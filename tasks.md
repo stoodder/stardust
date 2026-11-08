@@ -23,7 +23,7 @@ Goal: process scaffolding, a complete story bible, and first-draft design, art, 
   - races.md says the Hollow appears "from late Act II", but the bible places it at A2M1.
   - The bible gives two different timings for inheriting Suppressing Fire (§6 says A3M4, §12 says A3M5). Settle on granted at the end of A3M4, usable from A3M5.
   - style-guide.md: raise the `{pests_processed}` worst case to 9 characters, and drop "tech docs list the first five".
-  - Name the finale's meter ("Singers"?), confirm the "Glass Witch" boss name, and specify Zibzab's A3M6 crate and which Skitterkin gift C3 moves.
+  - ~~Naming items~~ settled in T009 (Voices; Glass Witch; the crate; Gloop Spitter).
   - research/emotional-storytelling.md: mark the "void intelligence" wording as superseded (low priority).
 - [ ] **T008** Apply review fixes, reconcile docs, ship M0 (commit + `m0` tag)
 
@@ -46,15 +46,15 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T106** In-map HUD (Preact overlay): build menu, upgrade/sell panel, wave call, speed controls, credits/integrity/wave readouts, keyboard routing rule.
 - [ ] **T113** Orbital Strike commander ability (cooldown, targeting, VFX).
 - [ ] **T115** Minimal title screen and results screen (PESTS PROCESSED counter shown; no medals yet).
-- [ ] **T107** A1M1 playable end to end per the M1 cut: briefing as static text, no Bricks ally or Suppressing Fire. Par build tuned to match.
+- [ ] **T107** A1M1 playable end to end per the M1 cut: briefing as static text, with no Bricks ally, Suppressing Fire, Crossfire link, or medals. Par build tuned to match.
 - [ ] **T108b** Playwright smoke flows (boot, build, wave, win via `fastForward`, lose) with screenshots, wired into `npm run check`.
 
 ## M2 — Loadout, Upgrades & Meta Progression
 - [ ] **T201** Loadout screen (pick up to 4 towers; skipped when you own ≤4 types and have no choice to make)
-- [ ] **T202** Tier-4 specialization choice; adjacency links (incl. Crossfire); medals
+- [ ] **T202** Tier-4 specialization choice; adjacency links (incl. Crossfire); medals (in-map evaluation + results screen)
 - [ ] **T203** Save system (localStorage plus export/import codes)
-- [ ] **T204** Stardust and Intel currencies; medals; permanent upgrade shop (Zibzab) and R&D tree
-- [ ] **T207** Companion slot + Suppressing Fire; allies pool with the Bricks ally (never targets youngling/fleeing units)
+- [ ] **T204** Stardust and Intel currencies (medals → Intel payout); permanent upgrade shop (Zibzab) and R&D tree
+- [ ] **T207** Companion slot + Suppressing Fire; allies pool with the Bricks ally (never targets `quiet_wave`, `youngling`, or `fleeing` units)
 - [ ] **T206** Hold Fire command + story-flag tracking (feeds choices)
 - [ ] **T205** Procedural audio: SFX first, then music layers
 
