@@ -54,6 +54,22 @@ Reviewers report findings with severity (high / medium / low) and a concrete fix
 - Run independent work in parallel. Never let two agents edit the same file at the same time; split the work by file ownership.
 - Each subagent prompt names its task ID from `tasks.md`, the docs to read, the files it owns, and what to report back.
 
+### How the orchestrator runs a review round
+
+1. Spawn up to 3 **read-only** reviewers in parallel, each with distinct angles, a word budget, and a "ranked findings with severity + concrete fix" output format. Tell them what earlier rounds already settled, so they don't re-litigate it.
+2. **Consolidate** all findings into one resolutions file (in the session scratchpad, not the repo). Where reviewers conflict, make the ruling yourself. Tag every item with its owner (Design = `docs/design/*`, Tech/Art = `docs/tech/*` + `docs/art/*`, Story = `docs/story/*`, Orchestrator = `CLAUDE.md`, `tasks.md`, `docs/README.md`, `docs/decisions.md`).
+3. Log the cross-cutting rulings as a new `docs/decisions.md` entry.
+4. Spawn one **fixer per owner** in parallel, all reading the same resolutions file. Relay cross-owner details between fixers with SendMessage while they run (renamed anchors, new IDs, numbers the other side must mirror).
+5. Do the orchestrator-owned fixes yourself, run the test loop, and commit a checkpoint.
+6. Later rounds verify the previous round's fixes and the seams between owners. Round 3 is the last; anything left becomes a task.
+
+### Working with the owner
+
+- The owner is a **partner**. Pitch your own ideas (story, mechanics, process) alongside the work, not just what was asked.
+- Make decisive recommendations and proceed. Record them in `docs/decisions.md`, and bring only genuine forks to the owner. In the kickoff the owner said "use your best judgement".
+- **The story must be genuinely emotional as well as fun.** Act I is laugh-out-loud funny, and the later acts earn real tears and end in hope. Never scold the player. Visual target: vibrant colors and deep darks.
+- Keep the owner posted with short status updates at each phase: what finished, what's running, what's next.
+
 ---
 
 ## Project pillars (short version; full version in `docs/vision.md`)

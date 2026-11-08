@@ -15,7 +15,7 @@ Story moments that change play run **inside the sim** as map data, so headless r
 ```ts
 interface ScriptedEvent { id: string; on: ScriptTrigger; when?: ConditionDef; actions: ScriptAction[]; once?: boolean }
 type ScriptTrigger =
-  | { wave: number; phase: 'start' | 'cleared' | { afterSec: number } }
+  | { wave: number; phase: 'countdown' | 'start' | 'cleared' | { afterSec: number } }  // 'countdown': that wave's build-phase countdown begins (W1's is the pre-game build phase)
   | { bossHpPct: number; boss?: EnemyId }        // crossing downward
   | { bossPhase: number }
   | { refugeesRemaining: number }                 // Escort / Holdout
@@ -43,6 +43,8 @@ type ScriptAction =
   | { grantCredits: number } | { openTile: MarkerId; to: TileChar }  // openTile targets a predefined decor marker
   | { endMap: 'won' | 'completed' };                              // Holdout ends as 'completed'
 ```
+
+`towerUnlockWave: { [towerId]: N }` in map data compiles to `{ on: { wave: N, phase: 'countdown' }, actions: [{ unlockTowerClass: towerId }] }` (A1M1: `{ thumper: 3 }`).
 
 - **Cue ids** follow `<map_id>_wNN` for wave-bound cues (`a1_m01_w03`), and the other `<map_id>_<slot>` forms from [story/style-guide.md](../story/style-guide.md) for the rest. Validation checks the pattern.
 - **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([architecture.md § Data shapes](architecture.md#data-shapes)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.

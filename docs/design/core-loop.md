@@ -109,7 +109,7 @@ From **A2M1**, when the first fleeing Skitterkin appear, the player can tell tow
 - **Rule:** while it is on, a tower never **picks** a `fleeing`-tagged unit or a `youngling` unit as its primary target. It takes the best other target by its priority (§2.6), or waits if there is none. Its attacks are otherwise unchanged, so splash, chains, and multi-target hits can still catch those units. Abilities are unaffected.
 - **Why (rule):** sparing must cost nothing in play, not only in the leak and medal rules. The balance harness proves it: the `spareFleeing` policy (the par build with the filter on for every tower) must end with a margin ≥ par margin − 5 ([maps.md §6.4](maps.md#64-balance-harness)). Fleeing units pay a bounty of only 1 ([enemies.md § Fleeing Skitterkin](enemies.md#fleeing-skitterkin)), so the filter gives up almost nothing.
 - **Plain Hold Fire is unchanged.** It stops all fire, and it is still the only tool for C1 in A1M5, where the filter doesn't exist yet. The filter is taught in A2M1 by one short line in voice ([../story/campaign/act2.md § A2M1](../story/campaign/act2.md#a2m1--rig-nine)).
-- The filter is a sim command (the per-tag form of the hold-fire command), so it is in the command log and the harness can set it ([../tech/architecture.md § Commands](../tech/architecture.md#commands-input-into-the-sim)).
+- The filter is a sim command (`spareRunners`, separate from Hold Fire), so it is in the command log and the harness can set it ([../tech/architecture.md § Commands](../tech/architecture.md#commands-input-into-the-sim)).
 
 ### 2.8 Speed and pause
 

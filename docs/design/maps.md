@@ -283,7 +283,7 @@ How the harness encodes these is in [../tech/conventions.md § Balance sims](../
 | A2M4 Second Harvest → **A3M5** Unsung (night) | The plant at maximum throughput, vats glowing violet, Tidybots gone, bearers at the intake |
 
 - **State-dependent dressing.** Dressing layers can carry a flag condition, so choices show on the map: for example the `door_choice` memorial (a blast door painted HE HELD THE DOOR under `convoy`) in A3M4's shelters and the finale, the Fun Friday banner in the shelters, and Bricks's memorial wreck on the finale route (§3).
-- **The Peeker** sits behind a rock on every Act I map ([core-loop.md §6.9](core-loop.md#69-the-peeker)); the rock is a clickable marker (§5.3) on decor where a warren mouth or brush line meets the path.
+- **The Peeker** sits behind a rock on every Act I map ([core-loop.md §6.9](core-loop.md#69-the-peeker)); the rock is a named marker on decor (clickable only while a script sets it, as in A2M3; §5.3) where a warren mouth or brush line meets the path.
 - **Evie billboards** carry the act's billboard state ([core-loop.md §6.7](core-loop.md#67-per-act-presentation-dials)).
 - **The Hollow's edge:** on maps that show the Hollow's region, that edge darkens act by act, even before the Hollow appears.
 - The palette darkens across acts per [../art/art-direction.md](../art/art-direction.md).
