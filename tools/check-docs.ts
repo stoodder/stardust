@@ -1,5 +1,5 @@
 // Docs check: relative links resolve, #anchors match headings, docs/README.md indexes every doc.
-// Plain Node (>=22.18, native type stripping), no dependencies.
+// Plain Node (>=22.6 via --experimental-strip-types; native from 22.18), no dependencies.
 // Spec: docs/tech/conventions.md#docs-check-npm-run-checkdocs
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';

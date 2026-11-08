@@ -13,4 +13,4 @@ A web-based **2D isometric pixel-art tower defense game** with a story that begi
 - **Start with [`CLAUDE.md`](CLAUDE.md)**: the workflow, roles, and rules.
 - Docs index and reading paths: [`docs/README.md`](docs/README.md).
 - Task board: [`tasks.md`](tasks.md). Decision log: [`docs/decisions.md`](docs/decisions.md).
-- Docs check: `npm run check:docs` (Node ≥ 22.18).
+- Docs check: `npm run check:docs` (Node 22+).

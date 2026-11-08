@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22.6"
   },
   "scripts": {
-    "check:docs": "node tools/check-docs.ts"
+    "check:docs": "node --experimental-strip-types tools/check-docs.ts"
   }
 }

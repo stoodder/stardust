@@ -24,7 +24,7 @@ CLAUDE.md → docs/ → tasks.md (plan) → implement → test loop → review (
    - If the loop can't get to green within the task's scope, stop, mark the task `[!]`, and report what's failing rather than weakening or skipping tests.
 6. **Review: up to 3 rounds, from several angles.** After the test loop is green, the orchestrator spawns parallel reviewers, each with a distinct angle (see *Review angles* below). Fix real findings, **re-run the test loop after each round of fixes**, then re-review only if the fixes were substantial. Stop when a round comes back clean, or after round 3, logging any leftover findings as tasks.
 7. **Update the docs.** The docs must describe the game as it is *now*. Update every doc your change touched, add new decisions to `docs/decisions.md`, and update `docs/README.md` if you added a doc.
-8. **Ship the milestone.** Mark tasks `[x]`, run the test loop one final time, commit with a clear message, and tag milestone completions (`git tag m<N>`). Deploy once hosting is set up (see `docs/tech/architecture.md`).
+8. **Ship the milestone.** Mark tasks `[x]`, run the test loop one final time, add a short "M<N> shipped" entry to `docs/decisions.md`, commit with a message starting `M<N>: ship`, and push to `origin main`. Then try `git tag -a m<N>` and push the tag. **Claude Code cloud sessions can't push tags** (the GitHub proxy rejects them), so in a cloud session skip the tag and tell the owner to create release `m<N>` on GitHub (Releases → Draft a new release → new tag `m<N>` on `main`). Deploy once hosting is set up (see `docs/tech/architecture.md`).
 
 ### Review angles
 
@@ -88,6 +88,14 @@ Reviewers report findings with severity (high / medium / low) and a concrete fix
 - **Two upgrade layers:** in-map upgrades (paid with credits, reset every map) and permanent upgrades (paid with meta currency between maps).
 - Maps get progressively harder across the campaign.
 - The protagonist is **human**.
+
+## Environment (Claude Code cloud sessions)
+
+- Node 22 is the default (20, 21, and 22 are installed under `/opt/node*`). npm registry access works on the default "Trusted" network level.
+- `.claude/agents/stardust-dev.md` loads from the repo, with its `model` and `effort` honored.
+- Chrome for Testing is at `/usr/bin/google-chrome` (`CHROME_PATH` is set). Point Playwright at it, or run `npx playwright install chromium`. Check early (T101) that a Vite dev server on localhost is reachable from inside the session.
+- Pushing branches works; **pushing tags doesn't** (see step 8). The VM pauses when idle, so commit and push progress at least at every task boundary.
+- Commands time out at 2 min by default (10 min max). Run long jobs (full `npm run check`, balance sims) in the background or raise `BASH_DEFAULT_TIMEOUT_MS`.
 
 ## Tech (short version; full version in `docs/tech/architecture.md`)
 

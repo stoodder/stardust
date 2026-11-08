@@ -25,7 +25,7 @@ How Stardust is built: the stack, the module layout, the sim/render boundary, co
 
 | Tool | Version (Nov 2026) | Role |
 |---|---|---|
-| **Node** | ≥ 22.18 (LTS; 24 also fine) | Dev tooling. 22.18+ runs `.ts` files natively (type stripping), which `npm run sim` and the docs check rely on. |
+| **Node** | ≥ 22.6 (22 is the Claude Code cloud default; 24 also fine) | Dev tooling. `tools/*.ts` run through Node's type stripping: native from 22.18, and the npm scripts pass `--experimental-strip-types` so any Node 22 works. `npm run sim` and the docs check rely on it. |
 | **TypeScript** | 7.0.x (`typescript`), strict | Language and type checking (`tsc` is the native Go compiler in 7.x) |
 | **Vite** | 8.x | Dev server and production bundler |
 | **Phaser** | **4.2.x** | Rendering, input, animation, cameras, filters (WebGL) |
@@ -490,15 +490,15 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `format` | `prettier --write .` |
 | `test` | `vitest run`: unit, sim, content, save, balance-harness, and architecture tests |
 | `test:watch` | `vitest` |
-| `sim` | `node tools/sim.ts`: headless balance sims for every map (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--report`) |
+| `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--report`) |
 | `smoke` | `playwright test`: browser smoke tests against `npm run preview` |
-| `check:docs` | `node tools/check-docs.ts`: link and docs-index checks |
+| `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
 | `check` | **The whole gate:** `typecheck && lint && test && build && sim && smoke && check:docs` |
 | `check:fast` | `typecheck && lint && test` (inner dev loop only, never the gate) |
 
 From T101, `sim` and `smoke` exist as passing stubs ("0 maps") so the gate runs end to end before any map does.
 
-`package.json` sets `"type": "module"` and `"engines": { "node": ">=22.18" }`.
+`package.json` sets `"type": "module"` and `"engines": { "node": ">=22.6" }`.
 
 **Config files:**
 - `tsconfig.base.json`: shared strict options.
