@@ -1,6 +1,6 @@
 # Emotional Storytelling Research for Stardust
 
-> **Note:** This is background research written before the story bible. Where it differs from `docs/story/` (for example it calls the Hollow a "void intelligence"), the story docs are authoritative.
+> **Note:** This is background research written before the story bible. Where it differs from `docs/story/` (for example it calls the Hollow a "void intelligence", treats Bricks as a "hero unit", and predates the rename of Halcyon Dynamics to Everglow Dynamics), the story docs are authoritative.
 
 What makes game stories land emotionally, filtered for a tower defense (TD) game with a whimsical-to-serious arc. Each section: principles, examples, and "How Stardust should apply this." Sources at the end.
 

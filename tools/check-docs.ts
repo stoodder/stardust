@@ -1,5 +1,6 @@
 // Docs check: relative links resolve, #anchors match headings, docs/README.md indexes every doc.
-// Plain Node (>=22.18, native type stripping), no dependencies. Spec: docs/tech/conventions.md#docs-check-npm-run-check-docs
+// Plain Node (>=22.18, native type stripping), no dependencies.
+// Spec: docs/tech/conventions.md#docs-check-npm-run-checkdocs
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
@@ -13,22 +14,38 @@ function walk(dir: string): string[] {
   });
 }
 
-/** Strip fenced code blocks (headings inside them aren't real). */
+/** Remove fenced code blocks (up to 3 spaces of indent; closes on a fence of the same char, at least as long). */
 function stripFences(md: string): string {
-  return md.replace(/^(```|~~~)[\s\S]*?^\1/gm, '');
-}
-/** Also strip inline code so example links aren't checked. */
-function stripCode(md: string): string {
-  return stripFences(md).replace(/`[^`\n]*`/g, '');
+  const out: string[] = [];
+  let fence: { ch: string; len: number } | null = null;
+  for (const line of md.split('\n')) {
+    const m = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (fence) {
+      if (m && m[1][0] === fence.ch && m[1].length >= fence.len && line.trim() === m[1]) fence = null;
+      out.push('');
+    } else if (m) {
+      fence = { ch: m[1][0], len: m[1].length };
+      out.push('');
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join('\n');
 }
 
-/** GitHub-style heading slug. */
+/** Remove inline code spans of any backtick-run length. */
+function stripInline(md: string): string {
+  return md.replace(/(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g, '');
+}
+
+/** GitHub-style heading slug. Link syntax reduces to its text; marks (\p{M}) are kept. */
 function slug(heading: string): string {
   return heading
     .trim()
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
     .toLowerCase()
     .replace(/<[^>]+>/g, '')
-    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+    .replace(/[^\p{L}\p{M}\p{N}\s_-]/gu, '')
     .replace(/\s/g, '-');
 }
 
@@ -38,7 +55,7 @@ function anchorsOf(file: string): Set<string> {
   if (set) return set;
   set = new Set();
   const counts = new Map<string, number>();
-  for (const m of stripFences(readFileSync(file, 'utf8')).matchAll(/^#{1,6}\s+(.+?)\s*#*\s*$/gm)) {
+  for (const m of stripFences(readFileSync(file, 'utf8')).matchAll(/^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$/gm)) {
     const base = slug(m[1]);
     const n = counts.get(base) ?? 0;
     counts.set(base, n + 1);
@@ -46,6 +63,23 @@ function anchorsOf(file: string): Set<string> {
   }
   anchorCache.set(file, set);
   return set;
+}
+
+/** Every link target in a doc: inline [t](u), reference definitions [r]: u, and <autolinks>. */
+function linkTargets(body: string): string[] {
+  const targets: string[] = [];
+  for (const m of body.matchAll(/\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) targets.push(m[1]);
+  for (const m of body.matchAll(/^ {0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+["'(].*)?$/gm)) targets.push(m[1]);
+  for (const m of body.matchAll(/<([^\s<>]+\.md(?:#[^\s<>]*)?)>/g)) targets.push(m[1]);
+  return targets;
+}
+
+function safeDecode(s: string): string | null {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return null;
+  }
 }
 
 const files = [
@@ -59,12 +93,20 @@ const errors: string[] = [];
 
 for (const file of files) {
   const rel = relative(ROOT, file);
-  const body = stripCode(readFileSync(file, 'utf8'));
-  for (const m of body.matchAll(/\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
-    const target = m[1];
+  const body = stripInline(stripFences(readFileSync(file, 'utf8')));
+  for (const target of linkTargets(body)) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue; // external (http:, mailto:, ...)
-    const [pathPart, anchor] = target.split('#');
-    const targetFile = pathPart ? resolve(dirname(file), decodeURIComponent(pathPart)) : file;
+    const hash = target.indexOf('#');
+    const pathPart = hash === -1 ? target : target.slice(0, hash);
+    const anchor = hash === -1 ? '' : target.slice(hash + 1);
+    const decoded = safeDecode(pathPart);
+    if (decoded === null) {
+      errors.push(`${rel}: malformed link → ${target}`);
+      continue;
+    }
+    // Root-relative links (/CLAUDE.md) resolve against the repo root, as on GitHub.
+    const base = decoded.startsWith('/') ? ROOT : dirname(file);
+    const targetFile = decoded ? resolve(base, decoded.replace(/^\/+/, '')) : file;
     if (!existsSync(targetFile)) {
       errors.push(`${rel}: broken link → ${target}`);
       continue;
@@ -75,15 +117,16 @@ for (const file of files) {
   }
 }
 
-// docs/README.md must list every doc under docs/ (and only existing ones — covered by link check).
+// docs/README.md must list every doc under docs/ (listed-but-missing is covered by the link check).
 const readme = join(ROOT, 'docs', 'README.md');
 if (!existsSync(readme)) {
   errors.push('docs/README.md is missing');
 } else {
   const listed = new Set(
-    [...stripCode(readFileSync(readme, 'utf8')).matchAll(/\]\(([^)#\s]+)/g)].map((m) =>
-      resolve(dirname(readme), m[1]),
-    ),
+    linkTargets(stripInline(stripFences(readFileSync(readme, 'utf8'))))
+      .map((t) => t.split('#')[0])
+      .filter(Boolean)
+      .map((t) => resolve(dirname(readme), t)),
   );
   for (const doc of walk(join(ROOT, 'docs'))) {
     if (doc !== readme && !listed.has(doc)) errors.push(`docs/README.md does not list ${relative(ROOT, doc)}`);

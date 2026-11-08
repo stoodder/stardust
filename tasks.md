@@ -28,24 +28,33 @@ Goal: process scaffolding, a complete story bible, and first-draft design, art, 
 - [ ] **T008** Apply review fixes, reconcile docs, ship M0 (commit + `m0` tag)
 
 ## M1 — Playable Vertical Slice
-Goal: one map you can win or lose in the browser.
+Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable in the browser, with the full test gate green. Starts after `m0` is tagged.
 
-- [ ] **T101** Scaffold per `docs/tech/architecture.md`: Vite + TS + Phaser 4 + Preact overlay + Vitest + Playwright, oxlint/Prettier, all npm scripts incl. `npm run check`; `__sd` test hooks and Playwright fixture
-- [ ] **T102** Pure-TS simulation core: fixed-timestep tick, entities, deterministic RNG
-- [ ] **T103** Isometric grid and map data format; buildable tiles vs paths; path following
-- [ ] **T104** Code-generated pixel sprite pipeline (palette-indexed grids → textures) + sprite gallery dev page
-- [ ] **T110** `content/rules.ts` (combat matrix, stacking caps, jam limits) + content validation
-- [ ] **T105** Three towers (tiers 1–3), three enemies, a wave spawner, credits economy, core HP, win/lose
-- [ ] **T106** Basic in-map HUD: build menu, upgrade/sell panel, wave call, speed controls
-- [ ] **T107** Map 1 (Act I opener) playable end to end
-- [ ] **T108** Test harness: headless balance-sim runner (`npm run sim`: par / no-counter / Story runs per `docs/design/maps.md`) and browser smoke tests (Playwright) wired into the test loop
-- [ ] **T109** Content validation tests: paths vs buildable tiles, threat intel vs actual waves, counter-coverage guarantee
+**Parallel lanes:** sim (T111 → T102 → T103 → T110 → T105a/b/c → T108a) · sprites (T104, any time after T101) · render/UI (T112 → T106/T115/T113, once the sim API from T102 exists). T107 integrates everything; T108b closes the milestone.
+
+- [ ] **T101** Scaffold per `docs/tech/architecture.md`: Vite + TS + Phaser 4 + Preact overlay + Vitest + Playwright, oxlint/Prettier, `tsconfig.pure.json` + `tsconfig.node.json` (tools, smoke, configs), every npm script, and `npm run check`. `sim` and `smoke` start as passing stubs ("0 maps"). Add `__sd` test hooks, including `fastForward(ticks)`. Confirm package versions with `npm view`, pin them, and report them for D003.
+- [ ] **T111** Content pipeline: `content/types.ts`, `define.ts`, `registry.ts`, `compile.ts` (seconds→ticks, `CompiledContent`). Becomes the canonical home of data shapes (design docs link to it).
+- [ ] **T102** Pure-TS sim core: fixed 60 Hz tick, typed pools, per-system seeded RNG, command queue + `applyPending()` (commands while paused), events, `hash()`, determinism test.
+- [ ] **T103** Iso grid + map data format (incl. `towerUnlockWave`), buildable pads vs paths, path following, `iso.ts` math.
+- [ ] **T110** `content/rules.ts` (damage matrix, stacking formula and caps, jam limits) + content validator (paths vs pads, threatIntel/requiredCounters vs waves, cross-refs). (Absorbs the former T109.)
+- [ ] **T105a** Combat: damage pipeline, armor/shields, targeting priorities, tower behaviors (Rivet hitscan, Thumper lead-targeting splash, Sprinkler chill aura).
+- [ ] **T105b** Waves: spawner (spawn intervals), early wave call (bonus formula per `docs/design/core-loop.md`), credits economy, build/upgrade/sell (misclick grace rule), core integrity, win/lose.
+- [ ] **T105c** Content data: towers Rivet, Thumper, Sprinkler (tiers 1–3); enemies Nibbler, Zoomer, Chonk. Sprinkler and Chonk are sim-tested but not used on A1M1.
+- [ ] **T108a** Headless runner + `npm run sim` (par / no-counter / do-nothing / alwaysCallEarly runs) composed in `tools/` or `src/balance/` (not `sim/`).
+- [ ] **T104** Code-generated sprite pipeline (palette-indexed grids → textures, palette swaps, outlines) + sprite gallery dev page.
+- [ ] **T112** BattleScene: host loop (accumulator, 1×/2×/pause), pooled views, depth sorting, tile picking, range rings, pointer input → commands.
+- [ ] **T106** In-map HUD (Preact overlay): build menu, upgrade/sell panel, wave call, speed controls, credits/integrity/wave readouts, keyboard routing rule.
+- [ ] **T113** Orbital Strike commander ability (cooldown, targeting, VFX).
+- [ ] **T115** Minimal title screen and results screen (PESTS PROCESSED counter shown; no medals yet).
+- [ ] **T107** A1M1 playable end to end per the M1 cut: briefing as static text, no Bricks ally or Suppressing Fire. Par build tuned to match.
+- [ ] **T108b** Playwright smoke flows (boot, build, wave, win via `fastForward`, lose) with screenshots, wired into `npm run check`.
 
 ## M2 — Loadout, Upgrades & Meta Progression
-- [ ] **T201** Loadout screen (pick up to 4 towers)
-- [ ] **T202** Tier-4 specialization choice; targeting priorities
+- [ ] **T201** Loadout screen (pick up to 4 towers; skipped when you own ≤4 types and have no choice to make)
+- [ ] **T202** Tier-4 specialization choice; adjacency links (incl. Crossfire); medals
 - [ ] **T203** Save system (localStorage plus export/import codes)
 - [ ] **T204** Stardust and Intel currencies; medals; permanent upgrade shop (Zibzab) and R&D tree
+- [ ] **T207** Companion slot + Suppressing Fire; allies pool with the Bricks ally (never targets youngling/fleeing units)
 - [ ] **T206** Hold Fire command + story-flag tracking (feeds choices)
 - [ ] **T205** Procedural audio: SFX first, then music layers
 
@@ -53,7 +62,8 @@ Goal: one map you can win or lose in the browser.
 - [ ] **T301** Star map / campaign select screen
 - [ ] **T302** Dialogue system (portraits, between-wave and in-map barks, choices)
 - [ ] **T303** Codex/field journal
-- [ ] **T305** Objective variants: Escort ("Evacuated" meter), Holdout, Protect; allies entity pool
+- [ ] **T305** Objective variants: Escort ("Evacuated" meter), Holdout, Protect; retry-from-wave checkpoints
+- [ ] **T306** Character creation (name, pronouns), callsigns
 - [ ] **T304** All Act I maps, enemies, and towers per `docs/story/campaign.md`
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish

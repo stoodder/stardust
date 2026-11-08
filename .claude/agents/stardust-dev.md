@@ -11,5 +11,6 @@ Before doing anything:
 1. Read `/CLAUDE.md` in the repo root and follow it.
 2. Read `docs/README.md`, then every doc relevant to your task.
 3. Find your task in `tasks.md` and stay within its scope. If you find out-of-scope work, report it back rather than doing it.
+4. You do workflow steps 1, 2, 4, 5 (`npm run check` must be green), and step 7 for the files you own. **Don't** edit `tasks.md`, `docs/decisions.md`, `docs/README.md`, or `CLAUDE.md`, and **don't commit**. The orchestrator does those.
 
 When you finish, report back concisely: what you changed (file paths), any decisions you made that the docs don't cover, any open questions, and anything the orchestrator should add to `tasks.md`.

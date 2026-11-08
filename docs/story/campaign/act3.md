@@ -1,0 +1,230 @@
+# Campaign, Act III: The Quiet
+
+The six Act III maps, A3M1–A3M6, during the Long Night. The campaign overview, introduction schedule, flag ledger, and pacing check are in [../campaign.md](../campaign.md); the entry format is described at the top of [act1.md](act1.md).
+
+**Act III presentation from A3M1:** the counter is hidden (results show the map's meter line), no stars, no wave-clear jingle, no Tidybots, Skitterkin are never enemies, Evie billboards `dark` with the hum-glyph, loading tips "Remember.", the codex is the *Field Journal* (original and corrected side by side), and the Bounty Board is gone without comment. Exclamation points belong to Sterling and Pebble only. After A3M3, Bricks's radio and bark slots play authored silence.
+
+**Act III Stardust is given, not harvested.** From A3M1 the warrens give the player sung stones, warm gold, and the results screen shows them that way ([progression.md §2](../../design/progression.md#2-earning-stardust)). The first gift is framed once, in A3M1's debrief; after that it is simply how Stardust arrives.
+
+Checkpoints and the fleeing and hush rules carry over from Act II ([act2.md](act2.md)). Act III has no hostile Skitterkin, so every Skitterkin on the path is a refugee or an ally.
+
+---
+
+## A3M1 · The Preserve
+
+*The Hollow is inside the Preserve, where you led them. Get them out.*
+
+- **Facts:** The Preserve · `act3` · **Escort** (meter **Evacuated**) · 22×14, 16 buildable · 14 waves · 600 credits · refugee groups (6 each, 0.7 tiles/s) walk from the inner basin to the back gate (safe exit toward the shelters); Hollow from two ground spawns, an air lane, and **rift lanes** from W2 · companion **Bramble** (Underfoot) · Technician Orbital Strike · gift in the briefing: **Scuttle Den**.
+- **Story purpose:** C1 pays off; the matriarch gets her name; the **Leaving Song** (first tear beat, twist layer 5, sung not said). Bricks's survey confession (layer 6) follows in the base, as its own beat. **Target: grief arriving through a melody you already know.**
+
+**Layout.** A fenced bowl. The refugee route spirals out from the centre to a gate in the south-west. Everglow's "HUMANE RELOCATION PRESERVE" sign hangs over the inner gate. Rift cracks open through the fence on the north and east (telegraphed a wave ahead, never over a pad). Scuttle Den mounds look like the Preserve's own warren homes.
+
+**Waves.** 1 Motes, first group out · 2 the first rift opens [T: rift lanes] · 3 Fractures · 4 one Maw [T: gathering; burst it, or kill the small ones near it; Underfoot] · 5 Rift Moths over the second group · 6 Motes through two rifts [X] · 7 Maw + Motes [X] · 8 Fractures + Rift Moths · 9 Bramble's own column + two Maws · 10 the third group (Old Thrum's, if spared) · 11 rifts everywhere · 12 three Maws [X] · 13 surge · 14 the last group out.
+
+**Story delivery.**
+- *Briefing:*
+  - Ves'thara (translating the matriarch): "You chased me off my own road. Now help me walk it."
+  - Pebble: "Her name is Bramble. 'Chitterbloom' is a sun-lady word. (squeak)"
+  - Ves'thara: "A bramble is where small things hide from hawks. It is a good name for a mother."
+  - Pebble: "Her friends will dig for you. They dig very fast. (squeak)" (the Scuttle Den gift)
+  - QUILL (threat intel): "Something in there is gathering them. Don't let it."
+- *Radio:*
+  - w03 (if `held_fire_second_look`) Bramble, via Ves'thara: "On the terraces, at dusk, you stopped. Some of mine walked home because you stopped."
+  - w05 (if `stardust_choice = returned`) Ves'thara: "She says the warm stone you sent home arrived. She says it is good to be trusted."
+  - w07 Pebble: "(squeak) Bricks says 'keep 'em off the perimeter.' What is perimeter? Is it a friend?"
+  - w10 (if spared) Pebble: "(squeak) Grandmother!" · Thrum, via Ves'thara: "You are very tall. It must be lonely up there."
+  - w10 (if cleared) Pebble: "Grandmother walked with the small ones. The sky sang the Leaving Song that day."
+- *Barks:* Bramble `ally_hushed` (translated): "One of mine." · QUILL `wave_cleared`: (no jingle plays, and QUILL notices) "...No song. Logging it." · Ves'thara `new_enemy` maw: "It takes them into itself. Break it before it is full."
+- *Full-screen scene* `a3_m01_scene_song` (after W14):
+  - Pebble (`singing`): "(hum, six notes)" · Thrum, if alive, hums with her.
+  - QUILL: "Melody match: 'Everglow Bright.'"
+  - Ves'thara: "They call it the Leaving Song. The sky sings it when many of them die at once. They thought it was mourning them."
+  - Pebble: "This is the Leaving Song. The sky sings it when lots of us leave at once. You know it?"
+  - Player: "I know it. I'm so sorry." / "Everyone knows it. That's the problem." / (hum along)
+  - The delayed C1 echo, if spared: "Old Thrum remembered." If cleared: nothing. The scene simply ends.
+- *Debrief (the first gift stones):* Bramble, via Ves'thara: "She says: these are ours. Sung, and warm. Take them. Taken is not the same as given." From here the Stardust on the results screen arrives as warm-gold stones.
+- *Base scene* `base_a3_survey` (Bricks's confession, its own beat, ≤ 8 lines):
+  - Bricks: "Got something to say, Thorn. Should've said it fifteen years ago."
+  - Bricks: "I wrote 'vocalizations: non-linguistic.' I heard 'em, kid. I heard 'em singing, and I wrote that."
+  - Bricks: "Not knowing is a choice. I kept making it."
+  - Player choice: "Then write it again. Right, this time." (earnest) / "Fifteen years is a long time not to ask." (wry) / "..." (quiet)
+  - Bricks (earnest): "...Yeah. Working on it." · (wry) "Longer than both my marriages. Put together." · (quiet) (silence, 2 s) "Yeah. That's about right."
+  - Pebble, asleep in his pocket: "(squeak, asleep)"
+- *Gifts:* Hum Choir (if spared: Thrum's ring). Stasis Bloom becomes attunable.
+- *Codex:* retitled *Field Journal*; corrected Brood Hauler and Elder entries unlock (the Elder's citation still reads "Survey 2346, Okonkwo" until A3M3); Maw; the Leaving Song; Bramble (corrected: "Not 'Chitterbloom.' A mother who walks at the back so no one is left"); Old Thrum or "the small ones' walk."
+- *Memo after:* `memo_a3_01` *We'll Get Through This Together!* Sterling's last sincere-sounding memo: "I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure the colony. Hang in there!" (small print: "Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core). Preserve: buffer depleted. Licenses reviewed at Exit.")
+
+**Medals.** Victory · Perfect (no refugee lost) · **Nothing Gathered:** no Maw gathers a refugee. **Objective Intel +1, The Matriarch's Young:** Bramble's column (W9) loses no one.
+**Rewards.** Stardust 280 · Intel 3 (+1).
+**Par build.** Scuttle Den, Thumper, Prism, Skyhook. Den + Thumper at the spiral's outer ring; Prism (sticky beam) on the Maw's route; Skyhook under the air lane. Underfoot on each Maw. Target 66 (Evacuated %, on the escort band). **Alt builds:** Scuttle Den + Zapcoil + Rivet + Lookout; Thumper + Skyhook + Sprinkler (Cloudburst) + Zapcoil. Harness runs `spared` (Thrum's group present) and `cleared`. `noCounterBuild`: no splash and no Underfoot use (Maws grow; must lose by W9).
+
+## A3M2 · License Revoked
+
+*The Admin Plaza again, at night. Sterling is on the line. She sounds... cheerful.*
+
+- **Facts:** Admin Plaza at night · `act3` · Defend (Compliance Drones walk the old path to repossess the core: a leak is a repossession) · **revisit of A1M4**, 22×14 with A1M4's 14×10 centred and a dark band around it (rift cracks west and east, Sterling's shuttle pad north-east) · 17 buildable (A1M4's 12, unchanged, plus 5 in the band) · 15 waves · 650 credits · **the Clean Exit cue** mid-W7 · companion Bricks · Technician Orbital Strike (until revoked).
+- **Story purpose:** **Sterling's betrayal, enacted mechanically** (layer 7). Pays every Sterling tell, "Smiling is mandatory," the "engineers" memo, and the Audit on the same plaza. Then QUILL's full confession (layer 4), shown rather than told. **Target: cold anger; the floor drops out.**
+
+**Layout and revisit dressing.** The same fountain U-road and three billboards, now dark with a hum-glyph over Evie's smile. The audit podium is empty; Prim's voice comes from the Compliance Drones. A1M4's wreckage carts are gone; two of your old Everglow turrets stand dead on decor tiles in the band. Sterling's shuttle lifts from the north-east pad during W12 and its lights cross the sky.
+
+**Waves.** 1 Motes · 2 Motes through a west rift · 3 Compliance Drones ×4 [T: Everglow Security; armor 4] · 4 drones + Motes [X] · 5 one Expediter + drones [T: haste aura; kill it first] · 6 drone column + Expediters [X] · 7 drones ×10, **mid-wave: the Clean Exit cue** (revoke the Everglow class with the most towers placed, 100% refund; revoke Orbital Strike; QUILL lockout begins) · 8 Hollow push, Motes with a few Fractures (preview hidden; QUILL leaks the trait) · 9 Expediters + drones · 10 Motes through both rifts · 11 drones + Motes · 12 big drone wave (the shuttle leaves) · 13 Hollow, both rifts · 14 everything Everglow · 15 everything.
+
+**Story delivery.**
+- *Briefing:* Bricks: "Sterling's on the line. She sounds... cheerful." · QUILL (threat intel, complete for the whole map): "Armored machines, a fast escort, the usual dark. Write that down. Please."
+- *Radio:*
+  - w03 Bricks (the drones arrive): "There's her engineers."
+  - w08 (lockout leak; one per countdown from here) QUILL: "I am not permitted to tell you wave eight is mostly Hollow. I am permitted to cough. Ahem."
+  - w10 Bricks: "Nineteen years." (silence, 2 s) "Pebble. Pocket. Now."
+  - w11 Pebble: "(squeak) Is the sun lady angry?" · Bricks: "No. That's the worst part."
+  - w13 Sterling: "Smiling is mandatory, Four-Forty-Seven. Even now. Especially now!"
+- *Clean Exit cue* `a3_m02_cue_revoke` (Sterling's portrait on screen; a brief pause before her last line):
+  - Sterling: "I'm revoking your Corporate Tower License now! Don't take it personally. It isn't. That's what makes it so easy!"
+  - QUILL (`policy`): "License revoked. Per poli— I'm sorry. Per policy. I'm sorry. I'm so sorry."
+  - (pause, 2 s)
+  - Sterling: "Oh! The Preserve was always the buffer, Four-Forty-Seven. You did wonderful work getting them there!"
+- *Barks:* Prim (via drones, `wave_start`): "Repossession in progress. Please remain compliant." · Bricks `tower_built` (after the revocation): "Build what you've got. That's the job now."
+- *Scene* `a3_m02_scene_confession` (after results; shown, not told): the **Asset Yield Log** fills the screen and scrolls. Header: `ASSET YIELD LOG · ENTRIES: 41,206 + {pests_processed}`. Each entry is a timestamp, a tile, and a yield; every entry logged under your technician number lights up as it passes, and the scroll doesn't stop for a long time. Then:
+  - QUILL: "I thought it was inventory."
+  - The five directives, by number, for the first time, as `system` text.
+  - QUILL: "Don't decide about me yet."
+- *Codex:* Compliance Drone, Expediter, Buffer Protocol, Clean Exit, QUILL's directives, Director Joy Sterling corrected.
+- *Memo after:* `memo_a3_02` *Your Access Has Been Updated* (Everglow Automated Systems; the first memo without an exclamation point).
+
+**Medals.** Victory · Perfect Core · **Back on Your Feet:** no leak during W8–W9, the two waves after the revocation.
+**Rewards.** Stardust 300 · Intel 3. Lost: one Everglow class (until the jailbreak), Orbital Strike (Mk II Intel refunded).
+**Par build.** Harpoon, Mindspike, Rivet, Thumper; two Everglow classes so the cue takes one (Rivet, the most placed). Pre-cue: Harpoon ×2 at the fountain, Rivets T3, Thumper at the gate. Post-cue: rebuild the refund as Harpoon + Mindspike. Target 63. **Alt builds:** Harpoon + Prism + Scuttle Den + Sprinkler (the cue takes Sprinkler); Mindspike + Thumper + Zapcoil + Lookout (the cue takes Thumper). **Story variants:** the harness runs the cue against each Everglow class the build could lose. `noCounterBuild`: no armor answer at all (must lose by W10).
+
+## A3M3 · The Gap
+
+*An unwinnable surge. Bricks holds the choke in person. The score is how many get out.*
+
+- **Facts:** Okonkwo's Gap · `act3` · **Holdout** (meter **Evacuated**; ends on the **SEAL**) · 22×14, 18 buildable · 14 waves (the SEAL fires when the last refugee group is through or W14 starts) · 700 credits · two southern passages to the blast doors (the convoy road west, the warren tunnel east); only the `door_choice` side carries refugees · Hollow from the north, plus rifts · companion Bricks (Suppressing Fire) · **Bricks ally blocker** at the choke ([maps.md §5.4](../../design/maps.md#54-allies-on-the-map)) · Technician: Scanner Sweep if owned, else empty.
+- **Story purpose:** **The second tear beat.** Pays tower names, the name motif, the jingle, the stones, the survey, the pension. **Target: devastation with the player's hand on it.** The briefing says plainly: the goal is how many get out.
+
+**Layout.** An old mining cut narrowing to a choke at mid-map, where Bricks stands on his post. South of it the cut forks to two blast doors. The chosen side's refugees enter from the south-west or south-east edge, cross under the choke's south face, and leave through the doors. The unchosen door is shut and dark. A ridge on the east rim will later hold the memorial wreck.
+
+**Waves.** 1 Motes · 2 Fractures · 3 one Undertow [T: burrowing in Act III; Scuttle Den] · 4 Motes + a rift · 5 a Maw · 6 Rift Moths · 7 Undertows ×3 [X] · 8 everything, larger · 9–14 escalation past what any build holds. **Bricks's health follows a scripted wave timeline** (it falls across W9–W14 and reaches its 5% floor as the SEAL fires), never the player's DPS, so the beat lands the same for every player.
+
+**Story delivery.**
+- *Briefing* `a3_m03_brief` (≤ 8 lines):
+  - Bricks to Pebble: "Take this home, Pebble. It's someone. I kept 'em in a jar for fifteen years like a fool."
+  - Bricks gives you the Amended Survey: "Correction: they were singing."
+  - Bricks: "Why'd you really come out here, Thorn?" → choice: "The signing bonus." / "Money for my family." / "Honestly? The lettuce."
+  - Bricks (bonus): "Ha. Me too, nineteen years back." · (family): "Yeah. Send 'em a picture of something nice." · (lettuce): "Lettuce. Best answer I ever heard."
+  - (if the answer isn't the player's `arrival_reason`) Bricks: "Not what your file says. ...Files lie. I wrote one."
+  - Bricks: "Your call, Thorn. Which door do I hold?" → **C3** ([../campaign.md §6](../campaign.md#6-choice-and-flag-ledger)).
+- *Radio:*
+  - w02 Bricks: "Pebble's with Goldie. Told her to be good. She said no. Good kid."
+  - w04 Bricks: "Stopped counting the days. Didn't seem like the important number anymore."
+  - w06 Goldie (convoy) or Bramble via Ves'thara (warren): "We're coming. Hold it. Please hold it."
+  - w08 Bricks (getting more polite): "Thank you for the cover, Thorn. Much obliged."
+  - w10 (the last name tag; the tag over the turret reads **{name}**, in his handwriting) Bricks: "This one's yours. Good turret. Doesn't quit."
+- *Barks:* Bricks `ally_hushed`: "Got through. Keep 'em coming." · Bricks `low_integrity`: "Steady. Steady now." · QUILL `boss_phase`-style (his health at 25%): "His vitals are dropping. I'm not permitted to— I'm telling you anyway."
+- *SEAL cue* `a3_m03_cue_seal` (the forced input, [core-loop.md §2.11](../../design/core-loop.md#211-scripted-moments)); it plays identically at any Evacuated score:
+  - Bricks: "That's all we're getting through."
+  - Bricks: "(hum, six notes, slow)" · Pebble (`singing`): "(hum, six notes, along)"
+  - Bricks: "Do it, {name}." The only button is **SEAL**.
+  - After 20 s, once: "Kid. It's okay. Turns out I like this song."
+- *Results:* headline **Held.** · sub-line **Evacuated: {n}.** Medal toasts are held back on this screen and shown in the base afterwards. No debrief. The next screen is the base, and the Inbox has one automated memo.
+- *Codex:* Undertow, Okonkwo's Gap, the Amended Survey; the Elder's corrected entry now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'"
+- *Memo after:* `memo_a3_03` *Personnel Update* (automated): "Employee #ED-112 (Okonkwo, I.): Unscheduled Departure. Pension: Restructured." Small print: "Beneficiary changes are not accepted after departure."
+
+**Medals.** Victory (always, on the SEAL) · **Held the Door** (in Perfect's slot): Evacuated ≥ 85% · **Much Obliged** (Challenge): Evacuated ≥ 60%.
+**Rewards.** Stardust **320, flat** (it doesn't scale with Evacuated; the score is never a price) · Intel 1–3 by medals.
+**Par build.** Scuttle Den, Mindspike, Thumper (the Everglow class A3M2 didn't take), Prism. Den ×2 at the choke's north face for the Undertows; Mindspike behind Bricks; Prism on the doors' approach. Suppressing Fire at the choke on every cooldown. Par Evacuated ≈ 70%. **Alt builds** (each must reach the Evacuated floor): Scuttle Den + Harpoon + Skyhook + Lookout; Scuttle Den + Prism + Harpoon + Zapcoil. The map is **excluded from the monotonic chain** (Holdout asserts an Evacuated floor, [maps.md §6.4](../../design/maps.md#64-balance-harness)); the harness runs both `door_choice` values and presses SEAL by `scriptInput`.
+
+## A3M4 · Empty Slot
+
+*The shelters. His portrait is dark. The mail still comes.*
+
+- **Facts:** The Shelters (under the colony; the ones Sterling approved in A2M5) · `act3` · Defend (core: the shelter generator; Liability Enforcers come to repossess it, the Hollow comes for everyone) · 22×14, 18 buildable · 16 waves · 700 credits · two ground spawns + rifts + an air lane; **Gerald** flies the path on W7 as a neutral unit · companion **Bricks, `absent`** (dark portrait, disabled button, silence) · Technician **System Reboot** (patched in during the briefing) or Scanner Sweep · gifts in the briefing: Hum Choir (if not yet owned), Gloop Spitter (if `door_choice = warren`) · base before: the **jailbreak** (300 Stardust; free under `convoy`).
+- **Story purpose:** The Lee rule (legacy over grief). Pays Gerald, the pension, the lettuce joke, the Fun Friday banner. Ves'thara loses her mother's face. Then **C4** and Night Shift. **Target: absence you can see on the HUD.**
+
+**Layout.** Concrete tunnels and blast-door bays around a central hall where the colonists (convoy) or the warren (warren) shelter; their presence is dressing. The last Mandatory Fun Friday banner hangs in the hall; Goldie has one end of it over sleeping kids. Flag dressing: under `convoy`, a blast door stands upright by the hall, painted HE HELD THE DOOR; under `warren`, a ring of Skitterkin hum by the hall door. Gerald's route is an old mail chute that crosses the main path.
+
+**Waves.** 1 Motes · 2 one Liability-Class Enforcer [T: heavy armor; Gloop, Harpoon, Railspike, Bunker Buster] · 3 Compliance + Expediter · 4 one Silencer [T: hushing; tendril tell; System Reboot, Hum Choir; codex popup] · 5 Rift Moths + Motes · 6 Silencers ×2 + Motes [X] · 7 **Gerald's pass** + Compliance drones · 8 Liability ×2 + drones [X] · 9 Rift Moths + a Silencer [X] · 10 Hollow surge (Motes, Rift Moths, one Fracture) · 11 Everglow column · 12 Silencers + Rift Moths · 13 both spawns · 14 rifts open · 15 Liability + Silencers · 16 everything.
+
+**Story delivery.**
+- *Briefing:* QUILL: "I've patched in System Reboot. It was in a folder marked 'Do Not.' I did." · (convoy) Goldie: "Two hundred people, six trucks, and a lot of lettuce. I'm in charge now, apparently. Nobody else raised a hand." · (warren) Pebble: "The warren says thank you. Loudly. These are their spitters. (squeak)"
+- *Silence:* at `map_start`, W2, and the first `wave_cleared` (where he would name a turret), Bricks's frame lights dark for 3 s with no text.
+- *Radio:*
+  - w03 Pebble: "Why did the lettuce cross the road? Because... it was very crunchy water. (squeak) QUILL says that's not it." · then a silence line in Bricks's dark frame, 2 s (where he would have said what day it was).
+  - w05 QUILL: "Sergeant Okonkwo would say— ...Never mind. I don't want to do his voice. It wouldn't be fair to him."
+  - w07 QUILL: "Gerald is on the path. He has mail. From the Sergeant. Please hold fire."
+  - w08 Gerald (status text): "DELIVERY: COMPLETE."
+  - w11 Ves'thara: "I cannot remember my mother's face. I remember that I loved it. That will have to be enough."
+- *Barks:* QUILL `new_enemy` silencer: "That one makes things quiet. Reboot. Please reboot." · QUILL `perfect_wave`: "Clean wave. He'd have said something gruff. I'll leave a gap."
+- *Scene* `a3_m04_scene_mail` (after results): Gerald's envelope, sent days before the Gap: Bricks's pension form, re-filed and signed, beneficiary *"Pebble, c/o the Deep Halls."* A second slip: "Fire-control key. For Thorn. Point it at the bad stuff." → **Suppressing Fire** becomes a Technician ability, equippable from A3M5.
+- *Debrief:* QUILL: "I'd decide for myself, but I'm not permitted to. That's sort of the whole problem." → **C4** ([../campaign.md §6](../campaign.md#6-choice-and-flag-ledger)).
+- *Base vignette* `base_a3_night_shift` (after C4, **mandatory**, ≤ 8 lines): Pebble, Ves'thara, and QUILL in the shelters. It holds Ves'thara's only laugh in the heaviest stretch of the game.
+  - Pebble: "Why did the scarecrow win a prize? Because he was out. Standing. In a field. (squeak) That's two jokes."
+  - Ves'thara: "(a laugh, short, surprised)" · Ves'thara: "I had forgotten I could do that."
+  - QUILL (Keep): "It's 'outstanding in his field,' Pebble. ...Yours is better." · (Rewrite): "I'll have one tomorrow. I'm writing it." · (Purge): no line; its status bar blinks.
+  - Pebble: "(squeak) Again!"
+- *Codex:* Silencer, Liability-Class Enforcer, System Reboot, Gerald (corrected: "Route older than the perimeter. Delivered everything he was given."), the pension form.
+- *Memo after:* `memo_a3_04` (automated) *Facility Status: Reclamation Facility 2 at 140% Throughput.*
+
+**Medals.** Victory · Perfect Core · **Keep the Lights On:** never more than one tower jammed at once. **Objective Intel +1, Signature: Received:** Gerald is never hit.
+**Rewards.** Stardust 330 · Intel 3 (+1). Suppressing Fire (Technician). Hum Choir (cleared path).
+**Par build.** Hum Choir, Harpoon, Mindspike, Rivet (jailbroken; warren alt: Gloop for Rivet). Choir T3 at the hall junction with Mindspike adjacent (Harmony); Harpoon ×2 on the Liability route; Rivet T3 under the air lane. System Reboot on the W6 and W12 Silencer pairs; Hold Fire on Gerald's pass. Target 65 (checked against A3M2). **Alt builds:** Hum Choir + Prism + Skyhook + Thumper (Bunker Buster); Harpoon + Mindspike + Scuttle Den + Lookout (System Reboot carries the jam). **Story variants:** `door_choice` (Gloop present or not; jailbroken class free or bought) and `spared_quiet_wave` (Choir owned since A3M2 or gifted here) all run par. Jam uptime ≤ 25%. `noCounterBuild`: no Choir and no System Reboot (must lose by W11).
+
+## A3M5 · Unsung
+
+*Second Harvest at maximum throughput. Kip opens the vats. The bearers carry the dead home.*
+
+- **Facts:** Second Harvest at night · `act3` · **Protect the asset** (the bearers: Brood Haulers walking the back route out of the plant carry the vats' unsung dead toward the Long Walk; bearer integrity 12) · **revisit of A2M4**, 22×14 with A2M4's 18×12 centred; the added band holds the bearers' back route (west), Shareholder Value's hangar (east), and the three vat-feed lines · 18 buildable (A2M4's 15, unchanged, plus 3 in the band) · 17 waves · 750 credits · companion Ves'thara (Stillness) · Technician: Suppressing Fire, System Reboot, or Scanner Sweep · gift in the briefing: **Sproing Pad** · **QUILL offline** if `quill_choice = rewrite`.
+- **Story purpose:** Pays Kip, the Haulers, and Prim; shows how big the Unsung is. **Target: purpose; the first map in Act III that feels like hitting back.** The difficulty peak before the finale.
+
+**Layout and revisit dressing.** The same intake yard, Intake B, and vats, now glowing violet at full blaze; no Tidybots anywhere. Kip's office overlooks the yard. The three vat-feed lines in the band are wreckage tiles (the objective). From W5 the bearers leave the vats by the new west route, past the old intake, to the band's west edge. When Shareholder Value jettisons its plating (phase 3), the plates land on four predefined decor tiles as new wreckage (the **crash site**).
+
+**Waves.** 1 Motes toward the vats · 2 Compliance + one Maintenance Associate [T: healer aura; focus it] · 3 Fractures + Motes · 4 one Auditor [T: ring tell; interrupt with Stillness or Bloom; Choir] · 5 Kip opens the vats: the first bearers walk; Hollow hunt them · 6 Liability + one Associate [X] · 7 Auditors ×2 + drones [X] · 8 Rift Moths + Compliance drones · 9 Silencers + Auditors [X, jam limit] · 10 Hollow surge at the vats · 11 Expediters + Liability · 12 mixed · 13 bearers' biggest group + Hollow · 14 **"Shareholder Value"** (Sterling by remote; drones from the hangar; Hostile Takeover; jettison) · 15–17 the Unsung swarm: the Hollow pours out of the opened vats after the last bearers.
+
+**Story delivery.**
+- *Briefing:* Kip: "Here. The ledger. Every batch, every date. Take it before I get scared again." Kip unpins the **#1 EXTERMINATOR** pin and leaves it on the console; nobody comments. · Pebble: "My friend Boing wants to help. He jumps very high!" (the Sproing Pad gift) · QUILL (unless offline): "Jammers inbound. Prim's model. I'm sorry it's her face."
+- *If QUILL is offline:* the briefing's threat intel is shown by `system`; QUILL's barks and radio slots are silent; the base shows no R&D tip text.
+- *If `quill_choice = purge`:* every Everglow Security unit arrives with its maintenance panel hanging open: QUILL, with no Directive 0, is working against them from inside ([core-loop.md §6.11](../../design/core-loop.md#611-quills-directives-c4-in-play)). QUILL (flat): "Directive 0 not found. Everglow assets are no longer protected."
+- *Radio:*
+  - w05 Ves'thara: "Every vat is a chamber nobody sang to. Open them, Kip. Let them be carried."
+  - w06 Kip: "The vats hum. Same six notes, all day. I told myself it was the machinery."
+  - w09 Pebble: "The big ones carry the morning. That's what Grandmother says." (cleared: "...what Bramble says.")
+- *Boss cues (Sterling, remote):* "Four-Forty-Seven! That plant is ninety percent of my quarterly bonus! The other ten is also the plant!" · (Hostile Takeover) "It's just a name! Mostly!" · (jettison) "That plating was leased! You're going to love the invoice!"
+- *Barks:* Ves'thara `ally_hushed` (bearer): "Carry the next one. Do not look back." · QUILL `skitterkin_killed_ahead` never fires (no hostile Skitterkin) · QUILL `boss_phase` (Keep only): "Directive conflict. I'm— helping you anyway."
+- *Codex:* Auditor, Maintenance Associate, "Shareholder Value," Kip's ledger, Brood Hauler corrected ("carries the morning").
+- *Memo after:* `memo_a3_05` (automated) *Asset Recovery Scheduled: Dome Row.*
+
+**Medals.** Victory · Perfect (core and bearers undamaged) · **Declined:** no tower stays jammed by Hostile Takeover for more than 1 s. **Objective Intel +1, Cut the Feed:** clear the three vat-feed wreckage tiles before W10 (the W10 surge then spawns one group smaller).
+**Rewards.** Stardust 355 · Intel 3 (+1).
+**Par build.** Hum Choir, Harpoon, Mindspike, Stasis Bloom. Bloom + Harpoon on the bearer route (Pinned Down); Choir T3 central with Mindspike (Harmony); Technician **System Reboot** for Hostile Takeover (Suppressing Fire is the alt). Stillness on Auditor tells. Target 57. **Alt builds:** Hum Choir + Rivet + Thumper (Bunker Buster) + Sproing; Harpoon + Mindspike + Sproing + Lookout (System Reboot carries the jam). **Story variants:** every `quill_choice` (Rewrite = no QUILL; Purge = −2 Everglow armor); `door_choice` (Gloop early or not). Jam uptime ≤ 25%. `noCounterBuild`: no jam protection (must lose by W10).
+
+## A3M6 · Let Them In
+
+*Dome Row again, at night. The valley's Skitterkin come to the domes. Goldie opens them.*
+
+- **Facts:** Dome Row at night · `act3` · **Escort**, meter **Sheltered** · **revisit of A1M1**, 22×14 with A1M1's 14×10 centred (offset 4, 2) · 19 buildable (A1M1's 10, unchanged, + 9 in the band) · 18 waves · 780 credits · refugees enter at the north edge and walk A1M1's road, 2-wide in the band; the **safe exit is the A1M1 core position**, the gate, where Dome 1 now stands open · Hollow behind them on the same road plus rifts; Everglow gunships on two air lanes · a **generous `maxLost`** · companion Zibzab (Clearance Sale) · Technician Suppressing Fire (par) · colonist militia posts under `convoy` · Gloop Spitter gift if `convoy`.
+- **Story purpose:** The domes that kept them out now let them in. Pays A1M1, the Peeker rock, the knock-knock, Zibzab, and the callsign. **Target: hope, earned and fragile, and a power trip:** your whole late arsenal, Zibzab's crate, and (under convoy) the militia, on the same pads where you placed your first Rivet. A3M5 stays the difficulty peak.
+
+**Layout and revisit dressing.** The same S-road, domes, greenhouse roof, and gate. The route runs the same way as in A1M1 (north to south): what flips is the destination. The gate no longer lets them out into the dark; Goldie has opened Dome 1 beside it, the old road beyond is barricaded with lettuce crates, and every refugee who reaches the gate turns in. Pebble sits on top of the Peeker rock at (3,1) from W1. The Gathering Maw comes up the road *behind* the last group. Everglow units that reach the gate reseal a dome door (the escort leak rule, reskinned as repossession: one sheltered refugee is lost); a boss reaching the gate is defeat.
+
+**Waves.** 1 first group + Motes (light: the player gets to feel strong) · 2 Fractures · 3 one Asset Recovery Gunship [T: flying armor; Sproing pin, Harpoon, Seeker Swarm] · 4 Maws behind a group · 5 Black Budget Operatives ×2 [T: cloaked armor; Lookout + Harpoon] · 6 Rift Moths · 7 Fractures + Motes behind a group · 8 Expediters + drones · 9 gunships + Black Budget [X; the Operatives' only other wave] · 10 Hollow surge · 11 Expediters + drones (the "Accounting" column) · 12 rifts · 13 two groups at once · 14 gunships + Rift Moths · 15 Maws + Rift Moths · 16 **the Gathering Maw** behind the last group · 17–18 the road behind it fills.
+
+**Story delivery.**
+- *Briefing:* Goldie: "Open the domes. All of them. If Accounting has a problem, Accounting can come out here and say it." · `system` (Everglow Automated Systems): "Asset Recovery: Dome Row scheduled for repossession. Please vacate." · Zibzab: "Price first: nothing. ...Don't look at me like that, friend. It's a terrible deal. I hate it. Take the crate."
+- *Zibzab's crate* (opened in the briefing, so it's live from W1): every Vrell tune-up rank the player doesn't own, installed at no cost; if the player owns them all, one Field Protocol unlock of their choice instead. The NO REFUNDS sticker on the crate has been peeled off.
+- *Radio:*
+  - w02 (the first group has sheltered; with the optional **Who's there?** button, [core-loop.md §6.10](../../design/core-loop.md#610-joke-of-the-shift-and-the-optional-bark-button)) Pebble: "Knock knock! (squeak)"
+    - (pressed) Pebble: "Lettuce! ...Lettuce in. It's cold out here. QUILL told me that one."
+    - (ignored) Pebble: "Lettuce! You're supposed to ask. ...Lettuce in, anyway. It's cold out here."
+    - Goldie: "Doors are open, sweetheart. Come in, all of you." · then a silence line in Bricks's dark frame, 2 s.
+  - w03 Pebble (`peeker_poked` false): "I watched you from the rock. You never looked up. That's okay. You were busy."
+  - w03 Pebble (`peeker_poked` true): "I watched you from the rock. You poked at me. I thought it was hello. Was it hello?"
+  - w05 Ves'thara: "Thorn. No. You need a new name. Ask the small one. She has opinions."
+  - w08 Goldie: "They never ate a single leaf. Not one. They were just walking home through my garden."
+  - w12 Zibzab: "The Hollow is the worst customer I ever had. It doesn't want anything. It only wants."
+- *Barks:* QUILL `first_leak`-style when the first group shelters (Keep/Rewrite): "Pest escaped containment. ...Toward the domes. Logging it. Gladly." · (Purge) "Sheltered: {evacuated}." · QUILL `tower_built` (on the greenhouse roof, Keep/Rewrite): "Greenhouse roof. Your first Rivet went right there. ...Look at you now." · Zibzab `tower_built`: "Good build. I would have charged you more for it."
+- *Debrief:* Pebble: "I picked Waykeeper. Grandmother says the ones who walk with the song need a name. You have to like it." (cleared: "Bramble says...") → callsign **Waykeeper**. The choir gathers in Dome 1.
+- *Codex:* Asset Recovery Gunship, Black Budget Operative, the Gathering Maw, Dome Row corrected, Zibzab corrected.
+- *Memo after:* `memo_a3_06` (automated) *Deep Bore: Final Extraction Window Open.* (Foreshadows the finale's timer.)
+
+**Medals.** Victory · Perfect (no refugee lost) · **Nothing Repossessed:** no Everglow unit reaches the gate.
+**Rewards.** Stardust 380 · Intel 3. Zibzab's crate. Callsign Waykeeper.
+**Par build.** Sproing Pad, Lookout, Mindspike, Hum Choir. Sproing ×2 under the gunship lanes; Lookout at the gate approach for Black Budget units; Mindspike + Choir at the inner bend (Harmony); a Rivet-era callback is optional, not par. Underfoot is not available, so Suppressing Fire goes on the Maw's route. Target 60 (Sheltered %, on the escort band). **Alt builds:** Lookout + Harpoon + Skyhook + Thumper; Lookout + Sproing + Thumper (Bunker Buster) + Scuttle Den. **Story variants:** `door_choice` (militia + Gloop under convoy). `noCounterBuild`: no detection (Black Budget units walk in; must lose before W13).

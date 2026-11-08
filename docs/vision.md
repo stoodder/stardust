@@ -2,7 +2,7 @@
 
 ## Elevator pitch
 
-You're a brand-new Junior Perimeter Technician on a cheerful corporate frontier colony. Your job is to keep the adorable local "pests" out of the hydroponic domes. Over a campaign of increasingly desperate tower defense battles, you learn the truth about the pests, the company, and the shimmering mineral everyone is mining. It all starts with space-lettuce. It ends with the fate of a world.
+You're a brand-new Junior Perimeter Technician on a cheerful frontier colony run by Everglow Dynamics. Your job is to keep the adorable local "pests" out of the hydroponic domes. Over a campaign of increasingly desperate tower defense battles, you learn the truth about the pests, the company, and the shimmering mineral everyone is mining. It all starts with space-lettuce. It ends with the fate of a world.
 
 ## Target experience
 
@@ -30,7 +30,7 @@ You're a brand-new Junior Perimeter Technician on a cheerful corporate frontier 
 
 ## Scope (current plan)
 
-- About 17 campaign maps across 3 acts plus a finale. We can expand this if the story needs more room.
+- 18 campaign maps: 5 in Act I, 6 in Act II, 6 in Act III, plus the finale (see `docs/story/campaign.md`). We can expand this if the story needs more room.
 - About 12–16 towers in total, each with an in-map upgrade path (tiers 1–3, then a choice of 2 specializations at tier 4).
 - About 20–30 enemy types with distinct abilities, plus bosses.
 - Post-game: challenge maps, veteran modifiers, endless mode.

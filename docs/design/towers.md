@@ -15,7 +15,7 @@ Related docs: [enemies.md §2](enemies.md#2-combat-resolution) (damage types, th
 1. **One clear job per tower; the specialization flips or sharpens it.** A player should be able to say what a tower is *for* after one look.
 2. **Factions carry the story.** The roster is split into four factions of four towers each. You start with corporate kit, buy junk from a Vrell trader, are trusted with Aelari crystal, and are finally *given* homes by the creatures you spent Act I shooting. The Skitterkin towers are the emotional payoff of the campaign, so they get the most warmth and personality (section 8).
 3. **Cover every counter more than once.** Each defense trait in [enemies.md](enemies.md) has at least two tower answers, from at least two factions, so loadouts are puzzles rather than mandatory picks.
-4. **Rule: towers are never damaged or destroyed by enemies.** A few late enemies can briefly **Jam** (disable) towers ([enemies.md §4](enemies.md#4-tower-disabling-jamming)). Hum Choir and the System Reboot ability are the counters.
+4. **Rule: towers are never damaged or destroyed by enemies.** A few late enemies can briefly **Jam** (disable) towers ([enemies.md §4](enemies.md#4-tower-disabling-jamming)). Hum Choir (shorter jams; immunity with its Rally Chorus specialization) and the System Reboot ability are the counters.
 5. **Cross-faction links are the strongest story signal.** Most synergy links (section 6) pair towers from different factions. Alliances literally make you stronger.
 
 ---
@@ -26,11 +26,11 @@ Targets: **G** = ground, **A** = air. Damage types and their effects are defined
 
 | # | ID | Tower | Faction | Role | Damage | Targets | T1 cost | Recommended act | Acquired by |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | `rivet` | **Rivet Autoturret** | Halcyon | Single-target DPS (generalist) | Kinetic | G+A | 100 | Act I start | Issued (free) |
-| 2 | `thumper` | **Thumper Mortar** | Halcyon | Splash | Explosive | G | 125 | Act I early | Issued |
-| 3 | `sprinkler` | **Frostline Sprinkler** | Halcyon | Slow / control | Kinetic (tiny) | G (A with spec B) | 90 | Act I early | Issued |
-| 4 | `skyhook` | **Skyhook Flak Battery** | Halcyon | Anti-air splash | Explosive | A only | 110 | Act I mid | Issued |
-| 5 | `crane` | **Salvage Crane** | Vrell | Economy | none (Kinetic with spec B) | G (spec B) | 150 | Act I late | Zibzab, Stardust |
+| 1 | `rivet` | **Rivet Autoturret** | Everglow | Single-target DPS (generalist) | Kinetic | G+A | 100 | Act I start | Issued (free) |
+| 2 | `thumper` | **Thumper Mortar** | Everglow | Splash | Explosive | G | 125 | Act I early | Issued |
+| 3 | `sprinkler` | **Frostline Sprinkler** | Everglow | Slow / control | Kinetic (tiny) | G (A with spec B) | 90 | Act I early | Issued |
+| 4 | `skyhook` | **Skyhook Flak Battery** | Everglow | Anti-air splash | Explosive | A only | 110 | Act I mid | Issued |
+| 5 | `crane` | **Salvage Crane** | Vrell | Economy | none (Kinetic with spec B) | G (spec B) | 150 | Act II early | Zibzab, Stardust |
 | 6 | `zapcoil` | **Zapcoil** | Vrell | Anti-shield chain | Energy | G+A | 120 | Act I late | Zibzab, free sample |
 | 7 | `harpoon` | **Grapple Harpoon** | Vrell | Anti-armor; grounds flyers (spec B) | Kinetic, high per hit | G+A | 150 | Act II early | Zibzab, Stardust |
 | 8 | `lookout` | **Lookout Shack** | Vrell | Detection + support (range) | none | — | 100 | Act II early | Zibzab, Stardust |
@@ -38,8 +38,8 @@ Targets: **G** = ground, **A** = air. Damage types and their effects are defined
 | 10 | `mindspike` | **Mindspike Obelisk** | Aelari | Armor-ignoring DPS; anti-Hollow | Psionic | G+A | 150 | Act II late | R&D attunement, Intel |
 | 11 | `lantern` | **Seer's Lantern** | Aelari | Detection + debuff (Mark) | Psionic (tiny) | G+A | 120 | Act II late | R&D attunement, Intel |
 | 12 | `bloom` | **Stasis Bloom** | Aelari | Hard control; interrupts abilities | none | G+A | 140 | Act III early | R&D attunement, Intel |
-| 13 | `burrow` | **Brood Burrow** | Skitterkin | DoT swarm; hits burrowed enemies | Kinetic DoT | G (A with spec B) | 140 | Act III early | Gift (A3M1) |
-| 14 | `choir` | **Hum Choir** | Skitterkin | Support (damage aura, jam protection) | none | — | 130 | Act III early–mid | Gift (A3M1 if C1 spared; otherwise later) |
+| 13 | `burrow` | **Scuttle Den** | Skitterkin | DoT swarm; hits burrowed enemies | Kinetic DoT | G (A with spec B) | 140 | Act III early | Gift (A3M1) |
+| 14 | `choir` | **Hum Choir** | Skitterkin | Support (damage aura, jam protection) | none | — | 130 | Act III early–mid | Gift (A3M1 if C1 spared; otherwise A3M4) |
 | 15 | `gloop` | **Gloop Spitter** | Skitterkin | Splash + armor shred | Explosive | G | 120 | Act III mid | Gift |
 | 16 | `sproing` | **Sproing Pad** | Skitterkin | Anti-air; grounds flyers | Kinetic | G+A (air first) | 130 | Act III mid–late | Gift |
 
@@ -51,15 +51,15 @@ Acquisition rules and the story-timed gift schedule are in [progression.md §8](
 |---|---|
 | Single-target DPS | Rivet, Harpoon, Mindspike, Prism, Rivet [Railspike] |
 | Splash / swarm clear | Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike] |
-| Slow / control | Sprinkler, Stasis Bloom, Brood Burrow, Hum Choir [Lullaby], Mindspike [Dread] |
+| Slow / control | Sprinkler, Stasis Bloom, Scuttle Den, Mindspike [Dread], Hum Choir [Lullaby] (slows enemy abilities, not movement) |
 | Anti-air | Skyhook, Sproing Pad, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Sprinkler [Cloudburst] |
 | Detection (cloaked) | Lookout Shack, Seer's Lantern, *Scanner Sweep ability* |
 | Anti-shield | Zapcoil, Prism Spire, Sprinkler (Soaked status, T3) |
 | Anti-armor | Harpoon, Mindspike, Gloop (shred), Rivet [Railspike], Thumper [Bunker Buster] |
-| Burrowed enemies | Brood Burrow, Underfoot ability, Stasis Bloom (prevents burrowing), Seer's Lantern [Truthlight] |
+| Burrowed enemies | Scuttle Den, Underfoot ability, Stasis Bloom (prevents burrowing), Seer's Lantern [Truthlight] |
 | Support / buffer | Lookout Shack (range or fire rate), Hum Choir (damage, jam protection), Seer's Lantern (Mark) |
 | Economy | Salvage Crane |
-| Jam protection | Hum Choir, *System Reboot ability* |
+| Jam protection | Hum Choir (shorter jams; immunity only with [Rally Chorus]), *System Reboot ability* |
 
 ---
 
@@ -68,7 +68,7 @@ Acquisition rules and the story-timed gift schedule are in [progression.md §8](
 ### 3.1 In-map tiers (credits; reset every map)
 
 - **Rule:** tiers 1 → 2 → 3 are linear. At **tier 4** the player picks **one of two specializations (A or B)**. The choice is permanent for that tower in that map. Another tower of the same type can take the other specialization.
-- **Rule:** a specialization is only offered if it is unlocked in R&D ([progression.md §7](progression.md#7-rd-tree-intel)). A locked specialization shows a lock icon and its unlock cost, so the player learns what exists.
+- **Rule:** a tower's specializations are offered only once they are unlocked in R&D, and **one purchase unlocks both A and B** for that tower ([progression.md §7.1](progression.md#71-engineering-specializations)), so the in-map A/B choice is always a real choice. Locked specializations show a lock icon and the unlock cost, so the player learns what exists.
 - **Cost curve (default; per-tower overrides allowed):** T2 = 0.8 × T1, T3 = 1.5 × T1, T4 = 3.0 × T1. A fully upgraded tower costs about 6.3 × its T1 price.
 - **Power curve target:** T2 ≈ 1.4 × T1 effectiveness, T3 ≈ 2.0 × T1 plus a new property, T4 ≈ 3.5–4 × T1 *in its niche* and often weaker outside it. Credit efficiency falls with tier on purpose: limited pads make upgrading worthwhile anyway.
 
@@ -92,7 +92,7 @@ stat_final = (stat_tier + Σ flat_bonuses) × (1 + Σ percent_bonuses)
 - `stat_tier` is the tower's stat at its current tier (or specialization).
 - **Flat bonuses** (for example "+0.5 range" from a link) add first.
 - **Percent bonuses** for the same stat **add together**. Sources: shop tune-ups, synergy links, support auras, tiles (high ground, power node), Field Protocols.
-- **Auras of the same kind do not stack**: a tower inside two Hum Choir auras gets only the stronger one. Different aura kinds (Hum Choir damage plus Lookout range) do stack.
+- **Auras of the same kind do not stack**: a tower inside two Hum Choir auras gets only the stronger one. Different aura kinds (Hum Choir damage plus Lookout range) do stack. **The Lookout Shack's adjacency bonus is an aura kind** (range, or fire rate with Overclock Rig): a tower next to two Lookouts gets only the stronger bonus. A support tower is never covered by its own aura.
 - **Caps (rule):** total percent bonus is capped at **+150% damage, +100% fire rate, +60% range**.
 - Effects on *enemies* (Mark, Soaked, Corroded) are applied in the damage pipeline in [enemies.md §2.3](enemies.md#23-damage-pipeline), not here.
 - **Jammed** towers have fire rate 0 and provide no auras or links while jammed.
@@ -104,9 +104,12 @@ Tile bonuses ([maps.md §3](maps.md#3-tile-types)): **high ground +25% range**, 
 ## 5. Targeting
 
 - Priorities: **First** (least remaining route distance to the core), **Last**, **Strong** (highest current HP + shield), **Close** (nearest to the tower). The player can change priority at any time, including while paused.
+- **Range (rule):** a target is in range when `minRange < distance ≤ range`. Minimum range is exclusive: an enemy exactly at the minimum can't be hit.
 - **Tie-break (rule, for determinism):** First, then the lowest entity ID.
 - Towers **never** target enemies that are undetected-cloaked, burrowed, phased, or in a layer the tower can't hit (for example a ground-only tower and a flyer that isn't Pinned).
 - **Beam stickiness:** the Prism Spire keeps its target until the target dies or leaves range, regardless of priority, because ramp-up is its whole point.
+- **Delivery.** Each attack is **hitscan** (damage lands the tick it fires; the Rivet), a **projectile** with a flight time (the Thumper's shells), or a **beam** (the Prism Spire and the Lantern's light-beam; beams are not DoT, and armor applies per beam tick: [enemies.md §2.3](enemies.md#23-damage-pipeline)). Each tower's delivery is set in its data.
+- **Lead targeting (artillery).** A tower whose shells land after a delay (Thumper) aims at where its target will be along its route after the flight time, at the target's current speed. The impact point is fixed when it fires, so a target that speeds up, slows, or blinks can dodge.
 - Defaults are listed in each tower's entry. Support towers have no targeting.
 
 ---
@@ -128,21 +131,21 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 
 | Link | Partners | Effect | Available from (recommended) | Faction mix |
 |---|---|---|---|---|
-| **Crossfire** | Rivet + Thumper | Both +10% fire rate. | Act I early (the teaching link) | Halcyon + Halcyon |
-| **Sitting Ducks** | Thumper + Sprinkler | Thumper +20% damage vs Chilled enemies. Sprinkler +0.3 radius. | Act I early | Halcyon + Halcyon |
-| **Conductive** | Sprinkler + Zapcoil | Zapcoil +2 chain jumps. Sprinkler applies Soaked from tier 1. | Act I late | Halcyon + Vrell |
-| **Overwatch** | Rivet + Lookout | Rivet +15% damage. Lookout +0.5 detection radius. | Act II early | Halcyon + Vrell |
-| **Skywatch** | Skyhook + Lookout | Skyhook +20% range. Lookout +0.5 detection radius. | Act II early | Halcyon + Vrell |
+| **Crossfire** | Rivet + Thumper | Both +10% fire rate. | Act I early (the teaching link) | Everglow + Everglow |
+| **Sitting Ducks** | Thumper + Sprinkler | Thumper +20% damage vs Chilled enemies. Sprinkler +0.3 radius. | Act I early | Everglow + Everglow |
+| **Conductive** | Sprinkler + Zapcoil | Zapcoil +2 chain jumps. Sprinkler applies Soaked from tier 1. | Act I late | Everglow + Vrell |
+| **Overwatch** | Rivet + Lookout | Rivet +15% damage. Lookout +0.5 detection radius. | Act II early | Everglow + Vrell |
+| **Skywatch** | Skyhook + Lookout | Skyhook +20% range. Lookout +0.5 detection radius. | Act II early | Everglow + Vrell |
 | **Reel It In** | Crane + Harpoon | Harpoon kills give +3 credits. Harpoon +10% fire rate. | Act II early | Vrell + Vrell |
 | **Resonance** | Zapcoil + Prism | Both +20% damage vs shields. | Act II mid | Vrell + Aelari |
 | **Lightsong** | Prism + Lantern | Prism ramps 30% faster. Lantern Mark +5%. | Act II late | Aelari + Aelari |
 | **Pinned Down** | Harpoon + Bloom | Harpoon +30% damage vs Chilled or Stasis enemies. Bloom +0.3 radius. | Act III early | Vrell + Aelari |
 | **Stillmind** | Mindspike + Bloom | Mindspike +25% damage vs Chilled or Stasis enemies. Bloom pulse cooldown −1 s. | Act III early | Aelari + Aelari |
-| **Splash Zone** | Sprinkler + Burrow | Swarmlings +30% move speed and +1 s latch. Sprinkler +0.3 radius. | Act III early | Halcyon + Skitterkin |
+| **Splash Zone** | Sprinkler + Burrow | Swarmlings +30% move speed and +1 s latch. Sprinkler +0.3 radius. | Act III early | Everglow + Skitterkin |
 | **Finders Keepers** | Crane + Burrow | Burrow +1 swarmling. Swarmling kills give +1 credit. | Act III early | Vrell + Skitterkin |
 | **Harmony** | Mindspike + Choir | Mindspike hits 1 extra target. Choir aura +0.5 radius. | Act III early–mid | Aelari + Skitterkin |
-| **Acid Rain** | Thumper + Gloop | Thumper shells apply 1 Corroded stack. Gloop +0.5 range. | Act III mid | Halcyon + Skitterkin |
-| **Sticky Flak** | Skyhook + Gloop | Skyhook bursts apply 1 Corroded stack. Gloop +10% fire rate. | Act III mid | Halcyon + Skitterkin |
+| **Acid Rain** | Thumper + Gloop | Thumper shells apply 1 Corroded stack. Gloop +0.5 range. | Act III mid | Everglow + Skitterkin |
+| **Sticky Flak** | Skyhook + Gloop | Skyhook bursts apply 1 Corroded stack. Gloop +10% fire rate. | Act III mid | Everglow + Skitterkin |
 | **Lookie Here** | Lantern + Sproing | Sproing Pad +0.5 range and prefers Marked targets. Lantern +0.5 detection radius. | Act III mid–late | Aelari + Skitterkin |
 | **Bounce Chorus** | Sproing + Choir | Sproing Pad Pin +0.5 s. Choir aura +5% damage. | Act III mid–late | Skitterkin + Skitterkin |
 
@@ -154,20 +157,20 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base stats. Each later tier lists only what changes. The T4 cost assumes the default curve unless stated. DPS figures ignore armor and shields.
 
-### Halcyon towers
+### Everglow towers
 
-Corporate-issue perimeter kit with cheerful product names, safety stickers, and warranty-void warnings. They are reliable and readable, and they make up the starting kit. In A3M2 Sterling revokes the player's Corporate Tower License for one Halcyon class mid-wave, and it comes back in A3M4 as jailbroken firmware (section 9).
+Corporate-issue perimeter kit with cheerful product names, safety stickers, and warranty-void warnings. They are reliable and readable, and they make up the starting kit. In A3M2 Sterling revokes the player's Corporate Tower License for one Everglow class mid-wave, and it comes back in A3M4 as jailbroken firmware (section 9).
 
-#### Rivet Autoturret (`rivet`), "Halcyon RV-1: Perimeter Peace of Mind™"
-- **T1 (100):** 8 Kinetic, 2.0 shots/s, range 3.0, single target, G+A. 16 DPS. Default: First.
+#### Rivet Autoturret (`rivet`), "Everglow RV-1: Perimeter Peace of Mind™"
+- **T1 (100):** 8 Kinetic, 2.0 shots/s, range 3.0, single target, **hitscan**, G+A. 16 DPS. Default: First.
 - **T2 (80):** damage 11.
 - **T3 (150):** 2.5 shots/s, **armor pierce 3** (ignores 3 armor per hit).
 - **A: Rivet Storm (300):** minigun. 7.5 shots/s after a 1 s spin-up, 9 damage, pierce 0. A swarm shredder, poor against armor.
 - **B: Railspike (300):** sniper. 120 damage, 0.5 shots/s, range 6.0, **ignores all armor**. Default: Strong.
 - **Links:** Crossfire (Thumper), Overwatch (Lookout).
 
-#### Thumper Mortar (`thumper`), "Halcyon TM-4: Because Pests Hate Surprises"
-- **T1 (125):** 20 Explosive, 0.5 shots/s, range 3.5 (minimum 1.0), splash radius 0.9, G only. Shells take 0.8 s to land; the impact point is chosen when firing. Default: First.
+#### Thumper Mortar (`thumper`), "Everglow TM-4: Because Pests Hate Surprises"
+- **T1 (125):** 20 Explosive, 0.5 shots/s, range 3.5 (minimum 1.0, exclusive), splash radius 0.9, G only. Shells take 0.8 s to land and use **lead targeting**: each aims at the target's predicted route position after the flight time, fixed when it fires (section 5). Default: First.
 - **T2 (100):** damage 30.
 - **T3 (190):** splash 1.2, 0.6 shots/s.
 - **A: Cluster Thumper (375):** each shell also scatters 4 bomblets (12 damage, splash 0.6) within 1.2 tiles.
@@ -177,12 +180,12 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 #### Frostline Sprinkler (`sprinkler`), "AquaGuard irrigation head, *creatively* repurposed"
 - **T1 (90):** pulses every 1.0 s in radius 2.0: 2 Kinetic plus **Chilled 25%** for 1.5 s. G only.
 - **T2 (70):** Chilled 30%, radius 2.3.
-- **T3 (135):** Chilled 35%. Also applies **Soaked** for 3 s (+25% Energy damage taken).
+- **T3 (135):** Chilled 35%. Also applies **Soaked** for 3 s (more Energy damage, and Kinetic and Explosive bite harder into shields; [enemies.md §2.4](enemies.md#24-status-effects)).
 - **A: Flash Freeze (270):** every 8 s, puts all enemies in radius into **Stasis** for 1.0 s (bosses: Chilled 50% instead).
 - **B: Cloudburst (270):** radius 2.8 and **now also hits air**; flyers are Chilled and Soaked.
 - **Links:** Sitting Ducks (Thumper), Conductive (Zapcoil), Splash Zone (Burrow).
 
-#### Skyhook Flak Battery (`skyhook`), "Halcyon SK-2: Keep Your Skies Corporate"
+#### Skyhook Flak Battery (`skyhook`), "Everglow SK-2: Keep Your Skies Corporate"
 - **T1 (110):** 14 Explosive, 1.0 shots/s, range 3.5, splash 0.8, **air only**. Default: First.
 - **T2 (90):** damage 20.
 - **T3 (165):** 1.3 shots/s, range 4.0.
@@ -195,11 +198,12 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 "Zibzab's Genuine Pre-Owned Defensive Solutions." Jury-rigged from scrap, with four-armed ergonomics, mismatched paint, and price tags still attached. Clever, tricky, a little unreliable-looking but never unreliable in play.
 
 #### Salvage Crane (`crane`)
+- Licensed from Zibzab after A2M1, so it debuts on longer Act II maps where economy has time to pay back.
 - **T1 (150):** no attack. **+10 credits** each time a wave resolves. Kills by *any* tower within radius 2.5 give **+1 credit**. Clears wreckage within 2.5 tiles at double speed with +25% salvage.
 - **T2 (120):** +18 per wave.
 - **T3 (225):** +28 per wave, +2 credits per kill in radius.
 - **A: Haggler's Stall (450):** also pays **interest**: +2% of banked credits when each wave resolves (capped at +40 per wave).
-- **B: Magnet Crane (450):** gains an attack. Every 6 s it grabs a Mechanical or armored ground enemy in radius 2.5, lifts it (Pinned 1.5 s), and slams it for 150 Kinetic. Economy effects are kept. Shines against Halcyon security in Act III.
+- **B: Magnet Crane (450):** gains an attack. Every 6 s it grabs a Mechanical or armored ground enemy in radius 2.5, lifts it (Pinned 1.5 s), and slams it for 150 Kinetic. Economy effects are kept. Shines against Everglow security in Act III.
 - **Design target:** a T1 Crane built on wave 1 pays for itself by about wave 8 on a typical map. It's a greed choice that costs a loadout slot.
 - **Links:** Reel It In (Harpoon), Finders Keepers (Burrow).
 
@@ -220,7 +224,7 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **Links:** Reel It In (Crane), Pinned Down (Bloom).
 
 #### Lookout Shack (`lookout`)
-- **T1 (100):** no attack. **Detection radius 2.5** (reveals cloaked enemies; [enemies.md §2.5](enemies.md#25-detection)). Adjacent towers +10% range.
+- **T1 (100):** no attack. **Detection radius 2.5** (reveals cloaked enemies; [enemies.md §2.5](enemies.md#25-detection)). Adjacent towers +10% range (an aura kind: two Lookouts don't stack, section 4).
 - **T2 (80):** detection 3.0, adjacent +15% range.
 - **T3 (150):** detection 3.5, revealed enemies stay revealed 2 s after leaving the radius, adjacent +20% range.
 - **A: Crow's Nest (300):** detection 5.0, adjacent +25% range, revealed enemies take +10% damage (a Mark-type effect; doesn't stack with Mark).
@@ -229,10 +233,11 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 
 ### Aelari towers
 
-Elegant floating crystal lattices that chime when they fire, attuned for the player by Ves'thara. Precise and powerful, but psionic towers struggle against mindless machines ([enemies.md §2.2](enemies.md#22-damage-vs-body-matrix)). That is a deliberate Act III tension once Halcyon's drones turn hostile.
+Elegant floating crystal lattices that chime when they fire, attuned for the player by Ves'thara. Precise and powerful, but psionic towers struggle against mindless machines ([enemies.md §2.2](enemies.md#22-damage-vs-body-matrix)). That is a deliberate Act III tension once Everglow's drones turn hostile.
 
 #### Prism Spire (`prism`)
-- **T1 (160):** continuous beam, 12 Energy/s, **ramping +50% per second** on the same target up to ×4 (48/s). Range 3.0, G+A. Retargeting resets the ramp. Default: Strong (sticky; see section 5).
+- **T1 (160):** continuous beam, 12 Energy/s, **ramping +50% per second** on the same target up to ×4 (48/s). Range 3.0, G+A. Retargeting resets the ramp. A beam, not a DoT: armor applies per beam tick ([enemies.md §2.3](enemies.md#23-damage-pipeline)). Default: Strong (sticky; see section 5).
+- **Light source at Sundown.** While its beam is active, a Prism Spire pushes back the darkness overlay in radius 2.0, so towers within it keep their full range ([maps.md §5.1](maps.md#51-layout-and-event-modifiers)). Ves'thara: "I will hold the light."
 - **T2 (130):** base 16/s.
 - **T3 (240):** ramp cap ×5, range 3.5.
 - **A: Refractor (480):** splits into 3 beams on 3 targets, ramp cap ×3.
@@ -267,7 +272,7 @@ Elegant floating crystal lattices that chime when they fire, attuned for the pla
 
 Gifts from the warrens after the refugee reveal. **They are not purchased; they are given.** Each tower is a *home*: a mound, a nest, a hollow log, with Skitterkin living in it. See section 8 for their personality rules.
 
-#### Brood Burrow (`burrow`)
+#### Scuttle Den (`burrow`)
 A warren mound where refugee families shelter. The young-adult "swarmlings" dash out to defend it.
 - **T1 (140):** 3 swarmlings, range 2.5. Each swarmling runs out, **latches** onto a ground enemy (including **burrowed** enemies, since Skitterkin can follow anything underground) for 4 s, dealing 5 Kinetic/s (DoT; bypasses armor) and Chilled 10% (stacks to 30% from several swarmlings). Then it runs home and rests 3 s. Swarmlings can't be harmed; they always come home.
 - **T2 (110):** 4 swarmlings.
@@ -278,12 +283,12 @@ A warren mound where refugee families shelter. The young-adult "swarmlings" dash
 
 #### Hum Choir (`choir`)
 A ring of elder Skitterkin humming in harmony. Their song steadies machines and minds. If the Quiet Wave was spared (C1), Old Thrum is in the ring, and the gift arrives early, in A3M1.
-- **T1 (130):** aura radius 1.5 (covers adjacent tiles): towers inside get **+10% damage**, and **Jammed durations are halved**.
+- **T1 (130):** aura radius 1.5 (covers adjacent tiles): towers inside get **+10% damage**, and **Jammed durations are halved**. The Choir is not covered by its own aura, and **Silencers target a Choir first** ([enemies.md §5.4](enemies.md#54-the-hollow-body-void)), so where it stands is a decision.
 - **T2 (100):** +15% damage, aura radius 2.0.
-- **T3 (195):** +20% damage, towers inside are **immune to Jammed**.
-- **A: Lullaby (390):** also soothes enemies within radius 2.5: Chilled 20%.
-- **B: Rally Chorus (390):** +30% damage and +10% fire rate.
-- **Audio:** the Choir's hum layers into the procedural music as a harmony line that carries "Halcyon Bright" (the Leaving Song), so the motif plays wherever a Choir stands ([../tech/architecture.md § Audio](../tech/architecture.md#audio-srcaudio-m2)).
+- **T3 (195):** +20% damage, and Jammed durations inside are cut by **75%** (not immunity).
+- **A: Lullaby (390):** also soothes enemies within radius 2.5: their ability cooldowns run **×1.5 longer** (Lulled; [enemies.md §2.4](enemies.md#24-status-effects)).
+- **B: Rally Chorus (390):** +30% damage and +10% fire rate, and towers inside are **immune to Jammed**.
+- **Audio:** the Choir's hum layers into the procedural music as a harmony line that carries "Everglow Bright" (the Leaving Song), so the motif plays wherever a Choir stands ([../tech/architecture.md § Audio](../tech/architecture.md#audio-srcaudio-m2)).
 - **Links:** Harmony (Mindspike), Bounce Chorus (Sproing).
 
 #### Gloop Spitter (`gloop`)
@@ -310,7 +315,7 @@ A springy mushroom pad with a fearless leaper (a grown-up Puffwing-chaser) who b
 
 | Faction | Look | Sound | Idle behavior |
 |---|---|---|---|
-| Halcyon | Clean white-and-teal plastics, safety stripes, logo decals | Crisp clicks, cheerful startup chimes | Scanning sweeps; a tiny "SATISFACTION GUARANTEED" light |
+| Everglow | Clean white-and-teal plastics, safety stripes, logo decals | Crisp clicks, cheerful startup chimes | Scanning sweeps; a tiny "SATISFACTION GUARANTEED" light |
 | Vrell | Rusted, patched, mismatched, four-handed levers | Clanks, wheezes, the odd kazoo-like vent | Parts jiggle, smoke puffs, a price tag swings |
 | Aelari | Floating crystal facets, soft inner glow | Glass chimes, sustained tones | Slow rotation, light pulses in time with the music |
 | Skitterkin | Mounds, moss, woven grass, little lanterns | Squeaks, chirps, hums (the same voices as the Act I enemies) | Residents peek out, wave at adjacent towers, nap between waves, cheer on kills, and do a head-count chirp when swarmlings return |
@@ -326,7 +331,7 @@ Element shapes, palettes, and sprite specs are owned by [../art/art-direction.md
 
 ### Bricks's name tags
 
-On every map where Bricks is the companion, he names one of the player's turrets ([../story/characters.md](../story/characters.md#sgt-ikenna-bricks-okonkwo)).
+On every map from A1M2 where Bricks is the companion, he names one of the player's turrets ([../story/characters.md](../story/characters.md#sgt-ikenna-bricks-okonkwo)).
 - **When:** at the first `wave_cleared` of the map, through a radio line ("That one's Denise. After my first wife...").
 - **Which tower:** the player's **earliest-built attacking tower still standing** (ties: lowest entity id). Support towers are skipped.
 - **Name:** the next unused name from Bricks's list in the dialogue data (Denise, Marguerite, Biscuit, ...). The campaign remembers the list position (`bricksTagIndex` in the save), so names don't repeat across maps; replays reuse that map's first name.
@@ -343,11 +348,11 @@ The story adds towers as gifts ([progression.md §8](progression.md#8-tower-acqu
 - Between maps, any removed tower must have a replacement path, so the player is never left without a counter (the counter guarantee in [progression.md §8](progression.md#8-tower-acquisition) treats a revoked class as unowned).
 
 **A3M2, Sterling revokes the Corporate Tower License (mid-wave).**
-- **Which class:** the Halcyon class with **the most towers placed** at the moment of the cue. Ties: the most credits invested, then the earliest slot in the loadout. If the player has no Halcyon towers placed, the first Halcyon class in their loadout is revoked (they lose less, and that's fine). If the loadout has no Halcyon class, the first Halcyon class they own is revoked at map end instead, with no mid-map effect.
+- **Which class:** the Everglow class with **the most towers placed** at the moment of the cue. Ties: the most credits invested, then the earliest slot in the loadout. If the player has no Everglow towers placed, the first Everglow class in their loadout is revoked (they lose less, and that's fine). If the loadout has no Everglow class, the first Everglow class they own is revoked at map end instead, with no mid-map effect.
 - **When:** a script cue partway through a mid-map wave (map data), in the same cue as the Orbital Strike revocation ([core-loop.md §2.11](core-loop.md#211-scripted-moments)).
 - **After:** the class can't be built for the rest of A3M2, and from A3M3 it shows in the loadout screen greyed out with a REVOKED stamp until the jailbreak.
 
-**A3M4, jailbroken firmware.** Zibzab sells the jailbreak in the base after A3M3 ("Price first: three hundred. Yes, now."): **300 Stardust**, or **free under `door_choice = convoy`** (Goldie's engineers do it). It restores the revoked class with **identical stats and specs**, drawn with the `halcyon.jailbroken` palette (logo plate scratched out, a Vrell patch; [../art/art-direction.md §4](../art/art-direction.md#faction-rules)). Tune-ups and specialization unlocks bought before the revocation carry over. **Rule:** A3M3 must pass the counter guarantee without the revoked class, whichever class it is (the harness checks each possible class).
+**A3M4, jailbroken firmware.** Zibzab sells the jailbreak in the base after A3M3 ("Price first: three hundred. Yes, now."): **300 Stardust**, or **free under `door_choice = convoy`** (Goldie's engineers do it). It restores the revoked class with **identical stats and specs**, drawn with the `everglow.jailbroken` palette (logo plate scratched out, a Vrell patch; [../art/art-direction.md §4](../art/art-direction.md#faction-rules)). Tune-ups and specialization unlocks bought before the revocation carry over. **Rule:** A3M3 must pass the counter guarantee without the revoked class, whichever class it is (the harness checks each possible class).
 
 **Finale, QUILL's Directive 0 (only under `quill_choice = keep`).** When the choir enters the Halls, QUILL revokes one tower class by the same selection rule, applied to *all* the player's classes, with the same 100% refund. The "Who's there?" forced input follows; pressing it restores the class (the player rebuilds with the refunded credits). See [maps.md §5.5](maps.md#55-the-leaving-song-finale-rules).
 
@@ -355,25 +360,7 @@ The story adds towers as gifts ([progression.md §8](progression.md#8-tower-acqu
 
 ## 10. Data shape (for implementers)
 
-A sketch only; [../tech/conventions.md](../tech/conventions.md) owns the real types.
-
-```ts
-interface TowerDef {
-  id: string;                 // 'rivet'
-  faction: 'halcyon' | 'vrell' | 'aelari' | 'skitterkin';
-  role: string;               // display only
-  targets: { ground: boolean; air: boolean };
-  defaultPriority: 'first' | 'last' | 'strong' | 'close' | null;
-  tiers: [TierDef, TierDef, TierDef];       // T1..T3
-  specs: { a: TierDef; b: TierDef };        // T4 choices
-  links: string[];            // link IDs (link effects live in a separate links table)
-}
-interface TierDef {
-  cost: number;
-  attack?: { damage: number; type: DamageType; rate: number; range: number; splash?: number; pierce?: number; chain?: ChainDef };
-  effects?: EffectDef[];      // statuses applied, auras, economy hooks
-}
-```
+The canonical type sketch for `TowerDef` (tiers, specializations, attack delivery, effects, sprites) is [../tech/architecture.md § Data shapes](../tech/architecture.md#data-shapes), until `src/content/types.ts` exists and becomes the home. This doc's tables are the human-readable spec those types encode: the roster (section 2), tiers and specs (sections 3 and 7), stacking (section 4), targeting and delivery (section 5), and links (section 6).
 
 ---
 
@@ -383,8 +370,6 @@ interface TierDef {
 2. **Railspike range 6.0** may cover most of a small map. Check it against map sizes in [maps.md §6](maps.md#6-difficulty-curve).
 3. **Gravity Well** pushback can be degenerate when stacked. The once-per-20-s-per-enemy rule needs balance-harness testing.
 4. Should **links scale with tier** (for example +50% at T3+)? Flat is simpler; scaling rewards investment.
-5. **Salvage Crane** competes for a loadout slot, so economy has a real cost. Is it ever worth it on short Act I maps? If not, recommend introducing it on a longer map.
-6. Is 16 towers enough for post-game variety, or should challenge maps add **variant towers** (for example a Hollow-tainted tower in the post-game)?
-7. Should **Hum Choir T3 jam immunity** move to a specialization if disablers become trivial?
-8. **A3M2 revocation pick.** "Most towers placed" punishes a mono-Halcyon build hard mid-wave. Is that the right sting, or should it pick the class with the most credits invested?
-9. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?
+5. Is 16 towers enough for post-game variety, or should challenge maps add **variant towers** (for example a Hollow-tainted tower in the post-game)?
+6. **A3M2 revocation pick.** "Most towers placed" punishes a mono-Everglow build hard mid-wave. Is that the right sting, or should it pick the class with the most credits invested?
+7. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?

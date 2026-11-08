@@ -13,14 +13,14 @@ CLAUDE.md → docs/ → tasks.md (plan) → implement → test loop → review (
 ```
 
 1. **Read this file.**
-2. **Gather context from `docs/`.** Start at `docs/README.md` (the index), then read every doc relevant to your task. Never invent lore, mechanics, numbers, or conventions that contradict the docs. If the docs are silent, make a sensible choice and record it (step 6).
+2. **Gather context from `docs/`.** Start at `docs/README.md`. Its **Reading paths** table tells you which docs and sections each kind of task needs, so read those rather than everything. Never invent lore, mechanics, numbers, or conventions that contradict the docs. If the docs are silent, make a sensible choice and record it (step 7).
 3. **Plan in `tasks.md`.** Find or add the task under the current milestone. Break large tasks into subtasks that one agent can finish in a single session. Mark a task `[~]` (in progress) when you start it.
-4. **Implement.** Stay within the task's scope. Follow `docs/tech/conventions.md` once it exists. Write tests alongside the code: sim logic and content changes always need tests.
-5. **Test loop (before any review).** Run the full gate, fix failures, and repeat until everything is green. Never hand red code to reviewers.
-   - **Code:** `npm run typecheck`, `npm run lint`, `npm test` (unit + sim tests), `npm run build`.
-   - **Gameplay/content:** headless balance sims for every affected map (each must be winnable by the reference strategy and not trivially won by doing nothing; see `docs/tech/conventions.md`).
-   - **UI/rendering:** launch the dev server and smoke-test the affected screens in a real browser. Check for console errors, take screenshots, and play the affected flow.
-   - **Docs-only changes:** check that internal links resolve, `docs/README.md` lists every doc, and nothing contradicts another doc.
+4. **Implement.** Stay within the task's scope. Follow `docs/tech/conventions.md`. Write tests alongside the code: sim logic and content changes always need tests.
+5. **Test loop (before any review).** Run **`npm run check`**, the whole gate: typecheck → lint → test → build → sim → smoke → check:docs. Fix failures and repeat until green. Never hand red code to reviewers. The detailed spec lives in [docs/tech/conventions.md § The test loop](docs/tech/conventions.md#the-test-loop). In short:
+   - **Code:** types, lint, unit and sim tests, and build all pass.
+   - **Gameplay/content:** headless balance sims pass for every affected map. The reference strategy wins, doing nothing loses, and margins fall within the target band.
+   - **UI/rendering:** automated smoke flows pass, and for visual changes you also look at the screenshots and play the flow yourself.
+   - **Docs-only changes:** `npm run check:docs`, plus the manual consistency pass (one home per fact, no contradictions).
    - If the loop can't get to green within the task's scope, stop, mark the task `[!]`, and report what's failing rather than weakening or skipping tests.
 6. **Review: up to 3 rounds, from several angles.** After the test loop is green, the orchestrator spawns parallel reviewers, each with a distinct angle (see *Review angles* below). Fix real findings, **re-run the test loop after each round of fixes**, then re-review only if the fixes were substantial. Stop when a round comes back clean, or after round 3, logging any leftover findings as tasks.
 7. **Update the docs.** The docs must describe the game as it is *now*. Update every doc your change touched, add new decisions to `docs/decisions.md`, and update `docs/README.md` if you added a doc.
@@ -46,6 +46,8 @@ Reviewers report findings with severity (high / medium / low) and a concrete fix
 ---
 
 ## Orchestration model
+
+**Who does which step.** Subagents do steps **1, 2, 4, 5**, plus step **7 for the files they own**. They report proposed `tasks.md` and `docs/decisions.md` changes back and never commit. The **orchestrator** does steps **3, 6, and 8**, owns `tasks.md`, `docs/decisions.md`, `docs/README.md`, and `CLAUDE.md`, and makes all commits. A subagent working solo (no orchestrator) does every step.
 
 - The main session is the **orchestrator**. It plans, delegates, integrates, and runs reviews.
 - Subagents use the **`stardust-dev`** agent definition (`.claude/agents/stardust-dev.md`: Opus, high effort). If that type isn't available (agent definitions load at session start), use `general-purpose` with `model: opus` and tell the agent to follow `.claude/agents/stardust-dev.md`.

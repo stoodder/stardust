@@ -20,7 +20,15 @@ Related docs: [core-loop.md](core-loop.md) (credits, the in-map currency) · [to
 
 **Rule (D001):** Stardust buys *power*; Intel buys *options*. Nothing costs both.
 
-**What Stardust is, in the fiction:** the crystallized remains of the Skitterkin dead. The Stardust the player earns is literally made from the "pests" they process: Tidybots haul the bodies to Second Harvest, where they are crystallized unsung ([../story/bible.md §3](../story/bible.md#what-stardust-really-is)). The player learns this in A2M4 (or from A1M3, if they ask Zibzab). **Rule:** the currency stays fully usable after the reveal, because the story's moral is that the dead don't mind being useful, they mind being forgotten. The game never penalizes spending it; C2 (§2.1) is the one place the player can choose to give some back. The Stardust icon's shimmer follows the act ramp in [../art/art-direction.md §2](../art/art-direction.md#stardust-shimmer).
+**What Stardust is, in the fiction:** the crystallized remains of the Skitterkin dead ([../story/bible.md §3](../story/bible.md#what-stardust-really-is)). Where the player's Stardust comes from changes by act; the payout mechanics (§2) don't:
+
+| Act | In-fiction source |
+|---|---|
+| I | Everglow pays it out as a performance bonus, "Everglow's premium mineral." It is made from the "pests" the player processes: Tidybots haul the bodies to Second Harvest, where they are crystallized unsung. |
+| II | The same, until the player learns the truth in A2M4 (or from A1M3, if they ask Zibzab). C2 (§2.1) follows the reveal. |
+| III and finale | From A3M1, the warrens **give** it: sung, warm-gold stones offered to the one who walks with them. The currency becomes trust, not harvest. Everglow pays nothing any more. |
+
+**Rule:** the currency stays fully usable after the reveal, because the story's moral is that the dead don't mind being useful, they mind being forgotten. The game never penalizes spending it; C2 (§2.1) is the one place the player can choose to give some back. The Stardust icon's shimmer follows the act ramp in [../art/art-direction.md §2](../art/art-direction.md#stardust-shimmer) (warm gold from Act III).
 
 ---
 
@@ -33,25 +41,25 @@ Each map has a `stardust` value in its data (its **first-clear reward**).
 | **First victory** on a map | `stardust` (100%) |
 | **Replay victory** (already won before) | `0.4 × stardust × (1 + Σ veteranBonus)` ([§6](#6-veteran-modifiers-replays)) |
 | **Defeat** (any attempt) | `0.25 × stardust × (wavesResolved / totalWaves)`, rounded. This is D001's "keep a small share." |
-| **Holdout maps** ([maps.md §5](maps.md#5-map-modifiers-and-objective-variants)) | Treated as a victory at the end; the reward scales with performance (campaign data) |
+| **Holdout maps** ([maps.md §5.2](maps.md#52-objective-variants)) | Treated as a victory at the end, and paid as a **flat** `stardust` that never scales with Evacuated (A3M3: 320), so the score is never a price on what happened at the door |
 
-**Recommended first-clear values by act:**
+**First-clear values** are campaign data, listed per map in [../story/campaign.md §4.9](../story/campaign.md#49-shop-stock-and-the-reference-profile). Act totals:
 
-| Act | Maps (approx.) | `stardust` per map | Act total (approx.) |
+| Act | Maps | `stardust` per map | Act total |
 |---|---|---|---|
-| I | 6 | 100–160 | ~780 |
-| II | 5 | 180–260 | ~1,100 |
-| III | 5 | 280–380 | ~1,650 |
+| I | 5 | 0 (A1M1, the tutorial) to 160 | 580 |
+| II | 6 | 180–260 | 1,310 |
+| III | 6 | 280–380 | 1,965 |
 | Finale | 1 | 500 | 500 |
-| **Campaign** | ~17 | | **~4,000** |
+| **Campaign** | 18 | | **4,355** (plus the 400 Q3 Bonus) |
 
 ### 2.1 Story hooks
 
 | Hook | When | Rule |
 |---|---|---|
-| **Q3 Performance Bonus** | Delivered with the memo before A2M4 ([core-loop.md §6.4](core-loop.md#64-halcyon-inbox-memos)) | A scripted grant of **400 Stardust** (tuning value: about 1.5× A2M4's first-clear), so the bank is full when Zibzab tells the truth. Granted once per save. |
+| **Q3 Performance Bonus** | Paid on **A2M4's results screen**, alongside its first-clear reward (announced by memo before the map; [core-loop.md §6.4](core-loop.md#64-everglow-inbox-memos)) | A scripted grant of **400 Stardust** (tuning value: about 1.8× A2M4's first-clear). It lands just before the debrief, so C2 weighs the full bank. Granted once per save, on the first victory. |
 | **C2: Zibzab's Price** | The A2M4 debrief, before the base opens | Two offers, price first, both for the whole bank (the Stardust balance at that moment). **Sell:** Zibzab trades it on the Vrell market; the bank goes to 0 and he pays an **Intel windfall** of `clamp(floor(bank / 75), 4, 10)` plus the exclusive **Zibzab Tune-up** ("Ten percent. Honestly, eight."): +8% damage for every Vrell tower, permanently. **Return:** he carries it to the Skitterkin at cost; the bank goes to 0, his handling fee is an IOU in his ledger that is never cashed, and the finale gains **the Returned** ([maps.md §5.5](maps.md#55-the-leaving-song-finale-rules)). If the bank is 0, there is nothing to trade: `stardust_choice = none` ("No refunds. I did say."). Sets `stardust_choice`. Neither option is wrong, and both options' rewards stay inside the meta power cap (§10). |
-| **Jailbroken firmware** | Base, after A3M3 | 300 Stardust, or free under `door_choice = convoy` ([towers.md §9](towers.md#9-rules-for-story-driven-tower-changes)) |
+| **Jailbroken firmware** | Base, after A3M3 | 300 Stardust, or free under `door_choice = convoy` ([towers.md §9](towers.md#9-rules-for-story-driven-tower-changes)). A3M3's flat 320 keeps it affordable on every path |
 | **Zibzab's crate** | A3M6 ("Price first: nothing.") | A one-time free grant; its contents are campaign data. The only time Zibzab gives anything for nothing |
 
 ---
@@ -63,33 +71,34 @@ Every campaign map has **3 medals**. Each medal awards Intel **the first time** 
 | Medal | Condition | Intel |
 |---|---|---|
 | **Victory** | Win the map. | 1 |
-| **Perfect Core** | Win without losing any core integrity (no leaks). On Escort maps: every refugee saved. **Leaks from medal-exempt groups (the Quiet Wave) never count** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). | 1 |
-| **Challenge** | A map-specific condition, written in the map data and shown in the briefing. | 1 |
+| **Perfect Core** | Win without losing any core integrity (no leaks). On Escort maps: every refugee saved. **Leaks from medal-exempt units (the Quiet Wave, younglings, fleeing Skitterkin) never count** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). | 1 |
+| **Challenge** | A map-specific condition, written in the map data (`ConditionDef`) and shown in the briefing. | 1 |
 
-- Medals can be earned in separate runs (Kingdom Rush style). A single run can earn all three.
+- Medals can be earned in separate runs (Kingdom Rush style). A single run can earn all three. A run resumed from a checkpoint can't earn Perfect Core or the Challenge medal ([core-loop.md §2.12](core-loop.md#212-checkpoints)).
+- **Evaluation (rule):** a Challenge condition about a state ("win with a Crossfire link active") is evaluated **at the moment of victory**; a condition about events ("Gerald is never hit") is checked over the whole run.
 - **Challenge medal guidelines:** it should teach or reward a *skill* the map is about, never demand a grind. Good examples: "Win using no Explosive towers," "Clear all 4 wreckage tiles," "Call 6 waves early," "Let no Brood Hauler reach the Hollow side of the map" (story-flavored), and "Win with only 3 tower types." Bad examples: anything that needs a specific shop purchase, anything luck-based, or anything that requires holding fire on a story wave (that choice must stay free; see [core-loop.md §2.7](core-loop.md#27-hold-fire)).
-- **Objective Intel:** some story maps award +1–2 Intel for an optional objective (campaign data). Budget: about 8 across the campaign.
+- **Objective Intel:** some story maps award +1 Intel for an optional objective (map data `objectives`, which use the same `ConditionDef` grammar as Challenge medals; [maps.md §9](maps.md#9-map-data-shape-for-implementers)). Budget: 7 across the campaign (campaign data).
 - **Veteran medal:** the first victory on a map with veteran modifiers totalling **≥ +100%** awards +1 Intel and a badge ([§6](#6-veteran-modifiers-replays)).
 
-**Intel supply (approx.):** 51 from medals (17 × 3) + ~8 objectives = **~59 in the campaign**, plus up to 17 from veteran medals and more from post-game challenge maps.
+**Intel supply:** 54 from medals (18 maps × 3) + 7 objectives = **61 in the campaign**, plus 4–10 from C2 Sell (§2.1), up to 18 from veteran medals, and more from post-game challenge maps.
 
 ---
 
 ## 4. Zibzab's shop (Stardust)
 
-Zibzab's shop opens in A1M3, when he arrives. Item names carry Zibzab's voice, in his "price first" format ("Price first: 60 stardust. Barely-Dented Hull Plating! One previous owner, who barely exploded."). Final copy belongs to the [story style guide](../story/style-guide.md#63-shop-copy-zibzab).
+Zibzab's shop opens after A1M3, when he arrives. Item names carry Zibzab's voice, in his "price first" format ("Price first: 60 stardust. Barely-Dented Hull Plating! One previous owner, who barely exploded."). Final copy belongs to the [story style guide](../story/style-guide.md#63-shop-copy-zibzab).
 
 - **The open question.** From A1M3 until A2M4 the shop carries one extra item, **"Where does stardust come from?"**, priced "you won't like it, and you can't return it." Asking costs nothing, plays his answer, and sets `asked_zibzab_early`. The item disappears once asked, or at A2M4 when he tells everyone.
 - **Prices don't change with the story,** with the exceptions in §2.1. Zibzab's "demand is up" is a line, not a markup.
 
 ### 4.1 Vrell tower licenses
 
-| Tower | Price | Note |
-|---|---|---|
-| Zapcoil | **0 Stardust** (sample) | "Price first: your next visit. First one's on me. Zibzab is patient." Given the moment the shop opens. It is the guaranteed shield counter. (Zibzab never says "free," and "friend" is reserved for A3M6; [../story/style-guide.md §6.3](../story/style-guide.md#63-shop-copy-zibzab).) |
-| Salvage Crane | 200 | |
-| Lookout Shack | 150 | Kept cheap: it is a guaranteed detection counter ([§8](#8-tower-acquisition)). |
-| Grapple Harpoon | 250 | |
+| Tower | Price | Stocked (`availableAfter`) | Note |
+|---|---|---|---|
+| Zapcoil | **0 Stardust** (sample) | A1M3 (the shop opens) | "Price first: your next visit. First one's on me. Zibzab is patient." Given the moment the shop opens. It is the guaranteed shield counter. (Zibzab never says "free," and "friend" is reserved for A3M6; [../story/style-guide.md §6.3](../story/style-guide.md#63-shop-copy-zibzab).) |
+| Lookout Shack | 150 | A1M5 ("New shipment") | Kept cheap: it is a guaranteed detection counter ([§8](#8-tower-acquisition)). |
+| Salvage Crane | 200 | A2M1 | Arrives with Act II's longer maps, where economy has time to pay back. |
+| Grapple Harpoon | 250 | A2M1 | A guaranteed heavy-armor counter (§8). |
 
 ### 4.2 Tune-ups (per tower)
 
@@ -107,8 +116,8 @@ That is 260 Stardust per tower and ~4,160 for all 16. Players are expected to tu
 
 | Upgrade | Per rank | Ranks | Prices |
 |---|---|---|---|
-| **Reinforced Core** | +2 core integrity | 3 | 120 / 200 / 300 |
-| **Seed Money** | +25 starting credits | 4 | 80 / 120 / 180 / 260 |
+| **Reinforced Core** | +1 core integrity (max +3) | 3 | 120 / 200 / 300 |
+| **Seed Money** | +4% starting credits | 4 | 80 / 120 / 180 / 260 |
 | **Salvage Rights** | +25% wreckage salvage | 2 | 60 / 120 |
 | **Resale Value** | Sell refund 70% → 75% → 80% | 2 | 100 / 200 |
 | **Ability Coolant** | −5% commander ability cooldowns | 3 | 100 / 160 / 240 |
@@ -118,7 +127,7 @@ That is 260 Stardust per tower and ~4,160 for all 16. Players are expected to tu
 
 Each Field Protocol ([§5](#5-field-protocols-meta-perks)) costs 100–200 Stardust to unlock. Some are granted by story instead.
 
-**Total Stardust sink:** ~9,000, against ~4,000 from first clears. A first-pass player buys roughly 45% of the catalog. Replays and veteran runs fill in the rest.
+**Total Stardust sink:** about 9,100 (tune-ups 4,160, licenses 600, global upgrades 2,640, Field Protocols 1,420, the jailbreak 300), against 4,355 from first clears plus the 400 Q3 Bonus. A first-pass player buys roughly half the catalog (less after C2's whole-bank trade). Replays and veteran runs fill in the rest.
 
 ---
 
@@ -126,12 +135,12 @@ Each Field Protocol ([§5](#5-field-protocols-meta-perks)) costs 100–200 Stard
 
 Field Protocols are loadout perks: rule-benders chosen before each map, separate from the 4 towers. **Rule:** they never add a fifth tower type.
 
-- **Slots:** 1 slot when Zibzab's shop opens. Slot 2 costs 4 Intel and slot 3 costs 6 Intel in R&D.
+- **Slots:** 1 slot when Zibzab's shop opens (after A1M3). Slot 2 costs 4 Intel and slot 3 costs 6 Intel in R&D (§7.3).
 - Protocols can be swapped freely between maps. There is no respec cost.
 
 | Protocol | Effect | Unlock |
 |---|---|---|
-| **Head Start** | +100 starting credits | 100 Stardust |
+| **Head Start** | +10% starting credits | 100 Stardust |
 | **Rapid Deploy** | Your first tower each map costs nothing (T1 only) | 120 Stardust |
 | **Emergency Bulkhead** | Absorbs the first 5 integrity lost to leaks (once per map) | 150 Stardust |
 | **Salvage Expert** | Wreckage clears 2× faster | 100 Stardust |
@@ -140,7 +149,7 @@ Field Protocols are loadout perks: rule-benders chosen before each map, separate
 | **Early Bird** | Early wave call bonus +50% | 120 Stardust |
 | **High Ground Training** | High ground range bonus 25% → 40% | 150 Stardust |
 | **Bounty Board** | +10% kill bounties | 150 Stardust |
-| **Ready Room** | Commander abilities start each map with 0 cooldown *and* refresh 15% faster | 180 Stardust |
+| **Ready Room** | +1 extra use of each commander ability on wave 1: the first use during wave 1 doesn't start its cooldown | 180 Stardust |
 
 ---
 
@@ -169,36 +178,40 @@ Post-game, **challenge maps** and **endless mode** reuse these modifiers ([maps.
 
 R&D is run by QUILL in the base. Ves'thara takes over the Xenotech branch when she joins (A2M5). Under C4 Rewrite, R&D still works during A3M5's offline stretch but shows no QUILL tip text ([core-loop.md §2.11](core-loop.md#211-scripted-moments)). It has three branches. **Rule:** R&D unlocks are permanent and never need a respec, because they add options rather than forcing exclusive choices.
 
+**Availability (rule).** Every R&D item has an `availableAfter` map in its data: it is hidden until that map is won, so each branch opens with only a few items. Branches open in this order: **Command after A1M1** (offering only Orbital Strike Mk II and Companion Rapport at first), **Engineering after A1M4** (Sterling signs off your tier approvals), **Xenotech after A2M5** (Ves'thara joins).
+
 ### 7.1 Engineering: specializations
 
-| Item | Cost | Prerequisite |
-|---|---|---|
-| Halcyon tower spec (A or B, each) | 2 Intel | Tower owned |
-| Vrell, Aelari, or Skitterkin tower spec (A or B, each) | 3 Intel | Tower owned |
+**One purchase unlocks both specializations (A and B) of a tower**, so the in-map tier-4 pick is always a real choice between the two ([towers.md §3.1](towers.md#31-in-map-tiers-credits-reset-every-map)).
 
-There are 32 specializations: 8 × 2 + 24 × 3 = **88 Intel** for all of them.
+| Item | Cost | Prerequisite | Available after |
+|---|---|---|---|
+| Everglow tower specs (A and B) | 2 Intel | Tower owned | A1M4 |
+| Vrell, Aelari, or Skitterkin tower specs (A and B) | 3 Intel | Tower owned | A1M4 |
+
+There are 16 spec unlocks: 4 × 2 + 12 × 3 = **44 Intel** for all of them.
 
 ### 7.2 Xenotech: Aelari attunement
 
-| Item | Cost | Prerequisite |
-|---|---|---|
-| Prism Spire | **free** (granted when Ves'thara joins) | Story |
-| Mindspike Obelisk | 3 Intel | Prism Spire owned |
-| Seer's Lantern | 3 Intel | Prism Spire owned |
-| Stasis Bloom | 3 Intel | Prism Spire owned, and campaign availability |
+| Item | Cost | Prerequisite | Available after |
+|---|---|---|---|
+| Prism Spire | **free** (granted when Ves'thara joins) | Story | A2M5 |
+| Mindspike Obelisk | 3 Intel | Prism Spire owned | A2M5 |
+| Seer's Lantern | 3 Intel | Prism Spire owned | A2M5 |
+| Stasis Bloom | 3 Intel | Prism Spire owned | A3M1 |
 
 ### 7.3 Command: abilities and protocols
 
-| Item | Cost | Notes |
-|---|---|---|
-| Scanner Sweep (Technician ability) | 2 Intel | Recommended availability: Act II early |
-| System Reboot (Technician ability) | **free** (QUILL patches it in) | Granted by story before the first jammer ([enemies.md §4](enemies.md#4-tower-disabling-jamming)) |
-| Field Protocol slot 2 | 4 Intel | |
-| Field Protocol slot 3 | 6 Intel | |
-| Orbital Strike Mk II | 2 Intel | Radius 1.5 → 2.0. **Refunded** when the uplink is revoked in A3M2 |
-| Companion Rapport (per companion) | 2 Intel | Their ability's cooldown −15%. Unlocks companion-specific barks. Rapport bought for Bricks carries over to inherited Suppressing Fire; Rapport bought for QUILL is refunded under C4 Purge |
+| Item | Cost | Available after | Notes |
+|---|---|---|---|
+| Orbital Strike Mk II | 2 Intel | A1M1 | Radius 1.5 → 2.0. **Refunded** when the uplink is revoked in A3M2 |
+| Companion Rapport (per companion) | 2 Intel | A1M1 (for each companion once met) | Their ability's cooldown −15%. Unlocks companion-specific barks. Rapport bought for Bricks carries over to inherited Suppressing Fire; Rapport bought for QUILL is refunded under C4 Purge |
+| Field Protocol slot 2 | 4 Intel | A1M3 | |
+| Field Protocol slot 3 | 6 Intel | A1M3 | |
+| Scanner Sweep (Technician ability) | 2 Intel | A2M1 | Ahead of the first cloaked enemies (A2M4) |
+| System Reboot (Technician ability) | **free** (QUILL patches it in) | A3M3 | Granted by story in A3M4's briefing, before the first jammer ([enemies.md §4](enemies.md#4-tower-disabling-jamming)) |
 
-**Total R&D sink:** ~115 Intel, against ~59 in the campaign. A campaign player unlocks roughly half, so **specializations are a meaningful choice**. Post-game content fills in the rest.
+**Total R&D sink:** about **77 Intel** (specs 44, attunement 9, Command 24 with Rapport for all five companions), against **61** in the campaign (plus 4–10 under C2 Sell). A campaign player unlocks roughly four-fifths of it, so **which towers get their specs is a meaningful choice**. Post-game content fills in the rest.
 
 ---
 
@@ -206,36 +219,30 @@ There are 32 specializations: 8 × 2 + 24 × 3 = **88 Intel** for all of them.
 
 | Faction | How towers are acquired | Currency |
 |---|---|---|
-| Halcyon | **Issued** free when the campaign makes them available | — |
+| Everglow | **Issued** free when the campaign makes them available | — |
 | Vrell | Zapcoil free; the others licensed at Zibzab's shop | Stardust |
 | Aelari | Prism Spire free from Ves'thara; the others attuned in R&D | Intel |
 | Skitterkin | **Always given, never sold** (schedule below) | — |
 
-**Story-timed gifts** ([../story/bible.md §12](../story/bible.md#12-mechanics-the-story-needs); [campaign.md](../story/campaign.md) is authoritative for exact maps):
+**Story-timed gifts.** Exact maps are campaign data ([../story/campaign.md §4.1](../story/campaign.md#41-towers-and-specialization-access)). The design rules:
 
-| Gift | Default timing | Moved by |
-|---|---|---|
-| Prism Spire | When Ves'thara joins (A2M5) | — |
-| Brood Burrow | A3M1 (the first Skitterkin gift) | — |
-| Hum Choir | Its campaign slot (Act III mid) | **A3M1** if `spared_quiet_wave` |
-| One more Skitterkin tower (campaign picks Gloop Spitter or Sproing Pad) | Its campaign slot | **Early** (the map after A3M3) under `door_choice = warren`; **late** (two maps after its slot) under `convoy` |
-| Zibzab Tune-up | — | Only under `stardust_choice = sold` (§2.1) |
-| Jailbroken Halcyon class | — | Replaces the class revoked in A3M2 (§2.1) |
+- Prism Spire arrives when Ves'thara joins; Scuttle Den is the first Skitterkin gift (A3M1).
+- **Flag-moved gifts:** Hum Choir comes early under `spared_quiet_wave`; Gloop Spitter is the C3 gift, early under `door_choice = warren` and later under `convoy`; the Zibzab Tune-up exists only under `stardust_choice = sold` (§2.1); the jailbroken Everglow class replaces the one revoked in A3M2 (§2.1).
+- Moving a gift must never break the counter coverage guarantee below on any branch.
 
-Moving a gift must never break the counter coverage guarantee below on any branch.
+**Counter coverage guarantee (rule):** for every category in a map's `requiredCounters` ([maps.md §6.3](maps.md#63-one-new-thing-per-map)), the player already owns a counter, or can get one for free at that point, or can license one for no more than the previous map's first-clear Stardust. Soft traits (in the threat intel but not required) need no guarantee. Current coverage on the default path, using only purchases and story grants, never flag-dependent gifts:
 
-**Counter coverage guarantee (rule):** for every defense trait in a map's threat intel, the player already owns a counter, or can get one for free at that point, or can license one for no more than the previous map's first-clear Stardust. Current coverage:
-
-| Trait | Guaranteed counter (default path) |
+| Counter category | Guaranteed counter (default path) |
 |---|---|
-| Flying | Skyhook Flak, Rivet (issued) |
-| Shielded | Zapcoil (free sample); Sprinkler T3 Soaked |
-| Armored (light, Act I–II) | Rivet T3 armor pierce; Thumper splash |
-| Armored (heavy, Act III) | Gloop Spitter (gift, Corroded); Harpoon (licensed) |
-| Cloaked | Lookout Shack (150 Stardust); Scanner Sweep |
-| Burrowing (Act I) | Not a hard requirement (it is only brief); kill-timing and slows |
-| Burrowing (Act III) | Brood Burrow (gift); Stasis Bloom |
-| Jammer | Hum Choir (gift); System Reboot (free, A3M4) |
+| Air | Skyhook Flak, Rivet (issued) |
+| Shield | Zapcoil (free sample); Sprinkler T3 Soaked |
+| Armor (light, Acts I–II) | Rivet T3 armor pierce; Thumper splash |
+| Armor (heavy, Act III) | **Grapple Harpoon** (licensed after A2M1, 250); **Mindspike Obelisk** (attuned after A2M5, 3 Intel; ignores armor, but at ×0.35 against Everglow machines it is the answer to armored Hollow, while Harpoon covers Everglow armor). Gloop Spitter is a C3 bonus, not the guarantee |
+| Detection | Lookout Shack (150 Stardust, after A1M5); Scanner Sweep (2 Intel, after A2M1) |
+| Burrowed (Act III) | Scuttle Den (gift, A3M1); Stasis Bloom (attuned after A3M1) |
+| Jam | System Reboot (free, A3M4); Hum Choir (a gift by A3M4 on both C1 paths) |
+
+Act I burrowing is never a required counter (it is only brief; kill-timing and slows handle it).
 
 **Revoked classes count as unowned** from the A3M2 cue until the jailbreak, so every map in that window must pass the guarantee without them ([towers.md §9](towers.md#9-rules-for-story-driven-tower-changes)).
 
@@ -255,16 +262,17 @@ The player can change between Story and Standard at any time between maps.
 
 ## 10. Pacing targets and tuning assumptions
 
-- **Rule (fair challenge, vision pillar 5):** on **Standard**, every campaign map must be winnable by a player who has (a) spent all first-clear Stardust reasonably, (b) **no replays**, and (c) Intel from **Victory medals only**. Each map's data stores this as a **reference profile** (owned towers, specs, and shop ranks at that point). The balance harness uses it ([maps.md §6.4](maps.md#64-balance-harness)).
-- **Meta power cap:** the full shop and tune-up catalog should add no more than about **+20–25% effective power** over the reference profile. Grinding helps, but it never trivializes a map.
+- **Rule (fair challenge, vision pillar 5):** on **Standard**, every campaign map must be winnable by a player who has (a) spent all first-clear Stardust reasonably, (b) **no replays**, and (c) Intel from **Victory medals only** (1 per map won), taking the *weaker* branch of every story flag. Each map's data stores this as a **reference profile** (owned towers, spec unlocks, and shop ranks at that point; the per-map table is in [../story/campaign.md §4.9](../story/campaign.md#49-shop-stock-and-the-reference-profile)). The balance harness uses it ([maps.md §6.4](maps.md#64-balance-harness)).
+- **Rule (purchasable profiles):** every reference profile must be affordable on its own timeline: cumulative Stardust and Intel spent by each map ≤ what the earlier maps paid, and every item bought only after its `availableAfter` map. Every par build must use only what its reference profile owns (towers, spec unlocks, abilities). The harness asserts both.
+- **Meta power cap:** the full shop and tune-up catalog should add no more than about **+20–25% effective power** over the reference profile. Grinding helps, but it never trivializes a map. **Rule:** a profile that owns the **full catalog** (every tune-up, global upgrade, protocol, and slot) running any of a map's `noCounterBuilds` must still lose; meta power never substitutes for a counter.
 - **Unlock cadence:** something new (a tower, spec, ability, protocol, or slot) should be within reach after almost every map. A first-pass player should never go two maps without a meaningful purchase.
-- **Intel scarcity:** with ~1 Intel per map from Victory alone, a Victory-only player unlocks about one specialization every 2–3 maps. Players who chase medals unlock about one per map.
+- **Intel scarcity:** with 1 Intel per map from Victory alone, a Victory-only player unlocks one tower's specializations every 2–3 maps. Players who chase medals unlock about one per map.
 
 ---
 
 ## 11. What persists
 
-Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), Stardust, Intel, owned towers, revoked and jailbroken classes, owned and revoked abilities, R&D unlocks, shop ranks, Field Protocols, medals per map, veteran records, the lifetime **Pests Processed** counter ([core-loop.md §6.2](core-loop.md#62-results-screen-and-the-lifetime-counter)), story flags and seen scenes, read memos and codex versions, Bricks's tag index and memorial tower, loadout presets, and settings. The format and export/import codes are owned by [../tech/architecture.md](../tech/architecture.md#5-save-system).
+Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), Stardust, Intel, owned towers, revoked and jailbroken classes, owned and revoked abilities, R&D unlocks, shop ranks, Field Protocols, medals per map, veteran records, the lifetime **Pests Processed** counter ([core-loop.md §6.2](core-loop.md#62-results-screen-and-the-lifetime-counter)), story flags and seen scenes, read memos and codex versions, Bricks's tag index and memorial tower, loadout presets, and settings. The format and export/import codes are owned by [../tech/meta-runtime.md](../tech/meta-runtime.md#save-system).
 
 ---
 
@@ -276,4 +284,4 @@ Persisted per save: the profile (name, pronouns, callsign, `arrival_reason`), St
 4. Is the **Veteran medal threshold** (+100%) right, and should veteran records show on the star map?
 5. Do **Field Protocols** need limits per act (for example Linked Up is too strong early)?
 6. **C2 balance.** Both options spend the whole bank; Sell returns 4–10 Intel plus a permanent Vrell buff. Is Return's finale boon felt enough that players who are behind on upgrades still consider it? It must never be required to beat the finale.
-7. **Farming the bonus.** Replays don't re-grant the Q3 Bonus, but a player could hoard Stardust before A2M4 to inflate the Sell windfall. The clamp at 10 Intel caps it; confirm that's enough.
+7. **Farming the bonus.** Replays don't re-grant the Q3 Bonus, but a player could hoard Stardust (or replay for it) before A2M4 to inflate the Sell windfall. The clamp at 10 Intel caps it; confirm that's enough.
