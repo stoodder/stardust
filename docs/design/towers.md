@@ -55,7 +55,7 @@ Acquisition rules and the story-timed gift schedule are in [progression.md §8](
 | Anti-air | Skyhook, Sproing Pad, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Sprinkler [Cloudburst] |
 | Detection (cloaked) | Lookout Shack, Seer's Lantern, *Scanner Sweep ability* |
 | Anti-shield | Zapcoil, Prism Spire, Sprinkler (Soaked status, T3) |
-| Anti-armor | Harpoon, Mindspike, Gloop (shred), Rivet [Railspike], Thumper [Bunker Buster] |
+| Anti-armor | Harpoon, Prism Spire (its beam's armor applies per second, so it beats heavy armor), Gloop (shred), Rivet T3 (pierce), Rivet [Railspike], Thumper [Bunker Buster], Mindspike (not against Everglow machines, ×0.35) |
 | Burrowed enemies | Scuttle Den, Underfoot ability, Stasis Bloom (prevents burrowing), Seer's Lantern [Truthlight] |
 | Support / buffer | Lookout Shack (range or fire rate), Hum Choir (damage, jam protection), Seer's Lantern (Mark) |
 | Economy | Salvage Crane |
@@ -283,7 +283,7 @@ A warren mound where refugee families shelter. The young-adult "swarmlings" dash
 
 #### Hum Choir (`choir`)
 A ring of elder Skitterkin humming in harmony. Their song steadies machines and minds. If the Quiet Wave was spared (C1), Old Thrum is in the ring, and the gift arrives early, in A3M1.
-- **T1 (130):** aura radius 1.5 (covers adjacent tiles): towers inside get **+10% damage**, and **Jammed durations are halved**. The Choir is not covered by its own aura, and **Silencers target a Choir first** ([enemies.md §5.4](enemies.md#54-the-hollow-body-void)), so where it stands is a decision.
+- **T1 (130):** aura radius 1.5 (covers adjacent tiles): towers inside get **+10% damage**, and **Jammed durations are halved**. **No Choir aura covers any Choir**, its own or another Choir's, and **Silencers target a Choir first** (skipping jam-immune towers; [enemies.md §5.4](enemies.md#54-the-hollow-body-void)), so where it stands is a decision.
 - **T2 (100):** +15% damage, aura radius 2.0.
 - **T3 (195):** +20% damage, and Jammed durations inside are cut by **75%** (not immunity).
 - **A: Lullaby (390):** also soothes enemies within radius 2.5: their ability cooldowns run **×1.5 longer** (Lulled; [enemies.md §2.4](enemies.md#24-status-effects)).
@@ -348,7 +348,7 @@ The story adds towers as gifts ([progression.md §8](progression.md#8-tower-acqu
 - Between maps, any removed tower must have a replacement path, so the player is never left without a counter (the counter guarantee in [progression.md §8](progression.md#8-tower-acquisition) treats a revoked class as unowned).
 
 **A3M2, Sterling revokes the Corporate Tower License (mid-wave).**
-- **Which class:** the Everglow class with **the most towers placed** at the moment of the cue. Ties: the most credits invested, then the earliest slot in the loadout. If the player has no Everglow towers placed, the first Everglow class in their loadout is revoked (they lose less, and that's fine). If the loadout has no Everglow class, the first Everglow class they own is revoked at map end instead, with no mid-map effect.
+- **Which class:** the Everglow class with **the most credits invested** at the moment of the cue. Ties: the most towers placed, then the earliest slot in the loadout. If the player has no Everglow towers placed, the first Everglow class in their loadout is revoked (they lose less, and that's fine). If the loadout has no Everglow class, the first Everglow class they own is revoked at map end instead, with no mid-map effect.
 - **When:** a script cue partway through a mid-map wave (map data), in the same cue as the Orbital Strike revocation ([core-loop.md §2.11](core-loop.md#211-scripted-moments)).
 - **After:** the class can't be built for the rest of A3M2, and from A3M3 it shows in the loadout screen greyed out with a REVOKED stamp until the jailbreak.
 
@@ -371,5 +371,4 @@ The canonical type sketch for `TowerDef` (tiers, specializations, attack deliver
 3. **Gravity Well** pushback can be degenerate when stacked. The once-per-20-s-per-enemy rule needs balance-harness testing.
 4. Should **links scale with tier** (for example +50% at T3+)? Flat is simpler; scaling rewards investment.
 5. Is 16 towers enough for post-game variety, or should challenge maps add **variant towers** (for example a Hollow-tainted tower in the post-game)?
-6. **A3M2 revocation pick.** "Most towers placed" punishes a mono-Everglow build hard mid-wave. Is that the right sting, or should it pick the class with the most credits invested?
-7. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?
+6. **Name tag timing.** Is the first wave clear early enough for the tag to register before the player starts selling and rebuilding?

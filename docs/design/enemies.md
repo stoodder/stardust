@@ -119,9 +119,10 @@ target.hp -= damage
 
 | Trait | Art tell id | What it does | Tell | Counters |
 |---|---|---|---|---|
-| **Armored** | `armored` | Flat damage reduction per hit (2.3). | Chunky plates; "plink" sparks on weak hits | Psionic; high per-hit Kinetic (Harpoon, Railspike); armor pierce; Corroded (Gloop, Bunker Buster, Acid Rain / Sticky Flak links) |
+| **Armored** | `armored` | Flat damage reduction per hit (2.3). | Chunky plates; "plink" sparks on weak hits | High per-hit Kinetic (Harpoon, Railspike); armor pierce; **Prism Spire** (a beam: armor subtracts per second, not per tick, 2.3); Corroded (Gloop, Bunker Buster, Acid Rain / Sticky Flak links); Psionic against armored Hollow and Aelari (not Everglow machines, ×0.35) |
 | **Shielded** | `shielded` (+ `regen` if it regenerates) | A separate regenerating bar on top of HP. | A bubble with a second bar; ripples when hit | Energy (Zapcoil, Prism); Soaked (which also lets Kinetic and Explosive bite); Resonance link; sustained damage to beat regen. High per-hit Kinetic (Harpoon) is not a shield answer |
 | **Cloaked** | `stealth` | Untouchable unless Revealed. | Shimmer outline; footsteps sound | Lookout Shack, Seer's Lantern, Scanner Sweep |
+| **Fast** | `fast` | Moves well above the normal pace (Zoomer 2.0 tiles/s). | A lean, streaking sprite | Slows (Sprinkler, Stasis Bloom, Suppressing Fire); damage early on the route |
 | **Flying** | `flying` | Uses air lanes; only A towers can hit it. | Shadow on the ground; dotted air lane | Skyhook, Sproing Pad, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Cloudburst; Pin to ground it |
 | **Burrowing** | `burrower` *(new)* | Periodically digs in (untargetable) and moves underground. | Dirt spray 0.8 s before; a ripple trail underground | Kill it before it digs; Stasis or Unnerved blocks the dig; Truthlight; Scuttle Den and Underfoot hit it underground |
 | **Splitting** | `splitter` | Spawns smaller enemies on death. | Visibly "packed" sprite with bulges | Splash; Chilled zones near the death point; overkill doesn't help, so plan for the children |
@@ -135,7 +136,25 @@ target.hp -= damage
 | **Skittish** | `skittish` *(new)* | When an ally within 2 tiles dies, gains Haste 40% for 1.5 s (under the 50% haste cap). | Ears flatten, a panic squeak | Slows, and kill groups with splash rather than one at a time |
 | **Huddle** | `huddle` *(new)* | Allies within 1.5 tiles match the leader's pace and regenerate. | Allies cluster tightly around it | Splash loves clusters; kill the leader to scatter them |
 
-Other art tell ids used by the roster: `fast` (Zoomer), `carrier` (Brood Hauler), `boss`, `hollow`, and `heavy` (a Hollow unit that has hushed someone under the hush rule, §5.4). The tell vocabulary is owned by [../art/art-direction.md §8](../art/art-direction.md#8-readability-and-enemy-ability-tells). Ids marked *(new)* are proposed additions to that vocabulary.
+Other art tell ids used by the roster: `carrier` (Brood Hauler), `boss`, `hollow`, and `heavy` (a Hollow unit that has hushed someone under the hush rule, §5.4). The tell vocabulary is owned by [../art/art-direction.md §8](../art/art-direction.md#8-readability-and-enemy-ability-tells). Ids marked *(new)* are proposed additions to that vocabulary.
+
+### 3.1 Counter categories
+
+**This table is the canonical trait → counter-category map** (it is rule data, `rules.ts`). A map's `requiredCounters` are drawn from these categories ([maps.md §6.3](maps.md#63-one-new-thing-per-map)), and the **Answers** column is what a category's no-counter build must leave out ([maps.md §6.1](maps.md#61-per-act-targets)).
+
+| Category | Traits | Answers (every tower, spec, link, and Technician ability here; a no-counter build excludes all of them) |
+|---|---|---|
+| **armor** | Armored (light and heavy) | Harpoon; Rivet T3+ and Railspike (armor pierce, ignore armor); Skyhook [Seeker Swarm]; Prism Spire; Corroded sources (Gloop, Thumper [Bunker Buster], Acid Rain, Sticky Flak); Psionic (Mindspike) where the armored units are Hollow or Aelari, never against Everglow. Against light armor (Acts I–II), also Thumper |
+| **shield** | Shielded, Shield-recharge aura (`shield_aura`) | Every Energy source (Zapcoil, Prism Spire) and every Soaked source (Sprinkler T3+, Cloudburst, the Conductive link) |
+| **detection** | Cloaked | Lookout Shack, Seer's Lantern, Scanner Sweep |
+| **air** | Flying | Every tower that can hit air on that air lane (Skyhook, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Lantern, Sproing, Cloudburst, Brave Hearts), and every Pin that grounds flyers there |
+| **burrowed** | Burrowing | Scuttle Den, Underfoot, Stasis Bloom, Lantern [Truthlight], Mindspike [Dread] (Unnerved blocks the dig) |
+| **splash** | Splitting, Huddle, clustered groups (Mote clusters) | Every splash, chain, or multi-target attack ([towers.md §2.1](towers.md#21-role-coverage)'s Splash row, plus Skyhook against air clusters) |
+| **jam** | Jammer | Hum Choir, System Reboot, and tell interrupters (Stasis Bloom, Flash Freeze, Dread, Stillness) |
+| *intel-only* | Fast, Blink, Phasing, Skittish, Haste aura, Healer aura, Gathering; also the `boss` and rift-lane icons | None: shown in the threat intel, never a required counter, and exempt from the soft-trait rule |
+
+- **Soft enemies (rule).** An enemy is **soft** on a map only if it carries a trait whose category the map doesn't require **and none** of its traits maps to one of the map's `requiredCounters`. Intel-only traits never make an enemy soft. Soft enemies make up at most 15% of any wave's threat ([maps.md §6.2](maps.md#62-threat-budget-planning-tool)).
+- Bosses are judged by their traits like any other enemy.
 
 ---
 
@@ -148,8 +167,9 @@ Per D001, a *few late-game* enemies may **briefly disable** towers. This is the 
 - **Duration:** at most **4 s** per jam.
 - **Tell:** at least **1.5 s** (this doc owns the gameplay timing; the 0.75 s minimum in the art doc's tell section should be raised to match), with a distinct visual (Auditor: an expanding orange ring; Silencer: a black tendril creeping toward the tower) and a distinct sound.
 - **Post-jam immunity:** a tower can't be jammed again for **6 s** after a jam ends.
+- **Targeting (rule):** a jammer that picks a single target (the Silencer) skips jam-immune towers when choosing it (post-jam immunity, Rally Chorus, System Reboot).
 - **Jammed state:** the tower doesn't fire, and its auras and links switch off. It shows static, sparks, and a countdown ring. Nothing else happens to it.
-- **Counters:** interrupt the jammer during its tell (Stasis, Unnerved), kill it first, **Hum Choir** (halves the duration at T1–T2, cuts it by 75% at T3, and gives immunity only with its Rally Chorus specialization; the Choir itself is never inside its own aura), the **System Reboot** ability, and placement (jammers have short reach, so key towers can sit out of it). [towers.md §7](towers.md#hum-choir-choir) has the numbers.
+- **Counters:** interrupt the jammer during its tell (Stasis, Unnerved), kill it first, **Hum Choir** (halves the duration at T1–T2, cuts it by 75% at T3, and gives immunity only with its Rally Chorus specialization; no Choir aura ever protects a Choir, its own or another's), the **System Reboot** ability, and placement (jammers have short reach, so key towers can sit out of it). [towers.md §7](towers.md#hum-choir-choir) has the numbers.
 - **Introduction rule:** jamming never appears before the player has access to at least one counter beyond "kill it" (Hum Choir or System Reboot). A jammer's first appearance is a teaching wave with a single jammer and a codex popup.
 - **Story placement:** Silencers debut in A3M4, on the map where QUILL patches in **System Reboot** before the first jam; Auditors debut in A3M5; "Shareholder Value" is the A3M5 boss. Dialogue and codex call a Silencer's jam *hushing* ("the towers went quiet"); UI labels stay "Jammed" for readability.
 - **Wave-design limit:** in par play ([maps.md §6.4](maps.md#64-balance-harness)), no more than **25%** of the player's towers should be jammed at the same moment.
@@ -159,6 +179,8 @@ Per D001, a *few late-game* enemies may **briefly disable** towers. This is the 
 ## 5. Roster
 
 Columns: **HP**, **Armor**, **Shield** (`max / regen per s / delay s`), **Spd** (tiles/s), **Leak** (core damage), **Bounty** (credits), **Layer**. All numbers are first-pass tuning values.
+
+**Roster total: 27 enemy types** (8 + 6 + 7 + 6), plus the bosses in section 6.
 
 **Spawn spacing.** Each enemy has a default spawn interval within a wave group (wave data may override it per group): Nibbler **0.8 s**, Zoomer **0.5 s**. Other types are set when their first wave is authored.
 
@@ -178,7 +200,7 @@ Round, fuzzy, squeaky, and harmless-looking. **They never attack anything; they 
 | `hauler` | **Brood Hauler** | 300 | 6 | — | 0.7 | 3 | 15 | G | Armored shell, carries a glittering sack (see below) | Act I late |
 
 - **Skittish** is a *wave modifier*, not a unit. From Act II, Skitterkin waves can carry the Skittish trait (section 3). It reads as fear: they're being chased.
-- **Fleeing Skitterkin (rule, A2M1 on).** Skitterkin groups tagged `fleeing` (the ones running ahead of the Hollow in mixed waves, section 7) **leak for 0 integrity** and are **medal-exempt** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). They keep their normal bounty if killed. So killing them earns credits, sparing them is free, and the skill play is killing the Hollow before it reaches them (§5.4).
+- **Fleeing Skitterkin** (A2M1 on), the runners ahead of the Hollow in mixed waves: their rules live in [§5.4 Fleeing Skitterkin](#fleeing-skitterkin).
 - **No Skitterkin unit has an attack, an aura that harms, or any effect on towers (rule).** Their traits only change how they move.
 - **Brood Hauler, the dramatic-irony unit.** In Act I its codex reads "Carries stolen stardust. High bounty!" When it dies, its sack bursts in a puff of glitter, and a few tiny shapes scurry *back the way they came* into the brush. They are non-hostile, untargetable, and cost no leak. Attentive players notice. From Act II the sack is visibly a cluster of young and the codex entry is rewritten (the codex lines are owned by the story docs). Its behavior never changes; only the player's understanding does. In A3M5 and the finale, Haulers return on the path as **friendly bearers** (an `allies` unit, not an enemy) carrying the vats' unsung dead home ([maps.md §5.4](maps.md#54-allies-on-the-map)).
 - **Elder.** In Act I it reads as a slow, grumpy boss-lady. On re-read, it is protecting the young by holding the group to its pace.
@@ -193,7 +215,7 @@ Elegant crystal constructs piloted by distant Aelari minds. They glide rather th
 | ID | Name | HP | Armor | Shield | Spd | Leak | Bounty | Layer | Traits | Recommended act |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `glimmer` | **Glimmer** | 60 | 0 | 40 / 10 / 3 | 1.1 | 1 | 6 | G | Shielded | Act II start |
-| `warden` | **Facet Warden** | 250 | 3 | 200 / 20 / 3 | 0.6 | 3 | 18 | G | Heavy shield, light armor | Act II early |
+| `weft_warden` | **Weft Warden** | 250 | 3 | 200 / 20 / 3 | 0.6 | 3 | 18 | G | Heavy shield, light armor | Act II early |
 | `veilwalker` | **Veilwalker** | 90 | 0 | 30 / 10 / 3 | 1.0 | 2 | 10 | G | Cloaked | Act II early |
 | `lightwing` | **Lightwing** | 60 | 0 | 60 / 10 / 4 | 1.3 | 1 | 8 | A | Flying, shielded | Act II mid |
 | `blinkstrider` | **Blinkstrider** | 110 | 0 | 50 / 10 / 3 | 1.0 | 2 | 10 | G | Blink: 2.5 tiles forward every 6 s (0.8 s tell) | Act II mid |
@@ -220,7 +242,7 @@ Corporate, cold, and spotless. They arrive in A3M2, when Clean Exit sends Compli
 **How that plays:**
 - **Wrong in every channel.** Silhouettes have the wrong number of edges (mostly Skitterkin shapes, some Aelari, a few no one recognizes), they move in stutters and frame-skips, they render in the reserved Hollow palette ([../art/art-direction.md §4](../art/art-direction.md#4-faction-visual-language)), and nearby music and sound effects drop out. Near them the jingle is heard *hummed wrong* (audio).
 - **Hungry, not frightened.** Hollow units go for the living: they **hush** fleeing Skitterkin in mixed waves, refugees and choir singers on escort maps, and scripted allies such as Bricks at the Gap (who blocks them and is worn down rather than hushed, on a scripted timeline) ([maps.md §5.2](maps.md#52-objective-variants), [§5.4](maps.md#54-allies-on-the-map)). Hushing is shown as a squeak, a struggle, and a vanish, never anything worse ([../story/style-guide.md §8](../story/style-guide.md#8-content-guidelines)). The player should feel the difference between "frightened" movement and "hungry" movement without reading a word.
-- **The hush rule (all maps).** A non-boss Hollow unit that reaches a hushable unit (a `fleeing` Skitterkin enemy, or an escort refugee, bearer, or singer) stops for the 0.5 s hush tell, and that unit is removed (no leak, no bounty, not counted as processed). **Each non-boss Hollow unit can hush at most one.** Hushing **heals it to full HP and raises its base speed by 15%** (applied before chill and haste), and it becomes visibly **Heavy** (a darker, swollen variant; tell id `heavy`, §3). It then carries on along its route to the exit, ignoring every other hushable unit. So feeding the Hollow a refugee or a fleeing unit never slows it down for long: it costs the 0.5 s tell and hands back a full-health, faster enemy. The skill play is to kill the Hollow before it reaches them. Bosses follow their own scripts (§6). Tune mixed waves and escorts with this rule on in the harness.
+- **Hushing** follows the hush rule below, on every map.
 - **Gathering (the `consumer` trait).** A Maw may draw in other non-boss **Hollow** units (pieces rejoining) and, within the hush rule's limit, **one** Skitterkin enemy or refugee (the hushed becoming part of it; that gather is the Maw's one hush, and it grows by the gathering rule instead of turning Heavy). It never takes Everglow or Aelari units (no echo to take), never a boss, and **never a Skitterkin tower's units** (swarmlings and leapers always come home; [towers.md §8](towers.md#8-presentation-and-personality)). A gathered Skitterkin doesn't count toward Pests Processed.
 - **Scattering and rest.** Through Act III, a destroyed Hollow unit simply leaves the fight: it unravels into cold-violet motes that drift away (presentation only). In the finale, units broken outside the choir's song **scatter and re-form**, and units broken inside it are **laid to rest**; those rules live in [maps.md §5.5](maps.md#55-the-leaving-song-finale-rules).
 - **Identity:** splitting, gathering, phasing, and hushing (jamming). Weak to Psionic, resistant to Energy. They can use **rift lanes**, ground routes that cut through terrain where no path should be ([maps.md §4](maps.md#4-paths-and-air-lanes)).
@@ -230,12 +252,28 @@ Corporate, cold, and spotless. They arrive in A3M2, when Clean Exit sends Compli
 |---|---|---|---|---|---|---|---|---|---|---|
 | `mote` | **Mote** | 25 | 0 | — | 1.6 | 1 | 2 | G | Comes in clusters of 6–12; can use rift lanes | Act II start (A2M1, first Hollow), Act III |
 | `fracture` | **Fracture** | 200 | 0 | — | 0.9 | 2 | 8 | G | Splitting: 2 Shards (80 HP, speed 1.1) → each splits into 2 Motes | Act III early |
-| `maw` | **Maw** | 400 | 2 | — | 0.7 | 2 (+1 per absorb) | 20 (+3 per absorb) | G | **Gathering** (`consumer`): every 4 s, after a 1 s tendril tell, draws in the nearest eligible unit within 1 tile (§5.4: Hollow, or at most one Skitterkin; never a boss), adding that unit's current HP to its own HP and max HP and growing 10% in size. Max 5 absorbs. | Act III early |
+| `maw` | **Maw** | 400 | 2 | — | 0.7 | 2 (+1 per absorb) | 20 (+3 per Hollow absorb only) | G | **Gathering** (`consumer`): every 4 s, after a 1 s tendril tell, draws in the nearest eligible unit within 1 tile (§5.4: Hollow, or at most one Skitterkin; never a boss), adding that unit's current HP to its own HP and max HP and growing 10% in size. Max 5 absorbs. | Act III early |
 | `riftmoth` | **Rift Moth** | 120 | 0 | — | 1.2 | 1 | 10 | A | Flying; Phasing: untargetable for 1.5 s every 5 s (0.5 s flicker tell) | Act III mid |
 | `undertow` | **Undertow** | 350 | 5 | — | 0.8 | 2 | 18 | G | Burrowing: every 7 s digs in for 3 s, with a visible ripple trail | Act III mid |
-| `silencer` | **Silencer** | 260 | 4 | — | 0.8 | 2 | 22 | G | **Jammer:** every 12 s, targets a **Hum Choir** within 2.5 tiles if there is one (else the highest-tier tower; ties: lowest entity id) with a 2 s creeping-tendril tell, then jams it for 4 s | Act III mid–late |
+| `silencer` | **Silencer** | 260 | 4 | — | 0.8 | 2 | 22 | G | **Jammer:** every 12 s, targets a **Hum Choir** within 2.5 tiles if there is one (else the highest-tier tower; ties: lowest entity id), skipping jam-immune towers (§4), with a 2 s creeping-tendril tell, then jams it for 4 s | Act III mid–late |
 
-**Roster total: 27 enemy types** (8 + 6 + 7 + 6), plus the bosses below.
+#### Fleeing Skitterkin
+
+**This is the one home for the fleeing rules** (A2M1 on). Skitterkin groups tagged `fleeing` are the runners in mixed waves: they carry the Skittish modifier and spawn 2–4 s before the Hollow group on the same route (§7).
+
+- **Rules:** they **leak for 0** integrity, pay a **bounty of 1** if killed, count as **0 threat** ([maps.md §6.2](maps.md#62-threat-budget-planning-tool)), and are **medal-exempt** ([core-loop.md §2.7](core-loop.md#27-hold-fire)). Allies never target them ([maps.md §5.4](maps.md#54-allies-on-the-map)).
+- The **Spare runners** filter ([core-loop.md § Spare runners](core-loop.md#spare-runners)) stops towers from picking them as targets, so sparing them is free in play. The skill play is killing the Hollow before it reaches them.
+- A Hollow unit that reaches one hushes it (the hush rule, next). QUILL notices when the player kills one (`skitterkin_killed_ahead`, [core-loop.md §6.3](core-loop.md#63-barks)).
+
+#### The hush rule
+
+**This is the one home for the hush rule; it applies on every map.**
+
+- A non-boss Hollow unit that reaches a hushable unit (a `fleeing` Skitterkin enemy, or an escort refugee, bearer, or singer) stops for the **0.5 s** hush tell, and that unit is removed (no leak, no bounty, not counted as processed).
+- **Each non-boss Hollow unit can hush at most one.** Hushing **heals it to full HP and raises its base speed by 15%**, applied to `base` before chill and haste (the speed rule in §2.4 becomes `base × 1.15 × (1 − chill) × (1 + haste)`). It becomes visibly **Heavy** (a darker, swollen variant; tell id `heavy`, §3), then carries on along its route to the exit, ignoring every other hushable unit. A Heavy unit that reaches an escort's safe exit still costs one sheltered refugee, like any enemy ([maps.md §5.2](maps.md#52-objective-variants)).
+- So feeding the Hollow a refugee or a fleeing unit never slows it down for long: it costs the 0.5 s tell and hands back a full-health, faster enemy.
+- Exceptions: a Maw's one hush is a gather instead (it grows rather than turning Heavy; Gathering above), Bricks at the Gap blocks and is worn down on a timeline, Pebble can't be hushed, and bosses follow their own scripts (§6).
+- Tune mixed waves and escorts with this rule on in the harness ([maps.md §6.4](maps.md#64-balance-harness)).
 
 ---
 
@@ -278,10 +316,10 @@ Boss behavior that the story needs is **data on the boss's map** (map script tri
 - **Teach → test → twist.** A new enemy first appears alone or in a small, slow group, with a "NEW" badge and a codex popup (the teach wave). Later waves combine it with known threats (test). A later map mixes it with a new modifier (twist).
 - **Threat intel vs required counters (rule).** Map data lists two things ([maps.md §6.3](maps.md#63-one-new-thing-per-map)):
   - **`threatIntel`**: every defense trait present in the map's waves, shown as briefing icons ([core-loop.md §1](core-loop.md#1-session-loop-between-maps)). It is always complete and accurate.
-  - **`requiredCounters`**: at most **3** counter categories (for example Air + Shield + Detection) the map actually demands. Each one is backed by a no-counter build (`noCounterBuilds`) that omits it and must lose. The 4th loadout slot is always the player's free choice.
-  - A **soft trait** (in `threatIntel` but not required) may make up at most **15%** of any wave's threat (maps.md §6.2), so it can flavor a wave but never decide it.
+  - **`requiredCounters`**: at most **3** counter categories (§3.1; for example Air + Shield + Detection) the map actually demands. Each one is backed by exactly one no-counter build (`noCounterBuilds`) that omits every answer in that category and must lose. The 4th loadout slot is always the player's free choice.
+  - **Soft enemies** (§3.1) may make up at most **15%** of any wave's threat ([maps.md §6.2](maps.md#62-threat-budget-planning-tool)), so they can flavor a wave but never decide it.
   - A map adds at most **one new required-counter category** compared with every earlier map.
-- **Mixed waves tell the story.** From A2M1, Skitterkin flee *ahead of* Hollow units in the same wave (the Skitterkin groups are tagged `fleeing`, carry the Skittish modifier, and spawn 2–4 s before the Hollow group on the same route). Fleeing units leak for 0 and keep their bounty (§5.1), and each Hollow unit that catches one turns Heavy (§5.4). So killing them pays and sparing them is free; the skill play is killing the Hollow before it reaches them. QUILL notices when the player kills one (the `skitterkin_killed_ahead` bark trigger, [core-loop.md §6.3](core-loop.md#63-barks)).
+- **Mixed waves tell the story.** From A2M1, Skitterkin flee *ahead of* Hollow units in the same wave: `fleeing` groups that spawn 2–4 s before the Hollow on the same route, leak for 0, and pay 1 ([§5.4 Fleeing Skitterkin](#fleeing-skitterkin)).
 - **Wave tags.** A wave group may carry story tags (for example `quiet_wave`, `fleeing`) that the sim tracks for flags, barks, and medal exemptions ([core-loop.md §2.7](core-loop.md#27-hold-fire)).
 - **Act identities:** Act I waves are mostly Skitterkin swarms with one new trait per map. Act II waves center on Aelari shields and trickery, with Skittish Skitterkin. Act III waves are Everglow armor plus Hollow chaos, often from multiple spawns. The finale uses everything.
 - **Jammers:** see section 4 for limits.
@@ -308,5 +346,4 @@ In Acts I–II, **Tidybots** (cheerful cleanup drones) hover in after each wave 
 1. **Explosive vs Crystalline.** Should Explosive get ×1.25 against Crystalline, to give splash a role in Act II after shields break? It would be a fifth deviation in the matrix (a readability cost).
 2. **Overflow conversion** in the shield step (overflow returns to raw at the inverse multiplier) is accurate but subtle. The simpler alternative is "overflow is lost." Accuracy feels fairer; confirm.
 3. **Elder's Huddle** makes splash very strong against Skitterkin. Is that intended as a "learn splash" lesson in Act I, or is it too punishing in Act II?
-4. **The Glass Witch** is a new boss row added for A2M2's raid (the story needs a boss there with a retreat). Confirm its name and whether it shares sprites with the Sunderglass Penitent.
-5. **A2M5 pivot timing.** Is "50% HP or the surge wave, whichever first" readable, or should the pivot be purely wave-timed so it never depends on DPS?
+4. **A2M5 pivot timing.** Is "50% HP or the surge wave, whichever first" readable, or should the pivot be purely wave-timed so it never depends on DPS?

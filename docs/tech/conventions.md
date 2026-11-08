@@ -82,7 +82,7 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
    ```
    Numbers come from towers.md. Modifiers stack by the design formula (flat first, then summed percentages; see [architecture.md §2](architecture.md#sim-public-api)).
 4. **Register** it in `src/content/towers/index.ts`.
-5. **New behavior?** If the attack `kind` doesn't exist yet (for example `chain`), add `src/sim/behaviors/<kind>.ts`, add it to the `Attack` union, and write `<kind>.test.ts` (damage, cooldown, range edge cases, targeting modes, jammed state, hold fire, determinism).
+5. **New behavior?** If the attack `kind` doesn't exist yet (for example `chain`), add `src/sim/behaviors/<kind>.ts`, add its variant to `AttackDef`, and write `<kind>.test.ts` (damage, cooldown, range edge cases, targeting modes, jammed state, hold fire, determinism).
 6. **New visuals?** Add the projectile or beam handling in `render/views/ProjectileView.ts`, following [art-direction.md §7](../art/art-direction.md#7-vfx).
 7. **Unlock** it through progression content (`content/upgrades/`), per [design/progression.md](../design/progression.md).
 8. **Test loop:** `npm run check`. While tuning, run `npm run sim -- --map <id>` for each map whose builds or reference profile include the tower.
@@ -117,9 +117,9 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
        markers: { peeker: [1, 0] },                       // named decor tiles for scripts
        underWreckage: { '8,2': 'o' }, salvage: { '8,2': 40 },
        startCredits: 300, coreIntegrity: 20, stardust: 0,
-       towerUnlockWave: { example_mortar: 3 },            // build button unlocks at wave 3
+       towerUnlockWave: { example_mortar: 3 },            // unlocks when W3's countdown starts
        threatIntel: ['fast'],                             // every trait in waves.ts
-       requiredCounters: ['splash'],                      // ≤ 3, each with a noCounterBuild
+       requiredCounters: [],                              // A1M1 requires none; ≤ 3, each with a noCounterBuild
        medals: { challenge: { id: 'teamwork', condition: { linkActive: 'example_link' } } },
        objectives: [{ id: 'clean_w4', condition: { stat: 'integrityLost', lte: 0 }, intel: 1 }],
        companion: { id: 'bricks', state: 'present' },     // or { pick: [...] }, or null
@@ -185,7 +185,7 @@ The **design rules** behind these assertions (par margins per act, monotonic dif
 | 4 | **Doing nothing loses** (built-in `none` policy: no towers, no abilities) | Standard | seed 1 |
 | 5 | **Counters matter:** every entry in `noCounterBuilds` (one per `requiredCounters` entry) **loses before the final third** of waves | Standard | seeds 1–3 |
 | 6 | **Meta can't replace counters:** every `noCounterBuilds` entry still loses with the **full-catalog profile** (every shop and R&D upgrade in the game at max rank, and every protocol slot filled), whatever the map's real reference profile | Standard | seeds 1–3 |
-| 7 | **Early calls stay fair:** the par build run with `alwaysCallEarly` (it calls each wave the moment its countdown starts) has a margin **≤ the top of the band** | Standard | seeds 1–3 |
+| 7 | **Early calls stay fair:** the par build run with `alwaysCallEarly` (it calls each wave the moment its countdown starts) has a margin **≤ `min(band top, par margin + 10)`**, against the par margin on the same seed | Standard | seeds 1–3 |
 | 8 | **Forgiving floor:** each of the `altBuilds` (sensible non-par builds; at least 2 from A1M4, each sharing ≤ 2 tower types with par) wins with margin ≥ 20% | Standard | seeds 1–3 |
 | 9 | **Story difficulty:** the par build wins with margin ≥ its Standard median | Story | seed 1 |
 | 10 | **Jam limit:** with the par build, no tick has more than 25% of towers jammed ([enemies.md §4](../design/enemies.md#4-tower-disabling-jamming)) | Standard | every seed |
@@ -194,9 +194,9 @@ The **design rules** behind these assertions (par margins per act, monotonic dif
 | 13 | **Runtime:** each run finishes within 2 s wall time (a 25-minute finale is about 90,000 ticks) | all | all runs |
 | 14 | **Flag variants:** for every `flagVariants` entry (each value of a story flag the map's scripts read, for example `door_choice`, `quill_choice`, `spared_quiet_wave`), the par build passes assertions 1–2 with that flag set | Standard | seeds 1–3 |
 | 15 | **Companion pick list:** on a map whose `companion` is a pick list (the finale), the par build passes assertions 1–2 with each companion | Standard | seeds 1–3 |
-| 16 | **Free choices stay free:** maps with a medal-exempt story wave (A1M5's Quiet Wave) also run the par build with `holdFire { tag: 'quiet_wave' }`. It must win inside the band, and the run-end rules must set `spared_quiet_wave = true` | Standard | seeds 1–3 |
+| 16 | **Free choices stay free:** (a) maps with a medal-exempt story wave (A1M5's Quiet Wave) also run the par build with a `holdFireWhile: 'quiet_wave'` step. It must win inside the band, and the run-end rules must set `spared_quiet_wave = true`. (b) Maps with `fleeing` groups also run the built-in `spareFleeing` policy (the par build with the spare-runners filter on for every tower from W1). Its margin must be **≥ par margin − 5** on the same seed | Standard | seeds 1–3 |
 | 17 | **Holdout:** instead of 1–2, the par build's Evacuated is ≥ the map's `evacuatedFloor`, and the map ends through its scripted forced input, never through integrity 0 | Standard | every seed |
-| 18 | **Song timing (finale):** Phase 2 lasts within ±20% of its target time under each `quill_choice` variant | Standard | seeds 1–3 |
+| 18 | **Song timing (finale):** Phase 2 lasts within the tolerance of its target time set in [maps.md §6.4](../design/maps.md#64-balance-harness), under each `quill_choice` variant | Standard | seeds 1–3 |
 
 The **par-purchasable** check (every par build's reference profile can be bought by that point in the campaign) is static, so it runs in the content test, not here ([architecture.md § Validation](architecture.md#validation)).
 
@@ -211,7 +211,7 @@ export const builds = defineBuilds({
   referenceProfile: {                         // what a Standard player owns here (progression.md §10)
     towers: ['example_blaster', 'example_slower', 'example_mortar'],
     specs: ['example_blaster'],               // both tier-4 specs of these towers are unlocked
-    shop: { tuneup_damage: 1, core_plating: 1 },
+    shop: { tuneup_damage: 1, reinforced_core: 1 },
     protocols: [],
     technicianAbility: 'orbital_strike',
   },
@@ -243,11 +243,12 @@ export const builds = defineBuilds({
 Step semantics, implemented by the scripted-build executor in `src/sim/headless.ts`:
 
 - Steps run **strictly in order**. A step becomes eligible when the build phase before its `wave` begins (`wave: 1` is the pre-game build phase). It's issued as a normal `Command` as soon as it's affordable (and its tower is unlocked), and later steps wait behind it, so builds stay valid through small cost changes.
-- Step kinds map one-to-one onto commands: `build`, `upgrade`, `specialize`, `sell`, `targeting`, `holdFire` (by tile, `'all'`, or `{ tag }`), `ability` (with an optional `when: 'waveStart' | { afterSec }`), `clear` (wreckage), `callWave`, `interact` (click a marker as soon as it's clickable; without the step, the marker's fallback timer fires), and `scriptInput` (presses a forced input as soon as it is requested). After a scripted revocation, steps for the revoked class are skipped and the build continues.
+- Step kinds map one-to-one onto commands: `build`, `upgrade`, `specialize`, `sell`, `targeting`, `holdFire` (by tile or `'all'`), `spareRunners` (by tile or `'all'`), `ability` (with an optional `when: 'waveStart' | { afterSec }`), `clear` (wreckage), `callWave`, `interact` (click a marker as soon as it's clickable; without the step, the marker's fallback trigger fires), and `scriptInput` (presses a forced input as soon as it is requested). After a scripted revocation, steps for the revoked class are skipped and the build continues.
+- **One macro step:** `holdFireWhile: <tag>` issues plain `holdFire 'all'` on when the first unit of that tag spawns and off when the last one dies or leaks. It's what a player does by hand, so the run stays a plain command log.
 - `callEarly: true` calls each wave the moment its countdown starts. The built-in `alwaysCallEarly` policy is the par build with `callEarly: true`.
-- `flagVariants` lists the story-flag values to test: `{ door_choice: ['convoy', 'warren'] }`. Each value may override the build's steps where a variant needs a different plan.
+- `flagVariants` lists the story-flag values to test: `{ door_choice: ['convoy', 'warren'] }`. Each value may override the build's steps and `technicianAbility` where a variant needs a different plan (A3M5 under `quill_choice = rewrite` equips Suppressing Fire, because System Reboot is locked there).
 - **Profiles:** `src/balance/profile.ts` turns `referenceProfile` (or the generated full-catalog profile) into `SimConfig.modifiers` through `meta/modifiers.ts`, the same code the game uses, so the harness tests the real progression math. The sim itself never imports `meta/` or `balance/`.
-- **Policies** live in `src/balance/policies.ts` and need no authored steps: `none` (no steps), `spamCheapest` (generates a build step for every pad), and `alwaysCallEarly` (above).
+- **Policies** live in `src/balance/policies.ts` and need no authored steps: `none` (no steps), `spamCheapest` (generates a build step for every pad), `alwaysCallEarly` (above), and `spareFleeing` (the par build plus `spareRunners 'all'` on before W1).
 - The content test validates builds ([architecture.md § Validation](architecture.md#validation)).
 - The same builds drive the smoke tests (`__sd.autoplay('par')`), so one encoding serves both.
 
@@ -280,7 +281,7 @@ Boot parameters: `seed`, `map`, `skipIntro`. The hooks only read state and issue
 3. **Every map boots:** for each registered map, load `?test=1&map=<id>&skipIntro=1`, wait for the first rendered frame, and take a screenshot.
 4. **Key flows** (each milestone adds its own). Flows **assert on the DOM** (the results screen's heading and counter, found by role and text), not on sim state alone:
    - **M1:** title → battle; place a tower by **real mouse click** on a buildable tile; select it and upgrade through the HUD; call a wave; switch to 2×; fire Orbital Strike at a tile; then `autoplay('par')` plus `fastForward` through to the **win** results screen. Separately, `autoplay('none')` plus `fastForward` reaches the **lose** results screen, and retry works.
-   - **M2:** pick a 4-tower loadout; toggle hold fire; buy something in the shop; round-trip a save export and import.
+   - **M2:** pick a 4-tower loadout; toggle hold fire and the spare-runners filter; buy something in the shop; round-trip a save export and import.
    - **M3:** advance dialogue and make a choice (the flag is set); navigate the star map; open the codex.
 5. **Screenshots** at every flow step: `test-results/screens/<flow>/<nn>-<step>.png`, at a 1280×720 viewport (2× scale). **Look at them** (they open with the Read tool) whenever your change is visual. They aren't pixel-diffed yet ([architecture.md, open question 2](architecture.md#open-questions)).
 
@@ -308,7 +309,7 @@ What must have tests (Vitest, unless noted):
 
 | Area | Expectation |
 |---|---|
-| **Sim systems, behaviors, abilities** | **Required.** Every system and every attack or ability kind has unit tests covering normal cases, edge cases (zero HP, exact range boundary including exclusive minimum range, simultaneous kills, a tower sold mid-flight, interrupts mid-tell, lead targeting on a route corner), and invariants (enemies never damage towers; a jam always expires and grants immunity; allies are never harmed; allies never target `quiet_wave`, `youngling`, or `fleeing` units; a Hollow unit hushes at most once and turns Heavy; `fleeing` leaks cost 0 and count as medal-exempt; the misclick-grace refund ends at first fire or 10 s; commands applied by `applyPending()` while paused). |
+| **Sim systems, behaviors, abilities** | **Required.** Every system and every attack or ability kind has unit tests covering normal cases, edge cases (zero HP, exact range boundary including exclusive minimum range, simultaneous kills, a tower sold mid-flight, interrupts mid-tell, lead targeting on a route corner), and invariants (enemies never damage towers; a jam always expires and grants immunity; allies are never harmed; allies never target `quiet_wave`, `youngling`, or `fleeing` units; a tower with the spare-runners filter never picks a `fleeing` or `youngling` unit as its primary target, while its splash and chains still hit them; a Hollow unit hushes at most once and turns Heavy; `fleeing` leaks cost 0 and count as medal-exempt; the misclick-grace refund ends at first fire or 10 s; commands applied by `applyPending()` while paused). |
 | **Determinism** | `sim/determinism.test.ts`: a fixture map with a scripted command list, run twice, gives an identical `hash()`. Replaying the command log gives the same result, and replaying a log prefix to a checkpoint tick gives the same `hash()` as the original run at that tick. Commands applied by `applyPending()` at the end of tick *T* give the same state as the same commands applied at the start of tick *T + 1*. |
 | **Content** | `content/content.test.ts`: `validate(RAW_CONTENT)` returns no errors. This covers every check in [architecture.md § Validation](architecture.md#validation) (cross-references, geometry, `threatIntel` and `requiredCounters`, the soft-trait share, new-threat limits, revisit rules, builds, par-purchasable profiles, `altBuilds` from A1M4), rule limits (jam and stacking caps), sprite grids, master-palette membership, the Hollow hue reservation, path-vs-pad luminance contrast per environment palette, the dialogue rules in [story-runtime.md § Validation](story-runtime.md#validation) (lengths, protected `{name}`, QUILL's tell, exclamation budget), and the counter coverage guarantee on every branch (each possible A3M2 revoked class, each gift-timing flag). |
 | **Stacking** | `sim/stats.test.ts`: the [towers.md §4](../design/towers.md#4-stat-modifiers-and-stacking) formula, with flat bonuses first, percentages summed, caps applied to the sum, and same-kind auras not stacking. |
@@ -316,7 +317,7 @@ What must have tests (Vitest, unless noted):
 | **Iso math** | `render/iso.test.ts`: grid→screen→grid round trip, tile picking at the edges of the tile mask. |
 | **Saves** | Every `__fixtures__/save.v<n>.json` migrates to current and validates. The export→import round trip is lossless. Corrupt, truncated, and oversized codes are rejected cleanly. |
 | **Story runner** | Branching, choices setting flags, conditions, and text substitution: every token with each pronoun set (including `{v:…}` agreement and capitalized forms), `{pests_processed}` formatting and its live in-map value, `{glyph:…}`, and unknown tokens failing. Run-end flag rules (the Quiet Wave threshold at 74%, 75%, and 100%; `held_fire_second_look` at 49% and 50% fleeing leaked, with and without a Hold Fire use). Bark buttons (pressing applies `set` and plays `reply`; ignoring them changes nothing). Bark selection (priority, spacing, presence, no-repeat, silence for an absent speaker). Epilogue selection for every flag combination, codex version unlocking, memo delivery, and the countdown display at `p` = 0, 0.5, and 1. |
-| **Story transactions and run end** | `meta/`: the Q3 grant applies once, on A2M4's results; C2 Sell, Return, and none; jailbreak pricing under each `door_choice`; revocation refunds (Orbital Strike Mk II Intel); Pests Processed accumulates on win, loss, and retry; a checkpoint run forfeits Perfect and Challenge; one spec purchase unlocks both specs; `availableAfter` hides items until their map is completed. |
+| **Story transactions and run end** | `meta/`: the Q3 grant applies once, on A2M4's results; C2 Sell, Return, and none; jailbreak pricing under each `door_choice`; revocation refunds (Orbital Strike Mk II Intel); C4 Keep's Time Dilation inheritance and Purge's Rapport refund; Zibzab's crate (missing tune-ups, or a protocol when all are owned); Pests Processed accumulates on win, loss, and retry; a checkpoint run forfeits Perfect and Challenge; a defeat after a checkpoint retry pays only for waves from `resumedFromWave` on, and a defeat on a completed map pays 0; one spec purchase unlocks both specs; `availableAfter` hides items until their map is completed. |
 | **Architecture** | `shared/architecture.test.ts`: no forbidden imports in the pure modules, and no `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, or `Math.random` in `src/sim/`. |
 | **Balance harness code** | `src/balance/*.test.ts`: profile → modifier composition (including the full-catalog profile), the policies' generated steps, and each assertion on a tiny fixture map. |
 | **Balance** | `npm run sim` (above), not Vitest. |

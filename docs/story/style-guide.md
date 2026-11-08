@@ -214,7 +214,7 @@ export const a3_m03_cue_seal = defineScene([
   { kind: 'line', speaker: 'bricks', expression: 'neutral', text: '(hum, six notes, slow)' },
   { kind: 'line', speaker: 'pebble', expression: 'singing', text: '(hum, six notes, along)' },
   { kind: 'line', speaker: 'bricks', expression: 'neutral', text: 'Do it, {name}.' },
-  // The UI locks to a single SEAL button here (bible.md §12, item 10).
+  // The UI locks to a single SEAL button here (bible.md §12, item 8).
   { kind: 'end' },
 ]);
 ```

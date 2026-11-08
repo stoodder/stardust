@@ -4,7 +4,7 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Act II presentation from A2M1:** results line `Pests processed: {n}.` (no star), loading tips "Remember: a clean perimeter.", Evie billboards `peeling`, Skitterkin deaths without confetti, Tidybots still on. Sterling gets at least one between-wave line on every Act II map, and Pebble and Bricks share at least one exchange on every map from A2M3 to A3M3.
 
-**Fleeing Skitterkin (rule for every Act II map).** From A2M1, every Skitterkin enemy group is Skittish and tagged `fleeing`: it **leaks for 0 integrity**, is **medal-exempt**, and pays its bounty if killed ([core-loop.md §2.7](../../design/core-loop.md#27-hold-fire)). Killing them earns money; sparing them is free. Fleeing groups carry no threat in the counter-coverage sense. The skill play is killing the Hollow before it reaches them: a Hollow unit that hushes a Skitterkin turns **Heavy** (healed to full, +15% speed), once per unit ([enemies.md §5.4](../../design/enemies.md#54-the-hollow-body-void)). Allies never target `fleeing` units.
+**Fleeing Skitterkin (summary).** From A2M1 every Skitterkin enemy group is Skittish and `fleeing`: it leaks for 0, is medal-exempt, pays a bounty of 1, and a Hollow unit that hushes one turns Heavy. The rules live in [enemies.md § Fleeing Skitterkin](../../design/enemies.md#fleeing-skitterkin) and [§ The hush rule](../../design/enemies.md#the-hush-rule); the [Spare runners](../../design/core-loop.md#spare-runners) filter (Alt+H) keeps towers from picking them.
 
 **Checkpoints from Act II:** a loss offers "Retry from wave N" at the last 5-wave snapshot; using one forfeits Perfect and Challenge medals for that run ([core-loop.md](../../design/core-loop.md)).
 
@@ -22,20 +22,20 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 **Waves.** 1 Nibblers + Zoomers, fleeing [T: Skittish; nothing follows them yet] · 2 Puffwings + Diggers, fleeing · 3 a fleeing group, then Motes ×6 behind it on the same road [T: Mote; the hush and the **Heavy** tell] · 4 Haulers fleeing + Motes ×8 [X: shoot the Hollow, not the runners] · 5 an Elder with younglings + Motes · 6 Mote cluster ×12 [X: splash] · 7 Bunchlings fleeing + Motes, both roads · 8 mixed · 9 Motes ×20 from the bore [X] · 10 everything, both roads.
 
 **Story delivery.**
-- *Briefing:* Sterling: "Minor operational hiccup at Rig Nine! Super minor. Hiccup-sized. Go take a peek, Four-Forty-Seven!" · Bricks: "Rig crew's been quiet two days. Quiet's not a status, Sprout. Quiet's a symptom."
+- *Briefing:* Sterling: "Minor operational hiccup at Rig Nine! Super minor. Hiccup-sized. Go take a peek, Four-Forty-Seven!" · Bricks: "Rig crew's been quiet four days. Quiet's not a status, Sprout. Quiet's a symptom." · QUILL (the filter, before W1): "Firmware update! New filter: Spare runners, Alt+H. Runners pay one credit now. Not worth the ammo!"
 - *Radio:*
   - w02 QUILL: "They're moving faster than usual. And they keep looking back. Logging it."
   - w04 Bricks (crew found): "They're breathing. They just don't know their names. Sweet moons."
   - w06 QUILL (log recovered, or here if not): "The crew called it 'the hollow.' Lower case. I don't know why that's worse."
   - w07 Sterling: "Love the field report! I'm calling it a hiccup in my report too. Consistency!"
   - w08 Bricks: "Three hundred ninety-six days. Saying it out loud. Helps."
-- *Barks:* QUILL `skitterkin_killed_ahead`: "That one was running. From it." · QUILL on the first hush (proposed trigger `skitterkin_hushed`): "It caught one. It's heavier now. Faster. ...Logging it." · QUILL `new_enemy` mote: "Unknown signature. It isn't on any list. I've checked every list." · Bricks `wave_cleared`: "Jingle sounds different out here." (A2M4 makes it minor; here it only *feels* off.)
+- *Barks:* QUILL `skitterkin_killed_ahead`: "That one was running. From it." · QUILL `skitterkin_hushed` (the first hush on a map): "It caught one. It's heavier now. Faster. ...Logging it." · QUILL `new_enemy` mote: "Unknown signature. It isn't on any list. I've checked every list." · Bricks `wave_cleared`: "Jingle sounds different out here." (A2M4 makes it minor; here it only *feels* off.)
 - *Codex:* Mote (original: "Rig Nine Atmospheric Event. Not dangerous! [REDACTED]"), Rig Nine, the Diggings, "Hushed" (wellness-event classification).
 - *Memo after:* `memo_a2_01` *Rig Nine: A Minor Operational Hiccup!* (small print: "Rig crew wellness events are covered under Plan B.")
 
 **Medals.** Victory · Perfect Core · **Hiccup Contained:** no Hollow unit leaks. **Objective Intel +1, Crew Logs:** clear both log wreckage tiles (unlocks the crew-log codex entry).
 **Rewards.** Stardust 180 · Intel 3 (+1).
-**Par build.** Rivet, Thumper, Sprinkler (Cloudburst not yet), Zapcoil. Thumper ×2 + Sprinkler at the merge; Zapcoil chains for clusters; Rivet on a ledge. The par script never targets fleeing groups and kills Motes before they reach them. Target 82 (re-baselines after the boss). **Alt builds:** Thumper + Zapcoil + Skyhook + Lookout; Thumper + Rivet + Skyhook + Lookout. `noCounterBuild`: single-target only (Rivets, no Thumper or Zapcoil) must lose by W7.
+**Par build.** Rivet, Thumper, Sprinkler (Cloudburst not yet), Zapcoil. Thumper ×2 + Sprinkler at the merge; Zapcoil chains for clusters; Rivet on a ledge. Par uses plain targeting (it shoots any runner its priorities pick) and kills Motes before they reach the runners; the harness's `spareFleeing` run is par with Spare runners on for every tower, and must end within 5 points of it. Target 82 (re-baselines after the boss). **Alt builds:** Thumper + Zapcoil + Skyhook + Lookout; Thumper + Rivet + Skyhook + Lookout. `noCounterBuilds`: **no-splash**, Rivet + Sprinkler + Skyhook + Lookout, no Thumper or Zapcoil (must lose by W7).
 
 ## A2M2 · The Glass Witch
 
@@ -62,7 +62,7 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Medals.** Victory · Perfect (core and rigs undamaged) · **Glass Half Empty:** force her retreat before she blinks three times.
 **Rewards.** Stardust 195 · Intel 3.
-**Par build.** Zapcoil, Sprinkler (Cloudburst), Thumper, Rivet. Zapcoil ×2 + Sprinkler adjacent (Conductive, Soaked) on the branch ledge; Thumper + Rivet on the main road (Crossfire). Time Dilation and Orbital Strike on the Witch after her first pulse. Target 79. **Alt builds:** Zapcoil + Rivet + Skyhook + Lookout; Sprinkler (Soaked) + Thumper + Skyhook + Lookout (Kinetic and Explosive into Soaked shields). `noCounterBuild`: no Zapcoil and no Sprinkler T3 (must lose a rig by W8).
+**Par build.** Zapcoil, Sprinkler (Cloudburst), Thumper, Rivet. Zapcoil ×2 + Sprinkler adjacent (Conductive, Soaked) on the branch ledge; Thumper + Rivet on the main road (Crossfire). Time Dilation and Orbital Strike on the Witch after her first pulse. Target 79. **Alt builds:** Zapcoil + Rivet + Skyhook + Lookout; Sprinkler (Soaked) + Thumper + Skyhook + Lookout (Kinetic and Explosive into Soaked shields). `noCounterBuilds`: **no-shield**, Thumper + Rivet + Skyhook + Lookout, no Energy and no Soaked (must lose by W8); **no-splash**, Rivet + Sprinkler (Soaked) + Skyhook + Lookout, no Thumper or Zapcoil (the Mote clusters; must lose by W8).
 
 ## A2M3 · Second Look
 
@@ -73,7 +73,7 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Layout and revisit dressing.** The same switchbacks and pump station as A1M2. Grey mining cuts slice across two terraces (through decor, never a pad); exposed warrens with eggs line the path; the soil is grey-streaked; Rig 3 is now a strip mine filling the east band, where Ves'thara's constructs strike. The scarecrow still stands on Terrace 2, badge faded, while everything streams past him. The Peeker's rock is still at the warren mouth; from W5 it holds Pebble and shows the clickable highlight ([core-loop.md §6.9](../../design/core-loop.md#69-the-peeker)). Skitterkin glance backward as they run. Evie billboard peeling.
 
-**Waves.** 1 Skitterkin families with younglings in tow, fleeing · 2 Glimmers on the strip mine · 3 Haulers fleeing (sacks visibly young) · 4 one Facet Warden + Glimmers [T: heavy shield; Soaked + Zapcoil] · 5 fleeing Skitterkin + Motes [the rock lights up] · 6 Lightwings ×4 over the strip mine [T: flying shields] · 7 Wardens ×2 + Lightwings [X] · 8 Elders with younglings + Motes · 9 big Aelari wave · 10 Hollow push, both routes · 11 everything.
+**Waves.** 1 Skitterkin families with younglings in tow, fleeing · 2 Glimmers on the strip mine · 3 Haulers fleeing (sacks visibly young) · 4 one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil] · 5 fleeing Skitterkin + Motes [the rock lights up] · 6 Lightwings ×4 over the strip mine [T: flying shields] · 7 Wardens ×2 + Lightwings [X] · 8 Elders with younglings + Motes · 9 big Aelari wave · 10 Hollow push, both routes · 11 everything.
 
 **Story delivery.**
 - *Briefing:* Bricks: "Same terraces. Different day. Keep your eyes on the path, Thorn."
@@ -85,13 +85,13 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
   - w09 Goldie: "There's grey creeping into Dome 3's soil. Plants know when something's wrong. People take longer."
 - *Rescue cue* `a2_m03_cue_pebble` (player-triggered by clicking the rock; fallback when W6 is cleared; a brief pause): Pebble: "(squeak)" · Bricks: "Small Fry. On your own? ...Pocket's got room. Just till we find her folks." · Pebble: "(squeak, smaller)"
 - *Barks:* Bricks `not_firing`: "...You okay, Thorn?" · Bricks `wave_cleared` (after the rescue): "She's not a pest, she's a passenger. Don't make it weird." · QUILL `skitterkin_killed_ahead`: "Logged. ...I'm logging the small ones separately now."
-- *Codex:* annotations begin. Brood Hauler annotated (QUILL's half), Facet Warden, Lightwing, a "Pebble" entry QUILL refuses to file ("Entry withheld.").
+- *Codex:* annotations begin. Brood Hauler annotated (QUILL's half), Weft Warden, Lightwing, a "Pebble" entry QUILL refuses to file ("Entry withheld.").
 - *Debrief:* Bricks reads the memo: "'Pension Restructuring Opportunity.' Nineteen years, restructured into a coupon. Ha."
 - *Memo after:* `memo_a2_03` *Pension Restructuring Opportunity!* (to Okonkwo, cc you).
 
 **Medals.** Victory · Perfect Core · **Clear Skies:** no Lightwing leaks. (No medal rewards or punishes sparing anyone.)
-**Rewards.** Stardust 210 · Intel 3. **Sets** `held_fire_second_look` when at least 50% of the map's `fleeing` units leaked **and** Hold Fire was used at least once ([core-loop.md §2.7](../../design/core-loop.md#27-hold-fire)).
-**Par build.** Zapcoil, Sprinkler (Cloudburst), Rivet, Skyhook. Zapcoil + Sprinkler on the pump station (Conductive, Soaked for the Wardens); Zapcoil + Rivet + Skyhook under the air lane. Target 77. **Alt builds:** Zapcoil + Thumper + Lookout (Zapcoil ×3 for shields and air); Sprinkler (Soaked) + Rivet + Thumper + Lookout. `noCounterBuild`: no Energy damage at all (must lose by W8).
+**Rewards.** Stardust 210 · Intel 3. **Sets** `held_fire_second_look` when at least 50% of the map's `fleeing` units leaked **and** plain Hold Fire was used at least once; the Spare runners filter alone doesn't count ([core-loop.md §2.7](../../design/core-loop.md#27-hold-fire)).
+**Par build.** Zapcoil, Sprinkler (Cloudburst), Rivet, Skyhook. Zapcoil + Sprinkler on the pump station (Conductive, Soaked for the Wardens); Zapcoil + Rivet + Skyhook under the air lane. Target 77. **Alt builds:** Zapcoil + Thumper + Lookout (Zapcoil ×3 for shields and air); Sprinkler (Soaked) + Zapcoil + Thumper + Lookout (one Zapcoil on the Wardens and the Lightwings, Thumper into Soaked shields). `noCounterBuilds`: **no-shield**, Rivet + Thumper + Skyhook + Lookout, no Energy and no Soaked (must lose by W8); **no-air**, Zapcoil + Sprinkler (no Cloudburst) + Thumper + Lookout, none of them in reach of the air lane (must lose by W8); **no-splash**, Rivet + Sprinkler (Soaked) + Skyhook + Lookout, no Zapcoil or Thumper (must lose by W8).
 
 ## A2M4 · Second Harvest
 
@@ -120,14 +120,16 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
   - w10 Sterling: "Throughput is up, morale is up, everything is up! Keep that plant safe, Four-Forty-Seven!"
 - *Barks:* Zibzab `skitterkin_killed_ahead`: "That one was worth eight stardust. Price first. I won't pretend." · QUILL `wave_cleared` (after the scene): "...Pests processed." · Zibzab `perfect_wave`: "Good work. Zibzab is careful what he calls good."
 - *Results:* `memo_a2_04` *Your Q3 Performance Bonus!* arrives **on the results screen** (+400 Stardust), so the bank is full when C2 is offered.
-- *Debrief:* Sterling: "Reclamation is a sustainability initiative, Four-Forty-Seven! Nothing on Tumble IV goes to waste. Isn't that beautiful?" · then "Let's call it the Humane Relocation Pilot. My budget, my risk. Just trust me, okay?" Then **C2** ([../campaign.md §6](../campaign.md#6-choice-and-flag-ledger)).
+- *Debrief:* Sterling: "Reclamation is a sustainability initiative, Four-Forty-Seven! Nothing on Tumble IV goes to waste. Isn't that beautiful?" · then "Let's call it the Humane Relocation Pilot. My budget, my risk. Just trust me, okay?" Then **C2**, Zibzab's offer (the options are in [../campaign.md §6.1](../campaign.md#61-the-choices)):
+  - Zibzab: "Price first. Two offers. I sell your stardust at market. Or I carry it home, at cost, plus my fee."
+  - Zibzab: "Neither one is wrong. The dead don't mind being useful. They mind being forgotten."
 - *Base:* Bricks hands Pebble over at Dome 3: "She's yours tonight, Goldie. She bites." · Pebble: "(squeak) Only a little." · Goldie takes her in: "She can sleep in the butterheads. She doesn't eat them. She just... sits in them. Like a little egg."
 - *Codex:* Second Harvest (original: "A sustainability success story!"), Veilwalker, Blinkstrider, Tidybot annotated, Stardust annotated, Kip Act II portrait.
 - *Memo after:* `memo_a2_05` *Humane Relocation Pilot: Next Steps!* (small print: "Preserve capacity planned per Protocol BP-2359.")
 
 **Medals.** Victory · Perfect Core · **Nothing Unseen:** every Veilwalker is revealed before it passes Intake B. **Objective Intel +1, Intake Manifest:** clear the intake wreckage (unlocks the manifest codex entry: tonnages, no names).
-**Rewards.** Stardust 225, plus the 400 Q3 Bonus on the results screen · Intel 3 (+1) · C2 may add 4–10 Intel ([progression.md §2.1](../../design/progression.md#21-story-hooks)).
-**Par build.** Lookout, Rivet, Zapcoil (Overload; its specs are bought just before this map), Sprinkler. Lookout + Rivet adjacent (Overwatch) at the yard entrance; Zapcoil (Overload) at the vats; Rivet + Zapcoil deep on the route so blinkers land in fire. Target 74. **Alt builds:** Lookout + Zapcoil + Skyhook + Thumper; Lookout + Sprinkler (Soaked) + Skyhook + Thumper. `noCounterBuild`: no Lookout and no Scanner Sweep (must lose by W8).
+**Rewards.** Stardust 225, plus the 400 Q3 Bonus on the results screen · Intel 3 (+1) · C2 Sell adds 3–8 Intel ([progression.md §2.1](../../design/progression.md#21-story-hooks)).
+**Par build.** Lookout, Rivet, Zapcoil (Overload; its specs are bought just before this map), Sprinkler. Lookout + Rivet adjacent (Overwatch) at the yard entrance; Zapcoil (Overload) at the vats for the Mote clusters; Rivet + Zapcoil deep on the route so blinkers land in fire. Target 74. **Alt builds:** Lookout + Zapcoil + Skyhook + Thumper; Lookout + Sprinkler (Soaked) + Skyhook + Thumper. `noCounterBuilds`: **no-detection**, Rivet + Zapcoil + Sprinkler + Thumper, no Lookout and no Scanner Sweep (must lose by W8); **no-shield**, Lookout + Rivet + Thumper + Skyhook, no Energy and no Soaked (must lose by W8); **no-splash**, Lookout + Rivet + Sprinkler (Soaked) + Skyhook, no Zapcoil or Thumper (must lose by W8).
 
 ## A2M5 · The Long Walk
 
@@ -155,7 +157,7 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Medals.** Victory · Perfect (no refugee lost) · **Kneel:** force the pivot by breaking the Penitent to 50% before W6 starts.
 **Rewards.** Stardust 240 · Intel 3. Prism Spire. Mindspike and Lantern attunable.
-**Par build.** Zapcoil (Overload), Lookout, Rivet, Thumper. Zapcoil + Lookout mid-road for Cantors and the cloaked shards; Thumper ×2 near the Ward for the Mote surges after the pivot. The Ward's chill does real work; the harness must see it. Target 71 (Evacuated %, on the escort band). **Alt builds:** Lookout + Zapcoil + Sprinkler + Skyhook; Lookout + Sprinkler (Soaked) + Thumper + Skyhook. `noCounterBuild`: no Lookout (the shards keep the shield up; must lose before the pivot or right after).
+**Par build.** Zapcoil (Overload), Lookout, Rivet, Thumper. Zapcoil + Lookout mid-road for Cantors and the cloaked shards; Thumper ×2 near the Ward for the Mote surges after the pivot. The Ward's chill does real work; the harness must see it. Target 71 (Evacuated %, on the escort band). **Alt builds:** Lookout + Zapcoil + Sprinkler + Skyhook; Lookout + Sprinkler (Soaked) + Thumper + Skyhook. `noCounterBuilds`: **no-detection**, Zapcoil + Rivet + Thumper + Sprinkler, no Lookout and no Scanner Sweep (the shards keep the shield up; must lose before the pivot or right after); **no-shield**, Lookout + Rivet + Thumper + Skyhook, no Energy and no Soaked (the Cantor waves leak through; must lose by W5); **no-splash**, Lookout + Rivet + Sprinkler (Soaked) + Skyhook, no Zapcoil or Thumper (the post-pivot Mote surges pass `maxLost`; must lose by W8).
 
 ## A2M6 · Sundown
 
@@ -175,8 +177,8 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
   - w04 Pebble (from the dome): "Keep 'em off the perimeter!"
   - w06 Bricks: "Everybody on the wall. Even the fancy one." · Ves'thara: "I heard that."
   - w09 Sterling (her moment of fear): "Do you know what happens to people who miss targets, Four-Forty-Seven? Neither do I. Nobody's ever seen one."
-  - w12 Goldie: "Lights out in Dome 3. Pebble's asleep in the butterheads. Don't let anything wake her."
-- *Barks:* Ves'thara `tower_built` (the first Prism after W8): "Build the Spire there. I will hold the light." · Ves'thara `new_enemy` fracture: "It breaks. It does not end. Remember that." · Ves'thara `perfect_wave`: "Good. Again." · QUILL `wave_cleared` (in the dark): "Knock knock. ...I've forgotten the rest. That's never happened before."
+  - w12 (full dark) Goldie: "Lights out in Dome 3. Pebble's asleep in the butterheads. Don't let anything wake her." · QUILL: "Knock knock. ...I've forgotten the rest. That's never happened before."
+- *Barks:* Ves'thara `tower_built` (the first Prism after W8): "Build the Spire there. I will hold the light." · Ves'thara `new_enemy` fracture: "It breaks. It does not end. Remember that." · Ves'thara `perfect_wave`: "Good. Again."
 - *Debrief (Ves'thara's mother):* Ves'thara: "Rig Nine bored into the oldest chamber. The Watch sang our dead there. My mother, Ishael, among them." · Ves'thara: "She is in it now. In the shapes we broke tonight. I have been fighting for her for three years." · Bricks: (silence, 2 s) "...I'm sorry." · Ves'thara: "Do not be sorry, Old Soldier. Be awake."
 - *Base scene* `base_a2_loophole` (QUILL's partial confession, its own scene): QUILL: "There are things I am not permitted to tell you. I am permitted to tell you that. It's a loophole. I found it myself."
 - *Base vignette* `base_a2_whistle`: Bricks tries to teach Pebble to whistle. She can't. She hums instead: a low family hum, not the jingle.
@@ -185,4 +187,4 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Medals.** Victory · Perfect Core · **Before the Dark:** no leaks in the last three waves.
 **Rewards.** Stardust 260 · Intel 3.
-**Par build.** Prism, Thumper (Cluster), Skyhook, Rivet. Thumper ×2 at the inner merge for Fracture splits; Skyhook ×2 under the air lane; Prism on the watchtower, holding the light over the merge for the late surges. Stillness on Rift Moth flocks. Target 68. **Alt builds:** Prism + Thumper + Zapcoil + Sprinkler (Cloudburst); Rivet + Skyhook + Zapcoil + Lookout. `noCounterBuild`: no splash (must lose by W9 to Fracture children).
+**Par build.** Prism, Thumper (Cluster), Skyhook, Rivet. Thumper ×2 at the inner merge for Fracture splits; Skyhook ×2 under the air lane; Prism on the watchtower, holding the light over the merge for the late surges. Stillness on Rift Moth flocks. Target 68. **Alt builds:** Prism + Thumper + Zapcoil + Sprinkler (Cloudburst); Rivet + Skyhook + Zapcoil + Lookout. `noCounterBuilds`: **no-splash**, Prism + Rivet + Skyhook + Sprinkler, no Thumper or Zapcoil (must lose by W9 to Fracture children); **no-air**, Thumper (Cluster) + Sprinkler (no Cloudburst) + Lookout, nothing in reach of the air lane (must lose by W10).

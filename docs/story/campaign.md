@@ -4,7 +4,7 @@ The authoritative campaign: the order of maps, what each one introduces, its cho
 
 **The per-map entries** (story beats, waves, lines, medals, rewards, par builds) live in four files, one heading per map:
 - [campaign/act1.md](campaign/act1.md): Act I, *Pest Control* (A1M1–A1M5), plus the Joke of the Shift table
-- [campaign/act2.md](campaign/act2.md): Act II, *First Contact* (A2M1–A2M6), plus the fleeing-Skitterkin rule
+- [campaign/act2.md](campaign/act2.md): Act II, *First Contact* (A2M1–A2M6), plus the fleeing-Skitterkin summary
 - [campaign/act3.md](campaign/act3.md): Act III, *The Quiet* (A3M1–A3M6)
 - [campaign/finale.md](campaign/finale.md): *Clearing the Way* (FIN)
 
@@ -46,7 +46,7 @@ Every map has three medals: **Victory**, **Perfect Core** (Escort: no refugee lo
 | A1M5 | [Record Quarter](campaign/act1.md#a1m5--record-quarter) | I | Defend + boss | Northern Gate (`act1`) | 10 | Digger, **Matriarch Chitterbloom** | Lookout Shack stocked after | Bricks + Bricks ally | **C1** (implicit) | Party Pooper Prevention |
 | A2M1 | [Rig Nine](campaign/act2.md#a2m1--rig-nine) | II | Defend | The Diggings (`act2.gold`) | 10 | Mote | Harpoon and Crane stocked, Scanner Sweep in R&D after | Bricks | — | Hiccup Contained |
 | A2M2 | [The Glass Witch](campaign/act2.md#a2m2--the-glass-witch) | II | Protect the rigs + boss | Ridge Rigs (`act2.gold`) | 11 | Glimmer, **The Glass Witch** | — | QUILL (Time Dilation) | — | Glass Half Empty |
-| A2M3 | [Second Look](campaign/act2.md#a2m3--second-look) | II | Defend (revisit A1M2) | The Terraces at dusk (`act2.gold`→`act2.dusk`) | 11 | Facet Warden, Lightwing | — | Bricks | — | Clear Skies |
+| A2M3 | [Second Look](campaign/act2.md#a2m3--second-look) | II | Defend (revisit A1M2) | The Terraces at dusk (`act2.gold`→`act2.dusk`) | 11 | Weft Warden, Lightwing | — | Bricks | — | Clear Skies |
 | A2M4 | [Second Harvest](campaign/act2.md#a2m4--second-harvest) | II | Defend | Reclamation Facility 2 (`act2.dusk`) | 12 | Veilwalker, Blinkstrider | Q3 Bonus (+400 Stardust) on the results screen | Zibzab (Clearance Sale) | **C2** (debrief) | Nothing Unseen |
 | A2M5 | [The Long Walk](campaign/act2.md#a2m5--the-long-walk) | II | Defend → Escort (pivot) + boss | Preserve Road (`act2.dusk`) | 12 | Aegis Cantor, **Sunderglass Penitent** | Prism Spire (gift, debrief); Mindspike + Lantern attunable | Bricks | — | Kneel |
 | A2M6 | [Sundown](campaign/act2.md#a2m6--sundown) | II | Defend + Sundown | Colony perimeter (`act2.dusk`→night) | 14 | Fracture, Rift Moth | (Prism first use) | Ves'thara (Stillness) + Bricks ally | — | Before the Dark |
@@ -64,9 +64,10 @@ Every map has three medals: **Victory**, **Perfect Core** (Escort: no refugee lo
 
 Threats are counted by design's rules ([maps.md §6.3](../design/maps.md#63-one-new-thing-per-map)): an enemy and its new trait count as one threat, bosses built only from known mechanics are exempt (Chitterbloom, the Penitent, Shareholder Value, the Gathering Maw, the Unsung; **the Glass Witch counts**, because she previews shield pulses and blinking), a scripted story event counts as one (A3M2's Clean Exit cue carries the license revocation, the Orbital Strike revocation, and the QUILL lockout), and a map adds at most one new required-counter category. How the campaign applies them:
 
-1. **Fleeing groups carry no threat.** From A2M1 every Skitterkin enemy group is `fleeing` and leaks for 0 ([act2.md](campaign/act2.md)), so their traits appear in `threatIntel` as icons but never count toward a wave's threat or a required counter.
-2. **Story events, presentation modifiers (Revisit), economy modifiers (salvage yard, crash site), objective variants, allies, towers, abilities, and tiles are novelties, not threats.** At most one story event per map, always foreshadowed in the briefing.
-3. **Every map still introduces at least one new thing** (§4.7 lists them).
+1. **Fleeing groups carry no threat.** From A2M1 every Skitterkin enemy group is `fleeing` and leaks for 0 ([enemies.md § Fleeing Skitterkin](../design/enemies.md#fleeing-skitterkin)), so their traits appear in `threatIntel` as icons but count as 0 threat ([maps.md §6.2](../design/maps.md#62-threat-budget-planning-tool)) and never toward a required counter.
+2. **Counters are categories.** Required counters, the soft-enemy rule, and which traits are intel-only come from the trait table in [enemies.md §3.1](../design/enemies.md#31-counter-categories). Each required counter has exactly one no-counter build, which leaves out every answer in that category; no alt build may lack an answer to a required counter ([maps.md §6.1](../design/maps.md#61-per-act-targets)). The act files list each map's builds.
+3. **Story events, presentation modifiers (Revisit), economy modifiers (salvage yard, crash site), objective variants, allies, towers, abilities, and tiles are novelties, not threats.** At most one story event per map, always foreshadowed in the briefing.
+4. **Every map still introduces at least one new thing** (§4.7 lists them).
 
 ---
 
@@ -81,7 +82,7 @@ Specs are bought in R&D ([progression.md §7.1](../design/progression.md#71-engi
 | Tower | Available from | How | Designed first use | Specs purchasable from | Link debut |
 |---|---|---|---|---|---|
 | Rivet Autoturret | A1M1 | Issued | A1M1 W1 | after A1M4 | Crossfire A1M1 |
-| Thumper Mortar | A1M1 (build button unlocks at W3) | Issued | A1M1 W3 | after A1M4 | Crossfire A1M1; Sitting Ducks A1M2 |
+| Thumper Mortar | A1M1 (build button unlocks when W3's countdown starts) | Issued | A1M1 W3 | after A1M4 | Crossfire A1M1; Sitting Ducks A1M2 |
 | Frostline Sprinkler | A1M2 | Issued | A1M2 | after A1M4 | Sitting Ducks A1M2; Conductive A1M4 |
 | Skyhook Flak Battery | A1M3 | Issued | A1M3 W3 | after A1M4 | Skywatch A2M4 |
 | Zapcoil | Shop opens after A1M3 | Sample ("Price first: your next visit.") | A1M4 | after A1M4 | Conductive A1M4; Resonance A2M6 |
@@ -105,12 +106,12 @@ Specs are bought in R&D ([progression.md §7.1](../design/progression.md#71-engi
 |---|---|---|---|---|
 | Orbital Strike | Technician | A1M1 (welcome memo gift) | Revoked mid-wave A3M2 (Mk II Intel refunded) | A1M1 W5 prompt |
 | Suppressing Fire | Companion (Bricks) | A1M1 | Companion through A3M3; **Technician from A3M5** (granted in A3M4's closing scene) | A1M1 W4 prompt |
-| Time Dilation | Companion (QUILL) | A1M3 | Lost for good under C4 Purge; dark for finale Phase 2 under C4 Keep | A1M3 W5 |
+| Time Dilation | Companion (QUILL) | A1M3 | Lost for good under C4 Purge. Under C4 Keep it is also an equippable Technician ability from A3M5 through finale Phase 1, and dark for Phase 2 | A1M3 W5 |
 | Clearance Sale | Companion (Zibzab) | A1M4 | — | A1M4 W1 |
 | Scanner Sweep | Technician | R&D after A2M1 (2 Intel) | — | A2M4 (optional detection) |
 | Stillness | Companion (Ves'thara) | A2M6 (she is the Ward ally in A2M5) | — | A2M6 W5 vs Rift Moths |
 | Underfoot | Companion (Bramble) | A3M1 | Finale pick list | A3M1 W4 vs the first Maw |
-| System Reboot | Technician | A3M4 briefing (QUILL patches it in; kept under every C4) | — | A3M4 W4, first Silencer |
+| System Reboot | Technician | A3M4 briefing (QUILL patches it in; kept under every C4) | Unavailable in A3M5 under C4 Rewrite (QUILL is offline) | A3M4 W4, first Silencer |
 
 Between A3M2's revocation and A3M4, slot 1 holds only Scanner Sweep if the player bought it; otherwise it is empty. At the Gap the player has only Bricks's ability. That is intended.
 
@@ -129,14 +130,14 @@ Between A3M2's revocation and A3M4, slot 1 holds only Scanner Sweep if the playe
 | Mote | A2M1 W3 | A2M1 W6, W9 | Every later map | First Hollow; first hush and the Heavy tell |
 | Glimmer | A2M2 W2 | A2M2 W4–5 | A2M3, A2M4, A2M5 | First shields |
 | **The Glass Witch** | A2M2 W11 | — | — | Retreats at 40% |
-| Facet Warden | A2M3 W4 | A2M3 W7 | A2M4 W8, A2M5 W2 | |
+| Weft Warden | A2M3 W4 | A2M3 W7 | A2M4 W8, A2M5 W2 | |
 | Lightwing | A2M3 W6 | A2M3 W7 | A2M4 W8, A2M5 W4 | |
 | Veilwalker | A2M4 W3 | A2M4 W7 | A2M4 W11, A2M5 (cloaked shards) | First cloak |
 | Blinkstrider | A2M4 W6 | A2M4 W9 | A2M5 W3 | |
 | Aegis Cantor | A2M5 W1 | A2M5 W2, W4 | Penitent pulses W5 | |
 | **Sunderglass Penitent** | A2M5 W5 | — | — | `pivot` at 50% or when W6 starts |
 | Fracture | A2M6 W3 | A2M6 W6 | A3M1 onward | |
-| Rift Moth | A2M6 W5 | A2M6 W9 | A3M1, A3M3, A3M4, A3M5, A3M6, FIN | |
+| Rift Moth | A2M6 W5 | A2M6 W9 | A3M1, A3M3, A3M4, A3M6, FIN | |
 | Maw | A3M1 W4 | A3M1 W7, W12 | A3M3, A3M6 | Gathers refugees on escorts |
 | Compliance Drone | A3M2 W3 | A3M2 W4, W6 | A3M4, A3M5 (boss hangar), A3M6, FIN | Everglow Security debut |
 | Expediter | A3M2 W5 | A3M2 W6, W9 | A3M4, A3M5, A3M6 | |
@@ -222,6 +223,7 @@ Revisits keep the original map's pads unchanged and add new pads only in the out
 | Pest Bounty Board, Stardust payout | A1M2 | Kip's row "on assignment" A2M4; gone A3M1 |
 | Bricks's name tags | A1M2 (Denise) | `{name}` at A3M3; silence at A3M4 |
 | Hold Fire | A1M3 (Gerald) | Quiet Wave A1M5; Gerald again A3M4 |
+| Spare runners filter (Alt+H) | A2M1 (QUILL's "firmware update" line) | The `spareFleeing` harness run from A2M1; `held_fire_second_look` still needs plain Hold Fire |
 | Zibzab's shop, Field Protocol slot 1, the early ask | After A1M3 (FP slot 2 in R&D from then) | |
 | Loadout choice | A1M4 | |
 | R&D Engineering, tier-4 specializations | After A1M4; first in-map T4 A1M5 | |
@@ -246,9 +248,9 @@ New threats per map under §3 (≤ 2), and the other new things that satisfy "so
 | A1M3 | Puffwing (+air lane) | Skyhook, Hold Fire, Gerald, wreckage, Time Dilation, shop, the optional bark button |
 | A1M4 | Elder, Bunchling | Zapcoil, loadout choice, salvage yard, Clearance Sale |
 | A1M5 | Digger, second spawn | First boss (capstone), T4 specs, Quiet Wave |
-| A2M1 | Mote (with the hush), Skittish | Fleeing groups, kill-order bark, checkpoints, Act II presentation |
+| A2M1 | Mote (with the hush), Skittish | Fleeing groups, the Spare runners filter, kill-order bark, checkpoints, Act II presentation |
 | A2M2 | Glimmer, Glass Witch | Protect objective, in-stage boss dialogue, retreat |
-| A2M3 | Facet Warden, Lightwing | Revisit, codex annotations, Pebble, the clickable rescue |
+| A2M3 | Weft Warden, Lightwing | Revisit, codex annotations, Pebble, the clickable rescue |
 | A2M4 | Veilwalker, Blinkstrider | Lookout as a required counter, Q3 Bonus, C2 |
 | A2M5 | Aegis Cantor | Capstone Penitent, pivot, Escort, Ward ally, Prism gift |
 | A2M6 | Fracture, Rift Moth | Prism, Stillness, Sundown |
@@ -262,28 +264,28 @@ New threats per map under §3 (≤ 2), and the other new things that satisfy "so
 
 ### 4.8 Counter coverage
 
-Per map: the **threat intel** (`threatIntel`: every trait present in the waves, shown as icons), the **required counters** (`requiredCounters`: ≤ 3, each backed by a `noCounterBuild` that must lose), and how the guarantee in [progression.md §8](../design/progression.md#8-tower-acquisition) holds on the default path ([enemies.md §7](../design/enemies.md#7-wave-design-rules)). A trait in the intel but not required is soft: it makes up ≤ 15% of any wave's threat, and fleeing groups count for none (§3). Licensing must cost ≤ the previous map's first-clear Stardust (§4.9).
+Per map: the **threat intel** (`threatIntel`: every trait present in the waves, shown as icons), the **required counters** (`requiredCounters`: ≤ 3 categories from [enemies.md §3.1](../design/enemies.md#31-counter-categories), each backed by one `noCounterBuild` that must lose; the builds are in each map's act-file entry), and how the guarantee in [progression.md §8](../design/progression.md#8-tower-acquisition) holds on the default path ([enemies.md §7](../design/enemies.md#7-wave-design-rules)). An enemy whose category-mapped traits are all outside the required set is **soft**: soft enemies make up ≤ 15% of any wave's threat (a map's `teach: true` wave for a new soft trait is exempt), intel-only traits never make an enemy soft, and fleeing groups count for none (§3). Licensing must cost ≤ the previous map's first-clear Stardust (§4.9). A map adds at most one new category; the **new** column shows it.
 
-| Map | Threat intel | Required counters | Guaranteed answer (owned, free, or affordable) |
-|---|---|---|---|
-| A1M1 | Fast | Splash | Thumper |
-| A1M2 | Fast, Armored (light) | Armor | Rivet T3 pierce, Thumper |
-| A1M3 | Fast, Armored, Flying | Air | Skyhook (issued this map), Rivet |
-| A1M4 | Fast, Armored, Splitting, Huddle | Splash | Thumper, Zapcoil |
-| A1M5 | Fast, Flying, Armored, Splitting, Huddle, Burrowing, Boss | Air, Splash | Skyhook, Rivet, Thumper; burrowing is not required |
-| A2M1 | Skittish (fleeing: Fast, Flying, Burrowing, Armored, Splitting, Huddle), Hollow clusters | Splash | Thumper, Zapcoil |
-| A2M2 | Skittish (fleeing), Shielded, Boss | Shield | Zapcoil, Sprinkler T3 |
-| A2M3 | Skittish (fleeing), Shielded (heavy), Flying + shielded | Shield, Air | Zapcoil, Sprinkler T3 Soaked; Skyhook, Rivet |
-| A2M4 | Skittish (fleeing), Cloaked, Blink, Shielded, Flying | Detection, Shield, Air | Lookout (150 ≤ 210); Scanner Sweep; Zapcoil |
-| A2M5 | Shield aura, Cloaked (boss shards), Hollow clusters | Shield, Detection | Zapcoil, Lookout |
-| A2M6 | Splitting, Flying + Phasing | Air, Splash | Skyhook, Rivet, Prism (gift), Thumper |
-| A3M1 | Gathering, Flying + Phasing, Splitting, Rift | Splash, Air | Thumper, Skyhook, Scuttle Den (gift), Underfoot |
-| A3M2 | Armored, Haste aura, Splitting (light), Rift | Armor | Harpoon (licensed before this map; 250 ≤ 280), Mindspike; survives either Everglow class revoked |
-| A3M3 | Burrowing, Gathering, Splitting, Flying + Phasing, Rift | Burrowed, Air | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon) |
-| A3M4 | Jammer, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Rift | Jam, Armor, Air | System Reboot (free), Hum Choir (gift by now on both C1 paths); Harpoon, Mindspike, Gloop (warren), jailbroken class |
-| A3M5 | Jammer, Healer aura, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Boss | Jam, Armor, Air | System Reboot, Hum Choir; Harpoon, Mindspike, Gloop (warren) |
-| A3M6 | Flying + armored, Cloaked + armored, Flying + Phasing, Gathering, Splitting, Haste aura, Rift, Boss | Air, Detection, Armor | Sproing (gift A3M5), Harpoon, Mindspike; Lookout or Lantern |
-| FIN | Flying, Jammer, Burrowing, Splitting, Gathering, Phasing, Armored, Healer aura, Cloaked (light), Boss | Air, Jam, Burrowed | Sproing, Skyhook/Harpoon; Hum Choir, System Reboot; Scuttle Den, Underfoot |
+| Map | Threat intel | Required counters | New | Soft here | Guaranteed answer (owned, free, or affordable) |
+|---|---|---|---|---|---|
+| A1M1 | Fast | — (none; the tutorial, [maps.md §6.4](../design/maps.md#64-balance-harness)) | — | — | — |
+| A1M2 | Fast, Armored (light) | Armor | armor | — | Rivet T3 pierce, Thumper |
+| A1M3 | Fast, Armored, Flying | Air, Armor | air | — | Skyhook (issued this map), Rivet; Rivet T3, Thumper |
+| A1M4 | Fast, Armored, Splitting, Huddle | Splash, Armor | splash | — | Thumper, Zapcoil; Rivet T3, Thumper |
+| A1M5 | Fast, Flying, Armored, Splitting, Huddle, Burrowing, Boss | Air, Splash, Armor | — | Diggers (W2 is the burrowing teach wave) | Skyhook, Rivet; Thumper, Zapcoil; Rivet T3, Thumper (Bunker Buster) |
+| A2M1 | Skittish (fleeing: Fast, Flying, Burrowing, Armored, Splitting, Huddle), Hollow clusters | Splash | — | — | Thumper, Zapcoil |
+| A2M2 | Skittish (fleeing), Shielded, Hollow clusters, Boss | Shield, Splash | shield | — | Zapcoil, Sprinkler T3; Thumper |
+| A2M3 | Skittish (fleeing), Shielded (heavy, light armor), Flying + shielded, Hollow clusters | Shield, Air, Splash | — | — | Zapcoil, Sprinkler T3 Soaked; Skyhook, Rivet; Thumper |
+| A2M4 | Skittish (fleeing), Cloaked, Blink, Shielded, Flying + shielded, Hollow clusters | Detection, Shield, Splash | detection | — (every flyer is also shielded) | Lookout (150 ≤ 210), Scanner Sweep; Zapcoil; Thumper |
+| A2M5 | Shield aura, Shielded, Cloaked (boss shards), Blink, Hollow clusters | Shield, Detection, Splash | — | — | Zapcoil, Lookout, Thumper |
+| A2M6 | Splitting, Hollow clusters, Flying + Phasing | Air, Splash | — | — | Skyhook, Rivet, Prism (gift); Thumper |
+| A3M1 | Gathering, Flying + Phasing, Splitting, Hollow clusters, Rift | Splash, Air | — | — | Thumper, Underfoot; Skyhook; Scuttle Den (gift) |
+| A3M2 | Armored, Haste aura, Splitting, Hollow clusters, Rift | Armor, Splash | — | — | Harpoon (licensed before this map; 250 ≤ 280), Prism; Thumper or Zapcoil; survives either Everglow class revoked |
+| A3M3 | Burrowing, Gathering, Splitting, Hollow clusters, Flying + Phasing, Rift | Burrowed, Air, Splash | burrowed | — | Scuttle Den; non-Everglow air (Zapcoil, Prism, Harpoon); Thumper (the class not revoked) or Zapcoil |
+| A3M4 | Jammer, Heavy armor, Armored, Haste aura, Flying + Phasing, Splitting (light), Hollow clusters (light), Rift | Jam, Armor, Air | jam | Mote and Fracture screens | System Reboot (free), Hum Choir (gift by now on both C1 paths); Harpoon, Prism, Gloop (warren), the jailbroken class; Rivet, Harpoon, Mindspike |
+| A3M5 | Jammer, Healer aura, Heavy armor, Armored, Haste aura, Splitting, Hollow clusters, Boss | Jam, Armor, Splash | — | — | System Reboot (not under Rewrite), Hum Choir; Harpoon, Prism, Gloop (warren); Thumper |
+| A3M6 | Flying + armored, Cloaked + armored, Armored, Flying + Phasing, Gathering, Haste aura, Hollow clusters (light), Rift, Boss | Air, Detection, Armor | — | Mote screens | Sproing (gift A3M5), Harpoon; Lookout or Lantern; Harpoon, Prism |
+| FIN | Flying, Flying + armored, Jammer, Splitting, Hollow clusters, Gathering, Phasing, Burrowing (light), Armored (light), Healer aura, Cloaked (light), Boss | Air, Jam, Splash | — | Undertows, armored and cloaked units | Sproing, Skyhook, Harpoon; Hum Choir, System Reboot; Gloop (both paths by now), Thumper, Mindspike [Echo Spike] |
 
 ### 4.9 Shop stock and the reference profile
 
@@ -329,7 +331,7 @@ The entries live in the act files. Their headings, in order:
 
 ## 6. Choice and flag ledger
 
-Flags are declared in `content/dialogue/flags.ts` ([bible.md §9](bible.md#flag-summary)). Scripts read flags but never set them; story sets them at map end or in dialogue ([maps.md §5.3](../design/maps.md#53-map-scripts)).
+Flags are declared in `content/dialogue/flags.ts`. **§6.2 is the canonical flag table**; [bible.md § Flag summary](bible.md#flag-summary) is a short summary that points here. Scripts read flags but never set them; story sets them at map end or in dialogue ([maps.md §5.3](../design/maps.md#53-map-scripts)).
 
 ### 6.1 The choices
 
@@ -351,11 +353,11 @@ Two smaller voice choices carry no flag: the A3M1 confession reply (earnest / wr
 | `peeker_poked` | bool | Clicking the Peeker on any Act I map | **A3M6 w03** Pebble's rock line (two variants) |
 | `spared_quiet_wave` | bool | A1M5 end (silent) | A1M5 results stamp + memo paragraph; **A2M2** Ves'thara's opening line; **A3M1** Thrum alive and reunited (else Pebble's news), the C1 echo, **Hum Choir at A3M1 debrief** (else A3M4); A3M5 and A3M6 Pebble quoting "Grandmother" vs Bramble; **FIN** Thrum beside Pebble (+0.5 song radius), or (cleared) Thrum's echo laid to rest in Phase 2; epilogue card 3 |
 | `asked_zibzab_early` | bool | Zibzab's shop, after A1M3 through before A2M4 | **A2M4** truth scene: "You asked me in the afternoon. I told you. You kept buying." |
-| `held_fire_second_look` | bool | A2M3 end: at least 50% of the map's `fleeing` units leaked **and** Hold Fire was used at least once | **A3M1 w03** Bramble's line. No mechanical effect, no medal, no false negative line |
+| `held_fire_second_look` | bool | A2M3 end: at least 50% of the map's `fleeing` units leaked **and** plain Hold Fire was used at least once (the Spare runners filter alone doesn't count) | **A3M1 w03** Bramble's line. No mechanical effect, no medal, no false negative line |
 | `stardust_choice` | `sold` / `returned` / `none` | A2M4 debrief (C2) | `sold`: Intel windfall + Zibzab Tune-up immediately; `returned`: **A3M1 w05** line, **FIN** the Returned (two bearers) and **w15** line; `none`: Zibzab's "No refunds. I did say."; epilogue card 5 |
 | `door_choice` | `convoy` / `warren` | A3M3 briefing (C3) | **A3M3** which refugees cross; **A3M4** jailbreak free (convoy) or 300; Gloop at A3M4 (warren) or A3M6 (convoy); shelter dressing (HE HELD THE DOOR, or the hum ring); **A3M6 and FIN** militia posts (convoy); FIN choir size; Goldie's A3M4 line; epilogue card 2 |
-| `quill_choice` | `purge` / `keep` / `rewrite` | A3M4 debrief (C4) | **Night Shift** line; **A3M5** QUILL offline (rewrite); QUILL's voice A3M5–FIN (purge: status-bar portrait, flat lines, no jokes); the mechanics in [core-loop.md §6.11](../design/core-loop.md#611-quills-directives-c4-in-play) (purge: −2 Everglow armor from A3M5, the Bore at 75% speed, Time Dilation gone, Rapport refunded; keep: Time Dilation dark in Phase 2); **FIN Phase 2** log / knock-knock + revocation / silence, and the rest multiplier; epilogue card 4 |
-| `ending_choice` | `stay` / `go` | After FIN (C5) | Epilogue cards 1, 2 (`go` variant), 4, 8, 9, 10, 12; final HUD image |
+| `quill_choice` | `purge` / `keep` / `rewrite` | A3M4 debrief (C4) | **Night Shift** line; **A3M5** QUILL offline (rewrite); QUILL's voice A3M5–FIN (purge: status-bar portrait, flat lines, no jokes); the mechanics in [core-loop.md §6.11](../design/core-loop.md#611-quills-directives-c4-in-play) (purge: −2 Everglow armor from A3M5, the Bore at 75% speed, Time Dilation gone, Rapport refunded; keep: Time Dilation as a Technician ability from A3M5 through FIN Phase 1, dark in Phase 2; rewrite: no System Reboot in A3M5); **A3M6 briefing** QUILL's own list (rewrite); **FIN Phase 2** log (rewrite) / knock-knock + revocation (keep) / silence (purge), and the rest multiplier; epilogue card 4 (with `ending_choice`) |
+| `ending_choice` | `stay` / `go` | After FIN (C5) | Epilogue cards 1, 2 (`go` variant), 4, 8, 9, 10, 12; final image |
 
 **Save state that behaves like a flag** (owned by [progression.md §11](../design/progression.md#11-what-persists)): the lifetime Pests Processed (A2M2 read-aloud, the A3M2 log header, the FIN countdown, `REMEMBERED`), the revoked class (A3M2 → jailbreak), `memorialTower` and the `{name}` plate (A3M3 → FIN), `bricksTagIndex`, the callsign.
 
@@ -408,8 +410,5 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 
 Items this campaign needs from design, tech, or art. Each is stated as the campaign assumes it.
 
-1. **A `skitterkin_hushed` bark trigger** (A2M1's "It caught one. It's heavier now."): fires the first time a Hollow unit hushes a fleeing Skitterkin on a map. Fallback: a script cue on the first hush.
-2. **Thrum's echo (FIN, cleared path):** a scripted, untargetable Elder-shaped Hollow echo that drifts into the song at rest progress 50% and is laid to rest by script. It needs a script action, not a unit the player fights.
-3. **Bramble's display name:** from A3M1 the companion and HUD show "Bramble"; the speaker id stays `chitterbloom`, and the Act I codex keeps Everglow's codename.
-4. **Fleeing groups and the soft-trait rule:** the campaign assumes fleeing units (leak 0) contribute no threat to the ≤ 15% check (§3).
-5. **Act I burrowing:** A1M5's W2 teach wave is all Diggers, so Burrowing isn't under 15% there. The campaign assumes Act I burrowing stays exempt as "not a hard requirement" (progression §8); otherwise the teach wave needs a Nibbler screen.
+1. **Thrum's echo (FIN, cleared path):** a scripted, untargetable Elder-shaped Hollow echo that drifts into the song at rest progress 50% and is laid to rest by script. It needs a script action, not a unit the player fights.
+2. **Bramble's display name:** from A3M1 the companion and HUD show "Bramble"; the speaker id stays `chitterbloom`, and the Act I codex keeps Everglow's codename.

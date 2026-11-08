@@ -12,7 +12,7 @@ Progression, currencies (Stardust and Intel, D001 #6), the shop, R&D, medals, an
 
 Meta turns a save into the inputs of a run:
 - **Modifiers.** `meta/modifiers.ts` turns owned upgrades, protocols, and difficulty into `SimConfig.modifiers`. It's a pure function over an ownership record, so `src/balance/profile.ts` calls the same function on a map's `referenceProfile` ([architecture.md § Sim public API](architecture.md#sim-public-api)).
-- **Pools.** The available loadout pool (owned minus revoked), the ability pool (owned minus revoked), the companion (or the finale's pick list), and `scriptFlags`.
+- **Pools.** The available loadout pool (owned minus revoked), the ability pool (owned minus revoked, minus the map's `lockedAbilities` whose condition holds), the companion (or the finale's pick list), and `scriptFlags`.
 - **Availability.** Every shop and R&D item has `availableAfter: MapId | null` in `content/upgrades/` ([design/progression.md](../design/progression.md)). An item shows in the shop or tree only once that map is completed. One Engineering purchase unlocks **both** tier-4 specializations of a tower, so the save stores tower ids, not spec ids.
 - **The loadout screen** is skipped when the player owns at most 4 tower types and has no protocol or ability choice to make ([design/core-loop.md §1](../design/core-loop.md#1-session-loop-between-maps)).
 
@@ -22,8 +22,8 @@ On win, loss, retry, or quit to menu, in this order:
 1. Add `stats.skitterkinKilled` to `save.stats.pestsProcessed`.
 2. Apply story run-end flag rules ([story-runtime.md § Flags](story-runtime.md#flags)).
 3. Copy `revoked` towers and abilities.
-4. Record medals. Leaks counted in `medalExemptLeaks` (Quiet Wave and `fleeing` units) never break Perfect Core. A run with `usedCheckpoint` ([architecture.md § Checkpoints](architecture.md#checkpoints)) can earn Victory but not Perfect or Challenge.
-5. Pay rewards: first-clear Stardust is the map's flat `stardust` value (A3M3 included), plus medal and objective Intel.
+4. Record medals. Leaks counted in `medalExemptLeaks` (`quiet_wave`, `fleeing`, and `youngling` units) never break Perfect Core. A run with `usedCheckpoint` ([architecture.md § Checkpoints](architecture.md#checkpoints)) can earn Victory but not Perfect or Challenge.
+5. Pay rewards by the table in [design/progression.md](../design/progression.md) §2: first-clear Stardust is the map's flat `stardust` value (A3M3 included), plus medal and objective Intel. **Defeat payouts can't be farmed:** a defeat on a map already completed pays 0 Stardust, and after a checkpoint retry `wavesResolved` counts only the waves resolved in this attempt from the run's `resumedFromWave` on ([architecture.md § Checkpoints](architecture.md#checkpoints)).
 6. Run the map's story transactions (below), then save.
 
 ## Story transactions
@@ -32,9 +32,11 @@ Named meta operations, so they're testable and idempotent (each records itself i
 - `grantQ3Bonus` (+400 Stardust), paid on **A2M4's results screen**.
 - `resolveC2(choice)`: Sell (bank → 0, Intel windfall, Zibzab Tune-up), Return (bank → 0), or none.
 - `buyJailbreak` (price 0 under `door_choice = convoy`).
-- `inheritAbility('suppressing_fire')`.
+- `inheritAbility(abilityId)`: a companion ability becomes an equippable Technician ability. `suppressing_fire` at the end of A3M4; `time_dilation` under C4 Keep (from A3M5 through finale Phase 1; the finale's Keep script revokes it for Phase 2).
+- `resolveC4(choice)`: Keep calls `inheritAbility('time_dilation')`; Purge removes QUILL from the finale pick list and refunds the Intel spent on QUILL's Companion Rapport. The rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
 - `revokeAbility` (refunding Orbital Strike Mk II Intel).
 - `grantGift(towerId)`.
+- `openCrate()`: Zibzab's A3M6 crate, applied when the A3M6 briefing ends (so it's live from W1), not at run end. Its contents are campaign data ([story/campaign/act3.md](../story/campaign/act3.md), A3M6).
 
 ---
 

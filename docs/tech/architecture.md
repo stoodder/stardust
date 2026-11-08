@@ -2,7 +2,7 @@
 
 How Stardust is built: the stack, the module layout, the sim/render boundary, content data shapes, and build and deploy. Related tech docs:
 - [story-runtime.md](story-runtime.md): map scripts, dialogue, flags, text tokens, barks, and the other story systems.
-- [meta-runtime.md](meta-runtime.md): meta progression, run end, checkpoints, and the save system.
+- [meta-runtime.md](meta-runtime.md): meta progression, run end, the story transactions, and the save system.
 - [conventions.md](conventions.md): code style, recipes, and the test loop in detail.
 - [art/tech-spec.md](../art/tech-spec.md): the isometric spec and the sprite format. The look is in [art/art-direction.md](../art/art-direction.md).
 
@@ -12,11 +12,11 @@ How Stardust is built: the stack, the module layout, the sim/render boundary, co
 > |---|---|---|
 > | **Modules** | `shared`, `content`, `sim`, `render`, `ui`, `app`, `balance`, `tools/` | `story` (A1M1's briefing is a static string in map data), `meta` (no saves or currencies), `audio` |
 > | **Content** (T111, T110, T105c) | `types.ts`, `define.ts`, `registry.ts`, `validate.ts`, `compile.ts`, `rules.ts`; towers `rivet`, `thumper`, `sprinkler` (tiers 1–3); enemies `nibbler`, `zoomer`, `chonk`; map `a1_m01`; ability `orbital_strike`. Sprinkler and Chonk are sim-tested but not placed on A1M1 | Tier-4 specs, links, medals, objectives, allies, companion (A1M1's `companion` is `null` until T207) |
-> | **Sim systems** (T102, T103, T105a/b, T113) | `applyCommands`, `waves`, `triggers` (only `unlockTowerClass`, compiled from `towerUnlockWave`: Thumper unlocks at W3), `status` (Chilled only), `abilities` (Orbital Strike only; no enemy abilities), `movement`, `towers` (hitscan Rivet, lobbed lead-targeting Thumper, Sprinkler aura), `projectiles`, `cleanup` (win/lose). Plus `applyPending()`, `hash()`, and per-system RNG streams | Allies, hold fire, links, jams, story stats beyond `skitterkinKilled` |
-> | **Commands** | `build`, `upgrade`, `sell`, `targeting`, `ability` (slot 1), `callWave` | `specialize` (T202), `holdFire` (T206), `clear`, `interact`, `scriptInput` |
+> | **Sim systems** (T102, T103, T105a/b, T113) | `applyCommands`, `waves`, `triggers` (only `unlockTowerClass`, compiled from `towerUnlockWave`: Thumper unlocks when W3's countdown starts), `status` (Chilled only), `abilities` (Orbital Strike only; no enemy abilities), `movement`, `towers` (hitscan Rivet, lobbed lead-targeting Thumper, Sprinkler aura), `projectiles`, `cleanup` (win/lose). Plus `applyPending()`, `hash()`, and per-system RNG streams | Allies, hold fire, the spare-runners filter, links, jams, story stats beyond `skitterkinKilled` |
+> | **Commands** | `build`, `upgrade`, `sell`, `targeting`, `ability` (slot 1), `callWave` | `specialize` (T202), `holdFire` and `spareRunners` (T206), `clear`, `interact`, `scriptInput` |
 > | **Events** | `EnemySpawned`, `EnemyDied`, `EnemyLeaked`, `ProjectileFired`, `ProjectileHit`, `TowerBuilt`, `TowerUpgraded`, `TowerSold`, `TowerClassUnlocked`, `WaveStarted`, `WaveCleared`, `AbilityUsed`, `MapWon`, `MapLost`, `CommandRejected` | Every story-facing event |
 > | **Render and UI** (T104, T112, T106, T115) | `BootScene`, `BattleScene`, sprite baker and gallery page, HUD, keyboard routing rule, Title and Results screens (the run's Pests Processed count; no medals) | Loadout, shop, dialogue, codex, star map |
-> | **Harness** (T108a) | Par wins; par margin in band; do-nothing loses; `noCounterBuilds.splash` (Rivet only) loses; `alwaysCallEarly` stays under the band top; determinism; invariants; runtime ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). A1M1's reference profile is empty | Monotonic chain (one map), `altBuilds` (from A1M4), Story difficulty, jam limit, flag and companion variants, Hold Fire variant, full-catalog check, par-purchasable check (trivially true with an empty profile) |
+> | **Harness** (T108a) | A1M1 has `requiredCounters: []`, so it has no no-counter builds. Its runs: do-nothing loses; par wins with its margin in band; a Rivet-only alt build (`altBuilds.rivet_only`) wins, with a lower margin than par; `alwaysCallEarly` stays at or under `min(band top, par margin + 10)`. Plus determinism, invariants, and runtime ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). A1M1's reference profile is empty | No-counter builds and the full-catalog check (no map in M1 has a required counter), monotonic chain (one map), the ≥ 2 `altBuilds` rule (from A1M4), Story difficulty, jam limit, flag and companion variants, Hold Fire and `spareFleeing` variants, par-purchasable check (trivially true with an empty profile) |
 > | **Smoke and hooks** (T101, T108b) | Boot, no console errors, every map boots, the M1 flow, the lose flow. `__sd`: `ready`, `state`, `enqueue`, `setSpeed`, `autoplay`, `fastForward`, `tileToClient`, `goto`, `perf` | M2+ flows |
 
 ---
@@ -103,10 +103,10 @@ We have about 5 entity kinds and at most a few hundred live entities. A generic 
 - One **typed pool per kind**: `towers`, `enemies` (including neutral units such as Gerald, flagged `neutral`), `projectiles`, `zones` (ground effects, ability areas, and song auras), and `allies`. Each pool is a preallocated array of plain objects with every field initialized (monomorphic shapes), plus a free list.
 - **Allies** are every friendly non-tower unit ([design/maps.md §5.4](../design/maps.md#54-allies-on-the-map)). Each has an `allyKind` (`swarmling`, `leaper`, `refugee`, `bearer`, `singer`, `bricks`, `militia`, `ward`), a movement mode (`route`, `post`, `owner`, or `stationary`), an optional attack (Bricks and militia), an optional song aura (singers, bearers), and a **vulnerability**: `never` (swarmlings, leapers, militia, wards, Pebble, Old Thrum), `hush` (refugees, singers, bearers), or `scripted` (Bricks in A3M3: Hollow units stop at his post, but his health bar follows a per-wave timeline in map data, never the player's DPS). Enemies never target towers.
 - **Ally targeting.** Ally attacks never target units whose wave group is tagged `quiet_wave`, `youngling`, or `fleeing` (the tags are in [§3](#data-shapes)).
-- **Hushing** ([design/maps.md §5.2](../design/maps.md#52-objective-variants)): a non-boss Hollow unit can hush **at most one** Skitterkin, either a `fleeing`-tagged enemy or a `hush` ally. After the 0.5 s tell the victim is removed, and the Hollow unit becomes **Heavy**: healed to full, +15% speed (added to its speed percentage, under the speed cap in `content/rules.ts`), with `hasHushed = true` so it can't hush again. It keeps walking to the exit. Bosses follow their own scripts. A boss that reaches an escort exit ends the map as lost.
+- **Hushing:** a non-boss Hollow unit hushes at most one `fleeing` enemy or `hush` ally and turns Heavy. The fleeing and hush rules (tell, heal, speed, the Maw's gather) have one home, [design/enemies.md](../design/enemies.md) §5.4. In code, the victim is removed and the unit sets `hasHushed = true` so it can't hush again.
 - Each entity has a `uid` (a monotonic integer, never reused within a run) and an `alive` flag. Dead slots return to the free list at the end of the tick.
 - Entities hold a **direct reference to their compiled definition** (`def: CompiledEnemyDef`), resolved at spawn, so hot loops never look up string ids.
-- Status effects ([design/enemies.md §2.4](../design/enemies.md#24-status-effects)) are **fixed fields** (`chillMul`, `chillTicks`, `soakedTicks`, `corrodedStacks`, `pinnedTicks`, `stasisTicks`, `stasisImmuneTicks`, `unnervedTicks`, `revealedTicks`, and on towers `jammedTicks` and `jamImmuneTicks`), not dynamic lists. Towers also carry `builtTick` and `firstFiredTick` for the misclick-grace refund ([design/core-loop.md §2.3](../design/core-loop.md#23-credits-the-in-map-currency)).
+- Status effects ([design/enemies.md §2.4](../design/enemies.md#24-status-effects)) are **fixed fields** (`chillMul`, `chillTicks`, `soakedTicks`, `corrodedStacks`, `pinnedTicks`, `stasisTicks`, `stasisImmuneTicks`, `unnervedTicks`, `revealedTicks`, and on towers `jammedTicks` and `jamImmuneTicks`), not dynamic lists. Towers also carry `builtTick` and `firstFiredTick` for the misclick-grace refund ([design/core-loop.md §2.3](../design/core-loop.md#23-credits-the-in-map-currency)); for pulse and aura towers, `firstFiredTick` is the first pulse that affects an enemy. Each tower also has a `spareRunners` boolean (the targeting filter, [§ Commands](#commands-input-into-the-sim)).
 - Enemies follow **predefined routes**. Map data gives ground paths and rift lanes as ordered tile sequences, and air lanes as polylines ([design/maps.md §4](../design/maps.md#4-paths-and-air-lanes)). Compile turns each into a polyline through tile centers with precomputed cumulative lengths. An enemy stores `pathIndex` and `dist` (distance traveled), and its position is derived from those. `dist` also gives "first / last" targeting and lead targeting (predict `dist + speed × flightTicks`) for free.
 - Systems are **plain functions** `(state: SimState, ctx: TickContext) => void`, run in a fixed order:
 
@@ -118,7 +118,7 @@ We have about 5 entity kinds and at most a few hundred live entities. A generic 
 | 4 | `status` | Ticks status timers, DoTs, auras, detection (Revealed), darkness and light sources, and synergy links |
 | 5 | `abilities` | Enemy ability state machines (telegraph → effect → cooldown), and commander ability cooldowns and effects |
 | 6 | `movement` | Advances enemies along paths; leaks damage the core (or the escort meter) |
-| 7 | `towers` | Targeting, cooldowns, firing, hold fire; `allies` (swarmling and leaper sorties, refugee, bearer, and choir movement, hushes, ally attacks, song auras) |
+| 7 | `towers` | Targeting (including the spare-runners filter), cooldowns, firing, hold fire; `allies` (swarmling and leaper sorties, refugee, bearer, and choir movement, hushes, ally attacks, song auras) |
 | 8 | `projectiles` | Movement, hits, damage, deaths, bounties |
 | 9 | `cleanup` | Releases dead slots, resolves rest vs scatter for dead Hollow units (finale), updates story stats, and checks win/lose |
 
@@ -137,7 +137,8 @@ type Command =
   | { type: 'specialize'; towerUid: number; spec: 'a' | 'b' }
   | { type: 'sell';       towerUid: number }
   | { type: 'targeting';  towerUid: number; mode: TargetPriority }
-  | { type: 'holdFire';   target: number | 'all' | { tag: WaveTag }; on: boolean }
+  | { type: 'holdFire';   target: number | 'all'; on: boolean }      // stop firing
+  | { type: 'spareRunners'; target: number | 'all'; on: boolean }    // the targeting filter
   | { type: 'clear';      tile: GridPos }                  // send the salvage drone to a wreckage tile
   | { type: 'ability';    slot: 1 | 2; target?: GridPos }  // commander abilities
   | { type: 'callWave' }                                   // call the next wave early
@@ -146,7 +147,8 @@ type Command =
 ```
 
 - The host calls `sim.enqueue(cmd)`, and the command applies at the **start of the next tick**, or immediately through `sim.applyPending()` (below).
-- `holdFire` with a tower uid or `'all'` is what the HUD issues. `{ tag }` holds every tower's fire while any live unit of that wave tag is on the map and releases it when the last one dies or leaks. It's the same thing a player gets by toggling `'all'` at the right moments, so builds and replays can say it in one step.
+- `holdFire` (a tower uid or `'all'`) stops the tower attacking; it's the plain Hold Fire that C1 uses.
+- `spareRunners` is the **"Spare runners" targeting filter** (from A2M1; the rules are in [design/core-loop.md](../design/core-loop.md) §2.6–2.7). With a tower uid it is the per-tower toggle. `'all'` is the global HUD toggle (hotkey Alt+H): it sets every tower's filter, and towers built while it's on start with it on. A tower with the filter on never *picks* a unit whose wave group has a tag in `SPARE_TAGS` (`fleeing`, `youngling`; `content/rules.ts`) as its primary target. Splash and chain hits still land on those units.
 - `interact` is accepted only while the marker is clickable (a `setClickable` script action). It is the input half of the clickable-world-object trigger ([story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)).
 - The sim validates every command (affordability, a buildable and empty tile, a tower in the loadout, unlocked and not revoked, an ability off cooldown and not revoked). While a forced input is pending, **every command except the matching `scriptInput` is rejected** (`reason: 'forcedInput'`). Invalid commands emit `CommandRejected { cmd, reason }` so the UI can explain.
 - The **command log plus the seed reproduces a run exactly.** The log records each command with the tick it applied at. The game keeps it in memory for checkpoints and so a bug report can include a replayable code (dev builds), and balance-sim builds are just scripted commands.
@@ -189,7 +191,7 @@ sim.drainEvents(events); dispatch(events);
 
 ### Checkpoints
 
-"Retry from wave N" ([design/core-loop.md](../design/core-loop.md)) needs no state serialization. A **checkpoint** is `{ wave, tick, commandCount }`, recorded by the host when the sim emits `CheckpointReached` (every 5 waves from Act II, per `content/rules.ts`; the finale also emits it at the start of Phase 2 through a `checkpoint` script action). Retrying re-creates the sim from the same `SimConfig`, replays the first `commandCount` logged commands headlessly up to `tick`, then hands the sim back to the host. Replay at uncapped speed costs the same as a headless run (well under 2 s even for the finale). Checkpoints live in memory for the current run only; using one marks the run result `usedCheckpoint`, which forfeits Perfect and Challenge medals ([meta-runtime.md § Run end](meta-runtime.md#run-end)).
+"Retry from wave N" ([design/core-loop.md](../design/core-loop.md) §2.12) needs no state serialization. A **checkpoint** is `{ wave, tick, commandCount }`, recorded by the host when the sim emits `CheckpointReached` (every 5 waves from Act II, per `content/rules.ts`; the finale also emits it at the start of Phase 2 through a `checkpoint` script action). Retrying re-creates the sim from the same `SimConfig`, replays the first `commandCount` logged commands headlessly up to `tick`, then hands the sim back to the host. Replay at uncapped speed costs the same as a headless run (well under 2 s even for the finale). Checkpoints live in memory for the current run only. Using one marks the run result `usedCheckpoint` (which forfeits Perfect and Challenge medals) and records `resumedFromWave`, which the defeat payout uses ([meta-runtime.md § Run end](meta-runtime.md#run-end)).
 
 ### Sim public API
 
@@ -252,7 +254,7 @@ type Modifier =
 | `codex/` | Codex entries, each with `original` / `annotated` / `corrected` versions and their unlock conditions |
 | `presentation.ts` | The per-act presentation dials ([design/core-loop.md §6.7](../design/core-loop.md#67-per-act-presentation-dials)), with per-map overrides in map data |
 | `campaign.ts` | Campaign map order (mirrors [story/campaign.md](../story/campaign.md)) |
-| `rules.ts` | Rule data: damage matrix, stacking caps, aura kinds, jam limits, the speed rule, counter categories, checkpoint interval, bark thresholds |
+| `rules.ts` | Rule data: damage matrix, stacking caps, aura kinds, jam limits, the speed rule, counter categories, the trait → counter-category map (canonical table: [design/enemies.md](../design/enemies.md) §3; intel-only traits map to no category), which towers answer each category, `SPARE_TAGS`, checkpoint interval, bark thresholds |
 | `sprites/`, `palettes/` | Pixel art data ([art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format)) |
 | `types.ts`, `define.ts` | Definition types plus `defineTower()`, `defineEnemy()`, and similar identity helpers that give type inference |
 | `registry.ts` | Imports every registry and exports `RAW_CONTENT` |
@@ -313,11 +315,16 @@ interface EnemyDef {
   sprites: { body: SpriteId; icon: SpriteId };
 }
 
-interface WaveDef { countdownSec?: number; groups: WaveGroup[] }   // countdown defaults by act
+interface WaveDef {
+  countdownSec?: number;                            // defaults by act
+  teach?: boolean;                                  // the teach wave for a new trait: exempt from the soft-trait cap
+  groups: WaveGroup[];
+}
 interface WaveGroup {
   enemy: EnemyId; count: number; intervalSec: number; delaySec?: number;
   spawn: string; route: string;                     // a path, air-lane, or rift-lane id
-  tags?: WaveTag[];                                 // fleeing: leaks cost 0 and are medal-exempt
+  tags?: WaveTag[];                                 // fleeing: leak 0, medal-exempt (design/enemies.md §5.4)
+  teach?: boolean;                                  // a teach group inside a mixed wave: only its threat is exempt
 }
 
 interface MapDef {
@@ -335,13 +342,14 @@ interface MapDef {
   startCredits: number; coreIntegrity?: number;     // default 20
   stardust: number;                                 // first-clear reward (flat; A1M1 pays 0)
   briefing?: string;                                // M1 only: the static briefing before story/ exists
-  towerUnlockWave?: Partial<Record<TowerId, number>>;  // the build button unlocks at that wave's start
+  towerUnlockWave?: Partial<Record<TowerId, number>>;  // the build button unlocks when that wave's countdown starts
   threatIntel: Trait[];                             // every trait in the waves; shown as icons
   requiredCounters: CounterId[];                    // ≤ 3; each backed by a noCounterBuild that must lose
   waves: WaveDef[];
-  medals: { challenge: { id: MedalId; condition: ConditionDef } };  // required on campaign maps
+  medals?: { challenge: { id: MedalId; condition: ConditionDef } }; // required on campaign maps from T202 (§ Validation)
   objectives?: { id: string; condition: ConditionDef; intel: number; onComplete?: ScriptAction[] }[];
   companion: { id: CompanionId; state: 'present' | 'absent' } | { pick: CompanionId[] } | null;
+  lockedAbilities?: { ability: AbilityId; when: Condition }[];  // unequippable here (A3M5: system_reboot under quill_choice = rewrite)
   allies?: AllyPlacement[];                         // posts, groups, routes; Bricks's A3M3 health timeline
   revisitOf?: MapId;                                // reuses that map's layout, centred (design/maps.md §7)
   dressing?: { layer: string; when?: Condition }[]; // state-dependent dressing (story Condition)
@@ -371,7 +379,8 @@ interface ProfileDef {                              // what a Standard player ow
   shop: Partial<Record<UpgradeId, number>>; protocols: ProtocolId[];
   technicianAbility: AbilityId | null;
 }
-interface ScriptedBuild { loadout: TowerId[]; companion?: CompanionId; callEarly?: boolean; steps: BuildStep[] }
+interface ScriptedBuild { loadout: TowerId[]; companion?: CompanionId; technicianAbility?: AbilityId;  // default: the profile's
+                          callEarly?: boolean; steps: BuildStep[] }
 // BuildStep kinds and their semantics: conventions.md § Balance sims
 ```
 
@@ -381,9 +390,11 @@ interface ScriptedBuild { loadout: TowerId[]; companion?: CompanionId; callEarly
 
 - **References and ranges:** every referenced id exists, numeric ranges are sane, sprite grids are well-formed, palette colors exist in the master palette, and Hollow-reserved hues aren't used elsewhere.
 - **Geometry** ([design/maps.md §9](../design/maps.md#9-map-data-shape-for-implementers)): ground paths lie on path tiles (air and rift lanes are exempt) and never cross buildable tiles; every path connects a spawn to the core or a safe exit; every wave group can walk its route; markers and script tile changes (crash-site wreckage) sit on predefined decor tiles; `cols + rows ≤ 36` for campaign maps. A revisit keeps the original's pads unchanged, adds pads only in the added band, and centres the original layout.
-- **Threats** ([design/maps.md §6.3](../design/maps.md#63-one-new-thing-per-map)): `threatIntel` equals the set of traits in the waves; `requiredCounters` has at most 3 entries, each with a `noCounterBuilds` entry; a trait in `threatIntel` but not backed by a required counter is at most 15% of any wave's threat (the threat formula in [design/maps.md §6.2](../design/maps.md#62-threat-budget-planning-tool)); at most two new threats and at most one new required-counter category per map, counted by the design's rules (an enemy with its new trait is one threat; a boss built only from known mechanics is exempt; a scripted event is one).
-- **Builds:** tiles are buildable, towers are in the loadout and the profile, upgrade targets have been built by then, and loadouts have at most 4 towers. **Par is purchasable:** every tower, spec, upgrade, protocol, and ability in `referenceProfile` is available by that map (`availableAfter`) and its total Stardust and Intel price is within what the campaign pays out before that map ([design/progression.md](../design/progression.md)). From A1M4, there are at least 2 `altBuilds`, each sharing at most 2 tower types with the par loadout.
-- **Scripts and story:** cue ids follow `<map_id>_wNN` (or another `<map_id>_<slot>` from [story/style-guide.md](../story/style-guide.md)); every flag a script reads has a `flagVariants` entry when it changes the sim; medal conditions don't reference medal-exempt groups. The dialogue rules are in [story-runtime.md § Validation](story-runtime.md#validation).
+- **Threats** ([design/maps.md §6.3](../design/maps.md#63-one-new-thing-per-map)): `threatIntel` equals the set of traits in the waves; every trait has an entry in the `rules.ts` trait → counter-category map (a category, or intel-only); `requiredCounters` has at most 3 entries, each with a `noCounterBuilds` entry.
+  - **Soft-trait share** (the threat formula in [design/maps.md §6.2](../design/maps.md#62-threat-budget-planning-tool); the trait map in [design/enemies.md](../design/enemies.md) §3): an enemy is **soft** if at least one of its traits maps to a counter category and none maps to one of the map's `requiredCounters`. Intel-only traits never make an enemy soft. Soft enemies are at most 15% of any wave's threat. `fleeing` units count as 0 threat, and a `teach` wave (or `teach` group) is exempt, at most one per new trait.
+  - **New-thing limits:** at most two new threats and at most one new required-counter category per map, counted by the design's rules (an enemy with its new trait is one threat; a boss built only from known mechanics is exempt; a scripted event is one).
+- **Builds:** tiles are buildable, towers are in the loadout and the profile, upgrade targets have been built by then, and loadouts have at most 4 towers. **Par is purchasable:** every tower, spec, upgrade, protocol, and ability in `referenceProfile` is available by that map (`availableAfter`) and its total Stardust and Intel price is within what the campaign pays out before that map ([design/progression.md](../design/progression.md)). From A1M4, there are at least 2 `altBuilds`, each sharing at most 2 tower types with the par loadout. **Counter builds** (by category, [design/maps.md](../design/maps.md) §6): `noCounterBuilds[c]` uses no tower that answers category `c` (the `rules.ts` answer list), and every alt build includes an answer to every required counter, so no alt build is a no-counter build. A build's `technicianAbility` is never one of the map's `lockedAbilities` under that build's flag variant.
+- **Scripts and story:** cue ids follow `<map_id>_wNN` (or another `<map_id>_<slot>` from [story/style-guide.md](../story/style-guide.md)); every flag a script reads has a `flagVariants` entry when it changes the sim; medal conditions don't reference medal-exempt groups. **Medals:** `medals.challenge` is required on every campaign map from T202 (M1 maps have none). The dialogue rules are in [story-runtime.md § Validation](story-runtime.md#validation).
 
 ---
 

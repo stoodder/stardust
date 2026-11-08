@@ -55,7 +55,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T203** Save system (localStorage plus export/import codes)
 - [ ] **T204** Stardust and Intel currencies (medals → Intel payout); permanent upgrade shop (Zibzab) and R&D tree
 - [ ] **T207** Companion slot + Suppressing Fire; allies pool with the Bricks ally (never targets `quiet_wave`, `youngling`, or `fleeing` units)
-- [ ] **T206** Hold Fire command + story-flag tracking (feeds choices)
+- [ ] **T206** Hold Fire command, `spareRunners` filter (per tower + global Alt+H; new towers inherit the global toggle), and story-flag tracking (feeds choices)
 - [ ] **T205** Procedural audio: SFX first, then music layers
 
 ## M3 — Star Map & Act I

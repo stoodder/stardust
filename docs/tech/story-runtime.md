@@ -27,14 +27,14 @@ type ScriptTrigger =
 type ScriptAction =
   | { cue: string }                                               // story binds it to a scene or bark
   | { unlockTowerClass: TowerId }                                 // the build button appears (towerUnlockWave compiles to this)
-  | { revokeTowerClass: { select: 'mostPlaced'; faction?: TowerFaction }; refundPct: 100 }
+  | { revokeTowerClass: { select: 'mostInvested'; faction?: TowerFaction }; refundPct: 100 }
   | { restoreTowerClass: 'lastRevoked' }
-  | { revokeAbility: AbilityId }                                  // A3M2 Orbital Strike; finale C4 Keep: QUILL's Time Dilation for Phase 2
+  | { revokeAbility: AbilityId }                                  // A3M2 Orbital Strike; finale under C4 Keep: Time Dilation for Phase 2
   | { setObjective: ObjectiveKind; meterLabel?: MeterLabel }      // the A2M5 pivot
   | { bossEnd: 'driveOff' | 'retreat' | 'pivot' }
   | { standDown: Faction }                                        // pivot: remove that faction's hostiles, no leak
   | { spawnAllies: AllyGroupId } | { spawnWave: WaveGroupId }
-  | { setClickable: { marker: MarkerId; on: boolean; fallbackSec?: number } }
+  | { setClickable: { marker: MarkerId; on: boolean; fallback?: ScriptTrigger } }  // A2M3: { wave: 6, phase: 'cleared' }
   | { forceInput: { id: string } }                                // freezes play and locks commands until scriptInput
   | { setModifier: 'quillLockout' | 'previewHidden'; on: boolean }
   | { startTimer: TimerId } | { setTimerRate: { timer: TimerId; pct: number } } | { setPhase: number }  // finale phases
@@ -45,10 +45,10 @@ type ScriptAction =
 ```
 
 - **Cue ids** follow `<map_id>_wNN` for wave-bound cues (`a1_m01_w03`), and the other `<map_id>_<slot>` forms from [story/style-guide.md](../story/style-guide.md) for the rest. Validation checks the pattern.
-- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([architecture.md § Data shapes](architecture.md#data-shapes)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's mechanical effects (Purge: QUILL's ability can target Everglow units and the Deep Bore timer runs slower in Phase 1; Keep: QUILL loses Time Dilation for Phase 2) are flag-conditioned events and ability variants, specified in [design/maps.md §5.5](../design/maps.md#55-the-leaving-song-finale-rules).
+- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([architecture.md § Data shapes](architecture.md#data-shapes)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
 - **Forced input.** `forceInput` sets `state.pendingInput`. While it is set, the wave schedule, movement, firing, cooldowns, and timers are frozen. The sim still ticks (so render can animate and `tick` stays monotonic), and `applyCommands` accepts only `{ type: 'scriptInput', id }`. The host shows the single-button overlay on `ForcedInputRequested`. Real-time lines (Bricks's line after 20 s on the SEAL) are a story-side timer on wall-clock time, not sim ticks. The balance harness presses it with a `scriptInput` build step.
-- **Clickable world objects.** `setClickable` marks a marker (for example `peeker` in A2M3) as clickable and emits `ClickableChanged`; render highlights it ([art-direction.md §6](../art/art-direction.md#6-story-and-world-sprites)). An `interact` command, or the `fallbackSec` timer if the player never clicks, fires the `interacted` trigger once and emits `Interacted { by }`. Pebble's A2M3 rescue is built this way. Clicks that change nothing in the sim (poking the Peeker in Act I) are UI events instead (`peeker_poked`, [§ Flags](#flags)).
-- **Revocation** selects the class deterministically (most towers placed, then credits invested, then loadout slot; [design/towers.md §9](../design/towers.md#9-rules-for-story-driven-tower-changes)), sells every tower of it at 100%, adds it to `state.revoked`, and emits `TowerClassRevoked`. Meta copies `revoked` into the save at run end.
+- **Clickable world objects.** `setClickable` marks a marker (for example `peeker` in A2M3) as clickable and emits `ClickableChanged`; render highlights it ([art-direction.md §6](../art/art-direction.md#6-story-and-world-sprites)). An `interact` command (valid only while the marker is clickable), or the `fallback` trigger if the player never clicks, fires the `interacted` trigger once and emits `Interacted { by }`. Pebble's A2M3 rescue is built this way, with "W6 cleared" as its fallback. Clicks that change nothing in the sim (poking the Peeker in Act I) are UI events instead (`peeker_poked`, [§ Flags](#flags)).
+- **Revocation** selects the class deterministically (most credits invested, then most towers placed, then loadout slot; [design/towers.md §9](../design/towers.md#9-rules-for-story-driven-tower-changes)), sells every tower of it at 100%, adds it to `state.revoked`, and emits `TowerClassRevoked`. Meta copies `revoked` into the save at run end.
 - **Rest and scatter** (finale, [design/maps.md §5.5](../design/maps.md#55-the-leaving-song-finale-rules)): when a Hollow unit dies, `cleanup` checks it against every active song zone (squared distance). Inside: `EnemyLaidToRest`, `restPoints += restValue × songMult`. Outside, and if the map's song is active and the unit hasn't re-formed before: it becomes a `reforming` enemy (untargetable, drifting back along its route) and returns at 50% HP after the delay. The song's passive trickle adds rest points every tick. The modifiers by flag come from `MapDef.song`.
 - **Bricks in A3M3.** His health bar follows `allies[].healthTimeline` (per-wave percentages in map data), so it drains on a scripted schedule whatever the player builds, and reaches its floor near the end. Results-screen medal toasts are held on that map (a presentation override), so the SEAL plays the same at any score.
 
@@ -80,7 +80,7 @@ Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast
 
 ## Flags
 
-Flags are declared in `content/dialogue/flags.ts` with a type (`boolean`, or a string union such as `'convoy' | 'warren'`) and a one-line description. The canon set is in [story/bible.md § Flag summary](../story/bible.md#flag-summary). Flags are set by `choice`/`set` nodes, by UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or by **run-end rules**: data in `content/dialogue/flags.ts` that derives a flag from `state.stats` when a map ends, for example:
+Flags are declared in `content/dialogue/flags.ts` with a type (`boolean`, or a string union such as `'convoy' | 'warren'`) and a one-line description. The canonical flag table is [story/campaign.md](../story/campaign.md) §6.2 (the bible's table is a summary). Flags are set by `choice`/`set` nodes, by UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or by **run-end rules**: data in `content/dialogue/flags.ts` that derives a flag from `state.stats` when a map ends, for example:
 
 ```ts
 { flag: 'spared_quiet_wave', onMapEnd: 'a1_m05',

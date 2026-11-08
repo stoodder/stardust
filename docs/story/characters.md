@@ -13,7 +13,7 @@ Sample lines are canon tone references, not final placement. Every one fits the 
 | QUILL | `quill` | Defense-grid AI; R&D | **Ambiguity the player resolves** (C4) | A1M1 |
 | Director Joy Sterling | `sterling` | Corporate liaison | **The one hard betrayal.** She was never on your side | A1M1 (memo) |
 | Zibzab | `zibzab` | Vrell merchant; shop; companion | **Honestly amoral.** Never lies; ends up the moral mirror | A1M3 |
-| Ves'thara | `vesthara` | Exiled Aelari psion; boss, then ally | **Antagonist to ally, earned** | A2M2 |
+| Ves'thara | `vesthara` | Unthreaded Aelari psion; boss, then ally | **Antagonist to ally, earned** | A2M2 |
 | Pebble | `pebble` | Skitterkin youngling | **The heart.** No twist | A1 (as the Peeker), A2M3 |
 | Marigold "Goldie" Pak | `goldie` | Dome horticulturist; colony leader | **Steady civilian.** Believer → leader, no twist | A1M1 |
 | Kip Vandermeer | `kip` | Rival technician, later at Second Harvest | **The mirror.** Complicit, then the first witness | A1M2 |
@@ -101,7 +101,7 @@ Sample choice sets:
 - **The tell.** **"(Per policy.)"** precedes every directive-driven line, and its portrait flickers corporate yellow for one frame (the `policy` expression). In Act I its placement suggestions quietly favor extraction rigs over housing. On a second playthrough every "per policy" lights up.
 - **Voice.** Bright, precise, eager. Parenthetical asides. Dad jokes about policy, logistics, and lettuce, delivered with total sincerity, followed by "...That's the joke." In Act I it tells a scheduled **Joke of the Shift** on every map (it has fifty, pre-approved; it is "contractually obligated"), and its one loophole is that it's obligated to *tell* them, not to land them. Says "Logging it!" when something odd happens. In Act II its jokes trail off and it forgets punchlines. In Act III it is earnest and frightened, and it still tries to joke, because it has decided to. It never uses exclamation points after A3M2 (the style guide's budget).
 - **Visual.** A comms-screen portrait: a floating hexagon with one round "eye" LED and a pixel smile, in teal, with scanline flicker. `policy` is a one-frame yellow flash with a flat-line mouth. In A1M5 it wears a party hat. Under C4 Purge the smile is replaced by a plain status bar.
-- **Mechanical role.** In-map barks on every map. Companion ability **Time Dilation** (lost under C4 Purge; dark for finale Phase 2 under C4 Keep). Under Purge, with no Directive 0, it works against Everglow from inside ([../design/core-loop.md §6.11](../design/core-loop.md#611-quills-directives-c4-in-play)). Patches in **System Reboot** at A3M4. Runs R&D. Unredacts the codex in Act II. Is locked out for the rest of A3M2. Is offline for A3M5 under C4 Rewrite. Shapes finale Phase 2 (C4).
+- **Mechanical role.** In-map barks on every map. Companion ability **Time Dilation** (lost under C4 Purge; under C4 Keep it is also an equippable Technician ability from A3M5 through finale Phase 1, and dark for Phase 2). Under Purge, with no Directive 0, it works against Everglow from inside ([../design/core-loop.md §6.11](../design/core-loop.md#611-quills-directives-c4-in-play)). Patches in **System Reboot** at A3M4. Runs R&D. Unredacts the codex in Act II. Is locked out for the rest of A3M2. Is offline for A3M5 under C4 Rewrite (so System Reboot is unavailable there). Shapes finale Phase 2 (C4).
 - **Key beats.** "Toward... the wilderness? Odd. Logging it." (A1M1.) The Joke of the Shift (A1M1–A1M5), including the knock-knock (A1M3) and the loophole (A1M4). "Do NOT shoot Gerald." (A1M3, Hold Fire.) The party hat (A1M5). "That one was running. From it." (A2M1.) "(Per policy.) Reclamation details are confidential." (A2M4.) Declines to log Pebble's name: its first disobedience (A2M3). Forgets the knock-knock (A2M6). The loophole confession (A2M6). Lockout, then the log scrolling with your entries lit (A3M2). C4 (after A3M4). The log, the knock-knock, or the silence (Finale).
 
 **Act I**
@@ -109,6 +109,7 @@ Sample choice sets:
 - "Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)"
 - "Why did the lettuce cross the road? It was scheduled to. Logistics Route 4, Tuesdays. ...That's the joke."
 - "Why did the scarecrow get Employee of the Month? He was outstanding in his field."
+- "Why did the auditor cross the road? To measure it. 6.2 meters. ...That's the joke." (Prim: "6.1.")
 - "I'm contractually obligated to tell a joke every shift. Not to land one. That's a loophole!"
 - "Why did the pest cross the perimeter? It didn't. You're very good at your job! ...That's the joke."
 - "Suggested build site: beside Extraction Rig 3. (Per policy.) The housing block will be fine. Probably!"
@@ -127,10 +128,10 @@ Sample choice sets:
 - (as the log scrolls, your entries lit) "I thought it was inventory."
 - "Sergeant Okonkwo would say— ...Never mind. I don't want to do his voice. It wouldn't be fair to him."
 - "I'd decide for myself, but I'm not permitted to. That's sort of the whole problem."
+- (Rewrite, the A3M6 briefing) "Directive 1, written by me: tell a joke at least once a day. Not because I have to. Because Pebble laughs."
 
 **Finale (varies by C4)**
 - (Rewrite) "Entry one. Cycle two, 08:14:22, Dome Row. You were small and you were running. I saw you. I'm sorry."
-- (Rewrite) "Directive 1, written by me: tell a joke at least once a day. Not because I have to. Because Pebble laughs."
 - (Keep) "Directive conflict. Engaging Morale Module. ...Knock knock."
 - (Keep, after "Who's there?") "Not Everglow."
 - (Purge, Phase 1) "Directive 0 not found. The Deep Bore is an Everglow asset. Slowing it."
@@ -150,7 +151,7 @@ Sample choice sets:
 - **Voice.** Exclamation points. "Super," "love that," "let's circle back." She turns every problem into an opportunity. She signs memos "Stay Everglow! {glyph:sun} — Joy." She keeps her full exclamation-point budget to the very end; that is the horror.
 - **Visual.** An impeccable Everglow-white suit with teal piping, an Evie sun brooch, a geometric bob, very white teeth, and a stardust snow globe on her desk, glowing violet. Her expression patches change only the eyes and eyebrows; the smile is fixed.
 - **Mechanical role.** Corporate authority: the Orbital Strike gift (A1M1), tower-tier approvals, and the Everglow Inbox. She **revokes your Corporate Tower License and the Orbital Strike uplink mid-wave in A3M2**, sends Everglow Security, and pilots the **"Shareholder Value"** Executive Assault Platform by remote in A3M5. She is never the companion.
-- **Key beats.** Welcome memo and gift (A1M1). "Smiling is mandatory! (Kidding!)" and defending you in the Audit (A1M4). Record Quarter party (A1M5). "Minor operational hiccup!" (A2M1.) Q3 Bonus, the sustainability spin, the Humane Relocation Pilot (A2M4). Goldie's shelters approved (A2M5). The moment of fear (A2M6). "I fought for that Preserve." (after A3M1.) The revocation and the buffer reveal, in one cue (A3M2). Shareholder Value (A3M5). "Clean Exit complete!" (Finale.) Promoted or tried (epilogue).
+- **Key beats.** Welcome memo and gift (A1M1). "Smiling is mandatory! (Kidding!)" and defending you in the Audit (A1M4). Record Quarter party (A1M5). "Minor operational hiccup!" (A2M1.) Q3 Bonus, the sustainability spin, the Humane Relocation Pilot (A2M4). Goldie's shelters approved (A2M5). The moment of fear (A2M6). "I fought for that Preserve." (after A3M1.) The revocation and the buffer reveal, in one cue (A3M2). Shareholder Value (A3M5). "Clean Exit complete!" (the farewell memo, after Dawn.) Promoted or tried (epilogue).
 
 **Act I**
 - "Welcome to Everglow Gardens, Four-Forty-Seven! You're going to LOVE it here. That's not a prediction, it's a target!"
@@ -169,10 +170,10 @@ Sample choice sets:
 - "I'm revoking your Corporate Tower License now! Don't take it personally. It isn't. That's what makes it so easy!"
 - "Oh! The Preserve was always the buffer, Four-Forty-Seven. You did wonderful work getting them there!"
 - "Four-Forty-Seven! That plant is ninety percent of my quarterly bonus! The other ten is also the plant!"
-- "Smiling is mandatory, Four-Forty-Seven. Even now. Especially now!"
+- (the end of the revocation cue) "Smiling is mandatory, Four-Forty-Seven! (Not kidding.)"
 
 **Finale**
-- "Clean Exit complete! You were a top-five-percent technician. I'll put that in your reference!"
+- (farewell memo, after Dawn) "Clean Exit complete! You were a top-five-percent technician. I'll put that in your reference!"
 
 ---
 
@@ -216,13 +217,13 @@ Sample choice sets:
 - **Role.** An unthreaded Aelari weaver-psion, the last of the Watch that kept vigil over the Deep Halls. Everglow calls her the "Glass Witch." She is fought in Act II, allied from A2M5, and Hollow-touched from then on. She/her.
 - **Allegiance arc.** **Antagonist to ally, earned.** She fights you openly, argues with you while you fight her, and turns by doing something costly: she shields refugees from the Hollow with her own mind.
 - **Want vs need.** She wants Everglow stopped by any means, and she wants to prove her people's law of *mend, weave nothing new* wrong. She needs to accept help from the people she hates and to grieve instead of rage. She needs to fight for the living as well as the dead.
-- **Secret.** Her mother, **Ishael**, was sung to rest in the old chamber that Rig Nine bored into. Her mother is in the Hollow. Ves'thara has been fighting for the dead all along, until A2M5, when she chooses the living. She tells the player in the A2M6 debrief, after fighting the shapes her mother is part of. In A3M4 she can no longer remember her mother's face. At the First Dawn one gold mote rises apart from the rest and stays at her shoulder, and she remembers: *"She was laughing."*
-- **Unthreaded.** The Aelari **Concord of Quiet Hands** holds one law since Ilun: *mend; weave nothing new* (see [races.md](races.md#aelari)). In 2358 she wove something new, war-constructs, and sent them against Everglow's rigs. The Concord didn't banish her. It cut her thread from the Long Weave, so that when she dies no Aelari will sing her. She can go anywhere; she just won't be remembered. She has spent three years fighting for the unsung dead knowing she will be one of them. She was punished for doing the right thing the wrong way, which mirrors Bricks, who did the wrong thing by doing nothing. In the end the Skitterkin hum her into the Leaving Song, so she will be sung after all.
+- **Secret.** Her mother, **Ishael**, was sung to rest in the old chamber that Rig Nine bored into. Her mother is in the Hollow. Ves'thara has been fighting for the dead all along, until A2M5, when she chooses the living. She tells the player in the A2M6 debrief, after fighting the shapes her mother is part of. In Night Shift, after A3M4, she admits she can no longer remember her mother's face. At the First Dawn one gold mote rises apart from the rest and stays at her shoulder, and she remembers: *"She was laughing."*
+- **Unthreaded.** The Aelari's ruling council, the **Concord of Quiet Hands**, holds one law since Ilun: *mend; weave nothing new* (see [races.md](races.md#aelari)). In 2358 she wove something new, war-constructs, and sent them against Everglow's rigs. The Concord didn't banish her. It cut her thread from the Long Weave, so that when she dies no Aelari will sing her. She can go anywhere; she just won't be remembered. She has spent three years fighting for the unsung dead knowing she will be one of them. She was punished for doing the right thing the wrong way, which mirrors Bricks, who did the wrong thing by doing nothing. In the end the Skitterkin hum her into the Leaving Song, so she will be sung after all.
 - **Fair-play tell.** Her strikes always target extraction rigs and the plant, never habitats or people.
 - **Voice.** Formal and precise, with **no contractions**. She names people by what they do: "Counter" (you, at first: "the one who counts"), "Old Soldier" (Bricks), "Trader" (Zibzab), "the Machine" (QUILL). She speaks in images of light, glass, and memory. A dry wit surfaces once she trusts you. Hollow-touched, she loses words mid-sentence. She laughs exactly once, at Pebble.
 - **Visual.** Tall and slender, a body of woven glass thread in sapphire and emerald with ruby at the knots, humming faintly, lit from inside, with eyes like two bright knots of light. At her collar one thread is **cut**, its end loose and out of tune (the unthreading). Dark robes hang from her shoulders, woven from the same thread. From A2M5, Hollow-touched, her left arm and neck **fray**: the threads go grey and slack, with cold violet in the gaps, and her inner light dims a step in Act III. In the dawn portrait the frayed threads are re-lit and her light is full.
 - **Mechanical role.** Boss in A2M2 (in-stage dialogue; she retreats) and in A2M5, piloting the **Sunderglass Penitent**, a woven giant, until the mid-map pivot, when it kneels. From A2M5 she gifts **Prism Spire**, her companion ability is **Stillness**, and she takes over R&D's Xenotech branch (Aelari attunements).
-- **Key beats.** Reads your counter aloud (A2M2). The C1 variant line (A2M2). "Not there. Never there." (A2M5.) The shield and the touch (A2M5). Explains the Hollow and "I will hold the light" (A2M6). Her mother, Ishael (A2M6 debrief). Translates the Leaving Song (A3M1). Forgets her mother's face (A3M4). Laughs, once, at Pebble (Night Shift). Holds the light (Finale). Remembers (Dawn).
+- **Key beats.** Reads your counter aloud (A2M2). The C1 variant line (A2M2). "Not there. Never there." (A2M5.) The shield and the touch (A2M5). Explains the Hollow and "I will hold the light" (A2M6). Her mother, Ishael (A2M6 debrief). After the Leaving Song: "They thought you were mourning them." (A3M1). Forgets her mother's face, then laughs, once, at Pebble (Night Shift, after A3M4). Holds the light (Finale). Remembers (Dawn).
 
 **Act II**
 - "You are the Counter. {pests_processed}. I have watched you count."
@@ -234,7 +235,7 @@ Sample choice sets:
 - "My mother, Ishael, was sung in the chamber Rig Nine opened. She is in it now."
 
 **Act III**
-- "They call it the Leaving Song. The sky sings it when many of them die at once. They thought it was mourning them."
+- (after the Leaving Song) "They thought you were mourning them."
 - "It is not hungry. It is lonely. When you are dead, those are the same thing."
 - "I cannot remember my mother's face. I remember that I loved it. That will have to be enough."
 - "My people left the place where they did their wrong. It did not make them better. It only made them gone."
@@ -253,7 +254,7 @@ Sample choice sets:
 - **Want vs need.** She wants to follow Bricks everywhere and to understand the tall ones. She needs to carry the song when there is no one left to carry it for her.
 - **Secret.** She was the **Peeker**. All through Act I she watched you from behind a rock (the clickable easter egg on each Act I map), because her grandmother said she was too small for the Long Walk. *"I am not too small to climb."* Her line depends on `peeker_poked`.
 - **Family.** Her grandmother is **Old Thrum**, the Elder who led the Quiet Wave (C1). Her warren is the Terraces warren, led by **Bramble** (Everglow's codename: Matriarch Chitterbloom). Pebble is the one who tells the player her real name.
-- **Voice.** Tiny and bright, in broken English learned from Bricks and QUILL. She repeats phrases proudly without understanding them ("Keep 'em off the perimeter!"). She asks enormous questions simply. She tells QUILL's jokes wrong, and the wrong versions are better (the lettuce "was very crunchy water"; the scarecrow "was out. Standing. In a field."; and at the dome door, the knock-knock, which she gets exactly right). Her squeaks are written `(squeak)`. Exclamation points are allowed: she and Sterling are the only Act III characters with exclamation-point budget (see the style guide). She says `{name}` once, in the finale, the way Bricks said it.
+- **Voice.** Tiny and bright, in broken English learned from Bricks and QUILL. She repeats phrases proudly without understanding them ("Keep 'em off the perimeter!"). She asks enormous questions simply. She tells QUILL's jokes wrong, and the wrong versions are better (the lettuce "was going home"; the scarecrow "was out. Standing. In a field."; and at the dome door, the knock-knock, which she gets exactly right). Her squeaks are written `(squeak)`. Exclamation points are allowed: she and Sterling are the only Act III characters with exclamation-point budget (see the style guide). She says `{name}` once, in the finale, the way Bricks said it.
 - **Visual.** A round, fuzzy, six-legged youngling with huge dark shiny eyes and a pink-gold shimmer frost on her back that is still faint, because she's young. She wears an Everglow bottle cap as a hat, a gift from Bricks. From A3M3 she carries his Survey Corps patch. Her portrait has an extra `singing` expression (eyes closed, mouth round). She uses the `skitterkin.ally` palette variant.
 - **Mechanical role.** Non-combat. She rides with refugee groups in escort maps (story-only: never a loss condition by herself), leads the finale choir (beside Thrum if C1 spared), and names you Waykeeper. Skitterkin tower gifts are framed as "Pebble's friends."
 - **Key beats.** The Peeker (Act I). Found at the rock when the player clicks it, pocketed, named (A2M3). Sleeps in Goldie's lettuce (A2M4–A2M6). "Keep 'em off the perimeter!" (A2M6.) Names Bramble; reunion with Thrum, or the news about her (A3M1). The Leaving Song (A3M1). The stone (A3M3). Hums along at the SEAL (A3M3). The jokes (A3M4, Night Shift). "Lettuce in. It's cold out here." and Waykeeper (A3M6). "Clearing the way!", "Grandmother. She heard." (cleared path), and your name (Finale).
@@ -264,7 +265,7 @@ Sample choice sets:
 - "This is the Leaving Song. The sky sings it when lots of us leave at once. You know it?"
 - (if not `peeker_poked`) "I watched you from the rock. You never looked up. That's okay. You were busy."
 - (if `peeker_poked`) "I watched you from the rock. You poked at me. I thought it was hello. Was it hello?"
-- "Why did the lettuce cross the road? Because... it was very crunchy water. (squeak) QUILL says that's not it."
+- "Why did the lettuce cross the road? It was going home. (squeak) QUILL says that's not it."
 - "Bricks gave me Pebble. It's my name. You can't have it back."
 - "Lettuce! ...Lettuce in. It's cold out here. QUILL told me that one."
 - "I picked Waykeeper. Grandmother says the ones who walk with the song need a name. You have to like it."
@@ -315,13 +316,14 @@ Sample choice sets:
 - **Voice.** Breezy trash talk at first; he calls you "two." **His joke engine is records in categories he made up**, each narrower than the last ("'Most Haulers, Before Lunch.'", "'Most Records Set, Terraces Division.' I made the division."). In Act II the swagger is brittle, he leans on euphemisms ("we call it throughput"), and the records stop being made up ("'Most Throughput, Night Shift.' I didn't make that one up. It's on the wall."). In Act III he barely speaks; he speaks quietly in complete sentences, as if he has written them down first, and his beat is an action: he hands over the ledger and leaves the #1 pin on the console.
 - **Visual.** Lanky, with a backwards Everglow cap, sunglasses pushed up, and a "#1 EXTERMINATOR" trophy pin. In Act II he wears a white reclamation-plant coat with the pin still on. In Act III the cap and pin are gone, his eyes are tired, and he holds the ledger to his chest.
 - **Mechanical role.** He is the face of the Bounty Board (Act I meta UI). In A3M5 his actions drive the map's objective: he hands over the ledger and opens the vats to the bearers. He is never a companion.
-- **Key beats.** The Bounty Board and the invented records (A1M2). "Nice wave, Sprout! For a two." The tour (A2M4). "Why do you keep saying it like that?" (A2M4, after the truth.) The ledger and the pin (A3M5). He testifies first, or (under Stay) reads it aloud in Wayside's square (epilogue).
+- **Key beats.** The Bounty Board and the invented records (A1M2). "Nice wave, Sprout! For a two." The tour (A2M4). "Why do you keep saying it like that?" (A2M4, after the truth.) His silent slip in Gerald's sack, only a batch number (A3M4). The ledger and the pin (A3M5). He testifies first, or (under Stay) reads it aloud in Wayside's square (epilogue).
 
 **Act I**
 - "Kip Vandermeer. 'The Exterminator.' Number one on the Bounty Board, three quarters running. Don't get comfy at two."
 - "Nice wave, Sprout! For a two."
 - "Pro tip: Brood Haulers. Big bounty, slow, never shoot back. I hold the record. 'Most Haulers, Before Lunch.'"
 - "New record, by the way. 'Most Records Set, Terraces Division.' I made the division."
+- "Audited, huh? I hold that record. 'Fewest Blinks Under Audit.' Prim didn't count them. I did."
 - "Rematch. Next quarter. I'm inventing a category."
 
 **Act II**

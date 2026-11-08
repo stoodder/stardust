@@ -55,7 +55,7 @@ Credits exist only inside a map and reset every map (D001).
 | Source | Formula / value | Notes |
 |---|---|---|
 | Starting credits | Per map data (`startCredits`). | Per-act ranges: [maps.md §6.1](maps.md#61-per-act-targets). |
-| Kill bounty | Per enemy data (`bounty`). Nibbler 3, Chonk 12, bosses 0 (bosses pay through the wave bonus). | Paid when the enemy dies. Leaked enemies pay nothing. Fleeing Skitterkin pay their bounty if killed ([enemies.md §7](enemies.md#7-wave-design-rules)). |
+| Kill bounty | Per enemy data (`bounty`). Nibbler 3, Chonk 12, bosses 0 (bosses pay through the wave bonus). | Paid when the enemy dies. Leaked enemies pay nothing. Fleeing Skitterkin pay only 1 ([enemies.md § Fleeing Skitterkin](enemies.md#fleeing-skitterkin)). |
 | Wave clear bonus | `20 + 4 × waveNumber` (wave 1 = 24). | Paid when the wave resolves, even if some of it leaked. |
 | Early wave call | `round(0.5 × nextWaveClearBonus × secondsRemaining / countdown)` | See 2.4. |
 | Wreckage salvage | Per wreckage tile in map data (30–80). | See [maps.md §3](maps.md#3-tile-types). |
@@ -65,7 +65,7 @@ Credits exist only inside a map and reset every map (D001).
 |---|---|
 | Build a tower | Pays its tier-1 cost ([towers.md §2](towers.md#2-roster-overview)). |
 | Upgrade | Pays the next tier's cost. Tiers 1 to 3 are linear; tier 4 is a specialization choice ([towers.md §3](towers.md#3-upgrades-and-specializations)). |
-| Sell | **Refund 70%** of everything spent on that tower (shop upgrades can raise this to 80%). **Misclick grace (rule):** a tower sold before it first fires and within **10 s** of sim time of being built (whichever ends first) refunds 100%. Paused time doesn't count toward the 10 s. |
+| Sell | **Refund 70%** of everything spent on that tower (shop upgrades can raise this to 80%). **Misclick grace (rule):** a tower sold before it first fires and within **10 s** of sim time of being built (whichever ends first) refunds 100%. Paused time doesn't count toward the 10 s. For pulse and aura towers, "first fires" means the first pulse that affects an enemy. |
 
 **Rule:** there is no interest on banked credits by default (one Vrell specialization adds a small amount; see [towers.md](towers.md#vrell-towers)).
 
@@ -77,7 +77,7 @@ During a countdown, the player can press the incoming flag (or a hotkey) to star
 - **Ability cooldowns:** every commander ability's remaining cooldown drops by `0.25 × secondsRemaining`.
 - You can call several waves back to back; each call pays its own bonus.
 - **Rule:** the player cannot call wave 1 early (there is no countdown before it). Starting wave 1 is free and pays nothing.
-- **Rule (no degenerate rush):** the balance harness runs an `alwaysCallEarly` policy (par build, every wave called the instant its countdown starts). It must not push the par margin above the top of the map's par band ([maps.md §6.4](maps.md#64-balance-harness)).
+- **Rule (no degenerate rush):** the balance harness runs an `alwaysCallEarly` policy (par build, every wave called the instant its countdown starts). Its margin must be ≤ `min(bandTop, parMargin + 10)`: it may not leave the map's par band, and it may not beat the normal par run by more than 10 points ([maps.md §6.4](maps.md#64-balance-harness)).
 
 ### 2.5 Building, upgrading, selling
 
@@ -88,7 +88,7 @@ During a countdown, the player can press the incoming flag (or a hotkey) to star
 
 ### 2.6 Targeting priorities
 
-Every attacking tower has a targeting priority the player can change at any time: **First** (furthest along its route), **Last**, **Strong** (highest current HP + shield), **Close** (nearest). Defaults and tie-breaks are in [towers.md §5](towers.md#5-targeting).
+Every attacking tower has a targeting priority the player can change at any time: **First** (furthest along its route), **Last**, **Strong** (highest current HP + shield), **Close** (nearest). Defaults and tie-breaks are in [towers.md §5](towers.md#5-targeting). From A2M1 the **Spare runners** filter ([§2.7](#spare-runners)) can sit on top of any priority.
 
 ### 2.7 Hold Fire
 
@@ -101,6 +101,15 @@ The player can order any tower, or all towers at once, to **hold fire**. A holdi
 - **Medal-exempt units (rule).** Units in groups tagged `quiet_wave` or `fleeing`, and units with the `youngling` modifier ([enemies.md §5.1](enemies.md#51-skitterkin-body-organic)), are **medal-exempt**: their leaks cost only the integrity their data says (0 for younglings and fleeing units; Old Thrum's 2), never break Perfect Core, and no Challenge medal can reference them.
 - **Allies hold fire too (rule).** Scripted allies with an attack (Bricks's post, colonist militia) **never target** those same medal-exempt units ([maps.md §5.4](maps.md#54-allies-on-the-map)), so sparing them is always the player's choice alone. In A1M5, right after "Clear it, Sprout," Bricks visibly **lowers his cannon** for the Quiet Wave (a silent tell, no line).
 - The same single-button grammar returns for the forced inputs in §2.11.
+
+#### Spare runners
+
+From **A2M1**, when the first fleeing Skitterkin appear, the player can tell towers to **spare runners**: a toggle in each attacking tower's panel, plus a global HUD toggle (hotkey **Alt+H**) that sets it on every tower.
+
+- **Rule:** while it is on, a tower never **picks** a `fleeing`-tagged unit or a `youngling` unit as its primary target. It takes the best other target by its priority (§2.6), or waits if there is none. Its attacks are otherwise unchanged, so splash, chains, and multi-target hits can still catch those units. Abilities are unaffected.
+- **Why (rule):** sparing must cost nothing in play, not only in the leak and medal rules. The balance harness proves it: the `spareFleeing` policy (the par build with the filter on for every tower) must end with a margin ≥ par margin − 5 ([maps.md §6.4](maps.md#64-balance-harness)). Fleeing units pay a bounty of only 1 ([enemies.md § Fleeing Skitterkin](enemies.md#fleeing-skitterkin)), so the filter gives up almost nothing.
+- **Plain Hold Fire is unchanged.** It stops all fire, and it is still the only tool for C1 in A1M5, where the filter doesn't exist yet. The filter is taught in A2M1 by one short line in voice ([../story/campaign/act2.md § A2M1](../story/campaign/act2.md#a2m1--rig-nine)).
+- The filter is a sim command (the per-tag form of the hold-fire command), so it is in the command log and the harness can set it ([../tech/architecture.md § Commands](../tech/architecture.md#commands-input-into-the-sim)).
 
 ### 2.8 Speed and pause
 
@@ -135,17 +144,18 @@ Story moments that change play are map-script actions ([maps.md §5.1](maps.md#5
 | **Tower license revocation** | A3M2 (Sterling, mid-wave); Finale under C4 Keep (QUILL, short) | [towers.md §9](towers.md#9-rules-for-story-driven-tower-changes). |
 | **Ability revocation** | A3M2 | Sterling revokes the **Orbital Strike** uplink in the same cue. If it is equipped, slot 1 goes dark for the rest of the map with a "UPLINK REVOKED" stamp. From then on it can't be equipped; Intel spent on Orbital Strike Mk II is refunded. |
 | **QUILL lockout** | A3M2, after the revocation | §2.2. QUILL's companion ability (if it is the companion) is disabled for the rest of the map. |
-| **QUILL offline** | A3M5, only if `quill_choice = rewrite` | No QUILL ability, no QUILL barks or radio lines, and no R&D tip text in the base until A3M5 ends. The briefing's threat intel is still shown, delivered by `system`. You should feel the silence. The other C4 outcomes' in-play effects are in §6.11. |
-| **Clickable world object** | A2M3 (the Peeker rock holds Pebble) | Clicking the rock fires its script trigger (Pebble's rescue cue); a fallback trigger fires the same cue if the player never clicks (§6.9; [maps.md §5.3](maps.md#53-map-scripts)). |
+| **QUILL offline** | A3M5, only if `quill_choice = rewrite` | No QUILL ability, no **System Reboot** (QUILL runs it), no QUILL barks or radio lines, and no R&D tip text in the base until A3M5 ends. The briefing's threat intel is still shown, delivered by `system`. You should feel the silence. The other C4 outcomes' in-play effects are in §6.11. |
+| **Clickable world object** | A2M3 (the Peeker rock holds Pebble) | While the rock is clickable, clicking it issues an `interact` command and fires its `interacted` trigger (Pebble's rescue cue); the `setClickable` action's fallback trigger (A2M3: W6 cleared) fires the same trigger if the player never clicks (§6.9; [maps.md §5.3](maps.md#53-map-scripts)). |
 | **Boss endings** | A1M5, A2M2, A2M5, Finale | `driveOff`, `retreat`, `pivot`, `layToRest` ([enemies.md §6.1](enemies.md#61-boss-scripting)). |
 
 ### 2.12 Checkpoints
 
 From **Act II** on, a lost run can be resumed from a checkpoint instead of from wave 1.
 
-- **Snapshots.** The sim snapshots its full state at the start of every 5th wave (W5, W10, W15, …). On a loss, Results offers **"Retry from wave N"** for the latest snapshot; the run resumes with the towers, credits, meter, cooldowns, and timers it had then.
-- **Finale.** The finale also snapshots at the **start of Phase 2** (towers, credits, Voices, and Deep Bore %), so a Phase 2 loss offers "Retry from the Halls" and never replays the Descent.
+- **When.** The game records a checkpoint at the start of every 5th wave (W5, W10, W15, …); how it is stored and restored is in [../tech/architecture.md § Checkpoints](../tech/architecture.md#checkpoints). On a loss, Results offers **"Retry from wave N"** for the latest checkpoint; the run resumes with the towers, credits, meter, cooldowns, and timers it had then.
+- **Finale.** The finale also records a checkpoint at the **start of Phase 2** (towers, credits, Voices, and Deep Bore %), so a Phase 2 loss offers "Retry from the Halls" and never replays the Descent.
 - **Cost (rule):** a run that used a checkpoint can still earn **Victory** and the first-clear rewards, but **forfeits Perfect Core and the Challenge medal** for that run.
+- **No farming (rule):** a defeat after a checkpoint retry pays defeat Stardust only for the waves resolved **in this attempt beyond the checkpoint**, and a defeat on a map already won pays **0** ([progression.md §2](progression.md#2-earning-stardust)).
 - Act I and the A3M3 Holdout (which has no defeat) have no checkpoints.
 
 ---
@@ -163,7 +173,7 @@ Enemies can never attack towers, so these abilities are the player's direct way 
 - **The finale pick list.** In the finale the player picks who walks with them in the loadout screen: Ves'thara (Stillness, the default), Bramble (Underfoot), Zibzab (Clearance Sale), or QUILL (Time Dilation; not offered under C4 Purge). The balance harness runs the par build with each companion ([maps.md §6.4](maps.md#64-balance-harness)).
 - **The empty slot (A3M4).** After Bricks dies, A3M4's map data sets the companion to Bricks in the **`absent`** state: the slot is visible, his portrait is dark (the art's `dark` portrait variant), the button is disabled and has no label, and his radio and bark slots play authored **silence** ([../story/style-guide.md §5.6](../story/style-guide.md#56-special-line-kinds-authoring-conventions)).
 - **Bricks has no hero unit.** His presence is the companion slot (Suppressing Fire, portrait, barks) and his turret name tags ([towers.md §8](towers.md#8-presentation-and-personality)). On A1M1, A1M5, A2M6, and the A3M3 Holdout he also appears as a **scripted ally unit** on the map: a person, not a tower, so the 4-tower rule is untouched ([maps.md §5.4](maps.md#54-allies-on-the-map)). The player never places or moves him.
-- **Inheritance.** At the end of A3M4, **Suppressing Fire** becomes a Technician ability, equippable in slot 1 from A3M5.
+- **Inheritance.** At the end of A3M4, **Suppressing Fire** becomes a Technician ability, equippable in slot 1 from A3M5. Under C4 Keep, **Time Dilation** is also equippable in slot 1 from A3M5 through finale Phase 1 (§6.11).
 - Abilities are **ready when wave 1 starts**, then go on cooldown after each use.
 - Cooldowns run on sim time and shrink with early wave calls (2.4).
 - Targeted abilities can be **aimed while paused**; they fire when play resumes (or instantly if cast during play).
@@ -177,9 +187,9 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 |---|---|---|---|---|
 | **Orbital Strike** | Technician. Sterling's welcome gift (the Everglow uplink) | Targeted, radius 1.5 tiles: 200 Explosive after a 1 s visible targeting reticle. | 45 s | A1M1 (the default Technician ability) until it is **revoked mid-wave in A3M2** (§2.11) |
 | **Scanner Sweep** | Technician (R&D) | Targeted, radius 4 tiles: reveals cloaked enemies for 10 s. | 30 s | R&D after A2M1, ahead of the first cloaked enemies |
-| **System Reboot** | Technician (free; QUILL patches it in) | Instantly clears **Jammed** on all towers and makes them immune to jamming for 6 s. | 40 s | A3M4, before the first Silencer. Kept under every C4 outcome |
+| **System Reboot** | Technician (free; QUILL patches it in) | Instantly clears **Jammed** on all towers and makes them immune to jamming for 6 s. | 40 s | A3M4, before the first Silencer. Kept under every C4 outcome, but unavailable in A3M5 under C4 Rewrite (§6.11) |
 | **Suppressing Fire** | Companion: Sgt. Bricks. Then Technician (inherited) | Targeted path segment (3 tiles): enemies on it are slowed 50% and take 20 Kinetic/s for 5 s. | 50 s | Companion on Bricks's maps from A1M1 through A3M3; Technician from A3M5 |
-| **Time Dilation** | Companion: QUILL | All enemies slowed 40% for 6 s (bosses 20%). | 60 s | On maps where QUILL is the companion. **Lost permanently under C4 Purge**; unavailable in A3M5 under C4 Rewrite; lost for finale Phase 2 under C4 Keep (§6.11) |
+| **Time Dilation** | Companion: QUILL. Under C4 Keep, also Technician | All enemies slowed 40% for 6 s (bosses 20%). | 60 s | On maps where QUILL is the companion. Under C4 Keep, also a Technician ability from A3M5 through finale Phase 1, then unavailable for all of Phase 2. **Lost permanently under C4 Purge**; unavailable in A3M5 under C4 Rewrite (§6.11) |
 | **Clearance Sale** | Companion: Zibzab | Your next 3 builds or upgrades this map cost 40% less. Rule: counted per purchase, not per second, so pausing can't exploit it. | Once per 4 waves | From A1M4 |
 | **Stillness** | Companion: Ves'thara | Targeted, radius 2.5 tiles: Stasis for 3 s (bosses: Chilled 50% instead). Interrupts abilities ([enemies.md §2.4](enemies.md#24-status-effects)). | 45 s | From A2M6 (in A2M5 she is the Ward ally) |
 | **Underfoot** | Companion: Bramble (the matriarch; "Chitterbloom" is Everglow's codename, and the HUD shows Bramble from A3M1) | Targeted path tile: for 6 s, each ground enemy that crosses it is Pinned 1 s and takes 30 Kinetic. Hits burrowed enemies. | 50 s | From A3M1 |
@@ -198,6 +208,7 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | Abilities | Click the ability button, then the target | Q (slot 1), E (slot 2) |
 | Pause / speed | HUD buttons | Space pause, F toggle 1x/2x |
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |
+| Spare runners (from A2M1, §2.7) | Tower panel toggle (one tower) or HUD button (all) | Alt+H (all) |
 | Cancel | Right-click | Esc |
 
 Every control is a hit target of at least **16×16 game px** (32×32 screen px at the 2× scale) so touch support can come later (D001). Key remapping is a backlog item.
@@ -263,7 +274,7 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 
 - About **one memo per map**, delivered when the player enters the base after results. An unread badge sits on the Inbox; memos never pop up over play.
 - A memo has From, To, Subject, body, sign-off, and **small print** (collapsed until clicked; [../story/style-guide.md §6.1](../story/style-guide.md#61-everglow-memos)). The small print is where fair-play clues live, so it must be reachable in one click.
-- A memo may carry a **gift** (for example the A1M1 Orbital Strike uplink). The gift is granted when the memo is delivered, not when it's read, so skipping the Inbox never costs anything. (The Q3 Bonus is announced by memo but paid on A2M4's results screen; [progression.md §2.1](progression.md#21-story-hooks).)
+- A memo may carry a **gift** (for example the A1M1 Orbital Strike uplink). The gift is granted when the memo is delivered, not when it's read, so skipping the Inbox never costs anything. (One memo arrives early: the Q3 Bonus memo lands on A2M4's results screen with its 400 Stardust; [progression.md §2.1](progression.md#21-story-hooks).)
 - The Inbox keeps every memo, newest first. In Act III memos become terse and automated; after A3M2 the sender line reads "Everglow Automated Systems."
 
 ### 6.5 The codex
@@ -301,8 +312,8 @@ Presentation that changes with the act is **data** (one table keyed by act, with
 ### 6.9 The Peeker
 
 - On every Act I map, a youngling hides behind a rock on a decor tile near a warren mouth ([maps.md §7](maps.md#7-storytelling-with-the-map)). It peeks out every 20–40 s of play. Clicking it plays a squeak and a duck animation and sets `peeker_poked` (once is enough). It has no effect on play, rewards, or medals.
-- **The rock is a clickable world object** (a named marker in map data; [maps.md §5.3](maps.md#53-map-scripts)). A click issues a command, so it is in the command log and the sim records it in the run stats; story sets `peeker_poked` from that stat at run end. The peeking animation itself is render-only.
-- **A2M3 (A1M2 revisited): Pebble's rescue is player-triggered.** From W5 the rock holds Pebble and shows the clickable highlight. Clicking it fires the rescue cue (Bricks picks her up). If the player never clicks, a fallback trigger in map data fires the same cue (A2M3: when W6 is cleared), so the story always lands. In A3M6 Pebble sits on top of the A1M1 rock.
+- **In Act I a poke is a UI event, not a command.** It changes nothing in the sim, so it never enters the command log; story records it and sets `peeker_poked` ([../tech/story-runtime.md § Flags](../tech/story-runtime.md#flags)). The rock is still a named marker in map data (`peeker`), and the peeking animation is render-only.
+- **A2M3 (A1M2 revisited): Pebble's rescue is player-triggered.** From W5 the rock holds Pebble: a `setClickable` script action makes the `peeker` marker a **clickable world object** and shows the highlight ([maps.md §5.3](maps.md#53-map-scripts)). Clicking it issues an `interact` command (valid only while the marker is clickable), so it is in the command log, and fires the `interacted` trigger once: the rescue cue (Bricks picks her up). The `setClickable` action carries a fallback trigger (A2M3: W6 cleared) that fires the same `interacted` trigger if the player never clicks, so the story always lands. In A3M6 Pebble sits on top of the A1M1 rock.
 
 ### 6.10 Joke of the Shift and the optional bark button
 
@@ -320,8 +331,10 @@ C4 ([../story/bible.md §9](../story/bible.md#c4-quills-directives-after-a3m4)) 
 | Outcome | Cost | Benefit |
 |---|---|---|
 | **Purge** | Time Dilation is lost for good (QUILL leaves the finale pick list), and QUILL's Rapport is refunded ([progression.md §7.3](progression.md#73-command-abilities-and-protocols)). Finale rest points ×1.0 ([maps.md §5.5](maps.md#55-the-leaving-song-finale-rules)). | **Unbound:** with no Directive 0, QUILL attacks Everglow systems from inside. From A3M5, every Everglow Security unit spawns with **−2 armor** (minimum 0; an open maintenance-panel tell), and in finale Phase 1 the **Deep Bore fills at 75% speed**. |
-| **Keep** | Directive 0 fires when the choir enters the Halls (a class revocation, then the "Who's there?" forced input; [towers.md §9](towers.md#9-rules-for-story-driven-tower-changes)), and **Time Dilation is unavailable for all of Phase 2**. | QUILL stays at full strength through A3M5 and A3M6; finale rest points ×1.25. |
-| **Rewrite** | QUILL is offline for A3M5 (§2.11). | Finale rest points ×1.5 (the countdown runs fastest). |
+| **Keep** | Directive 0 fires when the choir enters the Halls (a class revocation, then the "Who's there?" forced input; [towers.md §9](towers.md#9-rules-for-story-driven-tower-changes)), and **Time Dilation is unavailable for all of Phase 2**. | QUILL stays at full strength through A3M5 and A3M6, and **Time Dilation becomes an equippable Technician ability** (slot 1) from A3M5 through finale Phase 1. Finale rest points ×1.25. |
+| **Rewrite** | QUILL is offline for A3M5 (§2.11), so **System Reboot is unavailable in A3M5**. Suppressing Fire (Technician from A3M5, §3.1) is the slot-1 alternative, Hum Choir still answers jamming, and the harness runs A3M5 that way. | Finale rest points ×1.5 (the countdown runs fastest). |
+
+The rest multipliers survive the finale's Phase 2 length rule (±30% of the target time, [maps.md §6.4](maps.md#64-balance-harness)), because the target time is set at Keep's ×1.25: Purge runs about 25% longer and Rewrite about 17% shorter.
 
 
 ---
