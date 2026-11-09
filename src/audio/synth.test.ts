@@ -113,7 +113,7 @@ describe('the synth', () => {
     expect(reaches(ctx.started.at(-1), s.low)).toBe(false);
     expect(reaches(ctx.started.at(-1), s.sfx)).toBe(true);
     s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
-    expect(20 * Math.log10(lastTarget(s.low.gain))).toBeCloseTo(-3, 0);
+    expect(20 * Math.log10(lastTarget(s.low.gain) ?? 1)).toBeCloseTo(-3, 0);
     s.holdSfxDuck('speech', null);
     expect(lastTarget(s.low.gain)).toBe(1);
   });

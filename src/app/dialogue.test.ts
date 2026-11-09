@@ -290,7 +290,9 @@ describe("a battle's dialogue", () => {
     emit(countdown(7));
     expect(shown()).toBe(pension);
     vi.advanceTimersByTime(hold(pension));
-    expect(shown()).toBe(bark('quill_bank_nudge_a1_02'));
+    // The nudge is an act-wide bark (R5): found by its trigger, whatever its id.
+    const nudge = Object.values(BARKS).find((b) => b.trigger.on === 'bank_nudge');
+    expect(shown()).toBe(nudge?.text);
     expect(cue()).toBeNull();
   });
 

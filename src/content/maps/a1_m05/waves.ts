@@ -1,7 +1,7 @@
 // A1M5 waves: docs/story/campaign/act1.md § A1M5, Wave data. Routes: `spires` (the west road),
 // `warren` (the north-east track, whose spawn opens at W3), `sky` (the air lane down the middle),
 // and `sky_east` (W8's lone Puffwing round the east edge). Countdowns are the Act I default (25 s)
-// except W10's, which waits out the boss fight. Groups without an `intervalSec` use the enemy's
+// except W10's, which starts once the boss fight is over. Groups without an `intervalSec` use the enemy's
 // default spacing (Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder
 // 2.0 s, Digger 1.0 s, Puffwing 0.6 s).
 import { defineWaves } from '../../define.ts';
@@ -33,10 +33,16 @@ const huddle = (route: RouteId, delaySec: number, n: number): WaveGroup[] => [
 ];
 
 /**
- * W10's countdown: long enough that the Quiet Wave walks in after the Matriarch is driven off
- * (the countdown starts as soon as W9 has spawned; waves overlap), and a held breath after.
+ * W10's countdown, which starts only once the Matriarch is driven off (`countdownAfter:
+ * 'bossEnded'`; D097): the field goes quiet, Bricks lowers his cannon, and then the Quiet Wave
+ * walks in. It can't be called early (the sim refuses `callWave` on a quiet wave).
  */
-export const QUIET_WAVE_COUNTDOWN_SEC = 60;
+export const QUIET_WAVE_COUNTDOWN_SEC = 8;
+/**
+ * The Quiet Wave walks in this long after W10 starts: after Bricks's cue and his cannon lowering
+ * (1.5 s after the start, D094), so the player sees both before anything is on the road.
+ */
+export const QUIET_WAVE_DELAY_SEC = 4;
 /**
  * W2–W8 open this long after they start: the last wave's bounties land before the first contact,
  * so a player who calls waves early isn't buying turrets mid-fight (the harness's early-call check).
@@ -129,10 +135,11 @@ export const waves = defineWaves([
   { groups: [g('chitterbloom', 1, 'spires', BOSS_DELAY_SEC)] },
   // W10 · the Quiet Wave: Old Thrum leading six younglings, east road. No NEW badge, no prompt.
   {
+    countdownAfter: 'bossEnded',
     countdownSec: QUIET_WAVE_COUNTDOWN_SEC,
     groups: [
-      g('elder', 1, 'warren', 0, undefined, ['quiet_wave']),
-      g('nibbler', YOUNGLINGS, 'warren', 0.6, 0.8, ['quiet_wave', 'youngling']),
+      g('elder', 1, 'warren', QUIET_WAVE_DELAY_SEC, undefined, ['quiet_wave']),
+      g('nibbler', YOUNGLINGS, 'warren', QUIET_WAVE_DELAY_SEC + 0.6, 0.8, ['quiet_wave', 'youngling']),
     ],
   },
 ]);
