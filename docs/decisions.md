@@ -299,3 +299,12 @@ Four fixers applied D026: sim, art, UI, and balance. Notes beyond D026:
   - Triggers: first leak, W1 cleared (the jingle, which fills the W2 slot now that Bricks's pads line is in the briefing), Thumper unlock, W4 countdown (Goldie), first clean wave, W6 (Joke of the Shift, "It's Wednesday."), W7 (the grievance).
   - Name plates: QUILL teal.4, Bricks orange.4, Goldie green.4.
   - Each line shows for 4 s plus 40 ms per character over 60.
+
+### D028 — 2026-11-09 — M1 review round 2 rulings
+Round 2 ran two reviews. **Correctness/Architecture/Performance:** ship-ready, nothing high severity. Round 1's items are verified, the gate is green in 40 s and not flaky, and only cheap perf/robustness fixes remain. **Playtest** (three real-UI runs with the radio on): round 1's feedback, juice, radio voice, and art are at ship quality. One high finding remains. Rulings:
+- **No single-wave wall for non-upgrading builds; teach upgrades.** Builds that never upgrade still lost all their integrity in one wave, two Rivets in W5 for example, because nothing teaches upgrading. The fixes are a HUD upgrade hint from W2 and a W4 warning bump. New harness guards cover alts `no_upgrades` and `two_rivets`: no single wave may cost more than 50% of integrity, and a losing build must start leaking at least one wave before it loses.
+- **Results wait 1.5 s** after a win or loss so the last radio line and the leak feedback finish. Bricks's act1.md debrief shows on the win card, and a first-leak line from the last 4 s shows there too, so the first darkness seed is never lost.
+- **The W5→W6 dip is intended.** It's a breather that carries the Joke of the Shift before W7. It gets documented, not retuned.
+- **The pad behind the core stays where it is.** The core draws at about 60% alpha while a tower stands behind it.
+- **Art trail:** the round-2 reviewer approved the current gallery as the `m1` baseline. The dioramas also get the apron and fence so the baseline matches play. M2 should improve the tier-2 silhouettes and the mid-darks inside the playfield.
+- Minor fixes: radio staleness judged per batch, plus a 1–1.5 s beat before "It's Wednesday."; the fast glyph shown once per group; a red low-integrity halo; `matchMedia` cached; the HUD stat line cached; `radiusTiles` on `ProjectileFired`; `Object.hasOwn` in expectation checks; a note to run one gate at a time.
