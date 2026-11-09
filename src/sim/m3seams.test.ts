@@ -50,7 +50,7 @@ function refusedWith(def: CompiledEnemyDef): string[] {
 }
 
 describe('the clear command (T304b)', () => {
-  it('is declared, copied deeply, logged, and rejected notImplemented until T304b', () => {
+  it('is declared, copied deeply, and logged (live since T304b: systems/wreckage.test.ts)', () => {
     const cmd: Command<FixtureIds> = { type: 'clear', tile: [4, 3] };
     const copy = copyCommand(cmd);
     expect(copy).toEqual(cmd);
@@ -61,7 +61,9 @@ describe('the clear command (T304b)', () => {
     sim.applyPending();
     const out: SimEvent<FixtureIds>[] = [];
     sim.drainEvents(out);
-    expect(out).toEqual([{ type: 'CommandRejected', cmd, reason: 'notImplemented' }]);
+    // fx_map's (4, 3) is wreckage: the drone takes it.
+    expect(out).toEqual([]);
+    expect(sim.state.wreckage.queue).toEqual([3 * 6 + 4]);
     expect(sim.state.commandLog).toHaveLength(1);
   });
 });
@@ -103,7 +105,7 @@ describe('M3 state fields', () => {
 });
 
 describe('stub systems', () => {
-  it('wreckage changes nothing yet (T304b)', () => {
+  it('wreckage changes nothing with an empty queue', () => {
     const { state, ctx } = setup();
     spawn(state, LIVE.enemies.digger);
     const before = JSON.stringify(state);
@@ -143,7 +145,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
   it('names the lifting task for every M3 mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
       'attack.projectile': null, // T304a
-      'attack.chain': 'T304b',
+      'attack.chain': null, // T304b
       'enemy.flying': null, // T304a
       'enemy.neutral': null, // T304a
       'enemy.burrow': null, // T304c
@@ -156,8 +158,8 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'ability.discount': null, // T304d
       'modifier.firstBuildFree': null, // T304d
       'modifier.freeCast': null, // T304d
-      'modifier.economy.salvage': 'T304b',
-      'modifier.economy.clearSpeed': 'T304b',
+      'modifier.economy.salvage': null, // T304b
+      'modifier.economy.clearSpeed': null, // T304b
       'map.objectives': 'T304f',
     });
   });
@@ -246,10 +248,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(
       towerRefusal(RAW_CONTENT.towers.skyhook, { ...FEATURE_GATES, 'attack.projectile': 'T304a' }),
     ).toMatch(/'projectile' attack .* T304a$/);
-    expect(towerRefusal(LIVE.towers.zapcoil)).toMatch(/'chain' attack .* T304b$/);
+    expect(towerRefusal(LIVE.towers.zapcoil)).toBeNull(); // T304b
     expect(
-      towerRefusal(RAW_CONTENT.towers.zapcoil, { ...FEATURE_GATES, 'attack.chain': null }),
-    ).toBeNull();
+      towerRefusal(RAW_CONTENT.towers.zapcoil, { ...FEATURE_GATES, 'attack.chain': 'T304b' }),
+    ).toMatch(/'chain' attack .* T304b$/);
     expect(abilityRefusal(RAW_CONTENT.abilities.orbital_strike)).toBeNull();
     expect(abilityRefusal(RAW_CONTENT.abilities.time_dilation)).toBeNull(); // T304d
     expect(abilityRefusal(LIVE.abilities.clearance_sale)).toBeNull();

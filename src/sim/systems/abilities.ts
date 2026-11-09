@@ -129,7 +129,10 @@ export function abilityStats(
 
 /** A slot is off cooldown, in ticks and in waves (the HUD and the harness ask before casting). */
 export function abilityReady(
-  state: Pick<SimState, 'abilityCooldownTicks' | 'abilityCooldownWaves'>,
+  state: {
+    readonly abilityCooldownTicks: readonly number[];
+    readonly abilityCooldownWaves: readonly number[];
+  },
   slot: 1 | 2,
 ): boolean {
   return (
@@ -144,7 +147,7 @@ export function abilityReady(
  * the slot with it.
  */
 export function freeCastReady(
-  state: Pick<SimState, 'wave' | 'freeCastWave'>,
+  state: { readonly wave: number; readonly freeCastWave: readonly number[] },
   modifiers: readonly Modifier<IdSpace>[],
   slot: 1 | 2,
 ): boolean {

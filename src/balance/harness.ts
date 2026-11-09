@@ -23,7 +23,15 @@ import { mapChecks } from './mapChecks.ts';
 import { medalChecks } from './medals.ts';
 import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
 import { NOT_CHECKED, refusedFeatures } from './refusals.ts';
-import { fullCatalogProfile, referenceRunProfile, runConfig, type RunProfile } from './profile.ts';
+import {
+  fullCatalogProfile,
+  referenceRunProfile,
+  rndPickProfile,
+  rndPicks,
+  runConfig,
+  type RunProfile,
+} from './profile.ts';
+import { rndPickChecks } from './rndChecks.ts';
 import {
   DEFAULT_SEED_COUNT,
   FEW_SEED_COUNT,
@@ -137,7 +145,9 @@ export function runMap<K extends IdSpace = LiveIds>(
         p =
           meta === 'fullCatalog'
             ? fullCatalogProfile(map, content, catalog)
-            : referenceRunProfile(map, content, meta === 'story' ? 'story' : 'standard', catalog);
+            : meta.startsWith('rnd:')
+              ? rndPickProfile(map, content, meta.slice(4), catalog)
+              : referenceRunProfile(map, content, meta === 'story' ? 'story' : 'standard', catalog);
       } catch (err) {
         p = `${meta} profile: ${err instanceof Error ? err.message : String(err)}`;
       }
@@ -152,6 +162,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     ...mapChecks(map, every, few, leftOut),
     ...noCounterAnswerChecks(map, content),
     ...medalChecks(map, every),
+    ...rndPickChecks(map, rndPicks(map, content, catalog), few),
   ];
   const only = opts.build;
   if (only !== undefined) {

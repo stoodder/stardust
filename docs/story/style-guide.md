@@ -240,6 +240,8 @@ export const a3_m03_cue_seal = defineScene([
 
 From, To, Subject, body, sign-off, and **small print**. The small print is where the fair-play clues live. Subject lines are cheerful in every act.
 
+The memo texts' home is their content file ([`src/content/memos/act1.ts`](../../src/content/memos/act1.ts) for Act I), the way the item copy lives in `copy.ts`; the act files give each memo's subject and small print, and the sample below is `memo_a1_00`, verbatim.
+
 ```
 FROM: Director Joy Sterling, Frontier Operations
 TO:   Employee #ED-447 (Junior Perimeter Technician)
@@ -259,6 +261,8 @@ Sample subject lines: *Mandatory Fun Friday Is Back! (Attendance Optional) (Requ
 ### 6.2 Codex entries
 
 Three versions per entry, unlocked by story flags. The Act III *Field Journal* shows the original and the corrected version side by side, so the text the player laughed at becomes the evidence.
+
+The entry texts' home is their content file ([`src/content/codex/act1.ts`](../../src/content/codex/act1.ts) for Act I's originals); the act files list which entries each map unlocks, and the quotes below and in the act files appear there verbatim.
 
 > **BROOD HAULER**
 > *Original (Pest Field Guide, Everglow PR):* "Big, slow, and greedy! Carries stolen stardust. High bounty! Do not inspect cargo. Handling tip: aim for the sack! ★★★"

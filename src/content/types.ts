@@ -641,9 +641,13 @@ export type BuildStep<K extends IdSpace = LiveIds> = { readonly wave: number } &
   | { readonly callWave: true }
   | { readonly interact: MarkerId }
   | { readonly scriptInput: string }
-  // Macro: holdFire 'all' on when the first unit with the tag spawns, off when the last is gone.
-  | { readonly holdFireWhile: WaveTag }
+  // Macro: holdFire 'all' on when the first unit with the tag spawns, off when the last is gone;
+  // 'neutral': on while a neutral unit (Gerald) is on the field, each pass (T313).
+  | { readonly holdFireWhile: HoldFireWhileTarget }
 );
+
+/** What a `holdFireWhile` macro watches: a wave tag, or `'neutral'` units (Gerald; D072). */
+export type HoldFireWhileTarget = WaveTag | 'neutral';
 
 export interface ScriptedBuild<K extends IdSpace = LiveIds> {
   /** At most 4, all from the profile. */
@@ -699,6 +703,13 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly flagVariants?: { readonly [F in ScriptFlagId]?: readonly FlagValueOf<F>[] };
   /** Medals the par build must earn on every seed (the harness's `medals` check; default none). */
   readonly parMedals?: readonly MedalKind[];
+  /**
+   * R&D picks that must change a par result here (D060, T228): par with the pick bought must end
+   * with a different outcome, margin, or medal than par without it on some seed (the harness's
+   * `rnd` check). Each must be a pick the map allows (an R&D Command item for an ability par
+   * equips, stocked by this map, not already in the reference profile).
+   */
+  readonly rndPickChanges?: readonly UpgradeId[];
   /**
    * Overrides the wave each no-counter build must lose by (default ⌊⅔ × waves⌋, "before the
    * final third"; design/maps.md § 6.1), up to waves − 1 (never the final wave). Say why in a

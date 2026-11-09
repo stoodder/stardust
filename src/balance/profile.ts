@@ -114,11 +114,71 @@ export function referenceRunProfile<K extends IdSpace = LiveIds>(
 }
 
 /**
+ * The R&D picks par can be run with on `map` (D060, T228): each R&D item whose grants all tune an
+ * ability (Orbital Strike Mk II, a Companion Rapport) par casts here, from slot 1 or the
+ * companion's slot 2; stocked by this map (`availableAfter` null or an earlier campaign map); and
+ * not already owned by the reference profile. In catalog order, by id.
+ */
+export function rndPicks<K extends IdSpace = LiveIds>(
+  map: CompiledMapDef<K>,
+  content: CompiledContent<K>,
+  catalog: MetaCatalog = LIVE_CATALOG,
+): string[] {
+  const par = map.builds.parBuild;
+  const slots = new Set(par.steps.flatMap((s) => (s.kind === 'ability' ? [s.slot] : [])));
+  const cast = new Set<string>();
+  if (slots.has(1) && par.technicianAbility !== null) cast.add(par.technicianAbility);
+  if (slots.has(2)) {
+    let slot2: string | null = null;
+    try {
+      slot2 = companionSlot(content, map, par.companion).slot2;
+    } catch {
+      slot2 = null; // the run reports a bad pick
+    }
+    if (slot2 !== null) cast.add(slot2);
+  }
+  const campaign: readonly string[] = content.campaign;
+  const here = campaign.indexOf(map.id);
+  const owned: Readonly<Partial<Record<string, number>>> = map.builds.referenceProfile.shop;
+  const out: string[] = [];
+  for (const u of Object.values(catalog.upgrades)) {
+    if (u.kind !== 'rnd' || (owned[u.id] ?? 0) > 0) continue;
+    const after = u.availableAfter === null ? -1 : campaign.indexOf(u.availableAfter);
+    if (u.availableAfter !== null && (after < 0 || after >= here)) continue;
+    const grants = u.ranks[0]?.grants ?? [];
+    const tunes = (g: (typeof grants)[number]): boolean =>
+      g.kind === 'abilityStat' && (g.ability === '*' ? cast.size > 0 : cast.has(g.ability));
+    if (grants.length > 0 && grants.every(tunes)) out.push(u.id);
+  }
+  return out;
+}
+
+/** The reference profile with R&D pick `pick` (rank 1) bought too, on Standard. */
+export function rndPickProfile<K extends IdSpace = LiveIds>(
+  map: CompiledMapDef<K>,
+  content: CompiledContent<K>,
+  pick: string,
+  catalog: MetaCatalog = LIVE_CATALOG,
+): RunProfile<K> {
+  const profile = map.builds.referenceProfile;
+  const modifiers = modifiersFor(
+    {
+      upgrades: { ...profile.shop, [pick]: 1 },
+      protocols: profile.protocols,
+      difficulty: 'standard',
+    },
+    content,
+    catalog,
+  );
+  return { kind: 'reference', difficulty: 'standard', modifiers, specs: profile.specs, leftOut: [] };
+}
+
+/**
  * The full-catalog profile (assertion 6): every shop and R&D upgrade in `catalog` at its top rank
  * and every protocol slot filled with FULL_CATALOG_PROTOCOLS, on Standard. Spec unlocks are
  * Engineering's (options, not power: progression.md § 10 lists none), so it keeps the map's
- * reference specs. A grant the sim still refuses (FEATURE_GATES) is left out and listed: today
- * that's Salvage Rights, which only acts on wreckage (M3), so no run the sim can make changes.
+ * reference specs. A grant the sim still refuses (FEATURE_GATES) is left out and listed (none
+ * since T304b lifted Salvage Rights' wreckage gate).
  */
 export function fullCatalogProfile<K extends IdSpace = LiveIds>(
   map: CompiledMapDef<K>,

@@ -7,7 +7,7 @@ import { A1_M02_RADIO } from '../content/radio/a1_m02.ts';
 import { RADIO_TABLES } from '../content/radio/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { LineNode, Scene } from '../content/dialogue/types.ts';
-import { adaptRadio, momentOf, speakerNamed, staticBriefingScene } from './radio.ts';
+import { adaptRadio, momentOf, radioNode, speakerNamed, staticBriefingScene } from './radio.ts';
 
 const lines = (s: Scene | undefined): LineNode[] =>
   (s?.nodes ?? []).filter((n): n is LineNode => n.kind === 'line');
@@ -45,17 +45,17 @@ describe('the radio adapter', () => {
       'That jingle. Every time.',
     ]);
     expect(lines(a?.scenes.get('unlock:thumper'))[0]?.speaker).toBe('quill');
+    // The first leak is a queued scene: a bark just before it never drops it.
+    expect(texts(a?.scenes.get('firstLeak'))).toEqual(
+      A1_M01_RADIO.filter((l) => l.on === 'firstLeak').map((l) => l.text),
+    );
     // Adapted ids never reach the save's seen list.
     for (const s of a?.scenes.values() ?? []) expect(s.id.startsWith('radio:a1_m01:')).toBe(true);
   });
 
   it('turns lone event lines into barks on the D070 triggers', () => {
     const a1 = adaptRadio('a1_m01');
-    expect(a1?.barks.map((b) => b.trigger)).toEqual([
-      { on: 'first_leak' },
-      { on: 'perfect_wave' },
-      { on: 'bank_nudge' },
-    ]);
+    expect(a1?.barks.map((b) => b.trigger)).toEqual([{ on: 'perfect_wave' }, { on: 'bank_nudge' }]);
     // A1M1's perfect-wave line plays from W2 (the jingle owns W1).
     const perfect = a1?.barks.find((b) => b.trigger.on === 'perfect_wave');
     expect(a1?.fromWave.get(perfect?.id ?? '')).toBe(2);
@@ -76,13 +76,19 @@ describe('the radio adapter', () => {
     const a = adaptRadio('a1_m02');
     const denise = lines(a?.scenes.get('waveCleared:1'))[0];
     expect(denise).toMatchObject({ speaker: 'bricks', point: 'firstTower' });
-    const policy = lines(a?.scenes.get('countdown:3'))[0];
-    expect(policy).toMatchObject({ speaker: 'quill', expression: 'policy' });
-    expect(A1_M02_RADIO.some((l) => l.text === policy?.text)).toBe(true);
+    // The tell is a line that starts or ends with "(Per policy.)" (validateDialogue's rule).
+    expect(
+      radioNode({ on: 'countdown', speaker: 'quill', text: 'Noted. (Per policy.)' }),
+    ).toMatchObject({ speaker: 'quill', expression: 'policy' });
+    expect(radioNode({ on: 'countdown', speaker: 'quill', text: 'Noted.' })).not.toHaveProperty(
+      'expression',
+    );
   });
 
   it('keys each line by its moment, and leaves the debrief to the results card', () => {
-    expect(momentOf({ on: 'countdown', wave: 4, speaker: 'goldie', text: 'x' })).toBe('countdown:4');
+    expect(momentOf({ on: 'countdown', wave: 4, speaker: 'goldie', text: 'x' })).toBe(
+      'countdown:4',
+    );
     expect(momentOf({ on: 'unlock', tower: 'thumper', speaker: 'quill', text: 'x' })).toBe(
       'unlock:thumper',
     );

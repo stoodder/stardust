@@ -304,6 +304,7 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 - A memo has From, To, Subject, body, sign-off, and **small print** (collapsed until clicked; [../story/style-guide.md §6.1](../story/style-guide.md#61-everglow-memos)). The small print is where fair-play clues live, so it must be reachable in one click.
 - A memo may carry a **gift** (for example the A1M1 Orbital Strike uplink). The gift is granted when the memo is delivered, not when it's read, so skipping the Inbox never costs anything. (One memo arrives early: the Q3 Bonus memo lands on A2M4's results screen with its 400 Stardust; [progression.md §2.1](progression.md#21-story-hooks).)
 - The Inbox keeps every memo, newest first. In Act III memos become terse and automated; after A3M2 the sender line reads "Everglow Automated Systems."
+- **As built (T303):** a memo is delivered at the run end that first wins its map (and on entering the base, for a save that missed one), so its gift lands before the next map whether or not the Inbox is opened. The welcome memo `memo_a1_00` is delivered with the new save and is the only source of the Orbital Strike uplink. The Inbox and Codex are the base's first two tabs, with a NEW tag while something is unread. Act I's memo texts live in [`src/content/memos/act1.ts`](../../src/content/memos/act1.ts); the runtime is [story-runtime.md § Other story systems](../tech/story-runtime.md#other-story-systems).
 
 ### 6.5 The codex
 
@@ -311,6 +312,7 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 - From A3M1 the codex is retitled ***Field Journal***, and entries with a corrected version show **original and corrected side by side**. The original is never deleted.
 - Before Act III, an entry shows its newest unlocked version, with a tab to read older ones.
 - **Rule:** the codex is optional depth; nothing in it is required to follow the story or to play.
+- **As built (T303):** Act I's originals, 32 entries (every enemy, tower, place, and person the Act I maps list), in [`src/content/codex/act1.ts`](../../src/content/codex/act1.ts). An enemy entry unlocks once the enemy has been met in a run, a tower or ability entry once it's owned, and a place, person, or thing once its map is won. Each shows its picture (the unit's icon, or a prop or portrait; "Photo pending" for the rest). Annotations and corrections arrive with their acts (D064 defers them to M4).
 
 ### 6.6 The Pest Bounty Board
 

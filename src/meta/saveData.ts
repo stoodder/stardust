@@ -95,7 +95,10 @@ export interface SaveData {
   story: {
     /** Each set flag holds one of its declared values (content/dialogue/flags.ts). */
     flags: Partial<Record<StoryFlagId, FlagValue>>;
-    /** Scenes played (skippable on replay), and barks that play once per campaign (`BarkId`s). */
+    /**
+     * Scenes played (skippable on replay), barks that play once per campaign (`BarkId`s), and codex
+     * versions read (`codex_<entry>__<version>`, story/codex.ts `codexSeenId`).
+     */
     seen: SceneId[];
     /** Memos read: a subset of `memosDelivered` (unread = delivered − read, the Inbox badge). */
     memosRead: MemoId[];

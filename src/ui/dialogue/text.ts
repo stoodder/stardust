@@ -9,8 +9,7 @@ export const TYPE_CPS = 40;
 
 /** One run of a line: plain or emphasized text, or an inline glyph. */
 export type TextSegment =
-  | { readonly kind: 'text'; readonly text: string; readonly em: boolean }
-  | { readonly kind: 'sun' };
+  { readonly kind: 'text'; readonly text: string; readonly em: boolean } | { readonly kind: 'sun' };
 
 /**
  * `text` split into runs: `*word*` is emphasis (at most one per line, validation says; an

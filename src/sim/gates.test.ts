@@ -67,7 +67,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
   it('every closed T121 row names its task (D064: M3 lifts projectiles and chains)', () => {
     expect(FEATURE_GATES.specs).toBeNull();
     expect(FEATURE_GATES['attack.projectile']).toBeNull(); // T304a
-    expect(FEATURE_GATES['attack.chain']).toBe('T304b');
+    expect(FEATURE_GATES['attack.chain']).toBeNull(); // T304b
     for (const f of ['beam', 'spawner'] as const) expect(FEATURE_GATES[`attack.${f}`]).toBe('M4');
     for (const s of ['pinned', 'stasis', 'unnerved'] as const) {
       expect(FEATURE_GATES[`status.${s}`]).toBe('M4');

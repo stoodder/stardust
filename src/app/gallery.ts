@@ -79,7 +79,7 @@ function isShownVariant(name: string): boolean {
  * - one more palette variant (`secondVariant`), its authored frames only, zoomed on dark;
  * - each derived variant (`default+selected`, `default+jammed`), its first frame only.
  */
-export interface CardPlan {
+interface CardPlan {
   readonly rows: readonly {
     readonly variant: string;
     readonly frames: readonly string[];

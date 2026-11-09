@@ -230,9 +230,8 @@ describe('balance harness', () => {
     const six = r.checks.find((c) => c.id === '6')!;
     expect([five.subject, five.ok]).toEqual(['noCounter:splash', true]);
     expect([six.subject, six.ok]).toEqual(['noCounter:splash', true]);
-    expect(six.summary).toMatch(
-      /lost at W\d.*left out, not simulated yet: shop:salvage_rights \(T304b\)/,
-    );
+    expect(six.summary).toMatch(/lost at W\d/);
+    expect(six.summary).not.toMatch(/left out/);
     // The full-catalog runs really carry the catalog: more integrity, more credits, the Bulkhead.
     const full = r.runs.find((x) => x.build === 'noCounter:splash@fullCatalog' && x.seed === 1)!;
     const ref = r.runs.find((x) => x.build === 'noCounter:splash' && x.seed === 1)!;

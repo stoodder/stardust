@@ -950,3 +950,18 @@ A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields 
   - **At 0%:** `driveOff`. She becomes untargetable and leaves by the nearest edge within 4 s, taking every live unit of her wave with her.
   - **Boss rules:** a boss leak drains all integrity (no Bulkhead). Bosses take chills at half strength. A boss wave's clear bonus is ×3; the early-call bonus uses the plain bonus.
   - **Script hooks:** `bossPhase` and `bossHpPct` triggers; the `bossEnd` action (`driveOff`/`retreat`). `pivot` and `layToRest` stay M4.
+
+### D074 — 2026-11-09 — T311a Act I unit art
+Real art went in behind T300a's ids. No data changed.
+- **Towers:**
+  - **Skyhook:** steep twin barrels, a quad mount from T2, sky-blue trim.
+  - **Zapcoil:** a new Vrell scrap base with a price tag, and a claw-arm coil head firing blue-white arcs.
+- **Enemies:**
+  - **Puffwing:** fluff wings that flap.
+  - **Bunchling:** three lobes with pink seams.
+  - **Digger:** a `dig_<facing>` tell; there's no burrowed-mound art, because the docs give none.
+  - **Elder:** a mossy shell, white brows, and pulsing gold huddle spots.
+  - **Gerald:** matches his portrait.
+- **Icons and tells:** wave-preview icons, tower and ability icons, and the flying/burrower/splitter/huddle/boss tells.
+- **New ids:** `enemy.youngling` and `prop.peeker` (frames hidden, peek_0, peek_1, duck).
+- **Gallery:** cards pack side by side, showing one extra palette and only the first `+selected`/`+jammed` frame. The page dropped from 27,829 to 16,132 px, well under the capture limit. Only Chitterbloom remains a placeholder (T311b).

@@ -7,6 +7,7 @@ import {
   fixtureSim,
   type FixtureIds,
 } from './__fixtures__/sim.ts';
+import { GUN, tierWith } from './__fixtures__/combat.ts';
 import type { Command } from './commands.ts';
 import type { SimEvent } from './events.ts';
 import { createSim } from './sim.ts';
@@ -29,6 +30,18 @@ function drain(sim: ReturnType<typeof fixtureSim>): Ev[] {
 function rejections(events: readonly Ev[]): string[] {
   return events.flatMap((e) => (e.type === 'CommandRejected' ? [e.reason] : []));
 }
+
+/** fx_gun with a beam attack on tier 1: a feature the sim still refuses (FEATURE_GATES, M4). */
+const BEAM_GUN = {
+  ...FIXTURE_CONTENT,
+  towers: {
+    ...FIXTURE_CONTENT.towers,
+    fx_gun: {
+      ...GUN,
+      tiers: [tierWith(GUN.tiers[0], { kind: 'beam' }), GUN.tiers[1], GUN.tiers[2]],
+    },
+  },
+} as typeof FIXTURE_CONTENT;
 
 /** createSim's error message for a config with `over` applied; fails if it doesn't throw. */
 function bad(over: Parameters<typeof fixtureConfig>[0]): string {
@@ -73,8 +86,8 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] })).toMatch(
-      /'freeCast' modifier \(test\) is not simulated until T304d/,
+    expect(bad({ content: BEAM_GUN })).toMatch(
+      /'beam' attack \(fx_gun\) is not simulated until M4/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
@@ -88,9 +101,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] });
+    const both = bad({ seed: -1, content: BEAM_GUN });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until T304d/);
+    expect(both).toMatch(/until M4/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

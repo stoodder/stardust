@@ -14,7 +14,7 @@ import { LEAK_LEAD_WAVES, MAX_WAVE_LOSS_PCT } from './rules.ts';
  * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
  * 'holdFireWhile:quiet_wave', 'companion:x', 'flag:x=v', 'alt:x', 'noCounter:x', 'guard:x'), run on the map's
  * reference profile on Standard unless a `@<meta>` suffix says otherwise ('par@story',
- * 'noCounter:armor@fullCatalog'; `splitMeta`).
+ * 'noCounter:armor@fullCatalog', 'par@rnd:orbital_strike_mk2'; `splitMeta`).
  */
 export interface RunRequest {
   readonly build: string;
@@ -56,19 +56,24 @@ export const runKey = (r: RunRequest): string => `${r.build}#${r.seed}${r.repeat
 
 /**
  * A run's meta (balance/profile.ts): the reference profile on Standard (`standard`) or on Story
- * (`story`, assertion 9), or the full-catalog profile on Standard (`fullCatalog`, assertion 6).
+ * (`story`, assertion 9), the full-catalog profile on Standard (`fullCatalog`, assertion 6), or
+ * the reference profile with one R&D pick bought (`rnd:<upgrade id>`, the `rnd` check).
  */
-export type RunMeta = 'standard' | 'story' | 'fullCatalog';
+export type RunMeta = 'standard' | 'story' | 'fullCatalog' | `rnd:${string}`;
 
-/** A run label's build and meta: 'par@story' → par on Story; 'par' → par on Standard. */
+/**
+ * A run label's build and meta: 'par@story' → par on Story; 'par' → par on Standard;
+ * 'par@rnd:orbital_strike_mk2' → par with Mk II bought.
+ */
 export function splitMeta(label: string): { readonly build: string; readonly meta: RunMeta } {
   const at = label.lastIndexOf('@');
   if (at < 0) return { build: label, meta: 'standard' };
   const meta = label.slice(at + 1);
-  if (meta !== 'story' && meta !== 'fullCatalog') {
-    throw new RangeError(`unknown run meta '${meta}' in '${label}'`);
+  if (meta === 'story' || meta === 'fullCatalog') return { build: label.slice(0, at), meta };
+  if (meta.startsWith('rnd:') && meta.length > 4) {
+    return { build: label.slice(0, at), meta: `rnd:${meta.slice(4)}` };
   }
-  return { build: label.slice(0, at), meta };
+  throw new RangeError(`unknown run meta '${meta}' in '${label}'`);
 }
 
 /** The run label of par under one story-flag value (#14): 'flag:door_choice=convoy'. */

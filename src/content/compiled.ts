@@ -17,6 +17,7 @@ import type {
   EnemyFaction,
   FlagValue,
   GridPos,
+  HoldFireWhileTarget,
   IdSpace,
   Layer,
   LiveIds,
@@ -38,6 +39,7 @@ import type {
   TowerFaction,
   TowerStat,
   Trait,
+  UpgradeId,
   WavePhase,
   WaveTag,
 } from './types.ts';
@@ -404,7 +406,7 @@ export type CompiledBuildStep<K extends IdSpace = LiveIds> = { readonly wave: nu
   | { readonly kind: 'callWave' }
   | { readonly kind: 'interact'; readonly marker: MarkerId }
   | { readonly kind: 'scriptInput'; readonly id: string }
-  | { readonly kind: 'holdFireWhile'; readonly tag: WaveTag }
+  | { readonly kind: 'holdFireWhile'; readonly tag: HoldFireWhileTarget }
 );
 export type BuildStepKind = CompiledBuildStep['kind'];
 
@@ -434,6 +436,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly flagVariants: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
   /** Medals the par build must earn on every seed (default none). */
   readonly parMedals: readonly MedalKind[];
+  /** R&D picks that must change a par result (BuildsDef.rndPickChanges; default none). */
+  readonly rndPickChanges: readonly UpgradeId[];
   /** The map's no-counter lose-by override (BuildsDef.noCounterLoseByWave), or null. */
   readonly noCounterLoseByWave: number | null;
 }

@@ -57,8 +57,11 @@ export interface ReachedTower {
   readonly tower: string;
   readonly tier: number;
   readonly spec: 'a' | 'b' | null;
-  /** null: a loadout tower the build never builds, or a build step that gave no placement. */
-  readonly at: Placement | null;
+  /**
+   * Where it stood; null or absent for a loadout tower the build never builds, a build step that
+   * gave no placement, or a hypothetical tower (the loadout screen's "what could answer").
+   */
+  readonly at?: Placement | null;
 }
 
 /**
@@ -191,12 +194,13 @@ export function placementReaches(
   t: ReachedTower,
   rangeOf?: (t: ReachedTower) => number | null,
 ): boolean {
-  if (t.at === null || scope.routes === null || rangeOf === undefined) return true;
+  const at = t.at ?? null;
+  if (at === null || scope.routes === null || rangeOf === undefined) return true;
   const range = rangeOf(t);
   if (range === null) return true;
-  const reach = range * (1 + (t.at.highGround ? HIGH_GROUND_RANGE_PCT : 0)) + REACH_SLACK_TILES;
-  const at = t.at.tile;
-  return scope.routes.some((r) => distanceToRoute(at, r) <= reach);
+  const reach = range * (1 + (at.highGround ? HIGH_GROUND_RANGE_PCT : 0)) + REACH_SLACK_TILES;
+  const tile = at.tile;
+  return scope.routes.some((r) => distanceToRoute(tile, r) <= reach);
 }
 
 /** Whether `entry` applies on this map at all (its act, body, and layer conditions). */

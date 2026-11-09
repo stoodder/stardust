@@ -72,6 +72,8 @@ export interface SceneView {
   readonly ended: boolean;
   /** Text shows whole, with no typewriter (dialogue off under `?test=1`). */
   readonly instant: boolean;
+  /** The line's typewriter: when it started (performance.now), and whether Next finished it. */
+  readonly typing: { readonly from: number; readonly done: boolean };
 }
 
 export const dialogue = {

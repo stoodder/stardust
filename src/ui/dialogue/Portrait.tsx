@@ -9,7 +9,12 @@ import { PALETTES } from '../../content/palettes/index.ts';
 import { SCAN_FPS, TALK_FPS } from '../../content/sprites/portraits/portrait.ts';
 import { SPRITES } from '../../content/sprites/index.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
-import { bakeSprite, DEFAULT_VARIANT, frameKey, type BakedSprite } from '../../render/sprites/bake.ts';
+import {
+  bakeSprite,
+  DEFAULT_VARIANT,
+  frameKey,
+  type BakedSprite,
+} from '../../render/sprites/bake.ts';
 import { imageToCanvas } from '../../render/sprites/canvas.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { pickFrame, type FramePhase } from './portraitFrames.ts';
@@ -96,7 +101,8 @@ export function Portrait({ line, talking }: { line: LineView; talking: boolean }
   const style = { '--dlg-edge': plateColor(line.color) };
   if (p === null) return null;
   const s = spriteFrames(p.sprite);
-  const frame = s === null ? null : pickFrame(s.names, p.variant, p.expression, phaseAt(p, ms, talking, still));
+  const frame =
+    s === null ? null : pickFrame(s.names, p.variant, p.expression, phaseAt(p, ms, talking, still));
   const img = s === null || frame === null ? null : frameUrl(s, p.sprite, frame, p.dark);
   return (
     <span

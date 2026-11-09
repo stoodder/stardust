@@ -5,7 +5,12 @@ import { defineBarks, defineScene, defineScenes } from '../../content/dialogue/d
 
 export const DEV_SCENES = defineScenes([
   defineScene('a1_m01_cue_dev_survey', [
-    { kind: 'line', speaker: 'quill', expression: 'happy', text: 'Quick survey, Technician! How is your first shift going?' },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: 'Quick survey, Technician! How is your first shift going?',
+    },
     { kind: 'line', speaker: 'bricks', text: 'Careful. It logs everything.' },
     {
       kind: 'choice',
@@ -15,22 +20,54 @@ export const DEV_SCENES = defineScenes([
         { text: '...', tone: 'quiet', goto: 'quiet' },
       ],
     },
-    { label: 'great', kind: 'line', speaker: 'quill', expression: 'happy', text: 'Logged as: thriving!' },
+    {
+      label: 'great',
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: 'Logged as: thriving!',
+    },
     { kind: 'end' },
-    { label: 'lunch', kind: 'line', speaker: 'quill', expression: 'policy', text: 'Lunch is at noon. (Per policy.)' },
+    {
+      label: 'lunch',
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'policy',
+      text: 'Lunch is at noon. (Per policy.)',
+    },
     { kind: 'end' },
-    { label: 'quiet', kind: 'line', speaker: 'bricks', expression: 'happy', text: 'Quiet one. I like that.' },
+    {
+      label: 'quiet',
+      kind: 'line',
+      speaker: 'bricks',
+      expression: 'happy',
+      text: 'Quiet one. I like that.',
+    },
     { kind: 'end' },
   ]),
   defineScene('a1_m01_scene_dev_party', [
-    { kind: 'line', speaker: 'narrator', text: 'Dome 1, the break room. Someone brought a cake shaped like a turret.' },
-    { kind: 'line', speaker: 'quill', expression: 'happy', text: "Surprise! It's nobody's birthday. I checked twice." },
+    {
+      kind: 'line',
+      speaker: 'narrator',
+      text: 'Dome 1, the break room. Someone brought a cake shaped like a turret.',
+    },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: "Surprise! It's nobody's birthday. I checked twice.",
+    },
     { kind: 'line', speaker: 'bricks', text: "It's a good cake, Sprout. Don't tell it I said so." },
     { kind: 'line', speaker: 'player', expression: 'happy', text: '(You take the biggest slice.)' },
   ]),
   defineScene('a1_m01_cue_dev_knock', [
     { kind: 'line', speaker: 'quill', expression: 'happy', text: 'Lettuce!' },
-    { kind: 'line', speaker: 'quill', expression: 'happy', text: "Lettuce in, it's cold out here! ...That's the joke." },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: "Lettuce in, it's cold out here! ...That's the joke.",
+    },
   ]),
 ]);
 

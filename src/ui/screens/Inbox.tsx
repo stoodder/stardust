@@ -1,9 +1,9 @@
 // The Everglow Inbox (T303; design/core-loop.md § 6.4, art-direction § 9 *Memos*): the base's
 // memo pane. Delivered memos, newest first, in a list beside a reader on Everglow letterhead; the
 // small print collapses under its toggle, one click away. Showing a memo reads it, which clears its
-// NEW tag (and the Inbox tab's count). The view models are app/inbox.ts.
+// NEW tag (and, with the last one, the Inbox tab's badge). The view models are app/inbox.ts.
 import type { ComponentChildren } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { inboxView, markMemoRead, type MemoView } from '../../app/inbox.ts';
 import { GLYPH_CHARS } from '../../story/text.ts';
 import { silkText } from '../silk.ts';
@@ -24,10 +24,10 @@ export function GlyphText({ text }: { text: string }) {
 }
 
 /** The teal NEW tag (the HUD's build-slot tag, as a menu badge). Decorative: names say "new". */
-export function NewTag({ count }: { count?: number }) {
+export function NewTag() {
   return (
     <span class="sd-new-tag" aria-hidden="true">
-      {count === undefined ? 'NEW' : `${count} NEW`}
+      NEW
     </span>
   );
 }
@@ -35,6 +35,11 @@ export function NewTag({ count }: { count?: number }) {
 /** "Small print", collapsed until clicked (style-guide § 6.1: where the fair-play clues live). */
 export function SmallPrint({ id, text }: { id: string; text: string }) {
   const [open, setOpen] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  // Opened at the foot of a long memo, the print scrolls into view.
+  useEffect(() => {
+    if (open) textRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [open]);
   return (
     <div class="sd-small-print">
       <button
@@ -49,7 +54,7 @@ export function SmallPrint({ id, text }: { id: string; text: string }) {
         </span>
         Small print
       </button>
-      <p id={id} class="sd-small-print-text" hidden={!open}>
+      <p id={id} ref={textRef} class="sd-small-print-text" hidden={!open}>
         <GlyphText text={text} />
       </p>
     </div>

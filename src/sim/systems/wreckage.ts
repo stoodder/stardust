@@ -9,8 +9,8 @@
 //   `ceil(WRECKAGE_CLEAR_TICKS / speed)`, `speed = (set ?? 1 + Σ flat) × (1 + Σ pct)`, so pct 1 is
 //   2× faster (3 s). A queued tile clears on the tick its count reaches that time, and the next
 //   head starts counting on the following tick.
-// - **A cleared tile** becomes its `underWreckage` tile (a pad, high ground, a hidden power node, or
-//   decor), read through `liveTile` (the compiled map never changes). It pays its `salvage`
+// - **A cleared tile** becomes its `underWreckage` tile (a pad, high ground, a hidden power node,
+//   or decor), read through `liveTile` (the compiled map never changes). It pays its `salvage`
 //   (Salvage Rights' `economy.salvage`: `round((set ?? salvage + Σ flat) × (1 + Σ pct))`) as
 //   income, counts `stats.wreckageCleared`, and emits `WreckageCleared`.
 // - The Salvage Crane's double speed and +25% salvage arrive with the Crane (Act II, M4).
@@ -48,7 +48,7 @@ function keyOf(map: WreckageMap, idx: number): TileKey {
   return `${idx % map.cols},${Math.floor(idx / map.cols)}`;
 }
 
-/** What tile `idx` (row-major, in range) became when cleared: its `underWreckage` (pad if unset). */
+/** What wreckage tile `idx` (row-major, in range) becomes: its `underWreckage` (a pad if unset). */
 function underAt(map: WreckageMap, idx: number): TileChar {
   return map.underWreckage[keyOf(map, idx)] ?? 'o';
 }
@@ -57,24 +57,20 @@ function underAt(map: WreckageMap, idx: number): TileChar {
  * The tile at row-major `idx` as the run stands: the map's tile, or for cleared wreckage the
  * tile under it. The sim (builds, tile bonuses) and render/HUD read tiles through this.
  */
-export function liveTileAt(
-  map: WreckageMap,
-  wreckage: WreckageView,
-  idx: number,
-): TileChar {
+export function liveTileAt(map: WreckageMap, drone: WreckageView, idx: number): TileChar {
   const tile = map.tiles[idx]!; // callers pass an in-range index
-  return tile === 'x' && wreckage.cleared.includes(idx) ? underAt(map, idx) : tile;
+  return tile === 'x' && drone.cleared.includes(idx) ? underAt(map, idx) : tile;
 }
 
 /** The live tile at (col, row) (`liveTileAt`), or null off the map. */
 export function liveTile(
   map: WreckageMap,
-  wreckage: WreckageView,
+  drone: WreckageView,
   col: number,
   row: number,
 ): TileChar | null {
   const idx = tileIndex(map, col, row);
-  return idx < 0 ? null : liveTileAt(map, wreckage, idx);
+  return idx < 0 ? null : liveTileAt(map, drone, idx);
 }
 
 /**
@@ -83,14 +79,14 @@ export function liveTile(
  */
 export function wreckageStatus(
   map: WreckageMap,
-  wreckage: WreckageView,
+  drone: WreckageView,
   col: number,
   row: number,
 ): WreckageStatus {
   const idx = tileIndex(map, col, row);
   if (idx < 0 || map.tiles[idx] !== 'x') return 'none';
-  if (wreckage.cleared.includes(idx)) return 'cleared';
-  const at = wreckage.queue.indexOf(idx);
+  if (drone.cleared.includes(idx)) return 'cleared';
+  const at = drone.queue.indexOf(idx);
   if (at < 0) return 'wreckage';
   return at === 0 ? 'clearing' : 'queued';
 }

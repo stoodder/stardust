@@ -1,8 +1,8 @@
-// Clearance Sale: Zibzab's companion ability (design/core-loop.md § 3.2): the next 3 builds or
-// upgrades this map cost 40% less, counted per purchase (never per second, so pausing can't
-// exploit it), once per 4 waves. From A1M4. createSim refuses it until T304d (FEATURE_GATES
-// `ability.discount`; state.discountCharges, state.abilityCooldownWaves). The icon is a
-// placeholder under its final id (T311a).
+// Clearance Sale: Zibzab's companion ability (design/core-loop.md § 3.2): the next 3 builds,
+// upgrades, or specializations this map cost 40% less, counted per purchase (never per second, so
+// pausing can't exploit it), once per 4 waves (wave starts after the cast). From A1M4. The sim
+// loads `state.discountCharges` on the cast and sim/economy.ts `pay` spends one per discounted
+// purchase (T304d). The icon is a placeholder under its final id (T311a).
 import { defineAbility } from '../define.ts';
 
 export const clearance_sale = defineAbility({

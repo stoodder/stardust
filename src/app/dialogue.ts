@@ -52,7 +52,8 @@ import {
 } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { dialogue, type LineView, type SceneMode, type SceneView } from '../ui/dialogue/state.ts';
-import { typeMs } from '../ui/dialogue/text.ts';
+import { typedLength, typeMs } from '../ui/dialogue/text.ts';
+import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
@@ -88,13 +89,19 @@ export function readMs(text: string): number {
 }
 
 /**
- * How long a comms line holds, in ms: typing plus reading (its `durationSec` for a silence or a
- * timed line), the reading capped at REPLY_BEAT_MS when the next line answers it.
+ * How long a comms line holds, in ms (its `durationSec` for a silence or a timed line): its
+ * reading time, and at least REPLY_BEAT_MS once typed; just that beat when the next line answers it.
  */
-export function commsHoldMs(text: string, durationSec: number | undefined, nextIsReply: boolean): number {
+export function commsHoldMs(
+  text: string,
+  durationSec: number | undefined,
+  nextIsReply: boolean,
+): number {
   if (durationSec !== undefined) return durationSec * 1000;
-  const read = readMs(text);
-  return typeMs(text) + (nextIsReply ? Math.min(read, REPLY_BEAT_MS) : read);
+  // Reading starts as the line types; a short line still stays up a beat once it's whole.
+  const typing = typeMs(text);
+  if (nextIsReply) return typing + REPLY_BEAT_MS;
+  return Math.max(readMs(text), typing + REPLY_BEAT_MS);
 }
 
 /** What a scene changed, applied to `save`: flags, the callsign, and (for a real scene id) seen. */
@@ -253,6 +260,9 @@ interface Holding {
   cursor: DialogueCursor;
   transcript: LineView[];
   line: LineView | null;
+  /** When the line on screen started typing (performance.now), and whether Next finished it. */
+  typedFrom: number;
+  typedOut: boolean;
   remember: string | null;
 }
 
@@ -286,10 +296,16 @@ function publish(): void {
     transcript: [...h.transcript],
     line: h.line,
     choices:
-      step.kind === 'choice' ? step.node.options.map((o) => ({ text: silkText(resolveText(o.text, textContext())), tone: o.tone })) : null,
+      step.kind === 'choice'
+        ? step.node.options.map((o) => ({
+            text: silkText(resolveText(o.text, textContext())),
+            tone: o.tone,
+          }))
+        : null,
     remember: h.remember,
     ended: step.kind === 'end',
     instant: h.instant,
+    typing: { from: h.typedFrom, done: h.typedOut },
   };
   dialogue.scene.value = view;
 }
@@ -304,6 +320,8 @@ function settle(h: Holding): void {
     const view = lineView(step.node, ctx, textContext(), onRadio());
     if (!h.instant) {
       h.line = view;
+      h.typedFrom = performance.now();
+      h.typedOut = prefersReducedMotion() || typedLength(view.text) === 0;
       break;
     }
     h.transcript.push(view);
@@ -327,6 +345,8 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     cursor: start(scene, storyContext(map)),
     transcript: [],
     line: null,
+    typedFrom: 0,
+    typedOut: false,
     remember: null,
   };
   holding = h;
@@ -372,7 +392,24 @@ export function playScene(scene: Scene, opts: PlayOptions = {}): void {
   open(scene, opts, mode);
 }
 
-/** Next: moves past the line on screen (the UI first finishes its typing). */
+/**
+ * Next (a click, Enter, or Space): finishes the typing of the line on screen, else moves past it
+ * (or closes a scene that has played out). Judged on the scene's own clock, so presses faster
+ * than the screen redraws still land one step each.
+ */
+export function nextScene(): void {
+  const h = holding;
+  if (h === null) return;
+  if (h.line !== null && !h.typedOut && performance.now() - h.typedFrom < typeMs(h.line.text)) {
+    h.typedOut = true;
+    publish();
+    return;
+  }
+  if (h.line !== null) advanceScene();
+  else closeScene();
+}
+
+/** Moves past the line on screen (typed or not). */
 export function advanceScene(): void {
   const h = holding;
   if (h === null || h.cursor.step.kind !== 'line') return;
@@ -398,7 +435,9 @@ export function chooseOption(index: number): void {
   h.transcript.push(lineView({ speaker: 'player', text: option.text }, ctx, textContext(), null));
   h.cursor = advance(h.scene, h.cursor, ctx, index);
   h.remember =
-    option.remember === undefined ? null : `${SPEAKER_DEFS[option.remember].name} will remember that.`;
+    option.remember === undefined
+      ? null
+      : `${SPEAKER_DEFS[option.remember].name} will remember that.`;
   settle(h);
   if (h.cursor.step.kind === 'end' && h.mode !== 'briefing') {
     // A choice that ends the scene still shows its "will remember" before it closes.
@@ -497,7 +536,12 @@ function pumpComms(): void {
     return;
   }
   const map = session?.map ?? mapOfScene(next.scene.id);
-  commsNow = { scene: next.scene, cursor: start(next.scene, storyContext(map)), prev: null, button: null };
+  commsNow = {
+    scene: next.scene,
+    cursor: start(next.scene, storyContext(map)),
+    prev: null,
+    button: null,
+  };
   showCommsLine();
 }
 
@@ -519,17 +563,24 @@ function showCommsLine(): void {
   const view = lineView(node, ctx, textContext(), onRadio());
   const cue = c.prev !== null && c.prev.speaker !== view.speaker ? c.prev : null;
   c.button = node.button ?? null;
-  dialogue.comms.value = { line: view, cue, button: c.button === null ? null : silkText(c.button.label) };
+  dialogue.comms.value = {
+    line: view,
+    cue,
+    button: c.button === null ? null : silkText(c.button.label),
+  };
   const next = advance(c.scene, c.cursor, ctx);
   const reply = next.step.kind === 'line' && next.step.node.speaker !== node.speaker;
   clearCommsTimer();
-  commsTimer = setTimeout(() => {
-    commsTimer = null;
-    if (commsNow !== c) return;
-    c.prev = view;
-    c.cursor = next;
-    showCommsLine();
-  }, commsHoldMs(view.text, node.durationSec, reply));
+  commsTimer = setTimeout(
+    () => {
+      commsTimer = null;
+      if (commsNow !== c) return;
+      c.prev = view;
+      c.cursor = next;
+      showCommsLine();
+    },
+    commsHoldMs(view.text, node.durationSec, reply),
+  );
 }
 
 /** A bark on the panel: its own one-line scene, never under another line (D061). */
@@ -540,7 +591,12 @@ function barkScene(b: Bark): Scene {
 function showBark(b: Bark): void {
   clearCommsTimer();
   const scene = barkScene(b);
-  commsNow = { scene, cursor: start(scene, storyContext(session?.map ?? null)), prev: null, button: null };
+  commsNow = {
+    scene,
+    cursor: start(scene, storyContext(session?.map ?? null)),
+    prev: null,
+    button: null,
+  };
   showCommsLine();
 }
 
@@ -560,7 +616,12 @@ export function pressCommsButton(): void {
     return;
   }
   clearCommsTimer();
-  commsNow = { scene, cursor: start(scene, storyContext(session?.map ?? null)), prev: null, button: null };
+  commsNow = {
+    scene,
+    cursor: start(scene, storyContext(session?.map ?? null)),
+    prev: null,
+    button: null,
+  };
   showCommsLine();
 }
 
@@ -763,13 +824,17 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('TowerBuilt', (e) => {
       towerOf.set(e.uid, e.tower);
-      offerBarks([isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' }]);
+      offerBarks([
+        isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' },
+      ]);
     }),
     bus.on('TowerSold', (e) => {
       // Name tags (story/tags.ts) join with T302c: whether the turret was tagged isn't known yet.
       const t = towerOf.get(e.uid);
       towerOf.delete(e.uid);
-      offerBarks([t !== undefined && isTower(t) ? { on: 'tower_sold', tower: t } : { on: 'tower_sold' }]);
+      offerBarks([
+        t !== undefined && isTower(t) ? { on: 'tower_sold', tower: t } : { on: 'tower_sold' },
+      ]);
     }),
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);
@@ -796,7 +861,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     const saved = activeSave();
     const fresh = played.filter((id) => saved !== null && !saved.story.seen.includes(id));
     if (fresh.length > 0) {
-      updateActiveSave((sv) => ({ ...sv, story: { ...sv.story, seen: [...sv.story.seen, ...fresh] } }));
+      updateActiveSave((sv) => ({
+        ...sv,
+        story: { ...sv.story, seen: [...sv.story.seen, ...fresh] },
+      }));
     }
     if (session === s) session = null;
     clearCommsTimer();

@@ -59,6 +59,7 @@ On win, loss, retry, or quit to menu, in this order:
 5. Pay rewards by the table in [design/progression.md](../design/progression.md) §2: first-clear Stardust is the map's flat `stardust` value (A3M3 included), plus medal and objective Intel. **Defeat payouts can't be farmed:** a defeat on a map already completed pays 0 Stardust, and after a checkpoint retry `wavesResolved` counts only the waves resolved in this attempt from the run's `resumedFromWave` on ([architecture.md § Checkpoints](architecture.md#checkpoints)).
 6. Run the map's story transactions (below).
 7. Grant the towers the win issues for the next map ([Issued towers](#issued-towers)), then save.
+8. Story unlocks: the enemies the run met join the seen list, the memos now due are delivered with their gifts, and the codex versions now unlocked are added ([story-runtime.md § Other story systems](story-runtime.md#other-story-systems)).
 
 **As built (T204c).** `runEnd(save, input)` (`src/meta/runEnd.ts`) is pure: it returns a new save and a `RunEndSummary`, and never touches storage or the clock. Its `RunEndInput` is the map id, the outcome, the map's `stardust` and wave count, the waves resolved, the earned medal ids, the run's `skitterkinKilled`, the final meter, an optional veteran bonus (0 until veteran modifiers exist), and the run's `stats` (the router passes `state.stats`; without them no flag rule applies).
 - **Step 1** adds the kills on every outcome, and the run also adds 1 to `stats.runs`.
@@ -66,6 +67,7 @@ On win, loss, retry, or quit to menu, in this order:
 - **Step 4:** a win appends each earned medal the map's record doesn't hold yet; a loss records none. A won map's record is `completed` with `bestMeter` as the best of the old one and this run's meter. A loss on a map with no record leaves `{ completed: false, medals: [], bestMeter: 0 }` (the map has been played to an end), and a loss never changes an existing record.
 - **Step 5** (`src/meta/rewards.ts`, rates in `REWARD_RULES`; the new banks are clamped to `[0, SAVE_LIMITS.currency]`, so a run end never writes a save validation refuses): `stardustPayout` returns the amount with its `source`: `first_clear` (the full value), `replay` (`round(0.4 × stardust × (1 + veteranBonus))`), `defeat` on a map not yet won (`round(0.25 × stardust × wavesResolved / waveCount)`, with the waves clamped to the map), or `defeat_replay` (0). `medalPayout` pays `medalIntel` (1) per medal the record didn't hold, so a medal pays its Intel once. Difficulty never changes a payout ([progression.md § 9](../design/progression.md#9-difficulty-settings)).
 - **Step 7:** `withIssuedTowers`; the summary lists what it granted (`issued`, the Sprinkler on A1M1's first win), which Results names.
+- **Step 8** (T303, `meta/story.ts` `withStoryUnlocks`): after step 7, so an issued tower's codex entry unlocks with it. The enemies met are every wave on a win, and the waves resolved plus the one under way on a loss. The summary lists the memos delivered (`memos`) and the codex entries that gained a version (`codex`).
 - **Not yet:** step 3 waits for revocation (A3M2; the sim has no revoked state yet) and step 6 for the story transactions (the first is A2M4's), both M3+, checkpoints and their anti-farming clause for M3 (the clause is a TODO in `stardustPayout`), and objective Intel for M3's optional objectives. Each is marked in the code.
 - **The app** (`app/router.ts` → `app/save.ts` `recordRun`) calls it once per battle when the map ends (`MapWon` or `MapLost`), writes the result to the save's slot, and gives the summary to Results ([architecture.md § Rendering](architecture.md#rendering)). It returns the summary with `writeFailed` (null, or the "Records couldn't file that" message: the run holds for this session only, and Results says so) and `stardustNote` (where the Stardust goes while Zibzab's shop is still locked: "Banked for Zibzab's shop. Opens after Shift 3 (coming soon)."). A battle outside a campaign (the `?map=` dev battle) records nothing. There is no mid-map retry or quit to menu yet, so every run ends through Results.
 
@@ -99,7 +101,7 @@ interface SaveData {
   profile: PlayerProfile | null;        // { name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper' }; null until the intake (T306)
   campaign: {
     maps: Partial<Record<MapId, { completed: boolean; medals: MedalId[]; bestMeter: number }>>;
-    seenEnemies: EnemyId[];             // enemy types met (first spawned in a run): the NEW badge and `new_enemy`
+    seenEnemies: EnemyId[];             // enemy types met in a run (run end, step 8): codex unlocks, the NEW badge, `new_enemy`
   };
   currencies: { stardust: number; intel: number };
   unlocks: {
@@ -113,7 +115,7 @@ interface SaveData {
   upgrades: Partial<Record<UpgradeId, number>>;  // owned ranks (≥ 1), including the C2 Zibzab Tune-up
   story: {
     flags: Partial<Record<StoryFlagId, FlagValue>>;  // StoryFlagId = FlagId (content/dialogue/flags.ts)
-    seen: (SceneId | BarkId)[];         // scenes played (skippable on replay) and once-per-campaign barks
+    seen: (SceneId | BarkId)[];         // scenes played (skippable on replay), once-per-campaign barks, codex versions read (`codex_<entry>__<version>`)
     memosRead: MemoId[];                // a subset of memosDelivered; unread = delivered − read
     memosDelivered: MemoId[];           // in delivery order; a memo's gift is granted on delivery
     codex: Record<CodexId, ('original' | 'annotated' | 'corrected')[]>;
@@ -137,7 +139,7 @@ interface LoadoutPreset { towers: TowerId[]; ability: AbilityId | null }  // 1�
 
 - **The profile** is filled in by character creation (T306; name rules in [design/core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns), `isValidPlayerName` in [`content/dialogue/profile.ts`](../../src/content/dialogue/profile.ts)). New game writes the save only when the intake form is signed, so a new campaign starts with its profile. It is null for every save written before v2 (and for a new game under `?test=1`, which skips the intake), so the intake runs first when Continue, Load, or Import opens such a save (`app/navigation.ts`, `app/profile.ts`). The same intake sets the `arrival_reason` flag, which is that choice's one home, so story conditions read it like any flag.
 - **Equipped protocols** are save-wide, not per preset: protocols are swapped freely between maps ([progression.md § 5](../design/progression.md#5-field-protocols-meta-perks)). The picker is T308's.
-- **A new save** (`createNewSave()`) owns Rivet and Thumper (issued for A1M1) and Orbital Strike. Orbital Strike is the welcome memo's gift; until the memo exists, a new save grants it directly (D031). Everything else is empty or 0.
+- **A new save** (`createNewSave()`) owns Rivet and Thumper (issued for A1M1) and has the welcome memo `memo_a1_00` delivered, unread, with its gift, the Orbital Strike uplink (`story.granted` holds `memo_a1_00`). Everything else is empty or 0. A save from before the memo existed already owns the strike, and catches up on the memo, without a second grant, when it next reaches run end or the base.
 - **One-time hints** (`src/meta/hints.ts`, D061): `upgrade` is the upgrade teach, shown once per save (the HUD marks it the first time it shows). `new:<tower>` marks a newly issued tower's first battle: a tower Everglow issues after a map (`TOWER_ACCESS` `how: 'issued'` with an `availableAfter`, so never the starting kit) is new in every battle the save brings it into until one starts (`newlyIssuedTowers`). That battle shows a NEW tag on its build slot and plays its `issued` radio line (the Sprinkler on A1M2), and marks the hint as it starts. `app/save.ts` reads and writes them for the save in play (`hintShown`, `newTowersIn`, `markHintsShown`, `markNewTowersShown`).
 - **Each schema bump** comes with a migration and a fixture ([Versioning and migrations](#versioning-and-migrations)). v1 was M2's save, frozen when M2 shipped; v2 (M3) adds the profile, seen enemies, and equipped protocols. Veteran records arrive with their feature as a later bump.
 

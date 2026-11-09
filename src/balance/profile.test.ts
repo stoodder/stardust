@@ -65,19 +65,19 @@ describe('profiles', () => {
     expect(sources.filter((s) => s === 'shop:fx_power')).toHaveLength(3);
     expect(sources.filter((s) => s === 'shop:reinforced_core')).toHaveLength(3);
     for (const p of FULL_CATALOG_PROTOCOLS) expect(sources).toContain(`protocol:${p}`);
-    expect(full.leftOut).toEqual(['shop:salvage_rights (T304b)']);
+    expect(full.leftOut).toEqual([]);
     const sim = createSim(runConfig(FIXTURE_CONTENT, map, map.builds.parBuild, full, 1));
     expect(sim.state.integrity).toBe(map.coreIntegrity + 3);
     expect(sim.state.leakAbsorbLeft).toBe(5);
   });
 
-  it('the live full catalog composes on A1M1, leaving out only Salvage Rights', () => {
+  it('the live full catalog composes on A1M1, leaving nothing out', () => {
     const live = compileContent(RAW_CONTENT);
     const a1m1 = live.maps.a1_m01;
     const full = fullCatalogProfile(a1m1, live);
-    expect(full.leftOut).toEqual(['shop:salvage_rights (T304b)']);
+    expect(full.leftOut).toEqual([]);
     const every = Object.values<UpgradeDef>(UPGRADES)
-      .filter((u) => u.id !== 'salvage_rights' && u.ranks.some((r) => r.grants.length > 0))
+      .filter((u) => u.ranks.some((r) => r.grants.length > 0))
       .map((u) => `${u.kind}:${u.id}`);
     for (const s of every) expect(full.modifiers.map((m) => m.source)).toContain(s);
     const b = a1m1.builds.parBuild;

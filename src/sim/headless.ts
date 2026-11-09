@@ -18,8 +18,15 @@
 //   or `'all'`. The `holdFireWhile: <tag>` macro arms a watcher when it's reached: from then on,
 //   it issues plain `holdFire 'all'` on once a unit with that tag is alive, and off once every
 //   such unit the map spawns has spawned and none is left alive (conventions.md § Balance sims).
+//   `holdFireWhile: 'neutral'` (Gerald's macro, T313) holds while a neutral unit is on the field
+//   and releases once none is (each pass: he leaves with NeutralExited), every time one appears.
 //   It's what a player does by hand, so the run stays a plain command log.
+// - `specialize` addresses a tower by tile and, on an unlocked tier-3 tower, waits until its spec's
+//   listed cost is in the bank (otherwise it's issued, and the sim's rejection is the step error).
+//   `clear` sends the salvage drone (`clear` command): it completes once queued, and a later
+//   `build` on that wreckage tile waits until the drone has cleared it.
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
+import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
@@ -28,6 +35,7 @@ import { tileIndex } from './grid.ts';
 import { createRunTracker, type RunSummary } from './headlessTracker.ts';
 import { assertNever } from '../shared/types.ts';
 import { createSim, type Sim } from './sim.ts';
+import { clearCommand, wreckageStatus } from './systems/wreckage.ts';
 import type { MedalStatus } from './state.ts';
 
 export type { RunSummary, TowerSummary, WaveSummary } from './headlessTracker.ts';
@@ -36,6 +44,8 @@ export type { RunSummary, TowerSummary, WaveSummary } from './headlessTracker.ts
 const SUPPORTED_STEPS: ReadonlySet<CompiledBuildStep['kind']> = new Set([
   'build',
   'upgrade',
+  'specialize',
+  'clear',
   'sell',
   'targeting',
   'holdFire',
@@ -98,6 +108,8 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   let next = 0;
   /** Armed holdFireWhile macros: the tag, how many such units the map spawns, and its record. */
   const watchers: { tag: WaveTag; total: number; holding: boolean; rec: StepRecord }[] = [];
+  /** Armed holdFireWhile: 'neutral' macros (Gerald's): holding now, and the step's record. */
+  const neutralWatchers: { holding: boolean; rec: StepRecord }[] = [];
   /** The build phase (countdownWave) already called early, so each is called once. */
   let calledPhase = 0;
 
@@ -151,6 +163,9 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     switch (s.kind) {
       case 'build': {
         if (state.lockedTowers.includes(s.tower)) return 'wait';
+        // Wreckage the drone is still clearing: wait for it (a never-queued tile is rejected).
+        const wreck = wreckageStatus(sim.map, state.wreckage, s.tile[0], s.tile[1]);
+        if (wreck === 'queued' || wreck === 'clearing') return 'wait';
         const def = sim.config.content.towers[s.tower];
         if (def !== undefined && state.credits < def.tiers[0].cost) return 'wait';
         return finish(apply({ type: 'build', tile: s.tile, tower: s.tower }), lateForPhase);
@@ -162,6 +177,22 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         if (tier !== undefined && state.credits < tier.cost) return 'wait';
         return finish(apply({ type: 'upgrade', towerUid: t.uid }), lateForPhase);
       }
+      case 'specialize': {
+        const t = towerAt(s.tile);
+        if (t === null) return finish('noSuchTower', lateForPhase);
+        // Wait for the cost only when the spec is otherwise allowed; else the sim says why not.
+        const def = t.def;
+        const spec = def?.specs?.[s.spec];
+        const allowed =
+          def !== null &&
+          sim.config.specsUnlocked.includes(def.id) &&
+          t.spec === null &&
+          t.tier === MAX_TIER_BEFORE_SPEC;
+        if (allowed && spec !== undefined && state.credits < spec.cost) return 'wait';
+        return finish(apply({ type: 'specialize', towerUid: t.uid, spec: s.spec }), lateForPhase);
+      }
+      case 'clear':
+        return finish(apply(clearCommand(s.tile)), lateForPhase);
       case 'sell': {
         const t = towerAt(s.tile);
         if (t === null) return finish('noSuchTower', lateForPhase);
@@ -193,11 +224,16 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         return finish(apply({ type: s.kind, target, on: s.on }), lateForPhase);
       }
       case 'holdFireWhile': {
+        if (s.tag === 'neutral') {
+          neutralWatchers.push({ holding: false, rec });
+          return finish(null, false);
+        }
+        const tag = s.tag;
         const total = sim.map.waves.reduce(
-          (n, w) => n + w.groups.reduce((m, g) => m + (g.tags.includes(s.tag) ? g.count : 0), 0),
+          (n, w) => n + w.groups.reduce((m, g) => m + (g.tags.includes(tag) ? g.count : 0), 0),
           0,
         );
-        watchers.push({ tag: s.tag, total, holding: false, rec });
+        watchers.push({ tag, total, holding: false, rec });
         return finish(null, false);
       }
       case 'callWave': {
@@ -207,8 +243,6 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         waveCalls.push(state.tick);
         return finish(apply({ type: 'callWave' }), false);
       }
-      case 'specialize':
-      case 'clear':
       case 'interact':
       case 'scriptInput':
         // assertRunnableBuild refused these up front.
@@ -224,6 +258,16 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used
       if (e.alive && e.tags.includes(tag)) return true;
+    }
+    return false;
+  };
+
+  /** Whether a neutral unit (Gerald) is on the field. */
+  const neutralAlive = (): boolean => {
+    const enemies = state.enemies;
+    for (let i = 0; i < enemies.used; i++) {
+      const e = enemies.items[i]!; // i < used
+      if (e.alive && e.def !== null && e.def.neutral) return true;
     }
     return false;
   };
@@ -246,6 +290,13 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         w.holding = true;
         toggle(w.rec, true);
       }
+    }
+    if (neutralWatchers.length === 0) return;
+    const alive = neutralAlive();
+    for (const w of neutralWatchers) {
+      if (w.holding === alive) continue;
+      w.holding = alive;
+      toggle(w.rec, alive);
     }
   };
 

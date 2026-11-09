@@ -10,7 +10,8 @@
 //   specs, sells, and per-tower settings address a tower built by then; tier 3 is the last
 //   upgrade and a spec needs tier 3 and an unlocked spec; ability steps have an ability to use
 //   (slot 2: a present companion or a pick);
-//   clear, interact, scriptInput, and holdFireWhile name things the map has.
+//   clear, interact, scriptInput, and holdFireWhile name things the map has (a tag a group
+//   carries, or 'neutral' on a map that spawns a neutral unit).
 // - [no-counter-build]: `noCounterBuilds[c]` carries no answer to `c` (counterAnswers.ts: the
 //   tiers and specs its towers reach, from placements that reach its enemies' routes, on this
 //   map's act and enemies, and the abilities it casts).
@@ -340,6 +341,9 @@ function validateBuild(
     for (const a of e.actions) if ('forceInput' in a) forced.add(a.forceInput.id);
   }
   const tags = new Set(def.waves.flatMap((w) => w.groups.flatMap((g) => g.tags ?? [])));
+  const hasNeutral = def.waves.some((w) =>
+    w.groups.some((g) => ctx.enemies.get(g.enemy)?.neutral === true),
+  );
   const placed = new Map<string, Placed>();
   const cleared = new Set<string>();
   let lastWave = 1;
@@ -431,7 +435,11 @@ function validateBuild(
     } else if ('scriptInput' in s) {
       if (!forced.has(s.scriptInput)) bad(`no forceInput action requests '${s.scriptInput}'`);
     } else if ('holdFireWhile' in s) {
-      if (!tags.has(s.holdFireWhile)) bad(`no wave group is tagged '${s.holdFireWhile}'`);
+      if (s.holdFireWhile === 'neutral') {
+        if (!hasNeutral) bad('no wave group spawns a neutral unit');
+      } else if (!tags.has(s.holdFireWhile)) {
+        bad(`no wave group is tagged '${s.holdFireWhile}'`);
+      }
     }
   }
 }

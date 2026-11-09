@@ -37,10 +37,15 @@ export interface Typewriter {
 }
 
 /**
- * Types `line` from the moment its id first renders. `instant` (dialogue off under `?test=1`) and
+ * Types `line` from the moment its id first renders, or (`clock`, a scene's) from when the scene
+ * says it started, finished when the scene says so. `instant` (dialogue off under `?test=1`) and
  * reduced motion show it whole; a silence has nothing to type.
  */
-export function useTypewriter(line: LineView | null, instant: boolean): Typewriter {
+export function useTypewriter(
+  line: LineView | null,
+  instant: boolean,
+  clock: { readonly from: number; readonly done: boolean } | null = null,
+): Typewriter {
   const total = line === null ? 0 : typedLength(line.text);
   const whole = instant || prefersReducedMotion() || total === 0;
   const start = useRef({ id: -1, at: 0, finished: false, ticked: 0 });
@@ -49,15 +54,17 @@ export function useTypewriter(line: LineView | null, instant: boolean): Typewrit
   }
   const [, redraw] = useState(0);
   const s = start.current;
+  const from = clock?.from ?? s.at;
+  const finished = whole || s.finished || clock?.done === true;
   const shown =
-    line === null ? 0 : s.finished ? total : revealedAt(line.text, performance.now() - s.at);
+    line === null ? 0 : finished ? total : revealedAt(line.text, performance.now() - from);
   const done = shown >= total;
   useEffect(() => {
     if (line === null || done) return undefined;
     const id = setInterval(() => redraw((n) => n + 1), TICK_MS);
     return () => clearInterval(id);
   }, [line?.id, done]);
-  if (line !== null && !s.finished && shown > s.ticked) {
+  if (line !== null && !finished && shown > s.ticked) {
     s.ticked = shown;
     typeTick?.(line.speaker);
   }

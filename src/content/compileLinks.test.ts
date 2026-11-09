@@ -1,4 +1,5 @@
-// Link compilation (T202a): the live registry (Crossfire, Sitting Ducks, design/towers.md § 6.2)
+// Link compilation (T202a): the live registry (Crossfire, Sitting Ducks, Conductive; towers.md
+// § 6.2)
 // and every compile error a malformed link raises.
 import { describe, expect, it } from 'vitest';
 import { FIXTURE } from './__fixtures__/content.ts';
@@ -50,10 +51,33 @@ describe('the live links (towers.md § 6.2)', () => {
     expect(sprinkler).toMatchObject({ tower: 'sprinkler', flatRange: 0.3, pctRange: 0 });
   });
 
+  it('Conductive: Zapcoil +2 chain jumps, the Sprinkler Soaks for 3 s (T304b)', () => {
+    const [sprinkler, zapcoil] = live.links[2]!.partners;
+    expect(live.links[2]).toMatchObject({ id: 'conductive', index: 2, bit: 4 });
+    expect(sprinkler).toMatchObject({ tower: 'sprinkler', soakedTicks: 180, chainJumps: 0 });
+    expect(zapcoil).toMatchObject({ tower: 'zapcoil', chainJumps: 2, soakedTicks: 0 });
+    expect(live.links[0]!.partners[0]).toMatchObject({ chainJumps: 0, soakedTicks: 0 });
+  });
+
   it('lists each tower’s links on its compiled def', () => {
     expect(live.towers.rivet.links).toEqual(['crossfire']);
     expect(live.towers.thumper.links).toEqual(['crossfire', 'sitting_ducks']);
-    expect(live.towers.sprinkler.links).toEqual(['sitting_ducks']);
+    expect(live.towers.sprinkler.links).toEqual(['sitting_ducks', 'conductive']);
+    expect(live.towers.zapcoil.links).toEqual(['conductive']);
+  });
+
+  it('refuses chain jumps that aren’t a whole number > 0, and a Soak that isn’t > 0', () => {
+    const [gun, mortar] = link().partners;
+    for (const chainJumps of [0, 1.5, -1]) {
+      expect(errorsFor({ fx_link: link({ partners: [{ ...gun, chainJumps }, mortar] }) })).toEqual([
+        'links.fx_link.partners[0].chainJumps: needs a whole number > 0',
+      ]);
+    }
+    for (const soakedSec of [0, -3, Number.NaN]) {
+      expect(errorsFor({ fx_link: link({ partners: [gun, { ...mortar, soakedSec }] }) })).toEqual([
+        'links.fx_link.partners[1].soakedSec: needs a duration > 0',
+      ]);
+    }
   });
 
   it('numbers statuses in EffectDef order (the vsStatus mask bits)', () => {

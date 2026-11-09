@@ -38,7 +38,7 @@
   list-style: none;
 }
 
-.sd-story-list-title {
+.sd-story-list .sd-story-list-title {
   margin: 0 0 4px;
   font-family: var(--font-heading);
   font-size: 8px;
@@ -101,6 +101,10 @@
 /* The tab's badge sits after its label. */
 .sd-tab .sd-new-tag {
   margin-left: 4px;
+}
+
+.sd-tab {
+  white-space: nowrap;
 }
 
 /* ---- The reader ---- */
@@ -176,7 +180,7 @@
   color: var(--sd-teal-1);
 }
 
-.sd-memo-body p {
+.sd-memo .sd-memo-body p {
   margin: 6px 0 0;
   white-space: pre-line;
 }
@@ -242,7 +246,7 @@
   text-align: center;
 }
 
-.sd-small-print-text {
+.sd-small-print .sd-small-print-text {
   margin: 2px 0 0;
   font-family: var(--font-body);
   font-size: 8px;
@@ -252,7 +256,7 @@
 
 /* On the codex's dark well, the toggle and the print read in steel.3. */
 .sd-codex .sd-small-print-toggle,
-.sd-codex .sd-small-print-text {
+.sd-codex .sd-small-print .sd-small-print-text {
   color: var(--sd-steel-3);
 }
 
@@ -308,7 +312,7 @@
   color: var(--sd-steel-3);
 }
 
-.sd-codex-kicker {
+.sd-codex .sd-codex-kicker {
   margin: 0 0 2px;
   font-family: var(--font-heading);
   font-size: 8px;
@@ -317,7 +321,7 @@
   color: var(--sd-steel-3);
 }
 
-.sd-codex-title {
+.sd-codex .sd-codex-title {
   margin: 0;
   font-family: var(--font-heading);
   font-size: 16px;
@@ -341,7 +345,7 @@
   flex: 1;
 }
 
-.sd-codex-version-label {
+.sd-codex .sd-codex-version-label {
   margin: 0 0 2px;
   font-family: var(--font-heading);
   font-size: 8px;
@@ -349,7 +353,7 @@
   color: var(--accent);
 }
 
-.sd-codex-text {
+.sd-codex .sd-codex-text {
   margin: 0;
   font-family: var(--font-body);
   font-size: 8px;

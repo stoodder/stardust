@@ -4,11 +4,16 @@ import { describe, expect, it } from 'vitest';
 import { FIXTURE, fxBuilds, fxMap } from './__fixtures__/content.ts';
 import { compileContent } from './compile.ts';
 import {
+  REACH_SLACK_TILES,
   answerScope,
   answersCarried,
+  distanceToRoute,
+  rangeReached,
   towersReached,
   type AnswerScope,
   type ReachStep,
+  type ReachTile,
+  type ScopeEnemy,
 } from './counterAnswers.ts';
 import { mapDefinersFor } from './define.ts';
 import { COUNTER_ANSWERS, COUNTER_CATEGORIES, type TowerAnswer } from './rules.ts';
@@ -20,6 +25,7 @@ const scope = (act: Act, bodies: Body[] = ['organic'], air = false): AnswerScope
   act,
   bodies: new Set(bodies),
   air,
+  routes: null,
 });
 const build = (tower: string, tile: string): ReachStep => ({ op: 'build', tower, tile });
 const up = (tile: string): ReachStep => ({ op: 'upgrade', tile });
@@ -46,11 +52,11 @@ describe('towersReached', () => {
       up('nowhere'),
     ];
     expect(towersReached(['rivet', 'thumper', 'sprinkler'], steps)).toEqual([
-      { tower: 'rivet', tier: 4, spec: 'b' },
-      { tower: 'rivet', tier: 1, spec: null },
-      { tower: 'thumper', tier: 2, spec: null },
-      // In the loadout but never built: it still counts, at tier 1.
-      { tower: 'sprinkler', tier: 1, spec: null },
+      { tower: 'rivet', tier: 4, spec: 'b', at: null },
+      { tower: 'rivet', tier: 1, spec: null, at: null },
+      { tower: 'thumper', tier: 2, spec: null, at: null },
+      // In the loadout but never built: it still counts, at tier 1, with no placement.
+      { tower: 'sprinkler', tier: 1, spec: null, at: null },
     ]);
   });
 });
@@ -140,6 +146,103 @@ describe('the live answer table (enemies.md § 3.1, towers.md § 2.1)', () => {
   });
 });
 
+// ── Placement (T313): a placed tower answers only from where it can reach the enemies' routes ──
+
+describe('placement-aware answers (T313)', () => {
+  /** An air lane along row 0, from (0,0) to (10,0). */
+  const LANE: ReachTile[] = [
+    [0, 0],
+    [10, 0],
+  ];
+  const ROAD: ReachTile[] = [
+    [0, 9],
+    [10, 9],
+  ];
+  const puffwing: ScopeEnemy = { traits: ['flying'], body: 'organic', layer: 'air', route: LANE };
+  /** Gerald: neutral, flying, on the ground road (D072). */
+  const gerald: ScopeEnemy = { ...puffwing, body: 'mechanical', neutral: true, route: ROAD };
+  const at = (tower: string, tile: ReachTile, highGround = false): ReachStep => ({
+    op: 'build',
+    tower,
+    tile: `${tile[0]},${tile[1]}`,
+    at: { tile, highGround },
+  });
+  const towers = TOWERS as unknown as Record<string, Parameters<typeof rangeReached>[0]>;
+  const rangeOf = (t: Parameters<typeof rangeReached>[1]): number | null =>
+    towers[t.tower] === undefined ? null : rangeReached(towers[t.tower]!, t);
+  const air = (steps: ReachStep[], loadout: string[] = [], enemies: ScopeEnemy[] = [puffwing]) =>
+    answersCarried(
+      COUNTER_ANSWERS.air,
+      answerScope('air', 1, enemies),
+      towersReached(loadout, steps),
+      [],
+      rangeOf,
+    );
+
+  it('measures distance to a route polyline, ends and corners included', () => {
+    expect(distanceToRoute([5, 3], LANE)).toBe(3);
+    expect(distanceToRoute([13, 4], LANE)).toBe(5);
+    expect(
+      distanceToRoute(
+        [2, 2],
+        [
+          [0, 0],
+          [4, 0],
+          [4, 4],
+        ],
+      ),
+    ).toBe(2);
+    expect(distanceToRoute([1, 1], [[1, 1]])).toBe(0);
+  });
+
+  it('reads the range a tower reaches: tiers inherit, a spec may outrange', () => {
+    const rivet = TOWERS.rivet as unknown as Parameters<typeof rangeReached>[0];
+    const t = (tier: number, spec: 'a' | 'b' | null = null) => ({
+      tower: 'rivet',
+      tier,
+      spec,
+      at: null,
+    });
+    const t1 = rangeReached(rivet, t(1))!;
+    expect(t1).toBeGreaterThan(0);
+    expect(rangeReached(rivet, t(3))!).toBeGreaterThanOrEqual(t1);
+    // Railspike (spec b) is the long-range sniper (range 6).
+    expect(rangeReached(rivet, t(4, 'b'))).toBe(6);
+    expect(rangeReached({ tiers: [{}, {}, {}] }, t(3))).toBeNull();
+  });
+
+  it('a Rivet answers air only where it can reach the lane', () => {
+    const range = rangeOf({ tower: 'rivet', tier: 1, spec: null, at: null })!;
+    const edge = Math.floor(range + REACH_SLACK_TILES);
+    expect(air([at('rivet', [5, edge])])).toEqual(['rivet']);
+    expect(air([at('rivet', [5, edge + 1])])).toEqual([]);
+    // High ground's range bonus brings it back in.
+    const far = Math.floor(range * 1.25 + REACH_SLACK_TILES);
+    expect(air([at('rivet', [5, far], true)])).toEqual(['rivet']);
+    // Any one placement in reach is enough (reach once).
+    expect(air([at('rivet', [5, 9]), at('rivet', [5, 1])])).toEqual(['rivet']);
+  });
+
+  it('counts a loadout tower the build never places, and a tower with no known range', () => {
+    expect(air([], ['skyhook'])).toEqual(['skyhook']);
+    expect(air([at('lantern', [5, 9])])).toEqual(['lantern']); // no range data: not judged
+    // A step with no placement isn't judged either.
+    expect(air([{ op: 'build', tower: 'rivet', tile: 'r' }])).toEqual(['rivet']);
+  });
+
+  it('neutral units are in no category: Gerald on the road makes no road Rivet an air answer', () => {
+    expect(air([at('rivet', [5, 9])], [], [puffwing, gerald])).toEqual([]);
+    expect(answerScope('air', 1, [gerald]).routes).toBeNull();
+    expect(answerScope('air', 1, [gerald]).air).toBe(false);
+  });
+
+  it('routes are unknown (placement unjudged) when an enemy comes without one', () => {
+    const { route: _route, ...noRoute } = puffwing;
+    expect(answerScope('air', 1, [puffwing, noRoute]).routes).toBeNull();
+    expect(air([at('rivet', [5, 9])], [], [noRoute])).toEqual(['rivet']);
+  });
+});
+
 // ── The validator on a fixture map whose required counter is armor ─────────────────────────
 
 const loose = mapDefinersFor<IdSpace>();
@@ -196,7 +299,31 @@ function armorMap(noArmor: ScriptedBuild<IdSpace>, patch: Partial<MapDef<IdSpace
 }
 const errors = (raw: RawContent<IdSpace>, r = rules()): string[] => validate(raw, r);
 
+/** The fixture grid widened east, with a pad at (11,0) far from the path (and the air lane). */
+const WIDE = {
+  size: { cols: 12, rows: 5 },
+  tiles: fxMap.tiles.map((row, r) => `${row}${r === 0 ? '.....o' : '......'}`),
+} as const;
+
 describe('validate: answers by the tiers and specs a build reaches (T208)', () => {
+  it("[no-counter-build] a T3 gun out of the path's reach is no armor answer (T313)", () => {
+    const far = { ...gunT2, steps: [...gunT2.steps.filter((s) => !('ability' in s))] };
+    const farT3: ScriptedBuild<IdSpace> = {
+      ...far,
+      steps: [
+        ...far.steps,
+        { wave: 2, build: 'fx_gun', tile: [11, 0] },
+        { wave: 2, upgrade: [11, 0] },
+        { wave: 2, upgrade: [11, 0] },
+      ],
+    };
+    expect(errors(armorMap(farT3, WIDE))).toEqual([]);
+    const nearT3 = { ...farT3, steps: [...farT3.steps, { wave: 2, upgrade: [1, 1] as const }] };
+    expect(errors(armorMap(nearT3, WIDE))).toEqual([
+      "[no-counter-build] maps.fx_map.noCounterBuilds.armor: uses fx_gun T3, which answers 'armor'",
+    ]);
+  });
+
   it('a no-armor build with its guns held at T2 validates (and compiles)', () => {
     expect(errors(armorMap(gunT2))).toEqual([]);
     expect(() => compileContent(armorMap(gunT2), rules())).not.toThrow();

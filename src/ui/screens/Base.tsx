@@ -97,7 +97,7 @@ export function Base() {
                 {!open && <span class="sd-visually-hidden"> (locked)</span>}
                 {badge > 0 && (
                   <>
-                    <NewTag count={badge} />
+                    <NewTag />
                     <span class="sd-visually-hidden">{` (${badge} new)`}</span>
                   </>
                 )}

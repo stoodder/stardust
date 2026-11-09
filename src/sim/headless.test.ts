@@ -1,15 +1,23 @@
 // The scripted-build executor's step semantics (conventions.md § Balance sims) and runHeadless,
 // on the fixture map (src/sim/__fixtures__/sim.ts), plus A1M1's authored builds end to end.
 import { describe, expect, it } from 'vitest';
-import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
+import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
+import type { Modifier } from './config.ts';
 import type { SimEvent } from './events.ts';
 import { createBuildExecutor, runHeadless } from './headless.ts';
 import { createSim } from './sim.ts';
 
 type Step = CompiledBuildStep<FixtureIds>;
+/** A starting bank of `n` credits. */
+const credits = (n: number): Modifier<FixtureIds> => ({
+  kind: 'economy',
+  stat: 'startCredits',
+  set: n,
+  source: 'test',
+});
 const fxMap = FIXTURE_CONTENT.maps.fx_map;
 
 function build(
@@ -27,8 +35,11 @@ function build(
 }
 
 /** Runs a build with an executor, recording every event with its tick. */
-function play(b: CompiledBuild<FixtureIds>, maxTicks = 60 * 60 * 5) {
-  const sim = fixtureSim({ loadout: b.loadout });
+function play(
+  b: CompiledBuild<FixtureIds>,
+  maxTicks = 60 * 60 * 5,
+  sim = fixtureSim({ loadout: b.loadout }),
+) {
   const exec = createBuildExecutor(sim, b);
   const events: { tick: number; e: SimEvent<FixtureIds> }[] = [];
   /** The bank before each tick's steps. */
@@ -161,8 +172,90 @@ describe('scripted-build executor', () => {
 
   it("refuses step kinds the sim can't run yet", () => {
     const sim = fixtureSim();
-    const b = build([{ wave: 1, kind: 'clear', tile: [4, 3] }]);
-    expect(() => createBuildExecutor(sim, b)).toThrow(/can't run yet: 0:clear/);
+    const b = build([{ wave: 1, kind: 'scriptInput', id: 'press' }]);
+    expect(() => createBuildExecutor(sim, b)).toThrow(/can't run yet: 0:scriptInput/);
+  });
+
+  it('specialize: waits for the spec cost, then takes the tower to tier 4 (T215)', () => {
+    // 330 for the gun to T3 leaves 295: W1's bounties make up the rest of Fx Rail's 300.
+    const sim = fixtureSim({
+      loadout: ['fx_gun', 'fx_mortar'],
+      specsUnlocked: ['fx_gun'],
+      modifiers: [credits(625)],
+    });
+    const { exec, credits: bank } = play(
+      build([
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+        { wave: 1, kind: 'upgrade', tile: [1, 1] },
+        { wave: 2, kind: 'upgrade', tile: [1, 1] },
+        { wave: 2, kind: 'specialize', tile: [1, 1], spec: 'b' },
+      ]),
+      60 * 60 * 5,
+      sim,
+    );
+    const spec = exec.steps[3]!;
+    expect(spec.error).toBeNull();
+    // Issued the first tick the bank covered Fx Rail's 300, never before.
+    expect(spec.issuedTick).toBeGreaterThan(0);
+    expect(bank[spec.issuedTick]).toBeGreaterThanOrEqual(300);
+    expect(bank[spec.issuedTick - 1]).toBeLessThan(300);
+    const t = sim.state.towers.items[0]!;
+    expect([t.tier, t.spec, t.priority]).toEqual([4, 'b', 'strong']);
+  });
+
+  it('specialize: no tower, a locked spec, or a tower below T3 is a step error', () => {
+    const { exec } = play(
+      build([
+        { wave: 1, kind: 'specialize', tile: [3, 1], spec: 'a' },
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+        { wave: 1, kind: 'specialize', tile: [1, 1], spec: 'a' },
+      ]),
+      600,
+    );
+    expect(exec.steps.map((s) => s.error)).toEqual(['noSuchTower', null, 'specLocked']);
+    const sim = fixtureSim({
+      loadout: ['fx_gun', 'fx_mortar'],
+      specsUnlocked: ['fx_gun'],
+      modifiers: [credits(10_000)],
+    });
+    const low = play(
+      build([
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+        { wave: 1, kind: 'specialize', tile: [1, 1], spec: 'a' },
+      ]),
+      600,
+      sim,
+    );
+    expect(low.exec.steps.map((s) => s.error)).toEqual([null, 'needsTier3']);
+  });
+
+  it('clear sends the drone; a build on that wreckage waits until it is cleared', () => {
+    const { exec, events, sim } = play(
+      build([
+        { wave: 1, kind: 'clear', tile: [4, 3] },
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [4, 3] },
+      ]),
+    );
+    expect(exec.steps.map((s) => [s.issuedTick, s.error])).toEqual([
+      [0, null],
+      [expect.any(Number), null],
+    ]);
+    const cleared = events.find((l) => l.e.type === 'WreckageCleared')!;
+    // The tick after the drone finishes (the build sees the cleared tile at once).
+    expect(exec.steps[1]!.issuedTick).toBe(cleared.tick + 1);
+    expect(sim.state.towers.items[0]!.alive).toBe(true);
+    expect(sim.state.stats.wreckageCleared).toBe(1);
+  });
+
+  it('a build on wreckage never sent for, or a clear on a plain tile, is a step error', () => {
+    const { exec } = play(
+      build([
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [4, 3] },
+        { wave: 1, kind: 'clear', tile: [1, 1] },
+      ]),
+      600,
+    );
+    expect(exec.steps.map((s) => s.error)).toEqual(['notBuildable', 'invalidTarget']);
   });
 
   it('holdFire and spareRunners steps address a tower by tile or all; no tower is a step error', () => {
@@ -215,6 +308,54 @@ describe('scripted-build executor', () => {
     expect(sim.state.stats.tagLeaked.fleeing).toBe(4);
     expect(sim.state.stats.holdFireUses).toBe(1);
     expect(sim.state.holdFireAll).toBe(false);
+  });
+});
+
+describe("holdFireWhile: 'neutral' (Gerald's macro, T313)", () => {
+  // fx_map with W2's runners made neutral, like Gerald: towers target them, but every hit plinks.
+  const runner = { ...FIXTURE_CONTENT.enemies.fx_runner, neutral: true };
+  const map = FIXTURE_CONTENT.maps.fx_map;
+  const NEUTRAL: CompiledContent<FixtureIds> = {
+    ...FIXTURE_CONTENT,
+    enemies: { ...FIXTURE_CONTENT.enemies, fx_runner: runner },
+    maps: {
+      fx_map: {
+        ...map,
+        waves: map.waves.map((w) => ({
+          ...w,
+          groups: w.groups.map((g) => (g.enemy.id === 'fx_runner' ? { ...g, enemy: runner } : g)),
+        })),
+      },
+    },
+  };
+  const gun = { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] } as const;
+  const run = (steps: Step[]) => {
+    const b = build(steps);
+    return play(b, 60 * 60 * 5, createSim(fixtureConfig({ content: NEUTRAL, loadout: b.loadout })));
+  };
+
+  it('without the macro, the gun shoots the neutral units', () => {
+    expect(run([gun]).sim.state.stats.neutralHits).toBeGreaterThan(0);
+  });
+
+  it('holds from the first neutral spawn until the last has exited, and nothing hits them', () => {
+    const { exec, events, sim } = run([{ wave: 1, kind: 'holdFireWhile', tag: 'neutral' }, gun]);
+    expect(exec.steps.map((s) => [s.issuedTick, s.error])).toEqual([
+      [0, null],
+      [0, null],
+    ]);
+    const toggles = events.filter((l) => l.e.type === 'HoldFireChanged');
+    expect(toggles.map((l) => l.e)).toEqual([
+      { type: 'HoldFireChanged', target: 'all', on: true },
+      { type: 'HoldFireChanged', target: 'all', on: false },
+    ]);
+    const first = events.find((l) => l.e.type === 'EnemySpawned' && l.e.enemy === 'fx_runner')!;
+    const exits = events.filter((l) => l.e.type === 'NeutralExited');
+    expect(exits).toHaveLength(4);
+    expect(toggles[0]!.tick).toBe(first.tick + 1);
+    expect(toggles[1]!.tick).toBe(exits.at(-1)!.tick + 1);
+    expect(sim.state.stats.neutralHits).toBe(0);
+    expect(sim.state.outcome).toBe('won');
   });
 });
 

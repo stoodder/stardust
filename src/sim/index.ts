@@ -18,7 +18,9 @@ export { companionAbility, companionSlot, type CompanionSlot } from './companion
 export {
   SEGMENT_TICK_TICKS,
   abilityInSlot,
+  abilityReady,
   abilityStats,
+  freeCastReady,
   segmentSpan,
   type AbilityStats,
   type SegmentSpan,
@@ -59,8 +61,13 @@ export {
   bountyFor,
   callWaveBonus,
   costFor,
+  purchaseCost,
+  purchasePriceInto,
   sellValue,
   sellValueInto,
+  type PurchaseKind,
+  type PurchasePrice,
+  type PurchaseState,
   type SellValue,
 } from './economy.ts';
 export {

@@ -2,7 +2,7 @@
 // (a click or Enter finishes the typing, then moves on), the choice buttons (keyboard first: the
 // first option takes the focus, the arrows move between them), and the Tab trap a modal keeps.
 import { useEffect, useRef } from 'preact/hooks';
-import { advanceScene, chooseOption, closeScene } from '../../app/dialogue.ts';
+import { chooseOption, nextScene } from '../../app/dialogue.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import type { ChoiceView, SceneView } from './state.ts';
 
@@ -33,19 +33,11 @@ export interface SceneStep {
   readonly canNext: boolean;
 }
 
-/** The typing and the Next action for scene `view`. */
+/** The typing and the Next action for scene `view` (its clock is the scene's, app/dialogue.ts). */
 export function useSceneStep(view: SceneView): SceneStep {
-  const typed = useTypewriter(view.line, view.instant);
+  const typed = useTypewriter(view.line, view.instant, view.typing);
   const canNext = view.line !== null || (view.ended && view.mode !== 'briefing');
-  return {
-    typed,
-    canNext,
-    next: () => {
-      if (view.line !== null && !typed.done) typed.finish();
-      else if (view.line !== null) advanceScene();
-      else if (view.ended) closeScene();
-    },
-  };
+  return { typed, canNext, next: nextScene };
 }
 
 /**

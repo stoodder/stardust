@@ -4,10 +4,12 @@
 // - A batch of lines one moment plays (a countdown's radio, W1's jingle and Bricks's answer, the
 //   first Hauler down) becomes a non-pausing scene, keyed by its moment (`countdown:4`). Its lines
 //   play in order on the comms panel; a reply shows under its cue (D028).
-// - A single line on an event becomes a bark on the matching trigger (D070): `firstLeak` →
-//   `first_leak`, `perfectWave` → `perfect_wave` (from its wave on), `enemyKilled` →
-//   `enemy_killed`, `enemyLeaked` → `enemy_leaked`, `bankNudge` → `bank_nudge`, `issued` →
-//   `tower_issued`. Barks keep the 6 s spacing and drop rather than queue.
+// - A single line on an event becomes a bark on the matching trigger (D070): `perfectWave` →
+//   `perfect_wave` (from its wave on), `enemyKilled` → `enemy_killed`, `enemyLeaked` →
+//   `enemy_leaked`, `bankNudge` → `bank_nudge`, `issued` → `tower_issued`. Barks keep the 6 s
+//   spacing and drop rather than queue. The first leak stays a queued scene, as the M2 radio
+//   always played it: QUILL's line is a fair-play seed ("Toward... the wilderness?"), so a bark
+//   just before it (the bank nudge) must not drop it. T302c decides its final home.
 // - A map's static briefing string (`MapDef.briefing`) becomes its briefing scene.
 // - The debrief (`mapWon`, `mapLost`) stays the results card's (app/runResult.ts; T316).
 // Adapted ids start `radio:`, so they never reach the save's `story.seen`.
@@ -62,7 +64,6 @@ export function momentOf(l: RadioLine): string | null {
 function barkTrigger(l: RadioLine): BarkTrigger | null {
   const enemy = l.enemy !== undefined && isEnemy(l.enemy) ? l.enemy : null;
   const tower = l.tower !== undefined && isTower(l.tower) ? l.tower : null;
-  if (l.on === 'firstLeak') return { on: 'first_leak' };
   if (l.on === 'perfectWave') return { on: 'perfect_wave' };
   if (l.on === 'bankNudge') return { on: 'bank_nudge' };
   if (l.on === 'enemyKilled' && enemy !== null) return { on: 'enemy_killed', enemy };

@@ -24,7 +24,10 @@ async function captureFullPage(page: Page, path: string): Promise<{ w: number; h
     w: document.documentElement.scrollWidth,
     h: document.documentElement.scrollHeight,
   }));
-  expect(h, `the gallery is ${h} px tall; give it more columns`).toBeLessThanOrEqual(MAX_PAGE_PX);
+  expect(
+    h,
+    `the gallery is ${h} px tall; show fewer frames per card (app/gallery.ts cardPlan)`,
+  ).toBeLessThanOrEqual(MAX_PAGE_PX);
   const strips: string[] = [];
   for (let y = 0; y < h; y += TILE_PX) {
     const clip = { x: 0, y, width: w, height: Math.min(TILE_PX, h - y) };
@@ -70,7 +73,7 @@ function isPortrait(id: string): boolean {
 test('gallery: every registered sprite and frame renders, with no console errors', async ({
   page,
 }) => {
-  // Baking every sprite and stitching a ~28,000 px capture legitimately outlasts the default 30 s
+  // Baking every sprite and stitching a ~16,000 px capture can outlast the default 30 s
   // when the gate runs the smoke specs in parallel.
   test.setTimeout(90_000);
   // Wide enough that variants wrap side by side, keeping the full page short.
