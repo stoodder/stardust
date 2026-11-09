@@ -1274,3 +1274,11 @@ The star map ("Sector map" on screen) is specced in core-loop §1.1, art-directi
 - **Each act's shared barks are one file** (`barks/act2.ts`), and a test holds every shared bark to its act. `not_firing` takes an optional `wave`.
 - **Later-act codex versions are a per-act patch** merged by the registry (`CODEX_LATER_VERSIONS`), never replacing a version an entry already has; T411 annotates Act I entries from `codex/act2.ts`.
 - **Act II dev saves** (`after_a1m5_ref`, `after_a2m1..3`) follow the reference profile's weaker branches (C1 cleared, `held_fire_second_look` false), go through the shop's real `buy()`, and skip unregistered maps and unlanded content (M3's pattern), so they grow as M4 lands.
+
+### D105 — 2026-11-09 — T400a sim and content seams
+Every M4 shape, event, command, stat, stub and data id is declared (architecture.md's Built-so-far rows list them); `FEATURE_GATES` rows name the task that lifts each; A1M1–A1M5's harness output is identical (hashes moved as state fields were added, D069).
+- **`boss` is intel-only** (`ThreatIntelId = Trait | 'boss'`): it must appear in `threatIntel` exactly when a boss walks the waves, so A1M5's briefing now shows it.
+- **The hush is derived** (`hushes`: Hollow, not a boss, not gathering, not neutral), never authored; **Skittish** comes from fleeing Skitterkin groups and is refused only beside hushing units, so Act I's fleeing runners keep their M2 rules.
+- **Stub towers stay out of play:** `TOWERS_AHEAD_OF_TASK` keeps Lookout, Harpoon and Crane out of loadout pools, licenses and spec unlocks until their task lifts the row (the Lookout license goes live with T406).
+- **Open conflict for T408:** the Harpoon's documented 4.0 range reaches A1M5's Quiet Wave from two pads on a replay (D097); while the Harpoon is a stub it is excluded from `[quiet-wave-reach]`, and T408 must settle it (move a pad, scope the rule, or change the range) before lifting its gate. The Lookout's +20% range aura raises the same question for T406.
+- **`dev_act2`** (18×12, two merging spawns) is a render fixture, not a campaign map; it fits 1280×720 clear of the HUD.
