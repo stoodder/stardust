@@ -190,7 +190,9 @@ export function cycleTargeting(): void {
     showNotice(rejectText('noTargeting') ?? '');
     return;
   }
-  issue({ type: 'targeting', towerUid: sel.uid, mode: nextPriority(sel.priority) });
+  const mode = nextPriority(sel.priority);
+  issue({ type: 'targeting', towerUid: sel.uid, mode });
+  announce(`Targeting: ${PRIORITY_LABEL[mode]}.`);
 }
 
 /** W: starts wave 1, or calls the next wave early during a countdown (core-loop §2.4). */

@@ -276,6 +276,11 @@ export const hud = {
   nextWave: signal<WavePreview | null>(null),
   /** The latest notice, or null. */
   notice: signal<HudNotice | null>(null),
+  /**
+   * The latest screen-reader announcement of a player action (D059: Hold fire, targeting, a
+   * cast), read out by the HUD's polite live region; "" when there's none.
+   */
+  announce: signal(''),
   /** Whole seconds until the next wave starts on its own, or null when no countdown runs. */
   countdown: signal<number | null>(null),
   /** What calling the next wave now would pay (core-loop §2.4); 0 outside a countdown. */

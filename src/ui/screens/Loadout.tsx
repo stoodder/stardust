@@ -7,6 +7,7 @@
 // Keys: Tab moves between the groups; the arrows move within the tower grid and the ability
 // radio group; Enter or Space toggles a tower; Lock in has the focus on arrival, so Enter goes
 // straight on with the remembered pick; Esc goes back to the Shift board.
+import { MenuNotice } from './MenuNotice.tsx';
 import { silkText } from '../silk.ts';
 import { useState } from 'preact/hooks';
 import { formedLinks, pickWarnings, togglePickTower } from '../../app/loadout.ts';
@@ -214,6 +215,7 @@ export function Loadout() {
             )}
           </dl>
         </header>
+        <MenuNotice />
         <div class="sd-lo-body">
           <section class="sd-lo-main" aria-labelledby="sd-lo-towers-label">
             <h2 id="sd-lo-towers-label" class="sd-panel-heading sd-lo-heading">

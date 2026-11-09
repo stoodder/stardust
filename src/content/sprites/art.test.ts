@@ -43,6 +43,10 @@ function bounds(rows: readonly string[]): { x0: number; x1: number; y0: number; 
   return { x0, x1, y0, y1 };
 }
 
+function lum(c: ColorName): number {
+  return luminance(rgbOf(c));
+}
+
 function count(rows: readonly string[], chars: string): number {
   return rows
     .join('')
@@ -237,7 +241,6 @@ describe('Brood Hauler and its sack', () => {
   });
 
   it("keeps the burlap below the glitter's gold, so the flecks read (the m2 art verdict)", () => {
-    const lum = (c: ColorName): number => luminance(rgbOf(c));
     expect(lum(SACK_LEGEND.G)).toBeLessThan(lum(SACK_LEGEND.Y));
     expect(lum(SACK_LEGEND.G)).toBeLessThan(lum('gold.4'));
   });

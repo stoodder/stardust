@@ -5,8 +5,8 @@ import { fadeAlpha } from './fxTiming.ts';
 
 /** How long the young scurry before they're gone (ms). */
 export const SCURRY_MS = 1500;
-/** Their pace back up the route (tiles/s): a scamper, three times a Hauler's plod. */
-export const SCURRY_TILES_PER_S = 2.2;
+/** Their pace back up the route (tiles/s): a scamper, nearly four times a Hauler's plod. */
+export const SCURRY_TILES_PER_S = 2.6;
 /** Each young starts this long after the one before (ms), so they spill out, not march out. */
 export const SCURRY_STAGGER_MS = 90;
 /** The most young drawn per burst (the Hauler carries 3). */

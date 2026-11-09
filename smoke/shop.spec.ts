@@ -15,7 +15,10 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
-  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
   const pane = page.getByRole('tabpanel');
   await expect(pane).toContainText('Research Command · QUILL');
 
@@ -26,7 +29,7 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await expect(mk2).toContainText('2 Intel');
   await expect(rapport).toContainText('−15% Suppressing Fire cooldown');
   await expect(offerRow(page, 'Field Protocol Slot')).toContainText(
-    'Arrives after Special Delivery',
+    'Arrives after Shift 3 (coming soon)',
   );
   await expect(offerRow(page, 'Field Protocol Slot').getByRole('button')).toHaveCount(0);
   await expect(mk2.getByRole('img', { name: 'Rank 0 of 1' })).toBeVisible();

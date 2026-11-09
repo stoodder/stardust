@@ -12,7 +12,9 @@ const fontOf = (el: Locator) => el.evaluate((e) => getComputedStyle(e).fontFamil
 
 const shiftRow = (page: Page, name: string) => page.getByRole('listitem').filter({ hasText: name });
 
-test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen', async ({ page }) => {
+test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen', async ({
+  page,
+}) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();

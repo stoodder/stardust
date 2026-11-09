@@ -72,7 +72,7 @@ describe('offer text', () => {
     expect(offerName(mk2)).toBe('Orbital Strike Mk II');
     expect(priceText(mk2)).toBe('2 Intel');
     expect(offerCopy(mk2)).toBe(UPGRADES.orbital_strike_mk2.copy);
-    expect(arrivalText(byId(rnd, 'protocol_slots'))).toBe('Arrives after Special Delivery');
+    expect(arrivalText(byId(rnd, 'protocol_slots'))).toBe('Arrives after Shift 3 (coming soon)');
     // Every shop and R&D item has its catalog copy (T210c).
     for (const pane of ['rnd', 'shop'] as const) {
       const all = shelf(DEV_SAVES.all_unlocked.build(), pane, [pane]);

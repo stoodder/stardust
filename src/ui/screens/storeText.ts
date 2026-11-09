@@ -15,7 +15,7 @@ import {
   type UpgradeDef,
 } from '../../content/upgrades/index.ts';
 import type { Offer, StorePane } from '../../meta/index.ts';
-import { mapName } from '../../meta/index.ts';
+import { mapMilestone } from '../../meta/index.ts';
 import { assertNever } from '../../shared/types.ts';
 import { formatCount } from './format.ts';
 
@@ -169,7 +169,7 @@ export function priceText(o: Offer): string {
 export function arrivalText(o: Offer): string {
   return o.availableAfter === null
     ? 'Not stocked yet'
-    : `Arrives after ${mapName(o.availableAfter)}`;
+    : `Arrives after ${mapMilestone(o.availableAfter)}`;
 }
 
 /** Who presents each pane, and how. */

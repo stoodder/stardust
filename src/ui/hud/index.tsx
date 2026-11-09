@@ -20,7 +20,7 @@ import {
   toggleSpareRunnersSelected,
   upgradeSelected,
 } from '../../app/commands.ts';
-import type { TargetPriority } from '../../content/types.ts';
+import { PRIORITY_LABEL } from './words.ts';
 import {
   hud,
   speed,
@@ -56,12 +56,6 @@ const SLOT_COUNT = 4;
 /** Integrity at or below this shows the low-integrity alarm (art-direction §9: red at 5). */
 const LOW_INTEGRITY = 5;
 
-const PRIORITY_LABEL: Readonly<Record<TargetPriority, string>> = {
-  first: 'First',
-  last: 'Last',
-  strong: 'Strong',
-  close: 'Close',
-};
 
 /** A number that ticks toward `value` instead of jumping (art-direction § Look). */
 function useTicker(value: number): number {
@@ -704,6 +698,15 @@ function CursorAnnouncer() {
   );
 }
 
+/** What the player's last action did (D059: Hold fire, targeting, a cast), for screen readers. */
+function ActionAnnouncer() {
+  return (
+    <div class="hud-sr-only" role="status" aria-live="polite" data-testid="action-announce">
+      {hud.announce.value}
+    </div>
+  );
+}
+
 /** The upgrade hint (D028), bottom center, while the teach is on and no tower is selected. */
 function UpgradeHint() {
   if (!hud.upgradeHint.value || hud.selected.value !== null) return null;
@@ -922,6 +925,7 @@ export function Hud() {
         <UpgradeHint />
         <Notice />
         <CursorAnnouncer />
+        <ActionAnnouncer />
       </div>
       {briefing !== null && <Briefing lines={briefing} />}
     </div>

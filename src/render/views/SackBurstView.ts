@@ -9,13 +9,7 @@ import { pointAt, type Point } from '../../sim/index.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
-import {
-  MAX_YOUNG,
-  SCURRY_MS,
-  scurryAlpha,
-  scurryDist,
-  YOUNG_LANES_PX,
-} from '../vfx/scurry.ts';
+import { MAX_YOUNG, SCURRY_MS, scurryAlpha, scurryDist, YOUNG_LANES_PX } from '../vfx/scurry.ts';
 import { sideOf } from './EnemyView.ts';
 import { facingOf, type Facing } from './spriteInfo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
@@ -101,9 +95,9 @@ export class SackBurstView {
     b.count = route === null ? 0 : Math.min(young, MAX_YOUNG);
     b.ms = 0;
     b.active = true;
-    for (const y of b.young) {
-      y.facing = null;
-      y.sprite.stop().setVisible(false);
+    for (const kid of b.young) {
+      kid.facing = null;
+      kid.sprite.stop().setVisible(false);
     }
     this.#sync(b);
   }

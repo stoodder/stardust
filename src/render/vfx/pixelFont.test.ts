@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { canDraw, GLYPH_H, textImage } from './pixelFont.ts';
 
+/** A glyph's pixels as a string (red channel), to tell glyphs apart. */
+const lit = (ch: string): string =>
+  Array.from(textImage(ch, 'white.1').data.filter((_, i) => i % 4 === 0)).join(',');
+
 describe('the 3×5 pixel font', () => {
   it('lays glyphs out 1 px apart inside a 1 px outline', () => {
     const img = textImage('−12', 'red.3');
@@ -29,8 +33,6 @@ describe('the 3×5 pixel font', () => {
     expect(canDraw('CROSSFIRE!')).toBe(true);
     expect(canDraw('SITTING DUCKS!')).toBe(true);
     expect(canDraw('ABCDEFGHIJKLMNOPQRSTUVWXYZ ! 0123456789')).toBe(true);
-    const lit = (ch: string): string =>
-      Array.from(textImage(ch, 'white.1').data.filter((_, i) => i % 4 === 0)).join(',');
     expect(lit('S')).not.toBe(lit('5'));
   });
 });

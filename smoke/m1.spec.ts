@@ -10,6 +10,8 @@
 // ability.spec.ts. `fastForward` skips the 1.5 s results delay (D028), so the play-outs stay fast.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
+import { A1_M01_RADIO } from '../src/content/radio/a1_m01.ts';
+import { silkText } from '../src/ui/silk.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 /** A1M1's greenhouse roof (map.ts): par's first Rivet goes here, and so does ours. */
@@ -257,8 +259,16 @@ test('lose: no build plays out to a hiccup after the results delay; Title return
     await page.evaluate(() => globalThis.__sd!.state()!.stats.skitterkinKilled),
   );
   await expect(page.getByRole('button', { name: 'Retry' })).toBeFocused();
-  // A1M1 writes no loss debrief, and the first leak (W1) is long past: no spoken lines.
-  await expect(dialog.getByRole('list', { name: 'Debrief' })).toHaveCount(0);
+  // The loss debrief is A1M1's supportive `mapLost` line(s) (D059); the first leak (W1) is long
+  // past, so its line doesn't lead.
+  const debrief = dialog.getByRole('list', { name: 'Debrief' });
+  const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost');
+  expect(lost.length).toBeGreaterThan(0);
+  await expect(debrief.getByRole('listitem')).toHaveCount(lost.length);
+  for (const l of lost) await expect(debrief).toContainText(silkText(l.text));
+  for (const l of A1_M01_RADIO.filter((x) => x.on === 'firstLeak')) {
+    await expect(debrief).not.toContainText(silkText(l.text));
+  }
   // Game hotkeys are off on the results screen: F doesn't touch the frozen battle.
   await page.keyboard.press('KeyF');
   const t0 = await tick(page);

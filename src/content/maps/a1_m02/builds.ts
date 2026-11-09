@@ -16,6 +16,8 @@ const WEST: GridPos = [3, 4];
 /** The west switchback, where a wave's first Hauler walks into the strike. */
 const WEST_TURN: GridPos = [2, 3];
 const STRIKE_WHEN = { afterSec: 17.5 } as const;
+/** The same spot one Hauler later (W7–W8 release one every 12 s). */
+const SECOND_HAULER = { afterSec: 29.5 } as const;
 const SUPPRESS: GridPos = [11, 7];
 /** Beside the housing block on Terrace 2. */
 const HOUSING_PAD: GridPos = [5, 3];
@@ -33,8 +35,8 @@ function parSteps(): BuildStep[] {
     { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } }, // the Zoomer rush
     { wave: 7, upgrade: PUMP },
     { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
-    { wave: 8, upgrade: BESIDE_PUMP },
-    { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+    // No W8 purchase: the towers hold the first Hauler, and the strike waits for the second.
+    { wave: 8, ability: 1, target: WEST_TURN, when: SECOND_HAULER },
   ];
 }
 

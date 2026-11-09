@@ -91,6 +91,11 @@
   list-style: none;
 }
 
+.sd-offer:focus-visible {
+  outline: 1px solid var(--sd-teal-4);
+  outline-offset: -1px;
+}
+
 .sd-offer {
   display: flex;
   align-items: center;

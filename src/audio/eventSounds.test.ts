@@ -195,9 +195,9 @@ describe('event sounds', () => {
     expect(ids(run([{ type: 'TowerSpecialized', uid: 1, spec: 'a', cost: 200 }]))).toEqual([
       'sfx:specialize',
     ]);
-    expect(ids(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'forfeited' }]))).toEqual([
-      'sfx:medal_forfeit',
-    ]);
+    expect(
+      ids(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'forfeited' }])),
+    ).toEqual(['sfx:medal_forfeit']);
     expect(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'earned' }])).toEqual([]);
   });
 });

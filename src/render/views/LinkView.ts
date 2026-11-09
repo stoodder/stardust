@@ -102,7 +102,9 @@ export class LinkView {
     }
     const anchor = sprites.meta(TETHER).anchor;
     gridToScreen(from.col + 0.5, from.row + 0.5, origin, pos);
-    s.setPosition(pos.x, pos.y - from.liftPx - TETHER_LIFT_PX).setAlpha(1).setVisible(true);
+    s.setPosition(pos.x, pos.y - from.liftPx - TETHER_LIFT_PX)
+      .setAlpha(1)
+      .setVisible(true);
     if (this.#reducedMotion()) {
       const f = sprites.frame(TETHER, `${anim}_0`);
       s.stop().setTexture(f.texture, f.frame);

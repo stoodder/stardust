@@ -84,9 +84,9 @@ describe('dressTile', () => {
       rows: a1m02.size.rows,
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- map rows use only TileChars
       tiles: a1m02.tiles.join('').split('') as TileChar[],
-      markers: a1m02.markers,
+      markers: a1m02.markers ?? {},
     };
-    const drawn = Object.entries(a1m02.markers ?? {}).flatMap(([id, [c, r]]) => {
+    const drawn = Object.entries(a1.markers).flatMap(([id, [c, r]]) => {
       const sprite = dressTile(a1, c, r).prop?.sprite;
       return sprite === undefined ? [] : [[id, sprite]];
     });

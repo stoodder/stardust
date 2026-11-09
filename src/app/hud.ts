@@ -830,6 +830,22 @@ export function cooldownView(
 let noticeId = 0;
 let noticeTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Tells screen readers what the player's last action did (D059), through the HUD's polite live
+ * region. Saying the same thing twice in a row still reads out (a trailing no-break space toggles).
+ */
+export function announce(text: string): void {
+  const prev = hud.announce.value;
+  const t = silkText(text);
+  hud.announce.value = prev === t ? `${t}\u00a0` : t;
+}
+
+/** What a Hold fire change says (D059): for the one tower (by name) or for all of them. */
+export function holdFireText(on: boolean, tower: string | null): string {
+  if (tower === null) return on ? 'All turrets holding fire.' : 'All turrets firing again.';
+  return on ? `${tower} holding fire.` : `${tower} firing again.`;
+}
+
 /** Shows a short HUD notice, replacing any current one. */
 export function showNotice(text: string): void {
   hud.notice.value = { id: ++noticeId, text: silkText(text) };
@@ -1016,6 +1032,22 @@ export function bindHud(
       const text = rejectText(e.reason);
       if (text !== null) showNotice(text);
     }),
+    // Screen readers hear what H, Shift+H, and a cast did (D059; T is commands.ts's).
+    host.bus.on('HoldFireChanged', (e) => {
+      let name: string | null = null;
+      if (e.target !== 'all') {
+        const pool = sim.state.towers;
+        for (let i = 0; i < pool.used; i++) {
+          const t = pool.items[i]!; // i < used
+          if (t.alive && t.uid === e.target) name = displayName(t.def?.id ?? 'turret');
+        }
+      }
+      announce(holdFireText(e.on, e.target === 'all' ? null : (name ?? 'Turret')));
+    }),
+    host.bus.on('AbilityUsed', (e) => {
+      const def = sim.config.content.abilities[e.ability];
+      announce(`${def?.name ?? displayName(e.ability)} fired.`);
+    }),
   ];
   return () => {
     for (const off of offs) off();
@@ -1035,6 +1067,7 @@ export function bindHud(
     hud.abilityCooldowns.value = [];
     hud.nextWave.value = null;
     hud.notice.value = null;
+    hud.announce.value = '';
     hud.briefing.value = null;
     hud.intel.value = null;
     hud.medals.value = [];

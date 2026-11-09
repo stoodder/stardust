@@ -2,6 +2,7 @@
 // Each row shows its shift number, name, medals, and state: Start (open), Replay (won), locked
 // until the shift before is won, or coming soon (its content isn't built yet). The header shows
 // the banks; the footer leads to the base (locked with its hint until A1M1 is won) and Settings.
+import { MenuNotice } from './MenuNotice.tsx';
 import { silkText } from '../silk.ts';
 import { openSettings, playMap, toBase, toTitle } from '../../app/navigation.ts';
 import { focusOnce } from './focus.ts';
@@ -99,6 +100,7 @@ export function Campaign() {
           </div>
           <Banks view={view} />
         </header>
+        <MenuNotice />
         <ol class="sd-shifts" aria-label="Shifts">
           {view.board.map((s) => (
             <ShiftRow key={s.id} shift={s} first={s === focus} />

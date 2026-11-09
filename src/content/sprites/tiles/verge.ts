@@ -15,16 +15,10 @@ export const VERGE_VARIANTS = 2;
 function edgeDistance(x: number, y: number, edge: VergeEdge): number {
   const u = (x - 15.5) / 2;
   const v = y - 7.5;
-  switch (edge) {
-    case 'nw':
-      return 7.75 + u + v;
-    case 'ne':
-      return 7.75 - u + v;
-    case 'se':
-      return 7.75 - u - v;
-    case 'sw':
-      return 7.75 + u - v;
-  }
+  if (edge === 'nw') return 7.75 + u + v;
+  if (edge === 'ne') return 7.75 - u + v;
+  if (edge === 'se') return 7.75 - u - v;
+  return 7.75 + u - v;
 }
 
 /** Clumps of `1` with dithered rims and a few `0` roots right at the road's edge. */

@@ -20,6 +20,15 @@ const drumIds = new Set(Object.keys(DRUMS));
 
 const peakOf = (id: keyof typeof SFX): number => recipePeak(sfxRecipe(id));
 
+/** A short crack at `at` s (the overlap-peak test). */
+const crack = (at: number): ToneLayer => ({
+  wave: 'square',
+  at,
+  freq: 440,
+  env: { a: 0.001, d: 0.05, s: 0, r: 0.01 },
+  gain: 0.6,
+});
+
 describe('notes', () => {
   it('names and pitches notes', () => {
     expect(noteToMidi('C4')).toBe(60);
@@ -106,13 +115,6 @@ describe('sound effect recipes', () => {
   });
 
   it("don't sum layers that never sound together (a rattle's separate cracks)", () => {
-    const crack = (at: number): ToneLayer => ({
-      wave: 'square',
-      at,
-      freq: 440,
-      env: { a: 0.001, d: 0.05, s: 0, r: 0.01 },
-      gain: 0.6,
-    });
     const rattle = { gain: 1, layers: [crack(0), crack(0.065), crack(0.13)] };
     expect(overlapPeak(rattle)).toBeCloseTo(0.6);
     expect(recipePeak(rattle)).toBeCloseTo(1.8);

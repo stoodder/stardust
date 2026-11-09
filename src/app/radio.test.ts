@@ -124,6 +124,8 @@ const shown = () => hud.radio.value?.text ?? null;
 const cue = () => hud.radio.value?.cue?.text ?? null;
 const at = (line: RadioLine) => radioLineMs(line.text);
 
+const leakOf = (uid: number, enemy: string): Ev => ({ type: 'EnemyLeaked', uid, enemy, leak: 3 });
+
 describe('the D059 triggers: enemyLeaked and bankNudge', () => {
   const table: RadioLine[] = [
     { on: 'firstLeak', speaker: 'quill', text: 'first leak' },
@@ -131,7 +133,6 @@ describe('the D059 triggers: enemyLeaked and bankNudge', () => {
     { on: 'countdown', wave: 3, speaker: 'kip', text: 'w3 countdown' },
     { on: 'bankNudge', speaker: 'quill', text: 'spend it' },
   ];
-  const leakOf = (uid: number, enemy: string): Ev => ({ type: 'EnemyLeaked', uid, enemy, leak: 3 });
 
   it('plays an enemyLeaked line on the first leak of that enemy type only', () => {
     const r = createRadioScript(table);
