@@ -143,7 +143,14 @@ describe('aiming an ability', () => {
 });
 
 describe('wreckage: the clear intent (T312a; design/maps.md § 3)', () => {
-  const wreck: TileFacts = { ...pad, index: 49, col: 1, row: 4, buildable: false, wreckage: 'wreckage' };
+  const wreck: TileFacts = {
+    ...pad,
+    index: 49,
+    col: 1,
+    row: 4,
+    buildable: false,
+    wreckage: 'wreckage',
+  };
 
   it('sends the salvage drone on a plain click', () => {
     expect(resolveClick(wreck, 'left', null)).toEqual({ kind: 'clear', tile: [1, 4] });
@@ -173,7 +180,11 @@ describe('wreckage: the clear intent (T312a; design/maps.md § 3)', () => {
       tile: [1, 4],
     });
     expect(resolveClick(cleared, 'left', null)).toEqual({ kind: 'deselect' });
-    expect(resolveClick(wreck, 'left', null, 1)).toEqual({ kind: 'ability', slot: 1, tile: [1, 4] });
+    expect(resolveClick(wreck, 'left', null, 1)).toEqual({
+      kind: 'ability',
+      slot: 1,
+      tile: [1, 4],
+    });
     expect(resolveClick(wreck, 'right', null)).toEqual({ kind: 'cancel' });
     // A tower standing there (on a cleared tile) is selected, never cleared.
     expect(resolveClick({ ...cleared, towerUid: 3 }, 'left', null)).toEqual({

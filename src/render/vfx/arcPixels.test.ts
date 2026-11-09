@@ -6,7 +6,7 @@ describe('the chain arc (art-direction §7 Energy)', () => {
   it('is a white-hot core between blue.4 edges', () => {
     const img = arcStrokeImage();
     expect([img.w, img.h]).toEqual([1, 3]);
-    const at = (y: number): number[] => [...img.data.slice(y * 4, y * 4 + 3)];
+    const at = (y: number): number[] => Array.from(img.data.slice(y * 4, y * 4 + 3));
     const blue = rgbOf('blue.4');
     const white = rgbOf('white.1');
     expect(at(0)).toEqual([blue.r, blue.g, blue.b]);

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BEAM_MS,
+  FIELD_FLASH_TICKS,
+  fieldAlpha,
   beamCore,
   beamWidth,
   fadeAlpha,
@@ -89,5 +91,16 @@ describe("suppressAlpha (Suppressing Fire's ground strip)", () => {
     expect(suppressAlpha(SUPPRESS_FLICKER_MS, 300, true)).toBe(STEPPED_ALPHA[0]);
     expect(suppressAlpha(0, SUPPRESS_FADE_TICKS, false)).toBe(STEPPED_ALPHA[2]);
     expect(suppressAlpha(0, 1, true)).toBe(STEPPED_ALPHA[3]);
+  });
+});
+
+describe('Time Dilation tint (T312a)', () => {
+  it('flashes at 35%, holds at 15%, and blinks out over its last half second', () => {
+    expect(fieldAlpha(0, 360, false)).toBe(0.35);
+    expect(fieldAlpha(FIELD_FLASH_TICKS, 345, false)).toBe(0.15);
+    expect(fieldAlpha(300, 60, false)).toBe(0.15);
+    const tail = [29, 25, 19, 15, 9, 5, 0].map((left) => fieldAlpha(400, left, false));
+    expect(tail).toEqual([0, 0, 0.15, 0.15, 0, 0, 0]);
+    expect(fieldAlpha(400, 5, true)).toBe(0.15);
   });
 });

@@ -392,25 +392,6 @@ export class BattleScene extends Phaser.Scene {
     return towers[armed]?.tiers[0].targets.air ?? false;
   }
 
-  /** The M3 views' state, for the smoke hooks (T312a). */
-  get skyStatus(): {
-    lanes: number;
-    arcs: number;
-    plinks: number;
-    tinted: boolean;
-    queued: number;
-    drone: string;
-  } {
-    return {
-      lanes: this.#airLanes.shown,
-      arcs: this.#chains.live,
-      plinks: this.#plinks.count,
-      tinted: this.#fieldTint.showing,
-      queued: this.#wreckage.queuedMarkers,
-      drone: this.#drone.phase,
-    };
-  }
-
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */
   #liftPx(col: number, row: number): number {
     return this.#elevationOf(col, row) * ELEV_H;

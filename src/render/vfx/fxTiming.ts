@@ -174,3 +174,20 @@ export function suppressAlpha(ms: number, ticksLeft: number, reducedMotion: bool
     ? STEPPED_ALPHA[0]
     : STEPPED_ALPHA[1];
 }
+
+/**
+ * Time Dilation's playfield tint (T312a; views/FieldTintView.ts), on sim ticks so it holds while
+ * paused: a 35% flash for its first FIELD_FLASH_TICKS, then a 15% hold, blinking off for every
+ * other FIELD_BLINK_TICKS over its last FIELD_FADE_TICKS (3 Hz; held steady under reduced motion).
+ */
+export const FIELD_FLASH_TICKS = 15;
+export const FIELD_FADE_TICKS = 30;
+export const FIELD_BLINK_TICKS = 10;
+
+/** The tint's alpha `elapsed` ticks into a field with `ticksLeft` to go. */
+export function fieldAlpha(elapsed: number, ticksLeft: number, reduced: boolean): number {
+  if (elapsed < FIELD_FLASH_TICKS) return STEPPED_ALPHA[2];
+  const blinkOff = Math.floor(ticksLeft / FIELD_BLINK_TICKS) % 2 === 0;
+  if (!reduced && ticksLeft < FIELD_FADE_TICKS && blinkOff) return 0;
+  return STEPPED_ALPHA[3];
+}

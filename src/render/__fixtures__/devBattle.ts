@@ -2,6 +2,10 @@
 // views, and the battle smoke test run before A1M1 and the real towers land (T103, T105c). Not
 // game content: ids start with `dev_`, and the numbers are only shaped like design/towers.md and
 // design/enemies.md. app/battle.ts picks it until the live registries have a playable map.
+// A second dev map, `dev_sky` (T312a), uses the real M3 content (Skyhook, Zapcoil beside a
+// Sprinkler for Conductive, Puffwings on an air lane, Gerald on the path, wreckage hiding a power
+// node, and QUILL's Time Dilation in slot 2), so the air, chain, and wreckage smoke flows
+// (smoke/air.spec.ts, smoke/wreckage.spec.ts) run before A1M3–A1M5 land.
 import {
   defineAbility,
   defineEnemy,
@@ -10,7 +14,16 @@ import {
   mapDefinersFor,
 } from '../../content/define.ts';
 import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
-import type { IdsOf, RawContent } from '../../content/types.ts';
+import { time_dilation } from '../../content/abilities/time_dilation.ts';
+import { gerald } from '../../content/enemies/gerald.ts';
+import { nibbler } from '../../content/enemies/nibbler.ts';
+import { puffwing } from '../../content/enemies/puffwing.ts';
+import { conductive } from '../../content/links/conductive.ts';
+import { rivet } from '../../content/towers/rivet.ts';
+import { skyhook } from '../../content/towers/skyhook.ts';
+import { sprinkler } from '../../content/towers/sprinkler.ts';
+import { zapcoil } from '../../content/towers/zapcoil.ts';
+import type { IdsOf, LinkDef, RawContent } from '../../content/types.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
@@ -108,10 +121,16 @@ const DEV_ENTITIES = {
     dev_rivet: devRivet,
     dev_thumper: devThumper,
     dev_sprinkler: devSprinkler,
+    // dev_sky's real M3 towers (T312a).
+    rivet,
+    skyhook,
+    zapcoil,
+    sprinkler,
   }),
-  enemies: defineRegistry({ dev_nibbler: devNibbler }),
-  // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b).
-  abilities: defineRegistry({ dev_strike: devStrike, suppressing_fire }),
+  enemies: defineRegistry({ dev_nibbler: devNibbler, nibbler, puffwing, gerald }),
+  // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
+  // QUILL's Time Dilation for dev_sky (T312a).
+  abilities: defineRegistry({ dev_strike: devStrike, suppressing_fire, time_dilation }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
 
@@ -219,9 +238,125 @@ const devBuilds = dev.defineBuilds({
 
 const devMap = dev.defineMap({ ...devLayout, waves: devWaves, ...devBuilds });
 
+// dev_sky (T312a): a path from the spawn (top left) to the core (bottom right), an air lane bending
+// in from the top-right corner, and three wrecks: one over a hidden power node (1,4), one over high
+// ground (4,5), one over a pad (7,2). The pads by the bend let a Zapcoil stand beside a Sprinkler
+// (Conductive). Wave 1 sends Nibblers with Gerald overtaking them and a Puffwing flock; QUILL's Time
+// Dilation is slot 2.
+const skyLayout = dev.defineMapLayout({
+  id: 'dev_sky',
+  act: 1,
+  env: 'act1',
+  objective: 'defend',
+  size: { cols: 12, rows: 8 },
+  // prettier-ignore
+  tiles: [
+    'S###........',
+    '..o#o...o...',
+    '.o.#o..x....',
+    '...####.o...',
+    '.x...o#o.o..',
+    '....x.#o....',
+    '...o..####o.',
+    '.........#C.',
+  ],
+  paths: [
+    {
+      id: 'a',
+      tiles: [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [3, 1],
+        [3, 2],
+        [3, 3],
+        [4, 3],
+        [5, 3],
+        [6, 3],
+        [6, 4],
+        [6, 5],
+        [6, 6],
+        [7, 6],
+        [8, 6],
+        [9, 6],
+        [9, 7],
+        [10, 7],
+      ],
+    },
+  ],
+  airLanes: [
+    {
+      id: 'sky',
+      points: [
+        [11, 0],
+        [11, 4],
+        [10, 7],
+      ],
+    },
+  ],
+  underWreckage: { '1,4': '+', '4,5': '^', '7,2': 'o' },
+  salvage: { '1,4': 60, '4,5': 50, '7,2': 40 },
+  startCredits: 700,
+  stardust: 0,
+  threatIntel: ['flying'],
+  requiredCounters: ['air'],
+  medals: {
+    challenge: {
+      id: 'dev_sky_rivets',
+      name: 'Sky Range',
+      description: 'Win with a Skyhook on the sky range.',
+      condition: { towers: { tower: 'skyhook' }, gte: 1 },
+    },
+  },
+  companion: { id: 'quill', state: 'present' },
+});
+
+const skyWaves = dev.defineWaves([
+  {
+    groups: [
+      { enemy: 'nibbler', count: 6, route: 'a' },
+      { enemy: 'gerald', count: 1, route: 'a', delaySec: 1 },
+      { enemy: 'puffwing', count: 5, route: 'sky', delaySec: 2 },
+    ],
+  },
+  {
+    countdownSec: 10,
+    groups: [
+      { enemy: 'nibbler', count: 10, route: 'a' },
+      { enemy: 'puffwing', count: 8, route: 'sky' },
+    ],
+  },
+]);
+
+const skyBuilds = dev.defineBuilds({
+  referenceProfile: {
+    towers: ['skyhook', 'zapcoil', 'sprinkler', 'rivet'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['skyhook', 'zapcoil', 'sprinkler', 'rivet'],
+    steps: [
+      { wave: 1, build: 'skyhook', tile: [8, 3] },
+      { wave: 1, build: 'zapcoil', tile: [4, 2] },
+    ],
+  },
+  noCounterBuilds: {
+    air: { loadout: ['sprinkler'], steps: [{ wave: 1, build: 'sprinkler', tile: [4, 1] }] },
+  },
+});
+
+const skyMap = dev.defineMap({ ...skyLayout, waves: skyWaves, ...skyBuilds });
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
-  maps: defineRegistry({ dev_range: devMap }),
+  maps: defineRegistry({ dev_range: devMap, dev_sky: skyMap }),
+  // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+  links: { conductive: conductive as unknown as LinkDef<DevIds> },
   campaign: ['dev_range'],
 };

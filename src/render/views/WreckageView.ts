@@ -94,13 +94,6 @@ export class WreckageView {
     });
   }
 
-  /** How many wreckage tiles show a queue marker (the smoke hooks' check). */
-  get queuedMarkers(): number {
-    let n = 0;
-    for (const w of this.#tiles) if (w.place > 0) n++;
-    return n;
-  }
-
   /**
    * Draws every wreckage tile as the drone's queue stands: `progress` of `clearTicks` done on the
    * queue's head.
@@ -115,7 +108,8 @@ export class WreckageView {
         continue;
       }
       const at = drone.queue.indexOf(w.index);
-      const next: Shown = at < 0 ? Shown.Wreck : at > 0 ? Shown.Queued : half ? Shown.Half : Shown.Lit;
+      const next: Shown =
+        at < 0 ? Shown.Wreck : at > 0 ? Shown.Queued : half ? Shown.Half : Shown.Lit;
       this.#mark(w, at < 0 ? 0 : at + 1);
       if (next === w.shown) continue;
       if (w.shown === Shown.Wreck && next !== Shown.Wreck) {

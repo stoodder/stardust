@@ -8,13 +8,7 @@
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
-import {
-  costFor,
-  liveTileAt,
-  segmentSpan,
-  type SegmentSpan,
-  type Sim,
-} from '../../sim/index.ts';
+import { costFor, liveTileAt, segmentSpan, type SegmentSpan, type Sim } from '../../sim/index.ts';
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import { ghostLabel, ghostLabels, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';

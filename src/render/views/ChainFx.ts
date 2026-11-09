@@ -91,13 +91,6 @@ export class ChainFx {
     this.#draw(h);
   }
 
-  /** How many hops show (the smoke hooks' check). */
-  get live(): number {
-    let n = 0;
-    for (const h of this.#hops) if (h.active) n++;
-    return n;
-  }
-
   /** Advances every live hop by a frame of `dt` ms. */
   update(dt: number): void {
     for (const h of this.#hops) {

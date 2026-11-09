@@ -33,8 +33,6 @@ export class PlinkFx {
   #next = 0;
   /** ms since the last "PLINK!" callout (starts ready). */
   #sinceText = PLINK_TEXT_MS;
-  /** How many plinks have played this battle (the smoke hooks' check). */
-  count = 0;
 
   constructor(ctx: ViewContext, fx: TransientFx) {
     this.#ctx = ctx;
@@ -55,7 +53,6 @@ export class PlinkFx {
 
   /** A shot plinked off a flyer at grid (x, y). */
   plink(x: number, y: number): void {
-    this.count++;
     const p = this.#plinks[this.#next]!; // index < MAX_PLINKS
     this.#next = (this.#next + 1) % MAX_PLINKS;
     gridToScreen(x, y, this.#ctx.origin, pos);

@@ -45,6 +45,10 @@ describe('the air lane (art-direction §8)', () => {
       });
       return out;
     };
-    expect(litAt(1)).toEqual(litAt(0).map((i) => i + 1).filter((i) => i < px.length));
+    expect(litAt(1)).toEqual(
+      litAt(0)
+        .map((i) => i + 1)
+        .filter((i) => i < px.length),
+    );
   });
 });

@@ -68,13 +68,6 @@ export class AirLaneView {
     }
   }
 
-  /** How many lanes show (the smoke hooks' check). */
-  get shown(): number {
-    let n = 0;
-    for (const l of this.#lanes) if (l.shown) n++;
-    return n;
-  }
-
   /**
    * Shows each lane while a flyer on it is in wave `wave` (the current one; 0 in setup) or the
    * next, or while `armedHitsAir`.

@@ -65,11 +65,6 @@ export class DroneView {
     layers.air.add(this.#body);
   }
 
-  /** What the drone is doing (the smoke hooks' check). */
-  get phase(): DronePhase {
-    return this.#phase;
-  }
-
   /** Places the drone for this frame: `drone` is `state.wreckage`, `tick` the sim's tick. */
   update(drone: DroneQueueLike, clearTicks: number, tick: number): void {
     const head = drone.queue[0];

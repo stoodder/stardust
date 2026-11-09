@@ -7,18 +7,11 @@
 import * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
+import { fieldAlpha } from '../vfx/fxTiming.ts';
 import type { ZonePoolLike } from './FxView.ts';
 import type { TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
 
-/** The tint's stepped alphas (art-direction §7): the opening flash, then the hold. */
-const FLASH_ALPHA = 0.35;
-const HOLD_ALPHA = 0.15;
-/** The opening flash lasts this many sim ticks (0.25 s). */
-const FLASH_TICKS = 15;
-/** Over its last FADE_TICKS the tint blinks off for every other BLINK_TICKS (under 3 Hz). */
-const FADE_TICKS = 30;
-const BLINK_TICKS = 10;
 /** The time ripple: a ring out to the map's half-diagonal (capped), over this long. */
 const RIPPLE_MS = 600;
 const RIPPLE_MAX_TILES = 8;
@@ -62,11 +55,6 @@ export class FieldTintView {
     ctx.layers.lighting.add(this.#tint);
   }
 
-  /** Whether the tint shows (the smoke hooks' check). */
-  get showing(): boolean {
-    return this.#uid !== 0;
-  }
-
   update(zones: ZonePoolLike): void {
     let field = null;
     for (let i = 0; i < zones.used; i++) {
@@ -86,7 +74,11 @@ export class FieldTintView {
       this.#openTicks = field.ticksLeft;
       this.#fx.ring(this.#cx, this.#cy, this.#rippleTiles, 'teal.4', RIPPLE_MS, true);
     }
-    const alpha = fieldAlpha(this.#openTicks - field.ticksLeft, field.ticksLeft, this.#reducedMotion());
+    const alpha = fieldAlpha(
+      this.#openTicks - field.ticksLeft,
+      field.ticksLeft,
+      this.#reducedMotion(),
+    );
     if (alpha !== this.#alpha || !this.#tint.visible) {
       this.#alpha = alpha;
       this.#tint.setAlpha(alpha).setVisible(alpha > 0);
@@ -97,14 +89,4 @@ export class FieldTintView {
     this.#uid = 0;
     this.#tint.setVisible(false);
   }
-}
-
-/**
- * The tint's alpha `elapsed` ticks into a field with `ticksLeft` to go: the opening flash, the
- * hold, and the blink over its last FADE_TICKS (held at the hold under reduced motion).
- */
-export function fieldAlpha(elapsed: number, ticksLeft: number, reduced: boolean): number {
-  if (elapsed < FLASH_TICKS) return FLASH_ALPHA;
-  if (!reduced && ticksLeft < FADE_TICKS && Math.floor(ticksLeft / BLINK_TICKS) % 2 === 0) return 0;
-  return HOLD_ALPHA;
 }
