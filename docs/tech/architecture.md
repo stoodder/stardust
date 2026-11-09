@@ -326,7 +326,7 @@ Lives in `src/render/`.
 - **Phaser config:** `type: Phaser.WEBGL`, `width: 640`, `height: 360`, `pixelArt: true`, `roundPixels: true`, `antialias: false`, `backgroundColor: '#05030a'`, `scale.mode: NONE`. `render/scale.ts` computes the integer zoom on resize (formula in [art/tech-spec.md § Tile and screen](../art/tech-spec.md#tile-and-screen)) and applies it to the canvas and to the UI root (`--ui-scale`).
 - **Scenes:** `BootScene` (compile content, bake sprites, load fonts), `BattleScene` (the playfield), `StarMapScene` (M3), `BackdropScene` (animated backgrounds behind DOM menus).
 - **Views:** pooled `EnemyView`, `TowerView`, `ProjectileView`, and `FxView` objects, keyed by sim `uid`, created and released in response to sim events and positioned each frame from sim state through `render/iso.ts`. Layers and depth rules are in [art/tech-spec.md § Depth sorting](../art/tech-spec.md#depth-sorting).
-- **Sprites:** `render/sprites/` (rasterize, atlas, `SpriteSource`); see [art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format).
+- **Sprites:** `render/sprites/` (the pure `rasterize`, `bake`, and `atlas` modules, plus `CodeSpriteSource`, the `SpriteSource` that `BootScene` registers at boot and stores in the game registry under `spriteSource`); see [art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format). The sprite gallery dev page (`gallery.html`) is a second Vite entry, built with the game ([tech-spec § The sprite gallery](../art/tech-spec.md#the-sprite-gallery)).
 - **Input:** `render/input/` turns pointer input on the canvas into *intents* (select tile, place, cancel, click a clickable marker), then into `Command`s. Nothing is hover-only, so touch can be added later. Keyboard input goes through `app/`'s router (below).
 
 ### UI: DOM overlay
@@ -420,6 +420,7 @@ From T101, `sim` and `smoke` exist as passing stubs ("0 maps") so the gate runs 
 ```
 stardust/
 ├── index.html                  # #game canvas host + #ui overlay root
+├── gallery.html                # sprite gallery dev page (second Vite entry)
 ├── package.json
 ├── tsconfig.json  tsconfig.base.json  tsconfig.pure.json  tsconfig.app.json  tsconfig.node.json
 ├── vite.config.ts      playwright.config.ts
@@ -435,6 +436,7 @@ stardust/
     │   ├── boot.ts  host.ts  router.ts  commands.ts  keys.ts  checkpoints.ts
     │   ├── settings.ts  log.ts  testHooks.ts    # log.ts: the only console user in src/
     │   ├── testHookTypes.ts    # the __sd shape, DOM-free so smoke specs can import it
+    │   ├── gallery.ts          # the sprite gallery page (gallery.html)
     ├── shared/                 # pure utilities
     │   ├── rng.ts  bus.ts  hash.ts  math.ts  time.ts  types.ts
     │   └── architecture.test.ts
@@ -455,8 +457,8 @@ stardust/
     │   ├── presentation.ts     # per-act presentation dials
     │   ├── campaign.ts         # campaign map order (mirrors story/campaign.md)
     │   ├── dialogue/           # flags.ts speakers.ts types.ts scenes/ barks/ memos/ epilogue/ tips.ts results.ts bricks_tags.ts
-    │   ├── palettes/           # master.ts, factions.ts, env.ts
-    │   └── sprites/            # defineSprite.ts, index.ts, towers/ enemies/ projectiles/ props/ tiles/ icons/ portraits/ ui/
+    │   ├── palettes/           # master.ts, factions.ts, env.ts, index.ts, color.ts
+    │   └── sprites/            # types.ts legend.ts defineSprite.ts helpers.ts validate.ts index.ts; tiles/ props/ towers/ enemies/ projectiles/ fx/ (later icons/ portraits/ ui/)
     ├── story/                  # pure: runner.ts conditions.ts flags.ts barks.ts text.ts counter.ts codex.ts inbox.ts epilogue.ts presentation.ts tags.ts
     ├── meta/                   # save.ts, migrations.ts, codec.ts, store.ts, progression.ts, modifiers.ts, shop.ts, __fixtures__/
     ├── balance/                # pure: profile.ts (profile → SimConfig), policies.ts, assertions.ts, report.ts
@@ -464,7 +466,7 @@ stardust/
     │   ├── scale.ts  iso.ts  depth.ts  layers.ts
     │   ├── scenes/             # BootScene, BattleScene, StarMapScene, BackdropScene
     │   ├── views/              # pooled EnemyView, TowerView, ProjectileView, FxView
-    │   ├── sprites/            # rasterize.ts (pure), atlas.ts, SpriteSource.ts, CodeSpriteSource.ts
+    │   ├── sprites/            # rasterize.ts bake.ts atlas.ts (pure), canvas.ts, SpriteSource.ts, CodeSpriteSource.ts
     │   ├── vfx/                # particles, glow, bloom, lighting overlay, range rings
     │   └── input/              # pointer → intents → commands
     ├── ui/

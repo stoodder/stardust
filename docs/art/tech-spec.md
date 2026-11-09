@@ -61,12 +61,12 @@ gy = (v - u) / 2
 
 ### Sprite anchoring
 
-Every sprite definition declares an **anchor**: the pixel that sits on the ground point (the foot point). The renderer sets the sprite's display origin to the anchor in whole pixels (`setDisplayOrigin(ax, ay)`), never as a fraction.
+Every sprite definition declares an **anchor**: the point that sits on the ground point (the foot point). It is a whole-pixel **edge** coordinate, exactly what the renderer passes to `setDisplayOrigin(ax, ay)` (never a fraction): `(16, 0)` on a 32 px tile is the top vertex between pixels 15 and 16. The outline pass shifts it by 1, a mirrored frame's anchor is `w − ax`, and `SpriteSource.frameAnchor` returns each baked frame's own anchor.
 
 | Thing | Ground point | Typical canvas | Anchor convention |
 |---|---|---|---|
 | Ground tile | top vertex of tile | 32×16 (+8 per elevation level) | top-left at `(sx − 16, sy)` |
-| Tower | tile center | up to 32×48 | bottom-center of the base's footprint diamond |
+| Tower | tile center | up to 32×48 | the center of the base's footprint diamond (where it meets the ground), horizontally centered |
 | Enemy (small / medium / large) | its grid position | 10–16 / 16–24 / 24–32 px | between the feet, 1 px above the bottom row |
 | Boss | its grid position | up to 64×64 | between the feet |
 | Flying enemy | ground position (shadow) | as above | sprite drawn 12 px above the anchor, with a shadow blob at the anchor |
@@ -104,13 +104,19 @@ Per D001, sprites are **palette-indexed character grids** in TypeScript data fil
 
 | Path | Contents |
 |---|---|
-| `src/content/palettes/master.ts` | The master palette ([art-direction.md §2](art-direction.md#2-master-palette)), as `name → hex` |
-| `src/content/palettes/factions.ts`, `env.ts` | Faction slot palettes ([art-direction.md §4](art-direction.md#4-faction-visual-language)) and environment ramps ([art-direction.md §3](art-direction.md#3-environment-palettes-by-act)) |
-| `src/content/sprites/<category>/<id>.ts` | One sprite definition per file (towers, enemies, projectiles, props, icons, portraits, ui) |
-| `src/content/sprites/index.ts` | Registry of all sprites |
-| `src/render/sprites/rasterize.ts` | **Pure** grid → RGBA buffer, with outline, mirror, patch, and glow passes. No DOM, no Phaser, so it's unit-tested in Node. |
-| `src/render/sprites/atlas.ts` | Packs buffers into atlas canvases (shelf packer, max 2048×2048) |
-| `src/render/sprites/CodeSpriteSource.ts` | Registers atlas textures, frames, and animations with Phaser |
+| `src/content/palettes/master.ts` | The master palette ([art-direction.md §2](art-direction.md#2-master-palette)), as `name → hex`, including the namespaced environment ramps (`act1.grass.2`). **The home of every hex value.** |
+| `src/content/palettes/factions.ts`, `env.ts`, `index.ts` | Faction slot palettes ([art-direction.md §4](art-direction.md#4-faction-visual-language)), environment slot palettes and sky gradients ([art-direction.md §3](art-direction.md#3-environment-palettes-by-act)), and the `PALETTES` registry |
+| `src/content/palettes/color.ts` | Luminance, contrast ratio, and the Hollow hue-reservation test |
+| `src/content/sprites/types.ts`, `legend.ts`, `defineSprite.ts` | The data shapes (`SpriteDef`, `Slot`, `SlotPalette`, `PaletteId`, `EnvPaletteId`), the standard legend, and the identity helper |
+| `src/content/sprites/helpers.ts` | Procedural helpers: the tile mask, `diamond`, `isoBox`, `disc`, `line`, `stamp`, `mirrorRows`, `recolor`, seeded `hash01` |
+| `src/content/sprites/validate.ts` | `validateSprites()`: ids, grids, patches, mirrors, anims, legend colors, palette references (errors name sprite, frame, row, column) |
+| `src/content/sprites/<category>/<id>.ts` | One sprite per file (a tower's file holds its base and head). Categories: `tiles`, `props`, `towers`, `enemies`, `projectiles`, `fx`, and later `icons`, `portraits`, `ui`. Shared builders sit beside them (`tiles/tileGen.ts`, `towers/base.ts`, `enemies/skitter.ts`) |
+| `src/content/sprites/index.ts` | `SPRITES`, the registry of all sprites in gallery order, and the `SpriteId` union |
+| `src/render/sprites/rasterize.ts` | **Pure** pixel passes on char-code grids: parse, patch, mirror, outline, colorize, glow. No DOM, no Phaser, so it's unit-tested in Node. |
+| `src/render/sprites/bake.ts` | **Pure** baker: definition × palettes → keyed RGBA frames, anims, and meta |
+| `src/render/sprites/atlas.ts` | **Pure** shelf packer (max 2048×2048 pages, 1 px gutter, pages trimmed to their used size) |
+| `src/render/sprites/canvas.ts`, `CodeSpriteSource.ts` | Buffers → canvases; registers atlas pages (`sprites.0`, …), frames, and animations with Phaser |
+| `gallery.html`, `src/app/gallery.ts` | The sprite gallery dev page (below) |
 
 ### The standard legend
 
@@ -173,9 +179,12 @@ export const exampleMite = defineSprite({
 ### Format rules
 
 - **Grids are validated:** every row must have exactly `w` characters, there must be `h` rows, and every character must be in the legend. Errors name the sprite, frame, row, and column.
+- **Frames** are a grid, a patch (`{ from, patch }`, one patch or a list), or a mirror (`{ mirrorOf }`). In patch rows `.` writes transparency and a **space keeps** the pixel underneath. Patches must fit inside the frame.
+- **Mirror anims** (`{ mirrorOf: 'walk_se' }`) name each mirrored frame by swapping the facing token in the source frame's name, as a whole `_`-separated token (`se`↔`sw`, `ne`↔`nw`): `walk_se_0` → `walk_sw_0`, `se_fire` → `sw_fire`. A mirrored name that is also authored is an error.
 - **Facings:** actors that move have 4 diagonal facings (SE, SW, NE, NW). Author SE and NE; SW and NW are `mirrorOf`. Tower heads that aim may author up to 8 facings (4 authored + mirrors); the minimum is SE and NE.
 - **No runtime rotation of pixel art.** Rotating a sprite blurs or jags it unpredictably. Exceptions: projectiles of 4 px or smaller, and particles.
-- **Composition:** a tower is a `base` sprite plus a `head` sprite (the head is drawn at an offset declared in the base, `mount: { x, y }`). Tier visuals are separate frames or patches of the same sprite (`t1`, `t2`, `t3`, `spec_a`, `spec_b`).
+- **Composition:** a tower is a `base` sprite plus a `head` sprite (`tower.<id>` and `tower.<id>_head`). The head's anchor is drawn at the base's `mount: { x, y }` (authored pixels; `SpriteSource.mount` returns it in outlined pixels). Tier visuals are separate frames or patches of the same sprite (`t1`, `t2`, `t3`, `spec_a`, `spec_b`). Everglow bases share one builder: the teal logo chevron on the left face and one orange chevron per tier on the right face. Heads that aim author `se`, `ne`, `se_fire`, `ne_fire` and get `sw`/`nw` from `fire_sw`/`fire_nw` mirror anims; heads that don't aim (Sprinkler) author an idle cycle.
+- **Tiles** are 32×16 with anchor `(16, 0)` and no outline. They use environment palettes, whose slots are mapped the same way in every act: `p` ground (grass; Act III and finale ground), `s` path, `a` clay/cliff (Act III and finale: crystal), `e0`/`e1` the act's flora accent, `outline` the act's `shade`, `hi` its `light`. Act III's 4-step path ramp repeats its top step, and the finale borrows Act III's path and crystal ramps. Everglow hardware set into tiles (the pad's plate and brackets) uses custom legend entries, so it keeps its steel and teal in every act. Ground tiles ship noise variants (`v0`, `v1`, …); `tile.path` adds `tread_x` and `tread_y` (tread marks along each grid axis).
 - **Procedural helpers are allowed.** Sprite files are TypeScript, so a definition can be computed (`mirrorH`, `stamp`, `recolor`, and noise fills for tiles). Ground tiles are mostly generated from the tile mask, the environment ramps, and a seeded noise pattern, not hand-gridded one by one.
 - **Animation budget:** idle 2 frames at 2–4 fps, walk 2–4 frames at 6–10 fps, fire 2–3 frames, death 3–5 frames. Walk playback rate scales with the enemy's current speed, so a slowed enemy visibly walks slower.
 
@@ -185,11 +194,12 @@ For every sprite × palette variant × frame:
 
 1. **Resolve** patches and mirrors into full grids.
 2. **Rasterize** into an RGBA buffer through the palette (pure function, tested).
-3. **Outline pass** (`outline: 'auto'`): every transparent pixel that is 4-adjacent to an opaque one becomes the palette's `outline` color. (`'auto8'` uses 8-adjacency for chunkier outlines.)
+3. **Outline pass** (`outline: 'auto'`): every transparent pixel that is 4-adjacent to an opaque one becomes the palette's `outline` color. (`'auto8'` uses 8-adjacency for chunkier outlines.) Shadow (`_`) pixels don't grow an outline. Shadow pixels bake at 50% alpha.
 4. **Derived variants**, baked automatically for every actor:
-   - `selected`: outline replaced with `white.1` (hover and selection).
-   - `jammed`: every color mapped by luminance onto the `steel` ramp (towers under a jam, D001 #4 and [design/enemies.md §4](../design/enemies.md#4-tower-disabling-jamming)).
-   - `@glow`: if `glow` is set, emissive pixels dilated by `radius` with stepped alpha (60%, 35%, 15%; never smooth gradients), drawn additively.
+   - `selected`: outline replaced with `white.1` (hover and selection). Baked for towers and enemies.
+   - `jammed`: every color mapped onto the `steel` step nearest it in luminance (towers under a jam, D001 #4 and [design/enemies.md §4](../design/enemies.md#4-tower-disabling-jamming)). Baked for towers only.
+   - Derived variants are named `<variant>+selected` and `<variant>+jammed` and are baked for every palette variant (`default+selected`, `everglow.worn+jammed`).
+   - `@glow`: if `glow` is set, emissive pixels (the slots in `glow.slots`) dilated by `radius` with stepped alpha by rounded Euclidean distance (60% on the pixel, 35% at 1 px, 15% at 2 px and beyond; never smooth gradients), each halo pixel taking its nearest emissive pixel's color, drawn additively. The glow frame is padded by `radius` on every side and has its own anchor. Glow frames exist for palette variants, not derived ones.
    - `heavy` (Hollow sprites only): the Heavy tell from [art-direction.md §8](art-direction.md#trait-tells), baked as a variant so render only switches frames.
    - `dark` (portraits only): every color mapped onto `ink.1`–`ink.3` by luminance, outline `ink.0` ([art-direction.md § Portrait roster](art-direction.md#portrait-roster)).
 5. **Pack** into atlas pages and register with Phaser.
@@ -210,14 +220,25 @@ glow frame: <spriteId>#<variant>:<frame>@glow
 interface SpriteSource {
   load(scene: Phaser.Scene): Promise<void>;     // registers textures, frames, anims
   frame(spriteId: SpriteId, frame: string, variant?: string): { texture: string; frame: string };
+  glowFrame(spriteId: SpriteId, frame: string, variant?: string): { texture: string; frame: string } | null;
   anim(spriteId: SpriteId, anim: string, variant?: string): string;
   meta(spriteId: SpriteId): { w: number; h: number; anchor: { x: number; y: number } };
+  frameAnchor(spriteId: SpriteId, frame: string): { x: number; y: number };  // mirrored frames differ
+  mount(spriteId: SpriteId): { x: number; y: number } | null;                // tower bases
 }
 ```
 
-`CodeSpriteSource` is the only implementation for now. A future `SheetSpriteSource` would load a PNG atlas plus JSON (for example an Aseprite export) whose frame names follow the same contract, with anchors coming from the same sprite registry. Swapping is then one line in `BootScene`, and sprites can be migrated one at a time because a composite source can try sheets first and fall back to code.
+`variant` defaults to `default`. Anims loop unless their definition sets `loop: false` (fire, bursts). The code is the home of the interface: `src/render/sprites/SpriteSource.ts`.
+
+`CodeSpriteSource` is the only implementation for now. `BootScene` bakes and registers it synchronously at boot (`register(scene)`) and stores it in the game registry under `spriteSource`. A future `SheetSpriteSource` would load a PNG atlas plus JSON (for example an Aseprite export) whose frame names follow the same contract, with anchors coming from the same sprite registry. Swapping is then one line in `BootScene`, and sprites can be migrated one at a time because a composite source can try sheets first and fall back to code.
 
 The baked RGBA buffers are also available to the DOM UI (portraits and icons) as canvases, so the HUD and Phaser share one art pipeline.
+
+### The sprite gallery
+
+`gallery.html` (built alongside the game, entry `src/app/gallery.ts`) shows every registered sprite as a labeled card: each palette variant's frames at 1× and at an integer zoom (3× up to 20 px, else 2×), on dark (`ink.0`) and light (`steel.4`) backgrounds, with the `default+…` derived variants and the default frames composited with their `@glow`. Above the cards, small **dioramas** of an A1M1 corner place tiles, props, towers (heads on mounts), enemies, and VFX by their anchors with depth sorting, once in `act1` at 2× and once per environment palette at 1×. The page is deterministic (no time, no randomness, no running animations).
+
+The `smoke/gallery.spec.ts` smoke test opens it at a 1600 px wide viewport, checks the `data-*` counters on `<body>` (sprite count equals the registry; every displayed frame rendered), and writes the full-page screenshot to **`test-results/gallery/gallery.png`**, the milestone art-trail artifact.
 
 ---
 

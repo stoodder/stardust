@@ -91,3 +91,14 @@ The owner's request, from an orchestrator pitch. Starting with M1, every milesto
   - `towerUnlockWave` compiles to `once` countdown events, which come before authored events.
   - Every error is collected into one `ContentCompileError`.
   - The entry point is `compileContent()`.
+
+### D012 — 2026-11-09 — T104 sprite pipeline: format rulings
+Code-generated sprites are live: 21 sprites in 454 frames, baked at boot in about 12 ms through the pure `rasterize`/`bake`/`atlas` modules and `CodeSpriteSource`. [art/tech-spec.md](art/tech-spec.md) now settles the details the spec left open:
+- Anchors are pixel-edge coordinates, and a tower's anchor is the center of its base footprint.
+- Mirrored animations rename frames by swapping the facing token.
+- In patch rows, a space keeps the pixel underneath and `.` makes it transparent.
+- Derived `+selected` (towers and enemies) and `+jammed` (towers) variants are baked.
+- Glow frames are padded by their radius and use stepped alpha.
+- The env palette slots are `p`/`s`/`a`/`e`.
+- `fx` is a sprite category.
+The orchestrator reviewed the gallery: Everglow steel with teal and orange reads clearly against the warm, chunky Skitterkin, and the env palettes darken from Act I to the finale as the art direction intends. The D010 art-trail capture is `test-results/gallery/gallery.png` (`npm run smoke`, deterministic, 1600 px wide).

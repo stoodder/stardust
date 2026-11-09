@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stardust sprite gallery</title>
+    <link rel="icon" href="data:," />
+    <style>
+      /* Dev page (T104). Colors are master palette values: ink.0–4, steel.3–4, white.0, teal.3. */
+      body {
+        margin: 0;
+        padding: 16px 24px 32px;
+        background: #0d0a18;
+        color: #e6ebf5;
+        font:
+          12px/1.4 ui-monospace,
+          'DejaVu Sans Mono',
+          Menlo,
+          monospace;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        color: #2cd6cc;
+      }
+      h2 {
+        margin: 24px 0 8px;
+        font-size: 14px;
+        color: #2cd6cc;
+      }
+      .sub {
+        color: #929db6;
+        margin-bottom: 12px;
+      }
+      canvas {
+        image-rendering: pixelated;
+        display: block;
+      }
+      .card {
+        border: 1px solid #251c3a;
+        background: #181226;
+        margin: 0 0 10px;
+        padding: 8px 10px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 13px;
+        color: #e6ebf5;
+      }
+      .card h3 small {
+        color: #929db6;
+        font-weight: normal;
+        margin-left: 8px;
+      }
+      .variants {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+      }
+      .panels {
+        display: flex;
+      }
+      .vlabel {
+        color: #929db6;
+        margin-bottom: 2px;
+      }
+      .panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: flex-end;
+        padding: 6px;
+      }
+      .panel.dark {
+        background: #05030a;
+      }
+      .panel.light {
+        background: #c6cee0;
+        color: #181226;
+      }
+      .frame {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        font-size: 10px;
+      }
+      .frame span {
+        opacity: 0.7;
+      }
+      .dioramas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gallery"></div>
+    <script type="module" src="/src/app/gallery.ts"></script>
+  </body>
+</html>
