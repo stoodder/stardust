@@ -2,14 +2,23 @@
 // (docs/tech/meta-runtime.md § Progress and gating). The schedule is story/campaign.md's (§ 2 and
 // § 4.6); design/progression.md says what each system is. The map order and names are
 // content/campaign.ts's CAMPAIGN_PLAN, which includes maps whose content isn't built yet: the
-// Shift board shows those as "coming soon", and the gates name them. Pure functions over a SaveData.
+// Shift board runs to the last registered one (an unregistered gap shows "coming soon"), and the
+// gates name a later map by its position. Pure functions over a SaveData.
 import { CAMPAIGN_PLAN, type CampaignMapId } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { MapId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
 
-/** How many campaign maps the Shift board lists (the M2 cut, D031: A1M1 and A1M2). */
-export const SHIFT_BOARD_SIZE = 2;
+function isRegistered(id: string): id is MapId {
+  return Object.hasOwn(MAPS, id);
+}
+
+/**
+ * How many campaign maps the Shift board lists: the plan up to its last registered map (Act I's
+ * five while Act II isn't built), so a map joins the board the moment its folder is registered.
+ */
+export const SHIFT_BOARD_SIZE: number =
+  CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1;
 
 /** Systems the campaign opens between maps. */
 export type MetaSystem =
@@ -69,7 +78,7 @@ export function isSystemUnlocked(
 
 /**
  * A planned map as the gating copy names it: its name while the Shift board lists it ("Orientation
- * Day"), else its position, so the copy never names a map the player can't see yet ("Shift 3
+ * Day"), else its position, so the copy never names a map the player can't see yet ("Shift 10
  * (coming soon)"). An id off the plan is itself.
  */
 export function mapMilestone(id: string, size: number = SHIFT_BOARD_SIZE): string {
@@ -79,8 +88,8 @@ export function mapMilestone(id: string, size: number = SHIFT_BOARD_SIZE): strin
 }
 
 /**
- * What opens a locked system, in words for its locked pane: "Opens after Orientation Day", or
- * "Opens after Shift 3 (coming soon)" for a map past the Shift board (mapMilestone).
+ * What opens a locked system, in words for its locked pane: "Opens after Special Delivery", or
+ * "Opens after Shift 10 (coming soon)" for a map past the Shift board (mapMilestone).
  */
 export function unlockHint(system: MetaSystem, size: number = SHIFT_BOARD_SIZE): string {
   return `Opens after ${mapMilestone(SYSTEM_UNLOCKS[system], size)}`;
@@ -105,10 +114,6 @@ export interface ShiftEntry {
   readonly state: ShiftState;
   /** Medal ids earned on the map, in the order earned. */
   readonly medals: readonly string[];
-}
-
-function isRegistered(id: string): id is MapId {
-  return Object.hasOwn(MAPS, id);
 }
 
 /**
