@@ -2,7 +2,7 @@
 // battle's BattleInteraction, the rest become commands. Shared by the pointer (BattleScene) and
 // the keyboard cursor's Enter (app/commands.ts), so both act the same way.
 import type { IdSpace } from '../../content/types.ts';
-import type { Command } from '../../sim/index.ts';
+import { clearCommand, type Command } from '../../sim/index.ts';
 import type { BattleInteraction } from './BattleInteraction.ts';
 import type { Intent } from './intents.ts';
 
@@ -47,6 +47,20 @@ export function applyIntent(
       return;
     case 'cancel':
       interaction.clear();
+      return;
+    case 'clear':
+      // The sim queues the drone (it re-validates); WreckageView marks the tile as it joins.
+      interaction.selectTower(0);
+      sink.issue(clearCommand(intent.tile));
+      return;
+    case 'alreadyQueued':
+      interaction.selectTower(0);
+      interaction.refuse('alreadyQueued');
+      return;
+    case 'clearFirst':
+      // Still armed (like "Can't build there"): the HUD says to clear it first.
+      interaction.selectTower(0);
+      interaction.refuse('clearFirst');
       return;
     case 'poke':
       // A click off a tower deselects, as anywhere else; the poke itself is a UI event.

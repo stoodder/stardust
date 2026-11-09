@@ -36,13 +36,8 @@ const MARKER_COLOR = 'teal.4' as const;
 const MAX_MARKER = 9;
 
 /** Where a wreckage tile stands, as last drawn. */
-const enum Shown {
-  Wreck,
-  Queued,
-  Lit,
-  Half,
-  Cleared,
-}
+const Shown = { Wreck: 0, Queued: 1, Lit: 2, Half: 3, Cleared: 4 } as const;
+type Shown = (typeof Shown)[keyof typeof Shown];
 
 interface WreckTile {
   readonly index: number;
@@ -120,7 +115,7 @@ export class WreckageView {
         continue;
       }
       const at = drone.queue.indexOf(w.index);
-      const next = at < 0 ? Shown.Wreck : at > 0 ? Shown.Queued : half ? Shown.Half : Shown.Lit;
+      const next: Shown = at < 0 ? Shown.Wreck : at > 0 ? Shown.Queued : half ? Shown.Half : Shown.Lit;
       this.#mark(w, at < 0 ? 0 : at + 1);
       if (next === w.shown) continue;
       if (w.shown === Shown.Wreck && next !== Shown.Wreck) {

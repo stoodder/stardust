@@ -1028,3 +1028,10 @@ Real art went in behind T300a's ids. No data changed.
 - **Dialogue font:** dialogue uses **Silkscreen 8**. Pixelify Sans has no fix for its "5" bug, and art-direction now proposes dropping it.
 - **Radio adapter:** until T302c migrates the radio tables, a fallback adapter plays them.
 - **Tests:** `?test=1` keeps dialogue off unless `&dialogue=1`.
+
+### D081 — 2026-11-09 — T311b Chitterbloom, wreckage, and the salvage drone
+- **Chitterbloom** (`enemy.chitterbloom`, 58×46 against the 64×64 boss budget). Anims: walk, sneeze tell, sneeze, dig, `under` (a mound with her crown showing), surface, phase-3 `panic`, the invulnerable `puff` (alternated with the selected variant for a shimmer), and `flee`. Four facings, two of them mirrored.
+- **Wreckage** (`prop.wreckage`): a crashed delivery drone or a toppled lettuce cart, each with a beacon blink and a half-cleared frame.
+- **Salvage drone** (`prop.salvage_drone`): it hovers inside its own frame, so render adds no lift. `fly` and `work` (tractor-beam) anims.
+- The placeholders folder is gone, and every M3 unit now has real art.
+- The gallery shows mirrored frames at 1× only and is 18,147 px tall.

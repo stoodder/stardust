@@ -3,7 +3,7 @@
 // Enter on the same tile mean the same thing.
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { isBuildableTile, type Sim } from '../../sim/index.ts';
+import { isBuildableTile, liveTileAt, wreckageStatus, type Sim } from '../../sim/index.ts';
 import type { TileFacts } from './intents.ts';
 
 export type MutableTileFacts = { -readonly [K in keyof TileFacts]: TileFacts[K] };
@@ -18,6 +18,7 @@ export function emptyTileFacts(): MutableTileFacts {
     towerUid: 0,
     groundPath: false,
     peeker: false,
+    wreckage: 'none',
   };
 }
 
@@ -68,16 +69,19 @@ export function fillTileFacts(
     out.towerUid = 0;
     out.groundPath = false;
     out.peeker = false;
+    out.wreckage = 'none';
     return out;
   }
   out.index = index;
   out.col = index % map.cols;
   out.row = (index - out.col) / map.cols;
-  out.buildable = isBuildableTile(map.tiles[index]!); // index < cols·rows
+  // A cleared wreck is its live tile (a pad, high ground, a hidden power node; D076).
+  out.buildable = isBuildableTile(liveTileAt(map, sim.state.wreckage, index)); // index < cols·rows
   const slot = sim.state.towerAtTile[index] ?? -1;
   out.towerUid = slot < 0 ? 0 : (sim.state.towers.items[slot]?.uid ?? 0);
   out.groundPath = isGroundPathTile(map, index);
   out.peeker = index === peekerTile(map);
+  out.wreckage = wreckageStatus(map, sim.state.wreckage, out.col, out.row);
   return out;
 }
 

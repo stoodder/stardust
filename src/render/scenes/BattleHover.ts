@@ -8,7 +8,13 @@
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { costFor, segmentSpan, type SegmentSpan, type Sim } from '../../sim/index.ts';
+import {
+  costFor,
+  liveTileAt,
+  segmentSpan,
+  type SegmentSpan,
+  type Sim,
+} from '../../sim/index.ts';
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import { ghostLabel, ghostLabels, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';
@@ -157,8 +163,9 @@ export class BattleHover {
 
   /** The ghost's tile-bonus label for `armed` on (col, row), or null. */
   #ghostLabel(armed: CompiledTowerDef, col: number, row: number): string | null {
-    const map = this.#deps.sim.map;
-    const tile = map.tiles[row * map.cols + col];
+    const { sim } = this.#deps;
+    // A cleared wreck shows what it uncovered (a hidden power node's bonus; D076).
+    const tile = liveTileAt(sim.map, sim.state.wreckage, row * sim.map.cols + col);
     return ghostLabel(this.#labels, tile, armed.tiers[0].attack !== null);
   }
 

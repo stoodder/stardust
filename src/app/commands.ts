@@ -266,8 +266,9 @@ export function cancel(): void {
 /**
  * The tiles the keyboard cursor lands on: while an ability is aimed, every tile (a strike lands
  * on paths), or only the ground-route tiles for one that targets the path (Suppressing Fire);
- * else the buildable tiles (pads, high ground, power nodes, so every tower too), and with nothing
- * armed the Act I Peeker's rock too (Enter pokes it, as a click does; D040).
+ * else the buildable tiles (pads, high ground, power nodes, so every tower too) and wreckage (Enter
+ * sends the salvage drone), and with nothing armed the Act I Peeker's rock too (Enter pokes it, as
+ * a click does; D040).
  */
 function cursorTargets(t: CommandTarget): (index: number) => boolean {
   const { sim } = t.host;
@@ -278,9 +279,10 @@ function cursorTargets(t: CommandTarget): (index: number) => boolean {
     return () => true;
   }
   const peeker = t.interaction.armed === null ? peekerTile(sim.map) : -1;
+  // Wreckage too: Enter sends the salvage drone there, as a click does (T312a).
   return (i) => {
     const tile = tiles[i];
-    return i === peeker || (tile !== undefined && isBuildableTile(tile));
+    return i === peeker || tile === 'x' || (tile !== undefined && isBuildableTile(tile));
   };
 }
 

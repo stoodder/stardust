@@ -2,6 +2,7 @@
 // the facts about the tile under the pointer, and these functions decide what a click means and
 // what the hover should show. Nothing is hover-only, so touch can come later (one tap = click).
 import type { GridPos } from '../../content/types.ts';
+import type { WreckageStatus } from '../../sim/index.ts';
 import type { AbilitySlot } from './BattleInteraction.ts';
 
 /** What the player has picked to build (the HUD's build slot, T106), or null. */
@@ -13,7 +14,7 @@ export interface TileFacts {
   readonly index: number;
   readonly col: number;
   readonly row: number;
-  /** Pad, high ground, or power node (sim `isBuildableTile`). */
+  /** Pad, high ground, or power node (sim `isBuildableTile`), as the run stands (`liveTile`). */
   readonly buildable: boolean;
   /** The uid of the tower standing there, or 0. */
   readonly towerUid: number;
@@ -21,6 +22,8 @@ export interface TileFacts {
   readonly groundPath: boolean;
   /** The Peeker's rock on an Act I map (tileFacts.ts `peekerTile`): a plain click pokes it. */
   readonly peeker?: boolean;
+  /** Where the tile stands with the salvage drone (sim `wreckageStatus`; 'none' off wreckage). */
+  readonly wreckage?: WreckageStatus;
 }
 
 /** What a click does. The scene applies the selection and issues the command. */
@@ -40,7 +43,18 @@ export type Intent =
   /** Right-click: drops the selection and disarms (like Esc). */
   | { readonly kind: 'cancel' }
   /** A plain click on the Act I Peeker: a UI event, never a command (design/core-loop.md § 6.9). */
-  | { readonly kind: 'poke' };
+  | { readonly kind: 'poke' }
+  /** A plain click on wreckage: send the salvage drone (the `clear` command; maps.md § 3). */
+  | { readonly kind: 'clear'; readonly tile: GridPos }
+  /** A click on wreckage the drone is already queued for, or clearing: the HUD says so. */
+  | { readonly kind: 'alreadyQueued' }
+  /** An armed click on wreckage: the HUD says "Clear it first"; the slot stays armed. */
+  | { readonly kind: 'clearFirst' };
+
+/** Whether a wreckage status is a wreck still standing (not cleared, not plain ground). */
+function standingWreck(status: WreckageStatus | undefined): boolean {
+  return status === 'wreckage' || status === 'queued' || status === 'clearing';
+}
 
 /**
  * Decides a click: right-click cancels (and disarms, and stops aiming); while aiming an ability, a
@@ -49,7 +63,9 @@ export type Intent =
  * ground-route tile fires it and a click on any other tile says it can't target there; a
  * tower selects it; an armed click on a free pad builds (the slot stays armed, so the next click
  * builds another), and an armed click on any other tile says it can't build there. A plain click
- * (nothing armed or aimed) on the Act I Peeker pokes it. Anything else deselects.
+ * (nothing armed or aimed) on the Act I Peeker pokes it. A plain click on wreckage sends the
+ * salvage drone there (or, if it's already queued or being cleared, says so); an armed click on
+ * wreckage says to clear it first. Anything else deselects.
  */
 export function resolveClick(
   tile: TileFacts,
@@ -68,10 +84,11 @@ export function resolveClick(
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
   if (armed === null && tile.peeker === true) return { kind: 'poke' };
   if (armed !== null) {
-    return tile.buildable
-      ? { kind: 'build', tower: armed, tile: [tile.col, tile.row] }
-      : { kind: 'cantBuild' };
+    if (tile.buildable) return { kind: 'build', tower: armed, tile: [tile.col, tile.row] };
+    return standingWreck(tile.wreckage) ? { kind: 'clearFirst' } : { kind: 'cantBuild' };
   }
+  if (tile.wreckage === 'wreckage') return { kind: 'clear', tile: [tile.col, tile.row] };
+  if (standingWreck(tile.wreckage)) return { kind: 'alreadyQueued' };
   return { kind: 'deselect' };
 }
 

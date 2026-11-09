@@ -18,6 +18,7 @@ import {
   holdFireText,
   cursorText,
   meterLabelText,
+  refusalText,
   rejectText,
   specLockText,
 } from './hudText.ts';
@@ -302,8 +303,9 @@ export function bindHud(
   const offs = [
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
-    // A path ability aimed off the path (render/input/apply.ts): "Can't target there".
-    interaction.onRefusal((r) => showNotice(rejectText(r) ?? '')),
+    // Inputs refused before the sim (render/input/apply.ts): a path ability aimed off the path
+    // ("Can't target there"), a build on wreckage ("Clear it first"), wreckage already queued.
+    interaction.onRefusal((r) => showNotice(refusalText(r))),
     host.bus.on('TowerBuilt', (e) => {
       hud.built.value = true;
       syncTowers();

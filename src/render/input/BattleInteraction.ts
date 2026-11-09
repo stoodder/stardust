@@ -13,8 +13,12 @@
 // plays the duck, and the app plays the squeak and sets `peeker_poked` (app/peeker.ts).
 import type { CursorAxis } from './cursor.ts';
 
-/** Why an input was refused before reaching the sim (the HUD words it, app/hud.ts `rejectText`). */
-export type InputRefusal = 'invalidTarget';
+/**
+ * Why an input was refused before reaching the sim (the HUD words it, app/hudText.ts
+ * `refusalText`): a path ability aimed off the path; an armed build on wreckage (clear it first);
+ * a click on wreckage the drone is already queued for (T312a).
+ */
+export type InputRefusal = 'invalidTarget' | 'clearFirst' | 'alreadyQueued';
 
 export interface InteractionSnapshot {
   /** The selected tower's uid, or 0. */

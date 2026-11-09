@@ -141,3 +141,44 @@ describe('aiming an ability', () => {
     expect(resolveClick({ ...peeker, peeker: false }, 'left', null)).toEqual({ kind: 'deselect' });
   });
 });
+
+describe('wreckage: the clear intent (T312a; design/maps.md § 3)', () => {
+  const wreck: TileFacts = { ...pad, index: 49, col: 1, row: 4, buildable: false, wreckage: 'wreckage' };
+
+  it('sends the salvage drone on a plain click', () => {
+    expect(resolveClick(wreck, 'left', null)).toEqual({ kind: 'clear', tile: [1, 4] });
+  });
+
+  it('says the drone is already on it for a queued or clearing tile', () => {
+    expect(resolveClick({ ...wreck, wreckage: 'queued' }, 'left', null)).toEqual({
+      kind: 'alreadyQueued',
+    });
+    expect(resolveClick({ ...wreck, wreckage: 'clearing' }, 'left', null)).toEqual({
+      kind: 'alreadyQueued',
+    });
+  });
+
+  it('says to clear it first when a tower is armed (the slot stays armed)', () => {
+    expect(resolveClick(wreck, 'left', 'rivet')).toEqual({ kind: 'clearFirst' });
+    expect(resolveClick({ ...wreck, wreckage: 'queued' }, 'left', 'rivet')).toEqual({
+      kind: 'clearFirst',
+    });
+  });
+
+  it('builds on a cleared tile like any pad, and aiming or right-click mean what they always do', () => {
+    const cleared: TileFacts = { ...wreck, buildable: true, wreckage: 'cleared' };
+    expect(resolveClick(cleared, 'left', 'rivet')).toEqual({
+      kind: 'build',
+      tower: 'rivet',
+      tile: [1, 4],
+    });
+    expect(resolveClick(cleared, 'left', null)).toEqual({ kind: 'deselect' });
+    expect(resolveClick(wreck, 'left', null, 1)).toEqual({ kind: 'ability', slot: 1, tile: [1, 4] });
+    expect(resolveClick(wreck, 'right', null)).toEqual({ kind: 'cancel' });
+    // A tower standing there (on a cleared tile) is selected, never cleared.
+    expect(resolveClick({ ...cleared, towerUid: 3 }, 'left', null)).toEqual({
+      kind: 'selectTower',
+      uid: 3,
+    });
+  });
+});

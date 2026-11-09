@@ -18,6 +18,10 @@
 // Thumper's bomblets pop with their own small burst.
 // The Peeker (T309) is PeekerView's: on a map with a `peeker` marker it peeks, ducks from enemies
 // and the cursor, and ducks when poked (BattleInteraction's `onPoke`, a UI event).
+// M3 (T312a): air lanes show dotted while flyers are due or an armed tower hits air (AirLaneView);
+// flak climbs and bursts at a flyer's height; Zapcoil's arcs are ChainFx's and Gerald's plinks
+// PlinkFx's; Time Dilation's field tints the playfield (FieldTintView); wreckage follows the
+// salvage drone's queue (WreckageView) and the drone flies it (DroneView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -26,6 +30,7 @@ import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import {
   abilityStats,
+  clearTicksFor,
   isBuildableTile,
   tileElevation,
   type Command,
@@ -50,10 +55,14 @@ import { prefersReducedMotion, pulseOn } from '../motion.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
+import { AirLaneView } from '../views/AirLaneView.ts';
 import { AllyView } from '../views/AllyView.ts';
+import { ChainFx } from '../views/ChainFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { CursorView } from '../views/CursorView.ts';
+import { DroneView } from '../views/DroneView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
+import { FieldTintView } from '../views/FieldTintView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
 import { LinkView } from '../views/LinkView.ts';
@@ -61,12 +70,14 @@ import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
+import { PlinkFx } from '../views/PlinkFx.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
 import { ViewPool } from '../views/ViewPool.ts';
+import { WreckageView } from '../views/WreckageView.ts';
 import { bindBattleEvents, findLiveTower, type LiveTower } from './battleEvents.ts';
 import { BattleHover } from './BattleHover.ts';
 
@@ -114,6 +125,14 @@ export class BattleScene extends Phaser.Scene {
   #links!: LinkView;
   #sacks!: SackBurstView;
   #ping!: PingView;
+  #airLanes!: AirLaneView;
+  #chains!: ChainFx;
+  #plinks!: PlinkFx;
+  #fieldTint!: FieldTintView;
+  #wreckage!: WreckageView;
+  #drone!: DroneView;
+  /** The salvage drone's time per tile under the run's modifiers (ticks). */
+  #clearTicks = 0;
   /** The Peeker on the map's `peeker` marker, or null on a map without one. */
   #peeker: PeekerView | null = null;
   /** The sim tick at the last frame: play time only passes while it moves. */
@@ -197,7 +216,9 @@ export class BattleScene extends Phaser.Scene {
     this.#origin = mapOrigin(map.cols, map.rows, VIEW_W, VIEW_H);
     const ctx: ViewContext = { scene: this, sprites, layers, origin: this.#origin };
 
-    const coreProps = drawGround(ctx, map, map.env);
+    const wreckProps = new Map<number, Phaser.GameObjects.Sprite>();
+    const coreProps = drawGround(ctx, map, map.env, wreckProps);
+    this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
     this.#towers = new ViewPool(() => new TowerView(ctx));
     this.#enemies = new ViewPool(() => new EnemyView(ctx));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
@@ -206,6 +227,12 @@ export class BattleScene extends Phaser.Scene {
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#sacks = new SackBurstView(ctx);
+    this.#chains = new ChainFx(ctx);
+    this.#plinks = new PlinkFx(ctx, this.#fx);
+    this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
+    this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
+    this.#drone = new DroneView(ctx, map);
+    this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
     this.#pinged = 0;
@@ -269,6 +296,8 @@ export class BattleScene extends Phaser.Scene {
         links: this.#links,
         sacks: this.#sacks,
         core: this.#core,
+        chains: this.#chains,
+        plinks: this.#plinks,
         strikeRadius: this.#strikeRadius,
         liftPx: (col, row) => this.#liftPx(col, row),
         onBuilt: () => {
@@ -286,6 +315,10 @@ export class BattleScene extends Phaser.Scene {
       this.#sacks.reset();
       this.#ping.reset();
       this.#links.reset();
+      this.#chains.reset();
+      this.#plinks.reset();
+      this.#fieldTint.reset();
+      this.#wreckage.reset();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();
@@ -298,6 +331,13 @@ export class BattleScene extends Phaser.Scene {
     this.#syncViews();
     const state = this.#deps.sim.state;
     this.#fx.update(delta, state.zones);
+    const dt = Number.isFinite(delta) && delta > 0 ? delta : 0;
+    this.#chains.update(dt);
+    this.#plinks.update(dt);
+    this.#fieldTint.update(state.zones);
+    this.#wreckage.update(state.wreckage, this.#clearTicks);
+    this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
+    this.#airLanes.update(state.wave, this.#armedHitsAir());
     this.#sacks.update(delta);
     this.#links.update();
     this.#syncPing(delta);
@@ -342,6 +382,33 @@ export class BattleScene extends Phaser.Scene {
   /** The Peeker's pose (the smoke hooks' view of it), or null on a map without one. */
   get peekerPose(): 'hidden' | 'peek' | 'duck' | null {
     return this.#peeker?.pose ?? null;
+  }
+
+  /** Whether the armed tower's first tier hits air (the air lanes show while it's armed). */
+  #armedHitsAir(): boolean {
+    const armed = this.#deps.interaction.armed;
+    const towers = this.#deps.sim.config.content.towers;
+    if (armed === null || !Object.hasOwn(towers, armed)) return false;
+    return towers[armed]?.tiers[0].targets.air ?? false;
+  }
+
+  /** The M3 views' state, for the smoke hooks (T312a). */
+  get skyStatus(): {
+    lanes: number;
+    arcs: number;
+    plinks: number;
+    tinted: boolean;
+    queued: number;
+    drone: string;
+  } {
+    return {
+      lanes: this.#airLanes.shown,
+      arcs: this.#chains.live,
+      plinks: this.#plinks.count,
+      tinted: this.#fieldTint.showing,
+      queued: this.#wreckage.queuedMarkers,
+      drone: this.#drone.phase,
+    };
   }
 
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */

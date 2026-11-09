@@ -10,7 +10,7 @@
 // applies (a leaking boss drains all integrity, BOSS_LEAK_DRAINS_ALL). Her phase-2 burrows are
 // boss behaviour, not the Burrowing trait (her intel shows the `boss` icon; no burrow answer is
 // needed, since she surfaces on her own).
-// Sprites are placeholders under their final ids (T311b).
+// Sprites: `enemy.chitterbloom` / `icon.enemy.chitterbloom` (T311b).
 import { defineEnemy } from '../define.ts';
 
 export const chitterbloom = defineEnemy({

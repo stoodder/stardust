@@ -9,9 +9,12 @@ import { SYSTEM_UNLOCKS } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { assertNever, type DeepReadonly } from '../shared/types.ts';
+import type { InputRefusal } from '../render/input/BattleInteraction.ts';
 import {
   isBuildableTile,
+  liveTileAt,
   tileAndLinkRules,
+  wreckageStatus,
   type AbilityStats,
   type RejectReason,
   type Sim,
@@ -253,8 +256,9 @@ export function cursorText(
   aimingLabel: string | null,
 ): string | null {
   const map = sim.map;
-  const tile = map.tiles[index];
-  if (index < 0 || tile === undefined) return null;
+  if (index < 0 || map.tiles[index] === undefined) return null;
+  // A cleared wreck reads as what it uncovered (D076).
+  const tile = liveTileAt(map, sim.state.wreckage, index);
   const col = index % map.cols;
   const where = `column ${col + 1}, row ${(index - col) / map.cols + 1}`;
   const slot = sim.state.towerAtTile[index] ?? -1;
@@ -265,6 +269,12 @@ export function cursorText(
       : `${TILE_NAMES[tile]}, ${where}${isBuildableTile(tile) ? ', empty' : ''}`;
   if (aimingLabel !== null) return `${what}. Enter fires ${aimingLabel} here.`;
   if (tower !== null && tower.alive) return `${what}. Enter selects it.`;
+  if (tile === 'x' && armed === null) {
+    const status = wreckageStatus(map, sim.state.wreckage, col, (index - col) / map.cols);
+    return status === 'wreckage'
+      ? `${what}. Enter sends the salvage drone.`
+      : `${what}, the salvage drone's on it.`;
+  }
   if (armed !== null && isBuildableTile(tile))
     return `${what}. Enter builds ${sim.config.content.towers[armed]?.name ?? towerName(armed)}.`;
   return `${what}.`;
@@ -309,6 +319,20 @@ export function rejectText(reason: RejectReason): string | null {
     case 'notInLoadout':
     case 'noSuchTower':
       return null;
+    default:
+      return assertNever(reason);
+  }
+}
+
+/** Notice text for an input refused before it reached the sim (render/input/apply.ts). */
+export function refusalText(reason: InputRefusal): string {
+  switch (reason) {
+    case 'invalidTarget':
+      return rejectText('invalidTarget') ?? '';
+    case 'clearFirst':
+      return 'Clear it first';
+    case 'alreadyQueued':
+      return 'Drone already on it';
     default:
       return assertNever(reason);
   }
