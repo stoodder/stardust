@@ -414,6 +414,25 @@ section.chamfer,
   opacity: 0.15;
 }
 
+/* Hold fire (all) and Spare runners (all): slot-shaped, wide enough for their chord badges. */
+.hud-fire {
+  width: 44px;
+}
+
+.hud-fire .hud-glyph {
+  margin: 0 auto;
+}
+
+.hud-fire-label {
+  height: 8px;
+  text-align: center;
+  color: var(--sd-steel-3);
+}
+
+.hud-fire[aria-pressed='true'] .hud-fire-label {
+  color: var(--sd-white-1);
+}
+
 .hud-aim-hint {
   display: grid;
   gap: 3px;

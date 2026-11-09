@@ -28,7 +28,8 @@ export const HUD_CORNERS: readonly Rect[] = [
   { x: 4, y: 4, w: 100, h: 64 },
   // The wave panel grows a second preview row when a wave brings several kinds.
   { x: UI_W - 4 - 150, y: 4, w: 150, h: 92 },
-  { x: 4, y: UI_H - 4 - 38, w: 78, h: 38 },
+  // Two ability slots and Hold fire (all) (Spare runners (all), from A2M1, adds 47 px).
+  { x: 4, y: UI_H - 4 - 38, w: 122, h: 38 },
   { x: UI_W - 4 - 129, y: UI_H - 4 - 34, w: 129, h: 34 },
 ];
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
@@ -179,10 +180,12 @@ export function specCardHeight(descLines: number): number {
 /**
  * The tower panel's height for a view (its rows in hud/index.tsx's TowerPanel order): the header,
  * the stats lines, the bonus lines, the "Next:" lines, then either the tier-4 choice (a heading,
- * two cards, and the lock note) or the Upgrade button, and the Sell and Target buttons.
+ * two cards, and the lock note) or the Upgrade button, and the Sell, Target, and Hold fire
+ * buttons, plus Spare runners once it shows.
  */
 export function towerPanelHeight(
-  t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'>,
+  t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'> &
+    Partial<Pick<SelectedTowerView, 'spareRunners'>>,
 ): number {
   const rows: number[] = [PANEL_HEAD_H];
   const lines = t.statsLines.length + t.bonuses.length + t.deltaLines.length;
@@ -193,7 +196,8 @@ export function towerPanelHeight(
     for (const o of t.specs.options) rows.push(specCardHeight(o.descLines.length));
     for (let i = 0; i < t.specs.lockLines.length; i++) rows.push(LINE_H);
   }
-  rows.push(BUTTON_H, BUTTON_H);
+  rows.push(BUTTON_H, BUTTON_H, BUTTON_H);
+  if (t.spareRunners !== undefined && t.spareRunners !== null) rows.push(BUTTON_H);
   const sum = rows.reduce((a, b) => a + b, 0);
   return 2 * PANEL_PAD + sum + PANEL_GAP * (rows.length - 1);
 }

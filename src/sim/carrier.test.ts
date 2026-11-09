@@ -49,8 +49,8 @@ describe('carrier sack burst', () => {
   it('the Brood Hauler is a carrier with the documented numbers (enemies.md § 5.1)', () => {
     const hauler = compileContent(RAW_CONTENT).enemies.hauler;
     expect(hauler).toMatchObject({
-      hp: 300,
-      armor: 6,
+      hp: 330,
+      armor: 9,
       leak: 3,
       bounty: 15,
       faction: 'skitterkin',

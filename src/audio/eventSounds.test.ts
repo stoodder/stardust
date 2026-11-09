@@ -117,6 +117,20 @@ describe('event sounds', () => {
     expect(ENEMY_POP_PITCH['zoomer']).toBeGreaterThan(ENEMY_POP_PITCH['chonk']!);
   });
 
+  it("pops a carrier's sack after its death pop", () => {
+    const burst: SimEvent<IdSpace> = {
+      type: 'SackBurst',
+      uid: 3,
+      enemy: 'hauler',
+      x: 1,
+      y: 1,
+      route: 'road',
+      dist: 4,
+      young: 3,
+    };
+    expect(ids(run([died('hauler'), burst]))).toEqual(['sfx:enemy_pop', 'sfx:sack_pop']);
+  });
+
   it('alarms on a leak that costs integrity, not on a free one', () => {
     expect(ids(run([leak(1), leak(0)]))).toEqual(['sfx:leak']);
   });

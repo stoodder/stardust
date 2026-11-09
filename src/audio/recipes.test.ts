@@ -55,6 +55,7 @@ describe('sound effect recipes', () => {
         'radio_quill',
         'reject',
         'rivet_shot',
+        'sack_pop',
         'sell',
         'sprinkler_pulse',
         'strike_beam',

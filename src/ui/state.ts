@@ -115,6 +115,13 @@ export interface SelectedTowerView {
   readonly specs: SpecChoiceView | null;
   /** The share a sell returns after the grace (70%, or more with Resale Value), in percent. */
   readonly refundPct: number;
+  /** The tower is holding fire (core-loop §2.7): the panel's Hold fire toggle (H). */
+  readonly holdFire: boolean;
+  /**
+   * The tower's spare-runners filter, or null while the control is hidden (until spare runners
+   * unlock, after A1M5; or on a tower with no attack).
+   */
+  readonly spareRunners: boolean | null;
   /** The tower's tile center in game pixels, for placing the panel beside it. */
   readonly x: number;
   readonly y: number;
@@ -297,4 +304,12 @@ export const hud = {
    * built towers pulse and the HUD says how to upgrade.
    */
   upgradeHint: signal(false),
+  /** Hold Fire (all) is on (`state.holdFireAll`): the HUD's master switch (core-loop §2.7). */
+  holdFireAll: signal(false),
+  /** Towers holding fire right now, one by one or through the master switch. */
+  holdingCount: signal(0),
+  /** Spare runners (all) is on (`state.spareRunnersAll`). */
+  spareRunnersAll: signal(false),
+  /** The spare-runners controls show (unlocked after A1M5, or by `devUnlocks`; Alt+H works). */
+  spareRunnersOpen: signal(false),
 };

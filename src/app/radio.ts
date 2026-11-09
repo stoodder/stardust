@@ -55,7 +55,7 @@ export function createRadioScript(lines: readonly RadioLine[]) {
           return [];
         case 'EnemyDied':
           waveOf.delete(e.uid);
-          return [];
+          return take((l) => l.on === 'enemyKilled' && l.enemy === e.enemy);
         case 'EnemyLeaked': {
           const w = waveOf.get(e.uid);
           if (w !== undefined) leakedWaves.add(w);

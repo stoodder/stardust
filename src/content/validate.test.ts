@@ -113,9 +113,9 @@ describe('validate: entities', () => {
     rejects(withEnemy('fx_walker', { layer: 'air' }), 'enemy-traits');
     rejects(withEnemy('fx_runner', { tells: ['shielded', 'regen'] }), 'enemy-traits');
     // A carrier's sack and its tell go together (the Brood Hauler).
-    expect(
-      validate(withEnemy('fx_walker', { carrier: { young: 3 }, tells: ['carrier'] })),
-    ).toEqual([]);
+    expect(validate(withEnemy('fx_walker', { carrier: { young: 3 }, tells: ['carrier'] }))).toEqual(
+      [],
+    );
     rejects(withEnemy('fx_walker', { carrier: { young: 3 } }), 'enemy-traits');
     rejects(withEnemy('fx_walker', { tells: ['carrier'] }), 'enemy-traits');
     rejects(withEnemy('fx_walker', { carrier: { young: 0 }, tells: ['carrier'] }), 'enemy-range');
@@ -256,7 +256,9 @@ describe('validate: maps', () => {
     rejects(
       withMap({
         markers: { rock: [1, 1] },
-        events: [{ id: 'open', on: { wave: 1, phase: 'start' }, actions: [{ openTile: 'rock', to: 'o' }] }],
+        events: [
+          { id: 'open', on: { wave: 1, phase: 'start' }, actions: [{ openTile: 'rock', to: 'o' }] },
+        ],
       }),
       'marker',
     );

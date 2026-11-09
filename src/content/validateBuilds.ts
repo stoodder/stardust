@@ -148,7 +148,11 @@ export function validateBuilds(
       );
     }
     if (Object.keys(def.noCounterBuilds).length === 0) {
-      issues.add('builds-range', `${where}.noCounterLoseByWave`, 'the map has no no-counter builds');
+      issues.add(
+        'builds-range',
+        `${where}.noCounterLoseByWave`,
+        'the map has no no-counter builds',
+      );
     }
   }
 

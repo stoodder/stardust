@@ -141,7 +141,7 @@ function validateMap(
 }
 
 /** Tiles a route walks: a marker never sits on one. */
-const PATH_TILES: readonly string[] = ['#', 'S', 'C'];
+const PATH_TILES: ReadonlySet<string> = new Set(['#', 'S', 'C']);
 
 // ── Geometry ─────────────────────────────────────────────────────────────────────────────────
 
@@ -170,11 +170,13 @@ function validateGeometry(
   // an ally post or a scripted tile change takes the tile, so those markers stay on decor.
   const decorOnly = new Set<string>([
     ...(def.allies ?? []).map((a) => a.post),
-    ...(def.events ?? []).flatMap((e) => e.actions.flatMap((a) => ('openTile' in a ? [a.openTile] : []))),
+    ...(def.events ?? []).flatMap((e) =>
+      e.actions.flatMap((a) => ('openTile' in a ? [a.openTile] : [])),
+    ),
   ]);
   for (const [name, pos] of Object.entries(def.markers ?? {})) {
     const t = grid.at(pos);
-    const ok = decorOnly.has(name) ? t === '.' : t !== undefined && !PATH_TILES.includes(t);
+    const ok = decorOnly.has(name) ? t === '.' : t !== undefined && !PATH_TILES.has(t);
     if (!ok) {
       issues.add(
         'marker',

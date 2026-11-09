@@ -121,6 +121,59 @@ export function sellSelected(): void {
   if (uid !== 0) issue({ type: 'sell', towerUid: uid });
 }
 
+/** The live tower `uid` in the running battle, or null. */
+function liveTower(uid: number) {
+  if (target === null || uid === 0) return null;
+  const pool = target.host.sim.state.towers;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (t.alive && t.uid === uid) return t;
+  }
+  return null;
+}
+
+/** What H says with no tower selected: how to hold one, and the key that holds them all. */
+export const HOLD_NEEDS_TOWER = 'Pick a turret first · Shift+H holds all';
+
+/**
+ * H, or the tower panel's toggle: the selected tower holds fire, or fires again (core-loop §2.7).
+ * With nothing selected, a notice says how. The sim checks the uid; a rejection shows as a notice.
+ */
+export function toggleHoldFireSelected(): void {
+  if (target === null) return;
+  const uid = target.interaction.selectedTower;
+  const t = liveTower(uid);
+  if (t === null) {
+    showNotice(HOLD_NEEDS_TOWER);
+    return;
+  }
+  issue({ type: 'holdFire', target: uid, on: !t.holdFire });
+}
+
+/**
+ * Shift+H, or the HUD's Hold fire (all) button: the master switch. On, every tower holds (and
+ * towers built while it's on start holding); off, every tower fires again, ones held one by one
+ * included (D041).
+ */
+export function toggleHoldFireAll(): void {
+  if (target === null) return;
+  issue({ type: 'holdFire', target: 'all', on: !target.host.sim.state.holdFireAll });
+}
+
+/** The tower panel's Spare runners toggle (from A2M1; hidden, and a no-op, until it unlocks). */
+export function toggleSpareRunnersSelected(): void {
+  if (target === null || !hud.spareRunnersOpen.value) return;
+  const uid = target.interaction.selectedTower;
+  const t = liveTower(uid);
+  if (t !== null) issue({ type: 'spareRunners', target: uid, on: !t.spareRunners });
+}
+
+/** Alt+H, or the HUD's Spare runners (all) button: a master switch like Hold fire's. */
+export function toggleSpareRunnersAll(): void {
+  if (target === null || !hud.spareRunnersOpen.value) return;
+  issue({ type: 'spareRunners', target: 'all', on: !target.host.sim.state.spareRunnersAll });
+}
+
 /** Targeting priorities in cycle order (core-loop §2.6). */
 export const PRIORITY_CYCLE: readonly TargetPriority[] = ['first', 'last', 'strong', 'close'];
 

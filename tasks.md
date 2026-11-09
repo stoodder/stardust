@@ -97,7 +97,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T206a** Hold Fire + spare runners (global inherit); per-tag stats; youngling leak 0 and ×0.5 speed (absorbs T123); `holdFireWhile` / `spareFleeing` harness variants.
 - [x] **T204c** Run end (meta-runtime order); rewards (progression §2: defeat share, replays, already-won pays 0); medals → Intel; Results shows rewards and the lifetime Pests Processed.
 - [x] **T207b** HUD ability slot 2 (E, path-segment aiming); AllyView.
-- [~] **T210b** Brood Hauler data + A1M2 (layout, 8 waves, medals, `pump_station` marker, par, `no_armor`, alt builds); tune.
+- [x] **T210b** Brood Hauler data + A1M2 (layout, 8 waves, medals, `pump_station` marker, par, `no_armor`, alt builds); tune.
 - [x] **T117a** Spec frames, Thumper NE muzzle, explosion punch, Bricks's cannon-lowered frame; trim the art-direction hex tables (part of T117). The gallery page is 14,897 px tall, close to Chrome's 16,384 px screenshot limit: paginate the gallery or the art-trail capture so `m2.png` stays complete.
 - [x] **T202d** TowerView: use base frames `spec_a`/`spec_b` at tier 4 and the `_t2`/`_spec_<a|b>` heads, lift towers on high ground 8 px, and fix PlacementView's highlight under the block; set Cluster Thumper bomblets' `projectile` to `projectile.thumper_bomblet` (+ `fx.bomblet_burst`). HUD: link tethers; panel shows links, tile bonus, and modified stats; the T4 choice (locked + price); briefing shows medals and the threat-intel strip.
 - [x] **T201** Loadout screen (pick up to 4 towers + ability; skipped when you own ≤4 types; last preset; Change loadout). Gated until A1M4.

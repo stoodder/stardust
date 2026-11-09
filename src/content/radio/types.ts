@@ -12,9 +12,8 @@ import type { ColorName } from '../palettes/master.ts';
  * - `waveStart`: `WaveStarted` for `wave`.
  * - `waveCleared`: `WaveCleared` for `wave`.
  * - `perfectWave`: the first wave from `wave` on that resolves with no leaks.
- * - `enemyKilled`: the battle's first `EnemyDied` of `enemy` (design/core-loop.md §6.3's
- *   `enemy_killed` bark). Declared for A1M2's Brood Hauler barks; app/radio.ts plays it once its
- *   `EnemyDied` case takes these lines (until then they stay silent).
+ * - `enemyKilled`: the battle's first `EnemyDied` of `enemy`, whoever the killer
+ *   (design/core-loop.md §6.3's `enemy_killed` bark; A1M2's Brood Hauler barks).
  * - `mapWon` / `mapLost`: the map's debrief. These never play on the ticker: the results card
  *   shows them, with their name plates, after a win or a loss (D028).
  */

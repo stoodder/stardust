@@ -14,6 +14,10 @@ import {
   sellSelected,
   setSpeed,
   specializeSelected,
+  toggleHoldFireAll,
+  toggleHoldFireSelected,
+  toggleSpareRunnersAll,
+  toggleSpareRunnersSelected,
   upgradeSelected,
 } from '../../app/commands.ts';
 import type { TargetPriority } from '../../content/types.ts';
@@ -353,17 +357,104 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   );
 }
 
-/** Bottom-left: the commander ability slots, and the aiming hint while one is aimed. */
+/** An 8×8 pixel glyph in SVG from [x, y, w, h] rectangles. */
+function Glyph({ rects }: { rects: readonly (readonly [number, number, number, number])[] }) {
+  return (
+    <svg
+      class="hud-glyph"
+      width="8"
+      height="8"
+      viewBox="0 0 8 8"
+      shape-rendering="crispEdges"
+      aria-hidden="true"
+      fill="currentColor"
+    >
+      {rects.map(([x, y, w, h]) => (
+        <rect key={`${x},${y}`} x={x} y={y} width={w} height={h} />
+      ))}
+    </svg>
+  );
+}
+
+/** Hold fire: the pause bars (the same mark a holding tower wears on the playfield). */
+const HOLD_GLYPH = [
+  [1, 1, 2, 6],
+  [5, 1, 2, 6],
+] as const;
+/** Spare runners: an arrow pointing back the way they came. */
+const SPARE_GLYPH = [
+  [0, 3, 8, 2],
+  [1, 2, 1, 4],
+  [2, 1, 1, 6],
+  [3, 0, 1, 2],
+  [3, 6, 1, 2],
+] as const;
+
+/**
+ * Hold fire (all), bottom-left beside the abilities (core-loop §2.7): the master switch, always
+ * there. Pressed while every tower holds; its label says so too ("Held"), not only its color.
+ */
+function HoldFireAllButton() {
+  const on = hud.holdFireAll.value;
+  const n = hud.holdingCount.value;
+  const label = on
+    ? 'Hold fire, all: on. Every turret is holding'
+    : `Hold fire, all${n > 0 ? `: ${n} holding` : ''}`;
+  return (
+    <button
+      type="button"
+      class="hud-btn hud-slot hud-fire chamfer"
+      data-testid="hold-fire-all"
+      aria-pressed={on}
+      aria-label={label}
+      title={on ? 'Every turret is holding. Fire again (Shift+H)' : 'Hold fire, all turrets (Shift+H)'}
+      onMouseDown={noFocusOnPress}
+      onClick={toggleHoldFireAll}
+    >
+      <Key k="Shift+H" />
+      <Glyph rects={HOLD_GLYPH} />
+      <span class="hud-fire-label">{on ? 'Held' : 'Hold'}</span>
+    </button>
+  );
+}
+
+/** Spare runners (all), from A2M1 (hidden until it unlocks): Alt+H. */
+function SpareRunnersAllButton() {
+  if (!hud.spareRunnersOpen.value) return null;
+  const on = hud.spareRunnersAll.value;
+  return (
+    <button
+      type="button"
+      class="hud-btn hud-slot hud-fire chamfer"
+      data-testid="spare-runners-all"
+      aria-pressed={on}
+      aria-label={`Spare runners, all${on ? ': on' : ''}`}
+      title={on ? 'Every turret spares runners (Alt+H)' : 'Spare runners, all turrets (Alt+H)'}
+      onMouseDown={noFocusOnPress}
+      onClick={toggleSpareRunnersAll}
+    >
+      <Key k="Alt+H" />
+      <Glyph rects={SPARE_GLYPH} />
+      <span class="hud-fire-label">{on ? 'Sparing' : 'Spare'}</span>
+    </button>
+  );
+}
+
+/**
+ * Bottom-left: the commander ability slots, Hold fire (all) (and Spare runners (all) once it
+ * unlocks), and the aiming hint while an ability is aimed.
+ */
 function AbilityBar() {
   const slots = hud.abilities.value;
-  if (slots.length === 0) return null;
   const cds = hud.abilityCooldowns.value;
   const aimed = slots.find((a) => a.slot === hud.aimingAbility.value);
   return (
-    <nav class="hud-abilities" aria-label="Abilities">
+    <nav class="hud-abilities" aria-label="Abilities and fire control">
       {slots.map((a, i) => (
         <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
       ))}
+      <HoldFireAllButton />
+      <SpareRunnersAllButton />
       {aimed !== undefined && (
         <div class="hud-aim-hint chamfer" role="status">
           {aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target'}
@@ -527,6 +618,32 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
         </span>
         <Key k="T" />
       </button>
+      {/* Hold fire is always here (core-loop §2.7): the word changes with it, not only the color. */}
+      <button
+        type="button"
+        class="hud-btn chamfer wide"
+        data-testid="hold-fire"
+        aria-pressed={t.holdFire}
+        aria-label={t.holdFire ? 'Holding fire. Fire again' : 'Hold fire'}
+        onClick={toggleHoldFireSelected}
+      >
+        <Glyph rects={HOLD_GLYPH} />
+        <span class="grow">{t.holdFire ? 'Holding fire' : 'Hold fire'}</span>
+        <Key k="H" />
+      </button>
+      {t.spareRunners !== null && (
+        <button
+          type="button"
+          class="hud-btn chamfer wide"
+          data-testid="spare-runners"
+          aria-pressed={t.spareRunners}
+          aria-label={t.spareRunners ? 'Sparing runners. Stop' : 'Spare runners'}
+          onClick={toggleSpareRunnersSelected}
+        >
+          <Glyph rects={SPARE_GLYPH} />
+          <span class="grow">{t.spareRunners ? 'Sparing runners' : 'Spare runners'}</span>
+        </button>
+      )}
     </section>
   );
 }

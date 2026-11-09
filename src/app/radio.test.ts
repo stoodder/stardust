@@ -86,6 +86,34 @@ describe('the A1M1 radio (D026)', () => {
     expect(r.lines({ type: 'MapLost' })).toEqual([]);
   });
 
+  it('plays an enemyKilled pair on the first kill of that enemy only (D048: the Hauler barks)', () => {
+    const lines: RadioLine[] = [
+      { on: 'enemyKilled', enemy: 'hauler', speaker: 'quill', text: 'Sack down.' },
+      { on: 'enemyKilled', enemy: 'hauler', speaker: 'bricks', text: 'Strong targeting.' },
+    ];
+    const r = createRadioScript(lines);
+    const died = (uid: number, enemy: string): Ev => ({
+      type: 'EnemyDied',
+      uid,
+      enemy,
+      bounty: 5,
+      killer: { kind: 'ally', uid: 9 },
+      x: 0,
+      y: 0,
+    });
+    expect(r.lines(died(1, 'nibbler'))).toEqual([]);
+    expect(texts(r.lines(died(2, 'hauler')))).toEqual(['Sack down.', 'Strong targeting.']);
+    expect(r.lines(died(3, 'hauler'))).toEqual([]);
+  });
+
+  it('A1M2 carries its two Hauler barks on enemyKilled', () => {
+    const barks = radioLines('a1_m02').filter((l) => l.on === 'enemyKilled');
+    expect(barks.map((l) => [l.enemy, l.speaker])).toEqual([
+      ['hauler', 'quill'],
+      ['hauler', 'bricks'],
+    ]);
+  });
+
   it('has no radio for a map without a table', () => {
     expect(radioLines('dev_range')).toEqual([]);
     expect(radioLines('a1_m01')).toBe(A1_M01_RADIO);

@@ -391,6 +391,8 @@ export interface HudSaveInfo {
   readonly ownedTowers: readonly string[];
   /** Towers whose specs are unlocked (the answers that need a spec). */
   readonly specsUnlocked: readonly string[];
+  /** The spare-runners controls show (`meta/progress.ts`: after A1M5, or `devUnlocks`). */
+  readonly spareRunnersOpen: boolean;
 }
 
 /** The selected tower's panel inputs, as a key: the view is rebuilt only when it changes. */
@@ -412,6 +414,8 @@ function selectedKey(t: DeepReadonly<Tower>, sell: SellValue, x: number, y: numb
     sell.value,
     sell.full,
     t.priority,
+    t.holdFire,
+    t.spareRunners,
     x,
     y,
   ].join('|');
@@ -429,6 +433,7 @@ export function selectedView(
   origin: IsoOrigin,
   prev: SelectedTowerView | null,
   specLock = specLockText(false),
+  spareRunnersOpen = false,
 ): SelectedTowerView | null {
   if (uid === 0) return null;
   const pool = sim.state.towers;
@@ -473,6 +478,9 @@ export function selectedView(
     fullRefund: sell.full,
     refundPct: Math.round(state.economy.sellRefundPct * 100),
     priority: t.priority,
+    holdFire: t.holdFire,
+    // The filter only changes whom a tower picks, so a tower with no attack doesn't offer it.
+    spareRunners: spareRunnersOpen && (t.tierDef?.attack ?? null) !== null ? t.spareRunners : null,
     stats: statLine,
     statsLines: wrapParts(statLine.split(' · '), PANEL_CHARS),
     bonuses: bonusList.flatMap((b) => wrapParts([b], PANEL_CHARS)),
@@ -584,7 +592,13 @@ function tellGlyph(ids: readonly string[]): string | null {
 export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveInfo {
   const save = activeSave();
   if (save === null) {
-    return { engineeringOpen: false, heldMedals: [], ownedTowers: loadout, specsUnlocked: [] };
+    return {
+      engineeringOpen: false,
+      heldMedals: [],
+      ownedTowers: loadout,
+      specsUnlocked: [],
+      spareRunnersOpen: false,
+    };
   }
   const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
     save.campaign.maps;
@@ -593,6 +607,7 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     heldMedals: Object.hasOwn(maps, mapId) ? (maps[mapId]?.medals ?? []) : [],
     ownedTowers: save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t)),
     specsUnlocked: save.unlocks.specs,
+    spareRunnersOpen: systemOpen('spareRunners'),
   };
 }
 
@@ -635,6 +650,16 @@ export function cursorText(
   if (armed !== null && isBuildableTile(tile))
     return `${what}. Enter builds ${displayName(armed)}.`;
   return `${what}.`;
+}
+
+/** How many standing towers are holding fire (the HUD's Hold fire button counts them). */
+export function holdingCount(pool: Sim<IdSpace>['state']['towers']): number {
+  let n = 0;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (t.alive && t.holdFire) n++;
+  }
+  return n;
 }
 
 /** Every standing tower's tile center in game pixels (for the tower panel's placement). */
@@ -850,6 +875,7 @@ export function bindHud(
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
   hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);
   let medalState = { ...sim.state.medals };
+  hud.spareRunnersOpen.value = saveInfo.spareRunnersOpen;
   hud.leak.value = null;
   hud.waveBanner.value = null;
   hud.built.value = false;
@@ -885,6 +911,7 @@ export function bindHud(
       origin,
       hud.selected.value,
       specLock,
+      saveInfo.spareRunnersOpen,
     );
     const m = s.medals;
     if (
@@ -902,6 +929,9 @@ export function bindHud(
       s.outcome === 'playing',
     );
     syncCooldowns();
+    hud.holdFireAll.value = s.holdFireAll;
+    hud.spareRunnersAll.value = s.spareRunnersAll;
+    hud.holdingCount.value = holdingCount(s.towers);
     speed.value = host.speed;
   };
   const syncCooldowns = (): void => {
@@ -936,6 +966,7 @@ export function bindHud(
       origin,
       hud.selected.value,
       specLock,
+      saveInfo.spareRunnersOpen,
     );
     syncCursor();
   };
@@ -1007,5 +1038,9 @@ export function bindHud(
     hud.cursorShown.value = false;
     hud.countdown.value = null;
     hud.callBonus.value = 0;
+    hud.holdFireAll.value = false;
+    hud.holdingCount.value = 0;
+    hud.spareRunnersAll.value = false;
+    hud.spareRunnersOpen.value = false;
   };
 }

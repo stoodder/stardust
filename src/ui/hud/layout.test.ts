@@ -125,12 +125,22 @@ describe('wrapParts', () => {
   });
 
   it('sizes the panel by its rows', () => {
-    // Header 18, stats 8, Upgrade, Sell, Target 16 each; 4 gaps of 2; padding 4 + 4.
+    // Header 18, stats 8, Upgrade, Sell, Target, Hold fire 16 each; 5 gaps of 2; padding 4 + 4.
     expect(towerPanelHeight({ statsLines: ['s'], bonuses: [], deltaLines: [], specs: null })).toBe(
-      18 + 8 + 48 + 8 + 8,
+      18 + 8 + 64 + 8 + 10,
     );
     expect(
       towerPanelHeight({ statsLines: ['s'], bonuses: ['a'], deltaLines: ['b'], specs: null }),
-    ).toBe(110);
+    ).toBe(128);
+    // Spare runners (once unlocked) adds one more button row.
+    expect(
+      towerPanelHeight({
+        statsLines: ['s'],
+        bonuses: [],
+        deltaLines: [],
+        specs: null,
+        spareRunners: false,
+      }),
+    ).toBe(108 + 18);
   });
 });

@@ -646,3 +646,29 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
 - **Briefing:** a threat-intel strip ("Required: Armor" plus the owned towers that answer it, or "Nothing owned answers it yet") and the three medals with "On file". Change loadout is kept.
 - **HUD:** a medal tracker of three diamonds under credits; a forfeited one dims, with the tooltip "Next time!". The aim hint adds "Enter fires" while the keyboard cursor shows.
 - New HUD copy, to go into style-guide §2: "Win the shift.", "Win with no leaks.", "Specialize: pick one", the lock notes, "Nothing owned answers it yet", "Enter fires".
+
+### D057 — 2026-11-09 — T210b: A1M2 *Hatching Season* and the Brood Hauler
+- **Brood Hauler:** 330 HP, armor 9, speed 0.7, leak 3, bounty 15, spawn interval 2.5 s, tells `carrier` + `armored`. On death it emits `SackBurst` with 3 render-only young (`src/sim/carrier.ts`); the young are never sim units. The validator enforces carrier tell ⇔ carrier.
+- **A1M2:** 14×10, a 34-tile road down three terraces, high ground at (6,4), the power node at (10,6) carrying the `pump_station` marker, and 9 pads.
+  - W5 has a lone teach Hauler. W7 sends 5 Haulers and W8 sends 6, **one every 12 s** (D052 step 2).
+  - `requiredCounters: ['armor']`, `teachMap: true`, lose-by W8.
+  - The Challenge is "Aim for the Sack!" (`passedMarker`).
+- **D052's spacing fix worked, with the teach-map fallback.** no_armor loses in W8 on Standard **and with the full catalog**, so armor is genuinely required and D005 holds. No `knownLimits` entry is needed.
+- **Results:**
+
+  | Build | Result |
+  |---|---|
+  | par | 100 |
+  | par without casts | 85 |
+  | alwaysCallEarly | 55 |
+  | Story | 100 |
+  | no_sprinkler | 100 |
+  | par_minus_last | 85 |
+  | stops_after_w5 | 85 |
+
+  Robust to ±0.5–1 s Hauler gaps, except the `abilities` check (par's W8 strike only sometimes decides a Hauler).
+- **Open, for the M2 balance review:**
+  - Par sits at 100 because one Hauler leak costs 15 points, so par can't land near 92 and is +5 over A1M1's 95.
+  - A non-upgrading build hits a W7 wall (9–15 integrity in one wave), and no `no_upgrades` alt guards it, which conflicts with D028's no-wall rule.
+  - EnemyView/FxView don't draw `SackBurst` yet.
+  - A1M2's decor markers (`rig3`, `housing`, `scarecrow`) aren't drawn.
