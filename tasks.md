@@ -123,14 +123,44 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 
-M3 scope:
-- [ ] **T307** Counter model follow-ups from T208 (D038): placement-aware answers (A1M3's no-air build: Rivets out of the air lane's reach), A1M5's no-armor build needs "no Seeker Swarm", consider Harpoon [Skewer] / Prism [Refractor] as splash answers, move `MEDAL_EXEMPT_TAGS` into `rules.ts`.
-- [ ] **T301** Star map / campaign select screen
-- [ ] **T302** Dialogue system (portraits, between-wave and in-map barks, choices)
-- [ ] **T303** Codex/field journal
-- [ ] **T305** Objective variants: Escort ("Evacuated" meter), Holdout, Protect; retry-from-wave checkpoints
-- [ ] **T306** Character creation (name, pronouns), callsigns
-- [ ] **T304** All Act I maps, enemies, and towers per `docs/story/campaign.md`
+M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a·T300b·T310a → W2 T304a·T304c·T302a·T311a → W3 T304b·T304d·T313·T306 → W4 T304e·T302b·T312a·T311b → W5 T304f·T302c·T308·T312c → W6 T304g·T303·T312b·T310b → W7 T316·T314·T309·T311c → W8 T315·T317, then review. Housekeeping: T204b and T210c landed in D045/D048.
+
+- [ ] **T300a** Sim and content seams (folds in T119):
+  - commands: `clear`;
+  - events: `BossPhase`, `BossEnded`, `WreckageCleared`, `NeutralHit`, `ProjectileHit.reduced`;
+  - fields and stats: burrow, split, huddle, boss, neutral, wreckage, discount charges, wave-count cooldowns, `neutralHits`, `wreckageCleared`, `lateSells`, `MapDef.objectives`;
+  - stub systems in the tick order (`enemyAbilities/`, `wreckage.ts`, `attacks/chain.ts`);
+  - data stubs with final sprite ids; `gates.ts` rows.
+  A1M1/A1M2 must stay hash-identical.
+- [ ] **T300b** Story and save seams (folds in T218, T116): `dialogue/types.ts` (1:1 with style-guide §5), `speakers.ts`, empty scene and bark files per map, the codex and memo registries, `src/story/` stubs, SaveData v2 (profile, seen scenes, memos, codex, seen enemies, `bricksTagIndex`, protocols) with the migration from v1, dev saves `after_a1m3`/`4`/`5`.
+- [~] **T225** Split the oversized files (+ T234).
+- [ ] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
+- [ ] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
+- [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".
+- [ ] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
+- [ ] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
+- [ ] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
+- [ ] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
+- [ ] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
+- [ ] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
+- [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
+- [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
+- [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
+- [ ] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
+- [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
+- [ ] **T312a** Render: air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
+- [ ] **T312b** Render: burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
+- [ ] **T312c** HUD: slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
+- [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
+- [ ] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
+- [ ] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
+- [ ] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
+- [ ] **T311b** Sprites: Chitterbloom, wreckage, the drone.
+- [ ] **T311c** Props for A1M3–A1M5; terraces and cliffs (T223); death animations, scutes, clump separation (T117).
+- [ ] **T309** The Peeker: view + click sets `peeker_poked`.
+- [ ] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
+- [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.
+- [ ] **T317** Docs: T217, T120, as-built tables.
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish
 To be split up when we reach them. Known items:

@@ -796,3 +796,35 @@ M2 (*Loadout, Upgrades & Meta Progression*, the D031 cut) ships. The owner said 
   - A1M2 par sits at 100, so A1M3 targets ≤ 90 (T224).
   - Oversized UI files need splitting (T225).
 - **Release:** shipped as the `M2: ship` commit on `main`. Cloud sessions can't push tags, so the owner creates the `m2` release on GitHub.
+
+### D064 — 2026-11-09 — M3 scope ("the M3 cut")
+The owner said "Please continue to M3". The forks below were decided under the kickoff's "use your best judgement" and can be overturned on review.
+- **M3 = Act I, complete:** A1M3–A1M5 playable through **the Quiet Wave (C1) and the stinger**, told by a real dialogue system. A cut that stops at A1M4 has no crack in it, and C1 plus "Rig Nine stops answering" is Act I's payoff (bible §6; campaign §6.1). One milestone, not two.
+- **In scope:**
+  - **The maps (T304):** A1M3–A1M5, with the Puffwing, Bunchling, Elder, Digger, Chitterbloom (boss), and Gerald. Towers Skyhook and Zapcoil (T1–3). Air lanes, wreckage and the salvage drone, a second spawn, and `driveOff`. Time Dilation, Clearance Sale, and Conductive. Objective Intel.
+  - **Dialogue (T302):** it replaces the M1 radio ticker, migrating every line verbatim.
+  - **Character creation (T306).**
+  - **The codex and the Everglow Inbox,** Act I scope (T303).
+  - **The shop:** it opens with the Zapcoil sample and the early-ask scene, plus the protocol picker (T308).
+  - **The Peeker.**
+  - Every M2 carry-over.
+- **Deferred to M4:**
+  - **The star map (T301):** no doc specifies it, Act I is linear, and the Shift board already does the job. Pitch: the Shift board is Everglow's duty roster, and the star map opens in Act II as the world widens.
+  - **Objectives and checkpoints (T305):** Act II uses them first.
+  - **The Sprinkler, Skyhook, and Zapcoil specs:** they need homing, charge, Soaked, and Stasis, and the reference profile buys none before A2M2. Engineering shows them as "Arrives in a later shipment", a logged deviation from campaign §4.1.
+  - Codex annotations and the Bounty Board.
+- **Plan:** 30 tasks in 8 waves of up to 4 agents. The critical path is T300a → enemy/tower systems → A1M3 → A1M4 → A1M5 → flow → curve pass. Two seam tasks come first: T300a (sim/content) and T300b (story/saves, with SaveData v2). They pre-register every new unit under its final sprite id, so parallel tasks never share an index file and art never edits data.
+- **Gaps for the owning tasks to settle and log:**
+  - Gerald: the path vs the air, and whether splash counts as a hit.
+  - Clean Audit's wording.
+  - A1M5's order of party, Results, and stinger.
+  - C1 on replays: lines read *this run*, payoffs read the flag.
+  - A1M1's briefing choice has no replies.
+  - The codex and memo bodies are unwritten.
+  - The `burrower`/`huddle` tells are only "proposed".
+- **Balance notes:**
+  - 20 integrity moves margins in 5-point steps.
+  - A1M3's par target is ≤ 90 (T224).
+  - Mk II must decide a result on A1M3 (T228).
+  - Bricks's Rapport can only matter on A1M5 (the companions on A1M3/A1M4 are QUILL and Zibzab).
+  - The gate's sim time roughly triples; the budget stays ≤ 5 min.
