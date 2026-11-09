@@ -15,9 +15,10 @@
       "revokedTowers": [],
       "jailbroken": [],
       "abilities": ["orbital_strike"],
-      "revokedAbilities": []
+      "revokedAbilities": [],
+      "protocols": ["head_start"]
     },
-    "upgrades": {},
+    "upgrades": { "orbital_strike_mk2": 1 },
     "story": {
       "flags": { "spared_quiet_wave": false },
       "seen": ["a1_m01_briefing"],

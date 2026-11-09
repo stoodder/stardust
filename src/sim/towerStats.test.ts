@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { FIXTURE_CONTENT, fixtureSim } from './__fixtures__/sim.ts';
+import type { IdSpace } from '../content/types.ts';
+import { NO_BONUSES } from './bonuses.ts';
+import type { Modifier } from './config.ts';
 import { towerStats } from './towerStats.ts';
 
 const gun = FIXTURE_CONTENT.towers.fx_gun; // T1 10 dmg 2/s range 3; T2 12 dmg (80); T3 2.5/s pierce 3 (150)
@@ -17,6 +20,8 @@ describe('towerStats', () => {
       minRangeTiles: 0,
       splashTiles: 0,
       armorPierce: 0,
+      vsStatuses: [],
+      vsStatusDamage: 10,
       next: {
         tier: 2,
         cost: 80,
@@ -65,5 +70,46 @@ describe('towerStats', () => {
     sim.applyPending();
     const t = sim.state.towers.items[0]!;
     expect(towerStats(t.def!, t.tier).damage).toBe(10);
+  });
+
+  it('applies a tower’s bonuses through the stacking formula, capped (towers.md § 4)', () => {
+    const b = {
+      ...NO_BONUSES,
+      flatDamage: 2,
+      pctDamage: 0.5,
+      pctRate: 0.1,
+      flatRange: 0.3,
+      pctRange: 0.25,
+    };
+    const line = towerStats(gun, 1, b);
+    // (10 + 2) × 1.5; 2/s × 1.1 = 2.2/s → a 27-tick period → 2.22/s; (3 + 0.3) × 1.25.
+    expect(line).toMatchObject({ damage: 18, ratePerSec: 2.22, rangeTiles: 4.13 });
+    // The next tier keeps the bonuses: (12 + 2) × 1.5 = 21.
+    expect(line.next).toMatchObject({ damage: 3, ratePerSec: 0, rangeTiles: 0 });
+    // +500% damage is capped at +150%.
+    expect(towerStats(gun, 1, { ...NO_BONUSES, pctDamage: 5 }).damage).toBe(25);
+  });
+
+  it('shows a conditional vsStatus bonus beside the plain damage', () => {
+    const line = towerStats(mortar, 1, { ...NO_BONUSES, vsStatusMask: 1, vsStatusPct: 0.2 });
+    expect(line).toMatchObject({ damage: 20, vsStatuses: ['chilled'], vsStatusDamage: 24 });
+  });
+
+  it('prices the next tier with the run’s towerCost modifiers', () => {
+    const mods: Modifier<IdSpace>[] = [
+      { kind: 'towerCost', tower: 'fx_gun', tiers: 'all', pct: -0.05, source: 'shop:tune' },
+      { kind: 'towerCost', tower: '*', tiers: 'spec', pct: -0.25, source: 'protocol:specialist' },
+    ];
+    expect(towerStats(gun, 1, NO_BONUSES, mods).next!.cost).toBe(76); // 80 × 0.95
+    expect(towerStats(mortar, 1, NO_BONUSES, mods).next!.cost).toBe(100); // not the mortar's
+  });
+
+  it('reads a built tower’s bonuses off the tower itself (high ground: +25% range)', () => {
+    const sim = fixtureSim();
+    sim.enqueue({ type: 'build', tile: [3, 2], tower: 'fx_gun' }); // fx_map's high ground
+    sim.applyPending();
+    sim.step(); // the links system sums the tile bonus
+    const t = sim.state.towers.items[0]!;
+    expect(towerStats(t.def!, t.tier, t).rangeTiles).toBe(3.75);
   });
 });

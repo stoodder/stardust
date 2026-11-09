@@ -106,6 +106,8 @@ describe('validateSave', () => {
     ['data.unlocks: missing field "jailbroken"', 'unlocks.jailbroken', DELETE],
     ['data.upgrades: unknown upgrade id', 'upgrades', { free_money: 1 }],
     ['data.upgrades: expected an object', 'upgrades', []],
+    ['data.unlocks.protocols[0]: unknown id', 'unlocks.protocols', ['god_mode']],
+    ['data.unlocks: missing field "protocols"', 'unlocks.protocols', DELETE],
     ['data.story.flags: unknown story flag', 'story.flags', { god_mode: true }],
     ['data.story.flags.door_choice', 'story.flags', { door_choice: {} }],
     ['data.story.flags.door_choice', 'story.flags', { door_choice: 'Not An Id!' }],

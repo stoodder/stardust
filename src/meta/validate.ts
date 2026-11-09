@@ -268,6 +268,7 @@ function checkUnlocks(
     'jailbroken',
     'abilities',
     'revokedAbilities',
+    'protocols',
   ]);
   if (u === null) return null;
   const towers = c.ids(u['towers'], `${path}.towers`, known.towers);
@@ -285,7 +286,8 @@ function checkUnlocks(
   c.subset(revokedTowers, towers, `${path}.revokedTowers`, towersPath);
   c.subset(jailbroken, towers, `${path}.jailbroken`, towersPath);
   c.subset(revokedAbilities, abilities, `${path}.revokedAbilities`, `${path}.abilities`);
-  return { towers, specs, revokedTowers, jailbroken, abilities, revokedAbilities };
+  const protocols = c.ids(u['protocols'], `${path}.protocols`, known.protocols);
+  return { towers, specs, revokedTowers, jailbroken, abilities, revokedAbilities, protocols };
 }
 
 function checkUpgrades(

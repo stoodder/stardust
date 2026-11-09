@@ -27,8 +27,9 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(save.currencies).toEqual({ stardust: 0, intel: 3 });
   });
 
-  it('mid_m2 has the first two campaign maps won', () => {
+  it('mid_m2 owns Mk II and has the first two campaign maps won', () => {
     const save = DEV_SAVES.mid_m2.build();
+    expect(save.upgrades).toEqual({ orbital_strike_mk2: 1 });
     for (const map of CAMPAIGN.slice(0, 2)) expect(save.campaign.maps[map]?.completed).toBe(true);
   });
 
@@ -37,6 +38,8 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(save.unlocks.towers).toEqual(LIVE_KNOWN_IDS.towers);
     expect(save.unlocks.specs).toEqual(LIVE_KNOWN_IDS.towers);
     expect(save.unlocks.abilities).toEqual(LIVE_KNOWN_IDS.abilities);
+    expect(save.unlocks.protocols).toEqual(LIVE_KNOWN_IDS.protocols);
+    expect(Object.keys(save.upgrades).toSorted()).toEqual(LIVE_KNOWN_IDS.upgrades.toSorted());
     for (const map of CAMPAIGN) expect(save.campaign.maps[map]?.medals).toHaveLength(3);
   });
 });

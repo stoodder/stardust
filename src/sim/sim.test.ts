@@ -74,9 +74,9 @@ describe('createSim', () => {
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
     expect(bad({ difficulty: 'story' })).toMatch(/Story difficulty is not simulated until T204b/);
-    expect(
-      bad({ modifiers: [{ kind: 'economy', stat: 'startCredits', flat: 50, source: 'test' }] }),
-    ).toMatch(/'economy.startCredits' modifier \(test\) is not simulated until T202a/);
+    expect(bad({ modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] })).toMatch(
+      /'freeCast' modifier \(test\) is not simulated until M3/,
+    );
     expect(bad({ specsUnlocked: ['fx_gun'] })).toMatch(/specializations .* until T202b/);
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);

@@ -528,6 +528,14 @@
   gap: 8px;
 }
 
+.sd-slot .sd-dim {
+  color: var(--sd-steel-3);
+}
+
+.sd-slot .sd-warn {
+  color: var(--sd-orange-3);
+}
+
 .sd-slot-actions {
   display: flex;
   flex: none;
@@ -667,6 +675,7 @@
   flex: none;
   width: 52px;
   height: 8px;
+  text-align: center;
   color: var(--sd-steel-2);
 }
 
@@ -765,10 +774,6 @@
   color: var(--sd-steel-3);
 }
 
-.sd-pane-bank {
-  color: var(--sd-gold-3);
-}
-
 /* ---- Settings ---- */
 
 .sd-settings-grid {
@@ -813,11 +818,51 @@
   text-transform: uppercase;
 }
 
+/* A pixel slider: a 4 px track and a 4×10 handle, square, in the act accent. */
 .sd-slider input {
   flex: 1;
-  height: 8px;
+  height: 10px;
   margin: 0;
-  accent-color: var(--sd-teal-3);
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.sd-slider input::-webkit-slider-runnable-track {
+  height: 4px;
+  border: 1px solid var(--sd-steel-1);
+  background: var(--sd-ink-0);
+}
+
+.sd-slider input::-webkit-slider-thumb {
+  width: 4px;
+  height: 10px;
+  margin-top: -4px;
+  border: 0;
+  background: var(--accent);
+  appearance: none;
+}
+
+.sd-slider input::-moz-range-track {
+  height: 2px;
+  border: 1px solid var(--sd-steel-1);
+  background: var(--sd-ink-0);
+}
+
+.sd-slider input::-moz-range-thumb {
+  width: 4px;
+  height: 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
+}
+
+.sd-slider input:focus-visible {
+  outline: none;
+}
+
+.sd-slider input:focus-visible::-webkit-slider-thumb {
+  background: var(--sd-white-1);
 }
 
 .sd-slider-value {

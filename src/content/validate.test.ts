@@ -163,9 +163,9 @@ describe('validate: maps', () => {
     expect(validate(withMap({ companion: { id: 'bricks', state: 'present' } }))).toEqual([]);
     expect(validate(withMap({ companion: { pick: ['bricks'] } }))).toEqual([]);
     // An absent companion's slot is dark: it needs no ability.
-    expect(validate(withMap({ companion: { id: 'quill', state: 'absent' } }))).toEqual([]);
-    rejects(withMap({ companion: { id: 'quill', state: 'present' } }), 'companion');
-    rejects(withMap({ companion: { pick: ['bricks', 'quill'] } }), 'companion');
+    expect(validate(withMap({ companion: { id: 'zibzab', state: 'absent' } }))).toEqual([]);
+    rejects(withMap({ companion: { id: 'zibzab', state: 'present' } }), 'companion');
+    rejects(withMap({ companion: { pick: ['bricks', 'zibzab'] } }), 'companion');
     rejects(withMap({ companion: { pick: ['bricks', 'bricks'] } }), 'companion');
     rejects(withMap({ companion: { pick: [] } }), 'companion');
   });
@@ -396,10 +396,10 @@ describe('validate: builds', () => {
 
   it('[loadout] a build picks a companion only from a pick list', () => {
     rejects(withPar({ companion: 'bricks' }), 'loadout'); // the map has no companion
-    const pick = (companion: 'bricks' | 'quill'): RawContent<IdSpace> =>
+    const pick = (companion: 'bricks' | 'zibzab'): RawContent<IdSpace> =>
       withMap({ companion: { pick: ['bricks'] }, parBuild: { ...par, companion } });
     expect(validate(pick('bricks'))).toEqual([]);
-    rejects(pick('quill'), 'loadout');
+    rejects(pick('zibzab'), 'loadout');
     rejects(
       withMap({
         companion: { id: 'bricks', state: 'present' },

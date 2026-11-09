@@ -65,7 +65,9 @@ function ShiftRow({ shift, first }: { shift: ShiftView; first: boolean }) {
           {shift.state === 'open' ? 'Start' : 'Replay'}
         </button>
       ) : (
-        <span class="sd-shift-lock" aria-hidden="true" />
+        <span class="sd-shift-lock" aria-hidden="true">
+          <span class="sd-lock" />
+        </span>
       )}
     </li>
   );

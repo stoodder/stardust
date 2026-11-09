@@ -253,13 +253,13 @@ describe('A1M1 builds through runHeadless', () => {
       b,
     );
 
-  it('par issues every step on time, with no error, and wins letting one W7 Nibbler through', () => {
+  it('par issues every step on time, with no error, and wins', () => {
     const r = run(map.builds.parBuild);
     expect(r.steps.map((s) => [s.error, s.late])).toEqual(r.steps.map(() => [null, false]));
     expect(r.outcome).toBe('won');
-    // act1.md § A1M1: par's margin is 95, from one leak in W7.
-    expect(r.waves.map((w) => w.leaked)).toEqual([0, 0, 0, 0, 0, 0, 1]);
-    expect(r.integrity).toBe(19);
+    // With Crossfire and high ground live (T202a), par holds every wave until T125 re-tunes.
+    expect(r.waves.map((w) => w.leaked)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    expect(r.integrity).toBe(20);
     expect(r.violations).toEqual([]);
   });
 

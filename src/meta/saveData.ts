@@ -5,12 +5,14 @@
 import { ABILITIES } from '../content/abilities/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
+import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import type { DifficultyId } from '../sim/index.ts';
 import type {
   AbilityId,
   FlagValue,
   MapId,
   MedalId,
+  ProtocolId,
   ScriptFlagId,
   TowerId,
   UpgradeId,
@@ -63,9 +65,10 @@ export interface SaveData {
     abilities: AbilityId[];
     /** Subset of `abilities`. */
     revokedAbilities: AbilityId[];
+    /** Field Protocols owned (bought at Zibzab's shop, progression.md § 4.4). Equipping them is M3. */
+    protocols: ProtocolId[];
   };
   /** Owned shop and R&D ranks (≥ 1), including the C2 Zibzab Tune-up. */
-  // oxlint-disable-next-line typescript/no-generated-empty-object-type -- UpgradeId is never until T204a
   upgrades: Partial<Record<UpgradeId, number>>;
   story: {
     flags: Partial<Record<StoryFlagId, FlagValue>>;
@@ -102,15 +105,17 @@ export interface KnownIds {
   readonly abilities: readonly AbilityId[];
   readonly maps: readonly MapId[];
   readonly upgrades: readonly UpgradeId[];
+  readonly protocols: readonly ProtocolId[];
   readonly storyFlags: readonly StoryFlagId[];
 }
 
-/** The live registries' ids. Upgrades are empty until the catalog lands (T204a). */
+/** The live registries' ids. */
 export const LIVE_KNOWN_IDS: KnownIds = {
   towers: Object.values(TOWERS).map((t) => t.id),
   abilities: Object.values(ABILITIES).map((a) => a.id),
   maps: Object.values(MAPS).map((m) => m.id),
-  upgrades: [],
+  upgrades: Object.values(UPGRADES).map((u) => u.id),
+  protocols: Object.values(PROTOCOLS).map((p) => p.id),
   storyFlags: Object.values(STORY_FLAGS),
 };
 
@@ -135,6 +140,7 @@ export function createNewSave(): SaveData {
       jailbroken: [],
       abilities: [...STARTING_ABILITIES],
       revokedAbilities: [],
+      protocols: [],
     },
     upgrades: {},
     story: {

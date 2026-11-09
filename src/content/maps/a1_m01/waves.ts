@@ -4,9 +4,10 @@
 // knot of Nibblers fired close together: the knots Thumper splash and the Orbital Strike are for.
 // No wave is a teach wave: A1M1 has no required counters, so it has no soft enemies to exempt.
 //
-// Tuning (T127, T130; D026, D028; against the balance harness): pressure ramps through W4–W7
-// instead of a single-wave wall. Par (two Rivets in the setup, its bank spent) holds W1–W6 and
-// lets one W7 Nibbler through; its W7 strike saves 4 more. A defense that never upgrades feels
+// Tuning (T127, T130; D026, D028; against the balance harness; T202a grew W5's and W7's Zoomer
+// groups from 12 to 14 once links and high ground went live, until T125 re-tunes): pressure ramps
+// through W4–W7 instead of a single-wave wall. Par (two Rivets in the setup, its bank spent)
+// holds every wave; its W7 strike saves 4 integrity. A defense that never upgrades feels
 // it coming: two setup Rivets start leaking in W4 and lose over W5–W6, three lose over W5–W7,
 // and par without its upgrades leaks in W6 and W7 and still wins. Zoomers are the upgrade check
 // (a tier-2 Rivet kills one in two shots, a tier-1 in three). src/balance/a1m1.test.ts shifts
@@ -37,7 +38,7 @@ export const waves = defineWaves([
   { groups: [{ enemy: 'nibbler', count: 8, intervalSec: 0.65, route: ROUTE }] },
   // W2 · upgrade; high ground
   { groups: [{ enemy: 'nibbler', count: 10, route: ROUTE }] },
-  // W3 · Thumper unlocks (towerUnlockWave), Crossfire (cosmetic until T202): clumps of 4
+  // W3 · Thumper unlocks (towerUnlockWave), Crossfire: clumps of 4
   { groups: [clump(0, 4, 0.25), clump(3.75, 4, 0.25), clump(7.5, 4, 0.25)] },
   // W4 · fast, and the warning: a clump of 6 runs in behind the Zoomers, so two unupgraded
   // Rivets start to leak here, a wave before anything can end the shift
@@ -49,21 +50,21 @@ export const waves = defineWaves([
       clump(5, 4, 0.2),
       clump(10, 4, 0.2),
       clump(15, 4, 0.2),
-      zoomers(12, 1, 0.2),
+      zoomers(14, 1, 0.2),
     ],
   },
   // W6 · Zoomer rush, with two clumps of 6 in it: a breather for upgraded towers, the upgrade
   // check for tier-1 ones
   { groups: [zoomers(24, 0, 0.5), clump(2, 6, 0.25), clump(5.75, 6, 0.25)] },
-  // W7 · four big clumps of 8, 2 s apart, and two Zoomer groups of 12
+  // W7 · four big clumps of 8, 2 s apart, and two Zoomer groups of 14
   {
     groups: [
       clump(0, 8, 0.2),
       clump(2, 8, 0.2),
       clump(4, 8, 0.2),
       clump(6, 8, 0.2),
-      zoomers(12, 0, 0.3),
-      zoomers(12, 6.5, 0.3),
+      zoomers(14, 0, 0.3),
+      zoomers(14, 6.5, 0.3),
     ],
   },
 ]);

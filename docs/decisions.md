@@ -419,3 +419,13 @@ The owner said "start M2 … continue through to the end" and is away, so the or
 - **`CAMPAIGN_PLAN`** lists all 18 maps. `CAMPAIGN` is the registered subset in that order.
 - **Par-purchasable** (`validatePurchasable.ts`): every reference-profile item must exist, be stocked before its map, fit what earlier maps pay, and fit the protocol slots.
 - New towers now need a `TOWER_ACCESS` entry and a tune-up.
+
+### D035 — 2026-11-09 — T207a allies and Suppressing Fire
+- **Suppressing Fire** (core-loop §3.2): 50 s cooldown; a 50% slow plus 20 Kinetic/s for 5 s over 3 path tiles.
+  - **Rulings where the docs were silent:** the slow lands as Chilled 50%, so the strongest chill wins. The damage lands as 0.25 s beam ticks with armor applied per tick, so it is **not** an armor answer.
+  - **Segment:** the clicked path tile ±1, with one zone per ground route through that tile. It shifts inward at a spawn or the core to keep 3 tiles. A non-path tile is rejected as `invalidTarget`.
+- **Allies:** map data `MapDef.allies` (posts at decor markers). They spawn on tick 0 (`post`, vulnerability `never`) and shoot the nearest enemy, ties to the lowest uid. They never target `quiet_wave`, `youngling`, or `fleeing` units, and deal damage as `{kind:'ally'}`.
+- **Pests Processed counts ally kills too**, because the counter is the shift's tally of every Skitterkin the colony killed. The story point is that the player's operation processed them, whoever pulled the trigger.
+- **Modifiers:** Rapport is −15% cooldown on its companion's ability, Mk II is +0.5 strike radius (flat), and Coolant is −5% on every cooldown (progression §7.3).
+- **Gates lifted:** companion, slot 2, `abilityStat`, and harness row #15 (par runs once per companion on pick-list maps).
+- **Not yet:** A1M1's Bricks post tile isn't in act1.md ("post by the core"), so T125 adds that marker. The no-counter check ignores slot-2 abilities until T208.

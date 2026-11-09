@@ -7,6 +7,7 @@
 // SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
 import { CAMPAIGN } from '../../content/campaign.ts';
 import { MAPS } from '../../content/maps/index.ts';
+import { UPGRADES } from '../../content/upgrades/index.ts';
 import type { MapId, MedalId } from '../../content/types.ts';
 import type { MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
@@ -56,10 +57,12 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   },
   mid_m2: {
     description:
-      'The first two campaign maps won (A1M2 with Victory only) and their payouts banked. ' +
-      'Purchases (Mk II) join once the catalog has ids (T204a).',
+      'A1M1 won with all three medals, Orbital Strike Mk II bought with 2 of its 3 Intel, then ' +
+      'the second campaign map won (Victory only, once it is in CAMPAIGN) and its payout banked.',
     build: () => {
       const save = afterA1M1();
+      save.upgrades.orbital_strike_mk2 = 1;
+      save.currencies.intel -= 2;
       const second = CAMPAIGN[1];
       if (second !== undefined) {
         save.campaign.maps[second] = won(second, medalIds(second).slice(0, 1));
@@ -72,7 +75,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   },
   all_unlocked: {
     description:
-      'Every campaign map won with every medal; every registered tower, spec, and ability owned; ' +
+      'Every campaign map won with every medal; every registered tower, spec, ability, protocol, ' +
+      'and upgrade (at its top rank) owned; ' +
       'deep pockets for the shop and R&D; every gated system open.',
     devUnlocks: META_SYSTEMS,
     build: () => {
@@ -83,6 +87,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       save.unlocks.towers = towers;
       save.unlocks.specs = [...towers];
       save.unlocks.abilities = [...LIVE_KNOWN_IDS.abilities] as SaveData['unlocks']['abilities'];
+      save.unlocks.protocols = [...LIVE_KNOWN_IDS.protocols];
+      for (const u of Object.values(UPGRADES)) save.upgrades[u.id] = u.ranks.length;
       save.currencies = { stardust: 99_999, intel: 999 };
       save.stats = { pestsProcessed: 9_999, runs: 40 };
       return save;

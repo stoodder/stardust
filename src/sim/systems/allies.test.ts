@@ -13,11 +13,11 @@ import { runHeadless } from '../headless.ts';
 import { createSim } from '../sim.ts';
 import { allies, allyMayTarget, removeAlly } from './allies.ts';
 
-const POST: CompiledAllyPost = Object.freeze({
+const POST: CompiledAllyPost = {
   kind: 'bricks',
   post: 'rock',
   tile: [0, 2],
-  attack: Object.freeze({
+  attack: {
     type: 'kinetic',
     damage: 8,
     periodTicks: 30,
@@ -25,8 +25,8 @@ const POST: CompiledAllyPost = Object.freeze({
     rangeSq: 9,
     hitsGround: true,
     hitsAir: true,
-  }),
-});
+  },
+};
 
 /** A bare state on fx_map with `posts`. */
 function withPosts(posts: readonly CompiledAllyPost[] = [POST]) {

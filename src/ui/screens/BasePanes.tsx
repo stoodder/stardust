@@ -12,12 +12,22 @@ export interface BasePaneProps {
   readonly view: CampaignView;
 }
 
-function Placeholder({ who, line, bank }: { who: string; line: string; bank: string }) {
+function Placeholder({
+  who,
+  line,
+  bank,
+  currency,
+}: {
+  who: string;
+  line: string;
+  bank: string;
+  currency: 'stardust' | 'intel';
+}) {
   return (
     <div class="sd-pane-body">
       <p class="sd-pane-who">{who}</p>
       <p class="sd-pane-line">{line}</p>
-      <p class="sd-pane-bank">{bank}</p>
+      <p class={`sd-pane-bank sd-${currency}`}>{bank}</p>
     </div>
   );
 }
@@ -28,6 +38,7 @@ function ResearchPane({ view }: BasePaneProps) {
       who="R&D Command · QUILL"
       line="The lab is still being unpacked. Orbital Strike Mk II and Bricks's Rapport are on the way!"
       bank={`${formatCount(view.intel)} Intel to spend`}
+      currency="intel"
     />
   );
 }
@@ -38,6 +49,7 @@ function ShopPane({ view }: BasePaneProps) {
       who="Zibzab's Emporium"
       line="Price first: patience. The shelves are being stocked."
       bank={`${formatCount(view.stardust)} Stardust to spend`}
+      currency="stardust"
     />
   );
 }
@@ -48,6 +60,7 @@ function EngineeringPane({ view }: BasePaneProps) {
       who="R&D Engineering"
       line="Tier approvals are signed. Specializations unlock here."
       bank={`${formatCount(view.intel)} Intel to spend`}
+      currency="intel"
     />
   );
 }

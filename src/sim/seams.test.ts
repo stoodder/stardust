@@ -185,14 +185,14 @@ describe('FEATURE_GATES', () => {
       specsUnlocked: ['fx_gun'],
       difficulty: 'story',
       modifiers: [
-        { kind: 'linkBonus', pct: 0.5, source: 'protocol:linked_up' },
-        { kind: 'linkBonus', pct: 0.5, source: 'again' },
+        { kind: 'freeCast', wave: 1, source: 'shop:ready_room' },
+        { kind: 'freeCast', wave: 2, source: 'again' },
       ],
     });
     expect(gateRefusals(cfg)).toEqual([
       'tier-4 specializations is not simulated until T202b',
       'Story difficulty is not simulated until T204b',
-      "a 'linkBonus' modifier (protocol:linked_up) is not simulated until T202a",
+      "a 'freeCast' modifier (shop:ready_room) is not simulated until M3",
     ]);
     const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, specs: null };
     expect(gateRefusals(cfg, lifted)).toHaveLength(2);

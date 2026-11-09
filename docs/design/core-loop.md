@@ -194,6 +194,8 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | **Stillness** | Companion: Ves'thara | Targeted, radius 2.5 tiles: Stasis for 3 s (bosses: Chilled 50% instead). Interrupts abilities ([enemies.md §2.4](enemies.md#24-status-effects)). | 45 s | From A2M6 (in A2M5 she is the Ward ally) |
 | **Underfoot** | Companion: Bramble (the matriarch; "Chitterbloom" is Everglow's codename, and the HUD shows Bramble from A3M1) | Targeted path tile: for 6 s, each ground enemy that crosses it is Pinned 1 s and takes 30 Kinetic. Hits burrowed enemies. | 50 s | From A3M1 |
 
+**Suppressing Fire's segment** is the clicked path tile and one tile either side of it along the route ([decisions.md D031](../decisions.md#d031--2026-11-09--m2-scope-the-m2-cut)), on every route through that tile, shifted inward at a spawn or core so it always covers 3 tiles. It must target a path tile. Its slow is Chilled 50% (the strongest chill wins, so it doesn't stack with a Sprinkler), and its damage lands in beam ticks every 0.25 s, so armor blunts it per second as it does a beam ([enemies.md §2.3](enemies.md#23-damage-pipeline)): it is a crowd-control tool, not an armor answer. It hits every unit on the segment, quiet-wave units included: it is the player's cast, not the ally's.
+
 **Revocations are the betrayal you feel.** Losing Orbital Strike and a tower class in A3M2 is attributable to Sterling on screen (her portrait in the cue, an Everglow "REVOKED" stamp), so the loss reads as hers, not as a bug.
 
 ---

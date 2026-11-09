@@ -94,7 +94,7 @@ const parList = (splash: string): string[] => [
   `W3 build ${splash} 10,5`, // the Crossfire pair
   'W5 upgrade 7,2', // T3
   'W5 ability 4,3',
-  'W6 upgrade 10,5',
+  ...(splash === 'rivet' ? ['W6 upgrade 10,5'] : []), // par keeps the Thumper at T1 (T202a)
   'W6 upgrade 10,4',
   'W7 build rivet 3,4',
   'W7 ability 4,3',
@@ -227,7 +227,7 @@ describe('enemies', () => {
 describe('A1M1 waves', () => {
   it('has seven waves with the documented totals, all on the road', () => {
     expect(a1m1.waves.map((w) => w.groups.reduce((n, g) => n + g.count, 0))).toEqual([
-      8, 10, 12, 18, 28, 36, 56,
+      8, 10, 12, 18, 30, 36, 60,
     ]);
     for (const w of a1m1.waves) {
       expect(w.teach).toBe(false);
@@ -240,12 +240,12 @@ describe('A1M1 waves', () => {
     expect(groupsOf(1)).toEqual(['nibbler×10@48+0']);
     expect(groupsOf(2)).toEqual(clumps(4, 15, 0, 225, 450));
     expect(groupsOf(3)).toEqual(['zoomer×12@30+0', ...clumps(6, 12, 180)]);
-    expect(groupsOf(4)).toEqual([...clumps(4, 12, 0, 300, 600, 900), 'zoomer×12@12+60']);
+    expect(groupsOf(4)).toEqual([...clumps(4, 12, 0, 300, 600, 900), 'zoomer×14@12+60']);
     expect(groupsOf(5)).toEqual(['zoomer×24@30+0', ...clumps(6, 15, 120, 345)]);
     expect(groupsOf(6)).toEqual([
       ...clumps(8, 12, 0, 120, 240, 360),
-      'zoomer×12@18+0',
-      'zoomer×12@18+390',
+      'zoomer×14@18+0',
+      'zoomer×14@18+390',
     ]);
   });
 
@@ -297,9 +297,9 @@ describe('A1M1 builds', () => {
     for (const s of par.steps.filter((x) => x.kind === 'ability')) {
       expect(s).toMatchObject({ slot: 1, target: [4, 3], when: { afterTicks: 144 } });
     }
-    // The economy act1.md and builds.ts describe (par's only leak is in W7, after the last
-    // phase): W4's phase buys nothing, saving for the roof's tier 3.
-    expect(banks(par)).toEqual([350, 198, 176, 119, 221, 207, 203]);
+    // The economy builds.ts describes (par leaks nothing until T125 re-tunes A1M1 for links):
+    // W4's phase buys nothing, saving for the roof's tier 3.
+    expect(banks(par)).toEqual([350, 198, 176, 119, 221, 215, 311]);
   });
 
   it('rivet_only: par with the Thumper swapped for a Rivet, affordable too', () => {

@@ -1,5 +1,5 @@
 // A1M1 end to end through the public sim API (T105b): the spawner against the compiled waves,
-// the Thumper unlock, do-nothing losing, a scripted par run whose banks match act1.md's
+// the Thumper unlock, do-nothing losing, a scripted par run whose banks match builds.ts's
 // bank-per-phase numbers, and determinism over a full run. A minimal step executor lives here;
 // the harness's real one is T108a's (src/sim/headless.ts).
 import { describe, expect, it } from 'vitest';
@@ -194,26 +194,30 @@ describe('A1M1 economy and outcomes', () => {
     expect(ofType(run, 'MapWon')).toEqual([]);
   });
 
-  it('par, issued through commands, wins letting one W7 Nibbler through, with act1.md’s banks', () => {
+  it('par, issued through commands, wins with no leak, with builds.ts’s banks', () => {
     const run = play(par);
     expect(ofType(run, 'CommandRejected')).toEqual([]);
-    // act1.md § A1M1: par holds W1–W6 and lets one of W7's Nibblers through (margin 95).
-    const leaks = ofType(run, 'EnemyLeaked');
-    expect(leaks.map((l) => [l.e.enemy, l.e.leak])).toEqual([['nibbler', 1]]);
-    const w7Start = ofType(run, 'WaveStarted').find((l) => l.e.wave === 7)!.tick;
-    expect(leaks[0]!.tick).toBeGreaterThan(w7Start);
+    // Since links and high ground went live (T202a), par holds every wave (margin 100) until
+    // T125 re-tunes A1M1.
+    expect(ofType(run, 'EnemyLeaked')).toEqual([]);
     expect(ofType(run, 'AbilityUsed')).toHaveLength(2);
-    // Every enemy before W7 dies, so each build phase's bank is act1.md's (and data.test.ts's).
-    expect(run.banks).toEqual([350, 198, 176, 119, 221, 207, 203]);
+    // Every enemy dies, so each build phase's bank is builds.ts's (and data.test.ts's).
+    expect(run.banks).toEqual([350, 198, 176, 119, 221, 215, 311]);
     expect(ofType(run, 'WaveCleared').map((l) => l.e.wave)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    // Crossfire forms when the Thumper lands beside the (10,4) Rivet in W3's build phase.
+    const formed = ofType(run, 'LinkFormed');
+    expect(formed.map((l) => l.e.link)).toEqual(['crossfire']);
+    expect(ofType(run, 'LinkBroken')).toEqual([]);
     const s = run.sim.state;
     expect(s.outcome).toBe('won');
-    expect(s.integrity).toBe(19);
+    expect(s.integrity).toBe(20);
     const total = map.waves.reduce((n, w) => n + w.groups.reduce((k, g) => k + g.count, 0), 0);
-    expect(s.stats.skitterkinKilled).toBe(total - 1);
-    // The final bank: W7's phase bank, less its Rivet, plus W7's payout less the leaked bounty.
+    expect(s.stats.skitterkinKilled).toBe(total);
+    // Crossfire held from its first tick to the win.
+    expect(s.stats.linkTicks).toEqual({ crossfire: s.tick - formed[0]!.tick });
+    // The final bank: W7's phase bank, less its Rivet, plus W7's payout.
     const w7 = map.waves[6]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + 48;
-    expect(s.credits).toBe(203 - 100 + w7 - 3);
+    expect(s.credits).toBe(311 - 100 + w7);
     expect(s.credits).toBe(350 + s.stats.creditsEarned - s.stats.creditsSpent);
     // The map is decided: no tick runs after it.
     const tick = s.tick;
