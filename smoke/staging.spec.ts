@@ -79,10 +79,14 @@ test('staging: the party fires the cannon and the record counter lands', async (
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toBeVisible();
   await expect(page.locator('.dlg-stage[data-staging="party"]')).toBeVisible();
-  await expect(page.getByTestId('stage-cannon').locator('img').first()).toHaveAttribute(
+  // The cannon fired (its `fire` anim is over in 0.4 s, so it may already rest on idle), and its
+  // burst is up over the muzzle.
+  const cannon = page.getByTestId('stage-cannon');
+  await expect(cannon.locator('img.dlg-cannon-body')).toHaveAttribute(
     'data-frame',
-    /^fire_/,
+    /^(fire_|idle)/,
   );
+  await expect(cannon.locator('img.dlg-burst-frame')).toHaveAttribute('data-frame', /^burst_/);
   await page.waitForTimeout(300);
   await shot(page, 'staging', 7, 'party-burst');
   // The counter lands on the career total (its label says the total), and the record tag shows.
