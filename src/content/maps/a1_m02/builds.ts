@@ -38,6 +38,7 @@ function parSteps(): BuildStep[] {
 }
 
 const PAR_STEPS = parSteps();
+const PAR_LOADOUT = ['rivet', 'thumper', 'sprinkler'] as const;
 
 /** No armor answer (D038): no Thumper, Rivets held at T2, and both abilities still cast. */
 function noArmorSteps(): BuildStep[] {
@@ -70,7 +71,7 @@ export const builds = defineBuilds({
     protocols: [],
     technicianAbility: 'orbital_strike',
   },
-  parBuild: { loadout: ['rivet', 'thumper', 'sprinkler'], steps: PAR_STEPS },
+  parBuild: { loadout: PAR_LOADOUT, steps: PAR_STEPS },
   noCounterBuilds: {
     armor: { loadout: ['rivet', 'sprinkler'], steps: noArmorSteps() },
   },
@@ -78,4 +79,28 @@ export const builds = defineBuilds({
   // in W7–W8 (act1.md § A1M2), so a no-armor defense breaks in W8, not before the final third.
   teachMap: true,
   noCounterLoseByWave: 8,
+  altBuilds: {
+    // No Sprinkler (so no Sitting Ducks): a Rivet takes the pump station instead. The Thumpers
+    // still answer the armor.
+    no_sprinkler: {
+      loadout: ['rivet', 'thumper'],
+      steps: PAR_STEPS.map((s) =>
+        'build' in s && s.build === 'sprinkler' ? { ...s, build: 'rivet' as const } : s,
+      ),
+    },
+    // Par one purchase short: no W8 upgrade.
+    par_minus_last: {
+      loadout: PAR_LOADOUT,
+      steps: PAR_STEPS.filter((s) => s.wave < 8 || !('upgrade' in s)),
+    },
+    // An under-built player who stops buying after W5 (casts included).
+    stops_after_w5: {
+      loadout: PAR_LOADOUT,
+      steps: PAR_STEPS.filter((s) => s.wave <= 5 || 'ability' in s),
+    },
+  },
+  altExpectations: {
+    par_minus_last: { minMarginPct: 40 },
+    stops_after_w5: { outcome: 'either' },
+  },
 });

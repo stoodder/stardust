@@ -14,7 +14,7 @@ import {
   isGroundPathTile,
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
-import { isBuildableTile, type Command } from '../sim/index.ts';
+import { costFor, isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import { lockedText, rejectText, showNotice } from './hud.ts';
@@ -79,7 +79,10 @@ export function pressBuildSlot(index: number): void {
     return;
   }
   const state = host.sim.state;
-  const cost = host.sim.config.content.towers[tower]?.tiers[0].cost ?? Infinity;
+  const def = host.sim.config.content.towers[tower];
+  // What the sim charges: tier 1 after `towerCost` modifiers (D037).
+  const cost =
+    def === undefined ? Infinity : costFor(host.sim.config.modifiers, tower, def.tiers[0].cost);
   if (state.lockedTowers.includes(tower)) {
     const slot = hud.slots.value[index];
     showNotice(slot === undefined ? (rejectText('towerLocked') ?? '') : lockedText(slot));

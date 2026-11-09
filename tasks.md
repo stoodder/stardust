@@ -77,6 +77,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
 - [ ] **T219** UI text: the body font at small sizes renders "5" like "S" and "fi" oddly (R&D: "radius 1.S", "-1S%", "Ales"). Switch body text to Silkscreen or fix the glyphs (D054). Also: architecture.md's Base section still says placeholders; art-direction §9 needs the shelf-row spec; add a dev save with the shop open and items left to buy.
 - [ ] **T220** Results offers "Change loadout" before a retry (when the loadout system is open).
+- [ ] **T221** HUD follow-ups from T202d: the tall tier-3 panel can cover a neighbouring tower on busy maps; upgrade rings draw at ground level for towers on high ground; tower fire anims (`fire_<facing>_t2`, spec spin) aren't played yet; a flat-to-high-ground tether ends a few px low; add T202d's new HUD copy to style-guide §2.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
@@ -98,11 +99,11 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T207b** HUD ability slot 2 (E, path-segment aiming); AllyView.
 - [~] **T210b** Brood Hauler data + A1M2 (layout, 8 waves, medals, `pump_station` marker, par, `no_armor`, alt builds); tune.
 - [x] **T117a** Spec frames, Thumper NE muzzle, explosion punch, Bricks's cannon-lowered frame; trim the art-direction hex tables (part of T117). The gallery page is 14,897 px tall, close to Chrome's 16,384 px screenshot limit: paginate the gallery or the art-trail capture so `m2.png` stays complete.
-- [~] **T202d** TowerView: use base frames `spec_a`/`spec_b` at tier 4 and the `_t2`/`_spec_<a|b>` heads, lift towers on high ground 8 px, and fix PlacementView's highlight under the block; set Cluster Thumper bomblets' `projectile` to `projectile.thumper_bomblet` (+ `fx.bomblet_burst`). HUD: link tethers; panel shows links, tile bonus, and modified stats; the T4 choice (locked + price); briefing shows medals and the threat-intel strip.
+- [x] **T202d** TowerView: use base frames `spec_a`/`spec_b` at tier 4 and the `_t2`/`_spec_<a|b>` heads, lift towers on high ground 8 px, and fix PlacementView's highlight under the block; set Cluster Thumper bomblets' `projectile` to `projectile.thumper_bomblet` (+ `fx.bomblet_burst`). HUD: link tethers; panel shows links, tile bonus, and modified stats; the T4 choice (locked + price); briefing shows medals and the threat-intel strip.
 - [x] **T201** Loadout screen (pick up to 4 towers + ability; skipped when you own ≤4 types; last preset; Change loadout). Gated until A1M4.
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 - [x] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
-- [ ] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1. Also wire the radio's `enemyKilled` trigger (`app/radio.ts` `EnemyDied` case: one line; A1M2's two Hauler barks use it) and list it in architecture §4.
+- [~] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1. Also wire the radio's `enemyKilled` trigger (`app/radio.ts` `EnemyDied` case: one line; A1M2's two Hauler barks use it) and list it in architecture §4.
 - [x] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
 ## M3 — Star Map & Act I

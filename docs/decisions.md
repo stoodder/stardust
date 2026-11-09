@@ -633,3 +633,16 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
 - **Presets:** `SaveData.loadouts = { last, byMap }`. The screen starts from this map's preset, else the last one, else a default pick.
 - The screen shows each tower's role, cost, which towers answer the map's threats, the links the chosen four can form, and a gentle note (never a scold) if a required counter is missing.
 - **Follow-ups:** the HUD build slots must use `costFor` (relayed to T202d), and Results doesn't offer Change loadout yet (T220).
+
+### D056 — 2026-11-09 — T202d links, specializations, and the briefing in the HUD
+- **Towers:** tier-4 spec bases and heads, tier-2+ heads, and towers on high ground drawn 8 px up with elevated picking. `tileToClient` returns a point that picks its own tile. Bomblets land with their own burst.
+- **LinkView:** a tether between linked towers, shown on `LinkFormed` and removed on `LinkBroken`.
+- **Tower panel:**
+  - Stats come from the modifier-aware `towerStats`, with one line per source ("+25% range (high ground)", "+10% rate (Crossfire)").
+  - Prices come from `costFor`, and the sell value from `sellValue` at the run's refund rate.
+  - At tier 3 it shows two spec cards; a locked one says "Engineering unlocks after Shift 4".
+  - The text is pre-wrapped, so nothing clips. The panel is 152 px wide and avoids the HUD corners.
+- **Price fix:** build slots and the placement check use `costFor`, fixing the 100-vs-95 mismatch.
+- **Briefing:** a threat-intel strip ("Required: Armor" plus the owned towers that answer it, or "Nothing owned answers it yet") and the three medals with "On file". Change loadout is kept.
+- **HUD:** a medal tracker of three diamonds under credits; a forfeited one dims, with the tooltip "Next time!". The aim hint adds "Enter fires" while the keyboard cursor shows.
+- New HUD copy, to go into style-guide §2: "Win the shift.", "Win with no leaks.", "Specialize: pick one", the lock notes, "Nothing owned answers it yet", "Enter fires".

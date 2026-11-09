@@ -121,11 +121,15 @@ export function towerUnlockWaves(map: CompiledMapDef<IdSpace>): Readonly<Record<
   return out;
 }
 
-/** The build slots for a loadout. `unlockWaves`: towerUnlockWaves(map). */
+/**
+ * The build slots for a loadout. `unlockWaves`: towerUnlockWaves(map). Costs are what the sim
+ * charges: tier 1 after the run's `towerCost` modifiers (`costFor`, D037).
+ */
 export function buildSlots(
   towers: Readonly<Record<string, CompiledTowerDef>>,
   loadout: readonly string[],
   unlockWaves: Readonly<Record<string, number>> = {},
+  modifiers: SimConfig<IdSpace>['modifiers'] = [],
 ): BuildSlotView[] {
   return loadout.map((id) => {
     const def = towers[id];
@@ -134,7 +138,7 @@ export function buildSlots(
       tower: id,
       label: displayName(id),
       icon: def.sprites.icon,
-      cost: def.tiers[0].cost,
+      cost: costFor(modifiers, id, def.tiers[0].cost),
       unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
     };
   });
@@ -829,7 +833,12 @@ export function bindHud(
   hud.waveCount.value = sim.map.waves.length;
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
-  hud.slots.value = buildSlots(towers, sim.config.loadout, towerUnlockWaves(sim.map));
+  hud.slots.value = buildSlots(
+    towers,
+    sim.config.loadout,
+    towerUnlockWaves(sim.map),
+    sim.config.modifiers,
+  );
   const abilityViews = abilitySlots(sim.config);
   const cooldownTotals = abilityCooldownTotals(sim.config);
   hud.abilities.value = abilityViews;
@@ -941,7 +950,9 @@ export function bindHud(
     host.bus.on('TowerBuilt', (e) => {
       hud.built.value = true;
       syncTowers();
-      const cost = towers[e.tower]?.tiers[0].cost ?? Infinity;
+      const def = towers[e.tower];
+      const cost =
+        def === undefined ? Infinity : costFor(sim.config.modifiers, e.tower, def.tiers[0].cost);
       if (!staysArmed(interaction.armed, e.tower, sim.state.credits, cost)) {
         if (interaction.armed === e.tower) interaction.arm(null);
       }

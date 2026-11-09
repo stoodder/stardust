@@ -8,7 +8,14 @@ import { createSim, type Modifier, type Sim, type SimState } from '../sim/index.
 import type { IdSpace } from '../content/types.ts';
 import { CARD_CHARS, PANEL_CHARS, towerPanelHeight } from '../ui/hud/layout.ts';
 import { battleConfig } from './battleSetup.ts';
-import { bonusTexts, medalViews, selectedView, specLockText, threatIntel } from './hud.ts';
+import {
+  bonusTexts,
+  buildSlots,
+  medalViews,
+  selectedView,
+  specLockText,
+  threatIntel,
+} from './hud.ts';
 
 /** A1M1 with every tower and spec unlocked (the all_unlocked dev save), paused at tick 0. */
 function a1m1(modifiers?: Modifier<IdSpace>[]): Sim<IdSpace> {
@@ -169,5 +176,23 @@ describe('the briefing (T202d)', () => {
       { counter: 'armor', label: 'Armor', answers: ['Rivet T3', 'Thumper'] },
     ]);
     expect(threatIntel(sim.map, [], []).required).toEqual([]);
+  });
+});
+
+describe('build slot prices (D037)', () => {
+  it('show what the sim charges after towerCost modifiers', () => {
+    const sim = a1m1([
+      { kind: 'towerCost', tower: 'rivet', tiers: 'all', pct: -0.05, source: 'test' },
+    ] as Modifier<IdSpace>[]);
+    const slots = buildSlots(
+      sim.config.content.towers,
+      ['rivet', 'thumper'],
+      {},
+      sim.config.modifiers,
+    );
+    expect(slots.map((s) => s.cost)).toEqual([95, 125]);
+    sim.enqueue({ type: 'build', tile: [6, 1], tower: 'rivet' });
+    sim.step();
+    expect(sim.state.credits).toBe(sim.config.content.maps.a1_m01!.startCredits - 95);
   });
 });

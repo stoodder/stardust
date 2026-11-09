@@ -23,6 +23,7 @@ import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import {
   abilityStats,
+  costFor,
   isBuildableTile,
   segmentSpan,
   tileElevation,
@@ -510,7 +511,7 @@ export class BattleScene extends Phaser.Scene {
       tile.towerUid === 0 &&
       sim.config.loadout.includes(def.id) &&
       !s.lockedTowers.includes(def.id) &&
-      s.credits >= def.tiers[0].cost
+      s.credits >= costFor(sim.config.modifiers, def.id, def.tiers[0].cost)
     );
   }
 
