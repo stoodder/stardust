@@ -1,8 +1,15 @@
 // The shape of `window.__sd` (docs/tech/conventions.md § Browser smoke tests).
 // DOM-free on purpose: the smoke specs (tsconfig.node.json) import these types too.
+import type { IdSpace } from '../content/types.ts';
+import type { DeepReadonly } from '../shared/types.ts';
+import type { Command, SimState } from '../sim/index.ts';
 
-/** Screens `goto` can jump to. Grows as screens land (T112, T115). */
-export type ScreenId = 'title';
+/** Battle state as the hooks expose it: plain string ids (works for any content set). */
+export type HookState = DeepReadonly<SimState>;
+export type HookCommand = Command<IdSpace>;
+
+/** Screens `goto` can jump to. Grows as screens land (T115: results). */
+export type ScreenId = 'title' | 'battle';
 
 /** Game speed: paused, 1×, or 2×. */
 export type Speed = 0 | 1 | 2;
@@ -13,9 +20,9 @@ export interface ClientPoint {
 }
 
 export interface PerfSample {
-  /** Mean CPU time of recent frames, in ms. */
+  /** Mean CPU time of recent frames (Phaser's step through render), in ms. */
   readonly frameMs: number;
-  /** Mean sim time per tick, in ms (0 until the sim exists). */
+  /** Mean sim time per tick, in ms (0 outside a battle). */
   readonly simMsPerTick: number;
   readonly enemies: number;
   readonly towers: number;
@@ -30,20 +37,23 @@ export interface PerfSample {
 export interface TestHooks {
   /** Resolves after boot (the first scene has rendered and the UI is mounted). */
   readonly ready: Promise<void>;
-  /** The read-only sim state. Stub: `null` until a sim exists (T102/T112). */
-  state(): unknown;
-  /** Issues a `Command` exactly as the UI would. Stub: no-op until T112. */
-  enqueue(cmd: unknown): void;
-  /** Sets game speed. Stored now; drives the host loop from T112. */
+  /** The live, read-only sim state of the current battle, or `null` outside one. */
+  state(): HookState | null;
+  /** Issues a `Command` exactly as the UI would (it applies on the next tick). No-op outside a battle. */
+  enqueue(cmd: HookCommand): void;
+  /** Sets game speed; during a battle it drives the host loop. */
   setSpeed(speed: Speed): void;
   /** Runs a named build from the map's `builds.ts` through the host. Stub: no-op until T107. */
   autoplay(build: string): void;
-  /** Steps the sim `ticks` times synchronously, then dispatches events once. Stub: no-op until T112. */
+  /**
+   * Steps the sim `ticks` times synchronously (ignoring speed, even while paused), then dispatches
+   * the events once. `fastForward(0)` applies pending commands without advancing time.
+   */
   fastForward(ticks: number): void;
-  /** Client coordinates of a tile's center. Stub: `null` until T112 (needs `render/iso.ts`). */
+  /** Client (CSS pixel) coordinates of tile (x, y)'s center, or `null` outside a battle. */
   tileToClient(x: number, y: number): ClientPoint | null;
-  /** Jumps to a screen. */
-  goto(screen: ScreenId): void;
+  /** Jumps to a screen. Resolves once it has rendered (`battle`: its first frame). */
+  goto(screen: ScreenId): Promise<void>;
   /** Recent frame and sim timings and live entity counts. */
   perf(): PerfSample;
 }

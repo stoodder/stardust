@@ -261,23 +261,23 @@ Why Playwright: it drives a real browser, captures console output and page error
 
 | Hook | Does |
 |---|---|
-| `ready` | A promise that resolves after boot |
-| `state()` | The read-only sim state |
-| `enqueue(cmd)` | Issues a `Command`, exactly as the UI would |
-| `setSpeed(n)` | 0, 1, or 2 |
-| `autoplay(build)` | Runs a named build from the map's `builds.ts` (`'par'`, `'none'`, an alt build) through the host |
-| `fastForward(ticks)` | Steps the sim `ticks` times synchronously with no frame cap, then drains and dispatches the events once. A whole map resolves in well under a second of wall time |
-| `tileToClient(x, y)` | Client coordinates of a tile, for real mouse clicks |
-| `goto(screen)` | Jumps to a screen |
-| `perf()` | Recent frame CPU time, sim ms per tick, and live entity and particle counts |
+| `ready` | A promise that resolves after boot: the title, or the battle's first frame when the URL has `map` or `skipIntro` |
+| `state()` | The current battle's live, read-only sim state (string ids), or `null` outside a battle |
+| `enqueue(cmd)` | Issues a `Command` through `app/commands.ts`, exactly as the UI would. It applies at the next tick, or at the end of the next frame while paused |
+| `setSpeed(n)` | 0, 1, or 2; drives the host loop |
+| `autoplay(build)` | Runs a named build from the map's `builds.ts` (`'par'`, `'none'`, an alt build) through the host. **Stub (no-op) until T107** |
+| `fastForward(ticks)` | Steps the sim `ticks` times synchronously with no frame cap, whatever the speed (even paused), then drains and dispatches the events once. `fastForward(0)` applies pending commands without advancing time. A whole map resolves in well under a second of wall time |
+| `tileToClient(x, y)` | Client (CSS px) coordinates of the center of tile (x, y), for real mouse clicks; `null` outside a battle |
+| `goto(screen)` | Jumps to a screen (`'title'`, `'battle'`); returns a promise that resolves once it has rendered |
+| `perf()` | Recent frame CPU time (Phaser's pre-step through post-render), sim ms per tick, and live entity and particle counts |
 
-Boot parameters: `seed`, `map`, `skipIntro`. The hooks only read state and issue the same commands a player could, so they're safe to ship. Without `?test=1`, `window.__sd` doesn't exist. The hook types live in `src/app/testHookTypes.ts` (DOM-free, so specs import them too). Until the sim and BattleScene exist, the sim-facing hooks are documented no-op stubs: `state()` returns `null`, `tileToClient` returns `null`, and `enqueue`, `autoplay`, and `fastForward` do nothing (T112 and T107 make them real).
+Boot parameters: `seed`, `map` (opens that map's battle), `skipIntro` (opens the default battle, `DEFAULT_MAP_ID` in `src/app/battleSetup.ts`). The hooks only read state and issue the same commands a player could, so they're safe to ship. Without `?test=1`, `window.__sd` doesn't exist. The hook types live in `src/app/testHookTypes.ts` (DOM-free, so specs import them too). To land a command deterministically, pause first (`setSpeed(0)`), then `enqueue` and `fastForward(0)`.
 
 **What the smoke tests check:**
 
 1. **Boot:** the page loads, `__sd.ready` resolves within 10 s, the canvas has a non-zero size, and the title screen is visible (found by role and name).
 2. **No console errors:** a shared fixture records `console.error`, `pageerror`, and failed or 4xx/5xx requests for every test, and any of them fails the test. Allowed exceptions live in `smoke/allowedConsole.ts`, each with a justifying comment.
-3. **Every map boots:** for each registered map, load `?test=1&map=<id>&skipIntro=1`, wait for the first rendered frame, and take a screenshot.
+3. **Every map boots:** for each registered map, load `?test=1&map=<id>&skipIntro=1`, wait for the first rendered frame, and take a screenshot (`smoke/battle.spec.ts`, over `battleMapIds()` from `src/app/battleSetup.ts`, which also lists the dev battle; shots go to `test-results/screens/maps/`). The same spec runs the T112 battle flow: build by hook and by real click, select, upgrade while paused, `fastForward`, and run at 2×.
 4. **Key flows** (each milestone adds its own). Flows **assert on the DOM** (the results screen's heading and counter, found by role and text), not on sim state alone:
    - **M1:** title → battle; place a tower by **real mouse click** on a buildable tile; select it and upgrade through the HUD; call a wave; switch to 2×; fire Orbital Strike at a tile; then `autoplay('par')` plus `fastForward` through to the **win** results screen. Separately, `autoplay('none')` plus `fastForward` reaches the **lose** results screen, and retry works.
    - **M2:** pick a 4-tower loadout; toggle hold fire and the spare-runners filter; buy something in the shop; round-trip a save export and import.

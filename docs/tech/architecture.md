@@ -170,21 +170,25 @@ Story moments that change play run **inside the sim** as map data (`MapDef.event
 
 ### Game speed, pause, and the host loop
 
-The sim doesn't know about speed. The host (`src/app/host.ts`) drives it from Phaser's `update(time, delta)`:
+The sim doesn't know about speed. The host (`createHost(sim)` in `src/app/host.ts`) wraps one sim, and `BattleScene.update(time, delta)` calls its `frame(delta)` once per rendered frame:
 
 ```ts
 const TICK_MS = 1000 / TICK_HZ;
 const MAX_STEPS_PER_FRAME = 4;                   // per 1× of speed
+const MAX_FRAME_DELTA_MS = 250;                  // a background tab or a debugger pause
 const cap = MAX_STEPS_PER_FRAME * Math.max(speed, 1);
-acc += Math.min(delta, 250) * speed;             // speed ∈ {0 (paused), 1, 2}
+acc += Math.min(delta, MAX_FRAME_DELTA_MS) * speed;   // speed ∈ {0 (paused), 1, 2}
 let steps = 0;
 while (acc >= TICK_MS && steps < cap) {
   sim.step(); acc -= TICK_MS; steps++;
 }
 if (steps === cap) acc = 0;                      // drop backlog rather than spiral
 if (speed === 0) sim.applyPending();             // build/upgrade/sell land while paused
-events.length = 0; sim.drainEvents(events); dispatch(events);
+events.length = 0; sim.drainEvents(events); dispatch(events);   // then the after-frame listeners
 ```
+
+- **The host's API:** `sim`, `bus` (the drained events, by type), `speed` / `setSpeed(s)` (pausing empties the accumulator, so paused time never banks), `enqueue(cmd)`, `frame(deltaMs)` (returns the ticks stepped; non-finite or negative deltas count as 0), `fastForward(ticks)` (steps exactly `ticks` with no cap and regardless of speed, then dispatches once; `fastForward(0)` applies pending commands without advancing time), `onAfterFrame(listener)` (runs after every dispatch: the HUD's signal sync), and `simMsPerTick()` (a smoothed mean, for `__sd.perf()`). Its unit tests are `src/app/host.test.ts`.
+- **One frame, in order:** the host steps and dispatches (views are created and released by the events), then BattleScene positions every view from sim state and redraws the hover, selection, range ring, and placement ghost ([§ Rendering](#rendering)).
 
 - Speeds are 1× and 2×, with 3× an open design question ([design/core-loop.md §2.8](../design/core-loop.md#28-speed-and-pause)). The loop handles any integer speed; 2× is two ticks per 16.7 ms of accumulated time, not a bigger timestep. Pause sets speed to 0. Full-screen dialogue scenes pause; build-phase barks don't ([story/style-guide.md](../story/style-guide.md)).
 - **`sim.applyPending()`** is a zero-time, command-only step: it runs `applyCommands` on the queue without advancing `tick` or any other system. Applying commands at the end of tick *T* is identical to applying them at the start of tick *T + 1* (`applyCommands` runs first), so the command log stays replayable without knowing whether the game was paused.
@@ -331,10 +335,11 @@ app ──▶ everything except balance
 Lives in `src/render/`.
 
 - **Phaser config:** `type: Phaser.WEBGL`, `width: 640`, `height: 360`, `pixelArt: true`, `roundPixels: true`, `antialias: false`, `backgroundColor: '#05030a'`, `scale.mode: NONE`. `render/scale.ts` computes the integer zoom on resize (formula in [art/tech-spec.md § Tile and screen](../art/tech-spec.md#tile-and-screen)) and applies it to the canvas and to the UI root (`--ui-scale`).
-- **Scenes:** `BootScene` (compile content, bake sprites, load fonts), `BattleScene` (the playfield), `StarMapScene` (M3), `BackdropScene` (animated backgrounds behind DOM menus).
-- **Views:** pooled `EnemyView`, `TowerView`, `ProjectileView`, and `FxView` objects, keyed by sim `uid`, created and released in response to sim events and positioned each frame from sim state through `render/iso.ts` (the pure grid ↔ screen math, tile picking, and map centering of [art/tech-spec.md § Grid ↔ screen math](../art/tech-spec.md#grid--screen-math)). Grid queries shared with the sim (`tileAt`, `isBuildable`, `tileElevation`, …) come from `src/sim/grid.ts` through `sim/index.ts`. Layers and depth rules are in [art/tech-spec.md § Depth sorting](../art/tech-spec.md#depth-sorting).
+- **Scenes:** `BootScene` (bake sprites; later load fonts), `BattleScene` (the playfield), `StarMapScene` (M3), `BackdropScene` (animated backgrounds behind DOM menus).
+- **Battles** (`src/app/`): `router.ts` shows a screen (`title`, `battle`); `battle.ts` starts a session: one sim, its host, a `BattleInteraction`, and a `BattleScene` added under a fresh key (`Battle.<n>`), and stops it by removing the scene. `battleSetup.ts` turns a map id into a `SimConfig` (the map's par loadout and Technician ability, until loadouts and saves land) and names `DEFAULT_MAP_ID`, the map a battle opens when the URL names none. It searches the live registries first, then the dev battle `render/__fixtures__/devBattle.ts` (a 12×8 map with `dev_`-prefixed towers drawn with the real sprites), which stands in until the live content has a playable map. `BattleScene` gets everything through a `BattleSceneDeps` object (the sim, the host's bus, `frame`, `issue`, the interaction state), so it never imports `app/`.
+- **Views:** pooled `EnemyView`, `TowerView`, `ProjectileView`, and (later) `FxView` objects in a `ViewPool` keyed by sim `uid` (`render/views/ViewPool.ts`: hidden and reused, never destroyed), created and released in response to sim events and positioned each frame from sim state. Each sync pass also stamps the views of live entities and sweeps the rest, so a missed event can't leak a view; a live entity with no view gets one lazily. Tower views draw the tier's base frame, the head on the base's mount (aiming heads turn to their target's facing; idle heads such as the Sprinkler's play their anim), and the `@glow` halos additively in `vfx`; selection swaps to the baked `+selected` variant. Enemy views play `walk_<facing>` for the direction they last moved; flyers draw 12 px up in `air` over a shadow. Lobbed shells arc (a cosmetic parabola over the sim's ground point). The static ground and props are drawn once (`views/GroundView.ts`, tile choices in the pure `views/groundTiles.ts`; high ground and power nodes use the pad sprite until they have art). Positions go through `render/iso.ts` (the pure grid ↔ screen math, tile picking, and map centering of [art/tech-spec.md § Grid ↔ screen math](../art/tech-spec.md#grid--screen-math)). Grid queries shared with the sim (`tileAt`, `isBuildable`, `tileElevation`, …) come from `src/sim/grid.ts` through `sim/index.ts`. Layers and depth rules are in [art/tech-spec.md § Depth sorting](../art/tech-spec.md#depth-sorting); the code is `render/layers.ts` (the eight Phaser `Layer`s) and `render/depth.ts` (`worldDepth`). Range rings and tile highlights are pure RGBA buffers (`render/vfx/overlayPixels.ts`: a dashed 1 px midpoint ellipse per quarter-tile radius, and the tile mask with a 1 px edge and a 15% fill) registered as textures on first use.
 - **Sprites:** `render/sprites/` (the pure `rasterize`, `bake`, and `atlas` modules, plus `CodeSpriteSource`, the `SpriteSource` that `BootScene` registers at boot and stores in the game registry under `spriteSource`); see [art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format). The sprite gallery dev page (`gallery.html`) is a second Vite entry, built with the game ([tech-spec § The sprite gallery](../art/tech-spec.md#the-sprite-gallery)).
-- **Input:** `render/input/` turns pointer input on the canvas into *intents* (select tile, place, cancel, click a clickable marker), then into `Command`s. Nothing is hover-only, so touch can be added later. Keyboard input goes through `app/`'s router (below).
+- **Input:** `render/input/` turns pointer input on the canvas into *intents* (select tile, place, cancel, click a clickable marker), then into `Command`s. The decisions are pure (`input/intents.ts`: `resolveClick` and `hoverLook`): a left click on a tower selects it; on a free buildable tile with a tower armed, it builds; anything else, a right-click, or Esc clears the selection. Picking uses `pickTile` with no elevation while every tile is drawn flat. The selection and the armed build slot live in `BattleInteraction` (`input/BattleInteraction.ts`), which the scene draws and `app/` mirrors into the HUD. Until the build menu exists (T106), the first loadout tower stays armed. The hover shows the tile highlight (red where the armed tower can't go), the placement ghost with its range ring on a buildable tile (red when the tower is locked, unaffordable, or the tile is taken), and a hovered or selected tower's range ring. Nothing is hover-only, so touch can be added later. Keyboard input goes through `app/keys.ts` (below).
 
 ### UI: DOM overlay
 
@@ -350,8 +355,8 @@ Why DOM:
 How:
 - `#ui` is a 640×360 box (in game pixels) layered over the canvas and scaled with CSS **`zoom: var(--ui-scale)`**, the same integer factor as the canvas. All UI is authored in game pixels. (Use `zoom`, not `transform: scale`, so text re-rasterizes crisply and pointer coordinates stay correct.)
 - The root has `pointer-events: none`; panels set `pointer-events: auto`, so clicks on empty space reach the canvas.
-- **State flow:** the host updates `@preact/signals` view models (credits, core HP, wave, selection, dialogue) from sim events and state, only when values change. Components dispatch `Command`s through `app/commands.ts`. UI never imports sim internals.
-- **Keyboard routing** (one `keydown` listener in `app/`, so the rule lives in one place): game hotkeys ([design/core-loop.md §4](../design/core-loop.md#4-controls-desktop-first)) are ignored while focus is in a text input or textarea. When focus is on a button, **Space and 1–4 go to the game hotkey** (the handler calls `preventDefault()` so the button doesn't also activate), unless a modal is open, in which case the modal keeps them. Enter always activates the focused button.
+- **State flow:** the host updates `@preact/signals` view models (credits, core HP, wave, selection, dialogue) from sim events and state, only when values change. Components dispatch `Command`s through `app/commands.ts`. UI never imports sim internals. As built: `ui/state.ts` holds `screen`, `speed`, and `hud` (`mapId`, `credits`, `integrity`, `wave`, `waveCount`, `outcome`, `loadout`, `lockedTowers`, `selectedTower`, `armedTower`); `app/hud.ts` (`bindHud`) writes them after every host frame and on every interaction change. `app/commands.ts` is the one door for actions: `issue(cmd)`, `setSpeed`, `togglePause`, `toggleFastSpeed`, `armBuild(tower)`, `selectTower(uid)`, and `cancel()`, each a no-op outside a battle.
+- **Keyboard routing** (one `keydown` listener, `app/keys.ts`, so the rule lives in one place; its binding table has Space, F, and Esc so far, and the HUD's keys join it): game hotkeys ([design/core-loop.md §4](../design/core-loop.md#4-controls-desktop-first)) are ignored while focus is in a text input or textarea. When focus is on a button, **Space and 1–4 go to the game hotkey** (the handler calls `preventDefault()` so the button doesn't also activate), unless a modal is open, in which case the modal keeps them. Enter always activates the focused button.
 - Images (portraits, icons) are canvases from the sprite baker with `image-rendering: pixelated`.
 - The style is defined in [art-direction.md §9](../art/art-direction.md#9-ui-style), including act themes as CSS variables.
 - **Story UI states** the HUD must support: the forced-input overlay (one live button, everything else inert, settings still reachable), optional bark buttons (non-blocking; the game keeps running), the companion slot's `present` / `absent` (dark portrait, no label) / hidden states, the callsign name plate, the preview's "ACCESS RESTRICTED" state, REVOKED stamps on loadout and ability slots, held medal toasts (A3M3), the finale countdown counter and Deep Bore bar, and the codex's side-by-side Field Journal view.
@@ -441,6 +446,7 @@ stardust/
     ├── main.ts                 # entry: calls app/boot
     ├── app/                    # composition root
     │   ├── boot.ts  host.ts  router.ts  commands.ts  keys.ts  checkpoints.ts
+    │   ├── battle.ts  battleSetup.ts  hud.ts  perf.ts   # a battle session; map → SimConfig; HUD signal sync; frame timing
     │   ├── settings.ts  log.ts  testHooks.ts    # log.ts: the only console user in src/
     │   ├── testHookTypes.ts    # the __sd shape, DOM-free so smoke specs can import it
     │   ├── gallery.ts          # the sprite gallery page (gallery.html)
@@ -475,10 +481,11 @@ stardust/
     ├── render/
     │   ├── scale.ts  iso.ts  depth.ts  layers.ts
     │   ├── scenes/             # BootScene, BattleScene, StarMapScene, BackdropScene
-    │   ├── views/              # pooled EnemyView, TowerView, ProjectileView, FxView
+    │   ├── views/              # ViewPool; pooled EnemyView, TowerView, ProjectileView, FxView; GroundView, PlacementView
     │   ├── sprites/            # rasterize.ts bake.ts atlas.ts (pure), canvas.ts, SpriteSource.ts, CodeSpriteSource.ts
-    │   ├── vfx/                # particles, glow, bloom, lighting overlay, range rings
-    │   └── input/              # pointer → intents → commands
+    │   ├── vfx/                # particles, glow, bloom, lighting overlay, range rings (overlayPixels.ts, overlayTextures.ts)
+    │   ├── input/              # pointer → intents → commands (intents.ts, BattleInteraction.ts)
+    │   └── __fixtures__/       # devBattle.ts: the dev battle content (stands in until a live map is playable)
     ├── ui/
     │   ├── theme.css           # tokens from the master palette, act themes
     │   ├── state.ts            # signals / view models

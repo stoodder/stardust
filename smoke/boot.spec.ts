@@ -33,7 +33,7 @@ test('boot: stub hooks have the documented shape', async ({ page }) => {
     sd.setSpeed(2);
     sd.fastForward(60);
     sd.enqueue({ type: 'callWave' });
-    sd.goto('title');
+    void sd.goto('title');
     return {
       state: sd.state(),
       tile: sd.tileToClient(0, 0),

@@ -1,0 +1,68 @@
+// A battle session: one sim, its host loop, the interaction state, and the BattleScene drawing
+// it. The router starts and stops sessions; commands, the HUD, and the test hooks reach the live
+// one through it.
+import type * as Phaser from 'phaser';
+import type { IdSpace } from '../content/types.ts';
+import { BattleInteraction } from '../render/input/BattleInteraction.ts';
+import { BATTLE_SCENE_KEY, BattleScene } from '../render/scenes/BattleScene.ts';
+import { createSim, type SimConfig } from '../sim/index.ts';
+import { issue, setCommandTarget } from './commands.ts';
+import { createHost, type Host } from './host.ts';
+import { bindHud } from './hud.ts';
+
+/** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
+let battleCount = 0;
+
+export interface Battle {
+  readonly host: Host<IdSpace>;
+  readonly interaction: BattleInteraction;
+  readonly scene: BattleScene;
+  /** Game-pixel position of a tile's center (the `tileToClient` hook). */
+  tileCenter(col: number, row: number, out: { x: number; y: number }): void;
+  /** Resolves after the scene's first rendered frame. */
+  readonly firstFrame: Promise<void>;
+  /** Removes the scene and unwires the HUD and commands. */
+  stop(): void;
+}
+
+/** Starts a battle on `cfg` in a new BattleScene. Throws a RangeError on an invalid config. */
+export function startBattle(game: Phaser.Game, cfg: SimConfig<IdSpace>): Battle {
+  const sim = createSim(cfg);
+  const host = createHost(sim);
+  // M1 has no build menu yet (T106): the first loadout tower stays armed, so a click on a free pad
+  // builds it. T106's build slots re-arm through app/commands.ts armBuild().
+  const interaction = new BattleInteraction(cfg.loadout[0] ?? null);
+  let resolveFirstFrame: (() => void) | null = null;
+  const firstFrame = new Promise<void>((resolve) => {
+    resolveFirstFrame = resolve;
+  });
+  const key = `${BATTLE_SCENE_KEY}.${++battleCount}`;
+  const scene = new BattleScene(
+    {
+      sim,
+      bus: host.bus,
+      interaction,
+      frame: (delta) => {
+        host.frame(delta);
+      },
+      issue,
+      onFirstFrame: () => resolveFirstFrame?.(),
+    },
+    key,
+  );
+  const unbindHud = bindHud(host, interaction);
+  setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
+  game.scene.add(key, scene, true);
+  return {
+    host,
+    interaction,
+    scene,
+    tileCenter: (col, row, out) => scene.tileCenter(col, row, out),
+    firstFrame,
+    stop() {
+      setCommandTarget(null);
+      unbindHud();
+      game.scene.remove(key);
+    },
+  };
+}

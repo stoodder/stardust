@@ -1,9 +1,14 @@
-// Composition root: creates the Phaser game, mounts the DOM overlay, wires scaling and test hooks.
+// Composition root: creates the Phaser game, mounts the DOM overlay, and wires scaling, routing,
+// the keyboard, and the test hooks.
 import * as Phaser from 'phaser';
 import { computeScale, cssZoom, VIEW_H, VIEW_W } from '../render/scale.ts';
 import { BootScene } from '../render/scenes/BootScene.ts';
 import { mountUi } from '../ui/Overlay.tsx';
-import { screen, speed } from '../ui/state.ts';
+import { screen } from '../ui/state.ts';
+import { issue, setSpeed } from './commands.ts';
+import { installKeys } from './keys.ts';
+import { meterFrames } from './perf.ts';
+import { createRouter, type Router } from './router.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
 
@@ -28,7 +33,10 @@ function requireElement(id: string): HTMLElement {
   return el;
 }
 
-/** Boots the game. Resolves once the first scene has rendered. */
+/**
+ * Boots the game. Resolves once the first screen has rendered: the title, or with `?map=<id>` or
+ * `?skipIntro=1`, the battle's first frame.
+ */
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
   const gameRoot = requireElement('game');
@@ -38,25 +46,6 @@ export async function boot(): Promise<void> {
   const sceneReady = new Promise<void>((resolve) => {
     resolveSceneReady = resolve;
   });
-  const ready = sceneReady.then(() => {
-    screen.value = 'title';
-  });
-
-  if (params.test) {
-    installTestHooks(
-      createTestHooks({
-        ready,
-        setSpeed: (s) => {
-          speed.value = s;
-        },
-        goto: (id) => {
-          screen.value = id;
-        },
-        // Frame-to-frame delta; T112 replaces it with measured CPU time per frame.
-        frameMs: () => game.loop.delta,
-      }),
-    );
-  }
 
   const game = new Phaser.Game({
     type: Phaser.WEBGL,
@@ -71,6 +60,28 @@ export async function boot(): Promise<void> {
     banner: false,
     scene: [new BootScene(resolveSceneReady)],
   });
+  const frames = meterFrames(game);
+  const router: Router = createRouter(game, { mapId: params.map, seed: params.seed });
+  const startInBattle = params.map !== null || params.skipIntro;
+  const ready = sceneReady.then(() => router.goto(startInBattle ? 'battle' : 'title'));
+
+  if (params.test) {
+    installTestHooks(
+      createTestHooks({
+        ready,
+        battle: () => router.battle,
+        issue,
+        setSpeed,
+        goto: async (id) => {
+          await sceneReady;
+          await router.goto(id);
+        },
+        frameMs: () => frames.frameMs(),
+        canvas: () => game.canvas,
+        viewWidth: VIEW_W,
+      }),
+    );
+  }
 
   const applyScale = (): void => {
     const dpr = window.devicePixelRatio || 1;
@@ -80,8 +91,12 @@ export async function boot(): Promise<void> {
   };
   game.events.once(Phaser.Core.Events.READY, applyScale);
   window.addEventListener('resize', applyScale);
+  installKeys({
+    isActive: () => screen.value === 'battle',
+    // No modals until the HUD and menus exist (T106, T115).
+    isModalOpen: () => false,
+  });
 
   mountUi(uiRoot);
-  // `map`, `seed`, and `skipIntro` take effect once BattleScene exists (T112).
   await ready;
 }
