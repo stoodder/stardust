@@ -52,9 +52,10 @@ export const PACKED = 0.2;
 /** When the Glass Witch steps onto the branch in W11. */
 export const WITCH_DELAY = OPEN;
 /**
- * W11's Hollow surge down the main road, timed to reach the Thumpers as the Witch turns back
- * along the branch for the rigs (her second phase): QUILL's Time Dilation, ready again by then
- * only with Rapport (T401), slows both.
+ * W11's Hollow surge down the main road (SURGE_COUNT Motes behind a Zoomer stampede), on the road
+ * as the Witch turns back along the branch for the rigs: par's second Time Dilation, 52 s after its
+ * first, catches it only with QUILL's Rapport (51 s; T401). Without it the surge's tail gets
+ * through (par's last two leaks).
  */
 export const SURGE = 48;
 export const SURGE_COUNT = 60;
@@ -75,7 +76,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [run('nibbler', 8, OPEN), motes(10, OPEN + FLEE_LEAD)],
   },
-  // W4 · Glimmers ×8 + Skitterkin [X]
+  // W4 · Glimmers ×10 + Skitterkin [X]: both routes for the first time
   {
     countdownSec: COUNTDOWN,
     groups: [glimmers(10, OPEN), run('nibbler', 8, OPEN + 4), motes(12, OPEN + 4 + FLEE_LEAD)],
@@ -107,7 +108,8 @@ export const waves = defineWaves([
       motes(30, OPEN + 4 + FLEE_LEAD, PACKED),
     ],
   },
-  // W8 · mixed, both routes (the no-shield and no-splash builds lose here)
+  // W8 · mixed, both routes: two Glimmer columns and two Mote clusters (the no-shield and
+  // no-splash builds lose by here; par's first leaks)
   {
     countdownSec: COUNTDOWN,
     groups: [

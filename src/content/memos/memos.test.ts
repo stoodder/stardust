@@ -17,6 +17,7 @@ describe('the memo content', () => {
       'memo_a1_04',
       'memo_a1_05',
       'memo_a2_01',
+      'memo_a2_02',
     ]);
     expect(MEMO_LIST.map((m) => m.afterMap)).toEqual([
       null,
@@ -26,6 +27,7 @@ describe('the memo content', () => {
       'a1_m04',
       'a1_m05',
       'a2_m01',
+      'a2_m02',
     ]);
     for (const id of MEMO_IDS) expect(id).toMatch(MEMO_ID);
   });

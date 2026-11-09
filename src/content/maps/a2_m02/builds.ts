@@ -16,12 +16,8 @@ const FORK_HG: GridPos = [5, 3];
 const NODE: GridPos = [5, 5];
 /** Between the outcrop and the conduit, beside the main road's drop. */
 const POCKET: GridPos = [4, 4];
-/** Between the roads: the branch's drop and both its runs, and the main road's east run. */
-const MID: GridPos = [8, 5];
 /** Inside the main road's south bend. */
 const BEND: GridPos = [6, 8];
-/** East of the main road's south bend. */
-const BEND_E: GridPos = [8, 8];
 /** By the relay. */
 const RELAY: GridPos = [4, 10];
 /** The branch's ledge, between its ledge run and its back run (the outcrop in the middle). */
@@ -33,14 +29,8 @@ const RIG_W: GridPos = [10, 6];
 const RIG_C: GridPos = [11, 6];
 const RIG_E: GridPos = [12, 6];
 const RIG_END: GridPos = [13, 6];
-/** Strike points: the fork, the main road's east run, and the branch's back run. */
-const FORK: GridPos = [3, 3];
-const EAST_RUN: GridPos = [5, 7];
-const BACK_RUN: GridPos = [13, 4];
-/** The branch's hairpin, where she turns back for the rigs. */
+/** The strike point: the branch's hairpin, where she turns back for the rigs. */
 const HAIRPIN: GridPos = [10, 5];
-/** The branch's far corner, where the ledge run turns down. */
-const CORNER: GridPos = [16, 3];
 
 function parSteps(): BuildStep[] {
   return [
@@ -63,12 +53,12 @@ function parSteps(): BuildStep[] {
     { wave: 9, upgrade: RIG_END },
     { wave: 9, upgrade: RIG_END },
     { wave: 10, specialize: OUTCROP, spec: 'b' }, // Cloudburst
-    { wave: 10, build: 'rivet', tile: RIG_W },
+    { wave: 10, build: 'rivet', tile: RIG_C },
     // The first Time Dilation slows the rush down the road as she steps out; the strike waits for
     // her second phase at the hairpin; the second Time Dilation is ready 51 s after the first only
     // with QUILL's Rapport (60 s without), for the surge and her second phase.
     { wave: 11, ability: 2, when: { afterSec: TD_FIRST } },
-    { wave: 11, upgrade: RIG_W },
+    { wave: 11, upgrade: RIG_C },
     { wave: 11, ability: 1, target: HAIRPIN, when: { afterSec: WITCH_DELAY + 54 } },
     { wave: 11, ability: 2, when: { afterSec: TD_FIRST + TD_GAP } },
   ];
@@ -103,34 +93,39 @@ export const builds = defineBuilds({
         { wave: 7, build: 'skyhook', tile: RELAY },
       ],
     },
-    // No splash answer: Rivets, a Soaking Sprinkler, a Skyhook, and a Lookout (no Thumper or
-    // Zapcoil).
+    // No splash answer: Rivets into a Soaking Sprinkler's shields on the branch, Rivets on the road,
+    // a Skyhook, and a Lookout (no Thumper or Zapcoil). It holds the rigs and drowns in the clusters.
     splash: {
       loadout: ['rivet', 'sprinkler', 'skyhook', 'lookout'],
       steps: [
         { wave: 1, build: 'rivet', tile: NODE },
-        { wave: 1, build: 'rivet', tile: FORK_HG },
-        { wave: 1, build: 'sprinkler', tile: RIG_C },
-        { wave: 2, build: 'rivet', tile: RIG_W },
-        { wave: 3, build: 'lookout', tile: POCKET },
-        { wave: 3, upgrade: RIG_C },
-        { wave: 4, upgrade: NODE },
-        { wave: 4, upgrade: RIG_C },
-        { wave: 5, build: 'rivet', tile: BEND },
-        { wave: 5, upgrade: RIG_W },
-        { wave: 6, upgrade: BEND },
-        { wave: 6, upgrade: FORK_HG },
-        { wave: 6, build: 'rivet', tile: RIG_E },
-        { wave: 7, upgrade: NODE },
+        { wave: 1, build: 'sprinkler', tile: OUTCROP },
+        { wave: 1, build: 'rivet', tile: LEDGE_W },
+        { wave: 1, build: 'rivet', tile: POCKET },
+        { wave: 2, upgrade: OUTCROP },
+        { wave: 2, upgrade: OUTCROP }, // T3: Soaked
+        { wave: 3, build: 'rivet', tile: LEDGE_E },
+        { wave: 3, upgrade: NODE },
+        { wave: 4, upgrade: LEDGE_W },
+        { wave: 4, upgrade: LEDGE_E },
+        { wave: 4, build: 'rivet', tile: BEND },
+        { wave: 5, upgrade: POCKET },
+        { wave: 5, upgrade: BEND },
+        { wave: 5, build: 'lookout', tile: FORK_HG },
+        { wave: 6, upgrade: NODE },
+        { wave: 6, upgrade: LEDGE_W },
+        { wave: 7, upgrade: LEDGE_E },
+        { wave: 7, upgrade: BEND },
         { wave: 7, build: 'skyhook', tile: RELAY },
       ],
     },
   },
-  // The shield and splash tests both land by W8, the first wave down both routes at full weight.
+  // Both tests come to a head in W8 (mixed, both routes): the full-catalog no-shield run, its
+  // asset unguarded by the core's protocols, outlasts W7's Glimmer column by one wave.
   noCounterLoseByWave: 8,
   altBuilds: {
-    // Zapcoil, Thumper, Skyhook, Lookout: Thumpers hold the road, Zapcoils the branch, a Lookout
-    // on the outcrop stretching the ledge pair's reach.
+    // Zapcoil, Thumper, Skyhook, Lookout: Thumpers hold the road, a Zapcoil pair strips the
+    // branch's shields, and a Bunker Buster on the outcrop answers her.
     shell_and_coil: {
       loadout: ['zapcoil', 'thumper', 'skyhook', 'lookout'],
       steps: [
@@ -139,23 +134,21 @@ export const builds = defineBuilds({
         { wave: 1, build: 'zapcoil', tile: LEDGE_E },
         { wave: 2, upgrade: NODE },
         { wave: 3, upgrade: LEDGE_W },
-        { wave: 4, build: 'thumper', tile: MID },
+        { wave: 4, build: 'thumper', tile: BEND },
         { wave: 4, upgrade: LEDGE_E },
-        { wave: 5, build: 'thumper', tile: BEND },
-        { wave: 5, build: 'lookout', tile: OUTCROP },
-        { wave: 6, upgrade: BEND },
+        { wave: 5, upgrade: BEND },
+        { wave: 5, build: 'thumper', tile: OUTCROP },
         { wave: 6, upgrade: LEDGE_W },
+        { wave: 6, upgrade: OUTCROP },
         { wave: 7, upgrade: LEDGE_E },
-        { wave: 7, upgrade: MID },
+        { wave: 7, build: 'lookout', tile: POCKET },
+        { wave: 8, upgrade: OUTCROP },
         { wave: 8, build: 'zapcoil', tile: RIG_END },
-        { wave: 8, upgrade: RIG_END },
         { wave: 9, upgrade: RIG_END },
-        { wave: 9, build: 'zapcoil', tile: RIG_W },
-        { wave: 10, upgrade: RIG_W },
-        { wave: 10, upgrade: RIG_W },
-        { wave: 10, build: 'zapcoil', tile: RIG_C },
+        { wave: 9, specialize: OUTCROP, spec: 'b' }, // Bunker Buster
+        { wave: 10, upgrade: RIG_END },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST } },
-        { wave: 11, ability: 1, target: CORNER, when: { afterSec: WITCH_DELAY + 34 } },
+        { wave: 11, ability: 1, target: HAIRPIN, when: { afterSec: WITCH_DELAY + 54 } },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST + TD_GAP } },
       ],
     },
@@ -192,9 +185,9 @@ export const builds = defineBuilds({
   },
   // The spawn cue reads C1 (the variant line); a cue changes nothing in the sim, but the run holds it.
   flagVariants: { spared_quiet_wave: [true] },
+  // Par drives her off before her third blink on every seed (with its casts; without them she
+  // reaches the rigs).
+  parMedals: ['challenge'],
   // T401: QUILL's Rapport (Time Dilation 60 s → 51 s) changes a par result here.
   rndPickChanges: ['rapport_quill'],
 });
-
-// Unused for now (kept for the tuning pass).
-void [FORK_HG, RIG_E, RIG_C, MID, BEND_E, FORK, EAST_RUN];
