@@ -1,20 +1,15 @@
-// The playfield pointer (D059): while a radio line points at a tower (Bricks's "That one's
-// Denise."), a gold arrow bobs over it for a few seconds and a gold ring pulses from its tile, so
-// the player sees which turret has a name. Drawn in `overlay`, so no tower hides it.
+// The playfield pointer (D059, D061): while a radio line points at a tower (Bricks's "That one's
+// Denise."), a gold arrow bobs just over its turret head, for the line's whole time on screen (and
+// PING_MS at least), and BattleScene pulses a gold ring from its tile, so the player sees which
+// turret has a name. Drawn in `overlay`, so no tower hides it.
 import type * as Phaser from 'phaser';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import { gridToScreen, type Vec2 } from '../iso.ts';
-import { PING_MS, pingArrowImage, pingBob } from '../vfx/pingPixels.ts';
+import { PING_GAP_PX, pingArrowImage, pingBob, pingShows } from '../vfx/pingPixels.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const ARROW_KEY = 'fx.ping_arrow';
-/** The arrow's tip sits this far above the tower's ground point (px): over a tier-1 head. */
-const TIP_LIFT_PX = 30;
-
-const pos: Vec2 = { x: 0, y: 0 };
 
 export class PingView {
-  readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
   readonly #arrow: Phaser.GameObjects.Image;
   /** ms into the ping, or −1 while none shows. */
@@ -23,7 +18,6 @@ export class PingView {
   #y = 0;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
-    this.#ctx = ctx;
     this.#reducedMotion = reducedMotion;
     const { scene, layers } = ctx;
     if (!scene.textures.exists(ARROW_KEY)) {
@@ -39,19 +33,19 @@ export class PingView {
     return this.#ms >= 0;
   }
 
-  /** Points at the tower on tile (col, row), standing `liftPx` up (high ground). */
-  point(col: number, row: number, liftPx: number): void {
-    gridToScreen(col + 0.5, row + 0.5, this.#ctx.origin, pos);
-    this.#x = Math.round(pos.x);
-    this.#y = Math.round(pos.y) - liftPx - TIP_LIFT_PX;
+  /** Points at a tower whose art's top-center is screen (x, top): the tip lands just above it. */
+  point(x: number, top: number): void {
+    this.#x = Math.round(x);
+    this.#y = Math.round(top) - PING_GAP_PX;
     this.#ms = 0;
     this.#sync();
   }
 
-  update(deltaMs: number): void {
+  /** Advances the ping; `held`: the line that points is still up, so the arrow stays. */
+  update(deltaMs: number, held: boolean): void {
     if (this.#ms < 0) return;
     this.#ms += Number.isFinite(deltaMs) && deltaMs > 0 ? deltaMs : 0;
-    if (this.#ms >= PING_MS) {
+    if (!pingShows(this.#ms, held)) {
       this.reset();
       return;
     }

@@ -9,6 +9,8 @@ import type { ColorName } from '../palettes/master.ts';
  * - `countdown`: `CountdownStarted` for `wave` (the build phase before it; story/style-guide.md
  *   §5.3's `w<NN>` radio slot).
  * - `unlock`: `TowerClassUnlocked` for `tower`.
+ * - `issued`: the battle's start (once the briefing closes) when `tower` is newly issued: in the
+ *   loadout for the save's first time (meta/hints.ts; D061). A1M2's Sprinkler announcement.
  * - `waveStart`: `WaveStarted` for `wave`.
  * - `waveCleared`: `WaveCleared` for `wave`.
  * - `perfectWave`: the first wave from `wave` on that resolves with no leaks.
@@ -25,6 +27,7 @@ export type RadioTrigger =
   | 'firstLeak'
   | 'countdown'
   | 'unlock'
+  | 'issued'
   | 'waveStart'
   | 'waveCleared'
   | 'perfectWave'
@@ -44,7 +47,7 @@ export interface RadioLine {
   readonly on: RadioTrigger;
   /** The wave the trigger names (`countdown`, `waveStart`, `waveCleared`; the first for `perfectWave`). */
   readonly wave?: number;
-  /** The tower an `unlock` names. */
+  /** The tower an `unlock` or `issued` names. */
   readonly tower?: string;
   /** The enemy an `enemyKilled` or `enemyLeaked` names. */
   readonly enemy?: string;

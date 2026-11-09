@@ -336,6 +336,27 @@ section.chamfer,
   top: 2px;
 }
 
+/* A newly issued tower's first battle (D061): a small teal tag, QUILL's color, centered on the
+   slot's top edge. It sits in a holder beside the button, since the chamfer clips the button. */
+.hud-slot-holder {
+  position: relative;
+  display: flex;
+}
+
+.hud-new {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -7px;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 1px 1px 0;
+  color: var(--sd-ink-0);
+  background: var(--sd-teal-3);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
+  pointer-events: none;
+}
+
 .hud-slot .slot-icon {
   margin: 0 auto;
 }

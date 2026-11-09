@@ -6,6 +6,7 @@ import {
   createEventSounds,
   ENEMY_POP_PITCH,
   HORN_AFTER_CALL_SEC,
+  SOUND_EVENT_TYPES,
   type SoundCall,
 } from './eventSounds.ts';
 
@@ -56,6 +57,12 @@ const leak = (n: number): SimEvent<IdSpace> => ({
 });
 
 const cleared = (wave: number): SimEvent<IdSpace> => ({ type: 'WaveCleared', wave, bonus: 24 });
+
+const forfeit = (medal: 'perfectCore' | 'challenge'): SimEvent<IdSpace> => ({
+  type: 'MedalProgress',
+  medal,
+  status: 'forfeited',
+});
 
 describe('event sounds', () => {
   it('maps tower events to their sounds, upgrades rising by tier', () => {
@@ -199,5 +206,41 @@ describe('event sounds', () => {
       ids(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'forfeited' }])),
     ).toEqual(['sfx:medal_forfeit']);
     expect(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'earned' }])).toEqual([]);
+  });
+
+  it('plays a medal forfeit mid-run only: one per frame, never over the win or lose cue (D061)', () => {
+    expect(ids(run([forfeit('perfectCore'), forfeit('challenge')]))).toEqual(['sfx:medal_forfeit']);
+    expect(ids(run([forfeit('perfectCore'), forfeit('challenge'), { type: 'MapLost' }]))).toEqual([
+      'cue:lose',
+    ]);
+    expect(ids(run([forfeit('perfectCore'), { type: 'MapWon' }]))).toEqual(['cue:win']);
+    // Nothing after the map ends, either.
+    const s = createEventSounds(1);
+    const out: SoundCall[] = [];
+    s.sounds({ type: 'MapLost' }, out);
+    s.endFrame(out);
+    out.length = 0;
+    s.sounds(forfeit('challenge'), out);
+    s.endFrame(out);
+    expect(out).toEqual([]);
+  });
+
+  it('subscribes the binder to every event type that has a sound', () => {
+    for (const t of [
+      'SackBurst',
+      'LinkFormed',
+      'TowerSpecialized',
+      'MedalProgress',
+      'HoldFireChanged',
+      'SpareRunnersChanged',
+      'AllySpawned',
+      'AllyAttacked',
+      'MapWon',
+      'MapLost',
+    ] as const) {
+      expect(SOUND_EVENT_TYPES).toContain(t);
+    }
+    expect(SOUND_EVENT_TYPES).not.toContain('EnemySpawned');
+    expect(SOUND_EVENT_TYPES).not.toContain('LinkBroken');
   });
 });

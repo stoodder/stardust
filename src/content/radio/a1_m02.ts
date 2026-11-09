@@ -8,6 +8,13 @@
 import type { RadioLine } from './types.ts';
 
 export const A1_M02_RADIO: readonly RadioLine[] = [
+  // The shift's start, the first time the save brings the issued Sprinkler (D061).
+  {
+    on: 'issued',
+    tower: 'sprinkler',
+    speaker: 'quill',
+    text: 'New hardware! The Frostline Sprinkler chills pests. (Gently!) Set it by a Thumper: chilled pests are Sitting Ducks!',
+  },
   {
     on: 'waveCleared',
     wave: 1,

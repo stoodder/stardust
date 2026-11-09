@@ -14,6 +14,7 @@ import type {
   StoryFlagId,
 } from './saveData.ts';
 import { CODEX_VERSIONS, DIFFICULTIES, LIVE_KNOWN_IDS } from './saveData.ts';
+import { hintIds } from './hints.ts';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
@@ -65,14 +66,22 @@ class Checker {
   }
 
   /** Checks `x` is a plain object with exactly `keys`; returns it, or null after reporting. */
-  object(x: unknown, path: string, keys: readonly string[]): Record<string, unknown> | null {
+  /** `optional`: fields that may be absent (each reader supplies its default). */
+  object(
+    x: unknown,
+    path: string,
+    keys: readonly string[],
+    optional: readonly string[] = [],
+  ): Record<string, unknown> | null {
     const obj = this.record(x, path);
     if (obj === null) return null;
     for (const key of keys) {
       if (!Object.hasOwn(obj, key)) this.fail(path, `missing field "${key}"`);
     }
     for (const key of Object.keys(obj)) {
-      if (!keys.includes(key)) this.fail(path, `unknown field ${JSON.stringify(key.slice(0, 64))}`);
+      if (!keys.includes(key) && !optional.includes(key)) {
+        this.fail(path, `unknown field ${JSON.stringify(key.slice(0, 64))}`);
+      }
     }
     return obj;
   }
@@ -204,17 +213,23 @@ export function validateEnvelope(
 }
 
 function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveData | null {
-  const root = c.object(x, path, [
-    'profile',
-    'campaign',
-    'currencies',
-    'unlocks',
-    'upgrades',
-    'story',
-    'stats',
-    'settings',
-    'loadouts',
-  ]);
+  const root = c.object(
+    x,
+    path,
+    [
+      'profile',
+      'campaign',
+      'currencies',
+      'unlocks',
+      'upgrades',
+      'story',
+      'stats',
+      'settings',
+      'loadouts',
+    ],
+    // Added to v1 while it was still open (D032); a save written before it has seen no hints.
+    ['seenHints'],
+  );
   if (root === null) return null;
   if (root['profile'] !== null) {
     c.fail(
@@ -231,6 +246,9 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   const settings = checkSettings(c, root['settings'], `${path}.settings`);
   const loadouts =
     unlocks && checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks);
+  const seenHints = Object.hasOwn(root, 'seenHints')
+    ? c.ids(root['seenHints'], `${path}.seenHints`, hintIds(known.towers))
+    : [];
   if (
     !campaign ||
     !currencies ||
@@ -253,6 +271,7 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
     stats,
     settings,
     loadouts,
+    seenHints,
   };
 }
 

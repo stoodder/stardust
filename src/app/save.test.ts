@@ -12,10 +12,14 @@ import {
   deleteSave,
   exportActive,
   firstEmptySlot,
+  hintShown,
   importInto,
   initSaves,
   loadDevSave,
+  markHintsShown,
+  markNewTowersShown,
   newGame,
+  newTowersIn,
   nextMapId,
   openSlot,
   rawSlotText,
@@ -171,6 +175,24 @@ describe('the save session', () => {
     expect(activeSave()?.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
     expect(run('a1_m01', 20)).toMatchObject({ issued: [] });
     expect(activeSave()?.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
+  });
+
+  it('a newly issued tower is new for its first battle only, and the upgrade teach once (D061)', () => {
+    expect(newTowersIn(['rivet', 'sprinkler'])).toEqual([]); // no save: nothing is new
+    newGame(1);
+    run('a1_m01', 20);
+    const loadout = ['rivet', 'thumper', 'sprinkler'];
+    expect(newTowersIn(loadout)).toEqual(['sprinkler']);
+    markNewTowersShown(loadout);
+    expect(newTowersIn(loadout)).toEqual([]);
+    expect(hintShown('upgrade')).toBe(false);
+    markHintsShown(['upgrade']);
+    expect(hintShown('upgrade')).toBe(true);
+    // Both survive a reload.
+    closeSession();
+    expect(openSlot(1)).toEqual({ ok: true });
+    expect(newTowersIn(loadout)).toEqual([]);
+    expect(hintShown('upgrade')).toBe(true);
   });
 
   it('a save written before its towers were issued catches up when loaded or imported', async () => {

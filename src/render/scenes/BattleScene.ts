@@ -60,6 +60,8 @@ import { EnemyView } from '../views/EnemyView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
 import { calloutText, LINK_CALLOUT, LinkView, type LinkEnd } from '../views/LinkView.ts';
+import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
+import { canDraw } from '../vfx/pixelFont.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
@@ -118,9 +120,10 @@ function pct(frac: number): string {
   return `+${Math.round(frac * 100)}%`;
 }
 
-/** The Denise pointer's ring (D059). */
+/** The Denise pointer's ring (D059), and the arrow's spot over the turret head (scratch). */
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
+const pingAt: Vec2 = { x: 0, y: 0 };
 const CORE_FLOAT_LIFT_PX = 46;
 type LiveTower = DeepReadonly<Tower>;
 /** Most route tiles a segment preview can tint (FxView draws up to 12). */
@@ -142,6 +145,9 @@ export class BattleScene extends Phaser.Scene {
   #ping!: PingView;
   /** The radio pointer id last pinged (0: none). */
   #pinged = 0;
+  /** The tower that pointer pinged (0: none), and ms since its ring last pulsed. */
+  #pingTower = 0;
+  #pingRingMs = 0;
   /**
    * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
    * draws a burst and a ring (a bomblet: its small pop, no ring).
@@ -253,6 +259,7 @@ export class BattleScene extends Phaser.Scene {
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
     this.#pinged = 0;
+    this.#pingTower = 0;
     // Each Suppressing Fire streak flashes Bricks's muzzle toward where it lands (D059).
     this.#fx.onRake = (x, y) => {
       const v = this.#shooter;
@@ -328,11 +335,14 @@ export class BattleScene extends Phaser.Scene {
         for (const t of [a, b]) {
           fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true);
         }
-        if (name === undefined) return;
+        // The pixel font has capitals, digits, and a few marks: a name it can't draw keeps its
+        // rings and chime, and skips the text rather than throwing mid-battle (D061).
+        const text = name === undefined ? '' : calloutText(name);
+        if (text === '' || !canDraw(text)) return;
         const lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
         const mx = (a.col + b.col) / 2 + 0.5;
         const my = (a.row + b.row) / 2 + 0.5;
-        fx.floatText(calloutText(name), look.text, mx, my, lift, LINK_CALLOUT_MS);
+        fx.floatText(text, look.text, mx, my, lift, LINK_CALLOUT_MS);
       }),
       bus.on('LinkBroken', (e) => {
         this.#links.break(e.link, e.a, e.b);
@@ -530,23 +540,41 @@ export class BattleScene extends Phaser.Scene {
     return false;
   }
 
-  /** Pings the first-built tower still standing (the lowest uid) when the radio asks (D059). */
+  /**
+   * Pings the first-built tower still standing (the lowest uid) when the radio asks (D059): the
+   * arrow over its turret head and a gold ring from its tile, pulsing again every
+   * PING_RING_EVERY_MS while the line is up (D061).
+   */
   #syncPing(delta: number): void {
     const id = this.#deps.pointFirstTower?.() ?? 0;
     if (id !== 0 && id !== this.#pinged) {
       this.#pinged = id;
+      this.#pingTower = 0;
       let first: LiveTower | null = null;
       const pool = this.#deps.sim.state.towers;
       for (let i = 0; i < pool.used; i++) {
         const t = pool.items[i]!; // i < used ≤ items.length
         if (t.alive && (first === null || t.uid < first.uid)) first = t;
       }
-      if (first !== null) {
-        this.#ping.point(first.col, first.row, this.#liftPx(first.col, first.row));
+      const view = first === null ? undefined : this.#towers.get(first.uid);
+      if (first !== null && view !== undefined && view.artTop(pingAt)) {
+        this.#pingTower = first.uid;
+        this.#pingRingMs = 0;
+        this.#ping.point(pingAt.x, pingAt.y);
         this.#fx.ring(first.x, first.y, PING_RING_TILES, 'gold.3', PING_RING_MS, true);
       }
+    } else if (id !== 0 && this.#pingTower !== 0) {
+      const t = this.#findTower(this.#pingTower);
+      this.#pingRingMs += Number.isFinite(delta) && delta > 0 ? delta : 0;
+      if (t === null) {
+        this.#pingTower = 0;
+        this.#ping.reset();
+      } else if (this.#pingRingMs >= PING_RING_EVERY_MS) {
+        this.#pingRingMs = 0;
+        this.#fx.ring(t.x, t.y, PING_RING_TILES, 'gold.3', PING_RING_MS, true);
+      }
     }
-    this.#ping.update(delta);
+    this.#ping.update(delta, id !== 0 && id === this.#pinged && this.#pingTower !== 0);
   }
 
   /** The ping's arrow, for the smoke hooks: whether one shows. */

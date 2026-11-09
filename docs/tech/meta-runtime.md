@@ -90,7 +90,7 @@ Named meta operations, so they're testable and idempotent (each records itself i
 | Storage | `localStorage`, behind `KeyValueStore` (`src/meta/store.ts`: `get`, `set`, `remove`; `set` may throw). The browser adapter lives in `app/`; tests use `MemoryStore`. |
 | Keys | `stardust:slot:1`…`3` (campaign saves), `stardust:slot:N:bak` (the previous good write), `stardust:settings` (owned by app settings), `stardust:lastSlot` (written by every slot write). All in `SAVE_KEYS`. |
 | Format | JSON: `{ v: <schemaVersion>, savedAt, data: SaveData }`. `savedAt` is epoch milliseconds from the caller's clock; meta never reads the clock. Stored text over 512 KB is refused on read and write. |
-| When | After map results, purchases, story choices, and settings changes. Never mid-map; a map in progress isn't saved (checkpoints are in memory). Replaying a map is cheap and matches "failing has no penalty". |
+| When | After map results, purchases, story choices, and settings changes, plus a one-time hint marked seen (`seenHints`) as a battle starts or the upgrade teach first shows. A map in progress is never saved (checkpoints are in memory). Replaying a map is cheap and matches "failing has no penalty". |
 
 **SaveData v1.** The canonical type is `src/meta/saveData.ts`; the progression fields come from [design/progression.md § 11](../design/progression.md#11-what-persists). In outline:
 
@@ -123,18 +123,21 @@ interface SaveData {
     last: LoadoutPreset | null;         // the last one locked in on any map
     byMap: Partial<Record<MapId, LoadoutPreset>>;  // the last one locked in on each map
   };
+  seenHints: HintId[];                  // one-time hints already shown (meta/hints.ts; D061)
 }
+type HintId = 'upgrade' | `new:${TowerId}`;  // the upgrade teach; a newly issued tower's first battle
 interface LoadoutPreset { towers: TowerId[]; ability: AbilityId | null }  // 1–4 distinct towers, in build-slot order
 ```
 
 - **The profile** becomes `{ name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper', arrivalReason: 'bonus' | 'family' | 'lettuce' }` with character creation (name rules in [design/core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns)). That is a schema bump with a migration.
 - **A new save** (`createNewSave()`) owns Rivet and Thumper (issued for A1M1) and Orbital Strike. Orbital Strike is the welcome memo's gift; until the memo exists, a new save grants it directly (D031). Everything else is empty or 0.
-- **v1 is still open until M2 ships** (D032): M2's fields go straight into v1 with no migration (difficulty, owned protocols, and the loadout presets are in). After M2, fields the design persists that v1 doesn't hold (veteran records, equipped Field Protocols) arrive with their features, each as a schema bump.
+- **One-time hints** (`src/meta/hints.ts`, D061): `upgrade` is the upgrade teach, shown once per save (the HUD marks it the first time it shows). `new:<tower>` marks a newly issued tower's first battle: a tower Everglow issues after a map (`TOWER_ACCESS` `how: 'issued'` with an `availableAfter`, so never the starting kit) is new in every battle the save brings it into until one starts (`newlyIssuedTowers`). That battle shows a NEW tag on its build slot and plays its `issued` radio line (the Sprinkler on A1M2), and marks the hint as it starts. `app/save.ts` reads and writes them for the save in play (`hintShown`, `newTowersIn`, `markHintsShown`, `markNewTowersShown`).
+- **v1 is still open until M2 ships** (D032): M2's fields go straight into v1 with no migration (difficulty, owned protocols, the loadout presets, and `seenHints` are in; `seenHints` is the one optional field, read as none when absent, so a save written before it still loads). After M2, fields the design persists that v1 doesn't hold (veteran records, equipped Field Protocols) arrive with their features, each as a schema bump.
 
 ### Validation
 
 Saves are untrusted input: a pasted code or a hand-edited localStorage value. `validateSave(x, known = LIVE_KNOWN_IDS)` (`src/meta/validate.ts`) is strict and returns either a freshly built copy (no shared references, nothing outside the schema) or every error (up to 20), each with its field path, such as `data.currencies.intel: expected an integer in [0, 1000000000], got -3`. It checks:
-- **Shape:** every object is a plain object with exactly the schema's keys (missing and unknown keys both fail); `profile` is `null`.
+- **Shape:** every object is a plain object with exactly the schema's keys (missing and unknown keys both fail; the one exception is `seenHints`, which may be absent); `profile` is `null`. A hint is `upgrade` or `new:` plus a known tower id (`hintIds`).
 - **Ids:** towers, abilities, maps, upgrades, protocols, and story flags must exist in the live registries (`LIVE_KNOWN_IDS`; upgrades and protocols come from `content/upgrades/`), and the difficulty is one of `DIFFICULTIES`. Ids with no registry yet (scenes, memos, codex entries, grants, medals, string flag values) must be lowercase snake_case starting with a letter, which also rules out `__proto__`. Lists hold no duplicates.
 - **Numbers:** non-negative safe integers, with bounds no real save approaches (currencies ≤ 10⁹, meter ≤ 10⁶). An upgrade's rank is 1 to that item's own rank count (`KnownIds.upgradeRanks`, from the catalog; never above 10), so a hostile code can't pass validation and then crash every battle start in `metaModifiers`. Flag values are booleans, integers, or ids.
 - **Cross-field rules:** `specs`, `revokedTowers`, and `jailbroken` are subsets of `towers`; `revokedAbilities` of `abilities`; a map has at most 3 medals, and any medal means the map is `completed`. A loadout preset holds 1–4 distinct owned towers and an owned ability (or null), keyed by a known map. A revoked one is allowed, because a preset can predate the revocation, and `meta/loadout.ts` drops it when it reads the preset.

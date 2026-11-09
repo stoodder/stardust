@@ -49,16 +49,27 @@ describe('hud view models', () => {
   it('builds the slots from the loadout, in order, with tier-1 costs and icons', () => {
     const sim = devSim();
     expect(buildSlots(sim.config.content.towers, sim.config.loadout)).toEqual([
-      { tower: 'dev_rivet', label: 'Rivet', icon: 'icon.tower.rivet', cost: 100, unlockWave: null },
+      {
+        tower: 'dev_rivet',
+        label: 'Rivet',
+        icon: 'icon.tower.rivet',
+        cost: 100,
+        unlockWave: null,
+        isNew: false,
+      },
       {
         tower: 'dev_thumper',
         label: 'Thumper',
         icon: 'icon.tower.thumper',
         cost: 125,
         unlockWave: null,
+        isNew: false,
       },
     ]);
     expect(() => buildSlots(sim.config.content.towers, ['nope'])).toThrow(/nope/);
+    // A newly issued tower's slot wears the NEW pip (D061).
+    const pips = buildSlots(sim.config.content.towers, sim.config.loadout, {}, [], ['dev_thumper']);
+    expect(pips.map((s) => s.isNew)).toEqual([false, true]);
   });
 
   it('previews the next wave, then nothing after the last', () => {

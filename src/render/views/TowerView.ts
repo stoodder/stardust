@@ -44,6 +44,8 @@ export interface TowerSprites {
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
+/** Scratch for the art's top-center (the pause plate). */
+const artAt: Vec2 = { x: 0, y: 0 };
 /** The naming contract's glow-frame suffix (tech-spec § Naming contract). */
 const GLOW_SUFFIX = '@glow';
 /** The head draws just in front of its own base, below the next uid's tie-break step. */
@@ -306,14 +308,25 @@ export class TowerView implements PooledView {
     this.#headGlow.setPosition(hx, hy);
   }
 
-  /** The pause plate sits centered just above the tower's art (its head's, or its base's). */
-  #placeHold(): void {
-    if (!this.#holding) return;
+  /**
+   * The top-center of the tower's drawn art in screen px (its head's top, or its base's), into
+   * `out`: where a marker sits to point at the turret head. False before the first sync.
+   */
+  artTop(out: Vec2): boolean {
+    if (Number.isNaN(this.#x)) return false;
     const b = this.#base;
     let top = b.y - b.displayOriginY + opaqueTop(b.frame);
     const head = this.#head;
     if (head.visible) top = Math.min(top, head.y - head.displayOriginY + opaqueTop(head.frame));
-    this.#hold.setPosition(Math.round(this.#base.x), Math.round(top) - HOLD_MARKER_GAP);
+    out.x = b.x;
+    out.y = top;
+    return true;
+  }
+
+  /** The pause plate sits centered just above the tower's art (its head's, or its base's). */
+  #placeHold(): void {
+    if (!this.#holding || !this.artTop(artAt)) return;
+    this.#hold.setPosition(Math.round(artAt.x), Math.round(artAt.y) - HOLD_MARKER_GAP);
   }
 }
 

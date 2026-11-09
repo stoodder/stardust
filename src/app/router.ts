@@ -99,8 +99,10 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
 
   /**
    * Starts a battle; `briefing` opens the map's briefing over it (a fresh start, not a retry). Its
-   * config is built first: if that throws (a save the sim refuses), the menu stays up with a
-   * notice instead of a blank screen. If the battle itself fails to start, the Shift board shows.
+   * config is built first: if that throws (a save the sim refuses), a menu that shows the notice
+   * (the Shift board, the loadout screen) stays up with it instead of a blank screen; from
+   * anywhere else (Results → Retry) the Shift board shows it. If the battle itself fails to
+   * start, the Shift board shows too.
    */
   const openBattle = (request: BattleRequest, briefing: boolean): Promise<void> => {
     // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
@@ -111,7 +113,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       cfg = battleConfig(mapId, seed, activeSave());
     } catch (err) {
       menuNotice.value = BATTLE_FAILED;
-      return Promise.reject(err instanceof Error ? err : new Error(String(err)));
+      const shown = screen.value === 'campaign' || screen.value === 'loadout';
+      const back = shown ? Promise.resolve() : showFailed();
+      return back.then(() => Promise.reject(err instanceof Error ? err : new Error(String(err))));
     }
     stopBattle();
     showBackdrop(false);
@@ -128,8 +132,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       next = startBattle(game, cfg, { briefing });
     } catch (err) {
       menuNotice.value = BATTLE_FAILED;
-      const back = activeSave() === null ? showMenu('title') : showMenu('campaign');
-      return back.then(() => Promise.reject(err instanceof Error ? err : new Error(String(err))));
+      return showFailed().then(() =>
+        Promise.reject(err instanceof Error ? err : new Error(String(err))),
+      );
     }
     menuNotice.value = null;
     battle = next;
@@ -162,6 +167,10 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     screen.value = 'battle';
     return next.firstFrame;
   };
+
+  /** After a battle failed to start: the Shift board, where the notice shows (the Title without a save). */
+  const showFailed = (): Promise<void> =>
+    activeSave() === null ? showMenu('title') : showMenu('campaign');
 
   /** Shows a menu over the backdrop, ending any battle. */
   const showMenu = (id: MenuId | 'settings' | 'loadout'): Promise<void> => {

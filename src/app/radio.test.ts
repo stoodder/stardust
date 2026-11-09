@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { A1_M01_RADIO } from '../content/radio/a1_m01.ts';
+import { A1_M02_RADIO } from '../content/radio/a1_m02.ts';
 import { radioLines, type RadioLine } from '../content/radio/index.ts';
 import type { IdSpace } from '../content/types.ts';
 import { createBus } from '../shared/bus.ts';
@@ -255,6 +256,42 @@ describe('bindRadio: the ticker over real time (fake timers)', () => {
     vi.advanceTimersByTime(REPLY_BEAT_MS);
     expect(shown()).toBe(JINGLE_REPLY);
     expect(cue()).toBe(JINGLE);
+  });
+
+  it("queues the bank nudge as its own batch, never as a reply to the countdown's line (D061)", () => {
+    unbind();
+    let credits = 400;
+    unbind = bindRadio(bus, 'a1_m02', () => credits);
+    const PENSION = A1_M02_RADIO.find((l) => l.on === 'countdown' && l.wave === 7)!;
+    const NUDGE = A1_M02_RADIO.find((l) => l.on === 'bankNudge')!;
+    expect(PENSION.speaker).not.toBe(NUDGE.speaker); // another speaker: a reply if batched
+    bus.emit(countdown(7));
+    expect(shown()).toBe(PENSION.text);
+    // Bricks's line holds its full reading time, not the reply beat...
+    vi.advanceTimersByTime(REPLY_BEAT_MS);
+    expect(shown()).toBe(PENSION.text);
+    vi.advanceTimersByTime(radioLineMs(PENSION.text) - REPLY_BEAT_MS);
+    // ...and QUILL's nudge follows on its own, with no cue kept above it.
+    expect(shown()).toBe(NUDGE.text);
+    expect(cue()).toBeNull();
+    credits = 0;
+  });
+
+  it('announces a newly issued tower as the battle starts, once the briefing closes (D061)', () => {
+    unbind();
+    const ISSUED = A1_M02_RADIO.find((l) => l.on === 'issued')!;
+    expect(ISSUED).toMatchObject({ tower: 'sprinkler', speaker: 'quill' });
+    hud.briefing.value = [{ speaker: null, text: 'briefing' }];
+    unbind = bindRadio(bus, 'a1_m02', () => 0, ['sprinkler']);
+    expect(shown()).toBeNull(); // never under the briefing
+    hud.briefing.value = null;
+    expect(shown()).toBe(ISSUED.text);
+    // Not new: no announcement.
+    unbind();
+    unbind = bindRadio(bus, 'a1_m02', () => 0, []);
+    expect(shown()).toBeNull();
+    expect(createRadioScript(A1_M02_RADIO).start(['sprinkler'])).toEqual([ISSUED]);
+    expect(createRadioScript(A1_M02_RADIO).start(['thumper'])).toEqual([]);
   });
 
   it('unbinding stops the ticker and clears the line', () => {

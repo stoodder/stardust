@@ -4,8 +4,15 @@
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 
-/** How long a ping shows (ms), and its bob: up 2 px every other quarter second. */
+/**
+ * How long a ping shows at least (ms; it holds while the radio line that points is up, D061), and
+ * its bob: up 2 px every other quarter second.
+ */
 export const PING_MS = 3000;
+/** While the line that points is up, the gold ring pulses from the tower again this often (ms). */
+export const PING_RING_EVERY_MS = 1000;
+/** The arrow's tip sits this far above the top of the tower's art (px): just over the head. */
+export const PING_GAP_PX = 1;
 export const PING_BOB_PX = 2;
 const BOB_PERIOD_MS = 500;
 
@@ -48,4 +55,9 @@ export function pingArrowImage(): RgbaImage {
 export function pingBob(ms: number, reduced: boolean): number {
   if (reduced) return 0;
   return ms % BOB_PERIOD_MS < BOB_PERIOD_MS / 2 ? PING_BOB_PX : 0;
+}
+
+/** Whether the arrow still shows `ms` into a ping: PING_MS at least, and while `held` (the line is up). */
+export function pingShows(ms: number, held: boolean): boolean {
+  return held || ms < PING_MS;
 }

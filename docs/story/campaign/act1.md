@@ -151,6 +151,7 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
 **Story delivery.**
 - *Briefing:* QUILL: "Sensors show something big and sparkly on the terraces. Sparkly is good! Usually!" · Bricks: "Hatching season. Everything's out and about. Keep your eyes on the path, Sprout."
 - *Radio:*
+  - Shift start (`tower_issued` sprinkler: the first battle the save brings the newly issued Sprinkler into) QUILL: "New hardware! The Frostline Sprinkler chills pests. (Gently!) Set it by a Thumper: chilled pests are Sitting Ducks!"
   - w02 Kip: "Kip Vandermeer. 'The Exterminator.' Number one on the Bounty Board, three quarters running. Don't get comfy at two."
   - w03 QUILL: "Suggested build site: beside Extraction Rig 3. (Per policy.) The housing block will be fine. Probably!"
   - First `wave_cleared` (name tag) Bricks: "That one's Denise. After my first wife. Keeps her distance, fires on schedule, never calls."

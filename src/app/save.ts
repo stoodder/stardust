@@ -7,6 +7,7 @@ import { CAMPAIGN } from '../content/campaign.ts';
 import type { MapId } from '../content/types.ts';
 import { DEV_SAVES, type DevSaveId } from '../meta/__fixtures__/devSaves.ts';
 import {
+  type HintId,
   type ImportProblemCode,
   type KeyValueStore,
   type LoadoutPick,
@@ -28,22 +29,27 @@ import {
   deleteSlot,
   exportCode,
   getLastSlot,
+  hintSeen,
   importCode,
   isSystemUnlocked,
   listSlots,
   loadSlot,
+  newlyIssuedTowers,
+  newTowerHint,
   nextShift,
   runEnd,
   shelf,
   shiftBoard,
   showsLoadoutScreen,
   unlockHint,
+  withHintsSeen,
   withIssuedTowers,
   withPreset,
   writeSlot,
 } from '../meta/index.ts';
 import {
   campaign,
+  menuNotice,
   slots,
   type CampaignView,
   type Difficulty,
@@ -163,6 +169,7 @@ export function newGame(slot: SlotId): SaveResult {
     return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
   }
   session = { store, slot, scratch: false, devUnlocks: [], save: createNewSave() };
+  menuNotice.value = null;
   return persist();
 }
 
@@ -179,6 +186,7 @@ export function openSlot(slot: SlotId): SaveResult {
     };
   }
   session = { store, slot, scratch: false, devUnlocks: [], save: withIssuedTowers(load.save) };
+  menuNotice.value = null;
   refresh();
   return { ok: true };
 }
@@ -198,6 +206,7 @@ export function loadDevSave(id: string): boolean {
     devUnlocks: dev.devUnlocks ?? [],
     save: withIssuedTowers(dev.build()),
   };
+  menuNotice.value = null;
   const w = writeSlot(scratch, 1, session.save, clock());
   if (!w.ok) logError(`save: dev save '${id}' failed to write`, w.errors);
   refresh();
@@ -211,6 +220,7 @@ function isDevSaveId(id: string): id is DevSaveId {
 /** Leaves the save in play (back to the Title). */
 export function closeSession(): void {
   session = null;
+  menuNotice.value = null;
   refresh();
 }
 
@@ -280,6 +290,34 @@ export function rememberLoadout(mapId: string, pick: LoadoutPick): SaveResult {
   if (!isCampaignMap(mapId)) return { ok: false, message: `'${mapId}' is not a campaign map.` };
   session.save = withPreset(session.save, mapId, pick);
   return persist();
+}
+
+/** Whether the save in play has shown `hint` (meta/hints.ts); false without a save. */
+export function hintShown(hint: HintId): boolean {
+  return session !== null && hintSeen(session.save, hint);
+}
+
+/** The loadout's newly issued towers for the save in play (meta/hints.ts); none without one. */
+export function newTowersIn(loadout: readonly string[]): string[] {
+  return session === null ? [] : newlyIssuedTowers(session.save, loadout);
+}
+
+/**
+ * Marks `hints` shown in the save in play and writes it (once each; nothing without a save). A
+ * failed write is logged (persist) and otherwise harmless: the session keeps the hints.
+ */
+export function markHintsShown(hints: readonly HintId[]): void {
+  if (session === null) return;
+  const next = withHintsSeen(session.save, hints);
+  if (next === session.save) return;
+  session.save = next;
+  persist();
+}
+
+/** Marks the loadout's newly issued towers as fielded (their `new:` hints) in the save in play. */
+export function markNewTowersShown(loadout: readonly string[]): void {
+  if (session === null) return;
+  markHintsShown(newlyIssuedTowers(session.save, loadout).map(newTowerHint));
 }
 
 /** One base pane's offers for the save in play (empty without one). */
@@ -362,6 +400,7 @@ export function importInto(slot: SlotId, save: SaveData): SaveResult {
     return writeFailure(w);
   }
   session = { store, slot, scratch: false, devUnlocks: [], save: caughtUp };
+  menuNotice.value = null;
   refresh();
   return { ok: true };
 }

@@ -12,7 +12,9 @@ describe('radio tables', () => {
         if (l.on === 'countdown' || l.on === 'waveStart' || l.on === 'waveCleared') {
           expect(l.wave).toBeGreaterThanOrEqual(1);
         }
-        if (l.on === 'unlock') expect(l.tower).toBeDefined();
+        if (l.on === 'unlock' || l.on === 'issued') {
+          expect(Object.keys(RAW_CONTENT.towers), `${mapId}: ${l.text}`).toContain(l.tower);
+        }
         if (l.on === 'enemyKilled' || l.on === 'enemyLeaked') {
           expect(Object.keys(RAW_CONTENT.enemies), `${mapId}: ${l.text}`).toContain(l.enemy);
         }

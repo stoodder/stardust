@@ -22,6 +22,8 @@ export interface BuildSlotView {
   readonly cost: number;
   /** The wave whose countdown unlocks it, if the map holds it back (`towerUnlockWave`). */
   readonly unlockWave: number | null;
+  /** Newly issued, in its first battle for this save: the slot wears a NEW pip (D061). */
+  readonly isNew: boolean;
 }
 
 /** One commander ability slot (core-loop §3.1): fixed for a battle. */

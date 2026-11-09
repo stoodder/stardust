@@ -9,7 +9,7 @@ import { createSim, type SimConfig } from '../sim/index.ts';
 import { hud } from '../ui/state.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
-import { bindHud, rejectText, showNotice, type HudOptions } from './hud.ts';
+import { bindHud, hudSaveInfo, rejectText, showNotice, type HudOptions } from './hud.ts';
 import { bindBattleAudio } from './audio.ts';
 import { bindRadio } from './radio.ts';
 
@@ -62,8 +62,10 @@ export function startBattle(
     },
     key,
   );
-  const unbindHud = bindHud(host, interaction, hudOptions);
-  const unbindRadio = bindRadio(host.bus, sim.map.id, () => sim.state.credits);
+  // Read once, before the HUD marks this run's newly issued towers as fielded (meta/hints.ts).
+  const save = hudOptions.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
+  const unbindHud = bindHud(host, interaction, { ...hudOptions, save });
+  const unbindRadio = bindRadio(host.bus, sim.map.id, () => sim.state.credits, save.newTowers);
   const unbindAudio = bindBattleAudio(host);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);

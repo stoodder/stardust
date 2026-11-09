@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
-import { pingArrowImage, pingBob, PING_BOB_PX } from './pingPixels.ts';
+import { pingArrowImage, pingBob, pingShows, PING_BOB_PX, PING_MS } from './pingPixels.ts';
 
 describe('the playfield pointer (D059)', () => {
   it('is a gold arrow with an ink edge, pointing down', () => {
@@ -19,5 +19,12 @@ describe('the playfield pointer (D059)', () => {
     expect(pingBob(300, false)).toBe(0);
     expect(pingBob(300, true)).toBe(0);
     expect(pingBob(0, true)).toBe(0);
+  });
+
+  it('shows for PING_MS at least, and for as long as the line that points is up (D061)', () => {
+    expect(pingShows(0, false)).toBe(true);
+    expect(pingShows(PING_MS - 1, false)).toBe(true);
+    expect(pingShows(PING_MS, false)).toBe(false);
+    expect(pingShows(PING_MS * 3, true)).toBe(true);
   });
 });

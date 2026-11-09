@@ -15,7 +15,12 @@ export {
   type MusicIntent,
   type MusicScreen,
 } from './director.ts';
-export { ABILITY_SOUNDS, createEventSounds, type SoundCall } from './eventSounds.ts';
+export {
+  ABILITY_SOUNDS,
+  createEventSounds,
+  SOUND_EVENT_TYPES,
+  type SoundCall,
+} from './eventSounds.ts';
 export { CUES, THEMES, isCueId, isThemeId, type CueId, type ThemeId } from './music/index.ts';
 export { RADIO_BLIP, SFX_IDS, isSfxId, type SfxId } from './sfx/index.ts';
 export { DEFAULT_VOLUMES, type Volumes } from './synth.ts';

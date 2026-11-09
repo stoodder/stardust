@@ -28,6 +28,14 @@ export {
   uncoveredCounters,
   withPreset,
 } from './loadout.ts';
+export {
+  hintIds,
+  hintSeen,
+  newlyIssuedTowers,
+  newTowerHint,
+  UPGRADE_HINT,
+  withHintsSeen,
+} from './hints.ts';
 export { issuedTowers, withIssuedTowers } from './issued.ts';
 export { migrate, migrations } from './migrations.ts';
 export type { MetaCatalog, MetaLoadout } from './modifiers.ts';
@@ -78,6 +86,7 @@ export {
   writeSlot,
 } from './save.ts';
 export type {
+  HintId,
   KnownIds,
   LoadoutPreset,
   MapRecord,

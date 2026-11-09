@@ -13,7 +13,7 @@ import type {
 import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, STATUS_BITS } from '../content/rules.ts';
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import { SPRITES } from '../content/sprites/index.ts';
-import { SYSTEM_UNLOCKS } from '../meta/index.ts';
+import { SYSTEM_UNLOCKS, UPGRADE_HINT } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { gridToScreen, mapOrigin, type IsoOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
@@ -64,7 +64,14 @@ import {
 import { silkText } from '../ui/silk.ts';
 import { CARD_CHARS, PANEL_CHARS, wrapParts } from '../ui/hud/layout.ts';
 import type { Host } from './host.ts';
-import { activeSave, systemOpen } from './save.ts';
+import {
+  activeSave,
+  hintShown,
+  markHintsShown,
+  markNewTowersShown,
+  newTowersIn,
+  systemOpen,
+} from './save.ts';
 
 /** Every registered sprite id (the tell glyphs the briefing may show). */
 const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((d) => d.id));
@@ -124,13 +131,15 @@ export function towerUnlockWaves(map: CompiledMapDef<IdSpace>): Readonly<Record<
 
 /**
  * The build slots for a loadout. `unlockWaves`: towerUnlockWaves(map). Costs are what the sim
- * charges: tier 1 after the run's `towerCost` modifiers (`costFor`, D037).
+ * charges: tier 1 after the run's `towerCost` modifiers (`costFor`, D037). `newTowers`: the
+ * loadout's newly issued towers (meta/hints.ts), whose slots wear a NEW pip.
  */
 export function buildSlots(
   towers: Readonly<Record<string, CompiledTowerDef>>,
   loadout: readonly string[],
   unlockWaves: Readonly<Record<string, number>> = {},
   modifiers: SimConfig<IdSpace>['modifiers'] = [],
+  newTowers: readonly string[] = [],
 ): BuildSlotView[] {
   return loadout.map((id) => {
     const def = towers[id];
@@ -141,6 +150,7 @@ export function buildSlots(
       icon: def.sprites.icon,
       cost: costFor(modifiers, id, def.tiers[0].cost),
       unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
+      isNew: newTowers.includes(id),
     };
   });
 }
@@ -400,6 +410,10 @@ export interface HudSaveInfo {
   readonly specsUnlocked: readonly string[];
   /** The spare-runners controls show (`meta/progress.ts`: after A1M5, or `devUnlocks`). */
   readonly spareRunnersOpen: boolean;
+  /** The loadout's newly issued towers, in their first battle for this save (meta/hints.ts). */
+  readonly newTowers: readonly string[];
+  /** The save has shown the upgrade teach before, so it stays off (once per save, D061). */
+  readonly upgradeHintSeen: boolean;
 }
 
 /** The last selected-panel key's parts and string (selectedKey reuses them while unchanged). */
@@ -645,6 +659,8 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
       ownedTowers: loadout,
       specsUnlocked: [],
       spareRunnersOpen: false,
+      newTowers: [],
+      upgradeHintSeen: false,
     };
   }
   const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
@@ -655,6 +671,8 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     ownedTowers: save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t)),
     specsUnlocked: save.unlocks.specs,
     spareRunnersOpen: systemOpen('spareRunners'),
+    newTowers: newTowersIn(loadout),
+    upgradeHintSeen: hintShown(UPGRADE_HINT),
   };
 }
 
@@ -921,19 +939,22 @@ export function bindHud(
   hud.waveCount.value = sim.map.waves.length;
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
+  const saveInfo = opts.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
   hud.slots.value = buildSlots(
     towers,
     sim.config.loadout,
     towerUnlockWaves(sim.map),
     sim.config.modifiers,
+    saveInfo.newTowers,
   );
+  // The NEW pips are this run's: the save remembers the towers have been fielded (D061).
+  if (saveInfo.newTowers.length > 0) markNewTowersShown(saveInfo.newTowers);
   const abilityViews = abilitySlots(sim.config);
   const cooldownTotals = abilityCooldownTotals(sim.config);
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
   const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
   hud.briefing.value = lines.length === 0 ? null : lines;
-  const saveInfo = opts.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
   const specLock = specLockText(saveInfo.engineeringOpen);
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
   hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);
@@ -946,6 +967,7 @@ export function bindHud(
   hud.upgradeHint.value = false;
   let teachStarted = false;
   let upgraded = false;
+  let upgradeHintMarked = false;
   let previewFor = -1;
   let leakId = 0;
   let bannerId = 0;
@@ -985,12 +1007,14 @@ export function bindHud(
       medalState = { ...m };
       hud.medals.value = medalViews(sim.map, m, saveInfo.heldMedals);
     }
-    hud.upgradeHint.value = upgradeHintShows(
-      teachStarted,
-      upgraded,
-      s.towers.live,
-      s.outcome === 'playing',
-    );
+    // Once per save (D061): a save that has shown the teach never shows it again.
+    hud.upgradeHint.value =
+      !saveInfo.upgradeHintSeen &&
+      upgradeHintShows(teachStarted, upgraded, s.towers.live, s.outcome === 'playing');
+    if (hud.upgradeHint.value && !upgradeHintMarked) {
+      upgradeHintMarked = true;
+      markHintsShown([UPGRADE_HINT]);
+    }
     syncCooldowns();
     hud.holdFireAll.value = s.holdFireAll;
     hud.spareRunnersAll.value = s.spareRunnersAll;

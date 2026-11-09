@@ -3,7 +3,7 @@
 // not a branch. Cosmetic pitch variance (a recipe's `jitter`) is the synth's, from its own RNG;
 // nothing here reads or affects the sim.
 import type { Act, IdSpace } from '../content/types.ts';
-import type { SimEvent } from '../sim/index.ts';
+import type { SimEvent, SimEventType } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
 import { WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
 import type { SfxId } from './sfx/index.ts';
@@ -76,12 +76,53 @@ export const HORN_AFTER_CALL_SEC = 0.25;
 
 const sfx = (id: SfxId, pitch = 0, delay = 0): SoundCall => ({ kind: 'sfx', id, pitch, delay });
 
+/**
+ * Whether each sim event type can make a sound. Exhaustive, so a new event type must be sorted
+ * here; the binder subscribes to exactly the `true` rows (SOUND_EVENT_TYPES).
+ */
+const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
+  TowerBuilt: true,
+  TowerUpgraded: true,
+  TowerSold: true,
+  TowerClassUnlocked: true,
+  ProjectileFired: true,
+  ProjectileHit: true,
+  EnemyDied: true,
+  EnemyLeaked: true,
+  SackBurst: true,
+  WaveStarted: true,
+  WaveCleared: true,
+  AbilityUsed: true,
+  AllySpawned: true,
+  AllyAttacked: true,
+  AllyRemoved: true,
+  MapWon: true,
+  MapLost: true,
+  HoldFireChanged: true,
+  SpareRunnersChanged: true,
+  LinkFormed: true,
+  TowerSpecialized: true,
+  MedalProgress: true,
+  CommandRejected: false,
+  EnemySpawned: false,
+  CountdownStarted: false,
+  ScriptCue: false,
+  NotFiringAtSkitterkin: false,
+  LinkBroken: false,
+};
+
+/** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
+export const SOUND_EVENT_TYPES: readonly SimEventType[] = Object.keys(MAKES_SOUND)
+  .filter((k): k is SimEventType => Object.hasOwn(MAKES_SOUND, k))
+  .filter((t) => MAKES_SOUND[t]);
+
 export interface EventSounds {
   /** Appends the sounds `e` plays now to `out`. */
   sounds(e: SimEvent<IdSpace>, out: SoundCall[]): void;
   /**
-   * Appends what waited for the end of the frame: the wave-clear sting, unless the map ended in
-   * the same frame (the win jingle replaces it).
+   * Appends what waited for the end of the frame: the wave-clear sting and the medal-forfeit
+   * fall (one each per frame at most), unless the map ended in the same frame or earlier (the
+   * win or lose cue stands alone).
    */
   endFrame(out: SoundCall[]): void;
 }
@@ -93,6 +134,7 @@ export function createEventSounds(act: Act): EventSounds {
   /** Allies' kinds by uid, so their shots find their sound. */
   const allies = new Map<number, string>();
   let pendingClear = false;
+  let pendingForfeit = false;
   let ended = false;
   return {
     sounds(e, out) {
@@ -169,6 +211,7 @@ export function createEventSounds(act: Act): EventSounds {
         case 'MapLost':
           ended = true;
           pendingClear = false;
+          pendingForfeit = false;
           out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
           return;
         case 'HoldFireChanged':
@@ -180,7 +223,8 @@ export function createEventSounds(act: Act): EventSounds {
           return;
         }
         // M2's best moments get their own sounds (D059): a link's chime, a spec's flourish, and
-        // a soft, kind falling third when a medal slips away this run (never a buzzer).
+        // a soft, kind falling third when a medal slips away mid-run (never a buzzer; at most one
+        // per frame, and never over the win or lose cue, D061).
         case 'LinkFormed':
           out.push(sfx('link_chime'));
           return;
@@ -188,7 +232,7 @@ export function createEventSounds(act: Act): EventSounds {
           out.push(sfx('specialize'));
           return;
         case 'MedalProgress':
-          if (e.status === 'forfeited') out.push(sfx('medal_forfeit'));
+          if (e.status === 'forfeited' && !ended) pendingForfeit = true;
           return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
@@ -205,7 +249,9 @@ export function createEventSounds(act: Act): EventSounds {
     endFrame(out) {
       const cue = WAVE_CLEAR_CUE[act];
       if (pendingClear && !ended && cue) out.push({ kind: 'cue', id: cue });
+      if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));
       pendingClear = false;
+      pendingForfeit = false;
     },
   };
 }

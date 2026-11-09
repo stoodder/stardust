@@ -752,3 +752,47 @@ Both round-2 reviewers call M2 ship-ready with one small fix each. Every round-1
   - Remaining per-frame allocations (ghost label, `sellValue`) (T234).
   - The Results Career-total count-up and a first-payday marker, plus build floaters overlapping link callouts (T235).
 - **Review closes at round 2.** The round-2 fixes are small and gate-verified, so a round 3 would mostly re-confirm automated checks.
+
+### D062 — 2026-11-09 — M2 review round 2 fixes landed
+- **Sound bug found and fixed:** `app/audio.ts` subscribed to only 13 event types, so the link chime, the specialize sound, the medal forfeit, the sack pop, Bricks, and Hold Fire never played in a real game. The subscription list is now derived from a table in `eventSounds.ts` that must name every event type, so a new event can't be silently unheard.
+- **Medal-forfeit sounds:** at most one per frame, never in or after the win/lose frame.
+- **The bank nudge** is its own radio batch, never a "reply".
+- **The issued Sprinkler is announced:**
+  - A new `issued` radio trigger plays after the briefing closes. The canon QUILL line (act1.md § A1M2): "New hardware! The Frostline Sprinkler chills pests. (Gently!) Set it by a Thumper: chilled pests are Sitting Ducks!"
+  - A teal NEW tag marks the slot the first time the save takes a newly issued tower into battle (`src/meta/hints.ts`).
+- **The young running home:** 2.5 s and 2–3 tiles at full opacity, drawn above the turrets, with one pausing 0.55 s to look back at the burst.
+- **Denise pointer:** sits on the turret head and pulses while the line shows.
+- **Hints and notices:** the upgrade hint shows once per save (`SaveData.seenHints`, optional on read). `menuNotice` clears on Title, slot, and session changes, and a failed Retry lands on the Shift board with the notice.
+- **Robustness:** link callouts skip text they can't draw.
+
+### D063 — 2026-11-09 — M2 shipped
+M2 (*Loadout, Upgrades & Meta Progression*, the D031 cut) ships. The owner said "start M2 … continue through to the end" while away; every fork decided under "best judgement" is logged in D031–D062 for the owner's review.
+- **The playable loop:**
+  1. New game (3 slots, SD1 export/import codes).
+  2. The Shift board: A1M1 *Orientation Day* and A1M2 *Hatching Season*.
+  3. Loadout (gated after A1M3) and a briefing with the threat strip and medals.
+  4. Battle:
+     - Crossfire and Sitting Ducks links;
+     - high-ground and power-node bonuses;
+     - tier-4 specializations (gated);
+     - Bricks at his post with Suppressing Fire on E;
+     - Orbital Strike on Q;
+     - Hold Fire (H / Shift+H);
+     - keyboard-only play.
+  5. Results: a payroll with medals → Intel and Stardust, the lifetime Pests Processed, and the issued towers.
+  6. The Base: Research (Mk II or Rapport), the Shop and Engineering (gated).
+- **Also in M2:**
+  - procedural audio (SFX for every event, layered Act I music);
+  - Story difficulty;
+  - story flags;
+  - the Act I radio with every line canon;
+  - the Brood Hauler (armor is genuinely required on A1M2, even with the full catalog).
+- **The gate:** typecheck, lint, 1,321 tests, build, 64 balance runs over 2 maps (incl. full-catalog, Story, flag variants, and robustness), 46 Playwright flows, and the docs check: about 110 s.
+- **Reviews:** two rounds (D059–D062).
+- **Art trail:** [art/gallery/m2.png](art/gallery/m2.png). Stronger tier-2 silhouettes, distinct specs, and 55 sprites (from 38). M3 should push terraces, cliffs, and ground shadows (mid-darks), clump separation, and death animations.
+- **Known limits carried to M3:**
+  - The R&D pick changes no A1M2 result (T228).
+  - The never-spend player hits a W7–W8 wall on A1M2, mitigated by QUILL's nudge (T229).
+  - A1M2 par sits at 100, so A1M3 targets ≤ 90 (T224).
+  - Oversized UI files need splitting (T225).
+- **Release:** shipped as the `M2: ship` commit on `main`. Cloud sessions can't push tags, so the owner creates the `m2` release on GitHub.

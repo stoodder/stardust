@@ -265,10 +265,12 @@ test('lose: no build plays out to a hiccup after the results delay; Title return
   const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost');
   expect(lost.length).toBeGreaterThan(0);
   await expect(debrief.getByRole('listitem')).toHaveCount(lost.length);
-  for (const l of lost) await expect(debrief).toContainText(silkText(l.text));
-  for (const l of A1_M01_RADIO.filter((x) => x.on === 'firstLeak')) {
-    await expect(debrief).not.toContainText(silkText(l.text));
-  }
+  await Promise.all(lost.map((l) => expect(debrief).toContainText(silkText(l.text))));
+  await Promise.all(
+    A1_M01_RADIO.filter((x) => x.on === 'firstLeak').map((l) =>
+      expect(debrief).not.toContainText(silkText(l.text)),
+    ),
+  );
   // Game hotkeys are off on the results screen: F doesn't touch the frozen battle.
   await page.keyboard.press('KeyF');
   const t0 = await tick(page);

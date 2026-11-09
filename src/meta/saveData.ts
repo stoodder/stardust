@@ -33,6 +33,12 @@ export type GrantId = string;
 export type CodexVersion = 'original' | 'annotated' | 'corrected';
 export const CODEX_VERSIONS: readonly CodexVersion[] = ['original', 'annotated', 'corrected'];
 
+/**
+ * A one-time hint a save has already shown (D061): `upgrade`, the upgrade teach (D028), and
+ * `new:<tower>`, a newly issued tower's first battle (its NEW pip and QUILL's announcement).
+ */
+export type HintId = 'upgrade' | `new:${TowerId}`;
+
 /** One campaign map's record. A map with no record has never been played to an end. */
 export interface MapRecord {
   completed: boolean;
@@ -95,6 +101,8 @@ export interface SaveData {
    * one on any map (where the screen starts on a map with none).
    */
   loadouts: { last: LoadoutPreset | null; byMap: Partial<Record<MapId, LoadoutPreset>> };
+  /** One-time hints already shown (meta/hints.ts). A v1 save written before the field has none. */
+  seenHints: HintId[];
 }
 
 /** Every difficulty a save can hold; the first is a new save's. */
@@ -166,5 +174,6 @@ export function createNewSave(): SaveData {
     stats: { pestsProcessed: 0, runs: 0 },
     settings: { difficulty: 'standard' },
     loadouts: { last: null, byMap: {} },
+    seenHints: [],
   };
 }

@@ -11,6 +11,7 @@ import {
   createEventSounds,
   crossedLowIntegrity,
   RADIO_BLIP,
+  SOUND_EVENT_TYPES,
   screenMusic,
   silentEngine,
   type AudioEngine,
@@ -29,7 +30,7 @@ import { renderCue, renderSfx, renderStorm, renderTheme } from '../audio/offline
 import { SPEAKERS, type RadioSpeaker } from '../content/radio/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import type { SimEvent, SimEventType } from '../sim/index.ts';
+import type { SimEvent } from '../sim/index.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import type { AudioHooks } from './testHookTypes.ts';
@@ -169,23 +170,6 @@ export function installAudio(enabled: boolean): () => void {
   return uninstall;
 }
 
-/** The sim events that make sounds (eventSounds.ts decides which). */
-const SOUND_EVENTS: readonly SimEventType[] = [
-  'TowerBuilt',
-  'TowerUpgraded',
-  'TowerSold',
-  'TowerClassUnlocked',
-  'ProjectileFired',
-  'ProjectileHit',
-  'EnemyDied',
-  'EnemyLeaked',
-  'WaveStarted',
-  'WaveCleared',
-  'AbilityUsed',
-  'MapWon',
-  'MapLost',
-];
-
 /** Wires a battle's events and state to the audio. Returns the unwiring. */
 export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const { sim } = host;
@@ -247,7 +231,10 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
       );
     }
   };
-  const offs = [...SOUND_EVENTS.map((t) => host.bus.on(t, onEvent)), host.onAfterFrame(afterFrame)];
+  const offs = [
+    ...SOUND_EVENT_TYPES.map((t) => host.bus.on(t, onEvent)),
+    host.onAfterFrame(afterFrame),
+  ];
   return () => {
     for (const off of offs) off();
   };

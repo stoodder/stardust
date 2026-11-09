@@ -1,25 +1,30 @@
-// The Brood Hauler's sack burst (D059; design/enemies.md § 5.1): on `SackBurst`, fx.sack_burst
+// The Brood Hauler's sack burst (D059, D061; design/enemies.md § 5.1): on `SackBurst`, fx.sack_burst
 // pops where the Hauler fell, and its young (enemy.hauler_young, render-only: the sim keeps no
-// entity for them) scurry *back up the route toward the warren* for ~1.5 s, then fade. Pooled: a
-// fixed set of bursts, the oldest reused, so a W8 of Haulers allocates nothing. Real time,
-// cosmetic; the motion is the pure vfx/scurry.ts.
+// entity for them) scurry *back up the route toward the warren* for ~2.5 s, one stopping to look
+// back, then fade. They draw in the vfx layer, above the towers, so a turret beside the road never
+// hides them. Pooled: a fixed set of bursts, the oldest reused, so a W8 of Haulers allocates
+// nothing. Real time, cosmetic; the motion is the pure vfx/scurry.ts.
 import type * as Phaser from 'phaser';
 import type { CompiledRoute } from '../../content/compiled.ts';
 import { pointAt, type Point } from '../../sim/index.ts';
-import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
-import { MAX_YOUNG, SCURRY_MS, scurryAlpha, scurryDist, YOUNG_LANES_PX } from '../vfx/scurry.ts';
+import {
+  MAX_YOUNG,
+  SCURRY_MS,
+  scurryAlpha,
+  scurryDist,
+  scurryLooksBack,
+  YOUNG_LANES_PX,
+} from '../vfx/scurry.ts';
 import { sideOf } from './EnemyView.ts';
 import { facingOf, type Facing } from './spriteInfo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 
-/** Bursts drawn at once (W8 sends 6 Haulers, 12 s apart: two overlapping is already a lot). */
+/** Bursts drawn at once (W8 sends 7 Haulers, 12 s apart: two overlapping is already a lot). */
 const MAX_BURSTS = 4;
 /** fx.sack_burst: 5 frames at 10 fps. */
 const POP_MS = 5 * 100;
-/** Depth uids for the young (above any enemy uid's low byte tie-break). */
-const YOUNG_UID = 0xf0;
 /** How far back along the route a young looks to face where it's running (tiles). */
 const LOOK_TILES = 0.2;
 const FACINGS: readonly Facing[] = ['ne', 'nw', 'se', 'sw'];
@@ -27,6 +32,8 @@ const FACINGS: readonly Facing[] = ['ne', 'nw', 'se', 'sw'];
 interface Young {
   sprite: Phaser.GameObjects.Sprite;
   facing: Facing | null;
+  /** Stopped, looking back the way it came (its walk cycle paused). */
+  looking: boolean;
 }
 
 interface Burst {
@@ -69,10 +76,11 @@ export class SackBurstView {
       pop.setVisible(false);
       layers.vfx.add(pop);
       const young: Young[] = [];
+      // Above the world layer: readable over the turrets beside the road (D061).
       for (let k = 0; k < MAX_YOUNG; k++) {
         const s = scene.make.sprite({}, false).setVisible(false);
-        layers.world.add(s);
-        young.push({ sprite: s, facing: null });
+        layers.vfx.add(s);
+        young.push({ sprite: s, facing: null, looking: false });
       }
       this.#bursts.push({ active: false, ms: 0, route: null, dist0: 0, count: 0, pop, young });
     }
@@ -97,6 +105,7 @@ export class SackBurstView {
     b.active = true;
     for (const kid of b.young) {
       kid.facing = null;
+      kid.looking = false;
       kid.sprite.stop().setVisible(false);
     }
     this.#sync(b);
@@ -145,11 +154,20 @@ export class SackBurstView {
       pointAt(route, Math.max(0, d - LOOK_TILES), ahead);
       const dx = ahead.x - at.x;
       const dy = ahead.y - at.y;
-      const facing = dx === 0 && dy === 0 ? (y.facing ?? 'nw') : facingOf(dx, dy);
+      // The one that looks back turns to face the burst, and holds still.
+      const looking = scurryLooksBack(b.ms, i);
+      const facing =
+        dx === 0 && dy === 0 ? (y.facing ?? 'nw') : looking ? facingOf(-dx, -dy) : facingOf(dx, dy);
       if (facing !== y.facing) {
         const w = this.#walk.get(facing)!; // every facing is cached
         y.sprite.play(w.key).setDisplayOrigin(w.ox, w.oy);
         y.facing = facing;
+        y.looking = false;
+      }
+      if (looking !== y.looking) {
+        if (looking) y.sprite.anims.pause(y.sprite.anims.currentAnim?.frames[0]);
+        else y.sprite.anims.resume();
+        y.looking = looking;
       }
       gridToScreen(at.x, at.y, this.#ctx.origin, pos);
       const lane = YOUNG_LANES_PX[i] ?? 0;
@@ -157,7 +175,6 @@ export class SackBurstView {
       const sx = Math.round(pos.x + (s?.x ?? 0) * lane);
       const sy = Math.round(pos.y + (s?.y ?? 0) * lane);
       y.sprite.setPosition(sx, sy).setAlpha(alpha).setVisible(true);
-      y.sprite.setDepth(worldDepth(sy, 'enemy', YOUNG_UID + i));
     }
   }
 }

@@ -245,8 +245,8 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
   // Onboarding (D026): the first slot pulses until the first tower is built.
   const teach = index === 0 && !hud.built.value && !locked && !poor && !armed;
   const state = `${locked ? 'locked' : poor ? 'poor' : ''}${teach ? ' pulse' : ''}`;
-  const status = locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : '';
-  return (
+  const status = `${slot.isNew ? ', new' : ''}${locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : ''}`;
+  const button = (
     <button
       type="button"
       class={`hud-btn hud-slot chamfer ${state}`}
@@ -272,6 +272,17 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
         <Credits value={slot.cost} short />
       )}
     </button>
+  );
+  if (!slot.isNew) return button;
+  // Newly issued, in its first battle for this save (D061): a NEW tag sits on the slot's top
+  // edge, outside the chamfer's clip.
+  return (
+    <div class="hud-slot-holder">
+      {button}
+      <span class="hud-new" aria-hidden="true">
+        NEW
+      </span>
+    </div>
   );
 }
 

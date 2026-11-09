@@ -3,7 +3,8 @@
 // queued, one at a time for a few seconds of real time, and never blocks input or pauses the game.
 // The lines one event plays are a batch: a batch plays whole once its first line has played, and a
 // reply (the next line of the batch, another speaker) follows its cue after a short beat, shown
-// under it. A map's debrief isn't the ticker's: the results card shows it (app/runResult.ts).
+// under it. The bank nudge is a batch of its own, after the countdown's (D061), so it never
+// answers another speaker's line. A map's debrief isn't the ticker's: the results card shows it (app/runResult.ts).
 import { radioLines, SPEAKERS, type RadioLine } from '../content/radio/index.ts';
 import { BANK_NUDGE_CREDITS } from '../content/radio/types.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -50,78 +51,89 @@ export function createRadioScript(lines: readonly RadioLine[], credits: () => nu
     }
     return out;
   };
-  return {
-    /** The lines `e` plays, in table order (none for most events). */
-    lines(e: SimEvent<IdSpace>): RadioLine[] {
-      switch (e.type) {
-        case 'EnemySpawned':
-          waveOf.set(e.uid, e.wave);
-          return [];
-        case 'EnemyDied':
-          waveOf.delete(e.uid);
-          return take((l) => l.on === 'enemyKilled' && l.enemy === e.enemy);
-        case 'EnemyLeaked': {
-          const w = waveOf.get(e.uid);
-          if (w !== undefined) leakedWaves.add(w);
-          waveOf.delete(e.uid);
-          const firstOfType = !leakedEnemies.has(e.enemy);
-          leakedEnemies.add(e.enemy);
-          const first = !leaked;
-          leaked = true;
-          // The battle's first leak, then the first of this enemy type (both when one leak is both).
-          return [
-            ...(first ? take((l) => l.on === 'firstLeak') : []),
-            ...(firstOfType ? take((l) => l.on === 'enemyLeaked' && l.enemy === e.enemy) : []),
-          ];
-        }
-        case 'CountdownStarted': {
-          // The nudge rides behind the wave's own countdown lines, from wave 2 (W1's setup has its
-          // starting credits banked by design).
-          const nudge = e.wave >= 2 && credits() >= BANK_NUDGE_CREDITS;
-          return [
-            ...take((l) => l.on === 'countdown' && l.wave === e.wave),
-            ...(nudge ? take((l) => l.on === 'bankNudge') : []),
-          ];
-        }
-        case 'TowerClassUnlocked':
-          return take((l) => l.on === 'unlock' && l.tower === e.tower);
-        case 'WaveStarted':
-          return take((l) => l.on === 'waveStart' && l.wave === e.wave);
-        case 'WaveCleared': {
-          const perfect = !leakedWaves.has(e.wave);
-          return take(
-            (l) =>
-              (l.on === 'waveCleared' && l.wave === e.wave) ||
-              (perfect && l.on === 'perfectWave' && e.wave >= (l.wave ?? 1)),
-          );
-        }
-        // The debrief is the results card's (app/runResult.ts), never the ticker's.
-        case 'MapWon':
-        case 'MapLost':
-        case 'ProjectileFired':
-        case 'ProjectileHit':
-        case 'TowerBuilt':
-        case 'TowerUpgraded':
-        case 'TowerSold':
-        case 'ScriptCue':
-        case 'AbilityUsed':
-        case 'CommandRejected':
-        case 'TowerSpecialized':
-        case 'HoldFireChanged':
-        case 'SpareRunnersChanged':
-        case 'NotFiringAtSkitterkin':
-        case 'LinkFormed':
-        case 'LinkBroken':
-        case 'AllySpawned':
-        case 'AllyAttacked':
-        case 'AllyRemoved':
-        case 'MedalProgress':
-        case 'SackBurst':
-          return [];
-        default:
-          return assertNever(e);
+  /** The lines `e` plays as its own batch (the bank nudge is `batches`'s second). */
+  const own = (e: SimEvent<IdSpace>): RadioLine[] => {
+    switch (e.type) {
+      case 'EnemySpawned':
+        waveOf.set(e.uid, e.wave);
+        return [];
+      case 'EnemyDied':
+        waveOf.delete(e.uid);
+        return take((l) => l.on === 'enemyKilled' && l.enemy === e.enemy);
+      case 'EnemyLeaked': {
+        const w = waveOf.get(e.uid);
+        if (w !== undefined) leakedWaves.add(w);
+        waveOf.delete(e.uid);
+        const firstOfType = !leakedEnemies.has(e.enemy);
+        leakedEnemies.add(e.enemy);
+        const first = !leaked;
+        leaked = true;
+        // The battle's first leak, then the first of this enemy type (both when one leak is both).
+        return [
+          ...(first ? take((l) => l.on === 'firstLeak') : []),
+          ...(firstOfType ? take((l) => l.on === 'enemyLeaked' && l.enemy === e.enemy) : []),
+        ];
       }
-    },
+      case 'CountdownStarted':
+        return take((l) => l.on === 'countdown' && l.wave === e.wave);
+      case 'TowerClassUnlocked':
+        return take((l) => l.on === 'unlock' && l.tower === e.tower);
+      case 'WaveStarted':
+        return take((l) => l.on === 'waveStart' && l.wave === e.wave);
+      case 'WaveCleared': {
+        const perfect = !leakedWaves.has(e.wave);
+        return take(
+          (l) =>
+            (l.on === 'waveCleared' && l.wave === e.wave) ||
+            (perfect && l.on === 'perfectWave' && e.wave >= (l.wave ?? 1)),
+        );
+      }
+      // The debrief is the results card's (app/runResult.ts), never the ticker's.
+      case 'MapWon':
+      case 'MapLost':
+      case 'ProjectileFired':
+      case 'ProjectileHit':
+      case 'TowerBuilt':
+      case 'TowerUpgraded':
+      case 'TowerSold':
+      case 'ScriptCue':
+      case 'AbilityUsed':
+      case 'CommandRejected':
+      case 'TowerSpecialized':
+      case 'HoldFireChanged':
+      case 'SpareRunnersChanged':
+      case 'NotFiringAtSkitterkin':
+      case 'LinkFormed':
+      case 'LinkBroken':
+      case 'AllySpawned':
+      case 'AllyAttacked':
+      case 'AllyRemoved':
+      case 'MedalProgress':
+      case 'SackBurst':
+        return [];
+      default:
+        return assertNever(e);
+    }
+  };
+  /**
+   * The batches `e` plays, in order, none empty: its own lines, then (for a countdown, from wave
+   * 2, with `BANK_NUDGE_CREDITS` banked) the bank nudge on its own. W1's setup has its starting
+   * credits banked by design, so it never nudges.
+   */
+  const batches = (e: SimEvent<IdSpace>): RadioLine[][] => {
+    const out = [own(e)];
+    if (e.type === 'CountdownStarted' && e.wave >= 2 && credits() >= BANK_NUDGE_CREDITS) {
+      out.push(take((l) => l.on === 'bankNudge'));
+    }
+    return out.filter((b) => b.length > 0);
+  };
+  return {
+    /** The lines the battle's start plays for its newly issued towers (`issued`), once. */
+    start: (newTowers: readonly string[]): RadioLine[] =>
+      take((l) => l.on === 'issued' && l.tower !== undefined && newTowers.includes(l.tower)),
+    batches,
+    /** The lines `e` plays, in table and batch order (none for most events). */
+    lines: (e: SimEvent<IdSpace>): RadioLine[] => batches(e).flat(),
   };
 }
 
@@ -175,12 +187,15 @@ export function radioHoldMs(text: string, nextIsReply: boolean): number {
 
 /**
  * Wires a battle's radio to the HUD's `radio` signal. `credits` reads the battle's banked credits
- * (for `bankNudge`). Returns the unwiring (which clears it).
+ * (for `bankNudge`); `newTowers` are the loadout's newly issued towers (meta/hints.ts), whose
+ * `issued` lines play as the battle starts, once the briefing (if any) closes. Returns the
+ * unwiring (which clears it).
  */
 export function bindRadio(
   bus: Bus<SimEvent<IdSpace>>,
   mapId: string,
   credits: () => number = () => 0,
+  newTowers: readonly string[] = [],
 ): () => void {
   hud.radio.value = null;
   const lines = radioLines(mapId);
@@ -211,14 +226,24 @@ export function bindRadio(
     shown = next;
     timer = setTimeout(showNext, radioHoldMs(next.line.text, isReply(next, queue[0])));
   };
-  const onEvent = (e: SimEvent<IdSpace>): void => {
-    const add = script.lines(e);
+  const enqueue = (add: readonly (readonly RadioLine[])[]): void => {
     if (add.length === 0) return;
     const at = performance.now();
-    const batch = ++batches;
-    for (const line of add) queue.push({ line, at, batch });
+    for (const group of add) {
+      const batch = ++batches;
+      for (const line of group) queue.push({ line, at, batch });
+    }
     if (timer === null) showNext();
   };
+  const onEvent = (e: SimEvent<IdSpace>): void => enqueue(script.batches(e));
+  // The start's lines wait for the briefing to close, so they're never spoken under it.
+  let started = false;
+  const offBriefing = hud.briefing.subscribe((b) => {
+    if (started || b !== null) return;
+    started = true;
+    const opening = script.start(newTowers);
+    if (opening.length > 0) enqueue([opening]);
+  });
   const types = [
     'EnemySpawned',
     'EnemyDied',
@@ -231,6 +256,7 @@ export function bindRadio(
   const offs = types.map((t) => bus.on(t, onEvent));
   return () => {
     for (const off of offs) off();
+    offBriefing();
     if (timer !== null) clearTimeout(timer);
     timer = null;
     queue.length = 0;
