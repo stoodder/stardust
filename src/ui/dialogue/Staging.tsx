@@ -4,7 +4,7 @@
 // counter ticking up at the top). Sprites are the canvas art's own, baked into data URLs once per
 // frame (hud/Icon.tsx), drawn 2× with `image-rendering: pixelated`. Silent: nothing here plays a
 // sound, so muted play loses nothing. Reduced motion holds still frames and the counter lands.
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { SPRITES } from '../../content/sprites/index.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import { baked } from '../hud/Icon.tsx';
@@ -97,12 +97,17 @@ function Frame({
 /** The stinger's Rig 9 feed: an Everglow CRT above the lines (its beats lead the scene in). */
 function FeedStage({ ms, still }: { ms: number; still: boolean }) {
   const frame = frameAt(still ? FEED_BEATS_STILL : FEED_BEATS, animsOf(FEED_SPRITE), ms);
+  // The frames shown so far, in order, for the smoke flow (the smudge's half second is too short
+  // to catch by polling on a loaded machine).
+  const seen = useRef<string[]>([]);
+  if (frame !== null && seen.current.at(-1) !== frame) seen.current.push(frame);
   return (
     <div
       class="dlg-feed"
       role="img"
       aria-label="Rig 9, camera 2, live: static, a shape for half a second, then no signal"
       data-testid="stage-feed"
+      data-seen={seen.current.join(' ')}
     >
       <Frame id={FEED_SPRITE} frame={frame} class="dlg-feed-crt" />
     </div>
