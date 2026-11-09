@@ -1,9 +1,11 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
-// front: by i + j, then i), and the props standing on tiles (core, fence, decor) depth-sorted in
-// `world`. Drawn once per map. The apron lies outside the grid, so picking never reaches it.
+// front: by i + j, then i; the power node's pulse is the one animated tile), and what stands on
+// tiles depth-sorted in `world`: high-ground blocks (raised one step, `highGround` bias) and props
+// (core, fence, decor). Drawn once per map. The apron lies outside the grid, so picking never
+// reaches it.
 import * as Phaser from 'phaser';
 import { worldDepth } from '../depth.ts';
-import { gridToScreen, tileImageTopLeft, type Vec2 } from '../iso.ts';
+import { gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
 import {
   apronCells,
   dressTile,
@@ -33,11 +35,30 @@ function drawCell(
   id: number,
 ): Phaser.GameObjects.Sprite | null {
   const { scene, sprites, layers, origin } = ctx;
-  const f = sprites.frame(look.ground.sprite, look.ground.frame, envVariant(env));
+  const ev = envVariant(env);
+  const f = sprites.frame(look.ground.sprite, look.ground.frame, ev);
   tileImageTopLeft(i, j, origin, pos);
-  layers.ground.add(
-    new Phaser.GameObjects.Image(scene, pos.x, pos.y, f.texture, f.frame).setOrigin(0, 0),
-  );
+  if (look.ground.anim === undefined) {
+    layers.ground.add(
+      new Phaser.GameObjects.Image(scene, pos.x, pos.y, f.texture, f.frame).setOrigin(0, 0),
+    );
+  } else {
+    const tile = new Phaser.GameObjects.Sprite(scene, pos.x, pos.y, f.texture, f.frame);
+    tile.setOrigin(0, 0).play(sprites.anim(look.ground.sprite, look.ground.anim, ev));
+    layers.ground.add(tile);
+  }
+  if (look.block !== undefined) {
+    // The block's frame anchor is the footprint's top vertex on the ground plane; it sorts by the
+    // tile center, so a tower on it (tower bias) draws in front and actors behind it are hidden.
+    const b = look.block;
+    const bf = sprites.frame(b.sprite, b.frame, ev);
+    const ba = sprites.frameAnchor(b.sprite, b.frame);
+    gridToScreen(i, j, origin, pos);
+    const block = new Phaser.GameObjects.Image(scene, pos.x, pos.y, bf.texture, bf.frame);
+    const footY = pos.y + HALF_H;
+    block.setDisplayOrigin(ba.x, ba.y).setDepth(worldDepth(footY, 'highGround', propTieBreak(id)));
+    layers.world.add(block);
+  }
   const prop = look.prop;
   if (prop === null) return null;
   const pv = propVariant(prop.sprite, env);

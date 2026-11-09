@@ -1,12 +1,24 @@
 // Buildable pad: an Everglow steel plate with teal corner brackets, set into the ground
 // (art-direction §8 Tile readability: a constructed plate, never plain ground).
 import { defineSprite } from '../defineSprite.ts';
-import { diamond, inTileMask, plot, rows, TILE_H, TILE_W } from '../helpers.ts';
+import { diamond, inTileMask, plot, rows, TILE_H, TILE_W, type CharGrid } from '../helpers.ts';
 import { ENV_VARIANTS, grassGrid } from './tileGen.ts';
 
-const PLATE = 5.75; // plate inset, in diamond() units (the mask edge is 7.75)
+/** The plate's inset, in diamond() units (the mask edge is 7.75). */
+export const PLATE = 5.75;
 
-function padGrid(): string[] {
+/** The plate's custom legend: Everglow steel and teal, the same in every act. */
+export const PAD_LEGEND = {
+  K: 'steel.0',
+  L: 'steel.1',
+  M: 'steel.2',
+  N: 'steel.0',
+  P: 'steel.2',
+  T: 'teal.3',
+} as const;
+
+/** A pad: the steel plate with corner brackets, set into grass. Shared by the buildable tiles. */
+export function padGrid(): CharGrid {
   const g = grassGrid(7);
   const top = (x: number, y: number): boolean => diamond(x, y + 1) <= PLATE; // raised 1 px
   const body = (x: number, y: number): boolean => diamond(x, y) <= PLATE;
@@ -44,7 +56,7 @@ function padGrid(): string[] {
     [cx + 2 * PLATE - 2.5, cy + 1],
   ];
   for (const [x, y] of brackets) plot(g, Math.round(x), Math.round(y), 'T');
-  return rows(g);
+  return g;
 }
 
 export const tilePad = defineSprite({
@@ -54,6 +66,6 @@ export const tilePad = defineSprite({
   palette: 'act1',
   variants: ENV_VARIANTS,
   // The plate is Everglow hardware, so its steel and teal stay the same in every act.
-  legend: { K: 'steel.0', L: 'steel.1', M: 'steel.2', N: 'steel.0', P: 'steel.2', T: 'teal.3' },
-  frames: { v0: padGrid() },
+  legend: PAD_LEGEND,
+  frames: { v0: rows(padGrid()) },
 });

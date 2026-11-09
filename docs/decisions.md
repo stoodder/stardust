@@ -443,3 +443,19 @@ The owner said "start M2 … continue through to the end" and is away, so the or
 - **Unlock schedule** (`meta/progress.ts`, reading `CAMPAIGN_PLAN`): R&D after A1M1, Shop and Loadout after A1M3, Engineering after A1M4, spare runners after A1M5, Xenotech after A2M5.
 - **Dev override:** `devUnlocks` lives only on dev-save fixtures, never in `SaveData`, so an import can't carry it. `?save=` works only with `?test=1`.
 - **SaveData v1** gained `settings.difficulty` and `unlocks.protocols`, and is checked against the catalog. `?seed=` seeds every battle.
+
+### D037 — 2026-11-09 — T202a stacking, tile bonuses, links, and modifiers
+- **Formula** (`src/sim/bonuses.ts`): `(base + Σflat) × (1 + min(Σpct, cap))`. The inputs are:
+  - `towerStat` modifiers;
+  - high ground +25% range;
+  - a power node +20% rate (+20% aura strength for support towers);
+  - each link once (× `linkBonus`);
+  - the strongest aura per kind, never the tower's own.
+  
+  A rate bonus applies to `60/cooldownTicks` and rounds back to whole ticks (a Crossfire Rivet goes from 30 to 27 ticks). The links system recomputes these totals only when `linksDirty` is set.
+- **Links:** `src/content/links/` holds Crossfire and Sitting Ducks. `LinkId` comes from that registry, and compile fills `CompiledTowerDef.links` (`TowerDef.links` is gone). The conditional `vsStatus` bonus (+20% vs Chilled) joins the damage percent under the cap and is checked per hit (or per splash victim). The system emits `LinkFormed`/`LinkBroken` and tracks pairs and `stats.linkTicks`.
+- **Modifiers applied:**
+  - **Costs:** `towerCost` via `costFor`, with `invested` recording what was paid.
+  - **Economy:** `sellRefund`, `bounty` (fractions carry over), `earlyCallBonus`, `startCredits`, and `coreIntegrity` (the lowest `set` wins).
+  - **Movement:** `leakAbsorb`.
+- **A1M1 interim:** the live links and high ground made par win at 100 with its strikes irrelevant. The minimal nudge: par skips the W6 Thumper T2, and W5/W7 Zoomer groups go 12 → 14. The results are par 100, rivet_only 70, par_minus_last 85, no_upgrades 55, and two_rivets loses in W6. Every check and the ±0.2 s robustness pass. **T125 re-tunes par back to ≈95** once Bricks's post and the Teamwork medal land.

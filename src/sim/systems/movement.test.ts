@@ -127,6 +127,24 @@ describe('movement', () => {
     ]);
   });
 
+  it('Emergency Bulkhead absorbs the first leaks, once per map, before the core loses any', () => {
+    const { state } = setup();
+    state.leakAbsorbLeft = 5;
+    const brute = { ...walker, leak: 3 };
+    spawn(state, brute, road, { dist: 8.99 }); // 3: all absorbed
+    spawn(state, brute, road, { dist: 8.995 }); // 3: 2 absorbed, 1 lost
+    spawn(state, walker, road, { dist: 8.999 }); // 1: lost
+    movement(state);
+    expect(state.leakAbsorbLeft).toBe(0);
+    expect(state.integrity).toBe(map.coreIntegrity - 2);
+    expect(state.stats.integrityLost).toBe(2);
+    expect(state.events).toMatchObject([
+      { type: 'EnemyLeaked', leak: 0 },
+      { type: 'EnemyLeaked', leak: 1 },
+      { type: 'EnemyLeaked', leak: 1 },
+    ]);
+  });
+
   it('Chilled slows by chillMul', () => {
     const { state } = setup();
     const cold = spawn(state, walker, road, { chillMul: 0.5 });

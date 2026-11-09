@@ -115,7 +115,12 @@ describe('link content', () => {
       ['fx_ducks', 1, 2],
     ]);
     expect(CONTENT.links[1]!.partners).toEqual([
-      expect.objectContaining({ tower: 'fx_mortar', pctDamage: 0, vsStatusMask: 1, vsStatusPct: 0.2 }),
+      expect.objectContaining({
+        tower: 'fx_mortar',
+        pctDamage: 0,
+        vsStatusMask: 1,
+        vsStatusPct: 0.2,
+      }),
       expect.objectContaining({ tower: 'fx_sprinkler', flatRange: 0.3 }),
     ]);
     expect(MORTAR.links).toEqual(['fx_cross', 'fx_ducks']);

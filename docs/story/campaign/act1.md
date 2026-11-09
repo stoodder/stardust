@@ -42,7 +42,7 @@ The five Act I maps, A1M1–A1M5, during the Long Afternoon. The campaign overvi
 
 Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the window, sprinklers ticking, a sign reading "PESTS PROCESSED THIS QUARTER: 38% MORE!"
 
-**Waves.** 1 Nibblers ×8 [T: build] · 2 Nibblers ×10 [T: upgrade; high-ground prompt] · 3 Nibbler clumps ×12 [T: Thumper unlocks, Crossfire] · 4 Zoomers ×12 + a Nibbler clump ×6 [T: fast; Suppressing Fire prompt] · 5 Nibbler clumps ×16 + Zoomers ×12 [X; Orbital Strike prompt] · 6 Zoomer rush ×24 + Nibbler clumps ×12 [X; the breather] · 7 Nibbler big clumps ×32 + Zoomers ×24 [X].
+**Waves.** 1 Nibblers ×8 [T: build] · 2 Nibblers ×10 [T: upgrade; high-ground prompt] · 3 Nibbler clumps ×12 [T: Thumper unlocks, Crossfire] · 4 Zoomers ×12 + a Nibbler clump ×6 [T: fast; Suppressing Fire prompt] · 5 Nibbler clumps ×16 + Zoomers ×14 [X; Orbital Strike prompt] · 6 Zoomer rush ×24 + Nibbler clumps ×12 [X; the breather] · 7 Nibbler big clumps ×32 + Zoomers ×28 [X].
 
 **Wave data** (A1M1 is the M1 map, so its waves are fully specified; the data is [`src/content/maps/a1_m01/waves.ts`](../../../src/content/maps/a1_m01/waves.ts)). A **clump** is a knot of Nibblers 0.2–0.25 s apart: W3's and W5's hold 4, W4's and W6's 6, and W7's **big clumps** 8. Tight knots are what a Thumper shell and the Orbital Strike catch whole, so W7 is where the Thumper earns its slot. Groups without an interval use the enemy's default spacing (Nibbler 0.8 s, Zoomer 0.5 s; [enemies.md §5](../../design/enemies.md#5-roster)). `delaySec` is measured from the wave's start. Every route is the one road; every countdown is the Act I 25 s. Pressure ramps through W4–W7 rather than piling into W7 ([D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings)), and no wave is a wall even for a player who never upgrades ([D028](../../decisions.md#d028--2026-11-09--m1-review-round-2-rulings)): Zoomers are the upgrade check, because a tier-2 Rivet kills one in two shots and a tier-1 Rivet needs three.
 
@@ -52,9 +52,9 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
 | W2 | Nibbler ×10 @ 0.8, 0 | 10 |
 | W3 | Nibbler ×4 @ 0.25 at 0, 3.75, and 7.5 (three clumps) | 12 |
 | W4 | Zoomer ×12 @ 0.5, 0 · Nibbler ×6 @ 0.2, 3 (a clump) | 18 |
-| W5 | Nibbler ×4 @ 0.2 at 0, 5, 10, and 15 (four clumps) · Zoomer ×12 @ 0.2, 1 | 28 |
+| W5 | Nibbler ×4 @ 0.2 at 0, 5, 10, and 15 (four clumps) · Zoomer ×14 @ 0.2, 1 | 30 |
 | W6 | Zoomer ×24 @ 0.5, 0 · Nibbler ×6 @ 0.25 at 2 and 5.75 (two clumps) | 36 |
-| W7 | Nibbler ×8 @ 0.2 at 0, 2, 4, and 6 (four big clumps) · Zoomer ×12 @ 0.3, 0 · Zoomer ×12 @ 0.3, 6.5 | 56 |
+| W7 | Nibbler ×8 @ 0.2 at 0, 2, 4, and 6 (four big clumps) · Zoomer ×14 @ 0.3, 0 · Zoomer ×14 @ 0.3, 6.5 | 60 |
 
 - **W4 is the warning.** The clump runs in behind the Zoomers, so two Rivets that were never upgraded start leaking here, a full wave before anything can end the shift. An upgraded roof Rivet holds it.
 - **W5 is the test.** A dense Zoomer burst races in over the first clump, and the Orbital Strike, cast 2.4 s in, lands on both at the road's first corner.
@@ -91,23 +91,23 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
 | W3 | Thumper (10,5), beside the (10,4) Rivet: the Crossfire pair | Rivet (10,5) |
 | W4 | Nothing: saving for the roof's T3 | same |
 | W5 | Upgrade the roof Rivet to T3; Orbital Strike on the road's first corner (4,3), 2.4 s into the wave (it lands on the first clump) | same |
-| W6 | Upgrade the Thumper (10,5) and the Rivet (10,4) to T2 | Upgrade the Rivets (10,5) and (10,4) to T2 |
+| W6 | Upgrade the Rivet (10,4) to T2 (the Thumper stays T1 until T125's re-tune) | Upgrade the Rivets (10,5) and (10,4) to T2 |
 | W7 | Rivet (3,4); Orbital Strike on (4,3), 2.4 s in | same |
 
 `altBuilds.par_minus_last` is par without its last purchase, the W7 Rivet: a player one step short.
 
-Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. **Par margin 95**, tuned (T127 and T130; [D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings), [D028](../../decisions.md#d028--2026-11-09--m1-review-round-2-rulings)). Par holds W1–W6 and lets one W7 Nibbler through, so its first leak comes in the last wave; a player who builds a single Rivet in the setup leaks in W1 and hears QUILL's `first_leak` bark on the first shift. Par spends its bank as it goes: under par, the bank at the start of each build phase is 350, 198, 176, 119, 221, 207, 203 (W1–W7; every pest before W7 dies), W4's phase buys nothing while it saves for the roof's T3 (150), and W7 starts with 103 unspent (par is good, not optimal). **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs:
+Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. **Par margin 100 for now**: tuned to 95 without links (T127 and T130; [D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings), [D028](../../decisions.md#d028--2026-11-09--m1-review-round-2-rulings)), then nudged by T202a when Crossfire and the roof's high ground went live (par skips the Thumper's T2; W5's and W7's Zoomer groups grew from 12 to 14). T125 re-tunes it back toward 95. Par holds every wave; a player who builds a single Rivet in the setup leaks in W1 and hears QUILL's `first_leak` bark on the first shift. Par spends its bank as it goes: under par, the bank at the start of each build phase is 350, 198, 176, 119, 221, 215, 311 (W1–W7; every pest dies), and W4's phase buys nothing while it saves for the roof's T3 (150). **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs:
 - do-nothing loses (at W3);
-- par wins at **95**, inside the band;
-- par without its strike casts wins at 75: W7's strike alone saves 4;
-- the **Rivet-only** build wins at **80**, below par: it leaks 4 of W7's big clumps that par's Thumper holds, which is the Thumper's lesson;
-- `par_minus_last` wins at 80 (2 leaks in W6, 2 in W7);
-- `alwaysCallEarly` wins at 60 (it calls W4 while W3 is still on the road and leaks 6 across the two);
-- two **under-built** players, held to the no-single-wave-wall rule ([maps.md §6.1](../../design/maps.md#61-per-act-targets)) instead of having to win: `no_upgrades` (par's towers and strikes, never upgraded) wins at 60, leaking 3 in W6 and 5 in W7; `two_rivets` (the two setup Rivets and nothing more) leaks 4 in W4 and 8 in W5, then loses in W6.
+- par wins at **100**, inside the band;
+- par without its strike casts wins at 80: W7's strike alone saves 4;
+- the **Rivet-only** build wins at **70**, below par: it leaks 6 of W7's big clumps that par's Thumper holds, which is the Thumper's lesson;
+- `par_minus_last` wins at 85 (3 leaks in W7);
+- `alwaysCallEarly` wins at 70 (it calls W4 while W3 is still on the road and leaks 6 across W4, W5, and W7);
+- two **under-built** players, held to the no-single-wave-wall rule ([maps.md §6.1](../../design/maps.md#61-per-act-targets)) instead of having to win: `no_upgrades` (par's towers and strikes, never upgraded) wins at 55, leaking 3 in W6 and 6 in W7; `two_rivets` (the two setup Rivets and nothing more) leaks 3 in W4 and 9 in W5, then loses in W6.
 
-A third under-built player, three Rivets bought in the setup and never upgraded, leaks 2 in W5 and 9 in W6, then loses in W7 ([`src/balance/a1m1.test.ts`](../../../src/balance/a1m1.test.ts) holds it to the same rule). These verdicts hold with W5–W7's clumps shifted ±0.2 s apart (the same test file).
+A third under-built player, three Rivets bought in the setup and never upgraded, leaks 3 in W5 and 7 in W6, then loses in W7 ([`src/balance/a1m1.test.ts`](../../../src/balance/a1m1.test.ts) holds it to the same rule). These verdicts hold with W5–W7's clumps shifted ±0.2 s apart (the same test file).
 
-**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
+**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tuned this par **without Crossfire (links), tile bonuses, medals, Suppressing Fire, or the Bricks ally**. Crossfire and the roof's high ground are live since T202a (the W3 teach now links the pair); the Teamwork medal waits for T202c, and T125 re-tunes the map with all of them. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
 
 ## A1M2 · Hatching Season
 

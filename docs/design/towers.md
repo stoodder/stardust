@@ -99,6 +99,11 @@ stat_final = (stat_tier + Σ flat_bonuses) × (1 + Σ percent_bonuses)
 
 Tile bonuses ([maps.md §3](maps.md#3-tile-types)): **high ground +25% range**, **power node +20% fire rate** (for support towers without a fire rate: +20% aura strength).
 
+**As built** (the sim's side is [architecture.md § Sim public API](../tech/architecture.md#sim-public-api)):
+- **Conditional bonuses** (a link's "+20% damage vs Chilled") add to the damage percent before the cap, against an enemy that has the status when the hit lands. A shell checks each victim on impact.
+- **Fire rate** is simulated in whole ticks: the bonus applies to the tier's simulated rate, which then rounds back to a whole-tick period. +10% on a 2/s Rivet fires every 27 ticks (2.22/s).
+- Permanent tune-ups (`towerStat` modifiers) add to the same per-stat totals as links, auras, and tiles, so they share the caps.
+
 ---
 
 ## 5. Targeting
@@ -125,7 +130,8 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 - A link is **active** when both partner towers are built (any tier) and neither is Jammed. Holding fire does not break links.
 - **Each link type counts once per tower.** A Rivet touching two Thumpers gets Crossfire once.
 - A tower can have several *different* active links (each tower has 2–3 possible partners by design). Their bonuses add under the stacking formula (section 4).
-- Links are **flat**: they don't scale with tier (first pass).
+- Links are **flat**: they don't scale with tier (first pass). The Linked Up protocol scales every link bonus by ×1.5.
+- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire and Sitting Ducks so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
 - **Readability:** active links show as a soft animated tether between the towers, in a color per link. The loadout screen lists which links the chosen four can form. The tower panel lists active links.
 
 ### 6.2 Link table

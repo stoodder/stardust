@@ -123,6 +123,8 @@ describe('link compile errors', () => {
         fx_a: link({ id: 'fx_a', partners: [gun, vs] }),
         fx_b: link({ id: 'fx_b', partners: [vs, sprinkler] }),
       }),
-    ).toEqual(["links.fx_b: 'fx_mortar' already has a vsStatus bonus (from 'fx_a'); a tower takes one"]);
+    ).toEqual([
+      "links.fx_b: 'fx_mortar' already has a vsStatus bonus (from 'fx_a'); a tower takes one",
+    ]);
   });
 });

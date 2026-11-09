@@ -76,11 +76,10 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
        a: { name: 'Overcharge', cost: 300, attack: { damage: 30, ratePerSec: 0.8 } },
        b: { name: 'Rapid',      cost: 300, attack: { ratePerSec: 4 }, effects: [{ status: 'chilled', pct: 0.1, durationSec: 1 }] },
      },
-     links: ['example_link'],                                 // from T202, when the links registry exists
    });
    ```
    Tiers 2 and 3 patch the tier before, and specs patch tier 3 (`compileContent()` resolves them; the merge rule is in `src/content/compile.ts`). A tier may also change `targets` or `defaultPriority`. Numbers come from towers.md. Modifiers stack by the design formula (flat first, then summed percentages; see [architecture.md §2](architecture.md#sim-public-api)).
-4. **Register** it in `src/content/towers/index.ts`.
+4. **Register** it in `src/content/towers/index.ts`. Its synergy links (towers.md §6.2) go in `src/content/links/<link>.ts` via `defineLink({ id, name, partners: [{ tower, bonuses }, { tower, bonuses }] })` (`LinkDef` in `types.ts`), registered in `links/index.ts` (append: registry order is each link's bit).
 5. **New behavior?** If the attack `kind` doesn't exist yet (for example `chain`), add `src/sim/behaviors/<kind>.ts`, add its variant to `AttackDef`, and write `<kind>.test.ts` (damage, cooldown, range edge cases, targeting modes, jammed state, hold fire, determinism).
 6. **New visuals?** Add the projectile or beam handling in `render/views/ProjectileView.ts`, following [art-direction.md §7](../art/art-direction.md#7-vfx).
 7. **Unlock** it through progression content (`content/upgrades/`), per [design/progression.md](../design/progression.md).
@@ -213,7 +212,7 @@ The **par-purchasable** check (every par build's reference profile can be bought
 - **Build steps run cleanly** (checked on every run, beside 12 and 13): no step errors, and the par and alt builds get every step in before the map ends.
 - **Refused, not skipped:** a map that needs an assertion the harness can't make yet fails with a "refused" check that names the task it waits for. That covers non-integrity objectives, `flagVariants`, `fleeing` or `quiet_wave` groups, jammers, any `noCounterBuilds` (assertion 6 needs the full-catalog profile, T204b), and a reference profile with purchases. `HARNESS_GATES` in `src/balance/refusals.ts` names the task that lifts each map-feature refusal. Assertion 9 (Story difficulty) isn't checked in M1, and the report says so.
 
-**Report.** Always printed: per map, a PASS/FAIL verdict, each assertion with its summary and every failing seed, then a leaks-per-wave table for the first seed of each build with its result and credits left. `--report` also writes `reports/balance.json` (every run in full) and `reports/balance.md`: the assertion table; a runs table (build, seed, result, margin, ticks, credits left, late steps, hash, wall time); and, for the first seed of each build, a **per-wave table** (spawned, killed, leaked, integrity lost, the bank as the build phase opened, credits unspent as the wave started, early-call bonus, late steps) and a **per-tower table** (tile, tier, shots, kills). Link and jam uptime read "none" until links (T202) and jammers exist. Exit code 1 on any failure.
+**Report.** Always printed: per map, a PASS/FAIL verdict, each assertion with its summary and every failing seed, then a leaks-per-wave table for the first seed of each build with its result and credits left. `--report` also writes `reports/balance.json` (every run in full) and `reports/balance.md`: the assertion table; a runs table (build, seed, result, margin, ticks, credits left, late steps, hash, wall time); and, for the first seed of each build, a **per-wave table** (spawned, killed, leaked, integrity lost, the bank as the build phase opened, credits unspent as the wave started, early-call bonus, late steps) and a **per-tower table** (tile, tier, shots, kills). Link and jam uptime read "none" until the report reads `stats.linkTicks` (T124) and jammers exist. Exit code 1 on any failure.
 
 Optional **guards** catch known cheese: built-in policies such as `spamCheapest` (the cheapest loadout tower on every pad), listed under `guards` in `builds.ts` with an expectation (`lose`, or `maxMarginPct`).
 

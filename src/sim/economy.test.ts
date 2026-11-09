@@ -11,7 +11,15 @@ import { WALKER, setup, spawn } from './__fixtures__/combat.ts';
 import { fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import { applyDamage } from './combat/damage.ts';
 import type { Command } from './commands.ts';
-import { MISCLICK_GRACE_TICKS, bountyFor, callWaveBonus, sellValue } from './economy.ts';
+import type { Modifier } from './config.ts';
+import {
+  MISCLICK_GRACE_TICKS,
+  bountyFor,
+  callWaveBonus,
+  costFor,
+  payBounty,
+  sellValue,
+} from './economy.ts';
 import type { SimEvent } from './events.ts';
 
 type Ev = SimEvent<FixtureIds>;
@@ -188,5 +196,110 @@ describe('callWaveBonus', () => {
     expect(at('countdown', 1, 1500)).toBe(14);
     expect(at('countdown', 2, 750)).toBe(8);
     expect(at('done', 3)).toBe(0);
+  });
+});
+
+describe('economy modifiers (progression.md § 4.3, § 5, § 9; T202a)', () => {
+  type Mod = Modifier<FixtureIds>;
+  const sim = (modifiers: Mod[]) => fixtureSim({ modifiers });
+
+  it('start credits and core integrity: (set ?? base + Σ flat) × (1 + Σ pct), lowest set wins', () => {
+    const s = sim([
+      { kind: 'economy', stat: 'startCredits', pct: 0.04, source: 'shop:seed1' },
+      { kind: 'economy', stat: 'startCredits', pct: 0.1, source: 'protocol:head_start' },
+      { kind: 'economy', stat: 'coreIntegrity', flat: 2, source: 'shop:core2' },
+      { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+      { kind: 'economy', stat: 'coreIntegrity', set: 5, source: 'veteran:glass' },
+    ]);
+    expect(sim([]).state.credits).toBe(200);
+    expect(s.state.credits).toBe(228); // 200 × 1.14
+    expect(s.state.integrity).toBe(7); // set 5 (lowest) + 2
+  });
+
+  it('refuses a flat or set on bounty or the early-call bonus (pct only)', () => {
+    expect(() => sim([{ kind: 'economy', stat: 'bounty', flat: 1, source: 'test' }])).toThrow(
+      /economy 'bounty' takes pct only/,
+    );
+    expect(() =>
+      sim([{ kind: 'economy', stat: 'earlyCallBonus', set: 10, source: 'test' }]),
+    ).toThrow(/economy 'earlyCallBonus' takes pct only/);
+  });
+
+  it('towerCost: discounts builds and upgrades (rounded); `spec` discounts tier 4 only', () => {
+    const mods: Mod[] = [
+      { kind: 'towerCost', tower: 'fx_gun', tiers: 'all', pct: -0.05, source: 'shop:tune2' },
+      { kind: 'towerCost', tower: '*', tiers: 'spec', pct: -0.25, source: 'protocol:specialist' },
+    ];
+    expect(costFor(mods, 'fx_gun', 100)).toBe(95);
+    expect(costFor(mods, 'fx_gun', 150)).toBe(143); // 142.5 rounds up
+    expect(costFor(mods, 'fx_mortar', 120)).toBe(120);
+    expect(costFor(mods, 'fx_gun', 300, true)).toBe(210); // 300 × 0.7
+    expect(costFor(mods, 'fx_mortar', 375, true)).toBe(281); // 281.25
+    const s = sim(mods);
+    s.enqueue(gun(1, 1));
+    s.enqueue({ type: 'upgrade', towerUid: 1 });
+    s.applyPending();
+    expect(drain(s).flatMap((e) => ('cost' in e ? [e.cost] : []))).toEqual([95, 76]);
+    expect(s.state.credits).toBe(200 - 95 - 76);
+    expect(s.state.towers.items[0]!.invested).toBe(171);
+    expect(s.state.stats.creditsSpent).toBe(171);
+  });
+
+  it('sellRefund: Resale Value raises the 70% (never past 100%); the grace still refunds all', () => {
+    expect(sellValue({ invested: 200, builtTick: 0, firstFiredTick: 5 }, 10, 0.8).value).toBe(160);
+    const s = sim([
+      { kind: 'sellRefund', flat: 0.05, source: 'shop:resale1' },
+      { kind: 'sellRefund', flat: 0.05, source: 'shop:resale2' },
+    ]);
+    expect(s.state.economy.sellRefundPct).toBeCloseTo(0.8, 12);
+    expect(
+      sim([{ kind: 'sellRefund', flat: 0.5, source: 'test' }]).state.economy.sellRefundPct,
+    ).toBe(1);
+    s.enqueue(gun(1, 1));
+    s.applyPending();
+    for (let i = 0; i < MISCLICK_GRACE_TICKS; i++) s.step();
+    drain(s);
+    s.enqueue({ type: 'sell', towerUid: 1 });
+    s.applyPending();
+    expect(drain(s)).toContainEqual({ type: 'TowerSold', uid: 1, refund: 80 });
+  });
+
+  it('bounty: +5% carries its fractions to later kills instead of rounding them away', () => {
+    const { state } = setup();
+    state.economy.bountyPct = 0.05;
+    const paid: number[] = [];
+    for (let i = 0; i < 7; i++) {
+      paid.push(payBounty(state, 3, []));
+    }
+    // 3.15 a kill: the extra credit lands on the 7th (7 × 0.15 = 1.05).
+    expect(paid).toEqual([3, 3, 3, 3, 3, 3, 4]);
+    expect(state.economy.bountyCarry).toBeCloseTo(0.05, 9);
+    expect(payBounty(state, 3, ['youngling'])).toBe(0); // younglings still pay nothing
+  });
+
+  it('bounty through kills: EnemyDied reports what each kill paid', () => {
+    const { state } = setup();
+    state.economy.bountyPct = 0.5;
+    for (let i = 0; i < 2; i++) {
+      applyDamage(state, spawn(state, WALKER), 1000, 'kinetic', { kind: 'tower', uid: 9 });
+    }
+    expect(state.events.flatMap((e) => (e.type === 'EnemyDied' ? [e.bounty] : []))).toEqual([4, 5]); // 4.5 + 4.5
+    expect(state.stats.creditsEarned).toBe(9);
+  });
+
+  it('earlyCallBonus: Early Bird’s +50% scales the bonus before rounding', () => {
+    expect(earlyCallBonus(2, 750, 1500, 0.5)).toBe(11); // 7 × 1.5 = 10.5 → 11
+    const s = sim([{ kind: 'economy', stat: 'earlyCallBonus', pct: 0.5, source: 'p:eb' }]);
+    expect(s.state.economy.earlyCallPct).toBe(0.5);
+    s.enqueue({ type: 'callWave' });
+    s.applyPending();
+    while (s.state.schedule.phase !== 'countdown') s.step();
+    expect(callWaveBonus(s.state, s.map)).toBe(21); // 0.5 × 28 × 1.5, the full countdown
+  });
+
+  it('leakAbsorb: Emergency Bulkhead starts the run with its absorption', () => {
+    expect(
+      sim([{ kind: 'leakAbsorb', flat: 5, source: 'protocol:bulkhead' }]).state.leakAbsorbLeft,
+    ).toBe(5);
   });
 });

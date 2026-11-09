@@ -87,7 +87,8 @@ function tierStats(
   const attack = def.tiers[tier - 1]!.attack; // callers keep 1 ≤ tier ≤ 3
   if (attack === null) return NO_ATTACK;
   const damage = round2(bonusDamage(attack, b));
-  const vs = b.vsStatusMask === 0 ? [] : STATUS_BITS.filter((_, i) => (b.vsStatusMask & (1 << i)) !== 0);
+  const vs =
+    b.vsStatusMask === 0 ? [] : STATUS_BITS.filter((_, i) => (b.vsStatusMask & (1 << i)) !== 0);
   return {
     kind: attack.kind,
     damageType: attack.type,

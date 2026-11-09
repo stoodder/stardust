@@ -1,14 +1,25 @@
 // Sprite registry: every sprite definition, in gallery order.
+import { allyBricks } from './allies/bricks.ts';
+import { enemyBroodHauler } from './enemies/brood_hauler.ts';
 import { enemyChonk } from './enemies/chonk.ts';
+import { enemyHaulerYoung } from './enemies/hauler_young.ts';
 import { enemyNibbler } from './enemies/nibbler.ts';
 import { enemyZoomer } from './enemies/zoomer.ts';
 import { fxExplosion } from './fx/explosion.ts';
+import { fxSackBurst } from './fx/sack_burst.ts';
 import { fxGroundShadow } from './fx/ground_shadow.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxShadow } from './fx/shadow.ts';
+import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
 import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
-import { iconCore, iconCredits, iconLock, iconTellFast } from './icons/glyphs.ts';
+import {
+  iconCore,
+  iconCredits,
+  iconLock,
+  iconTellCarrier,
+  iconTellFast,
+} from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
 import { iconAbilitySuppressingFire } from './icons/suppressing_fire.ts';
@@ -28,6 +39,8 @@ import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
 import { tilePath } from './tiles/path.ts';
 import { tilePad } from './tiles/pad.ts';
+import { tileHighGround } from './tiles/high_ground.ts';
+import { tilePowerNode } from './tiles/power_node.ts';
 import { tileSpawn } from './tiles/spawn.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
@@ -37,6 +50,8 @@ export const SPRITES = [
   tileGrass,
   tilePath,
   tilePad,
+  tileHighGround,
+  tilePowerNode,
   tileSpawn,
   tileApron,
   propCore,
@@ -55,11 +70,15 @@ export const SPRITES = [
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
+  enemyBroodHauler,
+  enemyHaulerYoung,
+  allyBricks,
   projectileRivetTracer,
   projectileThumperShell,
   fxShadow,
   fxGroundShadow,
   fxExplosion,
+  fxSackBurst,
   fxOrbitalReticle,
   iconTowerRivet,
   iconTowerThumper,
@@ -67,12 +86,14 @@ export const SPRITES = [
   iconEnemyNibbler,
   iconEnemyZoomer,
   iconEnemyChonk,
+  iconEnemyBroodHauler,
   iconAbilityOrbitalStrike,
   iconAbilitySuppressingFire,
   iconCredits,
   iconCore,
   iconLock,
   iconTellFast,
+  iconTellCarrier,
 ] as const;
 
 /** Every sprite id. */

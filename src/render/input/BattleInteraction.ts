@@ -4,6 +4,10 @@
 // Rule (T106, T113): selecting a tower, arming a build slot, and aiming a commander ability are
 // exclusive. Each one drops the other two, so the playfield shows one of the tower panel, the build
 // ghost, or the ability reticle.
+// The keyboard tile cursor (T126) lives here too: the tile it's on (or hidden), the last tile it
+// was on (where it reappears), and the line its last arrow moves travelled (input/cursor.ts). It
+// is independent of the three above: it marks a tile, and Enter acts there as a click would.
+import type { CursorAxis } from './cursor.ts';
 
 export interface InteractionSnapshot {
   /** The selected tower's uid, or 0. */
@@ -16,10 +20,19 @@ export interface InteractionSnapshot {
 
 export type AbilitySlot = 1 | 2;
 
+/** The line the cursor's last arrow moves travelled (input/cursor.ts `cursorStep`). */
+export interface CursorNav {
+  readonly axis: CursorAxis;
+  readonly anchor: number;
+}
+
 export class BattleInteraction {
   #selectedTower = 0;
   #armed: string | null;
   #aiming: AbilitySlot | null = null;
+  #cursor = -1;
+  #cursorLast = -1;
+  #cursorNav: CursorNav | null = null;
   readonly #listeners: ((s: InteractionSnapshot) => void)[] = [];
 
   constructor(armed: string | null = null) {
@@ -36,6 +49,38 @@ export class BattleInteraction {
 
   get aiming(): AbilitySlot | null {
     return this.#aiming;
+  }
+
+  /** The keyboard cursor's tile index, or −1 while it's hidden. */
+  get cursor(): number {
+    return this.#cursor;
+  }
+
+  /** The tile the cursor was last on (−1 before it first showed): where it reappears. */
+  get cursorLast(): number {
+    return this.#cursorLast;
+  }
+
+  /** The line the last arrow moves travelled, or null after the cursor appeared or jumped. */
+  get cursorNav(): CursorNav | null {
+    return this.#cursorNav;
+  }
+
+  /** Shows the cursor on tile `index` (an arrow key), with the line it's travelling (or null). */
+  setCursor(index: number, nav: CursorNav | null = null): void {
+    this.#cursorNav = nav;
+    if (index === this.#cursor) return;
+    this.#cursor = index;
+    if (index >= 0) this.#cursorLast = index;
+    this.#notify();
+  }
+
+  /** Hides the cursor (the mouse moved, or Esc with nothing else to cancel); it remembers its tile. */
+  hideCursor(): void {
+    this.#cursorNav = null;
+    if (this.#cursor < 0) return;
+    this.#cursor = -1;
+    this.#notify();
   }
 
   /** Selects a tower by uid (0 clears the selection). Selecting a tower disarms and stops aiming. */

@@ -12,10 +12,21 @@ export interface TileLook {
   readonly frame: string;
 }
 
+/** A ground tile's look: a still frame, or a looping anim (the power node's pulse). */
+export interface GroundLook extends TileLook {
+  readonly anim?: string;
+}
+
 export interface TileDressing {
-  readonly ground: TileLook;
+  readonly ground: GroundLook;
   /** A prop on the tile's center (the core, wreckage, decor), or null. */
   readonly prop: (TileLook & { readonly anim: string | null }) | null;
+  /**
+   * A raised block standing on the tile (high ground): drawn in `world` by its frame anchor at
+   * the tile's top vertex, sorted by the tile center with `highGround` bias (tech-spec § Depth
+   * sorting). Its top face is `ELEVATION_PX` above the ground plane.
+   */
+  readonly block?: TileLook;
 }
 
 /** The grid as GroundView reads it (a CompiledMapDef satisfies it). */
@@ -58,11 +69,13 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
     }
     case 'S':
       return { ground: { sprite: 'tile.spawn', frame: 'v0' }, prop: null };
-    // High ground and power nodes have no art of their own yet: they read as pads (T117).
     case 'o':
-    case '^':
-    case '+':
       return { ground: { sprite: 'tile.pad', frame: 'v0' }, prop: null };
+    case '^':
+      // The block covers its whole footprint; the grass under it only backs its seams.
+      return { ground: grass, prop: null, block: { sprite: 'tile.high_ground', frame: 'v0' } };
+    case '+':
+      return { ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' }, prop: null };
     case 'x':
       return { ground: grass, prop: { sprite: 'prop.rock', frame: 'v0', anim: null } };
     case '.':

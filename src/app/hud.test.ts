@@ -239,6 +239,8 @@ describe('hud view models', () => {
         minRangeTiles: 0,
         splashTiles: 0,
         armorPierce: 0,
+        vsStatuses: [],
+        vsStatusDamage: 8,
         next: null,
       }),
     ).toBe('8 dmg · 2/s · range 3');

@@ -195,12 +195,7 @@ function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {
   }
 }
 
-function towerAt(
-  state: SimState,
-  map: TickContext['map'],
-  col: number,
-  row: number,
-): Tower | null {
+function towerAt(state: SimState, map: TickContext['map'], col: number, row: number): Tower | null {
   if (col < 0 || row < 0 || col >= map.cols || row >= map.rows) return null;
   const slot = state.towerAtTile[row * map.cols + col]!; // in bounds
   if (slot < 0) return null;

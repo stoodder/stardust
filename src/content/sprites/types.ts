@@ -99,6 +99,7 @@ export const SPRITE_CATEGORIES = [
   'prop',
   'tower',
   'enemy',
+  'ally',
   'projectile',
   'fx',
   'icon',

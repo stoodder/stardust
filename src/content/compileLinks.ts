@@ -31,7 +31,10 @@ export function compileLinks<K extends IdSpace>(
     }
     const [a, b] = def.partners;
     if (a.tower === b.tower) ctx.errors.push(`${where}: partners must be two different towers`);
-    const partners = [partner(ctx, a, `${where}.partners[0]`), partner(ctx, b, `${where}.partners[1]`)] as const;
+    const partners = [
+      partner(ctx, a, `${where}.partners[0]`),
+      partner(ctx, b, `${where}.partners[1]`),
+    ] as const;
     for (const p of partners) {
       if (!towerIds.has(p.tower)) {
         ctx.errors.push(`${where}: unknown tower '${p.tower}'`);

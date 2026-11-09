@@ -28,7 +28,7 @@ describe('autoplay', () => {
     expect(() => startAutoplay(a1m1Host(), 'nope')).toThrow(/no build 'nope'.*known: par/);
   });
 
-  it("plays par through the host's fastForward to act1.md's win at 95", () => {
+  it("plays par through the host's fastForward to a win (100 since T202a's links)", () => {
     const host = a1m1Host();
     const exec = startAutoplay(host, 'par');
     let won = 0;
@@ -38,7 +38,7 @@ describe('autoplay', () => {
     }
     expect(host.sim.state.outcome).toBe('won');
     expect(won).toBe(1);
-    expect(host.sim.state.integrity).toBe(19);
+    expect(host.sim.state.integrity).toBe(20);
     expect(host.sim.state.stats.skitterkinKilled).toBeGreaterThan(0);
     expect(exec.steps.every((s) => s.error === null && !s.late)).toBe(true);
   });

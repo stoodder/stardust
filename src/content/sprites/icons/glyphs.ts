@@ -83,3 +83,24 @@ export const iconTellFast = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconTellCarrier = defineSprite({
+  id: 'icon.tell.carrier',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `carrier` tell (art-direction §8): a box with a dot, `gold.3` lit to `gold.4`.
+  legend: { B: 'gold.2', C: 'gold.3', D: 'gold.4' },
+  frames: {
+    icon: [
+      'DDDDDC',
+      'D....B',
+      'D.DD.B',
+      'D.DC.B',
+      'D....B',
+      'CBBBBB',
+    ],
+  },
+});
