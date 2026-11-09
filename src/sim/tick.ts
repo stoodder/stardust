@@ -5,6 +5,7 @@ import type { IdSpace } from '../content/types.ts';
 import type { SimConfig } from './config.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
+import { enemyAbilities } from './enemyAbilities/index.ts';
 import { abilities } from './systems/abilities.ts';
 import { allies } from './systems/allies.ts';
 import { applyCommands } from './systems/applyCommands.ts';
@@ -16,6 +17,7 @@ import { status } from './systems/status.ts';
 import { towers } from './systems/towers.ts';
 import { triggers } from './systems/triggers.ts';
 import { waves } from './systems/waves.ts';
+import { wreckage } from './systems/wreckage.ts';
 
 /** Reusable per-tick scratch space: pure modules have no module-level state (conventions.md). */
 export interface Scratch {
@@ -51,10 +53,12 @@ export type System = (state: SimState, ctx: TickContext) => void;
 
 export type SystemName =
   | 'applyCommands'
+  | 'wreckage'
   | 'waves'
   | 'triggers'
   | 'status'
   | 'links'
+  | 'enemyAbilities'
   | 'abilities'
   | 'movement'
   | 'towers'
@@ -66,10 +70,12 @@ export type SystemName =
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([
     { name: 'applyCommands', run: applyCommands },
+    { name: 'wreckage', run: wreckage },
     { name: 'waves', run: waves },
     { name: 'triggers', run: triggers },
     { name: 'status', run: status },
     { name: 'links', run: links },
+    { name: 'enemyAbilities', run: enemyAbilities },
     { name: 'abilities', run: abilities },
     { name: 'movement', run: movement },
     { name: 'towers', run: towers },

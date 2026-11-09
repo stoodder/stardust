@@ -2,7 +2,7 @@
 
 How meta progression and saves work in code: `src/meta/`, what happens at run end, the story transactions, and the save system. The module layout is in [architecture.md](architecture.md); the rules (currencies, shop, R&D, medals, pacing) are owned by [design/progression.md](../design/progression.md). Story state that lives in the save is described in [story-runtime.md](story-runtime.md).
 
-**Built so far (M2).** The save core (T203a): `KeyValueStore`, `SaveData` v1, migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), and the loadout's rules and presets (T201), under [Meta](#meta-srcmeta). Run end and rewards (T204c), with its story flag step (T206b), under [Run end](#run-end). Purchases at the base (T204d), under [Purchases](#purchases). The story transactions are not built yet ([tasks.md](../../tasks.md)).
+**Built so far.** The save core (T203a): `KeyValueStore`, `SaveData` (now v2, T300b), migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), and the loadout's rules and presets (T201), under [Meta](#meta-srcmeta). Run end and rewards (T204c), with its story flag step (T206b), under [Run end](#run-end). Purchases at the base (T204d), under [Purchases](#purchases). The story transactions are not built yet ([tasks.md](../../tasks.md)).
 
 ---
 
@@ -15,7 +15,7 @@ Meta turns a save into the inputs of a run:
   - **Each grant is one modifier.** Owning rank *n* adds the grants of ranks 1..*n* (`content/upgrades/`), each with `source: '<kind>:<id>'` (`shop:seed_money`, `rnd:orbital_strike_mk2`, `protocol:linked_up`); the sim's stacking formula adds them up. A protocol with `choice: 'tower'` (Specialist) gets its pick in place of the grant's `'*'` tower.
   - **Order:** upgrades in catalog order, then protocols in slot order, then the difficulty's modifiers (`DIFFICULTY_MODIFIERS`; Story's are in [design/progression.md § 9](../design/progression.md#9-difficulty-settings), all sourced `difficulty:story`).
   - **Refused, not ignored:** an unknown upgrade or protocol, a rank outside the item's ranks, a protocol equipped twice, more protocols than slots (`protocolSlots`: 1 plus R&D's slots), or a Specialist with no pick throws.
-  - `saveModifiers(save)` is the game's call (`app/battleSetup.ts`, which leaves out what the sim still refuses, so a save ahead of the sim plays). A save equips no protocols until the picker (M3), so owning one grants nothing yet.
+  - `saveModifiers(save)` is the game's call (`app/battleSetup.ts`, which leaves out what the sim still refuses, so a save ahead of the sim plays). It doesn't read the save's equipped protocols (`loadouts.protocols`) until the picker lands (T308), so owning or equipping one grants nothing yet.
 - **Pools** (`meta/pools.ts`): `towerPool` and `abilityPool` (owned minus revoked; the loadout screen's offer), `protocolPool` (owned), and `protocolSlotCount` (0 before the shop opens, then 1 plus R&D's). Story flags reach runs as `scriptFlags` (`app/battleSetup.ts`, [story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)). Still to come: the map's `lockedAbilities` whose condition holds leave the ability pool, and the companion (or the finale's pick list) joins the pools.
 - **Availability.** Every shop and R&D item has `availableAfter: MapId | null` in `content/upgrades/` ([design/progression.md](../design/progression.md)). An item is stocked (buyable) once that map is completed; until then its pane lists it greyed out as "Arrives after <map>" ([Purchases](#purchases)). One Engineering purchase unlocks **both** tier-4 specializations of a tower, so the save stores tower ids, not spec ids.
 - **The loadout** (`meta/loadout.ts`, T201; the screen is [design/core-loop.md §1](../design/core-loop.md#1-session-loop-between-maps)), pure functions over a `SaveData`:
@@ -92,12 +92,15 @@ Named meta operations, so they're testable and idempotent (each records itself i
 | Format | JSON: `{ v: <schemaVersion>, savedAt, data: SaveData }`. `savedAt` is epoch milliseconds from the caller's clock; meta never reads the clock. Stored text over 512 KB is refused on read and write. |
 | When | After map results, purchases, story choices, and settings changes, plus a one-time hint marked seen (`seenHints`) as a battle starts or the upgrade teach first shows. A map in progress is never saved (checkpoints are in memory). Replaying a map is cheap and matches "failing has no penalty". |
 
-**SaveData v1.** The canonical type is `src/meta/saveData.ts`; the progression fields come from [design/progression.md § 11](../design/progression.md#11-what-persists). In outline:
+**SaveData v2.** The canonical type is `src/meta/saveData.ts`; the progression fields come from [design/progression.md § 11](../design/progression.md#11-what-persists). In outline:
 
 ```ts
 interface SaveData {
-  profile: null;                        // until character creation (T306, D031); see below
-  campaign: { maps: Partial<Record<MapId, { completed: boolean; medals: MedalId[]; bestMeter: number }>> };
+  profile: PlayerProfile | null;        // { name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper' }; null until the intake (T306)
+  campaign: {
+    maps: Partial<Record<MapId, { completed: boolean; medals: MedalId[]; bestMeter: number }>>;
+    seenEnemies: EnemyId[];             // enemy types met (first spawned in a run): the NEW badge and `new_enemy`
+  };
   currencies: { stardust: number; intel: number };
   unlocks: {
     towers: TowerId[];
@@ -105,23 +108,26 @@ interface SaveData {
     revokedTowers: TowerId[];           // A3M2 until the jailbreak
     jailbroken: TowerId[];              // drawn with the jailbroken palette
     abilities: AbilityId[]; revokedAbilities: AbilityId[];
-    protocols: ProtocolId[];            // Field Protocols owned (progression.md § 4.4); equipping is M3
+    protocols: ProtocolId[];            // Field Protocols owned (progression.md § 4.4)
   };
   upgrades: Partial<Record<UpgradeId, number>>;  // owned ranks (≥ 1), including the C2 Zibzab Tune-up
   story: {
     flags: Partial<Record<StoryFlagId, FlagValue>>;  // StoryFlagId = FlagId (content/dialogue/flags.ts)
-    seen: SceneId[];                    // scenes played (skippable on replay)
-    memosRead: MemoId[]; memosDelivered: MemoId[];
+    seen: (SceneId | BarkId)[];         // scenes played (skippable on replay) and once-per-campaign barks
+    memosRead: MemoId[];                // a subset of memosDelivered; unread = delivered − read
+    memosDelivered: MemoId[];           // in delivery order; a memo's gift is granted on delivery
     codex: Record<CodexId, ('original' | 'annotated' | 'corrected')[]>;
-    bricksTagIndex: number;             // next name in Bricks's tag list
+    bricksTagIndex: number;             // next name in Bricks's tag list (campaign.md § 6.3)
     memorialTower: TowerId | null;      // the A3M3 {name} turret's type
     granted: string[];                  // one-time grants already applied (q3_bonus, gifts, crate)
   };
   stats: { pestsProcessed: number; runs: number };
   settings: { difficulty: 'standard' | 'story' };  // per campaign, changeable between maps (progression.md § 9)
-  loadouts: {                           // loadout presets (T201, meta/loadout.ts)
+  loadouts: {                           // the loadout screen (T201, meta/loadout.ts) and the protocol picker (T308)
     last: LoadoutPreset | null;         // the last one locked in on any map
     byMap: Partial<Record<MapId, LoadoutPreset>>;  // the last one locked in on each map
+    protocols: ProtocolId[];            // equipped Field Protocols, save-wide, in slot order
+    protocolPicks: Partial<Record<ProtocolId, TowerId>>;  // Specialist's tower
   };
   seenHints: HintId[];                  // one-time hints already shown (meta/hints.ts; D061)
 }
@@ -129,24 +135,26 @@ type HintId = 'upgrade' | `new:${TowerId}`;  // the upgrade teach; a newly issue
 interface LoadoutPreset { towers: TowerId[]; ability: AbilityId | null }  // 1–4 distinct towers, in build-slot order
 ```
 
-- **The profile** becomes `{ name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper', arrivalReason: 'bonus' | 'family' | 'lettuce' }` with character creation (name rules in [design/core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns)). That is a schema bump with a migration.
+- **The profile** is filled in by character creation (T306; name rules in [design/core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns), `isValidPlayerName` in [`content/dialogue/profile.ts`](../../src/content/dialogue/profile.ts)). It is null for a new save until the intake, and for every save written before v2, so the intake runs on Continue for those. The same intake sets the `arrival_reason` flag, which is that choice's one home, so story conditions read it like any flag.
+- **Equipped protocols** are save-wide, not per preset: protocols are swapped freely between maps ([progression.md § 5](../design/progression.md#5-field-protocols-meta-perks)). The picker is T308's.
 - **A new save** (`createNewSave()`) owns Rivet and Thumper (issued for A1M1) and Orbital Strike. Orbital Strike is the welcome memo's gift; until the memo exists, a new save grants it directly (D031). Everything else is empty or 0.
 - **One-time hints** (`src/meta/hints.ts`, D061): `upgrade` is the upgrade teach, shown once per save (the HUD marks it the first time it shows). `new:<tower>` marks a newly issued tower's first battle: a tower Everglow issues after a map (`TOWER_ACCESS` `how: 'issued'` with an `availableAfter`, so never the starting kit) is new in every battle the save brings it into until one starts (`newlyIssuedTowers`). That battle shows a NEW tag on its build slot and plays its `issued` radio line (the Sprinkler on A1M2), and marks the hint as it starts. `app/save.ts` reads and writes them for the save in play (`hintShown`, `newTowersIn`, `markHintsShown`, `markNewTowersShown`).
-- **v1 is still open until M2 ships** (D032): M2's fields go straight into v1 with no migration (difficulty, owned protocols, the loadout presets, and `seenHints` are in; `seenHints` is the one optional field, read as none when absent, so a save written before it still loads). After M2, fields the design persists that v1 doesn't hold (veteran records, equipped Field Protocols) arrive with their features, each as a schema bump.
+- **Each schema bump** comes with a migration and a fixture ([Versioning and migrations](#versioning-and-migrations)). v1 was M2's save, frozen when M2 shipped; v2 (M3) adds the profile, seen enemies, and equipped protocols. Veteran records arrive with their feature as a later bump.
 
 ### Validation
 
 Saves are untrusted input: a pasted code or a hand-edited localStorage value. `validateSave(x, known = LIVE_KNOWN_IDS)` (`src/meta/validate.ts`) is strict and returns either a freshly built copy (no shared references, nothing outside the schema) or every error (up to 20), each with its field path, such as `data.currencies.intel: expected an integer in [0, 1000000000], got -3`. It checks:
-- **Shape:** every object is a plain object with exactly the schema's keys (missing and unknown keys both fail; the one exception is `seenHints`, which may be absent); `profile` is `null`. A hint is `upgrade` or `new:` plus a known tower id (`hintIds`).
-- **Ids:** towers, abilities, maps, upgrades, protocols, and story flags must exist in the live registries (`LIVE_KNOWN_IDS`; upgrades and protocols come from `content/upgrades/`), and the difficulty is one of `DIFFICULTIES`. Ids with no registry yet (scenes, memos, codex entries, grants, medals, string flag values) must be lowercase snake_case starting with a letter, which also rules out `__proto__`. Lists hold no duplicates.
-- **Numbers:** non-negative safe integers, with bounds no real save approaches (currencies ≤ 10⁹, meter ≤ 10⁶). An upgrade's rank is 1 to that item's own rank count (`KnownIds.upgradeRanks`, from the catalog; never above 10), so a hostile code can't pass validation and then crash every battle start in `metaModifiers`. Flag values are booleans, integers, or ids.
-- **Cross-field rules:** `specs`, `revokedTowers`, and `jailbroken` are subsets of `towers`; `revokedAbilities` of `abilities`; a map has at most 3 medals, and any medal means the map is `completed`. A loadout preset holds 1–4 distinct owned towers and an owned ability (or null), keyed by a known map. A revoked one is allowed, because a preset can predate the revocation, and `meta/loadout.ts` drops it when it reads the preset.
+- **Shape:** every object is a plain object with exactly the schema's keys (missing and unknown keys both fail). `profile` is null or a valid name (`isValidPlayerName`), a pronoun id, and a callsign id. A hint is `upgrade` or `new:` plus a known tower id (`hintIds`).
+- **Ids:** towers, enemies, abilities, maps, upgrades, protocols, and story flags must exist in the live registries (`LIVE_KNOWN_IDS`; upgrades and protocols come from `content/upgrades/`), and the difficulty is one of `DIFFICULTIES`. Scenes, memos, codex entries, grants, and medals are checked by shape only (lowercase snake_case starting with a letter, which also rules out `__proto__`), so a renamed or not-yet-registered content id never makes a save unreadable. Lists hold no duplicates.
+- **Flag values** (T218): each saved flag holds one of that flag's declared `values` (`KnownIds.flagValues`, from `FLAGS`), so `door_choice` is `convoy` or `warren` and a boolean flag is a boolean.
+- **Numbers:** non-negative safe integers, with bounds no real save approaches (currencies ≤ 10⁹, meter ≤ 10⁶). An upgrade's rank is 1 to that item's own rank count (`KnownIds.upgradeRanks`, from the catalog; never above 10), so a hostile code can't pass validation and then crash every battle start in `metaModifiers`.
+- **Cross-field rules:** `specs`, `revokedTowers`, and `jailbroken` are subsets of `towers`; `revokedAbilities` of `abilities`; `memosRead` of `memosDelivered`; a map has at most 3 medals, and any medal means the map is `completed`. Equipped protocols follow the rules `metaModifiers` refuses (so, like ranks, a valid save never fails a battle start): owned, distinct, no more than `protocolSlots` over the save's upgrades, and a pick (an owned tower) for exactly the equipped protocols that take one. A loadout preset holds 1–4 distinct owned towers and an owned ability (or null), keyed by a known map. A revoked one is allowed, because a preset can predate the revocation, and `meta/loadout.ts` drops it when it reads the preset.
 
 ### Versioning and migrations
 
-- `SAVE_VERSION` is an integer (now **1**). `src/meta/migrations.ts` exports `migrations: Record<number, (old: unknown) => unknown>`, where `migrations[n]` upgrades the `data` of version `n` to `n + 1`. A migration reshapes what it recognizes and passes anything else through for validation to reject.
-- Loading parses the JSON, applies migrations in sequence to the current version, then validates. A version above `SAVE_VERSION` is `too_new` (a newer build wrote it). **Version 0** is the pre-release draft of the format (v1 without `stats`, `settings`, `loadouts`, and `unlocks.protocols`); no build wrote it, and it exists so the framework is tested from the start.
-- Migrations are never deleted or edited after release. Each schema bump adds a fixture `src/meta/__fixtures__/save.v<n>.json`, and `migrations.test.ts` checks there is one fixture per version, then migrates every fixture to the current version and validates it.
+- `SAVE_VERSION` is an integer (now **2**). `src/meta/migrations.ts` exports `migrations: Record<number, (old: unknown) => unknown>`, where `migrations[n]` upgrades the `data` of version `n` to `n + 1`. A migration reshapes what it recognizes and passes anything else through for validation to reject.
+- Loading parses the JSON, applies migrations in sequence to the current version, then validates. A version above `SAVE_VERSION` is `too_new` (a newer build wrote it). **Version 0** is the pre-release draft of the format (v1 without `stats`, `settings`, `loadouts`, and `unlocks.protocols`); no build wrote it, and it exists so the framework is tested from the start. **v1 → v2** keeps an M2 save whole and adds M3's fields: the profile stays null (the intake runs on Continue), `campaign.seenEnemies` is seeded with the enemies of each M2 map the save has a record for (a table frozen in the migration, so A1M3 never badges a Nibbler as NEW), `loadouts.protocols` and `protocolPicks` start empty, and a missing `seenHints` becomes `[]`.
+- Migrations are never deleted or edited after release. Each schema bump adds a fixture `src/meta/__fixtures__/save.v<n>.json`, and `migrations.test.ts` checks there is one fixture per version, then migrates every fixture to the current version and validates it. Codes exported by shipped builds are kept in `__fixtures__/codes.ts` (`SD1_CODE`, from M2) and must import into every later build.
 
 ### Loading and writing slots
 
@@ -158,20 +166,23 @@ Saves are untrusted input: a pasted code or a hand-edited localStorage value. `v
 ### Export and import codes
 
 `src/meta/codec.ts`. A code is `SD<v>-<body>-<checksum>`:
-- `<v>` is the save's schema version. `<body>` is `base64url(deflate-raw(envelope JSON))`, unpadded (RFC 4648 §5). `<checksum>` is 4 lowercase hex digits: the low 16 bits of `fnv1a32` (`src/shared/hash.ts`) over everything before the last `-`. Example: `SD1-TVA9T8QwDP0v…-a3f9`. A new save is about 0.5 KB of JSON and about 400 characters as a code, which pastes fine.
+- `<v>` is the save's schema version. `<body>` is `base64url(deflate-raw(envelope JSON))`, unpadded (RFC 4648 §5). `<checksum>` is 4 lowercase hex digits: the low 16 bits of `fnv1a32` (`src/shared/hash.ts`) over everything before the last `-`. Example: `SD2-TVA9T8QwDP0v…-a3f9`. An older version's code imports through the migrations. A new save is about 0.5 KB of JSON and about 400 characters as a code, which pastes fine.
 - **Export** (`exportCode(data, savedAt)`) validates the save first and throws on an invalid one (a caller bug, not player input).
 - **Import** (`importCode(text)`) never throws on bad input. In order: cap the pasted text at **64 KB**; strip whitespace (pasting adds line breaks); check the shape (`format`), the checksum (`checksum`), and that the version isn't newer than this build (`too_new`), all before decompressing; decompress while counting bytes and stop at **512 KB** (`too_large`, which stops decompression bombs); decode strict UTF-8 (`corrupt` on failure, as for a body that doesn't inflate); parse (`json`); check the prefix version matches the envelope's `v` (`format`); then migrate and validate (`invalid`, with the schema errors). The app confirms with the player before writing the result to a slot.
 - `CompressionStream` and `TextEncoder` exist in every target browser and in Node 22, so Vitest runs the real codec. `meta/` is type-checked with the pure modules (no DOM lib), so `src/meta/platform.ts` looks the primitives up behind narrow structural types instead of declaring them globally.
 
 ### Dev saves
 
-`src/meta/__fixtures__/devSaves.ts` exports `DEV_SAVES`, which the test-only `?save=<id>` hook loads (D031) so smoke tests and the owner can reach gated systems. Each entry has a `description` and a `build()` that returns a fresh `SaveData` built from the live registries, so it stays valid as content lands; `devSaves.test.ts` validates every one and round-trips it through a code.
+`src/meta/__fixtures__/devSaves.ts` exports `DEV_SAVES`, which the test-only `?save=<id>` hook loads (D031) so smoke tests and the owner can reach gated systems. Each entry has a `description` and a `build()` that returns a fresh `SaveData` built from the live registries, so it stays valid as content lands: a map, tower, memo, or codex entry that isn't registered yet is left out (no record, no payout) until it is; `devSaves.test.ts` validates every one and round-trips it through a code.
 
 | Id | Holds |
 |---|---|
 | `fresh` | `createNewSave()` |
 | `after_a1m1` | A1M1 won with all three medals: 3 Intel, 0 Stardust; the Sprinkler issued for A1M2 |
 | `mid_m2` | `after_a1m1` with Orbital Strike Mk II bought (2 of its 3 Intel), plus the second campaign map won (Victory only) and its Stardust and Intel banked, once that map is in `CAMPAIGN` |
+| `after_a1m3` | Act I through A1M3 on the reference profile ([campaign.md § 4.9](../story/campaign.md#49-shop-stock-and-the-reference-profile)): the intake done (`Dev Tech`, they/them, Sprout, `arrival_reason = lettuce`), each map won with Victory and its payout banked, the issued towers plus the Zapcoil sample, Act I's memos delivered (all but the newest read), Bricks's tag index 1 |
+| `after_a1m4` | `after_a1m3`, then Head Start bought and equipped, Rivet and Thumper tune 1, and A1M4 won |
+| `after_a1m5` | `after_a1m4`, then Thumper specs, Reinforced Core 1, Sprinkler tune 1, and A1M5 won with the Quiet Wave spared (`spared_quiet_wave = true`, so the stamp and the memo paragraph have a save to show on); tag index 2 |
 | `all_unlocked` | Every campaign map won with every medal; every registered tower, spec unlock, ability, and protocol; every upgrade at its top rank; 99,999 Stardust and 999 Intel; `devUnlocks` opens every system ([Progress and gating](#progress-and-gating)) |
 
 Medal ids are `victory`, `perfect_core`, and the map's Challenge id (`mapMedalIds` in `sim/medals.ts`); the dev saves write `challenge` for a map whose data has no Challenge yet (A1M1 until T125).

@@ -158,7 +158,11 @@ export function withPreset(save: SaveData, mapId: MapId, pick: LoadoutPick): Sav
   const preset = (): LoadoutPreset => ({ towers: [...pick.towers], ability: pick.ability });
   return {
     ...save,
-    loadouts: { last: preset(), byMap: { ...save.loadouts.byMap, [mapId]: preset() } },
+    loadouts: {
+      ...save.loadouts,
+      last: preset(),
+      byMap: { ...save.loadouts.byMap, [mapId]: preset() },
+    },
   };
 }
 

@@ -7,8 +7,9 @@
 //   frozen blank, so a mutable object or array in a blank would be shared by every entity.
 // - The task that implements a kind's behavior adds the fields it needs here (T103 movement,
 //   T105a combat, T105b economy, T113 abilities). T200 added the M2 seams ahead of their tasks
-//   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a);
-//   until then they keep their blank values.
+//   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a),
+//   and T300a the M3 ones (enemy abilities and bosses T304c); until then they keep their blank
+//   values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -150,6 +151,22 @@ export interface Enemy extends PoolEntity {
   markPct: number;
   markTicks: number;
   spawnTick: number;
+  // Enemy abilities (sim/enemyAbilities/; T300a seams, run by T304c). Blank until then.
+  /** Ticks until its next ability step (a dig, a surfacing, a sneeze); 0: nothing pending. */
+  abilityTicks: number;
+  /** Burrowing: underground, so untargetable but for burrow answers (enemies.md § 2.6). */
+  burrowed: boolean;
+  /** Huddle: the uid of the leader whose pace it matches this tick (0 = none). */
+  huddleUid: number;
+  /** A boss's current phase (1-based; `def.boss.phases[bossPhase − 1]`); 0 for a non-boss. */
+  bossPhase: number;
+  /** A boss's phase-change invulnerability left, in ticks (at most 2 s; enemies.md § 6). */
+  invulnerableTicks: number;
+  /**
+   * A boss ending (`driveOff`, `retreat`): untargetable, heading off the map by the nearest edge;
+   * it never leaks (enemies.md § 6.1).
+   */
+  leaving: boolean;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -176,6 +193,12 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   markPct: 0,
   markTicks: 0,
   spawnTick: 0,
+  abilityTicks: 0,
+  burrowed: false,
+  huddleUid: 0,
+  bossPhase: 0,
+  invulnerableTicks: 0,
+  leaving: false,
 });
 
 /**

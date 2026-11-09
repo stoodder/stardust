@@ -129,7 +129,7 @@ test('meta: export a code from Settings, import it on the Title into slot 2', as
   expect(await page.evaluate(() => globalThis.__sd!.save()?.settings.difficulty)).toBe('story');
   await page.getByRole('button', { name: 'Export code' }).click();
   const field = page.getByRole('textbox', { name: 'Shift code' });
-  await expect(field).toHaveValue(/^SD1-[A-Za-z0-9_-]+-[0-9a-f]{4}$/);
+  await expect(field).toHaveValue(/^SD2-[A-Za-z0-9_-]+-[0-9a-f]{4}$/);
   const code = await field.inputValue();
   await shot(page, 'meta', 7, 'settings-export');
   // Back returns to the Shift board it was opened from.

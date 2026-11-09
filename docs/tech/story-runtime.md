@@ -6,7 +6,7 @@ The authoring format and voice rules are owned by [story/style-guide.md](../stor
 
 **Not in M1.** M1 uses only the `unlockTowerClass` action (compiled from `towerUnlockWave`); A1M1's briefing is static text ([architecture.md, M1 subset](architecture.md#architecture)).
 
-**Built so far (M2).** The flag registry, its run-end rules, and `scriptFlags` from the save ([§ Flags](#flags), T206b). The dialogue runner, text substitution, barks, and the other story systems below are M3+.
+**Built so far.** The flag registry, its run-end rules, and `scriptFlags` from the save ([§ Flags](#flags), T206b). The M3 seams (T300b): the dialogue, codex, and memo data shapes and their registries (all still empty), the speaker registry, the profile data, and `src/story/` stubs for the runner, conditions, text, barks, the codex, and the Inbox, which throw "not implemented" and name the task that builds each (T302a; T303 for the codex and the Inbox).
 
 ---
 
@@ -14,39 +14,7 @@ The authoring format and voice rules are owned by [story/style-guide.md](../stor
 
 Story moments that change play run **inside the sim** as map data, so headless runs, replays, and the balance harness see exactly what a player sees ([design/maps.md §5.3](../design/maps.md#53-map-scripts)). The `triggers` system ([architecture.md § Entity model](architecture.md#entity-model-typed-pools-not-an-ecs)) evaluates them. Dialogue stays in `story/`; the sim only emits `ScriptCue` ids.
 
-The exact types are `ScriptedEvent`, `ScriptTrigger`, and `ScriptAction` in [`src/content/types.ts`](../../src/content/types.ts); this sketch annotates what each trigger and action is for. An event fires at most once per run unless it sets `once: false`.
-
-```ts
-interface ScriptedEvent { id: string; on: ScriptTrigger; when?: ConditionDef; actions: ScriptAction[]; once?: boolean }
-type ScriptTrigger =
-  | { wave: number; phase: 'countdown' | 'start' | 'cleared' | { afterSec: number } }  // 'countdown': that wave's build-phase countdown begins (W1's is the pre-game build phase)
-  | { bossHpPct: number; boss?: EnemyId }        // crossing downward
-  | { bossPhase: number }
-  | { refugeesRemaining: number }                 // Escort / Holdout
-  | { restProgressPct: number }                   // finale
-  | { objectiveCompleted: string }
-  | { interacted: MarkerId }                      // a clickable world object, by click or by fallback
-  | { forcedInputResolved: string }
-  | { tick: number };
-type ScriptAction =
-  | { cue: string }                                               // story binds it to a scene or bark
-  | { unlockTowerClass: TowerId }                                 // the build button appears (towerUnlockWave compiles to this)
-  | { revokeTowerClass: { select: 'mostInvested'; faction?: TowerFaction }; refundPct: 100 }
-  | { restoreTowerClass: 'lastRevoked' }
-  | { revokeAbility: AbilityId }                                  // A3M2 Orbital Strike; finale under C4 Keep: Time Dilation for Phase 2
-  | { setObjective: ObjectiveKind; meterLabel?: MeterLabel }      // the A2M5 pivot
-  | { bossEnd: 'driveOff' | 'retreat' | 'pivot' }
-  | { standDown: Faction }                                        // pivot: remove that faction's hostiles, no leak
-  | { spawnAllies: AllyGroupId } | { spawnWave: WaveGroupId }
-  | { setClickable: { marker: MarkerId; on: boolean; fallback?: ScriptTrigger } }  // A2M3: { wave: 6, phase: 'cleared' }
-  | { forceInput: { id: string } }                                // freezes play and locks commands until scriptInput
-  | { setModifier: 'quillLockout' | 'previewHidden'; on: boolean }
-  | { startTimer: TimerId } | { setTimerRate: { timer: TimerId; pct: number } } | { setPhase: number }  // finale phases
-  | { setLighting: LightingPresetId }                             // sets darkness in the sim; render reads it
-  | { checkpoint: true }                                          // finale Phase 2 start (architecture.md § Checkpoints)
-  | { grantCredits: number } | { openTile: MarkerId; to: TileChar }  // openTile targets a predefined decor marker
-  | { endMap: 'won' | 'completed' };                              // Holdout ends as 'completed'
-```
+The types are `ScriptedEvent`, `ScriptTrigger`, and `ScriptAction` in [`src/content/types.ts`](../../src/content/types.ts), each trigger and action documented there. An event fires at most once per run unless it sets `once: false`. A trigger `{ wave, phase: 'countdown' }` fires as that wave's build-phase countdown begins (W1's is the pre-game build phase). An action `{ cue }` is a scene or bark id that story plays; `revokeAbility` serves A3M2's Orbital Strike and, under C4 Keep, the finale's Time Dilation for Phase 2; `setObjective` is the A2M5 pivot; `setLighting` sets darkness in the sim for render to read; `checkpoint` marks the finale's Phase 2 start ([architecture.md § Checkpoints](architecture.md#checkpoints)); `openTile` targets a predefined decor marker; and `endMap` ends a Holdout as `'completed'`. Revocation, forced input, and clickable objects are described below.
 
 `towerUnlockWave: { [towerId]: N }` in map data compiles to `{ on: { wave: N, phase: 'countdown' }, actions: [{ unlockTowerClass: towerId }] }` (A1M1: `{ thumper: 3 }`).
 
@@ -63,27 +31,21 @@ type ScriptAction =
 
 ## Dialogue runner
 
-A pure state machine over dialogue data: `start(sceneId) → cursor`, `advance(cursor, choiceIndex?)`. Node kinds:
+A pure state machine over dialogue data (`src/story/runner.ts`): `start(scene, ctx) → cursor`, `advance(cursor, ctx, choiceIndex?)`. A cursor rests on a line, a choice, or the end; `branch` and `set` nodes run on the way, and the effects (flags set, the callsign) ride on the cursor for meta to save.
 
-```ts
-type DialogueNode =
-  | { kind: 'line'; speaker: SpeakerId; expression?: Expression; text: string;
-      durationSec?: number }                 // required when text is '' (a silence line)
-  | { kind: 'choice'; options: { text: string; tone: 'earnest' | 'wry' | 'quiet'; set?: FlagSet[];
-      goto?: string; remember?: SpeakerId }[] }   // remember → "{Speaker} will remember that." (C3, C4 only)
-  | { kind: 'branch'; cond: Condition; then: string; else?: string }
-  | { kind: 'set'; flag: FlagId; value: FlagValue } | { kind: 'set'; callsign: Callsign }
-  | { kind: 'end' };
-```
-
-- **Speakers** are the ids in [style-guide §5.1](../story/style-guide.md#51-speaker-ids), declared in `content/dialogue/speakers.ts` with their portrait set (or `none` for `pa`, `kfa`, `hollow`, `narrator`, `system`) and the text style for portrait-less speakers (`form` for `kfa`, `distorted` for `hollow`, `caption` for `narrator`).
-- **Expressions:** the five base expressions plus per-speaker extras (`quill.policy`, `pebble.singing`); the portrait list is in [art-direction.md § Portrait roster](../art/art-direction.md#portrait-roster). A line naming no expression uses `neutral`.
-- **Portrait variants** are chosen by rules, not by lines: `speakers.ts` lists, per speaker, `{ variant, when: Condition }` in priority order (for example `vesthara`: `dawn` in the finale's Phase 3, `touched_deep` in Act III, `touched` from A2M5; `bricks`: `pebble` from A2M3, `dark` when absent; `quill`: `party_hat` on A1M5, `purge` under `quill_choice = purge`).
+**The data shapes** are [`src/content/dialogue/types.ts`](../../src/content/dialogue/types.ts), one-to-one with [style-guide §5](../story/style-guide.md#5-dialogue-format-conventions): `Scene` (an id and its nodes, with an optional `when`), the node kinds `line` (speaker, expression, text, `durationSec`, an optional reply `button`), `choice` (2–3 options, each with `text`, `tone`, the flags it `set`s, `goto`, and `remember`), `branch` (`cond`, `then`, `else`), `set` (a flag and one of its declared values, or the callsign), and `end`; `Bark`, `BarkTrigger`, `Condition`, and the token and glyph ids. The types make a bad speaker, a bad expression for a speaker, or a flag value outside its declaration a compile error.
+- **Labels.** Any node may carry a `label`; `goto`, `then`, and `else` name a label in the same scene. A choice option without `goto`, and a branch without `else`, continue with the next node.
+- **Files.** Each map's scenes and map-scoped barks are `content/dialogue/a<act>/<map_id>/scenes.ts` and `barks.ts`, listed once in `content/dialogue/index.ts` (`MAP_DIALOGUE`, with `SCENES` and `BARKS` by id). Barks that can fire on several maps go in `content/dialogue/barks/<trigger>.ts` (`SHARED_BARKS`), each gated by its `when`.
+- **What plays a scene** is its id's slot (`<map_id>_<slot>`, [style-guide §5.3](../story/style-guide.md#53-ids)): `brief` (the briefing), `w<NN>` (the radio as wave NN's countdown begins), `cue_<name>` (a map script `{ cue }` with the scene's id), `debrief` (after Results), `scene_<name>` (a full-screen scene the flow or a cue plays), and `base_<name>` (a base conversation topic, such as A1M3's early ask).
+- **Speakers** are the ids in [style-guide §5.1](../story/style-guide.md#51-speaker-ids), registered in [`content/dialogue/speakers.ts`](../../src/content/dialogue/speakers.ts) with the name plate, its color, the typewriter's blip (`blip.<speaker>`, authored by audio), the frame (`portrait`; `icon` for Gerald; and for portrait-less speakers their text style: `pa`, `form` for `kfa`, `distorted` for `hollow`, `caption` for `narrator`, `ui` for `system`), and the portrait sprite.
+- **Portraits** are one sprite per speaker, `portrait.<speaker>` (`src/content/sprites/portraits/`). Its frames are `[<variant>.]<expression>[_talk]` (`neutral`, `neutral_talk`, `party_hat.policy`), with QUILL's `policy_flash` for the tell; the portrait list is in [art-direction.md § Portrait roster](../art/art-direction.md#portrait-roster).
+- **Expressions:** the five base expressions plus per-speaker extras (`EXPRESSION_EXTRAS`: `quill.policy`, `pebble.singing`, each with the base expression art falls back to). A line naming no expression uses `neutral`; speakers with no portrait (and Gerald) take none.
+- **Portrait variants** are chosen by rules, not by lines: `speakers.ts` lists, per speaker, `{ variant, when: Condition }` in priority order, and the first that holds wins (for example `vesthara`: `touched_deep` in Act III, `touched` from A2M5; `bricks`: `pebble` from A2M3; `quill`: `purge` under `quill_choice = purge`, `party_hat` on A1M5). The finale's `dawn` and Bricks's `dark` (the derived bake, for an absent speaker) are not rules.
 - **Silence:** a `line` with `text: ''` shows the speaker's frame (dark for Bricks after A3M3) for `durationSec`, with no text and no typing sound.
 
 ## Conditions
 
-Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast: MapId }`, `{ mapIs: MapId }`, `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`. Map order comes from `content/campaign.ts`.
+Story conditions are data, not strings (`Condition` in [`content/dialogue/types.ts`](../../src/content/dialogue/types.ts), evaluated by `story/conditions.ts` over a `StoryContext`: the flags, the map the story is about, the lifetime counter, and the run that just ended): `{ flag, eq }` (the flag's value, or its default while unset), `{ act }`, `{ mapAtLeast }`, `{ mapIs }` (campaign map ids, built or not; order from `content/campaign.ts`), `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`, and two that read the run that just ended, so they hold only in a debrief, on Results, and in run-end barks: `{ outcome: 'won' | 'lost' }` and `{ thisRun: <boolean flag>, eq }` (the value that flag's run-end rule gives over this run, set or not; C1's lines read *this run*, its payoffs the flag).
 
 **In-map conditions** (the Challenge medal, optional objectives, and script `when` guards) use the sim's `ConditionDef` ([`src/content/types.ts`](../../src/content/types.ts)), evaluated by `src/sim/conditions.ts` over run state. Its atoms, by when they are judged ([design/progression.md §3](../design/progression.md#3-medals-and-intel), "Evaluation"):
 
@@ -104,8 +66,8 @@ A condition **settles** once the rest of the run can't change it (`settledCondit
 Flags are declared in `content/dialogue/flags.ts` (`FLAGS`): each with its `values` (a boolean flag lists `true` and `false`; a choice lists its ids, such as `'convoy'`, `'warren'`), a `default`, an optional `script: true`, and a one-line description. `FlagId` and `ScriptFlagId` (`content/types.ts`) are derived from it, so a typo'd flag is a compile error, and a map's `flagVariants` may list only that flag's values. The registry is exactly the canonical flag table, [story/campaign.md](../story/campaign.md) §6.2, in its order and with its values (`tools/flagLedger.test.ts` checks it; the bible's table is a summary).
 
 - **Defaults** are what story reads while a flag is unset (`flagValue` in `src/story/flags.ts`): `false` for a boolean (not done yet), `null` for a choice not made yet. The sim never sees a default ([§ Map scripts](#map-scripts-story-driven-sim-changes)).
-- **Who sets them:** `choice`/`set` nodes, UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or **run-end rules**.
-- **Saves** hold `story.flags` keyed by `FlagId` ([meta-runtime.md § Save system](meta-runtime.md#save-system)).
+- **Who sets them:** the intake (`arrival_reason`, T306), `choice`/`set` nodes, UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or **run-end rules**.
+- **Saves** hold `story.flags` keyed by `FlagId`, each value one of the flag's declared `values` ([meta-runtime.md § Validation](meta-runtime.md#validation)).
 
 **Run-end rules** (`FLAG_RULES` in `content/dialogue/flags.ts`) derive a boolean flag from the finished run's `state.stats` when a map ends:
 
@@ -128,8 +90,8 @@ Flags are declared in `content/dialogue/flags.ts` (`FLAGS`): each with its `valu
 | Token | Resolves to |
 |---|---|
 | `{name}` | `profile.name` |
-| `{callsign}` | `profile.callsign` (Sprout, Thorn, Waykeeper) |
-| `{they}` `{them}` `{their}` `{theirs}` `{themself}` and capitalized `{They}` `{Them}` `{Their}` `{Theirs}` `{Themself}` | The forms from `profile.pronouns` (a `PronounSet`: `she`, `he`, or `they`, each with all five forms and its `agreement`) |
+| `{callsign}` | `profile.callsign` (Sprout, Thorn, Waykeeper; `CALLSIGNS`) |
+| `{they}` `{them}` `{their}` `{theirs}` `{themself}` and capitalized `{They}` `{Them}` `{Their}` `{Theirs}` `{Themself}` | The forms from `profile.pronouns` (`PRONOUN_SETS` in [`content/dialogue/profile.ts`](../../src/content/dialogue/profile.ts): `she`, `he`, or `they`, each with all five forms and its `agreement`) |
 | `{v:<plural>\|<singular>}` | Verb agreement: the first form when `agreement` is `plural` (they/them), the second when `singular` (she, he). Any pair works: `{v:are\|is}`, `{v:were\|was}`, `{v:have\|has}` |
 | `{pests_processed}` | The lifetime counter with thousands separators; inside a map it is the save value plus the run's `skitterkinKilled` so far |
 | `{evacuated}` | The current map's meter count (Evacuated, Sheltered, or Voices) |
@@ -151,6 +113,8 @@ Emphasis `*word*` (at most one per line) renders italic; parentheticals such as 
 
 Scenes and barks bind to triggers: map script cues (`ScriptCue`), bark-matrix events (the trigger ids and their exact conditions are owned by [design/core-loop.md §6.3](../design/core-loop.md#63-barks); each maps to a sim event or a host event), and menu events (entering the base, the shop, the star map, the Inbox). `story/barks.ts` picks barks by the style guide's priority (script cue → boss → first-time trigger → repeat), spacing (one per 6 s of sim time unless scripted), presence (QUILL and the companion only; QUILL is absent when `quillOffline`), and no-repeat pools, using its own seeded RNG. A bark slot assigned to an absent speaker plays that speaker's authored silence line.
 
+`BarkTrigger` ([`content/dialogue/types.ts`](../../src/content/dialogue/types.ts)) carries core-loop's trigger ids with their parameters (`enemy_killed`, `enemy_leaked`, and `new_enemy` name an enemy; `tower_built` and `tower_sold` may name a tower, and `tower_sold` whether it was tagged; `wave_start` and `wave_cleared` may name a wave or the boss wave; `boss_phase` a phase), plus the Act I radio's event barks that core-loop's table doesn't list yet: `bank_nudge` (D059), `enemy_leaked` (D059), `neutral_hit` (Gerald, A1M3), `tower_issued` (D061), and `menu` (entering a base screen). A bark may play `once` per map or per campaign; the save keeps once-per-campaign barks in `story.seen`.
+
 **Optional bark button.** A bark (or radio line) may carry `button: { label: string; set?: FlagSet[]; reply?: SceneId }`, for example QUILL's Act I knock-knock joke with a "Who's there?" button. The UI rule is owned by [design/core-loop.md §6](../design/core-loop.md#6-story-facing-systems); in code:
 - The button shows in the comms panel for the bark's display time and then goes away. It never pauses, never blocks input, and never changes the sim, so it isn't a `Command` and isn't in the command log.
 - Pressing it emits the host event `BarkButtonPressed { barkId }`; story applies `set` and plays `reply`. Not pressing it is a valid outcome and needs no default.
@@ -158,14 +122,14 @@ Scenes and barks bind to triggers: map script cues (`ScriptCue`), bark-matrix ev
 
 ## Story state
 
-Flags, seen scenes, read memos, unlocked codex versions, `bricksTagIndex`, and `memorialTower` live in the save ([meta-runtime.md § Save system](meta-runtime.md#save-system)). Choices (D001 #3) are just flags; their payoffs are read by content (tower gifts, allies, map dressing, bark pools, epilogue cards) and by map scripts through `scriptFlags`.
+The profile, flags, seen scenes (and once-per-campaign barks), delivered and read memos, unlocked codex versions, seen enemies, `bricksTagIndex`, and `memorialTower` live in the save ([meta-runtime.md § Save system](meta-runtime.md#save-system)). Choices (D001 #3) are just flags; their payoffs are read by content (tower gifts, allies, map dressing, bark pools, epilogue cards) and by map scripts through `scriptFlags`.
 
 ## Other story systems
 
 All pure functions over content and save state:
 - `story/counter.ts`: the results line per act, and the finale countdown display `round(N × (1 − restPoints / restTarget))` from the sim's stats ([design/maps.md §5.5](../design/maps.md#55-the-leaving-song-finale-rules)).
-- `story/codex.ts`: which versions of each entry are unlocked, the *Pest Field Guide* / *Field Journal* title, and side-by-side mode from A3M1.
-- `story/inbox.ts`: which memos are delivered after a map (one condition per memo), and gifts attached to them.
+- `story/codex.ts`: which versions of each entry are unlocked, the *Pest Field Guide* / *Field Journal* title, and side-by-side mode from A3M1. The entries are `content/codex/` (`CodexEntryDef`: an id `codex_<entry>`, a title, a kind, an optional subject whose first encounter unlocks `original`, and each version's text and `when`).
+- `story/inbox.ts`: which memos are delivered on entering the base (each memo's `afterMap` won, or null for the intake's `memo_a1_00`, and its `when`), and the gifts attached to them. The memos are `content/memos/` (`MemoDef`: From, To, Subject, body, conditional `extra` paragraphs, sign-off, small print, `afterMap`, `when`, and `gift`).
 - `story/epilogue.ts`: for each card slot in order, the first `EpilogueCard { id, slot, when: Condition, text }` whose condition matches.
 - `story/presentation.ts`: resolves the act dials plus map overrides (loading tip pool, billboard state, Tidybots on or off, jingle variant, UI theme, held medal toasts).
 - `story/tags.ts`: Bricks's name-tag choice (which tower, which name) from sim events, starting at A1M2; cosmetic, so it lives outside the sim.

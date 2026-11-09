@@ -33,6 +33,30 @@ describe('dev saves (the ?save= fixtures)', () => {
     for (const map of CAMPAIGN.slice(0, 2)) expect(save.campaign.maps[map]?.completed).toBe(true);
   });
 
+  it.each(['after_a1m3', 'after_a1m4', 'after_a1m5'] as const)(
+    '%s has been through the intake and wins only registered Act I maps',
+    (id) => {
+      const save = DEV_SAVES[id].build();
+      expect(save.profile).toEqual({ name: 'Dev Tech', pronouns: 'they', callsign: 'sprout' });
+      expect(save.story.flags.arrival_reason).toBe('lettuce');
+      for (const map of Object.keys(save.campaign.maps)) expect(CAMPAIGN).toContain(map);
+      expect(save.campaign.seenEnemies).toEqual(expect.arrayContaining(['nibbler', 'zoomer']));
+      expect(save.story.memosRead.every((m) => save.story.memosDelivered.includes(m))).toBe(true);
+    },
+  );
+
+  it('the Act I saves follow the reference profile (campaign.md § 4.9)', () => {
+    expect(DEV_SAVES.after_a1m3.build().loadouts.protocols).toEqual([]);
+    const m4 = DEV_SAVES.after_a1m4.build();
+    expect(m4.loadouts.protocols).toEqual(['head_start']);
+    expect(m4.upgrades).toMatchObject({ tune_rivet: 1, tune_thumper: 1 });
+    expect(m4.story.bricksTagIndex).toBe(1);
+    const m5 = DEV_SAVES.after_a1m5.build();
+    expect(m5.unlocks.specs).toEqual(['thumper']);
+    expect(m5.story.flags.spared_quiet_wave).toBe(true);
+    expect(m5.story.bricksTagIndex).toBe(2);
+  });
+
   it('all_unlocked owns every registered tower, spec, and ability, and wins every map', () => {
     const save = DEV_SAVES.all_unlocked.build();
     expect(save.unlocks.towers).toEqual(LIVE_KNOWN_IDS.towers);

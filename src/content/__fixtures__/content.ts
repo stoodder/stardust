@@ -15,6 +15,7 @@ import type { IdsOf, RawContent } from '../types.ts';
 
 const fxGun = defineTower({
   id: 'fx_gun',
+  name: 'Fx Gun',
   faction: 'everglow',
   role: 'Fixture: single target',
   sprites: { base: 'tower.rivet', head: 'tower.rivet_head', icon: 'icon.tower.rivet' },
@@ -45,6 +46,7 @@ const fxGun = defineTower({
 
 const fxMortar = defineTower({
   id: 'fx_mortar',
+  name: 'Fx Mortar',
   faction: 'everglow',
   role: 'Fixture: splash',
   sprites: { base: 'tower.thumper', head: 'tower.thumper_head', icon: 'icon.tower.thumper' },
@@ -90,6 +92,7 @@ const fxMortar = defineTower({
 
 const fxSprinkler = defineTower({
   id: 'fx_sprinkler',
+  name: 'Fx Sprinkler',
   faction: 'everglow',
   role: 'Fixture: slow',
   sprites: { base: 'tower.sprinkler', icon: 'icon.tower.sprinkler' },
@@ -118,6 +121,7 @@ const fxSprinkler = defineTower({
 
 const fxWalker = defineEnemy({
   id: 'fx_walker',
+  name: 'Fx Walker',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',
@@ -134,6 +138,7 @@ const fxWalker = defineEnemy({
 
 const fxRunner = defineEnemy({
   id: 'fx_runner',
+  name: 'Fx Runner',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',

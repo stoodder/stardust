@@ -118,7 +118,7 @@ export function runEnd(
   const folded: SaveData = {
     ...save,
     story: { ...save.story, flags: { ...save.story.flags, ...flags } },
-    campaign: { maps: { ...save.campaign.maps, [input.mapId]: record } },
+    campaign: { ...save.campaign, maps: { ...save.campaign.maps, [input.mapId]: record } },
     currencies: {
       stardust: clampCurrency(save.currencies.stardust + stardust.amount),
       intel: clampCurrency(save.currencies.intel + intel),

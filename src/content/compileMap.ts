@@ -94,6 +94,8 @@ export function compileMap<K extends IdSpace>(
     checkCondition(ctx, refs, o.condition, `${w}.condition`);
     return {
       id: o.id,
+      name: o.name,
+      description: o.description,
       condition: o.condition,
       intel: o.intel,
       onComplete: (o.onComplete ?? []).map((a, j) =>

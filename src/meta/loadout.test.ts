@@ -34,7 +34,7 @@ function loadoutOpen(save: SaveData): SaveData {
   // a1_m03 isn't registered yet, so the record goes in under the gate's plain id.
   const maps: Record<string, unknown> = { ...save.campaign.maps };
   maps['a1_m03'] = { completed: true, medals: [], bestMeter: 20 };
-  return { ...save, campaign: { maps } };
+  return { ...save, campaign: { ...save.campaign, maps } };
 }
 
 /** An Act I map: Fast and Armored threats, Armor required, Bricks in slot 2. */
@@ -159,10 +159,15 @@ describe('presets', () => {
       ability: 'suppressing_fire',
     });
     const preset = { towers: ['sprinkler', 'rivet'], ability: 'suppressing_fire' };
-    expect(save.loadouts).toEqual({ last: preset, byMap: { a1_m01: preset } });
+    expect(save.loadouts).toEqual({
+      last: preset,
+      byMap: { a1_m01: preset },
+      protocols: [],
+      protocolPicks: {},
+    });
     expect(save.loadouts.last).not.toBe(save.loadouts.byMap.a1_m01);
     // (Minus the test's unregistered A1M3 record.)
-    expect(validateSave({ ...save, campaign: { maps: {} } }).ok).toBe(true);
+    expect(validateSave({ ...save, campaign: { ...save.campaign, maps: {} } }).ok).toBe(true);
   });
 
   it('refuses an invalid pick', () => {

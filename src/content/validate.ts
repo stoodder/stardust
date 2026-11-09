@@ -11,8 +11,12 @@
 // - [sprite-ref]: content names registered sprites of the right category.
 // - [tower-range], [enemy-range], [ability-range]: numbers are in range on every resolved tier.
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
-//   ⇔ shield, the `carrier` tell ⇔ `carrier`), and every trait shows its tell (enemies.md § 1,
-//   rule 1).
+//   ⇔ shield, burrowing ⇔ `burrow`, splitting ⇔ `split`, huddle ⇔ `huddle`, the `carrier` tell ⇔
+//   `carrier`, the `boss` tell ⇔ `boss`), and every trait shows its tell (enemies.md § 1, rule 1).
+// - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
+//   (never themselves), with sane numbers: a boss's phases start at full HP and fall, it ends at
+//   or below its last phase, and it pays no bounty; a neutral unit (Gerald) leaks and pays 0 and
+//   has no trait but flying. TODO(T304c): boss tells ≥ BOSS_MIN_TELL_SEC once boss abilities carry tells.
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
@@ -21,8 +25,10 @@
 //   (validateMedals.ts): see their headers.
 //
 // Feature guards ([feature]): content that needs a system that doesn't exist yet is refused
-// rather than silently mis-simulated: bosses (M3; the boss-leak rule), non-Defend objectives
-// (T305; Escort safe exits).
+// rather than silently mis-simulated: non-Defend objectives (T305; Escort safe exits). M3's new
+// mechanics (flyers, enemy abilities, bosses, wreckage, objectives, the new ability effects) are
+// refused at createSim instead, per feature (sim/gates.ts FEATURE_GATES), so their content can be
+// registered ahead of the task that runs it.
 import { mergePatch } from './compileHelpers.ts';
 import { validatePalettes } from './palettes/validate.ts';
 import { ENV_PALETTE_IDS } from './palettes/env.ts';
@@ -30,6 +36,7 @@ import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
 import {
   CHILL_CAP,
   COUNTER_ANSWERS,
+  HASTE_CAP,
   JAMMER_ENEMIES,
   MAX_STATUS_PCT,
   TRAIT_TELL,
@@ -77,7 +84,8 @@ export function validate<K extends IdSpace>(
   const issues = new Issues();
   issues.errors.push(...artErrors());
   for (const def of Object.values<TowerDef>(raw.towers)) validateTower(issues, def);
-  for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def);
+  const enemyIds: ReadonlySet<string> = new Set(Object.keys(raw.enemies));
+  for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def, enemyIds);
   const abilities = Object.values<AbilityDef>(raw.abilities);
   for (const def of abilities) validateAbility(issues, def);
   validateCompanionAbilities(issues, abilities);
@@ -243,7 +251,7 @@ function projectileSprites(def: TowerDef): [id: string, where: string][] {
 
 // ── Enemies ──────────────────────────────────────────────────────────────────────────────────
 
-function validateEnemy(issues: Issues, def: EnemyDef): void {
+function validateEnemy(issues: Issues, def: EnemyDef, enemyIds: ReadonlySet<string>): void {
   const where = `enemies.${def.id}`;
   checkSprite(issues, def.sprites.body, 'enemy', `${where}.sprites.body`);
   checkSprite(issues, def.sprites.icon, 'icon', `${where}.sprites.icon`);
@@ -286,6 +294,17 @@ function validateEnemy(issues: Issues, def: EnemyDef): void {
   if (def.tells.includes('carrier') !== (def.carrier !== undefined)) {
     traits('tells', "the 'carrier' tell goes with `carrier` (a sack that bursts on death)");
   }
+  if (has('burrowing') !== (def.burrow !== undefined)) {
+    traits('traits', "'burrowing' goes with `burrow`");
+  }
+  if (has('splitting') !== (def.split !== undefined)) {
+    traits('traits', "'splitting' goes with `split`");
+  }
+  if (has('huddle') !== (def.huddle !== undefined)) traits('traits', "'huddle' goes with `huddle`");
+  if (def.tells.includes('boss') !== (def.boss !== undefined)) {
+    traits('tells', "the 'boss' tell goes with `boss`");
+  }
+  validateEnemyAbilities(issues, def, enemyIds);
   if (has('jammer') && !JAMMER_ENEMIES.includes(def.id)) {
     issues.add(
       'jammer-source',
@@ -293,13 +312,67 @@ function validateEnemy(issues: Issues, def: EnemyDef): void {
       `only ${JAMMER_ENEMIES.join(', ')} may jam (adding a jammer needs a decision entry)`,
     );
   }
-  if (def.tells.includes('boss')) {
-    issues.add(
-      'feature',
-      where,
-      'bosses arrive in M3 (T304): the sim has no boss phases, endings, or the boss-leak rule ' +
-        '(a leaking boss drains all integrity) yet',
-    );
+}
+
+/** [enemy-ability]: burrow, split, huddle, boss, and neutral (enemies.md § 5–6; T300a). */
+function validateEnemyAbilities(
+  issues: Issues,
+  def: EnemyDef,
+  enemyIds: ReadonlySet<string>,
+): void {
+  const where = `enemies.${def.id}`;
+  const bad = (field: string, msg: string): void =>
+    issues.add('enemy-ability', `${where}.${field}`, msg);
+  const child = (field: string, id: string, count: number): void => {
+    if (!enemyIds.has(id)) bad(`${field}.enemy`, `unknown enemy '${id}'`);
+    else if (id === def.id) bad(`${field}.enemy`, 'an enemy may not spawn itself');
+    if (!isPositiveInt(count)) bad(`${field}.count`, 'must be a whole number ≥ 1');
+  };
+  const huddle = (field: string, h: { radiusTiles: number; regenPerSec: number }): void => {
+    if (!isPositive(h.radiusTiles)) bad(`${field}.radiusTiles`, 'must be > 0');
+    if (!isNonNegative(h.regenPerSec)) bad(`${field}.regenPerSec`, 'must be ≥ 0');
+  };
+  const b = def.burrow;
+  if (b !== undefined) {
+    if (!isPositive(b.everySec)) bad('burrow.everySec', 'must be > 0');
+    if (!isPositive(b.durationSec)) bad('burrow.durationSec', 'must be > 0');
+    if (!isPositive(b.speedMul)) bad('burrow.speedMul', 'must be > 0');
+    if (!isNonNegative(b.tellSec)) bad('burrow.tellSec', 'must be ≥ 0');
+  }
+  if (def.split !== undefined) child('split', def.split.enemy, def.split.count);
+  if (def.huddle !== undefined) huddle('huddle', def.huddle);
+  const threats = def.traits.filter((t) => t !== 'flying');
+  if (def.neutral === true && (def.leak !== 0 || def.bounty !== 0 || threats.length > 0)) {
+    bad('neutral', 'a neutral unit leaks 0, pays 0, and has no trait but flying (core-loop § 2.7)');
+  }
+  const boss = def.boss;
+  if (boss === undefined) return;
+  if (def.bounty !== 0) bad('bounty', 'a boss pays no bounty (its wave bonus is tripled)');
+  if (boss.phases.length === 0) bad('boss.phases', 'a boss has at least one phase');
+  let last = Infinity;
+  for (const [i, p] of boss.phases.entries()) {
+    const w = `boss.phases[${i}]`;
+    if (i === 0 ? p.fromPct !== 1 : !(p.fromPct > 0 && p.fromPct < last)) {
+      bad(`${w}.fromPct`, i === 0 ? 'the first phase starts at 1 (full HP)' : 'must fall, > 0');
+    }
+    last = p.fromPct;
+    if (p.spawn !== undefined) {
+      child(`${w}.spawn`, p.spawn.enemy, p.spawn.count);
+      if (!isPositive(p.spawn.everySec)) bad(`${w}.spawn.everySec`, 'must be > 0');
+    }
+    if (p.burrow !== undefined) {
+      if (!isPositiveInt(p.burrow.times)) bad(`${w}.burrow.times`, 'must be a whole number ≥ 1');
+      if (!isPositive(p.burrow.durationSec)) bad(`${w}.burrow.durationSec`, 'must be > 0');
+      const s = p.burrow.surfaceSpawn;
+      if (s !== undefined) child(`${w}.burrow.surfaceSpawn`, s.enemy, s.count);
+    }
+    if (p.hastePct !== undefined && !(p.hastePct > 0 && p.hastePct <= HASTE_CAP)) {
+      bad(`${w}.hastePct`, `must be in (0, ${HASTE_CAP}]`);
+    }
+    if (p.huddle !== undefined) huddle(`${w}.huddle`, p.huddle);
+  }
+  if (!(boss.endAtPct >= 0 && boss.endAtPct < last)) {
+    bad('boss.endAtPct', 'must be ≥ 0 and below the last phase');
   }
 }
 
@@ -311,10 +384,22 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
   const e = def.effect;
   const bad = (field: string, msg: string): void =>
     issues.add('ability-range', `${where}.${field}`, msg);
-  if (!isPositive(def.cooldownSec)) bad('cooldownSec', 'must be > 0');
+  if (def.cooldownWaves === undefined) {
+    if (!isPositive(def.cooldownSec)) bad('cooldownSec', 'must be > 0');
+  } else if (!isPositiveInt(def.cooldownWaves)) {
+    bad('cooldownWaves', 'must be a whole number of waves ≥ 1');
+  }
   if (e.kind === 'strike') {
     if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
     if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+  } else if (e.kind === 'slowAll') {
+    for (const f of ['slowPct', 'bossSlowPct'] as const) {
+      if (!(e[f] > 0 && e[f] < 1)) bad(`effect.${f}`, 'must be in (0, 1)');
+    }
+    if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
+  } else if (e.kind === 'discount') {
+    if (!(e.pct > 0 && e.pct < 1)) bad('effect.pct', 'must be in (0, 1)');
+    if (!isPositiveInt(e.charges)) bad('effect.charges', 'must be a whole number ≥ 1');
   } else {
     if (!isNonNegative(e.damagePerSec)) bad('effect.damagePerSec', 'must be ≥ 0');
     // The slow lands as Chilled (strongest source wins), so it can't pass the chill cap.

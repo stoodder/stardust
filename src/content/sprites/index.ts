@@ -53,6 +53,35 @@ import { tileVerge } from './tiles/verge.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
+// M3 placeholders (T300a), under their final ids; T311a/T311b replace the art behind them.
+import { iconAbilityClearanceSale, iconAbilityTimeDilation } from './placeholders/abilities.ts';
+import {
+  enemyBunchling,
+  enemyChitterbloom,
+  enemyDigger,
+  enemyElder,
+  enemyGerald,
+  enemyPuffwing,
+  iconEnemyBunchling,
+  iconEnemyChitterbloom,
+  iconEnemyDigger,
+  iconEnemyElder,
+  iconEnemyGerald,
+  iconEnemyPuffwing,
+} from './placeholders/enemies.ts';
+import {
+  iconTowerSkyhook,
+  iconTowerZapcoil,
+  projectileSkyhookFlak,
+  towerSkyhook,
+  towerSkyhookHead,
+  towerZapcoil,
+  towerZapcoilHead,
+} from './placeholders/towers.ts';
+import { portraitBricks } from './portraits/bricks.ts';
+import { portraitPlayer } from './portraits/player.ts';
+import { portraitQuill } from './portraits/quill.ts';
+import { portraitSterling } from './portraits/sterling.ts';
 
 export const SPRITES = [
   tileGrass,
@@ -79,15 +108,26 @@ export const SPRITES = [
   towerThumperHead,
   towerSprinkler,
   towerSprinklerHead,
+  towerSkyhook,
+  towerSkyhookHead,
+  towerZapcoil,
+  towerZapcoilHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
   enemyBroodHauler,
   enemyHaulerYoung,
+  enemyPuffwing,
+  enemyBunchling,
+  enemyDigger,
+  enemyElder,
+  enemyChitterbloom,
+  enemyGerald,
   allyBricks,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,
+  projectileSkyhookFlak,
   fxShadow,
   fxGroundShadow,
   fxExplosion,
@@ -104,12 +144,26 @@ export const SPRITES = [
   iconEnemyBroodHauler,
   iconAbilityOrbitalStrike,
   iconAbilitySuppressingFire,
+  iconTowerSkyhook,
+  iconTowerZapcoil,
+  iconEnemyPuffwing,
+  iconEnemyBunchling,
+  iconEnemyDigger,
+  iconEnemyElder,
+  iconEnemyChitterbloom,
+  iconEnemyGerald,
+  iconAbilityTimeDilation,
+  iconAbilityClearanceSale,
   iconCredits,
   iconCore,
   iconLock,
   iconTellFast,
   iconTellArmored,
   iconTellCarrier,
+  portraitPlayer,
+  portraitBricks,
+  portraitQuill,
+  portraitSterling,
 ] as const;
 
 /** Every sprite id. */

@@ -25,11 +25,11 @@ import type {
 } from './compiled.ts';
 import { checkKey, deepFreeze, entriesOf, ticks, type Ctx, type Refs } from './compileHelpers.ts';
 import { compileLinks } from './compileLinks.ts';
+import { compileEnemy } from './compileEnemy.ts';
 import { compileMap } from './compileMap.ts';
 import { compileTower } from './compileTower.ts';
 import type { AbilityEffect, IdSpace, LiveIds, RawContent } from './types.ts';
 import { validate, type ValidationRules } from './validate.ts';
-import { perSecToPerTick } from '../shared/time.ts';
 import { assertNever } from '../shared/types.ts';
 
 /** An ability's effect in ticks. */
@@ -53,6 +53,15 @@ function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): Compil
         durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
         reachTiles: (e.lengthTiles - 1) / 2,
       };
+    case 'slowAll':
+      return {
+        kind: 'slowAll',
+        slowPct: e.slowPct,
+        bossSlowPct: e.bossSlowPct,
+        durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
+      };
+    case 'discount':
+      return { kind: 'discount', pct: e.pct, charges: e.charges };
     default:
       return assertNever(e);
   }
@@ -91,36 +100,7 @@ export function compileContent<K extends IdSpace = LiveIds>(
   const enemies = new Map<string, CompiledEnemyDef<K['enemy']>>();
   for (const [key, def] of entriesOf(raw.enemies)) {
     checkKey(ctx, 'enemies', key, def.id);
-    const where = `enemies.${def.id}`;
-    enemies.set(key, {
-      id: def.id,
-      faction: def.faction,
-      body: def.body,
-      layer: def.layer,
-      hp: def.hp,
-      armor: def.armor,
-      shield:
-        def.shield === undefined
-          ? null
-          : {
-              hp: def.shield.hp,
-              regenPerTick: perSecToPerTick(def.shield.regenPerSec),
-              regenDelayTicks: ticks(
-                ctx,
-                def.shield.regenDelaySec,
-                `${where}.shield.regenDelaySec`,
-              ),
-            },
-      speedTilesPerTick: perSecToPerTick(def.speedTilesPerSec),
-      leak: def.leak,
-      bounty: def.bounty,
-      spawnIntervalTicks: ticks(ctx, def.spawnIntervalSec, `${where}.spawnIntervalSec`),
-      traits: def.traits,
-      tells: def.tells,
-      restValue: def.restValue ?? 1,
-      carrierYoung: def.carrier?.young ?? 0,
-      sprites: def.sprites,
-    });
+    enemies.set(key, compileEnemy(ctx, def));
   }
   const abilities = new Map<string, CompiledAbilityDef<K['ability']>>();
   for (const [key, def] of entriesOf(raw.abilities)) {
@@ -129,7 +109,9 @@ export function compileContent<K extends IdSpace = LiveIds>(
     abilities.set(key, {
       id: def.id,
       name: def.name,
-      cooldownTicks: ticks(ctx, def.cooldownSec, `${where}.cooldownSec`),
+      cooldownTicks:
+        def.cooldownSec === undefined ? 0 : ticks(ctx, def.cooldownSec, `${where}.cooldownSec`),
+      cooldownWaves: def.cooldownWaves ?? 0,
       effect: compileAbilityEffect(ctx, def.effect, `${where}.effect`),
       companion: def.companion ?? null,
       sprites: def.sprites,

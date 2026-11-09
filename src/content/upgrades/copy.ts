@@ -31,6 +31,10 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Harder hits, cheaper tiers, longer reach. In that order.',
   tune_sprinkler:
     'Price first: 40 stardust, rising. A better Sprinkler. Same water. Zibzab does not sell water. Yet.',
+  tune_skyhook:
+    "Price first: 40 stardust, rising. Everglow flak, Vrell tuning. Don't tell Everglow. Or the flak.",
+  tune_zapcoil:
+    'Price first: 40 stardust, rising. My own coil, tuned by me. I charged myself. I paid. Honestly.',
 
   // Zibzab: Field Protocols (protocols.ts).
   head_start:

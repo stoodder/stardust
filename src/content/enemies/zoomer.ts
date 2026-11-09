@@ -5,6 +5,7 @@ import { defineEnemy } from '../define.ts';
 
 export const zoomer = defineEnemy({
   id: 'zoomer',
+  name: 'Zoomer',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',

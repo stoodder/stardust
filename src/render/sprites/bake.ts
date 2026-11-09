@@ -37,7 +37,7 @@ import {
 export const DEFAULT_VARIANT = 'default';
 
 /** Derived variants (tech-spec § What the baker produces), appended to a palette variant with `+`. */
-export type DerivedVariant = 'selected' | 'jammed';
+export type DerivedVariant = 'selected' | 'jammed' | 'dark';
 
 /** One baked frame: its pixels and where its ground point is, in its own pixels. */
 export interface BakedFrame {
@@ -88,9 +88,13 @@ export function categoryOf(spriteId: string): SpriteCategory {
   return category;
 }
 
-/** Derived variants baked for a category: actors get `selected`, towers also `jammed`. */
+/**
+ * Derived variants baked for a category: actors get `selected`, towers also `jammed`, and
+ * portraits `dark` (an absent speaker's frame).
+ */
 export function derivedFor(category: SpriteCategory): readonly DerivedVariant[] {
   if (category === 'tower') return ['selected', 'jammed'];
+  if (category === 'portrait') return ['dark'];
   if (category === 'enemy') return ['selected'];
   return [];
 }
@@ -200,6 +204,13 @@ const STEEL: readonly Rgba[] = (
 ).map((n) => rgbaOf(n));
 const STEEL_LUM = STEEL.map(luminance);
 const SELECTED_OUTLINE = rgbaOf('white.1');
+/** `dark`: the ink steps a portrait's colors fall onto, and the luminance at which each starts. */
+const DARK_STEPS: readonly { readonly from: number; readonly color: Rgba }[] = [
+  { from: 0.2, color: rgbaOf('ink.3') },
+  { from: 0.035, color: rgbaOf('ink.2') },
+  { from: 0, color: rgbaOf('ink.1') },
+];
+const DARK_OUTLINE = rgbaOf('ink.0');
 
 /** The lookup for a derived variant of a palette lookup. */
 export function derivedLookup(base: ColorLookup, derived: DerivedVariant): ColorLookup {
@@ -218,6 +229,17 @@ export function derivedLookup(base: ColorLookup, derived: DerivedVariant): Color
         });
         const s = STEEL[best] ?? SELECTED_OUTLINE;
         return { r: s.r, g: s.g, b: s.b, a: c.a };
+      };
+    case 'dark':
+      // Every color onto ink.1–ink.3 by luminance band (bright parts stay the lightest), alpha
+      // kept; the outline goes to ink.0.
+      return (code) => {
+        if (code === OUTLINE_CODE) return DARK_OUTLINE;
+        const c = base(code);
+        if (c === null) return null;
+        const l = luminance(c);
+        const s = (DARK_STEPS.find((d) => l >= d.from) ?? DARK_STEPS[DARK_STEPS.length - 1])?.color;
+        return s === undefined ? null : { r: s.r, g: s.g, b: s.b, a: c.a };
       };
     default: {
       const never: never = derived;

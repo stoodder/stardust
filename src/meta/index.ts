@@ -86,12 +86,17 @@ export {
   writeSlot,
 } from './save.ts';
 export type {
+  CodexId,
+  CodexVersion,
   HintId,
   KnownIds,
   LoadoutPreset,
   MapRecord,
+  MemoId,
+  PlayerProfile,
   SaveData,
   SaveEnvelope,
+  SceneId,
   StoryFlagId,
 } from './saveData.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';

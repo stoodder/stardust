@@ -14,6 +14,7 @@ import type { IdsOf, RawContent } from '../../content/types.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
+  name: 'Dev Rivet',
   faction: 'everglow',
   role: 'Dev: single target',
   sprites: { base: 'tower.rivet', head: 'tower.rivet_head', icon: 'icon.tower.rivet' },
@@ -31,6 +32,7 @@ const devRivet = defineTower({
 
 const devThumper = defineTower({
   id: 'dev_thumper',
+  name: 'Dev Thumper',
   faction: 'everglow',
   role: 'Dev: splash',
   sprites: { base: 'tower.thumper', head: 'tower.thumper_head', icon: 'icon.tower.thumper' },
@@ -59,6 +61,7 @@ const devThumper = defineTower({
 
 const devSprinkler = defineTower({
   id: 'dev_sprinkler',
+  name: 'Dev Sprinkler',
   faction: 'everglow',
   role: 'Dev: slow',
   sprites: { base: 'tower.sprinkler', head: 'tower.sprinkler_head', icon: 'icon.tower.sprinkler' },
@@ -77,6 +80,7 @@ const devSprinkler = defineTower({
 
 const devNibbler = defineEnemy({
   id: 'dev_nibbler',
+  name: 'Dev Nibbler',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',

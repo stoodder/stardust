@@ -16,6 +16,7 @@ import { applyHoldFire, applySpareRunners, inheritFireControl } from '../fireCon
 import { applySpecialize } from '../specialize.ts';
 import { applyAbilityCommand } from './abilities.ts';
 import { callWave } from './waves.ts';
+import { applyClearCommand } from './wreckage.ts';
 
 /**
  * The deploy delay (core-loop.md § 2.5) as a starting cooldown. The towers system runs later on
@@ -67,6 +68,8 @@ function applyCommand(
       return callWave(state, ctx);
     case 'ability':
       return applyAbilityCommand(state, ctx, cmd);
+    case 'clear':
+      return applyClearCommand(state, ctx, cmd);
     default:
       return assertNever(cmd);
   }

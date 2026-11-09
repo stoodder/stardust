@@ -170,6 +170,67 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
   return card;
 }
 
+/** Portraits get their own section and card (portraitCard). */
+function isPortrait(b: BakedSprite): boolean {
+  return b.id.startsWith('portrait.');
+}
+
+/** A portrait frame's variant prefix (`party_hat.happy` → `party_hat`), or '' for the base. */
+function portraitVariantOf(frame: string): string {
+  const dot = frame.indexOf('.');
+  return dot < 0 ? '' : frame.slice(0, dot);
+}
+
+/** True for a frame showing an expression at rest (no `_talk`, `_scan`, or flash). */
+function isRestFrame(frame: string): boolean {
+  return !/_(talk|scan|flash)$/.test(frame);
+}
+
+/**
+ * A portrait's card (T310a): each portrait variant's expressions at 2× in a comms-panel frame, as
+ * the dialogue panel shows them, then every baked frame (talk, scan, flash, `+dark`) at 1×.
+ */
+function portraitCard(b: BakedSprite, count: Counters): HTMLElement {
+  const card = el('section', 'card');
+  card.dataset['spriteId'] = b.id;
+  const title = el('h3', undefined, b.id);
+  title.append(
+    el(
+      'small',
+      undefined,
+      `${b.meta.w}×${b.meta.h} · ${b.frameNames.length} frames · ${b.anims.length / b.variants.length} anims · variants: ${b.variants.join(', ')}`,
+    ),
+  );
+  card.append(title);
+  const byKey = new Map(b.frames.map((f) => [f.key, f]));
+  const groups = [...new Set(b.frameNames.map(portraitVariantOf))];
+  for (const group of groups) {
+    const row = el('div', 'portrait-row');
+    for (const name of b.frameNames) {
+      if (portraitVariantOf(name) !== group || !isRestFrame(name)) continue;
+      const f = byKey.get(frameKey(b.id, DEFAULT_VARIANT, name));
+      if (f === undefined) continue;
+      const box = el('div', 'frame portrait-frame');
+      box.append(scaled(f.image, 2), el('span', undefined, name));
+      row.append(box);
+    }
+    card.append(row);
+  }
+  for (const v of b.variants.filter(isShownVariant)) {
+    const strip = el('div', 'portrait-strip');
+    for (const name of b.frameNames) {
+      const f = byKey.get(frameKey(b.id, v, name));
+      if (f === undefined) continue;
+      if (hasOpaque(f.image)) count.rendered++;
+      const box = el('div', 'frame');
+      box.append(imageToCanvas(f.image), el('span', undefined, name));
+      strip.append(box);
+    }
+    card.append(el('div', 'vlabel', `${v} at 1×`), strip);
+  }
+  return card;
+}
+
 // A corner of an Act I map: S spawn, # path, o pad, ^ high ground, + power node, C core, . decor.
 // prettier-ignore
 const DIORAMA_MAP = [
@@ -506,7 +567,9 @@ function render(root: HTMLElement): void {
 
   root.append(el('h2', undefined, 'Sprites'));
   const count: Counters = { rendered: 0 };
-  for (const b of baked) root.append(spriteCard(b, count));
+  for (const b of baked) if (!isPortrait(b)) root.append(spriteCard(b, count));
+  root.append(el('h2', undefined, 'Portraits: expressions at 2× as the comms panel frames them'));
+  for (const b of baked) if (isPortrait(b)) root.append(portraitCard(b, count));
 
   const ds = document.body.dataset;
   ds['spriteCount'] = String(baked.length);

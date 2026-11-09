@@ -16,7 +16,7 @@ const POSE: Readonly<Record<string, { readonly dy: number; readonly dim: number 
   happy: { dy: -1, dim: 0 },
   worried: { dy: 1, dim: 0 },
   angry: { dy: 1, dim: 0 },
-  sad: { dy: 2, dim: 1 },
+  sad: { dy: 3, dim: 2 },
 };
 
 /** The visor's reflection, top to bottom: sky (dark to light), horizon, then the Gardens. */
@@ -132,7 +132,20 @@ function inVisor(x: number, y: number, dy: number): boolean {
   if (y < top || y > bottom) return false;
   const r = y - top;
   const fromBottom = bottom - y;
-  const inset = r === 0 ? 4 : r === 1 ? 2 : r === 2 ? 1 : fromBottom === 0 ? 5 : fromBottom === 1 ? 3 : fromBottom === 2 ? 1 : 0;
+  const inset =
+    r === 0
+      ? 4
+      : r === 1
+        ? 2
+        : r === 2
+          ? 1
+          : fromBottom === 0
+            ? 5
+            : fromBottom === 1
+              ? 3
+              : fromBottom === 2
+                ? 1
+                : 0;
   return x >= 10 + inset && x <= 37 - inset;
 }
 
@@ -175,7 +188,10 @@ function visor(
     for (let x = 8; x <= 39; x++) {
       if (inVisor(x, y, dy)) continue;
       const near =
-        inVisor(x - 1, y, dy) || inVisor(x + 1, y, dy) || inVisor(x, y - 1, dy) || inVisor(x, y + 1, dy);
+        inVisor(x - 1, y, dy) ||
+        inVisor(x + 1, y, dy) ||
+        inVisor(x, y - 1, dy) ||
+        inVisor(x, y + 1, dy);
       if (near) plot(g, x, y, '1');
     }
   }
@@ -187,7 +203,8 @@ function visor(
       const bow = horizonBow(expression, x);
       const horizon = 9 + bow;
       let ch: string;
-      if (r < horizon) ch = VISOR_SKY[Math.min(VISOR_SKY.length - 1, Math.max(0, r - bow + 1))] ?? 'C';
+      if (r < horizon)
+        ch = VISOR_SKY[Math.min(VISOR_SKY.length - 1, Math.max(0, r - bow + 1))] ?? 'C';
       else if (r === horizon) ch = 'w';
       else ch = r === horizon + 1 ? 'G' : 'H';
       for (let i = 0; i < dim; i++) ch = VISOR_DIM[ch] ?? ch;
@@ -288,7 +305,8 @@ function thumbsUp(g: CharGrid): void {
     '.87766...',
   ];
   fist.forEach((r, y) => {
-    for (let x = 0; x < r.length; x++) if (r.charAt(x) !== '.') plot(g, ox + x, oy + y, r.charAt(x));
+    for (let x = 0; x < r.length; x++)
+      if (r.charAt(x) !== '.') plot(g, ox + x, oy + y, r.charAt(x));
   });
 }
 
@@ -296,7 +314,8 @@ function sweatDrop(g: CharGrid, dy: number): void {
   // prettier-ignore
   const drop = ['..E.', '..E.', '.EDE', 'EDDC', 'EwDC', '.CC.'];
   drop.forEach((r, y) => {
-    for (let x = 0; x < r.length; x++) if (r.charAt(x) !== '.') plot(g, 40 + x, 6 + y + dy, r.charAt(x));
+    for (let x = 0; x < r.length; x++)
+      if (r.charAt(x) !== '.') plot(g, 40 + x, 6 + y + dy, r.charAt(x));
   });
 }
 
@@ -305,14 +324,15 @@ function angerMark(g: CharGrid, dy: number): void {
   // prettier-ignore
   const mark = ['.T..T.', 'TT..TT', '......', '......', 'TT..TT', '.T..T.'];
   mark.forEach((r, y) => {
-    for (let x = 0; x < r.length; x++) if (r.charAt(x) !== '.') plot(g, 33 + x, 1 + y + dy, r.charAt(x));
+    for (let x = 0; x < r.length; x++)
+      if (r.charAt(x) !== '.') plot(g, 33 + x, 1 + y + dy, r.charAt(x));
   });
 }
 
 function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const pose = POSE[expression] ?? { dy: 0, dim: 0 };
   const g = grid(S, S);
-  const slump = expression === 'sad' ? 1 : 0;
+  const slump = expression === 'sad' ? 2 : 0;
   jumpsuit(g, slump);
   collar(g, pose.dy);
   helmet(g, pose.dy);

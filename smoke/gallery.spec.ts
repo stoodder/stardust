@@ -62,6 +62,11 @@ async function captureFullPage(page: Page, path: string): Promise<{ w: number; h
   return { w, h };
 }
 
+/** Portraits are gathered in their own section at the end of the gallery. */
+function isPortrait(id: string): boolean {
+  return id.startsWith('portrait.');
+}
+
 test('gallery: every registered sprite and frame renders, with no console errors', async ({
   page,
 }) => {
@@ -80,7 +85,9 @@ test('gallery: every registered sprite and frame renders, with no console errors
   const cards = page.locator('section[data-sprite-id]');
   await expect(cards).toHaveCount(SPRITES.length);
   const ids = await Promise.all(SPRITES.map((_, i) => cards.nth(i).getAttribute('data-sprite-id')));
-  expect(ids).toEqual(SPRITES.map((s) => s.id));
+  // Registry order, with the portraits gathered in their own section at the end.
+  const order = SPRITES.map((s) => s.id as string);
+  expect(ids).toEqual([...order.filter((id) => !isPortrait(id)), ...order.filter(isPortrait)]);
 
   const { w, h } = await captureFullPage(page, GALLERY_SHOT);
   expect(w).toBe(1600);

@@ -10,6 +10,7 @@ import { defineEnemy } from '../define.ts';
 
 export const hauler = defineEnemy({
   id: 'hauler',
+  name: 'Brood Hauler',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',

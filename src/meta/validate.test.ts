@@ -42,8 +42,19 @@ const won = (medals: unknown, extra: object = {}): object => ({
   ...extra,
 });
 
+/** A valid profile. */
+const PROFILE = { name: "Jo O'Neil-Park", pronouns: 'they', callsign: 'sprout' };
+
 /** A valid preset for a new save. */
 const PRESET = { towers: ['thumper', 'rivet'], ability: 'orbital_strike' };
+
+/** A new save owning `owned` protocols, with `loadouts` fields replaced. */
+function withProtocols(loadouts: object, owned: string[] = ['head_start', 'specialist']): unknown {
+  const save: unknown = variant('unlocks.protocols', owned);
+  if (!isPlainRecord(save) || !isPlainRecord(save['loadouts'])) throw new Error('shape');
+  Object.assign(save['loadouts'], loadouts);
+  return save;
+}
 
 describe('validateSave', () => {
   it('accepts a new save and returns a fresh, equal copy', () => {
@@ -75,7 +86,23 @@ describe('validateSave', () => {
   const cases: [string, string, unknown][] = [
     ['data: missing field "stats"', 'stats', DELETE],
     ['data: unknown field "cheat"', 'cheat', 1],
-    ['data.profile', 'profile', { name: 'Jo' }],
+    ['data.profile: missing field "pronouns"', 'profile', { name: 'Jo' }],
+    ['data.profile: expected an object', 'profile', 'Jo'],
+    ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: '' }],
+    ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: 'A'.repeat(17) }],
+    ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: 'Jo<script>' }],
+    ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: ' Jo' }],
+    ['data.profile.name: expected 1–16', 'profile', { ...PROFILE, name: 7 }],
+    ['data.profile.pronouns: unknown id', 'profile', { ...PROFILE, pronouns: 'xe' }],
+    ['data.profile.callsign: unknown id', 'profile', { ...PROFILE, callsign: 'ace' }],
+    [
+      'data.profile: unknown field "arrivalReason"',
+      'profile',
+      { ...PROFILE, arrivalReason: 'bonus' },
+    ],
+    ['data.campaign: missing field "seenEnemies"', 'campaign.seenEnemies', DELETE],
+    ['data.campaign.seenEnemies[0]: unknown id', 'campaign.seenEnemies', ['dragon']],
+    ['data.campaign.seenEnemies[1]: duplicate id', 'campaign.seenEnemies', ['nibbler', 'nibbler']],
     ['data.campaign: expected an object', 'campaign', []],
     ['data.campaign.maps: expected an object', 'campaign.maps', []],
     ['data.campaign.maps: unknown map id', 'campaign.maps.a9_m99', won([])],
@@ -115,6 +142,14 @@ describe('validateSave', () => {
     ['data.story.flags.door_choice', 'story.flags', { door_choice: {} }],
     ['data.story.flags.door_choice', 'story.flags', { door_choice: 'Not An Id!' }],
     ['data.story.flags.door_choice', 'story.flags', { door_choice: 1.5 }],
+    // T218: each flag holds one of its own declared values.
+    ['data.story.flags.door_choice: expected one of', 'story.flags', { door_choice: 'garage' }],
+    ['data.story.flags.door_choice: expected one of', 'story.flags', { door_choice: true }],
+    ['data.story.flags.spared_quiet_wave', 'story.flags', { spared_quiet_wave: 'yes' }],
+    ['data.story.flags.spared_quiet_wave', 'story.flags', { spared_quiet_wave: 1 }],
+    ['data.story.flags.arrival_reason', 'story.flags', { arrival_reason: 'adventure' }],
+    ['data.story.flags.stardust_choice', 'story.flags', { stardust_choice: 'convoy' }],
+    ['data.story.memosRead: "welcome" is not in', 'story.memosRead', ['welcome']],
     ['data.story.seen[0]', 'story.seen', [5]],
     ['data.story.seen[0]: unknown id', 'story.seen', ['Bad Id']],
     ['data.story.memosRead: expected a list', 'story.memosRead', {}],
@@ -164,6 +199,20 @@ describe('validateSave', () => {
       'loadouts.last',
       { ...PRESET, protocols: [] },
     ],
+    ['data.loadouts: missing field "protocols"', 'loadouts.protocols', DELETE],
+    ['data.loadouts.protocols[0]: unknown id', 'loadouts.protocols', ['god_mode']],
+    [
+      'data.loadouts.protocols: "head_start" is not in unlocks.protocols',
+      'loadouts.protocols',
+      ['head_start'],
+    ],
+    ['data.loadouts.protocolPicks: expected an object', 'loadouts.protocolPicks', []],
+    [
+      'a pick for "specialist", which isn\'t equipped',
+      'loadouts.protocolPicks',
+      { specialist: 'rivet' },
+    ],
+    ['data: missing field "seenHints"', 'seenHints', DELETE],
   ];
 
   it.each(cases)('rejects %s', (expected, path, value) => {
@@ -214,7 +263,12 @@ describe('validateSave', () => {
     save.unlocks.jailbroken = ['rivet'];
     save.unlocks.revokedAbilities = ['orbital_strike'];
     save.story = {
-      flags: { door_choice: 'warren', spared_quiet_wave: true, quill_choice: 2 },
+      flags: {
+        door_choice: 'warren',
+        spared_quiet_wave: true,
+        quill_choice: 'keep',
+        arrival_reason: 'lettuce',
+      },
       seen: ['a1_m01_briefing'],
       memosRead: ['welcome'],
       memosDelivered: ['welcome', 'q3_bonus'],
@@ -223,12 +277,65 @@ describe('validateSave', () => {
       memorialTower: 'rivet',
       granted: ['q3_bonus'],
     };
+    save.profile = { name: 'Jo', pronouns: 'she', callsign: 'thorn' };
+    save.campaign.seenEnemies = ['nibbler', 'zoomer'];
+    save.unlocks.protocols = ['head_start', 'specialist'];
     save.loadouts = {
       last: { towers: ['sprinkler', 'rivet'], ability: null },
       byMap: { a1_m01: { towers: ['thumper', 'rivet', 'sprinkler'], ability: 'orbital_strike' } },
+      protocols: ['specialist'],
+      protocolPicks: { specialist: 'thumper' },
     };
+    save.seenHints = ['upgrade'];
     const r = validateSave(save);
     expect(r).toEqual({ ok: true, value: save });
+  });
+
+  describe('equipped Field Protocols (the rules metaModifiers refuses)', () => {
+    it('accepts protocols up to the slots, with a pick for Specialist', () => {
+      const ok = withProtocols({
+        protocols: ['specialist'],
+        protocolPicks: { specialist: 'rivet' },
+      });
+      expect(errorsOf(ok)).toEqual([]);
+    });
+
+    it('refuses more protocols than slots', () => {
+      const two = withProtocols({
+        protocols: ['head_start', 'specialist'],
+        protocolPicks: { specialist: 'rivet' },
+      });
+      expect(errorsOf(two).join()).toContain('2 protocols equipped, but only 1 slots');
+      const slotted = withProtocols({
+        protocols: ['head_start', 'specialist'],
+        protocolPicks: { specialist: 'rivet' },
+      });
+      if (!isPlainRecord(slotted)) throw new Error('shape');
+      slotted['upgrades'] = { protocol_slots: 1 };
+      expect(errorsOf(slotted)).toEqual([]);
+    });
+
+    it('refuses Specialist without a pick, a pick for a protocol that takes none, and an unowned pick', () => {
+      expect(errorsOf(withProtocols({ protocols: ['specialist'] })).join()).toContain(
+        'protocol "specialist" is equipped with no tower pick',
+      );
+      expect(
+        errorsOf(
+          withProtocols({ protocols: ['head_start'], protocolPicks: { head_start: 'rivet' } }),
+        ).join(),
+      ).toContain('protocol "head_start" takes no pick');
+      expect(
+        errorsOf(
+          withProtocols({ protocols: ['specialist'], protocolPicks: { specialist: 'sprinkler' } }),
+        ).join(),
+      ).toContain('"sprinkler" is not in unlocks.towers');
+    });
+
+    it('refuses a protocol equipped twice', () => {
+      expect(errorsOf(withProtocols({ protocols: ['head_start', 'head_start'] })).join()).toContain(
+        'duplicate id "head_start"',
+      );
+    });
   });
 
   it('caps the number of errors it reports', () => {

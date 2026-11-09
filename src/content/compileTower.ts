@@ -64,6 +64,7 @@ export function compileTower<Id extends string>(
         };
   return {
     id: def.id,
+    name: def.name,
     faction: def.faction,
     role: def.role,
     tiers,
@@ -131,13 +132,17 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
     case 'hitscan':
     case 'pulse':
       return { ...common, kind: a.kind };
-    case 'projectile':
+    case 'projectile': {
+      const splash = a.splashTiles ?? 0;
       return {
         ...common,
         kind: a.kind,
         projectile: a.projectile,
         speedTilesPerTick: perSecToPerTick(a.speedTilesPerSec),
+        splashTiles: splash,
+        splashSq: splash * splash,
       };
+    }
     case 'lobbed':
       return {
         ...common,

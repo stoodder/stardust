@@ -1,15 +1,21 @@
-// The campaign save: SaveData v1, its envelope, the id sets a save is checked against, and the
+// The campaign save: SaveData v2, its envelope, the id sets a save is checked against, and the
 // new-game state. Shape and rules: docs/tech/meta-runtime.md § Save system; what a save tracks:
 // docs/design/progression.md § 11. Bump SAVE_VERSION only together with a new entry in
 // migrations.ts and a new __fixtures__/save.v<n>.json (meta-runtime.md § Versioning and migrations).
 import { ABILITIES } from '../content/abilities/index.ts';
-import { FLAG_IDS } from '../content/dialogue/flags.ts';
+import type { CodexId, CodexVersion } from '../content/codex/types.ts';
+import { FLAG_IDS, FLAGS } from '../content/dialogue/flags.ts';
+import type { PlayerProfile } from '../content/dialogue/profile.ts';
+import type { SceneId } from '../content/dialogue/types.ts';
+import { ENEMIES } from '../content/enemies/index.ts';
 import { MAPS } from '../content/maps/index.ts';
+import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import type { DifficultyId } from '../sim/index.ts';
 import type {
   AbilityId,
+  EnemyId,
   FlagId,
   FlagValue,
   MapId,
@@ -20,18 +26,15 @@ import type {
 } from '../content/types.ts';
 
 /** The current schema version. Codes carry it as their `SD<v>-` prefix. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** Story flags a save can hold: every flag in `content/dialogue/flags.ts`. */
 export type StoryFlagId = FlagId;
 
-/** Ids with no registry yet (dialogue scenes, memos, codex entries, one-time grants). */
-export type SceneId = string;
-export type MemoId = string;
-export type CodexId = string;
+export type { CodexId, CodexVersion, MemoId, PlayerProfile, SceneId };
+export { CODEX_VERSIONS } from '../content/codex/types.ts';
+/** One-time grants (q3_bonus, gifts, the crate): free-form ids until their transactions land. */
 export type GrantId = string;
-export type CodexVersion = 'original' | 'annotated' | 'corrected';
-export const CODEX_VERSIONS: readonly CodexVersion[] = ['original', 'annotated', 'corrected'];
 
 /**
  * A one-time hint a save has already shown (D061): `upgrade`, the upgrade teach (D028), and
@@ -51,7 +54,7 @@ export interface MapRecord {
 /**
  * A loadout the player picked on the loadout screen (design/core-loop.md § 1): 1 to MAX_LOADOUT
  * distinct towers, in build-slot order, and the Technician's ability (slot 1; null only while the
- * save owns none). Field Protocols join with their picker (M3).
+ * save owns none). Field Protocols are equipped save-wide (`loadouts.protocols`), not per preset.
  */
 export interface LoadoutPreset {
   towers: TowerId[];
@@ -60,9 +63,17 @@ export interface LoadoutPreset {
 
 /** The player's campaign state. Mutable plain data: meta transactions return updated copies. */
 export interface SaveData {
-  /** Character creation arrives with T306; until then every save has no profile (D031). */
-  profile: null;
-  campaign: { maps: Partial<Record<MapId, MapRecord>> };
+  /**
+   * The player's name, pronouns, and callsign, from character creation (T306). Null until the
+   * intake: every save written before v2, and a new save until the form is filled in. The intake
+   * also sets the `arrival_reason` flag (that flag is its one home).
+   */
+  profile: PlayerProfile | null;
+  campaign: {
+    maps: Partial<Record<MapId, MapRecord>>;
+    /** Enemy types the player has met (first spawned in a run): the NEW badge and `new_enemy`. */
+    seenEnemies: EnemyId[];
+  };
   currencies: { stardust: number; intel: number };
   unlocks: {
     towers: TowerId[];
@@ -75,18 +86,23 @@ export interface SaveData {
     abilities: AbilityId[];
     /** Subset of `abilities`. */
     revokedAbilities: AbilityId[];
-    /** Field Protocols owned (bought at Zibzab's shop, progression.md § 4.4). Equipping them is M3. */
+    /** Field Protocols owned (bought at Zibzab's shop, progression.md § 4.4). */
     protocols: ProtocolId[];
   };
   /** Owned shop and R&D ranks (≥ 1), including the C2 Zibzab Tune-up. */
   upgrades: Partial<Record<UpgradeId, number>>;
   story: {
+    /** Each set flag holds one of its declared values (content/dialogue/flags.ts). */
     flags: Partial<Record<StoryFlagId, FlagValue>>;
+    /** Scenes played (skippable on replay), and barks that play once per campaign (`BarkId`s). */
     seen: SceneId[];
+    /** Memos read: a subset of `memosDelivered` (unread = delivered − read, the Inbox badge). */
     memosRead: MemoId[];
+    /** Memos delivered, in delivery order (each memo's gift is granted on delivery). */
     memosDelivered: MemoId[];
+    /** Unlocked codex versions per entry, each in unlock order. */
     codex: Record<CodexId, CodexVersion[]>;
-    /** The next name in Bricks's tag list. */
+    /** The next name in Bricks's tag list (campaign.md § 6.3). */
     bricksTagIndex: number;
     /** The A3M3 {name} turret's type. */
     memorialTower: TowerId | null;
@@ -98,10 +114,18 @@ export interface SaveData {
   settings: { difficulty: DifficultyId };
   /**
    * Loadout presets (T201, meta/loadout.ts): the last loadout locked in on each map, and the last
-   * one on any map (where the screen starts on a map with none).
+   * one on any map (where the screen starts on a map with none); and the Field Protocols equipped,
+   * save-wide (progression.md § 5: swapped freely between maps; T308's picker).
    */
-  loadouts: { last: LoadoutPreset | null; byMap: Partial<Record<MapId, LoadoutPreset>> };
-  /** One-time hints already shown (meta/hints.ts). A v1 save written before the field has none. */
+  loadouts: {
+    last: LoadoutPreset | null;
+    byMap: Partial<Record<MapId, LoadoutPreset>>;
+    /** Equipped protocols in slot order: owned, distinct, no more than the save's slots. */
+    protocols: ProtocolId[];
+    /** The tower each equipped `choice: 'tower'` protocol (Specialist) picked: an owned tower. */
+    protocolPicks: Partial<Record<ProtocolId, TowerId>>;
+  };
+  /** One-time hints already shown (meta/hints.ts). */
   seenHints: HintId[];
 }
 
@@ -119,22 +143,32 @@ export interface SaveEnvelope {
 /** The ids a save may name. Unknown ids make a save invalid (saves are untrusted input). */
 export interface KnownIds {
   readonly towers: readonly TowerId[];
+  readonly enemies: readonly EnemyId[];
   readonly abilities: readonly AbilityId[];
   readonly maps: readonly MapId[];
   /** Each upgrade id and its rank count: an owned rank is 1..ranks (`UpgradeDef.ranks.length`). */
   readonly upgradeRanks: Readonly<Partial<Record<UpgradeId, number>>>;
   readonly protocols: readonly ProtocolId[];
+  /** Protocols that take a tower pick (`choice: 'tower'`, Specialist). */
+  readonly protocolsWithPick: readonly ProtocolId[];
   readonly storyFlags: readonly StoryFlagId[];
+  /** Each flag's declared values (T218: a saved value must be one of them). */
+  readonly flagValues: Readonly<Partial<Record<StoryFlagId, readonly FlagValue[]>>>;
 }
 
 /** The live registries' ids. */
 export const LIVE_KNOWN_IDS: KnownIds = {
   towers: Object.values(TOWERS).map((t) => t.id),
+  enemies: Object.values(ENEMIES).map((e) => e.id),
   abilities: Object.values(ABILITIES).map((a) => a.id),
   maps: Object.values(MAPS).map((m) => m.id),
   upgradeRanks: Object.fromEntries(Object.values(UPGRADES).map((u) => [u.id, u.ranks.length])),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
+  protocolsWithPick: Object.values(PROTOCOLS)
+    .filter((p) => p.choice === 'tower')
+    .map((p) => p.id),
   storyFlags: FLAG_IDS,
+  flagValues: Object.fromEntries(FLAG_IDS.map((f) => [f, FLAGS[f].values])),
 };
 
 /** Towers issued before A1M1 (campaign.md § 4.1). */
@@ -149,7 +183,7 @@ export const STARTING_ABILITIES: readonly AbilityId[] = ['orbital_strike'];
 export function createNewSave(): SaveData {
   return {
     profile: null,
-    campaign: { maps: {} },
+    campaign: { maps: {}, seenEnemies: [] },
     currencies: { stardust: 0, intel: 0 },
     unlocks: {
       towers: [...STARTING_TOWERS],
@@ -173,7 +207,7 @@ export function createNewSave(): SaveData {
     },
     stats: { pestsProcessed: 0, runs: 0 },
     settings: { difficulty: 'standard' },
-    loadouts: { last: null, byMap: {} },
+    loadouts: { last: null, byMap: {}, protocols: [], protocolPicks: {} },
     seenHints: [],
   };
 }

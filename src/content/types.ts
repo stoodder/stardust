@@ -155,6 +155,8 @@ export type DeepPartial<T> = T extends readonly unknown[]
 
 export interface TowerDef<Id extends string = string> {
   readonly id: Id;
+  /** The display name the HUD, loadout, and store show ("Rivet"; T119). */
+  readonly name: string;
   readonly faction: TowerFaction;
   /** Display only. */
   readonly role: string;
@@ -206,9 +208,12 @@ export type AttackDef = AttackCommon &
   (
     | { readonly kind: 'hitscan' } // Rivet: damage lands the tick it fires
     | {
+        // A shot that flies to its target at a fixed speed (Skyhook's flak, T304a)
         readonly kind: 'projectile';
         readonly projectile: SpriteId;
         readonly speedTilesPerSec: number;
+        /** A burst on arrival: every enemy on the tier's layers within this radius (default 0: the target only). */
+        readonly splashTiles?: number;
       }
     | {
         // Thumper: lands after a fixed flight time, aimed with lead targeting
@@ -223,6 +228,7 @@ export type AttackDef = AttackCommon &
     | { readonly kind: 'beam'; readonly tickSec: number } // not DoT: armor applies per tick
     | {
         readonly kind: 'chain';
+        /** Jumps after the first hit: `jumps + 1` targets in all ("chains to 3" is 2). */
         readonly jumps: number;
         readonly jumpRangeTiles: number;
         /** Fraction lost per jump: 0.2 = −20%. */
@@ -301,6 +307,8 @@ export interface LinkBonusDef {
 
 export interface EnemyDef<Id extends string = string> {
   readonly id: Id;
+  /** The display name the wave preview and codex show ("Brood Hauler"; T119). */
+  readonly name: string;
   readonly faction: EnemyFaction;
   readonly body: Body;
   readonly layer: Layer;
@@ -329,16 +337,90 @@ export interface EnemyDef<Id extends string = string> {
    * `carrier` tell.
    */
   readonly carrier?: { readonly young: number };
+  // Enemy abilities (design/enemies.md § 3, § 5): each is an optional field, run by its module in
+  // sim/enemyAbilities/ (T304c). Blink, phasing, gathering, and jamming arrive with Acts II–III.
+  /** Burrowing (the `burrower` tell): every `everySec` it digs in, untargetable, for `durationSec`. */
+  readonly burrow?: BurrowDef;
+  /** Splitting (the `splitter` tell): on death it releases `count` of `enemy` where it died. */
+  readonly split?: SplitDef;
+  /** Huddle (the `huddle` tell): allies within the radius move at its pace and regenerate. */
+  readonly huddle?: HuddleDef;
+  /** A boss (the `boss` tell; design/enemies.md § 6): its phases and how it ends. */
+  readonly boss?: BossDef;
+  /**
+   * A neutral unit (Gerald, core-loop.md § 2.7): towers that aren't holding fire target it like an
+   * enemy, but it takes no damage (hits plink off, `NeutralHit`), never leaks, pays nothing, and
+   * never counts toward a wave's resolution or a medal (T304a).
+   */
+  readonly neutral?: true;
   readonly sprites: { readonly body: SpriteId; readonly icon: SpriteId };
-  // Enemy abilities (blink, burrow, jam, …) and bosses land with their first enemy (M3+).
+}
+
+/** Burrowing (Digger: every 6 s, 2 s underground at 1.5× speed, after a 0.8 s dirt-spray tell). */
+export interface BurrowDef {
+  readonly everySec: number;
+  readonly durationSec: number;
+  /** Speed multiplier while underground. */
+  readonly speedMul: number;
+  /** The dirt-spray tell before it digs in. */
+  readonly tellSec: number;
+}
+
+/**
+ * Splitting (Bunchling: 3 Nibblers). `enemy` is an EnemyId (validate() checks it: a definition
+ * never names its own kind's registry). The children spawn at the parent's route distance.
+ */
+export interface SplitDef {
+  readonly enemy: string;
+  readonly count: number;
+}
+
+/** Huddle (Elder: radius 1.5, 4 HP/s): nearby allies match the leader's pace and regenerate. */
+export interface HuddleDef {
+  readonly radiusTiles: number;
+  readonly regenPerSec: number;
+}
+
+/** How a boss fight ends without a death (design/enemies.md § 6.1). */
+export type BossEnding = 'driveOff' | 'retreat' | 'pivot' | 'layToRest';
+
+/**
+ * A boss (design/enemies.md § 6): phases by HP share, each with its own behaviour, and an ending
+ * at `endAtPct` (0 for `driveOff`: it is never killed). Every boss ability has a tell of at least
+ * 1.5 s, and a phase change at most 2 s of invulnerability (rules.ts).
+ */
+export interface BossDef {
+  /** In order; the first starts at 1 (full HP), each later one when HP falls to `fromPct`. */
+  readonly phases: readonly BossPhaseDef[];
+  readonly ending: BossEnding;
+  /** The HP share at which the ending runs (0: at 0 HP, instead of dying). */
+  readonly endAtPct: number;
+}
+
+/** One boss phase. Every field is optional; a phase runs whichever it lists. */
+export interface BossPhaseDef {
+  /** The HP share (1 = full) at which this phase begins. */
+  readonly fromPct: number;
+  /** Spawns `count` of `enemy` (an EnemyId) every `everySec` at its position (the sneeze). */
+  readonly spawn?: { readonly enemy: string; readonly count: number; readonly everySec: number };
+  /** Burrows `times` times for `durationSec` each, surfacing with `surfaceSpawn` if any. */
+  readonly burrow?: {
+    readonly times: number;
+    readonly durationSec: number;
+    readonly surfaceSpawn?: { readonly enemy: string; readonly count: number };
+  };
+  /** Haste on itself (a fraction, under HASTE_CAP). */
+  readonly hastePct?: number;
+  /** A constant huddle on nearby young (Chitterbloom's phase 3). */
+  readonly huddle?: HuddleDef;
 }
 
 // ── Commander abilities ──────────────────────────────────────────────────────────────────────
 
-export interface AbilityDef<Id extends string = string> {
+export type AbilityDef<Id extends string = string> = AbilityCommon<Id> & AbilityCooldown;
+interface AbilityCommon<Id extends string> {
   readonly id: Id;
   readonly name: string;
-  readonly cooldownSec: number;
   readonly effect: AbilityEffect;
   /**
    * A companion's signature ability (slot 2, design/core-loop.md § 3.1): the companion it belongs
@@ -347,7 +429,14 @@ export interface AbilityDef<Id extends string = string> {
   readonly companion?: CompanionId;
   readonly sprites: { readonly icon: SpriteId };
 }
-/** Other effect kinds (Time Dilation, Stillness, …) arrive with their tasks. */
+/**
+ * A cooldown in sim seconds, or in waves (Clearance Sale's "once per 4 waves": ready again when
+ * that many more waves have started; T304d). Exactly one.
+ */
+export type AbilityCooldown =
+  | { readonly cooldownSec: number; readonly cooldownWaves?: never }
+  | { readonly cooldownWaves: number; readonly cooldownSec?: never };
+/** Other effect kinds (Stillness, Underfoot, …) arrive with their tasks. */
 export type AbilityEffect =
   | {
       // Orbital Strike: a targeted area hit after a visible reticle
@@ -370,6 +459,25 @@ export type AbilityEffect =
       readonly slowPct: number;
       readonly durationSec: number;
       readonly lengthTiles: number;
+    }
+  | {
+      /**
+       * Time Dilation: no target; every enemy on the map is slowed `slowPct` (bosses
+       * `bossSlowPct`) for `durationSec` (T304d).
+       */
+      readonly kind: 'slowAll';
+      readonly slowPct: number;
+      readonly bossSlowPct: number;
+      readonly durationSec: number;
+    }
+  | {
+      /**
+       * Clearance Sale: no target; the next `charges` builds or upgrades this map cost `pct` less.
+       * Counted per purchase, never per second, so pausing can't exploit it (T304d).
+       */
+      readonly kind: 'discount';
+      readonly pct: number;
+      readonly charges: number;
     };
 
 /**
@@ -445,12 +553,8 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * § 3). Required on campaign maps (validateMedals.ts).
    */
   readonly medals?: { readonly challenge: ChallengeMedalDef<K> };
-  readonly objectives?: readonly {
-    readonly id: string;
-    readonly condition: ConditionDef<K>;
-    readonly intel: number;
-    readonly onComplete?: readonly ScriptAction<K>[];
-  }[];
+  /** Optional objectives (Objective Intel, design/progression.md § 3; T304f). */
+  readonly objectives?: readonly ObjectiveDef<K>[];
   /**
    * Slot 2 (design/core-loop.md § 3.1): the companion and its state, a pick list (the finale; the
    * first is the default), or null (the slot is hidden). Each companion named needs an ability
@@ -608,8 +712,20 @@ export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>
 
 // ── Conditions and map scripts (story-runtime.md § Map scripts) ───────────────────────────────
 
-/** Run stats a condition can read: run counters, so they only ever grow during a run. */
-export type RunStat = 'integrityLost' | 'towersBuilt' | 'creditsSpent' | 'abilityUses';
+/**
+ * Run stats a condition can read: run counters, so they only ever grow during a run. M3's three
+ * (T300a) are counted by their tasks: `neutralHits` (hits on a neutral unit: Return to Sender,
+ * T304a), `wreckageCleared` (Asset Recovery, T304b), and `lateSells` (sells after the tower's build
+ * phase that aren't a misclick-grace refund: Clean Audit, T304f).
+ */
+export type RunStat =
+  | 'integrityLost'
+  | 'towersBuilt'
+  | 'creditsSpent'
+  | 'abilityUses'
+  | 'neutralHits'
+  | 'wreckageCleared'
+  | 'lateSells';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -648,6 +764,22 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
 
 /** The three medals every campaign map has (design/progression.md § 3). */
 export type MedalKind = 'victory' | 'perfectCore' | 'challenge';
+
+/**
+ * An optional objective (Objective Intel, design/progression.md § 3; maps.md § 5.3): a condition in
+ * the medal grammar, the Intel it pays on a win, and script actions to run when it completes.
+ */
+export interface ObjectiveDef<K extends IdSpace = LiveIds> {
+  /** Unique on the map (snake_case); the save and the `objectiveCompleted` trigger name it. */
+  readonly id: string;
+  /** As the briefing, the HUD's tracker, and Results show it ("Clean Audit"). */
+  readonly name: string;
+  /** One line saying what completes it ("Sell no turret after its build phase."). */
+  readonly description: string;
+  readonly condition: ConditionDef<K>;
+  readonly intel: number;
+  readonly onComplete?: readonly ScriptAction<K>[];
+}
 
 /** A map's Challenge medal: its save id, what the briefing shows, and its condition. */
 export interface ChallengeMedalDef<K extends IdSpace = LiveIds> {

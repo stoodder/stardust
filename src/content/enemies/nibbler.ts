@@ -4,6 +4,7 @@ import { defineEnemy } from '../define.ts';
 
 export const nibbler = defineEnemy({
   id: 'nibbler',
+  name: 'Nibbler',
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',

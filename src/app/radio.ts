@@ -110,6 +110,10 @@ export function createRadioScript(lines: readonly RadioLine[], credits: () => nu
       case 'AllyRemoved':
       case 'MedalProgress':
       case 'SackBurst':
+      case 'NeutralHit':
+      case 'BossPhase':
+      case 'BossEnded':
+      case 'WreckageCleared':
         return [];
       default:
         return assertNever(e);

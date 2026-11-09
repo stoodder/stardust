@@ -88,6 +88,33 @@
       .frame span {
         opacity: 0.7;
       }
+      /* Portraits (T310a): each expression at 2× in a comms-panel frame (ink.2 inside a teal.2
+         edge on ink.0), then every frame at 1×. */
+      .portrait-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .portrait-frame canvas {
+        background: #181226;
+        border: 2px solid #0e8a92;
+        outline: 2px solid #05030a;
+      }
+      .portrait-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 6px;
+        padding: 6px;
+        background: #05030a;
+        margin-bottom: 4px;
+      }
+      .portrait-strip .frame {
+        width: 60px;
+        font-size: 8px;
+        word-break: break-all;
+        text-align: center;
+      }
       .dioramas {
         display: flex;
         flex-wrap: wrap;

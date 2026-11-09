@@ -5,6 +5,7 @@ import { defineTower } from '../define.ts';
 
 export const thumper = defineTower({
   id: 'thumper',
+  name: 'Thumper',
   faction: 'everglow',
   role: 'Splash',
   sprites: { base: 'tower.thumper', head: 'tower.thumper_head', icon: 'icon.tower.thumper' },

@@ -1,7 +1,8 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
-// fireControl.ts). clear, interact, and scriptInput arrive in M3; `notImplemented` is kept for
-// handlers declared ahead of their task.
+// fireControl.ts). M3's `clear` is declared (T300a) and rejected `notImplemented` until T304b
+// (systems/wreckage.ts); interact and scriptInput arrive with their maps (M4). `notImplemented` is
+// kept for handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 
@@ -23,6 +24,11 @@ export type Command<K extends IdSpace = LiveIds> =
    * towers built while it's on). The tower never picks a SPARE_TAGS unit as its target (T206a).
    */
   | { readonly type: 'spareRunners'; readonly target: number | 'all'; readonly on: boolean }
+  /**
+   * Send the salvage drone to a wreckage tile (design/maps.md § 3): it joins the drone's queue, and
+   * the tile clears 6 s of sim time after it reaches the head (systems/wreckage.ts, T304b).
+   */
+  | { readonly type: 'clear'; readonly tile: GridPos }
   /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */
   | { readonly type: 'ability'; readonly slot: 1 | 2; readonly target?: GridPos }
   /** Call the next wave early (or start wave 1). */
@@ -98,6 +104,8 @@ export function copyCommand<K extends IdSpace>(cmd: Command<K>): Command<K> {
         : { type: 'ability', slot: cmd.slot, target: [cmd.target[0], cmd.target[1]] };
     case 'callWave':
       return { type: 'callWave' };
+    case 'clear':
+      return { type: 'clear', tile: [cmd.tile[0], cmd.tile[1]] };
     default:
       return assertNever(cmd);
   }

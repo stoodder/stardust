@@ -31,3 +31,5 @@ function tuneUp<const Id extends string>(id: Id, tower: TowerId, name: string): 
 export const tune_rivet = tuneUp('tune_rivet', 'rivet', 'Rivet Tune-up');
 export const tune_thumper = tuneUp('tune_thumper', 'thumper', 'Thumper Tune-up');
 export const tune_sprinkler = tuneUp('tune_sprinkler', 'sprinkler', 'Sprinkler Tune-up');
+export const tune_skyhook = tuneUp('tune_skyhook', 'skyhook', 'Skyhook Tune-up');
+export const tune_zapcoil = tuneUp('tune_zapcoil', 'zapcoil', 'Zapcoil Tune-up');

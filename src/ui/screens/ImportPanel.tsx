@@ -57,7 +57,7 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
           rows={4}
           spellcheck={false}
           autocomplete="off"
-          placeholder="SD1-…"
+          placeholder="SD2-…"
           value={text}
           ref={focusOnce}
           onInput={(e) => setText(e.currentTarget.value)}

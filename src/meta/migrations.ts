@@ -29,6 +29,41 @@ export const migrations: Readonly<Record<number, Migration>> = {
       loadouts: { last: null, byMap: {} },
     };
   },
+  /**
+   * v1 is the M2 save (shipped, frozen at M2's end; D032). v2 is M3's story and loadout state:
+   * - `profile` stays null: character creation (T306) runs the intake on Continue.
+   * - `campaign.seenEnemies` (new) is seeded with the enemies of every M2 map the save has a
+   *   record for (`M2_MAP_ENEMIES`, frozen here), so A1M3 doesn't badge a Nibbler as NEW.
+   * - `loadouts.protocols` and `loadouts.protocolPicks` (new) start empty: M2 equipped none.
+   * - `seenHints` becomes required (a v1 save written before it had seen none).
+   * Story lists (scenes, memos, codex, grants) carry over as they are; no M2 build wrote any.
+   */
+  1: (old) => {
+    if (!isRecord(old) || !isRecord(old['campaign']) || !isRecord(old['loadouts'])) return old;
+    const campaign = old['campaign'];
+    if ('seenEnemies' in campaign) return old;
+    const maps = isRecord(campaign['maps']) ? campaign['maps'] : {};
+    const seenEnemies: string[] = [];
+    for (const [map, enemies] of Object.entries(M2_MAP_ENEMIES)) {
+      if (!Object.hasOwn(maps, map)) continue;
+      for (const e of enemies) if (!seenEnemies.includes(e)) seenEnemies.push(e);
+    }
+    return {
+      ...old,
+      campaign: { ...campaign, seenEnemies },
+      loadouts: { ...old['loadouts'], protocols: [], protocolPicks: {} },
+      seenHints: 'seenHints' in old ? old['seenHints'] : [],
+    };
+  },
+};
+
+/**
+ * The enemy types each M2 map spawns (act1.md § A1M1, § A1M2 wave data), frozen with the v1 → v2
+ * migration so it never changes as content does. A map with a record has been played to its end.
+ */
+const M2_MAP_ENEMIES: Readonly<Record<string, readonly string[]>> = {
+  a1_m01: ['nibbler', 'zoomer'],
+  a1_m02: ['nibbler', 'zoomer', 'chonk', 'hauler'],
 };
 
 export type Migrated =

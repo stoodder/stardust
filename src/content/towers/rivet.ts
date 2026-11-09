@@ -5,6 +5,7 @@ import { defineTower } from '../define.ts';
 
 export const rivet = defineTower({
   id: 'rivet',
+  name: 'Rivet',
   faction: 'everglow',
   role: 'Single-target DPS',
   sprites: { base: 'tower.rivet', head: 'tower.rivet_head', icon: 'icon.tower.rivet' },

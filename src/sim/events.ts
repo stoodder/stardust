@@ -1,17 +1,19 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. Every M2 event is declared; the ones whose task hasn't
-// landed are never emitted yet (each names its task). An event's owning task may add payload
-// fields.
+// sim, systems communicate through state. Every M2 and M3 event is declared; the ones whose task
+// hasn't landed are never emitted yet (each names its task). An event's owning task may add
+// payload fields.
 import type {
   AllyKind,
   AttackKind,
+  BossEnding,
   GridPos,
   IdSpace,
   LiveIds,
   MedalKind,
   RouteId,
   SpriteId,
+  TileChar,
 } from '../content/types.ts';
 import type { Command, RejectReason, SpecChoice } from './commands.ts';
 
@@ -121,6 +123,53 @@ export type SimEvent<K extends IdSpace = LiveIds> =
        * still precedes the EnemyDied events its hit causes. The harness's per-tower damage tally.
        */
       readonly damage: number;
+      /**
+       * Armor blunted it: some victim's armor, after pierce and Corroded, still subtracted from the
+       * hit (combat/damage.ts `armorReduces`). Audio's "plink" (enemies.md § 3, Armored's tell).
+       */
+      readonly reduced: boolean;
+    }
+  | {
+      /**
+       * A tower's shot hit a neutral unit (Gerald, core-loop.md § 2.7): no damage, a plink, and
+       * QUILL's bark; `stats.neutralHits` counts it (T304a). Position in tiles.
+       */
+      readonly type: 'NeutralHit';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly towerUid: number;
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * A boss entered phase `phase` (1-based; design/enemies.md § 6): the phase marker on its bar,
+       * the telegraph, and the `bossPhase` script trigger and bark (T304c).
+       */
+      readonly type: 'BossPhase';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly phase: number;
+    }
+  | {
+      /**
+       * A boss fight ended without a death (enemies.md § 6.1): `driveOff` (Chitterbloom at 0%),
+       * `retreat`, `pivot`, or `layToRest`. Never a leak, never a kill (T304c).
+       */
+      readonly type: 'BossEnded';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly how: BossEnding;
+    }
+  | {
+      /**
+       * The salvage drone cleared a wreckage tile (design/maps.md § 3): it is now `to`, and
+       * `salvage` credits were paid (T304b).
+       */
+      readonly type: 'WreckageCleared';
+      readonly tile: GridPos;
+      readonly to: TileChar;
+      readonly salvage: number;
     }
   | {
       readonly type: 'TowerBuilt';

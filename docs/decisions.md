@@ -838,3 +838,21 @@ The oversized files are split by responsibility with every importer updated. The
 - `balance/checks.ts` (597) → `parChecks`, `altChecks`, `freeChoiceChecks`, and `counterChecks`, assembled by `mapChecks.ts` in the original order.
 
 Three files stay at 430–470 lines, each one cohesive pool or frame loop. T234 is done: `silkText` is applied in the view models, ability slots, and loadout; the per-frame allocations are gone (`sellValueInto`, labels prebuilt); and the small dedupes are in.
+
+### D066 — 2026-11-09 — T300b story and save seams
+- **Dialogue types** (`content/dialogue/types.ts`): the 5 node kinds of style-guide §5, plus scenes, barks with triggers, conditions, tokens, glyphs, and expressions. The types reject a wrong speaker, a wrong expression for that speaker, and undeclared flag values.
+- **18 speakers** (`speakers.ts`): each with a name, colour, frame, `portrait.<speaker>`, and `blip.<speaker>`.
+- **Profile** (`profile.ts`): pronoun sets, callsigns, arrival reasons, and ASCII-only player names.
+- **Registries and stubs:** empty scene and bark files for A1M1–A1M5; codex and memo registries; `story/` stubs naming T302a and T303.
+- **SaveData v2:**
+  - adds the player profile (name, pronouns, callsign), `campaign.seenEnemies`, and `loadouts.protocols` with `protocolPicks` (one equipped set per save, shared across maps), and makes `seenHints` required;
+  - the **v1 → v2 migration** keeps the profile null, so the intake runs on Continue, and seeds seen enemies from A1M1/A1M2;
+  - M2's SD1 codes still import, and export is now SD2;
+  - T218: saved flag values are checked against each flag's declared values.
+- **Rulings:**
+  - `arrival_reason` lives only in the flag, not in the profile.
+  - New conditions `{outcome}` and `{thisRun}`. C1's lines read *this run*, while payoffs read the flag.
+  - New bark triggers `bank_nudge`, `enemy_leaked`, `neutral_hit`, `tower_issued`, and `menu`.
+  - Nodes get an optional `label`.
+  - Scene slots get `base_<name>`.
+  - Scene, memo, and codex ids in saves are checked by shape only.

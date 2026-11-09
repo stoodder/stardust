@@ -101,6 +101,7 @@ describe('definition shapes', () => {
   it('requires a complete tier 1', () => {
     const tower = defineTower({
       id: 'fx_incomplete',
+      name: 'Fx Incomplete',
       faction: 'everglow',
       role: 'x',
       sprites: { base: 'tower.rivet', icon: 'icon.tower.rivet' },

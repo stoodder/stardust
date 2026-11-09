@@ -109,6 +109,11 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   ScriptCue: false,
   NotFiringAtSkitterkin: false,
   LinkBroken: false,
+  // M3's events (T300a): silent until their sounds land (T314: the plink, the boss, salvage).
+  NeutralHit: false,
+  BossPhase: false,
+  BossEnded: false,
+  WreckageCleared: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -241,6 +246,10 @@ export function createEventSounds(act: Act): EventSounds {
         case 'ScriptCue':
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
+        case 'NeutralHit':
+        case 'BossPhase':
+        case 'BossEnded':
+        case 'WreckageCleared':
           return;
         default:
           assertNever(e);

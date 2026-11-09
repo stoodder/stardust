@@ -34,6 +34,8 @@ describe('issued towers', () => {
       rivet: { how: 'issued', availableAfter: null },
       thumper: { how: 'gift', availableAfter: null },
       sprinkler: { how: 'license', availableAfter: null, currency: 'stardust', price: 100 },
+      skyhook: { how: 'gift', availableAfter: 'a1_m01' },
+      zapcoil: { how: 'license', availableAfter: null, currency: 'stardust', price: 0 },
     } as const satisfies Record<TowerId, unknown>;
     expect(issuedTowers(createNewSave(), access)).toEqual(['rivet']);
   });

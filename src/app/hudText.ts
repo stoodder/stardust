@@ -122,6 +122,17 @@ export function abilityDescription(def: CompiledAbilityDef, stats?: AbilityStats
     const len = 2 * e.reachTiles + 1;
     return `Slows ${len} tiles of path ${slow}% and deals ${statNum(e.damagePerSec)} damage/s for ${sec} s. Recharges ${cd} s.`;
   }
+  // M3's untargeted effects (T300a; T304d runs them, and T312c may reword these lines).
+  if (e.kind === 'slowAll') {
+    const slow = statNum(Math.round(e.slowPct * 100));
+    const boss = statNum(Math.round(e.bossSlowPct * 100));
+    const sec = statNum(e.durationTicks / TICK_HZ);
+    return `Slows every enemy ${slow}% (bosses ${boss}%) for ${sec} s. Recharges ${cd} s.`;
+  }
+  if (e.kind === 'discount') {
+    const pct = statNum(Math.round(e.pct * 100));
+    return `Your next ${e.charges} builds or upgrades cost ${pct}% less. Once per ${def.cooldownWaves} waves.`;
+  }
   const delay = statNum(e.delayTicks / TICK_HZ);
   const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
   return `${statNum(e.damage)} damage in a ${radius}-tile radius after ${delay} s. Recharges ${cd} s.`;

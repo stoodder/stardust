@@ -127,7 +127,7 @@ describe('the save session', () => {
     newGame(1);
     run('a1_m01', 20);
     const code = await exportActive();
-    expect(code).toMatch(/^SD1-/);
+    expect(code).toMatch(/^SD2-/);
     const check = await checkImport(`\n  ${code ?? ''}  \n`);
     if (!check.ok) throw new Error(check.message);
     // The next open shift, or a count once every built shift is cleared.

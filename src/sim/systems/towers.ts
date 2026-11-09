@@ -32,7 +32,8 @@ import {
   bonusRangeTiles,
   hasStatusIn,
 } from '../bonuses.ts';
-import { applyDamage, applyEffects } from '../combat/damage.ts';
+import { chainAttack } from '../attacks/chain.ts';
+import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import {
   canHit,
   distSqTo,
@@ -74,11 +75,13 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'pulse':
         if (pulse(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // TODO(T2xx): straight projectiles, beams, chains, and spawners arrive with their towers
-      // (no M1 tower uses them).
+      case 'chain':
+        if (chainAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
+        break;
+      // TODO(T304a): Skyhook's flak, a projectile with a burst. Beams and spawners arrive with
+      // their Act II towers (M4). createSim refuses each until then (FEATURE_GATES).
       case 'projectile':
       case 'beam':
-      case 'chain':
       case 'spawner':
         break;
       default:
@@ -191,6 +194,7 @@ function fireHitscan(
     y: target.y,
     hits: 1,
     damage: 0,
+    reduced: armorReduces(target, attack.type, attack),
   };
   emit(state, hit);
   const source = ctx.scratch.towerSource;
@@ -325,12 +329,14 @@ function pulse(
     y: t.y,
     hits: victims.length,
     damage: 0,
+    reduced: false,
   };
   emit(state, hit);
   const source = ctx.scratch.towerSource;
   source.uid = t.uid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
+    if (!hit.reduced && armorReduces(e, attack.type, attack)) hit.reduced = true;
     // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).
     hit.damage += applyDamage(state, e, damageOn(t, attack, e), attack.type, source, attack);
     applyEffects(e, tier.effects);

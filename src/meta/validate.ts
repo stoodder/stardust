@@ -3,18 +3,21 @@
 // exist in the live registries, every number must be a bounded integer, and nothing outside the
 // schema survives. On success it returns a freshly built copy, so the caller never holds the
 // parsed object (no extra keys, no shared references, no prototype tricks).
+import { CALLSIGN_IDS, PRONOUN_IDS, isValidPlayerName } from '../content/dialogue/profile.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
-import type { FlagValue, MapId } from '../content/types.ts';
+import type { FlagValue, MapId, ProtocolId, TowerId } from '../content/types.ts';
 import type {
   KnownIds,
   LoadoutPreset,
   MapRecord,
+  PlayerProfile,
   SaveData,
   SaveEnvelope,
   StoryFlagId,
 } from './saveData.ts';
 import { CODEX_VERSIONS, DIFFICULTIES, LIVE_KNOWN_IDS } from './saveData.ts';
 import { hintIds } from './hints.ts';
+import { protocolSlots } from './modifiers.ts';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
@@ -213,30 +216,21 @@ export function validateEnvelope(
 }
 
 function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveData | null {
-  const root = c.object(
-    x,
-    path,
-    [
-      'profile',
-      'campaign',
-      'currencies',
-      'unlocks',
-      'upgrades',
-      'story',
-      'stats',
-      'settings',
-      'loadouts',
-    ],
-    // Added to v1 while it was still open (D032); a save written before it has seen no hints.
-    ['seenHints'],
-  );
+  const root = c.object(x, path, [
+    'profile',
+    'campaign',
+    'currencies',
+    'unlocks',
+    'upgrades',
+    'story',
+    'stats',
+    'settings',
+    'loadouts',
+    'seenHints',
+  ]);
   if (root === null) return null;
-  if (root['profile'] !== null) {
-    c.fail(
-      `${path}.profile`,
-      `expected null until character creation (T306), got ${describe(root['profile'])}`,
-    );
-  }
+  const profile =
+    root['profile'] === null ? null : checkProfile(c, root['profile'], `${path}.profile`);
   const campaign = checkCampaign(c, root['campaign'], `${path}.campaign`, known);
   const currencies = checkCurrencies(c, root['currencies'], `${path}.currencies`);
   const unlocks = checkUnlocks(c, root['unlocks'], `${path}.unlocks`, known);
@@ -245,11 +239,12 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   const stats = checkStats(c, root['stats'], `${path}.stats`);
   const settings = checkSettings(c, root['settings'], `${path}.settings`);
   const loadouts =
-    unlocks && checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks);
-  const seenHints = Object.hasOwn(root, 'seenHints')
-    ? c.ids(root['seenHints'], `${path}.seenHints`, hintIds(known.towers))
-    : [];
+    unlocks &&
+    upgrades &&
+    checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks, upgrades);
+  const seenHints = c.ids(root['seenHints'], `${path}.seenHints`, hintIds(known.towers));
   if (
+    (root['profile'] !== null && !profile) ||
     !campaign ||
     !currencies ||
     !unlocks ||
@@ -262,7 +257,7 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
     return null;
   }
   return {
-    profile: null,
+    profile,
     campaign,
     currencies,
     unlocks,
@@ -275,14 +270,32 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   };
 }
 
+/** The intake's profile: a valid name (core-loop.md § 6.1), a pronoun set, and a callsign. */
+function checkProfile(c: Checker, x: unknown, path: string): PlayerProfile | null {
+  const p = c.object(x, path, ['name', 'pronouns', 'callsign']);
+  if (p === null) return null;
+  const name = p['name'];
+  if (typeof name !== 'string' || !isValidPlayerName(name)) {
+    c.fail(
+      `${path}.name`,
+      `expected 1–16 letters, digits, spaces, apostrophes, hyphens, or periods, got ${describe(name)}`,
+    );
+  }
+  const pronouns = c.id(p['pronouns'], `${path}.pronouns`, PRONOUN_IDS);
+  const callsign = c.id(p['callsign'], `${path}.callsign`, CALLSIGN_IDS);
+  if (typeof name !== 'string' || !isValidPlayerName(name) || !pronouns || !callsign) return null;
+  return { name, pronouns, callsign };
+}
+
 function checkCampaign(
   c: Checker,
   x: unknown,
   path: string,
   known: KnownIds,
 ): SaveData['campaign'] | null {
-  const campaign = c.object(x, path, ['maps']);
+  const campaign = c.object(x, path, ['maps', 'seenEnemies']);
   if (campaign === null) return null;
+  const seenEnemies = c.ids(campaign['seenEnemies'], `${path}.seenEnemies`, known.enemies);
   const maps = c.record(campaign['maps'], `${path}.maps`);
   if (maps === null) return null;
   const out: Partial<Record<MapId, MapRecord>> = {};
@@ -302,7 +315,7 @@ function checkCampaign(
     const bestMeter = c.int(rec['bestMeter'], `${mapPath}.bestMeter`, 0, SAVE_LIMITS.meter);
     out[mapId] = { completed, medals, bestMeter };
   }
-  return { maps: out };
+  return { maps: out, seenEnemies };
 }
 
 function checkCurrencies(c: Checker, x: unknown, path: string): SaveData['currencies'] | null {
@@ -394,11 +407,14 @@ function checkStory(
   if (flags === null || codex === null) return null;
   const memorial = s['memorialTower'];
   const max = SAVE_LIMITS.idList;
+  const memosRead = c.ids(s['memosRead'], `${path}.memosRead`, null, max);
+  const memosDelivered = c.ids(s['memosDelivered'], `${path}.memosDelivered`, null, max);
+  c.subset(memosRead, memosDelivered, `${path}.memosRead`, `${path}.memosDelivered`);
   return {
     flags,
     seen: c.ids(s['seen'], `${path}.seen`, null, max),
-    memosRead: c.ids(s['memosRead'], `${path}.memosRead`, null, max),
-    memosDelivered: c.ids(s['memosDelivered'], `${path}.memosDelivered`, null, max),
+    memosRead,
+    memosDelivered,
     codex,
     bricksTagIndex: c.int(
       s['bricksTagIndex'],
@@ -425,16 +441,13 @@ function checkFlags(
       c.fail(path, `unknown story flag ${JSON.stringify(id.slice(0, 64))}`);
       continue;
     }
-    const valid =
-      typeof value === 'boolean' ||
-      (typeof value === 'number' && Number.isSafeInteger(value)) ||
-      (typeof value === 'string' && FREE_ID.test(value));
-    if (valid) out[id] = value;
+    // T218: each flag holds one of its own declared values (content/dialogue/flags.ts).
+    const values: readonly FlagValue[] = known.flagValues[id] ?? [];
+    const match = values.find((v) => v === value);
+    if (match !== undefined) out[id] = match;
     else {
-      c.fail(
-        `${path}.${id}`,
-        `expected a boolean, an integer, or an id string, got ${describe(value)}`,
-      );
+      const allowed = values.map((v) => JSON.stringify(v)).join(', ');
+      c.fail(`${path}.${id}`, `expected one of ${allowed}, got ${describe(value)}`);
     }
   }
   return out;
@@ -487,9 +500,11 @@ function checkLoadouts(
   path: string,
   known: KnownIds,
   unlocks: SaveData['unlocks'],
+  upgrades: SaveData['upgrades'],
 ): SaveData['loadouts'] | null {
-  const l = c.object(x, path, ['last', 'byMap']);
+  const l = c.object(x, path, ['last', 'byMap', 'protocols', 'protocolPicks']);
   if (l === null) return null;
+  const equipped = checkEquipped(c, l, path, known, unlocks, upgrades);
   const byMap = c.record(l['byMap'], `${path}.byMap`);
   if (byMap === null) return null;
   const outMaps: Partial<Record<MapId, LoadoutPreset>> = {};
@@ -503,7 +518,53 @@ function checkLoadouts(
   }
   const last =
     l['last'] === null ? null : checkPreset(c, l['last'], `${path}.last`, known, unlocks);
-  return { last, byMap: outMaps };
+  if (equipped === null) return null;
+  return { last, byMap: outMaps, ...equipped };
+}
+
+/**
+ * Equipped Field Protocols: owned, distinct, no more than the save's slots (`protocolSlots` over
+ * its upgrades), and a tower pick (an owned tower) for exactly the equipped protocols that take
+ * one. These are the rules `metaModifiers` refuses, so a valid save never fails a battle start.
+ */
+function checkEquipped(
+  c: Checker,
+  l: Record<string, unknown>,
+  path: string,
+  known: KnownIds,
+  unlocks: SaveData['unlocks'],
+  upgrades: SaveData['upgrades'],
+): Pick<SaveData['loadouts'], 'protocols' | 'protocolPicks'> | null {
+  const protocols = c.ids(l['protocols'], `${path}.protocols`, known.protocols);
+  c.subset(protocols, unlocks.protocols, `${path}.protocols`, 'unlocks.protocols');
+  const slots = protocolSlots(upgrades);
+  if (protocols.length > slots) {
+    c.fail(`${path}.protocols`, `${protocols.length} protocols equipped, but only ${slots} slots`);
+  }
+  const raw = c.record(l['protocolPicks'], `${path}.protocolPicks`);
+  if (raw === null) return null;
+  const picks: Partial<Record<ProtocolId, TowerId>> = {};
+  for (const [id, tower] of Object.entries(raw)) {
+    const at = `${path}.protocolPicks`;
+    if (!isMember(protocols, id)) {
+      c.fail(at, `a pick for ${JSON.stringify(id.slice(0, 64))}, which isn't equipped`);
+      continue;
+    }
+    if (!known.protocolsWithPick.includes(id)) {
+      c.fail(at, `protocol "${id}" takes no pick`);
+      continue;
+    }
+    const t = c.id(tower, `${at}.${id}`, known.towers);
+    if (t === null) continue;
+    c.subset([t], unlocks.towers, `${at}.${id}`, 'unlocks.towers');
+    picks[id] = t;
+  }
+  for (const id of protocols) {
+    if (known.protocolsWithPick.includes(id) && !Object.hasOwn(raw, id)) {
+      c.fail(`${path}.protocolPicks`, `protocol "${id}" is equipped with no tower pick`);
+    }
+  }
+  return { protocols, protocolPicks: picks };
 }
 
 function checkPreset(

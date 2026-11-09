@@ -405,10 +405,20 @@ export const DEFAULT_COUNTDOWN_SEC: Readonly<Record<Act, number>> = {
 /** Core integrity when a map doesn't set it (core-loop.md § 2.9). */
 export const DEFAULT_CORE_INTEGRITY = 20;
 /**
- * A leaking boss drains all remaining integrity (core-loop.md § 2.9), whatever its `leak`. The
- * validator refuses `boss` enemies until bosses land (M3), so the sim needn't implement it yet.
+ * A leaking boss drains all remaining integrity (core-loop.md § 2.9), whatever its `leak`.
+ * createSim refuses bosses until T304c (FEATURE_GATES `enemy.boss`), which implements it.
  */
 export const BOSS_LEAK_DRAINS_ALL = true;
+/** A boss wave's clear bonus is tripled (design/enemies.md § 6; T304c). */
+export const BOSS_CLEAR_BONUS_MULT = 3;
+/** A boss phase change gives at most this much invulnerability (enemies.md § 6). */
+export const BOSS_MAX_INVULNERABLE_SEC = 2;
+/** Every boss ability's tell lasts at least this long (enemies.md § 6). */
+export const BOSS_MIN_TELL_SEC = 1.5;
+/** `driveOff` / `retreat`: the boss leaves by the nearest map edge within this long (§ 6.1). */
+export const BOSS_LEAVE_MAX_SEC = 4;
+/** The salvage drone clears one wreckage tile in this much sim time (maps.md § 3; T304b). */
+export const WRECKAGE_CLEAR_SEC = 6;
 /** A new tower deploys for this long before it can fire or pulse (core-loop.md § 2.5). */
 export const TOWER_DEPLOY_SEC = 0.5;
 /** Selling refunds 70% of everything spent on the tower (core-loop.md § 2.3; shop can raise it). */

@@ -50,20 +50,17 @@ describe('script `when` conditions', () => {
     expect(sim.state.credits).toBe(200 - 100);
   });
 
-  it('createSim no longer refuses `when`, but refuses optional objectives (M3)', () => {
-    const map = {
-      ...compileContent(SIM_FIXTURE).maps.fx_map,
-      objectives: [
-        {
-          id: 'clean',
-          condition: { stat: 'towersBuilt', lte: 3 } as const,
-          intel: 1,
-          onComplete: [],
-        },
-      ],
+  it('createSim no longer refuses `when`; optional objectives are a feature gate (T304f)', () => {
+    const base = compileContent(SIM_FIXTURE).maps.fx_map;
+    const objective = {
+      id: 'clean',
+      name: 'Clean',
+      description: 'Build at most three turrets.',
+      condition: { stat: 'towersBuilt', lte: 3 } as const,
+      intel: 1,
+      onComplete: [],
     };
-    expect(unsupportedScript(map)).toEqual([
-      "objective 'clean': optional objectives are not simulated until M3",
-    ]);
+    const map = { ...base, objectives: [objective] };
+    expect(unsupportedScript(map)).toEqual([]);
   });
 });

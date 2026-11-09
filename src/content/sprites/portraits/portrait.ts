@@ -141,6 +141,11 @@ export function outlineInPlace(g: CharGrid): void {
   }
 }
 
+/** The paint arguments for an expression at rest. */
+function closed(expression: string, variant: string | null): PaintArgs {
+  return { expression, variant, mouth: 'closed', scan: false };
+}
+
 /**
  * Declares a portrait: the default `neutral` is a full grid; every other expression is a patch
  * over its variant's `neutral`, a variant's `neutral` a patch over the default `neutral`, and each
@@ -164,12 +169,6 @@ export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>):
   const frames: Record<string, FrameDef> = {};
   const anims: Record<string, AnimDef> = {};
   const scan = spec.scanlines === true;
-  const closed = (expression: string, variant: string | null): PaintArgs => ({
-    expression,
-    variant,
-    mouth: 'closed',
-    scan: false,
-  });
   for (const variant of [null, ...(spec.variants ?? [])]) {
     const neutralName = portraitFrame('neutral', { variant });
     const neutral = paint(closed('neutral', variant));
@@ -180,7 +179,11 @@ export function definePortrait<const Id extends string>(spec: PortraitSpec<Id>):
       const rowsClosed = paint(closed(expression, variant));
       if (expression !== 'neutral') frames[name] = patchFrom(neutralName, neutral, rowsClosed);
       const talk = portraitFrame(expression, { variant, mouth: 'talk' });
-      frames[talk] = patchFrom(name, rowsClosed, paint({ expression, variant, mouth: 'talk', scan }));
+      frames[talk] = patchFrom(
+        name,
+        rowsClosed,
+        paint({ expression, variant, mouth: 'talk', scan }),
+      );
       anims[portraitTalkAnim(expression, variant)] = { frames: [name, talk], fps: TALK_FPS };
       if (scan) {
         const scanName = portraitFrame(expression, { variant, scan: true });

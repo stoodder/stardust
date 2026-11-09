@@ -10,6 +10,7 @@ import { defineTower } from '../define.ts';
 
 export const sprinkler = defineTower({
   id: 'sprinkler',
+  name: 'Sprinkler',
   faction: 'everglow',
   role: 'Slow / control',
   sprites: { base: 'tower.sprinkler', head: 'tower.sprinkler_head', icon: 'icon.tower.sprinkler' },

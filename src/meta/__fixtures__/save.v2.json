@@ -1,0 +1,46 @@
+{
+  "v": 2,
+  "savedAt": 1793200000000,
+  "data": {
+    "profile": { "name": "Jo O'Neil-Park", "pronouns": "they", "callsign": "sprout" },
+    "campaign": {
+      "maps": {
+        "a1_m01": { "completed": true, "medals": ["victory", "perfect_core"], "bestMeter": 20 },
+        "a1_m02": { "completed": true, "medals": ["victory"], "bestMeter": 18 }
+      },
+      "seenEnemies": ["nibbler", "zoomer", "chonk", "hauler"]
+    },
+    "currencies": { "stardust": 30, "intel": 3 },
+    "unlocks": {
+      "towers": ["rivet", "thumper", "sprinkler"],
+      "specs": [],
+      "revokedTowers": [],
+      "jailbroken": [],
+      "abilities": ["orbital_strike"],
+      "revokedAbilities": [],
+      "protocols": ["head_start"]
+    },
+    "upgrades": { "orbital_strike_mk2": 1 },
+    "story": {
+      "flags": { "arrival_reason": "lettuce", "peeker_poked": true },
+      "seen": ["a1_m01_brief", "a1_m02_w02"],
+      "memosRead": ["memo_a1_00"],
+      "memosDelivered": ["memo_a1_00", "memo_a1_01", "memo_a1_02"],
+      "codex": { "codex_nibbler": ["original"] },
+      "bricksTagIndex": 1,
+      "memorialTower": null,
+      "granted": ["memo_a1_00"]
+    },
+    "stats": { "pestsProcessed": 540, "runs": 5 },
+    "settings": { "difficulty": "standard" },
+    "loadouts": {
+      "last": { "towers": ["rivet", "thumper", "sprinkler"], "ability": "orbital_strike" },
+      "byMap": {
+        "a1_m02": { "towers": ["rivet", "thumper", "sprinkler"], "ability": "orbital_strike" }
+      },
+      "protocols": ["head_start"],
+      "protocolPicks": {}
+    },
+    "seenHints": ["upgrade", "new:sprinkler"]
+  }
+}

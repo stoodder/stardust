@@ -8,7 +8,14 @@ import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
-import { resolveLoadout, saveModifiers, type LoadoutPick, type SaveData } from '../meta/index.ts';
+import {
+  abilityPool,
+  resolveLoadout,
+  saveModifiers,
+  towerPool,
+  type LoadoutPick,
+  type SaveData,
+} from '../meta/index.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
 import { scriptFlagsOf } from '../story/flags.ts';
 import {
@@ -75,9 +82,7 @@ export function defaultLoadout(
 
 /** The Technician's ability (slot 1): the par build's if the save owns it, else the first owned. */
 function slot1Ability(save: SaveData, par: string | null): string | null {
-  const usable: readonly string[] = save.unlocks.abilities.filter(
-    (a) => !save.unlocks.revokedAbilities.includes(a),
-  );
+  const usable: readonly string[] = abilityPool(save);
   return par !== null && usable.includes(par) ? par : (usable[0] ?? null);
 }
 
@@ -90,7 +95,8 @@ export function defaultPick(
   par: { readonly loadout: readonly string[]; readonly technicianAbility: string | null },
 ): LoadoutPick {
   const { towers: owned, abilities } = save.unlocks;
-  const towers = defaultLoadout(owned, save.unlocks.revokedTowers, par.loadout);
+  // The pool: owned, unrevoked, and played by the sim today (meta/pools.ts).
+  const towers = defaultLoadout(towerPool(save), [], par.loadout);
   const ability = slot1Ability(save, par.technicianAbility);
   return {
     // defaultLoadout's order, as the save's typed ids.

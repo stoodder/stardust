@@ -98,6 +98,31 @@ export interface SimStats {
    * watched; a key appears on the first pass.
    */
   markersPassed: Record<string, Record<string, number>>;
+  /**
+   * Hits on neutral units (Gerald; the Return to Sender Challenge; core-loop.md § 2.7): counted by
+   * the towers and projectiles systems when a shot lands on one (T304a).
+   */
+  neutralHits: number;
+  /** Wreckage tiles the salvage drone cleared (the Asset Recovery Challenge; systems/wreckage.ts, T304b). */
+  wreckageCleared: number;
+  /**
+   * Sells after the tower's build phase that weren't a misclick-grace refund (A1M4's Clean Audit
+   * objective; counted by `sell`, T304f).
+   */
+  lateSells: number;
+}
+
+/**
+ * Wreckage and the salvage drone (design/maps.md § 3; systems/wreckage.ts, T304b). Tiles are
+ * row-major indices into the map's grid.
+ */
+export interface WreckageState {
+  /** Wreckage tiles queued for the drone, in order; the head is being cleared. */
+  queue: number[];
+  /** Ticks of clearing done on the queue's head. */
+  progressTicks: number;
+  /** Wreckage tiles cleared this run, in order: each is now its `underWreckage` tile. */
+  cleared: number[];
 }
 
 /**
@@ -192,6 +217,19 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * abilities system ticks them down (T113).
    */
   abilityCooldownTicks: number[];
+  /**
+   * Commander ability cooldowns counted in waves, by slot (Clearance Sale's "once per 4 waves",
+   * `cooldownWaves`): waves still to start before it's ready; 0 = ready (T304d).
+   */
+  abilityCooldownWaves: number[];
+  /**
+   * Clearance Sale's discount (T304d): purchases (builds or upgrades) it still covers, and the
+   * fraction each saves. Counted per purchase, so pausing can't stretch it.
+   */
+  discountCharges: number;
+  discountPct: number;
+  /** Wreckage and the salvage drone's queue (T304b). */
+  wreckage: WreckageState;
   /** Global Hold Fire is on: every tower holds, and towers built now start holding (T206a). */
   holdFireAll: boolean;
   /** The global spare-runners toggle: towers built while it's on start with the filter (T206a). */
@@ -282,8 +320,15 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       medalExemptLeaks: 0,
       linkTicks: {},
       markersPassed: {},
+      neutralHits: 0,
+      wreckageCleared: 0,
+      lateSells: 0,
     },
     abilityCooldownTicks: [0, 0],
+    abilityCooldownWaves: [0, 0],
+    discountCharges: 0,
+    discountPct: 0,
+    wreckage: { queue: [], progressTicks: 0, cleared: [] },
     holdFireAll: false,
     spareRunnersAll: false,
     notFiringAnnounced: false,

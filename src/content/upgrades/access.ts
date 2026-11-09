@@ -13,6 +13,10 @@ export const TOWER_ACCESS: Readonly<Record<TowerId, Access>> = {
   thumper: { how: 'issued', availableAfter: null },
   /** Issued for A1M2. */
   sprinkler: { how: 'issued', availableAfter: 'a1_m01' },
+  /** Issued for A1M3 (its first use, W3). */
+  skyhook: { how: 'issued', availableAfter: 'a1_m02' },
+  /** Zibzab's free sample when the shop opens after A1M3 (T308 runs the license). */
+  zapcoil: { how: 'license', currency: 'stardust', price: 0, availableAfter: 'a1_m03' },
 };
 
 /**

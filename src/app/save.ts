@@ -364,7 +364,7 @@ export type ImportCheck =
  * The fault is always the transport's, never the player's.
  */
 export const IMPORT_MESSAGES: Readonly<Record<ImportProblemCode, string>> = {
-  format: "That doesn't look like a shift code (they start with SD1-). Try copying it again!",
+  format: "That doesn't look like a shift code (they start with SD). Try copying it again!",
   checksum: 'A few characters got lost in transit. Copy the whole code and paste it again!',
   too_new: 'This code comes from a newer Everglow build. Update the game, then try again!',
   too_large: 'That code is far too big to be a shift record. Paste a fresh copy!',

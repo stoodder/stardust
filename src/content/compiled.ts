@@ -8,6 +8,7 @@ import type {
   AllyKind,
   AltBuildExpectation,
   Body,
+  BossEnding,
   ChallengeMedalDef,
   CompanionId,
   ConditionDef,
@@ -55,6 +56,7 @@ export interface CompiledContent<K extends IdSpace = LiveIds> {
 
 export interface CompiledTowerDef<Id extends string = string> {
   readonly id: Id;
+  readonly name: string;
   readonly faction: TowerFaction;
   readonly role: string;
   /** Tiers 1–3, each fully resolved (patches applied). Index 0 is tier 1. */
@@ -105,6 +107,9 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly kind: 'projectile';
         readonly projectile: SpriteId;
         readonly speedTilesPerTick: number;
+        /** The burst on arrival (0: the target only). */
+        readonly splashTiles: number;
+        readonly splashSq: number;
       }
     | {
         readonly kind: 'lobbed';
@@ -191,6 +196,7 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
 
 export interface CompiledEnemyDef<Id extends string = string> {
   readonly id: Id;
+  readonly name: string;
   readonly faction: EnemyFaction;
   readonly body: Body;
   readonly layer: Layer;
@@ -210,13 +216,61 @@ export interface CompiledEnemyDef<Id extends string = string> {
   readonly restValue: number;
   /** How many young a carrier's burst sack releases (`EnemyDef.carrier`); 0 for non-carriers. */
   readonly carrierYoung: number;
+  /** Enemy abilities (EnemyDef; sim/enemyAbilities/), in ticks; null when it has none. */
+  readonly burrow: CompiledBurrow | null;
+  readonly split: CompiledSplit | null;
+  readonly huddle: CompiledHuddle | null;
+  readonly boss: CompiledBoss | null;
+  /** A neutral unit (Gerald): targeted, never hurt, never leaks or pays (EnemyDef.neutral). */
+  readonly neutral: boolean;
   readonly sprites: { readonly body: SpriteId; readonly icon: SpriteId };
+}
+
+export interface CompiledBurrow {
+  readonly everyTicks: number;
+  readonly durationTicks: number;
+  readonly speedMul: number;
+  readonly tellTicks: number;
+}
+/** `enemy` is an EnemyId the validator checked. */
+export interface CompiledSplit {
+  readonly enemy: string;
+  readonly count: number;
+}
+export interface CompiledHuddle {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly regenPerTick: number;
+}
+export interface CompiledBoss {
+  readonly phases: readonly CompiledBossPhase[];
+  readonly ending: BossEnding;
+  readonly endAtPct: number;
+}
+/** BossPhaseDef in ticks; absent parts are null. */
+export interface CompiledBossPhase {
+  readonly fromPct: number;
+  readonly spawn: {
+    readonly enemy: string;
+    readonly count: number;
+    readonly everyTicks: number;
+  } | null;
+  readonly burrow: {
+    readonly times: number;
+    readonly durationTicks: number;
+    readonly surfaceSpawn: { readonly enemy: string; readonly count: number } | null;
+  } | null;
+  readonly hastePct: number;
+  readonly huddle: CompiledHuddle | null;
 }
 
 export interface CompiledAbilityDef<Id extends string = string> {
   readonly id: Id;
   readonly name: string;
+  /** A cooldown in ticks; 0 for one counted in waves. */
   readonly cooldownTicks: number;
+  /** A cooldown in waves (Clearance Sale, T304d); 0 for one counted in ticks. */
+  readonly cooldownWaves: number;
   readonly effect: CompiledAbilityEffect;
   /** The companion whose slot-2 ability this is, or null (Technician only). */
   readonly companion: CompanionId | null;
@@ -239,7 +293,14 @@ export type CompiledAbilityEffect =
       readonly durationTicks: number;
       /** Path tiles covered on each side of the clicked one: (lengthTiles − 1) / 2. */
       readonly reachTiles: number;
-    };
+    }
+  | {
+      readonly kind: 'slowAll';
+      readonly slowPct: number;
+      readonly bossSlowPct: number;
+      readonly durationTicks: number;
+    }
+  | { readonly kind: 'discount'; readonly pct: number; readonly charges: number };
 
 /** A compiled ally post (AllyPostDef): the marker resolved to its tile, the attack in ticks. */
 export interface CompiledAllyPost {
@@ -373,6 +434,16 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly noCounterLoseByWave: number | null;
 }
 
+/** An ObjectiveDef with its `onComplete` actions compiled (none: empty). */
+export interface CompiledObjective<K extends IdSpace = LiveIds> {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly condition: ConditionDef<K>;
+  readonly intel: number;
+  readonly onComplete: readonly CompiledScriptAction<K>[];
+}
+
 export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly id: K['map'];
   readonly act: Act;
@@ -406,12 +477,7 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly events: readonly CompiledScriptedEvent<K>[];
   /** The Challenge medal, or null on a map without one (sim/medals.ts). */
   readonly medals: { readonly challenge: ChallengeMedalDef<K> } | null;
-  readonly objectives: readonly {
-    readonly id: string;
-    readonly condition: ConditionDef<K>;
-    readonly intel: number;
-    readonly onComplete: readonly CompiledScriptAction<K>[];
-  }[];
+  readonly objectives: readonly CompiledObjective<K>[];
   readonly companion:
     | { readonly id: CompanionId; readonly state: 'present' | 'absent' }
     | { readonly pick: readonly CompanionId[] }

@@ -20,6 +20,7 @@ import {
 import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
 import { burstSack } from '../carrier.ts';
+import { splitOnDeath } from '../enemyAbilities/split.ts';
 import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
@@ -116,6 +117,18 @@ export function applyDamage(
 }
 
 /**
+ * Whether armor blunts a hit of `type` on `enemy` (ProjectileHit's `reduced`, the plink): it has
+ * armor left after Corroded and the hit's pierce, and the hit doesn't ignore armor (ignore-armor,
+ * DoT, Psionic). Read it before the hit lands; a dead enemy keeps its def, so after works too.
+ */
+export function armorReduces(enemy: Enemy, type: DamageType, hit: HitMods = PLAIN_HIT): boolean {
+  const def = enemy.def;
+  if (def === null || hit.ignoresArmor || hit.isDoT === true) return false;
+  if (ARMOR_IGNORING_TYPES.includes(type)) return false;
+  return def.armor - enemy.corrodedStacks - hit.armorPierce > 0;
+}
+
+/**
  * Kills an enemy that ran out of HP: frees it for cleanup, counts the kill (Pests Processed for
  * Skitterkin, `killsByEnemy`, `tagKilled` per wave tag), credits the bounty, and emits EnemyDied naming the killer. The one
  * place a kill is booked.
@@ -144,6 +157,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
     y: enemy.y,
   });
   burstSack(state, enemy); // a carrier's sack (the Brood Hauler): SackBurst after EnemyDied
+  if (def.split !== null) splitOnDeath(state, enemy, def.split); // the Bunchling (T304c)
 }
 
 /**

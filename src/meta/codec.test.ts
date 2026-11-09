@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SD1_CODE } from './__fixtures__/codes.ts';
 import saveV0 from './__fixtures__/save.v0.json' with { type: 'json' };
+import saveV1 from './__fixtures__/save.v1.json' with { type: 'json' };
 import {
   CODE_LIMITS,
   codeChecksum,
@@ -11,7 +13,7 @@ import {
 import { pipeCapped, webCodec } from './platform.ts';
 import { serializeSave } from './save.ts';
 import type { SaveData } from './saveData.ts';
-import { createNewSave } from './saveData.ts';
+import { SAVE_VERSION, createNewSave } from './saveData.ts';
 
 /** Packs arbitrary bytes into a well-formed code (valid checksum), whatever they contain. */
 async function packCode(version: number, payload: Uint8Array | string): Promise<string> {
@@ -48,13 +50,26 @@ async function importError(code: string): Promise<string> {
 describe('SD export/import codes', () => {
   it('round-trips a save losslessly', async () => {
     const code = await exportCode(sample(), 1_793_000_000_000);
-    expect(code).toMatch(/^SD1-[A-Za-z0-9_-]+-[0-9a-f]{4}$/);
+    expect(code).toMatch(new RegExp(`^SD${SAVE_VERSION}-[A-Za-z0-9_-]+-[0-9a-f]{4}$`));
     expect(await importCode(code)).toEqual({
       ok: true,
       save: sample(),
       savedAt: 1_793_000_000_000,
       migratedFrom: null,
     });
+  });
+
+  it('imports an SD1 code exported by the M2 build, migrated to the current version', async () => {
+    const r = await importCode(SD1_CODE);
+    if (!r.ok) throw new Error(`${r.message}: ${r.errors.join('; ')}`);
+    expect(r.migratedFrom).toBe(1);
+    expect(r.savedAt).toBe(saveV1.savedAt);
+    expect(r.save.profile).toBeNull();
+    expect(r.save.unlocks).toEqual(saveV1.data.unlocks);
+    expect(r.save.campaign.maps).toEqual(saveV1.data.campaign.maps);
+    expect(r.save.campaign.seenEnemies).toEqual(['nibbler', 'zoomer']);
+    // Re-exported, it carries the current version.
+    expect(await exportCode(r.save, r.savedAt)).toMatch(new RegExp(`^SD${SAVE_VERSION}-`));
   });
 
   it('keeps a typical code short enough to paste', async () => {
@@ -89,7 +104,11 @@ describe('SD export/import codes', () => {
   });
 
   it('rejects an unknown (newer) version before unpacking', async () => {
-    const code = await packCode(2, serializeSave(sample(), 0).replace('"v":1', '"v":2'));
+    const next = SAVE_VERSION + 1;
+    const code = await packCode(
+      next,
+      serializeSave(sample(), 0).replace(`"v":${SAVE_VERSION}`, `"v":${next}`),
+    );
     expect(await importCode(code)).toMatchObject({ ok: false, code: 'too_new' });
   });
 
@@ -139,7 +158,7 @@ describe('SD export/import codes', () => {
 
   it('rejects well-formed codes whose save is malformed, with the schema errors', async () => {
     const tampered = serializeSave(sample(), 0).replace('"intel":4', '"intel":-4');
-    const r = await importCode(await packCode(1, tampered));
+    const r = await importCode(await packCode(SAVE_VERSION, tampered));
     expect(r).toMatchObject({ ok: false, code: 'invalid' });
     if (!r.ok) expect(r.errors.join()).toContain('save.data.currencies.intel');
   });

@@ -155,6 +155,10 @@ export function applyAbilityCommand(
   const def = abilityInSlot(ctx, cmd.slot);
   if (def === null) return 'noAbility';
   if ((state.abilityCooldownTicks[cmd.slot - 1] ?? 0) > 0) return 'abilityOnCooldown';
+  // TODO(T304d): Time Dilation (`slowAll`) and Clearance Sale (`discount`, with its wave-count
+  // cooldown, `state.abilityCooldownWaves`) take no target. createSim refuses them until then
+  // (FEATURE_GATES 'ability.*'), so this is never reached from a live config.
+  if (def.effect.kind === 'slowAll' || def.effect.kind === 'discount') return 'notImplemented';
   const target = cmd.target;
   if (target === undefined || tileIndex(ctx.map, target[0], target[1]) < 0) return 'invalidTarget';
 
@@ -171,9 +175,11 @@ export function applyAbilityCommand(
     zone.damageType = e.type;
     zone.abilitySlot = cmd.slot;
     uid = zone.uid;
-  } else {
+  } else if (e.kind === 'segment') {
     uid = openSegments(state, ctx, e, target[0], target[1], cmd.slot);
     if (uid === 0) return 'invalidTarget';
+  } else {
+    return 'notImplemented'; // returned above (T304d)
   }
   state.abilityCooldownTicks[cmd.slot - 1] = stats.cooldownTicks;
   state.stats.abilityUses++;

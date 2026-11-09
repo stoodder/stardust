@@ -11,7 +11,7 @@
 // shell, as its own splash on the shell's layers with the shell's effects. Bomblets don't scatter.
 import { nextFloat } from '../../shared/rng.ts';
 import { hasStatusIn } from '../bonuses.ts';
-import { applyDamage, applyEffects } from '../combat/damage.ts';
+import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { PROJECTILE_BLANK, type Projectile } from '../entities.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
@@ -126,12 +126,14 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
     y: p.targetY,
     hits: victims.length,
     damage: 0,
+    reduced: false,
   };
   emit(state, hit);
   const source = ctx.scratch.towerSource;
   source.uid = p.towerUid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
+    if (!hit.reduced && armorReduces(e, p.damageType, p)) hit.reduced = true;
     // A link's conditional bonus (Sitting Ducks) is checked per victim, as the shell lands.
     const damage = p.vsStatusMask !== 0 && hasStatusIn(e, p.vsStatusMask) ? p.damageVs : p.damage;
     // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).

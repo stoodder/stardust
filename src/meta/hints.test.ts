@@ -31,10 +31,9 @@ describe('one-time hints', () => {
     expect(withHintsSeen(once, [UPGRADE_HINT])).toBe(once);
   });
 
-  it('validates: a save without the field reads as none seen; unknown hints are refused', () => {
+  it('validates: the field is required (v1 saves gain it in migration); unknown hints are refused', () => {
     const { seenHints: _drop, ...older } = createNewSave();
-    const read = validateSave(older);
-    expect(read.ok && read.value.seenHints).toEqual([]);
+    expect(validateSave(older).ok).toBe(false);
     const seen = withHintsSeen(createNewSave(), [UPGRADE_HINT, newTowerHint('sprinkler')]);
     const again = validateSave(JSON.parse(JSON.stringify(seen)));
     expect(again.ok && again.value.seenHints).toEqual(['upgrade', 'new:sprinkler']);

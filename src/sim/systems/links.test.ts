@@ -21,6 +21,7 @@ import { isLinkActive, links, tileAndLinkRules } from './links.ts';
 /** A support tower with a damage aura (Hum Choir's shape) and one with a lookout aura. */
 const fxChoir: TowerDef<'fx_choir'> = {
   id: 'fx_choir',
+  name: 'Fx Choir',
   faction: 'skitterkin',
   role: 'Fixture: aura',
   sprites: { base: 'tower.sprinkler', icon: 'icon.tower.sprinkler' },

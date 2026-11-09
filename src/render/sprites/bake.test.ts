@@ -132,6 +132,26 @@ describe('bakeSprite', () => {
     expect(accent).toBeGreaterThan(luminance(rgbOf('ink.1')));
   });
 
+  it('bakes portraits a dark variant: ink.1–ink.3 by luminance, the outline ink.0', () => {
+    expect(derivedFor('portrait')).toEqual(['dark']);
+    const portrait: SpriteDef = {
+      ...mite,
+      id: 'portrait.test',
+      variants: [],
+      outline: 'none',
+      frames: { a: ['xk2w', '....', '....'] },
+      anims: {},
+    };
+    const p = bakeSprite(portrait, PALETTES);
+    expect(p.variants).toEqual(['default', 'default+dark']);
+    const f = p.frames.find((x) => x.key === frameKey('portrait.test', 'default+dark', 'a'));
+    if (f === undefined) throw new Error('no dark frame');
+    // Outline, eye (ink.1, darkest), mid coral, white highlight (lightest).
+    expect([0, 1, 2, 3].map((x) => pixel(f.image, x, 0).join())).toEqual(
+      [rgba('ink.0'), rgba('ink.1'), rgba('ink.2'), rgba('ink.3')].map((c) => c.join()),
+    );
+  });
+
   it('gives shadow pixels 50% alpha', () => {
     const s = bakeSprite({ ...mite, frames: { a: ['_...', '....', '....'] }, anims: {} }, PALETTES);
     expect(pixel(s.frames[0]?.image ?? { w: 0, data: new Uint8ClampedArray() }, 1, 1)).toEqual(

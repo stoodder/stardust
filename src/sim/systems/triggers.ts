@@ -64,14 +64,12 @@ function run(state: SimState, action: CompiledScriptAction<IdSpace>): void {
 
 /**
  * The map-script parts the sim can't run yet. createSim refuses a map whose events use any other
- * trigger or action, or that has optional objectives (Objective Intel, M3), listing each one,
- * until its task lands. Every condition atom (`when`, the Challenge medal) is simulated.
+ * trigger or action, listing each one, until its task lands. Every condition atom (`when`, the
+ * Challenge medal) is simulated. Optional objectives are a feature gate (`map.objectives`,
+ * sim/gates.ts; T304f).
  */
 export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   const out: string[] = [];
-  for (const o of map.objectives) {
-    out.push(`objective '${o.id}': optional objectives are not simulated until M3`);
-  }
   for (const ev of map.events) {
     const on = ev.on;
     if (!('tick' in on) && !('wave' in on)) {

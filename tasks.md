@@ -106,7 +106,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T215** Specs follow-ups: the headless executor runs `specialize` steps (it refuses them today); `validate.ts` checks bomblet sprite ids.
 - [ ] **T216** Allies polish: a glow halo for AllyView; the companion portrait on slot 2 (M3, with portraits); check in the UX review that the suppression tracers are juicy enough.
 - [ ] **T217** Docs: stale "T125" references in architecture.md (lines ~14, ~162), meta-runtime.md (~145), maps.md (~262), and comments in `hud.test.ts` / `devBattle.ts`.
-- [ ] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
+- [x] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
 - [ ] **T221** HUD follow-ups from T202d: the tall tier-3 panel can cover a neighbouring tower on busy maps; upgrade rings draw at ground level for towers on high ground; tower fire anims (`fire_<facing>_t2`, spec spin) aren't played yet; a flat-to-high-ground tether ends a few px low; add T202d's new HUD copy to style-guide §2.
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
 - [ ] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
@@ -119,7 +119,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
 - [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
 - [ ] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
-- [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
+- [x] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 
@@ -132,9 +132,9 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
   - stub systems in the tick order (`enemyAbilities/`, `wreckage.ts`, `attacks/chain.ts`);
   - data stubs with final sprite ids; `gates.ts` rows.
   A1M1/A1M2 must stay hash-identical.
-- [ ] **T300b** Story and save seams (folds in T218, T116): `dialogue/types.ts` (1:1 with style-guide §5), `speakers.ts`, empty scene and bark files per map, the codex and memo registries, `src/story/` stubs, SaveData v2 (profile, seen scenes, memos, codex, seen enemies, `bricksTagIndex`, protocols) with the migration from v1, dev saves `after_a1m3`/`4`/`5`.
+- [x] **T300b** Story and save seams (folds in T218, T116): `dialogue/types.ts` (1:1 with style-guide §5), `speakers.ts`, empty scene and bark files per map, the codex and memo registries, `src/story/` stubs, SaveData v2 (profile, seen scenes, memos, codex, seen enemies, `bricksTagIndex`, protocols) with the migration from v1, dev saves `after_a1m3`/`4`/`5`.
 - [x] **T225** Split the oversized files (+ T234).
-- [ ] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
+- [~] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
 - [ ] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
 - [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".
 - [ ] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
@@ -146,7 +146,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
 - [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
-- [ ] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
+- [~] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
 - [ ] **T312a** Render: air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
 - [ ] **T312b** Render: burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
