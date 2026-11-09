@@ -79,6 +79,11 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [x] **T220** Results offers "Change loadout" before a retry (when the loadout system is open).
 - [ ] **T221** HUD follow-ups from T202d: the tall tier-3 panel can cover a neighbouring tower on busy maps; upgrade rings draw at ground level for towers on high ground; tower fire anims (`fire_<facing>_t2`, spec spin) aren't played yet; a flat-to-high-ground tether ends a few px low; add T202d's new HUD copy to style-guide §2.
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
+- [~] **T227** M2 review round 1 fixes (D059): CORE, UI, ART, STORY+BAL fixers.
+- [ ] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
+- [ ] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
+- [ ] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
+- [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.

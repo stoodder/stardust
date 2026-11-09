@@ -682,3 +682,38 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
 - **T219:** Pixelify Sans draws "5" as "S" and "fi"/"fl" as "A" at every size from 8 to 16 px, so **all body text is now Silkscreen**. Pixelify stays as `--font-dialogue` for T302 to revisit.
 - **T220:** Results offers **Change loadout** next to Retry where the map offers the loadout screen.
 - **Every M2 build task is done.** The full gate is green: 1,262 unit tests, both maps' balance sims, 45 smoke flows, and the docs check. M2 goes to review.
+
+### D059 — 2026-11-09 — M2 review round 1 rulings
+Three reviews ran: Correctness/Architecture/Performance, Gameplay/Story, and UX/Art/Accessibility/Audio. The sim is deterministic and sound, and performance is about 0.8 ms per frame at A1M2 W8 2×. Rulings:
+- **Issued towers.** The real save never granted the Sprinkler that campaign.md says is "Issued A1M2", so A1M2 played without it. Campaign plan entries can now `issues` towers, granted on unlock/start.
+- **Never ship advice that loses.** Bricks's "Strong targeting on the big ones" predates armor 9 and now makes players lose, so it is rewritten in act1.md (canon first). Par's Strong step goes.
+- **A1M2's seeds must be visible:**
+  - The sack burst with young scurrying *back up the route toward the warren*.
+  - The `rig3`/`housing`/`scarecrow` decor.
+  - A Denise pointer when Bricks names her.
+  - Terrace and cliff tiles are M3 (T223).
+- **"&" never reaches Silkscreen,** which draws it like "$" (QUILL's very first line read "Logistics $ Lethality"). One text-pipeline substitution renders it as "and", and the R&D tab reads "Research".
+- **M2's best moments get feedback:**
+  - **Links:** floating text, a ring pulse, a chime, and a visible tether.
+  - **Specialize:** a sound and a flash.
+  - **Suppressing Fire:** an opaque striped zone, thicker tracers, and +10 dB. The sack pop gets +4 dB.
+- **Feedback for the player:**
+  - **Screen readers:** announcements for Hold Fire, targeting, and casts.
+  - **Focus:** handled after purchases and imports.
+  - **Contrast:** steel.3 for dim text.
+- **A1M2 par stays 100,** with a `marginBand` reason. One Hauler leak is 15 points, so par can't sit at 92 without faking it. A1M3's par target is ≤ 90 (T224), so the monotonic chain resumes.
+- **The R&D choice must matter on A1M2:** W4's Nibblers come as tight clumps a strike can catch. New alts `thumper_heavy`, `build_wide`, and `no_upgrades` (gradual) guard both the easy and hard sides.
+- **New radio triggers:**
+  - `enemyLeaked {enemy}`: the first leak per enemy type.
+  - `bankNudge`: once per run, when a countdown starts with ≥ 250 credits banked; a never-scolding QUILL nudge.
+  - Supportive `mapLost` debrief lines for both maps.
+- **Correctness fixes:**
+  - Per-item upgrade rank validation. A hostile import could pass validation, then crash every battle start.
+  - `openBattle` fails safe.
+  - Results reads the run's real max integrity (Story showed "30 / 20").
+  - Currency clamps, a notice when a save write fails, and spec-key and bomblet guards.
+- **Deferred:** split the 600–1,000-line HUD/FX/scene/checks files (T225); make Sitting Ducks or the power node decide a leak (T226); W7 clump readability (T117).
+- **Art trail:** the round-1 reviewer approves the current gallery as the `m2` baseline direction.
+  - **Better than m1:** tier-2 silhouettes, distinct specs, more actor variety.
+  - **Unmoved:** playfield mid-darks.
+  - **M3 should push:** terraces and cliffs, ground shadows, the clump split, death animations.
