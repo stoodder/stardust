@@ -150,6 +150,11 @@ export function pressAbility(slot: 1 | 2): void {
   interaction.aimAbility(slot);
 }
 
+/** Closes the map's briefing (its button, Enter, or Esc); game hotkeys come back on. */
+export function dismissBriefing(): void {
+  hud.briefing.value = null;
+}
+
 /** Esc / right-click: drops the selection, disarms the build slot, and stops aiming. */
 export function cancel(): void {
   target?.cancel();

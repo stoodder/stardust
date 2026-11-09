@@ -77,6 +77,12 @@ export interface WavePreview {
   readonly groups: readonly WavePreviewGroup[];
 }
 
+/** One line of a map's static briefing (M1), with its speaker if it names one. */
+export interface BriefingLine {
+  readonly speaker: string | null;
+  readonly text: string;
+}
+
 /** A short HUD message (a rejected command, a locked slot). `id` changes with every notice. */
 export interface HudNotice {
   readonly id: number;
@@ -123,4 +129,13 @@ export const hud = {
   nextWave: signal<WavePreview | null>(null),
   /** The latest notice, or null. */
   notice: signal<HudNotice | null>(null),
+  /** Whole seconds until the next wave starts on its own, or null when no countdown runs. */
+  countdown: signal<number | null>(null),
+  /** What calling the next wave now would pay (core-loop §2.4); 0 outside a countdown. */
+  callBonus: signal(0),
+  /**
+   * The map's static briefing while it's open (M1; it opens as a battle starts), or null. Game
+   * hotkeys are off while it's open.
+   */
+  briefing: signal<readonly BriefingLine[] | null>(null),
 };

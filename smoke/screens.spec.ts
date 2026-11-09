@@ -27,7 +27,20 @@ test('screens: title → Start (Enter) → battle', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => (globalThis.__sd?.state()?.tick ?? -1) >= 0);
   await expect(page.getByRole('heading', { name: 'Stardust' })).toBeHidden();
-  await shot(page, 'screens', 2, 'battle');
+  // Start shift plays A1M1, which opens on its static briefing (act1.md § A1M1).
+  expect(await page.evaluate(() => globalThis.__sd?.state()?.wave)).toBe(0);
+  const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
+  await expect(briefing).toBeVisible();
+  await expect(briefing).toContainText("Today's forecast: Nibblers, with a chance of Zoomers!");
+  await expect(briefing.getByRole('button', { name: 'Clock in' })).toBeFocused();
+  await shot(page, 'screens', 2, 'briefing');
+  // Game hotkeys wait for the briefing: W doesn't start a wave behind it.
+  await page.keyboard.press('KeyW');
+  await page.evaluate(() => globalThis.__sd?.fastForward(1));
+  expect(await page.evaluate(() => globalThis.__sd?.state()?.wave)).toBe(0);
+  await page.keyboard.press('Escape');
+  await expect(briefing).toBeHidden();
+  await shot(page, 'screens', 3, 'battle');
 });
 
 test('screens: a forced win shows the results and the counter; Title returns', async ({ page }) => {
@@ -37,7 +50,7 @@ test('screens: a forced win shows the results and the counter; Title returns', a
   await page.evaluate(() => {
     const sd = globalThis.__sd!; // installed: waitForReady passed
     sd.setSpeed(0);
-    sd.enqueue({ type: 'build', tile: [3, 1], tower: 'dev_rivet' });
+    sd.enqueue({ type: 'build', tile: [7, 2], tower: 'rivet' }); // A1M1's greenhouse roof
     sd.fastForward(0);
     sd.setSpeed(1);
   });
@@ -55,7 +68,7 @@ test('screens: a forced win shows the results and the counter; Title returns', a
   const t0 = await tick(page);
   await page.waitForTimeout(200);
   expect(await tick(page)).toBe(t0);
-  await shot(page, 'screens', 3, 'won');
+  await shot(page, 'screens', 4, 'won');
 
   // A second forced outcome is a no-op: the win stands.
   await page.evaluate(() => globalThis.__sd?.forceOutcome('lost'));
@@ -88,7 +101,7 @@ test('screens: a forced loss is a hiccup, not a scolding; Retry restarts the map
   const t0 = await tick(page);
   await page.waitForTimeout(200);
   expect(await tick(page)).toBe(t0);
-  await shot(page, 'screens', 4, 'lost');
+  await shot(page, 'screens', 5, 'lost');
 
   // Enter on the focused Retry starts the map over: a fresh run from tick 0, running at 1×.
   await page.keyboard.press('Enter');
@@ -97,7 +110,8 @@ test('screens: a forced loss is a hiccup, not a scolding; Retry restarts the map
     const s = globalThis.__sd?.state();
     return s !== null && s !== undefined && s.tick > 0 && s.tick < 120;
   });
-  await shot(page, 'screens', 5, 'retried');
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden(); // read already
+  await shot(page, 'screens', 6, 'retried');
 });
 
 test('screens: results need a finished run; forceOutcome needs a battle', async ({ page }) => {
@@ -112,4 +126,46 @@ test('screens: results need a finished run; forceOutcome needs a battle', async 
   });
   expect(errors).toHaveLength(2);
   await expect(page.getByRole('heading', { name: 'Stardust' })).toBeVisible();
+});
+
+test('screens: autoplay plays A1M1 par to a real win with pests processed', async ({ page }) => {
+  await page.goto('/?test=1&skipIntro=1&seed=1');
+  await waitForReady(page);
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!; // installed: waitForReady passed
+    sd.setSpeed(0);
+    sd.autoplay('par');
+  });
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
+  // Play it out in chunks (par lasts about four minutes of sim time).
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    for (let i = 0; i < 40 && sd.state()?.outcome === 'playing'; i++) sd.fastForward(600);
+  });
+  const dialog = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
+  await expect(dialog).toBeVisible();
+  const final = await page.evaluate(() => {
+    const s = globalThis.__sd!.state()!; // the finished battle stays behind the results
+    return { integrity: s.integrity, killed: s.stats.skitterkinKilled };
+  });
+  expect(final.integrity).toBe(19); // act1.md § A1M1: par's margin is 95
+  expect(final.killed).toBeGreaterThan(0);
+  await expect(counter(page)).toHaveAttribute(
+    'aria-label',
+    `PESTS PROCESSED: ${final.killed}, Top 5% of Technicians!`,
+  );
+  // The counter ticks up to the run's count.
+  await expect(counter(page)).toHaveText(new RegExp(`^PESTS PROCESSED: ${final.killed} `));
+  await shot(page, 'screens', 7, 'autoplay-won');
+  // An unknown build is an error, not a silent no-op.
+  await page.getByRole('button', { name: 'Retry' }).click();
+  const err = await page.evaluate(() => {
+    try {
+      globalThis.__sd!.autoplay('nope');
+      return null;
+    } catch (e) {
+      return String(e);
+    }
+  });
+  expect(err).toMatch(/no build 'nope'/);
 });

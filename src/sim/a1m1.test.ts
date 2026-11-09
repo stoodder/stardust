@@ -1,5 +1,5 @@
 // A1M1 end to end through the public sim API (T105b): the spawner against the compiled waves,
-// the Thumper unlock, do-nothing losing, a scripted par run whose banks match D019's
+// the Thumper unlock, do-nothing losing, a scripted par run whose banks match act1.md's
 // bank-per-phase numbers, and determinism over a full run. A minimal step executor lives here;
 // the harness's real one is T108a's (src/sim/headless.ts).
 import { describe, expect, it } from 'vitest';
@@ -133,10 +133,10 @@ const ofType = <T extends SimEvent['type']>(run: Run, type: T) =>
   run.events.flatMap((l) => (isType(l.e, type) ? [{ tick: l.tick, e: l.e }] : []));
 
 describe('A1M1 waves', () => {
-  it('spawns W1’s six Nibblers 0.8 s apart from the tick it starts', () => {
+  it('spawns W1’s eight Nibblers 0.65 s apart from the tick it starts', () => {
     const run = play(null);
     const w1 = ofType(run, 'EnemySpawned').filter((l) => l.e.wave === 1);
-    expect(w1.map((l) => l.tick)).toEqual([0, 48, 96, 144, 192, 240]);
+    expect(w1.map((l) => l.tick)).toEqual([0, 39, 78, 117, 156, 195, 234, 273]);
     expect(new Set(w1.map((l) => l.e.enemy))).toEqual(new Set(['nibbler']));
   });
 
@@ -193,22 +193,27 @@ describe('A1M1 economy and outcomes', () => {
     expect(ofType(run, 'MapWon')).toEqual([]);
   });
 
-  it('par, issued through commands, wins without a leak and banks D019’s numbers', () => {
+  it('par, issued through commands, wins letting one W1 Nibbler through, with act1.md’s banks', () => {
     const run = play(par);
     expect(ofType(run, 'CommandRejected')).toEqual([]);
-    expect(ofType(run, 'EnemyLeaked')).toEqual([]);
+    // act1.md § A1M1: the lone roof Rivet lets one of W1's eight Nibblers through (margin 95).
+    const leaks = ofType(run, 'EnemyLeaked');
+    expect(leaks.map((l) => [l.e.enemy, l.e.leak])).toEqual([['nibbler', 1]]);
+    const w2Start = ofType(run, 'WaveStarted').find((l) => l.e.wave === 2)!.tick;
+    expect(leaks[0]!.tick).toBeLessThan(w2Start);
     expect(ofType(run, 'AbilityUsed')).toHaveLength(2);
-    // Every enemy dies, so each build phase's bank is D019's (and data.test.ts's) number.
-    expect(run.banks).toEqual([350, 292, 270, 113, 165, 95, 179]);
+    // Every other enemy dies, so each build phase's bank is act1.md's (and data.test.ts's)
+    // number less the leaked Nibbler's 3-credit bounty from W2 on.
+    expect(run.banks).toEqual([350, 295, 273, 116, 168, 98, 182]);
     expect(ofType(run, 'WaveCleared').map((l) => l.e.wave)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     const s = run.sim.state;
     expect(s.outcome).toBe('won');
-    expect(s.integrity).toBe(20);
+    expect(s.integrity).toBe(19);
     const total = map.waves.reduce((n, w) => n + w.groups.reduce((k, g) => k + g.count, 0), 0);
-    expect(s.stats.skitterkinKilled).toBe(total);
+    expect(s.stats.skitterkinKilled).toBe(total - 1);
     // The final bank: W7's phase bank, less its Thumper, plus W7's payout.
     const w7 = map.waves[6]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + 48;
-    expect(s.credits).toBe(179 - 125 + w7);
+    expect(s.credits).toBe(182 - 125 + w7);
     expect(s.credits).toBe(350 + s.stats.creditsEarned - s.stats.creditsSpent);
     // The map is decided: no tick runs after it.
     const tick = s.tick;

@@ -49,7 +49,12 @@ export interface TestHooks {
   enqueue(cmd: HookCommand): void;
   /** Sets game speed; during a battle it drives the host loop. */
   setSpeed(speed: Speed): void;
-  /** Runs a named build from the map's `builds.ts` through the host. Stub: no-op until T107. */
+  /**
+   * Plays a named build from the map's `builds.ts` through the host from now on: `'par'`,
+   * `'none'`, `'alwaysCallEarly'`, or an alt build's name. Each step is issued before the tick it's
+   * due on (the balance harness's executor), at any speed or under `fastForward`, until the battle
+   * ends. Closes the briefing. Throws outside a battle or for an unknown build.
+   */
   autoplay(build: string): void;
   /**
    * Steps the sim `ticks` times synchronously (ignoring speed, even while paused), then dispatches

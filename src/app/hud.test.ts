@@ -11,8 +11,9 @@ import {
   displayName,
   meterLabelText,
   rejectText,
+  briefingLines,
+  countdownSeconds,
   selectedView,
-  sellValue,
   staysArmed,
   wavePreview,
 } from './hud.ts';
@@ -58,11 +59,43 @@ describe('hud view models', () => {
     expect(wavePreview(sim.map, 2)).toBeNull();
   });
 
-  it('values a sell at 70% (rounded down), or 100% inside the misclick grace', () => {
-    const t = { invested: 255, builtTick: 0, firstFiredTick: -1 };
-    expect(sellValue(t, 599)).toEqual({ value: 255, full: true });
-    expect(sellValue(t, 600)).toEqual({ value: 178, full: false });
-    expect(sellValue({ ...t, firstFiredTick: 30 }, 60)).toEqual({ value: 178, full: false });
+  it("shows the sim's sell value: 70% of 180 is 126 (D021), not a floored 125", () => {
+    const sim = devSim();
+    sim.enqueue({ type: 'build', tile: [3, 1], tower: 'dev_rivet' });
+    sim.applyPending();
+    const uid = sim.state.towers.items.find((t) => t.alive)!.uid; // just built
+    sim.enqueue({ type: 'upgrade', towerUid: uid }); // 100 + 80 invested
+    sim.applyPending();
+    const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
+    expect(selectedView(sim, uid, origin, null)).toMatchObject({
+      sellValue: 180,
+      fullRefund: true,
+    });
+    for (let i = 0; i < 600; i++) sim.step(); // past the misclick grace
+    expect(selectedView(sim, uid, origin, null)).toMatchObject({
+      sellValue: 126,
+      fullRefund: false,
+    });
+  });
+
+  it('splits a static briefing into lines with their speakers', () => {
+    expect(briefingLines(null)).toEqual([]);
+    expect(briefingLines("QUILL: Hello, Technician! I'm QUILL.\nNo speaker here\n\n")).toEqual([
+      { speaker: 'QUILL', text: "Hello, Technician! I'm QUILL." },
+      { speaker: null, text: 'No speaker here' },
+    ]);
+    // A colon deep in a sentence isn't a speaker.
+    expect(briefingLines('Note the time and the place: noon, the gate')).toEqual([
+      { speaker: null, text: 'Note the time and the place: noon, the gate' },
+    ]);
+  });
+
+  it('counts the countdown down in whole seconds, rounded up, only while one runs', () => {
+    expect(countdownSeconds('countdown', 1500)).toBe(25);
+    expect(countdownSeconds('countdown', 1441)).toBe(25);
+    expect(countdownSeconds('countdown', 1)).toBe(1);
+    expect(countdownSeconds('spawning', 1500)).toBeNull();
+    expect(countdownSeconds('setup', 0)).toBeNull();
   });
 
   it('describes the selected tower and reuses the view when nothing changed', () => {

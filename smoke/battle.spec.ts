@@ -1,7 +1,8 @@
 // The battle smoke flow (T112): boot straight into BattleScene, build through the hook and by a
 // real mouse click, pause and upgrade, fast-forward, and screenshot each step. Runs on the dev
-// battle until A1M1 is the default map (app/battleSetup.ts DEFAULT_MAP_ID).
-import { battleMapIds, DEFAULT_MAP_ID } from '../src/app/battleSetup.ts';
+// battle (`?map=dev_range`, app/battleSetup.ts DEV_MAP_ID), whose layout the pads below name;
+// every registered map, A1M1 included, gets the boot check at the end.
+import { battleMapIds, DEV_MAP_ID } from '../src/app/battleSetup.ts';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
@@ -10,7 +11,7 @@ const HOOK_PAD = [3, 1] as const;
 const CLICK_PAD = [7, 4] as const;
 
 test('battle: build by hook and by click, pause and upgrade, fast-forward', async ({ page }) => {
-  await page.goto(`/?test=1&map=${DEFAULT_MAP_ID}&seed=1`);
+  await page.goto(`/?test=1&map=${DEV_MAP_ID}&seed=1`);
   await waitForReady(page);
   await shot(page, 'battle', 1, 'start');
 
@@ -91,7 +92,7 @@ test('battle: build by hook and by click, pause and upgrade, fast-forward', asyn
 test('battle: Esc and right-click cancel the selection; paths never take towers', async ({
   page,
 }) => {
-  await page.goto(`/?test=1&map=${DEFAULT_MAP_ID}&seed=1`);
+  await page.goto(`/?test=1&map=${DEV_MAP_ID}&seed=1`);
   await waitForReady(page);
   // A click on a path tile builds nothing (hard rule).
   const path = await page.evaluate(() => globalThis.__sd?.tileToClient(4, 2) ?? null);

@@ -8,7 +8,7 @@ import { BATTLE_SCENE_KEY, BattleScene } from '../render/scenes/BattleScene.ts';
 import { createSim, type SimConfig } from '../sim/index.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
-import { bindHud } from './hud.ts';
+import { bindHud, type HudOptions } from './hud.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
 let battleCount = 0;
@@ -26,7 +26,11 @@ export interface Battle {
 }
 
 /** Starts a battle on `cfg` in a new BattleScene. Throws a RangeError on an invalid config. */
-export function startBattle(game: Phaser.Game, cfg: SimConfig<IdSpace>): Battle {
+export function startBattle(
+  game: Phaser.Game,
+  cfg: SimConfig<IdSpace>,
+  hudOptions: HudOptions = { briefing: false },
+): Battle {
   const sim = createSim(cfg);
   const host = createHost(sim);
   // Nothing is armed at the start: the HUD's build slots (or keys 1–4) arm a tower.
@@ -49,7 +53,7 @@ export function startBattle(game: Phaser.Game, cfg: SimConfig<IdSpace>): Battle 
     },
     key,
   );
-  const unbindHud = bindHud(host, interaction);
+  const unbindHud = bindHud(host, interaction, hudOptions);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
   return {

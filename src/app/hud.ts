@@ -3,19 +3,26 @@
 // only notify on a changed value; arrays and view objects are replaced only when their contents
 // change, so a steady frame re-renders nothing.
 import type { CompiledAbilityDef, CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
-import { MAX_TIER_BEFORE_SPEC, MISCLICK_GRACE_SEC, SELL_REFUND_PCT } from '../content/rules.ts';
+import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { IdSpace, MeterLabel } from '../content/types.ts';
 import { gridToScreen, mapOrigin, type IsoOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { assertNever } from '../shared/types.ts';
-import type { RejectReason, Sim, Tower } from '../sim/index.ts';
+import {
+  callWaveBonus,
+  sellValue,
+  type RejectReason,
+  type SchedulePhase,
+  type Sim,
+} from '../sim/index.ts';
 import {
   hud,
   speed,
   type AbilityCooldownView,
   type AbilitySlotView,
+  type BriefingLine,
   type BuildSlotView,
   type SelectedTowerView,
   type WavePreview,
@@ -23,7 +30,6 @@ import {
 } from '../ui/state.ts';
 import type { Host } from './host.ts';
 
-// TODO(T105b): use the sim's own sell-value rule (rounding included) once it implements `sell`.
 /** How long a notice stays up, in ms of real time. */
 export const NOTICE_MS = 1800;
 
@@ -95,13 +101,25 @@ export function wavePreview(map: CompiledMapDef<IdSpace>, wave: number): WavePre
   return { number: next.number, groups };
 }
 
-/** What a sell returns now: everything inside the misclick grace, else 70% (rounded down). */
-export function sellValue(
-  t: Pick<Tower, 'invested' | 'builtTick' | 'firstFiredTick'>,
-  tick: number,
-): { value: number; full: boolean } {
-  const full = t.firstFiredTick < 0 && tick - t.builtTick < MISCLICK_GRACE_SEC * TICK_HZ;
-  return { value: full ? t.invested : Math.floor(t.invested * SELL_REFUND_PCT), full };
+/**
+ * A map's static briefing (M1: map data `briefing`, one line per `\n`) as lines with their
+ * speakers: "QUILL: Hello!" is spoken by QUILL. A line with no short speaker prefix has none.
+ */
+export function briefingLines(briefing: string | null): BriefingLine[] {
+  if (briefing === null) return [];
+  return briefing
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l !== '')
+    .map((line) => {
+      const m = /^([^:\s][^:]{0,15}): (.+)$/.exec(line);
+      return m === null ? { speaker: null, text: line } : { speaker: m[1]!, text: m[2]! };
+    });
+}
+
+/** Whole seconds left in the countdown to the next wave (rounded up), or null when none runs. */
+export function countdownSeconds(phase: SchedulePhase, ticksLeft: number): number | null {
+  return phase === 'countdown' && ticksLeft > 0 ? Math.ceil(ticksLeft / TICK_HZ) : null;
 }
 
 function sameSelected(a: SelectedTowerView | null, b: SelectedTowerView): boolean {
@@ -250,8 +268,17 @@ export function showNotice(text: string): void {
   }, NOTICE_MS);
 }
 
+export interface HudOptions {
+  /** Open the map's static briefing (if it has one) over the battle until it's dismissed. */
+  readonly briefing: boolean;
+}
+
 /** Wires the HUD signals to a battle. Returns the unwiring (which also resets them). */
-export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): () => void {
+export function bindHud(
+  host: Host<IdSpace>,
+  interaction: BattleInteraction,
+  opts: HudOptions = { briefing: false },
+): () => void {
   const { sim } = host;
   const towers = sim.config.content.towers;
   const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
@@ -264,6 +291,8 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
   const abilityViews = abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1);
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
+  const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
+  hud.briefing.value = lines.length === 0 ? null : lines;
   let previewFor = -1;
   const sync = (): void => {
     const s = sim.state;
@@ -278,6 +307,8 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
       previewFor = s.wave;
       hud.nextWave.value = wavePreview(sim.map, s.wave);
     }
+    hud.countdown.value = countdownSeconds(s.schedule.phase, s.schedule.countdownTicks);
+    hud.callBonus.value = callWaveBonus(s, sim.map);
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
     syncCooldowns();
     speed.value = host.speed;
@@ -328,5 +359,8 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
     hud.abilityCooldowns.value = [];
     hud.nextWave.value = null;
     hud.notice.value = null;
+    hud.briefing.value = null;
+    hud.countdown.value = null;
+    hud.callBonus.value = 0;
   };
 }

@@ -38,6 +38,7 @@ const chill = (pct: number): unknown[] => [{ status: 'chilled', pct, durationTic
 const groupsOf = (w: number): string[] =>
   a1m1.waves[w]!.groups.map((g) => `${g.enemy.id}×${g.count}@${g.intervalTicks}+${g.delayTicks}`);
 const clumps = (...delays: number[]): string[] => delays.map((d) => `nibbler×4@15+${d}`);
+const bigClumps = (...delays: number[]): string[] => delays.map((d) => `nibbler×6@12+${d}`);
 
 /** A build step as `W<wave> <kind> [tower] <tile>`. */
 const stepOf = (s: CompiledBuild['steps'][number]): string =>
@@ -211,7 +212,7 @@ describe('enemies', () => {
 describe('A1M1 waves', () => {
   it('has seven waves with the documented totals, all on the road', () => {
     expect(a1m1.waves.map((w) => w.groups.reduce((n, g) => n + g.count, 0))).toEqual([
-      6, 10, 12, 4, 12, 10, 28,
+      8, 10, 12, 4, 12, 10, 46,
     ]);
     for (const w of a1m1.waves) {
       expect(w.teach).toBe(false);
@@ -219,17 +220,17 @@ describe('A1M1 waves', () => {
     }
   });
 
-  it('spaces groups as the wave table says (clumps 3.75 s apart)', () => {
-    expect(groupsOf(0)).toEqual(['nibbler×6@48+0']);
+  it('spaces groups as the wave table says (clumps 3.75 s apart, W7 big clumps 2.25 s)', () => {
+    expect(groupsOf(0)).toEqual(['nibbler×8@39+0']);
     expect(groupsOf(1)).toEqual(['nibbler×10@48+0']);
     expect(groupsOf(2)).toEqual(clumps(0, 225, 450));
     expect(groupsOf(3)).toEqual(['zoomer×4@30+0']);
     expect(groupsOf(4)).toEqual([...clumps(0, 225), 'zoomer×4@30+450']);
     expect(groupsOf(5)).toEqual(['zoomer×10@30+0']);
     expect(groupsOf(6)).toEqual([
-      ...clumps(0, 225, 450, 675, 900),
-      'zoomer×4@30+330',
-      'zoomer×4@30+780',
+      ...bigClumps(0, 135, 270, 405, 540),
+      'zoomer×8@30+195',
+      'zoomer×8@30+465',
     ]);
   });
 
@@ -290,8 +291,11 @@ describe('A1M1 builds', () => {
     for (const s of par.steps.filter((x) => x.kind === 'ability')) {
       expect(s).toMatchObject({ slot: 1, target: [4, 3], when: { afterTicks: 144 } });
     }
-    // The economy act1.md and builds.ts describe: 95 in W6's build phase is short of a Thumper.
-    expect(banks(par)).toEqual([350, 292, 270, 113, 165, 95, 179]);
+    // The economy act1.md and builds.ts describe: par lets one W1 Nibbler through (its 3-credit
+    // bounty is missing from W2 on), and 98 in W6's build phase is short of a Thumper.
+    expect(banks(par).map((b, i) => (i === 0 ? b : b - 3))).toEqual([
+      350, 295, 273, 116, 168, 98, 182,
+    ]);
   });
 
   it('rivet_only: par with every Thumper swapped for a Rivet, affordable too', () => {

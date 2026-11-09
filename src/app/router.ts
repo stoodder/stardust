@@ -27,7 +27,7 @@ export interface Router {
    * last finished run and rejects if no run has ended.
    */
   goto(id: ScreenId, request?: BattleRequest): Promise<void>;
-  /** Replays the last battle's map (Results → Retry), with the same request. */
+  /** Replays the last battle's map (Results → Retry), with the same request, minus the briefing. */
   retry(): Promise<void>;
   /**
    * Ends the running battle with `outcome` and shows Results. The sim's MapWon / MapLost call it;
@@ -53,6 +53,32 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     battle = null;
   };
 
+  /** Starts a battle; `briefing` opens the map's briefing over it (a fresh start, not a retry). */
+  const openBattle = (request: BattleRequest, briefing: boolean): Promise<void> => {
+    stopBattle();
+    showBackdrop(false);
+    lastRequest = request;
+    const mapId = request.mapId ?? DEFAULT_MAP_ID;
+    const seed = request.seed ?? randomSeed();
+    setSpeed(1);
+    runResult.value = null;
+    ended = false;
+    wavesCleared = 0;
+    const next = startBattle(game, battleConfig(mapId, seed), { briefing });
+    battle = next;
+    const { bus } = next.host;
+    bus.on('WaveCleared', () => {
+      wavesCleared++;
+    });
+    const onEnd = (outcome: RunOutcome) => () => {
+      if (battle === next) void router.endRun(outcome);
+    };
+    bus.on('MapWon', onEnd('won'));
+    bus.on('MapLost', onEnd('lost'));
+    screen.value = 'battle';
+    return next.firstFrame;
+  };
+
   const router: Router = {
     get battle() {
       return battle;
@@ -64,30 +90,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           showBackdrop(true);
           screen.value = 'title';
           return Promise.resolve();
-        case 'battle': {
-          stopBattle();
-          showBackdrop(false);
-          lastRequest = request;
-          const mapId = request.mapId ?? DEFAULT_MAP_ID;
-          const seed = request.seed ?? randomSeed();
-          setSpeed(1);
-          runResult.value = null;
-          ended = false;
-          wavesCleared = 0;
-          const next = startBattle(game, battleConfig(mapId, seed));
-          battle = next;
-          const { bus } = next.host;
-          bus.on('WaveCleared', () => {
-            wavesCleared++;
-          });
-          const onEnd = (outcome: RunOutcome) => () => {
-            if (battle === next) void router.endRun(outcome);
-          };
-          bus.on('MapWon', onEnd('won'));
-          bus.on('MapLost', onEnd('lost'));
-          screen.value = 'battle';
-          return next.firstFrame;
-        }
+        case 'battle':
+          return openBattle(request, true);
         case 'results':
           if (runResult.value === null) {
             return Promise.reject(new Error('router: no finished run to show results for'));
@@ -100,7 +104,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       }
     },
     retry() {
-      return router.goto('battle', lastRequest);
+      // A retry skips the briefing: the player read it moments ago.
+      return openBattle(lastRequest, false);
     },
     endRun(outcome) {
       if (battle === null) return Promise.reject(new Error('router: no battle to end'));

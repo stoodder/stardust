@@ -232,3 +232,15 @@ Architecture §2 has a *Waves, economy, and the end of a map* block, and the for
   - rivet_only wins at 100.
   
   **Check #8 fails:** rivet_only's margin isn't below par's. Both are perfect, so Thumper isn't earning its slot, and act1.md targets a par margin of about 95. Tuning is T107's job, and the gate's `sim` step stays red until T107 lands. This was committed anyway so the harness survives container restarts.
+
+### D024 — 2026-11-09 — T107 A1M1 playable and tuned
+- **Tuning (waves only; no placements, strike timings, or unit numbers changed).** Sweeps showed par had about twice the defense it needed: it never leaked, even against 32 Zoomers in W6 or 60 Nibblers in W7. Only W1's lone T1 Rivet was tight.
+  - **W1:** Nibbler ×8 @0.65 s (was ×6 @0.8). Par and rivet_only, identical through W2, each lose one Nibbler there, so QUILL's first-leak bark lands on the first shift.
+  - **W7:** five big clumps (6 Nibblers @0.2 s, 2.25 s apart) plus two Zoomer ×8 groups, 46 enemies in all. Thumper's splash holds them and Rivets alone leak 5. That's A1M1's teaching point.
+  - **Results** (every seed): par wins at **95** (act1.md's target), rivet_only at **70**, alwaysCallEarly at 100, and none loses at W3. Plausible human builds (Rivet spam, Thumper-heavy) score 95–100, so skipping a tower is never punished (D006).
+  - **Known fragility:** rivet_only's W7 has a cliff. Spacing the clumps 2.4 s apart instead of 2.25 flips it to 95 and fails check #8. T202 re-tunes A1M1 when links and Bricks land; harden it then (T125).
+  - Banks under par: 350/295/273/116/168/98/182.
+- **The real game:** "Start shift" plays A1M1 (`DEFAULT_MAP_ID`). The static briefing is a modal ("Shift briefing", speaker and line, a focused "Clock in" button; Enter or Esc closes it). Game hotkeys are off while it's open, and Retry skips it. `dev_range` stays as `DEV_MAP_ID` (`?map=dev_range`) for the HUD and battle smoke flows.
+- **HUD:** sell value comes from the sim's `sellValue()` (180 → 126). The wave panel shows the countdown and "Call +N", and Call is disabled while a wave is spawning.
+- **`__sd.autoplay(name)`** drives the harness's `createBuildExecutor` through a new `host.setDriver`. `app/autoplay.ts` repeats the harness's two-line none/alwaysCallEarly policy, because `app` may not import `balance`. A smoke test plays par to a real win (19/20 integrity, 101 pests processed).
+- **For the review:** W7's clumps overlap into a "centipede"; Thumper explosions are small; a build slot keeps its focus ring after Esc; the briefing has no threat-intel icons yet.

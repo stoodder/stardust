@@ -1,8 +1,9 @@
 // The in-map HUD (T106): build from a slot and a tile, select → upgrade → retarget → sell from the
 // tower panel, speed controls, the wave call, and the keyboard shortcuts, with screenshots of each
-// step in test-results/screens/hud/. Runs on the default battle (app/battleSetup.ts).
+// step in test-results/screens/hud/. Runs on the dev battle (`?map=dev_range`), whose Thumper
+// isn't held back the way A1M1's is until W3.
 import type { Page } from '@playwright/test';
-import { DEFAULT_MAP_ID } from '../src/app/battleSetup.ts';
+import { DEV_MAP_ID } from '../src/app/battleSetup.ts';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
@@ -28,7 +29,7 @@ function liveTowers(page: Page) {
 }
 
 async function open(page: Page): Promise<void> {
-  await page.goto(`/?test=1&map=${DEFAULT_MAP_ID}&seed=1`);
+  await page.goto(`/?test=1&map=${DEV_MAP_ID}&seed=1`);
   await waitForReady(page);
   await expect(page.getByTestId('hud')).toBeVisible();
 }

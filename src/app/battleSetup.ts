@@ -1,5 +1,6 @@
 // Which map a battle runs, and the SimConfig for it. The live registries win; the dev battle
-// (render/__fixtures__/devBattle.ts) fills in until the live content has a playable map.
+// (render/__fixtures__/devBattle.ts, `?map=dev_range`) stays reachable for development and for the
+// smoke flows that need its unlocked towers.
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
@@ -7,11 +8,11 @@ import type { IdSpace } from '../content/types.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
 import type { SimConfig } from '../sim/index.ts';
 
-/**
- * The map a battle opens when the URL names none. Switch to 'a1_m01' once A1M1 is playable (its
- * towers from T105c and the waves system from T105b); nothing else changes.
- */
-export const DEFAULT_MAP_ID = 'dev_range';
+/** The map a battle opens when the URL names none: the title's "Start shift" plays A1M1. */
+export const DEFAULT_MAP_ID = 'a1_m01';
+
+/** The development battle (render/__fixtures__/devBattle.ts): `?map=dev_range`. */
+export const DEV_MAP_ID = 'dev_range';
 
 let compiled: readonly CompiledContent<IdSpace>[] | null = null;
 

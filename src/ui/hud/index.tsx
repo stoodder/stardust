@@ -7,6 +7,7 @@ import {
   callWave,
   cancel,
   cycleTargeting,
+  dismissBriefing,
   pressAbility,
   pressBuildSlot,
   sellSelected,
@@ -19,6 +20,7 @@ import {
   speed,
   type AbilityCooldownView,
   type AbilitySlotView,
+  type BriefingLine,
   type BuildSlotView,
   type SelectedTowerView,
 } from '../state.ts';
@@ -127,18 +129,23 @@ function SpeedControls() {
   );
 }
 
-/** Top-right: the wave counter, the next wave's preview, and the call-wave button. */
+/**
+ * Top-right: the wave counter, the call-wave button (with what an early call pays), and the next
+ * wave's preview with its countdown.
+ */
 function WavePanel() {
   const wave = hud.wave.value;
   const count = hud.waveCount.value;
   const next = hud.nextWave.value;
   const ended = hud.outcome.value !== 'playing';
+  const countdown = hud.countdown.value;
+  const bonus = hud.callBonus.value;
   const callLabel =
     next === null
       ? null
       : wave === 0
         ? `Start wave ${next.number}`
-        : `Call wave ${next.number} early`;
+        : `Call wave ${next.number} early${bonus > 0 ? `, +${bonus} credits` : ''}`;
   return (
     <section class="hud-waves chamfer" aria-label="Waves">
       <div class="hud-wave-row">
@@ -153,10 +160,12 @@ function WavePanel() {
             class="hud-btn chamfer call"
             aria-label={callLabel}
             title={`${callLabel} (W)`}
-            aria-disabled={ended}
+            // Nothing to call while a wave is still spawning: the next countdown hasn't started.
+            aria-disabled={ended || (wave > 0 && countdown === null)}
             onClick={callWave}
           >
             {wave === 0 ? 'Start' : 'Call'}
+            {bonus > 0 && <span class="hud-bonus num gold">+{bonus}</span>}
             <Key k="W" />
           </button>
         )}
@@ -175,6 +184,11 @@ function WavePanel() {
               {g.air && <span class="hud-air">Air</span>}
             </li>
           ))}
+          {countdown !== null && (
+            <li class="hud-countdown" aria-label={`Starts in ${countdown} seconds`}>
+              <span class="hud-label">in</span> <span class="num">{countdown}s</span>
+            </li>
+          )}
         </ul>
       )}
     </section>
@@ -386,9 +400,51 @@ function Notice() {
   );
 }
 
+/** The map's static briefing (M1), over the battle until dismissed (its button, Enter, or Esc). */
+function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
+  return (
+    <div class="hud-briefing-scrim">
+      <section
+        class="hud-briefing chamfer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hud-briefing-heading"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            dismissBriefing();
+          }
+        }}
+      >
+        <h2 id="hud-briefing-heading" class="hud-briefing-title">
+          Shift briefing
+        </h2>
+        <ul class="hud-briefing-lines">
+          {lines.map((l, i) => (
+            <li key={i}>
+              {l.speaker !== null && <span class="hud-briefing-speaker">{l.speaker}</span>}
+              <span class="hud-briefing-text">{l.text}</span>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          class="hud-btn chamfer hud-briefing-go"
+          // Focused on arrival, so Enter (or Space) clocks in.
+          ref={(el) => el?.focus()}
+          onClick={dismissBriefing}
+        >
+          Clock in
+        </button>
+      </section>
+    </div>
+  );
+}
+
 /** The battle HUD. */
 export function Hud() {
   const selected = hud.selected.value;
+  const briefing = hud.briefing.value;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud">
       <StatusPanel />
@@ -400,6 +456,7 @@ export function Hud() {
       <BuildBar />
       {selected !== null && <TowerPanel t={selected} />}
       <Notice />
+      {briefing !== null && <Briefing lines={briefing} />}
     </div>
   );
 }

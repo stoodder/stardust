@@ -5,8 +5,9 @@ import { computeScale, cssZoom, VIEW_H, VIEW_W } from '../render/scale.ts';
 import { BackdropScene } from '../render/scenes/BackdropScene.ts';
 import { BootScene } from '../render/scenes/BootScene.ts';
 import { mountUi } from '../ui/Overlay.tsx';
-import { screen } from '../ui/state.ts';
-import { issue, setSpeed } from './commands.ts';
+import { hud, screen } from '../ui/state.ts';
+import { startAutoplay } from './autoplay.ts';
+import { dismissBriefing, issue, setSpeed } from './commands.ts';
 import { installKeys } from './keys.ts';
 import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
@@ -75,6 +76,12 @@ export async function boot(): Promise<void> {
         ready,
         battle: () => router.battle,
         issue,
+        autoplay: (build) => {
+          const b = router.battle;
+          if (b === null) throw new Error('__sd.autoplay: no battle is running');
+          dismissBriefing();
+          startAutoplay(b.host, build);
+        },
         setSpeed,
         goto: async (id) => {
           await sceneReady;
@@ -100,8 +107,9 @@ export async function boot(): Promise<void> {
   game.events.once(Phaser.Core.Events.READY, applyScale);
   window.addEventListener('resize', applyScale);
   installKeys({
-    isActive: () => screen.value === 'battle',
-    // No modals until dialogue and settings exist; the Title and Results screens turn hotkeys off.
+    // The Title and Results screens and the briefing turn game hotkeys off.
+    isActive: () => screen.value === 'battle' && hud.briefing.value === null,
+    // No modals over a live battle until dialogue and settings exist.
     isModalOpen: () => false,
   });
 

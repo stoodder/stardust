@@ -34,6 +34,8 @@ export interface HookEnv {
   /** The running battle, or null. */
   battle(): HookBattle | null;
   issue(cmd: HookCommand): void;
+  /** Plays a named build on the running battle (throws outside one, or for an unknown build). */
+  autoplay(build: string): void;
   setSpeed(speed: Speed): void;
   goto(screen: ScreenId): Promise<void>;
   /** Ends the running battle with `outcome` (rejects outside one). */
@@ -68,8 +70,9 @@ export function createTestHooks(env: HookEnv): TestHooks {
       if (!SPEEDS.has(speed)) throw new Error(`__sd.setSpeed: invalid speed ${String(speed)}`);
       env.setSpeed(speed);
     },
-    // TODO(T107): run a map's named build through the host (needs T108a's scripted-build executor).
-    autoplay: () => {},
+    autoplay: (build: string) => {
+      env.autoplay(build);
+    },
     fastForward: (ticks: number) => {
       if (!Number.isInteger(ticks) || ticks < 0) {
         throw new Error(`__sd.fastForward: ticks must be a non-negative integer, got ${ticks}`);

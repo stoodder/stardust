@@ -277,14 +277,14 @@ Why Playwright: it drives a real browser, captures console output and page error
 | `state()` | The current battle's live, read-only sim state (string ids), or `null` outside a battle |
 | `enqueue(cmd)` | Issues a `Command` through `app/commands.ts`, exactly as the UI would. It applies at the next tick, or at the end of the next frame while paused |
 | `setSpeed(n)` | 0, 1, or 2; drives the host loop |
-| `autoplay(build)` | Runs a named build from the map's `builds.ts` (`'par'`, `'none'`, an alt build) through the host. **Stub (no-op) until T107** |
+| `autoplay(build)` | Plays a named build from the map's `builds.ts` (`'par'`, `'none'`, `'alwaysCallEarly'`, an alt build) through the host from now on, with the harness's executor: each step is issued before the tick it's due on, at any speed or under `fastForward`. Closes the briefing. Throws outside a battle or for an unknown build |
 | `fastForward(ticks)` | Steps the sim `ticks` times synchronously with no frame cap, whatever the speed (even paused), then drains and dispatches the events once. `fastForward(0)` applies pending commands without advancing time. A whole map resolves in well under a second of wall time |
 | `tileToClient(x, y)` | Client (CSS px) coordinates of the center of tile (x, y), for real mouse clicks; `null` outside a battle |
 | `goto(screen)` | Jumps to a screen (`'title'`, `'battle'`, `'results'`); returns a promise that resolves once it has rendered. `'results'` shows the last finished run and rejects if no run has ended |
 | `forceOutcome(outcome)` | **Test-only, not a player action:** ends the running battle as if the sim had emitted `MapWon` (`'won'`) or `MapLost` (`'lost'`), with its stats as they stand, and shows the results screen; rejects outside a battle. It lets smoke flows reach both results screens without playing a map out |
 | `perf()` | Recent frame CPU time (Phaser's pre-step through post-render), sim ms per tick, and live entity and particle counts |
 
-Boot parameters: `seed`, `map` (opens that map's battle), `skipIntro` (opens the default battle, `DEFAULT_MAP_ID` in `src/app/battleSetup.ts`). The hooks only read state and issue the same commands a player could, so they're safe to ship. Without `?test=1`, `window.__sd` doesn't exist. The hook types live in `src/app/testHookTypes.ts` (DOM-free, so specs import them too). To land a command deterministically, pause first (`setSpeed(0)`), then `enqueue` and `fastForward(0)`.
+Boot parameters: `seed`, `map` (opens that map's battle), `skipIntro` (opens the default battle, `DEFAULT_MAP_ID` in `src/app/battleSetup.ts`: A1M1, which opens on its briefing; `map=dev_range` is the dev battle). The hooks only read state and issue the same commands a player could, so they're safe to ship. Without `?test=1`, `window.__sd` doesn't exist. The hook types live in `src/app/testHookTypes.ts` (DOM-free, so specs import them too). To land a command deterministically, pause first (`setSpeed(0)`), then `enqueue` and `fastForward(0)`.
 
 **What the smoke tests check:**
 

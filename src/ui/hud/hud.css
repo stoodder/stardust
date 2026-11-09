@@ -464,3 +464,74 @@ section.chamfer,
   color: var(--sd-white-1);
   pointer-events: none;
 }
+
+/* ── Wave panel: countdown and the early-call bonus ───────────────────────────────────────── */
+
+.hud-countdown {
+  margin-left: auto;
+  color: var(--sd-white-1);
+}
+
+.hud-bonus {
+  margin-left: 1px;
+}
+
+/* ── The static briefing (M1): a modal over the battle until it's dismissed ───────────────── */
+
+.hud-briefing-scrim {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(5 3 10 / 55%);
+  pointer-events: auto;
+}
+
+.hud-briefing {
+  box-sizing: border-box;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  width: 360px;
+  padding: 10px 12px 10px;
+}
+
+.hud-briefing-title {
+  margin: 0;
+  font-size: 8px;
+  font-weight: normal;
+  color: var(--accent);
+}
+
+.hud-briefing-lines {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-transform: none;
+}
+
+.hud-briefing-lines li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 6px;
+  line-height: 10px;
+}
+
+.hud-briefing-speaker {
+  color: var(--sd-gold-3);
+  text-transform: uppercase;
+}
+
+.hud-briefing-text {
+  grid-column: 2;
+  color: var(--sd-white-1);
+}
+
+.hud-briefing-go {
+  justify-self: end;
+  --edge: var(--accent);
+  color: var(--accent);
+}

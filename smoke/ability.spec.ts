@@ -1,12 +1,12 @@
 // The commander ability flow (T113): aim the slot-1 strike from the HUD (and cancel with Esc), fire
 // it by a real click on a tile while paused, fast-forward through the reticle to the impact, and
-// check the slot recharges. Screenshots in test-results/screens/ability/. Runs on the default
-// battle (app/battleSetup.ts), whose par build equips a strike in slot 1.
+// check the slot recharges. Screenshots in test-results/screens/ability/. Runs on A1M1 (the
+// default battle, app/battleSetup.ts), whose par build equips a strike in slot 1.
 import { DEFAULT_MAP_ID } from '../src/app/battleSetup.ts';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
 
-/** A path tile on the dev battle's road, a fallback target when no enemy is on the field yet. */
+/** A tile on A1M1's road, a fallback target when no enemy is on the field yet. */
 const ROAD_TILE = [4, 2] as const;
 
 test('ability: aim from the HUD, fire at a tile, see the strike land and recharge', async ({
@@ -15,6 +15,10 @@ test('ability: aim from the HUD, fire at a tile, see the strike land and recharg
   await page.goto(`/?test=1&map=${DEFAULT_MAP_ID}&seed=1`);
   await waitForReady(page);
   await expect(page.getByTestId('hud')).toBeVisible();
+  // The briefing opens first, with its button focused: Enter clocks in.
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
   const bar = page.getByRole('navigation', { name: 'Abilities' });
   const slot = bar.getByRole('button');
   await expect(slot).toHaveAttribute('aria-label', /, ready$/);

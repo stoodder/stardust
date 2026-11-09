@@ -30,6 +30,11 @@ export interface Host<K extends IdSpace = LiveIds> {
   fastForward(ticks: number): void;
   /** Runs `listener` after every frame's (and fastForward's) dispatch. Returns its `off`. */
   onAfterFrame(listener: () => void): () => void;
+  /**
+   * Runs `driver` before every sim tick (frames and fastForward alike), or none for null: how a
+   * scripted build (`__sd.autoplay`, headless.ts createBuildExecutor) plays through the host.
+   */
+  setDriver(driver: (() => void) | null): void;
   /** Mean wall time per sim tick over recent frames, in ms. */
   simMsPerTick(): number;
 }
@@ -49,6 +54,7 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
   let speed: Speed = opts.speed ?? 1;
   let acc = 0;
   let msPerTick = 0;
+  let driver: (() => void) | null = null;
 
   const dispatch = (): void => {
     events.length = 0;
@@ -61,7 +67,10 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
   const runSteps = (n: number): void => {
     if (n === 0) return;
     const t0 = now();
-    for (let i = 0; i < n; i++) sim.step();
+    for (let i = 0; i < n; i++) {
+      driver?.();
+      sim.step();
+    }
     const per = (now() - t0) / n;
     msPerTick = msPerTick === 0 ? per : msPerTick + (per - msPerTick) * PERF_SMOOTHING;
   };
@@ -113,6 +122,9 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
     },
     simMsPerTick() {
       return msPerTick;
+    },
+    setDriver(next) {
+      driver = next;
     },
   };
 }
