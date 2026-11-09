@@ -560,7 +560,7 @@ stardust/
     │   ├── radio/              # the M1 radio ticker's line tables, by map (D026); dialogue/ replaces it at T302
     │   ├── dialogue/           # flags.ts speakers.ts types.ts scenes/ barks/ memos/ epilogue/ tips.ts results.ts bricks_tags.ts
     │   ├── palettes/           # master.ts, factions.ts, env.ts, index.ts, color.ts
-    │   └── sprites/            # types.ts legend.ts defineSprite.ts helpers.ts validate.ts index.ts; tiles/ props/ towers/ enemies/ projectiles/ fx/ (later icons/ portraits/ ui/)
+    │   └── sprites/            # types.ts legend.ts defineSprite.ts helpers.ts validate.ts index.ts; tiles/ props/ towers/ enemies/ projectiles/ fx/ (portraits/; later icons/ ui/)
     ├── story/                  # pure: runner.ts conditions.ts flags.ts barks.ts text.ts counter.ts codex.ts inbox.ts epilogue.ts presentation.ts tags.ts
     ├── meta/                   # save.ts, migrations.ts, codec.ts, store.ts, progression.ts, modifiers.ts, shop.ts, __fixtures__/
     ├── balance/                # pure: harness.ts (plan, run, judge), mapChecks.ts (a map's assertions, in order) over checks.ts (their kit: run labels, records, judging helpers) and the families parChecks.ts, counterChecks.ts, altChecks.ts, freeChoiceChecks.ts, medals.ts; refusals.ts (checks not possible yet), rules.ts (bands, seeds, budgets), profile.ts (profile → SimConfig), policies.ts, report.ts

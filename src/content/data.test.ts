@@ -103,8 +103,19 @@ const parList = (splash: string): string[] => [
 ];
 
 describe('towers', () => {
-  it('registers the three M1 Everglow towers', () => {
-    expect(Object.keys(content.towers)).toEqual(['rivet', 'thumper', 'sprinkler']);
+  it('registers the three M1 Everglow towers (and M3\'s two, data.m3.test.ts)', () => {
+    expect(Object.keys(content.towers)).toEqual([
+      'rivet',
+      'thumper',
+      'sprinkler',
+      'skyhook',
+      'zapcoil',
+    ]);
+    expect([rivet, thumper, sprinkler].map((t) => t.name)).toEqual([
+      'Rivet',
+      'Thumper',
+      'Sprinkler',
+    ]);
     for (const t of [rivet, thumper, sprinkler]) {
       expect(t.faction).toBe('everglow');
       expect(t.sprites).toEqual({
@@ -248,8 +259,25 @@ describe('towers', () => {
 });
 
 describe('enemies', () => {
-  it('registers the M1 Skitterkin and the Brood Hauler', () => {
-    expect(Object.keys(content.enemies)).toEqual(['nibbler', 'zoomer', 'chonk', 'hauler']);
+  it('registers the M1 Skitterkin and the Brood Hauler (and M3\'s six, data.m3.test.ts)', () => {
+    expect(Object.keys(content.enemies)).toEqual([
+      'nibbler',
+      'zoomer',
+      'chonk',
+      'hauler',
+      'puffwing',
+      'bunchling',
+      'digger',
+      'elder',
+      'chitterbloom',
+      'gerald',
+    ]);
+    expect(Object.values(content.enemies).slice(0, 4).map((e) => e.name)).toEqual([
+      'Nibbler',
+      'Zoomer',
+      'Chonk',
+      'Brood Hauler',
+    ]);
     for (const e of [nibbler, zoomer, chonk]) {
       expect(e).toMatchObject({ faction: 'skitterkin', body: 'organic', layer: 'ground' });
       expect(e.shield).toBeNull();

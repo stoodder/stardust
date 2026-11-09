@@ -152,8 +152,8 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T312b** Render: burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [ ] **T312c** HUD: slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
 - [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
-- [ ] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
-- [ ] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
+- [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
+- [~] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
 - [ ] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
 - [ ] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [ ] **T311c** Props for A1M3–A1M5; terraces and cliffs (T223); death animations, scutes, clump separation (T117).

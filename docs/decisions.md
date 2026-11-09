@@ -856,3 +856,10 @@ Three files stay at 430–470 lines, each one cohesive pool or frame loop. T234 
   - Nodes get an optional `label`.
   - Scene slots get `base_<name>`.
   - Scene, memo, and codex ids in saves are checked by shape only.
+
+### D067 — 2026-11-09 — T310a portraits (batch 1)
+48×48 portraits for the player, Bricks, QUILL, and Sterling. Each has neutral/happy/worried/angry/sad expressions with `_talk` frames, and every portrait bakes a dark variant for an absent speaker. QUILL adds `policy` with a one-frame gold `policy_flash` and scanline idles. Built variants: the player's `reflect_confetti` and QUILL's `party_hat`.
+- **The player has no visible face.** Expressions read through the visor, its shadow acting as a brow, plus a thumbs-up, a sweat drop, or an anger mark. That keeps the protagonist open to any player-chosen identity (D001 #2).
+- **Sterling's smile never changes**, whatever her eyes do. That's the Everglow tell, in the art.
+- Later-act variants (Bricks `pebble`, QUILL `purge`, the player's `reflect_violet`/`reflect_pebble`) come with their acts.
+- The gallery is now 27,090 px tall, against the stitched capture's 32,767 px limit; paginate before M4.
