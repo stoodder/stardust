@@ -16,6 +16,13 @@ export const EARLY_CALL_SLACK_PCT = 10;
 export const MONOTONIC_TOLERANCE_PCT = 5;
 /** Assertion 8: the forgiving floor for every alt build. */
 export const FORGIVING_FLOOR_PCT = 20;
+/**
+ * The `gradual` check (D028): no wave of an alt build's run may cost more than this share of
+ * max integrity, so no build meets a single-wave wall...
+ */
+export const MAX_WAVE_LOSS_PCT = 50;
+/** ...and a build that loses starts leaking at least this many waves before the one it loses in. */
+export const LEAK_LEAD_WAVES = 1;
 /** Assertion 5: a no-counter build must lose by this share of the waves (before the final third). */
 export const NO_COUNTER_LOSE_BY_SHARE = 2 / 3;
 

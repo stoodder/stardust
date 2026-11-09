@@ -28,7 +28,7 @@ Goal: process scaffolding, a complete story bible, and first-draft design, art, 
 - [x] **T008** Apply review fixes, reconcile docs, ship M0 (commit + `m0` tag)
 
 ## M1 — Playable Vertical Slice
-**Status: current. Build done; in review.**
+**Status: done, shipped (D030); release `m1`.**
 Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable in the browser, with the full test gate green. Starts after `m0` is tagged.
 
 **Parallel lanes:** sim (T111 → T102 → T103 → T110 → T105a/b/c → T108a) · sprites (T104, any time after T101) · render/UI (T112 → T106/T115/T113, once the sim API from T102 exists). T107 integrates everything; T108b closes the milestone.
@@ -50,23 +50,26 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [x] **T107** A1M1 playable end to end per the M1 cut: briefing as static text, with no Bricks ally, Suppressing Fire, Crossfire link, or medals. Par build tuned to match. Tune the strike timing too (D022). **The gate's `sim` step is red until this lands:** par and rivet_only both score 100, so check #8 (alt below par) fails; tune A1M1 so par lands near act1.md's 95 and rivet_only below it (D023). Drive `__sd.autoplay` with `createBuildExecutor`. Set `DEFAULT_MAP_ID` to `'a1_m01'` (D015) and implement `__sd.autoplay(build)`. HUD: use the sim's `sellValue()` (the HUD's own copy floors 0.7 × 180 to 125), and show the countdown and `callWaveBonus()` (D021). Write A1M1 par and `rivet_only` as **explicit step lists** in `docs/story/campaign/act1.md`. First-pass content moved the second Thumper to W7 and Rivet T2 to W2 (D019); tune both builds and keep act1.md's step table in sync.
 - [x] **T108b** Playwright smoke flows (boot, build, wave, win via `fastForward`, lose; assert enemy and projectile views appear). Move the results flows off `__sd.forceOutcome` onto `autoplay`, and assert a non-zero PESTS PROCESSED with screenshots, wired into `npm run check`.
 
+- [x] **T118** Docs, Design and Story owners: add the armed-tower rule (D018) to core-loop §4, and the results/title/briefing strings (D017, D024: "Shift briefing", "Clock in") to style-guide §2.
+- [x] **T122** Render: a hitscan tracer and a Sprinkler pulse ring driven by `ProjectileFired` (shells and hit flashes are already drawn). Good fit with T113's `FxView`.
+- [x] **T127** M1 review round 1 fixes (D026, D027): sim, UI, art, and balance fixers.
+- [x] **T130** M1 review round 2 fixes (D028): UI and balance fixers.
+
+## M2 — Loadout, Upgrades & Meta Progression
+**Status: next.** Carried over from M1:
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
-- [ ] **T118** Docs, Design and Story owners: add the armed-tower rule (D018) to core-loop §4, and the results/title/briefing strings (D017, D024: "Shift briefing", "Clock in") to style-guide §2.
 - [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
 - [ ] **T121** `createSim` refuses loadouts that use attack kinds or statuses the towers system doesn't run yet (projectile/beam/chain/spawner; pinned/stasis/unnerved), per D013. Apply stat modifiers in `towers` once modifiers exist.
-- [x] **T122** Render: a hitscan tracer and a Sprinkler pulse ring driven by `ProjectileFired` (shells and hit flashes are already drawn). Good fit with T113's `FxView`.
 - [ ] **T123** Younglings: leaks cost 0 (`LEAK_FREE_TAGS`) and the ×0.5 speed (no M1 content uses them; needed before the first youngling map). Boss waves triple the clear bonus (with T304).
-- [ ] **T124** Harness follow-ups: move the "alt below par" expectation into `BuildsDef`; point maps.md §6.1's band numbers at `src/balance/rules.ts`; add a per-tower damage tally (e.g. `damage` on `ProjectileHit`) so the report shows DPS per tower; switch `src/sim/a1m1.test.ts`'s mini-executor to `runHeadless`.
+- [ ] **T124** Harness follow-ups (the `BuildsDef` expectations and the maps.md §6.1 pointers are done, D027): add a per-tower damage tally (e.g. `damage` on `ProjectileHit`) so the report shows DPS per tower; switch `src/sim/a1m1.test.ts`'s mini-executor to `runHeadless`.
 - [ ] **T125** Balance: when T202 re-tunes A1M1 (links, Bricks), keep `src/balance/a1m1.test.ts` green; rivet_only sits on its 40% floor at a −0.2 s clump shift (D027). Add a threat-intel strip to the briefing once trait icons exist.
-- [x] **T127** M1 review round 1 fixes (D026, D027): sim, UI, art, and balance fixers.
-- [~] **T130** M1 review round 2 fixes (D028): UI and balance fixers.
 - [ ] **T126** Accessibility: keyboard-only building and selecting (a tile cursor: arrows hop between pads and towers, Enter builds/selects). Also reposition the tower panel so it doesn't cover neighbouring towers.
 - [ ] **T128** Story: canonise the Thumper unlock radio line ("New hardware! Thumper Mortar, ready to deploy!") in act1.md § A1M1, or replace it with a canon line and drop its exemption in `tools/radioLines.test.ts`. Polish: phase-sync the 1 Hz HUD slot and pad pulses; a clearer low-integrity core frame (ART).
 - [ ] **T129** Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
-## M2 — Loadout, Upgrades & Meta Progression
+M2 scope:
 - [ ] **T201** Loadout screen (pick up to 4 towers; skipped when you own ≤4 types and have no choice to make)
 - [ ] **T202** Tier-4 specialization choice; adjacency links (incl. Crossfire); medals (in-map evaluation + results screen)
 - [ ] **T203** Save system (localStorage plus export/import codes)

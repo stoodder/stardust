@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+// SMOKE_PORT moves the preview server off the default 4173 (a second checkout's smoke run, say).
+// The gate still runs one `npm run check` at a time: runs also share `dist/`.
+const PORT = Number(process.env['SMOKE_PORT'] ?? 4173);
 
 // Browser resolution: CHROME_PATH (set in Claude Code cloud sessions, where the preinstalled
 // Chromium doesn't match the pinned Playwright's revision); otherwise Playwright's own Chromium
@@ -30,7 +32,8 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npm run preview',
+    // `npm run preview`'s Vite command, with the port.
+    command: `npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false,
     timeout: 30_000,

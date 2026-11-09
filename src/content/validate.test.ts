@@ -407,5 +407,15 @@ describe('validate: builds', () => {
     rejects(withMap({ marginBand: { minPct: 80, maxPct: 60 } }), 'builds-range');
     rejects(withMap({ flagVariants: { door_choice: [] } }), 'builds-range');
     rejects(withMap({ altExpectations: { no_such_build: { belowPar: true } } }), 'builds-range');
+    // 'toString' is on every object's prototype, never an own alt build.
+    rejects(
+      withMap({ altExpectations: { toString: { belowPar: true as const } } }),
+      'builds-range',
+    );
+    rejects(withMap({ altExpectations: { gun_only: {} } }), 'builds-range');
+    rejects(
+      withMap({ altExpectations: { gun_only: { outcome: 'lose', minMarginPct: 40 } } }),
+      'builds-range',
+    );
   });
 });

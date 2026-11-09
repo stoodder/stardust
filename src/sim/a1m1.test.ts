@@ -203,7 +203,7 @@ describe('A1M1 economy and outcomes', () => {
     expect(leaks[0]!.tick).toBeGreaterThan(w7Start);
     expect(ofType(run, 'AbilityUsed')).toHaveLength(2);
     // Every enemy before W7 dies, so each build phase's bank is act1.md's (and data.test.ts's).
-    expect(run.banks).toEqual([350, 198, 176, 119, 179, 189, 169]);
+    expect(run.banks).toEqual([350, 198, 176, 119, 221, 207, 203]);
     expect(ofType(run, 'WaveCleared').map((l) => l.e.wave)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     const s = run.sim.state;
     expect(s.outcome).toBe('won');
@@ -212,7 +212,7 @@ describe('A1M1 economy and outcomes', () => {
     expect(s.stats.skitterkinKilled).toBe(total - 1);
     // The final bank: W7's phase bank, less its Rivet, plus W7's payout less the leaked bounty.
     const w7 = map.waves[6]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + 48;
-    expect(s.credits).toBe(169 - 100 + w7 - 3);
+    expect(s.credits).toBe(203 - 100 + w7 - 3);
     expect(s.credits).toBe(350 + s.stats.creditsEarned - s.stats.creditsSpent);
     // The map is decided: no tick runs after it.
     const tick = s.tick;
@@ -220,8 +220,8 @@ describe('A1M1 economy and outcomes', () => {
     expect(run.sim.state.tick).toBe(tick);
   });
 
-  it('rivet_only and par_minus_last also win', () => {
-    for (const alt of ['rivet_only', 'par_minus_last']) {
+  it('rivet_only, par_minus_last, and no_upgrades also win', () => {
+    for (const alt of ['rivet_only', 'par_minus_last', 'no_upgrades']) {
       const run = play(map.builds.altBuilds[alt]!);
       expect(ofType(run, 'CommandRejected')).toEqual([]);
       expect(run.sim.state.outcome).toBe('won');

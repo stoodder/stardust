@@ -9,6 +9,8 @@ import { refusal } from './refusals.ts';
 import {
   EARLY_CALL_SLACK_PCT,
   FORGIVING_FLOOR_PCT,
+  LEAK_LEAD_WAVES,
+  MAX_WAVE_LOSS_PCT,
   noCounterLoseByWave,
   parBand,
 } from './rules.ts';
@@ -113,6 +115,31 @@ const margins = (recs: readonly RunRecord[]): string =>
   recs.map((r) => fmtPct(r.marginPct)).join(' / ');
 const won = (rec: RunRecord): string | null =>
   rec.result?.outcome === 'won' ? null : describeRun(rec);
+
+/** Integrity lost per wave, "0,0,3,8,9" (waves that never started read 0). */
+export const lossPerWave = (r: HeadlessResult | null): string =>
+  r === null ? '-' : r.waves.map((w) => w.integrityLost).join(',');
+
+/**
+ * Why a run hits a wall rather than losing gradually (the `gradual` check, D028), or null: a
+ * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity, or a loss in the very wave its
+ * leaks start (they must start LEAK_LEAD_WAVES earlier).
+ */
+export function notGradual(r: HeadlessResult): string | null {
+  const cap = (r.maxIntegrity * MAX_WAVE_LOSS_PCT) / 100;
+  const wall = r.waves.find((w) => w.integrityLost > cap);
+  if (wall !== undefined) {
+    return `W${wall.wave} costs ${wall.integrityLost} of ${r.maxIntegrity} integrity, over ${MAX_WAVE_LOSS_PCT}%`;
+  }
+  if (r.outcome === 'lost') {
+    const lost = r.lostAtWave ?? r.waves.length;
+    const first = r.waves.find((w) => w.integrityLost > 0)?.wave ?? lost;
+    if (first > lost - LEAK_LEAD_WAVES) {
+      return `it loses in W${lost}, but its leaks only start in W${first} (they must start by W${lost - LEAK_LEAD_WAVES})`;
+    }
+  }
+  return null;
+}
 
 /** Every check for `map` that needs runs. `every` and `few` are the seed lists. */
 export function mapChecks<K extends IdSpace>(
@@ -227,25 +254,56 @@ export function mapChecks<K extends IdSpace>(
   }
 
   for (const name of Object.keys(b.altBuilds)) {
+    const label = `alt:${name}`;
+    const outcome = Object.hasOwn(b.altExpectations, name)
+      ? b.altExpectations[name]!.outcome
+      : undefined;
+    if (outcome === undefined) {
+      checks.push(
+        perRun(
+          '8',
+          `${label} wins with margin ≥ ${FORGIVING_FLOOR_PCT}`,
+          label,
+          few,
+          (rec) => {
+            if (rec.result?.outcome !== 'won') return describeRun(rec);
+            return rec.marginPct >= FORGIVING_FLOOR_PCT
+              ? null
+              : `margin ${fmtPct(rec.marginPct)} is below ${FORGIVING_FLOOR_PCT}`;
+          },
+          (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+        ),
+      );
+    } else if (outcome === 'lose') {
+      checks.push(
+        perRun(
+          '8',
+          `${label} (under-built) loses`,
+          label,
+          few,
+          (rec) => (rec.result?.outcome === 'lost' ? null : describeRun(rec)),
+          (recs) => recs.map(describeRun).join(', '),
+        ),
+      );
+    }
     checks.push(
       perRun(
-        '8',
-        `alt:${name} wins with margin ≥ ${FORGIVING_FLOOR_PCT}`,
-        `alt:${name}`,
+        'gradual',
+        `${label} never loses over ${MAX_WAVE_LOSS_PCT}% of integrity in one wave, and leaks before any loss`,
+        label,
         few,
-        (rec) => {
-          if (rec.result?.outcome !== 'won') return describeRun(rec);
-          return rec.marginPct >= FORGIVING_FLOOR_PCT
-            ? null
-            : `margin ${fmtPct(rec.marginPct)} is below ${FORGIVING_FLOOR_PCT}`;
+        (rec) => notGradual(rec.result!),
+        // Seeds that played out alike are listed once.
+        (recs) => {
+          const runs = recs.map((r) => `${describeRun(r)}, lost per wave ${lossPerWave(r.result)}`);
+          return [...new Set(runs)].join('; ');
         },
-        (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
       ),
     );
   }
   for (const [name, expect] of Object.entries(b.altExpectations)) {
     const label = `alt:${name}`;
-    if (!(name in b.altBuilds)) {
+    if (!Object.hasOwn(b.altBuilds, name)) {
       // The validator rejects this; the harness refuses rather than skips, in case it runs first.
       checks.push(
         refusal('8', `${label} expectations`, label, () => {

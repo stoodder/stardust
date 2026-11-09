@@ -308,3 +308,39 @@ Round 2 ran two reviews. **Correctness/Architecture/Performance:** ship-ready, n
 - **The pad behind the core stays where it is.** The core draws at about 60% alpha while a tower stands behind it.
 - **Art trail:** the round-2 reviewer approved the current gallery as the `m1` baseline. The dioramas also get the apron and fence so the baseline matches play. M2 should improve the tier-2 silhouettes and the mid-darks inside the playfield.
 - Minor fixes: radio staleness judged per batch, plus a 1–1.5 s beat before "It's Wednesday."; the fast glyph shown once per group; a red low-integrity halo; `matchMedia` cached; the HUD stat line cached; `radiusTiles` on `ProjectileFired`; `Object.hasOwn` in expectation checks; a note to run one gate at a time.
+
+### D029 — 2026-11-09 — M1 review round 2 fixes; review closed at round 2
+- **UI** (UI2 fixer):
+  - The upgrade hint "Click a turret to upgrade it (U)" shows from W2 until the first upgrade, and the built towers pulse. All 1 Hz pulses share one clock.
+  - Results hold 1.5 s with the sim frozen (`fastForward` skips the hold). The win card shows Bricks's act1.md debrief ("Not bad, Sprout." / "Don't name things on day one. You get attached."), plus QUILL's first-leak line when that leak fired within 4 s *and* 480 ticks of the end.
+  - Radio staleness is judged per batch. A setup line drops to a 2.5 s hold when its reply is queued, and the reply shows under it. That's longer than D028's 1–1.5 s beat, because the 105-character setup must stay readable.
+  - The fast glyph shows once per enemy type per battle.
+  - The core turns red at low integrity and fades to 60% behind a tower.
+  - Gallery dioramas match the play frame (apron, fence, decor), and the gallery smoke dropped from 28 s to 3 s.
+- **Balance** (BAL2 fixer):
+  - **The no-single-wave-wall rule:** the harness `gradual` check (`MAX_WAVE_LOSS_PCT`, `LEAK_LEAD_WAVES` in `src/balance/rules.ts`; maps.md §6.1) runs on every alt build. `AltBuildExpectation.outcome` (`'lose' | 'either'`) marks deliberately under-built alts.
+  - **A1M1's final curve:** W4 got a warning clump, W5 is lighter, and W6 and W7 are denser. **The W5→W6 planning dip from D028 is gone**, because restoring it put `two_rivets` over the wall limit in W5. W6 still costs par nothing and still carries the Joke of the Shift.
+  - **Results:**
+
+    | Build | Margin / result | Leaks |
+    |---|---|---|
+    | par | 95 | 1 in W7 |
+    | rivet_only | 80 | 4 in W7, its splash lesson |
+    | par_minus_last | 80 | |
+    | par without strikes | 75 | the W7 strike saves 4 |
+    | no_upgrades | 60 | wins low |
+    | alwaysCallEarly | 60 | |
+    | two_rivets | loses in W6 | gradually: W4 4, W5 8, W6 8 |
+    | none | loses at W3 | |
+
+    Every check holds under ±0.2 s clump shifts.
+  - `playwright.config.ts` reads `SMOKE_PORT`, and conventions say to run one gate at a time.
+- **Review closed at round 2.** Round 2's only high finding (the wall for non-upgrading builds) is fixed and is now enforced by the harness. The other fixes were small and are verified by the gate and screenshots. A round 3 would mostly re-confirm automated checks, so M1 ships with the remaining low findings logged as tasks (T117, T125, T126, T128).
+
+### D030 — 2026-11-09 — M1 shipped
+M1 (the playable vertical slice, D004 as amended by D026) ships: A1M1 *Orientation Day* is winnable and losable in the browser.
+- **Content:** Rivet and Thumper (plus Sprinkler and Chonk, sim-tested), Nibbler and Zoomer, and Orbital Strike.
+- **Screens:** the static briefing, the Act I radio ticker, the HUD, and the title and results screens with PESTS PROCESSED and Bricks's debrief.
+- **The gate:** typecheck, lint, 581 unit/sim tests, build, a 25-run A1M1 balance harness, 17 Playwright smoke flows, and the docs check, about 40 s in all. Two review rounds ran: D026 to D029.
+- **Art trail:** the M1 baseline is [art/gallery/m1.png](art/gallery/m1.png). M2's image should show stronger tier-2 silhouettes and more mid-darks inside the playfield.
+- **Release:** shipped as the `M1: ship` commit on `main`. Cloud sessions can't push tags, so the owner creates the `m1` release on GitHub.

@@ -1,18 +1,20 @@
 // A1M1 balance-harness builds: docs/story/campaign/act1.md § A1M1, Par build (the step lists
-// there mirror these). Tuned by T127 (D026): par wins at 95 (one W7 Nibbler slips through), and
-// spends its bank as it goes; rivet_only wins lower, because W5's and W7's tight clumps are what
-// the Thumper's splash is for; par without its last step still ends well clear of a loss.
+// there mirror these). Tuned by T127 and T130 (D026, D028): par wins at 95 (one W7 Nibbler slips
+// through) and spends its bank as it goes; rivet_only wins lower, because W7's big clumps are what
+// the Thumper's splash is for; par without its last step still ends well clear of a loss; and the
+// under-built alts lose integrity over several waves, never to one.
 //
 // Economy (core-loop.md § 2.3: bounties plus a 20 + 4 × wave clear bonus; 350 to start): under
-// par, the bank in each wave's build phase is W1 350, W2 198, W3 176, W4 119, W5 179, W6 189,
-// W7 169. W4's phase buys nothing: par saves for the roof Rivet's tier 3 (150), which W4's
+// par, the bank in each wave's build phase is W1 350, W2 198, W3 176, W4 119, W5 221, W6 207,
+// W7 203. W4's phase buys nothing: par saves for the roof Rivet's tier 3 (150), which W4's
 // bounties complete.
 //
 // M1 cut (D004): no Crossfire, medals, Suppressing Fire, or Bricks ally. The Technician's Orbital
 // Strike (owned from A1M1, campaign.md § 4.2) hits the first clump of W5 and of W7 at the road's
 // first corner (4,3): a clump's lead Nibbler (1 tile/s) is at route distance 3.4 when a strike
-// cast 2.4 s into the wave lands 1 s later, and its tail is within 1.4 tiles behind (W5's 6 and
-// W7's 8 at 0.2 s), so the whole clump sits inside the 1.5-tile radius around (4,3).
+// cast 2.4 s into the wave lands 1 s later, and its tail is within 1.4 tiles behind (W5's 4 and
+// W7's 8 at 0.2 s), so the whole clump sits inside the 1.5-tile radius around (4,3). In W5 it
+// also catches the Zoomer burst running over that clump.
 import { defineBuilds } from '../../define.ts';
 import type { BuildStep } from '../../types.ts';
 
@@ -61,10 +63,19 @@ export const builds = defineBuilds({
       loadout: ['rivet', 'thumper'],
       steps: PAR_STEPS.filter((s) => !('build' in s && s.wave === 7)),
     },
+    // Under-built players (D028): par's towers and strikes with no upgrade ever bought, and two
+    // setup Rivets with nothing after. Neither meets a single-wave wall (the `gradual` check).
+    no_upgrades: {
+      loadout: ['rivet', 'thumper'],
+      steps: PAR_STEPS.filter((s) => !('upgrade' in s)),
+    },
+    two_rivets: { loadout: ['rivet'], steps: PAR_STEPS.slice(0, 2) },
   },
   altExpectations: {
     // The Thumper helps without being required (D006), and skipping it is never a rout.
     rivet_only: { belowPar: true, minMarginPct: 40 },
     par_minus_last: { minMarginPct: 40 },
+    no_upgrades: { outcome: 'either' },
+    two_rivets: { outcome: 'lose' },
   },
 });

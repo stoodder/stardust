@@ -443,6 +443,12 @@ export interface AltBuildExpectation {
   readonly belowPar?: true;
   /** It wins with at least this margin (%), stricter than the forgiving floor. */
   readonly minMarginPct?: number;
+  /**
+   * An under-built player's build rather than a sensible alternative (D028), so it's exempt from
+   * the forgiving floor: 'lose' must lose, 'either' may win or lose. Like every alt build, it
+   * must still lose gradually (the harness's `gradual` check). Not combined with the two above.
+   */
+  readonly outcome?: 'lose' | 'either';
 }
 
 export interface BuildsDef<K extends IdSpace = LiveIds> {

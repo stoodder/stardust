@@ -193,6 +193,7 @@ The finale is one map in three phases (splittable into two maps at the Phase 1 /
 - **Rule (counters matter):** for each of a map's `requiredCounters` (§6.3), a build that lacks that counter (for example no detection on a cloaked map) must **lose** before the final third of the map.
 - **Rule (no-counter builds):** a map has **exactly one** `noCounterBuilds` entry per required counter, defined **by category**: it leaves out *every* answer that category lists in [enemies.md §3.1](enemies.md#31-counter-categories), not just the obvious one, and is otherwise a sensible build. For Air: no Skyhook, Rivet, Zapcoil, or any other tower that hits air on that lane. For Shield: no Energy damage and no Soaked. The same pattern holds for every category. **An alt build must not match any no-counter build:** each alt build carries an answer for every required counter.
 - **Rule (forgiving floor):** a sensible non-par build that uses the right counters must win on Standard with a margin of **≥ 20%**. On Story difficulty, a weak scripted build must win.
+- **Rule (no single-wave wall):** a build that falls short must feel it coming. In every alt build's run, including the **under-built** alts that model a player who stops building or never upgrades, no single wave costs more than **50%** of max integrity, and a build that loses starts leaking at least **one wave before** the wave it loses in ([D028](../decisions.md#d028--2026-11-09--m1-review-round-2-rulings)).
 - **Rule (real loadout choice, from A1M4):** every map from A1M4 on has at least **two `altBuilds`**, each sharing **at most 2 towers** with the par build's loadout, and each must win with a margin of **≥ 20%**. So no loadout is the only answer.
 
 ### 6.2 Threat budget (planning tool)
@@ -232,12 +233,12 @@ Each map's data includes:
 - `referenceProfile`: what a Standard player owns at that point ([progression.md §10](progression.md#10-pacing-targets-and-tuning-assumptions)).
 - `parBuild`: a scripted loadout, placement order, upgrade order, and targeting settings that a designer considers a good-but-not-optimal solution.
 - `noCounterBuilds`: exactly one scripted build per entry in `requiredCounters`, each omitting every answer in that category (§6.1; a map with no required counters, such as A1M1, has none).
-- `altBuilds`: sensible non-par builds (at least two from A1M4, §6.1), with optional `altExpectations` per build: a stricter floor than 20%, or a margin below par's.
+- `altBuilds`: sensible non-par builds (at least two from A1M4, §6.1), with optional `altExpectations` per build: a stricter floor than 20%, or a margin below par's. An alt build can instead be marked **under-built** (`outcome: 'lose'` or `'either'`): a player who stops short, held to the no-single-wave-wall rule (§6.1) instead of the forgiving floor.
 
 The harness runs, per map:
 1. **Par build, Standard:** must win, with its margin **inside the par band** (§6.1). If it casts a commander ability, the same build without those casts must score lower: the ability has to matter.
 2. **No-counter builds:** each must lose before the final third.
-3. **Alt builds:** each must win with a margin of ≥ 20% (or its `altExpectations` floor), below par's margin where `altExpectations` says so, and (from A1M4) there are at least two, each sharing at most 2 towers with the par loadout.
+3. **Alt builds:** each must win with a margin of ≥ 20% (or its `altExpectations` floor), below par's margin where `altExpectations` says so, and (from A1M4) there are at least two, each sharing at most 2 towers with the par loadout. Under-built alts don't have to win. Every alt build passes the no-single-wave-wall rule (§6.1).
 4. **Par build, Story:** must win comfortably.
 5. **Monotonic check:** par margin ≤ the previous map's in the same chain (§6.1, within tolerance).
 6. **Purchasable:** the reference profile is affordable on its timeline and the par build uses only what it owns ([progression.md §10](progression.md#10-pacing-targets-and-tuning-assumptions)).
@@ -256,7 +257,7 @@ The harness runs, per map:
 
 How the harness encodes these is in [../tech/conventions.md § Balance sims](../tech/conventions.md#balance-sims-npm-run-sim).
 
-**A1M1, the tutorial.** A1M1 has `requiredCounters: []`: it must never punish a player who skips the Thumper, so it has no no-counter run. Its harness runs are: do-nothing loses; par wins inside the band; par without its strikes scores lower; a **Rivet-only** build wins at a lower margin than par and at ≥ 40%; par one purchase short (`par_minus_last`) wins at ≥ 40%, so an under-built player is never wiped; and `alwaysCallEarly`. Splash first becomes a required counter at A1M4.
+**A1M1, the tutorial.** A1M1 has `requiredCounters: []`: it must never punish a player who skips the Thumper, so it has no no-counter run. Its harness runs are: do-nothing loses; par wins inside the band; par without its strikes scores lower; a **Rivet-only** build wins at a lower margin than par and at ≥ 40%; par one purchase short (`par_minus_last`) wins at ≥ 40%; `alwaysCallEarly`; and two under-built alts, par never upgraded (`no_upgrades`, which may win or lose) and two setup Rivets with nothing after (`two_rivets`, which must lose), both held to the no-single-wave-wall rule, so an under-built player is never wiped in one wave. Splash first becomes a required counter at A1M4.
 
 **The M1 cut.** Under [D004](../decisions.md), M1 ships A1M1 without adjacency links (Crossfire), medals, Suppressing Fire, or the Bricks ally, so A1M1's par build is tuned without them for M1 and re-tuned when they land (links and medals in T202, Bricks and Suppressing Fire in M2). Until T202 the W3 Crossfire teach is cosmetic: the line plays, but no link forms. In M1 the Sprinkler (sim-tested content, not placed on A1M1) applies Chilled only; Soaked is left out until a map needs it. A1M1's reference profile carries no meta purchases (nothing has been bought yet).
 

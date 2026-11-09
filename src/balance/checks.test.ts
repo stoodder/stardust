@@ -6,6 +6,7 @@ import {
   VACUOUS_NOTE,
   mapChecks,
   median,
+  notGradual,
   runKey,
   type CheckSpec,
   type RunRequest,
@@ -22,6 +23,32 @@ function judge(spec: CheckSpec, results: Readonly<Record<string, HeadlessResult>
   );
 }
 const parAt = (integrity: number) => ({ 'par#1': fakeResult('won', integrity) });
+/** fx_map's checks about alt:gun_only, with gun_only marked under-built. */
+const withOutcome = (outcome: 'lose' | 'either'): CheckSpec[] =>
+  mapChecks(
+    { ...map, builds: { ...map.builds, altExpectations: { gun_only: { outcome } } } },
+    [1],
+    [1],
+  ).filter((x) => x.subject === 'alt:gun_only');
+/** A result whose waves cost `losses` integrity each (of 20); a loss is in the last listed wave. */
+function lossy(outcome: 'won' | 'lost', losses: readonly number[]): HeadlessResult {
+  const left = 20 - losses.reduce((a, b) => a + b, 0);
+  const r = fakeResult(outcome, left, outcome === 'lost' ? losses.length : null);
+  const waves = losses.map((integrityLost, i) => ({
+    wave: i + 1,
+    spawned: 0,
+    killed: 0,
+    leaked: integrityLost,
+    integrityLost,
+    startTick: 0,
+    early: false,
+    earlyBonus: 0,
+    clearedTick: 0,
+    bankAtPhase: 0,
+    unspentAtStart: 0,
+  }));
+  return { ...r, waves };
+}
 const find = (id: string, subject: string): CheckSpec =>
   mapChecks(map, [1, 2], [1]).find((c) => c.id === id && c.subject === subject)!;
 
@@ -108,7 +135,9 @@ describe('balance checks', () => {
         altExpectations: { gun_only: { belowPar: true as const, minMarginPct: 40 } },
       },
     };
-    const checks = mapChecks(expecting, [1], [1]).filter((x) => x.subject === 'alt:gun_only');
+    const checks = mapChecks(expecting, [1], [1]).filter(
+      (x) => x.subject === 'alt:gun_only' && x.id === '8',
+    );
     expect(checks.map((x) => x.title)).toEqual([
       'alt:gun_only wins with margin ≥ 20',
       'alt:gun_only wins with margin ≥ 40',
@@ -134,6 +163,30 @@ describe('balance checks', () => {
     const c = find('8', 'alt:gun_only');
     expect(judge(c, { 'alt:gun_only#1': fakeResult('won', 4) }).ok).toBe(true); // 20%
     expect(judge(c, { 'alt:gun_only#1': fakeResult('won', 3) }).ok).toBe(false);
+  });
+
+  it('gradual: no alt build wave costs over half the integrity, and leaks come before a loss', () => {
+    const c = find('gradual', 'alt:gun_only');
+    expect(judge(c, { 'alt:gun_only#1': lossy('won', [0, 9]) }).ok).toBe(true);
+    expect(judge(c, { 'alt:gun_only#1': lossy('won', [0, 11]) }).failures).toEqual([
+      'seed 1: W2 costs 11 of 20 integrity, over 50%',
+    ]);
+    // Two waves of 10 lose gradually; a first leak in the losing wave is a wall.
+    expect(judge(c, { 'alt:gun_only#1': lossy('lost', [10, 10]) }).ok).toBe(true);
+    expect(notGradual(lossy('lost', [0, 10, 10, 0]))).toBeNull();
+    expect(notGradual(lossy('lost', [0, 0, 10]))).toMatch(/only start in W3 .* by W2/);
+    expect(judge(c, { 'alt:gun_only#1': lossy('lost', [0, 10, 10]) }).summary).toBe(
+      'lost at W3, lost per wave 0,10,10',
+    );
+  });
+
+  it('#8 an under-built alt build (outcome) skips the forgiving floor', () => {
+    const lose = withOutcome('lose');
+    expect(lose.map((x) => x.id)).toEqual(['8', 'gradual']);
+    expect(lose[0]!.title).toBe('alt:gun_only (under-built) loses');
+    expect(judge(lose[0]!, { 'alt:gun_only#1': lossy('lost', [10, 10]) }).ok).toBe(true);
+    expect(judge(lose[0]!, { 'alt:gun_only#1': fakeResult('won', 2) }).ok).toBe(false);
+    expect(withOutcome('either').map((x) => x.id)).toEqual(['gradual']);
   });
 
   it('#11 determinism compares two identical par runs', () => {

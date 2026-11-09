@@ -227,7 +227,7 @@ describe('enemies', () => {
 describe('A1M1 waves', () => {
   it('has seven waves with the documented totals, all on the road', () => {
     expect(a1m1.waves.map((w) => w.groups.reduce((n, g) => n + g.count, 0))).toEqual([
-      8, 10, 12, 6, 36, 32, 56,
+      8, 10, 12, 18, 28, 36, 56,
     ]);
     for (const w of a1m1.waves) {
       expect(w.teach).toBe(false);
@@ -239,13 +239,13 @@ describe('A1M1 waves', () => {
     expect(groupsOf(0)).toEqual(['nibbler×8@39+0']);
     expect(groupsOf(1)).toEqual(['nibbler×10@48+0']);
     expect(groupsOf(2)).toEqual(clumps(4, 15, 0, 225, 450));
-    expect(groupsOf(3)).toEqual(['zoomer×6@30+0']);
-    expect(groupsOf(4)).toEqual([...clumps(6, 12, 0, 225, 450, 675), 'zoomer×12@24+900']);
-    expect(groupsOf(5)).toEqual(['zoomer×20@30+0', ...clumps(6, 15, 120, 345)]);
+    expect(groupsOf(3)).toEqual(['zoomer×12@30+0', ...clumps(6, 12, 180)]);
+    expect(groupsOf(4)).toEqual([...clumps(4, 12, 0, 300, 600, 900), 'zoomer×12@12+60']);
+    expect(groupsOf(5)).toEqual(['zoomer×24@30+0', ...clumps(6, 15, 120, 345)]);
     expect(groupsOf(6)).toEqual([
-      ...clumps(8, 12, 0, 135, 270, 405),
-      'zoomer×12@24+30',
-      'zoomer×12@24+390',
+      ...clumps(8, 12, 0, 120, 240, 360),
+      'zoomer×12@18+0',
+      'zoomer×12@18+390',
     ]);
   });
 
@@ -299,7 +299,7 @@ describe('A1M1 builds', () => {
     }
     // The economy act1.md and builds.ts describe (par's only leak is in W7, after the last
     // phase): W4's phase buys nothing, saving for the roof's tier 3.
-    expect(banks(par)).toEqual([350, 198, 176, 119, 179, 189, 169]);
+    expect(banks(par)).toEqual([350, 198, 176, 119, 221, 207, 203]);
   });
 
   it('rivet_only: par with the Thumper swapped for a Rivet, affordable too', () => {
@@ -317,10 +317,23 @@ describe('A1M1 builds', () => {
     );
   });
 
-  it('expects rivet_only below par and both alt builds at ≥ 40% (D026)', () => {
+  it('no_upgrades and two_rivets: the under-built players (D028)', () => {
+    const noUpgrades = a1m1.builds.altBuilds.no_upgrades!;
+    expect(noUpgrades.loadout).toEqual(['rivet', 'thumper']);
+    expect(noUpgrades.steps.map(stepOf)).toEqual(
+      parList('thumper').filter((s) => !s.includes('upgrade')),
+    );
+    const two = a1m1.builds.altBuilds.two_rivets!;
+    expect(two.loadout).toEqual(['rivet']);
+    expect(two.steps.map(stepOf)).toEqual(parList('thumper').slice(0, 2));
+  });
+
+  it('expects rivet_only below par, both sensible alts at ≥ 40%, and the under-built alts (D026, D028)', () => {
     expect(a1m1.builds.altExpectations).toEqual({
       rivet_only: { belowPar: true, minMarginPct: 40 },
       par_minus_last: { minMarginPct: 40 },
+      no_upgrades: { outcome: 'either' },
+      two_rivets: { outcome: 'lose' },
     });
   });
 });

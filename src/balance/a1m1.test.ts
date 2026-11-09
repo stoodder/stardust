@@ -1,13 +1,15 @@
-// A1M1's tuning is robust, not a knife edge (D026, T127): the harness's verdicts survive ±0.2 s
-// shifts of the clump spacing in W5–W7, a player who stops building after three Rivets loses
-// gradually rather than all at once in W7, and W7's strike is worth 4–6 integrity to par. The
-// waves and builds are documented in docs/story/campaign/act1.md § A1M1.
+// A1M1's tuning is robust, not a knife edge (D026, D028; T127, T130): the harness's verdicts,
+// the under-built alts' `gradual` checks among them, survive ±0.2 s shifts of the clump spacing
+// in W5–W7; a player who stops building after three Rivets loses gradually, never more than half
+// the integrity in one wave; and W7's strike is worth 4–6 integrity to par. The waves and builds
+// are documented in docs/story/campaign/act1.md § A1M1.
 import { describe, expect, it } from 'vitest';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
+import { notGradual } from './checks.ts';
 import { runMap } from './harness.ts';
 import { runConfig } from './profile.ts';
 
@@ -53,7 +55,7 @@ describe('A1M1 balance', () => {
     }
   });
 
-  it('three Rivets in the setup and nothing else lose gradually, not in one W7 wipe', () => {
+  it('three Rivets in the setup and nothing else lose gradually, never to one wave', () => {
     const tiles: readonly (readonly [number, number])[] = [ROOF, [10, 4], [3, 5]];
     const steps = tiles.map((tile) => ({
       wave: 1,
@@ -63,12 +65,10 @@ describe('A1M1 balance', () => {
     }));
     const r = run({ ...par, loadout: ['rivet'], steps });
     expect(r.outcome).toBe('lost');
-    const lost = r.lostAtWave!;
-    expect(lost).toBeGreaterThanOrEqual(6); // not before the final waves
-    // Leaks start by W5 and land in at least two waves before the one that ends it.
-    const leaky = r.waves.filter((w) => w.wave < lost && w.integrityLost > 0).map((w) => w.wave);
-    expect(leaky.length).toBeGreaterThanOrEqual(2);
-    expect(leaky[0]).toBeLessThanOrEqual(5);
+    expect(r.lostAtWave!).toBeGreaterThanOrEqual(6); // not before the final waves
+    // The harness's `gradual` check, which every alt build passes too (D028): no wave costs
+    // over half the integrity, and the leaks start at least a wave before the loss.
+    expect(notGradual(r)).toBeNull();
   });
 
   it('W7’s strike on the first big clump is worth 4–6 integrity to par', () => {
