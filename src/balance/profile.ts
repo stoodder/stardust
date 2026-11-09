@@ -170,7 +170,13 @@ export function rndPickProfile<K extends IdSpace = LiveIds>(
     content,
     catalog,
   );
-  return { kind: 'reference', difficulty: 'standard', modifiers, specs: profile.specs, leftOut: [] };
+  return {
+    kind: 'reference',
+    difficulty: 'standard',
+    modifiers,
+    specs: profile.specs,
+    leftOut: [],
+  };
 }
 
 /**

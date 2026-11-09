@@ -965,3 +965,14 @@ Real art went in behind T300a's ids. No data changed.
 - **Icons and tells:** wave-preview icons, tower and ability icons, and the flying/burrower/splitter/huddle/boss tells.
 - **New ids:** `enemy.youngling` and `prop.peeker` (frames hidden, peek_0, peek_1, duck).
 - **Gallery:** cards pack side by side, showing one extra palette and only the first `+selected`/`+jammed` frame. The page dropped from 27,829 to 16,132 px, well under the capture limit. Only Chitterbloom remains a placeholder (T311b).
+
+### D075 — 2026-11-09 — T303 the codex and the Everglow Inbox (Act I)
+- **Content:** 32 codex originals (every Act I entry the act file lists) and 6 memos (`memo_a1_00`–`_05`), in Everglow's voice with the darkness in the small print. Doc-quoted text is verbatim, checked by `tools/inboxCopy.test.ts`.
+- **Unlocks:**
+  - Enemy entries unlock when the enemy is seen; tower and ability entries when owned; places, people, and things when their map is won.
+  - A new run-end **step 8** delivers due memos (with gifts) and unlocks entries. Entering the Base re-runs it, so older saves catch up.
+- **The welcome memo grants the strike.** `createNewSave` delivers `memo_a1_00`, whose gift is Orbital Strike, replacing D031's direct grant. A save that already owns the strike gets the memo with no second grant.
+- **Read state:**
+  - **Dwell rule:** an item the pane opens on its own counts as read after 0.8 s; one you pick counts at once.
+  - **Storage:** read marks live in `story.seen` (`codex_<entry>__<version>`), with no new save field.
+- **Base tabs:** Inbox · Codex · Research · Shop · Engineering, opening on Research. NEW badges, fully keyboard-driven, with small print behind a toggle.

@@ -3,7 +3,7 @@
 // still win; and each pick the map lists in `rndPickChanges` must change a par result there (an
 // outcome, a margin, or a medal), so the Intel choice is felt on the maps that promise it.
 import type { CompiledMapDef } from '../content/compiled.ts';
-import type { IdSpace, MedalKind } from '../content/types.ts';
+import type { IdSpace } from '../content/types.ts';
 import {
   describeRun,
   margins,
@@ -20,12 +20,8 @@ import { refusal } from './refusals.ts';
 export const rndPickLabel = (pick: string): string => `par@rnd:${pick}`;
 
 /** The run's result as the `rnd` check compares it: outcome, margin, and medals earned. */
-function resultOf(rec: RunRecord): string {
-  const r = rec.result;
-  if (r === null) return describeRun(rec);
-  const medals = (Object.keys(r.medals) as MedalKind[]).filter((k) => r.medals[k] === 'earned');
-  return `${describeRun(rec)} [${medals.join(',')}]`;
-}
+const resultOf = (rec: RunRecord): string =>
+  rec.result === null ? describeRun(rec) : `${describeRun(rec)} ${medalMarks(rec.result)}`;
 
 /**
  * For each allowed pick: par with it bought wins (seeds `few`). For each pick in the map's
@@ -75,15 +71,11 @@ export function rndPickChecks<K extends IdSpace>(
       evaluate(get) {
         const pairs = few.map((seed) => {
           const par = get({ build: 'par', seed });
-          const with_ = get({ build: label, seed });
-          return { seed, par, with_, differs: resultOf(par) !== resultOf(with_) };
+          const bought = get({ build: label, seed });
+          return { seed, was: resultOf(par), now: resultOf(bought) };
         });
-        const changed = pairs.filter((p) => p.differs).map((p) => p.seed);
-        const marks = (rec: RunRecord): string =>
-          rec.result === null ? '' : ` ${medalMarks(rec.result)}`;
-        const summary = pairs
-          .map((p) => `seed ${p.seed}: ${describeRun(p.par)}${marks(p.par)} → ${describeRun(p.with_)}${marks(p.with_)}`)
-          .join('; ');
+        const changed = pairs.filter((p) => p.was !== p.now).map((p) => p.seed);
+        const summary = pairs.map((p) => `seed ${p.seed}: ${p.was} → ${p.now}`).join('; ');
         return changed.length > 0
           ? { ok: true, summary: `changed on seed ${changed.join(', ')}; ${summary}`, failures: [] }
           : { ok: false, summary, failures: [`no par result changes with ${pick}: ${summary}`] };
