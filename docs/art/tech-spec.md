@@ -57,6 +57,10 @@ gy = (v - u) / 2
 
 `originX/originY` is the screen position of grid point `(0, 0)`, the top vertex of tile `(0, 0)`. A tile image (32×16) is drawn with its top-left at `(sx(i, j) − 16, sy(i, j))`. **All final screen positions are rounded to integers** (`Math.round`) before they reach Phaser.
 
+The implementation is `src/render/iso.ts` (tested in `iso.test.ts`). Two details it settles:
+- **Picking snaps to the game pixel.** The pointer position is first moved to the center of the game pixel it falls in, then projected and floored. Pixel centers never lie on a diamond edge, so picking matches [the canonical tile mask](#the-canonical-tile-mask) exactly: each mask pixel picks its own tile and no pixel picks two. High ground is tested first at elevation 1 (its top face, drawn `ZH` higher, covers the tiles behind it); a point on its cliff faces falls in its own ground footprint, so it picks the raised tile too.
+- **Centering** (`mapOrigin`): the origin centers the ground diamond horizontally, and centers the diamond plus 40 px of headroom above it (tower overhang and one elevation step) vertically, in whole pixels. A1M1 (14 × 10) gets origin (288, 104) in the 640 × 360 view.
+
 **Ranges are circles in grid space**, so they appear on screen as 2:1 ellipses. Range rings are pre-rasterized pixel ellipses ([art-direction.md §7](art-direction.md#range-rings-and-placement)), not anti-aliased vector shapes.
 
 ### Sprite anchoring

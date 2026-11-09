@@ -16,3 +16,14 @@ export type { Ally, Enemy, Projectile, Tower, Zone } from './entities.ts';
 export type { Pool, PoolEntity } from './pool.ts';
 export type { Outcome, SimRngs, SimState, SimStats } from './state.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
+export {
+  isBuildable,
+  isBuildableTile,
+  isInBounds,
+  isWalkableTile,
+  tileAt,
+  tileElevation,
+  tileIndex,
+  type MapGrid,
+} from './grid.ts';
+export { pointAt, remainingDist, segmentAt, type Point, type RouteFollower } from './path.ts';

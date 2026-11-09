@@ -112,7 +112,7 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
          '..+.#####C',
          '..........',
        ],
-       paths: [{ id: 'a', tiles: [[0,1],[1,1],[2,1],[3,1],[4,1],[4,2],[4,3],[5,3] /* … */] }],
+       paths: [{ id: 'a', tiles: [[0,1],[1,1],[2,1],[3,1],[4,1],[4,2],[4,3],[5,3] /* … */, [9,3]] }], // S, every #, C (maps.md §4)
        markers: { peeker: [1, 0] },                       // named decor tiles for scripts
        underWreckage: { '8,2': 'o' }, salvage: { '8,2': 40 },
        startCredits: 300, coreIntegrity: 20, stardust: 0,

@@ -73,6 +73,7 @@ export interface Enemy extends PoolEntity {
   dist: number;
   /** The route segment `dist` lies on: cumLenTiles[seg] ≤ dist < cumLenTiles[seg + 1]. */
   seg: number;
+  /** Position in tiles, derived from (seg, dist) by movement each tick (sim/path.ts). */
   x: number;
   y: number;
   /** Speed multiplier from Chilled (1 = none) and its remaining ticks. */

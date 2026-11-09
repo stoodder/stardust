@@ -1,5 +1,7 @@
 // Map compilation: tile grid, routes as polylines, waves in ticks with resolved references,
-// towerUnlockWave compiled into script events, and script time triggers in ticks.
+// towerUnlockWave compiled into script events, and script time triggers in ticks. Route geometry
+// is part of the route format, so compile checks it (design/maps.md §4): a path lists its spawn
+// `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time.
 import type {
   CompiledRoute,
   CompiledMapDef,
@@ -44,7 +46,9 @@ export function compileMap<K extends IdSpace>(
   const where = `maps.${def.id}`;
   const errorsBefore = ctx.errors.length;
   const tiles = compileTiles(ctx, def, where);
-  const routes = compileRoutes(ctx, def, where);
+  // Route geometry is checked against the grid only when the grid itself compiled cleanly.
+  const grid = ctx.errors.length === errorsBefore ? { cols: def.size.cols, tiles } : null;
+  const routes = compileRoutes(ctx, def, grid, where);
   const waves = def.waves.map((w, i) => compileWave(ctx, refs, routes, def.act, w, i, where));
 
   // towerUnlockWave → one `countdown` unlock event per tower, ordered by wave then id, ahead of
@@ -166,17 +170,21 @@ function isTileChar(ch: string): ch is TileChar {
   return TILE_CHARS.has(ch);
 }
 
-function compileRoutes(ctx: Ctx, def: MapDef<IdSpace>, where: string): Map<string, CompiledRoute> {
+function compileRoutes(
+  ctx: Ctx,
+  def: MapDef<IdSpace>,
+  grid: RouteGrid | null,
+  where: string,
+): Map<string, CompiledRoute> {
   const routes = new Map<string, CompiledRoute>();
   const add = (r: CompiledRoute, w: string): void => {
     if (routes.has(r.id)) ctx.errors.push(`${w}: duplicate route id '${r.id}'`);
     else routes.set(r.id, r);
   };
   for (const [i, p] of def.paths.entries()) {
-    add(
-      compileRoute(ctx, p.id, 'path', p.tiles, null, `${where}.paths[${i}]`),
-      `${where}.paths[${i}]`,
-    );
+    const w = `${where}.paths[${i}]`;
+    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'path', w);
+    add(compileRoute(ctx, p.id, 'path', p.tiles, null, w), w);
   }
   for (const [i, p] of (def.airLanes ?? []).entries()) {
     const w = `${where}.airLanes[${i}]`;
@@ -184,9 +192,82 @@ function compileRoutes(ctx: Ctx, def: MapDef<IdSpace>, where: string): Map<strin
   }
   for (const [i, p] of (def.riftLanes ?? []).entries()) {
     const w = `${where}.riftLanes[${i}]`;
+    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'rift', w);
     add(compileRoute(ctx, p.id, 'rift', p.tiles, p.opensAtWave, w), w);
   }
+  if (grid !== null) checkPathTilesUsed(ctx, grid, def.paths, where);
   return routes;
+}
+
+/** The compiled grid, for route geometry checks. */
+interface RouteGrid {
+  readonly cols: number;
+  readonly tiles: readonly TileChar[];
+}
+
+function gridTile(grid: RouteGrid, [c, r]: GridPos): TileChar | undefined {
+  if (!Number.isInteger(c) || !Number.isInteger(r) || c < 0 || r < 0 || c >= grid.cols) {
+    return undefined;
+  }
+  return grid.tiles[r * grid.cols + c];
+}
+
+/**
+ * The route format (design/maps.md §4): a ground path lists every tile it walks, from its spawn
+ * `S` through `#` tiles to the core `C`, each step one tile up, down, left, or right. A rift lane
+ * walks the same way but over decor, never a buildable tile.
+ */
+function checkGroundRoute(
+  ctx: Ctx,
+  grid: RouteGrid,
+  tiles: readonly GridPos[],
+  kind: 'path' | 'rift',
+  where: string,
+): void {
+  const last = tiles.length - 1;
+  for (const [i, pos] of tiles.entries()) {
+    const at = `${where}.tiles[${i}] (${pos[0]},${pos[1]})`;
+    const tile = gridTile(grid, pos);
+    if (tile === undefined) {
+      ctx.errors.push(`${at}: not a tile on the map`);
+      continue;
+    }
+    if (kind === 'path') {
+      const want = i === 0 ? 'S' : i === last ? 'C' : '#';
+      if (tile !== want)
+        ctx.errors.push(
+          `${at}: is '${tile}', but a path's ${routeRole(i, last)} must be '${want}'`,
+        );
+    } else if (tile === 'o' || tile === '^' || tile === '+') {
+      ctx.errors.push(`${at}: a rift lane never crosses a buildable tile ('${tile}')`);
+    }
+    const prev = tiles[i - 1];
+    if (prev !== undefined && Math.abs(pos[0] - prev[0]) + Math.abs(pos[1] - prev[1]) !== 1) {
+      ctx.errors.push(`${at}: not one orthogonal step from the tile before`);
+    }
+  }
+}
+
+function routeRole(i: number, last: number): string {
+  return i === 0 ? 'first tile' : i === last ? 'last tile' : 'middle tiles';
+}
+
+/** Every drawn path tile and spawn is walked by some path (a decorative road is drawn as decor). */
+function checkPathTilesUsed(
+  ctx: Ctx,
+  grid: RouteGrid,
+  paths: MapDef<IdSpace>['paths'],
+  where: string,
+): void {
+  const used = new Set<number>();
+  for (const p of paths) for (const [c, r] of p.tiles) used.add(r * grid.cols + c);
+  for (const [i, tile] of grid.tiles.entries()) {
+    if ((tile === '#' || tile === 'S') && !used.has(i)) {
+      const c = i % grid.cols;
+      const r = (i - c) / grid.cols;
+      ctx.errors.push(`${where}.tiles: '${tile}' at (${c},${r}) is on no path`);
+    }
+  }
 }
 
 /** A polyline through tile centers with cumulative lengths (Math.sqrt is exactly rounded). */
