@@ -200,3 +200,34 @@ describe('Act I value bands (art-direction §1)', () => {
     }
   });
 });
+
+describe('Act II value bands (art-direction §1, T440a)', () => {
+  // Act II's ground is lit gold: its road is as bright as an Act I body. The Hollow reads by its
+  // dark interior inside a pale outline, the Aelari by their sapphire weave in a dark blue outline.
+  for (const env of ['act2.gold', 'act2.dusk'] as const) {
+    const palette = ENV_PALETTES[env];
+    const grass = bodyLuminance(sprite('tile.grass'), 'v0', palette);
+    const path = bodyLuminance(sprite('tile.path'), 'tread_x', palette);
+
+    it(`${env}: the Hollow sits well below the ground it crosses, Heavy too`, () => {
+      for (const frame of ['walk_se_0', 'walk_ne_0', 'heavy_se_0']) {
+        const d = sprite('enemy.mote');
+        const l = bodyLuminance(d, frame, PALETTES[d.palette]);
+        expect(contrastRatio(l, path), frame).toBeGreaterThanOrEqual(2);
+        expect(contrastRatio(l, grass), frame).toBeGreaterThanOrEqual(1.6);
+      }
+    });
+
+    it(`${env}: the Aelari stand a band apart from the road they glide along`, () => {
+      for (const [id, frame] of [
+        ['enemy.glimmer', 'walk_se_0'],
+        ['enemy.weft_warden', 'walk_se_0'],
+        ['enemy.lightwing', 'walk_se_1'],
+      ] as const) {
+        const d = sprite(id);
+        const l = bodyLuminance(d, frame, PALETTES[d.palette]);
+        expect(contrastRatio(l, path), `${id}:${frame}`).toBeGreaterThanOrEqual(1.2);
+      }
+    });
+  }
+});

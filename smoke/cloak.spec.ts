@@ -1,7 +1,7 @@
 // T430a: the cloak's look on the dev cloak range (`?map=dev_cloak`, render/__fixtures__/
 // devBattle.ts): cloaked Dev Veils walk the north road past a Lookout and a Rivet. Unrevealed, a
-// unit draws faint with its white outline shimmering (no bubble, no bracket: nothing gives it
-// away but the shimmer); inside the Lookout's radius it is Revealed, whole, in a green target
+// unit draws faint in its baked `cloak` look (a checker-dithered body in a dashed white outline,
+// T440a), shimmering (no bubble, no bracket: nothing gives it away but the shimmer); inside the Lookout's radius it is Revealed, whole, in a green target
 // bracket, and takes fire. No cloaked unit ships in M4 (T501b's flow uses the Veilwalker).
 // Screenshots in test-results/screens/cloak/ (look at them: the shimmer and the bracket are the
 // point).
@@ -59,7 +59,9 @@ test('cloak: a faint shimmering outline, then Revealed in its bracket', async ({
     hidden,
   );
   expect(drawnHidden).not.toBeNull();
-  expect(drawnHidden!.alpha).toBeLessThan(0.5); // checked just above
+  // Faint: its baked `cloak` look (T440a: a 50% checker body in a dashed white outline) at 60% or
+  // 35% on the shimmer, so at most about a third of its body shows.
+  expect(drawnHidden!.alpha).toBeLessThanOrEqual(0.6); // checked just above
   expect(drawnHidden!.bracket).toBe(false);
   expect(drawnHidden!.bubble).toBe(false);
   await shot(page, 'cloak', 1, 'cloaked');

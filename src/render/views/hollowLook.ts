@@ -7,7 +7,7 @@
 // - **Glitch offset:** every GLITCH_MIN_MS–GLITCH_MAX_MS it shows GLITCH_MS (two rendered frames)
 //   shoved 1 or 2 px sideways. None under reduced motion (art-direction §8).
 // Each unit's schedule comes from its uid (cosmetic, never the sim's RNG), so a pack never hitches
-// in step. The 1–3 dropped pixels per frame are a baked variant's (T440a).
+// in step. The 1–3 dropped pixels per frame are baked into its frames (sprites/enemies/hollow.ts).
 import { hash01 } from '../../content/sprites/helpers.ts';
 
 export const STUTTER_MIN_MS = 1100;

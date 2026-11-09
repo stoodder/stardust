@@ -77,11 +77,12 @@ export function orbImage(r: number): RgbaImage {
     data[i + 2] = c.b;
     data[i + 3] = Math.round(alpha * 255);
   };
+  // Integer discs: the heart (radius r − 2; the centre alone below 2), the disc, the halo.
+  const heart = r >= 2 ? (r - 2) * (r - 2) : 0;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const d2 = (x - r) * (x - r) + (y - r) * (y - r);
-      // Integer discs: the heart (radius r − 2, at least the centre), the disc, the halo.
-      if (d2 <= Math.max(0, (r - 2) * (r - 2))) put(x, y, 'white.1', 1);
+      if (d2 <= heart) put(x, y, 'white.1', 1);
       else if (d2 <= (r - 1) * (r - 1) + (r - 1)) put(x, y, 'blue.4', 1);
       else if (d2 <= r * r + r) put(x, y, 'blue.3', STEPPED_ALPHA[1]);
     }

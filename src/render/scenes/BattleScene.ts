@@ -75,6 +75,7 @@ import { AirLaneView } from '../views/AirLaneView.ts';
 import { AllyView } from '../views/AllyView.ts';
 import { quietWaves, weaponsLowered } from '../views/allyPose.ts';
 import { ChainFx } from '../views/ChainFx.ts';
+import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -160,6 +161,8 @@ export class BattleScene extends Phaser.Scene {
   #ping!: PingView;
   #airLanes!: AirLaneView;
   #chains!: ChainFx;
+  /** The Skyhook's and Zapcoil's spec looks: capacitor orbs, discharges, curtain puffs (T407b). */
+  #specs!: SpecFx;
   #plinks!: PlinkFx;
   #fieldTint!: FieldTintView;
   #lighting!: LightingView;
@@ -286,6 +289,9 @@ export class BattleScene extends Phaser.Scene {
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#sacks = new SackBurstView(ctx);
     this.#chains = new ChainFx(ctx);
+    this.#specs = new SpecFx(ctx, this.#fx, this.#chains, prefersReducedMotion, (c, r) =>
+      this.#liftPx(c, r),
+    );
     this.#plinks = new PlinkFx(ctx, this.#fx);
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
     this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
@@ -389,6 +395,11 @@ export class BattleScene extends Phaser.Scene {
       interaction.onPoke(() => this.#peeker?.poke()),
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
+      this.#specs.bind(
+        bus,
+        () => sim.state.towers,
+        () => sim.state.enemies,
+      ),
     );
     this.#hover.bindPointer(this, (button) => this.#click(button));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -400,6 +411,7 @@ export class BattleScene extends Phaser.Scene {
       this.#ping.reset();
       this.#links.reset();
       this.#chains.reset();
+      this.#specs.reset();
       this.#plinks.reset();
       this.#fieldTint.reset();
       this.#lighting.reset();
@@ -426,6 +438,7 @@ export class BattleScene extends Phaser.Scene {
     this.#fx.update(delta, state.zones);
     const dt = Number.isFinite(delta) && delta > 0 ? delta : 0;
     this.#chains.update(dt);
+    this.#specs.update(dt, state.towers);
     this.#plinks.update(dt);
     this.#fieldTint.update(state.zones);
     this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
@@ -497,6 +510,13 @@ export class BattleScene extends Phaser.Scene {
    * What the playfield draws now, as data (T332, T430a; views/renderState.ts): the `__sd.render()`
    * hook's. Test-only, so it allocates freely.
    */
+  /** Seekers in flight trailing their smoke (T407b). */
+  #seekersShown(): number {
+    let n = 0;
+    for (const v of this.#projectiles.live.values()) if (v.trailing) n++;
+    return n;
+  }
+
   renderState(): RenderState {
     const enemies: EnemyRenderState[] = [];
     for (const [uid, v] of this.#enemies.live) {
@@ -527,6 +547,13 @@ export class BattleScene extends Phaser.Scene {
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
       tethers: this.tethers,
+      specs: {
+        glows: this.#specs.glows,
+        puffs: this.#specs.puffs,
+        discharges: this.#specs.discharges,
+        fizzles: this.#specs.fizzles,
+        seekers: this.#seekersShown(),
+      },
     };
   }
 

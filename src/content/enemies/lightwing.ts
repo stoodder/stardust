@@ -3,7 +3,7 @@
 // spec: 60 HP, no armor, shield 60 (regen 10/s after 4 s without a hit), 1.3 tiles/s, leak 1,
 // bounty 8, air, crystalline. It needs both answers at once: a tower that hits air, and Energy
 // or Soaked for the shield (the Zapcoil does both). Spawned 0.7 s apart: a quick string of
-// gliders. Sprites are placeholders under their final ids (T440a).
+// gliders. Sprites: sprites/enemies/lightwing.ts.
 import { defineEnemy } from '../define.ts';
 
 export const lightwing = defineEnemy({

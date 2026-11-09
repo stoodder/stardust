@@ -242,17 +242,17 @@ export const iconTellShielded = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  // The `shielded` tell (art-direction §8): a hexagon, the shield bubble's shape and colours: a
-  // `blue.3` rim catching `white.1` light on its top and upper-left edges, a faint `blue.1` pane.
+  // The `shielded` tell (art-direction §8): a hexagon in the shield bubble's colours, a `blue.3`
+  // rim catching `white.1` light on its upper-left edges round a faint `blue.1` pane.
   legend: { A: 'blue.1', C: 'blue.3', D: 'blue.4', W: 'white.1' },
   frames: {
     icon: [
-      '.WWWD.',
-      'WAAAAC',
+      '..WD..',
+      '.WAAC.',
       'WAAAAC',
       'DAAAAC',
-      'CAAAAC',
-      '.CCCC.',
+      '.CAAC.',
+      '..CC..',
     ],
   },
 });
@@ -308,17 +308,16 @@ export const iconTellSkittish = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  // The `skittish` tell (art-direction §8): an exclamation mark, `coral.4` lit over `coral.3`,
-  // leaning forward as if it were bolting too.
+  // The `skittish` tell (art-direction §8): an exclamation mark, `coral.4` lit over `coral.3`.
   legend: { C: 'coral.3', D: 'coral.4' },
   frames: {
     icon: [
-      '...DD.',
-      '...DC.',
+      '..DD..',
       '..DC..',
-      '..C...',
+      '..DC..',
+      '..CC..',
       '......',
-      '.DC...',
+      '..DC..',
     ],
   },
 });

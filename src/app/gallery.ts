@@ -78,7 +78,10 @@ function isShownVariant(name: string): boolean {
  *   (without), then its mirrored frames at 1× only, on dark (mirrors are mechanical: the validator
  *   checks them, and the gallery only needs to show they face the other way);
  * - one more palette variant (`secondVariant`), its authored frames only, zoomed on dark;
- * - each derived variant (`default+selected`, `default+jammed`), its first frame only.
+ * - each derived variant (`default+selected`, `default+jammed`, `default+cloak`), its first frame
+ *   only;
+ * - a Hollow unit's Heavy and reach frames in a dark row of their own, and a fleeing body's card
+ *   only its authored frames, dark (T440a).
  */
 interface CardPlan {
   readonly rows: readonly {
@@ -107,13 +110,36 @@ function isScene(b: BakedSprite): boolean {
   return b.id.startsWith('scene.');
 }
 
+/**
+ * A fleeing body (`enemy.<id>_fleeing`, T440a) is its unit's other look, built from its walk: its
+ * card shows only its authored frames (the scurry, the glance, the panic hop), dark, with glow.
+ */
+function isFleeingBody(b: BakedSprite): boolean {
+  return b.id.endsWith('_fleeing');
+}
+
+/**
+ * A Hollow unit's Heavy walk and hush reach (T440a) get a row of their own, dark only, so the
+ * card stays one row wide.
+ */
+function isHollowLook(b: BakedSprite, n: string): boolean {
+  return DEFS.get(b.id)?.palette === 'hollow' && /^(heavy|tell)_/.test(n);
+}
+
 function cardPlan(b: BakedSprite): CardPlan {
   if (isScene(b)) {
     return {
       rows: [{ variant: DEFAULT_VARIANT, frames: b.frameNames, light: false, glow: false }],
     };
   }
-  const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
+  if (isFleeingBody(b)) {
+    const frames = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
+    return { rows: [{ variant: DEFAULT_VARIANT, frames, light: false, glow: true }] };
+  }
+  const looks = b.frameNames.filter((n) => !isMirrorFrame(b, n) && isHollowLook(b, n));
+  const authored = b.frameNames.filter(
+    (n) => !isMirrorFrame(b, n) && !isDeath(n) && !isHollowLook(b, n),
+  );
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
   const deaths = b.frameNames.filter(isDeath);
   const second = secondVariant(b);
@@ -121,6 +147,9 @@ function cardPlan(b: BakedSprite): CardPlan {
   return {
     rows: [
       { variant: DEFAULT_VARIANT, frames: authored, light: true, glow: true },
+      ...(looks.length === 0
+        ? []
+        : [{ variant: DEFAULT_VARIANT, frames: looks, light: false, glow: false }]),
       ...(deaths.length === 0
         ? []
         : [{ variant: DEFAULT_VARIANT, frames: deaths, light: false, glow: false }]),

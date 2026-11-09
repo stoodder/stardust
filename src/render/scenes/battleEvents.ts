@@ -180,8 +180,6 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (a?.kind === 'projectile' && a.homing) seekerSprites.add(a.projectile);
     }
   }
-  /** Seekers in flight: each pops small where it lands, with no splash ring. */
-  const seekers = new Set<number>();
   /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
   const told = new Set<string>();
   /**
@@ -453,8 +451,8 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         }
         // Flak (D072): a straight shot climbing from the barrels to its flyer's height, bursting
         // at the intercept point. A seeker (T407b) climbs, turns, and trails smoke as it steers.
+        // No splash: its landing pops small with no ring.
         const seeker = seekerSprites.has(e.sprite);
-        if (seeker) seekers.add(e.uid);
         flak.set(e.uid, e.radiusTiles);
         views.projectiles.acquire(e.uid).show(e.uid, {
           sprite: e.sprite,
@@ -482,7 +480,6 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         flak.delete(e.uid);
         fx.ring(e.x, e.y, burst, 'orange.3', SPLASH_RING_MS, false, AIR_LIFT_PX);
         fx.burst(e.x, e.y, 0, true, AIR_LIFT_PX);
-        seekers.delete(e.uid);
         return;
       }
       const splash = shells.get(e.uid);
@@ -555,7 +552,6 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     for (const off of offs) off();
     shells.clear();
     flak.clear();
-    seekers.clear();
     chainTower = 0;
     builtNow.clear();
     builtTick = -1;

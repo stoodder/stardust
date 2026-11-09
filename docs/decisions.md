@@ -1355,3 +1355,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **The rig branch** is 38 tiles (a ledge, back under the thread-glass outcrop, a hairpin, a drop to the rigs at (17,10)); 14 pads; 11 waves; 9.4 min. **Start credits are 500** (the Witch fight needs ~2,000 on the branch; within Act II's 400–550).
 - **Alts:** the plan's Zapcoil-and-Rivet alt can't hold Mote clusters (Energy ×0.75 vs the Hollow), so `shell_and_coil` and `soak_and_shell` replace it, both answering the Witch with a Bunker Buster.
 - The KFA form is the last paragraph of `memo_a2_02` (T411 may split it). **Bug found:** the Thorn callsign never reaches the save (debrief effects aren't applied on Results); T413 fixes it.
+
+### D118 — 2026-11-09 — T305b checkpoints
+- **Taken as the countdown to every 5th wave begins** (W5, W10) on Act II+ maps (rule data; never on a Holdout, the finale, challenge or endless maps), so a retry lands in the build phase. After a loss, **"Retry from wave N" is the focused primary button**; the resumed battle opens paused ("Resumed at wave N. Unpause when ready.").
+- **A retry replays the lost run's command log headlessly** to the checkpoint (exact, no state serialization; A2M2's W10 in ~124 ms). Listeners rebuild their own story state from the replayed events but play nothing visible or audible while replaying; bark spacing is approximate, once-limits and met enemies exact.
+- **The pause menu's Retry stays a full retry:** checkpoints recover a lost run, never rewind a wave that went badly mid-run.
+- **A checkpoint run forfeits Perfect Core and the Challenge, never objectives** (they carry story content and replay exactly). Pests Processed counts per attempt; flags and stamps read the whole run. A defeat pays only the waves beyond the checkpoint.

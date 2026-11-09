@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RAW_CONTENT } from '../../content/registry.ts';
 import {
   baseFrame,
   enemyBody,
@@ -73,5 +74,18 @@ describe('enemyBody (D074)', () => {
     expect(enemyBody('enemy.brood_hauler', ['fleeing'])).toBe('enemy.brood_hauler_fleeing');
     // No fleeing look drawn (Chonks don't run in Act II): its own body.
     expect(enemyBody('enemy.chonk', ['fleeing'])).toBe('enemy.chonk');
+  });
+
+  it('has a fleeing look for every runner in the campaign maps', () => {
+    for (const map of Object.values(RAW_CONTENT.maps)) {
+      for (const wave of map.waves) {
+        for (const g of wave.groups) {
+          const tags = g.tags ?? [];
+          if (!tags.includes('fleeing')) continue;
+          const body = RAW_CONTENT.enemies[g.enemy]?.sprites.body ?? '';
+          expect(enemyBody(body, tags), `${map.id} ${g.enemy}`).toMatch(/_fleeing$/);
+        }
+      }
+    }
   });
 });

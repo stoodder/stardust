@@ -38,7 +38,7 @@ describe('statePose (T312b)', () => {
   });
 
   it('strides on the walk, the Heavy walk, and the glance back (their tempo follows the pace)', () => {
-    expect(['walk', 'heavy', 'glance'].every((p) => isStride(p as EnemyPose))).toBe(true);
+    for (const p of ['walk', 'heavy', 'glance'] as const) expect(isStride(p)).toBe(true);
     for (const p of ['tell', 'panic', 'flee', 'puff', 'sneeze'] as const)
       expect(isStride(p)).toBe(false);
   });

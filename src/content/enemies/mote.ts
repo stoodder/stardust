@@ -5,7 +5,7 @@
 // Hollow unit does: `hushes` is derived at compile; enemyAbilities/hush.ts), turning Heavy, and may
 // walk rift lanes. At 1.6 tiles/s it catches a Nibbler fleeing 2–4 s ahead of it, but not a Zoomer
 // or a bolting runner (Skittish). Its 0.3 s spawn interval packs a cluster of 12 into 3.3 s of
-// road. Sprites are placeholders under their final ids (T440a; the Heavy variant too).
+// road. Its sprite (T440a) draws the Heavy walk and the hush reach too (sprites/enemies/mote.ts).
 import { defineEnemy } from '../define.ts';
 
 export const mote = defineEnemy({

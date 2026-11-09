@@ -31,6 +31,10 @@ import {
 import { createNewSave, type SaveData } from './saveData.ts';
 import { validateSave } from './validate.ts';
 
+/** The live spec names, as if the Skyhook's specs still had to ship (T319's rule, T407b). */
+const UNBUILT_SKYHOOK: SpecNames = (tower, spec) =>
+  tower === 'skyhook' ? null : LIVE_SPEC_NAMES(tower, spec);
+
 /** Five tower types and one ability: more than fit (towers the registries don't hold yet). */
 const FIVE: LoadoutPools<string, string> = {
   towers: ['rivet', 'thumper', 'sprinkler', 'skyhook', 'zapcoil'],
@@ -271,16 +275,14 @@ describe('counters and links', () => {
       { counter: 'air', minTier: 1, spec: null },
     ]);
     // A spec still to ship (no name authored) answers nothing, even with its unlock owned.
-    const unbuilt: SpecNames = (tower, spec) =>
-      tower === 'skyhook' ? null : LIVE_SPEC_NAMES(tower, spec);
-    expect(towerAnswers('skyhook', true, act2Air, unbuilt)).toEqual([
+    expect(towerAnswers('skyhook', true, act2Air, UNBUILT_SKYHOOK)).toEqual([
       { counter: 'air', minTier: 1, spec: null },
     ]);
     const save = createNewSave();
     save.unlocks.towers.push('sprinkler', 'skyhook');
     save.unlocks.specs = ['sprinkler', 'skyhook'];
     expect(specsOwned(save)).toEqual(['sprinkler', 'skyhook']);
-    expect(specsOwned(save, unbuilt)).toEqual(['sprinkler']);
+    expect(specsOwned(save, UNBUILT_SKYHOOK)).toEqual(['sprinkler']);
     expect(
       uncoveredCounters({ towers: ['sprinkler'], ability: null }, save, {
         ...act2Air,

@@ -1,7 +1,9 @@
 // The hush rule's look (T402's minimal view, T430a's polish; design/enemies.md § 5.4;
 // art-direction §8 `heavy`): pure rules, so they're unit-tested, and EnemyView applies them (its
 // outline, ring, and lean: EnemyDress.ts). The pose (`panic` for the held runner and a bolting
-// one) is enemyPose.ts's. Until T440a bakes the `heavy` variant (the victim's pale shape inside):
+// one, the Mote's reach in its tell, a Heavy unit's walk) is enemyPose.ts's. A sprite that draws
+// a `heavy` anim (the Mote, T440a: the victim's pale shape inside) wears it instead of the first
+// look below:
 // - **Heavy:** the body multiplies by HEAVY_TINT (`hollow.3`: a pale Mote goes charcoal, a dark
 //   knot against any ground) and wears a second pixel of its pale, inverted outline (a 2 px
 //   `hollow.4` rim: swollen), for the rest of its life, hit flashes aside. (An acid tint sank into

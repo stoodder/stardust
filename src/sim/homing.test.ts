@@ -10,7 +10,6 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { IdSpace, WaveTag } from '../content/types.ts';
-import { DIFFICULTY_MODIFIERS } from '../meta/modifiers.ts';
 import { MAP, enemyDef, placeTower, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 import type { SimConfig } from './config.ts';
@@ -32,7 +31,18 @@ const SEEKER_SWARM = SKYHOOK.specs!.b;
 const SKY = MAP.routes.sky!; // fx_map has the air lane `sky`
 // Tough, still flyers: hits never kill them unless a test says so.
 const FLYER = enemyDef('fx_flyer', { hp: 10_000, layer: 'air', speedTilesPerTick: 0 });
-const WALKER = enemyDef('fx_tank', { hp: 10_000, speedTilesPerTick: 0 });
+
+/**
+ * Story difficulty as it reaches the sim (meta/modifiers.ts DIFFICULTY_MODIFIERS; sim tests can't
+ * import meta): enemies −30% HP and shields, the economy's terms.
+ */
+const STORY: SimConfig<IdSpace>['modifiers'] = [
+  { kind: 'enemyStat', stat: 'hp', pct: -0.3, source: 'difficulty:story' },
+  { kind: 'enemyStat', stat: 'shield', pct: -0.3, source: 'difficulty:story' },
+  { kind: 'economy', stat: 'startCredits', pct: 0.5, source: 'difficulty:story' },
+  { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+  { kind: 'countdown', pct: 0.5, source: 'difficulty:story' },
+];
 
 type Ev = SimEvent<IdSpace>;
 const ofType = <T extends Ev['type']>(state: SimState, type: T): Extract<Ev, { type: T }>[] =>
@@ -46,7 +56,11 @@ function liveSetup(): { state: SimState; ctx: TickContext } {
 
 /** An enemy of `def` standing at (x, y) (on the air lane for a flyer). */
 function at(state: SimState, def = FLYER, x = 0, y = 0, tags?: readonly WaveTag[]): Enemy {
-  const e = spawn(state, def, def.layer === 'air' ? { route: SKY, tags } : { tags });
+  const route = def.layer === 'air' ? SKY : undefined;
+  const e = spawn(state, def, {
+    ...(route === undefined ? {} : { route }),
+    ...(tags === undefined ? {} : { tags }),
+  });
   e.x = x;
   e.y = y;
   return e;
@@ -67,6 +81,30 @@ function flyOut(state: SimState, ctx: TickContext, max = HOMING_LIFE_TICKS + 5):
 }
 
 const lost = (e: Enemy): number => Math.round((e.def!.hp - e.hp) * 1000) / 1000;
+
+/**
+ * A volley at three moving flyers on fx_map, for 240 ticks: every live shot's position after each
+ * tick, then the whole state's hash at the end.
+ */
+function volleyTrace(): string[] {
+  const { state, ctx } = liveSetup();
+  placeTower(state, SKYHOOK, 1, 1, SEEKER_SWARM);
+  const mover = enemyDef('fx_mover', { ...FLYER, hp: 60, speedTilesPerTick: 1.5 / 60 });
+  for (const d of [0.5, 1.5, 2.5]) spawn(state, mover, { route: SKY, dist: d });
+  const trace: string[] = [];
+  for (let i = 0; i < 240; i++) {
+    movement(state);
+    towers(state, ctx);
+    projectiles(state, ctx);
+    trace.push(
+      missiles(state)
+        .map((p) => `${p.uid}:${p.x},${p.y}>${p.targetUid}`)
+        .join(' '),
+    );
+  }
+  trace.push(hashState(state));
+  return trace;
+}
 
 describe('the Skyhook specs (towers.md § 7)', () => {
   it('Flak Curtain: 3.0 shots/s, 12 damage, splash 1.2; still straight flak at range 4', () => {
@@ -320,21 +358,9 @@ describe('homing missiles', () => {
   });
 
   it('is deterministic: the same setup flies the same paths, tick by tick', () => {
-    const run = (): string[] => {
-      const { state, ctx } = liveSetup();
-      placeTower(state, SKYHOOK, 1, 1, SEEKER_SWARM);
-      const mover = enemyDef('fx_mover', { ...FLYER, hp: 60, speedTilesPerTick: 1.5 / 60 });
-      for (const d of [0.5, 1.5, 2.5]) spawn(state, mover, { route: SKY, dist: d });
-      const hashes: string[] = [];
-      for (let i = 0; i < 240; i++) {
-        movement(state);
-        towers(state, ctx);
-        projectiles(state, ctx);
-        hashes.push(hashState(state));
-      }
-      return hashes;
-    };
-    expect(run()).toEqual(run());
+    const trace = volleyTrace();
+    expect(trace.some((t) => t.length > 0 && t.includes(':'))).toBe(true);
+    expect(volleyTrace()).toEqual(trace);
   });
 });
 
@@ -346,10 +372,7 @@ describe('a Story run with both specs (sim integration)', () => {
       seed: 7,
       loadout: ['skyhook', 'zapcoil', 'rivet', 'thumper'],
       companion: null,
-      modifiers: [
-        ...DIFFICULTY_MODIFIERS.story,
-        { kind: 'economy', stat: 'startCredits', flat: 5000, source: 'test' },
-      ],
+      modifiers: [...STORY, { kind: 'economy', stat: 'startCredits', flat: 5000, source: 'test' }],
       difficulty: 'story',
       abilities: { slot1: 'orbital_strike', slot2: null, slot2State: 'none' },
       scriptFlags: {},

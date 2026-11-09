@@ -62,79 +62,99 @@ export const FLEE_LEAD = 3;
 export const OPEN = 6;
 /** The build phase before W2–W11 (Act II's default is 20 s): room to look. */
 export const COUNTDOWN = 30;
+/**
+ * The build phase before W2, W4 and W9, after the slow runners (W1's younglings, W3's Haulers,
+ * W8's Elders and younglings): long
+ * enough that they're off the road before the next wave's threats arrive, so a player holding fire
+ * on every runner group isn't holding it on the Aelari too.
+ */
+export const LONG_COUNTDOWN = 60;
 /** A packed Mote cluster's spacing (seconds). */
 export const PACKED = 0.2;
 
 export const waves = defineWaves([
   // W1 · Skitterkin families with younglings in tow, fleeing: nothing follows them yet
   {
-    groups: [run('nibbler', 8, 0, 1.2), young(8, 0.5, 1.2)],
+    groups: [run('nibbler', 8, 0, 1.0), young(6, 0.5, 1.0)],
   },
-  // W2 · Glimmers on the strip mine
+  // W2 · Glimmers on the strip mine. The long build phase lets W1's younglings walk out first.
+  {
+    countdownSec: LONG_COUNTDOWN,
+    groups: [glimmers(4, OPEN + 8, 1.5)],
+  },
+  // W3 · Haulers fleeing, the sacks young, with nothing behind them: a wave to look at
   {
     countdownSec: COUNTDOWN,
-    groups: [glimmers(4, OPEN, 1.5)],
+    groups: [run('hauler', 3, OPEN)],
   },
-  // W3 · Haulers fleeing (the sacks are young), the Hollow behind them
+  // W4 · one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil]. The long build phase lets
+  // the Haulers walk out first.
   {
-    countdownSec: COUNTDOWN,
-    groups: [run('hauler', 3, OPEN), motes(12, OPEN + FLEE_LEAD)],
-  },
-  // W4 · one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil]
-  {
-    countdownSec: COUNTDOWN,
+    countdownSec: LONG_COUNTDOWN,
     groups: [wardens(1, OPEN), glimmers(6, OPEN + 4, 1.2)],
   },
-  // W5 · fleeing Skitterkin + Motes [the rock lights up]
-  {
-    countdownSec: COUNTDOWN,
-    groups: [run('nibbler', 10, OPEN), motes(20, OPEN + FLEE_LEAD, PACKED)],
-  },
-  // W6 · Lightwings ×4 over the strip mine [T: flying shields]
-  {
-    countdownSec: COUNTDOWN,
-    groups: [lightwings(4, OPEN, 4.0)],
-  },
-  // W7 · Wardens ×2 + Lightwings [X]
-  {
-    countdownSec: COUNTDOWN,
-    groups: [wardens(2, OPEN, 4), lightwings(5, OPEN + 6, 3.0), glimmers(4, OPEN + 20, 1.2)],
-  },
-  // W8 · Elders with younglings + Motes
+  // W5 · a Mote cluster down the mine, then fleeing Skitterkin with the Hollow behind them
+  // [the rock lights up as the wave starts]
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('elder', 2, OPEN, 6),
-      young(10, OPEN + 0.4, 0.6),
-      motes(30, OPEN + FLEE_LEAD, PACKED),
-      lightwings(4, OPEN + 10, 2.0),
+      motes(16, OPEN, PACKED, 'mine'),
+      run('nibbler', 8, OPEN + 14),
+      motes(3, OPEN + 14 + FLEE_LEAD),
     ],
   },
-  // W9 · the big Aelari wave: Wardens on the road, Glimmers down the mine, Lightwings over it
+  // W6 · Lightwings ×4 over the strip mine [T: flying shields], Glimmers behind
   {
     countdownSec: COUNTDOWN,
-    groups: [wardens(3, OPEN, 3), glimmers(16, OPEN, 0.8), lightwings(8, OPEN + 14, 2.0)],
+    groups: [lightwings(4, OPEN, 4.0), glimmers(6, OPEN + 16)],
   },
-  // W10 · the Hollow push, both routes: runners and the Motes behind them down the road, and a
-  // cluster down the mine road
+  // W7 · Wardens ×2 + Lightwings [X], and a cluster down the mine
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      wardens(2, OPEN, 4),
+      lightwings(5, OPEN + 6, 3.0),
+      motes(20, OPEN + 20, PACKED, 'mine'),
+    ],
+  },
+  // W8 · a cluster down the mine, then Elders with younglings, the Hollow behind them
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      motes(24, OPEN, PACKED, 'mine'),
+      run('elder', 2, OPEN + 16, 6),
+      young(10, OPEN + 16.4, 0.6),
+      motes(3, OPEN + 16 + FLEE_LEAD),
+    ],
+  },
+  // W9 · the big Aelari wave: Wardens on the road, Glimmers down the mine, Lightwings over it.
+  // The long build phase lets W8's Elders walk out first.
+  {
+    countdownSec: LONG_COUNTDOWN,
+    groups: [wardens(3, OPEN, 3), glimmers(16, OPEN, 0.8), lightwings(10, OPEN + 14, 1.4)],
+  },
+  // W10 · the Hollow push, both routes: runners with the Hollow behind them down the road, then a
+  // cluster down the mine and a bigger one down the road
   {
     countdownSec: COUNTDOWN,
     groups: [
       run('zoomer', 12, OPEN, 0.4),
-      motes(40, OPEN + FLEE_LEAD, PACKED),
-      motes(24, OPEN + 6, PACKED, 'mine'),
+      motes(4, OPEN + FLEE_LEAD),
+      motes(30, OPEN + 20, PACKED, 'mine'),
+      motes(50, OPEN + 26, PACKED),
     ],
   },
-  // W11 · everything
+  // W11 · everything: the last runners first, then the Aelari, the Lightwings, and the Hollow
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('nibbler', 10, OPEN),
-      motes(30, OPEN + FLEE_LEAD, PACKED),
-      wardens(3, OPEN + 4, 3),
-      glimmers(16, OPEN + 6, 0.8),
-      lightwings(12, OPEN + 18, 1.0),
-      motes(24, OPEN + 26, PACKED, 'mine'),
+      run('zoomer', 10, OPEN, 0.4),
+      motes(4, OPEN + FLEE_LEAD),
+      wardens(2, OPEN + 12, 6),
+      glimmers(16, OPEN + 24, 0.8),
+      lightwings(14, OPEN + 34, 1.0),
+      motes(40, OPEN + 44, PACKED),
+      motes(24, OPEN + 50, PACKED, 'mine'),
     ],
   },
 ]);

@@ -24,7 +24,6 @@ import {
 } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import { SPLASH_RING_MS } from '../vfx/fxTiming.ts';
 import {
   ORB_RADIUS_PX,
   chargeAlpha,
@@ -41,9 +40,14 @@ import type { ViewContext } from './ViewContext.ts';
 
 /** Where Zapcoil's arc leaves its claw, above the tile (px; battleEvents' ARC_EMITTER_PX). */
 const CLAW_PX = 14;
-/** The flash at the claw as a bank discharges, and the sputter of one that fizzles. */
+/**
+ * A discharge holds longer than a chain's hop (it's the bank's one big hit every 4 s): the bolt,
+ * the flash at the claw, and the splash ring. And the sputter of a charge that fizzles.
+ */
+const BOLT_MS = 280;
 const FLASH_TILES = 0.5;
-const FLASH_MS = 200;
+const FLASH_MS = 280;
+const DISCHARGE_RING_MS = 400;
 const SPUTTER_TILES = 0.3;
 const SPUTTER_MS = 250;
 /** Puffs alive at once (Flak Curtain fires 3 a second; a few of them at once). */
@@ -234,7 +238,7 @@ export class SpecFx {
     // Two jagged bolts over each other: heavier than a chain's single hop.
     for (let k = 0; k < 2; k++) {
       this.#chains.begin(e.x, e.y, claw);
-      this.#chains.hop(e.targetX, e.targetY, body);
+      this.#chains.hop(e.targetX, e.targetY, body, BOLT_MS);
     }
     this.#fx.ring(e.x, e.y, FLASH_TILES, 'white.1', FLASH_MS, false, claw);
     this.#fx.burst(e.targetX, e.targetY, 0, true, air ? AIR_LIFT_PX : 0);
@@ -243,7 +247,7 @@ export class SpecFx {
       e.targetY,
       e.radiusTiles,
       'blue.4',
-      SPLASH_RING_MS,
+      DISCHARGE_RING_MS,
       true,
       air ? AIR_LIFT_PX : 0,
     );

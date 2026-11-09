@@ -41,18 +41,14 @@ function parSteps(): BuildStep[] {
     { wave: 4, build: 'zapcoil', tile: SWITCH_E },
     { wave: 5, interact: 'peeker' },
     { wave: 5, build: 'skyhook', tile: GATE },
-    { wave: 5, upgrade: BENCH_1 },
-    { wave: 6, upgrade: GATE },
-    { wave: 6, build: 'rivet', tile: BENCH_2 },
-    { wave: 7, upgrade: PUMP },
-    { wave: 7, upgrade: SWITCH_E },
-    { wave: 8, upgrade: BENCH_9 },
-    { wave: 8, upgrade: BENCH_9 },
-    { wave: 9, specialize: BENCH_9, spec: 'b' }, // Cloudburst
-    { wave: 10, upgrade: BENCH_2 },
-    { wave: 10, upgrade: PUMP_S },
-    { wave: 11, upgrade: BENCH_8 },
-    { wave: 11, upgrade: BENCH_1 },
+    { wave: 5, build: 'zapcoil', tile: T3_MID },
+    { wave: 6, upgrade: PUMP },
+    { wave: 6, upgrade: BENCH_1 },
+    { wave: 7, upgrade: GATE },
+    { wave: 8, build: 'skyhook', tile: BENCH_2 },
+    { wave: 9, upgrade: BENCH_9 },
+    { wave: 9, upgrade: BENCH_9 },
+    { wave: 10, specialize: BENCH_9, spec: 'b' }, // Cloudburst
   ];
 }
 
@@ -124,7 +120,6 @@ export const builds = defineBuilds({
       notSetBy: ['par', 'spareFleeing'],
     },
   },
-  parMedals: ['challenge'],
   altBuilds: {
     // Zapcoil, Thumper, Lookout: three Zapcoils for the shields and the air, Thumpers for the
     // clusters.
@@ -147,7 +142,7 @@ export const builds = defineBuilds({
         { wave: 9, upgrade: T3_MID },
         { wave: 9, build: 'zapcoil', tile: SWITCH_E },
         { wave: 10, upgrade: SWITCH_E },
-        { wave: 10, upgrade: PUMP },
+        { wave: 10, upgrade: SWITCH_E },
       ],
     },
     // Sprinkler (Soaked), Zapcoil, Thumper, Lookout: one Zapcoil on the Wardens and the

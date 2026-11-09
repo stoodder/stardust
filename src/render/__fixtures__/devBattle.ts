@@ -433,7 +433,8 @@ const skyWaves = dev.defineWaves([
 const skyBuilds = dev.defineBuilds({
   referenceProfile: {
     towers: ['skyhook', 'zapcoil', 'sprinkler', 'rivet'],
-    specs: [],
+    // The Skyhook's and Zapcoil's specs (T407b): smoke/specs.spec.ts specializes them here.
+    specs: ['skyhook', 'zapcoil'],
     shop: {},
     protocols: [],
     technicianAbility: 'dev_strike',

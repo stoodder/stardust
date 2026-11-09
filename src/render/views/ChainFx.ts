@@ -25,6 +25,8 @@ const pos: Vec2 = { x: 0, y: 0 };
 interface Hop {
   active: boolean;
   ms: number;
+  /** How long it shows (CHAIN_MS; a Capacitor Bank's discharge holds longer). */
+  life: number;
   frames: number;
   x0: number;
   y0: number;
@@ -57,7 +59,17 @@ export class ChainFx {
         layers.vfx.add(img);
         segs.push(img);
       }
-      this.#hops.push({ active: false, ms: 0, frames: 0, x0: 0, y0: 0, x1: 0, y1: 0, segs });
+      this.#hops.push({
+        active: false,
+        ms: 0,
+        life: CHAIN_MS,
+        frames: 0,
+        x0: 0,
+        y0: 0,
+        x1: 0,
+        y1: 0,
+        segs,
+      });
     }
     for (let i = 0; i <= ARC_SEGMENTS; i++) this.#pts.push(0, 0);
   }
@@ -71,9 +83,9 @@ export class ChainFx {
 
   /**
    * The arc strikes the enemy at grid (x, y), `liftPx` up (its body): a hop from the last point,
-   * which moves there.
+   * which moves there. It shows for `lifeMs` (a chain's CHAIN_MS by default).
    */
-  hop(x: number, y: number, liftPx: number): void {
+  hop(x: number, y: number, liftPx: number, lifeMs = CHAIN_MS): void {
     gridToScreen(x, y, this.#ctx.origin, pos);
     const sx = pos.x;
     const sy = pos.y - liftPx;
@@ -84,6 +96,7 @@ export class ChainFx {
     h.x1 = Math.round(sx);
     h.y1 = Math.round(sy);
     h.ms = 0;
+    h.life = lifeMs;
     h.frames = 0;
     h.active = true;
     this.#cx = h.x1;
@@ -97,13 +110,13 @@ export class ChainFx {
       if (!h.active) continue;
       h.ms += dt;
       h.frames++;
-      if (h.ms >= CHAIN_MS) {
+      if (h.ms >= h.life) {
         h.active = false;
         for (const s of h.segs) s.setVisible(false);
         continue;
       }
       if (h.frames % REGEN_FRAMES === 0) this.#draw(h);
-      const a = fadeAlpha(h.ms / CHAIN_MS);
+      const a = fadeAlpha(h.ms / h.life);
       for (const s of h.segs) s.setAlpha(a);
     }
   }
@@ -130,7 +143,7 @@ export class ChainFx {
         .setPosition(x0, y0)
         .setRotation(Math.atan2(dy, dx))
         .setScale(len + 1, 1)
-        .setAlpha(fadeAlpha(h.ms / CHAIN_MS))
+        .setAlpha(fadeAlpha(h.ms / h.life))
         .setVisible(true);
     }
   }

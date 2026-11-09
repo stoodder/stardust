@@ -9,7 +9,8 @@
 //   turns back over its shoulder the way it came (the eyes cross to the far side of the head); from
 //   behind, one wide eye peeks round its shoulder at you. A bead of sweat flies off its crown.
 // - **`panic_<facing>`, the panic hop** (render's `panic` pose: held in a hush tell, or bolting):
-//   it jumps clear of the ground, 2 px up with the sweat flying, and lands (2 frames, 10 fps).
+//   it jumps clear of the ground, 2 px up with the sweat flying, and lands (2 frames, 10 fps). Its
+//   canvas is 2 px taller than its walking body's, room for the hop, on the same ground point.
 // - **`death`:** the same pop as its walking body (Act II plays the quiet half).
 // Fleeing bodies carry no palette variants: allies never flee.
 import { DEATH_ANIM, deathFrames } from './death.ts';
@@ -104,7 +105,9 @@ function sweat(g: CharGrid, body: string, front: boolean): void {
   const top = contour(g, body);
   const b = bodyBox(g, body);
   const x = front ? Math.min((g[0]?.length ?? 1) - 1, b.x1) : Math.max(0, b.x0 + 1);
-  const y = Math.max(0, (top[x] ?? b.y0) - 2);
+  let y = Math.max(0, (top[x] ?? b.y0) - 2);
+  // Up past anything already there (a scoop plate, a tuft), to clear air.
+  while (y > 0 && (at(g, x, y) !== '.' || at(g, x, y + 1) !== '.')) y--;
   if (at(g, x, y) === '.') plot(g, x, y, 'w');
   if (at(g, x, y + 1) === '.') plot(g, x, y + 1, 'Z');
 }
@@ -150,11 +153,14 @@ export function glance(src: readonly string[], facing: 'se' | 'ne', spec: FleeSp
   return rows(g);
 }
 
-/** The panic hop: the whole body jumps clear of the ground (up to 2 px, room allowing). */
+/** How high the panic hop jumps (px); a fleeing body is this much taller than its walking one. */
+export const HOP_PX = 2;
+
+/** The panic hop: the whole body jumps clear of the ground (HOP_PX, room allowing). */
 export function hop(src: readonly string[], spec: FleeSpec = {}): string[] {
   let free = 0;
   while (free < src.length && /^\.*$/.test(src[free] ?? '')) free++;
-  const lift = Math.min(2, free);
+  const lift = Math.min(HOP_PX, free);
   const lifted = [...src.slice(lift), ...src.slice(0, lift).map((r) => '.'.repeat(r.length))];
   const g = fromRows(lifted);
   sweat(g, spec.body ?? DEFAULT_BODY, false);
@@ -177,13 +183,19 @@ export function fleeingSprite<const Id extends string>(
       if (f === undefined) return out;
       if (!Array.isArray(f)) throw new Error(`${base.id}: ${prefix}_${i} must be a grid`);
       const rowsOf: readonly string[] = f;
-      out.push([...rowsOf]);
+      // Headroom for the hop: HOP_PX clear rows on top (the anchor moves down with them).
+      out.push([
+        ...rowsOf.slice(0, 1).flatMap((r) => Array<string>(HOP_PX).fill('.'.repeat(r.length))),
+        ...rowsOf,
+      ]);
     }
   };
   const frames: Record<string, FrameDef> = {};
   const anims: Record<string, AnimDef> = {};
+  let scurrySe: string[] = [];
   for (const facing of ['se', 'ne'] as const) {
     const walk = grids(`walk_${facing}`).map((f) => flatten(f, spec));
+    if (facing === 'se') scurrySe = walk[0] ?? [];
     walk.forEach((f, i) => (frames[`walk_${facing}_${i}`] = f));
     const first = walk[0] ?? [];
     frames[`glance_${facing}_0`] = glance(first, facing, spec);
@@ -201,13 +213,15 @@ export function fleeingSprite<const Id extends string>(
     anims[`${a}_sw`] = { mirrorOf: `${a}_se` };
     anims[`${a}_nw`] = { mirrorOf: `${a}_ne` };
   }
-  const anchor = base.anchor;
-  Object.assign(frames, deathFrames(frames['walk_se_0'] as string[], anchor));
+  const anchor = { x: base.anchor.x, y: base.anchor.y + HOP_PX };
+  Object.assign(frames, deathFrames(scurrySe, anchor));
   anims['death'] = DEATH_ANIM;
   const { variants: _variants, ...rest } = base;
   return {
     ...rest,
     id,
+    size: { w: base.size.w, h: base.size.h + HOP_PX },
+    anchor,
     legend: { ...base.legend, ...SWEAT_LEGEND },
     frames,
     anims,

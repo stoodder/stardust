@@ -59,7 +59,7 @@ export class ProjectileView implements PooledView {
   #liftTo = 0;
   #seeker = false;
   /** A seeker's trail: its dots (made on first use), screen points newest first, the last sample. */
-  #trail: Phaser.GameObjects.Image[] = [];
+  readonly #trail: Phaser.GameObjects.Image[] = [];
   readonly #trailX: number[] = [];
   readonly #trailY: number[] = [];
   #trailN = 0;
@@ -73,6 +73,11 @@ export class ProjectileView implements PooledView {
     this.#shadow = ctx.scene.make.image({}, false);
     ctx.layers.decal.add(this.#shadow);
     this.release();
+  }
+
+  /** Whether it's a seeker with its trail laid (the smoke flows' check). */
+  get trailing(): boolean {
+    return this.#seeker && this.#trailN > 0;
   }
 
   show(uid: number, look: ShotLook): void {
@@ -153,7 +158,7 @@ export class ProjectileView implements PooledView {
         dot.setVisible(false);
         continue;
       }
-      dot.setPosition(this.#trailX[k]!, this.#trailY[k]!).setVisible(true); // k < trailN
+      dot.setPosition(this.#trailX[k], this.#trailY[k]).setVisible(true); // k < trailN
     }
   }
 

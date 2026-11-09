@@ -107,14 +107,12 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
     'Unlocks tier 4: Rivet Storm or Railspike',
   );
   await expect(offerRow(page, 'Thumper specializations')).toContainText('Owned');
-  // The Sprinkler's specs are built (T407a): owned in full like the rest.
+  // The Sprinkler's (T407a), Skyhook's, and Zapcoil's (T407b) specs are built: owned in full
+  // like the rest, and nothing waits on a later shipment any more.
   await expect(offerRow(page, 'Sprinkler specializations')).toContainText('Owned');
-  // Specs deferred to a later shipment (D064; Skyhook's and Zapcoil's, T407b) are listed, in
-  // voice, and can't be ordered.
-  await expect(offerRow(page, 'Skyhook specializations')).toContainText(
-    'Arrives in a later shipment',
-  );
-  await expect(offerRow(page, 'Skyhook specializations').getByRole('button')).toHaveCount(0);
+  await expect(offerRow(page, 'Skyhook specializations')).toContainText('Owned');
+  await expect(offerRow(page, 'Zapcoil specializations')).toContainText('Owned');
+  await expect(pane.getByText('Arrives in a later shipment')).toHaveCount(0);
   await shot(page, 'shop', 7, 'engineering-all-unlocked');
 });
 
