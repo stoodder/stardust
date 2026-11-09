@@ -2,10 +2,9 @@
 // replaying the command log (or a prefix of it) reproduces the run; and applyPending() at the end
 // of tick T equals applying at the start of tick T + 1.
 import { describe, expect, it } from 'vitest';
-import { FIXTURE } from '../content/__fixtures__/content.ts';
 import { compileContent } from '../content/compile.ts';
 import { nextU32 } from '../shared/rng.ts';
-import { fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
+import { SIM_FIXTURE, fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import type { Command, CommandLogEntry } from './commands.ts';
 import type { Sim } from './sim.ts';
 import { createSim } from './sim.ts';
@@ -145,7 +144,7 @@ describe('hash()', () => {
       SCRIPT,
       TICKS,
       1,
-      createSim({ ...fixtureConfig(), content: compileContent<FixtureIds>(FIXTURE) }),
+      createSim({ ...fixtureConfig(), content: compileContent<FixtureIds>(SIM_FIXTURE) }),
     );
     expect(b.state.towers.items[0]?.def).not.toBe(a.state.towers.items[0]?.def);
     expect(b.hash()).toBe(a.hash());

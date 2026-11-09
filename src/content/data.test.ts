@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { CompiledBuild, CompiledTier } from './compiled.ts';
 import { compileContent } from './compile.ts';
 import { RAW_CONTENT } from './registry.ts';
+import { waveClearBonus } from './rules.ts';
 import type { RawContent } from './types.ts';
 import { validate } from './validate.ts';
 
@@ -40,15 +41,19 @@ const clumps = (...delays: number[]): string[] => delays.map((d) => `nibbler×4@
 
 /** A build step as `W<wave> <kind> [tower] <tile>`. */
 const stepOf = (s: CompiledBuild['steps'][number]): string =>
-  [`W${s.wave}`, s.kind, 'tower' in s ? s.tower : '', 'tile' in s ? s.tile.join(',') : '']
+  [
+    `W${s.wave}`,
+    s.kind,
+    'tower' in s ? s.tower : '',
+    'tile' in s ? s.tile.join(',') : '',
+    'target' in s && s.target !== null && s.target !== 'all' ? s.target.join(',') : '',
+  ]
     .filter((x) => x !== '')
     .join(' ');
 
-/** Clear bonus per wave (core-loop.md § 2.3). TODO(T105b): read it from rules.ts. */
-const clearBonus = (wave: number): number => 20 + 4 * wave;
 /** Credits wave `w` (0-based) pays if every enemy in it dies: bounties plus the clear bonus. */
 const payout = (w: number): number =>
-  a1m1.waves[w]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + clearBonus(w + 1);
+  a1m1.waves[w]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + waveClearBonus(w + 1);
 
 /**
  * The bank at the start of each wave's build phase if every enemy dies and the build spends in
@@ -264,7 +269,7 @@ describe('A1M1 builds', () => {
       specs: [],
       shop: {},
       protocols: [],
-      technicianAbility: null, // TODO(T113): 'orbital_strike'
+      technicianAbility: 'orbital_strike',
     });
   });
 
@@ -278,8 +283,13 @@ describe('A1M1 builds', () => {
       'W3 build rivet 10,4',
       'W3 build thumper 10,5',
       'W5 upgrade 7,2', // T3
+      'W5 ability 4,3',
       'W7 build thumper 3,5',
+      'W7 ability 4,3',
     ]);
+    for (const s of par.steps.filter((x) => x.kind === 'ability')) {
+      expect(s).toMatchObject({ slot: 1, target: [4, 3], when: { afterTicks: 144 } });
+    }
     // The economy act1.md and builds.ts describe: 95 in W6's build phase is short of a Thumper.
     expect(banks(par)).toEqual([350, 292, 270, 113, 165, 95, 179]);
   });
@@ -293,7 +303,9 @@ describe('A1M1 builds', () => {
       'W3 build rivet 10,4',
       'W3 build rivet 10,5',
       'W5 upgrade 7,2',
+      'W5 ability 4,3',
       'W7 build rivet 3,5',
+      'W7 ability 4,3',
     ]);
     expect(() => banks(alt)).not.toThrow();
   });

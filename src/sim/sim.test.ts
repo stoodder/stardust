@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FIXTURE } from '../content/__fixtures__/content.ts';
 import { compileContent } from '../content/compile.ts';
-import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
+import {
+  FIXTURE_CONTENT,
+  SIM_FIXTURE,
+  fixtureConfig,
+  fixtureSim,
+  type FixtureIds,
+} from './__fixtures__/sim.ts';
 import type { Command } from './commands.ts';
 import type { SimEvent } from './events.ts';
 import { createSim } from './sim.ts';
@@ -210,8 +215,8 @@ describe('command handlers (M1 subset)', () => {
     const sim = createSim({
       ...fixtureConfig(),
       content: compileContent<FixtureIds>({
-        ...FIXTURE,
-        maps: { fx_map: { ...FIXTURE.maps.fx_map, startCredits: 1000 } },
+        ...SIM_FIXTURE,
+        maps: { fx_map: { ...SIM_FIXTURE.maps.fx_map, startCredits: 1000 } },
       }),
     });
     sim.enqueue(buildGun(1, 1));
@@ -244,21 +249,27 @@ describe('command handlers (M1 subset)', () => {
     expect(pulse.sim.state.towers.items[0]?.priority).toBeNull();
   });
 
-  it('sell, callWave, and ability are rejected until their tasks land (T105b, T113)', () => {
+  it('sell, callWave, and ability are live (economy.test.ts and waves.test.ts cover the rules)', () => {
     const { events } = applied([
       buildGun(1, 1),
       { type: 'sell', towerUid: 1 },
       { type: 'callWave' },
       { type: 'ability', slot: 1, target: [2, 2] },
     ]);
-    expect(rejections(events)).toEqual(['notImplemented', 'notImplemented', 'notImplemented']);
+    expect(rejections(events)).toEqual([]);
+    expect(events.map((e) => e.type)).toEqual([
+      'TowerBuilt',
+      'TowerSold',
+      'WaveStarted',
+      'AbilityUsed',
+    ]);
   });
 });
 
 /** Fixture content with no towerUnlockWave, so every tower is available at the start. */
 function unlockedContent() {
-  const { towerUnlockWave: _locked, ...map } = FIXTURE.maps.fx_map;
-  return compileContent<FixtureIds>({ ...FIXTURE, maps: { fx_map: map } });
+  const { towerUnlockWave: _locked, ...map } = SIM_FIXTURE.maps.fx_map;
+  return compileContent<FixtureIds>({ ...SIM_FIXTURE, maps: { fx_map: map } });
 }
 
 describe('events', () => {
@@ -270,11 +281,7 @@ describe('events', () => {
     sim.step();
     sim.enqueue({ type: 'callWave' });
     sim.applyPending();
-    expect(drain(sim).map((e) => e.type)).toEqual([
-      'TowerBuilt',
-      'TowerUpgraded',
-      'CommandRejected',
-    ]);
+    expect(drain(sim).map((e) => e.type)).toEqual(['TowerBuilt', 'TowerUpgraded', 'WaveStarted']);
   });
 
   it('drainEvents appends to `out`, empties the buffer, and a second drain gets nothing', () => {
@@ -301,7 +308,7 @@ describe('events', () => {
 
 describe('content is never mutated', () => {
   it('stays deep-frozen and unchanged after a run', () => {
-    const content = compileContent(FIXTURE);
+    const content = compileContent(SIM_FIXTURE);
     const before = JSON.stringify(content);
     const sim = createSim({ ...fixtureConfig(), content });
     sim.enqueue(buildGun(1, 1));

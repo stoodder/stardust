@@ -57,13 +57,47 @@ export interface SimStats {
   killsByEnemy: Record<string, number>;
   integrityLost: number;
   towersBuilt: number;
-  /** Gross credits paid for builds and upgrades (refunds don't reduce it). */
+  /** Gross credits paid for builds and upgrades (refunds don't reduce it; see creditsRefunded). */
   creditsSpent: number;
+  /** Credits sells returned. Net spending is `creditsSpent − creditsRefunded`. */
+  creditsRefunded: number;
+  /** Credits earned in play: bounties, clear bonuses, early-call bonuses, and script grants. */
+  creditsEarned: number;
   abilityUses: number;
 }
 
 export type Outcome = 'playing' | 'won' | 'lost';
 
+/**
+ * Where the wave schedule is (design/core-loop.md § 2.1):
+ * - `setup`: before wave 1; no countdown runs until the player starts it (callWave).
+ * - `spawning`: wave `wave` is spawning its groups.
+ * - `countdown`: wave `wave` has finished spawning; the next wave's countdown is running.
+ * - `done`: the last wave has finished spawning (the map ends when every wave resolves).
+ */
+export type SchedulePhase = 'setup' | 'spawning' | 'countdown' | 'done';
+
+/** The wave schedule and per-wave resolution (the waves and cleanup systems). */
+export interface WaveSchedule {
+  phase: SchedulePhase;
+  /** While spawning: ticks since the current wave started (its groups' delays count from 0). */
+  waveTicks: number;
+  /** While counting down: ticks left before the next wave starts on its own; else 0. */
+  countdownTicks: number;
+  /** The running countdown's full length in ticks (the early-call bonus scales by it); else 0. */
+  countdownTotalTicks: number;
+  /**
+   * The highest wave whose build phase has begun: 1 from the start (wave 1's build phase is the
+   * setup), N + 1 once wave N finishes spawning. The `countdown` script trigger reads it.
+   */
+  countdownWave: number;
+  /** Per wave (index = wave − 1): the tick it started, or −1. */
+  startTick: number[];
+  /** Per wave: enemies that haven't died or leaked yet, unspawned ones included. */
+  remaining: number[];
+  /** Per wave: resolved (every enemy died or leaked) and its clear bonus paid. */
+  resolved: boolean[];
+}
 /**
  * K types the ids in the command queue, the log, and the events (the sim's API edge); inside the
  * sim everything is SimState<IdSpace>, with plain string ids.
@@ -77,8 +111,11 @@ export interface SimState<K extends IdSpace = IdSpace> {
   credits: number;
   /** Core integrity (the meter on Defend maps). */
   integrity: number;
-  /** The last wave started (1-based); 0 during the setup phase. Wave state grows with T105b. */
+  /** The last wave started (1-based); 0 during the setup phase. */
   wave: number;
+  schedule: WaveSchedule;
+  /** Per map event (CompiledMapDef.events, same order): it has fired. */
+  scriptFired: boolean[];
   /** Loadout towers not yet unlocked (towerUnlockWave), in unlock order. */
   lockedTowers: string[];
   /** Row-major, one per map tile: the slot of the tower standing there, or −1. */
@@ -90,6 +127,11 @@ export interface SimState<K extends IdSpace = IdSpace> {
   allies: Pool<Ally>;
   rng: SimRngs;
   stats: SimStats;
+  /**
+   * Commander ability cooldowns in ticks, by slot (index 0 = slot 1, 1 = slot 2); 0 = ready. The
+   * abilities system ticks them down (T113).
+   */
+  abilityCooldownTicks: number[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -120,6 +162,17 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     credits: map.startCredits,
     integrity: map.coreIntegrity,
     wave: 0,
+    schedule: {
+      phase: 'setup',
+      waveTicks: 0,
+      countdownTicks: 0,
+      countdownTotalTicks: 0,
+      countdownWave: 1,
+      startTick: map.waves.map(() => -1),
+      remaining: map.waves.map((w) => w.groups.reduce((n, g) => n + g.count, 0)),
+      resolved: map.waves.map(() => false),
+    },
+    scriptFired: map.events.map(() => false),
     lockedTowers: [...map.lockedTowersAtStart],
     towerAtTile: Array.from({ length: map.cols * map.rows }, () => -1),
     towers: createPool(TOWER_BLANK, POOL_CAPACITY.towers),
@@ -134,8 +187,11 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       integrityLost: 0,
       towersBuilt: 0,
       creditsSpent: 0,
+      creditsRefunded: 0,
+      creditsEarned: 0,
       abilityUses: 0,
     },
+    abilityCooldownTicks: [0, 0],
     pending: [],
     commandLog: [],
     events: [],

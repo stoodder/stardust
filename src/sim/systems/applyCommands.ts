@@ -6,9 +6,12 @@ import { assertNever } from '../../shared/types.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
-import { poolAlloc, poolFind } from '../pool.ts';
+import { sellValue } from '../economy.ts';
+import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { applyAbilityCommand } from './abilities.ts';
+import { callWave } from './waves.ts';
 
 export function applyCommands(state: SimState, ctx: TickContext): void {
   const queue = state.pending;
@@ -40,13 +43,12 @@ function applyCommand(
       tower.priority = cmd.mode;
       return null;
     }
-    // TODO(T105b): sell (refund rule and misclick grace) and callWave (start W1, early-call bonus).
     case 'sell':
+      return sell(state, ctx, cmd.towerUid);
     case 'callWave':
-      return 'notImplemented';
-    // TODO(T113): Orbital Strike (cooldown, reticle zone, AbilityUsed).
+      return callWave(state, ctx);
     case 'ability':
-      return 'notImplemented';
+      return applyAbilityCommand(state, ctx, cmd);
     default:
       return assertNever(cmd);
   }
@@ -68,7 +70,7 @@ function build(
   const tier = def.tiers[0];
   if (state.credits < tier.cost) return 'cantAfford';
 
-  // TODO(T105b): cost modifiers (shop discounts, Clearance Sale) when they land.
+  // TODO(T204): cost modifiers (shop discounts, Clearance Sale) arrive as modifiers.
   state.credits -= tier.cost;
   state.stats.creditsSpent += tier.cost;
   state.stats.towersBuilt++;
@@ -107,5 +109,24 @@ function upgrade(state: SimState, towerUid: number): RejectReason | null {
   tower.tierDef = next;
   tower.invested += next.cost;
   emit(state, { type: 'TowerUpgraded', uid: tower.uid, tier: tower.tier, cost: next.cost });
+  return null;
+}
+
+/**
+ * Sells a tower (design/core-loop.md § 2.3): refunds `sellValue` (everything inside the misclick
+ * grace, else 70% rounded down). The tower dies now, so nothing fires from it this tick, and its
+ * tile is free at once (a sell and a rebuild can share a tick, or a pause); cleanup releases its
+ * slot. Shells already in flight still land (they carry their own stats).
+ */
+function sell(state: SimState, ctx: TickContext, towerUid: number): RejectReason | null {
+  const tower = poolFind(state.towers, towerUid);
+  if (tower === null) return 'noSuchTower';
+  const { value } = sellValue(tower, state.tick);
+  poolKill(state.towers, tower);
+  const idx = tileIndex(ctx.map, tower.col, tower.row);
+  if (state.towerAtTile[idx] === tower.slot) state.towerAtTile[idx] = -1;
+  state.credits += value;
+  state.stats.creditsRefunded += value;
+  emit(state, { type: 'TowerSold', uid: tower.uid, refund: value });
   return null;
 }

@@ -190,6 +190,7 @@ Portraits and icons are authored at their display size and shown 1:1 in game pix
 |---|---|---|
 | Dialogue portrait | **48×48** | Base frame plus expression patches (`neutral`, `happy`, `worried`, `angry`, `sad`, and 2 mouth frames for talking). Shown 1:1 in game pixels. |
 | AI or comms speakers | 48×48 | A screen-frame portrait with a 2-frame scanline flicker (QUILL, Prim) |
+| Commander ability icons | 16×16 | Authored 14×14 plus outline, like tower icons, on no plinth. `icon.ability.<id>` (Orbital Strike: the Everglow uplink satellite firing its teal beam into an orange reticle) |
 | Tower and build icons | 16×16 | Readable silhouette, faction palette. Front view on a small faction plinth (Everglow: the steel slab with the teal and orange chevrons). Authored 14×14; the auto outline makes 16×16. `icon.tower.<id>` |
 | Enemy icons (wave preview) | 16×16 | The enemy's own body builder, front-facing (Skitterkin: `enemies/skitter.ts`). Authored 14×14 plus outline. `icon.enemy.<id>` |
 | Status and tell glyphs | 8×8 | See §8 |
@@ -273,7 +274,16 @@ Faction flavor goes on top: Aelari shots are thrown threads (a taut 1 px jewel-t
 - **Laid to rest (finale):** the unit's pixels flip to `stardust.sung` gold from the outline inward over 4 frames, then 6–10 gold motes rise slowly (about 1 px per frame) and fade in stepped alpha. **Ishael's mote (Dawn):** as the light comes up, one gold mote rises beside Ves'thara's sprite on its own, larger (2×2), slower (about 1 px every 2 frames), and last to fade. Nothing labels it. **Scattered:** the unit unravels into `stardust.unsung` violet motes that drift back along its route, then pull together where it re-forms.
 - **License revoked:** each powered-down tower flashes a red-stamped "REVOKED" plate (`red.3` on `white.0`) for 1 s, then folds down into its base and vanishes. The same stamp marks revoked slots in the loadout and HUD.
 - **Song aura:** a soft warm-gold ring (stepped alpha, 1 px dashed edge in `gold.4`) around the choir leader, pulsing gently in time with the hymn. It is also a light stamp in the darkness overlay.
-- **Screen shake:** at most 2 px, integer offsets, only for bosses, core hits, and big explosions. It's off in reduced-motion mode.
+- **Screen shake:** at most 2 px, integer offsets, only for bosses, core hits, and big explosions (the Orbital Strike: 240 ms). It's off in reduced-motion mode (`prefers-reduced-motion`).
+
+### Attack and ability effects
+
+The numbers are `render/vfx/fxTiming.ts`; FxView draws them ([architecture.md § Rendering](../tech/architecture.md#rendering)).
+
+- **Hitscan tracer (Rivet):** the `projectile.rivet_tracer` streak (warm tail, white head toward the target) flies from the muzzle to the target in about 90 ms. The hit itself landed the tick the tower fired; the streak is only the read.
+- **Pulse ring (Sprinkler):** a solid 1 px `blue.4` ellipse grows from the tower to its pulse radius in quarter-tile steps over about 360 ms, fading down the stepped-alpha ladder, drawn in `decal` under the enemies it chills.
+- **Shell burst (Thumper):** `fx.explosion` at the impact point.
+- **Orbital Strike:** the `fx.orbital_reticle` (its dashed ellipse sized to the 1.5-tile radius, dashes marching) sits on the target for the whole 1 s telegraph and holds while paused; at 60% alpha it also follows the pointer while the player aims. On impact a beam drops from the top of the screen (teal edges around a white core, 8 → 6 → 4 → 2 px over 200 ms, with a flat `teal.4` and white flash where it meets the ground), seven `fx.explosion` bursts roll outward (the center, then a ring of six at 0.9 tiles, 50 and 100 ms late), and the screen shakes.
 
 ### Glow and bloom
 

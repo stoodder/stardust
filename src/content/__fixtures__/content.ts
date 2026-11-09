@@ -1,7 +1,6 @@
 // Test fixture content for the content pipeline's tests. Not real game content: ids start with
 // `fx_` and the numbers are only shaped like the design's (real content is T105c / T103 / T107).
-// Sprites are real registered ids (content may only name registered sprites); ability icons stay
-// free-form until T113.
+// Sprites are real registered ids (content may only name registered sprites).
 // It covers each M1 shape: a hitscan tower, a lobbed lead-targeting tower, a pulse (chill aura)
 // tower, two enemies, a strike ability, and a map with a towerUnlockWave, events, and builds.
 import {
@@ -154,7 +153,7 @@ const fxStrike = defineAbility({
   name: 'Fixture Strike',
   cooldownSec: 45,
   effect: { kind: 'strike', type: 'explosive', damage: 200, radiusTiles: 1.5, delaySec: 1 },
-  sprites: { icon: 'icon.ability.fx_strike' },
+  sprites: { icon: 'icon.ability.orbital_strike' },
 });
 
 /** The fixture's entity registries. */

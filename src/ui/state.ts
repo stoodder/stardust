@@ -21,6 +21,26 @@ export interface BuildSlotView {
   readonly cost: number;
 }
 
+/** One commander ability slot (core-loop §3.1): fixed for a battle. */
+export interface AbilitySlotView {
+  readonly slot: 1 | 2;
+  readonly ability: string;
+  /** Display name. */
+  readonly label: string;
+  /** The `icon.ability.*` sprite id. */
+  readonly icon: string;
+  /** Hotkey label (Q for slot 1, E for slot 2). */
+  readonly key: string;
+}
+
+/** An ability slot's cooldown as shown: 0 seconds left means ready. */
+export interface AbilityCooldownView {
+  /** Whole seconds until ready, rounded up. */
+  readonly secondsLeft: number;
+  /** The share still recharging (0–1, in 1/16 steps): the height of the icon's dark wipe. */
+  readonly remaining: number;
+}
+
 /** The selected tower, for its upgrade / sell / targeting panel. */
 export interface SelectedTowerView {
   readonly uid: number;
@@ -93,6 +113,12 @@ export const hud = {
   selected: signal<SelectedTowerView | null>(null),
   /** The tower armed for building (a build slot), or null. */
   armedTower: signal<string | null>(null),
+  /** The commander ability slots, in slot order (bottom-left; empty when none is equipped). */
+  abilities: signal<readonly AbilitySlotView[]>([]),
+  /** Each ability slot's cooldown, in the same order as `abilities`. */
+  abilityCooldowns: signal<readonly AbilityCooldownView[]>([]),
+  /** The ability slot being aimed (click a tile to fire), or null. */
+  aimingAbility: signal<1 | 2 | null>(null),
   /** The next wave's preview, or null after the last wave has started. */
   nextWave: signal<WavePreview | null>(null),
   /** The latest notice, or null. */

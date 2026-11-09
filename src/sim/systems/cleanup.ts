@@ -1,7 +1,16 @@
-// System 9: cleanup. Releases dead slots back to their pools' free lists, last in the tick, so
-// every system this tick could still see (and name in events) what died.
+// System 9: cleanup, last in the tick. Books this tick's dead enemies (died or leaked) against
+// their waves, releases dead slots back to their pools' free lists (last, so every system this
+// tick could still see and name what died), resolves waves, and decides the map
+// (design/core-loop.md § 2.1):
+// - Defeat the instant core integrity hits 0. It wins over a victory on the same tick.
+// - A wave resolves when every enemy in it has died or leaked; its clear bonus (§ 2.3) pays then,
+//   leaks or not. Waves overlap, so they can resolve out of order; one tick resolves in wave order.
+// - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
+//   everything before it) with integrity above 0.
+import { waveClearBonus } from '../../content/rules.ts';
+import { earn } from '../economy.ts';
 import { poolReleaseDead } from '../pool.ts';
-import type { SimState } from '../state.ts';
+import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
 export function cleanup(state: SimState, ctx: TickContext): void {
@@ -14,10 +23,39 @@ export function cleanup(state: SimState, ctx: TickContext): void {
       if (state.towerAtTile[idx] === t.slot) state.towerAtTile[idx] = -1;
     }
   }
+  // Every enemy that died or leaked this tick is dead and not yet released: book it once.
+  const enemies = state.enemies;
+  const remaining = state.schedule.remaining;
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (!e.alive && e.uid !== 0 && e.wave > 0) remaining[e.wave - 1]!--; // wave ≤ waves.length
+  }
   poolReleaseDead(towers);
-  poolReleaseDead(state.enemies);
+  poolReleaseDead(enemies);
   poolReleaseDead(state.projectiles);
   poolReleaseDead(state.zones);
   poolReleaseDead(state.allies);
-  // TODO(T105b): win/lose (set state.outcome, emit MapWon / MapLost).
+
+  if (state.integrity <= 0) {
+    state.outcome = 'lost';
+    emit(state, { type: 'MapLost' });
+    return;
+  }
+  const s = state.schedule;
+  let allResolved = true;
+  for (let w = 0; w < remaining.length; w++) {
+    if (s.resolved[w] === true) continue;
+    if (s.startTick[w]! < 0 || remaining[w]! > 0) {
+      allResolved = false;
+      continue;
+    }
+    s.resolved[w] = true;
+    const bonus = waveClearBonus(w + 1);
+    earn(state, bonus);
+    emit(state, { type: 'WaveCleared', wave: w + 1, bonus });
+  }
+  if (allResolved) {
+    state.outcome = 'won';
+    emit(state, { type: 'MapWon' });
+  }
 }

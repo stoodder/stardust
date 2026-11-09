@@ -1,19 +1,27 @@
-// The in-map HUD (T106; art-direction §9, core-loop §4): status top-left, waves and speed
-// top-right, build slots bottom-right, the selected tower's panel beside it, and notices top
-// center. Components read the `hud` signals (kept in sync by app/hud.ts) and act only through
+// The in-map HUD (T106, T113; art-direction §9, core-loop §4): status top-left, waves and speed
+// top-right, commander abilities bottom-left, build slots bottom-right, the selected tower's panel
+// beside it, and notices top center. Components read the `hud` signals (kept in sync by app/hud.ts) and act only through
 // app/commands.ts. Every control is a real <button> of at least 16×16 game px.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   callWave,
   cancel,
   cycleTargeting,
+  pressAbility,
   pressBuildSlot,
   sellSelected,
   setSpeed,
   upgradeSelected,
 } from '../../app/commands.ts';
 import type { TargetPriority } from '../../content/types.ts';
-import { hud, speed, type BuildSlotView, type SelectedTowerView } from '../state.ts';
+import {
+  hud,
+  speed,
+  type AbilityCooldownView,
+  type AbilitySlotView,
+  type BuildSlotView,
+  type SelectedTowerView,
+} from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { placePanel, tickToward } from './layout.ts';
 import './hud.css';
@@ -221,6 +229,71 @@ function BuildBar() {
   );
 }
 
+/** The icon's size in game px: the cooldown wipe steps one pixel per 1/16. */
+const ICON_PX = 16;
+
+/** One commander ability slot (bottom-left): icon, hotkey, and the cooldown wipe and seconds. */
+function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | undefined }) {
+  const left = cd?.secondsLeft ?? 0;
+  const ready = left === 0;
+  const aiming = hud.aimingAbility.value === a.slot;
+  const status = aiming
+    ? ', aiming: click a target'
+    : ready
+      ? ', ready'
+      : `, recharging, ${left} s`;
+  return (
+    <button
+      type="button"
+      class={`hud-btn hud-slot hud-ability chamfer ${ready ? 'ready' : 'charging'}`}
+      aria-pressed={aiming}
+      aria-disabled={!ready}
+      aria-label={`${a.label}${status}`}
+      title={`${a.label} (${a.key})`}
+      onClick={() => pressAbility(a.slot)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        cancel();
+      }}
+    >
+      <Key k={a.key} />
+      <span class="ability-icon">
+        <Icon id={a.icon} class="slot-icon" />
+        {!ready && (
+          <span
+            class="hud-wipe"
+            style={{ height: `${Math.round((cd?.remaining ?? 0) * ICON_PX)}px` }}
+          />
+        )}
+      </span>
+      <span class="hud-cd num">{ready ? 'Ready' : `${left}s`}</span>
+    </button>
+  );
+}
+
+/** Bottom-left: the commander ability slots, and the aiming hint while one is aimed. */
+function AbilityBar() {
+  const slots = hud.abilities.value;
+  if (slots.length === 0) return null;
+  const cds = hud.abilityCooldowns.value;
+  const aiming = hud.aimingAbility.value !== null;
+  return (
+    <nav class="hud-abilities" aria-label="Abilities">
+      {slots.map((a, i) => (
+        <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
+      ))}
+      {aiming && (
+        <div class="hud-aim-hint chamfer" role="status">
+          Pick a target
+          <span class="dim">
+            <Key k="Esc" /> cancels
+          </span>
+        </div>
+      )}
+    </nav>
+  );
+}
+
 /** Tier pips: filled up to the current tier. */
 function Tier({ tier, max }: { tier: number; max: number }) {
   return (
@@ -323,6 +396,7 @@ export function Hud() {
         <SpeedControls />
         <WavePanel />
       </div>
+      <AbilityBar />
       <BuildBar />
       {selected !== null && <TowerPanel t={selected} />}
       <Notice />

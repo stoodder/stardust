@@ -58,3 +58,30 @@ describe('hoverLook', () => {
     expect(hoverLook(off, 'rivet', true)).toMatchObject({ highlight: null, ghost: false });
   });
 });
+
+describe('aiming an ability', () => {
+  it('fires at any tile on the map, keeps aiming off it, and cancels on right-click', () => {
+    for (const t of [pad, path, tower]) {
+      expect(resolveClick(t, 'left', null, 1)).toEqual({
+        kind: 'ability',
+        slot: 1,
+        tile: [t.col, t.row],
+      });
+    }
+    expect(resolveClick(off, 'left', null, 1)).toEqual({ kind: 'none' });
+    expect(resolveClick(pad, 'right', null, 1)).toEqual({ kind: 'cancel' });
+  });
+
+  it('shows the reticle on every tile, with no ghost or ring', () => {
+    expect(hoverLook(tower, null, false, 1)).toEqual({
+      highlight: 'hover',
+      ghost: false,
+      ghostValid: false,
+      ringTowerUid: 0,
+      aim: true,
+    });
+    expect(hoverLook(path, null, false, 1)).toMatchObject({ aim: true });
+    expect(hoverLook(off, null, false, 1)).toMatchObject({ aim: false, highlight: null });
+    expect(hoverLook(pad, 'rivet', true)).toMatchObject({ aim: false });
+  });
+});

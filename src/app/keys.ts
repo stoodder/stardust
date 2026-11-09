@@ -4,12 +4,13 @@
 // - On a focused button, Space and 1–4 go to the game hotkey (preventDefault, so the button doesn't
 //   also activate), unless a modal is open, in which case the modal keeps them.
 // - Enter always activates the focused button (never a game hotkey).
-// Bindings (design/core-loop.md §4) live in the table below. Still to come: Q and E (abilities,
-// T113 and T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
+// Bindings (design/core-loop.md §4) live in the table below. Still to come: E (the companion's
+// ability, T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
 import {
   callWave,
   cancel,
   cycleTargeting,
+  pressAbility,
   pressBuildSlot,
   sellSelected,
   toggleFastSpeed,
@@ -34,6 +35,7 @@ export const BINDINGS: Readonly<Record<string, () => void>> = {
   KeyS: sellSelected,
   KeyT: cycleTargeting,
   KeyW: callWave,
+  KeyQ: () => pressAbility(1),
 };
 
 /** Keys a focused button would act on itself, which the game takes instead (the modal keeps them). */

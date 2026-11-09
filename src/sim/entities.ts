@@ -194,6 +194,11 @@ export interface Zone extends PoolEntity {
   ticksLeft: number;
   damage: number;
   damageType: DamageType;
+  /**
+   * The commander ability slot that made it (its damage source), or 0. Not `slot`: that's the
+   * pool index every PoolEntity has.
+   */
+  abilitySlot: number;
 }
 
 export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
@@ -206,6 +211,7 @@ export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   ticksLeft: 0,
   damage: 0,
   damageType: 'kinetic',
+  abilitySlot: 0,
 });
 
 /** Friendly non-tower units. A placeholder until allies land (T207); the pool stays empty in M1. */

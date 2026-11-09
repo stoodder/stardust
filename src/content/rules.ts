@@ -3,7 +3,7 @@
 // this file is the home of the values. Every table names the section it encodes. Values marked
 // "chosen" are not in the docs (or the docs give a range); the comment says why.
 //
-// Pure data plus two tiny pure helpers. No imports beyond types, so any module may read it.
+// Pure data plus a few tiny pure formulas. No imports beyond types, so any module may read it.
 import type {
   Act,
   Body,
@@ -317,6 +317,33 @@ export const SELL_REFUND_PCT = 0.7;
  * of sim time of being built (whichever ends first; paused time doesn't count) refunds 100%.
  */
 export const MISCLICK_GRACE_SEC = 10;
+/** The wave clear bonus is `base + perWave × waveNumber` (core-loop.md § 2.3): wave 1 pays 24. */
+export const WAVE_CLEAR_BONUS_BASE = 20;
+export const WAVE_CLEAR_BONUS_PER_WAVE = 4;
+/** Credits for resolving wave `wave` (1-based), paid even if some of it leaked. */
+export function waveClearBonus(wave: number): number {
+  // TODO(T304): a boss wave's bonus is tripled (enemies.md § 6); the validator refuses bosses.
+  return WAVE_CLEAR_BONUS_BASE + WAVE_CLEAR_BONUS_PER_WAVE * wave;
+}
+/**
+ * Early wave call (core-loop.md § 2.4): the bonus is this share of the called wave's clear bonus,
+ * scaled by the fraction of the countdown skipped; every commander ability's remaining cooldown
+ * drops by the cooldown share of the time skipped.
+ */
+export const EARLY_CALL_BONUS_SHARE = 0.5;
+export const EARLY_CALL_COOLDOWN_SHARE = 0.25;
+/**
+ * `round(0.5 × clearBonus × secondsRemaining / countdown)`, in ticks (the ratio is the same).
+ * Halves round up. 0 when nothing is skipped.
+ */
+export function earlyCallBonus(wave: number, ticksLeft: number, countdownTicks: number): number {
+  if (ticksLeft <= 0 || countdownTicks <= 0) return 0;
+  const left = ticksLeft < countdownTicks ? ticksLeft : countdownTicks;
+  return Math.round((EARLY_CALL_BONUS_SHARE * waveClearBonus(wave) * left) / countdownTicks);
+}
+/** Kill bounties for tagged units (enemies.md § 5.1 youngling modifier, § 5.4 fleeing). */
+export const YOUNGLING_BOUNTY = 0;
+export const FLEEING_BOUNTY = 1;
 /** Wave tags whose units leak for 0 (core-loop.md § 2.9). */
 export const LEAK_FREE_TAGS: readonly WaveTag[] = ['fleeing', 'youngling'];
 /** The spare-runners filter never picks these as a primary target (D006). */

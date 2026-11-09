@@ -7,13 +7,17 @@
 // become affordable after about 8 of the 10 Zoomers die, too late to touch W6.
 //
 // M1 cut (D004): no Crossfire, medals, Suppressing Fire, or Bricks ally. The Technician's Orbital
-// Strike (owned from A1M1, campaign.md § 4.2) arrives with T113.
-// TODO(T113): set `technicianAbility: 'orbital_strike'` and add par's strikes on the W5 and W7
-// clumps (`{ wave: 5, ability: 1, … }`, `{ wave: 7, ability: 1, … }`).
+// Strike (owned from A1M1, campaign.md § 4.2) hits the first clump of W5 and of W7 at the road's
+// first corner (4,3): a Nibbler clump (4 at 0.25 s, 1 tile/s) leads at route distance 3.4 when a
+// strike cast 2.4 s into the wave lands 1 s later, so all four sit inside its 1.5-tile radius.
 import { defineBuilds } from '../../define.ts';
 
 /** The greenhouse roof: A1M1's one high-ground tile. */
 const ROOF = [7, 2] as const;
+/** The road's first corner, where the strikes land on a clump. */
+const CORNER = [4, 3] as const;
+/** Cast 2.4 s into the wave; the strike lands 1 s later, on the lead clump at the corner. */
+const STRIKE_WHEN = { afterSec: 2.4 } as const;
 
 export const builds = defineBuilds({
   // A1M1's reference profile: the issued kit and nothing bought (campaign.md § 4.9).
@@ -22,7 +26,7 @@ export const builds = defineBuilds({
     specs: [],
     shop: {},
     protocols: [],
-    technicianAbility: null,
+    technicianAbility: 'orbital_strike',
   },
   parBuild: {
     loadout: ['rivet', 'thumper'],
@@ -32,7 +36,9 @@ export const builds = defineBuilds({
       { wave: 3, build: 'rivet', tile: [10, 4] },
       { wave: 3, build: 'thumper', tile: [10, 5] }, // the Crossfire pair (a link from T202)
       { wave: 5, upgrade: ROOF }, // T3 (affordable from W5's build phase)
+      { wave: 5, ability: 1, target: CORNER, when: STRIKE_WHEN }, // W5 teaches the strike
       { wave: 7, build: 'thumper', tile: [3, 5] },
+      { wave: 7, ability: 1, target: CORNER, when: STRIKE_WHEN },
     ],
   },
   // A1M1 requires no counters (maps.md § 6.4): the tutorial never punishes skipping the Thumper.
@@ -47,7 +53,9 @@ export const builds = defineBuilds({
         { wave: 3, build: 'rivet', tile: [10, 4] },
         { wave: 3, build: 'rivet', tile: [10, 5] },
         { wave: 5, upgrade: ROOF },
+        { wave: 5, ability: 1, target: CORNER, when: STRIKE_WHEN },
         { wave: 7, build: 'rivet', tile: [3, 5] },
+        { wave: 7, ability: 1, target: CORNER, when: STRIKE_WHEN },
       ],
     },
   },

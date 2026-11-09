@@ -1,7 +1,8 @@
 // The one door for player actions (architecture.md § UI: DOM overlay): the HUD (T106), keyboard
 // hotkeys (keys.ts), and the test hooks act through these functions, never on the sim directly.
 // Sim commands go through the current battle's host; interaction changes (selection, the armed
-// build slot) go to the battle's BattleInteraction, which the scene and the HUD both read.
+// build slot, the aimed ability) go to the battle's BattleInteraction, which the scene and the HUD
+// both read.
 import type { IdSpace, TargetPriority } from '../content/types.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import type { Command } from '../sim/index.ts';
@@ -123,7 +124,33 @@ export function callWave(): void {
   issue({ type: 'callWave' });
 }
 
-/** Esc / right-click: drops the selection and disarms the build slot. */
+/**
+ * An ability slot (HUD click, or Q for slot 1): starts aiming it, so the next click on a tile fires
+ * it there, or stops aiming if it's already aimed. An empty or recharging slot doesn't aim; a
+ * notice says why. Aiming works while paused (the strike fires when play resumes, core-loop §3.1).
+ */
+export function pressAbility(slot: 1 | 2): void {
+  if (target === null) return;
+  const { host, interaction } = target;
+  if (interaction.aiming === slot) {
+    interaction.aimAbility(null);
+    return;
+  }
+  const id = slot === 1 ? host.sim.config.abilities.slot1 : host.sim.config.abilities.slot2;
+  const why =
+    id === null
+      ? 'noAbility'
+      : (host.sim.state.abilityCooldownTicks[slot - 1] ?? 0) > 0
+        ? 'abilityOnCooldown'
+        : null;
+  if (why !== null) {
+    showNotice(rejectText(why) ?? '');
+    return;
+  }
+  interaction.aimAbility(slot);
+}
+
+/** Esc / right-click: drops the selection, disarms the build slot, and stops aiming. */
 export function cancel(): void {
   target?.cancel();
 }

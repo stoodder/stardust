@@ -18,6 +18,7 @@ import {
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
+import { bountyFor, earn } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
 import { poolKill } from '../pool.ts';
@@ -113,8 +114,8 @@ export function applyDamage(
 
 /**
  * Kills an enemy that ran out of HP: frees it for cleanup, counts the kill (Pests Processed for
- * Skitterkin, `killsByEnemy`), and emits EnemyDied naming the killer. The one place a kill is
- * booked, so the economy (T105b) credits the bounty here.
+ * Skitterkin, `killsByEnemy`), credits the bounty, and emits EnemyDied naming the killer. The one
+ * place a kill is booked.
  */
 function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   const def = enemy.def!; // applyDamage checked it
@@ -122,12 +123,14 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   const stats = state.stats;
   stats.killsByEnemy[def.id] = (stats.killsByEnemy[def.id] ?? 0) + 1;
   if (def.faction === 'skitterkin') stats.skitterkinKilled++;
-  // TODO(T105b): credit the bounty (and settle youngling bounties) here.
+  // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3); leaks pay nothing (movement).
+  const bounty = bountyFor(def.bounty, enemy.tags);
+  earn(state, bounty);
   emit(state, {
     type: 'EnemyDied',
     uid: enemy.uid,
     enemy: def.id,
-    bounty: def.bounty,
+    bounty,
     // A copy: towers pass a reused scratch source.
     killer:
       source.kind === 'tower'

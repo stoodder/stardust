@@ -5,7 +5,9 @@ import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { nextPriority, PRIORITY_CYCLE } from './commands.ts';
 import {
+  abilitySlots,
   buildSlots,
+  cooldownView,
   displayName,
   meterLabelText,
   rejectText,
@@ -99,6 +101,37 @@ describe('hud view models', () => {
     expect(rejectText('cantAfford')).toBe('Not enough credits');
     expect(rejectText('notImplemented')).toBe('Not online yet');
     expect(rejectText('mapEnded')).toBeNull();
+    expect(rejectText('abilityOnCooldown')).toBe('Recharging');
+    expect(rejectText('invalidTarget')).toBe("Can't target there");
+    expect(rejectText('noAbility')).toBe('No ability equipped');
+    expect(rejectText('waveInProgress')).toBe('Wave in progress');
+    expect(rejectText('noWavesLeft')).toBe('No waves left');
+  });
+
+  it('shows the equipped Technician ability in slot 1, on Q', () => {
+    const sim = devSim();
+    expect(abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1)).toEqual([
+      {
+        slot: 1,
+        ability: 'dev_strike',
+        label: 'Dev Strike',
+        icon: 'icon.ability.orbital_strike',
+        key: 'Q',
+      },
+    ]);
+    expect(abilitySlots(sim.config.content.abilities, null)).toEqual([]);
+    expect(() => abilitySlots(sim.config.content.abilities, 'nope')).toThrow(/nope/);
+  });
+
+  it('shows a cooldown as whole seconds and a 1/16-step wipe, reusing unchanged views', () => {
+    const ready = cooldownView(0, 2700, null);
+    expect(ready).toEqual({ secondsLeft: 0, remaining: 0 });
+    const full = cooldownView(2700, 2700, ready);
+    expect(full).toEqual({ secondsLeft: 45, remaining: 1 });
+    expect(cooldownView(2699, 2700, full)).toBe(full); // still 45 s and a full wipe
+    expect(cooldownView(1350, 2700, full)).toEqual({ secondsLeft: 23, remaining: 0.5 });
+    expect(cooldownView(1, 2700, null)).toEqual({ secondsLeft: 1, remaining: 1 / 16 });
+    expect(cooldownView(0, 2700, ready)).toBe(ready);
   });
 
   it('cycles targeting First → Last → Strong → Close → First', () => {

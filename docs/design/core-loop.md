@@ -38,7 +38,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 2. **Wave.** Enemies spawn from spawn points along their ground paths or air lanes. Towers fire automatically. The player builds, upgrades, sells, retargets, and uses abilities.
 3. **Countdown.** When a wave has *finished spawning*, the next wave's countdown starts (default **20 s**; Act I 25 s, Act III 15 s). When it reaches zero the next wave starts. The player can **call the wave early** at any point during the countdown (2.4).
 4. **Repeat** until the last wave resolves.
-5. **End.** Victory when every enemy of the last wave has been killed or has leaked and core integrity is above 0. Defeat the instant core integrity hits 0.
+5. **End.** Victory when every wave has resolved (below), so every enemy of the last wave and of any earlier wave still on the field has been killed or has leaked, and core integrity is above 0. Defeat the instant core integrity hits 0; it wins over a victory on the same tick.
 
 Waves can overlap: the countdown starts once spawning ends, not when the wave is dead, so slow kills stack pressure. **Rule:** a wave is *resolved* when every enemy in it has died or leaked. The wave clear bonus (2.3) pays out on resolution.
 

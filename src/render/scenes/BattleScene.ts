@@ -2,6 +2,7 @@
 // dispatches its events (views are created and released from them), then views are positioned
 // from sim state, and the hover, selection, range ring, and placement ghost are redrawn. Pointer
 // input becomes intents (input/intents.ts), and intents become commands through `deps.issue`.
+// Event-driven effects (tracers, pulse rings, shell bursts, the Orbital Strike) are FxView's.
 // The scene only reads sim state; every change goes through a command.
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
@@ -23,6 +24,7 @@ import { VIEW_H, VIEW_W } from '../scale.ts';
 import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { EnemyView } from '../views/EnemyView.ts';
+import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
@@ -32,6 +34,11 @@ import type { ViewContext } from '../views/ViewContext.ts';
 import { ViewPool } from '../views/ViewPool.ts';
 
 export const BATTLE_SCENE_KEY = 'Battle';
+
+/** Reduced motion turns off screen shake (art-direction §7). */
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /** What the scene needs from the app (app/battle.ts provides it). */
 export interface BattleSceneDeps {
@@ -56,6 +63,9 @@ export class BattleScene extends Phaser.Scene {
   #enemies!: ViewPool<EnemyView>;
   #projectiles!: ViewPool<ProjectileView>;
   #placement!: PlacementView;
+  #fx!: FxView;
+  /** Uids of lobbed shells in flight: their impact draws a burst. */
+  readonly #shells = new Set<number>();
   #stamp = 0;
   /** The pointer in game pixels, or NaN while it's off the canvas. */
   #px = Number.NaN;
@@ -101,6 +111,7 @@ export class BattleScene extends Phaser.Scene {
     this.#enemies = new ViewPool(() => new EnemyView(ctx));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#placement = new PlacementView(ctx);
+    this.#fx = new FxView(ctx, prefersReducedMotion);
 
     const content = sim.config.content;
     this.#offs.push(
@@ -118,8 +129,25 @@ export class BattleScene extends Phaser.Scene {
       }),
       bus.on('EnemyDied', (e) => this.#enemies.release(e.uid)),
       bus.on('EnemyLeaked', (e) => this.#enemies.release(e.uid)),
-      bus.on('ProjectileFired', (e) => this.#showProjectile(e.uid, e.towerUid)),
-      bus.on('ProjectileHit', (e) => this.#projectiles.release(e.uid)),
+      bus.on('ProjectileFired', (e) => {
+        if (e.kind === 'hitscan') {
+          this.#fx.tracer(e.x, e.y, e.targetX, e.targetY, this.#isFlyer(e.targetUid));
+        } else if (e.kind === 'pulse') {
+          const range = this.#findTower(e.towerUid)?.tierDef?.attack?.rangeTiles ?? 0;
+          if (range > 0) this.#fx.pulse(e.x, e.y, range);
+        } else {
+          this.#showProjectile(e.uid, e.towerUid);
+        }
+      }),
+      bus.on('ProjectileHit', (e) => {
+        this.#projectiles.release(e.uid);
+        if (this.#shells.delete(e.uid)) this.#fx.burst(e.x, e.y);
+      }),
+      bus.on('AbilityUsed', (e) => {
+        if (e.uid !== 0 && e.target !== null) {
+          this.#fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5);
+        }
+      }),
     );
 
     this.input.mouse?.disableContextMenu();
@@ -139,6 +167,8 @@ export class BattleScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       for (const off of this.#offs) off();
       this.#offs.length = 0;
+      this.#fx.reset();
+      this.#shells.clear();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();
@@ -149,9 +179,10 @@ export class BattleScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.#deps.frame(delta);
     this.#syncViews();
+    this.#fx.update(delta, this.#deps.sim.state.zones);
   }
 
-  /** Esc and right-click: drops the selection and disarms the build slot. */
+  /** Esc and right-click: drops the selection, disarms the build slot, and stops aiming. */
   cancel(): void {
     this.#deps.interaction.clear();
   }
@@ -161,12 +192,23 @@ export class BattleScene extends Phaser.Scene {
     const attack = tower?.tierDef?.attack;
     if (attack === undefined || attack === null) return;
     if (attack.kind === 'lobbed') {
+      this.#shells.add(uid);
       this.#projectiles
         .acquire(uid)
         .show(uid, { sprite: attack.projectile, flightTicks: attack.flightTicks });
     } else if (attack.kind === 'projectile') {
       this.#projectiles.acquire(uid).show(uid, { sprite: attack.projectile, flightTicks: 0 });
     }
+  }
+
+  /** Whether the enemy `uid` flies (its slot keeps its def until reused, so a fresh kill counts). */
+  #isFlyer(uid: number): boolean {
+    const pool = this.#deps.sim.state.enemies;
+    for (let i = 0; i < pool.used; i++) {
+      const e = pool.items[i]!; // i < used ≤ items.length
+      if (e.uid === uid) return e.def?.layer === 'air';
+    }
+    return false;
   }
 
   #findTower(uid: number): LiveTower | null {
@@ -206,8 +248,15 @@ export class BattleScene extends Phaser.Scene {
 
   #click(button: 'left' | 'right'): void {
     const { interaction } = this.#deps;
-    const intent = resolveClick(this.#pointerTile(), button, interaction.armed);
+    const intent = resolveClick(this.#pointerTile(), button, interaction.armed, interaction.aiming);
     switch (intent.kind) {
+      case 'ability':
+        // One shot per aim; the sim re-validates (cooldown, target) and the HUD shows rejections.
+        this.#deps.issue({ type: 'ability', slot: intent.slot, target: intent.tile });
+        interaction.aimAbility(null);
+        return;
+      case 'none':
+        return;
       case 'selectTower':
         interaction.selectTower(intent.uid);
         return;
@@ -307,8 +356,10 @@ export class BattleScene extends Phaser.Scene {
       tile,
       armed === null ? null : armed.id,
       armed !== null && this.#canPlace(armed, tile),
+      this.#deps.interaction.aiming,
     );
     placement.setHover(tile.col, tile.row, look.highlight);
+    this.#fx.setAim(look.aim ? tile.col : -1, tile.row);
     placement.setSelectedTile(selectedTower?.col ?? -1, selectedTower?.row ?? -1);
 
     if (look.ghost && armed !== null) {

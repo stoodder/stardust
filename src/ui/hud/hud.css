@@ -339,6 +339,70 @@ section.chamfer,
   height: 8px;
 }
 
+/* ── Bottom-left: commander abilities ──────────────────────────────────────────────────────── */
+
+.hud-abilities {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.hud-ability {
+  width: 36px;
+}
+
+.hud-ability .ability-icon {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+}
+
+/* The cooldown wipe: an ink scrim over the top of the icon, one game pixel per 1/16 left. */
+.hud-wipe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  background: rgb(13 10 24 / 60%);
+}
+
+.hud-cd {
+  height: 8px;
+  text-align: center;
+  color: var(--sd-steel-3);
+}
+
+.hud-ability.ready .hud-cd {
+  color: var(--accent);
+}
+
+.hud-ability.ready {
+  --edge: var(--accent);
+}
+
+.hud-ability.charging .slot-icon {
+  opacity: 0.6;
+}
+
+.hud-aim-hint {
+  display: grid;
+  gap: 3px;
+  padding: 4px 6px;
+  color: var(--sd-white-1);
+  background: var(--panel-fill);
+}
+
+.hud-aim-hint .dim {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 /* ── The selected tower's panel ───────────────────────────────────────────────────────────── */
 
 .hud-tower {

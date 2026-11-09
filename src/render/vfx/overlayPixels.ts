@@ -69,8 +69,11 @@ export function ellipseQuadrant(a: number, b: number): [number, number][] {
   return out;
 }
 
-/** A dashed 1 px range ellipse for a range of `radiusTiles` (snapped to the bake step). */
-export function ringImage(radiusTiles: number, color: ColorName): RingImage {
+/**
+ * A 1 px range ellipse for a range of `radiusTiles` (snapped to the bake step): dashed for range
+ * rings, solid for effect rings (the Sprinkler's pulse, render/views/FxView.ts).
+ */
+export function ringImage(radiusTiles: number, color: ColorName, dashed = true): RingImage {
   rangeEllipsePx(snapRingRadius(radiusTiles), scratch);
   const a = Math.max(1, Math.round(scratch.x));
   const b = Math.max(1, Math.round(scratch.y));
@@ -87,7 +90,7 @@ export function ringImage(radiusTiles: number, color: ColorName): RingImage {
   };
   const quad = ellipseQuadrant(a, b);
   for (let i = 0; i < quad.length; i++) {
-    if (i % DASH_PERIOD >= DASH_ON) continue;
+    if (dashed && i % DASH_PERIOD >= DASH_ON) continue;
     const [x, y] = quad[i]!; // i < length
     put(a + x, b + y);
     put(a - x, b + y);

@@ -1,5 +1,6 @@
 // Registers the in-world UI pixels (overlayPixels.ts) as Phaser textures, lazily and once per game:
-// range rings per quarter-tile radius and validity, and the tile highlights.
+// range rings per quarter-tile radius and validity, the tile highlights, and the solid pulse rings
+// FxView expands from Sprinkler towers.
 import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
@@ -45,6 +46,22 @@ export function ringTexture(scene: Phaser.Scene, radiusTiles: number, valid: boo
   const cached = ringOrigins.get(key);
   if (cached !== undefined && scene.textures.exists(key)) return cached;
   const ring = ringImage(r, valid ? RING_COLOR.valid : RING_COLOR.invalid);
+  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, imageToCanvas(ring.image));
+  const tex: RingTexture = { key, ox: ring.cx, oy: ring.cy };
+  ringOrigins.set(key, tex);
+  return tex;
+}
+
+/** The Sprinkler's pulse ring color (art-direction §7: the water of the chill spray). */
+const PULSE_COLOR: ColorName = 'blue.4';
+
+/** A solid pulse ring texture for `radiusTiles` (snapped to quarter tiles), registered once. */
+export function pulseRingTexture(scene: Phaser.Scene, radiusTiles: number): RingTexture {
+  const r = snapRingRadius(radiusTiles);
+  const key = `fx.pulse_ring.${r}`;
+  const cached = ringOrigins.get(key);
+  if (cached !== undefined && scene.textures.exists(key)) return cached;
+  const ring = ringImage(r, PULSE_COLOR, false);
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, imageToCanvas(ring.image));
   const tex: RingTexture = { key, ox: ring.cx, oy: ring.cy };
   ringOrigins.set(key, tex);

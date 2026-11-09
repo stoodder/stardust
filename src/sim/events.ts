@@ -25,7 +25,7 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly type: 'EnemyDied';
       readonly uid: number;
       readonly enemy: K['enemy'];
-      /** The enemy's bounty (crediting it is the economy's, T105b). */
+      /** The credits the kill paid (already credited): the bounty, 0 for younglings, 1 if fleeing. */
       readonly bounty: number;
       readonly killer: DamageSource;
       /** Where it died, in tiles. */
@@ -84,11 +84,40 @@ export type SimEvent<K extends IdSpace = LiveIds> =
     }
   | { readonly type: 'TowerSold'; readonly uid: number; readonly refund: number }
   | { readonly type: 'TowerClassUnlocked'; readonly tower: K['tower'] }
-  | { readonly type: 'WaveStarted'; readonly wave: number; readonly early: boolean }
-  | { readonly type: 'WaveCleared'; readonly wave: number }
+  | {
+      /** Wave `wave` began spawning. `early`: called during its countdown, paying `bonus`. */
+      readonly type: 'WaveStarted';
+      readonly wave: number;
+      readonly early: boolean;
+      /** The early-call bonus credited (core-loop.md § 2.4); 0 when not called early. */
+      readonly bonus: number;
+    }
+  | {
+      /**
+       * Wave `wave` resolved: every enemy in it died or leaked (core-loop.md § 2.1). Waves can
+       * overlap, so they can resolve out of order. `bonus` is the clear bonus credited.
+       */
+      readonly type: 'WaveCleared';
+      readonly wave: number;
+      readonly bonus: number;
+    }
+  | {
+      /** A wave-phase trigger is reached: wave `wave`'s build-phase countdown began (W1: setup). */
+      readonly type: 'CountdownStarted';
+      readonly wave: number;
+      /** The countdown's length in ticks; 0 for wave 1 (the setup phase has no countdown). */
+      readonly ticks: number;
+    }
+  /** A map-script cue (story binds it to a scene or bark). */
+  | { readonly type: 'ScriptCue'; readonly cueId: string }
   | {
       readonly type: 'AbilityUsed';
       readonly slot: 1 | 2;
+      /**
+       * The strike zone's uid (render draws its reticle until the zone resolves); 0 when the
+       * ability makes no zone.
+       */
+      readonly uid: number;
       readonly ability: K['ability'];
       readonly target: GridPos | null;
     }

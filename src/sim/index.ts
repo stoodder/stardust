@@ -14,7 +14,14 @@ export type { Command, CommandLogEntry, CommandType, RejectReason } from './comm
 export type { SimEvent, SimEventType } from './events.ts';
 export type { Ally, Enemy, Projectile, Tower, Zone } from './entities.ts';
 export type { Pool, PoolEntity } from './pool.ts';
-export type { Outcome, SimRngs, SimState, SimStats } from './state.ts';
+export type { Outcome, SchedulePhase, SimRngs, SimState, SimStats, WaveSchedule } from './state.ts';
+export {
+  MISCLICK_GRACE_TICKS,
+  bountyFor,
+  callWaveBonus,
+  sellValue,
+  type SellValue,
+} from './economy.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   isBuildable,

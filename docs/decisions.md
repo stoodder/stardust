@@ -185,3 +185,34 @@ Combat is live: the damage pipeline (`src/sim/combat/damage.ts`), deterministic 
   - Every kill goes through `killEnemy`, which counts `skitterkinKilled` and `killsByEnemy` and emits `EnemyDied { uid, enemy, bounty, killer, x, y }`. T105b credits the bounty there.
   - `ProjectileFired` and `ProjectileHit` fire for every attack, with uid 0 for hitscan and pulse.
 - Attack kinds and statuses no M1 content uses (projectile, beam, chain, spawner; pinned, stasis, unnerved) are TODO no-ops. Under D013's "refuse, don't ignore" rule, `createSim` should refuse loadouts that need them (T121).
+
+### D021 — 2026-11-09 — T105b waves, economy, and the end of a map
+Architecture §2 has a *Waves, economy, and the end of a map* block, and the formulas are in `rules.ts`. Rulings:
+- **Formulas:**
+  - Clear bonus `20 + 4 × wave`.
+  - Early-call bonus `round(0.5 × clearBonus × ticksLeft / countdownTicks)`, halves rounding up. An early call also cuts every ability's remaining cooldown by 25% of the seconds skipped.
+  - Bounty is the enemy's bounty: 1 for fleeing units, 0 for younglings.
+- **Wave resolution:**
+  - A wave resolves when every enemy in it has died or leaked, so waves can resolve out of order when one is called early.
+  - The map is won only when every wave has resolved.
+  - Integrity 0 loses, and a loss on the same tick beats a win.
+  - A countdown starts on the tick of the previous wave's last spawn, and `countdown` triggers fire on that tick.
+- **Sell:** inside the misclick grace (the tower hasn't fired and was built under 600 ticks ago) the refund is the full investment, otherwise `floor(invested × 0.7)`, with float slack so 0.7 × 180 = 126. Selling frees the tile at once.
+- **Stats:** `creditsSpent` stays gross. `creditsRefunded` and `creditsEarned` give the net.
+- **Refuse, don't ignore (D013):** `createSim` refuses map-script triggers, actions, and conditions it can't run yet. It runs wave-phase and `tick` triggers plus `unlockTowerClass`, `cue`, and `grantCredits`.
+- **Bank check:** D019's bank-per-phase numbers (350/292/270/113/165/95/179) hold exactly for an A1M1 par run with no leaks and a win, **if each step is bought as soon as the bank covers it during the countdown**. When a countdown starts, the previous wave's bounties haven't all arrived yet (W3's bank is 221, not enough for the 225 step). Buying only at the end of the countdown leaks 2 in W1. So the T108a executor buys each step as soon as it becomes affordable.
+- **HUD API:** `state.schedule` (phase, countdown ticks, per-wave start/remaining/resolved), `callWaveBonus()`, `sellValue()`, and `MISCLICK_GRACE_TICKS` are exported from `sim/index.ts`. New events are `CountdownStarted` and `ScriptCue`, and `WaveStarted`/`WaveCleared` now carry `bonus`.
+
+### D022 — 2026-11-09 — T113 Orbital Strike and T122 combat FX
+- **Orbital Strike** (core-loop §3.2): 45 s cooldown, 200 Explosive damage, 1.5-tile radius, and a 1 s reticle before impact. Rulings where the docs were silent: it hits ground enemies only, its radius includes the edge (like splash), any in-bounds tile is a valid target, and it's ready from tick 0. The sim exports `applyAbilityCommand` and `reduceAbilityCooldowns` (the early call), and damage goes through `applyDamage` with `{ kind: 'ability', slot }`.
+- **HUD:** the ability slot sits bottom-left with an icon, a Q badge, whole seconds left, and a 1/16-step cooldown wipe. Q or a click aims, and Esc or right-click cancels. Aiming, arming a build slot, and selecting a tower each cancel the other two.
+- **A1M1 builds** cast the strike at the road corner (4,3), 2.4 s into W5 and W7. These are first-pass timings for T107 to tune with the harness.
+- **FX** (`render/vfx/fxTiming.ts`, all pooled through `FxView`):
+  - Rivet tracer: 90 ms.
+  - Sprinkler pulse ring: 360 ms in `blue.4`.
+  - Strike beam: 8→2 px over 200 ms, then a 7-burst ring.
+  - Screen shake: 2 px for 240 ms, off under reduced motion.
+  - Thumper shells play `fx.explosion` when they land.
+  Phaser 4's WebGL Graphics doesn't draw 1-px rects, so tracers use the `rivet_tracer` sprite and beams are at least 2 px wide.
+- **`SpriteId`** is now exactly the registered sprite ids (the `icon.*` carve-out is gone).
+- **For the UX review:** pulse rings read faintly, and the strike's impact could be juicier.

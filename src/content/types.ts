@@ -57,20 +57,8 @@ export interface EntityRegistries {
   readonly abilities: object;
 }
 
-/**
- * A sprite id content may name: a registered sprite (`sprites/index.ts`). Ability icons stay
- * free-form (`icon.ability.*`) until T113 registers them; validate() checks the rest.
- */
-export type SpriteId = Exclude<RegisteredSpriteId, `icon.${string}`> | IconSpriteId;
-type RegisteredIcon = Extract<RegisteredSpriteId, `icon.${string}`>;
-/**
- * Icon ids: the registered `icon.*` sprites, plus free-form `icon.ability.*` until T113. Until any
- * icon is registered (T106), any `icon.*` id is accepted.
- * TODO(T113): drop the `icon.ability.${string}` arm once ability icons are registered.
- */
-export type IconSpriteId = [RegisteredIcon] extends [never]
-  ? `icon.${string}`
-  : RegisteredIcon | `icon.ability.${string}`;
+/** A sprite id content may name: a registered sprite (`sprites/index.ts`). */
+export type SpriteId = RegisteredSpriteId;
 /** No registry yet: links arrive with T202, so towers list none until then. */
 export type LinkId = never;
 /** No registry yet: shop and R&D upgrades arrive with T204. */

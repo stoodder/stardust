@@ -93,20 +93,10 @@ function artErrors(): readonly string[] {
 }
 
 const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((s: SpriteDef) => s.id));
-/**
- * Feature guards: `icon.*` ids are free-form until T106 registers icon sprites, and
- * `icon.ability.*` until T113 registers ability icons; from then on they are checked like every
- * other sprite id.
- */
-const ICON_SPRITES_REGISTERED = SPRITES.some((s: SpriteDef) => s.id.startsWith('icon.'));
-function isUnregisteredYet(id: string): boolean {
-  return id.startsWith('icon.') && (!ICON_SPRITES_REGISTERED || id.startsWith('icon.ability.'));
-}
-
 function checkSprite(issues: Issues, id: string, category: string, where: string): void {
   if (!id.startsWith(`${category}.`)) {
     issues.add('sprite-ref', where, `'${id}' must be a '${category}.*' sprite`);
-  } else if (!isUnregisteredYet(id) && !SPRITE_IDS.has(id)) {
+  } else if (!SPRITE_IDS.has(id)) {
     issues.add('sprite-ref', where, `'${id}' is not a registered sprite`);
   }
 }

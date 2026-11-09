@@ -2,7 +2,7 @@
 // interaction change. Components read `hud` and `speed`, and act through app/commands.ts. Signals
 // only notify on a changed value; arrays and view objects are replaced only when their contents
 // change, so a steady frame re-renders nothing.
-import type { CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
+import type { CompiledAbilityDef, CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC, MISCLICK_GRACE_SEC, SELL_REFUND_PCT } from '../content/rules.ts';
 import type { IdSpace, MeterLabel } from '../content/types.ts';
 import { gridToScreen, mapOrigin, type IsoOrigin } from '../render/iso.ts';
@@ -14,6 +14,8 @@ import type { RejectReason, Sim, Tower } from '../sim/index.ts';
 import {
   hud,
   speed,
+  type AbilityCooldownView,
+  type AbilitySlotView,
   type BuildSlotView,
   type SelectedTowerView,
   type WavePreview,
@@ -181,6 +183,16 @@ export function rejectText(reason: RejectReason): string | null {
       return 'No targeting on this tower';
     case 'notImplemented':
       return 'Not online yet';
+    case 'waveInProgress':
+      return 'Wave in progress';
+    case 'noWavesLeft':
+      return 'No waves left';
+    case 'noAbility':
+      return 'No ability equipped';
+    case 'abilityOnCooldown':
+      return 'Recharging';
+    case 'invalidTarget':
+      return "Can't target there";
     case 'mapEnded':
     case 'notInLoadout':
     case 'noSuchTower':
@@ -188,6 +200,41 @@ export function rejectText(reason: RejectReason): string | null {
     default:
       return assertNever(reason);
   }
+}
+
+/** The commander ability slots a config equips (slot 1 only in M1; slot 2 is T207's). */
+export function abilitySlots(
+  abilities: Readonly<Record<string, CompiledAbilityDef>>,
+  slot1: string | null,
+): AbilitySlotView[] {
+  if (slot1 === null) return [];
+  const def = abilities[slot1];
+  if (def === undefined) throw new RangeError(`hud: ability '${slot1}' is not in the content`);
+  return [{ slot: 1, ability: def.id, label: def.name, icon: def.sprites.icon, key: 'Q' }];
+}
+
+/** Steps in the cooldown wipe (one per game pixel of the 16 px icon). */
+export const COOLDOWN_STEPS = 16;
+const READY: AbilityCooldownView = Object.freeze({ secondsLeft: 0, remaining: 0 });
+
+/**
+ * An ability's cooldown as the HUD shows it: whole seconds left (rounded up) and the share still
+ * to recharge in 1/16 steps (the icon's wipe). Reuses `prev` when neither changed, so the slot
+ * re-renders about once a second, not every tick.
+ */
+export function cooldownView(
+  ticksLeft: number,
+  totalTicks: number,
+  prev: AbilityCooldownView | null,
+): AbilityCooldownView {
+  if (ticksLeft <= 0 || totalTicks <= 0)
+    return prev !== null && prev.secondsLeft === 0 ? prev : READY;
+  const secondsLeft = Math.ceil(ticksLeft / TICK_HZ);
+  const remaining =
+    Math.ceil(Math.min(1, ticksLeft / totalTicks) * COOLDOWN_STEPS) / COOLDOWN_STEPS;
+  if (prev !== null && prev.secondsLeft === secondsLeft && prev.remaining === remaining)
+    return prev;
+  return { secondsLeft, remaining };
 }
 
 let noticeId = 0;
@@ -214,6 +261,8 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
   hud.slots.value = buildSlots(towers, sim.config.loadout);
+  const abilityViews = abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1);
+  hud.abilities.value = abilityViews;
   hud.notice.value = null;
   let previewFor = -1;
   const sync = (): void => {
@@ -230,11 +279,26 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
       hud.nextWave.value = wavePreview(sim.map, s.wave);
     }
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
+    syncCooldowns();
     speed.value = host.speed;
+  };
+  const syncCooldowns = (): void => {
+    const prev = hud.abilityCooldowns.value;
+    let next: AbilityCooldownView[] | null = null;
+    for (let i = 0; i < abilityViews.length; i++) {
+      const v = abilityViews[i]!; // i < length
+      const def = sim.config.content.abilities[v.ability];
+      const left = sim.state.abilityCooldownTicks[v.slot - 1] ?? 0;
+      const cd = cooldownView(left, def?.cooldownTicks ?? 0, prev[i] ?? null);
+      if (cd !== prev[i]) next ??= [...prev];
+      if (next !== null) next[i] = cd;
+    }
+    if (next !== null) hud.abilityCooldowns.value = next;
   };
   const syncInteraction = (): void => {
     hud.selectedTower.value = interaction.selectedTower;
     hud.armedTower.value = interaction.armed;
+    hud.aimingAbility.value = interaction.aiming;
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
   };
   sync();
@@ -259,6 +323,9 @@ export function bindHud(host: Host<IdSpace>, interaction: BattleInteraction): ()
     hud.selectedTower.value = 0;
     hud.selected.value = null;
     hud.armedTower.value = null;
+    hud.aimingAbility.value = null;
+    hud.abilities.value = [];
+    hud.abilityCooldowns.value = [];
     hud.nextWave.value = null;
     hud.notice.value = null;
   };

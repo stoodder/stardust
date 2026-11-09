@@ -6,6 +6,7 @@ import { fxExplosion } from './fx/explosion.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxShadow } from './fx/shadow.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
+import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
 import { iconCore, iconCredits, iconLock } from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
@@ -53,6 +54,7 @@ export const SPRITES = [
   iconEnemyNibbler,
   iconEnemyZoomer,
   iconEnemyChonk,
+  iconAbilityOrbitalStrike,
   iconCredits,
   iconCore,
   iconLock,

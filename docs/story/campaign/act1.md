@@ -86,12 +86,12 @@ The W7 Zoomer groups slot into the gaps after the second and fourth clumps. A1M1
 | W1 | Rivet on the greenhouse roof (7,2) | same |
 | W2 | Upgrade the roof Rivet to T2 | same |
 | W3 | Rivet (10,4), then Thumper (10,5): the Crossfire pair | Rivet (10,4), then Rivet (10,5) |
-| W5 | Upgrade the roof Rivet to T3 | same |
-| W7 | Thumper (3,5) | Rivet (3,5) |
+| W5 | Upgrade the roof Rivet to T3; Orbital Strike on the road's first corner (4,3), 2.4 s into the wave (it lands on the first clump) | same |
+| W7 | Thumper (3,5); Orbital Strike on (4,3), 2.4 s in | Rivet (3,5); the same strike |
 
 Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. Target margin 95. If every pest dies, the bank at the start of each build phase under par is 350, 292, 270, 113, 165, 95, 179 (W1–W7). So the second Thumper waits for **W7**: with 95 banked before W6, it would become affordable only after about 8 of W6's 10 Zoomers die, too late to matter there. These timings are provisional until T107's balance tuning. **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs: do-nothing loses; par wins inside the band; the **Rivet-only** build wins at a lower margin than par; `alwaysCallEarly`.
 
-**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Its Orbital Strike steps join the data with the ability (T113). Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
+**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
 
 ## A1M2 · Hatching Season
 

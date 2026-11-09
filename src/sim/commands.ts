@@ -34,6 +34,15 @@ export type RejectReason =
   | 'maxTier'
   /** The tower picks no target (pulse and support towers). */
   | 'noTargeting'
+  /** callWave while the current wave is still spawning (no countdown is running). */
+  | 'waveInProgress'
+  /** callWave after the last wave has started. */
+  | 'noWavesLeft'
+  /** No ability is equipped in that slot. */
+  | 'noAbility'
+  | 'abilityOnCooldown'
+  /** The ability's target is missing or off the map. */
+  | 'invalidTarget'
   /** The handler belongs to a later task (named where the command is handled). */
   | 'notImplemented';
 
