@@ -116,7 +116,7 @@
 
 /* Full: the unpicked cards dim (still focusable, so the limit can be explained). */
 .sd-lo-tower.sd-lo-full {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-lo-tower.sd-lo-full .sd-lo-icon {
@@ -176,7 +176,7 @@
 
 .sd-lo-full .sd-lo-cost,
 .sd-lo-full .sd-lo-role {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-lo-role {
@@ -251,7 +251,7 @@
   padding: 2px 4px;
   border-left: 2px solid var(--sd-ink-4);
   background: var(--sd-ink-2);
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
   line-height: 9px;
   text-transform: uppercase;
 }

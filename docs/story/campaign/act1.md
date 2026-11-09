@@ -118,7 +118,7 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
 
 **Layout.** Long switchbacks down three terraces from a north spawn to a gate core at the south edge. Long and slow by design, so Sprinkler + Thumper shine. The pump station (power node) sits at the second switchback; Extraction Rig 3 (decor) sits beside one pad and the housing block beside another, so QUILL's "(Per policy.)" suggestion is visible. A scarecrow in a faded Everglow cap stands on Terrace 2 (decor) with an *Employee of the Month* badge pinned to it. The Peeker's rock is at a warren mouth halfway down the east side. This is the layout A2M3 revisits: keep the west two-thirds clean of anything Act I–specific so the scars read.
 
-**Waves.** 1 Nibblers · 2 Nibblers + Zoomers [early-call prompt] · 3 Chonks ×2 [T: armor plink] · 4 Chonks + Nibbler swarm [X; Sitting Ducks] · 5 one Brood Hauler, alone [T] · 6 Zoomer rush + Chonks [X: early call] · 7 Haulers ×5, one at a time, + Nibblers [X] · 8 Haulers ×6, one at a time, + Chonks + Zoomers [X].
+**Waves.** 1 Nibblers · 2 Nibblers + Zoomers [early-call prompt] · 3 Chonks ×2 [T: armor plink] · 4 Chonks + Nibbler clumps [X; Sitting Ducks] · 5 one Brood Hauler, alone [T] · 6 Zoomer rush + Chonks [X: early call] · 7 Haulers ×5, one at a time, + Nibblers [X] · 8 Haulers ×7, one at a time, + Chonks + Zoomers [X].
 
 **Layout data** (the data is [`src/content/maps/a1_m02/map.ts`](../../../src/content/maps/a1_m02/map.ts)). Spawn (11,0); the road runs west along Terrace 1's lip (row 2), down the west switchback (column 2), east along Terrace 2's lip (row 5), down the east switchback past the pump station (column 11), and west along Terrace 3 (row 8) to the gate (4,9): 34 tiles, about 49 s for a Hauler. Buildable: the irrigation tower `^` (6,4) in the middle of Terrace 2, the pump station `+` (10,6) inside the east switchback, and 9 pads: (5,1) and (12,1) on Terrace 1, (5,3), (8,3), and (3,4) on Terrace 2, and (7,6), (6,7), (10,7), and (12,7) on Terrace 3. Markers: `pump_station` (10,6), the Challenge's marker on the power node ([D042](../../decisions.md#d042--2026-11-09--t202c-conditions-and-medals)); `peeker` (13,4); and decor markers for the renderer, `rig3` (9,3) beside the (8,3) pad, `housing` (4,3) beside the (5,3) pad, and `scarecrow` (11,3) at Terrace 2's east end. A1M2 has no Bricks post.
 
@@ -135,18 +135,18 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
 ....C.........
 ```
 
-**Wave data** (the data is [`src/content/maps/a1_m02/waves.ts`](../../../src/content/maps/a1_m02/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s). The Brood Hauler is 330 HP behind armor 9 ([enemies.md §5.1](../../design/enemies.md#51-skitterkin-body-organic)): a Rivet below T3 hits it at the 20% floor, so the Thumper and the T3 Rivet's pierce are the armor answer this map requires. W7 and W8 release their Haulers **one every 12 s**, further apart than an Orbital Strike covers and, across the wave, longer than its cooldown, so the strike can't stand in for the armor answer.
+**Wave data** (the data is [`src/content/maps/a1_m02/waves.ts`](../../../src/content/maps/a1_m02/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s). The Brood Hauler is 330 HP behind armor 9 ([enemies.md §5.1](../../design/enemies.md#51-skitterkin-body-organic)): a Rivet below T3 hits it at the 20% floor, so the Thumper and the T3 Rivet's pierce are the armor answer this map requires. W7 and W8 release their Haulers **one every 12 s**, further apart than an Orbital Strike covers and, across the wave, longer than its cooldown, so the strike can't stand in for the armor answer. W4's Nibblers come in four tight clumps of four, 0.25 s apart: each is under a tile long, so one Orbital Strike catches a clump whole.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
 | W1 | Nibbler ×10 @ 0.7, 0 | 10 |
 | W2 | Nibbler ×10, 0 · Zoomer ×10, 5 | 20 |
 | W3 | Chonk ×2 @ 3, 0 | 2 |
-| W4 | Chonk ×3 @ 2, 0 · Nibbler ×16 @ 0.3, 2 | 19 |
+| W4 | Chonk ×3 @ 2, 0 · Nibbler ×4 @ 0.25 at 2, 8, 14, and 20 (four clumps) | 19 |
 | W5 | Brood Hauler ×1, 0 | 1 |
 | W6 | Zoomer ×24 @ 0.5, 0 · Chonk ×4 @ 2, 4 | 28 |
 | W7 | Brood Hauler ×5 @ 12, 0 · Nibbler ×20 @ 0.4, 3 | 25 |
-| W8 | Brood Hauler ×6 @ 12, 0 · Chonk ×4 @ 2, 6 · Zoomer ×20 @ 0.4, 10 | 30 |
+| W8 | Brood Hauler ×7 @ 12, 0 · Chonk ×4 @ 2, 6 · Zoomer ×20 @ 0.4, 10 | 31 |
 
 **Story delivery.**
 - *Briefing:* QUILL: "Sensors show something big and sparkly on the terraces. Sparkly is good! Usually!" · Bricks: "Hatching season. Everything's out and about. Keep your eyes on the path, Sprout."
@@ -170,34 +170,41 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
 |---|---|
 | W1 | Rivet on the irrigation tower (6,4); Thumper (10,7) beside the pump station |
 | W2 | Thumper (3,4) inside the west switchback; Sprinkler on the pump station (10,6): Sitting Ducks with (10,7) |
-| W3 | Upgrade the irrigation Rivet to T2 and set it to Strong (the Chonks) |
+| W3 | Upgrade the irrigation Rivet to T2 |
 | W4 | Thumper (12,7) at the bottom of the east switchback |
 | W5 | Upgrade the Thumper (10,7) to T2; Orbital Strike on the west switchback (2,3), 17.5 s in (the teach Hauler) |
 | W6 | Suppressing Fire on the east switchback (11,7), 4 s in (the Zoomer rush) |
 | W7 | Upgrade the Sprinkler to T2; Orbital Strike on (2,3), 17.5 s in (the first Hauler) |
-| W8 | Upgrade the Thumper (10,7) to T3; Orbital Strike on (2,3), 17.5 s in |
+| W8 | No purchase; Orbital Strike on (2,3), 28.5 s in (the second Hauler) |
 
-The irrigation Rivet stays at T2: on this map the Thumpers are the armor answer, the Rivet holds the swarms and the Zoomers. Par's bank at each build phase: 300, 78, 14, 12, 68, 36, 3, 146 (W1–W8); many steps land a little late, as the bounties arrive.
+The irrigation Rivet stays at T2 on its default targeting: on this map the Thumpers are the armor answer, the Rivet holds the swarms and the Zoomers. (Strong targeting would point it at the Haulers, where a T2 Rivet hits the 20% floor; that's why Bricks's Hauler bark says mortars.) The W8 strike waits for the second Hauler, because the towers finish the first alone; the strike is what holds W8 whole. Par's bank at each build phase: 300, 78, 14, 12, 68, 36, 3, 146 (W1–W8); many steps land a little late, as the bounties arrive, and W8 buys nothing.
 
 **No-armor build** (`noCounterBuilds.armor`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); [D038](../../decisions.md#d038--2026-11-09--t208-counter-answer-model)): par with every Thumper swapped for a Rivet and every Rivet held at T2 (no pierce), the same Sprinkler, and the same casts of both abilities. A1M2 is a **teach map** (armor is first required here), so its no-counter build must lose by its final wave rather than before the final third ([maps.md §6.1](../../design/maps.md#61-per-act-targets); `teachMap`, `noCounterLoseByWave: 8`).
 
-**Alt builds** (A1M2 needs none; these guard the tuning): `no_sprinkler` (a Rivet on the pump station instead), `par_minus_last` (no W8 upgrade, ≥ 40%), and the under-built `stops_after_w5` (`outcome: 'either'`).
+**Alt builds** (A1M2 needs none; these guard the tuning): `no_sprinkler` (a Rivet on the pump station instead), `par_minus_last` (no W7 Sprinkler upgrade, ≥ 40%), the under-built `stops_after_w5` (`outcome: 'either'`), and three plausible human builds:
+- `thumper_heavy` (≥ 40%): Thumpers on (10,7), (3,4), the irrigation tower, (12,7), and (5,3), upgrades on the Thumpers, no Sprinkler, par's casts.
+- `build_wide` (≥ 40%): par's first towers, then a new tower on a fresh pad every wave and never an upgrade (ten towers by W8).
+- `no_upgrades` (`outcome: 'either'`): par's towers and casts, never upgraded; its one purchase is a fourth Thumper at (5,3) in W6, the kind QUILL's bank nudge asks for.
+
+A player who never upgrades *and* never spends (par without its upgrades, 560 credits banked) meets W7–W8 as a wall: 12 lost in W7, then the loss in W8. That player is who the bank nudge is for; one Thumper bought with the hoard wins at 100.
 
 **Harness runs** (every seed; margin, then integrity lost per wave W1–W8):
 
 | Run | Result | Integrity lost |
 |---|---|---|
-| par | wins at **100** (band 80–100; target 92) | none |
+| par | wins at **100** (band 80–100; target 92; `marginBand` says why) | none |
 | par without its casts | 85 | 3 in W8 (the W8 strike's Hauler) |
-| `alwaysCallEarly` | 55 | 3 in W5, W7, W8 |
+| `alwaysCallEarly` | 30 | 1 in W2, 3 in W7, 10 in W8 |
 | no-armor | loses in W8 | 3 in W5, 15 in W7, 2 in W8 |
 | no-armor, full catalog | loses in W8 | 7 in W7, 16 in W8 |
 | Story | 100, and the Challenge | none |
-| `no_sprinkler` | 100 | none |
-| `par_minus_last`, `stops_after_w5` | 85 | 3 in W8 |
+| `no_sprinkler`, `par_minus_last`, `stops_after_w5` | 100 | none |
+| `thumper_heavy`, `build_wide`, `no_upgrades` | 100 | none |
 | do-nothing | loses at W2 | |
 
-Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par doesn't earn (a Hauler gets past the pump station), so A1M2 lists no `parMedals`. [`src/balance/a1m2.test.ts`](../../../src/balance/a1m2.test.ts) re-runs the harness with W7–W8's Haulers 0.5–1 s closer or further apart and W6–W8's other groups shifted ±0.2 s: every check holds except `abilities`, because a shift can let the towers finish the Hauler par's W8 strike is aimed at.
+**Par stays at 100** (`marginBand`, D059): one Hauler leak costs 15 points, so A1M2 can't sit at the act's target of 92 without par leaking on purpose; A1M3 resumes the chain below 90. **The R&D pick changes no result here:** every run above scores the same with Orbital Strike Mk II or Companion Rapport bought. The 34-tile road gives the towers time to clear W4's clumps on every build tried, and the Haulers walk 12 s apart, past what even Mk II's 2 tiles reach.
+
+Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par doesn't earn (a Hauler gets past the pump station), so A1M2 lists no `parMedals`. [`src/balance/a1m2.test.ts`](../../../src/balance/a1m2.test.ts) re-runs the harness with W7–W8's Haulers 0.5–1 s closer or further apart and W6–W8's other groups shifted ±0.2 s: every check holds except `abilities`, because a shift can let the towers finish the Hauler par's W8 strike is aimed at. It also checks that each W4 clump fits inside one strike.
 
 ## A1M3 · Special Delivery
 

@@ -16,8 +16,8 @@ const WEST: GridPos = [3, 4];
 /** The west switchback, where a wave's first Hauler walks into the strike. */
 const WEST_TURN: GridPos = [2, 3];
 const STRIKE_WHEN = { afterSec: 17.5 } as const;
-/** The same spot one Hauler later (W7–W8 release one every 12 s). */
-const SECOND_HAULER = { afterSec: 29.5 } as const;
+/** The same spot, one Hauler later (W7–W8 release one every 12 s): W8's second Hauler. */
+const SECOND_HAULER = { afterSec: 28.5 } as const;
 const SUPPRESS: GridPos = [11, 7];
 /** Beside the housing block on Terrace 2. */
 const HOUSING_PAD: GridPos = [5, 3];
@@ -101,10 +101,10 @@ export const builds = defineBuilds({
         'build' in s && s.build === 'sprinkler' ? { ...s, build: 'rivet' as const } : s,
       ),
     },
-    // Par one purchase short: no W8 upgrade.
+    // Par one purchase short: no W7 Sprinkler upgrade (par buys nothing in W8).
     par_minus_last: {
       loadout: PAR_LOADOUT,
-      steps: PAR_STEPS.filter((s) => s.wave < 8 || !('upgrade' in s)),
+      steps: PAR_STEPS.filter((s) => s.wave !== 7 || !('upgrade' in s)),
     },
     // An under-built player who stops buying after W5 (casts included).
     stops_after_w5: {
@@ -132,7 +132,7 @@ export const builds = defineBuilds({
       ],
     },
     // Wide, not tall: par's first towers, then a new tower on a fresh pad every wave and never an
-    // upgrade (eight towers by W8), the same casts.
+    // upgrade (ten towers by W8), the same casts.
     build_wide: {
       loadout: PAR_LOADOUT,
       steps: [
@@ -153,9 +153,8 @@ export const builds = defineBuilds({
       ],
     },
     // Par's towers and casts, never upgraded; the one purchase is a fourth Thumper beside the
-    // housing block in W6, when QUILL's bank nudge plays. (Par without that Thumper banks 560
-    // credits and meets W8 as a wall: the nudge is for that player.) It's the alt where Orbital
-    // Strike Mk II changes the result (a1m2.test.ts).
+    // housing block in W6, the kind QUILL's bank nudge asks for. (Par without it banks 560
+    // credits and meets W7–W8 as a wall, 12 then the loss: the nudge is for that player.)
     no_upgrades: {
       loadout: PAR_LOADOUT,
       steps: byWave([

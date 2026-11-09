@@ -14,9 +14,11 @@ import {
   holdingCount,
   medalViews,
   selectedView,
+  specDescription,
   specLockText,
   threatIntel,
 } from './hud.ts';
+import { towerStats } from '../sim/index.ts';
 
 /** A1M1 with every tower and spec unlocked (the all_unlocked dev save), paused at tick 0. */
 function a1m1(modifiers?: Modifier<IdSpace>[]): Sim<IdSpace> {
@@ -91,7 +93,8 @@ describe('the tower panel (T202d)', () => {
       ['Rivet Storm', 270],
       ['Railspike', 270],
     ]);
-    expect(v.specs?.options[0].description).toBe('9 dmg · 7.5/s · 1 s spin-up');
+    // One format for every card (D059): the numbers, then what's special.
+    expect(v.specs?.options[0].description).toBe('9 dmg · 7.5/s · range 3 · 1 s spin-up');
     expect(v.specs?.options[1].description).toBe('120 dmg · 0.5/s · range 6 · ignores armor');
     for (const o of v.specs!.options) {
       for (const l of o.descLines) expect(l.length).toBeLessThanOrEqual(CARD_CHARS);
@@ -100,7 +103,15 @@ describe('the tower panel (T202d)', () => {
     sim.step();
     v = selectedView(sim, uid, origin, v)!;
     expect(v).toMatchObject({ tier: 4, specName: 'Railspike', specs: null, upgradeCost: null });
-    expect(v.stats).toBe('120 dmg · 0.5/s · range 6');
+    // Built, the panel's stat line reads exactly like its card did.
+    expect(v.stats).toBe('120 dmg · 0.5/s · range 6 · ignores armor');
+  });
+
+  it("shows a Cluster Thumper's bomblets and splash on its card and stat line (D059)", () => {
+    const thumper = battleConfig('a1_m01', 1).content.towers.thumper!;
+    const spec = thumper.specs!.a;
+    const text = specDescription(towerStats(thumper, 4, undefined, [], 'a'), spec);
+    expect(text).toMatch(/^\d+ dmg · [\d.]+\/s · range [\d.]+ · splash [\d.]+ · \+4 bomblets$/);
   });
 
   it('locks the choice with what unlocks it', () => {

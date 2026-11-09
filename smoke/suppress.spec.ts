@@ -121,3 +121,20 @@ test('suppress: keyboard only — E, the arrows walk the path, Enter fires', asy
     .toBeGreaterThan(0);
   expect(await page.evaluate(() => globalThis.__sd?.state()?.zones.live)).toBeGreaterThan(0);
 });
+
+test('suppress: E snaps a showing cursor to the path; screen readers hear the cast (D059)', async ({
+  page,
+}) => {
+  await open(page);
+  const say = page.getByTestId('cursor-announce');
+  // An arrow shows the cursor on a pad (nothing aimed: buildable tiles only).
+  await page.keyboard.press('ArrowRight');
+  await expect(say).toHaveText(/^(Pad|High ground|Power node)/);
+  // E snaps it straight to the path: Enter fires with no arrow first.
+  await page.keyboard.press('KeyE');
+  await expect(say).toHaveText(
+    /^(Path|Spawn|Core), column \d+, row \d+\. Enter fires Suppressing Fire here\.$/,
+  );
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('action-announce')).toHaveText('Suppressing Fire fired.');
+});

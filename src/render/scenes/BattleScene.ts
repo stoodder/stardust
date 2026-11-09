@@ -26,6 +26,7 @@ import {
   costFor,
   isBuildableTile,
   segmentSpan,
+  tileAndLinkRules,
   tileElevation,
   type Command,
   type SegmentSpan,
@@ -112,6 +113,11 @@ const LINK_CALLOUT_MS = 1600;
 /** A specialization's extra flash (D059): a gold ring past the upgrade's teal one. */
 const SPEC_RING_TILES = 1.25;
 const SPEC_RING_MS = 500;
+/** A tile bonus fraction as the ghost label's percent ("+25%"). */
+function pct(frac: number): string {
+  return `+${Math.round(frac * 100)}%`;
+}
+
 /** The Denise pointer's ring (D059). */
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
@@ -717,6 +723,21 @@ export class BattleScene extends Phaser.Scene {
     this.#fx.setSegmentAim(this.#previewTiles, n);
   }
 
+  /**
+   * The tile bonus a tower built on (col, row) would get, as the ghost's label (D059): "+25%
+   * RANGE" on high ground, "+20% RATE" (or AURA, for a tower with no attack) on a power node.
+   */
+  #ghostLabel(armed: CompiledTowerDef, col: number, row: number): string | null {
+    const map = this.#deps.sim.map;
+    const t = map.tiles[row * map.cols + col];
+    if (t !== '^' && t !== '+') return null;
+    const rules = tileAndLinkRules(this.#deps.sim.config.modifiers);
+    if (t === '^') return `${pct(rules.highGroundRangePct)} RANGE`;
+    return armed.tiers[0].attack === null
+      ? `${pct(rules.powerNodeAuraPct)} AURA`
+      : `${pct(rules.powerNodeRatePct)} RATE`;
+  }
+
   #syncFeedback(selectedTower: LiveTower | null): void {
     const placement = this.#placement;
     const tile = this.#pointerTile(true);
@@ -735,7 +756,13 @@ export class BattleScene extends Phaser.Scene {
     placement.setSelectedTile(selectedTower?.col ?? -1, selectedTower?.row ?? -1);
 
     if (look.ghost && armed !== null) {
-      placement.setGhost(tile.col, tile.row, armed.sprites.base, armed.sprites.head);
+      placement.setGhost(
+        tile.col,
+        tile.row,
+        armed.sprites.base,
+        armed.sprites.head,
+        this.#ghostLabel(armed, tile.col, tile.row),
+      );
       const range = armed.tiers[0].attack?.rangeTiles ?? 0;
       placement.setRing(tile.col + 0.5, tile.row + 0.5, range, look.ghostValid);
       return;

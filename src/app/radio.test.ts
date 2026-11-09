@@ -11,6 +11,7 @@ import {
   RADIO_STALE_MS,
   radioHoldMs,
   radioLineMs,
+  radioView,
   REPLY_BEAT_MS,
 } from './radio.ts';
 
@@ -155,6 +156,18 @@ describe('the D059 triggers: enemyLeaked and bankNudge', () => {
     credits = 250;
     expect(texts(r.lines(countdown(3)))).toEqual(['w3 countdown', 'spend it']);
     expect(r.lines(countdown(4))).toEqual([]);
+  });
+
+  it('points the playfield at the first-built tower for a `point` line (the Denise pointer)', () => {
+    const denise: RadioLine = {
+      on: 'waveCleared',
+      wave: 1,
+      speaker: 'bricks',
+      text: 'Denise',
+      point: 'firstTower',
+    };
+    expect(radioView(denise).pointFirstTower).toBe(true);
+    expect(radioView(table[0]!).pointFirstTower).toBe(false);
   });
 
   it('never nudges without a credits reader', () => {

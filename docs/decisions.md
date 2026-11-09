@@ -717,3 +717,22 @@ Three reviews ran: Correctness/Architecture/Performance, Gameplay/Story, and UX/
   - **Better than m1:** tier-2 silhouettes, distinct specs, more actor variety.
   - **Unmoved:** playfield mid-darks.
   - **M3 should push:** terraces and cliffs, ground shadows, the clump split, death animations.
+
+### D060 — 2026-11-09 — M2 review round 1: fixes landed; what didn't fully land
+- **Landed:**
+  - **Issued towers:** a real save gets the Sprinkler after A1M1, read from `TOWER_ACCESS`.
+  - **Safe import:** per-item rank validation, and `openBattle` fails safe with a `menuNotice`.
+  - **Results:** shows the true max integrity, plus "Issued for next shift", a save-failure notice, and a Stardust note ("Banked for Zibzab's shop…").
+  - **Art:** A1M2's decor (Rig 3, the housing block, the scarecrow), road-verge mid-darks, an Armored tell, and a darker sack.
+  - **UI (T227 UI items):** the sack burst with fleeing young, the Denise pointer, "&" → "and" (tab "Research"), link/spec/Suppressing Fire feedback, screen-reader announcements, contrast, focus.
+- **New canon lines** (act1.md first):
+  - Bricks's Hauler advice: "Mortars on the big ones. Rivets bounce off that hide till tier three."
+  - QUILL's first Hauler leak: "A Hauler got out, sack and all! It looked... relieved? Logging it."
+  - QUILL's bank nudge: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!"
+  - Bricks's supportive `mapLost` lines for A1M1 ("Everybody loses some lettuce on day one.") and A1M2.
+- **A1M2 re-tuned:**
+  - **Changes:** W4 is four tight Nibbler clumps, W8 has 7 Haulers, and par's W8 strike decides a Hauler, so the `abilities` check passes without the Strong step. `marginBand` is 80–100, with its reason.
+  - **Results:** par 100 (85 without casts). Every alt (no_sprinkler, par_minus_last, stops_after_w5, thumper_heavy, build_wide, no_upgrades) wins. No-armor loses in W8, with and without the full catalog. alwaysCallEarly 30. Robustness 9/9.
+- **Didn't fully land, accepted for M2 and logged as tasks:**
+  - **Mk II and Rapport change no A1M2 result.** A1M2's 34-tile road gives towers time, so W4's clumps never leak. The R&D pick matters on A1M1 replays (Mk II earns Perfect Core) and must matter from A1M3 on (T228).
+  - **A player who never upgrades *and never spends* still hits a W7–W8 wall on A1M2.** Trimming W7 only moves the wall to W8 and lets no-armor win with the full catalog. The `no_upgrades` alt is therefore par-without-upgrades plus one W6 Thumper, and the never-spend player is helped by QUILL's bank nudge instead (T229 revisits this with A1M3's curve).

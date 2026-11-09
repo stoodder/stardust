@@ -152,7 +152,15 @@
 }
 
 .sd-offer-copy {
+  /* Capped at 2 lines (D059): -1 px tracking fits every ≤100-char line in two; the clamp is the
+     backstop, so a row never grows a third. */
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   line-height: 9px;
+  letter-spacing: -1px;
   color: var(--sd-steel-3);
 }
 
@@ -187,7 +195,7 @@
   max-width: 120px;
   text-align: right;
   line-height: 10px;
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 /* Rank pips: 5 px squares, a steel.1 outline when empty, gold.3 with a gold.4 edge when owned

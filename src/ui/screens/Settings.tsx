@@ -56,19 +56,34 @@ function Sound() {
             max={100}
             step={5}
             value={Math.round(a[v.id] * 100)}
+            aria-label={v.label}
             aria-valuetext={`${Math.round(a[v.id] * 100)}%`}
             onInput={(e) => setAudioSettings({ [v.id]: Number(e.currentTarget.value) / 100 })}
           />
-          <span class="sd-slider-value">{Math.round(a[v.id] * 100)}</span>
+          <span class="sd-slider-value" aria-hidden="true">
+            {Math.round(a[v.id] * 100)}
+          </span>
         </label>
       ))}
     </fieldset>
   );
 }
 
+/** Arrow keys in the difficulty group: which way each moves the pick. */
+const RADIO_STEP: Readonly<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowUp: -1,
+  ArrowRight: 1,
+  ArrowDown: 1,
+};
+
 function DifficultyPick() {
   const view = campaign.value;
   const [error, setError] = useState<string | null>(null);
+  const pick = (d: Difficulty): void => {
+    const r = setDifficulty(d);
+    setError(r.ok ? null : r.message);
+  };
   return (
     <fieldset class="sd-fieldset">
       <legend class="sd-field-label">Difficulty</legend>
@@ -76,18 +91,35 @@ function DifficultyPick() {
         <p class="sd-message sd-dim">Load a campaign to pick its difficulty.</p>
       ) : (
         <>
-          <div class="sd-row sd-row-left" role="radiogroup" aria-label="Difficulty">
+          {/* One Tab stop; the arrows move the pick (the WAI-ARIA radio group pattern; D059). */}
+          <div
+            class="sd-row sd-row-left"
+            role="radiogroup"
+            aria-label="Difficulty"
+            onKeyDown={(e) => {
+              const step = RADIO_STEP[e.key];
+              if (step === undefined) return;
+              e.preventDefault();
+              const i = DIFFICULTIES.findIndex((d) => d.id === view.difficulty);
+              const n = DIFFICULTIES.length;
+              const next = DIFFICULTIES[(i + step + n) % n]!; // n > 0
+              pick(next.id);
+              const group = e.currentTarget;
+              requestAnimationFrame(() => {
+                group.querySelector<HTMLElement>(`[data-difficulty="${next.id}"]`)?.focus();
+              });
+            }}
+          >
             {DIFFICULTIES.map((d) => (
               <button
                 key={d.id}
                 type="button"
                 role="radio"
+                data-difficulty={d.id}
                 aria-checked={view.difficulty === d.id}
+                tabIndex={view.difficulty === d.id ? 0 : -1}
                 class={`sd-button sd-button-small${view.difficulty === d.id ? ' sd-button-primary' : ''}`}
-                onClick={() => {
-                  const r = setDifficulty(d.id);
-                  setError(r.ok ? null : r.message);
-                }}
+                onClick={() => pick(d.id)}
               >
                 {d.label}
               </button>

@@ -9,12 +9,19 @@ import type { SpriteId } from '../../content/sprites/index.ts';
 import { KIND_BIAS, worldDepth } from '../depth.ts';
 import { ELEV_H, gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
-import { highlightTexture, ringTexture, type HighlightKind } from '../vfx/overlayTextures.ts';
+import {
+  floatTextTexture,
+  highlightTexture,
+  ringTexture,
+  type HighlightKind,
+} from '../vfx/overlayTextures.ts';
 import { headStyle, spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Stepped alpha (art-direction §7): the ghost is 60%. */
 const GHOST_ALPHA = 0.6;
+/** The ghost's tile-bonus label sits this far above its ground point (px): over a tier-1 head. */
+const GHOST_LABEL_LIFT_PX = 30;
 /** The ghost sorts like a tower with a uid no live tower has. */
 const GHOST_UID = 0;
 /**
@@ -39,6 +46,9 @@ export class PlacementView {
   readonly #ring: Phaser.GameObjects.Image;
   readonly #ghostBase: Phaser.GameObjects.Image;
   readonly #ghostHead: Phaser.GameObjects.Image;
+  /** The tile bonus the ghost would get ("+25% RANGE"; D059), over its head in `overlay`. */
+  readonly #ghostLabel: Phaser.GameObjects.Image;
+  #ghostLabelText: string | null = null;
   #hoverKey = '';
   #ringKey = '';
   #ghostBaseId: string | null = null;
@@ -60,6 +70,8 @@ export class PlacementView {
     this.#ghostBase = scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false);
     this.#ghostHead = scene.make.image({}, false).setAlpha(GHOST_ALPHA).setVisible(false);
     layers.world.add([this.#ghostBase, this.#ghostHead]);
+    this.#ghostLabel = scene.make.image({}, false).setOrigin(0.5, 1).setVisible(false);
+    layers.overlay.add(this.#ghostLabel);
   }
 
   /** The highlight under the pointer (tile col, row), or none. */
@@ -123,13 +135,24 @@ export class PlacementView {
     this.#ring.setPosition(pos.x, pos.y).setVisible(true);
   }
 
-  /** The armed tower's ghost on tile (col, row), or none (base null). */
-  setGhost(col: number, row: number, base: string | null, head: string | null): void {
+  /**
+   * The armed tower's ghost on tile (col, row), or none (base null), with the tile's bonus as a
+   * label over it (`label`, in the 3×5 font's capitals; null for none).
+   */
+  setGhost(
+    col: number,
+    row: number,
+    base: string | null,
+    head: string | null,
+    label: string | null = null,
+  ): void {
     if (base === null) {
       this.#ghostBase.setVisible(false);
       this.#ghostHead.setVisible(false);
+      this.#ghostLabel.setVisible(false);
       return;
     }
+    this.#syncGhostLabel(col, row, label);
     const { sprites, origin } = this.#ctx;
     const baseId = spriteId(base);
     const headId = head === null ? null : spriteId(head);
@@ -162,6 +185,20 @@ export class PlacementView {
       .setPosition(bx + (mount?.x ?? this.#ghostBase.displayOriginX), by + (mount?.y ?? 0))
       .setDepth(depth + 0.00005)
       .setVisible(true);
+  }
+
+  #syncGhostLabel(col: number, row: number, label: string | null): void {
+    if (label === null) {
+      this.#ghostLabel.setVisible(false);
+      return;
+    }
+    if (label !== this.#ghostLabelText) {
+      this.#ghostLabel.setTexture(floatTextTexture(this.#ctx.scene, label, 'teal.4'));
+      this.#ghostLabelText = label;
+    }
+    gridToScreen(col + 0.5, row + 0.5, this.#ctx.origin, pos);
+    const y = pos.y - this.#elevation(col, row) * ELEV_H - GHOST_LABEL_LIFT_PX;
+    this.#ghostLabel.setPosition(Math.round(pos.x), Math.round(y)).setVisible(true);
   }
 
   /** The onboarding pulse's tiles (every buildable tile); call once. */

@@ -329,7 +329,7 @@
 }
 
 .sd-results-medal .sd-results-pay-label {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-results-medal-earned .sd-results-pay-label {
@@ -348,6 +348,7 @@
 
 .sd-results-pay-aside {
   margin: 1px 0 0;
+  text-align: left;
   color: var(--sd-steel-3);
 }
 
@@ -357,6 +358,7 @@
 
 .sd-results-save-notice {
   margin: 2px 0 0;
+  text-align: left;
   padding: 1px 3px;
   border: 1px solid var(--sd-red-3);
   color: var(--sd-red-4);
@@ -466,7 +468,7 @@
 .sd-button[aria-disabled='true'] {
   --sd-edge: var(--sd-ink-4);
   --sd-fill: var(--sd-ink-2);
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
   cursor: default;
   transform: none;
 }
@@ -522,7 +524,7 @@
 .sd-lock-big {
   zoom: 2;
   margin: 0 0 2px;
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 /* Code fields: monospace, because a code is case-sensitive and Silkscreen is all caps. */
@@ -757,7 +759,7 @@
 .sd-shift-coming_soon .sd-shift-name,
 .sd-shift-locked .sd-shift-state,
 .sd-shift-coming_soon .sd-shift-state {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-shift .sd-button-small {
@@ -770,7 +772,7 @@
   width: 52px;
   height: 8px;
   text-align: center;
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-medals {
@@ -820,7 +822,7 @@
 }
 
 .sd-tab-locked {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .sd-tab-on.sd-tab-locked {

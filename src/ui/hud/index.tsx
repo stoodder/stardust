@@ -56,7 +56,6 @@ const SLOT_COUNT = 4;
 /** Integrity at or below this shows the low-integrity alarm (art-direction §9: red at 5). */
 const LOW_INTEGRITY = 5;
 
-
 /** A number that ticks toward `value` instead of jumping (art-direction § Look). */
 function useTicker(value: number): number {
   const [shown, setShown] = useState(value);

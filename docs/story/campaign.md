@@ -219,7 +219,7 @@ Revisits keep the original map's pads unchanged and add new pads only in the out
 | Results counter `PESTS PROCESSED ★` and Tidybots | A1M1 | Plain from A2M1; hidden from A3M1; countdown FIN |
 | Joke of the Shift | A1M1–A1M5 | Forgotten A2M6; Pebble's versions A3M4, Night Shift, A3M6 |
 | Everglow Inbox, R&D Command (Mk II and Rapport only) | After A1M1 | Automated after A3M2 |
-| Early wave call, targeting priorities | A1M2 (W6 Zoomers; W3 Strong on Chonks) | |
+| Early wave call, targeting priorities | A1M2 (early call on W6's Zoomers; the priority cycle in the tower panel) | |
 | Pest Bounty Board, Stardust payout | A1M2 | Kip's row "on assignment" A2M4; gone A3M1 |
 | Bricks's name tags | A1M2 (Denise) | `{name}` at A3M3; silence at A3M4 |
 | Hold Fire | A1M3 (Gerald) | Quiet Wave A1M5; Gerald again A3M4 |

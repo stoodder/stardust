@@ -165,7 +165,7 @@ section.chamfer,
 }
 
 .hud-btn[aria-disabled='true'] {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
   cursor: default;
 }
 
@@ -279,7 +279,7 @@ section.chamfer,
 
 .hud-btn.call[aria-disabled='true'] {
   --edge: var(--sd-steel-1);
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 .hud-preview {
@@ -910,7 +910,7 @@ section.chamfer,
 }
 
 .hud-spec.locked .hud-spec-name {
-  color: var(--sd-steel-2);
+  color: var(--sd-steel-3);
 }
 
 /* ── Medals (T202d): the tracker in the status panel, and the briefing's list ─────────────── */

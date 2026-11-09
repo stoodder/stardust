@@ -11,7 +11,7 @@ const ROUTE = 'road';
  * answer (D049).
  */
 const HAULER_GAP = 12;
-/** W4's Nibbler clumps: this many, this far apart (s), so one Orbital Strike catches a clump whole. */
+/** W4's Nibbler clumps: this many, this far apart (s): one Orbital Strike catches a clump whole. */
 const CLUMP = 4;
 const CLUMP_GAP = 0.25;
 
@@ -47,6 +47,6 @@ export const waves = defineWaves([
   { groups: [g('zoomer', 24, 0, 0.5), g('chonk', 4, 4, 2)] },
   // W7 · Haulers + Nibblers [X]: five Haulers, one every 12 s
   { groups: [g('hauler', 5, 0, HAULER_GAP), g('nibbler', 20, 3, 0.4)] },
-  // W8 · Haulers + Chonks + Zoomers [X]: six Haulers, one every 12 s
-  { groups: [g('hauler', 6, 0, HAULER_GAP), g('chonk', 4, 6, 2), g('zoomer', 20, 10, 0.4)] },
+  // W8 · Haulers + Chonks + Zoomers [X]: seven Haulers, one every 12 s
+  { groups: [g('hauler', 7, 0, HAULER_GAP), g('chonk', 4, 6, 2), g('zoomer', 20, 10, 0.4)] },
 ]);

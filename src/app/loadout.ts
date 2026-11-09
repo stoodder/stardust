@@ -33,7 +33,7 @@ import {
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
-import { displayName } from './hud.ts';
+import { displayName, threatNames } from './hud.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
 
@@ -161,7 +161,7 @@ export function openLoadout(mapId: string): boolean {
     mapId,
     mapName: mapName(mapId),
     shift: shift < 0 ? null : shift + 1,
-    threats: map.threatIntel.map(displayName),
+    threats: threatNames(map),
     counters: mapCounters(c.map).map((id) => ({
       id,
       label: COUNTER_LABELS[id],

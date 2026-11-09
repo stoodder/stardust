@@ -3,8 +3,8 @@
 // verdicts still hold: par wins in band, the no-armor build loses (also on the full catalog),
 // early calls stay winnable, and the alt builds keep their floors and the no-single-wave-wall
 // rule. The one exception is the `abilities` check: par's W8 strike is worth a Hauler (15 points)
-// on the documented timing, but a shift can let the towers finish that Hauler without it, so that
-// check isn't asserted here. The waves and builds are documented in
+// on the documented timing (W8's second Hauler), but a shift can let the towers finish that Hauler
+// without it, so that check isn't asserted here. The waves and builds are documented in
 // docs/story/campaign/act1.md § A1M2.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
@@ -62,6 +62,19 @@ describe('A1M2 balance', () => {
   ] as const)('holds with W%i’s %s group ±0.2 s later', (wave, enemy) => {
     for (const d of [-0.2, 0.2]) {
       expect({ d, failed: failures(shifted([wave], delay(enemy, d))) }).toEqual({ d, failed: [] });
+    }
+  });
+
+  it('sends W4’s Nibblers in clumps one Orbital Strike catches whole (D059)', () => {
+    const clumps = raw.waves[3]!.groups.filter((g) => g.enemy === 'nibbler');
+    expect(clumps.length).toBeGreaterThanOrEqual(3);
+    const strike = content.abilities.orbital_strike.effect;
+    expect(strike.kind).toBe('strike');
+    const radius = strike.kind === 'strike' ? strike.radiusTiles : 0;
+    const speed = content.enemies.nibbler.speedTilesPerTick * 60;
+    for (const c of clumps) {
+      // A clump's length along the road fits inside the Mk I strike's diameter.
+      expect((c.count - 1) * c.intervalSec! * speed).toBeLessThan(2 * radius);
     }
   });
 

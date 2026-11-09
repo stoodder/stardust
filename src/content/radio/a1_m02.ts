@@ -3,8 +3,8 @@
 // systems M2 doesn't have (D031): Bricks's `tower_sold` bark for a tagged turret ("You sold
 // Denise.") and Kip's `arrival_reason = bonus` debrief variant (no name tags, onboarding form, or
 // flags until M3). Bricks names Denise as the first wave clears; the tag itself waits for M3, so
-// for now he names the turret only on the radio. The debrief (`mapWon`, `mapLost`) shows on the
-// results card, not the ticker (D028).
+// for now he names her on the radio while the playfield pings the first turret built (D059). The
+// debrief (`mapWon`, `mapLost`) shows on the results card, not the ticker (D028).
 import type { RadioLine } from './types.ts';
 
 export const A1_M02_RADIO: readonly RadioLine[] = [

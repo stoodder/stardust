@@ -16,8 +16,9 @@ import {
 } from '../render/input/tileFacts.ts';
 import { costFor, isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
+import { PRIORITY_LABEL } from '../ui/hud/words.ts';
 import type { Host } from './host.ts';
-import { lockedText, rejectText, showNotice } from './hud.ts';
+import { announce, lockedText, rejectText, showNotice } from './hud.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -225,6 +226,14 @@ export function pressAbility(slot: 1 | 2): void {
     return;
   }
   interaction.aimAbility(slot);
+  // A showing tile cursor snaps at once to the nearest tile the aim can land on (D059: E from a
+  // pad jumps to the path), so Enter fires without an arrow press first.
+  const isTarget = cursorTargets(target);
+  if (interaction.cursor >= 0 && !isTarget(interaction.cursor)) {
+    const map = host.sim.map;
+    const at = cursorStart(map.cols, map.rows, interaction.cursor, isTarget);
+    if (at >= 0) interaction.setCursor(at);
+  }
 }
 
 /**

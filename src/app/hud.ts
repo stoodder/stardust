@@ -158,11 +158,34 @@ function statNum(n: number): string {
 }
 
 /** A tower's stats as the tower panel shows them (sim `towerStats`), e.g. "8 dmg · 2/s · range 3". */
-export function statLineText(s: TowerStatLine): string {
+export function statLineText(
+  s: TowerStatLine,
+  tier: DeepReadonly<CompiledTier> | null = null,
+): string {
   if (s.kind === null) return 'Support';
   const parts = [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
   parts.push(`range ${statNum(s.rangeTiles)}`);
+  if (s.splashTiles > 0) parts.push(`splash ${statNum(s.splashTiles)}`);
+  if (tier !== null) parts.push(...traitTexts(tier));
   return parts.join(' · ');
+}
+
+/**
+ * What's special about a tier's attack, beyond its numbers (D059: the panel's stat line and the
+ * spec cards say the same): "+4 bomblets", "ignores armor", "1 s spin-up", "2 Corroded".
+ */
+function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
+  const parts: string[] = [];
+  const a = tier.attack;
+  if (a !== null) {
+    if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
+    if (a.ignoresArmor) parts.push('ignores armor');
+    if (a.spinUpTicks > 0) parts.push(`${statNum(a.spinUpTicks / TICK_HZ)} s spin-up`);
+  }
+  for (const e of tier.effects) {
+    if (e.status === 'corroded') parts.push(`${e.stacks} Corroded`);
+  }
+  return parts;
 }
 
 /** A signed stat change: "+3", "-0.5". */
@@ -309,29 +332,12 @@ export function bonusTexts(
 }
 
 /**
- * A spec's short description from its stats (what changes from tier 3, and what's special about
- * it), e.g. "9 dmg · 7.5/s · 1 s spin-up" or "120 dmg · 0.5/s · range 6 · ignores armor".
+ * A spec card's description (D059: one format for every card, and the same as the panel's stat
+ * line once it's built): its numbers, then what's special about it, e.g.
+ * "9 dmg · 7.5/s · range 3 · 1 s spin-up" or "120 dmg · 0.5/s · range 6 · ignores armor".
  */
-export function specDescription(
-  t3: TowerStatLine,
-  spec: TowerStatLine,
-  tier: DeepReadonly<CompiledTier>,
-): string {
-  const parts: string[] = [];
-  if (spec.damage !== t3.damage) parts.push(`${statNum(spec.damage)} dmg`);
-  if (spec.ratePerSec !== t3.ratePerSec) parts.push(`${statNum(spec.ratePerSec)}/s`);
-  if (spec.rangeTiles !== t3.rangeTiles) parts.push(`range ${statNum(spec.rangeTiles)}`);
-  if (spec.splashTiles !== t3.splashTiles) parts.push(`splash ${statNum(spec.splashTiles)}`);
-  const a = tier.attack;
-  if (a !== null) {
-    if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
-    if (a.ignoresArmor) parts.push('ignores armor');
-    if (a.spinUpTicks > 0) parts.push(`${statNum(a.spinUpTicks / TICK_HZ)} s spin-up`);
-  }
-  for (const e of tier.effects) {
-    if (e.status === 'corroded') parts.push(`${e.stacks} Corroded`);
-  }
-  return parts.join(' · ');
+export function specDescription(spec: TowerStatLine, tier: DeepReadonly<CompiledTier>): string {
+  return statLineText(spec, tier);
 }
 
 /**
@@ -354,11 +360,9 @@ export function specChoice(
   lockText: string,
 ): SpecChoiceView | null {
   if (def.specs === null || tier !== MAX_TIER_BEFORE_SPEC) return null;
-  const t3 = towerStats(def, MAX_TIER_BEFORE_SPEC, bonuses, modifiers);
   const option = (choice: SpecChoice): SpecOptionView => {
     const tierDef = def.specs![choice]; // checked above
     const description = specDescription(
-      t3,
       towerStats(def, MAX_TIER_BEFORE_SPEC + 1, bonuses, modifiers, choice),
       tierDef,
     );
@@ -398,31 +402,49 @@ export interface HudSaveInfo {
   readonly spareRunnersOpen: boolean;
 }
 
-/** The selected tower's panel inputs, as a key: the view is rebuilt only when it changes. */
+/** The last selected-panel key's parts and string (selectedKey reuses them while unchanged). */
+const keyParts: (number | string | boolean | null)[] = [];
+const keyNext: (number | string | boolean | null)[] = [];
+let keyText = '';
+
+/**
+ * The selected tower's panel inputs, as a key: the view is rebuilt only when it changes. Called
+ * every frame, so it allocates nothing while the inputs hold still (D059, C7): the parts go into a
+ * scratch array, and the joined string is rebuilt only when one of them changed.
+ */
 function selectedKey(t: DeepReadonly<Tower>, sell: SellValue, x: number, y: number): string {
   // Credits stay out: the component reads them itself (an unaffordable button dims).
-  return [
-    t.uid,
-    t.tier,
-    t.spec,
-    t.linkMask,
-    t.flatDamage,
-    t.flatRate,
-    t.flatRange,
-    t.pctDamage,
-    t.pctRate,
-    t.pctRange,
-    t.vsStatusMask,
-    t.vsStatusPct,
-    sell.value,
-    sell.full,
-    t.priority,
-    t.holdFire,
-    t.spareRunners,
-    x,
-    y,
-  ].join('|');
+  const k = keyNext;
+  k[0] = t.uid;
+  k[1] = t.tier;
+  k[2] = t.spec;
+  k[3] = t.linkMask;
+  k[4] = t.flatDamage;
+  k[5] = t.flatRate;
+  k[6] = t.flatRange;
+  k[7] = t.pctDamage;
+  k[8] = t.pctRate;
+  k[9] = t.pctRange;
+  k[10] = t.vsStatusMask;
+  k[11] = t.vsStatusPct;
+  k[12] = sell.value;
+  k[13] = sell.full;
+  k[14] = t.priority;
+  k[15] = t.holdFire;
+  k[16] = t.spareRunners;
+  k[17] = x;
+  k[18] = y;
+  let same = keyParts.length === k.length;
+  for (let i = 0; same && i < k.length; i++) same = keyParts[i] === k[i];
+  if (same) return keyText;
+  for (let i = 0; i < k.length; i++) keyParts[i] = k[i] ?? null;
+  keyParts.length = k.length;
+  keyText = k.join('|');
+  return keyText;
 }
+
+/** The selected tower's screen point (selectedView's scratch). */
+const panelPoint = { x: 0, y: 0 };
 
 /**
  * The selected tower's panel view, or null if it's gone (T106; T202d): its stats after every
@@ -449,7 +471,7 @@ export function selectedView(
     }
   }
   if (t === null || t.def === null) return null;
-  const p = { x: 0, y: 0 };
+  const p = panelPoint;
   gridToScreen(t.x, t.y, origin, p);
   const { state, config, map } = sim;
   const sell = sellValue(t, state.tick, state.economy.sellRefundPct);
@@ -459,7 +481,7 @@ export function selectedView(
   // A specialized tower (tier 4) reads its spec's stats.
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
   const upgradeDelta = deltaText(stats.next);
-  const statLine = statLineText(stats);
+  const statLine = statLineText(stats, t.tierDef);
   const tile = map.tiles[t.row * map.cols + t.col];
   const bonusList = bonusTexts(
     tile,
@@ -539,23 +561,27 @@ function answerLabel(label: string): string {
  * model (content/counterAnswers.ts: the highest in-map tier, and a spec only when its pair is
  * unlocked).
  */
-export function threatIntel(
-  map: Pick<CompiledMapDef<IdSpace>, 'act' | 'threatIntel' | 'requiredCounters' | 'waves'>,
-  owned: readonly string[],
-  specsUnlocked: readonly string[],
-): ThreatIntelView {
-  const enemies = new Map<
-    string,
-    CompiledMapDef<IdSpace>['waves'][number]['groups'][number]['enemy']
-  >();
+type MapEnemy = CompiledMapDef<IdSpace>['waves'][number]['groups'][number]['enemy'];
+
+/** Every enemy type a map's waves send, by id. */
+function mapEnemies(map: Pick<CompiledMapDef<IdSpace>, 'waves'>): Map<string, MapEnemy> {
+  const enemies = new Map<string, MapEnemy>();
   for (const w of map.waves) for (const g of w.groups) enemies.set(g.enemy.id, g.enemy);
+  return enemies;
+}
+
+/**
+ * A map's threats as the briefing lists them: each `threatIntel` trait, then any other glyph-
+ * bearing tell of its enemies (the Hauler's `carrier`).
+ */
+function threatViews(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): ThreatView[] {
   const threats: ThreatView[] = map.threatIntel.map((trait) => ({
     id: trait,
     label: displayName(trait),
     glyph: tellGlyph([trait]),
   }));
   const seen = new Set<string>(map.threatIntel);
-  for (const e of enemies.values()) {
+  for (const e of mapEnemies(map).values()) {
     for (const tell of e.tells) {
       const glyph = tellGlyph([tell]);
       if (seen.has(tell) || glyph === null) continue;
@@ -563,6 +589,24 @@ export function threatIntel(
       threats.push({ id: tell, label: displayName(tell), glyph });
     }
   }
+  return threats;
+}
+
+/**
+ * A map's threat names, exactly the briefing's strip (D059: the loadout screen's Threats list
+ * reads the same, Carrier included): "Fast", "Armored", "Carrier".
+ */
+export function threatNames(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): string[] {
+  return threatViews(map).map((t) => t.label);
+}
+
+export function threatIntel(
+  map: Pick<CompiledMapDef<IdSpace>, 'act' | 'threatIntel' | 'requiredCounters' | 'waves'>,
+  owned: readonly string[],
+  specsUnlocked: readonly string[],
+): ThreatIntelView {
+  const enemies = mapEnemies(map);
+  const threats = threatViews(map);
   const required: RequiredCounterView[] = map.requiredCounters.map((counter) => {
     const scope = answerScope(counter, map.act, enemies.values());
     const answers: string[] = [];

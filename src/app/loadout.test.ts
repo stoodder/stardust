@@ -36,7 +36,8 @@ describe('the loadout screen (app side)', () => {
     const view = loadout.value!; // opened above
     expect(loadoutMapId()).toBe('a1_m02');
     expect(view).toMatchObject({ mapName: 'Hatching Season', shift: 2, max: 4 });
-    expect(view.threats).toEqual(['Fast', 'Armored']);
+    // The briefing's strip exactly (D059): the Hauler's Carrier tell too.
+    expect(view.threats).toEqual(['Fast', 'Armored', 'Carrier']);
     expect(view.counters).toEqual([{ id: 'armor', label: 'Armor', required: true }]);
     expect(view.towers.map((t) => [t.id, t.answers.map((a) => a.via ?? 'T1')])).toEqual([
       ['rivet', ['T3']],

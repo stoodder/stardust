@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hud } from '../ui/state.ts';
 import { mapOrigin } from '../render/iso.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim } from '../sim/index.ts';
@@ -18,7 +19,9 @@ import {
   displayName,
   meterLabelText,
   rejectText,
+  announce,
   briefingLines,
+  holdFireText,
   countdownSeconds,
   cursorText,
   selectedView,
@@ -115,6 +118,21 @@ describe('hud view models', () => {
     );
     const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
     expect(towerPoints(sim, origin)).toHaveLength(1);
+  });
+
+  it('says what Hold fire did, for one turret or all (D059 announcements)', () => {
+    expect(holdFireText(true, 'Rivet')).toBe('Rivet holding fire.');
+    expect(holdFireText(false, 'Rivet')).toBe('Rivet firing again.');
+    expect(holdFireText(true, null)).toBe('All turrets holding fire.');
+    expect(holdFireText(false, null)).toBe('All turrets firing again.');
+  });
+
+  it('announces, and reads a repeat out again', () => {
+    announce('Targeting: Last.');
+    expect(hud.announce.value).toBe('Targeting: Last.');
+    announce('Targeting: Last.');
+    expect(hud.announce.value).not.toBe('Targeting: Last.');
+    expect(hud.announce.value.trim()).toBe('Targeting: Last.');
   });
 
   it('splits a static briefing into lines with their speakers', () => {
