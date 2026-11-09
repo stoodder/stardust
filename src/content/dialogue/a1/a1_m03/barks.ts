@@ -1,6 +1,6 @@
 // A1M3 · Special Delivery: map-scoped barks (story/campaign/act1.md § A1M3, *Barks*), verbatim. They
-// fire only on this map; act-wide pools live in ../../barks/. Ids end `_a1_03` (this map; the second
-// of a pair `_a1_13`), so no other Act I map's ids collide with them. Gerald's own status text
+// fire only on this map; act-wide pools live in ../../barks/. Ids end `_a1_03` (this map), so no other
+// Act I map's ids collide with them. Gerald's own status text
 // ("DELIVERY: ATTEMPTED. RECIPIENT: ARMED.") isn't a bark: he is never on the radio.
 import { defineBarks } from '../../define.ts';
 
@@ -14,7 +14,7 @@ export const barks = defineBarks([
     trigger: { on: 'neutral_hit' },
   },
   {
-    id: 'quill_neutral_hit_a1_13',
+    id: 'quill_neutral_hit_again_a1_03',
     speaker: 'quill',
     expression: 'worried',
     text: "Hold Fire, please, Technician. He's doing his best.",

@@ -1,14 +1,23 @@
-// Bottom-right: the four build slots (icon, cost, hotkey; locked, unaffordable, armed, and NEW
-// states; the armed-slot rule is app/commands.ts's).
+// Bottom-right: the four build slots (icon, cost, hotkey; locked, unaffordable, armed, NEW, sale,
+// and free states; the armed-slot rule is app/commands.ts's), and Clearance Sale's tag over them
+// while it has charges ("SALE -40% x3", D077).
 import { cancel, pressBuildSlot } from '../../app/commands.ts';
-import { hud, type BuildSlotView } from '../state.ts';
+import { hud, type BuildSlotView, type PriceTag } from '../state.ts';
 import { lockedText } from '../../app/hudText.ts';
+import { saleText } from '../../app/hudViews.ts';
 import { Icon } from './Icon.tsx';
 import { alignPulse } from './pulse.ts';
 import { Key, noFocusOnPress, Credits } from './parts.tsx';
 
 /** Build slots shown, whatever the loadout size (the loadout limit, CLAUDE.md). */
 const SLOT_COUNT = 4;
+
+/** How a price came about, for a slot's screen-reader label. */
+export const PRICE_WORDS: Readonly<Record<PriceTag, string>> = {
+  list: '',
+  sale: ', on sale',
+  free: ', free',
+};
 
 /** One build slot (bottom-right). */
 function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undefined }) {
@@ -21,7 +30,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
   // Onboarding (D026): the first slot pulses until the first tower is built.
   const teach = index === 0 && !hud.built.value && !locked && !poor && !armed;
   const state = `${locked ? 'locked' : poor ? 'poor' : ''}${teach ? ' pulse' : ''}`;
-  const status = `${slot.isNew ? ', new' : ''}${locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : ''}`;
+  const status = `${slot.isNew ? ', new' : ''}${PRICE_WORDS[slot.price]}${locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : ''}`;
   const button = (
     <button
       type="button"
@@ -44,8 +53,10 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
         <span class="hud-locked">
           <Icon id="icon.lock" />
         </span>
+      ) : slot.price === 'free' ? (
+        <span class="hud-free">Free</span>
       ) : (
-        <Credits value={slot.cost} short />
+        <Credits value={slot.cost} short sale={slot.price === 'sale'} />
       )}
     </button>
   );
@@ -64,8 +75,15 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
 
 export function BuildBar() {
   const slots = hud.slots.value;
+  const sale = hud.sale.value;
   return (
     <nav class="hud-build" aria-label="Build">
+      {/* Clearance Sale (core-loop §3.2): the discount and the purchases it has left. */}
+      {sale !== null && (
+        <span class="hud-sale chamfer" role="status" data-testid="sale-tag">
+          {saleText(sale)}
+        </span>
+      )}
       {Array.from({ length: SLOT_COUNT }, (_, i) => (
         <BuildSlot key={i} index={i} slot={slots[i]} />
       ))}

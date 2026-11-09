@@ -23,7 +23,8 @@ import {
   type SaveData,
   mapName,
 } from '../meta/index.ts';
-import { costFor } from '../sim/index.ts';
+import type { SimConfig } from '../sim/index.ts';
+import { LIST_PRICE_STATE, priceOf } from './hudViews.ts';
 import { silkText } from '../ui/silk.ts';
 import {
   loadout,
@@ -98,7 +99,7 @@ function loadoutMap(map: CompiledMapDef<IdSpace>, slot2: string | null): Loadout
 function towerView(
   content: CompiledContent<IdSpace>,
   c: Context,
-  modifiers: Parameters<typeof costFor>[0],
+  modifiers: SimConfig<IdSpace>['modifiers'],
   id: TowerId,
 ): LoadoutTowerView {
   const def = content.towers[id]!; // pool towers are registered (validateSave)
@@ -108,7 +109,9 @@ function towerView(
     id,
     name: silkText(def.name),
     role: silkText(def.role),
-    cost: costFor(modifiers, id, def.tiers[0].cost),
+    // The list price (D077: the same `purchasePriceInto` the sim charges, before a battle: no
+    // sale running, and Rapid Deploy's free first build isn't any one tower's).
+    cost: priceOf(LIST_PRICE_STATE, modifiers, id, def.tiers[0].cost, 'build').cost,
     icon: def.sprites.icon,
     answers: towerAnswers(id, specsOwned, c.map, c.specName).map((a) => ({
       counter: a.counter,

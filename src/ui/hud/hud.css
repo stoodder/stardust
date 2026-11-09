@@ -1024,3 +1024,172 @@ section.chamfer,
 .hud-intel-answers {
   color: var(--sd-white-1);
 }
+
+/* ── T312c: the name plate, objectives, prices on sale, ability states, preview badges ────── */
+
+/* Top-left: the status panel, then the comms panel under it in the flow, so the comms panel
+   follows the status panel's height (the name plate and any objective rows). */
+.hud-top-left {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.hud-top-left .hud-status {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+.hud-top-left .dlg-comms-slot {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+/* The name plate (core-loop §5): "JPT-1 · SPROUT" above the meter. */
+.hud-plate {
+  height: 8px;
+  margin: 0;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.hud-plate.tight {
+  letter-spacing: -1px;
+}
+
+/* The objective tracker: a 6 px box per objective and its name, under the medals. In reach: the
+   accent outline. Done: gold. Out of reach this run: dimmed (never red; the tooltip says
+   "Next time!"). */
+.hud-objectives {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 2px;
+  list-style: none;
+}
+
+.hud-objective {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 8px;
+  color: var(--sd-white-0);
+  white-space: nowrap;
+}
+
+.hud-objective-box {
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--accent);
+}
+
+.hud-objective.done .hud-objective-box {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}
+
+.hud-objective.done .hud-objective-name {
+  color: var(--sd-gold-3);
+}
+
+.hud-objective.failed {
+  color: var(--sd-steel-3);
+}
+
+.hud-objective.failed .hud-objective-box {
+  border-color: var(--sd-steel-1);
+  opacity: 0.6;
+}
+
+/* Prices on sale (Clearance Sale, D077): the act's secondary color and a 1 px under-tick, so a
+   discount reads by shape as well as color. */
+.hud-cost.sale {
+  color: var(--sd-pink-4);
+}
+
+.hud-cost.sale .num {
+  box-shadow: 0 1px 0 var(--accent-2);
+}
+
+.hud-btn.poor .hud-cost.sale {
+  color: var(--sd-red-3);
+}
+
+/* Rapid Deploy's free first build: "FREE" in place of the price. */
+.hud-free {
+  height: 8px;
+  color: var(--sd-green-3);
+  text-align: center;
+}
+
+/* Clearance Sale's tag, over the build slots while it has charges: "SALE -40% x3". */
+.hud-build {
+  overflow: visible;
+}
+
+.hud-sale {
+  --cut: 2px;
+  --edge: var(--accent-2);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 9px);
+  padding: 2px 4px 1px;
+  color: var(--sd-pink-4);
+  white-space: nowrap;
+  background: var(--panel-fill);
+  pointer-events: none;
+}
+
+/* Ability slots: a sale's charges on the icon's corner; Ready Room's FREE tag on the top edge;
+   a wave cooldown's chip ("3 waves") set tighter to fit the slot. */
+.hud-charges {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  color: var(--sd-pink-4);
+}
+
+.hud-free-tag {
+  background: var(--sd-green-3);
+}
+
+.hud-ability .hud-cd {
+  white-space: nowrap;
+  letter-spacing: -1px;
+}
+
+/* The wave preview: a NEW tag on a type never met, and a spawn chip on two-spawn maps. */
+.hud-preview-icon {
+  position: relative;
+  display: block;
+}
+
+.hud-preview-new {
+  top: -6px;
+  left: -4px;
+  right: -4px;
+  font-size: 8px;
+  line-height: 6px;
+  padding: 1px 1px 0;
+}
+
+.hud-preview-group.new {
+  margin-top: 4px;
+}
+
+.hud-spawn {
+  margin-left: 1px;
+  color: var(--sd-steel-3);
+}
+
+.hud-spawn.opens {
+  color: var(--accent-2);
+}

@@ -319,14 +319,15 @@ Par's bank at each build phase: 310, 85, 163, 119, 103, 92, 57, 31 (W1–W8); W6
 | par | wins at **90** (band 80–100; target 90), with Return to Sender | 2 in W4 |
 | par with Orbital Strike Mk II | 100, Perfect Core | none |
 | par without its casts | 40 | 4 in W4, 3 in W6, 5 in W8 |
-| `alwaysCallEarly` | 50 | 6 in W5, 4 in W6 |
-| no-air | loses in W6 | 4 in W3, 2 in W4, 10 in W5, 4 in W6 |
+| `alwaysCallEarly` | 45 | 7 in W5, 4 in W6 |
+| no-air | loses in W6 | 4 in W3, 10 in W5, 6 in W6 |
 | no-air, full catalog | loses in W7 | 9 in W5, 12 in W6, 2 in W7 |
 | no-armor | loses in W7 | 2 in W4, 12 in W6, 6 in W7 |
 | no-armor, full catalog | loses in W8 | 7 in W6, 10 in W7, 6 in W8 |
 | Story | 100, and the Challenge | none |
-| `par_minus_last`, `no_sprinkler` | 90 | 2 in W4 |
-| `no_upgrades` | 35 | 2 in W4, 6 in W6, 5 in W8 |
+| `par_minus_last` | 90 | 2 in W4 |
+| `no_sprinkler` | 100: a second Rivet out-earns the Sprinkler here (no W4 leak) | none |
+| `no_upgrades` | 45 | 6 in W6, 5 in W8 |
 | do-nothing | loses at W2 | |
 
 Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3.test.ts`](../../../src/balance/a1m3.test.ts) re-runs the harness with W6–W8's Haulers 0.5–1 s closer or further apart, Gerald's W4 and W7 passes 1 s earlier or later, W4's Chonks 0.2 s closer or further apart, and W5–W8's other groups shifted ±0.2 s: every check holds, Mk II's included. It also checks W4's Chonk spacing against both strike sizes and that the Haulers walk further apart than a strike covers.

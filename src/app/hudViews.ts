@@ -459,7 +459,12 @@ export interface SlotExtras {
   readonly charges: number;
 }
 
-const NO_EXTRAS: SlotExtras = Object.freeze({ wavesLeft: 0, totalWaves: 0, free: false, charges: 0 });
+const NO_EXTRAS: SlotExtras = Object.freeze({
+  wavesLeft: 0,
+  totalWaves: 0,
+  free: false,
+  charges: 0,
+});
 
 /**
  * An ability's cooldown as the HUD shows it: whole seconds left (rounded up), or wave starts left
@@ -477,7 +482,11 @@ export function cooldownView(
   const ticking = ticksLeft > 0 && totalTicks > 0;
   if (!ticking && wavesLeft <= 0) {
     if (!free && charges === 0) {
-      return prev !== null && prev.secondsLeft === 0 && prev.wavesLeft === 0 && !prev.free && prev.charges === 0
+      return prev !== null &&
+        prev.secondsLeft === 0 &&
+        prev.wavesLeft === 0 &&
+        !prev.free &&
+        prev.charges === 0
         ? prev
         : READY;
     }

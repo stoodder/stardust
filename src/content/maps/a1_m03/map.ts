@@ -62,7 +62,6 @@ export const map = defineMapLayout({
   startCredits: 310,
   coreIntegrity: 20,
   stardust: 140,
-  briefing: "QUILL: Today's route includes Gerald. Gerald is the mail. Gerald has right of way.",
   // The Skyhook is issued for this map and first used in W3, as the Puffwings arrive
   // (story/campaign.md § 4.1).
   towerUnlockWave: { skyhook: 3 },

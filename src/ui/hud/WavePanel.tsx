@@ -1,5 +1,7 @@
 // Top-right: speed and pause, the wave counter, the call-wave button (with its early-call bonus),
-// and the next wave's preview with its countdown (core-loop §2.2).
+// and the next wave's preview with its countdown (core-loop §2.2): a NEW tag on a type the player
+// has never met, and on a map with two spawns, which spawn each group comes from (a spawn opening
+// for the first time is flagged too).
 import { callWave, setSpeed } from '../../app/commands.ts';
 import { hud, speed } from '../state.ts';
 import { Icon } from './Icon.tsx';
@@ -28,6 +30,19 @@ export function SpeedControls() {
       {btn(2, '2x', 'Double speed', 'F')}
     </div>
   );
+}
+
+/** Longest spawn name the preview's chip shows whole. */
+const SPAWN_CHIP_CHARS = 5;
+
+/** A spawn's chip in the preview: its name ("West"), or its initials if long ("North Gate" → "NG"). */
+export function spawnShort(spawn: string): string {
+  if (spawn.length <= SPAWN_CHIP_CHARS) return spawn;
+  return spawn
+    .split(' ')
+    .map((w) => w.charAt(0))
+    .join('')
+    .slice(0, SPAWN_CHIP_CHARS);
 }
 
 /**
@@ -80,19 +95,35 @@ export function WavePanel() {
       {next !== null && (
         <ul class="hud-preview" aria-label={`Next: wave ${next.number}`}>
           <li class="hud-label">Next</li>
-          {next.groups.map((g) => (
-            <li
-              key={`${g.enemy}:${g.air ? 'air' : 'ground'}`}
-              class="hud-preview-group"
-              aria-label={`${g.count} ${g.label}${g.air ? ', air' : ''}${g.fast ? ', fast' : ''}`}
-              title={`${g.label}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}`}
-            >
-              <Icon id={g.icon} />
-              <span class="num">x{g.count}</span>
-              {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
-              {g.air && <span class="hud-air">Air</span>}
-            </li>
-          ))}
+          {next.groups.map((g) => {
+            const where = `${g.air ? ', air' : ''}${g.spawn === null ? '' : `, from ${g.spawn}${g.newSpawn ? ', a new spawn' : ''}`}`;
+            return (
+              <li
+                key={`${g.enemy}:${g.air ? 'air' : 'ground'}:${g.spawn ?? ''}`}
+                class={`hud-preview-group${g.isNew ? ' new' : ''}`}
+                data-enemy={g.enemy}
+                aria-label={`${g.count} ${g.label}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
+                title={`${g.label}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
+              >
+                <span class="hud-preview-icon">
+                  <Icon id={g.icon} />
+                  {g.isNew && (
+                    <span class="hud-new hud-preview-new" aria-hidden="true">
+                      New
+                    </span>
+                  )}
+                </span>
+                <span class="num">x{g.count}</span>
+                {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
+                {g.air && <span class="hud-air">Air</span>}
+                {g.spawn !== null && (
+                  <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
+                    {spawnShort(g.spawn)}
+                  </span>
+                )}
+              </li>
+            );
+          })}
           {countdown !== null && (
             <li class="hud-countdown" aria-label={`Starts in ${countdown} seconds`}>
               <span class="hud-label">in</span> <span class="num">{countdown}s</span>

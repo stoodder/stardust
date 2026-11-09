@@ -28,7 +28,8 @@ export const orbital_strike_mk2 = defineUpgrade({
 /**
  * Companion Rapport: the companion's ability cooldown −15% (keyed by ability, so Bricks's carries
  * over to inherited Suppressing Fire). Stocked once the companion's ability has been met: after
- * the map it first appears on. The other four arrive with their abilities.
+ * the map it first appears on: Bricks's after A1M1, QUILL's after A1M3 (T308). Zibzab's,
+ * Ves'thara's, and Bramble's arrive with their maps.
  */
 function rapport<const Id extends string>(
   id: Id,
@@ -55,6 +56,15 @@ export const rapport_bricks = rapport(
   'suppressing_fire',
   'a1_m01',
   'Rapport: Sgt. Bricks',
+);
+
+/** QUILL's Rapport: Time Dilation first plays on A1M3, so it's stocked from A1M4 (T308). */
+export const rapport_quill = rapport(
+  'rapport_quill',
+  'quill',
+  'time_dilation',
+  'a1_m03',
+  'Rapport: QUILL',
 );
 
 /** Field Protocol slots 2 (4 Intel) and 3 (6 Intel); slot 1 comes with the shop. */

@@ -1087,3 +1087,26 @@ Real art went in behind T300a's ids. No data changed.
   - Bark ids end in the map number; cue scenes are `<map>_cue_<moment>`; a tower intro over 80 characters is a cue scene.
   - The results card reads the outcome's `_debrief` scene.
   - Name tags run through `story/tags.ts`.
+
+### D085 — 2026-11-09 — T304e A1M3
+- **Map:** 14×10, a 26-tile road with one long hairpin, and an air lane from the top corner to the core crossing the hairpin. 10 pads plus the **depot roof**, a high-ground tile (the name is ours). 3 wrecks, one hiding a pad. Markers: peeker, mailbox, zibzab_shop. QUILL is the companion, Skyhook unlocks at W3, and the Challenge is **Return to Sender** (`neutralHits ≤ 0`).
+- **Required counters are air *and* armor.** campaign.md §4.8 and act1.md say so, and without armor W4's and W6's armored units break the 15% soft-trait cap. Lose-by is W7.
+- **Waves:**
+  - Gerald opens W1, W4, and W7, so hold-fire decisions recur.
+  - W3 teaches with 4 Puffwings, W5 is a 10-flock, and W8 a 20-flock.
+  - W4 has 3 Chonks, and W6 has 5 Haulers 12 s apart plus a trailing pack.
+- **Results** (every seed):
+
+  | Build | Result |
+  |---|---|
+  | par | **90** with Return to Sender (T224: below A1M2's 100, so the chain resumes) |
+  | par with Mk II | **100** and Perfect Core (T228: the R&D pick finally changes a result) |
+  | par without casts | 40 |
+  | no_air | loses W6 (W7 with the full catalog) |
+  | no_armor | loses W7 (W8 with the full catalog) |
+  | no_upgrades | 45 (gradual) |
+  | Story | 100 |
+
+  Robust under ±0.2–1 s shifts, including the Mk II result.
+- **Dialogue** (verbatim): the brief; Form 88-B; the knock-knock, whose "Who's there?" button plays the answer cue; Zibzab at W6–W7; Bricks's form at W8; Gerald-hit and hold-fire barks.
+- **Gaps for follow-up:** Gerald's status text has no channel, QUILL's wreckage line rides W2 (no trigger of its own), and no canon Skyhook-issued line exists (T325).

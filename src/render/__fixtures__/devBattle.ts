@@ -5,7 +5,9 @@
 // A second dev map, `dev_sky` (T312a), uses the real M3 content (Skyhook, Zapcoil beside a
 // Sprinkler for Conductive, Puffwings on an air lane, Gerald on the path, wreckage hiding a power
 // node, and QUILL's Time Dilation in slot 2), so the air, chain, and wreckage smoke flows
-// (smoke/air.spec.ts, smoke/wreckage.spec.ts) run before A1M3–A1M5 land.
+// (smoke/air.spec.ts, smoke/wreckage.spec.ts) run before A1M3–A1M5 land. A third, `dev_market`
+// (T312c), is dev_range with Zibzab's Clearance Sale in slot 2 for the HUD's sale prices
+// (smoke/hudAct1.spec.ts) before A1M4 lands.
 import {
   defineAbility,
   defineEnemy,
@@ -13,6 +15,7 @@ import {
   defineTower,
   mapDefinersFor,
 } from '../../content/define.ts';
+import { clearance_sale } from '../../content/abilities/clearance_sale.ts';
 import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
 import { time_dilation } from '../../content/abilities/time_dilation.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
@@ -130,7 +133,13 @@ const DEV_ENTITIES = {
   enemies: defineRegistry({ dev_nibbler: devNibbler, nibbler, puffwing, gerald }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
-  abilities: defineRegistry({ dev_strike: devStrike, suppressing_fire, time_dilation }),
+  // QUILL's Time Dilation for dev_sky (T312a), and Zibzab's Clearance Sale for dev_market (T312c).
+  abilities: defineRegistry({
+    dev_strike: devStrike,
+    suppressing_fire,
+    time_dilation,
+    clearance_sale,
+  }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
 
@@ -237,6 +246,18 @@ const devBuilds = dev.defineBuilds({
 });
 
 const devMap = dev.defineMap({ ...devLayout, waves: devWaves, ...devBuilds });
+
+// dev_market (T312c): dev_range with Zibzab along instead of Bricks, so Clearance Sale is slot 2
+// (no ally post: Bricks stays home).
+const marketMap = dev.defineMap({
+  ...devLayout,
+  id: 'dev_market',
+  markers: {},
+  allies: [],
+  companion: { id: 'zibzab', state: 'present' },
+  waves: devWaves,
+  ...devBuilds,
+});
 
 // dev_sky (T312a): a path from the spawn (top left) to the core (bottom right), an air lane bending
 // in from the top-right corner, and three wrecks: one over a hidden power node (1,4), one over high
@@ -354,7 +375,7 @@ const skyMap = dev.defineMap({ ...skyLayout, waves: skyWaves, ...skyBuilds });
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
-  maps: defineRegistry({ dev_range: devMap, dev_sky: skyMap }),
+  maps: defineRegistry({ dev_range: devMap, dev_sky: skyMap, dev_market: marketMap }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
   links: { conductive: conductive as unknown as LinkDef<DevIds> },

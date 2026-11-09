@@ -36,9 +36,35 @@ export function ActionAnnouncer() {
   );
 }
 
+/** The Hold Fire teach's hint (A1M3; core-loop §2.7): QUILL's request in the HUD's words. */
+export const HOLD_FIRE_HINT = 'Gerald is the mail. Hold fire';
+
+/**
+ * The Hold Fire teach's hint, bottom center, while Gerald is on the field and Hold (all) hasn't
+ * been used this run (it pulses meanwhile). It takes the upgrade hint's place while it shows.
+ */
+export function HoldFireHint() {
+  if (!hud.holdFireTeach.value || hud.holdFireAll.value) return null;
+  return (
+    <div class="hud-hint-slot">
+      <div
+        class="hud-hint chamfer"
+        role="status"
+        data-testid="hold-fire-hint"
+        aria-label={`${HOLD_FIRE_HINT} (Shift+H)`}
+      >
+        {HOLD_FIRE_HINT}
+        <Key k="Shift+H" />
+      </div>
+    </div>
+  );
+}
+
 /** The upgrade hint (D028), bottom center, while the teach is on and no tower is selected. */
 export function UpgradeHint() {
   if (!hud.upgradeHint.value || hud.selected.value !== null) return null;
+  // The Hold Fire hint is the more urgent one while both would show.
+  if (hud.holdFireTeach.value && !hud.holdFireAll.value) return null;
   return (
     <div class="hud-hint-slot">
       <div class="hud-hint chamfer" role="status" aria-label="Click a turret to upgrade it (U)">

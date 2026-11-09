@@ -1,6 +1,9 @@
 // Bottom-left: the commander ability slots (core-loop §3.1), each with its icon, hotkey, and
-// cooldown wipe, and the aiming hint while one is aimed.
+// cooldown wipe (seconds, or wave starts for Clearance Sale), Ready Room's FREE tag, the charges a
+// sale has left, and the aiming hint while one is aimed. An untargeted ability (Time Dilation,
+// Clearance Sale) casts on the press (D082).
 import { cancel, pressAbility } from '../../app/commands.ts';
+import { cooldownChip, cooldownWords } from '../../app/hudViews.ts';
 import { hud, type AbilityCooldownView, type AbilitySlotView } from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { Key, noFocusOnPress } from './parts.tsx';
@@ -13,8 +16,9 @@ const ICON_PX = 16;
  * absent companion's slot (A3M4) is dark and disabled, with no label (core-loop §3.1).
  */
 function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | undefined }) {
-  const left = cd?.secondsLeft ?? 0;
-  const ready = left === 0 && !a.absent;
+  const ready = (cd?.secondsLeft ?? 0) === 0 && (cd?.wavesLeft ?? 0) === 0 && !a.absent;
+  const free = ready && cd?.free === true;
+  const charges = cd?.charges ?? 0;
   const aiming = hud.aimingAbility.value === a.slot;
   const cue = hud.countdownCue.value;
   if (a.absent) {
@@ -35,15 +39,17 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const status = aiming
     ? `, aiming: ${a.aim === 'path' ? 'click the path' : 'click a target'}`
     : ready
-      ? ', ready'
-      : `, recharging, ${left} s`;
-  return (
+      ? `, ready${free ? ', free cast' : ''}${a.aim === 'none' ? ', casts at once' : ''}`
+      : `, recharging, ${cd === undefined ? '' : cooldownWords(cd)}`;
+  const sale = charges > 0 ? `, ${charges} ${charges === 1 ? 'purchase' : 'purchases'} left` : '';
+  const button = (
     <button
       type="button"
       class={`hud-btn hud-slot hud-ability chamfer ${ready ? 'ready' : 'charging'}`}
-      aria-pressed={aiming}
+      data-testid={`ability-${a.slot}`}
+      aria-pressed={a.aim === 'none' ? undefined : aiming}
       aria-disabled={!ready}
-      aria-label={`${a.label}${status}`}
+      aria-label={`${a.label}${status}${sale}`}
       title={`${a.label} (${a.key}): ${a.description}`}
       onMouseDown={noFocusOnPress}
       onClick={() => pressAbility(a.slot)}
@@ -64,8 +70,24 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
       </span>
       {/* A countdown starting pulses a ready slot once; the key restarts it each countdown. */}
       {ready && cue > 0 && <span key={cue} class="hud-ready-cue chamfer" aria-hidden="true" />}
-      <span class="hud-cd num">{ready ? 'Ready' : `${left}s`}</span>
+      {/* Clearance Sale's charges left: a count on the icon's corner. */}
+      {charges > 0 && (
+        <span class="hud-charges num" aria-hidden="true">
+          x{charges}
+        </span>
+      )}
+      <span class="hud-cd num">{ready ? 'Ready' : cd === undefined ? '' : cooldownChip(cd)}</span>
     </button>
+  );
+  if (!free) return button;
+  // Ready Room's free cast (D077): a FREE tag on the slot's top edge, outside the chamfer's clip.
+  return (
+    <div class="hud-slot-holder">
+      {button}
+      <span class="hud-new hud-free-tag" aria-hidden="true">
+        Free
+      </span>
+    </div>
   );
 }
 
@@ -76,7 +98,7 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
 export function AbilityBar() {
   const slots = hud.abilities.value;
   const cds = hud.abilityCooldowns.value;
-  const aimed = slots.find((a) => a.slot === hud.aimingAbility.value);
+  const aimed = slots.find((a) => a.slot === hud.aimingAbility.value && a.aim !== 'none');
   if (slots.length === 0) return null;
   return (
     <nav class="hud-abilities" aria-label="Abilities">

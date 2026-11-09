@@ -1,6 +1,6 @@
 // The fallen mailbox (A1M3 decor, act1.md § A1M3: "The Peeker's rock is behind a fallen
 // mailbox"): an Everglow post box knocked flat beside the mail road, Gerald's livery (white with
-// a teal band and chevron), its door sprung open on the lit end with letters spilled on the grass,
+// a teal band and chevron), its door sprung open on its far end with letters spilled on the grass,
 // the orange flag still up out of habit, and the bent post stub it snapped off.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp } from '../helpers.ts';

@@ -109,11 +109,11 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
 - [ ] **T221** HUD follow-ups from T202d: the tall tier-3 panel can cover a neighbouring tower on busy maps; upgrade rings draw at ground level for towers on high ground; tower fire anims (`fire_<facing>_t2`, spec spin) aren't played yet; a flat-to-high-ground tether ends a few px low; add T202d's new HUD copy to style-guide §2.
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
-- [ ] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
-- [ ] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
+- [~] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
+- [x] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
 - [x] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
 - [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
-- [ ] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
+- [x] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
 - [x] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
@@ -143,8 +143,8 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
 - [x] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
 - [x] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
-- [~] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
-- [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
+- [x] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
+- [~] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.

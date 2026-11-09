@@ -37,10 +37,21 @@ export function Key({ k }: { k: string }) {
 /** Keeps a pointer press from focusing a button, so its focus ring doesn't linger (D026). */
 export const noFocusOnPress = (e: MouseEvent): void => e.preventDefault();
 
-/** A credits amount: the gold chip and the number. */
-export function Credits({ value, short = false }: { value: number; short?: boolean }) {
+/**
+ * A credits amount: the gold chip and the number. `sale`: Clearance Sale discounts it (D077), so
+ * the number takes the sale's color and a small down-tick, a shape as well as a color.
+ */
+export function Credits({
+  value,
+  short = false,
+  sale = false,
+}: {
+  value: number;
+  short?: boolean;
+  sale?: boolean;
+}) {
   return (
-    <span class={short ? 'hud-cost short' : 'hud-cost'}>
+    <span class={`hud-cost${short ? ' short' : ''}${sale ? ' sale' : ''}`}>
       <Icon id="icon.credits" />
       <span class="num">{value}</span>
     </span>

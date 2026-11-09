@@ -1,6 +1,7 @@
-// Top-left: the meter (core integrity, or the map's own meter), credits, and the medal tracker
-// (T202d).
-import { hud, type MedalView } from '../state.ts';
+// Top-left: the name plate ("JPT-1 · SPROUT", core-loop §5), the meter (core integrity, or the
+// map's own meter), credits, the medal tracker (T202d), and the map's optional objectives under it
+// (T312c).
+import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
@@ -18,6 +19,7 @@ export function StatusPanel() {
     <section class="hud-status chamfer" aria-label="Status">
       {/* A leak flashes the panel's edge red (D026); the key restarts it on every leak. */}
       {leak !== null && <span key={leak.id} class="hud-leak-flash chamfer" aria-hidden="true" />}
+      <NamePlate />
       <div
         class="hud-meter"
         role="status"
@@ -41,7 +43,62 @@ export function StatusPanel() {
         <span class="big num gold">{credits}</span>
       </div>
       <MedalTracker />
+      <ObjectiveTracker />
     </section>
+  );
+}
+
+/** The plate's unit designation (Everglow's; the Shift board shows it too). */
+export const UNIT_DESIGNATION = 'JPT-1';
+
+/** Callsign plates longer than this many characters set tighter, so WAYKEEPER fits the panel. */
+const PLATE_TIGHT_CHARS = 14;
+
+/**
+ * The name plate (core-loop §5; art-direction § Dialogue presentation): "JPT-1 · {callsign}"
+ * above the meter, so the callsign's changes (Sprout → Thorn → Waykeeper) show during play.
+ */
+function NamePlate() {
+  const text = `${UNIT_DESIGNATION} · ${hud.callsign.value}`;
+  return (
+    <p
+      class={`hud-plate${text.length > PLATE_TIGHT_CHARS ? ' tight' : ''}`}
+      data-testid="callsign-plate"
+    >
+      {text}
+    </p>
+  );
+}
+
+/** An objective's standing in words (its row's label and tooltip). */
+function objectiveWord(o: ObjectiveView): string {
+  return o.status === 'done' ? 'done' : o.status === 'failed' ? 'next time' : 'in reach';
+}
+
+/**
+ * The objective tracker (T312c), under the medals: one row per optional objective (Objective
+ * Intel; "Clean Audit"), a box that fills gold once done and dims quietly when this run can't do it
+ * any more ("Next time!", like the medals), and the name; the tooltip says what completes it.
+ */
+function ObjectiveTracker() {
+  const objectives = hud.objectives.value;
+  if (objectives.length === 0) return null;
+  return (
+    <ul class="hud-objectives" aria-label="Objectives" data-testid="objective-tracker">
+      {objectives.map((o) => (
+        <li
+          key={o.id}
+          class={`hud-objective ${o.status}`}
+          data-objective={o.id}
+          data-status={o.status}
+          aria-label={`${o.name}, ${objectiveWord(o)}: ${o.description} +${o.intel} Intel`}
+          title={`${o.name}: ${o.status === 'failed' ? 'Next time!' : o.description} (+${o.intel} Intel)`}
+        >
+          <span class="hud-objective-box" aria-hidden="true" />
+          <span class="hud-objective-name">{o.name}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

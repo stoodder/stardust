@@ -52,6 +52,8 @@ describe('hud view models', () => {
         label: 'Rivet',
         icon: 'icon.tower.rivet',
         cost: 100,
+        listCost: 100,
+        price: 'list',
         unlockWave: null,
         isNew: false,
       },
@@ -60,6 +62,8 @@ describe('hud view models', () => {
         label: 'Thumper',
         icon: 'icon.tower.thumper',
         cost: 125,
+        listCost: 125,
+        price: 'list',
         unlockWave: null,
         isNew: false,
       },
@@ -82,6 +86,10 @@ describe('hud view models', () => {
           count: 6,
           air: false,
           fast: false,
+          // No save on the dev battle: the Nibbler is new to it.
+          isNew: true,
+          spawn: null,
+          newSpawn: false,
         },
       ],
     });
@@ -223,6 +231,7 @@ describe('hud view models', () => {
         key: 'Q',
         description: abilityDescription(abilities['dev_strike']!),
         aim: 'area',
+        wavesCooldown: false,
         absent: false,
       },
       {
@@ -233,6 +242,7 @@ describe('hud view models', () => {
         key: 'E',
         description: abilityDescription(abilities['suppressing_fire']!),
         aim: 'path',
+        wavesCooldown: false,
         absent: false,
       },
     ]);
@@ -275,12 +285,13 @@ describe('hud view models', () => {
 
   it('shows a cooldown as whole seconds and a 1/16-step wipe, reusing unchanged views', () => {
     const ready = cooldownView(0, 2700, null);
-    expect(ready).toEqual({ secondsLeft: 0, remaining: 0 });
+    const plain = { wavesLeft: 0, free: false, charges: 0 };
+    expect(ready).toEqual({ secondsLeft: 0, remaining: 0, ...plain });
     const full = cooldownView(2700, 2700, ready);
-    expect(full).toEqual({ secondsLeft: 45, remaining: 1 });
+    expect(full).toEqual({ secondsLeft: 45, remaining: 1, ...plain });
     expect(cooldownView(2699, 2700, full)).toBe(full); // still 45 s and a full wipe
-    expect(cooldownView(1350, 2700, full)).toEqual({ secondsLeft: 23, remaining: 0.5 });
-    expect(cooldownView(1, 2700, null)).toEqual({ secondsLeft: 1, remaining: 1 / 16 });
+    expect(cooldownView(1350, 2700, full)).toEqual({ secondsLeft: 23, remaining: 0.5, ...plain });
+    expect(cooldownView(1, 2700, null)).toEqual({ secondsLeft: 1, remaining: 1 / 16, ...plain });
     expect(cooldownView(0, 2700, ready)).toBe(ready);
   });
 

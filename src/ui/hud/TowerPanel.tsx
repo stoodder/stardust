@@ -12,7 +12,7 @@ import {
 import { PRIORITY_LABEL } from './words.ts';
 import { hud, type SelectedTowerView, type SpecOptionView } from '../state.ts';
 import { Icon } from './Icon.tsx';
-import { HUD_CORNERS, PANEL_W, placePanel, specCardHeight, towerPanelHeight } from './layout.ts';
+import { hudCorners, PANEL_W, placePanel, specCardHeight, towerPanelHeight } from './layout.ts';
 import { alignPulse } from './pulse.ts';
 import { Key, Credits, Glyph, HOLD_GLYPH, SPARE_GLYPH } from './parts.tsx';
 
@@ -41,12 +41,12 @@ function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; 
       class={`hud-btn chamfer hud-spec${locked ? ' locked' : ''}${poor ? ' poor' : ''}`}
       style={{ height: `${specCardHeight(o.descLines.length)}px` }}
       aria-disabled={locked || poor}
-      aria-label={`Specialize: ${o.name}, ${o.cost} credits${locked ? ', locked' : poor ? ', not enough credits' : ''}. ${o.description}`}
+      aria-label={`Specialize: ${o.name}, ${o.cost} credits${o.price === 'sale' ? ', on sale' : ''}${locked ? ', locked' : poor ? ', not enough credits' : ''}. ${o.description}`}
       onClick={() => specializeSelected(o.choice)}
     >
       <span class="hud-spec-row">
         <span class="hud-spec-name">{o.name}</span>
-        {locked ? <Icon id="icon.lock" /> : <Credits value={o.cost} />}
+        {locked ? <Icon id="icon.lock" /> : <Credits value={o.cost} sale={o.price === 'sale'} />}
       </span>
       {o.descLines.map((l, i) => (
         <span key={i} class="hud-spec-desc">
@@ -65,7 +65,8 @@ function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; 
 export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
   const h = towerPanelHeight(t);
-  const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, HUD_CORNERS);
+  const corners = hudCorners(hud.objectives.value.length);
+  const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;
   const poor = !max && credits < (t.upgradeCost ?? 0);
@@ -112,12 +113,12 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
           aria-label={
             max
               ? 'Max tier'
-              : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits${t.upgradeDelta === null ? '' : `: ${t.upgradeDelta}`}`
+              : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits${t.upgradePrice === 'sale' ? ', on sale' : ''}${t.upgradeDelta === null ? '' : `: ${t.upgradeDelta}`}`
           }
           onClick={upgradeSelected}
         >
           <span class="grow">{max ? 'Max tier' : 'Upgrade'}</span>
-          {!max && <Credits value={t.upgradeCost ?? 0} />}
+          {!max && <Credits value={t.upgradeCost ?? 0} sale={t.upgradePrice === 'sale'} />}
           <Key k="U" />
         </button>
       ) : (

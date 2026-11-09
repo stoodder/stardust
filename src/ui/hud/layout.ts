@@ -19,19 +19,34 @@ export interface Rect {
   readonly h: number;
 }
 
+/** The status panel's height with no objectives: the name plate, meter, credits, and medals. */
+const STATUS_H = 72;
+/** What each objective row adds to it (the first also adds the grid gap above the list). */
+const OBJECTIVE_ROW_H = 10;
+
 /**
- * The HUD's corner blocks (art-direction §9; their CSS in hud.css): status and the medal tracker
- * top-left, waves and speed top-right, the ability slots bottom-left, the build slots bottom-right.
- * The tower panel keeps clear of them when it can (T213).
+ * The HUD's corner blocks (art-direction §9; their CSS in hud.css): the status panel (name plate,
+ * meter, credits, medals) top-left, waves and speed top-right, the ability slots bottom-left, the
+ * build slots bottom-right (with the NEW tags and Clearance Sale's tag over them). The tower panel
+ * keeps clear of them when it can (T213).
  */
 export const HUD_CORNERS: readonly Rect[] = [
-  { x: 4, y: 4, w: 100, h: 64 },
+  { x: 4, y: 4, w: 100, h: STATUS_H },
   // The wave panel grows a second preview row when a wave brings several kinds.
   { x: UI_W - 4 - 150, y: 4, w: 150, h: 92 },
-  // Two ability slots and Hold fire (all) (Spare runners (all), from A2M1, adds 47 px).
-  { x: 4, y: UI_H - 4 - 38, w: 122, h: 38 },
-  { x: UI_W - 4 - 129, y: UI_H - 4 - 34, w: 129, h: 34 },
+  // Two ability slots and Hold fire (all) (Spare runners (all), from A2M1, adds 47 px), with
+  // Ready Room's FREE tag over them.
+  { x: 4, y: UI_H - 4 - 44, w: 122, h: 44 },
+  { x: UI_W - 4 - 129, y: UI_H - 4 - 50, w: 129, h: 50 },
 ];
+
+/** The corner blocks with the status panel grown by `objectives` tracker rows (T312c). */
+export function hudCorners(objectives: number): readonly Rect[] {
+  if (objectives <= 0) return HUD_CORNERS;
+  const [status, ...rest] = HUD_CORNERS;
+  if (status === undefined) return HUD_CORNERS;
+  return [{ ...status, h: status.h + objectives * OBJECTIVE_ROW_H + 2 }, ...rest];
+}
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;
 

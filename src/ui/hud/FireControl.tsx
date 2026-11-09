@@ -2,22 +2,26 @@
 // runners (all) once it unlocks.
 import { toggleHoldFireAll, toggleSpareRunnersAll } from '../../app/commands.ts';
 import { hud } from '../state.ts';
+import { alignPulse } from './pulse.ts';
 import { Key, noFocusOnPress, Glyph, HOLD_GLYPH, SPARE_GLYPH } from './parts.tsx';
 
 /**
  * Hold fire (all), bottom-left beside the abilities (core-loop §2.7): the master switch, always
  * there. Pressed while every tower holds; its label says so too ("Held"), not only its color.
+ * It pulses while Gerald (a neutral unit) is on the field until it's first used (A1M3's teach).
  */
 export function HoldFireAllButton() {
   const on = hud.holdFireAll.value;
   const n = hud.holdingCount.value;
+  const teach = hud.holdFireTeach.value && !on;
   const label = on
     ? 'Hold fire, all: on. Every turret is holding'
     : `Hold fire, all${n > 0 ? `: ${n} holding` : ''}`;
   return (
     <button
       type="button"
-      class="hud-btn hud-slot hud-fire chamfer"
+      class={`hud-btn hud-slot hud-fire chamfer${teach ? ' pulse' : ''}`}
+      ref={(el) => alignPulse(el)}
       data-testid="hold-fire-all"
       aria-pressed={on}
       aria-label={label}

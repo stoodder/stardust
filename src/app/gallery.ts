@@ -91,14 +91,26 @@ interface CardPlan {
   }[];
 }
 
+/**
+ * An enemy's death pop (T311c) gets its own row, dark only and in the default palette, so the
+ * page stays inside the art-trail capture.
+ */
+function isDeath(n: string): boolean {
+  return n.startsWith('death_');
+}
+
 function cardPlan(b: BakedSprite): CardPlan {
-  const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n));
+  const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
+  const deaths = b.frameNames.filter(isDeath);
   const second = secondVariant(b);
   const first = b.frameNames[0];
   return {
     rows: [
       { variant: DEFAULT_VARIANT, frames: authored, light: true, glow: true },
+      ...(deaths.length === 0
+        ? []
+        : [{ variant: DEFAULT_VARIANT, frames: deaths, light: false, glow: false }]),
       ...(mirrored.length === 0
         ? []
         : [{ variant: DEFAULT_VARIANT, frames: mirrored, light: false, glow: false, small: true }]),

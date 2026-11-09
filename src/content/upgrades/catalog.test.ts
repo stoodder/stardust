@@ -145,6 +145,18 @@ describe('catalog: progression.md numbers', () => {
     expect(prices(UPGRADES.protocol_slots)).toEqual([4, 6]);
   });
 
+  it("QUILL's Rapport (§ 7.3, T308): 2 Intel, Time Dilation −15% cooldown, once QUILL is met", () => {
+    const u = UPGRADES.rapport_quill;
+    expect(u.kind).toBe('rnd');
+    expect(u.companion).toBe('quill');
+    expect(prices(u)).toEqual([2]);
+    // Time Dilation first plays on A1M3 (QUILL's map), so it's stocked once A1M3 is won.
+    expect(u.availableAfter).toBe('a1_m03');
+    expect(u.ranks[0]?.grants).toEqual([
+      { kind: 'abilityStat', ability: 'time_dilation', stat: 'cooldown', pct: -0.15 },
+    ]);
+  });
+
   it('Engineering (§ 7.1): Everglow specs 2 Intel, the rest 3, after A1M4', () => {
     expect(ENGINEERING).toEqual({
       currency: 'intel',

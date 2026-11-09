@@ -17,6 +17,7 @@ import {
   CursorAnnouncer,
   ActionAnnouncer,
   UpgradeHint,
+  HoldFireHint,
   WaveBannerView,
   PausedOverlay,
 } from './Notices.tsx';
@@ -36,8 +37,11 @@ export function Hud() {
       <div class="hud-play" inert={open}>
         <PausedOverlay />
         <WaveBannerView />
-        <StatusPanel />
-        <CommsPanel />
+        {/* Top-left: status, then the comms panel under it (it follows the status panel's height). */}
+        <div class="hud-top-left">
+          <StatusPanel />
+          <CommsPanel />
+        </div>
         <div class="hud-top-right">
           <div class="hud-top-row">
             <MuteButton />
@@ -56,6 +60,7 @@ export function Hud() {
         <BuildBar />
         {selected !== null && <TowerPanel t={selected} />}
         <UpgradeHint />
+        <HoldFireHint />
         <Notice />
         <CursorAnnouncer />
         <ActionAnnouncer />
