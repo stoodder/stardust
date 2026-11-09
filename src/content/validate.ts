@@ -61,6 +61,7 @@ import { dialogueErrors } from './validateDialogue.ts';
 import { validateCampaignMaps } from './validateMap.ts';
 import { validateMedals } from './validateMedals.ts';
 import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
+import type { ExceptRule } from './validateWaves.ts';
 import {
   Issues,
   duplicates,
@@ -76,6 +77,8 @@ export interface ValidationRules {
   readonly counterAnswers: Readonly<Record<CounterId, CounterAnswers>>;
   /** The catalog and campaign plan for [purchasable]; default LIVE_PURCHASE_RULES. */
   readonly purchases?: PurchaseRules;
+  /** The run-end flag rules whose `tagRatio.except` tags [wave-tag] checks; default FLAG_RULES. */
+  readonly flagRules?: readonly ExceptRule[];
 }
 export const DEFAULT_VALIDATION_RULES: ValidationRules = { counterAnswers: COUNTER_ANSWERS };
 

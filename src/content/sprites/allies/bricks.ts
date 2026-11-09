@@ -81,13 +81,14 @@ function restingHands(g: CharGrid, facing: 'se' | 'ne', b: 0 | 1): void {
     ] as const)
       plot(g, x, y - (x > 16 ? b : 0), 'K');
     plot(g, 16, 13, 'J');
-    // The hands on the muzzle: the left over the right.
+    // The hands on the muzzle, the right over the left, each lit on its left knuckle and a step
+    // darker than the khaki behind them so they read on it.
     for (const [x, ch] of [
       [10, 'C'],
-      [11, 'C'],
-      [12, 'D'],
-      [13, 'C'],
-      [14, 'B'],
+      [11, 'B'],
+      [12, 'C'],
+      [13, 'B'],
+      [14, 'A'],
     ] as const)
       plot(g, x, 13, ch);
     plot(g, 10, 14, 'B'); // a thumb over the lip

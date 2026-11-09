@@ -5,7 +5,7 @@ import { barksFor, SCENES, SPEAKER_DEFS } from '../content/dialogue/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
 import { resultsFlow } from '../content/dialogue/resultsFlow.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
-import type { SpeakerId } from '../content/dialogue/types.ts';
+import type { LineNode, SpeakerId } from '../content/dialogue/types.ts';
 import {
   baseStoryContext,
   type RunEndInput as MetaRunEndInput,
@@ -282,6 +282,23 @@ export function debriefLines(
       spoken(l.speaker, l.text, story),
     ),
   ];
+}
+
+/**
+ * The lines a won run plays on the comms panel during the results hold (D098), before the map's
+ * before-Results scenes: its debrief as this run plays it (`linesUntilChoice`), on a map whose
+ * results flow asks for it (`debriefOnHold`: A1M5, Bricks's C1 reaction). None otherwise.
+ */
+export function holdLines(
+  input: Pick<RunEndInput, 'mapId' | 'stats' | 'story'>,
+  outcome: RunOutcome,
+): LineNode[] {
+  const map = input.mapId;
+  if (outcome !== 'won' || !isCampaignMapId(map) || resultsFlow(map).debriefOnHold !== true) {
+    return [];
+  }
+  const debrief = SCENES[`${map}_debrief`];
+  return debrief === undefined ? [] : linesUntilChoice(debrief, runStoryContext(map, input, outcome));
 }
 
 /**

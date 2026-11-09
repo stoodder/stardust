@@ -20,6 +20,7 @@ import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
+import { playMapEndLines } from './dialogue.ts';
 import { earnedMedalIds } from '../sim/index.ts';
 import { closeLoadout, openLoadout } from './loadout.ts';
 import {
@@ -34,6 +35,7 @@ import { FIRST_PAYDAY_SEEN_ID } from '../meta/index.ts';
 import { holdNewGame, intakeMode } from './profile.ts';
 import {
   debriefStoryOf,
+  holdLines,
   metaRunEndOf,
   offeredMedals,
   runResultOf,
@@ -49,6 +51,16 @@ export const BATTLE_FAILED =
 
 /** How long the frozen battle shows after the map ends, before Results (ms of real time; D028). */
 export const RESULTS_DELAY_MS = 1500;
+/** The longest the hold waits for the map-end lines on the comms panel (D098). */
+export const RESULTS_HOLD_MAX_MS = 5000;
+
+/**
+ * How long the frozen battle holds before Results: RESULTS_DELAY_MS, or long enough for the
+ * map-end lines on the comms panel (`linesMs`; A1M5's C1 reaction), up to RESULTS_HOLD_MAX_MS.
+ */
+export function resultsHoldMs(linesMs: number): number {
+  return Math.min(RESULTS_HOLD_MAX_MS, Math.max(RESULTS_DELAY_MS, linesMs));
+}
 
 export interface BattleRequest {
   /** Default: the router defaults' (the URL's `?map=`), else DEFAULT_MAP_ID. */
@@ -94,9 +106,14 @@ export interface Router {
   /**
    * Shows `result` as the finished run: a win's before-Results scenes first (A1M5's party), then
    * Results, whose dismissal plays the after-Results scenes (app/runFlow.ts). `flow` replaces the
-   * map's own scenes (the test hooks' results fixture).
+   * map's own scenes (the test hooks' results fixture). `record: false` (the fixture) writes
+   * nothing to the save: the first payday stays unspent and the scenes aren't marked seen.
    */
-  presentResults(result: RunResult, flow?: ResultsScenes): Promise<void>;
+  presentResults(
+    result: RunResult,
+    flow?: ResultsScenes,
+    opts?: { readonly record?: boolean },
+  ): Promise<void>;
   /** Settings → Back: the menu Settings was opened from (the Title when none). */
   closeSettings(): Promise<void>;
 }
@@ -210,12 +227,21 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       endedAt = { ms: performance.now(), tick: next.host.sim.state.tick };
       setSpeed(0);
       cancel();
+      // A won map's debrief may land first, on the radio (D098: Bricks's C1 reaction on A1M5).
+      const { sim } = next.host;
+      const lines = holdLines(
+        { mapId: sim.map.id, stats: sim.state.stats, ...debriefStoryOf(activeSave()) },
+        outcome,
+      );
       pending = {
         outcome,
-        timer: setTimeout(() => {
-          pending = null;
-          if (battle === next) void router.endRun(outcome);
-        }, RESULTS_DELAY_MS),
+        timer: setTimeout(
+          () => {
+            pending = null;
+            if (battle === next) void router.endRun(outcome);
+          },
+          resultsHoldMs(playMapEndLines(lines)),
+        ),
       };
     };
     bus.on('MapWon', onEnd('won'));
@@ -370,7 +396,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       if (battle === null || ended || pending !== null) return;
       recordEnd(battle, 'lost');
     },
-    presentResults(result, flow) {
+    presentResults(result, flow, opts = {}) {
+      const record = opts.record ?? true;
       runResult.value = result;
       const shown = battle;
       const before = flow?.before ?? flowScenes(result.mapId, result.outcome, 'before');
@@ -382,11 +409,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
             resolve();
             return;
           }
-          setAfterResults(after);
-          // The first payday is spent by being shown (D097), never by an abandoned run.
-          if (result.rewards?.firstPayday === true) markFirstPaydayShown();
+          setAfterResults(after, record);
+          // The first payday is spent by being shown (D097), never by an abandoned run or the
+          // results fixture.
+          if (record && result.rewards?.firstPayday === true) markFirstPaydayShown();
           router.goto('results').then(resolve, reject);
-        });
+        }, record);
       });
     },
   };

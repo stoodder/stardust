@@ -340,8 +340,7 @@ describe('Bricks at his post', () => {
     // Lowered, the cannon is grounded (S11): its top sits well down his body, not up by his head
     // as the shouldered tube does, and it stands on end, a tall run of tube pixels down to its
     // dark butt on the post plate, with skin (his hands) resting right on its muzzle.
-    const tubeTop = (f: string): number =>
-      grid('ally.bricks', f).findIndex((r) => /[1-4]/.test(r));
+    const tubeTop = (f: string): number => grid('ally.bricks', f).findIndex((r) => /[1-4]/.test(r));
     for (const facing of ['se', 'ne']) {
       for (const k of [0, 1]) {
         const f = `lowered_${facing}_${k}`;

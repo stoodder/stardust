@@ -215,7 +215,20 @@ interface Session {
   runKills(): number;
   readonly pool: readonly Bark[];
   barks: BarkState;
+  /**
+   * The Quiet Wave's silence (D098): from its start to the map's end no bark is offered but
+   * Bricks's `not_firing` (the wave's own line). Scripted lines (cues, cue barks) still play.
+   */
+  silent: boolean;
 }
+
+/** The one trigger the Quiet Wave's silence still offers: Bricks's "...You okay, Sprout?". */
+const SILENT_ZONE_TRIGGERS: ReadonlySet<BarkTrigger['on']> = new Set(['not_firing']);
+
+/** The act-wide `wave_cleared` barks (the jingle jokes): offered only after a clean wave (D098). */
+const JINGLE_BARKS: ReadonlySet<string> = new Set(
+  SHARED_BARKS.filter((b) => b.trigger.on === 'wave_cleared').map((b) => b.id),
+);
 
 let session: Session | null = null;
 
@@ -271,6 +284,8 @@ interface Holding {
   /** The speed to put back as it ends (a battle scene other than the briefing), else null. */
   readonly resume: Speed | null;
   readonly onEnd: (() => void) | null;
+  /** Whether its effects and seen id go into the save as it ends (not for the results fixture). */
+  readonly record: boolean;
   cursor: DialogueCursor;
   transcript: LineView[];
   line: LineView | null;
@@ -292,6 +307,47 @@ export interface PlayOptions {
   readonly instant?: boolean;
   /** Runs as the scene ends (after its effects are saved). */
   readonly onEnd?: () => void;
+  /** Default true; false: nothing it does is saved (the results fixture, `__sd.results`). */
+  readonly record?: boolean;
+}
+
+/** How long a silence holds when its line names no `durationSec`, in seconds. */
+export const SILENCE_SEC = 2;
+
+/**
+ * Whether the line on screen moves on by itself (D098): a silence in a full-screen scene holds
+ * for its `durationSec` and goes on, with no Next to press (Skip and Esc still work).
+ */
+export function advancesItself(
+  mode: SceneMode,
+  line: Pick<LineView, 'silence'> | null,
+  instant: boolean,
+): boolean {
+  return mode === 'fullscreen' && line !== null && line.silence && !instant;
+}
+
+let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearSilence(): void {
+  if (silenceTimer !== null) clearTimeout(silenceTimer);
+  silenceTimer = null;
+}
+
+/**
+ * Times the silence on screen (`advancesItself`): it moves on `durationSec` after it shows (after
+ * a staged lead-in, when one holds it back). Re-armed on every publish of the same line.
+ */
+function armSilence(h: Holding): void {
+  clearSilence();
+  const line = h.line;
+  const step = h.cursor.step;
+  if (!advancesItself(h.mode, line, h.instant) || step.kind !== 'line') return;
+  const wait =
+    Math.max(0, h.typedFrom - performance.now()) + (step.node.durationSec ?? SILENCE_SEC) * 1000;
+  silenceTimer = setTimeout(() => {
+    silenceTimer = null;
+    if (holding === h && h.line === line) advanceScene();
+  }, wait);
 }
 
 /**
@@ -317,9 +373,11 @@ function onRadio(): readonly SpeakerId[] | null {
 function publish(): void {
   const h = holding;
   if (h === null) {
+    clearSilence();
     dialogue.scene.value = null;
     return;
   }
+  armSilence(h);
   const step = h.cursor.step;
   // Shown whole (dialogue off), a scene stops short of its first choice: nobody is there to pick.
   const stopped = h.instant && step.kind === 'choice';
@@ -376,6 +434,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     instant: opts.instant ?? false,
     resume,
     onEnd: opts.onEnd ?? null,
+    record: opts.record ?? true,
     cursor: start(scene, storyContext(map)),
     transcript: [],
     line: null,
@@ -402,7 +461,8 @@ function finish(): void {
   const h = holding;
   if (h === null) return;
   holding = null;
-  commit(h.scene.id, h.cursor.effects);
+  clearSilence();
+  if (h.record) commit(h.scene.id, h.cursor.effects);
   if (h.resume !== null && session !== null && speed.value === 0) setSpeed(h.resume);
   dialogue.scene.value = null;
   h.onEnd?.();
@@ -672,23 +732,56 @@ export function pressCommsButton(): void {
   showCommsLine();
 }
 
+/** A map-end line holds this long once typed (the results hold's lines; D098). */
+export const END_LINE_BEAT_MS = 2000;
+
+/** How long a map-end line holds on the panel, in ms: its typing, then END_LINE_BEAT_MS. */
+export function endLineMs(text: string): number {
+  return typeMs(text) + END_LINE_BEAT_MS;
+}
+
+/**
+ * Plays `lines` on the comms panel now, over the frozen battle as the map ends (D098: A1M5's C1
+ * reaction lands before the party), cutting whatever the panel shows. Each holds `endLineMs`.
+ * Returns how long they take in ms (0 when dialogue is off, outside a battle, or with no lines).
+ */
+export function playMapEndLines(lines: readonly LineNode[]): number {
+  if (!enabled || session === null || commsHeld || lines.length === 0) return 0;
+  const nodes = lines.map((l) => ({ ...l, durationSec: endLineMs(l.text) / 1000 }));
+  // Not a scene id (SCENE_ID), so nothing is saved as seen: the card's debrief keeps the lines.
+  const scene: Scene = { id: 'map_end', nodes };
+  clearCommsTimer();
+  commsQueue.length = 0;
+  onIdle = null;
+  commsNow = {
+    scene,
+    cursor: start(scene, storyContext(session.map)),
+    prev: null,
+    button: null,
+  };
+  showCommsLine();
+  return lines.reduce((ms, l) => ms + endLineMs(l.text), 0);
+}
+
 // ─── Barks ───────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Offers one moment's triggers to the bark pools (`pickBarkOf`). Nothing plays over a line on the
- * panel or a scene, and nothing waits: the triggers still count as fired. A queued trigger's bark
- * (`isQueuedTrigger`) queues first, so the moment's other triggers find the panel busy.
+ * Offers one moment's triggers to the bark pools (`pickBarkOf`; `pool` defaults to the map's).
+ * Nothing plays over a line on the panel or a scene, and nothing waits: the triggers still count
+ * as fired. A queued trigger's bark (`isQueuedTrigger`) queues first, so the moment's other
+ * triggers find the panel busy. In the Quiet Wave's silence only its own trigger is offered.
  */
-function offerBarks(all: readonly BarkTrigger[]): void {
+function offerBarks(offered: readonly BarkTrigger[], pool?: readonly Bark[]): void {
   const s = session;
   if (s === null || !enabled) return;
+  const all = s.silent ? offered.filter((t) => SILENT_ZONE_TRIGGERS.has(t.on)) : offered;
   for (const t of all) if (isQueuedTrigger(t)) queueBark(t);
   const triggers = all.filter((t) => !isQueuedTrigger(t));
   if (triggers.length === 0) return;
   const atSec = s.simSec();
   const events: BarkEvent[] = triggers.map((trigger) => ({ trigger, atSec, present: s.present }));
   const busy = commsNow !== null || commsHeld || commsQueue.length > 0;
-  const pick = pickBarkOf(busy ? [] : s.pool, events, s.barks, storyContext(s.map));
+  const pick = pickBarkOf(busy ? [] : (pool ?? s.pool), events, s.barks, storyContext(s.map));
   s.barks = pick.state;
   if (pick.bark !== null) showBark(pick.bark);
 }
@@ -773,7 +866,15 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     runKills: () => sim.state.stats.skitterkinKilled,
     pool: map === null ? [] : barksFor(map),
     barks: newBarkState(sim.config.seed),
+    silent: false,
   };
+  /** The map's pool after a wave that leaked: no jingle jokes (D098). */
+  const leakyPool = s.pool.filter((b) => !JINGLE_BARKS.has(b.id));
+  // Per wave (index = wave − 1): a Quiet Wave (any group tagged `quiet_wave`), a boss wave.
+  const quiet = sim.map.waves.map((w) => w.groups.some((g) => g.tags.includes('quiet_wave')));
+  const boss = sim.map.waves.map(isBossWave);
+  /** A boss wave's `wave_start` and `wave_cleared` say so (`boss: true`; D098). */
+  const bossOf = (w: number): { boss?: true } => (boss[w - 1] === true ? { boss: true } : {});
   session = s;
   dialogue.comms.value = null;
   commsQueue.length = 0;
@@ -855,17 +956,22 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       const scene = radio.get(e.wave);
       radio.delete(e.wave);
       if (scene !== undefined && enabled && scenePlays(scene, storyContext(map))) playScene(scene);
-      if (e.wave >= 2 && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
+      // Never before the Quiet Wave (D098): its countdown is the held breath.
+      const quietNext = quiet[e.wave - 1] === true;
+      if (e.wave >= 2 && !quietNext && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
     }),
     bus.on('WaveStarted', (e) => {
       wave = Math.max(wave, e.wave);
-      offerBarks([{ on: 'wave_start', wave: e.wave }]);
+      // The Quiet Wave's silence starts with it (before its first spawn) and lasts the map.
+      if (quiet[e.wave - 1] === true) s.silent = true;
+      offerBarks([{ on: 'wave_start', wave: e.wave, ...bossOf(e.wave) }]);
     }),
     bus.on('WaveCleared', (e) => {
       stepTags(e);
-      const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave }];
-      if (!leakedWaves.has(e.wave)) triggers.push({ on: 'perfect_wave' });
-      offerBarks(triggers);
+      const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave, ...bossOf(e.wave) }];
+      const clean = !leakedWaves.has(e.wave);
+      if (clean) triggers.push({ on: 'perfect_wave' });
+      offerBarks(triggers, clean ? s.pool : leakyPool);
     }),
     bus.on('EnemySpawned', (e) => {
       waveOf.set(e.uid, e.wave);
@@ -961,6 +1067,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     if (holding !== null) {
       holding = null;
       waiting.length = 0;
+      clearSilence();
       dialogue.scene.value = null;
     }
     commsHeld = false;

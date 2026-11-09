@@ -122,7 +122,9 @@ describe('save migrations', () => {
     // Idempotent: a save that has the id keeps exactly one.
     const again = decodeEnvelope(JSON.parse(serializeSave(v2.envelope.data, 0)));
     if (!again.ok) throw new Error(again.problem.message);
-    expect(again.envelope.data.story.seen.filter((id) => id === FIRST_PAYDAY_SEEN_ID)).toHaveLength(1);
+    expect(again.envelope.data.story.seen.filter((id) => id === FIRST_PAYDAY_SEEN_ID)).toHaveLength(
+      1,
+    );
     // A1M1 pays no Stardust, so saveV1 (A1M1 only) still has its payday ahead.
     const v1 = decodeEnvelope(saveV1);
     if (!v1.ok) throw new Error(v1.problem.message);
@@ -132,7 +134,8 @@ describe('save migrations', () => {
 
   it('never reads the bank: a defeat stipend alone leaves the first payday ahead (D097)', () => {
     const stipend = clone(saveV2);
-    stipend.data.campaign.maps = { a1_m01: saveV2.data.campaign.maps.a1_m01 };
+    const maps: Record<string, unknown> = stipend.data.campaign.maps;
+    delete maps['a1_m02']; // A1M1 (0 Stardust) won, A1M2 lost: the bank holds stipends only
     stipend.data.currencies.stardust = 40;
     const decoded = decodeEnvelope(stipend);
     if (!decoded.ok) throw new Error(decoded.problem.message);

@@ -381,6 +381,24 @@ describe('validate: maps', () => {
     );
   });
 
+  it("[wave-tag] a flag rule's `except` tag needs its `tag` on that map's groups (D098)", () => {
+    const rule = {
+      onMapEnd: 'fx_map',
+      value: { all: [{ tagRatio: { tag: 'fleeing', except: 'youngling', of: 'leaked', gte: 1 } }] },
+    } as const;
+    const rules: ValidationRules = { ...DEFAULT_VALIDATION_RULES, flagRules: [rule] };
+    const tagErrors = (tags: readonly WaveTag[], r = rules): string[] =>
+      validate(withTags(tags), r).filter((e) => e.startsWith('[wave-tag]'));
+    rejects(withTags(['youngling']), 'wave-tag', rules);
+    expect(tagErrors(['youngling']).join('\n')).toMatch(/'youngling' needs 'fleeing' too/);
+    expect(tagErrors(['youngling', 'fleeing'])).toEqual([]);
+    // Only the rule's own map is judged, and the live rules (A1M5's) leave fx_map alone.
+    expect(
+      tagErrors(['youngling'], { ...rules, flagRules: [{ ...rule, onMapEnd: 'a1_m05' }] }),
+    ).toEqual([]);
+    expect(tagErrors(['youngling'], DEFAULT_VALIDATION_RULES)).toEqual([]);
+  });
+
   it('[quiet-wave-reach] no pad reaches the first 4 tiles of a quiet_wave route (D097)', () => {
     // fx_map's pad (1,1) is 1 tile from the road's first tiles; fx_mortar's T3 reaches 3.5.
     rejects(withTags(['quiet_wave']), 'quiet-wave-reach');

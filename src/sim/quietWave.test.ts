@@ -167,6 +167,32 @@ function leakAt(integrity: number, tags: readonly WaveTag[], cost = 2) {
   return { integrity: state.integrity, leak: leaked?.type === 'EnemyLeaked' ? leaked.leak : -1 };
 }
 
+/**
+ * A Quiet Wave unit (leak 2) and a plain one (leak `plain`) reach the core on the same tick at
+ * integrity 3, the quiet one in the lower slot or the higher one.
+ */
+function sharedTick(quietFirst: boolean, plain = 2) {
+  const { state } = setup();
+  state.integrity = 3;
+  const end = MAP.routes.a!.lengthTiles;
+  const thrum = Object.freeze({ ...WALKER, id: 'thrum', leak: 2 });
+  const pest = Object.freeze({ ...WALKER, id: 'pest', leak: plain });
+  const spawnQuiet = () => spawn(state, thrum, { dist: end, tags: ['quiet_wave'] });
+  const spawnPlain = () => spawn(state, pest, { dist: end });
+  if (quietFirst) {
+    spawnQuiet();
+    spawnPlain();
+  } else {
+    spawnPlain();
+    spawnQuiet();
+  }
+  movement(state);
+  return {
+    integrity: state.integrity,
+    leaks: state.events.flatMap((e) => (e.type === 'EnemyLeaked' ? [[e.enemy, e.leak]] : [])),
+  };
+}
+
 describe('a quiet_wave leak never takes the core below 1', () => {
   it('caps the leak at integrity − 1', () => {
     expect(leakAt(2, ['quiet_wave'])).toEqual({ integrity: 1, leak: 1 });
@@ -195,35 +221,15 @@ describe('a quiet_wave leak never takes the core below 1', () => {
     expect(state.leakAbsorbLeft).toBe(2);
   });
 
-  /**
-   * A Quiet Wave unit (leak 2) and a plain one (leak `plain`) reach the core on the same tick at
-   * integrity 3, the quiet one in the lower slot or the higher one.
-   */
-  function sharedTick(quietFirst: boolean, plain = 2) {
-    const { state } = setup();
-    state.integrity = 3;
-    const end = MAP.routes.a!.lengthTiles;
-    const thrum = Object.freeze({ ...WALKER, id: 'thrum', leak: 2 });
-    const pest = Object.freeze({ ...WALKER, id: 'pest', leak: plain });
-    const spawnQuiet = () => spawn(state, thrum, { dist: end, tags: ['quiet_wave'] });
-    const spawnPlain = () => spawn(state, pest, { dist: end });
-    if (quietFirst) {
-      spawnQuiet();
-      spawnPlain();
-    } else {
-      spawnPlain();
-      spawnQuiet();
-    }
-    movement(state);
-    return {
-      integrity: state.integrity,
-      leaks: state.events.flatMap((e) => (e.type === 'EnemyLeaked' ? [[e.enemy, e.leak]] : [])),
-    };
-  }
-
   it('a same-tick plain leak never turns sparing into a loss, in either slot order (D098)', () => {
     // The plain leak (2) is charged first, then Thrum is floored at 1: the core survives at 1.
-    const expected = { integrity: 1, leaks: [['pest', 2], ['thrum', 0]] };
+    const expected = {
+      integrity: 1,
+      leaks: [
+        ['pest', 2],
+        ['thrum', 0],
+      ],
+    };
     expect(sharedTick(true)).toEqual(expected);
     expect(sharedTick(false)).toEqual(expected);
   });

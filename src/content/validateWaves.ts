@@ -1,8 +1,9 @@
 // Wave validation (maps.md § 9; the rule list is validateMap.ts's header): [wave],
 // [route-walk], [wave-tag], and [quiet-wave-reach].
 import { REACH_SLACK_TILES, distanceToRoute, type ReachTile } from './counterAnswers.ts';
+import { FLAG_RULES, type FlagRuleCondition } from './dialogue/flags.ts';
 import { HIGH_GROUND_RANGE_PCT, MAX_TIER_BEFORE_SPEC, SKITTERKIN_ONLY_TAGS } from './rules.ts';
-import type { GridPos, IdSpace, Layer, MapDef, TileChar } from './types.ts';
+import type { GridPos, IdSpace, Layer, MapDef, TileChar, WaveTag } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import {
   BUILDABLE,
@@ -29,12 +30,41 @@ export function routesOf(
   return out;
 }
 
+/** A run-end flag rule as [wave-tag] reads it: its map and its condition. */
+export interface ExceptRule {
+  readonly onMapEnd: string;
+  readonly value: FlagRuleCondition;
+}
+
+/**
+ * Every `tagRatio.except` pair in the flag rules that end on `mapId`: `except` → the `tag` it is
+ * counted out of. The ratio subtracts `except`'s count from `tag`'s (the stats count per tag), so
+ * a unit carrying `except` without `tag` would be subtracted from a count it was never in (D098).
+ */
+export function exceptTags(rules: readonly ExceptRule[], mapId: string): Map<WaveTag, WaveTag[]> {
+  const out = new Map<WaveTag, WaveTag[]>();
+  const walk = (c: FlagRuleCondition): void => {
+    if ('tagRatio' in c) {
+      const { tag, except } = c.tagRatio;
+      if (except === undefined) return;
+      const tags = out.get(except) ?? [];
+      if (!tags.includes(tag)) tags.push(tag);
+      out.set(except, tags);
+    } else if ('all' in c) c.all.forEach(walk);
+    else if ('any' in c) c.any.forEach(walk);
+    else if ('not' in c) walk(c.not);
+  };
+  for (const r of rules) if (r.onMapEnd === mapId) walk(r.value);
+  return out;
+}
+
 export function validateWaves(
   issues: Issues,
   ctx: MapCtx,
   def: MapDef<IdSpace>,
   mapWhere: string,
 ): void {
+  const excepts = exceptTags(ctx.rules.flagRules ?? FLAG_RULES, def.id);
   if (def.waves.length === 0)
     issues.add('wave', `${mapWhere}.waves`, 'a map needs at least one wave');
   const routes = routesOf(def);
@@ -106,6 +136,17 @@ export function validateWaves(
       if (enemy !== undefined && enemy.faction !== 'skitterkin') {
         for (const t of tags.filter((x) => SKITTERKIN_ONLY_TAGS.includes(x))) {
           issues.add('wave-tag', `${gw}.tags`, `'${t}' is only for Skitterkin (not '${enemy.id}')`);
+        }
+      }
+      for (const t of tags) {
+        for (const needed of excepts.get(t) ?? []) {
+          if (!tags.includes(needed)) {
+            issues.add(
+              'wave-tag',
+              `${gw}.tags`,
+              `'${t}' needs '${needed}' too (a flag rule counts '${t}' out of '${needed}' here)`,
+            );
+          }
         }
       }
     }

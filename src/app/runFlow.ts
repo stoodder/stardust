@@ -30,9 +30,10 @@ export function flowScenes(
 
 /**
  * Plays `scenes` full-screen, one after another, then runs `done` (at once when there are none
- * or dialogue is off). A scene that has nothing to say ends at once and the next plays.
+ * or dialogue is off). A scene that has nothing to say ends at once and the next plays. `record`
+ * false (the results fixture) saves nothing they do, not even that they were seen.
  */
-export function playInOrder(scenes: readonly Scene[], done: () => void): void {
+export function playInOrder(scenes: readonly Scene[], done: () => void, record = true): void {
   if (scenes.length === 0 || !dialogueEnabled()) {
     done();
     return;
@@ -41,17 +42,24 @@ export function playInOrder(scenes: readonly Scene[], done: () => void): void {
   scenes.forEach((scene, i) => {
     playScene(
       scene,
-      i === scenes.length - 1 ? { mode: 'fullscreen', onEnd: done } : { mode: 'fullscreen' },
+      i === scenes.length - 1
+        ? { mode: 'fullscreen', onEnd: done, record }
+        : { mode: 'fullscreen', record },
     );
   });
 }
 
-/** The scenes to play once the results card on screen is dismissed. */
+/** The scenes to play once the results card on screen is dismissed, and whether they save. */
 let afterResults: readonly Scene[] = [];
+let afterRecord = true;
 
-/** Sets what plays once the card on screen is dismissed (the router, as Results shows). */
-export function setAfterResults(scenes: readonly Scene[]): void {
+/**
+ * Sets what plays once the card on screen is dismissed (the router, as Results shows); `record`
+ * false for the results fixture's card, whose scenes save nothing.
+ */
+export function setAfterResults(scenes: readonly Scene[], record = true): void {
   afterResults = scenes;
+  afterRecord = record;
 }
 
 /** Whether scenes wait for the card on screen to be dismissed. */
@@ -66,5 +74,5 @@ export function afterResultsPending(): boolean {
 export function leaveResults(go: () => void): void {
   const scenes = afterResults;
   afterResults = [];
-  playInOrder(scenes, go);
+  playInOrder(scenes, go, afterRecord);
 }

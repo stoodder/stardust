@@ -20,8 +20,10 @@
 // - [route-walk]: every group can walk its route (flyers on air lanes, ground units on paths or
 //   rift lanes; a neutral flyer, Gerald, may fly a path; rift lanes carry only the Hollow, from
 //   the wave they open).
-// - [wave-tag]: no duplicate tags; `fleeing`, `youngling`, and `quiet_wave` only on Skitterkin.
-//   `countdownAfter: 'bossEnded'` needs a boss in an earlier wave.
+// - [wave-tag]: no duplicate tags; `fleeing`, `youngling`, and `quiet_wave` only on Skitterkin;
+//   on a flag rule's map, a group carrying a `tagRatio.except` tag also carries its `tag` (D098:
+//   A1M5's younglings carry `quiet_wave`). `countdownAfter: 'bossEnded'` needs a boss in an
+//   earlier wave.
 // - [quiet-wave-reach]: no buildable tile's best tier-3 range (high ground's bonus and
 //   REACH_SLACK_TILES included) reaches the first 4 tiles of a route a `quiet_wave` group walks
 //   (D097: the Quiet Wave is seen before any tower could fire on it).

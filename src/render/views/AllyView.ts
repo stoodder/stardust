@@ -5,7 +5,8 @@
 // he shows in the `vfx` layer (his visor and the glinting stone; T216), following each anim frame.
 // Allies with no sprite yet (militia, M3) draw nothing.
 // Lowered (`setLowered`, allyPose.ts: A1M5's Quiet Wave, T330), he idles on `lowered_<facing>`
-// instead, the cannon held low across his hip, and stays so: a silent tell, never mentioned.
+// instead, the cannon grounded (butt on his post plate, hands resting on the muzzle), and stays so:
+// a silent tell, never mentioned.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { AllyKind } from '../../content/types.ts';

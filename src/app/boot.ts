@@ -127,7 +127,8 @@ export async function boot(): Promise<void> {
           await sceneReady;
           if (router.battle !== null) throw new Error('__sd.results: not during a battle');
           const result = fixtureResult(fixture, activeSave());
-          await router.presentResults(result, fixtureScenes(fixture));
+          // A made-up run: Results shows it, and nothing reaches the save (C-L2).
+          await router.presentResults(result, fixtureScenes(fixture), { record: false });
         },
       }),
     );

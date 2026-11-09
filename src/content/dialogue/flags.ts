@@ -114,7 +114,8 @@ export type FlagRuleStat =
  * units ÷ its spawned units (false when none spawned), and `stat` reads a run counter.
  * `tagRatio.except` counts only the units with `tag` that don't carry `except` (the stats count
  * per tag, so it is `tag`'s count less `except`'s); every unit tagged `except` must also carry
- * `tag`, as A1M5's younglings carry `quiet_wave` (its test checks the waves).
+ * `tag` on the rule's map, as A1M5's younglings carry `quiet_wave` (content validation
+ * `[wave-tag]` checks it, D098).
  */
 export type FlagRuleCondition =
   | {
