@@ -38,6 +38,7 @@ import {
   shiftBoard,
   showsLoadoutScreen,
   unlockHint,
+  withIssuedTowers,
   withPreset,
   writeSlot,
 } from '../meta/index.ts';
@@ -177,7 +178,7 @@ export function openSlot(slot: SlotId): SaveResult {
           : `Slot ${slot} couldn't be read. Copy its raw data to keep it safe.`,
     };
   }
-  session = { store, slot, scratch: false, devUnlocks: [], save: load.save };
+  session = { store, slot, scratch: false, devUnlocks: [], save: withIssuedTowers(load.save) };
   refresh();
   return { ok: true };
 }
@@ -195,7 +196,7 @@ export function loadDevSave(id: string): boolean {
     slot: 1,
     scratch: true,
     devUnlocks: dev.devUnlocks ?? [],
-    save: dev.build(),
+    save: withIssuedTowers(dev.build()),
   };
   const w = writeSlot(scratch, 1, session.save, clock());
   if (!w.ok) logError(`save: dev save '${id}' failed to write`, w.errors);
@@ -213,19 +214,41 @@ export function closeSession(): void {
   refresh();
 }
 
+/** What a run end paid, and whether the slot write held. */
+export interface RecordedRun extends RunEndSummary {
+  /** The slot write failed: the run holds for this session only (the message says so). */
+  readonly writeFailed: string | null;
+  /**
+   * Where the Stardust goes, while it can't be spent yet (paid > 0 and Zibzab's shop still
+   * locked): the payroll's Stardust line adds it (G8). Null otherwise.
+   */
+  readonly stardustNote: string | null;
+}
+
+/** The payroll's note on Stardust paid before the shop opens (style-guide.md § 2). */
+export function stardustNoteText(): string {
+  return `Banked for Zibzab's shop. ${unlockHint('shop')}.`;
+}
+
 /**
  * Ends a run in the save in play (meta-runtime.md § Run end: Pests Processed, medals, rewards) and
- * writes it. Returns what the run paid, or null without a save or for a non-campaign map (a `?map=`
- * dev battle), which leave no record. A failed write is logged; the session keeps the new save.
+ * writes it. Returns what the run paid with the write's status, or null without a save or for a
+ * non-campaign map (a `?map=` dev battle), which leave no record. A failed write is logged; the
+ * session keeps the new save, and Results says so.
  */
 export function recordRun(
   input: Omit<RunEndInput, 'mapId'> & { readonly mapId: string },
-): RunEndSummary | null {
+): RecordedRun | null {
   if (session === null || !isCampaignMap(input.mapId)) return null;
   const { save, summary } = runEnd(session.save, { ...input, mapId: input.mapId });
   session.save = save;
-  persist();
-  return summary;
+  const w = persist();
+  const unspendable = summary.stardust.amount > 0 && !systemOpen('shop');
+  return {
+    ...summary,
+    writeFailed: w.ok ? null : w.message,
+    stardustNote: unspendable ? stardustNoteText() : null,
+  };
 }
 
 function isCampaignMap(id: string): id is MapId {
@@ -332,12 +355,13 @@ export async function checkImport(text: string): Promise<ImportCheck> {
  * in play. The old value rotates into the slot's backup.
  */
 export function importInto(slot: SlotId, save: SaveData): SaveResult {
-  const w = writeSlot(store, slot, save, clock());
+  const caughtUp = withIssuedTowers(save);
+  const w = writeSlot(store, slot, caughtUp, clock());
   if (!w.ok) {
     refresh();
     return writeFailure(w);
   }
-  session = { store, slot, scratch: false, devUnlocks: [], save };
+  session = { store, slot, scratch: false, devUnlocks: [], save: caughtUp };
   refresh();
   return { ok: true };
 }

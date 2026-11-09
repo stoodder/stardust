@@ -61,6 +61,7 @@ import {
   type WavePreview,
   type WavePreviewGroup,
 } from '../ui/state.ts';
+import { silkText } from '../ui/silk.ts';
 import { CARD_CHARS, PANEL_CHARS, wrapParts } from '../ui/hud/layout.ts';
 import type { Host } from './host.ts';
 import { activeSave, systemOpen } from './save.ts';
@@ -241,7 +242,9 @@ export function briefingLines(briefing: string | null): BriefingLine[] {
     .filter((l) => l !== '')
     .map((line) => {
       const m = /^([^:\s][^:]{0,15}): (.+)$/.exec(line);
-      return m === null ? { speaker: null, text: line } : { speaker: m[1]!, text: m[2]! };
+      return m === null
+        ? { speaker: null, text: silkText(line) }
+        : { speaker: m[1]!, text: silkText(m[2]!) };
     });
 }
 
@@ -829,7 +832,7 @@ let noticeTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Shows a short HUD notice, replacing any current one. */
 export function showNotice(text: string): void {
-  hud.notice.value = { id: ++noticeId, text };
+  hud.notice.value = { id: ++noticeId, text: silkText(text) };
   if (noticeTimer !== null) clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => {
     noticeTimer = null;

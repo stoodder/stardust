@@ -31,6 +31,16 @@ export const SAVE_LIMITS = {
   bricksTagIndex: 10_000,
 } as const;
 
+/**
+ * A currency balance as a save may hold it: a whole number in [0, SAVE_LIMITS.currency]. Run end
+ * and purchases clamp with it, so a long campaign (or a dev save near the cap) never writes a save
+ * that validation then refuses.
+ */
+export function clampCurrency(n: number): number {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), SAVE_LIMITS.currency);
+}
+
 /** Ids with no registry yet (scenes, memos, codex entries, grants, medals, flag values). */
 const FREE_ID = /^[a-z][a-z0-9_]{0,47}$/;
 
@@ -331,11 +341,14 @@ function checkUpgrades(
   // Keyed by string so this compiles while UpgradeId is never; every key is checked below.
   const out: Record<string, number> = {};
   for (const [id, rank] of Object.entries(ups)) {
-    if (!isMember(known.upgrades, id)) {
+    const ranks: Readonly<Record<string, number>> = known.upgradeRanks;
+    if (!Object.hasOwn(ranks, id)) {
       c.fail(path, `unknown upgrade id ${JSON.stringify(id.slice(0, 64))}`);
       continue;
     }
-    out[id] = c.int(rank, `${path}.${id}`, 1, SAVE_LIMITS.upgradeRank);
+    // Each item's own rank count: a hostile rank past it would pass a global bound, then crash
+    // every battle start (metaModifiers refuses it).
+    out[id] = c.int(rank, `${path}.${id}`, 1, Math.min(ranks[id] ?? 0, SAVE_LIMITS.upgradeRank));
   }
   return out;
 }

@@ -10,6 +10,7 @@ import type { IdSpace } from '../content/types.ts';
 import type { Bus } from '../shared/bus.ts';
 import type { SimEvent } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
+import { silkText } from '../ui/silk.ts';
 import { hud, type RadioView } from '../ui/state.ts';
 
 /**
@@ -139,8 +140,12 @@ export function radioView(line: RadioLine, cue: RadioLine | null = null): RadioV
   const prev =
     cue === null
       ? null
-      : { name: SPEAKERS[cue.speaker].name, color: SPEAKERS[cue.speaker].color, text: cue.text };
-  return { id: ++radioId, name: look.name, color: look.color, text: line.text, cue: prev };
+      : {
+          name: SPEAKERS[cue.speaker].name,
+          color: SPEAKERS[cue.speaker].color,
+          text: silkText(cue.text),
+        };
+  return { id: ++radioId, name: look.name, color: look.color, text: silkText(line.text), cue: prev };
 }
 
 /** A line on (or waiting for) the ticker: when it was queued and the event batch it came in. */

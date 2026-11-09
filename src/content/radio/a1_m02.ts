@@ -3,8 +3,8 @@
 // systems M2 doesn't have (D031): Bricks's `tower_sold` bark for a tagged turret ("You sold
 // Denise.") and Kip's `arrival_reason = bonus` debrief variant (no name tags, onboarding form, or
 // flags until M3). Bricks names Denise as the first wave clears; the tag itself waits for M3, so
-// for now he names the turret only on the radio. The debrief (`mapWon`) shows on the win's results
-// card, not the ticker (D028).
+// for now he names the turret only on the radio. The debrief (`mapWon`, `mapLost`) shows on the
+// results card, not the ticker (D028).
 import type { RadioLine } from './types.ts';
 
 export const A1_M02_RADIO: readonly RadioLine[] = [
@@ -57,7 +57,20 @@ export const A1_M02_RADIO: readonly RadioLine[] = [
     on: 'enemyKilled',
     enemy: 'hauler',
     speaker: 'bricks',
-    text: 'Strong targeting on the big ones.',
+    text: 'Mortars on the big ones. Rivets bounce off that hide till tier three.',
+  },
+  // The first Hauler through the gate: a pebble in the shoe, logged and not understood.
+  {
+    on: 'enemyLeaked',
+    enemy: 'hauler',
+    speaker: 'quill',
+    text: 'A Hauler got out, sack and all! It looked... relieved? Logging it.',
+  },
+  // A build phase that opens with a big bank (D059): a nudge, never a scold.
+  {
+    on: 'bankNudge',
+    speaker: 'quill',
+    text: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!",
   },
   {
     on: 'countdown',
@@ -71,5 +84,10 @@ export const A1_M02_RADIO: readonly RadioLine[] = [
     on: 'mapWon',
     speaker: 'kip',
     text: "New record, by the way. 'Most Records Set, Terraces Division.' I made the division.",
+  },
+  {
+    on: 'mapLost',
+    speaker: 'bricks',
+    text: "Reset and go again, Sprout. The Haulers aren't going anywhere. Neither am I.",
   },
 ];

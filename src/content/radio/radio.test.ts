@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RAW_CONTENT } from '../registry.ts';
 import { radioLines, RADIO_TABLES } from './index.ts';
 import { SPEAKERS } from './types.ts';
 
@@ -12,7 +13,9 @@ describe('radio tables', () => {
           expect(l.wave).toBeGreaterThanOrEqual(1);
         }
         if (l.on === 'unlock') expect(l.tower).toBeDefined();
-        if (l.on === 'enemyKilled') expect(l.enemy).toBeDefined();
+        if (l.on === 'enemyKilled' || l.on === 'enemyLeaked') {
+          expect(Object.keys(RAW_CONTENT.enemies), `${mapId}: ${l.text}`).toContain(l.enemy);
+        }
       }
     }
   });

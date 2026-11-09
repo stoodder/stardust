@@ -9,7 +9,7 @@ import { at, plot, type CharGrid } from '../helpers.ts';
  * value band (art-direction §1), rope, and the glitter's pink and gold.
  */
 export const SACK_LEGEND = {
-  G: 'gold.4',
+  G: 'brass.4',
   H: 'grime.4',
   J: 'grime.3',
   I: 'grime.2',

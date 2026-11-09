@@ -88,7 +88,7 @@ export const enemyBroodHauler = defineSprite({
   variants: ['skitterkin.ally'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  legend: { S: 'steel.4', T: 'steel.3', ...SACK_LEGEND },
+  legend: { S: 'white.0', T: 'steel.4', ...SACK_LEGEND },
   frames: {
     walk_se_0: hauler('se', 0),
     walk_se_1: hauler('se', 1),

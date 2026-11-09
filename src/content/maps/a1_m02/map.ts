@@ -66,7 +66,7 @@ export const map = defineMapLayout({
     challenge: {
       id: 'aim_for_the_sack',
       name: 'Aim for the Sack!',
-      description: 'No Brood Hauler gets past the pump station.',
+      description: 'No Brood Hauler gets past the pump station (the power node).',
       condition: { not: { passedMarker: { marker: 'pump_station', enemy: 'hauler' } } },
     },
   },

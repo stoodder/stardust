@@ -113,7 +113,8 @@ export interface KnownIds {
   readonly towers: readonly TowerId[];
   readonly abilities: readonly AbilityId[];
   readonly maps: readonly MapId[];
-  readonly upgrades: readonly UpgradeId[];
+  /** Each upgrade id and its rank count: an owned rank is 1..ranks (`UpgradeDef.ranks.length`). */
+  readonly upgradeRanks: Readonly<Partial<Record<UpgradeId, number>>>;
   readonly protocols: readonly ProtocolId[];
   readonly storyFlags: readonly StoryFlagId[];
 }
@@ -123,7 +124,7 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   towers: Object.values(TOWERS).map((t) => t.id),
   abilities: Object.values(ABILITIES).map((a) => a.id),
   maps: Object.values(MAPS).map((m) => m.id),
-  upgrades: Object.values(UPGRADES).map((u) => u.id),
+  upgradeRanks: Object.fromEntries(Object.values(UPGRADES).map((u) => [u.id, u.ranks.length])),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
   storyFlags: FLAG_IDS,
 };

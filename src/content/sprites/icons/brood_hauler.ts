@@ -13,7 +13,7 @@ export const iconEnemyBroodHauler = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'skitterkin',
   outline: 'auto',
-  legend: { S: 'steel.4', T: 'steel.3', ...SACK_LEGEND },
+  legend: { S: 'white.0', T: 'steel.4', ...SACK_LEGEND },
   frames: {
     icon: enemyIcon({
       cx: 7,

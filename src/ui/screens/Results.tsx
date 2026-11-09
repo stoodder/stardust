@@ -5,6 +5,7 @@
 // speakers' name plates (D028). The counter is the Act I line (design/core-loop.md §6.2) and ticks up
 // (art-direction §9). The way on is Continue (base or Shift board) or Retry, with Change loadout
 // beside Retry where the map offers the loadout screen (T220).
+import { silkText } from '../silk.ts';
 import { useEffect, useState } from 'preact/hooks';
 import {
   afterWin,
@@ -96,7 +97,7 @@ function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
           <span class="sd-results-speaker" style={{ color: colorVar(l.color) }}>
             {l.name}
           </span>
-          <span class="sd-results-line">{l.text}</span>
+          <span class="sd-results-line">{silkText(l.text)}</span>
         </li>
       ))}
     </ul>

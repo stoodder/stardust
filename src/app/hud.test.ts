@@ -123,6 +123,10 @@ describe('hud view models', () => {
       { speaker: 'QUILL', text: "Hello, Technician! I'm QUILL." },
       { speaker: null, text: 'No speaker here' },
     ]);
+    // "&" reaches Silkscreen as "and" (D059): QUILL's very first line.
+    expect(briefingLines('QUILL: Logistics & Lethality')).toEqual([
+      { speaker: 'QUILL', text: 'Logistics and Lethality' },
+    ]);
     // A colon deep in a sentence isn't a speaker.
     expect(briefingLines('Note the time and the place: noon, the gate')).toEqual([
       { speaker: null, text: 'Note the time and the place: noon, the gate' },

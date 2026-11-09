@@ -2,6 +2,7 @@
 // Each row shows its shift number, name, medals, and state: Start (open), Replay (won), locked
 // until the shift before is won, or coming soon (its content isn't built yet). The header shows
 // the banks; the footer leads to the base (locked with its hint until A1M1 is won) and Settings.
+import { silkText } from '../silk.ts';
 import { openSettings, playMap, toBase, toTitle } from '../../app/navigation.ts';
 import { focusOnce } from './focus.ts';
 import { formatCount } from './format.ts';
@@ -47,7 +48,7 @@ function ShiftRow({ shift, first }: { shift: ShiftView; first: boolean }) {
   return (
     <li class={`sd-shift sd-shift-${shift.state}`}>
       <span class="sd-shift-index">Shift {shift.index}</span>
-      <span class="sd-shift-name">{shift.name}</span>
+      <span class="sd-shift-name">{silkText(shift.name)}</span>
       <MedalPips earned={shift.medals} />
       <span class="sd-shift-state">{STATE_TEXT[shift.state]}</span>
       {playable ? (

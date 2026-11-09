@@ -25,6 +25,7 @@ import {
 } from '../content/upgrades/index.ts';
 import { isMapWon, isSystemUnlocked, type MetaSystem } from './progress.ts';
 import type { SaveData } from './saveData.ts';
+import { clampCurrency } from './validate.ts';
 
 /** The base's buy panes (each is a MetaSystem). */
 export type StorePane = 'rnd' | 'shop' | 'engineering';
@@ -273,7 +274,7 @@ export function buy(
   }
   const currencies = {
     ...save.currencies,
-    [offer.currency]: save.currencies[offer.currency] - offer.price,
+    [offer.currency]: clampCurrency(save.currencies[offer.currency] - offer.price),
   };
   const next: SaveData = { ...save, currencies };
   switch (item.kind) {

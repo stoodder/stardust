@@ -9,6 +9,7 @@ import { CAMPAIGN } from '../../content/campaign.ts';
 import { MAPS } from '../../content/maps/index.ts';
 import { UPGRADES } from '../../content/upgrades/index.ts';
 import type { MapId, MedalId } from '../../content/types.ts';
+import { withIssuedTowers } from '../issued.ts';
 import type { MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
 import type { MapRecord, SaveData } from '../saveData.ts';
@@ -41,9 +42,8 @@ function afterA1M1(): SaveData {
   const save = createNewSave();
   save.campaign.maps.a1_m01 = won('a1_m01', medalIds('a1_m01'));
   save.currencies.intel = 3;
-  save.unlocks.towers.push('sprinkler'); // issued for A1M2 (campaign.md § 4.1)
   save.stats = { pestsProcessed: 212, runs: 2 };
-  return save;
+  return withIssuedTowers(save); // the Sprinkler, issued for A1M2 (campaign.md § 4.1)
 }
 
 export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {

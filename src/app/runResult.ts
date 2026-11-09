@@ -99,8 +99,25 @@ export function metaRunEndOf(
   };
 }
 
+/** What app/save.ts `recordRun` adds to meta's summary (absent in tests of meta's alone). */
+interface RecordStatus {
+  readonly writeFailed?: string | null;
+  readonly stardustNote?: string | null;
+}
+
+/** A tower id as the HUD's build slots name it (`sprinkler` → "Sprinkler"; hud.ts displayName). */
+function towerLabel(id: string): string {
+  return id
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /** meta's run end, as the results card shows it: every medal the map offers, and the payouts. */
-export function runRewardsOf(input: RunEndInput, summary: RunEndSummary): RunRewards {
+export function runRewardsOf(
+  input: RunEndInput,
+  summary: RunEndSummary & RecordStatus,
+): RunRewards {
   const medals = input.medals.map((m): MedalResult => {
     const won = summary.medals.find((e) => e.id === m.id);
     return {
@@ -117,6 +134,9 @@ export function runRewardsOf(input: RunEndInput, summary: RunEndSummary): RunRew
     stardust: { source, amount, base, wavesResolved: summary.stardust.wavesResolved, waveCount },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
+    issued: summary.issued.map(towerLabel),
+    stardustNote: summary.stardustNote ?? null,
+    saveNotice: summary.writeFailed ?? null,
   };
 }
 
@@ -153,7 +173,7 @@ export function debriefLines(
 export function runResultOf(
   input: RunEndInput,
   outcome: RunOutcome,
-  summary: RunEndSummary | null = null,
+  summary: (RunEndSummary & RecordStatus) | null = null,
 ): RunResult {
   return {
     mapId: input.mapId,

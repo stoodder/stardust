@@ -100,7 +100,20 @@ describe('the run end and the rewards on the card', () => {
       stardust: { source: 'replay', amount: 48, base: 120, wavesResolved: 7, waveCount: 7 },
       intel: 1,
       lifetimePests: 114,
+      stardustNote: null,
+      issued: [],
+      saveNotice: null,
     });
+  });
+
+  it('names the towers a first win issued, and a failed save write', () => {
+    const { summary } = runEnd(createNewSave(), {
+      ...metaRunEndOf(INPUT, 'won'),
+      mapId: 'a1_m01',
+    });
+    const rewards = runResultOf(INPUT, 'won', { ...summary, writeFailed: 'Records hiccup.' }).rewards;
+    expect(rewards?.issued).toEqual(['Sprinkler']);
+    expect(rewards?.saveNotice).toBe('Records hiccup.');
   });
 });
 
@@ -122,8 +135,10 @@ describe('the results card debrief (D028)', () => {
     expect(runResultOf({ ...INPUT, radio: A1_M01_RADIO }, 'won').debrief).toEqual(lines);
   });
 
-  it('has no debrief on an A1M1 loss (the act file writes none)', () => {
-    expect(debriefLines(A1_M01_RADIO, 'lost', null)).toEqual([]);
+  it("shows the map's mapLost lines on a loss (D059: a supportive Bricks line)", () => {
+    const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost').map((l) => l.text);
+    expect(lost.length).toBeGreaterThan(0);
+    expect(texts(debriefLines(A1_M01_RADIO, 'lost', null))).toEqual(lost);
   });
 
   it('puts a first leak from the last 4 s on the card first, so its line is never lost', () => {
@@ -133,12 +148,16 @@ describe('the results card debrief (D028)', () => {
       'Not bad, Sprout.',
       "Don't name things on day one. You get attached.",
     ]);
-    expect(texts(debriefLines(A1_M01_RADIO, 'lost', { ms: 1200, ticks: 144 }))).toEqual([LEAK]);
-    expect(debriefLines(A1_M01_RADIO, 'lost', { ...recent, ms: FIRST_LEAK_RECENT_MS + 1 })).toEqual(
-      [],
-    );
+    const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost').map((l) => l.text);
+    expect(texts(debriefLines(A1_M01_RADIO, 'lost', { ms: 1200, ticks: 144 }))).toEqual([
+      LEAK,
+      ...lost,
+    ]);
+    expect(
+      texts(debriefLines(A1_M01_RADIO, 'lost', { ...recent, ms: FIRST_LEAK_RECENT_MS + 1 })),
+    ).toEqual(lost);
     // Fast-forwarded: moments ago in real time, but long ago in game time.
-    expect(debriefLines(A1_M01_RADIO, 'lost', { ms: 5, ticks: 3000 })).toEqual([]);
+    expect(texts(debriefLines(A1_M01_RADIO, 'lost', { ms: 5, ticks: 3000 }))).toEqual(lost);
     expect(FIRST_LEAK_RECENT_TICKS).toBe(480); // 4 s at 2×
   });
 });

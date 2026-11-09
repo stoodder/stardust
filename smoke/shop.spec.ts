@@ -1,4 +1,4 @@
-// The base's shelves (T204d): R&D Command after A1M1, a purchase that persists and reaches the
+// The base's shelves (T204d): Research Command after A1M1, a purchase that persists and reaches the
 // battle, a refusal that explains itself, and the shop and Engineering on `all_unlocked`. Driven
 // through the real UI by keyboard where a player would use it. Screenshots in
 // test-results/screens/shop/.
@@ -15,11 +15,11 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
-  await expect(page.getByRole('tab', { name: 'R&D' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute('aria-selected', 'true');
   const pane = page.getByRole('tabpanel');
-  await expect(pane).toContainText('R&D Command · QUILL');
+  await expect(pane).toContainText('Research Command · QUILL');
 
-  // R&D offers Mk II and Rapport (2 Intel each); the protocol slot waits for A1M3.
+  // Research offers Mk II and Rapport (2 Intel each); the protocol slot waits for A1M3.
   const mk2 = offerRow(page, 'Orbital Strike Mk II');
   const rapport = offerRow(page, 'Rapport: Sgt. Bricks');
   await expect(mk2).toContainText('+0.5 Orbital Strike radius');
@@ -32,8 +32,8 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await expect(mk2.getByRole('img', { name: 'Rank 0 of 1' })).toBeVisible();
   await shot(page, 'shop', 1, 'rnd-after-a1m1');
 
-  // Keyboard: Tab from the R&D tab reaches Mk II's button; Enter orders it.
-  await expect(page.getByRole('tab', { name: 'R&D' })).toBeFocused();
+  // Keyboard: Tab from the Research tab reaches Mk II's button; Enter orders it.
+  await expect(page.getByRole('tab', { name: 'Research' })).toBeFocused();
   const order = mk2.getByRole('button', { name: /^Order Orbital Strike Mk II, 2 Intel/ });
   await page.keyboard.press('Tab');
   await expect(order).toBeFocused();
@@ -99,7 +99,7 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
   await shot(page, 'shop', 6, 'shop-scrolled');
 
   await page.getByRole('tab', { name: 'Engineering', exact: true }).click();
-  await expect(pane).toContainText('R&D Engineering · QUILL');
+  await expect(pane).toContainText('Engineering · QUILL');
   await expect(offerRow(page, 'Rivet specializations')).toContainText(
     'Unlocks tier 4: Rivet Storm or Railspike',
   );

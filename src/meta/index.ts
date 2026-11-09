@@ -28,6 +28,7 @@ export {
   uncoveredCounters,
   withPreset,
 } from './loadout.ts';
+export { issuedTowers, withIssuedTowers } from './issued.ts';
 export { migrate, migrations } from './migrations.ts';
 export type { MetaCatalog, MetaLoadout } from './modifiers.ts';
 export {
@@ -46,6 +47,7 @@ export {
   SYSTEM_UNLOCKS,
   isMapWon,
   isSystemUnlocked,
+  mapMilestone,
   mapName,
   nextShift,
   shiftBoard,

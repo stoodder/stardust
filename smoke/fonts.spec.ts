@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 // Body text readability (T219): the menus' body text is Silkscreen, which draws "5" and "fi" plainly
 // (Pixelify Sans drew "1.5" as "1.S" and "files" as "Ales"). Screenshots of every screen with body
-// text, for a look: R&D, Shop, Engineering, Settings, the loadout screen, and Results. In
+// text, for a look: Research, Shop, Engineering, Settings, the loadout screen, and Results. In
 // test-results/screens/fonts/.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -12,12 +12,12 @@ const fontOf = (el: Locator) => el.evaluate((e) => getComputedStyle(e).fontFamil
 
 const shiftRow = (page: Page, name: string) => page.getByRole('listitem').filter({ hasText: name });
 
-test('fonts: R&D, Shop, Engineering, and Settings body text is Silkscreen', async ({ page }) => {
+test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen', async ({ page }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
   const pane = page.getByRole('tabpanel');
-  // R&D's effects carry the bug's examples: "+0.5 Orbital Strike radius", "−15% ... cooldown".
+  // Research's effects carry the bug's examples: "+0.5 Orbital Strike radius", "−15% ... cooldown".
   await expect(pane).toContainText('Orbital Strike radius');
   await expect(pane).toContainText('15% Suppressing Fire cooldown');
   expect(await fontOf(page.getByTestId('store-line'))).toMatch(/^"?Silkscreen/);

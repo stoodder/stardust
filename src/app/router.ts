@@ -11,7 +11,7 @@ import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
 import { radioLines } from '../content/radio/index.ts';
 import { loadoutChangeable } from '../ui/screens/loadoutView.ts';
-import { runResult } from '../ui/screens/state.ts';
+import { menuNotice, runResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
@@ -21,6 +21,11 @@ import { closeLoadout, openLoadout } from './loadout.ts';
 import { activeSave, closeSession, loadoutOffered, recordRun, systemOpen } from './save.ts';
 import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
+
+/** The menu notice when a battle can't start (the error itself is logged by navigation). */
+export const BATTLE_FAILED =
+  "That shift couldn't start: Records found a problem with this save. It's safe; export a code " +
+  'from Settings, and try another shift.';
 
 /** How long the frozen battle shows after the map ends, before Results (ms of real time; D028). */
 export const RESULTS_DELAY_MS = 1500;
@@ -92,22 +97,41 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   const mapOf = (request: BattleRequest): string =>
     request.mapId ?? defaults.mapId ?? DEFAULT_MAP_ID;
 
-  /** Starts a battle; `briefing` opens the map's briefing over it (a fresh start, not a retry). */
+  /**
+   * Starts a battle; `briefing` opens the map's briefing over it (a fresh start, not a retry). Its
+   * config is built first: if that throws (a save the sim refuses), the menu stays up with a
+   * notice instead of a blank screen. If the battle itself fails to start, the Shift board shows.
+   */
   const openBattle = (request: BattleRequest, briefing: boolean): Promise<void> => {
+    // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
+    const mapId = mapOf(request);
+    const seed = request.seed ?? defaults.seed ?? randomSeed();
+    let cfg: ReturnType<typeof battleConfig>;
+    try {
+      cfg = battleConfig(mapId, seed, activeSave());
+    } catch (err) {
+      menuNotice.value = BATTLE_FAILED;
+      return Promise.reject(err instanceof Error ? err : new Error(String(err)));
+    }
     stopBattle();
     showBackdrop(false);
     closeLoadout();
     lastRequest = request;
-    // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
-    const mapId = mapOf(request);
-    const seed = request.seed ?? defaults.seed ?? randomSeed();
     setSpeed(1);
     runResult.value = null;
     ended = false;
     wavesCleared = 0;
     firstLeakAt = null;
     endedAt = null;
-    const next = startBattle(game, battleConfig(mapId, seed, activeSave()), { briefing });
+    let next: Battle;
+    try {
+      next = startBattle(game, cfg, { briefing });
+    } catch (err) {
+      menuNotice.value = BATTLE_FAILED;
+      const back = activeSave() === null ? showMenu('title') : showMenu('campaign');
+      return back.then(() => Promise.reject(err instanceof Error ? err : new Error(String(err))));
+    }
+    menuNotice.value = null;
     battle = next;
     const { bus } = next.host;
     bus.on('WaveCleared', () => {
@@ -222,7 +246,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const input: RunEndInput = {
         mapId: sim.map.id,
         waveCount: sim.map.waves.length,
-        maxIntegrity: sim.map.coreIntegrity,
+        maxIntegrity: s.maxIntegrity,
         integrity: s.integrity,
         skitterkinKilled: s.stats.skitterkinKilled,
         wavesCleared,

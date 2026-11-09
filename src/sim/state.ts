@@ -166,6 +166,11 @@ export interface SimState<K extends IdSpace = IdSpace> {
   credits: number;
   /** Core integrity (the meter on Defend maps). */
   integrity: number;
+  /**
+   * The run's starting integrity after modifiers (Reinforced Core, Story's 30; economy.ts
+   * `applyRunModifiers`): the meter's full value, which Results and the HUD show it against.
+   */
+  maxIntegrity: number;
   /** The last wave started (1-based); 0 during the setup phase. */
   wave: number;
   schedule: WaveSchedule;
@@ -238,6 +243,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     outcome: 'playing',
     credits: map.startCredits,
     integrity: map.coreIntegrity,
+    maxIntegrity: map.coreIntegrity,
     wave: 0,
     schedule: {
       phase: 'setup',

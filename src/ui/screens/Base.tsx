@@ -1,4 +1,4 @@
-// The base (T209, D031): R&D, Zibzab's shop, and Engineering as tabs. A tab whose system the
+// The base (T209, D031): Research, Zibzab's shop, and Engineering as tabs. A tab whose system the
 // campaign hasn't opened yet shows a locked pane with what opens it ("Opens after The Audit";
 // meta/progress.ts SYSTEM_UNLOCKS). An open tab shows its shelf (BasePanes.tsx, T204d).
 import { useState } from 'preact/hooks';
@@ -12,7 +12,7 @@ import './screens.css';
 import './base.css';
 
 const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
-  { id: 'rnd', label: 'R&D' },
+  { id: 'rnd', label: 'Research' },
   { id: 'shop', label: 'Shop' },
   { id: 'engineering', label: 'Engineering' },
 ];

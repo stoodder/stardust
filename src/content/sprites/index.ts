@@ -15,7 +15,14 @@ import { fxShadow } from './fx/shadow.ts';
 import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
 import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
-import { iconCore, iconCredits, iconLock, iconTellCarrier, iconTellFast } from './icons/glyphs.ts';
+import {
+  iconCore,
+  iconCredits,
+  iconLock,
+  iconTellArmored,
+  iconTellCarrier,
+  iconTellFast,
+} from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
 import { iconAbilitySuppressingFire } from './icons/suppressing_fire.ts';
@@ -30,7 +37,10 @@ import { propCore } from './props/core.ts';
 import { propDome } from './props/dome.ts';
 import { propFence } from './props/fence.ts';
 import { propFlora } from './props/flora.ts';
+import { propHousing } from './props/housing.ts';
 import { propLettuce } from './props/lettuce.ts';
+import { propRig } from './props/rig.ts';
+import { propScarecrow } from './props/scarecrow.ts';
 import { propRock } from './props/rock.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
@@ -58,6 +68,9 @@ export const SPRITES = [
   propDome,
   propBillboard,
   propLettuce,
+  propRig,
+  propHousing,
+  propScarecrow,
   towerRivet,
   towerRivetHead,
   towerThumper,
@@ -93,6 +106,7 @@ export const SPRITES = [
   iconCore,
   iconLock,
   iconTellFast,
+  iconTellArmored,
   iconTellCarrier,
 ] as const;
 

@@ -59,6 +59,7 @@ import { EnemyView } from '../views/EnemyView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
 import { LinkView, type LinkEnd } from '../views/LinkView.ts';
+import { SackBurstView } from '../views/SackBurstView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { facingOf, tellGlyph } from '../views/spriteInfo.ts';
@@ -114,6 +115,7 @@ export class BattleScene extends Phaser.Scene {
   #core!: CoreView;
   #cursor!: CursorView;
   #links!: LinkView;
+  #sacks!: SackBurstView;
   /**
    * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
    * draws a burst and a ring (a bomblet: its small pop, no ring).
@@ -217,6 +219,7 @@ export class BattleScene extends Phaser.Scene {
       }
     }
     this.#fx = new FxView(ctx, prefersReducedMotion);
+    this.#sacks = new SackBurstView(ctx);
     this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
     this.#cursor = new CursorView(ctx);
     const teach: [number, number][] = [];
@@ -300,6 +303,11 @@ export class BattleScene extends Phaser.Scene {
       bus.on('EnemyDied', (e) => {
         this.#enemies.release(e.uid);
         fx.burst(e.x, e.y); // the Act I death pop
+      }),
+      bus.on('SackBurst', (e) => {
+        // The young run back up the route toward the warren (D059); render-only.
+        const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
+        this.#sacks.burst(e.x, e.y, route, e.dist, e.young);
       }),
       bus.on('EnemyLeaked', (e) => {
         const v = this.#enemies.get(e.uid);
@@ -392,6 +400,7 @@ export class BattleScene extends Phaser.Scene {
       this.#allies.releaseAll();
       this.#offs.length = 0;
       this.#fx.reset();
+      this.#sacks.reset();
       this.#links.reset();
       this.#shells.clear();
     });
@@ -406,6 +415,7 @@ export class BattleScene extends Phaser.Scene {
     this.#syncViews();
     const state = this.#deps.sim.state;
     this.#fx.update(delta, state.zones);
+    this.#sacks.update(delta);
     this.#core.update(state.integrity, state.towerAtTile);
     this.#syncTeach();
   }

@@ -165,6 +165,42 @@ describe('the save session', () => {
     expect(newGame(2)).toMatchObject({ ok: false });
   });
 
+  it('a win issues the next map\'s towers (the Sprinkler after A1M1), once', () => {
+    newGame(1);
+    expect(run('a1_m01', 20)).toMatchObject({ issued: ['sprinkler'] });
+    expect(activeSave()?.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
+    expect(run('a1_m01', 20)).toMatchObject({ issued: [] });
+    expect(activeSave()?.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
+  });
+
+  it('a save written before its towers were issued catches up when loaded or imported', async () => {
+    const old = createNewSave();
+    old.campaign.maps.a1_m01 = { completed: true, medals: ['victory'], bestMeter: 20 };
+    const w = await exportCode(old, 0);
+    const check = await checkImport(w);
+    if (!check.ok) throw new Error(check.message);
+    expect(importInto(2, check.save)).toEqual({ ok: true });
+    expect(activeSave()?.unlocks.towers).toContain('sprinkler');
+    closeSession();
+    expect(openSlot(2)).toEqual({ ok: true });
+    expect(activeSave()?.unlocks.towers).toContain('sprinkler');
+  });
+
+  it('a run end reports a failed write, and notes where unspendable Stardust goes', () => {
+    newGame(1);
+    expect(run('a1_m01', 20)).toMatchObject({ writeFailed: null, stardustNote: null });
+    store.set = () => {
+      throw new Error('quota');
+    };
+    const r = run('a1_m02', 20, { mapStardust: 130 });
+    expect(r?.writeFailed).toMatch(/Records couldn't file that/);
+    expect(r?.stardustNote).toBe(
+      "Banked for Zibzab's shop. Opens after Shift 3 (coming soon).",
+    );
+    // The session keeps the run.
+    expect(activeSave()?.currencies.stardust).toBe(130);
+  });
+
   it('a storage failure is reported, not thrown', () => {
     const full = new MemoryStore();
     full.set = () => {

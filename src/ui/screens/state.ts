@@ -58,6 +58,19 @@ export interface RunRewards {
   readonly intel: number;
   /** The lifetime Pests Processed after this run (design/core-loop.md § 6.2). */
   readonly lifetimePests: number;
+  /**
+   * Where the Stardust goes while it can't be spent yet ("Banked for Zibzab's shop. Opens after
+   * Shift 3 (coming soon)."), for the payroll's Stardust line; null once the shop is open or when
+   * the run paid none.
+   */
+  readonly stardustNote: string | null;
+  /** Display names of the towers this win issued for the next map (the Sprinkler after A1M1). */
+  readonly issued: readonly string[];
+  /**
+   * The save slot write failed (null when it held): the run counts for this session only, and this
+   * message says so in Records' voice.
+   */
+  readonly saveNotice: string | null;
 }
 
 /** The last finished run, or null before any run has ended. */
@@ -127,3 +140,10 @@ export const campaign = signal<CampaignView | null>(null);
 
 /** The three save slots, refreshed whenever one changes. */
 export const slots = signal<readonly SlotView[]>([]);
+
+/**
+ * A notice for the menus (the Shift board, the loadout screen): set when a battle couldn't start
+ * (its config failed, say a save the sim refuses) and the menu stayed up; null otherwise. The
+ * router clears it whenever a battle opens.
+ */
+export const menuNotice = signal<string | null>(null);

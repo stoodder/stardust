@@ -175,6 +175,7 @@ export function applyRunModifiers(
   state.credits = credits > 0 ? credits : 0;
   const integrity = economyValue(map.coreIntegrity, economyTerms(modifiers, 'coreIntegrity'));
   state.integrity = integrity > 1 ? integrity : 1;
+  state.maxIntegrity = state.integrity;
   const errors: string[] = [];
   for (const stat of ['bounty', 'earlyCallBonus'] as const) {
     const t = economyTerms(modifiers, stat);

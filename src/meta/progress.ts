@@ -67,9 +67,23 @@ export function isSystemUnlocked(
   return devUnlocks.includes(system) || isMapWon(save, SYSTEM_UNLOCKS[system]);
 }
 
-/** What opens a locked system, in words for its locked pane ("Opens after The Audit"). */
-export function unlockHint(system: MetaSystem): string {
-  return `Opens after ${mapName(SYSTEM_UNLOCKS[system])}`;
+/**
+ * A planned map as the gating copy names it: its name while the Shift board lists it ("Orientation
+ * Day"), else its position, so the copy never names a map the player can't see yet ("Shift 3
+ * (coming soon)"). An id off the plan is itself.
+ */
+export function mapMilestone(id: string, size: number = SHIFT_BOARD_SIZE): string {
+  const index = CAMPAIGN_PLAN.findIndex((m) => m.id === id);
+  if (index < 0) return id;
+  return index < size ? mapName(id) : `Shift ${index + 1} (coming soon)`;
+}
+
+/**
+ * What opens a locked system, in words for its locked pane: "Opens after Orientation Day", or
+ * "Opens after Shift 3 (coming soon)" for a map past the Shift board (mapMilestone).
+ */
+export function unlockHint(system: MetaSystem, size: number = SHIFT_BOARD_SIZE): string {
+  return `Opens after ${mapMilestone(SYSTEM_UNLOCKS[system], size)}`;
 }
 
 /** A Shift board row's state. */

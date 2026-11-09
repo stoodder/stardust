@@ -7,7 +7,7 @@ import type { FlagRuleStats } from '../story/flags.ts';
 import { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
 import { runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
-import { validateSave } from './validate.ts';
+import { SAVE_LIMITS, clampCurrency, validateSave } from './validate.ts';
 
 /** A run on A1M1, priced like a 120-Stardust map with 8 waves (the real A1M1 pays 0). */
 const RUN: RunEndInput = {
@@ -182,6 +182,31 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
     expect(before).toEqual(frozen);
     expect(validateSave(save).ok).toBe(true);
     expect(validateSave(runEnd(save, lost(2)).save).ok).toBe(true);
+  });
+
+  it('clamps the bank to the save limit, so a run end never writes a save validation refuses', () => {
+    const rich = createNewSave();
+    rich.currencies = { stardust: SAVE_LIMITS.currency - 10, intel: SAVE_LIMITS.currency };
+    const { save } = runEnd(rich, RUN);
+    expect(save.currencies).toEqual({
+      stardust: SAVE_LIMITS.currency,
+      intel: SAVE_LIMITS.currency,
+    });
+    expect(validateSave(save).ok).toBe(true);
+    expect(clampCurrency(-3)).toBe(0);
+    expect(clampCurrency(Number.NaN)).toBe(0);
+    expect(clampCurrency(12.7)).toBe(12);
+  });
+
+  it('issues the next map\'s towers on the first win of the map before it (meta/issued.ts)', () => {
+    const first = runEnd(createNewSave(), RUN);
+    expect(first.summary.issued).toEqual(['sprinkler']);
+    expect(first.save.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
+    expect(runEnd(first.save, RUN).summary.issued).toEqual([]);
+    // A loss issues nothing (the map isn't won).
+    const loss = runEnd(createNewSave(), lost(3));
+    expect(loss.summary.issued).toEqual([]);
+    expect(loss.save.unlocks.towers).toEqual(['rivet', 'thumper']);
   });
 });
 

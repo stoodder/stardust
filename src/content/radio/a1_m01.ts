@@ -1,8 +1,8 @@
 // A1M1's radio (story/campaign/act1.md § A1M1, *Radio*, *Barks*, and *Debrief*), verbatim. Lines
 // that need a system the game doesn't have yet are left out: Goldie's `arrival_reason = lettuce`
 // variant (no onboarding form or flags). Bricks's W2 line is in the briefing (D026), so the W2 slot has none; the first wave's
-// clear plays the `wave_cleared` jingle barks there instead. The debrief (`mapWon`) shows on the
-// win's results card, not the ticker (D028).
+// clear plays the `wave_cleared` jingle barks there instead. The debrief (`mapWon`, `mapLost`)
+// shows on the results card, not the ticker (D028).
 import type { RadioLine } from './types.ts';
 
 export const A1_M01_RADIO: readonly RadioLine[] = [
@@ -40,6 +40,12 @@ export const A1_M01_RADIO: readonly RadioLine[] = [
     speaker: 'quill',
     text: "Perfect wave! I'd give you a sticker, but stickers are Tier 2.",
   },
+  // A build phase that opens with a big bank (D059): a nudge, never a scold.
+  {
+    on: 'bankNudge',
+    speaker: 'quill',
+    text: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!",
+  },
   {
     on: 'countdown',
     wave: 6,
@@ -62,4 +68,9 @@ export const A1_M01_RADIO: readonly RadioLine[] = [
   // The debrief, on the results card (D028).
   { on: 'mapWon', speaker: 'bricks', text: 'Not bad, Sprout.' },
   { on: 'mapWon', speaker: 'bricks', text: "Don't name things on day one. You get attached." },
+  {
+    on: 'mapLost',
+    speaker: 'bricks',
+    text: 'Back on the pads, Sprout. Everybody loses some lettuce on day one.',
+  },
 ];

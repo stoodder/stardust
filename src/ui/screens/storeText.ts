@@ -3,6 +3,7 @@
 // framing and thank-you lines. The catalog's item copy is content/upgrades/copy.ts's (T210c);
 // these are the screens' own strings. They show from Act I to the finale, so like the catalog copy
 // they use no exclamation points and no protected word (story/style-guide.md §§ 2, 3, 6.3, 6.4).
+import { silkText } from '../silk.ts';
 import { displayName } from '../../app/hud.ts';
 import { ABILITIES } from '../../content/abilities/index.ts';
 import { TOWERS } from '../../content/towers/index.ts';
@@ -132,9 +133,9 @@ export function effectText(o: Offer): string {
 export function offerName(o: Offer): string {
   switch (o.item.kind) {
     case 'upgrade':
-      return lookup(UPGRADE_DEFS, o.item.id)?.name ?? o.item.id;
+      return silkText(lookup(UPGRADE_DEFS, o.item.id)?.name ?? o.item.id);
     case 'protocol':
-      return lookup(PROTOCOL_DEFS, o.item.id)?.name ?? o.item.id;
+      return silkText(lookup(PROTOCOL_DEFS, o.item.id)?.name ?? o.item.id);
     case 'specs':
       return `${towerName(o.item.tower)} specializations`;
     default:
@@ -149,9 +150,9 @@ export const MISSING_COPY = 'Copy pending.';
 export function offerCopy(o: Offer): string | null {
   switch (o.item.kind) {
     case 'upgrade':
-      return lookup(UPGRADE_DEFS, o.item.id)?.copy ?? MISSING_COPY;
+      return silkText(lookup(UPGRADE_DEFS, o.item.id)?.copy ?? MISSING_COPY);
     case 'protocol':
-      return lookup(PROTOCOL_DEFS, o.item.id)?.copy ?? MISSING_COPY;
+      return silkText(lookup(PROTOCOL_DEFS, o.item.id)?.copy ?? MISSING_COPY);
     case 'specs':
       return null;
     default:
@@ -173,7 +174,7 @@ export function arrivalText(o: Offer): string {
 
 /** Who presents each pane, and how. */
 export interface Presenter {
-  /** The pane's owner line ("R&D Command · QUILL"). */
+  /** The pane's owner line ("Research Command · QUILL"). */
   readonly who: string;
   /** The speaker's name, for the thank-you line. */
   readonly speaker: string;
@@ -191,7 +192,7 @@ export interface Presenter {
 
 export const PRESENTERS: Readonly<Record<StorePane, Presenter>> = {
   rnd: {
-    who: 'R&D Command · QUILL',
+    who: 'Research Command · QUILL',
     speaker: 'QUILL',
     intro:
       'Every medal files one Intel here, and Intel buys options. I keep the paperwork. I like paperwork.',
@@ -220,7 +221,7 @@ export const PRESENTERS: Readonly<Record<StorePane, Presenter>> = {
     owned: 'You own the whole thing already. Zibzab does not sell things twice. Usually.',
   },
   engineering: {
-    who: 'R&D Engineering · QUILL',
+    who: 'Engineering · QUILL',
     speaker: 'QUILL',
     intro:
       'Tier approvals are signed. One unlock opens both tier-4 specializations of a turret; you pick in the field.',

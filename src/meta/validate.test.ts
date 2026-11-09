@@ -184,11 +184,25 @@ describe('validateSave', () => {
   });
 
   it('checks upgrade ranks against the catalog it is given', () => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- UpgradeId is never until T204a, so the test brings its own catalog
-    const known = { ...LIVE_KNOWN_IDS, upgrades: ['mk2'] } as unknown as KnownIds;
-    expect(validateSave(variant('upgrades', { mk2: 1 }), known).ok).toBe(true);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test brings its own catalog ids
+    const known = { ...LIVE_KNOWN_IDS, upgradeRanks: { mk2: 1, tune: 3 } } as unknown as KnownIds;
+    expect(validateSave(variant('upgrades', { mk2: 1, tune: 3 }), known).ok).toBe(true);
     expect(errorsOf(variant('upgrades', { mk2: 0 }), known).join()).toContain('data.upgrades.mk2');
     expect(errorsOf(variant('upgrades', { mk2: 11 }), known).join()).toContain('data.upgrades.mk2');
+  });
+
+  it("refuses a rank past the item's own rank count (C1: it would crash every battle start)", () => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test brings its own catalog ids
+    const known = { ...LIVE_KNOWN_IDS, upgradeRanks: { mk2: 1, tune: 3 } } as unknown as KnownIds;
+    expect(errorsOf(variant('upgrades', { mk2: 2 }), known)).toEqual([
+      'data.upgrades.mk2: expected an integer in [1, 1], got 2',
+    ]);
+    expect(errorsOf(variant('upgrades', { tune: 4 }), known).join()).toContain('[1, 3], got 4');
+    // The live catalog: every item's top rank is valid, one past it is not.
+    for (const [id, ranks] of Object.entries(LIVE_KNOWN_IDS.upgradeRanks)) {
+      expect(validateSave(variant('upgrades', { [id]: ranks })).ok, id).toBe(true);
+      expect(validateSave(variant('upgrades', { [id]: (ranks ?? 0) + 1 })).ok, id).toBe(false);
+    }
   });
 
   it('accepts every documented field filled in', () => {

@@ -80,10 +80,20 @@ describe('offer text', () => {
     }
   });
 
-  it('the presenters use no exclamation points', () => {
+  it('the presenters use no exclamation points, and no "&" (Silkscreen draws it as "$"; D059)', () => {
     for (const p of Object.values(PRESENTERS)) {
       for (const line of [p.who, p.intro, p.owned, ...p.thanks]) {
         expect(line).not.toContain('!');
+        expect(line).not.toContain('&');
+      }
+    }
+  });
+
+  it('never hands an "&" to Silkscreen: every name and copy line goes through silkText', () => {
+    for (const pane of ['rnd', 'shop', 'engineering'] as const) {
+      for (const o of shelf(DEV_SAVES.all_unlocked.build(), pane, [pane])) {
+        expect(offerName(o)).not.toContain('&');
+        expect(offerCopy(o) ?? '').not.toContain('&');
       }
     }
   });

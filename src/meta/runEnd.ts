@@ -7,6 +7,7 @@ import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
 import { withIssuedTowers } from './issued.ts';
 import { medalPayout, stardustPayout, type EarnedMedal, type StardustPayout } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
+import { clampCurrency } from './validate.ts';
 
 /** What a run end reads from the finished battle. */
 export interface RunEndInput {
@@ -119,8 +120,8 @@ export function runEnd(
     story: { ...save.story, flags: { ...save.story.flags, ...flags } },
     campaign: { maps: { ...save.campaign.maps, [input.mapId]: record } },
     currencies: {
-      stardust: save.currencies.stardust + stardust.amount,
-      intel: save.currencies.intel + intel,
+      stardust: clampCurrency(save.currencies.stardust + stardust.amount),
+      intel: clampCurrency(save.currencies.intel + intel),
     },
     stats: { pestsProcessed, runs: save.stats.runs + 1 },
   };

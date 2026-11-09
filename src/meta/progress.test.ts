@@ -9,6 +9,7 @@ import {
   mapName,
   nextShift,
   shiftBoard,
+  mapMilestone,
   unlockHint,
 } from './progress.ts';
 import { createNewSave } from './saveData.ts';
@@ -54,8 +55,13 @@ describe('gating', () => {
 
   it('hints name the map that opens a system', () => {
     expect(unlockHint('rnd')).toBe('Opens after Orientation Day');
-    expect(unlockHint('shop')).toBe('Opens after Special Delivery');
-    expect(unlockHint('engineering')).toBe('Opens after The Audit');
+    // G8: never a map name the Shift board doesn't show yet.
+    expect(unlockHint('shop')).toBe('Opens after Shift 3 (coming soon)');
+    expect(unlockHint('engineering')).toBe('Opens after Shift 4 (coming soon)');
+    // Once the board lists the map, its name.
+    expect(unlockHint('shop', 3)).toBe('Opens after Special Delivery');
+    expect(mapMilestone('a1_m02')).toBe('Hatching Season');
+    expect(mapMilestone('dev_range')).toBe('dev_range');
   });
 });
 

@@ -230,7 +230,7 @@ describe('Brood Hauler and its sack', () => {
       const sackTop = rows.findIndex((r) => /[GHJ]/.test(r));
       expect(sackTop, f).toBeLessThanOrEqual(bounds(rows).y0 + 1);
     }
-    expect(def('enemy.brood_hauler').legend).toMatchObject({ S: 'steel.4', T: 'steel.3' });
+    expect(def('enemy.brood_hauler').legend).toMatchObject({ S: 'white.0', T: 'steel.4' });
   });
 
   it('has an 8×8 carrier glyph and a wave-preview icon', () => {
