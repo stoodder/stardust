@@ -24,7 +24,8 @@ function outlined(g: CharGrid, layer: CharGrid): void {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (solid(x, y)) continue;
-      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1)) plot(g, x, y, 'x');
+      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))
+        plot(g, x, y, 'x');
     }
   }
   layer.forEach((r, y) => r.forEach((ch, x) => ch !== '.' && plot(g, x, y, ch)));

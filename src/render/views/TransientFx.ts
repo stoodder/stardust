@@ -284,9 +284,9 @@ export class TransientFx {
 
   /**
    * An explosive burst on the ground at grid (x, y), after `delayMs`; `small` for a bomblet's pop
-   * (fx.bomblet_burst).
+   * (fx.bomblet_burst); `liftPx` raises it into the air (a flak burst at a flyer's height).
    */
-  burst(x: number, y: number, delayMs = 0, small = false): void {
+  burst(x: number, y: number, delayMs = 0, small = false, liftPx = 0): void {
     const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
     this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
     gridToScreen(x, y, this.ctx.origin, pos);
@@ -298,7 +298,7 @@ export class TransientFx {
       b.small = small;
     }
     // The burst's anchor is its base, so lift it to sit centered on the ground point.
-    b.sprite.setPosition(pos.x, pos.y + 4);
+    b.sprite.setPosition(pos.x, pos.y + 4 - liftPx);
     b.sprite.stop().setVisible(false);
     b.ms = -delayMs;
     b.active = true;

@@ -14,8 +14,8 @@
 // - `sneeze_<facing>` (once, as the sneeze lands): ACHOO, squashed flat, a burst of fluff out in
 //   front; then a dazed blink.
 // - `dig_<facing>` (`bossTelling`, a dig next): the 1.5 s dig-in, nose down, dirt flung up.
-// - `under` (`burrowed`): a travelling mound with her crown poking out.
-// - `surface` (once, as she comes up): the mound bursts and she pops out shaking off dirt.
+// - `under_<facing>` (`burrowed`): a travelling mound with her crown poking out.
+// - `surface_<facing>` (once, as she comes up): the mound bursts and she pops out shaking off dirt.
 // - `panic_<facing>` (phase 3: Haste and the huddle): a frantic scurry, eyes wide, sweat flying,
 //   speed lines (the `haste_aura` tell's `orange.3`), her flank spots lit.
 // - `puff_<facing>` (`invulnerableTicks` > 0): puffed up into a bristling ball, eyes shut. Render
@@ -23,7 +23,7 @@
 // - `flee_<facing>` (`leaving`, the `driveOff`): running for the edge, wailing, the youngling
 //   hanging on.
 import { defineSprite } from '../defineSprite.ts';
-import { at, grid, hash01, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import { at, grid, hash01, mirrorRows, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 const W = 56;
 const H = 44;
@@ -85,14 +85,7 @@ const BABY_SE = ['....dc...', '...xbx...', '.xx434xx.', 'x4434443x', 'x43wk3wkx'
 const BABY_NE = ['...cd....', '...xbx...', '.xx434xx.', 'x4434443x', 'xwk3wk33x', 'xkk3kk33x', 'x33333+3x', '.x33333x.', '..xxxxx..'] as const;
 
 /** The big fluffy body: shaded from the upper left, in curls of fur, with a butter belly. */
-function fluff(
-  g: CharGrid,
-  cx: number,
-  cy: number,
-  rx: number,
-  ry: number,
-  facing: Facing,
-): void {
+function fluff(g: CharGrid, cx: number, cy: number, rx: number, ry: number, facing: Facing): void {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const dx = (x + 0.5 - cx) / rx;
@@ -102,7 +95,9 @@ function fluff(
       if (d > 1 + (hash01(x, y, 7) - 0.5) * 0.08) continue;
       const lit = -0.6 * dx - 0.8 * dy;
       let ch = '3';
-      if (lit > 0.5 && d < 0.75 && d > 0.3) ch = '4';
+      // Seen from behind (NE) the sun is over her shoulder: her broad back takes a bigger lit cap.
+      const cap = facing === 'se' ? 0.5 : 0.1;
+      if (lit > cap && d < (facing === 'se' ? 0.75 : 0.86) && d > 0.3) ch = '4';
       else if (lit < -0.45 && d > 0.55) ch = d > 0.88 ? '1' : '2';
       // The butter belly, low and toward her front.
       const bx = facing === 'se' ? dx - 0.25 : dx;
@@ -136,6 +131,12 @@ function body(p: Pose): CharGrid {
   const ry = BASE.ry + (p.dry ?? 0);
   const g = grid(W, H);
   fluff(g, cx, cy, rx, ry, p.facing);
+  if (p.facing === 'ne') {
+    // Seen from behind she is lit across her whole broad back (the sun over her shoulder), so the
+    // back view stays in the actors' value band without the butter belly: shadows come up a step.
+    const lift: Readonly<Record<string, string>> = { '1': '2', '2': '3' };
+    for (const row of g) row.forEach((ch, x) => (row[x] = lift[ch] ?? ch));
+  }
   const x0 = Math.round(cx);
   const y0 = Math.round(cy);
   const top = Math.round(cy - ry);
@@ -279,9 +280,7 @@ function frame(p: Pose, extra: readonly Stamp[] = []): string[] {
 }
 
 /** Mirrors stamp rows left to right (for the NE view's effects). */
-function flip(src: readonly string[]): string[] {
-  return src.map((r) => [...r].toReversed().join(''));
-}
+const flip = mirrorRows;
 
 // ── Frames ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -390,7 +389,7 @@ function dig(facing: Facing, k: 0 | 1): string[] {
 }
 
 /** The mound she travels under, her crown poking out, the earth rippling as she goes. */
-function under(k: 0 | 1): string[] {
+function under(facing: Facing, k: 0 | 1): string[] {
   const g = grid(W, H);
   const cx = AX + 0.5;
   for (let y = 0; y < H; y++) {
@@ -405,8 +404,11 @@ function under(k: 0 | 1): string[] {
   }
   // The crown pokes out on top, with a tuft of her fur.
   const top = H - 8 - k;
-  stamp(g, AX - 3, top + 1, ['.34.43.', '3443443']);
-  crown(g, AX, top + 1);
+  // Facing NE the crown sits a little back, as it does on her head, with a clod on the tuft.
+  const crownX = facing === 'se' ? AX : AX - 2;
+  stamp(g, crownX - 3, top + 1, ['.34.43.', '3443443']);
+  crown(g, crownX, top + 1);
+  if (facing === 'ne') stamp(g, crownX + 4, top + 2, ['N']);
   // Clods kicked up as she goes.
   stamp(g, k === 0 ? 3 : 6, H - 6 - k, ['O.', '.N']);
   stamp(g, k === 0 ? 41 : 38, H - 5 + k, ['.O', 'N.']);
@@ -414,32 +416,30 @@ function under(k: 0 | 1): string[] {
 }
 
 /** Surfacing: the mound bursts with her head out; then she is up, shaking the dirt off. */
-function surface(k: 0 | 1): string[] {
+function surface(facing: Facing, k: 0 | 1): string[] {
   if (k === 0) {
-    return frame(
-      { facing: 'se', dy: 7, eyes: 'wide', mouth: 'o', legs: 'none', ground: H - 6 },
+    return frame({ facing, dy: 7, eyes: 'wide', mouth: 'o', legs: 'none', ground: H - 6 }, [
       [
-        [3, H - 7, [
+        3,
+        H - 7,
+        [
           '....N..O..........O...N.....O...N...O..',
           '..MNNONNMNOONN.NNNOONNMNNONNOONNNMNNON.',
           '.MNNMNNNMNNNNMNNMNNNMNNNNMNNMNNNMNNNNMN',
           'MMNMMMNMMMMNMMMMNMMMNMMMMNMMNMMMNMMMMNM',
           '.MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM.',
-        ]],
-        [1, 3, ['O....N.......O', '...O....N.....', '.N.....O...N..']],
-        [36, 5, ['N...O...', '..O...N.', 'O.....O.']],
+        ],
       ],
-    );
+      [1, 3, ['O....N.......O', '...O....N.....', '.N.....O...N..']],
+      [36, 5, ['N...O...', '..O...N.', 'O.....O.']],
+    ]);
   }
-  return frame(
-    { facing: 'se', dy: 0, drx: 1, dry: -0.5, eyes: 'squint', mouth: 'grit', legs: 2 },
-    [
-      [2, 14, ['N', '.', 'O']],
-      [43, 14, ['O', '.', 'N']],
-      [5, 30, ['.O', 'N.']],
-      [40, 31, ['N.', '.O']],
-    ],
-  );
+  return frame({ facing, dy: 0, drx: 1, dry: -0.5, eyes: 'squint', mouth: 'grit', legs: 2 }, [
+    [2, 14, ['N', '.', 'O']],
+    [43, 14, ['O', '.', 'N']],
+    [5, 30, ['.O', 'N.']],
+    [40, 31, ['N.', '.O']],
+  ]);
 }
 
 /** Phase 3: a frantic scurry, eyes wide, sweat flying, speed lines behind (`haste_aura`). */
@@ -509,7 +509,8 @@ function framesFor<T extends number>(
   make: (f: Facing, k: T) => string[],
 ): Record<string, string[]> {
   const out: Record<string, string[]> = {};
-  for (const f of ['se', 'ne'] as const) for (const k of steps) out[`${name}_${f}_${k}`] = make(f, k);
+  for (const f of ['se', 'ne'] as const)
+    for (const k of steps) out[`${name}_${f}_${k}`] = make(f, k);
   return out;
 }
 
@@ -539,10 +540,8 @@ export const enemyChitterbloom = defineSprite({
     ...framesFor('tell', [0, 1], tell),
     ...framesFor('sneeze', [0, 1], sneeze),
     ...framesFor('dig', [0, 1], dig),
-    under_0: under(0),
-    under_1: under(1),
-    surface_0: surface(0),
-    surface_1: surface(1),
+    ...framesFor('under', [0, 1], under),
+    ...framesFor('surface', [0, 1], surface),
     ...framesFor('panic', [0, 1], panic),
     ...framesFor('puff', [0, 1], puff),
     ...framesFor('flee', [0, 1], flee),
@@ -564,8 +563,14 @@ export const enemyChitterbloom = defineSprite({
     dig_sw: { mirrorOf: 'dig_se' },
     dig_ne: { frames: ['dig_ne_0', 'dig_ne_1'], fps: 6 },
     dig_nw: { mirrorOf: 'dig_ne' },
-    under: { frames: ['under_0', 'under_1'], fps: 6 },
-    surface: { frames: ['surface_0', 'surface_1'], fps: 4, loop: false },
+    under_se: { frames: ['under_se_0', 'under_se_1'], fps: 6 },
+    under_sw: { mirrorOf: 'under_se' },
+    under_ne: { frames: ['under_ne_0', 'under_ne_1'], fps: 6 },
+    under_nw: { mirrorOf: 'under_ne' },
+    surface_se: { frames: ['surface_se_0', 'surface_se_1'], fps: 4, loop: false },
+    surface_sw: { mirrorOf: 'surface_se' },
+    surface_ne: { frames: ['surface_ne_0', 'surface_ne_1'], fps: 4, loop: false },
+    surface_nw: { mirrorOf: 'surface_ne' },
     panic_se: { frames: ['panic_se_0', 'panic_se_1'], fps: 10 },
     panic_sw: { mirrorOf: 'panic_se' },
     panic_ne: { frames: ['panic_ne_0', 'panic_ne_1'], fps: 10 },

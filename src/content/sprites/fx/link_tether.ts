@@ -4,6 +4,8 @@
 // ground. Shape and color both name the link (art-direction §8: color is never the only signal):
 //   - Crossfire (Rivet + Thumper): a solid `orange` line, the safety color, with white-hot beads.
 //   - Sitting Ducks (Thumper + Sprinkler): a dashed `blue` line, the chill, with white beads.
+//   - Conductive (Zapcoil + Sprinkler): a zigzag `teal.3` line, water carrying a spark, kinked
+//     1 px every 2 pixels so it reads electric, with white beads (T312a).
 // One frame set per link and direction. All frames share one canvas; the anchor is tower A's
 // ground point (its tile center), so the view places every frame at A and never measures it.
 import { defineSprite } from '../defineSprite.ts';
@@ -28,8 +30,9 @@ const SCREEN: Readonly<Record<TetherDir, readonly [number, number]>> = {
 
 /** Links with tether art, and how each draws: body, bead, and whether the line is dashed. */
 const STYLE = {
-  crossfire: { body: 'd', bead: 'e', dashed: false },
-  sitting_ducks: { body: 'B', bead: 'w', dashed: true },
+  crossfire: { body: 'd', bead: 'e', dashed: false, zigzag: false },
+  sitting_ducks: { body: 'B', bead: 'w', dashed: true, zigzag: false },
+  conductive: { body: 'T', bead: 'w', dashed: false, zigzag: true },
 } as const;
 export type TetherLink = keyof typeof STYLE;
 
@@ -92,20 +95,26 @@ function tether(link: TetherLink, dir: TetherDir, phase: number): string[] {
   // The under-stroke first, so the line overwrites it wherever the arc doubles back.
   // Dashed lines draw 2 pixels on, 1 off.
   const gap = (i: number): boolean => s.dashed && i % 3 === 2;
+  // A zigzag line kinks 1 px off the arc for every other pair of pixels (sideways on the
+  // vertical tether, up elsewhere); the ends stay plugged in.
+  const kink = (i: number): number =>
+    s.zigzag && i > 0 && i < pts.length - 1 && (i >> 1) % 2 === 1 ? 1 : 0;
+  const kx = (i: number): number => (dir === 's' ? kink(i) : 0);
+  const ky = (i: number): number => (dir === 's' ? 0 : -kink(i));
   pts.forEach(([x, y], i) => {
-    if (!gap(i)) plot(g, x, y + 1, 'x');
+    if (!gap(i)) plot(g, x + kx(i), y + ky(i) + 1, 'x');
   });
   pts.forEach(([x, y], i) => {
     const bead = (i - phase + PERIOD * 64) % PERIOD === 0;
     if (gap(i) && !bead) return;
-    plot(g, x, y, bead ? s.bead : s.body);
+    plot(g, x + kx(i), y + ky(i), bead ? s.bead : s.body);
   });
   // Plugged in at both ends: a white-hot knot.
   for (const p of [pts[0], pts.at(-1)]) if (p !== undefined) plot(g, p[0], p[1], 'w');
   return rows(g);
 }
 
-const LINKS: readonly TetherLink[] = ['crossfire', 'sitting_ducks'];
+const LINKS: readonly TetherLink[] = ['crossfire', 'sitting_ducks', 'conductive'];
 const DIRS: readonly TetherDir[] = ['e', 'se', 'ne', 's'];
 
 const frames: Record<string, string[]> = {};
@@ -127,7 +136,7 @@ export const fxLinkTether = defineSprite({
   size: { w: W, h: H },
   anchor: { x: OX, y: OY },
   palette: 'everglow',
-  legend: { B: 'blue.3' },
+  legend: { B: 'blue.3', T: 'teal.3' },
   frames,
   anims,
 });

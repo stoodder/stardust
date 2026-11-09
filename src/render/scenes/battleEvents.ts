@@ -1,7 +1,9 @@
 // The playfield's sim-event wiring (T225 split from BattleScene.ts): views are created and released
 // from sim events, and the event-driven effects and feedback juice (D026, D059) fire from them:
 // build dust and costs, upgrade and specialize rings, link tethers and callouts, deaths, leaks,
-// shells and bomblets, the strike's landing, and Bricks's shots. Render-only: it reads sim state.
+// shells and bomblets, the strike's landing, and Bricks's shots; and M3's (T312a): flak climbing
+// to a flyer and bursting there, Zapcoil's chain arcs hop by hop, Gerald's plink and exit, and the
+// salvage a cleared wreck pays. Render-only: it reads sim state.
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -9,14 +11,17 @@ import type { Sim, SimEvent, Tower } from '../../sim/index.ts';
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import type { Vec2 } from '../iso.ts';
 import type { AllyView } from '../views/AllyView.ts';
+import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
 import { calloutText, LINK_CALLOUT, type LinkEnd, type LinkView } from '../views/LinkView.ts';
+import type { PlinkFx } from '../views/PlinkFx.ts';
 import type { ProjectileView } from '../views/ProjectileView.ts';
 import type { SackBurstView } from '../views/SackBurstView.ts';
 import { facingOf, tellGlyph } from '../views/spriteInfo.ts';
 import type { TowerView } from '../views/TowerView.ts';
+import { AIR_LIFT_PX, BODY_LIFT_PX } from '../views/TransientFx.ts';
 import type { ViewPool } from '../views/ViewPool.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
 import {
@@ -46,6 +51,18 @@ export type LiveTower = DeepReadonly<Tower>;
 
 /** An ally's muzzle point (scratch). */
 const muzzle: Vec2 = { x: 0, y: 0 };
+/** Where Skyhook's flak leaves its tall barrels, and Zapcoil's arc its claw, above the tile (px). */
+const FLAK_MUZZLE_PX = 16;
+const ARC_EMITTER_PX = 14;
+/** A cleared wreck's salvage floats up from its tile, over a dust ring. */
+const SALVAGE_FLOAT_LIFT_PX = 12;
+/** The nearest enemy within this (tiles) of a chain's strike point is the one struck. */
+const STRUCK_NEAR_TILES = 0.75;
+
+/** Where a shot meets an enemy's body (px above its ground point): flyers draw 12 px higher. */
+function bodyLift(air: boolean): number {
+  return BODY_LIFT_PX + (air ? AIR_LIFT_PX : 0);
+}
 
 /** What the event wiring drives: the scene's sim, view pools, and effect views. */
 export interface BattleEventViews {
@@ -61,6 +78,10 @@ export interface BattleEventViews {
   readonly links: LinkView;
   readonly sacks: SackBurstView;
   readonly core: CoreView;
+  /** Zapcoil's chain arcs (T312a). */
+  readonly chains: ChainFx;
+  /** Gerald's plinks (T312a). */
+  readonly plinks: PlinkFx;
   /** Each ability slot's strike radius after modifiers (Mk II; tiles, 0: none). */
   readonly strikeRadius: readonly number[];
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */
@@ -95,6 +116,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
    * draws a burst and a ring (a bomblet: its small pop, no ring).
    */
   const shells = new Map<number, number>();
+  /** Flak in flight, by uid → splash radius (tiles): it bursts at its flyer's height. */
+  const flak = new Map<number, number>();
+  /** The tower whose chain is being drawn (its uid-0 ProjectileHits are the arc's hops), or 0. */
+  let chainTower = 0;
   /** The projectile sprites of the content's bomblets (Cluster Thumper's). */
   const bombletSprites = new Set<string>();
   for (const t of Object.values(content.towers)) {
@@ -119,6 +144,27 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (e.uid === uid) return e.def?.layer === 'air';
     }
     return false;
+  };
+  /** Whether the enemy struck at grid (x, y) flies: the nearest one there (a chain hop's height). */
+  const flyerAt = (x: number, y: number): boolean => {
+    const pool = sim.state.enemies;
+    let best = STRUCK_NEAR_TILES * STRUCK_NEAR_TILES;
+    let air = false;
+    for (let i = 0; i < pool.used; i++) {
+      const e = pool.items[i]!; // i < used ≤ items.length
+      if (e.def === null) continue;
+      const d = (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y);
+      if (d <= best) {
+        best = d;
+        air = e.def.layer === 'air';
+      }
+    }
+    return air;
+  };
+  /** How far up tower `uid` stands (px; 0 if it's gone). */
+  const towerLift = (uid: number): number => {
+    const t = findLiveTower(sim.state.towers, uid);
+    return t === null ? 0 : views.liftPx(t.col, t.row);
   };
   const offs = [
     bus.on('TowerBuilt', (e) => {
@@ -213,7 +259,12 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       }
     }),
     bus.on('ProjectileFired', (e) => {
-      if (e.kind === 'hitscan') {
+      chainTower = 0;
+      if (e.kind === 'chain') {
+        // The hits that follow, in chain order, are the arc's hops (D076).
+        chainTower = e.towerUid;
+        views.chains.begin(e.x, e.y, ARC_EMITTER_PX + towerLift(e.towerUid));
+      } else if (e.kind === 'hitscan') {
         fx.tracer(e.x, e.y, e.targetX, e.targetY, isFlyer(e.targetUid));
       } else if (e.kind === 'pulse') {
         if (e.radiusTiles > 0) fx.pulse(e.x, e.y, e.radiusTiles);
@@ -222,14 +273,36 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         // its shell and splash.
         if (e.kind === 'lobbed') {
           shells.set(e.uid, bombletSprites.has(e.sprite) ? -1 : e.radiusTiles);
+          views.projectiles
+            .acquire(e.uid)
+            .show(e.uid, { sprite: e.sprite, flightTicks: e.flightTicks });
+          return;
         }
-        views.projectiles
-          .acquire(e.uid)
-          .show(e.uid, { sprite: e.sprite, flightTicks: e.flightTicks });
+        // Flak (D072): a straight shot climbing from the barrels to its flyer's height, bursting
+        // at the intercept point.
+        flak.set(e.uid, e.radiusTiles);
+        views.projectiles.acquire(e.uid).show(e.uid, {
+          sprite: e.sprite,
+          flightTicks: e.flightTicks,
+          liftFrom: FLAK_MUZZLE_PX + towerLift(e.towerUid),
+          liftTo: bodyLift(isFlyer(e.targetUid)),
+        });
       }
     }),
     bus.on('ProjectileHit', (e) => {
+      if (e.uid === 0) {
+        if (e.towerUid === chainTower) views.chains.hop(e.x, e.y, bodyLift(flyerAt(e.x, e.y)));
+        return;
+      }
       views.projectiles.release(e.uid);
+      const burst = flak.get(e.uid);
+      if (burst !== undefined) {
+        // The flak bursts in the air; its splash shows on the ground, around the shadows it caught.
+        flak.delete(e.uid);
+        fx.ring(e.x, e.y, burst, 'orange.3', SPLASH_RING_MS, false);
+        fx.burst(e.x, e.y, 0, true, AIR_LIFT_PX);
+        return;
+      }
       const splash = shells.get(e.uid);
       if (splash === undefined) return;
       shells.delete(e.uid);
@@ -248,6 +321,21 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const radius = views.strikeRadius[e.slot - 1] ?? 0;
       if (e.uid !== 0 && e.target !== null && radius > 0) {
         fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, radius);
+      }
+    }),
+    bus.on('NeutralHit', (e) => {
+      views.plinks.plink(e.x, e.y);
+    }),
+    bus.on('NeutralExited', (e) => {
+      // Gerald delivered the mail and left: never a leak (D072).
+      views.enemies.release(e.uid);
+    }),
+    bus.on('WreckageCleared', (e) => {
+      // WreckageView swaps the wreck for its live tile; the salvage is income, floated in gold.
+      const [c, r] = e.tile;
+      fx.ring(c + 0.5, r + 0.5, BUILD_PUFF_TILES, 'steel.4', BUILD_PUFF_MS, true);
+      if (e.salvage > 0) {
+        fx.floatText(`+${e.salvage}`, 'gold.4', c + 0.5, r + 0.5, SALVAGE_FLOAT_LIFT_PX);
       }
     }),
     bus.on('AllySpawned', (e) => {
@@ -271,5 +359,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   return () => {
     for (const off of offs) off();
     shells.clear();
+    flak.clear();
+    chainTower = 0;
   };
 }

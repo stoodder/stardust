@@ -45,7 +45,8 @@ export function CommsPanel() {
             <div class="dlg-comms-words">
               <NamePlate line={view.line} />
               <LineText line={view.line} typed={typed} />
-              {view.button !== null && (
+              {/* The reply button shows once its line has typed out. */}
+              {view.button !== null && typed.done && (
                 <button type="button" class="hud-btn chamfer dlg-reply" onClick={pressCommsButton}>
                   {view.button}
                 </button>

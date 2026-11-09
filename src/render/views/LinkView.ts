@@ -1,8 +1,8 @@
 // Synergy-link tethers (design/towers.md § 6.1 Readability; art-direction §8): while two towers
-// are linked, an animated `fx.link_tether` arc joins them, solid orange for Crossfire and dashed
-// blue for Sitting Ducks (shape and color both name the link). BattleScene feeds it the sim's
-// LinkFormed and LinkBroken events with the two towers' tiles; a tether is placed once, since
-// towers never move. The frame set comes from `tetherDir`: the direction, and which tower it's
+// are linked, an animated `fx.link_tether` arc joins them, solid orange for Crossfire, dashed
+// blue for Sitting Ducks, and zigzag teal for Conductive (shape and color both name the link).
+// BattleScene feeds it the sim's LinkFormed and LinkBroken events with the two towers' tiles; a
+// tether is placed once, since towers never move. The frame set comes from `tetherDir`: the direction, and which tower it's
 // drawn from, so every tether runs left to right (or top to bottom). A tower on high ground lifts
 // its tether's anchor with it. Tethers draw in `vfx`, lifted TETHER_LIFT_PX so the arc joins the
 // heads, above the bases (D059), and pulse 100% ↔ 60% on the page's 1 Hz clock, a quick 4 Hz
@@ -38,8 +38,7 @@ export function tetherAlpha(ms: number, now: number, reduced: boolean): number {
 export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: ColorName }>> = {
   crossfire: { ring: 'orange.3', text: 'orange.4' },
   sitting_ducks: { ring: 'blue.3', text: 'blue.4' },
-  // Conductive (T304b): water carrying a spark. Its tether art is T312a's; until then it shows
-  // only this callout (`form` draws nothing for a link with no tether frames).
+  // Conductive (T304b): water carrying a spark; its tether is a zigzag teal line (T312a).
   conductive: { ring: 'teal.3', text: 'teal.4' },
 };
 

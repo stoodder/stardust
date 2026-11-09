@@ -15,7 +15,18 @@
 //   scorch remain), for the second half of a tile's clearing.
 // A cleared tile draws its `underWreckage` tile and no prop.
 import { defineSprite } from '../defineSprite.ts';
-import { diamond, disc, grid, hash01, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import {
+  diamond,
+  disc,
+  grid,
+  hash01,
+  isoBox,
+  line,
+  plot,
+  rows,
+  stamp,
+  type CharGrid,
+} from '../helpers.ts';
 import { ENV_VARIANTS } from '../tiles/tileGen.ts';
 
 const W = 32;
@@ -52,7 +63,7 @@ function stake(g: CharGrid, x: number, y: number, lit: boolean): void {
 /** A crate of parcels, orange with a white label. */
 function crate(g: CharGrid, cx: number, cy: number, hw: number, h: number): void {
   isoBox(g, cx, cy, hw, h, { top: 'O', rim: 'Y', left: 'Q', right: 'Z' });
-  plot(g, Math.round(cx) - 1, Math.round(cy - h) , 'W');
+  plot(g, Math.round(cx) - 1, Math.round(cy - h), 'W');
 }
 
 /** v0: a crashed delivery drone, nose-down, rotor mast bent, parcels spilled. */
@@ -70,7 +81,8 @@ function drone(g: CharGrid): void {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const dy = (y + 0.5 - cy) * 1.5;
-      if (Math.hypot(x + 0.5 - cx, dy) > 7.5 && 'VWTS'.includes(g[y]?.[x] ?? '.')) plot(g, x, y, '.');
+      if (Math.hypot(x + 0.5 - cx, dy) > 7.5 && 'VWTS'.includes(g[y]?.[x] ?? '.'))
+        plot(g, x, y, '.');
     }
   }
   line(g, cx - 6, cy + 1, cx + 3, cy - 4, 'E');
@@ -127,7 +139,8 @@ function outlined(g: CharGrid, debris: CharGrid): void {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (solid(x, y)) continue;
-      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1)) plot(g, x, y, 'N');
+      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))
+        plot(g, x, y, 'N');
     }
   }
   debris.forEach((r, y) => r.forEach((ch, x) => ch !== '.' && plot(g, x, y, ch)));

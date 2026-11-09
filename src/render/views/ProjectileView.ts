@@ -1,6 +1,8 @@
 // A pooled projectile. Straight shots draw in the `vfx` layer at their sim position; lobbed shells
 // draw in the `air` layer on a parabolic arc over a ground shadow (art-direction §7, Explosive).
-// The arc is cosmetic: the sim moves the shell's ground point; render only lifts it.
+// The arc is cosmetic: the sim moves the shell's ground point; render only lifts it. A straight
+// shot at a flyer (Skyhook's flak, D072) climbs from its muzzle's height to the flyer's (12 px up)
+// along its flight, over its ground point.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { worldDepth } from '../depth.ts';
@@ -14,6 +16,8 @@ export interface ProjectileLike {
   readonly x: number;
   readonly y: number;
   readonly ticksLeft: number;
+  /** The shot's whole flight (ticks); a straight shot's climb follows it. */
+  readonly flightTicks: number;
 }
 
 /** How a shot is drawn, from the firing tower's attack. */
@@ -21,6 +25,9 @@ export interface ShotLook {
   readonly sprite: string;
   /** Lobbed shells arc; 0 for straight shots. */
   readonly flightTicks: number;
+  /** A straight shot's height (px) at its muzzle and at its target (flak climbs to a flyer). */
+  readonly liftFrom?: number;
+  readonly liftTo?: number;
 }
 
 /** Peak height of a lobbed shell's arc, in pixels. */
@@ -36,6 +43,8 @@ export class ProjectileView implements PooledView {
   #id: SpriteId | null = null;
   #uid = 0;
   #flightTicks = 0;
+  #liftFrom = 0;
+  #liftTo = 0;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -50,6 +59,8 @@ export class ProjectileView implements PooledView {
     this.#uid = uid;
     this.#id = spriteId(look.sprite);
     this.#flightTicks = look.flightTicks;
+    this.#liftFrom = look.liftFrom ?? 0;
+    this.#liftTo = look.liftTo ?? 0;
     const lobbed = look.flightTicks > 0;
     (lobbed ? layers.air : layers.vfx).add(this.#body);
     const meta = sprites.meta(this.#id);
@@ -75,6 +86,9 @@ export class ProjectileView implements PooledView {
       this.#shadow.setPosition(pos.x, pos.y);
       const depth = worldDepth(pos.y, 'enemy', this.#uid);
       if (this.#body.depth !== depth) this.#body.setDepth(depth);
+    } else if (this.#liftFrom !== 0 || this.#liftTo !== 0) {
+      const t = p.flightTicks > 0 ? Phaser.Math.Clamp(1 - p.ticksLeft / p.flightTicks, 0, 1) : 1;
+      lift = Math.round(this.#liftFrom + (this.#liftTo - this.#liftFrom) * t);
     }
     this.#body.setPosition(pos.x, pos.y - lift);
   }

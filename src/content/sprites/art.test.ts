@@ -512,37 +512,56 @@ describe('M3 tell glyphs (art-direction §8)', () => {
   });
 });
 
+/** The opaque silhouette's width. */
+function spanW(rows: readonly string[]): number {
+  const b = bounds(rows);
+  return b.x1 - b.x0 + 1;
+}
+
 describe('Matriarch Chitterbloom (T311b)', () => {
   const id = 'enemy.chitterbloom';
-  const width = (rows: readonly string[]): number => {
-    const b = bounds(rows);
-    return b.x1 - b.x0 + 1;
-  };
 
   it('is the biggest thing on the road, within the boss canvas (tech-spec: up to 64×64)', () => {
     const d = def(id);
     expect(d.size.w + 2).toBeLessThanOrEqual(64);
     expect(d.size.h + 2).toBeLessThanOrEqual(64);
-    const her = width(grid(id, 'walk_se_0'));
+    const her = spanW(grid(id, 'walk_se_0'));
     for (const big of ['enemy.brood_hauler', 'enemy.elder'] as const) {
-      expect(her, big).toBeGreaterThan(width(grid(big, 'walk_se_0')) + 8);
+      expect(her, big).toBeGreaterThan(spanW(grid(big, 'walk_se_0')) + 8);
     }
   });
 
   it('has every boss state the sim reads, in four facings where she moves', () => {
     const anims = def(id).anims ?? {};
-    for (const a of ['walk', 'tell', 'sneeze', 'dig', 'panic', 'puff', 'flee']) {
-      for (const f of ['se', 'sw', 'ne', 'nw']) expect(anims[`${a}_${f}`], `${a}_${f}`).toBeDefined();
+    for (const a of [
+      'walk',
+      'tell',
+      'sneeze',
+      'dig',
+      'under',
+      'surface',
+      'panic',
+      'puff',
+      'flee',
+    ]) {
+      for (const f of ['se', 'sw', 'ne', 'nw'])
+        expect(anims[`${a}_${f}`], `${a}_${f}`).toBeDefined();
     }
-    expect(anims['under']).toBeDefined();
     // The one-shot beats play once; the tells and states loop.
     expect(anims['sneeze_se']).toMatchObject({ loop: false });
-    expect(anims['surface']).toMatchObject({ loop: false });
+    expect(anims['surface_se']).toMatchObject({ loop: false });
     expect(anims['tell_se']).not.toHaveProperty('loop');
   });
 
   it('wears her blossom crown in every pose, even underground', () => {
-    for (const f of ['walk_se_0', 'walk_ne_0', 'dig_se_0', 'under_0', 'panic_ne_1', 'flee_se_0']) {
+    for (const f of [
+      'walk_se_0',
+      'walk_ne_0',
+      'dig_se_0',
+      'under_se_0',
+      'panic_ne_1',
+      'flee_se_0',
+    ]) {
       expect(count(grid(id, f), 'PQ'), f).toBeGreaterThan(20);
     }
     expect(def(id).legend).toMatchObject({ P: 'pink.3', Q: 'pink.4' });
@@ -551,19 +570,19 @@ describe('Matriarch Chitterbloom (T311b)', () => {
   it('shows each tell with a shape change, not only a color', () => {
     const walk = grid(id, 'walk_se_1');
     // The sneeze tell stretches her taller; the sneeze squashes her and blows fluff out in front.
-    const tall = (f: string): number => {
+    const bodyHeight = (f: string): number => {
       const b = bounds(grid(id, f).map((r) => r.replace(/[PQcdbF+*]/g, '.')));
       return b.y1 - b.y0;
     };
-    expect(tall('tell_se_1')).toBeGreaterThan(tall('walk_se_1'));
+    expect(bodyHeight('tell_se_1')).toBeGreaterThan(bodyHeight('walk_se_1'));
     expect(count(grid(id, 'sneeze_se_0'), 'Fw')).toBeGreaterThan(count(walk, 'Fw') + 20);
     // The dig flings dirt; phase 3 trails the haste speed lines; the puff bristles wider.
     expect(count(grid(id, 'dig_se_0'), 'MNO')).toBeGreaterThan(40);
     expect(count(grid(id, 'panic_se_0'), 'L')).toBeGreaterThan(6);
-    expect(width(grid(id, 'puff_se_0'))).toBeGreaterThan(width(walk));
+    expect(spanW(grid(id, 'puff_se_0'))).toBeGreaterThan(spanW(walk));
     // Underground she is a mound, far lower than her standing silhouette.
-    const under = bounds(grid(id, 'under_0'));
-    expect(under.y1 - under.y0).toBeLessThan(tall('walk_se_1') / 2);
+    const under = bounds(grid(id, 'under_se_0'));
+    expect(under.y1 - under.y0).toBeLessThan(bodyHeight('walk_se_1') / 2);
   });
 
   it('has a wave-preview icon with the crown', () => {

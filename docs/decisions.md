@@ -1013,3 +1013,18 @@ Real art went in behind T300a's ids. No data changed.
 - **R&D-pick runs (T228):** par runs once per allowed R&D pick (`par@rnd:<id>`) and must win. A builds field `rndPickChanges` requires a listed pick to change par's outcome, margin, or medals on some seed.
 - **Timing:** 70 runs in 4–7 s, single-threaded, so no worker threads are needed yet. The whole-map balance tests get a 30 s timeout under load.
 - **For A1M3:** the build uses `holdFireWhile: 'neutral'`, a W2 `clear`, and `rndPickChanges: ['orbital_strike_mk2']`. The no-air build keeps its Rivets more than 3.5 tiles from the air lane.
+
+### D080 — 2026-11-09 — T302b the dialogue UI
+- **Comms panel** (top-left, in the radio's old slot):
+  - the portrait with talk frames, QUILL's scanline and policy flash, and a dark frame for an absent speaker;
+  - the speaker's coloured name plate, and text typed at 40 chars/s;
+  - a reply shows under its cue, and the reply button appears once the line has typed out.
+- **Scenes:**
+  - **Layout:** a 400 px bottom panel, or a full-screen stage for `scene_*`.
+  - **Controls:** Skip/Next on click, Enter, or Space. Choices are aria buttons with the first one focused and Up/Down to move; the line being answered stays on screen. **Esc skips to the next choice or the end.**
+  - **Briefing:** plays in the existing modal, with Change loadout kept and Clock in focused at the end.
+- **Pausing:** in battle, every scene except the briefing pauses play and restores the speed it found (a player's own pause stays).
+- **Barks:** 6 s of sim-time spacing, dropped and never queued, and never over a line or a scene.
+- **Dialogue font:** dialogue uses **Silkscreen 8**. Pixelify Sans has no fix for its "5" bug, and art-direction now proposes dropping it.
+- **Radio adapter:** until T302c migrates the radio tables, a fallback adapter plays them.
+- **Tests:** `?test=1` keeps dialogue off unless `&dialogue=1`.
