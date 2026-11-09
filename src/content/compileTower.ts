@@ -1,9 +1,23 @@
 // Tower compilation: tier patches resolved into full per-tier definitions, times in ticks.
 import { assertNever } from '../shared/types.ts';
 import { TICK_HZ, perSecToPerTick } from '../shared/time.ts';
-import type { CompiledAttack, CompiledEffect, CompiledTier, CompiledTowerDef } from './compiled.ts';
+import type {
+  CompiledAttack,
+  CompiledBomblets,
+  CompiledEffect,
+  CompiledTier,
+  CompiledTowerDef,
+} from './compiled.ts';
 import { mergePatch, periodTicks, ticks, type Ctx } from './compileHelpers.ts';
-import type { AttackDef, AttackKind, EffectDef, TierDef, TierPatch, TowerDef } from './types.ts';
+import type {
+  AttackDef,
+  AttackKind,
+  BombletsDef,
+  EffectDef,
+  TierDef,
+  TierPatch,
+  TowerDef,
+} from './types.ts';
 
 const ATTACK_FIELDS: Readonly<Record<AttackKind, readonly string[]>> = {
   hitscan: [],
@@ -133,6 +147,8 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
         splashTiles: a.splashTiles,
         splashSq: a.splashTiles * a.splashTiles,
         lead: a.lead,
+        bomblets:
+          a.bomblets === undefined ? null : compileBomblets(ctx, a.bomblets, `${where}.bomblets`),
       };
     case 'beam': {
       const beamTickTicks = ticks(ctx, a.tickSec, `${where}.tickSec`);
@@ -152,6 +168,41 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
     default:
       return assertNever(a);
   }
+}
+
+const BOMBLET_FIELDS = [
+  'count',
+  'damage',
+  'splashTiles',
+  'scatterTiles',
+  'flightSec',
+  'projectile',
+] as const;
+
+function compileBomblets(ctx: Ctx, b: BombletsDef, where: string): CompiledBomblets | null {
+  // A spec may patch bomblets onto tier 3's shell, so a partial one is possible here.
+  const missing = BOMBLET_FIELDS.filter((f) => !(f in b));
+  if (missing.length > 0) {
+    ctx.errors.push(`${where}: bomblets are missing ${missing.join(', ')}`);
+    return null;
+  }
+  if (!Number.isInteger(b.count) || b.count < 1) {
+    ctx.errors.push(`${where}.count: must be a whole number ≥ 1 (got ${b.count})`);
+  }
+  if (!(b.damage >= 0)) ctx.errors.push(`${where}.damage: must be ≥ 0 (got ${b.damage})`);
+  for (const f of ['splashTiles', 'scatterTiles'] as const) {
+    if (!(b[f] > 0)) ctx.errors.push(`${where}.${f}: must be > 0 (got ${b[f]})`);
+  }
+  return {
+    count: b.count,
+    damage: b.damage,
+    splashTiles: b.splashTiles,
+    splashSq: b.splashTiles * b.splashTiles,
+    scatterTiles: b.scatterTiles,
+    scatterSq: b.scatterTiles * b.scatterTiles,
+    flightTicks: ticks(ctx, b.flightSec, `${where}.flightSec`),
+    projectile: b.projectile,
+  };
 }
 
 function compileEffect(ctx: Ctx, e: EffectDef, where: string): CompiledEffect {

@@ -228,17 +228,23 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     return false;
   };
 
-  /** Runs the armed holdFireWhile macros; a rejected toggle is recorded on the macro's step. */
+  /** Issues a macro's toggle; the first rejection is recorded on the macro's step. */
+  const toggle = (rec: StepRecord, on: boolean): void => {
+    const error = apply({ type: 'holdFire', target: 'all', on });
+    if (rec.error === null) rec.error = error;
+  };
+
+  /** Runs the armed holdFireWhile macros. */
   const watch = (): void => {
     for (const w of watchers) {
       if (w.holding) {
         if (state.stats.tagSpawned[w.tag] < w.total || tagAlive(w.tag)) continue;
         w.holding = false;
         w.total = -1; // done: never again
-        w.rec.error ??= apply({ type: 'holdFire', target: 'all', on: false });
+        toggle(w.rec, false);
       } else if (w.total > 0 && tagAlive(w.tag)) {
         w.holding = true;
-        w.rec.error ??= apply({ type: 'holdFire', target: 'all', on: true });
+        toggle(w.rec, true);
       }
     }
   };

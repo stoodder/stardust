@@ -82,12 +82,17 @@ function validateMapMedals(issues: Issues, def: MapDef<IdSpace>, inCampaign: boo
     const variants = def.flagVariants ?? {};
     for (const f of flagsOf(challenge.condition)) {
       if (variants[f] === undefined) {
-        issues.add('flag-variants', `${w}.condition`, `reads flag '${f}', so flagVariants needs a '${f}' entry`);
+        issues.add(
+          'flag-variants',
+          `${w}.condition`,
+          `reads flag '${f}', so flagVariants needs a '${f}' entry`,
+        );
       }
     }
   }
   const par = def.parMedals ?? [];
-  for (const m of duplicates(par)) issues.add('medals', `${where}.parMedals`, `'${m}' is listed twice`);
+  for (const m of duplicates(par))
+    issues.add('medals', `${where}.parMedals`, `'${m}' is listed twice`);
   if (par.includes('challenge') && challenge === undefined) {
     issues.add('medals', `${where}.parMedals`, "'challenge' needs a Challenge medal on the map");
   }
@@ -114,7 +119,8 @@ function text(issues: Issues, s: string, max: number, where: string): void {
 function exemptRefs(issues: Issues, def: MapDef<IdSpace>, c: Condition, where: string): void {
   if ('all' in c || 'any' in c) {
     const list = 'all' in c ? c.all : c.any;
-    for (const [i, s] of list.entries()) exemptRefs(issues, def, s, `${where}.${'all' in c ? 'all' : 'any'}[${i}]`);
+    for (const [i, s] of list.entries())
+      exemptRefs(issues, def, s, `${where}.${'all' in c ? 'all' : 'any'}[${i}]`);
   } else if ('not' in c) {
     exemptRefs(issues, def, c.not, `${where}.not`);
   } else if ('tagRatio' in c) {
@@ -122,7 +128,9 @@ function exemptRefs(issues: Issues, def: MapDef<IdSpace>, c: Condition, where: s
   } else if ('passedMarker' in c && c.passedMarker.enemy !== undefined) {
     const enemy = c.passedMarker.enemy;
     const counted = def.waves.some((w) =>
-      w.groups.some((g) => g.enemy === enemy && !(g.tags ?? []).some((t) => MEDAL_EXEMPT_TAGS.includes(t))),
+      w.groups.some(
+        (g) => g.enemy === enemy && !(g.tags ?? []).some((t) => MEDAL_EXEMPT_TAGS.includes(t)),
+      ),
     );
     if (!counted) {
       issues.add(
@@ -135,7 +143,12 @@ function exemptRefs(issues: Issues, def: MapDef<IdSpace>, c: Condition, where: s
 }
 
 /** [condition]: the shape rules every condition follows. */
-function validateCondition(issues: Issues, def: MapDef<IdSpace>, c: Condition, where: string): void {
+function validateCondition(
+  issues: Issues,
+  def: MapDef<IdSpace>,
+  c: Condition,
+  where: string,
+): void {
   if ('all' in c || 'any' in c) {
     const key = 'all' in c ? 'all' : 'any';
     const list = 'all' in c ? c.all : c.any;
@@ -148,7 +161,10 @@ function validateCondition(issues: Issues, def: MapDef<IdSpace>, c: Condition, w
     if (gte === undefined && lte === undefined) {
       issues.add('condition', where, 'needs a bound (gte and/or lte)');
     }
-    for (const [k, v] of [['gte', gte], ['lte', lte]] as const) {
+    for (const [k, v] of [
+      ['gte', gte],
+      ['lte', lte],
+    ] as const) {
       if (v !== undefined && !isNonNegativeInt(v)) {
         issues.add('condition', `${where}.${k}`, `${v} must be a whole number ≥ 0`);
       }
@@ -158,7 +174,8 @@ function validateCondition(issues: Issues, def: MapDef<IdSpace>, c: Condition, w
     }
   } else if ('tagRatio' in c) {
     const g = c.tagRatio.gte;
-    if (!(g > 0 && g <= 1)) issues.add('condition', `${where}.tagRatio.gte`, `${g} must be in (0, 1]`);
+    if (!(g > 0 && g <= 1))
+      issues.add('condition', `${where}.tagRatio.gte`, `${g} must be in (0, 1]`);
   } else if ('passedMarker' in c) {
     passedMarker(issues, def, c.passedMarker.marker, c.passedMarker.enemy, where);
   }

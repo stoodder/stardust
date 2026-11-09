@@ -212,6 +212,8 @@ export type AttackDef = AttackCommon &
         readonly flightSec: number;
         readonly splashTiles: number;
         readonly lead: boolean;
+        /** Cluster Thumper: each shell also scatters bomblets where it lands. */
+        readonly bomblets?: BombletsDef;
       }
     | { readonly kind: 'beam'; readonly tickSec: number } // not DoT: armor applies per tick
     | {
@@ -226,6 +228,21 @@ export type AttackDef = AttackCommon &
     | { readonly kind: 'pulse' }
   );
 export type AttackKind = AttackDef['kind'];
+
+/**
+ * Bomblets a lobbed shell scatters on impact (Cluster Thumper, design/towers.md § 7): `count`
+ * small shells, each flying `flightSec` from the impact point to a random point within
+ * `scatterTiles` of it and landing as its own splash (`damage` of the shell's type, `splashTiles`),
+ * on the layers and with the effects of the shell.
+ */
+export interface BombletsDef {
+  readonly count: number;
+  readonly damage: number;
+  readonly splashTiles: number;
+  readonly scatterTiles: number;
+  readonly flightSec: number;
+  readonly projectile: SpriteId;
+}
 
 /** On-hit status effects (design/enemies.md §2.4). `pct` is a fraction: 25% → 0.25. */
 export type EffectDef =

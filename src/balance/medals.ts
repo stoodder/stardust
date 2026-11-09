@@ -6,7 +6,11 @@ import type { IdSpace, MedalKind } from '../content/types.ts';
 import type { HeadlessResult } from '../sim/index.ts';
 import { describeRun, type CheckSpec } from './checks.ts';
 
-const MARK: Readonly<Record<MedalKind, string>> = { victory: 'V', perfectCore: 'P', challenge: 'C' };
+const MARK: Readonly<Record<MedalKind, string>> = {
+  victory: 'V',
+  perfectCore: 'P',
+  challenge: 'C',
+};
 const ORDER: readonly MedalKind[] = ['victory', 'perfectCore', 'challenge'];
 
 /** "V P C" with `·` for each medal the run didn't earn; `—` without a result. */

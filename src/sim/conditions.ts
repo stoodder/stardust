@@ -43,11 +43,13 @@ const TIE_EPS_SQ = 1e-9;
 /** The condition's value now: state atoms as things stand, run atoms as accumulated so far. */
 export function evaluateCondition(c: Condition, state: View, ctx: ConditionContext): boolean {
   if ('all' in c) {
-    for (let i = 0; i < c.all.length; i++) if (!evaluateCondition(c.all[i]!, state, ctx)) return false; // i < length
+    for (let i = 0; i < c.all.length; i++)
+      if (!evaluateCondition(c.all[i]!, state, ctx)) return false; // i < length
     return true;
   }
   if ('any' in c) {
-    for (let i = 0; i < c.any.length; i++) if (evaluateCondition(c.any[i]!, state, ctx)) return true; // i < length
+    for (let i = 0; i < c.any.length; i++)
+      if (evaluateCondition(c.any[i]!, state, ctx)) return true; // i < length
     return false;
   }
   if ('not' in c) return !evaluateCondition(c.not, state, ctx);
@@ -58,11 +60,7 @@ export function evaluateCondition(c: Condition, state: View, ctx: ConditionConte
  * true or false once nothing later in the run can change the condition's value; null while it is
  * still open (any state atom it depends on, or a run atom short of its bound).
  */
-export function settledCondition(
-  c: Condition,
-  state: View,
-  ctx: ConditionContext,
-): boolean | null {
+export function settledCondition(c: Condition, state: View, ctx: ConditionContext): boolean | null {
   if ('all' in c || 'any' in c) {
     const list = 'all' in c ? c.all : c.any;
     const decisive = 'any' in c; // any: one true settles it; all: one false does
@@ -90,7 +88,8 @@ export function settledCondition(
 
 function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
   if ('stat' in c) return within(state.stats[c.stat], c.gte, c.lte);
-  if ('towers' in c) return within(countTowers(state, c.towers.tower, c.towers.faction), c.gte, c.lte);
+  if ('towers' in c)
+    return within(countTowers(state, c.towers.tower, c.towers.faction), c.gte, c.lte);
   if ('linkActive' in c) return isLinkActive(state, ctx.content, c.linkActive);
   if ('tagRatio' in c) {
     const { tag, of, gte } = c.tagRatio;

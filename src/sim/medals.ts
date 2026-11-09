@@ -16,7 +16,12 @@
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, MedalId, MedalKind } from '../content/types.ts';
 import type { DeepReadonly } from '../shared/types.ts';
-import { evaluateCondition, isMedalExempt, settledCondition, type ConditionContext } from './conditions.ts';
+import {
+  evaluateCondition,
+  isMedalExempt,
+  settledCondition,
+  type ConditionContext,
+} from './conditions.ts';
 import type { Enemy } from './entities.ts';
 import { emit, type MedalStatus, type SimState } from './state.ts';
 
@@ -71,11 +76,7 @@ export function bookLeak(state: SimState, e: Enemy): void {
 }
 
 /** Forfeits an open Challenge whose condition can no longer hold (cleanup, every tick in play). */
-export function watchChallenge(
-  state: SimState,
-  map: MedalMap,
-  ctx: ConditionContext,
-): void {
+export function watchChallenge(state: SimState, map: MedalMap, ctx: ConditionContext): void {
   if (map.medals === null || state.medals.challenge !== 'open') return;
   if (settledCondition(map.medals.challenge.condition, state, ctx) === false) {
     forfeit(state, 'challenge');

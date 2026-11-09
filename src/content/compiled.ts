@@ -113,6 +113,8 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly splashTiles: number;
         readonly splashSq: number;
         readonly lead: boolean;
+        /** Cluster Thumper's bomblets, or null. */
+        readonly bomblets: CompiledBomblets | null;
       }
     | {
         readonly kind: 'beam';
@@ -130,6 +132,18 @@ export type CompiledAttack = CompiledAttackCommon &
     | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
     | { readonly kind: 'pulse' }
   );
+
+/** BombletsDef in ticks, with the squared radii precomputed. */
+export interface CompiledBomblets {
+  readonly count: number;
+  readonly damage: number;
+  readonly splashTiles: number;
+  readonly splashSq: number;
+  readonly scatterTiles: number;
+  readonly scatterSq: number;
+  readonly flightTicks: number;
+  readonly projectile: SpriteId;
+}
 
 export type CompiledEffect =
   | { readonly status: 'chilled'; readonly pct: number; readonly durationTicks: number }

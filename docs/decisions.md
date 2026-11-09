@@ -477,3 +477,18 @@ New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and rend
 - **Tile cursor** (`src/render/input/cursor.ts`): arrow keys move a cursor to the nearest target in that screen direction. Targets are pads and towers, or any tile while aiming. Enter builds, selects, or fires the strike; Esc drops the selection, arm, or aim first, then hides the cursor. An aria-live region announces the tile. Moving the mouse hides the cursor. A test checks that every pad on every map is reachable.
 - **Tower panel placement** (`ui/hud/layout.ts`): it tries the far side, then the near side, then above or below. The first spot that covers no other tower wins.
 - **Menus:** Esc closes the innermost panel or screen (`ui/screens/escape.ts`). Art-direction §9 now describes the M2 menus.
+
+### D041 — 2026-11-09 — T206a Hold Fire and spare runners
+- **Commands** (`src/sim/fireControl.ts`):
+  - `holdFire` and `spareRunners` take a tower uid or `'all'`.
+  - `'all'` is a **master switch**: turning it off clears every tower, including ones held one by one. Towers built while it's on inherit it.
+  - An unknown uid is rejected.
+  - A holding tower drops its target, but its reload keeps running.
+- **Spare-runners filter:** towers never *pick* `fleeing` or `youngling` units, but splash still hits them. A pulse tower waits while only spared units are in range (core-loop §2.7).
+- **Stats:**
+  - `holdFireTicks`, `holdFireUses` (counts only changes), per-tag spawned/leaked/killed, and `ticksSinceFiredAtSkitterkin` (runs only while a Skitterkin is in an attacking tower's range).
+  - `NotFiringAtSkitterkin` fires once per run at 10 s.
+  - Younglings leak 0 and move at ×0.5 (lead targeting included).
+- **Harness:**
+  - The executor runs `holdFire`, `spareRunners`, and `holdFireWhile` steps. Check #16 is lifted. New run invariants: no shot while holding, no spared target picked.
+  - Results on a fixture map with fleeing and quiet groups: Quiet Wave run 90 vs par 95; `spareFleeing` 100 vs par 95.
