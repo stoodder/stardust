@@ -5,6 +5,8 @@ import type { TestHooks } from '../src/app/testHookTypes.ts';
 declare global {
   // `page.evaluate` callbacks run in the page, where boot installs the hooks (only with ?test=1).
   var __sd: TestHooks | undefined;
+  // The page's, for `page.evaluate` callbacks (the smoke tsconfig has no DOM lib).
+  function requestAnimationFrame(cb: () => void): number;
 }
 
 /** Waits until boot has finished (`__sd.ready` resolved). */
@@ -17,4 +19,14 @@ export async function waitForReady(page: Page, timeoutMs = 10_000): Promise<void
 export async function shot(page: Page, flow: string, n: number, step: string): Promise<void> {
   const nn = String(n).padStart(2, '0');
   await page.screenshot({ path: `test-results/screens/${flow}/${nn}-${step}.png` });
+}
+
+/** Waits for two animation frames, so the canvas shows the sim state as it now stands. */
+export async function nextFrames(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
 }

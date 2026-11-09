@@ -87,10 +87,6 @@ export async function boot(): Promise<void> {
           await sceneReady;
           await router.goto(id);
         },
-        forceOutcome: async (outcome) => {
-          await sceneReady;
-          await router.endRun(outcome);
-        },
         frameMs: () => frames.frameMs(),
         canvas: () => game.canvas,
         viewWidth: VIEW_W,

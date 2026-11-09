@@ -9,7 +9,6 @@ import type {
   HookCommand,
   HookState,
   PerfSample,
-  RunOutcome,
   ScreenId,
   Speed,
   TestHooks,
@@ -38,8 +37,6 @@ export interface HookEnv {
   autoplay(build: string): void;
   setSpeed(speed: Speed): void;
   goto(screen: ScreenId): Promise<void>;
-  /** Ends the running battle with `outcome` (rejects outside one). */
-  forceOutcome(outcome: RunOutcome): Promise<void>;
   /** Mean CPU time of recent frames, in ms. */
   frameMs(): number;
   /** The game canvas, to map game pixels to client coordinates. */
@@ -91,12 +88,6 @@ export function createTestHooks(env: HookEnv): TestHooks {
       return { x: rect.left + (p.x + 0.5) * scale, y: rect.top + (p.y + 0.5) * scale };
     },
     goto: (screen: ScreenId) => env.goto(screen),
-    forceOutcome: (outcome: RunOutcome) => {
-      if (outcome !== 'won' && outcome !== 'lost') {
-        return Promise.reject(new Error(`__sd.forceOutcome: invalid outcome ${String(outcome)}`));
-      }
-      return env.forceOutcome(outcome);
-    },
     perf: (): PerfSample => {
       const b = env.battle();
       const s = b?.host.sim.state;

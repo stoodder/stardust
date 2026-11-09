@@ -65,12 +65,6 @@ export interface TestHooks {
   tileToClient(x: number, y: number): ClientPoint | null;
   /** Jumps to a screen. Resolves once it has rendered (`battle`: its first frame). */
   goto(screen: ScreenId): Promise<void>;
-  /**
-   * Test-only, not a player action: ends the running battle as if the sim had emitted `MapWon` or
-   * `MapLost`, with its stats as they stand, and shows the results screen. Rejects outside a
-   * battle. Lets smoke flows reach both results screens without playing a map out.
-   */
-  forceOutcome(outcome: RunOutcome): Promise<void>;
   /** Recent frame and sim timings and live entity counts. */
   perf(): PerfSample;
 }

@@ -30,8 +30,8 @@ export interface Router {
   /** Replays the last battle's map (Results → Retry), with the same request, minus the briefing. */
   retry(): Promise<void>;
   /**
-   * Ends the running battle with `outcome` and shows Results. The sim's MapWon / MapLost call it;
-   * so does the test-only `__sd.forceOutcome`. Rejects outside a battle; a second call is a no-op.
+   * Ends the running battle with `outcome` and shows Results. The sim's MapWon / MapLost call it.
+   * Rejects outside a battle; a second call is a no-op.
    */
   endRun(outcome: RunOutcome): Promise<void>;
 }
