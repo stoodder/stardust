@@ -11,6 +11,7 @@ import { abilities } from './systems/abilities.ts';
 import { allies } from './systems/allies.ts';
 import { applyCommands } from './systems/applyCommands.ts';
 import { cleanup } from './systems/cleanup.ts';
+import { detection } from './systems/detection.ts';
 import { links } from './systems/links.ts';
 import { movement } from './systems/movement.ts';
 import { projectiles } from './systems/projectiles.ts';
@@ -65,6 +66,7 @@ export type SystemName =
   | 'enemyAbilities'
   | 'abilities'
   | 'movement'
+  | 'detection'
   | 'towers'
   | 'allies'
   | 'projectiles'
@@ -82,6 +84,7 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'enemyAbilities', run: enemyAbilities },
     { name: 'abilities', run: abilities },
     { name: 'movement', run: movement },
+    { name: 'detection', run: detection },
     { name: 'towers', run: towers },
     { name: 'allies', run: allies },
     { name: 'projectiles', run: projectiles },

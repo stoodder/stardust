@@ -8,16 +8,21 @@
 //
 // Features come from three places: the config (a companion, slot 2, specs, difficulty, each
 // modifier kind, and each ability effect in a slot), the loadout's reachable tiers (attack kinds
-// and on-hit statuses), and the map (T300a: flyers, neutral units, enemy abilities, bosses, and
-// optional objectives). Wreckage needs no gate: the `clear` command and the salvage drone run since
-// T304b (systems/wreckage.ts).
+// and on-hit statuses; T400a: detection, economy, homing, charge, line, and target filters, and the
+// three Act II towers registered ahead of their tasks), and the map (T300a: flyers, neutral
+// units, enemy abilities, bosses, and optional objectives; T400a: the hush rule, Skittish, shield
+// pulses, blinks, cloaks, Protect, revisits, and clickable objects). Wreckage needs no gate: the
+// `clear` command and the salvage drone run since T304b (systems/wreckage.ts).
+//
+// `run.checkpoints` refuses nothing (no config asks for a checkpoint): it records that the waves
+// system doesn't emit CheckpointReached until T305b, so a host offers no "Retry from wave N".
 // `towerRefusal` and `abilityRefusal` answer the same question for one raw tower or ability, so
 // meta can keep a save that runs ahead of the sim out of play.
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
 import type { AbilityEffect, AttackKind, IdSpace, StatusId } from '../content/types.ts';
 import type { EconomyStat, Modifier, SimConfig } from './config.ts';
 
-/** A task id from tasks.md (`T304a`), or a later milestone (`M4`) for features with no task yet. */
+/** A task id from tasks.md (`T304a`), or a later milestone (`M5`) for features with no task yet. */
 export type GateOwner = `T${number}${string}` | `M${number}`;
 
 export type Feature =
@@ -37,9 +42,24 @@ export type Feature =
   | 'attack.beam'
   | 'attack.chain'
   | 'attack.spawner'
+  /** A homing or multi-shot (`volley` > 1) projectile (Seeker Swarm; T407b). */
+  | 'attack.homing'
+  | 'attack.charge'
+  | 'attack.line'
+  /** An attack with a `targetFilter` (Magnet Crane; T408). */
+  | 'attack.targetFilter'
   | 'status.pinned'
   | 'status.stasis'
   | 'status.unnerved'
+  /** A tier with `detect` (the Lookout Shack; T406). */
+  | 'tower.detection'
+  /** A tier with `economy` (the Salvage Crane; T408). */
+  | 'tower.economy'
+  /**
+   * An Act II tower registered ahead of its task (T400a): its numbers are a stub until the task
+   * confirms them, so it stays out of play, the loadout pools, and the shop's shelves.
+   */
+  | StubTowerFeature
   /**
    * A commander ability effect in slot 1 or 2 that the abilities system doesn't run yet. Time
    * Dilation (`slowAll`) and Clearance Sale (`discount`, with its wave-count cooldown) run since
@@ -47,6 +67,8 @@ export type Feature =
    */
   | 'ability.slowAll'
   | 'ability.discount'
+  /** Scanner Sweep (T406). */
+  | 'ability.reveal'
   /** A wave group of flyers: an air-layer enemy or an air lane (air targeting; T304a). */
   | 'enemy.flying'
   /** A neutral unit in the waves (Gerald: targeted, never hurt, never leaks). */
@@ -60,8 +82,29 @@ export type Feature =
   /** A boss whose ending isn't `driveOff` or `retreat` (Act II–III's `pivot`, the finale's). */
   | 'enemy.boss.pivot'
   | 'enemy.boss.layToRest'
+  /**
+   * The hush rule (a non-boss Hollow unit in the waves; T402), and Skittish (a `fleeing` group on
+   * a map that also sends hushing units: the mixed waves Skittish is defined for, so Act I
+   * fixtures' fleeing runners keep their M2 rules until T402).
+   */
+  | 'enemy.hush'
+  | 'enemy.skittish'
+  /** A shield pulse, on a unit or a boss phase (T403). */
+  | 'enemy.pulse'
+  /** A blink, on a unit or a boss phase (T404). */
+  | 'enemy.blink'
+  /** A cloaked unit (T406). */
+  | 'enemy.cloak'
   /** Optional objectives (Objective Intel). */
   | 'map.objectives'
+  /** Protect the asset: a `protect` map's asset meter (T305a). */
+  | 'map.protect'
+  /** A revisit (`revisitOf`), composed from the original by reference (T410a). */
+  | 'map.revisit'
+  /** Clickable world objects (`clickables`, `setClickable`, `interact`; T409). */
+  | 'map.clickable'
+  /** Retry checkpoints: refuses nothing (see the header); lifted when T305b emits them. */
+  | 'run.checkpoints'
   | 'modifier.towerStat'
   | 'modifier.towerCost'
   | 'modifier.enemyStat'
@@ -80,6 +123,14 @@ export type Feature =
   | 'modifier.firstBuildFree'
   | 'modifier.freeCast';
 
+/** The Act II towers registered ahead of their tasks (T400a), each gated until its task. */
+export const STUB_TOWERS = ['lookout', 'harpoon', 'crane'] as const;
+export type StubTowerFeature = `tower.${(typeof STUB_TOWERS)[number]}`;
+
+function isStubTower(id: string): id is (typeof STUB_TOWERS)[number] {
+  return (STUB_TOWERS as readonly string[]).includes(id);
+}
+
 /**
  * Refused features and the task that lifts each; `null` once it's simulated. Map-script refusals
  * (triggers, actions, `when` conditions) are separate: `unsupportedScript` in systems/triggers.ts.
@@ -89,16 +140,26 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   abilitySlot2: null,
   specs: null,
   storyDifficulty: null,
-  // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's; beams,
-  // spawners, Pin, Stasis, and Unnerved arrive with their Act II towers and specs (Prism, Burrow,
-  // Harpoon, Flash Freeze, Mindspike; the M3 cut defers the Sprinkler, Skyhook, and Zapcoil specs).
+  // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
+  // (D101): Stasis with Flash Freeze (T407a), homing and charge with the Skyhook and Zapcoil specs
+  // (T407b), Pin, line, and target filters with the Harpoon and Crane (T408), detection with the
+  // Lookout (T406). Beams (Prism) and Unnerved (Mindspike) are M5's; spawners (Scuttle Den) M6's.
   'attack.projectile': null,
-  'attack.beam': 'M4',
+  'attack.beam': 'M5',
   'attack.chain': null,
-  'attack.spawner': 'M4',
-  'status.pinned': 'M4',
-  'status.stasis': 'M4',
-  'status.unnerved': 'M4',
+  'attack.spawner': 'M6',
+  'attack.homing': 'T407b',
+  'attack.charge': 'T407b',
+  'attack.line': 'T408',
+  'attack.targetFilter': 'T408',
+  'status.pinned': 'T408',
+  'status.stasis': 'T407a',
+  'status.unnerved': 'M5',
+  'tower.detection': 'T406',
+  'tower.economy': 'T408',
+  'tower.lookout': 'T406',
+  'tower.harpoon': 'T408',
+  'tower.crane': 'T408',
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,
@@ -118,23 +179,40 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.freeCast': null,
   'ability.slowAll': null,
   'ability.discount': null,
+  'ability.reveal': 'T406',
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
   'enemy.split': null,
   'enemy.huddle': null,
   'enemy.boss': null,
-  'enemy.boss.pivot': 'M4',
-  'enemy.boss.layToRest': 'M4',
+  'enemy.boss.pivot': 'M5',
+  'enemy.boss.layToRest': 'M7',
+  'enemy.hush': 'T402',
+  'enemy.skittish': 'T402',
+  'enemy.pulse': 'T403',
+  'enemy.blink': 'T404',
+  'enemy.cloak': 'T406',
   'map.objectives': null,
+  'map.protect': 'T305a',
+  'map.revisit': 'T410a',
+  'map.clickable': 'T409',
+  'run.checkpoints': 'T305b',
 });
 
-type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner';
+type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line';
 type GatedStatus = 'pinned' | 'stasis' | 'unnerved';
-type GatedEffect = 'slowAll' | 'discount';
+type GatedEffect = 'slowAll' | 'discount' | 'reveal';
 
 function isGatedKind(kind: AttackKind): kind is GatedKind {
-  return kind === 'projectile' || kind === 'beam' || kind === 'chain' || kind === 'spawner';
+  return (
+    kind === 'projectile' ||
+    kind === 'beam' ||
+    kind === 'chain' ||
+    kind === 'spawner' ||
+    kind === 'charge' ||
+    kind === 'line'
+  );
 }
 
 function isGatedStatus(status: StatusId): status is GatedStatus {
@@ -142,7 +220,7 @@ function isGatedStatus(status: StatusId): status is GatedStatus {
 }
 
 function isGatedEffect(kind: AbilityEffect['kind']): kind is GatedEffect {
-  return kind === 'slowAll' || kind === 'discount';
+  return kind === 'slowAll' || kind === 'discount' || kind === 'reveal';
 }
 
 /** The gate a modifier needs open. */
@@ -162,16 +240,35 @@ type Use = (f: Feature, what: string) => void;
  * may leave out its kind: a patch keeps the tier before's).
  */
 interface GateTier {
-  readonly attack?: { readonly kind?: AttackKind } | null;
+  readonly attack?: {
+    readonly kind?: AttackKind;
+    readonly homing?: boolean;
+    readonly volley?: number;
+    readonly targetFilter?: object | null;
+  } | null;
   readonly effects?: readonly { readonly status?: StatusId }[];
+  readonly detect?: object | null;
+  readonly economy?: object | null;
 }
 
-/** The attack kinds and statuses `tiers` use that have gates. */
+/** The attack kinds, statuses, and tier abilities `tiers` use that have gates. */
 function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
+  if (isStubTower(id)) use(`tower.${id}`, `the '${id}' tower`);
   for (const tier of tiers) {
-    const kind = tier.attack?.kind;
+    const a = tier.attack;
+    const kind = a?.kind;
     if (kind !== undefined && isGatedKind(kind))
       use(`attack.${kind}`, `a '${kind}' attack (${id})`);
+    if (a?.homing === true || (a?.volley ?? 1) > 1) {
+      use('attack.homing', `a homing or volley projectile (${id})`);
+    }
+    if (a?.targetFilter !== undefined && a.targetFilter !== null) {
+      use('attack.targetFilter', `a target filter (${id})`);
+    }
+    if (tier.detect !== undefined && tier.detect !== null) use('tower.detection', `detection (${id})`);
+    if (tier.economy !== undefined && tier.economy !== null) {
+      use('tower.economy', `tower economy (${id})`);
+    }
     for (const e of tier.effects ?? []) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
@@ -196,16 +293,36 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
       use(`enemy.boss.${how}`, `a boss ending '${how}' (${id})`);
     }
   }
+  if (def.hushes) use('enemy.hush', `the hush rule (${id})`);
+  const phases = def.boss?.phases ?? [];
+  if (def.pulse !== null || phases.some((p) => p.pulse !== null)) {
+    use('enemy.pulse', `a shield pulse (${id})`);
+  }
+  if (def.blink !== null || phases.some((p) => p.blink !== null)) {
+    use('enemy.blink', `a blink (${id})`);
+  }
+  if (def.cloaked) use('enemy.cloak', `a cloak (${id})`);
 }
 
-/** The features a map needs from its waves and layout (T300a). */
+/** The features a map needs from its waves and layout (T300a; T400a). */
 function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
+  let hushes = false;
+  let fleeing = false;
   for (const wave of map.waves) {
-    for (const g of wave.groups) useEnemy(g.enemy, g.route.kind === 'air', use);
+    for (const g of wave.groups) {
+      useEnemy(g.enemy, g.route.kind === 'air', use);
+      if (g.enemy.hushes) hushes = true;
+      if (g.tags.includes('fleeing')) fleeing = true;
+    }
   }
+  if (hushes && fleeing) use('enemy.skittish', 'Skittish fleeing groups beside the Hollow');
   if (map.objectives.length > 0) {
     use('map.objectives', `optional objectives (${map.objectives.map((o) => o.id).join(', ')})`);
   }
+  if (map.objective === 'protect' || map.asset !== null) use('map.protect', 'a Protect asset');
+  if (map.revisitOf !== null) use('map.revisit', `a revisit of '${map.revisitOf}'`);
+  const clickables = Object.keys(map.clickables);
+  if (clickables.length > 0) use('map.clickable', `clickable objects (${clickables.join(', ')})`);
 }
 
 /** What `cfg` uses that a closed gate refuses: one message per feature, in the order first used. */

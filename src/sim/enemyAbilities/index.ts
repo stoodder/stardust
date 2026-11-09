@@ -4,7 +4,11 @@
 // slot order:
 // 1. Reset each live unit's per-tick ability state (`paceMul` 1, `huddleUid` 0).
 // 2. Each unit's own abilities: a leaving unit only leaves (leave.ts); otherwise burrow.ts (the
-//    Digger's dig cycle) and boss.ts (a boss's phase abilities: sneezes, burrows, haste).
+//    Digger's dig cycle) and boss.ts (a boss's phase abilities: sneezes, burrows, haste). Act II
+//    (T400a seams, stubs until their tasks): skittish.ts (a fleeing unit's haste; T402), hush.ts
+//    (the hush rule; T402), pulse.ts (shield pulses, a unit's or its boss phase's; T403), and
+//    blink.ts (a unit's or its boss phase's; T404). cloak.ts is the untouchable rule's query
+//    (T406), run from targeting rather than here.
 // 3. Huddles (huddle.ts: the Elder, a boss's huddle phase), last, so each leader's pace is final.
 // Units born this tick (a boss's young) are visited by the later passes like any other.
 // Elsewhere: splitting runs from cleanup over the tick's kills (split.ts); a boss's phase changes
@@ -13,16 +17,21 @@
 // abilityCount, paceMul, burrowed, huddleUid, bossPhase, invulnerableTicks, leaving).
 import type { SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { blinkStep } from './blink.ts';
 import { bossHuddle, bossStep } from './boss.ts';
 import { burrowStep } from './burrow.ts';
 import { huddleStep } from './huddle.ts';
+import { hushStep } from './hush.ts';
 import { leaveStep } from './leave.ts';
+import { pulseStep } from './pulse.ts';
+import { skittishStep } from './skittish.ts';
 
 export { splitOnDeath, wasKilled } from './split.ts';
 export { untargetable, immune } from './layers.ts';
 export { bossDamage, startBossEnding } from './bossPhases.ts';
 export { bossNextAbility, bossTelling, type BossAbility } from './boss.ts';
 export { burrowTelling } from './burrow.ts';
+export { cloakedOut } from './cloak.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
   const pool = state.enemies;
@@ -42,6 +51,13 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
     }
     if (def.burrow !== null) burrowStep(e, def.burrow);
     if (def.boss !== null) bossStep(state, ctx, e, def.boss);
+    if (e.skittishTicks > 0) skittishStep(state, e);
+    if (def.hushes) hushStep(state, ctx, e, def);
+    const phase = def.boss === null ? null : (def.boss.phases[e.bossPhase - 1] ?? null);
+    const pulse = phase?.pulse ?? def.pulse;
+    if (pulse !== null) pulseStep(state, ctx, e, pulse);
+    const blink = phase?.blink ?? def.blink;
+    if (blink !== null) blinkStep(state, ctx, e, blink);
   }
   for (let i = 0; i < pool.used; i++) {
     const e = pool.items[i]!; // i < used ≤ items.length

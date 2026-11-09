@@ -463,6 +463,85 @@ Dialogue text is Silkscreen 8 (see *Fonts*), the line in `white.1` with `*emphas
 
 ---
 
+## 10. The star map
+
+The campaign screen from Act II on, titled **Sector map**: Everglow Perimeter Ops' survey chart of the valley, drawn full-bleed at 640×360 game px with the screen's chrome in the corners, as the HUD's is. What it shows and when is [design/core-loop.md §1.1](../design/core-loop.md#11-the-star-map); its strings are [story/style-guide.md §2](../story/style-guide.md#2-voice-by-act); its build is [architecture.md § UI: DOM overlay](../tech/architecture.md#ui-dom-overlay).
+
+### What is code art and what is DOM
+
+| Part | How it's drawn |
+|---|---|
+| **The chart** (terrain, the colony, roads, the Long Walk, the north band, the legs between nodes) | One 640×360 image from a pure, seeded pixel generator (as the menu backdrop is), painted 1:1 into a `<canvas>` in the DOM. It repaints only when its phase or its legs change. No palette cycles: the chart is still |
+| **Node glyphs, medal pips, the marker** | Sprites `ui.star_node`, `ui.star_pips`, `ui.star_marker`, baked from palette-indexed grids into data URLs as portraits are, shown 1:1 inside the DOM node buttons |
+| **Header, banks, footer, name plates, region labels, the node panel, the notice** | DOM (Silkscreen 8, the §9 panel and button styles) |
+| **Scanlines and the first-visit sweep** | CSS over the chart |
+
+### The chart
+
+North is up. It is a top-down survey with hill shading lit from the north-west, the cartographer's convention: each relief step's south-east faces take the phase's `shade`, its north-west lips its `light`, and a 1 px contour line one ramp step darker rings each step. **Value:** the whole chart sits in the environment band (principle 1), a step below a battle's ground, so the glyphs, the marker, and the plates read over it in grayscale. The 1 px scanline texture at 6% covers it, so it reads as an ops screen.
+
+| Feature | Where (chart px) | Look |
+|---|---|---|
+| **Survey grid** | Everywhere | A 1 px dot every 16 px in the ground's darkest step; 2 px ticks every 32 px along the edges |
+| **The north band** ("no survey data") | The top edge, its depth by phase (below) | 1 px diagonal hatch every 4 px in `ink.2` over `ink.0`; its south edge dithers into the Spires over 8 px with the 4×4 ordered pattern. Never `acid`: Everglow's chart doesn't map the Hollow, only where its survey stops |
+| **The Spires** | A ridge band across the north, about y 32–120 | Jagged peaks 8–20 px tall in the phase's clay ramp, shaded south-east |
+| **Rigs** | Ridge Rigs about (400, 100), Rigs 7 and 8 on the ledge east of it; the Diggings about (500, 88) | Derricks 5×7 in `steel.2`/`steel.3` with a 1 px `orange.3` light |
+| **Rig Nine's bore** | (520, 76) | A 9×6 `ink.0` mouth on a `grime` spoil heap with 3–4 `violet.3` pixels in it (drill spoil is unsung: §1, principle 6) |
+| **Reclamation Facility 2** | (472, 168), under the north-east cliff | Three squat `steel.1`/`steel.2` blocks, three 5 px vats with `violet.3` cores and one `violet.4` pixel each, a 1 px stack. Drawn from the start and unlabeled: a fair-play clue |
+| **Gold seams** | The cliff face above the plant | 4–6 pixels of `pink.3` and `gold.4` (sung) |
+| **The Terraces** | x 228–300, y 140–188 | Four stepped strips of grass with clay lips. From the `act2.dusk` phase a `grime` mining scar cuts across them (A2M3's revisit) |
+| **The colony** | Walled, x 268–424, y 196–304; gates north (312, 196), east (424, 240), south (304, 304) | A 1 px `steel.2` wall with gaps at the gates; domes 3–7 px across in `white.0` with `teal.3` rims and `ink.1` shade on the south-east; Dome Row along the south wall; Admin Plaza a 12×10 paved square in the path ramp's top step at (336, 252) with three 1 px `gold.4` billboard ticks on its north side. Dome windows are 1 px `gold.3` from the dusk phase on |
+| **Roads** | The Spires road (north gate to Ridge Rigs to the Diggings), the haul road (the Diggings to the plant to the east gate), Mail Road (the east gate to the east edge), Preserve Road (the north-west hills about (96, 104) to the Preserve's gate) | 2 px in the path ramp with a 1 px edge one step darker |
+| **The Preserve** | A bowl, x 120–196, y 188–240, its gate on the south-east | One relief step lower than its rim, ringed by a dotted `steel.2` fence |
+| **The Long Walk** | The content polyline: the north edge, the Halls' mouth (412, 60), Okonkwo's Gap, the north gate, the south gate, the south edge | A 1 px dotted trail (1 on, 1 off) in the path ramp's top step, drawn under the roads, leaving across both edges |
+| **The lowlands** | South of the colony | Ground dithered with `blue.1` pools toward the south edge; a 1–2 px `blue.2` creek from the west hills down past the colony's west side |
+| **Edges** | West, east, and south | Dither into `ink.0` over 4 px with the apron's pattern (§3 *The apron*) |
+| **Reserved corners** | The header (x 8–200, y 8–48), the banks (x 512–632, y 8–36), the footer (x 392–632, y 328–352) | Ground only: no landmark, label, or node under them |
+
+**Node positions** (glyph centres; the data is `src/content/starMap.ts`, T301b, which validates that every node stays inside the chart, out of the reserved corners, and 16 px from every other node on at least one axis):
+
+| Map | Centre | Map | Centre |
+|---|---|---|---|
+| A1M1 | (304, 292) | A2M1 | (500, 88) |
+| A1M2 | (264, 160) | A2M2 | (400, 100) |
+| A1M3 | (440, 236) | A2M3 | (280, 152) |
+| A1M4 | (336, 252) | A2M4 | (472, 168) |
+| A1M5 | (312, 204) | A2M5 | (176, 164) |
+| | | A2M6 | (352, 200) |
+
+Provisional, settled with their milestones: A3M1 (152, 208), A3M2 (352, 260), A3M3 (372, 136), A3M4 (296, 248), A3M5 (488, 176), A3M6 (320, 300), the finale (412, 60).
+
+### The north edge and the palette by phase
+
+The chart's **phase** is the frontier's (core-loop §1.1). Its ramps are the act's environment ramps (§3), so the chart darkens with the maps:
+
+| Phase | Frontier | Ground, relief, roads | Shade / light | Accent (frontier leg, the next glyph, the UI theme) | North band |
+|---|---|---|---|---|---|
+| `act2.gold` | A2M1–A2M3 | `act2.grass`, `act2.clay`, `act2.path` | `act2.gold`'s | `orange.3` (Act II) | 24 px deep, with a wedge to 40 px over the Diggings' ridge tops |
+| `act2.dusk` | A2M4–A2M6 | The same | `act2.dusk`'s | `orange.3` | 36 px, the wedge to 64 px; the Diggings' derricks in `ink.1` silhouette, their lights still on |
+| `act3` | A3M1–the finale | `act3.ground`, `act3.path`, `act3.crystal` on the cliffs | `act3`'s; dome windows `act3.emergency`, half of them dark | `red.3` | 72 px across the Spires, with two or three 1 px `violet.2`/`violet.3` cracks reaching south to the Terraces |
+| `dawn` | None (post-game) | `finale.ground`, Act III's path | `finale`'s | `gold.3` | Recedes to 16 px; the Halls' mouth glows `gold.3` and `pink.3` (sung) in a 9 px dither, and the north faces take the warm light |
+
+The `act3` and `dawn` rows are sketches; Act III's and the finale's milestones settle them.
+
+### Nodes, legs, and the marker
+
+- **`ui.star_node`** (15×15 frames, `ink.0` outline): `cleared`, a 9×9 diamond in `gold.3` with a `gold.4` top-left edge (a survey benchmark in the medal's shape); `next`, a chamfered 11×11 `white.1` square ring around a 5×5 core in the act accent, one palette variant per act (`act2`, `act3`, `finale`); `ping_0`–`ping_3`, a 1 px accent ring growing from 11 to 15 px with stepped alpha, played once every 2 s at 8 fps (the 3 Hz flicker cap holds); `soon`, a dashed `steel.3` ring around the menus' 7×8 padlock; `focus`, four 3 px `white.1` corner brackets at 15×15, overlaid on the selected node.
+- **`ui.star_pips`** (13×3): frames `0`–`3`, three 3×3 diamonds, `gold.3` earned and `steel.1` not, 2 px under a cleared glyph.
+- **`ui.star_marker`** (9×13): a down-pointing pin in `white.1` with an `ink.0` outline and a `teal.3` visor slit (the Technician's JPT-1 visor), its tip 1 px above its node's glyph; `idle_0`/`idle_1` bob 1 px at 2 fps. Its walk to a new node takes 0.6 s along the leg, eased, in whole game pixels.
+- **Legs:** 1 px dashes, 2 on and 2 off, in whole game pixels, stopping 6 px short of each glyph: `steel.3` between cleared nodes, the act accent from the marker to the frontier.
+- **Name plates** (on the frontier and the selected node, and on any node while hovered): `ink.1` at 92% with a 1 px act-accent edge, the name in `white.1`, 6 px below the glyph, centred and kept inside the chart; a teaser's plate has a `steel.3` name and an `ink.4` edge.
+- **Region labels:** Silkscreen 8 caps in `steel.4` on `ink.1` plates at 80% with no edge: "The Spires" over the ridges, "Everglow Gardens" by the colony's west wall, the Long Walk's label beside the trail south of the colony, "No survey data" in the north band. A corrected label shows its old words above in `steel.3` with a 1 px line through them and its new words in `steel.4` (the codex annotations' look).
+
+### The panel and the chrome
+
+- **The node panel:** a HUD panel (§9 *Look*: `ink.1` at 92%, a 1 px act-accent edge, 3 px chamfer), 176 px wide, placed beside the selected node by the tower panel's rule (away from the screen centre; never over its node; clear of the other nodes and the reserved corners when it can be). Top to bottom: the kicker in `steel.3`; the name in `gold.4`; the state (*Next up* in the accent, *Cleared* in `gold.3`, *Coming soon* in `steel.3` beside the padlock); the tagline in `white.0` at a 9 px line; an `ink.3` rule; the threat glyphs with their names in `white.1` and the "Required" line in the act's secondary color (the briefing strip's grammar, §9); the three medals as rows (the medal tracker's 6 px diamonds, names in `gold.3`); the optional objectives' squares; then the button, right-aligned and primary. A teaser stops after its tagline.
+- **The header** (top left) and **the banks** (top right) are the menu panel's header (§9) split into two HUD plates over the chart; **the footer**'s buttons sit bottom right; the menu notice sits under the header plate.
+- **The theme** is the phase's act: the screen root carries its own `data-act`.
+- **The first-visit sweep:** a 1 px accent line runs from the top of the chart to the bottom in 1.2 s, stepping 2 px at a time, revealing the chart behind it with a 4 px dithered afterglow; then the notice shows top center for 4 s. Reduced motion skips the sweep.
+
+---
+
 ## Open questions
 
 1. **Dropping Pixelify Sans.** Nothing draws in it since dialogue moved to Silkscreen 8 (T302b), so its `@fontsource` package and the `--font-dialogue` token could go. A code-generated bitmap font rendered to canvas stays an option if long lines in Silkscreen's capitals prove tiring to read.

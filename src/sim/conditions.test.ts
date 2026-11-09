@@ -62,7 +62,7 @@ function setup(flags: SimConfig<IdSpace>['scriptFlags'] = {}): {
 } {
   return {
     state: createState(MAP, 1),
-    ctx: { content: CONTENT, config: { scriptFlags: flags } },
+    ctx: { content: CONTENT, config: { scriptFlags: flags }, map: MAP },
   };
 }
 

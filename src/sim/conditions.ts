@@ -8,8 +8,12 @@
 //   least one pair of that synergy link), `tagRatio` (leaked or killed ÷ spawned for a wave tag; 0
 //   when none spawned).
 // - Run atoms, accumulated over the whole run: `stat` (a run counter, `gte`/`lte`; counters only
-//   grow) and `passedMarker` (a non-exempt unit of the kind went past the marker at some point;
-//   latched in `stats.markersPassed` by trackConditions, which cleanup runs every tick).
+//   grow), `leaks` (non-exempt leaks of a faction or enemy, `gte`/`lte`; T400a), `wreckageCleared`
+//   (the drone cleared the wreckage under a marker; T400a), and `passedMarker` (a non-exempt unit
+//   of the kind went past the marker at some point; latched in `stats.markersPassed` by
+//   trackConditions, which cleanup runs every tick).
+// - `objectiveDone`: another optional objective of the map is `done` (T400a; settled once that
+//   objective settles).
 // - `flag`: a story flag from `SimConfig.scriptFlags` (fixed for the run; unset never matches).
 // - `all`, `any`, `not`.
 //
@@ -18,20 +22,24 @@
 // from the start, and a state atom stays open until it is judged. The medals use it to forfeit a
 // Challenge the moment it can no longer be earned (sim/medals.ts).
 import type { CompiledContent, CompiledMapDef, CompiledRoute } from '../content/compiled.ts';
-import type { ConditionDef, IdSpace, WaveTag } from '../content/types.ts';
+import type { ConditionDef, EnemyFaction, IdSpace, WaveTag } from '../content/types.ts';
 import { MEDAL_EXEMPT_TAGS } from '../content/validateMedals.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import type { SimConfig } from './config.ts';
-import type { SimState } from './state.ts';
+import type { ObjectiveStatus, SimState } from './state.ts';
 import { isLinkActive } from './systems/links.ts';
 
 type Condition = ConditionDef<IdSpace>;
 type View = DeepReadonly<SimState>;
 
-/** What conditions read besides state: the links (for `linkActive`) and the story flags. */
+/**
+ * What conditions read besides state: the links (for `linkActive`), the story flags, and the map
+ * (markers for `wreckageCleared`, objectives for `objectiveDone`).
+ */
 export interface ConditionContext {
   readonly content: Pick<CompiledContent<IdSpace>, 'links'>;
   readonly config: Pick<SimConfig<IdSpace>, 'scriptFlags'>;
+  readonly map: Pick<CompiledMapDef<IdSpace>, 'markers' | 'cols' | 'objectives'>;
 }
 
 /** The `markersPassed` key for "any enemy" (`passedMarker` without `enemy`). */
@@ -77,11 +85,15 @@ export function settledCondition(c: Condition, state: View, ctx: ConditionContex
     return v === null ? null : !v;
   }
   if ('flag' in c) return atom(c, state, ctx);
-  if ('passedMarker' in c) return atom(c, state, ctx) ? true : null;
-  if ('stat' in c) {
-    const v = state.stats[c.stat];
+  if ('passedMarker' in c || 'wreckageCleared' in c) return atom(c, state, ctx) ? true : null;
+  if ('stat' in c || 'leaks' in c) {
+    const v = 'stat' in c ? state.stats[c.stat] : leakCount(state, c.leaks);
     if (c.lte !== undefined) return v > c.lte ? false : null;
     return c.gte === undefined || v >= c.gte ? true : null;
+  }
+  if ('objectiveDone' in c) {
+    const status = objectiveStatus(state, ctx, c.objectiveDone);
+    return status === 'open' ? null : status === 'done';
   }
   return null; // towers, linkActive, tagRatio: judged when evaluated
 }
@@ -102,7 +114,41 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
     return markerPassedTick(state, marker, enemy ?? ANY_ENEMY) >= 0;
   }
   if ('flag' in c) return ctx.config.scriptFlags[c.flag] === c.eq;
+  if ('leaks' in c) return within(leakCount(state, c.leaks), c.gte, c.lte);
+  if ('wreckageCleared' in c) return wreckageClearedAt(state, ctx.map, c.wreckageCleared);
+  if ('objectiveDone' in c) return objectiveStatus(state, ctx, c.objectiveDone) === 'done';
   return false; // combinators are handled by the callers
+}
+
+/** Non-exempt leaks of `faction` and/or `enemy` (both given: the enemy's, if of that faction). */
+function leakCount(
+  state: View,
+  of: { readonly faction?: EnemyFaction; readonly enemy?: string },
+): number {
+  if (of.enemy !== undefined) return state.stats.leaksByEnemy[of.enemy] ?? 0;
+  if (of.faction !== undefined) return state.stats.leaksByFaction[of.faction];
+  const f = state.stats.leaksByFaction;
+  return f.skitterkin + f.aelari + f.everglow + f.hollow;
+}
+
+/** Whether the drone has cleared the wreckage tile under `marker` this run. */
+export function wreckageClearedAt(
+  state: DeepReadonly<Pick<SimState, 'wreckage'>>,
+  map: Pick<CompiledMapDef<IdSpace>, 'markers' | 'cols'>,
+  marker: string,
+): boolean {
+  const pos = map.markers[marker];
+  if (pos === undefined) return false; // validateScripts rejects an unknown marker
+  return state.wreckage.cleared.includes(pos[1] * map.cols + pos[0]);
+}
+
+/** The standing of the map's objective `id` ('open' for an unknown id: validate rejects it). */
+function objectiveStatus(state: View, ctx: ConditionContext, id: string): ObjectiveStatus {
+  const objectives = ctx.map.objectives;
+  for (let i = 0; i < objectives.length; i++) {
+    if (objectives[i]!.id === id) return state.objectives[i] ?? 'open'; // i < length
+  }
+  return 'open';
 }
 
 function within(v: number, gte: number | undefined, lte: number | undefined): boolean {

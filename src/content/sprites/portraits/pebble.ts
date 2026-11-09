@@ -112,7 +112,7 @@ function shimmer(g: CharGrid, lit: boolean): void {
       const h = (x * 13 + y * 29) % 23;
       if (h === 0) plot(g, x, y, lit ? '*' : 'P');
       else if (h === 7) plot(g, x, y, lit ? 'Q' : '+');
-      else if (lit && (h === 3 || h === 15)) plot(g, x, y, (x + y) % 2 === 0 ? 'P' : '+');
+      else if (lit && h % 4 === 3) plot(g, x, y, (x + y) % 2 === 0 ? 'P' : '+');
     }
   }
 }
@@ -194,9 +194,7 @@ function lid(g: CharGrid, cx: number, cy: number, rows: number, slant: -1 | 0 | 
 
 /** A closed eye: a 2 px thick arc of `x`, curving up (happy) or down (peaceful, singing). */
 function closedEye(g: CharGrid, cx: number, cy: number, up: boolean): void {
-  const pts = up
-    ? ['..xxxx..', '.x....x.', 'x......x']
-    : ['x......x', '.x....x.', '..xxxx..'];
+  const pts = up ? ['..xxxx..', '.x....x.', 'x......x'] : ['x......x', '.x....x.', '..xxxx..'];
   put(g, Math.round(cx) - 4, Math.round(cy) - 1, pts);
 }
 

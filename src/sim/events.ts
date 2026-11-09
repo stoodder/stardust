@@ -1,7 +1,7 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. Every M2 and M3 event is declared; the ones whose task
-// hasn't landed are never emitted yet (each names its task). An event's owning task may add
+// sim, systems communicate through state. Every M2, M3, and M4 event is declared; the ones whose
+// task hasn't landed are never emitted yet (each names its task). An event's owning task may add
 // payload fields.
 import type {
   AllyKind,
@@ -320,6 +320,120 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly uid: number;
       readonly ability: K['ability'];
       readonly target: GridPos | null;
+    }
+  // ── Act II (T400a seams; each names the task that emits it) ─────────────────────────────────
+  | {
+      /**
+       * A Hollow unit began the hush tell on a hushable unit (enemies.md § 5.4; T402): it stops
+       * for HUSH_TELL_SEC. `victim` is the hushable unit's uid (an enemy, or later an ally).
+       */
+      readonly type: 'HushStarted';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly victim: number;
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * The hush landed (T402): `victim` is removed (no leak, no bounty, not processed), and the
+       * Hollow unit heals to full and turns Heavy (TurnedHeavy follows). The `skitterkin_hushed`
+       * bark's trigger. `victimEnemy` is the victim's enemy id (null for an ally).
+       */
+      readonly type: 'Hushed';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly victim: number;
+      readonly victimEnemy: K['enemy'] | null;
+      readonly x: number;
+      readonly y: number;
+    }
+  | { readonly type: 'TurnedHeavy'; readonly uid: number; readonly enemy: K['enemy'] }
+  | {
+      /** A Skittish unit bolted (T402): an ally within SKITTISH_RADIUS_TILES died or was hushed. */
+      readonly type: 'SkittishBolt';
+      readonly uid: number;
+    }
+  | {
+      /**
+       * A shield pulse's tell began (`tell`, T403) or it fired (`fired`): `restored` units got
+       * shield back within `radiusTiles` of (x, y). The ring and chime for render and audio.
+       */
+      readonly type: 'ShieldPulse';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly phase: 'tell' | 'fired';
+      readonly x: number;
+      readonly y: number;
+      readonly radiusTiles: number;
+      readonly restored: number;
+    }
+  | {
+      /** A hit landed on a shield (T403): the ripple; `broken` when it took the shield to 0. */
+      readonly type: 'ShieldHit';
+      readonly uid: number;
+      readonly x: number;
+      readonly y: number;
+      readonly broken: boolean;
+    }
+  | {
+      /** A blink's tell began (T404): it blinks to (toX, toY) after the tell unless interrupted. */
+      readonly type: 'BlinkTell';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly x: number;
+      readonly y: number;
+      readonly toX: number;
+      readonly toY: number;
+    }
+  | {
+      /** A unit blinked from (x, y) to (toX, toY): the afterimage (T404). */
+      readonly type: 'Blinked';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly x: number;
+      readonly y: number;
+      readonly toX: number;
+      readonly toY: number;
+    }
+  | { readonly type: 'BlinkInterrupted'; readonly uid: number }
+  /** A cloaked unit became Revealed (T406), or slipped back into its cloak (`Cloaked`). */
+  | { readonly type: 'Revealed'; readonly uid: number }
+  | { readonly type: 'Cloaked'; readonly uid: number }
+  | {
+      /**
+       * A leak along an asset route hit the Protect map's asset (T305a): `lost` meter it cost (a
+       * boss drains it all). Position in tiles.
+       */
+      readonly type: 'AssetHit';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly lost: number;
+      readonly x: number;
+      readonly y: number;
+    }
+  /** The asset meter reached 0: the map is lost (MapLost follows; T305a). */
+  | { readonly type: 'AssetLost' }
+  | {
+      /**
+       * A retry checkpoint (architecture.md § Checkpoints; T305b): wave `wave` is about to start
+       * (every CHECKPOINT_EVERY_WAVES from CHECKPOINTS_FROM_ACT, or a `checkpoint` action). The
+       * host records `{ wave, tick, commandCount }`.
+       */
+      readonly type: 'CheckpointReached';
+      readonly wave: number;
+    }
+  | {
+      /** A clickable world object turned on or off (`setClickable`; T409). */
+      readonly type: 'ClickableChanged';
+      readonly marker: string;
+      readonly on: boolean;
+    }
+  | {
+      /** The player interacted with a clickable object, or its fallback fired (`byFallback`; T409). */
+      readonly type: 'Interacted';
+      readonly marker: string;
+      readonly byFallback: boolean;
     }
   | { readonly type: 'MapWon' }
   | { readonly type: 'MapLost' }

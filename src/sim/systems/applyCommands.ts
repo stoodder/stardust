@@ -71,6 +71,8 @@ function applyCommand(
       return applyAbilityCommand(state, ctx, cmd);
     case 'clear':
       return applyClearCommand(state, ctx, cmd);
+    case 'interact':
+      return 'notImplemented'; // clickable world objects arrive with T409
     default:
       return assertNever(cmd);
   }

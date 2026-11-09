@@ -92,7 +92,8 @@ describe('portrait frames', () => {
 
   it('falls back to the base frame for a variant the art lacks, and neutral for an expression', () => {
     const b = frames(portraitBricks);
-    expect(pickFrame(b, 'pebble', 'sad', 'talk')).toBe('sad_talk');
+    expect(pickFrame(b, 'not_drawn', 'sad', 'talk')).toBe('sad_talk');
+    expect(pickFrame(b, 'pebble', 'sad', 'talk')).toBe('pebble.sad_talk');
     expect(pickFrame(b, null, 'singing', 'rest')).toBe('happy');
     expect(pickFrame(b, null, 'policy', 'flash')).toBe('neutral');
     expect(pickFrame(new Set(), null, 'neutral', 'rest')).toBeNull();

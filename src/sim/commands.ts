@@ -1,8 +1,9 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
-// fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b); interact and scriptInput
-// arrive with their maps (M4). `notImplemented` is kept for handlers declared ahead of their task.
-import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
+// fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b). M4's `interact` is declared
+// and rejected `notImplemented` until T409; `scriptInput` arrives with its Act III map.
+// `notImplemented` is kept for handlers declared ahead of their task.
+import type { GridPos, IdSpace, LiveIds, MarkerId, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 
 export type Command<K extends IdSpace = LiveIds> =
@@ -29,6 +30,12 @@ export type Command<K extends IdSpace = LiveIds> =
    * the map: `invalidTile`; not wreckage, or already queued or cleared: `invalidTarget`.
    */
   | { readonly type: 'clear'; readonly tile: GridPos }
+  /**
+   * Interact with a clickable world object (A2M3's Peeker holding Pebble; T409): a marker the map
+   * lists in `clickables` that a script has made clickable (`setClickable`). Rejected
+   * `notImplemented` until T409; then `notClickable` when the marker isn't clickable now.
+   */
+  | { readonly type: 'interact'; readonly marker: MarkerId }
   /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */
   | { readonly type: 'ability'; readonly slot: 1 | 2; readonly target?: GridPos }
   /** Call the next wave early (or start wave 1). */
@@ -83,6 +90,8 @@ export type RejectReason =
   | 'needsTier3'
   /** specialize: the tower is already tier 4. */
   | 'alreadySpecialized'
+  /** interact: the marker isn't a clickable object that's clickable now (T409). */
+  | 'notClickable'
   /** The handler belongs to a later task (named where the command is handled). */
   | 'notImplemented';
 
@@ -117,6 +126,8 @@ export function copyCommand<K extends IdSpace>(cmd: Command<K>): Command<K> {
       return { type: 'callWave' };
     case 'clear':
       return { type: 'clear', tile: [cmd.tile[0], cmd.tile[1]] };
+    case 'interact':
+      return { type: 'interact', marker: cmd.marker };
     default:
       return assertNever(cmd);
   }

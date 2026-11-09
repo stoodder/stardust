@@ -1253,3 +1253,12 @@ Orchestrator rulings on the plan's smaller forks (each logged here; the owning t
 - **Built gaps closed in M4:** the Lookout license (owed since A1M5) and Tidybots (core-loop §6.7) land with T406 and T410b.
 - **act2.md wins over maps.md §7** on A2M3's pads (A1M2's 11 unchanged; cuts go through decor); enemies.md §5.4's act column for Fracture and Rift Moth is fixed to A2M6.
 - **Every feature task ships its own minimal readable view**, so map tasks can screenshot real mechanics before the polish tasks land. Map tasks add a normal-flow smoke step from the star map (the T331 lesson). The gate budget is ≤ 7 min (T412).
+
+### D102 — 2026-11-09 — T301a the star map spec
+The star map ("Sector map" on screen) is specced in core-loop §1.1, art-direction §10 and architecture § UI.
+- **DOM only, no Phaser scene:** the chart is a pure, seeded pixel generator painted into a `<canvas>`; nodes, panel and focus are DOM; glyphs are baked sprites. The `campaign` screen shows the Shift board until A1M5 is won and the star map after, so every route lands right ("Shift board" buttons read "Sector map" then).
+- **Only won maps and the frontier show** (the first map not won: "Next up" if built, else a named "Coming soon" teaser with the act file's tagline). No locked nodes; later maps aren't named or in the page. The marker walks to a newly won map.
+- **The Shift board is Act I only:** its sixth row is never named. This retires D097's named "Rig Nine" teaser row; T420 caps the board at Act I so registering Act II maps can't spoil their names before T301b lands.
+- **Naming rule for locked shop and base copy:** Act I maps always; later maps only once won or at the frontier; otherwise "Shift {n}".
+- **The chart's phase follows the frontier** (`act2.gold` from A2M1, `act2.dusk` from A2M4, `act3`, `dawn`), the UI theme too. The north is Everglow's "No survey data" hatch, never the Hollow's acid; Rig Nine's spoil and the plant's vats carry a few cold violet pixels from the start as fair-play clues; the Long Walk is labelled "Surge corridor" until A2M5 is won (M5).
+- **First visit:** a survey sweep and "Access upgraded! Perimeter Ops now covers the whole valley." (`story.seen` id `star_map_opened`, no save bump). Keyboard: arrows in campaign order, Home/End, Enter to the panel, Esc back; arrival focuses the frontier's Start.
