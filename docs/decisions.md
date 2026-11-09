@@ -1071,3 +1071,19 @@ Real art went in behind T300a's ids. No data changed.
   - **Blips:** 14 per-speaker blips, including Kip's own. The narrator, system, KFA, and Hollow speakers are silent by design.
   - **Typewriter tick:** pitched per speaker, at most once every 55 ms, and quiet for 160 ms after a line's blip.
 - **Levels:** every sound peaks between −34 and −4.3 dBFS with nothing clipping. **The W7/boss storm peaks at −1.1 dB**, the same as M2's storm, so D033's −3.0 dB figure is out of date and the headroom margin is just 0.2 dB (restore it: T323).
+
+### D084 — 2026-11-09 — T302c the radio becomes dialogue
+- **Migration:** all 31 A1M1/A1M2 radio and debrief lines are dialogue now, word for word. The briefings are `_brief` scenes. `content/radio/` and the adapter are deleted, and `tools/dialogueCanon.test.ts` checks every line against its act file.
+- **A1M1's briefing choice** (new canon in act1.md):
+  - Bricks asks "Any questions, Sprout?" with three answers: "Where do they all come from?", "Is the lettuce always this aggressive?", "...No, Sergeant."
+  - The replies:
+    - QUILL: "The Spires, up north, where the rigs are! Further questions go to Extraction. (Per policy.)"
+    - Bricks: "Lettuce is fine. Ask Goldie. She talks to it."
+    - Bricks: "Good. I asked questions once. They gave me a clipboard."
+  - The callsign effect runs only on a first viewing, so a replay never undoes a later callsign.
+- **Rules:**
+  - A policy tell splits its line at "(Per policy.)" (style-guide §5.6).
+  - `first_leak` and a tagged `tower_sold` queue behind the panel instead of dropping. The first leak plays once per campaign (act1.md).
+  - Bark ids end in the map number; cue scenes are `<map>_cue_<moment>`; a tower intro over 80 characters is a cue scene.
+  - The results card reads the outcome's `_debrief` scene.
+  - Name tags run through `story/tags.ts`.

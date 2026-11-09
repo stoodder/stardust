@@ -24,11 +24,8 @@ const GATE_SIDE: GridPos = [11, 7];
 /** The salvage-only drones. */
 const EAST_WRECK: GridPos = [12, 6];
 const SOUTH_WRECK: GridPos = [6, 8];
-/**
- * The hairpin's corner, where W4's Chonks round into the bend while par holds fire for Gerald:
- * the turn bunches them, so Mk II's blast takes all three and Mk I's leaves the last.
- */
-const CHONK_STRIKE: GridPos = [2, 3];
+/** On the upper leg, where W4's Chonks walk while par holds fire for Gerald. */
+const CHONK_STRIKE: GridPos = [5, 3];
 /** The hairpin's bend: the Haulers' strike point. */
 const BEND: GridPos = [2, 5];
 
@@ -43,7 +40,7 @@ function parSteps(): BuildStep[] {
     { wave: 2, build: 'sprinkler', tile: HAIRPIN_SOUTH }, // Sitting Ducks with the Thumper
     { wave: 3, build: 'skyhook', tile: NORTH_LANE },
     { wave: 4, upgrade: HAIRPIN },
-    { wave: 4, ability: 1, target: CHONK_STRIKE, when: { afterSec: 16 } }, // the held Chonks
+    { wave: 4, ability: 1, target: CHONK_STRIKE, when: { afterSec: 17 } }, // the held Chonks
     { wave: 5, build: 'thumper', tile: BEND_WRECK },
     { wave: 5, ability: 2, when: { afterSec: 8 } }, // Time Dilation on the flock
     { wave: 6, upgrade: HAIRPIN_EAST },
@@ -126,7 +123,7 @@ export const builds = defineBuilds({
         { wave: 2, build: 'sprinkler', tile: HAIRPIN_SOUTH },
         { wave: 3, build: 'thumper', tile: HAIRPIN },
         { wave: 4, upgrade: HIGH_GROUND },
-        { wave: 4, ability: 1, target: CHONK_STRIKE, when: { afterSec: 16 } },
+        { wave: 4, ability: 1, target: CHONK_STRIKE, when: { afterSec: 17 } },
         { wave: 5, build: 'rivet', tile: SPAWN_SIDE },
         { wave: 5, ability: 2, when: { afterSec: 8 } },
         { wave: 6, upgrade: HAIRPIN_EAST },

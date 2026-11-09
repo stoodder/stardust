@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { luminance } from '../palettes/color.ts';
 import { rgbOf, type ColorName } from '../palettes/master.ts';
+import { DEATH_ANIM, DEATH_FRAMES } from './enemies/death.ts';
 import { SACK_LEGEND } from './enemies/sack.ts';
 import { peekerFrame } from './props/peeker.ts';
 import { tetherDir } from './fx/link_tether.ts';
@@ -501,6 +502,41 @@ describe("M3's enemies (T311a)", () => {
     expect(count(grid('prop.peeker', 'peek_1'), 'Q')).toBeLessThan(
       count(grid('prop.peeker', 'peek_0'), 'Q'),
     );
+  });
+});
+
+describe('Act I deaths and props (T311c)', () => {
+  it('gives every Act I Skitterkin a towers can kill the comic pop: four frames, played once', () => {
+    for (const id of [
+      'enemy.nibbler',
+      'enemy.zoomer',
+      'enemy.chonk',
+      'enemy.brood_hauler',
+      'enemy.youngling',
+      'enemy.puffwing',
+      'enemy.bunchling',
+      'enemy.digger',
+      'enemy.elder',
+    ] as const) {
+      const d = def(id);
+      expect(Object.keys(d.frames), id).toEqual(expect.arrayContaining([...DEATH_FRAMES]));
+      expect(d.anims?.['death'], id).toEqual(DEATH_ANIM);
+      // The squash keeps the body (wider, flatter); the pop throws confetti; the last frame is
+      // almost empty, so the unit is gone when the anim ends.
+      expect(count(grid(id, 'death_0'), '.')).toBeGreaterThan(count(grid(id, 'walk_se_0'), '.'));
+      expect(count(grid(id, 'death_3'), '.')).toBeGreaterThan(count(grid(id, 'death_1'), '.'));
+    }
+    // Gerald is never killed (he's the mail) and the Matriarch is driven off: no death pop.
+    expect(def('enemy.gerald').anims?.['death']).toBeUndefined();
+    expect(def('enemy.chitterbloom').anims?.['death']).toBeUndefined();
+  });
+
+  it("draws the Chonk's scutes as separate plates with steel rims (the Armored tell)", () => {
+    for (const f of ['walk_se_0', 'walk_ne_0']) {
+      expect(
+        count(grid('enemy.chonk', f), 'S') + count(grid('enemy.chonk', f), 'T'),
+      ).toBeGreaterThan(8);
+    }
   });
 });
 

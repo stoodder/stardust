@@ -35,8 +35,8 @@ function chonk(facing: 'se' | 'ne', step: 0 | 1): string[] {
       const along = x + (band % 2) * 3 - step + 5;
       const k = ((along % 5) + 5) % 5;
       const seam = k === 0;
-      // The rim runs over each plate's middle three pixels only: rounded tops, like scales.
-      const rim = k >= 2 && k <= 3;
+      // The rim runs over three of each plate's four pixels: rounded tops, like scales.
+      const rim = k >= 1 && k <= 3;
       if (r === 3) plot(g, x, y, '1');
       else if (r === 0 && rim) plot(g, x, y, dx < 0.2 ? 'S' : 'T');
       else if (r === 0) plot(g, x, y, seam ? '1' : '3');

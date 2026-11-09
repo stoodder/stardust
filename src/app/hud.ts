@@ -8,7 +8,8 @@ import { UPGRADE_HINT } from '../meta/index.ts';
 import { mapOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
-import { callWaveBonus, costFor } from '../sim/index.ts';
+import { abilityStats, callWaveBonus, freeCastReady } from '../sim/index.ts';
+import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
@@ -30,6 +31,10 @@ import {
   countdownSeconds,
   holdingCount,
   medalViews,
+  objectiveViews,
+  priceKey,
+  priceOf,
+  saleView,
   threatIntel,
   towerPoints,
   towerUnlockWaves,
@@ -70,6 +75,22 @@ export interface HudSaveInfo {
   readonly newTowers: readonly string[];
   /** The save has shown the upgrade teach before, so it stays off (once per save, D061). */
   readonly upgradeHintSeen: boolean;
+  /** Enemy types the save has met (`campaign.seenEnemies`): the wave preview's NEW badges. */
+  readonly seenEnemies: readonly string[];
+  /**
+   * The callsign the HUD's name plate shows, read again each frame (a scene's `set` node can
+   * change it mid-map; core-loop §6.1). Sprout without a profile (D070's fallback).
+   */
+  callsign(): string;
+}
+
+/** The name plate's callsign without a save or profile (D070: the token fallback). */
+export const DEFAULT_CALLSIGN = 'Sprout';
+
+/** The callsign of the save in play, for the name plate. */
+function savedCallsign(): string {
+  const id = activeSave()?.profile?.callsign;
+  return id === undefined ? DEFAULT_CALLSIGN : CALLSIGNS[id];
 }
 
 /** The save in play as the HUD reads it (app/save.ts); a `?map=` battle has none. */
@@ -84,6 +105,8 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
       spareRunnersOpen: false,
       newTowers: [],
       upgradeHintSeen: false,
+      seenEnemies: [],
+      callsign: () => DEFAULT_CALLSIGN,
     };
   }
   const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
@@ -96,6 +119,8 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     spareRunnersOpen: systemOpen('spareRunners'),
     newTowers: newTowersIn(loadout),
     upgradeHintSeen: hintShown(UPGRADE_HINT),
+    seenEnemies: save.campaign.seenEnemies,
+    callsign: savedCallsign,
   };
 }
 
@@ -119,6 +144,19 @@ export function callPulses(
 ): boolean {
   if (wave === 0) return built;
   return countdown !== null && countdown > CALL_PULSE_MIN_SEC && enemiesAlive === 0;
+}
+
+/**
+ * Whether the Hold Fire teach shows (core-loop §2.7: "the HUD's Hold Fire (all) button pulses
+ * until the player uses it"): a neutral unit (Gerald) is on the field, the master switch hasn't
+ * been used this run, and the map is still being played.
+ */
+export function holdFireTeachShows(
+  neutralsLive: number,
+  masterUsed: boolean,
+  playing: boolean,
+): boolean {
+  return neutralsLive > 0 && !masterUsed && playing;
 }
 
 /** The first wave whose countdown starts the upgrade teach (D028: W2's build phase). */
@@ -182,23 +220,47 @@ export function bindHud(
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
   const saveInfo = opts.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
+  const unlockWaves = towerUnlockWaves(sim.map);
+  // Prices follow the sim's (D077): the slots are rebuilt when Rapid Deploy's free build is spent
+  // or Clearance Sale's charges change.
+  let slotPrices = priceKey(sim.state);
   hud.slots.value = buildSlots(
     towers,
     sim.config.loadout,
-    towerUnlockWaves(sim.map),
+    unlockWaves,
     sim.config.modifiers,
     saveInfo.newTowers,
+    sim.state,
   );
+  hud.sale.value = saleView(sim.state, null);
   // The NEW pips are this run's: the save remembers the towers have been fielded (D061).
   if (saveInfo.newTowers.length > 0) markNewTowersShown(saveInfo.newTowers);
   const abilityViews = abilitySlots(sim.config);
   const cooldownTotals = abilityCooldownTotals(sim.config);
+  // Each slot's cooldown in waves (Clearance Sale), and whether its ability loads charges.
+  const waveTotals = abilityViews.map((v) => {
+    const def = sim.config.content.abilities[v.ability];
+    return def === undefined ? 0 : abilityStats(def, sim.config.modifiers).cooldownWaves;
+  });
+  const chargeSlots = abilityViews.map(
+    (v) => sim.config.content.abilities[v.ability]?.effect.kind === 'discount',
+  );
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
   const specLock = specLockText(saveInfo.engineeringOpen);
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
   hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);
   let medalState = { ...sim.state.medals };
+  // Objectives stay open until the sim settles them (T304f).
+  hud.objectives.value = objectiveViews(sim.map);
+  hud.callsign.value = saveInfo.callsign();
+  // The wave preview's NEW badges: types the save has met before this battle.
+  const seen: ReadonlySet<string> = new Set(saveInfo.seenEnemies);
+  // The Hold Fire teach (A1M3's Gerald): neutral units on the field, and whether Hold (all) has
+  // been used this run.
+  let neutralsLive = 0;
+  let masterUsed = false;
+  hud.holdFireTeach.value = false;
   hud.spareRunnersOpen.value = saveInfo.spareRunnersOpen;
   hud.leak.value = null;
   hud.waveBanner.value = null;
@@ -223,7 +285,7 @@ export function bindHud(
     }
     if (previewFor !== s.wave) {
       previewFor = s.wave;
-      hud.nextWave.value = wavePreview(sim.map, s.wave);
+      hud.nextWave.value = wavePreview(sim.map, s.wave, seen);
     }
     hud.countdown.value = countdownSeconds(s.schedule.phase, s.schedule.countdownTicks);
     hud.callBonus.value = callWaveBonus(s, sim.map);
@@ -256,18 +318,42 @@ export function bindHud(
       markHintsShown([UPGRADE_HINT]);
     }
     syncCooldowns();
+    const key = priceKey(s);
+    if (key !== slotPrices) {
+      slotPrices = key;
+      hud.slots.value = buildSlots(
+        towers,
+        sim.config.loadout,
+        unlockWaves,
+        sim.config.modifiers,
+        saveInfo.newTowers,
+        s,
+      );
+    }
+    hud.sale.value = saleView(s, hud.sale.value);
+    hud.callsign.value = saveInfo.callsign();
+    hud.holdFireTeach.value = holdFireTeachShows(neutralsLive, masterUsed, s.outcome === 'playing');
     hud.holdFireAll.value = s.holdFireAll;
     hud.spareRunnersAll.value = s.spareRunnersAll;
     hud.holdingCount.value = holdingCount(s.towers);
     speed.value = host.speed;
   };
+  const extras = { wavesLeft: 0, totalWaves: 0, free: false, charges: 0 };
   const syncCooldowns = (): void => {
     const prev = hud.abilityCooldowns.value;
     let next: AbilityCooldownView[] | null = null;
+    const s = sim.state;
     for (let i = 0; i < abilityViews.length; i++) {
       const v = abilityViews[i]!; // i < length
-      const left = sim.state.abilityCooldownTicks[v.slot - 1] ?? 0;
-      const cd = cooldownView(left, cooldownTotals[v.slot - 1] ?? 0, prev[i] ?? null);
+      const left = s.abilityCooldownTicks[v.slot - 1] ?? 0;
+      const wavesLeft = s.abilityCooldownWaves[v.slot - 1] ?? 0;
+      const ready = left <= 0 && wavesLeft <= 0 && !v.absent;
+      extras.wavesLeft = wavesLeft;
+      extras.totalWaves = waveTotals[i] ?? 0;
+      // Ready Room's free cast shows only on a slot that can cast now.
+      extras.free = ready && freeCastReady(s, sim.config.modifiers, v.slot);
+      extras.charges = chargeSlots[i] === true ? s.discountCharges : 0;
+      const cd = cooldownView(left, cooldownTotals[v.slot - 1] ?? 0, prev[i] ?? null, extras);
       if (cd !== prev[i]) next ??= [...prev];
       if (next !== null) next[i] = cd;
     }
@@ -310,8 +396,11 @@ export function bindHud(
       hud.built.value = true;
       syncTowers();
       const def = towers[e.tower];
+      // The next copy's price, as the sim will charge it (a sale charge may just have gone).
       const cost =
-        def === undefined ? Infinity : costFor(sim.config.modifiers, e.tower, def.tiers[0].cost);
+        def === undefined
+          ? Infinity
+          : priceOf(sim.state, sim.config.modifiers, e.tower, def.tiers[0].cost, 'build').cost;
       if (!staysArmed(interaction.armed, e.tower, sim.state.credits, cost)) {
         if (interaction.armed === e.tower) interaction.arm(null);
       }
@@ -342,7 +431,14 @@ export function bindHud(
       if (text !== null) showNotice(text);
     }),
     // Screen readers hear what H, Shift+H, and a cast did (D059; T is commands.ts's).
+    host.bus.on('EnemySpawned', (e) => {
+      if (sim.config.content.enemies[e.enemy]?.neutral === true) neutralsLive++;
+    }),
+    host.bus.on('NeutralExited', () => {
+      neutralsLive = Math.max(0, neutralsLive - 1);
+    }),
     host.bus.on('HoldFireChanged', (e) => {
+      if (e.target === 'all') masterUsed = true;
       let name: string | null = null;
       if (e.target !== 'all') {
         const pool = sim.state.towers;
@@ -387,5 +483,8 @@ export function bindHud(
     hud.holdingCount.value = 0;
     hud.spareRunnersAll.value = false;
     hud.spareRunnersOpen.value = false;
+    hud.holdFireTeach.value = false;
+    hud.sale.value = null;
+    hud.objectives.value = [];
   };
 }

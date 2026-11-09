@@ -15,12 +15,13 @@ import {
   peekerTile,
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
-import { costFor, isBuildableTile, type Command } from '../sim/index.ts';
+import { abilityReady, isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import { PRIORITY_LABEL } from '../ui/hud/words.ts';
 import type { Host } from './host.ts';
 import { announce, showNotice } from './hud.ts';
 import { lockedText, rejectText } from './hudText.ts';
+import { aimOf, priceOf, readyInWaves } from './hudViews.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -83,9 +84,11 @@ export function pressBuildSlot(index: number): void {
   }
   const state = host.sim.state;
   const def = host.sim.config.content.towers[tower];
-  // What the sim charges: tier 1 after `towerCost` modifiers (D037).
+  // What the sim charges now (D077): tune-ups, Rapid Deploy's free first build, Clearance Sale.
   const cost =
-    def === undefined ? Infinity : costFor(host.sim.config.modifiers, tower, def.tiers[0].cost);
+    def === undefined
+      ? Infinity
+      : priceOf(state, host.sim.config.modifiers, tower, def.tiers[0].cost, 'build').cost;
   if (state.lockedTowers.includes(tower)) {
     const slot = hud.slots.value[index];
     showNotice(slot === undefined ? (rejectText('towerLocked') ?? '') : lockedText(slot));
@@ -204,10 +207,11 @@ export function callWave(): void {
 }
 
 /**
- * An ability slot (HUD click, Q for slot 1, or E for slot 2): starts aiming it, so the next click
- * on a tile fires it there (a stretch of path for Suppressing Fire), or stops aiming if it's
- * already aimed. An empty, absent, or recharging slot doesn't aim; a notice says why. Aiming works
- * while paused (the ability fires when play resumes, core-loop §3.1).
+ * An ability slot (HUD click, Q for slot 1, or E for slot 2). A targeted one starts aiming, so the
+ * next click on a tile fires it there (a stretch of path for Suppressing Fire), or stops aiming if
+ * it's already aimed. An untargeted one (Time Dilation, Clearance Sale) casts at once (D082). An
+ * empty, absent, or recharging slot does neither; a notice says why. Aiming and casting work
+ * while paused (a cast applies at once, an aimed one fires when play resumes; core-loop §3.1).
  */
 export function pressAbility(slot: 1 | 2): void {
   if (target === null) return;
@@ -223,8 +227,21 @@ export function pressAbility(slot: 1 | 2): void {
     if (slot === 1 || a.slot2State === 'none') showNotice(rejectText('noAbility') ?? '');
     return;
   }
-  if ((host.sim.state.abilityCooldownTicks[slot - 1] ?? 0) > 0) {
-    showNotice(cooldownText(slot, host.sim.config.content.abilities[id]?.name ?? null));
+  const def = host.sim.config.content.abilities[id];
+  const state = host.sim.state;
+  if (!abilityReady(state, slot)) {
+    const waves = state.abilityCooldownWaves[slot - 1] ?? 0;
+    showNotice(
+      waves > 0
+        ? `${def?.name ?? 'Ability'}: ${readyInWaves(waves)}`
+        : cooldownText(slot, def?.name ?? null),
+    );
+    return;
+  }
+  if (def !== undefined && aimOf(def.effect.kind) === 'none') {
+    // Nothing to aim: drop any other slot's aim and cast now.
+    if (interaction.aiming !== null) interaction.aimAbility(null);
+    issue({ type: 'ability', slot });
     return;
   }
   interaction.aimAbility(slot);

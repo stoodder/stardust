@@ -298,13 +298,13 @@ Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par d
 | W1 | Gerald's macro; Rivet (4,4) inside the hairpin; Thumper (8,4) at its east end |
 | W2 | The salvage drone to all three wrecks, the bend's first; Sprinkler (7,5): Sitting Ducks with (8,4) |
 | W3 | Skyhook (3,2) under the air lane |
-| W4 | Upgrade the Rivet to T2; Orbital Strike on the hairpin's corner (2,3), 16 s in (the Chonks rounding the bend during Gerald's pass) |
+| W4 | Upgrade the Rivet to T2; Orbital Strike on the upper leg (5,3), 17 s in (the Chonks walking through Gerald's pass) |
 | W5 | Thumper on the cleared bend pad (1,5); Time Dilation 8 s in (the flock) |
 | W6 | Upgrade the Thumper (8,4) to T2 and the Rivet to T3 (pierce), Strong targeting; Orbital Strike on the bend (2,5), 42 s in (a Hauler) |
 | W7 | Upgrade the bend Thumper to T2; Skyhook (6,7) under the air lane; Orbital Strike on the bend, 20 s in |
 | W8 | Upgrade the Skyhook (3,2) to T2; Time Dilation 22 s in (the big flock); Orbital Strike on the bend, 20 s in |
 
-Par's bank at each build phase: 310, 85, 163, 119, 103, 92, 57, 31 (W1–W8); W6–W8's purchases land late as the bounties arrive. **Par's one leak is designed:** while it holds fire for Gerald's W4 pass, the three Chonks walk on into the bend, and the Mk I strike there catches two of them; the third leaks (2 integrity: 90). With **Orbital Strike Mk II** bought, the blast takes all three, and par wins at 100 with Perfect Core (`rndPickChanges: ['orbital_strike_mk2']`, T228). A player who holds fire only on the towers that can hit Gerald (Rivet, Skyhook; the Thumpers and the Sprinkler can't) loses nothing there: that's W4's test.
+Par's bank at each build phase: 310, 85, 163, 119, 103, 92, 57, 31 (W1–W8); W6–W8's purchases land late as the bounties arrive. **Par's one leak is designed:** while it holds fire for Gerald's W4 pass, the three Chonks walk on, and the Mk I strike catches two of them; the third leaks (2 integrity: 90). With **Orbital Strike Mk II** bought, the blast takes all three, and par wins at 100 with Perfect Core (`rndPickChanges: ['orbital_strike_mk2']`, T228). A player who holds fire only on the towers that can hit Gerald (Rivet, Skyhook; the Thumpers and the Sprinkler can't) loses nothing there: that's W4's test.
 
 **No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); both must lose by W7, `noCounterLoseByWave: 7`, because the armor test is W6–W7's Haulers, after W5's flock tests the air):
 - **no-air:** Thumpers (8,4), (4,4), and (1,5), the Sprinkler (7,5), and Rivets only on the high ground (9,2) and (12,2), out of the air lane's reach; par's casts.
@@ -329,7 +329,7 @@ Par's bank at each build phase: 310, 85, 163, 119, 103, 92, 57, 31 (W1–W8); W6
 | `no_upgrades` | 35 | 2 in W4, 6 in W6, 5 in W8 |
 | do-nothing | loses at W2 | |
 
-Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3.test.ts`](../../../src/balance/a1m3.test.ts) re-runs the harness with W6–W8's Haulers 0.5–1 s closer or further apart, Gerald's W4 and W7 passes 1 s earlier or later, W4's Chonks 0.4 s closer or further apart, and W5–W8's other groups shifted ±0.2 s: every check holds, Mk II's included. It also checks W4's Chonk spacing against both strike sizes and that the Haulers walk further apart than a strike covers.
+Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3.test.ts`](../../../src/balance/a1m3.test.ts) re-runs the harness with W6–W8's Haulers 0.5–1 s closer or further apart, Gerald's W4 and W7 passes 1 s earlier or later, W4's Chonks 0.2 s closer or further apart, and W5–W8's other groups shifted ±0.2 s: every check holds, Mk II's included. It also checks W4's Chonk spacing against both strike sizes and that the Haulers walk further apart than a strike covers.
 
 ## A1M4 · The Audit
 

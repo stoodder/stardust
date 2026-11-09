@@ -509,10 +509,14 @@ export function cooldownChip(cd: AbilityCooldownView): string {
   return `${cd.secondsLeft}s`;
 }
 
-/** The slot's recharge in words, for its label and notices: "Ready in 2 waves", "Ready in 12 s". */
+/** A wave cooldown in words (core-loop §3.2, Clearance Sale): "Ready in 1 wave", "Ready in 3 waves". */
+export function readyInWaves(waves: number): string {
+  return `Ready in ${waves} ${waves === 1 ? 'wave' : 'waves'}`;
+}
+
+/** The slot's recharge in words, for its label: "Ready in 2 waves", "Ready in 12 s". */
 export function cooldownWords(cd: AbilityCooldownView): string {
-  if (cd.wavesLeft > 0) return `Ready in ${cd.wavesLeft} ${cd.wavesLeft === 1 ? 'wave' : 'waves'}`;
-  return `Ready in ${cd.secondsLeft} s`;
+  return cd.wavesLeft > 0 ? readyInWaves(cd.wavesLeft) : `Ready in ${cd.secondsLeft} s`;
 }
 
 /**

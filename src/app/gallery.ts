@@ -313,6 +313,20 @@ const DIORAMA_GRID: GroundGrid = {
   // A1M2's decor markers (groundTiles DECOR_MARKERS): Rig 3 by the power node, the housing block,
   // and the scarecrow.
   markers: { rig3: [8, 2], housing: [0, 1], scarecrow: [8, 8] },
+  // Render-only terraces (T223): the back rows stand a step above the road, and the west strip
+  // of the lower field a step above its east, so both cliff faces show (lit `ne`, shaded `nw`).
+  // prettier-ignore
+  terraces: [
+    '111111111',
+    '111111111',
+    '111111111',
+    '000000000',
+    '110000000',
+    '110000000',
+    '110000000',
+    '110000000',
+    '110000000',
+  ].join('').split('').map(Number),
 };
 
 /** A tower's look: a tier (1–3) or a tier-4 spec, named like its base frame. */
@@ -402,6 +416,7 @@ function diorama(
     const [sx, sy] = screen(i, j);
     draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
     for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
+    for (const v of look.cliff ?? []) draw(frameOf('tile.cliff', v, envVariant(env)), sx, sy);
     if (look.block !== undefined)
       blocks.push({ id: look.block.sprite, frame: look.block.frame, i, j });
     const p = wreckageLook(i, j) ?? look.prop;
@@ -423,6 +438,8 @@ function diorama(
     // Matriarch Chitterbloom lumbering down the road (the boss's silhouette among her brood).
     ['enemy.chitterbloom', 'walk_sw_1', 7.55, 4.75],
     ['enemy.zoomer', 'walk_se_0', 7.45, 5.9],
+    // A Nibbler popping (Act I's comic death, T311c) just behind it.
+    ['enemy.nibbler', 'death_1', 7.5, 5.2],
     // An Elder holding three younglings to her pace (the Quiet Wave's look).
     ['enemy.elder', 'walk_sw_0', 4.75, 6.45],
     ['enemy.youngling', 'walk_sw_1', 5.45, 6.2],

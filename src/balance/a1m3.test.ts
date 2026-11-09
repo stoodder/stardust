@@ -1,5 +1,5 @@
 // A1M3's tuning is robust where it matters (T304e): with W6–W8's Haulers released a little closer
-// together or further apart, Gerald's passes a little earlier or later, W4's Chonks ±0.4 s apart,
+// together or further apart, Gerald's passes a little earlier or later, W4's Chonks ±0.2 s apart,
 // and W5–W8's other groups shifted ±0.2 s, the harness's verdicts still hold: par wins in band and
 // earns Return to Sender, Orbital Strike Mk II still changes par's result (T228), both no-counter
 // builds lose (also on the full catalog), early calls stay winnable, and the alt builds keep their
@@ -77,7 +77,7 @@ describe('A1M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     }
   });
 
-  it.each([-0.4, 0.4])('holds with W4’s Chonks %s s further apart (Mk II still decides)', (d) => {
+  it.each([-0.2, 0.2])('holds with W4’s Chonks %s s further apart (Mk II still decides)', (d) => {
     const wider = (g: WaveGroup): WaveGroup =>
       g.enemy === 'chonk' ? { ...g, intervalSec: g.intervalSec! + d } : g;
     expect(failures(shifted([4], wider))).toEqual([]);

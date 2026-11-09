@@ -7,16 +7,18 @@ import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import {
-  costFor,
+  liveTileAt,
   sellValueInto,
   towerStats,
   type SellValue,
   type Sim,
   type SimConfig,
   type SpecChoice,
+  type PurchaseState,
   type Tower,
   type TowerBonuses,
 } from '../sim/index.ts';
+import { LIST_PRICE_STATE, priceOf } from './hudViews.ts';
 import type { SelectedTowerView, SpecChoiceView, SpecOptionView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import { CARD_CHARS, PANEL_CHARS, wrapParts } from '../ui/hud/layout.ts';
@@ -36,7 +38,10 @@ function nextParts(delta: string): string[] {
   return parts;
 }
 
-/** The tier-4 choice for a tier-3 tower whose type has specs (else null). */
+/**
+ * The tier-4 choice for a tier-3 tower whose type has specs (else null), each priced as the sim
+ * would charge it now (`purchasePriceInto` on `state`, a `spec` purchase: D077).
+ */
 export function specChoice(
   def: DeepReadonly<CompiledTowerDef>,
   tier: number,
@@ -44,6 +49,7 @@ export function specChoice(
   modifiers: SimConfig<IdSpace>['modifiers'],
   unlocked: boolean,
   lockText: string,
+  state: PurchaseState = LIST_PRICE_STATE,
 ): SpecChoiceView | null {
   if (def.specs === null || tier !== MAX_TIER_BEFORE_SPEC) return null;
   const option = (choice: SpecChoice): SpecOptionView => {
@@ -52,10 +58,12 @@ export function specChoice(
       towerStats(def, MAX_TIER_BEFORE_SPEC + 1, bonuses, modifiers, choice),
       tierDef,
     );
+    const { cost, price } = priceOf(state, modifiers, def.id, tierDef.cost, 'spec');
     return {
       choice,
       name: silkText(tierDef.name ?? displayName(`${def.id}_${choice}`)),
-      cost: costFor(modifiers, def.id, tierDef.cost, true),
+      cost,
+      price,
       description,
       descLines: wrapParts(description.split(' · '), CARD_CHARS),
     };
@@ -77,7 +85,14 @@ let keyText = '';
  * every frame, so it allocates nothing while the inputs hold still (D059, C7): the parts go into a
  * scratch array, and the joined string is rebuilt only when one of them changed.
  */
-function selectedKey(t: DeepReadonly<Tower>, sell: SellValue, x: number, y: number): string {
+function selectedKey(
+  t: DeepReadonly<Tower>,
+  sell: SellValue,
+  x: number,
+  y: number,
+  sale: PurchaseState,
+  tile: string,
+): string {
   // Credits stay out: the component reads them itself (an unaffordable button dims).
   const k = keyNext;
   k[0] = t.uid;
@@ -99,6 +114,11 @@ function selectedKey(t: DeepReadonly<Tower>, sell: SellValue, x: number, y: numb
   k[16] = t.spareRunners;
   k[17] = x;
   k[18] = y;
+  // The prices follow Clearance Sale's charges (D077); the bonus lines follow the live tile
+  // (a node uncovered under wreckage pays, D082).
+  k[19] = sale.discountCharges;
+  k[20] = sale.discountPct;
+  k[21] = tile;
   let same = keyParts.length === k.length;
   for (let i = 0; same && i < k.length; i++) same = keyParts[i] === k[i];
   if (same) return keyText;
@@ -141,14 +161,15 @@ export function selectedView(
   gridToScreen(t.x, t.y, origin, p);
   const { state, config, map } = sim;
   const sell = sellValueInto(t, state.tick, state.economy.sellRefundPct, panelSell);
-  const key = selectedKey(t, sell, p.x, p.y);
+  // The live tile: a cleared wreck reads as what it uncovered (D076, D082).
+  const tile = liveTileAt(map, state.wreckage, t.row * map.cols + t.col);
+  const key = selectedKey(t, sell, p.x, p.y, state, tile);
   if (prev !== null && prev.key === key) return prev;
   const mods = config.modifiers;
   // A specialized tower (tier 4) reads its spec's stats.
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
   const upgradeDelta = deltaText(stats.next);
   const statLine = statLineText(stats, t.tierDef);
-  const tile = map.tiles[t.row * map.cols + t.col];
   const bonusList = bonusTexts(
     tile,
     t,
@@ -157,6 +178,12 @@ export function selectedView(
     mods,
   );
   const specName = t.spec === null ? null : (t.def.specs?.[t.spec].name ?? null);
+  // The next tier's price as the sim will charge it (D077: tune-ups, then Clearance Sale).
+  const nextTier = t.def.tiers[t.tier];
+  const upgrade =
+    stats.next === null || nextTier === undefined
+      ? null
+      : priceOf(state, mods, t.def.id, nextTier.cost, 'upgrade');
   return {
     uid,
     key,
@@ -165,7 +192,8 @@ export function selectedView(
     icon: t.def.sprites.icon,
     tier: t.tier,
     maxTier: MAX_TIER_BEFORE_SPEC,
-    upgradeCost: stats.next?.cost ?? null,
+    upgradeCost: upgrade?.cost ?? null,
+    upgradePrice: upgrade?.price ?? 'list',
     sellValue: sell.value,
     fullRefund: sell.full,
     refundPct: Math.round(state.economy.sellRefundPct * 100),
@@ -178,7 +206,15 @@ export function selectedView(
     bonuses: bonusList.flatMap((b) => wrapParts([silkText(b)], PANEL_CHARS)),
     upgradeDelta,
     deltaLines: upgradeDelta === null ? [] : wrapParts(nextParts(upgradeDelta), PANEL_CHARS),
-    specs: specChoice(t.def, t.tier, t, mods, config.specsUnlocked.includes(t.def.id), specLock),
+    specs: specChoice(
+      t.def,
+      t.tier,
+      t,
+      mods,
+      config.specsUnlocked.includes(t.def.id),
+      specLock,
+      state,
+    ),
     x: p.x,
     y: p.y,
   };
