@@ -377,7 +377,7 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | A1M2 | 1 | 2 | 6 | 92 | First pebble in the shoe |
 | A1M3 | 1 | 2 | 6 | 90 | Lightest threat load in Act I, for Hold Fire |
 | A1M4 | 2 | 3 | 6 | 85 | First loadout choice; comedy at full volume |
-| A1M5 | 3 | 4 | 6 | 84 | Boss; the Quiet Wave; stinger |
+| A1M5 | 3 | 4 | 6 | 81 | Boss; the Quiet Wave; stinger |
 | A2M1 | 4 | 4 | 7 | 82 | Re-baseline after the boss |
 | A2M2 | 4 | 5 | 6 | 79 | |
 | A2M3 | 5 | 5 | 4 | 77 | Deliberate low novelty: room to look |

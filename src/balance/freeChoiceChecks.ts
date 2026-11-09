@@ -43,9 +43,8 @@ const SPARED_RULE = flagRule('spared_quiet_wave');
  * `holdFireWhile: 'quiet_wave'` wins inside the band once the Quiet Wave's own designed cost
  * (`quietWaveCost`: the integrity its leaks are meant to cost) is given back, and its run sets
  * `spared_quiet_wave` by the flag's own run-end rule (story/flags.ts), whatever map the rule
- * names; (b) on a map with
- * `fleeing` groups, the spareFleeing policy's margin is ≥ par's − SPARE_FLEEING_SLACK_PCT on the
- * same seed.
+ * names; (b) on a map with `fleeing` groups, the spareFleeing policy's margin is ≥ par's −
+ * SPARE_FLEEING_SLACK_PCT on the same seed.
  */
 export function freeChoiceChecks<K extends IdSpace>(
   map: CompiledMapDef<K>,
@@ -59,7 +58,7 @@ export function freeChoiceChecks<K extends IdSpace>(
     out.push(
       perRun(
         '16',
-        "(a) par holding fire through the Quiet Wave wins in band (less the wave's own cost) and sets spared_quiet_wave",
+        '(a) par holding fire through the Quiet Wave wins in band (its own cost given back) and sets spared_quiet_wave',
         'holdFireWhile:quiet_wave',
         few,
         (rec) => {
@@ -68,7 +67,7 @@ export function freeChoiceChecks<K extends IdSpace>(
           if (band === null) return `act ${map.act} has no par band yet`;
           const judged = Math.min(100, rec.marginPct + (100 * cost) / r.maxIntegrity);
           if (judged < band.lo || judged > band.hi) {
-            return `margin ${fmtPct(rec.marginPct)} (${fmtPct(judged)} less the Quiet Wave's ${cost} integrity) is outside the band ${band.lo}–${band.hi}`;
+            return `margin ${fmtPct(rec.marginPct)} (${fmtPct(judged)} with the Quiet Wave's own ${cost} integrity given back) is outside the band ${band.lo}–${band.hi}`;
           }
           if (SPARED_RULE === undefined) return 'no run-end rule sets spared_quiet_wave';
           return evaluateFlagRule(SPARED_RULE.value, r.stats)

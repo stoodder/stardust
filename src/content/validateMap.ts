@@ -26,7 +26,8 @@
 // - [soft-traits]: soft enemies are ≤ 15% of every wave's threat (maps.md § 6.2).
 // - [teach]: each `teach` wave or group teaches a trait new to the campaign, at most one per trait.
 // - [new-threats], [new-counter]: in campaign order, at most two new threats and one new
-//   required-counter category per map (maps.md § 6.3).
+//   required-counter category per map (maps.md § 6.3); a capstone boss (known traits, known
+//   brood) is not a new threat.
 // - [script]: wave triggers name a wave of the map; markers, objectives, and forced inputs that
 //   scripts name exist; cue ids follow `<map_id>_wNN` or `<map_id>_<slot>`; `grantCredits` is a
 //   whole number ≥ 1.

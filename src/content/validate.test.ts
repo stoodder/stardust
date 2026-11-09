@@ -433,6 +433,23 @@ describe('validate: maps', () => {
       ],
     });
     rejects({ ...raw, enemies: { ...raw.enemies, fx_crawler: crawler } }, 'new-threats');
+    // A capstone boss built only from what's already taught is exempt (maps.md § 6.3, rule 2):
+    // its traits are known and its phases bring no new unit. One with a new trait counts.
+    const capstone: EnemyDef = {
+      ...FIXTURE.enemies.fx_walker,
+      id: 'fx_crawler',
+      bounty: 0,
+      tells: ['boss'],
+      boss: { phases: [{ fromPct: 1, hastePct: 0.5 }], ending: 'driveOff', endAtPct: 0 },
+    };
+    expect(validate({ ...raw, enemies: { ...raw.enemies, fx_crawler: capstone } })).toEqual([]);
+    const preview: EnemyDef = {
+      ...capstone,
+      armor: 2,
+      traits: ['armored'],
+      tells: ['boss', 'armored'],
+    };
+    rejects({ ...raw, enemies: { ...raw.enemies, fx_crawler: preview } }, 'new-threats');
   });
 
   it('[new-counter] at most one new required-counter category per map', () => {

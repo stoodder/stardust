@@ -202,8 +202,7 @@ export function validateNovelty(
       ...(p.burrow?.surfaceSpawn === undefined ? [] : [p.burrow.surfaceSpawn.enemy]),
     ]);
     return (
-      e.traits.every((t) => history.traits.has(t)) &&
-      brings.every((b) => history.enemies.has(b))
+      e.traits.every((t) => history.traits.has(t)) && brings.every((b) => history.enemies.has(b))
     );
   };
   const threats = [

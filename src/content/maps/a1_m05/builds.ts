@@ -17,18 +17,11 @@ const NODE: GridPos = [5, 5];
 const GATE_N: GridPos = [6, 5];
 /** South-east of the gate, beside row 6's east run. */
 const GATE_SE: GridPos = [8, 7];
-/** The west zigzag's pads: its upper pocket, and its lower pocket's two (the east one by the node). */
-const WEST_UP: GridPos = [2, 3];
+/** The west zigzag's lower pocket: two pads, the east one beside the node. */
 const WEST_LOW: GridPos = [3, 5];
 const WEST_LOW_E: GridPos = [4, 5];
-/** The east zigzag's pads: its upper pocket's two and its lower pocket's two. */
-const EAST_UP_W: GridPos = [10, 3];
-const EAST_UP: GridPos = [11, 3];
-const EAST_LOW_W: GridPos = [10, 5];
-const EAST_LOW: GridPos = [11, 5];
-/** Strike points: the gate, and row 6 on each side of it. */
+/** Strike points: the gate, and row 6 east of it, where the warren convoys walk in. */
 const GATE: GridPos = [6, 6];
-const WEST_RUN: GridPos = [3, 6];
 const EAST_RUN: GridPos = [9, 6];
 /** Row 6's east end, by the warren track's last turn. */
 const EAST_TURN: GridPos = [11, 6];
@@ -61,6 +54,7 @@ function parSteps(): BuildStep[] {
     { wave: 9, build: 'thumper', tile: WEST_LOW },
     { wave: 9, upgrade: WEST_LOW },
     { wave: 9, upgrade: WEST_LOW },
+    // The Matriarch's phase 3, at the gate (she comes up the road BOSS_DELAY_SEC into W9).
     { wave: 9, ability: 1, target: GATE, when: { afterSec: 60 } },
     { wave: 9, ability: 2, target: GATE, when: { afterSec: 60 } },
   ];
@@ -139,6 +133,10 @@ export const builds = defineBuilds({
   // The armor test is W5's Haulers and the air test W6's flock, so each no-counter build must lose
   // by W7 rather than W6 (act1.md § A1M5).
   noCounterLoseByWave: 7,
+  // Par drives the Matriarch off at the gate, before the banner line: Party Pooper Prevention.
+  parMedals: ['challenge'],
+  // Each pick saves W7's second warren Hauler: Mk II's wider blast takes it with its Elder, and
+  // Rapport readies Suppressing Fire at the gate in time for it (T228).
   rndPickChanges: ['orbital_strike_mk2', 'rapport_bricks'],
   altBuilds: {
     // Thumper (Bunker Buster), Sprinkler, Zapcoil: the Thumpers and the Sprinkler at the gate
@@ -206,6 +204,3 @@ export const builds = defineBuilds({
     },
   },
 });
-
-// Pads the builds don't use yet (kept named for tuning).
-void [WEST_UP, WEST_LOW, EAST_UP, EAST_LOW, EAST_RUN, WEST_RUN];

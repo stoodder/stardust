@@ -1166,3 +1166,12 @@ Real art went in behind T300a's ids. No data changed.
 - **Objective rows** show on a win, like medals ("NEW!" with Intel, "On file", "Next time!").
 - **First payday:** a run that pays Stardust into an empty bank while the shop is locked; "Banked for Zibzab's shop…" shows only then (T235).
 - Follow-ups: T329.
+
+### D092 — 2026-11-09 — T304g A1M5 *Record Quarter*
+- **Par 81.0** (17/21: the reference profile carries Reinforced Core 1, so integrity moves in 1/21 steps; 85.7 isn't below A1M4's 85 and 76.2 leaves the band, so par loses exactly 4). Its margin is late: W7's second warren Hauler and one W8 Puffwing on a second air lane `sky_east`. **Mk II and Bricks's Rapport each change a result** (95.2): Mk II's blast reaches the Hauler; Rapport readies Suppressing Fire at the gate in time (T228). Without casts par drops to 71–76. campaign.md §7's A1M5 target 84 → 81.
+- **The Quiet Wave (C1):** spared = 7/7 leaked, flag set, 71.4, no medal lost; cleared = par. **Check #16a judges the band with the Quiet Wave's designed cost added back** (`quietWaveCost`: Old Thrum's leak 2, younglings 0), since sparing must never read as failing the map.
+- **Capstone bosses aren't new threats** in `validateThreats` (maps.md §6.3 rule 2) when all their traits and brood are already known.
+- **Pacing for early-call fairness:** W2–W8 open 10 s after the wave starts (`OPEN`), the Matriarch arrives 20 s into W9, W10 has a 60 s countdown so it walks in after she's driven off (at ~dist 16.6, before the banner line).
+- **Alts as built** (act1.md's planned ones lost: an air-only Skyhook leaves two ground towers for two roads): `ducks_and_chain` (Thumper Bunker Buster + Sprinkler + Zapcoil) 81.0, `shell_and_chain` (Rivet + Thumper + Zapcoil) 52.4.
+- **C1 on replays:** the debrief branches on `thisRun: spared_quiet_wave`, the stamp reads the run (D091), later payoffs read the saved flag.
+- New canon lines in act1.md § A1M5: Sterling's brief and loss lines, Bricks's Marguerite name tag, the stinger caption "Rig Nine. Status: not answering." Follow-ups: T330; the runtime (~9.7 min) goes to T315.

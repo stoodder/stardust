@@ -342,7 +342,11 @@ describe('balance checks', () => {
     expect(judge(a, heldRun(18, 3)).failures[0]).toMatch(
       /only 3\/5 quiet-wave units leaked: spared_quiet_wave stays false/,
     );
-    expect(judge(a, heldRun(15, 5)).failures[0]).toMatch(/outside the band 80–100/);
+    // The band is judged with the Quiet Wave's own designed cost (Thrum's leak) given back.
+    expect(judge(a, heldRun(15, 5)).ok).toBe(true); // 75 + 5
+    expect(judge(a, heldRun(14, 5)).failures[0]).toMatch(
+      /margin 70 \(75 with the Quiet Wave's own 1 integrity given back\) is outside the band 80–100/,
+    );
     expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);
   });
 

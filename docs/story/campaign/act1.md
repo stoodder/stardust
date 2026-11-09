@@ -443,18 +443,51 @@ Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.
 - **Facts:** Northern Gate · `act1` (party dressing: banners, hats, a confetti cannon) · Defend + boss · 14×10, 12 buildable (2 high ground, 1 power node) · 10 waves · 350 credits · **second spawn** opens W3 · companion Bricks + Bricks ally post by the gate · Technician Orbital Strike.
 - **Story purpose:** Act I's comedy peak and its one crack: the boss who is driven off with her young, then the **Quiet Wave (C1)**, then the stinger. **Target: triumph, then a held breath.**
 
-**Layout.** Two roads from the north edge (the Spires road, west, and a warren track, north-east) merge at the colony's north gate before the core at the south edge. The banner line (a strip of party bunting across the merged road two-thirds of the way down) marks the Challenge. The party tent is decor beside the core. The Peeker's rock is on the warren track, closer than ever.
+**Layout.** Two roads from the north edge (the Spires road, west, and a warren track, north-east) zigzag down the two halves of the map and merge at the colony's north gate, mid-map, before the core at the south edge. The banner line (a strip of party bunting across the merged road just inside the gate, two-thirds of the way down the map) marks the Challenge. The party tent and the confetti cannon are decor beside the core. The Peeker's rock is on the warren track, closer than ever.
 
-**Waves.** 1 Nibblers (west) · 2 Diggers ×3 [T: burrowing, "not a hard requirement"; the wave is `teach: true`, because Burrowing is a soft trait here] · 3 east spawn opens: Zoomers + Nibblers [T: second spawn] · 4 Bunchlings with a few Diggers, both roads [X; the Diggers stay ≤ 15% of the wave's threat] · 5 Elder + Haulers · 6 Puffwings + Chonks · 7 mixed, both roads [X] · 8 the Spring Surge (largest Act I wave) · 9 **Matriarch Chitterbloom** (west road; sneezes Nibblers; burrows and surfaces with a Bunchling; panics and huddles her young; `driveOff` at 0%) · 10 **the Quiet Wave:** Old Thrum leading six younglings, east road, no NEW badge, no prompt ([enemies.md §5.1](../../design/enemies.md#51-skitterkin-body-organic)).
+**Waves.** 1 Nibblers (west) · 2 Diggers ×3 [T: burrowing, "not a hard requirement"; the wave is `teach: true`, because Burrowing is a soft trait here] · 3 east spawn opens: Zoomers + Nibblers [T: second spawn] · 4 Bunchlings with a few Diggers, both roads [X: splash; the Diggers stay ≤ 15% of the wave's threat] · 5 Elder + Haulers [X: armor] · 6 Puffwings + Chonks [X: air] · 7 mixed, both roads [X] · 8 the Spring Surge (largest Act I wave) · 9 **Matriarch Chitterbloom** (west road; sneezes Nibblers; burrows and surfaces with a Bunchling; panics and huddles her young; `driveOff` at 0%) · 10 **the Quiet Wave:** Old Thrum leading six younglings, east road, no NEW badge, no prompt ([enemies.md §5.1](../../design/enemies.md#51-skitterkin-body-organic)).
+
+**Layout data** (the data is [`src/content/maps/a1_m05/map.ts`](../../../src/content/maps/a1_m05/map.ts)). The **Spires road** (`spires`) spawns at (1,0), zigzags down the west half (south to row 2, east to column 4, south to row 4, west to column 1, south to row 6) and runs east along row 6 into the **north gate** (6,6); the **warren track** (`warren`) spawns at (12,0) and mirrors it down the east half (west along row 2 past the Peeker's rock, south, east along row 4, south) and runs west along row 6 into the gate. The merged road drops south from the gate to the core (6,9). Spires road 21 tiles (about 21 s for a Nibbler, 30 s for a Hauler, 52 s for the Matriarch), warren track 22. Air lanes: `sky` straight down the middle from (6,0) to the core, between the roads and over the gate; `sky_east` round the east edge ((13,0) down to (13,8), then to the core), flown only by W8's lone Puffwing. Buildable: the **Spires high ground** (3,3) inside the west zigzag (it covers the whole Spires road) and the **gate high ground** (7,5) north-east of the gate (both roads' runs into the gate and the merged road); the **power node** (5,5) north-west of the gate; pads (6,5) above the gate, (8,7) south-east of it, (3,5) and (4,5) in the west zigzag's lower pocket (the second beside the node), (2,3) in its upper pocket, and (10,3), (11,3), (10,5), (11,5) in the east zigzag's pockets. Markers: `bricks_post` (5,7) beside the gate, `banner_line` (7,7) across the merged road, `party_tent` (8,9) and `confetti_cannon` (4,8) by the core, `peeker` (8,3) on the warren track.
+
+```
+.S..........S.
+.#..........#.
+.####....####.
+..o^#....#oo..
+.####....####.
+.#.oo+o^..oo#.
+.############.
+......#.o.....
+......#.......
+......C.......
+```
+
+**Wave data** (the data is [`src/content/maps/a1_m05/waves.ts`](../../../src/content/maps/a1_m05/waves.ts); every countdown is Act I's 25 s except W10's 60 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s, Digger 1.0 s, Puffwing 0.6 s; groups take the Spires road unless marked *warren* or flown on a lane). **W2–W8 open 10 s into the wave** (`OPEN`): the last wave's bounties land before first contact, so a player who calls waves early isn't buying turrets mid-fight. A **convoy** is two Haulers 1.5 s apart, their Elder 1.2 s behind the second (both walk in its huddle, at its pace, regenerating), then Nibblers 0.3 s apart. W5's and W7's armor comes down both roads; **W7's warren convoy and W8's** are where par's casts and the R&D picks decide a Hauler (below). The **Matriarch comes up the Spires road 20 s into W9**: the ground rumbles first, and a player who calls W9 early still meets her after W8's tail has cleared the gate. W10's 60 s countdown starts as she spawns (waves overlap), so the Quiet Wave walks in after she has been driven off, and a held breath after.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler ×30 @ 0.8, 0 | 30 |
+| W2 | Digger ×3 @ 2.5, 10 (`teach`) · Nibbler ×26 @ 0.6, 19 | 29 |
+| W3 | Zoomer ×16 @ 0.4, 10 *warren* · Nibbler ×30 @ 0.6, 14 | 46 |
+| W4 | Bunchling ×6 @ 1.0, 10 · Bunchling ×6 @ 1.0, 14 *warren* · Digger ×2 @ 1.5, 22 *warren* | 14 |
+| W5 | convoy at 10 (Nibbler ×8) · Hauler 20, Elder 21.2, Nibbler ×8 @ 0.3, 21.6 *warren* · Hauler ×3 @ 1.5, 30 | 24 |
+| W6 | Chonk ×6 @ 2, 10 · Puffwing ×10 @ 0.6, 16 · Puffwing ×10 @ 0.6, 30 | 26 |
+| W7 | Bunchling ×12 @ 0.8, 10 · convoy at 12 *warren* (Nibbler ×6) · Puffwing ×10 @ 0.6, 18 · Zoomer ×20 @ 0.35, 26 · Chonk ×4 @ 1.5, 28 | 55 |
+| W8 | Zoomer ×24 @ 0.3, 10 *warren* · Bunchling ×16 @ 0.6, 10 · huddle (Elder + Nibbler ×10 @ 0.3) at 24 · Chonk ×8 @ 1.5, 22 *warren* · Puffwing ×16 @ 0.5, 26 · Hauler ×2 @ 1.5, 32, Elder ×3 @ 2.0, 34.7, Nibbler ×14 @ 0.3, 35.1 *warren* · convoy at 34 (Nibbler ×8) · Digger ×3 @ 1.2, 40 *warren* · Puffwing ×1, 30 on `sky_east` | 109 |
+| W9 | Matriarch Chitterbloom, 20 | 1 |
+| W10 | Old Thrum (Elder, `quiet_wave`), 0 · Nibbler ×6 @ 0.8, 0.6 (`quiet_wave`, `youngling`) *warren* | 7 |
+
+Totals count spawns; each Bunchling adds three Nibblers when it dies, and the Matriarch her sneezes and surfacing Bunchlings. Holding fire through all of W10 costs Old Thrum's 2 integrity and nothing else (younglings leak 0).
 
 **Story delivery.**
-- *Briefing:* Sterling's party memo; QUILL in a party hat: "I'm wearing a hat! Don't check the budget code." · QUILL (the boss hint): "Sensors show something big under the north road. Probably a party surprise!"
+- *Briefing:* Sterling's party memo: "Quarterly Results party at the north gate, Four-Forty-Seven! Hats on. Pests are NOT on the guest list!" · QUILL in a party hat: "I'm wearing a hat! Don't check the budget code." · QUILL (the boss hint): "Sensors show something big under the north road. Probably a party surprise!"
 - *Radio:*
   - w03 Bricks: "Second road's open. Watch both. You've got two eyes. Use both of 'em."
   - w04 (Joke of the Shift) QUILL: "Joke of the Shift, party edition! Why did the pest cross the perimeter? It didn't. You're very good at your job!" · QUILL: "...That's the joke. It's also a compliment. I'm allowed to combine them. I checked." · Bricks: "It's a good hat, QUILL."
   - w05 Sterling: "Q2 pest losses down 38%! Lettuce losses: Accounting is still working on that number!"
   - w07 Bricks: "Four hundred even. Round number. Don't like round numbers."
   - w09 (boss cue) QUILL: "That's not a surprise. That's a Matriarch. Codename: CHITTERBLOOM."
+  - First `wave_cleared` (name tag) Bricks: "That one's Marguerite. Second wife. Twice the range, half the patience."
 - *Quiet Wave (cue at W10 start):* Bricks: "Clear it, Sprout." Then Bricks's ally unit **lowers his cannon** and stays lowered for the wave: a silent tell, never mentioned (allies never target `quiet_wave`, `youngling`, or `fleeing` units). · Sterling: "Let's finish strong, Four-Forty-Seven!" Then nothing. At map end, if spared: Bricks: "...Sprout." then "Yeah. Okay." If cleared: Bricks: "Good work."
 - *Barks:* QUILL `boss_phase` 3: "She's panicking! Panicking is ninety percent of being driven off!" · Bricks `not_firing` (W10 only, once): "...You okay, Sprout?" · QUILL `wave_cleared` (boss): "Driven off! Not processed. Is that allowed? Logging it."
 - *Full-screen scene* `a1_m05_scene_party` (≤ 20 lines; the confetti, the record counter):
@@ -464,11 +497,61 @@ Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.
   - Zibzab: "Price first: party hats, two stardust. Honestly, one. The other one is the party."
   - QUILL: "Everyone's wearing a hat. This is the best day in my whole log!"
   - Goldie: "Dance, Sergeant!" · Bricks: "I don't dance." · Goldie: "You're tapping." · Bricks: "That's a muscle condition."
-- *Stinger:* `a1_m05_scene_stinger`: Rig Nine stops answering; six frames of something the wrong shape. QUILL: "Probably a smudge! Logging it."
+- *Stinger:* `a1_m05_scene_stinger`: Rig Nine stops answering; six frames of something the wrong shape. Caption: "Rig Nine. Status: not answering." A held beat. QUILL: "Probably a smudge! Logging it."
+- *On a loss* (the debrief), Sterling: "The party is postponed, not cancelled! Hats stay on, Four-Forty-Seven. Go again!"
+- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m05/`](../../../src/content/dialogue/a1/a1_m05/scenes.ts)): the briefing is `a1_m05_brief`; the radio lines are `a1_m05_w03`–`_w09`, one per countdown (the Joke of the Shift's three lines in one scene); the name tag is `a1_m05_cue_name_tag`; the map script cues `a1_m05_cue_quiet_wave` (Bricks, then Sterling) as W10 starts; the debrief `a1_m05_debrief` reads **this run's** C1 (`thisRun: spared_quiet_wave`), so a replay's line matches the replay, and later payoffs read the saved flag; the flow plays `a1_m05_scene_party` before Results and `a1_m05_scene_stinger` as the card is left. The barks are `quill_boss_phase_a1_05`, `quill_wave_cleared_boss_a1_05`, and `bricks_not_firing_a1_05` (the trigger fires once a run and takes no wave yet, so it plays the first time the player holds fire on Skitterkin for 10 s, which on this map is the Quiet Wave).
 - *Results:* the counter with ★; if spared, a red **CONTAINMENT LAPSE** stamp (story-only).
 - *Codex:* Digger, Matriarch Chitterbloom (original: "Codename CHITTERBLOOM. Big! Grumpy! Lays pests! ★★★★★"), Northern Gate, Rig Nine (one line, "status: answering").
 - *Memo after:* `memo_a1_05` *Record Quarter! You're Top 5%!* If spared, a second paragraph: *Performance Note: Containment Lapse* (no consequence).
 
-**Medals.** Victory · Perfect Core (Quiet Wave leaks exempt) · **Party Pooper Prevention:** drive the Matriarch off before she reaches the banner line. No medal can reference the Quiet Wave.
+**Medals.** Victory · Perfect Core (Quiet Wave leaks exempt) · **Party Pooper Prevention:** drive the Matriarch off before she reaches the banner line (`not passedMarker banner_line` by `chitterbloom`). No medal can reference the Quiet Wave.
 **Rewards.** Stardust 160 · Intel 3.
-**Par build.** Rivet, Thumper (Cluster spec), Sprinkler, Skyhook. Thumper ×2 and Sprinkler at the merge (Sitting Ducks); Rivet T3 on each high ground; one Skyhook at the merge for W6. First T4: Cluster Thumper by W8. Orbital Strike + Suppressing Fire on the boss's phase 3. Target 84. **Alt builds:** Rivet + Skyhook + Zapcoil (Rivet T3 for the Haulers; Zapcoil chains through the boss's sneezed young; Skyhook ×2 on the flock); Thumper (Bunker Buster) + Zapcoil + Skyhook (a dedicated air answer: Skyhook under the W6 lane, Zapcoil on the merge, the Bunker Buster for the armor). **Story variants** (harness): par with Hold Fire (all) during W10 must still win (Quiet Wave all leaks ≤ 2 integrity) and must end with `spared_quiet_wave = true`; par clearing W10 must win. `noCounterBuilds`: **no-air**, Thumper (Cluster and Bunker Buster) + Sprinkler, no tower that can reach the air lane (must lose by W7); **no-splash**, Rivet + Sprinkler + Skyhook, no Thumper or Zapcoil (must lose by W7); **no-armor**, Zapcoil + Sprinkler + Skyhook with Rivets held below T3, no Thumper (must lose by W7).
+**Par build.** Rivet, Thumper (Cluster spec), Sprinkler, Skyhook, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A1M4's, plus the Thumper specs, Reinforced Core 1, and the Sprinkler tune-up, so the core holds 21). Thumper ×2 and the Sprinkler at the gate (the node's Thumper and the Sprinkler beside it are Sitting Ducks); Rivet T3 on each high ground; one Skyhook above the gate for W6. First T4: Cluster Thumper by W8. Orbital Strike + Suppressing Fire on the boss's phase 3, at the gate. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a1_m05/builds.ts`](../../../src/content/maps/a1_m05/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Rivet (3,3) on the Spires high ground; Thumper on the node (5,5); Sprinkler (4,5) beside it (Sitting Ducks) |
+| W2 | Upgrade the Rivet to T2 |
+| W3 | Rivet (7,5) on the gate high ground; Thumper (8,7) south-east of the gate |
+| W4 | Upgrade both Thumpers to T2 |
+| W5 | Upgrade the Spires Rivet to T3 (pierce) and the gate Rivet to T2; Orbital Strike on row 6 east of the gate (9,6), 40 s in (the warren Hauler) |
+| W6 | Skyhook (6,5) above the gate; upgrade the gate Rivet to T3; Suppressing Fire at the gate (6,6), 55 s in (the Chonk column's tail) |
+| W7 | Upgrade the node's Thumper to T3; Orbital Strike at the warren track's last turn (11,6), 37 s in (the warren convoy's Elder); Suppressing Fire at the gate, 40 s in; upgrade the other Thumper to T3 and the Skyhook to T2 |
+| W8 | Cluster Thumper on the node; Orbital Strike on row 6 east of the gate, 54 s in (the warren convoy) |
+| W9 | Both Rivets to Strong; Thumper (3,5) in the west pocket, to T3; Orbital Strike and Suppressing Fire at the gate, 60 s in (her phase 3) |
+
+Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 174, 102 (W1–W10): it spends as it earns, and what's left at the end is what the boss and the Quiet Wave pay after its last purchase. **Par's margin comes from the late waves, by design:** W7's second warren Hauler (3), whose Elder par's strike takes but whose Hauler it misses, walks on to the gate with its HP and leaks; and W8's lone Puffwing round the east edge (1), where par has no air cover. Par wins at **17/21 (81.0%)** on every seed, below A1M4's 85. The Matriarch is driven off at the gate, before the banner line, so par earns **Party Pooper Prevention** (`parMedals`).
+
+**The R&D picks change a result** (`rndPickChanges`, T228): with **Orbital Strike Mk II** W7's strike is wide enough to take the second Hauler too; with **Bricks's Rapport** Suppressing Fire is ready at the gate as that Hauler arrives (W6's cast plus 42.5 s; without Rapport it comes 50 s later, a few seconds too late). Either way par loses only the Puffwing: 20/21 (95.2%). **The casts matter** (`#abilities`): without them W8's warren convoy (three Elders keeping two Haulers at their pace) ties up the gate, and the Diggers behind it slip through.
+
+**No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); each must lose by W7, `noCounterLoseByWave`, because the armor test is W5's Haulers and the air test W6's flock):
+- **no-air:** par with every Rivet and the Skyhook swapped for a Thumper: Thumpers and the Sprinkler, nothing that hits air.
+- **no-splash:** par with every Thumper swapped for a Rivet (the Rivets may reach T3), the Sprinkler and Skyhook, the same casts.
+- **no-armor:** par with every Thumper swapped for a Zapcoil and every Rivet held below T3 (no pierce), the Sprinkler and Skyhook, the same casts.
+
+**Alt builds** (each shares ≤ 2 towers with par and must win with ≥ 20%; Zapcoil is the only owned tower outside par, and it hits air, chains, and breaks shields): `ducks_and_chain`, Thumper (Bunker Buster) + Sprinkler + Zapcoil (the node's Thumper and the Sprinkler are Sitting Ducks, a Zapcoil beside the Sprinkler is Conductive, Zapcoils on the gate high ground and above the gate take the flocks, and a Bunker Buster on the node takes the Haulers and the Matriarch); `shell_and_chain`, Rivet + Thumper + Zapcoil (par's Rivets and Thumpers, a Zapcoil above the gate in the Skyhook's place, no Sprinkler, and a third Thumper for the Matriarch).
+
+**Story variants** (harness): par with Hold Fire (all) through W10 (`holdFireWhile: 'quiet_wave'`) wins at 15/21: all seven leak, Old Thrum's 2 integrity is the whole cost, and the run ends with `spared_quiet_wave = true` (#16a judges the band with the Quiet Wave's own designed cost given back: 81.0%). Par clearing W10 wins at 17/21 and leaves the flag false. Bricks's post never fires on the Quiet Wave (the invariant check).
+
+**Harness runs** (every seed; margin, then integrity lost per wave W1–W10):
+
+| Run | Result | Integrity lost |
+|---|---|---|
+| par | wins at **81.0** (band 80–100; 17/21), with Party Pooper Prevention | 3 in W7, 1 in W8 |
+| par with Orbital Strike Mk II | 95.2 | 1 in W8 |
+| par with Rapport: Sgt. Bricks | 95.2 | 1 in W8 |
+| par without its casts | 76.2 (71.4 on seeds 2–3) | 3 in W7, 2 in W8 |
+| par holding fire through the Quiet Wave | 71.4 (81.0 less Old Thrum's 2), `spared_quiet_wave` | 3 in W7, 1 in W8, 2 in W10 |
+| `alwaysCallEarly` | 52.4 | 6 in W5, 3 in W7, 1 in W8 |
+| no-air | loses in W7 | 20 in W6, 1 in W7 |
+| no-air, full catalog | loses in W7 | 15 in W6, 8 in W7 |
+| no-splash | loses in W5 | 3 in W4, 18 in W5 |
+| no-splash, full catalog | loses in W7 | 22 in W5, 1 in W7 |
+| no-armor | loses in W7 | 15 in W5, 6 in W7 |
+| no-armor, full catalog | loses in W9 (the Matriarch) | 10 in W5, 3 in W7, 10 in W8 |
+| Story | 96.8, and the Challenge | 1 in W8 |
+| `ducks_and_chain` | 81.0 | 3 in W5, 1 in W8 |
+| `shell_and_chain` | 52.4 | 9 in W5, 1 in W8 |
+| do-nothing | loses at W1 | |
+
+Par's 81.0 continues the monotonic chain under A1M4's 85. [`src/balance/a1m5.test.ts`](../../../src/balance/a1m5.test.ts) re-runs the harness with W5's Spires groups, W7's and W8's warren convoys, W4's and W7's Bunchlings, and W8's Chonks each shifted ±0.2 s: every check holds, the R&D picks' and the casts' included, and par stays at 81.0. It also checks both C1 paths: the cleared run kills all seven, the spared run lets all seven through for 2 integrity and sets the flag, and neither costs a medal.

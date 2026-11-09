@@ -1,7 +1,9 @@
 // A1M5 waves: docs/story/campaign/act1.md § A1M5, Wave data. Routes: `spires` (the west road),
-// `warren` (the north-east track, whose spawn opens at W3), and `sky` (the air lane). Countdowns
-// are the Act I default (25 s) except W10's, which waits out the boss fight. Groups without an
-// `intervalSec` use the enemy's default spacing.
+// `warren` (the north-east track, whose spawn opens at W3), `sky` (the air lane down the middle),
+// and `sky_east` (W8's lone Puffwing round the east edge). Countdowns are the Act I default (25 s)
+// except W10's, which waits out the boss fight. Groups without an `intervalSec` use the enemy's
+// default spacing (Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder
+// 2.0 s, Digger 1.0 s, Puffwing 0.6 s).
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup, WaveTag } from '../../types.ts';
 
@@ -34,7 +36,7 @@ const huddle = (route: RouteId, delaySec: number, n: number): WaveGroup[] => [
  * W10's countdown: long enough that the Quiet Wave walks in after the Matriarch is driven off
  * (the countdown starts as soon as W9 has spawned; waves overlap), and a held breath after.
  */
-export const QUIET_WAVE_COUNTDOWN_SEC = 70;
+export const QUIET_WAVE_COUNTDOWN_SEC = 60;
 /**
  * W2–W8 open this long after they start: the last wave's bounties land before the first contact,
  * so a player who calls waves early isn't buying turrets mid-fight (the harness's early-call check).
@@ -113,10 +115,10 @@ export const waves = defineWaves([
       ...huddle('spires', OPEN + 14, 10),
       g('chonk', 8, 'warren', OPEN + 12, 1.5),
       g('puffwing', 16, 'sky', OPEN + 16, 0.5),
-      // the warren convoy: two Haulers, two Elders keeping them at their pace, and their brood
+      // the warren convoy: two Haulers, three Elders keeping them at their pace, and their brood
       g('hauler', 2, 'warren', OPEN + 22, 1.5),
-      g('elder', 2, 'warren', OPEN + 24.7),
-      g('nibbler', 8, 'warren', OPEN + 25.1, 0.3),
+      g('elder', 3, 'warren', OPEN + 24.7),
+      g('nibbler', 14, 'warren', OPEN + 25.1, 0.3),
       ...convoy('spires', OPEN + 24, 8),
       g('digger', 3, 'warren', OPEN + 30, 1.2),
       g('puffwing', 1, 'sky_east', OPEN + 20),
