@@ -179,8 +179,8 @@ const ACT_TWO_PREP: Readonly<Record<ActTwoMap, readonly PurchaseItem[]>> = {
 
 /**
  * `save` with `items` bought through the shop's own `buy`, in order. An item whose content hasn't
- * landed yet (an unregistered tower, or a tower with no tier-4 specs yet) is skipped; any other
- * refusal is a broken fixture and throws.
+ * landed yet (a tower not registered or still behind its stub gate, so not on the shelf; a tower
+ * with no tier-4 specs yet) is skipped; any other refusal is a broken fixture and throws.
  */
 function bought(save: SaveData, items: readonly PurchaseItem[]): SaveData {
   let next = save;
@@ -220,7 +220,7 @@ function caughtUp(save: SaveData): SaveData {
 
 /**
  * The reference profile through `last` (campaign.md § 4.9): Act I through A1M5 with the weaker C1
- * branch (the Quiet Wave cleared), the Lookout license bought for A2M1 (once registered), then
+ * branch (the Quiet Wave cleared), the Lookout license bought for A2M1 (once stocked), then
  * each Act II map up to `last` prepared for and won with Victory, its first-clear Stardust and
  * Intel banked. An Act II map that isn't registered yet is skipped, its purchases with it, so the
  * save stays valid while A2M1–A2M3 land (`last` null: into A2M1, nothing of Act II won). The
@@ -312,7 +312,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   after_a1m5_ref: {
     description:
       'The reference profile into A2M1 (campaign.md § 4.9): Act I complete with the Quiet Wave ' +
-      'cleared (spared_quiet_wave = false), then the Lookout license bought (once registered).',
+      'cleared (spared_quiet_wave = false), then the Lookout license bought (once stocked).',
     build: () => actTwoThrough(null),
   },
   after_a2m1: {
