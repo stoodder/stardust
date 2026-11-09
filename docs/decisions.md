@@ -528,3 +528,16 @@ Each specialization has a distinct silhouette at 1×:
 Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star first frame, and Bricks has a cannon-lowered idle. Art-direction §2/§3's hex tables now link to `master.ts`.
 
 **The art-trail capture:** the gallery is now 17,772 px tall, past Chrome's single-screenshot limit. So `smoke/gallery.spec.ts` captures 4,096 px strips and stitches them into one deterministic `gallery.png` (up to 32,767 px, failing loudly beyond that), and CLAUDE.md step 8 is unchanged. Any Playwright run clears `test-results/`, so the orchestrator re-runs the gallery smoke right before copying `m<N>.png`.
+
+### D045 — 2026-11-09 — T204b meta modifiers, Story difficulty, and the meta harness checks
+- **Save → modifiers** (`src/meta/modifiers.ts`):
+  - Owning rank n of an upgrade grants ranks 1 through n (sources `shop:<id>` / `rnd:<id>`).
+  - Equipped protocols are sourced `protocol:<id>`. Specialist's `'*'` is replaced by the pick.
+  - Invalid ids, ranks, duplicate protocols, or too many protocols throw.
+  - A save equips no protocols until M3's picker.
+  - Pools are in `src/meta/pools.ts`.
+  - The battle config leaves out modifiers whose sim gate is still closed.
+- **Story difficulty:** enemies have −30% HP and shields (shield regen scales too), +50% starting credits, integrity set to 30, and countdowns +50%. `enemyStat` and `countdown` apply in `waves.ts`.
+- **Harness:** profiles build `SimConfig` through `meta/modifiers`. Check #6 (full catalog) leaves out grants the sim still refuses (only Salvage Rights until M3), names them in its summary, and keeps the reference profile's spec unlocks. On a fixture map with a required splash counter, the no-counter build loses at W2 with and without the full catalog. On A1M1 (no required counters), #9 Story wins at 100.
+- The tracker now measures max integrity and the credits ledger from the run's actual start, so modifiers don't break the margins.
+- T214's constants moved into `rules.ts`.

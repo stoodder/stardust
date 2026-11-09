@@ -65,16 +65,16 @@ export const ALLY_SFX = {
   },
   /** Suppressing Fire is called in: a four-round rattle, "brrrt". */
   suppress_burst: {
-    gain: 0.4,
+    gain: 0.7,
     priority: 2,
     maxVoices: 2,
     layers: [0, 0.065, 0.13, 0.195].map((at) => ({
       wave: 'noise' as const,
       at,
       freq: 440,
-      filter: { type: 'bandpass' as const, freq: 1800, q: 1.2 },
-      env: { a: 0.001, d: 0.04, s: 0, r: 0.02 },
-      gain: 0.24,
+      filter: { type: 'bandpass' as const, freq: 1800, q: 0.8 },
+      env: { a: 0.001, d: 0.05, s: 0, r: 0.02 },
+      gain: 0.3,
     })),
   },
 } as const satisfies Readonly<Record<string, SfxRecipe>>;

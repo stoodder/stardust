@@ -65,7 +65,7 @@ describe('the A1M1 radio (D026)', () => {
     expect(r.lines(countdown(6))).toEqual([]);
     expect(r.lines(countdown(7))[0]?.text).toMatch(/^If that jingle plays one more time/);
     expect(texts(r.lines({ type: 'TowerClassUnlocked', tower: 'thumper' }))).toEqual([
-      'New hardware! Thumper Mortar, ready to deploy!',
+      "New hardware! Put the mortar beside your Rivet. They like each other. It's called Crossfire!",
     ]);
   });
 
@@ -102,6 +102,7 @@ describe('bindRadio: the ticker over real time (fake timers)', () => {
   let unbind: () => void;
   const JOKE_SETUP = A1_M01_RADIO.find((l) => l.text.startsWith('Time for Joke'))!; // in the table
   const PUNCHLINE = A1_M01_RADIO.find((l) => l.text.startsWith('Why did the lettuce'))!;
+  const UNLOCK = A1_M01_RADIO.find((l) => l.on === 'unlock')!;
   const JINGLE = '(singing along) Ev-er-glow, Ev-er-glow!';
   const JINGLE_REPLY = 'That jingle. Every time.';
 
@@ -122,8 +123,8 @@ describe('bindRadio: the ticker over real time (fake timers)', () => {
     vi.advanceTimersByTime(radioLineMs(shown()!) - 1);
     expect(shown()).toMatch(/^Oh! You're the new tech!/);
     vi.advanceTimersByTime(1);
-    expect(shown()).toBe('New hardware! Thumper Mortar, ready to deploy!');
-    vi.advanceTimersByTime(4000);
+    expect(shown()).toBe(UNLOCK.text);
+    vi.advanceTimersByTime(at(UNLOCK));
     expect(shown()).toBeNull();
   });
 
@@ -148,12 +149,12 @@ describe('bindRadio: the ticker over real time (fake timers)', () => {
       if (r !== null) heard.push(r.text);
     });
     bus.emit(countdown(4)); // Goldie: about 6 s
-    bus.emit({ type: 'TowerClassUnlocked', tower: 'thumper' }); // QUILL: 4 s
-    bus.emit(countdown(6)); // the joke: starts about 10 s in, its tail runs past the limit
+    bus.emit({ type: 'TowerClassUnlocked', tower: 'thumper' }); // QUILL: about 5 s
+    bus.emit(countdown(6)); // the joke: starts about 11 s in, its tail runs past the limit
     bus.emit(cleared(1)); // the jingle pair: reached after the limit
     vi.advanceTimersByTime(60_000);
     off();
-    const jokeStarts = radioLineMs(heard[0]!) + 4000; // Goldie's line, then QUILL's 4 s one
+    const jokeStarts = radioLineMs(heard[0]!) + at(UNLOCK); // Goldie's line, then QUILL's
     expect(jokeStarts).toBeLessThan(RADIO_STALE_MS);
     expect(jokeStarts + at(JOKE_SETUP)).toBeGreaterThan(RADIO_STALE_MS);
     // The joke plays whole, reply and all; the stale jingle batch drops whole, so Bricks never
