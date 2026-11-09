@@ -19,9 +19,9 @@ export const map = defineMapLayout({
     '.S..........S.',
     '.#..........#.',
     '.####....####.',
-    '..o^#....#^o..',
+    '..o^#....#oo..',
     '.####....####.',
-    '.#oo.+oo..oo#.',
+    '.#.oo+o^..oo#.',
     '.############.',
     '......#.o.....',
     '......#.......',
@@ -59,14 +59,11 @@ export const map = defineMapLayout({
     },
   ],
   // The Puffwings fly straight down the middle, between the two roads, over the gate to the core.
+  // In the Spring Surge one loops round the east edge instead (`sky_east`), wide of the gate.
+  // prettier-ignore
   airLanes: [
-    {
-      id: 'sky',
-      points: [
-        [6, 0],
-        [6, 9],
-      ],
-    },
+    { id: 'sky', points: [[6, 0], [6, 9]] },
+    { id: 'sky_east', points: [[13, 0], [13, 8], [6, 9]] },
   ],
   // The party dressing (render draws these markers as props, render/views/groundTiles.ts): the
   // banner line across the merged road (the Challenge's line), the party tent and the confetti

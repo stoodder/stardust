@@ -2,23 +2,27 @@
 // there mirror these).
 import { defineBuilds } from '../../define.ts';
 import type { BuildStep, GridPos } from '../../types.ts';
+import { OPEN } from './waves.ts';
 
 /** The Spires high ground, inside the west zigzag: it covers the whole Spires road. */
 const HG_WEST: GridPos = [3, 3];
-/** The warren high ground, inside the east zigzag: it covers the whole warren track. */
-const HG_EAST: GridPos = [10, 3];
+/**
+ * The gate high ground, just north-east of the gate: it covers both roads' runs into the gate and
+ * the merged road.
+ */
+const HG_GATE: GridPos = [7, 5];
 /** The power node above the gate's west side. */
 const NODE: GridPos = [5, 5];
-/** Above the gate, between the node and GATE_NE. */
+/** Directly above the gate, under the air lane. */
 const GATE_N: GridPos = [6, 5];
-const GATE_NE: GridPos = [7, 5];
-/** South-east of the gate, beside row 6's east run, under the air lane's end. */
+/** South-east of the gate, beside row 6's east run. */
 const GATE_SE: GridPos = [8, 7];
-/** The west zigzag's pads: its upper pocket, and its lower pocket's two. */
+/** The west zigzag's pads: its upper pocket, and its lower pocket's two (the east one by the node). */
 const WEST_UP: GridPos = [2, 3];
-const WEST_LOW: GridPos = [2, 5];
-const WEST_LOW_E: GridPos = [3, 5];
-/** The east zigzag's pads. */
+const WEST_LOW: GridPos = [3, 5];
+const WEST_LOW_E: GridPos = [4, 5];
+/** The east zigzag's pads: its upper pocket's two and its lower pocket's two. */
+const EAST_UP_W: GridPos = [10, 3];
 const EAST_UP: GridPos = [11, 3];
 const EAST_LOW_W: GridPos = [10, 5];
 const EAST_LOW: GridPos = [11, 5];
@@ -26,34 +30,39 @@ const EAST_LOW: GridPos = [11, 5];
 const GATE: GridPos = [6, 6];
 const WEST_RUN: GridPos = [3, 6];
 const EAST_RUN: GridPos = [9, 6];
+/** Row 6's east end, by the warren track's last turn. */
+const EAST_TURN: GridPos = [11, 6];
 
 function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'rivet', tile: HG_WEST },
     { wave: 1, build: 'thumper', tile: NODE },
-    { wave: 1, build: 'sprinkler', tile: GATE_N }, // Sitting Ducks with the node's Thumper
+    { wave: 1, build: 'sprinkler', tile: WEST_LOW_E }, // Sitting Ducks with the node's Thumper
     { wave: 2, upgrade: HG_WEST },
-    { wave: 3, build: 'rivet', tile: HG_EAST },
-    { wave: 3, build: 'thumper', tile: GATE_NE }, // Sitting Ducks with the same Sprinkler
+    { wave: 3, build: 'rivet', tile: HG_GATE },
+    { wave: 3, build: 'thumper', tile: GATE_SE },
     { wave: 4, upgrade: NODE },
-    { wave: 4, upgrade: GATE_NE },
+    { wave: 4, upgrade: GATE_SE },
     { wave: 5, upgrade: HG_WEST }, // T3: pierce
-    { wave: 5, upgrade: HG_EAST },
-    { wave: 5, ability: 1, target: GATE, when: { afterSec: 20 } },
-    { wave: 6, build: 'skyhook', tile: GATE_SE },
-    { wave: 6, upgrade: HG_EAST }, // T3: pierce
+    { wave: 5, upgrade: HG_GATE },
+    { wave: 5, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 30 } },
+    { wave: 6, build: 'skyhook', tile: GATE_N },
+    { wave: 6, upgrade: HG_GATE }, // T3: pierce
+    { wave: 6, ability: 2, target: GATE, when: { afterSec: OPEN + 45 } }, // the Chonk column
     { wave: 7, upgrade: NODE },
-    { wave: 7, upgrade: GATE_NE },
+    { wave: 7, ability: 1, target: EAST_TURN, when: { afterSec: OPEN + 27 } }, // the warren convoy
+    { wave: 7, ability: 2, target: GATE, when: { afterSec: OPEN + 30 } },
     { wave: 7, upgrade: GATE_SE },
+    { wave: 7, upgrade: GATE_N },
     { wave: 8, specialize: NODE, spec: 'a' }, // Cluster Thumper
-    { wave: 8, ability: 1, target: GATE, when: { afterSec: 12 } },
-    { wave: 8, ability: 2, target: GATE, when: { afterSec: 14 } },
+    { wave: 8, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 44 } }, // the warren convoy
     { wave: 9, targeting: HG_WEST, mode: 'strong' },
-    { wave: 9, build: 'thumper', tile: WEST_LOW_E },
-    { wave: 9, upgrade: WEST_LOW_E },
-    { wave: 9, upgrade: WEST_LOW_E },
-    { wave: 9, ability: 1, target: GATE, when: { afterSec: 57 } },
-    { wave: 9, ability: 2, target: GATE, when: { afterSec: 57 } },
+    { wave: 9, targeting: HG_GATE, mode: 'strong' },
+    { wave: 9, build: 'thumper', tile: WEST_LOW },
+    { wave: 9, upgrade: WEST_LOW },
+    { wave: 9, upgrade: WEST_LOW },
+    { wave: 9, ability: 1, target: GATE, when: { afterSec: 60 } },
+    { wave: 9, ability: 2, target: GATE, when: { afterSec: 60 } },
   ];
 }
 
@@ -132,62 +141,71 @@ export const builds = defineBuilds({
   noCounterLoseByWave: 7,
   rndPickChanges: ['orbital_strike_mk2', 'rapport_bricks'],
   altBuilds: {
-    // Rivet, Skyhook, Zapcoil: Rivet T3 on the Haulers, Zapcoils chaining through the boss's young,
-    // two Skyhooks on the flock.
-    rivet_chain: {
-      loadout: ['rivet', 'skyhook', 'zapcoil'],
-      steps: [
-        { wave: 1, build: 'rivet', tile: HG_WEST },
-        { wave: 1, build: 'zapcoil', tile: NODE },
-        { wave: 2, upgrade: HG_WEST },
-        { wave: 3, build: 'rivet', tile: HG_EAST },
-        { wave: 3, build: 'zapcoil', tile: GATE_NE },
-        { wave: 4, upgrade: NODE },
-        { wave: 4, upgrade: GATE_NE },
-        { wave: 5, upgrade: HG_WEST },
-        { wave: 5, upgrade: HG_EAST },
-        { wave: 5, ability: 1, target: GATE, when: { afterSec: 20 } },
-        { wave: 6, build: 'skyhook', tile: GATE_SE },
-        { wave: 6, build: 'skyhook', tile: GATE_N },
-        { wave: 6, upgrade: HG_EAST },
-        { wave: 7, upgrade: NODE },
-        { wave: 7, upgrade: GATE_NE },
-        { wave: 7, build: 'rivet', tile: WEST_LOW_E },
-        { wave: 8, upgrade: WEST_LOW_E },
-        { wave: 8, upgrade: WEST_LOW_E },
-        { wave: 8, ability: 1, target: GATE, when: { afterSec: 12 } },
-        { wave: 8, ability: 2, target: GATE, when: { afterSec: 14 } },
-        { wave: 9, ability: 1, target: WEST_RUN, when: { afterSec: 60 } },
-        { wave: 9, ability: 2, target: WEST_RUN, when: { afterSec: 61 } },
-      ],
-    },
-    // Thumper (Bunker Buster), Zapcoil, Skyhook: a dedicated air answer under the lane, Zapcoils on
-    // the zigzags, the Bunker Buster for the armor.
-    buster_chain: {
-      loadout: ['thumper', 'zapcoil', 'skyhook'],
+    // Thumper (Bunker Buster), Sprinkler, Zapcoil: the Thumpers and the Sprinkler at the gate
+    // (Sitting Ducks), a Zapcoil beside the Sprinkler (Conductive) chaining through the
+    // Bunchlings, Zapcoils on the high ground and under the air lane for the flocks, and a Bunker
+    // Buster on the node for the Haulers and the Matriarch.
+    ducks_and_chain: {
+      loadout: ['thumper', 'sprinkler', 'zapcoil'],
       steps: [
         { wave: 1, build: 'thumper', tile: NODE },
-        { wave: 1, build: 'zapcoil', tile: WEST_LOW_E },
+        { wave: 1, build: 'sprinkler', tile: WEST_LOW_E },
+        { wave: 1, build: 'zapcoil', tile: WEST_LOW },
         { wave: 2, upgrade: NODE },
-        { wave: 3, build: 'zapcoil', tile: EAST_LOW_W },
-        { wave: 3, build: 'thumper', tile: GATE_NE },
-        { wave: 4, upgrade: WEST_LOW_E },
-        { wave: 4, upgrade: EAST_LOW_W },
-        { wave: 5, upgrade: GATE_NE },
-        { wave: 5, ability: 1, target: GATE, when: { afterSec: 20 } },
-        { wave: 6, build: 'skyhook', tile: GATE_N },
+        { wave: 3, build: 'thumper', tile: GATE_SE },
+        { wave: 3, build: 'zapcoil', tile: HG_GATE },
+        { wave: 4, upgrade: GATE_SE },
+        { wave: 4, upgrade: WEST_LOW },
+        { wave: 5, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 30 } },
+        { wave: 5, upgrade: NODE },
+        { wave: 5, upgrade: HG_GATE },
+        { wave: 6, build: 'zapcoil', tile: GATE_N },
         { wave: 6, upgrade: GATE_N },
-        { wave: 7, upgrade: NODE },
-        { wave: 7, upgrade: GATE_NE },
+        { wave: 7, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 28 } },
+        { wave: 7, upgrade: GATE_SE },
+        { wave: 7, upgrade: WEST_LOW_E },
+        { wave: 8, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 45 } },
         { wave: 8, specialize: NODE, spec: 'b' }, // Bunker Buster
-        { wave: 8, ability: 1, target: GATE, when: { afterSec: 12 } },
-        { wave: 8, ability: 2, target: GATE, when: { afterSec: 14 } },
-        { wave: 9, ability: 1, target: WEST_RUN, when: { afterSec: 40 } },
-        { wave: 9, ability: 2, target: WEST_RUN, when: { afterSec: 60 } },
+        { wave: 9, ability: 1, target: GATE, when: { afterSec: 60 } },
+        { wave: 9, ability: 2, target: GATE, when: { afterSec: 60 } },
+        { wave: 9, upgrade: GATE_N },
+        { wave: 9, upgrade: HG_GATE },
+      ],
+    },
+    // Rivet, Thumper, Zapcoil: par's Rivets and Thumpers with a Zapcoil under the air lane in place
+    // of the Skyhook (it hits air) and no Sprinkler; a third Thumper for the Matriarch.
+    shell_and_chain: {
+      loadout: ['rivet', 'thumper', 'zapcoil'],
+      steps: [
+        { wave: 1, build: 'rivet', tile: HG_WEST },
+        { wave: 1, build: 'thumper', tile: NODE },
+        { wave: 2, upgrade: HG_WEST },
+        { wave: 3, build: 'rivet', tile: HG_GATE },
+        { wave: 3, build: 'thumper', tile: GATE_SE },
+        { wave: 4, upgrade: NODE },
+        { wave: 4, upgrade: GATE_SE },
+        { wave: 5, upgrade: HG_WEST }, // T3: pierce
+        { wave: 5, upgrade: HG_GATE },
+        { wave: 5, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 30 } },
+        { wave: 6, build: 'zapcoil', tile: GATE_N },
+        { wave: 6, upgrade: HG_GATE }, // T3: pierce
+        { wave: 7, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 28 } },
+        { wave: 7, upgrade: NODE },
+        { wave: 7, upgrade: GATE_SE },
+        { wave: 7, upgrade: GATE_N },
+        { wave: 8, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 45 } },
+        { wave: 8, specialize: NODE, spec: 'a' }, // Cluster Thumper
+        { wave: 9, targeting: HG_WEST, mode: 'strong' },
+        { wave: 9, targeting: HG_GATE, mode: 'strong' },
+        { wave: 9, build: 'thumper', tile: WEST_LOW },
+        { wave: 9, upgrade: WEST_LOW },
+        { wave: 9, ability: 1, target: GATE, when: { afterSec: 60 } },
+        { wave: 9, ability: 2, target: GATE, when: { afterSec: 60 } },
+        { wave: 9, upgrade: WEST_LOW },
       ],
     },
   },
 });
 
 // Pads the builds don't use yet (kept named for tuning).
-void [WEST_UP, WEST_LOW, EAST_UP, EAST_LOW, EAST_RUN];
+void [WEST_UP, WEST_LOW, EAST_UP, EAST_LOW, EAST_RUN, WEST_RUN];

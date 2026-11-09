@@ -36,6 +36,11 @@ const huddle = (route: RouteId, delaySec: number, n: number): WaveGroup[] => [
  */
 export const QUIET_WAVE_COUNTDOWN_SEC = 70;
 /**
+ * W2–W8 open this long after they start: the last wave's bounties land before the first contact,
+ * so a player who calls waves early isn't buying turrets mid-fight (the harness's early-call check).
+ */
+export const OPEN = 10;
+/**
  * The Matriarch comes up the Spires road this long after W9 starts: the ground rumbles first, and
  * a player who calls W9 early still meets her after W8's tail has cleared the gate.
  */
@@ -55,50 +60,66 @@ const convoy = (route: RouteId, delaySec: number, n: number): WaveGroup[] => [
 
 export const waves = defineWaves([
   // W1 · Nibblers (west)
-  { groups: [g('nibbler', 16, 'spires', 0, 0.8)] },
+  { groups: [g('nibbler', 30, 'spires', 0, 0.8)] },
   // W2 · Diggers ×3 [T: burrowing, "not a hard requirement"]
-  { teach: true, groups: [g('digger', 3, 'spires', 0, 2.5), g('nibbler', 10, 'spires', 9, 0.6)] },
+  {
+    teach: true,
+    groups: [g('digger', 3, 'spires', OPEN, 2.5), g('nibbler', 26, 'spires', OPEN + 9, 0.6)],
+  },
   // W3 · the east spawn opens: Zoomers + Nibblers [T: second spawn]
-  { groups: [g('zoomer', 16, 'warren', 0, 0.4), g('nibbler', 14, 'spires', 4, 0.6)] },
+  { groups: [g('zoomer', 16, 'warren', OPEN, 0.4), g('nibbler', 30, 'spires', OPEN + 4, 0.6)] },
   // W4 · Bunchlings with a few Diggers, both roads [X: splash]
   {
     groups: [
-      g('bunchling', 10, 'spires', 0, 1.0),
-      g('bunchling', 10, 'warren', 4, 1.0),
-      g('digger', 2, 'warren', 12, 1.5),
+      g('bunchling', 6, 'spires', OPEN, 1.0),
+      g('bunchling', 6, 'warren', OPEN + 4, 1.0),
+      g('digger', 2, 'warren', OPEN + 12, 1.5),
     ],
   },
-  // W5 · Elder + Haulers [X: armor]: a convoy down each road
-  { groups: [...convoy('spires', 0, 8), ...convoy('warren', 10, 8)] },
+  // W5 · Elder + Haulers [X: armor]: a convoy down the Spires road, one Hauler and its Elder down
+  // the warren track, then three loose Haulers down the Spires road
+  {
+    groups: [
+      ...convoy('spires', OPEN, 8),
+      g('hauler', 1, 'warren', OPEN + 10),
+      g('elder', 1, 'warren', OPEN + 11.2),
+      g('nibbler', 8, 'warren', OPEN + 11.6, 0.3),
+      g('hauler', 3, 'spires', OPEN + 20, 1.5),
+    ],
+  },
   // W6 · Puffwings + Chonks [X: air]
   {
     groups: [
-      g('chonk', 6, 'spires', 0, 2),
-      g('puffwing', 10, 'sky', 6, 0.6),
-      g('puffwing', 10, 'sky', 20, 0.6),
+      g('chonk', 6, 'spires', OPEN, 2),
+      g('puffwing', 10, 'sky', OPEN + 6, 0.6),
+      g('puffwing', 10, 'sky', OPEN + 20, 0.6),
     ],
   },
   // W7 · mixed, both roads [X]
   {
     groups: [
-      g('bunchling', 12, 'spires', 0, 0.8),
-      ...convoy('warren', 2, 6),
-      g('puffwing', 10, 'sky', 8, 0.6),
-      g('zoomer', 20, 'warren', 16, 0.35),
-      g('chonk', 4, 'spires', 18, 1.5),
+      g('bunchling', 12, 'spires', OPEN, 0.8),
+      ...convoy('warren', OPEN + 2, 6),
+      g('puffwing', 10, 'sky', OPEN + 8, 0.6),
+      g('zoomer', 20, 'spires', OPEN + 16, 0.35),
+      g('chonk', 4, 'spires', OPEN + 18, 1.5),
     ],
   },
   // W8 · the Spring Surge: the largest wave of Act I, both roads and the sky
   {
     groups: [
-      g('zoomer', 24, 'warren', 0, 0.3),
-      g('bunchling', 16, 'spires', 0, 0.6),
-      ...huddle('spires', 14, 10),
-      g('chonk', 8, 'warren', 12, 1.5),
-      g('puffwing', 16, 'sky', 16, 0.5),
-      ...convoy('warren', 20, 8),
-      ...convoy('spires', 24, 8),
-      g('digger', 3, 'warren', 30, 1.2),
+      g('zoomer', 24, 'warren', OPEN, 0.3),
+      g('bunchling', 16, 'spires', OPEN, 0.6),
+      ...huddle('spires', OPEN + 14, 10),
+      g('chonk', 8, 'warren', OPEN + 12, 1.5),
+      g('puffwing', 16, 'sky', OPEN + 16, 0.5),
+      // the warren convoy: two Haulers, two Elders keeping them at their pace, and their brood
+      g('hauler', 2, 'warren', OPEN + 22, 1.5),
+      g('elder', 2, 'warren', OPEN + 24.7),
+      g('nibbler', 8, 'warren', OPEN + 25.1, 0.3),
+      ...convoy('spires', OPEN + 24, 8),
+      g('digger', 3, 'warren', OPEN + 30, 1.2),
+      g('puffwing', 1, 'sky_east', OPEN + 20),
     ],
   },
   // W9 · Matriarch Chitterbloom (west road): sneezes, burrows, panics, and is driven off
