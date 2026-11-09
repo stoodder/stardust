@@ -114,14 +114,27 @@ function supportText(tier: DeepReadonly<CompiledTier> | null): string {
 
 /**
  * What's special about a tier's attack, beyond its numbers (D059: the panel's stat line and the
- * spec cards say the same): "+4 bomblets", "ignores armor", "1 s spin-up", "2 Corroded".
+ * spec cards say the same): "+4 bomblets", "ignores armor", "1 s spin-up", "2 Corroded"; and
+ * T407b's, so the Skyhook's and Zapcoil's spec cards read apart from tier 3: "chains to 8",
+ * "4 homing", "4 s charge", "50% splash 1", "pierce 4".
  */
 function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
   const parts: string[] = [];
   const a = tier.attack;
   if (a !== null) {
     if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
+    if (a.kind === 'chain') parts.push(`chains to ${a.jumps + 1}`);
+    if (a.kind === 'projectile' && a.volley > 1) {
+      parts.push(`${a.volley} ${a.homing ? 'homing' : 'shots'}`);
+    } else if (a.kind === 'projectile' && a.homing) {
+      parts.push('homing');
+    }
+    if (a.kind === 'charge') {
+      parts.push(`${statNum(a.chargeTicks / TICK_HZ)} s charge`);
+      parts.push(`${statNum(Math.round(a.splashPct * 100))}% splash ${statNum(a.splashTiles)}`);
+    }
     if (a.ignoresArmor) parts.push('ignores armor');
+    else if (a.armorPierce > 0) parts.push(`pierce ${a.armorPierce}`);
     if (a.spinUpTicks > 0) parts.push(`${statNum(a.spinUpTicks / TICK_HZ)} s spin-up`);
   }
   for (const e of tier.effects) {

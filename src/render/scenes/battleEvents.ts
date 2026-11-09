@@ -169,13 +169,19 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   let chainTower = 0;
   /** The projectile sprites of the content's bomblets (Cluster Thumper's). */
   const bombletSprites = new Set<string>();
+  /** The projectile sprites of the content's homing shots (Seeker Swarm's missiles, T407b). */
+  const seekerSprites = new Set<string>();
   for (const t of Object.values(content.towers)) {
     const attacks = [...t.tiers, ...(t.specs === null ? [] : [t.specs.a, t.specs.b])];
     for (const tier of attacks) {
       const b = tier.attack?.kind === 'lobbed' ? tier.attack.bomblets : null;
       if (b !== null && b !== undefined) bombletSprites.add(b.projectile);
+      const a = tier.attack;
+      if (a?.kind === 'projectile' && a.homing) seekerSprites.add(a.projectile);
     }
   }
+  /** Seekers in flight: each pops small where it lands, with no splash ring. */
+  const seekers = new Set<number>();
   /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
   const told = new Set<string>();
   /**
@@ -446,13 +452,16 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
           return;
         }
         // Flak (D072): a straight shot climbing from the barrels to its flyer's height, bursting
-        // at the intercept point.
+        // at the intercept point. A seeker (T407b) climbs, turns, and trails smoke as it steers.
+        const seeker = seekerSprites.has(e.sprite);
+        if (seeker) seekers.add(e.uid);
         flak.set(e.uid, e.radiusTiles);
         views.projectiles.acquire(e.uid).show(e.uid, {
           sprite: e.sprite,
           flightTicks: e.flightTicks,
           liftFrom: FLAK_MUZZLE_PX + towerLift(e.towerUid),
           liftTo: bodyLift(isFlyer(e.targetUid)),
+          seeker,
         });
       }
     }),
@@ -473,6 +482,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         flak.delete(e.uid);
         fx.ring(e.x, e.y, burst, 'orange.3', SPLASH_RING_MS, false, AIR_LIFT_PX);
         fx.burst(e.x, e.y, 0, true, AIR_LIFT_PX);
+        seekers.delete(e.uid);
         return;
       }
       const splash = shells.get(e.uid);
@@ -528,10 +538,24 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.allies.release(e.uid);
     }),
   ];
+  // A battle that starts past tick 0 resumed from a checkpoint (app/checkpoints.ts): its replay ran
+  // before this scene, so the views the events would have made come from the state instead (towers
+  // and enemies sync every frame): the active links' tethers, and the props cued by now.
+  if (sim.state.tick > 0) {
+    const pairs = sim.state.linkPairs;
+    for (let i = 0; i < pairs.length; i += 3) {
+      const link = content.links[pairs[i]!]; // i < length, a multiple of 3
+      const a = linkEnd(pairs[i + 1]!);
+      const b = linkEnd(pairs[i + 2]!);
+      if (link !== undefined && a !== null && b !== null) views.links.form(link.id, a, b);
+    }
+    views.cueProps.reveal(Math.max(sim.state.wave, sim.state.schedule.countdownWave));
+  }
   return () => {
     for (const off of offs) off();
     shells.clear();
     flak.clear();
+    seekers.clear();
     chainTower = 0;
     builtNow.clear();
     builtTick = -1;

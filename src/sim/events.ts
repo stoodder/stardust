@@ -434,12 +434,18 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | { readonly type: 'AssetLost' }
   | {
       /**
-       * A retry checkpoint (architecture.md § Checkpoints; T305b): wave `wave` is about to start
-       * (every CHECKPOINT_EVERY_WAVES from CHECKPOINTS_FROM_ACT, or a `checkpoint` action). The
-       * host records `{ wave, tick, commandCount }`.
+       * A retry checkpoint (architecture.md § Checkpoints; T305b): wave `wave`'s countdown began
+       * (every CHECKPOINT_EVERY_WAVES-th wave from CHECKPOINTS_FROM_ACT; `checkpointAt` in
+       * systems/waves.ts; later the finale's `checkpoint` action). The host records
+       * `{ wave, tick, commandCount }`.
        */
       readonly type: 'CheckpointReached';
       readonly wave: number;
+      /**
+       * The tick a retry resumes at: the state after the tick that emitted this (`state.tick`
+       * once it ends). Replaying the logged commands with `tick` below it reproduces that state.
+       */
+      readonly tick: number;
     }
   | {
       /** A clickable world object turned on or off (`setClickable`; T409). */

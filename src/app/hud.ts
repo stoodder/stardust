@@ -315,8 +315,15 @@ export function bindHud(
   hud.notice.value = null;
   const specLock = specLockText(saveInfo.engineeringOpen);
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
-  hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);
-  let medalState = { ...sim.state.medals };
+  // A checkpoint retry keeps Victory only (core-loop.md § 2.12): the tracker shows the other two
+  // forfeited from the start.
+  const resumed = host.resumedFrom !== null;
+  let medalState = {
+    victory: sim.state.medals.victory,
+    perfectCore: resumed ? ('forfeited' as const) : sim.state.medals.perfectCore,
+    challenge: resumed ? ('forfeited' as const) : sim.state.medals.challenge,
+  };
+  hud.medals.value = medalViews(sim.map, medalState, saveInfo.heldMedals);
   // Objectives stay open until the sim settles them (T304f).
   hud.objectives.value = objectiveViews(sim.map);
   hud.callsign.value = saveInfo.callsign();
@@ -387,13 +394,15 @@ export function bindHud(
       saveInfo.spareRunnersOpen,
     );
     const m = s.medals;
+    const perfectCore = resumed ? 'forfeited' : m.perfectCore;
+    const challenge = resumed ? 'forfeited' : m.challenge;
     if (
       m.victory !== medalState.victory ||
-      m.perfectCore !== medalState.perfectCore ||
-      m.challenge !== medalState.challenge
+      perfectCore !== medalState.perfectCore ||
+      challenge !== medalState.challenge
     ) {
-      medalState = { ...m };
-      hud.medals.value = medalViews(sim.map, m, saveInfo.heldMedals);
+      medalState = { victory: m.victory, perfectCore, challenge };
+      hud.medals.value = medalViews(sim.map, medalState, saveInfo.heldMedals);
     }
     // Once per save (D061): a save that has shown the teach never shows it again.
     hud.upgradeHint.value =
@@ -545,11 +554,15 @@ export function bindHud(
         if (interaction.armed === e.tower) interaction.arm(null);
       }
     }),
+    // A resumed run's replay (Host.replaying) rebuilds the counters below but shows nothing: its
+    // flashes, banners, notices, and announcements played in the attempt that reached the
+    // checkpoint (app/checkpoints.ts).
     host.bus.on('EnemyLeaked', (e) => {
-      if (e.leak > 0) hud.leak.value = { id: ++leakId, amount: e.leak };
+      if (e.leak > 0 && !host.replaying) hud.leak.value = { id: ++leakId, amount: e.leak };
     }),
     host.bus.on('WaveStarted', (e) => {
       if (salvageStarted) salvageWaves++;
+      if (host.replaying) return;
       hud.waveBanner.value = { id: ++bannerId, wave: e.wave };
       if (bannerTimer !== null) clearTimeout(bannerTimer);
       bannerTimer = setTimeout(() => {
@@ -558,7 +571,7 @@ export function bindHud(
       }, WAVE_BANNER_MS);
     }),
     host.bus.on('CountdownStarted', (e) => {
-      hud.countdownCue.value++;
+      if (!host.replaying) hud.countdownCue.value++;
       if (e.wave >= UPGRADE_TEACH_WAVE) teachStarted = true;
       if (e.wave >= SALVAGE_TEACH_WAVE) salvageStarted = true;
     }),
@@ -571,6 +584,7 @@ export function bindHud(
     // A clickable world object on the cursor's tile turned on or off (T409): say what it is now.
     host.bus.on('ClickableChanged', syncCursor),
     host.bus.on('CommandRejected', (e) => {
+      if (host.replaying) return;
       const text = rejectText(e.reason);
       if (text !== null) showNotice(text);
     }),
@@ -587,6 +601,7 @@ export function bindHud(
     host.bus.on('HoldFireChanged', (e) => {
       if (e.target === 'all') masterUsed = true;
       else if (e.on) towerHoldUsed = true;
+      if (host.replaying) return;
       let name: string | null = null;
       if (e.target !== 'all') {
         const pool = sim.state.towers;
@@ -602,6 +617,7 @@ export function bindHud(
         tdCast = true;
         hud.timeDilationTeach.value = 0;
       }
+      if (host.replaying) return;
       const def = sim.config.content.abilities[e.ability];
       announce(`${def?.name ?? displayName(e.ability)} fired.`);
     }),

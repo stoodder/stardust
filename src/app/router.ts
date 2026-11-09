@@ -19,7 +19,11 @@ import { menuNotice, runResult, type RunResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
+import { attemptKills, resumeOf, type Resume } from './checkpoints.ts';
 import { cancel, setSpeed } from './commands.ts';
+import { showNotice } from './hud.ts';
+import type { IdSpace } from '../content/types.ts';
+import type { SimConfig } from '../sim/index.ts';
 import { playMapEndLines } from './dialogue.ts';
 import { earnedMedalIds } from '../sim/index.ts';
 import { closeLoadout, openLoadout } from './loadout.ts';
@@ -91,6 +95,12 @@ export interface Router {
   /** Replays the last battle's map (Results → Retry), with the same request, minus the briefing. */
   retry(): Promise<void>;
   /**
+   * Results → "Retry from wave N" (core-loop.md § 2.12): resumes the lost run from its latest
+   * checkpoint, paused in that wave's countdown with the towers, credits, meters, cooldowns, and
+   * timers it had then (app/checkpoints.ts). Rejects when the last run has no checkpoint to offer.
+   */
+  retryFromCheckpoint(): Promise<void>;
+  /**
    * Ends the running battle with `outcome` and shows Results now. The sim's MapWon / MapLost call
    * it after RESULTS_DELAY_MS. Rejects outside a battle; a second call is a no-op.
    */
@@ -126,6 +136,11 @@ function markFirstPaydayShown(): void {
     ...s,
     story: { ...s.story, seen: [...s.story.seen, FIRST_PAYDAY_SEEN_ID] },
   }));
+}
+
+/** The notice a checkpoint retry opens with, paused in wave `wave`'s countdown. */
+export function resumedNotice(wave: number): string {
+  return `Resumed at wave ${wave}. Unpause when ready.`;
 }
 
 /** Menus Settings can return to. */
@@ -186,6 +201,21 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const back = shown ? Promise.resolve() : showFailed();
       return back.then(() => Promise.reject(err instanceof Error ? err : new Error(String(err))));
     }
+    return launch(request, cfg, briefing, null);
+  };
+
+  /**
+   * Starts a battle on `cfg` (built by openBattle, or a lost run's own for a checkpoint retry,
+   * `resume`). The router's listeners subscribe before a resumed run's replay, so its waves,
+   * met enemies, and first leak count as they did in the attempt that reached the checkpoint.
+   */
+  const launch = (
+    request: BattleRequest,
+    cfg: SimConfig<IdSpace>,
+    briefing: boolean,
+    resume: Resume<IdSpace> | null,
+  ): Promise<void> => {
+    const mapId = cfg.mapId;
     stopBattle();
     showBackdrop(false);
     closeLoadout();
@@ -197,9 +227,56 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     met = [];
     firstLeakAt = null;
     endedAt = null;
-    let next: Battle;
+    let next: Battle | null = null;
+    const listen = (host: Battle['host']): void => {
+      const { bus } = host;
+      bus.on('WaveCleared', () => {
+        wavesCleared++;
+      });
+      // Met means spawned (D097): quitting before a wave never spends its NEW badge or codex entry.
+      const seen = met;
+      bus.on('EnemySpawned', (e) => {
+        if (!seen.includes(e.enemy)) seen.push(e.enemy);
+      });
+      // The first leak, for the results card's first-leak line (app/runResult.ts; D028). A
+      // replayed one is long ago in sim ticks, so it never reads as fresh.
+      bus.on('EnemyLeaked', () => {
+        firstLeakAt ??= { ms: performance.now(), tick: host.sim.state.tick };
+      });
+      // The map ended: freeze the battle now, show Results after the delay.
+      const onEnd = (outcome: RunOutcome) => () => {
+        if (next === null || battle !== next || ended || pending !== null) return;
+        const b = next;
+        endedAt = { ms: performance.now(), tick: host.sim.state.tick };
+        setSpeed(0);
+        cancel();
+        // A won map's debrief may land first, on the radio (D098: Bricks's C1 reaction on A1M5).
+        const { sim } = host;
+        const lines = holdLines(
+          { mapId: sim.map.id, stats: sim.state.stats, ...debriefStoryOf(activeSave()) },
+          outcome,
+        );
+        pending = {
+          outcome,
+          timer: setTimeout(
+            () => {
+              pending = null;
+              if (battle === b) void router.endRun(outcome);
+            },
+            resultsHoldMs(playMapEndLines(lines)),
+          ),
+        };
+      };
+      bus.on('MapWon', onEnd('won'));
+      bus.on('MapLost', onEnd('lost'));
+    };
     try {
-      next = startBattle(game, cfg, { briefing });
+      next = startBattle(
+        game,
+        cfg,
+        { briefing },
+        resume === null ? { listen } : { listen, resume },
+      );
     } catch (err) {
       menuNotice.value = BATTLE_FAILED;
       return showFailed().then(() =>
@@ -208,47 +285,15 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     }
     menuNotice.value = null;
     battle = next;
-    const { bus } = next.host;
-    bus.on('WaveCleared', () => {
-      wavesCleared++;
-    });
-    // Met means spawned (D097): quitting before a wave never spends its NEW badge or codex entry.
-    const seen = met;
-    bus.on('EnemySpawned', (e) => {
-      if (!seen.includes(e.enemy)) seen.push(e.enemy);
-    });
-    // The first leak, for the results card's first-leak line (app/runResult.ts; D028).
-    bus.on('EnemyLeaked', () => {
-      firstLeakAt ??= { ms: performance.now(), tick: next.host.sim.state.tick };
-    });
-    // The map ended: freeze the battle now, show Results after the delay.
-    const onEnd = (outcome: RunOutcome) => () => {
-      if (battle !== next || ended || pending !== null) return;
-      endedAt = { ms: performance.now(), tick: next.host.sim.state.tick };
-      setSpeed(0);
-      cancel();
-      // A won map's debrief may land first, on the radio (D098: Bricks's C1 reaction on A1M5).
-      const { sim } = next.host;
-      const lines = holdLines(
-        { mapId: sim.map.id, stats: sim.state.stats, ...debriefStoryOf(activeSave()) },
-        outcome,
-      );
-      pending = {
-        outcome,
-        timer: setTimeout(
-          () => {
-            pending = null;
-            if (battle === next) void router.endRun(outcome);
-          },
-          resultsHoldMs(playMapEndLines(lines)),
-        ),
-      };
-    };
-    bus.on('MapWon', onEnd('won'));
-    bus.on('MapLost', onEnd('lost'));
     // The briefing's Change loadout: only where the loadout screen came before it.
     loadoutChangeable.value = briefing && loadoutOffered(mapId);
     screen.value = 'battle';
+    if (resume !== null) {
+      // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
+      // and unpauses when ready (core-loop.md § 2.12).
+      setSpeed(0);
+      showNotice(resumedNotice(resume.checkpoint.wave));
+    }
     return next.firstFrame;
   };
 
@@ -278,6 +323,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     const { sim } = b.host;
     const s = sim.state;
     const end = endedAt ?? { ms: performance.now(), tick: s.tick };
+    const resumed = b.host.resumedFrom;
     const input: RunEndInput = {
       mapId: sim.map.id,
       waveCount: sim.map.waves.length,
@@ -286,7 +332,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       ...(sim.map.asset === null
         ? {}
         : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
-      skitterkinKilled: s.stats.skitterkinKilled,
+      // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
+      skitterkinKilled: attemptKills(b.host),
       wavesCleared,
       firstLeakAgo:
         firstLeakAt === null
@@ -303,6 +350,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       })),
       stats: s.stats,
       met,
+      resumedFromWave: resumed?.wave ?? null,
+      checkpointWave: b.host.checkpoints.at(-1)?.wave ?? null,
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
     // The battle freezes where it ended and stays drawn behind the results.
@@ -376,6 +425,16 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     retry() {
       // A retry skips the briefing: the player read it moments ago.
       return openBattle(lastRequest, false);
+    },
+    retryFromCheckpoint() {
+      const b = battle;
+      const checkpoint = b?.host.checkpoints.at(-1);
+      if (b === null || checkpoint === undefined || !ended) {
+        return Promise.reject(new Error('router: the last run has no checkpoint to retry from'));
+      }
+      // The lost run's own config (same seed, loadout, and modifiers), so the replay reproduces it.
+      const { sim } = b.host;
+      return launch(lastRequest, sim.config, false, resumeOf(sim.state.commandLog, checkpoint));
     },
     flushResults() {
       if (pending === null) return Promise.resolve();

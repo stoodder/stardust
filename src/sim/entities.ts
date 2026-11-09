@@ -318,8 +318,16 @@ export interface Projectile extends PoolEntity {
   bomblets: CompiledBomblets | null;
   bombletDamage: number;
   bombletDamageVs: number;
-  /** It steers to `targetUid` each tick (Seeker Swarm; T407b). */
+  /**
+   * It steers to `targetUid` each tick (Seeker Swarm; T407b; systems/projectiles.ts): at
+   * `speedTilesPerTick`, chasing the enemy in `targetSlot`, retargeting with the spare-runners
+   * filter it was fired under (`spare`). For a homing shot `flightTicks` is its whole lifetime and
+   * `ticksLeft` what's left of it; (targetX, targetY) is where it last saw its target.
+   */
   homing: boolean;
+  speedTilesPerTick: number;
+  targetSlot: number;
+  spare: boolean;
 }
 
 export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
@@ -350,6 +358,9 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   bombletDamage: 0,
   bombletDamageVs: 0,
   homing: false,
+  speedTilesPerTick: 0,
+  targetSlot: -1,
+  spare: false,
 });
 
 /**

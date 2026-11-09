@@ -45,7 +45,19 @@ describe('runResultOf', () => {
       ],
       stamps: [],
       rewards: null,
+      resumedFromWave: null,
+      retryFromWave: null,
     });
+  });
+
+  it('offers the latest checkpoint after a loss only, and says which wave a run resumed from', () => {
+    const cp = { ...INPUT, checkpointWave: 10, resumedFromWave: 5 };
+    expect(runResultOf(cp, 'lost')).toMatchObject({ retryFromWave: 10, resumedFromWave: 5 });
+    expect(runResultOf(cp, 'won')).toMatchObject({ retryFromWave: null, resumedFromWave: 5 });
+    expect(metaRunEndOf(cp, 'won')).toMatchObject({ usedCheckpoint: true, resumedFromWave: 5 });
+    const fresh = metaRunEndOf({ ...INPUT, checkpointWave: 5 }, 'lost');
+    expect(fresh.usedCheckpoint).toBeUndefined();
+    expect(fresh.resumedFromWave).toBeUndefined();
   });
 
   it("lists a Protect map's asset as the run left it (T305a)", () => {
@@ -111,7 +123,14 @@ describe('the run end and the rewards on the card', () => {
         { id: 'teamwork', name: 'Teamwork!', earned: true, isNew: true, intel: 1 },
       ],
       objectives: [],
-      stardust: { source: 'replay', amount: 48, base: 120, wavesResolved: 7, waveCount: 7 },
+      stardust: {
+        source: 'replay',
+        amount: 48,
+        base: 120,
+        wavesResolved: 7,
+        waveCount: 7,
+        fromWave: null,
+      },
       intel: 1,
       lifetimePests: 114,
       stardustNote: null,

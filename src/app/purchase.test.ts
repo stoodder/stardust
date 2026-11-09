@@ -48,8 +48,8 @@ describe('purchases in the save session', () => {
       'maxed',
       'maxed', // the Sprinkler's (T407a)
       'maxed', // the Lookout's (T406)
-      'no_specs', // Skyhook's and Zapcoil's ship later (T407b)
-      'no_specs',
+      'maxed', // Skyhook's and Zapcoil's (T407b)
+      'maxed',
     ]);
   });
 });

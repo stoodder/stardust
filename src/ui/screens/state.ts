@@ -32,6 +32,13 @@ export interface RunResult {
   readonly stamps: readonly string[];
   /** What the run paid into the save in play (meta run end); null outside a campaign (`?map=`). */
   readonly rewards: RunRewards | null;
+  /**
+   * The checkpoint wave this run resumed from (core-loop.md § 2.12), or null for a run from wave
+   * 1: a win's card says Perfect Core and the Challenge needed a run from the start.
+   */
+  readonly resumedFromWave: number | null;
+  /** A loss's latest checkpoint wave: the card offers "Retry from wave N". Null: none. */
+  readonly retryFromWave: number | null;
 }
 
 /** A Protect map's asset meter at the run's end: its name, what's left, and its full value. */
@@ -81,6 +88,8 @@ export interface RunRewards {
     readonly base: number;
     readonly wavesResolved: number;
     readonly waveCount: number;
+    /** The checkpoint wave a defeat's stipend counts from (`wavesResolved` from it on), or null. */
+    readonly fromWave: number | null;
   };
   /** The map's optional objectives in map order, with this run's standing (none on most maps). */
   readonly objectives: readonly ObjectiveResult[];

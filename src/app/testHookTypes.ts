@@ -115,6 +115,12 @@ export interface ResultsFixture {
   readonly quietWave?: { readonly spawned: number; readonly leaked: number };
   /** Scenes in place of the map's flow, by id (registered or dev, `ui/dialogue/dev.ts`). */
   readonly flow?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
+  /**
+   * Checkpoints (T305b; core-loop.md § 2.12): `resumedFrom`, the wave the run was retried from
+   * (Victory only; the card says why); `latest`, the checkpoint a loss offers ("Retry from wave
+   * N"; its button needs a real lost battle to act on). Default none.
+   */
+  readonly checkpoint?: { readonly resumedFrom?: number; readonly latest?: number };
 }
 
 export interface DialogueHooks {

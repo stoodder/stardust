@@ -12,6 +12,26 @@ import { enemyChitterbloom } from './enemies/chitterbloom.ts';
 import { enemyGerald } from './enemies/gerald.ts';
 import { enemyYoungling } from './enemies/youngling.ts';
 import { enemyZoomer } from './enemies/zoomer.ts';
+import { enemyMote } from './enemies/mote.ts';
+import { enemyGlimmer } from './enemies/glimmer.ts';
+import { enemyWeftWarden } from './enemies/weft_warden.ts';
+import { enemyLightwing } from './enemies/lightwing.ts';
+import {
+  enemyBroodHaulerFleeing,
+  enemyBunchlingFleeing,
+  enemyDiggerFleeing,
+  enemyElderFleeing,
+  enemyNibblerFleeing,
+  enemyPuffwingFleeing,
+  enemyYounglingFleeing,
+  enemyZoomerFleeing,
+} from './enemies/fleeing.ts';
+import {
+  iconEnemyGlimmer,
+  iconEnemyLightwing,
+  iconEnemyMote,
+  iconEnemyWeftWarden,
+} from './icons/act2_enemies.ts';
 import { fxBombletBurst } from './fx/bomblet_burst.ts';
 import { fxExplosion } from './fx/explosion.ts';
 import { fxSackBurst } from './fx/sack_burst.ts';
@@ -37,6 +57,10 @@ import {
   iconTellFlying,
   iconTellHuddle,
   iconTellSplitter,
+  iconTellShielded,
+  iconTellRegen,
+  iconTellHollow,
+  iconTellSkittish,
 } from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconEnemyBunchling } from './icons/bunchling.ts';
@@ -58,6 +82,7 @@ import { projectileRivetTracer } from './projectiles/rivet_tracer.ts';
 import { projectileThumperBomblet } from './projectiles/thumper_bomblet.ts';
 import { projectileThumperShell } from './projectiles/thumper_shell.ts';
 import { projectileSkyhookFlak } from './projectiles/skyhook_flak.ts';
+import { projectileSkyhookSeeker } from './projectiles/skyhook_seeker.ts';
 import { propBillboard } from './props/billboard.ts';
 import { propCore } from './props/core.ts';
 import { propDome } from './props/dome.ts';
@@ -106,20 +131,8 @@ import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
 import {
   enemyGlassWitch,
-  enemyGlimmer,
-  enemyLightwing,
-  enemyMote,
-  enemyWeftWarden,
   iconAbilityScannerSweep,
   iconEnemyGlassWitch,
-  iconEnemyGlimmer,
-  iconEnemyLightwing,
-  iconEnemyMote,
-  iconEnemyWeftWarden,
-  iconTellHollow,
-  iconTellRegen,
-  iconTellShielded,
-  iconTellSkittish,
   iconTowerCrane,
   iconTowerHarpoon,
   iconTowerLookout,
@@ -191,7 +204,16 @@ export const SPRITES = [
   enemyElder,
   enemyChitterbloom,
   enemyGerald,
-  // M4's units, placeholders until T440a and T440b (placeholders/index.ts).
+  // Act II's fleeing runners (enemies/flee.ts).
+  enemyNibblerFleeing,
+  enemyZoomerFleeing,
+  enemyYounglingFleeing,
+  enemyDiggerFleeing,
+  enemyPuffwingFleeing,
+  enemyBunchlingFleeing,
+  enemyElderFleeing,
+  enemyBroodHaulerFleeing,
+  // M4's units (the Glass Witch a placeholder until T440b, placeholders/index.ts).
   enemyMote,
   enemyGlimmer,
   enemyWeftWarden,
@@ -202,6 +224,7 @@ export const SPRITES = [
   projectileThumperShell,
   projectileThumperBomblet,
   projectileSkyhookFlak,
+  projectileSkyhookSeeker,
   fxShadow,
   fxGroundShadow,
   fxExplosion,
@@ -230,7 +253,7 @@ export const SPRITES = [
   iconEnemyGerald,
   iconAbilityTimeDilation,
   iconAbilityClearanceSale,
-  // M4's icons, placeholders until T440a and T440b (placeholders/index.ts).
+  // M4's icons (the towers', the Witch's, and Scanner Sweep's placeholders until T440b).
   iconTowerLookout,
   iconTowerHarpoon,
   iconTowerCrane,
@@ -251,7 +274,7 @@ export const SPRITES = [
   iconTellSplitter,
   iconTellHuddle,
   iconTellBoss,
-  // M4's tell glyphs, placeholders until T440a (placeholders/index.ts).
+  // M4's tell glyphs.
   iconTellShielded,
   iconTellRegen,
   iconTellHollow,

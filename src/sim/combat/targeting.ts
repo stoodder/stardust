@@ -55,7 +55,8 @@ function remaining(e: Enemy): number {
 /**
  * The best target from (x, y) under `priority`, or null. Priorities (towers.md §5): First (least
  * route distance left), Last (most left), Strong (highest HP + shield), Close (nearest). Ties:
- * First, then the lowest uid. With `spare` (the spare-runners filter), spared units are skipped.
+ * First, then the lowest uid. With `spare` (the spare-runners filter), spared units are skipped,
+ * and so are the enemy slots in `exclude` (a volley's targets so far; T407b).
  */
 export function pickTarget(
   enemies: Pool<Enemy>,
@@ -65,6 +66,7 @@ export function pickTarget(
   range: RangeSpec,
   priority: TargetPriority,
   spare = false,
+  exclude: readonly number[] | null = null,
 ): Enemy | null {
   let best: Enemy | null = null;
   let bRem = 0;
@@ -74,6 +76,7 @@ export function pickTarget(
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!canHit(e, layers)) continue;
     if (spare && isSpared(e.tags)) continue;
+    if (exclude !== null && exclude.includes(i)) continue;
     const d2 = distSqTo(x, y, e);
     if (!isInRange(d2, range)) continue;
     const rem = remaining(e);

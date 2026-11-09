@@ -7,6 +7,7 @@ import type { MemoId } from '../content/memos/index.ts';
 import type { MapId, MedalId, TowerId } from '../content/types.ts';
 import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { VICTORY_MEDAL_ID } from '../sim/medals.ts';
 import { withIssuedTowers } from './issued.ts';
 import { isMapWon } from './progress.ts';
 import {
@@ -57,15 +58,15 @@ export interface RunEndInput {
    */
   readonly met?: readonly string[];
   /**
-   * The run resumed from a checkpoint at least once (core-loop.md § 2.12): it still earns Victory
-   * and the first-clear rewards but forfeits Perfect Core and the Challenge medal. Default false.
-   * Not read yet: T305b applies the rule.
+   * The run resumed from a checkpoint at least once (core-loop.md § 2.12): it still earns Victory,
+   * the first-clear rewards, and its optional objectives, but forfeits Perfect Core and the
+   * Challenge medal (step 4). Default false.
    */
   readonly usedCheckpoint?: boolean;
   /**
    * The wave of the checkpoint this attempt resumed from (the latest retry's), or null for an
    * attempt from wave 1. A defeat pays defeat Stardust only for the waves resolved beyond it
-   * (progression.md § 2). Default null. Not read yet: T305b applies the rule.
+   * (progression.md § 2; step 5). Default null.
    */
   readonly resumedFromWave?: number | null;
 }
@@ -160,10 +161,14 @@ export function runEnd(
   // 3. Revoked towers and abilities: TODO(M3) when a map script can revoke (A3M2; the sim has no
   //    `state.revoked` yet).
 
-  // 4. Medals: the sim settled them (D042). TODO(M3 checkpoints): a run with `usedCheckpoint` keeps
-  //    Victory only.
+  // 4. Medals: the sim settled them (D042). A run that used a checkpoint keeps Victory only
+  //    (core-loop.md § 2.12); its objectives still count (the replay reproduced them exactly).
   const heldMedals = old?.medals ?? [];
-  const medals = won ? medalPayout(heldMedals, input.earnedMedals) : [];
+  const earned =
+    input.usedCheckpoint === true
+      ? input.earnedMedals.filter((m) => m === VICTORY_MEDAL_ID)
+      : input.earnedMedals;
+  const medals = won ? medalPayout(heldMedals, earned) : [];
   // Optional objectives settle like medals: a win records each newly completed one (T304f).
   const heldObjectives = old?.objectives ?? [];
   const objectives = won ? objectivePayout(heldObjectives, input.completedObjectives ?? []) : [];
@@ -186,6 +191,7 @@ export function runEnd(
     wavesResolved: input.wavesResolved,
     waveCount: input.waveCount,
     veteranBonus: input.veteranBonus ?? 0,
+    resumedFromWave: input.resumedFromWave ?? null,
   });
   const intel =
     medals.reduce((sum, m) => sum + m.intel, 0) + objectives.reduce((sum, o) => sum + o.intel, 0);

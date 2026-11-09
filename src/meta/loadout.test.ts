@@ -22,9 +22,11 @@ import {
   toggleProtocol,
   withPreset,
   withProtocols,
+  LIVE_SPEC_NAMES,
   type LoadoutMap,
   type LoadoutPick,
   type LoadoutPools,
+  type SpecNames,
 } from './loadout.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
 import { validateSave } from './validate.ts';
@@ -252,14 +254,33 @@ describe('counters and links', () => {
     expect(towerAnswers('sprinkler', true, act2Air)).toEqual([
       { counter: 'air', minTier: 4, spec: 'Cloudburst' },
     ]);
-    // Seeker Swarm ships later (T407b): an owned unlock for it answers nothing yet.
+    // Seeker Swarm is built (T407b): the Skyhook answers armor through it once the pair is owned.
     expect(towerAnswers('skyhook', true, act2Air)).toEqual([
+      { counter: 'armor', minTier: 4, spec: 'Seeker Swarm' },
+      { counter: 'air', minTier: 1, spec: null },
+    ]);
+    // Only against armored flyers: the Skyhook hits air only.
+    const groundArmor: LoadoutMap = {
+      ...act2Air,
+      enemies: [
+        { traits: ['armored'], body: 'organic', layer: 'ground' },
+        { traits: ['flying'], body: 'organic', layer: 'air' },
+      ],
+    };
+    expect(towerAnswers('skyhook', true, groundArmor)).toEqual([
+      { counter: 'air', minTier: 1, spec: null },
+    ]);
+    // A spec still to ship (no name authored) answers nothing, even with its unlock owned.
+    const unbuilt: SpecNames = (tower, spec) =>
+      tower === 'skyhook' ? null : LIVE_SPEC_NAMES(tower, spec);
+    expect(towerAnswers('skyhook', true, act2Air, unbuilt)).toEqual([
       { counter: 'air', minTier: 1, spec: null },
     ]);
     const save = createNewSave();
     save.unlocks.towers.push('sprinkler', 'skyhook');
     save.unlocks.specs = ['sprinkler', 'skyhook'];
-    expect(specsOwned(save)).toEqual(['sprinkler']);
+    expect(specsOwned(save)).toEqual(['sprinkler', 'skyhook']);
+    expect(specsOwned(save, unbuilt)).toEqual(['sprinkler']);
     expect(
       uncoveredCounters({ towers: ['sprinkler'], ability: null }, save, {
         ...act2Air,

@@ -31,7 +31,12 @@
 // - **The Hollow's walk** (hollowLook.ts): it hitches and skips a frame, and now and then shows a
 //   frame shoved sideways (none under reduced motion).
 // - **Fleeing runners** (fleeLook.ts) scurry (a faster walk, faster still when bolting) and glance
-//   back over their shoulders.
+//   back over their shoulders: in their fleeing body's `glance` frame where it has one (T440a,
+//   spriteInfo.ts `enemyBody`), else in the facing that looks back.
+// T440a's frames take over from the stand-ins where a sprite draws them: a Heavy unit with a
+// `heavy` anim walks in it (swollen, pale-outlined, the victim inside) with no tint or rim, and a
+// cloaked unit with a baked `cloak` variant draws that (a 50% checker body in a dashed white
+// outline) at the dither's alphas instead of its `selected` outline at the faint ones.
 // - **Shields** (shieldLook.ts): a faint hex bubble round a shielded body while its shield holds,
 //   flashing on each hit (ShieldView rings the hit and scatters the shards when it breaks).
 // - **Stasis** holds the frame, frosts the body, and rims it in crystal white; **a blink's tell**
@@ -67,6 +72,7 @@ import {
   cloakAlpha,
   ENEMY_POSES,
   interruptsOneShot,
+  isStride,
   ONE_SHOT_POSES,
   oneShotFor,
   POSE_INDEX,
@@ -122,7 +128,7 @@ const HIT_FLASH_COLOR = 0xffffff;
 /** Lateral offset step (px), perpendicular to the direction of travel: ((uid % 5) − 2) steps. */
 const LANE_STEP_PX = 1.5;
 const FACINGS: readonly Facing[] = ['ne', 'nw', 'se', 'sw'];
-/** Each facing's slot in the anim-key and anchor arrays (keys: facing × 2 + selected). */
+/** Each facing's slot in the anim-key and anchor arrays (keys: facing × 3 + look). */
 const FACING_INDEX: Readonly<Record<Facing, number>> = { ne: 0, nw: 1, se: 2, sw: 3 };
 /**
  * A tell glyph shows above a new enemy for 3 s (art-direction §8), counted in sim ticks: at 2× it
@@ -187,10 +193,16 @@ const glitch: HollowGlitch = { hold: false, offsetPx: 0 };
 /** Scratch for the health bar's fill. */
 const fill: HealthBarFill = { hpPx: 0, shieldPx: 0 };
 
+/** A body's look: plain, white-outlined (`selected`, the shimmers), or its baked `cloak`. */
+const LOOK_PLAIN = 0;
+const LOOK_SELECTED = 1;
+const LOOK_CLOAK = 2;
+const LOOKS = 3;
+
 /**
- * A sprite's anims for every pose, facing, and selection (keys[(pose × 4 + facing) × 2 +
- * selected], null where the sprite has no such pose), their frame-0 anchors (pose × 4 + facing),
- * and its death anim. Built once per sprite id and shared by every view that shows it.
+ * A sprite's anims for every pose, facing, and look (keys[(pose × 4 + facing) × LOOKS + look],
+ * null where the sprite has no such pose or look), their frame-0 anchors (pose × 4 + facing), and
+ * its death anim. Built once per sprite id and shared by every view that shows it.
  */
 interface AnimSet {
   readonly keys: (string | null)[];
@@ -199,6 +211,8 @@ interface AnimSet {
   /** The death anim's squash and pop alone (Act II's quiet death, deathLook.ts), or null. */
   readonly quietKey: string | null;
   readonly deathAnchor: { x: number; y: number };
+  /** It bakes a `cloak` variant (T440a). */
+  readonly cloak: boolean;
 }
 
 const ANIM_SETS = new WeakMap<SpriteSource, Map<SpriteId, AnimSet>>();
@@ -213,13 +227,20 @@ function animSetFor(sprites: SpriteSource, scene: Phaser.Scene, id: SpriteId): A
   if (cached !== undefined) return cached;
   const keys: (string | null)[] = [];
   const anchors: ({ x: number; y: number } | null)[] = [];
+  const cloakVariant = `${DEFAULT_VARIANT}+cloak`;
+  const cloak = scene.anims.exists(animKey(id, cloakVariant, 'walk_se'));
   for (const pose of ENEMY_POSES) {
     for (const f of FACINGS) {
       const anim = `${pose}_${f}`;
       const i = POSE_INDEX[pose] * 4 + FACING_INDEX[f];
       const has = hasAnim(id, anim);
-      keys[i * 2] = has ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, false)) : null;
-      keys[i * 2 + 1] = has ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, true)) : null;
+      keys[i * LOOKS + LOOK_PLAIN] = has
+        ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, false))
+        : null;
+      keys[i * LOOKS + LOOK_SELECTED] = has
+        ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, true))
+        : null;
+      keys[i * LOOKS + LOOK_CLOAK] = has && cloak ? sprites.anim(id, anim, cloakVariant) : null;
       // Mirrored frames of an off-center sprite have their own anchor (tech-spec § Sprite anchoring).
       anchors[i] = has ? sprites.frameAnchor(id, `${anim}_0`) : null;
     }
@@ -245,6 +266,7 @@ function animSetFor(sprites: SpriteSource, scene: Phaser.Scene, id: SpriteId): A
     deathKey: has ? death : null,
     quietKey: has ? quiet : null,
     deathAnchor: has ? sprites.frameAnchor(id, 'death_0') : { x: 0, y: 0 },
+    cloak,
   };
   byId.set(id, set);
   return set;
@@ -306,6 +328,8 @@ export class EnemyView implements PooledView {
   #shown: EnemyPose = 'walk';
   /** Whether the shown look is the shimmer's white-outlined half. */
   #shimmerOn = false;
+  /** Whether it draws its baked `cloak` look (cloaked, unrevealed, and the sprite has one). */
+  #cloakOn = false;
   /** Burrowed under the generic mound (the body hidden). */
   #mounded = false;
   #leaving = false;
@@ -499,6 +523,7 @@ export class EnemyView implements PooledView {
     this.#statePose = 'walk';
     this.#oneShot = null;
     this.#shimmerOn = false;
+    this.#cloakOn = false;
     this.#mounded = false;
     this.#heavy = false;
     this.#frozen = false;
@@ -722,12 +747,15 @@ export class EnemyView implements PooledView {
     const pose = this.#currentPose();
     // A cloak (T406, T430a) wears its white outline (the `selected` variant) on the faint body, so
     // the outline shimmers brighter than the body as its alpha steps.
+    // A sprite with a baked `cloak` variant draws that instead (T440a).
     const cloaked = this.#cloakable && !e.leaving && e.revealedTicks <= 0;
+    const dithered = cloaked && this.#set?.cloak === true;
     const shimmer =
-      cloaked ||
+      (cloaked && !dithered) ||
       ((pose === 'puff' || blinkTell) && (reduced || Math.floor(now / SHIMMER_MS) % 2 === 0));
-    if (shimmer !== this.#shimmerOn) {
+    if (shimmer !== this.#shimmerOn || dithered !== this.#cloakOn) {
       this.#shimmerOn = shimmer;
+      this.#cloakOn = dithered;
       dirty = true;
     }
     // A fleeing runner glances back over its shoulder now and then (fleeLook.ts).
@@ -751,7 +779,7 @@ export class EnemyView implements PooledView {
     const tempo = fleeTempo(this.#fleeing, bolting);
     if (tempo !== this.#tempoMul) {
       this.#tempoMul = tempo;
-      if (this.#shown === 'walk')
+      if (isStride(this.#shown))
         this.#body.anims.timeScale = walkTempo(this.#uid).timeScale * tempo;
     }
     if (e.leaving !== this.#leaving) {
@@ -759,7 +787,7 @@ export class EnemyView implements PooledView {
       dirty = true;
     }
     const high = reduced || Math.floor(now / SHIMMER_MS) % 2 === 0;
-    const alpha = cloakAlpha(e, this.#leaving, high);
+    const alpha = cloakAlpha(e, this.#leaving, high, this.#cloakOn);
     if (alpha !== this.#alpha) {
       this.#alpha = alpha;
       this.#body.setAlpha(alpha);
@@ -778,7 +806,7 @@ export class EnemyView implements PooledView {
     }
     // The Hollow's walk hitches (hollowLook.ts); a tell holds the frame (Stasis, the hush, a blink).
     const hushing = isHushing(e);
-    const walking = this.#shown === 'walk' && !e.leaving && !held;
+    const walking = isStride(this.#shown) && !e.leaving && !held;
     const glitching = this.#hollow && walking && !hushing;
     if (glitching) hollowGlitch(this.#uid, now, reduced, glitch);
     const hitch = glitching && glitch.hold;
@@ -858,7 +886,8 @@ export class EnemyView implements PooledView {
     } else if (pulseTell(e)) {
       rim = 'pulse';
       if (!tellHigh(e.pulseTicks, reduced)) rimAlpha = RIM_LOW_ALPHA;
-    } else if (this.#heavy && !e.leaving) {
+    } else if (this.#heavy && !e.leaving && !this.#has('heavy')) {
+      // A sprite that draws Heavy (T440a) has its 2 px pale outline already.
       rim = 'heavy';
     }
     d.rimOn(body, rim, rimAlpha);
@@ -993,14 +1022,15 @@ export class EnemyView implements PooledView {
   #stopFlash(): void {
     this.#flashFrames = 0;
     if (this.#frozen) this.#body.setTint(STASIS_TINT).setTintMode(Phaser.TintModes.SCREEN);
-    else if (this.#heavy) this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
+    else if (this.#heavy && !this.#has('heavy'))
+      this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
     else this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 
   /** Whether the shown sprite has `pose` in the current facing. */
   #has(pose: EnemyPose): boolean {
     const i = POSE_INDEX[pose] * 4 + FACING_INDEX[this.#facing];
-    return (this.#set?.keys[i * 2] ?? null) !== null;
+    return (this.#set?.keys[i * LOOKS] ?? null) !== null;
   }
 
   /** The pose to draw: a playing one-shot, else the state's. */
@@ -1029,16 +1059,25 @@ export class EnemyView implements PooledView {
       }
     }
     if (!this.#has(pose)) pose = 'walk';
-    // A fleeing runner's glance back shows the facing that looks over its shoulder (fleeLook.ts).
-    const facing = this.#glance ? glanceFacing(this.#facing) : this.#facing;
+    // A fleeing runner's glance back (fleeLook.ts): its `glance` frame where its body draws one
+    // (T440a), else the facing that looks over its shoulder.
+    let facing = this.#facing;
+    if (this.#glance && pose === 'walk') {
+      if (this.#has('glance')) pose = 'glance';
+      else facing = glanceFacing(this.#facing);
+    }
     const i = POSE_INDEX[pose] * 4 + FACING_INDEX[facing];
-    const selected = this.#selected || this.#shimmerOn;
-    const key = set.keys[i * 2 + (selected ? 1 : 0)];
+    const look = this.#cloakOn
+      ? LOOK_CLOAK
+      : this.#selected || this.#shimmerOn
+        ? LOOK_SELECTED
+        : LOOK_PLAIN;
+    const key = set.keys[i * LOOKS + look];
     const a = set.anchors[i];
     if (key === null || key === undefined || a === null || a === undefined) return;
     const was = this.#shown;
     this.#shown = mound ? 'under' : pose;
-    if (pose === 'walk') {
+    if (isStride(pose)) {
       const tempo = walkTempo(this.#uid);
       const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
       this.#body.play({ key, startFrame: tempo.startFrame % frames });

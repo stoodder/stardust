@@ -5,6 +5,7 @@ import type { IdSpace } from '../../content/types.ts';
 import {
   blankFacts,
   interruptsOneShot,
+  isStride,
   oneShotFor,
   poseFacts,
   statePose,
@@ -18,6 +19,7 @@ const calm: PoseFacts = {
   invulnerable: false,
   telling: null,
   panic: false,
+  heavy: false,
 };
 
 describe('statePose (T312b)', () => {
@@ -29,6 +31,16 @@ describe('statePose (T312b)', () => {
     expect(statePose({ ...calm, telling: 'dig', invulnerable: true })).toBe('puff');
     expect(statePose({ ...calm, invulnerable: true, burrowed: true })).toBe('under');
     expect(statePose({ ...calm, burrowed: true, leaving: true })).toBe('flee');
+    // Heavy (T440a) is the walk of a unit that has hushed someone: a tell or panic outranks it.
+    expect(statePose({ ...calm, heavy: true })).toBe('heavy');
+    expect(statePose({ ...calm, heavy: true, telling: 'tell' })).toBe('tell');
+    expect(statePose({ ...calm, heavy: true, leaving: true })).toBe('flee');
+  });
+
+  it('strides on the walk, the Heavy walk, and the glance back (their tempo follows the pace)', () => {
+    expect(['walk', 'heavy', 'glance'].every((p) => isStride(p as EnemyPose))).toBe(true);
+    for (const p of ['tell', 'panic', 'flee', 'puff', 'sneeze'] as const)
+      expect(isStride(p)).toBe(false);
   });
 
   it('plays the sneeze when a sneeze tell ends in a stride, and the surfacing out of the ground', () => {

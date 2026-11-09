@@ -82,6 +82,15 @@ export interface RunEndInput {
    * Absent: meta estimates them from the map's waves.
    */
   readonly met?: readonly string[];
+  /**
+   * The checkpoint wave this attempt resumed from (core-loop.md § 2.12; app/checkpoints.ts), or
+   * null/absent for an attempt from wave 1. A resumed run forfeits Perfect Core and the Challenge,
+   * and its defeat pays only the waves from it on (meta's runEnd). `skitterkinKilled` is then this
+   * attempt's kills: the replayed ones were filed by the attempt that reached the checkpoint.
+   */
+  readonly resumedFromWave?: number | null;
+  /** The latest checkpoint's wave, which a loss offers to retry from ("Retry from wave N"). */
+  readonly checkpointWave?: number | null;
 }
 
 /** An optional objective as the run left it. */
@@ -169,6 +178,9 @@ export function metaRunEndOf(
     ...(input.met === undefined ? {} : { met: input.met }),
     skitterkinKilled: input.skitterkinKilled,
     meter: Math.max(0, input.integrity),
+    ...(input.resumedFromWave === undefined || input.resumedFromWave === null
+      ? {}
+      : { usedCheckpoint: true, resumedFromWave: input.resumedFromWave }),
   };
 }
 
@@ -203,14 +215,21 @@ export function runRewardsOf(
       intel: paid?.intel ?? 0,
     };
   });
-  const { source, amount, base, waveCount } = summary.stardust;
+  const { source, amount, base, waveCount, fromWave } = summary.stardust;
   // The shop's note (set while the shop is locked) shows on the first payday only (T235).
   const note = summary.stardustNote ?? null;
   const firstPayday = summary.firstPayday && note !== null;
   return {
     medals,
     objectives,
-    stardust: { source, amount, base, wavesResolved: summary.stardust.wavesResolved, waveCount },
+    stardust: {
+      source,
+      amount,
+      base,
+      wavesResolved: summary.stardust.wavesResolved,
+      waveCount,
+      fromWave,
+    },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
     issued: summary.issued.map(towerName),
@@ -333,5 +352,8 @@ export function runResultOf(
     debrief: debriefLines(input, outcome),
     stamps: resultStamps(input, outcome),
     rewards: summary === null ? null : runRewardsOf(input, summary),
+    resumedFromWave: input.resumedFromWave ?? null,
+    // "Retry from wave N" (core-loop.md § 2.12): a loss offers the run's latest checkpoint.
+    retryFromWave: outcome === 'lost' ? (input.checkpointWave ?? null) : null,
   };
 }

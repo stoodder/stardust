@@ -3,7 +3,14 @@
 // 60%; Scanner Sweep's circle holds, then fades over its zone's last second.
 import { describe, expect, it } from 'vitest';
 import type { Enemy } from '../../sim/index.ts';
-import { CLOAK_ALPHA_HIGH, CLOAK_ALPHA_LOW, LEAVING_ALPHA, cloakAlpha } from './enemyPose.ts';
+import {
+  CLOAK_ALPHA_HIGH,
+  CLOAK_ALPHA_LOW,
+  CLOAK_DITHER_ALPHA_HIGH,
+  CLOAK_DITHER_ALPHA_LOW,
+  LEAVING_ALPHA,
+  cloakAlpha,
+} from './enemyPose.ts';
 import { STEPPED_ALPHA, sweepAlpha } from '../vfx/fxTiming.ts';
 
 const unit = (cloaked: boolean, revealedTicks: number): Enemy =>
@@ -18,6 +25,14 @@ describe('cloak shimmer', () => {
     expect(cloakAlpha(unit(true, 3), false, true)).toBe(1);
     expect(cloakAlpha(unit(false, 0), false, true)).toBe(1);
     expect(cloakAlpha(unit(true, 0), true, true)).toBe(LEAVING_ALPHA);
+  });
+
+  it('a dithered cloak (the baked `cloak` variant, T440a) shimmers two rungs up the ladder', () => {
+    expect(cloakAlpha(unit(true, 0), false, false, true)).toBe(CLOAK_DITHER_ALPHA_LOW);
+    expect(cloakAlpha(unit(true, 0), false, true, true)).toBe(CLOAK_DITHER_ALPHA_HIGH);
+    expect(STEPPED_ALPHA).toContain(CLOAK_DITHER_ALPHA_LOW);
+    expect(STEPPED_ALPHA).toContain(CLOAK_DITHER_ALPHA_HIGH);
+    expect(cloakAlpha(unit(true, 3), false, true, true)).toBe(1);
   });
 });
 

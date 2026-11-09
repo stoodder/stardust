@@ -100,8 +100,13 @@ export const YOUNGLING_SPRITE = 'enemy.youngling';
 
 /**
  * The body sprite an enemy draws: `enemy.youngling` for a `youngling`-tagged unit (the Quiet
- * Wave's little ones, an Elder's brood), else its def's own body.
+ * Wave's little ones, an Elder's brood), else its def's own body; then, for a `fleeing`-tagged
+ * runner, that body's fleeing look (`<body>_fleeing`: ears flat, the glance back, the panic hop;
+ * T440a, content/sprites/enemies/flee.ts) where one is drawn.
  */
 export function enemyBody(body: string, tags: readonly string[]): string {
-  return tags.includes('youngling') ? YOUNGLING_SPRITE : body;
+  const own = tags.includes('youngling') ? YOUNGLING_SPRITE : body;
+  if (!tags.includes('fleeing')) return own;
+  const fleeing = `${own}_fleeing`;
+  return BY_ID.has(fleeing) ? fleeing : own;
 }

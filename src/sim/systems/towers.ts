@@ -6,10 +6,15 @@
 // - projectile (Skyhook's flak, T304a): a straight shot at `speedTilesPerTick` to the intercept
 //   point, where the target will be when it arrives (`interceptInto`), fixed when it fires; the
 //   projectiles system bursts it there (splash on the tier's layers) or, with no splash, hits its
-//   target. Not homing (Seeker Swarm's homing is M4's).
+//   target. A `homing` shot (Seeker Swarm, T407b) is aimed at its target itself and steered there
+//   by the projectiles system. A `volley` fires that many shots at once, each at its own target
+//   where it can: the tower's target, then the next best by its priority among the others in range
+//   (the spare-runners filter applies), and with too few targets the extras go round the same
+//   ones again, the tower's target first.
 // - pulse (Sprinkler): every period, hits every enemy in range; no target, no priority. It waits
 //   (cooldown 0) until an enemy is in range, so its first pulse always affects one.
 // - chain (Zapcoil, T304b): sim/attacks/chain.ts.
+// - charge (Capacitor Bank, T407b): sim/attacks/charge.ts. Holding fire vents its charge.
 // A link's statuses (Conductive's Soak; systems/status.ts `applyLinkStatuses`) land after the
 // tier's own on hitscan, pulse, and chain hits.
 // Cooldowns: a tower fires on a tick whose cooldown starts at 0, then waits `cooldownTicks`.
@@ -43,6 +48,7 @@ import {
   hasStatusIn,
 } from '../bonuses.ts';
 import { chainAttack } from '../attacks/chain.ts';
+import { chargeAttack } from '../attacks/charge.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
 import {
@@ -60,6 +66,7 @@ import { poolAlloc } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { enemySpeedPerTick } from './movement.ts';
+import { HOMING_LIFE_TICKS } from './projectiles.ts';
 import { applyLinkStatuses } from './status.ts';
 
 export function towers(state: SimState, ctx: TickContext): void {
@@ -78,6 +85,7 @@ export function towers(state: SimState, ctx: TickContext): void {
     if (t.holdFire) {
       t.targetUid = 0;
       t.targetSlot = -1;
+      t.chargeTicks = 0;
       continue;
     }
     switch (attack.kind) {
@@ -92,12 +100,13 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'chain':
         if (chainAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // Beams (Prism, M5), spawners (Scuttle Den, M6), charges (Capacitor Bank, T407b), and
-      // lines (Skewer, T408) arrive with their towers and specs. createSim refuses each until
-      // then (FEATURE_GATES).
+      case 'charge':
+        if (chargeAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
+        break;
+      // Beams (Prism, M5), spawners (Scuttle Den, M6), and lines (Skewer, T408) arrive with their
+      // towers and specs. createSim refuses each until then (FEATURE_GATES).
       case 'beam':
       case 'spawner':
-      case 'charge':
       case 'line':
         break;
       default:
@@ -175,7 +184,7 @@ function aimAndFire(
   const atSkitterkin = target.def?.faction === 'skitterkin';
   if (attack.kind === 'hitscan') fireHitscan(state, ctx, t, tier, attack, target);
   else if (attack.kind === 'lobbed') fireShell(state, ctx, t, tier, attack, target);
-  else fireFlak(state, ctx, t, tier, attack, target);
+  else fireShots(state, ctx, t, tier, attack, target);
   t.cooldownTicks = bonusPeriodTicks(attack, t);
   if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;
   return atSkitterkin;
@@ -311,6 +320,84 @@ export function interceptInto(
   ticks = flightTicksTo(x, y, out.x, out.y, speed);
   pointAt(target.route, target.dist + v * ticks, out, target.seg);
   return ticks;
+}
+
+/**
+ * Fires a projectile attack's shots: one at `target`, or a volley (see the header), each a flak
+ * round or a homing missile.
+ */
+function fireShots(
+  state: SimState,
+  ctx: TickContext,
+  t: Tower,
+  tier: CompiledTier,
+  attack: Extract<CompiledAttack, { kind: 'projectile' }>,
+  target: Enemy,
+): void {
+  const fire = attack.homing ? fireHoming : fireFlak;
+  if (attack.volley <= 1) {
+    fire(state, ctx, t, tier, attack, target);
+    return;
+  }
+  const enemies = state.enemies;
+  const range = rangeOf(ctx, t, attack);
+  const chosen = ctx.scratch.slots;
+  chosen.length = 0;
+  chosen.push(target.slot);
+  const priority = t.priority ?? 'first';
+  while (chosen.length < attack.volley) {
+    const next = pickTarget(
+      enemies,
+      t.x,
+      t.y,
+      tier.targets,
+      range,
+      priority,
+      t.spareRunners,
+      chosen,
+    );
+    if (next === null) break;
+    chosen.push(next.slot);
+  }
+  const n = chosen.length;
+  for (let k = 0; k < attack.volley; k++) {
+    fire(state, ctx, t, tier, attack, enemies.items[chosen[k % n]!]!); // collected slots < used
+  }
+  chosen.length = 0;
+}
+
+/**
+ * Fires a homing missile (Seeker Swarm) at `target`: it starts at the tower and is steered to its
+ * target each tick by the projectiles system, for at most HOMING_LIFE_TICKS.
+ */
+function fireHoming(
+  state: SimState,
+  _ctx: TickContext,
+  t: Tower,
+  tier: CompiledTier,
+  attack: Extract<CompiledAttack, { kind: 'projectile' }>,
+  target: Enemy,
+): void {
+  const p = launch(state, t, tier, attack, target, target.x, target.y, HOMING_LIFE_TICKS);
+  p.homing = true;
+  p.speedTilesPerTick = attack.speedTilesPerTick;
+  p.targetSlot = target.slot;
+  p.spare = t.spareRunners;
+  emit(state, {
+    type: 'ProjectileFired',
+    uid: p.uid,
+    towerUid: t.uid,
+    kind: 'projectile',
+    targetUid: target.uid,
+    x: t.x,
+    y: t.y,
+    targetX: target.x,
+    targetY: target.y,
+    sprite: attack.projectile,
+    // It steers: render follows its pool position (flightTicks is a lobbed shell's arc).
+    flightTicks: 0,
+    radiusTiles: attack.splashTiles,
+  });
 }
 
 /**

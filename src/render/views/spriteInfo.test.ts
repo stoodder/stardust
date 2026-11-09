@@ -66,4 +66,12 @@ describe('enemyBody (D074)', () => {
     expect(enemyBody('enemy.nibbler', ['quiet_wave'])).toBe('enemy.nibbler');
     expect(spriteId(YOUNGLING_SPRITE)).toBe('enemy.youngling');
   });
+
+  it("draws a fleeing runner in its body's fleeing look, where one is drawn (T440a)", () => {
+    expect(enemyBody('enemy.nibbler', ['fleeing'])).toBe('enemy.nibbler_fleeing');
+    expect(enemyBody('enemy.nibbler', ['fleeing', 'youngling'])).toBe('enemy.youngling_fleeing');
+    expect(enemyBody('enemy.brood_hauler', ['fleeing'])).toBe('enemy.brood_hauler_fleeing');
+    // No fleeing look drawn (Chonks don't run in Act II): its own body.
+    expect(enemyBody('enemy.chonk', ['fleeing'])).toBe('enemy.chonk');
+  });
 });

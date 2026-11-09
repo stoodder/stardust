@@ -37,7 +37,7 @@ import {
 export const DEFAULT_VARIANT = 'default';
 
 /** Derived variants (tech-spec § What the baker produces), appended to a palette variant with `+`. */
-export type DerivedVariant = 'selected' | 'jammed' | 'dark';
+export type DerivedVariant = 'selected' | 'jammed' | 'dark' | 'cloak';
 
 /** One baked frame: its pixels and where its ground point is, in its own pixels. */
 export interface BakedFrame {
@@ -88,14 +88,25 @@ export function categoryOf(spriteId: string): SpriteCategory {
   return category;
 }
 
+/** The default palettes whose enemies can cloak or phase, and so get a baked `cloak` variant. */
+const CLOAKING_PALETTES: ReadonlySet<PaletteId> = new Set<PaletteId>(['aelari', 'hollow']);
+
 /**
  * Derived variants baked for a category: actors get `selected`, towers also `jammed`, and
- * portraits `dark` (an absent speaker's frame).
+ * portraits `dark` (an absent speaker's frame). Enemies whose default palette is a faction that
+ * cloaks or phases (the Aelari, the Hollow) also get `cloak` (art-direction §8 Cloaked).
  */
-export function derivedFor(category: SpriteCategory): readonly DerivedVariant[] {
+export function derivedFor(
+  category: SpriteCategory,
+  palette?: PaletteId,
+): readonly DerivedVariant[] {
   if (category === 'tower') return ['selected', 'jammed'];
   if (category === 'portrait') return ['dark'];
-  if (category === 'enemy') return ['selected'];
+  if (category === 'enemy') {
+    return palette !== undefined && CLOAKING_PALETTES.has(palette)
+      ? ['selected', 'cloak']
+      : ['selected'];
+  }
   return [];
 }
 
@@ -216,6 +227,8 @@ const DARK_OUTLINE = rgbaOf('ink.0');
 export function derivedLookup(base: ColorLookup, derived: DerivedVariant): ColorLookup {
   switch (derived) {
     case 'selected':
+    case 'cloak':
+      // A cloak's outline is the selected white too; `cloakDither` then thins body and outline.
       return (code) => (code === OUTLINE_CODE ? SELECTED_OUTLINE : base(code));
     case 'jammed':
       // Every color mapped by luminance onto the nearest step of the steel ramp; alpha kept.
@@ -248,6 +261,27 @@ export function derivedLookup(base: ColorLookup, derived: DerivedVariant): Color
   }
 }
 
+/**
+ * The `cloak` pass (art-direction §8 Cloaked: a 50% checker dither on the body and a dashed
+ * shimmer outline): body pixels on the odd squares of a checker go clear, and the outline (already
+ * white) keeps two pixels in every four along each diagonal, so it reads as dashes. Shadow pixels
+ * go too. In place on `img`, whose pixels came from `src`.
+ */
+export function cloakDither(src: IndexedImage, img: RgbaImage): RgbaImage {
+  for (let i = 0; i < src.px.length; i++) {
+    const code = src.px[i] ?? 0;
+    if (isClear(code)) continue;
+    const x = i % src.w;
+    const y = Math.floor(i / src.w);
+    const clear =
+      code === OUTLINE_CODE
+        ? Math.floor((x + y) / 2) % 2 === 1
+        : code === SHADOW_CODE || (x + y) % 2 === 1;
+    if (clear) img.data[i * 4 + 3] = 0;
+  }
+  return img;
+}
+
 /** Bakes every variant and frame of a sprite. Throws on malformed data, naming the sprite. */
 export function bakeSprite(
   def: SpriteDef,
@@ -269,7 +303,7 @@ export function bakeSprite(
     { name: DEFAULT_VARIANT, palette: palettes[def.palette] },
     ...(def.variants ?? []).map((id) => ({ name: id, palette: palettes[id] })),
   ];
-  const derived = derivedFor(categoryOf(def.id));
+  const derived = derivedFor(categoryOf(def.id), def.palette);
   const emissive = new Set((def.glow?.slots ?? []).map((s) => SLOT_CHAR[s].charCodeAt(0)));
   const frames: BakedFrame[] = [];
   const variants: string[] = [];
@@ -277,9 +311,11 @@ export function bakeSprite(
 
   const addVariant = (variant: string, lookup: ColorLookup, withGlow: boolean): void => {
     variants.push(variant);
+    const cloak = variant.endsWith('+cloak');
     for (const [name, o] of outlined) {
       const key = frameKey(def.id, variant, name);
-      frames.push({ key, image: colorize(o.img, lookup), anchor: o.anchor });
+      const image = colorize(o.img, lookup);
+      frames.push({ key, image: cloak ? cloakDither(o.img, image) : image, anchor: o.anchor });
       if (withGlow && def.glow !== undefined) {
         const r = def.glow.radius;
         frames.push({

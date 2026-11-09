@@ -116,7 +116,9 @@ describe('dev saves (the ?save= fixtures)', () => {
       LIVE_KNOWN_IDS.towers.filter((t) => TOWERS[t as keyof typeof TOWERS].specs !== undefined),
     );
     expect(save.unlocks.specs).toContain('sprinkler');
-    expect(save.unlocks.specs).not.toContain('skyhook');
+    // The Skyhook's and Zapcoil's specs are built (T407b), so their unlocks are owned too.
+    expect(save.unlocks.specs).toContain('skyhook');
+    expect(save.unlocks.specs).toContain('zapcoil');
     expect(save.unlocks.abilities).toEqual(LIVE_KNOWN_IDS.abilities);
     expect(save.unlocks.protocols).toEqual(LIVE_KNOWN_IDS.protocols);
     expect(Object.keys(save.upgrades).toSorted()).toEqual(

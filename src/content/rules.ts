@@ -238,7 +238,10 @@ export interface TowerAnswer {
   readonly acts?: readonly Act[];
   /** Only when one of the map's enemies in this category has one of these bodies (Psionic). */
   readonly vsBodies?: readonly Body[];
-  /** Only when one of the map's enemies in this category flies (Skyhook vs air clusters). */
+  /**
+   * Only when one of the map's enemies in this category flies (Skyhook vs air clusters, Seeker
+   * Swarm vs armored flyers).
+   */
   readonly vsAir?: true;
 }
 
@@ -273,7 +276,8 @@ export const COUNTER_ANSWERS: Readonly<Record<CounterId, CounterAnswers>> = {
       { tower: 'harpoon' },
       // T3 armor pierce 3; Railspike (spec b) ignores all armor, and is past T3 anyway.
       { tower: 'rivet', minTier: 3 },
-      { tower: 'skyhook', spec: 'b', specName: 'Seeker Swarm' },
+      // Seeker Swarm's armor pierce reaches only flyers (the Skyhook hits air only; T407b).
+      { tower: 'skyhook', spec: 'b', specName: 'Seeker Swarm', vsAir: true },
       // A beam: armor subtracts per second, not per tick (enemies.md § 2.3).
       { tower: 'prism' },
       // Corroded sources.
@@ -544,4 +548,4 @@ export const FLEEING_LEAD_MAX_SEC = 4;
 
 /** Retry checkpoints: every 5 waves, from Act II (architecture.md § Checkpoints). */
 export const CHECKPOINT_EVERY_WAVES = 5;
-export const CHECKPOINTS_FROM_ACT: Act = 2;
+export const CHECKPOINTS_FROM_ACT: Extract<Act, number> = 2;

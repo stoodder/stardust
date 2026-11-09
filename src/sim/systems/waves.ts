@@ -8,8 +8,12 @@
 // `enemyStat` scales each unit's def as it spawns (`runWaveModifiers`), so status, movement,
 // damage, and render all read the scaled numbers through `e.def` with no per-system change.
 import type { CompiledEnemyDef, CompiledPulse, CompiledWave } from '../../content/compiled.ts';
-import { EARLY_CALL_COOLDOWN_SHARE } from '../../content/rules.ts';
-import type { IdSpace } from '../../content/types.ts';
+import {
+  CHECKPOINT_EVERY_WAVES,
+  CHECKPOINTS_FROM_ACT,
+  EARLY_CALL_COOLDOWN_SHARE,
+} from '../../content/rules.ts';
+import type { Act, IdSpace, ObjectiveKind } from '../../content/types.ts';
 import type { EnemyStat, Modifier, SimConfig } from '../config.ts';
 import type { RejectReason } from '../commands.ts';
 import { callWaveBonus, earn, nextWaveIsQuiet } from '../economy.ts';
@@ -121,6 +125,31 @@ function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<Id
   s.countdownTotalTicks = ticks;
   s.countdownWave = next.number;
   emit(state, { type: 'CountdownStarted', wave: next.number, ticks });
+  // A retry checkpoint as the countdown to every 5th wave begins (core-loop.md § 2.12): the run
+  // resumes from the state after this tick, in the build phase before that wave, so a retry can
+  // rebuild before it walks in. The host records it (architecture.md § Checkpoints).
+  if (checkpointAt(ctx.map, next.number)) {
+    emit(state, { type: 'CheckpointReached', wave: next.number, tick: state.tick + 1 });
+  }
+}
+
+/**
+ * Whether the countdown to `wave` records a retry checkpoint (core-loop.md § 2.12): every
+ * CHECKPOINT_EVERY_WAVES-th wave on a campaign act's map from CHECKPOINTS_FROM_ACT on, never on a
+ * Holdout (it has no defeat to retry). The finale isn't counted in waves: its one checkpoint is a
+ * script action at Phase 2 (still refused, `SCRIPT_GATES`).
+ */
+export function checkpointAt(
+  map: { readonly act: Act; readonly objective: ObjectiveKind },
+  wave: number,
+): boolean {
+  return (
+    typeof map.act === 'number' &&
+    map.act >= CHECKPOINTS_FROM_ACT &&
+    map.objective !== 'holdout' &&
+    wave > 1 &&
+    wave % CHECKPOINT_EVERY_WAVES === 0
+  );
 }
 
 /**

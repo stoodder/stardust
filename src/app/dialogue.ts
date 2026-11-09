@@ -74,6 +74,7 @@ import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
+import { attemptKills } from './checkpoints.ts';
 import type { Host } from './host.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { Speed } from './testHookTypes.ts';
@@ -211,8 +212,13 @@ interface Session {
   readonly present: readonly SpeakerId[];
   /** Sim seconds now. */
   simSec(): number;
-  /** Skitterkin killed this run (for `{pests_processed}`). */
+  /** Skitterkin killed this run (for `{pests_processed}`): this attempt's (`attemptKills`). */
   runKills(): number;
+  /**
+   * A resumed run's replay (`Host.replaying`; app/checkpoints.ts): barks are still picked, so
+   * their spacing and once-limits count what the replayed attempt heard, but nothing plays.
+   */
+  replaying(): boolean;
   readonly pool: readonly Bark[];
   barks: BarkState;
   /**
@@ -783,7 +789,7 @@ function offerBarks(offered: readonly BarkTrigger[], pool?: readonly Bark[]): vo
   const busy = commsNow !== null || commsHeld || commsQueue.length > 0;
   const pick = pickBarkOf(busy ? [] : (pool ?? s.pool), events, s.barks, storyContext(s.map));
   s.barks = pick.state;
-  if (pick.bark !== null) showBark(pick.bark);
+  if (pick.bark !== null && !s.replaying()) showBark(pick.bark);
 }
 
 /**
@@ -805,7 +811,7 @@ function queueBark(trigger: BarkTrigger): void {
   const free = { ...s.barks, lastAtSec: null };
   const pick = pickBark(s.pool, event, free, storyContext(s.map));
   s.barks = pick.bark === null ? { ...pick.state, lastAtSec: s.barks.lastAtSec } : pick.state;
-  if (pick.bark !== null) queueComms(barkScene(pick.bark));
+  if (pick.bark !== null && !s.replaying()) queueComms(barkScene(pick.bark));
 }
 
 /** A bark a map script names: it plays whatever the spacing says, after the line on screen. */
@@ -813,7 +819,7 @@ function playCueBark(b: Bark): void {
   const s = session;
   if (s === null || !enabled) return;
   s.barks = cueBark(b, s.simSec(), s.barks);
-  queueComms(barkScene(b));
+  if (!s.replaying()) queueComms(barkScene(b));
 }
 
 // ─── Wiring a battle ─────────────────────────────────────────────────────────────────────────
@@ -863,7 +869,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     map,
     present: presentSpeakers(mapDef),
     simSec: () => sim.state.tick / TICK_HZ,
-    runKills: () => sim.state.stats.skitterkinKilled,
+    runKills: () => attemptKills(host),
+    replaying: () => host.replaying,
     pool: map === null ? [] : barksFor(map),
     barks: newBarkState(sim.config.seed),
     silent: false,
@@ -900,7 +907,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   /** Plays the map's scene `<map>_<slot>` if it has one and its `when` holds. */
   const playSlot = (slot: string): void => {
     const scene = map === null ? undefined : SCENES[`${map}_${slot}`];
-    if (scene === undefined || !enabled || !scenePlays(scene, storyContext(map))) return;
+    if (scene === undefined || !enabled || host.replaying) return;
+    if (!scenePlays(scene, storyContext(map))) return;
     playScene(scene);
   };
 
@@ -959,7 +967,9 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('CountdownStarted', (e) => {
       const scene = radio.get(e.wave);
       radio.delete(e.wave);
-      if (scene !== undefined && enabled && scenePlays(scene, storyContext(map))) playScene(scene);
+      // A resumed run's replay plays no scene (app/checkpoints.ts): its lines were heard already.
+      const plays = scene !== undefined && enabled && !host.replaying;
+      if (plays && scenePlays(scene, storyContext(map))) playScene(scene);
       // Never before the Quiet Wave (D098): its countdown is the held breath.
       const quietNext = quiet[e.wave - 1] === true;
       if (e.wave >= 2 && !quietNext && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
@@ -1049,7 +1059,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
         // cued by either log or by W6's countdown, whichever comes first).
         if (cuedScenes.has(scene.id)) return;
         cuedScenes.add(scene.id);
-        if (enabled) playScene(scene);
+        if (enabled && !host.replaying) playScene(scene);
         return;
       }
       const bark = BARKS[e.cueId];

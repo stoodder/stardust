@@ -43,12 +43,14 @@ describe('the hush look (T402)', () => {
     expect(HEAVY_TINT).toBe(0x6e6e76);
   });
 
-  it('a held runner and a bolting one panic; the Hollow unit in its tell walks', () => {
+  it('a held runner and a bolting one panic; the Hollow unit in its tell reaches; Heavy walks heavy', () => {
     const f = blankFacts();
     const pose = (e: Enemy) => statePose(poseFacts(e, f));
     expect(pose(unit({ def: E.nibbler, hushUid: 3 }))).toBe('panic');
     expect(pose(unit({ def: E.nibbler, skittishTicks: 5 }))).toBe('panic');
     expect(pose(unit({ def: E.nibbler }))).toBe('walk');
-    expect(pose(unit({ def: E.mote, hushUid: 9, hushTicks: 10 }))).toBe('walk');
+    expect(pose(unit({ def: E.mote, hushUid: 9, hushTicks: 10 }))).toBe('tell');
+    expect(pose(unit({ def: E.mote }))).toBe('walk');
+    expect(pose(unit({ def: E.mote, heavy: true }))).toBe('heavy');
   });
 });

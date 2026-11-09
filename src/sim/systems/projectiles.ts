@@ -9,17 +9,33 @@
 // Neutral units (Gerald; combat/neutral.ts): a shot fired at one plinks off it if it lands with
 // the unit in the burst (NeutralHit; the burst still hits the enemies around it), and every other
 // burst passes neutral units by.
+// Homing missiles (Seeker Swarm, design/towers.md § 7; T407b): a homing shot ignores the
+// countdown above and steers instead. Each tick, in slot order:
+// - **Its target** is the enemy it was fired at while that one is alive, on a layer the shot hits,
+//   and not burrowed, leaving, or cloaked out (`untargetable`). A neutral target (Gerald) is kept:
+//   the shot was aimed at him, so it plinks off him (D072).
+// - **Retarget:** when its target dies, leaks, burrows, cloaks, or leaves, it picks the nearest
+//   hittable enemy within HOMING_RETARGET_TILES of itself (squared distances; ties to the lowest
+//   uid), never a neutral unit and, if its tower spared runners when it fired, never a spared one.
+//   With none, it flies on to where it last saw its target and fizzles there (a hit on nothing).
+// - **Pursuit:** it moves `speedTilesPerTick` straight at its target's position this tick (after
+//   movement), so it closes on anything slower than it. When the target is within one step it
+//   arrives and lands like a shot (above): its target only, or a burst with splash.
+// - **Lifetime:** after HOMING_LIFE_TICKS without arriving it fizzles where it is.
+// Deterministic: + − × ÷ and sqrt only, and the target lookups scan in slot order.
 // Bomblets (Cluster Thumper, design/towers.md § 7): a shell that carries them scatters them after
 // every shell has landed this tick, so where a bomblet's pool slot falls never changes its flight.
 // Each flies from the impact point to a point drawn uniformly in the scatter disc (rejection
 // sampling on the `projectiles` RNG stream, in slot order) and lands `flightTicks` ticks after its
 // shell, as its own splash on the shell's layers with the shell's effects. Bomblets don't scatter.
 import { nextFloat } from '../../shared/rng.ts';
+import { secToTicks } from '../../shared/time.ts';
 import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
 import { untargetable } from '../enemyAbilities/layers.ts';
-import { PROJECTILE_BLANK, type Projectile } from '../entities.ts';
+import { PROJECTILE_BLANK, type Enemy, type Projectile } from '../entities.ts';
+import { isSpared } from '../fireControl.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -27,12 +43,22 @@ import type { TickContext } from '../tick.ts';
 /** Marks a landed shell whose bomblets are still to scatter (it's killed once they have). */
 const SCATTER_PENDING = -1;
 
+/** How long a homing shot flies before it gives up (3 s; a Seeker at 6 tiles/s covers 18 tiles). */
+export const HOMING_LIFE_TICKS = secToTicks(3);
+/** How far from itself a homing shot looks for a new target when it loses its own (tiles). */
+export const HOMING_RETARGET_TILES = 3;
+const RETARGET_SQ = HOMING_RETARGET_TILES * HOMING_RETARGET_TILES;
+
 export function projectiles(state: SimState, ctx: TickContext): void {
   const pool = state.projectiles;
   let scatter = false;
   for (let i = 0; i < pool.used; i++) {
     const p = pool.items[i]!; // i < used ≤ items.length
     if (!p.alive || p.ticksLeft < 0) continue;
+    if (p.homing) {
+      if (steer(state, ctx, p)) poolKill(pool, p);
+      continue;
+    }
     if (p.ticksLeft === 0) {
       land(state, ctx, p);
       if (p.bomblets === null) {
@@ -56,6 +82,79 @@ export function projectiles(state: SimState, ctx: TickContext): void {
     scatterBomblets(state, p);
     poolKill(pool, p);
   }
+}
+
+/**
+ * One tick of a homing shot (see the header): find or keep its target, close on it, and land on
+ * arrival or when its lifetime runs out. Returns whether it landed (the caller frees it).
+ */
+function steer(state: SimState, ctx: TickContext, p: Projectile): boolean {
+  let e = chased(state, p);
+  if (e === null) {
+    e = retarget(state, p);
+    p.targetUid = e === null ? 0 : e.uid;
+    p.targetSlot = e === null ? -1 : e.slot;
+  }
+  if (e !== null) {
+    p.targetX = e.x;
+    p.targetY = e.y;
+  }
+  const dx = p.targetX - p.x;
+  const dy = p.targetY - p.y;
+  const d2 = dx * dx + dy * dy;
+  const step = p.speedTilesPerTick;
+  if (d2 <= step * step) {
+    p.x = p.targetX;
+    p.y = p.targetY;
+    land(state, ctx, p);
+    return true;
+  }
+  const d = Math.sqrt(d2);
+  p.x += (dx / d) * step;
+  p.y += (dy / d) * step;
+  p.ticksLeft--;
+  if (p.ticksLeft > 0) return false;
+  // Out of fuel: it fizzles where it is, on nothing.
+  p.targetUid = 0;
+  p.targetSlot = -1;
+  p.targetX = p.x;
+  p.targetY = p.y;
+  land(state, ctx, p);
+  return true;
+}
+
+/** Whether a shot that hits these layers can touch `e` at all (alive, hittable, its layer). */
+function reachable(p: Projectile, e: Enemy): boolean {
+  if (!e.alive || e.def === null || untargetable(e)) return false;
+  return e.def.layer === 'air' ? p.hitsAir : p.hitsGround;
+}
+
+/** The homing shot's own target, if it's still one it can chase; else null. */
+function chased(state: SimState, p: Projectile): Enemy | null {
+  if (p.targetUid === 0 || p.targetSlot < 0 || p.targetSlot >= state.enemies.used) return null;
+  const e = state.enemies.items[p.targetSlot]!; // 0 ≤ slot < used ≤ items.length
+  return e.uid === p.targetUid && reachable(p, e) ? e : null;
+}
+
+/** The nearest enemy a homing shot may switch to (see the header), or null. */
+function retarget(state: SimState, p: Projectile): Enemy | null {
+  const enemies = state.enemies;
+  let best: Enemy | null = null;
+  let bD2 = 0;
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (!reachable(p, e) || isNeutral(e)) continue;
+    if (p.spare && isSpared(e.tags)) continue;
+    const dx = e.x - p.x;
+    const dy = e.y - p.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 > RETARGET_SQ) continue;
+    if (best === null || d2 < bD2 || (d2 === bD2 && e.uid < best.uid)) {
+      best = e;
+      bD2 = d2;
+    }
+  }
+  return best;
 }
 
 /**

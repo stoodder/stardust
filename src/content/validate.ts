@@ -253,6 +253,8 @@ function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef)
   // A field compile finds missing is reported there, so only present fields are checked here.
   // ratePerSec and negative durations are compile errors too, so they aren't repeated.
   const fields = new Map<string, unknown>(Object.entries(a));
+  // A straight shot's splash is optional, and a spec may take tier 3's away (Seeker Swarm: 0).
+  if (a.kind === 'projectile' && a.splashTiles === 0) fields.delete('splashTiles');
   for (const [field, holds, what] of ATTACK_RULES) {
     if (fields.has(field) && !holds(fields.get(field))) bad(`.attack.${field}`, what);
   }

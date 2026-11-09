@@ -83,15 +83,16 @@ describe('the live answer table (enemies.md § 3.1, towers.md § 2.1)', () => {
     ).toEqual([]);
   });
 
-  it('armor: Mindspike only against Hollow or Aelari armor; Skyhook only as Seeker Swarm', () => {
+  it('armor: Mindspike only against Hollow or Aelari armor; Skyhook only as Seeker Swarm, vs flyers', () => {
     const spike = [build('mindspike', 'a')];
     expect(live('armor', spike, scope(3, ['mechanical']))).toEqual([]);
     expect(live('armor', spike, scope(3, ['mechanical', 'void']))).toEqual(['mindspike']);
     const sky = [build('skyhook', 's'), up('s'), up('s')];
-    expect(live('armor', sky, scope(3))).toEqual([]);
-    expect(live('armor', [...sky, { op: 'specialize', tile: 's', spec: 'b' }], scope(3))).toEqual([
-      'skyhook [Seeker Swarm]',
-    ]);
+    const seeker = [...sky, { op: 'specialize', tile: 's', spec: 'b' } as const];
+    expect(live('armor', sky, scope(3, ['organic'], true))).toEqual([]);
+    expect(live('armor', seeker, scope(3, ['organic'], true))).toEqual(['skyhook [Seeker Swarm]']);
+    // The Skyhook hits air only, so Seeker Swarm doesn't answer armor that walks (T407b).
+    expect(live('armor', seeker, scope(3))).toEqual([]);
   });
 
   it('splash: spec-only answers, and Skyhook only against air clusters', () => {

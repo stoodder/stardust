@@ -14,8 +14,8 @@
 // pulses, blinks, cloaks, Protect, revisits, and clickable objects). Wreckage needs no gate: the
 // `clear` command and the salvage drone run since T304b (systems/wreckage.ts).
 //
-// `run.checkpoints` refuses nothing (no config asks for a checkpoint): it records that the waves
-// system doesn't emit CheckpointReached until T305b, so a host offers no "Retry from wave N".
+// `run.checkpoints` refuses nothing (no config asks for a checkpoint); the waves system emits
+// CheckpointReached since T305b, so its row is null.
 // `towerRefusal` and `abilityRefusal` answer the same question for one raw tower or ability, so
 // meta can keep a save that runs ahead of the sim out of play.
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
@@ -104,7 +104,7 @@ export type Feature =
   | 'map.revisit'
   /** Clickable world objects (`clickables`, `setClickable`, `interact`; T409). */
   | 'map.clickable'
-  /** Retry checkpoints: refuses nothing (see the header); lifted when T305b emits them. */
+  /** Retry checkpoints: refuses nothing (see the header); emitted since T305b. */
   | 'run.checkpoints'
   | 'modifier.towerStat'
   | 'modifier.towerCost'
@@ -157,14 +157,14 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   storyDifficulty: null,
   // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
   // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
-  // (T407b), Pin, line, and target filters with the Harpoon and Crane (T408), detection with the
+  // (T407b, live), Pin, line, and target filters with the Harpoon and Crane (T408), detection with the
   // Lookout (T406). Beams (Prism) and Unnerved (Mindspike) are M5's; spawners (Scuttle Den) M6's.
   'attack.projectile': null,
   'attack.beam': 'M5',
   'attack.chain': null,
   'attack.spawner': 'M6',
-  'attack.homing': 'T407b',
-  'attack.charge': 'T407b',
+  'attack.homing': null,
+  'attack.charge': null,
   'attack.line': 'T408',
   'attack.targetFilter': 'T408',
   'status.pinned': 'T408',
@@ -213,7 +213,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'map.protect': null,
   'map.revisit': null,
   'map.clickable': null,
-  'run.checkpoints': 'T305b',
+  'run.checkpoints': null,
 });
 
 type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line';

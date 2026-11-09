@@ -222,9 +222,11 @@ Story moments that change play are map-script actions ([maps.md §5.1](maps.md#5
 
 From **Act II** on, a lost run can be resumed from a checkpoint instead of from wave 1.
 
-- **When.** The game records a checkpoint at the start of every 5th wave (W5, W10, W15, …); how it is stored and restored is in [../tech/architecture.md § Checkpoints](../tech/architecture.md#checkpoints). On a loss, Results offers **"Retry from wave N"** for the latest checkpoint; the run resumes with the towers, credits, meter, cooldowns, and timers it had then.
+- **When.** The game records a checkpoint as the **countdown to every 5th wave begins** (W5, W10, W15, …), so a retry lands in the build phase before that wave; how it is stored and restored is in [../tech/architecture.md § Checkpoints](../tech/architecture.md#checkpoints). On a loss, Results offers **"Retry from wave N"** for the latest checkpoint, first and focused, beside Retry (from wave 1). The run resumes exactly as it stood: the towers, credits, core and asset meters, cooldowns, timers, and the earlier waves' enemies still walking. It opens **paused** ("Resumed at wave N. Unpause when ready."), so the player can look and rebuild first. Nothing said or heard before the checkpoint plays again (lines, barks, banners), and a later loss offers the latest checkpoint again.
+- **Only after a loss (rule).** The pause menu's Retry stays a full retry from wave 1: a checkpoint recovers a lost run, it is not a way to rewind a wave that went badly.
 - **Finale.** The finale also records a checkpoint at the **start of Phase 2** (towers, credits, Voices, and Deep Bore %), so a Phase 2 loss offers "Retry from the Halls" and never replays the Descent.
-- **Cost (rule):** a run that used a checkpoint can still earn **Victory** and the first-clear rewards, but **forfeits Perfect Core and the Challenge medal** for that run.
+- **Cost (rule):** a run that used a checkpoint can still earn **Victory**, the first-clear rewards, and its optional objectives (§2.13; story content, never a medal), but **forfeits Perfect Core and the Challenge medal** for that run. The HUD's medal tracker shows them forfeited from the resume, and the Results card says why.
+- **Pests Processed:** each attempt counts its own kills (§6.2), so a retry counts only the kills since the checkpoint; the ones before it were filed by the attempt that reached it.
 - **No farming (rule):** a defeat after a checkpoint retry pays defeat Stardust only for the waves resolved **in this attempt beyond the checkpoint**, and a defeat on a map already won pays **0** ([progression.md §2](progression.md#2-earning-stardust)).
 - Act I and the A3M3 Holdout (which has no defeat) have no checkpoints.
 

@@ -6,7 +6,7 @@ import { mapOrigin } from '../render/iso.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim, type Modifier, type Sim, type SimState } from '../sim/index.ts';
 import type { IdSpace } from '../content/types.ts';
-import { CARD_CHARS, PANEL_CHARS, towerPanelHeight } from '../ui/hud/layout.ts';
+import { CARD_CHARS, PANEL_CHARS, towerPanelHeight, wrapParts } from '../ui/hud/layout.ts';
 import { battleConfig } from './battleSetup.ts';
 import { selectedView } from './hudPanel.ts';
 import { bonusTexts, specDescription, specLockText } from './hudText.ts';
@@ -105,6 +105,24 @@ describe('the tower panel (T202d)', () => {
     const spec = thumper.specs!.a;
     const text = specDescription(towerStats(thumper, 4, undefined, [], 'a'), spec);
     expect(text).toMatch(/^\d+ dmg · [\d.]+\/s · range [\d.]+ · splash [\d.]+ · \+4 bomblets$/);
+  });
+
+  it("tells the Skyhook's and Zapcoil's specs apart from tier 3 on their cards (T407b)", () => {
+    const towers = battleConfig('a1_m01', 1).content.towers;
+    const card = (id: 'skyhook' | 'zapcoil', spec: 'a' | 'b'): string =>
+      specDescription(towerStats(towers[id]!, 4, undefined, [], spec), towers[id]!.specs![spec]);
+    expect(card('skyhook', 'a')).toBe('12 dmg · 3/s · range 4');
+    expect(card('skyhook', 'b')).toBe('25 dmg · 0.5/s · range 5 · 4 homing · pierce 4');
+    expect(card('zapcoil', 'a')).toBe('14 dmg · 1.2/s · range 2.5 · chains to 8');
+    expect(card('zapcoil', 'b')).toBe('250 dmg · 0.25/s · range 2.5 · 4 s charge · 50% splash 1');
+    for (const [id, spec] of [
+      ['skyhook', 'b'],
+      ['zapcoil', 'b'],
+    ] as const) {
+      for (const l of wrapParts(card(id, spec).split(' · '), CARD_CHARS)) {
+        expect(l.length).toBeLessThanOrEqual(CARD_CHARS);
+      }
+    }
   });
 
   it('locks the choice with what unlocks it', () => {

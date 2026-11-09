@@ -2,7 +2,7 @@
 // pack on the back): a tied burlap bag, lit from the upper left, flecked with gold glitter. In
 // Act I it reads as cargo, "stolen stardust"; the glitter is really the young's shimmer.
 // Shared by the walking body, its icon, and the burst.
-import { at, plot, type CharGrid } from '../helpers.ts';
+import { at, plot, stamp, type CharGrid } from '../helpers.ts';
 
 /**
  * Custom legend for the sack: burlap lit to parchment (`brass.4`), bright enough that the cargo
@@ -27,7 +27,19 @@ export interface SackShape {
   readonly ry: number;
   /** Which glitter pattern twinkles this frame. */
   readonly twinkle: 0 | 1;
+  /**
+   * From Act II (a fleeing Hauler, art-direction §6): the neck is untied and the young show, a
+   * cluster of round heads in the mouth of the bag, big-eyed facing you, frosted from behind.
+   */
+  readonly young?: 'se' | 'ne';
 }
+
+/** One of the young in the sack's mouth, facing you: coral fuzz, one huge eye, a glint. */
+// prettier-ignore
+const HEAD_SE = ['.33.', '3wk3', '2kk2'] as const;
+/** One of the young seen from behind: coral fuzz with the pink-gold frost of the very young. */
+// prettier-ignore
+const HEAD_NE = ['.34.', '3P43', '2332'] as const;
 
 /** Draws the bag, its tied neck and knot, creases, and glitter. */
 export function sack(g: CharGrid, s: SackShape): void {
@@ -59,6 +71,11 @@ export function sack(g: CharGrid, s: SackShape): void {
       if (at(g, x, top + k) !== '.') plot(g, x, top + k, ox < 0 ? 'H' : 'J');
     }
   }
+  if (s.young !== undefined) {
+    glitter(g, s);
+    youngInMouth(g, nx, top, s.young, s.twinkle);
+    return;
+  }
   // The tied neck and its knot, with two cloth ears.
   plot(g, nx, top - 1, 'J');
   plot(g, nx + 1, top - 1, 'I');
@@ -68,8 +85,29 @@ export function sack(g: CharGrid, s: SackShape): void {
   plot(g, nx + 2, top - 3, 'H');
   plot(g, nx, top, 'R');
   plot(g, nx + 1, top, 'R');
-  // Glitter: gold and pink, twinkling between two patterns; one or two flecks are emissive, so
-  // the sack glints without its halo washing out the burlap.
+  glitter(g, s);
+}
+
+/**
+ * The untied mouth (a dark fold of burlap) and three young in it: the middle one up highest,
+ * bobbing a pixel with the step; facing you, one huge eye each (the hauler_young's look).
+ */
+function youngInMouth(g: CharGrid, nx: number, top: number, facing: 'se' | 'ne', bob: 0 | 1): void {
+  for (let x = nx - 3; x <= nx + 4; x++) if (at(g, x, top + 1) !== '.') plot(g, x, top + 1, 'J');
+  const head = facing === 'se' ? HEAD_SE : HEAD_NE;
+  stamp(g, nx - 4, top - 1, head);
+  stamp(g, nx + 2, top - 1 + bob, head);
+  stamp(g, nx - 1, top - 3 + bob, head);
+  // Frost on the youngest's crown; a moss tuft on the eldest's.
+  plot(g, nx, top - 3 + bob, 'P');
+  plot(g, nx - 3, top - 2, 'c');
+}
+
+/**
+ * Glitter: gold and pink, twinkling between two patterns; one or two flecks are emissive, so the
+ * sack glints without its halo washing out the burlap.
+ */
+function glitter(g: CharGrid, s: SackShape): void {
   const flecks: readonly (readonly [number, number, string])[] =
     s.twinkle === 0
       ? [

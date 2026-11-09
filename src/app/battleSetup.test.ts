@@ -128,8 +128,8 @@ describe('battleSetup from a save', () => {
     expect(cfg.loadout.length).toBeLessThanOrEqual(4);
     expect(cfg.difficulty).toBe(FEATURE_GATES.storyDifficulty === null ? 'story' : 'standard');
     if (FEATURE_GATES.specs !== null) expect(cfg.specsUnlocked).toEqual([]);
-    // all_unlocked owns only the spec unlocks Engineering sells (built specs; T319).
-    else expect(cfg.specsUnlocked).toEqual(cfg.loadout.filter((t) => t !== 'skyhook'));
+    // all_unlocked owns every spec unlock Engineering sells (every tower's since T407b; T319).
+    else expect(cfg.specsUnlocked).toEqual(cfg.loadout);
     expect(() => createSim(cfg)).not.toThrow();
     // Every top-rank upgrade arrives (Salvage Rights too, since T304b), plus Story's.
     const sources = new Set(cfg.modifiers.map((m) => m.source));

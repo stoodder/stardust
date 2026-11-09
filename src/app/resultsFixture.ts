@@ -80,6 +80,8 @@ function inputOf(f: ResultsFixture): RunEndInput {
       status: won ? 'done' : 'failed',
     })),
     stats: statsOf(f),
+    resumedFromWave: f.checkpoint?.resumedFrom ?? null,
+    checkpointWave: f.checkpoint?.latest ?? f.checkpoint?.resumedFrom ?? null,
   };
 }
 

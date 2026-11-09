@@ -5,7 +5,9 @@
 // win the map's medals and optional objectives, this run's lit and first-time ones tagged NEW with
 // their Intel), and the debrief with its speakers' name plates (D028). The way on is Continue (base
 // or Shift board) or Retry, with Change loadout beside Retry where the map offers the loadout
-// screen (T220); after a win, leaving plays the map's after-Results scenes first (app/runFlow.ts).
+// screen (T220), and after a loss with a checkpoint (Act II on) "Retry from wave N" first
+// (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
+// (app/runFlow.ts).
 // Compact by design: everything fits 360 game px of height.
 import { silkText } from '../silk.ts';
 import { useEffect, useState } from 'preact/hooks';
@@ -14,6 +16,7 @@ import {
   changeLoadoutAfterRun,
   leaveResultsTo,
   loadoutOfferedAfterRun,
+  retryFromCheckpoint,
   retryRun,
 } from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
@@ -136,13 +139,21 @@ function stardustLine(s: RunRewards['stardust']): { label: string; note?: string
       return s.base === 0
         ? { label: 'Overtime bonus', note: 'Training shifts are unpaid!' }
         : { label: 'Overtime bonus' };
-    case 'defeat':
-      return { label: 'Effort stipend', note: `${s.wavesResolved}/${s.waveCount} waves` };
+    case 'defeat': {
+      // After a checkpoint retry the stipend counts the waves from the checkpoint on (D006).
+      const since = s.fromWave === null ? '' : ` since wave ${s.fromWave}`;
+      return { label: 'Effort stipend', note: `${s.wavesResolved}/${s.waveCount} waves${since}` };
+    }
     case 'defeat_replay':
       return { label: 'Effort stipend', note: 'Shift already cleared!' };
     default:
       return assertNever(s.source);
   }
+}
+
+/** Why a checkpoint run's card lights Victory only (core-loop.md § 2.12). */
+export function resumedNote(wave: number): string {
+  return `Resumed from wave ${wave}: Perfect Core and the Challenge need a shift from wave 1.`;
 }
 
 /** One of the map's medals: lit when earned this run, NEW! and its Intel the first time. */
@@ -205,7 +216,15 @@ function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
  * The payroll: the run's Stardust with where it came from, then (on a win) the map's medals, each
  * paying its Intel the first time it is earned.
  */
-function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
+function Payroll({
+  rewards,
+  won,
+  resumedFromWave,
+}: {
+  rewards: RunRewards;
+  won: boolean;
+  resumedFromWave: number | null;
+}) {
   const { label, note } = stardustLine(rewards.stardust);
   return (
     <section class="sd-results-payroll" aria-labelledby="sd-results-payroll-heading">
@@ -241,6 +260,12 @@ function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
             <MedalRow key={m.id} medal={m} />
           ))}
         </ul>
+      )}
+      {/* A checkpoint run keeps Victory only (core-loop.md § 2.12): say why, without a scolding. */}
+      {won && resumedFromWave !== null && (
+        <p class="sd-results-pay-aside" data-testid="results-resumed">
+          {silkText(resumedNote(resumedFromWave))}
+        </p>
       )}
       {/* Under the medals (core-loop.md § 2.13): a loss pays none, so like the medals, a win's only. */}
       {won && rewards.objectives.length > 0 && (
@@ -315,6 +340,7 @@ function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
   const { rewards } = result;
   const counted = useCountUp(result.pestsProcessed);
+  const checkpoint = won ? null : result.retryFromWave;
   return (
     <section
       class={`sd-panel sd-results-panel ${won ? 'sd-results-won' : 'sd-results-lost'}`}
@@ -357,13 +383,26 @@ function Body({ result }: { result: RunResult }) {
           <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
         )}
       </div>
-      {rewards !== null && <Payroll rewards={rewards} won={won} />}
+      {rewards !== null && (
+        <Payroll rewards={rewards} won={won} resumedFromWave={result.resumedFromWave} />
+      )}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
       <div class="sd-results-buttons">
+        {/* A loss with a checkpoint (Act II on): pick up where the run was, first and focused. */}
+        {checkpoint !== null && (
+          <button
+            type="button"
+            class="sd-button sd-button-primary"
+            ref={focusOnce}
+            onClick={retryFromCheckpoint}
+          >
+            Retry from wave {checkpoint}
+          </button>
+        )}
         <button
           type="button"
-          class={won ? 'sd-button' : 'sd-button sd-button-primary'}
-          ref={won ? null : focusOnce}
+          class={won || checkpoint !== null ? 'sd-button' : 'sd-button sd-button-primary'}
+          ref={won || checkpoint !== null ? null : focusOnce}
           onClick={retryRun}
         >
           Retry

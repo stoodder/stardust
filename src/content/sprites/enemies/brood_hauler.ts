@@ -41,7 +41,11 @@ function plates(
   }
 }
 
-function hauler(facing: 'se' | 'ne', step: 0 | 1): string[] {
+/**
+ * One Hauler frame. `young` (Act II's fleeing Hauler, enemy.brood_hauler_fleeing): its sack is
+ * untied and the young show in its mouth.
+ */
+export function hauler(facing: 'se' | 'ne', step: 0 | 1, young = false): string[] {
   const sink = step === 1 ? 1 : 0; // the planted, heavy step squashes the body
   const cx = 14;
   const cy = 17 + sink * 0.5;
@@ -56,7 +60,14 @@ function hauler(facing: 'se' | 'ne', step: 0 | 1): string[] {
       : ['11...11....11...11..11..', '00...00....00...00..00..'];
   if (facing === 'se') {
     // The sack rides on the back (upper left), bobbing a step behind the body.
-    sack(g, { cx: 9.5, cy: 9 + (1 - sink), rx: 6, ry: 5.5, twinkle: step });
+    sack(g, {
+      cx: 9.5,
+      cy: 9 + (1 - sink),
+      rx: 6,
+      ry: 5.5,
+      twinkle: step,
+      ...(young ? { young: 'se' as const } : {}),
+    });
     // The rope strap from the sack's neck across the shell to the chest.
     line(g, 13, 6 + (1 - sink), 20, 18 + sink, 'R');
     return finish(g, [
@@ -71,7 +82,14 @@ function hauler(facing: 'se' | 'ne', step: 0 | 1): string[] {
     ]);
   }
   // Seen from behind, the sack is most of the silhouette.
-  sack(g, { cx: 14, cy: 9.5 + (1 - sink), rx: 8, ry: 7, twinkle: step });
+  sack(g, {
+    cx: 14,
+    cy: 9.5 + (1 - sink),
+    rx: 8,
+    ry: 7,
+    twinkle: step,
+    ...(young ? { young: 'ne' as const } : {}),
+  });
   line(g, 8, 14 + sink, 6, 20 + sink, 'R');
   line(g, 20, 14 + sink, 22, 20 + sink, 'R');
   return finish(g, [

@@ -1,10 +1,13 @@
 // The host loop (architecture.md § Game speed, pause, and the host loop): turns real frame time
 // into fixed 60 Hz sim ticks at the current speed, applies commands while paused, and drains and
-// dispatches the sim's events once per frame. The sim knows nothing about speed or frames.
+// dispatches the sim's events once per frame. The sim knows nothing about speed or frames. It also
+// records the run's retry checkpoints, and a host created to resume one replays the run up to it
+// before the battle shows (app/checkpoints.ts; architecture.md § Checkpoints).
 import type { IdSpace, LiveIds } from '../content/types.ts';
 import { createBus, type Bus } from '../shared/bus.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import type { Command, Sim, SimEvent } from '../sim/index.ts';
+import { checkpointOf, type Checkpoint, type Resume } from './checkpoints.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** Real milliseconds per tick at 1×. */
@@ -37,12 +40,39 @@ export interface Host<K extends IdSpace = LiveIds> {
   setDriver(driver: (() => void) | null): void;
   /** Mean wall time per sim tick over recent frames, in ms. */
   simMsPerTick(): number;
+  /**
+   * The run's retry checkpoints so far, in the order reached (a resumed run's replayed ones
+   * included): the latest is what Results offers after a loss.
+   */
+  readonly checkpoints: readonly Checkpoint[];
+  /** The checkpoint this battle resumed from (`HostOptions.resume`), or null for a fresh run. */
+  readonly resumedFrom: Checkpoint | null;
+  /**
+   * The sim's `stats.skitterkinKilled` at the checkpoint a resumed run replayed to (0 for a fresh
+   * run, and until `catchUp`): kills its earlier attempt already filed (`attemptKills`).
+   */
+  readonly killsBefore: number;
+  /**
+   * True from creation until `catchUp` has replayed a resumed run. Listeners rebuild their state
+   * from the events dispatched meanwhile but hold back what the player would see or hear (lines,
+   * barks, banners, flashes, sounds), which played in the attempt that reached the checkpoint.
+   */
+  readonly replaying: boolean;
+  /**
+   * Replays a resumed run up to its checkpoint, headlessly: before each tick it enqueues the
+   * logged commands due then, and after each tick it dispatches that tick's events (with
+   * `replaying` true); the after-frame listeners run once at the end. No-op for a fresh run or
+   * once done. Throws if the replay doesn't reach the checkpoint (the run diverged).
+   */
+  catchUp(): void;
 }
 
 export interface HostOptions {
   /** A millisecond clock for the sim-time measurement (default `performance.now`). */
   readonly now?: () => number;
   readonly speed?: Speed;
+  /** Resume from a checkpoint: `sim` must be fresh, from the run's config; `catchUp` replays. */
+  readonly resume?: Resume<IdSpace>;
 }
 
 /** Wraps a sim in a host loop. */
@@ -55,13 +85,27 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
   let acc = 0;
   let msPerTick = 0;
   let driver: (() => void) | null = null;
+  const checkpoints: Checkpoint[] = [];
+  const resume = opts.resume ?? null;
+  let replaying = resume !== null;
+  let killsBefore = 0;
 
-  const dispatch = (): void => {
+  const emitEvents = (): void => {
     events.length = 0;
     sim.drainEvents(events);
-    for (let i = 0; i < events.length; i++) bus.emit(events[i]!); // i < length
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i]!; // i < length
+      if (e.type === 'CheckpointReached') checkpoints.push(checkpointOf(e, sim.state.commandLog));
+      bus.emit(e);
+    }
     events.length = 0;
+  };
+  const runAfterFrame = (): void => {
     for (let i = 0; i < afterFrame.length; i++) afterFrame[i]!(); // i < length
+  };
+  const dispatch = (): void => {
+    emitEvents();
+    runAfterFrame();
   };
 
   const runSteps = (n: number): void => {
@@ -125,6 +169,34 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
     },
     setDriver(next) {
       driver = next;
+    },
+    checkpoints,
+    resumedFrom: resume?.checkpoint ?? null,
+    get killsBefore() {
+      return killsBefore;
+    },
+    get replaying() {
+      return replaying;
+    },
+    catchUp() {
+      if (!replaying || resume === null) return;
+      const { log, checkpoint } = resume;
+      let i = 0;
+      while (sim.state.tick < checkpoint.tick && sim.state.outcome === 'playing') {
+        // A command logged at tick T applied as tick T ran (or by applyPending just before it).
+        while (i < log.length && log[i]!.tick <= sim.state.tick) sim.enqueue(log[i++]!.cmd); // i < length
+        sim.step();
+        emitEvents();
+      }
+      replaying = false;
+      killsBefore = sim.state.stats.skitterkinKilled;
+      if (sim.state.tick !== checkpoint.tick || i !== log.length) {
+        throw new Error(
+          `checkpoint replay diverged: tick ${sim.state.tick} of ${checkpoint.tick}, ` +
+            `${i} of ${log.length} commands, outcome ${sim.state.outcome}`,
+        );
+      }
+      runAfterFrame();
     },
   };
 }

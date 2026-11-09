@@ -31,7 +31,8 @@ export function bindAssetMeter(host: Host<IdSpace>): () => void {
     host.onAfterFrame(sync),
     host.bus.on('AssetHit', (e) => {
       sync();
-      if (e.lost > 0) hud.assetHit.value = { id: ++hitId, amount: e.lost };
+      // A resumed run's replay doesn't flash (app/checkpoints.ts).
+      if (e.lost > 0 && !host.replaying) hud.assetHit.value = { id: ++hitId, amount: e.lost };
     }),
   ];
   return () => {

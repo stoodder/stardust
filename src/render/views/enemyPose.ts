@@ -7,8 +7,12 @@
 // - **Between phases** (a boss's invulnerability): `puff`, which EnemyView shimmers.
 // - **Telling:** a boss's sneeze tell is `tell`, its dig tell `dig`; a Digger's dirt spray `dig`.
 // - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3; a runner held in a
-//   hush tell or bolting, T402): `panic`.
+//   hush tell or bolting, T402): `panic` (a fleeing runner's panic hop, T440a).
+// - **A Hollow unit's hush tell** (T440a): `tell`, its reach (no sneeze follows: a Mote has none).
+// - **Heavy** (it has hushed someone, T440a): `heavy`, the swollen walk with the victim inside.
 // - Else `walk`.
+// `glance` (a fleeing runner's look back, T440a) isn't a state pose: EnemyView shows it over a walk
+// while fleeLook.ts says the runner is glancing, where the sprite authors it.
 // Two poses play once, on a change the sim makes in a single tick: `sneeze` when a sneeze tell
 // ends in the sneeze (not in a dig, a phase change, or a retreat), and `surface` when a burrowed
 // boss comes up. Each holds until its anim ends, unless the boss leaves, burrows, or goes
@@ -32,6 +36,8 @@ export const ENEMY_POSES = [
   'panic',
   'puff',
   'flee',
+  'heavy',
+  'glance',
 ] as const;
 export type EnemyPose = (typeof ENEMY_POSES)[number];
 
@@ -46,7 +52,14 @@ export const POSE_INDEX: Readonly<Record<EnemyPose, number>> = {
   panic: 6,
   puff: 7,
   flee: 8,
+  heavy: 9,
+  glance: 10,
 };
+
+/** The poses that stride along the route (their tempo follows the unit's pace, walkTempo.ts). */
+export function isStride(pose: EnemyPose): boolean {
+  return pose === 'walk' || pose === 'heavy' || pose === 'glance';
+}
 
 /** The poses that play once and then hand back to the state pose. */
 export const ONE_SHOT_POSES: ReadonlySet<EnemyPose> = new Set<EnemyPose>(['sneeze', 'surface']);
@@ -59,6 +72,8 @@ export interface PoseFacts {
   /** The tell showing: a sneeze tell (`tell`), a dig (`dig`), or none. */
   readonly telling: 'tell' | 'dig' | null;
   readonly panic: boolean;
+  /** Heavy: a Hollow unit that has hushed someone (T402). */
+  readonly heavy: boolean;
 }
 
 /** The pose the state alone calls for (no one-shots). */
@@ -67,7 +82,8 @@ export function statePose(f: PoseFacts): EnemyPose {
   if (f.burrowed) return 'under';
   if (f.invulnerable) return 'puff';
   if (f.telling !== null) return f.telling;
-  return f.panic ? 'panic' : 'walk';
+  if (f.panic) return 'panic';
+  return f.heavy ? 'heavy' : 'walk';
 }
 
 /**
@@ -96,6 +112,7 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   out.invulnerable = e.invulnerableTicks > 0;
   out.telling = null;
   out.panic = false;
+  out.heavy = e.heavy;
   if (def === null) return out;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the sim's readers take a live Enemy and only read it
   const live = e as Enemy;
@@ -107,9 +124,10 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     out.telling = 'dig';
   }
   // The hush rule and Skittish (T402; hushLook.ts): the runner a Hollow unit holds struggles, and a
-  // bolting runner runs scared. (The Hollow unit's own tell is T430a's: `tell` would end in a
-  // sneeze.)
+  // bolting runner runs scared; the Hollow unit in its tell reaches (`tell`: no sneeze follows it,
+  // since no Hollow sprite has one).
   if (!def.hushes && (e.hushUid !== 0 || e.skittishTicks > 0)) out.panic = true;
+  if (def.hushes && e.hushUid !== 0 && e.hushTicks > 0) out.telling = 'tell';
   return out;
 }
 
@@ -117,7 +135,14 @@ export type MutablePoseFacts = { -readonly [K in keyof PoseFacts]: PoseFacts[K] 
 
 /** A fresh facts record (one per view, reused every frame). */
 export function blankFacts(): MutablePoseFacts {
-  return { leaving: false, burrowed: false, invulnerable: false, telling: null, panic: false };
+  return {
+    leaving: false,
+    burrowed: false,
+    invulnerable: false,
+    telling: null,
+    panic: false,
+    heavy: false,
+  };
 }
 
 /** A leaving unit draws at this alpha (the stepped-alpha ladder's 60%; it is untargetable). */
@@ -129,14 +154,28 @@ export const LEAVING_ALPHA = 0.6;
  */
 export const CLOAK_ALPHA_LOW = 0.15;
 export const CLOAK_ALPHA_HIGH = 0.35;
+/**
+ * The same shimmer on a sprite with a baked `cloak` variant (T440a: its body already half gone to
+ * the 50% checker dither inside a dashed white outline), two rungs up the ladder, so it reads as
+ * faint as the solid body did.
+ */
+export const CLOAK_DITHER_ALPHA_LOW = 0.35;
+export const CLOAK_DITHER_ALPHA_HIGH = 0.6;
 
 /**
  * The body's alpha: a leaving unit's 60%; a cloaked unit nobody has Revealed shimmers between
- * CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH (`shimmerHigh`: the cycle's high half; held high under
- * reduced motion by the caller); anyone else, whole.
+ * CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH, or the dither's rungs when it draws its `cloak` variant
+ * (`dithered`) (`shimmerHigh`: the cycle's high half; held high under reduced motion by the
+ * caller); anyone else, whole.
  */
-export function cloakAlpha(e: PoseEnemy, leaving: boolean, shimmerHigh: boolean): number {
+export function cloakAlpha(
+  e: PoseEnemy,
+  leaving: boolean,
+  shimmerHigh: boolean,
+  dithered = false,
+): number {
   if (leaving) return LEAVING_ALPHA;
   if (!cloakedOut(e)) return 1;
+  if (dithered) return shimmerHigh ? CLOAK_DITHER_ALPHA_HIGH : CLOAK_DITHER_ALPHA_LOW;
   return shimmerHigh ? CLOAK_ALPHA_HIGH : CLOAK_ALPHA_LOW;
 }

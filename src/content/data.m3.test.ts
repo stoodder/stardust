@@ -13,7 +13,8 @@ const SPRITE_IDS = new Set<string>(SPRITES.map((s) => s.id));
 describe('M3 towers', () => {
   it('Skyhook: 14 → 20 explosive flak with a 0.8 burst, air only; T3 1.3/s, range 4', () => {
     const t = content.towers.skyhook;
-    expect(t).toMatchObject({ name: 'Skyhook', faction: 'everglow', specs: null });
+    // Its specs are T407b's (sim/homing.test.ts).
+    expect(t).toMatchObject({ name: 'Skyhook', faction: 'everglow' });
     expect(t.tiers.map((x) => x.cost)).toEqual([110, 90, 165]);
     for (const tier of t.tiers) {
       expect(tier.targets).toEqual({ ground: false, air: true });
@@ -35,7 +36,8 @@ describe('M3 towers', () => {
 
   it('Zapcoil: 10 → 14 energy, chains to 3 (−20% a jump), then 4 at 1.2/s; ground and air', () => {
     const t = content.towers.zapcoil;
-    expect(t).toMatchObject({ name: 'Zapcoil', faction: 'vrell', specs: null });
+    // Its specs are T407b's (sim/attacks/charge.test.ts).
+    expect(t).toMatchObject({ name: 'Zapcoil', faction: 'vrell' });
     expect(t.tiers.map((x) => x.cost)).toEqual([120, 95, 180]);
     const chain = t.tiers.map((x) =>
       x.attack?.kind === 'chain'

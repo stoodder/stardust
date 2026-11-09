@@ -44,7 +44,9 @@ describe('icon sprites (art-direction §5)', () => {
     const renderOnly = new Set(['enemy.hauler_young', 'enemy.youngling']);
     for (const s of SPRITES) {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
-      if (m === null || s.id.endsWith('_head') || renderOnly.has(s.id)) continue;
+      // A fleeing body (`enemy.<id>_fleeing`, T440a) is its unit's look while it runs: the unit's icon.
+      if (m === null || s.id.endsWith('_head') || s.id.endsWith('_fleeing') || renderOnly.has(s.id))
+        continue;
       expect(ids.has(`icon.${m[1]}.${m[2]}`), s.id).toBe(true);
     }
   });

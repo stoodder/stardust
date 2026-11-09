@@ -271,7 +271,8 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'enemy.blink': null,
       // Protect plays since T305a (sim/protect.test.ts).
       'map.protect': null,
-      'run.checkpoints': 'T305b',
+      // Checkpoints are emitted since T305b (systems/waves.test.ts).
+      'run.checkpoints': null,
       // Cloaks, detection, the Lookout, and Scanner Sweep run since T406 (systems/detection.test.ts).
       'enemy.cloak': null,
       'tower.detection': null,
@@ -279,8 +280,9 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'ability.reveal': null,
       // Stasis (Flash Freeze) runs since T407a (sim/stasis.test.ts).
       'status.stasis': null,
-      'attack.homing': 'T407b',
-      'attack.charge': 'T407b',
+      // Homing, volleys, and charges run since T407b (sim/homing.test.ts, attacks/charge.test.ts).
+      'attack.homing': null,
+      'attack.charge': null,
       'status.pinned': 'T408',
       'attack.line': 'T408',
       'attack.targetFilter': 'T408',
@@ -371,7 +373,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
     ]);
     expect(towerRefusal(RAW_CONTENT.towers.lookout)).toBeNull();
     expect(towerRefusal(RAW_CONTENT.towers.rivet)).toBeNull();
-    // Homing and charge attacks (T407b) on a fixture tier.
+    // Homing and charge attacks play since T407b, on a fixture tier.
     const homing = tierWith(GUN.tiers[0], {
       kind: 'projectile',
       projectile: 'projectile.skyhook_flak',
@@ -388,12 +390,8 @@ describe('FEATURE_GATES (T400a rows)', () => {
       splashSq: 1,
       splashPct: 0.5,
     });
-    expect(gateRefusals(gun(homing))).toEqual([
-      'a homing or volley projectile (fx_gun) is not simulated until T407b',
-    ]);
-    expect(gateRefusals(gun(charge))).toEqual([
-      "a 'charge' attack (fx_gun) is not simulated until T407b",
-    ]);
+    expect(gateRefusals(gun(homing))).toEqual([]);
+    expect(gateRefusals(gun(charge))).toEqual([]);
     // Scanner Sweep in slot 1 plays since T406.
     const sweep: SimConfig<IdSpace> = {
       ...fixtureConfig(),

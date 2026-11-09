@@ -207,6 +207,11 @@ export function retryRun(): void {
   leaveResults(() => run('retry', (r) => r.retry()));
 }
 
+/** Results → "Retry from wave N" (core-loop.md § 2.12): the lost run, from its latest checkpoint. */
+export function retryFromCheckpoint(): void {
+  leaveResults(() => run('retry from checkpoint', (r) => r.retryFromCheckpoint()));
+}
+
 /** Where the pause menu's Quit goes: the base once it's open, else the Shift board (no save: Title). */
 export function quitDestination(): 'base' | 'campaign' | 'title' {
   if (activeSave() === null) return 'title';

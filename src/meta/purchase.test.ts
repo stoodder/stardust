@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { saveModifiers } from './modifiers.ts';
-import { buy, offerFor, openQuestionOffered, shelf, type PurchaseItem } from './purchase.ts';
+import {
+  LIVE_STORE,
+  buy,
+  offerFor,
+  openQuestionOffered,
+  shelf,
+  type PurchaseItem,
+} from './purchase.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
 import { validateSave } from './validate.ts';
 
@@ -111,14 +118,20 @@ describe('offers', () => {
     expect(offerFor(save, { kind: 'upgrade', id: 'tune_sprinkler' })?.refusal).toBe('not_owned');
     expect(offerFor(save, { kind: 'upgrade', id: 'tune_rivet' })?.refusal).toBe(null);
     save.unlocks.towers.push('sprinkler', 'skyhook');
-    // The Sprinkler's specs are built (T407a): Engineering sells them beside Rivet's and Thumper's.
+    // The Sprinkler's (T407a) and Skyhook's (T407b) specs are built: Engineering sells them
+    // beside Rivet's and Thumper's. No registered tower's specs ship later any more.
     expect(offerFor(save, { kind: 'specs', tower: 'sprinkler' })?.refusal).toBe(null);
+    expect(offerFor(save, { kind: 'specs', tower: 'skyhook' })?.refusal).toBe(null);
     const engineering = shelf(save, 'engineering');
-    expect(engineering.slice(0, 3).map((o) => o.tower)).toEqual(['rivet', 'thumper', 'sprinkler']);
-    // Skyhook's ship later (D064, T407b): listed after the built ones, refused.
-    expect(engineering.find((o) => o.tower === 'skyhook')?.refusal).toBe('no_specs');
+    expect(engineering.some((o) => o.refusal === 'no_specs')).toBe(false);
     // Towers not owned still say so first.
     expect(engineering.find((o) => o.tower === 'zapcoil')?.refusal).toBe('not_owned');
+    // A tower with no specs authored is still refused `no_specs` (none is registered today).
+    const bare = {
+      ...LIVE_STORE,
+      towers: { ...LIVE_STORE.towers, skyhook: { faction: 'everglow' as const } },
+    };
+    expect(offerFor(save, { kind: 'specs', tower: 'skyhook' }, [], bare)?.refusal).toBe('no_specs');
   });
 
   it('prices Engineering by faction', () => {
@@ -275,12 +288,8 @@ describe('buying', () => {
     for (const pane of ['rnd', 'shop', 'engineering'] as const) {
       const offers = shelf(save, pane, dev.devUnlocks);
       expect(offers.length).toBeGreaterThan(0);
-      // Everything is owned; only the specs that ship later (D064, T407b) can't be.
-      const later = new Set(['skyhook', 'zapcoil']);
-      for (const o of offers) {
-        const deferred = pane === 'engineering' && later.has(o.tower ?? '');
-        expect(o.refusal).toBe(deferred ? 'no_specs' : 'maxed');
-      }
+      // Everything is owned, every tower's specs included (T407b shipped the last of them).
+      for (const o of offers) expect(o.refusal).toBe('maxed');
     }
   });
 });

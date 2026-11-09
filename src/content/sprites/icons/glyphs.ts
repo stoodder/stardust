@@ -234,3 +234,91 @@ export const iconTellBoss = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconTellShielded = defineSprite({
+  id: 'icon.tell.shielded',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `shielded` tell (art-direction §8): a hexagon, the shield bubble's shape and colours: a
+  // `blue.3` rim catching `white.1` light on its top and upper-left edges, a faint `blue.1` pane.
+  legend: { A: 'blue.1', C: 'blue.3', D: 'blue.4', W: 'white.1' },
+  frames: {
+    icon: [
+      '.WWWD.',
+      'WAAAAC',
+      'WAAAAC',
+      'DAAAAC',
+      'CAAAAC',
+      '.CCCC.',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellRegen = defineSprite({
+  id: 'icon.tell.regen',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `regen` tell (art-direction §8): a circular arrow, `teal.3` lit to `teal.4`, its head at
+  // the top right turning clockwise.
+  legend: { B: 'teal.2', C: 'teal.3', D: 'teal.4' },
+  frames: {
+    icon: [
+      '.DDDDD',
+      'D...DD',
+      'D....D',
+      'C.....',
+      'C....B',
+      '.CCBB.',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellHollow = defineSprite({
+  id: 'icon.tell.hollow',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'hollow',
+  outline: 'auto',
+  // The Hollow (art-direction §8 and §4): a ring for a face, broken open, drained grey inside the
+  // pale inverted outline, with one acid pinprick where no eye belongs. The only glyph with a pale
+  // outline, so it reads wrong in any colour vision.
+  frames: {
+    icon: [
+      '.211..',
+      '2...1.',
+      '1..*.1',
+      '1....1',
+      '.1..1.',
+      '..10..',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellSkittish = defineSprite({
+  id: 'icon.tell.skittish',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `skittish` tell (art-direction §8): an exclamation mark, `coral.4` lit over `coral.3`,
+  // leaning forward as if it were bolting too.
+  legend: { C: 'coral.3', D: 'coral.4' },
+  frames: {
+    icon: [
+      '...DD.',
+      '...DC.',
+      '..DC..',
+      '..C...',
+      '......',
+      '.DC...',
+    ],
+  },
+});

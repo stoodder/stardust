@@ -152,6 +152,37 @@ describe('bakeSprite', () => {
     );
   });
 
+  it('bakes Aelari and Hollow enemies a cloak: a 50% checker body inside a dashed white outline', () => {
+    expect(derivedFor('enemy', 'aelari')).toEqual(['selected', 'cloak']);
+    expect(derivedFor('enemy', 'hollow')).toEqual(['selected', 'cloak']);
+    expect(derivedFor('enemy', 'skitterkin')).toEqual(['selected']);
+    expect(bakeSprite(mite, PALETTES).variants).not.toContain('default+cloak');
+    const { glow: _glow, variants: _variants, ...plain } = mite;
+    const veil: SpriteDef = {
+      ...plain,
+      palette: 'aelari',
+      frames: { a: ['2222', '2222', '2222'] },
+      anims: {},
+    };
+    const c = bakeSprite(veil, PALETTES);
+    expect(c.variants).toEqual(['default', 'default+selected', 'default+cloak']);
+    const f = c.frames.find((x) => x.key === frameKey('enemy.test_mite', 'default+cloak', 'a'));
+    if (f === undefined) throw new Error('no cloak frame');
+    // Body pixels (outlined: x, y in 1..4, 1..3) alternate solid and clear on a checker.
+    const alphaAt = (x: number, y: number): number => pixel(f.image, x, y)[3] ?? -1;
+    for (let y = 1; y <= 3; y++) {
+      for (let x = 1; x <= 4; x++)
+        expect(alphaAt(x, y), `${x},${y}`).toBe((x + y) % 2 === 0 ? 255 : 0);
+    }
+    // The outline is white where it shows, and dashed: some of it clear.
+    const ring = [1, 2, 3, 4].map((x) => pixel(f.image, x, 0));
+    expect(ring.filter((p) => p[3] === 255).every((p) => p.join() === rgba('white.1').join())).toBe(
+      true,
+    );
+    expect(ring.some((p) => p[3] === 0)).toBe(true);
+    expect(ring.some((p) => p[3] === 255)).toBe(true);
+  });
+
   it('gives shadow pixels 50% alpha', () => {
     const s = bakeSprite({ ...mite, frames: { a: ['_...', '....', '....'] }, anims: {} }, PALETTES);
     expect(pixel(s.frames[0]?.image ?? { w: 0, data: new Uint8ClampedArray() }, 1, 1)).toEqual(

@@ -1,9 +1,10 @@
 // T402: the hush rule's minimal look on the dev Hollow range (`?map=dev_hollow`, render/
 // __fixtures__/devBattle.ts): fleeing Nibblers run 2.5 s ahead of Motes on both roads, and nothing
-// is built. The hush tell (a pale ring closing on the held runner, which shakes and panics, and
-// the Mote's acid rim as it reaches), the vanish (a small acid ring), and the Heavy unit's tint
-// and swollen pale rim walking on (T430a; asserted through `__sd.render()`). Screenshots in
-// test-results/screens/hush/ (look at them: the ring and the tint are the point).
+// is built. The hush tell (a pale ring closing on the held runner, which shakes and does its panic
+// hop, and the Mote's acid rim as it reaches with limbs it never had), the vanish (a small acid
+// ring), and the Heavy Mote walking on, swollen, the victim pale inside it (T430a, T440a;
+// asserted through `__sd.render()`). Screenshots in test-results/screens/hush/ (look at them: the
+// ring and the Heavy Mote are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -53,6 +54,9 @@ test('hush: the tell on the runner, then a Heavy Mote walking on', async ({ page
   const tell = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
   expect(tell.some((e) => e.hushRing)).toBe(true);
   expect(tell.some((e) => e.rim === 'hush')).toBe(true);
+  // The Mote reaches (its `tell` pose, T440a); the runner it holds panics (its panic hop).
+  expect(tell.some((e) => e.pose === 'tell')).toBe(true);
+  expect(tell.some((e) => e.pose === 'panic')).toBe(true);
   await shot(page, 'hush', 1, 'tell');
 
   expect(await until(page, 'heavy')).toBe(true);
@@ -74,6 +78,8 @@ test('hush: the tell on the runner, then a Heavy Mote walking on', async ({ page
   expect(st.heavy).toBeGreaterThan(0);
   expect(st.outcome).toBe('playing');
   const drawn = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
-  expect(drawn.filter((e) => e.rim === 'heavy').length).toBe(st.heavy);
+  // The Mote draws Heavy itself (T440a: swollen, 2 px pale outline, the victim inside): no rim.
+  expect(drawn.filter((e) => e.pose === 'heavy').length).toBe(st.heavy);
+  expect(drawn.some((e) => e.rim === 'heavy')).toBe(false);
   expect(drawn.some((e) => e.hushRing)).toBe(false);
 });

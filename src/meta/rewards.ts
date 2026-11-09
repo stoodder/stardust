@@ -30,9 +30,14 @@ export interface StardustPayout {
   readonly amount: number;
   /** The map's first-clear `stardust`. */
   readonly base: number;
-  /** Waves resolved this run, and the map's total (the defeat share's fraction). */
+  /**
+   * The waves the payout counts, and the map's total (the defeat share's fraction): every wave
+   * resolved, or after a checkpoint retry only those from `fromWave` on.
+   */
   readonly wavesResolved: number;
   readonly waveCount: number;
+  /** A defeat's checkpoint wave, after a checkpoint retry (it counts waves from it on); else null. */
+  readonly fromWave: number | null;
 }
 
 /** What the payout reads about the run and the map. */
@@ -46,17 +51,25 @@ export interface PayoutInput {
   readonly waveCount: number;
   /** Σ of the veteran modifiers' Stardust bonuses (progression.md § 6; 0 until they exist). */
   readonly veteranBonus: number;
+  /**
+   * The wave of the checkpoint this attempt resumed from (core-loop.md § 2.12), or null (default)
+   * for an attempt from wave 1.
+   */
+  readonly resumedFromWave?: number | null;
 }
 
 /**
- * The run's Stardust (progression.md § 2). Rounded to whole Stardust.
- * TODO(M3 checkpoints): after a checkpoint retry, `wavesResolved` counts only the waves resolved
- * in this attempt from `resumedFromWave` on (D006); the caller passes that count once checkpoints
- * exist.
+ * The run's Stardust (progression.md § 2). Rounded to whole Stardust. No farming (D006): after a
+ * checkpoint retry the defeat share counts only the waves resolved from `resumedFromWave` on (the
+ * run's resolved waves less the `resumedFromWave − 1` before it), so a retry never pays twice for
+ * the waves the attempt that reached the checkpoint already filed.
  */
 export function stardustPayout(p: PayoutInput): StardustPayout {
-  const waves = Math.max(0, Math.min(p.wavesResolved, p.waveCount));
-  const base = { base: p.stardust, wavesResolved: waves, waveCount: p.waveCount };
+  const resolved = Math.max(0, Math.min(p.wavesResolved, p.waveCount));
+  // Only a defeat's share counts waves, so only a defeat counts them from the checkpoint.
+  const fromWave = p.won ? null : (p.resumedFromWave ?? null);
+  const waves = fromWave === null ? resolved : Math.max(0, resolved - (fromWave - 1));
+  const base = { base: p.stardust, wavesResolved: waves, waveCount: p.waveCount, fromWave };
   if (p.won && !p.wonBefore) return { source: 'first_clear', amount: p.stardust, ...base };
   if (p.won) {
     const amount = Math.round(REWARD_RULES.replayShare * p.stardust * (1 + p.veteranBonus));
