@@ -186,7 +186,7 @@ describe('movement', () => {
     const { state } = setup();
     const e = spawn(state, runner, sky);
     for (let i = 0; i < 75; i++) movement(state); // 2.5 tiles of the 5-tile diagonal
-    expect(e.x).toBeCloseTo(2, 9);
+    expect(e.x).toBeCloseTo(4, 9);
     expect(e.y).toBeCloseTo(2.5, 9);
   });
 

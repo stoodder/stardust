@@ -1,9 +1,14 @@
-// System 8: projectiles. Flies lobbed shells and lands them as splash (design/enemies.md §2.3:
+// System 8: projectiles. Flies lobbed shells and straight shots (Skyhook's flak, T304a) and lands
+// them as splash (design/enemies.md §2.3:
 // every enemy whose center is within the radius takes full damage, no falloff). A shell's ground
 // point moves linearly from its tower to its aim point; render draws the arc. A shell lands on the
 // tick its countdown starts at 0, after that tick's movement, so it lands `flightTicks` ticks
 // after the tick it was fired. Its victims are all chosen before any damage, so the order of
-// hits within one impact can't change who is in the blast.
+// hits within one impact can't change who is in the blast. A shot with no splash (none in the
+// content yet) hits only its target, if it is still alive and on the shot's layers.
+// Neutral units (Gerald; combat/neutral.ts): a shot fired at one plinks off it if it lands with
+// the unit in the burst (NeutralHit; the burst still hits the enemies around it), and every other
+// burst passes neutral units by.
 // Bomblets (Cluster Thumper, design/towers.md § 7): a shell that carries them scatters them after
 // every shell has landed this tick, so where a bomblet's pool slot falls never changes its flight.
 // Each flies from the impact point to a point drawn uniformly in the scatter disc (rejection
@@ -12,6 +17,7 @@
 import { nextFloat } from '../../shared/rng.ts';
 import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
+import { hitNeutral, isNeutral } from '../combat/neutral.ts';
 import { PROJECTILE_BLANK, type Projectile } from '../entities.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
@@ -105,18 +111,32 @@ function scatterBomblets(state: SimState, shell: Projectile): void {
   }
 }
 
-/** Splash at the aim point: every hittable enemy within the radius, in ascending slot order. */
+/**
+ * Splash at the aim point: every hittable enemy within the radius, in ascending slot order (with
+ * no splash, its target only). A neutral unit is never a victim; the shot's own neutral target in
+ * the burst is plinked (NeutralHit) after the impact.
+ */
 function land(state: SimState, ctx: TickContext, p: Projectile): void {
   const enemies = state.enemies;
   const victims = ctx.scratch.slots;
   victims.length = 0;
+  let plinked = -1;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!e.alive || e.def === null) continue;
     if (!(e.def.layer === 'air' ? p.hitsAir : p.hitsGround)) continue;
-    const dx = e.x - p.targetX;
-    const dy = e.y - p.targetY;
-    if (dx * dx + dy * dy <= p.splashSq) victims.push(i);
+    if (p.splashSq === 0) {
+      if (e.uid !== p.targetUid) continue;
+    } else {
+      const dx = e.x - p.targetX;
+      const dy = e.y - p.targetY;
+      if (dx * dx + dy * dy > p.splashSq) continue;
+    }
+    if (isNeutral(e)) {
+      if (e.uid === p.targetUid) plinked = i;
+      continue;
+    }
+    victims.push(i);
   }
   const hit = {
     type: 'ProjectileHit' as const,
@@ -141,4 +161,5 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
     applyEffects(e, p.effects);
   }
   victims.length = 0;
+  if (plinked >= 0) hitNeutral(state, enemies.items[plinked]!, p.towerUid); // a slot < used
 }

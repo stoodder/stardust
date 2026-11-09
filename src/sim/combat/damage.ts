@@ -9,6 +9,7 @@ import {
   ARMOR_FLOOR,
   ARMOR_IGNORING_TYPES,
   BODY_MULT,
+  BOSS_CHILL_MULT,
   CHILL_CAP,
   CORRODED_STACK_SEC,
   SHIELD_MULT,
@@ -20,7 +21,8 @@ import {
 import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
 import { burstSack } from '../carrier.ts';
-import { splitOnDeath } from '../enemyAbilities/split.ts';
+import { bossDamage } from '../enemyAbilities/bossPhases.ts';
+import { immune, untargetable } from '../enemyAbilities/layers.ts';
 import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
@@ -73,7 +75,8 @@ export function applyDamage(
   hit: HitMods = PLAIN_HIT,
 ): number {
   const def = enemy.def;
-  if (!enemy.alive || def === null || amount <= 0) return 0;
+  // Burrowed, leaving, or a boss between phases: nothing lands (enemyAbilities/layers.ts).
+  if (!enemy.alive || def === null || amount <= 0 || immune(enemy)) return 0;
 
   let raw = amount * BODY_MULT[type][def.body];
   if (enemy.markTicks > 0) raw *= 1 + enemy.markPct;
@@ -106,6 +109,8 @@ export function applyDamage(
   const through = raw - armor;
   const damage = through > floor ? through : floor;
 
+  // A boss never dies here: its phases and its ending take the hit (enemyAbilities/bossPhases.ts).
+  if (def.boss !== null) return bossDamage(state, enemy, damage);
   const before = enemy.hp;
   enemy.hp -= damage;
   if (enemy.hp <= DEAD_HP_EPS) {
@@ -157,7 +162,6 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
     y: enemy.y,
   });
   burstSack(state, enemy); // a carrier's sack (the Brood Hauler): SackBurst after EnemyDied
-  if (def.split !== null) splitOnDeath(state, enemy, def.split); // the Bunchling (T304c)
 }
 
 /**
@@ -170,7 +174,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  * - Marked: highest only, like Chilled.
  */
 export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): void {
-  if (!enemy.alive) return;
+  if (!enemy.alive || untargetable(enemy)) return;
   for (let i = 0; i < effects.length; i++) {
     const fx = effects[i]!; // i < length
     switch (fx.status) {
@@ -209,9 +213,10 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
 
 /** Chilled X% for `ticks` movement ticks: the strongest source wins (enemies.md §2.4). */
 export function applyChill(enemy: Enemy, pct: number, ticks: number): void {
-  const p = pct < CHILL_CAP ? pct : CHILL_CAP;
+  // Bosses take Chilled at half strength (enemies.md § 6); a converted Pin or Stasis (M4) won't.
+  const strength = enemy.def !== null && enemy.def.boss !== null ? pct * BOSS_CHILL_MULT : pct;
+  const p = strength < CHILL_CAP ? strength : CHILL_CAP;
   if (p <= 0 || ticks <= 0) return;
-  // TODO(T304): bosses take Chilled at half strength (BOSS_CHILL_MULT); M1 has no bosses.
   if (p > enemy.chillPct) {
     enemy.chillPct = p;
     enemy.chillTicks = ticks;

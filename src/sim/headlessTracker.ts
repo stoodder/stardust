@@ -271,6 +271,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'AllyRemoved':
           case 'MedalProgress':
           case 'NeutralHit':
+          case 'NeutralExited':
           case 'BossPhase':
           case 'BossEnded':
           case 'WreckageCleared':

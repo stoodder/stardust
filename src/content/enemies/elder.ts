@@ -1,8 +1,9 @@
 // Elder (design/enemies.md § 5.1): slow, grumpy, and (on re-read) holding the group to its pace to
 // protect the young. Huddle: allies within 1.5 tiles move at its pace and regenerate 4 HP/s. Its
 // armor 2 makes it Armored (light) too. Old Thrum, who leads the Quiet Wave (A1M5), is an Elder.
-// createSim refuses huddles until T304c (FEATURE_GATES `enemy.huddle`). The spawn interval isn't
-// in the docs: 2.0 s is a first pass. Sprites are placeholders under their final ids (T311a).
+// The huddle runs in sim/enemyAbilities/huddle.ts (it slows faster allies, never speeds slower
+// ones). The spawn interval isn't in the docs: 2.0 s is a first pass. Sprites are placeholders
+// under their final ids (T311a).
 import { defineEnemy } from '../define.ts';
 
 export const elder = defineEnemy({

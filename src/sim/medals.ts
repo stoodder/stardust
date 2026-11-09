@@ -64,9 +64,12 @@ export function earnedMedalIds(
   return out;
 }
 
-/** Whether an enemy that is dead this tick leaked (movement leaves a leaked unit at its route's end). */
+/**
+ * Whether an enemy that is dead this tick leaked (movement leaves a leaked unit at its route's
+ * end). A neutral unit (Gerald) at its route's end delivered and left: never a leak (T304a).
+ */
 export function leakedThisTick(e: Enemy): boolean {
-  return e.route !== null && e.dist >= e.route.lengthTiles;
+  return e.route !== null && e.dist >= e.route.lengthTiles && e.def?.neutral !== true;
 }
 
 /** Books one leak (cleanup, for each enemy leakedThisTick). */

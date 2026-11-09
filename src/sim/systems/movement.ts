@@ -1,10 +1,16 @@
 // System 6: movement. Advances every live enemy along its route by its speed this tick (Chilled
 // slows it through `chillMul`; younglings move at YOUNGLING_SPEED_MUL), and leaks the ones that
 // reach the route's end: the core loses the leak cost (design/core-loop.md §2.9; 0 for `fleeing`
-// and `youngling` units), less what Emergency Bulkhead absorbs, the leak counts toward its tags'
-// `stats.tagLeaked`, and the enemy is removed. Losing at 0 integrity is cleanup's check (T105b),
-// at the end of the tick. Slots run in ascending order (determinism).
-import { LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
+// and `youngling` units; a boss drains it all, BOSS_LEAK_DRAINS_ALL), less what Emergency Bulkhead
+// absorbs, the leak counts toward its tags' `stats.tagLeaked`, and the enemy is removed. Losing at
+// 0 integrity is cleanup's check (T105b), at the end of the tick. Slots run in ascending order
+// (determinism).
+// Flyers move the same way along their air lane (design/maps.md §4: a polyline from an air spawn
+// to the core, crossing any tile; compileMap.ts checks it ends on the core), and leak at the core
+// like ground units. A neutral unit (Gerald, core-loop.md §2.7) never leaks: at its route's end it
+// delivers and leaves (`NeutralExited`), with no integrity lost, no tag counted, and no leak for
+// Perfect Core (sim/medals.ts `leakedThisTick`).
+import { BOSS_LEAK_DRAINS_ALL, LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
@@ -13,12 +19,15 @@ import { pointAt } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
 
 /**
- * An enemy's speed this tick, in tiles per tick: its base speed, ×YOUNGLING_SPEED_MUL for a
- * youngling, × its Chilled multiplier. Lead targeting predicts with the same number.
+ * An enemy's speed this tick, in tiles per tick, ground or air: its base speed,
+ * ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier, × its pace (`paceMul`: a huddle
+ * or a boss's haste, T304c). Lead targeting and flak intercepts predict with the same number.
  */
 export function enemySpeedPerTick(e: Enemy): number {
   const base = e.def === null ? 0 : e.def.speedTilesPerTick;
-  return (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) * e.chillMul;
+  return (
+    (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) * e.chillMul * e.paceMul
+  );
 }
 
 /** Whether a unit with these tags leaks for 0 (LEAK_FREE_TAGS: fleeing, youngling). */
@@ -40,14 +49,28 @@ export function movement(state: SimState): void {
   const enemies = state.enemies;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
-    if (!e.alive || e.def === null || e.route === null) continue;
+    if (!e.alive || e.def === null || e.route === null || e.leaving) continue; // a leaving boss and its brood move in enemyAbilities (T304c)
     const route = e.route;
     e.dist += enemySpeedPerTick(e);
     if (e.dist >= route.lengthTiles - ARRIVE_EPS_TILES) {
       e.dist = route.lengthTiles;
       e.seg = pointAt(route, e.dist, e, e.seg);
+      if (e.def.neutral) {
+        emit(state, { type: 'NeutralExited', uid: e.uid, enemy: e.def.id, x: e.x, y: e.y });
+        poolKill(enemies, e);
+        continue;
+      }
       countTags(state.stats.tagLeaked, e.tags);
-      leak(state, e.def.id, leaksFree(e.tags) ? 0 : e.def.leak, e.uid);
+      leak(
+        state,
+        e.def.id,
+        e.def.boss !== null && BOSS_LEAK_DRAINS_ALL
+          ? state.integrity + state.leakAbsorbLeft
+          : leaksFree(e.tags)
+            ? 0
+            : e.def.leak,
+        e.uid,
+      );
       poolKill(enemies, e);
     } else {
       e.seg = pointAt(route, e.dist, e, e.seg);

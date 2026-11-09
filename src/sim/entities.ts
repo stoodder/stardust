@@ -152,8 +152,18 @@ export interface Enemy extends PoolEntity {
   markTicks: number;
   spawnTick: number;
   // Enemy abilities (sim/enemyAbilities/; T300a seams, run by T304c). Blank until then.
-  /** Ticks until its next ability step (a dig, a surfacing, a sneeze); 0: nothing pending. */
+  /**
+   * Ticks until its next ability step (a dig, a surfacing, a sneeze), or a leaving unit's ticks
+   * left to reach the map edge; 0: nothing pending.
+   */
   abilityTicks: number;
+  /** Uses left of a counted ability: a boss phase's burrows. */
+  abilityCount: number;
+  /**
+   * Its abilities' speed multiplier this tick (1 = none): a burrow's `speedMul`, a huddle
+   * leader's pace, a boss phase's haste. enemyAbilities sets it before movement, which reads it.
+   */
+  paceMul: number;
   /** Burrowing: underground, so untargetable but for burrow answers (enemies.md § 2.6). */
   burrowed: boolean;
   /** Huddle: the uid of the leader whose pace it matches this tick (0 = none). */
@@ -194,6 +204,8 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   markTicks: 0,
   spawnTick: 0,
   abilityTicks: 0,
+  abilityCount: 0,
+  paceMul: 1,
   burrowed: false,
   huddleUid: 0,
   bossPhase: 0,

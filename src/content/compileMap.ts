@@ -213,6 +213,7 @@ function compileRoutes(
   }
   for (const [i, p] of (def.airLanes ?? []).entries()) {
     const w = `${where}.airLanes[${i}]`;
+    if (grid !== null) checkAirLane(ctx, grid, p.points, w);
     add(compileRoute(ctx, p.id, 'air', p.points, null, w), w);
   }
   for (const [i, p] of (def.riftLanes ?? []).entries()) {
@@ -270,6 +271,22 @@ function checkGroundRoute(
     if (prev !== undefined && Math.abs(pos[0] - prev[0]) + Math.abs(pos[1] - prev[1]) !== 1) {
       ctx.errors.push(`${at}: not one orthogonal step from the tile before`);
     }
+  }
+}
+
+/**
+ * An air lane (design/maps.md §4) is a polyline through tile centers that may cross any tile, from
+ * an air spawn to the core: every point lies on the map, and the last is the core `C`, so a flyer
+ * leaks at the core like a ground unit (T304a).
+ */
+function checkAirLane(ctx: Ctx, grid: RouteGrid, points: readonly GridPos[], where: string): void {
+  const last = points.length - 1;
+  for (const [i, pos] of points.entries()) {
+    const at = `${where}.points[${i}] (${pos[0]},${pos[1]})`;
+    const tile = gridTile(grid, pos);
+    if (tile === undefined) ctx.errors.push(`${at}: not a tile on the map`);
+    else if (i === last && last > 0 && tile !== 'C')
+      ctx.errors.push(`${at}: is '${tile}', but an air lane ends on the core 'C'`);
   }
 }
 

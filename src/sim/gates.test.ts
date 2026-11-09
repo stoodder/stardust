@@ -17,11 +17,13 @@ function withGunTier(i: 0 | 1 | 2, tier: CompiledTier): CompiledContent<FixtureI
 
 describe('T121: unsimulated attack kinds and statuses', () => {
   it('a spec counts only once its pair is unlocked (fx_mortar spec A fires a projectile)', () => {
-    expect(gateRefusals(fixtureConfig())).toEqual([]);
-    expect(gateRefusals(fixtureConfig({ specsUnlocked: ['fx_mortar'] }))).toEqual([
+    // Projectiles run since T304a; a closed row shows the spec is counted once unlocked.
+    const closed = { ...FEATURE_GATES, 'attack.projectile': 'T304a' } as const;
+    expect(gateRefusals(fixtureConfig(), closed)).toEqual([]);
+    expect(gateRefusals(fixtureConfig({ specsUnlocked: ['fx_mortar'] }), closed)).toEqual([
       "a 'projectile' attack (fx_mortar) is not simulated until T304a",
     ]);
-    expect(() => fixtureSim({ specsUnlocked: ['fx_mortar'] })).toThrow(/'projectile' attack/);
+    expect(() => fixtureSim({ specsUnlocked: ['fx_mortar'] })).not.toThrow();
     expect(() => fixtureSim({ specsUnlocked: ['fx_gun'] })).not.toThrow();
   });
 
@@ -64,7 +66,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
 
   it('every closed T121 row names its task (D064: M3 lifts projectiles and chains)', () => {
     expect(FEATURE_GATES.specs).toBeNull();
-    expect(FEATURE_GATES['attack.projectile']).toBe('T304a');
+    expect(FEATURE_GATES['attack.projectile']).toBeNull(); // T304a
     expect(FEATURE_GATES['attack.chain']).toBe('T304b');
     for (const f of ['beam', 'spawner'] as const) expect(FEATURE_GATES[`attack.${f}`]).toBe('M4');
     for (const s of ['pinned', 'stasis', 'unnerved'] as const) {

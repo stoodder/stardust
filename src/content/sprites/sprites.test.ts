@@ -43,12 +43,25 @@ describe('sprite registry', () => {
   it('gives every moving actor SE and NE walks mirrored to four facings', () => {
     for (const def of SPRITES as readonly SpriteDef[]) {
       if (!def.id.startsWith('enemy.')) continue;
-      expect(Object.keys(def.anims ?? {}).toSorted(), def.id).toEqual([
-        'walk_ne',
-        'walk_nw',
-        'walk_se',
-        'walk_sw',
-      ]);
+      const anims = def.anims ?? {};
+      expect(
+        Object.keys(anims)
+          .filter((a) => a.startsWith('walk_'))
+          .toSorted(),
+        def.id,
+      ).toEqual(['walk_ne', 'walk_nw', 'walk_se', 'walk_sw']);
+      expect(anims['walk_sw'], def.id).toEqual({ mirrorOf: 'walk_se' });
+      expect(anims['walk_nw'], def.id).toEqual({ mirrorOf: 'walk_ne' });
+      // Any other anim (the Digger's `dig_<facing>` tell) comes in the same four facings.
+      const extra = new Set(
+        Object.keys(anims)
+          .filter((a) => !a.startsWith('walk_'))
+          .map((a) => a.replace(/_(se|sw|ne|nw)$/, '')),
+      );
+      for (const a of extra) {
+        for (const f of ['se', 'sw', 'ne', 'nw'])
+          expect(anims[`${a}_${f}`], `${def.id} ${a}_${f}`).toBeDefined();
+      }
     }
   });
 

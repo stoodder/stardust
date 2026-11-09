@@ -233,9 +233,10 @@ export const fxLayout = fx.defineMapLayout({
   airLanes: [
     {
       id: 'sky',
+      // An air lane ends on the core (compileMap.ts); a 3-4-5 diagonal over the path and pads.
       points: [
-        [0, 0],
-        [3, 4],
+        [2, 0],
+        [5, 4],
       ],
     },
   ],

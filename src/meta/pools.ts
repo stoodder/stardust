@@ -12,9 +12,9 @@ import type { SaveData } from './saveData.ts';
 
 /**
  * The towers the loadout can hold: owned and not revoked (A3M2 until the jailbreak), and played by
- * the sim today. A tower whose attack the sim still refuses (sim/gates.ts `towerRefusal`: Skyhook
- * until T304a, Zapcoil until T304b) stays out, so a save that runs ahead of the sim (the
- * all_unlocked dev save, Skyhook issued after A1M2) plays rather than throws.
+ * the sim today. A tower whose attack the sim still refuses (sim/gates.ts `towerRefusal`: Zapcoil
+ * until T304b) stays out, so a save that runs ahead of the sim (the all_unlocked dev save) plays
+ * rather than throws.
  */
 export function towerPool(save: SaveData): TowerId[] {
   return save.unlocks.towers.filter(

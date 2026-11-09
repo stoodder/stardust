@@ -138,11 +138,11 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [~] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
 - [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".
 - [~] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
-- [~] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
-- [ ] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
+- [x] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
+- [~] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
 - [~] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
-- [ ] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
-- [ ] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
+- [~] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
+- [~] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
 - [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
 - [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
@@ -156,6 +156,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
 - [~] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
 - [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
+- [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
 - [ ] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [ ] **T311c** Props for A1M3–A1M5; terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [ ] **T309** The Peeker: view + click sets `peeker_poked`.

@@ -1,22 +1,86 @@
-// Bosses (design/enemies.md § 6, § 6.1): phases by HP share (`BossPhase` on each change, with at
-// most BOSS_MAX_INVULNERABLE_SEC of invulnerability and a telegraph), each phase's abilities (a
-// sneeze of young, burrows that surface with a Bunchling, haste, a huddle on nearby young), and the
-// ending: at `endAtPct` a `driveOff` boss turns untargetable (`Enemy.leaving`) and leaves by the
-// nearest map edge within BOSS_LEAVE_MAX_SEC with its young (`BossEnded`; no leak, no death). A
-// leaking boss drains all integrity (BOSS_LEAK_DRAINS_ALL, movement), and a boss wave's clear
-// bonus is tripled (BOSS_CLEAR_BONUS_MULT, cleanup). State: `Enemy.bossPhase`,
-// `invulnerableTicks`, `leaving`, `abilityTicks`.
-import type { CompiledBoss } from '../../content/compiled.ts';
+// Bosses (design/enemies.md § 6, § 6.1), one tick at a time. Phase changes and the ending are
+// driven by hits (bossPhases.ts); this runs each phase's abilities, in this order:
+// - Phase 1 begins as the boss spawns (BossPhase 1).
+// - While invulnerable after a phase change, its ability timer waits.
+// - A phase's `burrow`s come first: BOSS_BURROW_GAP_SEC into the phase (and after each
+//   surfacing), it digs in for `durationTicks` (untargetable, at its own pace) and surfaces with
+//   `surfaceSpawn`, `times` times (`Enemy.abilityCount` left).
+// - Then its `spawn` (the sneeze): `count` of `enemy` every `everyTicks`, the first one
+//   `everyTicks` into the phase (or after the last surfacing).
+// - Every ability's tell is its timer's last BOSS_ABILITY_TELL_SEC (`bossTelling`).
+// - `hastePct` speeds the boss (`Enemy.paceMul`, under HASTE_CAP), and `huddle` makes it a huddle
+//   leader for its young (the abilities system runs it with the other huddles).
+// Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
+// Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
+// surfaces with a Bunchling each time; (3) 25–0% Haste 50% and a huddle on her young; `driveOff`
+// at 0%.
+import type { CompiledBoss, CompiledBossPhase, CompiledHuddle } from '../../content/compiled.ts';
+import { BOSS_ABILITY_TELL_SEC, HASTE_CAP } from '../../content/rules.ts';
+import { secToTicks } from '../../shared/time.ts';
 import type { Enemy } from '../entities.ts';
 import type { SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
+import { spawnBrood } from './brood.ts';
 
-/** One tick of a boss. TODO(T304c): phases, their abilities, and the ending. */
-export function bossStep(
-  _state: SimState,
-  _ctx: TickContext,
-  _boss: Enemy,
-  _def: CompiledBoss,
-): void {
-  // TODO(T304c)
+export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
+
+/** The boss's current phase def, or null before phase 1. */
+export function bossPhaseDef(boss: Enemy): CompiledBossPhase | null {
+  const def = boss.def?.boss ?? null;
+  if (def === null || boss.bossPhase === 0) return null;
+  return def.phases[boss.bossPhase - 1] ?? null;
+}
+
+/** The huddle a boss leads in its current phase (Chitterbloom's phase 3), or null. */
+export function bossHuddle(boss: Enemy): CompiledHuddle | null {
+  return bossPhaseDef(boss)?.huddle ?? null;
+}
+
+/** What the boss's ability timer does when it runs out: render's tell picks its art from it. */
+export type BossAbility = 'burrow' | 'surface' | 'spawn';
+
+/** The ability the boss's timer leads to, or null if none is pending. */
+export function bossNextAbility(boss: Enemy): BossAbility | null {
+  const p = bossPhaseDef(boss);
+  if (p === null || boss.leaving || boss.abilityTicks <= 0) return null;
+  if (boss.burrowed) return 'surface';
+  if (boss.abilityCount > 0 && p.burrow !== null) return 'burrow';
+  return p.spawn !== null ? 'spawn' : null;
+}
+
+/** Whether the boss is telegraphing a dig or a sneeze this tick (a surfacing has no tell). */
+export function bossTelling(boss: Enemy): boolean {
+  const next = bossNextAbility(boss);
+  return (
+    (next === 'burrow' || next === 'spawn') &&
+    boss.invulnerableTicks === 0 &&
+    boss.abilityTicks <= BOSS_ABILITY_TELL_TICKS
+  );
+}
+
+/** One tick of a live boss that isn't leaving. */
+export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: CompiledBoss): void {
+  if (boss.bossPhase === 0) enterBossPhase(state, boss, def, 1, false);
+  const p = def.phases[boss.bossPhase - 1]!; // 1 ≤ bossPhase ≤ phases.length
+  if (p.hastePct > 0) boss.paceMul *= 1 + (p.hastePct < HASTE_CAP ? p.hastePct : HASTE_CAP);
+  if (boss.invulnerableTicks > 0) {
+    boss.invulnerableTicks--;
+    return;
+  }
+  if (boss.abilityTicks <= 0 || --boss.abilityTicks > 0) return;
+  if (boss.burrowed) {
+    boss.burrowed = false;
+    boss.abilityCount--;
+    const surface = p.burrow?.surfaceSpawn ?? null;
+    if (surface !== null) spawnBrood(state, ctx, surface.enemy, surface.count, boss);
+    boss.abilityTicks =
+      boss.abilityCount > 0 ? BOSS_BURROW_GAP_TICKS : p.spawn !== null ? p.spawn.everyTicks : 0;
+  } else if (boss.abilityCount > 0 && p.burrow !== null) {
+    boss.burrowed = true;
+    boss.abilityTicks = p.burrow.durationTicks;
+  } else if (p.spawn !== null) {
+    spawnBrood(state, ctx, p.spawn.enemy, p.spawn.count, boss);
+    boss.abilityTicks = p.spawn.everyTicks;
+  }
 }

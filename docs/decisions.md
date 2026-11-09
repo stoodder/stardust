@@ -921,3 +921,19 @@ A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields 
 - **Portraits:** Zibzab (the `vrell` palette, no human skin, eyestalks moving independently), Goldie, and Kip, each with the base contract. Prim is a comms screen with scanlines and Auditor-orange eyes, so it never reads as QUILL. Gerald is a 16×16 icon whose chime lamp turns gold when he "talks".
 - **Gallery:** portrait cards go two to a row, bringing the page to 27,829 px, and the gallery test's timeout is now 90 s (it ran 37 s under full parallel load).
 - Later-act variants are T318. Until they exist, dialogue falls back to the base frames.
+
+### D072 — 2026-11-09 — T304a air, Skyhook, Puffwing, and Gerald
+- **Air:** air lanes must end on the core (a compile error otherwise). Flyers move like ground units and leak 1. Each tower hits only the layers its tier targets, and its splash follows the same rule. Skyhook flak aims at an intercept point and bursts there; it doesn't home. Flak flies at 10 tiles/s (confirmed). Puffwings spawn 0.6 s apart, so a burst catches two or three.
+- **Gerald (doc fork settled):**
+  - **What he is:** an air unit that flies the *ground path*, shot only by towers that hit air (Rivet, Skyhook).
+  - **What counts as a hit:** only shots aimed at him. That plinks, emits `NeutralHit`, and counts `neutralHits`. Splash, pulses, and chain jumps pass him by, so Return to Sender measures the hold-fire choice, not bad luck.
+  - **At the end of the path:** he leaves with `NeutralExited`, with no leak and no Perfect Core cost. He still counts toward his wave's resolution.
+  - **Movement:** HP 100 and speed 1.2, so he runs ahead of the Nibblers and draws First-targeting fire.
+  - **Map validation:** he adds no trait or threat to a map.
+- **Seams:**
+  - The chain skips neutral units on jumps (T304b).
+  - Suppressing Fire skips air units (T304d).
+  - Allies skip neutral units (T304c).
+  - Render releases Gerald on `NeutralExited` (T312a).
+  - The harness holds fire from Gerald's spawn until `NeutralExited` (T313).
+- **Follow-up:** spec counter-answers should require *authored* specs. The `all_unlocked` dev save owns Skyhook's M4 specs, so loadout suggests "Skyhook (Seeker Swarm)" (T319).

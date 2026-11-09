@@ -2,11 +2,14 @@
 // documented order, plus a summary of what it paid for the results screen. Pure: it returns a new
 // save (the input is untouched) and never reads the clock; the app writes the result to its slot.
 import { FLAG_RULES, type FlagRule, type FlagSet } from '../content/dialogue/flags.ts';
+import type { CodexId } from '../content/codex/index.ts';
+import type { MemoId } from '../content/memos/index.ts';
 import type { MapId, MedalId, TowerId } from '../content/types.ts';
 import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
 import { withIssuedTowers } from './issued.ts';
 import { medalPayout, stardustPayout, type EarnedMedal, type StardustPayout } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
+import { enemiesMet, withStoryUnlocks } from './story.ts';
 import { clampCurrency } from './validate.ts';
 
 /** What a run end reads from the finished battle. */
@@ -49,6 +52,10 @@ export interface RunEndSummary {
   readonly flags: FlagSet;
   /** Towers this run's win issued (meta/issued.ts), in issue order; empty on most runs. */
   readonly issued: readonly TowerId[];
+  /** Memos this run delivered to the Inbox (step 8), in delivery order; usually the map's one. */
+  readonly memos: readonly MemoId[];
+  /** Codex entries with a version this run unlocked (step 8), in codex order. */
+  readonly codex: readonly CodexId[];
 }
 
 export interface RunEndResult {
@@ -125,10 +132,17 @@ export function runEnd(
     },
     stats: { pestsProcessed, runs: save.stats.runs + 1 },
   };
-  const next = withIssuedTowers(folded);
-  const issued = next.unlocks.towers.filter((t) => !folded.unlocks.towers.includes(t));
+  const withTowers = withIssuedTowers(folded);
+  const issued = withTowers.unlocks.towers.filter((t) => !folded.unlocks.towers.includes(t));
+  // 8. Story unlocks (meta/story.ts): the enemies this run met join the seen list, the memos now
+  //    due are delivered with their gifts, and the codex versions now unlocked are added. After
+  //    step 7, so an issued tower's entry unlocks with it.
+  const story = withStoryUnlocks(
+    withTowers,
+    enemiesMet(input.mapId, won, input.wavesResolved),
+  );
   return {
-    save: next,
+    save: story.save,
     summary: {
       outcome: input.outcome,
       wonBefore,
@@ -138,6 +152,8 @@ export function runEnd(
       pestsProcessed: { run: kills, lifetime: pestsProcessed },
       flags,
       issued,
+      memos: story.memos,
+      codex: story.codex,
     },
   };
 }

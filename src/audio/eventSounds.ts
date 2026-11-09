@@ -111,6 +111,7 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   LinkBroken: false,
   // M3's events (T300a): silent until their sounds land (T314: the plink, the boss, salvage).
   NeutralHit: false,
+  NeutralExited: false,
   BossPhase: false,
   BossEnded: false,
   WreckageCleared: false,
@@ -247,6 +248,7 @@ export function createEventSounds(act: Act): EventSounds {
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
         case 'NeutralHit':
+        case 'NeutralExited':
         case 'BossPhase':
         case 'BossEnded':
         case 'WreckageCleared':

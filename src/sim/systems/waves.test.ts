@@ -286,9 +286,12 @@ describe('createSim and map scripts', () => {
     );
     expect(() =>
       simWith({
-        events: [{ id: 'boss', on: { bossPhase: 2 }, actions: [{ cue: 'fx_map_boss' }] }],
+        events: [{ id: 'boss', on: { refugeesRemaining: 2 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger bossPhase is not simulated yet/);
+    ).toThrow(/'boss': trigger refugeesRemaining is not simulated yet/);
+    expect(() =>
+      simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),
+    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated yet/);
     const cond = {
       ...FIXTURE_CONTENT.maps.fx_map,
       events: [

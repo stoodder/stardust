@@ -16,7 +16,6 @@ import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './_
 import { armorReduces } from './combat/damage.ts';
 import { copyCommand, type Command } from './commands.ts';
 import { ENEMY_BLANK } from './entities.ts';
-import { enemyAbilities } from './enemyAbilities/index.ts';
 import { FEATURE_GATES, abilityRefusal, gateRefusals, towerRefusal } from './gates.ts';
 import type { SimConfig } from './config.ts';
 import { towers } from './systems/towers.ts';
@@ -77,6 +76,8 @@ describe('M3 state fields', () => {
     expect(state.stats).toMatchObject({ neutralHits: 0, wreckageCleared: 0, lateSells: 0 });
     expect(ENEMY_BLANK).toMatchObject({
       abilityTicks: 0,
+      abilityCount: 0,
+      paceMul: 1,
       burrowed: false,
       huddleUid: 0,
       bossPhase: 0,
@@ -102,14 +103,11 @@ describe('M3 state fields', () => {
 });
 
 describe('stub systems', () => {
-  it('wreckage and enemyAbilities change nothing yet (T304b, T304c)', () => {
+  it('wreckage changes nothing yet (T304b)', () => {
     const { state, ctx } = setup();
-    const digger = LIVE.enemies.digger;
-    const e = spawn(state, digger);
-    e.abilityTicks = 5;
+    spawn(state, LIVE.enemies.digger);
     const before = JSON.stringify(state);
     wreckage(state, ctx);
-    enemyAbilities(state, ctx);
     expect(JSON.stringify(state)).toBe(before);
   });
 });
@@ -144,14 +142,16 @@ describe('ProjectileHit.reduced (the plink)', () => {
 describe('FEATURE_GATES (T300a rows)', () => {
   it('names the lifting task for every M3 mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'attack.projectile': 'T304a',
+      'attack.projectile': null, // T304a
       'attack.chain': 'T304b',
-      'enemy.flying': 'T304a',
-      'enemy.neutral': 'T304a',
-      'enemy.burrow': 'T304c',
-      'enemy.split': 'T304c',
-      'enemy.huddle': 'T304c',
-      'enemy.boss': 'T304c',
+      'enemy.flying': null, // T304a
+      'enemy.neutral': null, // T304a
+      'enemy.burrow': null, // T304c
+      'enemy.split': null, // T304c
+      'enemy.huddle': null, // T304c
+      'enemy.boss': null, // T304c
+      'enemy.boss.pivot': 'M4',
+      'enemy.boss.layToRest': 'M4',
       'ability.slowAll': 'T304d',
       'ability.discount': 'T304d',
       'modifier.firstBuildFree': 'T304d',
@@ -164,23 +164,45 @@ describe('FEATURE_GATES (T300a rows)', () => {
 
   it("refuses a map whose waves use a new enemy mechanic, once each, naming the enemy's id", () => {
     const e = LIVE.enemies;
-    expect(refusedWith(e.puffwing)).toEqual(['flyers (puffwing) is not simulated until T304a']);
-    expect(refusedWith(e.gerald)).toEqual([
+    // T304a's rows are open: flyers and neutral units play (closed again here to show the use).
+    const t304a = { ...FEATURE_GATES, 'enemy.flying': 'T304a', 'enemy.neutral': 'T304a' } as const;
+    expect(refusedWith(e.puffwing)).toEqual([]);
+    expect(refusedWith(e.gerald)).toEqual([]);
+    expect(gateRefusals(fixtureConfig({ content: contentWith(e.puffwing) }), t304a)).toEqual([
+      'flyers (puffwing) is not simulated until T304a',
+    ]);
+    expect(gateRefusals(fixtureConfig({ content: contentWith(e.gerald) }), t304a)).toEqual([
       'flyers (gerald) is not simulated until T304a',
       'a neutral unit (gerald) is not simulated until T304a',
     ]);
-    expect(refusedWith(e.digger)).toEqual(['burrowing (digger) is not simulated until T304c']);
-    expect(refusedWith(e.bunchling)).toEqual([
-      'splitting (bunchling) is not simulated until T304c',
-    ]);
-    expect(refusedWith(e.elder)).toEqual(['a huddle (elder) is not simulated until T304c']);
-    expect(refusedWith(e.chitterbloom)).toEqual([
-      'a boss (chitterbloom) is not simulated until T304c',
-    ]);
+    // T304c's rows are open too (closed again here to show the use).
+    const t304c = {
+      ...FEATURE_GATES,
+      'enemy.burrow': 'T304c',
+      'enemy.split': 'T304c',
+      'enemy.huddle': 'T304c',
+      'enemy.boss': 'T304c',
+    } as const;
+    const closed = (def: CompiledEnemyDef): string[] =>
+      gateRefusals(fixtureConfig({ content: contentWith(def) }), t304c);
+    for (const id of ['digger', 'bunchling', 'elder', 'chitterbloom'] as const) {
+      expect(refusedWith(e[id]), id).toEqual([]);
+    }
+    expect(closed(e.digger)).toEqual(['burrowing (digger) is not simulated until T304c']);
+    expect(closed(e.bunchling)).toEqual(['splitting (bunchling) is not simulated until T304c']);
+    expect(closed(e.elder)).toEqual(['a huddle (elder) is not simulated until T304c']);
+    expect(closed(e.chitterbloom)).toEqual(['a boss (chitterbloom) is not simulated until T304c']);
+    // Boss endings Act I doesn't use stay refused.
+    for (const ending of ['pivot', 'layToRest'] as const) {
+      const boss = { ...e.chitterbloom.boss!, ending };
+      expect(refusedWith({ ...e.chitterbloom, boss })).toEqual([
+        `a boss ending '${ending}' (chitterbloom) is not simulated until M4`,
+      ]);
+    }
     // A ground unit on an air lane is a flyer too.
     const air = { ...MAP.routes.a!, kind: 'air' as const, layer: 'air' as const };
     const content = contentWithGroups({ route: air });
-    expect(gateRefusals(fixtureConfig({ content }))[0]).toMatch(/^flyers \(fx_walker\)/);
+    expect(gateRefusals(fixtureConfig({ content }), t304a)[0]).toMatch(/^flyers \(fx_walker\)/);
     // Lifted per row.
     const lifted = { ...FEATURE_GATES, 'enemy.flying': null };
     expect(gateRefusals(fixtureConfig({ content: contentWith(e.puffwing) }), lifted)).toEqual([]);
@@ -220,7 +242,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
 
   it('towerRefusal and abilityRefusal judge one raw or compiled definition (meta pools)', () => {
     expect(towerRefusal(RAW_CONTENT.towers.rivet)).toBeNull();
-    expect(towerRefusal(RAW_CONTENT.towers.skyhook)).toMatch(/'projectile' attack .* T304a$/);
+    expect(towerRefusal(RAW_CONTENT.towers.skyhook)).toBeNull(); // T304a
+    expect(
+      towerRefusal(RAW_CONTENT.towers.skyhook, { ...FEATURE_GATES, 'attack.projectile': 'T304a' }),
+    ).toMatch(/'projectile' attack .* T304a$/);
     expect(towerRefusal(LIVE.towers.zapcoil)).toMatch(/'chain' attack .* T304b$/);
     expect(
       towerRefusal(RAW_CONTENT.towers.zapcoil, { ...FEATURE_GATES, 'attack.chain': null }),

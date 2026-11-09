@@ -38,8 +38,9 @@ describe('icon sprites (art-direction §5)', () => {
 
   it('gives every tower and enemy sprite a matching icon', () => {
     const ids = new Set<string>(SPRITES.map((s) => s.id));
-    // Render-only actors never appear in a wave preview or the build bar.
-    const renderOnly = new Set(['enemy.hauler_young']);
+    // Render-only actors never appear in a wave preview or the build bar. A youngling is a
+    // Nibbler with the `youngling` wave modifier drawn small, so its preview is the Nibbler's.
+    const renderOnly = new Set(['enemy.hauler_young', 'enemy.youngling']);
     for (const s of SPRITES) {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
       if (m === null || s.id.endsWith('_head') || renderOnly.has(s.id)) continue;

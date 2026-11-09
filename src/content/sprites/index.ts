@@ -4,6 +4,12 @@ import { enemyBroodHauler } from './enemies/brood_hauler.ts';
 import { enemyChonk } from './enemies/chonk.ts';
 import { enemyHaulerYoung } from './enemies/hauler_young.ts';
 import { enemyNibbler } from './enemies/nibbler.ts';
+import { enemyPuffwing } from './enemies/puffwing.ts';
+import { enemyBunchling } from './enemies/bunchling.ts';
+import { enemyDigger } from './enemies/digger.ts';
+import { enemyElder } from './enemies/elder.ts';
+import { enemyGerald } from './enemies/gerald.ts';
+import { enemyYoungling } from './enemies/youngling.ts';
 import { enemyZoomer } from './enemies/zoomer.ts';
 import { fxBombletBurst } from './fx/bomblet_burst.ts';
 import { fxExplosion } from './fx/explosion.ts';
@@ -20,18 +26,33 @@ import {
   iconCredits,
   iconLock,
   iconTellArmored,
+  iconTellBoss,
+  iconTellBurrower,
   iconTellCarrier,
   iconTellFast,
+  iconTellFlying,
+  iconTellHuddle,
+  iconTellSplitter,
 } from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
+import { iconEnemyBunchling } from './icons/bunchling.ts';
+import { iconEnemyDigger } from './icons/digger.ts';
+import { iconEnemyElder } from './icons/elder.ts';
+import { iconEnemyGerald } from './icons/gerald.ts';
+import { iconEnemyPuffwing } from './icons/puffwing.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
 import { iconAbilitySuppressingFire } from './icons/suppressing_fire.ts';
 import { iconTowerSprinkler } from './icons/sprinkler.ts';
 import { iconTowerThumper } from './icons/thumper.ts';
+import { iconTowerSkyhook } from './icons/skyhook.ts';
+import { iconAbilityClearanceSale } from './icons/clearance_sale.ts';
+import { iconAbilityTimeDilation } from './icons/time_dilation.ts';
+import { iconTowerZapcoil } from './icons/zapcoil.ts';
 import { iconEnemyZoomer } from './icons/zoomer.ts';
 import { projectileRivetTracer } from './projectiles/rivet_tracer.ts';
 import { projectileThumperBomblet } from './projectiles/thumper_bomblet.ts';
 import { projectileThumperShell } from './projectiles/thumper_shell.ts';
+import { projectileSkyhookFlak } from './projectiles/skyhook_flak.ts';
 import { propBillboard } from './props/billboard.ts';
 import { propCore } from './props/core.ts';
 import { propDome } from './props/dome.ts';
@@ -53,31 +74,10 @@ import { tileVerge } from './tiles/verge.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
-// M3 placeholders (T300a), under their final ids; T311a/T311b replace the art behind them.
-import { iconAbilityClearanceSale, iconAbilityTimeDilation } from './placeholders/abilities.ts';
-import {
-  enemyBunchling,
-  enemyChitterbloom,
-  enemyDigger,
-  enemyElder,
-  enemyGerald,
-  enemyPuffwing,
-  iconEnemyBunchling,
-  iconEnemyChitterbloom,
-  iconEnemyDigger,
-  iconEnemyElder,
-  iconEnemyGerald,
-  iconEnemyPuffwing,
-} from './placeholders/enemies.ts';
-import {
-  iconTowerSkyhook,
-  iconTowerZapcoil,
-  projectileSkyhookFlak,
-  towerSkyhook,
-  towerSkyhookHead,
-  towerZapcoil,
-  towerZapcoilHead,
-} from './placeholders/towers.ts';
+import { towerSkyhook, towerSkyhookHead } from './towers/skyhook.ts';
+import { towerZapcoil, towerZapcoilHead } from './towers/zapcoil.ts';
+// M3 placeholder (T300a), under its final id; T311b replaces the art behind it.
+import { enemyChitterbloom, iconEnemyChitterbloom } from './placeholders/enemies.ts';
 import { portraitBricks } from './portraits/bricks.ts';
 import { portraitGerald } from './portraits/gerald.ts';
 import { portraitGoldie } from './portraits/goldie.ts';
@@ -122,6 +122,7 @@ export const SPRITES = [
   enemyChonk,
   enemyBroodHauler,
   enemyHaulerYoung,
+  enemyYoungling,
   enemyPuffwing,
   enemyBunchling,
   enemyDigger,
@@ -165,6 +166,11 @@ export const SPRITES = [
   iconTellFast,
   iconTellArmored,
   iconTellCarrier,
+  iconTellFlying,
+  iconTellBurrower,
+  iconTellSplitter,
+  iconTellHuddle,
+  iconTellBoss,
   portraitPlayer,
   portraitBricks,
   portraitQuill,

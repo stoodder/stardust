@@ -13,6 +13,7 @@ import type { MemoId } from '../content/memos/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import type { DifficultyId } from '../sim/index.ts';
+import { deliverMemos } from './story.ts';
 import type {
   AbilityId,
   EnemyId,
@@ -174,13 +175,22 @@ export const LIVE_KNOWN_IDS: KnownIds = {
 /** Towers issued before A1M1 (campaign.md § 4.1). */
 export const STARTING_TOWERS: readonly TowerId[] = ['rivet', 'thumper'];
 /**
- * Abilities a new save owns. Orbital Strike is Sterling's welcome-memo gift; until the memo exists
- * (T302) a new save grants it directly (D031).
+ * Abilities a new save owns before its memos arrive: none. Orbital Strike is the gift of Sterling's
+ * welcome memo (`memo_a1_00`), which `createNewSave` delivers (T303 retired D031's direct grant).
  */
-export const STARTING_ABILITIES: readonly AbilityId[] = ['orbital_strike'];
+export const STARTING_ABILITIES: readonly AbilityId[] = [];
 
-/** The state of a brand-new campaign. Returns a fresh object every call. */
+/**
+ * The state of a brand-new campaign, with the memos due before A1M1 delivered (the welcome memo
+ * and its gift, the Orbital Strike uplink; meta/story.ts). Its codex fills in at the first run end
+ * or base visit. Returns a fresh object every call.
+ */
 export function createNewSave(): SaveData {
+  return deliverMemos(blankSave()).save;
+}
+
+/** A campaign before anything is delivered: the issued towers and empty records. */
+function blankSave(): SaveData {
   return {
     profile: null,
     campaign: { maps: {}, seenEnemies: [] },

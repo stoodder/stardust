@@ -56,6 +56,9 @@ export type Feature =
   | 'enemy.huddle'
   /** A boss in the waves: its phases, its ending, and the boss-leak rule. */
   | 'enemy.boss'
+  /** A boss whose ending isn't `driveOff` or `retreat` (Act II–III's `pivot`, the finale's). */
+  | 'enemy.boss.pivot'
+  | 'enemy.boss.layToRest'
   /** Optional objectives (Objective Intel). */
   | 'map.objectives'
   | 'modifier.towerStat'
@@ -85,10 +88,10 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   abilitySlot2: null,
   specs: null,
   storyDifficulty: null,
-  // Skyhook's flak (a projectile with a burst) and Zapcoil's chain are M3's (D064); beams,
+  // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain are M3's (D064); beams,
   // spawners, Pin, Stasis, and Unnerved arrive with their Act II towers and specs (Prism, Burrow,
   // Harpoon, Flash Freeze, Mindspike; the M3 cut defers the Sprinkler, Skyhook, and Zapcoil specs).
-  'attack.projectile': 'T304a',
+  'attack.projectile': null,
   'attack.beam': 'M4',
   'attack.chain': 'T304b',
   'attack.spawner': 'M4',
@@ -114,12 +117,14 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.freeCast': 'T304d',
   'ability.slowAll': 'T304d',
   'ability.discount': 'T304d',
-  'enemy.flying': 'T304a',
-  'enemy.neutral': 'T304a',
-  'enemy.burrow': 'T304c',
-  'enemy.split': 'T304c',
-  'enemy.huddle': 'T304c',
-  'enemy.boss': 'T304c',
+  'enemy.flying': null,
+  'enemy.neutral': null,
+  'enemy.burrow': null,
+  'enemy.split': null,
+  'enemy.huddle': null,
+  'enemy.boss': null,
+  'enemy.boss.pivot': 'M4',
+  'enemy.boss.layToRest': 'M4',
   'map.objectives': 'T304f',
 });
 
@@ -183,7 +188,13 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
   if (def.burrow !== null) use('enemy.burrow', `burrowing (${id})`);
   if (def.split !== null) use('enemy.split', `splitting (${id})`);
   if (def.huddle !== null) use('enemy.huddle', `a huddle (${id})`);
-  if (def.boss !== null) use('enemy.boss', `a boss (${id})`);
+  if (def.boss !== null) {
+    use('enemy.boss', `a boss (${id})`);
+    const how = def.boss.ending;
+    if (how === 'pivot' || how === 'layToRest') {
+      use(`enemy.boss.${how}`, `a boss ending '${how}' (${id})`);
+    }
+  }
 }
 
 /** The features a map needs from its waves and layout (T300a). */

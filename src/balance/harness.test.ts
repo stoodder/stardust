@@ -141,24 +141,25 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    const ref = PLAIN_CONTENT.maps.fx_map.builds.referenceProfile;
-    const bought: CompiledContent<FixtureIds> = {
+    const objective = {
+      id: 'clean_audit',
+      name: 'Clean Audit',
+      description: 'x',
+      condition: { stat: 'lateSells', lte: 0 } as const,
+      intel: 1,
+      onComplete: [],
+    };
+    const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
       maps: {
-        fx_map: {
-          ...PLAIN_CONTENT.maps.fx_map,
-          builds: {
-            ...PLAIN_CONTENT.maps.fx_map.builds,
-            // fx_mortar's spec A fires a straight projectile, which the sim refuses until M3.
-            referenceProfile: { ...ref, specs: ['fx_mortar' as const] },
-          },
-        },
+        // Optional objectives, which the sim refuses until T304f.
+        fx_map: { ...PLAIN_CONTENT.maps.fx_map, objectives: [objective] },
       },
     };
-    const r = runMap(bought, 'fx_map', { seeds: 1, build: 'par' });
+    const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*'projectile' attack.*\(fx_mortar\) is not simulated until T304a/,
+      /seed 1: error: [^]*optional objectives \(clean_audit\) is not simulated until T304f/,
     );
   });
 

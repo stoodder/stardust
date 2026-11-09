@@ -176,6 +176,17 @@ describe('Act I value bands (art-direction §1)', () => {
       ['tower.thumper', 'spec_a'],
       ['tower.thumper', 'spec_b'],
       ['tower.sprinkler', 't1'],
+      ['tower.skyhook', 't1'],
+      ['tower.zapcoil', 't1'],
+      ['tower.zapcoil', 't3'],
+      ['enemy.puffwing', 'walk_se_1'],
+      ['enemy.bunchling', 'walk_se_0'],
+      ['enemy.digger', 'walk_se_0'],
+      ['enemy.digger', 'dig_se_0'],
+      ['enemy.elder', 'walk_se_0'],
+      ['enemy.elder', 'walk_ne_0'],
+      ['enemy.youngling', 'walk_se_0'],
+      ['enemy.gerald', 'walk_se_0'],
     ];
     for (const [id, frame] of actors) {
       const d = sprite(id);

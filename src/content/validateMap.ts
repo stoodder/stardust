@@ -16,7 +16,8 @@
 // - [wave]: a map has at least one wave; every wave has groups; counts and intervals are
 //   positive; wave 1 has no countdown.
 // - [route-walk]: every group can walk its route (flyers on air lanes, ground units on paths or
-//   rift lanes; rift lanes carry only the Hollow, from the wave they open).
+//   rift lanes; a neutral flyer, Gerald, may fly a path; rift lanes carry only the Hollow, from
+//   the wave they open).
 // - [wave-tag]: no duplicate tags; `fleeing`, `youngling`, and `quiet_wave` only on Skitterkin.
 // - [threat-intel]: `threatIntel` is exactly the set of traits in the waves.
 // - [required-counters]: at most 3, no duplicates, each with a `noCounterBuilds` entry.

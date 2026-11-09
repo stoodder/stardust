@@ -143,8 +143,21 @@ export type SimEvent<K extends IdSpace = LiveIds> =
     }
   | {
       /**
+       * A neutral unit reached the end of its route (Gerald delivered the mail) and left the map:
+       * never a leak, so no integrity, tag, or Perfect Core cost (T304a). Render releases its view
+       * here. Position in tiles.
+       */
+      readonly type: 'NeutralExited';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
        * A boss entered phase `phase` (1-based; design/enemies.md § 6): the phase marker on its bar,
-       * the telegraph, and the `bossPhase` script trigger and bark (T304c).
+       * the telegraph, and the `bossPhase` script trigger and bark. Phase 1 fires as it spawns;
+       * each later one comes with `Enemy.invulnerableTicks` of invulnerability (T304c).
        */
       readonly type: 'BossPhase';
       readonly uid: number;
@@ -154,7 +167,9 @@ export type SimEvent<K extends IdSpace = LiveIds> =
   | {
       /**
        * A boss fight ended without a death (enemies.md § 6.1): `driveOff` (Chitterbloom at 0%),
-       * `retreat`, `pivot`, or `layToRest`. Never a leak, never a kill (T304c).
+       * `retreat`, `pivot`, or `layToRest`. Never a leak, never a kill. Emitted as the ending starts:
+       * the boss (and, for `driveOff`, its wave's other units) is then `Enemy.leaving` and is off
+       * the map within BOSS_LEAVE_MAX_SEC, with no further event (T304c).
        */
       readonly type: 'BossEnded';
       readonly uid: number;

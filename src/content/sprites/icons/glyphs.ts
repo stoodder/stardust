@@ -126,3 +126,110 @@ export const iconTellArmored = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconTellFlying = defineSprite({
+  id: 'icon.tell.flying',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `flying` tell (art-direction §8): a wing caret ^ over a dotted air lane, `white.0`.
+  legend: { C: 'steel.4', D: 'white.0' },
+  frames: {
+    icon: [
+      '..DD..',
+      '.DCCD.',
+      'DC..CD',
+      'C....C',
+      '......',
+      'D.D.D.',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellBurrower = defineSprite({
+  id: 'icon.tell.burrower',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `burrower` tell (art-direction §8): a down arrow into a line (the ground), `grime.3` lit to
+  // `grime.4`.
+  legend: { B: 'grime.2', C: 'grime.3', D: 'grime.4' },
+  frames: {
+    icon: [
+      '..DC..',
+      'DDDCCB',
+      '.DDCB.',
+      '..DB..',
+      '......',
+      'CCCCCB',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellSplitter = defineSprite({
+  id: 'icon.tell.splitter',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `splitter` tell (art-direction §8): three dots ∴, `pink.3` lit to `pink.4`.
+  legend: { B: 'pink.2', C: 'pink.3', D: 'pink.4' },
+  frames: {
+    icon: [
+      '..DC..',
+      '..CB..',
+      '......',
+      '......',
+      'DC..DC',
+      'CB..CB',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellHuddle = defineSprite({
+  id: 'icon.tell.huddle',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `huddle` tell (art-direction §8): three circles pressed together over the soft ring under the
+  // group, `gold.4` over `gold.3`.
+  legend: { B: 'gold.2', C: 'gold.3', D: 'gold.4' },
+  frames: {
+    icon: [
+      '......',
+      'DCDCDC',
+      'CBCBCB',
+      '......',
+      'C....C',
+      '.CCCC.',
+    ],
+  },
+});
+
+// prettier-ignore
+export const iconTellBoss = defineSprite({
+  id: 'icon.tell.boss',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `boss` tell (art-direction §8): a crown, `gold.4` lit over `gold.3`, a pink jewel.
+  legend: { B: 'gold.2', C: 'gold.3', D: 'gold.4', P: 'pink.3' },
+  frames: {
+    icon: [
+      'D..D..',
+      'D.DD.D',
+      'DDCCDC',
+      'DCPCCC',
+      'CCCCCB',
+      'BBBBBB',
+    ],
+  },
+});

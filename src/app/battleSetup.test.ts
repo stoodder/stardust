@@ -98,7 +98,7 @@ describe('battleSetup from a save', () => {
     // No choice left (one ability): the skip rule brings everything owned, preset or not.
     save.unlocks.revokedAbilities = ['suppressing_fire'];
     const skipped = battleConfig(DEFAULT_MAP_ID, 1, save);
-    expect(skipped.loadout).toEqual(['rivet', 'thumper', 'sprinkler']);
+    expect(skipped.loadout).toEqual(['rivet', 'thumper', 'sprinkler', 'skyhook']);
     expect(skipped.abilities.slot1).toBe('orbital_strike');
   });
 
@@ -106,7 +106,7 @@ describe('battleSetup from a save', () => {
     const save = DEV_SAVES.all_unlocked.build();
     const par = { loadout: ['thumper', 'rivet'], technicianAbility: 'orbital_strike' };
     expect(defaultPick(save, par)).toEqual({
-      towers: ['rivet', 'thumper', 'sprinkler'],
+      towers: ['rivet', 'thumper', 'sprinkler', 'skyhook'],
       ability: 'orbital_strike',
     });
     expect(defaultPick(save, { loadout: [], technicianAbility: 'nope' }).ability).toBe(

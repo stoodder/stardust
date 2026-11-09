@@ -48,8 +48,8 @@ describe('pointAt', () => {
 
   it('interpolates along a diagonal air lane by distance', () => {
     const p = { x: 0, y: 0 };
-    pointAt(sky, 2.5, p); // (0.5,0.5) → (3.5,4.5) is a 3-4-5 triangle
-    expect(p.x).toBeCloseTo(2, 12);
+    pointAt(sky, 2.5, p); // (2.5,0.5) → (5.5,4.5) is a 3-4-5 triangle
+    expect(p.x).toBeCloseTo(4, 12);
     expect(p.y).toBeCloseTo(2.5, 12);
   });
 

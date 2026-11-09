@@ -53,7 +53,12 @@ export function validateWaves(
       const enemy = ctx.enemies.get(group.enemy);
       const route = routes.get(group.route);
       if (enemy !== undefined && route !== undefined) {
-        if ((enemy.layer === 'air') !== (route.kind === 'air')) {
+        // Flyers take air lanes and ground units ground routes; a neutral flyer (Gerald, core-loop
+        // § 2.7) may also fly a ground path (T304a).
+        const air = enemy.layer === 'air';
+        const walks =
+          route.kind === 'air' ? air : !air || (enemy.neutral === true && route.kind === 'path');
+        if (!walks) {
           issues.add(
             'route-walk',
             gw,

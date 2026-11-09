@@ -1,11 +1,8 @@
-// Placeholder builders (T300a): simple shapes that stand in for M3's new actors so content can
-// name its final sprite ids before the art lands. T311a and T311b replace the art behind the
-// same ids (sprites/index.ts imports each placeholder by its final export name), and these files
-// go away with the last of them. Each placeholder still follows the sprite contract: walk anims
-// in four facings for enemies, t1–t3 frames and a mount for tower bases, aiming heads with fire
-// anims, and one 14×14 `icon` frame (outlined to 16×16) for icons.
+// Placeholder builders (T300a): simple shapes that stand in for an M3 actor so content can name its
+// final sprite id before the art lands. Only Chitterbloom is left (T311b replaces it, and these
+// files go away with it). A placeholder still follows the sprite contract: walk anims in four
+// facings, and one 14×14 `icon` frame (outlined to 16×16) for its icon.
 import { finish, skitterBody } from '../enemies/skitter.ts';
-import { disc, grid, line, plot, rows, type CharGrid } from '../helpers.ts';
 import type { AnimDef, FrameDef } from '../types.ts';
 
 /** A feature stamp: `[x, y, rows]`, `.` skipped (enemies/skitter.ts `finish`). */
@@ -68,61 +65,3 @@ export function blobWalk(s: BlobSpec): {
     },
   };
 }
-
-/** Fills a w×h rectangle. */
-export function box(g: CharGrid, x: number, y: number, w: number, h: number, ch: string): void {
-  for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) plot(g, xx, yy, ch);
-}
-
-/** A lit ball: `lit` in the upper left, `mid`, then `dark` at the rim. */
-export function ball(
-  g: CharGrid,
-  cx: number,
-  cy: number,
-  r: number,
-  lit: string,
-  mid: string,
-  dark: string,
-): void {
-  disc(g, cx, cy, r, (d, x, y) => (d > r - 1 ? dark : x + 0.5 < cx && y + 0.5 < cy ? lit : mid));
-}
-
-/** Head frame size and anchor shared by the placeholder turret heads. */
-export const HEAD_W = 18;
-export const HEAD_H = 16;
-export const HEAD_ANCHOR = { x: 9, y: 14 } as const;
-
-/**
- * A placeholder turret head facing `facing`: a squat housing (`housing`) with `barrels` drawn on
- * it by the caller, and a white muzzle flash when `fire`.
- */
-export function headFrame(
-  facing: 'se' | 'ne',
-  fire: boolean,
-  draw: (g: CharGrid, dir: 1 | -1) => readonly (readonly [number, number])[],
-): string[] {
-  const g = grid(HEAD_W, HEAD_H);
-  // The housing: a lit dome on a dark collar.
-  box(g, 4, 11, 10, 3, '1');
-  box(g, 4, 11, 10, 1, '2');
-  ball(g, 9, 10, 4.5, '4', '3', '2');
-  const muzzles = draw(g, facing === 'se' ? 1 : -1);
-  if (fire) {
-    for (const [x, y] of muzzles) {
-      plot(g, x, y, 'w');
-      plot(g, x + 1, y, 'e');
-      plot(g, x, y - 1, 'e');
-    }
-  }
-  return rows(g);
-}
-
-/** Aiming-head anims: fire in four facings, SE and NE authored. */
-export const HEAD_ANIMS: Readonly<Record<string, AnimDef>> = {
-  fire_se: { frames: ['se_fire', 'se'], fps: 12, loop: false },
-  fire_sw: { mirrorOf: 'fire_se' },
-  fire_ne: { frames: ['ne_fire', 'ne'], fps: 12, loop: false },
-  fire_nw: { mirrorOf: 'fire_ne' },
-};
-
-export { line };

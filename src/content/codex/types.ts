@@ -3,7 +3,7 @@
 // condition. Which versions a save has unlocked is `story.codex` (meta/saveData.ts); the logic is
 // story/codex.ts (T303).
 import type { Condition } from '../dialogue/types.ts';
-import type { AbilityId, EnemyId, TowerId } from '../types.ts';
+import type { AbilityId, EnemyId, SpriteId, TowerId } from '../types.ts';
 
 /** A codex entry id: `codex_<entry>` (style-guide § 5.3). */
 export type CodexId = string;
@@ -27,8 +27,20 @@ export type CodexSubject =
 export interface CodexVersionDef {
   /** ≤ 600 characters after substitution. Original: smug PR; annotated: bracketed and signed. */
   readonly text: string;
+  /**
+   * ≤ 140 characters; collapsed until clicked, like a memo's. Sterling's gifts carry theirs here
+   * (bible.md § 5: "every gift carries small print in the codex").
+   */
+  readonly smallPrint?: string;
   /** When this version unlocks (besides the subject's first encounter, for `original`). */
   readonly when?: Condition;
+}
+
+/** The picture an entry shows when it has no subject (a subject shows its own icon). */
+export interface CodexSprite {
+  readonly id: SpriteId;
+  /** The frame to show; default `icon` (a portrait's `neutral`, a prop's `v0`). */
+  readonly frame?: string;
 }
 
 export interface CodexEntryDef {
@@ -36,5 +48,6 @@ export interface CodexEntryDef {
   readonly title: string;
   readonly kind: CodexKind;
   readonly subject?: CodexSubject;
+  readonly sprite?: CodexSprite;
   readonly versions: { readonly [V in CodexVersion]?: CodexVersionDef };
 }

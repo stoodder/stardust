@@ -3,17 +3,24 @@
 // tick could still see and name what died), resolves waves, and decides the map
 // (design/core-loop.md § 2.1):
 // - Defeat the instant core integrity hits 0. It wins over a victory on the same tick.
-// - A wave resolves when every enemy in it has died or leaked; its clear bonus (§ 2.3) pays then,
-//   leaks or not. Waves overlap, so they can resolve out of order; one tick resolves in wave order.
+// - A killed splitter releases its children here, before resolution, into its wave
+//   (enemyAbilities/split.ts), so a wave isn't cleared while the Bunchling's Nibblers run.
+// - A wave resolves when every enemy in it has died, leaked, or left (a driven-off boss and her
+//   brood); its clear bonus (§ 2.3) pays then, leaks or not, tripled for a boss wave
+//   (waveClearBonusFor). Waves overlap, so they can resolve out of order; one tick resolves in
+//   wave order.
 // - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
 //   everything before it) with integrity above 0.
 // It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
 // conditions latch (sim/conditions.ts) while this tick's dead are still in their pools, a
 // Challenge that can no longer hold is forfeited, and a loss or win settles every medal just
 // before MapLost or MapWon.
-import { waveClearBonus } from '../../content/rules.ts';
+import type { CompiledWave } from '../../content/compiled.ts';
+import { waveClearBonusFor } from '../../content/rules.ts';
+import type { IdSpace } from '../../content/types.ts';
 import { trackConditions } from '../conditions.ts';
 import { earn } from '../economy.ts';
+import { splitOnDeath } from '../enemyAbilities/split.ts';
 import { bookLeak, leakedThisTick, settleLoss, settleWin, watchChallenge } from '../medals.ts';
 import { poolReleaseDead } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
@@ -37,6 +44,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     if (e.alive || e.uid === 0) continue;
     if (e.wave > 0) remaining[e.wave - 1]!--; // wave ≤ waves.length
     if (leakedThisTick(e)) bookLeak(state, e);
+    else if (e.def !== null && e.def.split !== null) splitOnDeath(state, ctx, e, e.def.split);
   }
   trackConditions(state, ctx.map);
   poolReleaseDead(towers);
@@ -61,7 +69,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
       continue;
     }
     s.resolved[w] = true;
-    const bonus = waveClearBonus(w + 1);
+    const bonus = waveClearBonusFor(w + 1, isBossWave(ctx.map.waves[w]!)); // w < waves.length
     earn(state, bonus);
     emit(state, { type: 'WaveCleared', wave: w + 1, bonus });
   }
@@ -70,4 +78,13 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     settleWin(state, ctx.map, ctx);
     emit(state, { type: 'MapWon' });
   }
+}
+
+/** Whether a wave sends a boss (its clear bonus is tripled; enemies.md § 6). */
+export function isBossWave(wave: CompiledWave<IdSpace>): boolean {
+  const groups = wave.groups;
+  for (let i = 0; i < groups.length; i++) {
+    if (groups[i]!.enemy.boss !== null) return true; // i < length
+  }
+  return false;
 }

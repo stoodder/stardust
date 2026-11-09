@@ -16,7 +16,7 @@
 // - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
 //   (never themselves), with sane numbers: a boss's phases start at full HP and fall, it ends at
 //   or below its last phase, and it pays no bounty; a neutral unit (Gerald) leaks and pays 0 and
-//   has no trait but flying. TODO(T304c): boss tells ≥ BOSS_MIN_TELL_SEC once boss abilities carry tells.
+//   has no trait but flying. (Boss ability tells are a rule, BOSS_ABILITY_TELL_SEC, not data.)
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.

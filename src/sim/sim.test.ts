@@ -76,10 +76,6 @@ describe('createSim', () => {
     expect(bad({ modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] })).toMatch(
       /'freeCast' modifier \(test\) is not simulated until T304d/,
     );
-    // T121: fx_mortar's spec A fires a straight projectile, which the towers system doesn't run.
-    expect(bad({ specsUnlocked: ['fx_mortar'] })).toMatch(
-      /a 'projectile' attack \(fx_mortar\) is not simulated until T304a/,
-    );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
     expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);

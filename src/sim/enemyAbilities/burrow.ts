@@ -1,18 +1,41 @@
-// Burrowing (design/enemies.md § 3, § 5.1; the `burrower` tell): every `everyTicks` the unit
-// sprays dirt for `tellTicks`, then digs in for `durationTicks` at `speedMul`, untargetable but for
-// the burrowed answers (Scuttle Den, Underfoot; § 2.6), and surfaces. Stasis or Unnerved block the
-// dig (the interrupt rule, § 2.4). State: `Enemy.burrowed`, `Enemy.abilityTicks`.
+// Burrowing (design/enemies.md § 3, § 5.1; the `burrower` tell). The Digger's cycle, a state
+// machine on `Enemy.burrowed` and `Enemy.abilityTicks`:
+// - Surface: it walks for `everyTicks − durationTicks` (so it digs in once every `everyTicks`: the
+//   Digger's "every 6 s, for 2 s" is 4 s up, 2 s down). The last `tellTicks` of it are the tell
+//   (the 0.8 s dirt spray; `burrowTelling`).
+// - Underground for `durationTicks` at `speedMul` (`Enemy.paceMul`): untargetable, and no hit,
+//   splash, or status reaches it (layers.ts) but the burrowed answers (Scuttle Den, Underfoot;
+//   § 2.6), none of which is in Act I. It keeps following its route, and leaks normally.
+// - Then it surfaces and the cycle restarts. A fresh spawn starts at the top of a surface stretch.
+// The interrupt (Stasis or Unnerved block the dig, § 2.4) and Truthlight arrive with those
+// statuses (M4 gates: `status.stasis`, `status.unnerved`).
 import type { CompiledBurrow } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import type { SimState } from '../state.ts';
-import type { TickContext } from '../tick.ts';
 
-/** One tick of a burrower's cycle. TODO(T304c): the tell, the dig, and the surfacing. */
-export function burrowStep(
-  _state: SimState,
-  _ctx: TickContext,
-  _e: Enemy,
-  _burrow: CompiledBurrow,
-): void {
-  // TODO(T304c)
+/** Ticks a burrower spends on the surface between digs (at least its tell, and 1). */
+export function surfaceTicks(burrow: CompiledBurrow): number {
+  const up = burrow.everyTicks - burrow.durationTicks;
+  const min = burrow.tellTicks + 1;
+  return up > min ? up : min;
+}
+
+/** One tick of a burrower's cycle: count down, dig in, or surface; underground, its pace. */
+export function burrowStep(e: Enemy, burrow: CompiledBurrow): void {
+  if (e.burrowed) {
+    if (--e.abilityTicks <= 0) {
+      e.burrowed = false;
+      e.abilityTicks = surfaceTicks(burrow);
+    }
+  } else if (e.abilityTicks <= 0) {
+    e.abilityTicks = surfaceTicks(burrow); // first tick alive
+  } else if (--e.abilityTicks <= 0) {
+    e.burrowed = true;
+    e.abilityTicks = burrow.durationTicks;
+  }
+  if (e.burrowed) e.paceMul *= burrow.speedMul;
+}
+
+/** Whether a burrower is showing its dig tell (the dirt spray) this tick: render reads it. */
+export function burrowTelling(e: Enemy, burrow: CompiledBurrow): boolean {
+  return !e.burrowed && e.abilityTicks > 0 && e.abilityTicks <= burrow.tellTicks;
 }

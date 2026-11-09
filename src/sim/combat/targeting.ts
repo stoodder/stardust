@@ -8,6 +8,7 @@
 import type { CompiledAttack } from '../../content/compiled.ts';
 import type { TargetPriority } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
+import { untargetable } from '../enemyAbilities/layers.ts';
 import { isSpared } from '../fireControl.ts';
 import type { Pool } from '../pool.ts';
 
@@ -21,11 +22,13 @@ export interface TargetLayers {
 export type RangeSpec = Pick<CompiledAttack, 'rangeSq' | 'minRangeSq'>;
 
 /**
- * Whether a tower that hits `layers` may touch `e` at all: alive and in a layer it hits. (Cloak,
- * burrow, and phase arrive with their enemies; M1 has none.)
+ * Whether a tower that hits `layers` may touch `e` at all: alive, not burrowed or leaving
+ * (enemyAbilities/layers.ts), and in a layer it hits (design/enemies.md §2.6: a flyer is air, so a
+ * ground-only tower never sees it). A neutral unit (Gerald) is targeted like any enemy; what a hit
+ * on it does is combat/neutral.ts's. (Cloak and phase arrive with their enemies.)
  */
 export function canHit(e: Enemy, layers: TargetLayers): boolean {
-  if (!e.alive || e.def === null) return false;
+  if (!e.alive || e.def === null || untargetable(e)) return false;
   return e.def.layer === 'air' ? layers.air : layers.ground;
 }
 

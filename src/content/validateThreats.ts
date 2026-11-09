@@ -57,9 +57,20 @@ function isSoft(e: EnemyDef, required: readonly CounterId[]): boolean {
   return cats.length > 0 && !cats.some((c) => required.includes(c));
 }
 
+/**
+ * A unit that threatens nothing: a neutral unit (Gerald, core-loop § 2.7) is not part of the
+ * roster, so it brings no trait, threat, or novelty to a map (T304a).
+ */
+function isNeutralId(ctx: MapCtx, id: string): boolean {
+  return ctx.enemies.get(id)?.neutral === true;
+}
+
 function traitsOf(ctx: MapCtx, groups: readonly WaveGroup<IdSpace>[]): Set<Trait> {
   const out = new Set<Trait>();
-  for (const g of groups) for (const t of ctx.enemies.get(g.enemy)?.traits ?? []) out.add(t);
+  for (const g of groups) {
+    if (isNeutralId(ctx, g.enemy)) continue;
+    for (const t of ctx.enemies.get(g.enemy)?.traits ?? []) out.add(t);
+  }
   return out;
 }
 
@@ -120,7 +131,7 @@ export function validateThreats(
     let soft = 0;
     for (const g of wave.groups) {
       const e = ctx.enemies.get(g.enemy);
-      if (e === undefined || (g.tags ?? []).includes('fleeing')) continue;
+      if (e === undefined || e.neutral === true || (g.tags ?? []).includes('fleeing')) continue;
       const threat = threatOf(e) * g.count;
       total += threat;
       if (g.teach !== true && isSoft(e, required)) soft += threat;
@@ -169,7 +180,7 @@ export function validateNovelty(
   const groups = def.waves.flatMap((w) => w.groups);
   const used = (kind: RouteKind): boolean => groups.some((g) => routes.get(g.route)?.kind === kind);
   const newEnemies = [...new Set(groups.map((g) => g.enemy))].filter(
-    (id) => ctx.enemies.has(id) && !history.enemies.has(id),
+    (id) => ctx.enemies.has(id) && !history.enemies.has(id) && !isNeutralId(ctx, id),
   );
   const broughtByNew = new Set(newEnemies.flatMap((id) => ctx.enemies.get(id)?.traits ?? []));
   const present = traitsOf(ctx, groups);

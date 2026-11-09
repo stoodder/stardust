@@ -23,7 +23,7 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await waitForReady(page);
   await shiftRow(page, 'Orientation Day').getByRole('button').click();
 
-  // The screen, starting from the default pick: everything owned (three towers), Orbital Strike.
+  // The screen, starting from the default pick: everything owned (four towers), Orbital Strike.
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   const lockIn = page.getByRole('button', { name: 'Lock in' });
   await expect(lockIn).toBeFocused();
@@ -31,7 +31,11 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
     /Rivet/i,
     /Thumper/i,
     /Sprinkler/i,
+    /Skyhook/i,
   ]);
+  // A1M1 has no flyers: drop the Skyhook, so the rest of the flow works with A1M1's three.
+  await towerCard(page, 'Skyhook').click();
+  await expect(towerCard(page, 'Skyhook')).toHaveAttribute('aria-pressed', 'false');
   // Costs include the save's cost modifiers: the top-rank Rivet tune-up takes 5% off 100.
   await expect(towerCard(page, 'Rivet')).toHaveAccessibleName(/95 credits/);
   await expect(page.getByRole('radio', { name: /Orbital Strike/ })).toHaveAttribute(
@@ -76,7 +80,12 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(briefing).toBeVisible();
   const saved = await page.evaluate(() => globalThis.__sd!.save()!.loadouts);
   const preset = { towers: ['rivet', 'sprinkler'], ability: 'suppressing_fire' };
-  expect(saved).toEqual({ last: preset, byMap: { a1_m01: preset } });
+  expect(saved).toEqual({
+    last: preset,
+    byMap: { a1_m01: preset },
+    protocols: [],
+    protocolPicks: {},
+  });
   await shot(page, 'loadout', 3, 'briefing');
 
   // Change loadout: back to the screen, which remembers the pick.
@@ -124,11 +133,13 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
   const warning = page.locator('.sd-lo-warning');
   await expect(warning).toHaveCount(0);
   // Sprinkler alone: a heads-up naming the towers that would answer it, and Lock in still works.
+  // (all_unlocked owns every tower's specs, Skyhook's Seeker Swarm too, which arrives in M4.)
   await towerCard(page, 'Rivet').click();
   await towerCard(page, 'Thumper').click();
+  await towerCard(page, 'Skyhook').click();
   await expect(warning).toHaveText(
     'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-      'Thumper would.',
+      'Thumper or Skyhook (Seeker Swarm) would.',
   );
   await shot(page, 'loadout', 5, 'heads-up');
   await page.getByRole('button', { name: 'Lock in' }).click();

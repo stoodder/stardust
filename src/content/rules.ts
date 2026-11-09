@@ -405,8 +405,8 @@ export const DEFAULT_COUNTDOWN_SEC: Readonly<Record<Act, number>> = {
 /** Core integrity when a map doesn't set it (core-loop.md § 2.9). */
 export const DEFAULT_CORE_INTEGRITY = 20;
 /**
- * A leaking boss drains all remaining integrity (core-loop.md § 2.9), whatever its `leak`.
- * createSim refuses bosses until T304c (FEATURE_GATES `enemy.boss`), which implements it.
+ * A leaking boss drains all remaining integrity (core-loop.md § 2.9), whatever its `leak`, and
+ * Emergency Bulkhead can't absorb it (movement).
  */
 export const BOSS_LEAK_DRAINS_ALL = true;
 /** A boss wave's clear bonus is tripled (design/enemies.md § 6; T304c). */
@@ -415,8 +415,31 @@ export const BOSS_CLEAR_BONUS_MULT = 3;
 export const BOSS_MAX_INVULNERABLE_SEC = 2;
 /** Every boss ability's tell lasts at least this long (enemies.md § 6). */
 export const BOSS_MIN_TELL_SEC = 1.5;
-/** `driveOff` / `retreat`: the boss leaves by the nearest map edge within this long (§ 6.1). */
+/**
+ * `driveOff` / `retreat`: the boss leaves by the nearest map edge within this long (§ 6.1), at its
+ * base speed or faster if that's what it takes; a driven-off boss's brood leaves the same way.
+ */
 export const BOSS_LEAVE_MAX_SEC = 4;
+/** A leaving unit is gone once it is this far past the map edge (so its sprite clears the map). */
+export const LEAVE_PAST_EDGE_TILES = 0.5;
+/**
+ * A boss phase change's invulnerability and telegraph (enemies.md § 6: at most 2 s). Damage that
+ * crosses a phase threshold stops at it, so no burst skips a phase.
+ */
+export const BOSS_PHASE_INVULNERABLE_SEC = 1.5;
+/** The tell before each boss ability (a sneeze, a burrow): the minimum, BOSS_MIN_TELL_SEC. */
+export const BOSS_ABILITY_TELL_SEC = BOSS_MIN_TELL_SEC;
+/**
+ * A boss phase's burrows (Chitterbloom's phase 2): the first starts this long into the phase
+ * (after its invulnerability), and each later one this long after the last surfacing. The tell
+ * is the last BOSS_ABILITY_TELL_SEC of it. Underground, a boss keeps its pace.
+ */
+export const BOSS_BURROW_GAP_SEC = 4;
+/**
+ * Units born on the route (a splitter's children, a boss's sneezed or surfacing young) trail
+ * their parent by this much each: the first at the parent's distance, the next this far behind.
+ */
+export const BROOD_SPREAD_TILES = 0.25;
 /** The salvage drone clears one wreckage tile in this much sim time (maps.md § 3; T304b). */
 export const WRECKAGE_CLEAR_SEC = 6;
 /** A new tower deploys for this long before it can fire or pulse (core-loop.md § 2.5). */
@@ -435,8 +458,16 @@ export const WAVE_CLEAR_BONUS_BASE = 20;
 export const WAVE_CLEAR_BONUS_PER_WAVE = 4;
 /** Credits for resolving wave `wave` (1-based), paid even if some of it leaked. */
 export function waveClearBonus(wave: number): number {
-  // TODO(T304): a boss wave's bonus is tripled (enemies.md § 6); the validator refuses bosses.
   return WAVE_CLEAR_BONUS_BASE + WAVE_CLEAR_BONUS_PER_WAVE * wave;
+}
+/**
+ * What resolving wave `wave` pays: its clear bonus, BOSS_CLEAR_BONUS_MULT times over for a boss
+ * wave (one with a boss in its groups; enemies.md § 6). The early-call bonus reads the plain
+ * waveClearBonus, never the tripled one: the triple rewards the fight, not calling it early.
+ */
+export function waveClearBonusFor(wave: number, boss: boolean): number {
+  const bonus = waveClearBonus(wave);
+  return boss ? bonus * BOSS_CLEAR_BONUS_MULT : bonus;
 }
 /**
  * Early wave call (core-loop.md § 2.4): the bonus is this share of the called wave's clear bonus,

@@ -43,6 +43,8 @@ describe('the loadout screen (app side)', () => {
       ['rivet', ['T3']],
       ['thumper', ['T1']],
       ['sprinkler', []],
+      // all_unlocked owns every tower's specs, Skyhook's M4 Seeker Swarm too (T304a report).
+      ['skyhook', ['Seeker Swarm']],
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -51,7 +53,7 @@ describe('the loadout screen (app side)', () => {
     expect(view.links.map((l) => l.name)).toEqual(['Crossfire', 'Sitting Ducks']);
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');
     expect(view.initial).toEqual({
-      towers: ['rivet', 'thumper', 'sprinkler'],
+      towers: ['rivet', 'thumper', 'sprinkler', 'skyhook'],
       ability: 'orbital_strike',
     });
   });
@@ -62,16 +64,21 @@ describe('the loadout screen (app side)', () => {
     let pick = loadout.value!.initial; // opened above
     expect(formedLinks(pick)).toEqual(['crossfire', 'sitting_ducks']);
     expect(pickWarnings(pick)).toEqual([]);
-    pick = togglePickTower(togglePickTower(pick, 'rivet'), 'thumper');
+    pick = togglePickTower(togglePickTower(togglePickTower(pick, 'rivet'), 'thumper'), 'skyhook');
     expect(pick.towers).toEqual(['sprinkler']);
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper would.',
+        'Thumper or Skyhook (Seeker Swarm) would.',
     ]);
     expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
     const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };
-    expect(activeSave()?.loadouts).toEqual({ last: preset, byMap: { a1_m02: preset } });
+    expect(activeSave()?.loadouts).toEqual({
+      last: preset,
+      byMap: { a1_m02: preset },
+      protocols: [],
+      protocolPicks: {},
+    });
     // The battle plays it.
     const cfg = battleConfig('a1_m02', 0, activeSave());
     expect(cfg.loadout).toEqual(['sprinkler']);
