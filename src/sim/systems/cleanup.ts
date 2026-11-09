@@ -2,7 +2,8 @@
 // their waves, releases dead slots back to their pools' free lists (last, so every system this
 // tick could still see and name what died), resolves waves, and decides the map
 // (design/core-loop.md § 2.1):
-// - Defeat the instant core integrity hits 0. It wins over a victory on the same tick.
+// - Defeat the instant core integrity hits 0, or a Protect map's asset meter does (T305a). It
+//   wins over a victory on the same tick.
 // - A killed splitter releases its children here, before resolution, into its wave
 //   (enemyAbilities/split.ts), so a wave isn't cleared while the Bunchling's Nibblers run.
 // - A killed Skitterkin sets the Skittish units within reach bolting (enemyAbilities/skittish.ts).
@@ -25,7 +26,12 @@ import { earn } from '../economy.ts';
 import { boltNear } from '../enemyAbilities/skittish.ts';
 import { splitOnDeath, wasKilled } from '../enemyAbilities/split.ts';
 import { bookLeak, leakedThisTick, settleLoss, settleWin, watchChallenge } from '../medals.ts';
-import { settleObjectivesLoss, settleObjectivesWin, watchObjectives } from '../objectives.ts';
+import {
+  isAssetLost,
+  settleObjectivesLoss,
+  settleObjectivesWin,
+  watchObjectives,
+} from '../objectives.ts';
 import { poolReleaseDead } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -59,7 +65,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   poolReleaseDead(state.zones);
   poolReleaseDead(state.allies);
 
-  if (state.integrity <= 0) {
+  if (state.integrity <= 0 || isAssetLost(state)) {
     state.outcome = 'lost';
     settleLoss(state, ctx.map);
     settleObjectivesLoss(state, ctx.map);

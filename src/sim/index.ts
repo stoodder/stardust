@@ -107,7 +107,15 @@ export {
   mapMedalIds,
   medalId,
 } from './medals.ts';
-export { completedObjectiveIds, isLateSell, objectiveStatusById } from './objectives.ts';
+export {
+  ASSET_CRITICAL_SHARE,
+  assetDamage,
+  completedObjectiveIds,
+  isAssetLost,
+  isLateSell,
+  objectiveStatusById,
+  type AssetDamage,
+} from './objectives.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   towerStats,

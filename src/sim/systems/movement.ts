@@ -13,17 +13,21 @@
 // like ground units. A neutral unit (Gerald, core-loop.md §2.7) never leaks: at its route's end it
 // delivers and leaves (`NeutralExited`), with no integrity lost, no tag counted, and no leak for
 // Perfect Core (sim/medals.ts `leakedThisTick`).
+// On a Protect map (T305a), a unit whose route leads to the asset (`map.asset.routes`) leaks
+// there instead: the same cost, floor, and boss rule against `state.asset`
+// (sim/objectives.ts `leakToAsset`), and the core loses nothing.
 import {
   BOSS_LEAK_DRAINS_ALL,
   HUSH_SPEED_MUL,
   LEAK_FREE_TAGS,
   YOUNGLING_SPEED_MUL,
 } from '../../content/rules.ts';
-import type { CompiledEnemyDef } from '../../content/compiled.ts';
-import type { WaveTag } from '../../content/types.ts';
+import type { CompiledEnemyDef, CompiledMapDef } from '../../content/compiled.ts';
+import type { IdSpace, WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { isMedalExempt } from '../conditions.ts';
 import { countTags } from '../fireControl.ts';
+import { leakToAsset } from '../objectives.ts';
 import { poolKill } from '../pool.ts';
 import { pointAt } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
@@ -57,7 +61,11 @@ export function leaksFree(tags: readonly WaveTag[]): boolean {
  */
 export const ARRIVE_EPS_TILES = 1e-9;
 
-export function movement(state: SimState): void {
+/** The map's asset, for routing leaks (absent in unit tests that run movement alone: no asset). */
+type AssetMap = Pick<CompiledMapDef<IdSpace>, 'asset'>;
+
+export function movement(state: SimState, ctx?: { readonly map: AssetMap }): void {
+  const map = ctx?.map ?? null;
   const enemies = state.enemies;
   let quietArrived = false;
   for (let i = 0; i < enemies.used; i++) {
@@ -77,7 +85,7 @@ export function movement(state: SimState): void {
         quietArrived = true; // leaks in the second pass, below
         continue;
       }
-      arrive(state, e, e.def, 0);
+      arrive(state, map, e, e.def, 0);
     } else {
       e.seg = pointAt(route, e.dist, e, e.seg);
     }
@@ -88,25 +96,28 @@ export function movement(state: SimState): void {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!e.alive || e.def === null || e.route === null || e.leaving) continue;
     if (e.dist < e.route.lengthTiles || !e.tags.includes('quiet_wave')) continue;
-    arrive(state, e, e.def, 1);
+    arrive(state, map, e, e.def, 1);
   }
 }
 
-/** Leaks an enemy that reached its route's end (never below `floor`) and removes it. */
-function arrive(state: SimState, e: Enemy, def: CompiledEnemyDef, floor: number): void {
+/**
+ * Leaks an enemy that reached its route's end (never below `floor`), at the asset if its route
+ * leads there, else at the core, and removes it.
+ */
+function arrive(
+  state: SimState,
+  map: AssetMap | null,
+  e: Enemy,
+  def: CompiledEnemyDef,
+  floor: number,
+): void {
   countTags(state.stats.tagLeaked, e.tags);
   countLeak(state, e, def);
-  leak(
-    state,
-    def.id,
-    def.boss !== null && BOSS_LEAK_DRAINS_ALL
-      ? state.integrity + state.leakAbsorbLeft
-      : leaksFree(e.tags)
-        ? 0
-        : def.leak,
-    e.uid,
-    floor,
-  );
+  const drains = def.boss !== null && BOSS_LEAK_DRAINS_ALL;
+  const cost = drains ? null : leaksFree(e.tags) ? 0 : def.leak;
+  if (map === null || !leakToAsset(state, map, e, cost, floor)) {
+    leak(state, def.id, cost ?? state.integrity + state.leakAbsorbLeft, e.uid, floor);
+  }
   poolKill(state.enemies, e);
 }
 

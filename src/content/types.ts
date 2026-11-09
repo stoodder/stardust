@@ -737,9 +737,13 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
  * The asset on a Protect map (D101): one meter of `integrity` (A2M2: 10, drawn as two rigs), on
  * the decor tile `marker`. A unit that leaks along one of `routes` (the branch to the asset) costs
  * the asset its leak value instead of the core; a boss reaching it drains it (defeat). The map is
- * lost when either meter reaches 0, and the par margin is min(core %, asset %) (T305a).
+ * lost when either meter reaches 0, and the par margin is min(core %, asset %) (T305a). An asset
+ * route ends beside the asset, not on the core: a path's last tile is a path tile orthogonally
+ * next to `marker`, an air lane's last point is `marker` itself (compileMap.ts).
  */
 export interface AssetDef {
+  /** The meter's label on the HUD and Results ("Rigs"): short, a plural noun or a name. */
+  readonly name: string;
   readonly integrity: number;
   readonly marker: MarkerId;
   readonly routes: readonly RouteId[];

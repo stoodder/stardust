@@ -29,6 +29,7 @@ import type { DamageSource } from '../events.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
+import { applyStasis } from '../systems/status.ts';
 
 export type { DamageSource };
 
@@ -179,6 +180,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  * - Corroded: adds stacks up to the attack's max (never removing stacks a higher-max source left)
  *   and refreshes the shared 5 s timer.
  * - Marked: highest only, like Chilled.
+ * - Stasis: never stacks or extends, then 2× immunity; a boss takes Chilled 50% (applyStasis).
  */
 export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): void {
   if (!enemy.alive || untargetable(enemy)) return;
@@ -201,10 +203,13 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
       case 'marked':
         applyMark(enemy, fx.pct, fx.durationTicks);
         break;
-      // TODO(T2xx): Pinned, Stasis, and Unnerved arrive with the towers that apply them (none in
-      // M1 content).
-      case 'pinned':
       case 'stasis':
+        // Frozen, or a boss's Chilled 50% (systems/status.ts; T407a).
+        applyStasis(enemy, fx.durationTicks);
+        break;
+      // Pinned (T408) and Unnerved (M5) arrive with the towers that apply them; createSim refuses
+      // them until then (FEATURE_GATES).
+      case 'pinned':
       case 'unnerved':
         break;
       default:
@@ -228,10 +233,14 @@ export function applyMark(enemy: Enemy, pct: number, ticks: number): void {
   }
 }
 
-/** Chilled X% for `ticks` movement ticks: the strongest source wins (enemies.md §2.4). */
-export function applyChill(enemy: Enemy, pct: number, ticks: number): void {
-  // Bosses take Chilled at half strength (enemies.md § 6); a converted Pin or Stasis (M4) won't.
-  const strength = enemy.def !== null && enemy.def.boss !== null ? pct * BOSS_CHILL_MULT : pct;
+/**
+ * Chilled X% for `ticks` movement ticks: the strongest source wins (enemies.md §2.4). Bosses take
+ * it at half strength (enemies.md § 6), except a `converted` Pin or Stasis (Chilled 50%), which is
+ * already boss strength and isn't halved again (systems/status.ts `applyStasis`).
+ */
+export function applyChill(enemy: Enemy, pct: number, ticks: number, converted = false): void {
+  const halved = !converted && enemy.def !== null && enemy.def.boss !== null;
+  const strength = halved ? pct * BOSS_CHILL_MULT : pct;
   const p = strength < CHILL_CAP ? strength : CHILL_CAP;
   if (p <= 0 || ticks <= 0) return;
   if (p > enemy.chillPct) {

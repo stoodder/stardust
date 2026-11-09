@@ -1,7 +1,8 @@
 // Map compilation: tile grid, routes as polylines, waves in ticks with resolved references,
 // towerUnlockWave compiled into script events, and script time triggers in ticks. Route geometry
 // is part of the route format, so compile checks it (design/maps.md §4): a path lists its spawn
-// `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time.
+// `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time. A Protect map's
+// asset routes end beside the asset instead (AssetDef; T305a).
 import type {
   CompiledAllyPost,
   CompiledAsset,
@@ -165,6 +166,7 @@ function compileAsset(
   }
   if (tile === undefined) return null;
   return {
+    name: a.name,
     integrity: a.integrity,
     marker: a.marker,
     tile: [tile[0], tile[1]],
@@ -237,21 +239,33 @@ function compileRoutes(
   };
   for (const [i, p] of def.paths.entries()) {
     const w = `${where}.paths[${i}]`;
-    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'path', w);
+    const end = assetEnd(def, p.id);
+    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'path', w, end);
     add(compileRoute(ctx, p.id, 'path', p.tiles, null, w), w);
   }
   for (const [i, p] of (def.airLanes ?? []).entries()) {
     const w = `${where}.airLanes[${i}]`;
-    if (grid !== null) checkAirLane(ctx, grid, p.points, w);
+    if (grid !== null) checkAirLane(ctx, grid, p.points, w, assetEnd(def, p.id));
     add(compileRoute(ctx, p.id, 'air', p.points, null, w), w);
   }
   for (const [i, p] of (def.riftLanes ?? []).entries()) {
     const w = `${where}.riftLanes[${i}]`;
-    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'rift', w);
+    if (grid !== null) checkGroundRoute(ctx, grid, p.tiles, 'rift', w, null);
+    if (assetEnd(def, p.id) !== null) ctx.errors.push(`${w}: a rift lane can't lead to the asset`);
     add(compileRoute(ctx, p.id, 'rift', p.tiles, p.opensAtWave, w), w);
   }
   if (grid !== null) checkPathTilesUsed(ctx, grid, def.paths, where);
   return routes;
+}
+
+/**
+ * Where route `id` ends when it leads to the Protect map's asset (AssetDef.routes): the asset's
+ * marker tile, or null for a route to the core (or an unknown marker, which compileAsset reports).
+ */
+function assetEnd(def: MapDef<IdSpace>, id: string): GridPos | null {
+  const a = def.asset;
+  if (a === undefined || !a.routes.includes(id)) return null;
+  return def.markers?.[a.marker] ?? null;
 }
 
 /** The compiled grid, for route geometry checks. */
@@ -269,8 +283,9 @@ function gridTile(grid: RouteGrid, [c, r]: GridPos): TileChar | undefined {
 
 /**
  * The route format (design/maps.md §4): a ground path lists every tile it walks, from its spawn
- * `S` through `#` tiles to the core `C`, each step one tile up, down, left, or right. A rift lane
- * walks the same way but over decor, never a buildable tile.
+ * `S` through `#` tiles to the core `C`, each step one tile up, down, left, or right. A path to
+ * a Protect map's asset (`asset`: its marker tile) ends on a `#` orthogonally next to it instead.
+ * A rift lane walks the same way but over decor, never a buildable tile.
  */
 function checkGroundRoute(
   ctx: Ctx,
@@ -278,6 +293,7 @@ function checkGroundRoute(
   tiles: readonly GridPos[],
   kind: 'path' | 'rift',
   where: string,
+  asset: GridPos | null,
 ): void {
   const last = tiles.length - 1;
   for (const [i, pos] of tiles.entries()) {
@@ -288,7 +304,7 @@ function checkGroundRoute(
       continue;
     }
     if (kind === 'path') {
-      const want = i === 0 ? 'S' : i === last ? 'C' : '#';
+      const want = i === 0 ? 'S' : i === last && asset === null ? 'C' : '#';
       if (tile !== want)
         ctx.errors.push(
           `${at}: is '${tile}', but a path's ${routeRole(i, last)} must be '${want}'`,
@@ -300,22 +316,39 @@ function checkGroundRoute(
     if (prev !== undefined && Math.abs(pos[0] - prev[0]) + Math.abs(pos[1] - prev[1]) !== 1) {
       ctx.errors.push(`${at}: not one orthogonal step from the tile before`);
     }
+    if (i === last && asset !== null && Math.abs(pos[0] - asset[0]) + Math.abs(pos[1] - asset[1]) !== 1) {
+      ctx.errors.push(`${at}: a path to the asset ends next to it (${asset[0]},${asset[1]})`);
+    }
   }
 }
 
 /**
  * An air lane (design/maps.md §4) is a polyline through tile centers that may cross any tile, from
  * an air spawn to the core: every point lies on the map, and the last is the core `C`, so a flyer
- * leaks at the core like a ground unit (T304a).
+ * leaks at the core like a ground unit (T304a). A lane to a Protect map's asset (`asset`) ends on
+ * the asset's marker tile instead.
  */
-function checkAirLane(ctx: Ctx, grid: RouteGrid, points: readonly GridPos[], where: string): void {
+function checkAirLane(
+  ctx: Ctx,
+  grid: RouteGrid,
+  points: readonly GridPos[],
+  where: string,
+  asset: GridPos | null,
+): void {
   const last = points.length - 1;
   for (const [i, pos] of points.entries()) {
     const at = `${where}.points[${i}] (${pos[0]},${pos[1]})`;
     const tile = gridTile(grid, pos);
-    if (tile === undefined) ctx.errors.push(`${at}: not a tile on the map`);
-    else if (i === last && last > 0 && tile !== 'C')
-      ctx.errors.push(`${at}: is '${tile}', but an air lane ends on the core 'C'`);
+    if (tile === undefined) {
+      ctx.errors.push(`${at}: not a tile on the map`);
+      continue;
+    }
+    if (i !== last || last === 0) continue;
+    if (asset === null) {
+      if (tile !== 'C') ctx.errors.push(`${at}: is '${tile}', but an air lane ends on the core 'C'`);
+    } else if (pos[0] !== asset[0] || pos[1] !== asset[1]) {
+      ctx.errors.push(`${at}: an air lane to the asset ends on it (${asset[0]},${asset[1]})`);
+    }
   }
 }
 

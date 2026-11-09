@@ -210,7 +210,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.blink': 'T404',
   'enemy.cloak': null,
   'map.objectives': null,
-  'map.protect': 'T305a',
+  'map.protect': null,
   'map.revisit': 'T410a',
   'map.clickable': 'T409',
   'run.checkpoints': 'T305b',

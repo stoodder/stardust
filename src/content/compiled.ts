@@ -523,6 +523,7 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
 
 /** AssetDef with its marker resolved to a tile. */
 export interface CompiledAsset {
+  readonly name: string;
   readonly integrity: number;
   readonly marker: MarkerId;
   readonly tile: GridPos;

@@ -42,18 +42,57 @@ export function isLateSell(
 }
 
 /**
- * Protect the asset (design/maps.md § 5.2; D101; T400a seam, run by T305a): a unit leaking along
- * one of `map.asset.routes` costs the asset meter (`state.asset`) its leak value instead of the
- * core (a boss drains it; AssetHit, and AssetLost at 0, which loses the map). Returns whether the
- * leak went to the asset. A stub until T305a: createSim refuses a Protect map (`map.protect`), so
- * no leak reaches it.
+ * Protect the asset (design/maps.md § 5.2; D101; T305a): a unit leaking along one of
+ * `map.asset.routes` costs the asset meter (`state.asset`) instead of the core. movement passes
+ * the leak's `cost` as it would charge the core (0 for a fleeing unit or a youngling), or null for
+ * a boss, which drains the asset. A `floor` of 1 (the Quiet Wave, D097) never takes it below 1.
+ * Emergency Bulkhead guards the core only. Emits `EnemyLeaked` with leak 0 (the core lost
+ * nothing; render and the barks still see a leak), then `AssetHit`, and `AssetLost` as the meter
+ * reaches 0 (cleanup then loses the map). Returns whether the leak went to the asset.
  */
 export function leakToAsset(
-  _state: SimState,
-  _map: Pick<CompiledMapDef<IdSpace>, 'asset'>,
-  _e: Pick<Enemy, 'route'>,
+  state: SimState,
+  map: Pick<CompiledMapDef<IdSpace>, 'asset'>,
+  e: Pick<Enemy, 'uid' | 'def' | 'route' | 'x' | 'y'>,
+  cost: number | null,
+  floor: number,
 ): boolean {
-  return false; // T305a
+  const asset = map.asset;
+  const def = e.def;
+  if (asset === null || def === null || e.route === null) return false;
+  if (!asset.routes.includes(e.route.id)) return false;
+  const left = state.asset;
+  const room = left > floor ? left - floor : 0;
+  const want = cost === null ? left : cost;
+  const lost = want < room ? want : room;
+  state.asset = left - lost;
+  emit(state, { type: 'EnemyLeaked', uid: e.uid, enemy: def.id, leak: 0 });
+  emit(state, { type: 'AssetHit', uid: e.uid, enemy: def.id, lost, x: e.x, y: e.y });
+  if (lost > 0 && state.asset === 0) emit(state, { type: 'AssetLost' });
+  return true;
+}
+
+/** Whether a Protect map's asset is gone (the map is lost; cleanup). */
+export function isAssetLost(state: DeepReadonly<Pick<SimState, 'asset' | 'maxAsset'>>): boolean {
+  return state.maxAsset > 0 && state.asset <= 0;
+}
+
+/**
+ * The asset's damage state, for the rig props (render) and the HUD meter: `intact` while full,
+ * `damaged` above ASSET_CRITICAL_SHARE of its meter, `critical` at or below it (A2M2's two rigs:
+ * one is down; the HUD's low-asset alarm), `lost` at 0. `none` on a map without an asset.
+ */
+export type AssetDamage = 'none' | 'intact' | 'damaged' | 'critical' | 'lost';
+
+/** The share of the asset meter at or below which it is `critical` (half: one rig of two). */
+export const ASSET_CRITICAL_SHARE = 0.5;
+
+/** The asset's damage state from its meter (assetDamage bands). */
+export function assetDamage(asset: number, maxAsset: number): AssetDamage {
+  if (maxAsset <= 0) return 'none';
+  if (asset <= 0) return 'lost';
+  if (asset >= maxAsset) return 'intact';
+  return asset <= maxAsset * ASSET_CRITICAL_SHARE ? 'critical' : 'damaged';
 }
 
 /** Settles each open objective whose condition can no longer change (cleanup, every tick in play). */
