@@ -163,7 +163,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T323** Audio follow-ups: delete `src/audio/sfx/radio.ts` (needs the owner's OK; an agent's delete was refused), restore storm headroom (−1.1 dB, only 0.2 dB margin), story-runtime ~158, the `testHookTypes` `render()` comment.
 - [ ] **T324** Dialogue cleanup: `MapDef.briefing`, `briefingLines`, the name-tag plate.
 - [ ] **T325** A1M3 dialogue gaps.
-- [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke.
+- [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke; switch `hud.ts` to `objectiveStatusById(state, map)` (D090).
 - [ ] **T327** `skipScene` transcript bug; `saveModifiers` ignores protocols.
 - [ ] **T328** Render follow-ups from T312b: enemy health bars (art-direction §8); the tell-glyph timer counts rendered frames, so it lingers through fast-forward (use sim ticks).
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
