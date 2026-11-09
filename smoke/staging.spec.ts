@@ -31,11 +31,13 @@ test('staging: the stinger feed leads in, then the caption and QUILL', async ({ 
   await expect(page.getByTestId('line-announce')).toHaveText('Rig Nine. Status: not answering.');
   await page.waitForTimeout(1000); // the caption types out
   await shot(page, 'staging', 2, 'stinger-caption');
-  // On through the held beat to QUILL, whose words the live region reads with her name.
-  await page.keyboard.press('Enter'); // the held beat, a silence
-  await expect(scene).not.toContainText('Probably a smudge');
+  // On to the held beat, a silence: no Next to press (D098), and it moves on to QUILL by itself,
+  // whose words the live region reads with her name.
   await page.keyboard.press('Enter');
-  await expect(scene).toContainText('Probably a smudge! Logging it.');
+  await expect(scene).not.toContainText('Probably a smudge');
+  await expect(scene.locator('.dlg-next')).toHaveCount(0);
+  await shot(page, 'staging', 7, 'stinger-held-beat');
+  await expect(scene).toContainText('Probably a smudge! Logging it.', { timeout: 4000 });
   await expect(page.getByTestId('line-announce')).toHaveText(
     /^QUILL: Probably a smudge! Logging it\.$/i,
   );
@@ -84,9 +86,10 @@ test('staging: the party fires the cannon and the record counter lands', async (
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toBeVisible();
   await expect(page.locator('.dlg-stage[data-staging="party"]')).toBeVisible();
-  // The cannon fired (its `fire` anim is over in 0.4 s, so it may already rest on idle), and its
-  // burst is up over the muzzle.
-  const cannon = page.getByTestId('stage-cannon');
+  // Two cannons flank the lines (D098). The left one fired (its `fire` anim is over in 0.4 s, so
+  // it may already rest on idle), and its burst is up over the muzzle.
+  await expect(page.getByTestId('stage-cannon')).toHaveCount(2);
+  const cannon = page.getByTestId('stage-cannon').first();
   await expect(cannon.locator('img.dlg-cannon-body')).toHaveAttribute(
     'data-frame',
     /^(fire_|idle)/,

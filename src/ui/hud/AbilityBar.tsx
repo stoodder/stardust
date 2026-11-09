@@ -7,6 +7,7 @@ import { cooldownChip, cooldownWords } from '../../app/hudViews.ts';
 import { hud, type AbilityCooldownView, type AbilitySlotView } from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { Key, noFocusOnPress } from './parts.tsx';
+import { alignPulse } from './pulse.ts';
 
 /** The icon's size in game px: the cooldown wipe steps one pixel per 1/16. */
 const ICON_PX = 16;
@@ -21,6 +22,8 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const charges = cd?.charges ?? 0;
   const aiming = hud.aimingAbility.value === a.slot;
   const cue = hud.countdownCue.value;
+  // The Time Dilation teach (A1M3's flock, D098): the slot pulses at 1 Hz until it's first cast.
+  const teach = ready && hud.timeDilationTeach.value === a.slot;
   if (a.absent) {
     return (
       <button
@@ -45,7 +48,8 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const button = (
     <button
       type="button"
-      class={`hud-btn hud-slot hud-ability chamfer ${ready ? 'ready' : 'charging'}`}
+      class={`hud-btn hud-slot hud-ability chamfer ${ready ? 'ready' : 'charging'}${teach ? ' pulse' : ''}`}
+      ref={(el) => alignPulse(el)}
       data-testid={`ability-${a.slot}`}
       aria-pressed={a.aim === 'none' ? undefined : aiming}
       aria-disabled={!ready}

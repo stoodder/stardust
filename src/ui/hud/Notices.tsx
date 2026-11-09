@@ -47,24 +47,30 @@ export const HOLD_FIRE_ONE_HINT = 'Gerald is the mail. Hold fire: H one, Shift+H
 /** The salvage teach (A1M3, R4): a wreck clears with a plain click. */
 export const SALVAGE_HINT = 'Click wreckage to send the salvage drone';
 
+/** The Time Dilation teach (A1M3's flock, D098): it casts on the key, and slows every pest. */
+export const TIME_DILATION_HINT = 'Time Dilation slows the flock';
+
 /** Which hint the bottom-center slot shows, most urgent first. */
-export type HintKind = 'holdOne' | 'holdAll' | 'salvage' | 'upgrade';
+export type HintKind = 'holdOne' | 'holdAll' | 'timeDilation' | 'salvage' | 'upgrade';
 
 /**
  * The bottom-center hint (one at a time): Gerald's second-pass lesson, then the Hold Fire teach
- * (both only while he's on the field), then the salvage teach, then the upgrade teach (only with
- * no tower selected, since the tower panel answers it).
+ * (both only while he's on the field, and neither while Hold (all) is on), then the Time Dilation
+ * teach, then the salvage teach, then the upgrade teach (only with no tower selected, since the
+ * tower panel answers it).
  */
 export function pickHint(h: {
   readonly holdFireOne: boolean;
   readonly holdFireTeach: boolean;
   readonly holdFireAll: boolean;
+  readonly timeDilation: boolean;
   readonly salvage: boolean;
   readonly upgrade: boolean;
   readonly selected: boolean;
 }): HintKind | null {
-  if (h.holdFireOne) return 'holdOne';
+  if (h.holdFireOne && !h.holdFireAll) return 'holdOne';
   if (h.holdFireTeach && !h.holdFireAll) return 'holdAll';
+  if (h.timeDilation) return 'timeDilation';
   if (h.salvage) return 'salvage';
   if (h.upgrade && !h.selected) return 'upgrade';
   return null;
@@ -91,14 +97,17 @@ function HintBox({
 
 /**
  * The bottom-center hint slot: the Hold Fire teach while Gerald is on the field (its second lesson
- * names both keys from his second pass), the salvage teach from W2 until the drone is first sent,
- * or the upgrade teach (D028).
+ * names both keys from his second pass), the Time Dilation teach as a flock comes in reach, the
+ * salvage teach from W2's countdown for two wave starts or until the drone is first sent, or the
+ * upgrade teach (D028).
  */
 export function BottomHint() {
+  const tdSlot = hud.timeDilationTeach.value;
   const kind = pickHint({
     holdFireOne: hud.holdFireOneHint.value,
     holdFireTeach: hud.holdFireTeach.value,
     holdFireAll: hud.holdFireAll.value,
+    timeDilation: tdSlot !== 0,
     salvage: hud.salvageHint.value,
     upgrade: hud.upgradeHint.value,
     selected: hud.selected.value !== null,
@@ -123,6 +132,15 @@ export function BottomHint() {
           <Key k="Shift+H" />
         </HintBox>
       );
+    case 'timeDilation': {
+      const key = hud.abilities.value.find((a) => a.slot === tdSlot)?.key ?? 'Q';
+      return (
+        <HintBox label={`${TIME_DILATION_HINT} (${key})`} testId="time-dilation-hint">
+          {TIME_DILATION_HINT}
+          <Key k={key} />
+        </HintBox>
+      );
+    }
     case 'salvage':
       return (
         <HintBox label={SALVAGE_HINT} testId="salvage-hint">

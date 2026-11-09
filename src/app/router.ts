@@ -403,18 +403,22 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const before = flow?.before ?? flowScenes(result.mapId, result.outcome, 'before');
       const after = flow?.after ?? flowScenes(result.mapId, result.outcome, 'after');
       return new Promise<void>((resolve, reject) => {
-        playInOrder(before, () => {
-          // A battle stopped meanwhile (a menu took over) has no Results to show.
-          if (battle !== shown) {
-            resolve();
-            return;
-          }
-          setAfterResults(after, record);
-          // The first payday is spent by being shown (D097), never by an abandoned run or the
-          // results fixture.
-          if (record && result.rewards?.firstPayday === true) markFirstPaydayShown();
-          router.goto('results').then(resolve, reject);
-        }, record);
+        playInOrder(
+          before,
+          () => {
+            // A battle stopped meanwhile (a menu took over) has no Results to show.
+            if (battle !== shown) {
+              resolve();
+              return;
+            }
+            setAfterResults(after, record);
+            // The first payday is spent by being shown (D097), never by an abandoned run or the
+            // results fixture.
+            if (record && result.rewards?.firstPayday === true) markFirstPaydayShown();
+            router.goto('results').then(resolve, reject);
+          },
+          record,
+        );
       });
     },
   };

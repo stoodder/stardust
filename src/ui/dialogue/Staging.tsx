@@ -1,7 +1,7 @@
 // The full-screen scenes' staging (D097 R3; the table and timelines are staging.ts): the stinger's
 // Rig 9 camera feed above its lines, and the party's bright stage (confetti falling behind the
-// lines, the cannon firing at the bottom left with its burst over the muzzle, and the record
-// counter ticking up at the top). Sprites are the canvas art's own, baked into data URLs once per
+// lines, two cannons firing at the bottom, one each side of the lines, with their bursts over the
+// muzzles, and the record counter ticking up at the top). Sprites are the canvas art's own, baked into data URLs once per
 // frame (hud/Icon.tsx), drawn 2× with `image-rendering: pixelated`. Silent: nothing here plays a
 // sound, so muted play loses nothing. Reduced motion holds still frames and the counter lands.
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -37,8 +37,11 @@ import type { StagingView } from './state.ts';
 const STAGE_TICK_MS = 40;
 /** The staged sprites' CSS scale (game px per sprite px): the feed and the falling confetti. */
 const SCALE = 2;
-/** The party cannon and its burst: the same pixel scale as the feed (one pixel size per stage). */
-const CANNON_SCALE = 2;
+/**
+ * The party's cannons and their bursts (D098 P-L2: big enough to read as the party's centrepiece,
+ * one each side of the lines). An integer scale, so no mixels (art-direction.md rule 7).
+ */
+const CANNON_SCALE = 3;
 /** The cannon's muzzle in its baked frame (authored (14, 11), plus the outline pass's 1 px). */
 const MUZZLE = { x: 15, y: 12 };
 /** The burst's anchor in its frame: the muzzle goes here. */
@@ -48,8 +51,16 @@ function spriteDef(id: string): SpriteDef | undefined {
   return (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
 }
 
+/** Each staged sprite's anims, looked up once (a stage redraws every STAGE_TICK_MS; C-L7). */
+const ANIMS = new Map<string, Readonly<Record<string, object>>>();
+
 function animsOf(id: string): Readonly<Record<string, object>> {
-  return spriteDef(id)?.anims ?? {};
+  let anims = ANIMS.get(id);
+  if (anims === undefined) {
+    anims = spriteDef(id)?.anims ?? {};
+    ANIMS.set(id, anims);
+  }
+  return anims;
 }
 
 /**
@@ -162,9 +173,6 @@ function PartyStage({ ms, still }: { ms: number; still: boolean }) {
   );
   const cannon = frameAt(still ? CANNON_BEATS_STILL : CANNON_BEATS, animsOf(CANNON_SPRITE), ms);
   const burst = frameAt(still ? BURST_BEATS_STILL : BURST_BEATS, confetti, ms);
-  // The burst's anchor sits on the cannon's muzzle (both at the stage's scale).
-  const burstLeft = (MUZZLE.x - BURST_ANCHOR.x) * CANNON_SCALE;
-  const burstTop = (MUZZLE.y - BURST_ANCHOR.y) * CANNON_SCALE;
   return (
     <>
       {fall !== null && (
@@ -177,14 +185,34 @@ function PartyStage({ ms, still }: { ms: number; still: boolean }) {
           }}
         />
       )}
+      {/* Two cannons flank the lines; the right one is the left mirrored. */}
+      <Cannon side="left" cannon={cannon} burst={burst} />
+      <Cannon side="right" cannon={cannon} burst={burst} />
       <RecordCounter ms={ms} still={still} />
-      <div class="dlg-cannon" aria-hidden="true" data-testid="stage-cannon">
-        <Frame id={CANNON_SPRITE} frame={cannon} class="dlg-cannon-body" scale={CANNON_SCALE} />
-        <div class="dlg-burst" style={{ left: `${burstLeft}px`, top: `${burstTop}px` }}>
-          <Frame id={CONFETTI_SPRITE} frame={burst} class="dlg-burst-frame" scale={CANNON_SCALE} />
-        </div>
-      </div>
     </>
+  );
+}
+
+/** One party cannon (`side` of the stage) with its burst's anchor on the muzzle. */
+function Cannon({
+  side,
+  cannon,
+  burst,
+}: {
+  side: 'left' | 'right';
+  cannon: string | null;
+  burst: string | null;
+}) {
+  // The burst's anchor sits on the cannon's muzzle (both at the cannons' scale).
+  const burstLeft = (MUZZLE.x - BURST_ANCHOR.x) * CANNON_SCALE;
+  const burstTop = (MUZZLE.y - BURST_ANCHOR.y) * CANNON_SCALE;
+  return (
+    <div class={`dlg-cannon ${side}`} aria-hidden="true" data-testid="stage-cannon">
+      <Frame id={CANNON_SPRITE} frame={cannon} class="dlg-cannon-body" scale={CANNON_SCALE} />
+      <div class="dlg-burst" style={{ left: `${burstLeft}px`, top: `${burstTop}px` }}>
+        <Frame id={CONFETTI_SPRITE} frame={burst} class="dlg-burst-frame" scale={CANNON_SCALE} />
+      </div>
+    </div>
   );
 }
 

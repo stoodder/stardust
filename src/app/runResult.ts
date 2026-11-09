@@ -298,7 +298,9 @@ export function holdLines(
     return [];
   }
   const debrief = SCENES[`${map}_debrief`];
-  return debrief === undefined ? [] : linesUntilChoice(debrief, runStoryContext(map, input, outcome));
+  return debrief === undefined
+    ? []
+    : linesUntilChoice(debrief, runStoryContext(map, input, outcome));
 }
 
 /**

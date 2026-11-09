@@ -295,7 +295,7 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 
 | Trigger id | Fires when |
 |---|---|
-| `map_start` / `wave_start` / `wave_cleared` | The map's first build phase; a wave starts; a wave resolves |
+| `map_start` / `wave_start` / `wave_cleared` | The map's first build phase; a wave starts; a wave resolves (both say `boss` for a boss wave). Act I's shared `wave_cleared` jingle jokes play only after a wave with no leaks |
 | `first_leak` | The first enemy of the map leaks |
 | `perfect_wave` | A wave resolves with no leaks (medal-exempt groups ignored) |
 | `tower_built` / `tower_sold` | A tower is built; sold (condition data can check whether it carried a name tag) |
@@ -311,12 +311,12 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 | `skitterkin_hushed` | A non-ally Skitterkin (a `fleeing` unit) is hushed by a Hollow unit. Once per map |
 | `flag` | Entering a map with a given story flag value (for example `spared_quiet_wave`), first build phase only |
 | `enemy_leaked` | A specific enemy id (condition) leaks, for the first time this map (A1M2's first Hauler through the gate). It plays after `first_leak` when one leak is both |
-| `bank_nudge` | A build phase from W2 on opens with 250+ credits unspent (`BANK_NUDGE_CREDITS`). Once per map; it plays on its own after the countdown's radio, never as a reply to it |
+| `bank_nudge` | A build phase from W2 on opens with 250+ credits unspent (`BANK_NUDGE_CREDITS`), but never the Quiet Wave's. Once per map; it plays on its own after the countdown's radio, never as a reply to it |
 | `neutral_hit` | The player's fire hits a neutral unit (Gerald, A1M3) |
 | `tower_issued` | The battle starts with a newly issued tower in the loadout (its first battle in the save), once the briefing closes |
 | `menu` | The player enters a base screen (the base, shop, R&D, Engineering, Inbox, codex, or star map) |
 
-Conditions can test the act, the map, flags, and run stats. Only speakers present on the map may bark: QUILL plus the companion.
+Conditions can test the act, the map, flags, and run stats. Only speakers present on the map may bark: QUILL plus the companion. **The Quiet Wave is silent:** from its start to the map's end no bark fires but `not_firing` (Bricks's "...You okay, Sprout?"); its scripted lines still play (D098).
 
 ### 6.4 Everglow Inbox (memos)
 

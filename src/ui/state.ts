@@ -386,6 +386,12 @@ export const hud = {
    * drone is first sent this run, a hint says how (click a wreck with nothing armed).
    */
   salvageHint: signal(false),
+  /**
+   * The Time Dilation teach (A1M3, D098): the ability slot (1 or 2) that pulses, with a hint, once
+   * a flock first comes within a turret's reach, until Time Dilation is first cast this run; 0
+   * while it doesn't show.
+   */
+  timeDilationTeach: signal<0 | 1 | 2>(0),
   /** Clearance Sale while it has charges (the "SALE -40% x3" tag over the build slots), or null. */
   sale: signal<SaleView | null>(null),
   /** The HUD's name plate (core-loop §5): "JPT-1 · SPROUT", the profile's callsign. */

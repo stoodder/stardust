@@ -114,4 +114,13 @@ describe('the first payday (D097)', () => {
     await router.presentResults(card(true), NO_SCENES);
     expect(activeSave()?.story.seen.filter((id) => id === FIRST_PAYDAY_SEEN_ID)).toHaveLength(1);
   });
+
+  it("is never spent by the results fixture's card (C-L2: it writes nothing)", async () => {
+    newGame(1);
+    const router = createRouter(game);
+    const before = activeSave();
+    await router.presentResults(card(true), NO_SCENES, { record: false });
+    expect(activeSave()?.story.seen).not.toContain(FIRST_PAYDAY_SEEN_ID);
+    expect(activeSave()).toBe(before);
+  });
 });

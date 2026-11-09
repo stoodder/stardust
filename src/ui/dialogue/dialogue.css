@@ -443,12 +443,21 @@
   visibility: visible;
 }
 
-/* The cannon, bottom left; its burst's anchor sits on the muzzle (Staging.tsx). */
+/* The cannons, bottom left and right (the right one mirrored), flanking the lines; each burst's
+   anchor sits on its muzzle (Staging.tsx). */
 .dlg-cannon {
   position: absolute;
-  left: 40px;
-  bottom: 6px;
+  bottom: 4px;
   pointer-events: none;
+}
+
+.dlg-cannon.left {
+  left: 40px;
+}
+
+.dlg-cannon.right {
+  right: 40px;
+  transform: scaleX(-1);
 }
 
 .dlg-burst {

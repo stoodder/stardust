@@ -175,18 +175,53 @@ export function holdFireOneHintShows(
 
 /** The first wave whose countdown starts the salvage teach (A1M3: QUILL's W2 drone prompt). */
 export const SALVAGE_TEACH_WAVE = 2;
+/** The salvage teach goes after this many wave starts (D098: a hint never goes stale). */
+export const SALVAGE_HINT_WAVES = 2;
 
 /**
- * Whether the salvage teach shows (R4): it has started (W2's countdown came), the map has
- * wreckage standing, and the drone hasn't been sent this run, while the map is still played.
+ * Whether the salvage teach shows (R4, D098), on any map with wreckage: it has started (W2's
+ * countdown came), fewer than SALVAGE_HINT_WAVES waves have started since (`wavesSince`), the map
+ * has wreckage standing, and the drone hasn't been sent this run, while the map is still played.
  */
 export function salvageHintShows(
   started: boolean,
   wreckStanding: boolean,
   sent: boolean,
   playing: boolean,
+  wavesSince = 0,
 ): boolean {
-  return started && wreckStanding && !sent && playing;
+  return started && wavesSince < SALVAGE_HINT_WAVES && wreckStanding && !sent && playing;
+}
+
+/** An air group this big is a flock (A1M3's W5: ten Puffwings), what Time Dilation is taught on. */
+export const FLOCK_SIZE = 10;
+
+/**
+ * Per wave (index = wave − 1): whether it sends a flock (an air group of FLOCK_SIZE or more).
+ */
+export function flockWaves(
+  waves: readonly {
+    readonly groups: readonly {
+      readonly count: number;
+      readonly enemy: { readonly layer: string };
+    }[];
+  }[],
+): boolean[] {
+  return waves.map((w) => w.groups.some((g) => g.enemy.layer === 'air' && g.count >= FLOCK_SIZE));
+}
+
+/**
+ * Whether the Time Dilation teach shows (D098, A1M3's W5): Time Dilation is in the bar and ready,
+ * it hasn't been cast this run, a flock has come within a turret's reach (`inReach`: a turret is
+ * shooting at one of its flyers) and some of that flock is still alive, while the map is played.
+ */
+export function timeDilationTeachShows(
+  inReach: boolean,
+  cast: boolean,
+  ready: boolean,
+  playing: boolean,
+): boolean {
+  return inReach && !cast && ready && playing;
 }
 
 /** The first wave whose countdown starts the upgrade teach (D028: W2's build phase). */
@@ -299,7 +334,15 @@ export function bindHud(
   let wrecks = 0;
   for (const ch of sim.map.tiles) if (ch === 'x') wrecks++;
   let salvageStarted = false;
+  let salvageWaves = 0;
   hud.salvageHint.value = false;
+  // The Time Dilation teach (D098): its slot, the waves that send a flock, whether a flock is in
+  // reach (latched until its flyers are gone), and whether it has been cast this run.
+  const tdSlot = abilityViews.find((v) => v.ability === 'time_dilation')?.slot ?? 0;
+  const flock = flockWaves(sim.map.waves);
+  let flockInReach = false;
+  let tdCast = false;
+  hud.timeDilationTeach.value = 0;
   hud.spareRunnersOpen.value = saveInfo.spareRunnersOpen;
   hud.leak.value = null;
   hud.waveBanner.value = null;
@@ -388,11 +431,50 @@ export function bindHud(
       w.cleared.length < wrecks,
       w.queue.length > 0 || w.cleared.length > 0,
       playing,
+      salvageWaves,
     );
+    if (tdSlot !== 0 && !tdCast) {
+      flockInReach = flockReach(flockInReach);
+      const ready =
+        (s.abilityCooldownTicks[tdSlot - 1] ?? 0) <= 0 &&
+        (s.abilityCooldownWaves[tdSlot - 1] ?? 0) <= 0;
+      hud.timeDilationTeach.value = timeDilationTeachShows(flockInReach, tdCast, ready, playing)
+        ? tdSlot
+        : 0;
+    }
     hud.holdFireAll.value = s.holdFireAll;
     hud.spareRunnersAll.value = s.spareRunnersAll;
     hud.holdingCount.value = holdingCount(s.towers);
     speed.value = host.speed;
+  };
+  /**
+   * Whether a flock is in reach now: once a turret shoots at one of its flyers, it stays in reach
+   * (`latched`) until none of the flock's flyers is left. Scans the pools only while it matters.
+   */
+  /** Whether enemy slot `slot` (uid `uid`; 0: any) is a live flyer of a flock wave. */
+  const isFlyer = (slot: number, uid: number): boolean => {
+    const e = sim.state.enemies.items[slot];
+    return (
+      e !== undefined &&
+      e.alive &&
+      (uid === 0 || e.uid === uid) &&
+      e.def?.layer === 'air' &&
+      flock[e.wave - 1] === true
+    );
+  };
+  const flockReach = (latched: boolean): boolean => {
+    const s = sim.state;
+    if (flock[s.wave - 1] !== true && !latched) return false;
+    if (latched) {
+      for (let i = 0; i < s.enemies.used; i++) if (isFlyer(i, 0)) return true;
+      return false;
+    }
+    const towersPool = s.towers;
+    for (let i = 0; i < towersPool.used; i++) {
+      const t = towersPool.items[i]!; // i < used
+      if (t.alive && t.targetUid !== 0 && isFlyer(t.targetSlot, t.targetUid)) return true;
+    }
+    return false;
   };
   const extras = { wavesLeft: 0, totalWaves: 0, free: false, charges: 0 };
   const syncCooldowns = (): void => {
@@ -465,6 +547,7 @@ export function bindHud(
       if (e.leak > 0) hud.leak.value = { id: ++leakId, amount: e.leak };
     }),
     host.bus.on('WaveStarted', (e) => {
+      if (salvageStarted) salvageWaves++;
       hud.waveBanner.value = { id: ++bannerId, wave: e.wave };
       if (bannerTimer !== null) clearTimeout(bannerTimer);
       bannerTimer = setTimeout(() => {
@@ -511,6 +594,10 @@ export function bindHud(
       announce(holdFireText(e.on, e.target === 'all' ? null : (name ?? 'Turret')));
     }),
     host.bus.on('AbilityUsed', (e) => {
+      if (e.ability === 'time_dilation') {
+        tdCast = true;
+        hud.timeDilationTeach.value = 0;
+      }
       const def = sim.config.content.abilities[e.ability];
       announce(`${def?.name ?? displayName(e.ability)} fired.`);
     }),
@@ -548,6 +635,7 @@ export function bindHud(
     hud.holdFireTeach.value = false;
     hud.holdFireOneHint.value = false;
     hud.salvageHint.value = false;
+    hud.timeDilationTeach.value = 0;
     hud.sale.value = null;
     hud.objectives.value = [];
   };

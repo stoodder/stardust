@@ -70,6 +70,7 @@ describe('the bottom-center hints (R4)', () => {
       holdFireOne: false,
       holdFireTeach: false,
       holdFireAll: false,
+      timeDilation: false,
       salvage: false,
       upgrade: false,
       selected: false,

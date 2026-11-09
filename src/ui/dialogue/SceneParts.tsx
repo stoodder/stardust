@@ -3,7 +3,7 @@
 // first option takes the focus, the arrows move between them), the Tab trap a modal keeps, and the
 // line announcer screen readers hear each line from.
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { chooseOption, nextScene } from '../../app/dialogue.ts';
+import { advancesItself, chooseOption, nextScene } from '../../app/dialogue.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import { plainText } from './text.ts';
 import type { ChoiceView, LineView, SceneView } from './state.ts';
@@ -31,14 +31,19 @@ export interface SceneStep {
   readonly typed: Typewriter;
   /** Next: finishes the typing, else moves past the line (or closes a played-out scene). */
   readonly next: () => void;
-  /** Whether Next has anything to do (a line on screen, or a played-out scene still showing). */
+  /**
+   * Whether Next shows: a line on screen (but not a full-screen silence, which moves on by itself,
+   * D098), or a played-out scene still showing.
+   */
   readonly canNext: boolean;
 }
 
 /** The typing and the Next action for scene `view` (its clock is the scene's, app/dialogue.ts). */
 export function useSceneStep(view: SceneView): SceneStep {
   const typed = useTypewriter(view.line, view.instant, view.typing);
-  const canNext = view.line !== null || (view.ended && view.mode !== 'briefing');
+  const canNext =
+    (view.line !== null && !advancesItself(view.mode, view.line, view.instant)) ||
+    (view.ended && view.mode !== 'briefing');
   return { typed, canNext, next: nextScene };
 }
 
