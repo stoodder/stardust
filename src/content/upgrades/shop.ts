@@ -1,6 +1,7 @@
 // Zibzab's global upgrades (design/progression.md § 4.3), stocked when the shop opens after A1M3
 // (story/campaign.md § 4.6). Prices are per rank, bought in order; each rank's grants add to the
 // ranks below it.
+import { itemCopy } from './copy.ts';
 import { defineUpgrade, sameEachRank } from './define.ts';
 
 const SHOP_OPENS = 'a1_m03';
@@ -9,7 +10,7 @@ const SHOP_OPENS = 'a1_m03';
 export const reinforced_core = defineUpgrade({
   id: 'reinforced_core',
   name: 'Reinforced Core',
-  copy: null,
+  copy: itemCopy('reinforced_core'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,
@@ -20,7 +21,7 @@ export const reinforced_core = defineUpgrade({
 export const seed_money = defineUpgrade({
   id: 'seed_money',
   name: 'Seed Money',
-  copy: null,
+  copy: itemCopy('seed_money'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,
@@ -31,7 +32,7 @@ export const seed_money = defineUpgrade({
 export const salvage_rights = defineUpgrade({
   id: 'salvage_rights',
   name: 'Salvage Rights',
-  copy: null,
+  copy: itemCopy('salvage_rights'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,
@@ -42,7 +43,7 @@ export const salvage_rights = defineUpgrade({
 export const resale_value = defineUpgrade({
   id: 'resale_value',
   name: 'Resale Value',
-  copy: null,
+  copy: itemCopy('resale_value'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,
@@ -53,7 +54,7 @@ export const resale_value = defineUpgrade({
 export const ability_coolant = defineUpgrade({
   id: 'ability_coolant',
   name: 'Ability Coolant',
-  copy: null,
+  copy: itemCopy('ability_coolant'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,
@@ -67,7 +68,7 @@ export const ability_coolant = defineUpgrade({
 export const bounty_hunter = defineUpgrade({
   id: 'bounty_hunter',
   name: 'Bounty Hunter',
-  copy: null,
+  copy: itemCopy('bounty_hunter'),
   kind: 'shop',
   currency: 'stardust',
   availableAfter: SHOP_OPENS,

@@ -27,8 +27,7 @@ describe('A1M1 · Orientation Day', () => {
       stardust: 0,
       threatIntel: ['fast'],
       requiredCounters: [],
-      companion: null,
-      medals: null,
+      companion: { id: 'bricks', state: 'present' },
     });
     expect(map.cols + map.rows).toBeLessThanOrEqual(36); // one screen
     expect(map.briefing).toContain("Today's forecast: Nibblers, with a chance of Zoomers!");
@@ -82,5 +81,44 @@ describe('A1M1 · Orientation Day', () => {
   it("puts the Peeker's rock in the brush beside the spawn road", () => {
     expect(map.markers.peeker).toEqual([3, 1]);
     expect(at(3, 1)).toBe('.');
+  });
+
+  it("posts Bricks by the core, east of the road, with about a tier-1 Rivet's DPS", () => {
+    const post = map.markers.bricks_post!;
+    expect(post).toEqual([5, 8]);
+    expect(at(...post)).toBe('.');
+    // Beside the road's last stretch before the gate, and out of the core's screen column (the
+    // core's sprite hides the tiles whose col − row equals its own).
+    expect(Math.hypot(post[0] - 4, post[1] - 9)).toBeLessThan(1.5);
+    expect(post[0] - post[1]).not.toBe(4 - 9);
+    expect(map.allies).toEqual([
+      {
+        kind: 'bricks',
+        post: 'bricks_post',
+        tile: [5, 8],
+        attack: {
+          type: 'kinetic',
+          damage: 8,
+          periodTicks: 30,
+          rangeTiles: 2,
+          rangeSq: 4,
+          hitsGround: true,
+          hitsAir: true,
+        },
+      },
+    ]);
+    const rivet = RAW_CONTENT.towers.rivet.tiers[0].attack;
+    const dps = (8 * 60) / 30;
+    expect(dps).toBe(rivet.damage * rivet.ratePerSec);
+  });
+
+  it('awards Teamwork Makes the Dream Work™ for winning with Crossfire up, and par earns it', () => {
+    expect(map.medals?.challenge).toEqual({
+      id: 'teamwork',
+      name: 'Teamwork Makes the Dream Work™',
+      description: 'Win with a Crossfire link active.',
+      condition: { linkActive: 'crossfire' },
+    });
+    expect(map.builds.parMedals).toEqual(['challenge']);
   });
 });

@@ -43,7 +43,7 @@ Tone moves on several slow dials at once, a little every map ([../research/emoti
 - **Briefing:** the heading "Shift briefing" and the button "Clock in".
 - **HUD notices:** "Not enough credits", "{Tower} ships at wave {n}" (a held-back tower; "{Tower} locked" with no wave), "Can't build there", "Uplink recharging" (the Orbital Strike's cooldown), "Can't target there", "Max tier", "Wave in progress", "No waves left", "Not online yet". While paused: "PAUSED". As a wave starts: "WAVE {n}".
 - **HUD labels:** "Start" / "Call +{n}" (the early-call bonus), "Ready", "Pick a target · Esc cancels", the tower panel's stat line ("8 dmg · 2/s · range 3") and "Next: +3 dmg", the strike's tooltip "200 damage in an area after 1 s. Recharges 45 s.", and the upgrade teach's hint "Click a turret to upgrade it (U)" (from W2's countdown until the first upgrade; D028)
-- **Radio (M1):** the map's radio lines and barks from its act file, verbatim, with the speaker's name plate (QUILL, Bricks, Goldie). A reply lands a short beat after its cue and shows under it (Bricks's "It's Wednesday." on QUILL's punchline; D028).
+- **Radio (M1):** the map's radio lines and barks from its act file, verbatim, with the speaker's name plate (QUILL, Bricks, Goldie, Kip). A reply lands a short beat after its cue and shows under it (Bricks's "It's Wednesday." on QUILL's punchline; D028).
 
 **Act II rules.** The jokes keep coming and start landing wrong. Characters notice and stop finishing sentences. Satire turns creepy through *content*, not tone: Sterling's memos sound exactly the same and say worse things. Ves'thara is the first voice that refuses to joke at all. Each map lowers the dials a little.
 
@@ -97,7 +97,8 @@ Story rides on channels that respect play. **Build-phase barks never pause the g
 | **Everglow Inbox (memos)** | Between maps | Body ≤ 600 chars, small print ≤ 140 | — | Everglow | §6.1 |
 | **Results screen** | After each map | One headline, one sub-line | — | System | The counter's per-act labels (§2) |
 | **Loading tips** | Loading screens | ≤ 80 chars | — | System | Erode by act (§2) |
-| **Shop copy** | Zibzab's shop | Item description ≤ 100 chars | — | Zibzab | "Price first" format: cost clause, then pitch, then honest correction |
+| **Shop copy** | Zibzab's shop | Item description ≤ 100 chars | — | Zibzab | "Price first" format: cost clause, then pitch, then honest correction (§6.3) |
+| **R&D copy** | QUILL's R&D lab | Item description ≤ 100 chars | — | QUILL | One line per item (§6.4) |
 | **Environmental** | On the map | — | — | Art and maps | Evie billboards, mining scars, the Peeker, Tidybots, memorial wreckage, path direction ([../design/maps.md §7](../design/maps.md#7-storytelling-with-the-map)) |
 | **Enemy design** | Behavior, motion, and death effects | — | — | Design and art | Frightened versus hungry movement; Haulers' sacks; the death-tone ramp ([../design/enemies.md](../design/enemies.md)) |
 | **Epilogue cards** | Over the credits | ≤ 240 chars each | Yes | Narrator | Modular, chosen by flags ([bible.md §10](bible.md#10-endings)) |
@@ -269,6 +270,15 @@ Codex rules: the original voice is smug Everglow PR with bounty stars and the eu
 ### 6.3 Shop copy (Zibzab)
 
 Format: **Price first: <cost>. <Pitch>. <Honest correction>.** He never says "free." The free Zapcoil sample's line is *"Price first: your next visit. First one's on me. Zibzab is patient."* That replaces "First one's free, friend!" in [../design/progression.md](../design/progression.md); "friend" is reserved for A3M6. Example item: *"Price first: 60 stardust. Barely-Dented Hull Plating! One previous owner, who barely exploded. Honestly? He exploded a normal amount."*
+
+**The catalog's copy lives in [`src/content/upgrades/copy.ts`](../../src/content/upgrades/copy.ts)** (its one home; `copy.test.ts` checks these rules). Zibzab writes the line for every shop item: the global upgrades, the tune-ups, and the Field Protocols.
+- **The price is true.** He never lies, so every price he names is that rank's. A ranked item names the first rank's price, then the next ones ("then 200, then 300") or says it climbs ("and it goes up", "rising").
+- **The pitch is true too.** It may be vague, never wrong: the Thumper tune-up's line names its three ranks, in order.
+- **It holds in every act.** The base shows the same catalog line from A1M4 to the finale, so catalog copy uses **no exclamation points** (Act III's budget, §2; his spoken patter, like the example above, follows its act's budget instead) and no protected word (§3). His Act I warmth and the seeds go in the content instead: "pest" in quotes as Everglow's word (he sells to everyone), the shell as his house, Kip's bought talent.
+
+### 6.4 R&D copy (QUILL)
+
+QUILL writes one line per R&D item, ≤ 100 characters, in [`src/content/upgrades/copy.ts`](../../src/content/upgrades/copy.ts) with Zibzab's. It is QUILL's Act I voice without the exclamation points (the copy shows in every act, and QUILL loses them after A3M2): precise numbers, a sincere aside, and "(Per policy.)" on any line a directive drives (§5.6), like Mk II's reminder that the uplink is a privilege (it is revoked in A3M2). Its lines can seed its arc so long as they say nothing early: the protocol slot's line wishes it could choose its own policies (C4 Rewrite). Under C4 Rewrite, R&D shows no QUILL text during A3M5's offline stretch ([../design/progression.md §7](../design/progression.md#7-rd-tree-intel)).
 
 ---
 

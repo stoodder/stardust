@@ -208,6 +208,8 @@ export interface CompiledEnemyDef<Id extends string = string> {
   readonly traits: readonly Trait[];
   readonly tells: readonly TellId[];
   readonly restValue: number;
+  /** How many young a carrier's burst sack releases (`EnemyDef.carrier`); 0 for non-carriers. */
+  readonly carrierYoung: number;
   readonly sprites: { readonly body: SpriteId; readonly icon: SpriteId };
 }
 

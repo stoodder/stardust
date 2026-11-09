@@ -73,7 +73,7 @@ export const map = defineMapLayout({
         type: 'kinetic',
         damage: 8,
         ratePerSec: 2,
-        rangeTiles: 2.5,
+        rangeTiles: 2,
         targets: { ground: true, air: true },
       },
     },

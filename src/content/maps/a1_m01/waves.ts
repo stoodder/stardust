@@ -42,7 +42,7 @@ export const waves = defineWaves([
   { groups: [clump(0, 4, 0.25), clump(3.75, 4, 0.25), clump(7.5, 4, 0.25)] },
   // W4 · fast, and the warning: a clump of 6 runs in behind the Zoomers, so two unupgraded
   // Rivets start to leak here, a wave before anything can end the shift
-  { groups: [zoomers(12), clump(3, 6, 0.2)] },
+  { groups: [zoomers(14), clump(3, 8, 0.2)] },
   // W5 · test; Orbital Strike prompt: a dense Zoomer burst over the first of four clumps of 4
   {
     groups: [
@@ -50,12 +50,20 @@ export const waves = defineWaves([
       clump(5, 4, 0.2),
       clump(10, 4, 0.2),
       clump(15, 4, 0.2),
-      zoomers(14, 1, 0.2),
+      zoomers(16, 1, 0.2),
     ],
   },
   // W6 · Zoomer rush, with two clumps of 6 in it: a breather for upgraded towers, the upgrade
   // check for tier-1 ones
-  { groups: [zoomers(24, 0, 0.5), clump(2, 6, 0.25), clump(5.75, 6, 0.25)] },
+  {
+    groups: [
+      zoomers(10, 0, 0.3),
+      zoomers(10, 4, 0.3),
+      zoomers(10, 8, 0.3),
+      clump(2, 8, 0.25),
+      clump(5.75, 8, 0.25),
+    ],
+  },
   // W7 · four big clumps of 8, 2 s apart, and two Zoomer groups of 14
   {
     groups: [
@@ -63,8 +71,8 @@ export const waves = defineWaves([
       clump(2, 8, 0.2),
       clump(4, 8, 0.2),
       clump(6, 8, 0.2),
-      zoomers(14, 0, 0.3),
-      zoomers(14, 6.5, 0.3),
+      zoomers(20, 0, 0.2),
+      zoomers(20, 6.5, 0.2),
     ],
   },
 ]);

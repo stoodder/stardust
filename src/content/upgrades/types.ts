@@ -60,11 +60,13 @@ export type ModifierGrant =
   | { readonly kind: 'freeCast'; readonly wave: number };
 export type GrantKind = ModifierGrant['kind'];
 
-/** Display copy. `copy` is the in-voice line (Zibzab's or QUILL's, ≤ 100 chars), null until T210c. */
+/** Display text. */
 interface ItemText {
-  /** Working name; T210c may rename it in voice. */
   readonly name: string;
-  // TODO(T210c): Zibzab and QUILL copy (story/style-guide.md § 6.3).
+  /**
+   * The seller's in-voice line, ≤ 100 chars: Zibzab's in the shop, QUILL's in R&D. The text's home
+   * is copy.ts (`itemCopy`); null only for an item that has none yet (copy.test.ts forbids that).
+   */
   readonly copy: string | null;
 }
 

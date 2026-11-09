@@ -3,6 +3,7 @@
 //
 // Support towers (+5% aura strength, +5% radius) and the Salvage Crane (+5% income) tune other
 // stats; no Modifier kind expresses those yet, so their tune-ups arrive with those towers.
+import { itemCopy } from './copy.ts';
 import { defineUpgrade } from './define.ts';
 import type { UpgradeDef } from './types.ts';
 import type { TowerId } from '../types.ts';
@@ -14,7 +15,7 @@ function tuneUp<const Id extends string>(id: Id, tower: TowerId, name: string): 
   return defineUpgrade({
     id,
     name,
-    copy: null,
+    copy: itemCopy(id),
     kind: 'shop',
     currency: 'stardust',
     availableAfter: 'a1_m03',

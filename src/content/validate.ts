@@ -11,7 +11,8 @@
 // - [sprite-ref]: content names registered sprites of the right category.
 // - [tower-range], [enemy-range], [ability-range]: numbers are in range on every resolved tier.
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
-//   ⇔ shield), and every trait shows its tell (enemies.md § 1, rule 1).
+//   ⇔ shield, the `carrier` tell ⇔ `carrier`), and every trait shows its tell (enemies.md § 1,
+//   rule 1).
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
@@ -278,6 +279,12 @@ function validateEnemy(issues: Issues, def: EnemyDef): void {
   }
   if (has('shielded') !== (def.shield !== undefined)) {
     traits('traits', "'shielded' goes with a shield");
+  }
+  if (def.carrier !== undefined && !isPositiveInt(def.carrier.young)) {
+    bad('carrier.young', 'must be a whole number ≥ 1');
+  }
+  if (def.tells.includes('carrier') !== (def.carrier !== undefined)) {
+    traits('tells', "the 'carrier' tell goes with `carrier` (a sack that bursts on death)");
   }
   if (has('jammer') && !JAMMER_ENEMIES.includes(def.id)) {
     issues.add(

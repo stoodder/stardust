@@ -48,6 +48,24 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly y: number;
     }
   | {
+      /**
+       * A carrier's sack burst as it died (the Brood Hauler, `carrier` in its content; sim/
+       * carrier.ts), right after its EnemyDied: `young` tiny shapes scurry back along `route`
+       * from route distance `dist` toward its spawn. Render-only: they're non-hostile,
+       * untargetable, and leak nothing, so the sim keeps no entity for them.
+       */
+      readonly type: 'SackBurst';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      /** Where it burst, in tiles. */
+      readonly x: number;
+      readonly y: number;
+      readonly route: RouteId;
+      /** The carrier's distance along `route` when it died, in tiles. */
+      readonly dist: number;
+      readonly young: number;
+    }
+  | {
       readonly type: 'EnemyLeaked';
       readonly uid: number;
       readonly enemy: K['enemy'];

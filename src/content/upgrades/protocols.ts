@@ -2,6 +2,7 @@
 // opens after A1M3, and equipped before a map (slot 1 with the shop; slots 2 and 3 in R&D). The
 // picker is M3 (D031); the sim applies Head Start, Emergency Bulkhead, and Linked Up first (the
 // full-catalog check equips those three; design/progression.md § 10).
+import { itemCopy } from './copy.ts';
 import { defineProtocol } from './define.ts';
 
 const SHOP_OPENS = 'a1_m03';
@@ -9,7 +10,7 @@ const SHOP_OPENS = 'a1_m03';
 export const head_start = defineProtocol({
   id: 'head_start',
   name: 'Head Start',
-  copy: null,
+  copy: itemCopy('head_start'),
   currency: 'stardust',
   price: 100,
   availableAfter: SHOP_OPENS,
@@ -19,7 +20,7 @@ export const head_start = defineProtocol({
 export const rapid_deploy = defineProtocol({
   id: 'rapid_deploy',
   name: 'Rapid Deploy',
-  copy: null,
+  copy: itemCopy('rapid_deploy'),
   currency: 'stardust',
   price: 120,
   availableAfter: SHOP_OPENS,
@@ -29,7 +30,7 @@ export const rapid_deploy = defineProtocol({
 export const emergency_bulkhead = defineProtocol({
   id: 'emergency_bulkhead',
   name: 'Emergency Bulkhead',
-  copy: null,
+  copy: itemCopy('emergency_bulkhead'),
   currency: 'stardust',
   price: 150,
   availableAfter: SHOP_OPENS,
@@ -40,7 +41,7 @@ export const emergency_bulkhead = defineProtocol({
 export const salvage_expert = defineProtocol({
   id: 'salvage_expert',
   name: 'Salvage Expert',
-  copy: null,
+  copy: itemCopy('salvage_expert'),
   currency: 'stardust',
   price: 100,
   availableAfter: SHOP_OPENS,
@@ -50,7 +51,7 @@ export const salvage_expert = defineProtocol({
 export const linked_up = defineProtocol({
   id: 'linked_up',
   name: 'Linked Up',
-  copy: null,
+  copy: itemCopy('linked_up'),
   currency: 'stardust',
   price: 200,
   availableAfter: SHOP_OPENS,
@@ -61,7 +62,7 @@ export const linked_up = defineProtocol({
 export const specialist = defineProtocol({
   id: 'specialist',
   name: 'Specialist',
-  copy: null,
+  copy: itemCopy('specialist'),
   currency: 'stardust',
   price: 150,
   availableAfter: SHOP_OPENS,
@@ -72,7 +73,7 @@ export const specialist = defineProtocol({
 export const early_bird = defineProtocol({
   id: 'early_bird',
   name: 'Early Bird',
-  copy: null,
+  copy: itemCopy('early_bird'),
   currency: 'stardust',
   price: 120,
   availableAfter: SHOP_OPENS,
@@ -83,7 +84,7 @@ export const early_bird = defineProtocol({
 export const high_ground_training = defineProtocol({
   id: 'high_ground_training',
   name: 'High Ground Training',
-  copy: null,
+  copy: itemCopy('high_ground_training'),
   currency: 'stardust',
   price: 150,
   availableAfter: SHOP_OPENS,
@@ -93,7 +94,7 @@ export const high_ground_training = defineProtocol({
 export const bounty_board = defineProtocol({
   id: 'bounty_board',
   name: 'Bounty Board',
-  copy: null,
+  copy: itemCopy('bounty_board'),
   currency: 'stardust',
   price: 150,
   availableAfter: SHOP_OPENS,
@@ -104,7 +105,7 @@ export const bounty_board = defineProtocol({
 export const ready_room = defineProtocol({
   id: 'ready_room',
   name: 'Ready Room',
-  copy: null,
+  copy: itemCopy('ready_room'),
   currency: 'stardust',
   price: 180,
   availableAfter: SHOP_OPENS,

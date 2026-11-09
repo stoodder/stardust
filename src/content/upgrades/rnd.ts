@@ -3,6 +3,7 @@
 // campaign.md § 4.1). Scanner Sweep (2 Intel, after A2M1) is an ability purchase: it joins
 // access.ts with its ability. Refunds (Mk II at A3M2's revocation, QUILL's Rapport under C4 Purge)
 // are meta's story transactions (meta-runtime.md).
+import { itemCopy } from './copy.ts';
 import { defineUpgrade } from './define.ts';
 import type { UpgradeDef } from './types.ts';
 import type { AbilityId, CompanionId } from '../types.ts';
@@ -12,7 +13,7 @@ import type { CampaignMapId } from '../campaign.ts';
 export const orbital_strike_mk2 = defineUpgrade({
   id: 'orbital_strike_mk2',
   name: 'Orbital Strike Mk II',
-  copy: null,
+  copy: itemCopy('orbital_strike_mk2'),
   kind: 'rnd',
   currency: 'intel',
   availableAfter: 'a1_m01',
@@ -39,7 +40,7 @@ function rapport<const Id extends string>(
   return defineUpgrade({
     id,
     name,
-    copy: null,
+    copy: itemCopy(id),
     kind: 'rnd',
     currency: 'intel',
     availableAfter,
@@ -60,7 +61,7 @@ export const rapport_bricks = rapport(
 export const protocol_slots = defineUpgrade({
   id: 'protocol_slots',
   name: 'Field Protocol Slot',
-  copy: null,
+  copy: itemCopy('protocol_slots'),
   kind: 'rnd',
   currency: 'intel',
   availableAfter: 'a1_m03',

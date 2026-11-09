@@ -112,6 +112,13 @@ describe('validate: entities', () => {
     rejects(withEnemy('fx_walker', { armor: 2 }), 'enemy-traits');
     rejects(withEnemy('fx_walker', { layer: 'air' }), 'enemy-traits');
     rejects(withEnemy('fx_runner', { tells: ['shielded', 'regen'] }), 'enemy-traits');
+    // A carrier's sack and its tell go together (the Brood Hauler).
+    expect(
+      validate(withEnemy('fx_walker', { carrier: { young: 3 }, tells: ['carrier'] })),
+    ).toEqual([]);
+    rejects(withEnemy('fx_walker', { carrier: { young: 3 } }), 'enemy-traits');
+    rejects(withEnemy('fx_walker', { tells: ['carrier'] }), 'enemy-traits');
+    rejects(withEnemy('fx_walker', { carrier: { young: 0 }, tells: ['carrier'] }), 'enemy-range');
   });
 
   it('[jammer-source] a jammer not on the exhaustive list', () => {
@@ -220,9 +227,39 @@ describe('validate: maps', () => {
     rejects(withMap({ tiles: ['S##..C', '.o#o..', '..#^o.', '.o##x.', '...##C'] }), 'core');
   });
 
-  it('[marker] markers sit on decor', () => {
-    rejects(withMap({ markers: { rock: [1, 1] } }), 'marker');
-    rejects(withMap({ markers: { rock: [9, 9] } }), 'marker');
+  it('[marker] markers sit off the path; ally posts and tile changes on decor (D042)', () => {
+    // Any non-path tile: a pad, high ground, wreckage, or decor (A1M2's pump station).
+    for (const pos of [
+      [1, 1],
+      [3, 2],
+      [4, 3],
+      [0, 1],
+    ] as const) {
+      expect(validate(withMap({ markers: { rock: pos } }))).toEqual([]);
+    }
+    rejects(withMap({ markers: { rock: [2, 1] } }), 'marker'); // path
+    rejects(withMap({ markers: { rock: [0, 0] } }), 'marker'); // spawn
+    rejects(withMap({ markers: { rock: [5, 4] } }), 'marker'); // core
+    rejects(withMap({ markers: { rock: [9, 9] } }), 'marker'); // off the map
+    // A marker an ally stands on, or a script opens, must be decor.
+    const attack = {
+      type: 'kinetic',
+      damage: 8,
+      ratePerSec: 2,
+      rangeTiles: 3,
+      targets: { ground: true, air: true },
+    } as const;
+    rejects(
+      withMap({ markers: { rock: [1, 1] }, allies: [{ kind: 'bricks', post: 'rock', attack }] }),
+      'marker',
+    );
+    rejects(
+      withMap({
+        markers: { rock: [1, 1] },
+        events: [{ id: 'open', on: { wave: 1, phase: 'start' }, actions: [{ openTile: 'rock', to: 'o' }] }],
+      }),
+      'marker',
+    );
   });
 
   it('[wreckage] what lies under it, and 30–80 salvage', () => {

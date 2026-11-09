@@ -118,6 +118,7 @@ export function compileContent<K extends IdSpace = LiveIds>(
       traits: def.traits,
       tells: def.tells,
       restValue: def.restValue ?? 1,
+      carrierYoung: def.carrier?.young ?? 0,
       sprites: def.sprites,
     });
   }

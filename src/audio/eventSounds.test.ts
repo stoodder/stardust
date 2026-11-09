@@ -83,10 +83,10 @@ describe('event sounds', () => {
     ]);
     const landing = run([
       fired('lobbed', 9),
-      { type: 'ProjectileHit', uid: 9, towerUid: 1, x: 1, y: 1, hits: 2 },
+      { type: 'ProjectileHit', uid: 9, towerUid: 1, x: 1, y: 1, hits: 2, damage: 0 },
       // A hitscan hit (uid 0) and a second landing of the same shell make no sound.
-      { type: 'ProjectileHit', uid: 0, towerUid: 1, x: 1, y: 1, hits: 1 },
-      { type: 'ProjectileHit', uid: 9, towerUid: 1, x: 1, y: 1, hits: 0 },
+      { type: 'ProjectileHit', uid: 0, towerUid: 1, x: 1, y: 1, hits: 1, damage: 0 },
+      { type: 'ProjectileHit', uid: 9, towerUid: 1, x: 1, y: 1, hits: 0, damage: 0 },
     ]);
     expect(ids(landing)).toEqual(['sfx:thumper_launch', 'sfx:thumper_impact']);
     // Attack kinds with no sound yet stay silent.
@@ -97,8 +97,8 @@ describe('event sounds', () => {
     const calls = run([
       bomblet(20),
       bomblet(21),
-      { type: 'ProjectileHit', uid: 20, towerUid: 1, x: 1, y: 1, hits: 1 },
-      { type: 'ProjectileHit', uid: 21, towerUid: 1, x: 1, y: 1, hits: 0 },
+      { type: 'ProjectileHit', uid: 20, towerUid: 1, x: 1, y: 1, hits: 1, damage: 0 },
+      { type: 'ProjectileHit', uid: 21, towerUid: 1, x: 1, y: 1, hits: 0, damage: 0 },
     ]);
     expect(ids(calls)).toEqual(['sfx:bomblet_pop', 'sfx:bomblet_pop']);
     expect(SFX.bomblet_pop.maxVoices).toBe(1);

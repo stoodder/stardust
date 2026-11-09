@@ -1,7 +1,8 @@
 // The damage pipeline (design/enemies.md §2.3) and on-hit statuses (§2.4). Every hit, from a
 // tower, a shell's splash, a pulse, or a commander ability (T113), goes through applyDamage, so
 // the matrix, shields, armor, and kill bookkeeping have one home. The numbers are rule data in
-// content/rules.ts. Allocation-free except the EnemyDied event a kill emits.
+// content/rules.ts. Allocation-free except the EnemyDied (and a carrier's SackBurst) event a kill
+// emits.
 import type { CompiledEffect } from '../../content/compiled.ts';
 import type { DamageType } from '../../content/types.ts';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
+import { burstSack } from '../carrier.ts';
 import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
@@ -141,6 +143,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
     x: enemy.x,
     y: enemy.y,
   });
+  burstSack(state, enemy); // a carrier's sack (the Brood Hauler): SackBurst after EnemyDied
 }
 
 /**

@@ -559,3 +559,8 @@ Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star
 - **VFX:** the suppressed stretch is a hazard-striped strip with tracer streaks from Bricks's muzzle and spark rings. AllyView draws Bricks idling toward his target and firing.
 - **Audio:** new ally sounds. Cluster bomblets merge into one rate-limited pop.
 - `dev_range` has Bricks at (7,2) for smoke tests.
+
+### D048 — 2026-11-09 — T210c A1M2 radio, item copy, and T128
+- **A1M2 radio:** 12 lines verbatim from act1.md, including Kip as a new speaker (gold.3). Bricks names Denise as W1 clears. A new `enemyKilled` trigger carries the two Hauler barks; the app wires it in T206c. Unmapped until M3: "You sold Denise" (needs name tags) and Kip's `arrival_reason=bonus` variant (needs flags). `tools/radioLines.test.ts` now checks every radio table and every map briefing against that map's own act-file section.
+- **Item copy** (`src/content/upgrades/copy.ts` is the home; style-guide §6.3–6.4 point to it): 19 Zibzab shop lines and 3 QUILL R&D lines, ≤100 chars, never using "!" (the Base shows them in every act). Tests check that Zibzab's named prices are true.
+- **T128 resolved:** the non-canon Thumper unlock line is replaced by act1.md's canon W3 Crossfire line. Links are live since T202a, so the claim is true, and every radio line is now verbatim canon.

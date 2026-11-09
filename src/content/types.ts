@@ -317,6 +317,13 @@ export interface EnemyDef<Id extends string = string> {
   readonly tells: readonly TellId[];
   /** Finale rest value; default 1. */
   readonly restValue?: number;
+  /**
+   * A carrier (the Brood Hauler, design/enemies.md § 5.1): on death its sack bursts and `young`
+   * tiny shapes scurry back along its route. They're non-hostile, untargetable, and cost no leak,
+   * so they aren't sim entities: the sim emits `SackBurst` and the renderer draws them. Needs the
+   * `carrier` tell.
+   */
+  readonly carrier?: { readonly young: number };
   readonly sprites: { readonly body: SpriteId; readonly icon: SpriteId };
   // Enemy abilities (blink, burrow, jam, …) and bosses land with their first enemy (M3+).
 }

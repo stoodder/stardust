@@ -9,7 +9,8 @@
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
 // - [core]: a Defend map has exactly one core `C`.
-// - [marker]: markers (and so script tile changes) sit on decor tiles inside the map (§ 3).
+// - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
+//   tile changes (`openTile`) sit on decor (§ 3; D042).
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
 //   pays 30–80 salvage; nothing else does.
 // - [wave]: a map has at least one wave; every wave has groups; counts and intervals are
@@ -136,6 +137,9 @@ function validateMap(
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null);
 }
 
+/** Tiles a route walks: a marker never sits on one. */
+const PATH_TILES: readonly string[] = ['#', 'S', 'C'];
+
 // ── Geometry ─────────────────────────────────────────────────────────────────────────────────
 
 function validateGeometry(
@@ -159,13 +163,24 @@ function validateGeometry(
       `a Defend map has exactly one core 'C' (found ${grid.count('C')})`,
     );
   }
+  // A marker may sit on any non-path tile (D042: A1M2's pump station marks its power node), but
+  // an ally post or a scripted tile change takes the tile, so those markers stay on decor.
+  const decorOnly = new Set<string>([
+    ...(def.allies ?? []).map((a) => a.post),
+    ...(def.events ?? []).flatMap((e) => e.actions.flatMap((a) => ('openTile' in a ? [a.openTile] : []))),
+  ]);
   for (const [name, pos] of Object.entries(def.markers ?? {})) {
     const t = grid.at(pos);
-    if (t !== '.') {
+    const ok = decorOnly.has(name) ? t === '.' : t !== undefined && !PATH_TILES.includes(t);
+    if (!ok) {
       issues.add(
         'marker',
         `${where}.markers.${name}`,
-        `${fmt(pos)} is ${t === undefined ? 'off the map' : `'${t}'`}; markers sit on decor ('.')`,
+        `${fmt(pos)} is ${t === undefined ? 'off the map' : `'${t}'`}; ${
+          decorOnly.has(name)
+            ? "an ally post or a scripted tile change sits on decor ('.')"
+            : 'markers sit off the path'
+        }`,
       );
     }
   }
