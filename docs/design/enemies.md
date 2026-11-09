@@ -183,7 +183,9 @@ Columns: **HP**, **Armor**, **Shield** (`max / regen per s / delay s`), **Spd** 
 
 **Roster total: 27 enemy types** (8 + 6 + 7 + 6), plus the bosses in section 6.
 
-**Spawn spacing.** Each enemy has a default spawn interval within a wave group (wave data may override it per group): Nibbler **0.8 s**, Zoomer **0.5 s**. Other types are set when their first wave is authored.
+**Spawn spacing.** Each enemy has a default spawn interval within a wave group (wave data may override it per group): Nibbler **0.8 s**, Zoomer **0.5 s**. Other types are set when their data is authored.
+
+**Where the exact numbers live.** Nibbler, Zoomer, and Chonk are in their data files, [`src/content/enemies/`](../../src/content/enemies/) (`nibbler.ts`, `zoomer.ts`, `chonk.ts`, including the Chonk's spawn interval), which are the home of those numbers; their rows below are the spec they encode.
 
 ### 5.1 Skitterkin (body: Organic)
 

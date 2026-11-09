@@ -157,6 +157,8 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base stats. Each later tier lists only what changes. The T4 cost assumes the default curve unless stated. DPS figures ignore armor and shields.
 
+**Where the exact numbers live.** Rivet, Thumper, and Sprinkler tiers 1–3 are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`), which are the home of those numbers; the entries below are the spec they encode. The other towers' entries, and every specialization, are still the only home of their numbers until their data lands.
+
 ### Everglow towers
 
 Corporate-issue perimeter kit with cheerful product names, safety stickers, and warranty-void warnings. They are reliable and readable, and they make up the starting kit. In A3M2 Sterling revokes the player's Corporate Tower License for one Everglow class mid-wave, and it comes back in A3M4 as jailbroken firmware (section 9).

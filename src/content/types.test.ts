@@ -52,7 +52,7 @@ describe('id unions derived from registries', () => {
   });
 
   it('rejects a typo’d id against the live registries', () => {
-    // @ts-expect-error -- not a tower id (live towers arrive with T105c; 'rivett' stays a typo)
+    // @ts-expect-error -- not a tower id ('rivett' is a typo of 'rivet')
     const tower: TowerId = 'rivett';
     // @ts-expect-error -- not an enemy id
     const enemy: EnemyId = 'nibblr';

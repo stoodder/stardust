@@ -45,8 +45,8 @@ export const map = defineMapLayout({
     "Bricks: Name's Okonkwo. Sergeant. I'll call you Sprout, 'cause you're green and you work with lettuce.",
     "QUILL: Today's forecast: Nibblers, with a chance of Zoomers!",
   ].join('\n'),
-  // TODO(T105c): add `towerUnlockWave: { thumper: 3 }` (Thumper's build button unlocks when W3's
-  // countdown starts) once the `thumper` tower and the waves exist; compile rejects it before.
+  // Thumper's build button unlocks when W3's countdown starts (the build phase before W3).
+  towerUnlockWave: { thumper: 3 },
   threatIntel: ['fast'],
   requiredCounters: [],
   companion: null,

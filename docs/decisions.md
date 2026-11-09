@@ -152,3 +152,10 @@ The sim core is live: `createSim(cfg)` → `{ state, enqueue, step, applyPending
 - **`--ui-scale` = n / devicePixelRatio**, so one game pixel is exactly n device pixels (D009's open question, settled).
 - **Fonts and tokens:** the HUD uses Silkscreen only (crisp at 8 and 16 px). Pixelify Sans renders soft at every size in Chrome, which is an open question for dialogue (T302). Both packages are pinned at 5.3.0, and their licences ship with the build. `:root` defines every `--sd-<ramp>-<n>` color from `master.ts`, and `tools/uiTokens.test.ts` keeps UI CSS on those tokens.
 - **Icons:** 14×14 authored plus outline makes 16×16 for towers and enemies; glyphs are 8×8. Display names are derived from ids until `TowerDef`/`EnemyDef` get a `name` (T119).
+
+### D019 — 2026-11-09 — T105c content data: first-pass numbers
+- Towers Rivet, Thumper, and Sprinkler (tiers 1–3) and enemies Nibbler, Zoomer (`fast`), and Chonk (`armored`, armor 2) are live content with the towers.md §7 / enemies.md §5 numbers. No tier-4 specs yet (T202). The M1 Sprinkler is Chilled-only; Soaked waits for A2M2.
+- **Numbers chosen where the docs were silent:** Chonk's spawn interval is 1.5 s (about 0.9 tiles apart at 0.6 tiles/s).
+- **A1M1** has the seven act1.md waves on `road` and `towerUnlockWave: { thumper: 3 }`. The validator's stub guard is gone, and every rule passes for real. The new threats are Nibbler and Zoomer, exactly the cap of 2.
+- **Par build timing:** if every enemy dies, the bank at each build phase is 350 / 292 / 270 / 113 / 165 / 95 / 179 for W1–W7. So **the second Thumper moves from W6 to W7** (T107's open note), and the Rivet T2 lands in W2. `rivet_only` is par with Rivets in place of Thumpers. Both builds are first-pass until T107's tuning. Orbital Strike steps join with T113.
+- **Ruling on conventions' open question 1 (design tables vs content):** content files are the single home for exact numbers. Design-doc tables keep roles, intent, and target ranges, plus a pointer to the content file. Shrinking the existing number columns is task T120 (Design owner). Until then, if a table and a content file disagree, the content file wins.

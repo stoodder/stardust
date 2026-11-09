@@ -31,7 +31,7 @@ function withMap(patch: Partial<MapDef<IdSpace>>): RawContent<IdSpace> {
 }
 
 describe('compileContent: live registries', () => {
-  it('compiles the live registries (empty until T105c / T107)', () => {
+  it('compiles the live registries', () => {
     const live = compileContent(RAW_CONTENT);
     expect(Object.keys(live.towers)).toEqual(Object.keys(RAW_CONTENT.towers));
     expect(live.campaign).toEqual(RAW_CONTENT.campaign);

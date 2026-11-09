@@ -44,7 +44,7 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
 
 **Waves.** 1 Nibblers ×6 [T: build] · 2 Nibblers ×10 [T: upgrade; high-ground prompt] · 3 Nibbler clumps ×12 [T: Thumper unlocks, Crossfire] · 4 Zoomers ×4 [T: fast; Suppressing Fire prompt] · 5 Nibblers ×8 + Zoomers ×4 [X; Orbital Strike prompt] · 6 Zoomer rush ×10 [X] · 7 Nibblers ×20 + Zoomers ×8 [X].
 
-**Wave data** (A1M1 is the M1 map, so its waves are fully specified). A **clump** is a group of 4 Nibblers at 0.25 s spacing, with 3 s between one clump's last spawn and the next clump's first (so clumps start 3.75 s apart). Other groups use the enemy's default spacing (Nibbler 0.8 s, Zoomer 0.5 s; [enemies.md §5](../../design/enemies.md#5-roster)). `delaySec` is measured from the wave's start. Every route is the one road; every countdown is the Act I 25 s.
+**Wave data** (A1M1 is the M1 map, so its waves are fully specified; the data is [`src/content/maps/a1_m01/waves.ts`](../../../src/content/maps/a1_m01/waves.ts)). A **clump** is a group of 4 Nibblers at 0.25 s spacing, with 3 s between one clump's last spawn and the next clump's first (so clumps start 3.75 s apart). Other groups use the enemy's default spacing (Nibbler 0.8 s, Zoomer 0.5 s; [enemies.md §5](../../design/enemies.md#5-roster)). `delaySec` is measured from the wave's start. Every route is the one road; every countdown is the Act I 25 s.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
@@ -79,9 +79,19 @@ The W7 Zoomer groups slot into the gaps after the second and fourth clumps. A1M1
 
 **Medals.** Victory · Perfect Core · **Teamwork Makes the Dream Work™:** win with a Crossfire link active (evaluated at the moment of victory).
 **Rewards.** Stardust 0 · Intel 3.
-**Par build.** Rivet on the greenhouse roof (7,2) at W1 → T3 by W5; second Rivet (10,4) + Thumper (10,5) for Crossfire in the build phase before W3; second Thumper (3,5) at **W6**. Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. Target margin 95. **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs: do-nothing loses; par wins inside the band; a **Rivet-only** build wins at a lower margin than par; `alwaysCallEarly`.
+**Par build.** Loadout Rivet + Thumper. Each step runs in the build phase before its wave, as soon as it's affordable ([conventions.md § Balance sims](../../tech/conventions.md#balance-sims-npm-run-sim)); the data is [`src/content/maps/a1_m01/builds.ts`](../../../src/content/maps/a1_m01/builds.ts).
 
-**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
+| Wave | Par | Rivet-only (`altBuilds.rivet_only`) |
+|---|---|---|
+| W1 | Rivet on the greenhouse roof (7,2) | same |
+| W2 | Upgrade the roof Rivet to T2 | same |
+| W3 | Rivet (10,4), then Thumper (10,5): the Crossfire pair | Rivet (10,4), then Rivet (10,5) |
+| W5 | Upgrade the roof Rivet to T3 | same |
+| W7 | Thumper (3,5) | Rivet (3,5) |
+
+Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. Target margin 95. If every pest dies, the bank at the start of each build phase under par is 350, 292, 270, 113, 165, 95, 179 (W1–W7). So the second Thumper waits for **W7**: with 95 banked before W6, it would become affordable only after about 8 of W6's 10 Zoomers die, too late to matter there. These timings are provisional until T107's balance tuning. **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs: do-nothing loses; par wins inside the band; the **Rivet-only** build wins at a lower margin than par; `alwaysCallEarly`.
+
+**The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Its Orbital Strike steps join the data with the ability (T113). Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
 
 ## A1M2 · Hatching Season
 

@@ -378,7 +378,6 @@ Budgets: sim tick ≤ 1 ms with 300 enemies and 40 towers; frame ≤ 8 ms CPU at
 
 ## Open questions
 
-1. **Exact numbers in design docs.** Content files are the home of exact numbers, with design docs holding intent and target ranges. Until content files exist (T105c onward), the design tables carry the numbers. When a content file lands, does its design table shrink to ranges plus a link, or stay as the human-readable table?
-2. **Gate time.** Plan to run sims in parallel with `worker_threads` once there are more than 5 maps, before `npm run sim` plus `smoke` push `check` past 5 minutes, and before cutting any coverage.
-3. **Firefox and WebKit smoke runs.** The gate is Chromium-only. Add a `smoke:all` run before milestone ships?
-4. **Variant explosion.** Flag and companion variants multiply harness runs on late maps (the finale reads four flags and has a companion pick list). Test each flag's values and each companion independently with the par combination, rather than every combination? Confirm before the finale is built.
+1. **Gate time.** Plan to run sims in parallel with `worker_threads` once there are more than 5 maps, before `npm run sim` plus `smoke` push `check` past 5 minutes, and before cutting any coverage.
+2. **Firefox and WebKit smoke runs.** The gate is Chromium-only. Add a `smoke:all` run before milestone ships?
+3. **Variant explosion.** Flag and companion variants multiply harness runs on late maps (the finale reads four flags and has a companion pick list). Test each flag's values and each companion independently with the par combination, rather than every combination? Confirm before the finale is built.

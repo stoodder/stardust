@@ -125,15 +125,6 @@ export interface MapCtx {
   readonly mapIds: ReadonlySet<string>;
 }
 
-/**
- * TODO(T105c): A1M1 is registered before its waves exist. A map with no waves yet is a stub:
- * its wave-derived checks (threat intel, soft traits, new threats) wait for the waves. Delete
- * this once every registered map has waves.
- */
-function isStubMap(def: MapDef<IdSpace>): boolean {
-  return def.waves.length === 0;
-}
-
 function validateMap(
   issues: Issues,
   ctx: MapCtx,
@@ -172,8 +163,7 @@ function validateMap(
 
   if (grid !== null) validateGeometry(issues, def, grid, campaign !== null, where);
   validateWaves(issues, ctx, def, where);
-  if (!isStubMap(def))
-    validateThreats(issues, ctx, def, campaign?.history ?? emptyHistory(), where);
+  validateThreats(issues, ctx, def, campaign?.history ?? emptyHistory(), where);
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null);
@@ -485,7 +475,7 @@ function validateNovelty(
     ...newTraits.map((t) => `trait ${t}`),
     ...modifiers,
   ];
-  if (!isStubMap(def) && threats.length > MAX_NEW_THREATS) {
+  if (threats.length > MAX_NEW_THREATS) {
     issues.add(
       'new-threats',
       where,
