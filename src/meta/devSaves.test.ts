@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CAMPAIGN } from '../content/campaign.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { exportCode, importCode } from './codec.ts';
+import { buy } from './purchase.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from './saveData.ts';
 import { validateSave } from './validate.ts';
 
@@ -57,15 +58,16 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(m5.story.bricksTagIndex).toBe(2);
   });
 
-  it('after_a1m5_ref is the reference profile into A2M1: C1 cleared, the Lookout once licensed', () => {
+  it('after_a1m5_ref is the reference profile into A2M1: C1 cleared, the Lookout once stocked', () => {
     const ref = DEV_SAVES.after_a1m5_ref.build();
     const m5 = DEV_SAVES.after_a1m5.build();
     expect(ref.story.flags.spared_quiet_wave).toBe(false);
     expect(ref.campaign.maps).toEqual(m5.campaign.maps);
     expect(ref.upgrades).toEqual(m5.upgrades);
     expect(ref.unlocks.specs).toEqual(['thumper']);
-    const towers: readonly string[] = LIVE_KNOWN_IDS.towers;
-    if (!towers.includes('lookout')) {
+    // The license goes on the shelf once T406 lifts the Lookout's stub gate (meta/purchase.ts).
+    const stocked = buy(m5, { kind: 'license', tower: 'lookout' }).ok;
+    if (!stocked) {
       expect(ref.unlocks.towers).toEqual(m5.unlocks.towers);
     } else {
       expect(ref.unlocks.towers).toEqual([...m5.unlocks.towers, 'lookout']);

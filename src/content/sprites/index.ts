@@ -103,6 +103,28 @@ import { portraitQuill } from './portraits/quill.ts';
 import { portraitSterling } from './portraits/sterling.ts';
 import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
+import {
+  enemyGlassWitch,
+  enemyGlimmer,
+  enemyLightwing,
+  enemyMote,
+  enemyWeftWarden,
+  iconAbilityScannerSweep,
+  iconEnemyGlassWitch,
+  iconEnemyGlimmer,
+  iconEnemyLightwing,
+  iconEnemyMote,
+  iconEnemyWeftWarden,
+  iconTowerCrane,
+  iconTowerHarpoon,
+  iconTowerLookout,
+  towerCrane,
+  towerCraneHead,
+  towerHarpoon,
+  towerHarpoonHead,
+  towerLookout,
+  towerLookoutHead,
+} from './placeholders/index.ts';
 
 export const SPRITES = [
   tileGrass,
@@ -144,6 +166,13 @@ export const SPRITES = [
   towerSkyhookHead,
   towerZapcoil,
   towerZapcoilHead,
+  // M4's towers, placeholders until T440b (placeholders/index.ts).
+  towerLookout,
+  towerLookoutHead,
+  towerHarpoon,
+  towerHarpoonHead,
+  towerCrane,
+  towerCraneHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
@@ -156,6 +185,12 @@ export const SPRITES = [
   enemyElder,
   enemyChitterbloom,
   enemyGerald,
+  // M4's units, placeholders until T440a and T440b (placeholders/index.ts).
+  enemyMote,
+  enemyGlimmer,
+  enemyWeftWarden,
+  enemyLightwing,
+  enemyGlassWitch,
   allyBricks,
   projectileRivetTracer,
   projectileThumperShell,
@@ -189,6 +224,16 @@ export const SPRITES = [
   iconEnemyGerald,
   iconAbilityTimeDilation,
   iconAbilityClearanceSale,
+  // M4's icons, placeholders until T440a and T440b (placeholders/index.ts).
+  iconTowerLookout,
+  iconTowerHarpoon,
+  iconTowerCrane,
+  iconEnemyMote,
+  iconEnemyGlimmer,
+  iconEnemyWeftWarden,
+  iconEnemyLightwing,
+  iconEnemyGlassWitch,
+  iconAbilityScannerSweep,
   iconCredits,
   iconCore,
   iconLock,

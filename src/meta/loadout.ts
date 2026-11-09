@@ -20,6 +20,7 @@ import type {
   MapId,
   ProtocolId,
   TowerId,
+  ThreatIntelId,
   Trait,
 } from '../content/types.ts';
 import { PROTOCOLS } from '../content/upgrades/index.ts';
@@ -344,7 +345,7 @@ export function toggleProtocol<P extends string>(
 /** What the counter checks need to know about a map (from its compiled data). */
 export interface LoadoutMap {
   readonly act: Act;
-  readonly threatIntel: readonly Trait[];
+  readonly threatIntel: readonly ThreatIntelId[];
   readonly requiredCounters: readonly CounterId[];
   /** The enemies in its waves (answerScope's act, body, and air conditions). */
   readonly enemies: readonly {
@@ -371,7 +372,7 @@ const COUNTER_ORDER: readonly CounterId[] = [
 export function mapCounters(map: LoadoutMap): CounterId[] {
   const set = new Set<CounterId>(map.requiredCounters);
   for (const t of map.threatIntel) {
-    const c = TRAIT_COUNTER[t];
+    const c = t === 'boss' ? null : TRAIT_COUNTER[t]; // `boss` is intel-only
     if (c !== null) set.add(c);
   }
   return COUNTER_ORDER.filter((c) => set.has(c));

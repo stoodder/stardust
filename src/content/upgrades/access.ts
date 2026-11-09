@@ -17,6 +17,14 @@ export const TOWER_ACCESS: Readonly<Record<TowerId, Access>> = {
   skyhook: { how: 'issued', availableAfter: 'a1_m02' },
   /** Zibzab's free sample when the shop opens after A1M3 (T308 runs the license). */
   zapcoil: { how: 'license', currency: 'stardust', price: 0, availableAfter: 'a1_m03' },
+  // M4 (T400a rows; campaign.md § 4.1–4.2). A license for a tower the sim still refuses
+  // (sim/gates.ts STUB_TOWERS) is on no shelf until its task lifts the gate (meta/purchase.ts), so
+  // these rows are data now and buyable from T406 (Lookout) and T408 (Crane, Harpoon).
+  /** Stocked after A1M5 (the reference owns it from A2M1). */
+  lookout: { how: 'license', currency: 'stardust', price: 150, availableAfter: 'a1_m05' },
+  /** Zibzab's new shipment after A2M1 (progression.md § 4.1: Harpoon 250, Crane 200). */
+  harpoon: { how: 'license', currency: 'stardust', price: 250, availableAfter: 'a2_m01' },
+  crane: { how: 'license', currency: 'stardust', price: 200, availableAfter: 'a2_m01' },
 };
 
 /**
@@ -28,6 +36,11 @@ export const ABILITY_ACCESS: Readonly<Partial<Record<AbilityId, Access>>> = {
   orbital_strike: { how: 'gift', availableAfter: null },
   /** Inherited in A3M4's closing scene, so a Technician ability from A3M5. */
   suppressing_fire: { how: 'gift', availableAfter: 'a3_m04' },
+  /**
+   * R&D Command after A2M1, 2 Intel (progression.md § 7.3). No R&D shelf sells abilities yet: T406
+   * adds the purchase when it lifts `ability.reveal`.
+   */
+  scanner_sweep: { how: 'rnd', currency: 'intel', price: 2, availableAfter: 'a2_m01' },
 };
 
 /** One purchase unlocks both tier-4 specs of an owned tower, once Engineering opens after A1M4. */

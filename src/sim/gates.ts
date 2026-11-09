@@ -132,6 +132,14 @@ function isStubTower(id: string): id is (typeof STUB_TOWERS)[number] {
 }
 
 /**
+ * The task a stub tower waits for (its `tower.<id>` row), or null for any other tower or once the
+ * row is lifted. Meta keeps a refused stub's license and spec unlock off the shelves.
+ */
+export function stubTowerGate(id: string, gates: Gates = FEATURE_GATES): GateOwner | null {
+  return isStubTower(id) ? gates[`tower.${id}`] : null;
+}
+
+/**
  * Refused features and the task that lifts each; `null` once it's simulated. Map-script refusals
  * (triggers, actions, `when` conditions) are separate: `unsupportedScript` in systems/triggers.ts.
  */

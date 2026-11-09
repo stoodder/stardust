@@ -1262,3 +1262,8 @@ The star map ("Sector map" on screen) is specced in core-loop §1.1, art-directi
 - **Naming rule for locked shop and base copy:** Act I maps always; later maps only once won or at the frontier; otherwise "Shift {n}".
 - **The chart's phase follows the frontier** (`act2.gold` from A2M1, `act2.dusk` from A2M4, `act3`, `dawn`), the UI theme too. The north is Everglow's "No survey data" hatch, never the Hollow's acid; Rig Nine's spoil and the plant's vats carry a few cold violet pixels from the start as fair-play clues; the Long Walk is labelled "Surge corridor" until A2M5 is won (M5).
 - **First visit:** a survey sweep and "Access upgraded! Perimeter Ops now covers the whole valley." (`story.seen` id `star_map_opened`, no save bump). Keyboard: arrows in campaign order, Home/End, Enter to the panel, Esc back; arrival focuses the frontier's Start.
+
+### D103 — 2026-11-09 — T441 Act II portraits
+- **Ves'thara** (`aelari` palette) is woven and lit from inside: her lattice veil's gaps are real transparent holes (the only see-through portrait), her eyes are knots of light that lose their white core only in grief, her robes are dark emerald so violet stays reserved for the Hollow-touched variants, and the cut collar thread hangs loose in every frame.
+- **Pebble** keeps the Peeker's green seedling (custom legend over `skitterkin.ally`) so the player knows her as the Peeker; she is bare-headed until Bricks's bottle cap (a `cap` variant from A2M4, M5). `singing` is drawn now for A3M1.
+- **Bricks's `pebble` variant** carries her in his breast pocket ("Pocket's got room"); it shows only after the rescue (T422), and Pebble's name plate reads "???" until Bricks names her.

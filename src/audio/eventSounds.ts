@@ -93,6 +93,23 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BossPhase: true,
   BossEnded: true,
   WreckageCleared: true,
+  // Act II's events (T400a seams) are silent until their sounds land (T450).
+  HushStarted: false,
+  Hushed: false,
+  TurnedHeavy: false,
+  SkittishBolt: false,
+  ShieldPulse: false,
+  ShieldHit: false,
+  BlinkTell: false,
+  Blinked: false,
+  BlinkInterrupted: false,
+  Revealed: false,
+  Cloaked: false,
+  AssetHit: false,
+  AssetLost: false,
+  CheckpointReached: false,
+  ClickableChanged: false,
+  Interacted: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -272,6 +289,22 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
         case 'ObjectiveProgress':
+        case 'HushStarted':
+        case 'Hushed':
+        case 'TurnedHeavy':
+        case 'SkittishBolt':
+        case 'ShieldPulse':
+        case 'ShieldHit':
+        case 'BlinkTell':
+        case 'Blinked':
+        case 'BlinkInterrupted':
+        case 'Revealed':
+        case 'Cloaked':
+        case 'AssetHit':
+        case 'AssetLost':
+        case 'CheckpointReached':
+        case 'ClickableChanged':
+        case 'Interacted':
           return;
         default:
           assertNever(e);

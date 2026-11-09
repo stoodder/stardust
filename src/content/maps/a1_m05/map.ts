@@ -82,7 +82,7 @@ export const map = defineMapLayout({
   coreIntegrity: 20,
   stardust: 160,
   // Chitterbloom's `boss` shows as her tell, not a trait (no Trait is 'boss').
-  threatIntel: ['fast', 'flying', 'armored', 'splitting', 'huddle', 'burrowing'],
+  threatIntel: ['fast', 'flying', 'armored', 'splitting', 'huddle', 'burrowing', 'boss'],
   requiredCounters: ['air', 'splash', 'armor'],
   // Party Pooper Prevention (act1.md § A1M5, Medals): the Matriarch is driven off before she
   // reaches the banner line. No medal can reference the Quiet Wave.

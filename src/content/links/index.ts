@@ -3,6 +3,17 @@
 import { defineRegistry } from '../define.ts';
 import { conductive } from './conductive.ts';
 import { crossfire } from './crossfire.ts';
+import { overwatch } from './overwatch.ts';
+import { reel_it_in } from './reel_it_in.ts';
 import { sitting_ducks } from './sitting_ducks.ts';
+import { skywatch } from './skywatch.ts';
 
-export const LINKS = defineRegistry({ crossfire, sitting_ducks, conductive });
+export const LINKS = defineRegistry({
+  crossfire,
+  sitting_ducks,
+  conductive,
+  // M4 (T400a stubs: their towers are refused until T406 and T408).
+  overwatch,
+  skywatch,
+  reel_it_in,
+});

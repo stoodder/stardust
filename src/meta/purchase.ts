@@ -26,6 +26,7 @@ import {
   type ProtocolDef,
   type UpgradeDef,
 } from '../content/upgrades/index.ts';
+import { stubTowerGate } from '../sim/gates.ts';
 import { isMapWon, isSystemUnlocked, SYSTEM_UNLOCKS, type MetaSystem } from './progress.ts';
 import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
@@ -193,7 +194,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
       };
     }
     case 'specs': {
-      if (!isTower(item.tower, catalog)) return null;
+      // A tower registered ahead of its task (sim/gates.ts STUB_TOWERS) isn't stocked yet.
+      if (!isTower(item.tower, catalog) || stubTowerGate(item.tower) !== null) return null;
       const specs: readonly string[] = save.unlocks.specs;
       const { engineering } = catalog;
       return {
@@ -211,6 +213,9 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
     case 'license': {
       const license = licenseOf(item.tower, catalog);
       if (!isTower(item.tower, catalog) || license === null) return null;
+      // A tower registered ahead of its task (sim/gates.ts STUB_TOWERS) isn't stocked yet: its
+      // license is data (Lookout after A1M5) and goes on the shelf when the task lifts the gate.
+      if (stubTowerGate(item.tower) !== null) return null;
       return {
         pane: 'shop',
         currency: license.currency,

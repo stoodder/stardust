@@ -7,7 +7,7 @@ import type {
   CompiledMapDef,
   CompiledTowerDef,
 } from '../content/compiled.ts';
-import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, TRAIT_TELL } from '../content/rules.ts';
+import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, THREAT_INTEL_TELL } from '../content/rules.ts';
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import { SPRITES } from '../content/sprites/index.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -290,14 +290,14 @@ function mapEnemies(map: Pick<CompiledMapDef<IdSpace>, 'waves'>): Map<string, Ma
 
 /**
  * A map's threats as the briefing lists them: each `threatIntel` trait with its tell's glyph
- * (`TRAIT_TELL`: `burrowing` draws `icon.tell.burrower`), then any other glyph-bearing tell of its
+ * (`THREAT_INTEL_TELL`: `burrowing` draws `icon.tell.burrower`, `boss` `icon.tell.boss`), then any other glyph-bearing tell of its
  * enemies (the Hauler's `carrier`), each tell once. Neutrals (Gerald) aren't threats.
  */
 function threatViews(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): ThreatView[] {
   const seen = new Set<string>();
   const threats: ThreatView[] = [];
   for (const trait of map.threatIntel) {
-    const tell = TRAIT_TELL[trait];
+    const tell = THREAT_INTEL_TELL[trait];
     if (seen.has(tell)) continue;
     seen.add(tell);
     threats.push({ id: trait, label: displayName(trait), glyph: tellGlyph([tell]) });
@@ -431,6 +431,7 @@ export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim
     case 'segment':
       return 'path';
     case 'strike':
+    case 'reveal':
       return 'area';
     case 'slowAll':
     case 'discount':

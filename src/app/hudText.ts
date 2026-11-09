@@ -147,6 +147,12 @@ export function abilityDescription(def: CompiledAbilityDef, stats?: AbilityStats
     const pct = statNum(Math.round(e.pct * 100));
     return `Your next ${e.charges} builds or upgrades cost ${pct}% less. Once per ${def.cooldownWaves} waves.`;
   }
+  // Scanner Sweep (T400a seam; T406 runs it, and T431 may reword the line).
+  if (e.kind === 'reveal') {
+    const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
+    const sec = statNum(e.durationTicks / TICK_HZ);
+    return `Reveals cloaked enemies in a ${radius}-tile radius for ${sec} s. Recharges ${cd} s.`;
+  }
   const delay = statNum(e.delayTicks / TICK_HZ);
   const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
   return `${statNum(e.damage)} damage in a ${radius}-tile radius after ${delay} s. Recharges ${cd} s.`;
@@ -318,6 +324,9 @@ export function rejectText(reason: RejectReason): string | null {
     // The Quiet Wave can't be called early (D097): the HUD hides Call, so only W reaches this.
     case 'quietWave':
       return 'This one comes in its own time';
+    // Clickable world objects (T409 may reword it).
+    case 'notClickable':
+      return "Can't reach that from here";
     case 'mapEnded':
     case 'notInLoadout':
     case 'noSuchTower':

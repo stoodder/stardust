@@ -442,7 +442,7 @@ const bossLayout = dev.defineMapLayout({
   ],
   startCredits: 900,
   stardust: 0,
-  threatIntel: ['burrowing', 'armored', 'splitting', 'huddle'],
+  threatIntel: ['burrowing', 'armored', 'splitting', 'huddle', 'boss'],
   requiredCounters: ['armor'],
   medals: {
     challenge: {

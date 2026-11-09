@@ -1,0 +1,25 @@
+// Mote (design/enemies.md § 5.4): the first Hollow unit (A2M1, Rig Nine), small and quick, in
+// clusters of 6–12. The roster row is the spec: 25 HP, no armor, 1.6 tiles/s, leak 1, bounty 2,
+// ground, void. `clustered` (D101) makes a cluster a splash-category threat, so A2M1 can require
+// splash and its briefing shows "Hollow clusters". It hushes under the hush rule (every non-boss
+// Hollow unit does: `hushes` is derived at compile; enemyAbilities/hush.ts, T402), and may walk
+// rift lanes. Spawn interval 0.3 s is a first pass (a cluster arrives packed); T402 and T420
+// confirm it. Sprites are placeholders under their final ids (T440a).
+import { defineEnemy } from '../define.ts';
+
+export const mote = defineEnemy({
+  id: 'mote',
+  name: 'Mote',
+  faction: 'hollow',
+  body: 'void',
+  layer: 'ground',
+  hp: 25,
+  armor: 0,
+  speedTilesPerSec: 1.6,
+  leak: 1,
+  bounty: 2,
+  spawnIntervalSec: 0.3,
+  traits: ['clustered'],
+  tells: ['hollow'],
+  sprites: { body: 'enemy.mote', icon: 'icon.enemy.mote' },
+});
