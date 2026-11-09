@@ -1,6 +1,7 @@
 // A1M5 balance-harness builds: docs/story/campaign/act1.md § A1M5, Par build (the step tables
 // there mirror these).
 import { defineBuilds } from '../../define.ts';
+import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos } from '../../types.ts';
 import { OPEN } from './waves.ts';
 
@@ -108,13 +109,7 @@ function swapped(
 export const builds = defineBuilds({
   // A1M5's reference profile (campaign.md § 4.9): A1M4's, plus the Thumper's specs (Engineering
   // opened after A1M4), Reinforced Core 1, and the Sprinkler tune-up.
-  referenceProfile: {
-    towers: ['rivet', 'thumper', 'sprinkler', 'skyhook', 'zapcoil'],
-    specs: ['thumper'],
-    shop: { tune_rivet: 1, tune_thumper: 1, tune_sprinkler: 1, reinforced_core: 1 },
-    protocols: ['head_start'],
-    technicianAbility: 'orbital_strike',
-  },
+  referenceProfile: REFERENCE_PROFILES.a1_m05,
   parBuild: { loadout: PAR_LOADOUT, steps: PAR_STEPS },
   noCounterBuilds: {
     // No air answer: Thumpers and Sprinklers only (no Rivet, Skyhook, or Zapcoil anywhere).
@@ -141,7 +136,17 @@ export const builds = defineBuilds({
   // Each pick saves W7's second warren Hauler: Mk II's wider blast takes it with its Elder, and
   // Rapport readies Suppressing Fire at the gate in time for it (T228).
   rndPickChanges: ['orbital_strike_mk2', 'rapport_bricks'],
+  // C1 (campaign.md § 6.2): par holding fire through the Quiet Wave spares it; par clears it.
+  runEndFlags: {
+    spared_quiet_wave: { setBy: ['holdFireWhile:quiet_wave'], notSetBy: ['par'] },
+  },
   altBuilds: {
+    // Under-built (T334): par without its Cluster spec, a player who never opened Engineering.
+    // It may win or lose, but never to one wave's wall.
+    no_spec: {
+      loadout: PAR_LOADOUT,
+      steps: PAR_STEPS.filter((s) => !('specialize' in s)),
+    },
     // Thumper (Bunker Buster), Sprinkler, Zapcoil: the Thumpers and the Sprinkler at the gate
     // (Sitting Ducks), a Zapcoil beside the Sprinkler (Conductive) chaining through the
     // Bunchlings, Zapcoils on the high ground and under the air lane for the flocks, and a Bunker
@@ -206,4 +211,5 @@ export const builds = defineBuilds({
       ],
     },
   },
+  altExpectations: { no_spec: { outcome: 'either' } },
 });

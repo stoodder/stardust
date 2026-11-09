@@ -10,7 +10,7 @@
 // Definitions never refer to their own kind's registry (a MapDef can't name a MapId), which is
 // what keeps the type-level imports below free of cycles.
 import type { ABILITIES } from './abilities/index.ts';
-import type { FLAGS, FlagValueOf } from './dialogue/flags.ts';
+import type { BooleanFlagId, FLAGS, FlagValueOf } from './dialogue/flags.ts';
 import type { ENEMIES } from './enemies/index.ts';
 import type { LINKS } from './links/index.ts';
 import type { MAPS } from './maps/index.ts';
@@ -831,6 +831,23 @@ export interface ScriptedBuild<K extends IdSpace = LiveIds> {
 
 export type PolicyId = 'none' | 'spamCheapest' | 'alwaysCallEarly' | 'spareFleeing';
 
+/**
+ * A run a run-end flag check names (BuildsDef.runEndFlags): par; the spareFleeing policy (par with
+ * the Spare runners filter on every tower); par with a `holdFireWhile: <tag>` macro armed before
+ * W1 (Hold Fire on all while that tag's units are on the field, wave by wave); or an alt build.
+ */
+export type FlagRunLabel = 'par' | 'spareFleeing' | `holdFireWhile:${WaveTag}` | `alt:${string}`;
+
+/**
+ * Which runs must set a run-end flag and which must not (BuildsDef.runEndFlags; T412). A run in
+ * `setBy` must win, and the flag's run-end rule (content/dialogue/flags.ts FLAG_RULES) must hold
+ * over its stats; for a run in `notSetBy` the rule must not hold.
+ */
+export interface RunEndFlagRuns {
+  readonly setBy: readonly FlagRunLabel[];
+  readonly notSetBy: readonly FlagRunLabel[];
+}
+
 /** What the harness expects of one alt build beyond the forgiving floor (conventions.md § Balance sims). */
 export interface AltBuildExpectation {
   /** It wins at a lower margin than par on the same seed: par's choices earn their slots. */
@@ -864,6 +881,13 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly marginBand?: { readonly minPct: number; readonly maxPct: number };
   /** The first map after a boss restarts the monotonic-difficulty chain. */
   readonly rebaseline?: boolean;
+  /**
+   * The run-end flags this map sets (FLAG_RULES whose `onMapEnd` is this map: A1M5's
+   * `spared_quiet_wave`, A2M3's `held_fire_second_look`), with the runs that must set each and
+   * the runs that must not (the harness's `flags` check). Every such rule of a campaign map is
+   * listed (validateBuilds).
+   */
+  readonly runEndFlags?: { readonly [F in BooleanFlagId]?: RunEndFlagRuns };
   /** Story-flag values the harness runs par under, one run each. Per-value build overrides arrive with A3M5. */
   readonly flagVariants?: { readonly [F in ScriptFlagId]?: readonly FlagValueOf<F>[] };
   /** Medals the par build must earn on every seed (the harness's `medals` check; default none). */

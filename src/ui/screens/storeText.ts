@@ -99,6 +99,10 @@ export function grantText(g: ModifierGrant): string {
       if (g.ability === '*') return `${amount(g)} ability ${what}s`;
       return `${amount(g)} ${abilityName(g.ability)} ${what}`;
     }
+    case 'supportStat': {
+      const who = g.tower === '*' ? 'support tower' : towerName(g.tower);
+      return `${pct(g.pct)} ${who} ${g.stat === 'aura' ? 'aura strength' : 'radius'}`;
+    }
     case 'linkBonus':
       return `${pct(g.pct)} link bonuses`;
     case 'tileBonus':
@@ -117,10 +121,13 @@ export function grantText(g: ModifierGrant): string {
 }
 
 /**
- * An offer's effect summary: its next (or top) rank's grants, what a spec unlock opens, or the
- * turret a license adds.
+ * An offer's effect summary: its next (or top) rank's grants, what a spec unlock opens, the
+ * turret a license adds, or the Technician ability R&D adds.
  */
 export function effectText(o: Offer): string {
+  if (o.item.kind === 'ability') {
+    return `Adds ${silkText(abilityName(o.item.id))} to your Technician abilities (slot 1)`;
+  }
   if (o.item.kind === 'license') {
     const role = lookup(TOWER_ROLES, o.item.tower)?.role;
     const what = `Adds the ${towerName(o.item.tower)} to your turrets`;
@@ -150,6 +157,8 @@ export function offerName(o: Offer): string {
       return `${towerName(o.item.tower)} specializations`;
     case 'license':
       return `${towerName(o.item.tower)} license`;
+    case 'ability':
+      return silkText(abilityName(o.item.id));
     default:
       return assertNever(o.item);
   }
@@ -169,6 +178,8 @@ export function offerCopy(o: Offer): string | null {
       return null;
     case 'license':
       return silkText(itemCopy(`license_${o.item.tower}`) ?? MISSING_COPY);
+    case 'ability':
+      return silkText(itemCopy(`ability_${o.item.id}`) ?? MISSING_COPY);
     default:
       return assertNever(o.item);
   }

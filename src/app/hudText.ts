@@ -78,12 +78,37 @@ export function statLineText(
   s: TowerStatLine,
   tier: DeepReadonly<CompiledTier> | null = null,
 ): string {
-  if (s.kind === null) return 'Support';
+  if (s.kind === null) return supportText(tier);
   const parts = [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
   parts.push(`range ${statNum(s.rangeTiles)}`);
   if (s.splashTiles > 0) parts.push(`splash ${statNum(s.splashTiles)}`);
   if (tier !== null) parts.push(...traitTexts(tier));
   return parts.join(' · ');
+}
+
+/** The words for an aura's stat ("+20% range nearby"). */
+const AURA_STAT_TEXT: Readonly<Record<string, string>> = {
+  damage: 'damage',
+  rate: 'fire rate',
+  range: 'range',
+};
+
+/**
+ * A support tier's line (T406; T431 may reword it): its detection and its auras as authored, e.g.
+ * "detect 3.5 · linger 2 s · +20% range nearby", or "Support" with neither.
+ */
+function supportText(tier: DeepReadonly<CompiledTier> | null): string {
+  const parts: string[] = [];
+  const d = tier?.detect ?? null;
+  if (d !== null) {
+    parts.push(`detect ${statNum(d.radiusTiles)}`);
+    if (d.lingerTicks > 0) parts.push(`linger ${statNum(d.lingerTicks / TICK_HZ)} s`);
+    if (d.revealedDamagePct > 0) parts.push(`revealed ${pctText(d.revealedDamagePct)} dmg`);
+  }
+  for (const a of tier?.auras ?? []) {
+    parts.push(`${pctText(a.pct)} ${AURA_STAT_TEXT[a.stat] ?? a.stat} nearby`);
+  }
+  return parts.length === 0 ? 'Support' : parts.join(' · ');
 }
 
 /**

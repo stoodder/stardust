@@ -43,6 +43,35 @@ describe('autoplay', () => {
     expect(exec.steps.every((s) => s.error === null && !s.late)).toBe(true);
   });
 
+  it("replays the harness's par on a ?map= battle: A1M5 at 17/21, its Cluster spec in (T332)", () => {
+    // No save: the map's reference profile (Reinforced Core 1, the Thumper's specs, the tunes and
+    // Head Start), as balance/profile.ts runs par. act1.md § A1M5: par 81.0, 17/21.
+    const host = createHost(createSim(battleConfig('a1_m05', 1)), { now: () => 0, speed: 0 });
+    const exec = startAutoplay(host, 'par');
+    while (host.sim.state.outcome === 'playing' && host.sim.state.tick < 60 * 60 * 20) {
+      host.fastForward(600);
+    }
+    expect(host.sim.state.outcome).toBe('won');
+    expect([host.sim.state.integrity, host.sim.state.maxIntegrity]).toEqual([17, 21]);
+    expect(exec.steps.filter((s) => s.error !== null || s.issuedTick < 0)).toEqual([]);
+    expect(exec.steps.some((s) => s.kind === 'specialize')).toBe(true);
+  });
+
+  it("lets go of Gerald's hold when another build takes over mid-pass (T335)", () => {
+    const host = createHost(createSim(battleConfig('a1_m03', 1)), { now: () => 0, speed: 0 });
+    startAutoplay(host, 'par');
+    const st = host.sim.state;
+    // Par to W4's pass: its macro holds fire while Gerald is on the field.
+    while (!(st.wave === 4 && st.holdFireAll) && st.outcome === 'playing') host.fastForward(1);
+    expect([st.wave, st.holdFireAll]).toEqual([4, true]);
+    startAutoplay(host, 'none');
+    host.fastForward(0);
+    expect(st.holdFireAll).toBe(false);
+    // Nobody plays on, so nothing turns it back on when Gerald comes round again.
+    while (st.wave < 7 && st.outcome === 'playing') host.fastForward(60);
+    expect(st.holdFireAll).toBe(false);
+  });
+
   it("plays 'none' to a loss", () => {
     const host = a1m1Host();
     startAutoplay(host, 'none');

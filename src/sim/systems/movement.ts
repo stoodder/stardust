@@ -13,7 +13,12 @@
 // like ground units. A neutral unit (Gerald, core-loop.md §2.7) never leaks: at its route's end it
 // delivers and leaves (`NeutralExited`), with no integrity lost, no tag counted, and no leak for
 // Perfect Core (sim/medals.ts `leakedThisTick`).
-import { BOSS_LEAK_DRAINS_ALL, LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
+import {
+  BOSS_LEAK_DRAINS_ALL,
+  HUSH_SPEED_MUL,
+  LEAK_FREE_TAGS,
+  YOUNGLING_SPEED_MUL,
+} from '../../content/rules.ts';
 import type { CompiledEnemyDef } from '../../content/compiled.ts';
 import type { WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
@@ -24,12 +29,14 @@ import { pointAt } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
 
 /**
- * An enemy's speed this tick, in tiles per tick, ground or air: its base speed,
- * ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier, × its pace (`paceMul`: a huddle
- * or a boss's haste, T304c). Lead targeting and flak intercepts predict with the same number.
+ * An enemy's speed this tick, in tiles per tick, ground or air: its base speed (×HUSH_SPEED_MUL
+ * once Heavy, enemies.md § 5.4), ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier,
+ * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop). Lead targeting
+ * and flak intercepts predict with the same number.
  */
 export function enemySpeedPerTick(e: Enemy): number {
-  const base = e.def === null ? 0 : e.def.speedTilesPerTick;
+  const own = e.def === null ? 0 : e.def.speedTilesPerTick;
+  const base = e.heavy ? own * HUSH_SPEED_MUL : own;
   return (
     (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) * e.chillMul * e.paceMul
   );

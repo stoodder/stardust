@@ -28,6 +28,7 @@ import type {
   PolicyId,
   ProfileDef,
   RouteId,
+  RunEndFlagRuns,
   ScriptFlagId,
   ScriptAction,
   ScriptTrigger,
@@ -44,6 +45,7 @@ import type {
   WavePhase,
   WaveTag,
 } from './types.ts';
+import type { BooleanFlagId } from './dialogue/flags.ts';
 
 export interface CompiledContent<K extends IdSpace = LiveIds> {
   readonly towers: Readonly<Record<K['tower'], CompiledTowerDef<K['tower']>>>;
@@ -509,6 +511,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly marginBand: { readonly minPct: number; readonly maxPct: number } | null;
   readonly rebaseline: boolean;
   readonly flagVariants: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
+  /** BuildsDef.runEndFlags (default none). */
+  readonly runEndFlags: Readonly<Partial<Record<BooleanFlagId, RunEndFlagRuns>>>;
   /** Medals the par build must earn on every seed (default none). */
   readonly parMedals: readonly MedalKind[];
   /** R&D picks that must change a par result (BuildsDef.rndPickChanges; default none). */

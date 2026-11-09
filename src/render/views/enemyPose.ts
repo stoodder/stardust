@@ -6,13 +6,20 @@
 // - **Burrowed:** `under` (Chitterbloom's mound with her crown showing; a Digger's generic mound).
 // - **Between phases** (a boss's invulnerability): `puff`, which EnemyView shimmers.
 // - **Telling:** a boss's sneeze tell is `tell`, its dig tell `dig`; a Digger's dirt spray `dig`.
-// - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3): `panic`.
+// - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3; a runner held in a
+//   hush tell or bolting, T402): `panic`.
 // - Else `walk`.
 // Two poses play once, on a change the sim makes in a single tick: `sneeze` when a sneeze tell
 // ends in the sneeze (not in a dig, a phase change, or a retreat), and `surface` when a burrowed
 // boss comes up. Each holds until its anim ends, unless the boss leaves, burrows, or goes
 // invulnerable meanwhile.
-import { bossNextAbility, bossTelling, burrowTelling, type Enemy } from '../../sim/index.ts';
+import {
+  bossNextAbility,
+  bossTelling,
+  burrowTelling,
+  cloakedOut,
+  type Enemy,
+} from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 
 export const ENEMY_POSES = [
@@ -99,6 +106,10 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   } else if (def.burrow !== null && burrowTelling(live, def.burrow)) {
     out.telling = 'dig';
   }
+  // The hush rule and Skittish (T402; hushLook.ts): the runner a Hollow unit holds struggles, and a
+  // bolting runner runs scared. (The Hollow unit's own tell is T430a's: `tell` would end in a
+  // sneeze.)
+  if (!def.hushes && (e.hushUid !== 0 || e.skittishTicks > 0)) out.panic = true;
   return out;
 }
 
@@ -107,4 +118,24 @@ export type MutablePoseFacts = { -readonly [K in keyof PoseFacts]: PoseFacts[K] 
 /** A fresh facts record (one per view, reused every frame). */
 export function blankFacts(): MutablePoseFacts {
   return { leaving: false, burrowed: false, invulnerable: false, telling: null, panic: false };
+}
+
+/** A leaving unit draws at this alpha (the stepped-alpha ladder's 60%; it is untargetable). */
+export const LEAVING_ALPHA = 0.6;
+/**
+ * A cloaked, unrevealed unit's shimmer (T406; enemies.md § 2.5: the player still sees it): its
+ * alpha steps between these on the 3 Hz shimmer cycle, so it reads as there-but-not-quite.
+ */
+export const CLOAK_ALPHA_LOW = 0.3;
+export const CLOAK_ALPHA_HIGH = 0.45;
+
+/**
+ * The body's alpha: a leaving unit's 60%; a cloaked unit nobody has Revealed shimmers between
+ * CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH (`shimmerHigh`: the cycle's high half; held low under
+ * reduced motion by the caller); anyone else, whole.
+ */
+export function cloakAlpha(e: PoseEnemy, leaving: boolean, shimmerHigh: boolean): number {
+  if (leaving) return LEAVING_ALPHA;
+  if (!cloakedOut(e)) return 1;
+  return shimmerHigh ? CLOAK_ALPHA_HIGH : CLOAK_ALPHA_LOW;
 }

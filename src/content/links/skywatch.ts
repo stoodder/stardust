@@ -1,6 +1,6 @@
 // Skywatch (design/towers.md § 6.2): Skyhook + Lookout Shack. The Skyhook gets +20% range; the
-// Lookout +0.5 detection radius. Act II early. A T400a stub: the Lookout is refused until T406
-// (which runs the detection bonus), so the link can't form before then.
+// Lookout +0.5 detection radius (`Tower.bonusDetectTiles`, read by sim/systems/detection.ts).
+// Act II early.
 import { defineLink } from '../define.ts';
 
 export const skywatch = defineLink({

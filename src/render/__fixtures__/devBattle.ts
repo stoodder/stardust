@@ -25,8 +25,11 @@ import { chitterbloom } from '../../content/enemies/chitterbloom.ts';
 import { digger } from '../../content/enemies/digger.ts';
 import { elder } from '../../content/enemies/elder.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
+import { glimmer } from '../../content/enemies/glimmer.ts';
+import { lightwing } from '../../content/enemies/lightwing.ts';
 import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
+import { weft_warden } from '../../content/enemies/weft_warden.ts';
 import { conductive } from '../../content/links/conductive.ts';
 import { rivet } from '../../content/towers/rivet.ts';
 import { skyhook } from '../../content/towers/skyhook.ts';
@@ -121,6 +124,18 @@ const devNibbler = defineEnemy({
 // of her HP, so the smoke flow can push her through every phase in a few seconds of fire.
 const devChitterbloom = defineEnemy({ ...chitterbloom, id: 'dev_chitterbloom', hp: 200 });
 
+// dev_aelari's pulser (T403): a Glimmer with a quick shield pulse (every 4 s, 1.5 s tell, 40
+// shield within 2 tiles), standing in for M5's Aegis Cantor so the pulse's tell and ring show.
+const devCantor = defineEnemy({
+  ...glimmer,
+  id: 'dev_cantor',
+  name: 'Dev Cantor',
+  hp: 120,
+  traits: ['shielded', 'shield_aura'],
+  tells: ['shielded', 'regen', 'shield_aura'],
+  pulse: { everySec: 4, tellSec: 1.5, radiusTiles: 2, shield: 40 },
+});
+
 const devStrike = defineAbility({
   id: 'dev_strike',
   name: 'Dev Strike',
@@ -150,6 +165,11 @@ const DEV_ENTITIES = {
     bunchling,
     elder,
     dev_chitterbloom: devChitterbloom,
+    // dev_aelari's (T403).
+    glimmer,
+    weft_warden,
+    lightwing,
+    dev_cantor: devCantor,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -639,6 +659,40 @@ const act2Builds = dev.defineBuilds({
 
 const act2Map = dev.defineMap({ ...act2Layout, waves: act2Waves, ...act2Builds });
 
+// dev_aelari (T403): dev_sky's ground road and air lane in Act II's gold, walked by the Aelari line
+// units (Glimmers, a Weft Warden, Lightwings on the lane) and a Dev Cantor pulsing shields among
+// the Glimmers, so the shield ripple, the break, and the pulse's tell and ring show
+// (smoke/shields.spec.ts) before A2M2 lands. Wave 1 teaches shields.
+const aelariMap = dev.defineMap({
+  ...skyLayout,
+  id: 'dev_aelari',
+  act: 2,
+  env: 'act2.gold',
+  threatIntel: ['shielded', 'shield_aura', 'flying', 'armored'],
+  requiredCounters: ['shield'],
+  waves: dev.defineWaves([
+    {
+      teach: true,
+      groups: [
+        { enemy: 'glimmer', count: 6, route: 'a', intervalSec: 0.8 },
+        { enemy: 'dev_cantor', count: 1, route: 'a', delaySec: 1.2 },
+        { enemy: 'lightwing', count: 4, route: 'sky', delaySec: 2, intervalSec: 0.7 },
+      ],
+    },
+    {
+      countdownSec: 10,
+      groups: [
+        { enemy: 'weft_warden', count: 2, route: 'a', intervalSec: 2 },
+        { enemy: 'glimmer', count: 6, route: 'a', delaySec: 1, intervalSec: 0.8 },
+      ],
+    },
+  ]),
+  ...skyBuilds,
+  noCounterBuilds: {
+    shield: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [4, 2] }] },
+  },
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -648,6 +702,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_market: marketMap,
     dev_boss: bossMap,
     dev_act2: act2Map,
+    dev_aelari: aelariMap,
   }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too

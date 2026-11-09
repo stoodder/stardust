@@ -1282,3 +1282,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Stub towers stay out of play:** `TOWERS_AHEAD_OF_TASK` keeps Lookout, Harpoon and Crane out of loadout pools, licenses and spec unlocks until their task lifts the row (the Lookout license goes live with T406).
 - **Open conflict for T408:** the Harpoon's documented 4.0 range reaches A1M5's Quiet Wave from two pads on a replay (D097); while the Harpoon is a stub it is excluded from `[quiet-wave-reach]`, and T408 must settle it (move a pad, scope the rule, or change the range) before lifting its gate. The Lookout's +20% range aura raises the same question for T406.
 - **`dev_act2`** (18×12, two merging spawns) is a render fixture, not a campaign map; it fits 1280×720 clear of the HUD.
+
+### D106 — 2026-11-09 — T403 Aelari shields in play
+- **The shield pulse** (`enemyAbilities/pulse.ts`): the first pulse comes one period after spawn; its last `tellSec` is the tell; it refills its own shield and every shielded unit of its faction within the radius (any layer; never leaving or burrowed ones), capped at max, without resetting regen delay. A boss's pulse timer waits through phase invulnerability and carries across phases. Stasis on a non-boss blocks or interrupts it and restarts the cooldown (`interrupted` only once the tell has begun); bosses are exempt (D101).
+- **Story difficulty scales the pulse amount** with the shield modifier (the Witch's 120 → 84), the one gap the shield-pipeline audit found against enemies.md §2.3.
+- `ShieldHit {broken}` is emitted once per hit that touches a shield; `ShieldView` draws ripples, breaks, the pulse tell and ring (polish in T430a). Glimmer, Weft Warden and Lightwing are live; `dev_aelari` is their dev map.

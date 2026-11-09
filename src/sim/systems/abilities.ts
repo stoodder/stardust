@@ -1,6 +1,6 @@
 // System 5: abilities. Commander ability cooldowns and effects (design/core-loop.md §3): slot 1 is
-// the Technician's (Orbital Strike), slot 2 the companion's (Suppressing Fire, T207a; Time
-// Dilation and Clearance Sale, T304d). Enemy abilities are their own system (enemyAbilities/).
+// the Technician's (Orbital Strike; Scanner Sweep, T406), slot 2 the companion's (Suppressing
+// Fire, T207a; Time Dilation and Clearance Sale, T304d). Enemy abilities are their own system (enemyAbilities/).
 //
 // - `applyAbilityCommand` (called by applyCommands) validates an `ability` command, puts the slot on
 //   cooldown, and applies the effect: a strike or segment opens its zone(s) at the target tile;
@@ -21,10 +21,14 @@
 //     enemy leaves); every SEGMENT_TICK_TICKS it takes `damage × DEFAULT_BEAM_TICK_SEC` as a beam
 //     tick (armor prorated, enemies.md §2.3), the last on the zone's final tick. It covers ground
 //     units only: Gerald flies the ground path but is an air unit, so it passes him by (D072).
-//   - A **field** (Time Dilation) Chills every live enemy on the map (air and burrowed included;
-//     never a neutral unit) by `slowPct` each tick for `durationTicks` from the cast tick, so units
-//     that spawn during it are slowed too. A boss takes it at half strength through `applyChill`
-//     (enemies.md § 6), which is the content's `bossSlowPct`.
+//   - A **field** (Time Dilation) Chills every live enemy on the map (air, burrowed, and cloaked
+//     included: it is map-wide, not aimed; never a neutral unit) by `slowPct` each tick for
+//     `durationTicks` from the cast tick, so units that spawn during it are slowed too. A boss
+//     takes it at half strength through `applyChill` (enemies.md § 6), the content's `bossSlowPct`.
+//   - A **reveal** zone (Scanner Sweep, T406) lives `durationTicks` ticks from the cast tick at the
+//     target tile; systems/detection.ts Reveals the cloaked units inside it on each of those ticks.
+//   - An undetected cloaked unit is untouchable (enemyAbilities/cloak.ts): a strike or segment
+//     tick deals it nothing (the damage pipeline's `immune`), and a segment doesn't slow it.
 // - Modifiers (`abilityStat`, by ability id or '*') change cooldowns (Ability Coolant, Companion
 //   Rapport) and strike radii (Orbital Strike Mk II): `abilityStats`.
 // - Cooldowns run on sim time, so pausing doesn't advance them, and an ability aimed while paused
@@ -40,6 +44,7 @@ import { secToTicks, TICK_HZ } from '../../shared/time.ts';
 import { applyChill, applyDamage, PLAIN_HIT, type HitMods } from '../combat/damage.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import type { Modifier, SimConfig } from '../config.ts';
+import { cloakedOut } from '../enemyAbilities/cloak.ts';
 import { ZONE_BLANK, type Zone } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
 import { tileIndex } from '../grid.ts';
@@ -83,7 +88,7 @@ export interface AbilityStats {
   readonly cooldownTicks: number;
   /** The cooldown each cast starts, in waves (Clearance Sale; at least 1); else 0. */
   readonly cooldownWaves: number;
-  /** A strike's radius in tiles; 0 for effects without one (a segment). */
+  /** A strike's or reveal's radius in tiles; 0 for effects without one (a segment). */
   readonly radiusTiles: number;
 }
 
@@ -115,7 +120,8 @@ export function abilityStats(
     }
   }
   const e = def.effect;
-  const radius = e.kind === 'strike' ? (e.radiusTiles + rFlat) * (1 + rPct) : 0;
+  const radius =
+    e.kind === 'strike' || e.kind === 'reveal' ? (e.radiusTiles + rFlat) * (1 + rPct) : 0;
   const radiusTiles = radius > 0 ? radius : 0;
   if (def.cooldownWaves > 0) {
     const cooldownWaves = Math.max(1, Math.round(def.cooldownWaves * (1 + cdPct)));
@@ -194,7 +200,7 @@ export function abilityConfigErrors(cfg: SimConfig<IdSpace>): string[] {
     if (m.kind !== 'abilityStat' || m.ability === '*') continue;
     if (!Object.hasOwn(defs, m.ability)) {
       out.push(`modifiers: abilityStat (${m.source}) names unknown ability '${m.ability}'`);
-    } else if (m.stat === 'radius' && defs[m.ability]!.effect.kind !== 'strike') {
+    } else if (m.stat === 'radius' && !hasRadius(defs[m.ability]!)) {
       out.push(
         `modifiers: abilityStat (${m.source}) changes the radius of '${m.ability}', which has none`,
       );
@@ -203,10 +209,15 @@ export function abilityConfigErrors(cfg: SimConfig<IdSpace>): string[] {
   return out;
 }
 
+/** Whether an ability has a radius a modifier may change (a strike or a reveal). */
+function hasRadius(def: CompiledAbilityDef): boolean {
+  return def.effect.kind === 'strike' || def.effect.kind === 'reveal';
+}
+
 /**
  * Validates and applies an `ability` command: the slot holds an ability, it is off cooldown (in
- * ticks and in waves), and a targeted one's target is a tile on the map (a strike may land on any
- * tile; a segment needs a tile of a ground route). Time Dilation and Clearance Sale take no
+ * ticks and in waves), and a targeted one's target is a tile on the map (a strike or a reveal
+ * may land on any tile; a segment needs a tile of a ground route). Time Dilation and Clearance Sale take no
  * target and ignore one if given. Returns null on success, else why it was rejected.
  */
 export function applyAbilityCommand(
@@ -268,7 +279,10 @@ function startCooldown(
   }
 }
 
-/** Opens a strike's or segment's zone(s) at tile (col, row); returns the first uid, or 0 if none. */
+/**
+ * Opens a strike's, reveal's, or segment's zone(s) at tile (col, row); returns the first uid, or 0
+ * if none.
+ */
 function openTargeted(
   state: SimState,
   ctx: TickContext,
@@ -288,6 +302,17 @@ function openTargeted(
     zone.ticksLeft = e.delayTicks;
     zone.damage = e.damage;
     zone.damageType = e.type;
+    zone.abilitySlot = slot;
+    return zone.uid;
+  }
+  if (e.kind === 'reveal') {
+    const radius = abilityStats(def, ctx.config.modifiers).radiusTiles;
+    const zone = poolAlloc(state.zones, ZONE_BLANK, takeUid(state));
+    zone.kind = 'reveal';
+    zone.x = col + 0.5;
+    zone.y = row + 0.5;
+    zone.radiusSq = radius * radius;
+    zone.ticksLeft = e.durationTicks;
     zone.abilitySlot = slot;
     return zone.uid;
   }
@@ -416,6 +441,12 @@ export function abilities(state: SimState, ctx: TickContext): void {
       if (z.ticksLeft <= 0) poolKill(zones, z);
       continue;
     }
+    if (z.kind === 'reveal') {
+      // Alive for detection on `durationTicks` ticks: the cast tick's and the ones after.
+      if (z.ticksLeft <= 0) poolKill(zones, z);
+      else z.ticksLeft--;
+      continue;
+    }
     if (z.ticksLeft > 0) {
       z.ticksLeft--;
       continue;
@@ -460,6 +491,7 @@ function suppress(state: SimState, ctx: TickContext, z: Zone, damageTick: boolea
     // Ground units only: Gerald flies the ground route but is an air unit (D072).
     if (e.def.layer === 'air') continue;
     if (e.dist < z.distFrom || e.dist > z.distTo) continue;
+    if (cloakedOut(e)) continue; // untouchable: no slow, and its damage tick would deal nothing
     applyChill(e, z.slowPct, 1);
     if (damageTick) victims.push(i);
   }

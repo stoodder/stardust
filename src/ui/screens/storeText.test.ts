@@ -60,9 +60,19 @@ describe('effect summaries', () => {
     expect(eng.slice(0, 3).map(effectText)).toEqual([
       'Unlocks tier 4: Rivet Storm or Railspike',
       'Unlocks tier 4: Cluster Thumper or Bunker Buster',
-      // A tower whose specs ship later (D064) has no pair to name yet.
-      'Unlocks both tier-4 specializations',
+      "Unlocks tier 4: Crow's Nest or Overclock Rig", // the Lookout's (T406)
     ]);
+    // A tower whose specs ship later (D064) has no pair to name yet.
+    const later = eng.find((o) => o.refusal === 'no_specs');
+    expect(later === undefined ? null : effectText(later)).toBe(
+      'Unlocks both tier-4 specializations',
+    );
+    // R&D's Technician ability (T406).
+    const sweep = rnd.find((o) => o.item.kind === 'ability');
+    expect(sweep === undefined ? null : effectText(sweep)).toBe(
+      'Adds Scanner Sweep to your Technician abilities (slot 1)',
+    );
+    expect(sweep === undefined ? null : offerName(sweep)).toBe('Scanner Sweep');
     expect(eng.slice(0, 2).map(offerName)).toEqual([
       'Rivet specializations',
       'Thumper specializations',

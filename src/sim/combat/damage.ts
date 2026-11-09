@@ -1,8 +1,8 @@
 // The damage pipeline (design/enemies.md §2.3) and on-hit statuses (§2.4). Every hit, from a
 // tower, a shell's splash, a pulse, or a commander ability (T113), goes through applyDamage, so
 // the matrix, shields, armor, and kill bookkeeping have one home. The numbers are rule data in
-// content/rules.ts. Allocation-free except the EnemyDied (and a carrier's SackBurst) event a kill
-// emits.
+// content/rules.ts. Allocation-free except the events it emits: ShieldHit for a hit that lands on
+// a shield (the ripple), and EnemyDied (and a carrier's SackBurst) for a kill.
 import type { CompiledEffect } from '../../content/compiled.ts';
 import type { DamageType } from '../../content/types.ts';
 import {
@@ -83,19 +83,21 @@ export function applyDamage(
   const soaked = enemy.soakedTicks > 0;
   if (soaked && type === 'energy') raw *= 1 + SOAKED_ENERGY_BONUS;
 
-  // Chosen: any hit on an enemy with a shield restarts its regen delay, even once the shield is
-  // down, so a broken shield stays down while the enemy is under fire (enemies.md §2.3 says
-  // "without shield damage" and is silent on hits to a broken shield).
+  // Any hit on an enemy with a shield restarts its regen delay, even once the shield is down, so
+  // a broken shield stays down while the enemy is under fire (enemies.md §2.3).
   if (def.shield !== null) enemy.shieldRegenDelayTicks = def.shield.regenDelayTicks;
   if (enemy.shieldHp > 0) {
     const m = soaked && SOAKED_SHIELD_TYPES.includes(type) ? SOAKED_SHIELD_MULT : SHIELD_MULT[type];
     const s = raw * m;
-    if (s <= enemy.shieldHp) {
+    if (s < enemy.shieldHp) {
       enemy.shieldHp -= s;
+      shieldHit(state, enemy, false);
       return 0;
     }
     raw = (s - enemy.shieldHp) / m;
     enemy.shieldHp = 0;
+    shieldHit(state, enemy, true);
+    if (raw <= 0) return 0;
   }
 
   let armor = 0;
@@ -119,6 +121,11 @@ export function applyDamage(
     return before;
   }
   return damage;
+}
+
+/** The ripple (ShieldHit) of a hit that landed on `enemy`'s shield; `broken` if it took it to 0. */
+function shieldHit(state: SimState, enemy: Enemy, broken: boolean): void {
+  emit(state, { type: 'ShieldHit', uid: enemy.uid, x: enemy.x, y: enemy.y, broken });
 }
 
 /**
@@ -192,12 +199,7 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         break;
       }
       case 'marked':
-        if (fx.pct > enemy.markPct || enemy.markTicks === 0) {
-          enemy.markPct = fx.pct;
-          enemy.markTicks = fx.durationTicks;
-        } else if (fx.pct === enemy.markPct && fx.durationTicks > enemy.markTicks) {
-          enemy.markTicks = fx.durationTicks;
-        }
+        applyMark(enemy, fx.pct, fx.durationTicks);
         break;
       // TODO(T2xx): Pinned, Stasis, and Unnerved arrive with the towers that apply them (none in
       // M1 content).
@@ -208,6 +210,21 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
       default:
         assertNever(fx);
     }
+  }
+}
+
+/**
+ * Marked X% for `ticks`: highest only, and an equal Mark extends it (enemies.md §2.4). Crow's
+ * Nest's "revealed enemies take +10% damage" is a Mark-type effect through here too, so it never
+ * stacks with a Mark (systems/detection.ts; T406).
+ */
+export function applyMark(enemy: Enemy, pct: number, ticks: number): void {
+  if (pct <= 0 || ticks <= 0) return;
+  if (pct > enemy.markPct || enemy.markTicks === 0) {
+    enemy.markPct = pct;
+    enemy.markTicks = ticks;
+  } else if (pct === enemy.markPct && ticks > enemy.markTicks) {
+    enemy.markTicks = ticks;
   }
 }
 

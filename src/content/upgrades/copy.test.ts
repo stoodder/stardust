@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { ITEM_COPY, itemCopy } from './copy.ts';
 import {
+  ABILITY_ACCESS,
   PROTOCOLS,
   TOWER_ACCESS,
   UPGRADES,
@@ -26,12 +27,18 @@ const licenses = Object.entries<Access>(TOWER_ACCESS)
   .filter(([, a]) => a.how === 'license')
   .map(([tower, a]) => ({ id: `license_${tower}`, price: a.how === 'license' ? a.price : 0 }));
 
+/** R&D's Technician abilities' copy ids: `ability_<id>` for each `how: 'rnd'` access row (T406). */
+const rndAbilities = Object.entries<Access | undefined>(ABILITY_ACCESS)
+  .filter(([, a]) => a?.how === 'rnd')
+  .map(([id]) => `ability_${id}`);
+
 describe('item copy', () => {
   it('every catalog item carries its copy.ts line, and copy.ts has no line for a missing item', () => {
     const ids = [
       ...upgrades.map((u) => u.id),
       ...protocols.map((p) => p.id),
       ...licenses.map((l) => l.id),
+      ...rndAbilities,
     ];
     for (const item of [...upgrades, ...protocols]) {
       expect(item.copy, item.id).not.toBeNull();
@@ -77,5 +84,6 @@ describe('item copy', () => {
 
   it("QUILL's R&D lines are not Zibzab's", () => {
     for (const u of quill) expect(u.copy, u.id).not.toMatch(/^Price first/);
+    for (const id of rndAbilities) expect(ITEM_COPY[id], id).not.toMatch(/^Price first/);
   });
 });

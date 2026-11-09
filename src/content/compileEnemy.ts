@@ -15,6 +15,19 @@ import type {
 import { ticks, type Ctx } from './compileHelpers.ts';
 import type { BlinkDef, BossDef, BurrowDef, EnemyDef, HuddleDef, PulseDef } from './types.ts';
 
+/**
+ * Whether a unit hushes under the hush rule (enemies.md § 5.4): every non-boss Hollow unit, except
+ * a gatherer (a Maw's one hush is a gather) and a neutral one. Derived, never authored.
+ */
+export function hushesOf(def: Pick<EnemyDef, 'faction' | 'boss' | 'neutral' | 'traits'>): boolean {
+  return (
+    def.faction === 'hollow' &&
+    def.boss === undefined &&
+    def.neutral !== true &&
+    !def.traits.includes('gathering')
+  );
+}
+
 export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): CompiledEnemyDef<Id> {
   const where = `enemies.${def.id}`;
   return {
@@ -47,13 +60,7 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
     boss: def.boss === undefined ? null : compileBoss(ctx, def.boss, `${where}.boss`),
     pulse: def.pulse === undefined ? null : compilePulse(ctx, def.pulse, `${where}.pulse`),
     blink: def.blink === undefined ? null : compileBlink(ctx, def.blink, `${where}.blink`),
-    // The hush rule (enemies.md § 5.4): every non-boss Hollow unit, except a gatherer (a Maw's one
-    // hush is a gather) and a neutral one.
-    hushes:
-      def.faction === 'hollow' &&
-      def.boss === undefined &&
-      def.neutral !== true &&
-      !def.traits.includes('gathering'),
+    hushes: hushesOf(def),
     cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,
     sprites: def.sprites,

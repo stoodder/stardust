@@ -891,6 +891,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   let tagGiven = false;
   let leaked = false;
   let lowFired = false;
+  /** The run's fleeing kills already offered as `skitterkin_killed_ahead` (the sim's tagKilled). */
+  let fleeingKilled = 0;
   let wave = 0;
 
   /** Plays the map's scene `<map>_<slot>` if it has one and its `when` holds. */
@@ -981,7 +983,21 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('EnemyDied', (e) => {
       waveOf.delete(e.uid);
-      if (isEnemy(e.enemy)) offerBarks([{ on: 'enemy_killed', enemy: e.enemy }]);
+      const triggers: BarkTrigger[] = isEnemy(e.enemy)
+        ? [{ on: 'enemy_killed', enemy: e.enemy }]
+        : [];
+      // A kill of a runner fleeing the Hollow (core-loop.md § 6.3): the run's fleeing kill count
+      // moved since the last one offered (the event doesn't carry its unit's wave tags).
+      const killed = sim.state.stats.tagKilled.fleeing;
+      if (killed > fleeingKilled) {
+        fleeingKilled = killed;
+        triggers.push({ on: 'skitterkin_killed_ahead' });
+      }
+      offerBarks(triggers);
+    }),
+    // A Hollow unit hushed a fleeing Skitterkin (enemies.md § 5.4; the bark's once-per-map limit).
+    bus.on('Hushed', (e) => {
+      if (e.victimEnemy !== null) offerBarks([{ on: 'skitterkin_hushed' }]);
     }),
     bus.on('EnemyLeaked', (e) => {
       const w = waveOf.get(e.uid);

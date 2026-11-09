@@ -2,6 +2,8 @@
 // the run-level checks.
 import { describe, expect, it } from 'vitest';
 import type { CompiledAttack, CompiledContent, CompiledTier } from '../content/compiled.ts';
+import { compileContent } from '../content/compile.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
 import {
   FLAG_VARIANT_CONTENT,
@@ -13,9 +15,40 @@ import {
   NO_SPLASH_CONTENT,
   PICK_CONTENT,
   PLAIN_CONTENT,
+  fakeResult,
+  fakeRun,
 } from './__fixtures__/harness.ts';
 import { evaluateFlagRule, flagRule } from '../story/flags.ts';
-import { buildFor, runCampaign, runMap } from './harness.ts';
+import {
+  buildFor,
+  monotonicCheck,
+  mustIssueEveryStep,
+  runCampaign,
+  runMap,
+  type MapReport,
+} from './harness.ts';
+
+const LIVE = compileContent(RAW_CONTENT);
+
+/** A map report whose one par run (seed 1) ends at `integrity` of 20. */
+const reportAt = (mapId: string, integrity: number): MapReport => ({
+  mapId,
+  act: 1,
+  objective: 'defend',
+  band: { lo: 80, hi: 100 },
+  ok: true,
+  checks: [],
+  runs: [fakeRun({ build: 'par', seed: 1 }, fakeResult('won', integrity))],
+  notChecked: [],
+  ms: 0,
+});
+
+/** #3 on the second of two maps whose pars end at `first` and `then` of 20. */
+const judge3 = (c: CompiledContent, first: number, then: number) => {
+  const reports = [reportAt(c.campaign[0]!, first), reportAt('a1_m01', then)];
+  monotonicCheck(c, reports);
+  return reports[1]!.checks.find((k) => k.id === '3')!;
+};
 
 describe('balance harness', () => {
   const report = runMap(PLAIN_CONTENT, 'fx_map', { seeds: 2 });
@@ -163,6 +196,22 @@ describe('balance harness', () => {
     );
   });
 
+  it('requires every step only of par and the sensible alts on their own profiles (T333, T334)', () => {
+    const fx = PLAIN_CONTENT.maps.fx_map;
+    const under = {
+      ...fx,
+      builds: { ...fx.builds, altExpectations: { gun_only: { outcome: 'either' } } },
+    } as const;
+    expect(mustIssueEveryStep(fx, 'par')).toBe(true);
+    expect(mustIssueEveryStep(fx, 'alt:gun_only')).toBe(true);
+    expect(mustIssueEveryStep(under, 'alt:gun_only')).toBe(false);
+    // Par on Story may end the map before its last buys (A1M4's W9 buys behind its strike).
+    expect(mustIssueEveryStep(fx, 'par@story')).toBe(false);
+    for (const label of ['par@rnd:x', 'none', 'spareFleeing', 'noCounter:air', 'guard:spam']) {
+      expect(mustIssueEveryStep(fx, label)).toBe(label === 'par@rnd:x');
+    }
+  });
+
   it('names builds by label', () => {
     const map = PLAIN_CONTENT.maps.fx_map;
     expect(buildFor('par', map, PLAIN_CONTENT)).toBe(map.builds.parBuild);
@@ -173,12 +222,41 @@ describe('balance harness', () => {
     expect(quiet.technicianAbility).toBe(map.builds.parBuild.technicianAbility);
     expect(buildFor('alt:nope', map, PLAIN_CONTENT)).toBeNull();
     expect(buildFor('spareFleeing', map, PLAIN_CONTENT)?.steps[0]?.kind).toBe('spareRunners');
-    expect(buildFor('holdFireWhile:quiet_wave', map, PLAIN_CONTENT)?.steps[0]).toEqual({
-      wave: 1,
-      kind: 'holdFireWhile',
-      tag: 'quiet_wave',
+    // holdFireWhile:<tag> names a tag the map's waves send (T412: any tag, not just the Quiet Wave).
+    const quietMap = QUIET_WAVE_CONTENT.maps.fx_map;
+    for (const tag of ['quiet_wave', 'fleeing'] as const) {
+      expect(buildFor(`holdFireWhile:${tag}`, quietMap, QUIET_WAVE_CONTENT)?.steps[0]).toEqual({
+        wave: 1,
+        kind: 'holdFireWhile',
+        tag,
+      });
+    }
+    expect(buildFor('holdFireWhile:quiet_wave', map, PLAIN_CONTENT)).toBeNull();
+    expect(buildFor('holdFireWhile:medal_exempt', quietMap, QUIET_WAVE_CONTENT)).toBeNull();
+  });
+
+  it('#3 re-baselines the first map after a boss against its own band (T412)', () => {
+    // The live A1M5 (the Matriarch) or A1M4 (no boss), then A1M1 standing in as the next map.
+    const a1m1 = LIVE.maps.a1_m01;
+    const after = (first: 'a1_m04' | 'a1_m05', rebaseline: boolean): CompiledContent => ({
+      ...LIVE,
+      maps: { ...LIVE.maps, a1_m01: { ...a1m1, builds: { ...a1m1.builds, rebaseline } } },
+      campaign: [first, 'a1_m01'],
     });
-    expect(buildFor('holdFireWhile:fleeing', map, PLAIN_CONTENT)).toBeNull();
+    // Without the flag, 100 after 80 (+20) breaks the chain; after a boss it re-baselines in band.
+    expect(judge3(after('a1_m05', false), 16, 20).ok).toBe(false);
+    const re = judge3(after('a1_m05', true), 16, 20);
+    expect(re.ok).toBe(true);
+    expect(re.summary).toBe(
+      "re-baseline after a1_m05's boss: median 100 in its own band 80–100, previous 80",
+    );
+    // Its own band still binds it, and the flag needs a boss on the map before.
+    expect(judge3(after('a1_m05', true), 20, 15).failures).toEqual([
+      'median par margin 75 is outside 80–100',
+    ]);
+    expect(judge3(after('a1_m04', true), 16, 20).failures[0]).toMatch(
+      /first map after a boss, and a1_m04 before it sends none/,
+    );
   });
 
   it('a campaign run adds the monotonic check; --map skips it and says so', () => {

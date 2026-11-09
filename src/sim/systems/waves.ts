@@ -7,7 +7,7 @@
 // The run's wave modifiers apply here (D032): `countdown` stretches or cuts every countdown, and
 // `enemyStat` scales each unit's def as it spawns (`runWaveModifiers`), so status, movement,
 // damage, and render all read the scaled numbers through `e.def` with no per-system change.
-import type { CompiledEnemyDef, CompiledWave } from '../../content/compiled.ts';
+import type { CompiledEnemyDef, CompiledPulse, CompiledWave } from '../../content/compiled.ts';
 import { EARLY_CALL_COOLDOWN_SHARE } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { EnemyStat, Modifier, SimConfig } from '../config.ts';
@@ -188,7 +188,8 @@ export function waveModifiers(
 }
 
 /**
- * An enemy def with its HP, shield (capacity and regeneration, so it refills in the same time),
+ * An enemy def with its HP, shield (capacity and regeneration, so it refills in the same time, and
+ * any shield pulse's amount, its own or a boss phase's, so a pulse restores the same share; T403),
  * and speed scaled by `1 + pct` (design/progression.md § 9 Story, § 6 Hardened Hides and Double
  * Time). HP stays fractional, as the damage pipeline's is.
  */
@@ -197,6 +198,7 @@ export function scaledEnemy(
   pct: Readonly<Record<EnemyStat, number>>,
 ): CompiledEnemyDef {
   const shieldMul = 1 + pct.shield;
+  const boss = def.boss;
   return Object.freeze({
     ...def,
     hp: def.hp * (1 + pct.hp),
@@ -208,8 +210,26 @@ export function scaledEnemy(
             hp: def.shield.hp * shieldMul,
             regenPerTick: def.shield.regenPerTick * shieldMul,
           }),
+    pulse: scaledPulse(def.pulse, shieldMul),
+    boss:
+      boss === null || shieldMul === 1 || !boss.phases.some((p) => p.pulse !== null)
+        ? boss
+        : Object.freeze({
+            ...boss,
+            phases: Object.freeze(
+              boss.phases.map((p) =>
+                p.pulse === null
+                  ? p
+                  : Object.freeze({ ...p, pulse: scaledPulse(p.pulse, shieldMul) }),
+              ),
+            ),
+          }),
     speedTilesPerTick: def.speedTilesPerTick * (1 + pct.speed),
   });
+}
+
+function scaledPulse(p: CompiledPulse | null, shieldMul: number): CompiledPulse | null {
+  return p === null || shieldMul === 1 ? p : Object.freeze({ ...p, shield: p.shield * shieldMul });
 }
 
 /**

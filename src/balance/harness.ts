@@ -2,7 +2,7 @@
 // runs them headlessly, and judges them. Pure: the CLI (tools/sim.ts) passes in the clock and
 // writes the files.
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
-import type { IdSpace, LiveIds } from '../content/types.ts';
+import type { IdSpace, LiveIds, WaveTag } from '../content/types.ts';
 import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
 import { runHeadless } from '../sim/index.ts';
 import {
@@ -95,9 +95,11 @@ export function buildFor<K extends IdSpace>(
   }
   const [kind, name = ''] = label.split(':');
   if (kind === 'alt') return b.altBuilds[name] ?? null;
-  // #16a: par with Hold Fire while the tagged (medal-exempt story) units are on the field.
+  // #16a and the run-end flag checks: par with Hold Fire while units with the tag are on the
+  // field (the Quiet Wave; each fleeing group), on a map whose waves send that tag.
   if (kind === 'holdFireWhile') {
-    return name === 'quiet_wave' ? withHoldFireWhile(b.parBuild, name) : null;
+    const tag = mapTag(map, name);
+    return tag === null ? null : withHoldFireWhile(b.parBuild, tag);
   }
   // #14: par under one story-flag value (flagsFor gives the flags).
   if (kind === 'flag') return flagsFor(label, map) === null ? null : b.parBuild;
@@ -114,6 +116,17 @@ export function buildFor<K extends IdSpace>(
   if (kind === 'guard') {
     const guard = b.guards[name];
     return guard === undefined ? null : policyBuild(guard.policy, map, content.towers);
+  }
+  return null;
+}
+
+/** `name` as a wave tag some group of `map` carries, or null. */
+function mapTag<K extends IdSpace>(map: CompiledMapDef<K>, name: string): WaveTag | null {
+  for (const w of map.waves) {
+    for (const g of w.groups) {
+      const tag = g.tags.find((t) => t === name);
+      if (tag !== undefined) return tag;
+    }
   }
   return null;
 }
@@ -216,7 +229,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     checks.push({ id: s.id, title: s.title, subject: s.subject, ok, summary, failures });
   }
   const all = [...runs.values()];
-  checks.push(...runLevelChecks(all));
+  checks.push(...runLevelChecks(map, all));
   return {
     mapId,
     act: map.act,
@@ -230,8 +243,31 @@ export function runMap<K extends IdSpace = LiveIds>(
   };
 }
 
+/**
+ * Whether a run must get every one of its build's steps in before the map ends: par and the
+ * sensible alt builds on their own profiles. Par on Story is exempt (T333: an easier map can end
+ * before par's last buys, as A1M4's W9 buys behind its strike), and so is an under-built alt
+ * (`outcome: 'lose' | 'either'`: a player who stops short may lose before the end of the plan).
+ */
+export function mustIssueEveryStep<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  label: string,
+): boolean {
+  const { build, meta } = splitMeta(label);
+  if (build === 'par') return meta !== 'story';
+  if (!build.startsWith('alt:')) return false;
+  const name = build.slice(4);
+  const expect = Object.hasOwn(map.builds.altExpectations, name)
+    ? map.builds.altExpectations[name]
+    : undefined;
+  return expect?.outcome === undefined;
+}
+
 /** Assertions 12 and 13 and clean build steps, over every run a map made. */
-function runLevelChecks(runs: readonly RunRecord[]): CheckResult[] {
+function runLevelChecks<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  runs: readonly RunRecord[],
+): CheckResult[] {
   const steps: string[] = [];
   const invariants: string[] = [];
   const slow: string[] = [];
@@ -242,8 +278,7 @@ function runLevelChecks(runs: readonly RunRecord[]): CheckResult[] {
     if (r === null) continue;
     for (const v of r.violations) invariants.push(`${name}: ${v}`);
     // Authored builds that should win must get every step in; no build may misfire a step.
-    const build = splitMeta(rec.build).build;
-    const mustFinish = build === 'par' || build.startsWith('alt:');
+    const mustFinish = mustIssueEveryStep(map, rec.build);
     for (const s of r.steps) {
       if (s.error !== null)
         steps.push(`${name}: step ${s.index} (${s.kind}, W${s.wave}) ${s.error}`);
@@ -267,8 +302,18 @@ function check(id: string, title: string, failures: string[], summary: string): 
   return { id, title, subject: '*', ok: failures.length === 0, summary, failures };
 }
 
-/** Assertion 3, across maps in campaign order: integrity and escort maps are separate chains. */
-function monotonicCheck<K extends IdSpace>(
+/** Whether any wave of `map` sends a boss. */
+const hasBoss = <K extends IdSpace>(map: CompiledMapDef<K>): boolean =>
+  map.waves.some((w) => w.groups.some((g) => g.enemy.boss !== null));
+
+/**
+ * Assertion 3, across maps in campaign order: integrity and escort maps are separate chains. A map
+ * with `rebaseline: true` (the first map after a boss, as A2M1 after A1M5's Matriarch; design/
+ * maps.md § 6.1) isn't held to the map before it: its median must sit inside its own band
+ * (its act's, or its override), and the chain goes on from it. The flag is refused on a map whose
+ * campaign predecessor sends no boss.
+ */
+export function monotonicCheck<K extends IdSpace>(
   content: CompiledContent<K>,
   reports: readonly MapReport[],
 ): void {
@@ -287,12 +332,10 @@ function monotonicCheck<K extends IdSpace>(
     const prev = last.get(chain);
     last.set(chain, med);
     let outcome: CheckOutcome;
-    if (prev === undefined || map.builds.rebaseline) {
-      outcome = {
-        ok: true,
-        summary: prev === undefined ? 'first map in its chain' : 'rebaseline',
-        failures: [],
-      };
+    if (map.builds.rebaseline) {
+      outcome = rebaselineOutcome(content, map, med, prev);
+    } else if (prev === undefined) {
+      outcome = { ok: true, summary: 'first map in its chain', failures: [] };
     } else {
       const ok = med <= prev + MONOTONIC_TOLERANCE_PCT;
       outcome = {
@@ -314,20 +357,62 @@ function monotonicCheck<K extends IdSpace>(
   }
 }
 
-/** Runs every campaign map (or `mapId` only) and judges the whole campaign. */
-export function runCampaign<K extends IdSpace = LiveIds>(
+/** #3 for a `rebaseline` map: after a boss, its median is judged against its own band. */
+function rebaselineOutcome<K extends IdSpace>(
   content: CompiledContent<K>,
-  opts: HarnessOptions & { readonly mapId?: string } = {},
-): CampaignReport {
-  const now = opts.now ?? ((): number => 0);
-  const t0 = now();
-  const ids = content.campaign.filter((id) => opts.mapId === undefined || id === opts.mapId);
-  if (opts.mapId !== undefined && ids.length === 0) {
-    throw new RangeError(
-      `unknown campaign map '${opts.mapId}' (maps: ${content.campaign.join(', ')})`,
-    );
+  map: CompiledMapDef<K>,
+  med: number,
+  prev: number | undefined,
+): CheckOutcome {
+  const campaign: readonly string[] = content.campaign;
+  const before = campaign[campaign.indexOf(map.id) - 1];
+  const beforeMap = before === undefined ? undefined : content.maps[before as K['map']];
+  if (beforeMap === undefined || !hasBoss(beforeMap)) {
+    return {
+      ok: false,
+      summary: 'rebaseline',
+      failures: [
+        `rebaseline: true is for the first map after a boss, and ${before ?? 'no map'} before it sends none`,
+      ],
+    };
   }
-  const reports = ids.map((id) => runMap(content, id, opts));
+  const band = parBand(map.act, map.builds.marginBand);
+  const was = prev === undefined ? '' : `, previous ${fmtPct(prev)}`;
+  const summary = `re-baseline after ${before}'s boss: median ${fmtPct(med)} in its own band ${band === null ? 'none' : `${band.lo}–${band.hi}`}${was}`;
+  if (band === null) {
+    return { ok: false, summary, failures: [`act ${map.act} has no par band to re-baseline in`] };
+  }
+  const ok = med >= band.lo && med <= band.hi;
+  return {
+    ok,
+    summary,
+    failures: ok ? [] : [`median par margin ${fmtPct(med)} is outside ${band.lo}–${band.hi}`],
+  };
+}
+
+/** The campaign maps a run covers: every one, or `mapId` only (a RangeError for an unknown id). */
+export function campaignMapIds<K extends IdSpace>(
+  content: CompiledContent<K>,
+  mapId?: string,
+): K['map'][] {
+  const ids = content.campaign.filter((id) => mapId === undefined || id === mapId);
+  if (mapId !== undefined && ids.length === 0) {
+    throw new RangeError(`unknown campaign map '${mapId}' (maps: ${content.campaign.join(', ')})`);
+  }
+  return ids;
+}
+
+/**
+ * Judges the whole campaign from its maps' reports, in campaign order (each from `runMap`, here or
+ * in a worker: tools/sim.ts runs maps in parallel): the cross-map monotonic check (#3), skipped
+ * with --map, and each map's verdict.
+ */
+export function judgeCampaign<K extends IdSpace>(
+  content: CompiledContent<K>,
+  reports: readonly MapReport[],
+  opts: HarnessOptions & { readonly mapId?: string },
+  ms: number,
+): CampaignReport {
   // With --map, the earlier maps in the chain aren't run, so there's nothing to compare against.
   if (opts.mapId === undefined) monotonicCheck(content, reports);
   for (const r of reports) {
@@ -341,6 +426,17 @@ export function runCampaign<K extends IdSpace = LiveIds>(
     seeds: opts.seeds ?? DEFAULT_SEED_COUNT,
     build: opts.build ?? null,
     maps: reports,
-    ms: now() - t0,
+    ms,
   };
+}
+
+/** Runs every campaign map (or `mapId` only) and judges the whole campaign, on this thread. */
+export function runCampaign<K extends IdSpace = LiveIds>(
+  content: CompiledContent<K>,
+  opts: HarnessOptions & { readonly mapId?: string } = {},
+): CampaignReport {
+  const now = opts.now ?? ((): number => 0);
+  const t0 = now();
+  const reports = campaignMapIds(content, opts.mapId).map((id) => runMap(content, id, opts));
+  return judgeCampaign(content, reports, opts, now() - t0);
 }

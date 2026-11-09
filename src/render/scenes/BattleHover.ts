@@ -10,6 +10,7 @@ import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   costFor,
+  detectRadiusTiles,
   liveTileAt,
   salvageFor,
   segmentSpan,
@@ -157,7 +158,9 @@ export class BattleHover {
         armed.sprites.head,
         this.#ghostLabel(armed, tile.col, tile.row),
       );
-      const range = armed.tiers[0].attack?.rangeTiles ?? 0;
+      // A tower without an attack (the Lookout) shows its detection radius instead (T406).
+      const t1 = armed.tiers[0];
+      const range = t1.attack?.rangeTiles ?? t1.detect?.radiusTiles ?? 0;
       placement.setRing(tile.col + 0.5, tile.row + 0.5, range, look.ghostValid);
       this.#setHand(false);
       return;
@@ -172,7 +175,11 @@ export class BattleHover {
     // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
     const ringTower =
       look.ringTowerUid !== 0 ? findLiveTower(sim.state.towers, look.ringTowerUid) : selectedTower;
-    const range = ringTower?.tierDef?.attack?.rangeTiles ?? 0;
+    const attack = ringTower?.tierDef?.attack ?? null;
+    const range =
+      ringTower === null
+        ? 0
+        : (attack?.rangeTiles ?? detectRadiusTiles(ringTower, sim.config.modifiers));
     placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range, true);
   }
 

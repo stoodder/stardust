@@ -26,6 +26,8 @@
 //   on a flag rule's map, a group carrying a `tagRatio.except` tag also carries its `tag` (D098:
 //   A1M5's younglings carry `quiet_wave`). `countdownAfter: 'bossEnded'` needs a boss in an
 //   earlier wave.
+// - [fleeing-lead]: in a wave that sends hushing Hollow units down a `fleeing` group's route, the
+//   fleeing group spawns 2–4 s before one of them (enemies.md § 7; FLEEING_LEAD_*_SEC).
 // - [quiet-wave-reach]: no buildable tile's best tier-3 range (high ground's bonus and
 //   REACH_SLACK_TILES included) reaches the first 4 tiles of a route a `quiet_wave` group walks
 //   (D097: the Quiet Wave is seen before any tower could fire on it).
@@ -45,8 +47,9 @@
 //   `interacted` trigger name one ([script] also checks `wreckageCleared` markers sit on
 //   wreckage and `objectiveDone` names another objective of the map).
 // Parts: this file (the map loop, feature guards, ranges, geometry), validateWaves.ts ([wave],
-// [route-walk], [wave-tag], [quiet-wave-reach]), validateThreats.ts (intel, counters, teach, novelty),
-// validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts (builds).
+// [route-walk], [wave-tag], [fleeing-lead], [quiet-wave-reach]), validateThreats.ts (intel,
+// counters, teach, novelty), validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts
+// (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
 //
@@ -69,10 +72,15 @@ import { validateScripts } from './validateScripts.ts';
 import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
+import { CAMPAIGN_PLAN_IDS } from './campaign.ts';
+import { TOWER_ACCESS } from './upgrades/access.ts';
 import {
   bestT3Reach,
+  rangeAuras,
   validateQuietWaveReach,
   validateWaves,
+  type AuraTower,
+  type RangeAura,
   type T3Reach,
   type TargetedTower,
 } from './validateWaves.ts';
@@ -104,6 +112,16 @@ export function validateCampaignMaps<K extends IdSpace>(
         .filter(([id]) => !TOWERS_AHEAD_OF_TASK.includes(id))
         .map(([, t]) => t),
     ),
+    // Range auras a pad could take ([quiet-wave-reach]), by when each tower is first stocked.
+    rangeAuras: rangeAuras(
+      Object.entries<AuraTower>(raw.towers).filter(([id]) => !TOWERS_AHEAD_OF_TASK.includes(id)),
+      (id) => {
+        const access: Readonly<Record<string, { availableAfter: string | null }>> = TOWER_ACCESS;
+        const after = Object.hasOwn(access, id) ? (access[id]?.availableAfter ?? null) : null;
+        return after === null ? -1 : planIndex(after);
+      },
+    ),
+    campaignIndex: planIndex,
     towersWithSpecs,
     companionAbilities,
     rules,
@@ -122,12 +140,22 @@ export function validateCampaignMaps<K extends IdSpace>(
   }
 }
 
+/** A map's index in the campaign plan (content/campaign.ts), or −1 for a map outside it. */
+function planIndex(id: string): number {
+  const ids: readonly string[] = CAMPAIGN_PLAN_IDS;
+  return ids.indexOf(id);
+}
+
 export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
   /** Each tower's tiers and specs, for the range a placed tower reaches (counterAnswers.ts). */
   readonly towers: ReadonlyMap<string, RangedTower>;
   /** The best tier-3 range any tower brings, per layer ([quiet-wave-reach]). */
   readonly t3Reach: T3Reach;
+  /** Every tower's best tier-3 range aura, with when it's first stocked ([quiet-wave-reach]). */
+  readonly rangeAuras: readonly RangeAura[];
+  /** A map's index in the campaign plan (−1: not a campaign map). */
+  readonly campaignIndex: (map: string) => number;
   readonly towersWithSpecs: ReadonlySet<string>;
   /** Each companion with a slot-2 ability in the content → that ability's id. */
   readonly companionAbilities: ReadonlyMap<string, string>;

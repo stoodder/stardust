@@ -97,9 +97,10 @@ export function towersReached(
   return out;
 }
 
-/** One tier's attack range, as raw tier patches and compiled tiers both carry it. */
+/** One tier's attack range and detection radius, as raw tier patches and compiled tiers carry them. */
 interface RangedTier {
   readonly attack?: { readonly rangeTiles?: number } | null;
+  readonly detect?: { readonly radiusTiles?: number } | null;
 }
 /** A tower's tiers and specs, raw (patches) or compiled: enough to read the range it reaches. */
 export interface RangedTower {
@@ -108,19 +109,28 @@ export interface RangedTower {
 }
 
 /**
- * The longest attack range `t` reaches: its tiers' up to the one it reached (a patch without a
- * range keeps the tier before's), and its spec's. Null when it never has an attack (support
- * towers), so it isn't judged by reach.
+ * The longest reach `t` has: its attack range or detection radius (the Lookout Shack, which has no
+ * attack, answers detection from as far as it sees; T406), the longer of the two, over its tiers
+ * up to the one it reached (a patch without one keeps the tier before's) and its spec's. Null when
+ * it has neither (a support tower without detection), so it isn't judged by reach. Taking the
+ * longer one is generous for a tower with both, as the static model means to be.
  */
 export function rangeReached(def: RangedTower, t: ReachedTower): number | null {
   let range: number | null = null;
+  let detect: number | null = null;
   let best: number | null = null;
+  const take = (r: number | null): void => {
+    if (r !== null) best = Math.max(best ?? 0, r);
+  };
   for (let i = 0; i < Math.min(t.tier, MAX_TIER_BEFORE_SPEC); i++) {
     range = def.tiers[i]?.attack?.rangeTiles ?? range;
-    if (range !== null) best = Math.max(best ?? 0, range);
+    detect = def.tiers[i]?.detect?.radiusTiles ?? detect;
+    take(range);
+    take(detect);
   }
-  const spec = t.spec === null ? undefined : def.specs?.[t.spec]?.attack?.rangeTiles;
-  if (spec !== undefined) best = Math.max(best ?? 0, spec);
+  const spec = t.spec === null ? undefined : def.specs?.[t.spec];
+  take(spec?.attack?.rangeTiles ?? null);
+  take(spec?.detect?.radiusTiles ?? null);
   return best;
 }
 

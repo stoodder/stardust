@@ -1,8 +1,15 @@
 // Wave validation (maps.md § 9; the rule list is validateMap.ts's header): [wave],
-// [route-walk], [wave-tag], and [quiet-wave-reach].
+// [route-walk], [wave-tag], [fleeing-lead], and [quiet-wave-reach].
 import { REACH_SLACK_TILES, distanceToRoute, type ReachTile } from './counterAnswers.ts';
 import { FLAG_RULES, type FlagRuleCondition } from './dialogue/flags.ts';
-import { HIGH_GROUND_RANGE_PCT, MAX_TIER_BEFORE_SPEC, SKITTERKIN_ONLY_TAGS } from './rules.ts';
+import { hushesOf } from './compileEnemy.ts';
+import {
+  FLEEING_LEAD_MAX_SEC,
+  FLEEING_LEAD_MIN_SEC,
+  HIGH_GROUND_RANGE_PCT,
+  MAX_TIER_BEFORE_SPEC,
+  SKITTERKIN_ONLY_TAGS,
+} from './rules.ts';
 import type { GridPos, IdSpace, Layer, MapDef, TileChar, WaveTag } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import {
@@ -150,6 +157,46 @@ export function validateWaves(
         }
       }
     }
+    validateFleeingLead(issues, ctx, wave.groups, where);
+  }
+}
+
+/** Float slack for authored seconds (2.0 − 0.1 is not quite 1.9). */
+const LEAD_EPS_SEC = 1e-9;
+
+/**
+ * [fleeing-lead] (enemies.md § 7): in a wave that sends hushing Hollow units down a `fleeing`
+ * group's route, the fleeing group spawns FLEEING_LEAD_MIN_SEC–FLEEING_LEAD_MAX_SEC before one of
+ * them, so the runners are seen running from something. A fleeing group with no Hollow behind it
+ * (A2M1's first waves) is free.
+ */
+function validateFleeingLead(
+  issues: Issues,
+  ctx: MapCtx,
+  groups: MapDef<IdSpace>['waves'][number]['groups'],
+  where: string,
+): void {
+  for (const [g, group] of groups.entries()) {
+    if (!(group.tags ?? []).includes('fleeing')) continue;
+    const leads: number[] = [];
+    for (const h of groups) {
+      const enemy = ctx.enemies.get(h.enemy);
+      if (h === group || h.route !== group.route || enemy === undefined || !hushesOf(enemy)) {
+        continue;
+      }
+      leads.push((h.delaySec ?? 0) - (group.delaySec ?? 0));
+    }
+    if (leads.length === 0) continue;
+    const ok = leads.some(
+      (s) => s >= FLEEING_LEAD_MIN_SEC - LEAD_EPS_SEC && s <= FLEEING_LEAD_MAX_SEC + LEAD_EPS_SEC,
+    );
+    if (!ok) {
+      issues.add(
+        'fleeing-lead',
+        `${where}.groups[${g}]`,
+        `a fleeing group spawns ${FLEEING_LEAD_MIN_SEC}–${FLEEING_LEAD_MAX_SEC} s before a Hollow group on route '${group.route}' (it leads by ${leads.map((s) => `${s} s`).join(', ')})`,
+      );
+    }
   }
 }
 
@@ -196,6 +243,55 @@ export function bestT3Reach(towers: Iterable<TargetedTower>): T3Reach {
     }
   }
   return best;
+}
+
+/** A tower's tiers as raw content gives them: enough to read its range auras. */
+export interface AuraTower {
+  readonly tiers: readonly {
+    readonly auras?: readonly {
+      readonly stat: string;
+      readonly pct: number;
+      readonly radiusTiles: number;
+    }[];
+  }[];
+}
+
+/**
+ * A range aura a pad could take from a support tower beside it (the Lookout Shack's, T406): the
+ * tower's best tier-1-to-3 range pct and that aura's radius (specs aren't counted, as in
+ * bestT3Reach), and the campaign index of the map whose win first stocks the tower (−1 from the
+ * start, or for a tower with no access row).
+ */
+export interface RangeAura {
+  readonly tower: string;
+  readonly pct: number;
+  readonly radiusTiles: number;
+  readonly firstOwnedAfter: number;
+}
+
+/**
+ * Every tower's best tier-1-to-3 range aura (aura arrays replace whole per tier, so each tier's
+ * own list counts). `stockedAfter` gives a tower's campaign index (−1: from the start).
+ */
+export function rangeAuras(
+  towers: Iterable<readonly [string, AuraTower]>,
+  stockedAfter: (tower: string) => number,
+): RangeAura[] {
+  const out: RangeAura[] = [];
+  for (const [id, t] of towers) {
+    let best: { pct: number; radiusTiles: number } | null = null;
+    for (let i = 0; i < Math.min(t.tiers.length, MAX_TIER_BEFORE_SPEC); i++) {
+      // i < length
+      for (const a of t.tiers[i]!.auras ?? []) {
+        if (a.stat === 'range' && a.pct > (best?.pct ?? 0)) best = a;
+      }
+    }
+    if (best !== null) {
+      const { pct, radiusTiles } = best;
+      out.push({ tower: id, pct, radiusTiles, firstOwnedAfter: stockedAfter(id) });
+    }
+  }
+  return out;
 }
 
 /** The first `lengthTiles` of a polyline through tile centres (cut mid-segment if need be). */
@@ -246,9 +342,39 @@ function buildSites(def: MapDef<IdSpace>, grid: Grid): { tile: ReachTile; high: 
 }
 
 /**
- * [quiet-wave-reach]: no buildable tile's best tier-3 range (with the high-ground bonus and the
- * static model's REACH_SLACK_TILES, so it holds under any profile's small range bonuses) reaches
- * the first QUIET_WAVE_CLEAR_TILES tiles of a route a `quiet_wave` group walks.
+ * The best range aura a tower on `site` could take on the map at campaign index `mapIndex` (−1:
+ * not a campaign map): a support tower standing on another build site within the aura's radius,
+ * owned by the run that first wins the map. Auras of one kind don't stack, so the best one counts.
+ *
+ * Only the run that first wins a map sets its flags (story-runtime.md § Flags), so that run is the
+ * one [quiet-wave-reach] guards: an aura tower first stocked after the map itself (the Lookout,
+ * after A1M5) can't stand beside a pad on A1M5's deciding run and isn't counted there (T406).
+ */
+function bestRangeAura(
+  site: { tile: ReachTile },
+  sites: readonly { tile: ReachTile }[],
+  auras: readonly RangeAura[],
+  mapIndex: number,
+): number {
+  let best = 0;
+  for (const a of auras) {
+    if (a.pct <= best || (mapIndex >= 0 && a.firstOwnedAfter >= mapIndex)) continue;
+    const r2 = a.radiusTiles * a.radiusTiles;
+    const beside = sites.some((o) => {
+      const dx = o.tile[0] - site.tile[0];
+      const dy = o.tile[1] - site.tile[1];
+      return o !== site && dx * dx + dy * dy <= r2;
+    });
+    if (beside) best = a.pct;
+  }
+  return best;
+}
+
+/**
+ * [quiet-wave-reach]: no buildable tile's best tier-3 range (with the high-ground bonus, the best
+ * range aura a support tower beside it could add (`bestRangeAura`), and the static model's
+ * REACH_SLACK_TILES, so it holds under any profile's small range bonuses) reaches the first
+ * QUIET_WAVE_CLEAR_TILES tiles of a route a `quiet_wave` group walks.
  */
 export function validateQuietWaveReach(
   issues: Issues,
@@ -277,7 +403,9 @@ export function validateQuietWaveReach(
       const head = routePrefix(route, QUIET_WAVE_CLEAR_TILES - 1);
       sites ??= buildSites(def, grid);
       for (const s of sites) {
-        const reach = range * (1 + (s.high ? HIGH_GROUND_RANGE_PCT : 0)) + REACH_SLACK_TILES;
+        const aura = bestRangeAura(s, sites, ctx.rangeAuras, ctx.campaignIndex(def.id));
+        const bonus = (s.high ? HIGH_GROUND_RANGE_PCT : 0) + aura;
+        const reach = range * (1 + bonus) + REACH_SLACK_TILES;
         const d = distanceToRoute(s.tile, head);
         if (d > reach) continue;
         issues.add(

@@ -1,6 +1,7 @@
 // R&D Command (T204d; design/progression.md § 7.3): QUILL's Intel shelf. It opens after A1M1 with
 // Orbital Strike Mk II and Bricks's Rapport (2 Intel each, so A1M1's 3 Intel buys one: D031); the
-// Field Protocol slots wait for A1M3.
+// Field Protocol slots wait for A1M3, and Scanner Sweep (a Technician ability, after its upgrades)
+// for A2M1 (T406).
 import type { BasePaneProps } from './BasePanes.tsx';
 import { Shelf } from './Shelf.tsx';
 

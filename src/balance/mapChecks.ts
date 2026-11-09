@@ -5,7 +5,7 @@ import type { IdSpace } from '../content/types.ts';
 import { altBuildChecks } from './altChecks.ts';
 import type { CheckSpec } from './checks.ts';
 import { noCounterChecks } from './counterChecks.ts';
-import { freeChoiceChecks } from './freeChoiceChecks.ts';
+import { freeChoiceChecks, runEndFlagChecks } from './freeChoiceChecks.ts';
 import {
   determinismCheck,
   parFairnessChecks,
@@ -32,6 +32,7 @@ export function mapChecks<K extends IdSpace>(
     ...altBuildChecks(map, few),
     ...variantChecks(map, few, band),
     ...freeChoiceChecks(map, few, band),
+    ...runEndFlagChecks(map, few),
     determinismCheck(),
   ];
 }

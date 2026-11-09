@@ -42,11 +42,16 @@ export function buildNames(map: CompiledMapDef<IdSpace>): string[] {
   ];
 }
 
+/** The build each host is playing now, so switching builds can release the one before. */
+const playing = new WeakMap<Host<IdSpace>, BuildExecutor>();
+
 /**
  * Starts playing `name` on the host's battle: from now on its steps are issued before each tick,
  * whatever the speed (frames and fastForward alike), until the battle ends. Steps already done by
- * hand fail as the sim rejects them, and the build carries on (as in the harness). Throws on an
- * unknown build name.
+ * hand fail as the sim rejects them, and the build carries on (as in the harness). The build
+ * played before it lets go: a Hold Fire its `holdFireWhile` macro holds (Gerald's) is turned off,
+ * so switching to 'none' mid-pass leaves the towers firing (T335). Throws on an unknown build
+ * name.
  */
 export function startAutoplay(host: Host<IdSpace>, name: string): BuildExecutor {
   const build = namedBuild(host.sim.map, name);
@@ -55,7 +60,9 @@ export function startAutoplay(host: Host<IdSpace>, name: string): BuildExecutor 
       `autoplay: no build '${name}' on ${host.sim.map.id} (known: ${buildNames(host.sim.map).join(', ')})`,
     );
   }
+  playing.get(host)?.release();
   const exec = createBuildExecutor(host.sim, build);
+  playing.set(host, exec);
   host.setDriver(() => {
     exec.beforeTick();
   });

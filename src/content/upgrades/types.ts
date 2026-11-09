@@ -53,6 +53,13 @@ export type ModifierGrant =
       readonly flat?: number;
       readonly pct?: number;
     }
+  /** A support tower's tune-up (T406): aura strength or detection/aura radius, as a fraction. */
+  | {
+      readonly kind: 'supportStat';
+      readonly tower: TowerId | '*';
+      readonly stat: 'aura' | 'radius';
+      readonly pct: number;
+    }
   | { readonly kind: 'linkBonus'; readonly pct: number }
   | { readonly kind: 'tileBonus'; readonly tile: 'highGround' | 'powerNode'; readonly flat: number }
   | { readonly kind: 'leakAbsorb'; readonly flat: number }

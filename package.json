@@ -19,7 +19,7 @@
     "sim": "node --experimental-strip-types tools/sim.ts",
     "smoke": "playwright test --trace off",
     "check:docs": "node --experimental-strip-types tools/check-docs.ts",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run sim && npm run smoke && npm run check:docs",
+    "check": "node --experimental-strip-types tools/gate.ts",
     "check:fast": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {

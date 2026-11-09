@@ -1,6 +1,7 @@
 // Which map a battle runs, and the SimConfig for it. With a campaign save, the config comes from
 // the save (owned towers, abilities, spec unlocks, upgrades, equipped Field Protocols, difficulty); without one (`?map=<id>`, the dev
-// battles), from the map's par build. The live registries win; the dev battle
+// battles), from the map's par build on its reference profile, so `__sd.autoplay('par')` replays
+// the harness's par run (T332). The live registries win; the dev battle
 // (render/__fixtures__/devBattle.ts, `?map=dev_range`) stays reachable for development and for the
 // smoke flows that need its unlocked towers.
 import { compileContent } from '../content/compile.ts';
@@ -142,7 +143,10 @@ export function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
  * modifiers (upgrades, equipped protocols, difficulty), and its difficulty. Each of those the
  * sim still refuses (FEATURE_GATES) is left out, so a save that runs ahead of the sim (the
  * all_unlocked dev save) plays rather than throws; it goes live when its task lifts the gate.
- * Without a save: the map's par loadout and Technician ability. Throws on an unknown map id.
+ * Without a save: the map's par loadout and Technician ability on its reference profile, on
+ * Standard, as the balance harness runs par (balance/profile.ts `referenceRunProfile`: the
+ * profile's shop ranks and protocols, and its spec unlocks for the loadout's towers; T332).
+ * Throws on an unknown map id.
  */
 export function battleConfig(
   mapId: string,
@@ -167,7 +171,20 @@ export function battleConfig(
       scriptFlags: {},
       specsUnlocked: [],
     };
-    if (save === null) return base;
+    if (save === null) {
+      const profile = map.builds.referenceProfile;
+      const modifiers = metaModifiers({
+        upgrades: profile.shop,
+        protocols: profile.protocols,
+        difficulty: 'standard',
+      }).filter((m) => simulated(modifierFeature(m)));
+      const specs: readonly string[] = profile.specs;
+      return {
+        ...base,
+        modifiers,
+        specsUnlocked: simulated('specs') ? specs.filter((t) => par.loadout.includes(t)) : [],
+      };
+    }
     // The loadout screen's pick for this map (its preset), or the default (meta/loadout.ts).
     const pick = resolveLoadout(save, mapId, defaultPick(save, par));
     const loadout: readonly string[] = pick.towers;

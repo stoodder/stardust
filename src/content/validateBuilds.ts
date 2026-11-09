@@ -16,7 +16,14 @@
 //   tiers and specs its towers reach, from placements that reach its enemies' routes, on this
 //   map's act and enemies, and the abilities it casts).
 // - [alt-builds]: every alt build carries an answer to every required counter; from A1M4, at
-//   least 2 alt builds, each sharing at most 2 tower types with the par loadout.
+//   least 2 sensible alt builds (no `outcome` expectation), each sharing at most 2 tower types
+//   with the par loadout. An under-built alt (`outcome: 'lose' | 'either'`: a player who stops
+//   short, such as par without its spec) counts toward neither (T334).
+// - [run-end-flags]: `runEndFlags` names flags with a run-end rule (dialogue/flags.ts FLAG_RULES)
+//   whose `onMapEnd` is this map, each with at least one run that sets it, runs that exist on the
+//   map (`holdFireWhile:<tag>` a tag some group carries, `alt:<name>` an alt build, spareFleeing
+//   on a map with fleeing groups), and no run on both sides; a campaign map lists every rule
+//   that ends on it (T412).
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
 //   build expectations name alt builds and at least one expectation, their minMarginPct is
 //   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar; a
@@ -46,6 +53,7 @@ import {
   type ReachStep,
   type ScopeEnemy,
 } from './counterAnswers.ts';
+import { FLAG_RULES } from './dialogue/flags.ts';
 import type { BuildStep, CounterId, GridPos, IdSpace, MapDef, ScriptedBuild } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
@@ -135,14 +143,16 @@ export function validateBuilds(
     }
   }
   if (campaignIndex !== null && campaignIndex >= ALT_BUILDS_FROM_CAMPAIGN_INDEX) {
-    if (alts.length < MIN_ALT_BUILDS) {
+    // Under-built alts model a player who stops short of par, so par's towers are theirs.
+    const sensible = alts.filter(([n]) => def.altExpectations?.[n]?.outcome === undefined);
+    if (sensible.length < MIN_ALT_BUILDS) {
       issues.add(
         'alt-builds',
         `${where}.altBuilds`,
-        `${alts.length} alt build${alts.length === 1 ? '' : 's'}; from A1M4 every map needs at least ${MIN_ALT_BUILDS}`,
+        `${sensible.length} sensible alt build${sensible.length === 1 ? '' : 's'} (under-built ones don't count); from A1M4 every map needs at least ${MIN_ALT_BUILDS}`,
       );
     }
-    for (const [n, b] of alts) {
+    for (const [n, b] of sensible) {
       const shared = b.loadout.filter((t) => def.parBuild.loadout.includes(t));
       if (shared.length > ALT_BUILD_MAX_SHARED_TOWERS) {
         issues.add(
@@ -219,8 +229,57 @@ export function validateBuilds(
       issues.add('builds-range', `${where}.flagVariants.${flag}`, 'must list at least one value');
     }
   }
+  validateRunEndFlags(issues, def, where, campaignIndex !== null);
   // Par is purchasable (available by this map and affordable): validatePurchasable.ts.
   // TODO(A3M5, M5): a build's technicianAbility is never in lockedAbilities under its variant.
+}
+
+/** [run-end-flags]: the runs each run-end flag check names exist, and every rule is covered. */
+function validateRunEndFlags(
+  issues: Issues,
+  def: MapDef<IdSpace>,
+  where: string,
+  isCampaign: boolean,
+): void {
+  const tags: ReadonlySet<string> = new Set(
+    def.waves.flatMap((w) => w.groups.flatMap((g) => g.tags ?? [])),
+  );
+  const listed = def.runEndFlags ?? {};
+  const runExists = (label: string): boolean => {
+    if (label === 'par') return true;
+    if (label === 'spareFleeing') return tags.has('fleeing');
+    const [kind, name = ''] = label.split(':');
+    if (kind === 'alt') return Object.hasOwn(def.altBuilds ?? {}, name);
+    return kind === 'holdFireWhile' && tags.has(name);
+  };
+  for (const [flag, runs] of Object.entries(listed)) {
+    if (runs === undefined) continue;
+    const at = `${where}.runEndFlags.${flag}`;
+    const rule = FLAG_RULES.find((r) => r.flag === flag);
+    if (rule === undefined) issues.add('run-end-flags', at, 'no run-end rule sets this flag');
+    else if (isCampaign && rule.onMapEnd !== def.id) {
+      issues.add('run-end-flags', at, `its run-end rule ends on ${rule.onMapEnd}, not this map`);
+    }
+    if (runs.setBy.length === 0) issues.add('run-end-flags', `${at}.setBy`, 'names no run');
+    for (const label of [...runs.setBy, ...runs.notSetBy]) {
+      if (!runExists(label)) issues.add('run-end-flags', at, `'${label}' is no run on this map`);
+    }
+    for (const label of runs.setBy) {
+      if (runs.notSetBy.includes(label)) {
+        issues.add('run-end-flags', at, `'${label}' is in both setBy and notSetBy`);
+      }
+    }
+  }
+  if (!isCampaign) return;
+  for (const rule of FLAG_RULES) {
+    if (rule.onMapEnd === def.id && !Object.hasOwn(listed, rule.flag)) {
+      issues.add(
+        'run-end-flags',
+        `${where}.runEndFlags`,
+        `'${rule.flag}' is set when this map ends: list the runs that set it and that don't`,
+      );
+    }
+  }
 }
 
 const COUNTERS: ReadonlySet<string> = new Set<string>(COUNTER_CATEGORIES);
@@ -339,7 +398,9 @@ function validateBuild(
   for (const e of def.events ?? []) {
     for (const a of e.actions) if ('forceInput' in a) forced.add(a.forceInput.id);
   }
-  const tags = new Set(def.waves.flatMap((w) => w.groups.flatMap((g) => g.tags ?? [])));
+  const tags: ReadonlySet<string> = new Set(
+    def.waves.flatMap((w) => w.groups.flatMap((g) => g.tags ?? [])),
+  );
   const hasNeutral = def.waves.some((w) =>
     w.groups.some((g) => ctx.enemies.get(g.enemy)?.neutral === true),
   );

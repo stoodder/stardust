@@ -251,6 +251,7 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **A: Crow's Nest (300):** detection 5.0, adjacent +25% range, revealed enemies take +10% damage (a Mark-type effect; doesn't stack with Mark).
 - **B: Overclock Rig (300):** detection stays 3.5. Adjacent towers get **+20% fire rate** *instead of* range.
 - **Links:** Overwatch (Rivet), Skywatch (Skyhook).
+- **As built (T406):** the adjacency bonus is the `lookout` aura kind, so a tower beside two Lookouts takes only the single strongest value, whatever its stat: an Overclock Rig's +20% fire rate beats a T2's +15% range rather than adding to it. Both specs keep T3's 2 s linger. Crow's Nest's +10% is a Mark (highest only) on each cloaked unit it reveals, for as long as it stays revealed. The detection radius is the tier's plus its links' +0.5 (scaled by Linked Up), × the tune-up's radius rank; high ground and power nodes don't change it (a power node gives its +20% aura strength, as for any support tower). Its tune-up is the support form ([progression.md §4.2](progression.md#42-tune-ups-per-tower)): +5% aura strength, −5% cost, +5% radius (detection and aura). Hover or selection shows its detection ring in place of a range ring.
 
 ### Aelari towers
 

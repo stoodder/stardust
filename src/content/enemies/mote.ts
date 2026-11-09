@@ -2,9 +2,10 @@
 // clusters of 6–12. The roster row is the spec: 25 HP, no armor, 1.6 tiles/s, leak 1, bounty 2,
 // ground, void. `clustered` (D101) makes a cluster a splash-category threat, so A2M1 can require
 // splash and its briefing shows "Hollow clusters". It hushes under the hush rule (every non-boss
-// Hollow unit does: `hushes` is derived at compile; enemyAbilities/hush.ts, T402), and may walk
-// rift lanes. Spawn interval 0.3 s is a first pass (a cluster arrives packed); T402 and T420
-// confirm it. Sprites are placeholders under their final ids (T440a).
+// Hollow unit does: `hushes` is derived at compile; enemyAbilities/hush.ts), turning Heavy, and may
+// walk rift lanes. At 1.6 tiles/s it catches a Nibbler fleeing 2–4 s ahead of it, but not a Zoomer
+// or a bolting runner (Skittish). Its 0.3 s spawn interval packs a cluster of 12 into 3.3 s of
+// road. Sprites are placeholders under their final ids (T440a; the Heavy variant too).
 import { defineEnemy } from '../define.ts';
 
 export const mote = defineEnemy({

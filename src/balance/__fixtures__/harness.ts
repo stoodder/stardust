@@ -110,6 +110,7 @@ export function fakeResult(
       challenge: 'open',
     },
     objectives: [],
+    hushes: 0,
   };
 }
 

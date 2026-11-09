@@ -1,9 +1,11 @@
 // #16, free choices stay free (conventions.md § Balance sims; D006): holding fire through the
-// Quiet Wave, and sparing fleeing units, cost the player nothing they shouldn't.
+// Quiet Wave, and sparing fleeing units, cost the player nothing they shouldn't. And the `flags`
+// check: the runs a map names set (or leave unset) its run-end flags by the flags' own rules.
 import type { CompiledMapDef, CompiledWaveGroup } from '../content/compiled.ts';
 import { LEAK_FREE_TAGS } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { HeadlessResult } from '../sim/index.ts';
+import { isFlagId } from '../content/dialogue/flags.ts';
 import { evaluateFlagRule, flagRule } from '../story/flags.ts';
 import {
   describeRun,
@@ -13,6 +15,7 @@ import {
   seedRuns,
   wonCount,
   type CheckSpec,
+  type RunRecord,
 } from './checks.ts';
 import type { Band } from './parChecks.ts';
 import { SPARE_FLEEING_SLACK_PCT } from './rules.ts';
@@ -96,10 +99,90 @@ export function freeChoiceChecks<K extends IdSpace>(
             : `margin ${fmtPct(rec.marginPct)} is below par's ${fmtPct(par.marginPct)} − ${SPARE_FLEEING_SLACK_PCT}`;
         },
         (recs, get) =>
-          `margins ${margins(recs)} vs par ${few.map((seed) => fmtPct(get({ build: 'par', seed }).marginPct)).join(' / ')}`,
+          `margins ${margins(recs)} vs par ${few.map((seed) => fmtPct(get({ build: 'par', seed }).marginPct)).join(' / ')}${hushNote(recs)}`,
         seedRuns('par', few),
       ),
     );
   }
   return out;
+}
+
+/** ", hushes 2 / 0 / 1" when any run had a hush (the cost of sparing on a mixed wave), else "". */
+function hushNote(recs: readonly RunRecord[]): string {
+  const n = recs.map((r) => r.result?.hushes ?? 0);
+  return n.some((h) => h > 0) ? `, hushes ${n.join(' / ')}` : '';
+}
+
+/**
+ * The `flags` check (T412): for each run-end flag the map's builds list (`runEndFlags`), every
+ * run in `setBy` wins and its stats make the flag's own run-end rule (content/dialogue/flags.ts,
+ * evaluated by story/flags.ts) true, and every run in `notSetBy` leaves it false. A2M3's
+ * `held_fire_second_look`: par holding fire on each fleeing group sets it; par, and the Spare
+ * runners filter alone (spareFleeing), don't.
+ */
+export function runEndFlagChecks<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  few: readonly number[],
+): CheckSpec[] {
+  const out: CheckSpec[] = [];
+  for (const [flag, runs] of Object.entries(map.builds.runEndFlags)) {
+    if (runs === undefined || !isFlagId(flag)) continue; // the type allows only flag ids
+    const rule = flagRule(flag);
+    const holds = (r: HeadlessResult): boolean | null =>
+      rule === undefined ? null : evaluateFlagRule(rule.value, r.stats);
+    const noRule = `no run-end rule sets ${flag} (content/dialogue/flags.ts FLAG_RULES)`;
+    for (const label of runs.setBy) {
+      out.push(
+        perRun(
+          'flags',
+          `${label} wins and sets ${flag}`,
+          label,
+          few,
+          (rec) => {
+            const r = rec.result;
+            if (r?.outcome !== 'won') return describeRun(rec);
+            const h = holds(r);
+            return h === null ? noRule : h ? null : `${flag}'s rule is false: ${flagStats(r)}`;
+          },
+          (recs) => `${wonCount(recs)}; ${seedStats(recs)}`,
+        ),
+      );
+    }
+    for (const label of runs.notSetBy) {
+      out.push(
+        perRun(
+          'flags',
+          `${label} leaves ${flag} unset`,
+          label,
+          few,
+          (rec) => {
+            const h = holds(rec.result!); // perRun judges only runs with a result
+            return h === null
+              ? noRule
+              : h
+                ? `${flag}'s rule holds: ${flagStats(rec.result)}`
+                : null;
+          },
+          (recs) => seedStats(recs),
+        ),
+      );
+    }
+  }
+  return out;
+}
+
+/** flagStats for each seed's run, each distinct line once ("…; …" when seeds differ). */
+const seedStats = (recs: readonly RunRecord[]): string =>
+  [...new Set(recs.map((r) => flagStats(r.result)))].join('; ');
+
+/** The stats run-end rules read most: "fleeing leaked 9/14, quiet 5/7, Hold Fire used 2×". */
+function flagStats(r: HeadlessResult | null): string {
+  if (r === null) return '-';
+  const { tagSpawned, tagLeaked, holdFireUses } = r.stats;
+  const parts: string[] = [];
+  for (const tag of ['fleeing', 'quiet_wave', 'youngling'] as const) {
+    if (tagSpawned[tag] > 0) parts.push(`${tag} leaked ${tagLeaked[tag]}/${tagSpawned[tag]}`);
+  }
+  parts.push(`Hold Fire used ${holdFireUses}×`);
+  return parts.join(', ');
 }

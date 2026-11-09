@@ -3,7 +3,9 @@
 // registered map on the campaign plan, in its reference profile:
 // - every tower, spec unlock, shop or R&D rank, protocol, and the Technician ability is
 //   obtainable (it has a catalog or access entry) and available: its `availableAfter` map comes
-//   earlier in the campaign plan;
+//   earlier in the campaign plan; a tower registered ahead of its task (towers/index.ts
+//   TOWERS_AHEAD_OF_TASK: its license is on no shelf yet) isn't, until its task lifts it (T412:
+//   A2M1's row owns the Lookout, which goes live with T406);
 // - shop ranks are whole numbers within the item's ranks, protocols are listed once, and no more
 //   protocols are equipped than the profile's slots;
 // - the Stardust spent is at most what the earlier maps' first clears paid (from each map's
@@ -30,6 +32,7 @@ import {
   type UpgradeDef,
 } from './upgrades/index.ts';
 import { REFERENCE_ECONOMY, type ReferenceEconomy } from './upgrades/reference.ts';
+import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import { duplicates, type Issues } from './validateHelpers.ts';
 
 /** The catalog and timeline the check reads; tests pass their own plan and access tables. */
@@ -42,6 +45,8 @@ export interface PurchaseRules {
   readonly abilities: Readonly<Partial<Record<string, Access<string>>>>;
   readonly engineering: EngineeringDef<string>;
   readonly economy: ReferenceEconomy<string>;
+  /** Towers registered ahead of their task, whose licenses no shelf sells yet. */
+  readonly aheadOfTask: readonly string[];
 }
 
 export const LIVE_PURCHASE_RULES: PurchaseRules = {
@@ -52,6 +57,7 @@ export const LIVE_PURCHASE_RULES: PurchaseRules = {
   abilities: ABILITY_ACCESS,
   engineering: ENGINEERING,
   economy: REFERENCE_ECONOMY,
+  aheadOfTask: TOWERS_AHEAD_OF_TASK,
 };
 
 type Purse = Record<Currency, number>;
@@ -148,6 +154,9 @@ function billOf(
       continue;
     }
     available(access.availableAfter, '.towers', `'${t}'`);
+    if (rules.aheadOfTask.includes(t)) {
+      report('.towers', `'${t}' waits for its task: no shelf sells it yet (TOWERS_AHEAD_OF_TASK)`);
+    }
     if ('price' in access) pay(access.currency, access.price);
   }
 

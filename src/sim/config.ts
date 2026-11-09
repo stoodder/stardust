@@ -35,6 +35,12 @@ export type EconomyStat =
 export type AbilityStat = 'cooldown' | 'radius';
 /** Tiles whose built-in bonus a modifier can raise (High Ground Training). */
 export type BonusTile = 'highGround' | 'powerNode';
+/**
+ * A support tower's stats a modifier can raise (design/progression.md § 4.2: a support tower's
+ * tune-up ranks 1 and 3): `aura` adds to its auras' strength (as a power node's +20% does), and
+ * `radius` scales its detection and aura radii (T406).
+ */
+export type SupportStat = 'aura' | 'radius';
 
 /**
  * A change from outside the map: permanent upgrades, Field Protocols, and difficulty arrive as a
@@ -101,6 +107,17 @@ export type Modifier<K extends IdSpace = LiveIds> =
       readonly stat: AbilityStat;
       readonly flat?: number;
       readonly pct?: number;
+      readonly source: ModifierSource;
+    }
+  /**
+   * A support tower's tune-up (T406; the Lookout Shack's ranks 1 and 3): +`pct` aura strength, or
+   * its detection and aura radii × (1 + Σ pct). A tower with an attack ignores it.
+   */
+  | {
+      readonly kind: 'supportStat';
+      readonly tower: K['tower'] | '*';
+      readonly stat: SupportStat;
+      readonly pct: number;
       readonly source: ModifierSource;
     }
   /** Wave countdowns (Story +50%, veteran Rush Hour −50%). */

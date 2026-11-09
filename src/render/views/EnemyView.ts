@@ -6,6 +6,7 @@
 // still under reduced motion), each on its own beat by uid. When it dies it plays its sprite's
 // `death` anim (Act I's comic pop, T311c) where it stood, on a corpse sprite of its own, so the
 // view can go back to the pool at once.
+// The hush rule's minimal look (T402; hushLook.ts): a Heavy unit's tint, a held runner's shake.
 // What it's doing picks the anim (T312b; enemyPose.ts has the rules): a Digger's `dig_<facing>`
 // tell, Chitterbloom's sneeze tell and sneeze, her dig and `under` mound and surfacing, her phase-3
 // panic, her invulnerable `puff` (shimmering: it alternates with its `default+selected` frame, a
@@ -13,7 +14,9 @@
 // burrowed unit without an `under` anim (the Digger) hides and draws the generic `fx.burrow_mound`
 // instead. A leaving unit (driven off with its boss) is untargetable, so it draws at 60%; when the
 // sim lets it go at the map edge, it hands its sprite to LeaveFx, which carries it on past the edge
-// as it fades.
+// as it fades. A cloaked unit nobody has Revealed (T406; enemies.md § 2.5: the player still sees a
+// faint shimmer) draws faint, stepping between enemyPose.ts's CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH
+// every SHIMMER_MS (steady at the low step under reduced motion); Revealed, it draws whole.
 // Its health bar (art-direction §8; T328) shows over the body while it's damaged or hovered: HP
 // and shield on an `ink.1` track (vfx/healthBar.ts), three pooled images cropped to width, so it
 // allocates nothing per frame. A boss and a neutral unit have none (`setBar(0, 0)`; the boss has
@@ -41,6 +44,7 @@ import {
 import { healthStripTexture } from '../vfx/overlayTextures.ts';
 import {
   blankFacts,
+  cloakAlpha,
   ENEMY_POSES,
   interruptsOneShot,
   ONE_SHOT_POSES,
@@ -51,6 +55,7 @@ import {
   type EnemyPose,
   type PoseEnemy,
 } from './enemyPose.ts';
+import { HEAVY_TINT, hushShakePx } from './hushLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
 import { facingOf, hasAnim, spriteId, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
@@ -97,8 +102,6 @@ const TELL_GAP_PX = HEALTH_BAR_ROOM_PX;
  * a 3 Hz cycle (no flicker above the photosensitivity cap, art-direction §8; D097).
  */
 export const SHIMMER_MS = 167;
-/** A leaving unit is untargetable: it draws at this alpha (the stepped-alpha ladder's 60%). */
-export const LEAVING_ALPHA = 0.6;
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
 
@@ -245,6 +248,12 @@ export class EnemyView implements PooledView {
   /** Burrowed under the generic mound (the body hidden). */
   #mounded = false;
   #leaving = false;
+  /** The body's alpha now (1, a leaving unit's, or the cloak shimmer's step). */
+  #alpha = 1;
+  /** Heavy (the hush rule, hushLook.ts): tinted for the rest of its life. */
+  #heavy = false;
+  /** A held runner's shake offset now (px). */
+  #shake = 0;
   readonly #facts = blankFacts();
 
   /** `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes). */
@@ -372,7 +381,10 @@ export class EnemyView implements PooledView {
     this.#oneShot = null;
     this.#shimmerOn = false;
     this.#mounded = false;
+    this.#heavy = false;
+    this.#shake = 0;
     this.#leaving = false;
+    this.#alpha = 1;
     this.#stopFlash();
     (flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(this.#body);
     this.#body.setVisible(true).setAlpha(1);
@@ -553,9 +565,25 @@ export class EnemyView implements PooledView {
     if (dirty) this.#play();
     if (e.leaving !== this.#leaving) {
       this.#leaving = e.leaving;
-      this.#body.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
-      this.#shadow.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
       dirty = true;
+    }
+    const high = !prefersReducedMotion() && Math.floor(performance.now() / SHIMMER_MS) % 2 === 0;
+    const alpha = cloakAlpha(e, this.#leaving, high);
+    if (alpha !== this.#alpha) {
+      this.#alpha = alpha;
+      this.#body.setAlpha(alpha);
+      this.#shadow.setAlpha(alpha);
+    }
+    // The hush rule (T402; hushLook.ts): Heavy's tint (a hit flash ends back on it), a held
+    // runner's shake.
+    if (e.heavy !== this.#heavy) {
+      this.#heavy = e.heavy;
+      if (this.#flashFrames === 0) this.#stopFlash();
+    }
+    const shake = hushShakePx(e, performance.now(), prefersReducedMotion());
+    if (shake !== this.#shake) {
+      this.#shake = shake;
+      this.#body.x = this.#bodyX + shake;
     }
     // Burrowing, surfacing, or leaving hides or shows the health bar.
     if (dirty) this.#syncBar();
@@ -613,7 +641,10 @@ export class EnemyView implements PooledView {
     this.#id = null;
     this.#set = null;
     this.#leaving = false;
+    this.#alpha = 1;
     this.#oneShot = null;
+    this.#heavy = false;
+    this.#shake = 0;
     this.#stopFlash();
     this.#body.stop();
     this.#body.setVisible(false).setAlpha(1);
@@ -645,7 +676,8 @@ export class EnemyView implements PooledView {
 
   #stopFlash(): void {
     this.#flashFrames = 0;
-    this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    if (this.#heavy) this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
+    else this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 
   /** Whether the shown sprite has `pose` in the current facing. */

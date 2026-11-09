@@ -41,6 +41,8 @@ describe('offers', () => {
       [RAPPORT, null],
       [QUILL_RAPPORT, 'not_stocked'],
       [SLOTS, 'not_stocked'],
+      // R&D's Technician abilities come after its upgrades (T406).
+      [{ kind: 'ability', id: 'scanner_sweep' }, 'not_stocked'],
     ]);
     expect(rnd[0]).toMatchObject({ currency: 'intel', price: 2, owned: 0, ranks: 1 });
     expect(rnd[2]).toMatchObject({ availableAfter: 'a1_m03', price: 2, ranks: 1 });
@@ -65,8 +67,8 @@ describe('offers', () => {
     const fresh = createNewSave();
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
-    // Every upgrade but R&D's four, every protocol, and the Zapcoil license.
-    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 1);
+    // Every upgrade but R&D's four, every protocol, and the Zapcoil and Lookout licenses.
+    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 2);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -82,7 +84,7 @@ describe('offers', () => {
     );
     expect(kinds[0]).toBe('license');
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
-    expect(kinds.filter((k) => k === 'tune')).toHaveLength(5); // Skyhook's and Zapcoil's too
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(6); // Skyhook's, Zapcoil's, Lookout's
   });
 
   it('orders each group by arrival, then entry price, then name', () => {
@@ -99,7 +101,8 @@ describe('offers', () => {
     // A bought rank doesn't move an item.
     const save = afterA1M4();
     save.upgrades.salvage_rights = 1;
-    expect(shelf(save, 'shop')[1]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
+    // After the two licenses (Zapcoil's, then the Lookout's).
+    expect(shelf(save, 'shop')[2]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
   });
 
   it('a tune-up needs its tower, and a spec unlock needs specs', () => {

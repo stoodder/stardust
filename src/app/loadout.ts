@@ -80,11 +80,16 @@ function bonusText(b: LinkBonusDef): string {
   return vs === undefined ? parts.join(', ') : `${parts.join(', ')} vs ${vs}`;
 }
 
-/** A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b). */
+/**
+ * A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b), and
+ * the Lookout's detection radius from Overwatch and Skywatch (T406).
+ */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
   if (p.chainJumps !== undefined) parts.push(`+${p.chainJumps} chain jumps`);
   if (p.soakedSec !== undefined) parts.push(`Soaks for ${p.soakedSec} s`);
+  // Overwatch, Skywatch (T406).
+  if (p.detectRadiusTiles !== undefined) parts.push(`+${p.detectRadiusTiles} detection radius`);
   return parts.join(', ');
 }
 

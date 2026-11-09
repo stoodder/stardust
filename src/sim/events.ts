@@ -356,20 +356,24 @@ export type SimEvent<K extends IdSpace = LiveIds> =
     }
   | {
       /**
-       * A shield pulse's tell began (`tell`, T403) or it fired (`fired`): `restored` units got
-       * shield back within `radiusTiles` of (x, y). The ring and chime for render and audio.
+       * A shield pulse's tell began (`tell`), it fired (`fired`: `restored` units got shield back
+       * within `radiusTiles` of (x, y)), or Stasis cancelled its tell (`interrupted`; restored 0).
+       * The ring and chime for render and audio (enemyAbilities/pulse.ts).
        */
       readonly type: 'ShieldPulse';
       readonly uid: number;
       readonly enemy: K['enemy'];
-      readonly phase: 'tell' | 'fired';
+      readonly phase: 'tell' | 'fired' | 'interrupted';
       readonly x: number;
       readonly y: number;
       readonly radiusTiles: number;
       readonly restored: number;
     }
   | {
-      /** A hit landed on a shield (T403): the ripple; `broken` when it took the shield to 0. */
+      /**
+       * A hit landed on a shield (the damage pipeline, combat/damage.ts): the ripple at the unit's
+       * (x, y); `broken` when it took the shield to 0 (the shatter).
+       */
       readonly type: 'ShieldHit';
       readonly uid: number;
       readonly x: number;

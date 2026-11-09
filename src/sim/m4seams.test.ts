@@ -24,9 +24,6 @@ import { evaluateCondition, settledCondition } from './conditions.ts';
 import type { SimConfig } from './config.ts';
 import { blinkStep } from './enemyAbilities/blink.ts';
 import { cloakedOut } from './enemyAbilities/cloak.ts';
-import { hushStep } from './enemyAbilities/hush.ts';
-import { pulseStep } from './enemyAbilities/pulse.ts';
-import { skittishStep } from './enemyAbilities/skittish.ts';
 import { ENEMY_BLANK, PROJECTILE_BLANK, TOWER_BLANK } from './entities.ts';
 import type { SimEvent } from './events.ts';
 import { FEATURE_GATES, gateRefusals, stubTowerGate, towerRefusal } from './gates.ts';
@@ -130,17 +127,13 @@ describe('M4 state fields', () => {
 });
 
 describe('stub systems change nothing', () => {
-  it('detection, and the hush, Skittish, pulse, blink, cloak, and asset stubs', () => {
+  it('detection, and the blink, cloak, and asset stubs', () => {
     const { state, ctx } = setup();
     const mote = spawn(state, LIVE.enemies.mote, { dist: 2 });
     const witch = spawn(state, LIVE.enemies.glass_witch, { dist: 1 });
-    spawn(state, RUNNER, { dist: 2.2, tags: ['fleeing'] });
     const before = JSON.stringify(state);
     detection(state, ctx);
-    hushStep(state, ctx, mote, LIVE.enemies.mote);
-    skittishStep(state, mote);
     const phases = LIVE.enemies.glass_witch.boss!.phases;
-    pulseStep(state, ctx, witch, phases[0]!.pulse!);
     blinkStep(state, ctx, witch, phases[1]!.blink!);
     expect(cloakedOut(mote)).toBe(false);
     expect(leakToAsset(state, MAP, mote)).toBe(false);
@@ -269,16 +262,14 @@ describe('wreckage by marker and objectives as conditions', () => {
 describe('FEATURE_GATES (T400a rows)', () => {
   it('names the lifting task for every M4 mechanic (D101)', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'enemy.hush': 'T402',
-      'enemy.skittish': 'T402',
-      'enemy.pulse': 'T403',
       'enemy.blink': 'T404',
       'map.protect': 'T305a',
       'run.checkpoints': 'T305b',
-      'enemy.cloak': 'T406',
-      'tower.detection': 'T406',
-      'tower.lookout': 'T406',
-      'ability.reveal': 'T406',
+      // Cloaks, detection, the Lookout, and Scanner Sweep run since T406 (systems/detection.test.ts).
+      'enemy.cloak': null,
+      'tower.detection': null,
+      'tower.lookout': null,
+      'ability.reveal': null,
       'status.stasis': 'T407a',
       'attack.homing': 'T407b',
       'attack.charge': 'T407b',
@@ -301,34 +292,28 @@ describe('FEATURE_GATES (T400a rows)', () => {
 
   it('refuses the Act II enemies by mechanic, naming the enemy', () => {
     const e = LIVE.enemies;
-    // Motes alone (fx_map's waves untagged): the hush rule.
+    // The hush rule and Skittish run since T402 (enemyAbilities/hush.test.ts): Motes, alone or
+    // beside a fleeing group (fx_map's W2 runners flee), are refused nothing.
     const untagged = MAP.waves.map((w) =>
       Object.assign({}, w, {
         groups: w.groups.map((g) => Object.assign({}, g, { enemy: e.mote, tags: [] })),
       }),
     );
-    expect(gateRefusals(contentWith(null, { waves: untagged }))).toEqual([
-      'the hush rule (mote) is not simulated until T402',
-    ]);
-    // Skittish: a fleeing group beside a hushing unit (fx_map's W2 runners flee).
+    expect(gateRefusals(contentWith(null, { waves: untagged }))).toEqual([]);
     const groups = MAP.waves.map((w, i) =>
       Object.assign({}, w, {
         groups: i === 0 ? w.groups.map((g) => Object.assign({}, g, { enemy: e.mote })) : w.groups,
       }),
     );
-    expect(gateRefusals(contentWith(null, { waves: groups }))).toEqual([
-      'the hush rule (mote) is not simulated until T402',
-      'Skittish fleeing groups beside the Hollow is not simulated until T402',
-    ]);
+    expect(gateRefusals(contentWith(null, { waves: groups }))).toEqual([]);
+    // Her pulse runs since T403 (enemyAbilities/pulse.test.ts).
     expect(gateRefusals(contentWith(e.glass_witch))).toEqual([
-      'a shield pulse (glass_witch) is not simulated until T403',
       'a blink (glass_witch) is not simulated until T404',
     ]);
+    // Cloaks run since T406 (systems/detection.test.ts).
     const veil = enemyDef('fx_veil', { cloaked: true, traits: ['cloaked'] });
-    expect(gateRefusals(contentWith(veil))).toEqual([
-      'a cloak (fx_veil) is not simulated until T406',
-    ]);
-    // Shields run since M1: the Aelari line units play today (T403 confirms them).
+    expect(gateRefusals(contentWith(veil))).toEqual([]);
+    // Shields run since M1: the Aelari line units play (T403 confirmed them in play).
     for (const id of ['glimmer', 'weft_warden', 'lightwing'] as const) {
       expect(gateRefusals(contentWith(e[id])), id).toEqual([]);
     }
@@ -347,7 +332,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
     ]);
   });
 
-  it('refuses the stub towers, their new tier abilities, and Scanner Sweep', () => {
+  it('refuses the stub towers and their new tier abilities (the Lookout and Scanner Sweep play)', () => {
     const towers = { ...FIXTURE_CONTENT.towers, ...LIVE.towers };
     const cfg = (loadout: string[], specsUnlocked: string[] = []): SimConfig<IdSpace> => ({
       ...fixtureConfig(),
@@ -355,10 +340,8 @@ describe('FEATURE_GATES (T400a rows)', () => {
       loadout,
       specsUnlocked,
     });
-    expect(gateRefusals(cfg(['lookout']))).toEqual([
-      "the 'lookout' tower is not simulated until T406",
-      'detection (lookout) is not simulated until T406',
-    ]);
+    // The Lookout and detection play since T406, its specs too.
+    expect(gateRefusals(cfg(['lookout'], ['lookout']))).toEqual([]);
     expect(gateRefusals(cfg(['harpoon']))).toEqual([
       "the 'harpoon' tower is not simulated until T408",
     ]);
@@ -373,7 +356,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'a target filter (crane) is not simulated until T408',
       'the pinned status (crane) is not simulated until T408',
     ]);
-    expect(towerRefusal(RAW_CONTENT.towers.lookout)).toMatch(/T406$/);
+    expect(towerRefusal(RAW_CONTENT.towers.lookout)).toBeNull();
     expect(towerRefusal(RAW_CONTENT.towers.rivet)).toBeNull();
     // Homing and charge attacks (T407b) on a fixture tier.
     const homing = tierWith(GUN.tiers[0], {
@@ -398,7 +381,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
     expect(gateRefusals(gun(charge))).toEqual([
       "a 'charge' attack (fx_gun) is not simulated until T407b",
     ]);
-    // Scanner Sweep in slot 1.
+    // Scanner Sweep in slot 1 plays since T406.
     const sweep: SimConfig<IdSpace> = {
       ...fixtureConfig(),
       content: {
@@ -407,9 +390,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       },
       abilities: { slot1: 'scanner_sweep', slot2: null, slot2State: 'none' },
     };
-    expect(gateRefusals(sweep)).toEqual([
-      "the 'reveal' ability (scanner_sweep) is not simulated until T406",
-    ]);
+    expect(gateRefusals(sweep)).toEqual([]);
   });
 
   it('keeps the stub towers and content TOWERS_AHEAD_OF_TASK in step', () => {

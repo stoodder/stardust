@@ -18,10 +18,13 @@
 // - `holdFire` and `spareRunners` steps address a tower by tile (an error if none stands there)
 //   or `'all'`. The `holdFireWhile: <tag>` macro arms a watcher when it's reached: from then on,
 //   it issues plain `holdFire 'all'` on once a unit with that tag is alive, and off once every
-//   such unit the map spawns has spawned and none is left alive (conventions.md § Balance sims).
-//   `holdFireWhile: 'neutral'` (Gerald's macro, T313) holds while a neutral unit is on the field
-//   and releases once none is (each pass: he leaves with NeutralExited), every time one appears.
-//   It's what a player does by hand, so the run stays a plain command log.
+//   such unit the waves started so far send has spawned and none is left alive (conventions.md
+//   § Balance sims), again for each later wave that sends some: one wave for the Quiet Wave,
+//   every runner group for `fleeing` (T412). `holdFireWhile: 'neutral'` (Gerald's macro, T313)
+//   holds while a neutral unit is on the field and releases once none is (each pass: he leaves
+//   with NeutralExited), every time one appears. It's what a player does by hand, so the run
+//   stays a plain command log. `release()` lets go of a held macro and disarms them all (the app's
+//   autoplay, when it's switched to another build mid-run; T335).
 // - `specialize` addresses a tower by tile and, on an unlocked tier-3 tower, waits until its spec's
 //   listed cost is in the bank (otherwise it's issued, and the sim's rejection is the step error).
 //   `clear` sends the salvage drone (`clear` command): it completes once queued, and a later
@@ -85,6 +88,12 @@ export interface BuildExecutor {
   readonly steps: readonly StepRecord[];
   /** Ticks at which the executor called a wave (wave 1's start and early calls). */
   readonly waveCalls: readonly number[];
+  /**
+   * Stops the `holdFireWhile` macros: a macro holding fire now issues `holdFire 'all'` off, and
+   * none toggles again. Call it when the build stops being played (the app's autoplay, switched
+   * to another build mid-run, T335), so a hold the macro started doesn't outlive it.
+   */
+  release(): void;
 }
 
 /** Throws a RangeError if `build` has steps the M1 sim can't run. */
@@ -114,8 +123,12 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const waveCalls: number[] = [];
   const state = sim.state;
   let next = 0;
-  /** Armed holdFireWhile macros: the tag, how many such units the map spawns, and its record. */
-  const watchers: { tag: WaveTag; total: number; holding: boolean; rec: StepRecord }[] = [];
+  /**
+   * Armed holdFireWhile macros: the tag, how many such units the waves send through each wave
+   * (`through[i]`: waves 1..i+1, so a hold lasts until the current wave's have all spawned),
+   * whether it holds now, and its record.
+   */
+  const watchers: { tag: WaveTag; through: number[]; holding: boolean; rec: StepRecord }[] = [];
   /** Armed holdFireWhile: 'neutral' macros (Gerald's): holding now, and the step's record. */
   const neutralWatchers: { holding: boolean; rec: StepRecord }[] = [];
   /** The build phase (countdownWave) already called early, so each is called once. */
@@ -255,11 +268,13 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
           return finish(null, false);
         }
         const tag = s.tag;
-        const total = sim.map.waves.reduce(
-          (n, w) => n + w.groups.reduce((m, g) => m + (g.tags.includes(tag) ? g.count : 0), 0),
-          0,
-        );
-        watchers.push({ tag, total, holding: false, rec });
+        const through: number[] = [];
+        let sent = 0;
+        for (const w of sim.map.waves) {
+          for (const g of w.groups) if (g.tags.includes(tag)) sent += g.count;
+          through.push(sent);
+        }
+        watchers.push({ tag, through, holding: false, rec });
         return finish(null, false);
       }
       case 'callWave': {
@@ -308,11 +323,12 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const watch = (): void => {
     for (const w of watchers) {
       if (w.holding) {
-        if (state.stats.tagSpawned[w.tag] < w.total || tagAlive(w.tag)) continue;
+        // Held until the units the started waves send have all spawned and none is alive.
+        const due = state.wave > 0 ? (w.through[state.wave - 1] ?? 0) : 0;
+        if (state.stats.tagSpawned[w.tag] < due || tagAlive(w.tag)) continue;
         w.holding = false;
-        w.total = -1; // done: never again
         toggle(w.rec, false);
-      } else if (w.total > 0 && tagAlive(w.tag)) {
+      } else if (tagAlive(w.tag)) {
         w.holding = true;
         toggle(w.rec, true);
       }
@@ -326,11 +342,21 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     }
   };
 
+  let released = false;
+
   return {
     steps,
     waveCalls,
+    release() {
+      if (released) return;
+      released = true;
+      const held = [...watchers, ...neutralWatchers].find((w) => w.holding);
+      watchers.length = 0;
+      neutralWatchers.length = 0;
+      if (held !== undefined && state.outcome === 'playing') toggle(held.rec, false);
+    },
     beforeTick() {
-      if (state.outcome !== 'playing') return;
+      if (state.outcome !== 'playing' || released) return;
       watch();
       while (next < build.steps.length) {
         const s = build.steps[next]!; // next < length
@@ -370,6 +396,11 @@ export interface HeadlessResult extends RunSummary {
   readonly medals: Readonly<Record<MedalKind, MedalStatus>>;
   /** Each optional objective's final standing, in map order (`state.objectives`; T304f). */
   readonly objectives: readonly ObjectiveStatus[];
+  /**
+   * Hushes this run (`Hushed` events: a Hollow unit reached a fleeing runner, which turned it
+   * Heavy; enemies.md § The hush rule). The free-choice checks report them (T412).
+   */
+  readonly hushes: number;
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -386,10 +417,12 @@ export function runHeadless<K extends IdSpace = LiveIds>(
   const exec = createBuildExecutor(sim, build);
   const tracker = createRunTracker(sim, opts.checkInvariants ?? true);
   const out: SimEvent<K>[] = [];
+  let hushes = 0;
   const drain = (): void => {
     out.length = 0;
     sim.drainEvents(out);
     tracker.consume(out);
+    for (let i = 0; i < out.length; i++) if (out[i]!.type === 'Hushed') hushes++; // i < length
   };
   while (sim.state.outcome === 'playing' && sim.state.tick < maxTicks) {
     exec.beforeTick();
@@ -409,5 +442,6 @@ export function runHeadless<K extends IdSpace = LiveIds>(
     commandCount: sim.state.commandLog.length,
     medals: { ...sim.state.medals },
     objectives: [...sim.state.objectives],
+    hushes,
   };
 }

@@ -1,13 +1,14 @@
 // Lookout Shack (design/towers.md § 7): Zibzab's watchtower, Vrell, no attack. It detects (reveals
-// cloaked enemies within its radius; enemies.md § 2.5) and gives adjacent towers range: the
-// adjacency bonus is the `lookout` aura kind (two Lookouts don't stack; towers.md § 4), and
-// "adjacent" is the 8-neighbourhood, so the aura reaches 1.5 tiles (a corner neighbour sits √2
-// away). T1 (100): detect 2.5, +10% range. T2 (80): detect 3.0, +15%. T3 (150): detect 3.5, a
-// 2 s reveal linger, +20%. Crow's Nest (300): detect 5.0, +25% range, revealed enemies take +10%
-// damage. Overclock Rig (300): detect 3.5, +20% fire rate instead of range.
-// Licensed after A1M5 for 150 Stardust (upgrades/access.ts). A T400a stub: T406 runs detection
-// and confirms these numbers, and createSim refuses it until then (`tower.lookout`,
-// `tower.detection`). Sprites are placeholders under their final ids (T440b).
+// cloaked enemies within its radius; enemies.md § 2.5; sim/systems/detection.ts) and gives
+// adjacent towers range: the adjacency bonus is the `lookout` aura kind (two Lookouts don't stack;
+// towers.md § 4), and "adjacent" is the 8-neighbourhood, so the aura reaches 1.5 tiles (a corner
+// neighbour sits √2 away). T1 (100): detect 2.5, +10% range. T2 (80): detect 3.0, +15%. T3 (150):
+// detect 3.5, a 2 s reveal linger, +20%. Crow's Nest (300): detect 5.0, +25% range, revealed
+// enemies take +10% damage (a Mark, so it doesn't stack with one). Overclock Rig (300): detect
+// 3.5, +20% fire rate instead of range. Both specs keep T3's 2 s linger (a patch merges into T3's
+// `detect`). Its links (Overwatch, Skywatch) add +0.5 detection radius; its tune-up is aura
+// strength and radius (`supportStat`, upgrades/tuneUps.ts). Licensed after A1M5 for 150 Stardust
+// (upgrades/access.ts). Sprites are placeholders under their final ids (T440b).
 import { defineTower } from '../define.ts';
 
 export const lookout = defineTower({

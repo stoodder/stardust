@@ -8,7 +8,10 @@ import { RAW_CONTENT } from './registry.ts';
 import type { IdSpace, MapDef, ProfileDef, RawContent } from './types.ts';
 import { DEFAULT_VALIDATION_RULES, validate } from './validate.ts';
 import { LIVE_PURCHASE_RULES, type PurchaseRules } from './validatePurchasable.ts';
+import { CAMPAIGN } from './campaign.ts';
+import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import { PROTOCOLS, UPGRADES } from './upgrades/index.ts';
+import { REFERENCE_PROFILES } from './upgrades/reference.ts';
 
 const PRIOR: MapDef<IdSpace> = { ...fxMap, id: 'fx_prior', stardust: 100 };
 
@@ -35,6 +38,7 @@ const RULES: PurchaseRules = {
     priceByFaction: LIVE_PURCHASE_RULES.engineering.priceByFaction,
   },
   economy: { intelPerMap: 1, baseProtocolSlots: 1, bankResetAfter: [] },
+  aheadOfTask: [],
 };
 
 /** The fixture with fx_prior before fx_map, and fx_map's profile patched. */
@@ -52,6 +56,28 @@ function rejects(raw: RawContent<IdSpace>, message: RegExp, rules: PurchaseRules
     /\[purchasable\] /,
   );
   expect(errorsOf(raw, rules).join('\n')).toMatch(message);
+}
+
+/**
+ * The live campaign with A2M1–A2M3 stood in by copies of A1M5 that pay campaign.md § 4.9's
+ * first-clear Stardust and carry their rows, so the Act II rows are priced on the real
+ * timeline before their maps exist.
+ */
+function withActTwoRows(): RawContent<IdSpace> {
+  const a1m5: MapDef<IdSpace> = RAW_CONTENT.maps.a1_m05;
+  const stand = (id: 'a2_m01' | 'a2_m02' | 'a2_m03', stardust: number): MapDef<IdSpace> => ({
+    ...a1m5,
+    id,
+    stardust,
+    referenceProfile: REFERENCE_PROFILES[id],
+  });
+  const maps = {
+    ...RAW_CONTENT.maps,
+    a2_m01: stand('a2_m01', 180),
+    a2_m02: stand('a2_m02', 195),
+    a2_m03: stand('a2_m03', 210),
+  };
+  return { ...RAW_CONTENT, maps, campaign: [...CAMPAIGN, 'a2_m01', 'a2_m02', 'a2_m03'] };
 }
 
 describe('[purchasable]', () => {
@@ -85,6 +111,12 @@ describe('[purchasable]', () => {
       ...RULES,
       abilities: { fx_strike: { how: 'gift', availableAfter: 'fx_map' } },
     });
+  });
+
+  it('fails a tower still ahead of its task: its license is on no shelf yet', () => {
+    const ahead = { ...RULES, aheadOfTask: ['fx_mortar'] };
+    rejects(withProfile({}), /towers: 'fx_mortar' waits for its task/, ahead);
+    expect(errorsOf(withProfile({}))).toEqual([]);
   });
 
   it('fails what has no catalog or access entry', () => {
@@ -161,5 +193,44 @@ describe('[purchasable]', () => {
     };
     expect(errorsOf(three(1), plan3)).toEqual([]);
     rejects(three(2), /spends 120 Stardust since the bank reset after fx_prior/, plan3);
+  });
+
+  // The campaign's reference profile rows (upgrades/reference.ts; campaign.md § 4.9).
+  describe('REFERENCE_PROFILES', () => {
+    it('is every registered campaign map’s own referenceProfile', () => {
+      for (const id of CAMPAIGN) {
+        const row: ProfileDef<IdSpace> | undefined = (
+          REFERENCE_PROFILES as Partial<Record<string, ProfileDef<IdSpace>>>
+        )[id];
+        expect({ id, profile: RAW_CONTENT.maps[id].referenceProfile }).toEqual({
+          id,
+          profile: row,
+        });
+      }
+    });
+
+    it('prices the Act II rows on the campaign timeline, the Lookout once its license sells', () => {
+      const live = errorsOf(withActTwoRows(), LIVE_PURCHASE_RULES);
+      if (TOWERS_AHEAD_OF_TASK.includes('lookout')) {
+        // Until T406 lifts it, every Act II row is refused for the Lookout, and only for it.
+        expect(live).toHaveLength(3);
+        for (const e of live) expect(e).toMatch(/towers: 'lookout' waits for its task/);
+      } else {
+        expect(live).toEqual([]);
+      }
+      // With the license on the shelf, the rows are affordable and available as written.
+      const sold = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
+      expect(errorsOf(withActTwoRows(), sold)).toEqual([]);
+    });
+
+    it('follows campaign.md § 4.9 from A1M5 to A2M3', () => {
+      const { a1_m05, a2_m01, a2_m02, a2_m03 } = REFERENCE_PROFILES;
+      expect(a2_m01.towers).toEqual([...a1_m05.towers, 'lookout']);
+      expect(a2_m01.shop).toEqual(a1_m05.shop);
+      expect(a2_m02.specs).toEqual(['thumper', 'sprinkler']);
+      expect(a2_m02.shop).toEqual({ ...a1_m05.shop, seed_money: 1, tune_zapcoil: 1 });
+      expect(a2_m03.shop).toEqual({ ...a2_m02.shop, tune_sprinkler: 2 });
+      expect(a2_m03.towers).toEqual(a2_m01.towers);
+    });
   });
 });

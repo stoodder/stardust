@@ -1,7 +1,9 @@
-// Weft Warden (design/enemies.md § 5.2): A2M3's heavy Aelari walker, a heavy shield over light
-// armor. The roster row is the spec: 250 HP, armor 3, shield 200 (regen 20/s after 3 s), 0.6
-// tiles/s, leak 3, bounty 18, ground, crystalline. Spawn interval 2.0 s is a first pass (T403).
-// Sprites are placeholders under their final ids (T440a).
+// Weft Warden (design/enemies.md § 5.2): A2M3's heavy Aelari walker ("heavy shield"; Soaked +
+// Zapcoil is its teach), a heavy shield over light armor. The roster row is the spec: 250 HP,
+// armor 3, shield 200 (regen 20/s after 3 s without a hit), 0.6 tiles/s, leak 3, bounty 18,
+// ground, crystalline. A hit's shield overflow meets the armor (§ 2.3), so Kinetic that breaks the
+// shield still plinks. Light armor: the Thumper answers it in Acts I–II (§ 3.1). Spawned 2.0 s
+// apart: each one its own problem. Sprites are placeholders under their final ids (T440a).
 import { defineEnemy } from '../define.ts';
 
 export const weft_warden = defineEnemy({

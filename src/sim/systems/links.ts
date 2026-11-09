@@ -11,7 +11,10 @@
 //   scaled by `linkBonus` modifiers (Linked Up), plus Conductive's extras (`bonusJumps`, rounded
 //   down after scaling, and `linkSoakedTicks`, which doesn't scale);
 // - auras from other towers, strongest per aura kind (same-kind auras don't stack; a support
-//   tower never covers itself).
+//   tower never covers itself), each at its tower's strength: 1, +20% on a power node, plus its
+//   `supportStat` aura tune-up, and over its radius × its `supportStat` radius tune-up (T406);
+// - a link's detection radius (Overwatch, Skywatch: `bonusDetectTiles`, scaled like any link
+//   bonus; systems/detection.ts reads it).
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
 // (the new pair list); it runs only when dirty, never per tick.
 import type { CompiledContent, CompiledLinkDef } from '../../content/compiled.ts';
@@ -28,6 +31,7 @@ import type { Modifier } from '../config.ts';
 import type { Tower } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { supportPct } from './detection.ts';
 import { liveTileAt } from './wreckage.ts';
 
 export function links(state: SimState, ctx: TickContext): void {
@@ -132,6 +136,7 @@ function recompute(state: SimState, ctx: TickContext): void {
       // a link grants is a duration, not a bonus, so it doesn't scale (the longest applies).
       if (p.chainJumps !== 0) t.bonusJumps += Math.floor(p.chainJumps * k + 1e-9);
       if (p.soakedTicks > t.linkSoakedTicks) t.linkSoakedTicks = p.soakedTicks;
+      t.bonusDetectTiles += p.detectRadiusTiles * k;
     }
   }
 
@@ -143,6 +148,7 @@ function recompute(state: SimState, ctx: TickContext): void {
 function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: number): void {
   const pool = state.towers;
   const map = ctx.map;
+  const modifiers = ctx.config.modifiers;
   for (let i = 0; i < pool.used; i++) {
     const t = pool.items[i]!; // i < used ≤ items.length
     if (!t.alive || t.def === null) continue;
@@ -152,15 +158,17 @@ function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: number)
       for (let j = 0; j < pool.used; j++) {
         const s = pool.items[j]!; // j < used ≤ items.length
         if (j === i || !s.alive || s.tierDef === null || s.tierDef.auras.length === 0) continue;
-        const onNode =
-          liveTileAt(map, state.wreckage, s.row * map.cols + s.col) === '+' &&
-          s.tierDef.attack === null;
-        const strength = onNode ? 1 + powerNodeAuraPct : 1;
+        const support = s.tierDef.attack === null;
+        const onNode = support && liveTileAt(map, state.wreckage, s.row * map.cols + s.col) === '+';
+        const tuned = support && s.def !== null ? supportPct(modifiers, s.def.id, 'aura') : 0;
+        const strength = 1 + (onNode ? powerNodeAuraPct : 0) + tuned;
+        const radiusMul =
+          support && s.def !== null ? 1 + supportPct(modifiers, s.def.id, 'radius') : 1;
         const dx = s.x - t.x;
         const dy = s.y - t.y;
         const d2 = dx * dx + dy * dy;
         for (const aura of s.tierDef.auras) {
-          if (aura.kind !== kind || d2 > aura.radiusSq) continue;
+          if (aura.kind !== kind || d2 > aura.radiusSq * radiusMul * radiusMul) continue;
           const v = aura.pct * strength;
           if (v > best) {
             best = v;
@@ -185,6 +193,7 @@ function clearBonuses(t: Tower): void {
   t.vsStatusPct = 0;
   t.bonusJumps = 0;
   t.linkSoakedTicks = 0;
+  t.bonusDetectTiles = 0;
 }
 
 function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {

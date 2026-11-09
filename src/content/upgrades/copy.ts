@@ -48,6 +48,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     "Price first: 40 stardust, rising. Everglow flak, Vrell tuning. Don't tell Everglow. Or the flak.",
   tune_zapcoil:
     'Price first: 40 stardust, rising. My own coil, tuned by me. I charged myself. I paid. Honestly.',
+  tune_lookout:
+    'Price first: 40 stardust, rising. Stronger nudge, cheaper shack, wider eyes. Same view. Nicer.',
 
   // Zibzab: Field Protocols (protocols.ts).
   head_start:
@@ -80,6 +82,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Time Dilation recharges 15% faster. Nobody has filed rapport with me before. I made a folder.',
   protocol_slots:
     "One more Field Protocol slot. Protocols are policies you get to choose. I'd like to try that.",
+  // QUILL: R&D Command's Technician abilities (access.ts `how: 'rnd'`; the id is `ability_<id>`).
+  ability_scanner_sweep:
+    'A 4-tile sweep reveals cloaked contacts for 10 s. Recharges in 30. I like seeing everyone.',
 };
 
 /** Item `id`'s copy, or null when it has none (copy.test.ts proves every catalog item has one). */

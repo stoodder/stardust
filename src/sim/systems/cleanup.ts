@@ -5,6 +5,8 @@
 // - Defeat the instant core integrity hits 0. It wins over a victory on the same tick.
 // - A killed splitter releases its children here, before resolution, into its wave
 //   (enemyAbilities/split.ts), so a wave isn't cleared while the Bunchling's Nibblers run.
+// - A killed Skitterkin sets the Skittish units within reach bolting (enemyAbilities/skittish.ts).
+//   A hushed unit (enemyAbilities/hush.ts) left the fight: it books to its wave and nothing else.
 // - A wave resolves when every enemy in it has died, leaked, or left (a driven-off boss and her
 //   brood); its clear bonus (§ 2.3) pays then, leaks or not, tripled for a boss wave
 //   (waveClearBonusFor). Waves overlap, so they can resolve out of order; one tick resolves in
@@ -20,7 +22,8 @@ import { waveClearBonusFor } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
 import { trackConditions } from '../conditions.ts';
 import { earn } from '../economy.ts';
-import { splitOnDeath } from '../enemyAbilities/split.ts';
+import { boltNear } from '../enemyAbilities/skittish.ts';
+import { splitOnDeath, wasKilled } from '../enemyAbilities/split.ts';
 import { bookLeak, leakedThisTick, settleLoss, settleWin, watchChallenge } from '../medals.ts';
 import { settleObjectivesLoss, settleObjectivesWin, watchObjectives } from '../objectives.ts';
 import { poolReleaseDead } from '../pool.ts';
@@ -46,6 +49,8 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     if (e.wave > 0) remaining[e.wave - 1]!--; // wave ≤ waves.length
     if (leakedThisTick(e)) bookLeak(state, e);
     else if (e.def !== null && e.def.split !== null) splitOnDeath(state, ctx, e, e.def.split);
+    // A killed Skitterkin sets the runners around it bolting (Skittish; a hush does it in hush.ts).
+    if (e.def !== null && e.def.faction === 'skitterkin' && wasKilled(e)) boltNear(state, e.x, e.y);
   }
   trackConditions(state, ctx.map);
   poolReleaseDead(towers);

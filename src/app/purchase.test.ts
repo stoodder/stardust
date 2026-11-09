@@ -46,6 +46,7 @@ describe('purchases in the save session', () => {
     expect(storeShelf('engineering').map((o) => o.refusal)).toEqual([
       'maxed',
       'maxed',
+      'maxed', // the Lookout's (T406)
       'no_specs',
       'no_specs',
       'no_specs',

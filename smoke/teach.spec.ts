@@ -21,9 +21,9 @@ test('teach: Time Dilation on A1M3’s flock, until the first cast', async ({ pa
       sd.fastForward(1);
     }
     if (st.wave !== 4) return `no W5 countdown: wave ${st.wave}, ${st.outcome}`;
-    // Nobody plays on (so nothing casts), with Gerald's hold from W4 released.
+    // Nobody plays on (so nothing casts); switching builds releases Gerald's hold from W4 (T335).
     sd.autoplay('none');
-    sd.enqueue({ type: 'holdFire', target: 'all', on: false });
+    if (st.holdFireAll) return 'Hold (all) is still on after autoplay switched to none';
     // Until a turret shoots at one of the flock's flyers.
     const flockInReach = (): boolean => {
       for (let i = 0; i < st.towers.used; i++) {

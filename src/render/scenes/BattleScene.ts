@@ -30,6 +30,7 @@
 // T328: an enemy under the pointer (the front-most body) is hovered, so its health bar shows at
 // full HP too (EnemyView). T330: on A1M5's Quiet Wave Bricks lowers his cannon a beat after the
 // wave starts and keeps it low (allyPose.ts); Suppressing Fire's streaks then come from off the map.
+// M4 (T403): a hit on a shield ripples, and a shield pulse tells and rings (ShieldView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -75,6 +76,7 @@ import { CursorView } from '../views/CursorView.ts';
 import { DroneView } from '../views/DroneView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
+import { SweepView } from '../views/SweepView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
 import { LeaveFx } from '../views/LeaveFx.ts';
@@ -86,6 +88,7 @@ import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
+import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
@@ -148,10 +151,14 @@ export class BattleScene extends Phaser.Scene {
   #chains!: ChainFx;
   #plinks!: PlinkFx;
   #fieldTint!: FieldTintView;
+  /** Scanner Sweep's circle while its reveal zone lives (T406). */
+  #sweeps!: SweepView;
   #wreckage!: WreckageView;
   #drone!: DroneView;
   #bossBar!: BossBarView;
   #huddles!: HuddleView;
+  /** Aelari shields: the ripple, the pulse tell and ring (T403). */
+  #shields!: ShieldView;
   #leaves!: LeaveFx;
   #cueProps!: CuePropView;
   /** The salvage drone's time per tile under the run's modifiers (ticks). */
@@ -191,6 +198,8 @@ export class BattleScene extends Phaser.Scene {
   readonly #offs: (() => void)[] = [];
   /** Each ability slot's strike radius after modifiers (Mk II), and segment reach (tiles; 0: none). */
   readonly #strikeRadius: [number, number] = [0, 0];
+  /** What aiming each slot previews: a strike's reticle, or Scanner Sweep's circle (T406). */
+  readonly #aimRadius: [number, number] = [0, 0];
   readonly #segmentReach: [number, number] = [0, 0];
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
   /** The pointer's spot (game px; scratch), and the enemy hovered there (0: none). */
@@ -263,10 +272,12 @@ export class BattleScene extends Phaser.Scene {
     this.#chains = new ChainFx(ctx);
     this.#plinks = new PlinkFx(ctx, this.#fx);
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
+    this.#sweeps = new SweepView(ctx, this.#fx);
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
     this.#drone = new DroneView(ctx, map);
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
+    this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
@@ -307,10 +318,11 @@ export class BattleScene extends Phaser.Scene {
       const id = slot === 1 ? a.slot1 : a.slot2;
       const def = id === null ? undefined : sim.config.content.abilities[id];
       const e = def?.effect;
-      this.#strikeRadius[slot - 1] =
-        def !== undefined && e?.kind === 'strike'
-          ? abilityStats(def, sim.config.modifiers).radiusTiles
-          : 0;
+      const area = def !== undefined && (e?.kind === 'strike' || e?.kind === 'reveal');
+      const radius = area ? abilityStats(def, sim.config.modifiers).radiusTiles : 0;
+      this.#strikeRadius[slot - 1] = e?.kind === 'strike' ? radius : 0;
+      // Aiming previews an area at its real radius: a strike's, or Scanner Sweep's (T406).
+      this.#aimRadius[slot - 1] = radius;
       this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
     }
     this.#built = false;
@@ -325,7 +337,7 @@ export class BattleScene extends Phaser.Scene {
       cursor: this.#cursor,
       origin: this.#origin,
       elevationAt: this.#elevationAt,
-      strikeRadius: this.#strikeRadius,
+      strikeRadius: this.#aimRadius,
       segmentReach: this.#segmentReach,
     });
 
@@ -353,6 +365,7 @@ export class BattleScene extends Phaser.Scene {
         },
       }),
       interaction.onPoke(() => this.#peeker?.poke()),
+      this.#shields.bind(bus, () => sim.state.enemies),
     );
     this.#hover.bindPointer(this, (button) => this.#click(button));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -366,9 +379,11 @@ export class BattleScene extends Phaser.Scene {
       this.#chains.reset();
       this.#plinks.reset();
       this.#fieldTint.reset();
+      this.#sweeps.reset();
       this.#wreckage.reset();
       this.#bossBar.reset();
       this.#huddles.reset();
+      this.#shields.reset();
       this.#leaves.reset();
       this.#hover.reset();
     });
@@ -387,10 +402,12 @@ export class BattleScene extends Phaser.Scene {
     this.#chains.update(dt);
     this.#plinks.update(dt);
     this.#fieldTint.update(state.zones);
+    this.#sweeps.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#bossBar.update(dt, state.enemies);
     this.#huddles.update(state.enemies);
+    this.#shields.update(dt, state.enemies);
     this.#leaves.update(dt);
     this.#cueProps.update(dt, state.towerAtTile);
     this.#airLanes.update(state.wave, this.#armedHitsAir());

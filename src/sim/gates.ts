@@ -120,6 +120,8 @@ export type Feature =
   | 'modifier.countdown'
   | 'modifier.linkBonus'
   | 'modifier.tileBonus'
+  /** A support tower's tune-up (the Lookout's; T406). */
+  | 'modifier.supportStat'
   | 'modifier.leakAbsorb'
   | 'modifier.firstBuildFree'
   | 'modifier.freeCast';
@@ -168,9 +170,9 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'status.pinned': 'T408',
   'status.stasis': 'T407a',
   'status.unnerved': 'M5',
-  'tower.detection': 'T406',
+  'tower.detection': null,
   'tower.economy': 'T408',
-  'tower.lookout': 'T406',
+  'tower.lookout': null,
   'tower.harpoon': 'T408',
   'tower.crane': 'T408',
   'modifier.towerStat': null,
@@ -187,12 +189,13 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.countdown': null,
   'modifier.linkBonus': null,
   'modifier.tileBonus': null,
+  'modifier.supportStat': null,
   'modifier.leakAbsorb': null,
   'modifier.firstBuildFree': null,
   'modifier.freeCast': null,
   'ability.slowAll': null,
   'ability.discount': null,
-  'ability.reveal': 'T406',
+  'ability.reveal': null,
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
@@ -201,11 +204,11 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss': null,
   'enemy.boss.pivot': 'M5',
   'enemy.boss.layToRest': 'M7',
-  'enemy.hush': 'T402',
-  'enemy.skittish': 'T402',
-  'enemy.pulse': 'T403',
+  'enemy.hush': null,
+  'enemy.skittish': null,
+  'enemy.pulse': null,
   'enemy.blink': 'T404',
-  'enemy.cloak': 'T406',
+  'enemy.cloak': null,
   'map.objectives': null,
   'map.protect': 'T305a',
   'map.revisit': 'T410a',

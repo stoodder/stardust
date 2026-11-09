@@ -79,6 +79,15 @@ function heldRun(
 const find = (id: string, subject: string): CheckSpec =>
   mapChecks(map, [1, 2], [1]).find((c) => c.id === id && c.subject === subject)!;
 
+/** A fleeing-map run: `leaked` of its 4 runners leaked, Hold Fire used `holds` times. */
+const fleeRun = (outcome: 'won' | 'lost', leaked: number, holds: number): HeadlessResult => {
+  const r = fakeResult(outcome, outcome === 'won' ? 18 : 0, outcome === 'won' ? null : 3);
+  r.stats.tagSpawned.fleeing = 4;
+  r.stats.tagLeaked.fleeing = leaked;
+  r.stats.holdFireUses = holds;
+  return r;
+};
+
 describe('balance checks', () => {
   it('#1 par wins on every seed', () => {
     const c = find('1', 'par');
@@ -361,6 +370,53 @@ describe('balance checks', () => {
       /margin 70 \(75 with the Quiet Wave's own 1 integrity given back\) is outside the band 80–100/,
     );
     expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);
+  });
+
+  it('#16b lists the hushes the sparing runs suffered (the hush is on in every run)', () => {
+    const b = mapChecks(FIXTURE_CONTENT.maps.fx_map, [1], [1, 2]).find((c) => c.id === '16')!;
+    expect(judge(b, spareRuns(19, 20)).summary).not.toMatch(/hushes/);
+    const runs = spareRuns(19, 20);
+    runs['spareFleeing#2'] = { ...runs['spareFleeing#2']!, hushes: 3 };
+    expect(judge(b, runs).summary).toMatch(/, hushes 0 \/ 3$/);
+  });
+
+  it('flags: setBy runs win and set the flag by its own rule; notSetBy runs leave it unset', () => {
+    // A2M3's rule on the fixture (whatever map the rule names): ≥ 50% of the fleeing units leaked
+    // and plain Hold Fire used at least once.
+    const fx = FIXTURE_CONTENT.maps.fx_map;
+    const flagged = {
+      ...fx,
+      builds: {
+        ...fx.builds,
+        runEndFlags: {
+          held_fire_second_look: {
+            setBy: ['holdFireWhile:fleeing'],
+            notSetBy: ['par', 'spareFleeing'],
+          },
+        },
+      },
+    } as const;
+    const checks = mapChecks(flagged, [1], [1]).filter((c) => c.id === 'flags');
+    expect(checks.map((c) => [c.subject, c.title])).toEqual([
+      ['holdFireWhile:fleeing', 'holdFireWhile:fleeing wins and sets held_fire_second_look'],
+      ['par', 'par leaves held_fire_second_look unset'],
+      ['spareFleeing', 'spareFleeing leaves held_fire_second_look unset'],
+    ]);
+    const [set, par, spare] = [checks[0]!, checks[1]!, checks[2]!];
+    expect(judge(set, { 'holdFireWhile:fleeing#1': fleeRun('won', 4, 2) }).ok).toBe(true);
+    expect(judge(set, { 'holdFireWhile:fleeing#1': fleeRun('won', 2, 1) }).ok).toBe(true); // 50%
+    expect(judge(set, { 'holdFireWhile:fleeing#1': fleeRun('won', 1, 1) }).failures[0]).toMatch(
+      /held_fire_second_look's rule is false: fleeing leaked 1\/4, Hold Fire used 1×/,
+    );
+    // The flag is set only on a won run (FlagRule: a first completion).
+    expect(judge(set, { 'holdFireWhile:fleeing#1': fleeRun('lost', 4, 1) }).failures[0]).toMatch(
+      /lost at W3/,
+    );
+    // The Spare runners filter alone lets them all go, but it isn't Hold Fire.
+    expect(judge(spare, { 'spareFleeing#1': fleeRun('won', 4, 0) }).ok).toBe(true);
+    expect(judge(par, { 'par#1': fleeRun('won', 4, 1) }).failures[0]).toMatch(
+      /held_fire_second_look's rule holds/,
+    );
   });
 
   it('median', () => {

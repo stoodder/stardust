@@ -1,20 +1,23 @@
 // Purchases at the base (design/progression.md §§ 4, 5, 7; meta-runtime.md § Purchases): R&D
 // Command's and Zibzab's ranked upgrades, Field Protocol unlocks, Zibzab's Vrell tower licenses
 // (the Zapcoil sample at 0, given when the shop opens: meta/issued.ts), and R&D Engineering's spec
-// unlocks. Pure functions over a SaveData: `offerFor` says what an item costs and whether it can be
+// unlocks, and R&D Command's Technician abilities (Scanner Sweep, T406). Pure functions over a
+// SaveData: `offerFor` says what an item costs and whether it can be
 // bought now (with the reason it can't), `buy` returns the save after the purchase, and `shelf`
 // lists one pane's offers in catalog order for its screen. The app writes the new save at once.
 //
 // An item can be bought when, in order: it exists; its pane is open (`isSystemUnlocked`); it is
 // stocked (its `availableAfter` map is won, or the dev hook's `devUnlocks` opens its pane, which
 // stocks the whole pane); its tower is owned (tune-ups, spec unlocks) and has specs (spec
-// unlocks); a next rank exists (ranked upgrades; a protocol, a license, or a spec unlock is bought
-// once); and the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+// unlocks); a next rank exists (ranked upgrades; a protocol, a license, a spec unlock, or an
+// ability is bought once); and the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+import { ABILITIES } from '../content/abilities/index.ts';
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
-import type { ProtocolId, TowerFaction, TowerId } from '../content/types.ts';
+import type { AbilityId, ProtocolId, TowerFaction, TowerId } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 import {
+  ABILITY_ACCESS,
   ENGINEERING,
   PROTOCOLS,
   TOWER_ACCESS,
@@ -26,7 +29,7 @@ import {
   type ProtocolDef,
   type UpgradeDef,
 } from '../content/upgrades/index.ts';
-import { stubTowerGate } from '../sim/gates.ts';
+import { abilityRefusal, stubTowerGate } from '../sim/gates.ts';
 import { isMapWon, isSystemUnlocked, SYSTEM_UNLOCKS, type MetaSystem } from './progress.ts';
 import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
@@ -44,7 +47,12 @@ export type PurchaseItem =
   /** R&D Engineering: both tier-4 specs of an owned tower, bought once. */
   | { readonly kind: 'specs'; readonly tower: string }
   /** A Vrell tower license at Zibzab's (an access row with `how: 'license'`), bought once. */
-  | { readonly kind: 'license'; readonly tower: string };
+  | { readonly kind: 'license'; readonly tower: string }
+  /**
+   * A Technician ability R&D Command sells (an ABILITY_ACCESS row with `how: 'rnd'`: Scanner
+   * Sweep), bought once; owning it puts it in the loadout's slot-1 pool.
+   */
+  | { readonly kind: 'ability'; readonly id: string };
 
 /** Why an item can't be bought now, in check order. */
 export type Refusal =
@@ -58,7 +66,7 @@ export type Refusal =
   | 'not_owned'
   /** A spec unlock for a tower with no tier-4 specs. */
   | 'no_specs'
-  /** Every rank owned, or the protocol, license, or spec unlock already owned. */
+  /** Every rank owned, or the protocol, license, spec unlock, or ability already owned. */
   | 'maxed'
   /** The bank is short of the price. */
   | 'short';
@@ -73,6 +81,8 @@ export interface StoreCatalog {
   >;
   /** How each tower is obtained (content/upgrades/access.ts); its licenses are on the shelf. */
   readonly towerAccess?: Readonly<Record<string, Access>>;
+  /** How each Technician ability is obtained; its `how: 'rnd'` rows are on R&D's shelf. */
+  readonly abilityAccess?: Readonly<Partial<Record<string, Access>>>;
 }
 
 export const LIVE_STORE: StoreCatalog = {
@@ -81,6 +91,7 @@ export const LIVE_STORE: StoreCatalog = {
   engineering: ENGINEERING,
   towers: TOWERS,
   towerAccess: TOWER_ACCESS,
+  abilityAccess: ABILITY_ACCESS,
 };
 
 /** One item as a pane shows it, and whether it can be bought now. */
@@ -90,11 +101,14 @@ export interface Offer {
   readonly currency: Currency;
   /** The next rank's price; the top rank's once maxed. */
   readonly price: number;
-  /** Ranks owned (0 or 1 for a protocol, a license, or a spec unlock). */
+  /** Ranks owned (0 or 1 for a protocol, a license, a spec unlock, or an ability). */
   readonly owned: number;
-  /** Ranks in all (1 for a protocol, a license, or a spec unlock). */
+  /** Ranks in all (1 for a protocol, a license, a spec unlock, or an ability). */
   readonly ranks: number;
-  /** What the next rank adds; the top rank's once maxed. Empty for a license or a spec unlock. */
+  /**
+   * What the next rank adds; the top rank's once maxed. Empty for a license, a spec unlock, or an
+   * ability.
+   */
   readonly grants: readonly ModifierGrant[];
   /** Field Protocol slots the next (or top) rank adds. */
   readonly protocolSlots: number;
@@ -113,6 +127,24 @@ export type BuyResult =
 
 function isLiveProtocol(id: string): id is ProtocolId {
   return Object.hasOwn(PROTOCOLS, id);
+}
+
+function isLiveAbility(id: string): id is AbilityId {
+  return Object.hasOwn(ABILITIES, id);
+}
+
+/** An ability's R&D terms, if the catalog sells it (an access row with `how: 'rnd'`). */
+function rndAbilityOf(
+  id: string,
+  catalog: StoreCatalog,
+): {
+  readonly currency: Currency;
+  readonly price: number;
+  readonly availableAfter: CampaignMapId | null;
+} | null {
+  const access = catalog.abilityAccess ?? {};
+  const a = Object.hasOwn(access, id) ? access[id] : undefined;
+  return a !== undefined && a.how === 'rnd' ? a : null;
 }
 
 /** The pane that sells an upgrade (by its catalog kind). */
@@ -229,6 +261,24 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         tower: item.tower,
       };
     }
+    case 'ability': {
+      const terms = rndAbilityOf(item.id, catalog);
+      if (terms === null) return null;
+      // An ability the sim still refuses (sim/gates.ts `abilityRefusal`) isn't stocked yet.
+      if (isLiveAbility(item.id) && abilityRefusal(ABILITIES[item.id]) !== null) return null;
+      const abilities: readonly string[] = save.unlocks.abilities;
+      return {
+        pane: 'rnd',
+        currency: terms.currency,
+        price: terms.price,
+        owned: abilities.includes(item.id) ? 1 : 0,
+        ranks: 1,
+        grants: [],
+        protocolSlots: 0,
+        availableAfter: terms.availableAfter,
+        tower: null,
+      };
+    }
     default:
       return assertNever(item);
   }
@@ -343,6 +393,14 @@ export function buy(
     case 'license':
       next.unlocks = { ...save.unlocks, towers: [...save.unlocks.towers, offer.tower!] };
       break;
+    case 'ability': {
+      // A save holds only live ability ids; a fixture catalog's other ids can't be stored.
+      if (!isLiveAbility(item.id)) {
+        return { ok: false, reason: 'unknown', message: refusalMessage(save, item, null) };
+      }
+      next.unlocks = { ...save.unlocks, abilities: [...save.unlocks.abilities, item.id] };
+      break;
+    }
     default:
       return assertNever(item);
   }
@@ -354,10 +412,14 @@ function arrival(o: Offer): number {
   return o.availableAfter === null ? -1 : CAMPAIGN_PLAN_IDS.indexOf(o.availableAfter);
 }
 
-/** The display name an upgrade or protocol sorts by (a spec unlock keeps its registry order). */
+/**
+ * The display name an upgrade or protocol sorts by (an ability by its id; a spec unlock keeps its
+ * registry order).
+ */
 function sortName(o: Offer, catalog: StoreCatalog): string {
   if (o.item.kind === 'upgrade') return catalog.upgrades[o.item.id]?.name ?? o.item.id;
   if (o.item.kind === 'protocol') return catalog.protocols[o.item.id]?.name ?? o.item.id;
+  if (o.item.kind === 'ability') return o.item.id;
   return '';
 }
 
@@ -367,7 +429,8 @@ function entryPrice(o: Offer, catalog: StoreCatalog): number {
 }
 
 /**
- * One pane's offers, in a fixed display order: R&D Command's upgrades; the shop's Vrell licenses,
+ * One pane's offers, in a fixed display order: R&D Command's upgrades, then its Technician
+ * abilities; the shop's Vrell licenses,
  * then global upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each
  * registered tower with specs, then for each one whose specs ship later. Within each group, by when the item is stocked (campaign order), then by entry
  * price, then by name, so the order never depends on how a module namespace lists its exports.
@@ -408,6 +471,13 @@ export function shelf(
     );
     if (pane === 'shop') {
       groups.push(Object.values(catalog.protocols).map((p) => ({ kind: 'protocol', id: p.id })));
+    }
+    if (pane === 'rnd') {
+      groups.push(
+        Object.keys(catalog.abilityAccess ?? {})
+          .filter((a) => rndAbilityOf(a, catalog) !== null)
+          .map((a) => ({ kind: 'ability', id: a })),
+      );
     }
   }
   return groups.flatMap((items) =>

@@ -1,6 +1,7 @@
 // A1M4 balance-harness builds: docs/story/campaign/act1.md § A1M4, Par build (the step tables
 // there mirror these).
 import { defineBuilds } from '../../define.ts';
+import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos } from '../../types.ts';
 
 /** Inside the plaza's north-west corner, beside the west side. */
@@ -104,13 +105,7 @@ function swapped(swap: readonly string[], rivetCap: number): BuildStep[] {
 export const builds = defineBuilds({
   // A1M4's reference profile (campaign.md § 4.9): the issued kit and Zibzab's Zapcoil sample, Head
   // Start in the protocol slot, and the Rivet and Thumper tune-ups at rank 1.
-  referenceProfile: {
-    towers: ['rivet', 'thumper', 'sprinkler', 'skyhook', 'zapcoil'],
-    specs: [],
-    shop: { tune_rivet: 1, tune_thumper: 1 },
-    protocols: ['head_start'],
-    technicianAbility: 'orbital_strike',
-  },
+  referenceProfile: REFERENCE_PROFILES.a1_m04,
   parBuild: { loadout: PAR_LOADOUT, steps: PAR_STEPS },
   noCounterBuilds: {
     // No splash answer (enemies.md § 3.1): par with every Thumper and the Zapcoil swapped for a

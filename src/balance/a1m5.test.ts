@@ -5,18 +5,17 @@
 // Bricks's Rapport each save that Hauler (T228), the Matriarch is driven off before the banner line
 // (Party Pooper Prevention), and the Quiet Wave is free to spare: holding fire through it costs Old
 // Thrum's 2 integrity and nothing else, and sets `spared_quiet_wave` (holding fire only after she
-// falls doesn't). Par without its Cluster spec stays gradual. With W5's Spires groups, W7's
-// and W8's warren convoys, W4's and W7's Bunchlings, or W8's Chonks shifted ±0.2 s, every harness
-// verdict holds and par stays at 81.0 (T304g also checked W5's warren Hauler, W6's flocks, and
-// W7–W8's Zoomers; trimmed here for the gate's time). The waves and builds are documented in
-// docs/story/campaign/act1.md § A1M5.
+// falls doesn't). Par without its Cluster spec (`alt:no_spec`, under-built) stays gradual. With
+// W5's Spires groups, W7's and W8's warren convoys, W4's and W7's Bunchlings, or W8's Chonks
+// shifted ±0.2 s, every harness verdict holds and par stays at 81.0 (T304g also checked W5's
+// warren Hauler, W6's flocks, and W7–W8's Zoomers; trimmed here for the gate's time). The waves
+// and builds are documented in docs/story/campaign/act1.md § A1M5.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
-import { createBuildExecutor, createSim, runHeadless } from '../sim/index.ts';
+import { createBuildExecutor, createSim } from '../sim/index.ts';
 import { evaluateFlagRule, flagRule, type FlagRuleStats } from '../story/flags.ts';
-import { notGradual } from './checks.ts';
 import { runMap } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
@@ -121,20 +120,6 @@ describe('A1M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(st.tagLeaked.youngling / st.tagSpawned.youngling).toBeGreaterThanOrEqual(0.75);
     const stats: FlagRuleStats = { ...st };
     expect(evaluateFlagRule(flagRule('spared_quiet_wave')!.value, stats)).toBe(false);
-  });
-
-  it('stays gradual for a player with no tier-4 spec (par without the Cluster)', () => {
-    // An under-built alt in all but name (validateBuilds keeps A1M4+ alts to ≤ 2 of par's towers):
-    // a player who never opened Engineering may win or lose here, but never to one wave's wall.
-    const map = content.maps.a1_m05;
-    const par = map.builds.parBuild;
-    const noSpec = { ...par, steps: par.steps.filter((st) => st.kind !== 'specialize') };
-    for (const seed of [1, 2, 3]) {
-      const cfg = runConfig(content, map, noSpec, referenceRunProfile(map, content), seed);
-      const r = runHeadless(cfg, noSpec);
-      expect({ seed, wall: notGradual(r) }).toEqual({ seed, wall: null });
-      expect(r.steps.filter((st) => st.error !== null)).toEqual([]);
-    }
   });
 
   it('tags every youngling quiet_wave too, as the flag rule’s `except` needs', () => {

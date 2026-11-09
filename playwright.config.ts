@@ -9,11 +9,20 @@ const PORT = Number(process.env['SMOKE_PORT'] ?? 4173);
 // (`npx playwright install chromium`, as in CI).
 const executablePath = process.env['CHROME_PATH'];
 
+// Smoke workers (conventions.md § Gate time): SMOKE_WORKERS (a count, or a share of the cores
+// such as '75%'), else half the cores. Each worker's headless Chromium renders WebGL in software
+// (SwiftShader), close to two cores while a battle draws, so more workers than half the cores
+// mostly makes each test slower.
+const WORKERS = process.env['SMOKE_WORKERS'] ?? '50%';
+
 export default defineConfig({
   testDir: './smoke',
   // Default output dir; screenshots go to test-results/screens/ (cleaned each run).
   outputDir: './test-results',
   fullyParallel: true,
+  workers: /^\d+$/.test(WORKERS) ? Number(WORKERS) : WORKERS,
+  // The gate-time guardrail: name every spec file over 15 s at the end of the run.
+  reportSlowTests: { max: 10, threshold: 15_000 },
   forbidOnly: true,
   retries: 0,
   reporter: 'list',

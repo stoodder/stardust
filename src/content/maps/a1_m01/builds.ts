@@ -21,6 +21,7 @@
 // prompts point at; in the sim's par run neither cast changes a leak (a W7 cast would hold par's
 // last one), so par stays at 95 rather than 100.
 import { defineBuilds } from '../../define.ts';
+import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep } from '../../types.ts';
 
 /** The greenhouse roof: A1M1's one high-ground tile. */
@@ -57,13 +58,7 @@ const PAR_STEPS = parSteps('thumper');
 
 export const builds = defineBuilds({
   // A1M1's reference profile: the issued kit and nothing bought (campaign.md § 4.9).
-  referenceProfile: {
-    towers: ['rivet', 'thumper'],
-    specs: [],
-    shop: {},
-    protocols: [],
-    technicianAbility: 'orbital_strike',
-  },
+  referenceProfile: REFERENCE_PROFILES.a1_m01,
   parBuild: { loadout: ['rivet', 'thumper'], steps: PAR_STEPS },
   // A1M1 requires no counters (maps.md § 6.4): the tutorial never punishes skipping the Thumper.
   noCounterBuilds: {},

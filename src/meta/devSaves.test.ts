@@ -65,14 +65,10 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(ref.campaign.maps).toEqual(m5.campaign.maps);
     expect(ref.upgrades).toEqual(m5.upgrades);
     expect(ref.unlocks.specs).toEqual(['thumper']);
-    // The license goes on the shelf once T406 lifts the Lookout's stub gate (meta/purchase.ts).
-    const stocked = buy(m5, { kind: 'license', tower: 'lookout' }).ok;
-    if (!stocked) {
-      expect(ref.unlocks.towers).toEqual(m5.unlocks.towers);
-    } else {
-      expect(ref.unlocks.towers).toEqual([...m5.unlocks.towers, 'lookout']);
-      expect(ref.currencies.stardust).toBeLessThan(m5.currencies.stardust);
-    }
+    // The license is on the shelf since T406 lifted the Lookout's stub gate (meta/purchase.ts).
+    expect(buy(m5, { kind: 'license', tower: 'lookout' }).ok).toBe(true);
+    expect(ref.unlocks.towers).toEqual([...m5.unlocks.towers, 'lookout']);
+    expect(ref.currencies.stardust).toBe(m5.currencies.stardust - 150);
     expect(ref.profile?.callsign).toBe('sprout');
     expect(ref.story.bricksTagIndex).toBe(2);
   });

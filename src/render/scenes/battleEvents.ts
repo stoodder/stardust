@@ -72,6 +72,14 @@ const BOSS_SPARK_LIFT_PX = 18;
 /** A specialization's extra flash (D059): a gold ring past the upgrade's teal one. */
 const SPEC_RING_TILES = 1.25;
 const SPEC_RING_MS = 500;
+/**
+ * The hush rule (T402, the minimal look until T430a): a pale Hollow ring holds on the runner for
+ * the 0.5 s tell; when it lands, the runner vanishes in a small acid ring (never a pop).
+ */
+const HUSH_TELL_RING_TILES = 0.45;
+const HUSH_TELL_RING_MS = 500;
+const HUSH_RING_TILES = 0.6;
+const HUSH_RING_MS = 300;
 
 /** A standing tower as render reads it. */
 export type LiveTower = DeepReadonly<Tower>;
@@ -348,6 +356,16 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         fx.ring(boss.x, boss.y, PHASE_FLASH_RING_TILES, 'white.1', PHASE_FLASH_RING_MS, true);
       }
       fx.leakShake();
+    }),
+    bus.on('HushStarted', (e) => {
+      fx.ring(e.x, e.y, HUSH_TELL_RING_TILES, 'hollow.4', HUSH_TELL_RING_MS, false);
+    }),
+    bus.on('Hushed', (e) => {
+      views.enemies.release(e.victim);
+      fx.ring(e.x, e.y, HUSH_RING_TILES, 'acid.3', HUSH_RING_MS, true);
+    }),
+    bus.on('TurnedHeavy', (e) => {
+      views.enemies.get(e.uid)?.flash(); // it heals to full: a flash, then the Heavy tint
     }),
     bus.on('BossEnded', (e) => {
       // Driven off: she turns and runs for the edge with her brood (EnemyView's `flee`); the bar

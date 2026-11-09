@@ -27,6 +27,8 @@ const GRANT_KINDS: ReadonlySet<GrantKind> = new Set<GrantKind>([
   'economy',
   'sellRefund',
   'abilityStat',
+  // A support tower's tune-up (the Lookout's; T406).
+  'supportStat',
   'linkBonus',
   'tileBonus',
   'leakAbsorb',
@@ -118,6 +120,16 @@ describe('catalog: progression.md numbers', () => {
       [{ kind: 'towerStat', tower: 'thumper', stat: 'damage', pct: 0.05 }],
       [{ kind: 'towerCost', tower: 'thumper', tiers: 'all', pct: -0.05 }],
       [{ kind: 'towerStat', tower: 'thumper', stat: 'range', pct: 0.05 }],
+    ]);
+  });
+
+  it('a support tower tunes aura strength and radius instead (§ 4.2; the Lookout, T406)', () => {
+    const t = UPGRADES.tune_lookout;
+    expect(prices(t)).toEqual([40, 80, 140]);
+    expect(t.ranks.map((r) => r.grants)).toEqual([
+      [{ kind: 'supportStat', tower: 'lookout', stat: 'aura', pct: 0.05 }],
+      [{ kind: 'towerCost', tower: 'lookout', tiers: 'all', pct: -0.05 }],
+      [{ kind: 'supportStat', tower: 'lookout', stat: 'radius', pct: 0.05 }],
     ]);
   });
 

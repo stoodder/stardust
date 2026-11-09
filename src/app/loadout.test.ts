@@ -48,6 +48,7 @@ describe('the loadout screen (app side)', () => {
       // all_unlocked owns every tower's specs, Skyhook's M4 Seeker Swarm too (T304a report).
       ['skyhook', ['Seeker Swarm']],
       ['zapcoil', []], // plays since T304b; A1M2 asks only for Armor
+      ['lookout', []], // plays since T406
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -57,8 +58,16 @@ describe('the loadout screen (app side)', () => {
       'Suppressing Fire',
       'Time Dilation', // plays since T304d
       'Clearance Sale',
+      'Scanner Sweep', // plays since T406
     ]);
-    expect(view.links.map((l) => l.name)).toEqual(['Crossfire', 'Sitting Ducks', 'Conductive']);
+    expect(view.links.map((l) => l.name)).toEqual([
+      'Crossfire',
+      'Sitting Ducks',
+      'Conductive',
+      'Overwatch', // the Lookout's (T406)
+      'Skywatch',
+    ]);
+    expect(view.links[3]?.bonus).toContain('Lookout Shack +0.5 detection radius');
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');
     expect(view.links[2]?.bonus).toBe('Sprinkler Soaks for 3 s · Zapcoil +2 chain jumps');
     expect(view.initial).toEqual({

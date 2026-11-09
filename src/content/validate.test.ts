@@ -399,6 +399,39 @@ describe('validate: maps', () => {
     expect(tagErrors(['youngling'], DEFAULT_VALIDATION_RULES)).toEqual([]);
   });
 
+  it('[fleeing-lead] a fleeing group spawns 2–4 s before a Hollow group on its route', () => {
+    // fx_runner as a hushing Hollow unit; fx_walker flees ahead of it.
+    const hollow = withEnemy('fx_runner', { faction: 'hollow', body: 'void' });
+    const lead = (fleeAt: number, hollowAt: number, base = hollow): string[] =>
+      validate({
+        ...base,
+        maps: {
+          fx_map: loose.defineMap({
+            ...fxMap,
+            waves: [
+              {
+                groups: [
+                  { enemy: 'fx_walker', count: 2, route: 'a', delaySec: fleeAt, tags: ['fleeing'] },
+                  { enemy: 'fx_runner', count: 2, route: 'a', delaySec: hollowAt },
+                ],
+              },
+              fxMap.waves[1]!,
+            ],
+          }),
+        },
+      }).filter((e) => e.startsWith('[fleeing-lead]'));
+    expect(lead(0, 2)).toEqual([]);
+    expect(lead(1, 5)).toEqual([]);
+    expect(lead(0.5, 2.4)).toHaveLength(1);
+    expect(lead(0, 4.5)).toHaveLength(1);
+    expect(lead(3, 0).join('\n')).toMatch(/route 'a' \(it leads by -3 s\)/);
+    // fx_map itself: no Hollow group behind its fleeing W2 group (a group never leads itself).
+    expect(validate(hollow).filter((e) => e.startsWith('[fleeing-lead]'))).toEqual([]);
+    // A gatherer (a Maw's one hush is a gather) sets no lead.
+    const maw = withEnemy('fx_runner', { faction: 'hollow', body: 'void', traits: ['gathering'] });
+    expect(lead(3, 0, maw)).toEqual([]);
+  });
+
   it('[quiet-wave-reach] no pad reaches the first 4 tiles of a quiet_wave route (D097)', () => {
     // fx_map's pad (1,1) is 1 tile from the road's first tiles; fx_mortar's T3 reaches 3.5.
     rejects(withTags(['quiet_wave']), 'quiet-wave-reach');
@@ -587,6 +620,27 @@ describe('validate: maps', () => {
   });
 });
 
+/** Four campaign maps, each fx_map patched: the fourth is held to the A1M4+ alt-build rules. */
+function campaignOf(patch: Partial<MapDef<IdSpace>>): RawContent<IdSpace> {
+  const maps: Record<string, MapDef<IdSpace>> = {};
+  for (const id of ['fx_m1', 'fx_m2', 'fx_m3', 'fx_m4']) {
+    maps[id] = { ...fxMap, id, events: [], ...patch };
+  }
+  return { ...BASE, maps, campaign: Object.keys(maps) };
+}
+/** fx_map as the only campaign map, named `id`, with `runEndFlags`. */
+function asMap(
+  id: string,
+  runs?: NonNullable<MapDef<IdSpace>['runEndFlags']>,
+): RawContent<IdSpace> {
+  const map = { ...fxMap, id, events: [], ...(runs === undefined ? {} : { runEndFlags: runs }) };
+  return { ...BASE, maps: { [id]: map }, campaign: [id] };
+}
+/** The [run-end-flags] errors only (a renamed fixture map breaks other rules too). */
+function runEndErrors(raw: RawContent<IdSpace>): string[] {
+  return validate(raw).filter((e) => e.startsWith('[run-end-flags]'));
+}
+
 describe('validate: builds', () => {
   const par = fxBuilds.parBuild;
   const withPar = (patch: Partial<typeof par>): RawContent<IdSpace> =>
@@ -703,6 +757,49 @@ describe('validate: builds', () => {
     const maps: Record<string, MapDef<IdSpace>> = {};
     for (const id of ['fx_m1', 'fx_m2', 'fx_m3', 'fx_m4']) maps[id] = { ...fxMap, id, events: [] };
     rejects({ ...BASE, maps, campaign: Object.keys(maps) }, 'alt-builds');
+  });
+
+  it('[alt-builds] under-built alts (an outcome) do not count toward the 2 from A1M4 (T334)', () => {
+    const gunOnly = fxBuilds.altBuilds!.gun_only!; // the fixture has it
+    const twoAlts = { gun_only: gunOnly, gun_too: gunOnly };
+    expect(validate(campaignOf({ altBuilds: twoAlts }))).toEqual([]);
+    // One of the two is under-built: only one sensible alt is left.
+    rejects(
+      campaignOf({ altBuilds: twoAlts, altExpectations: { gun_too: { outcome: 'either' } } }),
+      'alt-builds',
+    );
+    // An under-built alt beside two sensible ones is fine, even playing par's own towers.
+    const noSpec = { ...fxBuilds.parBuild, steps: fxBuilds.parBuild.steps.slice(0, 3) };
+    expect(
+      validate(
+        campaignOf({
+          altBuilds: { ...twoAlts, par_short: noSpec },
+          altExpectations: { par_short: { outcome: 'lose' } },
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it('[run-end-flags] names runs that exist, for a rule that ends on this map, and lists it', () => {
+    // fx_map's W2 sends fleeing runners; it is no map a run-end rule ends on.
+    rejects(
+      withMap({
+        runEndFlags: { held_fire_second_look: { setBy: ['holdFireWhile:fleeing'], notSetBy: [] } },
+      }),
+      'run-end-flags',
+    );
+    const ok = { setBy: ['holdFireWhile:fleeing'], notSetBy: ['par', 'spareFleeing'] } as const;
+    expect(runEndErrors(asMap('a2_m03', { held_fire_second_look: ok }))).toEqual([]);
+    // A campaign map lists every run-end rule that ends on it.
+    rejects(asMap('a2_m03'), 'run-end-flags');
+    for (const bad of [
+      { setBy: [], notSetBy: ['par'] },
+      { setBy: ['holdFireWhile:quiet_wave'], notSetBy: [] }, // no group carries it
+      { setBy: ['alt:nope'], notSetBy: [] },
+      { setBy: ['par'], notSetBy: ['par'] },
+    ] as const) {
+      rejects(asMap('a2_m03', { held_fire_second_look: bad }), 'run-end-flags');
+    }
   });
 
   it('[builds-range] margin bands, flag variants, and alt build expectations', () => {

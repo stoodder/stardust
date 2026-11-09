@@ -1,21 +1,117 @@
-// Shield pulses (design/enemies.md § 5.2, § 6; D101; T400a seam, run by T403). Every `everyTicks`
-// (`Enemy.pulseTicks` counts down; the last `tellTicks` are the tell, ShieldPulse 'tell'), a unit
-// with a pulse (its own `def.pulse`, or its boss phase's: the Glass Witch's phase 1) restores
-// `shield` to itself and each live shielded unit of its faction within `radiusTiles`, never past
-// its max (ShieldPulse 'fired'). Stasis and Unnerved interrupt the tell (§ 2.4); a converted
-// Stasis on a boss doesn't (D101). Reused by M5's Aegis Cantor and the Penitent.
-//
-// A stub until T403: no live unit pulses yet, and createSim refuses one (`enemy.pulse`).
+// Shield pulses (design/enemies.md § 3 `shield_aura`, § 5.2, § 6; D101), the one module behind a
+// unit's own pulse (`def.pulse`: M5's Aegis Cantor) and a boss phase's (the Glass Witch's phases,
+// the Sunderglass Penitent's later). The abilities system hands each unit its active pulse (its
+// boss phase's, else its own; enemyAbilities/index.ts). A state machine on `Enemy.pulseTicks`:
+// - The first tick it's alive the timer starts at `everyTicks`, so the first pulse comes one
+//   period after it spawns (the sneeze's rule). The last `tellTicks` of each period are the tell
+//   (ShieldPulse 'tell' as it begins; `pulseTelling` for render).
+// - When the timer runs out it fires (ShieldPulse 'fired') and restarts: every live unit of its
+//   faction with a shield, itself included, within `radiusTiles` (centres, any layer; not one
+//   that's leaving or burrowed: nothing reaches those) gets `shield` back, never past its own max.
+//   `restored` counts the units that gained any. The regen delay is untouched: a pulse refills,
+//   it doesn't restart anyone's regeneration.
+// - A boss's timer waits while it's invulnerable between phases, like its other ability timers
+//   (enemies.md § 6); the timer carries across a phase change.
+// - The interrupt (§ 2.4): while a unit is in Stasis, a tell can't start or go on: the pulse is
+//   cancelled, even mid-tell (ShieldPulse 'interrupted' if its tell had begun), and its cooldown
+//   restarts from zero. A boss never enters Stasis (it converts to Chilled 50%, which doesn't
+//   interrupt; D101). Unnerved joins with its status (M5).
+// Story difficulty's −30% shields scales the amount with the shield (systems/waves.ts
+// `scaledEnemy`), so a pulse restores the same share of a weaker shield.
 import type { CompiledPulse } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import type { SimState } from '../state.ts';
+import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
+/** The pulse `e` runs now (its boss phase's, else its own), or null. */
+export function activePulse(e: Readonly<Enemy>): CompiledPulse | null {
+  const def = e.def;
+  if (def === null) return null;
+  const phase = def.boss === null ? null : (def.boss.phases[e.bossPhase - 1] ?? null);
+  return phase?.pulse ?? def.pulse;
+}
+
+/** Whether `e` is showing a pulse's tell this tick (render reads it). */
+export function pulseTelling(e: Readonly<Enemy>, pulse: CompiledPulse): boolean {
+  return (
+    e.alive &&
+    !e.leaving &&
+    e.invulnerableTicks === 0 &&
+    e.pulseTicks > 0 &&
+    e.pulseTicks <= pulse.tellTicks
+  );
+}
+
+/** Whether something stops `e`'s pulse tell (Stasis on a non-boss; § 2.4, D101). */
+function interrupted(e: Enemy): boolean {
+  return e.stasisTicks > 0 && e.def !== null && e.def.boss === null;
+}
+
+/** One tick of a unit's shield pulse: count down, tell, fire, or be interrupted. */
 export function pulseStep(
-  _state: SimState,
+  state: SimState,
   _ctx: TickContext,
-  _e: Enemy,
-  _pulse: CompiledPulse,
+  e: Enemy,
+  pulse: CompiledPulse,
 ): void {
-  // T403.
+  if (e.invulnerableTicks > 0) return; // a boss between phases: its timers wait
+  if (e.pulseTicks <= 0) {
+    e.pulseTicks = pulse.everyTicks; // first tick alive
+    return;
+  }
+  const wasTelling = e.pulseTicks <= pulse.tellTicks;
+  const left = --e.pulseTicks;
+  if (left <= pulse.tellTicks && interrupted(e)) {
+    e.pulseTicks = pulse.everyTicks;
+    if (wasTelling) pulseEvent(state, e, pulse, 'interrupted', 0);
+    return;
+  }
+  if (left === pulse.tellTicks && left > 0) pulseEvent(state, e, pulse, 'tell', 0);
+  if (left > 0) return;
+  e.pulseTicks = pulse.everyTicks;
+  pulseEvent(state, e, pulse, 'fired', restoreShields(state, e, pulse));
+}
+
+/**
+ * Restores `pulse.shield` to every shielded unit of `source`'s faction within the radius, itself
+ * included, up to each one's max. Returns how many gained any.
+ */
+export function restoreShields(state: SimState, source: Enemy, pulse: CompiledPulse): number {
+  const faction = source.def!.faction; // abilities only run on units with a def
+  const pool = state.enemies;
+  let restored = 0;
+  for (let i = 0; i < pool.used; i++) {
+    const a = pool.items[i]!; // i < used ≤ items.length
+    const d = a.def;
+    if (!a.alive || d === null || d.shield === null || d.faction !== faction || d.neutral) continue;
+    if (a.leaving || a.burrowed) continue;
+    const max = d.shield.hp;
+    if (a.shieldHp >= max) continue;
+    const dx = a.x - source.x;
+    const dy = a.y - source.y;
+    if (dx * dx + dy * dy > pulse.radiusSq) continue;
+    const next = a.shieldHp + pulse.shield;
+    a.shieldHp = next < max ? next : max;
+    restored++;
+  }
+  return restored;
+}
+
+function pulseEvent(
+  state: SimState,
+  e: Enemy,
+  pulse: CompiledPulse,
+  phase: 'tell' | 'fired' | 'interrupted',
+  restored: number,
+): void {
+  emit(state, {
+    type: 'ShieldPulse',
+    uid: e.uid,
+    enemy: e.def!.id, // abilities only run on units with a def
+    phase,
+    x: e.x,
+    y: e.y,
+    radiusTiles: pulse.radiusTiles,
+    restored,
+  });
 }
