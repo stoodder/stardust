@@ -87,8 +87,11 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
 - [ ] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
-- [~] **T231** M2 review round 2 (verify round-1 fixes and seams).
+- [x] **T231** M2 review round 2 (verify round-1 fixes and seams) (D061).
+- [~] **T233** M2 review round 2 fixes (D061).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
+- [ ] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
+- [ ] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.

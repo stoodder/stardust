@@ -736,3 +736,19 @@ Three reviews ran: Correctness/Architecture/Performance, Gameplay/Story, and UX/
 - **Didn't fully land, accepted for M2 and logged as tasks:**
   - **Mk II and Rapport change no A1M2 result.** A1M2's 34-tile road gives towers time, so W4's clumps never leak. The R&D pick matters on A1M1 replays (Mk II earns Perfect Core) and must matter from A1M3 on (T228).
   - **A player who never upgrades *and never spends* still hits a W7–W8 wall on A1M2.** Trimming W7 only moves the wall to W8 and lets no-armor win with the full catalog. The `no_upgrades` alt is therefore par-without-upgrades plus one W6 Thumper, and the never-spend player is helped by QUILL's bank nudge instead (T229 revisits this with A1M3's curve).
+
+### D061 — 2026-11-09 — M2 review round 2 rulings; review closes at round 2
+Both round-2 reviewers call M2 ship-ready with one small fix each. Every round-1 item lands in play, the gate is green in 111 s with no flakes, and the art-trail reviewer approves the gallery as the `m2` baseline (55 sprites, 974 frames, up from 38 and 438). The fix round (T233):
+- **Medal-forfeit sounds** play only mid-run, at most one per frame, never over the win or lose cues. Otherwise up to three stack under the lose cue, or one falls over the win jingle.
+- **The bank nudge is its own radio batch,** queued after the countdown's lines, so QUILL never "answers" another speaker's line. At W7 it read as mocking Bricks's pension line, an Act III tear-beat plant.
+- **The issued Sprinkler is announced:** a canon QUILL line at A1M2's start (act1.md first) introduces it and Sitting Ducks, plus a one-run NEW pip on its slot. Today it arrives silently while A1M1 announces the Thumper.
+- **The "young running home" must be seeable:** ~2.5 s, 2–3 tiles, full opacity until the last 0.3 s, and one young pausing to look back. The light touch stays, but it must read as creatures fleeing, not debris.
+- **Smaller fixes:**
+  - **HUD hints:** the Denise pointer centres on the turret head and pulses while the line shows, and the upgrade hint shows once per save.
+  - **`menuNotice`:** clears on Title and on slot changes, and a failed Retry shows it.
+  - **Robustness and lint:** link callouts guard against unsupported glyphs (with a test over every link name); the smoke lint warnings are fixed.
+- **Deferred to tasks:**
+  - `silkText` applied in the view-model builders instead of per call site (no live bug: T234).
+  - Remaining per-frame allocations (ghost label, `sellValue`) (T234).
+  - The Results Career-total count-up and a first-payday marker, plus build floaters overlapping link callouts (T235).
+- **Review closes at round 2.** The round-2 fixes are small and gate-verified, so a round 3 would mostly re-confirm automated checks.
