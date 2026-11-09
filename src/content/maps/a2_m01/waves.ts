@@ -1,9 +1,10 @@
-// A2M1 waves: docs/story/campaign/act2.md § A2M1, Waves. Routes: `spires` (the north-west road,
+// A2M1 waves: docs/story/campaign/act2.md § A2M1, Wave data. Routes: `spires` (the north-west road,
 // where the Skitterkin run from), `bore` (out of Rig Nine's bore mouth, north-east: the Hollow's
-// road), and `sky` (the air lane, for the fleeing Puffwings). Every Skitterkin group is `fleeing`
-// (Skittish, leak 0, bounty 1, medal-exempt), so the Motes are the only threat; a fleeing group on
-// a road with Motes behind it leads them by FLEE_LEAD seconds ([fleeing-lead]). Countdowns are the
-// Act II default (20 s). Groups without an `intervalSec` use the enemy's default spacing (Mote
+// road), `cut` (the bore road's short way down the east edge to the lift, from W8), and `sky` (the
+// air lane, for the fleeing Puffwings). Every Skitterkin group is `fleeing` (Skittish, leak 0,
+// bounty 1, medal-exempt), so the Motes are the only threat; a fleeing group on a road with Motes
+// behind it leads them by FLEE_LEAD seconds ([fleeing-lead]). W2–W10's countdowns are COUNTDOWN
+// (Act II's default is 20 s). Groups without an `intervalSec` use the enemy's default spacing (Mote
 // 0.3 s, Nibbler 0.8 s, Zoomer 0.5 s, Puffwing 0.6 s, Digger 1.0 s, Bunchling 1.0 s, Hauler 2.5 s).
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup, WaveTag } from '../../types.ts';
@@ -38,14 +39,14 @@ const run = (
   intervalSec?: number,
 ): WaveGroup => g(enemy, count, route, delaySec, intervalSec, FLEEING);
 
-/** A Mote cluster: `count` Motes on `route`, `intervalSec` apart (default 0.3 s, packed). */
+/** A Mote group: `count` Motes on `route`, `intervalSec` apart (default 0.3 s). */
 const motes = (count: number, route: RouteId, delaySec: number, intervalSec?: number): WaveGroup =>
   g('mote', count, route, delaySec, intervalSec);
 
 /**
  * How far the runners lead the Motes that chase them on the same road (enemies.md § 7: 2–4 s).
  * At 1.6 tiles/s a Mote closes on a 1.0 tiles/s Nibbler 3 s ahead in about 5 s, a third of the
- * way down the Spires road: par's west towers meet the Motes there.
+ * way down the Spires road, under the west ledge: the hush happens in view, every Mote wave.
  */
 export const FLEE_LEAD = 3;
 /**
@@ -61,8 +62,15 @@ export const COUNTDOWN = 35;
 
 /** A packed cluster's spacing (seconds): 0.32 tiles apart at a Mote's 1.6 tiles/s. */
 export const PACKED = 0.2;
-/** A stream's spacing (seconds): a long, loose column that splash can't take in one shell. */
-export const STREAM = 0.5;
+/**
+ * W10 down the yard cut (the bore road's short way to the lift, out of reach of the merge): a
+ * packed cluster of CUT_CLUSTER, CUT_DELAY s into the wave (par's strike breaks it), then a looser
+ * column of CUT_COUNT, CUT_STREAM s apart, a little faster than par's cut Zapcoil can chain.
+ */
+export const CUT_DELAY = 14;
+export const CUT_CLUSTER = 12;
+export const CUT_COUNT = 20;
+export const CUT_STREAM = 0.4;
 /**
  * A bore cluster released this long before a Spires one reaches the merge with it: the bore road
  * is a tile longer to the merge (13 vs 12 tiles; 0.6 s at a Mote's pace).
@@ -111,7 +119,8 @@ export const waves = defineWaves([
       motes(20, 'bore', OPEN + 8, PACKED),
     ],
   },
-  // W6 · Mote clusters out of the bore [X: splash], meeting runners and their chasers at the merge
+  // W6 · Mote clusters out of the bore [X: splash], meeting runners and their chasers at the merge;
+  // the no-splash build loses here
   {
     countdownSec: COUNTDOWN,
     groups: [
@@ -121,18 +130,19 @@ export const waves = defineWaves([
       motes(36, 'bore', OPEN + 18, PACKED),
     ],
   },
-  // W7 · Bunchlings fleeing + Motes, both roads
+  // W7 · Bunchlings fleeing + Motes, both roads at once (the double cluster: the full-catalog
+  // no-splash build loses here)
   {
     countdownSec: COUNTDOWN,
     groups: [
       run('bunchling', 6, 'spires', OPEN),
-      motes(50, 'spires', OPEN + FLEE_LEAD, PACKED),
-      motes(50, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
+      motes(60, 'spires', OPEN + FLEE_LEAD, PACKED),
+      motes(60, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       motes(30, 'bore', OPEN + 24, PACKED),
     ],
   },
-  // W8 · mixed: Zoomers and Diggers fleeing down the Spires road, Puffwings overhead, Motes; the
-  // yard cut opens
+  // W8 · mixed: a Zoomer stampede and Diggers fleeing down the Spires road, Puffwings overhead,
+  // Motes; the yard cut opens (a few Motes straight down the east edge)
   {
     countdownSec: COUNTDOWN,
     groups: [
@@ -140,19 +150,19 @@ export const waves = defineWaves([
       motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
       motes(24, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       run('puffwing', 8, 'sky', OPEN + 5),
-      motes(10, 'cut', OPEN + 12),
+      motes(6, 'cut', OPEN + 12),
       run('digger', 4, 'spires', OPEN + 20),
       motes(20, 'spires', OPEN + 20 + FLEE_LEAD, PACKED),
     ],
   },
-  // W9 · Motes ×40 from the bore [X], too long for one strike, half of them down the cut
+  // W9 · runners and their chasers, a bore cluster to meet them at the merge, and the cut again
   {
     countdownSec: COUNTDOWN,
     groups: [
       run('nibbler', 10, 'spires', OPEN),
       motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
       motes(20, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
-      motes(26, 'cut', OPEN + 12),
+      motes(12, 'cut', OPEN + 12),
     ],
   },
   // W10 · everything, both roads and the cut
@@ -163,11 +173,11 @@ export const waves = defineWaves([
       motes(30, 'spires', OPEN + FLEE_LEAD, PACKED),
       motes(30, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       run('puffwing', 8, 'sky', OPEN + 8),
-      motes(20, 'cut', OPEN + 12),
+      motes(CUT_CLUSTER, 'cut', OPEN + CUT_DELAY, PACKED),
+      motes(CUT_COUNT, 'cut', OPEN + CUT_DELAY + 4, CUT_STREAM),
       run('hauler', 2, 'spires', OPEN + 24),
       motes(30, 'spires', OPEN + 24 + FLEE_LEAD, PACKED),
       motes(30, 'bore', OPEN + 24 + FLEE_LEAD - BORE_HEAD, PACKED),
-      motes(20, 'cut', OPEN + 30),
     ],
   },
 ]);

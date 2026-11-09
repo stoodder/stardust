@@ -1,5 +1,5 @@
 // The codex and the Inbox quote the docs where the docs give the words (T303): the welcome memo is
-// style-guide § 6.1's sample, every Act I memo's subject and small print is its act-file line, and
+// style-guide § 6.1's sample, every memo's subject and small print is its act-file line, and
 // the codex lines the docs quote appear in their entries. The content files are the home of
 // everything else. Reads the docs from disk, so it lives with the other node-side checks.
 import { readFileSync } from 'node:fs';
@@ -15,6 +15,9 @@ const flat = (s: string): string => s.replace(/\s+/g, ' ').trim();
 
 const STYLE = flat(read('docs/story/style-guide.md'));
 const ACT1 = flat(read('docs/story/campaign/act1.md'));
+const ACT2 = flat(read('docs/story/campaign/act2.md'));
+/** A memo's act file, by its id (`memo_a2_01` → act2.md). */
+const actDoc = (id: string): string => (id.startsWith('memo_a2_') ? ACT2 : ACT1);
 
 /** `doc` holds `text` (a boolean check, so a miss prints the text, not the whole doc). */
 function expectQuoted(doc: string, text: string): void {
@@ -38,13 +41,13 @@ describe('the welcome memo is the style guide sample', () => {
   });
 });
 
-describe("each Act I memo's subject and small print are its act-file lines", () => {
+describe("each memo's subject and small print are its act-file lines", () => {
   for (const m of MEMO_LIST) {
     it(m.id, () => {
       const subject = m.subject.replace(' {glyph:sun}', '');
-      expectQuoted(ACT1, `\`${m.id}\` *${subject}*`);
+      expectQuoted(actDoc(m.id), `\`${m.id}\` *${subject}*`);
       if (!UNQUOTED_SMALL_PRINT.has(m.id)) {
-        expectQuoted(ACT1, `small print: "${m.smallPrint ?? ''}")`);
+        expectQuoted(actDoc(m.id), `small print: "${m.smallPrint ?? ''}")`);
       }
     });
   }

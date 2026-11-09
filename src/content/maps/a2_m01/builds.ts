@@ -1,18 +1,17 @@
-// A2M1 balance-harness builds: docs/story/campaign/act2.md § A2M1, Par build (the step tables
-// there mirror these).
+// A2M1 balance-harness builds: docs/story/campaign/act2.md § A2M1, Par build (the step table there
+// mirrors these). No build uses the pads at (3,4) inside the Spires road's first bend or (4,7) by
+// row 6's west run: a player who wants to meet the Motes before they catch the runners builds there.
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos } from '../../types.ts';
-import { OPEN } from './waves.ts';
+import { CUT_DELAY, OPEN } from './waves.ts';
 
 /** The west canyon ledge, over the Spires road's first bend. */
 const LEDGE_W: GridPos = [4, 2];
-/** The east canyon ledge, inside the bore road's bend. */
+/** The east canyon ledge, between the bore road's drop and the yard cut. */
 const LEDGE_E: GridPos = [13, 4];
 /** The stardust conduit (power node), beside the merged road just south of the merge. */
 const NODE: GridPos = [9, 7];
-/** Inside the Spires road's first bend. */
-const BEND_W: GridPos = [3, 4];
 /** Between the Spires road's drop and the merge. */
 const MID_W: GridPos = [6, 4];
 /** Just north of the merge, over row 6. */
@@ -21,23 +20,21 @@ const MERGE_N: GridPos = [7, 5];
 const MID_E: GridPos = [10, 5];
 /** Inside the bore road's bend, west of its drop. */
 const BEND_E: GridPos = [11, 4];
-/** South of row 6's west run. */
-const ROW_W: GridPos = [4, 7];
 /** South-west of the merge, beside the merged road. */
 const MERGE_SW: GridPos = [7, 7];
 /** The rig yard, inside the merged road's bend. */
 const YARD: GridPos = [9, 9];
-/** Between the lift road and the yard cut. */
+/** Beside the lift road's last stretch, two tiles from the yard cut's fence run. */
 const LIFT: GridPos = [12, 9];
-/** East of the yard cut. */
+/** Beside the yard cut, west of it. */
 const CUT_E: GridPos = [14, 8];
 /** The crew-log rigs (wreckage over pads). */
 const LOG_BORE: GridPos = [13, 5];
 const LOG_YARD: GridPos = [10, 10];
-/** Strike points: the merge, and the bore road's drop. */
+/** Strike points: the merge, the bore road's drop, and the yard cut. */
 const MERGE: GridPos = [8, 6];
 const BORE_DROP: GridPos = [12, 5];
-const CUT: GridPos = [13, 8];
+const CUT: GridPos = [15, 8];
 
 function parSteps(): BuildStep[] {
   return [
@@ -53,14 +50,17 @@ function parSteps(): BuildStep[] {
     { wave: 5, upgrade: MID_E },
     { wave: 5, upgrade: LEDGE_W },
     { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
-    { wave: 8, build: 'zapcoil', tile: LIFT },
-    { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
-    { wave: 9, upgrade: LIFT },
-    { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
+    // W8's preview shows the yard cut: cover it.
+    { wave: 8, build: 'zapcoil', tile: CUT_E },
+    { wave: 8, build: 'rivet', tile: LEDGE_E },
+    { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
+    { wave: 9, upgrade: CUT_E },
+    { wave: 9, upgrade: LEDGE_E },
+    { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
     { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
-    { wave: 10, upgrade: LIFT },
+    { wave: 10, upgrade: CUT_E },
     { wave: 10, upgrade: NODE },
-    { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + 37 } },
+    { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + CUT_DELAY + 4.6 } },
   ];
 }
 
@@ -118,13 +118,17 @@ export const builds = defineBuilds({
         { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
         { wave: 7, upgrade: MID_E },
         { wave: 7, upgrade: NODE },
-        { wave: 8, build: 'thumper', tile: LIFT },
-        { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
-        { wave: 9, upgrade: LIFT },
+        { wave: 8, build: 'zapcoil', tile: CUT_E },
+        { wave: 8, build: 'zapcoil', tile: LEDGE_E },
+        { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
+        { wave: 9, upgrade: CUT_E },
+        { wave: 9, upgrade: LEDGE_E },
         { wave: 9, build: 'skyhook', tile: YARD },
-        { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
+        { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
         { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
-        { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + 37 } },
+        { wave: 10, upgrade: CUT_E },
+        { wave: 10, build: 'thumper', tile: LIFT },
+        { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + CUT_DELAY + 4.6 } },
       ],
     },
     // Thumper, Rivet, Skyhook, Lookout.
@@ -144,16 +148,20 @@ export const builds = defineBuilds({
         { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
         { wave: 7, upgrade: MID_E },
         { wave: 7, upgrade: NODE },
-        { wave: 8, build: 'thumper', tile: LIFT },
-        { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
-        { wave: 9, upgrade: LIFT },
+        { wave: 8, build: 'thumper', tile: CUT_E },
+        { wave: 8, targeting: CUT_E, mode: 'close' }, // the cut, not the merged road
+        { wave: 8, build: 'rivet', tile: LEDGE_E },
+        { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
+        { wave: 9, upgrade: CUT_E },
+        { wave: 9, upgrade: LEDGE_E },
         { wave: 9, build: 'skyhook', tile: YARD },
-        { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
+        { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 16 } },
         { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
-        { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + 37 } },
+        { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + CUT_DELAY + 4.6 } },
+        { wave: 10, upgrade: CUT_E },
+        { wave: 10, build: 'rivet', tile: LIFT },
+        { wave: 10, upgrade: LIFT },
       ],
     },
   },
 });
-
-export const PADS = { BEND_W, ROW_W, YARD, LIFT, CUT_E, LEDGE_E } as const;

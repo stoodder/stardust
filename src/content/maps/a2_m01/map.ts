@@ -22,14 +22,14 @@ export const map = defineMapLayout({
     '..#............#..',
     '..#.^..........#..',
     '..####......####..',
-    '...o.#o....o#^....',
-    '.....#.o..o.#x....',
-    '.....#########....',
-    '....o..o#+...#....',
-    '........####.#o...',
-    '.........o.#o#....',
-    '..........x###....',
-    '...........C......',
+    '...o.#o....o#^.#..',
+    '.....#.o..o.#x.#..',
+    '.....########..#..',
+    '....o..o#+.....#..',
+    '........####..o#..',
+    '.........o.#o..#..',
+    '..........x#...#..',
+    '...........C####..',
   ],
   // prettier-ignore
   paths: [
@@ -62,14 +62,13 @@ export const map = defineMapLayout({
       ],
     },
     {
-      // The yard cut: the bore road's short way to the lift, straight down past the rigs.
+      // The yard cut: the bore road's short way to the lift, straight down the dark east edge
+      // and in along the south fence, out of reach of the merge.
       id: 'cut',
       tiles: [
         [15, 0], [15, 1], [15, 2], [15, 3],
-        [14, 3], [13, 3], [12, 3],
-        [12, 4], [12, 5], [12, 6],
-        [13, 6], [13, 7], [13, 8], [13, 9], [13, 10],   // down the yard cut
-        [12, 10], [11, 10], [11, 11],                   // into the lift
+        [15, 4], [15, 5], [15, 6], [15, 7], [15, 8], [15, 9], [15, 10],   // down the east edge
+        [15, 11], [14, 11], [13, 11], [12, 11], [11, 11],                  // along the fence
       ],
     },
   ],

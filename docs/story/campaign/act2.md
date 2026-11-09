@@ -8,34 +8,118 @@ The six Act II maps, A2M1–A2M6, during the Long Dusk. The campaign overview, i
 
 **Checkpoints from Act II:** a loss offers "Retry from wave N" at the last 5-wave snapshot; using one forfeits Perfect and Challenge medals for that run ([core-loop.md](../../design/core-loop.md)).
 
+**Act II barks (shared).** Act-wide pools that fire on more than one Act II map (the data is [`src/content/dialogue/barks/act2.ts`](../../../src/content/dialogue/barks/act2.ts), one file for the act). Like every bark they play only for a speaker on the radio, QUILL or the map's companion. A map's own barks below sit beside them (A2M3's and A2M4's `skitterkin_killed_ahead` lines join QUILL's here; a map that wants only its own gates this one off).
+- `skitterkin_killed_ahead` (every Act II map; the player kills a runner fleeing the Hollow, once per map): QUILL: "That one was running. From it."
+- `skitterkin_hushed` (every Act II map; the first hush on a map): QUILL: "It caught one. It's heavier now. Faster. ...Logging it."
+- `new_enemy` (mote, wherever the save first meets one): QUILL: "Unknown signature. It isn't on any list. I've checked every list."
+- `wave_cleared`, the jingle (A2M1–A2M3, after a clean wave; A2M4 makes it minor, here it only *feels* off): Bricks: "Jingle sounds different out here."
+
 ---
 
 ## A2M1 · Rig Nine
 
 *Rig Nine stopped answering. Go take a peek. Minor operational hiccup!*
 
-- **Facts:** The Diggings · `act2.gold` · Defend · 18×12, 13 buildable (2 high ground on canyon ledges, 1 stardust-conduit power node) + 2 "crew log" wreckage · 10 waves · 420 credits · two spawns (the Spires road for Skitterkin; Rig Nine's bore mouth for the Hollow) · companion Bricks · Technician Orbital Strike.
+- **Facts:** The Diggings · `act2.gold` · Defend · 18×12, 13 buildable (2 high ground on canyon ledges, 1 stardust-conduit power node) + 2 "crew log" wreckage (pads under them) · 10 waves · 420 credits · two spawns (the Spires road for Skitterkin; Rig Nine's bore mouth for the Hollow, whose road forks: the **yard cut** down the dark east edge opens at W8) · companion Bricks · Technician Orbital Strike.
 - **Story purpose:** Pay the stinger; plant hushing and "they're running from it" without anyone saying so. **Target: curiosity curdling to unease.** First Hollow, first mixed waves, first fleeing groups.
 
-**Layout.** Two northern entries (road north-west, bore mouth north-east) merge mid-map and run south through the rig yard to the outpost lift (core). Broken mining rigs are the wreckage; two are marked "crew logs." The hushed crew sit outside their hut (decor) beside the path, staring at nothing, unharmed and unreachable by anything. The north-east edge (toward the Halls) is visibly darker than the rest.
+**Layout.** Two northern entries (road north-west, bore mouth north-east) merge mid-map and run south through the rig yard to the outpost lift (core). Broken mining rigs are the wreckage; two are marked "crew logs." The hushed crew sit outside their hut (decor) beside the bore road, staring at nothing, unharmed and unreachable by anything. The north-east edge (toward the Halls) is visibly darker than the rest, and from W8 the Hollow takes the yard cut straight down it.
 
-**Waves.** 1 Nibblers + Zoomers, fleeing [T: Skittish; nothing follows them yet] · 2 Puffwings + Diggers, fleeing · 3 a fleeing group, then Motes ×6 behind it on the same road [T: Mote; the hush and the **Heavy** tell] · 4 Haulers fleeing + Motes ×8 [X: shoot the Hollow, not the runners] · 5 an Elder with younglings + Motes · 6 Mote cluster ×12 [X: splash] · 7 Bunchlings fleeing + Motes, both roads · 8 mixed · 9 Motes ×20 from the bore [X] · 10 everything, both roads.
+**Waves.** 1 Nibblers + Zoomers, fleeing [T: Skittish; nothing follows them yet] · 2 Puffwings + Diggers, fleeing · 3 a fleeing group, then Motes ×6 behind it on the same road [T: Mote; the hush and the **Heavy** tell] · 4 Haulers fleeing + Motes; the bore opens [X: shoot the Hollow, not the runners] · 5 an Elder with her younglings + Motes · 6 Mote clusters out of the bore [X: splash] · 7 Bunchlings fleeing + Motes, both roads at once · 8 mixed; the yard cut opens · 9 runners, both roads, and the cut · 10 everything, both roads and the cut.
+
+**Layout data** (the data is [`src/content/maps/a2_m01/map.ts`](../../../src/content/maps/a2_m01/map.ts)). The **Spires road** (`spires`) spawns at (2,0), runs south to row 3, east under the **west ledge** (4,2) to column 5, south to row 6, and east into the **merge** (8,6); the **bore road** (`bore`) spawns at Rig Nine's bore mouth (15,0), runs south to row 3, west round the **east ledge** (13,4) to column 12, south to row 6, and west into the merge. The merged road drops to (8,8), runs east through the rig yard to (11,8), and south to the **outpost lift** (11,11). The **yard cut** (`cut`) leaves the bore road at (15,3) and runs straight down the east edge to (15,11), then west along the south fence into the lift: out of reach of every pad at the merge, covered only from (14,8), (12,9) and the east ledge. The **stardust conduit** (9,7) is the power node beside the merged road. The crew-log rigs are wreckage over pads at (13,5) (`crew_log_bore`, 50 salvage) and (10,10) (`crew_log_yard`, 40); Rig Nine's head frame (16,0) and the crew's hut (16,2) are markers on decor. The fleeing Puffwings fly one lane (`sky`) from (4,0) to the lift.
+
+```
+..S............S..
+..#............#..
+..#.^..........#..
+..####......####..
+...o.#o....o#^.#..
+.....#.o..o.#x.#..
+.....########..#..
+....o..o#+.....#..
+........####..o#..
+.........o.#o..#..
+..........x#...#..
+...........C####..
+```
+
+**Wave data** (the data is [`src/content/maps/a2_m01/waves.ts`](../../../src/content/maps/a2_m01/waves.ts)). W2–W10 have a **35 s** countdown (Act II's default is 20 s; the longer build phase leaves room to read the preview and send the drone, and puts par's shift at 9.4 minutes at 1×) and **open 6 s into the wave**, so the last wave's bounties land before the first contact. Every Skitterkin group is `fleeing` (†); a fleeing group with Motes behind it on its road leads them by 3 s ([fleeing-lead]). Mote clusters are **packed** at 0.2 s (0.32 tiles apart), and a bore cluster released 0.6 s before a Spires one meets it at the merge. Groups take the Spires road unless marked; default spacing Mote 0.3 s, Nibbler 0.8 s, Zoomer 0.5 s, Puffwing 0.6 s, Digger 1.0 s, Bunchling 1.0 s, Hauler 2.5 s.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler† ×10 @ 0.8, 0 · Zoomer† ×8 @ 0.5, 8 (`teach`: Skittish) | 18 |
+| W2 | Digger† ×4 @ 1, 6 · Puffwing† ×8 @ 0.6, 10 *sky* · Nibbler† ×8 @ 0.8, 14 | 20 |
+| W3 | Nibbler† ×6 @ 0.8, 6 · Mote ×6 @ 0.6, 9 (`teach`) | 12 |
+| W4 | Hauler† ×3 @ 2.5, 6 · Mote ×10 @ 0.3, 9 · Mote ×16 @ 0.2, 16 *bore* | 29 |
+| W5 | Elder† ×1, 6 · Nibbler† ×6 @ 0.3, 6.4 (`youngling`) · Mote ×12 @ 0.3, 9 · Mote ×20 @ 0.2, 14 *bore* | 39 |
+| W6 | Nibbler† ×8 @ 0.8, 6 · Mote ×24 @ 0.2, 9 · Mote ×36 @ 0.2, 8.4 *bore* · Mote ×36 @ 0.2, 24 *bore* | 104 |
+| W7 | Bunchling† ×6 @ 1, 6 · Mote ×60 @ 0.2, 9 · Mote ×60 @ 0.2, 8.4 *bore* · Mote ×30 @ 0.2, 30 *bore* | 156 |
+| W8 | Zoomer† ×20 @ 0.4, 6 · Mote ×24 @ 0.2, 9 · Mote ×24 @ 0.2, 8.4 *bore* · Puffwing† ×8 @ 0.6, 11 *sky* · Mote ×6 @ 0.3, 18 *cut* · Digger† ×4 @ 1, 26 · Mote ×20 @ 0.2, 29 | 106 |
+| W9 | Nibbler† ×10 @ 0.8, 6 · Mote ×24 @ 0.2, 9 · Mote ×20 @ 0.2, 8.4 *bore* · Mote ×12 @ 0.3, 18 *cut* | 66 |
+| W10 | Zoomer† ×24 @ 0.4, 6 · Mote ×30 @ 0.2, 9 · Mote ×30 @ 0.2, 8.4 *bore* · Puffwing† ×8 @ 0.6, 14 *sky* · Mote ×12 @ 0.2, 20 *cut* · Mote ×20 @ 0.4, 24 *cut* · Hauler† ×2 @ 2.5, 30 · Mote ×30 @ 0.2, 33 · Mote ×30 @ 0.2, 32.4 *bore* | 186 |
+
+Totals count spawns; each fleeing Bunchling adds its fleeing Nibblers when it dies. Fleeing units leak for 0, so the Motes are the map's whole threat (592 of them). **The Motes catch the runners**: at 1.6 tiles/s a Mote closes on a Nibbler 3 s ahead in about 5 s, under the west ledge, so the hush plays out in view on every Mote wave (par sees about 60), and only a player who builds early on the Spires road saves many. **Splash is the whole answer** (enemies.md §3.1): a Thumper's shell takes a packed cluster at once, so two Thumpers at the merge sweep everything that passes it, while single-target towers drown in W6's clusters. W7's double cluster (both roads, 120 Motes meeting at the merge) is the map's peak: it is what makes the no-splash build lose with the full catalog.
 
 **Story delivery.**
-- *Briefing:* Sterling: "Minor operational hiccup at Rig Nine! Super minor. Hiccup-sized. Go take a peek, Four-Forty-Seven!" · Bricks: "Rig crew's been quiet four days. Quiet's not a status, Sprout. Quiet's a symptom." · QUILL (the filter, before W1): "Firmware update! New filter: Spare runners, Alt+H. Runners pay one credit now. Not worth the ammo!"
+- *Briefing:* Sterling: "Minor operational hiccup at Rig Nine! Super minor. Hiccup-sized. Go take a peek, Four-Forty-Seven!" · Bricks: "Rig crew's been quiet four days. Quiet's not a status, Sprout. Quiet's a symptom."
+- *The filter* (cue as the build phase opens, after the briefing: the HUD's new Spare runners button is in view): QUILL: "Firmware update! New filter: Spare runners, Alt+H. Runners pay one credit now. Not worth the ammo!"
 - *Radio:*
   - w02 QUILL: "They're moving faster than usual. And they keep looking back. Logging it."
   - w04 Bricks (crew found): "They're breathing. They just don't know their names. Sweet moons."
-  - w06 QUILL (log recovered, or here if not): "The crew called it 'the hollow.' Lower case. I don't know why that's worse."
+  - The first crew log the drone recovers, or w06 if it hasn't recovered one by then, QUILL: "The crew called it 'the hollow.' Lower case. I don't know why that's worse."
   - w07 Sterling: "Love the field report! I'm calling it a hiccup in my report too. Consistency!"
   - w08 Bricks: "Three hundred ninety-six days. Saying it out loud. Helps."
-- *Barks:* QUILL `skitterkin_killed_ahead`: "That one was running. From it." · QUILL `skitterkin_hushed` (the first hush on a map): "It caught one. It's heavier now. Faster. ...Logging it." · QUILL `new_enemy` mote: "Unknown signature. It isn't on any list. I've checked every list." · Bricks `wave_cleared`: "Jingle sounds different out here." (A2M4 makes it minor; here it only *feels* off.)
-- *Codex:* Mote (original: "Rig Nine Atmospheric Event. Not dangerous! [REDACTED]"), Rig Nine, the Diggings, "Hushed" (wellness-event classification).
+  - First `wave_cleared` with a turret up (name tag) Bricks: "That one's Biscuit. Good dog. Barked at the dark so I didn't have to."
+- *Barks:* all act-wide (*Act II barks*, above): QUILL's `skitterkin_killed_ahead`, `skitterkin_hushed`, and the Mote's `new_enemy`; Bricks's jingle.
+- *Debrief:* Bricks (on a win): "Rig's quiet again. Not the good quiet." · *On a loss*, Sterling: "Hiccups happen! Rig Nine isn't going anywhere. Neither are you, Four-Forty-Seven!"
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m01/`](../../../src/content/dialogue/a2/a2_m01/scenes.ts)): the briefing is `a2_m01_brief`; the map script cues `a2_m01_cue_spare_runners` at W1's countdown (the build phase) and `a2_m01_cue_crew_log` from either crew-log rig's `wreckageCleared` or W6's countdown, whichever comes first (a cue scene plays once a battle); the radio lines are `a2_m01_w02`, `_w04`, `_w07`, `_w08`; the name tag is `a2_m01_cue_name_tag`; the debrief is `a2_m01_debrief`.
+- *Codex:* Mote (original: "Rig Nine Atmospheric Event. Not dangerous! [REDACTED]"), Rig Nine, the Diggings, "Hushed" (wellness-event classification), and the crew log (unlocked by Crew Logs: its `original` has `when: { objectiveDone: { map: 'a2_m01', objective: 'crew_logs' } }`, a story condition that reads the save).
 - *Memo after:* `memo_a2_01` *Rig Nine: A Minor Operational Hiccup!* (small print: "Rig crew wellness events are covered under Plan B.")
 
-**Medals.** Victory · Perfect Core · **Hiccup Contained:** no Hollow unit leaks. **Objective Intel +1, Crew Logs:** clear both log wreckage tiles (unlocks the crew-log codex entry).
+**Medals.** Victory · Perfect Core · **Hiccup Contained:** no Hollow unit leaks (`leaks: { faction: 'hollow' }, lte: 0`; a Heavy unit is Hollow). **Objective Intel +1, Crew Logs:** clear both log wreckage tiles (`wreckageCleared` on `crew_log_bore` and `crew_log_yard`; unlocks the crew-log codex entry). Since every Skitterkin group here flees (leak 0), every leak on this map is Hollow: Hiccup Contained and Perfect Core are earned together.
 **Rewards.** Stardust 180 · Intel 3 (+1).
-**Par build.** Rivet, Thumper, Sprinkler (Cloudburst not yet), Zapcoil. Thumper ×2 + Sprinkler at the merge; Zapcoil chains for clusters; Rivet on a ledge. Par uses plain targeting (it shoots any runner its priorities pick) and kills Motes before they reach the runners; the harness's `spareFleeing` run is par with Spare runners on for every tower, and must end within 5 points of it. Target 82 (re-baselines after the boss). **Alt builds:** Thumper + Zapcoil + Skyhook + Lookout; Thumper + Rivet + Skyhook + Lookout. `noCounterBuilds`: **no-splash**, Rivet + Sprinkler + Skyhook + Lookout, no Thumper or Zapcoil (must lose by W7).
+**Par build.** Rivet, Thumper, Sprinkler (Cloudburst not yet), Zapcoil, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A1M5's, plus the Lookout Shack's license; the core holds 21). Thumper ×2 and the Sprinkler at the merge (the Thumpers sweep the clusters; the Sprinkler's chill slows the trunk); a Zapcoil between the roads; Rivet on the west ledge; from W8, a Zapcoil beside the yard cut and a Rivet on the east ledge. Par uses plain targeting (it shoots any runner its priorities pick) and doesn't build on the Spires road, so the Motes catch most runners before the merge; the harness's `spareFleeing` run is par with Spare runners on for every tower.
+
+| Wave | Par |
+|---|---|
+| W1 | Rivet (4,2) on the west ledge; Thumper on the conduit (9,7); Sprinkler (7,7) south-west of the merge; the drone to both crew-log rigs (13,5) and (10,10) |
+| W2 | Thumper (7,5) north of the merge |
+| W3 | Zapcoil (10,5) between the roads |
+| W4 | Both Thumpers to T2 |
+| W5 | The Zapcoil and the ledge Rivet to T2 |
+| W6 | Orbital Strike on the bore road's drop (12,5), 9 s in |
+| W8 | Zapcoil (14,8) beside the yard cut (W8's preview shows it); Rivet (13,4) on the east ledge; Orbital Strike on the cut (15,8), 22 s in |
+| W9 | The cut Zapcoil and the east Rivet to T2; Orbital Strike on the cut and Suppressing Fire at the merge (8,6), 22 s in |
+| W10 | The cut Zapcoil and the conduit's Thumper to T3; Orbital Strike on the cut, 24.6 s in (the cut's packed cluster) |
+
+Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1–W10); it ends with about 520 unspent (W7's 150 Motes pay for the cut and then some). **Par's margin is the yard cut's, by design:** nothing gets through the merge; one Mote of W9's cut group, and three of W10's (its packed cluster, which the strike breaks, and the column behind it), slip past the cut Zapcoil and the east Rivet. Par wins at **17/21 (81.0%)** on every seed, the post-boss re-baseline (campaign.md §7's target 82, snapped to the 1/21 step). **The casts matter** (`#abilities`): without them W8's cut group gets through too (66.7). **Orbital Strike Mk II changes a result** (its wider blast takes one more of W10's cut cluster: 85.7); Bricks's Rapport doesn't (par casts Suppressing Fire once).
+
+**No-counter build** (`noCounterBuilds`, by category; must lose by W7, `noCounterLoseByWave`, since the splash test is W6's clusters):
+- **no-splash:** Rivets on par's merge and west-ledge tiles and between the roads, a Rivet in the bore road's bend, a Sprinkler, a Lookout beside the merge Rivet (Overwatch), a Skyhook; no Thumper, no Zapcoil; the same W6 strike. It loses to W6's clusters, and with the full catalog to W7's double cluster.
+
+**Alt builds** (each shares ≤ 2 towers with par and must win with ≥ 20%; both bring the Lookout): `shell_and_scope`, Thumper + Zapcoil + Skyhook + Lookout (Thumpers on the conduit and west of the merge (6,4), Zapcoils north of the merge and between the roads; for the cut, Zapcoils beside it and on the east ledge, then a Thumper by the lift); `shell_and_rivet`, Thumper + Rivet + Skyhook + Lookout (par's Rivet and two Thumpers at the merge, a third Thumper between the roads; for the cut, a Thumper beside it on Close targeting, so it takes the cut rather than the merged road, a Rivet on the east ledge, and a Rivet by the lift). The Skyhooks take only the fleeing Puffwings: a free slot, not an answer.
+
+**Story variants** (harness): `spareFleeing` (par with Spare runners on every tower) wins at 17/21, the same as par: sparing the runners costs nothing, and they are hushed either way where par has no tower. A2M1 sets no run-end flag.
+
+**Harness runs** (every seed; margin, then integrity lost per wave W1–W10):
+
+| Run | Result | Integrity lost |
+|---|---|---|
+| par | wins at **81.0** (band 65–85; 17/21) | 1 in W9, 3 in W10 |
+| par with Orbital Strike Mk II | 85.7 | 1 in W9, 2 in W10 |
+| par with Rapport: Sgt. Bricks | 81.0 | 1 in W9, 3 in W10 |
+| par without its casts | 66.7 | 1 in W8, 1 in W9, 5 in W10 |
+| `spareFleeing` | 81.0 | 1 in W9, 3 in W10 |
+| `alwaysCallEarly` | 52.4 | 4 in W7, 1 in W9, 5 in W10 |
+| no-splash | loses in W6 | 21 in W6 |
+| no-splash, full catalog | loses in W7 | 23 in W7 |
+| Story | 100, all three medals | |
+| `shell_and_scope` | 76.2 | 2 in W9, 3 in W10 |
+| `shell_and_rivet` | 85.7 | 2 in W6, 1 in W9 |
+| do-nothing | loses at W4 | 6 in W3, 15 in W4 |
+
+Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): with W7's double cluster shifted ±0.2 s par stays at 17/21; with a cut group shifted ±0.2 s every verdict holds and par loses at most two more (the strike and the Zapcoil's chains land differently in the column).
 
 ## A2M2 · The Glass Witch
 

@@ -3,7 +3,7 @@ import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import {
   META_SYSTEMS,
-  SHIFT_BOARD_LAST,
+  STAR_MAP_AFTER,
   SHIFT_BOARD_SIZE,
   SYSTEM_UNLOCKS,
   isMapWon,
@@ -107,8 +107,8 @@ describe('the live Shift board', () => {
   it('runs through Act I, and no further once Act II maps are registered (D102)', () => {
     expect(CAMPAIGN).toContain('a2_m01');
     expect(SHIFT_BOARD_SIZE).toBeLessThan(CAMPAIGN.length);
-    expect(SHIFT_BOARD_SIZE).toBe(CAMPAIGN_PLAN.findIndex((m) => m.id === SHIFT_BOARD_LAST) + 1);
-    expect(SHIFT_BOARD_LAST).toBe('a1_m05');
+    expect(SHIFT_BOARD_SIZE).toBe(CAMPAIGN_PLAN.findIndex((m) => m.id === STAR_MAP_AFTER) + 1);
+    expect(STAR_MAP_AFTER).toBe('a1_m05');
     const board = shiftBoard(createNewSave());
     expect(board.map((e) => e.id)).toEqual(['a1_m01', 'a1_m02', 'a1_m03', 'a1_m04', 'a1_m05']);
     expect(board.map((e) => e.state)).toEqual(['open', 'locked', 'locked', 'locked', 'locked']);

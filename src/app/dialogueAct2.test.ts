@@ -32,6 +32,16 @@ const line = (scene: string): string => {
   const n = SCENES[scene]?.nodes[0];
   return n?.kind === 'line' ? n.text : `<no scene ${scene}>`;
 };
+/** A Mote hushing a fleeing Nibbler. */
+const hush = (uid: number): Ev => ({
+  type: 'Hushed',
+  uid,
+  enemy: 'mote',
+  victim: uid + 100,
+  victimEnemy: 'nibbler',
+  x: 0,
+  y: 0,
+});
 /** Lets the panel play out (every line's hold). */
 const drain = (): void => {
   vi.advanceTimersByTime(30_000);
@@ -99,15 +109,6 @@ describe('A2M1 on the radio', () => {
 
   it('QUILL logs the first hush on the map, and only the first (skitterkin_hushed)', () => {
     at(100);
-    const hush = (uid: number): Ev => ({
-      type: 'Hushed',
-      uid,
-      enemy: 'mote',
-      victim: uid + 100,
-      victimEnemy: 'nibbler',
-      x: 0,
-      y: 0,
-    });
     emit(hush(1));
     expect(shown()).toBe(bark('quill_skitterkin_hushed_a2_01'));
     drain();
