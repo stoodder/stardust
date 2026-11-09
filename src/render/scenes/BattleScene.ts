@@ -16,29 +16,24 @@
 // high ground's block, ELEV_H up; picking knows raised tiles, so a click on a block's top face
 // lands on it. Linked towers show a tether (LinkView, from LinkFormed / LinkBroken). A Cluster
 // Thumper's bomblets pop with their own small burst.
-// The scene only reads sim state; every change goes through a command.
+// The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
+// previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
+// through a command.
 import * as Phaser from 'phaser';
-import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import {
   abilityStats,
-  costFor,
   isBuildableTile,
-  segmentSpan,
-  tileAndLinkRules,
   tileElevation,
   type Command,
-  type SegmentSpan,
   type Sim,
   type SimEvent,
-  type Tower,
 } from '../../sim/index.ts';
-import type { DeepReadonly } from '../../shared/types.ts';
 import { BattleInteraction } from '../input/BattleInteraction.ts';
 import { applyIntent } from '../input/apply.ts';
-import { hoverLook, resolveClick, type TileFacts } from '../input/intents.ts';
-import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
+import { resolveClick } from '../input/intents.ts';
+import { slotAimsAtPath } from '../input/tileFacts.ts';
 import {
   ELEV_H,
   gridToScreen,
@@ -59,26 +54,18 @@ import { CursorView } from '../views/CursorView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
-import { calloutText, LINK_CALLOUT, LinkView, type LinkEnd } from '../views/LinkView.ts';
+import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
-import { canDraw } from '../vfx/pixelFont.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
-import { facingOf, tellGlyph } from '../views/spriteInfo.ts';
-import {
-  BUILD_PUFF_MS,
-  BUILD_PUFF_TILES,
-  LEAK_RING_MS,
-  LEAK_RING_TILES,
-  SPLASH_RING_MS,
-  UPGRADE_RING_MS,
-  UPGRADE_RING_TILES,
-} from '../vfx/fxTiming.ts';
+import { facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
 import { ViewPool } from '../views/ViewPool.ts';
+import { bindBattleEvents, findLiveTower, type LiveTower } from './battleEvents.ts';
+import { BattleHover } from './BattleHover.ts';
 
 export const BATTLE_SCENE_KEY = 'Battle';
 
@@ -105,29 +92,10 @@ export interface BattleSceneDeps {
   pointFirstTower?(): number;
 }
 
-/** Where floating numbers start above a ground point (px): a tower's head, the core's heart. */
-const TOWER_FLOAT_LIFT_PX = 24;
-/** A link's callout (D059): its rings, and its name floated above the pair, held to be read. */
-const LINK_RING_TILES = 0.75;
-const LINK_RING_MS = 450;
-const LINK_CALLOUT_LIFT_PX = 6;
-const LINK_CALLOUT_MS = 1600;
-/** A specialization's extra flash (D059): a gold ring past the upgrade's teal one. */
-const SPEC_RING_TILES = 1.25;
-const SPEC_RING_MS = 500;
-/** A tile bonus fraction as the ghost label's percent ("+25%"). */
-function pct(frac: number): string {
-  return `+${Math.round(frac * 100)}%`;
-}
-
 /** The Denise pointer's ring (D059), and the arrow's spot over the turret head (scratch). */
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
 const pingAt: Vec2 = { x: 0, y: 0 };
-const CORE_FLOAT_LIFT_PX = 46;
-type LiveTower = DeepReadonly<Tower>;
-/** Most route tiles a segment preview can tint (FxView draws up to 12). */
-const MAX_PREVIEW_TILES = 12;
 
 export class BattleScene extends Phaser.Scene {
   readonly #deps: BattleSceneDeps;
@@ -148,13 +116,6 @@ export class BattleScene extends Phaser.Scene {
   /** The tower that pointer pinged (0: none), and ms since its ring last pulsed. */
   #pingTower = 0;
   #pingRingMs = 0;
-  /**
-   * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
-   * draws a burst and a ring (a bomblet: its small pop, no ring).
-   */
-  readonly #shells = new Map<number, number>();
-  /** The projectile sprites of the content's bomblets (Cluster Thumper's). */
-  readonly #bombletSprites = new Set<string>();
   /** A tile's elevation level by row-major index (1 for high ground), for picking. */
   readonly #elevationAt = (index: number): number => {
     const t = this.#deps.sim.map.tiles[index];
@@ -165,8 +126,6 @@ export class BattleScene extends Phaser.Scene {
     this.#elevationAt(row * this.#deps.sim.map.cols + col);
   /** Whether a tower has been built this battle (the onboarding pulse stops). */
   #built = false;
-  /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
-  readonly #told = new Set<string>();
   /** Whether any teach pulse is showing (so a hidden pulse isn't re-hidden every frame). */
   #teachShown = false;
   /** Teach-pulse tile tests, bound once (not a closure per frame). */
@@ -174,20 +133,12 @@ export class BattleScene extends Phaser.Scene {
   readonly #towerTile = (col: number, row: number): boolean => this.#towerSlotAt(col, row) >= 0;
   readonly #noTile = (): boolean => false;
   #stamp = 0;
-  /** The pointer in game pixels, or NaN while it's off the canvas. */
-  #px = Number.NaN;
-  #py = Number.NaN;
+  /** The pointer and hover feedback (placement ghost, aim previews, range rings). */
+  #hover!: BattleHover;
   readonly #offs: (() => void)[] = [];
-  /** Scratch for the tile under the pointer (or the keyboard cursor), reused every frame. */
-  readonly #tile = emptyTileFacts();
   /** Each ability slot's strike radius after modifiers (Mk II), and segment reach (tiles; 0: none). */
   readonly #strikeRadius: [number, number] = [0, 0];
   readonly #segmentReach: [number, number] = [0, 0];
-  /** Scratch for the segment preview: the span on one route, and the tiles (col, row pairs). */
-  readonly #span: SegmentSpan = { lo: 0, hi: 0, distFrom: 0, distTo: 0 };
-  readonly #previewTiles: number[] = Array.from({ length: 2 * MAX_PREVIEW_TILES }, () => 0);
-  /** The tile the segment preview was last drawn for, so it's recomputed only on a move. */
-  #previewAt = -2;
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
   /** The ally Suppressing Fire's streaks come from (Bricks), and his post (grid), or null. */
   #shooter: AllyView | null = null;
@@ -246,14 +197,6 @@ export class BattleScene extends Phaser.Scene {
     this.#allies = new ViewPool(() => new AllyView(ctx));
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
-    this.#bombletSprites.clear();
-    for (const t of Object.values(sim.config.content.towers)) {
-      const attacks = [...t.tiers, ...(t.specs === null ? [] : [t.specs.a, t.specs.b])];
-      for (const tier of attacks) {
-        const b = tier.attack?.kind === 'lobbed' ? tier.attack.bomblets : null;
-        if (b !== null && b !== undefined) this.#bombletSprites.add(b.projectile);
-      }
-    }
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#sacks = new SackBurstView(ctx);
     this.#shooter = null;
@@ -275,7 +218,6 @@ export class BattleScene extends Phaser.Scene {
       if (isBuildableTile(t)) teach.push([i % map.cols, Math.floor(i / map.cols)]);
     });
     this.#placement.setTeachTiles(teach);
-    this.#previewAt = -2;
     for (const slot of [1, 2] as const) {
       const a = sim.config.abilities;
       const id = slot === 1 ? a.slot1 : a.slot2;
@@ -289,178 +231,39 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#built = false;
     this.#teachShown = false;
-    this.#told.clear();
+    this.#hover = new BattleHover({
+      sim,
+      interaction,
+      placement: this.#placement,
+      fx: this.#fx,
+      cursor: this.#cursor,
+      origin: this.#origin,
+      elevationAt: this.#elevationAt,
+      strikeRadius: this.#strikeRadius,
+      segmentReach: this.#segmentReach,
+    });
 
-    const content = sim.config.content;
-    const fx = this.#fx;
     this.#offs.push(
-      bus.on('TowerBuilt', (e) => {
-        this.#built = true;
-        const tower = content.towers[e.tower]!; // built from the loadout
-        const [c, r] = e.tile;
-        this.#towers.acquire(e.uid).show(e.uid, tower.sprites, 1, true, this.#liftPx(c, r));
-        fx.ring(c + 0.5, r + 0.5, BUILD_PUFF_TILES, 'steel.4', BUILD_PUFF_MS, true);
-        fx.floatText(`−${e.cost}`, 'gold.3', c + 0.5, r + 0.5, TOWER_FLOAT_LIFT_PX);
-      }),
-      bus.on('TowerUpgraded', (e) => {
-        const v = this.#towers.get(e.uid);
-        if (v === undefined) return;
-        v.setTier(e.tier);
-        v.flash();
-        if (!Number.isNaN(v.x)) {
-          fx.ring(v.x, v.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true);
-          fx.floatText(`−${e.cost}`, 'gold.3', v.x, v.y, TOWER_FLOAT_LIFT_PX);
-        }
-      }),
-      bus.on('TowerSpecialized', (e) => {
-        const v = this.#towers.get(e.uid);
-        const t = this.#findTower(e.uid);
-        if (v === undefined || t === null) return;
-        v.setTier(t.tier, t.spec);
-        v.flash();
-        fx.ring(t.x, t.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true);
-        fx.ring(t.x, t.y, SPEC_RING_TILES, 'gold.3', SPEC_RING_MS, true);
-        fx.floatText(`−${e.cost}`, 'gold.3', t.x, t.y, TOWER_FLOAT_LIFT_PX);
-      }),
-      bus.on('LinkFormed', (e) => {
-        const a = this.#linkEnd(e.a);
-        const b = this.#linkEnd(e.b);
-        if (a === null || b === null) return;
-        this.#links.form(e.link, a, b);
-        // The moment gets its feedback (D059): a ring on both towers and the link's name, floated
-        // between them ("CROSSFIRE!"); the chime is the audio's.
-        const look = LINK_CALLOUT[e.link];
-        const name = content.links.find((l) => l.id === e.link)?.name;
-        if (look === undefined) return;
-        for (const t of [a, b]) {
-          fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true);
-        }
-        // The pixel font has capitals, digits, and a few marks: a name it can't draw keeps its
-        // rings and chime, and skips the text rather than throwing mid-battle (D061).
-        const text = name === undefined ? '' : calloutText(name);
-        if (text === '' || !canDraw(text)) return;
-        const lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
-        const mx = (a.col + b.col) / 2 + 0.5;
-        const my = (a.row + b.row) / 2 + 0.5;
-        fx.floatText(text, look.text, mx, my, lift, LINK_CALLOUT_MS);
-      }),
-      bus.on('LinkBroken', (e) => {
-        this.#links.break(e.link, e.a, e.b);
-      }),
-      bus.on('TowerSold', (e) => {
-        const v = this.#towers.get(e.uid);
-        if (v !== undefined && !Number.isNaN(v.x)) {
-          fx.floatText(`+${e.refund}`, 'gold.4', v.x, v.y, TOWER_FLOAT_LIFT_PX);
-        }
-        this.#towers.release(e.uid);
-        if (interaction.selectedTower === e.uid) interaction.selectTower(0);
-      }),
-      bus.on('EnemySpawned', (e) => {
-        const def = content.enemies[e.enemy]!; // spawned from the map's waves
-        // A tell glyph shows over the first of each enemy type this battle, not every one (D028):
-        // the body cue carries the rest.
-        const glyph = this.#told.has(e.enemy) ? null : tellGlyph(def.tells);
-        if (glyph !== null) this.#told.add(e.enemy);
-        const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
-        this.#enemies
-          .acquire(e.uid)
-          .show(e.uid, def.sprites.body, def.layer === 'air', glyph, route);
-      }),
-      bus.on('EnemyDied', (e) => {
-        this.#enemies.release(e.uid);
-        fx.burst(e.x, e.y); // the Act I death pop
-      }),
-      bus.on('SackBurst', (e) => {
-        // The young run back up the route toward the warren (D059); render-only.
-        const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
-        this.#sacks.burst(e.x, e.y, route, e.dist, e.young);
-      }),
-      bus.on('EnemyLeaked', (e) => {
-        const v = this.#enemies.get(e.uid);
-        const core = this.#core.nearest(v?.x ?? Number.NaN, v?.y ?? Number.NaN);
-        this.#enemies.release(e.uid);
-        if (e.leak <= 0) return;
-        this.#core.leak();
-        fx.leakShake();
-        if (core !== null) {
-          fx.ring(core.x, core.y, LEAK_RING_TILES, 'red.3', LEAK_RING_MS, true);
-          fx.floatText(`−${e.leak}`, 'red.3', core.x, core.y, CORE_FLOAT_LIFT_PX);
-        }
-      }),
-      bus.on('ProjectileFired', (e) => {
-        if (e.kind === 'hitscan') {
-          this.#fx.tracer(e.x, e.y, e.targetX, e.targetY, this.#isFlyer(e.targetUid));
-        } else if (e.kind === 'pulse') {
-          if (e.radiusTiles > 0) this.#fx.pulse(e.x, e.y, e.radiusTiles);
-        } else if (e.sprite !== null) {
-          // The event carries the shot's look and reach, so a tower sold mid-flight still shows
-          // its shell and splash.
-          if (e.kind === 'lobbed') {
-            this.#shells.set(e.uid, this.#bombletSprites.has(e.sprite) ? -1 : e.radiusTiles);
-          }
-          this.#projectiles
-            .acquire(e.uid)
-            .show(e.uid, { sprite: e.sprite, flightTicks: e.flightTicks });
-        }
-      }),
-      bus.on('ProjectileHit', (e) => {
-        this.#projectiles.release(e.uid);
-        const splash = this.#shells.get(e.uid);
-        if (splash === undefined) return;
-        this.#shells.delete(e.uid);
-        if (splash < 0) {
-          // A bomblet: its own small pop, no ring (four rings would bury the shell's).
-          fx.burst(e.x, e.y, 0, true);
-          return;
-        }
-        // The splash radius in orange under the burst, sized by the firing tier.
-        fx.ring(e.x, e.y, splash, 'orange.3', SPLASH_RING_MS, false);
-        fx.burst(e.x, e.y);
-      }),
-      bus.on('AbilityUsed', (e) => {
-        // A strike's reticle and landing at its real radius (abilityStats: Mk II). A segment
-        // (Suppressing Fire) needs nothing here: FxView draws every live segment zone.
-        const radius = this.#strikeRadius[e.slot - 1] ?? 0;
-        if (e.uid !== 0 && e.target !== null && radius > 0) {
-          fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, radius);
-        }
-      }),
-      bus.on('AllySpawned', (e) => {
-        this.#allies.acquire(e.uid).show(e.uid, e.kind, e.x, e.y);
-      }),
-      bus.on('AllyAttacked', (e) => {
-        const v = this.#allies.get(e.uid);
-        const air = this.#isFlyer(e.targetUid);
-        if (v === undefined || v.sprite === null) {
-          fx.tracer(e.x, e.y, e.targetX, e.targetY, air);
-          return;
-        }
-        v.fire(facingOf(e.targetX - e.x, e.targetY - e.y));
-        v.muzzle(this.#muzzle);
-        fx.tracerFrom(this.#muzzle.x, this.#muzzle.y, e.targetX, e.targetY, air);
-      }),
-      bus.on('AllyRemoved', (e) => {
-        this.#allies.release(e.uid);
+      bindBattleEvents({
+        sim,
+        bus,
+        interaction,
+        towers: this.#towers,
+        enemies: this.#enemies,
+        projectiles: this.#projectiles,
+        allies: this.#allies,
+        fx: this.#fx,
+        links: this.#links,
+        sacks: this.#sacks,
+        core: this.#core,
+        strikeRadius: this.#strikeRadius,
+        liftPx: (col, row) => this.#liftPx(col, row),
+        onBuilt: () => {
+          this.#built = true;
+        },
       }),
     );
-
-    this.input.mouse?.disableContextMenu();
-    this.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => {
-      // A real move hides the keyboard cursor (the mouse takes over the hover again).
-      if (p.x !== this.#px || p.y !== this.#py) interaction.hideCursor();
-      this.#px = p.x;
-      this.#py = p.y;
-    });
-    this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
-      interaction.hideCursor();
-      this.#px = p.x;
-      this.#py = p.y;
-      this.#click(p.rightButtonDown() ? 'right' : 'left');
-    });
-    this.input.on(Phaser.Input.Events.GAME_OUT, () => {
-      this.#px = Number.NaN;
-      this.#py = Number.NaN;
-    });
+    this.#hover.bindPointer(this, (button) => this.#click(button));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       for (const off of this.#offs) off();
       this.#allies.releaseAll();
@@ -469,7 +272,6 @@ export class BattleScene extends Phaser.Scene {
       this.#sacks.reset();
       this.#ping.reset();
       this.#links.reset();
-      this.#shells.clear();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();
@@ -513,12 +315,6 @@ export class BattleScene extends Phaser.Scene {
     return this.#elevationOf(col, row) * ELEV_H;
   }
 
-  /** A linked tower's tile and lift, for its tether; null if it's gone. */
-  #linkEnd(uid: number): LinkEnd | null {
-    const t = this.#findTower(uid);
-    return t === null ? null : { uid, col: t.col, row: t.row, liftPx: this.#liftPx(t.col, t.row) };
-  }
-
   /** The tower slot on tile (col, row), or −1. */
   #towerSlotAt(col: number, row: number): number {
     const { sim } = this.#deps;
@@ -528,16 +324,6 @@ export class BattleScene extends Phaser.Scene {
   /** Esc and right-click: drops the selection, disarms the build slot, and stops aiming. */
   cancel(): void {
     this.#deps.interaction.clear();
-  }
-
-  /** Whether the enemy `uid` flies (its slot keeps its def until reused, so a fresh kill counts). */
-  #isFlyer(uid: number): boolean {
-    const pool = this.#deps.sim.state.enemies;
-    for (let i = 0; i < pool.used; i++) {
-      const e = pool.items[i]!; // i < used ≤ items.length
-      if (e.uid === uid) return e.def?.layer === 'air';
-    }
-    return false;
   }
 
   /**
@@ -583,57 +369,15 @@ export class BattleScene extends Phaser.Scene {
   }
 
   #findTower(uid: number): LiveTower | null {
-    if (uid === 0) return null;
-    const pool = this.#deps.sim.state.towers;
-    for (let i = 0; i < pool.used; i++) {
-      const t = pool.items[i]!; // i < used ≤ items.length
-      if (t.alive && t.uid === uid) return t;
-    }
-    return null;
-  }
-
-  /**
-   * Fills the tile scratch with the facts about the tile under the pointer, or under the keyboard
-   * cursor while it shows (`keyboard`).
-   */
-  #pointerTile(keyboard = false): TileFacts {
-    const { sim, interaction } = this.#deps;
-    const map = sim.map;
-    if (keyboard && interaction.cursor >= 0) {
-      return fillTileFacts(sim, interaction.cursor, this.#tile);
-    }
-    // High ground's top face is drawn ELEV_H up, so a click there picks the raised tile.
-    const index = Number.isNaN(this.#px)
-      ? -1
-      : pickTile(this.#px, this.#py, this.#origin, map.cols, map.rows, this.#elevationAt);
-    return fillTileFacts(sim, index, this.#tile);
+    return findLiveTower(this.#deps.sim.state.towers, uid);
   }
 
   #click(button: 'left' | 'right'): void {
     const { interaction, sim } = this.#deps;
     const onPath = slotAimsAtPath(sim, interaction.aiming);
-    const tile = this.#pointerTile();
+    const tile = this.#hover.pointerTile();
     const intent = resolveClick(tile, button, interaction.armed, interaction.aiming, onPath);
     applyIntent(intent, interaction, this.#deps);
-  }
-
-  /** The armed tower's definition, if it's in this sim's content. */
-  #armedDef(): CompiledTowerDef | null {
-    const armed = this.#deps.interaction.armed;
-    const towers = this.#deps.sim.config.content.towers;
-    return armed !== null && Object.hasOwn(towers, armed) ? (towers[armed] ?? null) : null;
-  }
-
-  #canPlace(def: CompiledTowerDef, tile: TileFacts): boolean {
-    const { sim } = this.#deps;
-    const s = sim.state;
-    return (
-      tile.buildable &&
-      tile.towerUid === 0 &&
-      sim.config.loadout.includes(def.id) &&
-      !s.lockedTowers.includes(def.id) &&
-      s.credits >= costFor(sim.config.modifiers, def.id, def.tiers[0].cost)
-    );
   }
 
   #syncViews(): void {
@@ -720,85 +464,6 @@ export class BattleScene extends Phaser.Scene {
     }
 
     if (selected !== 0 && selectedTower === null) interaction.selectTower(0);
-    this.#syncFeedback(selectedTower);
-  }
-
-  /**
-   * The aimed ability's feedback on the hovered tile: a strike's reticle at its real radius, or
-   * the stretch of path a segment would cover there (exactly the sim's `segmentSpan`, on every
-   * ground route through the tile).
-   */
-  #syncAim(aim: boolean, tile: TileFacts, aiming: 1 | 2 | null): void {
-    const slot = aiming === null ? -1 : aiming - 1;
-    const radius = this.#strikeRadius[slot] ?? 0;
-    const reach = this.#segmentReach[slot] ?? 0;
-    this.#fx.setAim(aim && radius > 0 ? tile.col : -1, tile.row, radius);
-    const at = aim && reach > 0 ? tile.index : -1;
-    if (at === this.#previewAt) return;
-    this.#previewAt = at;
-    let n = 0;
-    if (at >= 0) {
-      for (const route of Object.values(this.#deps.sim.map.routes)) {
-        if (!segmentSpan(route, tile.col, tile.row, reach, this.#span)) continue;
-        for (let i = this.#span.lo; i <= this.#span.hi && n < MAX_PREVIEW_TILES; i++) {
-          const t = route.tiles[i]!; // lo ≤ i ≤ hi < tiles.length
-          this.#previewTiles[2 * n] = t[0];
-          this.#previewTiles[2 * n + 1] = t[1];
-          n++;
-        }
-      }
-    }
-    this.#fx.setSegmentAim(this.#previewTiles, n);
-  }
-
-  /**
-   * The tile bonus a tower built on (col, row) would get, as the ghost's label (D059): "+25%
-   * RANGE" on high ground, "+20% RATE" (or AURA, for a tower with no attack) on a power node.
-   */
-  #ghostLabel(armed: CompiledTowerDef, col: number, row: number): string | null {
-    const map = this.#deps.sim.map;
-    const t = map.tiles[row * map.cols + col];
-    if (t !== '^' && t !== '+') return null;
-    const rules = tileAndLinkRules(this.#deps.sim.config.modifiers);
-    if (t === '^') return `${pct(rules.highGroundRangePct)} RANGE`;
-    return armed.tiers[0].attack === null
-      ? `${pct(rules.powerNodeAuraPct)} AURA`
-      : `${pct(rules.powerNodeRatePct)} RATE`;
-  }
-
-  #syncFeedback(selectedTower: LiveTower | null): void {
-    const placement = this.#placement;
-    const tile = this.#pointerTile(true);
-    this.#cursor.set(this.#deps.interaction.cursor, this.#deps.sim.map.cols);
-    const armed = this.#armedDef();
-    const aiming = this.#deps.interaction.aiming;
-    const look = hoverLook(
-      tile,
-      armed === null ? null : armed.id,
-      armed !== null && this.#canPlace(armed, tile),
-      aiming,
-      slotAimsAtPath(this.#deps.sim, aiming),
-    );
-    placement.setHover(tile.col, tile.row, look.highlight);
-    this.#syncAim(look.aim, tile, aiming);
-    placement.setSelectedTile(selectedTower?.col ?? -1, selectedTower?.row ?? -1);
-
-    if (look.ghost && armed !== null) {
-      placement.setGhost(
-        tile.col,
-        tile.row,
-        armed.sprites.base,
-        armed.sprites.head,
-        this.#ghostLabel(armed, tile.col, tile.row),
-      );
-      const range = armed.tiers[0].attack?.rangeTiles ?? 0;
-      placement.setRing(tile.col + 0.5, tile.row + 0.5, range, look.ghostValid);
-      return;
-    }
-    placement.setGhost(0, 0, null, null);
-    // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
-    const ringTower = look.ringTowerUid !== 0 ? this.#findTower(look.ringTowerUid) : selectedTower;
-    const range = ringTower?.tierDef?.attack?.rangeTiles ?? 0;
-    placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range, true);
+    this.#hover.sync(selectedTower);
   }
 }

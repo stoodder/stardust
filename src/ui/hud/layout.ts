@@ -178,7 +178,7 @@ export function specCardHeight(descLines: number): number {
 }
 
 /**
- * The tower panel's height for a view (its rows in hud/index.tsx's TowerPanel order): the header,
+ * The tower panel's height for a view (its rows in hud/TowerPanel.tsx's order): the header,
  * the stats lines, the bonus lines, the "Next:" lines, then either the tier-4 choice (a heading,
  * two cards, and the lock note) or the Upgrade button, and the Sell, Target, and Hold fire
  * buttons, plus Spare runners once it shows.

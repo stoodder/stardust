@@ -59,7 +59,7 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
 function decorAt(g: GroundGrid, col: number, row: number): SpriteId | null {
   if (g.markers === undefined) return null;
   for (const [id, [c, r]] of Object.entries(g.markers)) {
-    const sprite = DECOR_MARKERS[id];
+    const sprite = Object.hasOwn(DECOR_MARKERS, id) ? DECOR_MARKERS[id] : undefined;
     if (sprite !== undefined && c === col && r === row) return sprite;
   }
   return null;

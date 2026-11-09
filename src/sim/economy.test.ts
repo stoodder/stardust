@@ -19,6 +19,7 @@ import {
   costFor,
   payBounty,
   sellValue,
+  sellValueInto,
 } from './economy.ts';
 import type { SimEvent } from './events.ts';
 
@@ -69,6 +70,20 @@ describe('sellValue', () => {
   it('ends the grace at the first shot, whichever comes first', () => {
     expect(sellValue({ ...t, firstFiredTick: 30 }, 31)).toEqual({ value: 178, full: false });
     expect(sellValue({ ...t, firstFiredTick: 0 }, 0)).toEqual({ value: 178, full: false });
+  });
+
+  it('sellValueInto fills a scratch with the same answer (the HUD reads it every frame)', () => {
+    const out = { value: -1, full: true };
+    for (const [tick, fired] of [
+      [0, -1],
+      [599, -1],
+      [600, -1],
+      [31, 30],
+    ] as const) {
+      const tower = { ...t, firstFiredTick: fired };
+      expect(sellValueInto(tower, tick, 0.7, out)).toBe(out);
+      expect({ ...out }).toEqual(sellValue(tower, tick, 0.7));
+    }
   });
 
   it('floors exact products correctly despite float error (0.7 × 180 = 126)', () => {

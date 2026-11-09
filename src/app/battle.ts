@@ -9,7 +9,8 @@ import { createSim, type SimConfig } from '../sim/index.ts';
 import { hud } from '../ui/state.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
-import { bindHud, hudSaveInfo, rejectText, showNotice, type HudOptions } from './hud.ts';
+import { bindHud, hudSaveInfo, showNotice, type HudOptions } from './hud.ts';
+import { rejectText } from './hudText.ts';
 import { bindBattleAudio } from './audio.ts';
 import { bindRadio } from './radio.ts';
 

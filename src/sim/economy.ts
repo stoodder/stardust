@@ -47,9 +47,20 @@ export function sellValue(
   tick: number,
   refundPct = SELL_REFUND_PCT,
 ): SellValue {
+  return sellValueInto(tower, tick, refundPct, { value: 0, full: false });
+}
+
+/** `sellValue` into `out` (the HUD reads it every frame without allocating). Returns `out`. */
+export function sellValueInto(
+  tower: Pick<Tower, 'invested' | 'builtTick' | 'firstFiredTick'>,
+  tick: number,
+  refundPct: number,
+  out: { value: number; full: boolean },
+): SellValue {
   const full = tower.firstFiredTick < 0 && tick - tower.builtTick < MISCLICK_GRACE_TICKS;
-  if (full) return { value: tower.invested, full };
-  return { value: Math.floor(tower.invested * refundPct + REFUND_EPS), full };
+  out.full = full;
+  out.value = full ? tower.invested : Math.floor(tower.invested * refundPct + REFUND_EPS);
+  return out;
 }
 
 /**

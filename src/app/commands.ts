@@ -18,7 +18,8 @@ import { costFor, isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import { PRIORITY_LABEL } from '../ui/hud/words.ts';
 import type { Host } from './host.ts';
-import { announce, lockedText, rejectText, showNotice } from './hud.ts';
+import { announce, showNotice } from './hud.ts';
+import { lockedText, rejectText } from './hudText.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */

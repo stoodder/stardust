@@ -5,32 +5,30 @@ import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { nextPriority, PRIORITY_CYCLE } from './commands.ts';
+import { announce, callPulses, staysArmed, UPGRADE_TEACH_WAVE, upgradeHintShows } from './hud.ts';
+import { selectedView } from './hudPanel.ts';
 import {
-  abilityCooldownTotals,
   abilityDescription,
-  abilitySlots,
-  buildSlots,
-  callPulses,
+  cursorText,
   deltaText,
-  lockedText,
-  statLineText,
-  towerUnlockWaves,
-  cooldownView,
   displayName,
+  holdFireText,
+  lockedText,
   meterLabelText,
   rejectText,
-  announce,
+  statLineText,
+} from './hudText.ts';
+import {
+  abilityCooldownTotals,
+  abilitySlots,
   briefingLines,
-  holdFireText,
+  buildSlots,
+  cooldownView,
   countdownSeconds,
-  cursorText,
-  selectedView,
   towerPoints,
-  staysArmed,
-  UPGRADE_TEACH_WAVE,
-  upgradeHintShows,
+  towerUnlockWaves,
   wavePreview,
-} from './hud.ts';
+} from './hudViews.ts';
 
 /** A sim on the dev battle (render/__fixtures__/devBattle.ts), paused at tick 0. */
 function devSim() {

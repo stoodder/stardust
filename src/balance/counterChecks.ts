@@ -1,4 +1,5 @@
-// The no-counter runs' own precondition (conventions.md § Balance sims, #5–#6): a no-counter build
+// The no-counter checks (conventions.md § Balance sims): #5 and #6 (T225: moved from checks.ts),
+// and the runs' own precondition: a no-counter build
 // must carry no answer to its category, judged by the same model as the content validator
 // (content/counterAnswers.ts: the tiers and specs its towers reach, and the abilities it casts).
 // Compile already rejects such content; this keeps the harness honest when it runs content
@@ -12,7 +13,8 @@ import {
 } from '../content/counterAnswers.ts';
 import { COUNTER_ANSWERS, COUNTER_CATEGORIES, type CounterAnswers } from '../content/rules.ts';
 import type { CounterId, IdSpace } from '../content/types.ts';
-import type { CheckSpec } from './checks.ts';
+import { describeRun, perRun, type CheckSpec } from './checks.ts';
+import { noCounterLoseByWave } from './rules.ts';
 
 const tileKey = (t: readonly [number, number]): string => `${t[0]},${t[1]}`;
 
@@ -92,4 +94,54 @@ export function noCounterAnswerChecks<K extends IdSpace>(
     });
   }
   return out;
+}
+
+/**
+ * #5 every no-counter build loses before the final third (or by the map's override), and #6 it
+ * still loses with the full-catalog profile: meta can't replace a counter. `leftOut` lists the
+ * catalog grants the sim doesn't simulate yet (#6 names them).
+ */
+export function noCounterChecks<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  few: readonly number[],
+  leftOut: readonly string[],
+): CheckSpec[] {
+  const b = map.builds;
+  const checks: CheckSpec[] = [];
+  // A map may push the lose-by wave later (BuildsDef.noCounterLoseByWave, capped by the validator).
+  const loseBy = b.noCounterLoseByWave ?? noCounterLoseByWave(map.waves.length);
+  const loseByWhy =
+    b.noCounterLoseByWave === null ? 'before the final third' : "by the map's override";
+  for (const counter of Object.keys(b.noCounterBuilds)) {
+    const label = `noCounter:${counter}`;
+    checks.push(
+      perRun(
+        '5',
+        `${label} loses ${loseByWhy} (by W${loseBy})`,
+        label,
+        few,
+        (rec) =>
+          rec.result?.outcome === 'lost' && (rec.result.lostAtWave ?? Infinity) <= loseBy
+            ? null
+            : describeRun(rec),
+        (recs) => recs.map(describeRun).join(', '),
+      ),
+    );
+    // #6: meta can't replace a counter (design/progression.md § 10).
+    const note =
+      leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
+    checks.push(
+      perRun(
+        '6',
+        `${label} still loses with the full-catalog profile`,
+        `${label}@fullCatalog`,
+        few,
+        (rec) => (rec.result?.outcome === 'lost' ? null : describeRun(rec)),
+        (recs) => `${recs.map(describeRun).join(', ')}${note}`,
+        [],
+        label,
+      ),
+    );
+  }
+  return checks;
 }

@@ -84,9 +84,10 @@ export function createRunTracker<K extends IdSpace>(
 ): RunTracker {
   const state = sim.state;
   const map = sim.map;
-  // The integrity and credits the run starts with: the map's, after the run's modifiers
-  // (Reinforced Core, Seed Money, Story). The tracker is created before the first tick.
-  const maxIntegrity = state.integrity;
+  // The integrity the run starts with is the sim's own `maxIntegrity` (the map's, after the run's
+  // modifiers: Reinforced Core, Story); the credits, the start's (Seed Money). The tracker is
+  // created before the first tick.
+  const maxIntegrity = state.maxIntegrity;
   const startCredits = state.credits;
   const waves: WaveSummary[] = map.waves.map((w) => ({
     wave: w.number,

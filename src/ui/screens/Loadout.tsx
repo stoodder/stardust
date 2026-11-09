@@ -8,7 +8,6 @@
 // radio group; Enter or Space toggles a tower; Lock in has the focus on arrival, so Enter goes
 // straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
-import { silkText } from '../silk.ts';
 import { useState } from 'preact/hooks';
 import { formedLinks, pickWarnings, togglePickTower } from '../../app/loadout.ts';
 import { lockInLoadout, toCampaign } from '../../app/navigation.ts';
@@ -77,7 +76,7 @@ function TowerCard(props: {
         <Icon id={t.icon} class="sd-lo-icon" />
         <span class="sd-lo-text" aria-hidden="true">
           <span class="sd-lo-row">
-            <span class="sd-lo-name">{silkText(t.name)}</span>
+            <span class="sd-lo-name">{t.name}</span>
             <span class="sd-lo-cost">{t.cost}</span>
           </span>
           <span class="sd-lo-role">{t.role}</span>
@@ -127,7 +126,7 @@ function AbilityPicker(props: {
           }}
         >
           <Icon id={a.icon} class="sd-lo-icon" />
-          <span class="sd-lo-ability-name">{silkText(a.name)}</span>
+          <span class="sd-lo-ability-name">{a.name}</span>
           {a.answers.length > 0 && <span class="sd-lo-chip">{a.answers.join(' · ')}</span>}
         </button>
       ))}
@@ -149,7 +148,7 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
         return (
           <li key={l.id} class={on ? 'sd-lo-link sd-lo-link-on' : 'sd-lo-link'}>
             <span class="sd-lo-link-head">
-              <span class="sd-lo-link-name">{silkText(l.name)}</span>
+              <span class="sd-lo-link-name">{l.name}</span>
               <span class="sd-lo-link-state">{on ? 'Linked' : `Needs ${names.join(' + ')}`}</span>
             </span>
             <span class="sd-lo-link-bonus">{l.bonus}</span>

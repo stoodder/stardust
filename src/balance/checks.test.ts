@@ -7,7 +7,6 @@ import {
   VACUOUS_NOTE,
   flagVariantLabel,
   flagsFor,
-  mapChecks,
   median,
   notGradual,
   runKey,
@@ -15,6 +14,7 @@ import {
   type CheckSpec,
   type RunRequest,
 } from './checks.ts';
+import { mapChecks } from './mapChecks.ts';
 import { HARNESS_GATES, refusedFeatures } from './refusals.ts';
 import { FIXTURE_CONTENT } from '../sim/__fixtures__/sim.ts';
 

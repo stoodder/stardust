@@ -8,16 +8,9 @@ import { createSim, type Modifier, type Sim, type SimState } from '../sim/index.
 import type { IdSpace } from '../content/types.ts';
 import { CARD_CHARS, PANEL_CHARS, towerPanelHeight } from '../ui/hud/layout.ts';
 import { battleConfig } from './battleSetup.ts';
-import {
-  bonusTexts,
-  buildSlots,
-  holdingCount,
-  medalViews,
-  selectedView,
-  specDescription,
-  specLockText,
-  threatIntel,
-} from './hud.ts';
+import { selectedView } from './hudPanel.ts';
+import { bonusTexts, specDescription, specLockText } from './hudText.ts';
+import { buildSlots, holdingCount, medalViews, threatIntel } from './hudViews.ts';
 import { towerStats } from '../sim/index.ts';
 
 /** A1M1 with every tower and spec unlocked (the all_unlocked dev save), paused at tick 0. */
@@ -206,6 +199,18 @@ describe('the briefing (T202d)', () => {
     expect(medals[2]?.description).toBe('Win with a Crossfire link active.');
     const after = medalViews(sim.map, { ...sim.state.medals, perfectCore: 'forfeited' }, []);
     expect(after[1]?.status).toBe('forfeited');
+  });
+
+  it('reads every "&" as "and" in the view model, not in the component (D059, T234)', () => {
+    const sim = a1m1();
+    const challenge = {
+      ...sim.map.medals!.challenge,
+      name: 'Rest & Relaxation',
+      description: 'R&D',
+    };
+    const map = { ...sim.map, medals: { challenge } };
+    const medals = medalViews(map, sim.state.medals, []);
+    expect([medals[2]?.name, medals[2]?.description]).toEqual(['Rest and Relaxation', 'R and D']);
   });
 
   it("shows the threat intel's glyphs and who answers a required counter", () => {

@@ -24,6 +24,7 @@ import {
   mapName,
 } from '../meta/index.ts';
 import { costFor } from '../sim/index.ts';
+import { silkText } from '../ui/silk.ts';
 import {
   loadout,
   type LoadoutAbilityView,
@@ -33,7 +34,8 @@ import {
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
-import { displayName, threatNames } from './hud.ts';
+import { displayName } from './hudText.ts';
+import { threatNames } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
 
@@ -96,8 +98,8 @@ function towerView(
   const required: readonly string[] = c.map.requiredCounters;
   return {
     id,
-    name: displayName(id),
-    role: def.role,
+    name: silkText(displayName(id)),
+    role: silkText(def.role),
     cost: costFor(modifiers, id, def.tiers[0].cost),
     icon: def.sprites.icon,
     answers: towerAnswers(id, specsOwned, c.map, c.specName).map((a) => ({
@@ -113,7 +115,7 @@ function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
   const [a, b] = l.partners;
   return {
     id: l.id,
-    name: l.name,
+    name: silkText(l.name),
     partners: [a.tower, b.tower],
     partnerNames: `${displayName(a.tower)} + ${displayName(b.tower)}`,
     bonus: l.partners
@@ -159,7 +161,7 @@ export function openLoadout(mapId: string): boolean {
   const slot2 = cfg.abilities.slot2;
   const view: LoadoutView = {
     mapId,
-    mapName: mapName(mapId),
+    mapName: silkText(mapName(mapId)),
     shift: shift < 0 ? null : shift + 1,
     threats: threatNames(map),
     counters: mapCounters(c.map).map((id) => ({
@@ -170,7 +172,7 @@ export function openLoadout(mapId: string): boolean {
     towers: pools.towers.map((id) => towerView(content, c, cfg.modifiers, id)),
     abilities: pools.abilities.map((id): LoadoutAbilityView => ({
       id,
-      name: content.abilities[id]!.name, // pool abilities are registered (validateSave)
+      name: silkText(content.abilities[id]!.name), // pool abilities are registered (validateSave)
       icon: content.abilities[id]!.sprites.icon,
       answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
     })),
@@ -178,7 +180,9 @@ export function openLoadout(mapId: string): boolean {
     companion:
       slot2 === null || cfg.companion === null
         ? null
-        : `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
+        : silkText(
+            `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
+          ),
     initial: initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
     max: MAX_LOADOUT,
   };

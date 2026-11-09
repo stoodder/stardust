@@ -60,6 +60,7 @@ export {
   callWaveBonus,
   costFor,
   sellValue,
+  sellValueInto,
   type SellValue,
 } from './economy.ts';
 export {

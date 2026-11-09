@@ -9,7 +9,6 @@ import {
   describeRun,
   flagsFor,
   fmtPct,
-  mapChecks,
   median,
   runKey,
   splitMeta,
@@ -20,6 +19,7 @@ import {
   type RunRequest,
 } from './checks.ts';
 import { noCounterAnswerChecks } from './counterChecks.ts';
+import { mapChecks } from './mapChecks.ts';
 import { medalChecks } from './medals.ts';
 import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
 import { NOT_CHECKED, refusedFeatures } from './refusals.ts';

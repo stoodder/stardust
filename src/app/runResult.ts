@@ -8,6 +8,7 @@ import type { FlagRuleStats } from '../story/flags.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
 import type { MedalResult, RunResult, RunRewards } from '../ui/screens/state.ts';
+import { displayName } from './hudText.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
@@ -105,14 +106,6 @@ interface RecordStatus {
   readonly stardustNote?: string | null;
 }
 
-/** A tower id as the HUD's build slots name it (`sprinkler` → "Sprinkler"; hud.ts displayName). */
-function towerLabel(id: string): string {
-  return id
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
 /** meta's run end, as the results card shows it: every medal the map offers, and the payouts. */
 export function runRewardsOf(
   input: RunEndInput,
@@ -134,7 +127,7 @@ export function runRewardsOf(
     stardust: { source, amount, base, wavesResolved: summary.stardust.wavesResolved, waveCount },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
-    issued: summary.issued.map(towerLabel),
+    issued: summary.issued.map(displayName),
     stardustNote: summary.stardustNote ?? null,
     saveNotice: summary.writeFailed ?? null,
   };

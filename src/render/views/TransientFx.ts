@@ -1,0 +1,454 @@
+// The pooled transient effects (art-direction §7; T225 split from FxView.ts): every effect is a
+// slot in a fixed array, made once and reused (the oldest of a kind is reused when its pool is
+// full), so a busy wave allocates nothing. Cosmetic, on real time.
+// - Hitscan tracers (Rivet, Bricks): the projectile.rivet_tracer streak flying from the muzzle to
+//   the target in a few frames (the shot itself landed on the tick it fired); Suppressing Fire's
+//   streaks are the same, drawn thick.
+// - Effect rings: a Sprinkler's pulse, a leak at the core, a Thumper's splash, a build's dust, an
+//   upgrade; each grows in quarter tiles or holds at its radius, and fades in steps.
+// - Bursts: fx.explosion at a shell's impact (or a death); a Cluster Thumper's bomblets pop with
+//   the small fx.bomblet_burst.
+// - Ground decals (a strike's flash and scorch), floating numbers and callouts in the 3×5 pixel
+//   font, and the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
+// FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
+import type * as Phaser from 'phaser';
+import type { ColorName } from '../../content/palettes/master.ts';
+import { gridToScreen, type Vec2 } from '../iso.ts';
+import {
+  BOMBLET_BURST_MS,
+  BURST_MS,
+  fadeAlpha,
+  floatRise,
+  FLOAT_MS,
+  LEAK_SHAKE_MS,
+  leakShakeOffset,
+  PULSE_MS,
+  pulseRadius,
+  SHAKE_MS,
+  shakeOffset,
+  TRACER_MS,
+} from '../vfx/fxTiming.ts';
+import { effectRingTexture, floatTextTexture, PULSE_COLOR } from '../vfx/overlayTextures.ts';
+import type { ViewContext } from './ViewContext.ts';
+
+/** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
+const MAX_TRACERS = 64;
+const MAX_PULSES = 32;
+const MAX_DECALS = 8;
+const MAX_FLOATS = 16;
+const MAX_BURSTS = 40;
+
+/** Suppressing Fire's streaks are 3 px thick and twice a Rivet's length (D059): heavy fire. */
+const SUPPRESS_STREAK_SCALE = { x: 2, y: 3 } as const;
+/** Where a tower's shot leaves its head, above the tile center (px). */
+const MUZZLE_LIFT_PX = 10;
+/** Where a shot meets its target, above the ground point (px); flyers draw 12 px higher. */
+export const BODY_LIFT_PX = 4;
+export const AIR_LIFT_PX = 12;
+
+interface Tracer {
+  active: boolean;
+  /** A Suppressing Fire streak (drawn thick), not a Rivet's. */
+  thick: boolean;
+  ms: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  img: Phaser.GameObjects.Image;
+}
+
+/** An effect ring: grows (in quarter tiles) or holds at its radius, and fades in steps. */
+interface Pulse {
+  active: boolean;
+  ms: number;
+  durationMs: number;
+  radiusTiles: number;
+  grow: boolean;
+  color: ColorName;
+  img: Phaser.GameObjects.Image;
+  shownRadius: number;
+  shownColor: ColorName | null;
+}
+
+/** A ground decal (a strike's flash, a scorch) that fades in steps. */
+interface Decal {
+  active: boolean;
+  ms: number;
+  durationMs: number;
+  img: Phaser.GameObjects.Image;
+}
+
+/** A floating number rising from a point. */
+interface Float {
+  active: boolean;
+  ms: number;
+  durationMs: number;
+  x: number;
+  y: number;
+  img: Phaser.GameObjects.Image;
+}
+
+interface Burst {
+  active: boolean;
+  /** Negative while waiting for its delay. */
+  ms: number;
+  /** A bomblet's small pop (fx.bomblet_burst) instead of the shell's fx.explosion. */
+  small: boolean;
+  sprite: Phaser.GameObjects.Sprite;
+}
+
+/** The two burst looks: the shell's explosion and a bomblet's pop, with how long each plays. */
+const BURST_LOOKS = {
+  big: { id: 'fx.explosion', ms: BURST_MS },
+  small: { id: 'fx.bomblet_burst', ms: BOMBLET_BURST_MS },
+} as const;
+
+const pos: Vec2 = { x: 0, y: 0 };
+
+/** A ground decal's texture: its key and display origin. */
+export interface DecalTexture {
+  readonly key: string;
+  readonly ox: number;
+  readonly oy: number;
+}
+
+export class TransientFx {
+  protected readonly ctx: ViewContext;
+  protected readonly reducedMotion: () => boolean;
+  /**
+   * One Graphics for effects drawn as shapes (FxView's strike beams), cleared each frame. Made
+   * first, so it draws under the tracers and bursts in `vfx`.
+   */
+  protected readonly gfx: Phaser.GameObjects.Graphics;
+  readonly #tracers: Tracer[] = [];
+  readonly #pulses: Pulse[] = [];
+  readonly #decals: Decal[] = [];
+  readonly #floats: Float[] = [];
+  readonly #bursts: Burst[] = [];
+  #nextTracer = 0;
+  #nextPulse = 0;
+  #nextBurst = 0;
+  #nextDecal = 0;
+  #nextFloat = 0;
+  #shakeMs = -1;
+  /** Which shake runs: the strike's 2 px or a leak's 1 px. */
+  #shakeSmall = false;
+
+  constructor(ctx: ViewContext, reducedMotion: () => boolean) {
+    this.ctx = ctx;
+    this.reducedMotion = reducedMotion;
+    const { scene, layers, sprites } = ctx;
+    this.gfx = scene.make.graphics({}, false);
+    layers.vfx.add(this.gfx);
+    const streak = sprites.frame('projectile.rivet_tracer', 'e');
+    const streakAnchor = sprites.meta('projectile.rivet_tracer').anchor;
+    for (let i = 0; i < MAX_TRACERS; i++) {
+      const img = scene.make.image({}, false);
+      img.setTexture(streak.texture, streak.frame).setDisplayOrigin(streakAnchor.x, streakAnchor.y);
+      img.setVisible(false);
+      layers.vfx.add(img);
+      this.#tracers.push({ active: false, thick: false, ms: 0, x0: 0, y0: 0, x1: 0, y1: 0, img });
+    }
+    for (let i = 0; i < MAX_PULSES; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      layers.decal.add(img);
+      this.#pulses.push({
+        active: false,
+        ms: 0,
+        durationMs: PULSE_MS,
+        radiusTiles: 0,
+        grow: true,
+        color: PULSE_COLOR,
+        img,
+        shownRadius: 0,
+        shownColor: null,
+      });
+    }
+    for (let i = 0; i < MAX_DECALS; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      layers.decal.add(img);
+      this.#decals.push({ active: false, ms: 0, durationMs: 0, img });
+    }
+    for (let i = 0; i < MAX_FLOATS; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      layers.overlay.add(img);
+      this.#floats.push({ active: false, ms: 0, durationMs: FLOAT_MS, x: 0, y: 0, img });
+    }
+    const boom = sprites.meta('fx.explosion').anchor;
+    const boomFrame = sprites.frame('fx.explosion', 'f0');
+    for (let i = 0; i < MAX_BURSTS; i++) {
+      const sprite = scene.make.sprite({}, false);
+      sprite.setTexture(boomFrame.texture, boomFrame.frame).setDisplayOrigin(boom.x, boom.y);
+      sprite.setVisible(false);
+      layers.vfx.add(sprite);
+      this.#bursts.push({ active: false, ms: 0, small: false, sprite });
+    }
+  }
+
+  /** A hitscan shot from a tower at grid (x0, y0) to a target at grid (x1, y1). */
+  tracer(x0: number, y0: number, x1: number, y1: number, targetAir: boolean): void {
+    gridToScreen(x0, y0, this.ctx.origin, pos);
+    this.tracerFrom(pos.x, pos.y - MUZZLE_LIFT_PX, x1, y1, targetAir);
+  }
+
+  /** A hitscan shot from screen point (sx, sy) (an ally's muzzle) to a target at grid (x1, y1). */
+  tracerFrom(sx: number, sy: number, x1: number, y1: number, targetAir: boolean): void {
+    gridToScreen(x1, y1, this.ctx.origin, pos);
+    this.streak(sx, sy, pos.x, pos.y - BODY_LIFT_PX - (targetAir ? AIR_LIFT_PX : 0));
+  }
+
+  /** A tracer streak between two screen points; `thick` for Suppressing Fire's. */
+  streak(x0: number, y0: number, x1: number, y1: number, thick = false): void {
+    const t = this.#tracers[this.#nextTracer]!; // index < MAX_TRACERS
+    this.#nextTracer = (this.#nextTracer + 1) % MAX_TRACERS;
+    if (thick !== t.thick) {
+      t.img.setScale(thick ? SUPPRESS_STREAK_SCALE.x : 1, thick ? SUPPRESS_STREAK_SCALE.y : 1);
+      t.thick = thick;
+    }
+    t.x0 = x0;
+    t.y0 = y0;
+    t.x1 = x1;
+    t.y1 = y1;
+    t.ms = 0;
+    t.active = true;
+    // The streak's head (its white end) points at the target.
+    t.img.setRotation(Math.atan2(t.y1 - t.y0, t.x1 - t.x0));
+    this.#drawTracer(t);
+  }
+
+  /** A Sprinkler pulse ring from a tower at grid (x, y) out to `radiusTiles`. */
+  pulse(x: number, y: number, radiusTiles: number): void {
+    this.ring(x, y, radiusTiles, PULSE_COLOR, PULSE_MS, true);
+  }
+
+  /**
+   * An effect ring on the ground at grid (x, y): grows from a quarter tile to `radiusTiles` over
+   * `ms` (`grow`), or holds at it, fading in steps either way.
+   */
+  ring(
+    x: number,
+    y: number,
+    radiusTiles: number,
+    color: ColorName,
+    ms: number,
+    grow: boolean,
+  ): void {
+    if (radiusTiles <= 0) return;
+    const p = this.#pulses[this.#nextPulse]!; // index < MAX_PULSES
+    this.#nextPulse = (this.#nextPulse + 1) % MAX_PULSES;
+    gridToScreen(x, y, this.ctx.origin, pos);
+    p.img.setPosition(pos.x, pos.y);
+    p.radiusTiles = radiusTiles;
+    p.durationMs = ms;
+    p.grow = grow;
+    p.color = color;
+    p.shownRadius = 0;
+    p.ms = 0;
+    p.active = true;
+    this.#syncPulse(p);
+  }
+
+  /**
+   * A floating number or callout (the 3×5 font) rising from grid (x, y), `liftPx` above the
+   * ground, for `ms` (a callout stays up longer, to be read).
+   */
+  floatText(
+    text: string,
+    color: ColorName,
+    x: number,
+    y: number,
+    liftPx: number,
+    ms = FLOAT_MS,
+  ): void {
+    const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
+    this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
+    gridToScreen(x, y, this.ctx.origin, pos);
+    const key = floatTextTexture(this.ctx.scene, text, color);
+    f.img.setTexture(key);
+    f.img.setOrigin(0.5, 1);
+    f.x = Math.round(pos.x);
+    f.y = Math.round(pos.y - liftPx);
+    f.ms = 0;
+    f.durationMs = ms;
+    f.active = true;
+    this.#syncFloat(f);
+  }
+
+  /** A 1 px camera shake for a leak (skipped under reduced motion; a strike's shake wins). */
+  leakShake(): void {
+    if (this.reducedMotion() || (this.#shakeMs >= 0 && !this.#shakeSmall)) return;
+    this.#shakeSmall = true;
+    this.#shakeMs = 0;
+  }
+
+  /**
+   * An explosive burst on the ground at grid (x, y), after `delayMs`; `small` for a bomblet's pop
+   * (fx.bomblet_burst).
+   */
+  burst(x: number, y: number, delayMs = 0, small = false): void {
+    const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
+    this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
+    gridToScreen(x, y, this.ctx.origin, pos);
+    if (small !== b.small) {
+      const id = BURST_LOOKS[small ? 'small' : 'big'].id;
+      const a = this.ctx.sprites.meta(id).anchor;
+      const f = this.ctx.sprites.frame(id, 'f0');
+      b.sprite.setTexture(f.texture, f.frame).setDisplayOrigin(a.x, a.y);
+      b.small = small;
+    }
+    // The burst's anchor is its base, so lift it to sit centered on the ground point.
+    b.sprite.setPosition(pos.x, pos.y + 4);
+    b.sprite.stop().setVisible(false);
+    b.ms = -delayMs;
+    b.active = true;
+  }
+
+  /** Advances every pooled effect by a frame of `dt` ms (FxView's update, before the abilities). */
+  protected advance(dt: number): void {
+    this.gfx.clear();
+    for (const t of this.#tracers) {
+      if (!t.active) continue;
+      t.ms += dt;
+      if (t.ms >= TRACER_MS) {
+        t.active = false;
+        t.img.setVisible(false);
+      } else {
+        this.#drawTracer(t);
+      }
+    }
+    for (const p of this.#pulses) {
+      if (!p.active) continue;
+      p.ms += dt;
+      if (p.ms >= p.durationMs) {
+        p.active = false;
+        p.img.setVisible(false);
+      } else {
+        this.#syncPulse(p);
+      }
+    }
+    for (const d of this.#decals) {
+      if (!d.active) continue;
+      d.ms += dt;
+      if (d.ms >= d.durationMs) {
+        d.active = false;
+        d.img.setVisible(false);
+      } else {
+        d.img.setAlpha(fadeAlpha(d.ms / d.durationMs));
+      }
+    }
+    for (const f of this.#floats) {
+      if (!f.active) continue;
+      f.ms += dt;
+      if (f.ms >= f.durationMs) {
+        f.active = false;
+        f.img.setVisible(false);
+      } else {
+        this.#syncFloat(f);
+      }
+    }
+    for (const b of this.#bursts) {
+      if (!b.active) continue;
+      const before = b.ms;
+      b.ms += dt;
+      if (before < 0 && b.ms >= 0) {
+        const look = BURST_LOOKS[b.small ? 'small' : 'big'];
+        b.sprite.setVisible(true).play(this.ctx.sprites.anim(look.id, 'burst'));
+      }
+      if (b.ms >= BURST_LOOKS[b.small ? 'small' : 'big'].ms) {
+        b.active = false;
+        b.sprite.stop().setVisible(false);
+      }
+    }
+  }
+
+  /** Starts the strike's 2 px camera shake (skipped under reduced motion). */
+  protected strikeShake(): void {
+    if (this.reducedMotion()) return;
+    this.#shakeSmall = false;
+    this.#shakeMs = 0;
+  }
+
+  /** Hides every pooled effect and resets the camera (the scene is shutting down). */
+  protected resetTransient(): void {
+    for (const t of this.#tracers) {
+      t.active = false;
+      t.img.setVisible(false);
+    }
+    for (const p of this.#pulses) {
+      p.active = false;
+      p.img.setVisible(false);
+    }
+    for (const d of this.#decals) {
+      d.active = false;
+      d.img.setVisible(false);
+    }
+    for (const f of this.#floats) {
+      f.active = false;
+      f.img.setVisible(false);
+    }
+    for (const b of this.#bursts) {
+      b.active = false;
+      b.sprite.stop().setVisible(false);
+    }
+    this.gfx.clear();
+    this.#shakeMs = -1;
+    this.ctx.scene.cameras.main.setScroll(0, 0);
+  }
+
+  #syncPulse(p: Pulse): void {
+    const t = p.ms / p.durationMs;
+    const r = p.grow ? pulseRadius(p.radiusTiles, t) : p.radiusTiles;
+    if (r !== p.shownRadius || p.color !== p.shownColor) {
+      const tex = effectRingTexture(this.ctx.scene, r, p.color);
+      p.img.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
+      p.shownRadius = r;
+      p.shownColor = p.color;
+    }
+    p.img.setAlpha(fadeAlpha(t)).setVisible(true);
+  }
+
+  #syncFloat(f: Float): void {
+    f.img
+      .setPosition(f.x, f.y - floatRise(Math.min(f.ms, FLOAT_MS)))
+      .setAlpha(fadeAlpha(f.ms / f.durationMs))
+      .setVisible(true);
+  }
+
+  /** A ground decal at grid (x, y) that fades over `ms`. */
+  decal(x: number, y: number, tex: DecalTexture, ms: number): void {
+    const d = this.#decals[this.#nextDecal]!; // index < MAX_DECALS
+    this.#nextDecal = (this.#nextDecal + 1) % MAX_DECALS;
+    gridToScreen(x, y, this.ctx.origin, pos);
+    d.img
+      .setTexture(tex.key)
+      .setDisplayOrigin(tex.ox, tex.oy)
+      .setPosition(pos.x, pos.y)
+      .setAlpha(1)
+      .setVisible(true);
+    d.ms = 0;
+    d.durationMs = ms;
+    d.active = true;
+  }
+
+  /** Places the streak `ms / TRACER_MS` of the way from the muzzle to the target. */
+  #drawTracer(t: Tracer): void {
+    const k = Math.min(1, t.ms / TRACER_MS);
+    t.img
+      .setPosition(Math.round(t.x0 + (t.x1 - t.x0) * k), Math.round(t.y0 + (t.y1 - t.y0) * k))
+      .setVisible(true);
+  }
+
+  /** Runs the camera shake (after the abilities, so a strike landing this frame shakes now). */
+  protected updateShake(dt: number): void {
+    if (this.#shakeMs < 0) return;
+    const cam = this.ctx.scene.cameras.main;
+    const [ox, oy] = this.#shakeSmall ? leakShakeOffset(this.#shakeMs) : shakeOffset(this.#shakeMs);
+    cam.setScroll(ox, oy);
+    this.#shakeMs += dt;
+    if (this.#shakeMs >= (this.#shakeSmall ? LEAK_SHAKE_MS : SHAKE_MS)) {
+      this.#shakeMs = -1;
+      cam.setScroll(0, 0);
+    }
+  }
+}

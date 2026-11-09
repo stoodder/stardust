@@ -4,7 +4,7 @@
 // these are the screens' own strings. They show from Act I to the finale, so like the catalog copy
 // they use no exclamation points and no protected word (story/style-guide.md §§ 2, 3, 6.3, 6.4).
 import { silkText } from '../silk.ts';
-import { displayName } from '../../app/hud.ts';
+import { displayName } from '../../app/hudText.ts';
 import { ABILITIES } from '../../content/abilities/index.ts';
 import { TOWERS } from '../../content/towers/index.ts';
 import {

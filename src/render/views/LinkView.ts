@@ -72,6 +72,8 @@ export class LinkView {
   readonly #live = new Map<string, Tether>();
   /** Released sprites, reused before new ones are made. */
   readonly #free: Phaser.GameObjects.Sprite[] = [];
+  /** The live tethers in an array too, so `update` walks them with an index (no iterator). */
+  readonly #list: Tether[] = [];
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
@@ -112,15 +114,19 @@ export class LinkView {
       s.play(sprites.anim(TETHER, anim));
     }
     s.setDisplayOrigin(anchor.x, anchor.y);
-    this.#live.set(k, { sprite: s, at: performance.now() });
+    const t: Tether = { sprite: s, at: performance.now() };
+    this.#live.set(k, t);
+    this.#list.push(t);
   }
 
   /** Pulses every tether (once per rendered frame). */
   update(): void {
-    if (this.#live.size === 0) return;
+    const list = this.#list;
+    if (list.length === 0) return;
     const now = performance.now();
     const reduced = this.#reducedMotion();
-    for (const t of this.#live.values()) {
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i]!; // i < length
       const a = tetherAlpha(now - t.at, now, reduced);
       if (t.sprite.alpha !== a) t.sprite.setAlpha(a);
     }
@@ -133,15 +139,18 @@ export class LinkView {
     if (t === undefined) return;
     t.sprite.stop().setVisible(false);
     this.#live.delete(k);
+    const i = this.#list.indexOf(t);
+    if (i >= 0) this.#list.splice(i, 1);
     this.#free.push(t.sprite);
   }
 
   /** Removes every tether (the scene is shutting down). */
   reset(): void {
-    for (const t of this.#live.values()) {
+    for (const t of this.#list) {
       t.sprite.stop().setVisible(false);
       this.#free.push(t.sprite);
     }
     this.#live.clear();
+    this.#list.length = 0;
   }
 }
