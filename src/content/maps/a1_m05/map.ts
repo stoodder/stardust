@@ -5,7 +5,8 @@
 // merged road drops three tiles south to the core. The banner line (party bunting) hangs across the
 // merged road just inside the gate, two-thirds of the way down; the party tent and the confetti
 // cannon stand by the core, Bricks keeps his post beside the gate, and the Peeker's rock is on the
-// warren track.
+// warren track. The east zigzag's pockets carry no pads: the Quiet Wave walks in down the warren
+// track, and no tower may reach its first tiles ([quiet-wave-reach], D097).
 import { defineMapLayout } from '../../define.ts';
 
 export const map = defineMapLayout({
@@ -59,7 +60,8 @@ export const map = defineMapLayout({
     },
   ],
   // The Puffwings fly straight down the middle, between the two roads, over the gate to the core.
-  // In the Spring Surge one loops round the east edge instead (`sky_east`), wide of the gate.
+  // A lone one loops round the east edge instead (`sky_east`), wide of the gate: in W6, where the
+  // lane first shows, and again in the Spring Surge.
   // prettier-ignore
   airLanes: [
     { id: 'sky', points: [[6, 0], [6, 9]] },

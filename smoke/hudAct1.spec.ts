@@ -1,8 +1,9 @@
 // T312c: the Act I HUD. On the dev sky range (`?map=dev_sky`): the wave preview's NEW tags and the
-// callsign plate, Gerald making Hold (all) pulse with its hint until it's used, and QUILL's Time
-// Dilation cast from its slot with one press. On the dev market (`?map=dev_market`, dev_range with
-// Zibzab): Clearance Sale's prices on the build slots and the tower panel, its tag, and its charges
-// and wave cooldown on the slot. Screenshots in test-results/screens/hud-act1/ (look at them).
+// callsign plate, Gerald's MAIL row (R9), Gerald making Hold (all) pulse with its hint until it's
+// used, and QUILL's Time Dilation cast from its slot with one press. On the dev market
+// (`?map=dev_market`, dev_range with Zibzab): Clearance Sale's prices on the build slots and the
+// tower panel, its tag, and its charges and wave cooldown on the slot. Screenshots in
+// test-results/screens/hud-act1/ (look at them).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -42,8 +43,12 @@ test('hud act1: NEW tags, the plate, the Gerald pulse, and Time Dilation on a pr
   await open(page, 'dev_sky');
   // No save: every type in W1 is new to this player, and the plate falls back to Sprout.
   const preview = page.getByRole('list', { name: 'Next: wave 1' });
-  await expect(preview.locator('.hud-preview-group.new')).toHaveCount(3);
-  await expect(preview.getByLabel(/^1 Gerald, new/)).toBeVisible();
+  // Gerald is the mail, not a pest (R9): MAIL with the hold-fire glyph, never NEW or AIR.
+  await expect(preview.locator('.hud-preview-group.new')).toHaveCount(2);
+  const gerald = preview.getByLabel(/^1 Gerald, the mail: hold fire$/);
+  await expect(gerald).toBeVisible();
+  await expect(gerald.locator('.hud-mail')).toHaveText(/Mail/i);
+  await expect(gerald.locator('.hud-air')).toHaveCount(0);
   await expect(page.getByTestId('callsign-plate')).toHaveText(/JPT-1 · Sprout/i);
   await page.mouse.move(0, 0);
   await shot(page, 'hud-act1', 1, 'new-tags-plate');

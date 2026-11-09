@@ -1,9 +1,11 @@
 // A1M5's tuning is robust where it matters (T304g). As tuned, par wins at 17/21 (81.0%, below
 // A1M4's 85) on every seed: its only leaks are W7's second warren Hauler (3), which its Mk I strike
-// leaves to the gate, and W8's lone Puffwing round the east edge (1). Orbital Strike Mk II and
+// leaves to the gate, and W6's lone Puffwing round the east edge (1), the lane's first showing (par
+// covers W8's with a Skyhook). Orbital Strike Mk II and
 // Bricks's Rapport each save that Hauler (T228), the Matriarch is driven off before the banner line
 // (Party Pooper Prevention), and the Quiet Wave is free to spare: holding fire through it costs Old
-// Thrum's 2 integrity and nothing else, and sets `spared_quiet_wave`. With W5's Spires groups, W7's
+// Thrum's 2 integrity and nothing else, and sets `spared_quiet_wave` (holding fire only after she
+// falls doesn't). Par without its Cluster spec stays gradual. With W5's Spires groups, W7's
 // and W8's warren convoys, W4's and W7's Bunchlings, or W8's Chonks shifted ±0.2 s, every harness
 // verdict holds and par stays at 81.0 (T304g also checked W5's warren Hauler, W6's flocks, and
 // W7–W8's Zoomers; trimmed here for the gate's time). The waves and builds are documented in

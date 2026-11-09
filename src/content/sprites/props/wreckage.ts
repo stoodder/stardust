@@ -157,7 +157,9 @@ function cart(g: CharGrid): void {
   // The open bed, dark inside, with the last heads still in it.
   stamp(g, 15, TOP, ['.KKKK.', 'KKKKKK', 'KHGKKK', '.KKKK.']);
   // The wheel in the air, buckled: a dark tyre with a bite out of it round a steel hub.
-  disc(g, 9, TOP - 4, 3, (d, x, y) => (x > 9 && y < TOP - 4 ? '.' : d > 2 ? 'K' : d > 1 ? 'U' : 'S'));
+  disc(g, 9, TOP - 4, 3, (d, x, y) =>
+    x > 9 && y < TOP - 4 ? '.' : d > 2 ? 'K' : d > 1 ? 'U' : 'S',
+  );
   plot(g, 9, TOP + 0, 'U');
   // The box split along its side, and sooted.
   crack(g, [

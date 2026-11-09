@@ -64,7 +64,11 @@ const spareRuns = (spare: number, par: number): Record<string, HeadlessResult> =
  * A won holdFireWhile:quiet_wave run on the fixture's Quiet Wave (Old Thrum and four younglings,
  * #16a): `leaked` of the four younglings leaked, and Thrum too unless `thrumLeaked` is false.
  */
-function heldRun(integrity: number, leaked: number, thrumLeaked = true): Record<string, HeadlessResult> {
+function heldRun(
+  integrity: number,
+  leaked: number,
+  thrumLeaked = true,
+): Record<string, HeadlessResult> {
   const r = fakeResult('won', integrity);
   r.stats.tagSpawned.quiet_wave = 5;
   r.stats.tagLeaked.quiet_wave = leaked + (thrumLeaked ? 1 : 0);

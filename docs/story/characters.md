@@ -158,7 +158,7 @@ Sample choice sets:
 - "Smiling is mandatory! (Kidding! It's in your contract, though.)"
 - "RECORD QUARTER! Top five percent, Four-Forty-Seven! I didn't check. I don't have to. I believe in you!"
 - "Auditor Prim, Four-Forty-Seven is the best technician on this rock. Dock their pay and you'll have to dock mine."
-- "Q2 pest losses down 38%! Lettuce losses: Accounting is still working on that number!"
+- "Q2 pest losses down 38%! Lettuce lost to pests: 40%! Insurance covers pests, so both numbers are super!"
 
 **Act II**
 - "Reclamation is a sustainability initiative, Four-Forty-Seven! Nothing on Tumble IV goes to waste. Isn't that beautiful?"
@@ -194,7 +194,7 @@ Sample choice sets:
 - "Your grid says 'per policy' like I say 'price first.' Difference is, I always tell you the price."
 - "Price first: party hats, two stardust. Honestly, one. The other one is the party."
 - "You want to know where stardust comes from? Price first: you won't like it, and you can't return it. Still asking?"
-- (if asked) "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the barrel upgrade?"
+- (if asked) "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the Rivet tune-up?"
 
 **Act II**
 - "You asked. Good. Stardust is the dead, Technician. Everyone in the trade knows. Nobody in the trade says."
@@ -324,7 +324,7 @@ Sample choice sets:
 - "Pro tip: Brood Haulers. Big bounty, slow, never shoot back. I hold the record. 'Most Haulers, Before Lunch.'"
 - "New record, by the way. 'Most Records Set, Terraces Division.' I made the division."
 - "Audited, huh? I hold that record. 'Fewest Blinks Under Audit.' Prim didn't count them. I did."
-- "Rematch. Next quarter. I'm inventing a category."
+- "Rematch next quarter, Sprout. I'm inventing a category. I've already won it."
 
 **Act II**
 - "Promoted! Reclamation Lead. Big vats, great benefits. Smells like burnt sugar, honestly. You get used to it."

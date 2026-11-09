@@ -337,7 +337,7 @@ Flags are declared in `content/dialogue/flags.ts`. **§6.2 is the canonical flag
 
 | Choice | Where and UI | Options (≤ 60 chars) | Sets | Feedback |
 |---|---|---|---|---|
-| **C1** The Quiet Wave | A1M5 W10. No UI, no prompt; Hold Fire is the only tool | (clear it, or hold fire) | `spared_quiet_wave` if ≥ 75% of the `quiet_wave` group leaks | None in A1M5 beyond Bricks's line, the memo paragraph, and the results stamp. Delayed echo in A3M1 if spared ("Old Thrum remembered."); none if cleared |
+| **C1** The Quiet Wave | A1M5 W10. No UI, no prompt; Hold Fire is the only tool | (clear it, or hold fire) | `spared_quiet_wave` if Old Thrum leaks and ≥ 75% of the younglings do | None in A1M5 beyond Bricks's line, the memo paragraph, and the results stamp. Delayed echo in A3M1 if spared ("Old Thrum remembered."); none if cleared |
 | **C2** Zibzab's Price | A2M4 debrief, after the Q3 Bonus lands on the results screen. Two offers, price first, for the whole bank | "Sell it. Market price." / "Take it to them." | `stardust_choice` = `sold` / `returned` (`none` if the bank is 0) | None |
 | **C3** Which door | A3M3 briefing. Bricks: "Your call, Thorn. Which door do I hold?" | "The convoy. Goldie's people." / "The warren. Pebble's people." | `door_choice` = `convoy` / `warren` | "Goldie will remember that." / "The warren will remember that." |
 | **C4** QUILL's directives | A3M4 debrief, after the mail scene | "Purge them. All of them." / "Keep them. Stay yourself." / "Write your own." | `quill_choice` = `purge` / `keep` / `rewrite` | "QUILL will remember that." |

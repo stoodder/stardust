@@ -27,9 +27,14 @@ const NO_TAGS: Readonly<Record<WaveTag, number>> = {
   medal_exempt: 0,
 };
 
-/** The run's stats: nothing counted, but the Quiet Wave's spawns and leaks (C1). */
+/**
+ * The run's stats: nothing counted, but the Quiet Wave's spawns and leaks (C1). Its spawns are Old
+ * Thrum and younglings for the rest; a leak counts Thrum first, so `leaked` > 0 means she lived.
+ */
 function statsOf(f: ResultsFixture): FlagRuleStats {
   const quiet = f.quietWave ?? { spawned: 0, leaked: 0 };
+  const young = Math.max(0, quiet.spawned - 1);
+  const youngLeaked = Math.min(young, Math.max(0, quiet.leaked - 1));
   return {
     holdFireUses: 0,
     holdFireTicks: 0,
@@ -37,9 +42,13 @@ function statsOf(f: ResultsFixture): FlagRuleStats {
     towersBuilt: 0,
     creditsSpent: 0,
     abilityUses: 0,
-    tagSpawned: { ...NO_TAGS, quiet_wave: quiet.spawned },
-    tagLeaked: { ...NO_TAGS, quiet_wave: quiet.leaked },
-    tagKilled: { ...NO_TAGS, quiet_wave: quiet.spawned - quiet.leaked },
+    tagSpawned: { ...NO_TAGS, quiet_wave: quiet.spawned, youngling: young },
+    tagLeaked: { ...NO_TAGS, quiet_wave: quiet.leaked, youngling: youngLeaked },
+    tagKilled: {
+      ...NO_TAGS,
+      quiet_wave: quiet.spawned - quiet.leaked,
+      youngling: young - youngLeaked,
+    },
   };
 }
 

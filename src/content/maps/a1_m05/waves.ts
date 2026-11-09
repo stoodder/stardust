@@ -1,6 +1,6 @@
 // A1M5 waves: docs/story/campaign/act1.md § A1M5, Wave data. Routes: `spires` (the west road),
 // `warren` (the north-east track, whose spawn opens at W3), `sky` (the air lane down the middle),
-// and `sky_east` (W8's lone Puffwing round the east edge). Countdowns are the Act I default (25 s)
+// and `sky_east` (a lone Puffwing round the east edge in W6 and W8). Countdowns are the Act I default (25 s)
 // except W10's, which starts once the boss fight is over. Groups without an `intervalSec` use the enemy's
 // default spacing (Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder
 // 2.0 s, Digger 1.0 s, Puffwing 0.6 s).
@@ -141,7 +141,10 @@ export const waves = defineWaves([
     countdownSec: QUIET_WAVE_COUNTDOWN_SEC,
     groups: [
       g('elder', 1, 'warren', QUIET_WAVE_DELAY_SEC, undefined, ['quiet_wave']),
-      g('nibbler', YOUNGLINGS, 'warren', QUIET_WAVE_DELAY_SEC + 0.6, 0.8, ['quiet_wave', 'youngling']),
+      g('nibbler', YOUNGLINGS, 'warren', QUIET_WAVE_DELAY_SEC + 0.6, 0.8, [
+        'quiet_wave',
+        'youngling',
+      ]),
     ],
   },
 ]);

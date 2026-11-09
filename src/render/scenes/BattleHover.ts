@@ -244,4 +244,3 @@ export class BattleHover {
     fx.setSegmentAim(this.#previewTiles, n);
   }
 }
-

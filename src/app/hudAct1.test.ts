@@ -163,11 +163,11 @@ describe('the wave preview (core-loop §2.2)', () => {
     const first = wavePreview(sky.map, 0)!; // W1 is next
     expect(first.groups.map((g) => [g.enemy, g.isNew])).toEqual([
       ['nibbler', true],
-      ['gerald', true],
+      ['gerald', false], // the mail, never NEW (R9)
       ['puffwing', true],
     ]);
     const met = wavePreview(sky.map, 0, new Set(['nibbler']))!;
-    expect(met.groups.map((g) => g.isNew)).toEqual([false, true, true]);
+    expect(met.groups.map((g) => g.isNew)).toEqual([false, false, true]);
     // W2 brings Nibblers and Puffwings again: W1 showed them.
     expect(wavePreview(sky.map, 1)!.groups.every((g) => !g.isNew)).toBe(true);
   });

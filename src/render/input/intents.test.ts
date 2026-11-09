@@ -88,7 +88,10 @@ describe('hoverLook', () => {
     const wreck: TileFacts = { ...path, groundPath: false, wreckage: 'wreckage' };
     expect(hoverLook(wreck, null, false)).toMatchObject({ highlight: 'salvage', salvage: true });
     // Armed: "Clear it first" stays the answer, so the hover reads invalid with no label.
-    expect(hoverLook(wreck, 'rivet', false)).toMatchObject({ highlight: 'invalid', salvage: false });
+    expect(hoverLook(wreck, 'rivet', false)).toMatchObject({
+      highlight: 'invalid',
+      salvage: false,
+    });
     // Already queued or being cleared: a plain hover, no label (a click says the drone's on it).
     for (const status of ['queued', 'clearing'] as const) {
       expect(hoverLook({ ...wreck, wreckage: status }, null, false)).toMatchObject({

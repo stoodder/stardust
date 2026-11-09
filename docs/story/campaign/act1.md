@@ -16,7 +16,14 @@ The five Act I maps, A1M1–A1M5, during the Long Afternoon. The campaign overvi
 | A1M4 | The auditor measuring the road ("6.2 meters." Prim: "6.1."); "contractually obligated... not to land one. That's a loophole!" | The A2M6 loophole confession; the Morale Module is Directive 2 (A3M2) |
 | A1M5 | "Why did the pest cross the perimeter? It didn't." | The Quiet Wave, the same day, if you let them cross |
 
-**The curve, and the R&D pick, across Act I.** Par's margins fall 95 → 100 → 90 → 85 → 81.0 (A1M2 sits at 100 by its `marginBand`, D059). Par leaks in W7 on A1M1, nowhere on A1M2, in W4 on A1M3 (Gerald's second pass), in W9 on A1M4, and in W7–W8 on A1M5. Story is 100 on A1M1–A1M4 and 96.8 on A1M5. At 1× par plays A1M1 in about 3.8 minutes (the tutorial), A1M2 6.4, A1M3 6.9, A1M4 7.3, and A1M5 8.7. The R&D picks stocked after A1M1 (T228; 2 Intel each) change a par result here:
+**Act I barks (shared).** Act-wide pools that fire on more than one map (the data is [`src/content/dialogue/barks/`](../../../src/content/dialogue/barks/index.ts), one file per trigger). Like every bark they play only for a speaker on the radio, QUILL or the map's companion, so each map hears its own voices: QUILL everywhere, Bricks on A1M1, A1M2, and A1M5, Zibzab on A1M4. A map's own barks below come first where they're more specific.
+- `perfect_wave` (every Act I map): QUILL: "Perfect wave! I'd give you a sticker, but stickers are Tier 2." · Bricks: "Clean wave. Do it again, Sprout." · Zibzab: "Perfect wave! Zibzab would charge extra for that. You work cheap. Bad business."
+- `bank_nudge` (every Act I map; once a shift, a build phase from W2 on that opens with 250+ credits banked, D059): QUILL: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!"
+- `wave_cleared`, the jingle (from A1M3; A1M1 has its own first jingle): QUILL: "(humming along) Ev-er-glow! I learned the harmony. Nobody asked me to!" · Bricks: "That jingle's in my head now. If you hear humming, it isn't me." (a seed: he hums when he's nervous, and the jingle is the Leaving Song) · Bricks: "Nineteen years of that jingle. Nineteen." · Zibzab: "That jingle again. Price first: Zibzab would pay you to unplug it."
+- `new_enemy`, wherever the save first meets them: QUILL (bunchling): "Bunchlings! Pop one, get three Nibblers. Splash gets the whole bunch!" · QUILL (digger): "Diggers! They tunnel under the road and pop up further on. Very punctual!"
+- `tower_sold` (Zibzab, so A1M4, the Clean Audit map; a tease, never a verdict): Zibzab: "Selling? Careful. Prim counts write-offs. Zibzab only counts money."
+
+**The curve, and the R&D pick, across Act I.** Par's margins fall 95 → 100 → 90 → 85 → 81.0 (A1M2 sits at 100 by its `marginBand`, D059). Par leaks in W7 on A1M1, nowhere on A1M2, in W4 on A1M3 (Gerald's second pass), in W9 on A1M4, and in W6–W7 on A1M5. Story is 100 on A1M1–A1M4 and 96.8 on A1M5. At 1× par plays A1M1 in about 3.8 minutes (the tutorial), A1M2 6.4, A1M3 6.9, A1M4 7.3, and A1M5 8.6. The R&D picks stocked after A1M1 (T228; 2 Intel each) change a par result here:
 
 | Pick | A1M1 (replay) | A1M2 | A1M3 | A1M4 | A1M5 |
 |---|---|---|---|---|---|
@@ -111,7 +118,7 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
   - w05 Bricks: "Fast ones. Lay my Suppressing Fire across the road. That's what it's for."
   - w06 (Joke of the Shift) QUILL: "Time for Joke of the Shift! I'm contractually obligated to tell one. Fifty are pre-approved!" · QUILL: "Why did the lettuce cross the road? It was scheduled to. Logistics Route 4, Tuesdays. ...That's the joke." · Bricks: "It's Wednesday."
   - w07 Bricks: "If that jingle plays one more time I'm filing a grievance. With God. Cc'ing HR."
-- *Barks:* QUILL `first_leak` (once per campaign): "Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)" · QUILL `wave_cleared` (W1's clear, the first jingle): "(singing along) Ev-er-glow, Ev-er-glow!" · Bricks `wave_cleared` (a later clear, the jingle again; standalone, never an answer to QUILL): "That jingle. Every time." · QUILL `perfect_wave`: "Perfect wave! I'd give you a sticker, but stickers are Tier 2." · QUILL `bank_nudge` (once per shift, a build phase from W2 on that opens with 250+ credits banked; both Act I maps so far): "Unspent budget detected! Credits can't shoot. I checked. Turrets can!"
+- *Barks:* QUILL `first_leak` (once per campaign): "Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)" · QUILL `wave_cleared` (W1's clear, the first jingle): "(singing along) Ev-er-glow, Ev-er-glow!" · Bricks `wave_cleared` (a later clear, the jingle again; standalone, never an answer to QUILL): "That jingle. Every time." · QUILL's `perfect_wave` sticker and `bank_nudge` are act-wide (*Act I barks*, above).
 - *Debrief:* Bricks: "Not bad, Sprout." · "Don't name things on day one. You get attached." (He names one tomorrow.) · (on a loss) Bricks: "Back on the pads, Sprout. Everybody loses some lettuce on day one."
 - *Codex:* Nibbler, Zoomer, Rivet, Thumper, Tidybot, Everglow Gardens, Orbital Strike (small print: "Uplink access contingent on Q2 extraction targets").
 - *Memo after:* `memo_a1_01` *Q2 Results: Pest Losses Down 38%!* (small print: "Lettuce loss figures pending Accounting review.")
@@ -194,7 +201,7 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
   - w04 (Joke of the Shift) QUILL: "Joke of the Shift! Why did the scarecrow get Employee of the Month? He was outstanding in his field." · QUILL: "That's the joke. He's real, by the way. Terrace 2. He's been out there since 2349. I worry about him." · Bricks: "Fewer complaints than Kip."
   - w05 Kip: "Pro tip: Brood Haulers. Big bounty, slow, never shoot back. I hold the record. 'Most Haulers, Before Lunch.'"
   - w07 Bricks: "Four hundred and twelve days to pension. Then it's me, a hammock, and a planet with zero bugs on it."
-- *Barks:* Bricks `enemy_killed` hauler: "Mortars on the big ones. Rivets bounce off that hide till tier three." · QUILL `enemy_killed` hauler: "Sack ruptured! Glitter everywhere! Tidybots are on it!" · QUILL `enemy_leaked` hauler (the first Hauler through the gate): "A Hauler got out, sack and all! It looked... relieved? Logging it." · QUILL `bank_nudge`: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!" · Bricks `tower_sold` (tagged): "You sold Denise. ...Fair. She'd have done the same."
+- *Barks:* Bricks `enemy_killed` hauler: "Mortars on the big ones. Rivets bounce off that hide till tier three." · QUILL `enemy_killed` hauler: "Sack ruptured! Glitter everywhere! Tidybots are on it!" · QUILL `enemy_leaked` hauler (the first Hauler through the gate): "A Hauler got out, sack and all! It looked... relieved? Logging it." · QUILL's `bank_nudge` (act-wide) · Bricks `tower_sold` (tagged): "You sold Denise. ...Fair. She'd have done the same."
 - *Debrief:* Kip: "Nice wave, Sprout! For a two." · Kip: "New record, by the way. 'Most Records Set, Terraces Division.' I made the division." · (if `arrival_reason = bonus`) Kip: "Signing bonus? Me too. Spent it." · (on a loss) Bricks: "Reset and go again, Sprout. The Haulers aren't going anywhere. Neither am I." · The results screen pays Stardust for the first time.
 - *Codex:* Chonk, Brood Hauler (original, [style-guide.md §6.2](../style-guide.md#62-codex-entries)), Frostline Sprinkler, Pest Bounty Board, Stardust ("Everglow's premium mineral! Responsibly sourced!"), Rig 3, the Terrace 2 scarecrow ("Employee of the Month, 144 months running").
 - *Memo after:* `memo_a1_02` *Introducing the Pest Bounty Board!* (small print: "Bounties funded by Reclamation Facility 2, a sustainability success story!")
@@ -288,20 +295,23 @@ Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par d
 **Story delivery.**
 - *Briefing:* QUILL: "Today's route includes Gerald. Gerald is the mail. Gerald has right of way."
 - *Radio:*
+  - Shift start (`tower_issued` skyhook: the first battle the save brings the newly issued Skyhook into) QUILL: "New hardware! The Skyhook shoots down flyers. It ships at wave 3. Build it under the dotted air lane!"
   - w02 QUILL: "Rerouting Gerald requires Form 88-B. Form 88-B must be delivered by mail. I've asked Gerald." · QUILL (on the wreckage): "Gerald's colleagues. Gerald doesn't like to talk about it."
+  - w03 (the per-turret Hold Fire teach, before Gerald's second pass) Bricks: "Next pass, Sprout: hold fire on your Rivets and Skyhooks. Just those. Mortars can't reach Gerald. Let 'em work."
   - w04 (Joke of the Shift, with the optional **Who's there?** button) QUILL: "Joke of the Shift! It's a knock-knock. Your line is 'Who's there?' There's a button. Knock knock."
     - (pressed) QUILL: "Lettuce. ...Now you say 'Lettuce who.' I'll do it. Lettuce who? Lettuce in, it's cold out here!"
     - (ignored) QUILL: "No answer. I'll log it as 'nobody home.' ...That's also a joke! Two for one."
     - Bricks: "It's a dome. It's always twenty-two degrees."
+  - w05 (the Time Dilation prompt, before the flock) QUILL: "Flock incoming: ten Puffwings! That's a lot of fluff." · QUILL: "Cast my Time Dilation as they reach your Skyhook. It slows pests, not turrets!"
   - w06 Zibzab (arrival): "Price first: forty stardust. Then the product: a very good gun. Zibzab does not lie. Lying is bad for repeat business."
   - w07 Zibzab: "No refunds, no regrets! It's on the shell. Right there. Next to the other thing I won't refund."
   - w08 Bricks (after Gerald's pass 3): "Pension form. Rejected. 'Missing signature.' I signed it. Twice. In pen."
 - *Barks:* QUILL (Gerald hit): "Do NOT shoot Gerald. Gerald is the mail." / "Hold Fire, please, Technician. He's doing his best." · Gerald (status text, after a hit): "DELIVERY: ATTEMPTED. RECIPIENT: ARMED." · QUILL `hold_fire_used`: "Thank you! Gerald thanks you. Gerald can't talk." · QUILL `new_enemy` puffwing: "Flying pests! They're fluffy. Don't let that stop you!"
-- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m03/`](../../../src/content/dialogue/a1/a1_m03/scenes.ts)): the briefing is `a1_m03_brief`; QUILL's wreckage line is w02's second line (the salvage-drone prompt wave); the knock-knock's **Who's there?** button plays `a1_m03_cue_knock_answer`, and ignored, w04 runs on to QUILL's *nobody home*, Bricks's fact-check closing both; Bricks's form line is w08, the countdown after Gerald's third pass. QUILL's two Gerald-hit lines are a `neutral_hit` pool, one a hit. Gerald's status text has no presentation yet: he is never on the radio.
+- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m03/`](../../../src/content/dialogue/a1/a1_m03/scenes.ts)): the briefing is `a1_m03_brief`; the Skyhook's line is `a1_m03_cue_issued_skyhook`, played as the briefing closes (D061's issued-tower slot); QUILL's wreckage line is w02's second line (the salvage-drone prompt wave); the knock-knock's **Who's there?** button plays `a1_m03_cue_knock_answer`, and ignored, w04 runs on to QUILL's *nobody home*, Bricks's fact-check closing both; Bricks's per-turret teach is w03, a countdown ahead of the pass it's for (the HUD's Gerald hint names the keys on that pass); Bricks's form line is w08, the countdown after Gerald's third pass. QUILL's two Gerald-hit lines are a `neutral_hit` pool, one a hit. Gerald's status text has no presentation yet: he is never on the radio.
 - *Base:* the shop opens, and with it the Zapcoil sample, given the moment it opens ([progression.md §4.1](../../design/progression.md#41-vrell-tower-licenses)).
   - **Arrival** (`a1_m03_base_arrival`; the first base visit with the shop open lands on the Shop tab and plays it): Zibzab: "Price first: your next visit. First one's on me. Zibzab is patient."
   - **The open question** (`a1_m03_base_stardust`; a shop row from A1M3 until A2M4, [progression.md §4](../../design/progression.md#4-zibzabs-shop-stardust)). You: "Where does stardust come from?" Zibzab: "You want to know where stardust comes from? Price first: you won't like it, and you can't return it. Still asking?"
-    - "Still asking." (sets `asked_zibzab_early`; the row leaves the shelf) Zibzab answers plainly: "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the barrel upgrade?"
+    - "Still asking." (sets `asked_zibzab_early`; the row leaves the shelf) Zibzab answers plainly: "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the Rivet tune-up?" (true: the tune-up's first rank is 40)
     - "Not today." The scene ends, and the question stays on the shelf.
 - *Codex:* Puffwing, Skyhook, Gerald ("Do not target. Do not reroute without Form 88-B."), Form 88-B, Zibzab, Vrell, Hold Fire.
 - *Memo after:* `memo_a1_03` *Mandatory Fun Friday Is Back! (Attendance Optional) (Required)* (small print: "Mail-drone incidents must be reported on Form 88-B.")
@@ -396,13 +406,13 @@ Totals count spawns; each Bunchling adds three Nibblers when it dies.
 - *Radio:*
   - w03 (Joke of the Shift) QUILL: "Joke of the Shift, for the audit! Why did the auditor cross the road? To measure it. 6.2 meters. ...That's the joke." · Prim: "6.1." · QUILL: "I'm contractually obligated to tell a joke every shift. Not to land one. That's a loophole!"
   - w04 Sterling: "Auditor Prim, Four-Forty-Seven is the best technician on this rock. Dock {their} pay and you'll have to dock mine."
-  - w05 Zibzab: "Your grid says 'per policy' like I say 'price first.' Difference is, I always tell you the price."
+  - w05 QUILL: "Suggested build site: beside the billboards. They're very valuable! (Per policy.)" · Zibzab: "Your grid says 'per policy' like I say 'price first.' Difference is, I always tell you the price." (the tell, then someone noticing it)
   - w06 Goldie: "Memo says pests ate forty percent of the crop. Weird! I count every head. They walked right past Duchess."
   - w07 Prim: "Observation: Technician has blinked 1,140 times this shift. Recommended maximum: 900. Noted."
   - w08 Sterling: "Tier approvals are on me, Four-Forty-Seven. My signature, my risk!"
 - *Barks:* Zibzab `map_start`: "Clearance Sale! Everything must go. Not you. You're not for sale. Yet." · Zibzab `tower_built` (Zapcoil): "Ten percent better than new. Honestly, eight. The ten is marketing." · QUILL `new_enemy` elder: "Elder! Slow, old, and in the way. Clear it first for efficiency!"
 - *Debrief:* Sterling: "Prim filed a report. I filed it under 'recycling.' Super!" · Kip: "Audited, huh? I hold that record. 'Fewest Blinks Under Audit.' Prim didn't count them. I did." · Sterling's sign-off opens R&D Engineering (specializations). On a loss, Sterling: "Prim's report says 'room for growth.' Growth is our whole brand, Four-Forty-Seven! Go again!"
-- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m04/`](../../../src/content/dialogue/a1/a1_m04/scenes.ts)): the briefing is `a1_m04_brief`; the radio lines are `a1_m04_w03`–`_w08`, one per countdown, the Joke of the Shift's three lines in one scene with Prim's fact-check in the middle; the debrief is `a1_m04_debrief`. The barks are `zibzab_map_start_a1_04`, `zibzab_tower_built_zapcoil_a1_04`, and `quill_new_enemy_elder_a1_04`.
+- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m04/`](../../../src/content/dialogue/a1/a1_m04/scenes.ts)): the briefing is `a1_m04_brief`; the radio lines are `a1_m04_w03`–`_w08`, one per countdown, the Joke of the Shift's three lines in one scene with Prim's fact-check in the middle, and w05's policy pick and Zibzab's doubt in one; the debrief is `a1_m04_debrief`. The barks are `zibzab_map_start_a1_04`, `zibzab_tower_built_zapcoil_a1_04`, and `quill_new_enemy_elder_a1_04`, plus the act-wide pools (the Bunchling's first bark and Zibzab's on a sale among them).
 - *Codex:* Elder (original, citing "Survey 2346, Okonkwo"), Bunchling, Zapcoil, Admin Plaza, Evie, Compliance Officer Prim, the Smile Audit.
 - *Memo after:* `memo_a1_04` *Buffer Populations and You: A Quick FAQ!* (body about "wildlife management" that says nothing; small print: "Tier approvals contingent on Q3 extraction targets.")
 
@@ -460,22 +470,22 @@ Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.
 
 **Waves.** 1 Nibblers (west) · 2 Diggers ×3 [T: burrowing, "not a hard requirement"; the wave is `teach: true`, because Burrowing is a soft trait here] · 3 east spawn opens: Zoomers + Nibblers [T: second spawn] · 4 Bunchlings with a few Diggers, both roads [X: splash; the Diggers stay ≤ 15% of the wave's threat] · 5 Elder + Haulers [X: armor] · 6 Puffwings + Chonks [X: air] · 7 mixed, both roads [X] · 8 the Spring Surge (largest Act I wave) · 9 **Matriarch Chitterbloom** (west road; sneezes Nibblers; burrows and surfaces with a Bunchling; panics and huddles her young; `driveOff` at 0%) · 10 **the Quiet Wave:** Old Thrum leading six younglings, east road, no NEW badge, no prompt ([enemies.md §5.1](../../design/enemies.md#51-skitterkin-body-organic)).
 
-**Layout data** (the data is [`src/content/maps/a1_m05/map.ts`](../../../src/content/maps/a1_m05/map.ts)). The **Spires road** (`spires`) spawns at (1,0), zigzags down the west half (south to row 2, east to column 4, south to row 4, west to column 1, south to row 6) and runs east along row 6 into the **north gate** (6,6); the **warren track** (`warren`) spawns at (12,0) and mirrors it down the east half (west along row 2 past the Peeker's rock, south, east along row 4, south) and runs west along row 6 into the gate. The merged road drops south from the gate to the core (6,9). Spires road 21 tiles (about 21 s for a Nibbler, 30 s for a Hauler, 52 s for the Matriarch), warren track 22. Air lanes: `sky` straight down the middle from (6,0) to the core, between the roads and over the gate; `sky_east` round the east edge ((13,0) down to (13,8), then to the core), flown only by W8's lone Puffwing. Buildable: the **Spires high ground** (3,3) inside the west zigzag (it covers the whole Spires road) and the **gate high ground** (7,5) north-east of the gate (both roads' runs into the gate and the merged road); the **power node** (5,5) north-west of the gate; pads (6,5) above the gate, (8,7) south-east of it, (3,5) and (4,5) in the west zigzag's lower pocket (the second beside the node), (2,3) in its upper pocket, and (10,3), (11,3), (10,5), (11,5) in the east zigzag's pockets. Markers: `bricks_post` (5,7) beside the gate, `banner_line` (7,7) across the merged road, `party_tent` (8,9) and `confetti_cannon` (4,8) by the core, `peeker` (8,3) on the warren track.
+**Layout data** (the data is [`src/content/maps/a1_m05/map.ts`](../../../src/content/maps/a1_m05/map.ts)). The **Spires road** (`spires`) spawns at (1,0), zigzags down the west half (south to row 2, east to column 4, south to row 4, west to column 1, south to row 6) and runs east along row 6 into the **north gate** (6,6); the **warren track** (`warren`) spawns at (12,0) and mirrors it down the east half (west along row 2 past the Peeker's rock, south, east along row 4, south) and runs west along row 6 into the gate. The merged road drops south from the gate to the core (6,9). Spires road 21 tiles (about 21 s for a Nibbler, 30 s for a Hauler, 52 s for the Matriarch), warren track 22. Air lanes: `sky` straight down the middle from (6,0) to the core, between the roads and over the gate; `sky_east` round the east edge ((13,0) down to (13,8), then to the core), flown only by a lone Puffwing in W6 and another in W8. Buildable: the **Spires high ground** (3,3) inside the west zigzag (it covers the whole Spires road) and the **gate high ground** (7,5) north-east of the gate (both roads' runs into the gate and the merged road); the **power node** (5,5) north-west of the gate; pads (6,5) above the gate, (8,7) south-east of it, (3,5) and (4,5) in the west zigzag's lower pocket (the second beside the node), (2,3) in its upper pocket, (8,5) north of row 6's east run beside the gate high ground, and (10,7), (11,7), (12,7) south of it, under `sky_east`'s last leg. The east zigzag's pockets have no pads: the Quiet Wave walks in down the warren track, and its first tiles stay out of every tower's reach (`[quiet-wave-reach]`, D097: no tile's best tier-3 range, with the high-ground bonus and half a tile of slack, reaches them), so the player sees it before anything can fire. Markers: `bricks_post` (5,7) beside the gate, `banner_line` (7,7) across the merged road, `party_tent` (8,9) and `confetti_cannon` (4,8) by the core, `peeker` (8,3) on the warren track.
 
 ```
 .S..........S.
 .#..........#.
 .####....####.
-..o^#....#oo..
+..o^#....#....
 .####....####.
-.#.oo+o^..oo#.
+.#.oo+o^o...#.
 .############.
-......#.o.....
+......#.o.ooo.
 ......#.......
 ......C.......
 ```
 
-**Wave data** (the data is [`src/content/maps/a1_m05/waves.ts`](../../../src/content/maps/a1_m05/waves.ts); every countdown is Act I's 25 s except W10's 60 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s, Digger 1.0 s, Puffwing 0.6 s; groups take the Spires road unless marked *warren* or flown on a lane). **W2–W8 open 6 s into the wave** (`OPEN`): the last wave's bounties land before first contact, so a player who calls waves early isn't buying turrets mid-fight, and a player who doesn't isn't left watching an empty road (6 s, not 10, keeps the shift near 8.7 minutes at 1×, inside Act I's 6–9). A **convoy** is two Haulers 1.5 s apart, their Elder 1.2 s behind the second (both walk in its huddle, at its pace, regenerating), then Nibblers 0.3 s apart. W5's and W7's armor comes down both roads; **W7's warren convoy and W8's** are where par's casts and the R&D picks decide a Hauler (below). The **Matriarch comes up the Spires road 20 s into W9**: the ground rumbles first, and a player who calls W9 early still meets her after W8's tail has cleared the gate. W10's 60 s countdown starts as she spawns (waves overlap), so the Quiet Wave walks in after she has been driven off, and a held breath after.
+**Wave data** (the data is [`src/content/maps/a1_m05/waves.ts`](../../../src/content/maps/a1_m05/waves.ts); every countdown is Act I's 25 s except W10's (below); default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s, Digger 1.0 s, Puffwing 0.6 s; groups take the Spires road unless marked *warren* or flown on a lane). **W2–W8 open 6 s into the wave** (`OPEN`): the last wave's bounties land before first contact, so a player who calls waves early isn't buying turrets mid-fight, and a player who doesn't isn't left watching an empty road (6 s, not 10, keeps the shift near 8.6 minutes at 1×, inside Act I's 6–9). A **convoy** is two Haulers 1.5 s apart, their Elder 1.2 s behind the second (both walk in its huddle, at its pace, regenerating), then Nibblers 0.3 s apart. W5's and W7's armor comes down both roads; **W7's warren convoy and W8's** are where par's casts and the R&D picks decide a Hauler (below). The **Matriarch comes up the Spires road 20 s into W9**: the ground rumbles first, and a player who calls W9 early still meets her after W8's tail has cleared the gate. **W10 waits for her** (`countdownAfter: 'bossEnded'`, D097): its 8 s countdown starts only once she has been driven off, and the wave can't be called early (the sim refuses `callWave` on a quiet wave, and the HUD hides Call). As it starts, Bricks's cue plays and he lowers his cannon (1.5 s in); Old Thrum and her younglings walk in 4 s after the start, down the warren track, whose first tiles no tower can reach. The choice is seen before it's made.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
@@ -484,28 +494,28 @@ Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.
 | W3 | Zoomer ×16 @ 0.4, 6 *warren* · Nibbler ×30 @ 0.6, 10 | 46 |
 | W4 | Bunchling ×6 @ 1.0, 6 · Bunchling ×6 @ 1.0, 10 *warren* · Digger ×2 @ 1.5, 18 *warren* | 14 |
 | W5 | convoy at 6 (Nibbler ×8) · Hauler 16, Elder 17.2, Nibbler ×8 @ 0.3, 17.6 *warren* · Hauler ×3 @ 1.5, 26 | 24 |
-| W6 | Chonk ×6 @ 2, 6 · Puffwing ×10 @ 0.6, 12 · Puffwing ×10 @ 0.6, 26 | 26 |
+| W6 | Chonk ×6 @ 2, 6 · Puffwing ×10 @ 0.6, 12 · Puffwing ×10 @ 0.6, 26 · Puffwing ×1, 18 on `sky_east` | 27 |
 | W7 | Bunchling ×12 @ 0.8, 6 · convoy at 8 *warren* (Nibbler ×6) · Puffwing ×10 @ 0.6, 14 · Zoomer ×20 @ 0.35, 22 · Chonk ×4 @ 1.5, 24 | 55 |
 | W8 | Zoomer ×24 @ 0.3, 6 *warren* · Bunchling ×16 @ 0.6, 6 · huddle (Elder + Nibbler ×10 @ 0.3) at 20 · Chonk ×8 @ 1.5, 18 *warren* · Puffwing ×16 @ 0.5, 22 · Hauler ×2 @ 1.5, 28, Elder ×3 @ 2.0, 30.7, Nibbler ×14 @ 0.3, 31.1 *warren* · convoy at 30 (Nibbler ×8) · Digger ×3 @ 1.2, 36 *warren* · Puffwing ×1, 26 on `sky_east` | 109 |
 | W9 | Matriarch Chitterbloom, 20 | 1 |
-| W10 | Old Thrum (Elder, `quiet_wave`), 0 · Nibbler ×6 @ 0.8, 0.6 (`quiet_wave`, `youngling`) *warren* | 7 |
+| W10 | Old Thrum (Elder, `quiet_wave`), 4 · Nibbler ×6 @ 0.8, 4.6 (`quiet_wave`, `youngling`) *warren* | 7 |
 
-Totals count spawns; each Bunchling adds three Nibblers when it dies, and the Matriarch her sneezes and surfacing Bunchlings. Holding fire through all of W10 costs Old Thrum's 2 integrity and nothing else (younglings leak 0).
+Totals count spawns; each Bunchling adds three Nibblers when it dies, and the Matriarch her sneezes and surfacing Bunchlings. Holding fire through all of W10 costs Old Thrum's 2 integrity and nothing else (younglings leak 0), and a quiet-wave leak never takes the core below 1, so sparing them can never lose the map. W6's lone Puffwing on `sky_east` shows the east lane two waves before W8's.
 
 **Story delivery.**
 - *Briefing:* Sterling's party memo: "Quarterly Results party at the north gate, Four-Forty-Seven! Hats on. Pests are NOT on the guest list!" · QUILL in a party hat: "I'm wearing a hat! Don't check the budget code." · QUILL (the boss hint): "Sensors show something big under the north road. Probably a party surprise!"
 - *Radio:*
-  - w03 Bricks: "Second road's open. Watch both. You've got two eyes. Use both of 'em."
+  - w03 Bricks: "Second road's open. Watch both. Marguerite said I could only ever watch one thing. She had a point." (W1's clear has just named her turret)
   - w04 (Joke of the Shift) QUILL: "Joke of the Shift, party edition! Why did the pest cross the perimeter? It didn't. You're very good at your job!" · QUILL: "...That's the joke. It's also a compliment. I'm allowed to combine them. I checked." · Bricks: "It's a good hat, QUILL."
-  - w05 Sterling: "Q2 pest losses down 38%! Lettuce losses: Accounting is still working on that number!"
+  - w05 Sterling: "Q2 pest losses down 38%! Lettuce lost to pests: 40%! Insurance covers pests, so both numbers are super!" (the memo's 38% and Goldie's 40%, both true on paper: the lettuce-fraud seed) · Bricks: "Armor next. Don't call it early, Sprout. Haulers take a while to crack."
   - w07 Bricks: "Four hundred even. Round number. Don't like round numbers."
   - w09 (boss cue) QUILL: "That's not a surprise. That's a Matriarch. Codename: CHITTERBLOOM."
   - First `wave_cleared` (name tag) Bricks: "That one's Marguerite. Second wife. Twice the range, half the patience."
-- *Quiet Wave (cue at W10 start):* Bricks: "Clear it, Sprout." Then Bricks's ally unit **lowers his cannon** and stays lowered for the wave: a silent tell, never mentioned (allies never target `quiet_wave`, `youngling`, or `fleeing` units). · Sterling: "Let's finish strong, Four-Forty-Seven!" Then nothing. At map end, if spared: Bricks: "...Sprout." then "Yeah. Okay." If cleared: Bricks: "Good work."
+- *Quiet Wave (cue at W10 start, 8 s after the drive-off; no early call):* Bricks: "Clear it, Sprout." Then Bricks's ally unit **lowers his cannon** and stays lowered for the wave: a silent tell, never mentioned (allies never target `quiet_wave`, `youngling`, or `fleeing` units). · Sterling: "Let's finish strong, Four-Forty-Seven!" Then nothing. At map end, if spared: Bricks: "...Sprout." then "Yeah. Okay." If cleared: Bricks: "Good work."
 - *Barks:* QUILL `boss_phase` 3: "She's panicking! Panicking is ninety percent of being driven off!" · Bricks `not_firing` (W10 only, once): "...You okay, Sprout?" · QUILL `wave_cleared` (boss): "Driven off! Not processed. Is that allowed? Logging it."
 - *Full-screen scene* `a1_m05_scene_party` (≤ 20 lines; the confetti, the record counter):
   - Sterling: "RECORD QUARTER! Top five percent, Four-Forty-Seven! I didn't check. I don't have to. I believe in you!"
-  - Kip: "Rematch. Next quarter. I'm inventing a category."
+  - Kip: "Rematch next quarter, Sprout. I'm inventing a category. I've already won it."
   - Goldie: "Duchess has a party hat! It's a thimble. She's thrilled. You can tell because she's lettuce."
   - Zibzab: "Price first: party hats, two stardust. Honestly, one. The other one is the party."
   - QUILL: "Everyone's wearing a hat. This is the best day in my whole log!"
@@ -530,12 +540,12 @@ Totals count spawns; each Bunchling adds three Nibblers when it dies, and the Ma
 | W5 | Upgrade the Spires Rivet to T3 (pierce) and the gate Rivet to T2; Orbital Strike on row 6 east of the gate (9,6), 36 s in (the warren Hauler) |
 | W6 | Skyhook (6,5) above the gate; upgrade the gate Rivet to T3; Suppressing Fire at the gate (6,6), 51 s in (the Chonk column's tail) |
 | W7 | Upgrade the node's Thumper to T3; Orbital Strike at the warren track's last turn (11,6), 33 s in (the warren convoy's Elder); Suppressing Fire at the gate, 36 s in; upgrade the other Thumper to T3 and the Skyhook to T2 |
-| W8 | Cluster Thumper on the node; Orbital Strike on row 6 east of the gate, 50 s in (the warren convoy) |
+| W8 | Cluster Thumper on the node; Skyhook (11,7) under `sky_east` (W6 showed the lane); Orbital Strike on row 6 east of the gate, 50 s in (the warren convoy) |
 | W9 | Both Rivets to Strong; Thumper (3,5) in the west pocket, to T3; Orbital Strike and Suppressing Fire at the gate, 60 s in (her phase 3) |
 
-Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 174, 102 (W1–W10): it spends as it earns, and what's left at the end is what the boss and the Quiet Wave pay after its last purchase. **Par's margin comes from the late waves, by design:** W7's second warren Hauler (3), whose Elder par's strike takes but whose Hauler it misses, walks on to the gate with its HP and leaks; and W8's lone Puffwing round the east edge (1), where par has no air cover. Par wins at **17/21 (81.0%)** on every seed, below A1M4's 85. The Matriarch is driven off at the gate, before the banner line, so par earns **Party Pooper Prevention** (`parMedals`).
+Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 69, 43 (W1–W10): it spends as it earns, and what's left at the end is what the boss and the Quiet Wave pay after its last purchase. **Par's margin comes from the second half, by design:** W6's lone Puffwing round the east edge (1), where par has no air cover yet: the lane's first showing, a cheap lesson par answers with a Skyhook on (11,7) before W8's; and W7's second warren Hauler (3), whose Elder par's strike takes but whose Hauler it misses, walks on to the gate with its HP and leaks. Par wins at **17/21 (81.0%)** on every seed, below A1M4's 85. The Matriarch is driven off at the gate, before the banner line, so par earns **Party Pooper Prevention** (`parMedals`).
 
-**The R&D picks change a result** (`rndPickChanges`, T228): with **Orbital Strike Mk II** W7's strike is wide enough to take the second Hauler too; with **Bricks's Rapport** Suppressing Fire is ready at the gate as that Hauler arrives (W7's cast is due 41.4 s after W6's; Rapport has Suppressing Fire back after 42.5 s, in time for that Hauler, and without it the fire comes back after 50 s, too late). Either way par loses only the Puffwing: 20/21 (95.2%). **The casts matter** (`#abilities`): without them W8's warren convoy (three Elders keeping two Haulers at their pace) ties up the gate, and the Diggers behind it slip through.
+**The R&D picks change a result** (`rndPickChanges`, T228): with **Orbital Strike Mk II** W7's strike is wide enough to take the second Hauler too; with **Bricks's Rapport** Suppressing Fire is ready at the gate as that Hauler arrives (W7's cast is due 41.4 s after W6's; Rapport has Suppressing Fire back after 42.5 s, in time for that Hauler, and without it the fire comes back after 50 s, too late). Either way par loses only W6's Puffwing: 20/21 (95.2%). **The casts matter** (`#abilities`): without them (52.4, 66.7 on seed 2) W8's warren convoy (three Elders keeping two Haulers at their pace) ties up the gate, and the Diggers behind it slip through.
 
 **No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); each must lose by W7, `noCounterLoseByWave`, because the armor test is W5's Haulers and the air test W6's flock):
 - **no-air:** par with every Rivet and the Skyhook swapped for a Thumper: Thumpers and the Sprinkler, nothing that hits air.
@@ -544,27 +554,29 @@ Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 174, 102 (W
 
 **Alt builds** (each shares ≤ 2 towers with par and must win with ≥ 20%; Zapcoil is the only owned tower outside par, and it hits air, chains, and breaks shields): `ducks_and_chain`, Thumper (Bunker Buster) + Sprinkler + Zapcoil (the node's Thumper and the Sprinkler are Sitting Ducks, a Zapcoil beside the Sprinkler is Conductive, Zapcoils on the gate high ground and above the gate take the flocks, and a Bunker Buster on the node takes the Haulers and the Matriarch); `shell_and_chain`, Rivet + Thumper + Zapcoil (par's Rivets and Thumpers, a Zapcoil above the gate in the Skyhook's place, no Sprinkler, and a third Thumper for the Matriarch).
 
-**Story variants** (harness): par with Hold Fire (all) through W10 (`holdFireWhile: 'quiet_wave'`) wins at 15/21: all seven leak, Old Thrum's 2 integrity is the whole cost, and the run ends with `spared_quiet_wave = true` (#16a judges the band with the Quiet Wave's own designed cost given back: 81.0%). Par clearing W10 wins at 17/21 and leaves the flag false. Bricks's post never fires on the Quiet Wave (the invariant check).
+**Story variants** (harness): par with Hold Fire (all) through W10 (`holdFireWhile: 'quiet_wave'`) wins at 15/21: all seven leak, Old Thrum's 2 integrity is the whole cost, and the run ends with `spared_quiet_wave = true` (#16a judges the band with the Quiet Wave's own designed cost given back: 81.0%). Par clearing W10 wins at 17/21 and leaves the flag false. **Spared means Old Thrum lived** (D097): par that fires until she falls and only then holds fire lets most of the younglings walk home, and the flag stays false ([`src/balance/a1m5.test.ts`](../../../src/balance/a1m5.test.ts)). Bricks's post never fires on the Quiet Wave (the invariant check).
+
+**No tier 4:** par without the Cluster spec (a player who never opened Engineering; a test, not an alt build, since an alt may share only two of par's towers) wins at 17/21 too, its leaks the same as par's, so the spec is an investment, not a requirement.
 
 **Harness runs** (every seed; margin, then integrity lost per wave W1–W10):
 
 | Run | Result | Integrity lost |
 |---|---|---|
-| par | wins at **81.0** (band 80–100; 17/21), with Party Pooper Prevention | 3 in W7, 1 in W8 |
-| par with Orbital Strike Mk II | 95.2 | 1 in W8 |
-| par with Rapport: Sgt. Bricks | 95.2 | 1 in W8 |
-| par without its casts | 76.2 (71.4 on seeds 2–3) | 3 in W7, 2 in W8 |
-| par holding fire through the Quiet Wave | 71.4 (81.0 less Old Thrum's 2), `spared_quiet_wave` | 3 in W7, 1 in W8, 2 in W10 |
-| `alwaysCallEarly` | 38.1 | 6 in W5, 3 in W7, 4 in W8 |
-| no-air | loses in W7 | 20 in W6, 1 in W7 |
-| no-air, full catalog | loses in W7 | 15 in W6, 8 in W7 |
+| par | wins at **81.0** (band 80–100; 17/21), with Party Pooper Prevention | 1 in W6, 3 in W7 |
+| par with Orbital Strike Mk II | 95.2 | 1 in W6 |
+| par with Rapport: Sgt. Bricks | 95.2 | 1 in W6 |
+| par without its casts | 52.4 (66.7 on seed 2) | 1 in W6, 3 in W7, 6 in W8 (3 on seed 2) |
+| par holding fire through the Quiet Wave | 71.4 (81.0 less Old Thrum's 2), `spared_quiet_wave` | 1 in W6, 3 in W7, 2 in W10 |
+| `alwaysCallEarly` | 38.1 | 6 in W5, 1 in W6, 3 in W7, 3 in W8 |
+| no-air | loses in W6 | 21 in W6 |
+| no-air, full catalog | loses in W7 | 16 in W6, 7 in W7 |
 | no-splash | loses in W5 | 3 in W4, 18 in W5 |
 | no-splash, full catalog | loses in W7 | 22 in W5, 1 in W7 |
 | no-armor | loses in W7 | 15 in W5, 6 in W7 |
 | no-armor, full catalog | loses in W9 (the Matriarch) | 10 in W5, 3 in W7, 10 in W8 |
-| Story | 96.8, and the Challenge | 1 in W8 |
-| `ducks_and_chain` | 81.0 | 3 in W5, 1 in W8 |
-| `shell_and_chain` | 52.4 | 9 in W5, 1 in W8 |
+| Story | 96.8, and the Challenge | 1 in W6 |
+| `ducks_and_chain` | 76.2 | 3 in W5, 1 in W6, 1 in W8 |
+| `shell_and_chain` | 47.6 | 9 in W5, 1 in W6, 1 in W8 |
 | do-nothing | loses at W1 | |
 
-Par's 81.0 continues the monotonic chain under A1M4's 85. [`src/balance/a1m5.test.ts`](../../../src/balance/a1m5.test.ts) re-runs the harness with W5's Spires groups, W7's and W8's warren convoys, W4's and W7's Bunchlings, and W8's Chonks each shifted ±0.2 s: every check holds, the R&D picks' and the casts' included, and par stays at 81.0. It also checks both C1 paths: the cleared run kills all seven, the spared run lets all seven through for 2 integrity and sets the flag, and neither costs a medal.
+Par's 81.0 continues the monotonic chain under A1M4's 85. [`src/balance/a1m5.test.ts`](../../../src/balance/a1m5.test.ts) re-runs the harness with W5's Spires groups, W7's and W8's warren convoys, W4's and W7's Bunchlings, and W8's Chonks each shifted ±0.2 s: every check holds, the R&D picks' and the casts' included, and par stays at 81.0. It also checks the C1 paths: the cleared run kills all seven, the spared run lets all seven through for 2 integrity and sets the flag, holding fire only after Old Thrum falls leaves it false, and none costs a medal.

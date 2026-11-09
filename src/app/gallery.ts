@@ -109,7 +109,9 @@ function isScene(b: BakedSprite): boolean {
 
 function cardPlan(b: BakedSprite): CardPlan {
   if (isScene(b)) {
-    return { rows: [{ variant: DEFAULT_VARIANT, frames: b.frameNames, light: false, glow: false }] };
+    return {
+      rows: [{ variant: DEFAULT_VARIANT, frames: b.frameNames, light: false, glow: false }],
+    };
   }
   const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));

@@ -687,6 +687,11 @@ describe('wreckage and the salvage drone (T311b)', () => {
   });
 });
 
+/** The highest opaque row of a confetti frame. */
+function confettiTop(f: string): number {
+  return bounds(grid('fx.confetti_burst', f)).y0;
+}
+
 describe("Act I's payoff staging (D097: the stinger and the party)", () => {
   it('runs the Rig 9 feed: live, static, six frames of the wrong shape, then NO SIGNAL', () => {
     const d = def('scene.rig9_feed');
@@ -726,8 +731,7 @@ describe("Act I's payoff staging (D097: the stinger and the party)", () => {
     expect(burst).toMatchObject({ loop: false });
     expect(burst && 'frames' in burst ? burst.frames : []).toHaveLength(6);
     // The fountain rises: the highest piece climbs over the first frames.
-    const top = (f: string): number => bounds(grid('fx.confetti_burst', f)).y0;
-    expect(top('burst_2')).toBeLessThan(top('burst_0'));
+    expect(confettiTop('burst_2')).toBeLessThan(confettiTop('burst_0'));
     // Every party colour shows.
     const all = Object.keys(d.frames).map((f) => grid('fx.confetti_burst', f).join(''));
     for (const ch of ['P', 'G', 'B', 'T', 'O', 'R']) expect(all.join('')).toContain(ch);

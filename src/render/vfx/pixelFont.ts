@@ -1,8 +1,9 @@
 // The in-world 3×5 bitmap font (art-direction §9, Fonts: "in-world Phaser text uses a
 // code-generated 3×5 bitmap font defined as glyph grids"). Digits, plus, and minus for floating
-// numbers, and capitals, space, "%", and "!" for callouts and labels ("CROSSFIRE!",
-// "+25% RANGE"; D059). Pure RGBA output (no canvas), so it's unit-tested; overlayTextures.ts
-// registers the strings render draws.
+// numbers, and capitals, space, "%", "!", ":", ".", and "·" for callouts and labels ("CROSSFIRE!",
+// "+25% RANGE", "RECIPIENT: ARMED."; D059, D097). The glyph grids live in content/sprites/font3x5.ts
+// (shared with sprites that carry lettering). Pure RGBA output (no canvas), so it's unit-tested;
+// overlayTextures.ts registers the strings render draws.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { GLYPH_H, GLYPH_W, GLYPHS } from '../../content/sprites/font3x5.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';

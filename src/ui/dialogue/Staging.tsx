@@ -36,8 +36,8 @@ import type { StagingView } from './state.ts';
 const STAGE_TICK_MS = 40;
 /** The staged sprites' CSS scale (game px per sprite px): the feed and the falling confetti. */
 const SCALE = 2;
-/** The party cannon and its burst, larger: the celebration's centrepiece. */
-const CANNON_SCALE = 3;
+/** The party cannon and its burst: the same pixel scale as the feed (one pixel size per stage). */
+const CANNON_SCALE = 2;
 /** The cannon's muzzle in its baked frame (authored (14, 11), plus the outline pass's 1 px). */
 const MUZZLE = { x: 15, y: 12 };
 /** The burst's anchor in its frame: the muzzle goes here. */
