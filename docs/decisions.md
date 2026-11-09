@@ -552,3 +552,10 @@ Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star
 - **Run end** (`src/meta/runEnd.ts`, pure, in meta-runtime's order): it adds the run's kills to the lifetime Pests Processed, increments `stats.runs`, adds only newly earned medals, and records completion and the best meter. Checkpoints, objective Intel, and the story steps are TODOs for M3.
 - **Results:** a "Career total" under the counter, and a **Payroll** section listing the Stardust line, then each medal marked "NEW!" with its Intel, "On file", or "Next time!". A1M1's Stardust line reads "Training shifts are unpaid!" The copy is in style-guide §2.
 - No mid-map retry or quit exists yet, so every run ends through Results.
+
+### D047 — 2026-11-09 — T207b slot 2, Suppressing Fire in the HUD, and AllyView
+- **Ability slot 2 (E)** shows only on maps with a companion. Both slots' tooltips and cooldown wipes use the real numbers from `abilityStats` (Mk II, Rapport, Coolant). Mk II's larger strike radius is drawn as a marching dashed ring.
+- **Aiming:** only path tiles are valid. A click off the path is refused ("Can't target there") and keeps the aim. Arrow keys walk path tiles only. The segment preview uses the sim's own `segmentSpan`, so the preview is exactly the zone.
+- **VFX:** the suppressed stretch is a hazard-striped strip with tracer streaks from Bricks's muzzle and spark rings. AllyView draws Bricks idling toward his target and firing.
+- **Audio:** new ally sounds. Cluster bomblets merge into one rate-limited pop.
+- `dev_range` has Bricks at (7,2) for smoke tests.
