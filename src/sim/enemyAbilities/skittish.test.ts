@@ -26,7 +26,9 @@ function put(state: SimState, def: CompiledEnemyDef, dist: number, tags: readonl
 
 function bolts(state: SimState): number[] {
   return state.events
-    .filter((e): e is Extract<SimEvent<IdSpace>, { type: 'SkittishBolt' }> => e.type === 'SkittishBolt')
+    .filter(
+      (e): e is Extract<SimEvent<IdSpace>, { type: 'SkittishBolt' }> => e.type === 'SkittishBolt',
+    )
     .map((e) => e.uid);
 }
 

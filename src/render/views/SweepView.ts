@@ -2,11 +2,13 @@
 // at its real radius (ink under-stroke, so it reads on light ground) lies on the ground in the
 // `decal` layer, under the actors it reveals; a ring sweeps out to it when the zone opens (the ping:
 // a shape, so color is never the only signal). It holds while paused (it follows the sim zone) and
-// fades over its last second on sim ticks. A minimal readable view: T431 owns the aim polish and
-// T430a the cloak art. Allocation-free per frame.
+// fades on the stepped ladder over its last second, on sim ticks (vfx/fxTiming.ts `sweepAlpha`).
+// A minimal readable view: T431 owns the aim polish and T430a the cloak art. Allocation-free per
+// frame.
 import * as Phaser from 'phaser';
 import { TICK_HZ } from '../../shared/time.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { sweepAlpha } from '../vfx/fxTiming.ts';
 import { effectRingTexture } from '../vfx/overlayTextures.ts';
 import type { ZonePoolLike } from './FxView.ts';
 import type { TransientFx } from './TransientFx.ts';
@@ -18,9 +20,8 @@ const MAX_SWEEPS = 2;
 const SWEEP_COLOR = 'green.4';
 /** The opening ping's duration. */
 const PING_MS = 450;
-/** The ring fades over the zone's last ticks. */
+/** The ring fades (stepped) over the zone's last second. */
 const FADE_TICKS = TICK_HZ;
-const RING_ALPHA = 0.85;
 
 /** One sweep's ring and the sim zone it follows. */
 interface Sweep {
@@ -30,11 +31,6 @@ interface Sweep {
 
 /** Scratch for screen positions. */
 const pos: Vec2 = { x: 0, y: 0 };
-
-/** The ring's alpha with `ticksLeft` of its zone to go: whole, then fading over its last second. */
-export function sweepAlpha(ticksLeft: number): number {
-  return ticksLeft >= FADE_TICKS ? RING_ALPHA : RING_ALPHA * Math.max(0, ticksLeft / FADE_TICKS);
-}
 
 export class SweepView {
   readonly #ctx: ViewContext;
@@ -63,7 +59,7 @@ export class SweepView {
         s = this.#sweeps.find((k) => k.uid === 0) ?? this.#sweeps[0]!; // MAX_SWEEPS > 0
         this.#open(s, z.uid, z.x, z.y, Math.sqrt(z.radiusSq));
       }
-      s.ring.setAlpha(sweepAlpha(z.ticksLeft));
+      s.ring.setAlpha(sweepAlpha(z.ticksLeft, FADE_TICKS));
     }
   }
 

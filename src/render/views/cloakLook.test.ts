@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Enemy } from '../../sim/index.ts';
 import { CLOAK_ALPHA_HIGH, CLOAK_ALPHA_LOW, LEAVING_ALPHA, cloakAlpha } from './enemyPose.ts';
-import { sweepAlpha } from './SweepView.ts';
+import { STEPPED_ALPHA, sweepAlpha } from '../vfx/fxTiming.ts';
 
 const unit = (cloaked: boolean, revealedTicks: number): Enemy =>
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only `cloaked` is read off the def
@@ -23,8 +23,11 @@ describe('cloak shimmer', () => {
 
 describe('Scanner Sweep circle', () => {
   it('holds until its last second, then fades to nothing', () => {
-    expect(sweepAlpha(600)).toBe(sweepAlpha(60));
-    expect(sweepAlpha(30)).toBeCloseTo(sweepAlpha(60) / 2);
-    expect(sweepAlpha(0)).toBe(0);
+    expect(sweepAlpha(600, 60)).toBe(1);
+    expect(sweepAlpha(60, 60)).toBe(1);
+    // Steps down the ladder, never a smooth blend.
+    for (let t = 1; t < 60; t++) expect(STEPPED_ALPHA).toContain(sweepAlpha(t, 60));
+    expect(sweepAlpha(5, 60)).toBe(STEPPED_ALPHA[3]);
+    expect(sweepAlpha(0, 60)).toBe(0);
   });
 });

@@ -33,7 +33,13 @@ const CONTACT_SQ = HUSH_CONTACT_TILES * HUSH_CONTACT_TILES;
 export function canHush(h: Enemy): boolean {
   const def = h.def;
   return (
-    h.alive && def !== null && def.hushes && !h.heavy && h.hushUid === 0 && !h.burrowed && !h.leaving
+    h.alive &&
+    def !== null &&
+    def.hushes &&
+    !h.heavy &&
+    h.hushUid === 0 &&
+    !h.burrowed &&
+    !h.leaving
   );
 }
 
@@ -156,7 +162,14 @@ export function hushPass(state: SimState, ctx: TickContext): void {
     v.hushUid = h.uid;
     h.paceMul = 0;
     v.paceMul = 0;
-    emit(state, { type: 'HushStarted', uid: h.uid, enemy: h.def!.id, victim: v.uid, x: v.x, y: v.y }); // canHush checked def
+    emit(state, {
+      type: 'HushStarted',
+      uid: h.uid,
+      enemy: h.def!.id,
+      victim: v.uid,
+      x: v.x,
+      y: v.y,
+    }); // canHush checked def
   }
   pairs.length = 0;
 }

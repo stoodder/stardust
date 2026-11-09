@@ -79,7 +79,9 @@ describe('the hush rule', () => {
         y: vy,
       },
     ]);
-    expect(events(state, 'TurnedHeavy')).toEqual([{ type: 'TurnedHeavy', uid: m.uid, enemy: 'mote' }]);
+    expect(events(state, 'TurnedHeavy')).toEqual([
+      { type: 'TurnedHeavy', uid: m.uid, enemy: 'mote' },
+    ]);
     expect([m.heavy, m.hp, m.hushUid, m.hushTicks]).toEqual([true, MOTE.hp, 0, 0]);
     expect(m.dist).toBeCloseTo(3 + MOTE.speedTilesPerTick * HUSH_SPEED_MUL, 9);
   });

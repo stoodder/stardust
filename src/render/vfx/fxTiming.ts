@@ -6,6 +6,15 @@ import { RING_STEP_TILES } from './overlayPixels.ts';
 /** Stepped alpha (art-direction §7). */
 export const STEPPED_ALPHA = [1, 0.6, 0.35, 0.15] as const;
 
+/**
+ * Scanner Sweep's ring (T406) with `ticksLeft` of its zone to go: whole, then the stepped fade over
+ * its last `fadeTicks` (sim ticks, so it holds while paused); 0 once the zone is done.
+ */
+export function sweepAlpha(ticksLeft: number, fadeTicks: number): number {
+  if (ticksLeft <= 0) return 0;
+  return ticksLeft >= fadeTicks ? STEPPED_ALPHA[0] : fadeAlpha(1 - ticksLeft / fadeTicks);
+}
+
 /** The stepped alpha for an effect `t` (0–1) of the way through its fade. */
 export function fadeAlpha(t: number): number {
   if (t < 0.5) return STEPPED_ALPHA[0];

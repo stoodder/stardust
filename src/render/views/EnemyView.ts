@@ -16,7 +16,7 @@
 // sim lets it go at the map edge, it hands its sprite to LeaveFx, which carries it on past the edge
 // as it fades. A cloaked unit nobody has Revealed (T406; enemies.md § 2.5: the player still sees a
 // faint shimmer) draws faint, stepping between enemyPose.ts's CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH
-// every SHIMMER_MS (steady at the low step under reduced motion); Revealed, it draws whole.
+// every SHIMMER_MS (steady at the high step under reduced motion); Revealed, it draws whole.
 // Its health bar (art-direction §8; T328) shows over the body while it's damaged or hovered: HP
 // and shield on an `ink.1` track (vfx/healthBar.ts), three pooled images cropped to width, so it
 // allocates nothing per frame. A boss and a neutral unit have none (`setBar(0, 0)`; the boss has
@@ -567,7 +567,7 @@ export class EnemyView implements PooledView {
       this.#leaving = e.leaving;
       dirty = true;
     }
-    const high = !prefersReducedMotion() && Math.floor(performance.now() / SHIMMER_MS) % 2 === 0;
+    const high = prefersReducedMotion() || Math.floor(performance.now() / SHIMMER_MS) % 2 === 0;
     const alpha = cloakAlpha(e, this.#leaving, high);
     if (alpha !== this.#alpha) {
       this.#alpha = alpha;

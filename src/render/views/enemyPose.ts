@@ -124,14 +124,15 @@ export function blankFacts(): MutablePoseFacts {
 export const LEAVING_ALPHA = 0.6;
 /**
  * A cloaked, unrevealed unit's shimmer (T406; enemies.md § 2.5: the player still sees it): its
- * alpha steps between these on the 3 Hz shimmer cycle, so it reads as there-but-not-quite.
+ * alpha steps between these two rungs of the stepped-alpha ladder (art-direction §7) on the 3 Hz
+ * shimmer cycle, so it reads as there-but-not-quite; held at the high rung under reduced motion.
  */
-export const CLOAK_ALPHA_LOW = 0.3;
-export const CLOAK_ALPHA_HIGH = 0.45;
+export const CLOAK_ALPHA_LOW = 0.15;
+export const CLOAK_ALPHA_HIGH = 0.35;
 
 /**
  * The body's alpha: a leaving unit's 60%; a cloaked unit nobody has Revealed shimmers between
- * CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH (`shimmerHigh`: the cycle's high half; held low under
+ * CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH (`shimmerHigh`: the cycle's high half; held high under
  * reduced motion by the caller); anyone else, whole.
  */
 export function cloakAlpha(e: PoseEnemy, leaving: boolean, shimmerHigh: boolean): number {
