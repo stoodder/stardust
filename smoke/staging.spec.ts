@@ -1,7 +1,8 @@
 // The full-screen scenes' staging (D097 R3; ui/dialogue/staging.ts). The stinger: the Rig 9 feed
 // leads its lines in (live, static, the smudge, static, NO SIGNAL), Skip cuts the lead-in short,
 // then the caption and QUILL's line, each read to screen readers by the scene's live region
-// (U-M1). The party: the bright stage, the cannon firing with its burst, and the record counter
+// (U-M1); its held beat (a silence) moves on by itself with no Next (D098). The party: the bright
+// stage, two cannons firing with their bursts (D098), and the record counter
 // landing on the career total. Reduced motion: the feed's three stills, no static. Screenshots in
 // test-results/screens/staging/ (look at them).
 import type { Page } from '@playwright/test';
