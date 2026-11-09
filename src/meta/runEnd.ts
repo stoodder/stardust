@@ -2,8 +2,9 @@
 // documented order, plus a summary of what it paid for the results screen. Pure: it returns a new
 // save (the input is untouched) and never reads the clock; the app writes the result to its slot.
 import { FLAG_RULES, type FlagRule, type FlagSet } from '../content/dialogue/flags.ts';
-import type { MapId, MedalId } from '../content/types.ts';
+import type { MapId, MedalId, TowerId } from '../content/types.ts';
 import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
+import { withIssuedTowers } from './issued.ts';
 import { medalPayout, stardustPayout, type EarnedMedal, type StardustPayout } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
 
@@ -45,6 +46,8 @@ export interface RunEndSummary {
   readonly pestsProcessed: { readonly run: number; readonly lifetime: number };
   /** Story flags the run-end rules set (step 2); results never show them (C1 is silent). */
   readonly flags: FlagSet;
+  /** Towers this run's win issued (meta/issued.ts), in issue order; empty on most runs. */
+  readonly issued: readonly TowerId[];
 }
 
 export interface RunEndResult {
@@ -110,7 +113,8 @@ export function runEnd(
 
   // 6. The map's story transactions (meta-runtime.md § Story transactions): TODO(M3); no M2 map
   //    has one (the first is A2M4's Q3 Bonus). The caller saves.
-  const next: SaveData = {
+  // 7. Towers the win issues for the next map (meta/issued.ts; the Sprinkler after A1M1).
+  const folded: SaveData = {
     ...save,
     story: { ...save.story, flags: { ...save.story.flags, ...flags } },
     campaign: { maps: { ...save.campaign.maps, [input.mapId]: record } },
@@ -120,6 +124,8 @@ export function runEnd(
     },
     stats: { pestsProcessed, runs: save.stats.runs + 1 },
   };
+  const next = withIssuedTowers(folded);
+  const issued = next.unlocks.towers.filter((t) => !folded.unlocks.towers.includes(t));
   return {
     save: next,
     summary: {
@@ -130,6 +136,7 @@ export function runEnd(
       intel,
       pestsProcessed: { run: kills, lifetime: pestsProcessed },
       flags,
+      issued,
     },
   };
 }

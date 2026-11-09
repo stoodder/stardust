@@ -124,6 +124,44 @@ const shown = () => hud.radio.value?.text ?? null;
 const cue = () => hud.radio.value?.cue?.text ?? null;
 const at = (line: RadioLine) => radioLineMs(line.text);
 
+describe('the D059 triggers: enemyLeaked and bankNudge', () => {
+  const table: RadioLine[] = [
+    { on: 'firstLeak', speaker: 'quill', text: 'first leak' },
+    { on: 'enemyLeaked', enemy: 'brood_hauler', speaker: 'quill', text: 'hauler leaked' },
+    { on: 'countdown', wave: 3, speaker: 'kip', text: 'w3 countdown' },
+    { on: 'bankNudge', speaker: 'quill', text: 'spend it' },
+  ];
+  const leakOf = (uid: number, enemy: string): Ev => ({ type: 'EnemyLeaked', uid, enemy, leak: 3 });
+
+  it('plays an enemyLeaked line on the first leak of that enemy type only', () => {
+    const r = createRadioScript(table);
+    expect(texts(r.lines(leakOf(1, 'nibbler')))).toEqual(['first leak']);
+    expect(texts(r.lines(leakOf(2, 'brood_hauler')))).toEqual(['hauler leaked']);
+    expect(r.lines(leakOf(3, 'brood_hauler'))).toEqual([]);
+  });
+
+  it('plays firstLeak then enemyLeaked when one leak is both', () => {
+    const r = createRadioScript(table);
+    expect(texts(r.lines(leakOf(1, 'brood_hauler')))).toEqual(['first leak', 'hauler leaked']);
+  });
+
+  it('nudges once per battle, behind the countdown lines, at 250+ credits from wave 2', () => {
+    let credits = 400;
+    const r = createRadioScript(table, () => credits);
+    expect(r.lines(countdown(1))).toEqual([]); // the setup's starting credits never nudge
+    credits = 249;
+    expect(r.lines(countdown(2))).toEqual([]);
+    credits = 250;
+    expect(texts(r.lines(countdown(3)))).toEqual(['w3 countdown', 'spend it']);
+    expect(r.lines(countdown(4))).toEqual([]);
+  });
+
+  it('never nudges without a credits reader', () => {
+    const r = createRadioScript(table);
+    expect(r.lines(countdown(3)).map((l) => l.on)).toEqual(['countdown']);
+  });
+});
+
 describe('bindRadio: the ticker over real time (fake timers)', () => {
   type Bus = ReturnType<typeof createBus<Ev>>;
   let bus: Bus;

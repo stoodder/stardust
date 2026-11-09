@@ -14,6 +14,10 @@ import type { ColorName } from '../palettes/master.ts';
  * - `perfectWave`: the first wave from `wave` on that resolves with no leaks.
  * - `enemyKilled`: the battle's first `EnemyDied` of `enemy`, whoever the killer
  *   (design/core-loop.md §6.3's `enemy_killed` bark; A1M2's Brood Hauler barks).
+ * - `enemyLeaked`: the battle's first `EnemyLeaked` of `enemy` (D059; A1M2's first Hauler leak).
+ *   It plays after `firstLeak` when one leak is both.
+ * - `bankNudge`: once per battle, on a `CountdownStarted` (wave 2 on) with at least
+ *   `BANK_NUDGE_CREDITS` banked (D059): a gentle nudge to spend, never a scold.
  * - `mapWon` / `mapLost`: the map's debrief. These never play on the ticker: the results card
  *   shows them, with their name plates, after a win or a loss (D028).
  */
@@ -25,8 +29,13 @@ export type RadioTrigger =
   | 'waveCleared'
   | 'perfectWave'
   | 'enemyKilled'
+  | 'enemyLeaked'
+  | 'bankNudge'
   | 'mapWon'
   | 'mapLost';
+
+/** Credits banked at a countdown's start that play the `bankNudge` line (D059). */
+export const BANK_NUDGE_CREDITS = 250;
 
 /** Speakers the M1 radio can show (story/style-guide.md §5.1 ids). */
 export type RadioSpeaker = 'quill' | 'bricks' | 'goldie' | 'kip';
@@ -37,7 +46,7 @@ export interface RadioLine {
   readonly wave?: number;
   /** The tower an `unlock` names. */
   readonly tower?: string;
-  /** The enemy an `enemyKilled` names. */
+  /** The enemy an `enemyKilled` or `enemyLeaked` names. */
   readonly enemy?: string;
   readonly speaker: RadioSpeaker;
   /** Verbatim from the map's act file (story/campaign/act<N>.md). */

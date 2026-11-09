@@ -685,7 +685,7 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
 
 ### D059 — 2026-11-09 — M2 review round 1 rulings
 Three reviews ran: Correctness/Architecture/Performance, Gameplay/Story, and UX/Art/Accessibility/Audio. The sim is deterministic and sound, and performance is about 0.8 ms per frame at A1M2 W8 2×. Rulings:
-- **Issued towers.** The real save never granted the Sprinkler that campaign.md says is "Issued A1M2", so A1M2 played without it. Campaign plan entries can now `issues` towers, granted on unlock/start.
+- **Issued towers.** The real save never granted the Sprinkler that campaign.md says is "Issued A1M2", so A1M2 played without it. Issued towers are derived from `TOWER_ACCESS` (`how: 'issued'`, `availableAfter`; one home), granted on unlock/start.
 - **Never ship advice that loses.** Bricks's "Strong targeting on the big ones" predates armor 9 and now makes players lose, so it is rewritten in act1.md (canon first). Par's Strong step goes.
 - **A1M2's seeds must be visible:**
   - The sack burst with young scurrying *back up the route toward the warren*.

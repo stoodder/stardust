@@ -5,6 +5,7 @@
 // reply (the next line of the batch, another speaker) follows its cue after a short beat, shown
 // under it. A map's debrief isn't the ticker's: the results card shows it (app/runResult.ts).
 import { radioLines, SPEAKERS, type RadioLine } from '../content/radio/index.ts';
+import { BANK_NUDGE_CREDITS } from '../content/radio/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { Bus } from '../shared/bus.ts';
 import type { SimEvent } from '../sim/index.ts';
@@ -30,12 +31,14 @@ export function radioLineMs(text: string): number {
 
 /**
  * Picks which of a map's lines a sim event plays, each at most once. Pure apart from its own
- * bookkeeping (which lines have played, which waves leaked), so it's unit-tested without a host.
+ * bookkeeping (which lines have played, which waves and enemy types leaked), so it's unit-tested
+ * without a host. `credits` reads the credits banked now (for `bankNudge`).
  */
-export function createRadioScript(lines: readonly RadioLine[]) {
+export function createRadioScript(lines: readonly RadioLine[], credits: () => number = () => 0) {
   const played = new Set<RadioLine>();
   const waveOf = new Map<number, number>();
   const leakedWaves = new Set<number>();
+  const leakedEnemies = new Set<string>();
   let leaked = false;
   const take = (match: (l: RadioLine) => boolean): RadioLine[] => {
     const out: RadioLine[] = [];
@@ -60,12 +63,25 @@ export function createRadioScript(lines: readonly RadioLine[]) {
           const w = waveOf.get(e.uid);
           if (w !== undefined) leakedWaves.add(w);
           waveOf.delete(e.uid);
-          if (leaked) return [];
+          const firstOfType = !leakedEnemies.has(e.enemy);
+          leakedEnemies.add(e.enemy);
+          const first = !leaked;
           leaked = true;
-          return take((l) => l.on === 'firstLeak');
+          // The battle's first leak, then the first of this enemy type (both when one leak is both).
+          return [
+            ...(first ? take((l) => l.on === 'firstLeak') : []),
+            ...(firstOfType ? take((l) => l.on === 'enemyLeaked' && l.enemy === e.enemy) : []),
+          ];
         }
-        case 'CountdownStarted':
-          return take((l) => l.on === 'countdown' && l.wave === e.wave);
+        case 'CountdownStarted': {
+          // The nudge rides behind the wave's own countdown lines, from wave 2 (W1's setup has its
+          // starting credits banked by design).
+          const nudge = e.wave >= 2 && credits() >= BANK_NUDGE_CREDITS;
+          return [
+            ...take((l) => l.on === 'countdown' && l.wave === e.wave),
+            ...(nudge ? take((l) => l.on === 'bankNudge') : []),
+          ];
+        }
         case 'TowerClassUnlocked':
           return take((l) => l.on === 'unlock' && l.tower === e.tower);
         case 'WaveStarted':
@@ -145,12 +161,19 @@ export function radioHoldMs(text: string, nextIsReply: boolean): number {
   return nextIsReply ? Math.min(ms, REPLY_BEAT_MS) : ms;
 }
 
-/** Wires a battle's radio to the HUD's `radio` signal. Returns the unwiring (which clears it). */
-export function bindRadio(bus: Bus<SimEvent<IdSpace>>, mapId: string): () => void {
+/**
+ * Wires a battle's radio to the HUD's `radio` signal. `credits` reads the battle's banked credits
+ * (for `bankNudge`). Returns the unwiring (which clears it).
+ */
+export function bindRadio(
+  bus: Bus<SimEvent<IdSpace>>,
+  mapId: string,
+  credits: () => number = () => 0,
+): () => void {
   hud.radio.value = null;
   const lines = radioLines(mapId);
   if (!enabled || lines.length === 0) return () => {};
-  const script = createRadioScript(lines);
+  const script = createRadioScript(lines, credits);
   const queue: Queued[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
   let batches = 0;

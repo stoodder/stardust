@@ -59,7 +59,7 @@ export function startBattle(
     key,
   );
   const unbindHud = bindHud(host, interaction, hudOptions);
-  const unbindRadio = bindRadio(host.bus, sim.map.id);
+  const unbindRadio = bindRadio(host.bus, sim.map.id, () => sim.state.credits);
   const unbindAudio = bindBattleAudio(host);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
