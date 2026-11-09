@@ -5,7 +5,7 @@ import { createState, type SimState } from './state.ts';
 import { applyCommands } from './systems/applyCommands.ts';
 import { cleanup } from './systems/cleanup.ts';
 import { poolKill } from './pool.ts';
-import { runTick, SYSTEMS, type System, type TickContext } from './tick.ts';
+import { createScratch, runTick, SYSTEMS, type System, type TickContext } from './tick.ts';
 import type { IdSpace } from '../content/types.ts';
 
 function setup(): { state: SimState; ctx: TickContext } {
@@ -13,7 +13,7 @@ function setup(): { state: SimState; ctx: TickContext } {
   const map = FIXTURE_CONTENT.maps.fx_map;
   return {
     state: createState(map, config.seed),
-    ctx: { content: FIXTURE_CONTENT, map, config, scratch: { slots: [] } },
+    ctx: { content: FIXTURE_CONTENT, map, config, scratch: createScratch() },
   };
 }
 

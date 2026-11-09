@@ -8,7 +8,7 @@ import { hashState } from '../hashState.ts';
 import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
 import { createState, takeUid, type SimState } from '../state.ts';
-import { runTick, type TickContext } from '../tick.ts';
+import { createScratch, runTick, type TickContext } from '../tick.ts';
 import { movement } from './movement.ts';
 
 const map = FIXTURE_CONTENT.maps.fx_map;
@@ -21,7 +21,7 @@ function setup(): { state: SimState; ctx: TickContext } {
   const config: SimConfig<IdSpace> = fixtureConfig();
   return {
     state: createState(map, config.seed),
-    ctx: { content: FIXTURE_CONTENT, map, config, scratch: { slots: [] } },
+    ctx: { content: FIXTURE_CONTENT, map, config, scratch: createScratch() },
   };
 }
 

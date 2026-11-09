@@ -50,6 +50,11 @@ export interface SimRngs {
 export interface SimStats {
   /** Pests Processed this run: Skitterkin enemies killed by towers or abilities. */
   skitterkinKilled: number;
+  /**
+   * Kills by enemy id (towers and abilities). A key appears on its enemy's first kill, so key
+   * order is kill order: deterministic, and hash() walks it.
+   */
+  killsByEnemy: Record<string, number>;
   integrityLost: number;
   towersBuilt: number;
   /** Gross credits paid for builds and upgrades (refunds don't reduce it). */
@@ -125,6 +130,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     rng,
     stats: {
       skitterkinKilled: 0,
+      killsByEnemy: {},
       integrityLost: 0,
       towersBuilt: 0,
       creditsSpent: 0,

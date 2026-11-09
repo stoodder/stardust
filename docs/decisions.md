@@ -159,3 +159,29 @@ The sim core is live: `createSim(cfg)` → `{ state, enqueue, step, applyPending
 - **A1M1** has the seven act1.md waves on `road` and `towerUnlockWave: { thumper: 3 }`. The validator's stub guard is gone, and every rule passes for real. The new threats are Nibbler and Zoomer, exactly the cap of 2.
 - **Par build timing:** if every enemy dies, the bank at each build phase is 350 / 292 / 270 / 113 / 165 / 95 / 179 for W1–W7. So **the second Thumper moves from W6 to W7** (T107's open note), and the Rivet T2 lands in W2. `rivet_only` is par with Rivets in place of Thumpers. Both builds are first-pass until T107's tuning. Orbital Strike steps join with T113.
 - **Ruling on conventions' open question 1 (design tables vs content):** content files are the single home for exact numbers. Design-doc tables keep roles, intent, and target ranges, plus a pointer to the content file. Shrinking the existing number columns is task T120 (Design owner). Until then, if a table and a content file disagree, the content file wins.
+
+### D020 — 2026-11-09 — T105a combat rules
+Combat is live: the damage pipeline (`src/sim/combat/damage.ts`), deterministic targeting (`combat/targeting.ts`), and the `status`, `towers`, and `projectiles` systems. Architecture §2 has a *Combat* block, and towers.md §5 and enemies.md §2.3–2.4 have the settled details. Rulings where the docs were silent:
+- **Targeting:**
+  - A tower re-picks by priority each time it's ready to fire, and keeps its target between shots while it stays valid.
+  - Ties go to First, then to the lowest uid.
+  - With no minimum range, distance 0 is in range. Without that, a flyer passing over a tower's center was untargetable.
+- **Firing:**
+  - A new tower can fire on the tick it's built.
+  - Spin-up runs from acquiring a target after having none.
+  - A pulse tower holds its shot until an enemy is in range, so its first pulse always affects one (misclick grace).
+- **Shells:**
+  - A shell lands exactly `flightTicks` after firing, after that tick's movement, so a lead shot at a target holding speed lands on its center. This is tested around a corner and while Chilled.
+  - Splash hits only the layers the tower targets.
+  - Shells keep their stats if the tower is sold mid-flight.
+- **Damage:**
+  - Statuses apply after the hit's damage.
+  - Any hit on a shielded enemy restarts its regen delay, even after the shield breaks.
+  - A weaker chill does nothing while a stronger one runs.
+  - Corroded stacks expire together.
+  - HP is fractional, and an enemy at or below 1e-9 HP is dead.
+- **API seams:**
+  - `applyDamage(state, enemy, amount, type, source, hit?)` is the one damage entry point; Orbital Strike (T113) uses it with `{ kind: 'ability', slot }`.
+  - Every kill goes through `killEnemy`, which counts `skitterkinKilled` and `killsByEnemy` and emits `EnemyDied { uid, enemy, bounty, killer, x, y }`. T105b credits the bounty there.
+  - `ProjectileFired` and `ProjectileHit` fire for every attack, with uid 0 for hitscan and pulse.
+- Attack kinds and statuses no M1 content uses (projectile, beam, chain, spawner; pinned, stasis, unnerved) are TODO no-ops. Under D013's "refuse, don't ignore" rule, `createSim` should refuse loadouts that need them (T121).

@@ -3,6 +3,7 @@
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { SimConfig } from './config.ts';
+import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
 import { abilities } from './systems/abilities.ts';
 import { applyCommands } from './systems/applyCommands.ts';
@@ -18,6 +19,15 @@ import { waves } from './systems/waves.ts';
 export interface Scratch {
   /** General-purpose slot or uid list; clear it (`length = 0`) before use. */
   readonly slots: number[];
+  /** A point for route predictions (lead targeting). */
+  readonly point: Point;
+  /** The damage source a tower's hits name, reused so firing doesn't allocate. */
+  readonly towerSource: { readonly kind: 'tower'; uid: number };
+}
+
+/** Fresh scratch space for one sim. */
+export function createScratch(): Scratch {
+  return { slots: [], point: { x: 0, y: 0 }, towerSource: { kind: 'tower', uid: 0 } };
 }
 
 /** A run's immutable inputs, plus scratch. Never hashed: it's the same for every tick. */

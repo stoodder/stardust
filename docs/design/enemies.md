@@ -75,8 +75,9 @@ target.hp -= damage
 ```
 
 - **Armor** is a flat reduction per hit. Rule of thumb: armor 4 halves an 8-damage Rivet shot, and armor 12 reduces it to the 20% floor.
-- **Shields** sit on top of HP and have their own bar. Shielded enemies regenerate `shieldRegen` per second after `shieldDelay` seconds without shield damage, unless the data says they don't.
+- **Shields** sit on top of HP and have their own bar. Shielded enemies regenerate `shieldRegen` per second after `shieldDelay` seconds without being hit (a hit on a broken shield also restarts the delay, so it stays down under fire), unless the data says they don't.
 - **Splash** hits every enemy whose center is inside the radius for full damage (no falloff, for readability).
+- **On-hit statuses land after the hit's damage**, so a status never boosts the hit that applies it (a Soaking shot doesn't get its own +25%).
 - **DoT** (damage over time) ticks every 0.25 s and **bypasses armor** but not shields.
 - **Beams are not DoT.** A beam (Prism Spire, the Lantern's light-beam) deals its damage per second in beam ticks of `tickLength` seconds (default 0.25 s; `raw = dps × tickLength`), and armor applies to each tick at `effArmor × tickLength`. So armor subtracts from a beam's *damage per second* rather than from each tiny tick, and the 20% floor still applies per tick.
 
@@ -84,7 +85,7 @@ target.hp -= damage
 
 | Status | Effect | Stacking / limits | Bosses |
 |---|---|---|---|
-| **Chilled X%** | Move speed × (1 − X). | Only the strongest source applies, except swarmling chills, which stack with each other to 30% and then count as one source. **Cap 70%.** | Half strength, except a Chilled 50% converted from Pin or Stasis, which is already boss strength and isn't halved again |
+| **Chilled X%** | Move speed × (1 − X). | Only the strongest source applies (a weaker chill while a stronger one runs does nothing; an equal one extends it), except swarmling chills, which stack with each other to 30% and then count as one source. **Cap 70%.** | Half strength, except a Chilled 50% converted from Pin or Stasis, which is already boss strength and isn't halved again |
 | **Soaked** | +25% Energy damage taken, and Kinetic and Explosive hits strip its shields at ×0.8 instead of ×0.5 (2.1). | Refreshes duration. | Normal |
 | **Corroded** | −1 armor per stack (armor can't go below 0). | Stacks up to the applying tower's max. Each stack lasts 5 s and refreshes on a new hit. | Normal |
 | **Marked X%** | +X% damage taken from all sources. | Highest only. | Normal |

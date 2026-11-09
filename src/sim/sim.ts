@@ -10,7 +10,7 @@ import type { SimEvent } from './events.ts';
 import { hashState } from './hashState.ts';
 import { createState, type SimState } from './state.ts';
 import { applyCommands } from './systems/applyCommands.ts';
-import { runTick, type TickContext } from './tick.ts';
+import { createScratch, runTick, type TickContext } from './tick.ts';
 
 export interface Sim<K extends IdSpace = LiveIds> {
   /** The live state, read-only. It's the same object every tick: read it, don't keep copies. */
@@ -38,7 +38,7 @@ export function createSim<K extends IdSpace = LiveIds>(cfg: SimConfig<K>): Sim<K
   const wide: SimConfig<IdSpace> = cfg;
   const map = validateConfig(wide);
   const state = createState(map, cfg.seed);
-  const ctx: TickContext = { content: wide.content, map, config: wide, scratch: { slots: [] } };
+  const ctx: TickContext = { content: wide.content, map, config: wide, scratch: createScratch() };
 
   // Validated boundary: every id in the queue, the log, and the events came from K's content or
   // from a Command<K>, so the string-typed internal state is a SimState<K>. (Two casts because TS

@@ -1,6 +1,7 @@
 // A pooled enemy: its walk anim for the facing it moves in, depth-sorted in `world` (ground units)
-// or `air` (flyers, drawn 12 px up over a ground shadow; tech-spec § Sprite anchoring).
-import type * as Phaser from 'phaser';
+// or `air` (flyers, drawn 12 px up over a ground shadow; tech-spec § Sprite anchoring). It flashes
+// white when its HP drops (art-direction §7, Impacts: 2 frames of white tint fill).
+import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -13,12 +14,17 @@ import type { PooledView } from './ViewPool.ts';
 export interface EnemyLike {
   readonly x: number;
   readonly y: number;
+  readonly hp: number;
 }
 
 /** Flyers draw this far above their ground point. */
 const FLY_LIFT_PX = 12;
 /** Moves shorter than this (in tiles) keep the current facing, so a pause doesn't flip it. */
 const MIN_TURN_TILES = 1e-4;
+/** Hit flash: this many rendered frames of white fill (art-direction §7, never longer). */
+const HIT_FLASH_FRAMES = 2;
+/** `white.1` (master palette). */
+const HIT_FLASH_COLOR = 0xffffff;
 
 const pos: Vec2 = { x: 0, y: 0 };
 
@@ -34,6 +40,8 @@ export class EnemyView implements PooledView {
   #facing: Facing = 'se';
   #x = Number.NaN;
   #y = Number.NaN;
+  #hp = Number.NaN;
+  #flashFrames = 0;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -61,6 +69,8 @@ export class EnemyView implements PooledView {
     this.#facing = 'se';
     this.#x = Number.NaN;
     this.#y = Number.NaN;
+    this.#hp = Number.NaN;
+    this.#stopFlash();
     (flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(this.#body);
     this.#body.setVisible(true);
     this.#play();
@@ -79,6 +89,7 @@ export class EnemyView implements PooledView {
 
   /** Positions the enemy from sim state and turns it to face where it moved. */
   sync(e: EnemyLike): void {
+    this.#syncFlash(e.hp);
     if (e.x === this.#x && e.y === this.#y) return;
     if (!Number.isNaN(this.#x)) {
       const dx = e.x - this.#x;
@@ -103,9 +114,27 @@ export class EnemyView implements PooledView {
   release(): void {
     this.#uid = 0;
     this.#id = null;
+    this.#stopFlash();
     this.#body.stop();
     this.#body.setVisible(false);
     this.#shadow.setVisible(false);
+  }
+
+  /** Starts the flash when HP dropped since the last frame; ends it after HIT_FLASH_FRAMES. */
+  #syncFlash(hp: number): void {
+    const hit = hp < this.#hp; // false on the first frame (NaN)
+    this.#hp = hp;
+    if (hit) {
+      this.#flashFrames = HIT_FLASH_FRAMES;
+      this.#body.setTint(HIT_FLASH_COLOR).setTintMode(Phaser.TintModes.FILL);
+    } else if (this.#flashFrames > 0 && --this.#flashFrames === 0) {
+      this.#stopFlash();
+    }
+  }
+
+  #stopFlash(): void {
+    this.#flashFrames = 0;
+    this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 
   #play(): void {

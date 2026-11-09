@@ -107,9 +107,10 @@ Tile bonuses ([maps.md §3](maps.md#3-tile-types)): **high ground +25% range**, 
 - **Range (rule):** a target is in range when `minRange < distance ≤ range`. Minimum range is exclusive: an enemy exactly at the minimum can't be hit.
 - **Tie-break (rule, for determinism):** First, then the lowest entity ID.
 - Towers **never** target enemies that are undetected-cloaked, burrowed, phased, or in a layer the tower can't hit (for example a ground-only tower and a flyer that isn't Pinned).
+- **Retargeting:** a tower picks its target by priority each time it's ready to fire. Between shots it keeps its current target while that target stays in range.
 - **Beam stickiness:** the Prism Spire keeps its target until the target dies or leaves range, regardless of priority, because ramp-up is its whole point.
 - **Delivery.** Each attack is **hitscan** (damage lands the tick it fires; the Rivet), a **projectile** with a flight time (the Thumper's shells), or a **beam** (the Prism Spire and the Lantern's light-beam; beams are not DoT, and armor applies per beam tick: [enemies.md §2.3](enemies.md#23-damage-pipeline)). Each tower's delivery is set in its data.
-- **Lead targeting (artillery).** A tower whose shells land after a delay (Thumper) aims at where its target will be along its route after the flight time, at the target's current speed. The impact point is fixed when it fires, so a target that speeds up, slows, or blinks can dodge.
+- **Lead targeting (artillery).** A tower whose shells land after a delay (Thumper) aims at where its target will be along its route after the flight time, at the target's current speed. The impact point is fixed when it fires, so a target that speeds up, slows, or blinks can dodge. The splash hits only the layers the tower targets (a Thumper shell never hits flyers).
 - Defaults are listed in each tower's entry. Support towers have no targeting.
 
 ---
