@@ -1235,3 +1235,6 @@ All of Act I plays: A1M1 *Orientation Day* through A1M5 *Record Quarter* on the 
 - **Art trail:** [docs/art/gallery/m3.png](art/gallery/m3.png) (103+ sprites, ~2,300 frames; M2 was 55 / 974).
 - **Deferred to M4** (D064): the star map, objectives beyond Act I's, the Sprinkler/Skyhook/Zapcoil specs, codex annotations, the Bounty Board. Open follow-ups T216, T229, T318–T335 carry over.
 - **Owner asks:** create release `m3` on GitHub (cloud sessions can't push tags); OK to delete `src/audio/sfx/radio.ts` (T323); a listen to the audio mix (the boss storm peaks at −1.1 dBFS).
+
+### D100 — 2026-11-09 — Owner sign-off on M3
+The owner approved M3's open calls (the star map in M4, abandon counts as a loss, QUILL's Rapport paying from Act II, the Hollow's palette in the stinger, the "Rig Nine" teaser, A1M4's banked credits as T333) and the deletion of `src/audio/sfx/radio.ts` (its `radio_*` recipes were dead since the speaker blips replaced them; T323). Release tags are skipped for now at the owner's request: ship steps still try `git tag`, and no release is asked for until the owner says otherwise.
