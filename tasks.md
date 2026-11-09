@@ -97,7 +97,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
 ## M3 — Star Map & Act I
-**Status: next.** Carried over from M2:
+**Status: current (started 2026-11-09; scope cut and plan in progress).** Carried over from M2:
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
@@ -111,7 +111,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
 - [ ] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
 - [ ] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
-- [ ] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
+- [~] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
 - [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
 - [ ] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
