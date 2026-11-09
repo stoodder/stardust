@@ -68,9 +68,51 @@ export interface TestHooks {
   goto(screen: ScreenId): Promise<void>;
   /** Recent frame and sim timings and live entity counts. */
   perf(): PerfSample;
+  /** The audio (T205): its state, and offline renders of its sounds for the level checks. */
+  readonly audio: AudioHooks;
 }
 
-/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1`). */
+/** Peak, RMS, and audible length of a render (`src/audio/analyze.ts`). */
+export interface LevelSample {
+  readonly peak: number;
+  readonly rms: number;
+  readonly peakDb: number;
+  readonly rmsDb: number;
+  readonly durationSec: number;
+  readonly clipped: number;
+}
+
+/** A render's levels through the master chain (`out`) and before the limiter (`raw`). */
+export interface RenderSample {
+  readonly out: LevelSample;
+  readonly raw: LevelSample;
+}
+
+/** The audio's live state (`src/audio/engine.ts` AudioStatus). */
+export interface AudioSample {
+  readonly enabled: boolean;
+  readonly unlocked: boolean;
+  readonly state: string | null;
+  readonly muted: boolean;
+  readonly theme: string | null;
+  readonly layers: Readonly<Record<'base' | 'drums' | 'lead', number>> | null;
+  readonly voices: number;
+  readonly played: Readonly<Record<string, number>>;
+}
+
+export interface AudioHooks {
+  status(): AudioSample;
+  /** Every sound effect, cue, and theme id. */
+  ids(): {
+    readonly sfx: readonly string[];
+    readonly cues: readonly string[];
+    readonly themes: readonly string[];
+  };
+  /** Renders a sound effect (`sfx:<id>`), cue (`cue:<id>`), theme (`theme:<id>`), or `storm` offline. */
+  render(what: string): Promise<RenderSample>;
+}
+
+/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1&audio=1`). */
 export interface BootParams {
   readonly test: boolean;
   /**
@@ -78,6 +120,11 @@ export interface BootParams {
    * stay clear, and `&radio=1` turns it back on for the specs that assert it.
    */
   readonly radio: boolean;
+  /**
+   * Whether audio plays (T205). On for players; `?test=1` turns it off (no AudioContext), and
+   * `&audio=1` turns it back on for the specs that assert it.
+   */
+  readonly audio: boolean;
   readonly seed: number | null;
   readonly map: string | null;
   readonly skipIntro: boolean;

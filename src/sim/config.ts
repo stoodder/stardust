@@ -11,18 +11,39 @@ import type {
   ScriptFlagId,
   TowerStat,
 } from '../content/types.ts';
+import { MAX_LOADOUT } from '../content/rules.ts';
 import { unsupportedScript } from './systems/triggers.ts';
+import { gateRefusals } from './gates.ts';
 
 /** Where a modifier came from, for the UI's breakdown: `'shop:<id>'`, `'difficulty:story'`, … */
 export type ModifierSource = string;
-export type EnemyStat = 'hp' | 'shield';
-export type EconomyStat = 'startCredits' | 'coreIntegrity';
+/** Enemy stats a modifier can scale (Story difficulty, veteran modifiers). */
+export type EnemyStat = 'hp' | 'shield' | 'speed';
+/**
+ * Map-economy numbers a modifier can change (design/progression.md §4.3, §5, §9):
+ * - `startCredits`: Seed Money, Head Start, Story difficulty.
+ * - `coreIntegrity`: Reinforced Core (flat), Story difficulty (`set: 30`).
+ * - `bounty`: every kill bounty (Bounty Hunter, Bounty Board).
+ * - `earlyCallBonus`: Early Bird.
+ * - `salvage`: wreckage salvage (Salvage Rights; wreckage is M3+).
+ * - `clearSpeed`: wreckage clearing speed (Salvage Expert; M3+).
+ */
+export type EconomyStat =
+  'startCredits' | 'coreIntegrity' | 'bounty' | 'earlyCallBonus' | 'salvage' | 'clearSpeed';
+/** Commander-ability stats a modifier can change: Ability Coolant, Rapport (cooldown), Mk II (radius). */
+export type AbilityStat = 'cooldown' | 'radius';
+/** Tiles whose built-in bonus a modifier can raise (High Ground Training). */
+export type BonusTile = 'highGround' | 'powerNode';
 
 /**
- * A stat change from outside the map (design/towers.md §4 stacking). `pct` is a fraction:
- * +10% → 0.10. Applied from T204; M1 runs pass none.
+ * A change from outside the map: permanent upgrades, Field Protocols, and difficulty arrive as a
+ * list of these (architecture.md § Sim public API; meta/modifiers.ts builds them). Unless a kind
+ * says otherwise, `pct` is a fraction (+10% → 0.10) and the stacking formula applies
+ * (design/towers.md §4): `(base + Σ flat) × (1 + Σ pct)`, percentages added, never multiplied.
+ * createSim refuses each kind until the task that applies it lands (FEATURE_GATES in gates.ts).
  */
 export type Modifier<K extends IdSpace = LiveIds> =
+  /** Tune-up damage and range (ranks 1 and 3), the Zibzab Tune-up (meta expands it per tower). */
   | {
       readonly kind: 'towerStat';
       readonly tower: K['tower'] | '*';
@@ -31,19 +52,77 @@ export type Modifier<K extends IdSpace = LiveIds> =
       readonly pct?: number;
       readonly source: ModifierSource;
     }
+  /**
+   * Credit costs: tune-up rank 2 (−5% build and upgrade, `tiers: 'all'`, specializations
+   * included) and Specialist (−25% tier 4 only, `tiers: 'spec'`). `pct` is negative for a
+   * discount; the sim rounds the final cost.
+   */
+  | {
+      readonly kind: 'towerCost';
+      readonly tower: K['tower'] | '*';
+      readonly tiers: 'all' | 'spec';
+      readonly pct: number;
+      readonly source: ModifierSource;
+    }
+  /** Story difficulty (−30% HP and shields), veteran Hardened Hides and Double Time. */
   | {
       readonly kind: 'enemyStat';
       readonly stat: EnemyStat;
       readonly pct: number;
       readonly source: ModifierSource;
     }
+  /**
+   * `set` replaces the map's value before `flat` and `pct` apply (Story's integrity 30, veteran
+   * Glass Core's 5); if several modifiers set it, the lowest wins.
+   */
   | {
       readonly kind: 'economy';
       readonly stat: EconomyStat;
+      readonly set?: number;
       readonly flat?: number;
       readonly pct?: number;
       readonly source: ModifierSource;
-    };
+    }
+  /**
+   * Resale Value: adds `flat` to the sell refund fraction (SELL_REFUND_PCT 0.7 → 0.75 → 0.8).
+   * The misclick-grace full refund is unchanged.
+   */
+  | { readonly kind: 'sellRefund'; readonly flat: number; readonly source: ModifierSource }
+  /**
+   * Commander abilities by id (`'*'`: every ability): Ability Coolant (`'*'`, cooldown −5%),
+   * Orbital Strike Mk II (radius +0.5 flat), Companion Rapport (that companion's ability's
+   * cooldown −15%; Bricks's carries over to inherited Suppressing Fire because it's keyed by
+   * ability, not slot).
+   */
+  | {
+      readonly kind: 'abilityStat';
+      readonly ability: K['ability'] | '*';
+      readonly stat: AbilityStat;
+      readonly flat?: number;
+      readonly pct?: number;
+      readonly source: ModifierSource;
+    }
+  /** Wave countdowns (Story +50%, veteran Rush Hour −50%). */
+  | { readonly kind: 'countdown'; readonly pct: number; readonly source: ModifierSource }
+  /** Linked Up: every synergy link's bonus × (1 + pct). */
+  | { readonly kind: 'linkBonus'; readonly pct: number; readonly source: ModifierSource }
+  /** High Ground Training: adds `flat` to the tile's bonus fraction (0.25 → 0.40). */
+  | {
+      readonly kind: 'tileBonus';
+      readonly tile: BonusTile;
+      readonly flat: number;
+      readonly source: ModifierSource;
+    }
+  /** Emergency Bulkhead: the first `flat` integrity lost to leaks is absorbed, once per map. */
+  | { readonly kind: 'leakAbsorb'; readonly flat: number; readonly source: ModifierSource }
+  /** Rapid Deploy: the first tower built each map costs nothing (tier 1 only). */
+  | { readonly kind: 'firstBuildFree'; readonly source: ModifierSource }
+  /**
+   * Ready Room: the first cast of each commander ability during wave `wave` doesn't start its
+   * cooldown.
+   */
+  | { readonly kind: 'freeCast'; readonly wave: number; readonly source: ModifierSource };
+export type ModifierKind = Modifier['kind'];
 
 /** Difficulty settings (design/progression.md §9). Their effects arrive as modifiers. */
 export type DifficultyId = 'story' | 'standard';
@@ -68,14 +147,18 @@ export interface SimConfig<K extends IdSpace = LiveIds> {
     readonly slot2State: 'present' | 'absent' | 'none';
   };
   readonly scriptFlags: ScriptFlags;
+  /**
+   * Towers whose tier-4 pair the player has unlocked (one R&D purchase unlocks both specs;
+   * meta-runtime.md § Meta). `specialize` is rejected `specLocked` for any other tower.
+   */
+  readonly specsUnlocked: readonly K['tower'][];
 }
 
-/** The hard rule: at most 4 tower types per map. */
-export const MAX_LOADOUT = 4;
+export { MAX_LOADOUT };
 
 /**
  * Checks a config against its content and returns the map. Throws a RangeError listing every
- * problem. Rejects what M1 can't simulate yet rather than silently ignoring it.
+ * problem. Refuses what the sim can't simulate yet (FEATURE_GATES) rather than ignoring it.
  */
 export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace> {
   const errors: string[] = [];
@@ -93,16 +176,22 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
     if (seen.has(id)) errors.push(`loadout: '${id}' appears twice`);
     seen.add(id);
   }
-  const { slot1, slot2, slot2State } = cfg.abilities;
+  const { slot1, slot2 } = cfg.abilities;
   if (slot1 !== null && !Object.hasOwn(cfg.content.abilities, slot1)) {
     errors.push(`abilities.slot1: unknown ability '${slot1}'`);
   }
-  // Not simulated in M1: refuse rather than ignore, so a run can't silently differ from its config.
-  if (cfg.companion !== null || slot2 !== null || slot2State !== 'none') {
-    errors.push('companions and slot 2 are not supported until T207');
+  if (slot2 !== null && !Object.hasOwn(cfg.content.abilities, slot2)) {
+    errors.push(`abilities.slot2: unknown ability '${slot2}'`);
   }
-  if (cfg.modifiers.length > 0) errors.push('modifiers are not applied until T204');
-  if (cfg.difficulty !== 'standard') errors.push('only Standard difficulty is supported in M1');
+  const specSeen = new Set<string>();
+  for (const id of cfg.specsUnlocked) {
+    if (!Object.hasOwn(cfg.content.towers, id)) errors.push(`specsUnlocked: unknown tower '${id}'`);
+    if (specSeen.has(id)) errors.push(`specsUnlocked: '${id}' appears twice`);
+    specSeen.add(id);
+  }
+  // Refuse rather than ignore what the sim can't simulate yet (gates.ts), so a run can't
+  // silently differ from its config.
+  errors.push(...gateRefusals(cfg));
   if (map !== undefined) {
     // The validator's [wave] rule refuses it too; a run with no waves would win on tick 0.
     if (map.waves.length === 0) errors.push(`map '${cfg.mapId}' has no waves`);

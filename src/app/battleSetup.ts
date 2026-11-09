@@ -54,6 +54,7 @@ export function battleConfig(mapId: string, seed: number): SimConfig<IdSpace> {
       difficulty: 'standard',
       abilities: { slot1: par.technicianAbility, slot2: null, slot2State: 'none' },
       scriptFlags: {},
+      specsUnlocked: [],
     };
   }
   throw new RangeError(`battle: unknown map '${mapId}'`);

@@ -160,6 +160,11 @@ export function createRunTracker<K extends IdSpace>(
             if (t !== undefined) t.tier = e.tier;
             break;
           }
+          case 'TowerSpecialized': {
+            const t = towerByUid.get(e.uid);
+            if (t !== undefined) t.tier = 4;
+            break;
+          }
           case 'TowerSold': {
             const t = towerByUid.get(e.uid);
             if (t !== undefined) t.soldTick = state.tick;
@@ -195,6 +200,15 @@ export function createRunTracker<K extends IdSpace>(
           case 'AbilityUsed':
           case 'MapWon':
           case 'CommandRejected':
+          case 'HoldFireChanged':
+          case 'SpareRunnersChanged':
+          case 'NotFiringAtSkitterkin':
+          case 'LinkFormed':
+          case 'LinkBroken':
+          case 'AllySpawned':
+          case 'AllyAttacked':
+          case 'AllyRemoved':
+          case 'MedalProgress':
             break;
           default:
             e satisfies never;

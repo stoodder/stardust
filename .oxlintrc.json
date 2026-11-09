@@ -28,7 +28,14 @@
       "rules": { "import/no-default-export": "off" }
     },
     {
-      "files": ["src/shared/**", "src/content/**", "src/sim/**", "src/story/**", "src/balance/**"],
+      "files": [
+        "src/shared/**",
+        "src/content/**",
+        "src/sim/**",
+        "src/story/**",
+        "src/meta/**",
+        "src/balance/**"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",

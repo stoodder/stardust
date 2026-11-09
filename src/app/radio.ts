@@ -89,6 +89,16 @@ export function createRadioScript(lines: readonly RadioLine[]) {
         case 'ScriptCue':
         case 'AbilityUsed':
         case 'CommandRejected':
+        case 'TowerSpecialized':
+        case 'HoldFireChanged':
+        case 'SpareRunnersChanged':
+        case 'NotFiringAtSkitterkin':
+        case 'LinkFormed':
+        case 'LinkBroken':
+        case 'AllySpawned':
+        case 'AllyAttacked':
+        case 'AllyRemoved':
+        case 'MedalProgress':
           return [];
         default:
           return assertNever(e);

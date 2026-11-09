@@ -5,6 +5,7 @@ import type { IdSpace } from '../content/types.ts';
 import type { Sim } from '../sim/index.ts';
 import type { Host } from './host.ts';
 import type {
+  AudioHooks,
   ClientPoint,
   HookCommand,
   HookState,
@@ -45,6 +46,8 @@ export interface HookEnv {
   canvas(): HTMLCanvasElement | null;
   /** The internal resolution's width (640), to find the canvas scale. */
   readonly viewWidth: number;
+  /** The audio hooks (app/audio.ts). */
+  readonly audio: AudioHooks;
 }
 
 const SPEEDS: ReadonlySet<number> = new Set([0, 1, 2]);
@@ -94,6 +97,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
       return { x: rect.left + (p.x + 0.5) * scale, y: rect.top + (p.y + 0.5) * scale };
     },
     goto: (screen: ScreenId) => env.goto(screen),
+    audio: env.audio,
     perf: (): PerfSample => {
       const b = env.battle();
       const s = b?.host.sim.state;

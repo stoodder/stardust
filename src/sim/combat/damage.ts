@@ -133,9 +133,9 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
     bounty,
     // A copy: towers pass a reused scratch source.
     killer:
-      source.kind === 'tower'
-        ? { kind: 'tower', uid: source.uid }
-        : { kind: 'ability', slot: source.slot },
+      source.kind === 'ability'
+        ? { kind: 'ability', slot: source.slot }
+        : { kind: source.kind, uid: source.uid },
     x: enemy.x,
     y: enemy.y,
   });

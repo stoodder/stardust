@@ -12,6 +12,8 @@ import { sellValue } from '../economy.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { applyHoldFire, applySpareRunners } from '../fireControl.ts';
+import { applySpecialize } from '../specialize.ts';
 import { applyAbilityCommand } from './abilities.ts';
 import { callWave } from './waves.ts';
 
@@ -46,6 +48,12 @@ function applyCommand(
       return build(state, ctx, cmd);
     case 'upgrade':
       return upgrade(state, cmd.towerUid);
+    case 'specialize':
+      return applySpecialize(state, ctx, cmd);
+    case 'holdFire':
+      return applyHoldFire(state, ctx, cmd);
+    case 'spareRunners':
+      return applySpareRunners(state, ctx, cmd);
     case 'targeting': {
       const tower = poolFind(state.towers, cmd.towerUid);
       if (tower === null) return 'noSuchTower';
@@ -80,7 +88,7 @@ function build(
   const tier = def.tiers[0];
   if (state.credits < tier.cost) return 'cantAfford';
 
-  // TODO(T204): cost modifiers (shop discounts, Clearance Sale) arrive as modifiers.
+  // TODO(T202a): cost modifiers (towerCost); Clearance Sale with its ability.
   state.credits -= tier.cost;
   state.stats.creditsSpent += tier.cost;
   state.stats.towersBuilt++;
@@ -97,6 +105,8 @@ function build(
   tower.builtTick = state.tick;
   tower.cooldownTicks = DEPLOY_TICKS + 1;
   state.towerAtTile[idx] = tower.slot;
+  // TODO(T206a): inherit state.holdFireAll / spareRunnersAll.
+  state.linksDirty = true;
   emit(state, {
     type: 'TowerBuilt',
     uid: tower.uid,
@@ -119,6 +129,7 @@ function upgrade(state: SimState, towerUid: number): RejectReason | null {
   tower.tier++;
   tower.tierDef = next;
   tower.invested += next.cost;
+  state.linksDirty = true;
   emit(state, { type: 'TowerUpgraded', uid: tower.uid, tier: tower.tier, cost: next.cost });
   return null;
 }
@@ -138,6 +149,7 @@ function sell(state: SimState, ctx: TickContext, towerUid: number): RejectReason
   if (state.towerAtTile[idx] === tower.slot) state.towerAtTile[idx] = -1;
   state.credits += value;
   state.stats.creditsRefunded += value;
+  state.linksDirty = true;
   emit(state, { type: 'TowerSold', uid: tower.uid, refund: value });
   return null;
 }

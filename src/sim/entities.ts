@@ -3,8 +3,12 @@
 // - Positions are in tiles; tile (c, r) has its center at (c + 0.5, r + 0.5).
 // - Entities refer to each other by uid (0 = none), never by object reference, so sim state has
 //   no cycles and hash() can walk it. Compiled definitions are held by direct reference.
+// - Fields are scalars (or frozen content): poolAlloc resets a slot with Object.assign from the
+//   frozen blank, so a mutable object or array in a blank would be shared by every entity.
 // - The task that implements a kind's behavior adds the fields it needs here (T103 movement,
-//   T105a combat, T105b economy, T113 abilities).
+//   T105a combat, T105b economy, T113 abilities). T200 added the M2 seams ahead of their tasks
+//   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a);
+//   until then they keep their blank values.
 import type {
   CompiledEffect,
   CompiledEnemyDef,
@@ -12,7 +16,8 @@ import type {
   CompiledTier,
   CompiledTowerDef,
 } from '../content/compiled.ts';
-import type { DamageType, TargetPriority, WaveTag } from '../content/types.ts';
+import type { AllyKind, DamageType, TargetPriority, WaveTag } from '../content/types.ts';
+import type { SpecChoice } from './commands.ts';
 import type { PoolEntity } from './pool.ts';
 
 const NO_TAGS: readonly WaveTag[] = Object.freeze([]);
@@ -20,8 +25,10 @@ const NO_EFFECTS: readonly CompiledEffect[] = Object.freeze([]);
 
 export interface Tower extends PoolEntity {
   def: CompiledTowerDef | null;
-  /** 1–3 (4 once specs land, T202). */
+  /** 1–3, or 4 once specialized (`spec`). */
   tier: number;
+  /** The tier-4 specialization taken, or null below tier 4 (T202b). */
+  spec: SpecChoice | null;
   /** The current tier, resolved once (`def.tiers[tier - 1]`), so hot loops don't index. */
   tierDef: CompiledTier | null;
   col: number;
@@ -43,6 +50,26 @@ export interface Tower extends PoolEntity {
   builtTick: number;
   /** −1 until the tower first fires (misclick-grace refund, design/core-loop.md §2.3). */
   firstFiredTick: number;
+  /** Hold Fire (core-loop.md § 2.7): it doesn't attack, but keeps its auras and links (T206a). */
+  holdFire: boolean;
+  /** The spare-runners targeting filter: never picks a SPARE_TAGS unit as its target (T206a). */
+  spareRunners: boolean;
+  /**
+   * Its active synergy links (design/towers.md § 6), as a bit mask: bit i is the i-th link in the
+   * compiled link registry (T202a). Each link type counts once per tower.
+   */
+  linkMask: number;
+  /**
+   * The dynamic bonuses (links, auras, tiles) summed per stat (architecture.md § Sim public API,
+   * stacking): flat, then percent as a fraction. Recomputed only when something changes, never
+   * per tick (T202a). Static modifiers fold into the tier's stats instead.
+   */
+  flatDamage: number;
+  flatRate: number;
+  flatRange: number;
+  pctDamage: number;
+  pctRate: number;
+  pctRange: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -64,6 +91,16 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   invested: 0,
   builtTick: 0,
   firstFiredTick: -1,
+  spec: null,
+  holdFire: false,
+  spareRunners: false,
+  linkMask: 0,
+  flatDamage: 0,
+  flatRate: 0,
+  flatRange: 0,
+  pctDamage: 0,
+  pctRate: 0,
+  pctRange: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -185,13 +222,21 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   effects: NO_EFFECTS,
 });
 
+/**
+ * What a zone does: `strike` lands once on every ground enemy in its radius (Orbital Strike);
+ * `segment` covers a stretch of one route for its duration (Suppressing Fire, T207a).
+ */
+export type ZoneKind = 'strike' | 'segment';
+
 /** Ground effects and ability areas (the Orbital Strike reticle, T113). */
 export interface Zone extends PoolEntity {
+  kind: ZoneKind;
   x: number;
   y: number;
   radiusSq: number;
   /** Ticks until it resolves or expires. */
   ticksLeft: number;
+  /** Per hit for a strike; per second for a segment. */
   damage: number;
   damageType: DamageType;
   /**
@@ -199,12 +244,19 @@ export interface Zone extends PoolEntity {
    * pool index every PoolEntity has.
    */
   abilitySlot: number;
+  /** A segment's route, and the stretch of it covered: `distFrom ≤ dist ≤ distTo` (tiles). */
+  route: CompiledRoute | null;
+  distFrom: number;
+  distTo: number;
+  /** A segment's slow on the enemies inside it, as a fraction (0.5 = −50% speed). */
+  slowPct: number;
 }
 
 export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   slot: 0,
   uid: 0,
   alive: false,
+  kind: 'strike',
   x: 0,
   y: 0,
   radiusSq: 0,
@@ -212,18 +264,68 @@ export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   damage: 0,
   damageType: 'kinetic',
   abilitySlot: 0,
+  route: null,
+  distFrom: 0,
+  distTo: 0,
+  slowPct: 0,
 });
 
-/** Friendly non-tower units. A placeholder until allies land (T207); the pool stays empty in M1. */
+/** How an ally moves (architecture.md § Entity model). */
+export type AllyMode = 'post' | 'route' | 'owner' | 'stationary';
+/** Who can hurt an ally: nobody, the Hollow's hush, or a scripted timeline (Bricks in A3M3). */
+export type AllyVulnerability = 'never' | 'hush' | 'scripted';
+
+/**
+ * Friendly non-tower units (design/maps.md § 5.4): Bricks at his post, militia, refugees, the
+ * choir, swarmlings. The allies system runs them (T207a); M2 has Bricks's post only. Allies with
+ * an attack never target `quiet_wave`, `youngling`, or `fleeing` units.
+ */
 export interface Ally extends PoolEntity {
+  kind: AllyKind | null;
+  mode: AllyMode;
+  vulnerability: AllyVulnerability;
+  /** Position in tiles (a post's tile center). */
   x: number;
   y: number;
+  /** For `route` allies: the route and the distance along it (as enemies, sim/path.ts). */
+  route: CompiledRoute | null;
+  dist: number;
+  seg: number;
+  /** For `owner` allies (swarmlings): the owning tower's uid; else 0. */
+  ownerUid: number;
+  /** The attack, if any (damage 0: none): per hit, every `periodTicks`, within the range. */
+  damage: number;
+  damageType: DamageType;
+  periodTicks: number;
+  rangeSq: number;
+  /** Ticks until it may attack again (fires on a tick that starts at 0, like a tower). */
+  cooldownTicks: number;
+  /** The current target (0 = none) and its enemy-pool slot hint. */
+  targetUid: number;
+  targetSlot: number;
+  /** Health as a fraction of full (1); scripted allies follow their map's timeline. */
+  health: number;
 }
 
 export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
   slot: 0,
   uid: 0,
   alive: false,
+  kind: null,
+  mode: 'post',
+  vulnerability: 'never',
   x: 0,
   y: 0,
+  route: null,
+  dist: 0,
+  seg: 0,
+  ownerUid: 0,
+  damage: 0,
+  damageType: 'kinetic',
+  periodTicks: 0,
+  rangeSq: 0,
+  cooldownTicks: 0,
+  targetUid: 0,
+  targetSlot: -1,
+  health: 1,
 });

@@ -5,6 +5,7 @@
 //   also activate), unless a modal is open, in which case the modal keeps them.
 // - Enter always activates the focused button (never a game hotkey).
 // - Esc closes a blocking modal (the M1 briefing) wherever the focus is, before anything else.
+// - Global keys (M: mute) work on every screen, under the same text-entry and modifier rules.
 // Bindings (design/core-loop.md §4) live in the table below. Still to come: E (the companion's
 // ability, T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
 import {
@@ -18,6 +19,7 @@ import {
   togglePause,
   upgradeSelected,
 } from './commands.ts';
+import { toggleMute } from './settings.ts';
 
 /** A hotkey's action, by `KeyboardEvent.code` (layout-independent). */
 export const BINDINGS: Readonly<Record<string, () => void>> = {
@@ -37,6 +39,11 @@ export const BINDINGS: Readonly<Record<string, () => void>> = {
   KeyT: cycleTargeting,
   KeyW: callWave,
   KeyQ: () => pressAbility(1),
+};
+
+/** Keys that work on every screen (title, battle, results), not only in a live battle. */
+export const GLOBAL_BINDINGS: Readonly<Record<string, () => void>> = {
+  KeyM: toggleMute,
 };
 
 /** Keys a focused button would act on itself, which the game takes instead (the modal keeps them). */
@@ -87,11 +94,25 @@ export function routeKey(
   return BINDINGS[e.code] ?? null;
 }
 
+/** Whether a global key press should run (not typed into a field, no modifiers, not a repeat). */
+export function routeGlobalKey(
+  e: Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey' | 'repeat'>,
+  focused: Element | null,
+): boolean {
+  return !(e.ctrlKey || e.metaKey || e.altKey || e.repeat) && !isTextEntry(focused);
+}
+
 /** Installs the listener. Returns its removal. */
 export function installKeys(routing: KeyRouting): () => void {
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.code === 'Escape' && !e.repeat && routing.dismissModal?.() === true) {
       e.preventDefault();
+      return;
+    }
+    const global = GLOBAL_BINDINGS[e.code];
+    if (global !== undefined && routeGlobalKey(e, document.activeElement)) {
+      e.preventDefault();
+      global();
       return;
     }
     if (!routing.isActive()) return;

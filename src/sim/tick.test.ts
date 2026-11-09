@@ -24,9 +24,11 @@ describe('the system pipeline', () => {
       'waves',
       'triggers',
       'status',
+      'links',
       'abilities',
       'movement',
       'towers',
+      'allies',
       'projectiles',
       'cleanup',
     ]);

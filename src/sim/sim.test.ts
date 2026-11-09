@@ -72,11 +72,19 @@ describe('createSim', () => {
     expect(
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
-    expect(bad({ companion: 'bricks' })).toMatch(/T207/);
-    expect(bad({ difficulty: 'story' })).toMatch(/Standard/);
+    expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' is not simulated until T207a/);
+    expect(bad({ difficulty: 'story' })).toMatch(/Story difficulty is not simulated until T204b/);
     expect(
       bad({ modifiers: [{ kind: 'economy', stat: 'startCredits', flat: 50, source: 'test' }] }),
-    ).toMatch(/T204/);
+    ).toMatch(/'economy.startCredits' modifier \(test\) is not simulated until T202a/);
+    expect(bad({ specsUnlocked: ['fx_gun'] })).toMatch(/specializations .* until T202b/);
+    // @ts-expect-error -- an unknown tower id is a type error too
+    expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
+    expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);
+    expect(
+      // @ts-expect-error -- an unknown ability id is a type error too
+      bad({ abilities: { slot1: null, slot2: 'nope', slot2State: 'present' } }),
+    ).toMatch(/abilities.slot2: unknown ability 'nope'/);
     // Compiled content can't have a waveless map (the validator refuses one); build it by hand.
     const waveless = { ...FIXTURE_CONTENT.maps.fx_map, waves: [] };
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
@@ -84,7 +92,7 @@ describe('createSim', () => {
     );
     const both = bad({ seed: -1, companion: 'bricks' });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/T207/);
+    expect(both).toMatch(/T207a/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

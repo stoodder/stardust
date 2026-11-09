@@ -2,6 +2,7 @@
 // Start button, and a little Act I corporate cheer. Copy: Everglow's slogan (story/races.md
 // § Everglow Dynamics) and the Act I loading tip (story/style-guide.md §2).
 import { startGame } from '../../app/navigation.ts';
+import { MuteButton } from '../hud/MuteButton.tsx';
 import './screens.css';
 
 /** The title screen. Enter (or a click) on the focused Start button opens the battle. */
@@ -29,6 +30,7 @@ export function Title() {
       >
         Start shift
       </button>
+      <MuteButton class="sd-title-sound" />
       <p class="sd-title-tip">
         <span class="sd-title-tip-label">Tip</span> Remember: a clean perimeter is a happy
         perimeter!

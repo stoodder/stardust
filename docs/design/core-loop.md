@@ -210,6 +210,7 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |
 | Spare runners (from A2M1, §2.7) | Tower panel toggle (one tower) or HUD button (all) | Alt+H (all) |
 | Cancel | Right-click | Esc |
+| Mute sound (any screen) | The speaker button, top right | M |
 
 **The armed-tower rule.** A battle starts with nothing armed. A build slot (click, or 1–4) arms its tower, and pressing it again disarms. A locked slot doesn't arm and says when it ships ("Thumper ships at wave 3"); an unaffordable one says "Not enough credits". With a tower armed, clicking a free pad builds it, and the slot **stays armed while another copy is affordable**, so several can go down in a row; clicking any other tile says "Can't build there" and keeps the slot armed. Selecting a tower, aiming an ability, Esc, or right-click disarms. Until the first build, slot 1 and the free pads pulse to show where to start.
 

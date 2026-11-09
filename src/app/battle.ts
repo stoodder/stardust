@@ -10,6 +10,7 @@ import { hud } from '../ui/state.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
 import { bindHud, rejectText, showNotice, type HudOptions } from './hud.ts';
+import { bindBattleAudio } from './audio.ts';
 import { bindRadio } from './radio.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
@@ -59,6 +60,7 @@ export function startBattle(
   );
   const unbindHud = bindHud(host, interaction, hudOptions);
   const unbindRadio = bindRadio(host.bus, sim.map.id);
+  const unbindAudio = bindBattleAudio(host);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
   return {
@@ -71,6 +73,7 @@ export function startBattle(
       setCommandTarget(null);
       unbindHud();
       unbindRadio();
+      unbindAudio();
       game.scene.remove(key);
     },
   };

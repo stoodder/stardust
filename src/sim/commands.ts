@@ -1,20 +1,34 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
-// This is the M1 subset; specialize, holdFire, spareRunners, clear, interact, and scriptInput
-// arrive with their tasks (T202, T206, M3).
+// Every M2 command is declared; the handlers that aren't live yet reject `notImplemented` and name
+// their task (specialize.ts, fireControl.ts). clear, interact, and scriptInput arrive in M3.
 import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 
 export type Command<K extends IdSpace = LiveIds> =
   | { readonly type: 'build'; readonly tile: GridPos; readonly tower: K['tower'] }
-  /** To the next tier. */
+  /** To the next tier (1–3). */
   | { readonly type: 'upgrade'; readonly towerUid: number }
+  /** Tier 3 → tier 4, choosing one of the tower's two specializations (T202b). */
+  | { readonly type: 'specialize'; readonly towerUid: number; readonly spec: SpecChoice }
   | { readonly type: 'sell'; readonly towerUid: number }
   | { readonly type: 'targeting'; readonly towerUid: number; readonly mode: TargetPriority }
-  /** Commander abilities. M1 has slot 1 only (Orbital Strike); slot 2 is the companion (T207). */
+  /**
+   * Plain Hold Fire (core-loop.md § 2.7): a tower uid, or `'all'` (every tower, and towers built
+   * while it's on start with it on). A holding tower keeps its auras and links (T206a).
+   */
+  | { readonly type: 'holdFire'; readonly target: number | 'all'; readonly on: boolean }
+  /**
+   * The spare-runners targeting filter (core-loop.md § 2.7): per tower, or `'all'` (inherited by
+   * towers built while it's on). The tower never picks a SPARE_TAGS unit as its target (T206a).
+   */
+  | { readonly type: 'spareRunners'; readonly target: number | 'all'; readonly on: boolean }
+  /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */
   | { readonly type: 'ability'; readonly slot: 1 | 2; readonly target?: GridPos }
   /** Call the next wave early (or start wave 1). */
   | { readonly type: 'callWave' };
 export type CommandType = Command['type'];
+/** A tower's tier-4 specialization: `TowerDef.specs.a` or `.b`. */
+export type SpecChoice = 'a' | 'b';
 
 /** Why a command was rejected (the `CommandRejected` event), so the UI can explain. */
 export type RejectReason =
@@ -43,6 +57,14 @@ export type RejectReason =
   | 'abilityOnCooldown'
   /** The ability's target is missing or off the map. */
   | 'invalidTarget'
+  /** specialize: the tower's specs aren't in `SimConfig.specsUnlocked`. */
+  | 'specLocked'
+  /** specialize: the tower has no tier-4 specializations. */
+  | 'noSpecs'
+  /** specialize: the tower is below tier 3. */
+  | 'needsTier3'
+  /** specialize: the tower is already tier 4. */
+  | 'alreadySpecialized'
   /** The handler belongs to a later task (named where the command is handled). */
   | 'notImplemented';
 
@@ -59,6 +81,12 @@ export function copyCommand<K extends IdSpace>(cmd: Command<K>): Command<K> {
       return { type: 'build', tile: [cmd.tile[0], cmd.tile[1]], tower: cmd.tower };
     case 'upgrade':
       return { type: 'upgrade', towerUid: cmd.towerUid };
+    case 'specialize':
+      return { type: 'specialize', towerUid: cmd.towerUid, spec: cmd.spec };
+    case 'holdFire':
+      return { type: 'holdFire', target: cmd.target, on: cmd.on };
+    case 'spareRunners':
+      return { type: 'spareRunners', target: cmd.target, on: cmd.on };
     case 'sell':
       return { type: 'sell', towerUid: cmd.towerUid };
     case 'targeting':

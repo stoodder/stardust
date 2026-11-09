@@ -1,0 +1,33 @@
+{
+  "v": 1,
+  "savedAt": 1793100000000,
+  "data": {
+    "profile": null,
+    "campaign": {
+      "maps": {
+        "a1_m01": { "completed": true, "medals": ["victory", "perfect_core"], "bestMeter": 20 }
+      }
+    },
+    "currencies": { "stardust": 0, "intel": 2 },
+    "unlocks": {
+      "towers": ["rivet", "thumper", "sprinkler"],
+      "specs": [],
+      "revokedTowers": [],
+      "jailbroken": [],
+      "abilities": ["orbital_strike"],
+      "revokedAbilities": []
+    },
+    "upgrades": {},
+    "story": {
+      "flags": { "spared_quiet_wave": false },
+      "seen": ["a1_m01_briefing"],
+      "memosRead": ["welcome"],
+      "memosDelivered": ["welcome"],
+      "codex": { "nibbler": ["original"] },
+      "bricksTagIndex": 1,
+      "memorialTower": null,
+      "granted": []
+    },
+    "stats": { "pestsProcessed": 187, "runs": 3 }
+  }
+}

@@ -32,47 +32,84 @@ export function refusal(
   };
 }
 
+export type HarnessFeature =
+  /** #2 margins for non-integrity objectives (escort, holdout, choir). */
+  | 'objectives'
+  /** #14 one par run per story-flag value. */
+  | 'flagVariants'
+  /** #15 one par run per companion on a pick-list map. */
+  | 'companionPick'
+  /** #16 Hold Fire and spareFleeing runs on maps with fleeing or quiet-wave groups. */
+  | 'holdFireRuns'
+  /** #10 the jam limit. */
+  | 'jamLimit';
+
 /**
- * Map features whose assertions (#10, #14–#18) or runs the harness can't make yet: refused, so a
- * map that needs them fails loudly instead of passing untested.
+ * The harness's own refusals: map features whose assertions (#2, #10, #14–#16) or runs it can't
+ * make yet, keyed by assertion, with the task that lifts each (`null` once it's checked). Like
+ * the sim's FEATURE_GATES (sim/gates.ts), each task flips only its own row.
  */
-export function refusedFeatures<K extends IdSpace>(map: CompiledMapDef<K>): CheckSpec[] {
+export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
+  objectives: 'T305',
+  flagVariants: 'M3',
+  companionPick: 'T207a',
+  holdFireRuns: 'T206a',
+  jamLimit: 'M3',
+});
+
+/**
+ * Map features whose assertions or runs the harness can't make yet (HARNESS_GATES): refused, so
+ * a map that needs them fails loudly instead of passing untested.
+ */
+export function refusedFeatures<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  gates: Readonly<Record<HarnessFeature, string | null>> = HARNESS_GATES,
+): CheckSpec[] {
   const out: CheckSpec[] = [];
-  const refuse = (id: string, title: string, why: string): void => {
+  const refuse = (feature: HarnessFeature, id: string, title: string, why: string): void => {
+    const owner = gates[feature];
+    if (owner === null) return;
     out.push(
       refusal(id, title, '*', () => {
-        throw new RangeError(why);
+        throw new RangeError(`${why} (${owner})`);
       }),
     );
   };
   if (map.objective !== 'defend' && map.objective !== 'protect') {
     refuse(
+      'objectives',
       '2',
       `${map.objective} margins`,
-      `the harness measures only integrity margins until T305`,
+      'the harness measures only integrity margins until objectives land',
     );
   }
   if (Object.keys(map.builds.flagVariants).length > 0) {
-    refuse('14', 'flag variants', 'flag-variant runs need story flags in the sim (M3)');
+    refuse('flagVariants', '14', 'flag variants', 'flag-variant runs need story flags in the sim');
   }
   if (map.companion !== null && 'pick' in map.companion) {
-    refuse('15', 'companion pick list', 'companion runs need companions in the sim (T207)');
+    refuse(
+      'companionPick',
+      '15',
+      'companion pick list',
+      'companion runs need companions in the sim',
+    );
   }
   const groups = map.waves.flatMap((w) => w.groups);
   if (groups.some((g) => g.tags.includes('fleeing') || g.tags.includes('quiet_wave'))) {
     refuse(
+      'holdFireRuns',
       '16',
       'free choices stay free',
-      'Hold Fire and spareFleeing runs need those commands (T206)',
+      'Hold Fire and spareFleeing runs need those commands',
     );
   }
   if (groups.some((g) => JAMMER_ENEMIES.includes(g.enemy.id))) {
-    refuse('10', 'jam limit', 'the jam-limit check needs jammers in the sim (M3)');
+    refuse('jamLimit', '10', 'jam limit', 'the jam-limit check needs jammers in the sim');
   }
   return out;
 }
 
-/** Assertions not made in M1 for any map (architecture.md, M1 subset: Harness). */
+/** Assertions not made for any map yet (architecture.md, M1 subset: Harness). */
 export const NOT_CHECKED_IN_M1: readonly string[] = [
-  '#9 Story difficulty (createSim refuses Story until it lands)',
+  '#9 Story difficulty (createSim refuses Story until T204b)',
 ];

@@ -325,6 +325,14 @@ export function rejectText(reason: RejectReason): string | null {
       return 'No targeting on this tower';
     case 'notImplemented':
       return 'Not online yet';
+    case 'specLocked':
+      return 'Specialization locked';
+    case 'noSpecs':
+      return 'No specializations';
+    case 'needsTier3':
+      return 'Needs tier 3';
+    case 'alreadySpecialized':
+      return 'Already specialized';
     case 'waveInProgress':
       return 'Wave in progress';
     case 'noWavesLeft':

@@ -6,8 +6,10 @@ import type { SimConfig } from './config.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
 import { abilities } from './systems/abilities.ts';
+import { allies } from './systems/allies.ts';
 import { applyCommands } from './systems/applyCommands.ts';
 import { cleanup } from './systems/cleanup.ts';
+import { links } from './systems/links.ts';
 import { movement } from './systems/movement.ts';
 import { projectiles } from './systems/projectiles.ts';
 import { status } from './systems/status.ts';
@@ -45,9 +47,11 @@ export type SystemName =
   | 'waves'
   | 'triggers'
   | 'status'
+  | 'links'
   | 'abilities'
   | 'movement'
   | 'towers'
+  | 'allies'
   | 'projectiles'
   | 'cleanup';
 
@@ -58,9 +62,11 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'waves', run: waves },
     { name: 'triggers', run: triggers },
     { name: 'status', run: status },
+    { name: 'links', run: links },
     { name: 'abilities', run: abilities },
     { name: 'movement', run: movement },
     { name: 'towers', run: towers },
+    { name: 'allies', run: allies },
     { name: 'projectiles', run: projectiles },
     { name: 'cleanup', run: cleanup },
   ]);

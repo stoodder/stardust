@@ -13,6 +13,8 @@ import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
 import { setRadioEnabled } from './radio.ts';
+import { audioTestHooks, installAudio } from './audio.ts';
+import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
 
@@ -25,6 +27,7 @@ export function parseBootParams(search: string): BootParams {
   return {
     test,
     radio: !test || q.get('radio') === '1',
+    audio: !test || q.get('audio') === '1',
     seed,
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
@@ -46,6 +49,8 @@ function requireElement(id: string): HTMLElement {
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
   setRadioEnabled(params.radio);
+  initSettings();
+  installAudio(params.audio);
   const gameRoot = requireElement('game');
   const uiRoot = requireElement('ui');
 
@@ -95,6 +100,7 @@ export async function boot(): Promise<void> {
         frameMs: () => frames.frameMs(),
         canvas: () => game.canvas,
         viewWidth: VIEW_W,
+        audio: audioTestHooks(),
       }),
     );
   }

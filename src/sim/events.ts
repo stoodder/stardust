@@ -1,17 +1,31 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. This is the M1 subset; each event's owning task may
-// add payload fields.
-import type { AttackKind, GridPos, IdSpace, LiveIds, RouteId, SpriteId } from '../content/types.ts';
-import type { Command, RejectReason } from './commands.ts';
+// sim, systems communicate through state. Every M2 event is declared; the ones whose task hasn't
+// landed are never emitted yet (each names its task). An event's owning task may add payload
+// fields.
+import type {
+  AllyKind,
+  AttackKind,
+  GridPos,
+  IdSpace,
+  LiveIds,
+  RouteId,
+  SpriteId,
+} from '../content/types.ts';
+import type { Command, RejectReason, SpecChoice } from './commands.ts';
 
 /**
- * Who dealt a hit (the damage pipeline's `source`, sim/combat/damage.ts): a tower by uid, or a
- * commander ability by slot. EnemyDied names the killer with it.
+ * Who dealt a hit (the damage pipeline's `source`, sim/combat/damage.ts): a tower by uid, a
+ * commander ability by slot, or an ally (Bricks, militia; T207a) by uid. EnemyDied names the
+ * killer with it.
  */
 export type DamageSource =
   | { readonly kind: 'tower'; readonly uid: number }
-  | { readonly kind: 'ability'; readonly slot: 1 | 2 };
+  | { readonly kind: 'ability'; readonly slot: 1 | 2 }
+  | { readonly kind: 'ally'; readonly uid: number };
+
+/** The three medals every campaign map has (design/progression.md § 3). */
+export type MedalKind = 'victory' | 'perfectCore' | 'challenge';
 
 export type SimEvent<K extends IdSpace = LiveIds> =
   | {
@@ -97,6 +111,79 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly cost: number;
     }
   | { readonly type: 'TowerSold'; readonly uid: number; readonly refund: number }
+  | {
+      /** Tier 3 → tier 4 (T202b). */
+      readonly type: 'TowerSpecialized';
+      readonly uid: number;
+      readonly spec: SpecChoice;
+      readonly cost: number;
+    }
+  | {
+      /** A holdFire command took effect (T206a). `target` as in the command. */
+      readonly type: 'HoldFireChanged';
+      readonly target: number | 'all';
+      readonly on: boolean;
+    }
+  | {
+      /** A spareRunners command took effect (T206a). `target` as in the command. */
+      readonly type: 'SpareRunnersChanged';
+      readonly target: number | 'all';
+      readonly on: boolean;
+    }
+  /**
+   * Story-facing (T206a): `stats.ticksSinceFiredAtSkitterkin` crossed the threshold in
+   * content/rules.ts (the "not firing" bark, core-loop.md § 6.3). Once per run.
+   */
+  | { readonly type: 'NotFiringAtSkitterkin' }
+  | {
+      /**
+       * A synergy link became active between towers `a` and `b` (design/towers.md § 6; T202a).
+       * `link` is a link id (content/links/).
+       */
+      readonly type: 'LinkFormed';
+      readonly link: string;
+      readonly a: number;
+      readonly b: number;
+    }
+  | {
+      /** An active link ended: a partner was sold or jammed (T202a). */
+      readonly type: 'LinkBroken';
+      readonly link: string;
+      readonly a: number;
+      readonly b: number;
+    }
+  | {
+      /** An ally unit appeared (design/maps.md § 5.4; T207a). Position in tiles. */
+      readonly type: 'AllySpawned';
+      readonly uid: number;
+      readonly kind: AllyKind;
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * An ally attacked (Bricks's rivet cannon; T207a): from (x, y) at its target's position.
+       * Its damage lands through the damage pipeline like a hitscan tower's.
+       */
+      readonly type: 'AllyAttacked';
+      readonly uid: number;
+      readonly targetUid: number;
+      readonly x: number;
+      readonly y: number;
+      readonly targetX: number;
+      readonly targetY: number;
+    }
+  /** An ally left the map (walked off, or its script removed it; T207a). */
+  | { readonly type: 'AllyRemoved'; readonly uid: number }
+  | {
+      /**
+       * A medal's status changed (T202c): `forfeited` the moment it can no longer be earned this
+       * run (Perfect Core's first counted leak, an event condition broken), `earned` at victory.
+       */
+      readonly type: 'MedalProgress';
+      readonly medal: MedalKind;
+      readonly status: 'earned' | 'forfeited';
+    }
   | { readonly type: 'TowerClassUnlocked'; readonly tower: K['tower'] }
   | {
       /** Wave `wave` began spawning. `early`: called during its countdown, paying `bonus`. */

@@ -26,6 +26,7 @@ import {
 } from '../state.ts';
 import { lockedText } from '../../app/hud.ts';
 import { Icon } from './Icon.tsx';
+import { MuteButton } from './MuteButton.tsx';
 import { placePanel, tickToward } from './layout.ts';
 import { alignPulse } from './pulse.ts';
 import { colorVar } from '../color.ts';
@@ -580,7 +581,10 @@ export function Hud() {
         <StatusPanel />
         <Radio />
         <div class="hud-top-right">
-          <SpeedControls />
+          <div class="hud-top-row">
+            <MuteButton />
+            <SpeedControls />
+          </div>
           <WavePanel />
         </div>
         <AbilityBar />

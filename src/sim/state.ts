@@ -2,7 +2,7 @@
 // the output buffers (HASH_EXCLUDED), so two runs that agree on hash() agree on every field.
 // Immutable inputs (content, the map, the config) live in the TickContext instead (tick.ts).
 import type { CompiledMapDef } from '../content/compiled.ts';
-import type { IdSpace } from '../content/types.ts';
+import type { IdSpace, WaveTag } from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
 import type { Command, CommandLogEntry } from './commands.ts';
 import {
@@ -17,7 +17,7 @@ import {
   type Tower,
   type Zone,
 } from './entities.ts';
-import type { SimEvent } from './events.ts';
+import type { MedalKind, SimEvent } from './events.ts';
 import { createPool, type Pool } from './pool.ts';
 
 /** Initial pool sizes, from the design's peak live counts (pools grow past them if needed). */
@@ -40,12 +40,17 @@ export interface SimRngs {
   abilities: Rng;
   movement: Rng;
   towers: Rng;
+  allies: Rng;
   projectiles: Rng;
 }
 
+/** A count per wave tag (fixed keys, so the shape is monomorphic and hash order is stable). */
+export type TagCounts = Record<WaveTag, number>;
+
 /**
- * Per-run stats (integers). M1 has the run stats conditions read (`RunStat` in content/types.ts)
- * and the Pests Processed count; the other story stats arrive with their tasks (T206, T202).
+ * Per-run stats (integers): the run stats conditions read (`RunStat` in content/types.ts), the
+ * Pests Processed count, and the story stats (architecture.md § Entity model). The fire-control
+ * and per-tag stats are counted from T206a, `medalExemptLeaks` from T202c; until then they stay 0.
  */
 export interface SimStats {
   /** Pests Processed this run: Skitterkin enemies killed by towers or abilities. */
@@ -64,7 +69,28 @@ export interface SimStats {
   /** Credits earned in play: bounties, clear bonuses, early-call bonuses, and script grants. */
   creditsEarned: number;
   abilityUses: number;
+  /** Ticks on which any tower was holding fire (T206a). */
+  holdFireTicks: number;
+  /** holdFire commands that turned Hold Fire on (T206a). */
+  holdFireUses: number;
+  /**
+   * Ticks since a tower last fired at a Skitterkin while one was in range of a tower; frozen while
+   * none is (the "not firing" bark, NotFiringAtSkitterkin; T206a).
+   */
+  ticksSinceFiredAtSkitterkin: number;
+  /** Per wave tag: units spawned, leaked, and killed by the player (towers, abilities, allies). */
+  tagSpawned: TagCounts;
+  tagLeaked: TagCounts;
+  tagKilled: TagCounts;
+  /** Leaks by medal-exempt units, which never break Perfect Core (core-loop.md § 2.7; T202c). */
+  medalExemptLeaks: number;
 }
+
+/**
+ * A medal's standing during a run (T202c): `open` until settled, `forfeited` once it can't be
+ * earned this run, `earned` at victory.
+ */
+export type MedalStatus = 'open' | 'forfeited' | 'earned';
 
 export type Outcome = 'playing' | 'won' | 'lost';
 
@@ -132,6 +158,19 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * abilities system ticks them down (T113).
    */
   abilityCooldownTicks: number[];
+  /** Global Hold Fire is on: every tower holds, and towers built now start holding (T206a). */
+  holdFireAll: boolean;
+  /** The global spare-runners toggle: towers built while it's on start with the filter (T206a). */
+  spareRunnersAll: boolean;
+  /**
+   * Something that changes links happened (a build, upgrade, specialization, or sell, or later a
+   * jam): the links system recomputes them, and the towers' dynamic bonuses, then clears it.
+   */
+  linksDirty: boolean;
+  /** Emergency Bulkhead: integrity loss still to absorb (from a `leakAbsorb` modifier; T202a). */
+  leakAbsorbLeft: number;
+  /** Each medal's standing this run (T202c). */
+  medals: Record<MedalKind, MedalStatus>;
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -153,6 +192,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     abilities: forkRng(root, 'abilities'),
     movement: forkRng(root, 'movement'),
     towers: forkRng(root, 'towers'),
+    allies: forkRng(root, 'allies'),
     projectiles: forkRng(root, 'projectiles'),
   };
   return {
@@ -190,12 +230,29 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       creditsRefunded: 0,
       creditsEarned: 0,
       abilityUses: 0,
+      holdFireTicks: 0,
+      holdFireUses: 0,
+      ticksSinceFiredAtSkitterkin: 0,
+      tagSpawned: tagCounts(),
+      tagLeaked: tagCounts(),
+      tagKilled: tagCounts(),
+      medalExemptLeaks: 0,
     },
     abilityCooldownTicks: [0, 0],
+    holdFireAll: false,
+    spareRunnersAll: false,
+    linksDirty: false,
+    leakAbsorbLeft: 0,
+    medals: { victory: 'open', perfectCore: 'open', challenge: 'open' },
     pending: [],
     commandLog: [],
     events: [],
   };
+}
+
+/** A zero count for every wave tag. */
+export function tagCounts(): TagCounts {
+  return { quiet_wave: 0, youngling: 0, fleeing: 0, medal_exempt: 0 };
 }
 
 /** Hands out the next uid. */

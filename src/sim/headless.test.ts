@@ -248,6 +248,7 @@ describe('A1M1 builds through runHeadless', () => {
         difficulty: 'standard',
         abilities: { slot1: b.technicianAbility, slot2: null, slot2State: 'none' },
         scriptFlags: {},
+        specsUnlocked: [],
       },
       b,
     );

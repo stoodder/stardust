@@ -11,7 +11,7 @@ import {
   type CheckSpec,
   type RunRequest,
 } from './checks.ts';
-import { refusedFeatures } from './refusals.ts';
+import { HARNESS_GATES, refusedFeatures } from './refusals.ts';
 import { FIXTURE_CONTENT } from '../sim/__fixtures__/sim.ts';
 
 const map = PLAIN_CONTENT.maps.fx_map;
@@ -240,6 +240,9 @@ describe('balance checks', () => {
     expect(
       refused[0]!.evaluate(() => fakeRun({ build: 'par', seed: 1 }, fakeResult('won', 20))).ok,
     ).toBe(false);
+    // Each task lifts its own row.
+    const lifted = { ...HARNESS_GATES, holdFireRuns: null };
+    expect(refusedFeatures(FIXTURE_CONTENT.maps.fx_map, lifted)).toEqual([]);
   });
 
   it('median', () => {

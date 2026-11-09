@@ -1,0 +1,30 @@
+{
+  "v": 0,
+  "savedAt": 1793000000000,
+  "data": {
+    "profile": null,
+    "campaign": {
+      "maps": { "a1_m01": { "completed": true, "medals": ["victory"], "bestMeter": 17 } }
+    },
+    "currencies": { "stardust": 0, "intel": 1 },
+    "unlocks": {
+      "towers": ["rivet", "thumper"],
+      "specs": [],
+      "revokedTowers": [],
+      "jailbroken": [],
+      "abilities": ["orbital_strike"],
+      "revokedAbilities": []
+    },
+    "upgrades": {},
+    "story": {
+      "flags": {},
+      "seen": [],
+      "memosRead": [],
+      "memosDelivered": [],
+      "codex": {},
+      "bricksTagIndex": 0,
+      "memorialTower": null,
+      "granted": []
+    }
+  }
+}

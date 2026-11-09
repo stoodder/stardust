@@ -44,6 +44,7 @@ export function fixtureConfig(over: Partial<SimConfig<FixtureIds>> = {}): SimCon
     difficulty: 'standard',
     abilities: { slot1: 'fx_strike', slot2: null, slot2State: 'none' },
     scriptFlags: {},
+    specsUnlocked: [],
     ...over,
   };
 }

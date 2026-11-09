@@ -27,6 +27,7 @@ function newSim(build: CompiledBuild | null, seed = 1): Sim {
     difficulty: 'standard',
     abilities: { slot1: build?.technicianAbility ?? null, slot2: null, slot2State: 'none' },
     scriptFlags: {},
+    specsUnlocked: [],
   });
 }
 

@@ -241,9 +241,19 @@ section.chamfer,
   gap: 3px;
 }
 
+.hud-top-row {
+  display: flex;
+  gap: 6px;
+}
+
 .hud-speed {
   display: flex;
   gap: 2px;
+}
+
+/* An 8×8 pixel glyph drawn in SVG (the sound toggle's speaker). */
+.hud-glyph {
+  display: block;
 }
 
 .hud-waves {
