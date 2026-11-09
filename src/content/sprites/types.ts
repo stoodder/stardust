@@ -104,6 +104,7 @@ export const SPRITE_CATEGORIES = [
   'fx',
   'icon',
   'portrait',
+  'scene',
   'ui',
 ] as const;
 export type SpriteCategory = (typeof SPRITE_CATEGORIES)[number];

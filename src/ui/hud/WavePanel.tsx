@@ -1,12 +1,12 @@
 // Top-right: speed and pause, the wave counter, the call-wave button (with its early-call bonus),
 // and the next wave's preview with its countdown (core-loop §2.2): a NEW tag on a type the player
-// has never met, and on a map with two spawns, which spawn each group comes from (a spawn opening
-// for the first time is flagged too).
+// has never met, a MAIL tag with the hold-fire glyph on a neutral (Gerald, R9), and on a map with
+// two spawns, which spawn each group comes from (a spawn opening for the first time is flagged too).
 import { callWave, setSpeed } from '../../app/commands.ts';
 import { hud, speed } from '../state.ts';
 import { Icon } from './Icon.tsx';
 import { alignPulse } from './pulse.ts';
-import { Key } from './parts.tsx';
+import { Glyph, HOLD_GLYPH, Key } from './parts.tsx';
 
 /** Top-right: speed and pause. */
 export function SpeedControls() {
@@ -56,8 +56,9 @@ export function WavePanel() {
   const ended = hud.outcome.value !== 'playing';
   const countdown = hud.countdown.value;
   const bonus = hud.callBonus.value;
+  // The Quiet Wave walks in on its own (D097): nothing to call, so no button and no bonus.
   const callLabel =
-    next === null
+    next === null || hud.nextQuiet.value
       ? null
       : wave === 0
         ? `Start wave ${next.number}`
@@ -102,8 +103,8 @@ export function WavePanel() {
                 key={`${g.enemy}:${g.air ? 'air' : 'ground'}:${g.spawn ?? ''}`}
                 class={`hud-preview-group${g.isNew ? ' new' : ''}`}
                 data-enemy={g.enemy}
-                aria-label={`${g.count} ${g.label}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
-                title={`${g.label}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
+                aria-label={`${g.count} ${g.label}${g.neutral ? ', the mail: hold fire' : ''}${g.isNew ? ', new' : ''}${g.fast ? ', fast' : ''}${where}`}
+                title={`${g.label}${g.neutral ? ' (the mail: hold fire)' : ''}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}${g.spawn === null ? '' : ` (${g.spawn})`}`}
               >
                 <span class="hud-preview-icon">
                   <Icon id={g.icon} />
@@ -116,6 +117,12 @@ export function WavePanel() {
                 <span class="num">x{g.count}</span>
                 {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
                 {g.air && <span class="hud-air">Air</span>}
+                {g.neutral && (
+                  <span class="hud-mail">
+                    <Glyph rects={HOLD_GLYPH} />
+                    Mail
+                  </span>
+                )}
                 {g.spawn !== null && (
                   <span class={`hud-spawn${g.newSpawn ? ' opens' : ''}`} aria-hidden="true">
                     {spawnShort(g.spawn)}

@@ -8,7 +8,14 @@ import { NamePlate } from './CommsPanel.tsx';
 import { plateColor } from './plate.ts';
 import { LineText } from './LineText.tsx';
 import { Portrait } from './Portrait.tsx';
-import { ChoiceList, NextButton, trapTab, useSceneStep, type SceneStep } from './SceneParts.tsx';
+import {
+  ChoiceList,
+  LineAnnouncer,
+  NextButton,
+  trapTab,
+  useSceneStep,
+  type SceneStep,
+} from './SceneParts.tsx';
 import { plainText } from './text.ts';
 import { dialogue, type LineView, type SceneView } from './state.ts';
 import './dialogue.css';
@@ -108,6 +115,7 @@ function ScenePanel({ view }: { view: SceneView }) {
           <Prompt line={prompt} />
         )}
         <Controls view={view} step={step} />
+        <LineAnnouncer line={view.line} />
       </section>
     </div>
   );

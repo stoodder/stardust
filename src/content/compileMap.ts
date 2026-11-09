@@ -391,6 +391,7 @@ function compileWave<K extends IdSpace>(
       wave.countdownSec ?? DEFAULT_COUNTDOWN_SEC[act],
       `${where}.countdownSec`,
     ),
+    countdownAfter: wave.countdownAfter ?? null,
     teach: wave.teach ?? false,
     groups,
     lastSpawnTicks,

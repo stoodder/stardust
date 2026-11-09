@@ -8,7 +8,7 @@ import { UPGRADE_HINT } from '../meta/index.ts';
 import { mapOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
-import { abilityStats, callWaveBonus, freeCastReady } from '../sim/index.ts';
+import { abilityStats, callWaveBonus, freeCastReady, nextWaveIsQuiet } from '../sim/index.ts';
 import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
@@ -159,6 +159,36 @@ export function holdFireTeachShows(
   return neutralsLive > 0 && !masterUsed && playing;
 }
 
+/**
+ * Whether the Hold Fire teach's second lesson shows (R4, A1M3: Bricks's "Hold the Rivets. Keep
+ * the mortars working."): a neutral unit is on the field on its second pass or later (`pass`
+ * counts the times one arrived on an empty field), and no single turret has held fire this run.
+ */
+export function holdFireOneHintShows(
+  neutralsLive: number,
+  pass: number,
+  towerHoldUsed: boolean,
+  playing: boolean,
+): boolean {
+  return neutralsLive > 0 && pass >= 2 && !towerHoldUsed && playing;
+}
+
+/** The first wave whose countdown starts the salvage teach (A1M3: QUILL's W2 drone prompt). */
+export const SALVAGE_TEACH_WAVE = 2;
+
+/**
+ * Whether the salvage teach shows (R4): it has started (W2's countdown came), the map has
+ * wreckage standing, and the drone hasn't been sent this run, while the map is still played.
+ */
+export function salvageHintShows(
+  started: boolean,
+  wreckStanding: boolean,
+  sent: boolean,
+  playing: boolean,
+): boolean {
+  return started && wreckStanding && !sent && playing;
+}
+
 /** The first wave whose countdown starts the upgrade teach (D028: W2's build phase). */
 export const UPGRADE_TEACH_WAVE = 2;
 
@@ -260,7 +290,16 @@ export function bindHud(
   // been used this run.
   let neutralsLive = 0;
   let masterUsed = false;
+  // Its second lesson (R4): Gerald's passes so far, and whether one turret has held fire.
+  let neutralPass = 0;
+  let towerHoldUsed = false;
   hud.holdFireTeach.value = false;
+  hud.holdFireOneHint.value = false;
+  // The salvage teach (R4): from W2's countdown, on a map with wreckage, until the drone is sent.
+  let wrecks = 0;
+  for (const ch of sim.map.tiles) if (ch === 'x') wrecks++;
+  let salvageStarted = false;
+  hud.salvageHint.value = false;
   hud.spareRunnersOpen.value = saveInfo.spareRunnersOpen;
   hud.leak.value = null;
   hud.waveBanner.value = null;
@@ -289,8 +328,11 @@ export function bindHud(
     }
     hud.countdown.value = countdownSeconds(s.schedule.phase, s.schedule.countdownTicks);
     hud.callBonus.value = callWaveBonus(s, sim.map);
+    // The Quiet Wave can't be called (D097, K3): no Call button, no bonus, no pulse.
+    hud.nextQuiet.value = nextWaveIsQuiet(s, sim.map);
     hud.callPulse.value =
       s.outcome === 'playing' &&
+      !hud.nextQuiet.value &&
       callPulses(s.wave, hud.countdown.value, s.enemies.live, hud.built.value);
     hud.selected.value = selectedView(
       sim,
@@ -332,7 +374,21 @@ export function bindHud(
     }
     hud.sale.value = saleView(s, hud.sale.value);
     hud.callsign.value = saveInfo.callsign();
-    hud.holdFireTeach.value = holdFireTeachShows(neutralsLive, masterUsed, s.outcome === 'playing');
+    const playing = s.outcome === 'playing';
+    hud.holdFireTeach.value = holdFireTeachShows(neutralsLive, masterUsed, playing);
+    hud.holdFireOneHint.value = holdFireOneHintShows(
+      neutralsLive,
+      neutralPass,
+      towerHoldUsed,
+      playing,
+    );
+    const w = s.wreckage;
+    hud.salvageHint.value = salvageHintShows(
+      salvageStarted,
+      w.cleared.length < wrecks,
+      w.queue.length > 0 || w.cleared.length > 0,
+      playing,
+    );
     hud.holdFireAll.value = s.holdFireAll;
     hud.spareRunnersAll.value = s.spareRunnersAll;
     hud.holdingCount.value = holdingCount(s.towers);
@@ -390,7 +446,7 @@ export function bindHud(
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     // Inputs refused before the sim (render/input/apply.ts): a path ability aimed off the path
-    // ("Can't target there"), a build on wreckage ("Clear it first"), wreckage already queued.
+    // ("Can't target there"), a build on wreckage (how to send the drone), wreckage already queued.
     interaction.onRefusal((r) => showNotice(refusalText(r))),
     host.bus.on('TowerBuilt', (e) => {
       hud.built.value = true;
@@ -419,6 +475,7 @@ export function bindHud(
     host.bus.on('CountdownStarted', (e) => {
       hud.countdownCue.value++;
       if (e.wave >= UPGRADE_TEACH_WAVE) teachStarted = true;
+      if (e.wave >= SALVAGE_TEACH_WAVE) salvageStarted = true;
     }),
     host.bus.on('TowerUpgraded', () => {
       upgraded = true;
@@ -432,13 +489,17 @@ export function bindHud(
     }),
     // Screen readers hear what H, Shift+H, and a cast did (D059; T is commands.ts's).
     host.bus.on('EnemySpawned', (e) => {
-      if (sim.config.content.enemies[e.enemy]?.neutral === true) neutralsLive++;
+      if (sim.config.content.enemies[e.enemy]?.neutral === true) {
+        if (neutralsLive === 0) neutralPass++;
+        neutralsLive++;
+      }
     }),
     host.bus.on('NeutralExited', () => {
       neutralsLive = Math.max(0, neutralsLive - 1);
     }),
     host.bus.on('HoldFireChanged', (e) => {
       if (e.target === 'all') masterUsed = true;
+      else if (e.on) towerHoldUsed = true;
       let name: string | null = null;
       if (e.target !== 'all') {
         const pool = sim.state.towers;
@@ -479,11 +540,14 @@ export function bindHud(
     hud.cursorShown.value = false;
     hud.countdown.value = null;
     hud.callBonus.value = 0;
+    hud.nextQuiet.value = false;
     hud.holdFireAll.value = false;
     hud.holdingCount.value = 0;
     hud.spareRunnersAll.value = false;
     hud.spareRunnersOpen.value = false;
     hud.holdFireTeach.value = false;
+    hud.holdFireOneHint.value = false;
+    hud.salvageHint.value = false;
     hud.sale.value = null;
     hud.objectives.value = [];
   };

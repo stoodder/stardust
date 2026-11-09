@@ -12,7 +12,7 @@ import { EARLY_CALL_COOLDOWN_SHARE } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { EnemyStat, Modifier, SimConfig } from '../config.ts';
 import type { RejectReason } from '../commands.ts';
-import { callWaveBonus, earn } from '../economy.ts';
+import { callWaveBonus, earn, nextWaveIsQuiet } from '../economy.ts';
 import { ENEMY_BLANK } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
 import { placeOnRoute } from '../path.ts';
@@ -32,20 +32,39 @@ export function waves(state: SimState, ctx: TickContext): void {
     spawnDue(state, wave, s.waveTicks, runWaveModifiers(ctx.config).enemies);
     if (s.waveTicks >= wave.lastSpawnTicks) finishSpawning(state, ctx);
     else s.waveTicks++;
+  } else if (s.phase === 'held' && !bossFightOn(state)) {
+    beginCountdown(state, ctx, ctx.map.waves[state.wave]!); // held ⇒ a next wave exists
   }
+}
+
+/**
+ * Whether a boss fight is on: a live boss that hasn't started leaving (its BossEnded). A boss that
+ * leaked or left is off the map, so that ends its fight too.
+ */
+function bossFightOn(state: SimState): boolean {
+  const pool = state.enemies;
+  for (let i = 0; i < pool.used; i++) {
+    const e = pool.items[i]!; // i < used ≤ items.length
+    if (e.alive && !e.leaving && e.def !== null && e.def.boss !== null) return true;
+  }
+  return false;
 }
 
 /**
  * The callWave command: starts wave 1 from the setup phase (free), or the next wave during a
  * countdown, paying the early-call bonus and cutting ability cooldowns. Its first spawns land in
- * this tick's waves system (or the next tick's, when applied while paused).
+ * this tick's waves system (or the next tick's, when applied while paused). A Quiet Wave is never
+ * called early (`quietWave`), and a wave waiting for the boss can't be called (`waveInProgress`).
  */
 export function callWave(state: SimState, ctx: TickContext): RejectReason | null {
   const s = state.schedule;
+  if (s.phase !== 'setup' && nextWaveIsQuiet(state, ctx.map)) return 'quietWave';
   switch (s.phase) {
     case 'setup':
       startWave(state, false, 0);
       return null;
+    case 'held':
+      return 'waveInProgress';
     case 'countdown': {
       const bonus = callWaveBonus(state, ctx.map);
       reduceAbilityCooldowns(state, Math.round(EARLY_CALL_COOLDOWN_SHARE * s.countdownTicks));
@@ -75,7 +94,10 @@ function startWave(state: SimState, early: boolean, bonus: number): void {
   emit(state, { type: 'WaveStarted', wave: state.wave, early, bonus });
 }
 
-/** Spawning is done: the next wave's countdown begins, or the schedule is done. */
+/**
+ * Spawning is done: the next wave's countdown begins, or it waits for the boss fight to end
+ * (`countdownAfter: 'bossEnded'`; `held`), or the schedule is done.
+ */
 function finishSpawning(state: SimState, ctx: TickContext): void {
   const s = state.schedule;
   const next = ctx.map.waves[state.wave]; // the wave after the current one, if any
@@ -83,6 +105,16 @@ function finishSpawning(state: SimState, ctx: TickContext): void {
     s.phase = 'done';
     return;
   }
+  if (next.countdownAfter === 'bossEnded' && bossFightOn(state)) {
+    s.phase = 'held';
+    return;
+  }
+  beginCountdown(state, ctx, next);
+}
+
+/** The countdown before wave `next` begins (CountdownStarted; the `countdown` trigger). */
+function beginCountdown(state: SimState, ctx: TickContext, next: CompiledWave<IdSpace>): void {
+  const s = state.schedule;
   const ticks = countdownTicksFor(next.countdownTicks, runWaveModifiers(ctx.config).countdownPct);
   s.phase = 'countdown';
   s.countdownTicks = ticks;

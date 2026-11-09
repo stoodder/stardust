@@ -41,6 +41,8 @@ export interface AudioEngine {
     level?: number,
   ): void;
   holdDuck(key: string, level: number | null): void;
+  /** Holds the low-priority sound effects ducked under `key` (a spoken line, R10), or releases. */
+  holdSfxDuck(key: string, level: number | null): void;
   setVolumes(v: Volumes): void;
   /** Pauses the audio clock (a hidden tab) or resumes it. */
   setSuspended(suspended: boolean): void;
@@ -62,6 +64,7 @@ export function silentEngine(muted = false): AudioEngine {
     cue() {},
     setMusic() {},
     holdDuck() {},
+    holdSfxDuck() {},
     setVolumes() {},
     setSuspended() {},
     status: () => ({
@@ -90,6 +93,7 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
     level: number;
   } = { theme: null, layers: { base: 0, drums: 0, lead: 0 }, level: 1 };
   const held = new Map<string, number>();
+  const sfxHeld = new Map<string, number>();
 
   const startTimer = (): void => {
     if (timer !== null || synth === null) return;
@@ -117,6 +121,7 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
         synth = new Synth(ctx);
         synth.setVolumes(volumes);
         for (const [key, level] of held) synth.holdDuck(key, level);
+        for (const [key, level] of sfxHeld) synth.holdSfxDuck(key, level);
         synth.setTheme(music.theme, music.layers, music.level);
         startTimer();
       }
@@ -138,6 +143,11 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
       if (level === null) held.delete(key);
       else held.set(key, level);
       synth?.holdDuck(key, level);
+    },
+    holdSfxDuck(key, level) {
+      if (level === null) sfxHeld.delete(key);
+      else sfxHeld.set(key, level);
+      synth?.holdSfxDuck(key, level);
     },
     setVolumes(v) {
       volumes = v;

@@ -304,6 +304,15 @@ section.chamfer,
   color: var(--accent-2);
 }
 
+/* A neutral in the preview (Gerald, R9): the mail, with Hold fire's pause bars, never a pest. */
+.hud-mail {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 1px;
+  color: var(--sd-white-1);
+}
+
 /* ── Bottom-right: build slots ────────────────────────────────────────────────────────────── */
 
 .hud-build {

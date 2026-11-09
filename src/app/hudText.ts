@@ -315,6 +315,9 @@ export function rejectText(reason: RejectReason): string | null {
       return 'Uplink recharging';
     case 'invalidTarget':
       return "Can't target there";
+    // The Quiet Wave can't be called early (D097): the HUD hides Call, so only W reaches this.
+    case 'quietWave':
+      return 'This one comes in its own time';
     case 'mapEnded':
     case 'notInLoadout':
     case 'noSuchTower':
@@ -324,13 +327,17 @@ export function rejectText(reason: RejectReason): string | null {
   }
 }
 
+/** An armed click on a wreck: how to send the salvage drone instead (style-guide § 2). */
+export const CLEAR_FIRST_TEXT = 'Click it (no tower armed) to send the drone';
+
 /** Notice text for an input refused before it reached the sim (render/input/apply.ts). */
 export function refusalText(reason: InputRefusal): string {
   switch (reason) {
     case 'invalidTarget':
       return rejectText('invalidTarget') ?? '';
     case 'clearFirst':
-      return 'Clear it first';
+      // R4: a mouse player learns how to clear it (style-guide § 2).
+      return CLEAR_FIRST_TEXT;
     case 'alreadyQueued':
       return 'Drone already on it';
     default:

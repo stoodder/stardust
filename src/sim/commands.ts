@@ -55,10 +55,18 @@ export type RejectReason =
   | 'maxTier'
   /** The tower picks no target (pulse and support towers). */
   | 'noTargeting'
-  /** callWave while the current wave is still spawning (no countdown is running). */
+  /**
+   * callWave while the current wave is still spawning (no countdown is running), or while the
+   * next wave waits for the boss fight to end (`countdownAfter: 'bossEnded'`).
+   */
   | 'waveInProgress'
   /** callWave after the last wave has started. */
   | 'noWavesLeft'
+  /**
+   * callWave while the next wave is a Quiet Wave (a `quiet_wave` group, A1M5): it is never called
+   * early, so the player sees it walk in before choosing (D097), nor while it waits for the boss.
+   */
+  | 'quietWave'
   /** No ability is equipped in that slot. */
   | 'noAbility'
   | 'abilityOnCooldown'

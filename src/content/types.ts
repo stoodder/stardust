@@ -598,6 +598,14 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
 export interface WaveDef<K extends IdSpace = LiveIds> {
   /** The countdown before this wave; default by act (compile.ts). Wave 1 has none: the player starts it. */
   readonly countdownSec?: number;
+  /**
+   * When that countdown begins. Default: as the wave before finishes spawning. `'bossEnded'`: once
+   * the wave before has finished spawning *and* every boss of the earlier waves has ended its
+   * fight (BossEnded, or left the map any other way), so the wave walks in `countdownSec` after
+   * the boss is driven off (A1M5's Quiet Wave; design/core-loop.md § 2.1). Needs a boss in an
+   * earlier wave.
+   */
+  readonly countdownAfter?: 'bossEnded';
   /** The teach wave for a new trait: exempt from the soft-trait cap. */
   readonly teach?: boolean;
   readonly groups: readonly WaveGroup<K>[];

@@ -18,8 +18,7 @@ import {
   Notice,
   CursorAnnouncer,
   ActionAnnouncer,
-  UpgradeHint,
-  HoldFireHint,
+  BottomHint,
   WaveBannerView,
   PausedOverlay,
 } from './Notices.tsx';
@@ -63,8 +62,7 @@ export function Hud() {
         </div>
         <BuildBar />
         {selected !== null && <TowerPanel t={selected} />}
-        <UpgradeHint />
-        <HoldFireHint />
+        <BottomHint />
         <Notice />
         <CursorAnnouncer />
         <ActionAnnouncer />

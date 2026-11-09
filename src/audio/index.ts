@@ -26,6 +26,6 @@ export { createFieldSounds, type FieldSounds, type FieldState } from './fieldSou
 export { blipFor, createTypeTicker, type TypeTicker } from './speech.ts';
 export { CUES, THEMES, isCueId, isThemeId, type CueId, type ThemeId } from './music/index.ts';
 export { SFX_IDS, isSfxId, type SfxId } from './sfx/index.ts';
-export { DEFAULT_VOLUMES, type Volumes } from './synth.ts';
+export { DEFAULT_VOLUMES, LOW_PRIORITY_MAX, SPEECH_SFX_DUCK, type Volumes } from './synth.ts';
 export type { RenderLevels } from './offline.ts';
 export type { Levels } from './analyze.ts';

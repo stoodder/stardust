@@ -19,6 +19,8 @@ import { fxBurrowMound } from './fx/burrow_mound.ts';
 import { fxGroundShadow } from './fx/ground_shadow.ts';
 import { fxLinkTether } from './fx/link_tether.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
+import { fxConfettiBurst } from './fx/confetti_burst.ts';
+import { sceneRig9Feed } from './scenes/rig9_feed.ts';
 import { fxShadow } from './fx/shadow.ts';
 import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
@@ -165,6 +167,7 @@ export const SPRITES = [
   fxBurrowMound,
   fxLinkTether,
   fxOrbitalReticle,
+  fxConfettiBurst,
   iconTowerRivet,
   iconTowerThumper,
   iconTowerSprinkler,
@@ -195,6 +198,7 @@ export const SPRITES = [
   iconTellSplitter,
   iconTellHuddle,
   iconTellBoss,
+  sceneRig9Feed,
   portraitPlayer,
   portraitBricks,
   portraitQuill,

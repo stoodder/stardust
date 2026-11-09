@@ -21,6 +21,10 @@
 //   rift lanes; a neutral flyer, Gerald, may fly a path; rift lanes carry only the Hollow, from
 //   the wave they open).
 // - [wave-tag]: no duplicate tags; `fleeing`, `youngling`, and `quiet_wave` only on Skitterkin.
+//   `countdownAfter: 'bossEnded'` needs a boss in an earlier wave.
+// - [quiet-wave-reach]: no buildable tile's best tier-3 range (high ground's bonus and
+//   REACH_SLACK_TILES included) reaches the first 4 tiles of a route a `quiet_wave` group walks
+//   (D097: the Quiet Wave is seen before any tower could fire on it).
 // - [threat-intel]: `threatIntel` is exactly the set of traits in the waves.
 // - [required-counters]: at most 3, no duplicates, each with a `noCounterBuilds` entry.
 // - [soft-traits]: soft enemies are ≤ 15% of every wave's threat (maps.md § 6.2).
@@ -34,7 +38,7 @@
 // - [flag-variants]: every flag an event or ability lock reads has a `flagVariants` entry.
 // - [revisit]: `revisitOf` names another map.
 // Parts: this file (the map loop, feature guards, ranges, geometry), validateWaves.ts ([wave],
-// [route-walk], [wave-tag]), validateThreats.ts (intel, counters, teach, novelty),
+// [route-walk], [wave-tag], [quiet-wave-reach]), validateThreats.ts (intel, counters, teach, novelty),
 // validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
@@ -57,7 +61,13 @@ import {
 import { validateScripts } from './validateScripts.ts';
 import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
-import { validateWaves } from './validateWaves.ts';
+import {
+  bestT3Reach,
+  validateQuietWaveReach,
+  validateWaves,
+  type T3Reach,
+  type TargetedTower,
+} from './validateWaves.ts';
 
 /** Validates every map: campaign maps in campaign order (with history), then the rest. */
 export function validateCampaignMaps<K extends IdSpace>(
@@ -80,6 +90,7 @@ export function validateCampaignMaps<K extends IdSpace>(
   const ctx = {
     enemies,
     towers,
+    t3Reach: bestT3Reach(Object.values<TargetedTower>(raw.towers)),
     towersWithSpecs,
     companionAbilities,
     rules,
@@ -102,6 +113,8 @@ export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
   /** Each tower's tiers and specs, for the range a placed tower reaches (counterAnswers.ts). */
   readonly towers: ReadonlyMap<string, RangedTower>;
+  /** The best tier-3 range any tower brings, per layer ([quiet-wave-reach]). */
+  readonly t3Reach: T3Reach;
   readonly towersWithSpecs: ReadonlySet<string>;
   /** Each companion with a slot-2 ability in the content → that ability's id. */
   readonly companionAbilities: ReadonlyMap<string, string>;
@@ -149,6 +162,7 @@ function validateMap(
     campaign !== null && def.requiredCounters.some((c) => !campaign.history.counters.has(c));
   if (grid !== null) validateGeometry(issues, def, grid, campaign !== null, where);
   validateWaves(issues, ctx, def, where);
+  if (grid !== null) validateQuietWaveReach(issues, ctx, def, grid, where);
   validateThreats(issues, ctx, def, campaign?.history ?? emptyHistory(), where);
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);

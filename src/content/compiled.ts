@@ -350,6 +350,8 @@ export interface CompiledWave<K extends IdSpace = LiveIds> {
   readonly number: number;
   /** The countdown before this wave (ignored for wave 1, which the player starts). */
   readonly countdownTicks: number;
+  /** When that countdown begins (WaveDef.countdownAfter); null: as the wave before finishes spawning. */
+  readonly countdownAfter: 'bossEnded' | null;
   readonly teach: boolean;
   readonly groups: readonly CompiledWaveGroup<K>[];
   /** Ticks from the wave's start to its last spawn: spawning has finished after this. */

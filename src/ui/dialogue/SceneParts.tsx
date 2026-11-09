@@ -1,10 +1,12 @@
 // Pieces every scene staging shares (the briefing, the bottom panel, full-screen): the Next control
 // (a click or Enter finishes the typing, then moves on), the choice buttons (keyboard first: the
-// first option takes the focus, the arrows move between them), and the Tab trap a modal keeps.
-import { useLayoutEffect, useRef } from 'preact/hooks';
+// first option takes the focus, the arrows move between them), the Tab trap a modal keeps, and the
+// line announcer screen readers hear each line from.
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { chooseOption, nextScene } from '../../app/dialogue.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
-import type { ChoiceView, SceneView } from './state.ts';
+import { plainText } from './text.ts';
+import type { ChoiceView, LineView, SceneView } from './state.ts';
 
 /** The focusable controls inside `root`, in tab order. */
 function focusables(root: HTMLElement): HTMLElement[] {
@@ -100,6 +102,31 @@ export function ChoiceList({ choices }: { choices: readonly ChoiceView[] }) {
           <span class="grow">{c.text}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/** What a screen reader hears as a line arrives: "QUILL: Hello!" (a caption reads alone). */
+export function lineAnnouncement(line: LineView | null): string {
+  if (line === null || line.silence) return '';
+  const text = plainText(line.text);
+  return line.name === '' ? text : `${line.name}: ${text}`;
+}
+
+/**
+ * The line on screen for screen readers (U-M1): a polite live region inside the scene's dialog,
+ * filled a frame after it mounts and on every new line (a region's first content isn't read),
+ * with the speaker and the whole line at once while the typewriter types for the eyes.
+ */
+export function LineAnnouncer({ line }: { line: LineView | null }) {
+  const [said, setSaid] = useState('');
+  const id = line?.id ?? -1;
+  useEffect(() => {
+    setSaid(lineAnnouncement(line));
+  }, [id]);
+  return (
+    <div class="dlg-sr" role="status" aria-live="polite" data-testid="line-announce">
+      {said}
     </div>
   );
 }

@@ -158,10 +158,12 @@ export type Outcome = 'playing' | 'won' | 'lost';
  * Where the wave schedule is (design/core-loop.md § 2.1):
  * - `setup`: before wave 1; no countdown runs until the player starts it (callWave).
  * - `spawning`: wave `wave` is spawning its groups.
+ * - `held`: wave `wave` has finished spawning, and the next wave (`countdownAfter: 'bossEnded'`)
+ *   waits for every boss fight to end before its countdown begins (A1M5's Quiet Wave; D097).
  * - `countdown`: wave `wave` has finished spawning; the next wave's countdown is running.
  * - `done`: the last wave has finished spawning (the map ends when every wave resolves).
  */
-export type SchedulePhase = 'setup' | 'spawning' | 'countdown' | 'done';
+export type SchedulePhase = 'setup' | 'spawning' | 'held' | 'countdown' | 'done';
 
 /** The wave schedule and per-wave resolution (the waves and cleanup systems). */
 export interface WaveSchedule {

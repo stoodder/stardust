@@ -8,6 +8,7 @@ import { LineText } from '../dialogue/LineText.tsx';
 import { Portrait } from '../dialogue/Portrait.tsx';
 import {
   ChoiceList,
+  LineAnnouncer,
   NextButton,
   trapTab,
   useFocusOn,
@@ -124,6 +125,7 @@ export function Briefing({ view }: { view: SceneView }) {
             </div>
           </div>
         </div>
+        <LineAnnouncer line={view.line} />
         {intel !== null && <IntelStrip intel={intel} />}
         {medals.length > 0 && <BriefingMedals medals={medals} />}
         <div class="hud-briefing-actions">

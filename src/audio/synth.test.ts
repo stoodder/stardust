@@ -3,7 +3,23 @@ import { asContext, FakeAudioContext, lastTarget } from './__fixtures__/fakeAudi
 import { analyze } from './analyze.ts';
 import { createAudioEngine, silentEngine } from './engine.ts';
 import { SFX, SFX_IDS } from './sfx/index.ts';
-import { DEFAULT_VOLUMES, MAX_SFX_VOICES, MUSIC_TRIM, SFX_TRIM, Synth } from './synth.ts';
+import { BLIP_SFX } from './sfx/blips.ts';
+import {
+  DEFAULT_VOLUMES,
+  LOW_PRIORITY_MAX,
+  MAX_SFX_VOICES,
+  MUSIC_TRIM,
+  SFX_TRIM,
+  SPEECH_SFX_DUCK,
+  Synth,
+} from './synth.ts';
+
+/** Whether `node`'s outputs lead to `target` (the fake graph records every connect). */
+function reaches(node: unknown, target: unknown): boolean {
+  if (node === target) return true;
+  const outs = (node as { outputs?: unknown[] }).outputs ?? [];
+  return outs.some((o) => reaches(o, target));
+}
 
 function synth(): { ctx: FakeAudioContext; s: Synth } {
   const ctx = new FakeAudioContext();
@@ -85,6 +101,27 @@ describe('the synth', () => {
     ctx.currentTime = 2;
     s.pump();
     expect(lastTarget(s.duck.gain)).toBe(1);
+  });
+
+  it('routes low-priority sounds through the bus speech ducks by about 3 dB (R10)', () => {
+    const { ctx, s } = synth();
+    expect(SFX.rivet_shot.priority).toBeLessThanOrEqual(LOW_PRIORITY_MAX);
+    s.play('rivet_shot');
+    const shot = ctx.started.at(-1);
+    expect(reaches(shot, s.low)).toBe(true);
+    s.play('leak');
+    expect(reaches(ctx.started.at(-1), s.low)).toBe(false);
+    expect(reaches(ctx.started.at(-1), s.sfx)).toBe(true);
+    s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
+    expect(20 * Math.log10(lastTarget(s.low.gain))).toBeCloseTo(-3, 0);
+    s.holdSfxDuck('speech', null);
+    expect(lastTarget(s.low.gain)).toBe(1);
+  });
+
+  it('never ducks or buries a line: blips outrank combat, ticks outrank the rattle (R10)', () => {
+    for (const r of Object.values(BLIP_SFX)) expect(r.priority).toBe(3);
+    expect(SFX.type_tick.priority).toBe(2);
+    expect(SFX.type_tick.priority).toBeGreaterThan(LOW_PRIORITY_MAX);
   });
 
   it('plays cues to their end', () => {

@@ -65,6 +65,7 @@ export {
   bountyFor,
   callWaveBonus,
   costFor,
+  nextWaveIsQuiet,
   purchaseCost,
   purchasePriceInto,
   sellValue,
@@ -73,6 +74,7 @@ export {
   type PurchasePrice,
   type PurchaseState,
   type SellValue,
+  type WaveTagsView,
 } from './economy.ts';
 export {
   NO_BONUSES,

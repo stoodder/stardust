@@ -6,7 +6,8 @@
 // code renders offline (offline.ts) for the level checks.
 //
 // The bus graph:
-//   sfx voices ─▶ sfx ──────────────────────────────┐
+//   sfx voices (priority ≤ 1) ─▶ low ─▶ sfx ────────┐ (low ducks while someone speaks, R10)
+//   sfx voices (priority ≥ 2) ─▶ sfx ───────────────┤
 //   theme voices ─▶ layer gains ─▶ theme fade ─▶ duck ─▶ music ─▶ master ─▶ glue ─▶ limiter ─▶ clip ─▶ out
 //   cue voices ─▶ cues ───────────────────────────────┘ (into music, after the duck)
 import { createRng, nextFloat, type Rng } from '../shared/rng.ts';
@@ -38,6 +39,10 @@ export const THEME_FADE_SEC = 0.5;
 /** Ducking: how fast the music dips and comes back (time constants, s). */
 export const DUCK_ATTACK_SEC = 0.03;
 export const DUCK_RELEASE_SEC = 0.2;
+/** Sound effects at this priority or below go through the `low` bus, which speech ducks (R10). */
+export const LOW_PRIORITY_MAX = 1;
+/** The `low` bus's level while a line is spoken: about −3 dB (R10). */
+export const SPEECH_SFX_DUCK = 0.7;
 /** Notes due longer ago than this when the scheduler wakes are skipped (s). */
 const LATE_SEC = 0.05;
 /** The quietest an envelope ramps to before it is cut (exponential ramps can't reach 0). */
@@ -126,6 +131,8 @@ export class Synth {
   readonly master: GainNode;
   readonly music: GainNode;
   readonly sfx: GainNode;
+  /** The low-priority sound effects (shots, hits, pops, clicks): ducked under speech. */
+  readonly low: GainNode;
   readonly duck: GainNode;
   readonly cues: GainNode;
   readonly #rng: Rng;
@@ -140,6 +147,9 @@ export class Synth {
   #ducks: { level: number; until: number }[] = [];
   readonly #held = new Map<string, number>();
   #duckTarget = 1;
+  /** Held ducks of the low-priority sound effects (speech), by key. */
+  readonly #lowHeld = new Map<string, number>();
+  #lowTarget = 1;
   readonly #noDuck: boolean;
   #themeLevel = 1;
   /** Sound effects started, by id (the test hooks report it). */
@@ -155,6 +165,8 @@ export class Synth {
     this.master = ctx.createGain();
     this.music = ctx.createGain();
     this.sfx = ctx.createGain();
+    this.low = ctx.createGain();
+    this.low.connect(this.sfx);
     this.duck = ctx.createGain();
     this.cues = ctx.createGain();
     this.duck.connect(this.music);
@@ -219,7 +231,7 @@ export class Synth {
       ratio: semitones(pitch),
       noteHz: null,
       noteSec: null,
-      dest: this.sfx,
+      dest: recipe.priority <= LOW_PRIORITY_MAX ? this.low : this.sfx,
     });
     const end = start + recipeDuration(recipe);
     this.#book.add(id, recipe.priority, start, end, voice);
@@ -294,6 +306,24 @@ export class Synth {
     if (level === null) this.#held.delete(key);
     else this.#held.set(key, level);
     this.#updateDuck();
+  }
+
+  /**
+   * Holds the low-priority sound effects (priority ≤ LOW_PRIORITY_MAX) ducked to `level` under
+   * `key` (a spoken line, R10) until it's released with null; the lowest held level wins.
+   */
+  holdSfxDuck(key: string, level: number | null): void {
+    if (level === null) this.#lowHeld.delete(key);
+    else this.#lowHeld.set(key, level);
+    if (this.#noDuck) return;
+    let target = 1;
+    for (const l of this.#lowHeld.values()) target = Math.min(target, l);
+    if (target === this.#lowTarget) return;
+    const now = this.ctx.currentTime;
+    const down = target < this.#lowTarget;
+    this.#lowTarget = target;
+    this.low.gain.cancelScheduledValues(now);
+    this.low.gain.setTargetAtTime(target, now, down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC);
   }
 
   /** Schedules the music up to the lookahead and updates the duck. Call it often (every ~25 ms). */

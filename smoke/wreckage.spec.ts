@@ -1,6 +1,6 @@
 // T312a: wreckage and the salvage drone on the dev sky range (`?map=dev_sky`,
 // render/__fixtures__/devBattle.ts: wrecks over a hidden power node (1,4), high ground (4,5), and a
-// pad (7,2)). An armed click on a wreck says "Clear it first"; a plain click queues the drone (the
+// pad (7,2)). An armed click on a wreck says how to clear it; a plain click queues the drone (the
 // tile's beacon blinks and it shows its place in line); a second click says the drone's already on
 // it; the drone flies out, works, clears the tile to what lay under it, flies on, and goes home.
 // Screenshots in test-results/screens/wreckage/.
@@ -49,7 +49,7 @@ test('wreckage: clear it first, queue the drone, watch it clear', async ({ page 
   // Armed, a wreck can't take a tower yet.
   await page.keyboard.press('Digit1');
   await click(page, NODE);
-  await expect(page.getByText('Clear it first')).toBeVisible();
+  await expect(page.getByText('Click it (no tower armed) to send the drone')).toBeVisible();
   await shot(page, 'wreckage', 2, 'clear-it-first');
   await page.keyboard.press('Escape');
 

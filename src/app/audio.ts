@@ -15,6 +15,7 @@ import {
   createTypeTicker,
   crossedLowIntegrity,
   SOUND_EVENT_TYPES,
+  SPEECH_SFX_DUCK,
   screenMusic,
   silentEngine,
   type AudioEngine,
@@ -149,10 +150,13 @@ export function installAudio(enabled: boolean): () => void {
         engine.play('reject');
       }
     }),
-    // A spoken line (the comms panel or a scene) ducks the music and blips as it starts.
+    // A spoken line (the comms panel or a scene) ducks the music and the low-priority sound
+    // effects, and blips as it starts.
     effect(() => {
       const l = speaking.value;
       engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
+      // Dialogue is never buried (R10): shots, hits, and pops dip about 3 dB under a line.
+      engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
       if (l !== null && l.id !== lineId) {
         lineId = l.id;
         const blip = l.silence ? null : blipFor(l.speaker);

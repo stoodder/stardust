@@ -19,8 +19,11 @@ const SQUELCH: ToneLayer = {
   gain: 0.3,
 };
 
-/** One blip per line start, at most: a new line cuts the last one's tail. */
-const VOICE = { priority: 2, minGapMs: 200, maxVoices: 1 } as const;
+/**
+ * One blip per line start, at most: a new line cuts the last one's tail. Priority 3 (R10): a
+ * storm of shots and pops can never steal a line's first sound.
+ */
+const VOICE = { priority: 3, minGapMs: 200, maxVoices: 1 } as const;
 
 export const BLIP_SFX = {
   /** The Technician: an even, unhurried two-note "mm-hm" (they rarely speak unprompted). */
@@ -327,7 +330,8 @@ export const SPEECH_SFX = {
    */
   type_tick: {
     gain: 0.14,
-    priority: 1,
+    // Above the combat rattle (R10), so a line keeps its patter in a storm.
+    priority: 2,
     minGapMs: 55,
     maxVoices: 2,
     jitter: 0.4,

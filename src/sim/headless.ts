@@ -31,7 +31,12 @@ import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
-import { purchasePriceInto, type PurchaseKind, type PurchasePrice } from './economy.ts';
+import {
+  nextWaveIsQuiet,
+  purchasePriceInto,
+  type PurchaseKind,
+  type PurchasePrice,
+} from './economy.ts';
 import type { SimEvent } from './events.ts';
 import { tileIndex } from './grid.ts';
 import { createRunTracker, type RunSummary } from './headlessTracker.ts';
@@ -336,6 +341,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       const phase = state.schedule.phase;
       if (phase === 'setup' || (build.callEarly && phase === 'countdown')) {
         if (calledPhase === state.schedule.countdownWave) return;
+        if (phase === 'countdown' && nextWaveIsQuiet(state, sim.map)) return; // never called (D097)
         calledPhase = state.schedule.countdownWave;
         waveCalls.push(state.tick);
         apply({ type: 'callWave' });

@@ -170,6 +170,8 @@ export interface WavePreviewGroup {
   readonly icon: string;
   readonly count: number;
   readonly air: boolean;
+  /** A neutral unit (Gerald, the mail): a "MAIL" tag and the hold-fire glyph, never NEW or AIR. */
+  readonly neutral: boolean;
   /** The enemy has the `fast` tell (art-direction §8): the preview shows a » chip. */
   readonly fast: boolean;
   /**
@@ -354,6 +356,8 @@ export const hud = {
   waveBanner: signal<WaveBanner | null>(null),
   /** Whether a tower has been built this battle (onboarding pulses stop after the first). */
   built: signal(false),
+  /** The next wave is the Quiet Wave (D097): it can't be called early, so Call is hidden. */
+  nextQuiet: signal(false),
   /** Whether the call-wave button pulses: nothing alive and time to spare, or a setup with a tower. */
   callPulse: signal(false),
   /** Changes when a countdown starts, so a ready ability slot pulses. */
@@ -372,6 +376,16 @@ export const hud = {
    * master switch hasn't been used this run, so Hold (all) pulses and a hint says why.
    */
   holdFireTeach: signal(false),
+  /**
+   * The Hold Fire teach's second lesson (A1M3, R4): on Gerald's second pass and later, until a
+   * single turret has held fire this run, the hint names both keys (H one, Shift+H all).
+   */
+  holdFireOneHint: signal(false),
+  /**
+   * The salvage teach (A1M3, R4): from W2's countdown on a map with wreckage, until the salvage
+   * drone is first sent this run, a hint says how (click a wreck with nothing armed).
+   */
+  salvageHint: signal(false),
   /** Clearance Sale while it has charges (the "SALE -40% x3" tag over the build slots), or null. */
   sale: signal<SaleView | null>(null),
   /** The HUD's name plate (core-loop §5): "JPT-1 · SPROUT", the profile's callsign. */
