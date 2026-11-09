@@ -20,7 +20,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 
 | Step | What the player does | Notes |
 |---|---|---|
-| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). **As built,** Act I is linear and the **Shift board** (Everglow's duty roster: each shift's name, medals, and Start or Replay) stands in for it; the star map opens in Act II as the world widens (M4, [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)). |
+| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). Act I plays from the **Shift board** (Everglow's duty roster: each shift's name, medals, and Start or Replay); once A1M5 is won, the star map (on screen, the **Sector map**) replaces it as the world widens (§1.1). **As built,** the Shift board runs all of Act I; the star map is T301b (M4). |
 | **Mission briefing** | Reads a short briefing (a memo, QUILL, or the companion NPC). Sees the **threat intel** strip: one icon for every defense trait on this map (the map's `threatIntel`, for example *Flying*, *Shielded*, *Cloaked*) and the three medal conditions. | Rule: threat intel is always shown and always accurate. Losses should teach, never ambush (vision pillar 3). A map may hold back *one* surprise for its final wave, and the briefing hints at it ("QUILL: sensors show something big under the soil"). Which traits a map *requires* an answer to is a separate field ([maps.md §6.3](maps.md#63-one-new-thing-per-map)). |
 | **Loadout** | Picks **up to 4 tower types**, a **Technician ability**, and **Field Protocols** (meta perks). Sees which synergy links the chosen towers can form. | Rule: the 4-tower limit is a hard rule (`/CLAUDE.md`). The loadout locks when the map starts. Restarting a map lets you change it. **Rule:** the loadout screen is shown only when there is a choice to make: the player owns more than 4 tower types, or has a real choice of Technician ability, Field Protocols, or companion (the finale pick list). Otherwise it is skipped and the map starts with everything owned (A1M1 skips it; a map can also hold a tower back until a wave with `towerUnlockWave`, [maps.md §9](maps.md#9-map-data-shape-for-implementers)). |
 | **Play the map** | Plays the waves (section 2). | Typically 6–20 minutes at 1x; see [maps.md §6](maps.md#6-difficulty-curve). |
@@ -29,7 +29,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 | **Base** | Reads the **Everglow Inbox** (§6.4), spends Stardust at **Zibzab's shop**, Intel in **R&D**, reads the **codex** (§6.5), checks the **Pest Bounty Board** (§6.6, Acts I–II), talks to NPCs. | The base hub is the Perimeter Office (working name). Story scenes can play here. See [progression.md](progression.md). |
 
 **The loadout screen as built.** It offers the towers, the Technician ability, and the Field Protocols (owned ones, up to the save's slots; one save-wide set, so a change carries to every map). The finale's companion pick joins with the finale (M5).
-- It comes before the briefing, which opens over the battle as the map's `_brief` scene (the star map's own briefing waits for the star map, M4).
+- It comes before the briefing, which opens over the battle as the map's `_brief` scene. The star map's node panel previews a map (§1.1) but never replaces its briefing.
 - The order the player picks towers in is their build-slot order (keys 1–4).
 - Each tower shows its icon, role, cost (after the save's discounts), and which of the map's counters it answers, from which tier or spec.
 - Under the towers, the Field Protocols toggle on and off; with one slot, picking another swaps it in, and Specialist picks its tower once equipped.
@@ -37,6 +37,59 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 - The last pick on each map is remembered; a map with none starts from the last pick anywhere. Retry keeps it, and the briefing's *Change loadout* and Results' *Change loadout* go back to the screen.
 
 The rules and the code are in [../tech/meta-runtime.md § Meta](../tech/meta-runtime.md#meta-srcmeta).
+
+### 1.1 The star map
+
+The campaign screen from Act II on. On screen it is the **Sector map**: Everglow Perimeter Ops' survey chart of the valley, since every node is on Tumble IV; the code calls it the star map. Its look is [art-direction.md §10](../art/art-direction.md#10-the-star-map), its build is [architecture.md § UI: DOM overlay](../tech/architecture.md#ui-dom-overlay), and every string it shows is in [story/style-guide.md §2](../story/style-guide.md#2-voice-by-act).
+
+**When it replaces the Shift board.** The campaign screen is the Shift board until A1M5 is won and the star map from then on, for good. The Shift board is Act I's view: it lists Act I's five shifts and one dimmed, padlocked sixth row that never names its map. Every way back to the campaign (Continue or Load from the Title, an import, the Base's and the loadout screen's way back, Results after a loss) reaches whichever of the two the save is on. The switch is a story beat: the stinger has just named Rig Nine, and the world widens.
+
+**Nodes.** One node per campaign map, standing at its real place in the valley (the place is [campaign.md §2](../story/campaign.md#2-overview)'s biome column). A revisit stands beside the map it revisits, at the same place. North is up: the colony in the valley's south, the Spires and their rigs across the north.
+
+| Shift | Map | Place | Where in the valley |
+|---|---|---|---|
+| 1 | A1M1 Orientation Day | Dome Row | The colony's south edge, at the south gate where the road leaves for the wilds |
+| 2 | A1M2 Hatching Season | The Terraces | The farm terraces on the north slope, above the colony |
+| 3 | A1M3 Special Delivery | Mail Road | The road into the colony's east gate |
+| 4 | A1M4 The Audit | Admin Plaza | The heart of the colony |
+| 5 | A1M5 Record Quarter | Northern Gate | The colony's north gate |
+| 6 | A2M1 Rig Nine | The Diggings | The north-east Spires, the deepest rig, nearest the dark |
+| 7 | A2M2 The Glass Witch | Ridge Rigs | The central Spires ridge, Rigs 7 and 8 on its east ledge |
+| 8 | A2M3 Second Look | The Terraces at dusk | Beside A1M2 |
+| 9 | A2M4 Second Harvest | Reclamation Facility 2 | Under the north-east cliff, on the haul road between the rigs and the colony |
+| 10 | A2M5 The Long Walk | Preserve Road | The road from the north-west hills down to the Preserve's gate |
+| 11 | A2M6 Sundown | Colony perimeter (north wall) | The north wall, east of the north gate |
+
+Act III and the finale are placed provisionally (A3M1 in the Preserve's basin, A3M2, A3M5, and A3M6 beside the maps they revisit, A3M3 at Okonkwo's Gap north of the colony, A3M4 under the colony, the finale at the north edge where the Long Walk enters the Halls); their milestones settle them. Positions are content data ([art-direction.md §10](../art/art-direction.md#10-the-star-map)).
+
+**What the map shows.** Never a map the player can't see yet:
+- **Cleared:** every won map, with its medals.
+- **Next:** the *frontier*, the first map in campaign order that isn't won. It is *Next up* when its content is built, and a **teaser** (*Coming soon*) when it isn't: named, with its tagline, padlocked, and no Start.
+- **Nothing else.** Later maps are not drawn, named, linked, or present in the page until they become the frontier. There are no locked nodes. After the finale is won, every node is cleared and there is no frontier (the post-game star map, §6.8).
+
+Example: with A2M3 won and A2M4 not built, the frontier is the teaser *Second Harvest*, whose tagline ends "Ask Zibzab where stardust comes from."
+
+**On each node.** Its state glyph; under a cleared node, its medal pips. The frontier's and the selected node's names show on plates; the others show their names in their panel. The **"you are here" marker** stands on the latest cleared map. When a newer map has been won since the screen last showed, the marker walks the leg to it as the screen opens.
+
+**Paths.** Dashed legs join the visible nodes in campaign order: the route the Technician has worked. The leg from the marker to the frontier is drawn in the act accent. No leg leads anywhere the player can't see.
+
+**The valley.** The chart shows the colony (Dome Row along its south wall, Admin Plaza at its heart, the east and north gates), the Terraces on the north slope, the Preserve's fenced basin to the west, Reclamation Facility 2 under the north-east cliff, and the Spires across the north with the rigs, Rig Nine deepest in the north-east. Beyond the Spires, Everglow's survey is blank. **The Long Walk** is drawn as an old trail under Everglow's roads, from the north edge through both colony gates and out across the south edge: the twist the paths tell ([maps.md §7](maps.md#7-storytelling-with-the-map)), in one picture. Everglow labels it a surge corridor; from A2M5 on, the label is corrected to the Long Walk. The Deep Halls are not named on the chart until a map has named them. **The north edge darkens act by act** (maps.md §7, the Hollow's edge), even before the Hollow reaches the colony.
+
+**Palette.** The chart and the screen's UI theme follow the furthest act reached: the frontier's phase (Act II's gold from A2M1, its dusk from A2M4, Act III's night from A3M1, and dawn after the finale; the steps are art-direction §10's).
+
+**The node panel.** One node is always selected, and its panel is open beside it: the shift number and place, the map's name and state, and its **tagline** (the italic line under the map's heading in its act file, verbatim). A map whose content is built adds its **threat intel** (each trait's glyph and name, and what it requires an answer to, as the briefing's strip shows them; §1's *Mission briefing*), its three **medals** by name (earned or not), and any optional objectives (§2.13). Then the button: **Start** on the frontier, **Replay** on a cleared map (Act I is replayed from its nodes). Either goes the way the Shift board's Start did: the loadout screen when there is a choice to make, then the briefing over the battle. A teaser shows its name, *Coming soon*, and its tagline only. Veteran modifiers join the panel with [progression.md §6](progression.md#6-veteran-modifiers-replays).
+
+**Around the chart.** The header (top left: the slot, *Sector map*, the Technician's line), the banks (top right), and the footer (bottom right: Title, Settings, Base) keep to the screen's corners, as the HUD does; the menu notice shows under the header. **The first time a save opens the star map**, the chart is revealed by a survey sweep and a one-time notice says Perimeter Ops' access was upgraded.
+
+**Keyboard.**
+- On arrival the frontier is selected and its panel's Start is focused, so Enter plays the next map at once, as on the Shift board. A teaser frontier focuses the teaser's node; after the finale, the finale's Replay.
+- The nodes are one tab stop (only the selected node is in the tab order). **Left and Up** select the previous visible node in campaign order, **Right and Down** the next, **Home** the first and **End** the frontier; there is no wrap. Focus moves with the selection and the panel follows.
+- **Enter** or **Space** on a node (or a click) selects it and focuses its panel's button. **Esc** in the panel returns focus to its node; on a node it does nothing.
+- Tab then reaches the panel's button and the footer, in that order.
+
+**Screen readers.** The chart is an image with a one-line description; the region labels are hidden from screen readers. The nodes are a labelled list of buttons, each named with its shift, map, place, state, and medals (a teaser adds its tagline), and the marker's node is marked as the current location. The panel is a region named by its map. Maps not shown are not in the page at all.
+
+**Reduced motion.** The frontier's beacon holds still, the marker doesn't bob or walk (it is simply at its node), and the first-visit sweep is skipped (the notice still shows).
 
 ---
 

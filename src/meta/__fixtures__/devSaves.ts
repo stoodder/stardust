@@ -1,8 +1,9 @@
 // Development saves, loaded by the test-only `?save=<id>` hook (T209, with `?test=1`) so smoke
 // tests and the owner can start partway through the campaign, or reach systems gated behind maps
 // that don't exist yet. Each is built from the live registries, so it stays valid as content
-// lands: `mid_m2` covers the first two campaign maps, and `all_unlocked` owns every registered
-// tower, spec, and ability. devSaves.test.ts validates every one.
+// lands: `mid_m2` covers the first two campaign maps, the Act II saves (`after_a1m5_ref` on) win
+// only the Act II maps already registered, and `all_unlocked` owns every registered tower, spec,
+// and ability. devSaves.test.ts validates every one.
 // `devUnlocks` opens gated systems whose maps don't exist yet (D031). It lives here, never in
 // SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
 import { CAMPAIGN, type CampaignMapId } from '../../content/campaign.ts';
@@ -11,15 +12,29 @@ import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
+import type { CallsignId } from '../../content/dialogue/profile.ts';
+import { tagIndexAfter } from '../../story/tags.ts';
 import { withIssuedTowers } from '../issued.ts';
-import { withFirstPaydayCaughtUp } from '../runEnd.ts';
-import type { MetaSystem } from '../progress.ts';
+import { isMapWon, type MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
+import { buy, type PurchaseItem } from '../purchase.ts';
+import { withFirstPaydayCaughtUp } from '../runEnd.ts';
 import type { MapRecord, SaveData } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
+import { withStoryUnlocks } from '../story.ts';
 
 export type DevSaveId =
-  'fresh' | 'after_a1m1' | 'mid_m2' | 'after_a1m3' | 'after_a1m4' | 'after_a1m5' | 'all_unlocked';
+  | 'fresh'
+  | 'after_a1m1'
+  | 'mid_m2'
+  | 'after_a1m3'
+  | 'after_a1m4'
+  | 'after_a1m5'
+  | 'after_a1m5_ref'
+  | 'after_a2m1'
+  | 'after_a2m2'
+  | 'after_a2m3'
+  | 'all_unlocked';
 
 export interface DevSave {
   readonly description: string;
@@ -144,6 +159,99 @@ function actOneThrough(last: 'a1_m03' | 'a1_m04' | 'a1_m05'): SaveData {
   return withFirstPaydayCaughtUp(withTowers); // A1M2's Results showed the first payday
 }
 
+/** The Act II maps the dev saves cover (M4), in campaign order. */
+type ActTwoMap = 'a2_m01' | 'a2_m02' | 'a2_m03';
+
+/**
+ * What the reference profile buys before each Act II map (campaign.md § 4.9): the Lookout license
+ * into A2M1; Sprinkler specs, Seed Money 1, and Zapcoil tune 1 into A2M2; Sprinkler tune 2 into
+ * A2M3 (its rank 1 came before A1M5).
+ */
+const ACT_TWO_PREP: Readonly<Record<ActTwoMap, readonly PurchaseItem[]>> = {
+  a2_m01: [{ kind: 'license', tower: 'lookout' }],
+  a2_m02: [
+    { kind: 'specs', tower: 'sprinkler' },
+    { kind: 'upgrade', id: 'seed_money' },
+    { kind: 'upgrade', id: 'tune_zapcoil' },
+  ],
+  a2_m03: [{ kind: 'upgrade', id: 'tune_sprinkler' }],
+};
+
+/**
+ * `save` with `items` bought through the shop's own `buy`, in order. An item whose content hasn't
+ * landed yet (an unregistered tower, or a tower with no tier-4 specs yet) is skipped; any other
+ * refusal is a broken fixture and throws.
+ */
+function bought(save: SaveData, items: readonly PurchaseItem[]): SaveData {
+  let next = save;
+  for (const item of items) {
+    const r = buy(next, item);
+    if (r.ok) next = r.save;
+    else if (r.reason !== 'unknown' && r.reason !== 'no_specs') {
+      throw new Error(`dev save: can't buy ${JSON.stringify(item)} (${r.reason}): ${r.message}`);
+    }
+  }
+  return next;
+}
+
+/**
+ * The callsign the story has given by the furthest map won (campaign.md § 4.6): Thorn at A2M2's
+ * debrief, then Waykeeper at A3M6's.
+ */
+function callsignFor(save: SaveData): CallsignId {
+  if (isMapWon(save, 'a3_m06')) return 'waykeeper';
+  return isMapWon(save, 'a2_m02') ? 'thorn' : 'sprout';
+}
+
+/** Bricks's tag index after every map `save` has won (story/tags.ts `tagIndexAfter`). */
+function tagIndexFor(save: SaveData): number {
+  return CAMPAIGN.reduce((i, map) => (isMapWon(save, map) ? tagIndexAfter(map, i) : i), 0);
+}
+
+/**
+ * `save`'s story caught up the way entering the base would (meta/story.ts): the memos due
+ * delivered with their gifts and the codex versions unlocked; every memo but the newest read.
+ */
+function caughtUp(save: SaveData): SaveData {
+  const next = withStoryUnlocks(save).save;
+  next.story.memosRead = next.story.memosDelivered.slice(0, -1);
+  return next;
+}
+
+/**
+ * The reference profile through `last` (campaign.md § 4.9): Act I through A1M5 with the weaker C1
+ * branch (the Quiet Wave cleared), the Lookout license bought for A2M1 (once registered), then
+ * each Act II map up to `last` prepared for and won with Victory, its first-clear Stardust and
+ * Intel banked. An Act II map that isn't registered yet is skipped, its purchases with it, so the
+ * save stays valid while A2M1–A2M3 land (`last` null: into A2M1, nothing of Act II won). The
+ * story follows the wins: Biscuit's tag (A2M1), Thorn (A2M2's debrief), Auntie Funmi's tag and
+ * `held_fire_second_look` cleared (A2M3, the weaker branch).
+ */
+function actTwoThrough(last: ActTwoMap | null): SaveData {
+  let save = actOneThrough('a1_m05');
+  save.story.flags.spared_quiet_wave = false;
+  save = bought(save, ACT_TWO_PREP.a2_m01);
+  const order: readonly ActTwoMap[] = ['a2_m01', 'a2_m02', 'a2_m03'];
+  const played = last === null ? [] : order.slice(0, order.indexOf(last) + 1);
+  for (const step of played) {
+    // Widened, so the registered check narrows to MapId while the Act II maps aren't in it yet.
+    const map: string = step;
+    if (!isRegistered(map)) continue;
+    if (step !== 'a2_m01') save = bought(save, ACT_TWO_PREP[step]); // A2M1's is bought above
+    save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
+    save.currencies.intel += 1;
+    save.currencies.stardust += MAPS[map].stardust;
+    for (const e of mapEnemies(map)) {
+      if (!save.campaign.seenEnemies.includes(e)) save.campaign.seenEnemies.push(e);
+    }
+    save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
+    if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
+  }
+  save.story.bricksTagIndex = tagIndexFor(save);
+  if (save.profile !== null) save.profile = { ...save.profile, callsign: callsignFor(save) };
+  return caughtUp(save);
+}
+
 /** The registered tower `id`, if it is registered yet. */
 function knownTower(id: string): TowerId | undefined {
   const towers: readonly string[] = LIVE_KNOWN_IDS.towers;
@@ -201,11 +309,35 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       'Quiet Wave spared (spared_quiet_wave = true): Act I complete.',
     build: () => actOneThrough('a1_m05'),
   },
+  after_a1m5_ref: {
+    description:
+      'The reference profile into A2M1 (campaign.md § 4.9): Act I complete with the Quiet Wave ' +
+      'cleared (spared_quiet_wave = false), then the Lookout license bought (once registered).',
+    build: () => actTwoThrough(null),
+  },
+  after_a2m1: {
+    description:
+      'after_a1m5_ref, then A2M1 won (Victory) with its payout banked: Biscuit tagged. Skipped ' +
+      'while A2M1 is not registered.',
+    build: () => actTwoThrough('a2_m01'),
+  },
+  after_a2m2: {
+    description:
+      'after_a2m1, then Sprinkler specs, Seed Money 1, and Zapcoil tune 1 bought and A2M2 won: ' +
+      'the callsign Thorn. Skipped while A2M2 is not registered.',
+    build: () => actTwoThrough('a2_m02'),
+  },
+  after_a2m3: {
+    description:
+      'after_a2m2, then Sprinkler tune 2 bought and A2M3 won with held_fire_second_look cleared: ' +
+      'Auntie Funmi tagged. Skipped while A2M3 is not registered.',
+    build: () => actTwoThrough('a2_m03'),
+  },
   all_unlocked: {
     description:
       'Every campaign map won with every medal; every registered tower, spec, ability, protocol, ' +
-      'and upgrade (at its top rank) owned; ' +
-      'deep pockets for the shop and R&D; every gated system open.',
+      'and upgrade (at its top rank) owned; deep pockets for the shop and R&D; every gated ' +
+      'system open; the intake done and the story caught up to the wins (memos all read).',
     devUnlocks: META_SYSTEMS,
     build: () => {
       const save = createNewSave();
@@ -219,7 +351,14 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       for (const u of Object.values(UPGRADES)) save.upgrades[u.id] = u.ranks.length;
       save.currencies = { stardust: 99_999, intel: 999 };
       save.stats = { pestsProcessed: 9_999, runs: 40 };
-      return withFirstPaydayCaughtUp(save);
+      // The story as far as the wins go: the intake done, the callsign and tags they gave, and
+      // every memo due delivered and read (so no NEW badge pulls the base to the Inbox).
+      save.profile = { ...DEV_PROFILE, callsign: callsignFor(save) };
+      save.story.flags = { arrival_reason: 'lettuce' };
+      save.story.bricksTagIndex = tagIndexFor(save);
+      const story = withStoryUnlocks(save).save;
+      story.story.memosRead = [...story.story.memosDelivered];
+      return withFirstPaydayCaughtUp(story);
     },
   },
 };

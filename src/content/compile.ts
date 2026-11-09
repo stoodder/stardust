@@ -62,6 +62,13 @@ function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): Compil
       };
     case 'discount':
       return { kind: 'discount', pct: e.pct, charges: e.charges };
+    case 'reveal':
+      return {
+        kind: 'reveal',
+        radiusTiles: e.radiusTiles,
+        radiusSq: e.radiusTiles * e.radiusTiles,
+        durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
+      };
     default:
       return assertNever(e);
   }

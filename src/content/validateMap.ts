@@ -1,6 +1,8 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
-// - [feature]: Defend maps only until T305 (Escort safe exits, Holdout, Protect, Choir).
+// - [feature]: Defend and Protect maps only until T305c (Escort safe exits, Holdout, Choir).
+// - [asset]: a Protect map has an `asset` (and only it does): a meter ≥ 1, at least one route,
+//   none twice; its marker sits on decor ([marker]).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
 //   content; a pick list is non-empty with no repeats.
 // - [ally]: ally posts have a positive attack rate and range, damage ≥ 0, and a layer to hit;
@@ -8,9 +10,9 @@
 //   compile error; [marker] puts it on decor.)
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
-// - [core]: a Defend map has exactly one core `C`.
+// - [core]: a Defend or Protect map has exactly one core `C`.
 // - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
-//   tile changes (`openTile`) sit on decor (§ 3; D042).
+//   tile changes (`openTile`), and a Protect map's asset sit on decor (§ 3; D042).
 // - [terraces]: the render-only terrace levels, if given, are shaped like `tiles`, one digit
 //   '0'–'3' per tile.
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
@@ -38,7 +40,10 @@
 //   scripts name exist; cue ids follow `<map_id>_wNN` or `<map_id>_<slot>`; `grantCredits` is a
 //   whole number ≥ 1.
 // - [flag-variants]: every flag an event or ability lock reads has a `flagVariants` entry.
-// - [revisit]: `revisitOf` names another map.
+// - [revisit]: `revisitOf` names another map; `revisitAt` goes with it.
+// - [clickable]: each `clickables` entry is a marker with a name; `setClickable` and the
+//   `interacted` trigger name one ([script] also checks `wreckageCleared` markers sit on
+//   wreckage and `objectiveDone` names another objective of the map).
 // Parts: this file (the map loop, feature guards, ranges, geometry), validateWaves.ts ([wave],
 // [route-walk], [wave-tag], [quiet-wave-reach]), validateThreats.ts (intel, counters, teach, novelty),
 // validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts (builds).
@@ -133,14 +138,16 @@ function validateMap(
   const where = `maps.${def.id}`;
   const grid = gridOf(def);
 
-  // Feature guards.
-  if (def.objective !== 'defend') {
+  // Feature guards. Protect is content now (A2M2) and createSim refuses it until T305a
+  // (`map.protect`); Escort, Holdout, and Choir arrive with T305c (M5).
+  if (def.objective !== 'defend' && def.objective !== 'protect') {
     issues.add(
       'feature',
       `${where}.objective`,
-      `'${def.objective}' maps arrive with T305 (Escort safe exits, Holdout, Protect); only 'defend' runs now`,
+      `'${def.objective}' maps arrive with T305c (Escort safe exits, Holdout, Choir); 'defend' and 'protect' only`,
     );
   }
+  validateAsset(issues, def, where);
   validateCompanion(issues, ctx, def, where);
   validateAllies(issues, def, where);
 
@@ -155,6 +162,9 @@ function validateMap(
   }
   if (def.revisitOf !== undefined && (def.revisitOf === def.id || !ctx.mapIds.has(def.revisitOf))) {
     issues.add('revisit', `${where}.revisitOf`, `'${def.revisitOf}' is not another map`);
+  }
+  if ((def.revisitAt !== undefined) !== (def.revisitOf !== undefined)) {
+    issues.add('revisit', `${where}.revisitAt`, 'goes with `revisitOf` (and only with it)');
   }
   // TODO(A3M6, M5): revisit layout rules — the original's pads unchanged, new pads only in the
   // added band, the original layout centred.
@@ -190,17 +200,18 @@ function validateGeometry(
       `cols + rows is ${grid.cols + grid.rows}; a campaign map fits one screen (≤ ${MAX_CAMPAIGN_GRID_SPAN})`,
     );
   }
-  if (def.objective === 'defend' && grid.count('C') !== 1) {
+  if ((def.objective === 'defend' || def.objective === 'protect') && grid.count('C') !== 1) {
     issues.add(
       'core',
       `${where}.tiles`,
-      `a Defend map has exactly one core 'C' (found ${grid.count('C')})`,
+      `a Defend or Protect map has exactly one core 'C' (found ${grid.count('C')})`,
     );
   }
   // A marker may sit on any non-path tile (D042: A1M2's pump station marks its power node), but
   // an ally post or a scripted tile change takes the tile, so those markers stay on decor.
   const decorOnly = new Set<string>([
     ...(def.allies ?? []).map((a) => a.post),
+    ...(def.asset === undefined ? [] : [def.asset.marker]),
     ...(def.events ?? []).flatMap((e) =>
       e.actions.flatMap((a) => ('openTile' in a ? [a.openTile] : [])),
     ),
@@ -277,6 +288,24 @@ function validateGeometry(
         issues.add('wreckage', `${where}.salvage`, `wreckage at ${fmt([c, r])} needs an entry`);
       }
     }
+  }
+}
+
+/** [asset]: a Protect map has an asset and only it does; its meter is a whole number ≥ 1. */
+function validateAsset(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  const a = def.asset;
+  if ((a !== undefined) !== (def.objective === 'protect')) {
+    issues.add('asset', `${where}.asset`, "goes with objective 'protect' (and only with it)");
+  }
+  if (a === undefined) return;
+  if (!isPositiveInt(a.integrity)) {
+    issues.add('asset', `${where}.asset.integrity`, 'must be a whole number ≥ 1');
+  }
+  if (a.routes.length === 0) {
+    issues.add('asset', `${where}.asset.routes`, 'names at least one route whose leaks hit it');
+  }
+  for (const r of duplicates(a.routes)) {
+    issues.add('asset', `${where}.asset.routes`, `'${r}' is listed twice`);
   }
 }
 

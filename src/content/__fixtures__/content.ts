@@ -241,13 +241,15 @@ export const fxLayout = fx.defineMapLayout({
     },
   ],
   markers: { rock: [0, 2] },
+  clickables: { rock: { name: 'A suspicious rock' } },
   underWreckage: { '4,3': 'o' },
   salvage: { '4,3': 40 },
   startCredits: 200,
   stardust: 0,
   briefing: 'Fixture briefing.',
   towerUnlockWave: { fx_sprinkler: 2, fx_mortar: 2 },
-  threatIntel: ['fast', 'shielded'],
+  // W2's fleeing runners bring Skittish (D101).
+  threatIntel: ['fast', 'shielded', 'skittish'],
   requiredCounters: [],
   medals: {
     challenge: {

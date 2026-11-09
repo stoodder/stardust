@@ -96,10 +96,12 @@ import { portraitBricks } from './portraits/bricks.ts';
 import { portraitGerald } from './portraits/gerald.ts';
 import { portraitGoldie } from './portraits/goldie.ts';
 import { portraitKip } from './portraits/kip.ts';
+import { portraitPebble } from './portraits/pebble.ts';
 import { portraitPlayer } from './portraits/player.ts';
 import { portraitPrim } from './portraits/prim.ts';
 import { portraitQuill } from './portraits/quill.ts';
 import { portraitSterling } from './portraits/sterling.ts';
+import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
 
 export const SPRITES = [
@@ -208,6 +210,8 @@ export const SPRITES = [
   portraitKip,
   portraitPrim,
   portraitGerald,
+  portraitVesthara,
+  portraitPebble,
 ] as const;
 
 /** Every sprite id. */

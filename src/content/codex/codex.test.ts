@@ -8,7 +8,18 @@ import { ENEMIES } from '../enemies/index.ts';
 import { SPRITES } from '../sprites/index.ts';
 import type { SpriteDef } from '../sprites/types.ts';
 import { TOWERS } from '../towers/index.ts';
-import { CODEX, CODEX_ENTRIES, CODEX_ID, CODEX_IDS, CODEX_VERSIONS } from './index.ts';
+import { ACT1_CODEX } from './act1.ts';
+import { ACT2_CODEX } from './act2.ts';
+import {
+  CODEX,
+  CODEX_ENTRIES,
+  CODEX_ID,
+  CODEX_IDS,
+  CODEX_LATER_VERSIONS,
+  CODEX_VERSIONS,
+  withLaterVersions,
+  type CodexEntryDef,
+} from './index.ts';
 
 /** Act I's entries by the map whose *Codex* line lists them (story/campaign/act1.md). */
 const ACT1_LISTS = {
@@ -111,6 +122,42 @@ describe('the codex content', () => {
       expect(def, e.id).toBeDefined();
       expect(Object.keys(def!.frames), e.id).toContain(e.sprite.frame ?? 'icon');
       expect(e.subject, `${e.id}: a subject brings its own icon`).toBeUndefined();
+    }
+  });
+});
+
+describe("the later acts' versions of earlier entries", () => {
+  const base: CodexEntryDef = {
+    id: 'codex_x',
+    title: 'X',
+    kind: 'thing',
+    versions: { original: { text: 'Original.' } },
+  };
+
+  it('merges a later version in CODEX_VERSIONS order, never replacing one the entry has', () => {
+    const [merged] = withLaterVersions(
+      [base],
+      [
+        { codex_x: { corrected: { text: 'Corrected.' } } },
+        { codex_x: { annotated: { text: 'Annotated.' }, original: { text: 'Not this.' } } },
+      ],
+    );
+    expect(Object.keys(merged!.versions)).toEqual(['original', 'annotated', 'corrected']);
+    expect(merged!.versions.original?.text).toBe('Original.');
+    expect(withLaterVersions([base], [{ codex_y: {} }])[0]).toBe(base);
+  });
+
+  it('every later version names a registered entry and adds a version it lacks', () => {
+    const own = [...ACT1_CODEX, ...ACT2_CODEX];
+    for (const patch of CODEX_LATER_VERSIONS) {
+      for (const [id, versions] of Object.entries(patch)) {
+        const entry = own.find((e) => e.id === id);
+        expect(entry, id).toBeDefined();
+        for (const v of Object.keys(versions)) {
+          expect(entry!.versions, `${id}.${v}`).not.toHaveProperty(v);
+          expect(CODEX[id]!.versions, `${id}.${v}`).toHaveProperty(v);
+        }
+      }
     }
   });
 });

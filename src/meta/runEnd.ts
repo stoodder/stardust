@@ -56,6 +56,18 @@ export interface RunEndInput {
    * (`enemiesMet`; tests and the results fixture).
    */
   readonly met?: readonly string[];
+  /**
+   * The run resumed from a checkpoint at least once (core-loop.md § 2.12): it still earns Victory
+   * and the first-clear rewards but forfeits Perfect Core and the Challenge medal. Default false.
+   * Not read yet: T305b applies the rule.
+   */
+  readonly usedCheckpoint?: boolean;
+  /**
+   * The wave of the checkpoint this attempt resumed from (the latest retry's), or null for an
+   * attempt from wave 1. A defeat pays defeat Stardust only for the waves resolved beyond it
+   * (progression.md § 2). Default null. Not read yet: T305b applies the rule.
+   */
+  readonly resumedFromWave?: number | null;
 }
 
 /**

@@ -112,7 +112,18 @@ export type Trait =
   | 'gathering'
   | 'jammer'
   | 'skittish'
-  | 'huddle';
+  | 'huddle'
+  /**
+   * Comes in clusters (the Mote: 6–12 at a time; D101): counter category splash, tell `hollow`.
+   * The trait says "splash answers this group", so the briefing shows it and the placement-aware
+   * answers find a splash-category enemy on the map.
+   */
+  | 'clustered';
+/**
+ * A threat-intel entry (campaign.md § 4.8): every trait, plus `boss`, which is intel-only and not
+ * a trait (D101; T330): a map lists it when a boss walks its waves. Its icon is the `boss` tell.
+ */
+export type ThreatIntelId = Trait | 'boss';
 /** Counter categories (design/enemies.md §3.1). */
 export type CounterId = 'armor' | 'shield' | 'detection' | 'air' | 'burrowed' | 'splash' | 'jam';
 /** Art tell ids (art/art-direction.md §8). */
@@ -181,6 +192,44 @@ export interface TierDef {
   readonly effects?: readonly EffectDef[];
   /** Support auras on nearby towers. */
   readonly auras?: readonly AuraDef[];
+  /**
+   * Detection (design/enemies.md § 2.5; the Lookout Shack, Seer's Lantern): cloaked enemies within
+   * the radius are Revealed. Run by sim/systems/detection.ts (T406).
+   */
+  readonly detect?: DetectDef;
+  /** Economy effects (the Salvage Crane, design/towers.md § 7; T408). */
+  readonly economy?: TowerEconomyDef;
+}
+
+/**
+ * A detector's reach (design/towers.md § 7, Lookout Shack): enemies inside `radiusTiles` are
+ * Revealed, and stay Revealed `lingerSec` after leaving it (Lookout T3: 2 s). Crow's Nest's
+ * "revealed enemies take +10% damage" is `revealedDamagePct` (a Mark-type bonus that doesn't
+ * stack with Mark).
+ */
+export interface DetectDef {
+  readonly radiusTiles: number;
+  readonly lingerSec?: number;
+  readonly revealedDamagePct?: number;
+}
+
+/**
+ * The Salvage Crane's economy (design/towers.md § 7; T408). Every field is optional; a tier
+ * patches the one before.
+ */
+export interface TowerEconomyDef {
+  /** Credits each time a wave resolves (T1 +10, T2 +18, T3 +28). */
+  readonly perWave?: number;
+  /** Credits per kill by any tower within `radiusTiles` (T1 +1, T3 +2). */
+  readonly perKill?: number;
+  readonly radiusTiles?: number;
+  /** Wreckage within `radiusTiles` clears this much faster (2 = double speed). */
+  readonly salvageSpeedMul?: number;
+  /** Extra salvage from wreckage within `radiusTiles` (0.25 = +25%). */
+  readonly salvagePct?: number;
+  /** Haggler's Stall: interest on banked credits as each wave resolves, capped per wave. */
+  readonly interestPct?: number;
+  readonly interestCap?: number;
 }
 /**
  * A later tier: its own cost, plus changes to the tier before. Objects merge deeply; arrays and
@@ -203,6 +252,11 @@ interface AttackCommon {
   readonly ignoresArmor?: boolean;
   /** Time before the first shot after acquiring a target (Rivet Storm). */
   readonly spinUpSec?: number;
+  /**
+   * Picks only targets that match (Magnet Crane: Mechanical or armored ground enemies; T408): a
+   * unit matches with one of `bodies` or, with `armored`, armor > 0. Absent: any target.
+   */
+  readonly targetFilter?: { readonly bodies?: readonly Body[]; readonly armored?: true };
 }
 export type AttackDef = AttackCommon &
   (
@@ -214,6 +268,10 @@ export type AttackDef = AttackCommon &
         readonly speedTilesPerSec: number;
         /** A burst on arrival: every enemy on the tier's layers within it (default 0: the target only). */
         readonly splashTiles?: number;
+        /** It steers to its target each tick instead of flying straight (Seeker Swarm; T407b). */
+        readonly homing?: boolean;
+        /** Shots per volley, each at its own target where it can (Seeker Swarm: 4; default 1). */
+        readonly volley?: number;
       }
     | {
         // Thumper: lands after a fixed flight time, aimed with lead targeting
@@ -237,6 +295,20 @@ export type AttackDef = AttackCommon &
     | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
     // Sprinkler: every period, hits every enemy within rangeTiles (no target, no priority)
     | { readonly kind: 'pulse' }
+    | {
+        // Capacitor Bank (T407b): charges `chargeSec` on a target, then discharges `damage` into
+        // it plus `splashPct` of that to enemies within `splashTiles` of it.
+        readonly kind: 'charge';
+        readonly chargeSec: number;
+        readonly splashTiles: number;
+        readonly splashPct: number;
+      }
+    | {
+        // Skewer (T408): the shot pierces every enemy in a `lengthTiles` line from the tower
+        // through its target, `damage` each.
+        readonly kind: 'line';
+        readonly lengthTiles: number;
+      }
   );
 export type AttackKind = AttackDef['kind'];
 
@@ -297,6 +369,10 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
    * Soaks from tier 1; T304b). Soaked is the only status a link grants so far.
    */
   readonly soakedSec?: number;
+  /** Added to the partner's detection radius (Overwatch, Skywatch: Lookout +0.5; T406). */
+  readonly detectRadiusTiles?: number;
+  /** Credits per kill the partner makes (Reel It In: Harpoon kills +3; T408). */
+  readonly killCredits?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a
@@ -355,6 +431,14 @@ export interface EnemyDef<Id extends string = string> {
   /** A boss (the `boss` tell; design/enemies.md § 6): its phases and how it ends. */
   readonly boss?: BossDef;
   /**
+   * A shield pulse (enemies.md § 5.2: the Aegis Cantor's style; the Glass Witch's phase 1): every
+   * `everySec`, after a `tellSec` tell, restores `shield` to itself and its faction's shielded
+   * units within `radiusTiles` (enemyAbilities/pulse.ts; T403).
+   */
+  readonly pulse?: PulseDef;
+  /** Blink (the `blink` tell): teleports forward along its route (enemyAbilities/blink.ts; T404). */
+  readonly blink?: BlinkDef;
+  /**
    * A neutral unit (Gerald, core-loop.md § 2.7): towers that aren't holding fire target it like an
    * enemy, but it takes no damage (hits plink off, `NeutralHit`), never leaks, pays nothing, and
    * never counts toward a wave's resolution or a medal (T304a).
@@ -386,6 +470,26 @@ export interface SplitDef {
 export interface HuddleDef {
   readonly radiusTiles: number;
   readonly regenPerSec: number;
+}
+
+/** A shield pulse (EnemyDef.pulse; D101: the Witch restores 120 within 2 tiles every 8 s, 1.5 s tell). */
+export interface PulseDef {
+  readonly everySec: number;
+  readonly tellSec: number;
+  readonly radiusTiles: number;
+  /** Shield restored to each unit it reaches (never above that unit's shield max). */
+  readonly shield: number;
+}
+
+/**
+ * Blink (enemies.md § 3; the Blinkstrider: 2.5 tiles every 6 s, 0.8 s tell; the Witch: 2.5 tiles
+ * every 7 s, 1.5 s tell). Stasis and Unnerved interrupt the tell (a converted Stasis on a boss
+ * doesn't, D101).
+ */
+export interface BlinkDef {
+  readonly everySec: number;
+  readonly tellSec: number;
+  readonly tiles: number;
 }
 
 /** How a boss fight ends without a death (design/enemies.md § 6.1). */
@@ -420,6 +524,10 @@ export interface BossPhaseDef {
   readonly hastePct?: number;
   /** A constant huddle on nearby young (Chitterbloom's phase 3). */
   readonly huddle?: HuddleDef;
+  /** A shield pulse while in this phase (the Glass Witch; T404 with T403's pulse module). */
+  readonly pulse?: PulseDef;
+  /** Blinks while in this phase (the Glass Witch's phase 2; T404). */
+  readonly blink?: BlinkDef;
 }
 
 // ── Commander abilities ──────────────────────────────────────────────────────────────────────
@@ -485,6 +593,15 @@ export type AbilityEffect =
       readonly kind: 'discount';
       readonly pct: number;
       readonly charges: number;
+    }
+  | {
+      /**
+       * Scanner Sweep (T406): a targeted circle; cloaked enemies inside it are Revealed for
+       * `durationSec` (design/core-loop.md § 3.2: 4 tiles, 10 s).
+       */
+      readonly kind: 'reveal';
+      readonly radiusTiles: number;
+      readonly durationSec: number;
     };
 
 /**
@@ -558,8 +675,11 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly briefing?: string;
   /** A loadout tower held back until that wave's countdown starts (compiles to an unlock event). */
   readonly towerUnlockWave?: Readonly<Partial<Record<K['tower'], number>>>;
-  /** Every trait in the waves; shown as briefing icons. */
-  readonly threatIntel: readonly Trait[];
+  /**
+   * Every trait in the waves, plus `boss` when a boss walks them; shown as briefing icons. A
+   * `fleeing` Skitterkin group brings `skittish` (D101: Skittish is the fleeing modifier).
+   */
+  readonly threatIntel: readonly ThreatIntelId[];
   /** At most 3; each backed by a noCounterBuild that must lose. */
   readonly requiredCounters: readonly CounterId[];
   /**
@@ -585,6 +705,24 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   }[];
   /** A MapId (validate() checks it): a MapDef can't name its own registry's ids. */
   readonly revisitOf?: string;
+  /**
+   * A revisit (A2M3 of A1M2; design/maps.md § 7): where the original's tile (0, 0) sits on this
+   * map's grid. The original's layout is composed by reference at compile (T410a); this map's own
+   * `tiles` hold the added band. createSim refuses `revisitOf` until T410a (`map.revisit`).
+   */
+  readonly revisitAt?: GridPos;
+  /**
+   * Protect the asset (design/maps.md § 5.2; A2M2's extraction rigs; D101): the second meter.
+   * Required on a `protect` map and only there. createSim refuses it until T305a (`map.protect`).
+   */
+  readonly asset?: AssetDef;
+  /**
+   * Clickable world objects (A2M3's Peeker holding Pebble): markers a script can make clickable
+   * (`setClickable`), each with the name the cursor's tooltip and the screen reader give it. The
+   * `interact` command and `interacted` trigger name them. createSim refuses them until T409
+   * (`map.clickable`).
+   */
+  readonly clickables?: Readonly<Record<MarkerId, { readonly name: string }>>;
   /** Map scripts (story-runtime.md § Map scripts). */
   readonly events?: readonly ScriptedEvent<K>[];
   /**
@@ -593,6 +731,18 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    */
   readonly allies?: readonly AllyPostDef[];
   // Not yet: song (finale), dressing and presentation (M3).
+}
+
+/**
+ * The asset on a Protect map (D101): one meter of `integrity` (A2M2: 10, drawn as two rigs), on
+ * the decor tile `marker`. A unit that leaks along one of `routes` (the branch to the asset) costs
+ * the asset its leak value instead of the core; a boss reaching it drains it (defeat). The map is
+ * lost when either meter reaches 0, and the par margin is min(core %, asset %) (T305a).
+ */
+export interface AssetDef {
+  readonly integrity: number;
+  readonly marker: MarkerId;
+  readonly routes: readonly RouteId[];
 }
 
 export interface WaveDef<K extends IdSpace = LiveIds> {
@@ -758,7 +908,9 @@ export type RunStat =
   | 'abilityUses'
   | 'neutralHits'
   | 'wreckageCleared'
-  | 'lateSells';
+  | 'lateSells'
+  /** Blinks a boss completed this run (Glass Half Empty: retreat before 3; counted by T404). */
+  | 'bossBlinks';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -791,6 +943,20 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
       readonly passedMarker: { readonly marker: MarkerId; readonly enemy?: K['enemy'] };
     }
   | { readonly flag: ScriptFlagId; readonly eq: FlagValue }
+  | {
+      /**
+       * Leaks this run by units of that faction (or enemy), medal-exempt units never counted
+       * (`stats.leaksByFaction`, `stats.leaksByEnemy`): Hiccup Contained is `{ leaks: { faction:
+       * 'hollow' }, lte: 0 }` (a Heavy unit is Hollow). A run atom, like `stat`.
+       */
+      readonly leaks: { readonly faction?: EnemyFaction; readonly enemy?: K['enemy'] };
+      readonly gte?: number;
+      readonly lte?: number;
+    }
+  /** The salvage drone has cleared the wreckage tile under that marker this run (a run atom). */
+  | { readonly wreckageCleared: MarkerId }
+  /** That optional objective of the map is done (settled `done`; failed or open is false). */
+  | { readonly objectiveDone: string }
   | { readonly all: readonly ConditionDef<K>[] }
   | { readonly any: readonly ConditionDef<K>[] }
   | { readonly not: ConditionDef<K> };
@@ -845,6 +1011,7 @@ export type ScriptTrigger<K extends IdSpace = LiveIds> =
   | { readonly restProgressPct: number }
   | { readonly objectiveCompleted: string }
   | { readonly interacted: MarkerId } // by click or by fallback
+  | { readonly wreckageCleared: MarkerId } // the drone cleared the wreckage under that marker
   | { readonly forcedInputResolved: string }
   | { readonly tick: number };
 

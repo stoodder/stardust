@@ -11,6 +11,7 @@ import type {
   DamageType,
   StatusId,
   TellId,
+  ThreatIntelId,
   TowerStat,
   Trait,
   WaveTag,
@@ -181,6 +182,8 @@ export const TRAIT_COUNTER: Readonly<Record<Trait, CounterId | null>> = {
   splitting: 'splash',
   huddle: 'splash',
   jammer: 'jam',
+  // Mote clusters (enemies.md § 3.1's splash row; D101).
+  clustered: 'splash',
   fast: null,
   blink: null,
   phasing: null,
@@ -208,6 +211,14 @@ export const TRAIT_TELL: Readonly<Record<Trait, TellId>> = {
   jammer: 'disabler',
   skittish: 'skittish',
   huddle: 'huddle',
+  // A cluster reads as Hollow: the tell is the faction's look, not a new glyph (D101).
+  clustered: 'hollow',
+};
+
+/** Each threat-intel entry's tell (its briefing glyph): the traits', plus `boss` (D101; T330). */
+export const THREAT_INTEL_TELL: Readonly<Record<ThreatIntelId, TellId>> = {
+  ...TRAIT_TELL,
+  boss: 'boss',
 };
 
 /**
@@ -508,6 +519,28 @@ export const SPARE_TAGS: readonly WaveTag[] = ['fleeing', 'youngling'];
 export const ALLY_NEVER_TARGET_TAGS: readonly WaveTag[] = ['quiet_wave', 'youngling', 'fleeing'];
 /** Wave tags only Skitterkin units may carry (enemies.md § 5.4: fleeing Skitterkin). */
 export const SKITTERKIN_ONLY_TAGS: readonly WaveTag[] = ['fleeing', 'youngling', 'quiet_wave'];
+
+// ── Act II enemy rules (design/enemies.md § 3, § 5.4; D101). Run by sim/enemyAbilities/ ───────
+
+/**
+ * Skittish (enemies.md § 3; the `fleeing` modifier, D101): when a Skitterkin within this many
+ * tiles dies or is hushed, the unit gains Haste SKITTISH_HASTE_PCT for SKITTISH_HASTE_SEC (under
+ * HASTE_CAP). Same layer or not (T402).
+ */
+export const SKITTISH_RADIUS_TILES = 2;
+export const SKITTISH_HASTE_PCT = 0.4;
+export const SKITTISH_HASTE_SEC = 1.5;
+/**
+ * The hush rule (enemies.md § 5.4; D101): a non-boss Hollow unit within HUSH_CONTACT_TILES along
+ * the route of a hushable unit on its own layer stops for the HUSH_TELL_SEC tell, then hushes it,
+ * heals to full, and turns Heavy (base speed × HUSH_SPEED_MUL). One hush each (T402).
+ */
+export const HUSH_CONTACT_TILES = 0.4;
+export const HUSH_TELL_SEC = 0.5;
+export const HUSH_SPEED_MUL = 1.15;
+/** Fleeing groups spawn this long before their Hollow group on the same route (enemies.md § 5.4). */
+export const FLEEING_LEAD_MIN_SEC = 2;
+export const FLEEING_LEAD_MAX_SEC = 4;
 
 /** Retry checkpoints: every 5 waves, from Act II (architecture.md § Checkpoints). */
 export const CHECKPOINT_EVERY_WAVES = 5;

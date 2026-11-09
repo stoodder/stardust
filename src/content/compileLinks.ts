@@ -76,6 +76,8 @@ function partner<K extends IdSpace>(
     vsStatusPct: 0,
     chainJumps: 0,
     soakedTicks: 0,
+    detectRadiusTiles: 0,
+    killCredits: 0,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -85,6 +87,15 @@ function partner<K extends IdSpace>(
     if (Number.isFinite(def.soakedSec) && def.soakedSec > 0) {
       out.soakedTicks = ticks(ctx, def.soakedSec, `${where}.soakedSec`);
     } else ctx.errors.push(`${where}.soakedSec: needs a duration > 0`);
+  }
+  if (def.detectRadiusTiles !== undefined) {
+    if (Number.isFinite(def.detectRadiusTiles) && def.detectRadiusTiles > 0) {
+      out.detectRadiusTiles = def.detectRadiusTiles;
+    } else ctx.errors.push(`${where}.detectRadiusTiles: needs a radius > 0`);
+  }
+  if (def.killCredits !== undefined) {
+    if (Number.isInteger(def.killCredits) && def.killCredits > 0) out.killCredits = def.killCredits;
+    else ctx.errors.push(`${where}.killCredits: needs a whole number > 0`);
   }
   for (const [i, bonus] of def.bonuses.entries()) {
     const at = `${where}.bonuses[${i}]`;

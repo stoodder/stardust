@@ -265,7 +265,6 @@ export type BarkTrigger =
         | 'perfect_wave'
         | 'low_integrity'
         | 'hold_fire_used'
-        | 'not_firing'
         | 'skitterkin_killed_ahead'
         | 'idle'
         | 'ally_hushed'
@@ -276,6 +275,12 @@ export type BarkTrigger =
         | 'flag';
     }
   | { readonly on: 'wave_start' | 'wave_cleared'; readonly wave?: number; readonly boss?: true }
+  /**
+   * Skitterkin in range for NOT_FIRING_SEC with no tower firing at them. A bark naming `wave`
+   * plays only when the trigger fires during that wave (A1M5's "...You okay, Sprout?" is W10's;
+   * T330), so the event must carry the wave it fired in.
+   */
+  | { readonly on: 'not_firing'; readonly wave?: number }
   | { readonly on: 'tower_built'; readonly tower?: TowerId }
   | { readonly on: 'tower_sold'; readonly tower?: TowerId; readonly tagged?: boolean }
   | { readonly on: 'enemy_killed' | 'enemy_leaked' | 'new_enemy'; readonly enemy: EnemyId }

@@ -1,11 +1,13 @@
 // Dialogue is canon (D026, D048): every line, choice option, and bark in a map's dialogue must
 // appear word for word in its map's section of its act file (`a1_m02` → story/campaign/act1.md
-// § A1M2), and a shared bark in its act's file. The other way round, every quoted line in a
-// migrated map's *Story delivery* (from *Briefing* to *Codex*) must be in its dialogue, so none
-// is dropped. Reads the docs from disk, so it lives with the other node-side checks.
+// § A1M2, `a2_m01` → act2.md § A2M1), and a shared bark in its act's file (by its id's act). The
+// other way round, every quoted line in a migrated map's *Story delivery* (from *Briefing* to
+// *Codex*) must be in its dialogue, so none is dropped. Reads the docs from disk, so it lives with
+// the other node-side checks.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { CAMPAIGN_PLAN } from '../src/content/campaign.ts';
 import { SHARED_BARKS } from '../src/content/dialogue/barks/index.ts';
 import { MAP_DIALOGUE } from '../src/content/dialogue/index.ts';
 import type { Bark, Scene } from '../src/content/dialogue/types.ts';
@@ -47,6 +49,15 @@ function texts(scenes: readonly Scene[], barks: readonly Bark[]): string[] {
 }
 
 describe('dialogue is verbatim from its map section of the act file', () => {
+  it('every registered map has its section, headed with its campaign name', () => {
+    for (const { map } of MAP_DIALOGUE) {
+      const name = CAMPAIGN_PLAN.find((m) => m.id === map)?.name ?? '';
+      expect(section(map).split('\n')[1], map).toBe(
+        `## ${map.slice(0, 2).toUpperCase()}M${Number(map.slice(-2))} · ${name}`,
+      );
+    }
+  });
+
   for (const { map, scenes, barks } of MAP_DIALOGUE) {
     const all = texts(scenes, barks);
     if (all.length === 0) continue;
@@ -58,8 +69,9 @@ describe('dialogue is verbatim from its map section of the act file', () => {
 
   it('shared barks are verbatim from their act file', () => {
     for (const b of SHARED_BARKS) {
-      const act = /_a(1|2|3|fin)_\d\d$/.exec(b.id)?.[1] ?? '';
-      expect(actFile(act), b.id).toContain(b.text);
+      const act = /_a(1|2|3|fin)_\d\d$/.exec(b.id)?.[1];
+      expect(act, `${b.id}: no act in its id`).toBeDefined();
+      if (b.text !== '') expect(actFile(act ?? ''), b.id).toContain(b.text);
     }
   });
 });

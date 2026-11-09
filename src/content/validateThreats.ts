@@ -12,7 +12,15 @@ import {
   THREAT_TRAIT_FACTOR,
   TRAIT_COUNTER,
 } from './rules.ts';
-import type { CounterId, EnemyDef, IdSpace, MapDef, Trait, WaveGroup } from './types.ts';
+import type {
+  CounterId,
+  EnemyDef,
+  IdSpace,
+  MapDef,
+  ThreatIntelId,
+  Trait,
+  WaveGroup,
+} from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { Issues, duplicates, type Grid } from './validateHelpers.ts';
 import { routesOf, type RouteKind } from './validateWaves.ts';
@@ -65,12 +73,25 @@ function isNeutralId(ctx: MapCtx, id: string): boolean {
   return ctx.enemies.get(id)?.neutral === true;
 }
 
+/**
+ * The traits a set of groups brings: each enemy's, plus `skittish` for a `fleeing` Skitterkin
+ * group (Skittish is the fleeing modifier, not an enemy's trait; D101).
+ */
 function traitsOf(ctx: MapCtx, groups: readonly WaveGroup<IdSpace>[]): Set<Trait> {
   const out = new Set<Trait>();
   for (const g of groups) {
     if (isNeutralId(ctx, g.enemy)) continue;
-    for (const t of ctx.enemies.get(g.enemy)?.traits ?? []) out.add(t);
+    const e = ctx.enemies.get(g.enemy);
+    for (const t of e?.traits ?? []) out.add(t);
+    if (e?.faction === 'skitterkin' && (g.tags ?? []).includes('fleeing')) out.add('skittish');
   }
+  return out;
+}
+
+/** The threat intel a map's waves call for: their traits, plus `boss` when a boss walks them. */
+function intelOf(ctx: MapCtx, groups: readonly WaveGroup<IdSpace>[]): Set<ThreatIntelId> {
+  const out = new Set<ThreatIntelId>(traitsOf(ctx, groups));
+  if (groups.some((g) => ctx.enemies.get(g.enemy)?.boss !== undefined)) out.add('boss');
   return out;
 }
 
@@ -82,7 +103,7 @@ export function validateThreats(
   where: string,
 ): void {
   const allGroups = def.waves.flatMap((w) => w.groups);
-  const present = traitsOf(ctx, allGroups);
+  const present = intelOf(ctx, allGroups);
   for (const t of duplicates(def.threatIntel)) {
     issues.add('threat-intel', `${where}.threatIntel`, `'${t}' is listed twice`);
   }
@@ -146,7 +167,7 @@ export function validateThreats(
   }
 
   // Teach waves and groups: each teaches a trait new to the campaign, at most one per trait.
-  const newTraits = new Set([...present].filter((t) => !history.traits.has(t)));
+  const newTraits = new Set([...traitsOf(ctx, allGroups)].filter((t) => !history.traits.has(t)));
   const taught = new Map<Trait, string>();
   const teach = (groups: readonly WaveGroup<IdSpace>[], w: string): void => {
     const fresh = [...traitsOf(ctx, groups)].filter((t) => newTraits.has(t));

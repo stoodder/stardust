@@ -64,6 +64,25 @@ describe('triggerMatches', () => {
       false,
     );
   });
+
+  it('filters not_firing by wave: a W10 line waits for W10, a generic one takes any (T330)', () => {
+    const w10: Bark = {
+      id: 'bricks_not_firing_a1_05',
+      speaker: 'bricks',
+      text: '...You okay, Sprout?',
+      trigger: { on: 'not_firing', wave: 10 },
+      once: 'map',
+    };
+    expect(triggerMatches(w10.trigger, { on: 'not_firing', wave: 10 })).toBe(true);
+    expect(triggerMatches(w10.trigger, { on: 'not_firing', wave: 4 })).toBe(false);
+    expect(triggerMatches(w10.trigger, { on: 'not_firing' })).toBe(false);
+    expect(triggerMatches({ on: 'not_firing' }, { on: 'not_firing', wave: 4 })).toBe(true);
+    // An early hold plays nothing and leaves the line for W10.
+    const early = pickBark([w10], ev({ on: 'not_firing', wave: 4 }, 10), newBarkState(1), ctx);
+    expect(early.bark).toBeNull();
+    const late = pickBark([w10], ev({ on: 'not_firing', wave: 10 }, 90), early.state, ctx);
+    expect(late.bark?.id).toBe(w10.id);
+  });
 });
 
 describe('pickBark', () => {

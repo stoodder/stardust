@@ -51,3 +51,10 @@ export interface CodexEntryDef {
   readonly sprite?: CodexSprite;
   readonly versions: { readonly [V in CodexVersion]?: CodexVersionDef };
 }
+
+/**
+ * Versions a later act adds to entries it doesn't own (an Act I entry's `annotated`), by entry id:
+ * the registry (index.ts) merges them in, so each act's text stays in its own file. A version
+ * here never replaces one the entry already has (codex.test.ts).
+ */
+export type CodexLaterVersions = Readonly<Record<CodexId, CodexEntryDef['versions']>>;

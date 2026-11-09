@@ -4,6 +4,7 @@
 // `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time.
 import type {
   CompiledAllyPost,
+  CompiledAsset,
   CompiledRoute,
   CompiledMapDef,
   CompiledScriptAction,
@@ -105,6 +106,7 @@ export function compileMap<K extends IdSpace>(
   });
 
   const allies = compileAllies(ctx, def, where);
+  const asset = compileAsset(ctx, def, routes, where);
   const builds = compileBuilds(ctx, refs, def, where);
   if (ctx.errors.length > errorsBefore) return null;
   return {
@@ -140,7 +142,33 @@ export function compileMap<K extends IdSpace>(
     lockedAbilities: def.lockedAbilities ?? [],
     allies,
     revisitOf: def.revisitOf ?? null,
+    revisitAt: def.revisitAt === undefined ? null : [def.revisitAt[0], def.revisitAt[1]],
+    asset,
+    clickables: { ...def.clickables },
     builds,
+  };
+}
+
+/** The Protect map's asset (T305a): its marker resolved, its routes checked against the map's. */
+function compileAsset(
+  ctx: Ctx,
+  def: MapDef<IdSpace>,
+  routes: ReadonlyMap<string, unknown>,
+  where: string,
+): CompiledAsset | null {
+  const a = def.asset;
+  if (a === undefined) return null;
+  const tile = def.markers?.[a.marker];
+  if (tile === undefined) ctx.errors.push(`${where}.asset.marker: unknown marker '${a.marker}'`);
+  for (const r of a.routes) {
+    if (!routes.has(r)) ctx.errors.push(`${where}.asset.routes: unknown route '${r}'`);
+  }
+  if (tile === undefined) return null;
+  return {
+    integrity: a.integrity,
+    marker: a.marker,
+    tile: [tile[0], tile[1]],
+    routes: [...a.routes],
   };
 }
 
@@ -408,6 +436,8 @@ function checkCondition<K extends IdSpace>(
     checkId(ctx, refs.towers, c.towers.tower, `${where}.towers`, 'tower');
   } else if ('passedMarker' in c && c.passedMarker.enemy !== undefined) {
     checkId(ctx, refs.enemies, c.passedMarker.enemy, `${where}.passedMarker`, 'enemy');
+  } else if ('leaks' in c && c.leaks.enemy !== undefined) {
+    checkId(ctx, refs.enemies, c.leaks.enemy, `${where}.leaks`, 'enemy');
   } else if ('all' in c) {
     for (const [i, s] of c.all.entries()) checkCondition(ctx, refs, s, `${where}.all[${i}]`);
   } else if ('any' in c) {

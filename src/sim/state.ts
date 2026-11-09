@@ -3,7 +3,7 @@
 // Immutable inputs (content, the map, the config) live in the TickContext instead (tick.ts).
 import type { CompiledMapDef } from '../content/compiled.ts';
 import { SELL_REFUND_PCT } from '../content/rules.ts';
-import type { IdSpace, WaveTag } from '../content/types.ts';
+import type { EnemyFaction, IdSpace, WaveTag } from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
 import type { Command, CommandLogEntry } from './commands.ts';
 import {
@@ -110,7 +110,18 @@ export interface SimStats {
    * a sell after a wave has started since the tower was built, unless it's a misclick-grace refund.
    */
   lateSells: number;
+  /** Blinks a boss completed (Glass Half Empty; counted by enemyAbilities/blink.ts, T404). */
+  bossBlinks: number;
+  /**
+   * Leaks by faction and by enemy id, medal-exempt units never counted (the `leaks` condition
+   * atom: Hiccup Contained; counted in movement). `leaksByEnemy` gets a key on its first leak.
+   */
+  leaksByFaction: FactionCounts;
+  leaksByEnemy: Record<string, number>;
 }
+
+/** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
+export type FactionCounts = Record<EnemyFaction, number>;
 
 /**
  * Wreckage and the salvage drone (design/maps.md § 3; systems/wreckage.ts, T304b). Tiles are
@@ -266,6 +277,18 @@ export interface SimState<K extends IdSpace = IdSpace> {
   medals: Record<MedalKind, MedalStatus>;
   /** Each optional objective's standing this run, index-aligned with `map.objectives` (T304f). */
   objectives: ObjectiveStatus[];
+  /**
+   * Protect the asset (design/maps.md § 5.2; T305a): the asset meter and its full value; both 0
+   * on a map without an asset (`map.asset`).
+   */
+  asset: number;
+  maxAsset: number;
+  /**
+   * Clickable world objects (T409): the markers clickable now, in the order they turned on, and
+   * those interacted with this run (by click or by fallback), in order.
+   */
+  clickable: string[];
+  interacted: string[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -338,6 +361,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       neutralHits: 0,
       wreckageCleared: 0,
       lateSells: 0,
+      bossBlinks: 0,
+      leaksByFaction: factionCounts(),
+      leaksByEnemy: {},
     },
     abilityCooldownTicks: [0, 0],
     abilityCooldownWaves: [0, 0],
@@ -354,6 +380,10 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     economy: { bountyPct: 0, bountyCarry: 0, earlyCallPct: 0, sellRefundPct: SELL_REFUND_PCT },
     medals: { victory: 'open', perfectCore: 'open', challenge: 'open' },
     objectives: map.objectives.map((): ObjectiveStatus => 'open'),
+    asset: map.asset?.integrity ?? 0,
+    maxAsset: map.asset?.integrity ?? 0,
+    clickable: [],
+    interacted: [],
     pending: [],
     commandLog: [],
     events: [],
@@ -363,6 +393,11 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
 /** A zero count for every wave tag. */
 export function tagCounts(): TagCounts {
   return { quiet_wave: 0, youngling: 0, fleeing: 0, medal_exempt: 0 };
+}
+
+/** A zero count for every enemy faction. */
+export function factionCounts(): FactionCounts {
+  return { skitterkin: 0, aelari: 0, everglow: 0, hollow: 0 };
 }
 
 /** Hands out the next uid. */

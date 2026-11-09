@@ -1,16 +1,19 @@
 // Enemy compilation: seconds to ticks, optional fields resolved to a value or null. The enemy
-// abilities (burrow, split, huddle, boss; T300a) compile here; the sim runs them in
-// sim/enemyAbilities/ (T304c). Their ids (a split's or a spawn's enemy) are checked by validate().
+// abilities (burrow, split, huddle, boss: T300a; pulse, blink, and the derived hush and cloak
+// flags: T400a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a
+// spawn's enemy) are checked by validate().
 import { perSecToPerTick } from '../shared/time.ts';
 import type {
+  CompiledBlink,
   CompiledBoss,
   CompiledBossPhase,
   CompiledBurrow,
   CompiledEnemyDef,
   CompiledHuddle,
+  CompiledPulse,
 } from './compiled.ts';
 import { ticks, type Ctx } from './compileHelpers.ts';
-import type { BossDef, BurrowDef, EnemyDef, HuddleDef } from './types.ts';
+import type { BlinkDef, BossDef, BurrowDef, EnemyDef, HuddleDef, PulseDef } from './types.ts';
 
 export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): CompiledEnemyDef<Id> {
   const where = `enemies.${def.id}`;
@@ -42,6 +45,16 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
     split: def.split === undefined ? null : { enemy: def.split.enemy, count: def.split.count },
     huddle: def.huddle === undefined ? null : compileHuddle(def.huddle),
     boss: def.boss === undefined ? null : compileBoss(ctx, def.boss, `${where}.boss`),
+    pulse: def.pulse === undefined ? null : compilePulse(ctx, def.pulse, `${where}.pulse`),
+    blink: def.blink === undefined ? null : compileBlink(ctx, def.blink, `${where}.blink`),
+    // The hush rule (enemies.md § 5.4): every non-boss Hollow unit, except a gatherer (a Maw's one
+    // hush is a gather) and a neutral one.
+    hushes:
+      def.faction === 'hollow' &&
+      def.boss === undefined &&
+      def.neutral !== true &&
+      !def.traits.includes('gathering'),
+    cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,
     sprites: def.sprites,
   };
@@ -53,6 +66,24 @@ function compileBurrow(ctx: Ctx, b: BurrowDef, where: string): CompiledBurrow {
     durationTicks: ticks(ctx, b.durationSec, `${where}.durationSec`),
     speedMul: b.speedMul,
     tellTicks: ticks(ctx, b.tellSec, `${where}.tellSec`),
+  };
+}
+
+function compilePulse(ctx: Ctx, p: PulseDef, where: string): CompiledPulse {
+  return {
+    everyTicks: ticks(ctx, p.everySec, `${where}.everySec`),
+    tellTicks: ticks(ctx, p.tellSec, `${where}.tellSec`),
+    radiusTiles: p.radiusTiles,
+    radiusSq: p.radiusTiles * p.radiusTiles,
+    shield: p.shield,
+  };
+}
+
+function compileBlink(ctx: Ctx, b: BlinkDef, where: string): CompiledBlink {
+  return {
+    everyTicks: ticks(ctx, b.everySec, `${where}.everySec`),
+    tellTicks: ticks(ctx, b.tellSec, `${where}.tellSec`),
+    tiles: b.tiles,
   };
 }
 
@@ -90,6 +121,8 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
             },
       hastePct: p.hastePct ?? 0,
       huddle: p.huddle === undefined ? null : compileHuddle(p.huddle),
+      pulse: p.pulse === undefined ? null : compilePulse(ctx, p.pulse, `${w}.pulse`),
+      blink: p.blink === undefined ? null : compileBlink(ctx, p.blink, `${w}.blink`),
     };
   });
   return { phases, ending: b.ending, endAtPct: b.endAtPct };

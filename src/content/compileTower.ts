@@ -4,19 +4,23 @@ import { TICK_HZ, perSecToPerTick } from '../shared/time.ts';
 import type {
   CompiledAttack,
   CompiledBomblets,
+  CompiledDetect,
   CompiledEffect,
   CompiledTier,
   CompiledTowerDef,
+  CompiledTowerEconomy,
 } from './compiled.ts';
 import { mergePatch, periodTicks, ticks, type Ctx } from './compileHelpers.ts';
 import type {
   AttackDef,
   AttackKind,
   BombletsDef,
+  DetectDef,
   EffectDef,
   TierDef,
   TierPatch,
   TowerDef,
+  TowerEconomyDef,
 } from './types.ts';
 
 const ATTACK_FIELDS: Readonly<Record<AttackKind, readonly string[]>> = {
@@ -27,6 +31,8 @@ const ATTACK_FIELDS: Readonly<Record<AttackKind, readonly string[]>> = {
   chain: ['jumps', 'jumpRangeTiles', 'falloffPct'],
   spawner: ['ally', 'maxAlive'],
   pulse: [],
+  charge: ['chargeSec', 'splashTiles', 'splashPct'],
+  line: ['lengthTiles'],
 };
 const ATTACK_COMMON_FIELDS = ['type', 'damage', 'ratePerSec', 'rangeTiles'];
 
@@ -104,6 +110,31 @@ function compileTier(
       stat: a.stat,
       pct: a.pct,
     })),
+    detect: tier.detect === undefined ? null : compileDetect(ctx, tier.detect, `${where}.detect`),
+    economy: tier.economy === undefined ? null : compileEconomy(tier.economy),
+  };
+}
+
+function compileDetect(ctx: Ctx, d: DetectDef, where: string): CompiledDetect {
+  return {
+    radiusTiles: d.radiusTiles,
+    radiusSq: d.radiusTiles * d.radiusTiles,
+    lingerTicks: d.lingerSec === undefined ? 0 : ticks(ctx, d.lingerSec, `${where}.lingerSec`),
+    revealedDamagePct: d.revealedDamagePct ?? 0,
+  };
+}
+
+function compileEconomy(e: TowerEconomyDef): CompiledTowerEconomy {
+  const radius = e.radiusTiles ?? 0;
+  return {
+    perWave: e.perWave ?? 0,
+    perKill: e.perKill ?? 0,
+    radiusTiles: radius,
+    radiusSq: radius * radius,
+    salvageSpeedMul: e.salvageSpeedMul ?? 1,
+    salvagePct: e.salvagePct ?? 0,
+    interestPct: e.interestPct ?? 0,
+    interestCap: e.interestCap ?? 0,
   };
 }
 
@@ -127,6 +158,10 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
     armorPierce: a.armorPierce ?? 0,
     ignoresArmor: a.ignoresArmor ?? false,
     spinUpTicks: a.spinUpSec === undefined ? 0 : ticks(ctx, a.spinUpSec, `${where}.spinUpSec`),
+    targetFilter:
+      a.targetFilter === undefined
+        ? null
+        : { bodies: a.targetFilter.bodies ?? [], armored: a.targetFilter.armored === true },
   };
   switch (a.kind) {
     case 'hitscan':
@@ -141,6 +176,8 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
         speedTilesPerTick: perSecToPerTick(a.speedTilesPerSec),
         splashTiles: splash,
         splashSq: splash * splash,
+        homing: a.homing === true,
+        volley: a.volley ?? 1,
       };
     }
     case 'lobbed':
@@ -170,6 +207,17 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
       };
     case 'spawner':
       return { ...common, kind: a.kind, ally: a.ally, maxAlive: a.maxAlive };
+    case 'charge':
+      return {
+        ...common,
+        kind: a.kind,
+        chargeTicks: ticks(ctx, a.chargeSec, `${where}.chargeSec`),
+        splashTiles: a.splashTiles,
+        splashSq: a.splashTiles * a.splashTiles,
+        splashPct: a.splashPct,
+      };
+    case 'line':
+      return { ...common, kind: a.kind, lengthTiles: a.lengthTiles };
     default:
       return assertNever(a);
   }

@@ -34,6 +34,7 @@ import type {
   SpriteId,
   TargetPriority,
   TellId,
+  ThreatIntelId,
   TileChar,
   TileKey,
   TowerFaction,
@@ -86,6 +87,30 @@ export interface CompiledTier {
   readonly attack: CompiledAttack | null;
   readonly effects: readonly CompiledEffect[];
   readonly auras: readonly CompiledAura[];
+  /** Detection (TierDef.detect), or null for a tier that reveals nothing. */
+  readonly detect: CompiledDetect | null;
+  /** The Crane's economy (TierDef.economy), or null. */
+  readonly economy: CompiledTowerEconomy | null;
+}
+
+/** DetectDef with the linger in ticks and the radius squared (0 / 0 for absent fields). */
+export interface CompiledDetect {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly lingerTicks: number;
+  readonly revealedDamagePct: number;
+}
+
+/** TowerEconomyDef resolved: absent fields are 0 (salvageSpeedMul 1). */
+export interface CompiledTowerEconomy {
+  readonly perWave: number;
+  readonly perKill: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly salvageSpeedMul: number;
+  readonly salvagePct: number;
+  readonly interestPct: number;
+  readonly interestCap: number;
 }
 
 interface CompiledAttackCommon {
@@ -101,6 +126,8 @@ interface CompiledAttackCommon {
   readonly armorPierce: number;
   readonly ignoresArmor: boolean;
   readonly spinUpTicks: number;
+  /** AttackDef.targetFilter (Magnet Crane), or null: any target. */
+  readonly targetFilter: { readonly bodies: readonly Body[]; readonly armored: boolean } | null;
 }
 export type CompiledAttack = CompiledAttackCommon &
   (
@@ -112,6 +139,10 @@ export type CompiledAttack = CompiledAttackCommon &
         /** The burst on arrival (0: the target only). */
         readonly splashTiles: number;
         readonly splashSq: number;
+        /** Steers to its target (Seeker Swarm; T407b). */
+        readonly homing: boolean;
+        /** Shots per volley (1 unless authored). */
+        readonly volley: number;
       }
     | {
         readonly kind: 'lobbed';
@@ -138,6 +169,14 @@ export type CompiledAttack = CompiledAttackCommon &
       }
     | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
     | { readonly kind: 'pulse' }
+    | {
+        readonly kind: 'charge';
+        readonly chargeTicks: number;
+        readonly splashTiles: number;
+        readonly splashSq: number;
+        readonly splashPct: number;
+      }
+    | { readonly kind: 'line'; readonly lengthTiles: number }
   );
 
 /** BombletsDef in ticks, with the squared radii precomputed. */
@@ -196,6 +235,10 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   readonly chainJumps: number;
   /** Soaked its hits apply while linked, in ticks (Conductive's Sprinkler; 0: none). */
   readonly soakedTicks: number;
+  /** Added to the partner's detection radius (Overwatch, Skywatch; 0: none). */
+  readonly detectRadiusTiles: number;
+  /** Credits per kill the partner makes (Reel It In; 0: none). */
+  readonly killCredits: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────
@@ -227,6 +270,16 @@ export interface CompiledEnemyDef<Id extends string = string> {
   readonly split: CompiledSplit | null;
   readonly huddle: CompiledHuddle | null;
   readonly boss: CompiledBoss | null;
+  /** EnemyDef.pulse and EnemyDef.blink in ticks (T403, T404), or null. */
+  readonly pulse: CompiledPulse | null;
+  readonly blink: CompiledBlink | null;
+  /**
+   * Hushes under the hush rule (enemies.md § 5.4): derived, true for a non-boss Hollow unit that
+   * doesn't gather (a Maw's one hush is a gather). Run by enemyAbilities/hush.ts (T402).
+   */
+  readonly hushes: boolean;
+  /** Cloaked (the `cloaked` trait): untouchable unless Revealed (systems/detection.ts; T406). */
+  readonly cloaked: boolean;
   /** A neutral unit (Gerald): targeted, never hurt, never leaks or pays (EnemyDef.neutral). */
   readonly neutral: boolean;
   readonly sprites: { readonly body: SpriteId; readonly icon: SpriteId };
@@ -248,6 +301,18 @@ export interface CompiledHuddle {
   readonly radiusSq: number;
   readonly regenPerTick: number;
 }
+export interface CompiledPulse {
+  readonly everyTicks: number;
+  readonly tellTicks: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly shield: number;
+}
+export interface CompiledBlink {
+  readonly everyTicks: number;
+  readonly tellTicks: number;
+  readonly tiles: number;
+}
 export interface CompiledBoss {
   readonly phases: readonly CompiledBossPhase[];
   readonly ending: BossEnding;
@@ -268,6 +333,8 @@ export interface CompiledBossPhase {
   } | null;
   readonly hastePct: number;
   readonly huddle: CompiledHuddle | null;
+  readonly pulse: CompiledPulse | null;
+  readonly blink: CompiledBlink | null;
 }
 
 export interface CompiledAbilityDef<Id extends string = string> {
@@ -306,7 +373,13 @@ export type CompiledAbilityEffect =
       readonly bossSlowPct: number;
       readonly durationTicks: number;
     }
-  | { readonly kind: 'discount'; readonly pct: number; readonly charges: number };
+  | { readonly kind: 'discount'; readonly pct: number; readonly charges: number }
+  | {
+      readonly kind: 'reveal';
+      readonly radiusTiles: number;
+      readonly radiusSq: number;
+      readonly durationTicks: number;
+    };
 
 /** A compiled ally post (AllyPostDef): the marker resolved to its tile, the attack in ticks. */
 export interface CompiledAllyPost {
@@ -444,6 +517,14 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly noCounterLoseByWave: number | null;
 }
 
+/** AssetDef with its marker resolved to a tile. */
+export interface CompiledAsset {
+  readonly integrity: number;
+  readonly marker: MarkerId;
+  readonly tile: GridPos;
+  readonly routes: readonly RouteId[];
+}
+
 /** An ObjectiveDef with its `onComplete` actions compiled (none: empty). */
 export interface CompiledObjective<K extends IdSpace = LiveIds> {
   readonly id: string;
@@ -482,7 +563,7 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly briefing: string | null;
   /** Loadout towers that start locked: the keys of `towerUnlockWave`, in unlock order. */
   readonly lockedTowersAtStart: readonly K['tower'][];
-  readonly threatIntel: readonly Trait[];
+  readonly threatIntel: readonly ThreatIntelId[];
   readonly requiredCounters: readonly CounterId[];
   readonly waves: readonly CompiledWave<K>[];
   /** Compiled `towerUnlockWave` events first, then the authored events, in order. */
@@ -501,5 +582,11 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   /** Ally posts, spawned on the first tick (systems/allies.ts). */
   readonly allies: readonly CompiledAllyPost[];
   readonly revisitOf: string | null;
+  /** MapDef.revisitAt, or null (T410a). */
+  readonly revisitAt: GridPos | null;
+  /** The Protect map's asset, its marker resolved (T305a), or null. */
+  readonly asset: CompiledAsset | null;
+  /** Clickable world objects by marker (MapDef.clickables; T409); empty for none. */
+  readonly clickables: Readonly<Record<MarkerId, { readonly name: string }>>;
   readonly builds: CompiledBuilds<K>;
 }

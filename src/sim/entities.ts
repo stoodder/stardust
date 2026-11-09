@@ -8,8 +8,10 @@
 // - The task that implements a kind's behavior adds the fields it needs here (T103 movement,
 //   T105a combat, T105b economy, T113 abilities). T200 added the M2 seams ahead of their tasks
 //   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a),
-//   and T300a the M3 ones (enemy abilities and bosses T304c); until then they keep their blank
-//   values.
+//   T300a the M3 ones (enemy abilities and bosses T304c), and T400a the M4 ones (the hush rule,
+//   Skittish, and Heavy T402; shield pulses T403; blink T404; detection and reveal zones T406;
+//   Stasis T407a; homing and charge attacks T407b; Pinned and link kill credits T408); until then
+//   they keep their blank values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -88,6 +90,14 @@ export interface Tower extends PoolEntity {
    */
   bonusJumps: number;
   linkSoakedTicks: number;
+  /**
+   * More link extras (T400a seams): `bonusDetectTiles` added to its detection radius (Overwatch,
+   * Skywatch; T406) and `linkKillCredits` paid per kill it makes (Reel It In; T408). 0 for none.
+   */
+  bonusDetectTiles: number;
+  linkKillCredits: number;
+  /** A charge attack's progress on its target, in ticks (Capacitor Bank; T407b). */
+  chargeTicks: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -123,6 +133,9 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   vsStatusPct: 0,
   bonusJumps: 0,
   linkSoakedTicks: 0,
+  bonusDetectTiles: 0,
+  linkKillCredits: 0,
+  chargeTicks: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -186,6 +199,26 @@ export interface Enemy extends PoolEntity {
    * it never leaks (enemies.md § 6.1).
    */
   leaving: boolean;
+  // Act II enemy state (T400a seams; enemies.md § 3, § 5.4). Blank until each task runs it.
+  /**
+   * The hush rule (T402): the hush tell's ticks left (0: not hushing), and the uid of the unit
+   * it is hushing. `heavy` once it has hushed (its one hush): base speed × HUSH_SPEED_MUL.
+   */
+  hushTicks: number;
+  hushUid: number;
+  heavy: boolean;
+  /** Skittish (T402): ticks of its Haste left (0: none). */
+  skittishTicks: number;
+  /** A shield pulse (T403) or blink (T404): ticks until the next one fires (its tell is the last part). */
+  pulseTicks: number;
+  blinkTicks: number;
+  /** Revealed (T406): ticks it stays Revealed (detection or a Scanner Sweep, plus linger); 0: not. */
+  revealTicks: number;
+  /** Stasis (T407a) and Pinned (T408): ticks left, and the immunity after each. */
+  stasisTicks: number;
+  stasisImmuneTicks: number;
+  pinnedTicks: number;
+  pinImmuneTicks: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -220,6 +253,17 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   bossPhase: 0,
   invulnerableTicks: 0,
   leaving: false,
+  hushTicks: 0,
+  hushUid: 0,
+  heavy: false,
+  skittishTicks: 0,
+  pulseTicks: 0,
+  blinkTicks: 0,
+  revealTicks: 0,
+  stasisTicks: 0,
+  stasisImmuneTicks: 0,
+  pinnedTicks: 0,
+  pinImmuneTicks: 0,
 });
 
 /**
@@ -265,6 +309,8 @@ export interface Projectile extends PoolEntity {
   bomblets: CompiledBomblets | null;
   bombletDamage: number;
   bombletDamageVs: number;
+  /** It steers to `targetUid` each tick (Seeker Swarm; T407b). */
+  homing: boolean;
 }
 
 export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
@@ -294,15 +340,17 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   bomblets: null,
   bombletDamage: 0,
   bombletDamageVs: 0,
+  homing: false,
 });
 
 /**
  * What a zone does: `strike` lands once on every ground enemy in its radius (Orbital Strike);
  * `segment` covers a stretch of one route for its duration (Suppressing Fire, T207a); `field`
  * covers the whole map for its duration (Time Dilation, T304d: `slowPct` on every enemy; it has
- * no position or route, and render tints the battlefield while it lives).
+ * no position or route, and render tints the battlefield while it lives); `reveal` Reveals the
+ * cloaked enemies in its radius for its duration (Scanner Sweep; T406).
  */
-export type ZoneKind = 'strike' | 'segment' | 'field';
+export type ZoneKind = 'strike' | 'segment' | 'field' | 'reveal';
 
 /** Ground effects and ability areas (the Orbital Strike reticle, T113). */
 export interface Zone extends PoolEntity {

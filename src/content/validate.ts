@@ -12,9 +12,11 @@
 // - [tower-range], [enemy-range], [ability-range]: numbers are in range on every resolved tier.
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
 //   ⇔ shield, burrowing ⇔ `burrow`, splitting ⇔ `split`, huddle ⇔ `huddle`, the `carrier` tell ⇔
-//   `carrier`, the `boss` tell ⇔ `boss`), and every trait shows its tell (enemies.md § 1, rule 1).
+//   `carrier`, the `boss` tell ⇔ `boss`, blink ⇔ `blink`), and every trait shows its tell
+//   (enemies.md § 1, rule 1).
 // - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
-//   (never themselves), with sane numbers: a boss's phases start at full HP and fall, it ends at
+//   (never themselves), with sane numbers (a pulse or a blink tells for less than its period, and
+//   a boss's for at least BOSS_MIN_TELL_SEC; a pulse needs a shield): a boss's phases start at full HP and fall, it ends at
 //   or below its last phase, and it pays no bounty; a neutral unit (Gerald) leaks and pays 0 and
 //   has no trait but flying. (Boss ability tells are a rule, BOSS_ABILITY_TELL_SEC, not data.)
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
@@ -36,6 +38,7 @@ import { validatePalettes } from './palettes/validate.ts';
 import { ENV_PALETTE_IDS } from './palettes/env.ts';
 import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
 import {
+  BOSS_MIN_TELL_SEC,
   CHILL_CAP,
   COUNTER_ANSWERS,
   HASTE_CAP,
@@ -50,8 +53,10 @@ import { validateSprites } from './sprites/validate.ts';
 import type {
   AbilityDef,
   AttackDef,
+  BlinkDef,
   CounterId,
   EnemyDef,
+  PulseDef,
   IdSpace,
   RawContent,
   TierDef,
@@ -208,6 +213,20 @@ function validateTier(issues: Issues, tier: TierDef, cost: number, where: string
     if (!isPositive(au.radiusTiles)) bad(`.auras[${i}].radiusTiles`, 'must be > 0');
     if (!isPositive(au.pct)) bad(`.auras[${i}].pct`, 'must be > 0');
   }
+  const d = tier.detect;
+  if (d !== undefined) {
+    if (!isPositive(d.radiusTiles)) bad('.detect.radiusTiles', 'must be > 0');
+    if (d.lingerSec !== undefined && !isNonNegative(d.lingerSec)) {
+      bad('.detect.lingerSec', 'must be ≥ 0');
+    }
+    const pct = d.revealedDamagePct;
+    if (pct !== undefined && !(pct > 0 && pct <= 1)) {
+      bad('.detect.revealedDamagePct', `${pct} must be in (0, 1]`);
+    }
+  }
+  for (const [field, v] of Object.entries(tier.economy ?? {})) {
+    if (typeof v !== 'number' || !isNonNegative(v)) bad(`.economy.${field}`, 'must be ≥ 0');
+  }
 }
 
 /** Attack field rules: [field, holds, what it must be]. Only fields present are checked. */
@@ -224,6 +243,10 @@ const ATTACK_RULES: readonly [string, (v: unknown) => boolean, string][] = [
   ['jumpRangeTiles', isPositive, 'must be > 0'],
   ['falloffPct', (v) => typeof v === 'number' && v >= 0 && v < 1, 'must be in [0, 1)'],
   ['maxAlive', isPositiveInt, 'must be a whole number ≥ 1'],
+  ['volley', isPositiveInt, 'must be a whole number ≥ 1'],
+  ['chargeSec', isPositive, 'must be > 0'],
+  ['splashPct', (v) => typeof v === 'number' && v > 0 && v <= 1, 'must be in (0, 1]'],
+  ['lengthTiles', isPositive, 'must be > 0'],
 ];
 
 function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef): void {
@@ -307,6 +330,9 @@ function validateEnemy(issues: Issues, def: EnemyDef, enemyIds: ReadonlySet<stri
     traits('traits', "'splitting' goes with `split`");
   }
   if (has('huddle') !== (def.huddle !== undefined)) traits('traits', "'huddle' goes with `huddle`");
+  // Blink is a trait on a unit that blinks on its own (the Blinkstrider); a boss's phase blinks are
+  // boss behaviour (its intel shows the `boss` icon), like Chitterbloom's burrows.
+  if (has('blink') !== (def.blink !== undefined)) traits('traits', "'blink' goes with `blink`");
   if (def.tells.includes('boss') !== (def.boss !== undefined)) {
     traits('tells', "the 'boss' tell goes with `boss`");
   }
@@ -338,6 +364,23 @@ function validateEnemyAbilities(
     if (!isPositive(h.radiusTiles)) bad(`${field}.radiusTiles`, 'must be > 0');
     if (!isNonNegative(h.regenPerSec)) bad(`${field}.regenPerSec`, 'must be ≥ 0');
   };
+  // A pulse restores shields, so the unit has one; every ability has a tell (enemies.md § 1).
+  const pulse = (field: string, p: PulseDef): void => {
+    if (def.shield === undefined) bad(field, 'a shield pulse needs a shield on the unit');
+    if (!isPositive(p.everySec)) bad(`${field}.everySec`, 'must be > 0');
+    if (!isPositive(p.tellSec) || p.tellSec >= p.everySec) {
+      bad(`${field}.tellSec`, 'must be > 0 and below everySec');
+    }
+    if (!isPositive(p.radiusTiles)) bad(`${field}.radiusTiles`, 'must be > 0');
+    if (!isPositive(p.shield)) bad(`${field}.shield`, 'must be > 0');
+  };
+  const blink = (field: string, b: BlinkDef): void => {
+    if (!isPositive(b.everySec)) bad(`${field}.everySec`, 'must be > 0');
+    if (!isPositive(b.tellSec) || b.tellSec >= b.everySec) {
+      bad(`${field}.tellSec`, 'must be > 0 and below everySec');
+    }
+    if (!isPositive(b.tiles)) bad(`${field}.tiles`, 'must be > 0');
+  };
   const b = def.burrow;
   if (b !== undefined) {
     if (!isPositive(b.everySec)) bad('burrow.everySec', 'must be > 0');
@@ -347,6 +390,8 @@ function validateEnemyAbilities(
   }
   if (def.split !== undefined) child('split', def.split.enemy, def.split.count);
   if (def.huddle !== undefined) huddle('huddle', def.huddle);
+  if (def.pulse !== undefined) pulse('pulse', def.pulse);
+  if (def.blink !== undefined) blink('blink', def.blink);
   const threats = def.traits.filter((t) => t !== 'flying');
   if (def.neutral === true && (def.leak !== 0 || def.bounty !== 0 || threats.length > 0)) {
     bad('neutral', 'a neutral unit leaks 0, pays 0, and has no trait but flying (core-loop § 2.7)');
@@ -376,6 +421,16 @@ function validateEnemyAbilities(
       bad(`${w}.hastePct`, `must be in (0, ${HASTE_CAP}]`);
     }
     if (p.huddle !== undefined) huddle(`${w}.huddle`, p.huddle);
+    if (p.pulse !== undefined) pulse(`${w}.pulse`, p.pulse);
+    if (p.blink !== undefined) {
+      blink(`${w}.blink`, p.blink);
+      if (p.blink.tellSec < BOSS_MIN_TELL_SEC) {
+        bad(`${w}.blink.tellSec`, `a boss ability tells for at least ${BOSS_MIN_TELL_SEC} s`);
+      }
+    }
+    if (p.pulse !== undefined && p.pulse.tellSec < BOSS_MIN_TELL_SEC) {
+      bad(`${w}.pulse.tellSec`, `a boss ability tells for at least ${BOSS_MIN_TELL_SEC} s`);
+    }
   }
   if (!(boss.endAtPct >= 0 && boss.endAtPct < last)) {
     bad('boss.endAtPct', 'must be ≥ 0 and below the last phase');
@@ -406,6 +461,9 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
   } else if (e.kind === 'discount') {
     if (!(e.pct > 0 && e.pct < 1)) bad('effect.pct', 'must be in (0, 1)');
     if (!isPositiveInt(e.charges)) bad('effect.charges', 'must be a whole number ≥ 1');
+  } else if (e.kind === 'reveal') {
+    if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+    if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
   } else {
     if (!isNonNegative(e.damagePerSec)) bad('effect.damagePerSec', 'must be ≥ 0');
     // The slow lands as Chilled (strongest source wins), so it can't pass the chill cap.
