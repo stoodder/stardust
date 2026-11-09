@@ -81,7 +81,7 @@ export interface RunRewards {
   readonly lifetimePests: number;
   /**
    * Where the Stardust goes while it can't be spent yet ("Banked for Zibzab's shop. Opens after
-   * Shift 3 (coming soon)."), under the payroll's Stardust line on the first payday only (T235);
+   * Special Delivery."), under the payroll's Stardust line on the first payday only (T235);
    * null on every other run.
    */
   readonly stardustNote: string | null;

@@ -54,7 +54,7 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
-  jamLimit: 'M3',
+  jamLimit: 'M5',
 });
 
 /**

@@ -29,7 +29,7 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await expect(mk2).toContainText('2 Intel');
   await expect(rapport).toContainText('−15% Suppressing Fire cooldown');
   await expect(offerRow(page, 'Field Protocol Slot')).toContainText(
-    'Arrives after Shift 3 (coming soon)',
+    'Arrives after Special Delivery',
   );
   await expect(offerRow(page, 'Field Protocol Slot').getByRole('button')).toHaveCount(0);
   await expect(mk2.getByRole('img', { name: 'Rank 0 of 1' })).toBeVisible();

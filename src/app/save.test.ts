@@ -217,7 +217,7 @@ describe('the save session', () => {
     };
     const r = run('a1_m02', 20, { mapStardust: 130 });
     expect(r?.writeFailed).toMatch(/Records couldn't file that/);
-    expect(r?.stardustNote).toBe("Banked for Zibzab's shop. Opens after Shift 3 (coming soon).");
+    expect(r?.stardustNote).toBe("Banked for Zibzab's shop. Opens after Special Delivery.");
     // The session keeps the run.
     expect(activeSave()?.currencies.stardust).toBe(130);
   });

@@ -1,7 +1,7 @@
 // Development saves, loaded by the test-only `?save=<id>` hook (T209, with `?test=1`) so smoke
-// tests and the owner can reach systems the campaign gates behind maps that don't exist yet.
-// Each is built from the live registries, so it stays valid as content lands: `mid_m2` covers
-// the first two campaign maps once A1M2 is in CAMPAIGN, and `all_unlocked` owns every registered
+// tests and the owner can start partway through the campaign, or reach systems gated behind maps
+// that don't exist yet. Each is built from the live registries, so it stays valid as content
+// lands: `mid_m2` covers the first two campaign maps, and `all_unlocked` owns every registered
 // tower, spec, and ability. devSaves.test.ts validates every one.
 // `devUnlocks` opens gated systems whose maps don't exist yet (D031). It lives here, never in
 // SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
@@ -29,8 +29,8 @@ export interface DevSave {
 }
 
 /**
- * The medal ids a map can award. Victory and Perfect Core ids are placeholders until T202c fixes
- * the medal id convention; the Challenge id is the map's own when its data has one.
+ * The medal ids a map can award (sim/medals.ts's convention): `victory`, `perfect_core`, and the
+ * map's own Challenge id (`challenge` for a map whose data has none).
  */
 function medalIds(map: MapId): MedalId[] {
   const def: { readonly medals?: { readonly challenge: { readonly id: MedalId } } } = MAPS[map];
@@ -167,7 +167,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   mid_m2: {
     description:
       'A1M1 won with all three medals, Orbital Strike Mk II bought with 2 of its 3 Intel, then ' +
-      'the second campaign map won (Victory only, once it is in CAMPAIGN) and its payout banked.',
+      'A1M2 won (Victory only) and its payout banked: A1M3 is next up.',
     build: () => {
       const save = afterA1M1();
       save.upgrades.orbital_strike_mk2 = 1;

@@ -162,7 +162,7 @@ describe('objectives and the first payday on the card (T316, T235)', () => {
   });
 
   it("marks the first payday, and shows the shop's note then only", () => {
-    const note = "Banked for Zibzab's shop. Opens after Shift 3 (coming soon).";
+    const note = "Banked for Zibzab's shop. Opens after Special Delivery.";
     const first = runEnd(createNewSave(), { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
     const paid = runResultOf(INPUT, 'won', { ...first.summary, stardustNote: note }).rewards;
     expect(paid?.firstPayday).toBe(true);

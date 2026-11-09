@@ -231,7 +231,7 @@ export const allyBricks = defineSprite({
     fire_sw: { mirrorOf: 'fire_se' },
     fire_ne: { frames: ['fire_ne_0', 'idle_ne_0'], fps: 10, loop: false },
     fire_nw: { mirrorOf: 'fire_ne' },
-    // Cannon lowered (no targets in reach): the idle breath, cannon held low.
+    // Cannon lowered (the Quiet Wave, A1M5 W10): the idle breath, cannon held low.
     lowered_se: { frames: ['lowered_se_0', 'lowered_se_1'], fps: 2 },
     lowered_sw: { mirrorOf: 'lowered_se' },
     lowered_ne: { frames: ['lowered_ne_0', 'lowered_ne_1'], fps: 2 },

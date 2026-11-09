@@ -219,8 +219,7 @@ export function validateBuilds(
       issues.add('builds-range', `${where}.flagVariants.${flag}`, 'must list at least one value');
     }
   }
-  // TODO(T204): par is purchasable — every profile tower, spec, upgrade, protocol, and ability
-  // is available by this map and affordable from what the campaign paid out before it.
+  // Par is purchasable (available by this map and affordable): validatePurchasable.ts.
   // TODO(A3M5, M5): a build's technicianAbility is never in lockedAbilities under its variant.
 }
 

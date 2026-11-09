@@ -17,8 +17,7 @@ function isRegistered(id: string): id is MapId {
  * How many campaign maps the Shift board lists: the plan up to its last registered map (Act I's
  * five while Act II isn't built), so a map joins the board the moment its folder is registered.
  */
-export const SHIFT_BOARD_SIZE: number =
-  CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1;
+export const SHIFT_BOARD_SIZE: number = CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1;
 
 /** Systems the campaign opens between maps. */
 export type MetaSystem =

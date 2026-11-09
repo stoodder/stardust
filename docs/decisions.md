@@ -1182,3 +1182,10 @@ Real art went in behind T300a's ids. No data changed.
 - The Results debrief shows after a loss too (a supportive line, D059); core-loop §1 now says so.
 - **Engineering's deferred-spec copy** is D064's "Arrives in a later shipment", not the built "No specs yet" (in voice; T331 changes the string).
 - **Bug found:** the Shift board still stopped at A1M2 (`SHIFT_BOARD_SIZE = 2`), so A1M3–A1M5 were reachable only through dev hooks. T331 (high) fixes it before ship; the smoke suite gains a normal-flow step past A1M2.
+
+### D094 — 2026-11-09 — Render polish: health bars, Bricks's lowered cannon (T328, T329, T330)
+- **Enemy health bars** (art-direction §8): a 2 px bar in a 1 px `ink.1` frame (a full `green.3` bar vanished on Act I grass without it), body width − 2 rounded even, 8–16 px, 1 px above the body; shield as `blue.4` 3-on/1-off segments after the HP, the two split by their maximums. Shows while hurt or shielded, or under the mouse pointer (not the keyboard cursor). Bosses and neutrals get none; burrowed and leaving units hide it. Three cropped images per view, no per-frame allocation.
+- **Tell glyphs** run on sim time (3 s from spawn), so fast-forward doesn't stretch them and pause holds them.
+- **Link callouts** lift clear of a −cost floater landing in the same sim tick.
+- **Bricks lowers his cannon only on the Quiet Wave**, a beat (1.5 s) after it starts, and holds it to the map's end; art-direction §6's "at-ease with nothing in reach" reading is dropped, since it would lower him as the boss leaves and flatten "Clear it, Sprout". Suppressing Fire cast on the Quiet Wave comes from off-map and never raises his cannon.
+- Follow-ups: T332.

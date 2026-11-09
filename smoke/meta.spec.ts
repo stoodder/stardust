@@ -2,7 +2,9 @@
 // the real UI. New game → A1M1 (autoplay par) → Results → Continue → Base (Research open, the rest
 // locked with their hints) → Shift board → A1M2 with the Sprinkler issued (D059) → Title → reload
 // → Continue. An export → import round
-// trip through Settings and the Title. `?test=1&save=all_unlocked` reaches every gated pane.
+// trip through Settings and the Title. `?test=1&save=all_unlocked` reaches every gated pane. The
+// Shift board runs through Act I (T331): winning A1M2 offers A1M3 next, A1M4 leads to A1M5, and
+// with A1M5 won every shift is cleared.
 // Screenshots in test-results/screens/meta/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -72,11 +74,11 @@ test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Contin
   await expect(mk2).toContainText('Owned');
   await expect(mk2).toBeFocused();
   await page.getByRole('tab', { name: /Shop/ }).click();
-  await expect(pane).toContainText('Opens after Shift 3 (coming soon)');
-  await expect(pane).not.toContainText('Special Delivery');
+  await expect(pane).toContainText('Opens after Special Delivery');
+  await expect(pane).not.toContainText('coming soon');
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: /Engineering/ })).toBeFocused();
-  await expect(pane).toContainText('Opens after Shift 4 (coming soon)');
+  await expect(pane).toContainText('Opens after The Audit');
   await shot(page, 'meta', 4, 'base-engineering-locked');
 
   // The Shift board: A1M1 cleared; A1M2 next up.
@@ -113,6 +115,55 @@ test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Contin
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(shiftRow(page, 'Orientation Day')).toContainText('Cleared');
+});
+
+test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → A1M5 won', async ({
+  page,
+}) => {
+  // A1M2 won in normal flow, from the board (not `?map=`).
+  await page.goto('/?test=1&seed=1&save=after_a1m1');
+  await waitForReady(page);
+  const rows = page.getByRole('list', { name: 'Shifts' }).getByRole('listitem');
+  await expect(rows).toHaveCount(5);
+  await expect(shiftRow(page, 'Special Delivery')).toContainText('Locked');
+  await expect(page.getByRole('list', { name: 'Shifts' })).not.toContainText('Coming soon');
+  await shiftRow(page, 'Hatching Season')
+    .getByRole('button', { name: 'Start Hatching Season' })
+    .click();
+  await page.evaluate(() => globalThis.__sd!.autoplay('par'));
+  const outcome = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    for (let i = 0; i < 80 && sd.state()?.outcome === 'playing'; i++) sd.fastForward(600);
+    return sd.state()?.outcome ?? null;
+  });
+  expect(outcome).toBe('won');
+  const results = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
+  await results.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Shift board' }).click();
+  await expect(page.getByRole('heading', { name: 'Shift board' })).toBeVisible();
+  await expect(shiftRow(page, 'Hatching Season')).toContainText('Cleared');
+  await expect(shiftRow(page, 'Special Delivery')).toContainText('Next up');
+  await expect(
+    shiftRow(page, 'Special Delivery').getByRole('button', { name: 'Start Special Delivery' }),
+  ).toBeFocused();
+  await expect(shiftRow(page, 'The Audit')).toContainText('Locked');
+  await shot(page, 'meta', 12, 'shift-board-after-a1m2');
+
+  // A1M4 won → A1M5 next up.
+  await page.goto('/?test=1&seed=1&save=after_a1m4');
+  await waitForReady(page);
+  await expect(shiftRow(page, 'The Audit')).toContainText('Cleared');
+  await expect(shiftRow(page, 'Record Quarter')).toContainText('Next up');
+
+  // A1M5 won: Act I cleared, nothing next up, and the focus on the last shift's Replay.
+  await page.goto('/?test=1&seed=1&save=after_a1m5');
+  await waitForReady(page);
+  await expect(rows).toHaveCount(5);
+  await expect(rows.filter({ hasText: 'Cleared' })).toHaveCount(5);
+  await expect(
+    shiftRow(page, 'Record Quarter').getByRole('button', { name: 'Replay Record Quarter' }),
+  ).toBeFocused();
+  await shot(page, 'meta', 13, 'shift-board-after-a1m5');
 });
 
 test('meta: export a code from Settings, import it on the Title into slot 2', async ({ page }) => {

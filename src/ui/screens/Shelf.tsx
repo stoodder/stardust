@@ -85,7 +85,9 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
   } else if (r === 'not_owned' || r === 'no_specs') {
     side = (
       <span class="sd-offer-wait">
-        {r === 'not_owned' ? `Needs the ${towerName(offer.tower ?? '')}` : 'No specs yet'}
+        {r === 'not_owned'
+          ? `Needs the ${towerName(offer.tower ?? '')}`
+          : 'Arrives in a later shipment'}
       </span>
     );
   } else if (r === 'maxed') {

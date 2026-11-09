@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import {
   META_SYSTEMS,
+  SHIFT_BOARD_SIZE,
   SYSTEM_UNLOCKS,
   isMapWon,
   isSystemUnlocked,
@@ -53,13 +54,15 @@ describe('gating', () => {
       expect(isSystemUnlocked(all.build(), s, all.devUnlocks)).toBe(true);
   });
 
-  it('hints name the map that opens a system', () => {
+  it('hints name the map that opens a system, once the Shift board lists it', () => {
     expect(unlockHint('rnd')).toBe('Opens after Orientation Day');
-    // G8: never a map name the Shift board doesn't show yet.
-    expect(unlockHint('shop')).toBe('Opens after Shift 3 (coming soon)');
-    expect(unlockHint('engineering')).toBe('Opens after Shift 4 (coming soon)');
-    // Once the board lists the map, its name.
-    expect(unlockHint('shop', 3)).toBe('Opens after Special Delivery');
+    expect(unlockHint('shop')).toBe('Opens after Special Delivery');
+    expect(unlockHint('loadout')).toBe('Opens after Special Delivery');
+    expect(unlockHint('engineering')).toBe('Opens after The Audit');
+    expect(unlockHint('spareRunners')).toBe('Opens after Record Quarter');
+    // G8: never a map name the Shift board doesn't show yet (Act II isn't built).
+    expect(unlockHint('xenotech')).toBe('Opens after Shift 10 (coming soon)');
+    expect(unlockHint('shop', 2)).toBe('Opens after Shift 3 (coming soon)');
     expect(mapMilestone('a1_m02')).toBe('Hatching Season');
     expect(mapMilestone('dev_range')).toBe('dev_range');
   });
@@ -92,9 +95,42 @@ describe('the Shift board', () => {
     expect(nextShift(board)?.id).toBe('a1_m01');
   });
 
-  it('lists the live campaign by default', () => {
+  it('a gap in the registry is coming soon, and locks the map after it', () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    const board = shiftBoard(save, 3, registered(['a1_m01', 'a1_m03']));
+    expect(board.map((e) => e.state)).toEqual(['won', 'coming_soon', 'locked']);
+  });
+});
+
+describe('the live Shift board', () => {
+  it('runs to the last registered campaign map (all of Act I)', () => {
+    expect(SHIFT_BOARD_SIZE).toBe(CAMPAIGN.length);
+    expect(SHIFT_BOARD_SIZE).toBe(CAMPAIGN_PLAN.findIndex((m) => m.id === 'a1_m05') + 1);
     const board = shiftBoard(createNewSave());
-    expect(board.map((e) => e.id)).toEqual(['a1_m01', 'a1_m02']);
-    expect(board[0]?.state).toBe('open');
+    expect(board.map((e) => e.id)).toEqual(['a1_m01', 'a1_m02', 'a1_m03', 'a1_m04', 'a1_m05']);
+    expect(board.map((e) => e.state)).toEqual(['open', 'locked', 'locked', 'locked', 'locked']);
+    expect(board.some((e) => e.state === 'coming_soon')).toBe(false);
+  });
+
+  it('winning A1M2 offers A1M3 next (the M2 cut no longer stops the board)', () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    save.campaign.maps.a1_m02 = { completed: true, medals: ['victory'], bestMeter: 1 };
+    const board = shiftBoard(save);
+    expect(board[2]).toMatchObject({ id: 'a1_m03', state: 'open', name: 'Special Delivery' });
+    expect(nextShift(board)?.id).toBe('a1_m03');
+  });
+
+  it('chains A1M4 to A1M5, and with all of Act I won the next shift is a replay', () => {
+    const save = createNewSave();
+    const won = { completed: true, medals: ['victory'], bestMeter: 1 };
+    for (const id of ['a1_m01', 'a1_m02', 'a1_m03', 'a1_m04'] as const)
+      save.campaign.maps[id] = { ...won, medals: [...won.medals] };
+    expect(nextShift(shiftBoard(save))?.id).toBe('a1_m05');
+    save.campaign.maps.a1_m05 = { ...won, medals: [...won.medals] };
+    const board = shiftBoard(save);
+    expect(board).toHaveLength(5);
+    expect(board.every((e) => e.state === 'won')).toBe(true);
+    // No sixth map to look for: the last won shift is the one offered.
+    expect(nextShift(board)?.id).toBe('a1_m05');
   });
 });
