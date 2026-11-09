@@ -395,6 +395,6 @@ The rest multipliers survive the finale's Phase 2 length rule (±30% of the targ
 
 1. **3x speed** as a post-game unlock, or available from the start?
 2. **Overlapping waves.** Is starting the countdown when spawning ends (not when the wave dies) too punishing in Act I? An alternative is a Story-difficulty-only rule that the countdown waits for the wave to resolve.
-3. **Spared threshold.** Is 75% of the Quiet Wave the right line between "spared" and "cleared"? A player who holds fire but loses a couple to a stray splash should still count as sparing.
+3. **Spared threshold** (settled, D097): Old Thrum must leak, plus at least 75% of the younglings, so a stray splash that catches a couple of younglings still counts as sparing, and killing Thrum first never does.
 4. **"Not firing" detection.** Ten seconds with Skitterkin in range and no shots fired may trigger by accident on maps with poor coverage. Should it also require Hold Fire to be on, at the cost of missing players who spare by placement?
 5. **Pests Processed on quit.** Kills are added when a run ends. Closing the tab mid-map loses that run's count. Acceptable, or should the host flush the count on `pagehide`?
