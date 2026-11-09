@@ -13,11 +13,11 @@ export const LANE_DASH_PERIOD = 5;
 /** The dashes and their 1 px under-stroke (so they read on light ground), and their alphas. */
 const DASH: { readonly color: ColorName; readonly alpha: number } = {
   color: 'white.0',
-  alpha: 0.6,
+  alpha: 1,
 };
 const UNDER: { readonly color: ColorName; readonly alpha: number } = {
   color: 'ink.0',
-  alpha: 0.35,
+  alpha: 0.6,
 };
 
 /** A baked lane frame: its pixels and the screen point its (0, 0) sits on. */

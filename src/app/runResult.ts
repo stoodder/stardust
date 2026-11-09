@@ -1,10 +1,20 @@
 // Run end → the results screen's data (meta-runtime.md § Run end). The router reads the finished
 // battle into a RunEndInput; app/save.ts folds it into the save in play (meta's runEnd) and returns
 // what it paid; this module turns both into the results card's RunResult.
-import { SPEAKERS, type RadioLine } from '../content/radio/index.ts';
-import type { RunEndInput as MetaRunEndInput, RunEndSummary } from '../meta/index.ts';
+import { barksFor, SCENES, SPEAKER_DEFS } from '../content/dialogue/index.ts';
+import { isCampaignMapId } from '../content/dialogue/rules.ts';
+import type { SpeakerId } from '../content/dialogue/types.ts';
+import {
+  baseStoryContext,
+  type RunEndInput as MetaRunEndInput,
+  type RunEndSummary,
+  type SaveData,
+} from '../meta/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
+import { evaluateCondition, runContextOf, type StoryContext } from '../story/conditions.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
+import { linesUntilChoice } from '../story/runner.ts';
+import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
 import type { MedalResult, RunResult, RunRewards } from '../ui/screens/state.ts';
@@ -12,8 +22,8 @@ import { towerName } from './hudText.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
- * A first leak this recent (ms of real time) when the map ends puts its radio line on the results
- * card too (D028): the ticker may not have shown it yet, and it's the first darkness seed.
+ * A first leak this recent (ms of real time) when the map ends puts its bark on the results card
+ * too (D028): the comms panel may not have shown it yet, and it's the first darkness seed.
  */
 export const FIRST_LEAK_RECENT_MS = 4000;
 /**
@@ -37,8 +47,11 @@ export interface RunEndInput {
   readonly skitterkinKilled: number;
   /** `WaveCleared` events seen this run. */
   readonly wavesCleared: number;
-  /** The map's radio table (content/radio), for the debrief and the first-leak line. */
-  readonly radio: readonly RadioLine[];
+  /**
+   * What the debrief reads (the save in play after the run's end: flags, seen, the profile);
+   * absent outside a campaign, so lines read the flags' defaults and no profile.
+   */
+  readonly story?: DebriefStory;
   /** From the battle's first leak to the map's end; null if nothing leaked. */
   readonly firstLeakAgo: LeakAgo | null;
   /** The map's first-clear Stardust (`MapDef.stardust`). */
@@ -50,6 +63,29 @@ export interface RunEndInput {
   /** The run's `state.stats`, for the story run-end flag rules (meta's runEnd, step 2). */
   readonly stats?: FlagRuleStats;
 }
+
+/** What the debrief's conditions and tokens read. `run` and `map` come from the run itself. */
+export interface DebriefStory {
+  readonly story: Omit<StoryContext, 'map' | 'run'>;
+  readonly text: TextContext;
+}
+
+/** The debrief's story from the save in play (none outside a campaign). */
+export function debriefStoryOf(save: SaveData | null): { story?: DebriefStory } {
+  if (save === null) return {};
+  const base = baseStoryContext(save);
+  return {
+    story: {
+      story: { flags: base.flags, pestsProcessed: base.pestsProcessed, seen: base.seen },
+      text: { profile: save.profile, pestsProcessed: base.pestsProcessed, evacuated: null },
+    },
+  };
+}
+
+const NO_STORY: DebriefStory = {
+  story: { flags: {}, pestsProcessed: 0, seen: [] },
+  text: { profile: null, pestsProcessed: 0, evacuated: null },
+};
 
 /** One of a map's medals: its save id and the name the results card shows. */
 export interface MapMedal {
@@ -133,30 +169,47 @@ export function runRewardsOf(
   };
 }
 
-function spoken(l: RadioLine): SpokenLine {
-  const look = SPEAKERS[l.speaker];
-  return { name: look.name, color: look.color, text: l.text };
+function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLine {
+  const def = SPEAKER_DEFS[speaker];
+  return { name: def.name, color: def.color, text: resolveText(text, story.text) };
 }
 
 /**
- * The results card's spoken lines (D028): the `firstLeak` line when the first leak came within
- * FIRST_LEAK_RECENT_MS (and FIRST_LEAK_RECENT_TICKS) of the end, then the debrief (`mapWon` or
- * `mapLost` lines), in table order.
+ * The results card's spoken lines (D028): the map's `first_leak` bark when the first leak came
+ * within FIRST_LEAK_RECENT_MS (and FIRST_LEAK_RECENT_TICKS) of the end and the bark could play
+ * this run (its `when` holds; a once-per-campaign bark not already in the save's seen list), then
+ * the map's `<map>_debrief` scene as the run's outcome plays it, up to any choice (T316's).
  */
 export function debriefLines(
-  radio: readonly RadioLine[],
+  input: Pick<RunEndInput, 'mapId' | 'firstLeakAgo' | 'stats' | 'story'>,
   outcome: RunOutcome,
-  firstLeakAgo: LeakAgo | null,
 ): SpokenLine[] {
+  const map = input.mapId;
+  if (!isCampaignMapId(map)) return [];
+  const story = input.story ?? NO_STORY;
+  const run =
+    input.stats === undefined
+      ? { outcome, ruleFlags: {} }
+      : runContextOf(map, outcome, input.stats);
+  const ctx: StoryContext = { ...story.story, map, run };
+  const ago = input.firstLeakAgo;
   const recent =
-    firstLeakAgo !== null &&
-    firstLeakAgo.ms <= FIRST_LEAK_RECENT_MS &&
-    firstLeakAgo.ticks <= FIRST_LEAK_RECENT_TICKS;
-  const trigger = outcome === 'won' ? 'mapWon' : 'mapLost';
+    ago !== null && ago.ms <= FIRST_LEAK_RECENT_MS && ago.ticks <= FIRST_LEAK_RECENT_TICKS;
+  const leak = recent
+    ? barksFor(map).find(
+        (b) =>
+          b.trigger.on === 'first_leak' &&
+          !(b.once === 'campaign' && ctx.seen.includes(b.id)) &&
+          (b.when === undefined || evaluateCondition(b.when, ctx)),
+      )
+    : undefined;
+  const debrief = SCENES[`${map}_debrief`];
   return [
-    ...(recent ? radio.filter((l) => l.on === 'firstLeak').slice(0, 1) : []),
-    ...radio.filter((l) => l.on === trigger),
-  ].map(spoken);
+    ...(leak === undefined ? [] : [spoken(leak.speaker, leak.text, story)]),
+    ...(debrief === undefined ? [] : linesUntilChoice(debrief, ctx)).map((l) =>
+      spoken(l.speaker, l.text, story),
+    ),
+  ];
 }
 
 /**
@@ -176,7 +229,7 @@ export function runResultOf(
     integrity: Math.max(0, input.integrity),
     maxIntegrity: input.maxIntegrity,
     pestsProcessed: input.skitterkinKilled,
-    debrief: debriefLines(input.radio, outcome, input.firstLeakAgo),
+    debrief: debriefLines(input, outcome),
     rewards: summary === null ? null : runRewardsOf(input, summary),
   };
 }

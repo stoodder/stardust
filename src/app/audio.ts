@@ -1,16 +1,19 @@
 // Binds the audio (src/audio/) to the game (architecture.md § Audio): drained sim events and the
-// battle's state become sound effects, music layers, and cues; HUD signals (notices, the radio,
-// the screen) and UI buttons get their sounds; the settings drive the volumes and mute. Audio is
-// created on the first user gesture, and stays off under `?test=1` unless the URL adds `&audio=1`.
+// battle's state become sound effects, music layers, and cues; HUD signals (notices, spoken lines
+// and their typewriter, the screen) and UI buttons get their sounds; the settings drive the volumes
+// and mute. Audio is created on the first user gesture, and stays off under `?test=1` unless the
+// URL adds `&audio=1`.
 import { effect } from '@preact/signals';
 import {
   ABILITY_SOUNDS,
   battleMusic,
+  blipFor as speakerBlip,
   countdownTick,
   createAudioEngine,
   createEventSounds,
+  createFieldSounds,
+  createTypeTicker,
   crossedLowIntegrity,
-  RADIO_BLIP,
   SOUND_EVENT_TYPES,
   screenMusic,
   silentEngine,
@@ -30,7 +33,8 @@ import { renderCue, renderSfx, renderStorm, renderTheme } from '../audio/offline
 import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import type { SimEvent } from '../sim/index.ts';
+import { clearTicksFor, type SimEvent } from '../sim/index.ts';
+import { setTypeTick } from '../ui/dialogue/LineText.tsx';
 import { speaking } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
@@ -81,12 +85,11 @@ function setMusic(m: MusicIntent): void {
 }
 
 /**
- * A speaker's voice blip as a line starts (the radio's per-speaker blips; T314 authors the rest
- * and the typewriter's per-character tick, `setTypeTick` in ui/dialogue/LineText.tsx). Null: none.
+ * A speaker's voice blip as a line starts (`blip.<speaker>`, named in content/dialogue/speakers.ts;
+ * audio/speech.ts). Null: the speaker types silently.
  */
 export function blipFor(speaker: SpeakerId): SfxId | null {
-  const blips: Readonly<Partial<Record<string, SfxId>>> = RADIO_BLIP;
-  return Object.hasOwn(blips, speaker) ? (blips[speaker] ?? null) : null;
+  return speakerBlip(speaker);
 }
 
 /** The button a DOM event happened on, if it's an enabled one. */
@@ -127,6 +130,12 @@ export function installAudio(enabled: boolean): () => void {
   document.addEventListener('pointerover', onHover, true);
   let noticeId = 0;
   let lineId = 0;
+  // The typewriter's tick: a soft, per-speaker patter as each line types (audio/speech.ts).
+  const ticker = createTypeTicker();
+  setTypeTick((speaker) => {
+    const t = ticker.tick(speaker, performance.now());
+    if (t !== null) engine.play(t.id, { pitch: t.pitch });
+  });
   const offs = [
     effect(() => {
       const a = settings.value.audio;
@@ -147,7 +156,7 @@ export function installAudio(enabled: boolean): () => void {
       if (l !== null && l.id !== lineId) {
         lineId = l.id;
         const blip = l.silence ? null : blipFor(l.speaker);
-        if (blip !== null) engine.play(blip);
+        if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
       }
     }),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
@@ -162,6 +171,7 @@ export function installAudio(enabled: boolean): () => void {
   ];
   uninstall = () => {
     for (const off of offs) off();
+    setTypeTick(null);
     window.removeEventListener('pointerdown', unlock, true);
     window.removeEventListener('keydown', unlock, true);
     document.removeEventListener('visibilitychange', onVisibility);
@@ -176,7 +186,12 @@ export function installAudio(enabled: boolean): () => void {
 /** Wires a battle's events and state to the audio. Returns the unwiring. */
 export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const { sim } = host;
-  const sounds = createEventSounds(sim.map.act);
+  const enemies = sim.config.content.enemies;
+  const sounds = createEventSounds(sim.map.act, {
+    splits: (id) => Object.hasOwn(enemies, id) && (enemies[id]?.split ?? null) !== null,
+  });
+  // What no event announces (digs, a sneeze's tell, a flock, the drone), from the state.
+  const field = createFieldSounds(clearTicksFor(sim.config.modifiers));
   const calls: SoundCall[] = [];
   /** Ability zones waiting to land, with the sounds they land with. */
   let zones: { uid: number; land: readonly SfxId[] }[] = [];
@@ -201,6 +216,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const afterFrame = (): void => {
     const s = sim.state;
     sounds.endFrame(calls);
+    field.frame(s, calls);
     playCalls(calls);
     if (zones.length > 0) {
       const landed = zones.filter((z) => !zoneAlive(z.uid));

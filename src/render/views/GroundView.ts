@@ -1,6 +1,6 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
 // front: by i + j, then i; the power node's pulse is the one animated tile; the road's grass
-// verge overlays its tile), and what stands on tiles depth-sorted in `world`: high-ground blocks
+// verge and any terrace cliff face overlay their tile), and what stands on tiles depth-sorted in `world`: high-ground blocks
 // (raised one step, `highGround` bias) and props (core, fence, decor, and the map's decor
 // markers). Drawn once per map. The apron lies outside the grid, so picking never
 // reaches it.
@@ -55,6 +55,12 @@ export function drawCell(
     const vf = sprites.frame('tile.verge', frame, ev);
     layers.ground.add(
       new Phaser.GameObjects.Image(scene, pos.x, pos.y, vf.texture, vf.frame).setOrigin(0, 0),
+    );
+  }
+  for (const frame of look.cliff ?? []) {
+    const cf = sprites.frame('tile.cliff', frame, ev);
+    layers.ground.add(
+      new Phaser.GameObjects.Image(scene, pos.x, pos.y, cf.texture, cf.frame).setOrigin(0, 0),
     );
   }
   if (look.block !== undefined) {

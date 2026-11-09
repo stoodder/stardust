@@ -1,5 +1,6 @@
-// Dialogue (T302b; tech/story-runtime.md, art-direction.md § Dialogue presentation): the briefing
-// as a scene (portraits, the typewriter, keyboard-only advance, Clock in), a scene with a choice
+// Dialogue (T302b, T302c; tech/story-runtime.md, art-direction.md § Dialogue presentation): A1M1's
+// briefing as a scene (portraits, the typewriter, keyboard-only advance, Bricks's question and the
+// player's first choice, Clock in), a scene with a choice
 // that pauses play and puts the speed back, a full-screen scene, a bark on the comms panel with
 // its portrait, and a bark's reply button. `?test=1` keeps dialogue off unless `&dialogue=1`.
 import type { Locator, Page } from '@playwright/test';
@@ -35,17 +36,28 @@ test('dialogue: the briefing plays as a scene, by keyboard alone', async ({ page
   const next = briefing.getByRole('button', { name: /^(Skip|Next)$/ });
   await expect(next).toBeFocused();
   await shot(page, 'dialogue', 1, 'briefing-typing');
-  // Enter finishes the typing, Enter again reads on: four lines, then Clock in has the focus.
+  // Enter finishes the typing, Enter again reads on: five lines, up to Bricks's question.
+  await readLine(page, next);
   await readLine(page, next);
   await readLine(page, next);
   await readLine(page, next);
   await readLine(page, next);
   await expect(lines).toContainText('Nothing goes on the path but bugs and bad decisions.');
+  await expect(lines).toContainText('Any questions, Sprout?');
+  // The choice: its first option has the focus, and Enter takes it.
+  const ask = briefing.getByRole('button', { name: 'Where do they all come from?' });
+  await expect(ask).toBeFocused();
+  await expect(briefing.getByRole('button', { name: '...No, Sergeant.' })).toBeVisible();
+  await shot(page, 'dialogue', 2, 'briefing-choice');
+  await page.keyboard.press('Enter');
+  // QUILL answers (by policy); then Clock in has the focus.
+  await readLine(page, next);
+  await expect(lines).toContainText('Further questions go to Extraction. (Per policy.)');
   await expect(next).toHaveCount(0);
   const clockIn = briefing.getByRole('button', { name: 'Clock in' });
   await expect(clockIn).toBeFocused();
   await expect(page.getByTestId('threat-intel')).toBeVisible();
-  await shot(page, 'dialogue', 2, 'briefing-done');
+  await shot(page, 'dialogue', 3, 'briefing-done');
   await page.keyboard.press('Enter');
   await expect(briefing).toBeHidden();
   const save = await page.evaluate(() => globalThis.__sd!.save());
@@ -68,7 +80,7 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   const tick = await page.evaluate(() => globalThis.__sd!.state()!.tick);
   await expect(scene).toContainText('QUILL');
   await expect(scene.locator('.dlg-portrait img')).toBeVisible();
-  await shot(page, 'dialogue', 3, 'scene-panel');
+  await shot(page, 'dialogue', 4, 'scene-panel');
   // Keyboard: each line takes Enter to finish typing and Enter to read on.
   const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
   await readLine(page, next);
@@ -76,7 +88,7 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   const answer = scene.getByRole('group', { name: 'Your answer' });
   await expect(answer.getByRole('button')).toHaveCount(3);
   await expect(answer.getByRole('button', { name: /Great, honestly/ })).toBeFocused();
-  await shot(page, 'dialogue', 4, 'scene-choice');
+  await shot(page, 'dialogue', 5, 'scene-choice');
   await page.keyboard.press('ArrowDown');
   await expect(answer.getByRole('button', { name: /Ask me after lunch/ })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -122,7 +134,7 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
   await expect(scene).toContainText('Bricks');
   await page.waitForTimeout(1500); // Bricks's line types out
   await nextFrames(page);
-  await shot(page, 'dialogue', 5, 'fullscreen');
+  await shot(page, 'dialogue', 6, 'fullscreen');
   await page.keyboard.press('Escape');
   await expect(scene).toBeHidden();
 });
@@ -130,8 +142,8 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
 test('dialogue: barks on the comms panel with a portrait, and a reply button', async ({ page }) => {
   await page.goto('/?test=1&skipIntro=1&seed=1&dialogue=1');
   await waitForReady(page);
-  // The first leak: QUILL's line (the adapted radio), with its portrait. The bank nudge may
-  // speak first (nothing is built, so W2's build phase opens with a big bank).
+  // The first leak: QUILL's bark, with its portrait. It queues behind the bank nudge if that
+  // speaks first (nothing is built, so W2's build phase opens with a big bank).
   await page.evaluate(() => {
     const sd = globalThis.__sd!; // installed: waitForReady passed
     sd.setSpeed(0);
@@ -143,12 +155,12 @@ test('dialogue: barks on the comms panel with a portrait, and a reply button', a
   await expect(comms.locator('.dlg-portrait img')).toBeVisible();
   await page.waitForTimeout(2000); // let it type out
   await nextFrames(page);
-  await shot(page, 'dialogue', 6, 'bark');
+  await shot(page, 'dialogue', 7, 'bark');
   // A bark with a reply button: pressing it plays the reply at once. The game keeps running.
   await page.evaluate(() => globalThis.__sd!.dialogue.bark('quill_map_start_a1_99'));
   const reply = comms.getByRole('button', { name: "Who's there?" });
   await expect(reply).toBeVisible({ timeout: 15_000 });
-  await shot(page, 'dialogue', 7, 'bark-button');
+  await shot(page, 'dialogue', 8, 'bark-button');
   await reply.click();
   await expect(comms).toContainText('Lettuce!');
   await expect(page.getByRole('dialog')).toHaveCount(0);

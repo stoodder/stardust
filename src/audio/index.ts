@@ -19,10 +19,13 @@ export {
   ABILITY_SOUNDS,
   createEventSounds,
   SOUND_EVENT_TYPES,
+  type EnemyLookup,
   type SoundCall,
 } from './eventSounds.ts';
+export { createFieldSounds, type FieldSounds, type FieldState } from './fieldSounds.ts';
+export { blipFor, createTypeTicker, type TypeTicker } from './speech.ts';
 export { CUES, THEMES, isCueId, isThemeId, type CueId, type ThemeId } from './music/index.ts';
-export { RADIO_BLIP, SFX_IDS, isSfxId, type SfxId } from './sfx/index.ts';
+export { SFX_IDS, isSfxId, type SfxId } from './sfx/index.ts';
 export { DEFAULT_VOLUMES, type Volumes } from './synth.ts';
 export type { RenderLevels } from './offline.ts';
 export type { Levels } from './analyze.ts';

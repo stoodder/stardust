@@ -1,12 +1,12 @@
-// The dialogue system in play (T302b): scenes that hold input (pause, choices, effects saved),
-// the comms panel (radio scenes, replies under their cue, staleness), barks (6 s spacing, dropped
-// rather than queued, never under another line), the bank nudge after the countdown's radio, and
-// the briefing as a scene. Real-time holds run on fake timers; sim time is the sim's tick.
+// The dialogue system in play (T302b, T302c): scenes that hold input (pause, choices, effects
+// saved), the comms panel (radio scenes, replies under their cue, staleness), barks (6 s spacing,
+// dropped rather than queued, never under another line; the first leak and a sold tag queue), the
+// bank nudge after the countdown's radio, Bricks's name tag, and the briefing as a scene, all over
+// A1M1's and A1M2's real dialogue. Real-time holds run on fake timers; sim time is the sim's tick.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BARKS, SCENES } from '../content/dialogue/index.ts';
 import { defineScene } from '../content/dialogue/define.ts';
 import type { Scene } from '../content/dialogue/types.ts';
-import { A1_M01_RADIO } from '../content/radio/a1_m01.ts';
-import { A1_M02_RADIO } from '../content/radio/a1_m02.ts';
 import type { IdSpace } from '../content/types.ts';
 import { MemoryStore, createNewSave, type SaveData } from '../meta/index.ts';
 import type { DialogueEffects } from '../story/runner.ts';
@@ -33,7 +33,7 @@ import {
   withSceneEffects,
 } from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
-import { activeSave, initSaves, newGame } from './save.ts';
+import { activeSave, initSaves, newGame, updateActiveSave } from './save.ts';
 
 type Ev = SimEvent<IdSpace>;
 const noop = (): void => {};
@@ -50,8 +50,19 @@ const shown = (): string | null => dialogue.comms.value?.line.text ?? null;
 const cue = (): string | null => dialogue.comms.value?.cue?.text ?? null;
 const countdown = (wave: number): Ev => ({ type: 'CountdownStarted', wave, ticks: 1500 });
 const leak = (uid: number, enemy = 'nibbler'): Ev => ({ type: 'EnemyLeaked', uid, enemy, leak: 1 });
-const radio = (table: typeof A1_M01_RADIO, pick: (l: (typeof A1_M01_RADIO)[number]) => boolean) =>
-  table.filter(pick).map((l) => l.text);
+/** The texts of scene `id`'s line nodes, in authoring order. */
+const lines = (id: string): string[] =>
+  (SCENES[id]?.nodes ?? []).flatMap((n) => (n.kind === 'line' ? [n.text] : []));
+/** Bark `id`'s text. */
+const bark = (id: string): string => BARKS[id]?.text ?? `<no bark ${id}>`;
+const built = (uid: number, tower: string): Ev => ({
+  type: 'TowerBuilt',
+  uid,
+  tower,
+  tile: [0, 0],
+  cost: 0,
+});
+const sold = (uid: number): Ev => ({ type: 'TowerSold', uid, refund: 0 });
 /** How long a lone comms line holds. */
 const hold = (text: string): number => commsHoldMs(text, undefined, false);
 
@@ -87,7 +98,7 @@ describe('dialogue helpers', () => {
     expect(presentSpeakers({ companion: null })).toEqual(['quill']);
   });
 
-  it("saves a scene's flags, callsign, and seen id; never an adapted radio id", () => {
+  it("saves a scene's flags, callsign, and seen id; never a bark's id", () => {
     const save: SaveData = {
       ...createNewSave(),
       profile: { name: 'Ada', pronouns: 'they', callsign: 'sprout' },
@@ -99,7 +110,7 @@ describe('dialogue helpers', () => {
     expect(after.story.seen).toEqual(['a1_m01_cue_test']);
     // Seen once; nothing new is the same save.
     expect(withSceneEffects(after, 'a1_m01_cue_test', { flags: {}, callsign: null })).toBe(after);
-    expect(withSceneEffects(save, 'radio:a1_m01:countdown:4', { flags: {}, callsign: null })).toBe(
+    expect(withSceneEffects(save, 'quill_first_leak_a1_01', { flags: {}, callsign: null })).toBe(
       save,
     );
   });
@@ -139,10 +150,7 @@ describe("a battle's dialogue", () => {
 
   it("plays a countdown's radio as a scene: the punchline, then Bricks's answer under it (D028)", () => {
     bind('a1_m01');
-    const [setup, punchline, answer] = radio(
-      A1_M01_RADIO,
-      (l) => l.on === 'countdown' && l.wave === 6,
-    );
+    const [setup, punchline, answer] = lines('a1_m01_w06');
     emit(countdown(6));
     expect(shown()).toBe(setup);
     expect(dialogue.comms.value?.line.portrait?.sprite).toBe('portrait.quill');
@@ -160,7 +168,7 @@ describe("a battle's dialogue", () => {
   it('queues scenes behind the line on screen, and drops one gone stale', () => {
     bind('a1_m01');
     emit(countdown(4)); // Goldie
-    emit({ type: 'TowerClassUnlocked', tower: 'thumper' }); // QUILL's Crossfire line, queued
+    emit(countdown(3)); // QUILL's Crossfire line, queued
     const goldie = shown()!;
     expect(goldie).toMatch(/^Oh! You're the new tech!/);
     vi.advanceTimersByTime(hold(goldie));
@@ -180,19 +188,32 @@ describe("a battle's dialogue", () => {
     expect(heard.some((t) => t.startsWith('Time for Joke of the Shift'))).toBe(false);
   });
 
+  it("gives Goldie the 'lettuce' line when that's why you came (D068)", () => {
+    bind('a1_m01');
+    newGame(1);
+    updateActiveSave((sv) => ({
+      ...sv,
+      story: { ...sv.story, flags: { ...sv.story.flags, arrival_reason: 'lettuce' } },
+    }));
+    emit(countdown(4));
+    expect(shown()).toMatch(/^You're the one who wrote 'lettuce' on the form!/);
+  });
+
   it('plays a bark when the panel is free, keeps 6 s of sim time between barks, and never queues', () => {
     bind('a1_m01');
     at(10);
     emit({ type: 'WaveCleared', wave: 2, bonus: 0 });
-    const perfect = radio(A1_M01_RADIO, (l) => l.on === 'perfectWave')[0]!;
-    expect(shown()).toBe(perfect);
+    // W2's clear: the generic wave_cleared bark (Bricks) is tried before perfect_wave.
+    const jingle = bark('bricks_wave_cleared_a1_01');
+    expect(shown()).toBe(jingle);
     expect(cue()).toBeNull(); // standalone, never a reply (D061)
-    vi.advanceTimersByTime(hold(perfect));
+    vi.advanceTimersByTime(hold(jingle));
     expect(shown()).toBeNull();
     // A big bank as W3's build phase opens, within 6 s of sim time: dropped, not queued.
     b.state.credits = BANK_NUDGE_CREDITS;
     at(14);
     emit(countdown(3));
+    vi.advanceTimersByTime(hold(lines('a1_m01_w03')[0]!));
     expect(shown()).toBeNull();
     vi.advanceTimersByTime(20_000);
     expect(shown()).toBeNull();
@@ -209,10 +230,10 @@ describe("a battle's dialogue", () => {
     emit({ type: 'WaveCleared', wave: 3, bonus: 0 });
     expect(shown()).toMatch(/^Oh! You're the new tech!/);
     vi.advanceTimersByTime(30_000);
-    expect(shown()).toBeNull(); // the perfect-wave line never played late
+    expect(shown()).toBeNull(); // the wave-cleared bark never played late
   });
 
-  it('plays the first leak as a queued scene, so a bark just before it never drops it', () => {
+  it('queues the first leak behind a bark just before it, never dropping it', () => {
     bind('a1_m01');
     b.state.credits = BANK_NUDGE_CREDITS;
     at(8);
@@ -221,27 +242,58 @@ describe("a battle's dialogue", () => {
     emit(leak(1));
     expect(shown()).toMatch(/^Unspent budget detected!/);
     vi.advanceTimersByTime(hold(shown()!));
-    expect(shown()).toBe(radio(A1_M01_RADIO, (l) => l.on === 'firstLeak')[0]);
+    expect(shown()).toBe(bark('quill_first_leak_a1_01'));
   });
 
-  it('plays the perfect-wave bark from its wave on (A1M1: from W2)', () => {
+  it('plays the first leak once per campaign', () => {
+    newGame(1);
+    updateActiveSave((sv) => ({
+      ...sv,
+      story: { ...sv.story, seen: [...sv.story.seen, 'quill_first_leak_a1_01'] },
+    }));
+    bind('a1_m01');
+    at(10);
+    emit(leak(1));
+    expect(shown()).toBeNull();
+    unbind();
+    unbind = noop;
+    // And a battle that plays it puts it in the seen list.
+    updateActiveSave((sv) => ({ ...sv, story: { ...sv.story, seen: [] } }));
+    bind('a1_m01');
+    emit(leak(1));
+    expect(shown()).toBe(bark('quill_first_leak_a1_01'));
+    unbind();
+    unbind = noop;
+    expect(activeSave()?.story.seen).toContain('quill_first_leak_a1_01');
+  });
+
+  it("plays W1's jingle on its clear, not the perfect-wave bark", () => {
     bind('a1_m01');
     at(30);
-    emit({ type: 'WaveCleared', wave: 1, bonus: 0 }); // the jingle pair, not the bark
+    emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
     expect(shown()).toBe('(singing along) Ev-er-glow, Ev-er-glow!');
   });
 
   it("nudges a big bank after the countdown's radio, on its own (D061)", () => {
     bind('a1_m02');
     b.state.credits = BANK_NUDGE_CREDITS + 100;
-    const pension = radio(A1_M02_RADIO, (l) => l.on === 'countdown' && l.wave === 7)[0]!;
-    const nudge = radio(A1_M02_RADIO, (l) => l.on === 'bankNudge')[0]!;
+    const pension = lines('a1_m02_w07')[0]!;
     at(100);
     emit(countdown(7));
     expect(shown()).toBe(pension);
     vi.advanceTimersByTime(hold(pension));
-    expect(shown()).toBe(nudge);
+    expect(shown()).toBe(bark('quill_bank_nudge_a1_02'));
     expect(cue()).toBeNull();
+  });
+
+  it("gives QUILL's policy suggestion its tell, and the shrug its own line", () => {
+    bind('a1_m02');
+    emit(countdown(3));
+    expect(dialogue.comms.value?.line.portrait).toMatchObject({ expression: 'policy' });
+    expect(shown()).toMatch(/\(Per policy\.\)$/);
+    vi.advanceTimersByTime(hold(shown()!));
+    expect(shown()).toBe('The housing block will be fine. Probably!');
+    expect(dialogue.comms.value?.line.portrait?.policy).toBe(false);
   });
 
   it('announces a newly issued tower once the briefing closes (D061)', () => {
@@ -254,14 +306,21 @@ describe("a battle's dialogue", () => {
     expect(shown()).toMatch(/^New hardware! The Frostline Sprinkler/);
   });
 
-  it('shows the briefing whole and played out while dialogue is off', () => {
+  it('shows the briefing whole and played out while dialogue is off, up to its choice', () => {
     setDialogueEnabled(false);
     bind('a1_m01', { briefing: true });
     const view = dialogue.scene.value;
-    expect(hud.briefing.value).toBe('radio:a1_m01:brief');
+    expect(hud.briefing.value).toBe('a1_m01_brief');
     expect(view?.instant).toBe(true);
     expect(view?.ended).toBe(true);
-    expect(view?.transcript.map((l) => l.name)).toEqual(['QUILL', 'Bricks', 'QUILL', 'Bricks']);
+    expect(view?.choices).toBeNull();
+    expect(view?.transcript.map((l) => l.name)).toEqual([
+      'QUILL',
+      'Bricks',
+      'QUILL',
+      'Bricks',
+      'Bricks',
+    ]);
     // "&" reads "and" in Silkscreen (D059).
     expect(view?.transcript[0]?.text).toContain('Logistics and Lethality');
     // And nothing plays on the panel.
@@ -270,14 +329,39 @@ describe("a battle's dialogue", () => {
     expect(shown()).toBeNull();
   });
 
-  it('types the briefing line by line while dialogue is on', () => {
+  it('types the briefing line by line, takes the choice, and names you once', () => {
+    newGame(1);
+    updateActiveSave((sv) => ({
+      ...sv,
+      profile: { name: 'Ada', pronouns: 'they', callsign: 'thorn' },
+    }));
     bind('a1_m01', { briefing: true });
     expect(dialogue.scene.value?.line?.name).toBe('QUILL');
     expect(dialogue.scene.value?.ended).toBe(false);
-    for (let i = 0; i < 4; i++) advanceScene();
+    for (let i = 0; i < 5; i++) advanceScene();
+    expect(dialogue.scene.value?.choices?.map((c) => c.tone)).toEqual(['earnest', 'wry', 'quiet']);
+    chooseOption(2);
+    expect(dialogue.scene.value?.transcript.at(-1)).toMatchObject({
+      speaker: 'player',
+      text: '...No, Sergeant.',
+    });
+    expect(dialogue.scene.value?.line?.text).toMatch(/clipboard\.$/);
+    advanceScene();
     expect(dialogue.scene.value?.ended).toBe(true);
-    expect(dialogue.scene.value?.transcript).toHaveLength(4);
     expect(hud.briefing.value).not.toBeNull(); // Clock in closes it
+    dismissBriefing();
+    // Bricks named you: the callsign is Sprout, and the briefing is seen.
+    expect(activeSave()?.profile?.callsign).toBe('sprout');
+    expect(activeSave()?.story.seen).toContain('a1_m01_brief');
+    // A replay never takes back a later callsign.
+    updateActiveSave((sv) => ({
+      ...sv,
+      profile: { name: 'Ada', pronouns: 'they', callsign: 'thorn' },
+    }));
+    unbind();
+    bind('a1_m01', { briefing: true });
+    dismissBriefing();
+    expect(activeSave()?.profile?.callsign).toBe('thorn');
   });
 
   it('pauses play for a scene with a choice, takes the pick, and puts the speed back', () => {
@@ -341,10 +425,34 @@ describe("a battle's dialogue", () => {
     expect(activeSave()?.story.flags.peeker_poked).toBe(true);
   });
 
-  it('plays the A1M2 Denise line with the pointer on', () => {
+  it('names the earliest attacking turret at the first clear, and Bricks minds its sale', () => {
+    newGame(1);
     bind('a1_m02');
+    emit(built(6, 'rivet'));
+    emit(built(7, 'thumper'));
+    at(20);
     emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
     expect(dialogue.comms.value?.line).toMatchObject({ speaker: 'bricks', point: true });
+    expect(shown()).toMatch(/^That one's Denise\./);
+    // Selling an untagged turret is no story; selling Denise queues Bricks behind the line.
+    at(22);
+    emit(sold(7));
+    emit(sold(6));
+    vi.advanceTimersByTime(hold(shown()!));
+    expect(shown()).toBe(bark('bricks_tower_sold_a1_02'));
+    unbind();
+    unbind = noop;
+    expect(activeSave()?.story.bricksTagIndex).toBe(1); // past Denise
+  });
+
+  it('waits for an attacking turret before the tag moment comes', () => {
+    bind('a1_m02');
+    emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
+    expect(shown()).toBeNull();
+    emit(built(3, 'thumper'));
+    at(30);
+    emit({ type: 'WaveCleared', wave: 2, bonus: 0 });
+    expect(shown()).toMatch(/^That one's Denise\./);
   });
 
   it('unbinding clears the panel and stops the radio', () => {

@@ -349,9 +349,10 @@ export class TransientFx {
     }
     for (const b of this.#bursts) {
       if (!b.active) continue;
-      const before = b.ms;
       b.ms += dt;
-      if (before < 0 && b.ms >= 0) {
+      // Starts once its delay is up (a burst with no delay starts on its first frame: −0 < 0 is
+      // false, so the time alone can't say it hasn't started).
+      if (!b.sprite.visible && b.ms >= 0) {
         const look = BURST_LOOKS[b.small ? 'small' : 'big'];
         b.sprite.setVisible(true).play(this.ctx.sprites.anim(look.id, 'burst'));
       }

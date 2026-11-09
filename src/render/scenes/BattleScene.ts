@@ -32,6 +32,7 @@ import {
   abilityStats,
   clearTicksFor,
   isBuildableTile,
+  liveTileAt,
   tileElevation,
   type Command,
   type Sim,
@@ -142,10 +143,14 @@ export class BattleScene extends Phaser.Scene {
   /** The tower that pointer pinged (0: none), and ms since its ring last pulsed. */
   #pingTower = 0;
   #pingRingMs = 0;
-  /** A tile's elevation level by row-major index (1 for high ground), for picking. */
+  /**
+   * A tile's elevation level by row-major index (1 for high ground), for picking and towers' lift.
+   * It reads the live tile, so a wreck cleared to high ground is raised from then on (D076).
+   */
   readonly #elevationAt = (index: number): number => {
-    const t = this.#deps.sim.map.tiles[index];
-    return t === undefined ? 0 : tileElevation(t);
+    const { map, state } = this.#deps.sim;
+    if (index < 0 || index >= map.tiles.length) return 0;
+    return tileElevation(liveTileAt(map, state.wreckage, index));
   };
   /** A tile's elevation level by column and row. */
   readonly #elevationOf = (col: number, row: number): number =>

@@ -11,7 +11,6 @@
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
-import { radioLines } from '../content/radio/index.ts';
 import { loadoutChangeable } from '../ui/screens/loadoutView.ts';
 import { menuNotice, runResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
@@ -22,7 +21,13 @@ import { earnedMedalIds } from '../sim/index.ts';
 import { closeLoadout, openLoadout } from './loadout.ts';
 import { activeSave, closeSession, loadoutOffered, recordRun, systemOpen } from './save.ts';
 import { holdNewGame, intakeMode } from './profile.ts';
-import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
+import {
+  debriefStoryOf,
+  metaRunEndOf,
+  offeredMedals,
+  runResultOf,
+  type RunEndInput,
+} from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
 /** The menu notice when a battle can't start (the error itself is logged by navigation). */
@@ -145,7 +150,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     bus.on('WaveCleared', () => {
       wavesCleared++;
     });
-    // The radio's first-leak trigger: the battle's first EnemyLeaked (app/radio.ts).
+    // The first leak, for the results card's first-leak line (app/runResult.ts; D028).
     bus.on('EnemyLeaked', () => {
       firstLeakAt ??= { ms: performance.now(), tick: next.host.sim.state.tick };
     });
@@ -271,7 +276,6 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         integrity: s.integrity,
         skitterkinKilled: s.stats.skitterkinKilled,
         wavesCleared,
-        radio: radioLines(sim.map.id),
         firstLeakAgo:
           firstLeakAt === null
             ? null
@@ -284,7 +288,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // Run end (meta-runtime.md § Run end): Pests Processed, medals, and rewards into the save
       // in play, then the results card shows what it paid.
       const summary = recordRun(metaRunEndOf(input, outcome));
-      runResult.value = runResultOf(input, outcome, summary);
+      // The debrief reads the save as the run left it (its flags, seen list, and profile).
+      runResult.value = runResultOf(
+        { ...input, ...debriefStoryOf(activeSave()) },
+        outcome,
+        summary,
+      );
       // The battle freezes where it ended and stays drawn behind the results.
       setSpeed(0);
       cancel();

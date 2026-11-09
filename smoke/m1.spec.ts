@@ -10,7 +10,8 @@
 // ability.spec.ts. `fastForward` skips the 1.5 s results delay (D028), so the play-outs stay fast.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
-import { A1_M01_RADIO } from '../src/content/radio/a1_m01.ts';
+import { BARKS, SCENES } from '../src/content/dialogue/index.ts';
+import { linesUntilChoice } from '../src/story/runner.ts';
 import { silkText } from '../src/ui/silk.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
@@ -259,18 +260,16 @@ test('lose: no build plays out to a hiccup after the results delay; Title return
     await page.evaluate(() => globalThis.__sd!.state()!.stats.skitterkinKilled),
   );
   await expect(page.getByRole('button', { name: 'Retry' })).toBeFocused();
-  // The loss debrief is A1M1's supportive `mapLost` line(s) (D059); the first leak (W1) is long
-  // past, so its line doesn't lead.
+  // The loss debrief is A1M1's debrief scene as a loss plays it: Bricks's supportive line (D059).
+  // The first leak (W1) is long past, so its line doesn't lead.
   const debrief = dialog.getByRole('list', { name: 'Debrief' });
-  const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost');
+  const scene = SCENES.a1_m01_debrief!;
+  const ctx = { flags: {}, map: 'a1_m01', pestsProcessed: 0, seen: [] } as const;
+  const lost = linesUntilChoice(scene, { ...ctx, run: { outcome: 'lost', ruleFlags: {} } });
   expect(lost.length).toBeGreaterThan(0);
   await expect(debrief.getByRole('listitem')).toHaveCount(lost.length);
   await Promise.all(lost.map((l) => expect(debrief).toContainText(silkText(l.text))));
-  await Promise.all(
-    A1_M01_RADIO.filter((x) => x.on === 'firstLeak').map((l) =>
-      expect(debrief).not.toContainText(silkText(l.text)),
-    ),
-  );
+  await expect(debrief).not.toContainText(silkText(BARKS.quill_first_leak_a1_01!.text));
   // Game hotkeys are off on the results screen: F doesn't touch the frozen battle.
   await page.keyboard.press('KeyF');
   const t0 = await tick(page);
@@ -290,7 +289,7 @@ test('lose: no build plays out to a hiccup after the results delay; Title return
 test("radio and leak feedback: the first leak plays QUILL's line and flashes the core", async ({
   page,
 }) => {
-  // `radio=1`: the ticker is off under test=1 unless a spec asks for it (D026).
+  // `radio=1` (M2's name for `dialogue=1`): dialogue is off under test=1 unless a spec asks (D026).
   await page.goto('/?test=1&skipIntro=1&seed=1&radio=1');
   await waitForReady(page);
   const integrity = await page.evaluate(() => {

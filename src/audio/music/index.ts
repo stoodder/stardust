@@ -3,7 +3,7 @@
 import type { Act } from '../../content/types.ts';
 import type { Song } from '../types.ts';
 import { ACT1_BATTLE, TITLE_THEME } from './act1.ts';
-import { BRIGHT_STING, LOSE_STING, WIN_JINGLE } from './cues.ts';
+import { BOSS_STING, BRIGHT_STING, LOSE_STING, WIN_JINGLE } from './cues.ts';
 
 export { ALL_INSTRUMENTS, DRUMS, INSTRUMENTS, KIT } from './instruments.ts';
 
@@ -18,6 +18,7 @@ export const CUES = {
   bright_sting: BRIGHT_STING,
   win: WIN_JINGLE,
   lose: LOSE_STING,
+  boss_sting: BOSS_STING,
 } as const satisfies Readonly<Record<string, Song>>;
 export type CueId = keyof typeof CUES;
 

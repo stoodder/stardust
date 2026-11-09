@@ -3,8 +3,9 @@
 // salvage drone's queue, read from sim state every frame (so a missed event can't desync it):
 // - **Untouched:** the wreck (`v0` or `v1`, by tile).
 // - **Queued:** the salvage stake's beacon blinks (`blink_v<n>`, 2 fps) and the tile carries its
-//   place in the drone's line as a `teal.4` number in the 3×5 font (overlay), so a click's effect
-//   shows at once; a `teal.4` ring grows from the tile when it joins the queue.
+//   place in the drone's line (the tile being cleared counts as 1) as a `teal.4` number in the
+//   3×5 font (overlay); a `teal.4` ring grows from any tile the moment it joins the queue, so a
+//   click's effect shows at once.
 // - **Being cleared** (the queue's head): the beacon lit (`v<n>_lit`), then half cleared
 //   (`v<n>_half`) for the second half of the drone's work; DroneView draws the drone.
 // - **Cleared:** the wreck goes, and the tile's live tile (its `underWreckage`: a pad, high ground,
@@ -95,12 +96,12 @@ export class WreckageView {
   }
 
   /**
-   * Draws every wreckage tile as the drone's queue stands: `progress` of `clearTicks` done on the
-   * queue's head.
+   * Draws every wreckage tile as the drone's queue stands (`state.wreckage`: its queue, the head's
+   * progress, and the cleared tiles), with `clearTicks` per tile.
    */
   update(drone: DroneQueue & { readonly progressTicks: number }, clearTicks: number): void {
-    const work = clearTicks * DRONE_FLY_FRAC;
-    const half = progressHalf(drone.progressTicks, work, clearTicks);
+    const fly = clearTicks * DRONE_FLY_FRAC;
+    const half = progressHalf(drone.progressTicks, fly, clearTicks);
     for (const w of this.#tiles) {
       if (w.shown === Shown.Cleared) continue;
       if (drone.cleared.includes(w.index)) {
@@ -110,7 +111,9 @@ export class WreckageView {
       const at = drone.queue.indexOf(w.index);
       const next: Shown =
         at < 0 ? Shown.Wreck : at > 0 ? Shown.Queued : half ? Shown.Half : Shown.Lit;
-      this.#mark(w, at < 0 ? 0 : at + 1);
+      // Waiting tiles show their place in line (the head counts as 1); the head itself has the
+      // drone over it, so it shows none.
+      this.#mark(w, at <= 0 ? 0 : at + 1);
       if (next === w.shown) continue;
       if (w.shown === Shown.Wreck && next !== Shown.Wreck) {
         // A click's feedback: the tile answers the moment it joins the drone's line.

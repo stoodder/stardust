@@ -289,6 +289,15 @@ describe('validate: maps', () => {
     rejects(withMap({ tiles: ['S##..C', '.o#o..', '..#^o.', '.o##x.', '...##C'] }), 'core');
   });
 
+  it('[terraces] render-only terrace levels are shaped like the tiles, digits 0–3', () => {
+    const ok = ['222222', '111111', '111000', '000000', '000000'];
+    expect(validate(withMap({ terraces: ok }))).toEqual([]);
+    rejects(withMap({ terraces: ok.slice(1) }), 'terraces'); // a row short
+    rejects(withMap({ terraces: [...ok.slice(1), '00000'] }), 'terraces'); // a column short
+    rejects(withMap({ terraces: [...ok.slice(1), '000004'] }), 'terraces'); // above 3
+    rejects(withMap({ terraces: [...ok.slice(1), '0000a0'] }), 'terraces'); // not a digit
+  });
+
   it('[marker] markers sit off the path; ally posts and tile changes on decor (D042)', () => {
     // Any non-path tile: a pad, high ground, wreckage, or decor (A1M2's pump station).
     for (const pos of [

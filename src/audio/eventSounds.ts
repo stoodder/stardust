@@ -1,80 +1,58 @@
-// Sim events → sounds (pure): which sound effects and music cues each drained event plays. The
-// tables are data, so a new tower attack kind, enemy, or ability gets its sound by adding a row,
-// not a branch. Cosmetic pitch variance (a recipe's `jitter`) is the synth's, from its own RNG;
-// nothing here reads or affects the sim.
+// Sim events → sounds (pure): which sound effects and music cues each drained event plays, from
+// the data tables in eventTables.ts (a new tower attack kind, enemy, or ability gets its sound by
+// adding a row there, not a branch here). Cosmetic pitch variance (a recipe's `jitter`) is the
+// synth's, from its own RNG; nothing here reads or affects the sim. What no event announces (a
+// sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the state after each frame.
 import type { Act, IdSpace } from '../content/types.ts';
 import type { SimEvent, SimEventType } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
+import {
+  ALLY_SOUNDS,
+  ATTACK_SOUNDS,
+  BOMBLET_SOUNDS,
+  BOSS_END_CUE,
+  bossSounds,
+  CHAIN_SOUNDS,
+  DRONE_SOUNDS,
+  ENEMY_POP_PITCH,
+  FIRE_CONTROL_SOUNDS,
+  HORN_AFTER_CALL_SEC,
+  NEUTRAL_SOUNDS,
+  PLINK_SOUNDS,
+  SPLIT_SOUND,
+  ABILITY_SOUNDS,
+  UPGRADE_PITCH_PER_TIER,
+} from './eventTables.ts';
 import { WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
 import type { SfxId } from './sfx/index.ts';
+
+export {
+  ABILITY_SOUNDS,
+  ALLY_SOUNDS,
+  ATTACK_SOUNDS,
+  BOMBLET_SOUNDS,
+  CHAIN_SOUNDS,
+  ENEMY_POP_PITCH,
+  FIRE_CONTROL_SOUNDS,
+  HORN_AFTER_CALL_SEC,
+  PLINK_SOUNDS,
+  UPGRADE_PITCH_PER_TIER,
+} from './eventTables.ts';
 
 /** A sound to play: an effect (pitch in semitones, delay in seconds) or a music cue. */
 export type SoundCall =
   | { readonly kind: 'sfx'; readonly id: SfxId; readonly pitch: number; readonly delay: number }
   | { readonly kind: 'cue'; readonly id: CueId };
 
-/** What each attack kind sounds like as it fires, and as its projectile lands (if it has one). */
-export const ATTACK_SOUNDS: Readonly<
-  Partial<Record<string, { readonly fire: SfxId | null; readonly land: SfxId | null }>>
-> = {
-  hitscan: { fire: 'rivet_shot', land: null },
-  lobbed: { fire: 'thumper_launch', land: 'thumper_impact' },
-  pulse: { fire: 'sprinkler_pulse', land: null },
-};
+export const sfx = (id: SfxId, pitch = 0, delay = 0): SoundCall => ({
+  kind: 'sfx',
+  id,
+  pitch,
+  delay,
+});
 
-/**
- * A Cluster Thumper's bomblets (a lobbed shot with no target, scattered where its shell landed):
- * no launch of their own (the shell's impact covers it), and one rate-limited crackle as they land.
- */
-export const BOMBLET_SOUNDS = { fire: null, land: 'bomblet_pop' } as const satisfies {
-  readonly fire: SfxId | null;
-  readonly land: SfxId | null;
-};
+/** The `flying` kind of a Cluster Thumper's bomblet (BOMBLET_SOUNDS). */
 const BOMBLET_KIND = 'bomblet';
-
-/** Each enemy's pop pitch (semitones): small and quick is high, big and slow is low. */
-export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
-  nibbler: 0,
-  zoomer: 4,
-  chonk: -6,
-  hauler: -9,
-};
-
-/**
- * Each ability's cast sound, and the sounds when its zone lands (the binder watches the zone; the
- * Orbital Strike's beam and boom land with it, D022).
- */
-export const ABILITY_SOUNDS: Readonly<
-  Partial<Record<string, { readonly cast: SfxId; readonly land: readonly SfxId[] }>>
-> = {
-  orbital_strike: { cast: 'strike_charge', land: ['strike_beam', 'strike_boom'] },
-  // The segment starts as it's cast; its end is quiet.
-  suppressing_fire: { cast: 'suppress_burst', land: [] },
-};
-
-/** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */
-export const ALLY_SOUNDS: Readonly<
-  Partial<Record<string, { readonly spawn: SfxId | null; readonly attack: SfxId | null }>>
-> = {
-  bricks: { spawn: 'bricks_ready', attack: 'bricks_shot' },
-};
-
-/**
- * Fire control's clicks (core-loop §2.7): Hold fire on and off, and the spare-runners filter as
- * the same clicks pitched up, so the two read as kin but never as each other.
- */
-export const FIRE_CONTROL_SOUNDS = {
-  on: 'hold_fire_on',
-  off: 'hold_fire_off',
-  sparePitch: 5,
-} as const satisfies { readonly on: SfxId; readonly off: SfxId; readonly sparePitch: number };
-
-/** Semitones an upgrade's arpeggio rises per tier above 2. */
-export const UPGRADE_PITCH_PER_TIER = 2;
-/** The early-call cue plays first; the wave's horn follows after this (s). */
-export const HORN_AFTER_CALL_SEC = 0.25;
-
-const sfx = (id: SfxId, pitch = 0, delay = 0): SoundCall => ({ kind: 'sfx', id, pitch, delay });
 
 /**
  * Whether each sim event type can make a sound. Exhaustive, so a new event type must be sorted
@@ -109,12 +87,11 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   ScriptCue: false,
   NotFiringAtSkitterkin: false,
   LinkBroken: false,
-  // M3's events (T300a): silent until their sounds land (T314: the plink, the boss, salvage).
-  NeutralHit: false,
-  NeutralExited: false,
-  BossPhase: false,
-  BossEnded: false,
-  WreckageCleared: false,
+  NeutralHit: true,
+  NeutralExited: true,
+  BossPhase: true,
+  BossEnded: true,
+  WreckageCleared: true,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -133,15 +110,45 @@ export interface EventSounds {
   endFrame(out: SoundCall[]): void;
 }
 
+/** What the event sounds need to know about the battle's enemies (content's compiled defs). */
+export interface EnemyLookup {
+  /** Whether `enemy` splits when it dies (a Bunchling). */
+  splits(enemy: string): boolean;
+}
+const NO_ENEMIES: EnemyLookup = { splits: () => false };
+
 /** Event sounds for a battle in act `act`. */
-export function createEventSounds(act: Act): EventSounds {
+export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): EventSounds {
   /** Fired projectiles' kinds by uid, so their landing finds its sound. */
   const flying = new Map<number, string>();
   /** Allies' kinds by uid, so their shots find their sound. */
   const allies = new Map<number, string>();
+  /** The chain attack whose hits are arriving (its tower, or -1), and how many have. */
+  let chainTower = -1;
+  let chainHits = 0;
   let pendingClear = false;
   let pendingForfeit = false;
   let ended = false;
+  const landing = (e: Extract<SimEvent<IdSpace>, { type: 'ProjectileHit' }>, out: SoundCall[]) => {
+    if (e.uid !== 0) {
+      const kind = flying.get(e.uid);
+      flying.delete(e.uid);
+      const land =
+        kind === BOMBLET_KIND
+          ? BOMBLET_SOUNDS.land
+          : kind === undefined
+            ? null
+            : ATTACK_SOUNDS[kind]?.land;
+      if (land) out.push(sfx(land));
+    } else if (e.towerUid === chainTower) {
+      // The arc runs down the line: each jump a beat later and a step higher.
+      const k = chainHits++;
+      if (k > 0) {
+        const pitch = Math.min(k * CHAIN_SOUNDS.pitchPerJump, CHAIN_SOUNDS.maxPitch);
+        out.push(sfx(CHAIN_SOUNDS.jump, pitch, k * CHAIN_SOUNDS.gapSec));
+      }
+    }
+  };
   return {
     sounds(e, out) {
       switch (e.type) {
@@ -162,23 +169,19 @@ export function createEventSounds(act: Act): EventSounds {
           const s = bomblet ? BOMBLET_SOUNDS : ATTACK_SOUNDS[e.kind];
           if (s?.fire) out.push(sfx(s.fire));
           if (e.uid !== 0 && s?.land) flying.set(e.uid, bomblet ? BOMBLET_KIND : e.kind);
+          chainTower = e.kind === 'chain' ? e.towerUid : -1;
+          chainHits = 0;
           return;
         }
-        case 'ProjectileHit': {
-          if (e.uid === 0) return;
-          const kind = flying.get(e.uid);
-          flying.delete(e.uid);
-          const land =
-            kind === BOMBLET_KIND
-              ? BOMBLET_SOUNDS.land
-              : kind === undefined
-                ? null
-                : ATTACK_SOUNDS[kind]?.land;
-          if (land) out.push(sfx(land));
+        case 'ProjectileHit':
+          landing(e, out);
+          // The "wrong tool" tells: a hit that did nothing, else one that armor blunted.
+          if (e.hits > 0 && e.damage === 0) out.push(sfx(PLINK_SOUNDS.nothing));
+          else if (e.reduced) out.push(sfx(PLINK_SOUNDS.reduced));
           return;
-        }
         case 'EnemyDied':
           out.push(sfx('enemy_pop', ENEMY_POP_PITCH[e.enemy] ?? 0));
+          if (enemies.splits(e.enemy)) out.push(sfx(SPLIT_SOUND.id, 0, SPLIT_SOUND.delay));
           return;
         case 'EnemyLeaked':
           if (e.leak > 0) out.push(sfx('leak'));
@@ -240,6 +243,26 @@ export function createEventSounds(act: Act): EventSounds {
         case 'MedalProgress':
           if (e.status === 'forfeited' && !ended) pendingForfeit = true;
           return;
+        // Gerald (D072): his chime as a shot plinks off him, his whistle as he leaves.
+        case 'NeutralHit':
+        case 'NeutralExited': {
+          const s = Object.hasOwn(NEUTRAL_SOUNDS, e.enemy) ? NEUTRAL_SOUNDS[e.enemy] : undefined;
+          if (s !== undefined) out.push(sfx(e.type === 'NeutralHit' ? s.hit : s.exit));
+          return;
+        }
+        // The boss (D073): its arrival, each later phase, and its ending with the sting.
+        case 'BossPhase': {
+          const s = bossSounds(e.enemy);
+          out.push(sfx(e.phase <= 1 ? s.arrive : s.phase));
+          return;
+        }
+        case 'BossEnded':
+          out.push(sfx(bossSounds(e.enemy).end));
+          if (!ended) out.push({ kind: 'cue', id: BOSS_END_CUE });
+          return;
+        case 'WreckageCleared':
+          out.push(sfx(DRONE_SOUNDS.cleared));
+          return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
@@ -247,11 +270,6 @@ export function createEventSounds(act: Act): EventSounds {
         case 'ScriptCue':
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
-        case 'NeutralHit':
-        case 'NeutralExited':
-        case 'BossPhase':
-        case 'BossEnded':
-        case 'WreckageCleared':
           return;
         default:
           assertNever(e);
@@ -263,6 +281,8 @@ export function createEventSounds(act: Act): EventSounds {
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));
       pendingClear = false;
       pendingForfeit = false;
+      chainTower = -1;
+      chainHits = 0;
     },
   };
 }

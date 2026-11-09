@@ -119,6 +119,7 @@ export function compileMap<K extends IdSpace>(
     cols: def.size.cols,
     rows: def.size.rows,
     tiles,
+    terraces: def.terraces === undefined ? null : def.terraces.join('').split('').map(Number),
     underWreckage: { ...def.underWreckage },
     salvage: { ...def.salvage },
     routes: Object.fromEntries(routes),

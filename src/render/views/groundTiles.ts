@@ -3,6 +3,7 @@
 // the choices are unit-tested; GroundView draws them.
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
+import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/cliff.ts';
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
 import type { GridPos, MarkerId, TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
@@ -25,6 +26,11 @@ export interface TileDressing {
    * edge a grass tile shares with the road (art-direction §3). Absent with none.
    */
   readonly verge?: readonly string[];
+  /**
+   * `tile.cliff` overlay frames drawn over the ground (and verge), in order: a terrace step down
+   * from each back neighbour that stands higher (`GroundGrid.terraces`; T223). Absent with none.
+   */
+  readonly cliff?: readonly string[];
   /** A prop on the tile's center (the core, wreckage, decor), or null. */
   readonly prop: (TileLook & { readonly anim: string | null }) | null;
   /**
@@ -42,17 +48,38 @@ export interface GroundGrid {
   readonly tiles: readonly TileChar[];
   /** The map's markers; the ones named in `DECOR_MARKERS` are drawn as props. */
   readonly markers?: Readonly<Record<MarkerId, GridPos>>;
+  /** Render-only terrace levels, row-major like `tiles` (MapDef.terraces); absent or null: flat. */
+  readonly terraces?: readonly number[] | null;
 }
 
 /**
  * Decor markers (maps.md: markers are map-local names on non-path tiles): a marker with one of
- * these ids is drawn as its prop, on any map, in place of the tile's sparse decor. Other markers
- * (a Challenge's power node, an ally post) draw nothing here.
+ * these ids, or one of them plus `_<n>` (`billboard_2`, for a map with several), is drawn as its
+ * prop, on any map, in place of the tile's sparse decor. Other markers (a Challenge's power node,
+ * an ally post) draw nothing here. The props each map names are in act1.md (A1M2's Rig 3, housing
+ * block, and scarecrow; A1M3's fallen mailbox; A1M4's fountain, podium, and Evie billboards;
+ * A1M5's banner line, party tent, and confetti cannon).
  */
 export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   rig3: 'prop.rig',
   housing: 'prop.housing',
   scarecrow: 'prop.scarecrow',
+  mailbox: 'prop.mailbox',
+  fountain: 'prop.fountain',
+  podium: 'prop.podium',
+  billboard: 'prop.billboard',
+  banner_line: 'prop.bunting',
+  party_tent: 'prop.party_tent',
+  confetti_cannon: 'prop.confetti_cannon',
+};
+
+/** A decor prop's frame and looping anim on the map, where it isn't `v0` and still. */
+const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: string | null }>>> = {
+  'prop.fountain': { frame: 'f0', anim: 'flow' },
+  // Compliance Officer Prim hovers at the podium all map (act1.md § A1M4).
+  'prop.podium': { frame: 'prim_0', anim: 'prim' },
+  'prop.billboard': { frame: 'beaming', anim: null },
+  'prop.confetti_cannon': { frame: 'idle', anim: null },
 };
 
 /**
@@ -61,16 +88,41 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
  */
 export const VIEW_MARKERS: readonly MarkerId[] = ['peeker'];
 
-/** The decor prop a marker puts on (col, row), if any; 'bare' for a view marker's tile. */
+/**
+ * Props a map script brings on (props on cues, T312b): their marker's tile stays bare until the
+ * cue shows the prop there. Zibzab's shell-shop clanks onto A1M3's road at W6 (act1.md § A1M3).
+ */
+export const CUE_DECOR: Readonly<Record<MarkerId, SpriteId>> = {
+  zibzab_shop: 'prop.zibzab_shop',
+};
+
+/** The decor id a marker id names: itself, or itself less a `_<n>` suffix. */
+function decorSprite(id: MarkerId): SpriteId | undefined {
+  if (Object.hasOwn(DECOR_MARKERS, id)) return DECOR_MARKERS[id];
+  const base = id.replace(/_\d+$/, '');
+  return base !== id && Object.hasOwn(DECOR_MARKERS, base) ? DECOR_MARKERS[base] : undefined;
+}
+
+/** The decor prop a marker puts on (col, row), if any; 'bare' for a view or cue marker's tile. */
 function decorAt(g: GroundGrid, col: number, row: number): SpriteId | 'bare' | null {
   if (g.markers === undefined) return null;
   for (const [id, [c, r]] of Object.entries(g.markers)) {
     if (c !== col || r !== row) continue;
-    if (VIEW_MARKERS.includes(id)) return 'bare';
-    const sprite = Object.hasOwn(DECOR_MARKERS, id) ? DECOR_MARKERS[id] : undefined;
+    if (VIEW_MARKERS.includes(id) || Object.hasOwn(CUE_DECOR, id)) return 'bare';
+    const sprite = decorSprite(id);
     if (sprite !== undefined) return sprite;
   }
   return null;
+}
+
+/**
+ * The banner line's frame: slung back across the road behind its tile, along grid x (`x`) or y
+ * (`y`); `x` if neither neighbour is road.
+ */
+function buntingFrame(g: GroundGrid, col: number, row: number): 'x' | 'y' {
+  const t = (c: number, r: number): TileChar | undefined =>
+    c < 0 || r < 0 || c >= g.cols || r >= g.rows ? undefined : g.tiles[r * g.cols + c];
+  return !isPathLike(t(col - 1, row)) && isPathLike(t(col, row - 1)) ? 'y' : 'x';
 }
 
 /** Each tile edge's neighbour offset (verge.ts names the edges). */
@@ -97,8 +149,44 @@ function isPathLike(t: TileChar | undefined): boolean {
   return t === '#' || t === 'S' || t === 'C';
 }
 
+/** Back neighbours a terrace face can step down from: (col, row − 1), then (col − 1, row). */
+const CLIFF_EDGES: readonly (readonly [CliffEdge, number, number])[] = [
+  ['ne', 0, -1],
+  ['nw', -1, 0],
+];
+
+/**
+ * The terrace faces on tile (col, row): one per back neighbour on a higher terrace. The road cuts
+ * through (a path tile gets none: the switchbacks read as cuts), a high-ground block covers its
+ * own footprint, and a pad or power node keeps its plate clear (the `_pad` frames).
+ */
+export function cliffFrames(g: GroundGrid, col: number, row: number): string[] {
+  const out: string[] = [];
+  const levels = g.terraces;
+  if (levels === undefined || levels === null) return out;
+  const t = g.tiles[row * g.cols + col];
+  if (isPathLike(t) || t === '^') return out;
+  const here = levels[row * g.cols + col] ?? 0;
+  const plate = t === 'o' || t === '+' ? '_pad' : '';
+  for (const [edge, dc, dr] of CLIFF_EDGES) {
+    const c = col + dc;
+    const r = row + dr;
+    if (c < 0 || r < 0) continue;
+    if ((levels[r * g.cols + c] ?? 0) > here) {
+      out.push(`${edge}${plate}_${(col + row) % CLIFF_VARIANTS}`);
+    }
+  }
+  return out;
+}
+
 /** The dressing for tile (col, row). Deterministic: the same map always looks the same. */
 export function dressTile(g: GroundGrid, col: number, row: number): TileDressing {
+  const look = dressBase(g, col, row);
+  const cliff = cliffFrames(g, col, row);
+  return cliff.length === 0 ? look : { ...look, cliff };
+}
+
+function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
   const at = (c: number, r: number): TileChar | undefined =>
     c < 0 || r < 0 || c >= g.cols || r >= g.rows ? undefined : g.tiles[r * g.cols + c];
   const t = at(col, row);
@@ -140,8 +228,13 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
       }
       // Wreckage alternates its two wrecks by tile (a crashed drone, a toppled cart); WreckageView
       // swaps the frame as the drone works and hides it once the tile is cleared.
-      const frame = t === 'x' ? wreckageFrame(col, row) : 'v0';
-      const prop = sprite === null ? null : { sprite, frame, anim: null };
+      let prop: Prop | null = null;
+      if (sprite === 'prop.bunting') prop = { sprite, frame: buntingFrame(g, col, row), anim: null };
+      else if (sprite !== null) {
+        const look = DECOR_LOOKS[sprite];
+        const frame = t === 'x' ? wreckageFrame(col, row) : (look?.frame ?? 'v0');
+        prop = { sprite, frame, anim: t === 'x' ? null : (look?.anim ?? null) };
+      }
       // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
       const verge: string[] = [];
       for (const [edge, dc, dr] of EDGES) {
@@ -167,6 +260,13 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.rig',
   'prop.housing',
   'prop.scarecrow',
+  'prop.mailbox',
+  'prop.zibzab_shop',
+  'prop.fountain',
+  'prop.podium',
+  'prop.party_tent',
+  'prop.confetti_cannon',
+  'prop.bunting',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */

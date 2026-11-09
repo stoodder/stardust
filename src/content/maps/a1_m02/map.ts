@@ -24,6 +24,21 @@ export const map = defineMapLayout({
     '....########..',
     '....C.........',
   ],
+  // The three terraces (render-only): Terrace 1 (rows 0–2) down to Terrace 2 (rows 3–5) down to
+  // Terrace 3 (rows 6–9). The renderer draws a cliff along each step; the switchbacks cut through.
+  // prettier-ignore
+  terraces: [
+    '22222222222222',
+    '22222222222222',
+    '22222222222222',
+    '11111111111111',
+    '11111111111111',
+    '11111111111111',
+    '00000000000000',
+    '00000000000000',
+    '00000000000000',
+    '00000000000000',
+  ],
   // prettier-ignore
   paths: [
     {

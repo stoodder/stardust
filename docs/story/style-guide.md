@@ -206,7 +206,7 @@ Barks are keyed to the trigger events in [../tech/story-runtime.md](../tech/stor
 - **Silence:** a `line` with `text: ""` and an explicit duration. It shows the speaker's frame (dark, for Bricks after A3M3) with no text. Use it sparingly; it is one of the strongest tools in the game.
 - **Hums and squeaks:** a parenthetical in text: `(hum, six notes)`, `(squeak)`. Skitterkin raw speech never gets translated subtitles in the same line; a translator speaks on the next line.
 - **The Hollow:** speaker `hollow` and no portrait. Text is only *fragments of things it has consumed*, rendered with the distortion style (dropped letters, misregistered glyphs): `...brigh— every...`, `...logg...`. It never has an original line of its own.
-- **QUILL's tell:** any line driven by a directive starts with "(Per policy.)" or ends with it, uses expression `policy`, and is the only use of that expression.
+- **QUILL's tell:** any line driven by a directive starts with "(Per policy.)" or ends with it, uses expression `policy`, and is the only use of that expression. A thought with the tell in its middle is split into two lines at the tell, words unchanged: the directive line ends with it (and flashes), and the line after it is QUILL's own (A1M2's "Suggested build site: beside Extraction Rig 3. (Per policy.)" · "The housing block will be fine. Probably!").
 - **Forms:** speaker `kfa` or `system`, set in form styling, with numbered clauses.
 
 ### 5.7 Choices

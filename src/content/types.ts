@@ -528,6 +528,13 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly size: { readonly cols: number; readonly rows: number };
   /** One string per row, one TileChar per tile. Wrap in `// prettier-ignore`. */
   readonly tiles: readonly string[];
+  /**
+   * Render-only terrace levels: one string per row, one digit '0'–'3' per tile (higher digits are
+   * higher terraces), shaped like `tiles`. The renderer draws a cliff face where a tile's back
+   * neighbour is higher (art/tech-spec.md § Depth sorting); the sim never reads it, so gameplay
+   * stays flat (design/maps.md § 3). Wrap in `// prettier-ignore`.
+   */
+  readonly terraces?: readonly string[];
   /** What each wreckage tile becomes when cleared, and what clearing it pays. */
   readonly underWreckage?: Readonly<Partial<Record<TileKey, TileChar>>>;
   readonly salvage?: Readonly<Partial<Record<TileKey, number>>>;

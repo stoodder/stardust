@@ -76,7 +76,8 @@ describe('the save session', () => {
     expect(run('a1_m01', 19)).toMatchObject({ intel: 2, pestsProcessed: { lifetime: 40 } });
     expect(systemOpen('base')).toBe(true);
     expect(systemOpen('rnd')).toBe(true);
-    expect(systemOpen('shop')).toBe(false);
+    // Xenotech opens after A2M5, far past every map the dev save can have won (A1M3 opens the shop).
+    expect(systemOpen('xenotech')).toBe(false);
     expect(campaign.value?.board[0]).toMatchObject({ state: 'won' });
     closeSession();
     expect(openSlot(1)).toEqual({ ok: true });
@@ -257,7 +258,8 @@ describe('dev saves (?test=1&save=)', () => {
     if (!check.ok) throw new Error(check.message);
     importInto(1, check.save);
     expect(systemOpen('rnd')).toBe(true);
-    expect(systemOpen('shop')).toBe(false);
+    // Xenotech opens after A2M5, far past every map the dev save can have won (A1M3 opens the shop).
+    expect(systemOpen('xenotech')).toBe(false);
   });
 
   it('unknown ids are refused', () => {

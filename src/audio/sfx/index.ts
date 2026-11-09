@@ -3,18 +3,28 @@
 import type { SfxRecipe } from '../types.ts';
 import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
+import { SPEECH_SFX } from './blips.ts';
+import { BOSS_SFX } from './boss.ts';
+import { COMMANDER_SFX } from './commander.ts';
+import { HIT_SFX } from './hits.ts';
+import { PEST_SFX } from './pests.ts';
 import { RADIO_SFX } from './radio.ts';
 import { TOWER_SFX } from './towers.ts';
 import { UI_SFX } from './ui.ts';
 
-export { RADIO_BLIP } from './radio.ts';
+export type { SpeakerBlipId } from './blips.ts';
 
 export const SFX = {
   ...UI_SFX,
   ...TOWER_SFX,
   ...BATTLE_SFX,
   ...ALLY_SFX,
+  ...HIT_SFX,
+  ...PEST_SFX,
+  ...BOSS_SFX,
+  ...COMMANDER_SFX,
   ...RADIO_SFX,
+  ...SPEECH_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 
 /** A sound effect's id. */

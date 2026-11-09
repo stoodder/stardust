@@ -4,6 +4,7 @@ import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
 import { map as a1m02 } from '../../content/maps/a1_m02/map.ts';
 import {
   apronCells,
+  cliffFrames,
   DECOR_MARKERS,
   dressTile,
   envVariant,
@@ -94,6 +95,45 @@ describe('dressTile', () => {
     // The Peeker's rock is PeekerView's (T309): its tile has no sparse decor of its own.
     const [pc, pr] = a1.markers['peeker'] ?? [-1, -1];
     expect(dressTile(a1, pc, pr).prop).toBeNull();
+  });
+
+  it('steps terraces down with a cliff face on the lower tile, cut by the road (T223)', () => {
+    const t = { ...grid(['....', '.o#^', '.+#.']), terraces: [2, 2, 2, 2, 1, 0, 1, 1, 1, 0, 0, 1] };
+    // A step from the tile behind (row − 1): the lit `ne` face.
+    expect(cliffFrames(t, 0, 1)).toEqual(['ne_1']);
+    // A step from the tile to the left (col − 1): the shaded `nw` face. A pad or power node keeps
+    // its plate clear.
+    expect(dressTile(t, 1, 1).cliff).toEqual(['ne_pad_0', 'nw_pad_0']);
+    expect(cliffFrames(t, 1, 2)).toEqual(['nw_pad_1']);
+    const decor = { ...t, tiles: t.tiles.map((c, i) => (i === 9 ? '.' : c)) };
+    expect(cliffFrames(decor, 1, 2)).toEqual(['nw_1']);
+    // The road and a high-ground block take no face; nor does a step up toward the front.
+    expect(cliffFrames(t, 2, 1)).toEqual([]);
+    expect(cliffFrames(t, 3, 1)).toEqual([]);
+    expect(cliffFrames(t, 3, 2)).toEqual([]);
+    // Flat maps (no terraces) draw none.
+    expect(dressTile(grid(['..', '..']), 1, 1).cliff).toBeUndefined();
+  });
+
+  it("faces A1M2's two terrace steps along rows 3 and 6, never on the road (act1.md § A1M2)", () => {
+    const a1 = {
+      cols: a1m02.size.cols,
+      rows: a1m02.size.rows,
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- map rows use only TileChars
+      tiles: a1m02.tiles.join('').split('') as TileChar[],
+      terraces: (a1m02.terraces ?? []).join('').split('').map(Number),
+    };
+    const faced: string[] = [];
+    for (let r = 0; r < a1.rows; r++) {
+      for (let c = 0; c < a1.cols; c++) {
+        if (cliffFrames(a1, c, r).length > 0) faced.push(`${c},${r}`);
+      }
+    }
+    // Every tile of rows 3 and 6 but the switchback road (2,3) and (11,6).
+    expect(faced).toHaveLength(2 * a1.cols - 2);
+    expect(faced).not.toContain('2,3');
+    expect(faced).not.toContain('11,6');
+    expect(faced.every((k) => k.endsWith(',3') || k.endsWith(',6'))).toBe(true);
   });
 
   it('maps env ids to sprite variants', () => {

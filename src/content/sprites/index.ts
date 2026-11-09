@@ -68,6 +68,13 @@ import { propRock } from './props/rock.ts';
 import { propPeeker } from './props/peeker.ts';
 import { propWreckage } from './props/wreckage.ts';
 import { propSalvageDrone } from './props/salvage_drone.ts';
+import { propMailbox } from './props/mailbox.ts';
+import { propZibzabShop } from './props/zibzab_shop.ts';
+import { propFountain } from './props/fountain.ts';
+import { propPodium } from './props/podium.ts';
+import { propPartyTent } from './props/party_tent.ts';
+import { propConfettiCannon } from './props/confetti_cannon.ts';
+import { propBunting } from './props/bunting.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
 import { tilePath } from './tiles/path.ts';
@@ -76,6 +83,7 @@ import { tileHighGround } from './tiles/high_ground.ts';
 import { tilePowerNode } from './tiles/power_node.ts';
 import { tileSpawn } from './tiles/spawn.ts';
 import { tileVerge } from './tiles/verge.ts';
+import { tileCliff } from './tiles/cliff.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
@@ -94,6 +102,7 @@ import { portraitZibzab } from './portraits/zibzab.ts';
 export const SPRITES = [
   tileGrass,
   tileVerge,
+  tileCliff,
   tilePath,
   tilePad,
   tileHighGround,
@@ -113,6 +122,13 @@ export const SPRITES = [
   propPeeker,
   propWreckage,
   propSalvageDrone,
+  propMailbox,
+  propZibzabShop,
+  propFountain,
+  propPodium,
+  propPartyTent,
+  propConfettiCannon,
+  propBunting,
   towerRivet,
   towerRivetHead,
   towerThumper,

@@ -8,6 +8,7 @@ import type { StoryContext } from './conditions.ts';
 import {
   advance,
   labelIndex,
+  linesUntilChoice,
   pressButton,
   resume,
   sceneSlot,
@@ -126,6 +127,21 @@ describe('the runner', () => {
     expect(scenePlays(gated, ctx)).toBe(false);
     expect(scenePlays(gated, { ...ctx, map: 'a1_m01' })).toBe(true);
     expect(scenePlays(door, ctx)).toBe(true);
+  });
+});
+
+describe('linesUntilChoice', () => {
+  it('reads the lines up to the first choice, or the end, taking no choice', () => {
+    expect(linesUntilChoice(door, ctx).map((l) => l.text)).toEqual(['Two doors. One of us.']);
+    const after = defineScene('a3_m03_w02', [
+      { kind: 'branch', cond: { flag: 'peeker_poked', eq: true }, goto: 'poked' },
+      { kind: 'line', speaker: 'bricks', text: 'Quiet one.' },
+      { kind: 'end' },
+      { kind: 'line', speaker: 'quill', text: 'Poked!', label: 'poked' },
+    ]);
+    expect(linesUntilChoice(after, ctx).map((l) => l.text)).toEqual(['Quiet one.']);
+    const poked = { ...ctx, flags: { peeker_poked: true } };
+    expect(linesUntilChoice(after, poked).map((l) => l.text)).toEqual(['Poked!']);
   });
 });
 

@@ -100,6 +100,20 @@ export function pressButton(button: ReplyButton): {
   return { flags: button.set ?? {}, reply: button.reply ?? null };
 }
 
+/**
+ * The lines `scene` plays in `ctx` with nobody advancing it by hand: from its start to its first
+ * choice or its end (a debrief on the results card; the canon tests). Takes no choice.
+ */
+export function linesUntilChoice(scene: Scene, ctx: StoryContext): LineNode[] {
+  const out: LineNode[] = [];
+  let cursor = start(scene, ctx);
+  while (cursor.step.kind === 'line') {
+    out.push(cursor.step.node);
+    cursor = advance(scene, cursor, ctx);
+  }
+  return out;
+}
+
 /** A scene id's slot (`a1_m03_w04` → radio before wave 4), or null for a malformed id. */
 export function sceneSlot(id: SceneId): SceneSlot | null {
   return parseSceneId(id)?.slot ?? null;

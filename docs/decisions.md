@@ -1035,3 +1035,19 @@ Real art went in behind T300a's ids. No data changed.
 - **Salvage drone** (`prop.salvage_drone`): it hovers inside its own frame, so render adds no lift. `fly` and `work` (tractor-beam) anims.
 - The placeholders folder is gone, and every M3 unit now has real art.
 - The gallery shows mirrored frames at 1× only and is 18,147 px tall.
+
+### D082 — 2026-11-09 — T312a rendering air, combat FX, and wreckage
+- **Air:**
+  - Flyers draw 12 px up over a shadow, with a 1 px bob that turns off under reduced motion.
+  - Air lanes are dotted lines drifting toward the core. They show while flyers are in the current or next wave, or while an anti-air tower is armed.
+  - Flak climbs to the flyer's height, bursts there, and rings its splash on the ground.
+- **FX:**
+  - jagged blue-white chain arcs, one per hop;
+  - Gerald's plink spark and "PLINK!" callout (at most once per 0.7 s);
+  - Time Dilation's teal tint and ripple;
+  - a zigzag teal Conductive tether.
+- **Wreckage:**
+  - The beacon blinks, queued wrecks show their place in line, and a wreck goes half-cleared as the drone works.
+  - The drone flies in from the core, chains between queued wrecks, then flies home.
+  - **A plain click or Enter clears.** "Drone already on it" and "Clear it first" are the notices. Every render and input path reads the *live* tile.
+- **Bug fixed:** zero-delay bursts in `TransientFx` never played, which had hidden death pops and shell bursts.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { A1_M01_RADIO } from '../content/radio/a1_m01.ts';
 import {
   debriefLines,
+  debriefStoryOf,
   FIRST_LEAK_RECENT_MS,
   FIRST_LEAK_RECENT_TICKS,
   metaRunEndOf,
@@ -18,7 +18,6 @@ const INPUT: RunEndInput = {
   integrity: 13,
   skitterkinKilled: 57,
   wavesCleared: 4,
-  radio: [],
   firstLeakAgo: null,
   stardust: 120,
   medals: offeredMedals({ medals: { challenge: { id: 'teamwork', name: 'Teamwork!' } } }),
@@ -35,7 +34,13 @@ describe('runResultOf', () => {
       integrity: 0,
       maxIntegrity: 20,
       pestsProcessed: 57,
-      debrief: [],
+      debrief: [
+        {
+          name: 'Bricks',
+          color: 'orange.4',
+          text: 'Back on the pads, Sprout. Everybody loses some lettuce on day one.',
+        },
+      ],
       rewards: null,
     });
   });
@@ -121,12 +126,14 @@ describe('the run end and the rewards on the card', () => {
 });
 
 const texts = (lines: readonly { text: string }[]) => lines.map((l) => l.text);
+const at = (firstLeakAgo: RunEndInput['firstLeakAgo']) => ({ ...INPUT, firstLeakAgo });
 
 describe('the results card debrief (D028)', () => {
   const LEAK = 'Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)';
+  const LOST = 'Back on the pads, Sprout. Everybody loses some lettuce on day one.';
 
   it("shows Bricks's A1M1 debrief on a win, with his name plate", () => {
-    const lines = debriefLines(A1_M01_RADIO, 'won', null);
+    const lines = debriefLines(INPUT, 'won');
     expect(lines).toEqual([
       { name: 'Bricks', color: 'orange.4', text: 'Not bad, Sprout.' },
       {
@@ -135,32 +142,52 @@ describe('the results card debrief (D028)', () => {
         text: "Don't name things on day one. You get attached.",
       },
     ]);
-    expect(runResultOf({ ...INPUT, radio: A1_M01_RADIO }, 'won').debrief).toEqual(lines);
+    expect(runResultOf(INPUT, 'won').debrief).toEqual(lines);
   });
 
-  it("shows the map's mapLost lines on a loss (D059: a supportive Bricks line)", () => {
-    const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost').map((l) => l.text);
-    expect(lost.length).toBeGreaterThan(0);
-    expect(texts(debriefLines(A1_M01_RADIO, 'lost', null))).toEqual(lost);
+  it("shows the map's loss lines on a loss (D059: a supportive Bricks line)", () => {
+    expect(texts(debriefLines(INPUT, 'lost'))).toEqual([LOST]);
+  });
+
+  it("reads the save's flags: Kip's signing bonus on A1M2 (act1.md § A1M2)", () => {
+    const save = createNewSave();
+    const kip = { ...INPUT, mapId: 'a1_m02', ...debriefStoryOf(save) };
+    expect(texts(debriefLines(kip, 'won'))).not.toContain('Signing bonus? Me too. Spent it.');
+    const bonus = {
+      ...save,
+      story: { ...save.story, flags: { arrival_reason: 'bonus' as const } },
+    };
+    const lines = debriefLines({ ...kip, ...debriefStoryOf(bonus) }, 'won');
+    expect(texts(lines).at(-1)).toBe('Signing bonus? Me too. Spent it.');
+    expect(lines.at(-1)?.name).toBe('Kip');
+    expect(texts(debriefLines({ ...kip, ...debriefStoryOf(bonus) }, 'lost'))).toEqual([
+      "Reset and go again, Sprout. The Haulers aren't going anywhere. Neither am I.",
+    ]);
   });
 
   it('puts a first leak from the last 4 s on the card first, so its line is never lost', () => {
     const recent = { ms: FIRST_LEAK_RECENT_MS, ticks: FIRST_LEAK_RECENT_TICKS };
-    expect(texts(debriefLines(A1_M01_RADIO, 'won', recent))).toEqual([
+    expect(texts(debriefLines(at(recent), 'won'))).toEqual([
       LEAK,
       'Not bad, Sprout.',
       "Don't name things on day one. You get attached.",
     ]);
-    const lost = A1_M01_RADIO.filter((l) => l.on === 'mapLost').map((l) => l.text);
-    expect(texts(debriefLines(A1_M01_RADIO, 'lost', { ms: 1200, ticks: 144 }))).toEqual([
-      LEAK,
-      ...lost,
+    expect(texts(debriefLines(at({ ms: 1200, ticks: 144 }), 'lost'))).toEqual([LEAK, LOST]);
+    expect(texts(debriefLines(at({ ...recent, ms: FIRST_LEAK_RECENT_MS + 1 }), 'lost'))).toEqual([
+      LOST,
     ]);
-    expect(
-      texts(debriefLines(A1_M01_RADIO, 'lost', { ...recent, ms: FIRST_LEAK_RECENT_MS + 1 })),
-    ).toEqual(lost);
     // Fast-forwarded: moments ago in real time, but long ago in game time.
-    expect(texts(debriefLines(A1_M01_RADIO, 'lost', { ms: 5, ticks: 3000 }))).toEqual(lost);
+    expect(texts(debriefLines(at({ ms: 5, ticks: 3000 }), 'lost'))).toEqual([LOST]);
     expect(FIRST_LEAK_RECENT_TICKS).toBe(480); // 4 s at 2×
+    // Once per campaign: a save that has heard it doesn't hear it on the card either.
+    const save = createNewSave();
+    const heard = { ...save, story: { ...save.story, seen: ['quill_first_leak_a1_01'] } };
+    expect(texts(debriefLines({ ...at(recent), ...debriefStoryOf(heard) }, 'lost'))).toEqual([
+      LOST,
+    ]);
+  });
+
+  it('has no debrief off the campaign', () => {
+    expect(debriefLines({ ...INPUT, mapId: 'dev_range' }, 'won')).toEqual([]);
   });
 });

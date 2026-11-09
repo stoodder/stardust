@@ -84,19 +84,23 @@ Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the windo
 
 **Story delivery.**
 - *Before:* character creation (the onboarding form), then memo `memo_a1_00` *WELCOME TO THE GARDENS!* (grants Orbital Strike; small print per [style-guide.md §6.1](../style-guide.md#61-everglow-memos)).
-- *Briefing:* QUILL introduces itself; Bricks names you; a choice (earnest / wry / quiet, [characters.md](../characters.md#the-protagonist)'s A1M1 set).
+- *Briefing* (`a1_m01_brief`, in this order): QUILL introduces itself; Bricks names you (the callsign beat: the scene sets your callsign to Sprout, once; a replay of the briefing never resets a later one); the threat intel; Bricks's how-to line (the W2 radio slot's line, played here instead since [D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings)); then his question and a choice (earnest / wry / quiet, [characters.md](../characters.md#the-protagonist)'s A1M1 set), each with its own one-line answer. The choice sets no flag: it's the player's first chance to speak, and every answer plants a seed (the Spires with QUILL's policy tell, Goldie, the survey's clipboard).
   - QUILL: "Hello, Technician! I'm QUILL, your Quantified Unified Integrated Logistics & Lethality assistant. I love my job!"
   - Bricks: "Name's Okonkwo. Sergeant. I'll call you Sprout, 'cause you're green and you work with lettuce."
   - QUILL (threat intel): "Today's forecast: Nibblers, with a chance of Zoomers!"
+  - Bricks: "Turrets go on the pads. Bugs go on the path. Nothing goes on the path but bugs and bad decisions."
+  - Bricks: "Any questions, Sprout?"
+    - (earnest) "Where do they all come from?" → QUILL: "The Spires, up north, where the rigs are! Further questions go to Extraction. (Per policy.)"
+    - (wry) "Is the lettuce always this aggressive?" → Bricks: "Lettuce is fine. Ask Goldie. She talks to it."
+    - (quiet) "...No, Sergeant." → Bricks: "Good. I asked questions once. They gave me a clipboard."
 - *Radio:*
-  - w02 Bricks: "Turrets go on the pads. Bugs go on the path. Nothing goes on the path but bugs and bad decisions."
   - w03 QUILL: "New hardware! Put the mortar beside your Rivet. They like each other. It's called Crossfire!"
   - w04 Goldie: "Oh! You're the new tech! Want to meet Duchess? She's a butterhead. She's shy. Don't look directly at her."
     - (if `arrival_reason = lettuce`, in place of the line above) Goldie: "You're the one who wrote 'lettuce' on the form! I cried. Meet Duchess. She's shy. Don't look directly at her."
   - w05 Bricks: "Fast ones. Lay my Suppressing Fire across the road. That's what it's for."
   - w06 (Joke of the Shift) QUILL: "Time for Joke of the Shift! I'm contractually obligated to tell one. Fifty are pre-approved!" · QUILL: "Why did the lettuce cross the road? It was scheduled to. Logistics Route 4, Tuesdays. ...That's the joke." · Bricks: "It's Wednesday."
   - w07 Bricks: "If that jingle plays one more time I'm filing a grievance. With God. Cc'ing HR."
-- *Barks:* QUILL `first_leak` (once per campaign): "Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)" · QUILL `wave_cleared`: "(singing along) Ev-er-glow, Ev-er-glow!" · Bricks `wave_cleared`: "That jingle. Every time." · QUILL `perfect_wave`: "Perfect wave! I'd give you a sticker, but stickers are Tier 2." · QUILL `bank_nudge` (once per shift, a build phase from W2 on that opens with 250+ credits banked; both Act I maps so far): "Unspent budget detected! Credits can't shoot. I checked. Turrets can!"
+- *Barks:* QUILL `first_leak` (once per campaign): "Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)" · QUILL `wave_cleared` (W1's clear, the first jingle): "(singing along) Ev-er-glow, Ev-er-glow!" · Bricks `wave_cleared` (a later clear, the jingle again; standalone, never an answer to QUILL): "That jingle. Every time." · QUILL `perfect_wave`: "Perfect wave! I'd give you a sticker, but stickers are Tier 2." · QUILL `bank_nudge` (once per shift, a build phase from W2 on that opens with 250+ credits banked; both Act I maps so far): "Unspent budget detected! Credits can't shoot. I checked. Turrets can!"
 - *Debrief:* Bricks: "Not bad, Sprout." · "Don't name things on day one. You get attached." (He names one tomorrow.) · (on a loss) Bricks: "Back on the pads, Sprout. Everybody loses some lettuce on day one."
 - *Codex:* Nibbler, Zoomer, Rivet, Thumper, Tidybot, Everglow Gardens, Orbital Strike (small print: "Uplink access contingent on Q2 extraction targets").
 - *Memo after:* `memo_a1_01` *Q2 Results: Pest Losses Down 38%!* (small print: "Lettuce loss figures pending Accounting review.")
@@ -174,7 +178,7 @@ A third under-built player, three Rivets bought in the setup ((7,2), (10,4), (3,
 - *Radio:*
   - Shift start (`tower_issued` sprinkler: the first battle the save brings the newly issued Sprinkler into) QUILL: "New hardware! The Frostline Sprinkler chills pests. (Gently!) Set it by a Thumper: chilled pests are Sitting Ducks!"
   - w02 Kip: "Kip Vandermeer. 'The Exterminator.' Number one on the Bounty Board, three quarters running. Don't get comfy at two."
-  - w03 QUILL: "Suggested build site: beside Extraction Rig 3. (Per policy.) The housing block will be fine. Probably!"
+  - w03 QUILL: "Suggested build site: beside Extraction Rig 3. (Per policy.)" · QUILL: "The housing block will be fine. Probably!" (two lines, so the tell ends the first: [style-guide.md §5.6](../style-guide.md#56-special-line-kinds-authoring-conventions))
   - First `wave_cleared` (name tag) Bricks: "That one's Denise. After my first wife. Keeps her distance, fires on schedule, never calls."
   - w04 (Joke of the Shift) QUILL: "Joke of the Shift! Why did the scarecrow get Employee of the Month? He was outstanding in his field." · QUILL: "That's the joke. He's real, by the way. Terrace 2. He's been out there since 2349. I worry about him." · Bricks: "Fewer complaints than Kip."
   - w05 Kip: "Pro tip: Brood Haulers. Big bounty, slow, never shoot back. I hold the record. 'Most Haulers, Before Lunch.'"

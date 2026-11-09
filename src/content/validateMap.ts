@@ -11,6 +11,8 @@
 // - [core]: a Defend map has exactly one core `C`.
 // - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
 //   tile changes (`openTile`) sit on decor (§ 3; D042).
+// - [terraces]: the render-only terrace levels, if given, are shaped like `tiles`, one digit
+//   '0'–'3' per tile.
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
 //   pays 30–80 salvage; nothing else does.
 // - [wave]: a map has at least one wave; every wave has groups; counts and intervals are
@@ -198,6 +200,18 @@ function validateGeometry(
             ? "an ally post or a scripted tile change sits on decor ('.')"
             : 'markers sit off the path'
         }`,
+      );
+    }
+  }
+  if (def.terraces !== undefined) {
+    const t = def.terraces;
+    const shaped =
+      t.length === grid.rows && t.every((row) => /^[0-3]*$/.test(row) && row.length === grid.cols);
+    if (!shaped) {
+      issues.add(
+        'terraces',
+        `${where}.terraces`,
+        `must be ${grid.rows} rows of ${grid.cols} digits '0'–'3' (one per tile, like tiles)`,
       );
     }
   }

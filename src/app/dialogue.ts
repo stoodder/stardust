@@ -8,11 +8,15 @@
 //   countdown begins), script cues, and barks, one line at a time on real-time holds. Scenes queue
 //   (going stale after COMMS_STALE_MS); barks never queue: one that can't show now is dropped (D070).
 // - **Barks** are standalone (never a reply to another speaker's line; D061), picked by
-//   `pickBarkOf` from the map's pools with 6 s of sim-time spacing.
+//   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
+//   queue behind the line on the panel instead (`QUEUED_BARKS`): QUILL's first-leak seed, and
+//   Bricks on selling the turret he named.
+// - Moments that play a map's scenes: wave NN's countdown (`<map>_wNN`), a map script cue (the
+//   scene with the cue's id), Bricks's tag moment (`<map>_cue_name_tag`; story/tags.ts), and a
+//   newly issued tower at the battle's start (`<map>_cue_issued_<tower>`).
 // - What a scene changed (flags, the callsign) and that it was seen go into the save as it ends.
-// Until T302c migrates content/radio/, a map with no dialogue plays its adapted radio (app/radio.ts).
 // `?test=1` turns the comms panel and in-battle scenes off unless `&dialogue=1` (the radio's rule);
-// the briefing still shows, whole, at once.
+// the briefing still shows, whole, at once (up to its first choice).
 import { ENEMIES } from '../content/enemies/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
@@ -36,6 +40,7 @@ import {
   campaignBarksPlayed,
   cueBark,
   newBarkState,
+  pickBark,
   pickBarkOf,
   type BarkEvent,
   type BarkState,
@@ -45,11 +50,13 @@ import {
   advance,
   NO_EFFECTS,
   pressButton,
+  scenePlays,
   sceneSlot,
   start,
   type DialogueCursor,
   type DialogueEffects,
 } from '../story/runner.ts';
+import { newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { dialogue, type LineView, type SceneMode, type SceneView } from '../ui/dialogue/state.ts';
 import { typedLength, typeMs } from '../ui/dialogue/text.ts';
@@ -58,7 +65,6 @@ import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { setSpeed } from './commands.ts';
 import type { Host } from './host.ts';
-import { adaptRadio, staticBriefingScene } from './radio.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { Speed } from './testHookTypes.ts';
 
@@ -198,8 +204,6 @@ interface Session {
   /** Skitterkin killed this run (for `{pests_processed}`). */
   runKills(): number;
   readonly pool: readonly Bark[];
-  /** A `perfect_wave` bark's first wave (the adapted radio's). */
-  readonly fromWave: ReadonlyMap<string, number>;
   barks: BarkState;
 }
 
@@ -295,20 +299,22 @@ function publish(): void {
     return;
   }
   const step = h.cursor.step;
+  // Shown whole (dialogue off), a scene stops short of its first choice: nobody is there to pick.
+  const stopped = h.instant && step.kind === 'choice';
   const view: SceneView = {
     sceneId: h.scene.id,
     mode: h.mode,
     transcript: [...h.transcript],
     line: h.line,
     choices:
-      step.kind === 'choice'
+      step.kind === 'choice' && !stopped
         ? step.node.options.map((o) => ({
             text: silkText(resolveText(o.text, textContext())),
             tone: o.tone,
           }))
         : null,
     remember: h.remember,
-    ended: step.kind === 'end',
+    ended: step.kind === 'end' || stopped,
     instant: h.instant,
     typing: { from: h.typedFrom, done: h.typedOut },
   };
@@ -634,21 +640,39 @@ export function pressCommsButton(): void {
 
 /**
  * Offers one moment's triggers to the bark pools (`pickBarkOf`). Nothing plays over a line on the
- * panel or a scene, and nothing waits: the triggers still count as fired. `wave` is the wave a
- * `perfect_wave` resolved (the adapted radio's A1M1 line plays from W2).
+ * panel or a scene, and nothing waits: the triggers still count as fired.
  */
-function offerBarks(triggers: readonly BarkTrigger[], wave: number | null = null): void {
+function offerBarks(triggers: readonly BarkTrigger[]): void {
   const s = session;
   if (s === null || !enabled || triggers.length === 0) return;
   const atSec = s.simSec();
   const events: BarkEvent[] = triggers.map((trigger) => ({ trigger, atSec, present: s.present }));
   const busy = commsNow !== null || commsHeld || commsQueue.length > 0;
-  const pool = busy
-    ? []
-    : s.pool.filter((b) => wave === null || (s.fromWave.get(b.id) ?? 0) <= wave);
-  const pick = pickBarkOf(pool, events, s.barks, storyContext(s.map));
+  const pick = pickBarkOf(busy ? [] : s.pool, events, s.barks, storyContext(s.map));
   s.barks = pick.state;
   if (pick.bark !== null) showBark(pick.bark);
+}
+
+/**
+ * Whether a trigger's bark queues behind the line on the panel instead of dropping: the battle's
+ * first leak (QUILL's "Toward... the wilderness?", a fair-play seed) and selling the turret Bricks
+ * named. Their pick ignores the 6 s spacing (later barks keep theirs from it), but not the bark's
+ * `when`, presence, or once limits.
+ */
+export function isQueuedTrigger(t: BarkTrigger): boolean {
+  return t.on === 'first_leak' || (t.on === 'tower_sold' && t.tagged === true);
+}
+
+/** Picks a queued trigger's bark (`isQueuedTrigger`) and queues it on the panel. */
+function queueBark(trigger: BarkTrigger): void {
+  const s = session;
+  if (s === null || !enabled) return;
+  const atSec = s.simSec();
+  const event: BarkEvent = { trigger, atSec, present: s.present };
+  const free = { ...s.barks, lastAtSec: null };
+  const pick = pickBark(s.pool, event, free, storyContext(s.map));
+  s.barks = pick.bark === null ? { ...pick.state, lastAtSec: s.barks.lastAtSec } : pick.state;
+  if (pick.bark !== null) queueComms(barkScene(pick.bark));
 }
 
 /** A bark a map script names: it plays whatever the spacing says, after the line on screen. */
@@ -675,13 +699,9 @@ export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>): Speake
   return out;
 }
 
-/** The briefing scene of `map`: its `<map>_brief`, else its static briefing (app/radio.ts). */
-export function briefingScene(map: {
-  readonly id: string;
-  readonly briefing?: string | null;
-}): Scene | null {
-  const id = `${map.id}_brief`;
-  return SCENES[id] ?? staticBriefingScene(map.id, map.briefing ?? undefined);
+/** The briefing scene of `map` (`<map>_brief`), or null when it has none. */
+export function briefingScene(map: { readonly id: string }): Scene | null {
+  return SCENES[`${map.id}_brief`] ?? null;
 }
 
 export interface DialogueOptions {
@@ -699,21 +719,19 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const { sim, bus } = host;
   const mapDef = sim.map;
   const map = isCampaignMapId(mapDef.id) ? mapDef.id : null;
-  const own = map === null ? { scenes: [], barks: [] } : mapDialogue(map);
-  const adapted = own.scenes.length === 0 && own.barks.length === 0 ? adaptRadio(mapDef.id) : null;
-  /** Scenes by the moment that plays them (`countdown:<wave>`, `cue:<id>`, the adapter's keys). */
-  const moments = new Map<string, Scene>(adapted?.scenes ?? []);
+  const own = map === null ? { scenes: [] } : mapDialogue(map);
+  /** Radio scenes by the countdown that plays them (`<map>_wNN` → NN). */
+  const radio = new Map<number, Scene>();
   for (const scene of own.scenes) {
     const slot = sceneSlot(scene.id);
-    if (slot?.kind === 'radio') moments.set(`countdown:${slot.wave}`, scene);
+    if (slot?.kind === 'radio') radio.set(slot.wave, scene);
   }
   const s: Session = {
     map,
     present: presentSpeakers(mapDef),
     simSec: () => sim.state.tick / TICK_HZ,
     runKills: () => sim.state.stats.skitterkinKilled,
-    pool: [...(map === null ? [] : barksFor(map)), ...(adapted?.barks ?? [])],
-    fromWave: adapted?.fromWave ?? new Map(),
+    pool: map === null ? [] : barksFor(map),
     barks: newBarkState(sim.config.seed),
   };
   session = s;
@@ -728,26 +746,44 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const towerOf = new Map<number, string>();
   const leakedWaves = new Set<number>();
   const leakedEnemies = new Set<string>();
-  const killedEnemies = new Set<string>();
+  let tags: TagState | null = map === null ? null : newTagState(map);
+  let tagGiven = false;
   let leaked = false;
   let lowFired = false;
   let wave = 0;
 
-  const playMoment = (key: string): void => {
-    const scene = moments.get(key);
-    if (scene === undefined) return;
-    moments.delete(key);
-    if (!enabled) return;
+  /** Plays the map's scene `<map>_<slot>` if it has one and its `when` holds. */
+  const playSlot = (slot: string): void => {
+    const scene = map === null ? undefined : SCENES[`${map}_${slot}`];
+    if (scene === undefined || !enabled || !scenePlays(scene, storyContext(map))) return;
     playScene(scene);
   };
 
-  // The start: map_start, the entry flag barks, and newly issued towers, once the briefing closes.
-  const begin = (): void => {
-    if (opts.newTowers.length > 0 && adapted !== null) {
-      for (const t of opts.newTowers) playMoment(`issued:${t}`);
+  /** Steps Bricks's name tag past a sim event; returns whether a tagged turret was just sold. */
+  const stepTags = (e: Parameters<typeof tagStep>[1]): boolean => {
+    if (tags === null) return false;
+    const step = tagStep(tags, e);
+    tags = step.state;
+    let sold = false;
+    for (const fx of step.effects) {
+      if (fx.kind === 'untagged' && fx.reason === 'sold') sold = true;
+      if (fx.kind === 'tagged' && !tagGiven) {
+        tagGiven = true;
+        playSlot('cue_name_tag');
+      }
     }
-    const triggers: BarkTrigger[] = [{ on: 'map_start' }, { on: 'flag' }];
-    for (const t of opts.newTowers) if (isTower(t)) triggers.push({ on: 'tower_issued', tower: t });
+    return sold;
+  };
+
+  // The start: newly issued towers' scenes, then map_start, the entry flag barks, and
+  // tower_issued (first, so its bark wins the moment), once the briefing closes.
+  const begin = (): void => {
+    const triggers: BarkTrigger[] = [];
+    for (const t of opts.newTowers) {
+      playSlot(`cue_issued_${t}`);
+      if (isTower(t)) triggers.push({ on: 'tower_issued', tower: t });
+    }
+    triggers.push({ on: 'map_start' }, { on: 'flag' });
     offerBarks(triggers);
   };
   let begun = false;
@@ -776,20 +812,20 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
 
   const offs = [
     bus.on('CountdownStarted', (e) => {
-      playMoment(`countdown:${e.wave}`);
+      const scene = radio.get(e.wave);
+      radio.delete(e.wave);
+      if (scene !== undefined && enabled && scenePlays(scene, storyContext(map))) playScene(scene);
       if (e.wave >= 2 && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
     }),
-    bus.on('TowerClassUnlocked', (e) => playMoment(`unlock:${e.tower}`)),
     bus.on('WaveStarted', (e) => {
       wave = Math.max(wave, e.wave);
-      playMoment(`waveStart:${e.wave}`);
       offerBarks([{ on: 'wave_start', wave: e.wave }]);
     }),
     bus.on('WaveCleared', (e) => {
-      playMoment(`waveCleared:${e.wave}`);
+      stepTags(e);
       const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave }];
       if (!leakedWaves.has(e.wave)) triggers.push({ on: 'perfect_wave' });
-      offerBarks(triggers, e.wave);
+      offerBarks(triggers);
     }),
     bus.on('EnemySpawned', (e) => {
       waveOf.set(e.uid, e.wave);
@@ -799,25 +835,19 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('EnemyDied', (e) => {
       waveOf.delete(e.uid);
-      if (!killedEnemies.has(e.enemy)) {
-        killedEnemies.add(e.enemy);
-        playMoment(`enemyKilled:${e.enemy}`);
-      }
       if (isEnemy(e.enemy)) offerBarks([{ on: 'enemy_killed', enemy: e.enemy }]);
     }),
     bus.on('EnemyLeaked', (e) => {
       const w = waveOf.get(e.uid);
       if (w !== undefined) leakedWaves.add(w);
       waveOf.delete(e.uid);
-      const triggers: BarkTrigger[] = [];
       if (!leaked) {
         leaked = true;
-        playMoment('firstLeak');
-        triggers.push({ on: 'first_leak' });
+        queueBark({ on: 'first_leak' });
       }
+      const triggers: BarkTrigger[] = [];
       if (!leakedEnemies.has(e.enemy)) {
         leakedEnemies.add(e.enemy);
-        playMoment(`enemyLeaked:${e.enemy}`);
         if (isEnemy(e.enemy)) triggers.push({ on: 'enemy_leaked', enemy: e.enemy });
       }
       const st = sim.state;
@@ -829,17 +859,18 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('TowerBuilt', (e) => {
       towerOf.set(e.uid, e.tower);
+      stepTags(e);
       offerBarks([
         isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' },
       ]);
     }),
     bus.on('TowerSold', (e) => {
-      // Name tags (story/tags.ts) join with T302c: whether the turret was tagged isn't known yet.
       const t = towerOf.get(e.uid);
       towerOf.delete(e.uid);
-      offerBarks([
-        t !== undefined && isTower(t) ? { on: 'tower_sold', tower: t } : { on: 'tower_sold' },
-      ]);
+      const tagged = stepTags(e);
+      const tower = t !== undefined && isTower(t) ? { tower: t } : {};
+      if (tagged) queueBark({ on: 'tower_sold', ...tower, tagged: true });
+      else offerBarks([{ on: 'tower_sold', ...tower }]);
     }),
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);
@@ -858,17 +889,27 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       if (bark !== undefined) playCueBark(bark);
     }),
   ];
+  /** The save's place in Bricks's tag list after this battle (never back; story/tags.ts). */
+  const tagIndex = (index: number): number =>
+    map !== null && tagGiven ? tagIndexAfter(map, index) : index;
   return () => {
     for (const off of offs) off();
     offBriefing();
-    // Barks that play once per campaign go into the save's seen list.
+    // Barks that play once per campaign go into the save's seen list; a tag given moves the
+    // save's place in Bricks's tag list (never back: a replay reuses its map's name).
     const played = campaignBarksPlayed(s.barks, s.pool);
     const saved = activeSave();
     const fresh = played.filter((id) => saved !== null && !saved.story.seen.includes(id));
-    if (fresh.length > 0) {
+    const moved =
+      saved !== null && tagIndex(saved.story.bricksTagIndex) !== saved.story.bricksTagIndex;
+    if (fresh.length > 0 || moved) {
       updateActiveSave((sv) => ({
         ...sv,
-        story: { ...sv.story, seen: [...sv.story.seen, ...fresh] },
+        story: {
+          ...sv.story,
+          seen: [...sv.story.seen, ...fresh],
+          bricksTagIndex: tagIndex(sv.story.bricksTagIndex),
+        },
       }));
     }
     if (session === s) session = null;

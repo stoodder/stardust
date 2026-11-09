@@ -1,6 +1,6 @@
 // Radio blips: as each radio line appears, a squelch and a short chirp in the speaker's register
 // (story/characters.md): QUILL bright and quick, Bricks low and gruff, Goldie warm and mid.
-import type { RadioSpeaker } from '../../content/radio/types.ts';
+import type { SpeakerId } from '../../content/dialogue/types.ts';
 import type { SfxRecipe, ToneLayer } from '../types.ts';
 
 /** The open-mic squelch every blip starts with. */
@@ -91,7 +91,9 @@ export const RADIO_SFX = {
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 
 /** Each radio speaker's blip. */
-export const RADIO_BLIP: Readonly<Record<RadioSpeaker, keyof typeof RADIO_SFX>> = {
+export const RADIO_BLIP: Readonly<
+  Record<Extract<SpeakerId, 'quill' | 'bricks' | 'goldie' | 'kip'>, keyof typeof RADIO_SFX>
+> = {
   quill: 'radio_quill',
   bricks: 'radio_bricks',
   goldie: 'radio_goldie',

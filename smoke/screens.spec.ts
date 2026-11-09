@@ -22,7 +22,7 @@ test('screens: title → Start (Enter) → battle', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => (globalThis.__sd?.state()?.tick ?? -1) >= 0);
   await expect(page.getByRole('heading', { name: 'Stardust' })).toBeHidden();
-  // Start shift plays A1M1, which opens on its static briefing (act1.md § A1M1).
+  // Start shift plays A1M1, which opens on its briefing scene (act1.md § A1M1).
   expect(await page.evaluate(() => globalThis.__sd?.state()?.wave)).toBe(0);
   const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
   await expect(briefing).toBeVisible();

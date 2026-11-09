@@ -465,6 +465,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly rows: number;
   /** Row-major: the tile at (col, row) is `tiles[row * cols + col]`. */
   readonly tiles: readonly TileChar[];
+  /** Render-only terrace levels, row-major like `tiles`, or null on a flat map (MapDef.terraces). */
+  readonly terraces: readonly number[] | null;
   readonly underWreckage: Readonly<Partial<Record<TileKey, TileChar>>>;
   readonly salvage: Readonly<Partial<Record<TileKey, number>>>;
   /** Paths, air lanes, and rift lanes by id (ids are unique across all three). */

@@ -56,6 +56,8 @@ S # # # # # # . . o o . . .
 | `S` | **Spawn** | No | Enemy entry point | The portal look is per faction (art) |
 | `C` | **Core** | No | The colony core (the lose condition, [core-loop.md §2.9](core-loop.md#29-core-integrity-lose-condition)) | |
 
+**Terraces (render-only):** a map may add `terraces`, a digit level per tile ('0'–'3'), to show slopes such as A1M2's three terraces. The renderer draws a cliff face wherever the ground steps down ([../art/tech-spec.md § Depth sorting](../art/tech-spec.md#depth-sorting)). Terraces change no rule: the sim never reads them, so gameplay stays flat and `^` stays the only raised, buildable level.
+
 **Wreckage clearing (rules):**
 - Click a wreckage tile to send the **salvage drone**. Clearing takes **6 s** of sim time (the drone's flight included), and only one wreckage clears at a time: further clicks join a queue, cleared in click order. It costs nothing, works before wave 1 and while paused, and a tile already queued or cleared can't be sent again.
 - The salvage is paid as income the moment the tile clears, and the tile is buildable (or a power node pays its bonus) from then on.

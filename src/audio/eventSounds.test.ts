@@ -98,7 +98,7 @@ describe('event sounds', () => {
         x: 1,
         y: 1,
         hits: 2,
-        damage: 0,
+        damage: 4,
         reduced: false,
       },
       // A hitscan hit (uid 0) and a second landing of the same shell make no sound.
@@ -109,7 +109,7 @@ describe('event sounds', () => {
         x: 1,
         y: 1,
         hits: 1,
-        damage: 0,
+        damage: 4,
         reduced: false,
       },
       {
@@ -139,7 +139,7 @@ describe('event sounds', () => {
         x: 1,
         y: 1,
         hits: 1,
-        damage: 0,
+        damage: 4,
         reduced: false,
       },
       {
