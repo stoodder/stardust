@@ -157,10 +157,10 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
 - [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
 - [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
-- [ ] **T320** Inbox follow-ups (from T303's hand-back).
+- [ ] **T320** Inbox follow-ups (from T303's hand-back); the Base opens on the Inbox when a memo is NEW (U-L5: needs the meta/shop/inbox smoke's Research-first expectations reworked).
 - [ ] **T321** Sprinkler T3 Soak data.
 - [ ] **T322** Peeker polish.
-- [ ] **T323** Audio follow-ups: delete `src/audio/sfx/radio.ts` (needs the owner's OK; an agent's delete was refused), restore storm headroom (−1.1 dB, only 0.2 dB margin), the `testHookTypes` `render()` comment.
+- [ ] **T323** Audio follow-ups: delete `src/audio/sfx/radio.ts` (needs the owner's OK; an agent's delete was refused), restore storm headroom (−1.1 dBFS after the limiter, ~0.2 dB short of the −3 dB target; unchanged by the speech duck), the `testHookTypes` `render()` comment.
 - [ ] **T324** Dialogue cleanup: `MapDef.briefing`, `briefingLines`, the name-tag plate.
 - [ ] **T325** A1M3 dialogue gaps: no `a1_m03_debrief` scene (the other maps have one with a `lost` branch); then add `a1_m03` and `a1_m04` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
 - [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke; switch `hud.ts` to `objectiveStatusById(state, map)` (D090).

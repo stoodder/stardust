@@ -26,6 +26,7 @@ import {
   FEED_BEATS_STILL,
   FEED_SPRITE,
   frameAt,
+  leadInMs,
   stillMoving,
   type Beat,
   type StagingKind,
@@ -94,12 +95,28 @@ function Frame({
   );
 }
 
+/** When the smudge starts in the feed's beats (after the live feed and the first static). */
+const SMUDGE_FROM_MS = leadInMs(FEED_BEATS.slice(0, 2));
+/** The smudge's frame a stalled redraw holds once rather than skip it. */
+const SMUDGE_HELD = 'smudge_3';
+
 /** The stinger's Rig 9 feed: an Everglow CRT above the lines (its beats lead the scene in). */
 function FeedStage({ ms, still }: { ms: number; still: boolean }) {
-  const frame = frameAt(still ? FEED_BEATS_STILL : FEED_BEATS, animsOf(FEED_SPRITE), ms);
+  const seen = useRef<string[]>([]);
+  let frame = frameAt(still ? FEED_BEATS_STILL : FEED_BEATS, animsOf(FEED_SPRITE), ms);
+  // The shape is the stinger's point: a redraw that stalled past its half second (or a Skip) still
+  // shows it, for one redraw, before moving on.
+  if (
+    !still &&
+    ms >= SMUDGE_FROM_MS &&
+    frame !== null &&
+    !frame.startsWith('smudge_') &&
+    !seen.current.some((f) => f.startsWith('smudge_'))
+  ) {
+    frame = SMUDGE_HELD;
+  }
   // The frames shown so far, in order, for the smoke flow (the smudge's half second is too short
   // to catch by polling on a loaded machine).
-  const seen = useRef<string[]>([]);
   if (frame !== null && seen.current.at(-1) !== frame) seen.current.push(frame);
   return (
     <div

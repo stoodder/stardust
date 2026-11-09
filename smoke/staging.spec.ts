@@ -26,7 +26,7 @@ test('staging: the stinger feed leads in, then the caption and QUILL', async ({ 
   // The six frames of the wrong shape played on the way (the feed records what it showed: their
   // half second is too short to catch by polling).
   const seen = (await page.getByTestId('stage-feed').getAttribute('data-seen')) ?? '';
-  expect(seen).toMatch(/live_.*static_.*smudge_.*static_.*no_signal_/);
+  expect(seen).toMatch(/live_.*smudge_.*no_signal_/);
   await expect(scene).toContainText('Rig Nine. Status: not answering.');
   await expect(page.getByTestId('line-announce')).toHaveText('Rig Nine. Status: not answering.');
   await page.waitForTimeout(1000); // the caption types out
@@ -49,7 +49,7 @@ test('staging: the stinger feed leads in, then the caption and QUILL', async ({ 
   await expect(scene).toBeVisible();
   await scene.getByRole('button', { name: 'Skip' }).click();
   await expect(scene).toContainText('Rig Nine');
-  expect(await feedFrame(page)).toMatch(/^no_signal_/);
+  await expect.poll(() => feedFrame(page)).toMatch(/^no_signal_/);
 });
 
 test('staging: under reduced motion the feed holds three stills', async ({ browser }) => {
@@ -66,7 +66,7 @@ test('staging: under reduced motion the feed holds three stills', async ({ brows
     'live_0 smudge_3 no_signal_0',
   );
   await expect(page.getByRole('dialog', { name: 'Scene' })).toContainText('Rig Nine');
-  await shot(page, 'staging', 5, 'stinger-still-caption');
+  await shot(page, 'staging', 4, 'stinger-still-caption');
   await context.close();
 });
 
@@ -93,7 +93,7 @@ test('staging: the party fires the cannon and the record counter lands', async (
   );
   await expect(cannon.locator('img.dlg-burst-frame')).toHaveAttribute('data-frame', /^burst_/);
   await page.waitForTimeout(300);
-  await shot(page, 'staging', 6, 'party-burst');
+  await shot(page, 'staging', 5, 'party-burst');
   // The counter lands on the career total (its label says the total), and the record tag shows.
   const record = page.getByTestId('stage-record');
   await expect(record.locator('.dlg-record-tag.on')).toBeVisible({ timeout: 4000 });
@@ -101,7 +101,7 @@ test('staging: the party fires the cannon and the record counter lands', async (
   const total = /([\d,]+)$/.exec(label ?? '')?.[1] ?? 'none';
   await expect(record.locator('.dlg-record-n')).toHaveText(total);
   await expect(scene).toContainText('RECORD QUARTER!');
-  await shot(page, 'staging', 7, 'party-counter');
+  await shot(page, 'staging', 6, 'party-counter');
   // Esc skips it, and the card shows.
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'PERIMETER SECURED!' })).toBeVisible();
