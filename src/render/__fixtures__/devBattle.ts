@@ -27,6 +27,7 @@ import { elder } from '../../content/enemies/elder.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
 import { glimmer } from '../../content/enemies/glimmer.ts';
 import { lightwing } from '../../content/enemies/lightwing.ts';
+import { mote } from '../../content/enemies/mote.ts';
 import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
 import { weft_warden } from '../../content/enemies/weft_warden.ts';
@@ -170,6 +171,8 @@ const DEV_ENTITIES = {
     weft_warden,
     lightwing,
     dev_cantor: devCantor,
+    // dev_hollow's (T402).
+    mote,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -693,6 +696,33 @@ const aelariMap = dev.defineMap({
   },
 });
 
+// dev_hollow (T402): dev_act2's two roads walked by fleeing Nibblers with Motes 2.5 s behind them
+// on each, so the hush tell, the vanish, Heavy, and Skittish show (smoke/hush.spec.ts) before A2M1
+// lands. Nothing is built: the Motes catch the runners.
+const hollowMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_hollow',
+  threatIntel: ['skittish', 'clustered'],
+  waves: dev.defineWaves([
+    {
+      groups: [
+        { enemy: 'nibbler', count: 4, route: 'a', intervalSec: 0.6, tags: ['fleeing'] },
+        { enemy: 'mote', count: 6, route: 'a', delaySec: 2.5 },
+        {
+          enemy: 'nibbler',
+          count: 3,
+          route: 'b',
+          delaySec: 1,
+          intervalSec: 0.6,
+          tags: ['fleeing'],
+        },
+        { enemy: 'mote', count: 4, route: 'b', delaySec: 3.5 },
+      ],
+    },
+  ]),
+  ...act2Builds,
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -703,6 +733,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_boss: bossMap,
     dev_act2: act2Map,
     dev_aelari: aelariMap,
+    dev_hollow: hollowMap,
   }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
