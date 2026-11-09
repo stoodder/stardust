@@ -1301,3 +1301,10 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Under-built alts** don't count toward the two required alts and may use par's towers; they and par on Story skip "every step issued". A1M5's `no_spec` is a real alt (81.0).
 - **A `?map=` battle with no save uses the map's reference profile**, so `autoplay('par')` reproduces par.
 - **Gate budget: 7 min**, printed per step by `tools/gate.ts` (over budget warns, never fails); `npm run sim` runs maps on worker threads with identical output at any job count.
+
+### D109 — 2026-11-09 — T402 the hush, Skittish and the Mote
+- **The hush tell holds both units still** (0.5 s) and either side can break it: the victim dying, leaking, burrowing or leaving releases the Hollow unit with its hush unspent; the Hollow unit dying frees the runner.
+- **Contact** is same-layer within 0.4 tiles, along the route when both walk the same one and a straight line across merging roads. **Matching is order-independent:** contacts are judged against the tick's state before any lands, each victim to its nearest free Hollow unit, ties to the lower uid.
+- **A hushed runner is neither a kill nor a leak** (no bounty, not processed, no split; it still counts toward its wave). The Hollow unit heals to its run's full HP and turns Heavy (×1.15 base speed).
+- **Skittish:** a Skitterkin killed or hushed (never a leak) within 2 tiles, straight line, any layer, gives fleeing runners 40% haste for 1.5 s; a repeat restarts it without a new event.
+- **`[fleeing-lead]`:** a fleeing group leads a hushing group on its route by 2–4 s; a fleeing group with no Hollow behind it is exempt. Heavy's minimal tint is `hollow.3` (charcoal); `acid` vanished on Act II's olive ground.
