@@ -220,7 +220,10 @@ export interface Enemy extends PoolEntity {
   blinkTicks: number;
   /** Revealed (T406): ticks it stays Revealed (detection or a Scanner Sweep, plus linger); 0: not. */
   revealedTicks: number;
-  /** Stasis (T407a) and Pinned (T408): ticks left, and the immunity after each. */
+  /**
+   * Stasis (T407a; systems/status.ts): ticks left, and the immunity that follows (set to 2× the
+   * Stasis when it lands, counting down once it's over). Pinned (T408): the same pair.
+   */
   stasisTicks: number;
   stasisImmuneTicks: number;
   pinnedTicks: number;

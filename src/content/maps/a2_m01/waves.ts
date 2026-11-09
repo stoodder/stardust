@@ -55,7 +55,9 @@ export const FLEE_LEAD = 3;
 export const OPEN = 6;
 
 /** A packed cluster's spacing (seconds): 0.32 tiles apart at a Mote's 1.6 tiles/s. */
-export const PACKED = 0.3;
+export const PACKED = 0.2;
+/** A stream's spacing (seconds): a long, loose column that splash can't take in one shell. */
+export const STREAM = 0.5;
 /**
  * A bore cluster released this long before a Spires one reaches the merge with it: the bore road
  * is a tile longer to the merge (13 vs 12 tiles; 0.6 s at a Mote's pace).
@@ -118,36 +120,40 @@ export const waves = defineWaves([
       motes(30, 'bore', OPEN + 24, PACKED),
     ],
   },
-  // W8 · mixed: Zoomers and Diggers fleeing down the Spires road, Puffwings overhead, Motes
+  // W8 · mixed: Zoomers and Diggers fleeing down the Spires road, Puffwings overhead, Motes; the
+  // yard cut opens
   {
     groups: [
-      run('zoomer', 10, 'spires', OPEN),
-      motes(16, 'spires', OPEN + FLEE_LEAD, PACKED),
+      run('zoomer', 20, 'spires', OPEN, 0.4),
+      motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
+      motes(24, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       run('puffwing', 8, 'sky', OPEN + 5),
-      motes(24, 'bore', OPEN + 10, PACKED),
-      run('digger', 4, 'spires', OPEN + 16),
-      motes(20, 'spires', OPEN + 16 + FLEE_LEAD, PACKED),
-      motes(24, 'bore', OPEN + 16 + FLEE_LEAD - BORE_HEAD, PACKED),
+      motes(10, 'cut', OPEN + 12),
+      run('digger', 4, 'spires', OPEN + 20),
+      motes(20, 'spires', OPEN + 20 + FLEE_LEAD, PACKED),
     ],
   },
-  // W9 · Motes ×40 from the bore [X], too long for one strike, with runners on the Spires road
+  // W9 · Motes ×40 from the bore [X], too long for one strike, half of them down the cut
   {
     groups: [
-      run('nibbler', 8, 'spires', OPEN),
-      motes(16, 'spires', OPEN + FLEE_LEAD, PACKED),
-      motes(40, 'bore', OPEN + 8, PACKED),
+      run('nibbler', 10, 'spires', OPEN),
+      motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
+      motes(20, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
+      motes(20, 'cut', OPEN + 12),
     ],
   },
-  // W10 · everything, both roads
+  // W10 · everything, both roads and the cut
   {
     groups: [
-      run('hauler', 2, 'spires', OPEN),
-      motes(40, 'spires', OPEN + FLEE_LEAD, PACKED),
-      motes(40, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
+      run('zoomer', 24, 'spires', OPEN, 0.4),
+      motes(30, 'spires', OPEN + FLEE_LEAD, PACKED),
+      motes(30, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       run('puffwing', 8, 'sky', OPEN + 8),
-      run('bunchling', 6, 'spires', OPEN + 20),
-      motes(40, 'spires', OPEN + 20 + FLEE_LEAD, PACKED),
-      motes(50, 'bore', OPEN + 20 + FLEE_LEAD - BORE_HEAD, PACKED),
+      motes(16, 'cut', OPEN + 12),
+      run('hauler', 2, 'spires', OPEN + 24),
+      motes(30, 'spires', OPEN + 24 + FLEE_LEAD, PACKED),
+      motes(30, 'bore', OPEN + 24 + FLEE_LEAD - BORE_HEAD, PACKED),
+      motes(16, 'cut', OPEN + 30),
     ],
   },
 ]);

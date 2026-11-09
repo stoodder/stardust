@@ -689,7 +689,7 @@ export class EnemyView implements PooledView {
 
   #stopFlash(): void {
     this.#flashFrames = 0;
-    if (this.#frozen) this.#body.setTint(STASIS_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
+    if (this.#frozen) this.#body.setTint(STASIS_TINT).setTintMode(Phaser.TintModes.SCREEN);
     else if (this.#heavy) this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
     else this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }

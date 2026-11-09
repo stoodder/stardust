@@ -1308,3 +1308,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **A hushed runner is neither a kill nor a leak** (no bounty, not processed, no split; it still counts toward its wave). The Hollow unit heals to its run's full HP and turns Heavy (×1.15 base speed).
 - **Skittish:** a Skitterkin killed or hushed (never a leak) within 2 tiles, straight line, any layer, gives fleeing runners 40% haste for 1.5 s; a repeat restarts it without a new event.
 - **`[fleeing-lead]`:** a fleeing group leads a hushing group on its route by 2–4 s; a fleeing group with no Hollow behind it is exempt. Heavy's minimal tint is `hollow.3` (charcoal); `acid` vanished on Act II's olive ground.
+
+### D110 — 2026-11-09 — T404 the Glass Witch and the blink
+- **A blinking unit holds still through its tell**, so the landing point it shows is exactly where it appears (and the tell is a window to punish). A boss phase's blink tell starts as the phase begins (after the 1.5 s phase invulnerability); a unit's own blink waits one period after spawning. The Witch's blinks land about 3, 10 and 17 s after she crosses 70%; Glass Half Empty is `bossBlinks ≤ 2`.
+- **A blink moves along the route, round corners, clamped to its end; a blink onto the end leaks that tick**, through the normal leak path (so on A2M2 it drains the rigs, D101). A leaving unit never blinks; Stasis interrupts non-bosses only (`isInterrupted`, T407a).
+- **`bossHpPct` is a share (0–1)**: validation now refuses whole-number percents, which would have fired a cue at spawn.

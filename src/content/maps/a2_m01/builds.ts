@@ -27,16 +27,17 @@ const ROW_W: GridPos = [4, 7];
 const MERGE_SW: GridPos = [7, 7];
 /** The rig yard, inside the merged road's bend. */
 const YARD: GridPos = [9, 9];
-/** Beside the lift road's last stretch. */
+/** Between the lift road and the yard cut. */
 const LIFT: GridPos = [12, 9];
-/** South of the bore road's drop. */
-const BORE_S: GridPos = [13, 7];
+/** East of the yard cut. */
+const CUT_E: GridPos = [14, 8];
 /** The crew-log rigs (wreckage over pads). */
 const LOG_BORE: GridPos = [13, 5];
 const LOG_YARD: GridPos = [10, 10];
 /** Strike points: the merge, and the bore road's drop. */
 const MERGE: GridPos = [8, 6];
 const BORE_DROP: GridPos = [12, 5];
+const CUT: GridPos = [13, 8];
 
 function parSteps(): BuildStep[] {
   return [
@@ -52,10 +53,14 @@ function parSteps(): BuildStep[] {
     { wave: 5, upgrade: MID_E },
     { wave: 5, upgrade: LEDGE_W },
     { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
-    { wave: 8, upgrade: MID_E },
-    { wave: 9, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 12 } },
+    { wave: 8, build: 'zapcoil', tile: LIFT },
+    { wave: 8, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
+    { wave: 9, upgrade: LIFT },
+    { wave: 9, ability: 1, target: CUT, when: { afterSec: OPEN + 19 } },
     { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
-    { wave: 10, ability: 1, target: MERGE, when: { afterSec: OPEN + 24 } },
+    { wave: 10, upgrade: LIFT },
+    { wave: 10, upgrade: NODE },
+    { wave: 10, ability: 1, target: CUT, when: { afterSec: OPEN + 37 } },
   ];
 }
 
@@ -141,8 +146,6 @@ export const builds = defineBuilds({
       ],
     },
   },
-  // Unused pads, named for the step tables: the west bend, the west row, the yard, the lift, the
-  // bore's south pad, and the east ledge.
 });
 
-export const PADS = { BEND_W, ROW_W, YARD, LIFT, BORE_S, LEDGE_E } as const;
+export const PADS = { BEND_W, ROW_W, YARD, LIFT, CUT_E, LEDGE_E } as const;

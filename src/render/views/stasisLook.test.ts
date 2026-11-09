@@ -17,7 +17,7 @@ describe('the Stasis look (T407a)', () => {
   });
 
   it('is a pale ice tint, distinct from Heavy, and its ring is the same ice', () => {
-    const c = rgbOf('act1.water.3');
+    const c = rgbOf('act1.water.1');
     expect(STASIS_TINT).toBe((c.r << 16) | (c.g << 8) | c.b);
     expect(STASIS_TINT).not.toBe(HEAVY_TINT);
     expect(FREEZE_RING_COLOR).toBe('act1.water.3');

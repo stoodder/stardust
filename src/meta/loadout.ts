@@ -412,12 +412,12 @@ export function specsOwned(save: SaveData, names: SpecNames = LIVE_SPEC_NAMES): 
 
 /**
  * The map's counters a tower can answer (mapCounters), each by its easiest route: a plain answer
- * first, then the lowest tier, then a spec. Spec answers count only with `specsOwned` (the save's
+ * first, then the lowest tier, then a spec. Spec answers count only with `specsUnlocked` (the save's
  * Engineering unlock for this tower) and only for a spec that exists (`specName` isn't null; T319).
  */
 export function towerAnswers(
   tower: TowerId,
-  specsOwned: boolean,
+  specsUnlocked: boolean,
   map: LoadoutMap,
   specName: SpecNames = LIVE_SPEC_NAMES,
 ): TowerAnswerNote[] {
@@ -428,7 +428,7 @@ export function towerAnswers(
     for (const entry of COUNTER_ANSWERS[counter].towers) {
       if (entry.tower !== tower) continue;
       const name = entry.spec === undefined ? null : specName(tower, entry.spec);
-      if (entry.spec !== undefined && (!specsOwned || name === null)) continue;
+      if (entry.spec !== undefined && (!specsUnlocked || name === null)) continue;
       const reached: ReachedTower =
         entry.spec === undefined
           ? { tower, tier: entry.minTier ?? 1, spec: null }

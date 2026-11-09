@@ -31,11 +31,14 @@ export function burrowStep(e: Enemy, burrow: CompiledBurrow): void {
     }
   } else if (e.abilityTicks <= 0) {
     e.abilityTicks = surfaceTicks(burrow); // first tick alive
-  } else if (--e.abilityTicks <= burrow.tellTicks && isInterrupted(e)) {
-    e.abilityTicks = surfaceTicks(burrow); // the dig is cancelled; its cooldown restarts
-  } else if (e.abilityTicks <= 0) {
-    e.burrowed = true;
-    e.abilityTicks = burrow.durationTicks;
+  } else {
+    const left = --e.abilityTicks;
+    if (left <= burrow.tellTicks && isInterrupted(e)) {
+      e.abilityTicks = surfaceTicks(burrow); // the dig is cancelled; its cooldown restarts
+    } else if (left <= 0) {
+      e.burrowed = true;
+      e.abilityTicks = burrow.durationTicks;
+    }
   }
   if (e.burrowed) e.paceMul *= burrow.speedMul;
 }

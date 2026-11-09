@@ -168,7 +168,7 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base. Each later tier lists only what changes. DPS figures ignore armor and shields.
 
-**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), and the Rivet and Thumper specializations are there too. Their entries below give each tier's job and target ranges, not the numbers. **Specs not built yet** (the Sprinkler's, Skyhook's, and Zapcoil's, deferred to M4 by [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut): they need homing, charge, Soaked, and Stasis) and **every other tower** keep their first-pass numbers here, with a T4 cost on the default curve unless stated. Engineering lists those towers' spec unlocks as "Arrives in a later shipment" ([progression.md §7.1](progression.md#71-engineering-specializations)).
+**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), and the Rivet, Thumper, and Sprinkler specializations are there too (the Sprinkler's since T407a). Their entries below give each tier's job and target ranges, not the numbers. **Specs not built yet** (Skyhook's and Zapcoil's, deferred to M4 by [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut) for homing and charge attacks; T407b) and **every other tower** keep their first-pass numbers here, with a T4 cost on the default curve unless stated. Engineering lists those towers' spec unlocks as "Arrives in a later shipment" ([progression.md §7.1](progression.md#71-engineering-specializations)).
 
 **Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
 - **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.
@@ -176,6 +176,7 @@ Format: **T1** is the base. Each later tier lists only what changes. DPS figures
 - **Rivet Storm's spin-up** restarts on specializing, even mid-fight, then runs from acquiring a target after having none (section 5). Its spin-up and whole-tick fire period are in `rivet.ts`.
 - **Cluster Thumper's bomblets.** After the shell's own splash, its bomblets fly a short way from the impact point. Each lands at a point drawn uniformly within the scatter radius (seeded, so replays match) as its own small splash. Bomblets hit the shell's layers, apply the shell's effects, take the tower's damage bonuses (links included) fixed at fire time, and still land if the tower is sold. They don't scatter again. Count, damage, radii, and flight time: `thumper.ts`.
 - **Bunker Buster's Corroded** is applied at its max stacks, so each shell refreshes the stacks rather than adding more.
+- **Flash Freeze's burst** (`attack.burst` on a pulse: a period and effects) runs on its own timer beside the pulse's cooldown, over the same victims (the pulse's hit lands first when both go off on one tick), deals no damage, and takes no rate bonus; it emits `PulseBurst` (the frost ring). The timer starts ready when the tower specializes.
 
 ### Everglow towers
 
@@ -200,9 +201,9 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 #### Frostline Sprinkler (`sprinkler`), "AquaGuard irrigation head, *creatively* repurposed"
 - **T1:** a `pulse` with no target: about once a second it hits every ground enemy within about 2 tiles for a token Kinetic hit plus a short **Chilled** (about 25%). G only.
 - **T2:** a stronger chill and a wider radius.
-- **T3:** a stronger chill again (about 35%). By design it also applies **Soaked** for 3 s (more Energy damage, and Kinetic and Explosive bite harder into shields; [enemies.md §2.4](enemies.md#24-status-effects)); that Soak isn't in its data yet (T321, M4), so today Soaked's only source is the Conductive link (section 6).
-- **A: Flash Freeze (270; M4):** every 8 s, puts all enemies in radius into **Stasis** for 1.0 s (bosses: Chilled 50% instead).
-- **B: Cloudburst (270; M4):** radius 2.8 and **now also hits air**; flyers are Chilled and Soaked.
+- **T3:** a stronger chill again (about 35%), and it applies **Soaked** for 3 s (more Energy damage, and Kinetic and Explosive bite harder into shields; [enemies.md §2.4](enemies.md#24-status-effects)). Its other Soak source is the Conductive link (section 6), from tier 1.
+- **A: Flash Freeze:** keeps T3's pulse and adds a **burst** on its own timer: about every 8 s it puts every enemy the pulse reaches into **Stasis** for about 1 s (bosses: Chilled 50% instead). Like the pulse, the burst waits for something in range, so the first one lands on the first enemy. It's the Sprinkler's jam answer (an interrupter; enemies.md §3.1).
+- **B: Cloudburst:** a wider radius (about 2.8) that **also hits air**, so flyers are Chilled and Soaked like walkers. It's the Sprinkler's air answer.
 - **Links:** Sitting Ducks (Thumper), Conductive (Zapcoil), Splash Zone (Burrow).
 
 #### Skyhook Flak Battery (`skyhook`), "Everglow SK-2: Keep Your Skies Corporate"
