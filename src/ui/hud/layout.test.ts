@@ -126,9 +126,11 @@ describe('wrapParts', () => {
 
   it('sizes the panel by its rows', () => {
     // Header 18, stats 8, Upgrade, Sell, Target 16 each; 4 gaps of 2; padding 4 + 4.
-    expect(towerPanelHeight({ bonuses: [], deltaLines: [], specs: null })).toBe(
+    expect(towerPanelHeight({ statsLines: ['s'], bonuses: [], deltaLines: [], specs: null })).toBe(
       18 + 8 + 48 + 8 + 8,
     );
-    expect(towerPanelHeight({ bonuses: ['a'], deltaLines: ['b'], specs: null })).toBe(110);
+    expect(
+      towerPanelHeight({ statsLines: ['s'], bonuses: ['a'], deltaLines: ['b'], specs: null }),
+    ).toBe(110);
   });
 });

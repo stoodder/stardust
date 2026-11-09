@@ -27,9 +27,11 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   const lockIn = page.getByRole('button', { name: 'Lock in' });
   await expect(lockIn).toBeFocused();
-  for (const t of ['Rivet', 'Thumper', 'Sprinkler']) {
-    await expect(towerCard(page, t)).toHaveAttribute('aria-pressed', 'true');
-  }
+  await expect(page.locator('.sd-lo-tower[aria-pressed="true"]')).toHaveText([
+    /Rivet/i,
+    /Thumper/i,
+    /Sprinkler/i,
+  ]);
   // Costs include the save's cost modifiers: the top-rank Rivet tune-up takes 5% off 100.
   await expect(towerCard(page, 'Rivet')).toHaveAccessibleName(/95 credits/);
   await expect(page.getByRole('radio', { name: /Orbital Strike/ })).toHaveAttribute(

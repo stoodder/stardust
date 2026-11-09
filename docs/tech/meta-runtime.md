@@ -2,7 +2,7 @@
 
 How meta progression and saves work in code: `src/meta/`, what happens at run end, the story transactions, and the save system. The module layout is in [architecture.md](architecture.md); the rules (currencies, shop, R&D, medals, pacing) are owned by [design/progression.md](../design/progression.md). Story state that lives in the save is described in [story-runtime.md](story-runtime.md).
 
-**Built so far (M2).** The save core (T203a): `KeyValueStore`, `SaveData` v1, migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), under [Meta](#meta-srcmeta). Run end and rewards (T204c), with its story flag step (T206b), under [Run end](#run-end). Purchases at the base (T204d), under [Purchases](#purchases). The story transactions are not built yet ([tasks.md](../../tasks.md)).
+**Built so far (M2).** The save core (T203a): `KeyValueStore`, `SaveData` v1, migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), and the loadout's rules and presets (T201), under [Meta](#meta-srcmeta). Run end and rewards (T204c), with its story flag step (T206b), under [Run end](#run-end). Purchases at the base (T204d), under [Purchases](#purchases). The story transactions are not built yet ([tasks.md](../../tasks.md)).
 
 ---
 
@@ -16,9 +16,13 @@ Meta turns a save into the inputs of a run:
   - **Order:** upgrades in catalog order, then protocols in slot order, then the difficulty's modifiers (`DIFFICULTY_MODIFIERS`; Story's are in [design/progression.md § 9](../design/progression.md#9-difficulty-settings), all sourced `difficulty:story`).
   - **Refused, not ignored:** an unknown upgrade or protocol, a rank outside the item's ranks, a protocol equipped twice, more protocols than slots (`protocolSlots`: 1 plus R&D's slots), or a Specialist with no pick throws.
   - `saveModifiers(save)` is the game's call (`app/battleSetup.ts`, which leaves out what the sim still refuses, so a save ahead of the sim plays). A save equips no protocols until the picker (M3), so owning one grants nothing yet.
-- **Pools** (`meta/pools.ts`): `towerPool` and `abilityPool` (owned minus revoked), `protocolPool` (owned), and `protocolSlotCount` (0 before the shop opens, then 1 plus R&D's). Story flags reach runs as `scriptFlags` (`app/battleSetup.ts`, [story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)). Still to come: the map's `lockedAbilities` whose condition holds leave the ability pool, and the companion (or the finale's pick list) joins the pools.
+- **Pools** (`meta/pools.ts`): `towerPool` and `abilityPool` (owned minus revoked; the loadout screen's offer), `protocolPool` (owned), and `protocolSlotCount` (0 before the shop opens, then 1 plus R&D's). Story flags reach runs as `scriptFlags` (`app/battleSetup.ts`, [story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)). Still to come: the map's `lockedAbilities` whose condition holds leave the ability pool, and the companion (or the finale's pick list) joins the pools.
 - **Availability.** Every shop and R&D item has `availableAfter: MapId | null` in `content/upgrades/` ([design/progression.md](../design/progression.md)). An item is stocked (buyable) once that map is completed; until then its pane lists it greyed out as "Arrives after <map>" ([Purchases](#purchases)). One Engineering purchase unlocks **both** tier-4 specializations of a tower, so the save stores tower ids, not spec ids.
-- **The loadout screen** is skipped when the player owns at most 4 tower types and has no protocol or ability choice to make ([design/core-loop.md §1](../design/core-loop.md#1-session-loop-between-maps)).
+- **The loadout** (`meta/loadout.ts`, T201; the screen is [design/core-loop.md §1](../design/core-loop.md#1-session-loop-between-maps)), pure functions over a `SaveData`:
+  - **The skip rule.** `loadoutPools(save)` is the tower and ability pools. `hasLoadoutChoice` is true with more than `MAX_LOADOUT` (4) tower types or more than one Technician ability. Protocols join the rule with their picker (M3), and the finale's companion pick with the finale (M5). `showsLoadoutScreen(save, devUnlocks)` is that choice plus the `loadout` system being open ([Progress and gating](#progress-and-gating)). Otherwise the map starts with everything owned.
+  - **A pick** is 1 to 4 distinct pool towers, in build-slot order (the order the player picked them), plus the slot-1 ability (null only while the save owns none). `pickProblems` lists what's wrong with one. `toggleTower` drops a picked tower, so the rest move up a slot, or appends one while there's room. `fitPick` cuts a stale pick down to the pools.
+  - **Presets** (`SaveData.loadouts`): `withPreset(save, map, pick)` stores the pick as that map's preset and as `last`. `initialPick` starts the screen from the map's preset, else `last`, else the default (`app/battleSetup.ts` `defaultPick`: every owned tower up to four, par towers first, and the par build's ability if owned), each fitted to the pools. `resolveLoadout` gives the battle its towers and ability. That's the map's preset while the save has a choice and the preset still fits the pools; otherwise it's the default. The screen writes the preset before the battle starts, so a retry keeps the loadout.
+  - **Counters and links.** `mapCounters(map)` is the categories the map's threat intel calls for (`TRAIT_COUNTER`) plus its required ones. `towerAnswers(tower, specsOwned, map)` says how a tower answers each one, by its easiest route: from tier 1, from a tier (Rivet T3), or as a tier-4 spec, which needs the save's Engineering unlock. It uses `COUNTER_ANSWERS` through `content/counterAnswers.ts`, so the screen and the harness agree. `uncoveredCounters(pick, save, map)` lists the required counters that no picked tower, the picked ability, or the companion's ability answers. `linksAmong(towers, links)` lists the links a set of towers can form.
 
 ## Purchases
 
@@ -107,12 +111,17 @@ interface SaveData {
   };
   stats: { pestsProcessed: number; runs: number };
   settings: { difficulty: 'standard' | 'story' };  // per campaign, changeable between maps (progression.md § 9)
+  loadouts: {                           // loadout presets (T201, meta/loadout.ts)
+    last: LoadoutPreset | null;         // the last one locked in on any map
+    byMap: Partial<Record<MapId, LoadoutPreset>>;  // the last one locked in on each map
+  };
 }
+interface LoadoutPreset { towers: TowerId[]; ability: AbilityId | null }  // 1–4 distinct towers, in build-slot order
 ```
 
 - **The profile** becomes `{ name, pronouns: 'she' | 'he' | 'they', callsign: 'sprout' | 'thorn' | 'waykeeper', arrivalReason: 'bonus' | 'family' | 'lettuce' }` with character creation (name rules in [design/core-loop.md §6.1](../design/core-loop.md#61-character-creation-and-callsigns)). That is a schema bump with a migration.
 - **A new save** (`createNewSave()`) owns Rivet and Thumper (issued for A1M1) and Orbital Strike. Orbital Strike is the welcome memo's gift; until the memo exists, a new save grants it directly (D031). Everything else is empty or 0.
-- **v1 is still open until M2 ships** (D032): M2's fields go straight into v1 with no migration (difficulty and owned protocols are in; the loadout presets come with T201). After M2, fields the design persists that v1 doesn't hold (veteran records, equipped Field Protocols) arrive with their features, each as a schema bump.
+- **v1 is still open until M2 ships** (D032): M2's fields go straight into v1 with no migration (difficulty, owned protocols, and the loadout presets are in). After M2, fields the design persists that v1 doesn't hold (veteran records, equipped Field Protocols) arrive with their features, each as a schema bump.
 
 ### Validation
 
@@ -120,12 +129,12 @@ Saves are untrusted input: a pasted code or a hand-edited localStorage value. `v
 - **Shape:** every object is a plain object with exactly the schema's keys (missing and unknown keys both fail); `profile` is `null`.
 - **Ids:** towers, abilities, maps, upgrades, protocols, and story flags must exist in the live registries (`LIVE_KNOWN_IDS`; upgrades and protocols come from `content/upgrades/`), and the difficulty is one of `DIFFICULTIES`. Ids with no registry yet (scenes, memos, codex entries, grants, medals, string flag values) must be lowercase snake_case starting with a letter, which also rules out `__proto__`. Lists hold no duplicates.
 - **Numbers:** non-negative safe integers, with bounds no real save approaches (currencies ≤ 10⁹, meter ≤ 10⁶, upgrade ranks 1–10). Flag values are booleans, integers, or ids.
-- **Cross-field rules:** `specs`, `revokedTowers`, and `jailbroken` are subsets of `towers`; `revokedAbilities` of `abilities`; a map has at most 3 medals, and any medal means the map is `completed`.
+- **Cross-field rules:** `specs`, `revokedTowers`, and `jailbroken` are subsets of `towers`; `revokedAbilities` of `abilities`; a map has at most 3 medals, and any medal means the map is `completed`. A loadout preset holds 1–4 distinct owned towers and an owned ability (or null), keyed by a known map. A revoked one is allowed, because a preset can predate the revocation, and `meta/loadout.ts` drops it when it reads the preset.
 
 ### Versioning and migrations
 
 - `SAVE_VERSION` is an integer (now **1**). `src/meta/migrations.ts` exports `migrations: Record<number, (old: unknown) => unknown>`, where `migrations[n]` upgrades the `data` of version `n` to `n + 1`. A migration reshapes what it recognizes and passes anything else through for validation to reject.
-- Loading parses the JSON, applies migrations in sequence to the current version, then validates. A version above `SAVE_VERSION` is `too_new` (a newer build wrote it). **Version 0** is the pre-release draft of the format (v1 without `stats`, `settings`, and `unlocks.protocols`); no build wrote it, and it exists so the framework is tested from the start.
+- Loading parses the JSON, applies migrations in sequence to the current version, then validates. A version above `SAVE_VERSION` is `too_new` (a newer build wrote it). **Version 0** is the pre-release draft of the format (v1 without `stats`, `settings`, `loadouts`, and `unlocks.protocols`); no build wrote it, and it exists so the framework is tested from the start.
 - Migrations are never deleted or edited after release. Each schema bump adds a fixture `src/meta/__fixtures__/save.v<n>.json`, and `migrations.test.ts` checks there is one fixture per version, then migrates every fixture to the current version and validates it.
 
 ### Loading and writing slots

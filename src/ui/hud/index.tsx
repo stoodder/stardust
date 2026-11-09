@@ -454,7 +454,11 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
         <span class="hud-name">{t.specName ?? t.label}</span>
         <Tier tier={t.tier} max={t.maxTier} />
       </header>
-      <p class="hud-stats">{t.stats}</p>
+      {t.statsLines.map((l, i) => (
+        <p key={`s${i}`} class="hud-stats">
+          {l}
+        </p>
+      ))}
       {t.bonuses.map((b, i) => (
         <p key={`b${i}`} class="hud-bonus-line">
           {b}

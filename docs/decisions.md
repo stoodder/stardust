@@ -626,3 +626,10 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
   
   A purchase plays the upgrade (or unlock) sound and shows a thank-you; being short plays the reject sound and explains why. Shelves sort by arrival, then entry price, then name. A pane opened by `devUnlocks` is fully stocked.
 - **Body-font bug found in review (T219):** "5" renders like "S" ("1.5" reads "1.S") and "fi" looks like "A". This is a readability bug in the body font at small sizes.
+
+### D055 — 2026-11-09 — T201 loadout screen
+- **Flow:** Shift board Start → the Loadout screen (when offered) → briefing (now with **Change loadout**) → battle. Lock in saves the pick, and Retry keeps it.
+- **Skip rule:** the screen shows only when the loadout system is open (A1M3 won, or `devUnlocks`) **and** there's a choice to make: more than 4 tower types or more than 1 ability. The protocol and companion pickers wait for M3 and M5.
+- **Presets:** `SaveData.loadouts = { last, byMap }`. The screen starts from this map's preset, else the last one, else a default pick.
+- The screen shows each tower's role, cost, which towers answer the map's threats, the links the chosen four can form, and a gentle note (never a scold) if a required counter is missing.
+- **Follow-ups:** the HUD build slots must use `costFor` (relayed to T202d), and Results doesn't offer Change loadout yet (T220).

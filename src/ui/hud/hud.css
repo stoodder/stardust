@@ -434,6 +434,8 @@ section.chamfer,
   position: absolute;
   box-sizing: border-box;
   display: grid;
+  /* One column the panel's width: a long line never widens it (each row's text is pre-wrapped). */
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 2px;
   padding: 4px;
@@ -853,7 +855,7 @@ section.chamfer,
   align-content: start;
   gap: 2px;
   width: 100%;
-  padding: 3px 4px;
+  padding: 3px;
   text-align: left;
 }
 

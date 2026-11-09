@@ -100,6 +100,8 @@ export interface SelectedTowerView {
   readonly priority: TargetPriority | null;
   /** The current tier's stats after every bonus (`towerStats`), e.g. "8 dmg · 2.22/s · range 3". */
   readonly stats: string;
+  /** `stats` wrapped to the panel's width (a long bonus-laden line takes two). */
+  readonly statsLines: readonly string[];
   /**
    * Where the bonuses come from, one per line: "+10% rate (Crossfire)", "+25% range (high
    * ground)". Empty with none.

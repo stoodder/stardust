@@ -26,7 +26,8 @@ export interface Rect {
  */
 export const HUD_CORNERS: readonly Rect[] = [
   { x: 4, y: 4, w: 100, h: 64 },
-  { x: UI_W - 4 - 150, y: 4, w: 150, h: 72 },
+  // The wave panel grows a second preview row when a wave brings several kinds.
+  { x: UI_W - 4 - 150, y: 4, w: 150, h: 92 },
   { x: 4, y: UI_H - 4 - 38, w: 78, h: 38 },
   { x: UI_W - 4 - 129, y: UI_H - 4 - 34, w: 129, h: 34 },
 ];
@@ -134,7 +135,7 @@ export const BUTTON_H = 16;
 export const CARD_PAD_Y = 3;
 export const CARD_LINE_GAP = 2;
 /** A spec card's horizontal padding. */
-const CARD_PAD_X = 4;
+const CARD_PAD_X = 3;
 /** Silkscreen's advance at 8 px in capitals, rounded up (it renders up to 5.6 px): wrapping budgets. */
 export const CHAR_PX = 6;
 /** Characters on one line of the panel, and of a spec card. */
@@ -177,14 +178,15 @@ export function specCardHeight(descLines: number): number {
 
 /**
  * The tower panel's height for a view (its rows in hud/index.tsx's TowerPanel order): the header,
- * the stats line, the bonus lines, the "Next:" lines, then either the tier-4 choice (a heading,
+ * the stats lines, the bonus lines, the "Next:" lines, then either the tier-4 choice (a heading,
  * two cards, and the lock note) or the Upgrade button, and the Sell and Target buttons.
  */
 export function towerPanelHeight(
-  t: Pick<SelectedTowerView, 'bonuses' | 'deltaLines' | 'specs'>,
+  t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'>,
 ): number {
-  const rows: number[] = [PANEL_HEAD_H, LINE_H];
-  for (let i = 0; i < t.bonuses.length + t.deltaLines.length; i++) rows.push(LINE_H);
+  const rows: number[] = [PANEL_HEAD_H];
+  const lines = t.statsLines.length + t.bonuses.length + t.deltaLines.length;
+  for (let i = 0; i < lines; i++) rows.push(LINE_H);
   if (t.specs === null) rows.push(BUTTON_H);
   else {
     rows.push(LINE_H);

@@ -111,7 +111,7 @@ describe('the tower panel (T202d)', () => {
     expect(specLockText(true)).toBe('Unlock in Engineering');
     // The panel grows with its rows: the choice is taller than one Upgrade button.
     expect(towerPanelHeight(v)).toBeGreaterThan(
-      towerPanelHeight({ bonuses: [], deltaLines: [], specs: null }),
+      towerPanelHeight({ statsLines: ['s'], bonuses: [], deltaLines: [], specs: null }),
     );
   });
 

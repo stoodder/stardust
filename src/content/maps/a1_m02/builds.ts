@@ -11,7 +11,9 @@ const PUMP: GridPos = [10, 6];
 const BESIDE_PUMP: GridPos = [10, 7];
 /** The bottom of the east switchback. */
 const BOTTOM: GridPos = [12, 7];
-/** The west switchback, where a Hauler pair walks into the strike. */
+/** Inside the west switchback: a Thumper here covers both terraces' lips and the turn. */
+const WEST: GridPos = [3, 4];
+/** The west switchback, where a wave's first Hauler walks into the strike. */
 const WEST_TURN: GridPos = [2, 3];
 const STRIKE_WHEN = { afterSec: 17.5 } as const;
 const SUPPRESS: GridPos = [11, 7];
@@ -20,18 +22,17 @@ function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'rivet', tile: IRRIGATION },
     { wave: 1, build: 'thumper', tile: BESIDE_PUMP },
-    { wave: 2, upgrade: IRRIGATION },
-    { wave: 2, targeting: IRRIGATION, mode: 'strong' },
-    { wave: 3, build: 'sprinkler', tile: PUMP },
-    { wave: 4, upgrade: IRRIGATION },
-    { wave: 5, build: 'thumper', tile: BOTTOM },
-    { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
-    { wave: 6, upgrade: BESIDE_PUMP },
-    { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } },
+    { wave: 2, build: 'thumper', tile: WEST },
+    { wave: 2, build: 'sprinkler', tile: PUMP }, // Sitting Ducks with the Thumper beside it
+    { wave: 3, upgrade: IRRIGATION },
+    { wave: 3, targeting: IRRIGATION, mode: 'strong' }, // W3 teaches Strong on the Chonks
+    { wave: 4, build: 'thumper', tile: BOTTOM },
+    { wave: 5, upgrade: BESIDE_PUMP },
+    { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN }, // the teach Hauler
+    { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } }, // the Zoomer rush
     { wave: 7, upgrade: PUMP },
-    { wave: 7, upgrade: BESIDE_PUMP },
     { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
-    { wave: 8, upgrade: BOTTOM },
+    { wave: 8, upgrade: BESIDE_PUMP },
     { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
   ];
 }

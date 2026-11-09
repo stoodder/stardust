@@ -447,6 +447,7 @@ export function selectedView(
   // A specialized tower (tier 4) reads its spec's stats.
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
   const upgradeDelta = deltaText(stats.next);
+  const statLine = statLineText(stats);
   const tile = map.tiles[t.row * map.cols + t.col];
   const bonusList = bonusTexts(
     tile,
@@ -468,7 +469,8 @@ export function selectedView(
     fullRefund: sell.full,
     refundPct: Math.round(state.economy.sellRefundPct * 100),
     priority: t.priority,
-    stats: statLineText(stats),
+    stats: statLine,
+    statsLines: wrapParts(statLine.split(' · '), PANEL_CHARS),
     bonuses: bonusList.flatMap((b) => wrapParts([b], PANEL_CHARS)),
     upgradeDelta,
     deltaLines: upgradeDelta === null ? [] : wrapParts(nextParts(upgradeDelta), PANEL_CHARS),
