@@ -56,7 +56,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [x] **T130** M1 review round 2 fixes (D028): UI and balance fixers.
 
 ## M2 — Loadout, Upgrades & Meta Progression
-**Status: next.** Carried over from M1:
+**Status: current (started 2026-11-09; scope cut and plan in progress).** Carried over from M1:
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
@@ -77,7 +77,7 @@ M2 scope:
 - [ ] **T207** Companion slot + Suppressing Fire (ability slot 2 on key E); allies pool with the Bricks ally (never targets `quiet_wave`, `youngling`, or `fleeing` units)
 - [ ] **T206** Hold Fire command, `spareRunners` filter (per tower + global Alt+H; new towers inherit the global toggle), and story-flag tracking (feeds choices)
 - [ ] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches (air reach is proven by the harness). Docs gaps from M0 review round 3: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; settle `youngling` as a wave modifier vs a `WaveTag`. Replace `COUNTER_ANSWERS` (tower lists) with `{tower, minTier?, spec?}` entries.
-- [ ] **T205** Procedural audio: SFX first, then music layers
+- [~] **T205** Procedural audio: SFX first, then music layers
 
 ## M3 — Star Map & Act I
 - [ ] **T301** Star map / campaign select screen
