@@ -103,7 +103,11 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
   }
   if (cfg.modifiers.length > 0) errors.push('modifiers are not applied until T204');
   if (cfg.difficulty !== 'standard') errors.push('only Standard difficulty is supported in M1');
-  if (map !== undefined) errors.push(...unsupportedScript(map));
+  if (map !== undefined) {
+    // The validator's [wave] rule refuses it too; a run with no waves would win on tick 0.
+    if (map.waves.length === 0) errors.push(`map '${cfg.mapId}' has no waves`);
+    errors.push(...unsupportedScript(map));
+  }
   if (errors.length > 0) throw new RangeError(`invalid SimConfig:\n- ${errors.join('\n- ')}`);
   // map is defined: a missing map pushed an error, and errors throw above.
   return map!;

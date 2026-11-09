@@ -1,7 +1,9 @@
 // System 1: applyCommands. Validates and applies queued commands FIFO; each rejection emits
 // CommandRejected. Every applied command (accepted or not) is logged with the current tick, so
 // the log plus the seed replays the run. Also run alone by applyPending() while paused.
+import { MAX_TIER_BEFORE_SPEC, TOWER_DEPLOY_SEC } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
+import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
@@ -12,6 +14,14 @@ import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { applyAbilityCommand } from './abilities.ts';
 import { callWave } from './waves.ts';
+
+/**
+ * The deploy delay (core-loop.md § 2.5) as a starting cooldown. The towers system runs later on
+ * the build tick and decrements before it checks, so the extra tick makes the first possible shot
+ * land exactly DEPLOY_TICKS after the build tick (the same spacing as a cooldown after a shot).
+ * A build applied while paused runs at the next tick's start, so it's the same.
+ */
+export const DEPLOY_TICKS = secToTicks(TOWER_DEPLOY_SEC);
 
 export function applyCommands(state: SimState, ctx: TickContext): void {
   const queue = state.pending;
@@ -85,6 +95,7 @@ function build(
   tower.priority = tier.defaultPriority;
   tower.invested = tier.cost;
   tower.builtTick = state.tick;
+  tower.cooldownTicks = DEPLOY_TICKS + 1;
   state.towerAtTile[idx] = tower.slot;
   emit(state, {
     type: 'TowerBuilt',
@@ -100,8 +111,8 @@ function upgrade(state: SimState, towerUid: number): RejectReason | null {
   const tower = poolFind(state.towers, towerUid);
   if (tower === null || tower.def === null) return 'noSuchTower';
   // Tier 4 is a specialization (`specialize`, T202), not an upgrade.
-  if (tower.tier >= 3) return 'maxTier';
-  const next = tower.def.tiers[tower.tier]!; // tier is 1 or 2 here, so the index is 1 or 2
+  if (tower.tier >= MAX_TIER_BEFORE_SPEC) return 'maxTier';
+  const next = tower.def.tiers[tower.tier]!; // tier < MAX_TIER_BEFORE_SPEC = tiers.length
   if (state.credits < next.cost) return 'cantAfford';
   state.credits -= next.cost;
   state.stats.creditsSpent += next.cost;

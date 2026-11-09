@@ -16,7 +16,7 @@ import type {
   WaveTag,
 } from './types.ts';
 import { DEFAULT_VALIDATION_RULES, validate, type ValidationRules } from './validate.ts';
-import { threatOf } from './validateMap.ts';
+import { threatOf } from './validateThreats.ts';
 
 const loose = mapDefinersFor<IdSpace>();
 const BASE: RawContent<IdSpace> = FIXTURE;
@@ -167,7 +167,10 @@ describe('validate: maps', () => {
     rejects(withMap({ salvage: { '4,3': 40, '1,1': 40 } }), 'wreckage');
   });
 
-  it('[wave] empty waves, bad counts, and a wave-1 countdown', () => {
+  it('[wave] no waves, empty waves, bad counts, and a wave-1 countdown', () => {
+    expect(() => compileContent(withMap({ waves: [] }))).toThrow(
+      /\[wave\] maps\.fx_map\.waves: a map needs at least one wave/,
+    );
     rejects(withMap({ waves: [...fxMap.waves, { groups: [] }] }), 'wave');
     rejects(
       withMap({ waves: [{ countdownSec: 5, groups: fxMap.waves[0]!.groups }, fxMap.waves[1]!] }),
@@ -287,6 +290,12 @@ describe('validate: maps', () => {
       }),
       'script',
     );
+    for (const grantCredits of [0, -5, 2.5]) {
+      rejects(
+        withEvent({ id: 'e', on: { wave: 1, phase: 'start' }, actions: [{ grantCredits }] }),
+        'script',
+      );
+    }
   });
 
   it('[flag-variants] a flag a script reads needs a variant entry', () => {

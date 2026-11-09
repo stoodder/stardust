@@ -107,6 +107,8 @@ function fireHitscan(
     y: t.y,
     targetX: target.x,
     targetY: target.y,
+    sprite: null,
+    flightTicks: 0,
   });
   emit(state, {
     type: 'ProjectileHit',
@@ -174,6 +176,8 @@ function fireShell(
     y: t.y,
     targetX: ax,
     targetY: ay,
+    sprite: attack.projectile,
+    flightTicks: attack.flightTicks,
   });
 }
 
@@ -206,6 +210,8 @@ function pulse(
     y: t.y,
     targetX: t.x,
     targetY: t.y,
+    sprite: null,
+    flightTicks: 0,
   });
   emit(state, {
     type: 'ProjectileHit',

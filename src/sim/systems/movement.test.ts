@@ -112,7 +112,7 @@ describe('movement', () => {
     expect(state.events).toMatchObject([{ type: 'EnemyLeaked', leak: 0 }]);
   });
 
-  it('integrity never goes below 0, and integrityLost counts only what was there', () => {
+  it('integrity never goes below 0; integrityLost and EnemyLeaked.leak count only what was there', () => {
     const { state } = setup();
     state.integrity = 1;
     spawn(state, walker, road, { dist: 8.99 });
@@ -120,7 +120,11 @@ describe('movement', () => {
     movement(state);
     expect(state.integrity).toBe(0);
     expect(state.stats.integrityLost).toBe(1);
-    expect(state.events.filter((ev) => ev.type === 'EnemyLeaked')).toHaveLength(2);
+    // EnemyLeaked.leak is what the core actually lost: the second leak finds nothing left.
+    expect(state.events).toMatchObject([
+      { type: 'EnemyLeaked', leak: 1 },
+      { type: 'EnemyLeaked', leak: 0 },
+    ]);
   });
 
   it('Chilled slows by chillMul', () => {

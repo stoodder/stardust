@@ -77,6 +77,11 @@ describe('createSim', () => {
     expect(
       bad({ modifiers: [{ kind: 'economy', stat: 'startCredits', flat: 50, source: 'test' }] }),
     ).toMatch(/T204/);
+    // Compiled content can't have a waveless map (the validator refuses one); build it by hand.
+    const waveless = { ...FIXTURE_CONTENT.maps.fx_map, waves: [] };
+    expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
+      /map 'fx_map' has no waves/,
+    );
     const both = bad({ seed: -1, companion: 'bricks' });
     expect(both).toMatch(/seed/);
     expect(both).toMatch(/T207/);

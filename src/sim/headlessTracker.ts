@@ -4,6 +4,7 @@
 import type { IdSpace } from '../content/types.ts';
 import { MAX_LOADOUT } from './config.ts';
 import type { SimEvent } from './events.ts';
+import { isBuildableTile, tileIndex } from './grid.ts';
 import type { Sim } from './sim.ts';
 import type { SimStats } from './state.ts';
 
@@ -129,7 +130,7 @@ export function createRunTracker<K extends IdSpace>(
             const w = waveOf(enemyWave.get(e.uid) ?? 0);
             if (w !== undefined) {
               w.leaked++;
-              w.integrityLost += e.leak;
+              w.integrityLost += e.leak; // what the core actually lost (clamped at 0)
             }
             break;
           }
@@ -212,6 +213,16 @@ export function createRunTracker<K extends IdSpace>(
         violate(`integrity ${state.integrity} above ${map.coreIntegrity}`);
       }
       if (state.outcome === 'won' && state.integrity <= 0) violate('won with no integrity left');
+      // The credits ledger: every credit is the start, plus income, minus net spending.
+      const st = state.stats;
+      const ledger = map.startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
+      if (state.credits !== ledger) {
+        violate(`credits ${state.credits} ≠ ledger ${ledger} (start + earned − spent + refunded)`);
+      }
+      const remaining = state.schedule.remaining;
+      for (let w = 0; w < remaining.length; w++) {
+        if (remaining[w]! < 0) violate(`wave ${w + 1} has ${remaining[w]} enemies remaining`); // w < length
+      }
       const enemies = state.enemies;
       for (let i = 0; i < enemies.used; i++) {
         const e = enemies.items[i]!; // i < used
@@ -242,6 +253,24 @@ export function createRunTracker<K extends IdSpace>(
         if (!t.alive) continue;
         alive++;
         if (!liveTowers.has(t.uid)) violate(`tower ${t.uid} is alive but was never built`);
+        // Towers stand only on buildable tiles (hard rule), and the tile map points back at them.
+        const idx = tileIndex(map, t.col, t.row);
+        if (idx < 0 || !isBuildableTile(map.tiles[idx]!)) {
+          violate(`tower ${t.uid} stands on a non-buildable tile (${t.col}, ${t.row})`);
+        } else if (state.towerAtTile[idx] !== t.slot) {
+          violate(`tile (${t.col}, ${t.row}) doesn't map to tower ${t.uid}`);
+        }
+      }
+      const tiles = state.towerAtTile;
+      for (let idx = 0; idx < tiles.length; idx++) {
+        const slot = tiles[idx]!; // idx < length
+        if (slot === -1) continue;
+        const t = pool.items[slot];
+        const col = idx % map.cols;
+        const row = (idx - col) / map.cols;
+        if (t === undefined || !t.alive || t.col !== col || t.row !== row) {
+          violate(`tile (${col}, ${row}) maps to slot ${slot}, which has no tower there`);
+        }
       }
       if (alive !== liveTowers.size) {
         violate(`${liveTowers.size - alive} tower(s) vanished without a sell`);

@@ -254,6 +254,28 @@ describe('wave resolution and win/lose', () => {
     expect(rejections(apply(sim))).toEqual(['mapEnded']);
     expect(sim.hash()).toBe(hash);
   });
+
+  it('a loss beats a win on the same tick: the last enemy leaking the last integrity loses', () => {
+    // One walker per wave, W2 called the tick after W1's: they leak at 539 and 540.
+    const sim = simWith({
+      waves: [
+        { groups: [{ enemy: 'fx_walker', count: 1, route: 'a' }] },
+        { groups: [{ enemy: 'fx_walker', count: 1, route: 'a' }] },
+      ],
+      coreIntegrity: 2,
+      threatIntel: [],
+    });
+    sim.enqueue({ type: 'callWave' });
+    runTo(sim, 1);
+    sim.enqueue({ type: 'callWave' });
+    const log = runTo(sim, 2000);
+    expect(ticksOf(log, 'EnemyLeaked')).toEqual([539, 540]);
+    expect(ofType(log, 'WaveCleared').map((e) => e.wave)).toEqual([1]);
+    // On tick 540 every wave has resolved, but integrity is 0: the map is lost, not won.
+    expect(sim.state.outcome).toBe('lost');
+    expect(ticksOf(log, 'MapLost')).toEqual([540]);
+    expect(ticksOf(log, 'MapWon')).toEqual([]);
+  });
 });
 
 describe('createSim and map scripts', () => {

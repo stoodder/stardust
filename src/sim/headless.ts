@@ -90,14 +90,22 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   /** The build phase (countdownWave) already called early, so each is called once. */
   let calledPhase = 0;
 
-  /** Applies `cmd` now; returns the sim's rejection reason, or null. */
+  /**
+   * Applies `cmd` now; returns the sim's rejection reason, or null. The rejection is matched to
+   * this command by identity: the sim logs the (copied) command it applied and names that same
+   * object in CommandRejected, so another command's rejection can never be mistaken for it.
+   */
   const apply = (cmd: Command<K>): RejectReason | null => {
     const before = state.events.length;
+    // Commands already queued (by anyone else) apply first, so ours logs after them.
+    const logIndex = state.commandLog.length + state.pending.length;
     sim.enqueue(cmd);
     sim.applyPending();
+    const applied = state.commandLog[logIndex]?.cmd;
+    if (applied === undefined) return null; // applyPending always logs what it applies
     for (let i = before; i < state.events.length; i++) {
       const e = state.events[i]!; // i < length
-      if (e.type === 'CommandRejected' && e.cmd.type === cmd.type) return e.reason;
+      if (e.type === 'CommandRejected' && e.cmd === applied) return e.reason;
     }
     return null;
   };

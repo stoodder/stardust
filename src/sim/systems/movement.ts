@@ -31,11 +31,14 @@ export function movement(state: SimState): void {
   }
 }
 
-/** Applies a leak to the core. Fleeing Skitterkin leak for 0 (design/enemies.md §5.4). */
+/**
+ * Applies a leak to the core: its cost, never more than the integrity left. Fleeing Skitterkin
+ * leak for 0 (design/enemies.md §5.4). EnemyLeaked reports what was actually lost.
+ */
 function leak(state: SimState, enemy: string, cost: number, isFleeing: boolean, uid: number): void {
   const amount = isFleeing ? 0 : cost;
   const lost = amount < state.integrity ? amount : state.integrity;
   state.integrity -= lost;
   state.stats.integrityLost += lost;
-  emit(state, { type: 'EnemyLeaked', uid, enemy, leak: amount });
+  emit(state, { type: 'EnemyLeaked', uid, enemy, leak: lost });
 }

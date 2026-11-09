@@ -1,6 +1,7 @@
 // The authoritative module-boundary check (docs/tech/architecture.md § 2 and § 4).
-// Scans every source file under src/ for forbidden imports, and src/sim/ for nondeterministic
-// globals and the banned Math members. Lint repeats some of this for editor feedback; this test
+// Scans every source file under src/ for forbidden imports, and the code the sim executes
+// (src/sim/, src/shared/, src/content/rules.ts) for nondeterministic globals and the banned Math
+// members. Lint repeats some of this for editor feedback; this test
 // is what the gate trusts. Type-checked by tsconfig.node.json (it reads files with node:fs).
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix, relative } from 'node:path';
@@ -193,7 +194,17 @@ function checkImport(file: string, spec: string): string | null {
   return null;
 }
 
-/** Banned Math members and globals in src/sim/ (determinism). */
+/**
+ * Whether the sim executes `file` (relative to src/), so it must be deterministic: src/sim/,
+ * src/shared/, and content/rules.ts (rule formulas the sim calls). The rest of content/ is data the
+ * sim reads after compiling, not code it runs per tick.
+ */
+function isSimExecuted(file: string): boolean {
+  const mod = moduleOf(file);
+  return mod === 'sim' || mod === 'shared' || file === 'content/rules.ts';
+}
+
+/** Banned Math members and globals in sim-executed code (determinism). */
 function checkSimDeterminism(code: string): { index: number; message: string }[] {
   const out: { index: number; message: string }[] = [];
   for (const m of code.matchAll(/(?<![\w$.])Math\b/g)) {
@@ -204,12 +215,12 @@ function checkSimDeterminism(code: string): { index: number; message: string }[]
         message: 'Math used other than as Math.<member> (aliasing hides bans)',
       });
     } else if (BANNED_MATH.has(member)) {
-      out.push({ index: m.index, message: `Math.${member} is banned in src/sim/` });
+      out.push({ index: m.index, message: `Math.${member} is banned in sim code` });
     }
   }
   const globals = new RegExp(`(?<![\\w$.])(${BANNED_SIM_GLOBALS.join('|')})\\b(?!\\s*\\??:)`, 'g');
   for (const m of code.matchAll(globals)) {
-    out.push({ index: m.index, message: `'${m[1] ?? ''}' is banned in src/sim/` });
+    out.push({ index: m.index, message: `'${m[1] ?? ''}' is banned in sim code` });
   }
   return out;
 }
@@ -221,7 +232,7 @@ function scanSource(file: string, src: string): Violation[] {
     const message = checkImport(file, spec);
     if (message !== null) violations.push({ file, line, message });
   }
-  if (moduleOf(file) === 'sim') {
+  if (isSimExecuted(file)) {
     const code = stripComments(src, true);
     for (const { index, message } of checkSimDeterminism(code)) {
       violations.push({ file, line: lineOf(code, index), message });
@@ -300,19 +311,28 @@ describe('scanner catches violations', () => {
 
   it('flags banned Math members and aliasing in src/sim/', () => {
     expect(messages('sim/a.ts', 'const a = Math.sin(x);')).toEqual([
-      '1: Math.sin is banned in src/sim/',
+      '1: Math.sin is banned in sim code',
     ]);
     expect(messages('sim/a.ts', 'const r =\n  Math . random();')).toEqual([
-      '2: Math.random is banned in src/sim/',
+      '2: Math.random is banned in sim code',
     ]);
     expect(messages('sim/a.ts', "const r = Math['pow'](2, 3);")).toHaveLength(1);
     expect(messages('sim/a.ts', 'const { cos } = Math;')).toHaveLength(1);
     expect(messages('sim/a.ts', 'const M = Math; M.atan2(1, 2);')).toHaveLength(1);
   });
 
+  it('scans shared/ and content/rules.ts like sim/', () => {
+    expect(messages('shared/rng.ts', 'const r = Math.random();')).toEqual([
+      '1: Math.random is banned in sim code',
+    ]);
+    expect(messages('content/rules.ts', 'const t = Date.now();')).toEqual([
+      "1: 'Date' is banned in sim code",
+    ]);
+  });
+
   it('flags nondeterministic globals in src/sim/', () => {
     expect(messages('sim/a.ts', 'const t = Date.now();')).toEqual([
-      "1: 'Date' is banned in src/sim/",
+      "1: 'Date' is banned in sim code",
     ]);
     expect(messages('sim/a.ts', 'performance.now();')).toHaveLength(1);
     expect(messages('sim/a.ts', 'setTimeout(f, 1);')).toHaveLength(1);
@@ -331,11 +351,12 @@ describe('scanner catches violations', () => {
     ].join('\n');
     expect(messages('sim/a.ts', ok)).toEqual([]);
     expect(messages('render/a.ts', 'const a = Math.sin(t) + Date.now();')).toEqual([]);
+    expect(messages('content/towers/rivet.ts', 'const a = Math.sin(t);')).toEqual([]);
     expect(messages('sim/a.ts', "// import * as Phaser from 'phaser';")).toEqual([]);
   });
 
   it('keeps line numbers through comments and templates', () => {
     const src = '/* one\n two */\nconst s = `a\n${b}\nc`;\nMath.random();';
-    expect(messages('sim/a.ts', src)).toEqual(['6: Math.random is banned in src/sim/']);
+    expect(messages('sim/a.ts', src)).toEqual(['6: Math.random is banned in sim code']);
   });
 });

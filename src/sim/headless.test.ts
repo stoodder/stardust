@@ -121,6 +121,19 @@ describe('scripted-build executor', () => {
     expect(exec.steps.map((s) => s.error)).toEqual(['noSuchTower', 'notBuildable', null]);
   });
 
+  it("matches a rejection to its own step's command, not another of the same type", () => {
+    const sim = fixtureSim();
+    const exec = createBuildExecutor(
+      sim,
+      build([{ wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] }]),
+    );
+    // Someone else's build (on the path) is queued first; applyPending applies and rejects it too.
+    sim.enqueue({ type: 'build', tower: 'fx_gun', tile: [2, 0] });
+    exec.beforeTick();
+    expect(sim.state.events.filter((e) => e.type === 'CommandRejected')).toHaveLength(1);
+    expect(exec.steps.map((s) => s.error)).toEqual([null]);
+  });
+
   it('flags a step issued after its wave started as late', () => {
     // fx_mortar is locked until W2's countdown, so a wave-1 mortar goes in during W1.
     const { exec } = play(build([{ wave: 1, kind: 'build', tower: 'fx_mortar', tile: [3, 1] }]));

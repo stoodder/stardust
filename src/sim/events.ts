@@ -2,7 +2,7 @@
 // during a tick; the host drains them after each frame. Systems never read events: inside the
 // sim, systems communicate through state. This is the M1 subset; each event's owning task may
 // add payload fields.
-import type { AttackKind, GridPos, IdSpace, LiveIds, RouteId } from '../content/types.ts';
+import type { AttackKind, GridPos, IdSpace, LiveIds, RouteId, SpriteId } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 
 /**
@@ -36,6 +36,10 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly type: 'EnemyLeaked';
       readonly uid: number;
       readonly enemy: K['enemy'];
+      /**
+       * The core integrity this leak actually cost: the enemy's `leak`, 0 for a fleeing unit, and
+       * never more than the integrity that was left.
+       */
       readonly leak: number;
     }
   | {
@@ -55,6 +59,10 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly y: number;
       readonly targetX: number;
       readonly targetY: number;
+      /** The projectile's sprite (the firing tier's, fixed at fire time); null with none. */
+      readonly sprite: SpriteId | null;
+      /** A lobbed shell's flight time in ticks (it lands that many ticks later); else 0. */
+      readonly flightTicks: number;
     }
   | {
       /**

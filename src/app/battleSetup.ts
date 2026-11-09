@@ -4,7 +4,7 @@
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { IdSpace } from '../content/types.ts';
+import type { IdSpace, RawContent } from '../content/types.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
 import type { SimConfig } from '../sim/index.ts';
 
@@ -14,17 +14,25 @@ export const DEFAULT_MAP_ID = 'a1_m01';
 /** The development battle (render/__fixtures__/devBattle.ts): `?map=dev_range`. */
 export const DEV_MAP_ID = 'dev_range';
 
-let compiled: readonly CompiledContent<IdSpace>[] | null = null;
+/**
+ * Content sets searched for a map id, in order: the live game first, then the dev battle. Each
+ * compiles on first use, so an A1M1 run never compiles the dev content.
+ */
+const CONTENT_SETS: readonly {
+  readonly raw: { readonly maps: object };
+  readonly compile: () => CompiledContent<IdSpace>;
+}[] = [lazy(RAW_CONTENT), lazy(DEV_CONTENT)];
 
-/** Content sets searched for a map id, in order: the live game first, then the dev battle. */
-function contentSets(): readonly CompiledContent<IdSpace>[] {
-  compiled ??= [compileContent(RAW_CONTENT), compileContent(DEV_CONTENT)];
-  return compiled;
+function lazy<K extends IdSpace>(
+  raw: RawContent<K>,
+): { readonly raw: RawContent<K>; readonly compile: () => CompiledContent<IdSpace> } {
+  let compiled: CompiledContent<IdSpace> | null = null;
+  return { raw, compile: () => (compiled ??= compileContent(raw)) };
 }
 
-/** Every map id a battle can open (the smoke tests boot each one). */
+/** Every map id a battle can open (the smoke tests boot each one). Compiles nothing. */
 export function battleMapIds(): readonly string[] {
-  return contentSets().flatMap((c) => Object.keys(c.maps));
+  return CONTENT_SETS.flatMap((c) => Object.keys(c.raw.maps));
 }
 
 /**
@@ -32,8 +40,9 @@ export function battleMapIds(): readonly string[] {
  * or saves yet, T201/T203). Throws on an unknown map id.
  */
 export function battleConfig(mapId: string, seed: number): SimConfig<IdSpace> {
-  for (const content of contentSets()) {
-    if (!Object.hasOwn(content.maps, mapId)) continue;
+  for (const set of CONTENT_SETS) {
+    if (!Object.hasOwn(set.raw.maps, mapId)) continue;
+    const content = set.compile();
     const par = content.maps[mapId]!.builds.parBuild; // hasOwn above
     return {
       content,

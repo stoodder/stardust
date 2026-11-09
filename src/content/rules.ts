@@ -310,6 +310,8 @@ export const DEFAULT_CORE_INTEGRITY = 20;
  * validator refuses `boss` enemies until bosses land (M3), so the sim needn't implement it yet.
  */
 export const BOSS_LEAK_DRAINS_ALL = true;
+/** A new tower deploys for this long before it can fire or pulse (core-loop.md § 2.5). */
+export const TOWER_DEPLOY_SEC = 0.5;
 /** Selling refunds 70% of everything spent on the tower (core-loop.md § 2.3; shop can raise it). */
 export const SELL_REFUND_PCT = 0.7;
 /**

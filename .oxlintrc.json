@@ -114,6 +114,49 @@
       }
     },
     {
+      "files": ["src/shared/**", "src/content/rules.ts"],
+      "rules": {
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "Math",
+            "property": "sin",
+            "message": "Banned in sim-executed code (determinism)."
+          },
+          {
+            "object": "Math",
+            "property": "cos",
+            "message": "Banned in sim-executed code (determinism)."
+          },
+          {
+            "object": "Math",
+            "property": "atan2",
+            "message": "Banned in sim-executed code (determinism)."
+          },
+          {
+            "object": "Math",
+            "property": "pow",
+            "message": "Banned in sim-executed code (determinism)."
+          },
+          {
+            "object": "Math",
+            "property": "random",
+            "message": "Banned in sim-executed code (determinism)."
+          }
+        ],
+        "no-restricted-globals": [
+          "error",
+          "Date",
+          "performance",
+          "setTimeout",
+          "setInterval",
+          "requestAnimationFrame",
+          "localStorage",
+          "globalThis"
+        ]
+      }
+    },
+    {
       "files": ["src/shared/architecture.test.ts"],
       "rules": { "no-restricted-imports": "off" }
     }

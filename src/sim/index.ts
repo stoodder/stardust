@@ -24,6 +24,12 @@ export {
 } from './economy.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
+  towerStats,
+  type TierStatDelta,
+  type TierStats,
+  type TowerStatLine,
+} from './towerStats.ts';
+export {
   isBuildable,
   isBuildableTile,
   isInBounds,

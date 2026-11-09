@@ -18,6 +18,7 @@ import { hashState } from '../hashState.ts';
 import { poolKill } from '../pool.ts';
 import type { SimState } from '../state.ts';
 import { runTick, type TickContext } from '../tick.ts';
+import { DEPLOY_TICKS } from './applyCommands.ts';
 
 type SimEvent = LiveSimEvent<IdSpace>;
 type Ev<T extends SimEvent['type']> = Extract<SimEvent, { type: T }>;
@@ -45,6 +46,32 @@ const fast = enemyDef('fx_fast', { hp: 1000, speedTilesPerTick: 2 / 60 });
 const sturdy = enemyDef('fx_sturdy', { hp: 1000 });
 const flyer = enemyDef('fx_flyer', { hp: 1000, layer: 'air' });
 
+describe('towers: deploy delay (core-loop.md § 2.5)', () => {
+  it('is 0.5 s', () => {
+    expect(DEPLOY_TICKS).toBe(30);
+  });
+
+  it('a built tower first fires DEPLOY_TICKS after the build tick, then on its cooldown', () => {
+    const { state, ctx } = setup();
+    spawn(state, sturdy);
+    state.pending.push({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
+    const evs = run(state, ctx, 91);
+    expect(ofType(evs, 'TowerBuilt').map((b) => b.tick)).toEqual([0]);
+    expect(ofType(evs, 'ProjectileFired').map((f) => f.tick)).toEqual([30, 60, 90]);
+  });
+
+  it('a built pulse tower waits out the deploy too', () => {
+    const { state, ctx } = setup({ loadout: ['fx_sprinkler'] });
+    state.lockedTowers.length = 0;
+    spawn(state, sturdy);
+    state.pending.push({ type: 'build', tile: [1, 1], tower: 'fx_sprinkler' });
+    const evs = run(state, ctx, 31);
+    expect(ofType(evs, 'ProjectileFired').map((f) => [f.tick, f.kind, f.sprite])).toEqual([
+      [30, 'pulse', null],
+    ]);
+  });
+});
+
 describe('towers: hitscan (Rivet)', () => {
   it('fires the tick it has a target, then every cooldownTicks, and kills', () => {
     const { state, ctx } = setup();
@@ -54,7 +81,14 @@ describe('towers: hitscan (Rivet)', () => {
     const evs = run(state, ctx, 90);
     const fired = ofType(evs, 'ProjectileFired');
     expect(fired.map((f) => f.tick)).toEqual([0, 30, 60]);
-    expect(fired[0]).toMatchObject({ uid: 0, towerUid: gun.uid, kind: 'hitscan', targetUid: eUid });
+    expect(fired[0]).toMatchObject({
+      uid: 0,
+      towerUid: gun.uid,
+      kind: 'hitscan',
+      targetUid: eUid,
+      sprite: null,
+      flightTicks: 0,
+    });
     expect(ofType(evs, 'ProjectileHit').map((h) => [h.tick, h.hits])).toEqual([
       [0, 1],
       [30, 1],
@@ -154,6 +188,8 @@ describe('towers: lobbed shells with lead targeting (Thumper)', () => {
     const { fired, hit, at, e, mortar } = shoot();
     expect(fired).toMatchObject({
       kind: 'lobbed',
+      sprite: 'projectile.thumper_shell',
+      flightTicks: 48,
       towerUid: mortar.uid,
       targetUid: e.uid,
       x: 3.5,
