@@ -54,10 +54,12 @@ function stats(
  */
 function quiet(thrumLeaked: boolean, younglings: number, leaked: number): FlagRuleStats {
   const s = stats('quiet_wave', 1 + younglings, (thrumLeaked ? 1 : 0) + leaked);
-  s.tagSpawned.youngling = younglings;
-  s.tagLeaked.youngling = leaked;
-  s.tagKilled.youngling = younglings - leaked;
-  return s;
+  return {
+    ...s,
+    tagSpawned: { ...s.tagSpawned, youngling: younglings },
+    tagLeaked: { ...s.tagLeaked, youngling: leaked },
+    tagKilled: { ...s.tagKilled, youngling: younglings - leaked },
+  };
 }
 
 const spared = flagRule('spared_quiet_wave')!;

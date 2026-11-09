@@ -22,6 +22,7 @@ import {
   PRONOUN_SETS,
   isValidPlayerName,
 } from './profile.ts';
+import { SHARED_BARKS } from './barks/index.ts';
 import { FLAGS } from './flags.ts';
 import { ACT1_SPEAKERS } from './speakers.ts';
 import { EXPRESSION_EXTRAS, SPEAKER_IDS } from './types.ts';
@@ -83,7 +84,7 @@ describe('the dialogue registries', () => {
   it('looks up scenes and maps safely', () => {
     expect(sceneById('__proto__')).toBeUndefined();
     expect(mapDialogue('a2_m01')).toEqual({ map: 'a2_m01', scenes: [], barks: [] });
-    expect(barksFor('a1_m03')).toEqual(mapDialogue('a1_m03').barks);
+    expect(barksFor('a1_m03')).toEqual([...mapDialogue('a1_m03').barks, ...SHARED_BARKS]);
   });
 
   it('matches the id patterns of style-guide § 5.3', () => {
