@@ -8,7 +8,7 @@ import { TOWERS } from '../towers/index.ts';
 import { MEMO_ID, MEMO_IDS, MEMO_LIST, MEMOS } from './index.ts';
 
 describe('the memo content', () => {
-  it('delivers memo_a1_00 at the intake and one memo after each Act I map, in order', () => {
+  it('delivers memo_a1_00 at the intake and one memo after each map built, in order', () => {
     expect(MEMO_IDS).toEqual([
       'memo_a1_00',
       'memo_a1_01',
@@ -16,6 +16,7 @@ describe('the memo content', () => {
       'memo_a1_03',
       'memo_a1_04',
       'memo_a1_05',
+      'memo_a2_01',
     ]);
     expect(MEMO_LIST.map((m) => m.afterMap)).toEqual([
       null,
@@ -24,6 +25,7 @@ describe('the memo content', () => {
       'a1_m03',
       'a1_m04',
       'a1_m05',
+      'a2_m01',
     ]);
     for (const id of MEMO_IDS) expect(id).toMatch(MEMO_ID);
   });

@@ -109,6 +109,21 @@ export const iconTellHollow = defineSprite({
   frames: { icon: ['.DD.D.', 'D....D', 'D.....', '.....C', 'C....C', '.C.CC.'] },
 });
 
+// prettier-ignore
+/**
+ * `skittish`: an exclamation mark in `coral.4` (art-direction § 8's row), for A2M1's fleeing
+ * groups (T420; the threat strip needs a glyph for every threat it lists).
+ */
+export const iconTellSkittish = defineSprite({
+  id: 'icon.tell.skittish',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'skitterkin',
+  outline: 'auto',
+  legend: { C: 'coral.3', D: 'coral.4' },
+  frames: { icon: ['..DD..', '..DD..', '..DD..', '..CC..', '......', '..CC..'] },
+});
+
 // Scanner Sweep's ability icon (T440b).
 export const iconAbilityScannerSweep = placeholder(
   iconAbilityOrbitalStrike,

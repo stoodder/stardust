@@ -40,7 +40,20 @@ export function baseStoryContext(save: SaveData): StoryContext {
     pestsProcessed: save.stats.pestsProcessed,
     seen: save.story.seen,
     run: null,
+    objectives: objectivesOnFile(save),
   };
+}
+
+/** The optional objectives the save holds, by map (`objectiveDone` reads them). */
+function objectivesOnFile(save: SaveData): Partial<Record<CampaignMapId, readonly string[]>> {
+  const maps: Partial<Record<string, { readonly objectives?: readonly string[] }>> =
+    save.campaign.maps;
+  const out: Partial<Record<CampaignMapId, readonly string[]>> = {};
+  for (const id of CAMPAIGN_PLAN_IDS) {
+    const done = maps[id]?.objectives;
+    if (done !== undefined && done.length > 0) out[id] = done;
+  }
+  return out;
 }
 
 /**

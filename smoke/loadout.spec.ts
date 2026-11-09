@@ -137,13 +137,13 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
   const warning = page.locator('.sd-lo-warning');
   await expect(warning).toHaveCount(0);
   // Sprinkler alone: a heads-up naming the towers that would answer it, and Lock in still works.
-  // (all_unlocked owns every tower's specs, Skyhook's Seeker Swarm too, which arrives in M4.)
+  // (Skyhook's Seeker Swarm isn't built until T407b, so it answers nothing yet: T319.)
   await towerCard(page, 'Rivet').click();
   await towerCard(page, 'Thumper').click();
   await towerCard(page, 'Skyhook').click();
   await expect(warning).toHaveText(
     'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-      'Thumper or Skyhook (Seeker Swarm) would.',
+      'Thumper would.',
   );
   await shot(page, 'loadout', 5, 'heads-up');
   await page.getByRole('button', { name: 'Lock in' }).click();

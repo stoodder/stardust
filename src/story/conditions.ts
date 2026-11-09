@@ -32,6 +32,11 @@ export interface StoryContext {
   readonly seen: readonly string[];
   /** Set only while a run's end is on screen. */
   readonly run: RunContext | null;
+  /**
+   * The optional objectives on file, by map (the save's `MapRecord.objectives`, for
+   * `objectiveDone`); none when left out.
+   */
+  readonly objectives?: Readonly<Partial<Record<CampaignMapId, readonly string[]>>>;
 }
 
 /** The run context for a run of `map` that ended `outcome` with `stats` (every rule of the map). */
@@ -55,6 +60,7 @@ export function runContextOf(
  * - `mapAtLeast` / `mapIs`: campaign order; false before A1M1.
  * - `outcome` / `thisRun`: false without a run; `thisRun` is false too when the ended map has no
  *   rule for that flag (its value is unknown, so neither `eq` holds).
+ * - `objectiveDone`: the save holds that map's objective (a win completed it, on any run).
  */
 export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('all' in cond) return cond.all.every((c) => evaluateCondition(c, ctx));
@@ -69,6 +75,10 @@ export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('stat' in cond) return ctx.pestsProcessed >= cond.gte;
   if ('seen' in cond) return ctx.seen.includes(cond.seen);
   if ('outcome' in cond) return ctx.run !== null && ctx.run.outcome === cond.outcome;
+  if ('objectiveDone' in cond) {
+    const done = ctx.objectives?.[cond.objectiveDone.map] ?? [];
+    return done.includes(cond.objectiveDone.objective);
+  }
   const v = ctx.run?.ruleFlags[cond.thisRun];
   return v !== undefined && v === cond.eq;
 }

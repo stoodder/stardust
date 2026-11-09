@@ -115,6 +115,11 @@ export type Condition =
   | { readonly outcome: 'won' | 'lost' }
   /** The value `flag`'s run-end rule gives over the run that just ended (FLAG_RULES). */
   | { readonly thisRun: BooleanFlagId; readonly eq: boolean }
+  /**
+   * That optional objective of that map is on file in the save (completed on a win, ever; the
+   * save's `MapRecord.objectives`): A2M1's Crew Logs unlock the crew-log codex entry.
+   */
+  | { readonly objectiveDone: { readonly map: CampaignMapId; readonly objective: string } }
   | { readonly all: readonly Condition[] }
   | { readonly any: readonly Condition[] }
   | { readonly not: Condition };

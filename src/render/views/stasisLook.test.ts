@@ -1,12 +1,25 @@
 // T407a's minimal Stasis look: who is frozen, and the tint that marks them.
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
-import { ENEMY_BLANK, type Enemy } from '../../sim/entities.ts';
+import { battleConfig } from '../../app/battleSetup.ts';
+import { createSim, type Enemy } from '../../sim/index.ts';
 import { HEAVY_TINT } from './hushLook.ts';
 import { FREEZE_RING_COLOR, isFrozen, STASIS_TINT } from './stasisLook.ts';
 
+/** A live A1M1 Nibbler, copied (render reads only). */
+const BASE: Enemy = (() => {
+  const sim = createSim(battleConfig('a1_m01', 1));
+  sim.enqueue({ type: 'callWave' });
+  for (let t = 0; t < 600; t++) {
+    sim.step();
+    const e = sim.state.enemies.items.find((x) => x.alive);
+    if (e !== undefined) return { ...e };
+  }
+  throw new Error('no enemy spawned');
+})();
+
 function unit(over: Partial<Enemy>): Enemy {
-  return { ...ENEMY_BLANK, alive: true, ...over };
+  return { ...BASE, ...over };
 }
 
 describe('the Stasis look (T407a)', () => {

@@ -60,6 +60,7 @@ export { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools
 export type { MetaSystem, ShiftEntry, ShiftState } from './progress.ts';
 export {
   META_SYSTEMS,
+  SHIFT_BOARD_LAST,
   SHIFT_BOARD_SIZE,
   SYSTEM_UNLOCKS,
   isMapWon,

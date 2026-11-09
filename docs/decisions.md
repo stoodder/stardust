@@ -1319,3 +1319,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Perfect Core needed no change:** a leak at the asset is a leak, so the medal already means nothing got through to either. **Emergency Bulkhead and Reinforced Core guard only the core.**
 - **Asset routes end beside the asset** (a path's last tile next to its decor marker; an air lane's last point on it); the asset's `name` is required, ≤ 10 characters ("Rigs"). The low-asset alarm is the `critical` band (≤ 50%: on A2M2, one rig of two down).
 - **The harness margin is min(core %, asset %)**, and the gradual rule applies to each meter.
+
+### D112 — 2026-11-09 — T407a Stasis and the Sprinkler specs
+- **Stasis never stacks or extends:** it lands only on a unit neither frozen nor immune, counts the tick it lands, and leaves 2× its duration of immunity starting when it ends. A frozen non-boss still takes damage and interrupts its abilities (`isInterrupted`): the shield pulse, the blink, the Digger's dig and the hush (the runner runs on, the hush unspent). A frozen huddle leader holds its huddle. A boss gets Chilled 50% instead, with no interrupt or immunity.
+- **Flash Freeze is a burst on its own 8 s timer on top of T3's chill pulse** (Stasis 1.0 s), ready on specializing; not a burrowed answer. Cloudburst: radius 2.8, hits air. Every T3 Sprinkler now Soaks for 3 s (T321).
+- **A spec answers counters only once it exists** (T319): `LIVE_SPEC_NAMES`; `all_unlocked` owns only built specs. Engineering sells the Sprinkler's specs; the Skyhook's and Zapcoil's stay "Arrives in a later shipment" until T407b.

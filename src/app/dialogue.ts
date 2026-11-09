@@ -891,6 +891,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   let tagGiven = false;
   let leaked = false;
   let lowFired = false;
+  /** Cue scenes this battle has played (a cue scene plays once a battle). */
+  const cuedScenes = new Set<string>();
   /** The run's fleeing kills already offered as `skitterkin_killed_ahead` (the sim's tagKilled). */
   let fleeingKilled = 0;
   let wave = 0;
@@ -1043,6 +1045,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('ScriptCue', (e) => {
       const scene = SCENES[e.cueId];
       if (scene !== undefined) {
+        // A cue scene plays once a battle, however many events cue it (A2M1's crew-log line is
+        // cued by either log or by W6's countdown, whichever comes first).
+        if (cuedScenes.has(scene.id)) return;
+        cuedScenes.add(scene.id);
         if (enabled) playScene(scene);
         return;
       }

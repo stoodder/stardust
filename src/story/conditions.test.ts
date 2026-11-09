@@ -118,6 +118,26 @@ describe('evaluateCondition', () => {
   });
 });
 
+describe('objectiveDone (A2M1’s crew logs)', () => {
+  const crewLogs: Condition = { objectiveDone: { map: 'a2_m01', objective: 'crew_logs' } };
+
+  it('holds once the save has that map’s objective on file, and not before', () => {
+    expect(holds(crewLogs)).toBe(false);
+    expect(holds(crewLogs, { ...base, objectives: { a2_m01: [] } })).toBe(false);
+    expect(holds(crewLogs, { ...base, objectives: { a1_m04: ['crew_logs'] } })).toBe(false);
+    expect(holds(crewLogs, { ...base, objectives: { a2_m01: ['crew_logs'] } })).toBe(true);
+  });
+
+  it('reads the save, not the run (a later loss keeps it)', () => {
+    const ctx: StoryContext = {
+      ...base,
+      objectives: { a2_m01: ['crew_logs'] },
+      run: { outcome: 'lost', ruleFlags: {} },
+    };
+    expect(holds(crewLogs, ctx)).toBe(true);
+  });
+});
+
 describe('actOf and withFlags', () => {
   it('maps ids to acts', () => {
     expect(actOf('a1_m05')).toBe(1);

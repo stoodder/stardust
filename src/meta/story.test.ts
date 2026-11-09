@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
+import { newCodexUnlocks } from '../story/codex.ts';
+import type { CodexEntryDef } from '../content/codex/index.ts';
 import { baseStoryContext, enemiesMet, furthestWon, withStoryUnlocks } from './story.ts';
 import { validateSave } from './validate.ts';
 
@@ -114,6 +116,30 @@ describe('the catch-up for older saves (entering the base)', () => {
   it('returns the same save when nothing is due', () => {
     const once = withStoryUnlocks(m2Save()).save;
     expect(withStoryUnlocks(once).save).toBe(once);
+  });
+
+  it('puts the objectives on file in the base context, so a codex entry can unlock on one', () => {
+    const s = m2Save();
+    expect(baseStoryContext(s).objectives).toEqual({});
+    const won = { completed: true, medals: ['victory'], bestMeter: 1 };
+    s.campaign.maps.a2_m01 = { ...won, objectives: ['crew_logs'] };
+    const ctx = baseStoryContext(s);
+    expect(ctx.objectives).toEqual({ a2_m01: ['crew_logs'] });
+    // An entry like T411's crew log: its original unlocks with the objective, never before.
+    const entry: CodexEntryDef = {
+      id: 'codex_test_crew_log',
+      title: 'Crew log',
+      kind: 'thing',
+      versions: {
+        original: {
+          text: 'Recovered.',
+          when: { objectiveDone: { map: 'a2_m01', objective: 'crew_logs' } },
+        },
+      },
+    };
+    const met = { enemies: [], towers: [], abilities: [] };
+    expect(newCodexUnlocks({}, ctx, met, [entry])).toEqual({ codex_test_crew_log: ['original'] });
+    expect(newCodexUnlocks({}, baseStoryContext(m2Save()), met, [entry])).toEqual({});
   });
 
   it('reads the base context from the furthest map won', () => {

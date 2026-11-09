@@ -13,11 +13,17 @@ function isRegistered(id: string): id is MapId {
   return Object.hasOwn(MAPS, id);
 }
 
+/** The Shift board's last map: it is Act I's view (D102), and the star map takes over after it. */
+export const SHIFT_BOARD_LAST: CampaignMapId = 'a1_m05';
+
 /**
- * How many campaign maps the Shift board lists: the plan up to its last registered map (Act I's
- * five while Act II isn't built), so a map joins the board the moment its folder is registered.
+ * How many campaign maps the Shift board lists: the plan up to its last registered map, capped at
+ * Act I (SHIFT_BOARD_LAST), so registering an Act II map never names it on the board (D102).
  */
-export const SHIFT_BOARD_SIZE: number = CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1;
+export const SHIFT_BOARD_SIZE: number = Math.min(
+  CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1,
+  CAMPAIGN_PLAN.findIndex((m) => m.id === SHIFT_BOARD_LAST) + 1,
+);
 
 /** Systems the campaign opens between maps. */
 export type MetaSystem =
