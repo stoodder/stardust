@@ -153,8 +153,9 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T312c** HUD: slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
 - [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
 - [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
-- [~] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
-- [ ] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
+- [x] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
+- [~] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
+- [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
 - [ ] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [ ] **T311c** Props for A1M3–A1M5; terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [ ] **T309** The Peeker: view + click sets `peeker_poked`.

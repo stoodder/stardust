@@ -916,3 +916,8 @@ A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields 
   - barks are standalone, never replies (the D061 lesson).
 - **Name tags:** Bricks's names are bound to maps, so `bricksTagIndex` is the position after the furthest map tagged. A failed tag waits for the next wave clear.
 - **`validateDialogue`:** 18 rules, including line lengths, `{name}` use, the policy tell, the "!" budget per act, speaker/expression validity, reachable nodes, and no dangling jumps.
+
+### D071 — 2026-11-09 — T310b portraits (batch 2)
+- **Portraits:** Zibzab (the `vrell` palette, no human skin, eyestalks moving independently), Goldie, and Kip, each with the base contract. Prim is a comms screen with scanlines and Auditor-orange eyes, so it never reads as QUILL. Gerald is a 16×16 icon whose chime lamp turns gold when he "talks".
+- **Gallery:** portrait cards go two to a row, bringing the page to 27,829 px, and the gallery test's timeout is now 90 s (it ran 37 s under full parallel load).
+- Later-act variants are T318. Until they exist, dialogue falls back to the base frames.
