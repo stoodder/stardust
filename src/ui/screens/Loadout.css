@@ -75,6 +75,7 @@
 /* The tower grid: two columns of cards; it scrolls when the collection outgrows the panel. */
 .sd-lo-towers {
   display: grid;
+  flex: none;
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   margin: 0;
@@ -277,6 +278,94 @@
 
 .sd-lo-link-on .sd-lo-link-state {
   color: var(--sd-teal-4);
+}
+
+/* Field Protocols (T308): toggles like the ability rows, the effect under the name. */
+/* Under the tower grid, two to a row like the towers, taking the column's leftover height (it
+   scrolls when a save owns more than fit; the tower grid above never shrinks for it). */
+.sd-lo-protocols {
+  display: grid;
+  flex: 1 1 0;
+  grid-template-columns: repeat(2, 1fr);
+  align-content: start;
+  gap: 2px 4px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.sd-lo-protocol-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sd-lo-protocol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 22px;
+  padding: 3px 4px 3px 2px;
+  border: 0;
+  border-left: 2px solid var(--sd-ink-4);
+  background: var(--sd-ink-2);
+  color: var(--sd-white-0);
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sd-lo-protocol.sd-lo-on {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--sd-white-1);
+}
+
+.sd-lo-protocol.sd-lo-full {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-protocol:hover,
+.sd-lo-protocol:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--sd-teal-4);
+}
+
+.sd-lo-protocol-effect {
+  color: var(--sd-steel-3);
+  text-transform: none;
+}
+
+.sd-lo-protocol.sd-lo-on .sd-lo-protocol-effect {
+  color: var(--sd-teal-4);
+}
+
+/* Specialist's tower, under its row. */
+.sd-lo-protocol-tower {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.sd-lo-protocol-tower select {
+  border: 1px solid var(--sd-ink-4);
+  background: var(--sd-ink-1);
+  color: var(--sd-white-0);
+  font-family: var(--font-heading);
+  font-size: 8px;
+}
+
+.sd-lo-protocol-tower select:focus-visible {
+  outline: 1px solid var(--sd-teal-4);
 }
 
 /* Heads-ups: orange, never red (a warning, not a scold). */

@@ -88,12 +88,20 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
  */
 export const VIEW_MARKERS: readonly MarkerId[] = ['peeker'];
 
+/** A prop that arrives on a cue: its sprite, and the wave whose countdown brings it on. */
+export interface CueDecor {
+  readonly sprite: SpriteId;
+  /** It lands as this wave's build-phase countdown starts (the cue scene's moment). */
+  readonly wave: number;
+}
+
 /**
- * Props a map script brings on (props on cues, T312b): their marker's tile stays bare until the
- * cue shows the prop there. Zibzab's shell-shop clanks onto A1M3's road at W6 (act1.md § A1M3).
+ * Props the story brings on (props on cues, T312b): their marker's tile stays bare until the cue,
+ * then CuePropView drops the prop there. Zibzab's shell-shop clanks onto A1M3's verge with his W6
+ * scene (`a1_m03_w06`, which plays as W6's countdown starts; act1.md § A1M3).
  */
-export const CUE_DECOR: Readonly<Record<MarkerId, SpriteId>> = {
-  zibzab_shop: 'prop.zibzab_shop',
+export const CUE_DECOR: Readonly<Record<MarkerId, CueDecor>> = {
+  zibzab_shop: { sprite: 'prop.zibzab_shop', wave: 6 },
 };
 
 /** The decor id a marker id names: itself, or itself less a `_<n>` suffix. */

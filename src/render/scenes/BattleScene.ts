@@ -22,6 +22,11 @@
 // flak climbs and bursts at a flyer's height; Zapcoil's arcs are ChainFx's and Gerald's plinks
 // PlinkFx's; Time Dilation's field tints the playfield (FieldTintView); wreckage follows the
 // salvage drone's queue (WreckageView) and the drone flies it (DroneView).
+// M3 (T312b): enemies pick their anim from what they're doing (EnemyView: a Digger's dig tell and
+// mound, Chitterbloom's sneeze, dig, burrow, panic, shimmer, and flight); a dig-in or surfacing
+// puffs a dirt ring; a boss shows its bar (BossBarView); a huddle links its leader and young
+// (HuddleView); driven-off units run on past the edge as they fade (LeaveFx); props on cues land
+// (CuePropView); and A1M4's Peeker hides in its planter.
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -60,21 +65,25 @@ import { AirLaneView } from '../views/AirLaneView.ts';
 import { AllyView } from '../views/AllyView.ts';
 import { ChainFx } from '../views/ChainFx.ts';
 import { CoreView } from '../views/CoreView.ts';
+import { BossBarView } from '../views/BossBarView.ts';
+import { CuePropView } from '../views/CuePropView.ts';
 import { CursorView } from '../views/CursorView.ts';
 import { DroneView } from '../views/DroneView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { FxView } from '../views/FxView.ts';
+import { HuddleView } from '../views/HuddleView.ts';
+import { LeaveFx } from '../views/LeaveFx.ts';
 import { drawGround } from '../views/GroundView.ts';
 import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
-import { PeekerView } from '../views/PeekerView.ts';
+import { PeekerView, peekerCover } from '../views/PeekerView.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
-import { facingOf } from '../views/spriteInfo.ts';
+import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
 import { ViewPool } from '../views/ViewPool.ts';
@@ -111,6 +120,9 @@ export interface BattleSceneDeps {
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
 const pingAt: Vec2 = { x: 0, y: 0 };
+/** A dig-in or a surfacing kicks up a ring of dirt (T312b). */
+const DIRT_RING_TILES = 0.5;
+const DIRT_RING_MS = 300;
 
 export class BattleScene extends Phaser.Scene {
   readonly #deps: BattleSceneDeps;
@@ -132,6 +144,10 @@ export class BattleScene extends Phaser.Scene {
   #fieldTint!: FieldTintView;
   #wreckage!: WreckageView;
   #drone!: DroneView;
+  #bossBar!: BossBarView;
+  #huddles!: HuddleView;
+  #leaves!: LeaveFx;
+  #cueProps!: CuePropView;
   /** The salvage drone's time per tile under the run's modifiers (ticks). */
   #clearTicks = 0;
   /** The Peeker on the map's `peeker` marker, or null on a map without one. */
@@ -225,7 +241,8 @@ export class BattleScene extends Phaser.Scene {
     const coreProps = drawGround(ctx, map, map.env, wreckProps);
     this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
     this.#towers = new ViewPool(() => new TowerView(ctx));
-    this.#enemies = new ViewPool(() => new EnemyView(ctx));
+    this.#leaves = new LeaveFx(ctx);
+    this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#allies = new ViewPool(() => new AllyView(ctx));
     this.#placement = new PlacementView(ctx, this.#elevationOf);
@@ -237,6 +254,9 @@ export class BattleScene extends Phaser.Scene {
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
     this.#drone = new DroneView(ctx, map);
+    this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
+    this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
+    this.#cueProps = new CuePropView(ctx, map.markers, map.cols, map.env, this.#fx);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
@@ -256,7 +276,15 @@ export class BattleScene extends Phaser.Scene {
     this.#peeker =
       peekerAt === undefined
         ? null
-        : new PeekerView(ctx, peekerAt[0], peekerAt[1], map.cols, map.env, sim.config.seed);
+        : new PeekerView(
+            ctx,
+            peekerAt[0],
+            peekerAt[1],
+            map.cols,
+            map.env,
+            sim.config.seed,
+            peekerCover(map.id),
+          );
     this.#lastTick = sim.state.tick;
     const teach: [number, number][] = [];
     map.tiles.forEach((t, i) => {
@@ -303,6 +331,8 @@ export class BattleScene extends Phaser.Scene {
         core: this.#core,
         chains: this.#chains,
         plinks: this.#plinks,
+        bossBar: this.#bossBar,
+        cueProps: this.#cueProps,
         strikeRadius: this.#strikeRadius,
         liftPx: (col, row) => this.#liftPx(col, row),
         onBuilt: () => {
@@ -324,6 +354,9 @@ export class BattleScene extends Phaser.Scene {
       this.#plinks.reset();
       this.#fieldTint.reset();
       this.#wreckage.reset();
+      this.#bossBar.reset();
+      this.#huddles.reset();
+      this.#leaves.reset();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();
@@ -342,6 +375,10 @@ export class BattleScene extends Phaser.Scene {
     this.#fieldTint.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
+    this.#bossBar.update(dt, state.enemies);
+    this.#huddles.update(state.enemies);
+    this.#leaves.update(dt);
+    this.#cueProps.update(dt);
     this.#airLanes.update(state.wave, this.#armedHitsAir());
     this.#sacks.update(delta);
     this.#links.update();
@@ -382,6 +419,16 @@ export class BattleScene extends Phaser.Scene {
     this.#lastTick = state.tick;
     const hovered = this.#hover.pointerTile(true).index === p.tile;
     p.update(delta, played ? delta : 0, state.enemies, hovered);
+  }
+
+  /** The boss bar's fill (px of 160), or −1 while no bar shows (the smoke flows' check). */
+  get bossBarFill(): number {
+    return this.#bossBar.showing ? this.#bossBar.fillPx : -1;
+  }
+
+  /** The drawn pose of the enemy `uid` (EnemyView's), or null without a view (smoke flows). */
+  enemyPose(uid: number): string | null {
+    return this.#enemies.get(uid)?.pose ?? null;
   }
 
   /** The Peeker's pose (the smoke hooks' view of it), or null on a map without one. */
@@ -482,10 +529,13 @@ export class BattleScene extends Phaser.Scene {
       let v = this.#enemies.get(e.uid);
       if (v === undefined) {
         v = this.#enemies.acquire(e.uid);
-        v.show(e.uid, e.def.sprites.body, e.def.layer === 'air', null, e.route);
+        v.show(e.uid, enemyBody(e.def.sprites.body, e.tags), e.def.layer === 'air', null, e.route);
       }
       v.stamp = stamp;
       v.sync(e);
+      const under = v.burrowed;
+      v.syncPose(e);
+      if (under !== v.burrowed) this.#fx.ring(e.x, e.y, DIRT_RING_TILES, 'grime.3', DIRT_RING_MS, true);
     }
     this.#enemies.sweep(stamp);
 

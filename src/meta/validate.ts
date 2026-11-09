@@ -29,6 +29,8 @@ export const SAVE_LIMITS = {
   count: Number.MAX_SAFE_INTEGER,
   meter: 1_000_000,
   medalsPerMap: 3,
+  /** Optional objectives a map record may hold (no map has more than one yet). */
+  objectivesPerMap: 3,
   upgradeRank: 10,
   /** Longest list of free-form ids (scenes, memos, codex entries, grants). */
   idList: 1024,
@@ -305,7 +307,7 @@ function checkCampaign(
       c.fail(`${path}.maps`, `unknown map id ${JSON.stringify(mapId.slice(0, 64))}`);
       continue;
     }
-    const rec = c.object(raw, mapPath, ['completed', 'medals', 'bestMeter']);
+    const rec = c.object(raw, mapPath, ['completed', 'medals', 'bestMeter'], ['objectives']);
     if (rec === null) continue;
     const completed = c.bool(rec['completed'], `${mapPath}.completed`);
     const medals = c.ids(rec['medals'], `${mapPath}.medals`, null, SAVE_LIMITS.medalsPerMap);
@@ -313,7 +315,16 @@ function checkCampaign(
       c.fail(`${mapPath}.medals`, 'medals need a win, but the map is not completed');
     }
     const bestMeter = c.int(rec['bestMeter'], `${mapPath}.bestMeter`, 0, SAVE_LIMITS.meter);
-    out[mapId] = { completed, medals, bestMeter };
+    if (rec['objectives'] === undefined) {
+      out[mapId] = { completed, medals, bestMeter };
+      continue;
+    }
+    const objPath = `${mapPath}.objectives`;
+    const objectives = c.ids(rec['objectives'], objPath, null, SAVE_LIMITS.objectivesPerMap);
+    if (objectives.length > 0 && !completed) {
+      c.fail(objPath, 'objectives need a win, but the map is not completed');
+    }
+    out[mapId] = { completed, medals, bestMeter, objectives };
   }
   return { maps: out, seenEnemies };
 }

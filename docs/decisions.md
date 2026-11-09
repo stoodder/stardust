@@ -1135,3 +1135,10 @@ Real art went in behind T300a's ids. No data changed.
   - rings sit on high ground;
   - a flat-to-high tether rides at the mean height of its ends.
 - T213, T221, and T222 are closed. Leftovers: spawn "incoming" flags, the slot-2 companion portrait, and an objective-tracker smoke (T326).
+
+### D088 — 2026-11-09 — T308 the shop opens; protocols
+- **Zibzab's arrival** (`a1_m03_base_arrival`, a canon line added to act1.md § A1M3 *Base*) plays on the first Base visit with the shop open, landing on the Shop tab. It plays only while dialogue is on.
+- **The Zapcoil sample** is a license priced 0, given once when it's stocked. The shop gains a *Licenses* group, where Zapcoil shows as Owned.
+- **The early ask** is a shop row, not a click on the locked tab. act1.md and progression §4 place the question from A1M3 to A2M4. Answering "Still asking." sets `asked_zibzab_early` and removes the row; "Not today." keeps it.
+- **QUILL's Rapport** (`rapport_quill`): 2 Intel for −15% Time Dilation cooldown, stocked after A1M3.
+- **Protocol picker:** in the loadout under the tower grid. Protocols count toward the loadout's skip rule, a full slot swaps, and Specialist picks a tower. Equipped protocols reach the battle's modifiers.

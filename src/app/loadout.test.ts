@@ -9,6 +9,8 @@ import {
   openLoadout,
   pickWarnings,
   savePick,
+  setProtocolTower,
+  togglePickProtocol,
   togglePickTower,
 } from './loadout.ts';
 import { activeSave, initSaves, loadDevSave, loadoutOffered, newGame } from './save.ts';
@@ -62,6 +64,17 @@ describe('the loadout screen (app side)', () => {
     expect(view.initial).toEqual({
       towers: ['rivet', 'thumper', 'sprinkler', 'skyhook'],
       ability: 'orbital_strike',
+      protocols: [],
+      protocolPicks: {},
+    });
+    // Every protocol owned, one slot plus R&D's two (T308).
+    expect(view.protocolSlots).toBe(3);
+    expect(view.protocols).toHaveLength(10);
+    expect(view.protocols[0]).toEqual({
+      id: 'head_start',
+      name: 'Head Start',
+      effect: '+10% starting credits',
+      takesTower: false,
     });
   });
 
@@ -92,6 +105,42 @@ describe('the loadout screen (app side)', () => {
     expect(cfg.abilities.slot1).toBe('suppressing_fire');
     // The screen opens on it next time.
     openLoadout('a1_m02');
-    expect(loadout.value?.initial).toEqual(preset);
+    expect(loadout.value?.initial).toEqual({ ...preset, protocols: [], protocolPicks: {} });
+  });
+
+  it('equips Field Protocols save-wide, Specialist with its tower (T308)', () => {
+    loadDevSave('after_a1m3');
+    activeSave()!.unlocks.protocols.push('head_start', 'specialist');
+    expect(openLoadout('a1_m03')).toBe(true);
+    const view = loadout.value!; // opened above
+    expect(view.protocolSlots).toBe(1);
+    expect(view.protocols.map((p) => p.id)).toEqual(['head_start', 'specialist']);
+    let pick = togglePickProtocol(view.initial, 'head_start');
+    expect(pick.protocols).toEqual(['head_start']);
+    // One slot: picking another swaps it in, and Specialist starts on the pick's first tower.
+    pick = togglePickProtocol(pick, 'specialist');
+    expect(pick.protocols).toEqual(['specialist']);
+    expect(pick.protocolPicks).toEqual({ specialist: pick.towers[0] });
+    pick = setProtocolTower(pick, 'specialist', 'skyhook');
+    expect(setProtocolTower(pick, 'specialist', 'prism')).toBe(pick); // not in the pool
+    expect(savePick(pick)).toEqual({ ok: true });
+    expect(activeSave()?.loadouts.protocols).toEqual(['specialist']);
+    expect(activeSave()?.loadouts.protocolPicks).toEqual({ specialist: 'skyhook' });
+    // Save-wide: another map's battle has it too, and its screen starts with it equipped.
+    const cfg = battleConfig('a1_m01', 0, activeSave());
+    expect(cfg.modifiers).toContainEqual({
+      kind: 'towerCost',
+      tower: 'skyhook',
+      tiers: 'spec',
+      pct: -0.25,
+      source: 'protocol:specialist',
+    });
+    openLoadout('a1_m01');
+    expect(loadout.value?.initial.protocols).toEqual(['specialist']);
+    // Toggled off, it leaves the save on the next lock-in.
+    const off = togglePickProtocol(loadout.value!.initial, 'specialist');
+    expect(off).toMatchObject({ protocols: [], protocolPicks: {} });
+    expect(savePick(off)).toEqual({ ok: true });
+    expect(activeSave()?.loadouts.protocols).toEqual([]);
   });
 });

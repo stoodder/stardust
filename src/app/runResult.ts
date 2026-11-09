@@ -60,6 +60,8 @@ export interface RunEndInput {
   readonly medals: readonly MapMedal[];
   /** The medal ids the sim settled as earned (`earnedMedalIds`; D042). */
   readonly earnedMedals: readonly string[];
+  /** The optional objectives the sim settled as done, with their Intel (T304f; paid on a win). */
+  readonly completedObjectives?: readonly { readonly id: string; readonly intel: number }[];
   /** The run's `state.stats`, for the story run-end flag rules (meta's runEnd, step 2). */
   readonly stats?: FlagRuleStats;
 }
@@ -130,6 +132,9 @@ export function metaRunEndOf(
     waveCount: input.waveCount,
     wavesResolved: wavesResolved(input, outcome),
     earnedMedals: input.earnedMedals,
+    ...(input.completedObjectives === undefined
+      ? {}
+      : { completedObjectives: input.completedObjectives }),
     ...(input.stats === undefined ? {} : { stats: input.stats }),
     skitterkinKilled: input.skitterkinKilled,
     meter: Math.max(0, input.integrity),

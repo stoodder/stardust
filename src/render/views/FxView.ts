@@ -12,11 +12,13 @@
 // - Suppressing Fire (T207b): while its path tile is aimed, the segment it would cover (the sim's
 //   `segmentSpan`) is tinted on the ground; while a segment zone lives, its tiles flicker in a warm
 //   ground strip and tracer streaks rake it from Bricks's post (or from off the map without him).
+//   The strip sorts in `world` over the enemies it pins and under towers (T232, `stripDepth`).
 import type * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { pointAt, type Point, type Zone } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { gridToScreen, type Vec2 } from '../iso.ts';
+import { worldDepth } from '../depth.ts';
+import { gridToScreen, HALF_H, type Vec2 } from '../iso.ts';
 import {
   BEAM_MS,
   beamCore,
@@ -51,7 +53,9 @@ const MAX_PREVIEW_TILES = 12;
 
 /**
  * Suppressing Fire's strip and its aiming preview (Kinetic's warm color, art-direction §7). The
- * live strip is hazard-striped at 50% and drawn in `overlay`, over the enemies it pins (D059).
+ * live strip is hazard-striped at 50% and drawn in `world`, each tile sorted just in front of the
+ * enemies on it (D059: over the units it pins) and behind any tower or high ground in front of it
+ * (T232: the strip lies on the ground, so it never covers a tower beside the path).
  */
 const SUPPRESS_TINT = { color: 'orange.3', fill: 0.5, edge: 1 } as const;
 /** The preview: the same hazard stripes in the lighter orange, held still (no flicker, no fire). */
@@ -162,9 +166,7 @@ export class FxView extends TransientFx {
       return img;
     };
     for (let i = 0; i < MAX_SEGMENTS; i++) {
-      const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () =>
-        tileImage(tint, layers.overlay),
-      );
+      const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () => tileImage(tint, layers.world));
       this.#segments.push({
         zoneUid: 0,
         seen: 0,
@@ -383,7 +385,11 @@ export class FxView extends TransientFx {
       if (d < z.distFrom || d > z.distTo) continue;
       const [c, r] = route.tiles[i]!; // i < length
       gridToScreen(c + 0.5, r + 0.5, this.ctx.origin, pos);
-      g.tiles[g.shown++]!.setPosition(pos.x, pos.y).setAlpha(1).setVisible(true); // < MAX
+      g.tiles[g.shown++]! // < MAX
+        .setPosition(pos.x, pos.y)
+        .setDepth(stripDepth(pos.y))
+        .setAlpha(1)
+        .setVisible(true);
     }
   }
 
@@ -418,6 +424,15 @@ export class FxView extends TransientFx {
     this.#seed = (Math.imul(this.#seed, 1664525) + 1013904223) >>> 0;
     return this.#seed / 2 ** 32;
   }
+}
+
+/**
+ * A live strip tile's sort depth (T232), from its center's screen y: just above its bottom vertex,
+ * so the enemies on the tile draw under it and a tower or high-ground block on the tile in front
+ * (footY one HALF_H lower) draws over it.
+ */
+export function stripDepth(centerY: number): number {
+  return worldDepth(centerY + HALF_H - 1, 'strip', 0);
 }
 
 function zoneAlive(zones: ZonePoolLike, uid: number): boolean {

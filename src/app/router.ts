@@ -283,6 +283,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         stardust: sim.map.stardust,
         medals: offeredMedals(sim.map),
         earnedMedals: earnedMedalIds(s, sim.map),
+        completedObjectives: sim.map.objectives
+          .filter((_, i) => s.objectives[i] === 'done')
+          .map((o) => ({ id: o.id, intel: o.intel })),
         stats: s.stats,
       };
       // Run end (meta-runtime.md § Run end): Pests Processed, medals, and rewards into the save

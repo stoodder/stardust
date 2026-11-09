@@ -4,8 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { FIXTURE, fxMap } from './__fixtures__/content.ts';
 import { compileContent } from './compile.ts';
 import { mapDefinersFor } from './define.ts';
-import type { ChallengeMedalDef, ConditionDef, IdSpace, MapDef, RawContent } from './types.ts';
-import { CHALLENGE_PENDING } from './validateMedals.ts';
+import type {
+  ChallengeMedalDef,
+  ConditionDef,
+  IdSpace,
+  MapDef,
+  ObjectiveDef,
+  RawContent,
+} from './types.ts';
+import { CHALLENGE_PENDING, OBJECTIVE_INTEL_BUDGET } from './validateMedals.ts';
 
 const loose = mapDefinersFor<IdSpace>();
 const BASE: RawContent<IdSpace> = FIXTURE;
@@ -157,5 +164,44 @@ describe('[condition]', () => {
         },
       }),
     );
+  });
+});
+
+describe('[objectives]', () => {
+  const AUDIT: ObjectiveDef<IdSpace> = {
+    id: 'clean_audit',
+    name: 'Clean Audit',
+    description: 'Sell no turret after its build phase.',
+    condition: { stat: 'lateSells', lte: 0 },
+    intel: 1,
+  };
+  const withObjective = (patch: Partial<ObjectiveDef<IdSpace>>): RawContent<IdSpace> =>
+    withMap({ objectives: [{ ...AUDIT, ...patch }] });
+
+  it('a valid objective', () => accepts(withObjective({})));
+
+  it('a bad id, name, description, or Intel', () => {
+    rejects(withObjective({ id: 'Clean-Audit' }), 'objectives', /snake_case/);
+    rejects(withObjective({ name: '' }), 'objectives', /name: must be 1–40/);
+    rejects(withObjective({ description: 'x'.repeat(101) }), 'objectives', /must be 1–100/);
+    rejects(withObjective({ intel: 0 }), 'objectives', /at least 1 Intel/);
+  });
+
+  it('never references medal-exempt units, and every flag it reads has variants', () => {
+    rejects(
+      withObjective({ condition: { tagRatio: { tag: 'fleeing', of: 'killed', gte: 1 } } }),
+      'medals',
+      /medal-exempt/,
+    );
+    rejects(
+      withObjective({ condition: { flag: 'spared_quiet_wave', eq: true } }),
+      'flag-variants',
+      /flagVariants needs a 'spared_quiet_wave' entry/,
+    );
+  });
+
+  it('the campaign pays at most OBJECTIVE_INTEL_BUDGET objective Intel', () => {
+    accepts(withObjective({ intel: OBJECTIVE_INTEL_BUDGET }));
+    rejects(withObjective({ intel: OBJECTIVE_INTEL_BUDGET + 1 }), 'objectives', /budget is 7/);
   });
 });

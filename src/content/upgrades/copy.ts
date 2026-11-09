@@ -70,7 +70,7 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   rapport_bricks:
     "Suppressing Fire recharges 15% faster. Sergeant Okonkwo says he doesn't do rapport. Logged: maybe.",
   rapport_quill:
-    "Time Dilation recharges 15% faster. Nobody has filed rapport with me before. I made a folder.",
+    'Time Dilation recharges 15% faster. Nobody has filed rapport with me before. I made a folder.',
   protocol_slots:
     "One more Field Protocol slot. Protocols are policies you get to choose. I'd like to try that.",
 };

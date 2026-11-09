@@ -8,6 +8,10 @@
 //   medal-exempt units (no `tagRatio`, and a `passedMarker` enemy must walk in a group that isn't
 //   exempt; design/core-loop.md § 2.7); every flag it reads has a `flagVariants` entry; and
 //   `parMedals` has no repeats and names `challenge` only on a map that has one.
+// - [objectives]: each optional objective (Objective Intel; design/progression.md § 3) has a
+//   snake_case id, a name and description that fit the HUD tracker, pays at least 1 Intel, never
+//   references medal-exempt units (it pays like a medal), and every flag it reads has a
+//   `flagVariants` entry; the campaign's objectives pay OBJECTIVE_INTEL_BUDGET Intel at most.
 // - [condition]: every condition on a map (the Challenge, objectives, events' `when`, ability
 //   locks): `stat` and `towers` have a bound (`gte` and/or `lte`, whole numbers ≥ 0, gte ≤ lte);
 //   `tagRatio.gte` is in (0, 1]; `all` and `any` are non-empty; a `passedMarker` names a marker
@@ -45,6 +49,9 @@ export const CHALLENGE_PENDING: Readonly<Record<string, string>> = {};
 export const MEDAL_NAME_MAX = 40;
 export const MEDAL_DESCRIPTION_MAX = 100;
 
+/** Objective Intel across the campaign (design/progression.md § 3; story/campaign.md § 4.9). */
+export const OBJECTIVE_INTEL_BUDGET = 7;
+
 /** How close (tiles, center to route) a `passedMarker` marker must sit to a route its units walk. */
 export const PASSED_MARKER_REACH_TILES = 1.5;
 
@@ -55,8 +62,18 @@ type Condition = ConditionDef<IdSpace>;
 /** Validates every map's medals and conditions. */
 export function validateMedals<K extends IdSpace>(issues: Issues, raw: RawContent<K>): void {
   const campaign = new Set<string>(raw.campaign);
+  let objectiveIntel = 0;
   for (const def of Object.values<MapDef<IdSpace>>(raw.maps)) {
     validateMapMedals(issues, def, campaign.has(def.id));
+    validateObjectives(issues, def);
+    if (campaign.has(def.id)) for (const o of def.objectives ?? []) objectiveIntel += o.intel;
+  }
+  if (objectiveIntel > OBJECTIVE_INTEL_BUDGET) {
+    issues.add(
+      'objectives',
+      'maps',
+      `campaign objectives pay ${objectiveIntel} Intel; the budget is ${OBJECTIVE_INTEL_BUDGET}`,
+    );
   }
 }
 
@@ -109,9 +126,36 @@ function validateMapMedals(issues: Issues, def: MapDef<IdSpace>, inCampaign: boo
   for (const [c, w] of conditions) validateCondition(issues, def, c, w);
 }
 
-function text(issues: Issues, s: string, max: number, where: string): void {
+function validateObjectives(issues: Issues, def: MapDef<IdSpace>): void {
+  const variants = def.flagVariants ?? {};
+  for (const [i, o] of (def.objectives ?? []).entries()) {
+    const w = `maps.${def.id}.objectives[${i}]`;
+    if (!MEDAL_ID_RE.test(o.id)) issues.add('objectives', `${w}.id`, `'${o.id}' must be snake_case`);
+    text(issues, o.name, MEDAL_NAME_MAX, `${w}.name`, 'objectives');
+    text(issues, o.description, MEDAL_DESCRIPTION_MAX, `${w}.description`, 'objectives');
+    if (o.intel < 1) issues.add('objectives', `${w}.intel`, 'an objective pays at least 1 Intel');
+    exemptRefs(issues, def, o.condition, `${w}.condition`);
+    for (const f of flagsOf(o.condition)) {
+      if (variants[f] === undefined) {
+        issues.add(
+          'flag-variants',
+          `${w}.condition`,
+          `reads flag '${f}', so flagVariants needs a '${f}' entry`,
+        );
+      }
+    }
+  }
+}
+
+function text(
+  issues: Issues,
+  s: string,
+  max: number,
+  where: string,
+  rule: 'medals' | 'objectives' = 'medals',
+): void {
   if (s.trim() === '' || s.length > max) {
-    issues.add('medals', where, `must be 1–${max} characters (is ${s.length})`);
+    issues.add(rule, where, `must be 1–${max} characters (is ${s.length})`);
   }
 }
 

@@ -1,11 +1,19 @@
-// A pooled enemy: its walk anim for the facing it moves in, depth-sorted in `world` (ground units)
-// or `air` (flyers, drawn 12 px up over a ground shadow; tech-spec § Sprite anchoring). It flashes
+// A pooled enemy: its anim for the facing it moves in, depth-sorted in `world` (ground units) or
+// `air` (flyers, drawn 12 px up over a ground shadow; tech-spec § Sprite anchoring). It flashes
 // white when its HP drops (art-direction §7, Impacts: 2 frames of white tint fill). Each one walks a
 // little to the side of the path's center line, by uid (D026), so a tight clump reads as a crowd,
 // not a centipede. Flyers bob 1 px at 2 Hz (art-direction §8 Flying: "drawn 12 px up with a bob";
 // still under reduced motion), each on its own beat by uid. When it dies it plays its sprite's
 // `death` anim (Act I's comic pop, T311c) where it stood, on a corpse sprite of its own, so the
 // view can go back to the pool at once.
+// What it's doing picks the anim (T312b; enemyPose.ts has the rules): a Digger's `dig_<facing>`
+// tell, Chitterbloom's sneeze tell and sneeze, her dig and `under` mound and surfacing, her phase-3
+// panic, her invulnerable `puff` (shimmering: it alternates with its `default+selected` frame, a
+// white outline, every SHIMMER_MS; steady white-outlined under reduced motion), and `flee`. A
+// burrowed unit without an `under` anim (the Digger) hides and draws the generic `fx.burrow_mound`
+// instead. A leaving unit (driven off with its boss) is untargetable, so it draws at 60%; when the
+// sim lets it go at the map edge, it hands its sprite to LeaveFx, which carries it on past the edge
+// as it fades.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
@@ -13,7 +21,21 @@ import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { animKey, DEFAULT_VARIANT } from '../sprites/bake.ts';
-import { facingOf, spriteId, type Facing } from './spriteInfo.ts';
+import type { SpriteSource } from '../sprites/SpriteSource.ts';
+import {
+  blankFacts,
+  ENEMY_POSES,
+  interruptsOneShot,
+  ONE_SHOT_POSES,
+  oneShotFor,
+  POSE_INDEX,
+  poseFacts,
+  statePose,
+  type EnemyPose,
+  type PoseEnemy,
+} from './enemyPose.ts';
+import type { LeaveFx } from './LeaveFx.ts';
+import { facingOf, hasAnim, spriteId, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -34,6 +56,8 @@ const BOB_UID_STEP_MS = 137;
 const MIN_TURN_TILES = 1e-4;
 /** Hit flash: this many rendered frames of white fill (art-direction §7, never longer). */
 const HIT_FLASH_FRAMES = 2;
+/** A brood's pop-in (a split child, a sneezed or surfaced young): a frame longer than a hit. */
+const POP_FLASH_FRAMES = 3;
 /** `white.1` (master palette). */
 const HIT_FLASH_COLOR = 0xffffff;
 /** Lateral offset step (px), perpendicular to the direction of travel: ((uid % 5) − 2) steps. */
@@ -45,6 +69,12 @@ const FACING_INDEX: Readonly<Record<Facing, number>> = { ne: 0, nw: 1, se: 2, sw
 const TELL_FRAMES = 180;
 /** The glyph's gap above the body's top (px). */
 const TELL_GAP_PX = 2;
+/** The invulnerable shimmer: the `puff` anim swaps to its white-outlined variant this often (ms). */
+export const SHIMMER_MS = 125;
+/** A leaving unit is untargetable: it draws at this alpha (the stepped-alpha ladder's 60%). */
+export const LEAVING_ALPHA = 0.6;
+/** The generic burrow mound (a unit without its own `under` anim). */
+const MOUND_SPRITE = 'fx.burrow_mound';
 
 /** The sideways direction before an enemy has moved, with no route to seed it (screen, unit). */
 const SIDE_DEFAULT_X = -0.894;
@@ -81,17 +111,65 @@ export function sideOf(dx: number, dy: number, out: Vec2): Vec2 | null {
 
 const side: Vec2 = { x: 0, y: 0 };
 
+/**
+ * A sprite's anims for every pose, facing, and selection (keys[(pose × 4 + facing) × 2 +
+ * selected], null where the sprite has no such pose), their frame-0 anchors (pose × 4 + facing),
+ * and its death anim. Built once per sprite id and shared by every view that shows it.
+ */
+interface AnimSet {
+  readonly keys: (string | null)[];
+  readonly anchors: ({ x: number; y: number } | null)[];
+  readonly deathKey: string | null;
+  readonly deathAnchor: { x: number; y: number };
+}
+
+const ANIM_SETS = new WeakMap<SpriteSource, Map<SpriteId, AnimSet>>();
+
+function animSetFor(sprites: SpriteSource, scene: Phaser.Scene, id: SpriteId): AnimSet {
+  let byId = ANIM_SETS.get(sprites);
+  if (byId === undefined) {
+    byId = new Map();
+    ANIM_SETS.set(sprites, byId);
+  }
+  const cached = byId.get(id);
+  if (cached !== undefined) return cached;
+  const keys: (string | null)[] = [];
+  const anchors: ({ x: number; y: number } | null)[] = [];
+  for (const pose of ENEMY_POSES) {
+    for (const f of FACINGS) {
+      const anim = `${pose}_${f}`;
+      const i = POSE_INDEX[pose] * 4 + FACING_INDEX[f];
+      const has = hasAnim(id, anim);
+      keys[i * 2] = has ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, false)) : null;
+      keys[i * 2 + 1] = has ? sprites.anim(id, anim, variantName(DEFAULT_VARIANT, true)) : null;
+      // Mirrored frames of an off-center sprite have their own anchor (tech-spec § Sprite anchoring).
+      anchors[i] = has ? sprites.frameAnchor(id, `${anim}_0`) : null;
+    }
+  }
+  const death = animKey(id, DEFAULT_VARIANT, 'death');
+  const has = scene.anims.exists(death);
+  const set: AnimSet = {
+    keys,
+    anchors,
+    deathKey: has ? death : null,
+    deathAnchor: has ? sprites.frameAnchor(id, 'death_0') : { x: 0, y: 0 },
+  };
+  byId.set(id, set);
+  return set;
+}
+
 export class EnemyView implements PooledView {
   stamp = 0;
   readonly #ctx: ViewContext;
+  readonly #exits: LeaveFx | null;
   readonly #body: Phaser.GameObjects.Sprite;
   readonly #shadow: Phaser.GameObjects.Image;
   readonly #tell: Phaser.GameObjects.Image;
+  /** The generic burrow mound, shown in place of a burrowed body with no `under` anim. */
+  readonly #mound: Phaser.GameObjects.Sprite;
   /** Plays the death anim where the unit died; hides itself when the anim ends. */
   readonly #corpse: Phaser.GameObjects.Sprite;
-  /** The shown sprite's `death` anim key and its frame-0 anchor, or null without one. */
-  #deathKey: string | null = null;
-  #deathAnchor = { x: 0, y: 0 };
+  #set: AnimSet | null = null;
   #tellFrames = 0;
   /** The body's height above its anchor (px), for placing the tell glyph. */
   #headroom = 0;
@@ -112,17 +190,39 @@ export class EnemyView implements PooledView {
   #lane = 0;
   #sideX = SIDE_DEFAULT_X;
   #sideY = SIDE_DEFAULT_Y;
-  /** Anim keys (facing × 2 + selected) and frame-0 anchors (by facing) for the shown sprite. */
-  readonly #keys: string[] = [];
-  readonly #anchors: { x: number; y: number }[] = [];
+  /** The last move's grid direction (a leaver carries on along it past the edge). */
+  #dirX = 0;
+  #dirY = 0;
+  /** The pose the sim's state calls for, the one-shot playing over it (or null), and the drawn one. */
+  #statePose: EnemyPose = 'walk';
+  #oneShot: EnemyPose | null = null;
+  #shown: EnemyPose = 'walk';
+  /** Whether the shown look is the shimmer's white-outlined half. */
+  #shimmerOn = false;
+  /** Burrowed under the generic mound (the body hidden). */
+  #mounded = false;
+  #leaving = false;
+  readonly #facts = blankFacts();
 
-  constructor(ctx: ViewContext) {
+  /** `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes). */
+  constructor(ctx: ViewContext, exits: LeaveFx | null = null) {
     this.#ctx = ctx;
+    this.#exits = exits;
     this.#body = ctx.scene.make.sprite({}, false);
+    this.#body.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      if (this.#oneShot === null) return;
+      this.#oneShot = null;
+      this.#play();
+    });
     this.#shadow = ctx.scene.make.image({}, false);
     ctx.layers.decal.add(this.#shadow);
     this.#tell = ctx.scene.make.image({}, false).setOrigin(0.5, 1);
     ctx.layers.overlay.add(this.#tell);
+    this.#mound = ctx.scene.make.sprite({}, false).setVisible(false);
+    const ma = ctx.sprites.meta(MOUND_SPRITE).anchor;
+    const mf = ctx.sprites.frame(MOUND_SPRITE, 'mound_0');
+    this.#mound.setTexture(mf.texture, mf.frame).setDisplayOrigin(ma.x, ma.y);
+    ctx.layers.world.add(this.#mound);
     this.#corpse = ctx.scene.make.sprite({}, false).setVisible(false);
     this.#corpse.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.#corpse.setVisible(false);
@@ -137,6 +237,16 @@ export class EnemyView implements PooledView {
 
   get y(): number {
     return this.#y;
+  }
+
+  /** The pose drawn now (the smoke flows' and tests' view of it). */
+  get pose(): EnemyPose {
+    return this.#shown;
+  }
+
+  /** Whether it's drawn as burrowed (its mound or `under` anim). */
+  get burrowed(): boolean {
+    return this.#statePose === 'under';
   }
 
   /**
@@ -157,7 +267,10 @@ export class EnemyView implements PooledView {
     const s = sideOf(dx, dy, side);
     this.#sideX = s?.x ?? SIDE_DEFAULT_X;
     this.#sideY = s?.y ?? SIDE_DEFAULT_Y;
+    this.#dirX = dx;
+    this.#dirY = dy;
     this.#id = spriteId(body);
+    this.#set = animSetFor(this.#ctx.sprites, this.#ctx.scene, this.#id);
     this.#flying = flying;
     this.#selected = false;
     this.#facing = 'se';
@@ -165,10 +278,14 @@ export class EnemyView implements PooledView {
     this.#y = Number.NaN;
     this.#hp = Number.NaN;
     this.#lane = laneOffsetPx(uid);
+    this.#statePose = 'walk';
+    this.#oneShot = null;
+    this.#shimmerOn = false;
+    this.#mounded = false;
+    this.#leaving = false;
     this.#stopFlash();
-    this.#cacheAnims();
     (flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(this.#body);
-    this.#body.setVisible(true);
+    this.#body.setVisible(true).setAlpha(1);
     this.#play();
     const { sprites } = this.#ctx;
     // Flyers cast the soft fx.shadow; ground units a contact shadow sized to the body.
@@ -209,6 +326,8 @@ export class EnemyView implements PooledView {
       const dx = e.x - this.#x;
       const dy = e.y - this.#y;
       if (dx * dx + dy * dy > MIN_TURN_TILES * MIN_TURN_TILES) {
+        this.#dirX = dx;
+        this.#dirY = dy;
         const facing = facingOf(dx, dy);
         if (facing !== this.#facing) {
           this.#facing = facing;
@@ -236,11 +355,51 @@ export class EnemyView implements PooledView {
     if (this.#flying) this.#syncBob();
     const depth = worldDepth(gy + oy, 'enemy', this.#uid);
     if (this.#body.depth !== depth) this.#body.setDepth(depth);
-    this.#shadow.setPosition(gx + ox, gy + oy).setVisible(true);
+    this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
+    this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
     if (this.#tellFrames > 0) {
       const top = this.#body.y - this.#headroom - TELL_GAP_PX;
       this.#tell.setPosition(this.#body.x, top).setVisible(true);
     }
+  }
+
+  /**
+   * Picks the anim from what the unit is doing (enemyPose.ts): its tells, its burrow, a boss's
+   * phase state, and leaving. Call after `sync`, every frame. Allocation-free.
+   */
+  syncPose(e: PoseEnemy): void {
+    const next = statePose(poseFacts(e, this.#facts));
+    let dirty = false;
+    if (next !== this.#statePose) {
+      const shot = oneShotFor(this.#statePose, next);
+      this.#statePose = next;
+      if (shot !== null && this.#has(shot)) this.#oneShot = shot;
+      else if (this.#oneShot !== null && interruptsOneShot(next)) this.#oneShot = null;
+      dirty = true;
+    }
+    const shimmer =
+      this.#currentPose() === 'puff' &&
+      (prefersReducedMotion() || Math.floor(performance.now() / SHIMMER_MS) % 2 === 0);
+    if (shimmer !== this.#shimmerOn) {
+      this.#shimmerOn = shimmer;
+      dirty = true;
+    }
+    if (dirty) this.#play();
+    if (e.leaving !== this.#leaving) {
+      this.#leaving = e.leaving;
+      this.#body.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
+      this.#shadow.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
+    }
+  }
+
+  /** A brood's arrival (split, sneezed, or surfaced): a short white pop over its first frames. */
+  popIn(): void {
+    this.#flash(POP_FLASH_FRAMES);
+  }
+
+  /** A boss's phase change: the body flashes white (the telegraph's first beat). */
+  flash(): void {
+    this.#flash(HIT_FLASH_FRAMES + 1);
   }
 
   /** Lifts a flyer 1 px for half of each bob period (page clock; still under reduced motion). */
@@ -263,26 +422,38 @@ export class EnemyView implements PooledView {
    * Returns false when it has none, or was never placed, so the caller can show another effect.
    */
   die(): boolean {
-    const key = this.#deathKey;
-    if (key === null || Number.isNaN(this.#x) || !this.#body.visible) return false;
+    const key = this.#set?.deathKey ?? null;
+    if (key === null || this.#set === null || Number.isNaN(this.#x) || !this.#body.visible) {
+      return false;
+    }
     const c = this.#corpse;
     (this.#flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(c);
     c.setPosition(this.#body.x, this.#body.y)
       .setDepth(this.#body.depth)
-      .setDisplayOrigin(this.#deathAnchor.x, this.#deathAnchor.y)
+      .setDisplayOrigin(this.#set.deathAnchor.x, this.#set.deathAnchor.y)
       .setVisible(true)
       .play(key);
     return true;
   }
 
   release(): void {
+    // A leaver the sim let go at the map edge runs on past it, fading (no event marks it).
+    if (this.#leaving && this.#exits !== null && this.#body.visible && !Number.isNaN(this.#x)) {
+      const key = this.#body.anims.currentAnim?.key ?? null;
+      this.#exits.start(this.#body, key, this.#flying, this.#dirX, this.#dirY);
+    }
     this.#uid = 0;
     this.#id = null;
+    this.#set = null;
+    this.#leaving = false;
+    this.#oneShot = null;
     this.#stopFlash();
     this.#body.stop();
-    this.#body.setVisible(false);
-    this.#shadow.setVisible(false);
+    this.#body.setVisible(false).setAlpha(1);
+    this.#shadow.setVisible(false).setAlpha(1);
     this.#tell.setVisible(false);
+    this.#mound.stop().setVisible(false);
+    this.#mounded = false;
     this.#tellFrames = 0;
   }
 
@@ -291,11 +462,15 @@ export class EnemyView implements PooledView {
     const hit = hp < this.#hp; // false on the first frame (NaN)
     this.#hp = hp;
     if (hit) {
-      this.#flashFrames = HIT_FLASH_FRAMES;
-      this.#body.setTint(HIT_FLASH_COLOR).setTintMode(Phaser.TintModes.FILL);
+      this.#flash(HIT_FLASH_FRAMES);
     } else if (this.#flashFrames > 0 && --this.#flashFrames === 0) {
       this.#stopFlash();
     }
+  }
+
+  #flash(frames: number): void {
+    this.#flashFrames = Math.max(this.#flashFrames, frames);
+    this.#body.setTint(HIT_FLASH_COLOR).setTintMode(Phaser.TintModes.FILL);
   }
 
   #stopFlash(): void {
@@ -303,38 +478,61 @@ export class EnemyView implements PooledView {
     this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 
-  /** Looks up every facing's anim key (plain and selected) and anchor once per show. */
-  #cacheAnims(): void {
-    this.#keys.length = 0;
-    this.#anchors.length = 0;
-    this.#deathKey = null;
-    if (this.#id === null) return;
-    const { sprites } = this.#ctx;
-    const death = animKey(this.#id, DEFAULT_VARIANT, 'death');
-    if (this.#ctx.scene.anims.exists(death)) {
-      this.#deathKey = death;
-      this.#deathAnchor = sprites.frameAnchor(this.#id, 'death_0');
-    }
-    for (const f of FACINGS) {
-      const anim = `walk_${f}`;
-      const i = FACING_INDEX[f];
-      this.#keys[i * 2] = sprites.anim(this.#id, anim, variantName(DEFAULT_VARIANT, false));
-      this.#keys[i * 2 + 1] = sprites.anim(this.#id, anim, variantName(DEFAULT_VARIANT, true));
-      // Mirrored frames of an off-center sprite have their own anchor (tech-spec § Sprite anchoring).
-      this.#anchors[i] = sprites.frameAnchor(this.#id, `${anim}_0`);
-    }
+  /** Whether the shown sprite has `pose` in the current facing. */
+  #has(pose: EnemyPose): boolean {
+    const i = POSE_INDEX[pose] * 4 + FACING_INDEX[this.#facing];
+    return (this.#set?.keys[i * 2] ?? null) !== null;
+  }
+
+  /** The pose to draw: a playing one-shot, else the state's. */
+  #currentPose(): EnemyPose {
+    return this.#oneShot ?? this.#statePose;
+  }
+
+  /** Burrowed with no `under` anim of its own: the generic mound stands in for the body. */
+  #burrowedLook(): boolean {
+    return this.#statePose === 'under';
   }
 
   #play(): void {
-    if (this.#id === null) return;
-    const i = FACING_INDEX[this.#facing];
-    const key = this.#keys[i * 2 + (this.#selected ? 1 : 0)];
-    const a = this.#anchors[i];
-    if (key === undefined || a === undefined) return;
-    const tempo = walkTempo(this.#uid);
-    const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
-    this.#body.play({ key, startFrame: tempo.startFrame % frames });
-    this.#body.anims.timeScale = tempo.timeScale;
+    const set = this.#set;
+    if (set === null || this.#id === null) return;
+    let pose = this.#currentPose();
+    // A burrowed body without its own `under` hides under the generic mound.
+    const mound = pose === 'under' && !this.#has('under');
+    if (mound !== this.#mounded) {
+      this.#mounded = mound;
+      this.#body.setVisible(!mound);
+      if (mound) {
+        this.#mound.setVisible(true).play(this.#ctx.sprites.anim(MOUND_SPRITE, 'mound'));
+      } else {
+        this.#mound.stop().setVisible(false);
+      }
+    }
+    if (!this.#has(pose)) pose = 'walk';
+    const i = POSE_INDEX[pose] * 4 + FACING_INDEX[this.#facing];
+    const selected = this.#selected || (pose === 'puff' && this.#shimmerOn);
+    const key = set.keys[i * 2 + (selected ? 1 : 0)];
+    const a = set.anchors[i];
+    if (key === null || key === undefined || a === null || a === undefined) return;
+    const was = this.#shown;
+    this.#shown = mound ? 'under' : pose;
+    if (pose === 'walk') {
+      const tempo = walkTempo(this.#uid);
+      const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
+      this.#body.play({ key, startFrame: tempo.startFrame % frames });
+      this.#body.anims.timeScale = tempo.timeScale;
+    } else if (pose === 'puff' && was === 'puff') {
+      // The shimmer swaps the variant mid-cycle: keep the frame it was on.
+      const frame = this.#body.anims.currentFrame?.index ?? 1;
+      this.#body.play({ key, startFrame: frame - 1 });
+      this.#body.anims.timeScale = 1;
+    } else {
+      this.#body.play(key);
+      this.#body.anims.timeScale = 1;
+    }
     this.#body.setDisplayOrigin(a.x, a.y);
+    // A one-shot that can't play here (none authored) hands straight back to the state pose.
+    if (ONE_SHOT_POSES.has(this.#currentPose()) && pose === 'walk') this.#oneShot = null;
   }
 }

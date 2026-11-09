@@ -1,7 +1,7 @@
 // The harness end to end on the fixture map: planning, running each run once, judging, and
 // the run-level checks.
 import { describe, expect, it } from 'vitest';
-import type { CompiledContent } from '../content/compiled.ts';
+import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
 import {
   FLAG_VARIANT_CONTENT,
@@ -144,7 +144,7 @@ describe('balance harness', () => {
     // A beam attack on the par loadout's gun, which the sim refuses until M4.
     const gun = PLAIN_CONTENT.towers.fx_gun;
     const [t1, ...rest] = gun.tiers;
-    const beam = { ...t1!, attack: { ...t1!.attack!, kind: 'beam' as const } };
+    const beam = { ...t1!, attack: { ...t1!.attack, kind: 'beam' } } as CompiledTier;
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
       towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [beam, ...rest] } },

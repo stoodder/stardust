@@ -170,7 +170,7 @@ describe('dressTile', () => {
     const across = { ...grid(['.#.', '...']), markers: { banner_line: [1, 1] } } as const;
     expect(dressTile(across, 1, 1).prop?.frame).toBe('y');
     // A cue's prop (Zibzab's shop, T312b) leaves its tile bare until the cue.
-    expect(CUE_DECOR['zibzab_shop']).toBe('prop.zibzab_shop');
+    expect(CUE_DECOR['zibzab_shop']).toEqual({ sprite: 'prop.zibzab_shop', wave: 6 });
     expect(dressTile(m, 3, 3).prop).toBeNull();
     // Hardware keeps its own palette.
     expect(propVariant('prop.podium', 'act3')).toBe('default');

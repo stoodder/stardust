@@ -1,5 +1,5 @@
-// Run-end rewards (design/progression.md § 2 Stardust, § 3 medal Intel; meta-runtime.md § Run end
-// step 5). Pure: what a run pays, given the map's record before the run. The payout rates are
+// Run-end rewards (design/progression.md § 2 Stardust, § 3 medal and objective Intel;
+// meta-runtime.md § Run end step 5). Pure: what a run pays, given the map's record before the run. The payout rates are
 // first-pass tuning values from progression.md; the anti-farming clauses are rules (D006).
 import type { MedalId } from '../content/types.ts';
 
@@ -89,6 +89,38 @@ export function medalPayout(
     if (out.some((m) => m.id === id)) continue;
     const isNew = !held.includes(id);
     out.push({ id, isNew, intel: isNew ? REWARD_RULES.medalIntel : 0 });
+  }
+  return out;
+}
+
+/** An optional objective the run completed (the sim's `completedObjectiveIds`) and its Intel. */
+export interface CompletedObjective {
+  readonly id: string;
+  /** The objective's `intel` (map data). */
+  readonly intel: number;
+}
+
+/** An objective the run completed, and whether it is new to the save (only new ones pay Intel). */
+export interface EarnedObjective {
+  readonly id: string;
+  readonly isNew: boolean;
+  /** Intel it paid: the objective's `intel` when new, else 0. */
+  readonly intel: number;
+}
+
+/**
+ * The run's completed objectives against the ones the save already holds for the map
+ * (progression.md § 3, Objective Intel): like a medal, each pays its Intel the first time.
+ */
+export function objectivePayout(
+  held: readonly string[],
+  completed: readonly CompletedObjective[],
+): readonly EarnedObjective[] {
+  const out: EarnedObjective[] = [];
+  for (const o of completed) {
+    if (out.some((x) => x.id === o.id)) continue;
+    const isNew = !held.includes(o.id);
+    out.push({ id: o.id, isNew, intel: isNew ? Math.max(0, Math.floor(o.intel)) : 0 });
   }
   return out;
 }

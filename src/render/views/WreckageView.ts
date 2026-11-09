@@ -169,7 +169,8 @@ export class WreckageView {
     const live = liveTileAt(map, { queue: [], cleared: [w.index] }, w.index);
     const tiles = map.tiles.slice();
     tiles[w.index] = live;
-    const grid: GroundGrid = { cols: map.cols, rows: map.rows, tiles };
+    // The map's terraces too, so a cleared tile at a terrace's foot keeps its cliff face (T312b).
+    const grid: GroundGrid = { cols: map.cols, rows: map.rows, tiles, terraces: map.terraces };
     drawCell(this.#ctx, map.env, w.col, w.row, dressTile(grid, w.col, w.row), w.index);
   }
 }

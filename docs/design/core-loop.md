@@ -28,10 +28,11 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 | **Debrief** | Reads a short scene (≤ 6 lines) and, after some maps, makes a story choice (C2–C4, [../story/bible.md §9](../story/bible.md#9-the-choices)). | Only after a victory (or a Holdout's scripted end). Skippable on replays. |
 | **Base** | Reads the **Everglow Inbox** (§6.4), spends Stardust at **Zibzab's shop**, Intel in **R&D**, reads the **codex** (§6.5), checks the **Pest Bounty Board** (§6.6, Acts I–II), talks to NPCs. | The base hub is the Perimeter Office (working name). Story scenes can play here. See [progression.md](progression.md). |
 
-**The loadout screen as built (T201, M2).** It offers the towers and the Technician ability. Field Protocols join it with their picker (M3), and the finale's companion pick with the finale (M5).
+**The loadout screen as built (T201, M2; protocols T308, M3).** It offers the towers, the Technician ability, and the Field Protocols (owned ones, up to the save's slots; one save-wide set, so a change carries to every map). The finale's companion pick joins with the finale (M5).
 - It comes before the briefing, which opens over the battle (the star map and its briefing are M3).
 - The order the player picks towers in is their build-slot order (keys 1–4).
 - Each tower shows its icon, role, cost (after the save's discounts), and which of the map's counters it answers, from which tier or spec.
+- Under the towers, the Field Protocols toggle on and off; with one slot, picking another swaps it in, and Specialist picks its tower once equipped.
 - A side column shows slot 2 (the map's companion), the links the owned towers can form (lit when the pick forms them), and a heads-up for any required counter the pick leaves unanswered. The heads-up names the towers that would answer it and never blocks the pick.
 - The last pick on each map is remembered; a map with none starts from the last pick anywhere. Retry keeps it, and the briefing's *Change loadout* goes back to the screen. Results doesn't offer *Change loadout* yet.
 

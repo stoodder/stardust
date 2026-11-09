@@ -1,15 +1,22 @@
 // The loadout screen (T201; design/core-loop.md § 1, vision pillar 2): before a map, pick up to
-// four tower types (in build-slot order) and the Technician's ability. Each tower shows its icon,
-// role, cost, and which of the map's counters it answers; the side column shows slot 2 (the map's
-// companion), the synergy links the pool can form (lit when the pick forms them), and a heads-up
+// four tower types (in build-slot order), the Technician's ability, and the Field Protocols to
+// equip (T308: up to the save's slots, save-wide). Each tower shows its icon, role, cost, and which
+// of the map's counters it answers, and the protocols sit under the towers; the side column shows
+// slot 2 (the map's companion), the synergy links the pool can form (lit when it forms them), and a heads-up
 // for any required counter the pick leaves unanswered (a warning, never a block or a scold).
 // The router shows it only when there's a choice to make (meta/loadout.ts, the skip rule).
 // Keys: Tab moves between the groups; the arrows move within the tower grid and the ability
-// radio group; Enter or Space toggles a tower; Lock in has the focus on arrival, so Enter goes
-// straight on with the remembered pick; Esc goes back to the Shift board.
+// radio group; Enter or Space toggles a tower or a protocol; Lock in has the focus on arrival, so
+// Enter goes straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
 import { useState } from 'preact/hooks';
-import { formedLinks, pickWarnings, togglePickTower } from '../../app/loadout.ts';
+import {
+  formedLinks,
+  pickWarnings,
+  setProtocolTower,
+  togglePickProtocol,
+  togglePickTower,
+} from '../../app/loadout.ts';
 import { lockInLoadout, toCampaign } from '../../app/navigation.ts';
 import { Icon } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
@@ -18,6 +25,7 @@ import {
   loadout,
   type LoadoutAbilityView,
   type LoadoutPickView,
+  type LoadoutProtocolView,
   type LoadoutTowerView,
   type LoadoutView,
 } from './loadoutView.ts';
@@ -134,6 +142,74 @@ function AbilityPicker(props: {
   );
 }
 
+/**
+ * The Field Protocol picker: each owned protocol toggles on and off (aria-pressed), up to the
+ * slots; with one slot, picking another swaps it in. Specialist, once equipped, picks its tower.
+ */
+function Protocols(props: {
+  view: LoadoutView;
+  pick: LoadoutPickView;
+  onPick: (next: LoadoutPickView) => void;
+  onFull: () => void;
+}) {
+  const { view, pick } = props;
+  if (view.protocols.length === 0) {
+    return <p class="sd-lo-dim">None owned yet. Zibzab sells them.</p>;
+  }
+  const full = pick.protocols.length >= view.protocolSlots && view.protocolSlots > 1;
+  return (
+    <ul class="sd-lo-protocols" aria-label={`Field Protocols, equip up to ${view.protocolSlots}`}>
+      {view.protocols.map((p: LoadoutProtocolView) => {
+        const on = pick.protocols.includes(p.id);
+        const blocked = !on && full;
+        const tower = pick.protocolPicks[p.id];
+        return (
+          <li key={p.id} class="sd-lo-protocol-row">
+            <button
+              type="button"
+              class={`sd-lo-protocol${on ? ' sd-lo-on' : ''}${blocked ? ' sd-lo-full' : ''}`}
+              data-protocol={p.id}
+              aria-pressed={on}
+              aria-disabled={blocked}
+              aria-label={`${p.name}: ${p.effect}${on ? ', equipped' : ''}`}
+              onClick={() => {
+                const next = togglePickProtocol(pick, p.id);
+                if (next === pick) props.onFull();
+                else props.onPick(next);
+              }}
+            >
+              <span class="sd-lo-protocol-name" aria-hidden="true">
+                {p.name}
+              </span>
+              <span class="sd-lo-protocol-effect" aria-hidden="true">
+                {p.effect}
+              </span>
+            </button>
+            {on && p.takesTower && (
+              <label class="sd-lo-protocol-tower">
+                <span class="sd-lo-dim">Tower </span>
+                <select
+                  value={tower}
+                  aria-label={`${p.name}: tower`}
+                  onChange={(e) =>
+                    props.onPick(setProtocolTower(pick, p.id, e.currentTarget.value))
+                  }
+                >
+                  {view.towers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   const formed = formedLinks(pick);
   if (view.links.length === 0) {
@@ -163,7 +239,7 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
 export function Loadout() {
   const view = loadout.value;
   const [pick, setPick] = useState<LoadoutPickView>(
-    () => view?.initial ?? { towers: [], ability: null },
+    () => view?.initial ?? { towers: [], ability: null, protocols: [], protocolPicks: {} },
   );
   const [notice, setNotice] = useState<string | null>(null);
   // Esc (T212) goes back to the Shift board, as its button does.
@@ -241,6 +317,29 @@ export function Loadout() {
             <p class="sd-lo-hint" role="status">
               {notice ?? 'Pick order is build-slot order (keys 1–4 in the shift).'}
             </p>
+            {view.protocolSlots > 0 && (
+              <>
+                <h2 class="sd-panel-heading sd-lo-heading">
+                  Field Protocols{' '}
+                  <span class="sd-lo-count">
+                    {pick.protocols.length} / {view.protocolSlots}
+                  </span>
+                </h2>
+                <Protocols
+                  view={view}
+                  pick={pick}
+                  onPick={(next) => {
+                    setNotice(null);
+                    setPick(next);
+                  }}
+                  onFull={() =>
+                    setNotice(
+                      `${view.protocolSlots} protocols is the limit. Drop one to swap this one in.`,
+                    )
+                  }
+                />
+              </>
+            )}
           </section>
           <aside class="sd-lo-side">
             <h2 id="sd-lo-ability-label" class="sd-panel-heading sd-lo-heading">

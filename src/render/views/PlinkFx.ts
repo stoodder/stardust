@@ -53,20 +53,28 @@ export class PlinkFx {
 
   /** A shot plinked off a flyer at grid (x, y). */
   plink(x: number, y: number): void {
+    this.spark(x, y, AIR_LIFT_PX + BODY_LIFT_PX + 2);
+    if (this.#sinceText >= PLINK_TEXT_MS) {
+      this.#sinceText = 0;
+      this.#fx.floatText('PLINK!', 'white.1', x, y, PLINK_TEXT_LIFT_PX);
+    }
+  }
+
+  /**
+   * Just the spark, `liftPx` above grid (x, y): a shot bouncing off a boss between phases (T312b;
+   * enemies.md § 6, "shots plink off"), with no callout.
+   */
+  spark(x: number, y: number, liftPx: number): void {
     const p = this.#plinks[this.#next]!; // index < MAX_PLINKS
     this.#next = (this.#next + 1) % MAX_PLINKS;
     gridToScreen(x, y, this.#ctx.origin, pos);
     p.img
       .setTexture(`${KEY}.0`)
-      .setPosition(Math.round(pos.x), Math.round(pos.y - AIR_LIFT_PX - BODY_LIFT_PX - 2))
+      .setPosition(Math.round(pos.x), Math.round(pos.y - liftPx))
       .setVisible(true);
     p.ms = 0;
     p.frame = 0;
     p.active = true;
-    if (this.#sinceText >= PLINK_TEXT_MS) {
-      this.#sinceText = 0;
-      this.#fx.floatText('PLINK!', 'white.1', x, y, PLINK_TEXT_LIFT_PX);
-    }
   }
 
   update(dt: number): void {

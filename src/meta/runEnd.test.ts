@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { FlagRule } from '../content/dialogue/flags.ts';
 import type { WaveTag } from '../content/types.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
-import { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
+import { REWARD_RULES, medalPayout, objectivePayout, stardustPayout } from './rewards.ts';
 import { runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
 import { SAVE_LIMITS, clampCurrency, validateSave } from './validate.ts';
@@ -79,6 +79,54 @@ describe('medalPayout (progression.md § 3)', () => {
 
   it('counts a medal once even if listed twice', () => {
     expect(medalPayout([], ['victory', 'victory'])).toHaveLength(1);
+  });
+});
+
+describe('objective Intel (progression.md § 3; T304f)', () => {
+  const AUDIT = { id: 'clean_audit', intel: 1 };
+
+  it('objectivePayout pays an objective once, the first time, and counts a repeat once', () => {
+    expect(objectivePayout([], [AUDIT, AUDIT])).toEqual([
+      { id: 'clean_audit', isNew: true, intel: 1 },
+    ]);
+    expect(objectivePayout(['clean_audit'], [AUDIT])).toEqual([
+      { id: 'clean_audit', isNew: false, intel: 0 },
+    ]);
+  });
+
+  it('a win pays new objective Intel on top of medal Intel and records it on the map', () => {
+    const { save, summary } = runEnd(createNewSave(), { ...RUN, completedObjectives: [AUDIT] });
+    expect(summary.objectives).toEqual([{ id: 'clean_audit', isNew: true, intel: 1 }]);
+    expect(summary.intel).toBe(3);
+    expect(save.currencies.intel).toBe(3);
+    expect(save.campaign.maps.a1_m01?.objectives).toEqual(['clean_audit']);
+    expect(validateSave(save).ok).toBe(true);
+    // A replay that completes it again pays nothing more.
+    const again = runEnd(save, { ...RUN, completedObjectives: [AUDIT] });
+    expect(again.summary.objectives).toEqual([{ id: 'clean_audit', isNew: false, intel: 0 }]);
+    expect(again.save.campaign.maps.a1_m01?.objectives).toEqual(['clean_audit']);
+  });
+
+  it('a loss pays and records no objective; a win without one adds no field', () => {
+    const { save, summary } = runEnd(createNewSave(), {
+      ...lost(3),
+      completedObjectives: [AUDIT],
+    });
+    expect(summary.objectives).toEqual([]);
+    expect(save.campaign.maps.a1_m01).not.toHaveProperty('objectives');
+    expect(after(RUN).campaign.maps.a1_m01).not.toHaveProperty('objectives');
+  });
+
+  it('validation refuses objectives on a map not completed', () => {
+    const save = after(RUN);
+    const bad = {
+      ...save,
+      campaign: {
+        ...save.campaign,
+        maps: { a1_m01: { completed: false, medals: [], bestMeter: 0, objectives: ['x'] } },
+      },
+    };
+    expect(validateSave(bad).ok).toBe(false);
   });
 });
 

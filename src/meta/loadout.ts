@@ -73,9 +73,7 @@ export function loadoutPools(save: SaveData, devUnlocks: readonly MetaSystem[] =
  */
 export function hasLoadoutChoice(pools: LoadoutPools<string, string>): boolean {
   return (
-    pools.towers.length > MAX_LOADOUT ||
-    pools.abilities.length > 1 ||
-    hasProtocolChoice(pools)
+    pools.towers.length > MAX_LOADOUT || pools.abilities.length > 1 || hasProtocolChoice(pools)
   );
 }
 

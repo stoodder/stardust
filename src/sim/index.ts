@@ -26,6 +26,9 @@ export {
   type SegmentSpan,
 } from './systems/abilities.ts';
 export { allyMayTarget } from './systems/allies.ts';
+// What render reads of enemy abilities (T312b): the tells and what a boss does next.
+export { bossNextAbility, bossTelling, type BossAbility } from './enemyAbilities/boss.ts';
+export { burrowTelling } from './enemyAbilities/burrow.ts';
 export type {
   Command,
   CommandLogEntry,

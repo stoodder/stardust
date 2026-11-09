@@ -15,6 +15,7 @@ import { enemyZoomer } from './enemies/zoomer.ts';
 import { fxBombletBurst } from './fx/bomblet_burst.ts';
 import { fxExplosion } from './fx/explosion.ts';
 import { fxSackBurst } from './fx/sack_burst.ts';
+import { fxBurrowMound } from './fx/burrow_mound.ts';
 import { fxGroundShadow } from './fx/ground_shadow.ts';
 import { fxLinkTether } from './fx/link_tether.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
@@ -161,6 +162,7 @@ export const SPRITES = [
   fxExplosion,
   fxBombletBurst,
   fxSackBurst,
+  fxBurrowMound,
   fxLinkTether,
   fxOrbitalReticle,
   iconTowerRivet,

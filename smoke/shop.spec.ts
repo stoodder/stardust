@@ -109,3 +109,81 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
   await expect(offerRow(page, 'Thumper specializations')).toContainText('Owned');
   await shot(page, 'shop', 7, 'engineering-all-unlocked');
 });
+
+// T308: the shop opens after A1M3. `&dialogue=1` lets the base's scenes play under `?test=1`.
+test("shop: after A1M3, Zibzab's arrival, the Zapcoil sample, QUILL's Rapport, and the open question", async ({
+  page,
+}) => {
+  await page.goto('/?test=1&seed=1&dialogue=1&save=after_a1m3');
+  await waitForReady(page);
+  await page.getByRole('button', { name: 'Base' }).click();
+
+  // The first visit with the shop open lands on the Shop tab, and Zibzab presents the sample.
+  await expect(page.getByRole('tab', { name: 'Shop', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const scene = page.getByTestId('scene');
+  await expect(scene).toContainText('Zibzab');
+  await expect(scene).toContainText("First one's on me. Zibzab is patient.");
+  // The line types out (Skip turns to Next), then Next closes it.
+  const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
+  await expect(next).toHaveText('Next', { timeout: 5000 });
+  await shot(page, 'shop', 8, 'zibzab-arrival');
+  await next.click();
+  await expect(scene).toBeHidden();
+  const seen = await page.evaluate(() => globalThis.__sd!.save()!.story.seen);
+  expect(seen).toContain('a1_m03_base_arrival');
+
+  // The shelf: the open question first, then the Zapcoil license, owned (given as the shop opened).
+  const pane = page.getByRole('tabpanel');
+  await expect(pane.getByRole('heading', { name: 'Ask Zibzab' })).toBeVisible();
+  await expect(pane.getByRole('heading', { name: 'Licenses' })).toBeVisible();
+  const zapcoil = offerRow(page, 'Zapcoil license');
+  await expect(zapcoil).toContainText('Owned');
+  await expect(zapcoil).toContainText('Price first: your next visit.');
+  expect(await page.evaluate(() => globalThis.__sd!.save()!.unlocks.towers)).toContain('zapcoil');
+  await shot(page, 'shop', 9, 'shop-after-a1m3');
+
+  // Research: QUILL's Rapport is stocked now that QUILL has been out with you.
+  await page.getByRole('tab', { name: 'Research' }).click();
+  const rapport = offerRow(page, 'Rapport: QUILL');
+  await expect(rapport).toContainText('−15% Time Dilation cooldown');
+  await expect(
+    rapport.getByRole('button', { name: /^Order Rapport: QUILL, 2 Intel/ }),
+  ).toBeVisible();
+  await shot(page, 'shop', 10, 'rnd-quill-rapport');
+
+  // The open question: ask, hear the price, and keep asking.
+  await page.getByRole('tab', { name: 'Shop', exact: true }).click();
+  await page.getByRole('button', { name: 'Ask Zibzab where stardust comes from' }).click();
+  await expect(scene).toContainText('Where does stardust come from?');
+  // Read on to the choice (each line: Skip finishes its typing, Next moves on).
+  const still = scene.getByRole('button', { name: 'Still asking.' });
+  for (let i = 0; i < 6; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- each press depends on what the last one showed
+    if (await still.isVisible()) break;
+    // oxlint-disable-next-line no-await-in-loop -- one press at a time, in order
+    await next.click();
+  }
+  await expect(still).toBeVisible();
+  await expect(scene).toContainText("you won't like it, and you can't return it");
+  await shot(page, 'shop', 11, 'open-question');
+  await still.click();
+  await expect(scene).toContainText("It's the dead. Theirs.");
+  await expect(next).toHaveText('Next', { timeout: 5000 });
+  await shot(page, 'shop', 12, 'open-question-answer');
+  await page.keyboard.press('Escape');
+  await expect(scene).toBeHidden();
+  const flags = await page.evaluate(() => globalThis.__sd!.save()!.story.flags);
+  expect(flags.asked_zibzab_early).toBe(true);
+  // Asked once, it leaves the shelf; and the arrival doesn't play again.
+  await expect(pane.getByRole('heading', { name: 'Ask Zibzab' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Shift board' }).click();
+  await page.getByRole('button', { name: 'Base' }).click();
+  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(scene).toHaveCount(0);
+});

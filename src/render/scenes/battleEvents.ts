@@ -3,7 +3,11 @@
 // build dust and costs, upgrade and specialize rings, link tethers and callouts, deaths, leaks,
 // shells and bomblets, the strike's landing, and Bricks's shots; and M3's (T312a): flak climbing
 // to a flyer and bursting there, Zapcoil's chain arcs hop by hop, Gerald's plink and exit, and the
-// salvage a cleared wreck pays. Render-only: it reads sim state.
+// salvage a cleared wreck pays; and T312b's: younglings drawn as `enemy.youngling`, a brood popping
+// in where it's born (a split's children, a sneeze, a surfacing), a splitter's pink pop, a boss's
+// phase change (its bar flashes, gold and white rings, a 1 px shake) and the sparks of shots
+// plinking off it while it's invulnerable, its ending fading the bar, and props on cues landing
+// with their wave's countdown. Render-only: it reads sim state.
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -11,6 +15,8 @@ import type { Sim, SimEvent, Tower } from '../../sim/index.ts';
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import type { Vec2 } from '../iso.ts';
 import type { AllyView } from '../views/AllyView.ts';
+import type { BossBarView } from '../views/BossBarView.ts';
+import type { CuePropView } from '../views/CuePropView.ts';
 import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
 import type { EnemyView } from '../views/EnemyView.ts';
@@ -19,7 +25,7 @@ import { calloutText, LINK_CALLOUT, type LinkEnd, type LinkView } from '../views
 import type { PlinkFx } from '../views/PlinkFx.ts';
 import type { ProjectileView } from '../views/ProjectileView.ts';
 import type { SackBurstView } from '../views/SackBurstView.ts';
-import { facingOf, tellGlyph } from '../views/spriteInfo.ts';
+import { enemyBody, facingOf, tellGlyph } from '../views/spriteInfo.ts';
 import type { TowerView } from '../views/TowerView.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from '../views/TransientFx.ts';
 import type { ViewPool } from '../views/ViewPool.ts';
@@ -42,6 +48,18 @@ const LINK_RING_TILES = 0.75;
 const LINK_RING_MS = 450;
 const LINK_CALLOUT_LIFT_PX = 6;
 const LINK_CALLOUT_MS = 1600;
+/** A brood born mid-route (not at its route's start): it pops in. */
+const BROOD_MIN_DIST_TILES = 0.01;
+/** A splitter's pop where it fell (T312b): a quick pink ring. */
+const SPLIT_RING_TILES = 0.6;
+const SPLIT_RING_MS = 300;
+/** A boss's phase change (the telegraph's first beat): a wide gold ring and a white one inside. */
+const PHASE_RING_TILES = 1.5;
+const PHASE_RING_MS = 600;
+const PHASE_FLASH_RING_TILES = 0.75;
+const PHASE_FLASH_RING_MS = 250;
+/** Shots bouncing off a boss between phases spark on its body, this high (px). */
+const BOSS_SPARK_LIFT_PX = 18;
 /** A specialization's extra flash (D059): a gold ring past the upgrade's teal one. */
 const SPEC_RING_TILES = 1.25;
 const SPEC_RING_MS = 500;
@@ -80,8 +98,12 @@ export interface BattleEventViews {
   readonly core: CoreView;
   /** Zapcoil's chain arcs (T312a). */
   readonly chains: ChainFx;
-  /** Gerald's plinks (T312a). */
+  /** Gerald's plinks (T312a), and the sparks off an invulnerable boss (T312b). */
   readonly plinks: PlinkFx;
+  /** The boss bar (T312b). */
+  readonly bossBar: BossBarView;
+  /** Props that land on a cue (T312b). */
+  readonly cueProps: CuePropView;
   /** Each ability slot's strike radius after modifiers (Mk II; tiles, 0: none). */
   readonly strikeRadius: readonly number[];
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */
@@ -161,6 +183,27 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     }
     return air;
   };
+  /** The enemy `uid` in the pool (its slot keeps it until reused, so a fresh death finds it), or null. */
+  const enemyOf = (uid: number): Sim<IdSpace>['state']['enemies']['items'][number] | null => {
+    const pool = sim.state.enemies;
+    for (let i = 0; i < pool.used; i++) {
+      const e = pool.items[i]!; // i < used ≤ items.length
+      if (e.uid === uid) return e;
+    }
+    return null;
+  };
+  /** Whether a hit at grid (x, y) that took nothing struck a boss between phases (its plinks). */
+  const shieldedBossAt = (x: number, y: number): boolean => {
+    const pool = sim.state.enemies;
+    for (let i = 0; i < pool.used; i++) {
+      const e = pool.items[i]!; // i < used ≤ items.length
+      if (!e.alive || e.invulnerableTicks <= 0) continue;
+      if ((e.x - x) * (e.x - x) + (e.y - y) * (e.y - y) <= STRUCK_NEAR_TILES * STRUCK_NEAR_TILES) {
+        return true;
+      }
+    }
+    return false;
+  };
   /** How far up tower `uid` stands (px; 0 if it's gone). */
   const towerLift = (uid: number): number => {
     const t = findLiveTower(sim.state.towers, uid);
@@ -239,13 +282,47 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const glyph = told.has(e.enemy) ? null : tellGlyph(def.tells);
       if (glyph !== null) told.add(e.enemy);
       const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
-      views.enemies.acquire(e.uid).show(e.uid, def.sprites.body, def.layer === 'air', glyph, route);
+      const unit = enemyOf(e.uid);
+      // A `youngling`-tagged unit draws as the little one (D074).
+      const body = enemyBody(def.sprites.body, unit?.tags ?? []);
+      const v = views.enemies.acquire(e.uid);
+      v.show(e.uid, body, def.layer === 'air', glyph, route);
+      // A brood (a split's children, a sneeze, a surfacing) is born mid-route: it pops in.
+      if (unit !== null && unit.dist > BROOD_MIN_DIST_TILES) v.popIn();
     }),
     bus.on('EnemyDied', (e) => {
       // Act I's comic pop: the unit's own `death` anim (T311c); a sprite without one bursts.
       const popped = views.enemies.get(e.uid)?.die() === true;
       views.enemies.release(e.uid);
       if (!popped) fx.burst(e.x, e.y);
+      // A splitter's pop (its children spawn here this tick and pop in).
+      if (content.enemies[e.enemy]?.split != null) {
+        fx.ring(e.x, e.y, SPLIT_RING_TILES, 'pink.3', SPLIT_RING_MS, true);
+      }
+    }),
+    bus.on('BossPhase', (e) => {
+      views.bossBar.phase(e.uid, e.phase);
+      if (e.phase <= 1) return;
+      // The telegraph's first beat (enemies.md § 6): she flashes and puffs up, rings go out, and
+      // the screen shakes a pixel (a boss's to have, art-direction §7).
+      views.enemies.get(e.uid)?.flash();
+      const boss = enemyOf(e.uid);
+      if (boss !== null) {
+        fx.ring(boss.x, boss.y, PHASE_RING_TILES, 'gold.4', PHASE_RING_MS, true);
+        fx.ring(boss.x, boss.y, PHASE_FLASH_RING_TILES, 'white.1', PHASE_FLASH_RING_MS, true);
+      }
+      fx.leakShake();
+    }),
+    bus.on('BossEnded', (e) => {
+      // Driven off: she turns and runs for the edge with her brood (EnemyView's `flee`); the bar
+      // holds a moment and steps out.
+      views.bossBar.ended(e.uid);
+    }),
+    bus.on('CountdownStarted', (e) => {
+      views.cueProps.reveal(e.wave);
+    }),
+    bus.on('WaveStarted', (e) => {
+      views.cueProps.reveal(e.wave);
     }),
     bus.on('SackBurst', (e) => {
       // The young run back up the route toward the warren (D059); render-only.
@@ -296,6 +373,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       }
     }),
     bus.on('ProjectileHit', (e) => {
+      // A hit that took nothing off a boss between phases plinks off it (enemies.md § 6).
+      if (e.damage <= 0 && shieldedBossAt(e.x, e.y)) {
+        views.plinks.spark(e.x, e.y, BOSS_SPARK_LIFT_PX);
+      }
       if (e.uid === 0) {
         if (e.towerUid === chainTower) views.chains.hop(e.x, e.y, bodyLift(flyerAt(e.x, e.y)));
         return;

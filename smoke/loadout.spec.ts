@@ -165,3 +165,50 @@ test('loadout: skipped when the system is locked or there is no choice', async (
   await expect(build.getByRole('button')).toHaveCount(3);
   await shot(page, 'loadout', 6, 'skipped');
 });
+
+// T308: Field Protocols. after_a1m3 owns five towers (the Zapcoil sample), so the screen shows;
+// one slot opens with the shop. Buy Head Start, equip it, and the battle starts with +10% credits.
+test('loadout: equip a Field Protocol, and the battle starts with its modifier', async ({
+  page,
+}) => {
+  await page.goto('/?test=1&seed=1&save=after_a1m3');
+  await waitForReady(page);
+  // Unequipped first: the plain start.
+  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
+  await expect(page.getByText('Field Protocols')).toBeVisible();
+  await expect(page.getByText('None owned yet. Zibzab sells them.')).toBeVisible();
+  await page.getByRole('button', { name: 'Lock in' }).click();
+  const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
+  await expect(briefing).toBeVisible();
+  const plain = await page.evaluate(() => globalThis.__sd!.state()!.credits);
+
+  // Buy Head Start at Zibzab's.
+  await page.evaluate(() => globalThis.__sd!.goto('base'));
+  await page.getByRole('tab', { name: 'Shop', exact: true }).click();
+  await page
+    .getByRole('tabpanel')
+    .getByRole('button', { name: /^Buy Head Start, 100 Stardust/ })
+    .click();
+  await expect(page.getByTestId('store-line')).toContainText('Zibzab:');
+
+  // Equip it on the loadout screen: one slot, so it shows 1 / 1.
+  await page.getByRole('button', { name: 'Shift board' }).click();
+  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  const headStart = page.getByRole('button', { name: /^Head Start: \+10% starting credits/ });
+  await expect(headStart).toHaveAttribute('aria-pressed', 'false');
+  await headStart.click();
+  await expect(headStart).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('1 / 1')).toBeVisible();
+  await page.waitForTimeout(200);
+  await shot(page, 'loadout', 7, 'protocol-equipped');
+  await page.getByRole('button', { name: 'Lock in' }).click();
+  await expect(briefing).toBeVisible();
+
+  // Saved save-wide, and the battle has the modifier: +10% starting credits.
+  const loadouts = await page.evaluate(() => globalThis.__sd!.save()!.loadouts);
+  expect(loadouts.protocols).toEqual(['head_start']);
+  const credits = await page.evaluate(() => globalThis.__sd!.state()!.credits);
+  expect(credits).toBe(Math.round(plain * 1.1));
+  await shot(page, 'loadout', 8, 'protocol-briefing');
+});

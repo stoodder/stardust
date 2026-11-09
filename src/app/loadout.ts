@@ -1,19 +1,31 @@
 // The loadout screen's app side (T201; design/core-loop.md § 1): builds its view from the save in
 // play and the map (ui/screens/loadoutView.ts), and answers the screen's questions while it's open
-// (toggling a tower, the links a pick forms, the counters it leaves unanswered) through the pure
-// rules in meta/loadout.ts. Locking a pick in writes it as the map's preset (app/save.ts); the
-// battle reads it back through battleConfig (app/battleSetup.ts), so a retry keeps it too.
+// (toggling a tower or a Field Protocol, the links a pick forms, the counters it leaves
+// unanswered) through the pure rules in meta/loadout.ts. Locking a pick in writes it as the map's
+// preset and equips its protocols save-wide (app/save.ts); the battle reads both back through
+// battleConfig (app/battleSetup.ts), so a retry keeps them too.
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { LINKS } from '../content/links/index.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
-import type { CounterId, IdSpace, LinkBonusDef, TowerId, TowerStat } from '../content/types.ts';
+import type {
+  CounterId,
+  IdSpace,
+  LinkBonusDef,
+  ProtocolId,
+  TowerId,
+  TowerStat,
+} from '../content/types.ts';
+import { PROTOCOLS } from '../content/upgrades/index.ts';
 import {
   abilityAnswers,
+  equippedProtocols,
   initialPick,
   linksAmong,
   loadoutPools,
   mapCounters,
+  takesTowerPick,
+  toggleProtocol,
   toggleTower,
   towerAnswers,
   uncoveredCounters,
@@ -31,9 +43,11 @@ import {
   type LoadoutAbilityView,
   type LoadoutLinkView,
   type LoadoutPickView,
+  type LoadoutProtocolView,
   type LoadoutTowerView,
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
+import { grantText } from '../ui/screens/storeText.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
 import { displayName, towerName } from './hudText.ts';
 import { threatNames } from './hudViews.ts';
@@ -122,6 +136,17 @@ function towerView(
   };
 }
 
+/** An owned Field Protocol as the picker shows it: its name and its grants in words. */
+function protocolView(id: ProtocolId): LoadoutProtocolView {
+  const def = PROTOCOLS[id];
+  return {
+    id,
+    name: silkText(def.name),
+    effect: silkText(def.grants.map(grantText).join(' · ')),
+    takesTower: takesTowerPick(id),
+  };
+}
+
 function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
   const [a, b] = l.partners;
   return {
@@ -192,7 +217,14 @@ export function openLoadout(mapId: string): boolean {
         : silkText(
             `${displayName(cfg.companion)} · ${content.abilities[slot2]?.name ?? displayName(slot2)}`,
           ),
-    initial: initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
+    protocols: (pools.protocols ?? []).flatMap((p) =>
+      save.unlocks.protocols.filter((o) => o === p).map(protocolView),
+    ),
+    protocolSlots: pools.protocolSlots ?? 0,
+    initial: {
+      ...initialPick(save, mapId, defaultPick(save, map.builds.parBuild)),
+      ...equippedView(save),
+    },
     max: MAX_LOADOUT,
   };
   loadout.value = view;
@@ -205,11 +237,33 @@ export function closeLoadout(): void {
   ctx = null;
 }
 
-/** The pick as the save's typed ids (unknown ids dropped), in its build-slot order. */
+/** The save's equipped protocols as the screen's pick holds them. */
+function equippedView(save: SaveData): Pick<LoadoutPickView, 'protocols' | 'protocolPicks'> {
+  const { equipped, picks } = equippedProtocols(save);
+  const protocolPicks: Record<string, string> = {};
+  for (const id of equipped) {
+    const tower = picks[id];
+    if (tower !== undefined) protocolPicks[id] = tower;
+  }
+  return { protocols: equipped, protocolPicks };
+}
+
+/**
+ * The pick as the save's typed ids (unknown ids dropped), in its build-slot order, with its
+ * protocols to equip.
+ */
 function typed(c: Context, pick: LoadoutPickView): LoadoutPick {
+  const owned = c.save.unlocks.protocols;
+  const equipped = pick.protocols.flatMap((p) => owned.filter((o) => o === p));
+  const picks: Partial<Record<ProtocolId, TowerId>> = {};
+  for (const id of equipped) {
+    const tower = c.pools.towers.find((t) => t === pick.protocolPicks[id]);
+    if (tower !== undefined) picks[id] = tower;
+  }
   return {
     towers: pick.towers.flatMap((t) => c.pools.towers.filter((o) => o === t)),
     ability: c.pools.abilities.find((a) => a === pick.ability) ?? null,
+    equip: { equipped, picks },
   };
 }
 
@@ -217,7 +271,38 @@ function typed(c: Context, pick: LoadoutPickView): LoadoutPick {
 export function togglePickTower(pick: LoadoutPickView, tower: string): LoadoutPickView {
   if (ctx === null) return pick;
   const pools: LoadoutPools<string, string> = ctx.pools;
-  return toggleTower(pick, tower, pools);
+  const next = toggleTower(pick, tower, pools);
+  return next === pick ? pick : { ...pick, towers: next.towers };
+}
+
+/**
+ * Toggles a Field Protocol (meta/loadout.ts toggleProtocol: on while a slot is free; with one full
+ * slot, a swap). Unchanged when every slot is full. A protocol that takes a tower (Specialist)
+ * starts on the pick's first tower.
+ */
+export function togglePickProtocol(pick: LoadoutPickView, id: string): LoadoutPickView {
+  const view = loadout.value;
+  if (ctx === null || view === null || !view.protocols.some((p) => p.id === id)) return pick;
+  const protocols = toggleProtocol(pick.protocols, id, view.protocolSlots);
+  if (protocols === pick.protocols) return pick;
+  const protocolPicks: Record<string, string> = {};
+  for (const p of protocols) {
+    if (!takesTowerPick(p)) continue;
+    const tower = pick.protocolPicks[p] ?? pick.towers[0] ?? view.towers[0]?.id;
+    if (tower !== undefined) protocolPicks[p] = tower;
+  }
+  return { ...pick, protocols, protocolPicks };
+}
+
+/** Sets the tower an equipped tower-pick protocol (Specialist) takes: any tower in the pool. */
+export function setProtocolTower(
+  pick: LoadoutPickView,
+  protocol: string,
+  tower: string,
+): LoadoutPickView {
+  if (ctx === null || !pick.protocols.includes(protocol)) return pick;
+  if (!ctx.pools.towers.some((t) => t === tower)) return pick;
+  return { ...pick, protocolPicks: { ...pick.protocolPicks, [protocol]: tower } };
 }
 
 /** The ids of the links the picked towers form. */

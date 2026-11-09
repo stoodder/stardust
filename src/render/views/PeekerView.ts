@@ -1,10 +1,12 @@
 // The Peeker (T309; design/core-loop.md § 6.9, art-direction §6): `prop.peeker` on the map's
-// `peeker` marker, a youngling hiding behind a rock. It peeks out every 20–40 s of play, ducks
+// `peeker` marker, a youngling hiding behind a rock (or its map's own cover: A1M4's planter,
+// `peekerCover`). It peeks out every 20–40 s of play, ducks
 // when an enemy comes near or the cursor is on its rock, and ducks when poked (peekerMotion.ts
 // has the rule). Render-only and cosmetic: its timing draws from its own random source, never the
 // sim's, and nothing here touches the sim. The poke itself (a click, or Enter on the keyboard
 // cursor) is a UI event that BattleInteraction hands to the scene and the app.
 import * as Phaser from 'phaser';
+import { peekerFrame, type PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { createRng, nextFloat } from '../../shared/rng.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -16,6 +18,17 @@ const SPRITE = 'prop.peeker';
 const pos: Vec2 = { x: 0, y: 0 };
 /** Props sort among themselves by a per-tile id (GroundView's `propTieBreak`). */
 const TIE_MASK = 0xff;
+
+/**
+ * Each map's own cover for the Peeker, where it isn't the default rock (act1.md per map; T312b):
+ * A1M4's planter by the fountain. A1M3's fallen mailbox is a decor prop in front of the rock.
+ */
+const COVER_BY_MAP: Readonly<Record<string, PeekerCover>> = { a1_m04: 'planter' };
+
+/** The Peeker's cover on map `mapId`. */
+export function peekerCover(mapId: string): PeekerCover {
+  return Object.hasOwn(COVER_BY_MAP, mapId) ? COVER_BY_MAP[mapId]! : 'rock'; // checked
+}
 
 /** What the Peeker reads each frame: the sim's enemy pool. */
 export interface PeekerEnemies {
@@ -38,14 +51,24 @@ export class PeekerView {
   /**
    * The Peeker on tile (`col`, `row`) of a `cols`-wide map in env `env`. `seed` seeds its own
    * cosmetic random source (the battle's seed, mixed, so a seeded run looks the same each time).
+   * `cover` is what it hides behind (`peekerCover`): the rock, or the map's own.
    */
-  constructor(ctx: ViewContext, col: number, row: number, cols: number, env: string, seed: number) {
+  constructor(
+    ctx: ViewContext,
+    col: number,
+    row: number,
+    cols: number,
+    env: string,
+    seed: number,
+    cover: PeekerCover = 'rock',
+  ) {
     const { scene, sprites, layers, origin } = ctx;
     const variant = propVariant(SPRITE, env);
-    this.#hidden = sprites.frame(SPRITE, 'hidden', variant);
-    this.#peek = sprites.anim(SPRITE, 'peek', variant);
-    this.#duck = sprites.anim(SPRITE, 'duck', variant);
-    const anchor = sprites.frameAnchor(SPRITE, 'hidden');
+    const hidden = peekerFrame(cover, 'hidden');
+    this.#hidden = sprites.frame(SPRITE, hidden, variant);
+    this.#peek = sprites.anim(SPRITE, peekerFrame(cover, 'peek'), variant);
+    this.#duck = sprites.anim(SPRITE, peekerFrame(cover, 'duck'), variant);
+    const anchor = sprites.frameAnchor(SPRITE, hidden);
     gridToScreen(col + 0.5, row + 0.5, origin, pos);
     this.tile = row * cols + col;
     this.#img = new Phaser.GameObjects.Sprite(

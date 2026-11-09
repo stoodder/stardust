@@ -7,7 +7,9 @@
 // node, and QUILL's Time Dilation in slot 2), so the air, chain, and wreckage smoke flows
 // (smoke/air.spec.ts, smoke/wreckage.spec.ts) run before A1M3–A1M5 land. A third, `dev_market`
 // (T312c), is dev_range with Zibzab's Clearance Sale in slot 2 for the HUD's sale prices
-// (smoke/hudAct1.spec.ts) before A1M4 lands.
+// (smoke/hudAct1.spec.ts) before A1M4 lands. A fourth, `dev_boss` (T312b), brings A1M4–A1M5's
+// Skitterkin (Diggers, Bunchlings, an Elder with younglings) and a short Chitterbloom fight, so the
+// burrow, split, huddle, and boss smoke flow (smoke/boss.spec.ts) runs before A1M5 lands.
 import {
   defineAbility,
   defineEnemy,
@@ -18,6 +20,10 @@ import {
 import { clearance_sale } from '../../content/abilities/clearance_sale.ts';
 import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
 import { time_dilation } from '../../content/abilities/time_dilation.ts';
+import { bunchling } from '../../content/enemies/bunchling.ts';
+import { chitterbloom } from '../../content/enemies/chitterbloom.ts';
+import { digger } from '../../content/enemies/digger.ts';
+import { elder } from '../../content/enemies/elder.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
 import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
@@ -111,6 +117,10 @@ const devNibbler = defineEnemy({
   sprites: { body: 'enemy.nibbler', icon: 'icon.enemy.nibbler' },
 });
 
+// A short Chitterbloom for dev_boss: her real phases, sneezes, burrows, and driveOff, on a fifth of
+// her HP, so the smoke flow can push her through every phase in a few seconds of fire.
+const devChitterbloom = defineEnemy({ ...chitterbloom, id: 'dev_chitterbloom', hp: 500 });
+
 const devStrike = defineAbility({
   id: 'dev_strike',
   name: 'Dev Strike',
@@ -130,7 +140,17 @@ const DEV_ENTITIES = {
     zapcoil,
     sprinkler,
   }),
-  enemies: defineRegistry({ dev_nibbler: devNibbler, nibbler, puffwing, gerald }),
+  enemies: defineRegistry({
+    dev_nibbler: devNibbler,
+    nibbler,
+    puffwing,
+    gerald,
+    // dev_boss's (T312b).
+    digger,
+    bunchling,
+    elder,
+    dev_chitterbloom: devChitterbloom,
+  }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
   // QUILL's Time Dilation for dev_sky (T312a), and Zibzab's Clearance Sale for dev_market (T312c).
@@ -372,10 +392,128 @@ const skyBuilds = dev.defineBuilds({
 
 const skyMap = dev.defineMap({ ...skyLayout, waves: skyWaves, ...skyBuilds });
 
+// dev_boss (T312b): an S-road from the spawn (top left) to the core (bottom right), pads along it.
+// Wave 1 sends Diggers (the dig tell and the mound), Bunchlings (the split), and an Elder holding
+// three younglings back (the huddle); wave 2 is a short Chitterbloom with two Nibblers of her
+// brood, for her phases, sneeze, burrows, panic, and driveOff.
+const bossLayout = dev.defineMapLayout({
+  id: 'dev_boss',
+  act: 1,
+  env: 'act1',
+  objective: 'defend',
+  size: { cols: 14, rows: 8 },
+  // prettier-ignore
+  tiles: [
+    'S#####........',
+    '.o...#.o..o...',
+    '..o..#........',
+    '.....####o....',
+    '..o.o...#.....',
+    '......o.#o....',
+    '.o......####..',
+    '...o.......#C.',
+  ],
+  paths: [
+    {
+      id: 'a',
+      tiles: [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [5, 0],
+        [5, 1],
+        [5, 2],
+        [5, 3],
+        [6, 3],
+        [7, 3],
+        [8, 3],
+        [8, 4],
+        [8, 5],
+        [8, 6],
+        [9, 6],
+        [10, 6],
+        [11, 6],
+        [11, 7],
+        [12, 7],
+      ],
+    },
+  ],
+  startCredits: 900,
+  stardust: 0,
+  threatIntel: ['burrowing', 'armored', 'splitting', 'huddle'],
+  requiredCounters: ['armor'],
+  medals: {
+    challenge: {
+      id: 'dev_boss_rivets',
+      name: 'Boss Range',
+      description: 'Win with two Rivets on the boss range.',
+      condition: { towers: { tower: 'rivet' }, gte: 2 },
+    },
+  },
+  markers: {},
+  companion: { id: 'bricks', state: 'present' },
+});
+
+// Both waves teach (dev content: exempt from the soft-trait cap).
+const bossWaves = dev.defineWaves([
+  {
+    teach: true,
+    groups: [
+      { enemy: 'digger', count: 2, route: 'a', intervalSec: 1.5 },
+      { enemy: 'bunchling', count: 2, route: 'a', delaySec: 3, intervalSec: 1.5 },
+      { enemy: 'elder', count: 1, route: 'a', delaySec: 7 },
+      {
+        enemy: 'nibbler',
+        count: 3,
+        route: 'a',
+        delaySec: 7.6,
+        intervalSec: 0.4,
+        tags: ['youngling'],
+      },
+    ],
+  },
+  {
+    countdownSec: 5,
+    groups: [
+      { enemy: 'dev_chitterbloom', count: 1, route: 'a' },
+      { enemy: 'nibbler', count: 2, route: 'a', delaySec: 2.5 },
+    ],
+  },
+]);
+
+const bossBuilds = dev.defineBuilds({
+  referenceProfile: {
+    towers: ['rivet', 'sprinkler'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'sprinkler'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [9, 3] },
+      { wave: 1, build: 'rivet', tile: [9, 5] },
+    ],
+  },
+  noCounterBuilds: {
+    armor: { loadout: ['sprinkler'], steps: [{ wave: 1, build: 'sprinkler', tile: [9, 3] }] },
+  },
+});
+
+const bossMap = dev.defineMap({ ...bossLayout, waves: bossWaves, ...bossBuilds });
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
-  maps: defineRegistry({ dev_range: devMap, dev_sky: skyMap, dev_market: marketMap }),
+  maps: defineRegistry({
+    dev_range: devMap,
+    dev_sky: skyMap,
+    dev_market: marketMap,
+    dev_boss: bossMap,
+  }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
   links: { conductive: conductive as unknown as LinkDef<DevIds> },

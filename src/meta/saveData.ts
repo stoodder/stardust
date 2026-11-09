@@ -50,6 +50,11 @@ export interface MapRecord {
   medals: MedalId[];
   /** The best final meter reading (integrity, evacuated, …) on a win; 0 before the first win. */
   bestMeter: number;
+  /**
+   * Optional objectives completed on a win, each once (Objective Intel, progression.md § 3; T304f).
+   * Absent until the first one: saves from before objectives need no migration.
+   */
+  objectives?: string[];
 }
 
 /**

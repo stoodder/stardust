@@ -292,16 +292,16 @@ function protocolsOwned(): SaveData {
 
 describe('Field Protocols (T308; progression.md § 5)', () => {
   it('a slot and an owned protocol make a choice: the skip rule shows the screen', () => {
-    expect(hasProtocolChoice({ towers: [], abilities: [], protocols: ['x'], protocolSlots: 1 })).toBe(
-      true,
-    );
+    expect(
+      hasProtocolChoice({ towers: [], abilities: [], protocols: ['x'], protocolSlots: 1 }),
+    ).toBe(true);
     expect(hasProtocolChoice({ towers: [], abilities: [], protocols: [], protocolSlots: 1 })).toBe(
       false,
     );
     // Owned before the shop opens (no slot yet): no choice.
-    expect(hasProtocolChoice({ towers: [], abilities: [], protocols: ['x'], protocolSlots: 0 })).toBe(
-      false,
-    );
+    expect(
+      hasProtocolChoice({ towers: [], abilities: [], protocols: ['x'], protocolSlots: 0 }),
+    ).toBe(false);
     const save = loadoutOpen(createNewSave());
     expect(showsLoadoutScreen(save)).toBe(false);
     save.unlocks.protocols = ['head_start'];
@@ -316,12 +316,15 @@ describe('Field Protocols (T308; progression.md § 5)', () => {
       '2 protocols equipped, but only 1 slots',
       "protocol 'specialist' needs a tower pick",
     ]);
-    expect(protocolProblems(save, { equipped: ['linked_up'], picks: { specialist: 'rivet' } })).toEqual(
-      ["protocol 'linked_up' is not owned", "a pick for protocol 'specialist', which isn't equipped"],
-    );
-    expect(protocolProblems(save, { equipped: ['specialist'], picks: { specialist: 'rivet' } })).toEqual(
-      [],
-    );
+    expect(
+      protocolProblems(save, { equipped: ['linked_up'], picks: { specialist: 'rivet' } }),
+    ).toEqual([
+      "protocol 'linked_up' is not owned",
+      "a pick for protocol 'specialist', which isn't equipped",
+    ]);
+    expect(
+      protocolProblems(save, { equipped: ['specialist'], picks: { specialist: 'rivet' } }),
+    ).toEqual([]);
   });
 
   it('withProtocols equips save-wide, and the result validates', () => {
@@ -357,7 +360,12 @@ describe('Field Protocols (T308; progression.md § 5)', () => {
     // Specialist with a revoked or missing pick takes the fallback tower.
     save.unlocks.revokedTowers = ['rivet'];
     expect(
-      fitProtocols(save, { equipped: ['specialist'], picks: { specialist: 'rivet' } }, [], 'skyhook'),
+      fitProtocols(
+        save,
+        { equipped: ['specialist'], picks: { specialist: 'rivet' } },
+        [],
+        'skyhook',
+      ),
     ).toEqual({ equipped: ['specialist'], picks: { specialist: 'skyhook' } });
     // Before the shop opens there are no slots, so nothing is equipped.
     const early = DEV_SAVES.mid_m2.build();

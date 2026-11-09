@@ -7,7 +7,15 @@ import type { MemoId } from '../content/memos/index.ts';
 import type { MapId, MedalId, TowerId } from '../content/types.ts';
 import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
 import { withIssuedTowers } from './issued.ts';
-import { medalPayout, stardustPayout, type EarnedMedal, type StardustPayout } from './rewards.ts';
+import {
+  medalPayout,
+  objectivePayout,
+  stardustPayout,
+  type CompletedObjective,
+  type EarnedMedal,
+  type EarnedObjective,
+  type StardustPayout,
+} from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
 import { enemiesMet, withStoryUnlocks } from './story.ts';
 import { clampCurrency } from './validate.ts';
@@ -23,6 +31,11 @@ export interface RunEndInput {
   readonly wavesResolved: number;
   /** The medals the sim settled as earned (`earnedMedalIds(state, map)`; D042). */
   readonly earnedMedals: readonly MedalId[];
+  /**
+   * The optional objectives the sim settled as done (`completedObjectiveIds`, with each one's
+   * `intel` from map data; T304f). Paid on a win only. Default none.
+   */
+  readonly completedObjectives?: readonly CompletedObjective[];
   /** The run's `stats.skitterkinKilled`: this run's Pests Processed. */
   readonly skitterkinKilled: number;
   /** The final meter reading (integrity on a defend map). */
@@ -44,7 +57,9 @@ export interface RunEndSummary {
   readonly stardust: StardustPayout;
   /** The medals this run earned, in the sim's order; `isNew` ones paid Intel. */
   readonly medals: readonly EarnedMedal[];
-  /** Intel paid in all (new medals; objectives join in M3). */
+  /** The objectives this run completed (on a win), in map order; `isNew` ones paid Intel. */
+  readonly objectives: readonly EarnedObjective[];
+  /** Intel paid in all: new medals and new objectives. */
   readonly intel: number;
   /** This run's Pests Processed, and the lifetime total after it. */
   readonly pestsProcessed: { readonly run: number; readonly lifetime: number };
@@ -99,6 +114,10 @@ export function runEnd(
   //    Victory only.
   const heldMedals = old?.medals ?? [];
   const medals = won ? medalPayout(heldMedals, input.earnedMedals) : [];
+  // Optional objectives settle like medals: a win records each newly completed one (T304f).
+  const heldObjectives = old?.objectives ?? [];
+  const objectives = won ? objectivePayout(heldObjectives, input.completedObjectives ?? []) : [];
+  const newObjectives = objectives.filter((o) => o.isNew).map((o) => o.id);
   const record: MapRecord = {
     ...(old ?? emptyRecord()),
     completed: wonBefore || won,
@@ -106,9 +125,10 @@ export function runEnd(
     bestMeter: won
       ? Math.max(old?.bestMeter ?? 0, Math.max(0, input.meter))
       : (old?.bestMeter ?? 0),
+    ...(newObjectives.length > 0 ? { objectives: [...heldObjectives, ...newObjectives] } : {}),
   };
 
-  // 5. Rewards (progression.md § 2–3). TODO(M3): objective Intel.
+  // 5. Rewards (progression.md § 2–3): Stardust, then medal and objective Intel.
   const stardust = stardustPayout({
     won,
     wonBefore,
@@ -117,7 +137,8 @@ export function runEnd(
     waveCount: input.waveCount,
     veteranBonus: input.veteranBonus ?? 0,
   });
-  const intel = medals.reduce((sum, m) => sum + m.intel, 0);
+  const intel =
+    medals.reduce((sum, m) => sum + m.intel, 0) + objectives.reduce((sum, o) => sum + o.intel, 0);
 
   // 6. The map's story transactions (meta-runtime.md § Story transactions): TODO(M3); no M2 map
   //    has one (the first is A2M4's Q3 Bonus). The caller saves.
@@ -145,6 +166,7 @@ export function runEnd(
       wonBefore,
       stardust,
       medals,
+      objectives,
       intel,
       pestsProcessed: { run: kills, lifetime: pestsProcessed },
       flags,

@@ -10,6 +10,9 @@ describe('worldDepth', () => {
     expect(worldDepth(10, 'prop', 7)).toBeLessThan(worldDepth(10, 'enemy', 7));
     expect(worldDepth(10, 'enemy', 7)).toBeLessThan(worldDepth(10, 'tower', 7));
     expect(worldDepth(10, 'highGround', 7)).toBeLessThan(worldDepth(10, 'prop', 7));
+    // A ground strip (T232) covers enemies but never a tower, whatever their uids.
+    expect(worldDepth(10, 'enemy', 255)).toBeLessThan(worldDepth(10, 'strip', 0));
+    expect(worldDepth(10, 'strip', 255)).toBeLessThan(worldDepth(10, 'tower', 0));
   });
 
   it('breaks ties by uid without crossing kinds', () => {

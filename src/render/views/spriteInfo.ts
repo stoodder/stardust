@@ -94,3 +94,14 @@ export function facingOf(dx: number, dy: number): Facing {
   if (sy >= 0) return sx >= 0 ? 'se' : 'sw';
   return sx >= 0 ? 'ne' : 'nw';
 }
+
+/** The sprite a unit with the `youngling` wave tag draws (art-direction §6, D074). */
+export const YOUNGLING_SPRITE = 'enemy.youngling';
+
+/**
+ * The body sprite an enemy draws: `enemy.youngling` for a `youngling`-tagged unit (the Quiet
+ * Wave's little ones, an Elder's brood), else its def's own body.
+ */
+export function enemyBody(body: string, tags: readonly string[]): string {
+  return tags.includes('youngling') ? YOUNGLING_SPRITE : body;
+}
