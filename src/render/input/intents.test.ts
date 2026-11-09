@@ -87,7 +87,8 @@ describe('hoverLook', () => {
   it('marks a wreck to clear in salvage gold with its label, only with nothing armed (D097)', () => {
     const wreck: TileFacts = { ...path, groundPath: false, wreckage: 'wreckage' };
     expect(hoverLook(wreck, null, false)).toMatchObject({ highlight: 'salvage', salvage: true });
-    // Armed: "Clear it first" stays the answer, so the hover reads invalid with no label.
+    // Armed: "Click it (no tower armed) to send the drone" stays the answer, so the hover reads
+    // invalid with no label.
     expect(hoverLook(wreck, 'rivet', false)).toMatchObject({
       highlight: 'invalid',
       salvage: false,

@@ -1,6 +1,7 @@
 // The clear intent end to end (T312a; design/maps.md § 3): a click (or the cursor's Enter) on the
 // dev battle's wreckage tile reads its facts from the sim, issues `clear`, and the tile becomes its
-// live tile once the drone is done; a build there first says "Clear it first".
+// live tile once the drone is done; a build there first says "Click it (no tower armed) to send
+// the drone".
 import { describe, expect, it } from 'vitest';
 import { battleConfig, DEV_MAP_ID } from '../../app/battleSetup.ts';
 import { clearTicksFor, createSim, type Command } from '../../sim/index.ts';

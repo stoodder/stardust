@@ -48,7 +48,10 @@ export type Intent =
   | { readonly kind: 'clear'; readonly tile: GridPos }
   /** A click on wreckage the drone is already queued for, or clearing: the HUD says so. */
   | { readonly kind: 'alreadyQueued' }
-  /** An armed click on wreckage: the HUD says "Clear it first"; the slot stays armed. */
+  /**
+   * An armed click on wreckage: the HUD says "Click it (no tower armed) to send the drone"; the
+   * slot stays armed.
+   */
   | { readonly kind: 'clearFirst' };
 
 /** Whether a wreckage status is a wreck still standing (not cleared, not plain ground). */
@@ -65,7 +68,7 @@ function standingWreck(status: WreckageStatus | undefined): boolean {
  * builds another), and an armed click on any other tile says it can't build there. A plain click
  * (nothing armed or aimed) on the Act I Peeker pokes it. A plain click on wreckage sends the
  * salvage drone there (or, if it's already queued or being cleared, says so); an armed click on
- * wreckage says to clear it first. Anything else deselects.
+ * wreckage says how to send the drone instead. Anything else deselects.
  */
 export function resolveClick(
   tile: TileFacts,

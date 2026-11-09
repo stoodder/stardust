@@ -503,19 +503,26 @@ function systemView(s: Session, id: MetaSystem): SystemView {
  * The Shift board's dimmed, padlocked teaser (D097 R6): the plan's next map after the last
  * registered one, "Coming soon", so the board never ends in a dead end. None once the plan runs out.
  */
-export function teaserRow(size: number = SHIFT_BOARD_SIZE): ShiftView[] {
+export function teaserRow(size: number = SHIFT_BOARD_SIZE, named = false): ShiftView[] {
   const next = CAMPAIGN_PLAN[size];
   if (next === undefined) return [];
   return [
     {
       id: next.id,
-      name: next.name,
+      // Named only once the board's last shift is won (the stinger says "Rig Nine" there); before
+      // that it goes by its position, like every map the player can't see yet (style-guide §2).
+      name: named ? next.name : '',
       index: size + 1,
       state: 'coming_soon',
       medals: 0,
       teaser: true,
     },
   ];
+}
+
+function teaserRowFor(save: SaveData): ShiftView[] {
+  const board = shiftBoard(save);
+  return teaserRow(SHIFT_BOARD_SIZE, board.length > 0 && board[board.length - 1]!.state === 'won');
 }
 
 function campaignView(s: Session): CampaignView {
@@ -535,7 +542,7 @@ function campaignView(s: Session): CampaignView {
         medals: e.medals.length,
         teaser: false,
       })),
-      ...teaserRow(),
+      ...teaserRowFor(s.save),
     ],
     systems: {
       base: systemView(s, 'base'),

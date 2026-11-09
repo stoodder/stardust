@@ -91,8 +91,10 @@ describe('the bottom-center hints (R4)', () => {
 
 describe("the Shift board's teaser (R6)", () => {
   it('adds the next planned map past the built ones, padlocked, and nothing past the plan', () => {
-    const [row] = teaserRow();
     const next = CAMPAIGN_PLAN[SHIFT_BOARD_SIZE]!;
+    // Unnamed until the board's last shift is won (style-guide §2: never a name the player can't see).
+    expect(teaserRow()[0]!.name).toBe('');
+    const [row] = teaserRow(SHIFT_BOARD_SIZE, true);
     expect(row).toEqual({
       id: next.id,
       name: next.name,
