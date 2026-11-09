@@ -5,7 +5,7 @@ import type { CompiledContent } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import type { ConditionDef, IdSpace, RawContent } from '../content/types.ts';
 import { RUNNER, WALKER, placeTower, spawn } from './__fixtures__/combat.ts';
-import { SIM_FIXTURE, fixtureConfig } from './__fixtures__/sim.ts';
+import { SIM_FIXTURE } from './__fixtures__/sim.ts';
 import {
   ANY_ENEMY,
   evaluateCondition,

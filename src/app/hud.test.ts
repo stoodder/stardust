@@ -5,6 +5,7 @@ import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { nextPriority, PRIORITY_CYCLE } from './commands.ts';
 import {
+  abilityCooldownTotals,
   abilityDescription,
   abilitySlots,
   buildSlots,
@@ -179,20 +180,66 @@ describe('hud view models', () => {
     expect(rejectText('noWavesLeft')).toBe('No waves left');
   });
 
-  it('shows the equipped Technician ability in slot 1, on Q', () => {
+  it('shows slot 1 on Q, and the companion slot on E only when the map has a companion', () => {
     const sim = devSim();
-    expect(abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1)).toEqual([
+    const abilities = sim.config.content.abilities;
+    expect(abilitySlots(sim.config)).toEqual([
       {
         slot: 1,
         ability: 'dev_strike',
         label: 'Dev Strike',
         icon: 'icon.ability.orbital_strike',
         key: 'Q',
-        description: abilityDescription(sim.config.content.abilities['dev_strike']!),
+        description: abilityDescription(abilities['dev_strike']!),
+        aim: 'area',
+        absent: false,
+      },
+      {
+        slot: 2,
+        ability: 'suppressing_fire',
+        label: 'Suppressing Fire',
+        icon: 'icon.ability.suppressing_fire',
+        key: 'E',
+        description: abilityDescription(abilities['suppressing_fire']!),
+        aim: 'path',
+        absent: false,
       },
     ]);
-    expect(abilitySlots(sim.config.content.abilities, null)).toEqual([]);
-    expect(() => abilitySlots(sim.config.content.abilities, 'nope')).toThrow(/nope/);
+    const none = { slot1: null, slot2: null, slot2State: 'none' } as const;
+    expect(abilitySlots({ ...sim.config, abilities: none })).toEqual([]);
+    // No companion (A1M1 until T125): slot 2 is hidden, not empty.
+    const a1 = createSim(battleConfig('a1_m01', 1));
+    expect(abilitySlots(a1.config).map((a) => a.slot)).toEqual(
+      a1.config.companion === null ? [1] : [1, 2],
+    );
+    // An absent companion's slot shows, dark.
+    const absent = { ...sim.config.abilities, slot2State: 'absent' } as const;
+    expect(abilitySlots({ ...sim.config, abilities: absent })[1]?.absent).toBe(true);
+    expect(() =>
+      abilitySlots({ ...sim.config, abilities: { ...none, slot1: 'nope' } }),
+    ).toThrow(/nope/);
+  });
+
+  it('describes and times abilities with their modified numbers (Mk II, Rapport)', () => {
+    const sim = devSim();
+    const modifiers = [
+      { kind: 'abilityStat', ability: 'dev_strike', stat: 'radius', flat: 0.5, source: 'mk2' },
+      {
+        kind: 'abilityStat',
+        ability: 'suppressing_fire',
+        stat: 'cooldown',
+        pct: -0.15,
+        source: 'rapport',
+      },
+    ] as const;
+    const cfg = { ...sim.config, modifiers };
+    const [strike, suppress] = abilitySlots(cfg);
+    expect(strike?.description).toBe('200 damage in a 2-tile radius after 1 s. Recharges 45 s.');
+    expect(suppress?.description).toBe(
+      'Slows 3 tiles of path 50% and deals 20 damage/s for 5 s. Recharges 42.5 s.',
+    );
+    expect(abilityCooldownTotals(cfg)).toEqual([2700, 2550]);
+    expect(abilityCooldownTotals(sim.config)).toEqual([2700, 3000]);
   });
 
   it('shows a cooldown as whole seconds and a 1/16-step wipe, reusing unchanged views', () => {
@@ -226,7 +273,7 @@ describe('hud view models', () => {
   it('describes the Orbital Strike in one line (D026)', () => {
     const sim = createSim(battleConfig('a1_m01', 1));
     expect(abilityDescription(sim.config.content.abilities['orbital_strike']!)).toBe(
-      '200 damage in an area after 1 s. Recharges 45 s.',
+      '200 damage in a 1.5-tile radius after 1 s. Recharges 45 s.',
     );
   });
 

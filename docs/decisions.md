@@ -492,3 +492,18 @@ New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and rend
 - **Harness:**
   - The executor runs `holdFire`, `spareRunners`, and `holdFireWhile` steps. Check #16 is lifted. New run invariants: no shot while holding, no spared target picked.
   - Results on a fixture map with fleeing and quiet groups: Quiet Wave run 90 vs par 95; `spareFleeing` 100 vs par 95.
+
+### D042 — 2026-11-09 — T202c conditions and medals
+- **Conditions** (`src/sim/conditions.ts`):
+  - **Judged at evaluation** (a medal's win tick): `towers`, `linkActive`, `tagRatio` (false if none of the tag spawned).
+  - **Accumulated over the run:** `stat` and `passedMarker {marker, enemy?}`. A unit passes once its route distance exceeds the route point closest to the marker; on a doubling route the later point counts. Medal-exempt units never count, and passes latch in `stats.markersPassed`.
+  - **`flag`:** read from `config.scriptFlags`; an unset flag never matches.
+  - **Forfeit at once:** `settledCondition` lets a Challenge be forfeited the moment it breaks.
+  - **Triggers:** a trigger's `when` is judged once, on the trigger tick; if it's false, the event is used up.
+- **Medals** (`src/sim/medals.ts`, from `cleanup`):
+  - Any non-exempt leak forfeits Perfect Core at once, even a 0-cost leak or one a Bulkhead absorbs. The exempt tags are `quiet_wave`, `youngling`, `fleeing`, `medal_exempt`.
+  - A loss forfeits every open medal. A win earns Victory and Perfect Core (if still open) and judges the Challenge.
+  - `MedalProgress` precedes `MapWon`/`MapLost`. Medal save ids are `victory`, `perfect_core`, `<challenge id>` (`earnedMedalIds`).
+  - Challenges need `name` and `description` data.
+- **Ruling, markers on special tiles:** a script marker may sit on any **non-path** tile (decor, power node, high ground), not only decor, so A1M2's pump-station marker can mark its power node. T210b relaxes the `[marker]` rule accordingly.
+- `createSim` refuses optional objectives until M3.

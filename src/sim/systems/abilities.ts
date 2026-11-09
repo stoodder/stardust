@@ -17,7 +17,11 @@
 //   Rapport) and strike radii (Orbital Strike Mk II): `abilityStats`.
 // - Cooldowns run on sim time, so pausing doesn't advance them, and an ability aimed while paused
 //   lands when play resumes (core-loop §3.1). An early wave call cuts them (`reduceAbilityCooldowns`).
-import type { CompiledAbilityDef, CompiledAbilityEffect } from '../../content/compiled.ts';
+import type {
+  CompiledAbilityDef,
+  CompiledAbilityEffect,
+  CompiledRoute,
+} from '../../content/compiled.ts';
 import { DEFAULT_BEAM_TICK_SEC } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
 import { secToTicks, TICK_HZ } from '../../shared/time.ts';
@@ -183,11 +187,58 @@ export function applyAbilityCommand(
   return null;
 }
 
+/** The stretch of one route a segment covers (`segmentSpan`). */
+export interface SegmentSpan {
+  /** The first and last route tile indices covered (`route.tiles[lo..hi]`, `hi − lo = 2 × reach`). */
+  lo: number;
+  hi: number;
+  /** The covered route distance (tiles): padded by half a tile at each end, clamped to the route. */
+  distFrom: number;
+  distTo: number;
+}
+
+/**
+ * The stretch of `route` a segment cast at tile (col, row) covers: the route's tile there
+ * ±`reachTiles`, shifted inward at the route's ends so it keeps its length (D031), and padded by
+ * half a tile at each end so it covers those tiles whole. Writes it into `out` and returns true,
+ * or returns false (leaving `out` alone) when `route` is an air route or doesn't cross the tile.
+ * The sim opens its zones with it, and the HUD's aiming preview draws exactly the same tiles.
+ */
+export function segmentSpan(
+  route: CompiledRoute,
+  col: number,
+  row: number,
+  reachTiles: number,
+  out: SegmentSpan,
+): boolean {
+  if (route.kind === 'air') return false;
+  const tiles = route.tiles;
+  let at = -1;
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i]!; // i < length
+    if (t[0] === col && t[1] === row) {
+      at = i;
+      break;
+    }
+  }
+  if (at < 0) return false;
+  const last = tiles.length - 1;
+  const hi = Math.min(last, Math.max(at + reachTiles, 2 * reachTiles));
+  const lo = Math.max(0, hi - 2 * reachTiles);
+  out.lo = lo;
+  out.hi = hi;
+  out.distFrom = Math.max(0, route.cumLenTiles[lo]! - 0.5); // lo ≤ last
+  out.distTo = Math.min(route.lengthTiles, route.cumLenTiles[hi]! + 0.5); // hi ≤ last
+  return true;
+}
+
+/** Scratch for openSegments (no allocation per cast). */
+const span: SegmentSpan = { lo: 0, hi: 0, distFrom: 0, distTo: 0 };
+
 /**
  * Opens one segment zone per ground route (paths and rift lanes, in the map's route order) whose
- * tiles include (col, row): its tile there ±`reachTiles`, shifted inward at a route's ends so it
- * keeps its length, and padded by half a tile at each end so it covers those tiles whole.
- * Returns the first zone's uid, or 0 if no ground route crosses the tile.
+ * tiles include (col, row), over its `segmentSpan`. Returns the first zone's uid, or 0 if no
+ * ground route crosses the tile.
  */
 function openSegments(
   state: SimState,
@@ -199,20 +250,7 @@ function openSegments(
 ): number {
   let first = 0;
   for (const route of Object.values(ctx.map.routes)) {
-    if (route.kind === 'air') continue;
-    const tiles = route.tiles;
-    let at = -1;
-    for (let i = 0; i < tiles.length; i++) {
-      const t = tiles[i]!; // i < length
-      if (t[0] === col && t[1] === row) {
-        at = i;
-        break;
-      }
-    }
-    if (at < 0) continue;
-    const last = tiles.length - 1;
-    const hi = Math.min(last, Math.max(at + e.reachTiles, 2 * e.reachTiles));
-    const lo = Math.max(0, hi - 2 * e.reachTiles);
+    if (!segmentSpan(route, col, row, e.reachTiles, span)) continue;
     const zone = poolAlloc(state.zones, ZONE_BLANK, takeUid(state));
     zone.kind = 'segment';
     zone.x = col + 0.5;
@@ -222,8 +260,8 @@ function openSegments(
     zone.damageType = e.type;
     zone.abilitySlot = slot;
     zone.route = route;
-    zone.distFrom = Math.max(0, route.cumLenTiles[lo]! - 0.5); // lo ≤ last
-    zone.distTo = Math.min(route.lengthTiles, route.cumLenTiles[hi]! + 0.5); // hi ≤ last
+    zone.distFrom = span.distFrom;
+    zone.distTo = span.distTo;
     zone.slowPct = e.slowPct;
     if (first === 0) first = zone.uid;
   }

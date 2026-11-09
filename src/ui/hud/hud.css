@@ -405,6 +405,15 @@ section.chamfer,
   opacity: 0.6;
 }
 
+/* An absent companion's slot (A3M4): dark, disabled, no label. */
+.hud-ability.absent {
+  cursor: default;
+}
+
+.hud-ability.absent .slot-icon {
+  opacity: 0.15;
+}
+
 .hud-aim-hint {
   display: grid;
   gap: 3px;

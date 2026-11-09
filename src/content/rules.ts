@@ -447,6 +447,13 @@ export function earlyCallBonus(
 }
 /** Kill bounties for tagged units (enemies.md § 5.1 youngling modifier, § 5.4 fleeing). */
 export const YOUNGLING_BOUNTY = 0;
+/** The youngling wave modifier's speed multiplier (enemies.md § 5.1: speed ×0.5). */
+export const YOUNGLING_SPEED_MUL = 0.5;
+/**
+ * The "not firing" threshold (core-loop.md § 6.3, the `not_firing` bark): Skitterkin in range of
+ * a tower for this long with no tower firing at any of them.
+ */
+export const NOT_FIRING_SEC = 10;
 export const FLEEING_BOUNTY = 1;
 /** Wave tags whose units leak for 0 (core-loop.md § 2.9). */
 export const LEAK_FREE_TAGS: readonly WaveTag[] = ['fleeing', 'youngling'];

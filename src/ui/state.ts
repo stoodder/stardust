@@ -34,8 +34,15 @@ export interface AbilitySlotView {
   readonly icon: string;
   /** Hotkey label (Q for slot 1, E for slot 2). */
   readonly key: string;
-  /** One line on what it does, for its tooltip. */
+  /** One line on what it does, with its real numbers (`abilityStats`), for its tooltip. */
   readonly description: string;
+  /** What aiming it picks: a spot on the map (a strike) or a stretch of path (a segment). */
+  readonly aim: 'area' | 'path';
+  /**
+   * The companion is `absent` (A3M4, core-loop §3.1): the slot shows, dark and disabled, with no
+   * label; its ability can't be used.
+   */
+  readonly absent: boolean;
 }
 
 /** An ability slot's cooldown as shown: 0 seconds left means ready. */

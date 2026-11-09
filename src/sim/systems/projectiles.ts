@@ -4,27 +4,103 @@
 // tick its countdown starts at 0, after that tick's movement, so it lands `flightTicks` ticks
 // after the tick it was fired. Its victims are all chosen before any damage, so the order of
 // hits within one impact can't change who is in the blast.
+// Bomblets (Cluster Thumper, design/towers.md § 7): a shell that carries them scatters them after
+// every shell has landed this tick, so where a bomblet's pool slot falls never changes its flight.
+// Each flies from the impact point to a point drawn uniformly in the scatter disc (rejection
+// sampling on the `projectiles` RNG stream, in slot order) and lands `flightTicks` ticks after its
+// shell, as its own splash on the shell's layers with the shell's effects. Bomblets don't scatter.
+import { nextFloat } from '../../shared/rng.ts';
 import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects } from '../combat/damage.ts';
-import type { Projectile } from '../entities.ts';
-import { poolKill } from '../pool.ts';
-import { emit, type SimState } from '../state.ts';
+import { PROJECTILE_BLANK, type Projectile } from '../entities.ts';
+import { poolAlloc, poolKill } from '../pool.ts';
+import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+
+/** Marks a landed shell whose bomblets are still to scatter (it's killed once they have). */
+const SCATTER_PENDING = -1;
 
 export function projectiles(state: SimState, ctx: TickContext): void {
   const pool = state.projectiles;
+  let scatter = false;
   for (let i = 0; i < pool.used; i++) {
     const p = pool.items[i]!; // i < used ≤ items.length
-    if (!p.alive) continue;
-    if (p.ticksLeft <= 0) {
+    if (!p.alive || p.ticksLeft < 0) continue;
+    if (p.ticksLeft === 0) {
       land(state, ctx, p);
-      poolKill(pool, p);
+      if (p.bomblets === null) {
+        poolKill(pool, p);
+      } else {
+        p.ticksLeft = SCATTER_PENDING;
+        scatter = true;
+      }
       continue;
     }
     p.ticksLeft--;
     const t = p.flightTicks > 0 ? 1 - p.ticksLeft / p.flightTicks : 1;
     p.x = p.originX + (p.targetX - p.originX) * t;
     p.y = p.originY + (p.targetY - p.originY) * t;
+  }
+  if (!scatter) return;
+  // New bomblets never match SCATTER_PENDING, so this pass only reaches the shells landed above.
+  for (let i = 0; i < pool.used; i++) {
+    const p = pool.items[i]!; // i < used ≤ items.length
+    if (!p.alive || p.ticksLeft !== SCATTER_PENDING) continue;
+    scatterBomblets(state, p);
+    poolKill(pool, p);
+  }
+}
+
+/**
+ * Fires a landed shell's bomblets from its impact point. A bomblet starts one tick into its
+ * flight (the projectiles system has run this tick), so it lands `flightTicks` after its shell.
+ */
+function scatterBomblets(state: SimState, shell: Projectile): void {
+  const b = shell.bomblets!; // only shells with bomblets are pending
+  const rng = state.rng.projectiles;
+  for (let k = 0; k < b.count; k++) {
+    // Uniform in the unit disc: draw in the square until a point falls inside.
+    let dx: number;
+    let dy: number;
+    do {
+      dx = nextFloat(rng) * 2 - 1;
+      dy = nextFloat(rng) * 2 - 1;
+    } while (dx * dx + dy * dy > 1);
+    const p = poolAlloc(state.projectiles, PROJECTILE_BLANK, takeUid(state));
+    p.towerUid = shell.towerUid;
+    p.originX = shell.targetX;
+    p.originY = shell.targetY;
+    p.targetX = shell.targetX + dx * b.scatterTiles;
+    p.targetY = shell.targetY + dy * b.scatterTiles;
+    p.flightTicks = b.flightTicks;
+    p.ticksLeft = b.flightTicks > 1 ? b.flightTicks - 1 : 0;
+    const t = 1 - p.ticksLeft / p.flightTicks;
+    p.x = p.originX + (p.targetX - p.originX) * t;
+    p.y = p.originY + (p.targetY - p.originY) * t;
+    p.damage = shell.bombletDamage;
+    p.damageVs = shell.bombletDamageVs;
+    p.vsStatusMask = shell.vsStatusMask;
+    p.damageType = shell.damageType;
+    p.armorPierce = shell.armorPierce;
+    p.ignoresArmor = shell.ignoresArmor;
+    p.splashSq = b.splashSq;
+    p.hitsGround = shell.hitsGround;
+    p.hitsAir = shell.hitsAir;
+    p.effects = shell.effects;
+    emit(state, {
+      type: 'ProjectileFired',
+      uid: p.uid,
+      towerUid: p.towerUid,
+      kind: 'lobbed',
+      targetUid: 0,
+      x: p.originX,
+      y: p.originY,
+      targetX: p.targetX,
+      targetY: p.targetY,
+      sprite: b.projectile,
+      flightTicks: b.flightTicks,
+      radiusTiles: b.splashTiles,
+    });
   }
 }
 

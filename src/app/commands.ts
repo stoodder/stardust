@@ -8,7 +8,12 @@ import { applyIntent } from '../render/input/apply.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { cursorStart, cursorStep, type CursorDir } from '../render/input/cursor.ts';
 import { resolveClick } from '../render/input/intents.ts';
-import { emptyTileFacts, fillTileFacts } from '../render/input/tileFacts.ts';
+import {
+  emptyTileFacts,
+  fillTileFacts,
+  isGroundPathTile,
+  slotAimsAtPath,
+} from '../render/input/tileFacts.ts';
 import { isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import type { Host } from './host.ts';
@@ -129,9 +134,10 @@ export function callWave(): void {
 }
 
 /**
- * An ability slot (HUD click, or Q for slot 1): starts aiming it, so the next click on a tile fires
- * it there, or stops aiming if it's already aimed. An empty or recharging slot doesn't aim; a
- * notice says why. Aiming works while paused (the strike fires when play resumes, core-loop §3.1).
+ * An ability slot (HUD click, Q for slot 1, or E for slot 2): starts aiming it, so the next click
+ * on a tile fires it there (a stretch of path for Suppressing Fire), or stops aiming if it's
+ * already aimed. An empty, absent, or recharging slot doesn't aim; a notice says why. Aiming works
+ * while paused (the ability fires when play resumes, core-loop §3.1).
  */
 export function pressAbility(slot: 1 | 2): void {
   if (target === null) return;
@@ -140,18 +146,27 @@ export function pressAbility(slot: 1 | 2): void {
     interaction.aimAbility(null);
     return;
   }
-  const id = slot === 1 ? host.sim.config.abilities.slot1 : host.sim.config.abilities.slot2;
-  const why =
-    id === null
-      ? 'noAbility'
-      : (host.sim.state.abilityCooldownTicks[slot - 1] ?? 0) > 0
-        ? 'abilityOnCooldown'
-        : null;
-  if (why !== null) {
-    showNotice(rejectText(why) ?? '');
+  const a = host.sim.config.abilities;
+  const id = slot === 1 ? a.slot1 : a.slot2State === 'present' ? a.slot2 : null;
+  if (id === null) {
+    // An absent companion's slot is dark and says nothing (core-loop §3.1).
+    if (slot === 1 || a.slot2State === 'none') showNotice(rejectText('noAbility') ?? '');
+    return;
+  }
+  if ((host.sim.state.abilityCooldownTicks[slot - 1] ?? 0) > 0) {
+    showNotice(cooldownText(slot, host.sim.config.content.abilities[id]?.name ?? null));
     return;
   }
   interaction.aimAbility(slot);
+}
+
+/**
+ * What a recharging slot says: the uplink for slot 1 (the Technician's Orbital Strike), the
+ * ability by name for slot 2 ("Suppressing Fire recharging").
+ */
+export function cooldownText(slot: 1 | 2, name: string | null): string {
+  if (slot === 1 || name === null) return rejectText('abilityOnCooldown') ?? '';
+  return `${name} recharging`;
 }
 
 /** Closes the map's briefing (its button, Enter, or Esc); game hotkeys come back on. */
@@ -171,12 +186,18 @@ export function cancel(): void {
 }
 
 /**
- * The tiles the keyboard cursor lands on: every tile while an ability is aimed (a strike lands
- * on paths), else the buildable tiles (pads, high ground, power nodes, so every tower too).
+ * The tiles the keyboard cursor lands on: while an ability is aimed, every tile (a strike lands
+ * on paths), or only the ground-route tiles for one that targets the path (Suppressing Fire);
+ * else the buildable tiles (pads, high ground, power nodes, so every tower too).
  */
 function cursorTargets(t: CommandTarget): (index: number) => boolean {
-  const tiles = t.host.sim.map.tiles;
-  if (t.interaction.aiming !== null) return () => true;
+  const { sim } = t.host;
+  const tiles = sim.map.tiles;
+  const aiming = t.interaction.aiming;
+  if (aiming !== null) {
+    if (slotAimsAtPath(sim, aiming)) return (i) => isGroundPathTile(sim.map, i);
+    return () => true;
+  }
   return (i) => {
     const tile = tiles[i];
     return tile !== undefined && isBuildableTile(tile);
@@ -205,6 +226,13 @@ export function moveCursor(dir: CursorDir): void {
   const { interaction } = target;
   const map = target.host.sim.map;
   const isTarget = cursorTargets(target);
+  // The cursor sits on a tile it can't land on now (aiming a path ability from a pad): it jumps
+  // to the nearest one it can.
+  if (interaction.cursor >= 0 && !isTarget(interaction.cursor)) {
+    const at = cursorStart(map.cols, map.rows, interaction.cursor, isTarget);
+    if (at >= 0) interaction.setCursor(at);
+    return;
+  }
   if (interaction.cursor < 0) {
     const sel = towerTile(target, interaction.selectedTower);
     const at = cursorStart(map.cols, map.rows, sel >= 0 ? sel : interaction.cursorLast, isTarget);
@@ -234,7 +262,9 @@ export function pressCursor(): void {
   const { host, interaction } = target;
   if (interaction.cursor < 0) return;
   const facts = fillTileFacts(host.sim, interaction.cursor, cursorFacts);
-  applyIntent(resolveClick(facts, 'left', interaction.armed, interaction.aiming), interaction, {
+  const onPath = slotAimsAtPath(host.sim, interaction.aiming);
+  const intent = resolveClick(facts, 'left', interaction.armed, interaction.aiming, onPath);
+  applyIntent(intent, interaction, {
     issue,
     onCantBuild: () => showNotice(rejectText('notBuildable') ?? ''),
   });

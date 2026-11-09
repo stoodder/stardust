@@ -1,6 +1,7 @@
 // The facts about one tile that input decisions need (intents.ts `TileFacts`), read from the sim:
 // shared by the pointer (BattleScene) and the keyboard cursor (app/commands.ts), so a click and
 // Enter on the same tile mean the same thing.
+import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import { isBuildableTile, type Sim } from '../../sim/index.ts';
 import type { TileFacts } from './intents.ts';
@@ -9,7 +10,27 @@ export type MutableTileFacts = { -readonly [K in keyof TileFacts]: TileFacts[K] 
 
 /** A fresh scratch object for `fillTileFacts` (off the map until filled). */
 export function emptyTileFacts(): MutableTileFacts {
-  return { index: -1, col: -1, row: -1, buildable: false, towerUid: 0 };
+  return { index: -1, col: -1, row: -1, buildable: false, towerUid: 0, groundPath: false };
+}
+
+/** Each map's ground-route tiles (1 where a path or rift lane runs), computed once per map. */
+const groundPaths = new WeakMap<object, Uint8Array>();
+
+/**
+ * Whether tile `index` lies on one of the map's ground routes (paths and rift lanes, their spawn
+ * and core tiles included): the tiles a segment ability (Suppressing Fire) can target.
+ */
+export function isGroundPathTile(map: CompiledMapDef<IdSpace>, index: number): boolean {
+  let mask = groundPaths.get(map);
+  if (mask === undefined) {
+    mask = new Uint8Array(map.cols * map.rows);
+    for (const route of Object.values(map.routes)) {
+      if (route.kind === 'air') continue;
+      for (const [c, r] of route.tiles) mask[r * map.cols + c] = 1;
+    }
+    groundPaths.set(map, mask);
+  }
+  return mask[index] === 1;
 }
 
 /** Fills `out` with the facts about tile `index` (−1, or out of range: off the map). */
@@ -25,6 +46,7 @@ export function fillTileFacts(
     out.row = -1;
     out.buildable = false;
     out.towerUid = 0;
+    out.groundPath = false;
     return out;
   }
   out.index = index;
@@ -33,5 +55,19 @@ export function fillTileFacts(
   out.buildable = isBuildableTile(map.tiles[index]!); // index < cols·rows
   const slot = sim.state.towerAtTile[index] ?? -1;
   out.towerUid = slot < 0 ? 0 : (sim.state.towers.items[slot]?.uid ?? 0);
+  out.groundPath = isGroundPathTile(map, index);
   return out;
+}
+
+/**
+ * Whether the ability in slot `slot` targets the path (a segment: Suppressing Fire), so aiming it
+ * only takes ground-route tiles; false for a strike (any tile) or an empty slot.
+ */
+export function slotAimsAtPath(sim: Sim<IdSpace>, slot: 1 | 2 | null): boolean {
+  if (slot === null) return false;
+  const a = sim.config.abilities;
+  const id = slot === 1 ? a.slot1 : a.slot2;
+  const abilities = sim.config.content.abilities;
+  if (id === null || !Object.hasOwn(abilities, id)) return false;
+  return abilities[id]?.effect.kind === 'segment';
 }

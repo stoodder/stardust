@@ -23,6 +23,7 @@
 //   `stats.ticksSinceFiredAtSkitterkin` (a shot fired at a Skitterkin target, or a pulse that hits
 //   one, resets it).
 import type { CompiledAttack, CompiledTier } from '../../content/compiled.ts';
+import { stackedStat } from '../../content/rules.ts';
 import { assertNever } from '../../shared/types.ts';
 import {
   bonusDamage,
@@ -240,6 +241,16 @@ function fireShell(
   p.hitsGround = tier.targets.ground;
   p.hitsAir = tier.targets.air;
   p.effects = tier.effects;
+  const bomblets = attack.bomblets;
+  if (bomblets !== null) {
+    // Bomblets take the tower's damage bonuses on their own base damage (Cluster Thumper).
+    p.bomblets = bomblets;
+    p.bombletDamage = stackedStat('damage', bomblets.damage, t.flatDamage, t.pctDamage);
+    p.bombletDamageVs =
+      t.vsStatusMask === 0
+        ? p.bombletDamage
+        : stackedStat('damage', bomblets.damage, t.flatDamage, t.pctDamage + t.vsStatusPct);
+  }
   emit(state, {
     type: 'ProjectileFired',
     uid: p.uid,

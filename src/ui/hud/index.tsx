@@ -281,14 +281,32 @@ function BuildBar() {
 /** The icon's size in game px: the cooldown wipe steps one pixel per 1/16. */
 const ICON_PX = 16;
 
-/** One commander ability slot (bottom-left): icon, hotkey, and the cooldown wipe and seconds. */
+/**
+ * One commander ability slot (bottom-left): icon, hotkey, and the cooldown wipe and seconds. An
+ * absent companion's slot (A3M4) is dark and disabled, with no label (core-loop §3.1).
+ */
 function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | undefined }) {
   const left = cd?.secondsLeft ?? 0;
-  const ready = left === 0;
+  const ready = left === 0 && !a.absent;
   const aiming = hud.aimingAbility.value === a.slot;
   const cue = hud.countdownCue.value;
+  if (a.absent) {
+    return (
+      <button
+        type="button"
+        class="hud-btn hud-slot hud-ability chamfer absent"
+        aria-disabled="true"
+        aria-label={`Ability slot ${a.slot}, empty`}
+        onMouseDown={noFocusOnPress}
+      >
+        <span class="ability-icon">
+          <Icon id={a.icon} class="slot-icon" />
+        </span>
+      </button>
+    );
+  }
   const status = aiming
-    ? ', aiming: click a target'
+    ? `, aiming: ${a.aim === 'path' ? 'click the path' : 'click a target'}`
     : ready
       ? ', ready'
       : `, recharging, ${left} s`;
@@ -329,15 +347,15 @@ function AbilityBar() {
   const slots = hud.abilities.value;
   if (slots.length === 0) return null;
   const cds = hud.abilityCooldowns.value;
-  const aiming = hud.aimingAbility.value !== null;
+  const aimed = slots.find((a) => a.slot === hud.aimingAbility.value);
   return (
     <nav class="hud-abilities" aria-label="Abilities">
       {slots.map((a, i) => (
         <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
       ))}
-      {aiming && (
+      {aimed !== undefined && (
         <div class="hud-aim-hint chamfer" role="status">
-          Pick a target
+          {aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target'}
           <span class="dim">
             <Key k="Esc" /> cancels
           </span>

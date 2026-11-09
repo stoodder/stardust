@@ -17,6 +17,7 @@ import {
 import type { SimEvent } from '../events.ts';
 import { createSim, type Sim } from '../sim.ts';
 import { unsupportedScript } from './triggers.ts';
+import { countdownTicksFor, runWaveModifiers, scaledEnemy, waveModifiers } from './waves.ts';
 
 type Ev = SimEvent<FixtureIds>;
 type FxSim = Sim<FixtureIds>;
@@ -310,5 +311,85 @@ describe('createSim and map scripts', () => {
     runTo(sim, 100);
     expect(sim.state.credits).toBe(207);
     expect(sim.state.scriptFired.at(-1)).toBe(true); // after the two compiled unlock events
+  });
+});
+
+describe('wave modifiers (enemyStat, countdown)', () => {
+  const story = [
+    { kind: 'enemyStat', stat: 'hp', pct: -0.3, source: 'difficulty:story' },
+    { kind: 'enemyStat', stat: 'shield', pct: -0.3, source: 'difficulty:story' },
+    { kind: 'countdown', pct: 0.5, source: 'difficulty:story' },
+  ] as const;
+
+  it('spawns units with scaled HP and shields; shields regenerate to the scaled cap', () => {
+    const sim = fixtureSim({ modifiers: story });
+    sim.enqueue({ type: 'callWave' });
+    runTo(sim, 1);
+    const walker = sim.state.enemies.items[0]!;
+    expect(walker.hp).toBeCloseTo(21, 9); // 30 × 0.7
+    expect(walker.def?.hp).toBeCloseTo(21, 9);
+    // The content def is untouched; only the spawned unit's def is scaled.
+    expect(FIXTURE_CONTENT.enemies.fx_walker.hp).toBe(30);
+    runTo(sim, 800); // W2 starts at 96 + 900 (the 600-tick countdown, +50%), not 696
+    expect(sim.state.schedule.phase).toBe('countdown');
+    runTo(sim, 1100);
+    const runner = sim.state.enemies.items.find((e) => e.alive && e.def?.id === 'fx_runner')!;
+    expect(runner.shieldHp).toBeCloseTo(7, 9); // 10 × 0.7
+    expect(runner.def?.shield?.hp).toBeCloseTo(7, 9);
+  });
+
+  it('stretches every countdown by Σ pct (Story +50%: 600 → 900 ticks)', () => {
+    const sim = fixtureSim({ modifiers: story });
+    sim.enqueue({ type: 'callWave' });
+    const log = runTo(sim, 1100);
+    expect(ofType(log, 'CountdownStarted')).toEqual([
+      { type: 'CountdownStarted', wave: 2, ticks: 900 },
+    ]);
+    expect(ticksOf(log, 'WaveStarted')).toEqual([0, 996]); // 96 + 900
+  });
+
+  it('scales speed, and leaves a run with no wave modifiers on the content defs', () => {
+    const fast = fixtureSim({
+      modifiers: [{ kind: 'enemyStat', stat: 'speed', pct: 0.2, source: 'veteran:double_time' }],
+    });
+    fast.enqueue({ type: 'callWave' });
+    runTo(fast, 1);
+    const walker = FIXTURE_CONTENT.enemies.fx_walker;
+    expect(fast.state.enemies.items[0]!.def?.speedTilesPerTick).toBeCloseTo(
+      walker.speedTilesPerTick * 1.2,
+      12,
+    );
+    const plain = started();
+    runTo(plain, 1);
+    expect(plain.state.enemies.items[0]!.def).toBe(walker);
+    expect(runWaveModifiers(plain.config).enemies.size).toBe(0);
+  });
+
+  it('sums percentages, scales shield regeneration with the shield, and refuses −100%', () => {
+    const runner = FIXTURE_CONTENT.enemies.fx_runner;
+    const m = waveModifiers(
+      [
+        { kind: 'enemyStat', stat: 'shield', pct: 0.4, source: 'a' },
+        { kind: 'enemyStat', stat: 'shield', pct: -0.3, source: 'b' },
+        { kind: 'countdown', pct: 0.5, source: 'c' },
+        { kind: 'countdown', pct: -0.5, source: 'd' },
+      ],
+      [runner],
+    );
+    expect(m.countdownPct).toBe(0);
+    expect(m.enemyPct.shield).toBeCloseTo(0.1, 12);
+    const s = scaledEnemy(runner, { hp: 0, shield: 0.5, speed: 0 });
+    expect(s.shield?.hp).toBe(runner.shield!.hp * 1.5);
+    expect(s.shield?.regenPerTick).toBe(runner.shield!.regenPerTick * 1.5);
+    expect(s.hp).toBe(runner.hp);
+    expect(() =>
+      waveModifiers([{ kind: 'enemyStat', stat: 'hp', pct: -1, source: 'x' }], [runner]),
+    ).toThrow(/must stay above -1/);
+    expect(() => waveModifiers([{ kind: 'countdown', pct: -1.5, source: 'x' }], [])).toThrow(
+      /countdown/,
+    );
+    expect(countdownTicksFor(600, 0.5)).toBe(900);
+    expect(countdownTicksFor(600, -0.5)).toBe(300);
+    expect(countdownTicksFor(1, -0.9)).toBe(1);
   });
 });

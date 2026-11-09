@@ -4,19 +4,13 @@
 // and `youngling` units), less what Emergency Bulkhead absorbs, the leak counts toward its tags'
 // `stats.tagLeaked`, and the enemy is removed. Losing at 0 integrity is cleanup's check (T105b),
 // at the end of the tick. Slots run in ascending order (determinism).
-import { LEAK_FREE_TAGS } from '../../content/rules.ts';
+import { LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { pointAt } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
-
-/**
- * The youngling wave modifier's speed (design/enemies.md § 5.1: speed ×0.5).
- * TODO(orchestrator): move to content/rules.ts beside YOUNGLING_BOUNTY once T208 lands.
- */
-export const YOUNGLING_SPEED_MUL = 0.5;
 
 /**
  * An enemy's speed this tick, in tiles per tick: its base speed, ×YOUNGLING_SPEED_MUL for a

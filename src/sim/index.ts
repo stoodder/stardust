@@ -19,7 +19,9 @@ export {
   SEGMENT_TICK_TICKS,
   abilityInSlot,
   abilityStats,
+  segmentSpan,
   type AbilityStats,
+  type SegmentSpan,
 } from './systems/abilities.ts';
 export { allyMayTarget } from './systems/allies.ts';
 export type {

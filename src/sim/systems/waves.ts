@@ -3,9 +3,14 @@
 // finished spawning (waves overlap). Also home of the callWave command (§ 2.4): starting wave 1,
 // and calling the next wave early for a bonus. Resolution (WaveCleared, the clear bonus) is
 // cleanup's, once the tick's deaths and leaks are in.
-import type { CompiledWave } from '../../content/compiled.ts';
+//
+// The run's wave modifiers apply here (D032): `countdown` stretches or cuts every countdown, and
+// `enemyStat` scales each unit's def as it spawns (`runWaveModifiers`), so status, movement,
+// damage, and render all read the scaled numbers through `e.def` with no per-system change.
+import type { CompiledEnemyDef, CompiledWave } from '../../content/compiled.ts';
 import { EARLY_CALL_COOLDOWN_SHARE } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
+import type { EnemyStat, Modifier, SimConfig } from '../config.ts';
 import type { RejectReason } from '../commands.ts';
 import { callWaveBonus, earn } from '../economy.ts';
 import { ENEMY_BLANK } from '../entities.ts';
@@ -24,7 +29,7 @@ export function waves(state: SimState, ctx: TickContext): void {
   }
   if (s.phase === 'spawning') {
     const wave = ctx.map.waves[state.wave - 1]!; // spawning ⇒ 1 ≤ wave ≤ waves.length
-    spawnDue(state, wave, s.waveTicks);
+    spawnDue(state, wave, s.waveTicks, runWaveModifiers(ctx.config).enemies);
     if (s.waveTicks >= wave.lastSpawnTicks) finishSpawning(state, ctx);
     else s.waveTicks++;
   }
@@ -78,18 +83,111 @@ function finishSpawning(state: SimState, ctx: TickContext): void {
     s.phase = 'done';
     return;
   }
+  const ticks = countdownTicksFor(next.countdownTicks, runWaveModifiers(ctx.config).countdownPct);
   s.phase = 'countdown';
-  s.countdownTicks = next.countdownTicks;
-  s.countdownTotalTicks = next.countdownTicks;
+  s.countdownTicks = ticks;
+  s.countdownTotalTicks = ticks;
   s.countdownWave = next.number;
-  emit(state, { type: 'CountdownStarted', wave: next.number, ticks: next.countdownTicks });
+  emit(state, { type: 'CountdownStarted', wave: next.number, ticks });
+}
+
+/**
+ * A countdown after the run's `countdown` modifiers (Story +50%, veteran Rush Hour −50%):
+ * `round(ticks × (1 + Σ pct))`, at least 1 tick.
+ */
+export function countdownTicksFor(ticks: number, pct: number): number {
+  if (pct === 0) return ticks;
+  const out = Math.round(ticks * (1 + pct));
+  return out > 1 ? out : 1;
+}
+
+/** A run's wave modifiers, summed once per config (`runWaveModifiers`). */
+export interface WaveModifiers {
+  /** Σ pct of the `countdown` modifiers. */
+  readonly countdownPct: number;
+  /** Σ pct of the `enemyStat` modifiers, per stat. */
+  readonly enemyPct: Readonly<Record<EnemyStat, number>>;
+  /** The scaled def each enemy spawns with, by id; empty when no `enemyStat` modifier applies. */
+  readonly enemies: ReadonlyMap<string, CompiledEnemyDef>;
+}
+
+/** Per config (it's immutable for a run), so the sums and scaled defs are built once. */
+const WAVE_MODIFIERS = new WeakMap<SimConfig<IdSpace>, WaveModifiers>();
+
+/**
+ * The run's wave modifiers. Throws a RangeError for an `enemyStat` total of −100% or less (a
+ * unit with no HP or speed is a malformed config, not a difficulty).
+ */
+export function runWaveModifiers(cfg: SimConfig<IdSpace>): WaveModifiers {
+  let out = WAVE_MODIFIERS.get(cfg);
+  if (out === undefined) {
+    out = waveModifiers(cfg.modifiers, Object.values(cfg.content.enemies));
+    WAVE_MODIFIERS.set(cfg, out);
+  }
+  return out;
+}
+
+/** Sums the wave modifiers and scales every enemy def (`runWaveModifiers`, uncached). */
+export function waveModifiers(
+  modifiers: readonly Modifier<IdSpace>[],
+  defs: readonly CompiledEnemyDef[],
+): WaveModifiers {
+  let countdownPct = 0;
+  const enemyPct: Record<EnemyStat, number> = { hp: 0, shield: 0, speed: 0 };
+  for (const m of modifiers) {
+    if (m.kind === 'countdown') countdownPct += m.pct;
+    else if (m.kind === 'enemyStat') enemyPct[m.stat] += m.pct;
+  }
+  for (const stat of ['hp', 'shield', 'speed'] as const) {
+    if (enemyPct[stat] <= -1) {
+      throw new RangeError(`enemyStat '${stat}' modifiers total ${enemyPct[stat]}; they must stay above -1`);
+    }
+  }
+  if (countdownPct <= -1) {
+    throw new RangeError(`countdown modifiers total ${countdownPct}; they must stay above -1`);
+  }
+  const enemies = new Map<string, CompiledEnemyDef>();
+  if (enemyPct.hp !== 0 || enemyPct.shield !== 0 || enemyPct.speed !== 0) {
+    for (const def of defs) enemies.set(def.id, scaledEnemy(def, enemyPct));
+  }
+  return { countdownPct, enemyPct, enemies };
+}
+
+/**
+ * An enemy def with its HP, shield (capacity and regeneration, so it refills in the same time),
+ * and speed scaled by `1 + pct` (design/progression.md § 9 Story, § 6 Hardened Hides and Double
+ * Time). HP stays fractional, as the damage pipeline's is.
+ */
+export function scaledEnemy(
+  def: CompiledEnemyDef,
+  pct: Readonly<Record<EnemyStat, number>>,
+): CompiledEnemyDef {
+  const shieldMul = 1 + pct.shield;
+  return Object.freeze({
+    ...def,
+    hp: def.hp * (1 + pct.hp),
+    shield:
+      def.shield === null
+        ? null
+        : Object.freeze({
+            ...def.shield,
+            hp: def.shield.hp * shieldMul,
+            regenPerTick: def.shield.regenPerTick * shieldMul,
+          }),
+    speedTilesPerTick: def.speedTilesPerTick * (1 + pct.speed),
+  });
 }
 
 /**
  * Spawns every unit due at `t` ticks into the wave: group g's i-th unit (0-based) spawns at
  * `delay + i × interval`. Groups spawn in parallel, in their authored order within a tick.
  */
-function spawnDue(state: SimState, wave: CompiledWave<IdSpace>, t: number): void {
+function spawnDue(
+  state: SimState,
+  wave: CompiledWave<IdSpace>,
+  t: number,
+  scaled: ReadonlyMap<string, CompiledEnemyDef>,
+): void {
   const groups = wave.groups;
   for (let gi = 0; gi < groups.length; gi++) {
     const g = groups[gi]!; // gi < length
@@ -97,15 +195,20 @@ function spawnDue(state: SimState, wave: CompiledWave<IdSpace>, t: number): void
     if (k < 0) continue;
     if (g.intervalTicks > 0) {
       if (k % g.intervalTicks !== 0 || k / g.intervalTicks >= g.count) continue;
-      spawn(state, wave.number, g);
+      spawn(state, wave.number, g, scaled);
     } else if (k === 0) {
-      for (let i = 0; i < g.count; i++) spawn(state, wave.number, g);
+      for (let i = 0; i < g.count; i++) spawn(state, wave.number, g, scaled);
     }
   }
 }
 
-function spawn(state: SimState, wave: number, g: CompiledWave<IdSpace>['groups'][number]): void {
-  const def = g.enemy;
+function spawn(
+  state: SimState,
+  wave: number,
+  g: CompiledWave<IdSpace>['groups'][number],
+  scaled: ReadonlyMap<string, CompiledEnemyDef>,
+): void {
+  const def = scaled.size === 0 ? g.enemy : (scaled.get(g.enemy.id) ?? g.enemy);
   const e = poolAlloc(state.enemies, ENEMY_BLANK, takeUid(state));
   e.def = def;
   e.wave = wave;

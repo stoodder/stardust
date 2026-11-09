@@ -110,8 +110,8 @@ describe('towers', () => {
         head: `tower.${t.id}_head`,
         icon: `icon.tower.${t.id}`,
       });
-      expect(t.specs).toBeNull(); // tier-4 specs land with T202
     }
+    expect(sprinkler.specs).toBeNull(); // Flash Freeze and Cloudburst need Stasis (M3, D031)
   });
 
   it('Rivet: 8 → 11 kinetic hitscan at 2/s, then 2.5/s with armor pierce 3', () => {
@@ -123,6 +123,81 @@ describe('towers', () => {
       { ...common, cost: 80, damage: 11, cooldownTicks: 30, armorPierce: 0, effects: [] },
       { ...common, cost: 150, damage: 11, cooldownTicks: 24, armorPierce: 3, effects: [] },
     ]);
+  });
+
+  it('Rivet specs: Rivet Storm (7.5/s after a 1 s spin-up) and Railspike (ignores armor)', () => {
+    const storm = rivet.specs!.a; // rivet has specs (asserted by the names below)
+    const rail = rivet.specs!.b;
+    expect([storm.name, rail.name]).toEqual(['Rivet Storm', 'Railspike']);
+    expect([storm.tier, rail.tier]).toEqual([4, 4]);
+    const ga = { ground: true, air: true };
+    const base = { targets: ga, kind: 'hitscan', type: 'kinetic', minRangeTiles: 0, effects: [] };
+    expect(summary(storm)).toEqual({
+      ...base,
+      cost: 300,
+      priority: 'first',
+      damage: 9,
+      cooldownTicks: 8,
+      rangeTiles: 3,
+      armorPierce: 0,
+      splashTiles: undefined,
+    });
+    expect(storm.attack).toMatchObject({ spinUpTicks: 60, ignoresArmor: false });
+    expect(summary(rail)).toEqual({
+      ...base,
+      cost: 300,
+      priority: 'strong',
+      damage: 120,
+      cooldownTicks: 120,
+      rangeTiles: 6,
+      armorPierce: 3,
+      splashTiles: undefined,
+    });
+    expect(rail.attack).toMatchObject({ ignoresArmor: true, spinUpTicks: 0 });
+  });
+
+  it('Thumper specs: Cluster Thumper (4 bomblets) and Bunker Buster (3 Corroded stacks)', () => {
+    const cluster = thumper.specs!.a; // thumper has specs (asserted by the names below)
+    const buster = thumper.specs!.b;
+    expect([cluster.name, buster.name]).toEqual(['Cluster Thumper', 'Bunker Buster']);
+    const base = {
+      targets: { ground: true, air: false },
+      priority: 'first',
+      kind: 'lobbed',
+      type: 'explosive',
+      rangeTiles: 3.5,
+      minRangeTiles: 1,
+      armorPierce: 0,
+    };
+    expect(summary(cluster)).toEqual({
+      ...base,
+      cost: 375,
+      damage: 30,
+      cooldownTicks: 100,
+      splashTiles: 1.2,
+      effects: [],
+    });
+    expect(cluster.attack).toMatchObject({
+      flightTicks: 48,
+      lead: true,
+      bomblets: {
+        count: 4,
+        damage: 12,
+        splashTiles: 0.6,
+        scatterTiles: 1.2,
+        flightTicks: 18,
+        projectile: 'projectile.thumper_shell',
+      },
+    });
+    expect(summary(buster)).toEqual({
+      ...base,
+      cost: 375,
+      damage: 140,
+      cooldownTicks: 150,
+      splashTiles: 0.6,
+      effects: [{ status: 'corroded', stacks: 3, maxStacks: 3 }],
+    });
+    expect(buster.attack).toMatchObject({ bomblets: null, flightTicks: 48, lead: true });
   });
 
   it('Thumper: lobbed, lead-targeted explosive splash, ground only', () => {

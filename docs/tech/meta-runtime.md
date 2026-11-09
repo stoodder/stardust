@@ -31,7 +31,7 @@ On win, loss, retry, or quit to menu, in this order:
 1. Add `stats.skitterkinKilled` to `save.stats.pestsProcessed`.
 2. Apply story run-end flag rules ([story-runtime.md § Flags](story-runtime.md#flags)).
 3. Copy `revoked` towers and abilities.
-4. Record medals. Leaks counted in `medalExemptLeaks` (`quiet_wave`, `fleeing`, and `youngling` units) never break Perfect Core. A run with `usedCheckpoint` ([architecture.md § Checkpoints](architecture.md#checkpoints)) can earn Victory but not Perfect or Challenge.
+4. Record medals: the sim has already settled them (`earnedMedalIds(state, map)`; [architecture.md § Medals](architecture.md#medals)), so medal-exempt leaks never broke Perfect Core. A run with `usedCheckpoint` ([architecture.md § Checkpoints](architecture.md#checkpoints)) can earn Victory but not Perfect or Challenge.
 5. Pay rewards by the table in [design/progression.md](../design/progression.md) §2: first-clear Stardust is the map's flat `stardust` value (A3M3 included), plus medal and objective Intel. **Defeat payouts can't be farmed:** a defeat on a map already completed pays 0 Stardust, and after a checkpoint retry `wavesResolved` counts only the waves resolved in this attempt from the run's `resumedFromWave` on ([architecture.md § Checkpoints](architecture.md#checkpoints)).
 6. Run the map's story transactions (below), then save.
 
@@ -132,7 +132,7 @@ Saves are untrusted input: a pasted code or a hand-edited localStorage value. `v
 | `mid_m2` | `after_a1m1` with Orbital Strike Mk II bought (2 of its 3 Intel), plus the second campaign map won (Victory only) and its Stardust and Intel banked, once that map is in `CAMPAIGN` |
 | `all_unlocked` | Every campaign map won with every medal; every registered tower, spec unlock, ability, and protocol; every upgrade at its top rank; 99,999 Stardust and 999 Intel; `devUnlocks` opens every system ([Progress and gating](#progress-and-gating)) |
 
-Medal ids in the dev saves use `victory`, `perfect_core`, and the map's Challenge id (or `challenge` if its data has none) until the medal id convention is fixed.
+Medal ids are `victory`, `perfect_core`, and the map's Challenge id (`mapMedalIds` in `sim/medals.ts`); the dev saves write `challenge` for a map whose data has no Challenge yet (A1M1 until T125).
 
 ---
 

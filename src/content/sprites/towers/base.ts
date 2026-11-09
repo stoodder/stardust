@@ -1,7 +1,9 @@
 // The Everglow tower base: an iso plinth with the 3×3 teal logo chevron on its left face and
 // orange tier chevrons on its right face (one per tier). Shared by every Everglow tower.
 // Tiers also change the silhouette, so they read at 1× without the chevrons: T2 bolts armor
-// pods onto both side corners, and T3 adds a sensor mast with a teal tip on the left pod.
+// pods onto both side corners, and T3 adds a sensor mast with a teal tip on the left pod. A tier-4
+// spec swaps the pods and mast for the spec's own kit (`everglowSpecBase`), so the base says which
+// spec the tower took.
 import { grid, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 export const BASE_W = 30;
@@ -25,8 +27,8 @@ function pod(g: CharGrid, cx: number, cy: number): void {
   }
 }
 
-/** One base frame per tier (1–3). `trim` recolors the top-face ring per tower. */
-export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
+/** The plinth every tier shares: shadow, block, trim ring, logo plate, and `chevrons` chevrons. */
+function plinth(trim: string, chevrons: number): CharGrid {
   const g: CharGrid = grid(BASE_W, BASE_H);
   const { x: cx, y: cy } = BASE_ANCHOR;
   isoBox(g, cx, cy + 1, 12, 0, { top: '_', rim: '_', left: '_', right: '_' });
@@ -42,7 +44,7 @@ export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
   ]);
   plot(g, 6 + OX, 12 + OY, '7');
   // Tier chevrons on the right face, stepping down its slope.
-  for (let t = 0; t < tier; t++) {
+  for (let t = 0; t < chevrons; t++) {
     const x = 15 + OX + t * 3;
     const y = 14 + OY - Math.floor((t * 3) / 2);
     // prettier-ignore
@@ -51,6 +53,13 @@ export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
       '.d.',
     ]);
   }
+  return g;
+}
+
+/** One base frame per tier (1–3). `trim` recolors the top-face ring per tower. */
+export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
+  const g = plinth(trim, tier);
+  const { x: cx, y: cy } = BASE_ANCHOR;
   if (tier >= 2) {
     pod(g, cx - 10, cy + 1);
     pod(g, cx + 10, cy + 1);
@@ -71,5 +80,22 @@ export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
     plot(g, cx, cy + 4, '+');
     plot(g, cx - 1, cy + 4, '+');
   }
+  return rows(g);
+}
+
+/**
+ * A tier-4 spec base: the plinth with three chevrons, a lit status light at the front corner, and
+ * the spec's own kit (drawn by `kit` at the side corners, where T2's pods sit) instead of the pods
+ * and T3's mast. `kit` gets the plinth's anchor so it can place things around it.
+ */
+export function everglowSpecBase(
+  trim: string,
+  kit: (g: CharGrid, cx: number, cy: number) => void,
+): string[] {
+  const g = plinth(trim, 3);
+  const { x: cx, y: cy } = BASE_ANCHOR;
+  kit(g, cx, cy);
+  plot(g, cx, cy + 4, '*');
+  plot(g, cx - 1, cy + 4, '+');
   return rows(g);
 }

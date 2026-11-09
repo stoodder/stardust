@@ -9,7 +9,8 @@ import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
 import { createState, takeUid, type SimState } from '../state.ts';
 import { createScratch, runTick, type TickContext } from '../tick.ts';
-import { enemySpeedPerTick, movement, YOUNGLING_SPEED_MUL } from './movement.ts';
+import { YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
+import { enemySpeedPerTick, movement } from './movement.ts';
 
 const map = FIXTURE_CONTENT.maps.fx_map;
 const road = map.routes.a!; // length 9

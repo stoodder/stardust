@@ -41,6 +41,10 @@ export function applyIntent(
       interaction.selectTower(0);
       sink.onCantBuild();
       return;
+    case 'cantTarget':
+      // Still aimed: the HUD (subscribed to the interaction's refusals) says why.
+      interaction.refuse('invalidTarget');
+      return;
     case 'cancel':
       interaction.clear();
       return;

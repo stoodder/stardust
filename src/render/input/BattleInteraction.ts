@@ -7,7 +7,12 @@
 // The keyboard tile cursor (T126) lives here too: the tile it's on (or hidden), the last tile it
 // was on (where it reappears), and the line its last arrow moves travelled (input/cursor.ts). It
 // is independent of the three above: it marks a tile, and Enter acts there as a click would.
+// Refusals (a path ability aimed at a tile off the path) go out to `onRefusal` listeners, so the
+// HUD can say why without the scene knowing about notices.
 import type { CursorAxis } from './cursor.ts';
+
+/** Why an input was refused before reaching the sim (the HUD words it, app/hud.ts `rejectText`). */
+export type InputRefusal = 'invalidTarget';
 
 export interface InteractionSnapshot {
   /** The selected tower's uid, or 0. */
@@ -34,6 +39,7 @@ export class BattleInteraction {
   #cursorLast = -1;
   #cursorNav: CursorNav | null = null;
   readonly #listeners: ((s: InteractionSnapshot) => void)[] = [];
+  readonly #refusals: ((r: InputRefusal) => void)[] = [];
 
   constructor(armed: string | null = null) {
     this.#armed = armed;
@@ -112,6 +118,20 @@ export class BattleInteraction {
     return () => {
       const i = this.#listeners.indexOf(listener);
       if (i >= 0) this.#listeners.splice(i, 1);
+    };
+  }
+
+  /** Reports a refused input (nothing changes; the HUD says why). */
+  refuse(reason: InputRefusal): void {
+    for (const l of this.#refusals) l(reason);
+  }
+
+  /** Subscribes to refusals. Returns the unsubscribe. */
+  onRefusal(listener: (r: InputRefusal) => void): () => void {
+    this.#refusals.push(listener);
+    return () => {
+      const i = this.#refusals.indexOf(listener);
+      if (i >= 0) this.#refusals.splice(i, 1);
     };
   }
 

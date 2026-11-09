@@ -73,11 +73,13 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ difficulty: 'story' })).toMatch(/Story difficulty is not simulated until T204b/);
     expect(bad({ modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] })).toMatch(
       /'freeCast' modifier \(test\) is not simulated until M3/,
     );
-    expect(bad({ specsUnlocked: ['fx_gun'] })).toMatch(/specializations .* until T202b/);
+    // T121: fx_mortar's spec A fires a straight projectile, which the towers system doesn't run.
+    expect(bad({ specsUnlocked: ['fx_mortar'] })).toMatch(
+      /'projectile' attacks \(fx_mortar\) is not simulated until M3/,
+    );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
     expect(bad({ specsUnlocked: ['fx_gun', 'fx_gun'] })).toMatch(/'fx_gun' appears twice/);
@@ -90,9 +92,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, difficulty: 'story' });
+    const both = bad({ seed: -1, modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/T204b/);
+    expect(both).toMatch(/until M3/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

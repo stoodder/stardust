@@ -11,7 +11,7 @@
 // - Both are allowed on any tower (a pulse tower picks no target, so the filter only changes when
 //   it pulses; a tower with no attack just carries the flag).
 import type { IdSpace, WaveTag } from '../content/types.ts';
-import { SPARE_TAGS } from '../content/rules.ts';
+import { NOT_FIRING_SEC, SPARE_TAGS } from '../content/rules.ts';
 import { secToTicks } from '../shared/time.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { Tower } from './entities.ts';
@@ -22,12 +22,7 @@ import type { TickContext } from './tick.ts';
 type HoldFireCommand = Extract<Command<IdSpace>, { type: 'holdFire' }>;
 type SpareRunnersCommand = Extract<Command<IdSpace>, { type: 'spareRunners' }>;
 
-/**
- * The "not firing" threshold (design/core-loop.md § 6.3, the `not_firing` bark): Skitterkin in
- * range of a tower for this long with no tower firing at any of them.
- * TODO(orchestrator): move to content/rules.ts beside the other rule numbers once T208 lands.
- */
-export const NOT_FIRING_SEC = 10;
+/** The "not firing" threshold (NOT_FIRING_SEC, content/rules.ts) in ticks. */
 export const NOT_FIRING_TICKS = secToTicks(NOT_FIRING_SEC);
 
 /**

@@ -1,6 +1,6 @@
-// The M2 seams (T200): commands whose handlers belong to later tasks are declared and logged but
-// rejected `notImplemented`; the new state fields start blank and are hashed; the links and
-// allies systems run in the pipeline as no-ops; FEATURE_GATES refuses per feature.
+// The M2 seams (T200): the new commands are declared (and live, each tested with its task); the
+// new state fields start blank and are hashed; the links and allies systems run in the pipeline;
+// FEATURE_GATES refuses per feature.
 import { describe, expect, it } from 'vitest';
 import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import { copyCommand, type Command } from './commands.ts';
@@ -21,31 +21,16 @@ function drain(sim: ReturnType<typeof fixtureSim>): SimEvent<FixtureIds>[] {
 }
 
 describe('commands declared ahead of their tasks', () => {
-  // holdFire and spareRunners are live (T206a; fireControl.test.ts).
-  const stubs: readonly Cmd[] = [{ type: 'specialize', towerUid: 1, spec: 'a' }];
-
-  it('are logged and rejected notImplemented, changing nothing else', () => {
-    const sim = fixtureSim();
-    sim.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
-    sim.applyPending();
-    drain(sim);
-    const before = sim.hash();
-    for (const cmd of stubs) sim.enqueue(cmd);
-    sim.applyPending();
-    expect(drain(sim)).toEqual(
-      stubs.map((cmd) => ({ type: 'CommandRejected', cmd, reason: 'notImplemented' })),
-    );
-    expect(sim.state.commandLog.slice(1).map((e) => e.cmd)).toEqual(stubs);
-    expect(sim.hash()).toBe(before);
-  });
-
+  // Every M2 command is live: holdFire and spareRunners (T206a; fireControl.test.ts) and
+  // specialize (T202b; specialize.test.ts). clear, interact, and scriptInput arrive in M3.
   it('copyCommand deep-copies every new command', () => {
-    const fireControl: readonly Cmd[] = [
+    const cmds: readonly Cmd[] = [
+      { type: 'specialize', towerUid: 1, spec: 'a' },
       { type: 'holdFire', target: 'all', on: true },
       { type: 'holdFire', target: 1, on: false },
       { type: 'spareRunners', target: 'all', on: true },
     ];
-    for (const cmd of [...stubs, ...fireControl]) {
+    for (const cmd of cmds) {
       const copy = copyCommand(cmd);
       expect(copy).toEqual(cmd);
       expect(copy).not.toBe(cmd);
@@ -187,17 +172,17 @@ describe('FEATURE_GATES', () => {
       specsUnlocked: ['fx_gun'],
       difficulty: 'story',
       modifiers: [
-        { kind: 'freeCast', wave: 1, source: 'shop:ready_room' },
+        { kind: 'firstBuildFree', source: 'protocol:rapid_deploy' },
+        { kind: 'freeCast', wave: 1, source: 'protocol:ready_room' },
         { kind: 'freeCast', wave: 2, source: 'again' },
       ],
     });
     expect(gateRefusals(cfg)).toEqual([
-      'tier-4 specializations is not simulated until T202b',
-      'Story difficulty is not simulated until T204b',
-      "a 'freeCast' modifier (shop:ready_room) is not simulated until M3",
+      "a 'firstBuildFree' modifier (protocol:rapid_deploy) is not simulated until M3",
+      "a 'freeCast' modifier (protocol:ready_room) is not simulated until M3",
     ]);
-    const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, specs: null };
-    expect(gateRefusals(cfg, lifted)).toHaveLength(2);
+    const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, 'modifier.firstBuildFree': null };
+    expect(gateRefusals(cfg, lifted)).toHaveLength(1);
     expect(gateRefusals(fixtureConfig())).toEqual([]);
   });
 });

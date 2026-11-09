@@ -10,6 +10,7 @@
 //   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a);
 //   until then they keep their blank values.
 import type {
+  CompiledBomblets,
   CompiledEffect,
   CompiledEnemyDef,
   CompiledRoute,
@@ -178,9 +179,9 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
 });
 
 /**
- * A shot in flight. M1 has lobbed shells only (the Thumper): fired at a fixed ground point and
- * landing after a fixed flight time. Everything the impact needs is copied in at fire time, so
- * selling or upgrading the tower mid-flight doesn't change the shell.
+ * A shot in flight: a lobbed shell (the Thumper) or a bomblet it scattered, fired at a fixed
+ * ground point and landing after a fixed flight time. Everything the impact needs is copied in at
+ * fire time, so selling, upgrading, or specializing the tower mid-flight doesn't change the shell.
  */
 export interface Projectile extends PoolEntity {
   towerUid: number;
@@ -213,6 +214,13 @@ export interface Projectile extends PoolEntity {
   hitsAir: boolean;
   /** On-hit statuses (the firing tier's effects). */
   effects: readonly CompiledEffect[];
+  /**
+   * The bomblets it scatters on impact (Cluster Thumper; null for none, and for a bomblet), with
+   * their damage under the tower's bonuses at fire time (`bombletDamageVs` as `damageVs`).
+   */
+  bomblets: CompiledBomblets | null;
+  bombletDamage: number;
+  bombletDamageVs: number;
 }
 
 export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
@@ -239,6 +247,9 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   hitsGround: false,
   hitsAir: false,
   effects: NO_EFFECTS,
+  bomblets: null,
+  bombletDamage: 0,
+  bombletDamageVs: 0,
 });
 
 /**

@@ -25,6 +25,7 @@ import {
   abilityStats,
   applyAbilityCommand,
   SEGMENT_TICK_TICKS,
+  segmentSpan,
 } from './abilities.ts';
 
 type AbilityCmd = Extract<Command<IdSpace>, { type: 'ability' }>;
@@ -132,6 +133,20 @@ describe('the segment (D031: the clicked path tile ±1 along the route)', () => 
     const coreEnd = setup(BRICKS);
     applyAbilityCommand(coreEnd.state, coreEnd.ctx, cast(5, 4)); // the core: tiles 7–9
     expect(coreEnd.state.zones.items[0]).toMatchObject({ distFrom: 6.5, distTo: 9 });
+  });
+
+  it('segmentSpan gives the zone its stretch (the HUD preview draws the same tiles)', () => {
+    const out = { lo: -1, hi: -1, distFrom: -1, distTo: -1 };
+    expect(segmentSpan(ROAD, 2, 2, 1, out)).toBe(true);
+    expect(out).toEqual({ lo: 3, hi: 5, distFrom: 2.5, distTo: 5.5 });
+    expect(segmentSpan(ROAD, 0, 0, 1, out)).toBe(true);
+    expect(out).toEqual({ lo: 0, hi: 2, distFrom: 0, distTo: 2.5 });
+    expect(segmentSpan(ROAD, 5, 4, 1, out)).toBe(true);
+    expect(out).toEqual({ lo: 7, hi: 9, distFrom: 6.5, distTo: 9 });
+    // Off the route, or an air lane: false, and `out` is left alone.
+    expect(segmentSpan(ROAD, 1, 1, 1, out)).toBe(false);
+    expect(segmentSpan({ ...ROAD, kind: 'air' }, 2, 2, 1, out)).toBe(false);
+    expect(out).toEqual({ lo: 7, hi: 9, distFrom: 6.5, distTo: 9 });
   });
 
   it('needs a ground path tile: a pad, decor, or an off-map tile is rejected (invalidTarget)', () => {

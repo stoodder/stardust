@@ -11,8 +11,8 @@
 //   In the menus it closes the innermost panel or screen (Settings, a Title panel, the Base;
 //   ui/screens/escape.ts), from a text field too.
 // - Global keys (M: mute) work on every screen, under the same text-entry and modifier rules.
-// Bindings (design/core-loop.md §4) live in the table below. Still to come: E (the companion's
-// ability, T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
+// Bindings (design/core-loop.md §4) live in the table below. Still to come: H and Shift+H (Hold
+// Fire, T206), and Alt+H (spare runners).
 import { runEscape } from '../ui/screens/escape.ts';
 import {
   callWave,
@@ -47,6 +47,7 @@ export const BINDINGS: Readonly<Record<string, () => void>> = {
   KeyT: cycleTargeting,
   KeyW: callWave,
   KeyQ: () => pressAbility(1),
+  KeyE: () => pressAbility(2),
   ArrowUp: () => moveCursor('up'),
   ArrowDown: () => moveCursor('down'),
   ArrowLeft: () => moveCursor('left'),

@@ -118,8 +118,9 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
        towerUnlockWave: { example_mortar: 3 },            // unlocks when W3's countdown starts
        threatIntel: ['fast'],                             // every trait in waves.ts
        requiredCounters: [],                              // A1M1 requires none; ≤ 3, each with a noCounterBuild
-       medals: { challenge: { id: 'one_mortar', condition: { towers: { tower: 'example_mortar' }, lte: 1 } } },
-       objectives: [{ id: 'clean_w4', condition: { stat: 'integrityLost', lte: 0 }, intel: 1 }],
+       medals: { challenge: { id: 'one_mortar', name: 'Mortar Minimalist',  // required on campaign maps
+         description: 'Win with at most one mortar.', condition: { towers: { tower: 'example_mortar' }, lte: 1 } } },
+       objectives: [{ id: 'clean_w4', condition: { stat: 'integrityLost', lte: 0 }, intel: 1 }], // M3: createSim refuses objectives until then
        companion: { id: 'bricks', state: 'present' },     // or { pick: [...] }, or null
        events: [{ id: 'w03_radio', on: { wave: 3, phase: 'start' }, actions: [{ cue: 'example_map_w03' }] }],
      });
@@ -210,10 +211,11 @@ The **par-purchasable** check (every par build's reference profile can be bought
 - **No single-wave wall** (check `gradual`, every alt build, seeds 1–3; [maps.md §6.1](../design/maps.md#61-per-act-targets)): no wave of the run costs more than 50% of max integrity, and a run that loses has leaked in an earlier wave than the one it loses in. Its summary lists the integrity lost per wave. The judge is `notGradual()` in `checks.ts`, and its numbers (`MAX_WAVE_LOSS_PCT`, `LEAK_LEAD_WAVES`) are in `rules.ts`.
 - **A1M1's robustness test** (`src/balance/a1m1.test.ts`, part of `npm test`) re-runs the whole harness on A1M1 with each of W5–W7's clumps shifted ±0.1 and ±0.2 s apart, and expects every check to pass, so the tuning can't rest on a cliff. Every check includes the alt builds' `gradual` checks, so the under-built alts can't hit a wall under a shift either. It also checks that three setup Rivets and nothing else (a reference that isn't an alt build) lose no earlier than W6 and pass the same `notGradual()` judge, and that W7's strike is worth 4–6 integrity to par.
 - **Assertion 16** (`freeChoiceChecks` in `checks.ts`, seeds 1–3; checked on the fixture map in `src/balance/__fixtures__/fireControl.ts` until a live map has these groups): (a) on a map with a `quiet_wave` group, the run `holdFireWhile:quiet_wave` (par with the macro armed before W1, `withHoldFireWhile`) must win with its margin in band, and every `quiet_wave` unit that spawned must leak. Until the run-end flag rules exist (T206b), that full leak stands in for `spared_quiet_wave = true`, since it meets any share threshold. (b) On a map with a `fleeing` group, the `spareFleeing` run's margin must be ≥ par's − `SPARE_FLEEING_SLACK_PCT` (5) on the same seed.
+- **Par earns its medals** (check `medals`, every seed; `src/balance/medals.ts`): when a map's builds list `parMedals` (for example `['challenge']`), the par build must earn each of them on every seed. A1M1's par must earn its Teamwork medal (T125). Medals themselves are the sim's ([architecture.md § Medals](architecture.md#medals)).
 - **Build steps run cleanly** (checked on every run, beside 12 and 13): no step errors, and the par and alt builds get every step in before the map ends.
 - **Refused, not skipped:** a map that needs an assertion the harness can't make yet fails with a "refused" check that names the task it waits for. That covers non-integrity objectives, `flagVariants`, jammers, any `noCounterBuilds` (assertion 6 needs the full-catalog profile, T204b), and a reference profile with purchases. `HARNESS_GATES` in `src/balance/refusals.ts` names the task that lifts each map-feature refusal. Assertion 9 (Story difficulty) isn't checked in M1, and the report says so.
 
-**Report.** Always printed: per map, a PASS/FAIL verdict, each assertion with its summary and every failing seed, then a leaks-per-wave table for the first seed of each build with its result and credits left. `--report` also writes `reports/balance.json` (every run in full) and `reports/balance.md`: the assertion table; a runs table (build, seed, result, margin, ticks, credits left, late steps, hash, wall time); and, for the first seed of each build, a **per-wave table** (spawned, killed, leaked, integrity lost, the bank as the build phase opened, credits unspent as the wave started, early-call bonus, late steps) and a **per-tower table** (tile, tier, shots, kills). Link and jam uptime read "none" until the report reads `stats.linkTicks` (T124) and jammers exist. Exit code 1 on any failure.
+**Report.** Always printed: per map, a PASS/FAIL verdict, each assertion with its summary and every failing seed, then a leaks-per-wave table for the first seed of each build with its result, credits left, and medals (`V P C`, with `·` for each one not earned). `--report` also writes `reports/balance.json` (every run in full) and `reports/balance.md`: the assertion table; a runs table (build, seed, result, margin, ticks, credits left, late steps, medals, hash, wall time); and, for the first seed of each build, a **per-wave table** (spawned, killed, leaked, integrity lost, the bank as the build phase opened, credits unspent as the wave started, early-call bonus, late steps) and a **per-tower table** (tile, tier, shots, kills). Link and jam uptime read "none" until the report reads `stats.linkTicks` (T124) and jammers exist. Exit code 1 on any failure.
 
 Optional **guards** catch known cheese: built-in policies such as `spamCheapest` (the cheapest loadout tower on every pad), listed under `guards` in `builds.ts` with an expectation (`lose`, or `maxMarginPct`).
 
@@ -250,6 +252,7 @@ export const builds = defineBuilds({
     mortar_heavy: { loadout: [/* … */], steps: [/* … */] },
   },
   altExpectations: { slow_heavy: { belowPar: true, minMarginPct: 40 } },   // optional, per alt build
+  parMedals: ['challenge'],                   // optional: medals par must earn on every seed
   guards: { spam: { policy: 'spamCheapest', expect: 'lose' } },
 });
 ```

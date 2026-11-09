@@ -49,6 +49,7 @@ type ScriptAction =
 `towerUnlockWave: { [towerId]: N }` in map data compiles to `{ on: { wave: N, phase: 'countdown' }, actions: [{ unlockTowerClass: towerId }] }` (A1M1: `{ thumper: 3 }`).
 
 - **Cue ids** follow `<map_id>_wNN` for wave-bound cues (`a1_m01_w03`), and the other `<map_id>_<slot>` forms from [story/style-guide.md](../story/style-guide.md) for the rest. Validation checks the pattern.
+- **`when`** is judged once, on the tick its event's trigger is reached ([§ Conditions](#conditions)). If it doesn't hold then, the event is spent without running; it never waits for the condition to come true.
 - **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([`src/content/types.ts`](../../src/content/types.ts)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
 - **Forced input.** `forceInput` sets `state.pendingInput`. While it is set, the wave schedule, movement, firing, cooldowns, and timers are frozen. The sim still ticks (so render can animate and `tick` stays monotonic), and `applyCommands` accepts only `{ type: 'scriptInput', id }`. The host shows the single-button overlay on `ForcedInputRequested`. Real-time lines (Bricks's line after 20 s on the SEAL) are a story-side timer on wall-clock time, not sim ticks. The balance harness presses it with a `scriptInput` build step.
 - **Clickable world objects.** `setClickable` marks a marker (for example `peeker` in A2M3) as clickable and emits `ClickableChanged`; render highlights it ([art-direction.md §6](../art/art-direction.md#6-story-and-world-sprites)). An `interact` command (valid only while the marker is clickable), or the `fallback` trigger if the player never clicks, fires the `interacted` trigger once and emits `Interacted { by }`. Pebble's A2M3 rescue is built this way, with "W6 cleared" as its fallback. Clicks that change nothing in the sim (poking the Peeker in Act I) are UI events instead (`peeker_poked`, [§ Flags](#flags)).
@@ -80,7 +81,21 @@ type DialogueNode =
 
 ## Conditions
 
-Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast: MapId }`, `{ mapIs: MapId }`, `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`. Map order comes from `content/campaign.ts`. (In-map medal and objective conditions use the sim's `ConditionDef` in [`src/content/types.ts`](../../src/content/types.ts).)
+Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast: MapId }`, `{ mapIs: MapId }`, `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`. Map order comes from `content/campaign.ts`.
+
+**In-map conditions** (the Challenge medal, optional objectives, and script `when` guards) use the sim's `ConditionDef` ([`src/content/types.ts`](../../src/content/types.ts)), evaluated by `src/sim/conditions.ts` over run state. Its atoms, by when they are judged ([design/progression.md §3](../design/progression.md#3-medals-and-intel), "Evaluation"):
+
+| Atom | Reads | Judged |
+|---|---|---|
+| `{ towers: { tower?, faction? }, gte?, lte? }` | Live towers of that tower id or faction (all towers if neither) | As things stand (a medal's on the win tick) |
+| `{ linkActive: LinkId }` | At least one pair of that synergy link is active | As things stand |
+| `{ tagRatio: { tag, of: 'leaked' \| 'killed', gte } }` | That tag's leaked or killed units ÷ its spawned units (false when none spawned) | As things stand |
+| `{ stat: RunStat, gte?, lte? }` | A run counter (`integrityLost`, `towersBuilt`, `creditsSpent`, `abilityUses`); counters only grow | Over the run |
+| `{ passedMarker: { marker, enemy? } }` | A unit of `enemy` (any enemy if omitted) went past the marker at some point: its route distance passed the route point closest to the marker (the later one where a route doubles back). Medal-exempt units never count. Latched each tick in `stats.markersPassed` | Over the run |
+| `{ flag, eq }` | `SimConfig.scriptFlags`; an unset flag never matches | Fixed for the run |
+| `{ all }`, `{ any }`, `{ not }` | Combinators | — |
+
+A condition **settles** once the rest of the run can't change it (`settledCondition`): a flag at once, a `stat` past its `lte` (false) or at its `gte` with no `lte` (true), a `passedMarker` once passed (true), and the combinators by three-valued logic. State atoms stay open until judged. That is how a Challenge such as A1M2's "no Brood Hauler gets past the pump station" (`{ not: { passedMarker: { marker: 'pump_station', enemy: 'hauler' } } }`) is forfeited the moment one does ([architecture.md § Medals](architecture.md#medals)). The validator's rules for conditions and medals are in [`src/content/validateMedals.ts`](../../src/content/validateMedals.ts).
 
 ## Flags
 

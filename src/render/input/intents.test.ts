@@ -1,10 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { hoverLook, resolveClick, type TileFacts } from './intents.ts';
 
-const pad: TileFacts = { index: 13, col: 1, row: 1, buildable: true, towerUid: 0 };
-const path: TileFacts = { index: 2, col: 2, row: 0, buildable: false, towerUid: 0 };
+const pad: TileFacts = {
+  index: 13,
+  col: 1,
+  row: 1,
+  buildable: true,
+  towerUid: 0,
+  groundPath: false,
+};
+const path: TileFacts = {
+  index: 2,
+  col: 2,
+  row: 0,
+  buildable: false,
+  towerUid: 0,
+  groundPath: true,
+};
 const tower: TileFacts = { ...pad, towerUid: 7 };
-const off: TileFacts = { index: -1, col: -1, row: 0, buildable: false, towerUid: 0 };
+const off: TileFacts = {
+  index: -1,
+  col: -1,
+  row: 0,
+  buildable: false,
+  towerUid: 0,
+  groundPath: false,
+};
 
 describe('resolveClick', () => {
   it('builds the armed tower on a free buildable tile', () => {
@@ -88,5 +109,18 @@ describe('aiming an ability', () => {
     expect(hoverLook(path, null, false, 1)).toMatchObject({ aim: true });
     expect(hoverLook(off, null, false, 1)).toMatchObject({ aim: false, highlight: null });
     expect(hoverLook(pad, 'rivet', true)).toMatchObject({ aim: false });
+  });
+
+  it('fires a path ability (a segment) only on the path; elsewhere it says so and stays aimed', () => {
+    expect(resolveClick(path, 'left', null, 2, true)).toEqual({
+      kind: 'ability',
+      slot: 2,
+      tile: [2, 0],
+    });
+    expect(resolveClick(pad, 'left', null, 2, true)).toEqual({ kind: 'cantTarget' });
+    expect(resolveClick(tower, 'left', null, 2, true)).toEqual({ kind: 'cantTarget' });
+    expect(resolveClick(off, 'left', null, 2, true)).toEqual({ kind: 'none' });
+    expect(hoverLook(path, null, false, 2, true)).toMatchObject({ highlight: 'hover', aim: true });
+    expect(hoverLook(pad, null, false, 2, true)).toMatchObject({ highlight: 'invalid', aim: false });
   });
 });

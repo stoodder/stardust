@@ -11,6 +11,7 @@ import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { assertNever } from '../shared/types.ts';
 import {
+  abilityStats,
   callWaveBonus,
   isBuildableTile,
   sellValue,
@@ -18,8 +19,10 @@ import {
   type RejectReason,
   type TierStatDelta,
   type TowerStatLine,
+  type AbilityStats,
   type SchedulePhase,
   type Sim,
+  type SimConfig,
 } from '../sim/index.ts';
 import {
   hud,
@@ -144,19 +147,23 @@ export function deltaText(d: TierStatDelta | null): string | null {
 }
 
 /**
- * An ability's one-line description (D026), e.g. "200 damage in an area after 1 s. Recharges
- * 45 s." or "Slows a stretch of path 50% and deals 20 damage/s for 5 s. Recharges 50 s."
+ * An ability's one-line description (D026) with its real numbers (`stats`: abilityStats, so Mk II's
+ * radius and Rapport's or Coolant's cooldown show), e.g. "200 damage in a 1.5-tile radius after
+ * 1 s. Recharges 45 s." or "Slows 3 tiles of path 50% and deals 20 damage/s for 5 s. Recharges
+ * 50 s." Without `stats`, the content's own numbers.
  */
-export function abilityDescription(def: CompiledAbilityDef): string {
+export function abilityDescription(def: CompiledAbilityDef, stats?: AbilityStats): string {
   const e = def.effect;
-  const cd = statNum(def.cooldownTicks / TICK_HZ);
+  const cd = statNum((stats?.cooldownTicks ?? def.cooldownTicks) / TICK_HZ);
   if (e.kind === 'segment') {
     const slow = statNum(Math.round(e.slowPct * 100));
     const sec = statNum(e.durationTicks / TICK_HZ);
-    return `Slows a stretch of path ${slow}% and deals ${statNum(e.damagePerSec)} damage/s for ${sec} s. Recharges ${cd} s.`;
+    const len = 2 * e.reachTiles + 1;
+    return `Slows ${len} tiles of path ${slow}% and deals ${statNum(e.damagePerSec)} damage/s for ${sec} s. Recharges ${cd} s.`;
   }
   const delay = statNum(e.delayTicks / TICK_HZ);
-  return `${statNum(e.damage)} damage in an area after ${delay} s. Recharges ${cd} s.`;
+  const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
+  return `${statNum(e.damage)} damage in a ${radius}-tile radius after ${delay} s. Recharges ${cd} s.`;
 }
 
 /**
@@ -416,24 +423,46 @@ export function rejectText(reason: RejectReason): string | null {
   }
 }
 
-/** The commander ability slots a config equips (slot 1 only in M1; slot 2 is T207's). */
-export function abilitySlots(
-  abilities: Readonly<Record<string, CompiledAbilityDef>>,
-  slot1: string | null,
-): AbilitySlotView[] {
-  if (slot1 === null) return [];
-  const def = abilities[slot1];
-  if (def === undefined) throw new RangeError(`hud: ability '${slot1}' is not in the content`);
-  return [
-    {
-      slot: 1,
+/** The battle config fields the ability slots read. */
+type AbilityConfig = Pick<SimConfig<IdSpace>, 'content' | 'abilities' | 'modifiers'>;
+
+/** The hotkey of each ability slot (core-loop §4). */
+const ABILITY_KEYS = { 1: 'Q', 2: 'E' } as const;
+
+/**
+ * The commander ability slots a config equips (core-loop §3.1), in slot order: slot 1 (the
+ * Technician's, on Q) when it holds an ability, and slot 2 (the companion's, on E) when the map
+ * has a companion (`absent`: shown dark). Descriptions carry the modified numbers.
+ */
+export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
+  const out: AbilitySlotView[] = [];
+  const { slot1, slot2, slot2State } = cfg.abilities;
+  const view = (slot: 1 | 2, id: string, absent: boolean): AbilitySlotView => {
+    const def = Object.hasOwn(cfg.content.abilities, id) ? cfg.content.abilities[id] : undefined;
+    if (def === undefined) throw new RangeError(`hud: ability '${id}' is not in the content`);
+    return {
+      slot,
       ability: def.id,
       label: def.name,
       icon: def.sprites.icon,
-      key: 'Q',
-      description: abilityDescription(def),
-    },
-  ];
+      key: ABILITY_KEYS[slot],
+      description: abilityDescription(def, abilityStats(def, cfg.modifiers)),
+      aim: def.effect.kind === 'segment' ? 'path' : 'area',
+      absent,
+    };
+  };
+  if (slot1 !== null) out.push(view(1, slot1, false));
+  if (slot2 !== null && slot2State !== 'none') out.push(view(2, slot2, slot2State === 'absent'));
+  return out;
+}
+
+/** The cooldown each ability slot starts when cast (`abilityStats`), by slot (0 when empty). */
+export function abilityCooldownTotals(cfg: AbilityConfig): [number, number] {
+  const total = (id: string | null): number => {
+    const def = id === null ? undefined : cfg.content.abilities[id];
+    return def === undefined ? 0 : abilityStats(def, cfg.modifiers).cooldownTicks;
+  };
+  return [total(cfg.abilities.slot1), total(cfg.abilities.slot2)];
 }
 
 /** Steps in the cooldown wipe (one per game pixel of the 16 px icon). */
@@ -493,7 +522,8 @@ export function bindHud(
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
   hud.slots.value = buildSlots(towers, sim.config.loadout, towerUnlockWaves(sim.map));
-  const abilityViews = abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1);
+  const abilityViews = abilitySlots(sim.config);
+  const cooldownTotals = abilityCooldownTotals(sim.config);
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
   const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
@@ -542,9 +572,8 @@ export function bindHud(
     let next: AbilityCooldownView[] | null = null;
     for (let i = 0; i < abilityViews.length; i++) {
       const v = abilityViews[i]!; // i < length
-      const def = sim.config.content.abilities[v.ability];
       const left = sim.state.abilityCooldownTicks[v.slot - 1] ?? 0;
-      const cd = cooldownView(left, def?.cooldownTicks ?? 0, prev[i] ?? null);
+      const cd = cooldownView(left, cooldownTotals[v.slot - 1] ?? 0, prev[i] ?? null);
       if (cd !== prev[i]) next ??= [...prev];
       if (next !== null) next[i] = cd;
     }
@@ -572,6 +601,8 @@ export function bindHud(
   const offs = [
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
+    // A path ability aimed off the path (render/input/apply.ts): "Can't target there".
+    interaction.onRefusal((r) => showNotice(rejectText(r) ?? '')),
     host.bus.on('TowerBuilt', (e) => {
       hud.built.value = true;
       syncTowers();

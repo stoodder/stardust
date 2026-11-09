@@ -1,6 +1,7 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
-// Every M2 command is declared; the handlers that aren't live yet reject `notImplemented` and name
-// their task (specialize.ts). clear, interact, and scriptInput arrive in M3.
+// Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
+// fireControl.ts). clear, interact, and scriptInput arrive in M3; `notImplemented` is kept for
+// handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 
@@ -8,7 +9,7 @@ export type Command<K extends IdSpace = LiveIds> =
   | { readonly type: 'build'; readonly tile: GridPos; readonly tower: K['tower'] }
   /** To the next tier (1–3). */
   | { readonly type: 'upgrade'; readonly towerUid: number }
-  /** Tier 3 → tier 4, choosing one of the tower's two specializations (T202b). */
+  /** Tier 3 → tier 4, choosing one of the tower's two specializations (specialize.ts). */
   | { readonly type: 'specialize'; readonly towerUid: number; readonly spec: SpecChoice }
   | { readonly type: 'sell'; readonly towerUid: number }
   | { readonly type: 'targeting'; readonly towerUid: number; readonly mode: TargetPriority }

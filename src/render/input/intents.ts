@@ -17,6 +17,8 @@ export interface TileFacts {
   readonly buildable: boolean;
   /** The uid of the tower standing there, or 0. */
   readonly towerUid: number;
+  /** On a ground route (paths and rift lanes, spawn and core tiles included): a segment's target. */
+  readonly groundPath: boolean;
 }
 
 /** What a click does. The scene applies the selection and issues the command. */
@@ -31,12 +33,16 @@ export type Intent =
   | { readonly kind: 'deselect' }
   /** An armed click on a tile nothing can be built on: the HUD says so (D026); stays armed. */
   | { readonly kind: 'cantBuild' }
+  /** An aimed path ability (a segment) clicked off the path: the HUD says so; it stays aimed. */
+  | { readonly kind: 'cantTarget' }
   /** Right-click: drops the selection and disarms (like Esc). */
   | { readonly kind: 'cancel' };
 
 /**
  * Decides a click: right-click cancels (and disarms, and stops aiming); while aiming an ability, a
- * click on any tile fires it there (towers included: the strike hits the ground around them); a
+ * click on any tile fires it there (towers included: the strike hits the ground around them), or,
+ * for an ability that targets the path (`aimOnPath`: Suppressing Fire's segment), a click on a
+ * ground-route tile fires it and a click on any other tile says it can't target there; a
  * tower selects it; an armed click on a free pad builds (the slot stays armed, so the next click
  * builds another), and an armed click on any other tile says it can't build there. Anything else
  * deselects.
@@ -46,12 +52,13 @@ export function resolveClick(
   button: 'left' | 'right',
   armed: Armed,
   aiming: AbilitySlot | null = null,
+  aimOnPath = false,
 ): Intent {
   if (button === 'right') return { kind: 'cancel' };
   if (aiming !== null) {
-    return tile.index < 0
-      ? { kind: 'none' }
-      : { kind: 'ability', slot: aiming, tile: [tile.col, tile.row] };
+    if (tile.index < 0) return { kind: 'none' };
+    if (aimOnPath && !tile.groundPath) return { kind: 'cantTarget' };
+    return { kind: 'ability', slot: aiming, tile: [tile.col, tile.row] };
   }
   if (tile.index < 0) return { kind: 'deselect' };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
@@ -72,7 +79,7 @@ export interface HoverLook {
   readonly ghostValid: boolean;
   /** The uid of a hovered tower whose range ring to show, or 0. */
   readonly ringTowerUid: number;
-  /** Draw the aimed ability's reticle on this tile. */
+  /** Draw the aimed ability's reticle (or its segment preview) on this tile. */
   readonly aim: boolean;
 }
 
@@ -89,14 +96,17 @@ const look: MutableHoverLook = {
 
 /**
  * The hover feedback for a tile. `canPlace` is the armed tower's full placement check
- * (buildable, empty, unlocked, affordable); the sim re-validates the command either way. The
- * result is a shared scratch object, valid until the next call: read it, don't keep it.
+ * (buildable, empty, unlocked, affordable); the sim re-validates the command either way. While
+ * aiming an ability that targets the path (`aimOnPath`), a tile off the ground routes reads as
+ * invalid and shows no preview. The result is a shared scratch object, valid until the next call:
+ * read it, don't keep it.
  */
 export function hoverLook(
   tile: TileFacts,
   armed: Armed,
   canPlace: boolean,
   aiming: AbilitySlot | null = null,
+  aimOnPath = false,
 ): HoverLook {
   look.ghost = false;
   look.ghostValid = false;
@@ -105,8 +115,9 @@ export function hoverLook(
   if (tile.index < 0) {
     look.highlight = null;
   } else if (aiming !== null) {
-    look.highlight = 'hover';
-    look.aim = true;
+    const ok = !aimOnPath || tile.groundPath;
+    look.highlight = ok ? 'hover' : 'invalid';
+    look.aim = ok;
   } else if (tile.towerUid !== 0) {
     look.highlight = 'hover';
     look.ringTowerUid = tile.towerUid;

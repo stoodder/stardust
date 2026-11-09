@@ -94,4 +94,17 @@ describe('BattleInteraction', () => {
     i.hideCursor();
     expect(seen).toHaveLength(n);
   });
+
+  it('reports refusals to their listeners without changing anything', () => {
+    const { i, seen } = watched();
+    i.aimAbility(2);
+    const refused: string[] = [];
+    const off = i.onRefusal((r) => refused.push(r));
+    i.refuse('invalidTarget');
+    off();
+    i.refuse('invalidTarget');
+    expect(refused).toEqual(['invalidTarget']);
+    expect(seen).toHaveLength(1); // the aim only
+    expect(i.aiming).toBe(2);
+  });
 });

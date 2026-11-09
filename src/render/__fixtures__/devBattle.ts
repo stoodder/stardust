@@ -9,6 +9,7 @@ import {
   defineTower,
   mapDefinersFor,
 } from '../../content/define.ts';
+import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
 import type { IdsOf, RawContent } from '../../content/types.ts';
 
 const devRivet = defineTower({
@@ -105,13 +106,16 @@ const DEV_ENTITIES = {
     dev_sprinkler: devSprinkler,
   }),
   enemies: defineRegistry({ dev_nibbler: devNibbler }),
-  abilities: defineRegistry({ dev_strike: devStrike }),
+  // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b).
+  abilities: defineRegistry({ dev_strike: devStrike, suppressing_fire }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
 
 const dev = mapDefinersFor<DevIds>();
 
-// An S-bend from the spawn (top left) to the core (bottom right), with pads on both sides.
+// An S-bend from the spawn (top left) to the core (bottom right), with pads on both sides. Sgt.
+// Bricks stands at his post on decor (7,2), beside the bend, with Suppressing Fire in slot 2 (the
+// dev stand-in for A1M1's post until T125 places it there).
 const devLayout = dev.defineMapLayout({
   id: 'dev_range',
   act: 1,
@@ -161,7 +165,29 @@ const devLayout = dev.defineMapLayout({
   stardust: 0,
   threatIntel: [],
   requiredCounters: [],
-  companion: null,
+  medals: {
+    challenge: {
+      id: 'dev_two_rivets',
+      name: 'Rivet Range',
+      description: 'Win with two Rivets on the range.',
+      condition: { towers: { tower: 'dev_rivet' }, gte: 2 },
+    },
+  },
+  markers: { bricks_post: [7, 2] },
+  companion: { id: 'bricks', state: 'present' },
+  allies: [
+    {
+      kind: 'bricks',
+      post: 'bricks_post',
+      attack: {
+        type: 'kinetic',
+        damage: 6,
+        ratePerSec: 1.5,
+        rangeTiles: 2.5,
+        targets: { ground: true, air: true },
+      },
+    },
+  ],
 });
 
 const devWaves = dev.defineWaves([
