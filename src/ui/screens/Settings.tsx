@@ -1,16 +1,25 @@
 // Settings (T209): sound (mute and the three volumes, app/settings.ts, which the audio engine
 // follows live), the campaign's difficulty (Standard or Story, progression.md § 9: changeable any
-// time between maps), and the save's export and import codes. Difficulty and Export need a save
+// time between maps), the player's file (T306: name and pronouns; the callsign and the reason for
+// joining show read-only), and the save's export and import codes. Difficulty and Export need a save
 // in play; from the Title they explain that instead.
 import { useState } from 'preact/hooks';
 import { closeSettings } from '../../app/navigation.ts';
 import { exportActive, setDifficulty } from '../../app/save.ts';
 import { setAudioSettings, settings, toggleMute, type AudioSettings } from '../../app/settings.ts';
+import { editProfile } from '../../app/profile.ts';
+import {
+  ARRIVAL_REASONS,
+  CALLSIGNS,
+  PLAYER_NAME,
+  type PronounId,
+} from '../../content/dialogue/profile.ts';
 import { copyText } from './clipboard.ts';
+import { ChoiceGroup, PRONOUN_OPTIONS } from './Intake.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { ImportPanel } from './ImportPanel.tsx';
-import { campaign, type Difficulty } from './state.ts';
+import { campaign, type Difficulty, type ProfileView } from './state.ts';
 import './screens.css';
 
 type Volume = Exclude<keyof AudioSettings, 'muted'>;
@@ -139,6 +148,105 @@ function DifficultyPick() {
   );
 }
 
+/**
+ * The player's file (T306; core-loop.md § 6.1): the name and pronouns can change here; the
+ * callsign is the story's (dialogue `set` nodes) and the reason for joining is final, so both
+ * show read-only.
+ */
+function TechnicianFile() {
+  const view = campaign.value;
+  const profile = view?.profile ?? null;
+  return (
+    <fieldset class="sd-fieldset sd-file">
+      <legend class="sd-field-label">Your file</legend>
+      {view === null ? (
+        <p class="sd-message sd-dim">Load a campaign to update your file.</p>
+      ) : profile === null ? (
+        <p class="sd-message sd-dim">Your intake form opens when you continue this campaign.</p>
+      ) : (
+        <FileEditor profile={profile} />
+      )}
+    </fieldset>
+  );
+}
+
+function FileEditor({ profile }: { profile: ProfileView }) {
+  const [name, setName] = useState(profile.name);
+  const [pronouns, setPronouns] = useState<PronounId>(profile.pronouns);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const changed = name !== profile.name || pronouns !== profile.pronouns;
+  const save = (e: Event): void => {
+    e.preventDefault();
+    const r = editProfile(name, pronouns);
+    setNote(
+      r.ok
+        ? { ok: true, text: 'Filed! Your name tag is being reprinted.' }
+        : { ok: false, text: r.message },
+    );
+  };
+  return (
+    <form class="sd-file-form" noValidate onSubmit={save}>
+      <label class="sd-file-row">
+        <span class="sd-slider-label">Name</span>
+        <input
+          class="sd-code sd-file-name"
+          type="text"
+          autocomplete="off"
+          spellcheck={false}
+          maxLength={PLAYER_NAME.maxLength}
+          value={name}
+          aria-invalid={note !== null && !note.ok ? 'true' : undefined}
+          onInput={(e) => {
+            setName(e.currentTarget.value);
+            setNote(null);
+          }}
+        />
+      </label>
+      <div class="sd-file-row sd-file-row-stack">
+        <span id="sd-file-pronouns" class="sd-slider-label">
+          Pronouns
+        </span>
+        <ChoiceGroup
+          name="pronouns"
+          labelledBy="sd-file-pronouns"
+          options={PRONOUN_OPTIONS}
+          value={pronouns}
+          onPick={(p) => {
+            setPronouns(p);
+            setNote(null);
+          }}
+        />
+      </div>
+      <dl class="sd-file-facts">
+        <div>
+          <dt class="sd-slider-label">Callsign</dt>
+          <dd>{CALLSIGNS[profile.callsign]}</dd>
+        </div>
+        <div>
+          <dt class="sd-slider-label">Reason</dt>
+          <dd>
+            {profile.arrival === null ? 'Not on file' : ARRIVAL_REASONS[profile.arrival]}
+            <span class="sd-dim"> · final</span>
+          </dd>
+        </div>
+      </dl>
+      {note !== null && (
+        <p
+          class={`sd-message ${note.ok ? 'sd-ok' : 'sd-warn'}`}
+          role={note.ok ? 'status' : 'alert'}
+        >
+          {note.text}
+        </p>
+      )}
+      <div class="sd-row sd-row-left">
+        <button type="submit" class="sd-button sd-button-small" disabled={!changed}>
+          Update file
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function Codes() {
   const view = campaign.value;
   const [code, setCode] = useState<string | null>(null);
@@ -221,6 +329,7 @@ export function Settings() {
             <DifficultyPick />
           </div>
           <div class="sd-settings-col">
+            <TechnicianFile />
             <Codes />
           </div>
         </div>

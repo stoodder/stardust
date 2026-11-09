@@ -20,6 +20,8 @@
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
+// - [dialogue-*]: the style guide's mechanical rules over every scene, bark, and name tag
+//   (validateDialogue.ts; story-runtime.md § Validation).
 // - [purchasable]: reference profiles are affordable and available in time (validatePurchasable.ts).
 // - Maps (validateMap.ts), builds (validateBuilds.ts), and medals and conditions
 //   (validateMedals.ts): see their headers.
@@ -55,6 +57,7 @@ import type {
   TierDef,
   TowerDef,
 } from './types.ts';
+import { dialogueErrors } from './validateDialogue.ts';
 import { validateCampaignMaps } from './validateMap.ts';
 import { validateMedals } from './validateMedals.ts';
 import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
@@ -82,7 +85,7 @@ export function validate<K extends IdSpace>(
   rules: ValidationRules = DEFAULT_VALIDATION_RULES,
 ): string[] {
   const issues = new Issues();
-  issues.errors.push(...artErrors());
+  issues.errors.push(...artErrors(), ...dialogueErrors());
   for (const def of Object.values<TowerDef>(raw.towers)) validateTower(issues, def);
   const enemyIds: ReadonlySet<string> = new Set(Object.keys(raw.enemies));
   for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def, enemyIds);

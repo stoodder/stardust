@@ -1,0 +1,230 @@
+/* The intake (T306): Everglow's onboarding form in the menu panel (art-direction §9), widened to
+   two columns: the fields on the left; the callsign, the ID badge, the file note, and the small
+   print on the right. Game pixels; theme.css tokens. */
+
+.sd-intake-panel {
+  width: 480px;
+  min-height: 0;
+  gap: 6px;
+}
+
+.sd-intake-ids {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 0;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.sd-intake-ids dd {
+  margin: 0;
+}
+
+.sd-intake-intro {
+  font-family: var(--font-heading);
+  line-height: 10px;
+  color: var(--sd-white-1);
+}
+
+.sd-intake-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sd-intake-grid {
+  display: flex;
+  gap: 12px;
+}
+
+.sd-intake-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sd-intake-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  font-family: var(--font-heading);
+}
+
+/* The name field: a code field's look (case shows; Silkscreen is caps only). */
+.sd-intake-name {
+  height: 16px;
+  font-size: 10px;
+}
+
+.sd-intake-name[aria-invalid='true'] {
+  border-color: var(--sd-orange-3);
+}
+
+/* Radio groups of small buttons. */
+.sd-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sd-choices-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.sd-choices-stacked .sd-choice {
+  text-align: left;
+}
+
+/* A pick that's missing after Sign: the group's edges go orange (never red; style-guide § 2). */
+.sd-choices[aria-invalid='true'] .sd-choice {
+  --sd-edge: var(--sd-orange-3);
+}
+
+.sd-intake-callsign {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+.sd-intake-callsign dd {
+  margin: 0;
+}
+
+/* The ID badge: an off-white card with a teal brand bar, the visor-down photo, and the name. */
+.sd-intake-badge {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--sd-teal-3);
+  background: var(--sd-white-0);
+  color: var(--sd-ink-1);
+  font-family: var(--font-heading);
+}
+
+.sd-intake-photo {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.sd-intake-portrait {
+  display: block;
+  width: 48px;
+  height: 48px;
+  background: var(--sd-ink-1);
+  image-rendering: pixelated;
+}
+
+.sd-intake-photo-note {
+  color: var(--sd-steel-1);
+  text-transform: uppercase;
+}
+
+.sd-intake-badge-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sd-intake-badge-brand {
+  align-self: flex-start;
+  padding: 1px 3px;
+  background: var(--sd-teal-3);
+  color: var(--sd-ink-0);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sd-intake-badge-name {
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  color: var(--sd-ink-0);
+}
+
+.sd-intake-badge-name.sd-dim {
+  color: var(--sd-steel-2);
+}
+
+.sd-intake-badge-grade {
+  color: var(--sd-steel-1);
+}
+
+.sd-intake-note {
+  min-height: 20px;
+  font-family: var(--font-heading);
+  line-height: 10px;
+  color: var(--sd-teal-4);
+}
+
+.sd-intake-small {
+  font-family: var(--font-heading);
+  line-height: 10px;
+  color: var(--sd-steel-3);
+}
+
+.sd-intake-failure {
+  text-align: right;
+}
+
+/* ---- Settings: the player's file (T306) ---- */
+
+.sd-file-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.sd-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sd-file-row-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.sd-file-name {
+  flex: 1;
+  height: 16px;
+  font-size: 10px;
+}
+
+.sd-file-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+}
+
+.sd-file-facts div {
+  display: flex;
+  gap: 6px;
+}
+
+.sd-file-facts dd {
+  margin: 0;
+  color: var(--sd-white-1);
+  text-transform: uppercase;
+}

@@ -17,8 +17,7 @@ export function livePestsProcessed(lifetime: number, runKills: number): number {
 
 /** An Act III map's meter, which replaces the counter on its results screen. */
 export type ResultsMeter =
-  | { readonly kind: 'evacuated' | 'sheltered'; readonly n: number }
-  | { readonly kind: 'held' };
+  { readonly kind: 'evacuated' | 'sheltered'; readonly n: number } | { readonly kind: 'held' };
 
 /** What the results screen shows for the counter. */
 export interface ResultsCounter {
@@ -44,20 +43,16 @@ export function resultsCounter(
   meter: ResultsMeter | null = null,
 ): ResultsCounter {
   const career = `Career total: ${formatCount(lifetime)}`;
-  switch (act) {
-    case 1:
-      return {
-        line: `PESTS PROCESSED: ${formatCount(run)} ★ Top 5% of Technicians!`,
-        career,
-        stars: true,
-      };
-    case 2:
-      return { line: `Pests processed: ${formatCount(run)}.`, career, stars: false };
-    case 3:
-      return { line: meterLine(meter), career: null, stars: false };
-    case 'finale':
-      return { line: `REMEMBERED: ${formatCount(lifetime)}`, career: null, stars: false };
+  if (act === 1) {
+    return {
+      line: `PESTS PROCESSED: ${formatCount(run)} ★ Top 5% of Technicians!`,
+      career,
+      stars: true,
+    };
   }
+  if (act === 2) return { line: `Pests processed: ${formatCount(run)}.`, career, stars: false };
+  if (act === 3) return { line: meterLine(meter), career: null, stars: false };
+  return { line: `REMEMBERED: ${formatCount(lifetime)}`, career: null, stars: false };
 }
 
 function meterLine(meter: ResultsMeter | null): string {

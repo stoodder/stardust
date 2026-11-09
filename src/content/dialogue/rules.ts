@@ -68,18 +68,10 @@ const longest = (xs: readonly string[]): number => Math.max(...xs.map((x) => x.l
 export function tokenWorstCase(token: TextToken): number {
   const p = pronounToken(token);
   if (p !== null) return longest(Object.values(PRONOUN_SETS).map((s) => s[p.form]));
-  switch (token) {
-    case 'name':
-      return PLAYER_NAME.maxLength; // 16
-    case 'callsign':
-      return longest(Object.values(CALLSIGNS)); // "Waykeeper"
-    case 'pests_processed':
-      return 9; // "1,234,567"
-    case 'evacuated':
-      return 5; // "12,345": no map's meter comes near it
-    default:
-      return 0;
-  }
+  if (token === 'name') return PLAYER_NAME.maxLength; // 16
+  if (token === 'callsign') return longest(Object.values(CALLSIGNS)); // "Waykeeper"
+  if (token === 'pests_processed') return 9; // "1,234,567"
+  return 5; // `evacuated`: "12,345", which no map's meter comes near
 }
 
 /** One piece of a text: literal text, or a parsed token. */
@@ -169,7 +161,7 @@ export function tokenProblems(text: string): string[] {
 export function worstCaseLength(text: string): number {
   let n = 0;
   for (const p of parseText(text).parts) {
-    if (p.kind === 'text') n += [...p.text].length;
+    if (p.kind === 'text') n += p.text.length;
     else if (p.kind === 'token') n += tokenWorstCase(p.token);
     else if (p.kind === 'verb') n += Math.max(p.plural.length, p.singular.length);
     else n += 1;

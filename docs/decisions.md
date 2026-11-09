@@ -863,3 +863,13 @@ Three files stay at 430–470 lines, each one cohesive pool or frame loop. T234 
 - **Sterling's smile never changes**, whatever her eyes do. That's the Everglow tell, in the art.
 - Later-act variants (Bricks `pebble`, QUILL `purge`, the player's `reflect_violet`/`reflect_pebble`) come with their acts.
 - The gallery is now 27,090 px tall, against the stitched capture's 32,767 px limit; paginate before M4.
+
+### D068 — 2026-11-09 — T306 character creation
+- **New Hire Intake:** an Everglow onboarding form opens on New game (the save is written only when the form is signed; Back or Esc writes nothing) and on Continue/Load/Import for saves without a profile (migrated v1).
+  - It asks for name, pronouns, and an arrival reason, with nothing pre-selected, and keyboard radio groups for pronouns and reason.
+  - The callsign reads "Assigned in the field by your supervisor", so Bricks still names you "Sprout" in A1M1's briefing.
+  - The small print says the field supervisor may read your file, which seeds A3M3.
+  - A file-note preview fills in the player's tokens. The copy's home is act1.md § Character creation · New Hire Intake.
+- **Settings ("Your file"):** edits name and pronouns. The callsign and arrival reason are read-only story facts (core-loop §6.1).
+- **Shift board:** shows "JPT-1 {name} · #ED-447".
+- `?test=1` skips the intake, the same as the radio and audio in tests; `&intake=1` turns it back on.

@@ -17,7 +17,7 @@ const SHELL = { x: 35.5, y: 13.5 } as const;
 const HEAD = { x: 20.5, y: 30, rx: 11.5, ry: 9 } as const;
 
 /** One eye: where it sits, where the pupil looks, and how the lid falls. */
-interface Eye {
+export interface Eye {
   /** Stalk base on the head, and the eye's center at the stalk's tip. */
   readonly base: readonly [number, number];
   readonly at: readonly [number, number];
@@ -31,7 +31,7 @@ interface Eye {
   readonly small?: boolean;
 }
 
-interface Face {
+export interface Face {
   readonly left: Eye;
   readonly right: Eye;
 }
@@ -40,7 +40,8 @@ interface Face {
 const BL = [16, 22] as const;
 const BR = [25, 22] as const;
 
-const FACES: Readonly<Record<string, Face>> = {
+/** Each expression's eyes (exported for the eyestalk tests). */
+export const ZIBZAB_FACES: Readonly<Record<string, Face>> = {
   // One eye on you, one on the goods: the merchant's resting state. Lids a touch heavy.
   neutral: {
     left: { base: BL, at: [12, 9], look: [0, 1], lid: { y: -2.2, tilt: 0 } },
@@ -108,8 +109,8 @@ function shell(g: CharGrid): void {
       const dy = y + 0.5 - SHELL.y;
       // The shell: a great round whorl, running on down the frame's right side behind him.
       const inWhorl = Math.hypot(dx / 19, dy / 18) <= 1;
-      const inBody = x >= 27 && y >= SHELL.y && x - 27 >= (y - 40) * 0.6;
-      if (!inWhorl && !inBody) continue;
+      const inLower = x >= 27 && y >= SHELL.y && x - 27 >= (y - 40) * 0.6;
+      if (!inWhorl && !inLower) continue;
       const r = Math.hypot(dx, dy);
       const theta = Math.atan2(dy, dx) + Math.PI; // 0..2π
       const t = (r / b - theta) / (2 * Math.PI);
@@ -349,7 +350,7 @@ function sweat(g: CharGrid): void {
 
 function paint({ expression, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
-  const face = FACES[expression] ?? FACES['neutral'];
+  const face = ZIBZAB_FACES[expression] ?? ZIBZAB_FACES['neutral'];
   if (face === undefined) throw new Error(`zibzab: no face ${expression}`);
   shell(g);
   lantern(g);

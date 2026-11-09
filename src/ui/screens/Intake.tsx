@@ -5,7 +5,7 @@
 // name and a file note shows the pronouns in a sentence. The copy's home is
 // docs/story/campaign/act1.md § Character creation; the rules are app/profile.ts.
 import { useRef, useState } from 'preact/hooks';
-import type { JSX } from 'preact';
+import type { TargetedKeyboardEvent } from 'preact';
 import { cancelIntake, submitIntake } from '../../app/navigation.ts';
 import {
   ARRIVAL_ORDER,
@@ -98,7 +98,7 @@ export function ChoiceGroup<T extends string>({
   onPick: (id: T) => void;
 }) {
   const stop = value ?? options[0]?.id ?? null;
-  const onKeyDown = (e: JSX.TargetedKeyboardEvent<HTMLDivElement>): void => {
+  const onKeyDown = (e: TargetedKeyboardEvent<HTMLDivElement>): void => {
     const step = RADIO_STEP[e.key];
     if (step === undefined) return;
     e.preventDefault();
@@ -114,7 +114,7 @@ export function ChoiceGroup<T extends string>({
   };
   return (
     <div
-      ref={groupRef}
+      ref={groupRef ?? null}
       class={`sd-choices${stacked ? ' sd-choices-stacked' : ''}`}
       role="radiogroup"
       aria-labelledby={labelledBy}

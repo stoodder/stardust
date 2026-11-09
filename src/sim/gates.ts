@@ -10,13 +10,14 @@
 // modifier kind, and each ability effect in a slot), the loadout's reachable tiers (attack kinds
 // and on-hit statuses), and the map (T300a: flyers, neutral units, enemy abilities, bosses, and
 // optional objectives). Wreckage needs no gate: until T304b a map's wreckage simply stays (it was
-// never buildable), and the `clear` command is rejected `notImplemented` (systems/wreckage.ts). `towerRefusal` and `abilityRefusal` answer the same question
-// for one raw tower or ability, so meta can keep a save that runs ahead of the sim out of play.
+// never buildable), and the `clear` command is rejected `notImplemented` (systems/wreckage.ts).
+// `towerRefusal` and `abilityRefusal` answer the same question for one raw tower or ability, so
+// meta can keep a save that runs ahead of the sim out of play.
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
 import type { AbilityEffect, AttackKind, IdSpace, StatusId } from '../content/types.ts';
 import type { EconomyStat, Modifier, SimConfig } from './config.ts';
 
-/** A task id from tasks.md (`T202a`), or a later milestone (`M3`) for features with no M2 task. */
+/** A task id from tasks.md (`T304a`), or a later milestone (`M4`) for features with no task yet. */
 export type GateOwner = `T${number}${string}` | `M${number}`;
 
 export type Feature =

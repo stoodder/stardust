@@ -24,7 +24,11 @@ export interface TextContext {
  * form of address, the first callsign, and they/them. Nothing should play before the intake; this
  * keeps a stray line readable instead of throwing.
  */
-export const NO_PROFILE: PlayerProfile = { name: 'Technician', pronouns: 'they', callsign: 'sprout' };
+export const NO_PROFILE: PlayerProfile = {
+  name: 'Technician',
+  pronouns: 'they',
+  callsign: 'sprout',
+};
 
 /**
  * How `{glyph:<id>}` reaches the text: a private-use character the pixel-font renderer swaps for

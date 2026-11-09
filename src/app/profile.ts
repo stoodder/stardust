@@ -9,12 +9,12 @@ import {
   ARRIVAL_REASONS,
   CALLSIGN_IDS,
   PLAYER_NAME,
-  PRONOUN_SETS,
   isValidPlayerName,
   type ArrivalReason,
   type PronounId,
 } from '../content/dialogue/profile.ts';
 import type { SaveData, SlotId } from '../meta/index.ts';
+import { resolveText } from '../story/text.ts';
 import { activeSave, newGame, updateActiveSave, type SaveResult } from './save.ts';
 
 // ── When the intake runs ─────────────────────────────────────────────────────────────────────
@@ -30,7 +30,8 @@ export function setIntakeEnabled(on: boolean): void {
 }
 
 /** What the open intake is for: a new campaign in an empty slot, or the save in play. */
-export type IntakeMode = { readonly kind: 'new'; readonly slot: SlotId } | { readonly kind: 'existing' };
+export type IntakeMode =
+  { readonly kind: 'new'; readonly slot: SlotId } | { readonly kind: 'existing' };
 
 let pendingNew: SlotId | null = null;
 
@@ -188,26 +189,17 @@ export function editProfile(raw: string, pronouns: PronounId): SaveResult {
 export const SAMPLE_NOTE =
   'File note: {They} {v:are|is} cleared for perimeter duty. {Their} helmet is one size fits most!';
 
-const PRONOUN_FORMS = ['they', 'them', 'their', 'theirs', 'themself'] as const;
-const PRONOUN_TOKEN = /\{([Tt]he(?:y|m|ir|irs|mself))\}/g;
-const AGREEMENT_TOKEN = /\{v:([^|}]*)\|([^}]*)\}/g;
-
 /**
- * `text` with the pronoun and agreement tokens resolved for `pronouns`: just what the preview's
- * sample uses. The story runtime's `resolveText` (story/text.ts, T302a) is the general resolver.
+ * `text` resolved for a profile being filled in (the intake's file note, Settings' preview):
+ * the story runtime's `resolveText` (story/text.ts), with the name as typed so far.
  */
-export function previewText(text: string, pronouns: PronounId): string {
-  const set = PRONOUN_SETS[pronouns];
-  return text
-    .replace(PRONOUN_TOKEN, (whole, token: string) => {
-      const key = PRONOUN_FORMS.find((f) => f === token.toLowerCase());
-      if (key === undefined) return whole;
-      const form = set[key];
-      return token === key ? form : form.charAt(0).toUpperCase() + form.slice(1);
-    })
-    .replace(AGREEMENT_TOKEN, (_, plural: string, singular: string) =>
-      set.agreement === 'plural' ? plural : singular,
-    );
+export function previewText(text: string, pronouns: PronounId, name = ''): string {
+  const cleaned = cleanName(name);
+  return resolveText(text, {
+    profile: { name: cleaned === '' ? 'Technician' : cleaned, pronouns, callsign: FIRST_CALLSIGN },
+    pestsProcessed: 0,
+    evacuated: null,
+  });
 }
 
 function isArrivalReason(x: string): x is ArrivalReason {
@@ -215,6 +207,5 @@ function isArrivalReason(x: string): x is ArrivalReason {
 }
 
 /** The arrival reasons in form order (core-loop.md § 6.1). */
-export const ARRIVAL_ORDER: readonly ArrivalReason[] = Object.keys(ARRIVAL_REASONS).filter(
-  isArrivalReason,
-);
+export const ARRIVAL_ORDER: readonly ArrivalReason[] =
+  Object.keys(ARRIVAL_REASONS).filter(isArrivalReason);

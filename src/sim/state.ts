@@ -103,7 +103,7 @@ export interface SimStats {
    * the towers and projectiles systems when a shot lands on one (T304a).
    */
   neutralHits: number;
-  /** Wreckage tiles the salvage drone cleared (the Asset Recovery Challenge; systems/wreckage.ts, T304b). */
+  /** Wreckage tiles the drone cleared (the Asset Recovery Challenge; systems/wreckage.ts, T304b). */
   wreckageCleared: number;
   /**
    * Sells after the tower's build phase that weren't a misclick-grace refund (A1M4's Clean Audit

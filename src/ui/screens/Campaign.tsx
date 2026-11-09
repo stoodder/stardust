@@ -97,6 +97,11 @@ export function Campaign() {
             <h1 id="sd-campaign-heading" class="sd-menu-heading">
               Shift board
             </h1>
+            {view.profile !== null && (
+              <p class="sd-kicker sd-campaign-tech" data-testid="technician">
+                JPT-1 {silkText(view.profile.name)} · #ED-447
+              </p>
+            )}
           </div>
           <Banks view={view} />
         </header>

@@ -79,9 +79,14 @@ import {
   towerZapcoilHead,
 } from './placeholders/towers.ts';
 import { portraitBricks } from './portraits/bricks.ts';
+import { portraitGerald } from './portraits/gerald.ts';
+import { portraitGoldie } from './portraits/goldie.ts';
+import { portraitKip } from './portraits/kip.ts';
 import { portraitPlayer } from './portraits/player.ts';
+import { portraitPrim } from './portraits/prim.ts';
 import { portraitQuill } from './portraits/quill.ts';
 import { portraitSterling } from './portraits/sterling.ts';
+import { portraitZibzab } from './portraits/zibzab.ts';
 
 export const SPRITES = [
   tileGrass,
@@ -164,6 +169,11 @@ export const SPRITES = [
   portraitBricks,
   portraitQuill,
   portraitSterling,
+  portraitZibzab,
+  portraitGoldie,
+  portraitKip,
+  portraitPrim,
+  portraitGerald,
 ] as const;
 
 /** Every sprite id. */

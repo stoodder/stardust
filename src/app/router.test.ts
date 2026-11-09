@@ -6,6 +6,7 @@ import type * as Phaser from 'phaser';
 import { MemoryStore } from '../meta/index.ts';
 import { menuNotice } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
+import { holdNewGame, intakeMode } from './profile.ts';
 import { BATTLE_FAILED, createRouter } from './router.ts';
 import { closeSession, initSaves, newGame, openSlot } from './save.ts';
 
@@ -64,5 +65,20 @@ describe('the menu notice', () => {
     menuNotice.value = BATTLE_FAILED;
     newGame(2);
     expect(menuNotice.value).toBeNull();
+  });
+});
+
+describe('the intake (T306)', () => {
+  it('needs a held new game or a loaded save, and the Title drops the hold', async () => {
+    const router = createRouter(game);
+    await expect(router.goto('intake')).rejects.toThrow();
+    holdNewGame(1);
+    await router.goto('intake');
+    expect(screen.value).toBe('intake');
+    await router.goto('title');
+    expect(intakeMode()).toBeNull();
+    newGame(1);
+    await router.goto('intake');
+    expect(intakeMode()).toEqual({ kind: 'existing' });
   });
 });

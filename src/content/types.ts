@@ -212,7 +212,7 @@ export type AttackDef = AttackCommon &
         readonly kind: 'projectile';
         readonly projectile: SpriteId;
         readonly speedTilesPerSec: number;
-        /** A burst on arrival: every enemy on the tier's layers within this radius (default 0: the target only). */
+        /** A burst on arrival: every enemy on the tier's layers within it (default 0: the target only). */
         readonly splashTiles?: number;
       }
     | {
@@ -339,7 +339,7 @@ export interface EnemyDef<Id extends string = string> {
   readonly carrier?: { readonly young: number };
   // Enemy abilities (design/enemies.md § 3, § 5): each is an optional field, run by its module in
   // sim/enemyAbilities/ (T304c). Blink, phasing, gathering, and jamming arrive with Acts II–III.
-  /** Burrowing (the `burrower` tell): every `everySec` it digs in, untargetable, for `durationSec`. */
+  /** Burrowing (the `burrower` tell): digs in on a timer, untargetable. */
   readonly burrow?: BurrowDef;
   /** Splitting (the `splitter` tell): on death it releases `count` of `enemy` where it died. */
   readonly split?: SplitDef;

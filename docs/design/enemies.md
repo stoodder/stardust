@@ -192,7 +192,7 @@ Columns: **HP**, **Armor**, **Shield** (`max / regen per s / delay s`), **Spd** 
 
 **Spawn spacing.** Each enemy has a default spawn interval within a wave group (wave data may override it per group): Nibbler **0.8 s**, Zoomer **0.5 s**. Other types are set when their data is authored.
 
-**Where the exact numbers live.** Nibbler, Zoomer, Chonk, and the Brood Hauler are in their data files, [`src/content/enemies/`](../../src/content/enemies/) (`nibbler.ts`, `zoomer.ts`, `chonk.ts`, `hauler.ts`, including the Chonk's and Hauler's spawn intervals), which are the home of those numbers; their rows below are the spec they encode.
+**Where the exact numbers live.** Nibbler, Zoomer, Chonk, the Brood Hauler, and Act I's later Skitterkin (Puffwing, Bunchling, Digger, Elder) and Matriarch Chitterbloom are in their data files, [`src/content/enemies/`](../../src/content/enemies/) (`nibbler.ts`, `zoomer.ts`, `chonk.ts`, `hauler.ts`, `puffwing.ts`, `bunchling.ts`, `digger.ts`, `elder.ts`, `chitterbloom.ts`, including every spawn interval but the Nibbler's and Zoomer's, and Chitterbloom's phase-3 huddle numbers), which are the home of those numbers; their rows below are the spec they encode. Gerald (`gerald.ts`) is a neutral unit, not part of the roster ([core-loop.md §2.7](core-loop.md#27-hold-fire)).
 
 ### 5.1 Skitterkin (body: Organic)
 

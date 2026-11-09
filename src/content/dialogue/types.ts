@@ -110,8 +110,8 @@ export type Condition =
   | { readonly mapAtLeast: CampaignMapId }
   | { readonly mapIs: CampaignMapId }
   | { readonly stat: 'pestsProcessed'; readonly gte: number }
-  /** The scene (or once-per-campaign bark) is in the save's `story.seen`. */
-  | { readonly seen: SceneId | BarkId }
+  /** A scene id (or a once-per-campaign bark id) is in the save's `story.seen`. */
+  | { readonly seen: string }
   | { readonly outcome: 'won' | 'lost' }
   /** The value `flag`'s run-end rule gives over the run that just ended (FLAG_RULES). */
   | { readonly thisRun: BooleanFlagId; readonly eq: boolean }
@@ -160,7 +160,7 @@ export interface ReplyButton {
 
 /** Fields every node may carry. */
 interface NodeBase {
-  /** A jump target for `goto`, `then`, and `else` in the same scene. Unique within it. */
+  /** A jump target for `goto` and `else` in the same scene. Unique within it. */
   readonly label?: string;
 }
 
@@ -203,11 +203,14 @@ export interface ChoiceNode extends NodeBase {
   readonly options: readonly ChoiceOption[];
 }
 
-/** Jumps to `then` when `cond` holds, else to `else` (or on to the next node). */
+/**
+ * Jumps to `goto` when `cond` holds, else to `else` (or on to the next node). The field is `goto`,
+ * not `then`: lint refuses thenable object literals.
+ */
 export interface BranchNode extends NodeBase {
   readonly kind: 'branch';
   readonly cond: Condition;
-  readonly then: string;
+  readonly goto: string;
   readonly else?: string;
 }
 

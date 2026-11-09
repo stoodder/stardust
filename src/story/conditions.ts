@@ -3,10 +3,15 @@
 // run that just ended). Pure. In-map conditions are the sim's `ConditionDef` (src/sim/conditions.ts),
 // not these.
 import type { CampaignMapId } from '../content/campaign.ts';
-import type { BooleanFlagId, FlagSet } from '../content/dialogue/flags.ts';
+import {
+  FLAG_RULES,
+  type BooleanFlagId,
+  type FlagRule,
+  type FlagSet,
+} from '../content/dialogue/flags.ts';
 import { mapAct, mapIndex } from '../content/dialogue/rules.ts';
 import type { Condition, StoryAct } from '../content/dialogue/types.ts';
-import { flagValue, runEndFlags, type FlagRuleStats } from './flags.ts';
+import { evaluateFlagRule, flagValue, type FlagRuleStats } from './flags.ts';
 
 /** The run that just ended, for `outcome` and `thisRun` (a debrief, results, run-end barks). */
 export interface RunContext {
@@ -34,10 +39,11 @@ export function runContextOf(
   map: CampaignMapId,
   outcome: 'won' | 'lost',
   stats: FlagRuleStats,
+  rules: readonly FlagRule[] = FLAG_RULES,
 ): RunContext {
   const ruleFlags: Partial<Record<BooleanFlagId, boolean>> = {};
-  for (const [flag, value] of Object.entries(runEndFlags(map, stats))) {
-    if (typeof value === 'boolean') ruleFlags[flag as BooleanFlagId] = value;
+  for (const r of rules) {
+    if (r.onMapEnd === map) ruleFlags[r.flag] = evaluateFlagRule(r.value, stats);
   }
   return { outcome, ruleFlags };
 }

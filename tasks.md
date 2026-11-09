@@ -146,7 +146,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
 - [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
-- [~] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
+- [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
 - [ ] **T312a** Render: air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
 - [ ] **T312b** Render: burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.

@@ -1,0 +1,151 @@
+// Character creation (T306): the intake's rules, its writes (the profile and the arrival_reason
+// flag), Settings' edit, and the file note's preview.
+import { beforeEach, describe, expect, it } from 'vitest';
+import { MemoryStore, createNewSave } from '../meta/index.ts';
+import {
+  ARRIVAL_ORDER,
+  INTAKE_PROBLEMS,
+  SAMPLE_NOTE,
+  cleanName,
+  editProfile,
+  holdNewGame,
+  intakeMode,
+  intakeProblems,
+  nameProblem,
+  needsIntake,
+  previewText,
+  setIntakeEnabled,
+  signIntake,
+  withIntake,
+  withProfileEdit,
+} from './profile.ts';
+import { activeSave, closeSession, initSaves, newGame, slotEmpty } from './save.ts';
+import { worstCaseLength } from '../story/text.ts';
+
+beforeEach(() => {
+  initSaves(new MemoryStore(), () => 1_793_000_000_000);
+  setIntakeEnabled(true);
+  holdNewGame(null);
+});
+
+describe('the name rule', () => {
+  it('trims and collapses spaces before it checks', () => {
+    expect(cleanName('  Ada   Okafor ')).toBe('Ada Okafor');
+    expect(nameProblem('  Ada  ')).toBeNull();
+    expect(nameProblem("D'Arcy-Lee Jr.")).toBeNull();
+  });
+
+  it('says what is wrong, cheerfully', () => {
+    expect(nameProblem('   ')).toBe(INTAKE_PROBLEMS.nameEmpty);
+    expect(nameProblem('x'.repeat(17))).toBe(INTAKE_PROBLEMS.nameLong);
+    expect(nameProblem('Zoë')).toBe(INTAKE_PROBLEMS.nameChars);
+    expect(nameProblem('Bob & Co')).toBe(INTAKE_PROBLEMS.nameChars);
+    expect(nameProblem("'-.")).toBe(INTAKE_PROBLEMS.nameBare);
+    for (const m of Object.values(INTAKE_PROBLEMS)) expect(m).not.toMatch(/invalid|error|wrong/i);
+  });
+
+  it('nothing is picked for the player: every field must be filled', () => {
+    expect(intakeProblems({ name: '', pronouns: null, arrival: null })).toEqual({
+      name: INTAKE_PROBLEMS.nameEmpty,
+      pronouns: INTAKE_PROBLEMS.pronouns,
+      arrival: INTAKE_PROBLEMS.arrival,
+    });
+    expect(intakeProblems({ name: 'Ada', pronouns: 'they', arrival: 'lettuce' })).toEqual({});
+  });
+});
+
+describe('the intake writes', () => {
+  it('the profile with the first callsign, and the arrival_reason flag', () => {
+    const save = withIntake(createNewSave(), { name: 'Ada', pronouns: 'she' }, 'lettuce');
+    expect(save.profile).toEqual({ name: 'Ada', pronouns: 'she', callsign: 'sprout' });
+    expect(save.story.flags.arrival_reason).toBe('lettuce');
+  });
+
+  it('keeps a callsign already earned', () => {
+    const base = createNewSave();
+    base.profile = { name: 'Old', pronouns: 'he', callsign: 'thorn' };
+    expect(withIntake(base, { name: 'New', pronouns: 'they' }, 'bonus').profile?.callsign).toBe(
+      'thorn',
+    );
+  });
+
+  it('a new game: the slot stays empty until the form is signed', () => {
+    holdNewGame(2);
+    expect(intakeMode()).toEqual({ kind: 'new', slot: 2 });
+    expect(slotEmpty(2)).toBe(true);
+    const bad = signIntake({ name: '', pronouns: 'he', arrival: 'bonus' });
+    expect(bad.ok).toBe(false);
+    expect(slotEmpty(2)).toBe(true);
+    expect(signIntake({ name: ' Kofi ', pronouns: 'he', arrival: 'family' })).toEqual({ ok: true });
+    expect(slotEmpty(2)).toBe(false);
+    expect(activeSave()?.profile).toEqual({ name: 'Kofi', pronouns: 'he', callsign: 'sprout' });
+    expect(activeSave()?.story.flags.arrival_reason).toBe('family');
+    // The hold is spent: the intake now edits the save in play.
+    expect(intakeMode()).toEqual({ kind: 'existing' });
+  });
+
+  it('a save with no profile (a v1 save) needs the intake, and files it in place', () => {
+    newGame(1);
+    expect(needsIntake()).toBe(true);
+    expect(signIntake({ name: 'Ada', pronouns: 'they', arrival: 'bonus' })).toEqual({ ok: true });
+    expect(needsIntake()).toBe(false);
+    expect(activeSave()?.story.flags.arrival_reason).toBe('bonus');
+  });
+
+  it('off under ?test=1 unless asked for', () => {
+    newGame(1);
+    setIntakeEnabled(false);
+    expect(needsIntake()).toBe(false);
+  });
+
+  it('no save and no hold: nothing to fill in', () => {
+    closeSession();
+    expect(intakeMode()).toBeNull();
+    expect(signIntake({ name: 'Ada', pronouns: 'she', arrival: 'bonus' }).ok).toBe(false);
+  });
+});
+
+describe('Settings edits the file', () => {
+  it('changes the name and pronouns; the callsign and reason stay', () => {
+    newGame(1, (s) => withIntake(s, { name: 'Ada', pronouns: 'she' }, 'lettuce'));
+    expect(editProfile('  Ada  Lovelace ', 'they')).toEqual({ ok: true });
+    expect(activeSave()?.profile).toEqual({
+      name: 'Ada Lovelace',
+      pronouns: 'they',
+      callsign: 'sprout',
+    });
+    expect(activeSave()?.story.flags.arrival_reason).toBe('lettuce');
+  });
+
+  it('refuses a bad name with the form message, and needs a filed profile', () => {
+    newGame(1);
+    expect(editProfile('Ada', 'she')).toEqual({
+      ok: false,
+      message: 'Your intake form opens when you continue this campaign.',
+    });
+    expect(editProfile('', 'she')).toEqual({ ok: false, message: INTAKE_PROBLEMS.nameEmpty });
+    expect(withProfileEdit(createNewSave(), { name: 'X', pronouns: 'he' }).profile).toBeNull();
+  });
+});
+
+describe('the preview', () => {
+  it('resolves the file note for each pronoun set', () => {
+    expect(previewText(SAMPLE_NOTE, 'they')).toBe(
+      'File note: They are cleared for perimeter duty. Their helmet is one size fits most!',
+    );
+    expect(previewText(SAMPLE_NOTE, 'she')).toBe(
+      'File note: She is cleared for perimeter duty. Her helmet is one size fits most!',
+    );
+    expect(previewText(SAMPLE_NOTE, 'he')).toBe(
+      'File note: He is cleared for perimeter duty. His helmet is one size fits most!',
+    );
+  });
+
+  it('fits a dialogue line at worst case (style-guide.md § 5.4)', () => {
+    expect(worstCaseLength(SAMPLE_NOTE)).toBeLessThanOrEqual(120);
+  });
+
+  it('offers the arrival reasons in form order', () => {
+    expect(ARRIVAL_ORDER).toEqual(['bonus', 'family', 'lettuce']);
+  });
+});

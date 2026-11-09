@@ -198,7 +198,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         case 'intake':
           // Character creation (T306): a held new game, or the save in play (app/profile.ts).
           if (intakeMode() === null) {
-            return Promise.reject(new Error('router: the intake needs a new game or a loaded save'));
+            return Promise.reject(
+              new Error('router: the intake needs a new game or a loaded save'),
+            );
           }
           return showMenu('intake');
         case 'campaign':

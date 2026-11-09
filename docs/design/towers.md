@@ -166,7 +166,7 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base stats. Each later tier lists only what changes. The T4 cost assumes the default curve unless stated. DPS figures ignore armor and shields.
 
-**Where the exact numbers live.** Rivet, Thumper, and Sprinkler tiers 1–3, and the Rivet and Thumper specializations, are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`), which are the home of those numbers; the entries below are the spec they encode. The other towers' entries, and the other specializations, are still the only home of their numbers until their data lands.
+**Where the exact numbers live.** Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil tiers 1–3, and the Rivet and Thumper specializations, are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), which are the home of those numbers; the entries below are the spec they encode. (Skyhook's flak flight speed, 10 tiles/s, isn't in its entry: a first pass in its data file.) The other towers' entries, and the other specializations, are still the only home of their numbers until their data lands.
 
 **Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
 - **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.

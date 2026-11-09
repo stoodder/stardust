@@ -1,4 +1,4 @@
-// System 5a: enemyAbilities. Enemy ability state machines (design/enemies.md § 3, § 5–6;
+// System 4c: enemyAbilities. Enemy ability state machines (design/enemies.md § 3, § 5–6;
 // architecture.md § Entity model): each live enemy runs the abilities its definition carries,
 // telegraph → effect → cooldown, in ascending slot order, before the commander abilities and
 // before movement (so a dig or a huddle's pace applies to this tick's step).

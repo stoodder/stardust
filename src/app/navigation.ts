@@ -106,7 +106,8 @@ export function startGame(): SaveResult {
  */
 export function newGame(slot: SlotId): SaveResult {
   if (intakeBeforeNewGame()) {
-    if (!slotEmpty(slot)) return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
+    if (!slotEmpty(slot))
+      return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
     holdNewGame(slot);
     run('intake', (r) => r.goto('intake'));
     return { ok: true };

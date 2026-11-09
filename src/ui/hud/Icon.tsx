@@ -36,7 +36,15 @@ function baked(id: string, frameName: string): Baked | null {
  * Decorative: the surrounding control carries the accessible name. `frame` picks another frame
  * than `icon` (a portrait's `neutral`, for the intake's ID badge).
  */
-export function Icon({ id, frame = 'icon', class: cls }: { id: string; frame?: string; class?: string }) {
+export function Icon({
+  id,
+  frame = 'icon',
+  class: cls,
+}: {
+  id: string;
+  frame?: string;
+  class?: string;
+}) {
   const b = baked(id, frame);
   const name = `icon ${cls ?? ''}`.trim();
   if (b === null) return <span class={`${name} icon-missing`} aria-hidden="true" />;
