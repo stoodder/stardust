@@ -3,13 +3,13 @@
 // relay (the core), and at the top the rig branch peels east along the ledge, doubles back on
 // itself round a hairpin under the thread-glass outcrop, and drops off the ledge to Rigs 7 and 8
 // on the east edge (the asset, Protect: a leak on the branch costs the rigs, not the core). The
-// Glass Witch's fight is the branch's: her shield comes down on the ledge and back runs, between
-// the ledge pads and the rig pocket, and her second phase plays out round the hairpin. The Skitterkin and the Hollow only ever take the main road; the
-// Aelari constructs, and the Glass Witch, only ever take the branch. The two thread-glass
-// outcrops are the high ground (one at the fork, one over the branch's switchback), the
-// stardust conduit is the power node in the fork's pocket, and the habitat domes on the west
-// edge are decor nothing goes near: the camera frames them, so the player can notice she never
-// does.
+// Skitterkin and the Hollow only ever take the main road; the Aelari constructs, and the Glass
+// Witch, only ever take the branch. Her fight is the branch's: her shield comes down on the ledge
+// and back runs, between the ledge pads and the rig pocket, and her second phase plays out round
+// the hairpin. The two thread-glass outcrops are the high ground (one at the fork, one over the
+// branch's switchback), the stardust conduit is the power node in the fork's pocket, and the
+// habitat domes on the west edge are decor nothing goes near: the camera frames them, so the
+// player can notice she never does.
 import { defineMapLayout } from '../../define.ts';
 
 export const map = defineMapLayout({

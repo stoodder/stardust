@@ -1349,3 +1349,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Act II deaths:** Skitterkin go *quiet* (squash and pop, no confetti, a small fleck left behind); Aelari *shatter* into jewel-toned shards; the Hollow *unravel* into cold-violet motes in any act. Act III's *still* is declared, drawn in M6.
 - **The Hollow moves wrong:** a held frame then a skipped one every 1–2 s and a rare 1–2 px shove (none under reduced motion), seeded per uid, never the sim's RNG. Fleeing runners glance back.
 - **`__sd.render()`** reports render beats (pose, rims, rings, brackets, lowered allies) so smoke can assert them, not only screenshot them.
+
+### D117 — 2026-11-09 — T421 A2M2 *The Glass Witch*
+- **Par 76.2 (16/21, rigs untouched)**, A2M1 81.0 → A2M2 76.2; it earns Glass Half Empty with one blink because its strike lands on her phase 2 at the hairpin. **QUILL's Rapport changes a result (85.7, T401):** par casts Time Dilation 8 s into W11 and again 52 s later; only the 51 s Rapport cooldown catches the surge. Without casts par loses in W11 (she drains the rigs after three blinks); checkpoints (T305b) soften that.
+- **The rig branch** is 38 tiles (a ledge, back under the thread-glass outcrop, a hairpin, a drop to the rigs at (17,10)); 14 pads; 11 waves; 9.4 min. **Start credits are 500** (the Witch fight needs ~2,000 on the branch; within Act II's 400–550).
+- **Alts:** the plan's Zapcoil-and-Rivet alt can't hold Mote clusters (Energy ×0.75 vs the Hollow), so `shell_and_coil` and `soak_and_shell` replace it, both answering the Witch with a Bunker Buster.
+- The KFA form is the last paragraph of `memo_a2_02` (T411 may split it). **Bug found:** the Thorn callsign never reaches the save (debrief effects aren't applied on Results); T413 fixes it.

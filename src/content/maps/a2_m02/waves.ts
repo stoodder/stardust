@@ -2,9 +2,9 @@
 // relay: the fleeing Skitterkin and the Motes that chase them) and `rigs` (the branch to Rigs 7
 // and 8: the Aelari, and the Glass Witch). Every Skitterkin group is `fleeing` (Skittish, leak 0,
 // bounty 1, medal-exempt); a fleeing group with Motes behind it on the main road leads them by
-// FLEE_LEAD seconds ([fleeing-lead]). W2–W11's countdowns are COUNTDOWN (Act II's default is 20 s)
-// and open OPEN s in. Groups without an `intervalSec` use the enemy's default spacing (Mote 0.3 s,
-// Glimmer 0.8 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s).
+// FLEE_LEAD seconds ([fleeing-lead]). W2–W11's countdowns are COUNTDOWN (Act II's default is
+// 20 s) and open OPEN s in. Groups without an `intervalSec` use the enemy's default spacing
+// (Mote 0.3 s, Glimmer 0.8 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s).
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup, WaveTag } from '../../types.ts';
 

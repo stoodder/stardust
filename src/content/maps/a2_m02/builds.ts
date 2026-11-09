@@ -96,8 +96,9 @@ export const builds = defineBuilds({
         { wave: 7, build: 'skyhook', tile: RELAY },
       ],
     },
-    // No splash answer: Rivets into a Soaking Sprinkler's shields on the branch, Rivets on the road,
-    // a Skyhook, and a Lookout (no Thumper or Zapcoil). It holds the rigs and drowns in the clusters.
+    // No splash answer: Rivets into a Soaking Sprinkler's shields on the branch, Rivets on the
+    // road, a Skyhook, and a Lookout (no Thumper or Zapcoil). It holds the rigs and drowns in the
+    // clusters.
     splash: {
       loadout: ['rivet', 'sprinkler', 'skyhook', 'lookout'],
       steps: [
@@ -186,7 +187,8 @@ export const builds = defineBuilds({
       ],
     },
   },
-  // The spawn cue reads C1 (the variant line); a cue changes nothing in the sim, but the run holds it.
+  // The spawn cue reads C1 (the variant line): a cue changes nothing in the sim, but the harness
+  // runs par under it all the same.
   flagVariants: { spared_quiet_wave: [true] },
   // Par drives her off before her third blink on every seed (with its casts; without them she
   // reaches the rigs).
