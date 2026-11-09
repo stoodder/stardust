@@ -43,10 +43,9 @@ const A1M5: ProfileDef = {
   shop: { ...A1M4.shop, tune_sprinkler: 1, reinforced_core: 1 },
 };
 /**
- * Zibzab's "new shipment" after A1M5: the Lookout Shack's license (150). While the Lookout waits
- * for its task (towers/index.ts TOWERS_AHEAD_OF_TASK; T406) its license is on no shelf, so the
- * par-purchasable check refuses this row's maps, and a run whose loadout brings it is refused by
- * the sim's `tower.lookout` gate: the row goes live with the license, untouched.
+ * Zibzab's "new shipment" after A1M5: the Lookout Shack's license (150). A tower still ahead of its
+ * task (towers/index.ts TOWERS_AHEAD_OF_TASK) fails the par-purchasable check in any row that
+ * owns it, so a row goes live only with its license on the shelf.
  */
 const A2M1: ProfileDef = { ...A1M5, towers: [...A1M5.towers, 'lookout'] };
 const A2M2: ProfileDef = {

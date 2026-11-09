@@ -188,7 +188,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T441** Portraits: Ves'thara, Pebble (bare at A2M3), Bricks `pebble` (T318); their blips.
 - [~] **T402** Fleeing groups, Skittish, the hush rule and Heavy; the Mote (`clustered`); write the hush contact rule into enemies.md §5.4.
 - [x] **T403** Aelari shields in play: the shield pulse; Glimmer, Weft Warden, Lightwing.
-- [~] **T406** Detection: cloak/Revealed, Scanner Sweep, the Lookout Shack (T1–3, specs, the license after A1M5), Overwatch, Skywatch; R&D ability purchases (Scanner Sweep's row is data only); the Lookout's tune-ups (D105).
+- [x] **T406** Detection: cloak/Revealed, Scanner Sweep, the Lookout Shack (T1–3, specs, the license after A1M5), Overwatch, Skywatch; R&D ability purchases (Scanner Sweep's row is data only); the Lookout's tune-ups (D105).
 - [~] **T412** Act II harness: reference profile through A2M3, Act II band and re-baseline, `spareFleeing` with the hush, `held_fire_second_look`, under-built alts (T334), `@story` step exemption (T333), `?map=` autoplay with the profile (T332), Gerald macro release (T335), gate-time budget ≤ 7 min.
 - [ ] **T420** A2M1 *Rig Nine* (fleeing groups, Motes, crew-log objective, Hiccup Contained, Spare runners teach, Biscuit, Act II barks, `memo_a2_01`; a story-side `objectiveDone` condition atom for the crew-log codex unlock); cap the Shift board at Act I (`SHIFT_BOARD_SIZE` ≤ `a1_m05`) so registering Act II maps never names them there (D102), and reach A2M1 through a dev hook until T301b's star map lands.
 - [ ] **T404** The Glass Witch: phases, pulse, the blink module, retreat, `bossBlinks`, in-stage cues; Stasis on a boss → Chilled without interrupt.
@@ -197,7 +197,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T421** A2M2 *The Glass Witch* (Protect the rigs, the boss, QUILL companion, T401: QUILL's Rapport changes a result, Thorn, `memo_a2_02` + KFA form).
 - [ ] **T409** Clickable world objects: `setClickable`, `interact`, the Peeker holding Pebble, keyboard and screen-reader reach; T322.
 - [ ] **T410a** Revisit by reference (A1M2 inside A2M3's 18×12 with the outer band) and the lighting overlay's tint path (cosmetic crossfade).
-- [ ] **T430a** Render units and combat: hush, Heavy, Hollow stutter, fleeing look, Act II deaths, shield ripple/pulse, blink afterimage, Stasis, Cloudburst, Seekers, charge; shield polish (hex bubble, shards on break, a stronger pulse tell over gold ground; `dev_aelari`); ally glow (T216); hover tell glyph and the render-state hook (T332).
+- [ ] **T430a** Render units and combat: hush, Heavy, Hollow stutter, fleeing look, Act II deaths, shield ripple/pulse, blink afterimage, Stasis, Cloudburst, Seekers, charge; real cloak art, tells and a Revealed outline; shield polish (hex bubble, shards on break, a stronger pulse tell over gold ground; `dev_aelari`); ally glow (T216); hover tell glyph and the render-state hook (T332).
 - [ ] **T422** A2M3 *Second Look* (the revisit, Wardens and Lightwings, Pebble's rescue, the light crossfade, `held_fire_second_look`, Clear Skies, Auntie Funmi, the pension line, `memo_a2_03`); Bricks's `pebble` portrait only after the rescue (`speakers.ts`: A2M4+, or A2M3 once `a2_m03_cue_pebble` is seen, live mid-battle); Pebble's name plate reads "???" until Bricks names her (D103).
 - [ ] **T407b** Zapcoil specs (Overload, Capacitor Bank) and Skyhook specs (Flak Curtain, Seeker Swarm); homing and charge attacks.
 - [ ] **T305b** Checkpoints: W5/W10 from Act II, retry from wave N, story state rebuilt from replayed events, Perfect/Challenge forfeited, defeat pay beyond the checkpoint.
@@ -208,15 +208,16 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T440b** Sprites: the Glass Witch; Lookout, Harpoon, Crane; spec frames for Sprinkler, Skyhook, Zapcoil, Lookout, Harpoon, Crane.
 - [ ] **T410b** Act II presentation: per-act dial table, loading tips, Evie `peeling`, death tone, Tidybots, the Act II UI theme.
 - [ ] **T430b** Render the world: revisit dressing, grey soil, the rigs' damage states, the dark north-east edge, hushed crew decor; floater collisions and the scorch (T334); fast-forward floater piling (T332).
-- [ ] **T431** HUD: asset meter, Scanner Sweep aim, the Spare runners teach, checkpoint copy; T326; slot-2 portrait (T216); locked tier-4 copy (T332).
+- [ ] **T431** HUD: asset meter, Scanner Sweep aim (its own reticle, not the strike's), the loadout's link list overflowing under its buttons with five links (all_unlocked), the Spare runners teach, checkpoint copy; T326; slot-2 portrait (T216); locked tier-4 copy (T332).
 - [ ] **T440c** Props and tiles for A2M1–A2M3, Act II wreckage, the rigs, outcrops, conduit node, Evie `peeling`, Tidybots, the Peeker rock holding Pebble.
 - [ ] **T460** Act II curve pass (A2M1–A2M3): Story everywhere, the chain within the band, 9–13 min runtimes, T333's A1M4 bank, T401's verdict.
 - [ ] **T461** Docs: as-built tables, maps.md §7 mining-cut, enemies.md Fracture/Rift Moth act column, story-runtime's Sprinkler line (T334).
-- [ ] **T450** Audio: the Act II theme, Hollow audio, Aelari chimes, shield ripple/shatter, blink, the sad squeak, cloak, Scanner ping, Stasis, `ShieldHit`/`ShieldPulse` incl. `interrupted`; a tuning pass on Ves'thara's and Pebble's existing blips; T323.
-- [ ] **T408** Harpoon and Crane (the cut lever): T1–3, specs, Pinned, Reel It In, licenses after A2M1; settle the Harpoon's 4.0 range vs A1M5's `[quiet-wave-reach]` (and the Lookout's +20% aura) before lifting its gate (D105); their tune-ups.
+- [ ] **T450** Audio: the Act II theme, Hollow audio, Aelari chimes, shield ripple/shatter, blink, the sad squeak, cloak, the reveal ping (Scanner Sweep borrows `dilation_swell`), Stasis, `ShieldHit`/`ShieldPulse` incl. `interrupted`; a tuning pass on Ves'thara's and Pebble's existing blips; T323.
+- [ ] **T408** Harpoon and Crane (the cut lever): T1–3, specs, Pinned, Reel It In, licenses after A2M1; settle the Harpoon's 4.0 range vs A1M5's `[quiet-wave-reach]` before lifting its gate (D105; D107's first-win scope is one option); their tune-ups.
 
 ## M5 — Act II, part two (A2M4–A2M6) · M6 — Act III · M7 — Finale, post-game & polish
 To be split up when we reach them. Known items:
+- [ ] **T501b** M5: a cloak smoke flow with the Veilwalker (no cloaked unit ships in M4).
 - [ ] **T501a** M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
 - [ ] **T501** C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
 

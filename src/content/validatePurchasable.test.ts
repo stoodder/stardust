@@ -209,18 +209,14 @@ describe('[purchasable]', () => {
       }
     });
 
-    it('prices the Act II rows on the campaign timeline, the Lookout once its license sells', () => {
-      const live = errorsOf(withActTwoRows(), LIVE_PURCHASE_RULES);
-      if (TOWERS_AHEAD_OF_TASK.includes('lookout')) {
-        // Until T406 lifts it, every Act II row is refused for the Lookout, and only for it.
-        expect(live).toHaveLength(3);
-        for (const e of live) expect(e).toMatch(/towers: 'lookout' waits for its task/);
-      } else {
-        expect(live).toEqual([]);
-      }
-      // With the license on the shelf, the rows are affordable and available as written.
-      const sold = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
-      expect(errorsOf(withActTwoRows(), sold)).toEqual([]);
+    it('prices the Act II rows on the campaign timeline (the Lookout license is on the shelf)', () => {
+      expect(TOWERS_AHEAD_OF_TASK).not.toContain('lookout');
+      expect(errorsOf(withActTwoRows(), LIVE_PURCHASE_RULES)).toEqual([]);
+      // A row owning a tower still ahead of its task is refused for it, and only for it.
+      const ahead = { ...LIVE_PURCHASE_RULES, aheadOfTask: ['lookout'] };
+      const refused = errorsOf(withActTwoRows(), ahead);
+      expect(refused).toHaveLength(3);
+      for (const e of refused) expect(e).toMatch(/towers: 'lookout' waits for its task/);
     });
 
     it('follows campaign.md § 4.9 from A1M5 to A2M3', () => {

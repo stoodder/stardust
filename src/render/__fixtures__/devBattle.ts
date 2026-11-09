@@ -697,17 +697,20 @@ const aelariMap = dev.defineMap({
 });
 
 // dev_hollow (T402): dev_act2's two roads walked by fleeing Nibblers with Motes 2.5 s behind them
-// on each, so the hush tell, the vanish, Heavy, and Skittish show (smoke/hush.spec.ts) before A2M1
-// lands. Nothing is built: the Motes catch the runners.
+// on each (spaced out on the north road, a packed cluster on the south one), so the hush tell, the
+// vanish, Heavy, and Skittish show (smoke/hush.spec.ts) before A2M1 lands. Nothing is built: the
+// Motes catch the runners.
 const hollowMap = dev.defineMap({
   ...act2Layout,
   id: 'dev_hollow',
   threatIntel: ['skittish', 'clustered'],
+  // Motes are a splash problem: without the requirement they'd be soft (enemies.md § 3.1).
+  requiredCounters: ['splash'],
   waves: dev.defineWaves([
     {
       groups: [
-        { enemy: 'nibbler', count: 4, route: 'a', intervalSec: 0.6, tags: ['fleeing'] },
-        { enemy: 'mote', count: 6, route: 'a', delaySec: 2.5 },
+        { enemy: 'nibbler', count: 3, route: 'a', intervalSec: 1, tags: ['fleeing'] },
+        { enemy: 'mote', count: 3, route: 'a', delaySec: 2.5, intervalSec: 1.5 },
         {
           enemy: 'nibbler',
           count: 3,
@@ -721,6 +724,9 @@ const hollowMap = dev.defineMap({
     },
   ]),
   ...act2Builds,
+  noCounterBuilds: {
+    splash: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [8, 4] }] },
+  },
 });
 
 /** The dev battle's raw content (compile it with compileContent). */

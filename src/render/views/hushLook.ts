@@ -2,8 +2,9 @@
 // T430a's render pass and T440a's baked `heavy` variant: pure rules, so they're unit-tested, and
 // EnemyView applies them. The pose (`panic` for the held runner and a bolting one) is
 // enemyPose.ts's.
-// - **Heavy:** the body multiplies by HEAVY_TINT (`acid.2`: darker, gone the Hollow's sick green)
-//   for the rest of its life, hit flashes aside.
+// - **Heavy:** the body multiplies by HEAVY_TINT (`hollow.3`: a pale Mote goes charcoal, a dark
+//   knot against any ground) for the rest of its life, hit flashes aside. (An acid tint sank into
+//   Act II's olive ground.)
 // - **Held** (a runner in a Hollow unit's hush tell): it struggles, a 1 px side-to-side shake on
 //   the shimmer's 3 Hz cycle (under the photosensitivity cap; none under reduced motion, where the
 //   ring and the `panic` pose carry it).
@@ -17,7 +18,7 @@ function hex(name: Parameters<typeof rgbOf>[0]): number {
 }
 
 /** A Heavy unit's body tint (multiply). */
-export const HEAVY_TINT = hex('acid.2');
+export const HEAVY_TINT = hex('hollow.3');
 /** The held runner's shake: this many px either side, flipping every HUSH_SHAKE_MS (3 Hz). */
 export const HUSH_SHAKE_PX = 1;
 export const HUSH_SHAKE_MS = 167;

@@ -501,10 +501,10 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `format:check` | `prettier --check .` (the formatting half of `lint`) |
 | `test` | `vitest run`: unit, sim, content, save, balance-harness, and architecture tests |
 | `test:watch` | `vitest` |
-| `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--report`) |
+| `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map, maps in parallel on worker threads (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--jobs <n>`, `--report`) |
 | `smoke` | `playwright test --trace off`: browser smoke tests against `npm run preview` |
 | `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
-| `check` | **The whole gate:** `typecheck && lint && test && build && sim && smoke && check:docs` |
+| `check` | **The whole gate:** `node --experimental-strip-types tools/gate.ts`: `typecheck`, `lint`, `test`, `build`, `sim`, `smoke`, `check:docs` in order, failing fast, then each step's time against its budget ([conventions.md § Gate time](conventions.md#gate-time)) |
 | `check:fast` | `typecheck && lint && test` (inner dev loop only, never the gate) |
 
 `package.json` sets `"type": "module"` and `"engines": { "node": ">=22.6" }`.
@@ -541,7 +541,9 @@ stardust/
 ├── vite.config.ts      playwright.config.ts
 ├── .oxlintrc.json      .prettierrc.json    .prettierignore    .editorconfig
 ├── tools/
+│   ├── gate.ts                 # npm run check: the gate's steps and their time budget
 │   ├── sim.ts                  # npm run sim: CLI over src/balance/
+│   ├── simWorker.ts            # one sim worker thread (a map at a time)
 │   └── check-docs.ts           # npm run check:docs
 ├── smoke/                      # Playwright specs (*.spec.ts); fixtures.ts (console-error fixture), allowedConsole.ts, hooks.ts (__sd helpers)
 ├── docs/ … CLAUDE.md  tasks.md

@@ -238,41 +238,41 @@ describe('the hush rule', () => {
   });
 });
 
-describe('the hush rule is order-independent', () => {
-  /** The pairs (Hollow label → victim label) after one tick, for units placed in `order`. */
-  function pairing(order: readonly string[]): Record<string, string> {
-    const { state, ctx } = setup();
-    // Fixed uids per label, so only the slot order changes between runs.
-    const at: Record<string, [CompiledEnemyDef, number, readonly WaveTag[], number]> = {
-      h1: [MOTE, 3, [], 101],
-      h2: [MOTE, 3.3, [], 102],
-      v1: [WALKER, 3.2, FLEE, 201],
-      v2: [WALKER, 3.65, FLEE, 202],
-      v3: [WALKER, 2.75, FLEE, 203],
-    };
-    const units = new Map<string, Enemy>();
-    for (const label of order) {
-      const [def, dist, tags, uid] = at[label]!;
-      const e = put(state, def, dist, tags);
-      e.uid = uid;
-      units.set(label, e);
-    }
-    tick(state, ctx);
-    const byUid = new Map([...units].map(([l, e]) => [e.uid, l]));
-    const out: Record<string, string> = {};
-    for (const l of ['h1', 'h2']) {
-      const e = units.get(l)!;
-      if (e.hushUid !== 0) out[l] = byUid.get(e.hushUid)!;
-    }
-    return out;
+/** The pairs (Hollow label → victim label) after one tick, for units placed in `order`. */
+function pairing(order: readonly string[]): Record<string, string> {
+  const { state, ctx } = setup();
+  // Fixed uids per label, so only the slot order changes between runs.
+  const at: Record<string, [CompiledEnemyDef, number, readonly WaveTag[], number]> = {
+    h1: [MOTE, 3, [], 101],
+    h2: [MOTE, 3.3, [], 102],
+    v1: [WALKER, 3.2, FLEE, 201],
+    v2: [WALKER, 3.65, FLEE, 202],
+    v3: [WALKER, 2.75, FLEE, 203],
+  };
+  const units = new Map<string, Enemy>();
+  for (const label of order) {
+    const [def, dist, tags, uid] = at[label]!;
+    const e = put(state, def, dist, tags);
+    e.uid = uid;
+    units.set(label, e);
   }
+  tick(state, ctx);
+  const byUid = new Map([...units].map(([l, e]) => [e.uid, l]));
+  const out: Record<string, string> = {};
+  for (const l of ['h1', 'h2']) {
+    const e = units.get(l)!;
+    if (e.hushUid !== 0) out[l] = byUid.get(e.hushUid)!;
+  }
+  return out;
+}
 
+describe('the hush rule is order-independent', () => {
   it('gives the same pairs for every slot order', () => {
     // v1 is nearest h2 (0.1 vs 0.2): a slot-greedy rule would hand it to h1 when h1 comes first.
     // h2 takes v1 (its nearest of v1 and v2); h1 takes v3 (0.25); v2 waits.
     const expected = { h1: 'v3', h2: 'v1' };
     const labels = ['h1', 'h2', 'v1', 'v2', 'v3'];
-    const orders = [labels, [...labels].reverse(), ['v2', 'h2', 'v3', 'h1', 'v1']];
+    const orders = [labels, labels.toReversed(), ['v2', 'h2', 'v3', 'h1', 'v1']];
     for (const o of orders) expect(pairing(o), o.join(',')).toEqual(expected);
   });
 

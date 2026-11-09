@@ -165,11 +165,11 @@ export function hushPass(state: SimState, ctx: TickContext): void {
     emit(state, {
       type: 'HushStarted',
       uid: h.uid,
-      enemy: h.def!.id,
+      enemy: h.def!.id, // canHush checked def
       victim: v.uid,
       x: v.x,
       y: v.y,
-    }); // canHush checked def
+    });
   }
   pairs.length = 0;
 }

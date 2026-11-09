@@ -17,8 +17,7 @@ const BASE: Enemy = (() => {
   for (let t = 0; t < 600; t++) {
     sim.step();
     const e = sim.state.enemies.items.find((x) => x.alive);
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test's copy of a live unit
-    if (e !== undefined) return { ...e } as Enemy;
+    if (e !== undefined) return { ...e };
   }
   throw new Error('no enemy spawned');
 })();
@@ -40,8 +39,8 @@ describe('the hush look (T402)', () => {
     expect(hushShakePx(unit({ def: E.nibbler }), 0, false)).toBe(0);
   });
 
-  it("Heavy's tint is acid.2 (#9cc214)", () => {
-    expect(HEAVY_TINT).toBe(0x9cc214);
+  it("Heavy's tint is hollow.3 (#6e6e76)", () => {
+    expect(HEAVY_TINT).toBe(0x6e6e76);
   });
 
   it('a held runner and a bolting one panic; the Hollow unit in its tell walks', () => {
