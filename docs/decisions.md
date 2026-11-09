@@ -1195,3 +1195,11 @@ Real art went in behind T300a's ids. No data changed.
 - **With Act I won**, every row reads Cleared and the board focuses "Replay Record Quarter"; no Act II teaser row until the star map (M4).
 - **Engineering lists towers whose specs ship later** (Sprinkler, Skyhook, Zapcoil) as unbuyable "Arrives in a later shipment" rows after the buyable ones, as D064 and progression §7.1 say (the shelf had filtered them out).
 - A normal-flow smoke step now plays A1M2 from the board and sees A1M3 next (the gap that let this ship hidden: M3's smoke reached later maps only through `?map=` and dev saves).
+
+### D096 — 2026-11-09 — T315 the Act I curve pass; the T228 verdict
+- **Act I as built:** par 95 / 100 / 90 / 85 / 81.0; runtimes at 1× 3.8 / 6.4 / 6.9 / 7.3 / 8.7 min; Story wins everywhere (100, A1M5 96.8). Par leaks: A1M1 W7, A1M2 none, A1M3 W4 (Gerald's pass), A1M4 W9, A1M5 W7–W8. **The tutorial (A1M1) is exempt from Act I's 6–9 min target.**
+- **A1M4 (supersedes D090's ruling):** the W1 rush is 16 Zoomers at 0.35 s and par holds it; par's one leak is a Hauler from a W9 tail (four Haulers, no Elder) that its W9 strike can't fully reach (no casts 65, Mk II 100 with Perfect Core). W5 Bunchlings 24; W6–W8 filler trimmed. Par adds a billboard Rivet but still ends with ~920 credits (was 1,396): every further purchase makes par unbreakable at wave sizes the alts survive. Partly met; T333.
+- **A1M5:** `OPEN` 10 → 6 s (8.7 min); all D092 results hold.
+- **T226 is met by a test**, not a retune: with Sitting Ducks' bonuses zeroed, A1M2's par and three alts leak in W8.
+- **T229 is a UI fix:** the bank nudge arrives a wave after A1M2's W7 wall; a waves-only fix broke early-call.
+- **T228 verdict:** Mk II changes par on A1M1 (replay), A1M3, A1M4 and A1M5; Bricks's Rapport on A1M5; **QUILL's Rapport nowhere in Act I** (A1M3 is the only Time Dilation map and par's casts are three waves apart). Accepted: Act I's pick is Mk II vs Bricks, and QUILL's Rapport is an investment that pays from A2M2 (T401). The verdict's home is act1.md's Act I curve section.

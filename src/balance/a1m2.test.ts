@@ -4,8 +4,8 @@
 // early calls stay winnable, and the alt builds keep their floors and the no-single-wave-wall
 // rule. The one exception is the `abilities` check: par's W8 strike is worth a Hauler (15 points)
 // on the documented timing (W8's second Hauler), but a shift can let the towers finish that Hauler
-// without it, so that check isn't asserted here. The waves and builds are documented in
-// docs/story/campaign/act1.md § A1M2.
+// without it, so that check isn't asserted here. It also checks that Sitting Ducks is what holds
+// W8 (T226). The waves and builds are documented in docs/story/campaign/act1.md § A1M2.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
@@ -33,6 +33,14 @@ function failures(c: typeof content): string[] {
   return runMap(c, 'a1_m02', { seeds: 1 })
     .checks.filter((k) => !k.ok && k.id !== 'abilities')
     .map((k) => `#${k.id} ${k.title}`);
+}
+
+/** Integrity `build` loses in W8 on seed 1 (−1 without a result). */
+function w8(c: typeof content, build: string): number {
+  const run = runMap(c, 'a1_m02', { seeds: 1, build }).runs.find(
+    (r) => r.build === build && r.seed === 1 && !r.repeat,
+  );
+  return run?.result?.waves[7]?.integrityLost ?? -1;
 }
 
 const gap =
@@ -65,6 +73,34 @@ describe('A1M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   ] as const)('holds with W%i’s %s group ±0.2 s later', (wave, enemy) => {
     for (const d of [-0.2, 0.2]) {
       expect({ d, failed: failures(shifted([wave], delay(enemy, d))) }).toEqual({ d, failed: [] });
+    }
+  });
+
+  it('lets Sitting Ducks decide W8’s Haulers: par and the under-built alts leak without it (T226)', () => {
+    // The same runs with the link's bonuses zeroed (Thumper +20% damage to Chilled pests, the
+    // Sprinkler's +0.3 tiles): the pump station's pair is what holds W8.
+    const links = RAW_CONTENT.links!;
+    const [thumper, sprinkler] = links.sitting_ducks!.partners;
+    const noDucks = compileContent({
+      ...RAW_CONTENT,
+      links: {
+        ...links,
+        sitting_ducks: {
+          ...links.sitting_ducks!,
+          partners: [
+            { ...thumper, bonuses: [] },
+            { ...sprinkler, bonuses: [] },
+          ],
+        },
+      },
+    });
+    for (const build of ['par', 'alt:no_upgrades', 'alt:stops_after_w5', 'alt:par_minus_last']) {
+      expect({ build, linked: w8(content, build) }).toEqual({ build, linked: 0 });
+      // One Hauler (3 integrity) through for par, two for the under-built alts.
+      expect({ build, unlinked: w8(noDucks, build) }).toEqual({
+        build,
+        unlinked: build === 'par' ? 3 : 6,
+      });
     }
   });
 

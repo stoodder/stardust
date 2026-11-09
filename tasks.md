@@ -112,9 +112,9 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
 - [x] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
 - [x] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
-- [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
+- [x] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
 - [x] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
-- [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
+- [ ] **T229** A1M2's never-spend wall (W7 −12, W8 loss) is a UI fix (D096): fire the bank nudge by W7, e.g. at ~200 credits or after two build phases with no purchase (`app/` dialogue/bark trigger) + a test.
 - [x] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
 - [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
@@ -170,16 +170,18 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T330** A1M5 follow-ups from T304g: `BarkTrigger` `not_firing` has no wave filter, so holding fire earlier spends Bricks's W10 line; the briefing can't list "Boss" as threat intel (campaign.md §4.8; `boss` isn't a `Trait`: add one with TRAIT_COUNTER/TRAIT_TELL or change the doc).
 - [x] **T331** (high) The Shift board stops at A1M2 (`SHIFT_BOARD_SIZE = 2` from the M2 cut): size from the registered campaign, real map names in unlock hints, a smoke step past A1M2 in normal flow; Engineering's deferred-spec copy → "Arrives in a later shipment" (D064); stale comments in validateBuilds/devSaves; `jamLimit` → M5.
 - [ ] **T332** Render follow-ups: the tell glyph also shows on hover (art-direction §8; enemy hover now exists); an app-owned `__sd` render-state hook (bar shown, ally lowered) so smoke can assert render beats, not only screenshot them; the HUD's locked tier-4 card says "Engineering unlocks after Shift 4" (`app/hudText.ts`), the base hints say "after The Audit": match them; test-only fast-forward piles floaters/callouts into one frame; `?map=` + `autoplay('par')` runs without the harness's reference profile (Reinforced Core, spec unlock, R&D), so it can't reproduce par (A1M5's W8 Cluster specialize is refused).
+- [ ] **T333** Balance follow-ups from T315: A1M4 par still holds 500+ credits at W6–W7 and ends ~920 (needs lower income or a layout/tower change); its billboard Rivet does little; harness: exempt `@story` runs from "every step issued" so par's W9 buys can precede the strike; A1M4 can join the canon test's `COMPLETE`.
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [x] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
-- [~] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090); A1M5 runs ~9.7 min at 1× against Act I's 6–9 min (trim the `OPEN` delays, D092); add `a1_m05` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
+- [x] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090); A1M5 runs ~9.7 min at 1× against Act I's 6–9 min (trim the `OPEN` delays, D092); add `a1_m05` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
 - [x] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish
 To be split up when we reach them. Known items:
 - [ ] **T501** C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
+- [ ] **T401** Make QUILL's Rapport matter on A2M2 (par's Time Dilation casts close enough that the shorter cooldown counts; T228 verdict, D096).
 
 ## Backlog / Ideas
 - HUD wave preview: the NEW badge and codex hint (needs saves, M2+); the callsign plate (T306)

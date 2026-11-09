@@ -40,8 +40,9 @@ export const QUIET_WAVE_COUNTDOWN_SEC = 60;
 /**
  * W2–W8 open this long after they start: the last wave's bounties land before the first contact,
  * so a player who calls waves early isn't buying turrets mid-fight (the harness's early-call check).
+ * 6 s, not more, keeps par's shift near 8.7 minutes at 1×, inside Act I's 6–9 (T315).
  */
-export const OPEN = 10;
+export const OPEN = 6;
 /**
  * The Matriarch comes up the Spires road this long after W9 starts: the ground rumbles first, and
  * a player who calls W9 early still meets her after W8's tail has cleared the gate.

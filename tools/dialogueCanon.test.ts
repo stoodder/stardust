@@ -13,7 +13,7 @@ import type { Bark, Scene } from '../src/content/dialogue/types.ts';
 const ROOT = join(import.meta.dirname, '..');
 
 /** The maps whose every *Story delivery* line is dialogue (the rest still have lines to land). */
-const COMPLETE = ['a1_m01', 'a1_m02'];
+const COMPLETE = ['a1_m01', 'a1_m02', 'a1_m05'];
 
 function actFile(act: string): string {
   const name = act === 'fin' ? 'finale' : `act${act}`;

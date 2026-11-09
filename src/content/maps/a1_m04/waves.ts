@@ -46,16 +46,20 @@ const convoy = (delaySec: number): WaveGroup[] => [
  * single-target turret can't stop in time.
  */
 export const CHONK_GAP = 2;
-/** W9's tail: TAIL Haulers TAIL_GAP s apart, TAIL_DELAY s into the wave. */
+/**
+ * W9's tail (T315): TAIL Haulers TAIL_GAP s apart, TAIL_DELAY s into the wave, behind the last
+ * convoy and with no Elder to heal them. It's where par's margin comes from (D090): its towers and
+ * its strike take three of them, and one reaches the gate.
+ */
 export const TAIL = 4;
-export const TAIL_DELAY = 30;
+export const TAIL_DELAY = 32;
 export const TAIL_GAP = 3;
 /** W6's Elders walk this far apart, so one strike never catches two huddles. */
 export const ELDER_GAP = 10;
 
 export const waves = defineWaves([
-  // W1 · Nibblers, then a Zoomer rush [the Clearance Sale prompt]
-  { groups: [g('nibbler', 18, 0, 0.7), g('zoomer', 20, 10, 0.3)] },
+  // W1 · Nibblers, then a Zoomer rush [the Clearance Sale prompt]: par's strike holds it whole
+  { groups: [g('nibbler', 18, 0, 0.7), g('zoomer', 16, 10, 0.35)] },
   // W2 · Bunchlings ×4 [T: splitting]
   { teach: true, groups: [g('bunchling', 4, 0, 2.5), g('nibbler', 10, 12, 0.6)] },
   // W3 · Bunchlings + Zoomers [X]
@@ -63,14 +67,14 @@ export const waves = defineWaves([
   // W4 · one Elder + huddled Nibblers [T: huddle; splash], then a loose pack
   { teach: true, groups: [...huddle(0, 10), g('nibbler', 13, 20, 0.5)] },
   // W5 · Chonks + Bunchlings [the armor test: light armor in a column, splitters behind it]
-  { groups: [g('chonk', 10, 0, CHONK_GAP), g('bunchling', 20, 6, 0.8)] },
+  { groups: [g('chonk', 10, 0, CHONK_GAP), g('bunchling', 24, 6, 0.8)] },
   // W6 · Elders ×2 + Bunchlings [X]
   { groups: [...huddle(0, 10), ...huddle(ELDER_GAP, 10), g('bunchling', 4, 16, 0.8)] },
   // W7 · Haulers ×2 + an Elder
   { groups: [g('hauler', 2, 0, HAULER_GAP), ...huddle(6, 13), g('zoomer', 10, 20, 0.35)] },
   // W8 · a Zoomer flood + Bunchlings
-  { groups: [g('zoomer', 24, 0, 0.3), g('bunchling', 6, 6, 0.7)] },
-  // W9 · Elders ×3 with big huddles + Haulers [X]: each Elder shepherds two Haulers
+  { groups: [g('zoomer', 24, 0, 0.3), g('bunchling', 10, 6, 0.7)] },
+  // W9 · Elders ×3 with big huddles + Haulers [X]: each Elder shepherds two Haulers, then the tail
   {
     groups: [
       ...convoy(0),

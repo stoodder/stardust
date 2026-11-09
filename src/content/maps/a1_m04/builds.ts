@@ -18,6 +18,8 @@ const S_CART: GridPos = [6, 6];
 /** The gate court between the east side and the east edge: the Conductive pair. */
 const COURT_W: GridPos = [11, 5];
 const COURT_E: GridPos = [12, 5];
+/** The gate court's south pad, above the gate. */
+const COURT_S: GridPos = [11, 7];
 /** The gate court's north pad. */
 const COURT_N: GridPos = [11, 4];
 /** Above the billboard stretch, where the road turns down the east edge. */
@@ -29,6 +31,8 @@ const W1_STRIKE: GridPos = [2, 4];
 /** The strike points: the south-west bend and the south side's east end. */
 const SW_STRIKE: GridPos = [3, 7];
 const SE_STRIKE: GridPos = [9, 7];
+/** The top of the east edge, where W9's tail walks into the strike. */
+const EAST_EDGE: GridPos = [13, 3];
 
 function parSteps(): BuildStep[] {
   return [
@@ -52,14 +56,17 @@ function parSteps(): BuildStep[] {
     { wave: 6, upgrade: NW_PAD },
     { wave: 6, upgrade: COURT_N },
     { wave: 7, upgrade: NW_PAD }, // T3: pierce
+    { wave: 7, build: 'rivet', tile: BILLBOARD },
     { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
     { wave: 8, ability: 2 },
     { wave: 8, upgrade: SE_BEND },
     { wave: 8, upgrade: NODE },
     { wave: 8, upgrade: COURT_E },
-    { wave: 8, build: 'rivet', tile: BILLBOARD },
-    { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+    // W9's tail at the top of the east edge: without the strike two of its Haulers reach the gate,
+    // with it one, with Mk II's wider blast none. The last two upgrades land as the tail walks in.
+    { wave: 9, ability: 1, target: EAST_EDGE, when: { afterSec: 70 } },
     { wave: 9, upgrade: COURT_N },
+    { wave: 9, upgrade: BILLBOARD },
   ];
 }
 
@@ -121,11 +128,12 @@ export const builds = defineBuilds({
   },
   // Par clears all five carts, so it earns Asset Recovery.
   parMedals: ['challenge'],
-  // Mk II's wider blast takes more of W1's Zoomer rush: one leak fewer (T228).
+  // Mk II's wider blast saves the W9 tail Hauler par lets through (T228).
   rndPickChanges: ['orbital_strike_mk2'],
   altBuilds: {
     // Skyhook (idle), Thumper, Zapcoil: the Zapcoils chain through the huddles and the rush, the
-    // Thumpers take the Chonks and Haulers.
+    // Thumpers take the Chonks and Haulers; it spends its late bank on two more Thumpers, above the
+    // gate and on the south-east cart, for W9's tail.
     chain_and_shell: {
       loadout: ['skyhook', 'thumper', 'zapcoil'],
       steps: [
@@ -145,12 +153,16 @@ export const builds = defineBuilds({
         { wave: 6, upgrade: COURT_N },
         { wave: 6, upgrade: COURT_E },
         { wave: 7, build: 'thumper', tile: SE_CART },
+        { wave: 7, build: 'thumper', tile: COURT_S },
         { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
         { wave: 8, ability: 2 },
         { wave: 8, upgrade: SE_BEND },
         { wave: 8, upgrade: NODE },
         { wave: 8, upgrade: COURT_N },
+        { wave: 8, upgrade: COURT_S },
         { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+        { wave: 9, upgrade: COURT_S },
+        { wave: 9, upgrade: SE_CART },
       ],
     },
     // Thumper, Sprinkler, Skyhook (idle): Sprinklers slow the rush and the huddles into the bends,

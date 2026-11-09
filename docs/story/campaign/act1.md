@@ -16,6 +16,17 @@ The five Act I maps, A1M1–A1M5, during the Long Afternoon. The campaign overvi
 | A1M4 | The auditor measuring the road ("6.2 meters." Prim: "6.1."); "contractually obligated... not to land one. That's a loophole!" | The A2M6 loophole confession; the Morale Module is Directive 2 (A3M2) |
 | A1M5 | "Why did the pest cross the perimeter? It didn't." | The Quiet Wave, the same day, if you let them cross |
 
+**The curve, and the R&D pick, across Act I.** Par's margins fall 95 → 100 → 90 → 85 → 81.0 (A1M2 sits at 100 by its `marginBand`, D059). Par leaks in W7 on A1M1, nowhere on A1M2, in W4 on A1M3 (Gerald's second pass), in W9 on A1M4, and in W7–W8 on A1M5. Story is 100 on A1M1–A1M4 and 96.8 on A1M5. At 1× par plays A1M1 in about 3.8 minutes (the tutorial), A1M2 6.4, A1M3 6.9, A1M4 7.3, and A1M5 8.7. The R&D picks stocked after A1M1 (T228; 2 Intel each) change a par result here:
+
+| Pick | A1M1 (replay) | A1M2 | A1M3 | A1M4 | A1M5 |
+|---|---|---|---|---|---|
+| Orbital Strike Mk II | 95 → 100, Perfect Core | — | 90 → 100, Perfect Core | 85 → 100, Perfect Core | 81.0 → 95.2 |
+| Rapport: Sgt. Bricks | — | — | not cast (QUILL's map) | not cast (Zibzab's map) | 81.0 → 95.2 |
+| Rapport: QUILL | not stocked yet | not stocked yet | — on a replay | not cast | not cast |
+
+So Mk II matters on every Act I map but A1M2, and Bricks's Rapport on A1M5 only. **QUILL's Rapport matters nowhere in Act I:** it is stocked after A1M3, the only Act I map where Time Dilation is cast, and even on an A1M3 replay par's two casts (W5 and W8) are three waves apart, so the shorter cooldown never binds. Its first chance is A2M2, QUILL's next map as companion.
+
+
 ---
 
 ## Character creation · New Hire Intake
@@ -212,7 +223,9 @@ The irrigation Rivet stays at T2 on its default targeting: on this map the Thump
 - `build_wide` (≥ 40%): par's first towers, then a new tower on a fresh pad every wave and never an upgrade (ten towers by W8).
 - `no_upgrades` (`outcome: 'either'`): par's towers and casts, never upgraded; its one purchase is a fourth Thumper at (5,3) in W6, the kind QUILL's bank nudge asks for.
 
-A player who never upgrades *and* never spends (par without its upgrades, 560 credits banked) meets W7–W8 as a wall: 12 lost in W7, then the loss in W8. That player is who the bank nudge is for; one Thumper bought with the hoard wins at 100.
+A player who never upgrades *and* never spends (par without its upgrades and nothing else) meets W7–W8 as a wall: 12 lost in W7 (four Haulers), then the loss in W8. That player is who the bank nudge is for, but the nudge's 250 credits come only at W8's build phase (226 unspent as W7 starts), a wave after the wall. One Thumper bought with the hoard by W6 wins at 100 (`no_upgrades`). A waves-only fix was tried (T315): a lone Hauler in W6 as a warning, four Haulers in W7 and eight in W8 makes that player lose gradually (5, 9, then 6 in W8) and keeps par at 100 and the no-armor build losing in W8, but drops `alwaysCallEarly` to 15, so the waves stay as they are and the help this player needs is an earlier nudge (a follow-up for the HUD).
+
+**Sitting Ducks holds W8** (T226): with the link's bonuses taken away (no +20% for the Thumper beside the pump station on Chilled pests, no extra reach for the Sprinkler), par lets one W8 Hauler through (85), and `no_upgrades`, `stops_after_w5`, and `par_minus_last` let two (70). [`src/balance/a1m2.test.ts`](../../../src/balance/a1m2.test.ts) checks both sides.
 
 **Harness runs** (every seed; margin, then integrity lost per wave W1–W8):
 
@@ -345,7 +358,7 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 
 **Layout.** A U-shaped road around the plaza fountain under three giant Evie billboards, entering north-west and leaving south-east through the plaza gate (core). The audit podium (decor) faces the path; Prim hovers there all map. Five wreckage carts ring the fountain; the power node is under the cart nearest the podium. The Peeker's rock is a planter by the fountain. A3M2 revisits this plaza: the podium, billboards, and fountain must be landmark-clear.
 
-**Waves.** 1 Nibblers, then a Zoomer rush [Clearance Sale prompt] · 2 Bunchlings ×4 [T: splitting] · 3 Bunchlings + Zoomers [X] · 4 one Elder + 10 huddled Nibblers [T: huddle; splash] · 5 a column of Chonks + Bunchlings [X: armor and splash] · 6 Elders ×2 + Bunchlings [X] · 7 Haulers ×2 + Elder · 8 Zoomer flood + Bunchlings · 9 Elders ×3 with big huddles + Haulers [X].
+**Waves.** 1 Nibblers, then a Zoomer rush [Clearance Sale prompt] · 2 Bunchlings ×4 [T: splitting] · 3 Bunchlings + Zoomers [X] · 4 one Elder + 10 huddled Nibblers [T: huddle; splash] · 5 a column of Chonks + Bunchlings [X: armor and splash] · 6 Elders ×2 + Bunchlings [X] · 7 Haulers ×2 + Elder · 8 Zoomer flood + Bunchlings · 9 Elders ×3 with big huddles + Haulers, then a tail of four Haulers [X].
 
 **Layout data** (the data is [`src/content/maps/a1_m04/map.ts`](../../../src/content/maps/a1_m04/map.ts)). Spawn (2,0); the road runs down the plaza's west side (column 2), east along its south side (row 7), back up its east side (column 10), east past the billboards (row 2), and down the east edge to the plaza gate (13,9): 30 tiles, about 30 s for a Nibbler and 43 s for a Hauler. The open north side is under the three billboards (markers `billboard_west` (5,0), `billboard_center` (8,0), `billboard_east` (11,0)); the fountain (`fountain`, 6,4) is the plaza's heart, the podium (`podium`, 3,5) faces the south-west bend, and the Peeker's planter (`peeker`, 8,3) is beside the fountain. Buildable: 12 pads: (13,1) above the billboard stretch, (3,2) and (9,2) in the plaza's north corners, (1,3) and (1,6) west of the west side, (9,6) inside the south-east bend, (11,4), (11,5), (12,5), and (11,7) in the **gate court** between the east side and the east edge (a tower there covers both), and (4,8) and (7,8) south of the south side. Wreckage (toppled lettuce carts): (4,5) by the podium hides the **power node** (salvage 50); (8,5) inside the south-east bend hides a pad (40); (5,2), (7,2), and (6,6) lie on the paving (30 each).
 
@@ -362,19 +375,19 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 .............C
 ```
 
-**Wave data** (the data is [`src/content/maps/a1_m04/waves.ts`](../../../src/content/maps/a1_m04/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s; everything takes the road). A **huddle** is an Elder with Nibblers packed 0.3 s apart 0.4 s behind it: they keep to its pace and regenerate while they stay close, so a single-target turret chews on a healing clump while a shell or an arc hits all of it. **W1's Zoomer rush** catches the Nibblers on the west side: the Technician's strike there is the difference between two or three leaks and six. **W5 is the armor and splash test:** ten Chonks walk 2 s apart (1.2 tiles), a column the shells roll down, with twenty Bunchlings behind it; Rivets alone can't stop either. W7 releases its Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)), and W6's Elders walk 10 s apart, so one strike never catches two huddles. **W9's convoys** are each an Elder shepherding two Haulers: the Haulers walk 1.5 s apart just ahead of it, so they keep to its pace and regenerate in its huddle. A strike can't kill a Hauler, and a turret without an armor answer can't out-damage the regeneration, so the convoys are where the full catalog still loses without one.
+**Wave data** (the data is [`src/content/maps/a1_m04/waves.ts`](../../../src/content/maps/a1_m04/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s; everything takes the road). A **huddle** is an Elder with Nibblers packed 0.3 s apart 0.4 s behind it: they keep to its pace and regenerate while they stay close, so a single-target turret chews on a healing clump while a shell or an arc hits all of it. **W1's Zoomer rush** catches the Nibblers on the west side, and the Technician's strike there holds it whole: a player who opens with par's Rivet and Thumper and casts the strike loses nothing on the first wave of the map. **W5 is the armor and splash test:** ten Chonks walk 2 s apart (1.2 tiles), a column the shells roll down, with twenty-four Bunchlings behind it; Rivets alone can't stop either. W7 releases its Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)), and W6's Elders walk 10 s apart, so one strike never catches two huddles. **W9's convoys** are each an Elder shepherding two Haulers: the Haulers walk 1.5 s apart just ahead of it, so they keep to its pace and regenerate in its huddle. A strike can't kill a Hauler, and a turret without an armor answer can't out-damage the regeneration, so the convoys are where the full catalog still loses without one. **W9's tail** is four Haulers 3 s apart, 32 s in, behind the last convoy and with no Elder to heal them: the late armor-damage check where par's margin comes from (below).
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
-| W1 | Nibbler ×18 @ 0.7, 0 · Zoomer ×32 @ 0.3, 10 | 50 |
+| W1 | Nibbler ×18 @ 0.7, 0 · Zoomer ×16 @ 0.35, 10 | 34 |
 | W2 | Bunchling ×4 @ 2.5, 0 (`teach`) · Nibbler ×10 @ 0.6, 12 | 14 |
 | W3 | Bunchling ×10 @ 1.0, 0 · Zoomer ×18 @ 0.4, 6 | 28 |
 | W4 | huddle: Elder, 0 · Nibbler ×10 @ 0.3, 0.4 (`teach`) · Nibbler ×13 @ 0.5, 20 | 24 |
-| W5 | Chonk ×10 @ 2, 0 · Bunchling ×20 @ 0.8, 6 | 30 |
-| W6 | huddles (Elder + Nibbler ×10) at 0 and 10 · Bunchling ×13 @ 0.8, 16 | 35 |
-| W7 | Hauler ×2 @ 12, 0 · huddle (Elder + Nibbler ×13) at 6 · Zoomer ×21 @ 0.35, 20 | 37 |
-| W8 | Zoomer ×39 @ 0.3, 0 · Bunchling ×18 @ 0.7, 6 | 57 |
-| W9 | convoys at 0, 12, and 24: Hauler ×2 @ 1.5, then the Elder 2.7 s in, then Nibbler ×14 @ 0.3, 3.1 s in · Bunchling ×13 @ 0.8, 32 | 64 |
+| W5 | Chonk ×10 @ 2, 0 · Bunchling ×24 @ 0.8, 6 | 34 |
+| W6 | huddles (Elder + Nibbler ×10) at 0 and 10 · Bunchling ×4 @ 0.8, 16 | 26 |
+| W7 | Hauler ×2 @ 12, 0 · huddle (Elder + Nibbler ×13) at 6 · Zoomer ×10 @ 0.35, 20 | 26 |
+| W8 | Zoomer ×24 @ 0.3, 0 · Bunchling ×10 @ 0.7, 6 | 34 |
+| W9 | convoys at 0, 12, and 24: Hauler ×2 @ 1.5, then the Elder 2.7 s in, then Nibbler ×14 @ 0.3, 3.1 s in · Bunchling ×13 @ 0.8, 32 · the tail: Hauler ×4 @ 3, 32 | 68 |
 
 Totals count spawns; each Bunchling adds three Nibblers when it dies.
 
@@ -405,36 +418,36 @@ Totals count spawns; each Bunchling adds three Nibblers when it dies.
 | W4 | Clearance Sale; upgrade the Thumpers (9,6) and (4,5) and the Zapcoil to T2 |
 | W5 | Thumper (11,4) in the gate court; Orbital Strike on the south side's east end (9,7), 12 s in (the Chonk column) |
 | W6 | Upgrade the Rivet and the court Thumper to T2 |
-| W7 | Upgrade the Rivet to T3 (pierce); Orbital Strike on the south-west bend (3,7), 14 s in |
+| W7 | Upgrade the Rivet to T3 (pierce); Orbital Strike on the south-west bend (3,7), 14 s in; Rivet (13,1) above the billboard stretch |
 | W8 | Clearance Sale; upgrade the Thumpers (9,6) and (4,5) and the Zapcoil to T3 |
-| W9 | Upgrade the court Thumper to T3; Orbital Strike on the south-west bend, 14 s in |
+| W9 | Orbital Strike on the top of the east edge (13,3), 70 s in (the tail); then the court Thumper to T3 and the billboard Rivet to T2 |
 
-Par's bank at each build phase: 352, 228, 311, 315, 404, 410, 716, 845, 788 (W1–W9); from W6 the bounties outrun its purchases, and it ends with about 1,400 credits unspent. **Par's one leak is designed:** W1's Zoomer rush slips three Zoomers past the opening Rivet and Thumper (85). Without the casts six get through (70); with **Orbital Strike Mk II** the wider blast leaves two (90; `rndPickChanges: ['orbital_strike_mk2']`, T228). From W2 on par loses nothing.
+Par's bank at each wave's start: 127, 239, 228, 295, 287, 527, 537, 370, 658 (W1–W9); it ends with about 920 credits, most of them W9's own bounties. W6–W8 carry little filler on purpose: the Bunchlings and Zoomers that only paid par a hoard it couldn't use are gone, and what par earns goes into the late defense. **Par's one leak is designed, and late:** it holds W1's rush whole with its strike and loses nothing until W9's tail, where its towers and the strike on the east edge take three of the four Haulers and the fourth reaches the gate (3 integrity: 85). The strike is worth a Hauler there: without the casts two get through (65, with one Zoomer from W1's rush). With **Orbital Strike Mk II** the wider blast saves the last one too, and par wins at 100 with Perfect Core (`rndPickChanges: ['orbital_strike_mk2']`, T228).
 
 **No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); both must lose by W6, the default for nine waves):
 - **no-splash:** par with every Thumper and the Zapcoil swapped for a Rivet (the Rivets may reach T3), an idle Skyhook, the same casts.
 - **no-armor:** par with every Thumper swapped for a Rivet held below T3 (no pierce); the same Sprinkler, Zapcoil, and casts, and an idle Skyhook.
 
-**Alt builds** (≤ 2 towers shared with par, each must win with ≥ 20%; the only owned tower outside par is the Skyhook, so each alt carries it, idle on a map with no flyers): `chain_and_shell`, Skyhook + Thumper + Zapcoil (Zapcoils at (3,2) and in the court chain through the huddles and the rush; Thumpers at the bends and the court take the Chonks and Haulers); `slow_and_shell`, Thumper + Sprinkler + Skyhook (two Sprinklers at the entrance slow the rush and the huddles into the bends, where four Thumpers shell them).
+**Alt builds** (≤ 2 towers shared with par, each must win with ≥ 20%; the only owned tower outside par is the Skyhook, so each alt carries it, idle on a map with no flyers): `chain_and_shell`, Skyhook + Thumper + Zapcoil (Zapcoils at (3,2) and in the court chain through the huddles and the rush; Thumpers at the bends and in the court take the Chonks and Haulers, with a fifth above the gate (11,7) and a sixth on the cleared south-east cart by W9); `slow_and_shell`, Thumper + Sprinkler + Skyhook (two Sprinklers at the entrance slow the rush and the huddles into the bends, where four Thumpers shell them).
 
 **Harness runs** (every seed; margin, then integrity lost per wave W1–W9):
 
 | Run | Result | Integrity lost |
 |---|---|---|
-| par | wins at **85** (band 80–100; target 87), with Asset Recovery and Clean Audit | 3 in W1 |
-| par with Orbital Strike Mk II | 90 | 2 in W1 |
-| par without its casts | 70 | 6 in W1 |
-| `alwaysCallEarly` | 85 | 3 in W1 |
-| no-splash | loses in W4 | 17 in W1, 3 in W3 |
-| no-splash, full catalog | loses in W6 | 5 in W1, 9 in W3, 9 in W5 |
-| no-armor | loses in W6 | 10 in W1, 10 in W5 |
-| no-armor, full catalog | loses in W9 | 23 in W9 (the convoys) |
+| par | wins at **85** (band 80–100; target 85), with Asset Recovery and Clean Audit | 3 in W9 (a tail Hauler) |
+| par with Orbital Strike Mk II | 100, Perfect Core | none |
+| par without its casts | 65 | 1 in W1, 6 in W9 |
+| `alwaysCallEarly` | 85 | 3 in W9 |
+| no-splash | loses in W6 | 12 in W3, 8 in W5 |
+| no-splash, full catalog | loses in W6 | 4 in W3, 19 in W5 |
+| no-armor | loses in W6 | 20 in W5 |
+| no-armor, full catalog | loses in W9 | 8 in W5, 15 in W9 (the convoys) |
 | Story | 100, and the Challenge | none |
-| `chain_and_shell` | 70 | 1 in W1, 5 in W3 |
-| `slow_and_shell` | 100: two Sprinklers at the entrance stop the rush cold | none |
+| `chain_and_shell` | 75 | 5 in W3 |
+| `slow_and_shell` | 85 | 3 in W9 (a tail Hauler) |
 | do-nothing | loses at W1 | |
 
-Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.ts`](../../../src/balance/a1m4.test.ts) re-runs the harness with W5's Chonks ±0.2 s apart, W7's Haulers and W9's convoys 1 s closer or further apart, W9's Elders ±0.2 s later, and W3–W9's other groups shifted ±0.2 s: every check holds, Mk II's included, and par stays at 85. W1's rush moves par between 80 and 90 when it's nudged, never out of the band (and may move what Mk II saves).
+Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.ts`](../../../src/balance/a1m4.test.ts) re-runs the harness with W1's rush ±0.2 s later or 0.05 s looser or tighter, W5's Chonks ±0.2 s apart, W7's Haulers and W9's convoys 1 s closer or further apart (the tail keeps its own time), W9's Elders and its tail ±0.2 s later, and W3–W9's other groups shifted ±0.2 s: every check holds, Mk II's included, and par stays at 85 with its one leak in W9.
 
 ## A1M5 · Record Quarter
 
@@ -462,18 +475,18 @@ Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.
 ......C.......
 ```
 
-**Wave data** (the data is [`src/content/maps/a1_m05/waves.ts`](../../../src/content/maps/a1_m05/waves.ts); every countdown is Act I's 25 s except W10's 60 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s, Digger 1.0 s, Puffwing 0.6 s; groups take the Spires road unless marked *warren* or flown on a lane). **W2–W8 open 10 s into the wave** (`OPEN`): the last wave's bounties land before first contact, so a player who calls waves early isn't buying turrets mid-fight. A **convoy** is two Haulers 1.5 s apart, their Elder 1.2 s behind the second (both walk in its huddle, at its pace, regenerating), then Nibblers 0.3 s apart. W5's and W7's armor comes down both roads; **W7's warren convoy and W8's** are where par's casts and the R&D picks decide a Hauler (below). The **Matriarch comes up the Spires road 20 s into W9**: the ground rumbles first, and a player who calls W9 early still meets her after W8's tail has cleared the gate. W10's 60 s countdown starts as she spawns (waves overlap), so the Quiet Wave walks in after she has been driven off, and a held breath after.
+**Wave data** (the data is [`src/content/maps/a1_m05/waves.ts`](../../../src/content/maps/a1_m05/waves.ts); every countdown is Act I's 25 s except W10's 60 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s, Digger 1.0 s, Puffwing 0.6 s; groups take the Spires road unless marked *warren* or flown on a lane). **W2–W8 open 6 s into the wave** (`OPEN`): the last wave's bounties land before first contact, so a player who calls waves early isn't buying turrets mid-fight, and a player who doesn't isn't left watching an empty road (6 s, not 10, keeps the shift near 8.7 minutes at 1×, inside Act I's 6–9). A **convoy** is two Haulers 1.5 s apart, their Elder 1.2 s behind the second (both walk in its huddle, at its pace, regenerating), then Nibblers 0.3 s apart. W5's and W7's armor comes down both roads; **W7's warren convoy and W8's** are where par's casts and the R&D picks decide a Hauler (below). The **Matriarch comes up the Spires road 20 s into W9**: the ground rumbles first, and a player who calls W9 early still meets her after W8's tail has cleared the gate. W10's 60 s countdown starts as she spawns (waves overlap), so the Quiet Wave walks in after she has been driven off, and a held breath after.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
 | W1 | Nibbler ×30 @ 0.8, 0 | 30 |
-| W2 | Digger ×3 @ 2.5, 10 (`teach`) · Nibbler ×26 @ 0.6, 19 | 29 |
-| W3 | Zoomer ×16 @ 0.4, 10 *warren* · Nibbler ×30 @ 0.6, 14 | 46 |
-| W4 | Bunchling ×6 @ 1.0, 10 · Bunchling ×6 @ 1.0, 14 *warren* · Digger ×2 @ 1.5, 22 *warren* | 14 |
-| W5 | convoy at 10 (Nibbler ×8) · Hauler 20, Elder 21.2, Nibbler ×8 @ 0.3, 21.6 *warren* · Hauler ×3 @ 1.5, 30 | 24 |
-| W6 | Chonk ×6 @ 2, 10 · Puffwing ×10 @ 0.6, 16 · Puffwing ×10 @ 0.6, 30 | 26 |
-| W7 | Bunchling ×12 @ 0.8, 10 · convoy at 12 *warren* (Nibbler ×6) · Puffwing ×10 @ 0.6, 18 · Zoomer ×20 @ 0.35, 26 · Chonk ×4 @ 1.5, 28 | 55 |
-| W8 | Zoomer ×24 @ 0.3, 10 *warren* · Bunchling ×16 @ 0.6, 10 · huddle (Elder + Nibbler ×10 @ 0.3) at 24 · Chonk ×8 @ 1.5, 22 *warren* · Puffwing ×16 @ 0.5, 26 · Hauler ×2 @ 1.5, 32, Elder ×3 @ 2.0, 34.7, Nibbler ×14 @ 0.3, 35.1 *warren* · convoy at 34 (Nibbler ×8) · Digger ×3 @ 1.2, 40 *warren* · Puffwing ×1, 30 on `sky_east` | 109 |
+| W2 | Digger ×3 @ 2.5, 6 (`teach`) · Nibbler ×26 @ 0.6, 15 | 29 |
+| W3 | Zoomer ×16 @ 0.4, 6 *warren* · Nibbler ×30 @ 0.6, 10 | 46 |
+| W4 | Bunchling ×6 @ 1.0, 6 · Bunchling ×6 @ 1.0, 10 *warren* · Digger ×2 @ 1.5, 18 *warren* | 14 |
+| W5 | convoy at 6 (Nibbler ×8) · Hauler 16, Elder 17.2, Nibbler ×8 @ 0.3, 17.6 *warren* · Hauler ×3 @ 1.5, 26 | 24 |
+| W6 | Chonk ×6 @ 2, 6 · Puffwing ×10 @ 0.6, 12 · Puffwing ×10 @ 0.6, 26 | 26 |
+| W7 | Bunchling ×12 @ 0.8, 6 · convoy at 8 *warren* (Nibbler ×6) · Puffwing ×10 @ 0.6, 14 · Zoomer ×20 @ 0.35, 22 · Chonk ×4 @ 1.5, 24 | 55 |
+| W8 | Zoomer ×24 @ 0.3, 6 *warren* · Bunchling ×16 @ 0.6, 6 · huddle (Elder + Nibbler ×10 @ 0.3) at 20 · Chonk ×8 @ 1.5, 18 *warren* · Puffwing ×16 @ 0.5, 22 · Hauler ×2 @ 1.5, 28, Elder ×3 @ 2.0, 30.7, Nibbler ×14 @ 0.3, 31.1 *warren* · convoy at 30 (Nibbler ×8) · Digger ×3 @ 1.2, 36 *warren* · Puffwing ×1, 26 on `sky_east` | 109 |
 | W9 | Matriarch Chitterbloom, 20 | 1 |
 | W10 | Old Thrum (Elder, `quiet_wave`), 0 · Nibbler ×6 @ 0.8, 0.6 (`quiet_wave`, `youngling`) *warren* | 7 |
 
@@ -514,15 +527,15 @@ Totals count spawns; each Bunchling adds three Nibblers when it dies, and the Ma
 | W2 | Upgrade the Rivet to T2 |
 | W3 | Rivet (7,5) on the gate high ground; Thumper (8,7) south-east of the gate |
 | W4 | Upgrade both Thumpers to T2 |
-| W5 | Upgrade the Spires Rivet to T3 (pierce) and the gate Rivet to T2; Orbital Strike on row 6 east of the gate (9,6), 40 s in (the warren Hauler) |
-| W6 | Skyhook (6,5) above the gate; upgrade the gate Rivet to T3; Suppressing Fire at the gate (6,6), 55 s in (the Chonk column's tail) |
-| W7 | Upgrade the node's Thumper to T3; Orbital Strike at the warren track's last turn (11,6), 37 s in (the warren convoy's Elder); Suppressing Fire at the gate, 40 s in; upgrade the other Thumper to T3 and the Skyhook to T2 |
-| W8 | Cluster Thumper on the node; Orbital Strike on row 6 east of the gate, 54 s in (the warren convoy) |
+| W5 | Upgrade the Spires Rivet to T3 (pierce) and the gate Rivet to T2; Orbital Strike on row 6 east of the gate (9,6), 36 s in (the warren Hauler) |
+| W6 | Skyhook (6,5) above the gate; upgrade the gate Rivet to T3; Suppressing Fire at the gate (6,6), 51 s in (the Chonk column's tail) |
+| W7 | Upgrade the node's Thumper to T3; Orbital Strike at the warren track's last turn (11,6), 33 s in (the warren convoy's Elder); Suppressing Fire at the gate, 36 s in; upgrade the other Thumper to T3 and the Skyhook to T2 |
+| W8 | Cluster Thumper on the node; Orbital Strike on row 6 east of the gate, 50 s in (the warren convoy) |
 | W9 | Both Rivets to Strong; Thumper (3,5) in the west pocket, to T3; Orbital Strike and Suppressing Fire at the gate, 60 s in (her phase 3) |
 
 Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 174, 102 (W1–W10): it spends as it earns, and what's left at the end is what the boss and the Quiet Wave pay after its last purchase. **Par's margin comes from the late waves, by design:** W7's second warren Hauler (3), whose Elder par's strike takes but whose Hauler it misses, walks on to the gate with its HP and leaks; and W8's lone Puffwing round the east edge (1), where par has no air cover. Par wins at **17/21 (81.0%)** on every seed, below A1M4's 85. The Matriarch is driven off at the gate, before the banner line, so par earns **Party Pooper Prevention** (`parMedals`).
 
-**The R&D picks change a result** (`rndPickChanges`, T228): with **Orbital Strike Mk II** W7's strike is wide enough to take the second Hauler too; with **Bricks's Rapport** Suppressing Fire is ready at the gate as that Hauler arrives (W6's cast plus 42.5 s; without Rapport it comes 50 s later, a few seconds too late). Either way par loses only the Puffwing: 20/21 (95.2%). **The casts matter** (`#abilities`): without them W8's warren convoy (three Elders keeping two Haulers at their pace) ties up the gate, and the Diggers behind it slip through.
+**The R&D picks change a result** (`rndPickChanges`, T228): with **Orbital Strike Mk II** W7's strike is wide enough to take the second Hauler too; with **Bricks's Rapport** Suppressing Fire is ready at the gate as that Hauler arrives (W7's cast is due 41.4 s after W6's; Rapport has Suppressing Fire back after 42.5 s, in time for that Hauler, and without it the fire comes back after 50 s, too late). Either way par loses only the Puffwing: 20/21 (95.2%). **The casts matter** (`#abilities`): without them W8's warren convoy (three Elders keeping two Haulers at their pace) ties up the gate, and the Diggers behind it slip through.
 
 **No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); each must lose by W7, `noCounterLoseByWave`, because the armor test is W5's Haulers and the air test W6's flock):
 - **no-air:** par with every Rivet and the Skyhook swapped for a Thumper: Thumpers and the Sprinkler, nothing that hits air.
@@ -542,7 +555,7 @@ Par's bank at each build phase: 385, 133, 173, 127, 53, 31, 62, 204, 174, 102 (W
 | par with Rapport: Sgt. Bricks | 95.2 | 1 in W8 |
 | par without its casts | 76.2 (71.4 on seeds 2–3) | 3 in W7, 2 in W8 |
 | par holding fire through the Quiet Wave | 71.4 (81.0 less Old Thrum's 2), `spared_quiet_wave` | 3 in W7, 1 in W8, 2 in W10 |
-| `alwaysCallEarly` | 52.4 | 6 in W5, 3 in W7, 1 in W8 |
+| `alwaysCallEarly` | 38.1 | 6 in W5, 3 in W7, 4 in W8 |
 | no-air | loses in W7 | 20 in W6, 1 in W7 |
 | no-air, full catalog | loses in W7 | 15 in W6, 8 in W7 |
 | no-splash | loses in W5 | 3 in W4, 18 in W5 |

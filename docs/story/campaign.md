@@ -374,9 +374,9 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | Map | Tone | Difficulty | Novelty | Par margin | Note |
 |---|---|---|---|---|---|
 | A1M1 | 1 | 1 | 9 | 95 | Everything is new, gated by prompts |
-| A1M2 | 1 | 2 | 6 | 92 | First pebble in the shoe |
+| A1M2 | 1 | 2 | 6 | 100 | First pebble in the shoe; par holds every wave, since one Hauler is 15 points (`marginBand`, D059) |
 | A1M3 | 1 | 2 | 6 | 90 | Lightest threat load in Act I, for Hold Fire |
-| A1M4 | 2 | 3 | 6 | 85 | First loadout choice; comedy at full volume |
+| A1M4 | 2 | 3 | 6 | 85 | First loadout choice; comedy at full volume; par's margin is W9's tail, not W1 |
 | A1M5 | 3 | 4 | 6 | 81 | Boss; the Quiet Wave; stinger |
 | A2M1 | 4 | 4 | 7 | 82 | Re-baseline after the boss |
 | A2M2 | 4 | 5 | 6 | 79 | |
