@@ -92,7 +92,7 @@ Rendering **reads** sim state and **sends commands**. It never mutates sim state
 
 - Same content + same map + same seed + same command list ⇒ the **same outcome**, on the same JS engine. That's what tests, balance sims, checkpoints, and reproducible bug reports need. Bit-exact results across browsers aren't a goal (there's no multiplayer or server replay).
 - **Fixed timestep: 60 ticks per second.** `TICK_HZ = 60` (`src/shared/time.ts`, with the seconds → ticks conversions). Sim time is an integer `tick` counter. Content is authored in seconds and tiles, and converted to ticks once at content compile time.
-- **Seeded RNG:** `sfc32` (128-bit state, serializable) in `src/shared/rng.ts`. The sim derives one **stream per system** from the map seed (`rng.fork('spawn')`, `rng.fork('combat')`), so adding a random roll in one system doesn't shift every other system's results. Cosmetic randomness (particles, Hollow glitches, bark choice) uses separate render-side or story-side RNGs and **never** touches the sim's.
+- **Seeded RNG:** `sfc32` (128-bit state as four plain numbers, so it hashes and serializes) in `src/shared/rng.ts`. The sim derives one **stream per system** from the run's seed (`state.rng.waves`, `state.rng.towers`, …, each `forkRng(root, '<system>')`), so adding a random roll in one system doesn't shift every other system's results. `forkRng` reads its parent without advancing it, so adding a stream doesn't shift the others either. Use the integer helpers (`nextInt`, `nextIntBetween`, `chance`) rather than scaling floats yourself. Cosmetic randomness (particles, Hollow glitches, bark choice) uses separate render-side or story-side RNGs and **never** touches the sim's.
 - Iteration order is always array order (entities are processed in ascending slot order). No `for…in` over objects, and no sorting without a deterministic tie-break.
 - **Banned in `src/sim/`:** `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, and `Math.random` (lint rule plus the architecture test). Their results can differ between engines, and none is needed: use squared distances, precomputed polyline lengths, and `x * x`. Lead targeting solves along the route's `dist`, not with angles.
 
@@ -104,8 +104,8 @@ We have about 5 entity kinds and at most a few hundred live entities. A generic 
 - **Allies** are every friendly non-tower unit ([design/maps.md §5.4](../design/maps.md#54-allies-on-the-map)). Each has an `allyKind` (`swarmling`, `leaper`, `refugee`, `bearer`, `singer`, `bricks`, `militia`, `ward`), a movement mode (`route`, `post`, `owner`, or `stationary`), an optional attack (Bricks and militia), an optional song aura (singers, bearers), and a **vulnerability**: `never` (swarmlings, leapers, militia, wards, Pebble, Old Thrum), `hush` (refugees, singers, bearers), or `scripted` (Bricks in A3M3: Hollow units stop at his post, but his health bar follows a per-wave timeline in map data, never the player's DPS). Enemies never target towers.
 - **Ally targeting.** Ally attacks never target units whose wave group is tagged `quiet_wave`, `youngling`, or `fleeing` (`WaveTag`, [§3 Data shapes](#data-shapes)).
 - **Hushing:** a non-boss Hollow unit hushes at most one `fleeing` enemy or `hush` ally and turns Heavy. The fleeing and hush rules (tell, heal, speed, the Maw's gather) have one home, [design/enemies.md](../design/enemies.md) §5.4. In code, the victim is removed and the unit sets `hasHushed = true` so it can't hush again.
-- Each entity has a `uid` (a monotonic integer, never reused within a run) and an `alive` flag. Dead slots return to the free list at the end of the tick.
-- Entities hold a **direct reference to their compiled definition** (`def: CompiledEnemyDef`), resolved at spawn, so hot loops never look up string ids.
+- Each entity has a `slot`, a `uid` (a monotonic integer from one run-wide counter, `state.nextUid`, never reused within a run; `0` marks a free slot), and an `alive` flag. Killing an entity (`poolKill`) clears `alive` but keeps the uid, so later systems in the same tick can still name it in events. `cleanup` returns dead slots to the free list at the end of the tick (`poolReleaseDead`), and `poolAlloc` resets every field from the kind's frozen blank when it reuses one. A full pool grows by one slot rather than failing. The pool code is `src/sim/pool.ts`; the entity shapes and blanks are `src/sim/entities.ts`, and each behavior task adds the fields it needs there.
+- Entities hold a **direct reference to their compiled definition** (`def: CompiledEnemyDef`; towers also `tierDef`, the current tier), resolved at spawn, so hot loops never look up string ids. Entities refer to **each other only by uid** (`targetUid`, `towerUid`), never by object reference, so sim state has no cycles and `hash()` can walk it.
 - Status effects ([design/enemies.md §2.4](../design/enemies.md#24-status-effects)) are **fixed fields** (`chillMul`, `chillTicks`, `soakedTicks`, `corrodedStacks`, `pinnedTicks`, `stasisTicks`, `stasisImmuneTicks`, `unnervedTicks`, `revealedTicks`, and on towers `jammedTicks` and `jamImmuneTicks`), not dynamic lists. Towers also carry `builtTick` and `firstFiredTick` for the misclick-grace refund ([design/core-loop.md §2.3](../design/core-loop.md#23-credits-the-in-map-currency)); for pulse and aura towers, `firstFiredTick` is the first pulse that affects an enemy. Each tower also has a `spareRunners` boolean (the targeting filter, [§ Commands](#commands-input-into-the-sim)).
 - Enemies follow **predefined routes**. Map data gives ground paths and rift lanes as ordered tile sequences, and air lanes as polylines ([design/maps.md §4](../design/maps.md#4-paths-and-air-lanes)). Compile turns each into a polyline through tile centers with precomputed cumulative lengths. An enemy stores `pathIndex` and `dist` (distance traveled), and its position is derived from those. `dist` also gives "first / last" targeting and lead targeting (predict `dist + speed × flightTicks`) for free.
 - Systems are **plain functions** `(state: SimState, ctx: TickContext) => void`, run in a fixed order:
@@ -146,12 +146,13 @@ type Command =
   | { type: 'scriptInput'; id: string };                   // the forced single input (SEAL, "Who's there?")
 ```
 
-- The host calls `sim.enqueue(cmd)`, and the command applies at the **start of the next tick**, or immediately through `sim.applyPending()` (below).
+- The code is the home of the union as built: [`src/sim/commands.ts`](../../src/sim/commands.ts) holds the M1 subset (`build`, `upgrade`, `sell`, `targeting`, `ability`, `callWave`) and `RejectReason`. The sketch above is the full target.
+- The host calls `sim.enqueue(cmd)`, and the command applies at the **start of the next tick**, or immediately through `sim.applyPending()` (below). `enqueue` copies the command, so the caller may reuse its object.
 - `holdFire` (a tower uid or `'all'`) stops the tower attacking; it's the plain Hold Fire that C1 uses.
 - `spareRunners` is the **"Spare runners" targeting filter** (from A2M1; the rules are in [design/core-loop.md](../design/core-loop.md) §2.6–2.7). With a tower uid it is the per-tower toggle. `'all'` is the global HUD toggle (hotkey Alt+H): it sets every tower's filter, and towers built while it's on start with it on. A tower with the filter on never *picks* a unit whose wave group has a tag in `SPARE_TAGS` (`fleeing`, `youngling`; `content/rules.ts`) as its primary target. Splash and chain hits still land on those units.
 - `interact` is accepted only while the marker is clickable (a `setClickable` script action). It is the input half of the clickable-world-object trigger ([story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)).
 - The sim validates every command (affordability, a buildable and empty tile, a tower in the loadout, unlocked and not revoked, an ability off cooldown and not revoked). While a forced input is pending, **every command except the matching `scriptInput` is rejected** (`reason: 'forcedInput'`). Invalid commands emit `CommandRejected { cmd, reason }` so the UI can explain.
-- The **command log plus the seed reproduces a run exactly.** The log records each command with the tick it applied at. The game keeps it in memory for checkpoints and so a bug report can include a replayable code (dev builds), and balance-sim builds are just scripted commands.
+- The **command log plus the seed reproduces a run exactly.** The sim appends every command it applies, accepted or rejected, to `state.commandLog` as `{ tick, cmd }`, where `tick` is the tick it applied at (a command applied by `applyPending()` after tick *T* logs *T + 1*, the same as one applied at the start of tick *T + 1*). Replaying means enqueuing each entry just before that tick runs. The game keeps the log in memory for checkpoints and so a bug report can include a replayable code (dev builds), and balance-sim builds are just scripted commands.
 - **Optional bark buttons** ("Who's there?" in Act I) are not commands. They never change play, so they stay out of the sim and the command log; story handles them ([story-runtime.md § Barks](story-runtime.md#barks)).
 
 ### Events (output from the sim)
@@ -159,7 +160,7 @@ type Command =
 - During a tick, systems push typed events into `state.events`.
   - **Combat:** `EnemySpawned`, `EnemyDied`, `EnemyLeaked`, `ProjectileFired`, `ProjectileHit`, `TowerBuilt`, `TowerUpgraded`, `TowerSold`, `TowerJammed`, `HoldFireChanged`, `AbilityUsed`, `WaveStarted`, `WaveCleared`, `BossPhase`, `MapWon`, `MapLost`, `CommandRejected`, `CheckpointReached { wave }`.
   - **Story-facing:** `ScriptCue { cueId }`, `NotFiringAtSkitterkin` (once, when `ticksSinceFiredAtSkitterkin` crosses the threshold in `content/rules.ts`), `SkitterkinKilledAhead`, `Hushed { hollowUid, victim: 'enemy' | 'ally' }` (the Hollow unit turns Heavy), `RefugeeSaved`, `AllyHealthChanged`, `EnemyLaidToRest { uid, restValue }`, `EnemyScattered`, `EnemyReformed`, `BossEnded { how: 'driveOff' | 'retreat' | 'pivot' | 'layToRest' }`, `ObjectiveChanged`, `ObjectiveCompleted { id }`, `TowerClassUnlocked`, `TowerClassRevoked { tower, refund }`, `TowerClassRestored`, `AbilityRevoked`, `ClickableChanged { marker, on }`, `Interacted { marker, by: 'player' | 'fallback' }`, `ForcedInputRequested { id }`, `ForcedInputResolved { id }`, and `TimerProgress` (secondary timer, emitted on each whole percent).
-- After each frame's ticks, the host calls `sim.drainEvents(out)` and dispatches the events to subscribers (render views, UI signals, story, audio) through the **typed event bus** in `src/shared/bus.ts` (a tiny `on/off/emit` emitter keyed by event `type`).
+- After each frame's ticks, the host calls `sim.drainEvents(out)`, which **appends** every event since the last drain to `out` (the caller clears `out`) and empties the sim's buffer. Events wait in the buffer until drained, so a headless runner that ignores them should still drain now and then. The host dispatches the events to subscribers (render views, UI signals, story, audio) through the **typed event bus** in `src/shared/bus.ts` (a tiny `on/off/emit` emitter keyed by event `type`).
 - **Inside the sim, systems communicate through state, not events.** Events are output only, which keeps the tick order explicit.
 - Events are infrequent compared to per-entity work, so plain object events are fine. Per-entity, per-tick work must not allocate ([conventions.md § Performance](conventions.md#performance-rules)).
 
@@ -182,7 +183,7 @@ while (acc >= TICK_MS && steps < cap) {
 }
 if (steps === cap) acc = 0;                      // drop backlog rather than spiral
 if (speed === 0) sim.applyPending();             // build/upgrade/sell land while paused
-sim.drainEvents(events); dispatch(events);
+events.length = 0; sim.drainEvents(events); dispatch(events);
 ```
 
 - Speeds are 1× and 2×, with 3× an open design question ([design/core-loop.md §2.8](../design/core-loop.md#28-speed-and-pause)). The loop handles any integer speed; 2× is two ticks per 16.7 ms of accumulated time, not a bigger timestep. Pause sets speed to 0. Full-screen dialogue scenes pause; build-phase barks don't ([story/style-guide.md](../story/style-guide.md)).
@@ -196,29 +197,35 @@ sim.drainEvents(events); dispatch(events);
 ### Sim public API
 
 ```ts
-// src/sim/index.ts
-export function createSim(cfg: SimConfig): Sim;
-interface SimConfig {
-  content: CompiledContent; mapId: MapId; seed: number;
-  loadout: TowerId[];                 // ≤ 4 (hard rule); never contains a revoked class
+// src/sim/index.ts (implementation: sim.ts, config.ts, state.ts)
+export function createSim<K extends IdSpace = LiveIds>(cfg: SimConfig<K>): Sim<K>;
+interface SimConfig<K> {
+  content: CompiledContent<K>; mapId: K['map']; seed: number;   // seed: an integer in [0, 2³²)
+  loadout: K['tower'][];              // ≤ 4 distinct (hard rule); never contains a revoked class
   companion: CompanionId | null;      // resolved from MapDef.companion (a pick list is resolved before the map)
-  modifiers: Modifier[];              // from permanent upgrades, difficulty, veteran mods
-  difficulty: DifficultyId;
-  abilities: { slot1: AbilityId | null; slot2: AbilityId | null; slot2State: 'present' | 'absent' | 'none' };
+  modifiers: Modifier<K>[];           // from permanent upgrades, difficulty, veteran mods
+  difficulty: DifficultyId;           // 'story' | 'standard'
+  abilities: { slot1: K['ability'] | null; slot2: K['ability'] | null; slot2State: 'present' | 'absent' | 'none' };
   scriptFlags: ScriptFlags;           // story flags that map scripts read (story-runtime.md § Map scripts)
 }
-interface Sim {
-  readonly state: DeepReadonly<SimState>;
-  enqueue(cmd: Command): void;
-  step(): void;                       // one 60 Hz tick
+interface Sim<K> {
+  readonly state: DeepReadonly<SimState<K>>;   // the live object, same every tick
+  readonly config: SimConfig<K>;
+  readonly map: CompiledMapDef<K>;
+  enqueue(cmd: Command<K>): void;     // copied; applies at the start of the next tick
+  step(): void;                       // one 60 Hz tick; a no-op once the map is won or lost
   applyPending(): void;               // zero-time, command-only step (works while paused)
-  drainEvents(out: SimEvent[]): void;
-  hash(): string;                     // FNV-1a over key state, for determinism checks
+  drainEvents(out: SimEvent<K>[]): void;   // appends to out, empties the buffer
+  hash(): string;                     // 16 hex digits over all state, for determinism checks
 }
 // src/sim/headless.ts
 export function runHeadless(cfg: SimConfig, build: ScriptedBuild, opts?: HeadlessOptions): HeadlessResult;
 ```
 
+- **Id typing.** `K` is the content's id space ([§3 Data shapes](#data-shapes)): the game uses the live registries, tests use `src/sim/__fixtures__/sim.ts` over the content fixture. It types only the API's edges (config, commands, events); inside, the sim runs on plain string ids.
+- **`createSim` validates the config** and throws a `RangeError` listing every problem: an unknown map, tower, or ability, a bad seed, or a loadout over 4 or with duplicates. Until their tasks land it also refuses what it can't simulate, rather than ignoring it: a companion or slot 2 (T207), any modifier (T204), and Story difficulty.
+- **`state`** ([`src/sim/state.ts`](../../src/sim/state.ts)) holds everything that changes: `tick` (ticks completed; during a step, the tick being run, starting at 0), `nextUid`, `outcome`, `credits`, `integrity`, `wave`, `lockedTowers`, `towerAtTile`, the five pools, the RNG streams, `stats`, the `pending` queue, and the output buffers `commandLog` and `events`. Immutable inputs (content, map, config) and per-tick scratch live in the `TickContext` that systems receive, not in state.
+- **`hash()`** walks all of `state` generically except the output buffers, so a field added later is covered automatically. Numbers hash by their exact bits; a frozen object with a string `id` (a compiled definition or route) hashes as its id, so two runs over separately compiled but identical content agree. Two lanes (FNV-1a plus a second mix, `src/shared/hash.ts`) give a 64-bit digest. It isn't for hot loops.
 - **`runHeadless`** runs one map to the end with no frame cap, issuing the build's steps through the scripted-build executor ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). It takes a ready `SimConfig`; it never imports `meta/`.
 - **The sim knows nothing about meta progression.** Permanent upgrades, Field Protocols, and difficulty arrive as a list of `Modifier`s. In the game, `app/` gets them from `meta/`. In the harness, `src/balance/profile.ts` composes a map's `referenceProfile` into modifiers through the same pure `meta/modifiers.ts` functions the game uses. For M1, A1M1's profile is empty, so its modifier list is empty.
 
@@ -441,9 +448,12 @@ stardust/
     │   ├── rng.ts  bus.ts  hash.ts  math.ts  time.ts  types.ts
     │   └── architecture.test.ts
     ├── sim/                    # pure, deterministic
-    │   ├── index.ts            # public API
-    │   ├── state.ts  constants.ts  commands.ts  events.ts  pool.ts  path.ts  grid.ts
-    │   ├── tick.ts             # system order
+    │   ├── index.ts            # public API (createSim lives in sim.ts)
+    │   ├── sim.ts  config.ts  state.ts  entities.ts  commands.ts  events.ts  pool.ts  hashState.ts
+    │   ├── grid.ts  path.ts    # tile lookups; route following (T103)
+    │   ├── tick.ts             # system order, TickContext
+    │   ├── determinism.test.ts
+    │   ├── __fixtures__/       # test helpers: a sim over the content fixture map
     │   ├── systems/            # applyCommands, waves, triggers, status, abilities, movement, towers, projectiles, cleanup
     │   ├── behaviors/          # tower attack kinds (hitscan, projectile, lobbed, beam, chain, pulse, spawner)
     │   ├── abilities/          # enemy ability kinds (blink, burrow, gather, jam, hush, …) and commander abilities

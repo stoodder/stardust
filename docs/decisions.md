@@ -102,3 +102,12 @@ Code-generated sprites are live: 21 sprites in 454 frames, baked at boot in abou
 - The env palette slots are `p`/`s`/`a`/`e`.
 - `fx` is a sprite category.
 The orchestrator reviewed the gallery: Everglow steel with teal and orange reads clearly against the warm, chunky Skitterkin, and the env palettes darken from Act I to the finale as the art direction intends. The D010 art-trail capture is `test-results/gallery/gallery.png` (`npm run smoke`, deterministic, 1600 px wide).
+
+### D013 — 2026-11-09 — T102 sim core: rulings
+The sim core is live: `createSim(cfg)` → `{ state, enqueue, step, applyPending, drainEvents, hash }`, with typed pools, the nine systems in the documented order (later tasks fill in the stubs), and a determinism suite. Architecture §2 *Sim public API* describes it as built. Rulings:
+- **RNG:** sfc32 as plain data, with functional helpers (`forkRng(rng, name)` in place of `rng.fork(name)`, because pure modules use functions). Forking by name doesn't advance the parent, so adding a stream never shifts the others.
+- **`hash()`** walks all state generically. It skips the event buffer and the command log, and hashes frozen content by its id. Entities refer to each other only by uid.
+- **Command timing:** a command applied by `applyPending()` after tick T is logged at T+1, the tick it takes effect before. Rejected commands are logged too, so a run replays from its log.
+- **Unsupported config is refused, not ignored.** `createSim` throws on a companion, slot 2, modifiers, or Story difficulty until the owning task lands, so the harness can't silently test a different game.
+- **Where the headless runner lives:** `runHeadless()` and the scripted-build executor stay in `src/sim/headless.ts`, as architecture §2 says. They're pure and use only the public sim API. The *harness* (profiles, the run list, assertions, reports) lives in `src/balance/` with the CLI in `tools/sim.ts`, and that is what T108a means by "not `sim/`".
+- `src/shared/hash.ts` (FNV-1a 64) and `DeepReadonly` in `src/shared/types.ts` were added by T102. Shared utilities have no single owner, so whoever needs one adds it and reports it.
