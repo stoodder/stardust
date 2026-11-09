@@ -36,18 +36,16 @@ describe('profiles', () => {
     );
     expect(
       profileModifiers({ ...base, shop, protocols: ['head_start'] }, FIXTURE_CONTENT, 'story'),
-    ).toEqual(
-      metaModifiers({ upgrades: shop, protocols: ['head_start'], difficulty: 'story' }),
-    );
+    ).toEqual(metaModifiers({ upgrades: shop, protocols: ['head_start'], difficulty: 'story' }));
   });
 
   it("refuses what the mapping refuses, and ids the map's content doesn't have", () => {
     expect(() =>
       profileModifiers({ ...base, protocols: ['head_start', 'linked_up'] }, FIXTURE_CONTENT),
     ).toThrow(/2 protocols equipped, but only 1 slots/);
-    expect(() =>
-      profileModifiers({ ...base, shop: { tune_rivet: 1 } }, FIXTURE_CONTENT),
-    ).toThrow(/shop:tune_rivet names a tower or ability this content doesn't have/);
+    expect(() => profileModifiers({ ...base, shop: { tune_rivet: 1 } }, FIXTURE_CONTENT)).toThrow(
+      /shop:tune_rivet names a tower or ability this content doesn't have/,
+    );
   });
 
   it('a Story run profile carries the difficulty and its modifiers', () => {
@@ -98,7 +96,10 @@ describe('profiles', () => {
       abilities: { slot1: 'fx_strike', slot2: null, slot2State: 'none' },
       specsUnlocked: [],
     });
-    const specs = referenceRunProfile(withProfile({ specs: ['fx_gun', 'fx_mortar'] }), FIXTURE_CONTENT);
+    const specs = referenceRunProfile(
+      withProfile({ specs: ['fx_gun', 'fx_mortar'] }),
+      FIXTURE_CONTENT,
+    );
     expect(runConfig(FIXTURE_CONTENT, map, b, specs, 1).specsUnlocked).toEqual(['fx_gun']);
   });
 

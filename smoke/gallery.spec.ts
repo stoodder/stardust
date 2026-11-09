@@ -27,27 +27,33 @@ async function captureFullPage(page: Page, path: string): Promise<{ w: number; h
   const strips: string[] = [];
   for (let y = 0; y < h; y += TILE_PX) {
     const clip = { x: 0, y, width: w, height: Math.min(TILE_PX, h - y) };
+    // oxlint-disable-next-line no-await-in-loop -- one capture at a time, top to bottom
     strips.push((await page.screenshot({ clip, fullPage: true })).toString('base64'));
   }
   const scratch = await page.context().newPage();
   const png = await scratch.evaluate(
-    async ({ strips, w, h }) => {
+    async ({ parts, width, height }) => {
       const c = document.createElement('canvas');
-      c.width = w;
-      c.height = h;
+      c.width = width;
+      c.height = height;
       const ctx = c.getContext('2d');
       if (ctx === null) throw new Error('no 2d context');
+      const imgs = await Promise.all(
+        parts.map(async (b64) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${b64}`;
+          await img.decode();
+          return img;
+        }),
+      );
       let y = 0;
-      for (const b64 of strips) {
-        const img = new Image();
-        img.src = `data:image/png;base64,${b64}`;
-        await img.decode();
+      for (const img of imgs) {
         ctx.drawImage(img, 0, y);
         y += img.height;
       }
       return c.toDataURL('image/png').slice('data:image/png;base64,'.length);
     },
-    { strips, w, h },
+    { parts: strips, width: w, height: h },
   );
   await scratch.close();
   mkdirSync(dirname(path), { recursive: true });

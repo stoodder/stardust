@@ -153,7 +153,7 @@ export const RETICLE_SPRITE_TILES = 1.5;
 // ── Suppressing Fire (T207b): a strip of fire along its path segment ────────────────────────
 
 /** A new tracer streak lands somewhere on each live segment this often (ms). */
-export const SUPPRESS_TRACER_MS = 45;
+export const SUPPRESS_TRACER_MS = 35;
 /** The ground strip flickers between its two top alpha steps this often (ms). */
 export const SUPPRESS_FLICKER_MS = 125;
 /** The strip fades down the stepped ladder over its last ticks (sim time: it holds while paused). */

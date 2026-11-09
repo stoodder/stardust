@@ -118,7 +118,7 @@ export function fakeRun(req: RunRequest, result: HeadlessResult): RunRecord {
   };
 }
 
-/** A strong fixture upgrade: +25% damage for every tower per rank, 3 ranks. */
+/** A fixture tune-up for every tower: +10% damage per rank, 3 ranks. */
 const fx_power = defineUpgrade({
   id: 'fx_power',
   name: 'Fixture Power',
@@ -126,7 +126,7 @@ const fx_power = defineUpgrade({
   kind: 'shop',
   currency: 'stardust',
   availableAfter: null,
-  ranks: sameEachRank([1, 1, 1], [{ kind: 'towerStat', tower: '*', stat: 'damage', pct: 0.25 }]),
+  ranks: sameEachRank([1, 1, 1], [{ kind: 'towerStat', tower: '*', stat: 'damage', pct: 0.1 }]),
 });
 
 /**
@@ -150,13 +150,32 @@ export const FIXTURE_CATALOG: MetaCatalog = {
 };
 
 /**
- * The plain fixture requiring a splash counter, with a no-counter build (no mortar: one T1 gun
- * by the spawn) that loses on the reference profile and with the full catalog.
+ * The plain fixture with a swarm wave (40 walkers) as W2 and a splash counter required, with a
+ * no-counter build (no mortar: one gun by the road, upgraded once) that loses in W2 on the
+ * reference profile, and still loses with the full catalog.
  */
 export const NO_SPLASH_CONTENT: CompiledContent<FixtureIds> = (() => {
-  const map = PLAIN_CONTENT.maps.fx_map;
+  const compiled = withoutTags(
+    compileContent<FixtureIds>({
+      ...SIM_FIXTURE,
+      maps: {
+        fx_map: {
+          ...rawMap,
+          waves: [
+            rawMap.waves[0]!,
+            {
+              countdownSec: 10,
+              groups: [{ enemy: 'fx_walker', count: 40, intervalSec: 0.25, route: 'a' }],
+            },
+            ...rawMap.waves.slice(1),
+          ],
+        },
+      },
+    }),
+  );
+  const map = compiled.maps.fx_map;
   return {
-    ...PLAIN_CONTENT,
+    ...compiled,
     maps: {
       fx_map: {
         ...map,
@@ -169,7 +188,10 @@ export const NO_SPLASH_CONTENT: CompiledContent<FixtureIds> = (() => {
               companion: null,
               technicianAbility: null,
               callEarly: false,
-              steps: [{ wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] }],
+              steps: [
+                { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+                { wave: 1, kind: 'upgrade', tile: [1, 1] },
+              ],
             },
           },
         },

@@ -111,16 +111,18 @@ export function floatTextTexture(scene: Phaser.Scene, text: string, color: Color
   return key;
 }
 
-/** A tile tint texture (tileTintImage), registered once per color and alphas. */
+/** A tile tint texture (tileTintImage), registered once per color, alphas, and stripes. */
 export function tileTintTexture(
   scene: Phaser.Scene,
   color: ColorName,
   fillAlpha: number,
   edgeAlpha = 1,
+  stripes = false,
 ): string {
-  const key = `fx.tint.${color}.${fillAlpha}.${edgeAlpha}`;
+  const key = `fx.tint.${color}.${fillAlpha}.${edgeAlpha}${stripes ? '.stripes' : ''}`;
   if (!scene.textures.exists(key)) {
-    scene.textures.addCanvas(key, imageToCanvas(tileTintImage(color, fillAlpha, edgeAlpha)));
+    const img = tileTintImage(color, fillAlpha, edgeAlpha, stripes);
+    scene.textures.addCanvas(key, imageToCanvas(img));
   }
   return key;
 }

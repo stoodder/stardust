@@ -9,6 +9,7 @@ import {
   median,
   notGradual,
   runKey,
+  splitMeta,
   type CheckSpec,
   type RunRequest,
 } from './checks.ts';
@@ -215,23 +216,50 @@ describe('balance checks', () => {
     expect(judge(c, { 'par#1#again': other }).ok).toBe(false);
   });
 
-  it('#5 a no-counter build must lose before the final third, and #6 is refused until T204', () => {
+  it('#5 a no-counter build must lose before the final third; #6 it must lose with the full catalog', () => {
     const withCounter = {
       ...map,
       builds: { ...map.builds, noCounterBuilds: { splash: map.builds.altBuilds.gun_only! } },
     };
-    const checks = mapChecks(withCounter, [1], [1]);
+    const checks = mapChecks(withCounter, [1], [1], ['shop:salvage_rights (M3)']);
     const five = checks.find((c) => c.id === '5')!;
     expect(five.subject).toBe('noCounter:splash');
     // fx_map has 2 waves, so the build must lose by W1.
     expect(judge(five, { 'noCounter:splash#1': fakeResult('lost', 0, 1) }).ok).toBe(true);
     expect(judge(five, { 'noCounter:splash#1': fakeResult('lost', 0, 2) }).ok).toBe(false);
-    expect(
-      judge(
-        checks.find((c) => c.id === '6')!,
-        {},
-      ).failures[0],
-    ).toMatch(/T204/);
+    // #6 is about the same build (its subject), run on the full-catalog profile; any loss passes.
+    const six = checks.find((c) => c.id === '6')!;
+    expect(six.subject).toBe('noCounter:splash');
+    expect(six.needs).toEqual([{ build: 'noCounter:splash@fullCatalog', seed: 1 }]);
+    const lost = judge(six, { 'noCounter:splash@fullCatalog#1': fakeResult('lost', 0, 2) });
+    expect(lost.ok).toBe(true);
+    expect(lost.summary).toBe('lost at W2 (left out, not simulated yet: shop:salvage_rights (M3))');
+    const won = judge(six, { 'noCounter:splash@fullCatalog#1': fakeResult('won', 3) });
+    expect(won.failures).toEqual(['seed 1: won (15%)']);
+  });
+
+  it('#9 par on Story (seed 1) must win with a margin at least its Standard median', () => {
+    const nine = mapChecks(map, [1, 2, 3], [1]).find((c) => c.id === '9')!;
+    expect(nine.subject).toBe('par');
+    const standard = {
+      'par#1': fakeResult('won', 16),
+      'par#2': fakeResult('won', 18),
+      'par#3': fakeResult('won', 20),
+    };
+    expect(judge(nine, { ...standard, 'par@story#1': fakeResult('won', 18) }).ok).toBe(true);
+    const below = judge(nine, { ...standard, 'par@story#1': fakeResult('won', 17) });
+    expect(below.failures).toEqual(['seed 1: margin 85 is below the Standard median 90']);
+    expect(judge(nine, { ...standard, 'par@story#1': fakeResult('lost', 0, 2) }).ok).toBe(false);
+  });
+
+  it('splits a run label into its build and meta', () => {
+    expect(splitMeta('par')).toEqual({ build: 'par', meta: 'standard' });
+    expect(splitMeta('par@story')).toEqual({ build: 'par', meta: 'story' });
+    expect(splitMeta('noCounter:armor@fullCatalog')).toEqual({
+      build: 'noCounter:armor',
+      meta: 'fullCatalog',
+    });
+    expect(() => splitMeta('par@hard')).toThrow(/unknown run meta 'hard'/);
   });
 
   it('guards judge their policy runs', () => {

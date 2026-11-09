@@ -22,12 +22,7 @@ import { noCounterAnswerChecks } from './counterChecks.ts';
 import { medalChecks } from './medals.ts';
 import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
 import { NOT_CHECKED, refusedFeatures } from './refusals.ts';
-import {
-  fullCatalogProfile,
-  referenceRunProfile,
-  runConfig,
-  type RunProfile,
-} from './profile.ts';
+import { fullCatalogProfile, referenceRunProfile, runConfig, type RunProfile } from './profile.ts';
 import {
   DEFAULT_SEED_COUNT,
   FEW_SEED_COUNT,
@@ -169,9 +164,11 @@ export function runMap<K extends IdSpace = LiveIds>(
     const build = buildFor(req.build, map, content);
     const profile = profileFor(splitMeta(req.build).meta);
     const base = { build: req.build, seed: req.seed, repeat: req.repeat === true };
-    if (build === null || typeof profile === 'string') {
-      const error = build === null ? `unknown build '${req.build}'` : profile;
-      return { ...base, error, result: null, marginPct: 0, ms: 0 };
+    if (build === null) {
+      return { ...base, error: `unknown build '${req.build}'`, result: null, marginPct: 0, ms: 0 };
+    }
+    if (typeof profile === 'string') {
+      return { ...base, error: profile, result: null, marginPct: 0, ms: 0 };
     }
     const start = now();
     try {

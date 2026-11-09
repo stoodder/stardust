@@ -6,14 +6,12 @@ import {
   SYSTEM_UNLOCKS,
   isMapWon,
   isSystemUnlocked,
-  markMapWon,
   mapName,
   nextShift,
   shiftBoard,
   unlockHint,
 } from './progress.ts';
 import { createNewSave } from './saveData.ts';
-import { validateSave } from './validate.ts';
 
 describe('the campaign plan', () => {
   it('every gate names a planned map', () => {
@@ -92,19 +90,5 @@ describe('the Shift board', () => {
     const board = shiftBoard(createNewSave());
     expect(board.map((e) => e.id)).toEqual(['a1_m01', 'a1_m02']);
     expect(board[0]?.state).toBe('open');
-  });
-});
-
-describe('markMapWon', () => {
-  it('marks the map won, keeps medals and the best meter, and stays valid', () => {
-    const save = DEV_SAVES.after_a1m1.build();
-    const before = DEV_SAVES.after_a1m1.build();
-    const next = markMapWon(save, 'a1_m01', 5);
-    expect(save).toEqual(before);
-    expect(next.campaign.maps.a1_m01?.medals).toEqual(before.campaign.maps.a1_m01?.medals);
-    expect(next.campaign.maps.a1_m01?.bestMeter).toBe(before.campaign.maps.a1_m01?.bestMeter);
-    const fresh = markMapWon(createNewSave(), 'a1_m01', 17);
-    expect(fresh.campaign.maps.a1_m01).toEqual({ completed: true, medals: [], bestMeter: 17 });
-    expect(validateSave(fresh).ok).toBe(true);
   });
 });

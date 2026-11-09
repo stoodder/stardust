@@ -182,11 +182,21 @@ export function tileHighlightImage(color: ColorName): RgbaImage {
   return { w: TILE_W, h: TILE_H, data };
 }
 
+/** Hazard stripes across a tile tint: this many px of stripe, then as many clear (diagonal). */
+const STRIPE_PX = 3;
+
 /**
  * A tile tint (Suppressing Fire's ground strip and its aiming preview): the canonical tile mask in
- * `color`, its 1 px edge at `edgeAlpha` and its fill at `fillAlpha` (stepped alphas, 0–1).
+ * `color`, its 1 px edge at `edgeAlpha` and its fill at `fillAlpha` (stepped alphas, 0–1). With
+ * `stripes`, the fill is diagonal hazard stripes (STRIPE_PX on, STRIPE_PX off, running along the
+ * tile's NE edge) instead of a wash, so it reads on any ground, the warm path included.
  */
-export function tileTintImage(color: ColorName, fillAlpha: number, edgeAlpha = 1): RgbaImage {
+export function tileTintImage(
+  color: ColorName,
+  fillAlpha: number,
+  edgeAlpha = 1,
+  stripes = false,
+): RgbaImage {
   const data = new Uint8ClampedArray(TILE_W * TILE_H * 4);
   const c = rgbOf(color);
   const fill = Math.round(Math.min(1, Math.max(0, fillAlpha)) * 255);
@@ -199,6 +209,8 @@ export function tileTintImage(color: ColorName, fillAlpha: number, edgeAlpha = 1
         !inTileMask(x + 1, y) ||
         !inTileMask(x, y - 1) ||
         !inTileMask(x, y + 1);
+      const striped = Math.floor((x + 2 * y) / STRIPE_PX) % 2 === 0;
+      if (!onEdge && stripes && !striped) continue;
       const i = (y * TILE_W + x) * 4;
       data[i] = c.r;
       data[i + 1] = c.g;

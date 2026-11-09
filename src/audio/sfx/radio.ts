@@ -95,4 +95,6 @@ export const RADIO_BLIP: Readonly<Record<RadioSpeaker, keyof typeof RADIO_SFX>> 
   quill: 'radio_quill',
   bricks: 'radio_bricks',
   goldie: 'radio_goldie',
+  /** Kip borrows Goldie's mid-register lilt until he gets a blip of his own (T211). */
+  kip: 'radio_goldie',
 };

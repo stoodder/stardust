@@ -22,6 +22,16 @@ export const ATTACK_SOUNDS: Readonly<
   pulse: { fire: 'sprinkler_pulse', land: null },
 };
 
+/**
+ * A Cluster Thumper's bomblets (a lobbed shot with no target, scattered where its shell landed):
+ * no launch of their own (the shell's impact covers it), and one rate-limited crackle as they land.
+ */
+export const BOMBLET_SOUNDS = { fire: null, land: 'bomblet_pop' } as const satisfies {
+  readonly fire: SfxId | null;
+  readonly land: SfxId | null;
+};
+const BOMBLET_KIND = 'bomblet';
+
 /** Each enemy's pop pitch (semitones): small and quick is high, big and slow is low. */
 export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   nibbler: 0,
@@ -89,16 +99,22 @@ export function createEventSounds(act: Act): EventSounds {
           out.push(sfx('unlock'));
           return;
         case 'ProjectileFired': {
-          const s = ATTACK_SOUNDS[e.kind];
+          const bomblet = e.kind === 'lobbed' && e.targetUid === 0;
+          const s = bomblet ? BOMBLET_SOUNDS : ATTACK_SOUNDS[e.kind];
           if (s?.fire) out.push(sfx(s.fire));
-          if (e.uid !== 0 && s?.land) flying.set(e.uid, e.kind);
+          if (e.uid !== 0 && s?.land) flying.set(e.uid, bomblet ? BOMBLET_KIND : e.kind);
           return;
         }
         case 'ProjectileHit': {
           if (e.uid === 0) return;
           const kind = flying.get(e.uid);
           flying.delete(e.uid);
-          const land = kind === undefined ? null : ATTACK_SOUNDS[kind]?.land;
+          const land =
+            kind === BOMBLET_KIND
+              ? BOMBLET_SOUNDS.land
+              : kind === undefined
+                ? null
+                : ATTACK_SOUNDS[kind]?.land;
           if (land) out.push(sfx(land));
           return;
         }

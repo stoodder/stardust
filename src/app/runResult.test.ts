@@ -80,9 +80,9 @@ describe('the run end and the rewards on the card', () => {
     const { summary } = runEnd(held, { ...metaRunEndOf(input, 'won'), mapId: 'a1_m01' });
     expect(runResultOf(input, 'won', summary).rewards).toEqual({
       medals: [
-        { id: 'victory', name: 'Victory', earned: true, isNew: false },
-        { id: 'perfect_core', name: 'Perfect Core', earned: false, isNew: false },
-        { id: 'teamwork', name: 'Teamwork!', earned: true, isNew: true },
+        { id: 'victory', name: 'Victory', earned: true, isNew: false, intel: 0 },
+        { id: 'perfect_core', name: 'Perfect Core', earned: false, isNew: false, intel: 0 },
+        { id: 'teamwork', name: 'Teamwork!', earned: true, isNew: true, intel: 1 },
       ],
       stardust: { source: 'replay', amount: 48, base: 120, wavesResolved: 7, waveCount: 7 },
       intel: 1,

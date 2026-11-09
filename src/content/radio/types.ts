@@ -12,6 +12,9 @@ import type { ColorName } from '../palettes/master.ts';
  * - `waveStart`: `WaveStarted` for `wave`.
  * - `waveCleared`: `WaveCleared` for `wave`.
  * - `perfectWave`: the first wave from `wave` on that resolves with no leaks.
+ * - `enemyKilled`: the battle's first `EnemyDied` of `enemy` (design/core-loop.md §6.3's
+ *   `enemy_killed` bark). Declared for A1M2's Brood Hauler barks; app/radio.ts plays it once its
+ *   `EnemyDied` case takes these lines (until then they stay silent).
  * - `mapWon` / `mapLost`: the map's debrief. These never play on the ticker: the results card
  *   shows them, with their name plates, after a win or a loss (D028).
  */
@@ -22,11 +25,12 @@ export type RadioTrigger =
   | 'waveStart'
   | 'waveCleared'
   | 'perfectWave'
+  | 'enemyKilled'
   | 'mapWon'
   | 'mapLost';
 
 /** Speakers the M1 radio can show (story/style-guide.md §5.1 ids). */
-export type RadioSpeaker = 'quill' | 'bricks' | 'goldie';
+export type RadioSpeaker = 'quill' | 'bricks' | 'goldie' | 'kip';
 
 export interface RadioLine {
   readonly on: RadioTrigger;
@@ -34,6 +38,8 @@ export interface RadioLine {
   readonly wave?: number;
   /** The tower an `unlock` names. */
   readonly tower?: string;
+  /** The enemy an `enemyKilled` names. */
+  readonly enemy?: string;
   readonly speaker: RadioSpeaker;
   /** Verbatim from the map's act file (story/campaign/act<N>.md). */
   readonly text: string;
@@ -48,10 +54,11 @@ export interface SpeakerLook {
 
 /**
  * Name plates. Colors follow each character's look (story/characters.md): QUILL's teal screen,
- * Bricks's Everglow-orange security kit, Goldie's green overalls.
+ * Bricks's Everglow-orange security kit, Goldie's green overalls, Kip's gold #1 trophy pin.
  */
 export const SPEAKERS: Readonly<Record<RadioSpeaker, SpeakerLook>> = {
   quill: { name: 'QUILL', color: 'teal.4' },
   bricks: { name: 'Bricks', color: 'orange.4' },
   goldie: { name: 'Goldie', color: 'green.4' },
+  kip: { name: 'Kip', color: 'gold.3' },
 };

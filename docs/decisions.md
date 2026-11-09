@@ -517,3 +517,14 @@ New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and rend
 - **`specialize`** checks, in order: no tower, no specs, locked, already specialized, needs T3, can't afford. Spec cost goes through `costFor(..., true)` into `invested`.
 - **Rulings where the docs were silent:** a spec whose default priority differs switches the tower to it; otherwise the player's chosen priority stays. Bunker Buster's Corroded is capped at 3 stacks.
 - **T121:** `createSim` refuses loadouts whose reachable tiers or unlocked specs use the projectile, beam, chain, or spawner attack kinds, or the pinned, stasis, or unnerved statuses. They come in M3.
+
+### D044 — 2026-11-09 — T117a specialization art and the art-trail capture
+Each specialization has a distinct silhouette at 1×:
+- **Rivet Storm:** ammo crates and rotary barrels with a spin frame.
+- **Railspike:** outrigger legs and teal capacitor coils.
+- **Cluster Thumper:** bomblet bins, plus new bomblet projectile and burst sprites.
+- **Bunker Buster:** slab blast shields.
+
+Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star first frame, and Bricks has a cannon-lowered idle. Art-direction §2/§3's hex tables now link to `master.ts`.
+
+**The art-trail capture:** the gallery is now 17,772 px tall, past Chrome's single-screenshot limit. So `smoke/gallery.spec.ts` captures 4,096 px strips and stitches them into one deterministic `gallery.png` (up to 32,767 px, failing loudly beyond that), and CLAUDE.md step 8 is unchanged. Any Playwright run clears `test-results/`, so the orchestrator re-runs the gallery smoke right before copying `m<N>.png`.

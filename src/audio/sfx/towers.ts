@@ -204,6 +204,35 @@ export const TOWER_SFX = {
       },
     ],
   },
+  /**
+   * A Cluster Thumper's bomblets land: a small crackle. One sound stands for the whole scatter:
+   * the long gap and single voice merge a cluster's bomblets into one or two pops.
+   */
+  bomblet_pop: {
+    gain: 0.26,
+    priority: 0,
+    minGapMs: 120,
+    maxVoices: 1,
+    jitter: 1.5,
+    layers: [
+      {
+        wave: 'noise',
+        freq: 440,
+        filter: { type: 'lowpass', freq: 3500, freqEnd: 600 },
+        env: { a: 0.002, d: 0.09, s: 0, r: 0.04 },
+        gain: 0.7,
+      },
+      {
+        wave: 'square',
+        freq: 300,
+        glide: 0.5,
+        glideSec: 0.06,
+        filter: { type: 'lowpass', freq: 2000 },
+        env: { a: 0.001, d: 0.05, s: 0, r: 0.03 },
+        gain: 0.25,
+      },
+    ],
+  },
   /** Sprinkler's chill pulse: a cool spritz and a little icy chime. */
   sprinkler_pulse: {
     gain: 0.3,

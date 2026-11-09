@@ -37,6 +37,19 @@ describe('run tracker invariants', () => {
     expect(check(t)).toEqual([expect.stringMatching(/credits 105 ≠ ledger 100/)]);
   });
 
+  it("starts the ledger and max integrity from the run's own start (after modifiers)", () => {
+    const sim = fixtureSim({
+      modifiers: [
+        { kind: 'economy', stat: 'startCredits', pct: 0.5, source: 'difficulty:story' },
+        { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+      ],
+    });
+    const tracker = createRunTracker(sim, true);
+    tracker.afterTick();
+    expect(tracker.summary()).toMatchObject({ maxIntegrity: 30, integrity: 30, credits: 300 });
+    expect(tracker.summary().violations).toEqual([]);
+  });
+
   it('a wave with a negative remaining count', () => {
     const t = tracked();
     t.state.schedule.remaining[0] = -1;

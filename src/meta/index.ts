@@ -1,4 +1,5 @@
-// meta/: saves, campaign progress (gating, the Shift board), modifiers, and pools now; run end, shop, and R&D as they land (meta-runtime.md).
+// meta/: saves, campaign progress (gating, the Shift board), modifiers, pools, and run end with
+// its rewards now; the shop and R&D as they land (meta-runtime.md).
 // The save API for app/ and the screens. Dev saves for `?save=` are in __fixtures__/devSaves.ts.
 export type { ImportProblemCode, ImportResult } from './codec.ts';
 export { CODE_LIMITS, exportCode, importCode } from './codec.ts';
@@ -21,7 +22,6 @@ export {
   isMapWon,
   isSystemUnlocked,
   mapName,
-  markMapWon,
   nextShift,
   shiftBoard,
   unlockHint,

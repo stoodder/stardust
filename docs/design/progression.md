@@ -4,7 +4,7 @@ Meta currencies, medals, Zibzab's shop, Field Protocols (meta perks), veteran mo
 
 > **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
 >
-> **As built:** the catalog is [`src/content/upgrades/`](../../src/content/upgrades/index.ts): `shop.ts` (§4.3), `tuneUps.ts` (§4.2), `protocols.ts` (§5), `rnd.ts` (§7.3 Command), and `access.ts` (§8 tower and ability access, §7.1 Engineering prices). Each item names its `availableAfter` map on the campaign plan (`src/content/campaign.ts`) and grants sim modifiers. Vrell licenses, Aelari attunements, Scanner Sweep, System Reboot, the other four Rapports, and the Zibzab Tune-up join with their towers and abilities. The §10 purchasable-profiles rule is the `[purchasable]` validator ([`validatePurchasable.ts`](../../src/content/validatePurchasable.ts)); `upgrades/reference.ts` holds the reference economy it assumes (1 Intel per map, the bank reset at A2M4's C2 Return).
+> **As built:** the catalog is [`src/content/upgrades/`](../../src/content/upgrades/index.ts): `shop.ts` (§4.3), `tuneUps.ts` (§4.2), `protocols.ts` (§5), `rnd.ts` (§7.3 Command), and `access.ts` (§8 tower and ability access, §7.1 Engineering prices). Each item names its `availableAfter` map on the campaign plan (`src/content/campaign.ts`) and grants sim modifiers. Vrell licenses, Aelari attunements, Scanner Sweep, System Reboot, the other four Rapports, and the Zibzab Tune-up join with their towers and abilities. The §10 purchasable-profiles rule is the `[purchasable]` validator ([`validatePurchasable.ts`](../../src/content/validatePurchasable.ts)); `upgrades/reference.ts` holds the reference economy it assumes (1 Intel per map, the bank reset at A2M4's C2 Return). The run-end payouts (§2 Stardust, §3 medal Intel) are [`src/meta/rewards.ts`](../../src/meta/rewards.ts) (`REWARD_RULES`); the order they run in is [meta-runtime.md § Run end](../tech/meta-runtime.md#run-end).
 >
 > **Ordering:** [../story/campaign.md](../story/campaign.md) is **authoritative** for when shops, towers, and abilities unlock. This doc defines *what* they are and what they cost.
 
@@ -261,6 +261,8 @@ Act I burrowing is never a required counter (it is only brief; kill-timing and s
 | **Veteran modifiers** | Opt-in per replay (§6) | Bonus Stardust, Veteran medal |
 
 The player can change between Story and Standard at any time between maps.
+
+**As built:** difficulty reaches the sim as modifiers (`DIFFICULTY_MODIFIERS` in [`src/meta/modifiers.ts`](../../src/meta/modifiers.ts); [../tech/meta-runtime.md § Meta](../tech/meta-runtime.md#meta-srcmeta)), stacking with purchases by the usual formula: Story's +50% starting credits adds to Seed Money's and Head Start's percentages, and Reinforced Core's ranks add to Story's 30. Enemy HP and shields scale as each unit spawns; a shield's regeneration scales with it, so a weaker shield refills in the same time.
 
 ---
 

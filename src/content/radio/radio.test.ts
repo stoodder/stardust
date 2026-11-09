@@ -1,16 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { A1_M01_RADIO } from './a1_m01.ts';
+import { radioLines, RADIO_TABLES } from './index.ts';
 import { SPEAKERS } from './types.ts';
 
 describe('radio tables', () => {
   it('fit the dialogue line limit and name known speakers (story/style-guide.md §5.4)', () => {
-    for (const l of A1_M01_RADIO) {
-      expect(l.text.length).toBeLessThanOrEqual(120);
-      expect(Object.keys(SPEAKERS)).toContain(l.speaker);
-      if (l.on === 'countdown' || l.on === 'waveStart' || l.on === 'waveCleared') {
-        expect(l.wave).toBeGreaterThanOrEqual(1);
+    for (const [mapId, lines] of Object.entries(RADIO_TABLES)) {
+      for (const l of lines) {
+        expect(l.text.length, `${mapId}: ${l.text}`).toBeLessThanOrEqual(120);
+        expect(Object.keys(SPEAKERS)).toContain(l.speaker);
+        if (l.on === 'countdown' || l.on === 'waveStart' || l.on === 'waveCleared') {
+          expect(l.wave).toBeGreaterThanOrEqual(1);
+        }
+        if (l.on === 'unlock') expect(l.tower).toBeDefined();
+        if (l.on === 'enemyKilled') expect(l.enemy).toBeDefined();
       }
-      if (l.on === 'unlock') expect(l.tower).toBeDefined();
     }
+  });
+
+  it('play each line at most once, so no table repeats a line', () => {
+    for (const lines of Object.values(RADIO_TABLES)) {
+      const texts = lines.map((l) => l.text);
+      expect(new Set(texts).size).toBe(texts.length);
+    }
+  });
+
+  it('are found by map id', () => {
+    expect(radioLines('a1_m02')).toBe(RADIO_TABLES.a1_m02);
+    expect(radioLines('no_such_map')).toEqual([]);
   });
 });

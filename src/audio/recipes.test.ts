@@ -42,6 +42,7 @@ describe('sound effect recipes', () => {
   it('cover every sound the game plays', () => {
     expect(SFX_IDS.toSorted()).toEqual(
       [
+        'bomblet_pop',
         'bricks_ready',
         'bricks_shot',
         'build',
@@ -73,7 +74,15 @@ describe('sound effect recipes', () => {
   });
 
   it('keep the frequent sounds short and quiet, and rate-limited', () => {
-    for (const id of ['rivet_shot', 'bricks_shot', 'enemy_pop', 'ui_hover', 'ui_click'] as const) {
+    const frequent = [
+      'rivet_shot',
+      'bricks_shot',
+      'bomblet_pop',
+      'enemy_pop',
+      'ui_hover',
+      'ui_click',
+    ] as const;
+    for (const id of frequent) {
       const r = sfxRecipe(id);
       expect(recipeDuration(r), id).toBeLessThan(0.15);
       expect(recipePeak(r), id).toBeLessThan(0.3);

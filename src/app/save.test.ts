@@ -88,10 +88,12 @@ describe('the save session', () => {
 
   it('a loss is a run end too: Pests Processed and the run count, no win', () => {
     newGame(1);
-    expect(run('a1_m01', 0, { outcome: 'lost', earnedMedals: [], wavesResolved: 3 })).toMatchObject({
-      stardust: { source: 'defeat', amount: 0 },
-      intel: 0,
-    });
+    expect(run('a1_m01', 0, { outcome: 'lost', earnedMedals: [], wavesResolved: 3 })).toMatchObject(
+      {
+        stardust: { source: 'defeat', amount: 0 },
+        intel: 0,
+      },
+    );
     expect(activeSave()?.stats).toEqual({ pestsProcessed: 40, runs: 1 });
     expect(systemOpen('base')).toBe(false);
     openSlot(1);

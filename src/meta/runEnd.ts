@@ -2,12 +2,7 @@
 // documented order, plus a summary of what it paid for the results screen. Pure: it returns a new
 // save (the input is untouched) and never reads the clock; the app writes the result to its slot.
 import type { MapId, MedalId } from '../content/types.ts';
-import {
-  medalPayout,
-  stardustPayout,
-  type EarnedMedal,
-  type StardustPayout,
-} from './rewards.ts';
+import { medalPayout, stardustPayout, type EarnedMedal, type StardustPayout } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
 
 /** What a run end reads from the finished battle. */

@@ -65,7 +65,7 @@ export interface ZonePoolLike {
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
 const MAX_TRACERS = 64;
-const MAX_PULSES = 24;
+const MAX_PULSES = 32;
 const MAX_DECALS = 8;
 const MAX_FLOATS = 16;
 const MAX_BURSTS = 40;
@@ -77,8 +77,13 @@ const MAX_SEGMENT_TILES = 5;
 const MAX_PREVIEW_TILES = 12;
 
 /** Suppressing Fire's ground strip and its aiming preview (Kinetic's warm color, art-direction §7). */
-const SUPPRESS_TINT = { color: 'orange.3', fill: 0.35, edge: 0.6 } as const;
-const PREVIEW_TINT = { color: 'orange.4', fill: 0.15, edge: 1 } as const;
+const SUPPRESS_TINT = { color: 'orange.3', fill: 0.6, edge: 1 } as const;
+/** The preview: the same hazard stripes in the lighter orange, held still (no flicker, no fire). */
+const PREVIEW_TINT = { color: 'orange.4', fill: 0.6, edge: 1 } as const;
+const PREVIEW_ALPHA = 1;
+/** Where a streak lands: a small spark ring, held, that fades in steps (ms). */
+const SPARK_TILES = 0.25;
+const SPARK_MS = 150;
 /** Without Bricks on the map, the streaks come in from this far up-screen (px) of where they land. */
 const OFFMAP_SOURCE_PX = { x: -48, y: -72 } as const;
 /** Streaks land up to this far (tiles) to either side of the path's center line. */
@@ -158,6 +163,8 @@ interface Segment {
   ms: number;
   /** ms until its next tracer streak. */
   nextMs: number;
+  /** The zone's ticksLeft last frame: streaks fly only while the sim runs (not while paused). */
+  lastTicks: number;
   tiles: Phaser.GameObjects.Image[];
   shown: number;
 }
@@ -289,15 +296,26 @@ export class FxView {
     };
     for (let i = 0; i < MAX_SEGMENTS; i++) {
       const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () => tileImage(tint));
-      this.#segments.push({ zoneUid: 0, seen: 0, ms: 0, nextMs: 0, tiles, shown: 0 });
+      this.#segments.push({
+        zoneUid: 0,
+        seen: 0,
+        ms: 0,
+        nextMs: 0,
+        lastTicks: -1,
+        tiles,
+        shown: 0,
+      });
     }
     const preview = tileTintTexture(
       scene,
       PREVIEW_TINT.color,
       PREVIEW_TINT.fill,
       PREVIEW_TINT.edge,
+      true,
     );
-    for (let i = 0; i < MAX_PREVIEW_TILES; i++) this.#preview.push(tileImage(preview));
+    for (let i = 0; i < MAX_PREVIEW_TILES; i++) {
+      this.#preview.push(tileImage(preview).setAlpha(PREVIEW_ALPHA));
+    }
   }
 
   /** A hitscan shot from a tower at grid (x0, y0) to a target at grid (x1, y1). */
@@ -671,13 +689,15 @@ export class FxView {
         this.#openSegment(g, z);
       }
       g.seen = frame;
+      // The strip holds still while the sim is paused (its zone's clock stopped): no flicker, no
+      // streaks. A long frame (a background tab) catches up at most a few streaks.
+      const running = z.ticksLeft !== g.lastTicks;
+      g.lastTicks = z.ticksLeft;
+      if (!running) continue;
       g.ms += dt;
       const alpha = suppressAlpha(g.ms, z.ticksLeft, reduced);
       for (let t = 0; t < g.shown; t++) g.tiles[t]!.setAlpha(alpha); // t < shown ≤ length
-      // Real time, so the strip holds still while paused (a paused frame has dt 0); a long frame
-      // (a background tab) catches up at most a few streaks.
       g.nextMs = Math.max(g.nextMs - dt, -4 * SUPPRESS_TRACER_MS);
-      if (dt <= 0) continue;
       while (g.nextMs <= 0) {
         g.nextMs += SUPPRESS_TRACER_MS;
         this.#rake(z);
@@ -699,6 +719,7 @@ export class FxView {
     g.zoneUid = z.uid;
     g.ms = 0;
     g.nextMs = 0;
+    g.lastTicks = -1;
     g.shown = 0;
     const route = z.route;
     if (route === null) return;
@@ -734,6 +755,7 @@ export class FxView {
     } else {
       this.#streak(this.#fireX, this.#fireY, tx, ty);
     }
+    this.ring(x, y, SPARK_TILES, 'orange.4', SPARK_MS, false);
   }
 
   /** Cosmetic randomness in [0, 1) (a small LCG, so screenshots repeat; never the sim's RNG). */

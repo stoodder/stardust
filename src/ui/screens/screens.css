@@ -272,6 +272,84 @@
   color: var(--sd-teal-3);
 }
 
+/* The lifetime count, under this run's (T204c). */
+.sd-results-career {
+  margin-top: -4px;
+  font-family: var(--font-heading);
+  color: var(--sd-steel-3);
+}
+
+.sd-results-career-count {
+  color: var(--sd-gold-4);
+}
+
+/* The payroll (T204c): what the run paid, line by line; the map's medals under it on a win. */
+.sd-results-payroll {
+  width: 100%;
+  padding: 4px 4px 0;
+  border-top: 1px solid var(--sd-ink-3);
+  font-family: var(--font-heading);
+}
+
+.sd-results-payroll-heading {
+  margin: 0 0 3px;
+  text-align: left;
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-results-payroll ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-results-payroll ul + ul {
+  margin-top: 3px;
+}
+
+.sd-results-payroll li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sd-results-pay-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--sd-white-1);
+}
+
+.sd-results-medal .sd-results-pay-label {
+  color: var(--sd-steel-2);
+}
+
+.sd-results-medal-earned .sd-results-pay-label {
+  color: var(--sd-white-1);
+}
+
+.sd-results-new {
+  padding: 0 2px;
+  background: var(--sd-pink-3);
+  color: var(--sd-ink-0);
+}
+
+.sd-results-pay-note {
+  color: var(--sd-steel-3);
+}
+
+.sd-results-pay-amount {
+  flex: none;
+}
+
 /* The debrief (D028): spoken lines under their name plates, like the radio ticker's. */
 .sd-results-debrief {
   display: flex;

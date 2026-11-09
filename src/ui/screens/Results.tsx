@@ -1,15 +1,17 @@
-// The results screen (T115): shown over the frozen battle when a run ends. One headline and the
-// counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and integrity,
-// and the debrief with its speakers' name plates (D028).
-// The counter is the Act I line (design/core-loop.md §6.2) and ticks up (art-direction §9). Medals
-// and rewards arrive with T204c. The way on is Continue (base or Shift board) or Retry.
+// The results screen (T115, T204c): shown over the frozen battle when a run ends. One headline and
+// the counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and
+// integrity, the lifetime count, the payroll (the Stardust paid and why; on a win the map's medals,
+// this run's lit and first-time ones tagged NEW with their Intel), and the debrief with its
+// speakers' name plates (D028). The counter is the Act I line (design/core-loop.md §6.2) and ticks up
+// (art-direction §9). The way on is Continue (base or Shift board) or Retry.
 import { useEffect, useState } from 'preact/hooks';
 import { afterWin, retryRun, toCampaign, toTitle } from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
-import { campaign, runResult, type RunResult } from './state.ts';
+import { campaign, runResult, type MedalResult, type RunResult, type RunRewards } from './state.ts';
 import { colorVar } from '../color.ts';
+import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
 import './screens.css';
@@ -93,6 +95,105 @@ function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
   );
 }
 
+const CURRENCY = { stardust: 'Stardust', intel: 'Intel' } as const;
+
+/** An amount in its currency's color: "+48 Stardust". */
+function Amount({ n, currency }: { n: number; currency: keyof typeof CURRENCY }) {
+  return (
+    <span class={`sd-results-pay-amount sd-${currency}`}>
+      +{formatCount(n)} {CURRENCY[currency]}
+    </span>
+  );
+}
+
+/** The Stardust line's label and note, in Everglow's voice (style-guide § 2, Act I system copy). */
+function stardustLine(s: RunRewards['stardust']): { label: string; note?: string } {
+  switch (s.source) {
+    case 'first_clear':
+      return s.base === 0
+        ? { label: 'Shift bonus', note: 'Training shifts are unpaid!' }
+        : { label: 'Shift bonus' };
+    case 'replay':
+      return s.base === 0
+        ? { label: 'Overtime bonus', note: 'Training shifts are unpaid!' }
+        : { label: 'Overtime bonus' };
+    case 'defeat':
+      return { label: 'Effort stipend', note: `${s.wavesResolved}/${s.waveCount} waves` };
+    case 'defeat_replay':
+      return { label: 'Effort stipend', note: 'Shift already cleared!' };
+    default:
+      return assertNever(s.source);
+  }
+}
+
+/** One of the map's medals: lit when earned this run, NEW! and its Intel the first time. */
+function MedalRow({ medal }: { medal: MedalResult }) {
+  const status = medal.isNew ? 'new!' : medal.earned ? 'on file' : 'next time';
+  return (
+    <li
+      class={medal.earned ? 'sd-results-medal sd-results-medal-earned' : 'sd-results-medal'}
+      aria-label={`${medal.name}: ${status}`}
+    >
+      <span class="sd-results-pay-label">
+        <span class={medal.earned ? 'sd-medal sd-medal-on' : 'sd-medal'} aria-hidden="true" />
+        {medal.name}
+        {medal.isNew && (
+          <span class="sd-results-new" aria-hidden="true">
+            NEW!
+          </span>
+        )}
+      </span>
+      {medal.isNew ? (
+        <Amount n={medal.intel} currency="intel" />
+      ) : (
+        <span class="sd-results-pay-note" aria-hidden="true">
+          {medal.earned ? 'On file' : 'Next time!'}
+        </span>
+      )}
+    </li>
+  );
+}
+
+/**
+ * The payroll: the run's Stardust with where it came from, then (on a win) the map's medals, each
+ * paying its Intel the first time it is earned.
+ */
+function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
+  const { label, note } = stardustLine(rewards.stardust);
+  return (
+    <section class="sd-results-payroll" aria-labelledby="sd-results-payroll-heading">
+      <h2 id="sd-results-payroll-heading" class="sd-results-payroll-heading">
+        Payroll
+      </h2>
+      <ul>
+        <li>
+          <span class="sd-results-pay-label">
+            {label}
+            {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
+          </span>
+          <Amount n={rewards.stardust.amount} currency="stardust" />
+        </li>
+      </ul>
+      {won && (
+        <ul aria-label="Medals">
+          {rewards.medals.map((m) => (
+            <MedalRow key={m.id} medal={m} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** The lifetime count under this run's (design/core-loop.md § 6.2). */
+function Career({ n }: { n: number }) {
+  return (
+    <p class="sd-results-career">
+      Career total: <span class="sd-results-career-count">{formatCount(n)}</span>
+    </p>
+  );
+}
+
 /**
  * The way on from Results. In a campaign: after a win, Continue (to the base once it's open, else
  * the Shift board); after a loss, the Shift board. Without one (a `?map=` dev battle): Title.
@@ -115,6 +216,7 @@ function OnwardButton({ won }: { won: boolean }) {
 
 function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
+  const { rewards } = result;
   return (
     <section
       class={`sd-panel sd-results-panel ${won ? 'sd-results-won' : 'sd-results-lost'}`}
@@ -141,6 +243,8 @@ function Body({ result }: { result: RunResult }) {
         </div>
       </dl>
       <Counter n={result.pestsProcessed} />
+      {rewards !== null && <Career n={rewards.lifetimePests} />}
+      {rewards !== null && <Payroll rewards={rewards} won={won} />}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
       <div class="sd-results-buttons">
         <button

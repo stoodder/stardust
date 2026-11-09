@@ -132,25 +132,3 @@ export function shiftBoard(
 export function nextShift(board: readonly ShiftEntry[]): ShiftEntry | null {
   return board.find((e) => e.state === 'open') ?? board.findLast((e) => e.state === 'won') ?? null;
 }
-
-/**
- * Marks a map won (a copy; the input is untouched), keeping its medals and the best meter. The
- * minimal run end that keeps the M2 loop moving until T204c's `runEnd` takes over (meta-runtime.md
- * § Run end: medals, rewards, Pests Processed, story transactions).
- */
-export function markMapWon(save: SaveData, mapId: MapId, meter: number): SaveData {
-  const old = save.campaign.maps[mapId];
-  return {
-    ...save,
-    campaign: {
-      maps: {
-        ...save.campaign.maps,
-        [mapId]: {
-          completed: true,
-          medals: [...(old?.medals ?? [])],
-          bestMeter: Math.max(old?.bestMeter ?? 0, meter),
-        },
-      },
-    },
-  };
-}

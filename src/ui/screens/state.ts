@@ -35,6 +35,8 @@ export interface MedalResult {
   readonly earned: boolean;
   /** Earned this run for the first time (it paid Intel). */
   readonly isNew: boolean;
+  /** The Intel it paid this run (0 unless new). */
+  readonly intel: number;
 }
 
 /** How the run's Stardust was earned (meta/rewards.ts StardustSource). */

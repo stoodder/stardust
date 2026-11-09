@@ -264,7 +264,8 @@ export function selectedView(
     statLine = prev.stats;
     upgradeDelta = prev.upgradeDelta;
   } else {
-    const stats = towerStats(t.def, t.tier);
+    // A specialized tower (tier 4) reads its spec's stats.
+    const stats = towerStats(t.def, t.tier, undefined, undefined, t.spec);
     statLine = statLineText(stats);
     upgradeDelta = deltaText(stats.next);
   }

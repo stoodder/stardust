@@ -13,7 +13,7 @@ A sun-bleached sci-fi frontier seen from a 2:1 isometric camera, drawn in chunky
 ### Principles
 
 1. **Value first, hue second.** Every scene has three value bands: environment (low to mid), actors (mid to high, with dark outlines), and emissives and projectiles (highest, with white cores). If a screenshot turned to grayscale is still readable, the art is correct.
-2. **Darks are colored, never gray.** The darkest ink is violet-black (`#05030a`). Shadows shift hue toward violet or blue, and highlights shift toward yellow (hue-shifted ramps).
+2. **Darks are colored, never gray.** The darkest ink, `ink.0`, is violet-black. Shadows shift hue toward violet or blue, and highlights shift toward yellow (hue-shifted ramps).
 3. **Saturation is earned.** Large areas (ground, sky) stay softer. Full saturation is reserved for actors, emissives, and UI accents.
 4. **Shape tells the truth.** Every gameplay-relevant state has a shape or motion cue as well as a color (see [§8](#8-readability-and-enemy-ability-tells)).
 5. **The palette is a story dial.** The palette darkens gradually across maps, not with a switch at each act boundary. Actors keep their faction palettes; the world, the light, and the UI theme around them change.
@@ -24,46 +24,32 @@ A sun-bleached sci-fi frontier seen from a 2:1 isometric camera, drawn in chunky
 
 ## 2. Master palette
 
-**Every color in the game comes from this table.** Sprite palettes, environment ramps, and UI themes reference colors by name (for example `teal.3`), never by raw hex. A content test enforces this ([conventions.md](../tech/conventions.md#testing)).
+**Every color in the game comes from the master palette.** Its hex values live in one place, [`src/content/palettes/master.ts`](../../src/content/palettes/master.ts): change colors there, never here. Sprite palettes, environment ramps, and UI themes reference colors by name (for example `teal.3`), never by raw hex. A content test enforces this ([conventions.md](../tech/conventions.md#testing)). This section names the ramps and what each is for.
 
 Ramps run from `0` (darkest) to `4` (lightest) and are hue-shifted: shadows lean violet or blue, and highlights lean warm.
 
-> These values seed `src/content/palettes/master.ts` (T104). Once that file exists, **the code is the home of the hex values.** Change colors there, and trim this section to a link plus the rules if the two drift.
-
 ### Neutrals
 
-| Ramp | 0 | 1 | 2 | 3 | 4 | Use |
-|---|---|---|---|---|---|---|
-| `ink` | `#05030a` | `#0d0a18` | `#181226` | `#251c3a` | `#362a52` | Outlines, the deepest shadows, UI panels, letterbox |
-| `steel` | `#2a3046` | `#434c66` | `#646f8a` | `#929db6` | `#c6cee0` | Metal, Everglow hardware, UI chrome |
-| `white` | `#e6ebf5` | `#ffffff` | | | | Highlights, projectile cores, Everglow paint |
+| Ramp | Steps | Use |
+|---|---|---|
+| `ink` | 0–4 | Outlines, the deepest shadows, UI panels, letterbox. `ink.0` is violet-black, never gray |
+| `steel` | 0–4 | Metal, Everglow hardware, UI chrome |
+| `white` | 0–1 | Highlights, projectile cores, Everglow paint (`white.1` is pure white) |
 
 ### Hues
 
-| Ramp | 0 | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| `red` | `#2e0718` | `#6e0f2c` | `#b81d3a` | `#f0384a` | `#ff8c7e` |
-| `coral` | `#3a0e1c` | `#7e2234` | `#c8474a` | `#f47e6a` | `#ffc2a0` |
-| `orange` | `#3a1206` | `#8c2e0e` | `#d65c16` | `#ff9430` | `#ffcf7a` |
-| `gold` | `#3e2408` | `#8c5c0e` | `#dca61c` | `#ffde46` | `#fff5ac` |
-| `green` | `#0a2618` | `#155a2c` | `#2a9a3c` | `#62d64c` | `#b6f59e` |
-| `teal` | `#04222a` | `#08505c` | `#0e8a92` | `#2cd6cc` | `#9efff0` |
-| `blue` | `#08123c` | `#142c86` | `#245cd4` | `#469cff` | `#a6d8ff` |
-| `violet` | `#170838` | `#351676` | `#642cbc` | `#9c5cf0` | `#d8acff` |
-| `pink` | `#36082c` | `#76125c` | `#c4268c` | `#ff58b4` | `#ffaedd` |
+Nine saturated five-step ramps: `red`, `coral`, `orange`, `gold`, `green`, `teal`, `blue`, `violet`, `pink`. Their faction and UI roles are in [§4](#4-faction-visual-language) and [§9](#9-ui-style).
 
 ### Materials and skin
 
-| Ramp | 0 | 1 | 2 | 3 | 4 | Use |
-|---|---|---|---|---|---|---|
-| `skin.a` | `#3a1c16` | `#7a3c2a` | `#b86a48` | `#e8a47a` | `#ffd9bc` | Human skin (light to medium) |
-| `skin.b` | `#24120e` | `#4e2a1e` | `#7e4a32` | `#b07a56` | `#dcae88` | Human skin (medium to deep) |
-| `skin.c` | `#1a0c0a` | `#3a1e16` | `#5e3424` | `#8a5638` | `#c0885e` | Human skin (deep) |
-| `brass` | `#2a1806` | `#5c3a12` | `#9c6c22` | `#d6a440` | `#f6dc94` | Vrell hardware |
-| `patina` | `#122a24` | `#2c5a4a` | `#4e8a72` | `#86c0a0` | `#c4ecd2` | Vrell oxidized metal |
-| `grime` | `#1a1612` | `#3a3226` | `#5e523e` | `#8a7c62` | `#b8aa8c` | Dirt, scavenged plating, mining scars |
-| `hollow` | `#121214` | `#26262b` | `#42424a` | `#6e6e76` | `#a8a8ae` | The Hollow's drained body color |
-| `acid` | `#2c3604` | `#4a5a06` | `#9cc214` | `#d8ff3e` | `#f2ffb0` | **Reserved for the Hollow** (see the hue reservation below) |
+| Ramp | Use |
+|---|---|
+| `skin.a`, `skin.b`, `skin.c` | Human skin: light to medium, medium to deep, deep |
+| `brass` | Vrell hardware |
+| `patina` | Vrell oxidized metal |
+| `grime` | Dirt, scavenged plating, mining scars |
+| `hollow` | The Hollow's drained body color |
+| `acid` | **Reserved for the Hollow** (see the hue reservation below) |
 
 **Hue reservation.** Saturated yellow-green (hue 60–85°, HSV saturation above 60%, value above 50%) belongs **only** to the Hollow. No other faction, environment, or UI element may use it. When players see that color, they should feel that something is wrong before they can say why. A palette test enforces the reservation.
 
@@ -99,16 +85,7 @@ Actors (towers, enemies, projectiles) **keep their faction palettes in every act
 
 Deep, saturated greens, pink clay, a dusty-rose sand track, and a cyan sky. Shadows are lavender, not black, but still clearly dark. The ground sits a value band **below** the actors (principle 1): body luminance runs grass ≈ 0.20 < path ≈ 0.31 < every enemy, ally, and tower (≈ 0.37–0.42), so a Skitterkin on the road reads in grayscale by its value, not only its outline. A palette test holds the order (grass < path, path/grass ≥ 1.3:1, each actor ≥ 1.2:1 over the path). Grass tiles carry two soft mid-dark clumps each (a solid `p1` heart with a dithered rim), so the playfield has mid-darks between the lit ground and the deep apron.
 
-| Role | 0 | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| `grass` | `#123a2c` | `#1e6438` | `#348c48` | `#56b056` | `#98d878` |
-| `clay` (cliffs, soil) | `#4c2244` | `#7c3a5c` | `#b85c7c` | `#e892a2` | `#ffc6c8` |
-| `path` (sand track) | `#44303e` | `#6e5260` | `#957470` | `#b48e80` | `#d8baa2` |
-| `water` | `#1c6ab0` | `#2e9ae0` | `#6ad4f4` | `#c2f6ff` | |
-| `sky` (backdrop gradient) | `#7ccbee` | `#b2e6f8` | `#e2f8ff` | | |
-| `shade` / `light` | `#3a2c5e` | `#fff4dc` | | | |
-
-Flora accents: `pink.3`, `pink.4`, `gold.4`. Everglow billboards and domes: `white.0` and `teal.3`.
+Ramps (`act1.*`): `grass` (deep green), `clay` (pink: cliffs, soil), `path` (the dusty-rose sand track), `water` (4 steps), `sky` (the cyan backdrop gradient, 3 steps), and `shade` (lavender) / `light` (warm cream). Flora accents: `pink.3`, `pink.4`, `gold.4`. Everglow billboards and domes: `white.0` and `teal.3`.
 
 ### The apron (every act)
 
@@ -118,30 +95,13 @@ No map floats in the void. `GroundView` draws a 4-tile **apron** of non-playable
 
 Sun-baked gold grass, rust soil, ember highlights. By the end of the act the sky is violet and the shadows are deep plum. Grey **mining scars** (`grime` ramp) spread across revisited maps. **A2M6 (Sundown)** is the one map where the light changes during play: it starts on `act2.dusk`, and the lighting overlay ([§7](#glow-and-bloom)) fades in across its waves until the last wave is fought in full Long Night darkness.
 
-| Role | 0 | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| `grass` (dry) | `#3c3416` | `#6c5c1e` | `#a88c2c` | `#dcbc48` | `#fbe88c` |
-| `clay` (rust) | `#3c1630` | `#6c2838` | `#a84638` | `#de7440` | `#ffae62` |
-| `path` | `#4a2a32` | `#7a4840` | `#ae7650` | `#dca468` | `#fcd690` |
-| `sky` (gold) | `#ff7a52` | `#ffae52` | `#ffd88c` | | |
-| `sky` (dusk) | `#3a1a5e` | `#7a3484` | `#d0587a` | | |
-| `shade` / `light` (gold) | `#3a1446` | `#ffd49c` | | | |
-| `shade` / `light` (dusk) | `#1c0c34` | `#bca0ff` | | | |
-
-Accents: `violet.3`, `orange.3`, and embers `orange.4`.
+Ramps: `act2.grass` (dry gold), `act2.clay` (rust), and `act2.path` are shared by both palettes. Each has its own `sky` (3 steps) and `shade` / `light`: `act2.gold` has a sunset-orange sky, plum shade, and peach light; `act2.dusk` has a violet-to-rose sky, near-black plum shade, and lilac light. Accents: `violet.3`, `orange.3`, and embers `orange.4`.
 
 ### Act III: the Long Night (`act3`)
 
 Near-black ground, cold-violet crystal growths (unsung stardust spreading from the mines), and alarm-red Everglow emergency lighting. Darkness is now the default, and light comes only from emissives and the two moons (see the lighting overlay in [§7](#7-vfx)).
 
-| Role | 0 | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| `ground` | `#06040c` | `#120a22` | `#22123c` | `#36195a` | `#522882` |
-| `crystal` | `#2a0a4c` | `#5a1aa2` | `#9a42ff` | `#d294ff` | `#ffffff` |
-| `path` | `#160a16` | `#2c1224` | `#461c30` | `#66283a` | |
-| `alarm` | `red.1` | `#d4162e` | `#ff2e3e` | `red.4` | |
-| `sky` | `#000000` | `#07040f` | | | |
-| `shade` / `light` / `emergency` | `#000000` | `#8a6ec4` | `#ff2e3e` | | |
+Ramps (`act3.*`): `ground` (near-black to deep violet), `crystal` (cold violet up to white), `path` (4 steps; its top step repeats in the tile palette), `alarm` (`red.1`, two alarm reds of its own, `red.4`), `sky` (black, 2 steps), and `shade` (black) / `light` (pale violet) / `emergency` (alarm red).
 
 ### Finale: dawn through the dark (`finale`)
 
@@ -149,14 +109,9 @@ The finale follows its three phases ([design/maps.md §5.5](../design/maps.md#55
 - **Phases 1–2 (the Descent, the Unsung):** still night, on the Act III ground, with one new warm source: the **choir's song aura is a warm-gold light** punched into the darkness overlay, moving with the choir. The Halls' natural seams glow `stardust.sung`; the Deep Bore glows `stardust.unsung`. The light does not brighten per wave.
 - **Phase 3 (Dawn):** when the countdown reaches 0, the first sunlight in nineteen days rakes in from the east edge over about 8 s, lifting the darkness overlay and switching to the dawn ramps below. Highlights go gold and cyan. Sunrise is the reward, and it comes from the song, not from clearing waves.
 
-| Role | 0 | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|---|
-| `ground` | `#0f0a1c` | `#2a1a3a` | `#5c3050` | `#b4606a` | `#ffc68c` |
-| `sky` (dawn gradient) | `#1a0c36` | `#5e2a6a` | `#d0586a` | `#ff9c5a` | `#ffd87a` |
-| `hope` (accents) | `gold.3` | `teal.4` | `white.1` | | |
-| `shade` / `light` | `#1c1430` | `#ffc68c` | | | |
+Ramps (`finale.*`): `ground` (dark violet warming to peach), `sky` (the dawn gradient, 5 steps: night violet through rose and orange to gold), and `shade` / `light`; it borrows Act III's path and crystal ramps. The `hope` accents are `gold.3`, `teal.4`, and `white.1`.
 
-> Environment ramps not drawn from the core ramps (above) are still entries in the master palette, namespaced as `act1.grass.2` and so on.
+Every environment ramp is an entry in the master palette, namespaced by act (`act1.grass.2`), in [`master.ts`](../../src/content/palettes/master.ts).
 
 ---
 
@@ -237,7 +192,7 @@ Sprites the maps and story need beyond the tower and enemy rosters. Lore and cha
 | **`youngling`** | The enemy variant: a smaller Nibbler with a faint shimmer |
 | **Gerald** | A mail drone with a satchel |
 | **Tidybots** | Round cleanup drones with a vacuum nozzle and a chime light |
-| **Bricks in person** | A 16–24 px human with the rivet cannon on his shoulder. `ally.bricks` (M2): about 22 px of Bricks (lit khaki jacket over teal fatigues, deep skin lit warm, grey stubble, the brow scar, a pink-gold glint in his stone pouch, a chunky white cannon with an orange band and magazine) standing on his **post**, a round Everglow steel plate with a hazard-striped rim, so he reads as a person at a station and never as a tower. Frames: idle (a 2-frame breath) and firing, SE and NE authored and mirrored. Still to come: **cannon lowered** (pointed at the ground: his silent tell on A1M5 after "Clear it, Sprout," held while the Quiet Wave passes), and a worn-down kneel for A3M3 |
+| **Bricks in person** | A 16–24 px human with the rivet cannon on his shoulder. `ally.bricks` (M2): about 22 px of Bricks (lit khaki jacket over teal fatigues, deep skin lit warm, grey stubble, the brow scar, a pink-gold glint in his stone pouch, a chunky white cannon with an orange band and magazine) standing on his **post**, a round Everglow steel plate with a hazard-striped rim, so he reads as a person at a station and never as a tower. Frames: idle (a 2-frame breath), firing, and **cannon lowered** (`lowered_<facing>`: the same breath with the cannon held low across his hip, muzzle to the ground; his silent tell on A1M5 after "Clear it, Sprout," held while the Quiet Wave passes, and his at-ease pose with nothing in reach), SE and NE authored and mirrored. Still to come: a worn-down kneel for A3M3 |
 | **Colonist militia** | Colonists holding a firing post beside the path |
 | **Choir singers** | Skitterkin with `skitterkin.ally` and a singing loop |
 | **Brood Hauler** | `enemy.brood_hauler`: a big, waddling Skitterkin with broad steel-lit shell plates (heavy armor) under a tied, pale burlap sack lit to cream, flecked with gold and pink glitter (only one or two flecks are emissive, so the halo never washes the sack out). The sack is the `carrier` tell (§8). It dies in `fx.sack_burst` (the bag swells and splits, shreds fly, a glitter puff drifts down, the empty sack lies limp), and its young (`enemy.hauler_young`, teacup-sized, one huge eye, faint pink-gold frost) scurry back the way they came. From Act II the sack shows the cluster of young (later art) |
@@ -276,7 +231,7 @@ Faction flavor goes on top: Aelari shots are thrown threads (a taut 1 px jewel-t
 ### Impacts, hits, and deaths
 
 - **Hit flash:** 2 frames of white tint fill on the target. Never longer: hits must not hide the sprite.
-- **Impact burst:** a 3–5 frame sprite, sized by damage class (small 5×5, medium 9×9, large 15×15).
+- **Impact burst:** a 3–5 frame sprite, sized by damage class: small 5×5, medium about 11×11 (`fx.bomblet_burst`), large about 19×19 (`fx.explosion`). Its first frame is the biggest and brightest (a white-hot star with spikes), so the hit lands on the frame it happens; then fireball, ring, smoke.
 - **Death tone ramp (a story dial):** Skitterkin deaths in Act I are slapstick: a "poof" of fluff and confetti pixels. Over Act II the confetti thins and a small stardust fleck lingers. By Act III there is no confetti, just a short, quiet fade of a still body. The variant is chosen by the map's act; the rules are in [design/enemies.md §8](../design/enemies.md#8-death-and-feedback-by-act).
 - **Tidybots (Acts I–II):** after a wave resolves, 1–3 Tidybots hover in from the map edge, vacuum up the remains with a cheerful 2-frame chime light, and leave. In A2M4 they're seen unloading at the plant's intake. They never appear in Act III, and bodies stay on the path for a moment before fading.
 - **Laid to rest (finale):** the unit's pixels flip to `stardust.sung` gold from the outline inward over 4 frames, then 6–10 gold motes rise slowly (about 1 px per frame) and fade in stepped alpha. **Ishael's mote (Dawn):** as the light comes up, one gold mote rises beside Ves'thara's sprite on its own, larger (2×2), slower (about 1 px every 2 frames), and last to fade. Nothing labels it. **Scattered:** the unit unravels into `stardust.unsung` violet motes that drift back along its route, then pull together where it re-forms.
@@ -290,8 +245,11 @@ The numbers are `render/vfx/fxTiming.ts`; FxView draws them ([architecture.md §
 
 - **Hitscan tracer (Rivet):** the `projectile.rivet_tracer` streak (warm tail, white head toward the target) flies from the muzzle to the target in about 90 ms. The hit itself landed the tick the tower fired; the streak is only the read.
 - **Pulse ring (Sprinkler):** a solid 1 px `blue.4` ellipse grows from the tower to its pulse radius in quarter-tile steps over about 360 ms, fading down the stepped-alpha ladder, drawn in `decal` under the enemies it chills.
-- **Shell burst (Thumper):** `fx.explosion` at the impact point, over a solid `orange.3` ring at the firing tier's splash radius for 200 ms, so the player sees what the shell covered.
+- **Shell burst (Thumper):** `fx.explosion` at the impact point, over a solid `orange.3` ring at the firing tier's splash radius for 200 ms, so the player sees what the shell covered. **Cluster Thumper**'s bomblets are `projectile.thumper_bomblet` (a 4 px orange ball with a white glint, tumbling) and each pops a small `fx.bomblet_burst`, so the cluster reads as one big burst ringed by little ones.
 - **Orbital Strike:** the `fx.orbital_reticle` (its dashed ellipse sized to the 1.5-tile radius, dashes marching) sits on the target for the whole 1 s telegraph and holds while paused; at 60% alpha it also follows the pointer while the player aims. On impact a beam drops from the top of the screen (teal edges around a white core, 8 → 6 → 4 → 2 px over 200 ms, with a flat `teal.4` and white flash where it meets the ground), the ground flashes out to the strike's radius (a filled `teal.4` ellipse at 60% with a `white.1` edge, fading in steps over 240 ms), seven `fx.explosion` bursts roll outward (the center, then a ring of six at 0.9 tiles, 50 and 100 ms late) with two more just off the center for a big core, a dithered `ink.0` scorch (0.75 tiles) fades over 1.5 s, and the screen shakes.
+- **Orbital Strike Mk II** (radius 2 tiles): the baked reticle fits only 1.5 tiles, so a wider strike's reticle is a marching dashed `teal.3` ring (3 on, 2 off, `ink.0` under-stroke) at its real radius.
+- **Suppressing Fire:** while aimed, hovering a path tile previews the stretch it would cover (every ground route through the tile, 3 tiles each) as `orange.4` hazard stripes (3 px diagonal bands at 60% inside a solid 1 px tile edge); any other tile shows the red invalid highlight. Once cast, the covered tiles carry `orange.3` hazard stripes for the 5 s, flickering 100% ↔ 60% every 125 ms (steady under reduced motion) and stepping down to 35% and 15% over the last half second, while `projectile.rivet_tracer` streaks rake random spots on the strip (one every 35 ms, up to 0.35 tiles off the center line), each landing with a quarter-tile `orange.4` spark ring. The streaks fly from Bricks's muzzle when he is on the map, otherwise in from up-screen. Everything holds still while paused.
+- **Bricks at his post** (`ally.bricks`) breathes in `idle_<facing>` (2 fps) turned toward his target, and each shot plays `fire_<facing>` (the muzzle flash, then back to idle) with a tracer streak from his cannon's muzzle to the target, like a Rivet's.
 - **Link tethers:** an active link ([design/towers.md §6.1](../design/towers.md#61-rules)) shows as `fx.link_tether`: a 1 px arc between the two towers, bowed 6 px up so it clears their heads, with a 1 px `ink.0` under-stroke and beads marching from one tower to the other (4 frames at 6 fps). Shape and color both name the link: **Crossfire** is a solid `orange.3` line with `orange.4` beads; **Sitting Ducks** is a dashed `blue.3` line (2 on, 1 off) with white beads. Drawn over the towers, in `overlay`.
 - **Feedback juice (D026):** an enemy death pops `fx.explosion` (Act I's slapstick poof until the death-tone ramp lands). A new tower drops in from 4 px above (1 px per 2 frames) inside a `steel.4` dust ring; an upgrade fills the tower white for 2 frames inside a growing `teal.4` ring. Credits float as numbers in the 3×5 font with a 1 px `ink.0` outline, rising 10 px over 0.9 s: "−cost" in `gold.3` on a build or upgrade, "+refund" in `gold.4` on a sale.
 - **A leak:** the core fills white for 2 frames, a `red.3` ring grows from it to 1 tile, the camera shakes 1 px for 120 ms (off under reduced motion), and "−N" floats up in `red.3`. At integrity 5 or less the core's heart turns red: its glow halo is drawn in `red.3` and the orb pulses `red.3` ↔ `red.4` at 1 Hz (a steady `red.4` under reduced motion). Both overlays are cut from the core's `@glow` frame (the orb is its 60% step, the halo its outer steps), so they fit the sprite exactly.

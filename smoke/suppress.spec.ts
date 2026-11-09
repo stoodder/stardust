@@ -9,9 +9,9 @@ import { DEV_MAP_ID } from '../src/app/battleSetup.ts';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
-/** dev_range tiles: a pad, and the path tile at the bend in front of Bricks's post. */
+/** dev_range tiles: a pad, and the path tile at the bend, where wave 1 is walking by then. */
 const PAD = [3, 1] as const;
-const BEND = [6, 3] as const;
+const BEND = [4, 3] as const;
 
 async function tileClient(page: Page, [c, r]: readonly [number, number]) {
   const p = await page.evaluate(([x, y]) => globalThis.__sd?.tileToClient(x, y) ?? null, [
@@ -76,8 +76,8 @@ test('suppress: E aims at the path, previews the segment, and casts it', async (
       .filter((z) => z.alive)
       .map((z) => ({ kind: z.kind, slot: z.abilitySlot, from: z.distFrom, to: z.distTo })),
   );
-  // dev_range's path tile (6,3) is route index 9: the segment covers tiles 8–10.
-  expect(zones).toEqual([{ kind: 'segment', slot: 2, from: 7.5, to: 10.5 }]);
+  // dev_range's path tile (4,3) is route index 7: the segment covers tiles 6–8.
+  expect(zones).toEqual([{ kind: 'segment', slot: 2, from: 5.5, to: 8.5 }]);
   await expect(slot2).toHaveAttribute('aria-label', /^Suppressing Fire, recharging, 50 s$/);
 
   // Let it run a moment in real time: the strip flickers, streaks rake it, Bricks fires.
@@ -107,7 +107,9 @@ test('suppress: keyboard only — E, the arrows walk the path, Enter fires', asy
   await page.keyboard.press('KeyE');
   // The cursor appears on a path tile, and every move stays on the path.
   for (const key of ['ArrowDown', 'ArrowRight', 'ArrowDown']) {
+    // oxlint-disable-next-line no-await-in-loop -- one key press at a time, in order
     await page.keyboard.press(key);
+    // oxlint-disable-next-line no-await-in-loop -- each press is checked before the next
     await expect(say).toHaveText(
       /^(Path|Spawn|Core), column \d+, row \d+\. Enter fires Suppressing Fire here\.$/,
     );

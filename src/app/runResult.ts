@@ -99,7 +99,13 @@ export function metaRunEndOf(
 export function runRewardsOf(input: RunEndInput, summary: RunEndSummary): RunRewards {
   const medals = input.medals.map((m): MedalResult => {
     const won = summary.medals.find((e) => e.id === m.id);
-    return { id: m.id, name: m.name, earned: won !== undefined, isNew: won?.isNew ?? false };
+    return {
+      id: m.id,
+      name: m.name,
+      earned: won !== undefined,
+      isNew: won?.isNew ?? false,
+      intel: won?.intel ?? 0,
+    };
   });
   const { source, amount, base, waveCount } = summary.stardust;
   return {

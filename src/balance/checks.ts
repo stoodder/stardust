@@ -226,7 +226,8 @@ export function mapChecks<K extends IdSpace>(
       ),
     );
     // #6: meta can't replace a counter (design/progression.md § 10).
-    const note = leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
+    const note =
+      leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
     checks.push(
       perRun(
         '6',
@@ -248,7 +249,7 @@ export function mapChecks<K extends IdSpace>(
   checks.push(
     perRun(
       '9',
-      "par on Story wins with margin ≥ its Standard median",
+      'par on Story wins with margin ≥ its Standard median',
       'par@story',
       [1],
       (rec, get) => {

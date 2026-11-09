@@ -49,7 +49,9 @@ describe('meta modifiers', () => {
       const got = metaModifiers({ ...none, protocols: [id], ...(picks && { picks }) });
       const expected = p.grants.map((g) => {
         const m = { ...g, source: `protocol:${id}` };
-        return picks !== undefined && 'tower' in m && m.tower === '*' ? { ...m, tower: 'rivet' } : m;
+        return picks !== undefined && 'tower' in m && m.tower === '*'
+          ? { ...m, tower: 'rivet' }
+          : m;
       });
       expect(got).toEqual(expected);
     },
@@ -59,7 +61,13 @@ describe('meta modifiers', () => {
     expect(
       metaModifiers({ ...none, protocols: ['specialist'], picks: { specialist: 'thumper' } }),
     ).toEqual([
-      { kind: 'towerCost', tower: 'thumper', tiers: 'spec', pct: -0.25, source: 'protocol:specialist' },
+      {
+        kind: 'towerCost',
+        tower: 'thumper',
+        tiers: 'spec',
+        pct: -0.25,
+        source: 'protocol:specialist',
+      },
     ]);
     expect(() => metaModifiers({ ...none, protocols: ['specialist'] })).toThrow(
       /'specialist' needs a tower pick/,
@@ -103,7 +111,11 @@ describe('meta modifiers', () => {
     expect(story.state.integrity).toBe(30);
     expect(story.state.credits).toBe(Math.round(map.startCredits * 1.5));
     const stacked = cfg(
-      metaModifiers({ ...none, difficulty: 'story', upgrades: { reinforced_core: 3, seed_money: 4 } }),
+      metaModifiers({
+        ...none,
+        difficulty: 'story',
+        upgrades: { reinforced_core: 3, seed_money: 4 },
+      }),
     );
     expect(stacked.state.integrity).toBe(33);
     expect(stacked.state.credits).toBe(Math.round(map.startCredits * (1 + 0.5 + 0.16)));
@@ -124,7 +136,9 @@ describe('meta modifiers', () => {
   });
 
   it('refuses unknown ids, ranks out of range, duplicates, and too many protocols', () => {
-    expect(() => metaModifiers({ ...none, upgrades: { nope: 1 } })).toThrow(/unknown upgrade 'nope'/);
+    expect(() => metaModifiers({ ...none, upgrades: { nope: 1 } })).toThrow(
+      /unknown upgrade 'nope'/,
+    );
     expect(() => metaModifiers({ ...none, upgrades: { seed_money: 5 } })).toThrow(/rank 5/);
     expect(() => metaModifiers({ ...none, upgrades: { seed_money: 1.5 } })).toThrow(/rank 1.5/);
     expect(() => metaModifiers({ ...none, protocols: ['nope'] })).toThrow(/unknown protocol/);
@@ -153,7 +167,9 @@ describe('meta modifiers', () => {
     const save = DEV_SAVES.all_unlocked.build();
     const mods = saveModifiers(save);
     expect(mods.some((m) => m.source.startsWith('protocol:'))).toBe(false);
-    expect(mods).toEqual(metaModifiers({ upgrades: maxRanks(), protocols: [], difficulty: 'standard' }));
+    expect(mods).toEqual(
+      metaModifiers({ upgrades: maxRanks(), protocols: [], difficulty: 'standard' }),
+    );
     save.settings.difficulty = 'story';
     expect(saveModifiers(save).slice(-5)).toEqual(DIFFICULTY_MODIFIERS.story);
     expect(saveModifiers(createNewSave())).toEqual([]);

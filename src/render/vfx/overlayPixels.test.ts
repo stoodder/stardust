@@ -129,6 +129,16 @@ describe('tileTintImage', () => {
     expect(alphaAt(img, 15, 0)).toBe(Math.round(0.6 * 255)); // top vertex
     expect(alphaAt(img, 0, 0)).toBe(0); // outside the diamond
   });
+
+  it('stripes the fill (some inner pixels clear), keeping the whole edge', () => {
+    const img = tileTintImage('orange.3', 0.6, 1, true);
+    const inner: number[] = [];
+    for (let y = 2; y < 14; y++)
+      for (let x = 8; x < 24; x++) if (inTileMask(x, y)) inner.push(alphaAt(img, x, y));
+    expect(inner).toContain(0);
+    expect(inner).toContain(Math.round(0.6 * 255));
+    expect(alphaAt(img, 15, 0)).toBe(255);
+  });
 });
 
 describe('ringImage dash shift', () => {

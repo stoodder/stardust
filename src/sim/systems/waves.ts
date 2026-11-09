@@ -140,7 +140,9 @@ export function waveModifiers(
   }
   for (const stat of ['hp', 'shield', 'speed'] as const) {
     if (enemyPct[stat] <= -1) {
-      throw new RangeError(`enemyStat '${stat}' modifiers total ${enemyPct[stat]}; they must stay above -1`);
+      throw new RangeError(
+        `enemyStat '${stat}' modifiers total ${enemyPct[stat]}; they must stay above -1`,
+      );
     }
   }
   if (countdownPct <= -1) {

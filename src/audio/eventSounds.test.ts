@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SFX } from './sfx/index.ts';
 import type { AttackKind, IdSpace } from '../content/types.ts';
 import type { SimEvent } from '../sim/index.ts';
 import {
@@ -22,6 +23,9 @@ const fired = (kind: AttackKind, uid: number): SimEvent<IdSpace> => ({
   flightTicks: 0,
   radiusTiles: 0,
 });
+
+/** A Cluster Thumper bomblet: a lobbed shot with no target. */
+const bomblet = (uid: number): SimEvent<IdSpace> => ({ ...fired('lobbed', uid), targetUid: 0 });
 
 function run(events: SimEvent<IdSpace>[], act: 1 | 3 = 1): SoundCall[] {
   const s = createEventSounds(act);
@@ -87,6 +91,18 @@ describe('event sounds', () => {
     expect(ids(landing)).toEqual(['sfx:thumper_launch', 'sfx:thumper_impact']);
     // Attack kinds with no sound yet stay silent.
     expect(run([fired('beam', 0)])).toEqual([]);
+  });
+
+  it("merges a Cluster Thumper's bomblets: no launch each, one rate-limited crackle on landing", () => {
+    const calls = run([
+      bomblet(20),
+      bomblet(21),
+      { type: 'ProjectileHit', uid: 20, towerUid: 1, x: 1, y: 1, hits: 1 },
+      { type: 'ProjectileHit', uid: 21, towerUid: 1, x: 1, y: 1, hits: 0 },
+    ]);
+    expect(ids(calls)).toEqual(['sfx:bomblet_pop', 'sfx:bomblet_pop']);
+    expect(SFX.bomblet_pop.maxVoices).toBe(1);
+    expect(SFX.bomblet_pop.minGapMs).toBeGreaterThanOrEqual(100);
   });
 
   it('pitches enemy pops by type', () => {

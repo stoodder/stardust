@@ -14,12 +14,13 @@ export const A1_M01_RADIO: readonly RadioLine[] = [
   },
   { on: 'waveCleared', wave: 1, speaker: 'quill', text: '(singing along) Ev-er-glow, Ev-er-glow!' },
   { on: 'waveCleared', wave: 1, speaker: 'bricks', text: 'That jingle. Every time.' },
-  // The W3 Crossfire line waits for links (T202); until then the unlock is announced plainly.
+  // The w03 line, on the Thumper's unlock (the same moment: W3's countdown starts). It teaches
+  // Crossfire, which is live since T202a.
   {
     on: 'unlock',
     tower: 'thumper',
     speaker: 'quill',
-    text: 'New hardware! Thumper Mortar, ready to deploy!',
+    text: "New hardware! Put the mortar beside your Rivet. They like each other. It's called Crossfire!",
   },
   {
     on: 'countdown',

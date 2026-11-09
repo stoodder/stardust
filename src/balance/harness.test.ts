@@ -117,7 +117,7 @@ describe('balance harness', () => {
     const r = runMap(bought, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: .*'projectile' attacks \(fx_mortar\) is not simulated until M3/,
+      /seed 1: error: [^]*'projectile' attack.*\(fx_mortar\) is not simulated until M3/,
     );
   });
 
@@ -188,7 +188,9 @@ describe('balance harness', () => {
     const six = r.checks.find((c) => c.id === '6')!;
     expect([five.subject, five.ok]).toEqual(['noCounter:splash', true]);
     expect([six.subject, six.ok]).toEqual(['noCounter:splash', true]);
-    expect(six.summary).toMatch(/lost at W\d.*left out, not simulated yet: shop:salvage_rights \(M3\)/);
+    expect(six.summary).toMatch(
+      /lost at W\d.*left out, not simulated yet: shop:salvage_rights \(M3\)/,
+    );
     // The full-catalog runs really carry the catalog: more integrity, more credits, the Bulkhead.
     const full = r.runs.find((x) => x.build === 'noCounter:splash@fullCatalog' && x.seed === 1)!;
     const ref = r.runs.find((x) => x.build === 'noCounter:splash' && x.seed === 1)!;
@@ -200,7 +202,7 @@ describe('balance harness', () => {
       build: 'splash',
       catalog: FIXTURE_CATALOG,
     });
-    expect(only.runs.map((x) => x.build).sort()).toEqual([
+    expect(only.runs.map((x) => x.build).toSorted()).toEqual([
       'noCounter:splash',
       'noCounter:splash@fullCatalog',
     ]);

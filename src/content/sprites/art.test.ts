@@ -141,9 +141,12 @@ describe('explosion punch (D024)', () => {
     const b0 = bounds(grid('fx.explosion', 'f0'));
     expect(b0.x1 - b0.x0 + 1).toBeGreaterThanOrEqual(17);
     expect(area('f1')).toBeGreaterThan(150);
-    expect(def('fx.explosion').anims?.['burst']).toMatchObject({ fps: 12, loop: false });
-    // Four frames: render/vfx/fxTiming.ts BURST_MS is four frames at 12 fps.
-    expect((def('fx.explosion').anims?.['burst'] as { frames: string[] }).frames).toHaveLength(4);
+    // Four frames at 12 fps: render/vfx/fxTiming.ts BURST_MS assumes it.
+    expect(def('fx.explosion').anims?.['burst']).toMatchObject({
+      frames: ['f0', 'f1', 'f2', 'f3'],
+      fps: 12,
+      loop: false,
+    });
   });
 });
 
