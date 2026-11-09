@@ -203,7 +203,11 @@ export function validateNovelty(
   const newEnemies = [...new Set(groups.map((g) => g.enemy))].filter(
     (id) => ctx.enemies.has(id) && !history.enemies.has(id) && !isNeutralId(ctx, id),
   );
-  const broughtByNew = new Set(newEnemies.flatMap((id) => ctx.enemies.get(id)?.traits ?? []));
+  // What a new enemy's own groups bring (its traits, and Skittish when it walks fleeing).
+  const broughtByNew = traitsOf(
+    ctx,
+    groups.filter((g) => newEnemies.includes(g.enemy)),
+  );
   const present = traitsOf(ctx, groups);
   const newTraits = [...present].filter((t) => !history.traits.has(t) && !broughtByNew.has(t));
   const modifiers: string[] = [];

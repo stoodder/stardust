@@ -57,7 +57,8 @@ export type Feature =
   | 'tower.economy'
   /**
    * An Act II tower registered ahead of its task (T400a): its numbers are a stub until the task
-   * confirms them, so it stays out of play, the loadout pools, and the shop's shelves.
+   * confirms them, so it stays out of play, the loadout pools, and the shop's shelves. The task
+   * that lifts the row also drops the tower from content's TOWERS_AHEAD_OF_TASK.
    */
   | StubTowerFeature
   /**
@@ -123,12 +124,15 @@ export type Feature =
   | 'modifier.firstBuildFree'
   | 'modifier.freeCast';
 
-/** The Act II towers registered ahead of their tasks (T400a), each gated until its task. */
-export const STUB_TOWERS = ['lookout', 'harpoon', 'crane'] as const;
-export type StubTowerFeature = `tower.${(typeof STUB_TOWERS)[number]}`;
+/**
+ * The Act II towers registered ahead of their tasks (T400a; content/towers/index.ts
+ * TOWERS_AHEAD_OF_TASK lists the ones still waiting), each with its own row.
+ */
+export type StubTowerFeature = 'tower.lookout' | 'tower.harpoon' | 'tower.crane';
 
-function isStubTower(id: string): id is (typeof STUB_TOWERS)[number] {
-  return (STUB_TOWERS as readonly string[]).includes(id);
+/** A tower's own gate row, if it was registered ahead of its task. */
+function stubFeature(id: string): StubTowerFeature | null {
+  return id === 'lookout' || id === 'harpoon' || id === 'crane' ? `tower.${id}` : null;
 }
 
 /**
@@ -136,7 +140,8 @@ function isStubTower(id: string): id is (typeof STUB_TOWERS)[number] {
  * row is lifted. Meta keeps a refused stub's license and spec unlock off the shelves.
  */
 export function stubTowerGate(id: string, gates: Gates = FEATURE_GATES): GateOwner | null {
-  return isStubTower(id) ? gates[`tower.${id}`] : null;
+  const f = stubFeature(id);
+  return f === null ? null : gates[f];
 }
 
 /**
@@ -261,7 +266,8 @@ interface GateTier {
 
 /** The attack kinds, statuses, and tier abilities `tiers` use that have gates. */
 function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
-  if (isStubTower(id)) use(`tower.${id}`, `the '${id}' tower`);
+  const stub = stubFeature(id);
+  if (stub !== null) use(stub, `the '${id}' tower`);
   for (const tier of tiers) {
     const a = tier.attack;
     const kind = a?.kind;

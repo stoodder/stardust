@@ -29,6 +29,7 @@ describe('the system pipeline', () => {
       'enemyAbilities',
       'abilities',
       'movement',
+      'detection',
       'towers',
       'allies',
       'projectiles',

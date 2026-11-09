@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN, CAMPAIGN_PLAN, CAMPAIGN_PLAN_IDS } from '../campaign.ts';
 import { MAPS } from '../maps/index.ts';
-import { TOWERS } from '../towers/index.ts';
+import { TOWERS, TOWERS_AHEAD_OF_TASK } from '../towers/index.ts';
 import {
   ABILITY_ACCESS,
   ENGINEERING,
@@ -79,7 +79,9 @@ describe('catalog: shape', () => {
   it('every registered tower has an access entry and one tune-up', () => {
     for (const id of Object.keys(TOWERS)) {
       expect(Object.hasOwn(TOWER_ACCESS, id), id).toBe(true);
-      expect(upgrades.filter((u) => u.tower === id).map((u) => u.id)).toEqual([`tune_${id}`]);
+      // A stub registered ahead of its task gets its tune-up with that task (T406, T408).
+      const tunes = TOWERS_AHEAD_OF_TASK.includes(id) ? [] : [`tune_${id}`];
+      expect(upgrades.filter((u) => u.tower === id).map((u) => u.id)).toEqual(tunes);
     }
   });
 });

@@ -176,7 +176,9 @@ export type T3Reach = Readonly<Record<Layer, number>>;
 /**
  * The best tier-1-to-3 range over `towers`, per layer (specs aren't counted: tier 4 is a later
  * investment, D097). Every tower in the content counts, not only the map's issued ones, since a
- * replay brings whatever the save owns. Tier patches carry their tier before's targets and range.
+ * replay brings whatever the save owns, except stubs registered ahead of their task (the caller
+ * leaves out towers/index.ts TOWERS_AHEAD_OF_TASK). Tier patches carry their tier before's targets
+ * and range.
  */
 export function bestT3Reach(towers: Iterable<TargetedTower>): T3Reach {
   const best = { ground: 0, air: 0 };

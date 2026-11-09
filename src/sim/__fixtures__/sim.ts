@@ -13,15 +13,18 @@ import { createSim, type Sim } from '../sim.ts';
 export type { FixtureIds };
 
 /**
- * The content fixture as the sim runs it: fx_map's `late_gift` event without its `setClickable`
- * action, which the sim doesn't simulate yet (createSim refuses it; clickable objects are A2M3's).
- * Its other script parts (a cue at W2's countdown, a credit grant 1.5 s into W2) stay.
+ * The content fixture as the sim runs it: fx_map without its clickable rock (`clickables`, and
+ * `late_gift`'s `setClickable` action), which the sim doesn't simulate yet (createSim refuses
+ * them until T409; clickable objects are A2M3's). Its other script parts (a cue at W2's
+ * countdown, a credit grant 1.5 s into W2) stay.
  */
+const { clickables: _clickables, ...FX_MAP } = FIXTURE.maps.fx_map;
+
 export const SIM_FIXTURE: RawContent<FixtureIds> = {
   ...FIXTURE,
   maps: {
     fx_map: {
-      ...FIXTURE.maps.fx_map,
+      ...FX_MAP,
       events: (FIXTURE.maps.fx_map.events ?? []).map((ev) =>
         Object.assign({}, ev, { actions: ev.actions.filter((a) => !('setClickable' in a)) }),
       ),

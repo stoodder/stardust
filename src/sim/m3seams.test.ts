@@ -152,8 +152,8 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'enemy.split': null, // T304c
       'enemy.huddle': null, // T304c
       'enemy.boss': null, // T304c
-      'enemy.boss.pivot': 'M4',
-      'enemy.boss.layToRest': 'M4',
+      'enemy.boss.pivot': 'M5', // T305c (D101 renumbered the milestones)
+      'enemy.boss.layToRest': 'M7',
       'ability.slowAll': null, // T304d
       'ability.discount': null, // T304d
       'modifier.firstBuildFree': null, // T304d
@@ -195,10 +195,13 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(closed(e.elder)).toEqual(['a huddle (elder) is not simulated until T304c']);
     expect(closed(e.chitterbloom)).toEqual(['a boss (chitterbloom) is not simulated until T304c']);
     // Boss endings Act I doesn't use stay refused.
-    for (const ending of ['pivot', 'layToRest'] as const) {
+    for (const [ending, owner] of [
+      ['pivot', 'M5'],
+      ['layToRest', 'M7'],
+    ] as const) {
       const boss = { ...e.chitterbloom.boss!, ending };
       expect(refusedWith({ ...e.chitterbloom, boss })).toEqual([
-        `a boss ending '${ending}' (chitterbloom) is not simulated until M4`,
+        `a boss ending '${ending}' (chitterbloom) is not simulated until ${owner}`,
       ]);
     }
     // A ground unit on an air lane is a flyer too.

@@ -282,16 +282,16 @@ describe('wave resolution and win/lose', () => {
 describe('createSim and map scripts', () => {
   it('refuses script parts it cannot simulate, naming them', () => {
     expect(() => createSim({ ...fixtureConfig(), content: compileContent(FIXTURE) })).toThrow(
-      /late_gift': action setClickable is not simulated yet/,
+      /late_gift': action setClickable is not simulated until T409/,
     );
     expect(() =>
       simWith({
         events: [{ id: 'boss', on: { refugeesRemaining: 2 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger refugeesRemaining is not simulated yet/);
+    ).toThrow(/'boss': trigger refugeesRemaining is not simulated until T305c \(M5\)/);
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),
-    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated yet/);
+    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated until T305c \(M5\)/);
     const cond = {
       ...FIXTURE_CONTENT.maps.fx_map,
       events: [

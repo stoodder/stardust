@@ -110,6 +110,10 @@ describe('towers', () => {
       'sprinkler',
       'skyhook',
       'zapcoil',
+      // M4's (T400a stubs; src/sim/m4seams.test.ts).
+      'lookout',
+      'harpoon',
+      'crane',
     ]);
     expect([rivet, thumper, sprinkler].map((t) => t.name)).toEqual([
       'Rivet',
@@ -271,6 +275,12 @@ describe('enemies', () => {
       'elder',
       'chitterbloom',
       'gerald',
+      // M4's (T400a stubs; src/sim/m4seams.test.ts).
+      'mote',
+      'glimmer',
+      'weft_warden',
+      'lightwing',
+      'glass_witch',
     ]);
     expect(
       Object.values(content.enemies)

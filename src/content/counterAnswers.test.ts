@@ -296,7 +296,7 @@ function armorMap(noArmor: ScriptedBuild<IdSpace>, patch: Partial<MapDef<IdSpace
   };
   const map = loose.defineMap({
     ...fxMap,
-    threatIntel: ['armored', 'fast', 'shielded'],
+    threatIntel: ['armored', 'fast', 'shielded', 'skittish'],
     requiredCounters: ['armor'],
     referenceProfile: { ...fxBuilds.referenceProfile, specs: ['fx_mortar'] },
     noCounterBuilds: { armor: noArmor },

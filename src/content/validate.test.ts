@@ -516,7 +516,14 @@ describe('validate: maps', () => {
       tells: ['boss'],
       boss: { phases: [{ fromPct: 1, hastePct: 0.5 }], ending: 'driveOff', endAtPct: 0 },
     };
-    expect(validate({ ...raw, enemies: { ...raw.enemies, fx_crawler: capstone } })).toEqual([]);
+    // A boss in the waves brings the intel-only `boss` entry (D101).
+    const bossRaw = withMap({
+      waves: raw.maps.fx_map!.waves,
+      threatIntel: [...fxMap.threatIntel, 'boss'],
+    });
+    expect(validate({ ...bossRaw, enemies: { ...raw.enemies, fx_crawler: capstone } })).toEqual(
+      [],
+    );
     const preview: EnemyDef = {
       ...capstone,
       armor: 2,

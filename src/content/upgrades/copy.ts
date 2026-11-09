@@ -15,6 +15,13 @@
 export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Zibzab: Vrell tower licenses (access.ts). The Zapcoil sample's line is act1.md's (A1M3, *Base*).
   license_zapcoil: "Price first: your next visit. First one's on me. Zibzab is patient.",
+  // M4's licenses (T400a; on the shelf once their towers play: T406 Lookout, T408 the others).
+  license_lookout:
+    'Price first: 150 stardust. A shack with a view. It spots what hides. The view is used. Still works.',
+  license_harpoon:
+    'Price first: 250 stardust. For rig security, the brochure says. It goes through armor. Rigs too.',
+  license_crane:
+    'Price first: 200 stardust. A crane that earns while it stands there. Like me. Mostly like me.',
 
   // Zibzab: global upgrades (shop.ts).
   reinforced_core:

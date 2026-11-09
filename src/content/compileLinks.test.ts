@@ -60,10 +60,15 @@ describe('the live links (towers.md § 6.2)', () => {
   });
 
   it('lists each tower’s links on its compiled def', () => {
-    expect(live.towers.rivet.links).toEqual(['crossfire']);
+    expect(live.towers.rivet.links).toEqual(['crossfire', 'overwatch']);
     expect(live.towers.thumper.links).toEqual(['crossfire', 'sitting_ducks']);
     expect(live.towers.sprinkler.links).toEqual(['sitting_ducks', 'conductive']);
     expect(live.towers.zapcoil.links).toEqual(['conductive']);
+    // M4's (T400a stubs).
+    expect(live.towers.skyhook.links).toEqual(['skywatch']);
+    expect(live.towers.lookout.links).toEqual(['overwatch', 'skywatch']);
+    expect(live.towers.harpoon.links).toEqual(['reel_it_in']);
+    expect(live.towers.crane.links).toEqual(['reel_it_in']);
   });
 
   it('refuses chain jumps that aren’t a whole number > 0, and a Soak that isn’t > 0', () => {

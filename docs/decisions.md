@@ -1267,3 +1267,10 @@ The star map ("Sector map" on screen) is specced in core-loop §1.1, art-directi
 - **Ves'thara** (`aelari` palette) is woven and lit from inside: her lattice veil's gaps are real transparent holes (the only see-through portrait), her eyes are knots of light that lose their white core only in grief, her robes are dark emerald so violet stays reserved for the Hollow-touched variants, and the cut collar thread hangs loose in every frame.
 - **Pebble** keeps the Peeker's green seedling (custom legend over `skitterkin.ally`) so the player knows her as the Peeker; she is bare-headed until Bricks's bottle cap (a `cap` variant from A2M4, M5). `singing` is drawn now for A3M1.
 - **Bricks's `pebble` variant** carries her in his breast pocket ("Pocket's got room"); it shows only after the rescue (T422), and Pebble's name plate reads "???" until Bricks names her.
+
+### D104 — 2026-11-09 — T400b story, meta and save seams
+- **No SaveData bump for M4:** checkpoints live in memory (host and run end), star-map nodes derive from map records, presentation is content.
+- **Presentation dials** live in `content/presentation.ts` (one row per act plus `byMap` overrides), not in map data; `story/presentation.ts` `presentationFor(map)` resolves them (wired by T410b).
+- **Each act's shared barks are one file** (`barks/act2.ts`), and a test holds every shared bark to its act. `not_firing` takes an optional `wave`.
+- **Later-act codex versions are a per-act patch** merged by the registry (`CODEX_LATER_VERSIONS`), never replacing a version an entry already has; T411 annotates Act I entries from `codex/act2.ts`.
+- **Act II dev saves** (`after_a1m5_ref`, `after_a2m1..3`) follow the reference profile's weaker branches (C1 cleared, `held_fire_second_look` false), go through the shop's real `buy()`, and skip unregistered maps and unlanded content (M3's pattern), so they grow as M4 lands.

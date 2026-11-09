@@ -9,6 +9,15 @@ import { sprinkler } from './sprinkler.ts';
 import { thumper } from './thumper.ts';
 import { zapcoil } from './zapcoil.ts';
 
+/**
+ * Towers registered ahead of their task (T400a): stubs whose numbers their task confirms, refused
+ * by the sim until then (sim/gates.ts, each `tower.<id>` row). The task that lifts a row removes
+ * the tower here in the same change (src/sim/m4seams.test.ts checks the two agree). While listed,
+ * a tower is left out of [quiet-wave-reach]'s best tier-3 range: the Harpoon's 4.0 reaches A1M5's
+ * Quiet Wave from two pads (D097), which T408 must settle before it lifts `tower.harpoon`.
+ */
+export const TOWERS_AHEAD_OF_TASK: readonly string[] = ['lookout', 'harpoon', 'crane'];
+
 export const TOWERS = defineRegistry({
   rivet,
   thumper,

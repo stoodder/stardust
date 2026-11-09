@@ -77,6 +77,7 @@ describe('compileContent: towers and tier patches', () => {
       armorPierce: 0,
       ignoresArmor: false,
       spinUpTicks: 0,
+      targetFilter: null,
     });
   });
 

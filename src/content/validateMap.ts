@@ -66,6 +66,7 @@ import {
   type Grid,
 } from './validateHelpers.ts';
 import { validateScripts } from './validateScripts.ts';
+import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
 import {
@@ -97,7 +98,12 @@ export function validateCampaignMaps<K extends IdSpace>(
   const ctx = {
     enemies,
     towers,
-    t3Reach: bestT3Reach(Object.values<TargetedTower>(raw.towers)),
+    // Stubs registered ahead of their task don't count yet (towers/index.ts TOWERS_AHEAD_OF_TASK).
+    t3Reach: bestT3Reach(
+      Object.entries<TargetedTower>(raw.towers)
+        .filter(([id]) => !TOWERS_AHEAD_OF_TASK.includes(id))
+        .map(([, t]) => t),
+    ),
     towersWithSpecs,
     companionAbilities,
     rules,

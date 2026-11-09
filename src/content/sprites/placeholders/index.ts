@@ -21,6 +21,8 @@ import { iconEnemyZoomer } from '../icons/zoomer.ts';
 import { towerRivet, towerRivetHead } from '../towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from '../towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from '../towers/thumper.ts';
+import { defineSprite } from '../defineSprite.ts';
+import { GLYPH } from '../icons/iconGen.ts';
 import type { AnimDef, FrameDef, PaletteId, SpriteDef } from '../types.ts';
 
 /** `base` under a new id and palette, without palette variants or tier-4 spec frames. */
@@ -71,6 +73,45 @@ export const towerCraneHead = placeholder(towerThumperHead, 'tower.crane_head', 
 export const iconTowerLookout = placeholder(iconTowerSprinkler, 'icon.tower.lookout', 'vrell');
 export const iconTowerHarpoon = placeholder(iconTowerRivet, 'icon.tower.harpoon', 'vrell');
 export const iconTowerCrane = placeholder(iconTowerThumper, 'icon.tower.crane', 'vrell');
+
+// Tell glyphs the Act II units name (art-direction § 8; T440a draws the real ones in glyphs.ts):
+// first-pass 6×6 marks, so the briefing and wave preview show something readable.
+
+// prettier-ignore
+/** `shielded`: a bubble arc over a body (blue-white, the shield's colour). */
+export const iconTellShielded = defineSprite({
+  id: 'icon.tell.shielded',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'aelari',
+  outline: 'auto',
+  legend: { C: 'blue.3', D: 'blue.4' },
+  frames: { icon: ['.DDDD.', 'D....D', 'C.CC.C', 'C.CC.C', 'C....C', '.CCCC.'] },
+});
+
+// prettier-ignore
+/** `regen`: a plus (the shield comes back). */
+export const iconTellRegen = defineSprite({
+  id: 'icon.tell.regen',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'aelari',
+  outline: 'auto',
+  legend: { C: 'teal.3', D: 'teal.4' },
+  frames: { icon: ['..DD..', '..DD..', 'DDDDDD', 'CCCCCC', '..CC..', '..CC..'] },
+});
+
+// prettier-ignore
+/** `hollow`: a broken ring (wrong in every channel), in the reserved Hollow greys. */
+export const iconTellHollow = defineSprite({
+  id: 'icon.tell.hollow',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'hollow',
+  outline: 'auto',
+  legend: { C: 'hollow.3', D: 'hollow.4' },
+  frames: { icon: ['.DD.D.', 'D....D', 'D.....', '.....C', 'C....C', '.C.CC.'] },
+});
 
 // Scanner Sweep's ability icon (T440b).
 export const iconAbilityScannerSweep = placeholder(

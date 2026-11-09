@@ -31,7 +31,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     const pinned = { status: 'pinned', durationTicks: 60 } as const;
     const content = withGunTier(1, { ...GUN.tiers[1], effects: [pinned] });
     expect(gateRefusals(fixtureConfig({ content }))).toEqual([
-      'the pinned status (fx_gun) is not simulated until M4',
+      'the pinned status (fx_gun) is not simulated until T408',
     ]);
     // Not in the loadout: nothing to refuse.
     expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }))).toEqual([]);
@@ -54,23 +54,24 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     });
     const cfg = fixtureConfig({ content });
     expect(gateRefusals(cfg)).toEqual([
-      "a 'beam' attack (fx_gun) is not simulated until M4",
-      'the stasis status (fx_gun) is not simulated until M4',
-      'the unnerved status (fx_gun) is not simulated until M4',
+      "a 'beam' attack (fx_gun) is not simulated until M5",
+      'the stasis status (fx_gun) is not simulated until T407a',
+      'the unnerved status (fx_gun) is not simulated until M5',
     ]);
     const lifted = { ...FEATURE_GATES, 'attack.beam': null, 'status.stasis': null };
     expect(gateRefusals(cfg, lifted)).toEqual([
-      'the unnerved status (fx_gun) is not simulated until M4',
+      'the unnerved status (fx_gun) is not simulated until M5',
     ]);
   });
 
-  it('every closed T121 row names its task (D064: M3 lifts projectiles and chains)', () => {
+  it('every closed T121 row names its task (D064: M3 lifts projectiles and chains; D101: M4)', () => {
     expect(FEATURE_GATES.specs).toBeNull();
     expect(FEATURE_GATES['attack.projectile']).toBeNull(); // T304a
     expect(FEATURE_GATES['attack.chain']).toBeNull(); // T304b
-    for (const f of ['beam', 'spawner'] as const) expect(FEATURE_GATES[`attack.${f}`]).toBe('M4');
-    for (const s of ['pinned', 'stasis', 'unnerved'] as const) {
-      expect(FEATURE_GATES[`status.${s}`]).toBe('M4');
-    }
+    expect(FEATURE_GATES['attack.beam']).toBe('M5'); // Prism
+    expect(FEATURE_GATES['attack.spawner']).toBe('M6'); // Scuttle Den
+    expect(FEATURE_GATES['status.stasis']).toBe('T407a'); // Flash Freeze
+    expect(FEATURE_GATES['status.pinned']).toBe('T408'); // Tether, Magnet Crane
+    expect(FEATURE_GATES['status.unnerved']).toBe('M5'); // Mindspike
   });
 });
