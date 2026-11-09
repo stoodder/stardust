@@ -22,9 +22,9 @@ CLAUDE.md → docs/ → tasks.md (plan) → implement → test loop → review (
    - **UI/rendering:** automated smoke flows pass, and for visual changes you also look at the screenshots and play the flow yourself.
    - **Docs-only changes:** `npm run check:docs`, plus the manual consistency pass (one home per fact, no contradictions).
    - If the loop can't get to green within the task's scope, stop, mark the task `[!]`, and report what's failing rather than weakening or skipping tests.
-6. **Review: up to 3 rounds, from several angles.** After the test loop is green, the orchestrator spawns parallel reviewers, each with a distinct angle (see *Review angles* below). Fix real findings, **re-run the test loop after each round of fixes**, then re-review only if the fixes were substantial. Stop when a round comes back clean, or after round 3, logging any leftover findings as tasks.
+6. **Review: up to 3 rounds, from several angles.** After the test loop is green, the orchestrator spawns parallel reviewers, each with a distinct angle (see *Review angles* below). Fix real findings, **re-run the test loop after each round of fixes**, then re-review only if the fixes were substantial. Stop when a round comes back clean, or after round 3, logging any leftover findings as tasks. **Every milestone review includes the art trail:** run `npm run smoke`, look at the sprite gallery screenshot yourself, and give it to the reviewers (always to UX & feel or Art, when one of those angles is running) next to the previous milestone's `docs/art/gallery/m<N-1>.png`.
 7. **Update the docs.** The docs must describe the game as it is *now*. Update every doc your change touched, add new decisions to `docs/decisions.md`, and update `docs/README.md` if you added a doc.
-8. **Ship the milestone.** Mark tasks `[x]`, run the test loop one final time, add a short "M<N> shipped" entry to `docs/decisions.md`, commit with a message starting `M<N>: ship`, and push to `origin main`. Then try `git tag -a m<N>` and push the tag. **Claude Code cloud sessions can't push tags** (the GitHub proxy rejects them), so in a cloud session skip the tag and tell the owner to create release `m<N>` on GitHub (Releases → Draft a new release → new tag `m<N>` on `main`). Deploy once hosting is set up (see `docs/tech/architecture.md`).
+8. **Ship the milestone.** Mark tasks `[x]`, run the test loop one final time, copy the final sprite gallery screenshot to `docs/art/gallery/m<N>.png` (the art trail: one image per milestone, never overwritten, and the only binary allowed under `docs/`), add a short "M<N> shipped" entry to `docs/decisions.md` that links it, send that image to the owner with the ship summary, commit with a message starting `M<N>: ship`, and push to `origin main`. Then try `git tag -a m<N>` and push the tag. **Claude Code cloud sessions can't push tags** (the GitHub proxy rejects them), so in a cloud session skip the tag and tell the owner to create release `m<N>` on GitHub (Releases → Draft a new release → new tag `m<N>` on `main`). Deploy once hosting is set up (see `docs/tech/architecture.md`).
 
 ### Review angles
 
@@ -117,6 +117,7 @@ Reviewers report findings with severity (high / medium / low) and a concrete fix
 | `docs/story/` | Story bible, characters, races, campaign beats |
 | `docs/design/` | Mechanics: core loop, towers, enemies, progression, maps |
 | `docs/art/` | Art direction, palettes, isometric spec |
+| `docs/art/gallery/` | The art trail: one sprite gallery screenshot per shipped milestone (`m<N>.png`) |
 | `docs/tech/` | Architecture, conventions |
 | `docs/research/` | Background research that informs decisions |
 | `.claude/agents/` | Subagent definitions |
