@@ -45,10 +45,10 @@ function parSteps(): BuildStep[] {
     { wave: 6, upgrade: PUMP },
     { wave: 6, upgrade: BENCH_1 },
     { wave: 7, upgrade: GATE },
-    { wave: 8, build: 'skyhook', tile: BENCH_2 },
-    { wave: 9, upgrade: BENCH_9 },
+    { wave: 8, upgrade: BENCH_9 },
     { wave: 9, upgrade: BENCH_9 },
     { wave: 10, specialize: BENCH_9, spec: 'b' }, // Cloudburst
+    { wave: 11, build: 'skyhook', tile: BENCH_2 },
   ];
 }
 

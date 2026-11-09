@@ -10,7 +10,13 @@ import { tintOf } from './holdMarker.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import { TRAIL_SAMPLE_TICKS, TRAIL_STEPS, dotImage, seekerLift } from '../vfx/specPixels.ts';
+import {
+  TRAIL_SAMPLE_TICKS,
+  TRAIL_STEPS,
+  dotImage,
+  seekerFan,
+  seekerLift,
+} from '../vfx/specPixels.ts';
 import { firstLook, spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -22,6 +28,9 @@ export interface ProjectileLike {
   readonly ticksLeft: number;
   /** The shot's whole flight (ticks); a straight shot's climb follows it. */
   readonly flightTicks: number;
+  /** Where it's heading (tiles): a seeker fans out to the side of this line. */
+  readonly targetX: number;
+  readonly targetY: number;
 }
 
 /** How a shot is drawn, from the firing tower's attack. */
@@ -37,6 +46,8 @@ export interface ShotLook {
    * flight has no fixed length), turns along its heading, and leaves a smoke trail.
    */
   readonly seeker?: boolean;
+  /** A seeker's place in its volley (0–3): which way, and how far, it fans out. */
+  readonly fan?: number;
 }
 
 /** The trail's dot textures, by size. */
@@ -46,6 +57,7 @@ const DOT_KEYS = { 1: 'fx.trail.dot1', 2: 'fx.trail.dot2' } as const;
 const ARC_PEAK_PX = 18;
 
 const pos: Vec2 = { x: 0, y: 0 };
+const aim: Vec2 = { x: 0, y: 0 };
 
 export class ProjectileView implements PooledView {
   stamp = 0;
@@ -58,6 +70,7 @@ export class ProjectileView implements PooledView {
   #liftFrom = 0;
   #liftTo = 0;
   #seeker = false;
+  #fan = 0;
   /** A seeker's trail: its dots (made on first use), screen points newest first, the last sample. */
   readonly #trail: Phaser.GameObjects.Image[] = [];
   readonly #trailX: number[] = [];
@@ -88,6 +101,7 @@ export class ProjectileView implements PooledView {
     this.#liftFrom = look.liftFrom ?? 0;
     this.#liftTo = look.liftTo ?? 0;
     this.#seeker = look.seeker === true;
+    this.#fan = look.fan ?? 0;
     this.#trailN = 0;
     this.#sampledAge = 0;
     this.#prevX = Number.NaN;
@@ -125,8 +139,22 @@ export class ProjectileView implements PooledView {
       const t = p.flightTicks > 0 ? Phaser.Math.Clamp(1 - p.ticksLeft / p.flightTicks, 0, 1) : 1;
       lift = Math.round(this.#liftFrom + (this.#liftTo - this.#liftFrom) * t);
     }
-    const x = pos.x;
-    const y = pos.y - lift;
+    let x = pos.x;
+    let y = pos.y - lift;
+    if (this.#seeker) {
+      // Fan out to the side of its line to the target (screen space), easing back onto it.
+      const side = seekerFan(this.#fan, p.flightTicks - p.ticksLeft);
+      if (side !== 0) {
+        gridToScreen(p.targetX, p.targetY, this.#ctx.origin, aim);
+        const dx = aim.x - pos.x;
+        const dy = aim.y - pos.y;
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+          x += Math.round((-dy / len) * side);
+          y += Math.round((dx / len) * side);
+        }
+      }
+    }
     this.#body.setPosition(x, y);
     if (this.#seeker) this.#syncSeeker(p.flightTicks - p.ticksLeft, x, y);
   }

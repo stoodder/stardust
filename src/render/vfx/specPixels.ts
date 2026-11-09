@@ -1,7 +1,8 @@
 // The looks of the Skyhook's and Zapcoil's specs (T407b; art-direction §7): pure, unit-tested
 // rules and pixel images that ProjectileView and SpecFx draw.
 // - **Seekers** (Seeker Swarm): each missile climbs from the barrels to its flyer's height over its
-//   first SEEKER_CLIMB_TICKS sim ticks, turns along its flight (a 3×3 sprite may rotate), and
+//   first SEEKER_CLIMB_TICKS sim ticks, fans out from its volley-mates and eases back onto its line
+//   (`seekerFan`), turns along its flight (a 3×3 sprite may rotate), and
 //   leaves a smoke trail: a point dropped every TRAIL_SAMPLE_TICKS sim ticks, the newest an
 //   exhaust spark, the older ones grey puffs fading down the stepped-alpha ladder (TRAIL_STEPS).
 //   On sim ticks, so a pause holds the trail and 2× stretches nothing.
@@ -24,6 +25,21 @@ export const SEEKER_CLIMB_TICKS = 12;
 export function seekerLift(ageTicks: number, fromPx: number, toPx: number): number {
   const t = Math.min(1, Math.max(0, ageTicks / SEEKER_CLIMB_TICKS));
   return Math.round(fromPx + (toPx - fromPx) * t);
+}
+
+/**
+ * A volley's missiles fan out as they leave (render-only: in the sim, missiles at one target fly
+ * one path): the k-th missile of a volley starts SEEKER_FAN_PX[k] px to the side of its line,
+ * easing in to it over SEEKER_FAN_TICKS, so a volley reads as a swarm that converges.
+ */
+export const SEEKER_FAN_PX: readonly number[] = [-4, 4, -8, 8];
+export const SEEKER_FAN_TICKS = 30;
+
+/** The k-th missile's sideways offset (px) `ageTicks` into its flight, in whole pixels. */
+export function seekerFan(k: number, ageTicks: number): number {
+  const fan = SEEKER_FAN_PX[k % SEEKER_FAN_PX.length]!; // index < length
+  const left = 1 - Math.min(1, Math.max(0, ageTicks / SEEKER_FAN_TICKS));
+  return Math.round(fan * left);
 }
 
 /** A trail point is dropped every this many sim ticks. */

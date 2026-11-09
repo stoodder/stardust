@@ -167,6 +167,9 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   const flak = new Map<number, number>();
   /** The tower whose chain is being drawn (its uid-0 ProjectileHits are the arc's hops), or 0. */
   let chainTower = 0;
+  /** The tower whose volley is arriving (its seekers fan out by their place in it), and the next place. */
+  let volleyTower = 0;
+  let volleyPlace = 0;
   /** The projectile sprites of the content's bomblets (Cluster Thumper's). */
   const bombletSprites = new Set<string>();
   /** The projectile sprites of the content's homing shots (Seeker Swarm's missiles, T407b). */
@@ -453,6 +456,9 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         // at the intercept point. A seeker (T407b) climbs, turns, and trails smoke as it steers.
         // No splash: its landing pops small with no ring.
         const seeker = seekerSprites.has(e.sprite);
+        // A volley's shots arrive together: each fans out by its place in it.
+        volleyPlace = seeker && e.towerUid === volleyTower ? volleyPlace + 1 : 0;
+        volleyTower = seeker ? e.towerUid : 0;
         flak.set(e.uid, e.radiusTiles);
         views.projectiles.acquire(e.uid).show(e.uid, {
           sprite: e.sprite,
@@ -460,6 +466,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
           liftFrom: FLAK_MUZZLE_PX + towerLift(e.towerUid),
           liftTo: bodyLift(isFlyer(e.targetUid)),
           seeker,
+          fan: volleyPlace,
         });
       }
     }),
