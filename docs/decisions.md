@@ -1110,3 +1110,11 @@ Real art went in behind T300a's ids. No data changed.
   Robust under ±0.2–1 s shifts, including the Mk II result.
 - **Dialogue** (verbatim): the brief; Form 88-B; the knock-knock, whose "Who's there?" button plays the answer cue; Zibzab at W6–W7; Bricks's form at W8; Gerald-hit and hold-fire barks.
 - **Gaps for follow-up:** Gerald's status text has no channel, QUILL's wreckage line rides W2 (no trigger of its own), and no canon Skyhook-issued line exists (T325).
+
+### D086 — 2026-11-09 — T311c terraces, Act I props, death animations, clump separation
+- **Terraces (T223):** the render-only `terraces` field (digits 0–3, the same shape as `tiles`, never read by the sim; maps.md §3) gives A1M2 its three levels. `tile.cliff` paints an 8 px clay bank with a contact shadow on the lower tile; the road cuts through, and pads keep their plate. This is the playfield mid-dark push the m2 art verdict asked for.
+- **Props:** mailbox, Zibzab's shop (it appears on its W6 cue), fountain, a podium with Prim hovering, party tent, confetti cannon, bunting, and a planter that hides the Peeker on A1M4. They are placed through decor markers.
+- **Death animations:** a 4-frame pop for every killable Act I Skitterkin, played on its own corpse sprite.
+- **Clumps:** a per-unit walk tempo (×0.88–1.12) and a start-frame offset, so a clump reads as individuals (T117).
+- **Chonk:** its scutes are staggered, steel-rimmed plates.
+- **Gallery:** 23,492 px tall.

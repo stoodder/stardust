@@ -157,4 +157,43 @@ describe('battleSetup from a save', () => {
     expect(sim.state.integrity).toBe(30);
     expect(sim.state.credits).toBe(Math.round(sim.map.startCredits * 1.5));
   });
+
+  it('equipped Field Protocols reach the battle as modifiers (T308; Head Start, Specialist)', () => {
+    const save = DEV_SAVES.after_a1m4.build();
+    expect(save.loadouts.protocols).toEqual(['head_start']);
+    const cfg = battleConfig(DEFAULT_MAP_ID, 1, save);
+    expect(cfg.modifiers).toContainEqual({
+      kind: 'economy',
+      stat: 'startCredits',
+      pct: 0.1,
+      source: 'protocol:head_start',
+    });
+    const sim = createSim(cfg);
+    expect(sim.state.credits).toBe(Math.round(sim.map.startCredits * 1.1));
+    // Unequipped: no protocol modifier, the plain start.
+    const bare = { ...save, loadouts: { ...save.loadouts, protocols: [] } };
+    const plain = battleConfig(DEFAULT_MAP_ID, 1, bare);
+    expect(plain.modifiers.some((m) => m.source.startsWith('protocol:'))).toBe(false);
+    // Specialist's '*' tower becomes its pick.
+    const spec = DEV_SAVES.after_a1m4.build();
+    spec.unlocks.protocols.push('specialist');
+    spec.loadouts.protocols = ['specialist'];
+    spec.loadouts.protocolPicks = { specialist: 'thumper' };
+    expect(battleConfig(DEFAULT_MAP_ID, 1, spec).modifiers).toContainEqual({
+      kind: 'towerCost',
+      tower: 'thumper',
+      tiers: 'spec',
+      pct: -0.25,
+      source: 'protocol:specialist',
+    });
+  });
+
+  it('a stale equipped list never fails a battle start: what it no longer allows drops', () => {
+    const save = DEV_SAVES.after_a1m4.build();
+    save.unlocks.protocols = [];
+    expect(() => createSim(battleConfig(DEFAULT_MAP_ID, 1, save))).not.toThrow();
+    expect(battleConfig(DEFAULT_MAP_ID, 1, save).modifiers.map((m) => m.source)).not.toContain(
+      'protocol:head_start',
+    );
+  });
 });

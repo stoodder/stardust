@@ -2,13 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { saveModifiers } from './modifiers.ts';
-import { buy, offerFor, shelf, type PurchaseItem } from './purchase.ts';
+import { buy, offerFor, openQuestionOffered, shelf, type PurchaseItem } from './purchase.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
 import { validateSave } from './validate.ts';
 
 const MK2: PurchaseItem = { kind: 'upgrade', id: 'orbital_strike_mk2' };
 const RAPPORT: PurchaseItem = { kind: 'upgrade', id: 'rapport_bricks' };
 const SLOTS: PurchaseItem = { kind: 'upgrade', id: 'protocol_slots' };
+const QUILL_RAPPORT: PurchaseItem = { kind: 'upgrade', id: 'rapport_quill' };
+const ZAPCOIL: PurchaseItem = { kind: 'license', tower: 'zapcoil' };
 
 /** A1M1 through A1M4 won (the shop and Engineering open), with deep pockets. */
 function afterA1M4(): SaveData {
@@ -31,32 +33,54 @@ function expectValid(save: SaveData): void {
 }
 
 describe('offers', () => {
-  it('after A1M1, R&D sells Mk II and Rapport; the protocol slot arrives after A1M3', () => {
+  it("after A1M1, R&D sells Mk II and Rapport; QUILL's Rapport and the slot arrive after A1M3", () => {
     const save = DEV_SAVES.after_a1m1.build();
     const rnd = shelf(save, 'rnd');
     expect(rnd.map((o) => [o.item, o.refusal])).toEqual([
       [MK2, null],
       [RAPPORT, null],
+      [QUILL_RAPPORT, 'not_stocked'],
       [SLOTS, 'not_stocked'],
     ]);
     expect(rnd[0]).toMatchObject({ currency: 'intel', price: 2, owned: 0, ranks: 1 });
-    expect(rnd[2]).toMatchObject({ availableAfter: 'a1_m03', price: 4, ranks: 2 });
+    expect(rnd[2]).toMatchObject({ availableAfter: 'a1_m03', price: 2, ranks: 1 });
+    expect(rnd[3]).toMatchObject({ availableAfter: 'a1_m03', price: 4, ranks: 2 });
+  });
+
+  it("QUILL's Rapport is stocked once QUILL is met (A1M3 won, T308)", () => {
+    const save = DEV_SAVES.after_a1m3.build();
+    expect(offerFor(save, QUILL_RAPPORT)).toMatchObject({ refusal: null, price: 2 });
+    const r = buy(save, QUILL_RAPPORT);
+    if (!r.ok) throw new Error(r.message);
+    expect(saveModifiers(r.save)).toContainEqual({
+      kind: 'abilityStat',
+      ability: 'time_dilation',
+      stat: 'cooldown',
+      pct: -0.15,
+      source: 'rnd:rapport_quill',
+    });
   });
 
   it('a pane that has not opened refuses everything', () => {
     const fresh = createNewSave();
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
-    expect(shop.length).toBe(Object.keys(UPGRADES).length - 3 + Object.keys(PROTOCOLS).length);
+    // Every upgrade but R&D's four, every protocol, and the Zapcoil license.
+    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 1);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
 
-  it('lists the shop as global upgrades, then tune-ups, then protocols', () => {
+  it('lists the shop as licenses, then global upgrades, then tune-ups, then protocols', () => {
     const shop = shelf(afterA1M4(), 'shop');
     const kinds = shop.map((o) =>
-      o.item.kind === 'protocol' ? 'protocol' : o.tower === null ? 'global' : 'tune',
+      o.item.kind === 'protocol' || o.item.kind === 'license'
+        ? o.item.kind
+        : o.tower === null
+          ? 'global'
+          : 'tune',
     );
+    expect(kinds[0]).toBe('license');
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
     expect(kinds.filter((k) => k === 'tune')).toHaveLength(5); // Skyhook's and Zapcoil's too
   });
@@ -75,7 +99,7 @@ describe('offers', () => {
     // A bought rank doesn't move an item.
     const save = afterA1M4();
     save.upgrades.salvage_rights = 1;
-    expect(shelf(save, 'shop')[0]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
+    expect(shelf(save, 'shop')[1]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
   });
 
   it('a tune-up needs its tower, and a spec unlock needs specs', () => {
@@ -121,8 +145,38 @@ describe('offers', () => {
 });
 
 function order(kind: string): number {
-  return ['global', 'tune', 'protocol'].indexOf(kind);
+  return ['license', 'global', 'tune', 'protocol'].indexOf(kind);
 }
+
+describe('licenses (progression.md § 4.1)', () => {
+  it("the Zapcoil sample: 0 Stardust, stocked when the shop opens, owned once it's given", () => {
+    const save = DEV_SAVES.after_a1m3.build();
+    expect(offerFor(save, ZAPCOIL)).toMatchObject({
+      pane: 'shop',
+      currency: 'stardust',
+      price: 0,
+      owned: 1,
+      availableAfter: 'a1_m03',
+      tower: 'zapcoil',
+      refusal: 'maxed',
+    });
+    expect(shelf(save, 'shop')[0]?.item).toEqual(ZAPCOIL);
+  });
+
+  it('a license not yet owned is bought once and adds its tower', () => {
+    const save = afterA1M4();
+    expect(save.unlocks.towers).not.toContain('zapcoil');
+    const r = buy(save, ZAPCOIL);
+    if (!r.ok) throw new Error(r.message);
+    expect(r.save.unlocks.towers.at(-1)).toBe('zapcoil');
+    expect(r.save.currencies.stardust).toBe(1000);
+    expect(buy(r.save, ZAPCOIL)).toMatchObject({ ok: false, reason: 'maxed' });
+    // Before the shop opens, it's locked with the rest of the pane.
+    expect(offerFor(DEV_SAVES.after_a1m1.build(), ZAPCOIL)?.refusal).toBe('pane_locked');
+    // Towers with no license row aren't sold.
+    expect(offerFor(save, { kind: 'license', tower: 'rivet' })).toBeNull();
+  });
+});
 
 describe('buying', () => {
   it("A1M1's 3 Intel buys Mk II or Rapport, not both", () => {
@@ -215,5 +269,23 @@ describe('buying', () => {
       expect(offers.length).toBeGreaterThan(0);
       for (const o of offers) expect(o.refusal).toBe('maxed');
     }
+  });
+});
+
+describe('the open question (progression.md § 4)', () => {
+  it('is on the shelf from the shop opening until asked, or until A2M4 is reached', () => {
+    expect(openQuestionOffered(DEV_SAVES.mid_m2.build())).toBe(false);
+    expect(openQuestionOffered(DEV_SAVES.mid_m2.build(), ['shop'])).toBe(true);
+    const save = DEV_SAVES.after_a1m3.build();
+    expect(openQuestionOffered(save)).toBe(true);
+    save.story.flags.asked_zibzab_early = true;
+    expect(openQuestionOffered(save)).toBe(false);
+    const later = DEV_SAVES.after_a1m3.build();
+    (later.campaign.maps as Record<string, unknown>)['a2_m04'] = {
+      completed: false,
+      medals: [],
+      bestMeter: 0,
+    };
+    expect(openQuestionOffered(later)).toBe(false);
   });
 });

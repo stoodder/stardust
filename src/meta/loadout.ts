@@ -1,8 +1,9 @@
 // The loadout (design/core-loop.md § 1, T201): what a save may bring into a map, when the loadout
 // screen is shown (the skip rule), the presets it remembers (SaveData.loadouts), and what a pick
 // answers on a map (its counters and synergy links). Pure: the app builds the screen's view from
-// these, and app/battleSetup.ts asks `resolveLoadout` for the battle's towers and ability.
-// Field Protocols and the finale's companion pick join the screen with their pickers (M3, M5).
+// these, and app/battleSetup.ts asks `resolveLoadout` for the battle's towers and ability and
+// `equippedProtocols` for its Field Protocols (T308: equipped save-wide, swapped freely between
+// maps; progression.md § 5). The finale's companion pick joins the screen with the finale (M5).
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import {
   COUNTER_ANSWERS,
@@ -17,10 +18,12 @@ import type {
   CounterId,
   Layer,
   MapId,
+  ProtocolId,
   TowerId,
   Trait,
 } from '../content/types.ts';
-import { abilityPool, towerPool } from './pools.ts';
+import { PROTOCOLS } from '../content/upgrades/index.ts';
+import { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
 import { isSystemUnlocked, type MetaSystem } from './progress.ts';
 import type { LoadoutPreset, SaveData } from './saveData.ts';
 
@@ -31,25 +34,54 @@ import type { LoadoutPreset, SaveData } from './saveData.ts';
 export interface LoadoutPools<T extends string = TowerId, A extends string = AbilityId> {
   readonly towers: readonly T[];
   readonly abilities: readonly A[];
-}
-
-/** A pick on the loadout screen (or a stored preset): towers in build-slot order, and slot 1. */
-export interface LoadoutPick<T extends string = TowerId, A extends string = AbilityId> {
-  readonly towers: readonly T[];
-  readonly ability: A | null;
-}
-
-export function loadoutPools(save: SaveData): LoadoutPools {
-  return { towers: towerPool(save), abilities: abilityPool(save) };
+  /** The Field Protocols owned (none when absent). */
+  readonly protocols?: readonly string[];
+  /** The save's Field Protocol slots: 0 before Zibzab's shop opens (none when absent). */
+  readonly protocolSlots?: number;
 }
 
 /**
- * The skip rule's "a choice to make" (core-loop.md § 1): more tower types than fit, or more than
- * one Technician ability. Protocols don't count until their picker exists (M3), nor the companion
- * until the finale's pick list (M5).
+ * A pick on the loadout screen (or a stored preset): towers in build-slot order, and slot 1. The
+ * screen's pick also carries the Field Protocols to equip (save-wide, not part of the preset);
+ * without them, the equipped protocols stay as they are.
+ */
+export interface LoadoutPick<T extends string = TowerId, A extends string = AbilityId> {
+  readonly towers: readonly T[];
+  readonly ability: A | null;
+  readonly protocols?: ProtocolPick;
+}
+
+/** Field Protocols to equip, in slot order, and the tower each `choice: 'tower'` one picked. */
+export interface ProtocolPick {
+  readonly equipped: readonly ProtocolId[];
+  readonly picks: Readonly<Partial<Record<ProtocolId, TowerId>>>;
+}
+
+export function loadoutPools(save: SaveData, devUnlocks: readonly MetaSystem[] = []): LoadoutPools {
+  return {
+    towers: towerPool(save),
+    abilities: abilityPool(save),
+    protocols: protocolPool(save),
+    protocolSlots: protocolSlotCount(save, devUnlocks),
+  };
+}
+
+/**
+ * The skip rule's "a choice to make" (core-loop.md § 1): more tower types than fit, more than one
+ * Technician ability, or a Field Protocol to equip (a slot and an owned protocol). The companion
+ * counts once the finale's pick list exists (M5).
  */
 export function hasLoadoutChoice(pools: LoadoutPools<string, string>): boolean {
-  return pools.towers.length > MAX_LOADOUT || pools.abilities.length > 1;
+  return (
+    pools.towers.length > MAX_LOADOUT ||
+    pools.abilities.length > 1 ||
+    hasProtocolChoice(pools)
+  );
+}
+
+/** Whether there's a Field Protocol to equip: a slot, and a protocol owned to fill it. */
+export function hasProtocolChoice(pools: LoadoutPools<string, string>): boolean {
+  return (pools.protocolSlots ?? 0) > 0 && (pools.protocols?.length ?? 0) > 0;
 }
 
 /**
@@ -61,7 +93,10 @@ export function showsLoadoutScreen(
   save: SaveData,
   devUnlocks: readonly MetaSystem[] = [],
 ): boolean {
-  return isSystemUnlocked(save, 'loadout', devUnlocks) && hasLoadoutChoice(loadoutPools(save));
+  return (
+    isSystemUnlocked(save, 'loadout', devUnlocks) &&
+    hasLoadoutChoice(loadoutPools(save, devUnlocks))
+  );
 }
 
 /** Why a pick can't be locked in (empty when it can): the CLAUDE.md 4-tower rule and the pools. */
@@ -149,14 +184,20 @@ export function resolveLoadout(save: SaveData, mapId: string, fallback: LoadoutP
 }
 
 /**
- * The save with `pick` remembered as `mapId`'s preset and as the last one. Throws a RangeError on
- * a pick the pools don't allow (a caller bug: the screen only offers valid picks).
+ * The save with `pick` remembered as `mapId`'s preset and as the last one, and its Field
+ * Protocols (when it carries them) equipped save-wide. Throws a RangeError on a pick the pools
+ * don't allow (a caller bug: the screen only offers valid picks).
  */
-export function withPreset(save: SaveData, mapId: MapId, pick: LoadoutPick): SaveData {
-  const problems = pickProblems(pick, loadoutPools(save));
+export function withPreset(
+  save: SaveData,
+  mapId: MapId,
+  pick: LoadoutPick,
+  devUnlocks: readonly MetaSystem[] = [],
+): SaveData {
+  const problems = pickProblems(pick, loadoutPools(save, devUnlocks));
   if (problems.length > 0) throw new RangeError(`loadout: ${problems.join('; ')}`);
   const preset = (): LoadoutPreset => ({ towers: [...pick.towers], ability: pick.ability });
-  return {
+  const next: SaveData = {
     ...save,
     loadouts: {
       ...save.loadouts,
@@ -164,6 +205,7 @@ export function withPreset(save: SaveData, mapId: MapId, pick: LoadoutPick): Sav
       byMap: { ...save.loadouts.byMap, [mapId]: preset() },
     },
   };
+  return pick.protocols === undefined ? next : withProtocols(next, pick.protocols, devUnlocks);
 }
 
 /**
@@ -181,6 +223,122 @@ export function toggleTower<T extends string, A extends string>(
   }
   if (pick.towers.length >= MAX_LOADOUT || !pools.towers.includes(tower)) return pick;
   return { ...pick, towers: [...pick.towers, tower] };
+}
+
+// ── Field Protocols (progression.md § 5; T308) ──────────────────────────────────────────────────
+
+/** Whether protocol `id` takes a tower pick when equipped (Specialist). */
+export function takesTowerPick(id: string): boolean {
+  const defs: Readonly<Record<string, { readonly choice?: 'tower' }>> = PROTOCOLS;
+  return Object.hasOwn(defs, id) && defs[id]?.choice === 'tower';
+}
+
+/**
+ * Why `pick` can't be equipped (empty when it can): each protocol owned and equipped once, no more
+ * than the save's slots, and a tower pick (an owned, unrevoked tower) for exactly the equipped
+ * protocols that take one. The rules `metaModifiers` and the save validator enforce.
+ */
+export function protocolProblems(
+  save: SaveData,
+  pick: ProtocolPick,
+  devUnlocks: readonly MetaSystem[] = [],
+): string[] {
+  const out: string[] = [];
+  const owned = protocolPool(save);
+  const slots = protocolSlotCount(save, devUnlocks);
+  if (pick.equipped.length > slots) {
+    out.push(`${pick.equipped.length} protocols equipped, but only ${slots} slots`);
+  }
+  const seen = new Set<string>();
+  for (const id of pick.equipped) {
+    if (seen.has(id)) out.push(`protocol '${id}' is equipped twice`);
+    seen.add(id);
+    if (!owned.includes(id)) out.push(`protocol '${id}' is not owned`);
+    if (takesTowerPick(id)) {
+      const tower = pick.picks[id];
+      if (tower === undefined) out.push(`protocol '${id}' needs a tower pick`);
+      else if (!towerPool(save).includes(tower)) out.push(`'${tower}' is not in the tower pool`);
+    }
+  }
+  for (const id of Object.keys(pick.picks)) {
+    if (!seen.has(id)) out.push(`a pick for protocol '${id}', which isn't equipped`);
+  }
+  return out;
+}
+
+/**
+ * `pick` cut down to what the save allows now: owned protocols, each once, up to the slots; a
+ * protocol that takes a tower keeps its pick while the tower is in the pool, else takes
+ * `fallbackTower` (or leaves, with no tower to pick).
+ */
+export function fitProtocols(
+  save: SaveData,
+  pick: ProtocolPick,
+  devUnlocks: readonly MetaSystem[] = [],
+  fallbackTower: TowerId | null = null,
+): { equipped: ProtocolId[]; picks: Partial<Record<ProtocolId, TowerId>> } {
+  const owned = protocolPool(save);
+  const pool = towerPool(save);
+  const slots = protocolSlotCount(save, devUnlocks);
+  const equipped: ProtocolId[] = [];
+  const picks: Partial<Record<ProtocolId, TowerId>> = {};
+  for (const id of pick.equipped) {
+    if (equipped.length >= slots) break;
+    if (equipped.includes(id) || !owned.includes(id)) continue;
+    if (takesTowerPick(id)) {
+      const kept = pick.picks[id];
+      const tower = kept !== undefined && pool.includes(kept) ? kept : (fallbackTower ?? pool[0]);
+      if (tower === undefined) continue;
+      picks[id] = tower;
+    }
+    equipped.push(id);
+  }
+  return { equipped, picks };
+}
+
+/** The save's equipped protocols as the battle takes them (fitProtocols over `loadouts`). */
+export function equippedProtocols(
+  save: SaveData,
+  devUnlocks: readonly MetaSystem[] = [],
+): { equipped: ProtocolId[]; picks: Partial<Record<ProtocolId, TowerId>> } {
+  return fitProtocols(
+    save,
+    { equipped: save.loadouts.protocols, picks: save.loadouts.protocolPicks },
+    devUnlocks,
+  );
+}
+
+/**
+ * The save with `pick` equipped (save-wide; progression.md § 5). Throws a RangeError on a pick
+ * protocolProblems refuses (a caller bug: the picker only offers valid picks).
+ */
+export function withProtocols(
+  save: SaveData,
+  pick: ProtocolPick,
+  devUnlocks: readonly MetaSystem[] = [],
+): SaveData {
+  const problems = protocolProblems(save, pick, devUnlocks);
+  if (problems.length > 0) throw new RangeError(`protocols: ${problems.join('; ')}`);
+  return {
+    ...save,
+    loadouts: { ...save.loadouts, protocols: [...pick.equipped], protocolPicks: { ...pick.picks } },
+  };
+}
+
+/**
+ * Toggles protocol `id` in the equipped list: an equipped one leaves, an unequipped one joins at
+ * the end while a slot is free. With every slot full and only one slot, it swaps in for the one
+ * equipped (one click to change your mind); with more slots, it's unchanged until one is dropped.
+ */
+export function toggleProtocol<P extends string>(
+  equipped: readonly P[],
+  id: P,
+  slots: number,
+): readonly P[] {
+  if (equipped.includes(id)) return equipped.filter((p) => p !== id);
+  if (equipped.length < slots) return [...equipped, id];
+  if (slots === 1) return [id];
+  return equipped;
 }
 
 // ── What a pick answers on a map ─────────────────────────────────────────────────────────────

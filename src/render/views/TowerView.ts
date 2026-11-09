@@ -5,7 +5,10 @@
 // few px (D026), and an upgrade flashes both white for 2 frames. A tower on high ground stands on
 // the raised block's top face, `liftPx` up, but sorts by its tile (tech-spec § Depth sorting). A
 // tower holding fire (core-loop §2.7) dims to `steel.3` and wears a pause plate above its head in
-// the `overlay` layer (holdMarker.ts), so it reads by shape as well as by tone.
+// the `overlay` layer (holdMarker.ts), so it reads by shape as well as by tone. An aiming head
+// plays its fire anim on every shot (T221: `fire_<facing>` with its tier-2 `_t2` or spec suffix;
+// a Rivet Storm's spins through its `_spin` frame), seen as its reload restarting, then settles
+// back on its facing's still frame.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -25,6 +28,7 @@ import {
 } from './spriteInfo.ts';
 import { HOLD_TINT_COLOR, holdMarkerImage, tintOf } from './holdMarker.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
+import { hasAnim } from './spriteInfo.ts';
 import type { PooledView } from './ViewPool.ts';
 
 /** The tower fields a view reads (a live sim Tower satisfies it). */
@@ -35,6 +39,8 @@ export interface TowerLike {
   readonly tier: number;
   /** Holding fire (a sim Tower's `holdFire`): dimmed, with the pause plate. */
   readonly holdFire?: boolean;
+  /** Ticks until it may fire again (a sim Tower's): a jump up means it just fired. */
+  readonly cooldownTicks?: number;
 }
 
 /** Sprite ids of a tower definition (`CompiledTowerDef.sprites`). */
@@ -58,6 +64,9 @@ const HOLD_TINT = tintOf(HOLD_TINT_COLOR);
 const HOLD_MARKER_KEY = 'overlay.hold_fire';
 /** Clear pixels between the tower's top and the pause plate. */
 const HOLD_MARKER_GAP = 1;
+
+const FACINGS: readonly Facing[] = ['se', 'sw', 'ne', 'nw'];
+const FACING_INDEX: Readonly<Record<Facing, number>> = { se: 0, sw: 1, ne: 2, nw: 3 };
 
 /** Each frame's first opaque row (px from its top), by texture and frame: read once per frame. */
 const opaqueTops = new Map<string, number>();
@@ -125,6 +134,14 @@ export class TowerView implements PooledView {
   #dropFrames = 0;
   /** Frames left in the upgrade flash. */
   #flashFrames = 0;
+  /** The reload last synced: a jump up is a shot (the fire anim plays). */
+  #lastCooldown = 0;
+  /** The head's fire anim key per facing (FACING_INDEX), or '' where it has none. */
+  readonly #fireAnims: string[] = ['', '', '', ''];
+  /** What `#fireAnims` were looked up for (the head suffix and variant). */
+  #fireAnimsKey = '';
+  /** The aiming head's still frame for its facing (a shot settles back on it). */
+  #still: { readonly texture: string; readonly frame: string } | null = null;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -137,6 +154,13 @@ export class TowerView implements PooledView {
     layers.world.add([this.#base, this.#head]);
     layers.vfx.add([this.#baseGlow, this.#headGlow]);
     layers.overlay.add(this.#hold);
+    // A finished shot settles back on the facing's still frame.
+    this.#head.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      const still = this.#still;
+      if (this.#headStyle.kind === 'aim' && still !== null) {
+        this.#head.setTexture(still.texture, still.frame);
+      }
+    });
     this.release();
   }
 
@@ -222,6 +246,9 @@ export class TowerView implements PooledView {
   /** Positions the tower at its sim position (a tile center). Called every frame; cheap if still. */
   sync(t: TowerLike): void {
     this.setHolding(t.holdFire === true);
+    const cd = t.cooldownTicks ?? 0;
+    if (cd > this.#lastCooldown) this.#fire();
+    this.#lastCooldown = cd;
     if (this.#flashFrames > 0 && --this.#flashFrames === 0) this.#endFlash();
     const dropping = this.#dropFrames > 0;
     if (dropping) this.#dropFrames--;
@@ -236,6 +263,13 @@ export class TowerView implements PooledView {
     this.#baseGlow.setPosition(pos.x, pos.y - lift);
     this.#placeHead(depth);
     this.#placeHold();
+  }
+
+  /** A shot: an aiming head plays its fire anim for its facing once (none authored: no anim). */
+  #fire(): void {
+    if (this.#headStyle.kind !== 'aim' || this.#headId === null) return;
+    const anim = this.#fireAnims[FACING_INDEX[this.#facing]] ?? '';
+    if (anim !== '') this.#head.play(anim);
   }
 
   #endFlash(): void {
@@ -259,6 +293,9 @@ export class TowerView implements PooledView {
     this.#liftPx = 0;
     this.#spec = null;
     this.#uid = 0;
+    this.#lastCooldown = 0;
+    this.#fireAnimsKey = '';
+    this.#still = null;
     this.#baseId = null;
     this.#headId = null;
     this.#head.stop();
@@ -279,9 +316,24 @@ export class TowerView implements PooledView {
     setGlow(this.#baseGlow, sprites, this.#baseId, tierFrame);
     if (this.#headId !== null) {
       if (this.#headStyle.kind === 'aim') {
-        const look = `${this.#facing}${headSuffix(this.#headId, this.#tier, this.#spec)}`;
+        const suffix = headSuffix(this.#headId, this.#tier, this.#spec);
+        const look = `${this.#facing}${suffix}`;
+        // The fire anims follow the tier, spec, and selection (looked up only when those change).
+        const animsKey = `${suffix}|${variant}`;
+        if (animsKey !== this.#fireAnimsKey) {
+          this.#fireAnimsKey = animsKey;
+          for (const f of FACINGS) {
+            const name = `fire_${f}${suffix}`;
+            this.#fireAnims[FACING_INDEX[f]] = hasAnim(this.#headId, name)
+              ? sprites.anim(this.#headId, name, variant)
+              : '';
+          }
+        }
+        // A turn, tier, or selection change ends a shot in progress on the new still frame.
+        this.#head.stop();
         const h = sprites.frame(this.#headId, look, variant);
         const ha = sprites.frameAnchor(this.#headId, look);
+        this.#still = h;
         this.#head.setTexture(h.texture, h.frame).setDisplayOrigin(ha.x, ha.y);
         setGlow(this.#headGlow, sprites, this.#headId, look);
       } else if (restartIdle) {

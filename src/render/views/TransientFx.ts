@@ -224,7 +224,8 @@ export class TransientFx {
 
   /**
    * An effect ring on the ground at grid (x, y): grows from a quarter tile to `radiusTiles` over
-   * `ms` (`grow`), or holds at it, fading in steps either way.
+   * `ms` (`grow`), or holds at it, fading in steps either way. `liftPx` raises it onto a raised
+   * tile's top face (a tower's upgrade ring on high ground, T221).
    */
   ring(
     x: number,
@@ -233,12 +234,13 @@ export class TransientFx {
     color: ColorName,
     ms: number,
     grow: boolean,
+    liftPx = 0,
   ): void {
     if (radiusTiles <= 0) return;
     const p = this.#pulses[this.#nextPulse]!; // index < MAX_PULSES
     this.#nextPulse = (this.#nextPulse + 1) % MAX_PULSES;
     gridToScreen(x, y, this.ctx.origin, pos);
-    p.img.setPosition(pos.x, pos.y);
+    p.img.setPosition(pos.x, pos.y - liftPx);
     p.radiusTiles = radiusTiles;
     p.durationMs = ms;
     p.grow = grow;

@@ -81,6 +81,7 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   LinkFormed: true,
   TowerSpecialized: true,
   MedalProgress: true,
+  ObjectiveProgress: false,
   CommandRejected: false,
   EnemySpawned: false,
   CountdownStarted: false,

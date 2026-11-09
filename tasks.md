@@ -98,7 +98,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 
 ## M3 — Star Map & Act I
 **Status: current (started 2026-11-09; scope cut and plan in progress).** Carried over from M2:
-- [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
+- [x] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [x] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
 - [x] **T211** Audio follow-ups: Kip's own radio blip (he borrows Goldie's); an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
@@ -109,7 +109,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
 - [ ] **T221** HUD follow-ups from T202d: the tall tier-3 panel can cover a neighbouring tower on busy maps; upgrade rings draw at ground level for towers on high ground; tower fire anims (`fire_<facing>_t2`, spec spin) aren't played yet; a flat-to-high-ground tether ends a few px low; add T202d's new HUD copy to style-guide §2.
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
-- [~] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
+- [x] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
 - [x] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
 - [x] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
 - [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
@@ -149,7 +149,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
 - [ ] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
-- [ ] **T312b** Render: draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
+- [~] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [~] **T312c** HUD: price builds/upgrades/specs with `purchasePriceInto` (Clearance Sale, Rapid Deploy) instead of `costFor` in commands/hudViews/hudPanel/loadout; `abilityReady`/`freeCastReady` for slot states; slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
 - [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
 - [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
@@ -158,7 +158,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
 - [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
-- [~] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
+- [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [x] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
 - [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.

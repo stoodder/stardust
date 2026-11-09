@@ -273,6 +273,16 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly medal: MedalKind;
       readonly status: 'earned' | 'forfeited';
     }
+  | {
+      /**
+       * An optional objective settled (T304f; sim/objectives.ts): `done` the moment its condition
+       * holds for good or at victory, `failed` the moment it can't hold (Clean Audit's first late
+       * sell) or on a loss. `id` is the objective's map id.
+       */
+      readonly type: 'ObjectiveProgress';
+      readonly id: string;
+      readonly status: 'done' | 'failed';
+    }
   | { readonly type: 'TowerClassUnlocked'; readonly tower: K['tower'] }
   | {
       /** Wave `wave` began spawning. `early`: called during its countdown, paying `bonus`. */

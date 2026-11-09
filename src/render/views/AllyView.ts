@@ -1,8 +1,9 @@
 // A pooled ally (design/maps.md § 5.4; T207b): Sgt. Bricks at his post, beside the path. He plays
 // his idle anim (a slow breath) facing his last target, turns to each new one, and plays his fire
 // anim on every shot (AllyAttacked), then settles back to idle. Depth-sorted in `world` with the
-// towers (his ground point is his post plate's center). Allies with no sprite yet (militia, M3)
-// draw nothing.
+// towers (his ground point is his post plate's center), with the additive @glow halo of the frame
+// he shows in the `vfx` layer (his visor and the glinting stone; T216), following each anim frame.
+// Allies with no sprite yet (militia, M3) draw nothing.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { AllyKind } from '../../content/types.ts';
@@ -45,6 +46,17 @@ export const BRICKS_MUZZLE: Readonly<Record<Facing, { readonly dx: number; reado
   };
 
 const FACINGS: readonly Facing[] = ['se', 'sw', 'ne', 'nw'];
+
+/** A frame's glow halo: its texture frame and its own anchor (glow frames are padded). */
+interface GlowLook {
+  readonly texture: string;
+  readonly frame: string;
+  readonly ax: number;
+  readonly ay: number;
+}
+
+/** The naming contract's glow-frame suffix (tech-spec § Naming contract). */
+const GLOW_SUFFIX = '@glow';
 const FACING_INDEX: Readonly<Record<Facing, number>> = { se: 0, sw: 1, ne: 2, nw: 3 };
 const pos: Vec2 = { x: 0, y: 0 };
 
@@ -52,6 +64,10 @@ export class AllyView implements PooledView {
   stamp = 0;
   readonly #ctx: ViewContext;
   readonly #body: Phaser.GameObjects.Sprite;
+  /** The shown frame's additive @glow halo (in `vfx`), hidden when the frame has none. */
+  readonly #glow: Phaser.GameObjects.Image;
+  /** Each baked frame key's glow and its anchor, looked up once (null: no glow). */
+  readonly #glowFor = new Map<string, GlowLook | null>();
   #id: SpriteId | null = null;
   #uid = 0;
   #facing: Facing = 'se';
@@ -68,9 +84,14 @@ export class AllyView implements PooledView {
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
     this.#body = ctx.scene.make.sprite({}, false);
+    this.#glow = ctx.scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD);
     ctx.layers.world.add(this.#body);
+    ctx.layers.vfx.add(this.#glow);
     // Only the fire anims end (idles loop): a finished shot settles back to idle.
     this.#body.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.#play(false));
+    // The halo follows every frame the body shows.
+    this.#body.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.#syncGlow());
+    this.#body.on(Phaser.Animations.Events.ANIMATION_START, () => this.#syncGlow());
     this.release();
   }
 
@@ -141,6 +162,36 @@ export class AllyView implements PooledView {
     this.#sx = pos.x;
     this.#sy = pos.y;
     this.#body.setPosition(pos.x, pos.y).setDepth(worldDepth(pos.y, 'tower', this.#uid));
+    this.#glow.setPosition(pos.x, pos.y);
+  }
+
+  /**
+   * Points the halo at the shown frame's @glow (a baked key `<sprite>#<variant>:<frame>`; the
+   * default variant's glow, as towers use). Looked up once per frame key, then cached.
+   */
+  #syncGlow(): void {
+    const id = this.#id;
+    if (id === null) return;
+    const key = this.#body.frame.name;
+    let look = this.#glowFor.get(key);
+    if (look === undefined) {
+      const name = key.slice(key.indexOf(':') + 1);
+      const ref = this.#ctx.sprites.glowFrame(id, name);
+      const a = ref === null ? null : this.#ctx.sprites.frameAnchor(id, `${name}${GLOW_SUFFIX}`);
+      look =
+        ref === null || a === null
+          ? null
+          : { texture: ref.texture, frame: ref.frame, ax: a.x, ay: a.y };
+      this.#glowFor.set(key, look);
+    }
+    if (look === null) {
+      this.#glow.setVisible(false);
+      return;
+    }
+    this.#glow
+      .setTexture(look.texture, look.frame)
+      .setDisplayOrigin(look.ax, look.ay)
+      .setVisible(this.#body.visible);
   }
 
   release(): void {
@@ -152,6 +203,7 @@ export class AllyView implements PooledView {
     this.#sy = Number.NaN;
     this.#body.stop();
     this.#body.setVisible(false);
+    this.#glow.setVisible(false);
   }
 
   #play(fire: boolean): void {

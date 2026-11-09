@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { LINKS } from '../../content/links/index.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
-import { calloutText, LINK_CALLOUT } from './LinkView.ts';
+import { calloutText, LINK_CALLOUT, TETHER_LIFT_PX, tetherLift } from './LinkView.ts';
 
 describe('link callouts', () => {
   it('every link name floats as drawable text, with a callout look', () => {
@@ -18,5 +18,13 @@ describe('link callouts', () => {
   it("a name the font can't draw is caught by the guard", () => {
     expect(canDraw(calloutText('Acid Rain'))).toBe(true);
     expect(canDraw(calloutText("Bricks's Tip"))).toBe(false); // the apostrophe isn't in the font
+  });
+
+  it("rides a flat-to-high tether at the ends' mean height (T221)", () => {
+    expect(tetherLift(0, 0)).toBe(TETHER_LIFT_PX);
+    expect(tetherLift(8, 8)).toBe(8 + TETHER_LIFT_PX);
+    // Either way round, each end is half a step (4 px) from its head.
+    expect(tetherLift(0, 8)).toBe(4 + TETHER_LIFT_PX);
+    expect(tetherLift(8, 0)).toBe(4 + TETHER_LIFT_PX);
   });
 });

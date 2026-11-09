@@ -1,5 +1,5 @@
 // Which map a battle runs, and the SimConfig for it. With a campaign save, the config comes from
-// the save (owned towers, abilities, spec unlocks, difficulty); without one (`?map=<id>`, the dev
+// the save (owned towers, abilities, spec unlocks, upgrades, equipped Field Protocols, difficulty); without one (`?map=<id>`, the dev
 // battles), from the map's par build. The live registries win; the dev battle
 // (render/__fixtures__/devBattle.ts, `?map=dev_range`) stays reachable for development and for the
 // smoke flows that need its unlocked towers.
@@ -10,8 +10,9 @@ import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
 import {
   abilityPool,
+  equippedProtocols,
+  metaModifiers,
   resolveLoadout,
-  saveModifiers,
   towerPool,
   type LoadoutPick,
   type SaveData,
@@ -120,17 +121,25 @@ function companionOf(
 }
 
 /**
- * Modifiers from the save's purchases and difficulty (meta/modifiers.ts), less any the sim still
- * refuses (Salvage Rights until wreckage, M3), so a save ahead of the sim plays.
+ * Modifiers from the save's purchases, its equipped Field Protocols (T308: save-wide, fitted to
+ * what it owns and its slots; meta/loadout.ts `equippedProtocols`), and its difficulty, through
+ * meta/modifiers.ts `metaModifiers`, less any the sim still refuses, so a save ahead of the sim
+ * plays.
  */
-function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
-  return saveModifiers(save).filter((m) => simulated(modifierFeature(m)));
+export function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
+  const { equipped, picks } = equippedProtocols(save);
+  return metaModifiers({
+    upgrades: save.upgrades,
+    protocols: equipped,
+    picks,
+    difficulty: save.settings.difficulty,
+  }).filter((m) => simulated(modifierFeature(m)));
 }
 
 /**
  * The SimConfig for a map, always with the map's companion in slot 2. With a save: its towers
- * (defaultLoadout), its Technician ability, its spec unlocks for the loadout's towers, and its
- * difficulty. Each of those the
+ * (defaultLoadout), its Technician ability, its spec unlocks for the loadout's towers, its
+ * modifiers (upgrades, equipped protocols, difficulty), and its difficulty. Each of those the
  * sim still refuses (FEATURE_GATES) is left out, so a save that runs ahead of the sim (the
  * all_unlocked dev save) plays rather than throws; it goes live when its task lifts the gate.
  * Without a save: the map's par loadout and Technician ability. Throws on an unknown map id.

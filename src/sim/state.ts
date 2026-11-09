@@ -106,8 +106,8 @@ export interface SimStats {
   /** Wreckage tiles the drone cleared (the Asset Recovery Challenge; systems/wreckage.ts, T304b). */
   wreckageCleared: number;
   /**
-   * Sells after the tower's build phase that weren't a misclick-grace refund (A1M4's Clean Audit
-   * objective; counted by `sell`, T304f).
+   * Late sells (A1M4's Clean Audit objective; sim/objectives.ts `isLateSell`, counted by `sell`):
+   * a sell after a wave has started since the tower was built, unless it's a misclick-grace refund.
    */
   lateSells: number;
 }
@@ -145,6 +145,12 @@ export interface RunEconomy {
  * earned this run, `earned` at victory.
  */
 export type MedalStatus = 'open' | 'forfeited' | 'earned';
+
+/**
+ * An optional objective's standing during a run (T304f; sim/objectives.ts): `open` until settled,
+ * `done` once its condition holds for good (or holds at victory), `failed` once it can't.
+ */
+export type ObjectiveStatus = 'open' | 'done' | 'failed';
 
 export type Outcome = 'playing' | 'won' | 'lost';
 
@@ -256,6 +262,8 @@ export interface SimState<K extends IdSpace = IdSpace> {
   economy: RunEconomy;
   /** Each medal's standing this run (T202c). */
   medals: Record<MedalKind, MedalStatus>;
+  /** Each optional objective's standing this run, index-aligned with `map.objectives` (T304f). */
+  objectives: ObjectiveStatus[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -343,6 +351,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     leakAbsorbLeft: 0,
     economy: { bountyPct: 0, bountyCarry: 0, earlyCallPct: 0, sellRefundPct: SELL_REFUND_PCT },
     medals: { victory: 'open', perfectCore: 'open', challenge: 'open' },
+    objectives: map.objectives.map((): ObjectiveStatus => 'open'),
     pending: [],
     commandLog: [],
     events: [],

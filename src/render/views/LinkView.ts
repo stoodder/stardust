@@ -4,7 +4,7 @@
 // BattleScene feeds it the sim's LinkFormed and LinkBroken events with the two towers' tiles; a
 // tether is placed once, since towers never move. The frame set comes from `tetherDir`: the direction, and which tower it's
 // drawn from, so every tether runs left to right (or top to bottom). A tower on high ground lifts
-// its tether's anchor with it. Tethers draw in `vfx`, lifted TETHER_LIFT_PX so the arc joins the
+// its tether with it (between a flat and a raised tower, to their mean height: `tetherLift`). Tethers draw in `vfx`, lifted TETHER_LIFT_PX so the arc joins the
 // heads, above the bases (D059), and pulse 100% ↔ 60% on the page's 1 Hz clock, a quick 4 Hz
 // shimmer for their first second. Under reduced motion the beads hold still and nothing pulses.
 import type * as Phaser from 'phaser';
@@ -32,6 +32,16 @@ export function tetherAlpha(ms: number, now: number, reduced: boolean): number {
   if (reduced) return 1;
   if (ms < SHIMMER_MS) return ms % SHIMMER_PERIOD_MS < SHIMMER_PERIOD_MS / 2 ? 1 : DIM_ALPHA;
   return now % PULSE_PERIOD_MS < PULSE_PERIOD_MS / 2 ? 1 : DIM_ALPHA;
+}
+
+/**
+ * How far up a tether between ends `liftA` and `liftB` px up draws (T221). The arc is one sprite
+ * drawn level, so between a flat tower and one on high ground it can't meet both heads: it rides
+ * at their mean height, each end within half a terrace step (4 px) of its head, where lifting it
+ * from one end left the other a full step (8 px) off.
+ */
+export function tetherLift(liftA: number, liftB: number): number {
+  return Math.round((liftA + liftB) / 2) + TETHER_LIFT_PX;
 }
 
 /** A link's callout look (D059): its ring and text colors, the tether's own (art-direction §7). */
@@ -106,7 +116,7 @@ export class LinkView {
     }
     const anchor = sprites.meta(TETHER).anchor;
     gridToScreen(from.col + 0.5, from.row + 0.5, origin, pos);
-    s.setPosition(pos.x, pos.y - from.liftPx - TETHER_LIFT_PX)
+    s.setPosition(pos.x, pos.y - tetherLift(a.liftPx, b.liftPx))
       .setAlpha(1)
       .setVisible(true);
     if (this.#reducedMotion()) {

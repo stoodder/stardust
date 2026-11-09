@@ -1,5 +1,6 @@
 // Purchases at the base (design/progression.md §§ 4, 5, 7; meta-runtime.md § Purchases): R&D
-// Command's and Zibzab's ranked upgrades, Field Protocol unlocks, and R&D Engineering's spec
+// Command's and Zibzab's ranked upgrades, Field Protocol unlocks, Zibzab's Vrell tower licenses
+// (the Zapcoil sample at 0, given when the shop opens: meta/issued.ts), and R&D Engineering's spec
 // unlocks. Pure functions over a SaveData: `offerFor` says what an item costs and whether it can be
 // bought now (with the reason it can't), `buy` returns the save after the purchase, and `shelf`
 // lists one pane's offers in catalog order for its screen. The app writes the new save at once.
@@ -7,8 +8,8 @@
 // An item can be bought when, in order: it exists; its pane is open (`isSystemUnlocked`); it is
 // stocked (its `availableAfter` map is won, or the dev hook's `devUnlocks` opens its pane, which
 // stocks the whole pane); its tower is owned (tune-ups, spec unlocks) and has specs (spec
-// unlocks); a next rank exists (ranked upgrades; a protocol or a spec unlock is bought once); and
-// the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+// unlocks); a next rank exists (ranked upgrades; a protocol, a license, or a spec unlock is bought
+// once); and the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { ProtocolId, TowerFaction, TowerId } from '../content/types.ts';
@@ -16,14 +17,16 @@ import { assertNever } from '../shared/types.ts';
 import {
   ENGINEERING,
   PROTOCOLS,
+  TOWER_ACCESS,
   UPGRADES,
+  type Access,
   type Currency,
   type EngineeringDef,
   type ModifierGrant,
   type ProtocolDef,
   type UpgradeDef,
 } from '../content/upgrades/index.ts';
-import { isMapWon, isSystemUnlocked, type MetaSystem } from './progress.ts';
+import { isMapWon, isSystemUnlocked, SYSTEM_UNLOCKS, type MetaSystem } from './progress.ts';
 import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
 
@@ -38,7 +41,9 @@ export type PurchaseItem =
   /** A Field Protocol unlock (ProtocolId), bought once at Zibzab's. */
   | { readonly kind: 'protocol'; readonly id: string }
   /** R&D Engineering: both tier-4 specs of an owned tower, bought once. */
-  | { readonly kind: 'specs'; readonly tower: string };
+  | { readonly kind: 'specs'; readonly tower: string }
+  /** A Vrell tower license at Zibzab's (an access row with `how: 'license'`), bought once. */
+  | { readonly kind: 'license'; readonly tower: string };
 
 /** Why an item can't be bought now, in check order. */
 export type Refusal =
@@ -52,7 +57,7 @@ export type Refusal =
   | 'not_owned'
   /** A spec unlock for a tower with no tier-4 specs. */
   | 'no_specs'
-  /** Every rank owned, or the protocol or spec unlock already owned. */
+  /** Every rank owned, or the protocol, license, or spec unlock already owned. */
   | 'maxed'
   /** The bank is short of the price. */
   | 'short';
@@ -65,6 +70,8 @@ export interface StoreCatalog {
   readonly towers: Readonly<
     Record<string, { readonly faction: TowerFaction; readonly specs?: unknown }>
   >;
+  /** How each tower is obtained (content/upgrades/access.ts); its licenses are on the shelf. */
+  readonly towerAccess?: Readonly<Record<string, Access>>;
 }
 
 export const LIVE_STORE: StoreCatalog = {
@@ -72,6 +79,7 @@ export const LIVE_STORE: StoreCatalog = {
   protocols: PROTOCOLS,
   engineering: ENGINEERING,
   towers: TOWERS,
+  towerAccess: TOWER_ACCESS,
 };
 
 /** One item as a pane shows it, and whether it can be bought now. */
@@ -81,17 +89,17 @@ export interface Offer {
   readonly currency: Currency;
   /** The next rank's price; the top rank's once maxed. */
   readonly price: number;
-  /** Ranks owned (0 or 1 for a protocol or a spec unlock). */
+  /** Ranks owned (0 or 1 for a protocol, a license, or a spec unlock). */
   readonly owned: number;
-  /** Ranks in all (1 for a protocol or a spec unlock). */
+  /** Ranks in all (1 for a protocol, a license, or a spec unlock). */
   readonly ranks: number;
-  /** What the next rank adds; the top rank's once maxed. Empty for a spec unlock. */
+  /** What the next rank adds; the top rank's once maxed. Empty for a license or a spec unlock. */
   readonly grants: readonly ModifierGrant[];
   /** Field Protocol slots the next (or top) rank adds. */
   readonly protocolSlots: number;
   /** The map whose win stocks it (null: from the start). */
   readonly availableAfter: CampaignMapId | null;
-  /** The tower a tune-up or spec unlock is for. */
+  /** The tower a tune-up, license, or spec unlock is for. */
   readonly tower: TowerId | null;
   /** Why it can't be bought now, or null when it can. */
   readonly refusal: Refusal | null;
@@ -113,6 +121,17 @@ function upgradePane(def: UpgradeDef): StorePane {
 
 function isTower(id: string, catalog: StoreCatalog): id is TowerId {
   return Object.hasOwn(catalog.towers, id);
+}
+
+/** The license row for `tower`, if the catalog sells one. */
+function licenseOf(
+  tower: string,
+  catalog: StoreCatalog,
+): (Access & { readonly how: 'license' }) | null {
+  const access = catalog.towerAccess ?? {};
+  if (!Object.hasOwn(access, tower)) return null;
+  const a = access[tower]!;
+  return a.how === 'license' ? a : null;
 }
 
 function owns(save: SaveData, tower: string): boolean {
@@ -185,6 +204,22 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         tower: item.tower,
       };
     }
+    case 'license': {
+      const license = licenseOf(item.tower, catalog);
+      if (!isTower(item.tower, catalog) || license === null) return null;
+      return {
+        pane: 'shop',
+        currency: license.currency,
+        price: license.price,
+        owned: owns(save, item.tower) ? 1 : 0,
+        ranks: 1,
+        grants: [],
+        protocolSlots: 0,
+        // A license is stocked no earlier than the shop opens.
+        availableAfter: license.availableAfter ?? SYSTEM_UNLOCKS.shop,
+        tower: item.tower,
+      };
+    }
     default:
       return assertNever(item);
   }
@@ -202,7 +237,8 @@ function refusalOf(
   const stocked =
     b.availableAfter === null || isMapWon(save, b.availableAfter) || devUnlocks.includes(b.pane);
   if (!stocked) return 'not_stocked';
-  if (b.tower !== null && !owns(save, b.tower)) return 'not_owned';
+  // A tune-up or spec unlock needs its tower (a license is how you get it).
+  if (item.kind !== 'license' && b.tower !== null && !owns(save, b.tower)) return 'not_owned';
   if (item.kind === 'specs' && catalog.towers[item.tower]?.specs === undefined) return 'no_specs';
   if (b.owned >= b.ranks) return 'maxed';
   if (save.currencies[b.currency] < b.price) return 'short';
@@ -225,7 +261,9 @@ export function offerFor(
 }
 
 function itemLabel(item: PurchaseItem): string {
-  return item.kind === 'specs' ? `specs for '${item.tower}'` : `${item.kind} '${item.id}'`;
+  if (item.kind === 'specs') return `specs for '${item.tower}'`;
+  if (item.kind === 'license') return `the license for '${item.tower}'`;
+  return `${item.kind} '${item.id}'`;
 }
 
 /** A refusal in words, for logs and tests (the screens word their own, in voice). */
@@ -255,8 +293,8 @@ export function refusalMessage(save: SaveData, item: PurchaseItem, offer: Offer 
 }
 
 /**
- * Buys `item`: deducts its price and records it (an upgrade's next rank, a protocol, or a tower's
- * spec unlock). Returns a new save (the input is untouched), or the refusal.
+ * Buys `item`: deducts its price and records it (an upgrade's next rank, a protocol, a licensed
+ * tower, or a tower's spec unlock). Returns a new save (the input is untouched), or the refusal.
  */
 export function buy(
   save: SaveData,
@@ -293,6 +331,9 @@ export function buy(
     case 'specs':
       next.unlocks = { ...save.unlocks, specs: [...save.unlocks.specs, offer.tower!] };
       break;
+    case 'license':
+      next.unlocks = { ...save.unlocks, towers: [...save.unlocks.towers, offer.tower!] };
+      break;
     default:
       return assertNever(item);
   }
@@ -317,9 +358,9 @@ function entryPrice(o: Offer, catalog: StoreCatalog): number {
 }
 
 /**
- * One pane's offers, in a fixed display order: R&D Command's upgrades; the shop's global
- * upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each registered
- * tower with specs. Within each group, by when the item is stocked (campaign order), then by entry
+ * One pane's offers, in a fixed display order: R&D Command's upgrades; the shop's Vrell licenses,
+ * then global upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each
+ * registered tower with specs. Within each group, by when the item is stocked (campaign order), then by entry
  * price, then by name, so the order never depends on how a module namespace lists its exports.
  */
 export function shelf(
@@ -337,6 +378,13 @@ export function shelf(
     );
   } else {
     const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
+    if (pane === 'shop') {
+      groups.push(
+        Object.keys(catalog.towerAccess ?? {})
+          .filter((t) => licenseOf(t, catalog) !== null)
+          .map((t) => ({ kind: 'license', tower: t })),
+      );
+    }
     // Global upgrades before tune-ups (a tune-up names its tower).
     groups.push(
       upgrades.filter((u) => u.tower === undefined).map((u) => ({ kind: 'upgrade', id: u.id })),
@@ -360,5 +408,26 @@ export function shelf(
           entryPrice(a, catalog) - entryPrice(b, catalog) ||
           sortName(a, catalog).localeCompare(sortName(b, catalog), 'en'),
       ),
+  );
+}
+
+/** The map that ends the open question: A2M4, where Zibzab tells everyone (progression.md § 4). */
+export const OPEN_QUESTION_UNTIL: CampaignMapId = 'a2_m04';
+
+/**
+ * Whether Zibzab's shop carries the open question, "Where does stardust come from?"
+ * (progression.md § 4; act1.md § A1M3): from the shop's opening until the player asks (the
+ * `asked_zibzab_early` flag) or A2M4 is reached, when he tells everyone. Asking costs nothing;
+ * the app plays the question's scene, whose answer sets the flag.
+ */
+export function openQuestionOffered(
+  save: SaveData,
+  devUnlocks: readonly MetaSystem[] = [],
+): boolean {
+  const maps: Readonly<Record<string, unknown>> = save.campaign.maps;
+  return (
+    isSystemUnlocked(save, 'shop', devUnlocks) &&
+    save.story.flags.asked_zibzab_early !== true &&
+    !Object.hasOwn(maps, OPEN_QUESTION_UNTIL)
   );
 }

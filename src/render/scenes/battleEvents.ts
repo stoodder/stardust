@@ -171,9 +171,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.onBuilt();
       const tower = content.towers[e.tower]!; // built from the loadout
       const [c, r] = e.tile;
-      views.towers.acquire(e.uid).show(e.uid, tower.sprites, 1, true, views.liftPx(c, r));
-      fx.ring(c + 0.5, r + 0.5, BUILD_PUFF_TILES, 'steel.4', BUILD_PUFF_MS, true);
-      fx.floatText(`−${e.cost}`, 'gold.3', c + 0.5, r + 0.5, TOWER_FLOAT_LIFT_PX);
+      const lift = views.liftPx(c, r);
+      views.towers.acquire(e.uid).show(e.uid, tower.sprites, 1, true, lift);
+      fx.ring(c + 0.5, r + 0.5, BUILD_PUFF_TILES, 'steel.4', BUILD_PUFF_MS, true, lift);
+      fx.floatText(`−${e.cost}`, 'gold.3', c + 0.5, r + 0.5, TOWER_FLOAT_LIFT_PX + lift);
     }),
     bus.on('TowerUpgraded', (e) => {
       const v = views.towers.get(e.uid);
@@ -181,8 +182,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       v.setTier(e.tier);
       v.flash();
       if (!Number.isNaN(v.x)) {
-        fx.ring(v.x, v.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true);
-        fx.floatText(`−${e.cost}`, 'gold.3', v.x, v.y, TOWER_FLOAT_LIFT_PX);
+        // On high ground the ring sits on the block's top face, with the tower (T221).
+        const lift = towerLift(e.uid);
+        fx.ring(v.x, v.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true, lift);
+        fx.floatText(`−${e.cost}`, 'gold.3', v.x, v.y, TOWER_FLOAT_LIFT_PX + lift);
       }
     }),
     bus.on('TowerSpecialized', (e) => {
@@ -191,9 +194,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (v === undefined || t === null) return;
       v.setTier(t.tier, t.spec);
       v.flash();
-      fx.ring(t.x, t.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true);
-      fx.ring(t.x, t.y, SPEC_RING_TILES, 'gold.3', SPEC_RING_MS, true);
-      fx.floatText(`−${e.cost}`, 'gold.3', t.x, t.y, TOWER_FLOAT_LIFT_PX);
+      const lift = views.liftPx(t.col, t.row);
+      fx.ring(t.x, t.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true, lift);
+      fx.ring(t.x, t.y, SPEC_RING_TILES, 'gold.3', SPEC_RING_MS, true, lift);
+      fx.floatText(`−${e.cost}`, 'gold.3', t.x, t.y, TOWER_FLOAT_LIFT_PX + lift);
     }),
     bus.on('LinkFormed', (e) => {
       const a = linkEnd(e.a);
@@ -206,7 +210,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const name = content.links.find((l) => l.id === e.link)?.name;
       if (look === undefined) return;
       for (const t of [a, b]) {
-        fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true);
+        fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true, t.liftPx);
       }
       // The pixel font has capitals, digits, and a few marks: a name it can't draw keeps its
       // rings and chime, and skips the text rather than throwing mid-battle (D061).

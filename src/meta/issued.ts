@@ -4,13 +4,20 @@
 // is owned once its `availableAfter` map is won (null: from the start, createNewSave's kit). A
 // save gets them at run end (the win that unlocks the next map) and whenever the app takes a save
 // into play (load, import, dev save), so a save written before a tower was issued catches up.
-// Gifts and licenses are story transactions and purchases, not this.
+// A license priced 0 is given the same way the moment it's stocked: Zibzab's Zapcoil sample, "given
+// the moment the shop opens" after A1M3 (progression.md § 4.1; T308). Gifts and paid licenses are
+// story transactions and purchases, not this.
 import { TOWER_ACCESS, type Access } from '../content/upgrades/index.ts';
 import type { TowerId } from '../content/types.ts';
 import { isMapWon } from './progress.ts';
 import type { SaveData } from './saveData.ts';
 
-/** The issued towers `save` should own by now, in access-table order. */
+/** Whether access row `a` hands its tower over unasked: issued, or a license priced 0 (a sample). */
+function given(a: Access<string>): boolean {
+  return a.how === 'issued' || (a.how === 'license' && a.price === 0);
+}
+
+/** The issued (and sampled) towers `save` should own by now, in access-table order. */
 export function issuedTowers(
   save: SaveData,
   access: Readonly<Record<TowerId, Access<string>>> = TOWER_ACCESS,
@@ -19,7 +26,7 @@ export function issuedTowers(
   const out: TowerId[] = [];
   for (const id of Object.keys(access).filter(isTower)) {
     const a = access[id];
-    if (a.how !== 'issued') continue;
+    if (!given(a)) continue;
     if (a.availableAfter === null || isMapWon(save, a.availableAfter)) out.push(id);
   }
   return out;

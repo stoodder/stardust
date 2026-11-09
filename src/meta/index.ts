@@ -8,25 +8,33 @@ export type {
   LoadoutMap,
   LoadoutPick,
   LoadoutPools,
+  ProtocolPick,
   SpecNames,
   TowerAnswerNote,
 } from './loadout.ts';
 export {
   abilityAnswers,
+  equippedProtocols,
   fitPick,
+  fitProtocols,
   hasLoadoutChoice,
+  hasProtocolChoice,
   initialPick,
   isValidPick,
   linksAmong,
   loadoutPools,
   mapCounters,
   pickProblems,
+  protocolProblems,
   resolveLoadout,
   showsLoadoutScreen,
+  takesTowerPick,
+  toggleProtocol,
   toggleTower,
   towerAnswers,
   uncoveredCounters,
   withPreset,
+  withProtocols,
 } from './loadout.ts';
 export {
   hintIds,
@@ -69,7 +77,16 @@ export type {
   StoreCatalog,
   StorePane,
 } from './purchase.ts';
-export { LIVE_STORE, STORE_PANES, buy, offerFor, refusalMessage, shelf } from './purchase.ts';
+export {
+  LIVE_STORE,
+  OPEN_QUESTION_UNTIL,
+  STORE_PANES,
+  buy,
+  offerFor,
+  openQuestionOffered,
+  refusalMessage,
+  shelf,
+} from './purchase.ts';
 export type { EarnedMedal, PayoutInput, StardustPayout, StardustSource } from './rewards.ts';
 export { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
 export type { RunEndInput, RunEndResult, RunEndSummary } from './runEnd.ts';
