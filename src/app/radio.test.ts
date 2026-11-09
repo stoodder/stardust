@@ -23,6 +23,15 @@ const spawn = (uid: number, wave: number): Ev => ({
   wave,
 });
 const leak = (uid: number): Ev => ({ type: 'EnemyLeaked', uid, enemy: 'nibbler', leak: 1 });
+const died = (uid: number, enemy: string): Ev => ({
+  type: 'EnemyDied',
+  uid,
+  enemy,
+  bounty: 5,
+  killer: { kind: 'ally', uid: 9 },
+  x: 0,
+  y: 0,
+});
 const cleared = (wave: number): Ev => ({ type: 'WaveCleared', wave, bonus: 0 });
 const countdown = (wave: number): Ev => ({ type: 'CountdownStarted', wave, ticks: 1500 });
 const texts = (lines: readonly { text: string }[]) => lines.map((l) => l.text);
@@ -92,15 +101,6 @@ describe('the A1M1 radio (D026)', () => {
       { on: 'enemyKilled', enemy: 'hauler', speaker: 'bricks', text: 'Strong targeting.' },
     ];
     const r = createRadioScript(lines);
-    const died = (uid: number, enemy: string): Ev => ({
-      type: 'EnemyDied',
-      uid,
-      enemy,
-      bounty: 5,
-      killer: { kind: 'ally', uid: 9 },
-      x: 0,
-      y: 0,
-    });
     expect(r.lines(died(1, 'nibbler'))).toEqual([]);
     expect(texts(r.lines(died(2, 'hauler')))).toEqual(['Sack down.', 'Strong targeting.']);
     expect(r.lines(died(3, 'hauler'))).toEqual([]);

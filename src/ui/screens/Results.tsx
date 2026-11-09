@@ -3,9 +3,17 @@
 // integrity, the lifetime count, the payroll (the Stardust paid and why; on a win the map's medals,
 // this run's lit and first-time ones tagged NEW with their Intel), and the debrief with its
 // speakers' name plates (D028). The counter is the Act I line (design/core-loop.md §6.2) and ticks up
-// (art-direction §9). The way on is Continue (base or Shift board) or Retry.
+// (art-direction §9). The way on is Continue (base or Shift board) or Retry, with Change loadout
+// beside Retry where the map offers the loadout screen (T220).
 import { useEffect, useState } from 'preact/hooks';
-import { afterWin, retryRun, toCampaign, toTitle } from '../../app/navigation.ts';
+import {
+  afterWin,
+  changeLoadoutAfterRun,
+  loadoutOfferedAfterRun,
+  retryRun,
+  toCampaign,
+  toTitle,
+} from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
@@ -255,6 +263,16 @@ function Body({ result }: { result: RunResult }) {
         >
           Retry
         </button>
+        {/* Before a retry, a different four (T220): only where the loadout screen is offered. */}
+        {campaign.value !== null && loadoutOfferedAfterRun(result.mapId) && (
+          <button
+            type="button"
+            class="sd-button"
+            onClick={() => changeLoadoutAfterRun(result.mapId)}
+          >
+            Change loadout
+          </button>
+        )}
         <OnwardButton won={won} />
       </div>
     </section>

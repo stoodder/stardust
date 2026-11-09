@@ -357,10 +357,17 @@ section.chamfer,
 
 /* ── Bottom-left: commander abilities ──────────────────────────────────────────────────────── */
 
-.hud-abilities {
+.hud-bottom-left {
   position: absolute;
   left: 4px;
   bottom: 4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.hud-abilities,
+.hud-fire-control {
   display: flex;
   align-items: flex-end;
   gap: 3px;
@@ -434,6 +441,11 @@ section.chamfer,
 }
 
 .hud-aim-hint {
+  /* Beside the whole bottom-left cluster (abilities and fire control), not between them. */
+  position: absolute;
+  left: calc(100% + 3px);
+  bottom: 0;
+  white-space: nowrap;
   display: grid;
   gap: 3px;
   padding: 4px 6px;

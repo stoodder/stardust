@@ -672,3 +672,13 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
   - A non-upgrading build hits a W7 wall (9–15 integrity in one wave), and no `no_upgrades` alt guards it, which conflicts with D028's no-wall rule.
   - EnemyView/FxView don't draw `SackBurst` yet.
   - A1M2's decor markers (`rig3`, `housing`, `scarecrow`) aren't drawn.
+
+### D058 — 2026-11-09 — T206c Hold Fire HUD, T219 body font, T220; M2 build complete
+- **Hold Fire HUD:**
+  - **Controls:** H holds the selected tower ("Holding fire"). Shift+H, or the "Hold"/"Held" button in a new bottom-left "Fire control" group, is the master switch. H with nothing selected says "Pick a turret first · Shift+H holds all".
+  - **Feedback:** a held tower dims to steel.3 and shows a 9×9 pause plate (a shape, not only colour), and toggling plays its own click.
+  - **Spare runners:** the controls (panel toggle, Alt+H, all) stay hidden until they unlock (after A1M5, or `devUnlocks`).
+- **Radio:** `EnemyDied` plays `enemyKilled` lines, so A1M2's Hauler barks are live.
+- **T219:** Pixelify Sans draws "5" as "S" and "fi"/"fl" as "A" at every size from 8 to 16 px, so **all body text is now Silkscreen**. Pixelify stays as `--font-dialogue` for T302 to revisit.
+- **T220:** Results offers **Change loadout** next to Retry where the map offers the loadout screen.
+- **Every M2 build task is done.** The full gate is green: 1,262 unit tests, both maps' balance sims, 45 smoke flows, and the docs check. M2 goes to review.

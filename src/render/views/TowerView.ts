@@ -3,13 +3,16 @@
 // or an idle anim), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier
 // 2). Selection swaps both to the baked `+selected` variant (white outline). A new build drops in a
 // few px (D026), and an upgrade flashes both white for 2 frames. A tower on high ground stands on
-// the raised block's top face, `liftPx` up, but sorts by its tile (tech-spec § Depth sorting).
+// the raised block's top face, `liftPx` up, but sorts by its tile (tech-spec § Depth sorting). A
+// tower holding fire (core-loop §2.7) dims to `steel.3` and wears a pause plate above its head in
+// the `overlay` layer (holdMarker.ts), so it reads by shape as well as by tone.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
 import { BUILD_DROP_PX, BUILD_DROP_STEP_FRAMES, UPGRADE_FLASH_FRAMES } from '../vfx/fxTiming.ts';
 import {
   baseFrame,
@@ -20,6 +23,7 @@ import {
   type HeadStyle,
   type SpecLetter,
 } from './spriteInfo.ts';
+import { HOLD_TINT_COLOR, holdMarkerImage, tintOf } from './holdMarker.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
 
@@ -29,6 +33,8 @@ export interface TowerLike {
   readonly x: number;
   readonly y: number;
   readonly tier: number;
+  /** Holding fire (a sim Tower's `holdFire`): dimmed, with the pause plate. */
+  readonly holdFire?: boolean;
 }
 
 /** Sprite ids of a tower definition (`CompiledTowerDef.sprites`). */
@@ -44,6 +50,52 @@ const GLOW_SUFFIX = '@glow';
 const HEAD_DEPTH_EPS = 0.00005;
 /** `white.1`: the upgrade flash's fill tint. */
 const FLASH_COLOR = 0xffffff;
+/** A holding tower's multiply tint. */
+const HOLD_TINT = tintOf(HOLD_TINT_COLOR);
+/** The pause plate's texture key (registered once per game). */
+const HOLD_MARKER_KEY = 'overlay.hold_fire';
+/** Clear pixels between the tower's top and the pause plate. */
+const HOLD_MARKER_GAP = 1;
+
+/** Each frame's first opaque row (px from its top), by texture and frame: read once per frame. */
+const opaqueTops = new Map<string, number>();
+
+/**
+ * The first row of `f` with any opaque pixel, so the pause plate sits on the art and not on the
+ * frame's empty headroom. Read from the frame's source once and cached; 0 if it can't be read.
+ */
+function opaqueTop(f: Phaser.Textures.Frame): number {
+  const key = `${f.texture.key}|${f.name}`;
+  const hit = opaqueTops.get(key);
+  if (hit !== undefined) return hit;
+  let top = 0;
+  const w = f.cutWidth;
+  const h = f.cutHeight;
+  const src = f.source.image;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, w);
+  canvas.height = Math.max(1, h);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (ctx !== null && w > 0 && h > 0 && src !== null && !(src instanceof WebGLTexture)) {
+    ctx.drawImage(src, f.cutX, f.cutY, w, h, 0, 0, w, h);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    let row = 0;
+    find: for (; row < h; row++) {
+      for (let x = 0; x < w; x++) if ((data[(row * w + x) * 4 + 3] ?? 0) > 0) break find;
+    }
+    top = row < h ? row : 0;
+  }
+  opaqueTops.set(key, top);
+  return top;
+}
+
+/** The pause plate's texture, registering it on first use. */
+function holdMarkerTexture(scene: Phaser.Scene): string {
+  if (!scene.textures.exists(HOLD_MARKER_KEY)) {
+    scene.textures.addCanvas(HOLD_MARKER_KEY, imageToCanvas(holdMarkerImage()));
+  }
+  return HOLD_MARKER_KEY;
+}
 
 export class TowerView implements PooledView {
   stamp = 0;
@@ -52,6 +104,9 @@ export class TowerView implements PooledView {
   readonly #head: Phaser.GameObjects.Sprite;
   readonly #baseGlow: Phaser.GameObjects.Image;
   readonly #headGlow: Phaser.GameObjects.Image;
+  /** The pause plate while holding fire (in `overlay`). */
+  readonly #hold: Phaser.GameObjects.Image;
+  #holding = false;
   #baseId: SpriteId | null = null;
   #headId: SpriteId | null = null;
   #headStyle: HeadStyle = { kind: 'aim' };
@@ -76,8 +131,10 @@ export class TowerView implements PooledView {
     this.#head = scene.make.sprite({}, false);
     this.#baseGlow = scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD);
     this.#headGlow = scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD);
+    this.#hold = scene.make.image({}, false).setTexture(holdMarkerTexture(scene)).setOrigin(0.5, 1);
     layers.world.add([this.#base, this.#head]);
     layers.vfx.add([this.#baseGlow, this.#headGlow]);
+    layers.overlay.add(this.#hold);
     this.release();
   }
 
@@ -131,6 +188,15 @@ export class TowerView implements PooledView {
     this.#refreshFrames(false);
   }
 
+  /** Holding fire: dims the tower and shows the pause plate (or undoes both). */
+  setHolding(holding: boolean): void {
+    if (holding === this.#holding) return;
+    this.#holding = holding;
+    this.#hold.setVisible(holding && this.#baseId !== null);
+    if (this.#flashFrames === 0) this.#applyTint();
+    if (!Number.isNaN(this.#x)) this.#placeHold();
+  }
+
   /** The upgrade flash: base and head fill white for a couple of frames. */
   flash(): void {
     this.#flashFrames = UPGRADE_FLASH_FRAMES;
@@ -153,6 +219,7 @@ export class TowerView implements PooledView {
 
   /** Positions the tower at its sim position (a tile center). Called every frame; cheap if still. */
   sync(t: TowerLike): void {
+    this.setHolding(t.holdFire === true);
     if (this.#flashFrames > 0 && --this.#flashFrames === 0) this.#endFlash();
     const dropping = this.#dropFrames > 0;
     if (dropping) this.#dropFrames--;
@@ -166,15 +233,25 @@ export class TowerView implements PooledView {
     this.#base.setPosition(pos.x, pos.y - lift).setDepth(depth);
     this.#baseGlow.setPosition(pos.x, pos.y - lift);
     this.#placeHead(depth);
+    this.#placeHold();
   }
 
   #endFlash(): void {
     this.#flashFrames = 0;
-    this.#base.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
-    this.#head.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    this.#applyTint();
+  }
+
+  /** The resting tint: none, or the hold dim. */
+  #applyTint(): void {
+    for (const img of [this.#base, this.#head]) {
+      img.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+      if (this.#holding) img.setTint(HOLD_TINT);
+    }
   }
 
   release(): void {
+    this.#holding = false;
+    this.#hold.setVisible(false);
     this.#endFlash();
     this.#dropFrames = 0;
     this.#liftPx = 0;
@@ -213,7 +290,10 @@ export class TowerView implements PooledView {
         this.#head.setDisplayOrigin(a.x, a.y);
       }
     }
-    if (!Number.isNaN(this.#x)) this.#placeHead(this.#base.depth);
+    if (!Number.isNaN(this.#x)) {
+      this.#placeHead(this.#base.depth);
+      this.#placeHold();
+    }
   }
 
   #placeHead(baseDepth: number): void {
@@ -224,6 +304,16 @@ export class TowerView implements PooledView {
     const hy = this.#base.y - this.#base.displayOriginY + (mount?.y ?? 0);
     this.#head.setPosition(hx, hy).setDepth(baseDepth + HEAD_DEPTH_EPS);
     this.#headGlow.setPosition(hx, hy);
+  }
+
+  /** The pause plate sits centered just above the tower's art (its head's, or its base's). */
+  #placeHold(): void {
+    if (!this.#holding) return;
+    const b = this.#base;
+    let top = b.y - b.displayOriginY + opaqueTop(b.frame);
+    const head = this.#head;
+    if (head.visible) top = Math.min(top, head.y - head.displayOriginY + opaqueTop(head.frame));
+    this.#hold.setPosition(Math.round(this.#base.x), Math.round(top) - HOLD_MARKER_GAP);
   }
 }
 

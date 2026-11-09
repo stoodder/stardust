@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import type { Page } from '@playwright/test';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';

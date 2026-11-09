@@ -67,11 +67,12 @@
   --sd-coral-3: #f47e6a;
   --sd-coral-4: #ffc2a0;
 
-  /* Fonts (art-direction § Fonts). Headings, labels, numbers, and buttons use Silkscreen at 8 or
-     16 game px; body text uses Pixelify Sans at 8 or 16 (the sizes where its pixel grid lands on
-     the game-pixel grid). */
+  /* Fonts (art-direction § Fonts). Everything uses Silkscreen at 8 or 16 game px, body text
+     included: Pixelify Sans draws "5" like "S" and its "fi"/"fl" ligatures like "A" at every size
+     (T219), so it waits for the dialogue system (T302). `--font-body` stays the body text's token. */
   --font-heading: 'Silkscreen', monospace;
-  --font-body: 'Pixelify Sans', monospace;
+  --font-body: 'Silkscreen', monospace;
+  --font-dialogue: 'Pixelify Sans', monospace;
 
   /* Panels (art-direction § Look): ink.1 at 92% with a 1 px act-accent edge. */
   --panel-fill: rgb(13 10 24 / 92%);

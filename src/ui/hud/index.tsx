@@ -407,7 +407,9 @@ function HoldFireAllButton() {
       data-testid="hold-fire-all"
       aria-pressed={on}
       aria-label={label}
-      title={on ? 'Every turret is holding. Fire again (Shift+H)' : 'Hold fire, all turrets (Shift+H)'}
+      title={
+        on ? 'Every turret is holding. Fire again (Shift+H)' : 'Hold fire, all turrets (Shift+H)'
+      }
       onMouseDown={noFocusOnPress}
       onClick={toggleHoldFireAll}
     >
@@ -441,20 +443,20 @@ function SpareRunnersAllButton() {
 }
 
 /**
- * Bottom-left: the commander ability slots, Hold fire (all) (and Spare runners (all) once it
- * unlocks), and the aiming hint while an ability is aimed.
+ * Bottom-left: the commander ability slots, and the aiming hint while one is aimed (drawn past the
+ * fire-control buttons that follow the slots).
  */
 function AbilityBar() {
   const slots = hud.abilities.value;
   const cds = hud.abilityCooldowns.value;
   const aimed = slots.find((a) => a.slot === hud.aimingAbility.value);
+  if (slots.length === 0) return null;
   return (
-    <nav class="hud-abilities" aria-label="Abilities and fire control">
+    <nav class="hud-abilities" aria-label="Abilities">
       {slots.map((a, i) => (
         <AbilitySlot key={a.slot} a={a} cd={cds[i]} />
       ))}
-      <HoldFireAllButton />
-      <SpareRunnersAllButton />
+      {/* Placed beside the whole bottom-left cluster (hud.css), after the fire control. */}
       {aimed !== undefined && (
         <div class="hud-aim-hint chamfer" role="status">
           {aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target'}
@@ -907,7 +909,14 @@ export function Hud() {
           </div>
           <WavePanel />
         </div>
-        <AbilityBar />
+        {/* Bottom-left: the abilities, then fire control (always there: core-loop §2.7). */}
+        <div class="hud-bottom-left">
+          <AbilityBar />
+          <div class="hud-fire-control" role="group" aria-label="Fire control">
+            <HoldFireAllButton />
+            <SpareRunnersAllButton />
+          </div>
+        </div>
         <BuildBar />
         {selected !== null && <TowerPanel t={selected} />}
         <UpgradeHint />

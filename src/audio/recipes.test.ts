@@ -48,6 +48,8 @@ describe('sound effect recipes', () => {
         'build',
         'countdown_tick',
         'enemy_pop',
+        'hold_fire_off',
+        'hold_fire_on',
         'leak',
         'low_integrity',
         'radio_bricks',

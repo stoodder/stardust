@@ -11,6 +11,7 @@ import { battleConfig } from './battleSetup.ts';
 import {
   bonusTexts,
   buildSlots,
+  holdingCount,
   medalViews,
   selectedView,
   specLockText,
@@ -147,6 +148,38 @@ describe('the tower panel (T202d)', () => {
       [{ kind: 'linkBonus', pct: 0.5, source: 'test' }] as Modifier<IdSpace>[],
     );
     expect(lines).toEqual(['+20% rate (power node)', '+30% dmg vs Chilled (Sitting Ducks)']);
+  });
+});
+
+describe('Hold fire in the tower panel (T206c)', () => {
+  it('shows the tower holding, rebuilds on a change, and counts the holding towers', () => {
+    const sim = a1m1();
+    sim.enqueue({ type: 'build', tile: [6, 1], tower: 'rivet' });
+    sim.enqueue({ type: 'build', tile: [7, 2], tower: 'rivet' });
+    sim.step();
+    const uid = uidAt(sim, 6, 1);
+    const off = selectedView(sim, uid, origin, null)!; // built above
+    expect(off.holdFire).toBe(false);
+    sim.enqueue({ type: 'holdFire', target: uid, on: true });
+    sim.step();
+    const on = selectedView(sim, uid, origin, off)!;
+    expect(on).not.toBe(off);
+    expect(on.holdFire).toBe(true);
+    expect(holdingCount(sim.state.towers)).toBe(1);
+    sim.enqueue({ type: 'holdFire', target: 'all', on: true });
+    sim.step();
+    expect(holdingCount(sim.state.towers)).toBe(2);
+  });
+
+  it('hides Spare runners until it unlocks, then offers it on attacking towers', () => {
+    const sim = a1m1();
+    sim.enqueue({ type: 'build', tile: [6, 1], tower: 'rivet' });
+    sim.step();
+    const uid = uidAt(sim, 6, 1);
+    expect(selectedView(sim, uid, origin, null)!.spareRunners).toBeNull(); // built above
+    const open = selectedView(sim, uid, origin, null, specLockText(false), true)!;
+    expect(open.spareRunners).toBe(false);
+    expect(towerPanelHeight(open)).toBe(towerPanelHeight({ ...open, spareRunners: null }) + 18);
   });
 });
 

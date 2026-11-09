@@ -168,6 +168,17 @@ describe('event sounds', () => {
     expect(ids(calls)).toEqual(['sfx:suppress_burst', 'sfx:bricks_ready', 'sfx:bricks_shot']);
   });
 
+  it('clicks fire control: Hold fire down and up, spare runners the same clicks pitched up', () => {
+    const calls = run([
+      { type: 'HoldFireChanged', target: 'all', on: true },
+      { type: 'HoldFireChanged', target: 3, on: false },
+      { type: 'SpareRunnersChanged', target: 'all', on: true },
+    ]);
+    expect(ids(calls)).toEqual(['sfx:hold_fire_on', 'sfx:hold_fire_off', 'sfx:hold_fire_on']);
+    expect(calls.map((c) => (c.kind === 'sfx' ? c.pitch : null))).toEqual([0, 0, 5]);
+    expect(Object.hasOwn(SFX, 'hold_fire_on') && Object.hasOwn(SFX, 'hold_fire_off')).toBe(true);
+  });
+
   it('stings each wave clear once per frame, but not when the map ends in the same frame', () => {
     expect(ids(run([cleared(1), cleared(2)]))).toEqual(['cue:bright_sting']);
     expect(ids(run([cleared(7), { type: 'MapWon' }]))).toEqual(['cue:win']);

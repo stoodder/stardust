@@ -11,6 +11,7 @@ import {
   firstEmptySlot,
   hasAnySave,
   importInto,
+  loadoutOffered,
   newGame as newSave,
   nextMapId,
   openSlot,
@@ -55,6 +56,19 @@ export function changeLoadout(): void {
     const mapId = r.battle?.host.sim.map.id;
     return mapId === undefined ? Promise.resolve() : r.goto('loadout', { mapId });
   });
+}
+
+/**
+ * Whether Results offers Change loadout for the finished run's map (T220): the save in play has a
+ * choice to make there (the loadout screen's skip rule, D055).
+ */
+export function loadoutOfferedAfterRun(mapId: string): boolean {
+  return loadoutOffered(mapId);
+}
+
+/** Results → Change loadout (T220): the finished run's map's loadout screen, then its briefing. */
+export function changeLoadoutAfterRun(mapId: string): void {
+  run('change loadout', (r) => r.goto('loadout', { mapId }));
 }
 
 /** Plays the save's next map, or shows the Shift board when there is none. */

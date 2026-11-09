@@ -6,7 +6,8 @@ describe('the Hold Fire marker', () => {
     const img = holdMarkerImage();
     expect([img.w, img.h]).toEqual([9, 9]);
     const alpha = (x: number, y: number) => img.data[(y * img.w + x) * 4 + 3];
-    const rgb = (x: number, y: number) => [...img.data.slice((y * img.w + x) * 4, (y * img.w + x) * 4 + 3)];
+    const rgb = (x: number, y: number) =>
+      Array.from(img.data.slice((y * img.w + x) * 4, (y * img.w + x) * 4 + 3));
     expect(alpha(0, 0)).toBe(0);
     expect(alpha(8, 8)).toBe(0);
     expect(rgb(2, 4)).toEqual([255, 255, 255]);

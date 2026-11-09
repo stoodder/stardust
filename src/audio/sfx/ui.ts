@@ -52,4 +52,38 @@ export const UI_SFX = {
       },
     ],
   },
+  /** Hold fire on (one turret or all): two soft clicks stepping down, a safety catch going on. */
+  hold_fire_on: {
+    gain: 0.24,
+    priority: 1,
+    minGapMs: 80,
+    maxVoices: 1,
+    layers: [
+      {
+        wave: 'pulse25',
+        freq: 880,
+        steps: [[0.05, 0.75]],
+        filter: { type: 'lowpass', freq: 2400 },
+        env: { a: 0.002, d: 0.03, s: 0.5, hold: 0.06, r: 0.03 },
+        gain: 0.6,
+      },
+    ],
+  },
+  /** Hold fire off: the same two clicks stepping back up. */
+  hold_fire_off: {
+    gain: 0.24,
+    priority: 1,
+    minGapMs: 80,
+    maxVoices: 1,
+    layers: [
+      {
+        wave: 'pulse25',
+        freq: 660,
+        steps: [[0.05, 4 / 3]],
+        filter: { type: 'lowpass', freq: 2400 },
+        env: { a: 0.002, d: 0.03, s: 0.5, hold: 0.06, r: 0.03 },
+        gain: 0.6,
+      },
+    ],
+  },
 } as const satisfies Readonly<Record<string, SfxRecipe>>;

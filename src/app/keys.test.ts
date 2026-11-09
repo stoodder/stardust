@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ALT_BINDINGS, BINDINGS, bindingFor, SHIFT_BINDINGS } from './keys.ts';
-import {
-  toggleHoldFireAll,
-  toggleHoldFireSelected,
-  toggleSpareRunnersAll,
-} from './commands.ts';
+import { toggleHoldFireAll, toggleHoldFireSelected, toggleSpareRunnersAll } from './commands.ts';
 
 const key = (code: string, mods: { shift?: boolean; alt?: boolean; ctrl?: boolean } = {}) => ({
   code,
@@ -34,7 +30,8 @@ describe('bindingFor: the Hold Fire keys (core-loop §4)', () => {
   });
 
   it('every chord key also has a plain binding or is Alt-only by design', () => {
-    for (const code of Object.keys(SHIFT_BINDINGS)) expect(Object.hasOwn(BINDINGS, code)).toBe(true);
+    for (const code of Object.keys(SHIFT_BINDINGS))
+      expect(Object.hasOwn(BINDINGS, code)).toBe(true);
     expect(Object.keys(ALT_BINDINGS)).toEqual(['KeyH']);
   });
 });

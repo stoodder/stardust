@@ -59,6 +59,16 @@ export const ALLY_SOUNDS: Readonly<
   bricks: { spawn: 'bricks_ready', attack: 'bricks_shot' },
 };
 
+/**
+ * Fire control's clicks (core-loop §2.7): Hold fire on and off, and the spare-runners filter as
+ * the same clicks pitched up, so the two read as kin but never as each other.
+ */
+export const FIRE_CONTROL_SOUNDS = {
+  on: 'hold_fire_on',
+  off: 'hold_fire_off',
+  sparePitch: 5,
+} as const satisfies { readonly on: SfxId; readonly off: SfxId; readonly sparePitch: number };
+
 /** Semitones an upgrade's arpeggio rises per tier above 2. */
 export const UPGRADE_PITCH_PER_TIER = 2;
 /** The early-call cue plays first; the wave's horn follows after this (s). */
@@ -161,15 +171,21 @@ export function createEventSounds(act: Act): EventSounds {
           pendingClear = false;
           out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
           return;
+        case 'HoldFireChanged':
+          out.push(sfx(e.on ? FIRE_CONTROL_SOUNDS.on : FIRE_CONTROL_SOUNDS.off));
+          return;
+        case 'SpareRunnersChanged': {
+          const id = e.on ? FIRE_CONTROL_SOUNDS.on : FIRE_CONTROL_SOUNDS.off;
+          out.push(sfx(id, FIRE_CONTROL_SOUNDS.sparePitch));
+          return;
+        }
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
         case 'CountdownStarted':
         case 'ScriptCue':
-        // Their sounds come with their M2 tasks (T202 specs and links, T206 Hold Fire).
+        // Their sounds come with their M2 tasks (T202 specs and links).
         case 'TowerSpecialized':
-        case 'HoldFireChanged':
-        case 'SpareRunnersChanged':
         case 'NotFiringAtSkitterkin':
         case 'LinkFormed':
         case 'LinkBroken':
