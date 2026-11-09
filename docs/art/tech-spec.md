@@ -114,7 +114,7 @@ Per D001, sprites are **palette-indexed character grids** in TypeScript data fil
 | `src/content/sprites/types.ts`, `legend.ts`, `defineSprite.ts` | The data shapes (`SpriteDef`, `Slot`, `SlotPalette`, `PaletteId`, `EnvPaletteId`), the standard legend, and the identity helper |
 | `src/content/sprites/helpers.ts` | Procedural helpers: the tile mask, `diamond`, `isoBox`, `disc`, `line`, `stamp`, `mirrorRows`, `recolor`, seeded `hash01` |
 | `src/content/sprites/validate.ts` | `validateSprites()`: ids, grids, patches, mirrors, anims, legend colors, palette references (errors name sprite, frame, row, column) |
-| `src/content/sprites/<category>/<id>.ts` | One sprite per file (a tower's file holds its base and head). Categories: `tiles`, `props`, `towers`, `enemies`, `projectiles`, `fx`, and later `icons`, `portraits`, `ui`. Shared builders sit beside them (`tiles/tileGen.ts`, `towers/base.ts`, `enemies/skitter.ts`) |
+| `src/content/sprites/<category>/<id>.ts` | One sprite per file (a tower's file holds its base and head). Categories: `tiles`, `props`, `towers`, `enemies`, `projectiles`, `fx`, `icons`, and later `portraits`, `ui`. Shared builders sit beside them (`tiles/tileGen.ts`, `towers/base.ts`, `enemies/skitter.ts`, `icons/iconGen.ts`, `icons/enemyIcon.ts`); the HUD's 8×8 glyphs share `icons/glyphs.ts` |
 | `src/content/sprites/index.ts` | `SPRITES`, the registry of all sprites in gallery order, and the `SpriteId` union |
 | `src/render/sprites/rasterize.ts` | **Pure** pixel passes on char-code grids: parse, patch, mirror, outline, colorize, glow. No DOM, no Phaser, so it's unit-tested in Node. |
 | `src/render/sprites/bake.ts` | **Pure** baker: definition × palettes → keyed RGBA frames, anims, and meta |

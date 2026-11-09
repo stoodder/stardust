@@ -1,0 +1,402 @@
+/* The in-map HUD (art-direction §9), in game pixels inside the zoomed 640×360 #ui box. Panels and
+   buttons are chamfered (45° cuts) with a 1 px edge in the act accent. The edge is a separate ring
+   (::after, an even-odd polygon) drawn over the fill, so the 92% fill never shows the edge color
+   through it. Colors come from the tokens in ../theme.css. */
+
+.hud {
+  --cut: 3px;
+  --edge: var(--accent);
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-white-0);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.hud .num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Chamfered frames ──────────────────────────────────────────────────────────────────────── */
+
+.chamfer {
+  position: relative;
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut)
+  );
+}
+
+.chamfer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--edge);
+  /* The outer outline, then the inner one 1 px in: even-odd leaves a 1 px ring. */
+  clip-path: polygon(
+    evenodd,
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut),
+    var(--cut) 0,
+    var(--cut) 1px,
+    1px var(--cut),
+    1px calc(100% - var(--cut)),
+    var(--cut) calc(100% - 1px),
+    calc(100% - var(--cut)) calc(100% - 1px),
+    calc(100% - 1px) calc(100% - var(--cut)),
+    calc(100% - 1px) var(--cut),
+    calc(100% - var(--cut)) 1px,
+    var(--cut) 1px
+  );
+}
+
+section.chamfer,
+.hud-notice {
+  background: var(--panel-fill);
+  pointer-events: auto;
+}
+
+/* ── Text ─────────────────────────────────────────────────────────────────────────────────── */
+
+.hud-label {
+  color: var(--sd-steel-3);
+}
+
+.hud .big {
+  font-size: 16px;
+  line-height: 16px;
+}
+
+.hud .dim {
+  font-size: 8px;
+  color: var(--sd-steel-3);
+}
+
+.hud .gold {
+  color: var(--sd-gold-3);
+}
+
+.hud .danger {
+  color: var(--sd-red-3);
+}
+
+.hud .accent {
+  color: var(--accent);
+}
+
+.hud .icon {
+  display: block;
+  flex: none;
+}
+
+.hud-key {
+  flex: none;
+  min-width: 5px;
+  padding: 1px 1px 0;
+  color: var(--sd-ink-0);
+  background: var(--sd-steel-3);
+  text-align: center;
+}
+
+.hud-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--sd-gold-3);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────────────────────── */
+
+.hud-btn {
+  --cut: 2px;
+  --edge: var(--sd-steel-1);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0 4px;
+  border: 0;
+  font: inherit;
+  line-height: 8px;
+  color: var(--sd-white-0);
+  text-transform: uppercase;
+  background: var(--sd-ink-2);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hud-btn:hover {
+  --edge: var(--accent);
+  background: var(--sd-ink-3);
+}
+
+.hud-btn:active {
+  background: var(--accent-dim);
+}
+
+.hud-btn[aria-pressed='true'] {
+  --edge: var(--accent);
+  color: var(--sd-white-1);
+  background: var(--accent-dim);
+}
+
+.hud-btn[aria-disabled='true'] {
+  color: var(--sd-steel-2);
+  cursor: default;
+}
+
+/* Focus: the ring turns white (an outline would be clipped by the chamfer). */
+.hud-btn:focus {
+  outline: none;
+}
+
+.hud-btn:focus-visible {
+  --edge: var(--sd-white-1);
+}
+
+.hud-btn.square {
+  justify-content: center;
+  width: 16px;
+  padding: 0;
+}
+
+.hud-btn.wide {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hud-btn .grow {
+  flex: 1;
+  text-align: left;
+}
+
+.hud-btn.poor .hud-cost {
+  color: var(--sd-red-3);
+}
+
+.hud-btn.full .hud-cost {
+  color: var(--sd-green-3);
+}
+
+/* ── Top-left: status ─────────────────────────────────────────────────────────────────────── */
+
+.hud-status {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  box-sizing: border-box;
+  width: 100px;
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px 6px 6px;
+}
+
+.hud-meter,
+.hud-credits {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-meter .big,
+.hud-credits .big {
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Top-right: speed, waves, preview ─────────────────────────────────────────────────────── */
+
+.hud-top-right {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.hud-speed {
+  display: flex;
+  gap: 2px;
+}
+
+.hud-waves {
+  display: grid;
+  gap: 4px;
+  padding: 5px 5px 5px 7px;
+}
+
+.hud-wave-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-wave-row .big {
+  min-width: 36px;
+}
+
+.hud-btn.call {
+  --edge: var(--accent);
+  color: var(--accent);
+}
+
+.hud-btn.call[aria-disabled='true'] {
+  --edge: var(--sd-steel-1);
+  color: var(--sd-steel-2);
+}
+
+.hud-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 5px;
+  max-width: 112px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-preview-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.hud-air {
+  margin-left: 1px;
+  color: var(--accent-2);
+}
+
+/* ── Bottom-right: build slots ────────────────────────────────────────────────────────────── */
+
+.hud-build {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  gap: 3px;
+}
+
+.hud-slot {
+  position: relative;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 30px;
+  height: 34px;
+  padding: 0 0 3px;
+}
+
+.hud-slot.empty {
+  --cut: 2px;
+  --edge: var(--sd-ink-3);
+  background: rgb(13 10 24 / 60%);
+}
+
+.hud-slot .hud-key {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+}
+
+.hud-slot .slot-icon {
+  margin: 0 auto;
+}
+
+.hud-slot.poor .slot-icon,
+.hud-slot.locked .slot-icon {
+  opacity: 0.45;
+}
+
+.hud-slot.poor .hud-cost {
+  color: var(--sd-red-3);
+}
+
+.hud-locked {
+  display: flex;
+  justify-content: center;
+  height: 8px;
+}
+
+/* ── The selected tower's panel ───────────────────────────────────────────────────────────── */
+
+.hud-tower {
+  position: absolute;
+  box-sizing: border-box;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 4px;
+}
+
+.hud-tower-head {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.hud-name {
+  flex: 1;
+  color: var(--sd-white-1);
+}
+
+.hud-tier {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.hud-tier .hud-label {
+  margin-right: 1px;
+}
+
+.pip {
+  width: 3px;
+  height: 5px;
+  background: var(--sd-ink-3);
+}
+
+.pip.on {
+  background: var(--sd-orange-3);
+}
+
+/* ── Notices ──────────────────────────────────────────────────────────────────────────────── */
+
+.hud-notice-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.hud-notice {
+  --edge: var(--accent-2);
+  padding: 4px 8px;
+  color: var(--sd-white-1);
+  pointer-events: none;
+}

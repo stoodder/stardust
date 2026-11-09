@@ -75,7 +75,8 @@ function compileBuild<K extends IdSpace>(
   };
 }
 
-const STEP_KEYS = [
+/** The action keys a build step may carry; a step has exactly one. */
+export const STEP_KEYS = [
   'build',
   'upgrade',
   'specialize',

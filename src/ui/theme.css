@@ -1,9 +1,115 @@
-/* Page layout and the overlay root. Tokens and act themes arrive with the HUD (T106). */
+/* Page layout, the overlay root, and the UI tokens (art-direction §9). All UI is authored in game
+   pixels: #ui is the 640×360 game box, zoomed by --ui-scale (set by app/boot.ts to the canvas's
+   CSS zoom, n / devicePixelRatio, so one game pixel covers exactly n device pixels). */
+
+/* The two pixel fonts (SIL OFL, self-hosted by Vite from @fontsource; latin subset, regular). */
+@import '@fontsource/silkscreen/latin-400.css';
+@import '@fontsource/pixelify-sans/latin-400.css';
+
 :root {
-  --ink-0: #05030a;
-  --text: #e8f6ff;
-  --accent: #2fd6c4;
+  /* Master palette colors as CSS tokens: `--sd-<ramp>-<step>` is master.ts `<ramp>.<step>`.
+     content/palettes/master.ts is the home of the values; tools/uiTokens.test.ts checks every --sd- token in src/ui. */
+  --sd-ink-0: #05030a;
+  --sd-ink-1: #0d0a18;
+  --sd-ink-2: #181226;
+  --sd-ink-3: #251c3a;
+  --sd-ink-4: #362a52;
+  --sd-steel-0: #2a3046;
+  --sd-steel-1: #434c66;
+  --sd-steel-2: #646f8a;
+  --sd-steel-3: #929db6;
+  --sd-steel-4: #c6cee0;
+  --sd-white-0: #e6ebf5;
+  --sd-white-1: #ffffff;
+  --sd-red-0: #2e0718;
+  --sd-red-1: #6e0f2c;
+  --sd-red-2: #b81d3a;
+  --sd-red-3: #f0384a;
+  --sd-red-4: #ff8c7e;
+  --sd-orange-0: #3a1206;
+  --sd-orange-1: #8c2e0e;
+  --sd-orange-2: #d65c16;
+  --sd-orange-3: #ff9430;
+  --sd-orange-4: #ffcf7a;
+  --sd-gold-0: #3e2408;
+  --sd-gold-1: #8c5c0e;
+  --sd-gold-2: #dca61c;
+  --sd-gold-3: #ffde46;
+  --sd-gold-4: #fff5ac;
+  --sd-green-0: #0a2618;
+  --sd-green-1: #155a2c;
+  --sd-green-2: #2a9a3c;
+  --sd-green-3: #62d64c;
+  --sd-green-4: #b6f59e;
+  --sd-teal-0: #04222a;
+  --sd-teal-1: #08505c;
+  --sd-teal-2: #0e8a92;
+  --sd-teal-3: #2cd6cc;
+  --sd-teal-4: #9efff0;
+  --sd-blue-0: #08123c;
+  --sd-blue-1: #142c86;
+  --sd-blue-2: #245cd4;
+  --sd-blue-3: #469cff;
+  --sd-blue-4: #a6d8ff;
+  --sd-violet-0: #170838;
+  --sd-violet-1: #351676;
+  --sd-violet-2: #642cbc;
+  --sd-violet-3: #9c5cf0;
+  --sd-violet-4: #d8acff;
+  --sd-pink-0: #36082c;
+  --sd-pink-1: #76125c;
+  --sd-pink-2: #c4268c;
+  --sd-pink-3: #ff58b4;
+  --sd-pink-4: #ffaedd;
+  --sd-coral-0: #3a0e1c;
+  --sd-coral-1: #7e2234;
+  --sd-coral-2: #c8474a;
+  --sd-coral-3: #f47e6a;
+  --sd-coral-4: #ffc2a0;
+
+  /* Fonts (art-direction § Fonts). Headings, labels, numbers, and buttons use Silkscreen at 8 or
+     16 game px; body text uses Pixelify Sans at 8 or 16 (the sizes where its pixel grid lands on
+     the game-pixel grid). */
+  --font-heading: 'Silkscreen', monospace;
+  --font-body: 'Pixelify Sans', monospace;
+
+  /* Panels (art-direction § Look): ink.1 at 92% with a 1 px act-accent edge. */
+  --panel-fill: rgb(13 10 24 / 92%);
+
+  /* The act theme; [data-act] below switches it. Act I by default. */
+  --accent: var(--sd-teal-3);
+  --accent-2: var(--sd-pink-3);
+  --accent-dim: var(--sd-teal-1);
+
+  /* Not used for display: these references make Vite ship the fonts' OFL license texts with the
+     build (art-direction § Fonts). */
+  --font-licenses: url('@fontsource/silkscreen/LICENSE'), url('@fontsource/pixelify-sans/LICENSE');
+
+  --ink-0: var(--sd-ink-0);
+  --text: var(--sd-white-0);
   --ui-scale: 1;
+}
+
+/* Act themes (art-direction § Act themes): one attribute on a UI root switches them. */
+[data-act='1'] {
+  --accent: var(--sd-teal-3);
+  --accent-2: var(--sd-pink-3);
+  --accent-dim: var(--sd-teal-1);
+}
+[data-act='2'] {
+  --accent: var(--sd-orange-3);
+  --accent-2: var(--sd-violet-3);
+  --accent-dim: var(--sd-orange-1);
+}
+[data-act='3'] {
+  --accent: var(--sd-red-3);
+  --accent-2: var(--sd-violet-4);
+  --accent-dim: var(--sd-red-1);
+}
+[data-act='finale'] {
+  --accent: var(--sd-gold-3);
+  --accent-2: var(--sd-teal-4);
+  --accent-dim: var(--sd-gold-1);
 }
 
 html,
@@ -40,23 +146,12 @@ body {
   zoom: var(--ui-scale);
   pointer-events: none;
   line-height: normal;
-  font-family: monospace;
+  font-family: var(--font-heading);
   font-size: 8px;
+  -webkit-font-smoothing: none;
 }
 
-.screen {
-  position: absolute;
-  inset: auto 0 24px 0;
-  text-align: center;
-}
-
-.screen h1 {
-  margin: 0;
-  font-size: 16px;
-  color: var(--accent);
-  letter-spacing: 2px;
-}
-
-.screen p {
-  margin: 4px 0 0;
+#ui img,
+#ui canvas {
+  image-rendering: pixelated;
 }

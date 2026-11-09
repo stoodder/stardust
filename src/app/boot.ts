@@ -2,11 +2,13 @@
 // the keyboard, and the test hooks.
 import * as Phaser from 'phaser';
 import { computeScale, cssZoom, VIEW_H, VIEW_W } from '../render/scale.ts';
+import { BackdropScene } from '../render/scenes/BackdropScene.ts';
 import { BootScene } from '../render/scenes/BootScene.ts';
 import { mountUi } from '../ui/Overlay.tsx';
 import { screen } from '../ui/state.ts';
 import { issue, setSpeed } from './commands.ts';
 import { installKeys } from './keys.ts';
+import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
@@ -58,10 +60,12 @@ export async function boot(): Promise<void> {
     backgroundColor: '#05030a',
     scale: { mode: Phaser.Scale.NONE },
     banner: false,
-    scene: [new BootScene(resolveSceneReady)],
+    // Only the first scene starts on its own; the router starts the backdrop and battles.
+    scene: [new BootScene(resolveSceneReady), new BackdropScene()],
   });
   const frames = meterFrames(game);
   const router: Router = createRouter(game, { mapId: params.map, seed: params.seed });
+  setNavigator(router);
   const startInBattle = params.map !== null || params.skipIntro;
   const ready = sceneReady.then(() => router.goto(startInBattle ? 'battle' : 'title'));
 
@@ -75,6 +79,10 @@ export async function boot(): Promise<void> {
         goto: async (id) => {
           await sceneReady;
           await router.goto(id);
+        },
+        forceOutcome: async (outcome) => {
+          await sceneReady;
+          await router.endRun(outcome);
         },
         frameMs: () => frames.frameMs(),
         canvas: () => game.canvas,
@@ -93,7 +101,7 @@ export async function boot(): Promise<void> {
   window.addEventListener('resize', applyScale);
   installKeys({
     isActive: () => screen.value === 'battle',
-    // No modals until the HUD and menus exist (T106, T115).
+    // No modals until dialogue and settings exist; the Title and Results screens turn hotkeys off.
     isModalOpen: () => false,
   });
 

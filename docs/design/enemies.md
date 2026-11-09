@@ -44,7 +44,7 @@ Every enemy has one **body class**. The multiplier applies to damage before shie
 | Energy | 1.0 | 1.0 | 1.0 | **0.75** (light passes through what isn't there) |
 | Psionic | 1.0 | **0.75** (a kindred mind resists) | **0.35** (no mind to touch) | **1.5** (it is made of minds: echoes of the unmourned dead) |
 
-Only four cells deviate from 1.0, on purpose (readability). They carry story: Ves'thara's towers struggle against her own people and badly against Sterling's machines (so Psionic's armor-ignore never makes Mindspike the answer to Everglow armor), and they are the best weapon against the Hollow.
+The matrix's data form is `BODY_MULT` in [`src/content/rules.ts`](../../src/content/rules.ts), with the shield multipliers (2.1) beside it. Only four cells deviate from 1.0, on purpose (readability). They carry story: Ves'thara's towers struggle against her own people and badly against Sterling's machines (so Psionic's armor-ignore never makes Mindspike the answer to Everglow armor), and they are the best weapon against the Hollow.
 
 **"Void" is a mechanical label, not lore.** The body class `void` means *absence*: Hollow shapes are made of what is missing, the lonely echoes of dead who were never sung ([../story/bible.md](../story/bible.md#the-hollow)). It is not a machine, nanite, or cosmic intelligence.
 
@@ -95,7 +95,7 @@ target.hp -= damage
 | **Revealed** | A cloaked enemy can be targeted. | While inside a detection radius, plus any linger time. | n/a |
 | **Haste X%** (enemy aura) | Move speed × (1 + X). | Highest only. **Cap +50%.** | Normal |
 
-**Speed rule:** `speed = base × (1 − chill) × (1 + haste)`. Speed is 0 while Pinned or in Stasis.
+**Speed rule:** `speed = base × (1 − chill) × (1 + haste)`. Speed is 0 while Pinned or in Stasis. The caps, immunity times, and the speed rule are rule data in [`src/content/rules.ts`](../../src/content/rules.ts).
 
 **Interrupt rule:** an interrupted ability (a blink, burrow, gather, jam, or heal pulse) is cancelled, even mid-tell, and its cooldown restarts from zero.
 
@@ -140,7 +140,7 @@ Other art tell ids used by the roster: `carrier` (Brood Hauler), `boss`, `hollow
 
 ### 3.1 Counter categories
 
-**This table is the canonical trait → counter-category map** (it is rule data, `rules.ts`). A map's `requiredCounters` are drawn from these categories ([maps.md §6.3](maps.md#63-one-new-thing-per-map)), and the **Answers** column is what a category's no-counter build must leave out ([maps.md §6.1](maps.md#61-per-act-targets)).
+**This table is the human-readable trait → counter-category map.** Its data form is `TRAIT_COUNTER` and `COUNTER_ANSWERS` in [`src/content/rules.ts`](../../src/content/rules.ts), which validation reads; change them together. (Until T208, `COUNTER_ANSWERS` lists every tower that answers a category at any tier or spec, so it is stricter than the tier and spec notes below.) A map's `requiredCounters` are drawn from these categories ([maps.md §6.3](maps.md#63-one-new-thing-per-map)), and the **Answers** column is what a category's no-counter build must leave out ([maps.md §6.1](maps.md#61-per-act-targets)).
 
 | Category | Traits | Answers (every tower, spec, link, and Technician ability here; a no-counter build excludes all of them) |
 |---|---|---|
@@ -172,6 +172,7 @@ Per D001, a *few late-game* enemies may **briefly disable** towers. This is the 
 - **Counters:** interrupt the jammer during its tell (Stasis, Unnerved), kill it first, **Hum Choir** (halves the duration at T1–T2, cuts it by 75% at T3, and gives immunity only with its Rally Chorus specialization; no Choir aura ever protects a Choir, its own or another's), the **System Reboot** ability, and placement (jammers have short reach, so key towers can sit out of it). [towers.md §7](towers.md#hum-choir-choir) has the numbers.
 - **Introduction rule:** jamming never appears before the player has access to at least one counter beyond "kill it" (Hum Choir or System Reboot). A jammer's first appearance is a teaching wave with a single jammer and a codex popup.
 - **Story placement:** Silencers debut in A3M4, on the map where QUILL patches in **System Reboot** before the first jam; Auditors debut in A3M5; "Shareholder Value" is the A3M5 boss. Dialogue and codex call a Silencer's jam *hushing* ("the towers went quiet"); UI labels stay "Jammed" for readability.
+- The jam limits and the jammer list are rule data in [`src/content/rules.ts`](../../src/content/rules.ts).
 - **Wave-design limit:** in par play ([maps.md §6.4](maps.md#64-balance-harness)), no more than **25%** of the player's towers should be jammed at the same moment.
 
 ---

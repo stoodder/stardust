@@ -93,7 +93,7 @@ stat_final = (stat_tier + Σ flat_bonuses) × (1 + Σ percent_bonuses)
 - **Flat bonuses** (for example "+0.5 range" from a link) add first.
 - **Percent bonuses** for the same stat **add together**. Sources: shop tune-ups, synergy links, support auras, tiles (high ground, power node), Field Protocols.
 - **Auras of the same kind do not stack**: a tower inside two Hum Choir auras gets only the stronger one. Different aura kinds (Hum Choir damage plus Lookout range) do stack. **The Lookout Shack's adjacency bonus is an aura kind** (range, or fire rate with Overclock Rig): a tower next to two Lookouts gets only the stronger bonus. A support tower is never covered by its own aura.
-- **Caps (rule):** total percent bonus is capped at **+150% damage, +100% fire rate, +60% range**.
+- **Caps (rule):** total percent bonus is capped at **+150% damage, +100% fire rate, +60% range**. The caps, aura kinds, and tile bonuses are rule data in [`src/content/rules.ts`](../../src/content/rules.ts).
 - Effects on *enemies* (Mark, Soaked, Corroded) are applied in the damage pipeline in [enemies.md §2.3](enemies.md#23-damage-pipeline), not here.
 - **Jammed** towers have fire rate 0 and provide no auras or links while jammed.
 

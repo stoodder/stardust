@@ -4,19 +4,50 @@
 // - On a focused button, Space and 1–4 go to the game hotkey (preventDefault, so the button doesn't
 //   also activate), unless a modal is open, in which case the modal keeps them.
 // - Enter always activates the focused button (never a game hotkey).
-// Bindings (design/core-loop.md §4) live in the table below; T106 adds the HUD ones (1–4, U, S, T,
-// W, Q) here.
-import { cancel, toggleFastSpeed, togglePause } from './commands.ts';
+// Bindings (design/core-loop.md §4) live in the table below. Still to come: Q and E (abilities,
+// T113 and T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
+import {
+  callWave,
+  cancel,
+  cycleTargeting,
+  pressBuildSlot,
+  sellSelected,
+  toggleFastSpeed,
+  togglePause,
+  upgradeSelected,
+} from './commands.ts';
 
 /** A hotkey's action, by `KeyboardEvent.code` (layout-independent). */
-const BINDINGS: Readonly<Record<string, () => void>> = {
+export const BINDINGS: Readonly<Record<string, () => void>> = {
   Space: togglePause,
   KeyF: toggleFastSpeed,
   Escape: cancel,
+  Digit1: () => pressBuildSlot(0),
+  Digit2: () => pressBuildSlot(1),
+  Digit3: () => pressBuildSlot(2),
+  Digit4: () => pressBuildSlot(3),
+  Numpad1: () => pressBuildSlot(0),
+  Numpad2: () => pressBuildSlot(1),
+  Numpad3: () => pressBuildSlot(2),
+  Numpad4: () => pressBuildSlot(3),
+  KeyU: upgradeSelected,
+  KeyS: sellSelected,
+  KeyT: cycleTargeting,
+  KeyW: callWave,
 };
 
 /** Keys a focused button would act on itself, which the game takes instead (the modal keeps them). */
-const BUTTON_PASSTHROUGH = new Set(['Space', 'Digit1', 'Digit2', 'Digit3', 'Digit4']);
+const BUTTON_PASSTHROUGH = new Set([
+  'Space',
+  'Digit1',
+  'Digit2',
+  'Digit3',
+  'Digit4',
+  'Numpad1',
+  'Numpad2',
+  'Numpad3',
+  'Numpad4',
+]);
 
 export interface KeyRouting {
   /** Whether game hotkeys are live (a battle is on screen). */

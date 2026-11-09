@@ -190,9 +190,11 @@ Portraits and icons are authored at their display size and shown 1:1 in game pix
 |---|---|---|
 | Dialogue portrait | **48×48** | Base frame plus expression patches (`neutral`, `happy`, `worried`, `angry`, `sad`, and 2 mouth frames for talking). Shown 1:1 in game pixels. |
 | AI or comms speakers | 48×48 | A screen-frame portrait with a 2-frame scanline flicker (QUILL, Prim) |
-| Tower and build icons | 16×16 | Readable silhouette, faction palette |
+| Tower and build icons | 16×16 | Readable silhouette, faction palette. Front view on a small faction plinth (Everglow: the steel slab with the teal and orange chevrons). Authored 14×14; the auto outline makes 16×16. `icon.tower.<id>` |
+| Enemy icons (wave preview) | 16×16 | The enemy's own body builder, front-facing (Skitterkin: `enemies/skitter.ts`). Authored 14×14 plus outline. `icon.enemy.<id>` |
 | Status and tell glyphs | 8×8 | See §8 |
-| Currency icons | 8×8 | Credits (gold chip), Stardust (shimmer cycle), Intel (teal data shard) |
+| Currency icons | 8×8 | Credits (gold chip, `icon.credits`), Stardust (shimmer cycle), Intel (teal data shard) |
+| HUD glyphs | 8×8 | The meter's core orb (`icon.core`) and the locked-slot padlock (`icon.lock`). Glyphs are authored 6×6 plus outline |
 
 ### Portrait roster
 
@@ -374,7 +376,8 @@ The in-map HUD, menus, and dialogue are a **DOM overlay** sized to the 640×360 
 
 - **Panels:** `ink.1` at 92% opacity with a 1 px border in the act accent color and **45° chamfered corners** (2–3 px cuts; CSS `clip-path`). Optional 1 px scanline texture at 6% opacity.
 - **Layout: HUD in the corners.** An isometric map leaves the four screen corners empty ([tech-spec.md § Tile and screen](tech-spec.md#tile-and-screen)), so: top-left has core integrity (or Evacuated) and credits; top-right has the wave counter, wave preview, call-wave, and speed and pause; bottom-left has the two commander ability slots (with the companion's portrait); bottom-right has the 4 loadout build slots (16×16 icons and costs). A contextual upgrade/sell/targeting/hold-fire panel opens next to the selected tower, on the side away from the map center. The playfield stays unobstructed.
-- **Numbers** use tabular figures; counters tick up and don't jump.
+- **Numbers** use tabular figures; counters tick up and don't jump (credits close any gap in about 250 ms; reduced motion jumps). Core integrity turns `red.3` at 5 or below.
+- **HUD details (T106):** panels cut 3 px, buttons 2 px. The 1 px edge is a separate ring drawn over the 92% fill (an even-odd `clip-path`), so the fill never shows the edge color through it. Buttons are `ink.2` with a `steel.1` edge; hover and the armed or pressed state take the act accent edge (pressed: over `--accent-dim`); keyboard focus turns the edge `white.1`. Hotkeys show as small `steel.3` key badges on their controls. Unaffordable costs are `red.3` with the icon at 45% opacity; a locked slot shows the padlock in place of its cost. Notices (a rejected command) sit top center in a panel edged in the act's secondary color for about 2 s.
 - **Hit targets:** at least 16×16 game px (32 screen px at 2×). Nothing important lives only on hover, so touch can be added later (D001 #8).
 
 ### Act themes
@@ -395,9 +398,17 @@ DOM text uses two **SIL Open Font License** pixel fonts, self-hosted through `@f
 | Font | Use | Size (game px) |
 |---|---|---|
 | **Silkscreen** | Headings, labels, HUD numbers, buttons | 8 (or 16) |
-| **Pixelify Sans** | Dialogue, codex, body text | 8–10, chosen at T106 for crispness |
+| **Pixelify Sans** | Dialogue, codex, body text | Not settled: see Open question 1 |
 
-Fonts are used only at sizes where their pixel grid lines up with the game-pixel grid (verified at T106). In-world Phaser text (floating "+12", tier pips) uses a **code-generated 3×5 bitmap font** defined as glyph grids, like any other sprite.
+Fonts are used only at sizes where their pixel grid lines up with the game-pixel grid. T106 measured this in Chrome under CSS `zoom`: Silkscreen at 8 and 16 is crisp (under 2% of its edge pixels antialiased), so the HUD uses only Silkscreen. CSS tokens: `--font-heading` (Silkscreen) and `--font-body` (Pixelify Sans) in `src/ui/theme.css`, which also references each package's `LICENSE` so the build ships them. In-world Phaser text (floating "+12", tier pips) uses a **code-generated 3×5 bitmap font** defined as glyph grids, like any other sprite.
+
+### Menu screens (Title, Results)
+
+- **Backdrop:** menus without a battle behind them sit on `BackdropScene`: a night sky in dithered bands (`ink.0` → `ink.1` → `ink.2` → `violet.0` → `pink.0` at the horizon, 4×4 ordered dither across each seam) over the dark silhouette of Dome Row (`ink.0` domes with a `violet.1` rim and lit `gold`/`teal` window slits), the two small moons, a static starfield, 5×5 twinkling stars (stepped alpha), and 1–2 px motes rising on the `stardust.sung` cycle. The layout is seeded, so it's the same every boot. Reduced motion freezes it.
+- **Title:** the logo is Silkscreen at **32** (a multiple of its grid) in `gold.4` with hard drop shadows (`pink.3` 2 px down, then `violet.1`), under an Everglow brand line in `teal.3` with `pink.3` chevrons. One large chamfered Start button (Silkscreen 16, at least 96×24, the forced-input shape without the pulse). A loading tip sits at the bottom with a `pink.3` TIP badge.
+- **Results:** a 45% `ink.0` scrim over the frozen battle and one centered chamfered panel (act accent edge), 336 px wide (the longest headline fits on one line): a small `steel.3` kicker (victory or defeat in plain words), the headline in Silkscreen 16 (`teal.4` for a win, `orange.3` for a loss, never red; the loss panel's edge is `coral.3`), the waves and integrity rows, the counter, then the buttons. In Act I the counter is a rounded badge (`gold.2` border, `gold.3` label, `pink.3` star, `teal.3` brag) that counts up on arrival (eased, 0.6–1.8 s; instant under reduced motion) with its width reserved, so the line never shifts.
+- **Menu panels are opaque.** The chamfered edge is the element and the fill is an inset layer, so a translucent fill would show the edge color through it. Menu panels sit over a scrim anyway, so they use opaque `ink.1` plus the scanlines; the 92% fill is for HUD panels over the playfield, which need an edge drawn without a layer under the fill.
+- **Buttons:** Silkscreen 8, at least 16 px tall, chamfered. Primary: the act accent edge over its dim fill (Act I: `teal.3` over `teal.1`); secondary: `ink.2` with `steel.2`. Hover and keyboard focus brighten to `teal.2` with a `teal.4` edge (the chamfer clips an outline, so focus is shown by the fill).
 
 ### Dialogue presentation
 
@@ -415,7 +426,7 @@ Fonts are used only at sizes where their pixel grid lines up with the game-pixel
 
 ## Open questions
 
-1. **Font crispness.** Silkscreen and Pixelify Sans need to be verified at 8–10 game px under CSS `zoom`. The fallback is a code-generated bitmap font rendered to canvas for all UI text.
+1. **Body font crispness.** Silkscreen is verified crisp (T106). Pixelify Sans is not: in Chrome its glyphs land on the pixel grid at no size from 8 to 40 px (at 8–10 game px under a 3× zoom, 45–55% of its edge pixels are antialiased; at 1×, 90%+), so dialogue in it reads slightly soft. Options when dialogue lands (T302): accept the softness at 10 or 12, use Silkscreen 8 for body text too (caps only, less readable in long lines), or the code-generated bitmap font rendered to canvas.
 2. **Lighting overlay cost.** Redrawing a 640×360 light map each frame should be cheap, but it needs a measurement on low-end integrated GPUs before A2M6 work.
 3. **Hand-authored or generated ground tiles.** This doc assumes mostly procedural ground tiles. If they look too uniform, add hand-gridded variants per environment palette.
 4. **Dawn silhouette.** The visor going up at the First Dawn is a full-screen scene illustration (larger than a portrait). Is one hand-gridded 640×360 scene within the code-art budget, or should it be a composed scene from props and a large silhouette sprite?

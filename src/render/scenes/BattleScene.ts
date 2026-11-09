@@ -151,9 +151,9 @@ export class BattleScene extends Phaser.Scene {
     this.#syncViews();
   }
 
-  /** Cancels the current selection (Esc, right-click). */
+  /** Esc and right-click: drops the selection and disarms the build slot. */
   cancel(): void {
-    this.#deps.interaction.selectTower(0);
+    this.#deps.interaction.clear();
   }
 
   #showProjectile(uid: number, towerUid: number): void {
@@ -212,11 +212,14 @@ export class BattleScene extends Phaser.Scene {
         interaction.selectTower(intent.uid);
         return;
       case 'build':
-        interaction.selectTower(0);
+        // The slot stays armed; app/hud.ts disarms it once another can't be afforded.
         this.#deps.issue({ type: 'build', tile: intent.tile, tower: intent.tower });
         return;
       case 'deselect':
         interaction.selectTower(0);
+        return;
+      case 'cancel':
+        this.cancel();
         return;
     }
   }

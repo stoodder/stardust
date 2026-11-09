@@ -1,0 +1,308 @@
+// Content validation: the design rules types and compile can't express. compileContent() runs it
+// first and throws one ContentCompileError listing every validation and compile problem, so
+// invalid content never compiles. Each error reads `[rule] where: message`.
+//
+// This file and its parts are the home of the list of checks (architecture.md § Validation is a
+// summary). The rules themselves are owned by the design docs, and their values by rules.ts.
+//
+// Checked here:
+// - [sprites], [palettes]: sprite grids (sprites/validate.ts) and the palette rules
+//   (palettes/validate.ts: master colors, the Hollow hue reservation, path vs pad contrast).
+// - [sprite-ref]: content names registered sprites of the right category.
+// - [tower-range], [enemy-range], [ability-range]: numbers are in range on every resolved tier.
+// - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
+//   ⇔ shield), and every trait shows its tell (enemies.md § 1, rule 1).
+// - [jammer-source]: only the listed jammers jam (enemies.md § 4).
+// - [campaign]: no map twice.
+// - Maps (validateMap.ts) and builds (validateBuilds.ts): see their headers.
+//
+// Feature guards ([feature]): content that needs a system that doesn't exist yet is refused
+// rather than silently mis-simulated: bosses (M3; the boss-leak rule), non-Defend objectives
+// (T305; Escort safe exits), companions (T207).
+import { mergePatch } from './compileHelpers.ts';
+import { validatePalettes } from './palettes/validate.ts';
+import { ENV_PALETTE_IDS } from './palettes/env.ts';
+import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
+import {
+  COUNTER_ANSWERS,
+  JAMMER_ENEMIES,
+  MAX_STATUS_PCT,
+  TRAIT_TELL,
+  type CounterAnswers,
+} from './rules.ts';
+import { SPRITES } from './sprites/index.ts';
+import type { SpriteDef } from './sprites/types.ts';
+import { validateSprites } from './sprites/validate.ts';
+import type {
+  AbilityDef,
+  AttackDef,
+  CounterId,
+  EnemyDef,
+  IdSpace,
+  RawContent,
+  TierDef,
+  TowerDef,
+} from './types.ts';
+import { validateCampaignMaps } from './validateMap.ts';
+import {
+  Issues,
+  duplicates,
+  isNonNegative,
+  isNonNegativeInt,
+  isPositive,
+  isPositiveInt,
+} from './validateHelpers.ts';
+
+/** The rule data validation reads; tests swap in fixture answer lists. */
+export interface ValidationRules {
+  /** Which towers and abilities answer each counter category (rules.ts COUNTER_ANSWERS). */
+  readonly counterAnswers: Readonly<Record<CounterId, CounterAnswers>>;
+}
+export const DEFAULT_VALIDATION_RULES: ValidationRules = { counterAnswers: COUNTER_ANSWERS };
+
+/** Every validation problem in the content; empty when it is valid. Never throws. */
+export function validate<K extends IdSpace>(
+  raw: RawContent<K>,
+  rules: ValidationRules = DEFAULT_VALIDATION_RULES,
+): string[] {
+  const issues = new Issues();
+  issues.errors.push(...artErrors());
+  for (const def of Object.values<TowerDef>(raw.towers)) validateTower(issues, def);
+  for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def);
+  for (const def of Object.values<AbilityDef>(raw.abilities)) validateAbility(issues, def);
+  for (const id of duplicates(raw.campaign)) {
+    issues.add('campaign', 'campaign', `map '${id}' is listed more than once`);
+  }
+  validateCampaignMaps(issues, raw, rules);
+  return issues.errors;
+}
+
+// ── Art ──────────────────────────────────────────────────────────────────────────────────────
+
+let artCache: readonly string[] | null = null;
+
+/** Sprite and palette errors. The art registries are static, so this runs once per process. */
+function artErrors(): readonly string[] {
+  artCache ??= [
+    ...validateSprites(SPRITES, PALETTE_IDS).map((e) => `[sprites] ${e}`),
+    ...validatePalettes({ palettes: PALETTES, envIds: ENV_PALETTE_IDS, sprites: SPRITES }).map(
+      (e) => `[palettes] ${e}`,
+    ),
+  ];
+  return artCache;
+}
+
+const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((s: SpriteDef) => s.id));
+/**
+ * Feature guards: `icon.*` ids are free-form until T106 registers icon sprites, and
+ * `icon.ability.*` until T113 registers ability icons; from then on they are checked like every
+ * other sprite id.
+ */
+const ICON_SPRITES_REGISTERED = SPRITES.some((s: SpriteDef) => s.id.startsWith('icon.'));
+function isUnregisteredYet(id: string): boolean {
+  return id.startsWith('icon.') && (!ICON_SPRITES_REGISTERED || id.startsWith('icon.ability.'));
+}
+
+function checkSprite(issues: Issues, id: string, category: string, where: string): void {
+  if (!id.startsWith(`${category}.`)) {
+    issues.add('sprite-ref', where, `'${id}' must be a '${category}.*' sprite`);
+  } else if (!isUnregisteredYet(id) && !SPRITE_IDS.has(id)) {
+    issues.add('sprite-ref', where, `'${id}' is not a registered sprite`);
+  }
+}
+
+// ── Towers ───────────────────────────────────────────────────────────────────────────────────
+
+/** Attack kinds that pick a target, so they need a default priority. */
+const TARGETED_KINDS: ReadonlySet<string> = new Set([
+  'hitscan',
+  'projectile',
+  'lobbed',
+  'beam',
+  'chain',
+]);
+
+function validateTower(issues: Issues, def: TowerDef): void {
+  const where = `towers.${def.id}`;
+  checkSprite(issues, def.sprites.base, 'tower', `${where}.sprites.base`);
+  if (def.sprites.head !== undefined) {
+    checkSprite(issues, def.sprites.head, 'tower', `${where}.sprites.head`);
+  }
+  checkSprite(issues, def.sprites.icon, 'icon', `${where}.sprites.icon`);
+  for (const [p, w] of projectileSprites(def)) checkSprite(issues, p, 'projectile', `${where}${w}`);
+  if (def.lightRadiusTiles !== undefined && !isPositive(def.lightRadiusTiles)) {
+    issues.add('tower-range', `${where}.lightRadiusTiles`, 'must be > 0');
+  }
+  // Ranges are checked on each resolved tier (the patches merged as compile merges them), so a
+  // patch can't break a value it doesn't mention.
+  const [t1, p2, p3] = def.tiers;
+  const t2 = resolve(t1, p2);
+  const t3 = resolve(t2, p3);
+  const tiers: [TierDef, number, string][] = [
+    [t1, t1.cost, `${where}.tiers[0]`],
+    [t2, p2.cost, `${where}.tiers[1]`],
+    [t3, p3.cost, `${where}.tiers[2]`],
+  ];
+  if (def.specs !== undefined) {
+    tiers.push([resolve(t3, def.specs.a), def.specs.a.cost, `${where}.specs.a`]);
+    tiers.push([resolve(t3, def.specs.b), def.specs.b.cost, `${where}.specs.b`]);
+  }
+  for (const [tier, cost, w] of tiers) validateTier(issues, tier, cost, w);
+}
+
+function resolve(base: TierDef, patch: object): TierDef {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the compile merge rule; compile checks completeness
+  return mergePatch(base, patch) as TierDef;
+}
+
+function validateTier(issues: Issues, tier: TierDef, cost: number, where: string): void {
+  const bad = (field: string, msg: string): void =>
+    issues.add('tower-range', `${where}${field}`, msg);
+  if (!isPositiveInt(cost)) bad('.cost', `${String(cost)} must be a whole number of credits > 0`);
+  const a = tier.attack;
+  if (a !== undefined) {
+    if (a.kind !== 'spawner' && !tier.targets.ground && !tier.targets.air) {
+      bad('.targets', 'an attacking tier must target ground, air, or both');
+    }
+    if (TARGETED_KINDS.has(a.kind) && tier.defaultPriority === null) {
+      bad('.defaultPriority', `a '${a.kind}' attack picks a target, so it needs a priority`);
+    }
+    if (a.kind === 'pulse' && tier.defaultPriority !== null) {
+      bad('.defaultPriority', "a 'pulse' attack hits everything in range; it must be null");
+    }
+    validateAttack(bad, a);
+  } else if (tier.defaultPriority !== null && (tier.auras ?? []).length > 0) {
+    bad('.defaultPriority', 'a support tower picks no target; it must be null');
+  }
+  for (const [i, e] of (tier.effects ?? []).entries()) {
+    const w = `.effects[${i}]`;
+    if ('pct' in e) {
+      const max = MAX_STATUS_PCT[e.status] ?? 1;
+      if (!isPositive(e.pct) || e.pct > max) bad(`${w}.pct`, `${e.pct} must be in (0, ${max}]`);
+    }
+    if ('durationSec' in e && !isPositive(e.durationSec)) bad(`${w}.durationSec`, 'must be > 0');
+    if (e.status === 'corroded') {
+      if (!isPositiveInt(e.stacks) || !isPositiveInt(e.maxStacks) || e.stacks > e.maxStacks) {
+        bad(w, 'stacks and maxStacks must be whole numbers ≥ 1, with stacks ≤ maxStacks');
+      }
+    }
+  }
+  for (const [i, au] of (tier.auras ?? []).entries()) {
+    if (!isPositive(au.radiusTiles)) bad(`.auras[${i}].radiusTiles`, 'must be > 0');
+    if (!isPositive(au.pct)) bad(`.auras[${i}].pct`, 'must be > 0');
+  }
+}
+
+/** Attack field rules: [field, holds, what it must be]. Only fields present are checked. */
+const ATTACK_RULES: readonly [string, (v: unknown) => boolean, string][] = [
+  ['damage', isNonNegative, 'must be ≥ 0'],
+  ['rangeTiles', isPositive, 'must be > 0'],
+  ['armorPierce', isNonNegativeInt, 'must be a whole number ≥ 0'],
+  ['spinUpSec', isNonNegative, 'must be ≥ 0'],
+  ['speedTilesPerSec', isPositive, 'must be > 0'],
+  ['flightSec', isPositive, 'must be > 0'],
+  ['splashTiles', isPositive, 'must be > 0'],
+  ['tickSec', isPositive, 'must be > 0'],
+  ['jumps', isPositiveInt, 'must be a whole number ≥ 1'],
+  ['jumpRangeTiles', isPositive, 'must be > 0'],
+  ['falloffPct', (v) => typeof v === 'number' && v >= 0 && v < 1, 'must be in [0, 1)'],
+  ['maxAlive', isPositiveInt, 'must be a whole number ≥ 1'],
+];
+
+function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef): void {
+  // A field compile finds missing is reported there, so only present fields are checked here.
+  // ratePerSec and negative durations are compile errors too, so they aren't repeated.
+  const fields = new Map<string, unknown>(Object.entries(a));
+  for (const [field, holds, what] of ATTACK_RULES) {
+    if (fields.has(field) && !holds(fields.get(field))) bad(`.attack.${field}`, what);
+  }
+  const min = a.minRangeTiles;
+  if (min !== undefined && (!isNonNegative(min) || min >= a.rangeTiles)) {
+    bad('.attack.minRangeTiles', `${min} must be ≥ 0 and below rangeTiles (${a.rangeTiles})`);
+  }
+}
+
+/** Projectile sprites as authored (each once, not once per tier that inherits it). */
+function projectileSprites(def: TowerDef): [id: string, where: string][] {
+  const out: [string, string][] = [];
+  const visit = (a: unknown, w: string): void => {
+    if (typeof a === 'object' && a !== null && 'projectile' in a) {
+      if (typeof a.projectile === 'string') out.push([a.projectile, `${w}.attack.projectile`]);
+    }
+  };
+  for (const [i, t] of def.tiers.entries()) visit(t.attack, `.tiers[${i}]`);
+  if (def.specs !== undefined) {
+    visit(def.specs.a.attack, '.specs.a');
+    visit(def.specs.b.attack, '.specs.b');
+  }
+  return out;
+}
+
+// ── Enemies ──────────────────────────────────────────────────────────────────────────────────
+
+function validateEnemy(issues: Issues, def: EnemyDef): void {
+  const where = `enemies.${def.id}`;
+  checkSprite(issues, def.sprites.body, 'enemy', `${where}.sprites.body`);
+  checkSprite(issues, def.sprites.icon, 'icon', `${where}.sprites.icon`);
+  const bad = (field: string, msg: string): void =>
+    issues.add('enemy-range', `${where}.${field}`, msg);
+  if (!isPositive(def.hp)) bad('hp', 'must be > 0');
+  if (!isNonNegative(def.armor)) bad('armor', 'must be ≥ 0');
+  if (def.shield !== undefined) {
+    if (!isPositive(def.shield.hp)) bad('shield.hp', 'must be > 0');
+    if (!isNonNegative(def.shield.regenPerSec)) bad('shield.regenPerSec', 'must be ≥ 0');
+  }
+  if (!isPositive(def.speedTilesPerSec)) bad('speedTilesPerSec', 'must be > 0');
+  if (!isNonNegativeInt(def.leak)) bad('leak', 'must be a whole number ≥ 0');
+  if (!isNonNegativeInt(def.bounty)) bad('bounty', 'must be a whole number ≥ 0');
+  if (!isPositive(def.spawnIntervalSec)) bad('spawnIntervalSec', 'must be > 0');
+  if (def.restValue !== undefined && !isPositive(def.restValue)) bad('restValue', 'must be > 0');
+
+  const traits = (field: string, msg: string): void =>
+    issues.add('enemy-traits', `${where}.${field}`, msg);
+  for (const t of duplicates(def.traits)) traits('traits', `'${t}' is listed twice`);
+  for (const t of duplicates(def.tells)) traits('tells', `'${t}' is listed twice`);
+  for (const t of def.traits) {
+    if (!def.tells.includes(TRAIT_TELL[t])) {
+      traits('tells', `trait '${t}' needs its tell '${TRAIT_TELL[t]}'`);
+    }
+  }
+  const has = (t: (typeof def.traits)[number]): boolean => def.traits.includes(t);
+  if (has('flying') !== (def.layer === 'air')) {
+    traits('traits', `'flying' goes with layer 'air' (layer is '${def.layer}')`);
+  }
+  if (has('armored') !== def.armor > 0) {
+    traits('traits', `'armored' goes with armor > 0 (armor is ${def.armor})`);
+  }
+  if (has('shielded') !== (def.shield !== undefined)) {
+    traits('traits', "'shielded' goes with a shield");
+  }
+  if (has('jammer') && !JAMMER_ENEMIES.includes(def.id)) {
+    issues.add(
+      'jammer-source',
+      `${where}.traits`,
+      `only ${JAMMER_ENEMIES.join(', ')} may jam (adding a jammer needs a decision entry)`,
+    );
+  }
+  if (def.tells.includes('boss')) {
+    issues.add(
+      'feature',
+      where,
+      'bosses arrive in M3 (T304): the sim has no boss phases, endings, or the boss-leak rule ' +
+        '(a leaking boss drains all integrity) yet',
+    );
+  }
+}
+
+// ── Abilities ────────────────────────────────────────────────────────────────────────────────
+
+function validateAbility(issues: Issues, def: AbilityDef): void {
+  const where = `abilities.${def.id}`;
+  checkSprite(issues, def.sprites.icon, 'icon', `${where}.sprites.icon`);
+  const e = def.effect;
+  const bad = (field: string, msg: string): void =>
+    issues.add('ability-range', `${where}.${field}`, msg);
+  if (!isPositive(def.cooldownSec)) bad('cooldownSec', 'must be > 0');
+  if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
+  if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+}

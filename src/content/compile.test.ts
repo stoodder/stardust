@@ -3,21 +3,24 @@ import { FIXTURE, fxBuilds, fxLayout, fxMap, fxWaves } from './__fixtures__/cont
 import { ContentCompileError, compileContent } from './compile.ts';
 import type { CompiledContent } from './compiled.ts';
 import { deepFreeze, mergePatch } from './compileHelpers.ts';
-import { DEFAULT_COUNTDOWN_SEC } from './compileMap.ts';
 import { mapDefinersFor } from './define.ts';
 import { RAW_CONTENT } from './registry.ts';
+import { DEFAULT_COUNTDOWN_SEC } from './rules.ts';
 import type { IdSpace, MapDef, RawContent, TowerDef } from './types.ts';
 import type { FixtureIds } from './__fixtures__/content.ts';
 
 const content: CompiledContent<FixtureIds> = compileContent(FIXTURE);
 const map = content.maps.fx_map;
 
-/** Compiles fixture content with one map replaced, expecting failure; returns the errors. */
+/**
+ * Compiles content expecting failure; returns the compile errors. Validation errors (tagged
+ * `[rule]`, validate.test.ts) are left out: broken fixtures here often break a design rule too.
+ */
 function errorsFor(raw: RawContent<IdSpace>): readonly string[] {
   try {
     compileContent(raw);
   } catch (e) {
-    if (e instanceof ContentCompileError) return e.errors;
+    if (e instanceof ContentCompileError) return e.errors.filter((m) => !m.startsWith('['));
     throw e;
   }
   throw new Error('expected compileContent to fail');
@@ -352,8 +355,15 @@ describe('compileContent: errors', () => {
   });
 
   it('throws one error listing every problem', () => {
-    const raw = withMap({ waves: [], towerUnlockWave: { fx_mortar: 1 } });
-    expect(() => compileContent(raw)).toThrow(/Content failed to compile \(1\):\n- maps\.fx_map/);
+    const raw: RawContent<IdSpace> = { ...FIXTURE, campaign: ['fx_map', 'missing_map'] };
+    expect(() => compileContent(raw)).toThrow(/Content failed to compile \(1\):\n- campaign\[1\]/);
+  });
+
+  it('runs validate() first, so content that breaks a design rule never compiles', () => {
+    const raw = withMap({ threatIntel: ['fast'] });
+    expect(() => compileContent(raw)).toThrow(
+      /\(1\):\n- \[threat-intel\] maps\.fx_map\.threatIntel: missing shielded/,
+    );
   });
 });
 

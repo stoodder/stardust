@@ -126,3 +126,29 @@ The sim core is live: `createSim(cfg)` → `{ state, enqueue, step, applyPending
 - **Selection look:** a white outline and a `teal.3` highlight on the tile. Hovering a tower shows its range ring, which takes priority over the selected tower's ring.
 - **Not yet drawn:** high-ground and power-node tiles are drawn as plain pads with no elevation offset until they get art (T117).
 - **For the UX review:** A1M1 fills only about half of the 640×360 frame. Consider a backdrop or a camera fit.
+
+### D016 — 2026-11-09 — T110 rules data and the content validator
+- **`src/content/rules.ts`** holds the rule data: the damage matrix, status caps and the speed rule, stacking caps, aura kinds (`choir`, `lookout`), jam limits, counter categories, the trait → category map, `COUNTER_ANSWERS`, `SPARE_TAGS`, `SELL_REFUND_PCT` (0.7), `MISCLICK_GRACE_SEC` (10), `DEFAULT_COUNTDOWN_SEC`, and `DEFAULT_CORE_INTEGRITY`. Design docs keep the intent and point to it for the numbers.
+- **Validate, then compile, into one error.** `compileContent()` runs `validate()` first and throws a single `ContentCompileError` with every problem, each tagged `[rule]`. `validate.test.ts` has one failing fixture per rule.
+- **Feature guards:** content that needs an unbuilt feature is refused, not ignored. That covers bosses and the boss-leak rule (T304), Escort and other objectives (T305), and companions (T207). Named TODO stubs remain for par-purchasable (T204), medals (T202), tier/spec answers (T208), and per-flag revisit layouts (M5).
+- **Numbers chosen where the docs were silent:**
+  - Threat factors multiply when an enemy has several factor traits, and all auras share one ×1.5.
+  - The countdown for finale, challenge, and endless maps is 20 s.
+  - Alt builds are required from campaign index 3 (A1M4).
+  - The mercy tags (`fleeing`, `youngling`, `quiet_wave`) are allowed only on Skitterkin.
+  - `COUNTER_ANSWERS` lists every tower that answers a category at any tier, which is stricter than the design until T208 adds tier/spec entries.
+- **`SpriteId`** is now derived from the sprite registry. Ability icons stay free-form (`icon.ability.*`) until T113.
+
+### D017 — 2026-11-09 — T115 title and results screens
+- **Run end:** the router listens for `MapWon`/`MapLost` and counts `WaveCleared`, builds a `RunResult` (Pests Processed = the run's `skitterkinKilled`; M1 has no save), pauses the battle, and shows Results over the frozen battlefield. UI buttons reach the router only through `app/navigation.ts`. Retry reuses the URL's seed if there is one, and otherwise starts a fresh seed (fine for M1).
+- **`__sd.forceOutcome`** is a documented, test-only exception to "hooks only do what a player could", because real win/lose arrives with T105b. T108b moves those flows to `autoplay`.
+- **Strings:** "PESTS PROCESSED: {n} ★ Top 5% of Technicians!", the loading tip, and "EVERGLOW · Brighter Every Day!" come from the story docs. Written fresh where the docs were silent and accepted by the orchestrator: "Start shift", "PERIMETER SECURED!" (win), "MINOR OPERATIONAL HICCUP" (loss, Everglow's canon euphemism, so a loss is funny and never scolds), "Shift report · Victory/Defeat", Retry, and Title. The style guide should take them in (Story owner, T118).
+- **Look:** the title logo is Silkscreen at 32 px over a code-drawn starfield `BackdropScene`. Menu panels use **opaque** fills, because a translucent fill lets the edge color bleed through the inset layer.
+
+### D018 — 2026-11-09 — T106 in-map HUD
+- **Armed tower:** a battle starts with nothing armed. A slot (click, or key 1–4) arms its tower, and pressing it again disarms. A locked or unaffordable slot shows a notice instead of arming. After a build the slot stays armed while another copy is affordable. Esc or right-click clears both arming and selection. Selecting a tower disarms, and arming drops the selection.
+- **Keys:** 1–4, U (upgrade), S (sell), T (targeting: First → Last → Strong → Close), W (call wave), Space (pause), F (fast), Esc.
+- **Sim rejections** become HUD notices. `sell`/`callWave` show "Not online yet" until T105b. Sell value uses `SELL_REFUND_PCT` and `MISCLICK_GRACE_SEC` from `rules.ts`, rounded down.
+- **`--ui-scale` = n / devicePixelRatio**, so one game pixel is exactly n device pixels (D009's open question, settled).
+- **Fonts and tokens:** the HUD uses Silkscreen only (crisp at 8 and 16 px). Pixelify Sans renders soft at every size in Chrome, which is an open question for dialogue (T302). Both packages are pinned at 5.3.0, and their licences ship with the build. `:root` defines every `--sd-<ramp>-<n>` color from `master.ts`, and `tools/uiTokens.test.ts` keeps UI CSS on those tokens.
+- **Icons:** 14×14 authored plus outline makes 16×16 for towers and enemies; glyphs are 8×8. Display names are derived from ids until `TowerDef`/`EnemyDef` get a `name` (T119).

@@ -37,12 +37,13 @@ test('battle: build by hook and by click, pause and upgrade, fast-forward', asyn
   expect(built.credits).toBe((start?.credits ?? 0) - 100);
   expect(built.tick).toBe(start?.tick);
 
-  // 2. Build by a real mouse click on a pad (the first loadout tower is armed until the HUD, T106).
+  // 2. Arm build slot 1 (key 1), then build by a real mouse click on a pad.
   const target = await page.evaluate(([c, r]) => globalThis.__sd?.tileToClient(c, r) ?? null, [
     CLICK_PAD[0],
     CLICK_PAD[1],
   ] as const);
   expect(target).not.toBeNull();
+  await page.keyboard.press('Digit1');
   await page.mouse.move(target!.x, target!.y); // checked just above
   await shot(page, 'battle', 2, 'placement-ghost');
   await page.mouse.click(target!.x, target!.y);

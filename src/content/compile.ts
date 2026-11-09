@@ -10,9 +10,11 @@
 // - Tier patches: objects merge deeply; arrays and values replace; an object whose `kind`
 //   differs from the one it patches replaces it whole (an attack that changes delivery).
 //
-// compileContent() throws a ContentCompileError listing every problem it can't compile past:
-// unknown ids, registry keys that don't match ids, malformed tile grids, invalid durations.
-// Design rules (geometry, threat intel, builds) are validate()'s job (T110).
+// compileContent() runs validate() first (validate.ts: the design rules types and compile can't
+// express, each error tagged `[rule]`), then compiles, collecting what it can't compile past:
+// unknown ids, registry keys that don't match ids, malformed tile grids, routes that break the
+// route format (compileMap.ts), invalid durations. It throws one ContentCompileError listing
+// every validation and compile problem, so invalid content never compiles.
 import type {
   CompiledAbilityDef,
   CompiledContent,
@@ -24,9 +26,10 @@ import { checkKey, deepFreeze, entriesOf, ticks, type Ctx, type Refs } from './c
 import { compileMap } from './compileMap.ts';
 import { compileTower } from './compileTower.ts';
 import type { IdSpace, LiveIds, RawContent } from './types.ts';
+import { validate, type ValidationRules } from './validate.ts';
 import { perSecToPerTick } from '../shared/time.ts';
 
-/** Thrown when content can't be compiled; `errors` lists every problem found. */
+/** Thrown when content is invalid or can't be compiled; `errors` lists every problem found. */
 export class ContentCompileError extends Error {
   readonly errors: readonly string[];
   constructor(errors: readonly string[]) {
@@ -36,11 +39,15 @@ export class ContentCompileError extends Error {
   }
 }
 
-/** Compiles every registry. Throws ContentCompileError when anything can't be compiled. */
+/**
+ * Validates and compiles every registry. Throws ContentCompileError when anything is invalid or
+ * can't be compiled. `rules` defaults to rules.ts; tests pass fixture answer lists.
+ */
 export function compileContent<K extends IdSpace = LiveIds>(
   raw: RawContent<K>,
+  rules?: ValidationRules,
 ): CompiledContent<K> {
-  const ctx: Ctx = { errors: [] };
+  const ctx: Ctx = { errors: validate(raw, rules) };
 
   const towers = new Map<string, CompiledTowerDef<K['tower']>>();
   for (const [key, def] of entriesOf(raw.towers)) {

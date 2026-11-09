@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest';
+import { BattleInteraction, type InteractionSnapshot } from './BattleInteraction.ts';
+
+function watched(armed: string | null = null): {
+  i: BattleInteraction;
+  seen: InteractionSnapshot[];
+} {
+  const i = new BattleInteraction(armed);
+  const seen: InteractionSnapshot[] = [];
+  i.subscribe((s) => seen.push(s));
+  return { i, seen };
+}
+
+describe('BattleInteraction', () => {
+  it('starts with what it was given and nothing selected', () => {
+    expect(new BattleInteraction().snapshot()).toEqual({ selectedTower: 0, armed: null });
+    expect(new BattleInteraction('rivet').snapshot()).toEqual({ selectedTower: 0, armed: 'rivet' });
+  });
+
+  it('keeps selection and the armed slot exclusive', () => {
+    const { i } = watched('rivet');
+    i.selectTower(5);
+    expect(i.snapshot()).toEqual({ selectedTower: 5, armed: null });
+    i.arm('thumper');
+    expect(i.snapshot()).toEqual({ selectedTower: 0, armed: 'thumper' });
+    // Clearing the selection leaves the armed slot alone, and disarming leaves the selection.
+    i.selectTower(0);
+    expect(i.armed).toBe('thumper');
+    i.selectTower(3);
+    i.arm(null);
+    expect(i.selectedTower).toBe(3);
+  });
+
+  it('clear() drops both', () => {
+    const { i, seen } = watched('rivet');
+    i.clear();
+    expect(i.snapshot()).toEqual({ selectedTower: 0, armed: null });
+    i.clear();
+    expect(seen).toHaveLength(1);
+  });
+
+  it('notifies only on a change', () => {
+    const { i, seen } = watched();
+    i.selectTower(0);
+    i.arm(null);
+    i.arm('rivet');
+    i.arm('rivet');
+    i.selectTower(2);
+    i.selectTower(2);
+    expect(seen).toEqual([
+      { selectedTower: 0, armed: 'rivet' },
+      { selectedTower: 2, armed: null },
+    ]);
+  });
+});

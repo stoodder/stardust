@@ -2,11 +2,12 @@
 // hotkeys (keys.ts), and the test hooks act through these functions, never on the sim directly.
 // Sim commands go through the current battle's host; interaction changes (selection, the armed
 // build slot) go to the battle's BattleInteraction, which the scene and the HUD both read.
-import type { IdSpace } from '../content/types.ts';
+import type { IdSpace, TargetPriority } from '../content/types.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import type { Command } from '../sim/index.ts';
-import { speed as speedSignal } from '../ui/state.ts';
+import { hud, speed as speedSignal } from '../ui/state.ts';
 import type { Host } from './host.ts';
+import { rejectText, showNotice } from './hud.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -49,17 +50,80 @@ export function toggleFastSpeed(): void {
   setSpeed(speedSignal.value === 2 ? 1 : 2);
 }
 
-/** Arms a build slot's tower (null disarms). */
+/** Arms a build slot's tower (null disarms). Arming drops the selection. */
 export function armBuild(tower: string | null): void {
   target?.interaction.arm(tower);
 }
 
-/** Selects a tower by uid (0 clears). */
+/**
+ * A build slot (HUD click or keys 1–4, 0-based here): arms its tower, or disarms it if it's
+ * already armed. A locked or unaffordable tower doesn't arm; a notice says why.
+ */
+export function pressBuildSlot(index: number): void {
+  if (target === null) return;
+  const { host, interaction } = target;
+  const tower = host.sim.config.loadout[index];
+  if (tower === undefined) return;
+  if (interaction.armed === tower) {
+    interaction.arm(null);
+    return;
+  }
+  const state = host.sim.state;
+  const cost = host.sim.config.content.towers[tower]?.tiers[0].cost ?? Infinity;
+  const why = state.lockedTowers.includes(tower)
+    ? 'towerLocked'
+    : state.credits < cost
+      ? 'cantAfford'
+      : null;
+  if (why !== null) {
+    showNotice(rejectText(why) ?? '');
+    return;
+  }
+  interaction.arm(tower);
+}
+
+/** Selects a tower by uid (0 clears). Selecting a tower disarms. */
 export function selectTower(uid: number): void {
   target?.interaction.selectTower(uid);
 }
 
-/** Esc / right-click: drops the selection. */
+/** U: upgrades the selected tower to its next tier. */
+export function upgradeSelected(): void {
+  const uid = target?.interaction.selectedTower ?? 0;
+  if (uid !== 0) issue({ type: 'upgrade', towerUid: uid });
+}
+
+/** S: sells the selected tower. */
+export function sellSelected(): void {
+  const uid = target?.interaction.selectedTower ?? 0;
+  if (uid !== 0) issue({ type: 'sell', towerUid: uid });
+}
+
+/** Targeting priorities in cycle order (core-loop §2.6). */
+export const PRIORITY_CYCLE: readonly TargetPriority[] = ['first', 'last', 'strong', 'close'];
+
+/** The priority after `p` in the cycle. */
+export function nextPriority(p: TargetPriority): TargetPriority {
+  return PRIORITY_CYCLE[(PRIORITY_CYCLE.indexOf(p) + 1) % PRIORITY_CYCLE.length] ?? 'first';
+}
+
+/** T: cycles the selected tower's targeting priority. */
+export function cycleTargeting(): void {
+  const sel = hud.selected.value;
+  if (target === null || sel === null || sel.uid !== target.interaction.selectedTower) return;
+  if (sel.priority === null) {
+    showNotice(rejectText('noTargeting') ?? '');
+    return;
+  }
+  issue({ type: 'targeting', towerUid: sel.uid, mode: nextPriority(sel.priority) });
+}
+
+/** W: starts wave 1, or calls the next wave early during a countdown (core-loop §2.4). */
+export function callWave(): void {
+  issue({ type: 'callWave' });
+}
+
+/** Esc / right-click: drops the selection and disarms the build slot. */
 export function cancel(): void {
   target?.cancel();
 }

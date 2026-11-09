@@ -5,6 +5,13 @@ import { enemyZoomer } from './enemies/zoomer.ts';
 import { fxExplosion } from './fx/explosion.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxShadow } from './fx/shadow.ts';
+import { iconEnemyChonk } from './icons/chonk.ts';
+import { iconCore, iconCredits, iconLock } from './icons/glyphs.ts';
+import { iconEnemyNibbler } from './icons/nibbler.ts';
+import { iconTowerRivet } from './icons/rivet.ts';
+import { iconTowerSprinkler } from './icons/sprinkler.ts';
+import { iconTowerThumper } from './icons/thumper.ts';
+import { iconEnemyZoomer } from './icons/zoomer.ts';
 import { projectileRivetTracer } from './projectiles/rivet_tracer.ts';
 import { projectileThumperShell } from './projectiles/thumper_shell.ts';
 import { propCore } from './props/core.ts';
@@ -40,6 +47,15 @@ export const SPRITES = [
   fxShadow,
   fxExplosion,
   fxOrbitalReticle,
+  iconTowerRivet,
+  iconTowerThumper,
+  iconTowerSprinkler,
+  iconEnemyNibbler,
+  iconEnemyZoomer,
+  iconEnemyChonk,
+  iconCredits,
+  iconCore,
+  iconLock,
 ] as const;
 
 /** Every sprite id. */

@@ -4,7 +4,15 @@
 import { describe, expect, it } from 'vitest';
 import { FIXTURE_ENTITIES, fx, fxBuilds } from './__fixtures__/content.ts';
 import { defineRegistry, defineTower } from './define.ts';
-import type { AbilityId, EnemyId, MapId, TierPatch, TowerId } from './types.ts';
+import type {
+  AbilityId,
+  EnemyId,
+  MapId,
+  MapLayoutDef,
+  TierPatch,
+  TowerDef,
+  TowerId,
+} from './types.ts';
 
 describe('id unions derived from registries', () => {
   it('rejects a typo’d id anywhere a map refers to another kind', () => {
@@ -55,6 +63,17 @@ describe('id unions derived from registries', () => {
     expect([tower, enemy, ability, map]).toHaveLength(4);
   });
 
+  it('rejects an unregistered sprite or environment palette', () => {
+    const sprites: TowerDef['sprites'] = {
+      // @ts-expect-error -- 'tower.rivett' is not a registered sprite
+      base: 'tower.rivett',
+      icon: 'icon.tower.rivet',
+    };
+    // @ts-expect-error -- 'act4' is not an environment palette
+    const env: MapLayoutDef['env'] = 'act4';
+    expect([sprites, env]).toHaveLength(2);
+  });
+
   it('derives fixture ids from the fixture registries', () => {
     const ids: (keyof typeof FIXTURE_ENTITIES.towers)[] = ['fx_gun', 'fx_mortar', 'fx_sprinkler'];
     expect(ids).toEqual(Object.keys(FIXTURE_ENTITIES.towers));
@@ -84,7 +103,7 @@ describe('definition shapes', () => {
       id: 'fx_incomplete',
       faction: 'everglow',
       role: 'x',
-      sprites: { base: 'tower.x', icon: 'icon.x' },
+      sprites: { base: 'tower.rivet', icon: 'icon.tower.rivet' },
       tiers: [
         // @ts-expect-error -- tier 1 needs targets and defaultPriority
         { cost: 1 },

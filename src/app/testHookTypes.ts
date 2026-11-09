@@ -8,8 +8,14 @@ import type { Command, SimState } from '../sim/index.ts';
 export type HookState = DeepReadonly<SimState>;
 export type HookCommand = Command<IdSpace>;
 
-/** Screens `goto` can jump to. Grows as screens land (T115: results). */
-export type ScreenId = 'title' | 'battle';
+/**
+ * Screens `goto` can jump to. `results` shows the last finished run's results (it rejects if no
+ * run has ended yet).
+ */
+export type ScreenId = 'title' | 'battle' | 'results';
+
+/** How a finished run ended. */
+export type RunOutcome = 'won' | 'lost';
 
 /** Game speed: paused, 1×, or 2×. */
 export type Speed = 0 | 1 | 2;
@@ -54,6 +60,12 @@ export interface TestHooks {
   tileToClient(x: number, y: number): ClientPoint | null;
   /** Jumps to a screen. Resolves once it has rendered (`battle`: its first frame). */
   goto(screen: ScreenId): Promise<void>;
+  /**
+   * Test-only, not a player action: ends the running battle as if the sim had emitted `MapWon` or
+   * `MapLost`, with its stats as they stand, and shows the results screen. Rejects outside a
+   * battle. Lets smoke flows reach both results screens without playing a map out.
+   */
+  forceOutcome(outcome: RunOutcome): Promise<void>;
   /** Recent frame and sim timings and live entity counts. */
   perf(): PerfSample;
 }

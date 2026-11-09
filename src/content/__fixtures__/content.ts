@@ -1,5 +1,7 @@
 // Test fixture content for the content pipeline's tests. Not real game content: ids start with
 // `fx_` and the numbers are only shaped like the design's (real content is T105c / T103 / T107).
+// Sprites are real registered ids (content may only name registered sprites); ability icons stay
+// free-form until T113.
 // It covers each M1 shape: a hitscan tower, a lobbed lead-targeting tower, a pulse (chill aura)
 // tower, two enemies, a strike ability, and a map with a towerUnlockWave, events, and builds.
 import {
@@ -15,7 +17,7 @@ const fxGun = defineTower({
   id: 'fx_gun',
   faction: 'everglow',
   role: 'Fixture: single target',
-  sprites: { base: 'tower.fx_gun', head: 'tower.fx_gun_head', icon: 'icon.tower.fx_gun' },
+  sprites: { base: 'tower.rivet', head: 'tower.rivet_head', icon: 'icon.tower.rivet' },
   tiers: [
     {
       cost: 100,
@@ -45,7 +47,7 @@ const fxMortar = defineTower({
   id: 'fx_mortar',
   faction: 'everglow',
   role: 'Fixture: splash',
-  sprites: { base: 'tower.fx_mortar', icon: 'icon.tower.fx_mortar' },
+  sprites: { base: 'tower.thumper', head: 'tower.thumper_head', icon: 'icon.tower.thumper' },
   tiers: [
     {
       cost: 120,
@@ -58,7 +60,7 @@ const fxMortar = defineTower({
         ratePerSec: 0.5,
         rangeTiles: 3.5,
         minRangeTiles: 1,
-        projectile: 'projectile.fx_shell',
+        projectile: 'projectile.thumper_shell',
         flightSec: 0.8,
         splashTiles: 0.9,
         lead: true,
@@ -78,7 +80,7 @@ const fxMortar = defineTower({
         damage: 50,
         ratePerSec: 1,
         rangeTiles: 4,
-        projectile: 'projectile.fx_rocket',
+        projectile: 'projectile.rivet_tracer',
         speedTilesPerSec: 6,
       },
     },
@@ -90,7 +92,7 @@ const fxSprinkler = defineTower({
   id: 'fx_sprinkler',
   faction: 'everglow',
   role: 'Fixture: slow',
-  sprites: { base: 'tower.fx_sprinkler', icon: 'icon.tower.fx_sprinkler' },
+  sprites: { base: 'tower.sprinkler', icon: 'icon.tower.sprinkler' },
   tiers: [
     {
       cost: 90,
@@ -127,7 +129,7 @@ const fxWalker = defineEnemy({
   spawnIntervalSec: 0.8,
   traits: [],
   tells: [],
-  sprites: { body: 'enemy.fx_walker', icon: 'icon.enemy.fx_walker' },
+  sprites: { body: 'enemy.nibbler', icon: 'icon.enemy.nibbler' },
 });
 
 const fxRunner = defineEnemy({
@@ -142,9 +144,9 @@ const fxRunner = defineEnemy({
   leak: 1,
   bounty: 4,
   spawnIntervalSec: 0.5,
-  traits: ['fast'],
-  tells: ['fast'],
-  sprites: { body: 'enemy.fx_runner', icon: 'icon.enemy.fx_runner' },
+  traits: ['fast', 'shielded'],
+  tells: ['fast', 'shielded', 'regen'],
+  sprites: { body: 'enemy.zoomer', icon: 'icon.enemy.zoomer' },
 });
 
 const fxStrike = defineAbility({
@@ -212,7 +214,7 @@ export const fxLayout = fx.defineMapLayout({
   stardust: 0,
   briefing: 'Fixture briefing.',
   towerUnlockWave: { fx_sprinkler: 2, fx_mortar: 2 },
-  threatIntel: ['fast'],
+  threatIntel: ['fast', 'shielded'],
   requiredCounters: [],
   companion: null,
   events: [

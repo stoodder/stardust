@@ -22,11 +22,18 @@ export interface TileFacts {
 export type Intent =
   | { readonly kind: 'selectTower'; readonly uid: number }
   | { readonly kind: 'build'; readonly tower: string; readonly tile: GridPos }
-  | { readonly kind: 'deselect' };
+  /** Drops the selection; an armed build slot stays armed. */
+  | { readonly kind: 'deselect' }
+  /** Right-click: drops the selection and disarms (like Esc). */
+  | { readonly kind: 'cancel' };
 
-/** Decides a click: right-click cancels; a tower selects it; an armed click on a free pad builds. */
+/**
+ * Decides a click: right-click cancels (and disarms); a tower selects it; an armed click on a free
+ * pad builds (the slot stays armed, so the next click builds another). Anything else deselects.
+ */
 export function resolveClick(tile: TileFacts, button: 'left' | 'right', armed: Armed): Intent {
-  if (button === 'right' || tile.index < 0) return { kind: 'deselect' };
+  if (button === 'right') return { kind: 'cancel' };
+  if (tile.index < 0) return { kind: 'deselect' };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
   if (armed !== null && tile.buildable) {
     return { kind: 'build', tower: armed, tile: [tile.col, tile.row] };

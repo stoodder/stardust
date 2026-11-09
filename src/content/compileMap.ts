@@ -13,6 +13,7 @@ import type {
 } from './compiled.ts';
 import { compileBuilds } from './compileBuilds.ts';
 import { checkId, entriesOf, ticks, type Ctx, type Refs } from './compileHelpers.ts';
+import { DEFAULT_CORE_INTEGRITY, DEFAULT_COUNTDOWN_SEC } from './rules.ts';
 import type {
   Act,
   ConditionDef,
@@ -24,17 +25,6 @@ import type {
   TileChar,
   WaveDef,
 } from './types.ts';
-
-/** The build-phase countdown when a wave doesn't set one (design/core-loop.md §2.1). */
-export const DEFAULT_COUNTDOWN_SEC: Readonly<Record<Act, number>> = {
-  1: 25,
-  2: 20,
-  3: 15,
-  finale: 20,
-  challenge: 20,
-  endless: 20,
-};
-export const DEFAULT_CORE_INTEGRITY = 20;
 
 const TILE_CHARS: ReadonlySet<string> = new Set<TileChar>(['#', 'o', '^', '+', 'x', '.', 'S', 'C']);
 

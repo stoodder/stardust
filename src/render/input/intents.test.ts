@@ -24,8 +24,9 @@ describe('resolveClick', () => {
     expect(resolveClick(tower, 'left', 'rivet')).toEqual({ kind: 'selectTower', uid: 7 });
   });
 
-  it('cancels on right-click and off the map', () => {
-    expect(resolveClick(pad, 'right', 'rivet')).toEqual({ kind: 'deselect' });
+  it('cancels (and disarms) on right-click; deselects off the map', () => {
+    expect(resolveClick(pad, 'right', 'rivet')).toEqual({ kind: 'cancel' });
+    expect(resolveClick(off, 'right', null)).toEqual({ kind: 'cancel' });
     expect(resolveClick(off, 'left', 'rivet')).toEqual({ kind: 'deselect' });
   });
 });

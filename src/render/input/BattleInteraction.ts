@@ -1,6 +1,8 @@
 // The battle's interaction state, shared by BattleScene (which draws it and changes it on pointer
 // input) and the app (which mirrors it into UI signals for the HUD, and arms build slots from the
 // HUD, T106). Phaser-free, so app/ and tests can use it without a scene.
+// Rule (T106): selecting a tower and arming a build slot are exclusive. Selecting a tower disarms,
+// and arming a slot drops the selection, so the HUD shows either the build ghost or a tower panel.
 
 export interface InteractionSnapshot {
   /** The selected tower's uid, or 0. */
@@ -26,17 +28,29 @@ export class BattleInteraction {
     return this.#armed;
   }
 
-  /** Selects a tower by uid (0 clears the selection). */
+  /** Selects a tower by uid (0 clears the selection). Selecting a tower disarms. */
   selectTower(uid: number): void {
-    if (uid === this.#selectedTower) return;
+    const armed = uid === 0 ? this.#armed : null;
+    if (uid === this.#selectedTower && armed === this.#armed) return;
     this.#selectedTower = uid;
+    this.#armed = armed;
     this.#notify();
   }
 
-  /** Arms a tower id for building (null disarms). */
+  /** Arms a tower id for building (null disarms). Arming drops the selection. */
   arm(tower: string | null): void {
-    if (tower === this.#armed) return;
+    const selected = tower === null ? this.#selectedTower : 0;
+    if (tower === this.#armed && selected === this.#selectedTower) return;
     this.#armed = tower;
+    this.#selectedTower = selected;
+    this.#notify();
+  }
+
+  /** Drops the selection and disarms (Esc, right-click). */
+  clear(): void {
+    if (this.#selectedTower === 0 && this.#armed === null) return;
+    this.#selectedTower = 0;
+    this.#armed = null;
     this.#notify();
   }
 

@@ -29,9 +29,8 @@ export interface Battle {
 export function startBattle(game: Phaser.Game, cfg: SimConfig<IdSpace>): Battle {
   const sim = createSim(cfg);
   const host = createHost(sim);
-  // M1 has no build menu yet (T106): the first loadout tower stays armed, so a click on a free pad
-  // builds it. T106's build slots re-arm through app/commands.ts armBuild().
-  const interaction = new BattleInteraction(cfg.loadout[0] ?? null);
+  // Nothing is armed at the start: the HUD's build slots (or keys 1–4) arm a tower.
+  const interaction = new BattleInteraction();
   let resolveFirstFrame: (() => void) | null = null;
   const firstFrame = new Promise<void>((resolve) => {
     resolveFirstFrame = resolve;

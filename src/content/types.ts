@@ -1,7 +1,8 @@
 // Content definition types: the canonical home of Stardust's data shapes.
 // Content is authored in seconds and tiles, with the unit in each field name; compile.ts turns it
 // into tick-based CompiledContent (compiled.ts). Design rules for each field live in the design
-// docs (towers.md, enemies.md, maps.md, core-loop.md); validate.ts (T110) checks them.
+// docs (towers.md, enemies.md, maps.md, core-loop.md); validate.ts checks what types can't, and
+// rule values (caps, tables, limits) live in rules.ts.
 //
 // Id unions are derived from the explicit registries (`keyof typeof TOWERS`), so a typo'd id is a
 // compile error. Types that refer to other kinds' ids take an id space `K` (default: the live
@@ -11,7 +12,12 @@
 import type { ABILITIES } from './abilities/index.ts';
 import type { ENEMIES } from './enemies/index.ts';
 import type { MAPS } from './maps/index.ts';
+import type { AuraKind } from './rules.ts';
+import type { SpriteId as RegisteredSpriteId } from './sprites/index.ts';
+import type { EnvPaletteId } from './sprites/types.ts';
 import type { TOWERS } from './towers/index.ts';
+
+export type { EnvPaletteId };
 
 // ── Ids ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -52,10 +58,19 @@ export interface EntityRegistries {
 }
 
 /**
- * Sprite id, `<category>.<id>` (conventions.md § Naming). Minimal until the sprite registry
- * exists (T104); then this becomes `keyof typeof SPRITES`.
+ * A sprite id content may name: a registered sprite (`sprites/index.ts`). Ability icons stay
+ * free-form (`icon.ability.*`) until T113 registers them; validate() checks the rest.
  */
-export type SpriteId = `${'tower' | 'enemy' | 'projectile' | 'icon' | 'prop' | 'tile'}.${string}`;
+export type SpriteId = Exclude<RegisteredSpriteId, `icon.${string}`> | IconSpriteId;
+type RegisteredIcon = Extract<RegisteredSpriteId, `icon.${string}`>;
+/**
+ * Icon ids: the registered `icon.*` sprites, plus free-form `icon.ability.*` until T113. Until any
+ * icon is registered (T106), any `icon.*` id is accepted.
+ * TODO(T113): drop the `icon.ability.${string}` arm once ability icons are registered.
+ */
+export type IconSpriteId = [RegisteredIcon] extends [never]
+  ? `icon.${string}`
+  : RegisteredIcon | `icon.ability.${string}`;
 /** No registry yet: links arrive with T202, so towers list none until then. */
 export type LinkId = never;
 /** No registry yet: shop and R&D upgrades arrive with T204. */
@@ -69,7 +84,6 @@ export type CompanionId = 'bricks' | 'quill' | 'zibzab' | 'vesthara' | 'bramble'
 /** Map-local names: markers, routes, timers, ally groups, wave groups. validate() checks them. */
 export type MarkerId = string;
 export type RouteId = string;
-export type EnvPaletteId = string;
 export type MedalId = string;
 
 // ── Shared vocabulary ────────────────────────────────────────────────────────────────────────
@@ -234,9 +248,9 @@ export type EffectDef =
   | { readonly status: 'unnerved'; readonly durationSec: number };
 export type StatusId = EffectDef['status'];
 
-/** A support aura. Same-kind auras don't stack; kinds and caps are rule data (rules.ts, T110). */
+/** A support aura. Same-kind auras don't stack; kinds and caps are rule data (rules.ts). */
 export interface AuraDef {
-  readonly kind: string;
+  readonly kind: AuraKind;
   readonly radiusTiles: number;
   readonly stat: TowerStat;
   readonly pct: number;
