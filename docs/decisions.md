@@ -247,3 +247,24 @@ Architecture §2 has a *Waves, economy, and the end of a map* block, and the for
 
 ### D025 — 2026-11-09 — T108b smoke flows; M1 build complete
 `smoke/m1.spec.ts` covers the M1 flow through the real UI: Start shift → briefing → build through the HUD → start wave → enemies and a Thumper shell on screen → `autoplay('par')` → Victory with PESTS PROCESSED equal to `stats.skitterkinKilled` (101) → Retry is a fresh run. It also covers the lose flow (`autoplay('none')` → MINOR OPERATIONAL HICCUP → Title). **`__sd.forceOutcome` is removed**, which closes D017's test-only exception. `__sd.perf()` reports sim entity counts, not view counts; screenshots prove the views. Smoke is 15 tests in about 17 s, and the whole gate takes about 31 s. With this, every M1 build task (T101–T115, T122) is done, and M1 goes to review.
+
+### D026 — 2026-11-09 — M1 review round 1 rulings
+Three reviews ran: Correctness/Architecture, Gameplay/Story, and UX/Art/Performance. Correctness found no high-severity bugs, and performance has plenty of headroom (frame ≈0.5 ms at W7, 423 KB gzipped, cold boot <1 s). The fixes go to four owners (sim, UI, art, then balance). Cross-cutting rulings:
+- **Deploy delay restored.** core-loop §2.5's "a new tower deploys for 0.5 s before it can fire" wins over D020's "can fire on the tick it's built", which overlooked it.
+- **An M1 radio ticker is in scope (amends D004).** act1.md's A1M1 lines appear verbatim as HUD radio notices on sim events: first leak, countdowns, the Thumper unlock. It isn't a dialogue system (that stays T302), but Act I's comedy and the first-leak darkness seed must reach the first map, which pillar 1 requires.
+- **A1M1's curve is reshaped** so pressure ramps through W4–W7 rather than W1–W6 never leaking and W7 wiping an under-built player. The new harness checks are: par minus its last step ends ≥ 8 integrity; par without its strikes scores below par; rivet_only has no ±0.2 s cliff. This supersedes D024's wave numbers.
+- **Tone pitches accepted:**
+  - "Shift report · Incident logged" for a defeat and "Shift report · Exemplary!" for a victory.
+  - "Thumper ships at wave 3" on the locked slot.
+  - "Uplink recharging" for the strike's cooldown.
+  - A how-to line in the briefing.
+- **Feedback gaps fixed for ship:**
+  - Leaks get a core flash, a pulse ring, and "−N".
+  - Low integrity gets a shape signal, not only a red number.
+  - The briefing becomes a real keyboard modal.
+  - Value bands: Act I's ground is darker so actors sit in their own band.
+  - A decor apron fills the void around the map.
+  - A Zoomer `fast` tell, distinct tier silhouettes, and per-unit lateral offsets break up the W7 "centipede".
+  - Impacts and builds get more juice.
+- **Deferred:** keyboard-only building (a tile cursor) is T126.
+- **Art-trail baseline:** M1's gallery is the first art-trail image. M2's should show the darker Act I ground, distinct tier silhouettes, and the Zoomer tell.

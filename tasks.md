@@ -59,6 +59,8 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T123** Younglings: leaks cost 0 (`LEAK_FREE_TAGS`) and the ×0.5 speed (no M1 content uses them; needed before the first youngling map). Boss waves triple the clear bonus (with T304).
 - [ ] **T124** Harness follow-ups: move the "alt below par" expectation into `BuildsDef`; point maps.md §6.1's band numbers at `src/balance/rules.ts`; add a per-tower damage tally (e.g. `damage` on `ProjectileHit`) so the report shows DPS per tower; switch `src/sim/a1m1.test.ts`'s mini-executor to `runHeadless`.
 - [ ] **T125** Balance: harden A1M1's rivet_only W7 cliff when T202 re-tunes the map (D024). Add a threat-intel strip to the briefing once trait icons exist.
+- [~] **T127** M1 review round 1 fixes (D026): sim, UI, art, and balance fixers.
+- [ ] **T126** Accessibility: keyboard-only building and selecting (a tile cursor: arrows hop between pads and towers, Enter builds/selects). Also reposition the tower panel so it doesn't cover neighbouring towers.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 ## M2 — Loadout, Upgrades & Meta Progression
