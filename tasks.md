@@ -180,10 +180,44 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090); A1M5 runs ~9.7 min at 1× against Act I's 6–9 min (trim the `OPEN` delays, D092); add `a1_m05` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
 - [x] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 
-## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish
+## M4 — Act II, part one (A2M1–A2M3 and the star map)
+**Status: current (started 2026-11-09).** Cut and plan: `docs/decisions.md` D101. Waves (≤ 4 agents): W1 T400a·T400b·T301a·T441 → W2 T402·T403·T406·T412 → W3 T420·T404·T305a·T407a → W4 T421·T409·T410a·T430a → W5 T422·T407b·T305b·T440a → W6 T301b·T411·T413·T440b → W7 T410b·T430b·T431·T440c → W8 T460·T461·T450·T408, then review. Critical path: T400a → T402/T403 (+T412) → A2M1 → T404 + T305a + T407a → A2M2 → T409 + T410a → A2M3 → T460. Cut lever: T408, then the Bounty Board, then T407b.
+- [ ] **T400a** Sim and content seams: Act II types (`clustered` trait, intel-only `boss`, Skittish from `fleeing`, hush/heavy/pulse/blink/cloak/detect fields, `MapDef.asset`, `revisitOf`, clickable markers, `reveal`), the `interact` command, Act II events, faction leak stats and boss ability counts, `wreckageCleared` trigger, tick-order stubs, data stubs under final ids (mote, glimmer, weft_warden, lightwing, glass_witch; lookout, harpoon, crane; scanner_sweep; overwatch, skywatch, reel_it_in; spec stubs), shop/R&D rows, the `dev_act2` 18×12 fixture, gate rows per task. A1 harness numbers unchanged.
+- [ ] **T400b** Story, meta and save seams: `a2/a2_m01..03` dialogue folders, `barks/act2.ts`, Act II codex/memo registries, the canon test reads act2.md, presentation-dial types and stub, checkpoint run-result fields, dev saves through A2M3, `not_firing` wave filter (T330).
+- [ ] **T301a** Star map spec (docs): a real valley map of Tumble IV replacing the Shift board once Act I is won ("Sector Map" on screen); nodes, node panel, the darkening north edge, teaser node, keyboard/screen reader; fixes architecture's and conventions' stale star-map lines.
+- [ ] **T441** Portraits: Ves'thara, Pebble (bare at A2M3), Bricks `pebble` (T318); their blips.
+- [ ] **T402** Fleeing groups, Skittish, the hush rule and Heavy; the Mote (`clustered`).
+- [ ] **T403** Aelari shields in play: the shield pulse; Glimmer, Weft Warden, Lightwing.
+- [ ] **T406** Detection: cloak/Revealed, Scanner Sweep, the Lookout Shack (T1–3, specs, the license after A1M5), Overwatch, Skywatch.
+- [ ] **T412** Act II harness: reference profile through A2M3, Act II band and re-baseline, `spareFleeing` with the hush, `held_fire_second_look`, under-built alts (T334), `@story` step exemption (T333), `?map=` autoplay with the profile (T332), Gerald macro release (T335), gate-time budget ≤ 7 min.
+- [ ] **T420** A2M1 *Rig Nine* (fleeing groups, Motes, crew-log objective, Hiccup Contained, Spare runners teach, Biscuit, Act II barks, `memo_a2_01`).
+- [ ] **T404** The Glass Witch: phases, pulse, the blink module, retreat, `bossBlinks`, in-stage cues; Stasis on a boss → Chilled without interrupt.
+- [ ] **T305a** Protect the asset: `MapDef.asset`, defeat at 0, boss drains it, Perfect needs both, margin = min(core %, asset %), the asset meter, the harness gate lifted for `protect`.
+- [ ] **T407a** Sprinkler specs (Flash Freeze, Cloudburst), T3 Soak (T321), the Stasis status, spec counter answers (T319).
+- [ ] **T421** A2M2 *The Glass Witch* (Protect the rigs, the boss, QUILL companion, T401: QUILL's Rapport changes a result, Thorn, `memo_a2_02` + KFA form).
+- [ ] **T409** Clickable world objects: `setClickable`, `interact`, the Peeker holding Pebble, keyboard and screen-reader reach; T322.
+- [ ] **T410a** Revisit by reference (A1M2 inside A2M3's 18×12 with the outer band) and the lighting overlay's tint path (cosmetic crossfade).
+- [ ] **T430a** Render units and combat: hush, Heavy, Hollow stutter, fleeing look, Act II deaths, shield ripple/pulse, blink afterimage, Stasis, Cloudburst, Seekers, charge; ally glow (T216); hover tell glyph and the render-state hook (T332).
+- [ ] **T422** A2M3 *Second Look* (the revisit, Wardens and Lightwings, Pebble's rescue, the light crossfade, `held_fire_second_look`, Clear Skies, Auntie Funmi, the pension line, `memo_a2_03`).
+- [ ] **T407b** Zapcoil specs (Overload, Capacitor Bank) and Skyhook specs (Flak Curtain, Seeker Swarm); homing and charge attacks.
+- [ ] **T305b** Checkpoints: W5/W10 from Act II, retry from wave N, story state rebuilt from replayed events, Perfect/Challenge forfeited, defeat pay beyond the checkpoint.
+- [ ] **T440a** Sprites: Mote (+ Heavy), Glimmer, Weft Warden, Lightwing, fleeing frames, Act II deaths, the sack with young.
+- [ ] **T301b** The star map (build T301a) and the Pest Bounty Board base tab; normal-flow smoke A1M5 → star map → A2M1 → A2M3.
+- [ ] **T411** Codex and Inbox for Act II: annotations from A2M3, Act II originals, `memo_a2_01..03`, the KFA form; T320 (Inbox-first base, the stinger landing).
+- [ ] **T413** Dialogue and app carry-overs: T229, T324, T325, T327, T329 (first two items), T330's bark wave filter, A1M3/A1M4 into `COMPLETE`.
+- [ ] **T440b** Sprites: the Glass Witch; Lookout, Harpoon, Crane; spec frames for Sprinkler, Skyhook, Zapcoil, Lookout, Harpoon, Crane.
+- [ ] **T410b** Act II presentation: per-act dial table, loading tips, Evie `peeling`, death tone, Tidybots, the Act II UI theme.
+- [ ] **T430b** Render the world: revisit dressing, grey soil, the rigs' damage states, the dark north-east edge, hushed crew decor; floater collisions and the scorch (T334); fast-forward floater piling (T332).
+- [ ] **T431** HUD: asset meter, Scanner Sweep aim, the Spare runners teach, checkpoint copy; T326; slot-2 portrait (T216); locked tier-4 copy (T332).
+- [ ] **T440c** Props and tiles for A2M1–A2M3, Act II wreckage, the rigs, outcrops, conduit node, Evie `peeling`, Tidybots, the Peeker rock holding Pebble.
+- [ ] **T460** Act II curve pass (A2M1–A2M3): Story everywhere, the chain within the band, 9–13 min runtimes, T333's A1M4 bank, T401's verdict.
+- [ ] **T461** Docs: as-built tables, maps.md §7 mining-cut, enemies.md Fracture/Rift Moth act column, story-runtime's Sprinkler line (T334).
+- [ ] **T450** Audio: the Act II theme, Hollow audio, Aelari chimes, shield ripple/shatter, blink, the sad squeak, cloak, Scanner ping, Stasis; Ves'thara and Pebble blips; T323.
+- [ ] **T408** Harpoon and Crane (the cut lever): T1–3, specs, Pinned, Reel It In, licenses after A2M1.
+
+## M5 — Act II, part two (A2M4–A2M6) · M6 — Act III · M7 — Finale, post-game & polish
 To be split up when we reach them. Known items:
 - [ ] **T501** C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
-- [ ] **T401** Make QUILL's Rapport matter on A2M2 (par's Time Dilation casts close enough that the shorter cooldown counts; T228 verdict, D096).
 
 ## Backlog / Ideas
 - HUD wave preview: the NEW badge and codex hint (needs saves, M2+); the callsign plate (T306)

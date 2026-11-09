@@ -1238,3 +1238,18 @@ All of Act I plays: A1M1 *Orientation Day* through A1M5 *Record Quarter* on the 
 
 ### D100 — 2026-11-09 — Owner sign-off on M3
 The owner approved M3's open calls (the star map in M4, abandon counts as a loss, QUILL's Rapport paying from Act II, the Hollow's palette in the stinger, the "Rig Nine" teaser, A1M4's banked credits as T333) and the deletion of `src/audio/sfx/radio.ts` (its `radio_*` recipes were dead since the speaker blips replaced them; T323). Release tags are skipped for now at the owner's request: ship steps still try `git tag`, and no release is asked for until the owner says otherwise.
+
+### D101 — 2026-11-09 — M4 cut: Act II, part one
+**M4 = A2M1 *Rig Nine*, A2M2 *The Glass Witch* and A2M3 *Second Look*, reached from a real star map.** It ends on Act II's first crack, "where I understood" (bible §6): the Haulers' sacks are young, the player's own click pulls Pebble off the Peeker's rock, QUILL declines to log her name, and Bricks reads his voided pension. Owner's calls (all three as recommended):
+- **The cut:** A2M1–A2M3 (~32 tasks, 8 waves), not A2M1–A2M4 or all of Act II. **The milestones renumber:** M5 = Act II, part two (A2M4–A2M6, ending on the act's close), M6 = Act III, M7 = the finale, post-game and polish.
+- **The star map is a real valley map of Tumble IV** ("Sector Map" on screen; every node is on the planet), replacing the Shift board once Act I is won; the Shift board stays as Act I's view.
+- **Harpoon and Crane ship in M4** as the cut lever (no Act II par or alt needs them).
+Orchestrator rulings on the plan's smaller forks (each logged here; the owning task updates its doc):
+- **`clustered` trait** (intel "Hollow clusters", counter category splash, tell `hollow`) on the Mote; **Skittish** derives from the `fleeing` tag; **`boss`** is an intel-only threat entry, not a `Trait` (closes T330's half).
+- **The hush rule:** contact = same layer within 0.4 tiles along the route; a ground Hollow can't hush a flyer. Skittish triggers on any Skitterkin within 2 tiles that dies or is hushed.
+- **Protect the asset:** one asset meter (A2M2: 10) drawn as two rigs; branch leaks hit it by their leak value; a boss reaching it drains it (defeat); **the par margin is min(core %, asset %)**.
+- **The Glass Witch:** her pulse restores 120 shield to her and Aelari within 2 tiles every 8 s (1.5 s tell); Stasis converted to Chilled on a boss doesn't interrupt her blink.
+- **A2M3's light crossfade is cosmetic** (sky and shade only); A2M6 stays "the one map where the dark changes play" (art-direction §3 reworded).
+- **Built gaps closed in M4:** the Lookout license (owed since A1M5) and Tidybots (core-loop §6.7) land with T406 and T410b.
+- **act2.md wins over maps.md §7** on A2M3's pads (A1M2's 11 unchanged; cuts go through decor); enemies.md §5.4's act column for Fracture and Rift Moth is fixed to A2M6.
+- **Every feature task ships its own minimal readable view**, so map tasks can screenshot real mechanics before the polish tasks land. Map tasks add a normal-flow smoke step from the star map (the T331 lesson). The gate budget is ≤ 7 min (T412).
