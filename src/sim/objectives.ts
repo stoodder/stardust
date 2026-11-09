@@ -20,7 +20,7 @@ import type { IdSpace } from '../content/types.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import { evaluateCondition, settledCondition, type ConditionContext } from './conditions.ts';
 import { sellValue } from './economy.ts';
-import type { Tower } from './entities.ts';
+import type { Enemy, Tower } from './entities.ts';
 import { emit, type ObjectiveStatus, type SimState } from './state.ts';
 import { runScriptAction } from './systems/triggers.ts';
 
@@ -39,6 +39,21 @@ export function isLateSell(
   const lastStart = state.schedule.startTick[state.wave - 1] ?? -1;
   if (lastStart <= tower.builtTick) return false;
   return !sellValue(tower, state.tick).full;
+}
+
+/**
+ * Protect the asset (design/maps.md § 5.2; D101; T400a seam, run by T305a): a unit leaking along
+ * one of `map.asset.routes` costs the asset meter (`state.asset`) its leak value instead of the
+ * core (a boss drains it; AssetHit, and AssetLost at 0, which loses the map). Returns whether the
+ * leak went to the asset. A stub until T305a: createSim refuses a Protect map (`map.protect`), so
+ * no leak reaches it.
+ */
+export function leakToAsset(
+  _state: SimState,
+  _map: Pick<CompiledMapDef<IdSpace>, 'asset'>,
+  _e: Pick<Enemy, 'route'>,
+): boolean {
+  return false; // T305a
 }
 
 /** Settles each open objective whose condition can no longer change (cleanup, every tick in play). */

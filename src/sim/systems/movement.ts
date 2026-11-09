@@ -2,7 +2,8 @@
 // slows it through `chillMul`; younglings move at YOUNGLING_SPEED_MUL), and leaks the ones that
 // reach the route's end: the core loses the leak cost (design/core-loop.md §2.9; 0 for `fleeing`
 // and `youngling` units; a boss drains it all, BOSS_LEAK_DRAINS_ALL), less what Emergency Bulkhead
-// absorbs, the leak counts toward its tags' `stats.tagLeaked`, and the enemy is removed. Losing at
+// absorbs, the leak counts toward its tags' `stats.tagLeaked` (and, unless medal-exempt, toward
+// `stats.leaksByFaction` and `leaksByEnemy`), and the enemy is removed. Losing at
 // 0 integrity is cleanup's check (T105b), at the end of the tick. Slots run in ascending order
 // (determinism), except that `quiet_wave` units leak last in the tick (D098): a Quiet Wave leak
 // never takes the core below 1 (D097), so leaking after every other leak of the tick means sparing
@@ -16,6 +17,7 @@ import { BOSS_LEAK_DRAINS_ALL, LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../..
 import type { CompiledEnemyDef } from '../../content/compiled.ts';
 import type { WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
+import { isMedalExempt } from '../conditions.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { pointAt } from '../path.ts';
@@ -86,6 +88,7 @@ export function movement(state: SimState): void {
 /** Leaks an enemy that reached its route's end (never below `floor`) and removes it. */
 function arrive(state: SimState, e: Enemy, def: CompiledEnemyDef, floor: number): void {
   countTags(state.stats.tagLeaked, e.tags);
+  countLeak(state, e, def);
   leak(
     state,
     def.id,
@@ -98,6 +101,17 @@ function arrive(state: SimState, e: Enemy, def: CompiledEnemyDef, floor: number)
     floor,
   );
   poolKill(state.enemies, e);
+}
+
+/**
+ * Counts a leak by faction and by enemy id (the `leaks` condition atom: Hiccup Contained; T400a),
+ * except a medal-exempt unit's, which no Challenge may read (core-loop.md § 2.7).
+ */
+function countLeak(state: SimState, e: Enemy, def: CompiledEnemyDef): void {
+  if (isMedalExempt(e.tags)) return;
+  const stats = state.stats;
+  stats.leaksByFaction[def.faction]++;
+  stats.leaksByEnemy[def.id] = (stats.leaksByEnemy[def.id] ?? 0) + 1;
 }
 
 /**

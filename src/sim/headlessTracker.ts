@@ -277,6 +277,23 @@ export function createRunTracker<K extends IdSpace>(
           case 'BossPhase':
           case 'BossEnded':
           case 'WreckageCleared':
+          // Act II (T400a seams): their tasks may tally them (a hush, an asset hit).
+          case 'HushStarted':
+          case 'Hushed':
+          case 'TurnedHeavy':
+          case 'SkittishBolt':
+          case 'ShieldPulse':
+          case 'ShieldHit':
+          case 'BlinkTell':
+          case 'Blinked':
+          case 'BlinkInterrupted':
+          case 'Revealed':
+          case 'Cloaked':
+          case 'AssetHit':
+          case 'AssetLost':
+          case 'CheckpointReached':
+          case 'ClickableChanged':
+          case 'Interacted':
             break;
           default:
             e satisfies never;

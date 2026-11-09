@@ -91,10 +91,13 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'chain':
         if (chainAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // Beams and spawners arrive with their Act II towers (M4). createSim refuses each until
+      // Beams (Prism, M5), spawners (Scuttle Den, M6), charges (Capacitor Bank, T407b), and
+      // lines (Skewer, T408) arrive with their towers and specs. createSim refuses each until
       // then (FEATURE_GATES).
       case 'beam':
       case 'spawner':
+      case 'charge':
+      case 'line':
         break;
       default:
         assertNever(attack);
