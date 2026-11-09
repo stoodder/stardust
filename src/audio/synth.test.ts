@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { asContext, FakeAudioContext, lastTarget } from './__fixtures__/fakeAudio.ts';
+import { asContext, FakeAudioContext, FakeNode, lastTarget } from './__fixtures__/fakeAudio.ts';
 import { analyze } from './analyze.ts';
 import { createAudioEngine, silentEngine } from './engine.ts';
 import { SFX, SFX_IDS } from './sfx/index.ts';
@@ -17,8 +17,8 @@ import {
 /** Whether `node`'s outputs lead to `target` (the fake graph records every connect). */
 function reaches(node: unknown, target: unknown): boolean {
   if (node === target) return true;
-  const outs = (node as { outputs?: unknown[] }).outputs ?? [];
-  return outs.some((o) => reaches(o, target));
+  if (!(node instanceof FakeNode)) return false;
+  return node.outputs.some((o) => reaches(o, target));
 }
 
 function synth(): { ctx: FakeAudioContext; s: Synth } {

@@ -94,7 +94,10 @@ export interface ResultsFixture {
   readonly outcome: RunOutcome;
   /** This run's Pests Processed. Default 120. */
   readonly pests?: number;
-  /** The Quiet Wave (`quiet_wave` group) units that spawned and leaked, for C1's `thisRun`. */
+  /**
+   * The Quiet Wave (`quiet_wave` group) units that spawned and leaked, for C1's `thisRun`: Old
+   * Thrum and younglings for the rest, Thrum leaking first (so 7 and 7 spared them; 7 and 0 didn't).
+   */
   readonly quietWave?: { readonly spawned: number; readonly leaked: number };
   /** Scenes in place of the map's flow, by id (registered or dev, `ui/dialogue/dev.ts`). */
   readonly flow?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
