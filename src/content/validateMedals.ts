@@ -130,7 +130,8 @@ function validateObjectives(issues: Issues, def: MapDef<IdSpace>): void {
   const variants = def.flagVariants ?? {};
   for (const [i, o] of (def.objectives ?? []).entries()) {
     const w = `maps.${def.id}.objectives[${i}]`;
-    if (!MEDAL_ID_RE.test(o.id)) issues.add('objectives', `${w}.id`, `'${o.id}' must be snake_case`);
+    if (!MEDAL_ID_RE.test(o.id))
+      issues.add('objectives', `${w}.id`, `'${o.id}' must be snake_case`);
     text(issues, o.name, MEDAL_NAME_MAX, `${w}.name`, 'objectives');
     text(issues, o.description, MEDAL_DESCRIPTION_MAX, `${w}.description`, 'objectives');
     if (o.intel < 1) issues.add('objectives', `${w}.intel`, 'an objective pays at least 1 Intel');

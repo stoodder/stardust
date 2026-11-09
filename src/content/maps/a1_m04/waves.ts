@@ -28,14 +28,25 @@ const huddle = (delaySec: number, n: number): WaveGroup[] => [
 /** How far behind its Elder a huddle's Nibblers start, and their spacing (seconds). */
 export const HUDDLE_LAG = 0.4;
 export const HUDDLE_GAP = 0.3;
-/** W7 and W9 release their Haulers one at a time, this far apart (D052): a strike takes one. */
+/** W7 releases its Haulers one at a time, this far apart (D052): a strike takes one. */
 export const HAULER_GAP = 12;
+/**
+ * W9's convoys: two Haulers 1.5 s apart out front, their Elder 1.2 s behind the second (so both
+ * walk in its huddle, at its pace, regenerating), and 14 Nibblers behind it. A strike can't kill a
+ * Hauler (330 HP), so it can't stand in for an armor answer; the convoys walk 12 s apart.
+ */
+export const CONVOY_GAP = 12;
+const convoy = (delaySec: number): WaveGroup[] => [
+  g('hauler', 2, delaySec, 1.5),
+  g('elder', 1, delaySec + 2.7),
+  g('nibbler', 14, delaySec + 3.1, HUDDLE_GAP),
+];
 /**
  * W5's Chonks walk this far apart (1.2 tiles): a column the splash shells roll down, which a
  * single-target turret can't stop in time.
  */
 export const CHONK_GAP = 2;
-/** W6's and W9's Elders walk this far apart, so one strike never catches two huddles. */
+/** W6's Elders walk this far apart, so one strike never catches two huddles. */
 export const ELDER_GAP = 10;
 
 export const waves = defineWaves([
@@ -55,14 +66,13 @@ export const waves = defineWaves([
   { groups: [g('hauler', 2, 0, HAULER_GAP), ...huddle(6, 13), g('zoomer', 21, 20, 0.35)] },
   // W8 · a Zoomer flood + Bunchlings
   { groups: [g('zoomer', 39, 0, 0.3), g('bunchling', 18, 6, 0.7)] },
-  // W9 · Elders ×3 with big huddles + Haulers [X]
+  // W9 · Elders ×3 with big huddles + Haulers [X]: each Elder shepherds two Haulers
   {
     groups: [
-      g('hauler', 4, 0, HAULER_GAP),
-      ...huddle(4, 16),
-      ...huddle(4 + ELDER_GAP, 16),
-      ...huddle(4 + 2 * ELDER_GAP, 16),
-      g('bunchling', 13, 30, 0.8),
+      ...convoy(0),
+      ...convoy(CONVOY_GAP),
+      ...convoy(2 * CONVOY_GAP),
+      g('bunchling', 13, 2 * CONVOY_GAP + 8, 0.8),
     ],
   },
 ]);

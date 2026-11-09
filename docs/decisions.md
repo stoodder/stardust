@@ -1151,3 +1151,9 @@ Real art went in behind T300a's ids. No data changed.
 - **T232:** the Suppressing Fire strip is depth-sorted in `world` (bias `strip: 0.25`): over enemies, under towers.
 - **`dev_boss`** dev map (a 200 HP Chitterbloom with Diggers, Bunchlings, an Elder) for smoke and the gallery.
 - Follow-ups: T328.
+
+### D090 — 2026-11-09 — T304f A1M4 and the objective system
+- **Objectives** (`src/sim/objectives.ts`): `state.objectives[]` is `'open'|'done'|'failed'` in `map.objectives` order. Cleanup settles an objective as soon as its condition can no longer change (done runs `onComplete` at once via the exported `runScriptAction`); a win judges what's still open, a loss fails it. New event `ObjectiveProgress {id, status}`. Objective Intel pays **on a win, once per save** (`MapRecord.objectives?`, optional, no migration). Validation `[objectives]` caps Act I's objective Intel at 7.
+- **Clean Audit** (core-loop §2.13): a tower's build phase lasts until the next wave starts after it was built; selling after that is a *late sell* and fails the objective at once. A misclick-grace refund is never a sale.
+- **A1M4 as built:** par 85 (A1M3 90; campaign.md §7's target 87 → 85, since integrity moves in 5-point steps). Mk II → 90, no casts → 70. W5 (10 Chonks + 20 Bunchlings) is the armor and splash test; W9's Elder convoys keep the no-armor build losing with the full catalog. The alt `slow_and_shell` scores 100, above par; allowed (par is the reference, not the ceiling).
+- **Ruling for T315:** par's only leak is a designed W1 rush of 32 Zoomers, and it ends with ~1,400 credits unspent. A map-4 margin that comes from wave 1 reads as cheap (D026 R3 ruled the same for A1M1). T315 moves the margin into the late waves and makes par spend its bank, keeping par ≤ 85.

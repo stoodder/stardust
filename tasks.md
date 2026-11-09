@@ -144,14 +144,14 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
 - [x] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
 - [x] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
-- [~] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
-- [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
+- [x] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
+- [~] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
 - [ ] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
 - [x] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [x] **T312c** HUD: price builds/upgrades/specs with `purchasePriceInto` (Clearance Sale, Rapid Deploy) instead of `costFor` in commands/hudViews/hudPanel/loadout; `abilityReady`/`freeCastReady` for slot states; slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
-- [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
+- [~] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
 - [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
 - [x] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
 - [x] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
@@ -170,7 +170,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [x] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
-- [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.
+- [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090).
 - [ ] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish

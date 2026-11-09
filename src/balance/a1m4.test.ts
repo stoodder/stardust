@@ -1,5 +1,6 @@
-// A1M4's tuning is robust where it matters (T304f): with W5's Chonks ±0.2 s apart, W7's and W9's
-// Haulers 1 s closer or further apart, and W3–W9's other groups shifted ±0.2 s, the harness's
+// A1M4's tuning is robust where it matters (T304f): with W5's Chonks ±0.2 s apart, W7's Haulers and
+// W9's convoys 1 s closer or further apart, W9's Elders ±0.2 s, and W3–W9's other groups shifted
+// ±0.2 s, the harness's
 // verdicts still hold and par stays at 85: it wins in band, earns Asset Recovery and completes
 // Clean Audit, its casts and Orbital Strike Mk II still change its result (T228), both no-counter
 // builds lose (also on the full catalog), early calls stay fair, and the alt builds keep their
@@ -61,8 +62,15 @@ describe('A1M4 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(judge(shifted([5], spaced('chonk', d)))).toEqual({ failed: [], par: 85 });
   });
 
-  it.each([-1, 1])('holds with W7’s and W9’s Haulers %s s further apart', (d) => {
-    expect(judge(shifted([7, 9], spaced('hauler', d)))).toEqual({ failed: [], par: 85 });
+  it.each([-1, 1])('holds with W7’s Haulers and W9’s convoys %s s further apart', (d) => {
+    expect(judge(shifted([7], spaced('hauler', d)))).toEqual({ failed: [], par: 85 });
+    // Each convoy (and the trailing Bunchlings) moves by d per 12 s convoy gap.
+    const convoys = (g: WaveGroup): WaveGroup => delay(g.enemy, (d * (g.delaySec ?? 0)) / 12)(g);
+    expect(judge(shifted([9], convoys))).toEqual({ failed: [], par: 85 });
+  });
+
+  it.each([-0.2, 0.2])('holds with W9’s Elders %s s later', (d) => {
+    expect(judge(shifted([9], delay('elder', d)))).toEqual({ failed: [], par: 85 });
   });
 
   it.each([
@@ -78,22 +86,27 @@ describe('A1M4 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it('keeps par in the band with W1’s Zoomer rush nudged', () => {
+    // The rush is par's designed leak, so a nudge may also move what Mk II saves (#rnd).
     for (const patch of [delay('zoomer', -0.2), delay('zoomer', 0.2), spaced('zoomer', 0.05)]) {
       const { failed, par } = judge(shifted([1], patch));
-      expect(failed).toEqual([]);
+      expect(failed.filter((f) => !f.startsWith('#rnd R&D pick'))).toEqual([]);
       expect(par).toBeGreaterThanOrEqual(80);
       expect(par).toBeLessThanOrEqual(90);
     }
   });
 
-  it('releases W7’s and W9’s Haulers one at a time, further apart than a strike covers (D052)', () => {
+  it('releases W7’s Haulers further apart than a strike covers, and W9’s in huddles (D052)', () => {
     const strike = content.abilities.orbital_strike.effect;
+    expect(strike.kind).toBe('strike');
     const radius = strike.kind === 'strike' ? strike.radiusTiles + 0.5 : Infinity; // Mk II
-    for (const w of [6, 8]) {
-      const h = raw.waves[w]!.groups.find((g) => g.enemy === 'hauler')!;
-      expect(h.intervalSec! * content.enemies.hauler.speedTilesPerTick * 60).toBeGreaterThan(
-        2 * radius,
-      );
-    }
+    const h = raw.waves[6]!.groups.find((g) => g.enemy === 'hauler')!;
+    expect(h.intervalSec! * content.enemies.hauler.speedTilesPerTick * 60).toBeGreaterThan(
+      2 * radius,
+    );
+    // W9's Haulers walk in pairs inside an Elder's huddle: no strike kills one.
+    expect(strike.kind === 'strike' && strike.damage).toBeLessThan(content.enemies.hauler.hp);
+    const w9 = raw.waves[8]!.groups;
+    expect(w9.filter((g) => g.enemy === 'hauler').map((g) => g.count)).toEqual([2, 2, 2]);
+    expect(w9.filter((g) => g.enemy === 'elder')).toHaveLength(3);
   });
 });

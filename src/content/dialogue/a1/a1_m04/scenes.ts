@@ -25,7 +25,7 @@ export const scenes = defineScenes([
       kind: 'line',
       speaker: 'quill',
       expression: 'happy',
-      text: 'Joke of the Shift, for the audit! Why did the auditor cross the road? To measure it. 6.2 meters. ...That\'s the joke.',
+      text: "Joke of the Shift, for the audit! Why did the auditor cross the road? To measure it. 6.2 meters. ...That's the joke.",
     },
     { kind: 'line', speaker: 'prim', text: '6.1.' },
     {

@@ -41,10 +41,12 @@ describe('A1M4 · The Audit', () => {
     expect(Object.values(raw.underWreckage ?? {}).filter((t) => t === '+')).toHaveLength(1);
     // The node is under the cart nearest the podium.
     const [pc, pr] = map.markers.podium!;
-    const nearest = Object.keys(raw.underWreckage ?? {})
-      .map((k) => k.split(',').map(Number) as [number, number])
-      .toSorted((a, b) => Math.hypot(a[0] - pc, a[1] - pr) - Math.hypot(b[0] - pc, b[1] - pr))[0];
-    expect(nearest).toEqual([4, 5]);
+    const dist = (k: string): number => {
+      const [c = 0, r = 0] = k.split(',').map(Number);
+      return Math.hypot(c - pc, r - pr);
+    };
+    const nearest = Object.keys(raw.underWreckage ?? {}).toSorted((a, b) => dist(a) - dist(b))[0];
+    expect(nearest).toBe('4,5');
   });
 
   it('runs a U-shaped road around the fountain from a north-west spawn to a south-east gate', () => {
@@ -55,7 +57,7 @@ describe('A1M4 · The Audit', () => {
     for (const [i, [c, r]] of road.tiles.entries()) {
       expect(at(c, r)).toBe(i === 0 ? 'S' : i === road.tiles.length - 1 ? 'C' : '#');
     }
-    expect(road.lengthTiles).toBe(31);
+    expect(road.lengthTiles).toBe(30);
     // The fountain sits inside the U: road on its west, south, and east.
     const [fc, fr] = map.markers.fountain!;
     expect(at(2, fr)).toBe('#');

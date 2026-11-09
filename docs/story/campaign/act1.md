@@ -347,7 +347,7 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 
 **Waves.** 1 Nibblers, then a Zoomer rush [Clearance Sale prompt] · 2 Bunchlings ×4 [T: splitting] · 3 Bunchlings + Zoomers [X] · 4 one Elder + 10 huddled Nibblers [T: huddle; splash] · 5 a column of Chonks + Bunchlings [X: armor and splash] · 6 Elders ×2 + Bunchlings [X] · 7 Haulers ×2 + Elder · 8 Zoomer flood + Bunchlings · 9 Elders ×3 with big huddles + Haulers [X].
 
-**Layout data** (the data is [`src/content/maps/a1_m04/map.ts`](../../../src/content/maps/a1_m04/map.ts)). Spawn (2,0); the road runs down the plaza's west side (column 2), east along its south side (row 7), back up its east side (column 10), east past the billboards (row 2), and down the east edge to the plaza gate (13,9): 31 tiles, about 31 s for a Nibbler and 44 s for a Hauler. The open north side is under the three billboards (markers `billboard_west` (5,0), `billboard_center` (8,0), `billboard_east` (11,0)); the fountain (`fountain`, 6,4) is the plaza's heart, the podium (`podium`, 3,5) faces the south-west bend, and the Peeker's planter (`peeker`, 8,3) is beside the fountain. Buildable: 12 pads: (13,1) above the billboard stretch, (3,2) and (9,2) in the plaza's north corners, (1,3) and (1,6) west of the west side, (9,6) inside the south-east bend, (11,4), (11,5), (12,5), and (11,7) in the **gate court** between the east side and the east edge (a tower there covers both), and (4,8) and (7,8) south of the south side. Wreckage (toppled lettuce carts): (4,5) by the podium hides the **power node** (salvage 50); (8,5) inside the south-east bend hides a pad (40); (5,2), (7,2), and (6,6) lie on the paving (30 each).
+**Layout data** (the data is [`src/content/maps/a1_m04/map.ts`](../../../src/content/maps/a1_m04/map.ts)). Spawn (2,0); the road runs down the plaza's west side (column 2), east along its south side (row 7), back up its east side (column 10), east past the billboards (row 2), and down the east edge to the plaza gate (13,9): 30 tiles, about 30 s for a Nibbler and 43 s for a Hauler. The open north side is under the three billboards (markers `billboard_west` (5,0), `billboard_center` (8,0), `billboard_east` (11,0)); the fountain (`fountain`, 6,4) is the plaza's heart, the podium (`podium`, 3,5) faces the south-west bend, and the Peeker's planter (`peeker`, 8,3) is beside the fountain. Buildable: 12 pads: (13,1) above the billboard stretch, (3,2) and (9,2) in the plaza's north corners, (1,3) and (1,6) west of the west side, (9,6) inside the south-east bend, (11,4), (11,5), (12,5), and (11,7) in the **gate court** between the east side and the east edge (a tower there covers both), and (4,8) and (7,8) south of the south side. Wreckage (toppled lettuce carts): (4,5) by the podium hides the **power node** (salvage 50); (8,5) inside the south-east bend hides a pad (40); (5,2), (7,2), and (6,6) lie on the paving (30 each).
 
 ```
 ..S...........
@@ -362,7 +362,7 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 .............C
 ```
 
-**Wave data** (the data is [`src/content/maps/a1_m04/waves.ts`](../../../src/content/maps/a1_m04/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s; everything takes the road). A **huddle** is an Elder with Nibblers packed 0.3 s apart 0.4 s behind it: they keep to its pace and regenerate while they stay close, so a single-target turret chews on a healing clump while a shell or an arc hits all of it. **W1's Zoomer rush** catches the Nibblers on the west side: the Technician's strike there is the difference between two or three leaks and six. **W5 is the armor and splash test:** ten Chonks walk 2 s apart (1.2 tiles), a column the shells roll down, with twenty Bunchlings behind it; Rivets alone can't stop either. W7 and W9 release their Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)), and W6's and W9's Elders walk 10 s apart, so one strike never catches two huddles.
+**Wave data** (the data is [`src/content/maps/a1_m04/waves.ts`](../../../src/content/maps/a1_m04/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s; everything takes the road). A **huddle** is an Elder with Nibblers packed 0.3 s apart 0.4 s behind it: they keep to its pace and regenerate while they stay close, so a single-target turret chews on a healing clump while a shell or an arc hits all of it. **W1's Zoomer rush** catches the Nibblers on the west side: the Technician's strike there is the difference between two or three leaks and six. **W5 is the armor and splash test:** ten Chonks walk 2 s apart (1.2 tiles), a column the shells roll down, with twenty Bunchlings behind it; Rivets alone can't stop either. W7 releases its Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)), and W6's Elders walk 10 s apart, so one strike never catches two huddles. **W9's convoys** are each an Elder shepherding two Haulers: the Haulers walk 1.5 s apart just ahead of it, so they keep to its pace and regenerate in its huddle. A strike can't kill a Hauler, and a turret without an armor answer can't out-damage the regeneration, so the convoys are where the full catalog still loses without one.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
@@ -374,7 +374,7 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 | W6 | huddles (Elder + Nibbler ×10) at 0 and 10 · Bunchling ×13 @ 0.8, 16 | 35 |
 | W7 | Hauler ×2 @ 12, 0 · huddle (Elder + Nibbler ×13) at 6 · Zoomer ×21 @ 0.35, 20 | 37 |
 | W8 | Zoomer ×39 @ 0.3, 0 · Bunchling ×18 @ 0.7, 6 | 57 |
-| W9 | Hauler ×4 @ 12, 0 · huddles (Elder + Nibbler ×16) at 4, 14, and 24 · Bunchling ×13 @ 0.8, 30 | 68 |
+| W9 | convoys at 0, 12, and 24: Hauler ×2 @ 1.5, then the Elder 2.7 s in, then Nibbler ×14 @ 0.3, 3.1 s in · Bunchling ×13 @ 0.8, 32 | 64 |
 
 Totals count spawns; each Bunchling adds three Nibblers when it dies.
 
@@ -409,7 +409,7 @@ Totals count spawns; each Bunchling adds three Nibblers when it dies.
 | W8 | Clearance Sale; upgrade the Thumpers (9,6) and (4,5) and the Zapcoil to T3 |
 | W9 | Upgrade the court Thumper to T3; Orbital Strike on the south-west bend, 14 s in |
 
-Par's bank at each build phase: 352, 228, 311, 315, 404, 410, 716, 845, 788 (W1–W8 plus W9). **Par's one leak is designed:** W1's Zoomer rush slips three Zoomers past the opening Rivet and Thumper (85). Without the casts six get through (70); with **Orbital Strike Mk II** the wider blast leaves two (90; `rndPickChanges: ['orbital_strike_mk2']`, T228). From W2 on par loses nothing.
+Par's bank at each build phase: 352, 228, 311, 315, 404, 410, 716, 845, 788 (W1–W9); from W6 the bounties outrun its purchases, and it ends with about 1,400 credits unspent. **Par's one leak is designed:** W1's Zoomer rush slips three Zoomers past the opening Rivet and Thumper (85). Without the casts six get through (70); with **Orbital Strike Mk II** the wider blast leaves two (90; `rndPickChanges: ['orbital_strike_mk2']`, T228). From W2 on par loses nothing.
 
 **No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); both must lose by W6, the default for nine waves):
 - **no-splash:** par with every Thumper and the Zapcoil swapped for a Rivet (the Rivets may reach T3), an idle Skyhook, the same casts.
@@ -428,13 +428,13 @@ Par's bank at each build phase: 352, 228, 311, 315, 404, 410, 716, 845, 788 (W1�
 | no-splash | loses in W4 | 17 in W1, 3 in W3 |
 | no-splash, full catalog | loses in W6 | 5 in W1, 9 in W3, 9 in W5 |
 | no-armor | loses in W6 | 10 in W1, 10 in W5 |
-| no-armor, full catalog | loses in W9 | 23 in W9 |
+| no-armor, full catalog | loses in W9 | 23 in W9 (the convoys) |
 | Story | 100, and the Challenge | none |
 | `chain_and_shell` | 70 | 1 in W1, 5 in W3 |
 | `slow_and_shell` | 100: two Sprinklers at the entrance stop the rush cold | none |
 | do-nothing | loses at W1 | |
 
-Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.ts`](../../../src/balance/a1m4.test.ts) re-runs the harness with W5's Chonks ±0.2 s apart, W7's and W9's Haulers 1 s closer or further apart, and W3–W9's other groups shifted ±0.2 s: every check holds, Mk II's included, and par stays at 85. W1's rush moves par between 80 and 90 when it's nudged, never out of the band.
+Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.ts`](../../../src/balance/a1m4.test.ts) re-runs the harness with W5's Chonks ±0.2 s apart, W7's Haulers and W9's convoys 1 s closer or further apart, W9's Elders ±0.2 s later, and W3–W9's other groups shifted ±0.2 s: every check holds, Mk II's included, and par stays at 85. W1's rush moves par between 80 and 90 when it's nudged, never out of the band (and may move what Mk II saves).
 
 ## A1M5 · Record Quarter
 
