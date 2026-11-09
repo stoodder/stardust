@@ -123,7 +123,7 @@ export function tickToward(shown: number, target: number, dtMs: number, duration
 // ── The tower panel's size (T202d) ──────────────────────────────────────────────────────────
 
 /** The tower panel's width, and its padding and row gap (hud.css `.hud-tower`). */
-export const PANEL_W = 136;
+export const PANEL_W = 152;
 export const PANEL_PAD = 4;
 export const PANEL_GAP = 2;
 /** Row heights: the header, a line of 8 px text, a button. */
@@ -135,8 +135,8 @@ export const CARD_PAD_Y = 3;
 export const CARD_LINE_GAP = 2;
 /** A spec card's horizontal padding. */
 const CARD_PAD_X = 4;
-/** Silkscreen's widest advance at 8 px in capitals, rounded up: what text wrapping budgets. */
-export const CHAR_PX = 5;
+/** Silkscreen's advance at 8 px in capitals, rounded up (it renders up to 5.6 px): wrapping budgets. */
+export const CHAR_PX = 6;
 /** Characters on one line of the panel, and of a spec card. */
 export const PANEL_CHARS = Math.floor((PANEL_W - 2 * PANEL_PAD) / CHAR_PX);
 export const CARD_CHARS = Math.floor((PANEL_W - 2 * PANEL_PAD - 2 * CARD_PAD_X) / CHAR_PX);

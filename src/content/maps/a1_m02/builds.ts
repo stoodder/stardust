@@ -19,18 +19,20 @@ const SUPPRESS: GridPos = [11, 7];
 function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'rivet', tile: IRRIGATION },
-    { wave: 1, build: 'sprinkler', tile: PUMP },
-    { wave: 2, build: 'thumper', tile: BESIDE_PUMP },
-    { wave: 3, upgrade: IRRIGATION },
-    { wave: 3, targeting: IRRIGATION, mode: 'strong' },
+    { wave: 1, build: 'thumper', tile: BESIDE_PUMP },
+    { wave: 2, upgrade: IRRIGATION },
+    { wave: 2, targeting: IRRIGATION, mode: 'strong' },
+    { wave: 3, build: 'sprinkler', tile: PUMP },
     { wave: 4, upgrade: IRRIGATION },
     { wave: 5, build: 'thumper', tile: BOTTOM },
+    { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
     { wave: 6, upgrade: BESIDE_PUMP },
     { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } },
-    { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
     { wave: 7, upgrade: PUMP },
-    { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+    { wave: 7, upgrade: BESIDE_PUMP },
+    { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
     { wave: 8, upgrade: BOTTOM },
+    { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
   ];
 }
 

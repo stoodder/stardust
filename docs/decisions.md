@@ -616,3 +616,13 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
   - The save's set flags reach scripts as `scriptFlags`.
 - **Module edges:** `meta` and `balance` may import `story`.
 - **Harness:** #16(a) uses the real `spared_quiet_wave` rule. #14 (flag variants) is live, with one par run per flag value on a fixture.
+
+### D054 — 2026-11-09 — T204d R&D, Shop, and Engineering screens
+- **Purchases** (`src/meta/purchase.ts`: `offerFor`, `buy`, `shelf`). Refusal reasons are checked in this order: unknown, pane locked, not stocked, tower not owned (tune-ups need the tower), no specs, maxed, short of currency. A purchase saves at once.
+- **Screens:** one shared `Shelf` for R&D (QUILL), Shop ("Zibzab's Genuine Pre-Owned"), and Engineering. Each row shows:
+  - rank pips, the price, and the effect derived from its grants (e.g. "+0.5 Orbital Strike radius");
+  - T210c's copy, with no exclamation points;
+  - "Arrives after <map>" for unstocked items.
+  
+  A purchase plays the upgrade (or unlock) sound and shows a thank-you; being short plays the reject sound and explains why. Shelves sort by arrival, then entry price, then name. A pane opened by `devUnlocks` is fully stocked.
+- **Body-font bug found in review (T219):** "5" renders like "S" ("1.5" reads "1.S") and "fi" looks like "A". This is a readability bug in the body font at small sizes.

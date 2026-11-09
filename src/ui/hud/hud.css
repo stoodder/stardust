@@ -690,7 +690,7 @@ section.chamfer,
 .hud-radio-slot {
   position: absolute;
   left: 4px;
-  top: 56px;
+  top: 68px;
   width: 200px;
   pointer-events: none;
 }

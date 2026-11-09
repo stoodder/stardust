@@ -6,7 +6,7 @@ import { mapOrigin } from '../render/iso.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { createSim, type Modifier, type Sim, type SimState } from '../sim/index.ts';
 import type { IdSpace } from '../content/types.ts';
-import { PANEL_CHARS, towerPanelHeight } from '../ui/hud/layout.ts';
+import { CARD_CHARS, PANEL_CHARS, towerPanelHeight } from '../ui/hud/layout.ts';
 import { battleConfig } from './battleSetup.ts';
 import { bonusTexts, medalViews, selectedView, specLockText, threatIntel } from './hud.ts';
 
@@ -86,7 +86,7 @@ describe('the tower panel (T202d)', () => {
     expect(v.specs?.options[0].description).toBe('9 dmg · 7.5/s · 1 s spin-up');
     expect(v.specs?.options[1].description).toBe('120 dmg · 0.5/s · range 6 · ignores armor');
     for (const o of v.specs!.options) {
-      for (const l of o.descLines) expect(l.length).toBeLessThanOrEqual(PANEL_CHARS);
+      for (const l of o.descLines) expect(l.length).toBeLessThanOrEqual(CARD_CHARS);
     }
     sim.enqueue({ type: 'specialize', towerUid: uid, spec: 'b' });
     sim.step();

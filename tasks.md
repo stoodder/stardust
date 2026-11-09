@@ -75,6 +75,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T216** Allies polish: a glow halo for AllyView; the companion portrait on slot 2 (M3, with portraits); check in the UX review that the suppression tracers are juicy enough.
 - [ ] **T217** Docs: stale "T125" references in architecture.md (lines ~14, ~162), meta-runtime.md (~145), maps.md (~262), and comments in `hud.test.ts` / `devBattle.ts`.
 - [ ] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
+- [ ] **T219** UI text: the body font at small sizes renders "5" like "S" and "fi" oddly (R&D: "radius 1.S", "-1S%", "Ales"). Switch body text to Silkscreen or fix the glyphs (D054). Also: architecture.md's Base section still says placeholders; art-direction §9 needs the shelf-row spec; add a dev save with the shop open and items left to buy.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
@@ -101,7 +102,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 - [x] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
 - [ ] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1. Also wire the radio's `enemyKilled` trigger (`app/radio.ts` `EnemyDied` case: one line; A1M2's two Hauler barks use it) and list it in architecture §4.
-- [~] **T204d** R&D and Shop screens: buy, availability, locked panes.
+- [x] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
 ## M3 — Star Map & Act I
 - [ ] **T307** Counter model follow-ups from T208 (D038): placement-aware answers (A1M3's no-air build: Rivets out of the air lane's reach), A1M5's no-armor build needs "no Seeker Swarm", consider Harpoon [Skewer] / Prism [Refractor] as splash answers, move `MEDAL_EXEMPT_TAGS` into `rules.ts`.

@@ -11,7 +11,7 @@ export const hauler = defineEnemy({
   faction: 'skitterkin',
   body: 'organic',
   layer: 'ground',
-  hp: 300,
+  hp: 330,
   armor: 9,
   speedTilesPerSec: 0.7,
   leak: 3,
