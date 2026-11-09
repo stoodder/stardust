@@ -8,7 +8,6 @@ import { isBuildableTile, tileIndex } from './grid.ts';
 import type { Sim } from './sim.ts';
 import type { SimStats } from './state.ts';
 import { isSpared } from './fireControl.ts';
-import { poolFind } from './pool.ts';
 import { allyMayTarget } from './systems/allies.ts';
 
 /** One wave of a run. */
@@ -124,8 +123,13 @@ export function createRunTracker<K extends IdSpace>(
    * as the drain finds them, which is how they stood when it fired (commands apply first).
    */
   const checkShot = (towerUid: number, targetUid: number): void => {
-    const t = poolFind(state.towers, towerUid);
-    if (t === null) return;
+    const pool = state.towers;
+    let t: (typeof pool.items)[number] | undefined;
+    for (let i = 0; i < pool.used && t === undefined; i++) {
+      const c = pool.items[i]!; // i < used
+      if (c.alive && c.uid === towerUid) t = c;
+    }
+    if (t === undefined) return;
     if (t.holdFire) violate(`tower ${towerUid} fired while holding fire`);
     if (t.spareRunners && targetUid !== 0 && spared.has(targetUid)) {
       violate(`tower ${towerUid} with spare runners on targeted spared enemy ${targetUid}`);

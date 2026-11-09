@@ -50,6 +50,20 @@ function lossy(outcome: 'won' | 'lost', losses: readonly number[]): HeadlessResu
   }));
   return { ...r, waves };
 }
+/** spareFleeing and par runs on seeds 1–2 at these integrities (#16b). */
+const spareRuns = (spare: number, par: number): Record<string, HeadlessResult> => ({
+  'spareFleeing#1': fakeResult('won', spare),
+  'spareFleeing#2': fakeResult('won', spare),
+  'par#1': fakeResult('won', par),
+  'par#2': fakeResult('won', par),
+});
+/** A won holdFireWhile:quiet_wave run where `leaked` of 5 quiet-wave units leaked (#16a). */
+function heldRun(integrity: number, leaked: number): Record<string, HeadlessResult> {
+  const r = fakeResult('won', integrity);
+  r.stats.tagSpawned.quiet_wave = 5;
+  r.stats.tagLeaked.quiet_wave = leaked;
+  return { 'holdFireWhile:quiet_wave#1': r };
+}
 const find = (id: string, subject: string): CheckSpec =>
   mapChecks(map, [1, 2], [1]).find((c) => c.id === id && c.subject === subject)!;
 
@@ -255,28 +269,16 @@ describe('balance checks', () => {
     const fleeing = mapChecks(FIXTURE_CONTENT.maps.fx_map, [1], [1, 2]);
     const b = fleeing.find((c) => c.id === '16')!;
     expect(b.subject).toBe('spareFleeing');
-    const runs = (spare: number, par: number): Record<string, HeadlessResult> => ({
-      'spareFleeing#1': fakeResult('won', spare),
-      'spareFleeing#2': fakeResult('won', spare),
-      'par#1': fakeResult('won', par),
-      'par#2': fakeResult('won', par),
-    });
-    expect(judge(b, runs(19, 20)).ok).toBe(true); // 95 ≥ 100 − 5
-    expect(judge(b, runs(18, 20)).ok).toBe(false); // 90 < 95
-    expect(judge(b, runs(18, 20)).failures[0]).toMatch(/below par's 100 − 5/);
-    expect(judge(b, runs(20, 18)).ok).toBe(true); // sparing may beat par
+    expect(judge(b, spareRuns(19, 20)).ok).toBe(true); // 95 ≥ 100 − 5
+    expect(judge(b, spareRuns(18, 20)).ok).toBe(false); // 90 < 95
+    expect(judge(b, spareRuns(18, 20)).failures[0]).toMatch(/below par's 100 − 5/);
+    expect(judge(b, spareRuns(20, 18)).ok).toBe(true); // sparing may beat par
 
     const quiet = mapChecks(QUIET_WAVE_CONTENT.maps.fx_map, [1], [1]);
     const a = quiet.find((c) => c.subject === 'holdFireWhile:quiet_wave')!;
-    const held = (integrity: number, leaked: number): Record<string, HeadlessResult> => {
-      const r = fakeResult('won', integrity);
-      r.stats.tagSpawned.quiet_wave = 5;
-      r.stats.tagLeaked.quiet_wave = leaked;
-      return { 'holdFireWhile:quiet_wave#1': r };
-    };
-    expect(judge(a, held(18, 5)).ok).toBe(true);
-    expect(judge(a, held(18, 4)).failures[0]).toMatch(/only 4\/5 quiet-wave units leaked/);
-    expect(judge(a, held(15, 5)).failures[0]).toMatch(/outside the band 80–100/);
+    expect(judge(a, heldRun(18, 5)).ok).toBe(true);
+    expect(judge(a, heldRun(18, 4)).failures[0]).toMatch(/only 4\/5 quiet-wave units leaked/);
+    expect(judge(a, heldRun(15, 5)).failures[0]).toMatch(/outside the band 80–100/);
     expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);
   });
 

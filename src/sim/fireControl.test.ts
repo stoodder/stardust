@@ -14,7 +14,7 @@ import {
   SPRINKLER,
   WALKER,
 } from './__fixtures__/combat.ts';
-import { fixtureSim } from './__fixtures__/sim.ts';
+import { fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import type { Command } from './commands.ts';
 import type { SimEvent as LiveSimEvent } from './events.ts';
 import { isSpared, NOT_FIRING_TICKS } from './fireControl.ts';
@@ -39,6 +39,8 @@ function run(state: SimState, ctx: TickContext, n: number): Tagged[] {
 
 const shotsBy = (evs: readonly Tagged[], uid: number): Tagged[] =>
   evs.filter((e) => e.type === 'ProjectileFired' && e.towerUid === uid);
+const notFiring = (evs: readonly Tagged[]): number[] =>
+  evs.flatMap((e) => (e.type === 'NotFiringAtSkitterkin' ? [e.tick] : []));
 const firedAt = (evs: readonly Tagged[]): number[] =>
   evs.flatMap((e) => (e.type === 'ProjectileFired' ? [e.targetUid] : []));
 
@@ -84,7 +86,7 @@ describe('holdFire', () => {
 
   it("'all': every tower and the global toggle; towers built while it's on inherit it", () => {
     const sim = fixtureSim();
-    const out: LiveSimEvent[] = [];
+    const out: LiveSimEvent<FixtureIds>[] = [];
     sim.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
     sim.enqueue({ type: 'holdFire', target: 'all', on: true });
     sim.applyPending();
@@ -150,7 +152,7 @@ describe('holdFire', () => {
 describe('spareRunners', () => {
   it("per tower and 'all', with events; towers built while the global toggle is on inherit it", () => {
     const sim = fixtureSim();
-    const out: LiveSimEvent[] = [];
+    const out: LiveSimEvent<FixtureIds>[] = [];
     sim.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
     sim.applyPending();
     const first = sim.state.towers.items[0]!;
@@ -265,8 +267,6 @@ describe('"not firing" (core-loop.md § 6.3)', () => {
     spawn(state, still);
     let evs = run(state, ctx, NOT_FIRING_TICKS);
     expect(state.stats.ticksSinceFiredAtSkitterkin).toBe(NOT_FIRING_TICKS);
-    const notFiring = (es: readonly Tagged[]): number[] =>
-      es.flatMap((e) => (e.type === 'NotFiringAtSkitterkin' ? [e.tick] : []));
     expect(notFiring(evs)).toEqual([30 + NOT_FIRING_TICKS - 1]);
     // A shot at a Skitterkin resets it.
     t.holdFire = false;

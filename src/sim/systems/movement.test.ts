@@ -98,7 +98,10 @@ describe('movement', () => {
     expect(e.alive).toBe(false);
     expect(state.integrity).toBe(map.coreIntegrity - 1);
     expect(state.stats.integrityLost).toBe(1);
-    expect(state.events).toEqual([{ type: 'EnemyLeaked', uid, enemy: 'fx_walker', leak: 1 }]);
+    expect(state.events).toEqual([
+      { type: 'EnemyLeaked', uid, enemy: 'fx_walker', leak: 1 },
+      { type: 'MedalProgress', medal: 'perfectCore', status: 'forfeited' }, // cleanup (T202c)
+    ]);
     expect(state.enemies.live).toBe(0);
     expect(e.uid).toBe(0); // cleanup released it
   });

@@ -419,6 +419,10 @@ export function mapChecks<K extends IdSpace>(
   return checks;
 }
 
+/** Quiet-wave units leaked over spawned, "5/5". */
+const quietLeaked = (r: HeadlessResult): string =>
+  `${r.stats.tagLeaked.quiet_wave}/${r.stats.tagSpawned.quiet_wave}`;
+
 /**
  * #16, free choices stay free (D006): (a) on a map with a `quiet_wave` group, par with
  * `holdFireWhile: 'quiet_wave'` wins inside the band, and every quiet-wave unit leaks (until the
@@ -434,8 +438,6 @@ function freeChoiceChecks<K extends IdSpace>(
   const groups = map.waves.flatMap((w) => w.groups);
   const out: CheckSpec[] = [];
   if (groups.some((g) => g.tags.includes('quiet_wave'))) {
-    const leaked = (r: HeadlessResult): string =>
-      `${r.stats.tagLeaked.quiet_wave}/${r.stats.tagSpawned.quiet_wave}`;
     out.push(
       perRun(
         '16',
@@ -452,11 +454,11 @@ function freeChoiceChecks<K extends IdSpace>(
           const { tagSpawned, tagLeaked } = r.stats;
           return tagSpawned.quiet_wave > 0 && tagLeaked.quiet_wave === tagSpawned.quiet_wave
             ? null
-            : `only ${leaked(r)} quiet-wave units leaked`;
+            : `only ${quietLeaked(r)} quiet-wave units leaked`;
         },
         (recs) =>
           `${wonCount(recs)}, margins ${margins(recs)}, quiet wave leaked ${recs
-            .map((r) => (r.result === null ? '-' : leaked(r.result)))
+            .map((r) => (r.result === null ? '-' : quietLeaked(r.result)))
             .join(' / ')}`,
       ),
     );

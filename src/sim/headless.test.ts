@@ -204,12 +204,12 @@ describe('scripted-build executor', () => {
       { type: 'HoldFireChanged', target: 'all', on: true },
       { type: 'HoldFireChanged', target: 'all', on: false },
     ]);
-    const spawns = events.filter((l) => l.e.type === 'EnemySpawned' && l.e.enemy === 'fx_runner');
+    const firstSpawn = events.find((l) => l.e.type === 'EnemySpawned' && l.e.enemy === 'fx_runner');
     const gone = events.filter(
       (l) => (l.e.type === 'EnemyLeaked' || l.e.type === 'EnemyDied') && l.e.enemy === 'fx_runner',
     );
     // On the tick after the first runner spawns; off the tick after the last one leaves.
-    expect(toggles[0]!.tick).toBe(spawns[0]!.tick + 1);
+    expect(toggles[0]!.tick).toBe(firstSpawn!.tick + 1);
     expect(toggles[1]!.tick).toBe(gone.at(-1)!.tick + 1);
     expect(gone.every((l) => l.e.type === 'EnemyLeaked')).toBe(true);
     expect(sim.state.stats.tagLeaked.fleeing).toBe(4);

@@ -469,3 +469,6 @@ The owner said "start M2 … continue through to the end" and is away, so the or
 - **A1M2's `no_armor` build:** no Thumper, Rivets at most T2. It may cast both abilities. The harness has a new #5 check: a no-counter build carries no answer.
 - The M0 doc gaps are fixed: Sproing in the splash row, Underfoot, A3M4's "no Seeker Swarm", A3M2/FIN's "no Rivet Storm / Echo Spike", conventions #6's protocols, and `youngling` staying a WaveTag.
 - **Known limit:** answers aren't placement-aware, so A1M3's no-air build ("Rivets out of the air lane's reach") would be rejected. That's a task for whoever builds A1M3 (M3).
+
+### D039 — 2026-11-09 — T210a M2 art
+New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and render-only scurrying young, Bricks at his post (idle and fire per facing, the post plate in every frame), raised high-ground tiles (drawn 8 px up) and pulsing power nodes, Crossfire and Sitting Ducks link tethers, and tier-2+ head frames for Rivet and Thumper (the m1 verdict). Grass gains mid-dark clumps, the second m1 verdict item. The value-band test now covers the new actors. Views that draw them come in T207b (Bricks), T202d (tethers, tower lift on high ground), and T210b (the Hauler).
