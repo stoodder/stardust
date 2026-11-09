@@ -6,7 +6,8 @@
 // Executor rules:
 // - Steps run strictly in order. A step is eligible once the build phase before its wave has
 //   begun (`schedule.countdownWave ≥ wave`; wave 1's is the setup). It's issued the moment it's
-//   affordable and its tower is unlocked (D021), and later steps wait behind it. A step whose
+//   affordable (at the price the sim will charge: economy.ts `purchasePriceInto`) and its tower is
+//   unlocked (D021), and later steps wait behind it. A step whose
 //   wave has already started is still issued when it can be (the run records it as late).
 // - Each command is applied at once with applyPending(), which is identical to applying it at
 //   the start of the next tick (D013), so the next step sees its effect.
@@ -30,11 +31,13 @@ import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
+import { purchasePriceInto, type PurchaseKind, type PurchasePrice } from './economy.ts';
 import type { SimEvent } from './events.ts';
 import { tileIndex } from './grid.ts';
 import { createRunTracker, type RunSummary } from './headlessTracker.ts';
 import { assertNever } from '../shared/types.ts';
 import { createSim, type Sim } from './sim.ts';
+import { abilityReady } from './systems/abilities.ts';
 import { clearCommand, wreckageStatus } from './systems/wreckage.ts';
 import type { MedalStatus } from './state.ts';
 
@@ -151,6 +154,14 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     return start + Math.max(1, s.when === 'waveStart' ? 0 : s.when.afterTicks);
   };
 
+  /**
+   * What a purchase costs now (economy.ts `purchasePriceInto`: modifiers, Rapid Deploy's free first
+   * build, a Clearance Sale), so a step waits for exactly what the sim will charge.
+   */
+  const quote: PurchasePrice = { cost: 0, discounted: false };
+  const price = (tower: string, base: number, kind: PurchaseKind): number =>
+    purchasePriceInto(state, sim.config.modifiers, tower, base, kind, quote).cost;
+
   /** Tries the head step: 'wait' keeps it (and everything behind it) for a later tick. */
   const tryStep = (s: CompiledBuildStep<K>, rec: StepRecord): 'wait' | 'done' => {
     const finish = (error: RejectReason | null, late: boolean): 'done' => {
@@ -167,14 +178,22 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         const wreck = wreckageStatus(sim.map, state.wreckage, s.tile[0], s.tile[1]);
         if (wreck === 'queued' || wreck === 'clearing') return 'wait';
         const def = sim.config.content.towers[s.tower];
-        if (def !== undefined && state.credits < def.tiers[0].cost) return 'wait';
+        if (def !== undefined && state.credits < price(s.tower, def.tiers[0].cost, 'build')) {
+          return 'wait';
+        }
         return finish(apply({ type: 'build', tile: s.tile, tower: s.tower }), lateForPhase);
       }
       case 'upgrade': {
         const t = towerAt(s.tile);
         if (t === null) return finish('noSuchTower', lateForPhase);
         const tier = t.def?.tiers[t.tier];
-        if (tier !== undefined && state.credits < tier.cost) return 'wait';
+        if (
+          tier !== undefined &&
+          t.def !== null &&
+          state.credits < price(t.def.id, tier.cost, 'upgrade')
+        ) {
+          return 'wait';
+        }
         return finish(apply({ type: 'upgrade', towerUid: t.uid }), lateForPhase);
       }
       case 'specialize': {
@@ -188,7 +207,9 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
           sim.config.specsUnlocked.includes(def.id) &&
           t.spec === null &&
           t.tier === MAX_TIER_BEFORE_SPEC;
-        if (allowed && spec !== undefined && state.credits < spec.cost) return 'wait';
+        if (allowed && spec !== undefined && state.credits < price(def.id, spec.cost, 'spec')) {
+          return 'wait';
+        }
         return finish(apply({ type: 'specialize', towerUid: t.uid, spec: s.spec }), lateForPhase);
       }
       case 'clear':
@@ -206,7 +227,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       case 'ability': {
         const due = dueTick(s);
         if (due === null || state.tick < due) return 'wait';
-        if ((state.abilityCooldownTicks[s.slot - 1] ?? 0) > 0) return 'wait';
+        if (!abilityReady(state, s.slot)) return 'wait'; // tick and wave-count cooldowns
         const cmd: Command<K> =
           s.target === null
             ? { type: 'ability', slot: s.slot }

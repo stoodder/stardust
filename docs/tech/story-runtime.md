@@ -79,6 +79,7 @@ Flags are declared in `content/dialogue/flags.ts` (`FLAGS`): each with its `valu
 
 - **Defaults** are what story reads while a flag is unset (`flagValue` in `src/story/flags.ts`): `false` for a boolean (not done yet), `null` for a choice not made yet. The sim never sees a default ([§ Map scripts](#map-scripts-story-driven-sim-changes)).
 - **Who sets them:** the intake (`arrival_reason`, T306), `choice`/`set` nodes, UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or **run-end rules**.
+- **`peeker_poked`** (T309) is written the moment the Act I Peeker is first poked (`app/peeker.ts`, through `updateActiveSave`), not at run end: a poke on any Act I map counts whether that run is won, lost, or abandoned, and the run end builds on the same in-memory save, so it keeps the flag. Later pokes write nothing. A battle with no save in play (`?map=`) sets nothing.
 - **Saves** hold `story.flags` keyed by `FlagId`, each value one of the flag's declared `values` ([meta-runtime.md § Validation](meta-runtime.md#validation)).
 
 **Run-end rules** (`FLAG_RULES` in `content/dialogue/flags.ts`) derive a boolean flag from the finished run's `state.stats` when a map ends:

@@ -50,3 +50,6 @@ export function parBand(
 export function noCounterLoseByWave(waveCount: number): number {
   return Math.floor(waveCount * NO_COUNTER_LOSE_BY_SHARE);
 }
+
+/** Vitest's per-test timeout for tests that re-run a whole map's harness (a1m1/a1m2.test.ts). */
+export const HARNESS_TEST_TIMEOUT_MS = 30_000;

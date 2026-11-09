@@ -69,10 +69,11 @@ describe('line text', () => {
   });
 });
 
-describe('portrait frames', () => {
-  const frames = (def: { frames?: object }): ReadonlySet<string> =>
-    new Set(Object.keys(def.frames ?? {}));
+/** A sprite's frame names. */
+const frames = (def: { frames?: object }): ReadonlySet<string> =>
+  new Set(Object.keys(def.frames ?? {}));
 
+describe('portrait frames', () => {
   it('tries the expression, its base, then neutral', () => {
     expect(expressionChain('singing')).toEqual(['singing', 'happy', 'neutral']);
     expect(expressionChain('angry')).toEqual(['angry', 'neutral']);

@@ -3,7 +3,6 @@
 // reply still answers its cue, D028), and lone event lines become barks on the D070 triggers.
 import { describe, expect, it } from 'vitest';
 import { A1_M01_RADIO } from '../content/radio/a1_m01.ts';
-import { A1_M02_RADIO } from '../content/radio/a1_m02.ts';
 import { RADIO_TABLES } from '../content/radio/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { LineNode, Scene } from '../content/dialogue/types.ts';

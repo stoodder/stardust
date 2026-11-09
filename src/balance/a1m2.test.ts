@@ -11,6 +11,7 @@ import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
 import { runMap } from './harness.ts';
+import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const raw = RAW_CONTENT.maps.a1_m02;
 
@@ -45,7 +46,9 @@ const delay =
   (g: WaveGroup): WaveGroup =>
     g.enemy === enemy ? { ...g, delaySec: (g.delaySec ?? 0) + d } : g;
 
-describe('A1M2 balance', () => {
+// Each test re-runs a whole map's harness (A1M2 also runs its R&D picks, T313): seconds, not
+// milliseconds, and slower while other suites share the machine.
+describe('A1M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   it('passes every harness check as tuned', () => {
     const report = runMap(content, 'a1_m02', { seeds: 1 });
     expect(report.checks.filter((k) => !k.ok).map((k) => k.id)).toEqual([]);

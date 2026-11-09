@@ -64,6 +64,7 @@ describe('sound effect recipes', () => {
         'link_chime',
         'low_integrity',
         'medal_forfeit',
+        'peeker_squeak',
         'radio_bricks',
         'radio_goldie',
         'radio_quill',

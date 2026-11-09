@@ -126,4 +126,18 @@ describe('aiming an ability', () => {
       aim: false,
     });
   });
+
+  it('pokes the Act I Peeker on a plain click only (T309: a UI event, never a command)', () => {
+    const peeker: TileFacts = { ...pad, index: 17, col: 3, row: 1, buildable: false, peeker: true };
+    expect(resolveClick(peeker, 'left', null)).toEqual({ kind: 'poke' });
+    // Armed or aimed, the click means what it means anywhere else; right-click still cancels.
+    expect(resolveClick(peeker, 'left', 'rivet')).toEqual({ kind: 'cantBuild' });
+    expect(resolveClick(peeker, 'left', null, 1)).toEqual({
+      kind: 'ability',
+      slot: 1,
+      tile: [3, 1],
+    });
+    expect(resolveClick(peeker, 'right', null)).toEqual({ kind: 'cancel' });
+    expect(resolveClick({ ...peeker, peeker: false }, 'left', null)).toEqual({ kind: 'deselect' });
+  });
 });

@@ -2,11 +2,19 @@
 // as a scene (portraits, the typewriter, keyboard-only advance, Clock in), a scene with a choice
 // that pauses play and puts the speed back, a full-screen scene, a bark on the comms panel with
 // its portrait, and a bark's reply button. `?test=1` keeps dialogue off unless `&dialogue=1`.
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 const URL = '/?test=1&seed=1&dialogue=1';
+
+/** Reads one line on: Enter finishes its typing (Skip → Next), Enter again moves on. */
+async function readLine(page: Page, next: Locator): Promise<void> {
+  await expect(next).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(next).toHaveText('Next');
+  await page.keyboard.press('Enter');
+}
 
 /** Starts A1M1 from the Title (a new save), with its briefing up. */
 async function startShift(page: Page): Promise<void> {
@@ -28,12 +36,10 @@ test('dialogue: the briefing plays as a scene, by keyboard alone', async ({ page
   await expect(next).toBeFocused();
   await shot(page, 'dialogue', 1, 'briefing-typing');
   // Enter finishes the typing, Enter again reads on: four lines, then Clock in has the focus.
-  for (let i = 0; i < 4; i++) {
-    await expect(next).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(next).toHaveText('Next');
-    await page.keyboard.press('Enter');
-  }
+  await readLine(page, next);
+  await readLine(page, next);
+  await readLine(page, next);
+  await readLine(page, next);
   await expect(lines).toContainText('Nothing goes on the path but bugs and bad decisions.');
   await expect(next).toHaveCount(0);
   const clockIn = briefing.getByRole('button', { name: 'Clock in' });
@@ -65,12 +71,8 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await shot(page, 'dialogue', 3, 'scene-panel');
   // Keyboard: each line takes Enter to finish typing and Enter to read on.
   const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
-  for (let i = 0; i < 2; i++) {
-    await expect(next).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(next).toHaveText('Next');
-    await page.keyboard.press('Enter');
-  }
+  await readLine(page, next);
+  await readLine(page, next);
   const answer = scene.getByRole('group', { name: 'Your answer' });
   await expect(answer.getByRole('button')).toHaveCount(3);
   await expect(answer.getByRole('button', { name: /Great, honestly/ })).toBeFocused();

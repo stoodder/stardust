@@ -278,6 +278,11 @@ export interface PlayOptions {
   readonly onEnd?: () => void;
 }
 
+/** The reduced-motion preference (none outside a browser: the unit tests). */
+function reducedMotion(): boolean {
+  return typeof window !== 'undefined' && prefersReducedMotion();
+}
+
 /** Who is on the radio: the battle's speakers, or null outside one. */
 function onRadio(): readonly SpeakerId[] | null {
   return session?.present ?? null;
@@ -321,7 +326,7 @@ function settle(h: Holding): void {
     if (!h.instant) {
       h.line = view;
       h.typedFrom = performance.now();
-      h.typedOut = prefersReducedMotion() || typedLength(view.text) === 0;
+      h.typedOut = reducedMotion() || typedLength(view.text) === 0;
       break;
     }
     h.transcript.push(view);

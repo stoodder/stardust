@@ -91,6 +91,9 @@ describe('dressTile', () => {
       return sprite === undefined ? [] : [[id, sprite]];
     });
     expect(Object.fromEntries(drawn)).toMatchObject(DECOR_MARKERS);
+    // The Peeker's rock is PeekerView's (T309): its tile has no sparse decor of its own.
+    const [pc, pr] = a1.markers['peeker'] ?? [-1, -1];
+    expect(dressTile(a1, pc, pr).prop).toBeNull();
   });
 
   it('maps env ids to sprite variants', () => {

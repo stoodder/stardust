@@ -12,6 +12,7 @@ import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
 import { notGradual } from './checks.ts';
 import { runMap } from './harness.ts';
+import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 import { NO_PURCHASES, runConfig } from './profile.ts';
 
 const content = compileContent(RAW_CONTENT);
@@ -47,7 +48,9 @@ function run(build: CompiledBuild): HeadlessResult {
   return runHeadless(runConfig(content, map, build, NO_PURCHASES, 1), build);
 }
 
-describe('A1M1 balance', () => {
+// Each test re-runs a whole map's harness (A1M2 also runs its R&D picks, T313): seconds, not
+// milliseconds, and slower while other suites share the machine.
+describe('A1M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   it.each([5, 6, 7])('every harness check still passes with W%i’s clumps ±0.2 s apart', (wave) => {
     for (const shiftSec of [-0.2, -0.1, 0.1, 0.2]) {
       const report = runMap(shiftClumps(wave, shiftSec), 'a1_m01', { seeds: 1 });

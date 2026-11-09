@@ -36,7 +36,10 @@ export function pokePeeker(): void {
  * Listens for pokes in a battle on `map` (only an Act I map with a `peeker` marker has a Peeker to
  * poke). Returns the unsubscribe.
  */
-export function bindPeeker(map: CompiledMapDef<IdSpace>, interaction: BattleInteraction): () => void {
+export function bindPeeker(
+  map: CompiledMapDef<IdSpace>,
+  interaction: BattleInteraction,
+): () => void {
   if (peekerTile(map) < 0) return () => {};
   return interaction.onPoke(pokePeeker);
 }

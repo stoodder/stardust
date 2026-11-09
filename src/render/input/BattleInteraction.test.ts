@@ -107,4 +107,17 @@ describe('BattleInteraction', () => {
     expect(seen).toHaveLength(1); // the aim only
     expect(i.aiming).toBe(2);
   });
+
+  it('hands pokes to their listeners without changing anything (T309)', () => {
+    const i = new BattleInteraction('rivet');
+    const seen: number[] = [];
+    const off = i.onPoke(() => seen.push(1));
+    i.onPoke(() => seen.push(2));
+    i.poke();
+    expect(seen).toEqual([1, 2]);
+    expect(i.snapshot()).toEqual({ selectedTower: 0, armed: 'rivet', aiming: null });
+    off();
+    i.poke();
+    expect(seen).toEqual([1, 2, 2]);
+  });
 });

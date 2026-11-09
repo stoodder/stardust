@@ -1,7 +1,7 @@
 // Pieces every scene staging shares (the briefing, the bottom panel, full-screen): the Next control
 // (a click or Enter finishes the typing, then moves on), the choice buttons (keyboard first: the
 // first option takes the focus, the arrows move between them), and the Tab trap a modal keeps.
-import { useEffect, useRef } from 'preact/hooks';
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { chooseOption, nextScene } from '../../app/dialogue.ts';
 import { useTypewriter, type Typewriter } from './LineText.tsx';
 import type { ChoiceView, SceneView } from './state.ts';
@@ -46,7 +46,8 @@ export function useSceneStep(view: SceneView): SceneStep {
  */
 export function useFocusOn(key: unknown, when = true): { current: HTMLButtonElement | null } {
   const ref = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
+  // A layout effect: the focus is in place as the control appears, so an Enter right away lands.
+  useLayoutEffect(() => {
     if (when) ref.current?.focus();
   }, [key, when]);
   return ref;

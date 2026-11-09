@@ -36,6 +36,7 @@ import { createHost, type Host } from './host.ts';
 import { activeSave, initSaves, newGame } from './save.ts';
 
 type Ev = SimEvent<IdSpace>;
+const noop = (): void => {};
 
 /** A battle's host on `mapId`, its state writable (tests set the tick and credits directly). */
 function battle(mapId: string): { host: Host<IdSpace>; state: SimState } {
@@ -105,7 +106,7 @@ describe('dialogue helpers', () => {
 });
 
 describe("a battle's dialogue", () => {
-  let unbind: () => void = () => {};
+  let unbind: () => void = noop;
   let b: ReturnType<typeof battle>;
   const bind = (mapId: string, opts: { briefing?: boolean; newTowers?: string[] } = {}): void => {
     b = battle(mapId);
@@ -130,7 +131,7 @@ describe("a battle's dialogue", () => {
   });
   afterEach(() => {
     unbind();
-    unbind = () => {};
+    unbind = noop;
     vi.useRealTimers();
     setDialogueEnabled(true);
     screen.value = null;
@@ -351,7 +352,7 @@ describe("a battle's dialogue", () => {
     emit(countdown(4));
     expect(shown()).not.toBeNull();
     unbind();
-    unbind = () => {};
+    unbind = noop;
     expect(shown()).toBeNull();
     vi.advanceTimersByTime(30_000);
     expect(shown()).toBeNull();

@@ -73,9 +73,10 @@ function isShownVariant(name: string): boolean {
 }
 
 /**
- * What a sprite card shows (T311a, to keep the art trail under the capture limit):
- * - `default`, every frame (mirrors too), at 1× and zoomed, on dark (with its `@glow` added) and on
- *   light (without);
+ * What a sprite card shows (T311a, T311b: to keep the art trail under the capture limit):
+ * - `default`, its authored frames at 1× and zoomed, on dark (with its `@glow` added) and on light
+ *   (without), then its mirrored frames at 1× only, on dark (mirrors are mechanical: the validator
+ *   checks them, and the gallery only needs to show they face the other way);
  * - one more palette variant (`secondVariant`), its authored frames only, zoomed on dark;
  * - each derived variant (`default+selected`, `default+jammed`), its first frame only.
  */
@@ -85,16 +86,22 @@ interface CardPlan {
     readonly frames: readonly string[];
     readonly light: boolean;
     readonly glow: boolean;
+    /** Shown at 1× only (no zoomed copy). */
+    readonly small?: boolean;
   }[];
 }
 
 function cardPlan(b: BakedSprite): CardPlan {
   const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n));
+  const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
   const second = secondVariant(b);
   const first = b.frameNames[0];
   return {
     rows: [
-      { variant: DEFAULT_VARIANT, frames: b.frameNames, light: true, glow: true },
+      { variant: DEFAULT_VARIANT, frames: authored, light: true, glow: true },
+      ...(mirrored.length === 0
+        ? []
+        : [{ variant: DEFAULT_VARIANT, frames: mirrored, light: false, glow: false, small: true }]),
       ...(second === undefined
         ? []
         : [{ variant: second, frames: authored, light: false, glow: false }]),
@@ -165,7 +172,8 @@ function panel(
       g === undefined
         ? undefined
         : { img: g.image, dx: f.anchor.x - g.anchor.x, dy: f.anchor.y - g.anchor.y };
-    box.append(scaled(f.image, zoom, halo), el('span', undefined, name));
+    if (zoom > 1) box.append(scaled(f.image, zoom, halo));
+    box.append(el('span', undefined, name));
     p.append(box);
   }
   return p;
@@ -203,9 +211,11 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
     }
     const block = el('div', 'variant');
     const panels = el('div', 'panels');
-    panels.append(panel(frames, zoom, 'dark', count, glows));
-    if (row.light) panels.append(panel(frames, zoom, 'light', null));
-    const label = glows.size > 0 ? `${row.variant} (dark: + @glow)` : row.variant;
+    const z = row.small === true ? 1 : zoom;
+    panels.append(panel(frames, z, 'dark', count, glows));
+    if (row.light) panels.append(panel(frames, z, 'light', null));
+    const name = row.small === true ? `${row.variant}, mirrored, 1×` : row.variant;
+    const label = glows.size > 0 ? `${name} (dark: + @glow)` : name;
     block.append(el('div', 'vlabel', label), panels);
     variants.append(block);
   }
@@ -643,7 +653,7 @@ function render(root: HTMLElement): void {
     el(
       'h2',
       undefined,
-      'Sprites: default (every frame), one more palette (authored frames), derived (first frame)',
+      'Sprites: default (authored frames; mirrors at 1×), one more palette (authored frames), derived (first frame)',
     ),
   );
   const count: Counters = { expected: 0, rendered: 0 };

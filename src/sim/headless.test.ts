@@ -203,6 +203,19 @@ describe('scripted-build executor', () => {
     expect([t.tier, t.spec, t.priority]).toEqual([4, 'b', 'strong']);
   });
 
+  it('waits for the price the sim will charge: a free first build goes in with no bank', () => {
+    const sim = fixtureSim({
+      loadout: ['fx_gun', 'fx_mortar'],
+      modifiers: [startBank(0), { kind: 'firstBuildFree', source: 'test' }],
+    });
+    const { exec } = play(
+      build([{ wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] }]),
+      10,
+      sim,
+    );
+    expect(exec.steps.map((s) => [s.issuedTick, s.error])).toEqual([[0, null]]);
+  });
+
   it('specialize: no tower, a locked spec, or a tower below T3 is a step error', () => {
     const { exec } = play(
       build([
