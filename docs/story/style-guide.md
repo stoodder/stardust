@@ -154,7 +154,8 @@ Portrait *variants* are chosen by flags or act, not by expression: Ves'thara's f
 ### 5.3 IDs
 
 Snake_case, following [../tech/conventions.md](../tech/conventions.md):
-- **Scenes:** `<map_id>_<slot>`. Slots are `brief`, `w<NN>` (radio before wave NN), `cue_<name>`, `debrief`, and `scene_<name>`. Examples: `a1_m01_brief`, `a1_m05_w08`, `a3_m03_cue_seal`, `a2_m04_debrief`.
+- **Scenes:** `<map_id>_<slot>`. Slots are `brief`, `w<NN>` (radio before wave NN, from `w01`), `cue_<name>`, `debrief`, `scene_<name>` (full-screen), and `base_<name>` (a base conversation topic). Examples: `a1_m01_brief`, `a1_m05_w08`, `a3_m03_cue_seal`, `a2_m04_debrief`, `a1_m05_scene_party`, `a1_m03_base_stardust`.
+- **Labels:** any node may carry a `label` (snake_case, unique within its scene). A choice option's `goto` and a branch's `goto` and `else` name one; without one, play continues with the next node.
 - **Barks:** pools in `barks/<trigger>.ts`. Bark IDs are `<speaker>_<trigger>_a<act>_<nn>`, for example `bricks_idle_fire_a1_01`.
 - **Codex:** `codex_<entry>` with versions `original`, `annotated`, and `corrected`.
 - **Memos:** `memo_a<act>_<nn>`.

@@ -873,3 +873,32 @@ Three files stay at 430–470 lines, each one cohesive pool or frame loop. T234 
 - **Settings ("Your file"):** edits name and pronouns. The callsign and arrival reason are read-only story facts (core-loop §6.1).
 - **Shift board:** shows "JPT-1 {name} · #ED-447".
 - `?test=1` skips the intake, the same as the radio and audio in tests; `&intake=1` turns it back on.
+
+### D069 — 2026-11-09 — T300a sim and content seams for Act I
+A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields were added.
+- **Declared:**
+  - **Command:** `clear` (rejected until T304b).
+  - **Events:** `NeutralHit`, `BossPhase`, `BossEnded`, `WreckageCleared`, and `ProjectileHit.reduced` (live, for the armor "plink").
+  - **Unit fields:** burrow/split/huddle/boss/neutral, with matching per-unit state.
+  - **Ability state:** wave-count ability cooldowns, and discount charges.
+  - **Wreckage state.**
+  - **Stats:** `neutralHits`, `wreckageCleared`, `lateSells`.
+  - **Ability effects:** `slowAll`, `discount`.
+  - **`ObjectiveDef`.**
+  - **T119:** towers and enemies carry display names.
+- **Stub systems in the tick order:** wreckage (1b), enemy abilities (4c), chain attacks.
+- **Content stubs:** Skyhook, Zapcoil, Puffwing, Bunchling, Digger, Elder, Chitterbloom, Gerald, Time Dilation, and Clearance Sale, under **final sprite ids** with placeholder art.
+- **Gates:** each feature is gated by a row naming its lifting task:
+  - T304a: projectile, flying, neutral.
+  - T304b: chain, salvage.
+  - T304c: burrow, split, huddle, boss.
+  - T304d: slowAll, discount, firstBuildFree, freeCast.
+  - T304f: objectives.
+  - M4: beam, spawner, Pinned, Stasis, Unnerved.
+- **First-pass numbers for the owning tasks to confirm:**
+  - Skyhook fires flak bursts at 10 tiles/s.
+  - Zapcoil's `jumps` counts jumps after the first hit.
+  - Spawn intervals.
+  - Chitterbloom's phase-3 huddle and leak.
+- Gerald is provisionally an air unit; T304a settles it.
+- Meta pools leave out anything still gated.

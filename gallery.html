@@ -90,6 +90,18 @@
       }
       /* Portraits (T310a): each expression at 2× in a comms-panel frame (ink.2 inside a teal.2
          edge on ink.0), then every frame at 1×. */
+      /* Two portrait cards per row (a frame-heavy one spans both) keep the page under the stitched
+         capture's height limit. */
+      .portraits {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: row dense;
+        gap: 0 10px;
+        align-items: start;
+      }
+      .portraits .wide {
+        grid-column: span 2;
+      }
       .portrait-row {
         display: flex;
         flex-wrap: wrap;

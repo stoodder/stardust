@@ -186,12 +186,16 @@ function isRestFrame(frame: string): boolean {
   return !/_(talk|scan|flash)$/.test(frame);
 }
 
+/** A portrait with more frames than this gets a full-width card in the two-column portrait grid. */
+const WIDE_PORTRAIT_FRAMES = 12;
+
 /**
  * A portrait's card (T310a): each portrait variant's expressions at 2× in a comms-panel frame, as
  * the dialogue panel shows them, then every baked frame (talk, scan, flash, `+dark`) at 1×.
  */
 function portraitCard(b: BakedSprite, count: Counters): HTMLElement {
-  const card = el('section', 'card');
+  // Portraits pack two to a row; one with many frames (variants, extras) takes a whole row.
+  const card = el('section', b.frameNames.length > WIDE_PORTRAIT_FRAMES ? 'card wide' : 'card');
   card.dataset['spriteId'] = b.id;
   const title = el('h3', undefined, b.id);
   title.append(
@@ -569,7 +573,9 @@ function render(root: HTMLElement): void {
   const count: Counters = { rendered: 0 };
   for (const b of baked) if (!isPortrait(b)) root.append(spriteCard(b, count));
   root.append(el('h2', undefined, 'Portraits: expressions at 2× as the comms panel frames them'));
-  for (const b of baked) if (isPortrait(b)) root.append(portraitCard(b, count));
+  const portraits = el('div', 'portraits');
+  for (const b of baked) if (isPortrait(b)) portraits.append(portraitCard(b, count));
+  root.append(portraits);
 
   const ds = document.body.dataset;
   ds['spriteCount'] = String(baked.length);

@@ -99,7 +99,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 ## M3 — Star Map & Act I
 **Status: current (started 2026-11-09; scope cut and plan in progress).** Carried over from M2:
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
-- [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
+- [x] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
 - [ ] **T211** Audio follow-ups: Kip's own radio blip (he borrows Goldie's); an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
 - [ ] **T213** HUD polish from T126: the aim hint says "Enter fires" when the cursor shows (style-guide wording); the panel's "Next:" line clips "+3 pierce"; the panel avoids the HUD corners.
@@ -125,7 +125,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 
 M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a·T300b·T310a → W2 T304a·T304c·T302a·T311a → W3 T304b·T304d·T313·T306 → W4 T304e·T302b·T312a·T311b → W5 T304f·T302c·T308·T312c → W6 T304g·T303·T312b·T310b → W7 T316·T314·T309·T311c → W8 T315·T317, then review. Housekeeping: T204b and T210c landed in D045/D048.
 
-- [ ] **T300a** Sim and content seams (folds in T119):
+- [x] **T300a** Sim and content seams (folds in T119):
   - commands: `clear`;
   - events: `BossPhase`, `BossEnded`, `WreckageCleared`, `NeutralHit`, `ProjectileHit.reduced`;
   - fields and stats: burrow, split, huddle, boss, neutral, wreckage, discount charges, wave-count cooldowns, `neutralHits`, `wreckageCleared`, `lateSells`, `MapDef.objectives`;
@@ -138,9 +138,9 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
 - [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".
 - [ ] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
-- [ ] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
+- [~] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
 - [ ] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
-- [ ] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
+- [~] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
 - [ ] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
 - [ ] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
 - [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).

@@ -288,6 +288,11 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 | `ally_hushed` | A refugee or singer is hushed |
 | `skitterkin_hushed` | A non-ally Skitterkin (a `fleeing` unit) is hushed by a Hollow unit. Once per map |
 | `flag` | Entering a map with a given story flag value (for example `spared_quiet_wave`), first build phase only |
+| `enemy_leaked` | A specific enemy id (condition) leaks, for the first time this map (A1M2's first Hauler through the gate). It plays after `first_leak` when one leak is both |
+| `bank_nudge` | A build phase from W2 on opens with 250+ credits unspent (`BANK_NUDGE_CREDITS`). Once per map; it plays on its own after the countdown's radio, never as a reply to it |
+| `neutral_hit` | The player's fire hits a neutral unit (Gerald, A1M3) |
+| `tower_issued` | The battle starts with a newly issued tower in the loadout (its first battle in the save), once the briefing closes |
+| `menu` | The player enters a base screen (the base, shop, R&D, Engineering, Inbox, codex, or star map) |
 
 Conditions can test the act, the map, flags, and run stats. Only speakers present on the map may bark: QUILL plus the companion.
 
