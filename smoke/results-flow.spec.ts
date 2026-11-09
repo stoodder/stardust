@@ -23,7 +23,7 @@ const playOut = (page: Page) =>
 test('results: A1M4 par lists Clean Audit with its Intel, and the career total counts up', async ({
   page,
 }) => {
-  // The Shift board lists two shifts until the star map (T301): `?map=` opens A1M4 in the save.
+  // `?map=` opens A1M4 in the save, past the loadout screen the Shift board's Start would show.
   await page.goto('/?test=1&seed=1&save=after_a1m3&map=a1_m04');
   await waitForReady(page);
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();

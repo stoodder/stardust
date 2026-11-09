@@ -46,6 +46,10 @@ const convoy = (delaySec: number): WaveGroup[] => [
  * single-target turret can't stop in time.
  */
 export const CHONK_GAP = 2;
+/** W9's tail: TAIL Haulers TAIL_GAP s apart, TAIL_DELAY s into the wave. */
+export const TAIL = 4;
+export const TAIL_DELAY = 30;
+export const TAIL_GAP = 3;
 /** W6's Elders walk this far apart, so one strike never catches two huddles. */
 export const ELDER_GAP = 10;
 
@@ -61,11 +65,11 @@ export const waves = defineWaves([
   // W5 · Chonks + Bunchlings [the armor test: light armor in a column, splitters behind it]
   { groups: [g('chonk', 10, 0, CHONK_GAP), g('bunchling', 20, 6, 0.8)] },
   // W6 · Elders ×2 + Bunchlings [X]
-  { groups: [...huddle(0, 10), ...huddle(ELDER_GAP, 10), g('bunchling', 13, 16, 0.8)] },
+  { groups: [...huddle(0, 10), ...huddle(ELDER_GAP, 10), g('bunchling', 4, 16, 0.8)] },
   // W7 · Haulers ×2 + an Elder
-  { groups: [g('hauler', 2, 0, HAULER_GAP), ...huddle(6, 13), g('zoomer', 21, 20, 0.35)] },
+  { groups: [g('hauler', 2, 0, HAULER_GAP), ...huddle(6, 13), g('zoomer', 10, 20, 0.35)] },
   // W8 · a Zoomer flood + Bunchlings
-  { groups: [g('zoomer', 39, 0, 0.3), g('bunchling', 18, 6, 0.7)] },
+  { groups: [g('zoomer', 24, 0, 0.3), g('bunchling', 6, 6, 0.7)] },
   // W9 · Elders ×3 with big huddles + Haulers [X]: each Elder shepherds two Haulers
   {
     groups: [
@@ -73,6 +77,7 @@ export const waves = defineWaves([
       ...convoy(CONVOY_GAP),
       ...convoy(2 * CONVOY_GAP),
       g('bunchling', 13, 2 * CONVOY_GAP + 8, 0.8),
+      g('hauler', TAIL, TAIL_DELAY, TAIL_GAP),
     ],
   },
 ]);

@@ -1189,3 +1189,9 @@ Real art went in behind T300a's ids. No data changed.
 - **Link callouts** lift clear of a −cost floater landing in the same sim tick.
 - **Bricks lowers his cannon only on the Quiet Wave**, a beat (1.5 s) after it starts, and holds it to the map's end; art-direction §6's "at-ease with nothing in reach" reading is dropped, since it would lower him as the boss leaves and flatten "Clear it, Sprout". Suppressing Fire cast on the Quiet Wave comes from off-map and never raises his cannon.
 - Follow-ups: T332.
+
+### D095 — 2026-11-09 — T331 the Shift board runs through Act I
+- **The board's size is derived from the registry:** the campaign plan up to its last registered map (5 today), so a map joins the board, and the unlock hints name it, the moment its folder is registered. "Coming soon" shows only for unregistered maps (Act II). Hints now read "Opens after Special Delivery" (Shop, loadout), "Opens after The Audit" (Engineering), "Opens after Record Quarter" (spare runners).
+- **With Act I won**, every row reads Cleared and the board focuses "Replay Record Quarter"; no Act II teaser row until the star map (M4).
+- **Engineering lists towers whose specs ship later** (Sprinkler, Skyhook, Zapcoil) as unbuyable "Arrives in a later shipment" rows after the buyable ones, as D064 and progression §7.1 say (the shelf had filtered them out).
+- A normal-flow smoke step now plays A1M2 from the board and sees A1M3 next (the gap that let this ship hidden: M3's smoke reached later maps only through `?map=` and dev saves).

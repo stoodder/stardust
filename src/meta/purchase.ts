@@ -364,7 +364,7 @@ function entryPrice(o: Offer, catalog: StoreCatalog): number {
 /**
  * One pane's offers, in a fixed display order: R&D Command's upgrades; the shop's Vrell licenses,
  * then global upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each
- * registered tower with specs. Within each group, by when the item is stocked (campaign order), then by entry
+ * registered tower with specs, then for each one whose specs ship later. Within each group, by when the item is stocked (campaign order), then by entry
  * price, then by name, so the order never depends on how a module namespace lists its exports.
  */
 export function shelf(
@@ -375,11 +375,16 @@ export function shelf(
 ): Offer[] {
   const groups: PurchaseItem[][] = [];
   if (pane === 'engineering') {
-    groups.push(
-      Object.entries(catalog.towers)
-        .filter(([, t]) => t.specs !== undefined)
-        .map(([id]) => ({ kind: 'specs', tower: id })),
-    );
+    // Towers with specs first; then the registered towers whose specs ship later (D064), listed
+    // so the shelf says so (refused `no_specs`).
+    const towers = Object.entries(catalog.towers);
+    for (const built of [true, false]) {
+      groups.push(
+        towers
+          .filter(([, t]) => (t.specs !== undefined) === built)
+          .map(([id]) => ({ kind: 'specs', tower: id })),
+      );
+    }
   } else {
     const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
     if (pane === 'shop') {

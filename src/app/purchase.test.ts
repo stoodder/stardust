@@ -43,6 +43,12 @@ describe('purchases in the save session', () => {
     expect(loadDevSave('after_a1m1')).toBe(true);
     expect(storeShelf('engineering')[0]?.refusal).toBe('pane_locked');
     expect(loadDevSave('all_unlocked')).toBe(true);
-    expect(storeShelf('engineering').map((o) => o.refusal)).toEqual(['maxed', 'maxed']);
+    expect(storeShelf('engineering').map((o) => o.refusal)).toEqual([
+      'maxed',
+      'maxed',
+      'no_specs',
+      'no_specs',
+      'no_specs',
+    ]);
   });
 });

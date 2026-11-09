@@ -107,6 +107,11 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
     'Unlocks tier 4: Rivet Storm or Railspike',
   );
   await expect(offerRow(page, 'Thumper specializations')).toContainText('Owned');
+  // Specs deferred to a later milestone (D064) are listed, in voice, and can't be ordered.
+  await expect(offerRow(page, 'Sprinkler specializations')).toContainText(
+    'Arrives in a later shipment',
+  );
+  await expect(offerRow(page, 'Sprinkler specializations').getByRole('button')).toHaveCount(0);
   await shot(page, 'shop', 7, 'engineering-all-unlocked');
 });
 

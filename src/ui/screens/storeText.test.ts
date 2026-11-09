@@ -57,11 +57,16 @@ describe('effect summaries', () => {
     expect(effectText(byId(rnd, 'orbital_strike_mk2'))).toBe('+0.5 Orbital Strike radius');
     expect(effectText(byId(rnd, 'protocol_slots'))).toBe('+1 Field Protocol slot');
     const eng = shelf(dev.build(), 'engineering', ['engineering']);
-    expect(eng.map(effectText)).toEqual([
+    expect(eng.slice(0, 3).map(effectText)).toEqual([
       'Unlocks tier 4: Rivet Storm or Railspike',
       'Unlocks tier 4: Cluster Thumper or Bunker Buster',
+      // A tower whose specs ship later (D064) has no pair to name yet.
+      'Unlocks both tier-4 specializations',
     ]);
-    expect(eng.map(offerName)).toEqual(['Rivet specializations', 'Thumper specializations']);
+    expect(eng.slice(0, 2).map(offerName)).toEqual([
+      'Rivet specializations',
+      'Thumper specializations',
+    ]);
   });
 });
 
