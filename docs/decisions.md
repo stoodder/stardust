@@ -387,3 +387,24 @@ The owner said "start M2 … continue through to the end" and is away, so the or
   - The `?test=1&save=` hook may set a dev-only `devUnlocks` override (never honoured from imports), because the shop, Engineering, and loadout unlock at A1M3/A1M4, which don't exist yet.
   - Medal ids are `victory` / `perfect_core` / `<challenge id>` until T202c.
 - **Gate flakiness:** under 4–5 concurrent agents, the ±0.2 s A1M1 robustness test can exceed Vitest's 5 s timeout, and overlapping builds swap asset hashes mid-smoke. The test gets a longer timeout; one gate run at a time.
+
+### D033 — 2026-11-09 — T205 procedural audio
+- **Engine:** a small WebAudio synth (`src/audio/`) with a voice limiter and a master limiter. All SFX recipes and music are data.
+- **SFX:** every gameplay event that matters has a sound:
+  - building, upgrades (pitch rises per tier), selling, rejections;
+  - Rivet shots (rate-limited);
+  - Thumper launch and impact, the Sprinkler pulse;
+  - per-type enemy pops (cosmetic RNG, never the sim's);
+  - the leak alarm and a low-integrity klaxon;
+  - wave start, the early call, countdown ticks in the last 3 s;
+  - Orbital Strike charge, beam, and boom;
+  - a radio blip per speaker.
+- **Music:** "Everglow Bright" is G–C–E, F–D–C plus its couplet, an 8-bar Act I loop at 140 BPM. Layers add in: base, then drums while a wave is on the field, then a lead in W6–W7 or at integrity ≤5. The title variant runs at 108 BPM. Cues are a wave-clear sting, a win, and a sad-trombone loss. Music ducks to 0.55 under the radio and the big SFX, and drops to half while paused.
+- **Levels are verified without listening:** every recipe and cue, plus a W7-at-2× worst case, is rendered offline through the real graph. Sound peaks run −28 to −4 dBFS, battle music RMS is −21 dB, and the worst-case storm peaks at −3.0 dB after the limiter with nothing clipped. The smoke test asserts these ranges.
+- **Controls:**
+  - M is a global mute key, and there's a speaker button on the HUD and the title.
+  - Settings persist in `stardust:settings`.
+  - The volume sliders land in T209's Settings screen.
+  - Audio is off under `?test=1` unless `&audio=1`.
+- **Limit:** the title theme starts on the first click or key press, because of the browser's autoplay policy.
+- **The owner should listen** when back; tuning by ear is the one check the automated pass can't do.

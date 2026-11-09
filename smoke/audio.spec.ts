@@ -92,9 +92,8 @@ test('audio: every sound renders at a sane level, and a W7 storm never clips', a
       ...ids.themes.map((id) => `theme:${id}`),
       'storm',
     ];
-    const out: Record<string, Awaited<ReturnType<typeof a.render>>> = {};
-    for (const n of names) out[n] = await a.render(n);
-    return out;
+    const renders = await Promise.all(names.map((n) => a.render(n)));
+    return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
   });
   const rows: string[] = [];
   for (const [name, r] of Object.entries(report)) {
