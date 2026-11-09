@@ -13,7 +13,8 @@
 // `dev_protect` (T305a) is dev_act2 as a Protect map, its south road the branch to the rigs.
 // `dev_witch` (T404) walks a short Glass Witch (her real phases, pulse, blink, and retreat) down
 // dev_act2's north road behind a few Glimmers, so her blink's tell and afterimage show
-// (smoke/witch.spec.ts) before A2M2 lands.
+// (smoke/witch.spec.ts) before A2M2 lands. `dev_revisit` (T410a) revisits `dev_terraces` (A1M2's
+// real layout) by reference, with a strip-mine band, grey soil, and the gold-to-dusk crossfade.
 import {
   defineAbility,
   defineEnemy,
@@ -37,6 +38,8 @@ import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
 import { weft_warden } from '../../content/enemies/weft_warden.ts';
 import { conductive } from '../../content/links/conductive.ts';
+import { lookout } from '../../content/towers/lookout.ts';
+import { map as a1m2 } from '../../content/maps/a1_m02/map.ts';
 import { rivet } from '../../content/towers/rivet.ts';
 import { skyhook } from '../../content/towers/skyhook.ts';
 import { sprinkler } from '../../content/towers/sprinkler.ts';
@@ -151,6 +154,20 @@ const devGlassWitch = defineEnemy({
   shield: { hp: 200, regenPerSec: 30, regenDelaySec: 4 },
 });
 
+// dev_cloak's (T430a): a Veilwalker-shaped cloaked Aelari (enemies.md § 5.2's numbers) in the
+// Glimmer's body, so the cloak's shimmer, its Revealed bracket, and the reveal edge show before a
+// cloaked unit ships (M5's Veilwalker, T501b).
+const devVeil = defineEnemy({
+  ...glimmer,
+  id: 'dev_veil',
+  name: 'Dev Veil',
+  hp: 90,
+  shield: { hp: 30, regenPerSec: 10, regenDelaySec: 3 },
+  speedTilesPerSec: 1,
+  traits: ['cloaked', 'shielded'],
+  tells: ['stealth', 'shielded'],
+});
+
 const devStrike = defineAbility({
   id: 'dev_strike',
   name: 'Dev Strike',
@@ -169,6 +186,8 @@ const DEV_ENTITIES = {
     skyhook,
     zapcoil,
     sprinkler,
+    // dev_cloak's detector (T430a).
+    lookout,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -189,6 +208,8 @@ const DEV_ENTITIES = {
     mote,
     // dev_witch's (T404).
     dev_glass_witch: devGlassWitch,
+    // dev_cloak's (T430a).
+    dev_veil: devVeil,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -863,6 +884,214 @@ const protectMap = dev.defineMap({
   },
 });
 
+// dev_terraces (T410a): A1M2's real layout (its terraces, road, pads, and markers, imported, so
+// an A1M2 edit flows here) with a few Nibblers, as the original that dev_revisit revisits.
+// `?map=dev_terraces`.
+const terracesMap = dev.defineMap({
+  id: 'dev_terraces',
+  act: a1m2.act,
+  env: a1m2.env,
+  objective: 'defend',
+  size: a1m2.size,
+  tiles: a1m2.tiles,
+  ...(a1m2.terraces === undefined ? {} : { terraces: a1m2.terraces }),
+  paths: a1m2.paths,
+  ...(a1m2.markers === undefined ? {} : { markers: a1m2.markers }),
+  startCredits: a1m2.startCredits,
+  stardust: 0,
+  threatIntel: [],
+  requiredCounters: [],
+  companion: a1m2.companion,
+  waves: dev.defineWaves([{ groups: [{ enemy: 'dev_nibbler', count: 6, route: 'road' }] }]),
+  referenceProfile: {
+    towers: ['rivet', 'sprinkler'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'sprinkler'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [8, 3] },
+      { wave: 1, build: 'sprinkler', tile: [7, 6] },
+    ],
+  },
+  noCounterBuilds: {},
+});
+
+// dev_revisit (T410a): dev_terraces revisited by reference (`revisitOf`), as A2M3 revisits A1M2
+// (act2.md § A2M3): its 14×10 layout centred at (2, 1) in 18×12, unchanged, with an added band
+// whose east side is a strip mine (four bench pads, cut to bare grey earth, an air lane over it),
+// grey soil streaked over the original's grass, and the light crossfading from `act2.gold` to
+// `act2.dusk` across its four waves (cosmetic). `?map=dev_revisit`; smoke/lighting.spec.ts.
+const revisitMap = dev.defineMap({
+  id: 'dev_revisit',
+  act: 2,
+  env: 'act2.gold',
+  objective: 'defend',
+  revisitOf: 'dev_terraces',
+  revisitAt: [2, 1],
+  size: { cols: 18, rows: 12 },
+  // prettier-ignore
+  tiles: [
+    '..................',
+    '..**************..',
+    '..**************o.',
+    '..**************..',
+    '..**************.o',
+    '..**************..',
+    '..**************o.',
+    '..**************..',
+    '..**************.o',
+    '..**************..',
+    '..**************..',
+    '..................',
+  ],
+  // The band steps down beside each terrace; the strip mine's far column is cut one step lower.
+  // prettier-ignore
+  terraces: [
+    '222222222222222222',
+    '22**************22',
+    '22**************22',
+    '22**************21',
+    '11**************10',
+    '11**************10',
+    '11**************10',
+    '00**************00',
+    '00**************00',
+    '00**************00',
+    '00**************00',
+    '000000000000000000',
+  ],
+  paths: [],
+  airLanes: [
+    {
+      id: 'mine',
+      points: [
+        [17, 0],
+        [17, 7],
+        [6, 10],
+      ],
+    },
+  ],
+  dressing: [
+    { kind: 'greySoil', area: 'original' },
+    { kind: 'mineScar', area: { from: [16, 0], to: [17, 11] } },
+  ],
+  lighting: [{ wave: 4, env: 'act2.dusk' }],
+  startCredits: 700,
+  stardust: 0,
+  threatIntel: ['flying'],
+  requiredCounters: ['air'],
+  companion: { id: 'bricks', state: 'present' },
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'dev_nibbler', count: 6, route: 'road' }] },
+    {
+      countdownSec: 10,
+      groups: [
+        { enemy: 'dev_nibbler', count: 6, route: 'road' },
+        { enemy: 'puffwing', count: 4, route: 'mine', delaySec: 2 },
+      ],
+    },
+    {
+      countdownSec: 10,
+      groups: [
+        { enemy: 'dev_nibbler', count: 8, route: 'road' },
+        { enemy: 'puffwing', count: 4, route: 'mine', delaySec: 2 },
+      ],
+    },
+    {
+      countdownSec: 10,
+      groups: [
+        { enemy: 'dev_nibbler', count: 8, route: 'road' },
+        { enemy: 'puffwing', count: 6, route: 'mine', delaySec: 2 },
+      ],
+    },
+  ]),
+  referenceProfile: {
+    towers: ['rivet', 'skyhook', 'sprinkler'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'skyhook', 'sprinkler'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [10, 4] },
+      { wave: 1, build: 'rivet', tile: [9, 7] },
+      { wave: 1, build: 'skyhook', tile: [16, 6] },
+      { wave: 1, build: 'skyhook', tile: [17, 8] },
+    ],
+  },
+  noCounterBuilds: {
+    air: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [10, 4] }] },
+  },
+});
+
+// dev_click (T409): dev_act2 with the Peeker's rock on the decor tile (9,6) between its two roads,
+// a clickable world object from W1's start (named for the cursor and screen readers), with W1's
+// clear as its fallback. Its `interacted` event cues a scene no story binds, so only the sim and
+// the render show it: the Peeker holding Pebble, the dashed gold outline, the pointer, the empty
+// rock after (smoke/clickable.spec.ts). Par clicks the rock (an `interact` step) and holds.
+const clickMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_click',
+  markers: { peeker: [9, 6] },
+  clickables: { peeker: { name: "The Peeker's rock" } },
+  events: [
+    {
+      id: 'pebble_on',
+      on: { wave: 1, phase: 'start' },
+      actions: [
+        { setClickable: { marker: 'peeker', on: true, fallback: { wave: 1, phase: 'cleared' } } },
+      ],
+    },
+    { id: 'pebble', on: { interacted: 'peeker' }, actions: [{ cue: 'dev_click_cue_pebble' }] },
+  ],
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'dev_nibbler', count: 6, route: 'a', intervalSec: 1.2 }] },
+    { countdownSec: 15, groups: [{ enemy: 'dev_nibbler', count: 6, route: 'b' }] },
+  ]),
+  ...act2Builds,
+  parBuild: {
+    loadout: ['rivet', 'sprinkler'],
+    steps: [...act2Builds.parBuild.steps, { wave: 1, interact: 'peeker' }],
+  },
+});
+
+// dev_cloak (T430a): dev_act2's north road walked by cloaked Dev Veils, a Lookout midway along it
+// and a Rivet past it, so a unit shimmers in, is Revealed (whole, in its target bracket) inside the
+// Lookout's radius, takes fire, and slips back under its cloak beyond it. `?map=dev_cloak`; no
+// cloaked unit ships in M4 (T501b's smoke flow uses the Veilwalker).
+const cloakMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_cloak',
+  threatIntel: ['cloaked', 'shielded'],
+  requiredCounters: ['detection'],
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'dev_veil', count: 4, route: 'a', intervalSec: 1.5 }] },
+  ]),
+  referenceProfile: {
+    towers: ['lookout', 'rivet'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['lookout', 'rivet'],
+    steps: [
+      { wave: 1, build: 'lookout', tile: [8, 4] },
+      { wave: 1, build: 'rivet', tile: [10, 3] },
+    ],
+  },
+  noCounterBuilds: {
+    detection: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [10, 3] }] },
+  },
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -876,6 +1105,10 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_hollow: hollowMap,
     dev_witch: witchMap,
     dev_protect: protectMap,
+    dev_click: clickMap,
+    dev_terraces: terracesMap,
+    dev_revisit: revisitMap,
+    dev_cloak: cloakMap,
   }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too

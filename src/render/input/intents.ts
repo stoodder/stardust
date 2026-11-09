@@ -1,7 +1,7 @@
 // Pointer input → intents → commands (architecture.md § Rendering, Input). Pure: the scene gathers
 // the facts about the tile under the pointer, and these functions decide what a click means and
 // what the hover should show. Nothing is hover-only, so touch can come later (one tap = click).
-import type { GridPos } from '../../content/types.ts';
+import type { GridPos, MarkerId } from '../../content/types.ts';
 import type { WreckageStatus } from '../../sim/index.ts';
 import type { AbilitySlot } from './BattleInteraction.ts';
 
@@ -24,6 +24,11 @@ export interface TileFacts {
   readonly peeker?: boolean;
   /** Where the tile stands with the salvage drone (sim `wreckageStatus`; 'none' off wreckage). */
   readonly wreckage?: WreckageStatus;
+  /**
+   * The clickable world object on this tile now (T409: a marker in sim `state.clickable`; A2M3's
+   * Peeker holding Pebble), or null: a click here interacts with it.
+   */
+  readonly clickable?: MarkerId | null;
 }
 
 /** What a click does. The scene applies the selection and issues the command. */
@@ -44,6 +49,11 @@ export type Intent =
   | { readonly kind: 'cancel' }
   /** A plain click on the Act I Peeker: a UI event, never a command (design/core-loop.md § 6.9). */
   | { readonly kind: 'poke' }
+  /**
+   * A click on a clickable world object (T409): the `interact` command. Armed or not (the tile is
+   * decor, so nothing could be built there anyway); only an aimed ability fires instead.
+   */
+  | { readonly kind: 'interact'; readonly marker: MarkerId }
   /** A plain click on wreckage: send the salvage drone (the `clear` command; maps.md § 3). */
   | { readonly kind: 'clear'; readonly tile: GridPos }
   /** A click on wreckage the drone is already queued for, or clearing: the HUD says so. */
@@ -65,8 +75,9 @@ function standingWreck(status: WreckageStatus | undefined): boolean {
  * for an ability that targets the path (`aimOnPath`: Suppressing Fire's segment), a click on a
  * ground-route tile fires it and a click on any other tile says it can't target there; a
  * tower selects it; an armed click on a free pad builds (the slot stays armed, so the next click
- * builds another), and an armed click on any other tile says it can't build there. A plain click
- * (nothing armed or aimed) on the Act I Peeker pokes it. A plain click on wreckage sends the
+ * builds another), and an armed click on any other tile says it can't build there. A click on a
+ * clickable world object (armed or not) interacts with it (T409). A plain click (nothing armed or
+ * aimed) on the Act I Peeker pokes it. A plain click on wreckage sends the
  * salvage drone there (or, if it's already queued or being cleared, says so); an armed click on
  * wreckage says how to send the drone instead. Anything else deselects.
  */
@@ -84,6 +95,8 @@ export function resolveClick(
     return { kind: 'ability', slot: aiming, tile: [tile.col, tile.row] };
   }
   if (tile.index < 0) return { kind: 'deselect' };
+  const clickable = tile.clickable ?? null;
+  if (clickable !== null) return { kind: 'interact', marker: clickable };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
   if (armed === null && tile.peeker === true) return { kind: 'poke' };
   if (armed !== null) {
@@ -101,6 +114,8 @@ export interface HoverLook {
   readonly highlight: 'hover' | 'invalid' | 'salvage' | null;
   /** Show the "SEND DRONE" label over the wreck: a plain click (or Enter) clears it (D097). */
   readonly salvage: boolean;
+  /** A clickable world object (T409): a click interacts with it, so the pointer is the hand. */
+  readonly clickable: boolean;
   /** Draw the armed tower's ghost and range ring here. */
   readonly ghost: boolean;
   /** The ghost's ring and highlight read as an invalid placement (red). */
@@ -121,6 +136,7 @@ const look: MutableHoverLook = {
   ringTowerUid: 0,
   aim: false,
   salvage: false,
+  clickable: false,
 };
 
 /**
@@ -128,8 +144,10 @@ const look: MutableHoverLook = {
  * (buildable, empty, unlocked, affordable); the sim re-validates the command either way. While
  * aiming an ability that targets the path (`aimOnPath`), a tile off the ground routes reads as
  * invalid and shows no preview. With nothing armed, a wreck the drone can still be sent to gets
- * the gold salvage highlight and its "SEND DRONE" label (`salvage`). The result is a shared scratch object, valid until the next call:
- * read it, don't keep it.
+ * the gold salvage highlight and its "SEND DRONE" label (`salvage`). A clickable world object
+ * (T409) shows no tile highlight (its outline is the highlight) and asks for the hand
+ * (`clickable`). The result is a shared scratch object, valid until the next call: read it, don't
+ * keep it.
  */
 export function hoverLook(
   tile: TileFacts,
@@ -143,8 +161,13 @@ export function hoverLook(
   look.ringTowerUid = 0;
   look.aim = false;
   look.salvage = false;
+  look.clickable = false;
   if (tile.index < 0) {
     look.highlight = null;
+  } else if (aiming === null && (tile.clickable ?? null) !== null) {
+    // Its own dashed gold outline is the highlight (ClickableView); no tile mask over it.
+    look.highlight = null;
+    look.clickable = true;
   } else if (aiming !== null) {
     const ok = !aimOnPath || tile.groundPath;
     look.highlight = ok ? 'hover' : 'invalid';

@@ -146,6 +146,11 @@ export class AllyView implements PooledView {
   }
 
   /** Whether it shows its weapon lowered (the smoke flows' view of it). */
+  /** Whether its @glow halo shows (the render-state hook's view of it; T216). */
+  get glowShown(): boolean {
+    return this.#glow.visible;
+  }
+
   get lowered(): boolean {
     return this.#isLowered && this.#lowered.length > 0;
   }

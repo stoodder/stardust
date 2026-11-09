@@ -1331,3 +1331,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Story `objectiveDone` condition** (`{ map, objective }`, from the save) gates the crew-log codex entry. **A cue scene plays at most once per battle** (the crew-log line fires on either log's clear or W6's countdown, whichever is first).
 - **The Shift board is capped at Act I** (`STAR_MAP_AFTER = 'a1_m05'`); A2M1 is reached by `?map=` until T301b's star map.
 - **Ruling: Hiccup Contained becomes "no Heavy Mote leaks"** (a hushed Mote never reaches the lift). As built it equalled Perfect Core, since every Skitterkin flees and leaks for 0; T460 implements it.
+
+### D114 — 2026-11-09 — T410a revisits by reference and the light
+- **A revisit is composed from its original before validation:** `revisitOf`/`revisitAt` place the original's tiles, terraces, routes, markers and wreckage unchanged; `*` marks the footprint, and new pads live only in the band, so A1M2's 11 pads stay A2M3's (act2.md wins over maps.md §7; cuts go through decor). An edit to A1M2 flows into A2M3.
+- **Lighting is map data, not a script action:** `lighting: [{ wave, env }]` eases the sky and a multiply shade toward each key's palette over 240 sim ticks from that wave's start (stepped under reduced motion). It is cosmetic: the sim never reads it. The battle sky is drawn only on maps with a schedule. `setLighting` waits for the finale's Dawn (M7); M5's Sundown extends the overlay with darkness and light sources.
+- **Dressing is data** (`greySoil`, `mineScar` over an area), render-only, never on pads, path or blocks.
+- **Process:** agents keep scratch files in their own scratchpad subfolder (one agent's logs and configs were overwritten by another's).

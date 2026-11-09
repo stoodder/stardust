@@ -5,16 +5,26 @@
 // has the rule). Render-only and cosmetic: its timing draws from its own random source, never the
 // sim's, and nothing here touches the sim. The poke itself (a click, or Enter on the keyboard
 // cursor) is a UI event that BattleInteraction hands to the scene and the app.
+//
+// Where the map makes the rock a clickable world object (A2M3, T409), the scene reads its hold
+// from the sim (peekerMotion.ts `peekerHold`): `holding` while the `peeker` marker is clickable
+// (Pebble stays up on the rock, looking about and blinking, never shy: she wants to be found;
+// ClickableView outlines her `outlineFrame`), and `empty` before and after (the bare rock:
+// `prop.rock` in the act's colours, until T440c draws the Peeker's own).
 import * as Phaser from 'phaser';
 import { peekerFrame, type PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { createRng, nextFloat } from '../../shared/rng.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { propVariant } from './groundTiles.ts';
-import { enemyNear, PeekerMotion, type PeekerPose } from './peekerMotion.ts';
+import { enemyNear, PeekerMotion, type PeekerHold, type PeekerPose } from './peekerMotion.ts';
+import type { ObjectFrame } from './ClickableView.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const SPRITE = 'prop.peeker';
+/** The empty rock after the rescue: decor's own rock, whose base row matches the Peeker's. */
+const EMPTY = { sprite: 'prop.rock', frame: 'v0' } as const;
+
 const pos: Vec2 = { x: 0, y: 0 };
 /** Props sort among themselves by a per-tile id (GroundView's `propTieBreak`). */
 const TIE_MASK = 0xff;
@@ -31,6 +41,15 @@ export class PeekerView {
   readonly #hidden: { readonly texture: string; readonly frame: string };
   readonly #peek: string;
   readonly #duck: string;
+  /** The holding pose's frame (peek_0): what the clickable outline hugs. */
+  readonly #held: { readonly texture: string; readonly frame: string };
+  readonly #heldAnchor: { readonly x: number; readonly y: number };
+  readonly #empty: { readonly texture: string; readonly frame: string };
+  readonly #emptyAnchor: { readonly x: number; readonly y: number };
+  readonly #anchor: { readonly x: number; readonly y: number };
+  readonly #px: number;
+  readonly #py: number;
+  #hold: PeekerHold = 'shy';
   readonly #cx: number;
   readonly #cy: number;
   /** The tile index of the rock (the cursor and the pointer test against it). */
@@ -58,7 +77,15 @@ export class PeekerView {
     this.#peek = sprites.anim(SPRITE, peekerFrame(cover, 'peek'), variant);
     this.#duck = sprites.anim(SPRITE, peekerFrame(cover, 'duck'), variant);
     const anchor = sprites.frameAnchor(SPRITE, hidden);
+    const held = peekerFrame(cover, 'peek_0');
+    this.#held = sprites.frame(SPRITE, held, variant);
+    this.#heldAnchor = sprites.frameAnchor(SPRITE, held);
+    this.#empty = sprites.frame(EMPTY.sprite, EMPTY.frame, propVariant(EMPTY.sprite, env));
+    this.#emptyAnchor = sprites.frameAnchor(EMPTY.sprite, EMPTY.frame);
+    this.#anchor = anchor;
     gridToScreen(col + 0.5, row + 0.5, origin, pos);
+    this.#px = pos.x;
+    this.#py = pos.y;
     this.tile = row * cols + col;
     this.#img = new Phaser.GameObjects.Sprite(
       scene,
@@ -81,11 +108,34 @@ export class PeekerView {
     return this.#motion.pose;
   }
 
+  /** Its story state (the smoke hooks' view of it). */
+  get hold(): PeekerHold {
+    return this.#hold;
+  }
+
+  /** The holding pose's frame and where its top-left sits (ClickableView's outline hugs it). */
+  outlineFrame(): ObjectFrame {
+    return {
+      texture: this.#held.texture,
+      frame: this.#held.frame,
+      left: this.#px - this.#heldAnchor.x,
+      top: this.#py - this.#heldAnchor.y,
+    };
+  }
+
   /**
-   * One frame: `realMs` of wall time, `playMs` of play (0 while paused), the enemy pool, and
-   * whether the pointer or the keyboard cursor is on the rock.
+   * One frame: `realMs` of wall time, `playMs` of play (0 while paused), the enemy pool, whether
+   * the pointer or the keyboard cursor is on the rock, and its story state (`peekerHold`).
    */
-  update(realMs: number, playMs: number, enemies: PeekerEnemies, hovered: boolean): void {
+  update(
+    realMs: number,
+    playMs: number,
+    enemies: PeekerEnemies,
+    hovered: boolean,
+    hold: PeekerHold = 'shy',
+  ): void {
+    if (hold !== this.#hold) this.#setHold(hold);
+    if (hold !== 'shy') return;
     const shy = hovered || enemyNear(enemies.items, enemies.used, this.#cx, this.#cy);
     this.#motion.update(realMs, playMs, shy);
     this.#show();
@@ -93,8 +143,35 @@ export class PeekerView {
 
   /** A poke (a click or Enter on its rock): it ducks. */
   poke(): void {
+    if (this.#hold !== 'shy') return;
     this.#motion.poke();
     this.#show();
+  }
+
+  /** Holding: she's up on the rock, looking about (the peek anim, looping); empty: the bare rock. */
+  #setHold(hold: PeekerHold): void {
+    this.#hold = hold;
+    const img = this.#img;
+    img.stop();
+    // The frame first, then its origin: a display origin is kept as a share of the frame's size,
+    // and the rock and the Peeker's frames differ in size.
+    if (hold === 'holding') {
+      img
+        .setTexture(this.#held.texture, this.#held.frame)
+        .setDisplayOrigin(this.#heldAnchor.x, this.#heldAnchor.y)
+        .play(this.#peek);
+    } else if (hold === 'empty') {
+      img
+        .setTexture(this.#empty.texture, this.#empty.frame)
+        .setDisplayOrigin(this.#emptyAnchor.x, this.#emptyAnchor.y);
+    } else {
+      // Shy (only ever the first hold): the rock and its motion.
+      img
+        .setTexture(this.#hidden.texture, this.#hidden.frame)
+        .setDisplayOrigin(this.#anchor.x, this.#anchor.y);
+      this.#shown = -1;
+      this.#show();
+    }
   }
 
   #show(): void {

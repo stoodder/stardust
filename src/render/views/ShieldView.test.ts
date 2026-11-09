@@ -41,8 +41,8 @@ describe('RippleGate (the shield ripple, T403)', () => {
 });
 
 describe('the pulse tell ring', () => {
-  it('blinks 100% ↔ 60% every 8 sim ticks, steady under reduced motion', () => {
-    expect([90, 88, 87, 80, 79, 72, 71].map((t) => tellAlpha(t, false))).toEqual([
+  it('steps 100% ↔ 60% every 10 sim ticks (3 Hz), steady under reduced motion', () => {
+    expect([99, 90, 89, 80, 79, 70, 69].map((t) => tellAlpha(t, false))).toEqual([
       0.6, 0.6, 1, 1, 0.6, 0.6, 1,
     ]);
     expect(tellAlpha(87, true)).toBe(1);

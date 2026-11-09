@@ -126,6 +126,7 @@ describe('aiming an ability', () => {
       ringTowerUid: 0,
       aim: true,
       salvage: false,
+      clickable: false,
     });
     expect(hoverLook(path, null, false, 1)).toMatchObject({ aim: true });
     expect(hoverLook(off, null, false, 1)).toMatchObject({ aim: false, highlight: null });

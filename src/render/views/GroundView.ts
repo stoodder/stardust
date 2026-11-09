@@ -1,11 +1,12 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
-// front: by i + j, then i; the power node's pulse is the one animated tile; the road's grass
-// verge and any terrace cliff face overlay their tile), and what stands on tiles depth-sorted in `world`: high-ground blocks
-// (raised one step, `highGround` bias) and props (core, fence, decor, and the map's decor
-// markers). Drawn once per map. The apron lies outside the grid, so picking never
-// reaches it.
+// front: by i + j, then i; the power node's pulse is the one animated tile; the map's grey-soil
+// dressing, the road's grass verge, and any terrace cliff face overlay their tile), and what stands
+// on tiles depth-sorted in `world`: high-ground blocks (raised one step, `highGround` bias) and
+// props (core, fence, decor, and the map's decor markers). Drawn once per map. The apron lies
+// outside the grid, so picking never reaches it.
 import * as Phaser from 'phaser';
 import { worldDepth } from '../depth.ts';
+import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
 import {
   apronCells,
@@ -50,6 +51,13 @@ export function drawCell(
     const tile = new Phaser.GameObjects.Sprite(scene, pos.x, pos.y, f.texture, f.frame);
     tile.setOrigin(0, 0).play(sprites.anim(look.ground.sprite, look.ground.anim, ev));
     layers.ground.add(tile);
+  }
+  if (look.soil !== undefined) {
+    // The map's dressing over its grass (A2M3's grey soil): one master-colored overlay frame.
+    const sf = sprites.frame('tile.grime', look.soil, DEFAULT_VARIANT);
+    layers.ground.add(
+      new Phaser.GameObjects.Image(scene, pos.x, pos.y, sf.texture, sf.frame).setOrigin(0, 0),
+    );
   }
   for (const frame of look.verge ?? []) {
     const vf = sprites.frame('tile.verge', frame, ev);

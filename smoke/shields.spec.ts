@@ -1,8 +1,9 @@
 // T403: Aelari shields on the dev Aelari range (`?map=dev_aelari`, render/__fixtures__/
 // devBattle.ts): Glimmers and a Dev Cantor on the road, Lightwings on the air lane. The pulse's
-// tell (a held, blinking ring under the Cantor) and its ring as it fires, a hit rippling a shield,
-// the break, and the shield bars. Screenshots in test-results/screens/shields/ (look at them: the
-// rings are the point).
+// tell (a blue pool and a held, stepping ring under the Cantor, which wears a blue rim) and its
+// ring as it fires, a hit rippling a shield and flashing its hex bubble, the break and its shards,
+// and the shield bars (T430a; asserted through `__sd.render()`). Screenshots in
+// test-results/screens/shields/ (look at them: the rings are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -84,9 +85,15 @@ test('shields: the pulse tell and ring, the ripple, and the break', async ({ pag
 
   expect(await until(page, 'rippled')).toBe(true);
   await page.waitForTimeout(120); // the ripple grows on real time
+  const rippled = await page.evaluate(() => globalThis.__sd!.render()!);
+  expect(rippled.shields.ripples).toBeGreaterThan(0);
+  expect(rippled.enemies.some((e) => e.bubble)).toBe(true);
   await shot(page, 'shields', 1, 'ripple');
 
   expect(await until(page, 'tell')).toBe(true);
+  const telling = await page.evaluate(() => globalThis.__sd!.render()!);
+  expect(telling.shields.tells).toBeGreaterThan(0);
+  expect(telling.enemies.some((e) => e.rim === 'pulse')).toBe(true);
   await shot(page, 'shields', 2, 'pulse-tell');
 
   expect(await until(page, 'fired')).toBe(true);
@@ -95,6 +102,7 @@ test('shields: the pulse tell and ring, the ripple, and the break', async ({ pag
 
   expect(await until(page, 'broken')).toBe(true);
   await page.waitForTimeout(120);
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.shields.breaks)).toBeGreaterThan(0);
   await shot(page, 'shields', 4, 'broken');
 
   await page.evaluate(() => globalThis.__sd!.fastForward(240));

@@ -1,7 +1,9 @@
 // T404: the Glass Witch's blink on the dev Witch range (`?map=dev_witch`, render/__fixtures__/
 // devBattle.ts): par's Zapcoils push a short Witch past 70%; her blink's tell (a violet ghost of her
-// where she'll land, over a ring, while she holds still), the afterimage she leaves, and her
-// retreat at 40%. Screenshots in test-results/screens/witch/ (look at them: the ghost is the point).
+// where she'll land, outlined in white over a ring, while she holds still, shimmers, and wears a
+// violet rim), the afterimage she leaves, and her retreat at 40% (T430a; asserted through
+// `__sd.render()`). Screenshots in test-results/screens/witch/ (look at them: the ghost is the
+// point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -74,10 +76,16 @@ test('the Witch: the blink tell, the afterimage, the retreat', async ({ page }) 
 
   expect(await until(page, 'tell')).toBe(true);
   await page.waitForTimeout(400); // the Zapcoils' arcs fade on real time; the tell holds (sim ticks)
+  const tell = await page.evaluate(() => globalThis.__sd!.render()!);
+  expect(tell.blinks.tells).toBe(1);
+  expect(tell.enemies.some((e) => e.rim === 'blink')).toBe(true);
   await shot(page, 'witch', 1, 'blink-tell');
 
   expect(await until(page, 'blinked')).toBe(true);
   await page.waitForTimeout(120); // the afterimage fades on real time
+  const after = await page.evaluate(() => globalThis.__sd!.render()!);
+  expect(after.blinks.afterimages).toBeGreaterThan(0);
+  expect(after.enemies.some((e) => e.rim === 'blink')).toBe(false);
   await shot(page, 'witch', 2, 'afterimage');
 
   expect(await until(page, 'retreat')).toBe(true);

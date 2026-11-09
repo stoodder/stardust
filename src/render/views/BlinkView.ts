@@ -1,14 +1,17 @@
-// Blink, the minimal readable view (T404; art-direction §8's `blink` tell: "shimmer during the
-// tell; afterimage outline at the destination", `violet.4`; enemies.md § 3). T430a polishes it.
-// - **The tell**, from sim state each frame (`blinkTelling`): the unit holds still while a
-//   `violet.4` silhouette of it (its walk frame, filled) stands where it will land
-//   (`blinkLanding`), over a `violet.4` ring on the ground, both stepping 85% ↔ 50% four times a
-//   second on sim ticks (held while paused; a steady 85% under reduced motion). It's where the
-//   player should aim: the unit will be there.
-// - **The blink** (`Blinked`): an afterimage (the same silhouette) stays where the unit stood and
-//   fades in steps over AFTERIMAGE_MS (blinkLook.ts), and a `white.1` flash ring pops where it lands.
-// A retreat or an interrupt simply ends the tell (it's drawn from state). The silhouettes draw in
-// `vfx`, above the units. Allocation-free per frame: fixed pools of images.
+// Blink (T404's view, T430a's polish; art-direction §8's `blink` tell: "shimmer during the tell;
+// afterimage outline at the destination", `violet.4`; enemies.md § 3).
+// - **The tell**, from sim state each frame (`blinkTelling`): the unit holds still, shimmering and
+//   rimmed in violet (EnemyView), while a ghost of it stands where it will land (`blinkLanding`):
+//   its walk frame filled `violet.4` inside a 1 px `white.1` outline (four shoved copies behind
+//   it), so it reads as a lit shape on gold grass and dusk alike, over a `violet.4` ring on the
+//   ground, all stepping 85% ↔ 50% on the sim's 3 Hz tell step (vfx/fxTiming.ts `tellHigh`; held
+//   while paused; a steady 85% under reduced motion). It's where the player should aim: the unit
+//   will be there.
+// - **The blink** (`Blinked`): an afterimage (the same outlined ghost) stays where the unit stood
+//   and fades in steps over AFTERIMAGE_MS (blinkLook.ts), and a `white.1` flash ring pops where it
+//   lands.
+// A retreat or an interrupt simply ends the tell (it's drawn from state). The ghosts draw in `vfx`,
+// above the units. Allocation-free per frame: fixed pools of images.
 import * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
@@ -22,7 +25,13 @@ import {
 } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { effectRingTexture } from '../vfx/overlayTextures.ts';
-import { AFTERIMAGE_ALPHA, afterimageAlpha, blinkTellAlpha, GHOST_TINT } from './blinkLook.ts';
+import {
+  AFTERIMAGE_ALPHA,
+  afterimageAlpha,
+  blinkTellAlpha,
+  GHOST_EDGE_TINT,
+  GHOST_TINT,
+} from './blinkLook.ts';
 import { enemyBody, facingOf, spriteId, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, type TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -45,8 +54,66 @@ const WALK_FRAME: Readonly<Record<Facing, string>> = {
   nw: 'walk_nw_0',
 };
 
+/** The ghost's outline: four copies shoved 1 px left, right, up, and down. */
+const EDGE_SHOVES: readonly (readonly [number, number])[] = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
+
+/** An outlined silhouette: the violet fill and its four white edge copies. */
+class Silhouette {
+  readonly fill: Phaser.GameObjects.Image;
+  readonly #edges: Phaser.GameObjects.Image[] = [];
+
+  constructor(ctx: ViewContext) {
+    for (const _ of EDGE_SHOVES) {
+      const img = ctx.scene.make.image({}, false).setVisible(false);
+      img.setTint(GHOST_EDGE_TINT).setTintMode(Phaser.TintModes.FILL);
+      ctx.layers.vfx.add(img);
+      this.#edges.push(img);
+    }
+    this.fill = ctx.scene.make.image({}, false).setVisible(false);
+    this.fill.setTint(GHOST_TINT).setTintMode(Phaser.TintModes.FILL);
+    ctx.layers.vfx.add(this.fill);
+  }
+
+  get visible(): boolean {
+    return this.fill.visible;
+  }
+
+  get alpha(): number {
+    return this.fill.alpha;
+  }
+
+  dress(texture: string, frame: string, ax: number, ay: number): void {
+    this.fill.setTexture(texture, frame).setDisplayOrigin(ax, ay);
+    for (const e of this.#edges) e.setTexture(texture, frame).setDisplayOrigin(ax, ay);
+  }
+
+  place(x: number, y: number): void {
+    this.fill.setPosition(x, y);
+    for (let i = 0; i < this.#edges.length; i++) {
+      const s = EDGE_SHOVES[i]!; // i < 4
+      this.#edges[i]!.setPosition(x + s[0], y + s[1]); // i < 4
+    }
+  }
+
+  show(alpha: number): void {
+    this.fill.setAlpha(alpha).setVisible(true);
+    for (const e of this.#edges) e.setAlpha(alpha).setVisible(true);
+  }
+
+  hide(): void {
+    if (!this.fill.visible) return;
+    this.fill.setVisible(false);
+    for (const e of this.#edges) e.setVisible(false);
+  }
+}
+
 interface Ghost {
-  readonly img: Phaser.GameObjects.Image;
+  readonly img: Silhouette;
   readonly ring: Phaser.GameObjects.Image;
   /** The unit and facing it shows (its texture is set only when they change). */
   uid: number;
@@ -54,7 +121,7 @@ interface Ghost {
 }
 
 interface Afterimage {
-  readonly img: Phaser.GameObjects.Image;
+  readonly img: Silhouette;
   ms: number;
   active: boolean;
 }
@@ -81,11 +148,10 @@ export class BlinkView {
       const ring = ctx.scene.make.image({}, false).setVisible(false);
       ring.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
       ctx.layers.decal.add(ring);
-      const img = silhouette(ctx);
-      this.#tells.push({ img, ring, uid: 0, facing: null });
+      this.#tells.push({ img: new Silhouette(ctx), ring, uid: 0, facing: null });
     }
     for (let i = 0; i < MAX_AFTERIMAGES; i++) {
-      this.#after.push({ img: silhouette(ctx), ms: 0, active: false });
+      this.#after.push({ img: new Silhouette(ctx), ms: 0, active: false });
     }
   }
 
@@ -102,7 +168,7 @@ export class BlinkView {
       this.#place(a.img, ev.x, ev.y, e);
       a.ms = 0;
       a.active = true;
-      a.img.setAlpha(AFTERIMAGE_ALPHA).setVisible(true);
+      a.img.show(AFTERIMAGE_ALPHA);
     });
   }
 
@@ -114,9 +180,9 @@ export class BlinkView {
       const alpha = afterimageAlpha(a.ms);
       if (alpha <= 0) {
         a.active = false;
-        a.img.setVisible(false);
+        a.img.hide();
       } else if (a.img.alpha !== alpha) {
-        a.img.setAlpha(alpha);
+        a.img.show(alpha);
       }
     }
     const reduced = this.#reducedMotion();
@@ -136,13 +202,13 @@ export class BlinkView {
       }
       const alpha = blinkTellAlpha(e.blinkTicks, reduced);
       this.#place(g.img, landing.x, landing.y, e);
-      g.img.setAlpha(alpha).setVisible(true);
+      g.img.show(alpha);
       gridToScreen(landing.x, landing.y, this.#ctx.origin, pos);
       g.ring.setPosition(Math.round(pos.x), Math.round(pos.y)).setAlpha(alpha).setVisible(true);
     }
     for (; n < MAX_TELLS; n++) {
       const g = this.#tells[n]!; // n < MAX_TELLS
-      if (g.img.visible) g.img.setVisible(false);
+      g.img.hide();
       if (g.ring.visible) g.ring.setVisible(false);
       g.uid = 0;
     }
@@ -157,42 +223,34 @@ export class BlinkView {
 
   reset(): void {
     for (const g of this.#tells) {
-      g.img.setVisible(false);
+      g.img.hide();
       g.ring.setVisible(false);
       g.uid = 0;
       g.facing = null;
     }
     for (const a of this.#after) {
       a.active = false;
-      a.img.setVisible(false);
+      a.img.hide();
     }
   }
 
   /** Gives `img` the unit's walk frame for `facing`, anchored like its body. */
-  #dress(img: Phaser.GameObjects.Image, e: DeepReadonly<Enemy>, facing: Facing): void {
+  #dress(img: Silhouette, e: DeepReadonly<Enemy>, facing: Facing): void {
     const def = e.def;
     if (def === null) return;
     const id = spriteId(enemyBody(def.sprites.body, e.tags));
     const name = WALK_FRAME[facing];
     const f = this.#ctx.sprites.frame(id, name);
     const a = this.#ctx.sprites.frameAnchor(id, name);
-    img.setTexture(f.texture, f.frame).setDisplayOrigin(a.x, a.y);
+    img.dress(f.texture, f.frame, a.x, a.y);
   }
 
   /** Puts `img` at grid (x, y), a flyer's 12 px up. */
-  #place(img: Phaser.GameObjects.Image, x: number, y: number, e: DeepReadonly<Enemy>): void {
+  #place(img: Silhouette, x: number, y: number, e: DeepReadonly<Enemy>): void {
     gridToScreen(x, y, this.#ctx.origin, pos);
     const lift = e.def?.layer === 'air' ? AIR_LIFT_PX : 0;
-    img.setPosition(Math.round(pos.x), Math.round(pos.y) - lift);
+    img.place(Math.round(pos.x), Math.round(pos.y) - lift);
   }
-}
-
-/** A hidden image filled `violet.4`, in `vfx`. */
-function silhouette(ctx: ViewContext): Phaser.GameObjects.Image {
-  const img = ctx.scene.make.image({}, false).setVisible(false);
-  img.setTint(GHOST_TINT).setTintMode(Phaser.TintModes.FILL);
-  ctx.layers.vfx.add(img);
-  return img;
 }
 
 /** The live unit `uid`, or null. */

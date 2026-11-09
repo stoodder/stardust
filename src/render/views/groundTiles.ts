@@ -6,7 +6,8 @@ import type { PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
 import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/cliff.ts';
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
-import type { GridPos, MarkerId, TileChar } from '../../content/types.ts';
+import { GRIME_VARIANTS } from '../../content/sprites/tiles/grime.ts';
+import type { DressingLayerDef, GridPos, MarkerId, TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 
@@ -27,6 +28,11 @@ export interface TileDressing {
    * edge a grass tile shares with the road (art-direction §3). Absent with none.
    */
   readonly verge?: readonly string[];
+  /**
+   * A `tile.grime` overlay frame drawn over the ground, under the verge: the map's dressing layers
+   * over a decor tile's grass (`soilFrame`; A2M3's grey soil). Absent with none.
+   */
+  readonly soil?: string;
   /**
    * `tile.cliff` overlay frames drawn over the ground (and verge), in order: a terrace step down
    * from each back neighbour that stands higher (`GroundGrid.terraces`; T223). Absent with none.
@@ -51,6 +57,11 @@ export interface GroundGrid {
   readonly markers?: Readonly<Record<MarkerId, GridPos>>;
   /** Render-only terrace levels, row-major like `tiles` (MapDef.terraces); absent or null: flat. */
   readonly terraces?: readonly number[] | null;
+  /** Render-only dressing layers (MapDef.dressing); absent or empty: none. */
+  readonly dressing?: readonly DressingLayerDef[];
+  /** A revisit's original footprint: where its (0, 0) sits, and its size (null: not a revisit). */
+  readonly revisitAt?: GridPos | null;
+  readonly revisitSize?: { readonly cols: number; readonly rows: number } | null;
 }
 
 /**
@@ -202,9 +213,50 @@ export function cliffFrames(g: GroundGrid, col: number, row: number): string[] {
 
 /** The dressing for tile (col, row). Deterministic: the same map always looks the same. */
 export function dressTile(g: GroundGrid, col: number, row: number): TileDressing {
-  const look = dressBase(g, col, row);
+  let look = dressBase(g, col, row);
+  const grass = look.ground.sprite === 'tile.grass' && look.block === undefined;
+  const soil = grass ? soilFrame(g, col, row) : null;
+  if (soil !== null) {
+    // Bare earth grows no flora: a scar keeps only its rocks (and any marker's prop).
+    const bare = soil.startsWith('scar') && look.prop?.sprite === 'prop.flora';
+    look = { ...look, soil, ...(bare ? { prop: null } : {}) };
+  }
   const cliff = cliffFrames(g, col, row);
   return cliff.length === 0 ? look : { ...look, cliff };
+}
+
+/** True when (col, row) is in a dressing layer's area (DressingLayerDef). */
+export function inDressingArea(
+  g: GroundGrid,
+  area: DressingLayerDef['area'],
+  col: number,
+  row: number,
+): boolean {
+  if (typeof area !== 'string') {
+    return col >= area.from[0] && col <= area.to[0] && row >= area.from[1] && row <= area.to[1];
+  }
+  if (area === 'all') return true;
+  const at = g.revisitAt;
+  const size = g.revisitSize;
+  if (at === undefined || at === null || size === undefined || size === null) return false;
+  const inside = col >= at[0] && row >= at[1] && col < at[0] + size.cols && row < at[1] + size.rows;
+  return area === 'original' ? inside : !inside;
+}
+
+/**
+ * The `tile.grime` frame the map's dressing lays over the grass at (col, row), or null: the last
+ * layer whose area holds it (`greySoil` → `soil_<k>`, `mineScar` → `scar_<k>`), its variant by tile.
+ * The caller draws it only over grass (decor tiles: never a pad, the path, or a block).
+ */
+export function soilFrame(g: GroundGrid, col: number, row: number): string | null {
+  const layers = g.dressing ?? [];
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const d = layers[i]!; // i < length
+    if (!inDressingArea(g, d.area, col, row)) continue;
+    const k = (col * 5 + row * 3) % GRIME_VARIANTS;
+    return d.kind === 'greySoil' ? `soil_${k}` : `scar_${k}`;
+  }
+  return null;
 }
 
 function dressBase(g: GroundGrid, col: number, row: number): TileDressing {

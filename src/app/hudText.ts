@@ -10,6 +10,7 @@ import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { assertNever, type DeepReadonly } from '../shared/types.ts';
 import type { InputRefusal } from '../render/input/BattleInteraction.ts';
+import { clickableAt, peekerTile } from '../render/input/tileFacts.ts';
 import {
   isBuildableTile,
   liveTileAt,
@@ -278,7 +279,9 @@ const TILE_NAMES: Readonly<Record<TileChar, string>> = {
 /**
  * What the keyboard tile cursor on tile `index` announces (T126; the HUD's aria-live region):
  * the tile (columns and rows counted from 1), what stands on it, and what Enter does there.
- * `aimingLabel` is the aimed ability's name, or null. Null while the cursor is hidden.
+ * `aimingLabel` is the aimed ability's name, or null. Null while the cursor is hidden. A clickable
+ * world object reads as its map's name for it (`clickables`, T409); the Act I Peeker's rock as a
+ * rock (T322).
  */
 export function cursorText(
   sim: Sim<IdSpace>,
@@ -300,6 +303,14 @@ export function cursorText(
       : `${TILE_NAMES[tile]}, ${where}${isBuildableTile(tile) ? ', empty' : ''}`;
   if (aimingLabel !== null) return `${what}. Enter fires ${aimingLabel} here.`;
   if (tower !== null && tower.alive) return `${what}. Enter selects it.`;
+  const clickable = clickableAt(sim, index);
+  if (clickable !== null) {
+    const name = Object.hasOwn(map.clickables, clickable) ? map.clickables[clickable]?.name : null;
+    return `${name ?? 'Something'}, ${where}. Enter reaches for it.`;
+  }
+  if (index === peekerTile(map)) {
+    return armed === null ? `A rock, ${where}. Enter pokes it.` : `A rock, ${where}.`;
+  }
   if (tile === 'x' && armed === null) {
     const status = wreckageStatus(map, sim.state.wreckage, col, (index - col) / map.cols);
     return status === 'wreckage'
@@ -349,9 +360,9 @@ export function rejectText(reason: RejectReason): string | null {
     // The Quiet Wave can't be called early (D097): the HUD hides Call, so only W reaches this.
     case 'quietWave':
       return 'This one comes in its own time';
-    // Clickable world objects (T409 may reword it).
+    // Clickable world objects (T409): only a click that races the fallback, or a stale one.
     case 'notClickable':
-      return "Can't reach that from here";
+      return 'Out of reach now';
     case 'mapEnded':
     case 'notInLoadout':
     case 'noSuchTower':

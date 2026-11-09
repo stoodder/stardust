@@ -79,7 +79,8 @@ test('peeker: keyboard only, the tile cursor reaches the rock and Enter pokes it
     // oxlint-disable-next-line no-await-in-loop -- one key press at a time, in order
     await page.keyboard.press('ArrowUp');
   }
-  await expect(say).toHaveText(/^Ground, column 4, row 2\.$/);
+  // T322: it reads as the rock it is, and says what Enter does.
+  await expect(say).toHaveText(/^A rock, column 4, row 2\. Enter pokes it\.$/);
   await page.keyboard.press('Enter');
   await expect.poll(() => poked(page)).toBe(true);
   await shot(page, 'peeker', 4, 'keyboard-poke');

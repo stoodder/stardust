@@ -9,8 +9,10 @@ import {
   DECOR_MARKERS,
   dressTile,
   envVariant,
+  inDressingArea,
   peekerCover,
   propVariant,
+  soilFrame,
   tilesBehind,
 } from './groundTiles.ts';
 
@@ -282,5 +284,57 @@ describe('tilesBehind (the core fades over them; D028)', () => {
   it('stops at the grid edge', () => {
     expect(tilesBehind(a1, 1, 9, 33)).toEqual([at(0, 8)]);
     expect(tilesBehind(a1, 0, 9, 33)).toEqual([]);
+  });
+});
+
+describe("dressing layers (T410a: the revisit's grey soil)", () => {
+  // A 6×4 revisit of a 2×2 original at (2, 1): footprint cols 2–3, rows 1–2.
+  const base = grid(['......', '..o...', '......', '...o..']);
+  const revisit = { ...base, revisitAt: [2, 1] as const, revisitSize: { cols: 2, rows: 2 } };
+
+  it('tells the original footprint from the band, the whole map, and a corner-to-corner area', () => {
+    expect(inDressingArea(revisit, 'original', 2, 1)).toBe(true);
+    expect(inDressingArea(revisit, 'original', 3, 2)).toBe(true);
+    expect(inDressingArea(revisit, 'original', 4, 2)).toBe(false);
+    expect(inDressingArea(revisit, 'band', 4, 2)).toBe(true);
+    expect(inDressingArea(revisit, 'band', 2, 1)).toBe(false);
+    expect(inDressingArea(revisit, 'all', 0, 0)).toBe(true);
+    const east = { from: [4, 0], to: [5, 3] } as const;
+    expect(inDressingArea(revisit, east, 5, 3)).toBe(true);
+    expect(inDressingArea(revisit, east, 3, 3)).toBe(false);
+    // Not a revisit: its original and band are nowhere.
+    expect(inDressingArea(base, 'original', 2, 1)).toBe(false);
+    expect(inDressingArea(base, 'band', 0, 0)).toBe(false);
+  });
+
+  it('greys the grass by the last layer over it, never a pad, and keeps no flora on a scar', () => {
+    const g = {
+      ...revisit,
+      dressing: [
+        { kind: 'greySoil', area: 'all' },
+        { kind: 'mineScar', area: { from: [4, 0], to: [5, 3] } },
+      ] as const,
+    };
+    expect(soilFrame(g, 0, 0)).toMatch(/^soil_[0-2]$/);
+    expect(soilFrame(g, 5, 0)).toMatch(/^scar_[0-2]$/);
+    expect(soilFrame(revisit, 0, 0)).toBeNull();
+    expect(dressTile(g, 0, 0).soil).toMatch(/^soil_/);
+    // A pad keeps its plate clear.
+    expect(dressTile(g, 2, 1).soil).toBeUndefined();
+    // (0, 0) carries sparse flora; cut to a scar, it's bare.
+    expect(dressTile(revisit, 0, 0).prop?.sprite).toBe('prop.flora');
+    const scarred = { ...revisit, dressing: [{ kind: 'mineScar', area: 'all' }] as const };
+    expect(dressTile(scarred, 0, 0)).toMatchObject({
+      soil: expect.stringMatching(/^scar_/),
+      prop: null,
+    });
+    for (let col = 4; col < 6; col++) {
+      for (let row = 0; row < 4; row++) {
+        const look = dressTile(g, col, row);
+        if (look.ground.sprite !== 'tile.grass') continue;
+        expect(look.soil, `${col},${row}`).toMatch(/^scar_/);
+        expect(look.prop?.sprite, `${col},${row}`).not.toBe('prop.flora');
+      }
+    }
   });
 });

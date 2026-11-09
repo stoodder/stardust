@@ -9,6 +9,7 @@ import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { cursorStart, cursorStep, type CursorDir } from '../render/input/cursor.ts';
 import { resolveClick } from '../render/input/intents.ts';
 import {
+  clickableAt,
   emptyTileFacts,
   fillTileFacts,
   isGroundPathTile,
@@ -284,8 +285,9 @@ export function cancel(): void {
  * The tiles the keyboard cursor lands on: while an ability is aimed, every tile (a strike lands
  * on paths), or only the ground-route tiles for one that targets the path (Suppressing Fire);
  * else the buildable tiles (pads, high ground, power nodes, so every tower too) and wreckage (Enter
- * sends the salvage drone), and with nothing armed the Act I Peeker's rock too (Enter pokes it, as
- * a click does; D040).
+ * sends the salvage drone), a clickable world object while it's clickable (Enter interacts, as a
+ * click does; T409), and with nothing armed the Act I Peeker's rock too (Enter pokes it, as a
+ * click does; D040).
  */
 function cursorTargets(t: CommandTarget): (index: number) => boolean {
   const { sim } = t.host;
@@ -297,9 +299,11 @@ function cursorTargets(t: CommandTarget): (index: number) => boolean {
   }
   const peeker = t.interaction.armed === null ? peekerTile(sim.map) : -1;
   // Wreckage too: Enter sends the salvage drone there, as a click does (T312a).
+  const clickable = sim.state.clickable.length > 0;
   return (i) => {
     const tile = tiles[i];
-    return i === peeker || tile === 'x' || (tile !== undefined && isBuildableTile(tile));
+    if (i === peeker || tile === 'x' || (tile !== undefined && isBuildableTile(tile))) return true;
+    return clickable && clickableAt(sim, i) !== null;
   };
 }
 
@@ -354,8 +358,8 @@ const cursorFacts = emptyTileFacts();
 
 /**
  * Enter on the playfield (T126): acts on the cursor's tile as a click would (fires an aimed
- * ability there, selects a tower, builds the armed tower on a free pad, pokes the Peeker). No-op
- * while it's hidden.
+ * ability there, selects a tower, builds the armed tower on a free pad, interacts with a clickable
+ * world object, pokes the Peeker). No-op while it's hidden.
  */
 export function pressCursor(): void {
   if (target === null) return;

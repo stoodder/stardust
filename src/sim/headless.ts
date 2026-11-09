@@ -29,6 +29,11 @@
 //   listed cost is in the bank (otherwise it's issued, and the sim's rejection is the step error).
 //   `clear` sends the salvage drone (`clear` command): it completes once queued, and a later
 //   `build` on that wreckage tile waits until the drone has cleared it.
+// - `interact` (T409) arms a click on a clickable world object and holds nothing behind it: the
+//   `interact` command is issued before the first tick its marker is clickable (so a click on a
+//   marker the script has already turned on goes at once), and that's the step's issued tick. If
+//   the marker is interacted with before the click (its fallback fired), the step records
+//   `notClickable` at that tick; if the map ends first, the step was never issued.
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
@@ -64,6 +69,7 @@ const SUPPORTED_STEPS: ReadonlySet<CompiledBuildStep['kind']> = new Set([
   'holdFireWhile',
   'ability',
   'callWave',
+  'interact',
 ]);
 
 /** What happened to one step of the build. */
@@ -131,6 +137,8 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const watchers: { tag: WaveTag; through: number[]; holding: boolean; rec: StepRecord }[] = [];
   /** Armed holdFireWhile: 'neutral' macros (Gerald's): holding now, and the step's record. */
   const neutralWatchers: { holding: boolean; rec: StepRecord }[] = [];
+  /** Armed `interact` steps: the marker to click, and the step's record (T409). */
+  const clicks: { marker: string; rec: StepRecord }[] = [];
   /** The build phase (countdownWave) already called early, so each is called once. */
   let calledPhase = 0;
 
@@ -285,8 +293,11 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         return finish(apply({ type: 'callWave' }), false);
       }
       case 'interact':
+        // Armed: clicked by `click` once its marker is clickable; later steps don't wait for it.
+        clicks.push({ marker: s.marker, rec });
+        return 'done';
       case 'scriptInput':
-        // assertRunnableBuild refused these up front.
+        // assertRunnableBuild refused it up front.
         throw new RangeError(`unsupported step kind '${s.kind}'`);
       default:
         return assertNever(s);
@@ -317,6 +328,24 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const toggle = (rec: StepRecord, on: boolean): void => {
     const error = apply({ type: 'holdFire', target: 'all', on });
     if (rec.error === null) rec.error = error;
+  };
+
+  /** Issues each armed click whose marker is clickable now, or records the one its fallback beat. */
+  const click = (): void => {
+    for (let i = 0; i < clicks.length; i++) {
+      const c = clicks[i]!; // i < length
+      if (state.clickable.includes(c.marker)) {
+        c.rec.issuedTick = state.tick;
+        c.rec.error = apply({ type: 'interact', marker: c.marker });
+      } else if (state.interacted.includes(c.marker)) {
+        c.rec.issuedTick = state.tick;
+        c.rec.error = 'notClickable';
+      } else {
+        continue;
+      }
+      clicks.splice(i, 1);
+      i--;
+    }
   };
 
   /** Runs the armed holdFireWhile macros. */
@@ -353,6 +382,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       const held = [...watchers, ...neutralWatchers].find((w) => w.holding);
       watchers.length = 0;
       neutralWatchers.length = 0;
+      clicks.length = 0;
       if (held !== undefined && state.outcome === 'playing') toggle(held.rec, false);
     },
     beforeTick() {
@@ -364,6 +394,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         if (tryStep(s, steps[next]!) === 'wait') break; // same index as build.steps
         next++;
       }
+      if (clicks.length > 0) click();
       const phase = state.schedule.phase;
       if (phase === 'setup' || (build.callEarly && phase === 'countdown')) {
         if (calledPhase === state.schedule.countdownWave) return;

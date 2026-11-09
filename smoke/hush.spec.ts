@@ -1,7 +1,8 @@
 // T402: the hush rule's minimal look on the dev Hollow range (`?map=dev_hollow`, render/
 // __fixtures__/devBattle.ts): fleeing Nibblers run 2.5 s ahead of Motes on both roads, and nothing
-// is built. The hush tell (a pale ring on the held runner, which shakes and panics), the vanish
-// (a small acid ring), and the Heavy unit's tint walking on. Screenshots in
+// is built. The hush tell (a pale ring closing on the held runner, which shakes and panics, and
+// the Mote's acid rim as it reaches), the vanish (a small acid ring), and the Heavy unit's tint
+// and swollen pale rim walking on (T430a; asserted through `__sd.render()`). Screenshots in
 // test-results/screens/hush/ (look at them: the ring and the tint are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -49,6 +50,9 @@ test('hush: the tell on the runner, then a Heavy Mote walking on', async ({ page
   });
 
   expect(await until(page, 'tell')).toBe(true);
+  const tell = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
+  expect(tell.some((e) => e.hushRing)).toBe(true);
+  expect(tell.some((e) => e.rim === 'hush')).toBe(true);
   await shot(page, 'hush', 1, 'tell');
 
   expect(await until(page, 'heavy')).toBe(true);
@@ -69,4 +73,7 @@ test('hush: the tell on the runner, then a Heavy Mote walking on', async ({ page
   });
   expect(st.heavy).toBeGreaterThan(0);
   expect(st.outcome).toBe('playing');
+  const drawn = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
+  expect(drawn.filter((e) => e.rim === 'heavy').length).toBe(st.heavy);
+  expect(drawn.some((e) => e.hushRing)).toBe(false);
 });

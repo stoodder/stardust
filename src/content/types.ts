@@ -718,14 +718,27 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
     readonly ability: K['ability'];
     readonly when: ConditionDef<K>;
   }[];
-  /** A MapId (validate() checks it): a MapDef can't name its own registry's ids. */
-  readonly revisitOf?: string;
   /**
-   * A revisit (A2M3 of A1M2; design/maps.md § 7): where the original's tile (0, 0) sits on this
-   * map's grid. The original's layout is composed by reference at compile (T410a); this map's own
-   * `tiles` hold the added band. createSim refuses `revisitOf` until T410a (`map.revisit`).
+   * A revisit (A2M3 of A1M2; design/maps.md § 7): the MapId whose layout this map reuses by
+   * reference (validate() checks it: a MapDef can't name its own registry's ids). The original's
+   * tiles, terraces, routes, markers, and wreckage are placed at `revisitAt`, unchanged, when the
+   * content compiles (content/compileRevisit.ts), so an edit to the original flows into its
+   * revisit. This map's own `tiles` hold the added band, with '*' (`REVISIT_TILE`) on every tile
+   * of the original's footprint (and in its `terraces`, if given); its own routes, markers, and
+   * wreckage are added to the original's. The rest (waves, scripts, medals, builds) is its own.
    */
+  readonly revisitOf?: string;
+  /** Where the original's tile (0, 0) sits on this map's grid: the original centred. */
   readonly revisitAt?: GridPos;
+  /**
+   * The lighting schedule (art-direction.md § 7, the lighting overlay's tint path): keyframes the
+   * light reaches as each named wave starts, crossfading the sky and the shade from the map's
+   * `env` (the light before wave 1) through each key in turn. Cosmetic: the sim never reads it
+   * (A2M3's gold-to-dusk, D101). M5's Sundown extends a key with darkness.
+   */
+  readonly lighting?: readonly LightingKeyDef[];
+  /** Render-only dressing layers laid over the ground (A2M3's grey soil; design/maps.md § 7). */
+  readonly dressing?: readonly DressingLayerDef[];
   /**
    * Protect the asset (design/maps.md § 5.2; A2M2's extraction rigs; D101): the second meter.
    * Required on a `protect` map and only there. createSim refuses it until T305a (`map.protect`).
@@ -745,7 +758,26 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * route allies, ally groups for `spawnAllies`, and health timelines are M3.
    */
   readonly allies?: readonly AllyPostDef[];
-  // Not yet: song (finale), dressing and presentation (M3).
+  // Not yet: song (finale); flag-conditioned dressing (maps.md § 7, with its maps).
+}
+
+/** One key of a map's lighting schedule (MapLayoutDef.lighting). */
+export interface LightingKeyDef {
+  /** The light is `env`'s as this wave starts (1-based), crossfading from the key before. */
+  readonly wave: number;
+  readonly env: EnvPaletteId;
+}
+
+/**
+ * A render-only dressing layer over the map's grass (decor tiles: never a pad, path, or block):
+ * `greySoil` streaks the grass grey (the mining scars spreading over a revisited map), `mineScar`
+ * cuts it to bare grey earth (a strip mine). Its `area`: the revisit's original footprint or its
+ * added band (both need `revisitOf`), the whole map, or the tiles from one corner to the other
+ * (inclusive). Where layers overlap, the later one shows.
+ */
+export interface DressingLayerDef {
+  readonly kind: 'greySoil' | 'mineScar';
+  readonly area: 'original' | 'band' | 'all' | { readonly from: GridPos; readonly to: GridPos };
 }
 
 /**

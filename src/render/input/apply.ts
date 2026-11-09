@@ -62,6 +62,11 @@ export function applyIntent(
       interaction.selectTower(0);
       interaction.refuse('clearFirst');
       return;
+    case 'interact':
+      // A clickable world object (T409): the sim interacts (it re-validates); the slot stays armed.
+      interaction.selectTower(0);
+      sink.issue({ type: 'interact', marker: intent.marker });
+      return;
     case 'poke':
       // A click off a tower deselects, as anywhere else; the poke itself is a UI event.
       interaction.selectTower(0);

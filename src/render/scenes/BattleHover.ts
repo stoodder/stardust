@@ -171,7 +171,7 @@ export class BattleHover {
       tile.row,
       look.salvage ? (this.#salvageLabels.get(tile.index) ?? null) : null,
     );
-    this.#setHand(look.salvage && interaction.cursor < 0);
+    this.#setHand((look.salvage || look.clickable) && interaction.cursor < 0);
     // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
     const ringTower =
       look.ringTowerUid !== 0 ? findLiveTower(sim.state.towers, look.ringTowerUid) : selectedTower;
@@ -188,7 +188,10 @@ export class BattleHover {
     this.#setHand(false);
   }
 
-  /** The pointer hand over a clickable wreck (art-direction: clickable world objects), else the default. */
+  /**
+   * The pointer hand over a clickable wreck or a clickable world object (art-direction §6:
+   * clickable world objects; T409), else the default.
+   */
   #setHand(on: boolean): void {
     if (on === this.#handCursor || this.#scene === null) return;
     this.#handCursor = on;

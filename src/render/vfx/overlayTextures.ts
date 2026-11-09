@@ -12,6 +12,7 @@ import {
   tileTintImage,
 } from './overlayPixels.ts';
 import { healthStripImage, type HealthStrip } from './healthBar.ts';
+import { hexBubbleImage, solidImage, targetBracketImage } from './markPixels.ts';
 import { textImage } from './pixelFont.ts';
 
 /** Tile highlight styles: hover, the selected tower's tile, and an invalid placement. */
@@ -168,4 +169,29 @@ export function reticleRingAnim(scene: Phaser.Scene, radiusTiles: number): RingT
     scene.anims.create({ key, frames, frameRate: RETICLE_FPS, repeat: -1 });
   }
   return { key, ox: center?.cx ?? 0, oy: center?.cy ?? 0 };
+}
+
+/** A body-sized shield bubble (markPixels.ts), registered once per body size. */
+export function bubbleTexture(scene: Phaser.Scene, bodyW: number, bodyH: number): string {
+  const key = `fx.bubble.${bodyW}x${bodyH}`;
+  if (!scene.textures.exists(key)) {
+    scene.textures.addCanvas(key, imageToCanvas(hexBubbleImage(bodyW, bodyH)));
+  }
+  return key;
+}
+
+/** A body-sized Revealed target bracket (markPixels.ts), registered once per body size. */
+export function bracketTexture(scene: Phaser.Scene, bodyW: number, bodyH: number): string {
+  const key = `fx.bracket.${bodyW}x${bodyH}`;
+  if (!scene.textures.exists(key)) {
+    scene.textures.addCanvas(key, imageToCanvas(targetBracketImage(bodyW, bodyH)));
+  }
+  return key;
+}
+
+/** A white debris pixel (1 or 2 px square), tinted per particle, registered once. */
+export function debrisTexture(scene: Phaser.Scene, size: 1 | 2): string {
+  const key = `fx.debris.${size}`;
+  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, imageToCanvas(solidImage(size)));
+  return key;
 }

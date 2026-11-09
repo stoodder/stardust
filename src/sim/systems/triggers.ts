@@ -3,10 +3,14 @@
 // `cleared`, and `afterTicks` into a wave), `tick`, the boss triggers (`bossHpPct`: a live boss,
 // of that id if named, at or below that share of its HP; `bossPhase`: a live boss in that phase
 // or a later one), and `wreckageCleared` (the drone cleared the wreckage under that marker; T400a:
-// A2M1's crew logs), guarded by an optional `when` condition (sim/conditions.ts), with the
-// actions `unlockTowerClass` (what `towerUnlockWave` compiles to), `cue`, `grantCredits`, and
-// `bossEnd` (`driveOff` or `retreat`: every live boss starts its ending now, whatever its HP;
-// enemyAbilities/bossPhases.ts). createSim refuses a map that uses anything else
+// A2M1's crew logs), and `interacted` (T409: a clickable world object was interacted with, by
+// click or by fallback; sim/clickables.ts), guarded by an optional `when` condition
+// (sim/conditions.ts), with the actions `unlockTowerClass` (what `towerUnlockWave` compiles to),
+// `cue`, `grantCredits`, `bossEnd` (`driveOff` or `retreat`: every live boss starts its ending now,
+// whatever its HP; enemyAbilities/bossPhases.ts), and `setClickable` (T409). Before the events,
+// each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
+// (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
+// uses anything else
 // (unsupportedScript below, which names the task that lifts each part: SCRIPT_GATES), so a run never
 // silently skips part of its script.
 //
@@ -22,6 +26,7 @@ import type {
   CompiledScriptTrigger,
 } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
+import { interact, setClickable } from '../clickables.ts';
 import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
@@ -29,6 +34,7 @@ import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
 export function triggers(state: SimState, ctx: TickContext): void {
+  clickFallbacks(state, ctx);
   const events = ctx.map.events;
   const fired = state.scriptFired;
   for (let i = 0; i < events.length; i++) {
@@ -38,6 +44,21 @@ export function triggers(state: SimState, ctx: TickContext): void {
     fired[i] = true;
     if (ev.when !== null && !evaluateCondition(ev.when, state, ctx)) continue;
     for (let a = 0; a < ev.actions.length; a++) runScriptAction(state, ev.actions[a]!); // a < length
+  }
+}
+
+/**
+ * Each clickable marker whose fallback trigger is reached is interacted with (`byFallback`), in
+ * the order the markers turned clickable. A fallback set by an action this pass is checked from
+ * the next tick.
+ */
+function clickFallbacks(state: SimState, ctx: TickContext): void {
+  const fallbacks = state.clickFallback;
+  for (let i = 0; i < fallbacks.length; i++) {
+    const on = fallbacks[i]!; // i < length
+    if (on === null || !reached(state, ctx, on)) continue;
+    interact(state, state.clickable[i]!, true); // index-aligned with clickFallback
+    i--; // interact removed entry i
   }
 }
 
@@ -56,6 +77,7 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   if ('bossHpPct' in on) return bossReached(state, on.boss ?? null, on.bossHpPct, 0);
   if ('bossPhase' in on) return bossReached(state, null, 2, on.bossPhase);
   if ('wreckageCleared' in on) return wreckageClearedAt(state, ctx.map, on.wreckageCleared);
+  if ('interacted' in on) return state.interacted.includes(on.interacted);
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -91,6 +113,9 @@ export function runScriptAction(state: SimState, action: CompiledScriptAction<Id
       const e = pool.items[i]!; // i < used ≤ items.length
       if (e.alive && e.def !== null && e.def.boss !== null) startBossEnding(state, e, how);
     }
+  } else if ('setClickable' in action) {
+    const { marker, on, fallback } = action.setClickable;
+    setClickable(state, marker, on, fallback);
   }
   // Anything else is refused by createSim (unsupportedScript).
 }
@@ -102,14 +127,14 @@ export function runScriptAction(state: SimState, action: CompiledScriptAction<Id
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   // Triggers.
-  interacted: 'T409',
   objectiveCompleted: 'M5',
   refugeesRemaining: 'T305c (M5)',
   restProgressPct: 'M7',
   forcedInputResolved: 'M6',
   // Actions.
-  setClickable: 'T409',
-  setLighting: 'T410a',
+  // A lighting change at a script moment (the finale's Dawn); wave-paced light is map data
+  // (`MapDef.lighting`, T410a).
+  setLighting: 'M7',
   checkpoint: 'T305b',
   setObjective: 'T305c (M5)',
   standDown: 'T305c (M5)',
@@ -132,17 +157,7 @@ function notYet(key: string): string {
 export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   const out: string[] = [];
   for (const ev of map.events) {
-    const on = ev.on;
-    if (
-      !('tick' in on) &&
-      !('wave' in on) &&
-      !('bossHpPct' in on) &&
-      !('bossPhase' in on) &&
-      !('wreckageCleared' in on)
-    ) {
-      const key = Object.keys(on).join('/');
-      out.push(`event '${ev.id}': trigger ${key} ${notYet(key)}`);
-    }
+    unsupportedTrigger(ev.on, `event '${ev.id}': trigger`, out);
     for (const a of ev.actions) unsupportedAction(a, `event '${ev.id}'`, out);
   }
   for (const o of map.objectives) {
@@ -151,8 +166,30 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   return out;
 }
 
+function unsupportedTrigger(
+  on: CompiledScriptTrigger<IdSpace>,
+  where: string,
+  out: string[],
+): void {
+  if (
+    !('tick' in on) &&
+    !('wave' in on) &&
+    !('bossHpPct' in on) &&
+    !('bossPhase' in on) &&
+    !('wreckageCleared' in on) &&
+    !('interacted' in on)
+  ) {
+    const key = Object.keys(on).join('/');
+    out.push(`${where} ${key} ${notYet(key)}`);
+  }
+}
+
 function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out: string[]): void {
-  if ('bossEnd' in a && a.bossEnd === 'pivot') {
+  if ('setClickable' in a) {
+    // Its fallback is a trigger like an event's (T409).
+    const fallback = a.setClickable.fallback;
+    if (fallback !== null) unsupportedTrigger(fallback, `${where}: setClickable fallback`, out);
+  } else if ('bossEnd' in a && a.bossEnd === 'pivot') {
     out.push(`${where}: action bossEnd 'pivot' ${notYet('bossEnd.pivot')}`);
   } else if (
     !('unlockTowerClass' in a) &&

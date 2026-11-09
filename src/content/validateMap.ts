@@ -42,7 +42,13 @@
 //   scripts name exist; cue ids follow `<map_id>_wNN` or `<map_id>_<slot>`; `grantCredits` is a
 //   whole number ≥ 1.
 // - [flag-variants]: every flag an event or ability lock reads has a `flagVariants` entry.
-// - [revisit]: `revisitOf` names another map; `revisitAt` goes with it.
+// - [revisit]: `revisitOf` names another map; `revisitAt` goes with it. The layout rules (the
+//   original centred, its footprint unchanged, new pads only in the band, no route, marker, or
+//   wreckage collisions) are compileRevisit.ts's, which composes a revisit before validation.
+// - [lighting]: the lighting schedule's keys name the map's waves in rising order, and it leaves
+//   the map's env at some point.
+// - [dressing]: dressing over a revisit's `original` or `band` needs a revisit; a corner-to-corner
+//   area lies on the map; no layer twice.
 // - [clickable]: each `clickables` entry is a marker with a name; `setClickable` and the
 //   `interacted` trigger name one ([script] also checks `wreckageCleared` markers sit on
 //   wreckage and `objectiveDone` names another objective of the map).
@@ -52,10 +58,8 @@
 // (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
-//
-// TODO stubs (their content can't exist yet): the revisit layout rules (A3M6, M5).
 import { MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
-import type { EnemyDef, IdSpace, MapDef, RawContent } from './types.ts';
+import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
 import {
@@ -200,8 +204,10 @@ function validateMap(
   if ((def.revisitAt !== undefined) !== (def.revisitOf !== undefined)) {
     issues.add('revisit', `${where}.revisitAt`, 'goes with `revisitOf` (and only with it)');
   }
-  // TODO(A3M6, M5): revisit layout rules — the original's pads unchanged, new pads only in the
-  // added band, the original layout centred.
+  // The revisit layout rules (centred, the footprint unchanged, new pads only in the band, no
+  // collisions) are compileRevisit.ts's, run as it composes the revisit.
+  validateLighting(issues, def, where);
+  validateDressing(issues, def, where);
 
   // Before validateNovelty adds this map's counters to the history.
   const introducesCounter =
@@ -213,6 +219,58 @@ function validateMap(
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null, introducesCounter);
+}
+
+/**
+ * [lighting]: the schedule's keys name waves of the map, in rising order (the light before wave
+ * 1 is the map's `env`), each changing the light.
+ */
+function validateLighting(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  const keys = def.lighting;
+  if (keys === undefined) return;
+  if (keys.length === 0) issues.add('lighting', `${where}.lighting`, 'has no keys (omit it)');
+  let prev = { wave: 0, env: def.env };
+  for (const [i, k] of keys.entries()) {
+    const w = `${where}.lighting[${i}]`;
+    if (!Number.isInteger(k.wave) || k.wave < 1 || k.wave > def.waves.length) {
+      issues.add('lighting', w, `wave ${k.wave} is not a wave of this map`);
+    } else if (k.wave <= prev.wave) {
+      issues.add('lighting', w, `wave ${k.wave} is not after the key before (${prev.wave})`);
+    }
+    prev = k;
+  }
+  if (keys.length > 0 && keys.every((k) => k.env === def.env)) {
+    issues.add('lighting', `${where}.lighting`, `never leaves the map's env '${def.env}'`);
+  }
+}
+
+/**
+ * [dressing]: a revisit's areas (`original`, `band`) need a revisit; a corner-to-corner area lies
+ * on the map, `from` above and left of `to`; no layer twice.
+ */
+function validateDressing(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  const seen = new Set<string>();
+  const { cols, rows } = def.size;
+  const on = ([c, r]: GridPos): boolean =>
+    Number.isInteger(c) && Number.isInteger(r) && c >= 0 && r >= 0 && c < cols && r < rows;
+  for (const [i, d] of (def.dressing ?? []).entries()) {
+    const w = `${where}.dressing[${i}]`;
+    const a = d.area;
+    if (typeof a !== 'string') {
+      if (!on(a.from) || !on(a.to) || a.from[0] > a.to[0] || a.from[1] > a.to[1]) {
+        issues.add(
+          'dressing',
+          `${w}.area`,
+          'runs from a tile to one below and right of it, on the map',
+        );
+      }
+    } else if (a !== 'all' && def.revisitOf === undefined) {
+      issues.add('dressing', w, `area '${a}' needs a revisit (revisitOf)`);
+    }
+    const key = `${d.kind}:${JSON.stringify(a)}`;
+    if (seen.has(key)) issues.add('dressing', w, `${d.kind} over the same area twice`);
+    seen.add(key);
+  }
 }
 
 /** Tiles a route walks: a marker never sits on one. */

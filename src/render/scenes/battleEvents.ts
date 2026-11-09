@@ -9,7 +9,10 @@
 // plinking off it while it's invulnerable, its ending fading the bar, and props on cues landing
 // with their wave's countdown; T328's health bars scaled to each unit's def (none on a boss or a
 // neutral unit); and T329's: a link formed by this frame's build floats its callout clear of the
-// new tower's `−cost`. Render-only: it reads sim state.
+// new tower's `−cost`; and T430a's: deaths in the act's tone (deathLook.ts: Act I's comic pop, Act
+// II's quiet pop and lingering stardust fleck, the Aelari's shatter, the Hollow's unravelling
+// violet motes), the hush's vanish (its tell is EnemyView's, on sim ticks), and Cloudburst's
+// pulse ring at the flyers' height as well as on the ground. Render-only: it reads sim state.
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -21,6 +24,7 @@ import type { BossBarView } from '../views/BossBarView.ts';
 import type { CuePropView } from '../views/CuePropView.ts';
 import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
+import { deathStyle } from '../views/deathLook.ts';
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
 import {
@@ -42,6 +46,7 @@ import { barMaxHp } from '../vfx/healthBar.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
 import {
   BUILD_PUFF_MS,
+  PULSE_MS,
   BUILD_PUFF_TILES,
   LEAK_RING_MS,
   LEAK_RING_TILES,
@@ -74,13 +79,15 @@ const BOSS_SPARK_LIFT_PX = 18;
 const SPEC_RING_TILES = 1.25;
 const SPEC_RING_MS = 500;
 /**
- * The hush rule (T402, the minimal look until T430a): a pale Hollow ring holds on the runner for
- * the 0.5 s tell; when it lands, the runner vanishes in a small acid ring (never a pop).
+ * The hush rule (T402): when the hush lands, the runner vanishes in a small acid ring (never a
+ * pop). Its tell (the closing ring, the Hollow unit's reach) is EnemyView's, on sim ticks.
  */
-const HUSH_TELL_RING_TILES = 0.45;
-const HUSH_TELL_RING_MS = 500;
 const HUSH_RING_TILES = 0.6;
 const HUSH_RING_MS = 300;
+/** Cloudburst's ring at the flyers' height (its ground ring is the Sprinkler's `blue.4`). */
+const AIR_PULSE_COLOR = 'white.1';
+/** Where a death's shards and motes start: the body's middle, above its ground point (px). */
+const DEATH_BODY_PX = 6;
 
 /** A standing tower as render reads it. */
 export type LiveTower = DeepReadonly<Tower>;
@@ -231,6 +238,14 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     }
     return false;
   };
+  /** Whether tower `uid`'s attack (its spec's at tier 4, else its tier's) reaches flyers. */
+  const pulseHitsAir = (uid: number): boolean => {
+    const t = findLiveTower(sim.state.towers, uid);
+    const def = t?.def ?? null;
+    if (t === null || def === null) return false;
+    const spec = t.spec === null || def.specs === null ? null : def.specs[t.spec];
+    return (spec ?? def.tiers[t.tier - 1])?.targets.air ?? false;
+  };
   /** How far up tower `uid` stands (px; 0 if it's gone). */
   const towerLift = (uid: number): number => {
     const t = findLiveTower(sim.state.towers, uid);
@@ -333,10 +348,18 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (unit !== null && unit.dist > BROOD_MIN_DIST_TILES) v.popIn();
     }),
     bus.on('EnemyDied', (e) => {
-      // Act I's comic pop: the unit's own `death` anim (T311c); a sprite without one bursts.
-      const popped = views.enemies.get(e.uid)?.die() === true;
+      // The death tone by act and faction (deathLook.ts): Act I's comic pop is the unit's own
+      // `death` anim (T311c), Act II's the same pop without the confetti and a fleck left lying;
+      // the Aelari shatter and the Hollow unravel; a sprite with no death anim bursts.
+      const def = Object.hasOwn(content.enemies, e.enemy) ? content.enemies[e.enemy] : undefined;
+      const style = def === undefined ? 'comic' : deathStyle(map.act, def.faction);
+      const lift = DEATH_BODY_PX + (def?.layer === 'air' ? AIR_LIFT_PX : 0);
+      const popped = views.enemies.get(e.uid)?.die(style) === true;
       views.enemies.release(e.uid);
-      if (!popped) fx.burst(e.x, e.y);
+      if (style === 'shatter') fx.shatter(e.x, e.y, lift);
+      else if (style === 'unravel') fx.unravel(e.x, e.y, lift);
+      else if (!popped) fx.burst(e.x, e.y, 0, style !== 'comic' && style !== 'burst');
+      if (style === 'quiet') fx.fleck(e.x, e.y);
       // A splitter's pop (its children spawn here this tick and pop in).
       const split = Object.hasOwn(content.enemies, e.enemy)
         ? content.enemies[e.enemy]?.split
@@ -357,9 +380,6 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         fx.ring(boss.x, boss.y, PHASE_FLASH_RING_TILES, 'white.1', PHASE_FLASH_RING_MS, true);
       }
       fx.leakShake();
-    }),
-    bus.on('HushStarted', (e) => {
-      fx.ring(e.x, e.y, HUSH_TELL_RING_TILES, 'hollow.4', HUSH_TELL_RING_MS, false);
     }),
     bus.on('Hushed', (e) => {
       views.enemies.release(e.victim);
@@ -410,6 +430,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         fx.tracer(e.x, e.y, e.targetX, e.targetY, isFlyer(e.targetUid));
       } else if (e.kind === 'pulse') {
         if (e.radiusTiles > 0) fx.pulse(e.x, e.y, e.radiusTiles);
+        // A pulse that reaches flyers (Cloudburst, D112) rings at their height too, in cloud
+        // white, so the burst reads where the flyers are as well as on the road.
+        if (e.radiusTiles > 0 && pulseHitsAir(e.towerUid)) {
+          fx.ring(e.x, e.y, e.radiusTiles, AIR_PULSE_COLOR, PULSE_MS, true, AIR_LIFT_PX);
+        }
       } else if (e.sprite !== null) {
         // The event carries the shot's look and reach, so a tower sold mid-flight still shows
         // its shell and splash.

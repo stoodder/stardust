@@ -568,6 +568,8 @@ export function bindHud(
     }),
     host.bus.on('TowerSold', syncTowers),
     host.bus.on('TowerSpecialized', syncCursor),
+    // A clickable world object on the cursor's tile turned on or off (T409): say what it is now.
+    host.bus.on('ClickableChanged', syncCursor),
     host.bus.on('CommandRejected', (e) => {
       const text = rejectText(e.reason);
       if (text !== null) showNotice(text);

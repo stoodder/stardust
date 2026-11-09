@@ -2,7 +2,7 @@
 // shared by the pointer (BattleScene) and the keyboard cursor (app/commands.ts), so a click and
 // Enter on the same tile mean the same thing.
 import type { CompiledMapDef } from '../../content/compiled.ts';
-import type { IdSpace } from '../../content/types.ts';
+import type { IdSpace, MarkerId } from '../../content/types.ts';
 import { isBuildableTile, liveTileAt, wreckageStatus, type Sim } from '../../sim/index.ts';
 import type { TileFacts } from './intents.ts';
 
@@ -19,6 +19,7 @@ export function emptyTileFacts(): MutableTileFacts {
     groundPath: false,
     peeker: false,
     wreckage: 'none',
+    clickable: null,
   };
 }
 
@@ -32,6 +33,21 @@ export function peekerTile(map: CompiledMapDef<IdSpace>): number {
   if (at === undefined) return -1;
   const [c, r] = at;
   return c >= 0 && r >= 0 && c < map.cols && r < map.rows ? r * map.cols + c : -1;
+}
+
+/**
+ * The clickable world object on tile `index` now (T409): a marker in the sim's `state.clickable`
+ * that sits there, or null. Clickable markers are few (A2M3 has one), so this walks them.
+ */
+export function clickableAt(sim: Sim<IdSpace>, index: number): MarkerId | null {
+  const map = sim.map;
+  const clickable = sim.state.clickable;
+  for (let i = 0; i < clickable.length; i++) {
+    const m = clickable[i]!; // i < length
+    const at = Object.hasOwn(map.markers, m) ? map.markers[m] : undefined;
+    if (at !== undefined && at[1] * map.cols + at[0] === index) return m;
+  }
+  return null;
 }
 
 /** Each map's ground-route tiles (1 where a path or rift lane runs), computed once per map. */
@@ -70,6 +86,7 @@ export function fillTileFacts(
     out.groundPath = false;
     out.peeker = false;
     out.wreckage = 'none';
+    out.clickable = null;
     return out;
   }
   out.index = index;
@@ -82,6 +99,7 @@ export function fillTileFacts(
   out.groundPath = isGroundPathTile(map, index);
   out.peeker = index === peekerTile(map);
   out.wreckage = wreckageStatus(map, sim.state.wreckage, out.col, out.row);
+  out.clickable = clickableAt(sim, index);
   return out;
 }
 

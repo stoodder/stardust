@@ -12,6 +12,7 @@ import type {
   HookCommand,
   HookState,
   PerfSample,
+  RenderState,
   ResultsFixture,
   ScreenId,
   Speed,
@@ -29,6 +30,8 @@ export interface HookBattle {
   readonly host: Host<IdSpace>;
   /** Game-pixel position of a tile's center. */
   tileCenter(col: number, row: number, out: { x: number; y: number }): void;
+  /** The battle's scene: what it draws now (`render`; absent in hook unit tests). */
+  readonly scene?: { renderState(): RenderState };
 }
 
 /** What the hooks need from the rest of the app. */
@@ -74,6 +77,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
       const b = env.battle();
       return b === null ? null : stateOf(b.host.sim);
     },
+    render: () => env.battle()?.scene?.renderState() ?? null,
     enqueue: (cmd) => {
       env.issue(cmd);
     },
@@ -119,8 +123,8 @@ export function createTestHooks(env: HookEnv): TestHooks {
         enemies: s?.enemies.live ?? 0,
         towers: s?.towers.live ?? 0,
         projectiles: s?.projectiles.live ?? 0,
-        // No particles until the VFX tasks add them.
-        particles: 0,
+        // Debris pixels in flight (T430a: shards, motes, flecks).
+        particles: b?.scene?.renderState().debris ?? 0,
       };
     },
   };

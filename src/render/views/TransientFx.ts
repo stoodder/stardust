@@ -10,9 +10,13 @@
 //   the small fx.bomblet_burst.
 // - Ground decals (a strike's flash and scorch), floating numbers and callouts in the 3×5 pixel
 //   font, and the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
+// - Debris (T430a): pooled 1 and 2 px palette pixels with a velocity, gravity, and a stepped fade
+//   (art-direction § Particles: at most 0.8 s each, far under the 512 cap): an Aelari unit's
+//   shatter and a broken shield's shards, the Hollow's unravelling violet motes, and the stardust
+//   fleck an Act II Skitterkin leaves (deathLook.ts). Cosmetic RNG of its own, never the sim's.
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
-import type { ColorName } from '../../content/palettes/master.ts';
+import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   BOMBLET_BURST_MS,
@@ -28,7 +32,12 @@ import {
   shakeOffset,
   TRACER_MS,
 } from '../vfx/fxTiming.ts';
-import { effectRingTexture, floatTextTexture, PULSE_COLOR } from '../vfx/overlayTextures.ts';
+import {
+  debrisTexture,
+  effectRingTexture,
+  floatTextTexture,
+  PULSE_COLOR,
+} from '../vfx/overlayTextures.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
@@ -37,6 +46,7 @@ const MAX_PULSES = 32;
 const MAX_DECALS = 8;
 const MAX_FLOATS = 16;
 const MAX_BURSTS = 40;
+const MAX_DEBRIS = 128;
 
 /** Suppressing Fire's streaks are 3 px thick and twice a Rivet's length (D059): heavy fire. */
 const SUPPRESS_STREAK_SCALE = { x: 2, y: 3 } as const;
@@ -98,6 +108,46 @@ interface Burst {
   sprite: Phaser.GameObjects.Sprite;
 }
 
+/** A debris pixel: a shard, a mote, or a fleck, moving in screen px. */
+interface Debris {
+  active: boolean;
+  ms: number;
+  lifeMs: number;
+  /** Screen position and velocity (px, px/ms), and gravity (px/ms²). */
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  g: number;
+  /** Its pixel's size (the texture it shows). */
+  size: 1 | 2;
+  img: Phaser.GameObjects.Image;
+}
+
+/** Shard and mote colours (art-direction §4): the Aelari's jewel tones, the unsung's cold violet. */
+const SHATTER_COLORS: readonly ColorName[] = ['blue.4', 'teal.4', 'white.1', 'pink.4', 'blue.3'];
+const SHIELD_SHARD_COLORS: readonly ColorName[] = ['blue.4', 'white.1', 'blue.3'];
+const UNSUNG_COLORS: readonly ColorName[] = ['violet.3', 'violet.4', 'white.1'];
+/** How each debris kind moves and lasts. */
+const SHATTER = {
+  count: 12,
+  speed: [0.035, 0.07],
+  lift: 0.06,
+  g: 0.00028,
+  ms: 560,
+  sizes: [2, 2, 1],
+} as const;
+const SHIELD_SHARDS = {
+  count: 7,
+  speed: [0.04, 0.065],
+  lift: 0.03,
+  g: 0.00025,
+  ms: 380,
+  sizes: [2, 1, 1],
+} as const;
+const UNRAVEL = { count: 8, rise: [0.012, 0.024], drift: 0.012, ms: 780 } as const;
+const FLECK_MS = 1400;
+
 /** The two burst looks: the shell's explosion and a bomblet's pop, with how long each plays. */
 const BURST_LOOKS = {
   big: { id: 'fx.explosion', ms: BURST_MS },
@@ -126,6 +176,10 @@ export class TransientFx {
   readonly #decals: Decal[] = [];
   readonly #floats: Float[] = [];
   readonly #bursts: Burst[] = [];
+  readonly #debris: Debris[] = [];
+  #nextDebris = 0;
+  /** The debris's cosmetic RNG state (xorshift32): its own, so the sim's never moves. */
+  #rng = 0x9e3779b9;
   #nextTracer = 0;
   #nextPulse = 0;
   #nextBurst = 0;
@@ -184,6 +238,141 @@ export class TransientFx {
       layers.vfx.add(sprite);
       this.#bursts.push({ active: false, ms: 0, small: false, sprite });
     }
+    const px1 = debrisTexture(scene, 1);
+    for (let i = 0; i < MAX_DEBRIS; i++) {
+      const img = scene.make.image({}, false).setTexture(px1).setOrigin(0, 0).setVisible(false);
+      layers.vfx.add(img);
+      this.#debris.push({
+        active: false,
+        ms: 0,
+        lifeMs: 0,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        g: 0,
+        size: 1,
+        img,
+      });
+    }
+  }
+
+  /** Debris pixels in flight (the render-state hook's count). */
+  get debrisLive(): number {
+    let n = 0;
+    for (const d of this.#debris) if (d.active) n++;
+    return n;
+  }
+
+  /**
+   * An Aelari unit shatters at grid (x, y), `liftPx` up (its body): jewel-toned shards fly out and
+   * fall, with a small white flash (deathLook.ts `shatter`; the chime is audio's).
+   */
+  shatter(x: number, y: number, liftPx: number): void {
+    gridToScreen(x, y, this.ctx.origin, pos);
+    this.#spray(pos.x, pos.y - liftPx, SHATTER, SHATTER_COLORS, 0);
+    this.ring(x, y, 0.5, 'white.1', 200, true, liftPx);
+  }
+
+  /** A broken shield's shards from its bubble round the body at grid (x, y), `liftPx` up. */
+  shieldShards(x: number, y: number, liftPx: number): void {
+    gridToScreen(x, y, this.ctx.origin, pos);
+    this.#spray(pos.x, pos.y - liftPx, SHIELD_SHARDS, SHIELD_SHARD_COLORS, 6);
+  }
+
+  /** A Hollow unit unravels at grid (x, y): cold-violet motes drift up and away from its body. */
+  unravel(x: number, y: number, liftPx: number): void {
+    gridToScreen(x, y, this.ctx.origin, pos);
+    const sx = pos.x;
+    const sy = pos.y - liftPx;
+    for (let i = 0; i < UNRAVEL.count; i++) {
+      const color = UNSUNG_COLORS[i % UNSUNG_COLORS.length]!; // index < length
+      const rise = UNRAVEL.rise[0] + this.#rand() * (UNRAVEL.rise[1] - UNRAVEL.rise[0]);
+      const drift = (this.#rand() * 2 - 1) * UNRAVEL.drift;
+      const ox = Math.round((this.#rand() * 2 - 1) * 5);
+      const oy = -Math.round(this.#rand() * 9);
+      this.#spawn(sx + ox, sy + oy, drift, -rise, 0, UNRAVEL.ms, i % 3 === 0 ? 2 : 1, color);
+    }
+  }
+
+  /** The small stardust fleck an Act II Skitterkin leaves where it fell, lingering on the ground. */
+  fleck(x: number, y: number): void {
+    gridToScreen(x, y, this.ctx.origin, pos);
+    this.#spawn(pos.x, pos.y - 1, 0, 0, 0, FLECK_MS, 1, 'gold.4');
+    this.#spawn(pos.x + 1, pos.y - 1, 0, 0, 0, FLECK_MS, 1, 'pink.3');
+  }
+
+  /** `kind.count` pixels flung out from (sx, sy) at random angles, starting `startPx` out. */
+  #spray(
+    sx: number,
+    sy: number,
+    kind: {
+      readonly count: number;
+      readonly speed: readonly [number, number];
+      readonly lift: number;
+      readonly g: number;
+      readonly ms: number;
+      readonly sizes: readonly (1 | 2)[];
+    },
+    colors: readonly ColorName[],
+    startPx: number,
+  ): void {
+    for (let i = 0; i < kind.count; i++) {
+      const a = ((i + this.#rand() * 0.8) / kind.count) * Math.PI * 2;
+      const speed = kind.speed[0] + this.#rand() * (kind.speed[1] - kind.speed[0]);
+      const cx = Math.cos(a);
+      // Squashed 2:1, like the ground the iso camera sees.
+      const cy = Math.sin(a) * 0.5;
+      const color = colors[i % colors.length]!; // index < length
+      this.#spawn(
+        sx + cx * startPx,
+        sy + cy * startPx,
+        cx * speed,
+        cy * speed - kind.lift,
+        kind.g,
+        kind.ms,
+        kind.sizes[i % kind.sizes.length] ?? 1,
+        color,
+      );
+    }
+  }
+
+  #spawn(
+    x: number,
+    y: number,
+    vx: number,
+    vy: number,
+    g: number,
+    lifeMs: number,
+    size: 1 | 2,
+    color: ColorName,
+  ): void {
+    const d = this.#debris[this.#nextDebris]!; // index < MAX_DEBRIS
+    this.#nextDebris = (this.#nextDebris + 1) % MAX_DEBRIS;
+    if (d.size !== size || !d.active) {
+      d.img.setTexture(debrisTexture(this.ctx.scene, size));
+      d.size = size;
+    }
+    d.x = x;
+    d.y = y;
+    d.vx = vx;
+    d.vy = vy;
+    d.g = g;
+    d.ms = 0;
+    d.lifeMs = lifeMs;
+    d.active = true;
+    d.img.setTint(tintOf(color)).setAlpha(1).setVisible(true);
+    d.img.setPosition(Math.round(x), Math.round(y));
+  }
+
+  /** The next cosmetic random number in [0, 1). */
+  #rand(): number {
+    let r = this.#rng;
+    r ^= r << 13;
+    r ^= r >>> 17;
+    r ^= r << 5;
+    this.#rng = r >>> 0;
+    return this.#rng / 4294967296;
   }
 
   /** A hitscan shot from a tower at grid (x0, y0) to a target at grid (x1, y1). */
@@ -363,6 +552,19 @@ export class TransientFx {
         b.sprite.stop().setVisible(false);
       }
     }
+    for (const d of this.#debris) {
+      if (!d.active) continue;
+      d.ms += dt;
+      if (d.ms >= d.lifeMs) {
+        d.active = false;
+        d.img.setVisible(false);
+        continue;
+      }
+      d.vy += d.g * dt;
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      d.img.setPosition(Math.round(d.x), Math.round(d.y)).setAlpha(fadeAlpha(d.ms / d.lifeMs));
+    }
   }
 
   /** Starts the strike's 2 px camera shake (skipped under reduced motion). */
@@ -393,6 +595,10 @@ export class TransientFx {
     for (const b of this.#bursts) {
       b.active = false;
       b.sprite.stop().setVisible(false);
+    }
+    for (const d of this.#debris) {
+      d.active = false;
+      d.img.setVisible(false);
     }
     this.gfx.clear();
     this.#shakeMs = -1;
@@ -454,4 +660,10 @@ export class TransientFx {
       cam.setScroll(0, 0);
     }
   }
+}
+
+/** A palette colour as a Phaser tint (0xRRGGBB). */
+function tintOf(name: ColorName): number {
+  const c = rgbOf(name);
+  return (c.r << 16) | (c.g << 8) | c.b;
 }

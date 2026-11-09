@@ -491,7 +491,11 @@ function validateBuild(
         cleared.add(key);
       }
     } else if ('interact' in s) {
+      // A clickable world object (T409): a marker the map lists in `clickables`.
       if (!(s.interact in markers)) bad(`unknown marker '${s.interact}'`);
+      else if (!Object.hasOwn(def.clickables ?? {}, s.interact)) {
+        bad(`marker '${s.interact}' is not in clickables`);
+      }
     } else if ('scriptInput' in s) {
       if (!forced.has(s.scriptInput)) bad(`no forceInput action requests '${s.scriptInput}'`);
     } else if ('holdFireWhile' in s) {

@@ -16,14 +16,33 @@
 // sim lets it go at the map edge, it hands its sprite to LeaveFx, which carries it on past the edge
 // as it fades. A cloaked unit nobody has Revealed (T406; enemies.md § 2.5: the player still sees a
 // faint shimmer) draws faint, stepping between enemyPose.ts's CLOAK_ALPHA_LOW and CLOAK_ALPHA_HIGH
-// every SHIMMER_MS (steady at the high step under reduced motion); Revealed, it draws whole.
+// every SHIMMER_MS (steady at the high step under reduced motion) in its white `selected` outline
+// (T430a), so the outline shimmers brighter than the body; Revealed, it draws whole.
 // Its health bar (art-direction §8; T328) shows over the body while it's damaged or hovered: HP
 // and shield on an `ink.1` track (vfx/healthBar.ts), three pooled images cropped to width, so it
 // allocates nothing per frame. A boss and a neutral unit have none (`setBar(0, 0)`; the boss has
 // BossBarView); a burrowed or leaving unit hides it. The first of each type's tell glyph shows for
-// 3 s of sim time (TELL_TICKS), so fast-forward shortens it and a pause holds it.
+// 3 s of sim time (TELL_TICKS), so fast-forward shortens it and a pause holds it; every unit's
+// shows while the pointer is on it (T332).
+// T430a's Act II looks (EnemyDress.ts places them; the rules are the *Look.ts files):
+// - **The hush** (hushLook.ts): the Hollow unit in its tell freezes mid-reach, leans 1 px at its
+//   victim, and flickers an acid rim; the held runner shakes inside a closing pale ring (sim
+//   ticks, in `overlay`); a Heavy unit wears a 2 px pale rim over its charcoal tint (swollen).
+// - **The Hollow's walk** (hollowLook.ts): it hitches and skips a frame, and now and then shows a
+//   frame shoved sideways (none under reduced motion).
+// - **Fleeing runners** (fleeLook.ts) scurry (a faster walk, faster still when bolting) and glance
+//   back over their shoulders.
+// - **Shields** (shieldLook.ts): a faint hex bubble round a shielded body while its shield holds,
+//   flashing on each hit (ShieldView rings the hit and scatters the shards when it breaks).
+// - **Stasis** holds the frame, frosts the body, and rims it in crystal white; **a blink's tell**
+//   holds still, shimmers white (the `puff` shimmer's 3 Hz), and rims the body in the ghost's
+//   violet; **a shield pulser** rims itself in blue while it tells; a Revealed unit draws whole
+//   inside a green target bracket.
+// Its death (`die`) plays the act's tone (deathLook.ts): Act I's comic pop, Act II's quiet one (the
+// pop without the confetti).
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
+import { activeBlink, activePulse, blinkTelling, pulseTelling } from '../../sim/index.ts';
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
 import { TICK_HZ } from '../../shared/time.ts';
 import { worldDepth } from '../depth.ts';
@@ -41,6 +60,7 @@ import {
   healthBarWidth,
   type HealthBarFill,
 } from '../vfx/healthBar.ts';
+import { SHIMMER_MS, STEPPED_ALPHA, tellHigh } from '../vfx/fxTiming.ts';
 import { healthStripTexture } from '../vfx/overlayTextures.ts';
 import {
   blankFacts,
@@ -55,10 +75,23 @@ import {
   type EnemyPose,
   type PoseEnemy,
 } from './enemyPose.ts';
-import { HEAVY_TINT, hushShakePx } from './hushLook.ts';
+import type { DeathStyle } from './deathLook.ts';
+import { QUIET_DEATH_FRAMES } from './deathLook.ts';
+import { EnemyDress, type RimMode } from './EnemyDress.ts';
+import { fleeTempo, glanceFacing, glancing } from './fleeLook.ts';
+import { glitches, hollowGlitch, type HollowGlitch } from './hollowLook.ts';
+import {
+  HEAVY_TINT,
+  HUSH_LEAN_PX,
+  hushRingRadius,
+  hushShakePx,
+  isHeld,
+  isHushing,
+} from './hushLook.ts';
+import { bubbleAlpha } from './shieldLook.ts';
 import { isFrozen, STASIS_TINT } from './stasisLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
-import { facingOf, hasAnim, spriteId, type Facing } from './spriteInfo.ts';
+import { facingOf, hasAnim, spriteId, tellGlyph, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -99,10 +132,13 @@ export const TELL_TICKS = 3 * TICK_HZ;
 /** The glyph's gap above the body's top (px): room for the health bar between them. */
 const TELL_GAP_PX = HEALTH_BAR_ROOM_PX;
 /**
- * The invulnerable shimmer: the `puff` anim swaps to its white-outlined variant this often (ms),
- * a 3 Hz cycle (no flicker above the photosensitivity cap, art-direction §8; D097).
+ * The invulnerable shimmer (and a blink's tell, T430a): the anim swaps to its white-outlined
+ * variant every SHIMMER_MS, a 3 Hz cycle (no flicker above the photosensitivity cap, art-direction
+ * §8; D097). Its home is vfx/fxTiming.ts.
  */
-export const SHIMMER_MS = 167;
+export { SHIMMER_MS };
+/** A rim's low step while it flickers (its tell's off half). */
+const RIM_LOW_ALPHA = STEPPED_ALPHA[1];
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
 
@@ -140,6 +176,14 @@ export function sideOf(dx: number, dy: number, out: Vec2): Vec2 | null {
 }
 
 const side: Vec2 = { x: 0, y: 0 };
+/** Whether `e` is telling a shield pulse (it wears a blue rim meanwhile). */
+function pulseTell(e: PoseEnemy): boolean {
+  const pulse = activePulse(e);
+  return pulse !== null && pulseTelling(e, pulse);
+}
+
+/** Scratch for a Hollow unit's glitch. */
+const glitch: HollowGlitch = { hold: false, offsetPx: 0 };
 /** Scratch for the health bar's fill. */
 const fill: HealthBarFill = { hpPx: 0, shieldPx: 0 };
 
@@ -152,6 +196,8 @@ interface AnimSet {
   readonly keys: (string | null)[];
   readonly anchors: ({ x: number; y: number } | null)[];
   readonly deathKey: string | null;
+  /** The death anim's squash and pop alone (Act II's quiet death, deathLook.ts), or null. */
+  readonly quietKey: string | null;
   readonly deathAnchor: { x: number; y: number };
 }
 
@@ -180,10 +226,24 @@ function animSetFor(sprites: SpriteSource, scene: Phaser.Scene, id: SpriteId): A
   }
   const death = animKey(id, DEFAULT_VARIANT, 'death');
   const has = scene.anims.exists(death);
+  // The quiet death: the comic pop's first frames, made once per sprite from the baked anim.
+  const quiet = `${death}.quiet`;
+  const full = has ? scene.anims.get(death) : undefined;
+  if (full !== undefined && !scene.anims.exists(quiet)) {
+    scene.anims.create({
+      key: quiet,
+      frames: full.frames
+        .slice(0, QUIET_DEATH_FRAMES)
+        .map((f) => ({ key: f.textureKey, frame: f.textureFrame })),
+      frameRate: full.frameRate,
+      repeat: 0,
+    });
+  }
   const set: AnimSet = {
     keys,
     anchors,
     deathKey: has ? death : null,
+    quietKey: has ? quiet : null,
     deathAnchor: has ? sprites.frameAnchor(id, 'death_0') : { x: 0, y: 0 },
   };
   byId.set(id, set);
@@ -255,9 +315,34 @@ export class EnemyView implements PooledView {
   #heavy = false;
   /** In Stasis (stasisLook.ts): its anim holds, its body tinted ice. */
   #frozen = false;
-  /** A held runner's shake offset now (px). */
-  #shake = 0;
+  /** The body's look offset now (px): a held runner's shake, a glitch, a hush lean. */
+  #offX = 0;
+  #offY = 0;
   readonly #facts = blankFacts();
+  /** What the body wears beyond its sprite (T430a): rims, bubble, hush ring, bracket. */
+  readonly #dress: EnemyDress;
+  /** The unit whose fixed facts below were read (0: not yet; read on its first syncPose). */
+  #factsUid = 0;
+  /** Its faction glitches (the Hollow), it flees, it has a shield, it can cloak. */
+  #hollow = false;
+  #fleeing = false;
+  #shielded = false;
+  #cloakable = false;
+  /** Its tell glyph (the first of its type shows it; any shows it on hover), or null. */
+  #glyph: SpriteId | null = null;
+  /** The body's frame size and anchor (meta, outlined px). */
+  #metaW = 0;
+  #metaH = 0;
+  /** The sim tick last synced, and the tick a hush tell took hold of it (a held runner). */
+  #tick = 0;
+  #heldAt = -1;
+  /** When its shield last took a hit (page ms; −Infinity: never), for the bubble's flash. */
+  #bubbleHitAt = Number.NEGATIVE_INFINITY;
+  /** The anim is held for a Hollow hitch (it skips a frame when the hold ends). */
+  #hitch = false;
+  /** Glancing back (a fleeing runner), and its walk's tempo multiplier. */
+  #glance = false;
+  #tempoMul = 1;
 
   /** `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes). */
   constructor(ctx: ViewContext, exits: LeaveFx | null = null) {
@@ -282,6 +367,7 @@ export class EnemyView implements PooledView {
     this.#corpse.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.#corpse.setVisible(false);
     });
+    this.#dress = new EnemyDress(ctx);
     const strip = (kind: 'track' | 'hp' | 'shield'): Phaser.GameObjects.Image => {
       const img = ctx.scene.make.image({}, false);
       img.setTexture(healthStripTexture(ctx.scene, kind)).setOrigin(0, 0).setVisible(false);
@@ -318,6 +404,34 @@ export class EnemyView implements PooledView {
     return this.#barShown;
   }
 
+  /** The body's alpha now (the render-state hook's view of it). */
+  get alpha(): number {
+    return this.#alpha;
+  }
+
+  /** Whether its tell glyph shows (the render-state hook's view of it). */
+  get tellShown(): boolean {
+    return this.#tell.visible;
+  }
+
+  /** What its body wears now (the render-state hook's view of it). */
+  get dress(): {
+    readonly rim: RimMode;
+    readonly bubble: boolean;
+    readonly hushRing: boolean;
+    readonly bracket: boolean;
+    readonly glance: boolean;
+  } {
+    const d = this.#dress;
+    return {
+      rim: d.rim,
+      bubble: d.bubbleShown,
+      hushRing: d.ringShown,
+      bracket: d.bracketShown,
+      glance: this.#glance,
+    };
+  }
+
   /** The drawn body's depth (front-most wins a hover). */
   get depth(): number {
     return this.#body.depth;
@@ -335,11 +449,13 @@ export class EnemyView implements PooledView {
     this.#syncBar();
   }
 
-  /** The pointer is over it: its health bar shows even at full HP. */
+  /** The pointer is over it: its health bar and its tell glyph show (T332). */
   setHovered(hovered: boolean): void {
     if (hovered === this.#hovered) return;
     this.#hovered = hovered;
     this.#syncBar();
+    this.#syncGlyph();
+    this.#placeOverhead();
   }
 
   /** Whether screen point (px, py) is on its drawn body's frame (a hover). Allocation-free. */
@@ -385,11 +501,22 @@ export class EnemyView implements PooledView {
     this.#shimmerOn = false;
     this.#mounded = false;
     this.#heavy = false;
-    this.#shake = 0;
+    this.#frozen = false;
+    this.#offX = 0;
+    this.#offY = 0;
     this.#leaving = false;
     this.#alpha = 1;
+    this.#factsUid = 0;
+    this.#heldAt = -1;
+    this.#bubbleHitAt = Number.NEGATIVE_INFINITY;
+    this.#hitch = false;
+    this.#glance = false;
+    this.#tempoMul = 1;
     this.#stopFlash();
-    (flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(this.#body);
+    const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
+    layer.add(this.#body);
+    this.#dress.setLayer(layer);
+    this.#dress.hideAll();
     this.#body.setVisible(true).setAlpha(1);
     this.#play();
     const { sprites } = this.#ctx;
@@ -406,6 +533,8 @@ export class EnemyView implements PooledView {
       .setVisible(false);
     const meta = sprites.meta(this.#id);
     this.#headroom = meta.anchor.y;
+    this.#metaW = meta.w;
+    this.#metaH = meta.h;
     this.#barW = healthBarWidth(meta.w);
     this.#maxHp = 0;
     this.#maxShield = 0;
@@ -414,11 +543,27 @@ export class EnemyView implements PooledView {
     this.#barShieldPx = -1;
     this.#hideBar();
     this.#telling = tell !== null;
-    if (tell !== null) {
-      const g = sprites.frame(tell, 'icon');
-      this.#tell.setTexture(g.texture, g.frame);
-    }
+    this.#glyph = null;
+    if (tell !== null) this.#setGlyph(tell);
     this.#tell.setVisible(false);
+  }
+
+  /** Gives the tell glyph its art. */
+  #setGlyph(id: SpriteId): void {
+    const g = this.#ctx.sprites.frame(id, 'icon');
+    this.#tell.setTexture(g.texture, g.frame);
+    this.#glyph = id;
+  }
+
+  /** The tell glyph shows for its first 3 s, or while hovered, unless the unit is underground. */
+  #syncGlyph(): void {
+    const up =
+      this.#glyph !== null &&
+      (this.#telling || this.#hovered) &&
+      this.#body.visible &&
+      !Number.isNaN(this.#x) &&
+      !this.#burrowedLook();
+    if (up !== this.#tell.visible) this.#tell.setVisible(up);
   }
 
   setSelected(selected: boolean): void {
@@ -433,11 +578,14 @@ export class EnemyView implements PooledView {
    */
   sync(e: EnemyLike, tick: number): void {
     const hit = e.hp !== this.#hp || e.shieldHp !== this.#shieldHp;
+    this.#tick = tick;
     this.#syncFlash(e.hp);
+    // A hit on the shield flashes its bubble (shieldLook.ts).
+    if (e.shieldHp < this.#shieldHp) this.#bubbleHitAt = performance.now();
     this.#shieldHp = e.shieldHp;
     if (this.#telling && tick - e.spawnTick >= TELL_TICKS) {
       this.#telling = false;
-      this.#tell.setVisible(false);
+      this.#syncGlyph();
     }
     if (e.x === this.#x && e.y === this.#y) {
       if (hit) this.#syncBar();
@@ -473,25 +621,32 @@ export class EnemyView implements PooledView {
     this.#bodyX = gx + ox;
     this.#bodyY = (this.#flying ? gy - FLY_LIFT_PX : gy) + oy;
     this.#bob = 0;
-    this.#body.setPosition(this.#bodyX, this.#bodyY);
+    this.#placeBody();
     if (this.#flying) this.#syncBob();
     const depth = worldDepth(gy + oy, 'enemy', this.#uid);
     if (this.#body.depth !== depth) this.#body.setDepth(depth);
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
     this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
-    if (this.#telling) {
-      // A burrowed unit's glyph waits underground with it.
-      this.#tell.setVisible(!this.#burrowedLook());
-    }
-    this.#placeOverhead();
+    // A burrowed unit's glyph waits underground with it.
+    this.#syncGlyph();
     this.#syncBar();
   }
 
-  /** Puts the tell glyph and the health bar over the body's top, where it's drawn now. */
+  /** Puts the body where it stands now (its bob and look offsets on top), and its overhead. */
+  #placeBody(): void {
+    this.#body.setPosition(this.#bodyX + this.#offX, this.#bodyY - this.#bob + this.#offY);
+    this.#placeOverhead();
+  }
+
+  /**
+   * Puts the tell glyph and the health bar over the body's top, where it stands (its bob, not its
+   * shakes and glitches: the bar holds still while the body struggles).
+   */
   #placeOverhead(): void {
-    const top = this.#body.y - this.#headroom;
-    if (this.#telling) this.#tell.setPosition(this.#body.x, top - TELL_GAP_PX);
-    const x = Math.round(this.#body.x) - this.#barW / 2;
+    const bx = this.#bodyX;
+    const top = this.#bodyY - this.#bob - this.#headroom;
+    this.#tell.setPosition(bx, top - TELL_GAP_PX);
+    const x = Math.round(bx) - this.#barW / 2;
     const y = Math.round(top) - HEALTH_BAR_GAP_PX - HEALTH_BAR_FRAME_PX - HEALTH_BAR_H;
     this.#barTrack.setPosition(x - HEALTH_BAR_FRAME_PX, y - HEALTH_BAR_FRAME_PX);
     this.#barHp.setPosition(x, y);
@@ -547,6 +702,9 @@ export class EnemyView implements PooledView {
    * phase state, and leaving. Call after `sync`, every frame. Allocation-free.
    */
   syncPose(e: PoseEnemy): void {
+    if (this.#factsUid !== this.#uid) this.#readFacts(e);
+    const now = performance.now();
+    const reduced = prefersReducedMotion();
     const next = statePose(poseFacts(e, this.#facts));
     let dirty = false;
     if (next !== this.#statePose) {
@@ -554,31 +712,60 @@ export class EnemyView implements PooledView {
       this.#statePose = next;
       if (shot !== null && this.#has(shot)) this.#oneShot = shot;
       else if (this.#oneShot !== null && interruptsOneShot(next)) this.#oneShot = null;
-      if (this.#telling) this.#tell.setVisible(next !== 'under');
+      this.#syncGlyph();
       if (!Number.isNaN(this.#x)) this.#shadow.setVisible(next !== 'under');
       dirty = true;
     }
+    // A blink's tell (T430a): the unit holds still and shimmers like a boss between phases.
+    const blink = activeBlink(e);
+    const blinkTell = blink !== null && blinkTelling(e, blink);
+    const pose = this.#currentPose();
+    // A cloak (T406, T430a) wears its white outline (the `selected` variant) on the faint body, so
+    // the outline shimmers brighter than the body as its alpha steps.
+    const cloaked = this.#cloakable && !e.leaving && e.revealedTicks <= 0;
     const shimmer =
-      this.#currentPose() === 'puff' &&
-      (prefersReducedMotion() || Math.floor(performance.now() / SHIMMER_MS) % 2 === 0);
+      cloaked ||
+      ((pose === 'puff' || blinkTell) && (reduced || Math.floor(now / SHIMMER_MS) % 2 === 0));
     if (shimmer !== this.#shimmerOn) {
       this.#shimmerOn = shimmer;
       dirty = true;
     }
+    // A fleeing runner glances back over its shoulder now and then (fleeLook.ts).
+    const held = isHeld(e);
+    const bolting = e.skittishTicks > 0;
+    const glance =
+      this.#fleeing &&
+      !held &&
+      !bolting &&
+      !e.leaving &&
+      this.#statePose === 'walk' &&
+      this.#oneShot === null &&
+      !Number.isNaN(this.#x) &&
+      glancing(this.#uid, now);
+    if (glance !== this.#glance) {
+      this.#glance = glance;
+      dirty = true;
+    }
     if (dirty) this.#play();
+    // Scurrying: a fleeing runner's legs run faster than its pace, a bolting one's faster still.
+    const tempo = fleeTempo(this.#fleeing, bolting);
+    if (tempo !== this.#tempoMul) {
+      this.#tempoMul = tempo;
+      if (this.#shown === 'walk')
+        this.#body.anims.timeScale = walkTempo(this.#uid).timeScale * tempo;
+    }
     if (e.leaving !== this.#leaving) {
       this.#leaving = e.leaving;
       dirty = true;
     }
-    const high = prefersReducedMotion() || Math.floor(performance.now() / SHIMMER_MS) % 2 === 0;
+    const high = reduced || Math.floor(now / SHIMMER_MS) % 2 === 0;
     const alpha = cloakAlpha(e, this.#leaving, high);
     if (alpha !== this.#alpha) {
       this.#alpha = alpha;
       this.#body.setAlpha(alpha);
       this.#shadow.setAlpha(alpha);
     }
-    // The hush rule (T402; hushLook.ts): Heavy's tint (a hit flash ends back on it), a held
-    // runner's shake.
+    // The hush rule (T402; hushLook.ts): Heavy's tint (a hit flash ends back on it).
     if (e.heavy !== this.#heavy) {
       this.#heavy = e.heavy;
       if (this.#flashFrames === 0) this.#stopFlash();
@@ -589,16 +776,116 @@ export class EnemyView implements PooledView {
       this.#frozen = frozen;
       if (this.#flashFrames === 0) this.#stopFlash();
     }
+    // The Hollow's walk hitches (hollowLook.ts); a tell holds the frame (Stasis, the hush, a blink).
+    const hushing = isHushing(e);
+    const walking = this.#shown === 'walk' && !e.leaving && !held;
+    const glitching = this.#hollow && walking && !hushing;
+    if (glitching) hollowGlitch(this.#uid, now, reduced, glitch);
+    const hitch = glitching && glitch.hold;
+    const hold = frozen || hushing || blinkTell || hitch;
     const anims = this.#body.anims;
-    if (frozen && anims.isPlaying) anims.pause();
-    else if (!frozen && anims.isPaused) anims.resume();
-    const shake = hushShakePx(e, performance.now(), prefersReducedMotion());
-    if (shake !== this.#shake) {
-      this.#shake = shake;
-      this.#body.x = this.#bodyX + shake;
+    if (hold && anims.isPlaying) anims.pause();
+    else if (!hold && anims.isPaused) {
+      anims.resume();
+      // A hitch ends a frame ahead of where it stopped: the skip.
+      if (this.#hitch) anims.nextFrame();
     }
+    this.#hitch = hitch;
+    // The body's look offset: a held runner's struggle, a Hollow glitch, the Hollow unit's lean.
+    let offX = hushShakePx(e, now, reduced);
+    let offY = 0;
+    if (glitching) offX += glitch.offsetPx;
+    if (hushing) {
+      const sx = this.#dirX - this.#dirY;
+      const sy = this.#dirX + this.#dirY;
+      if (Math.abs(sx) > 1e-9) offX += Math.sign(sx) * HUSH_LEAN_PX;
+      else if (Math.abs(sy) > 1e-9) offY += Math.sign(sy) * HUSH_LEAN_PX;
+    }
+    if (offX !== this.#offX || offY !== this.#offY) {
+      this.#offX = offX;
+      this.#offY = offY;
+      this.#placeBody();
+    }
+    this.#syncDress(e, now, reduced, frozen, blinkTell, hushing, held);
     // Burrowing, surfacing, or leaving hides or shows the health bar.
     if (dirty) this.#syncBar();
+  }
+
+  /** Reads the unit's fixed facts once (its faction, tags, shield, cloak, tell glyph). */
+  #readFacts(e: PoseEnemy): void {
+    this.#factsUid = this.#uid;
+    const def = e.def;
+    this.#hollow = def !== null && glitches(def.faction);
+    this.#fleeing = def !== null && !def.hushes && e.tags.includes('fleeing');
+    this.#shielded = def !== null && def.shield !== null;
+    this.#cloakable = def !== null && def.cloaked;
+    if (this.#glyph === null && def !== null) {
+      const g = tellGlyph(def.tells);
+      if (g !== null) this.#setGlyph(g);
+    }
+  }
+
+  /** Places what the body wears this frame (EnemyDress.ts). */
+  #syncDress(
+    e: PoseEnemy,
+    now: number,
+    reduced: boolean,
+    frozen: boolean,
+    blinkTell: boolean,
+    hushing: boolean,
+    held: boolean,
+  ): void {
+    const d = this.#dress;
+    const body = this.#body;
+    if (!body.visible || Number.isNaN(this.#x)) {
+      d.hideAll();
+      return;
+    }
+    const ax = body.displayOriginX;
+    const ay = body.displayOriginY;
+    const cloaked = this.#cloakable && !e.leaving && e.revealedTicks <= 0;
+    // The rim: one look at a time, the most urgent first.
+    let rim: RimMode = 'none';
+    let rimAlpha = 1;
+    if (frozen) {
+      rim = 'crystal';
+    } else if (blinkTell) {
+      rim = 'blink';
+      if (!tellHigh(e.blinkTicks, reduced)) rimAlpha = RIM_LOW_ALPHA;
+    } else if (hushing) {
+      rim = 'hush';
+      if (!tellHigh(e.hushTicks, reduced)) rimAlpha = RIM_LOW_ALPHA;
+    } else if (pulseTell(e)) {
+      rim = 'pulse';
+      if (!tellHigh(e.pulseTicks, reduced)) rimAlpha = RIM_LOW_ALPHA;
+    } else if (this.#heavy && !e.leaving) {
+      rim = 'heavy';
+    }
+    d.rimOn(body, rim, rimAlpha);
+    // The shield bubble, faint while the shield holds, flashing on a hit (hidden by a cloak).
+    const bubble =
+      this.#shielded && e.shieldHp > 0 && !e.leaving && !cloaked
+        ? bubbleAlpha(now - this.#bubbleHitAt)
+        : 0;
+    d.bubbleOn(body, this.#metaW, this.#metaH, ax, ay, bubble);
+    // The hush ring closes on the held runner over the tell (sim ticks).
+    if (held) {
+      if (this.#heldAt < 0) this.#heldAt = this.#tick;
+      const ground = this.#flying ? FLY_LIFT_PX : 0;
+      d.ringOn(this.#bodyX, this.#bodyY + ground, hushRingRadius(this.#tick - this.#heldAt));
+    } else {
+      this.#heldAt = -1;
+      d.ringOn(0, 0, 0);
+    }
+    // A Revealed cloaked unit: the target bracket.
+    d.bracketOn(
+      this.#cloakable && e.revealedTicks > 0 && !e.leaving,
+      body,
+      this.#metaW,
+      this.#metaH,
+      ax,
+      ay,
+    );
   }
 
   /** A brood's arrival (split, sneezed, or surfaced): a short white pop over its first frames. */
@@ -620,24 +907,34 @@ export class EnemyView implements PooledView {
         : 0;
     if (up === this.#bob) return;
     this.#bob = up;
-    this.#body.setPosition(this.#bodyX, this.#bodyY - up);
-    this.#placeOverhead();
+    this.#placeBody();
   }
 
   /**
-   * Plays the unit's death anim where it stands, if its sprite has one (call before `release`).
-   * Returns false when it has none, or was never placed, so the caller can show another effect.
+   * Plays the unit's death where it stands, in the act's tone (deathLook.ts; call before
+   * `release`): `comic` the sprite's whole `death` anim, `quiet` (and, until Act III's look lands,
+   * `still`) its squash and pop without the confetti. Returns false when its sprite has no death
+   * anim, or it was never placed, or the style draws no body (`shatter`, `unravel`, `burst`), so
+   * the caller shows another effect.
    */
-  die(): boolean {
-    const key = this.#set?.deathKey ?? null;
-    if (key === null || this.#set === null || Number.isNaN(this.#x) || !this.#body.visible) {
+  die(style: DeathStyle = 'comic'): boolean {
+    const set = this.#set;
+    const key =
+      set === null
+        ? null
+        : style === 'comic'
+          ? set.deathKey
+          : style === 'quiet' || style === 'still'
+            ? set.quietKey
+            : null;
+    if (key === null || set === null || Number.isNaN(this.#x) || !this.#body.visible) {
       return false;
     }
     const c = this.#corpse;
     (this.#flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(c);
     c.setPosition(this.#body.x, this.#body.y)
       .setDepth(this.#body.depth)
-      .setDisplayOrigin(this.#set.deathAnchor.x, this.#set.deathAnchor.y)
+      .setDisplayOrigin(set.deathAnchor.x, set.deathAnchor.y)
       .setVisible(true)
       .play(key);
     return true;
@@ -657,7 +954,13 @@ export class EnemyView implements PooledView {
     this.#oneShot = null;
     this.#heavy = false;
     this.#frozen = false;
-    this.#shake = 0;
+    this.#offX = 0;
+    this.#offY = 0;
+    this.#factsUid = 0;
+    this.#glyph = null;
+    this.#glance = false;
+    this.#hitch = false;
+    this.#dress.hideAll();
     this.#stopFlash();
     this.#body.stop();
     this.#body.setVisible(false).setAlpha(1);
@@ -726,8 +1029,10 @@ export class EnemyView implements PooledView {
       }
     }
     if (!this.#has(pose)) pose = 'walk';
-    const i = POSE_INDEX[pose] * 4 + FACING_INDEX[this.#facing];
-    const selected = this.#selected || (pose === 'puff' && this.#shimmerOn);
+    // A fleeing runner's glance back shows the facing that looks over its shoulder (fleeLook.ts).
+    const facing = this.#glance ? glanceFacing(this.#facing) : this.#facing;
+    const i = POSE_INDEX[pose] * 4 + FACING_INDEX[facing];
+    const selected = this.#selected || this.#shimmerOn;
     const key = set.keys[i * 2 + (selected ? 1 : 0)];
     const a = set.anchors[i];
     if (key === null || key === undefined || a === null || a === undefined) return;
@@ -737,7 +1042,7 @@ export class EnemyView implements PooledView {
       const tempo = walkTempo(this.#uid);
       const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
       this.#body.play({ key, startFrame: tempo.startFrame % frames });
-      this.#body.anims.timeScale = tempo.timeScale;
+      this.#body.anims.timeScale = tempo.timeScale * this.#tempoMul;
     } else if (pose === was && this.#body.anims.isPlaying) {
       // The same pose in a new facing or variant (the shimmer): carry on from the frame it was on,
       // so a turn mid-sneeze or mid-surfacing doesn't start the one-shot over.

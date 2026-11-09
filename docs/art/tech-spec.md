@@ -96,7 +96,7 @@ The world is drawn in **fixed layers** (Phaser `Layer`s), bottom to top:
 | 4 | `world` | Towers, ground enemies, props, tall terrain, Suppressing Fire's live strip | **`depth = footY + kindBias + (uid & 0xff) / 1e4`** |
 | 5 | `air` | Flying enemies, lobbed projectiles at the top of their arc | same formula |
 | 6 | `vfx` | Projectiles, impacts, particles, glow sprites (additive) | insertion order |
-| 7 | `lighting` | Darkness overlay (A2M6 through the finale) with light punch-outs | none |
+| 7 | `lighting` | The lighting schedule's multiply grade (A2M3 onward), Time Dilation's field tint, and the darkness overlay (A2M6 through the finale) with light punch-outs | none |
 | 8 | `overlay` | Health bars, tells, floating credits, selection brackets | insertion order |
 
 - `footY` is the anchor's screen y **on the ground plane** (no elevation offset). `kindBias`: high ground 0.05, prop 0.1, enemy 0.2, strip 0.25, tower 0.3, so at equal y, towers draw in front. A **ground strip** (Suppressing Fire's live zone, T232) sorts each tile at its bottom vertex less 1 px (`stripDepth` in `render/depth.ts`): over the enemies on the tile, under a tower or high-ground block on the tile in front.

@@ -281,9 +281,33 @@ describe('wave resolution and win/lose', () => {
 
 describe('createSim and map scripts', () => {
   it('refuses script parts it cannot simulate, naming them', () => {
-    expect(() => createSim({ ...fixtureConfig(), content: compileContent(FIXTURE) })).toThrow(
-      /late_gift': action setClickable is not simulated until T409/,
-    );
+    // The whole fixture runs since T409 (its clickable rock: sim/clickables.test.ts).
+    expect(() => createSim({ ...fixtureConfig(), content: compileContent(FIXTURE) })).not.toThrow();
+    // A clickable's fallback is held to the same triggers as an event's.
+    expect(() =>
+      createSim({
+        ...fixtureConfig(),
+        content: compileContent<FixtureIds>({
+          ...FIXTURE,
+          maps: {
+            fx_map: {
+              ...FIXTURE.maps.fx_map,
+              events: [
+                {
+                  id: 'rock',
+                  on: { tick: 5 },
+                  actions: [
+                    {
+                      setClickable: { marker: 'rock', on: true, fallback: { restProgressPct: 50 } },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        }),
+      }),
+    ).toThrow(/'rock': setClickable fallback restProgressPct is not simulated until M7/);
     expect(() =>
       simWith({
         events: [{ id: 'boss', on: { refugeesRemaining: 2 }, actions: [{ cue: 'fx_map_boss' }] }],

@@ -1,7 +1,7 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
-// fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b). M4's `interact` is declared
-// and rejected `notImplemented` until T409; `scriptInput` arrives with its Act III map.
+// fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b), and M4's `interact`
+// (sim/clickables.ts, T409); `scriptInput` arrives with its Act III map.
 // `notImplemented` is kept for handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, MarkerId, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -32,8 +32,9 @@ export type Command<K extends IdSpace = LiveIds> =
   | { readonly type: 'clear'; readonly tile: GridPos }
   /**
    * Interact with a clickable world object (A2M3's Peeker holding Pebble; T409): a marker the map
-   * lists in `clickables` that a script has made clickable (`setClickable`). Rejected
-   * `notImplemented` until T409; then `notClickable` when the marker isn't clickable now.
+   * lists in `clickables` that a script has made clickable (`setClickable`; sim/clickables.ts).
+   * Rejected `notClickable` when the marker isn't clickable now (never turned on, turned off, or
+   * already interacted with, by click or by fallback).
    */
   | { readonly type: 'interact'; readonly marker: MarkerId }
   /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */

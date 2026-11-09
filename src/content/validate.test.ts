@@ -618,6 +618,35 @@ describe('validate: maps', () => {
   it('[revisit] revisitOf names another map', () => {
     rejects(withMap({ revisitOf: 'fx_map' }), 'revisit');
   });
+
+  it("[lighting] keys name the map's waves in rising order and leave its env (T410a)", () => {
+    expect(validate(withMap({ lighting: [{ wave: 2, env: 'act2.dusk' }] }))).toEqual([]);
+    rejects(withMap({ lighting: [] }), 'lighting');
+    rejects(withMap({ lighting: [{ wave: 3, env: 'act2.dusk' }] }), 'lighting');
+    rejects(withMap({ lighting: [{ wave: 0, env: 'act2.dusk' }] }), 'lighting');
+    rejects(
+      withMap({
+        lighting: [
+          { wave: 2, env: 'act2.gold' },
+          { wave: 1, env: 'act2.dusk' },
+        ],
+      }),
+      'lighting',
+    );
+    rejects(withMap({ lighting: [{ wave: 2, env: 'act1' }] }), 'lighting');
+  });
+
+  it("[dressing] a revisit's areas need a revisit; an area lies on the map; no layer twice (T410a)", () => {
+    const all = { kind: 'greySoil', area: 'all' } as const;
+    expect(validate(withMap({ dressing: [all] }))).toEqual([]);
+    rejects(withMap({ dressing: [{ kind: 'greySoil', area: 'band' }] }), 'dressing');
+    rejects(withMap({ dressing: [all, all] }), 'dressing');
+    const area = (from: readonly [number, number], to: readonly [number, number]) =>
+      withMap({ dressing: [{ kind: 'mineScar', area: { from, to } }] });
+    expect(validate(area([4, 0], [5, 4]))).toEqual([]);
+    rejects(area([4, 0], [6, 4]), 'dressing');
+    rejects(area([5, 0], [4, 4]), 'dressing');
+  });
 });
 
 /** Four campaign maps, each fx_map patched: the fourth is held to the A1M4+ alt-build rules. */

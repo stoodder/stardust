@@ -1,25 +1,28 @@
-// Aelari shields, the minimal readable view (T403; art-direction §8's `shielded` and `shield_aura`
-// tells; enemies.md § 2.3, § 3). The shield bar itself is EnemyView's (vfx/healthBar.ts). This adds:
-// - **The ripple** (`ShieldHit`): a hit that lands on a shield grows a small `blue.3` ring at the
-//   unit's body (flyers 12 px up), at most once per RIPPLE_GAP_MS per unit and RIPPLES_PER_FRAME in
-//   all, so a Zapcoil's chain through a column reads as ripples, not a flood. The hit that breaks
-//   the shield always shows: a wider `white.1` flash and a `blue.4` ring (the shatter's stand-in).
+// Aelari shields (T403's view, T430a's polish; art-direction §8's `shielded` and `shield_aura`
+// tells; enemies.md § 2.3, § 3). The shield bar is EnemyView's (vfx/healthBar.ts), and so is the
+// hex bubble round each shielded body (shieldLook.ts), which flashes on every hit. This adds:
+// - **The ripple** (`ShieldHit`): a hit that lands on a shield grows a small `blue.3` ring out from
+//   the bubble at the unit's body (flyers 12 px up), at most once per RIPPLE_GAP_MS per unit and
+//   RIPPLES_PER_FRAME in all, so a Zapcoil's chain through a column reads as ripples, not a flood.
+//   The hit that breaks the shield always shows: a wider `white.1` flash, a `blue.4` ring, and the
+//   bubble's shards flying off and falling (TransientFx's debris).
 // - **The pulse ring** (`ShieldPulse` 'fired'): a `white.1` flash at the pulser and a `blue.4` ring
 //   growing on the ground out to the pulse's radius, the dashed `shield_aura` ring.
-// - **The pulse tell**, from sim state each frame (`pulseTelling`): a held `blue.4` ring over a
-//   1 px `ink.0` under-stroke at the pulse's radius, and a `white.1` one closing in from it to the
-//   pulser as the tell runs out (the charge; `chargeRadius`), both in `decal` under the units and
-//   blinking 100% ↔ 60% four times a second on sim ticks (so they hold while paused; steady 100%
-//   under reduced motion).
-// T430a polishes them (the hexagon bubble, the shards, a chime pairing). Allocation-free per frame:
-// the rings are TransientFx's and this view's pools.
+// - **The pulse tell**, from sim state each frame (`pulseTelling`): the reach laid on the ground as
+//   a dithered `blue.1` pool at 35% (cold blue on Act II's warm gold reads at a glance), a held
+//   `blue.4` ring over a 1 px `ink.0` under-stroke at its edge, and a `white.1` one closing in from
+//   it to the pulser as the tell runs out (the charge; `chargeRadius`), all in `decal` under the
+//   units; the rings step 100% ↔ 60% on the sim's 3 Hz tell step (vfx/fxTiming.ts `tellHigh`; held
+//   while paused; steady under reduced motion). The pulser itself wears a `blue.4` rim meanwhile
+//   (EnemyView). Allocation-free per frame: the rings are TransientFx's and this view's pools.
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { activePulse, pulseTelling, type Enemy, type SimEvent } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
-import { effectRingTexture } from '../vfx/overlayTextures.ts';
+import { STEPPED_ALPHA, tellHigh } from '../vfx/fxTiming.ts';
+import { discTexture, effectRingTexture } from '../vfx/overlayTextures.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX, type TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -40,12 +43,15 @@ const BREAK_MS = 300;
 const PULSE_RING_MS = 600;
 const PULSE_FLASH_TILES = 0.5;
 const PULSE_FLASH_MS = 250;
+/** A break's shards fly from the bubble's middle, a little above the hit point (px). */
+const SHARD_LIFT_PX = 2;
 /** Units remembered by the ripple gate (the oldest is forgotten first). */
 const GATE_SLOTS = 32;
 const MAX_TELLS = 6;
-/** The tell ring blinks every this many sim ticks (4 Hz at 60 ticks/s). */
-const TELL_BLINK_TICKS = 8;
-const TELL_ALPHA = { on: 1, off: 0.6 } as const;
+const TELL_ALPHA = { on: STEPPED_ALPHA[0], off: STEPPED_ALPHA[1] } as const;
+/** The tell's pool on the ground: its colour and alpha. */
+const POOL_COLOR = 'blue.1';
+const POOL_ALPHA = STEPPED_ALPHA[2];
 
 /** The smallest ring (the effect rings' quarter-tile step). */
 const MIN_RING_TILES = 0.25;
@@ -62,8 +68,7 @@ export function chargeRadius(ticksLeft: number, tellTicks: number, radiusTiles: 
 
 /** The tell ring's alpha `ticksLeft` ticks before the pulse fires. */
 export function tellAlpha(ticksLeft: number, reducedMotion: boolean): number {
-  if (reducedMotion) return TELL_ALPHA.on;
-  return Math.floor(ticksLeft / TELL_BLINK_TICKS) % 2 === 0 ? TELL_ALPHA.on : TELL_ALPHA.off;
+  return tellHigh(ticksLeft, reducedMotion) ? TELL_ALPHA.on : TELL_ALPHA.off;
 }
 
 /**
@@ -116,6 +121,8 @@ export class RippleGate {
 
 interface TellRing {
   readonly img: Phaser.GameObjects.Image;
+  /** The reach's pool on the ground, under the rings. */
+  readonly pool: Phaser.GameObjects.Image;
   radius: number;
   /** The closing charge ring. */
   readonly charge: Phaser.GameObjects.Image;
@@ -133,17 +140,21 @@ export class ShieldView {
   /** Ripples and pulse rings started since the view was made (the smoke flow's check). */
   ripples = 0;
   pulseRings = 0;
+  /** Shields broken (their shards thrown) since the view was made. */
+  breaks = 0;
 
   constructor(ctx: ViewContext, fx: TransientFx, reducedMotion: () => boolean) {
     this.#ctx = ctx;
     this.#fx = fx;
     this.#reducedMotion = reducedMotion;
     for (let i = 0; i < MAX_TELLS; i++) {
+      const pool = ctx.scene.make.image({}, false).setVisible(false);
       const img = ctx.scene.make.image({}, false).setVisible(false);
       const charge = ctx.scene.make.image({}, false).setVisible(false);
+      ctx.layers.decal.add(pool);
       ctx.layers.decal.add(img);
       ctx.layers.decal.add(charge);
-      this.#tells.push({ img, radius: 0, charge, chargeRadius: 0 });
+      this.#tells.push({ img, pool, radius: 0, charge, chargeRadius: 0 });
     }
   }
 
@@ -156,6 +167,8 @@ export class ShieldView {
       if (e.broken) {
         this.#fx.ring(e.x, e.y, BREAK_TILES, 'white.1', BREAK_MS, true, lift);
         this.#fx.ring(e.x, e.y, RIPPLE_TILES, 'blue.4', BREAK_MS, true, lift);
+        this.#fx.shieldShards(e.x, e.y, lift + SHARD_LIFT_PX);
+        this.breaks++;
       } else {
         this.#fx.ring(e.x, e.y, RIPPLE_TILES, 'blue.3', RIPPLE_MS, true, lift);
       }
@@ -186,6 +199,8 @@ export class ShieldView {
       if (ring.radius !== pulse.radiusTiles) {
         const tex = effectRingTexture(this.#ctx.scene, pulse.radiusTiles, 'blue.4', 'ink.0');
         ring.img.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
+        const pool = discTexture(this.#ctx.scene, pulse.radiusTiles, POOL_COLOR, 1, true);
+        ring.pool.setTexture(pool.key).setDisplayOrigin(pool.ox, pool.oy).setAlpha(POOL_ALPHA);
         ring.radius = pulse.radiusTiles;
       }
       const cr = chargeRadius(e.pulseTicks, pulse.tellTicks, pulse.radiusTiles);
@@ -198,12 +213,14 @@ export class ShieldView {
       const x = Math.round(pos.x);
       const y = Math.round(pos.y);
       const alpha = tellAlpha(e.pulseTicks, reduced);
+      ring.pool.setPosition(x, y).setVisible(true);
       ring.img.setPosition(x, y).setAlpha(alpha).setVisible(true);
       ring.charge.setPosition(x, y).setAlpha(alpha).setVisible(true);
     }
     for (; r < MAX_TELLS; r++) {
       const ring = this.#tells[r]!; // r < MAX_TELLS
       if (ring.img.visible) ring.img.setVisible(false);
+      if (ring.pool.visible) ring.pool.setVisible(false);
       if (ring.charge.visible) ring.charge.setVisible(false);
     }
   }
@@ -219,6 +236,7 @@ export class ShieldView {
     this.#gate.reset();
     for (const t of this.#tells) {
       t.img.setVisible(false);
+      t.pool.setVisible(false);
       t.charge.setVisible(false);
     }
   }

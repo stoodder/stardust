@@ -8,7 +8,15 @@ import { resolveClick } from '../render/input/intents.ts';
 import { emptyTileFacts, fillTileFacts, peekerTile } from '../render/input/tileFacts.ts';
 import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
-import { bindPeeker, pokePeeker, withPeekerPoked } from './peeker.ts';
+import { hud } from '../ui/state.ts';
+import { createHost } from './host.ts';
+import {
+  bindClickables,
+  bindPeeker,
+  clickableText,
+  pokePeeker,
+  withPeekerPoked,
+} from './peeker.ts';
 import { activeSave, initSaves, newGame } from './save.ts';
 
 const sim = (mapId: string) => createSim(battleConfig(mapId, 1, null));
@@ -74,5 +82,19 @@ describe('the Peeker', () => {
     const save = withPeekerPoked(createNewSave());
     expect(save.story.flags.peeker_poked).toBe(true);
     expect(withPeekerPoked(save)).toBe(save);
+  });
+
+  it('screen readers hear a clickable object turn clickable, by its name (T409)', () => {
+    const host = createHost(sim('dev_click'));
+    const off = bindClickables(host);
+    hud.announce.value = '';
+    host.sim.enqueue({ type: 'callWave' });
+    host.fastForward(1);
+    expect(hud.announce.value).toBe(clickableText("The Peeker's rock"));
+    expect(clickableText("The Peeker's rock")).toMatch(/^The Peeker's rock: within reach\./);
+    off();
+    // A map without clickables binds nothing.
+    const plain = createHost(sim('a1_m01'));
+    expect(() => bindClickables(plain)()).not.toThrow();
   });
 });

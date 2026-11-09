@@ -86,6 +86,7 @@ import { tileHighGround } from './tiles/high_ground.ts';
 import { tilePowerNode } from './tiles/power_node.ts';
 import { tileSpawn } from './tiles/spawn.ts';
 import { tileVerge } from './tiles/verge.ts';
+import { tileGrime } from './tiles/grime.ts';
 import { tileCliff } from './tiles/cliff.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
@@ -133,6 +134,7 @@ import {
 export const SPRITES = [
   tileGrass,
   tileVerge,
+  tileGrime,
   tileCliff,
   tilePath,
   tilePad,

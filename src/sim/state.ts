@@ -1,7 +1,7 @@
 // SimState: everything that changes during a run, as plain data. hash() walks all of it except
 // the output buffers (HASH_EXCLUDED), so two runs that agree on hash() agree on every field.
 // Immutable inputs (content, the map, the config) live in the TickContext instead (tick.ts).
-import type { CompiledMapDef } from '../content/compiled.ts';
+import type { CompiledMapDef, CompiledScriptTrigger } from '../content/compiled.ts';
 import { SELL_REFUND_PCT } from '../content/rules.ts';
 import type { EnemyFaction, IdSpace, WaveTag } from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
@@ -284,11 +284,18 @@ export interface SimState<K extends IdSpace = IdSpace> {
   asset: number;
   maxAsset: number;
   /**
-   * Clickable world objects (T409): the markers clickable now, in the order they turned on, and
-   * those interacted with this run (by click or by fallback), in order.
+   * Clickable world objects (T409; story-runtime.md § Map scripts): the markers clickable now, in
+   * the order they turned on, and those interacted with this run (by click or by fallback), in
+   * order. A marker is interacted with at most once, and never turns clickable again after.
    */
   clickable: string[];
   interacted: string[];
+  /**
+   * Index-aligned with `clickable`: the fallback trigger its `setClickable` carried (the frozen
+   * map data, hashed structurally), or null. When it's reached the sim interacts by itself
+   * (`Interacted { byFallback: true }`; systems/triggers.ts).
+   */
+  clickFallback: (CompiledScriptTrigger<IdSpace> | null)[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -384,6 +391,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     maxAsset: map.asset?.integrity ?? 0,
     clickable: [],
     interacted: [],
+    clickFallback: [],
     pending: [],
     commandLog: [],
     events: [],

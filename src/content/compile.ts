@@ -10,8 +10,9 @@
 // - Tier patches: objects merge deeply; arrays and values replace; an object whose `kind`
 //   differs from the one it patches replaces it whole (an attack that changes delivery).
 //
-// compileContent() runs validate() first (validate.ts: the design rules types and compile can't
-// express, each error tagged `[rule]`), then compiles, collecting what it can't compile past:
+// compileContent() composes each revisit with its original (compileRevisit.ts), runs validate()
+// (validate.ts: the design rules types and compile can't express, each error tagged `[rule]`) on
+// the composed content, then compiles, collecting what it can't compile past:
 // unknown ids, registry keys that don't match ids, malformed tile grids, routes that break the
 // route format (compileMap.ts), invalid durations. It throws one ContentCompileError listing
 // every validation and compile problem, so invalid content never compiles.
@@ -27,8 +28,9 @@ import { checkKey, deepFreeze, entriesOf, ticks, type Ctx, type Refs } from './c
 import { compileLinks } from './compileLinks.ts';
 import { compileEnemy } from './compileEnemy.ts';
 import { compileMap } from './compileMap.ts';
+import { composeRevisits } from './compileRevisit.ts';
 import { compileTower } from './compileTower.ts';
-import type { AbilityEffect, IdSpace, LiveIds, RawContent } from './types.ts';
+import type { AbilityEffect, IdSpace, LiveIds, MapDef, RawContent } from './types.ts';
 import { validate, type ValidationRules } from './validate.ts';
 import { assertNever } from '../shared/types.ts';
 
@@ -89,10 +91,14 @@ export class ContentCompileError extends Error {
  * can't be compiled. `rules` defaults to rules.ts; tests pass fixture answer lists.
  */
 export function compileContent<K extends IdSpace = LiveIds>(
-  raw: RawContent<K>,
+  input: RawContent<K>,
   rules?: ValidationRules,
 ): CompiledContent<K> {
-  const ctx: Ctx = { errors: validate(raw, rules) };
+  // Revisits are composed with their originals first (compileRevisit.ts), so validation and
+  // compilation see each revisit's whole layout.
+  const composed = composeRevisits(input);
+  const raw = composed.raw;
+  const ctx: Ctx = { errors: [...composed.errors, ...validate(raw, rules)] };
 
   const towers = new Map<string, CompiledTowerDef<K['tower']>>();
   for (const [key, def] of entriesOf(raw.towers)) {
@@ -129,7 +135,12 @@ export function compileContent<K extends IdSpace = LiveIds>(
   const maps = new Map<string, CompiledMapDef<K>>();
   for (const [key, def] of entriesOf(raw.maps)) {
     checkKey(ctx, 'maps', key, def.id);
-    const map = compileMap(ctx, refs, def);
+    const of = def.revisitOf;
+    const revisitSize =
+      of !== undefined && Object.hasOwn(input.maps, of)
+        ? (input.maps as Readonly<Record<string, { size: MapDef['size'] }>>)[of]!.size // hasOwn
+        : null;
+    const map = compileMap(ctx, refs, def, revisitSize);
     if (map !== null) maps.set(key, map);
   }
   for (const [i, id] of raw.campaign.entries()) {

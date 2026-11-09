@@ -8,6 +8,7 @@ import { assertNever } from '../../shared/types.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
+import { interact } from '../clickables.ts';
 import { pay, sellValue } from '../economy.ts';
 import { isLateSell } from '../objectives.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
@@ -72,7 +73,8 @@ function applyCommand(
     case 'clear':
       return applyClearCommand(state, ctx, cmd);
     case 'interact':
-      return 'notImplemented'; // clickable world objects arrive with T409
+      // A clickable world object (T409): `notClickable` unless a script has made it clickable.
+      return interact(state, cmd.marker, false);
     default:
       return assertNever(cmd);
   }

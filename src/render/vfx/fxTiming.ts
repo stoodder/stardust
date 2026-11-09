@@ -23,6 +23,23 @@ export function fadeAlpha(t: number): number {
   return STEPPED_ALPHA[3];
 }
 
+// ── Tells on sim ticks (art-direction §8, T430a) ─────────────────────────────────────────────
+
+/**
+ * Tells drawn from sim state (a shield pulse's rings, a blink's ghost, the hush) step between two
+ * alphas every TELL_STEP_TICKS sim ticks: a 3 Hz cycle at 60 ticks/s, the flicker cap (art-direction
+ * §8), at any game speed's frame rate; they hold while paused.
+ */
+export const TELL_STEP_TICKS = 10;
+
+/** Whether a tell with `ticksLeft` to go is on its high step (always, under reduced motion). */
+export function tellHigh(ticksLeft: number, reducedMotion: boolean): boolean {
+  return reducedMotion || Math.floor(Math.max(0, ticksLeft) / TELL_STEP_TICKS) % 2 === 0;
+}
+
+/** The page clock's shimmer: a look alternates every SHIMMER_MS, a 3 Hz cycle (D097). */
+export const SHIMMER_MS = 167;
+
 // ── Hitscan tracer (Kinetic: a straight streak, art-direction §7) ───────────────────────────
 
 /** A tracer's flight from muzzle to target, in ms (about 5 frames at 60 Hz). */

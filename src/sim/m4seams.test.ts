@@ -59,7 +59,8 @@ function gun(tier: CompiledTier): SimConfig<IdSpace> {
 }
 
 describe('the interact command (T409)', () => {
-  it('is declared, copied, logged, and rejected notImplemented until T409', () => {
+  // The rest of its rules: sim/clickables.test.ts.
+  it('is declared, copied, logged, and rejected notClickable while nothing is clickable', () => {
     const cmd: Command<FixtureIds> = { type: 'interact', marker: 'rock' };
     const copy = copyCommand(cmd);
     expect(copy).toEqual(cmd);
@@ -69,7 +70,7 @@ describe('the interact command (T409)', () => {
     sim.applyPending();
     const out: SimEvent<FixtureIds>[] = [];
     sim.drainEvents(out);
-    expect(out).toEqual([{ type: 'CommandRejected', cmd, reason: 'notImplemented' }]);
+    expect(out).toEqual([{ type: 'CommandRejected', cmd, reason: 'notClickable' }]);
     expect(sim.state.commandLog).toHaveLength(1);
   });
 });
@@ -241,21 +242,23 @@ describe('wreckage by marker and objectives as conditions', () => {
   });
 
   it('unsupportedScript names the task for each Act II part (SCRIPT_GATES)', () => {
+    // Clickable objects run since T409 (sim/clickables.test.ts).
+    expect(SCRIPT_GATES).not.toHaveProperty('interacted');
+    expect(SCRIPT_GATES).not.toHaveProperty('setClickable');
     expect(SCRIPT_GATES).toMatchObject({
-      interacted: 'T409',
-      setClickable: 'T409',
-      setLighting: 'T410a',
+      // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's.
+      setLighting: 'M7',
       checkpoint: 'T305b',
       'bossEnd.pivot': 'T305c (M5)',
     });
     const events = [
-      { id: 'a', on: { interacted: 'rock' }, when: null, actions: [], once: true },
+      { id: 'a', on: { objectiveCompleted: 'x' }, when: null, actions: [], once: true },
       { id: 'b', on: { tick: 1 }, when: null, actions: [{ setLighting: 'dusk' }], once: true },
       { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: true }], once: true },
     ] as const;
     expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'a': trigger interacted is not simulated until T409",
-      "event 'b': action setLighting is not simulated until T410a",
+      "event 'a': trigger objectiveCompleted is not simulated until M5",
+      "event 'b': action setLighting is not simulated until M7",
       "event 'c': action checkpoint is not simulated until T305b",
     ]);
   });
@@ -284,8 +287,10 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'tower.economy': 'T408',
       'tower.harpoon': 'T408',
       'tower.crane': 'T408',
-      'map.clickable': 'T409',
-      'map.revisit': 'T410a',
+      // Clickable objects run since T409 (sim/clickables.test.ts).
+      'map.clickable': null,
+      // Revisits run since T410a (content/compileRevisit.test.ts).
+      'map.revisit': null,
       // Renumbered by D101 (M5 = Act II, part two; M6 = Act III; M7 = the finale).
       'attack.beam': 'M5',
       'status.unnerved': 'M5',
@@ -323,7 +328,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
     }
   });
 
-  it('refuses revisits and clickable objects on the map (Protect plays since T305a)', () => {
+  it('refuses nothing on the map (Protect since T305a, clickables since T409, revisits since T410a)', () => {
     const asset = {
       name: 'Rock',
       integrity: 10,
@@ -332,12 +337,12 @@ describe('FEATURE_GATES (T400a rows)', () => {
       routes: ['a'],
     };
     expect(gateRefusals(contentWith(null, { objective: 'protect', asset }))).toEqual([]);
-    expect(gateRefusals(contentWith(null, { revisitOf: 'a1_m02', revisitAt: [2, 1] }))).toEqual([
-      "a revisit of 'a1_m02' is not simulated until T410a",
-    ]);
-    expect(gateRefusals(contentWith(null, { clickables: { rock: { name: 'A rock' } } }))).toEqual([
-      'clickable objects (rock) is not simulated until T409',
-    ]);
+    // Revisits run since T410a (content/compileRevisit.test.ts).
+    expect(gateRefusals(contentWith(null, { revisitOf: 'a1_m02', revisitAt: [2, 1] }))).toEqual([]);
+    // Clickable objects run since T409 (sim/clickables.test.ts).
+    expect(gateRefusals(contentWith(null, { clickables: { rock: { name: 'A rock' } } }))).toEqual(
+      [],
+    );
   });
 
   it('refuses the stub towers and their new tier abilities (the Lookout and Scanner Sweep play)', () => {

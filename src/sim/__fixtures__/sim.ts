@@ -13,10 +13,10 @@ import { createSim, type Sim } from '../sim.ts';
 export type { FixtureIds };
 
 /**
- * The content fixture as the sim runs it: fx_map without its clickable rock (`clickables`, and
- * `late_gift`'s `setClickable` action), which the sim doesn't simulate yet (createSim refuses
- * them until T409; clickable objects are A2M3's). Its other script parts (a cue at W2's
- * countdown, a credit grant 1.5 s into W2) stay.
+ * The content fixture as most sim tests run it: fx_map without its clickable rock (`clickables`,
+ * and `late_gift`'s `setClickable` action, whose fallback would add events to every run's stream).
+ * sim/clickables.test.ts runs the whole fixture (`CLICK_CONTENT`). Its other script parts (a cue at
+ * W2's countdown, a credit grant 1.5 s into W2) stay.
  */
 const { clickables: _clickables, ...FX_MAP } = FIXTURE.maps.fx_map;
 
@@ -34,6 +34,9 @@ export const SIM_FIXTURE: RawContent<FixtureIds> = {
 
 /** The sim fixture content, compiled once (it's deep-frozen, so sharing it is safe). */
 export const FIXTURE_CONTENT: CompiledContent<FixtureIds> = compileContent(SIM_FIXTURE);
+
+/** The whole content fixture, its clickable rock included (T409), compiled once. */
+export const CLICK_CONTENT: CompiledContent<FixtureIds> = compileContent(FIXTURE);
 
 /** A valid M1 config on fx_map; override any field. */
 export function fixtureConfig(over: Partial<SimConfig<FixtureIds>> = {}): SimConfig<FixtureIds> {

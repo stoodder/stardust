@@ -11,6 +11,23 @@
 
 export type PeekerPose = 'hidden' | 'peek' | 'duck';
 
+/** The marker the Peeker sits on, and the one a script makes clickable to hold Pebble (A2M3). */
+export const PEEKER_MARKER = 'peeker';
+
+/**
+ * The Peeker's story state, read from the sim each frame (T409). `shy` on a map where its rock is
+ * only a rock (Act I: it peeks and ducks). Where the map lists the `peeker` marker as a clickable
+ * world object (A2M3, `scripted`): `holding` Pebble while it's clickable, and `empty` before (the
+ * old rock stands bare until she turns up on it, from W5) and after (Bricks has her).
+ */
+export type PeekerHold = 'shy' | 'holding' | 'empty';
+
+/** The hold for the sim's clickable markers (`state.clickable`) on a map that scripts the rock. */
+export function peekerHold(scripted: boolean, clickable: readonly string[]): PeekerHold {
+  if (!scripted) return 'shy';
+  return clickable.includes(PEEKER_MARKER) ? 'holding' : 'empty';
+}
+
 /** The wait between peeks, in ms of play (core-loop.md § 6.9: every 20–40 s). */
 export const PEEK_EVERY_MIN_MS = 20_000;
 export const PEEK_EVERY_MAX_MS = 40_000;

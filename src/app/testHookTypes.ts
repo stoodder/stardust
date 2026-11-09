@@ -4,6 +4,13 @@ import type { IdSpace } from '../content/types.ts';
 import type { SaveData } from '../meta/saveData.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import type { Command, SimState } from '../sim/index.ts';
+import type { RenderState } from '../render/views/renderState.ts';
+
+export type {
+  AllyRenderState,
+  EnemyRenderState,
+  RenderState,
+} from '../render/views/renderState.ts';
 
 /** Battle state as the hooks expose it: plain string ids (works for any content set). */
 export type HookState = DeepReadonly<SimState>;
@@ -49,6 +56,13 @@ export interface TestHooks {
   readonly ready: Promise<void>;
   /** The live, read-only sim state of the current battle, or `null` outside one. */
   state(): HookState | null;
+  /**
+   * What the playfield draws now (T332, T430a; render/views/renderState.ts): each enemy's pose,
+   * bar, tell glyph, rim, bubble, hush ring, and bracket; each ally's lowered weapon and glow; the
+   * shield, blink, and debris counts. `null` outside a battle. Assert render beats with it, then
+   * screenshot what it says is up.
+   */
+  render(): RenderState | null;
   /** Issues a `Command` exactly as the UI would (it applies on the next tick). No-op outside a battle. */
   enqueue(cmd: HookCommand): void;
   /** Sets game speed; during a battle it drives the host loop. */

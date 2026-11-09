@@ -17,7 +17,9 @@
 // lands on it. Linked towers show a tether (LinkView, from LinkFormed / LinkBroken). A Cluster
 // Thumper's bomblets pop with their own small burst.
 // The Peeker (T309) is PeekerView's: on a map with a `peeker` marker it peeks, ducks from enemies
-// and the cursor, and ducks when poked (BattleInteraction's `onPoke`, a UI event).
+// and the cursor, and ducks when poked (BattleInteraction's `onPoke`, a UI event). Where the map
+// makes its rock a clickable world object (T409) it holds Pebble while the sim says it's clickable
+// (`peekerHold`), and ClickableView outlines whatever is clickable now (`state.clickable`).
 // M3 (T312a): air lanes show dotted while flyers are due or an armed tower hits air (AirLaneView);
 // flak climbs and bursts at a flyer's height; Zapcoil's arcs are ChainFx's and Gerald's plinks
 // PlinkFx's; Time Dilation's field tints the playfield (FieldTintView); wreckage follows the
@@ -33,6 +35,8 @@
 // M4 (T403): a hit on a shield ripples, and a shield pulse tells and rings (ShieldView).
 // M4 (T404): a blink's tell shows a ghost where the unit will land, and leaves an afterimage
 // (BlinkView).
+// M4 (T410a): a map's lighting schedule crossfades the sky and a multiply grade as its waves start
+// (LightingView; cosmetic), and its dressing greys the grass (GroundView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -79,6 +83,7 @@ import { CursorView } from '../views/CursorView.ts';
 import { DroneView } from '../views/DroneView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
+import { LightingView } from '../views/LightingView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
@@ -89,7 +94,9 @@ import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
+import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
+import { PEEKER_MARKER, peekerHold } from '../views/peekerMotion.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
@@ -97,6 +104,7 @@ import { ProjectileView } from '../views/ProjectileView.ts';
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
+import type { AllyRenderState, EnemyRenderState, RenderState } from '../views/renderState.ts';
 import { ViewPool } from '../views/ViewPool.ts';
 import { barMaxHp } from '../vfx/healthBar.ts';
 import { WreckageView } from '../views/WreckageView.ts';
@@ -154,6 +162,7 @@ export class BattleScene extends Phaser.Scene {
   #chains!: ChainFx;
   #plinks!: PlinkFx;
   #fieldTint!: FieldTintView;
+  #lighting!: LightingView;
   /** Scanner Sweep's circle while its reveal zone lives (T406). */
   #sweeps!: SweepView;
   #wreckage!: WreckageView;
@@ -170,6 +179,8 @@ export class BattleScene extends Phaser.Scene {
   #clearTicks = 0;
   /** The Peeker on the map's `peeker` marker, or null on a map without one. */
   #peeker: PeekerView | null = null;
+  /** The clickable-object outlines (T409). */
+  #clickables!: ClickableView;
   /** The sim tick at the last frame: play time only passes while it moves. */
   #lastTick = 0;
   /** The radio pointer id last pinged (0: none). */
@@ -277,6 +288,7 @@ export class BattleScene extends Phaser.Scene {
     this.#chains = new ChainFx(ctx);
     this.#plinks = new PlinkFx(ctx, this.#fx);
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
+    this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
     this.#sweeps = new SweepView(ctx, this.#fx);
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
     this.#drone = new DroneView(ctx, map);
@@ -313,6 +325,10 @@ export class BattleScene extends Phaser.Scene {
             sim.config.seed,
             peekerCover(map.id),
           );
+    // Clickable world objects (T409): the outline hugs the Peeker holding Pebble on her marker.
+    this.#clickables = new ClickableView(ctx, map, prefersReducedMotion);
+    const peeker = this.#peeker;
+    if (peeker !== null) this.#clickables.setObject(PEEKER_MARKER, () => peeker.outlineFrame());
     this.#lastTick = sim.state.tick;
     const teach: [number, number][] = [];
     map.tiles.forEach((t, i) => {
@@ -386,6 +402,7 @@ export class BattleScene extends Phaser.Scene {
       this.#chains.reset();
       this.#plinks.reset();
       this.#fieldTint.reset();
+      this.#lighting.reset();
       this.#sweeps.reset();
       this.#wreckage.reset();
       this.#bossBar.reset();
@@ -394,6 +411,7 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.reset();
       this.#leaves.reset();
       this.#hover.reset();
+      this.#clickables.reset();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();
@@ -410,6 +428,7 @@ export class BattleScene extends Phaser.Scene {
     this.#chains.update(dt);
     this.#plinks.update(dt);
     this.#fieldTint.update(state.zones);
+    this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
     this.#sweeps.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
@@ -424,6 +443,7 @@ export class BattleScene extends Phaser.Scene {
     this.#links.update();
     this.#syncPing(delta);
     this.#syncPeeker(delta);
+    this.#clickables.update(dt, state.clickable);
     this.#core.update(state.integrity, state.towerAtTile);
     this.#syncTeach();
   }
@@ -458,7 +478,9 @@ export class BattleScene extends Phaser.Scene {
     const played = state.tick !== this.#lastTick;
     this.#lastTick = state.tick;
     const hovered = this.#hover.pointerTile(true).index === p.tile;
-    p.update(delta, played ? delta : 0, state.enemies, hovered);
+    const scripted = Object.hasOwn(this.#deps.sim.map.clickables, PEEKER_MARKER);
+    const hold = peekerHold(scripted, state.clickable);
+    p.update(delta, played ? delta : 0, state.enemies, hovered, hold);
   }
 
   /** The boss bar's fill (px of 160), or −1 while no bar shows (the smoke flows' check). */
@@ -469,6 +491,48 @@ export class BattleScene extends Phaser.Scene {
   /** The drawn pose of the enemy `uid` (EnemyView's), or null without a view (smoke flows). */
   enemyPose(uid: number): string | null {
     return this.#enemies.get(uid)?.pose ?? null;
+  }
+
+  /**
+   * What the playfield draws now, as data (T332, T430a; views/renderState.ts): the `__sd.render()`
+   * hook's. Test-only, so it allocates freely.
+   */
+  renderState(): RenderState {
+    const enemies: EnemyRenderState[] = [];
+    for (const [uid, v] of this.#enemies.live) {
+      enemies.push({
+        uid,
+        pose: v.pose,
+        alpha: v.alpha,
+        bar: v.barShown,
+        tell: v.tellShown,
+        ...v.dress,
+      });
+    }
+    const allies: AllyRenderState[] = [];
+    for (const [uid, v] of this.#allies.live) {
+      allies.push({ uid, sprite: v.sprite, lowered: v.lowered, glow: v.glowShown });
+    }
+    const sh = this.#shields;
+    return {
+      enemies,
+      allies,
+      shields: {
+        ripples: sh.ripples,
+        breaks: sh.breaks,
+        pulseRings: sh.pulseRings,
+        tells: sh.tells,
+      },
+      blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
+      debris: this.#fx.debrisLive,
+      bossBar: this.bossBarFill,
+      tethers: this.tethers,
+    };
+  }
+
+  /** How many clickable-object outlines show (T409; tests' view of them). */
+  get clickablesShown(): number {
+    return this.#clickables.shown;
   }
 
   /** The Peeker's pose (the smoke hooks' view of it), or null on a map without one. */

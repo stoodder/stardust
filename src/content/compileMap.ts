@@ -2,7 +2,8 @@
 // towerUnlockWave compiled into script events, and script time triggers in ticks. Route geometry
 // is part of the route format, so compile checks it (design/maps.md §4): a path lists its spawn
 // `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time. A Protect map's
-// asset routes end beside the asset instead (AssetDef; T305a).
+// asset routes end beside the asset instead (AssetDef; T305a). A revisit arrives composed with its
+// original (compileRevisit.ts).
 import type {
   CompiledAllyPost,
   CompiledAsset,
@@ -35,6 +36,8 @@ export function compileMap<K extends IdSpace>(
   ctx: Ctx,
   refs: Refs<K>,
   def: MapDef<K, K['map']>,
+  /** A revisit's original's size (compileRevisit.ts has composed its layout), else null. */
+  revisitSize: { readonly cols: number; readonly rows: number } | null = null,
 ): CompiledMapDef<K> | null {
   const where = `maps.${def.id}`;
   const errorsBefore = ctx.errors.length;
@@ -144,6 +147,12 @@ export function compileMap<K extends IdSpace>(
     allies,
     revisitOf: def.revisitOf ?? null,
     revisitAt: def.revisitAt === undefined ? null : [def.revisitAt[0], def.revisitAt[1]],
+    revisitSize:
+      def.revisitOf === undefined || revisitSize === null
+        ? null
+        : { cols: revisitSize.cols, rows: revisitSize.rows },
+    lighting: def.lighting ?? [],
+    dressing: def.dressing ?? [],
     asset,
     clickables: { ...def.clickables },
     builds,

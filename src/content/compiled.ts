@@ -14,12 +14,14 @@ import type {
   ConditionDef,
   CounterId,
   DamageType,
+  DressingLayerDef,
   EnemyFaction,
   FlagValue,
   GridPos,
   HoldFireWhileTarget,
   IdSpace,
   Layer,
+  LightingKeyDef,
   LiveIds,
   MarkerId,
   MedalKind,
@@ -593,9 +595,19 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   }[];
   /** Ally posts, spawned on the first tick (systems/allies.ts). */
   readonly allies: readonly CompiledAllyPost[];
+  /**
+   * A revisit's original (MapDef.revisitOf), or null. Its layout is already composed into this
+   * map's tiles, routes, and markers (compileRevisit.ts); these say where, for render's dressing.
+   */
   readonly revisitOf: string | null;
-  /** MapDef.revisitAt, or null (T410a). */
+  /** Where the original's tile (0, 0) sits (MapDef.revisitAt), or null. */
   readonly revisitAt: GridPos | null;
+  /** The original's footprint (its size), or null. */
+  readonly revisitSize: { readonly cols: number; readonly rows: number } | null;
+  /** The lighting schedule (MapDef.lighting): cosmetic, render reads it; empty for none. */
+  readonly lighting: readonly LightingKeyDef[];
+  /** Render-only dressing layers (MapDef.dressing); empty for none. */
+  readonly dressing: readonly DressingLayerDef[];
   /** The Protect map's asset, its marker resolved (T305a), or null. */
   readonly asset: CompiledAsset | null;
   /** Clickable world objects by marker (MapDef.clickables; T409); empty for none. */
