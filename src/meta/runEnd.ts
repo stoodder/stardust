@@ -17,7 +17,7 @@ import {
   type StardustPayout,
 } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
-import { enemiesMet, withStoryUnlocks } from './story.ts';
+import { enemiesMet, isEnemyId, withStoryUnlocks } from './story.ts';
 import { clampCurrency } from './validate.ts';
 
 /** What a run end reads from the finished battle. */
@@ -47,7 +47,20 @@ export interface RunEndInput {
    * rule is applied (unit tests of the other steps).
    */
   readonly stats?: FlagRuleStats;
+  /**
+   * The enemy types that actually spawned this run (its `EnemySpawned` events, in order; D097):
+   * what step 8 adds to the seen list, so quitting before a wave never spends its NEW badge,
+   * first bark, or codex entry. Without it, step 8 estimates them from the map's waves
+   * (`enemiesMet`; tests and the results fixture).
+   */
+  readonly met?: readonly string[];
 }
+
+/**
+ * The `story.seen` id that marks the first payday as shown (D097): the app adds it when a Results
+ * card shows the payday, so a run that never reaches Results can't use it up.
+ */
+export const FIRST_PAYDAY_SEEN_ID = 'results_first_payday';
 
 /** What a run end paid and recorded, for the results screen. */
 export interface RunEndSummary {
@@ -56,8 +69,9 @@ export interface RunEndSummary {
   readonly wonBefore: boolean;
   readonly stardust: StardustPayout;
   /**
-   * The run paid Stardust into an empty bank. Until Zibzab's shop opens (the only Stardust sink)
-   * the bank only grows, so then this is the save's first payday (T235: Results marks it once).
+   * The save's first payday (T235; D097): a win that pays Stardust while `story.seen` lacks
+   * FIRST_PAYDAY_SEEN_ID, which the app adds once a Results card has shown it. Never read from the
+   * bank balance, so an abandoned run's stipend can't use it up.
    */
   readonly firstPayday: boolean;
   /** The medals this run earned, in the sim's order; `isNew` ones paid Intel. */
@@ -163,14 +177,15 @@ export function runEnd(
   // 8. Story unlocks (meta/story.ts): the enemies this run met join the seen list, the memos now
   //    due are delivered with their gifts, and the codex versions now unlocked are added. After
   //    step 7, so an issued tower's entry unlocks with it.
-  const story = withStoryUnlocks(withTowers, enemiesMet(input.mapId, won, input.wavesResolved));
+  const met = input.met ?? enemiesMet(input.mapId, won, input.wavesResolved);
+  const story = withStoryUnlocks(withTowers, met.filter(isEnemyId));
   return {
     save: story.save,
     summary: {
       outcome: input.outcome,
       wonBefore,
       stardust,
-      firstPayday: stardust.amount > 0 && save.currencies.stardust <= 0,
+      firstPayday: won && stardust.amount > 0 && !save.story.seen.includes(FIRST_PAYDAY_SEEN_ID),
       medals,
       objectives,
       intel,

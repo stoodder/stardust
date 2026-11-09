@@ -99,7 +99,18 @@ function isDeath(n: string): boolean {
   return n.startsWith('death_');
 }
 
+/**
+ * Full-screen scene art (`scene.*`, the DOM scene layer's: the Rig 9 feed) is big and drawn only
+ * on the scene layer's `ink.0` stage, so its card shows its frames on dark only.
+ */
+function isScene(b: BakedSprite): boolean {
+  return b.id.startsWith('scene.');
+}
+
 function cardPlan(b: BakedSprite): CardPlan {
+  if (isScene(b)) {
+    return { rows: [{ variant: DEFAULT_VARIANT, frames: b.frameNames, light: false, glow: false }] };
+  }
   const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
   const deaths = b.frameNames.filter(isDeath);

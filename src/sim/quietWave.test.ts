@@ -6,11 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { compileContent } from '../content/compile.ts';
-import type {
-  CompiledContent,
-  CompiledScriptedEvent,
-  CompiledWave,
-} from '../content/compiled.ts';
+import type { CompiledContent, CompiledScriptedEvent, CompiledWave } from '../content/compiled.ts';
 import type { IdSpace, WaveTag } from '../content/types.ts';
 import { MAP, WALKER, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
@@ -55,8 +51,19 @@ function content(
 
 type Logged = { readonly tick: number; readonly e: SimEvent<IdSpace> };
 
-function start(c: CompiledContent<FixtureIds>): Sim<FixtureIds> {
-  const sim = createSim(fixtureConfig({ content: c }));
+function start(c: CompiledContent<FixtureIds>, integrity?: number): Sim<FixtureIds> {
+  const modifiers =
+    integrity === undefined
+      ? []
+      : [
+          {
+            kind: 'economy',
+            stat: 'coreIntegrity',
+            set: integrity,
+            source: 'veteran:glass',
+          } as const,
+        ];
+  const sim = createSim(fixtureConfig({ content: c, modifiers }));
   sim.enqueue({ type: 'callWave' });
   return sim;
 }
@@ -148,18 +155,18 @@ describe('the Quiet Wave refuses callWave', () => {
   });
 });
 
-describe('a quiet_wave leak never takes the core below 1', () => {
-  /** Leaks one walker (leak `cost`, tags `tags`) into a core at `integrity`. */
-  function leakAt(integrity: number, tags: readonly WaveTag[], cost = 2) {
-    const { state } = setup();
-    state.integrity = integrity;
-    const def = Object.freeze({ ...WALKER, id: 'thrum', leak: cost });
-    spawn(state, def, { dist: MAP.routes.a!.lengthTiles, tags });
-    movement(state);
-    const leaked = state.events.find((e) => e.type === 'EnemyLeaked');
-    return { integrity: state.integrity, leak: leaked?.type === 'EnemyLeaked' ? leaked.leak : -1 };
-  }
+/** Leaks one walker (leak `cost`, tags `tags`) into a core at `integrity`. */
+function leakAt(integrity: number, tags: readonly WaveTag[], cost = 2) {
+  const { state } = setup();
+  state.integrity = integrity;
+  const def = Object.freeze({ ...WALKER, id: 'thrum', leak: cost });
+  spawn(state, def, { dist: MAP.routes.a!.lengthTiles, tags });
+  movement(state);
+  const leaked = state.events.find((e) => e.type === 'EnemyLeaked');
+  return { integrity: state.integrity, leak: leaked?.type === 'EnemyLeaked' ? leaked.leak : -1 };
+}
 
+describe('a quiet_wave leak never takes the core below 1', () => {
   it('caps the leak at integrity − 1', () => {
     expect(leakAt(2, ['quiet_wave'])).toEqual({ integrity: 1, leak: 1 });
     expect(leakAt(1, ['quiet_wave'])).toEqual({ integrity: 1, leak: 0 });
@@ -171,8 +178,9 @@ describe('a quiet_wave leak never takes the core below 1', () => {
   });
 
   it('a spared Quiet Wave never loses the map', () => {
-    const sim = start(content({ after: 'bossEnded', tags: ['quiet_wave'] }));
-    sim.state.integrity = 1;
+    const sim = start(content({ after: 'bossEnded', tags: ['quiet_wave'] }), 1);
+    expect(sim.state.integrity).toBe(1);
+    expect(WALKER.leak).toBeGreaterThan(0);
     runTo(sim, 6000);
     expect(sim.state.stats.tagLeaked.quiet_wave).toBe(3);
     expect(sim.state.integrity).toBe(1);

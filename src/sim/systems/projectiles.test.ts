@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { enemyDef, placeTower, setup, spawn } from '../__fixtures__/combat.ts';
+import { enemyDef, placeTower, setup, spawn, tierWith } from '../__fixtures__/combat.ts';
 import type { SimEvent as LiveSimEvent } from '../events.ts';
 import { hashState } from '../hashState.ts';
 import { poolKill } from '../pool.ts';
@@ -163,5 +163,30 @@ describe('Bunker Buster', () => {
     const second = 100000 - plated.hp - first;
     expect(plated.corrodedStacks).toBe(3);
     expect(second - first).toBeCloseTo(3, 9); // 3 less armor on the second hit
+  });
+});
+
+/** One shell from `tier` at a plated still target that burrows while it flies. */
+function burrowedUnder(splash: boolean) {
+  const { state, ctx } = setup();
+  const tier = splash ? THUMPER.tiers[2] : tierWith(THUMPER.tiers[2], { splashTiles: 0 });
+  placeTower(state, THUMPER, 3, 1, tier);
+  const def = enemyDef('fx_plated_digger', { hp: 1000, speedTilesPerTick: 0, armor: 8 });
+  const e = spawn(state, def, { dist: 4 });
+  run(state, ctx, 1); // the shell is fired at tick 0
+  e.burrowed = true;
+  const evs = run(state, ctx, 60);
+  return { e, hits: ofType(evs, 'ProjectileHit') };
+}
+
+describe('a shell landing on an untargetable unit', () => {
+  it.each([
+    ['a splash shell', true],
+    ['a shot with no splash', false],
+  ])('%s hits nothing and shows no armor tell', (_, splash) => {
+    const { e, hits } = burrowedUnder(splash);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ hits: 0, damage: 0, reduced: false });
+    expect(e.hp).toBe(1000);
   });
 });

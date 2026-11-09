@@ -83,6 +83,22 @@ describe('hoverLook', () => {
   it('shows nothing off the map', () => {
     expect(hoverLook(off, 'rivet', true)).toMatchObject({ highlight: null, ghost: false });
   });
+
+  it('marks a wreck to clear in salvage gold with its label, only with nothing armed (D097)', () => {
+    const wreck: TileFacts = { ...path, groundPath: false, wreckage: 'wreckage' };
+    expect(hoverLook(wreck, null, false)).toMatchObject({ highlight: 'salvage', salvage: true });
+    // Armed: "Clear it first" stays the answer, so the hover reads invalid with no label.
+    expect(hoverLook(wreck, 'rivet', false)).toMatchObject({ highlight: 'invalid', salvage: false });
+    // Already queued or being cleared: a plain hover, no label (a click says the drone's on it).
+    for (const status of ['queued', 'clearing'] as const) {
+      expect(hoverLook({ ...wreck, wreckage: status }, null, false)).toMatchObject({
+        highlight: 'hover',
+        salvage: false,
+      });
+    }
+    // Aiming wins: the reticle, not the drone.
+    expect(hoverLook(wreck, null, false, 1)).toMatchObject({ aim: true, salvage: false });
+  });
 });
 
 describe('aiming an ability', () => {
@@ -105,6 +121,7 @@ describe('aiming an ability', () => {
       ghostValid: false,
       ringTowerUid: 0,
       aim: true,
+      salvage: false,
     });
     expect(hoverLook(path, null, false, 1)).toMatchObject({ aim: true });
     expect(hoverLook(off, null, false, 1)).toMatchObject({ aim: false, highlight: null });

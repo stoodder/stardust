@@ -484,6 +484,10 @@ describe("M3's enemies (T311a)", () => {
 
   it('the youngling is a small Nibbler, and the Peeker is that youngling behind a rock', () => {
     expect(def('enemy.youngling').size.w).toBeLessThan(def('enemy.nibbler').size.w);
+    // Its seedling (two leaves, D097) sets it apart from a Nibbler's or a Hauler's young.
+    for (const f of ['walk_se_0', 'walk_se_1', 'walk_ne_0', 'walk_ne_1']) {
+      expect(count(grid('enemy.youngling', f).slice(0, 2), 'de'), f).toBeGreaterThanOrEqual(6);
+    }
     expect(def('enemy.youngling').size.w).toBeGreaterThan(def('enemy.hauler_young').size.w);
     const p = def('prop.peeker');
     // Each map's own cover (T311c) repeats the four poses behind it: `<cover>_<frame>`.
@@ -544,7 +548,7 @@ describe('M3 tell glyphs (art-direction §8)', () => {
   it('are 8×8, in their tell colors', () => {
     for (const [id, c] of [
       ['icon.tell.flying', 'white.0'],
-      ['icon.tell.burrower', 'grime.3'],
+      ['icon.tell.burrower', 'grime.4'],
       ['icon.tell.splitter', 'pink.3'],
       ['icon.tell.huddle', 'gold.3'],
       ['icon.tell.boss', 'gold.4'],
@@ -552,6 +556,8 @@ describe('M3 tell glyphs (art-direction §8)', () => {
       expect(def(id).size, id).toEqual({ w: 6, h: 6 });
       expect(Object.values(def(id).legend ?? {}), id).toContain(c);
     }
+    // D097: the burrower's arrow has a white-hot core so it reads on dirt and grass.
+    expect(def('icon.tell.burrower').legend).toMatchObject({ W: 'white.1' });
   });
 });
 
@@ -646,8 +652,23 @@ describe('wreckage and the salvage drone (T311b)', () => {
       // The salvage stake's hazard stripes: the "clear me" cue on every wreck.
       expect(count(grid('prop.wreckage', v), 'O'), v).toBeGreaterThan(4);
     }
-    // Everglow hardware keeps its colors in every act (custom legend), the dirt follows the env.
-    expect(d.legend).toMatchObject({ W: 'white.0', O: 'orange.3', E: 'teal.3' });
+    // Dead hardware (D097): no Everglow white left on the wreck, the stake keeps its orange, and
+    // the patch is a burnt ink.1 heart with a grime rim; custom legend, so it holds in every act.
+    expect(d.legend).toMatchObject({ W: 'steel.3', O: 'orange.3', K: 'ink.1', J: 'grime.1' });
+    expect(Object.values(d.legend ?? {})).not.toContain('white.1');
+    expect(Object.values(d.legend ?? {})).not.toContain('white.0');
+    for (const v of ['v0', 'v1']) {
+      expect(count(grid('prop.wreckage', v), 'K'), v).toBeGreaterThan(12);
+      expect(count(grid('prop.wreckage', v), 'J'), v).toBeGreaterThan(8);
+    }
+    // The stake's beacon winks slowly while the wreck waits (≤ 3 Hz), faster once queued.
+    for (const v of ['v0', 'v1']) {
+      const idle = d.anims?.[`idle_${v}`];
+      expect(
+        idle && 'frames' in idle ? idle.frames.length / idle.fps : 0,
+        v,
+      ).toBeGreaterThanOrEqual(1);
+    }
     expect(d.variants).toContain('act3');
   });
 
@@ -663,5 +684,56 @@ describe('wreckage and the salvage drone (T311b)', () => {
     // Boxy Everglow white with orange hazard bands, not Gerald's round capsule.
     expect(d.palette).toBe('everglow');
     expect(count(grid('prop.salvage_drone', 'fly_0'), 'bc')).toBeGreaterThan(6);
+  });
+});
+
+describe("Act I's payoff staging (D097: the stinger and the party)", () => {
+  it('runs the Rig 9 feed: live, static, six frames of the wrong shape, then NO SIGNAL', () => {
+    const d = def('scene.rig9_feed');
+    const frames = Object.keys(d.frames);
+    for (const f of ['live_0', 'live_1', 'no_signal_0', 'no_signal_1']) expect(frames).toContain(f);
+    const smudge = d.anims?.['smudge'];
+    // Six frames, about half a second, once.
+    expect(smudge).toMatchObject({ fps: 12, loop: false });
+    expect(smudge && 'frames' in smudge ? smudge.frames : []).toHaveLength(6);
+    expect(d.anims?.['static']).toBeDefined();
+    // The shape is the Hollow: its palette's reserved acid and pale outline show only on the
+    // smudge frames, never on the quiet feed or the NO SIGNAL card.
+    expect(d.palette).toBe('hollow');
+    for (const f of ['live_0', 'live_1', 'no_signal_0'])
+      expect(count(grid('scene.rig9_feed', f), 'abcde+*x')).toBe(0);
+    for (const f of ['smudge_1', 'smudge_3', 'smudge_4']) {
+      expect(count(grid('scene.rig9_feed', f), 'cd'), f).toBeGreaterThan(0);
+      expect(count(grid('scene.rig9_feed', f), 'NO'), f).toBeGreaterThan(
+        count(grid('scene.rig9_feed', 'live_0'), 'NO'),
+      );
+    }
+    // It grows: each smudge frame shows more of it than the one before, up to the tear.
+    const body = (k: number): number => count(grid('scene.rig9_feed', `smudge_${k}`), 'NOx');
+    expect(body(1)).toBeGreaterThan(body(0));
+    expect(body(3)).toBeGreaterThan(body(1));
+    expect(body(4)).toBeGreaterThan(body(3));
+    // The NO SIGNAL card blinks its text (lit, then dim), under 3 Hz.
+    expect(grid('scene.rig9_feed', 'no_signal_0')).not.toEqual(
+      grid('scene.rig9_feed', 'no_signal_1'),
+    );
+    expect(d.anims?.['no_signal']).toMatchObject({ fps: 1 });
+  });
+
+  it('throws confetti from the cannon’s muzzle, and drifts it down in a seamless loop', () => {
+    const d = def('fx.confetti_burst');
+    const burst = d.anims?.['burst'];
+    expect(burst).toMatchObject({ loop: false });
+    expect(burst && 'frames' in burst ? burst.frames : []).toHaveLength(6);
+    // The fountain rises: the highest piece climbs over the first frames.
+    const top = (f: string): number => bounds(grid('fx.confetti_burst', f)).y0;
+    expect(top('burst_2')).toBeLessThan(top('burst_0'));
+    // Every party colour shows.
+    const all = Object.keys(d.frames).map((f) => grid('fx.confetti_burst', f).join(''));
+    for (const ch of ['P', 'G', 'B', 'T', 'O', 'R']) expect(all.join('')).toContain(ch);
+    const fall = d.anims?.['fall'];
+    expect(fall && 'frames' in fall ? fall.frames.length : 0).toBeGreaterThanOrEqual(6);
+    // The cannon it stages with fires once.
+    expect(def('prop.confetti_cannon').anims?.['fire']).toMatchObject({ loop: false });
   });
 });

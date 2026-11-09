@@ -47,6 +47,18 @@
   color: var(--accent);
 }
 
+/* The codex list's header: its title and count on one line, never wrapping (U-L4). */
+.sd-story-list .sd-codex-list-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.sd-codex-count {
+  color: var(--sd-steel-3);
+}
+
 .sd-codex-section + .sd-codex-section {
   margin-top: 6px;
 }

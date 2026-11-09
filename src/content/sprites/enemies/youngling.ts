@@ -1,14 +1,17 @@
 // The youngling (`enemy.youngling`, design/enemies.md § 5.1 youngling modifier; art-direction §6):
 // the small sprite variant drawn for a unit whose wave group carries the `youngling` tag (the
 // Quiet Wave's little ones behind Old Thrum) and for the Peeker. A smaller Nibbler: rounder, with
-// eyes too big for it, a single sprout of a tuft, and the faint pink-gold shimmer frost of the very
-// young on its back. It toddles: a hop, a wobble, a hop.
+// eyes too big for it, a seedling for a tuft (two leaves on a stem), and the faint pink-gold
+// shimmer frost of the very young on its back. It toddles: a hop, a wobble, a hop.
 import { defineSprite } from '../defineSprite.ts';
 import { DEATH_ANIM, deathFrames } from './death.ts';
 import { finish, skitterBody } from './skitter.ts';
 
 const W = 11;
 const H = 10;
+
+/** The seedling on its crown: two leaves (`green.4` tips over `green.3`) on a `green.2` stem. */
+const SPROUT = ['ed.de', '.dcd.', '..c..'] as const;
 
 /** One youngling frame (the Peeker reuses the front view, props/peeker.ts). */
 export function youngling(facing: 'se' | 'ne', step: 0 | 1): string[] {
@@ -27,8 +30,9 @@ export function youngling(facing: 'se' | 'ne', step: 0 | 1): string[] {
   if (facing === 'se') {
     return finish(g, [
       [1, H - 2, legs],
-      // One sprout of a tuft.
-      [4, 0 - up, ['.c', 'b.']],
+      // A seedling for a tuft: two green leaves on a stem (D097: it never reads as a Nibbler's
+      // or a Hauler's young). It doesn't bob, so the leaves never clip off the top.
+      [3, 0, SPROUT],
       [5, 3 - up, ['wk', 'kk', 'kk']],
       [8, 3 - up, ['wk', 'kk', 'kk']],
       [2, 3 - up, ['P', '+']],
@@ -36,7 +40,7 @@ export function youngling(facing: 'se' | 'ne', step: 0 | 1): string[] {
   }
   return finish(g, [
     [1, H - 2, legs],
-    [4, 0 - up, ['.c', 'b.']],
+    [3, 0, SPROUT],
     [3, 3 - up, ['P*P', '.+.']],
   ]);
 }

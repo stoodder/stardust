@@ -1,8 +1,10 @@
 // Scenes that hold input (art-direction.md § Dialogue presentation; story/style-guide.md § 4): a
 // bottom panel over the paused battle (a 48×48 portrait framed in the speaker's colour, the name
 // plate, the typewriter, Next, and choices), or a full-screen scene on a dark stage with the
-// lines so far above the current one (the party, the stinger). The briefing is the HUD's own
+// lines so far above the current one, and its staging (Staging.tsx: the stinger's Rig 9 feed, which
+// leads the lines in, and the party's confetti and record counter). The briefing is the HUD's own
 // (hud/Briefing.tsx). Esc skips to the next choice or the end (app/keys.ts routes it here).
+import { useEffect, useState } from 'preact/hooks';
 import { hud } from '../state.ts';
 import { NamePlate } from './CommsPanel.tsx';
 import { plateColor } from './plate.ts';
@@ -16,6 +18,7 @@ import {
   useSceneStep,
   type SceneStep,
 } from './SceneParts.tsx';
+import { Staging } from './Staging.tsx';
 import { plainText } from './text.ts';
 import { dialogue, type LineView, type SceneView } from './state.ts';
 import './dialogue.css';
@@ -88,12 +91,36 @@ export function TranscriptLine({ line }: { line: LineView }) {
 /** The last few lines a full-screen scene keeps up above the current one. */
 const FULLSCREEN_HISTORY = 4;
 
+/**
+ * Whether a staged lead-in still holds the lines back (the stinger's feed plays first), and a
+ * redraw as it ends.
+ */
+function useLeadIn(view: SceneView): boolean {
+  const st = view.staging;
+  const end = st === null ? 0 : st.from + st.leadInMs;
+  const leading = performance.now() < end;
+  const [, redraw] = useState(0);
+  useEffect(() => {
+    if (!leading) return undefined;
+    const id = setTimeout(() => redraw((n) => n + 1), Math.max(0, end - performance.now()) + 1);
+    return () => clearTimeout(id);
+  }, [end, leading]);
+  return leading;
+}
+
 function ScenePanel({ view }: { view: SceneView }) {
   const step = useSceneStep(view);
   const full = view.mode === 'fullscreen';
   const prompt = view.transcript.at(-1);
+  const leading = useLeadIn(view);
+  const staging = full ? view.staging : null;
   return (
-    <div class={full ? 'dlg-stage' : 'dlg-scrim'} data-act={hud.act.value}>
+    <div
+      class={full ? 'dlg-stage' : 'dlg-scrim'}
+      data-act={hud.act.value}
+      data-staging={staging?.kind}
+    >
+      {staging !== null && <Staging staging={staging} />}
       <section
         class={full ? 'dlg-fullscreen' : 'dlg-panel chamfer'}
         role="dialog"
@@ -109,13 +136,13 @@ function ScenePanel({ view }: { view: SceneView }) {
             ))}
           </div>
         )}
-        {view.line !== null && <CurrentLine line={view.line} step={step} />}
+        {view.line !== null && !leading && <CurrentLine line={view.line} step={step} />}
         {/* At a choice, the line it answers stays up above the options. */}
         {view.line === null && view.choices !== null && prompt !== undefined && !full && (
           <Prompt line={prompt} />
         )}
         <Controls view={view} step={step} />
-        <LineAnnouncer line={view.line} />
+        <LineAnnouncer line={leading ? null : view.line} />
       </section>
     </div>
   );

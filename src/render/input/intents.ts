@@ -94,7 +94,10 @@ export function resolveClick(
 
 /** What the hover shows: a highlight style (or none), and whether to draw the placement ghost. */
 export interface HoverLook {
-  readonly highlight: 'hover' | 'invalid' | null;
+  /** `salvage`: a plain click here sends the salvage drone (gold, the clickable-object colour). */
+  readonly highlight: 'hover' | 'invalid' | 'salvage' | null;
+  /** Show the "SEND DRONE" label over the wreck: a plain click (or Enter) clears it (D097). */
+  readonly salvage: boolean;
   /** Draw the armed tower's ghost and range ring here. */
   readonly ghost: boolean;
   /** The ghost's ring and highlight read as an invalid placement (red). */
@@ -114,13 +117,15 @@ const look: MutableHoverLook = {
   ghostValid: false,
   ringTowerUid: 0,
   aim: false,
+  salvage: false,
 };
 
 /**
  * The hover feedback for a tile. `canPlace` is the armed tower's full placement check
  * (buildable, empty, unlocked, affordable); the sim re-validates the command either way. While
  * aiming an ability that targets the path (`aimOnPath`), a tile off the ground routes reads as
- * invalid and shows no preview. The result is a shared scratch object, valid until the next call:
+ * invalid and shows no preview. With nothing armed, a wreck the drone can still be sent to gets
+ * the gold salvage highlight and its "SEND DRONE" label (`salvage`). The result is a shared scratch object, valid until the next call:
  * read it, don't keep it.
  */
 export function hoverLook(
@@ -134,6 +139,7 @@ export function hoverLook(
   look.ghostValid = false;
   look.ringTowerUid = 0;
   look.aim = false;
+  look.salvage = false;
   if (tile.index < 0) {
     look.highlight = null;
   } else if (aiming !== null) {
@@ -147,6 +153,10 @@ export function hoverLook(
     look.highlight = canPlace ? 'hover' : 'invalid';
     look.ghost = true;
     look.ghostValid = canPlace;
+  } else if (armed === null && tile.wreckage === 'wreckage') {
+    // Nothing armed over a wreck the drone isn't on yet: a click clears it, so say so.
+    look.highlight = 'salvage';
+    look.salvage = true;
   } else {
     look.highlight = armed === null ? 'hover' : 'invalid';
   }

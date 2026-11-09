@@ -91,7 +91,8 @@ function rigNight(beacon: boolean): Screen {
     for (let u = 0; u < SW; u++) {
       const haze = v - (HORIZON - 12);
       if (haze > 0 && hash01(u, v, 3) < haze / 14) plot(s, u, v, 'M');
-      else if (v < HORIZON - 14 && hash01(u, v, 4) < 0.012) plot(s, u, v, hash01(u, v, 5) < 0.3 ? 'I' : 'G');
+      else if (v < HORIZON - 14 && hash01(u, v, 4) < 0.012)
+        plot(s, u, v, hash01(u, v, 5) < 0.3 ? 'I' : 'G');
     }
   }
   // Ground: dark grime with ink dither, and a low far ridge on the horizon.
@@ -161,7 +162,8 @@ function rigNight(beacon: boolean): Screen {
   // A heap of drill spoil by the legs, two cold violet flecks in it (unsung: art-direction §1).
   for (let u = RIG_X - 16; u <= RIG_X - 8; u++) {
     const hgt = Math.round(3 - Math.abs(u - (RIG_X - 12)) * 0.6);
-    for (let v = RIG_FOOT - hgt; v <= RIG_FOOT; v++) plot(s, u, v, v === RIG_FOOT - hgt ? 'H' : 'G');
+    for (let v = RIG_FOOT - hgt; v <= RIG_FOOT; v++)
+      plot(s, u, v, v === RIG_FOOT - hgt ? 'H' : 'G');
   }
   plot(s, RIG_X - 13, RIG_FOOT - 1, 'P');
   plot(s, RIG_X - 10, RIG_FOOT, 'Q');
@@ -190,7 +192,12 @@ function wrongShape(s: Screen, cx: number, foot: number, h: number, seed: number
       }
     }
   };
-  const stroke = (a: { x: number; y: number }, b: { x: number; y: number }, r0: number, r1: number): void => {
+  const stroke = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    r0: number,
+    r1: number,
+  ): void => {
     const n = Math.max(2, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y)));
     for (let i = 0; i <= n; i++) {
       const t = i / n;
@@ -200,7 +207,8 @@ function wrongShape(s: Screen, cx: number, foot: number, h: number, seed: number
   for (let i = 0; i < joints.length - 1; i++) {
     const a = joints[i];
     const b = joints[i + 1];
-    if (a !== undefined && b !== undefined) stroke(a, b, thick * (1 - i * 0.2), thick * (0.8 - i * 0.2));
+    if (a !== undefined && b !== undefined)
+      stroke(a, b, thick * (1 - i * 0.2), thick * (0.8 - i * 0.2));
   }
   const crown = joints[3] ?? { x: cx, y: foot - h };
   const headR = Math.max(1.5, h / 8);
@@ -228,7 +236,10 @@ function wrongShape(s: Screen, cx: number, foot: number, h: number, seed: number
       for (let u = 0; u < SW; u++) {
         if (inMask(u - off, v)) continue;
         const edge =
-          inMask(u - off - 1, v) || inMask(u - off + 1, v) || inMask(u - off, v - 1) || inMask(u - off, v + 1);
+          inMask(u - off - 1, v) ||
+          inMask(u - off + 1, v) ||
+          inMask(u - off, v - 1) ||
+          inMask(u - off, v + 1);
         if (!edge) continue;
         if (hash01(u, v, seed + off * 17) < (off > 0 ? 0.6 : 0.4)) continue;
         plot(s, u, v, off > 0 ? '3' : 'x');
@@ -454,7 +465,8 @@ function smudgeFrame(k: number): string[] {
 function noSignalFrame(lit: boolean): string[] {
   const s = screen('V');
   for (let v = 1; v < SH; v += 2) for (let u = 0; u < SW; u++) plot(s, u, v, 'A');
-  for (let v = 0; v < SH; v += 2) for (let u = 0; u < SW; u++) if (hash01(u, v, 90) < 0.05) plot(s, u, v, 'W');
+  for (let v = 0; v < SH; v += 2)
+    for (let u = 0; u < SW; u++) if (hash01(u, v, 90) < 0.05) plot(s, u, v, 'W');
   const text = 'NO SIGNAL';
   const tw = textWidth(text, 2);
   osdText(s, text, Math.floor((SW - tw) / 2), 26, lit ? 'L' : 'H', 2);

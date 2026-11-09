@@ -5,7 +5,7 @@
 // tether is placed once, since towers never move. The frame set comes from `tetherDir`: the direction, and which tower it's
 // drawn from, so every tether runs left to right (or top to bottom). A tower on high ground lifts
 // its tether with it (between a flat and a raised tower, to their mean height: `tetherLift`). Tethers draw in `vfx`, lifted TETHER_LIFT_PX so the arc joins the
-// heads, above the bases (D059), and pulse 100% ↔ 60% on the page's 1 Hz clock, a quick 4 Hz
+// heads, above the bases (D059), and pulse 100% ↔ 60% on the page's 1 Hz clock, a quick 3 Hz
 // shimmer for their first second. Under reduced motion the beads hold still and nothing pulses.
 import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
@@ -23,10 +23,11 @@ export const TETHER_LIFT_PX = 9;
 const DIM_ALPHA = 0.6;
 /** A new tether shimmers this long (ms) at SHIMMER_HZ before settling into the 1 Hz pulse. */
 const SHIMMER_MS = 1000;
-const SHIMMER_PERIOD_MS = 250;
+/** 3 Hz: no flicker above the photosensitivity cap (art-direction §8; D097). */
+const SHIMMER_PERIOD_MS = 334;
 
 /**
- * A tether's alpha `ms` after it formed, at page time `now` (ms): a 4 Hz shimmer for its first
+ * A tether's alpha `ms` after it formed, at page time `now` (ms): a 3 Hz shimmer for its first
  * second, then the shared 1 Hz pulse; steady under reduced motion.
  */
 export function tetherAlpha(ms: number, now: number, reduced: boolean): number {

@@ -354,3 +354,103 @@
     animation: none;
   }
 }
+
+/* ---- Staging (Staging.tsx; D097 R3): the stinger's Rig 9 feed and the party's stage ---- */
+
+/* The stinger: the CRT above the lines, on the dark stage, pinned to the top so it holds still as
+   the lines arrive under it. */
+.dlg-stage[data-staging='rig9_feed'] {
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  padding-top: 16px;
+}
+
+.dlg-feed {
+  flex: none;
+  height: 176px;
+}
+
+.dlg-feed-crt,
+.dlg-cannon-body,
+.dlg-burst-frame {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* The party: a bright stage (Act I's pinks and violets) with confetti drifting down behind the
+   lines; the lines sit on a dark panel so they read over it. */
+.dlg-stage[data-staging='party'] {
+  background:
+    radial-gradient(ellipse at 50% 35%, var(--sd-pink-2), transparent 75%),
+    linear-gradient(var(--sd-violet-2), var(--sd-blue-1));
+}
+
+.dlg-confetti {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.dlg-stage[data-staging='party'] .dlg-fullscreen {
+  position: relative;
+  margin-top: 40px;
+  background: var(--panel-fill);
+  box-shadow: 0 0 0 1px var(--sd-pink-3);
+}
+
+/* The record counter: top center, the number ticking up to the new total. */
+.dlg-record {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-heading);
+  text-shadow: 1px 1px 0 var(--sd-ink-0);
+}
+
+.dlg-record-kicker {
+  color: var(--sd-gold-4);
+}
+
+.dlg-record-line {
+  font-size: 16px;
+  line-height: 16px;
+  color: var(--sd-white-1);
+}
+
+.dlg-record-n {
+  color: var(--sd-gold-3);
+}
+
+.dlg-record-tag {
+  padding: 1px 2px 0;
+  color: var(--sd-ink-0);
+  background: var(--sd-gold-3);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
+  text-shadow: none;
+  visibility: hidden;
+}
+
+.dlg-record-tag.on {
+  visibility: visible;
+}
+
+/* The cannon, bottom left; its burst's anchor sits on the muzzle (Staging.tsx). */
+.dlg-cannon {
+  position: absolute;
+  left: 40px;
+  bottom: 6px;
+  pointer-events: none;
+}
+
+.dlg-burst {
+  position: absolute;
+}

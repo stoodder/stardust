@@ -124,9 +124,12 @@ test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → 
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
   const rows = page.getByRole('list', { name: 'Shifts' }).getByRole('listitem');
-  await expect(rows).toHaveCount(5);
+  // Act I's five shifts, then the dimmed, padlocked teaser (D097 R6): the only "Coming soon".
+  await expect(rows).toHaveCount(6);
   await expect(shiftRow(page, 'Special Delivery')).toContainText('Locked');
-  await expect(page.getByRole('list', { name: 'Shifts' })).not.toContainText('Coming soon');
+  await expect(rows.filter({ hasText: 'Coming soon' })).toHaveCount(1);
+  await expect(rows.last()).toHaveAttribute('data-testid', 'shift-teaser');
+  await expect(rows.last().getByRole('button')).toHaveCount(0);
   await shiftRow(page, 'Hatching Season')
     .getByRole('button', { name: 'Start Hatching Season' })
     .click();
@@ -158,8 +161,9 @@ test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → 
   // A1M5 won: Act I cleared, nothing next up, and the focus on the last shift's Replay.
   await page.goto('/?test=1&seed=1&save=after_a1m5');
   await waitForReady(page);
-  await expect(rows).toHaveCount(5);
+  await expect(rows).toHaveCount(6);
   await expect(rows.filter({ hasText: 'Cleared' })).toHaveCount(5);
+  await expect(rows.last()).toContainText('Coming soon');
   await expect(
     shiftRow(page, 'Record Quarter').getByRole('button', { name: 'Replay Record Quarter' }),
   ).toBeFocused();

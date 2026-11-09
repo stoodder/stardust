@@ -56,7 +56,7 @@ function flagSetOf(flags: Readonly<Partial<Record<FlagId, FlagValue>>>): FlagSet
   return out;
 }
 
-function isEnemyId(id: string): id is EnemyId {
+export function isEnemyId(id: string): id is EnemyId {
   return Object.hasOwn(ENEMIES, id);
 }
 

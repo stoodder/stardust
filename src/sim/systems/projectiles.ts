@@ -18,6 +18,7 @@ import { nextFloat } from '../../shared/rng.ts';
 import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
+import { untargetable } from '../enemyAbilities/layers.ts';
 import { PROJECTILE_BLANK, type Projectile } from '../entities.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
@@ -113,7 +114,7 @@ function scatterBomblets(state: SimState, shell: Projectile): void {
 
 /**
  * Splash at the aim point: every hittable enemy within the radius, in ascending slot order (with
- * no splash, its target only). A neutral unit is never a victim; the shot's own neutral target in
+ * no splash, its target only). A burrowed or leaving unit is never a victim (`untargetable`). A neutral unit is never a victim; the shot's own neutral target in
  * the burst is plinked (NeutralHit) after the impact.
  */
 function land(state: SimState, ctx: TickContext, p: Projectile): void {
@@ -125,6 +126,7 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!e.alive || e.def === null) continue;
     if (!(e.def.layer === 'air' ? p.hitsAir : p.hitsGround)) continue;
+    if (untargetable(e)) continue; // burrowed or leaving: no hit, no armor `reduced` tell
     if (p.splashSq === 0) {
       if (e.uid !== p.targetUid) continue;
     } else {

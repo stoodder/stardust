@@ -1,12 +1,23 @@
 // Zapcoil's chain arc (art-direction §7 Energy: "chain arcs, a jagged polyline regenerated every 2
-// frames with cosmetic RNG"; §6 Zapcoil: a jagged `blue.4` arc with a white core). Pure: the
+// frames with cosmetic RNG"; §6 Zapcoil: a jagged blue arc with a white core). Pure: the
 // stroke's pixels and the jagged polyline between two screen points, so both are unit-tested;
 // views/ChainFx.ts draws each segment as the stroke stretched and turned along it.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 
-/** The stroke across the arc, top to bottom: a white-hot core between two `blue.4` edges. */
-export const ARC_STROKE: readonly ColorName[] = ['blue.4', 'white.1', 'blue.4'];
+/**
+ * The stroke across the arc, edge to edge: a 2 px white-hot core between `blue.3` edges, inside a
+ * 1 px `ink.0` under-stroke at 60% each side, so it reads on grass, path, and pads alike (D097: the
+ * old 3 px `blue.4` stroke washed out on Act I grass). Alpha 0–1.
+ */
+export const ARC_STROKE: readonly { readonly color: ColorName; readonly alpha: number }[] = [
+  { color: 'ink.0', alpha: 0.6 },
+  { color: 'blue.3', alpha: 1 },
+  { color: 'white.1', alpha: 1 },
+  { color: 'white.1', alpha: 1 },
+  { color: 'blue.3', alpha: 1 },
+  { color: 'ink.0', alpha: 0.6 },
+];
 
 /** Segments per hop: the jagged line's kinks (its two ends stay put). */
 export const ARC_SEGMENTS = 5;
@@ -17,12 +28,12 @@ export const ARC_JITTER_PX = 3;
 export function arcStrokeImage(): RgbaImage {
   const h = ARC_STROKE.length;
   const data = new Uint8ClampedArray(h * 4);
-  ARC_STROKE.forEach((name, y) => {
-    const c = rgbOf(name);
+  ARC_STROKE.forEach(({ color, alpha }, y) => {
+    const c = rgbOf(color);
     data[y * 4] = c.r;
     data[y * 4 + 1] = c.g;
     data[y * 4 + 2] = c.b;
-    data[y * 4 + 3] = 255;
+    data[y * 4 + 3] = Math.round(alpha * 255);
   });
   return { w: 1, h, data };
 }

@@ -22,7 +22,15 @@ import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { earnedMedalIds } from '../sim/index.ts';
 import { closeLoadout, openLoadout } from './loadout.ts';
-import { activeSave, closeSession, loadoutOffered, recordRun, systemOpen } from './save.ts';
+import {
+  activeSave,
+  closeSession,
+  loadoutOffered,
+  recordRun,
+  systemOpen,
+  updateActiveSave,
+} from './save.ts';
+import { FIRST_PAYDAY_SEEN_ID } from '../meta/index.ts';
 import { holdNewGame, intakeMode } from './profile.ts';
 import {
   debriefStoryOf,
@@ -93,6 +101,16 @@ export interface Router {
   closeSettings(): Promise<void>;
 }
 
+/** Adds FIRST_PAYDAY_SEEN_ID to the save in play's `story.seen` (once; no save, no-op). */
+function markFirstPaydayShown(): void {
+  const save = activeSave();
+  if (save === null || save.story.seen.includes(FIRST_PAYDAY_SEEN_ID)) return;
+  updateActiveSave((s) => ({
+    ...s,
+    story: { ...s.story, seen: [...s.story.seen, FIRST_PAYDAY_SEEN_ID] },
+  }));
+}
+
 /** Menus Settings can return to. */
 type MenuId = 'title' | 'campaign' | 'base';
 
@@ -101,6 +119,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   let battle: Battle | null = null;
   let ended = false;
   let wavesCleared = 0;
+  /** The enemy types that spawned this battle, in order: what the run "met" (D097). */
+  let met: string[] = [];
   /** performance.now() and the sim tick at the battle's first leak, and at the map's end. */
   let firstLeakAt: { ms: number; tick: number } | null = null;
   let endedAt: { ms: number; tick: number } | null = null;
@@ -157,6 +177,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     runResult.value = null;
     ended = false;
     wavesCleared = 0;
+    met = [];
     firstLeakAt = null;
     endedAt = null;
     let next: Battle;
@@ -173,6 +194,11 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     const { bus } = next.host;
     bus.on('WaveCleared', () => {
       wavesCleared++;
+    });
+    // Met means spawned (D097): quitting before a wave never spends its NEW badge or codex entry.
+    const seen = met;
+    bus.on('EnemySpawned', (e) => {
+      if (!seen.includes(e.enemy)) seen.push(e.enemy);
     });
     // The first leak, for the results card's first-leak line (app/runResult.ts; D028).
     bus.on('EnemyLeaked', () => {
@@ -247,6 +273,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         status: s.objectives[i] ?? 'open',
       })),
       stats: s.stats,
+      met,
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
     // The battle freezes where it ended and stays drawn behind the results.
@@ -356,6 +383,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
             return;
           }
           setAfterResults(after);
+          // The first payday is spent by being shown (D097), never by an abandoned run.
+          if (result.rewards?.firstPayday === true) markFirstPaydayShown();
           router.goto('results').then(resolve, reject);
         });
       });

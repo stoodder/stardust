@@ -50,6 +50,15 @@ export function clampCurrency(n: number): number {
 /** Ids with no registry yet (scenes, memos, codex entries, grants, medals, flag values). */
 const FREE_ID = /^[a-z][a-z0-9_]{0,47}$/;
 
+/**
+ * Whether a save can hold `id` as a free-form id (lowercase snake_case from a letter, ≤ 48
+ * chars): what `story.seen` keeps (scene, bark, and codex-read ids), so content whose id fails it
+ * would make a save validation refuses (meta/freeIds.test.ts checks every one).
+ */
+export function isFreeId(id: string): boolean {
+  return FREE_ID.test(id);
+}
+
 /** True for a plain object (from JSON.parse or a literal): not null, not a list, not a class. */
 export function isPlainRecord(x: unknown): x is Record<string, unknown> {
   if (typeof x !== 'object' || x === null || Array.isArray(x)) return false;

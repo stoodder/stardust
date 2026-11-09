@@ -39,3 +39,11 @@ export function ghostLabel(
   if (tile === '+') return hasAttack ? labels.rate : labels.aura;
   return null;
 }
+
+/**
+ * The hover label over a wreck a plain click would clear (D097): what the click does, and the
+ * salvage it pays after the run's modifiers, in the 3×5 font ("SEND DRONE +40").
+ */
+export function salvageLabel(pays: number): string {
+  return pays > 0 ? `SEND DRONE +${pays}` : 'SEND DRONE';
+}

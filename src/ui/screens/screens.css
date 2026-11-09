@@ -529,6 +529,15 @@
   color: var(--sd-steel-3);
 }
 
+/* The teaser past the last built map (D097 R6): dimmed, padlocked, no medals. */
+.sd-shift-teaser {
+  opacity: 0.6;
+}
+
+.sd-shift-teaser .sd-medals {
+  width: 25px;
+}
+
 .sd-shift .sd-button-small {
   min-width: 52px;
 }

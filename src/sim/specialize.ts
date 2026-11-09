@@ -39,7 +39,7 @@ export function applySpecialize(
   if (tower.spec !== null) return 'alreadySpecialized';
   if (tower.tier < MAX_TIER_BEFORE_SPEC) return 'needsTier3';
   const tier = def.specs[cmd.spec];
-  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'spec');
+  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'spec', ctx.scratch.price);
   if (cost < 0) return 'cantAfford';
 
   const before = def.tiers[2].defaultPriority; // tier 3's

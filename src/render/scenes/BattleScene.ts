@@ -370,6 +370,7 @@ export class BattleScene extends Phaser.Scene {
       this.#bossBar.reset();
       this.#huddles.reset();
       this.#leaves.reset();
+      this.#hover.reset();
     });
     this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
       this.#deps.onFirstFrame();

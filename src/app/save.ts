@@ -3,7 +3,7 @@
 // KeyValueStore. It keeps the menus' view models (ui/screens/state.ts: `campaign`, `slots`) in
 // step. The dev hook `?test=1&save=<id>` plays a dev save in an in-memory scratch slot that never
 // touches localStorage, with the dev save's `devUnlocks`.
-import { CAMPAIGN } from '../content/campaign.ts';
+import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { MapId } from '../content/types.ts';
 import { DEV_SAVES, type DevSaveId } from '../meta/__fixtures__/devSaves.ts';
 import {
@@ -39,6 +39,7 @@ import {
   nextShift,
   runEnd,
   shelf,
+  SHIFT_BOARD_SIZE,
   shiftBoard,
   showsLoadoutScreen,
   unlockHint,
@@ -54,6 +55,7 @@ import {
   type CampaignView,
   type Difficulty,
   type ProfileView,
+  type ShiftView,
   type SlotView,
   type SystemView,
 } from '../ui/screens/state.ts';
@@ -497,6 +499,25 @@ function systemView(s: Session, id: MetaSystem): SystemView {
   return { unlocked: isSystemUnlocked(s.save, id, s.devUnlocks), hint: unlockHint(id) };
 }
 
+/**
+ * The Shift board's dimmed, padlocked teaser (D097 R6): the plan's next map after the last
+ * registered one, "Coming soon", so the board never ends in a dead end. None once the plan runs out.
+ */
+export function teaserRow(size: number = SHIFT_BOARD_SIZE): ShiftView[] {
+  const next = CAMPAIGN_PLAN[size];
+  if (next === undefined) return [];
+  return [
+    {
+      id: next.id,
+      name: next.name,
+      index: size + 1,
+      state: 'coming_soon',
+      medals: 0,
+      teaser: true,
+    },
+  ];
+}
+
 function campaignView(s: Session): CampaignView {
   return {
     slot: s.scratch ? null : s.slot,
@@ -505,13 +526,17 @@ function campaignView(s: Session): CampaignView {
     pestsProcessed: s.save.stats.pestsProcessed,
     difficulty: s.save.settings.difficulty,
     profile: profileView(s.save),
-    board: shiftBoard(s.save).map((e) => ({
-      id: e.id,
-      name: e.name,
-      index: e.index,
-      state: e.state,
-      medals: e.medals.length,
-    })),
+    board: [
+      ...shiftBoard(s.save).map((e): ShiftView => ({
+        id: e.id,
+        name: e.name,
+        index: e.index,
+        state: e.state,
+        medals: e.medals.length,
+        teaser: false,
+      })),
+      ...teaserRow(),
+    ],
     systems: {
       base: systemView(s, 'base'),
       rnd: systemView(s, 'rnd'),

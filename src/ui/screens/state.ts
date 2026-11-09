@@ -110,6 +110,8 @@ export interface ShiftView {
   readonly state: 'won' | 'open' | 'locked' | 'coming_soon';
   /** Medals earned, of the map's 3. */
   readonly medals: number;
+  /** The board's last row: the next map past the built ones, dimmed and padlocked (D097 R6). */
+  readonly teaser: boolean;
 }
 
 /** A between-map system's pane: open, or locked with what opens it. */

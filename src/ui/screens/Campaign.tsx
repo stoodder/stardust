@@ -1,6 +1,7 @@
 // The Shift board (T209, D031): the campaign's maps in order, standing in for the star map (T301).
 // Each row shows its shift number, name, medals, and state: Start (open), Replay (won), locked
-// until the shift before is won, or coming soon (its content isn't built yet). The header shows
+// until the shift before is won, or coming soon (its content isn't built yet; past the last built
+// map, one dimmed, padlocked teaser row, so the board never dead-ends, D097). The header shows
 // the banks; the footer leads to the base (locked with its hint until A1M1 is won) and Settings.
 import { MenuNotice } from './MenuNotice.tsx';
 import { silkText } from '../silk.ts';
@@ -47,10 +48,17 @@ const STATE_TEXT: Readonly<Record<ShiftView['state'], string>> = {
 function ShiftRow({ shift, first }: { shift: ShiftView; first: boolean }) {
   const playable = shift.state === 'open' || shift.state === 'won';
   return (
-    <li class={`sd-shift sd-shift-${shift.state}`}>
+    <li
+      class={`sd-shift sd-shift-${shift.state}${shift.teaser ? ' sd-shift-teaser' : ''}`}
+      data-testid={shift.teaser ? 'shift-teaser' : undefined}
+    >
       <span class="sd-shift-index">Shift {shift.index}</span>
       <span class="sd-shift-name">{silkText(shift.name)}</span>
-      <MedalPips earned={shift.medals} />
+      {shift.teaser ? (
+        <span class="sd-medals" aria-hidden="true" />
+      ) : (
+        <MedalPips earned={shift.medals} />
+      )}
       <span class="sd-shift-state">{STATE_TEXT[shift.state]}</span>
       {playable ? (
         <button

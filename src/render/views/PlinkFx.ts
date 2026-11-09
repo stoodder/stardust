@@ -1,8 +1,10 @@
 // Gerald's plink (core-loop.md § 2.7; D072; T312a): every shot aimed at him (`NeutralHit`) bounces
 // off with a plink spark on his body (the pure `vfx/sparkPixels.ts` star, three frames in 150 ms,
 // drawn in `vfx` at his flying height), and "PLINK!" floats up from him in `white.1`, at most once
-// every PLINK_TEXT_MS so a Rivet's stream reads as one complaint, not a stack of them. His chime is
-// the audio's (T314). Pooled; allocation-free per frame.
+// every PLINK_TEXT_MS so a Rivet's stream reads as one complaint, not a stack of them. The first
+// aimed hit of each pass also floats his status text, "RECIPIENT: ARMED." in `teal.4` over the
+// plink (act1.md § A1M3's ledger line; D097), once per Gerald. His chime is the audio's (T314).
+// Pooled; allocation-free per frame.
 import type * as Phaser from 'phaser';
 import { imageToCanvas } from '../sprites/canvas.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -15,6 +17,10 @@ const MAX_PLINKS = 8;
 /** The "PLINK!" callout: at most one per this many ms, floated from above his rotor. */
 const PLINK_TEXT_MS = 700;
 const PLINK_TEXT_LIFT_PX = 26;
+/** Gerald's status text (his line from act1.md § A1M3, cut to what reads at 1×), over the plink. */
+export const GERALD_STATUS_TEXT = 'RECIPIENT: ARMED.';
+const STATUS_LIFT_PX = PLINK_TEXT_LIFT_PX + 8;
+const STATUS_MS = 1800;
 const KEY = 'fx.plink';
 
 interface Plink {
@@ -33,6 +39,8 @@ export class PlinkFx {
   #next = 0;
   /** ms since the last "PLINK!" callout (starts ready). */
   #sinceText = PLINK_TEXT_MS;
+  /** The uid of the last Gerald whose status text showed (once per pass). */
+  #statusUid = 0;
 
   constructor(ctx: ViewContext, fx: TransientFx) {
     this.#ctx = ctx;
@@ -51,9 +59,13 @@ export class PlinkFx {
     }
   }
 
-  /** A shot plinked off a flyer at grid (x, y). */
-  plink(x: number, y: number): void {
+  /** A shot aimed at neutral flyer `uid` plinked off it at grid (x, y). */
+  plink(x: number, y: number, uid = 0): void {
     this.spark(x, y, AIR_LIFT_PX + BODY_LIFT_PX + 2);
+    if (uid !== 0 && uid !== this.#statusUid) {
+      this.#statusUid = uid;
+      this.#fx.floatText(GERALD_STATUS_TEXT, 'teal.4', x, y, STATUS_LIFT_PX, STATUS_MS);
+    }
     if (this.#sinceText >= PLINK_TEXT_MS) {
       this.#sinceText = 0;
       this.#fx.floatText('PLINK!', 'white.1', x, y, PLINK_TEXT_LIFT_PX);
@@ -94,6 +106,7 @@ export class PlinkFx {
   }
 
   reset(): void {
+    this.#statusUid = 0;
     for (const p of this.#plinks) {
       p.active = false;
       p.img.setVisible(false);

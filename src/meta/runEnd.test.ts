@@ -5,7 +5,7 @@ import type { FlagRule } from '../content/dialogue/flags.ts';
 import type { WaveTag } from '../content/types.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
 import { REWARD_RULES, medalPayout, objectivePayout, stardustPayout } from './rewards.ts';
-import { runEnd, type RunEndInput } from './runEnd.ts';
+import { FIRST_PAYDAY_SEEN_ID, runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
 import { SAVE_LIMITS, clampCurrency, validateSave } from './validate.ts';
 
@@ -218,15 +218,29 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
     expect(summary.pestsProcessed).toEqual({ run: 3, lifetime: 110 });
   });
 
-  it('marks the first payday: Stardust paid into an empty bank (T235)', () => {
+  it('marks the first payday: a win that pays Stardust before Results has shown one (D097)', () => {
     // A 0-Stardust win (A1M1) pays nothing, so it's no payday.
     expect(runEnd(createNewSave(), { ...RUN, mapStardust: 0 }).summary.firstPayday).toBe(false);
     const first = runEnd(createNewSave(), RUN);
     expect(first.summary.firstPayday).toBe(true);
-    // A defeat stipend can be the first payday too; a later run into a full bank isn't.
-    expect(runEnd(createNewSave(), lost(4)).summary.firstPayday).toBe(true);
-    expect(runEnd(first.save, RUN).summary.firstPayday).toBe(false);
-    expect(runEnd(createNewSave(), lost(0)).summary.firstPayday).toBe(false);
+    // A loss's stipend (an abandoned run too) never is, and never uses it up: the next win is.
+    const abandoned = runEnd(createNewSave(), lost(4));
+    expect(abandoned.summary.stardust.amount).toBeGreaterThan(0);
+    expect(abandoned.summary.firstPayday).toBe(false);
+    expect(runEnd(abandoned.save, RUN).summary.firstPayday).toBe(true);
+    // Not read from the bank: a win into a full bank is still the first until Results shows one.
+    expect(runEnd(first.save, RUN).summary.firstPayday).toBe(true);
+    const seen = { ...first.save, story: { ...first.save.story, seen: [FIRST_PAYDAY_SEEN_ID] } };
+    expect(runEnd(seen, RUN).summary.firstPayday).toBe(false);
+  });
+
+  it('adds only the enemies that spawned to the seen list, when the run says (D097)', () => {
+    // Quit before wave 1: nothing spawned, nothing met.
+    const quit = runEnd(createNewSave(), { ...lost(0), met: [] });
+    expect(quit.save.campaign.seenEnemies).toEqual([]);
+    // An early-called wave whose units spawned but never cleared still counts them.
+    const called = runEnd(createNewSave(), { ...lost(0), met: ['nibbler', 'zoomer', 'bogus'] });
+    expect(called.save.campaign.seenEnemies).toEqual(['nibbler', 'zoomer']);
   });
 
   it('pays Story difficulty in full (progression.md § 9)', () => {

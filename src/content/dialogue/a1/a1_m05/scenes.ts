@@ -32,7 +32,7 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'bricks',
-      text: "Second road's open. Watch both. You've got two eyes. Use both of 'em.",
+      text: "Second road's open. Watch both. Marguerite said I could only ever watch one thing. She had a point.",
     },
   ]),
   // Joke of the Shift, party edition: QUILL combines a joke and a compliment; Bricks rates the hat.
@@ -56,7 +56,13 @@ export const scenes = defineScenes([
       kind: 'line',
       speaker: 'sterling',
       expression: 'happy',
-      text: 'Q2 pest losses down 38%! Lettuce losses: Accounting is still working on that number!',
+      text: 'Q2 pest losses down 38%! Lettuce lost to pests: 40%! Insurance covers pests, so both numbers are super!',
+    },
+    // Calling W5 early piles its Haulers onto W4's Bunchlings (the harness's early-call run).
+    {
+      kind: 'line',
+      speaker: 'bricks',
+      text: "Armor next. Don't call it early, Sprout. Haulers take a while to crack.",
     },
   ]),
   defineScene('a1_m05_w07', [
@@ -120,7 +126,11 @@ export const scenes = defineScenes([
       expression: 'happy',
       text: "RECORD QUARTER! Top five percent, Four-Forty-Seven! I didn't check. I don't have to. I believe in you!",
     },
-    { kind: 'line', speaker: 'kip', text: "Rematch. Next quarter. I'm inventing a category." },
+    {
+      kind: 'line',
+      speaker: 'kip',
+      text: "Rematch next quarter, Sprout. I'm inventing a category. I've already won it.",
+    },
     {
       kind: 'line',
       speaker: 'goldie',

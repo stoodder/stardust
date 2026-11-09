@@ -102,6 +102,8 @@ export const waves = defineWaves([
       g('chonk', 6, 'spires', OPEN, 2),
       g('puffwing', 10, 'sky', OPEN + 6, 0.6),
       g('puffwing', 10, 'sky', OPEN + 20, 0.6),
+      // A lone Puffwing round the east edge: `sky_east` shows here, two waves before W8's
+      g('puffwing', 1, 'sky_east', OPEN + 12),
     ],
   },
   // W7 · mixed, both roads [X]

@@ -1,5 +1,5 @@
 // A fixture map for harness assertion #16 (free choices stay free; T206a): the sim fixture's
-// fx_map (W2 has 4 fleeing runners) plus a W3 Quiet Wave shaped like A1M5's: one `quiet_wave`
+// fx_map with a long lead-in (W2 has 4 fleeing runners) plus a W3 Quiet Wave shaped like A1M5's: one `quiet_wave`
 // walker (Old Thrum, leak 1) leading four `quiet_wave` + `youngling` walkers (leak 0, half
 // speed, bounty 0). No live map has fleeing or quiet-wave groups yet.
 //
@@ -13,12 +13,33 @@ import { SIM_FIXTURE, type FixtureIds } from '../../sim/__fixtures__/sim.ts';
 
 const rawMap = SIM_FIXTURE.maps.fx_map;
 
+/**
+ * fx_map's road gets an eleven-tile lead-in from a spawn at the east edge (the map grows to 14
+ * columns), so the Quiet Wave's first tiles are out of every pad's reach ([quiet-wave-reach],
+ * D097). The lead-in runs west along row 0 and joins the road at (2,0).
+ */
+const LEAD_IN: [number, number][] = Array.from({ length: 11 }, (_, i) => [13 - i, 0]);
+
 const quietMap: MapDef<FixtureIds, 'fx_map'> = {
   ...rawMap,
+  size: { cols: 14, rows: 5 },
+  // prettier-ignore
+  tiles: [
+    '..###########S',
+    '.o#o..........',
+    '..#^o.........',
+    '.o##x.........',
+    '...##C........',
+  ],
+  paths: rawMap.paths.map((p) => ({
+    ...p,
+    tiles: [...LEAD_IN, ...p.tiles.filter(([c, r]) => !(r === 0 && c < 2))],
+  })),
   waves: [
     ...rawMap.waves,
     {
-      countdownSec: 10,
+      // Long enough that W2 has cleared the longer road before the Quiet Wave walks in.
+      countdownSec: 30,
       groups: [
         { enemy: 'fx_walker', count: 1, route: 'a', tags: ['quiet_wave'] },
         {

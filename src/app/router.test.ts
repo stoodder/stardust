@@ -1,14 +1,15 @@
 // The router's menu notice (D059, D061): set when a battle can't start, shown where the player
 // can act on it, and cleared on the Title and whenever the save in play changes. The battle and
-// the backdrop scene are stubbed: these paths never draw.
+// the backdrop scene are stubbed: these paths never draw. Also the first payday's seen mark.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as Phaser from 'phaser';
-import { MemoryStore } from '../meta/index.ts';
+import { FIRST_PAYDAY_SEEN_ID, MemoryStore, createNewSave, runEnd } from '../meta/index.ts';
 import { menuNotice } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { holdNewGame, intakeMode } from './profile.ts';
 import { BATTLE_FAILED, createRouter } from './router.ts';
-import { closeSession, initSaves, newGame, openSlot } from './save.ts';
+import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
+import { activeSave, closeSession, initSaves, newGame, openSlot } from './save.ts';
 
 vi.mock('./battle.ts', () => ({
   startBattle: () => {
@@ -80,5 +81,37 @@ describe('the intake (T306)', () => {
     newGame(1);
     await router.goto('intake');
     expect(intakeMode()).toEqual({ kind: 'existing' });
+  });
+});
+
+describe('the first payday (D097)', () => {
+  const INPUT: RunEndInput = {
+    mapId: 'a1_m01',
+    waveCount: 7,
+    maxIntegrity: 20,
+    integrity: 13,
+    skitterkinKilled: 57,
+    wavesCleared: 7,
+    firstLeakAgo: null,
+    stardust: 120,
+    medals: offeredMedals({ medals: null }),
+    earnedMedals: [],
+  };
+  /** A won run's card, with or without the payday on it. */
+  const card = (firstPayday: boolean) => {
+    const { summary } = runEnd(createNewSave(), { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
+    const note = firstPayday ? 'Banked.' : null;
+    return runResultOf(INPUT, 'won', { ...summary, firstPayday, stardustNote: note });
+  };
+  const NO_SCENES = { before: [], after: [] };
+
+  it('is spent by Results showing it, once', async () => {
+    newGame(1);
+    const router = createRouter(game);
+    await router.presentResults(card(false), NO_SCENES);
+    expect(activeSave()?.story.seen).not.toContain(FIRST_PAYDAY_SEEN_ID);
+    await router.presentResults(card(true), NO_SCENES);
+    await router.presentResults(card(true), NO_SCENES);
+    expect(activeSave()?.story.seen.filter((id) => id === FIRST_PAYDAY_SEEN_ID)).toHaveLength(1);
   });
 });

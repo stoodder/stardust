@@ -20,6 +20,8 @@ const GATE_SE: GridPos = [8, 7];
 /** The west zigzag's lower pocket: two pads, the east one beside the node. */
 const WEST_LOW: GridPos = [3, 5];
 const WEST_LOW_E: GridPos = [4, 5];
+/** South of row 6's east run, under the `sky_east` air lane's last leg. */
+const SKY_EAST: GridPos = [11, 7];
 /** Strike points: the gate, and row 6 east of it, where the warren convoys walk in. */
 const GATE: GridPos = [6, 6];
 const EAST_RUN: GridPos = [9, 6];
@@ -48,6 +50,7 @@ function parSteps(): BuildStep[] {
     { wave: 7, upgrade: GATE_SE },
     { wave: 7, upgrade: GATE_N },
     { wave: 8, specialize: NODE, spec: 'a' }, // Cluster Thumper
+    { wave: 8, build: 'skyhook', tile: SKY_EAST }, // W6 showed the east lane: cover it
     { wave: 8, ability: 1, target: EAST_RUN, when: { afterSec: OPEN + 44 } }, // the warren convoy
     { wave: 9, targeting: HG_WEST, mode: 'strong' },
     { wave: 9, targeting: HG_GATE, mode: 'strong' },

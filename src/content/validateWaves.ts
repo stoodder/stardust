@@ -1,10 +1,6 @@
 // Wave validation (maps.md § 9; the rule list is validateMap.ts's header): [wave],
 // [route-walk], [wave-tag], and [quiet-wave-reach].
-import {
-  REACH_SLACK_TILES,
-  distanceToRoute,
-  type ReachTile,
-} from './counterAnswers.ts';
+import { REACH_SLACK_TILES, distanceToRoute, type ReachTile } from './counterAnswers.ts';
 import { HIGH_GROUND_RANGE_PCT, MAX_TIER_BEFORE_SPEC, SKITTERKIN_ONLY_TAGS } from './rules.ts';
 import type { GridPos, IdSpace, Layer, MapDef, TileChar } from './types.ts';
 import type { MapCtx } from './validateMap.ts';

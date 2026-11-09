@@ -420,9 +420,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.projectiles.release(e.uid);
       const burst = flak.get(e.uid);
       if (burst !== undefined) {
-        // The flak bursts in the air; its splash shows on the ground, around the shadows it caught.
+        // The flak bursts in the air, and its splash rings out there too, at the flyers' height
+        // round the burst, so the hit reads where the flyers are (D097), not on the grass below.
         flak.delete(e.uid);
-        fx.ring(e.x, e.y, burst, 'orange.3', SPLASH_RING_MS, false);
+        fx.ring(e.x, e.y, burst, 'orange.3', SPLASH_RING_MS, false, AIR_LIFT_PX);
         fx.burst(e.x, e.y, 0, true, AIR_LIFT_PX);
         return;
       }
@@ -447,7 +448,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       }
     }),
     bus.on('NeutralHit', (e) => {
-      views.plinks.plink(e.x, e.y);
+      views.plinks.plink(e.x, e.y, e.uid);
     }),
     bus.on('NeutralExited', (e) => {
       // Gerald delivered the mail and left: never a leak (D072).

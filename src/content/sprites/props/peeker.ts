@@ -32,6 +32,7 @@ const CRITTER: Readonly<Record<string, string>> = {
   b: 'V',
   c: 'V',
   d: 'V',
+  e: 'V',
   k: 'Q',
   w: 'W',
   '+': 'H',

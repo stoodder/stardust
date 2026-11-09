@@ -90,7 +90,7 @@ export {
 export type { EarnedMedal, PayoutInput, StardustPayout, StardustSource } from './rewards.ts';
 export { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
 export type { RunEndInput, RunEndResult, RunEndSummary } from './runEnd.ts';
-export { runEnd } from './runEnd.ts';
+export { FIRST_PAYDAY_SEEN_ID, runEnd } from './runEnd.ts';
 export type { DecodedSave, SaveProblem, SaveProblemCode, SlotLoad, SlotWrite } from './save.ts';
 export {
   MAX_SAVE_JSON_CHARS,

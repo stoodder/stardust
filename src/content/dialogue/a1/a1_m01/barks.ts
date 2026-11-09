@@ -1,16 +1,8 @@
 // A1M1 · Orientation Day: map-scoped barks (story/campaign/act1.md § A1M1, *Barks*), verbatim. They
 // fire only on this map; act-wide pools live in ../../barks/. Ids end `_a1_01` (this map), so no
 // other Act I map's ids collide with them.
+// QUILL's perfect-wave sticker and the bank nudge are act-wide (../../barks/).
 import { defineBarks } from '../../define.ts';
-import type { Bark } from '../../types.ts';
-
-/** QUILL's bank nudge (D059), on A1M1 and A1M2 alike: a nudge to spend, never a scold. */
-export const BANK_NUDGE: Bark = {
-  id: 'quill_bank_nudge_a1_01',
-  speaker: 'quill',
-  text: "Unspent budget detected! Credits can't shoot. I checked. Turrets can!",
-  trigger: { on: 'bank_nudge' },
-};
 
 export const barks = defineBarks([
   // The fair-play seed: the first pest out goes south, into the wilds. Once per campaign, and
@@ -36,12 +28,4 @@ export const barks = defineBarks([
     text: 'That jingle. Every time.',
     trigger: { on: 'wave_cleared' },
   },
-  {
-    id: 'quill_perfect_wave_a1_01',
-    speaker: 'quill',
-    expression: 'happy',
-    text: "Perfect wave! I'd give you a sticker, but stickers are Tier 2.",
-    trigger: { on: 'perfect_wave' },
-  },
-  BANK_NUDGE,
 ]);

@@ -69,6 +69,11 @@ export interface RunEndInput {
   readonly objectives?: readonly RunObjective[];
   /** The run's `state.stats`, for the story run-end flag rules (meta's runEnd, step 2). */
   readonly stats?: FlagRuleStats;
+  /**
+   * The enemy types that spawned this run (`EnemySpawned`, in order; D097), for meta's seen list.
+   * Absent: meta estimates them from the map's waves.
+   */
+  readonly met?: readonly string[];
 }
 
 /** An optional objective as the run left it. */
@@ -153,6 +158,7 @@ export function metaRunEndOf(
             .map((o) => ({ id: o.id, intel: o.intel })),
         }),
     ...(input.stats === undefined ? {} : { stats: input.stats }),
+    ...(input.met === undefined ? {} : { met: input.met }),
     skitterkinKilled: input.skitterkinKilled,
     meter: Math.max(0, input.integrity),
   };

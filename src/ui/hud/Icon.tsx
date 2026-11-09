@@ -6,7 +6,7 @@ import type { SpriteDef } from '../../content/sprites/types.ts';
 import { bakeSprite, DEFAULT_VARIANT, frameKey } from '../../render/sprites/bake.ts';
 import { imageToCanvas } from '../../render/sprites/canvas.ts';
 
-interface Baked {
+export interface Baked {
   readonly url: string;
   readonly w: number;
   readonly h: number;
@@ -15,7 +15,7 @@ interface Baked {
 const cache = new Map<string, Baked | null>();
 
 /** The sprite's baked `frame` as a data URL, or null if no such sprite or frame exists. */
-function baked(id: string, frameName: string): Baked | null {
+export function baked(id: string, frameName: string): Baked | null {
   const cacheKey = `${id}|${frameName}`;
   const hit = cache.get(cacheKey);
   if (hit !== undefined) return hit;

@@ -103,8 +103,11 @@ export function priceOf(
  * What changes a build slot's price mid-battle (`purchasePriceInto`'s state inputs), as a key:
  * the HUD rebuilds the slots only when it changes.
  */
-export function priceKey(state: PurchaseState): string {
-  return `${state.stats.towersBuilt === 0 ? 'first' : 'later'}|${state.discountCharges}|${state.discountPct}`;
+export function priceKey(state: PurchaseState): number {
+  // A number, not a string: the HUD reads it every frame (C6), so it allocates nothing. The sale's
+  // percent in tenths of a percent (0–1000) and the first-build flag pack under the charges.
+  const pct = Math.round(state.discountPct * 1000);
+  return (state.discountCharges * 1001 + pct) * 2 + (state.stats.towersBuilt === 0 ? 1 : 0);
 }
 
 /** Clearance Sale while it has charges (the tag over the build slots), else null. */

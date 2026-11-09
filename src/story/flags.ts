@@ -26,9 +26,11 @@ export function evaluateFlagRule(c: FlagRuleCondition, stats: FlagRuleStats): bo
   if ('any' in c) return c.any.some((x) => evaluateFlagRule(x, stats));
   if ('not' in c) return !evaluateFlagRule(c.not, stats);
   if ('tagRatio' in c) {
-    const { tag, of, gte } = c.tagRatio;
-    const spawned = stats.tagSpawned[tag];
-    const n = of === 'leaked' ? stats.tagLeaked[tag] : stats.tagKilled[tag];
+    const { tag, except, of, gte } = c.tagRatio;
+    const counts = of === 'leaked' ? stats.tagLeaked : stats.tagKilled;
+    // `except`'s units also carry `tag` (FlagRuleCondition), so they come off both counts.
+    const spawned = stats.tagSpawned[tag] - (except === undefined ? 0 : stats.tagSpawned[except]);
+    const n = counts[tag] - (except === undefined ? 0 : counts[except]);
     return spawned > 0 && n / spawned >= gte;
   }
   const v = stats[c.stat];

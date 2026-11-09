@@ -17,6 +17,7 @@ import type {
 } from './types.ts';
 import { DEFAULT_VALIDATION_RULES, validate, type ValidationRules } from './validate.ts';
 import { threatOf } from './validateThreats.ts';
+import { bestT3Reach, routePrefix, type TargetedTower } from './validateWaves.ts';
 
 const loose = mapDefinersFor<IdSpace>();
 const BASE: RawContent<IdSpace> = FIXTURE;
@@ -377,6 +378,61 @@ describe('validate: maps', () => {
         enemies: { ...raw.enemies, fx_walker: { ...FIXTURE.enemies.fx_walker, faction: 'aelari' } },
       },
       'wave-tag',
+    );
+  });
+
+  it('[quiet-wave-reach] no pad reaches the first 4 tiles of a quiet_wave route (D097)', () => {
+    // fx_map's pad (1,1) is 1 tile from the road's first tiles; fx_mortar's T3 reaches 3.5.
+    rejects(withTags(['quiet_wave']), 'quiet-wave-reach');
+    expect(validate(withTags(['quiet_wave'])).join('\n')).toMatch(/\(1,1\) is 1\.00 tiles/);
+    // Only the tagged route's head is judged: the same group untagged is fine.
+    expect(validate(withTags([])).filter((e) => e.includes('quiet-wave-reach'))).toEqual([]);
+  });
+
+  it('[quiet-wave-reach] reads the best T3 range per layer, and the route head by length', () => {
+    const reach = bestT3Reach(Object.values<TargetedTower>(FIXTURE.towers));
+    expect(reach.ground).toBeGreaterThan(0);
+    expect(reach.air).toBeGreaterThan(0);
+    expect(
+      bestT3Reach([
+        { tiers: [{ targets: { ground: false, air: true }, attack: { rangeTiles: 9 } }] },
+      ]),
+    ).toEqual({ ground: 0, air: 9 });
+    expect(
+      routePrefix(
+        [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+          [0, 9],
+        ],
+        3,
+      ),
+    ).toEqual([
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+    ]);
+    expect(
+      routePrefix(
+        [
+          [0, 0],
+          [0, 10],
+        ],
+        3,
+      ),
+    ).toEqual([
+      [0, 0],
+      [0, 3],
+    ]);
+  });
+
+  it("[wave] countdownAfter: 'bossEnded' needs a boss in an earlier wave", () => {
+    rejects(
+      withMap({ waves: [fxMap.waves[0]!, { ...fxMap.waves[1]!, countdownAfter: 'bossEnded' }] }),
+      'wave',
     );
   });
 

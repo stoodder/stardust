@@ -155,17 +155,18 @@ export const iconTellBurrower = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  // The `burrower` tell (art-direction §8): a down arrow into a line (the ground), `grime.3` lit to
-  // `grime.4`.
-  legend: { B: 'grime.2', C: 'grime.3', D: 'grime.4' },
+  // The `burrower` tell (art-direction §8): a down arrow into a line (the ground): a `white.1`
+  // core edged in `grime.4`, over a `grime.4` ground line, inside the `ink.0` outline, so it reads
+  // on grass and dirt alike (D097).
+  legend: { C: 'grime.3', D: 'grime.4', W: 'white.1' },
   frames: {
     icon: [
-      '..DC..',
-      'DDDCCB',
-      '.DDCB.',
-      '..DB..',
+      '..WW..',
+      'DWWWWD',
+      '.DWWD.',
+      '..DD..',
       '......',
-      'CCCCCB',
+      'DDDDDC',
     ],
   },
 });
@@ -198,15 +199,15 @@ export const iconTellHuddle = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  // The `huddle` tell (art-direction §8): three circles pressed together over the soft ring under the
-  // group, `gold.4` over `gold.3`.
-  legend: { B: 'gold.2', C: 'gold.3', D: 'gold.4' },
+  // The `huddle` tell (art-direction §8): three 2×2 dots huddled over an arc (the ring under the
+  // group), `gold.4` lit over `gold.3` (D097: the old row of circles read as a bar at 1×).
+  legend: { C: 'gold.3', D: 'gold.4' },
   frames: {
     icon: [
-      '......',
-      'DCDCDC',
-      'CBCBCB',
-      '......',
+      '..DD..',
+      '..DC..',
+      'DD..DD',
+      'DC..DC',
       'C....C',
       '.CCCC.',
     ],

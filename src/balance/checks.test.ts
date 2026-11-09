@@ -60,11 +60,16 @@ const spareRuns = (spare: number, par: number): Record<string, HeadlessResult> =
   'par#1': fakeResult('won', par),
   'par#2': fakeResult('won', par),
 });
-/** A won holdFireWhile:quiet_wave run where `leaked` of 5 quiet-wave units leaked (#16a). */
-function heldRun(integrity: number, leaked: number): Record<string, HeadlessResult> {
+/**
+ * A won holdFireWhile:quiet_wave run on the fixture's Quiet Wave (Old Thrum and four younglings,
+ * #16a): `leaked` of the four younglings leaked, and Thrum too unless `thrumLeaked` is false.
+ */
+function heldRun(integrity: number, leaked: number, thrumLeaked = true): Record<string, HeadlessResult> {
   const r = fakeResult('won', integrity);
   r.stats.tagSpawned.quiet_wave = 5;
-  r.stats.tagLeaked.quiet_wave = leaked;
+  r.stats.tagLeaked.quiet_wave = leaked + (thrumLeaked ? 1 : 0);
+  r.stats.tagSpawned.youngling = 4;
+  r.stats.tagLeaked.youngling = leaked;
   return { 'holdFireWhile:quiet_wave#1': r };
 }
 const find = (id: string, subject: string): CheckSpec =>
@@ -336,15 +341,19 @@ describe('balance checks', () => {
 
     const quiet = mapChecks(QUIET_WAVE_CONTENT.maps.fx_map, [1], [1]);
     const a = quiet.find((c) => c.subject === 'holdFireWhile:quiet_wave')!;
-    // spared_quiet_wave's own rule judges it: ≥ 75% of the Quiet Wave leaked.
-    expect(judge(a, heldRun(18, 5)).ok).toBe(true);
-    expect(judge(a, heldRun(18, 4)).ok).toBe(true); // 80%
-    expect(judge(a, heldRun(18, 3)).failures[0]).toMatch(
+    // spared_quiet_wave's own rule judges it: Old Thrum and ≥ 75% of the younglings leaked.
+    expect(judge(a, heldRun(18, 4)).ok).toBe(true);
+    expect(judge(a, heldRun(18, 3)).ok).toBe(true); // 75%
+    expect(judge(a, heldRun(18, 2)).failures[0]).toMatch(
       /only 3\/5 quiet-wave units leaked: spared_quiet_wave stays false/,
     );
+    // Holding fire only after Thrum falls isn't sparing her.
+    expect(judge(a, heldRun(18, 4, false)).failures[0]).toMatch(
+      /only 4\/5 quiet-wave units leaked: spared_quiet_wave stays false/,
+    );
     // The band is judged with the Quiet Wave's own designed cost (Thrum's leak) given back.
-    expect(judge(a, heldRun(15, 5)).ok).toBe(true); // 75 + 5
-    expect(judge(a, heldRun(14, 5)).failures[0]).toMatch(
+    expect(judge(a, heldRun(15, 4)).ok).toBe(true); // 75 + 5
+    expect(judge(a, heldRun(14, 4)).failures[0]).toMatch(
       /margin 70 \(75 with the Quiet Wave's own 1 integrity given back\) is outside the band 80–100/,
     );
     expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);

@@ -58,7 +58,14 @@ import {
 } from '../story/runner.ts';
 import { newTagState, tagIndexAfter, tagStep, type TagState } from '../story/tags.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
-import { dialogue, type LineView, type SceneMode, type SceneView } from '../ui/dialogue/state.ts';
+import {
+  dialogue,
+  type LineView,
+  type SceneMode,
+  type SceneView,
+  type StagingView,
+} from '../ui/dialogue/state.ts';
+import { stagingLeadInMs, stagingOf } from '../ui/dialogue/staging.ts';
 import { typedLength, typeMs } from '../ui/dialogue/text.ts';
 import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
@@ -268,6 +275,8 @@ interface Holding {
   typedFrom: number;
   typedOut: boolean;
   remember: string | null;
+  /** A full-screen scene's staging (ui/dialogue/staging.ts): its clock and lead-in, else null. */
+  staging: StagingView | null;
 }
 
 let holding: Holding | null = null;
@@ -280,6 +289,16 @@ export interface PlayOptions {
   readonly instant?: boolean;
   /** Runs as the scene ends (after its effects are saved). */
   readonly onEnd?: () => void;
+}
+
+/**
+ * A full-screen scene's staging as it opens (D097 R3): its kind, its clock's start (now), and how
+ * long its lead-in holds the lines back. None for a panel, a briefing, or text shown whole.
+ */
+function openStaging(sceneId: string, mode: SceneMode, instant: boolean): StagingView | null {
+  const kind = stagingOf(sceneId);
+  if (kind === null || mode !== 'fullscreen' || instant) return null;
+  return { kind, from: performance.now(), leadInMs: stagingLeadInMs(kind, reducedMotion()) };
 }
 
 /** The reduced-motion preference (none outside a browser: the unit tests). */
@@ -317,6 +336,7 @@ function publish(): void {
     ended: step.kind === 'end' || stopped,
     instant: h.instant,
     typing: { from: h.typedFrom, done: h.typedOut },
+    staging: h.staging,
   };
   dialogue.scene.value = view;
 }
@@ -359,9 +379,14 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
     typedFrom: 0,
     typedOut: false,
     remember: null,
+    staging: openStaging(scene.id, mode, opts.instant ?? false),
   };
   holding = h;
   settle(h);
+  // A staged lead-in (the stinger's feed) holds the first line back: it types once it ends.
+  if (h.staging !== null && h.line !== null) {
+    h.typedFrom = Math.max(h.typedFrom, h.staging.from + h.staging.leadInMs);
+  }
   if (h.cursor.step.kind === 'end' && mode !== 'briefing') {
     finish();
     return;
@@ -411,6 +436,14 @@ export function playScene(scene: Scene, opts: PlayOptions = {}): void {
 export function nextScene(): void {
   const h = holding;
   if (h === null) return;
+  // During a staged lead-in, Skip cuts to its end: the staging jumps on, and the line types now.
+  const now = performance.now();
+  if (h.staging !== null && now < h.staging.from + h.staging.leadInMs) {
+    h.staging = { ...h.staging, from: now - h.staging.leadInMs };
+    h.typedFrom = now;
+    publish();
+    return;
+  }
   if (h.line !== null && !h.typedOut && performance.now() - h.typedFrom < typeMs(h.line.text)) {
     h.typedOut = true;
     publish();

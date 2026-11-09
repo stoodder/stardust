@@ -8,9 +8,16 @@
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { costFor, liveTileAt, segmentSpan, type SegmentSpan, type Sim } from '../../sim/index.ts';
+import {
+  costFor,
+  liveTileAt,
+  salvageFor,
+  segmentSpan,
+  type SegmentSpan,
+  type Sim,
+} from '../../sim/index.ts';
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
-import { ghostLabel, ghostLabels, type GhostLabels } from '../input/ghostLabel.ts';
+import { ghostLabel, ghostLabels, salvageLabel, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';
 import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
 import { pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
@@ -49,10 +56,23 @@ export class BattleHover {
   readonly #previewTiles: number[] = Array.from({ length: 2 * MAX_PREVIEW_TILES }, () => 0);
   /** The tile the segment preview was last drawn for, so it's recomputed only on a move. */
   #previewAt = -2;
+  /** Each wreckage tile's "SEND DRONE +n" label (by tile index), built once per battle. */
+  readonly #salvageLabels = new Map<number, string>();
+  /** The canvas cursor as last set (the pointer hand over a wreck to clear). */
+  #handCursor = false;
+  #scene: Phaser.Scene | null = null;
 
   constructor(deps: BattleHoverDeps) {
     this.#deps = deps;
     this.#labels = ghostLabels(deps.sim.config.modifiers);
+    const map = deps.sim.map;
+    map.tiles.forEach((t, index) => {
+      if (t !== 'x') return;
+      const col = index % map.cols;
+      const key = `${col},${(index - col) / map.cols}` as const;
+      const pays = salvageFor(deps.sim.config.modifiers, map.salvage[key] ?? 0);
+      this.#salvageLabels.set(index, salvageLabel(pays));
+    });
   }
 
   /**
@@ -62,6 +82,7 @@ export class BattleHover {
   bindPointer(scene: Phaser.Scene, click: (button: 'left' | 'right') => void): void {
     const { interaction } = this.#deps;
     const pointer = this.#pointer;
+    this.#scene = scene;
     scene.input.mouse?.disableContextMenu();
     scene.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => {
       if (p.x !== pointer.x || p.y !== pointer.y) interaction.hideCursor();
@@ -138,14 +159,33 @@ export class BattleHover {
       );
       const range = armed.tiers[0].attack?.rangeTiles ?? 0;
       placement.setRing(tile.col + 0.5, tile.row + 0.5, range, look.ghostValid);
+      this.#setHand(false);
       return;
     }
     placement.setGhost(0, 0, null, null);
+    placement.setSalvageLabel(
+      tile.col,
+      tile.row,
+      look.salvage ? (this.#salvageLabels.get(tile.index) ?? null) : null,
+    );
+    this.#setHand(look.salvage && interaction.cursor < 0);
     // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
     const ringTower =
       look.ringTowerUid !== 0 ? findLiveTower(sim.state.towers, look.ringTowerUid) : selectedTower;
     const range = ringTower?.tierDef?.attack?.rangeTiles ?? 0;
     placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range, true);
+  }
+
+  /** Puts the default cursor back (the scene is shutting down). */
+  reset(): void {
+    this.#setHand(false);
+  }
+
+  /** The pointer hand over a clickable wreck (art-direction: clickable world objects), else the default. */
+  #setHand(on: boolean): void {
+    if (on === this.#handCursor || this.#scene === null) return;
+    this.#handCursor = on;
+    this.#scene.input.setDefaultCursor(on ? 'pointer' : '');
   }
 
   /** The armed tower's definition, if it's in this sim's content. */
@@ -204,3 +244,4 @@ export class BattleHover {
     fx.setSegmentAim(this.#previewTiles, n);
   }
 }
+

@@ -6,6 +6,7 @@ import { computed, signal } from '@preact/signals';
 import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpeakerFrame } from '../../content/dialogue/speakers.ts';
 import type { ChoiceTone, SpeakerId } from '../../content/dialogue/types.ts';
+import type { StagingKind } from './staging.ts';
 
 /** How a scene is staged. */
 export type SceneMode = 'briefing' | 'panel' | 'fullscreen';
@@ -74,6 +75,17 @@ export interface SceneView {
   readonly instant: boolean;
   /** The line's typewriter: when it started (performance.now), and whether Next finished it. */
   readonly typing: { readonly from: number; readonly done: boolean };
+  /** A full-screen scene's staging (staging.ts, D097 R3), or null for a plain scene. */
+  readonly staging: StagingView | null;
+}
+
+/** A staged scene's clock: its kind, when its timeline started, and how long it leads the lines. */
+export interface StagingView {
+  readonly kind: StagingKind;
+  /** performance.now() at the timeline's start (moved back when Skip cuts the lead-in short). */
+  readonly from: number;
+  /** The lines wait this long from `from` (the stinger's feed); 0 for none. */
+  readonly leadInMs: number;
 }
 
 export const dialogue = {

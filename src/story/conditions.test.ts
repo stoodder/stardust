@@ -27,11 +27,15 @@ const zero = (): Record<WaveTag, number> => ({
   fleeing: 0,
   medal_exempt: 0,
 });
+/** A Quiet Wave of `spawned` (Old Thrum, then younglings), `leaked` of them leaked, Thrum first. */
 function quietStats(spawned: number, leaked: number): FlagRuleStats {
   const s = { tagSpawned: zero(), tagLeaked: zero(), tagKilled: zero() };
   s.tagSpawned.quiet_wave = spawned;
   s.tagLeaked.quiet_wave = leaked;
   s.tagKilled.quiet_wave = spawned - leaked;
+  s.tagSpawned.youngling = spawned - 1;
+  s.tagLeaked.youngling = Math.max(0, leaked - 1);
+  s.tagKilled.youngling = s.tagSpawned.youngling - s.tagLeaked.youngling;
   return {
     holdFireUses: 0,
     holdFireTicks: 0,

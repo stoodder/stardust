@@ -79,7 +79,8 @@ export function textPixels(
       for (let gx = 0; gx < GLYPH_W; gx++) {
         if (g[gy]?.charAt(gx) !== '#') continue;
         for (let sy = 0; sy < scale; sy++) {
-          for (let sx = 0; sx < scale; sx++) out.push({ x: ox + gx * scale + sx, y: y + gy * scale + sy });
+          for (let sx = 0; sx < scale; sx++)
+            out.push({ x: ox + gx * scale + sx, y: y + gy * scale + sy });
         }
       }
     }

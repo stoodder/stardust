@@ -1,7 +1,8 @@
 // Wreckage tiles and their queue (design/maps.md § 3, the clearing rules; D076; T312a). GroundView
 // draws each wreckage tile's `prop.wreckage` wreck once; this view keeps it in step with the
 // salvage drone's queue, read from sim state every frame (so a missed event can't desync it):
-// - **Untouched:** the wreck (`v0` or `v1`, by tile).
+// - **Untouched:** the wreck (`v0` or `v1`, by tile), its beacon winking slowly (`idle_v<n>`: lit a
+//   quarter second in every two, each tile out of step; still under reduced motion).
 // - **Queued:** the salvage stake's beacon blinks (`blink_v<n>`, 2 fps) and the tile carries its
 //   place in the drone's line (the tile being cleared counts as 1) as a `teal.4` number in the
 //   3×5 font (overlay); a `teal.4` ring grows from any tile the moment it joins the queue, so a
@@ -17,6 +18,7 @@ import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import { liveTileAt, type WreckageView as DroneQueue } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { prefersReducedMotion } from '../motion.ts';
 import { DRONE_FLY_FRAC } from '../vfx/droneFlight.ts';
 import { floatTextTexture } from '../vfx/overlayTextures.ts';
 import { drawCell } from './GroundView.ts';
@@ -26,6 +28,8 @@ import type { ViewContext } from './ViewContext.ts';
 
 /** The wreck's sprite (T311b) and its frames: v<n>, v<n>_lit, v<n>_half, anim blink_v<n>. */
 export const WRECKAGE_SPRITE = 'prop.wreckage' as const;
+/** Frames in the idle wink anim (`idle_v<n>`). */
+const IDLE_FRAMES = 8;
 /** A tile joining the queue: a ring grows from it. */
 const QUEUE_RING_TILES = 0.75;
 const QUEUE_RING_MS = 300;
@@ -93,6 +97,7 @@ export class WreckageView {
         place: 0,
       });
     });
+    for (const w of this.#tiles) this.#look(w);
   }
 
   /**
@@ -151,6 +156,14 @@ export class WreckageView {
     const variant = propVariant(WRECKAGE_SPRITE, this.#map.env);
     if (w.shown === Shown.Queued) {
       p.play(sprites.anim(WRECKAGE_SPRITE, `blink_${w.look}`, variant), true);
+      return;
+    }
+    if (w.shown === Shown.Wreck && !prefersReducedMotion()) {
+      // The slow idle wink, each tile from its own frame so a field of wrecks never winks at once.
+      p.play({
+        key: sprites.anim(WRECKAGE_SPRITE, `idle_${w.look}`, variant),
+        startFrame: (w.col * 3 + w.row * 5) % IDLE_FRAMES,
+      });
       return;
     }
     p.stop();

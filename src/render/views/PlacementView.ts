@@ -5,6 +5,7 @@
 // tile (high ground) the highlights sit on the block's top face, ELEV_H up, sorted in `world` just
 // in front of the block (it would hide a `decal`), and the ghost stands on it like a tower.
 import type * as Phaser from 'phaser';
+import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { KIND_BIAS, worldDepth } from '../depth.ts';
 import { ELEV_H, gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
@@ -22,6 +23,9 @@ import type { ViewContext } from './ViewContext.ts';
 const GHOST_ALPHA = 0.6;
 /** The ghost's tile-bonus label sits this far above its ground point (px): over a tier-1 head. */
 const GHOST_LABEL_LIFT_PX = 30;
+/** The salvage label sits over the wreck's stake, in the clickable-object gold. */
+const SALVAGE_LABEL_LIFT_PX = 26;
+const SALVAGE_LABEL_COLOR: ColorName = 'gold.4';
 /** The ghost sorts like a tower with a uid no live tower has. */
 const GHOST_UID = 0;
 /**
@@ -49,6 +53,7 @@ export class PlacementView {
   /** The tile bonus the ghost would get ("+25% RANGE"; D059), over its head in `overlay`. */
   readonly #ghostLabel: Phaser.GameObjects.Image;
   #ghostLabelText: string | null = null;
+  #ghostLabelColor: ColorName | null = null;
   #hoverKey = '';
   #ringKey = '';
   #ghostBaseId: string | null = null;
@@ -187,17 +192,32 @@ export class PlacementView {
       .setVisible(true);
   }
 
-  #syncGhostLabel(col: number, row: number, label: string | null): void {
+  /**
+   * The "SEND DRONE +n" label over a wreck the hover would clear (`label`; null hides it). It
+   * shares the ghost label's image: the two never show at once (a wreck is never buildable).
+   */
+  setSalvageLabel(col: number, row: number, label: string | null): void {
+    this.#syncGhostLabel(col, row, label, SALVAGE_LABEL_COLOR, SALVAGE_LABEL_LIFT_PX);
+  }
+
+  #syncGhostLabel(
+    col: number,
+    row: number,
+    label: string | null,
+    color: ColorName = 'teal.4',
+    lift = GHOST_LABEL_LIFT_PX,
+  ): void {
     if (label === null) {
       this.#ghostLabel.setVisible(false);
       return;
     }
-    if (label !== this.#ghostLabelText) {
-      this.#ghostLabel.setTexture(floatTextTexture(this.#ctx.scene, label, 'teal.4'));
+    if (label !== this.#ghostLabelText || color !== this.#ghostLabelColor) {
+      this.#ghostLabel.setTexture(floatTextTexture(this.#ctx.scene, label, color));
       this.#ghostLabelText = label;
+      this.#ghostLabelColor = color;
     }
     gridToScreen(col + 0.5, row + 0.5, this.#ctx.origin, pos);
-    const y = pos.y - this.#elevation(col, row) * ELEV_H - GHOST_LABEL_LIFT_PX;
+    const y = pos.y - this.#elevation(col, row) * ELEV_H - lift;
     this.#ghostLabel.setPosition(Math.round(pos.x), Math.round(y)).setVisible(true);
   }
 

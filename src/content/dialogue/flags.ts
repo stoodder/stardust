@@ -40,7 +40,8 @@ export const FLAGS = {
     values: BOOL,
     default: false,
     script: true,
-    description: 'C1: at A1M5 end, at least 75% of the quiet_wave group leaked (a run-end rule).',
+    description:
+      'C1: at A1M5 end, Old Thrum leaked and at least 75% of the younglings leaked (a run-end rule).',
   },
   asked_zibzab_early: {
     values: BOOL,
@@ -111,11 +112,15 @@ export type FlagRuleStat =
  * What a run-end rule tests, over the finished run's stats. The same atoms as the sim's
  * `ConditionDef` (content/types.ts) where they overlap: `tagRatio` is that tag's leaked or killed
  * units ÷ its spawned units (false when none spawned), and `stat` reads a run counter.
+ * `tagRatio.except` counts only the units with `tag` that don't carry `except` (the stats count
+ * per tag, so it is `tag`'s count less `except`'s); every unit tagged `except` must also carry
+ * `tag`, as A1M5's younglings carry `quiet_wave` (its test checks the waves).
  */
 export type FlagRuleCondition =
   | {
       readonly tagRatio: {
         readonly tag: WaveTag;
+        readonly except?: WaveTag;
         readonly of: 'leaked' | 'killed';
         readonly gte: number;
       };
@@ -139,11 +144,18 @@ export interface FlagRule {
 
 /** The run-end rules (campaign.md § 6.2; design/core-loop.md § 2.7). One rule per flag. */
 export const FLAG_RULES: readonly FlagRule[] = [
-  // C1, the Quiet Wave: no prompt; holding fire through it is the choice.
+  // C1, the Quiet Wave: no prompt; holding fire through it is the choice. Spared means Old Thrum
+  // lived (D097): she (the quiet_wave unit that isn't a youngling) leaked, and so did at least 75%
+  // of the younglings, so holding fire only after she falls never counts as sparing them.
   {
     flag: 'spared_quiet_wave',
     onMapEnd: 'a1_m05',
-    value: { tagRatio: { tag: 'quiet_wave', of: 'leaked', gte: 0.75 } },
+    value: {
+      all: [
+        { tagRatio: { tag: 'quiet_wave', except: 'youngling', of: 'leaked', gte: 1 } },
+        { tagRatio: { tag: 'youngling', of: 'leaked', gte: 0.75 } },
+      ],
+    },
   },
   // Plain Hold Fire, not the Spare runners filter (holdFireUses counts only the former).
   {

@@ -300,17 +300,18 @@ describe('purchase prices (economy.ts purchasePriceInto and pay)', () => {
 
   it('pay spends credits and one charge per discounted purchase, and refuses a short bank', () => {
     const s = setup();
+    const PRICE = s.ctx.scratch.price;
     s.state.credits = 200;
     s.state.discountCharges = 2;
     s.state.discountPct = 0.4;
-    expect(pay(s.state, [], 'fx_gun', 100, 'build')).toBe(60);
+    expect(pay(s.state, [], 'fx_gun', 100, 'build', PRICE)).toBe(60);
     expect(s.state).toMatchObject({ credits: 140, discountCharges: 1, discountPct: 0.4 });
     expect(s.state.stats.creditsSpent).toBe(60);
-    expect(pay(s.state, [], 'fx_gun', 300, 'spec')).toBe(-1); // 180 > 140
+    expect(pay(s.state, [], 'fx_gun', 300, 'spec', PRICE)).toBe(-1); // 180 > 140
     expect(s.state).toMatchObject({ credits: 140, discountCharges: 1 });
-    expect(pay(s.state, [], 'fx_gun', 100, 'build')).toBe(60);
+    expect(pay(s.state, [], 'fx_gun', 100, 'build', PRICE)).toBe(60);
     expect(s.state).toMatchObject({ credits: 80, discountCharges: 0, discountPct: 0 });
-    expect(pay(s.state, [], 'fx_gun', 100, 'build')).toBe(-1);
+    expect(pay(s.state, [], 'fx_gun', 100, 'build', PRICE)).toBe(-1);
   });
 });
 

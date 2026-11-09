@@ -1,9 +1,10 @@
 // The huddle (design/enemies.md § 3 Huddle; art-direction §8, the `huddle` tell: "allies cluster;
 // a soft ring under the group"; T312b). Each frame, for every leader holding at least one ally back
-// (an Elder, Chitterbloom in her phase-3 panic): a soft `gold.4` ring on the ground at its huddle
-// radius, at 60%, and a dotted `gold.4` tether (1 px dots, 3 px apart, solid) from each huddled ally
-// (`Enemy.huddleUid`) to it, both pulsing down a step on the shared 1 Hz clock (steady under
-// reduced motion). The leader's own flank spots pulse in its sprite. In `decal`, under the units.
+// (an Elder, Chitterbloom in her phase-3 panic): a `gold.4` ring on the ground at its huddle
+// radius over a 1 px `ink.0` under-stroke, at 100% stepping to 60%, and a dotted `gold.4` tether
+// (2×2 dots, 4 px apart, each over a 1 px `ink.0` under-stroke so it reads on grass and path) from
+// each huddled ally (`Enemy.huddleUid`) to it, both pulsing down a step on the shared 1 Hz clock
+// (steady under reduced motion; D097). The leader's own flank spots pulse in its sprite. In `decal`, under the units.
 // Allocation-free per frame: the rings are pooled, the tethers redrawn into one Graphics.
 import type * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
@@ -20,14 +21,20 @@ export interface HuddlePool {
 }
 
 const MAX_RINGS = 8;
-/** Tether dots: one every DOT_STEP_PX along the line. */
-const DOT_STEP_PX = 3;
-const RING_ALPHA = { on: 0.6, off: 0.35 } as const;
+/** Tether dots: DOT_PX square, one every DOT_STEP_PX along the line. */
+const DOT_STEP_PX = 4;
+const DOT_PX = 2;
+/** The ring never drops under 60% (D097: it has to read on Act I grass). */
+const RING_ALPHA = { on: 1, off: 0.6 } as const;
 const TETHER_ALPHA = { on: 1, off: 0.6 } as const;
-const COLOR = (() => {
-  const c = rgbOf('gold.4');
+/** The tether dots' under-stroke (a 1 px `ink.0` rim round each dot). */
+const UNDER_ALPHA = 0.6;
+function hex(name: 'gold.4' | 'ink.0'): number {
+  const c = rgbOf(name);
   return (c.r << 16) | (c.g << 8) | c.b;
-})();
+}
+const COLOR = hex('gold.4');
+const UNDER = hex('ink.0');
 
 /** The huddle radius `e` leads with now (tiles), or 0: an Elder's, or a boss phase's. */
 export function huddleRadius(e: DeepReadonly<Enemy>): number {
@@ -82,16 +89,20 @@ export class HuddleView {
     if (this.#held.length < enemies.used) this.#held = new Uint16Array(enemies.used * 2);
     const held = this.#held;
     held.fill(0, 0, enemies.used);
-    // Tethers: each huddled ally to its leader (found by uid in the pool).
-    g.fillStyle(COLOR, on ? TETHER_ALPHA.on : TETHER_ALPHA.off);
-    for (let i = 0; i < enemies.used; i++) {
-      const e = enemies.items[i]!; // i < used ≤ items.length
-      if (!e.alive || e.huddleUid === 0) continue;
-      const leader = slotOf(enemies, e.huddleUid);
-      if (leader < 0) continue;
-      held[leader] = (held[leader] ?? 0) + 1;
-      const l = enemies.items[leader]!; // slotOf returns a slot < used
-      this.#dots(e.x, e.y, l.x, l.y);
+    // Tethers: each huddled ally to its leader (found by uid in the pool); the ink under-stroke
+    // pass first, then the gold dots over it.
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass === 0) g.fillStyle(UNDER, on ? UNDER_ALPHA : UNDER_ALPHA * TETHER_ALPHA.off);
+      else g.fillStyle(COLOR, on ? TETHER_ALPHA.on : TETHER_ALPHA.off);
+      for (let i = 0; i < enemies.used; i++) {
+        const e = enemies.items[i]!; // i < used ≤ items.length
+        if (!e.alive || e.huddleUid === 0) continue;
+        const leader = slotOf(enemies, e.huddleUid);
+        if (leader < 0) continue;
+        if (pass === 0) held[leader] = (held[leader] ?? 0) + 1;
+        const l = enemies.items[leader]!; // slotOf returns a slot < used
+        this.#dots(e.x, e.y, l.x, l.y, pass === 0);
+      }
     }
     // Rings: under each leader holding someone back.
     let r = 0;
@@ -102,7 +113,7 @@ export class HuddleView {
       if (radius <= 0) continue;
       const ring = this.#rings[r++]!; // r < MAX_RINGS
       if (ring.radius !== radius) {
-        const tex = effectRingTexture(this.#ctx.scene, radius, 'gold.4');
+        const tex = effectRingTexture(this.#ctx.scene, radius, 'gold.4', 'ink.0');
         ring.img.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
         ring.radius = radius;
       }
@@ -123,8 +134,8 @@ export class HuddleView {
     for (const r of this.#rings) r.img.setVisible(false);
   }
 
-  /** A dotted line between two grid points, on the ground. */
-  #dots(x0: number, y0: number, x1: number, y1: number): void {
+  /** A dotted line between two grid points, on the ground (`under`: the ink rims, 1 px wider). */
+  #dots(x0: number, y0: number, x1: number, y1: number, under: boolean): void {
     gridToScreen(x0, y0, this.#ctx.origin, a);
     gridToScreen(x1, y1, this.#ctx.origin, b);
     const dx = b.x - a.x;
@@ -132,7 +143,10 @@ export class HuddleView {
     const n = Math.floor(Math.hypot(dx, dy) / DOT_STEP_PX);
     for (let k = 1; k < n; k++) {
       const t = k / n;
-      this.#gfx.fillRect(Math.round(a.x + dx * t), Math.round(a.y + dy * t), 1, 1);
+      const x = Math.round(a.x + dx * t);
+      const y = Math.round(a.y + dy * t);
+      if (under) this.#gfx.fillRect(x - 1, y - 1, DOT_PX + 2, DOT_PX + 2);
+      else this.#gfx.fillRect(x, y, DOT_PX, DOT_PX);
     }
   }
 }

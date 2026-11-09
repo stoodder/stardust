@@ -12,8 +12,11 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
-import { evaluateFlagRule, flagRule } from '../story/flags.ts';
+import { createBuildExecutor, createSim, runHeadless } from '../sim/index.ts';
+import { evaluateFlagRule, flagRule, type FlagRuleStats } from '../story/flags.ts';
+import { notGradual } from './checks.ts';
 import { runMap } from './harness.ts';
+import { referenceRunProfile, runConfig } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const raw = RAW_CONTENT.maps.a1_m05;
@@ -90,6 +93,54 @@ describe('A1M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     // Sparing them never costs a medal: Victory and the Challenge stand.
     expect(spared.medals.victory).toBe('earned');
     expect(spared.medals.challenge).toBe('earned');
+  });
+
+  it('counts holding fire only after Old Thrum falls as clearing it, not sparing it (D097)', () => {
+    // Par to W10, then the player fires until Thrum is down and holds fire on the younglings.
+    const map = content.maps.a1_m05;
+    const build = map.builds.parBuild;
+    const sim = createSim(runConfig(content, map, build, referenceRunProfile(map, content), 1));
+    const exec = createBuildExecutor(sim, build);
+    const st = sim.state.stats;
+    let held = false;
+    while (sim.state.outcome === 'playing' && sim.state.tick < 200_000) {
+      exec.beforeTick();
+      const thrumDown = st.tagKilled.quiet_wave > st.tagKilled.youngling;
+      if (!held && thrumDown) {
+        held = true;
+        sim.enqueue({ type: 'holdFire', target: 'all', on: true });
+      }
+      sim.step();
+      sim.drainEvents([]);
+    }
+    expect(sim.state.outcome).toBe('won');
+    expect(held).toBe(true);
+    // Most of the younglings walk home, but Old Thrum didn't: the flag stays false.
+    expect(st.tagLeaked.youngling / st.tagSpawned.youngling).toBeGreaterThanOrEqual(0.75);
+    const stats: FlagRuleStats = { ...st };
+    expect(evaluateFlagRule(flagRule('spared_quiet_wave')!.value, stats)).toBe(false);
+  });
+
+  it('stays gradual for a player with no tier-4 spec (par without the Cluster)', () => {
+    // An under-built alt in all but name (validateBuilds keeps A1M4+ alts to ≤ 2 of par's towers):
+    // a player who never opened Engineering may win or lose here, but never to one wave's wall.
+    const map = content.maps.a1_m05;
+    const par = map.builds.parBuild;
+    const noSpec = { ...par, steps: par.steps.filter((st) => st.kind !== 'specialize') };
+    for (const seed of [1, 2, 3]) {
+      const cfg = runConfig(content, map, noSpec, referenceRunProfile(map, content), seed);
+      const r = runHeadless(cfg, noSpec);
+      expect({ seed, wall: notGradual(r) }).toEqual({ seed, wall: null });
+      expect(r.steps.filter((st) => st.error !== null)).toEqual([]);
+    }
+  });
+
+  it('tags every youngling quiet_wave too, as the flag rule’s `except` needs', () => {
+    for (const w of raw.waves) {
+      for (const g of w.groups) {
+        if (g.tags?.includes('youngling') === true) expect(g.tags).toContain('quiet_wave');
+      }
+    }
   });
 
   it.each([

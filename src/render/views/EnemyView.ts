@@ -92,8 +92,11 @@ const FACING_INDEX: Readonly<Record<Facing, number>> = { ne: 0, nw: 1, se: 2, sw
 export const TELL_TICKS = 3 * TICK_HZ;
 /** The glyph's gap above the body's top (px): room for the health bar between them. */
 const TELL_GAP_PX = HEALTH_BAR_ROOM_PX;
-/** The invulnerable shimmer: the `puff` anim swaps to its white-outlined variant this often (ms). */
-export const SHIMMER_MS = 125;
+/**
+ * The invulnerable shimmer: the `puff` anim swaps to its white-outlined variant this often (ms),
+ * a 3 Hz cycle (no flicker above the photosensitivity cap, art-direction §8; D097).
+ */
+export const SHIMMER_MS = 167;
 /** A leaving unit is untargetable: it draws at this alpha (the stepped-alpha ladder's 60%). */
 export const LEAVING_ALPHA = 0.6;
 /** The generic burrow mound (a unit without its own `under` anim). */

@@ -37,3 +37,10 @@
   line-height: 10px;
   color: var(--sd-steel-3);
 }
+
+/* A secondary button with the focus (or the pointer) shows a white.1 edge on its own dark fill,
+   so it never reads as Resume, the primary (U-L1). */
+.sd-pause-buttons .sd-button:not(.sd-button-primary):is(:hover, :focus-visible) {
+  --sd-edge: var(--sd-white-1);
+  --sd-fill: var(--sd-ink-3);
+}

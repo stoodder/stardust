@@ -3,6 +3,7 @@
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { SimConfig } from './config.ts';
+import type { PurchasePrice } from './economy.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
@@ -29,6 +30,8 @@ export interface Scratch {
   readonly towerSource: { readonly kind: 'tower'; uid: number };
   /** A tower's range after its bonuses (sim/bonuses.ts), for the targeting calls. */
   readonly range: { rangeSq: number; minRangeSq: number };
+  /** A purchase's price as the sim pays it (economy.ts `pay`). */
+  readonly price: PurchasePrice;
 }
 
 /** Fresh scratch space for one sim. */
@@ -38,6 +41,7 @@ export function createScratch(): Scratch {
     point: { x: 0, y: 0 },
     towerSource: { kind: 'tower', uid: 0 },
     range: { rangeSq: 0, minRangeSq: 0 },
+    price: { cost: 0, discounted: false },
   };
 }
 

@@ -10,7 +10,7 @@ import {
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
-import { createNewSave, runEnd } from '../meta/index.ts';
+import { FIRST_PAYDAY_SEEN_ID, createNewSave, runEnd } from '../meta/index.ts';
 
 const INPUT: RunEndInput = {
   mapId: 'a1_m01',
@@ -167,7 +167,12 @@ describe('objectives and the first payday on the card (T316, T235)', () => {
     const paid = runResultOf(INPUT, 'won', { ...first.summary, stardustNote: note }).rewards;
     expect(paid?.firstPayday).toBe(true);
     expect(paid?.stardustNote).toBe(note);
-    const later = runEnd(first.save, { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
+    // Results showed it, so the router marked it seen (D097); the next win isn't a first payday.
+    const shown = {
+      ...first.save,
+      story: { ...first.save.story, seen: [...first.save.story.seen, FIRST_PAYDAY_SEEN_ID] },
+    };
+    const later = runEnd(shown, { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
     const again = runResultOf(INPUT, 'won', { ...later.summary, stardustNote: note }).rewards;
     expect(again?.firstPayday).toBe(false);
     expect(again?.stardustNote).toBeNull();
@@ -176,9 +181,13 @@ describe('objectives and the first payday on the card (T316, T235)', () => {
   });
 });
 
-/** Run stats with `quiet` Quiet Wave units spawned and `leaked` of them leaked. */
-const tags = (quiet: number, leaked: number) => {
+/**
+ * Run stats for A1M5's Quiet Wave: Old Thrum (`quiet_wave`) and six younglings (`quiet_wave` +
+ * `youngling`); `thrum` says whether she leaked, `young` how many younglings did.
+ */
+const tags = (thrum: boolean, young: number) => {
   const none = { quiet_wave: 0, youngling: 0, fleeing: 0, medal_exempt: 0 };
+  const leaked = (thrum ? 1 : 0) + young;
   return {
     holdFireUses: 1,
     holdFireTicks: 0,
@@ -186,25 +195,27 @@ const tags = (quiet: number, leaked: number) => {
     towersBuilt: 0,
     creditsSpent: 0,
     abilityUses: 0,
-    tagSpawned: { ...none, quiet_wave: quiet },
-    tagLeaked: { ...none, quiet_wave: leaked },
-    tagKilled: { ...none, quiet_wave: quiet - leaked },
+    tagSpawned: { ...none, quiet_wave: 7, youngling: 6 },
+    tagLeaked: { ...none, quiet_wave: leaked, youngling: young },
+    tagKilled: { ...none, quiet_wave: 7 - leaked, youngling: 6 - young },
   };
 };
 
-/** A run of A1M5 whose Quiet Wave (7 units) leaked `leaked`. */
-const a1m05 = (leaked: number): RunEndInput => ({
+/** A run of A1M5 whose Quiet Wave leaked Old Thrum (or not) and `young` of six younglings. */
+const a1m05 = (thrum: boolean, young: number): RunEndInput => ({
   ...INPUT,
   mapId: 'a1_m05',
-  stats: tags(7, leaked),
+  stats: tags(thrum, young),
 });
 
 describe('story stamps (core-loop.md § 6.2; C1)', () => {
   it("stamps A1M5's card CONTAINMENT LAPSE when this run spared the Quiet Wave", () => {
-    expect(resultStamps(a1m05(7), 'won')).toEqual(['CONTAINMENT LAPSE']);
-    expect(resultStamps(a1m05(6), 'won')).toEqual(['CONTAINMENT LAPSE']); // ≥ 75%
-    expect(resultStamps(a1m05(5), 'won')).toEqual([]);
-    expect(runResultOf(a1m05(7), 'won').stamps).toEqual(['CONTAINMENT LAPSE']);
+    expect(resultStamps(a1m05(true, 6), 'won')).toEqual(['CONTAINMENT LAPSE']);
+    expect(resultStamps(a1m05(true, 5), 'won')).toEqual(['CONTAINMENT LAPSE']); // ≥ 75%
+    expect(resultStamps(a1m05(true, 4), 'won')).toEqual([]);
+    // Spared means Old Thrum lived (D097): younglings spared after she fell don't count.
+    expect(resultStamps(a1m05(false, 6), 'won')).toEqual([]);
+    expect(runResultOf(a1m05(true, 6), 'won').stamps).toEqual(['CONTAINMENT LAPSE']);
   });
 
   it("reads this run, not the save's flag: a replay that cleared it has no stamp", () => {
@@ -213,17 +224,17 @@ describe('story stamps (core-loop.md § 6.2; C1)', () => {
       ...save,
       story: { ...save.story, flags: { spared_quiet_wave: true as const } },
     };
-    expect(resultStamps({ ...a1m05(0), ...debriefStoryOf(spared) }, 'won')).toEqual([]);
-    expect(resultStamps({ ...a1m05(7), ...debriefStoryOf(save) }, 'won')).toEqual([
+    expect(resultStamps({ ...a1m05(false, 0), ...debriefStoryOf(spared) }, 'won')).toEqual([]);
+    expect(resultStamps({ ...a1m05(true, 6), ...debriefStoryOf(save) }, 'won')).toEqual([
       'CONTAINMENT LAPSE',
     ]);
   });
 
   it('stamps only a win, only on its map, and nothing without stats', () => {
-    expect(resultStamps(a1m05(7), 'lost')).toEqual([]);
-    expect(resultStamps({ ...a1m05(7), mapId: 'a1_m04' }, 'won')).toEqual([]);
+    expect(resultStamps(a1m05(true, 6), 'lost')).toEqual([]);
+    expect(resultStamps({ ...a1m05(true, 6), mapId: 'a1_m04' }, 'won')).toEqual([]);
     expect(resultStamps({ ...INPUT, mapId: 'a1_m05' }, 'won')).toEqual([]);
-    expect(resultStamps({ ...a1m05(7), mapId: 'dev_range' }, 'won')).toEqual([]);
+    expect(resultStamps({ ...a1m05(true, 6), mapId: 'dev_range' }, 'won')).toEqual([]);
   });
 });
 

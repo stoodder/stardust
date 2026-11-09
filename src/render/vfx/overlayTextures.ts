@@ -15,12 +15,14 @@ import { healthStripImage, type HealthStrip } from './healthBar.ts';
 import { textImage } from './pixelFont.ts';
 
 /** Tile highlight styles: hover, the selected tower's tile, and an invalid placement. */
-export type HighlightKind = 'hover' | 'selected' | 'invalid';
+export type HighlightKind = 'hover' | 'selected' | 'invalid' | 'salvage';
 
 const HIGHLIGHT_COLOR: Readonly<Record<HighlightKind, ColorName>> = {
   hover: 'white.0',
   selected: 'teal.3',
   invalid: 'red.3',
+  // Clickable world objects are gold (art-direction § Story and world sprites): a wreck to clear.
+  salvage: 'gold.4',
 };
 
 /** Ring colors (art-direction §7): `white.0` when valid, `red.3` when the placement is invalid. */
@@ -73,12 +75,13 @@ export function effectRingTexture(
   scene: Phaser.Scene,
   radiusTiles: number,
   color: ColorName = PULSE_COLOR,
+  underStroke: ColorName | null = null,
 ): RingTexture {
   const r = snapRingRadius(radiusTiles);
-  const key = `fx.ring.${color}.${r}`;
+  const key = `fx.ring.${color}.${r}${underStroke === null ? '' : `.u.${underStroke}`}`;
   const cached = ringOrigins.get(key);
   if (cached !== undefined && scene.textures.exists(key)) return cached;
-  const ring = ringImage(r, color, false);
+  const ring = ringImage(r, color, false, underStroke);
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, imageToCanvas(ring.image));
   const tex: RingTexture = { key, ox: ring.cx, oy: ring.cy };
   ringOrigins.set(key, tex);

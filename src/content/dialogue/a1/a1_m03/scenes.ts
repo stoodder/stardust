@@ -1,5 +1,6 @@
 // A1M3 · Special Delivery: scenes (story/campaign/act1.md § A1M3, *Story delivery*), verbatim. Ids are
-// `a1_m03_<slot>` (style-guide.md § 5.3). The Joke of the Shift (w04) carries the optional
+// `a1_m03_<slot>` (style-guide.md § 5.3). The shift teaches before it tests (D097): the Skyhook as
+// it's issued, per-turret Hold Fire before Gerald's second pass, Time Dilation before the flock. The Joke of the Shift (w04) carries the optional
 // **Who's there?** button (core-loop.md § 6.10): pressed, it plays `a1_m03_cue_knock_answer`;
 // ignored, the scene runs on to QUILL's "nobody home". Bricks fact-checks either way.
 import { defineScene, defineScenes } from '../../define.ts';
@@ -20,6 +21,16 @@ export const scenes = defineScenes([
       text: "Today's route includes Gerald. Gerald is the mail. Gerald has right of way.",
     },
   ]),
+  // The shift's start, the first battle the save brings the newly issued Skyhook into (D061):
+  // app/dialogue.ts plays `<map>_cue_issued_<tower>`. It ships at W3, with the Puffwings.
+  defineScene('a1_m03_cue_issued_skyhook', [
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: 'New hardware! The Skyhook shoots down flyers. It ships at wave 3. Build it under the dotted air lane!',
+    },
+  ]),
   // The salvage-drone prompt wave: Form 88-B, then the crashed drones in Gerald's livery.
   defineScene('a1_m03_w02', [
     {
@@ -32,6 +43,14 @@ export const scenes = defineScenes([
       speaker: 'quill',
       expression: 'worried',
       text: "Gerald's colleagues. Gerald doesn't like to talk about it.",
+    },
+  ]),
+  // Before Gerald's second pass (W4): hold fire turret by turret, on the ones that can hit him.
+  defineScene('a1_m03_w03', [
+    {
+      kind: 'line',
+      speaker: 'bricks',
+      text: "Next pass, Sprout: hold fire on your Rivets and Skyhooks. Just those. Mortars can't reach Gerald. Let 'em work.",
     },
   ]),
   // Joke of the Shift: the knock-knock and its button (the single-button grammar's rehearsal).
@@ -59,6 +78,20 @@ export const scenes = defineScenes([
       text: "Lettuce. ...Now you say 'Lettuce who.' I'll do it. Lettuce who? Lettuce in, it's cold out here!",
     },
     DOME,
+  ]),
+  // The flock wave: the Time Dilation prompt.
+  defineScene('a1_m03_w05', [
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: "Flock incoming: ten Puffwings! That's a lot of fluff.",
+    },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      text: 'Cast my Time Dilation as they reach your Skyhook. It slows pests, not turrets!',
+    },
   ]),
   // Zibzab's shell-shop clanks onto the verge (the `zibzab_shop` marker): price first, always.
   defineScene('a1_m03_w06', [

@@ -39,7 +39,7 @@ export const scenes = defineScenes([
       kind: 'line',
       label: 'answer',
       speaker: 'zibzab',
-      text: "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the barrel upgrade?",
+      text: "It's the dead. Theirs. Sung to sleep, very slowly. Anyway. Forty for the Rivet tune-up?",
     },
     { kind: 'end' },
     // Not today: nothing more is said, and the question stays on the shelf.

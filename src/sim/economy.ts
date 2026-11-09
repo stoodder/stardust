@@ -156,14 +156,12 @@ function firstBuildFree(modifiers: readonly Modifier<IdSpace>[]): boolean {
   return false;
 }
 
-/** Scratch for `pay` (the sim pays one purchase at a time). */
-const price: PurchasePrice = { cost: 0, discounted: false };
-
 /**
  * Pays for a purchase at `purchasePriceInto`'s price: returns the credits paid (the caller adds
  * them to the tower's `invested`, so a sell refunds a share of what was actually paid), or −1
  * when the bank can't cover it (nothing changes). Paying counts `creditsSpent` and spends a
- * Clearance Sale charge when the discount applied.
+ * Clearance Sale charge when the discount applied. `scratch` holds the price (the run's
+ * `Scratch.price`, so paying doesn't allocate and no state is shared between sims).
  */
 export function pay(
   state: SimState,
@@ -171,8 +169,9 @@ export function pay(
   tower: string,
   base: number,
   kind: PurchaseKind,
+  scratch: PurchasePrice,
 ): number {
-  const p = purchasePriceInto(state, modifiers, tower, base, kind, price);
+  const p = purchasePriceInto(state, modifiers, tower, base, kind, scratch);
   if (state.credits < p.cost) return -1;
   state.credits -= p.cost;
   state.stats.creditsSpent += p.cost;

@@ -1,5 +1,6 @@
 // Story flags at run time (story-runtime.md § Flags; conventions.md § Story runner): the run-end
-// rules at their thresholds (the Quiet Wave at 74%, 75%, and 100%; held_fire_second_look at 49%
+// rules at their thresholds (the Quiet Wave: Old Thrum leaked or not, younglings at 74%, 75%, and
+// 100%; held_fire_second_look at 49%
 // and 50% fleeing leaked, with and without Hold Fire), the registry's rule set, defaults, and the
 // flags a run's scripts see.
 import { describe, expect, it } from 'vitest';
@@ -47,23 +48,46 @@ function stats(
   };
 }
 
+/**
+ * A1M5-shaped Quiet Wave stats: Old Thrum (quiet_wave only) leaked or killed, and `younglings`
+ * (quiet_wave + youngling) of which `leaked` leaked.
+ */
+function quiet(thrumLeaked: boolean, younglings: number, leaked: number): FlagRuleStats {
+  const s = stats('quiet_wave', 1 + younglings, (thrumLeaked ? 1 : 0) + leaked);
+  s.tagSpawned.youngling = younglings;
+  s.tagLeaked.youngling = leaked;
+  s.tagKilled.youngling = younglings - leaked;
+  return s;
+}
+
 const spared = flagRule('spared_quiet_wave')!;
 const secondLook = flagRule('held_fire_second_look')!;
 
 describe('run-end rules (campaign.md § 6.2)', () => {
   it.each([
-    ['74% leaked', 100, 74, false],
-    ['75% leaked', 100, 75, true],
-    ['100% leaked', 5, 5, true],
-    ['4 of 5 (80%)', 5, 4, true],
-    ['3 of 5 (60%)', 5, 3, false],
-    ['none leaked', 5, 0, false],
-  ] as const)('spared_quiet_wave: %s', (_, spawned, leaked, want) => {
-    expect(evaluateFlagRule(spared.value, stats('quiet_wave', spawned, leaked))).toBe(want);
+    ['Thrum and 74% of the younglings leaked', true, 100, 74, false],
+    ['Thrum and 75% of the younglings leaked', true, 100, 75, true],
+    ['all seven leaked', true, 6, 6, true],
+    ['Thrum and 5 of 6 younglings', true, 6, 5, true],
+    ['Thrum and 4 of 6 younglings (67%)', true, 6, 4, false],
+    ['Thrum killed, every youngling leaked (hold fire after she falls)', false, 6, 6, false],
+    ['none leaked', false, 6, 0, false],
+  ] as const)('spared_quiet_wave: %s', (_, thrum, younglings, leaked, want) => {
+    expect(evaluateFlagRule(spared.value, quiet(thrum, younglings, leaked))).toBe(want);
   });
 
   it('spared_quiet_wave is false when no quiet wave spawned (the ratio needs a spawn)', () => {
     expect(evaluateFlagRule(spared.value, stats('quiet_wave', 0, 0))).toBe(false);
+    // Younglings alone (no Old Thrum) never count as sparing her.
+    expect(evaluateFlagRule(spared.value, quiet(false, 6, 6))).toBe(false);
+  });
+
+  it('tagRatio.except counts only the units without the excepted tag', () => {
+    const s = quiet(true, 6, 0);
+    const thrum = { tag: 'quiet_wave', except: 'youngling', of: 'leaked', gte: 1 } as const;
+    expect(evaluateFlagRule({ tagRatio: thrum }, s)).toBe(true);
+    expect(evaluateFlagRule({ tagRatio: { ...thrum, of: 'killed', gte: 0.01 } }, s)).toBe(false);
+    expect(evaluateFlagRule({ tagRatio: thrum }, quiet(false, 6, 6))).toBe(false);
   });
 
   it.each([
@@ -92,9 +116,9 @@ describe('run-end rules (campaign.md § 6.2)', () => {
   });
 
   it('runEndFlags sets only the ended map’s flags, true or false', () => {
-    const full = stats('quiet_wave', 5, 5);
+    const full = quiet(true, 6, 6);
     expect(runEndFlags('a1_m05', full)).toEqual({ spared_quiet_wave: true });
-    expect(runEndFlags('a1_m05', stats('quiet_wave', 5, 0))).toEqual({ spared_quiet_wave: false });
+    expect(runEndFlags('a1_m05', quiet(false, 6, 0))).toEqual({ spared_quiet_wave: false });
     expect(runEndFlags('a2_m03', stats('fleeing', 4, 4, { holdFireUses: 1 }))).toEqual({
       held_fire_second_look: true,
     });

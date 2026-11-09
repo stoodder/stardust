@@ -97,8 +97,12 @@ export function CodexPane() {
   return (
     <div class="sd-story-pane sd-codex">
       <nav class="sd-story-list" aria-label={`${view.title} entries`}>
-        <p class="sd-story-list-title">
-          {view.title} · {entries.length} of {view.total}
+        {/* The title and the count on one line, the count right-aligned (U-L4: no orphan). */}
+        <p class="sd-story-list-title sd-codex-list-title">
+          <span>{view.title}</span>
+          <span class="sd-codex-count" aria-label={`${entries.length} of ${view.total}`}>
+            {entries.length}/{view.total}
+          </span>
         </p>
         <div onKeyDown={(e) => listKeys(e, pick, ordered.length)}>
           {CODEX_SECTIONS.map((s) => {

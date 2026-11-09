@@ -92,7 +92,7 @@ function build(
   const def = ctx.content.towers[cmd.tower]!; // validateConfig checked every loadout id
   const tier = def.tiers[0];
   // Tune-ups, Rapid Deploy, and Clearance Sale (economy.ts purchasePriceInto).
-  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'build');
+  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'build', ctx.scratch.price);
   if (cost < 0) return 'cantAfford';
 
   state.stats.towersBuilt++;
@@ -127,7 +127,14 @@ function upgrade(state: SimState, ctx: TickContext, towerUid: number): RejectRea
   // Tier 4 is a specialization (`specialize`, T202), not an upgrade.
   if (tower.tier >= MAX_TIER_BEFORE_SPEC) return 'maxTier';
   const next = tower.def.tiers[tower.tier]!; // tier < MAX_TIER_BEFORE_SPEC = tiers.length
-  const cost = pay(state, ctx.config.modifiers, tower.def.id, next.cost, 'upgrade');
+  const cost = pay(
+    state,
+    ctx.config.modifiers,
+    tower.def.id,
+    next.cost,
+    'upgrade',
+    ctx.scratch.price,
+  );
   if (cost < 0) return 'cantAfford';
   tower.tier++;
   tower.tierDef = next;

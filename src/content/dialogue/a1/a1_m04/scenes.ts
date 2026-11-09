@@ -42,7 +42,14 @@ export const scenes = defineScenes([
       text: "Auditor Prim, Four-Forty-Seven is the best technician on this rock. Dock {their} pay and you'll have to dock mine.",
     },
   ]),
+  // QUILL's policy pick, then Zibzab's doubt right behind it: the tell, and someone noticing it.
   defineScene('a1_m04_w05', [
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'policy',
+      text: "Suggested build site: beside the billboards. They're very valuable! (Per policy.)",
+    },
     {
       kind: 'line',
       speaker: 'zibzab',

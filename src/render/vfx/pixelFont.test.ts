@@ -36,3 +36,11 @@ describe('the 3×5 pixel font', () => {
     expect(lit('S')).not.toBe(lit('5'));
   });
 });
+
+describe("Gerald's status text (D097)", () => {
+  it('is drawable in the 3×5 font and stays short enough to float over him', async () => {
+    const { GERALD_STATUS_TEXT } = await import('../views/PlinkFx.ts');
+    expect(canDraw(GERALD_STATUS_TEXT)).toBe(true);
+    expect(textImage(GERALD_STATUS_TEXT, 'teal.4').w).toBeLessThanOrEqual(72);
+  });
+});
