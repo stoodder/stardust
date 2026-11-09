@@ -379,7 +379,7 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | A1M4 | 2 | 3 | 6 | 85 | First loadout choice; comedy at full volume; par's margin is W9's tail, not W1 |
 | A1M5 | 3 | 4 | 6 | 81 | Boss; the Quiet Wave; stinger |
 | A2M1 | 4 | 4 | 7 | 81 | Re-baseline after the boss (17/21; the target 82 snapped to Reinforced Core 1's 1/21 steps); the margin is the yard cut's, W9–W10 |
-| A2M2 | 4 | 5 | 6 | 79 | |
+| A2M2 | 4 | 5 | 6 | 76 | First boss of Act II and the first Protect map; 16/21 (the target 79 snapped to 1/21 steps, as A2M1's); the margin is the core's, W8–W11, the rigs untouched |
 | A2M3 | 5 | 5 | 4 | 77 | Deliberate low novelty: room to look |
 | A2M4 | 6 | 6 | 6 | 74 | The midpoint |
 | A2M5 | 6 | 6 | 8 | 71 (escort) | Overloaded by design; split trigger in §1 |

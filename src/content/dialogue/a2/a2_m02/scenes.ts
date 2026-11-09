@@ -57,18 +57,12 @@ export const scenes = defineScenes([
       text: 'You let the small ones walk, once. I saw. It is why I have not struck you.',
     },
   ]),
-  // 70%: she reads the counter aloud, and QUILL hears its own log in her mouth.
+  // 70%: she reads the counter aloud (the lifetime count plus this run's, story/text.ts).
   defineScene('a2_m02_cue_witch_counter', [
     {
       kind: 'line',
       speaker: 'vesthara',
       text: 'You are the Counter. {pests_processed}. I have watched you count.',
-    },
-    {
-      kind: 'line',
-      speaker: 'quill',
-      expression: 'worried',
-      text: "That's my number. The exact one. ...How does she have my number?",
     },
   ]),
   defineScene('a2_m02_cue_witch_strike', [
@@ -86,10 +80,17 @@ export const scenes = defineScenes([
       text: 'Keep shooting. You are very good at it. That has never been the question.',
     },
   ]),
-  // The debrief: Bricks names the player Thorn on a win (the callsign beat, once it's given it
-  // stays; Waykeeper comes at A3M6); Sterling on a loss.
+  // The debrief, on a win: QUILL heard its own log in her mouth (her cues come close together at
+  // the fight's pace, so its line waits for the card), then Bricks names the player Thorn (the
+  // callsign beat; Waykeeper comes at A3M6). Sterling on a loss.
   defineScene('a2_m02_debrief', [
     { kind: 'branch', cond: { outcome: 'lost' }, goto: 'lost' },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'worried',
+      text: 'She read out my number. The exact one. ...How does she have my number?',
+    },
     {
       kind: 'line',
       speaker: 'bricks',

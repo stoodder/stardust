@@ -125,28 +125,109 @@ Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): wi
 
 *Someone is shattering the extraction rigs, and only the rigs.*
 
-- **Facts:** Ridge Rigs · `act2.gold` · **Protect the asset** (two extraction rigs on the rig branch, own integrity 10) · 18×12, 14 buildable (2 Aelari thread-glass outcrops as high ground, 1 conduit node) · 11 waves · 450 credits · main road (fleeing Skitterkin and Motes to the ridge relay core) + rig branch (Aelari to the rigs) · companion QUILL (Time Dilation) · Technician Orbital Strike.
+- **Facts:** Ridge Rigs · `act2.gold` · **Protect the asset** (Rigs 7 and 8 at the end of the rig branch, one meter of 10, "Rigs") · 18×12, 14 buildable (2 Aelari thread-glass outcrops as high ground, 1 conduit node) · 11 waves · 500 credits · one spawn: the main road (fleeing Skitterkin and Motes to the ridge relay, the core) and the rig branch (Aelari to the rigs) · companion QUILL (Time Dilation) · Technician Orbital Strike.
 - **Story purpose:** Ves'thara's first appearance, her targets, her grievance, the C1 variant line; the callsign **Thorn**. QUILL as companion on the map where you defend rigs is the fair-play joke: its "(Per policy.)" suggestions are, for once, correct. **Target: intrigue; the first voice that refuses to joke.**
 
-**Layout.** The main road runs north to south along a ridge. At the top a branch peels east along a ledge to Rigs 7 and 8 at the map's east edge. Aelari constructs only ever take the branch. Habitat domes sit untouched on the west side all map; the camera frames them so the player can notice she never goes near them.
+**Layout.** The main road runs north to south along a ridge. At the top a branch peels east along a ledge, doubles back on itself under a thread-glass outcrop, and drops off the ledge to Rigs 7 and 8 at the map's east edge. Aelari constructs only ever take the branch. Habitat domes sit untouched on the west side all map; the camera frames them so the player can notice she never goes near them.
 
-**Waves.** 1 Skitterkin, fleeing · 2 Glimmers ×4 on the branch [T: shields; Zapcoil] · 3 fleeing Skitterkin + Motes · 4 Glimmers ×8 + Skitterkin [X] · 5 Glimmer column + Motes [X] · 6 Mote cluster + fleeing Haulers · 7 Glimmers + Motes · 8 mixed, both routes · 9 Glimmers + Motes · 10 big mixed · 11 **the Glass Witch** on the branch (shield pulse; blink from 70%; in-stage cue at 70%; `retreat` at 40%, which resolves the wave and wins the map).
+**Waves.** 1 Skitterkin, fleeing · 2 Glimmers ×4 on the branch [T: shields; Zapcoil] · 3 fleeing Skitterkin + Motes · 4 Glimmers ×10 + Skitterkin [X] · 5 Glimmer column + Motes [X] · 6 Mote cluster + fleeing Haulers · 7 Glimmers + Motes · 8 mixed, both routes · 9 Glimmers + Motes · 10 big mixed · 11 **the Glass Witch** on the branch (shield pulse; blink from 70%; in-stage cues at 70% and 55%; `retreat` at 40%, which wins the map once the rest of W11 is resolved), with a Hollow surge down the road as she turns back for the rigs.
+
+**Layout data** (the data is [`src/content/maps/a2_m02/map.ts`](../../../src/content/maps/a2_m02/map.ts)). Both routes spawn at (3,0) and share the road to the **fork** (3,2). The **main road** (`main`) runs down the ridge to (3,7), east to (7,7), down to (7,9), west to (5,9), and down to the **ridge relay** (5,11). The **rig branch** (`rigs`, the asset's only route; 38 tiles) runs east along the ledge to (16,2), down to (16,4), back west under the **thread-glass outcrop** (13,3) to (9,4), round the **hairpin** (9,5), east again to (14,5), and down off the ledge to (14,10) and along to (16,10), beside the **rigs** (17,10). The **west outcrop** (5,3) and the **stardust conduit** (5,5) sit in the fork's pocket; the **ledge** pads (12,3) and (14,3) flank the outcrop between the branch's ledge run and its back run, and the **rig pocket** (10,6)–(13,6) sits under the hairpin's second run. The pad at (8,5) reaches both roads; (16,11) is the rigs' doorstep. The habitat domes are markers on decor at (1,3) and (1,8).
+
+```
+...S..............
+...#..............
+...##############.
+...#.^......o^o.#.
+...#o....########.
+...#.+..o######...
+...#......oooo#...
+...#####......#...
+......o#......#...
+.....###......#...
+....o#........###.
+.....C..........o.
+```
+
+**Wave data** (the data is [`src/content/maps/a2_m02/waves.ts`](../../../src/content/maps/a2_m02/waves.ts)). W2–W11 have a **30 s** countdown and **open 6 s into the wave**. Every Skitterkin group is `fleeing` (†) and runs the main road; Glimmers and the Witch take the branch (*rigs*); Motes the main road, **packed** at 0.2 s where marked. A fleeing group with Motes behind it leads them by 3 s ([fleeing-lead]). Default spacing Mote 0.3 s, Glimmer 0.8 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler† ×10, 0 · Zoomer† ×8, 8 | 18 |
+| W2 | Glimmer ×4 @ 1.2, 6 *rigs* (`teach`: Shielded) | 4 |
+| W3 | Nibbler† ×8, 6 · Mote ×10, 9 | 18 |
+| W4 | Glimmer ×10, 6 *rigs* · Nibbler† ×8, 10 · Mote ×12, 13 | 30 |
+| W5 | Glimmer ×14 @ 0.6, 6 *rigs* · Nibbler† ×8, 8 · Mote ×16 packed, 11 | 38 |
+| W6 | Hauler† ×3, 6 · Mote ×34 packed, 9 · Glimmer ×10, 16 *rigs* | 47 |
+| W7 | Glimmer ×20 @ 0.6, 6 *rigs* · Nibbler† ×10, 10 · Mote ×30 packed, 13 | 60 |
+| W8 | Glimmer ×20 @ 0.5, 6 *rigs* · Zoomer† ×16 @ 0.4, 6 · Mote ×43 packed, 9 · Glimmer ×12 @ 0.5, 24 *rigs* · Mote ×24 packed, 26 | 115 |
+| W9 | Glimmer ×28 @ 0.5, 6 *rigs* · Nibbler† ×10, 12 · Mote ×40 packed, 15 | 78 |
+| W10 | Glimmer ×20 @ 0.5, 6 *rigs* · Zoomer† ×20 @ 0.4, 6 · Mote ×50 packed, 9 · Glimmer ×20 @ 0.5, 22 *rigs* · Hauler† ×2, 24 · Mote ×50 packed, 27 | 162 |
+| W11 | Nibbler† ×10, 3 · Mote ×30 packed, 6 · **the Glass Witch**, 6 *rigs* · Glimmer ×6, 14 *rigs* · Zoomer† ×12 @ 0.4, 45 · Mote ×60 packed, 48 (the surge) | 119 |
+
+Totals count spawns (164 Glimmers, 399 Motes). Fleeing units leak for 0, so the threats are the Glimmers on the branch (each that reaches the rigs costs 1 of 10) and the Motes on the road (1 of the relay's 21). **The branch is the shield test:** Energy strips a Glimmer's shield at ×2 and Soaked makes Kinetic and Explosive strip it at ×0.8, so a build with neither loses the rigs to the Glimmer columns. **The road is the splash test:** the packed clusters drown single-target towers. **The Witch is the boss fight:** her shield (1,200, plus 120 every 8 s from her pulse) comes down on the ledge run and the back run, between the ledge pair and the rig pocket; she crosses 70% about at the hairpin, and her blinks then carry her round it, along the second run, and down off the ledge, 2.5 tiles at a time.
 
 **Story delivery.**
 - *Briefing:* Sterling: "Vandalism at the ridge rigs! That's the word. Vandalism. Write it on everything!" · QUILL (threat intel): "Shielded signatures. Your Zapcoil was free. It is about to earn it."
 - *Radio:*
   - w03 QUILL: "Rig integrity is my top priority. (Per policy.) Your integrity is also a priority. A close second."
-  - w06 Bricks (cue): "Whoever it is, they're not touching the domes. Not once. That's a choice."
+  - w06 Bricks: "Whoever it is, they're not touching the domes. Not once. That's a choice."
   - w09 Sterling: "Insurers say 'vandalism.' Legal says 'vandalism.' So it's vandalism. Super!"
 - *Boss cues:* at spawn, if `spared_quiet_wave`: Ves'thara: "You let the small ones walk, once. I saw. It is why I have not struck you." · At 70%: "You are the Counter. {pests_processed}. I have watched you count." · At 55%: "I do not strike your homes, Counter. Look at what I strike. Ask yourself why it bleeds light." · At retreat: "Keep shooting. You are very good at it. That has never been the question."
 - *Barks:* QUILL `perfect_wave`: "Both rigs intact! (Per policy.) Also, you're intact. Also good." · QUILL `new_enemy` glimmer: "Shielded! Energy breaks shields. Zapcoils are energy. You see where I'm going."
-- *Debrief:* Bricks: "Sprout's grown some thorns. Thorn. That's you now. Don't let it go to your head." (callsign → Thorn).
+- *Debrief:* on a win, QUILL: "She read out my number. The exact one. ...How does she have my number?" · Bricks: "Sprout's grown some thorns. Thorn. That's you now. Don't let it go to your head." (callsign → Thorn). · *On a loss*, Sterling: "The vandal won a round! Rounds are not quarters. Back up the ridge, Four-Forty-Seven!"
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m02/`](../../../src/content/dialogue/a2/a2_m02/scenes.ts)): the briefing is `a2_m02_brief`; the radio lines are `a2_m02_w03`, `_w06`, `_w09`; the map script cues her lines from the boss triggers, `a2_m02_cue_witch_spared` at her spawn (`bossPhase: 1`, `when: { flag: 'spared_quiet_wave', eq: true }`), `a2_m02_cue_witch_counter` at `bossHpPct: 0.7`, `a2_m02_cue_witch_strike` at 0.55, and `a2_m02_cue_witch_retreat` at 0.4; the barks are map-scoped (`a2/a2_m02/barks.ts`, so Bricks's act-wide jingle stays off the radio with QUILL as companion); the debrief is `a2_m02_debrief`, whose win branch sets the callsign. Her cues come close together at par's pace (70% to retreat in about nine seconds), so QUILL's reaction to hearing its own count waits for the results card.
 - *Codex:* Glimmer, the Glass Witch (original: "Unidentified vandal. Probably sad! Report sightings to Security."), lumenglass ("woven glass, origin unknown, humming"), Aelari (heavily redacted).
-- *Memo after:* `memo_a2_02` *Re: Incident 2361-A. Please Use "Vandalism" in All Correspondence!*, plus a KFA form (`kfa`): *First Contact Incident 2361-A, filed, pending.*
+- *Memo after:* `memo_a2_02` *Re: Incident 2361-A. Please Use "Vandalism" in All Correspondence!* (small print: "Incident footage is retained by Legal. The vandal is not to be described as sad."), plus a KFA form (`kfa`): *First Contact Incident 2361-A, filed, pending.* (As built the form is the memo's last paragraph, the automated filing Sterling asks everyone to disregard; [`src/content/memos/act2.ts`](../../../src/content/memos/act2.ts).)
 
-**Medals.** Victory · Perfect (core and rigs undamaged) · **Glass Half Empty:** force her retreat before she blinks three times.
+**Medals.** Victory · Perfect Core (nothing through to the relay or the rigs) · **Glass Half Empty:** force her retreat before she blinks three times (`stat: 'bossBlinks', lte: 2`; she blinks 3, 10 and 17 s after crossing 70%).
 **Rewards.** Stardust 195 · Intel 3.
-**Par build.** Zapcoil, Sprinkler (Cloudburst), Thumper, Rivet. Zapcoil ×2 + Sprinkler adjacent (Conductive, Soaked) on the branch ledge; Thumper + Rivet on the main road (Crossfire). Time Dilation and Orbital Strike on the Witch after her first pulse. Target 79. **Alt builds:** Zapcoil + Rivet + Skyhook + Lookout; Sprinkler (Soaked) + Thumper + Skyhook + Lookout (Kinetic and Explosive into Soaked shields). `noCounterBuilds`: **no-shield**, Thumper + Rivet + Skyhook + Lookout, no Energy and no Soaked (must lose by W8); **no-splash**, Rivet + Sprinkler (Soaked) + Skyhook + Lookout, no Thumper or Zapcoil (the Mote clusters; must lose by W8).
+**Par build.** Zapcoil, Sprinkler (Cloudburst), Thumper, Rivet, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M1's, plus the Sprinkler's specs, Seed Money 1 and Zapcoil tune 1; the relay holds 21). Zapcoil ×2 on the ledge either side of the Sprinkler on the outcrop (Conductive, Soaked; Cloudburst from W10) for the branch; Thumper on the conduit with a Rivet beside it (Crossfire) and a second Thumper in the south bend for the road; a Zapcoil in the rig pocket, and in W11 a Rivet in the pocket and one on the rigs' doorstep for her second phase. **QUILL's two Time Dilations, 52 s apart, and the strike on her second phase:**
+
+| Wave | Par |
+|---|---|
+| W1 | Thumper on the conduit (5,5); Rivet (4,4) beside it (Crossfire); Zapcoil (12,3) on the ledge; Sprinkler (13,3) on the outcrop (Conductive) |
+| W2 | The conduit's Thumper to T2 |
+| W3 | Zapcoil (14,3), the outcrop's other side (Conductive) |
+| W4 | Zapcoil (12,3) to T2 |
+| W5 | Thumper (6,8) in the south bend; Zapcoil (14,3) to T2 |
+| W6 | Sprinkler to T3 (Soaked); the bend Thumper to T2 |
+| W7 | Both ledge Zapcoils to T3 |
+| W8 | Zapcoil (13,6) in the rig pocket; the Rivet to T2 |
+| W9 | The pocket Zapcoil to T3 |
+| W10 | Cloudburst; Rivet (11,6) in the rig pocket |
+| W11 | Time Dilation 8 s in (the rush down the road as she steps out); the pocket Rivet to T2; Rivet (16,11) on the rigs' doorstep; Orbital Strike on the hairpin (10,5), 60 s in (her second phase); Time Dilation again, 60 s in (only with QUILL's Rapport: 68 s in without it) |
+
+Par's bank at each build phase: 570, 142, 73, 8, 70, 94, 20, 46, 166, 69, 35 (W1–W11); W11's own bounties and its tripled clear bonus leave about 350 unspent at the end. **Par's margin is the core's** (the rigs come through untouched): two of W8's first cluster, one of W10's, and two of W11's surge get through, so par wins at **16/21 (76.2%)** on every seed, with both rigs intact (campaign.md §7's target 79, snapped to the 1/21 step). Her shield comes down on the back run; she crosses 70% about 58 s into W11, at the back run's west end, and the strike lands as she tells her first blink at the hairpin: she retreats after one blink, 67 s in, with about ten tiles of the branch still to go. **Glass Half Empty is the strike's:** par without it (Time Dilations only) wins with three blinks, driven off on the last drop; par without its casts loses the rigs. **QUILL's Rapport changes a result (T401):** with the 51 s cooldown the second Time Dilation lands on the surge in time, and it all dies on the road: 85.7. Orbital Strike Mk II doesn't change one (par's one strike is already on her).
+
+**No-counter builds** (`noCounterBuilds`, by category; both must lose by W8, `noCounterLoseByWave`, with and without the full catalog):
+- **no-shield:** Thumper, Rivet, Skyhook, Lookout (no Energy, no Soaked): Rivets on the west outcrop and in the rig pocket, Thumpers on the conduit, the thread-glass outcrop and the bend, a Lookout in the pocket. The road holds; the Glimmer columns reach the rigs (5 in W4, 5 in W5), and with the full catalog (whose Reinforced Core and Emergency Bulkhead guard only the relay) in W8.
+- **no-splash:** Rivet, Sprinkler (Soaked), Skyhook, Lookout: the Soaking Sprinkler on the outcrop with Rivets either side holds the branch; Rivets on the conduit, in the pocket and the bend can't hold the clusters, which reach the relay by W6 (W7 with the full catalog).
+
+**Alt builds** (each shares 2 towers with par and must win with ≥ 20%; both bring the Lookout and cast like par): `shell_and_coil`, Zapcoil + Thumper + Skyhook + Lookout (Thumpers on the conduit and in the bend; Zapcoils either side of a Thumper on the outcrop that becomes a **Bunker Buster** for her; a Zapcoil in the pocket) at 76.2; `soak_and_shell`, Sprinkler (Soaked) + Thumper + Skyhook + Lookout (the Soaking Sprinkler on the outcrop between two Thumpers, the east one a Bunker Buster; a second Sprinkler and a Thumper in the pocket) at 81.0, above par. The Skyhook has nothing to hit: a free slot, not an answer.
+
+**Story variants** (harness): `flag:spared_quiet_wave=true` plays her spawn line and changes nothing in the sim (76.2). `spareFleeing` wins at 81.0: spared runners cost nothing here. A2M2 sets no run-end flag.
+
+**Harness runs** (every seed; margin, then integrity lost per wave, the rigs' as "+n rigs"):
+
+| Run | Result | Lost |
+|---|---|---|
+| par | wins at **76.2** (band 65–85; 16/21, rigs 10/10), Glass Half Empty (one blink) | 2 in W8, 1 in W10, 2 in W11 |
+| par with Rapport: QUILL | **85.7** | 2 in W8, 1 in W10 |
+| par with Orbital Strike Mk II | 76.2 | 2 in W8, 1 in W10, 2 in W11 |
+| par without its casts | loses in W11 (she drains the rigs after three blinks) | 2 in W8, 1 in W10, 5 + 10 rigs in W11 |
+| `spareFleeing` | 81.0 | 1 in W6, 2 in W8, 1 in W10 |
+| `alwaysCallEarly` | 57.1 | 2 in W8, 5 in W10, 2 in W11 |
+| no-shield | loses in W6 | 5 rigs in W4, 5 rigs in W5 |
+| no-shield, full catalog | loses in W8 | 3 rigs in W4, 3 rigs in W5, 4 rigs in W7 |
+| no-splash | loses in W6 | 1 in W3, 4 in W4, 8 + 3 rigs in W5, 8 in W6 |
+| no-splash, full catalog | loses in W7 | 5 in W5, 16 in W6, 2 in W7 |
+| Story | 87.1, Victory and Glass Half Empty | |
+| `shell_and_coil` | 76.2, Glass Half Empty | 1 in W7, 4 in W8 |
+| `soak_and_shell` | 81.0, Glass Half Empty | 3 in W6, 1 in W7 |
+| do-nothing | loses at W4 | |
+
+Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): with the Witch shifted ±0.2 s (±1 s checked in T421) the fight plays out the same; with W11's surge and its runners, or W8, shifted ±0.2 s every verdict holds and par stays within one leak of 16/21. The surge's leaks ride on where the Thumpers' shells land in a packed cluster: shifting its Motes alone, away from their runners, can save par both (85.7, over the band).
 
 ## A2M3 · Second Look
 

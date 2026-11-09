@@ -1,8 +1,10 @@
 // A2M2 · The Glass Witch: layout and rules (docs/story/campaign/act2.md § A2M2). Ridge Rigs, at
 // gold dusk. One spawn on the north edge; the main road runs south down the ridge to the ridge
-// relay (the core), and at the top the rig branch peels east along the ledge, doubles back once
-// on itself, and ends at Rigs 7 and 8 on the east edge (the asset, Protect: a leak on the branch
-// costs the rigs, not the core). The Skitterkin and the Hollow only ever take the main road; the
+// relay (the core), and at the top the rig branch peels east along the ledge, doubles back on
+// itself round a hairpin under the thread-glass outcrop, and drops off the ledge to Rigs 7 and 8
+// on the east edge (the asset, Protect: a leak on the branch costs the rigs, not the core). The
+// Glass Witch's fight is the branch's: her shield comes down on the ledge and back runs, between
+// the ledge pads and the rig pocket, and her second phase plays out round the hairpin. The Skitterkin and the Hollow only ever take the main road; the
 // Aelari constructs, and the Glass Witch, only ever take the branch. The two thread-glass
 // outcrops are the high ground (one at the fork, one over the branch's switchback), the
 // stardust conduit is the power node in the fork's pocket, and the habitat domes on the west
@@ -27,9 +29,9 @@ export const map = defineMapLayout({
     '...#......oooo#...',
     '...#####......#...',
     '......o#......#...',
-    '.....###.....o#...',
+    '.....###......#...',
     '....o#........###.',
-    '.....C............',
+    '.....C..........o.',
   ],
   // prettier-ignore
   paths: [
@@ -48,7 +50,8 @@ export const map = defineMapLayout({
     },
     {
       // The rig branch: east along the ledge, down, back west under the thread-glass outcrop,
-      // down, and east again to Rigs 7 and 8. Only the Aelari walk it.
+      // round the hairpin, east again, and down off the ledge to Rigs 7 and 8 (38 tiles). Only
+      // the Aelari walk it.
       id: 'rigs',
       tiles: [
         [3, 0], [3, 1], [3, 2],

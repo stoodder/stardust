@@ -41,6 +41,7 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
       'KFA FORM 7-C · FIRST CONTACT INCIDENT 2361-A\n' +
       'Status: filed, pending.',
     signOff: SIGN_OFF,
+    smallPrint: 'Incident footage is retained by Legal. The vandal is not to be described as sad.',
     afterMap: 'a2_m02',
   },
 ];

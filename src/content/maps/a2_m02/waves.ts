@@ -93,11 +93,7 @@ export const waves = defineWaves([
   // W6 · a Mote cluster + fleeing Haulers
   {
     countdownSec: COUNTDOWN,
-    groups: [
-      run('hauler', 3, OPEN),
-      motes(34, OPEN + FLEE_LEAD, PACKED),
-      glimmers(10, OPEN + 10),
-    ],
+    groups: [run('hauler', 3, OPEN), motes(34, OPEN + FLEE_LEAD, PACKED), glimmers(10, OPEN + 10)],
   },
   // W7 · Glimmers + Motes
   {

@@ -30,7 +30,7 @@ const RIG_C: GridPos = [11, 6];
 const RIG_E: GridPos = [12, 6];
 const RIG_END: GridPos = [13, 6];
 /** Beside the branch's last drop, the rigs' doorstep. */
-const TAIL: GridPos = [13, 9];
+const TAIL: GridPos = [16, 11];
 /** The strike point: the branch's hairpin, where she turns back for the rigs. */
 const HAIRPIN: GridPos = [10, 5];
 
