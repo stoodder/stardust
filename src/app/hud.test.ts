@@ -85,6 +85,7 @@ describe('hud view models', () => {
           icon: 'icon.enemy.nibbler',
           count: 6,
           air: false,
+          neutral: false,
           fast: false,
           // No save on the dev battle: the Nibbler is new to it.
           isNew: true,

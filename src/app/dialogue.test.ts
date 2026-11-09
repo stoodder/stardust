@@ -458,7 +458,9 @@ describe("a battle's dialogue", () => {
   it('waits for an attacking turret before the tag moment comes', () => {
     bind('a1_m02');
     emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
-    expect(shown()).toBeNull();
+    // No tag moment yet (an act-wide wave-clear bark may play: R5); let it finish.
+    expect(shown() ?? '').not.toMatch(/Denise/);
+    if (shown() !== null) vi.advanceTimersByTime(hold(shown()!));
     emit(built(3, 'thumper'));
     at(30);
     emit({ type: 'WaveCleared', wave: 2, bonus: 0 });

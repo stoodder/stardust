@@ -35,6 +35,22 @@ function def(id: string): SpriteDef {
 
 const anims = (id: string) => def(id).anims ?? {};
 
+/** The moving feed's frame `ms` in. */
+const at = (ms: number) => frameAt(FEED_BEATS, anims(FEED_SPRITE), ms);
+
+/** Every beat names a real frame or anim, and every moment of the timeline a real frame. */
+function check(id: string, beats: readonly Beat[]): void {
+  const d = def(id);
+  for (const b of beats) {
+    if ('frame' in b) expect(Object.hasOwn(d.frames, b.frame), `${id} ${b.frame}`).toBe(true);
+    else expect(Object.hasOwn(d.anims ?? {}, b.anim), `${id} ${b.anim}`).toBe(true);
+  }
+  for (let ms = 0; ms < 6000; ms += 37) {
+    const f = frameAt(beats, anims(id), ms);
+    expect(f !== null && Object.hasOwn(d.frames, f), `${id} at ${ms}: ${f}`).toBe(true);
+  }
+}
+
 describe('the staging table', () => {
   it('stages registered scenes only, the stinger and the party', () => {
     for (const id of Object.keys(SCENE_STAGING)) {
@@ -46,17 +62,6 @@ describe('the staging table', () => {
   });
 
   it("names only frames and anims ART's sprites have", () => {
-    const check = (id: string, beats: readonly Beat[]): void => {
-      const d = def(id);
-      for (const b of beats) {
-        if ('frame' in b) expect(Object.hasOwn(d.frames, b.frame), `${id} ${b.frame}`).toBe(true);
-        else expect(Object.hasOwn(d.anims ?? {}, b.anim), `${id} ${b.anim}`).toBe(true);
-      }
-      for (let ms = 0; ms < 6000; ms += 37) {
-        const f = frameAt(beats, anims(id), ms);
-        expect(f !== null && Object.hasOwn(d.frames, f), `${id} at ${ms}: ${f}`).toBe(true);
-      }
-    };
     check(FEED_SPRITE, FEED_BEATS);
     check(FEED_SPRITE, FEED_BEATS_STILL);
     check(CANNON_SPRITE, CANNON_BEATS);
@@ -69,8 +74,6 @@ describe('the staging table', () => {
 });
 
 describe('the stinger feed', () => {
-  const at = (ms: number) => frameAt(FEED_BEATS, anims(FEED_SPRITE), ms);
-
   it('plays live, static, the six smudge frames in half a second, static, then NO SIGNAL', () => {
     expect(at(0)).toBe('live_0');
     expect(at(600)).toBe('live_1');
@@ -114,19 +117,20 @@ describe('the party', () => {
   });
 });
 
-describe('the line announcer (U-M1)', () => {
-  const line = (name: string, text: string, silence = false): LineView => ({
-    id: 1,
-    speaker: 'quill',
-    name,
-    color: 'teal.3',
-    frame: 'portrait',
-    portrait: null,
-    text,
-    silence,
-    point: false,
-  });
+/** A line on screen. */
+const line = (name: string, text: string, silence = false): LineView => ({
+  id: 1,
+  speaker: 'quill',
+  name,
+  color: 'teal.3',
+  frame: 'portrait',
+  portrait: null,
+  text,
+  silence,
+  point: false,
+});
 
+describe('the line announcer (U-M1)', () => {
   it('says the speaker and the whole line; a caption alone; a silence nothing', () => {
     expect(lineAnnouncement(line('QUILL', 'Probably a *smudge*! Logging it.'))).toBe(
       'QUILL: Probably a smudge! Logging it.',
