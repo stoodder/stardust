@@ -111,13 +111,13 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T222** Silkscreen draws "&" like "$" (the R&D tab reads "R$D"): rename the tab to "R and D" / "Research" or fix the glyph. Add the Hold Fire / spare-runners HUD copy to style-guide §2. A dev save with the shop open and items left to buy.
 - [ ] **T223** Terrace and cliff tiles (A1M2's three terraces; real mid-darks in the playfield) — M3.
 - [ ] **T224** A1M3's par target ≤ 90 so the monotonic chain resumes after A1M2's 100 — with A1M3 (M3).
-- [~] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
+- [x] **T225** Split the oversized files: `app/hud.ts` (~1,050 lines) → hudText/hudViews/hudBind; `ui/hud/index.tsx` by component; `FxView` (strike/segment vs pooled effects); `BattleScene`; `balance/checks.ts`.
 - [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
 - [ ] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
 - [ ] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
-- [ ] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
+- [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
 - [ ] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
@@ -133,7 +133,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
   - data stubs with final sprite ids; `gates.ts` rows.
   A1M1/A1M2 must stay hash-identical.
 - [ ] **T300b** Story and save seams (folds in T218, T116): `dialogue/types.ts` (1:1 with style-guide §5), `speakers.ts`, empty scene and bark files per map, the codex and memo registries, `src/story/` stubs, SaveData v2 (profile, seen scenes, memos, codex, seen enemies, `bricksTagIndex`, protocols) with the migration from v1, dev saves `after_a1m3`/`4`/`5`.
-- [~] **T225** Split the oversized files (+ T234).
+- [x] **T225** Split the oversized files (+ T234).
 - [ ] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
 - [ ] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
 - [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".

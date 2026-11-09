@@ -828,3 +828,13 @@ The owner said "Please continue to M3". The forks below were decided under the k
   - Mk II must decide a result on A1M3 (T228).
   - Bricks's Rapport can only matter on A1M5 (the companions on A1M3/A1M4 are QUILL and Zibzab).
   - The gate's sim time roughly triples; the budget stays ≤ 5 min.
+
+### D065 — 2026-11-09 — T225/T234 file splits (behaviour-preserving)
+The oversized files are split by responsibility with every importer updated. The sim report is identical before and after: every margin, hash, outcome, and check matches.
+- `app/hud.ts` (1,150 lines) → `hud.ts` (bindHud + signals), `hudText.ts`, `hudViews.ts`, `hudPanel.ts`.
+- `ui/hud/index.tsx` (943) → one file per component.
+- `FxView.ts` (839) → `FxView` (strike/segment) extending `TransientFx` (the pooled effects).
+- `BattleScene.ts` (804) → the scene plus `battleEvents.ts`, `BattleHover.ts`, `input/ghostLabel.ts`.
+- `balance/checks.ts` (597) → `parChecks`, `altChecks`, `freeChoiceChecks`, and `counterChecks`, assembled by `mapChecks.ts` in the original order.
+
+Three files stay at 430–470 lines, each one cohesive pool or frame loop. T234 is done: `silkText` is applied in the view models, ability slots, and loadout; the per-frame allocations are gone (`sellValueInto`, labels prebuilt); and the small dedupes are in.
