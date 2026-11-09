@@ -5,7 +5,8 @@
 // - Hitscan tracers (Rivet): the projectile.rivet_tracer streak flying from the muzzle to the
 //   target in a few frames (the shot itself landed on the tick it fired).
 // - Pulse rings (Sprinkler): a solid ring expanding to the pulse radius in quarter-tile steps.
-// - Shell bursts (Thumper): fx.explosion at the impact point.
+// - Shell bursts (Thumper): fx.explosion at the impact point; a Cluster Thumper's bomblets pop
+//   with the small fx.bomblet_burst where each lands.
 // - Orbital Strike: fx.orbital_reticle while the zone counts down (and at the pointer while aiming),
 //   then a white-cored beam from the top of the screen, a ground flash at the strike's radius, a
 //   big center burst inside a rolling ring of bursts, a scorch decal, and a 2 px screen shake
@@ -27,6 +28,7 @@ import {
   BEAM_MS,
   beamCore,
   beamWidth,
+  BOMBLET_BURST_MS,
   BURST_MS,
   fadeAlpha,
   floatRise,
@@ -151,8 +153,16 @@ interface Burst {
   active: boolean;
   /** Negative while waiting for its delay. */
   ms: number;
+  /** A bomblet's small pop (fx.bomblet_burst) instead of the shell's fx.explosion. */
+  small: boolean;
   sprite: Phaser.GameObjects.Sprite;
 }
+
+/** The two burst looks: the shell's explosion and a bomblet's pop, with how long each plays. */
+const BURST_LOOKS = {
+  big: { id: 'fx.explosion', ms: BURST_MS },
+  small: { id: 'fx.bomblet_burst', ms: BOMBLET_BURST_MS },
+} as const;
 
 /** A live Suppressing Fire zone's strip: its tiles' tints and its tracer cadence. */
 interface Segment {
@@ -261,7 +271,7 @@ export class FxView {
       sprite.setTexture(boomFrame.texture, boomFrame.frame).setDisplayOrigin(boom.x, boom.y);
       sprite.setVisible(false);
       layers.vfx.add(sprite);
-      this.#bursts.push({ active: false, ms: 0, sprite });
+      this.#bursts.push({ active: false, ms: 0, small: false, sprite });
     }
     const ret = sprites.meta('fx.orbital_reticle').anchor;
     const retFrame = sprites.frame('fx.orbital_reticle', 'march_0');
@@ -399,11 +409,21 @@ export class FxView {
     this.#shakeMs = 0;
   }
 
-  /** An explosive burst on the ground at grid (x, y), after `delayMs`. */
-  burst(x: number, y: number, delayMs = 0): void {
+  /**
+   * An explosive burst on the ground at grid (x, y), after `delayMs`; `small` for a bomblet's pop
+   * (fx.bomblet_burst).
+   */
+  burst(x: number, y: number, delayMs = 0, small = false): void {
     const b = this.#bursts[this.#nextBurst]!; // index < MAX_BURSTS
     this.#nextBurst = (this.#nextBurst + 1) % MAX_BURSTS;
     gridToScreen(x, y, this.#ctx.origin, pos);
+    if (small !== b.small) {
+      const id = BURST_LOOKS[small ? 'small' : 'big'].id;
+      const a = this.#ctx.sprites.meta(id).anchor;
+      const f = this.#ctx.sprites.frame(id, 'f0');
+      b.sprite.setTexture(f.texture, f.frame).setDisplayOrigin(a.x, a.y);
+      b.small = small;
+    }
     // The burst's anchor is its base, so lift it to sit centered on the ground point.
     b.sprite.setPosition(pos.x, pos.y + 4);
     b.sprite.stop().setVisible(false);
@@ -533,9 +553,10 @@ export class FxView {
       const before = b.ms;
       b.ms += dt;
       if (before < 0 && b.ms >= 0) {
-        b.sprite.setVisible(true).play(this.#ctx.sprites.anim('fx.explosion', 'burst'));
+        const look = BURST_LOOKS[b.small ? 'small' : 'big'];
+        b.sprite.setVisible(true).play(this.#ctx.sprites.anim(look.id, 'burst'));
       }
-      if (b.ms >= BURST_MS) {
+      if (b.ms >= BURST_LOOKS[b.small ? 'small' : 'big'].ms) {
         b.active = false;
         b.sprite.stop().setVisible(false);
       }

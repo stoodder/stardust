@@ -1,0 +1,316 @@
+// Purchases at the base (design/progression.md §§ 4, 5, 7; meta-runtime.md § Purchases): R&D
+// Command's and Zibzab's ranked upgrades, Field Protocol unlocks, and R&D Engineering's spec
+// unlocks. Pure functions over a SaveData: `offerFor` says what an item costs and whether it can be
+// bought now (with the reason it can't), `buy` returns the save after the purchase, and `shelf`
+// lists one pane's offers in catalog order for its screen. The app writes the new save at once.
+//
+// An item can be bought when, in order: it exists; its pane is open (`isSystemUnlocked`); it is
+// stocked (its `availableAfter` map is won, or the dev hook's `devUnlocks` opens its pane, which
+// stocks the whole pane); its tower is owned (tune-ups, spec unlocks) and has specs (spec
+// unlocks); a next rank exists (ranked upgrades; a protocol or a spec unlock is bought once); and
+// the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+import type { CampaignMapId } from '../content/campaign.ts';
+import { TOWERS } from '../content/towers/index.ts';
+import type { TowerFaction, TowerId } from '../content/types.ts';
+import {
+  ENGINEERING,
+  PROTOCOLS,
+  UPGRADES,
+  type Currency,
+  type EngineeringDef,
+  type ModifierGrant,
+  type ProtocolDef,
+  type UpgradeDef,
+} from '../content/upgrades/index.ts';
+import { isMapWon, isSystemUnlocked, type MetaSystem } from './progress.ts';
+import type { SaveData } from './saveData.ts';
+
+/** The base's buy panes (each is a MetaSystem). */
+export type StorePane = 'rnd' | 'shop' | 'engineering';
+export const STORE_PANES: readonly StorePane[] = ['rnd', 'shop', 'engineering'];
+
+/** Something the base sells. */
+export type PurchaseItem =
+  /** A ranked shop or R&D upgrade (UpgradeId); buys the next rank. */
+  | { readonly kind: 'upgrade'; readonly id: string }
+  /** A Field Protocol unlock (ProtocolId), bought once at Zibzab's. */
+  | { readonly kind: 'protocol'; readonly id: string }
+  /** R&D Engineering: both tier-4 specs of an owned tower, bought once. */
+  | { readonly kind: 'specs'; readonly tower: string };
+
+/** Why an item can't be bought now, in check order. */
+export type Refusal =
+  /** No such item in the catalog (or a tower outside the registry). */
+  | 'unknown'
+  /** Its pane hasn't opened (meta/progress.ts SYSTEM_UNLOCKS). */
+  | 'pane_locked'
+  /** Its `availableAfter` map isn't won yet. */
+  | 'not_stocked'
+  /** A tune-up or spec unlock for a tower the save doesn't own. */
+  | 'not_owned'
+  /** A spec unlock for a tower with no tier-4 specs. */
+  | 'no_specs'
+  /** Every rank owned, or the protocol or spec unlock already owned. */
+  | 'maxed'
+  /** The bank is short of the price. */
+  | 'short';
+
+/** What the shelves read: the catalog and the towers (tests pass fixtures). */
+export interface StoreCatalog {
+  readonly upgrades: Readonly<Record<string, UpgradeDef>>;
+  readonly protocols: Readonly<Record<string, ProtocolDef>>;
+  readonly engineering: EngineeringDef;
+  readonly towers: Readonly<
+    Record<string, { readonly faction: TowerFaction; readonly specs?: unknown }>
+  >;
+}
+
+export const LIVE_STORE: StoreCatalog = {
+  upgrades: UPGRADES,
+  protocols: PROTOCOLS,
+  engineering: ENGINEERING,
+  towers: TOWERS,
+};
+
+/** One item as a pane shows it, and whether it can be bought now. */
+export interface Offer {
+  readonly item: PurchaseItem;
+  readonly pane: StorePane;
+  readonly currency: Currency;
+  /** The next rank's price; the top rank's once maxed. */
+  readonly price: number;
+  /** Ranks owned (0 or 1 for a protocol or a spec unlock). */
+  readonly owned: number;
+  /** Ranks in all (1 for a protocol or a spec unlock). */
+  readonly ranks: number;
+  /** What the next rank adds; the top rank's once maxed. Empty for a spec unlock. */
+  readonly grants: readonly ModifierGrant[];
+  /** Field Protocol slots the next (or top) rank adds. */
+  readonly protocolSlots: number;
+  /** The map whose win stocks it (null: from the start). */
+  readonly availableAfter: CampaignMapId | null;
+  /** The tower a tune-up or spec unlock is for. */
+  readonly tower: TowerId | null;
+  /** Why it can't be bought now, or null when it can. */
+  readonly refusal: Refusal | null;
+}
+
+/** A purchase's outcome: the new save, or why not. */
+export type BuyResult =
+  | { readonly ok: true; readonly save: SaveData; readonly offer: Offer }
+  | { readonly ok: false; readonly reason: Refusal; readonly message: string };
+
+/** The pane that sells an upgrade (by its catalog kind). */
+function upgradePane(def: UpgradeDef): StorePane {
+  return def.kind === 'rnd' ? 'rnd' : 'shop';
+}
+
+function isTower(id: string, catalog: StoreCatalog): id is TowerId {
+  return Object.hasOwn(catalog.towers, id);
+}
+
+function owns(save: SaveData, tower: string): boolean {
+  const towers: readonly string[] = save.unlocks.towers;
+  return towers.includes(tower);
+}
+
+interface Basics {
+  readonly pane: StorePane;
+  readonly currency: Currency;
+  readonly price: number;
+  readonly owned: number;
+  readonly ranks: number;
+  readonly grants: readonly ModifierGrant[];
+  readonly protocolSlots: number;
+  readonly availableAfter: CampaignMapId | null;
+  readonly tower: TowerId | null;
+}
+
+/** An item's facts before the checks, or null for an unknown item. */
+function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basics | null {
+  switch (item.kind) {
+    case 'upgrade': {
+      if (!Object.hasOwn(catalog.upgrades, item.id)) return null;
+      const def = catalog.upgrades[item.id]!;
+      const upgrades: Readonly<Partial<Record<string, number>>> = save.upgrades;
+      const owned = Math.min(upgrades[item.id] ?? 0, def.ranks.length);
+      const rank = def.ranks[Math.min(owned, def.ranks.length - 1)];
+      return {
+        pane: upgradePane(def),
+        currency: def.currency,
+        price: rank?.price ?? 0,
+        owned,
+        ranks: def.ranks.length,
+        grants: rank?.grants ?? [],
+        protocolSlots: rank?.protocolSlots ?? 0,
+        availableAfter: def.availableAfter,
+        tower: def.tower ?? null,
+      };
+    }
+    case 'protocol': {
+      if (!Object.hasOwn(catalog.protocols, item.id)) return null;
+      const def = catalog.protocols[item.id]!;
+      const protocols: readonly string[] = save.unlocks.protocols;
+      return {
+        pane: 'shop',
+        currency: def.currency,
+        price: def.price,
+        owned: protocols.includes(item.id) ? 1 : 0,
+        ranks: 1,
+        grants: def.grants,
+        protocolSlots: 0,
+        availableAfter: def.availableAfter,
+        tower: null,
+      };
+    }
+    case 'specs': {
+      if (!isTower(item.tower, catalog)) return null;
+      const specs: readonly string[] = save.unlocks.specs;
+      const { engineering } = catalog;
+      return {
+        pane: 'engineering',
+        currency: engineering.currency,
+        price: engineering.priceByFaction[catalog.towers[item.tower]!.faction],
+        owned: specs.includes(item.tower) ? 1 : 0,
+        ranks: 1,
+        grants: [],
+        protocolSlots: 0,
+        availableAfter: engineering.availableAfter,
+        tower: item.tower,
+      };
+    }
+  }
+}
+
+/** Why `b` can't be bought now, in the documented order, or null. */
+function refusalOf(
+  save: SaveData,
+  item: PurchaseItem,
+  b: Basics,
+  devUnlocks: readonly MetaSystem[],
+  catalog: StoreCatalog,
+): Refusal | null {
+  if (!isSystemUnlocked(save, b.pane, devUnlocks)) return 'pane_locked';
+  const stocked =
+    b.availableAfter === null || isMapWon(save, b.availableAfter) || devUnlocks.includes(b.pane);
+  if (!stocked) return 'not_stocked';
+  if (b.tower !== null && !owns(save, b.tower)) return 'not_owned';
+  if (item.kind === 'specs' && catalog.towers[item.tower]?.specs === undefined) return 'no_specs';
+  if (b.owned >= b.ranks) return 'maxed';
+  if (save.currencies[b.currency] < b.price) return 'short';
+  return null;
+}
+
+/**
+ * What `item` costs now and whether it can be bought (`refusal` null), or null for an item the
+ * catalog doesn't have.
+ */
+export function offerFor(
+  save: SaveData,
+  item: PurchaseItem,
+  devUnlocks: readonly MetaSystem[] = [],
+  catalog: StoreCatalog = LIVE_STORE,
+): Offer | null {
+  const b = basics(save, item, catalog);
+  if (b === null) return null;
+  return { item, ...b, refusal: refusalOf(save, item, b, devUnlocks, catalog) };
+}
+
+function itemLabel(item: PurchaseItem): string {
+  return item.kind === 'specs' ? `specs for '${item.tower}'` : `${item.kind} '${item.id}'`;
+}
+
+/** A refusal in words, for logs and tests (the screens word their own, in voice). */
+export function refusalMessage(save: SaveData, item: PurchaseItem, offer: Offer | null): string {
+  const what = itemLabel(item);
+  if (offer === null || offer.refusal === null) {
+    return offer === null ? `${what} is not in the catalog` : `${what} can be bought`;
+  }
+  switch (offer.refusal) {
+    case 'unknown':
+      return `${what} is not in the catalog`;
+    case 'pane_locked':
+      return `${what}: the ${offer.pane} pane is not open yet`;
+    case 'not_stocked':
+      return `${what} is not stocked until ${offer.availableAfter ?? 'the start'} is won`;
+    case 'not_owned':
+      return `${what} needs the ${offer.tower ?? 'tower'} owned`;
+    case 'no_specs':
+      return `${what}: the tower has no tier-4 specializations`;
+    case 'maxed':
+      return `${what} is already owned at its top rank`;
+    case 'short':
+      return `${what} costs ${offer.price} ${offer.currency}; the bank holds ${save.currencies[offer.currency]}`;
+  }
+}
+
+/**
+ * Buys `item`: deducts its price and records it (an upgrade's next rank, a protocol, or a tower's
+ * spec unlock). Returns a new save (the input is untouched), or the refusal.
+ */
+export function buy(
+  save: SaveData,
+  item: PurchaseItem,
+  devUnlocks: readonly MetaSystem[] = [],
+  catalog: StoreCatalog = LIVE_STORE,
+): BuyResult {
+  const offer = offerFor(save, item, devUnlocks, catalog);
+  if (offer === null || offer.refusal !== null) {
+    return {
+      ok: false,
+      reason: offer?.refusal ?? 'unknown',
+      message: refusalMessage(save, item, offer),
+    };
+  }
+  const currencies = {
+    ...save.currencies,
+    [offer.currency]: save.currencies[offer.currency] - offer.price,
+  };
+  const next: SaveData = { ...save, currencies };
+  switch (item.kind) {
+    case 'upgrade':
+      // offerFor checked the id against the catalog, and save ids are the registry's.
+      next.upgrades = { ...save.upgrades, [item.id]: offer.owned + 1 };
+      break;
+    case 'protocol':
+      next.unlocks = {
+        ...save.unlocks,
+        protocols: [...save.unlocks.protocols, item.id as SaveData['unlocks']['protocols'][number]],
+      };
+      break;
+    case 'specs':
+      next.unlocks = { ...save.unlocks, specs: [...save.unlocks.specs, offer.tower!] };
+      break;
+  }
+  return { ok: true, save: next, offer: { ...offer, owned: offer.owned + 1 } };
+}
+
+/**
+ * One pane's offers in catalog order: R&D Command's upgrades; the shop's global upgrades, then
+ * tune-ups, then Field Protocols; Engineering's spec unlock for each registered tower with specs.
+ */
+export function shelf(
+  save: SaveData,
+  pane: StorePane,
+  devUnlocks: readonly MetaSystem[] = [],
+  catalog: StoreCatalog = LIVE_STORE,
+): Offer[] {
+  const items: PurchaseItem[] = [];
+  if (pane === 'engineering') {
+    for (const [id, t] of Object.entries(catalog.towers)) {
+      if (t.specs !== undefined) items.push({ kind: 'specs', tower: id });
+    }
+  } else {
+    const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
+    // Global upgrades before tune-ups (a tune-up names its tower).
+    for (const u of upgrades) if (u.tower === undefined) items.push({ kind: 'upgrade', id: u.id });
+    for (const u of upgrades) if (u.tower !== undefined) items.push({ kind: 'upgrade', id: u.id });
+    if (pane === 'shop') {
+      for (const p of Object.values(catalog.protocols)) items.push({ kind: 'protocol', id: p.id });
+    }
+  }
+  return items.flatMap((item) => {
+    const o = offerFor(save, item, devUnlocks, catalog);
+    return o === null ? [] : [o];
+  });
+}

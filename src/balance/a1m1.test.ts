@@ -1,8 +1,9 @@
-// A1M1's tuning is robust, not a knife edge (D026, D028; T127, T130): the harness's verdicts,
-// the under-built alts' `gradual` checks among them, survive ±0.2 s shifts of the clump spacing
-// in W5–W7; a player who stops building after three Rivets loses gradually, never more than half
-// the integrity in one wave; and W7's strike is worth 4–6 integrity to par. The waves and builds
-// are documented in docs/story/campaign/act1.md § A1M1.
+// A1M1's tuning is robust, not a knife edge (D026, D028; T127, T130, T125): the harness's
+// verdicts, the under-built alts' `gradual` checks and par's Teamwork medal among them, survive
+// ±0.2 s shifts of the clump spacing in W5–W7; a player who stops building after three Rivets
+// loses gradually, never more than half the integrity in one wave; and W7's strike is what holds
+// the finale for par (it's worth 6–10 integrity). The waves and builds are documented in
+// docs/story/campaign/act1.md § A1M1.
 import { describe, expect, it } from 'vitest';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
@@ -71,14 +72,14 @@ describe('A1M1 balance', () => {
     expect(notGradual(r)).toBeNull();
   });
 
-  it('W7’s strike on the first big clump is worth 4–6 integrity to par', () => {
+  it('W7’s strike on the first big clump is worth 6–10 integrity to par', () => {
     const withStrike = run(par);
     const noW7Strike = run({
       ...par,
       steps: par.steps.filter((s) => !(s.kind === 'ability' && s.wave === 7)),
     });
     const saved = withStrike.integrity - noW7Strike.integrity;
-    expect(saved).toBeGreaterThanOrEqual(4);
-    expect(saved).toBeLessThanOrEqual(6);
+    expect(saved).toBeGreaterThanOrEqual(6);
+    expect(saved).toBeLessThanOrEqual(10);
   });
 });

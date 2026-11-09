@@ -1,7 +1,9 @@
-// A pooled tower: the tier's base frame, the head on the base's mount (aimed by facing, or an
-// idle anim), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier 2).
-// Selection swaps both to the baked `+selected` variant (white outline). A new build drops in a few
-// px (D026), and an upgrade flashes both white for 2 frames.
+// A pooled tower: the tier's base frame (a specialized tower's `spec_a`/`spec_b`), the head on the
+// base's mount (aimed by facing, with the `_t2` head from tier 2 and the spec's own head at tier 4,
+// or an idle anim), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier
+// 2). Selection swaps both to the baked `+selected` variant (white outline). A new build drops in a
+// few px (D026), and an upgrade flashes both white for 2 frames. A tower on high ground stands on
+// the raised block's top face, `liftPx` up, but sorts by its tile (tech-spec § Depth sorting).
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -9,7 +11,15 @@ import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { BUILD_DROP_PX, BUILD_DROP_STEP_FRAMES, UPGRADE_FLASH_FRAMES } from '../vfx/fxTiming.ts';
-import { headStyle, spriteId, type Facing, type HeadStyle } from './spriteInfo.ts';
+import {
+  baseFrame,
+  headStyle,
+  headSuffix,
+  spriteId,
+  type Facing,
+  type HeadStyle,
+  type SpecLetter,
+} from './spriteInfo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
 
@@ -46,6 +56,9 @@ export class TowerView implements PooledView {
   #headId: SpriteId | null = null;
   #headStyle: HeadStyle = { kind: 'aim' };
   #tier = 0;
+  #spec: SpecLetter | null = null;
+  /** How far up its tile's ground point the tower stands (px): ELEV_H on high ground. */
+  #liftPx = 0;
   #facing: Facing = 'se';
   #selected = false;
   #uid = 0;
@@ -77,8 +90,18 @@ export class TowerView implements PooledView {
     return this.#y;
   }
 
-  /** Shows the view for a newly seen tower; `dropIn` for one just built (it drops into place). */
-  show(uid: number, sprites: TowerSprites, tier: number, dropIn = false): void {
+  /**
+   * Shows the view for a newly seen tower; `dropIn` for one just built (it drops into place);
+   * `liftPx` for one on raised ground (it stands on the block's top face).
+   */
+  show(
+    uid: number,
+    sprites: TowerSprites,
+    tier: number,
+    dropIn = false,
+    liftPx = 0,
+    spec: SpecLetter | null = null,
+  ): void {
     this.#dropFrames = dropIn ? BUILD_DROP_PX * BUILD_DROP_STEP_FRAMES : 0;
     this.#endFlash();
     this.#uid = uid;
@@ -86,6 +109,8 @@ export class TowerView implements PooledView {
     this.#headId = sprites.head === null ? null : spriteId(sprites.head);
     this.#headStyle = this.#headId === null ? { kind: 'aim' } : headStyle(this.#headId);
     this.#tier = tier;
+    this.#spec = spec;
+    this.#liftPx = liftPx;
     this.#facing = 'se';
     this.#selected = false;
     this.#x = Number.NaN;
@@ -98,9 +123,11 @@ export class TowerView implements PooledView {
     this.#refreshFrames(true);
   }
 
-  setTier(tier: number): void {
-    if (tier === this.#tier) return;
+  /** The tower's tier, and its specialization once it has one (tier 4). */
+  setTier(tier: number, spec: SpecLetter | null = null): void {
+    if (tier === this.#tier && spec === this.#spec) return;
     this.#tier = tier;
+    this.#spec = spec;
     this.#refreshFrames(false);
   }
 
@@ -135,7 +162,7 @@ export class TowerView implements PooledView {
     gridToScreen(t.x, t.y, this.#ctx.origin, pos);
     // Sorted by its tile, wherever the drop has it drawn.
     const depth = worldDepth(pos.y, 'tower', this.#uid);
-    const lift = Math.ceil(this.#dropFrames / BUILD_DROP_STEP_FRAMES);
+    const lift = Math.ceil(this.#dropFrames / BUILD_DROP_STEP_FRAMES) + this.#liftPx;
     this.#base.setPosition(pos.x, pos.y - lift).setDepth(depth);
     this.#baseGlow.setPosition(pos.x, pos.y - lift);
     this.#placeHead(depth);
@@ -150,6 +177,8 @@ export class TowerView implements PooledView {
   release(): void {
     this.#endFlash();
     this.#dropFrames = 0;
+    this.#liftPx = 0;
+    this.#spec = null;
     this.#uid = 0;
     this.#baseId = null;
     this.#headId = null;
@@ -164,17 +193,18 @@ export class TowerView implements PooledView {
     const { sprites } = this.#ctx;
     if (this.#baseId === null) return;
     const variant = variantName(DEFAULT_VARIANT, this.#selected);
-    const tierFrame = `t${this.#tier}`;
+    const tierFrame = baseFrame(this.#baseId, this.#tier, this.#spec);
     const b = sprites.frame(this.#baseId, tierFrame, variant);
     const ba = sprites.frameAnchor(this.#baseId, tierFrame);
     this.#base.setTexture(b.texture, b.frame).setDisplayOrigin(ba.x, ba.y);
     setGlow(this.#baseGlow, sprites, this.#baseId, tierFrame);
     if (this.#headId !== null) {
       if (this.#headStyle.kind === 'aim') {
-        const h = sprites.frame(this.#headId, this.#facing, variant);
-        const ha = sprites.frameAnchor(this.#headId, this.#facing);
+        const look = `${this.#facing}${headSuffix(this.#headId, this.#tier, this.#spec)}`;
+        const h = sprites.frame(this.#headId, look, variant);
+        const ha = sprites.frameAnchor(this.#headId, look);
         this.#head.setTexture(h.texture, h.frame).setDisplayOrigin(ha.x, ha.y);
-        setGlow(this.#headGlow, sprites, this.#headId, this.#facing);
+        setGlow(this.#headGlow, sprites, this.#headId, look);
       } else if (restartIdle) {
         const anim = sprites.anim(this.#headId, this.#headStyle.anim, variant);
         this.#head.play(anim);
@@ -214,5 +244,5 @@ function setGlow(
     return;
   }
   const a = sprites.frameAnchor(id, `${frame}${GLOW_SUFFIX}`);
-  glow.setTexture(ref.texture, ref.frame).setDisplayOrigin(a.x, a.y);
+  glow.setTexture(ref.texture, ref.frame).setDisplayOrigin(a.x, a.y).setVisible(true);
 }

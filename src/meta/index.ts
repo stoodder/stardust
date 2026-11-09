@@ -1,5 +1,5 @@
-// meta/: saves, campaign progress (gating, the Shift board), modifiers, pools, and run end with
-// its rewards now; the shop and R&D as they land (meta-runtime.md).
+// meta/: saves, campaign progress (gating, the Shift board), modifiers, pools, run end with its
+// rewards, and purchases at the base (R&D Command, the shop, Engineering) (meta-runtime.md).
 // The save API for app/ and the screens. Dev saves for `?save=` are in __fixtures__/devSaves.ts.
 export type { ImportProblemCode, ImportResult } from './codec.ts';
 export { CODE_LIMITS, exportCode, importCode } from './codec.ts';
@@ -26,6 +26,15 @@ export {
   shiftBoard,
   unlockHint,
 } from './progress.ts';
+export type {
+  BuyResult,
+  Offer,
+  PurchaseItem,
+  Refusal,
+  StoreCatalog,
+  StorePane,
+} from './purchase.ts';
+export { LIVE_STORE, STORE_PANES, buy, offerFor, refusalMessage, shelf } from './purchase.ts';
 export type { EarnedMedal, PayoutInput, StardustPayout, StardustSource } from './rewards.ts';
 export { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
 export type { RunEndInput, RunEndResult, RunEndSummary } from './runEnd.ts';

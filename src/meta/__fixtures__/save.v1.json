@@ -30,6 +30,12 @@
       "granted": []
     },
     "stats": { "pestsProcessed": 187, "runs": 3 },
-    "settings": { "difficulty": "story" }
+    "settings": { "difficulty": "story" },
+    "loadouts": {
+      "last": { "towers": ["thumper", "rivet", "sprinkler"], "ability": "orbital_strike" },
+      "byMap": {
+        "a1_m01": { "towers": ["thumper", "rivet", "sprinkler"], "ability": "orbital_strike" }
+      }
+    }
   }
 }

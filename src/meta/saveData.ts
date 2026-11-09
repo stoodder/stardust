@@ -48,6 +48,16 @@ export interface MapRecord {
   bestMeter: number;
 }
 
+/**
+ * A loadout the player picked on the loadout screen (design/core-loop.md § 1): 1 to MAX_LOADOUT
+ * distinct towers, in build-slot order, and the Technician's ability (slot 1; null only while the
+ * save owns none). Field Protocols join with their picker (M3).
+ */
+export interface LoadoutPreset {
+  towers: TowerId[];
+  ability: AbilityId | null;
+}
+
 /** The player's campaign state. Mutable plain data: meta transactions return updated copies. */
 export interface SaveData {
   /** Character creation arrives with T306; until then every save has no profile (D031). */
@@ -86,6 +96,11 @@ export interface SaveData {
   stats: { pestsProcessed: number; runs: number };
   /** Per-campaign settings (progression.md § 9): changeable any time between maps. */
   settings: { difficulty: DifficultyId };
+  /**
+   * Loadout presets (T201, meta/loadout.ts): the last loadout locked in on each map, and the last
+   * one on any map (where the screen starts on a map with none).
+   */
+  loadouts: { last: LoadoutPreset | null; byMap: Partial<Record<MapId, LoadoutPreset>> };
 }
 
 /** Every difficulty a save can hold; the first is a new save's. */
@@ -155,5 +170,6 @@ export function createNewSave(): SaveData {
     },
     stats: { pestsProcessed: 0, runs: 0 },
     settings: { difficulty: 'standard' },
+    loadouts: { last: null, byMap: {} },
   };
 }

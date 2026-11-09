@@ -38,6 +38,41 @@ export function headStyle(id: SpriteId): HeadStyle {
   return { kind: 'idle', anim };
 }
 
+/** A tower's tier-4 specialization, as the sim names it. */
+export type SpecLetter = 'a' | 'b';
+
+/**
+ * The base frame a tower draws (T202d): `spec_a`/`spec_b` once specialized (tier 4), when the
+ * base authors it; else its tier's `t<n>`, capped at the highest in-map tier the sprite has.
+ */
+export function baseFrame(id: SpriteId, tier: number, spec: SpecLetter | null): string {
+  const def = BY_ID.get(id);
+  if (def === undefined) throw new Error(`render: unknown sprite '${id}'`);
+  if (spec !== null && Object.hasOwn(def.frames, `spec_${spec}`)) return `spec_${spec}`;
+  for (let t = tier; t > 1; t--) if (Object.hasOwn(def.frames, `t${t}`)) return `t${t}`;
+  return 't1';
+}
+
+/**
+ * The suffix of an aiming head's frames for a tier and spec (T202d; the m2 sprite notes): a spec's
+ * own head (`_spec_a`, `_spec_b`) when authored, else the tier-2+ head (`_t2`) from tier 2 when
+ * authored, else none. So `se` + suffix is the frame; mirrored facings exist through the head's
+ * mirrored fire anims.
+ */
+export function headSuffix(id: SpriteId, tier: number, spec: SpecLetter | null): string {
+  const def = BY_ID.get(id);
+  if (def === undefined) throw new Error(`render: unknown sprite '${id}'`);
+  if (spec !== null && Object.hasOwn(def.frames, `se_spec_${spec}`)) return `_spec_${spec}`;
+  if (tier >= 2 && Object.hasOwn(def.frames, 'se_t2')) return '_t2';
+  return '';
+}
+
+/** Whether a sprite authors (or mirrors) an anim named `anim`. */
+export function hasAnim(id: SpriteId, anim: string): boolean {
+  const def = BY_ID.get(id);
+  return def?.anims !== undefined && Object.hasOwn(def.anims, anim);
+}
+
 /** A sprite's first authored frame and first anim (null for a single still frame). */
 export function firstLook(id: SpriteId): { readonly frame: string; readonly anim: string | null } {
   const def = BY_ID.get(id);

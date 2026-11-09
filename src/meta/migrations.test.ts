@@ -37,6 +37,7 @@ describe('save migrations', () => {
     expect(decoded.envelope.data.stats).toEqual({ pestsProcessed: 0, runs: 0 });
     expect(decoded.envelope.data.settings).toEqual({ difficulty: 'standard' });
     expect(decoded.envelope.data.unlocks.protocols).toEqual([]);
+    expect(decoded.envelope.data.loadouts).toEqual({ last: null, byMap: {} });
     expect(decoded.envelope.data.campaign.maps.a1_m01?.medals).toEqual(['victory']);
     expect(decoded.envelope.savedAt).toBe(saveV0.savedAt);
   });

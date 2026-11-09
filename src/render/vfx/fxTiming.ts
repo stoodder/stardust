@@ -34,6 +34,8 @@ export function pulseRadius(radiusTiles: number, t: number): number {
 // ── Explosion bursts (fx.explosion: 4 frames at 12 fps) ─────────────────────────────────────
 
 export const BURST_MS = 4 * (1000 / 12);
+/** A Cluster Thumper bomblet's pop (fx.bomblet_burst): 3 frames at 12 fps. */
+export const BOMBLET_BURST_MS = 3 * (1000 / 12);
 
 // ── Orbital Strike impact ────────────────────────────────────────────────────────────────────
 

@@ -45,7 +45,7 @@ describe('[medals]', () => {
   it('a campaign map without a Challenge (unless pending), but not a map off the campaign', () => {
     rejects(withoutChallenge(), 'medals', /needs a Challenge medal/);
     accepts(withoutChallenge({}, false));
-    expect(CHALLENGE_PENDING).toEqual({ a1_m01: 'T125' });
+    expect(CHALLENGE_PENDING).toEqual({}); // A1M1's Teamwork landed with T125
   });
 
   it('a Challenge id that is not snake_case, or a built-in id', () => {

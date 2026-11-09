@@ -3,8 +3,16 @@
 // exist in the live registries, every number must be a bounded integer, and nothing outside the
 // schema survives. On success it returns a freshly built copy, so the caller never holds the
 // parsed object (no extra keys, no shared references, no prototype tricks).
+import { MAX_LOADOUT } from '../content/rules.ts';
 import type { FlagValue, MapId } from '../content/types.ts';
-import type { KnownIds, MapRecord, SaveData, SaveEnvelope, StoryFlagId } from './saveData.ts';
+import type {
+  KnownIds,
+  LoadoutPreset,
+  MapRecord,
+  SaveData,
+  SaveEnvelope,
+  StoryFlagId,
+} from './saveData.ts';
 import { CODEX_VERSIONS, DIFFICULTIES, LIVE_KNOWN_IDS } from './saveData.ts';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; errors: string[] };
@@ -195,6 +203,7 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
     'story',
     'stats',
     'settings',
+    'loadouts',
   ]);
   if (root === null) return null;
   if (root['profile'] !== null) {
@@ -210,10 +219,30 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   const story = checkStory(c, root['story'], `${path}.story`, known);
   const stats = checkStats(c, root['stats'], `${path}.stats`);
   const settings = checkSettings(c, root['settings'], `${path}.settings`);
-  if (!campaign || !currencies || !unlocks || !upgrades || !story || !stats || !settings) {
+  const loadouts = unlocks && checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks);
+  if (
+    !campaign ||
+    !currencies ||
+    !unlocks ||
+    !upgrades ||
+    !story ||
+    !stats ||
+    !settings ||
+    !loadouts
+  ) {
     return null;
   }
-  return { profile: null, campaign, currencies, unlocks, upgrades, story, stats, settings };
+  return {
+    profile: null,
+    campaign,
+    currencies,
+    unlocks,
+    upgrades,
+    story,
+    stats,
+    settings,
+    loadouts,
+  };
 }
 
 function checkCampaign(
@@ -412,4 +441,53 @@ function checkSettings(c: Checker, x: unknown, path: string): SaveData['settings
   if (s === null) return null;
   const difficulty = c.id(s['difficulty'], `${path}.difficulty`, DIFFICULTIES);
   return difficulty === null ? null : { difficulty };
+}
+
+/**
+ * Loadout presets: each 1 to MAX_LOADOUT distinct owned towers and an owned ability (or null), keyed
+ * by known map. Revoked towers and abilities are allowed: a preset can predate a revocation, and
+ * meta/loadout.ts drops what the pools no longer hold when it reads one.
+ */
+function checkLoadouts(
+  c: Checker,
+  x: unknown,
+  path: string,
+  known: KnownIds,
+  unlocks: SaveData['unlocks'],
+): SaveData['loadouts'] | null {
+  const l = c.object(x, path, ['last', 'byMap']);
+  if (l === null) return null;
+  const byMap = c.record(l['byMap'], `${path}.byMap`);
+  if (byMap === null) return null;
+  const outMaps: Partial<Record<MapId, LoadoutPreset>> = {};
+  for (const [mapId, raw] of Object.entries(byMap)) {
+    if (!isMember(known.maps, mapId)) {
+      c.fail(`${path}.byMap`, `unknown map id ${JSON.stringify(mapId.slice(0, 64))}`);
+      continue;
+    }
+    const preset = checkPreset(c, raw, `${path}.byMap.${mapId}`, known, unlocks);
+    if (preset !== null) outMaps[mapId] = preset;
+  }
+  const last = l['last'] === null ? null : checkPreset(c, l['last'], `${path}.last`, known, unlocks);
+  return { last, byMap: outMaps };
+}
+
+function checkPreset(
+  c: Checker,
+  x: unknown,
+  path: string,
+  known: KnownIds,
+  unlocks: SaveData['unlocks'],
+): LoadoutPreset | null {
+  const p = c.object(x, path, ['towers', 'ability']);
+  if (p === null) return null;
+  const towers = c.ids(p['towers'], `${path}.towers`, known.towers, MAX_LOADOUT);
+  if (Array.isArray(p['towers']) && p['towers'].length === 0) {
+    c.fail(`${path}.towers`, 'expected at least one tower');
+  }
+  c.subset(towers, unlocks.towers, `${path}.towers`, 'unlocks.towers');
+  const raw = p['ability'];
+  const ability = raw === null ? null : c.id(raw, `${path}.ability`, known.abilities);
+  if (ability !== null) c.subset([ability], unlocks.abilities, `${path}.ability`, 'unlocks.abilities');
+  return { towers, ability };
 }

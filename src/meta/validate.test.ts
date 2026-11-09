@@ -42,6 +42,9 @@ const won = (medals: unknown, extra: object = {}): object => ({
   ...extra,
 });
 
+/** A valid preset for a new save. */
+const PRESET = { towers: ['thumper', 'rivet'], ability: 'orbital_strike' };
+
 describe('validateSave', () => {
   it('accepts a new save and returns a fresh, equal copy', () => {
     const save = createNewSave();
@@ -129,6 +132,34 @@ describe('validateSave', () => {
     ['data.settings.difficulty: unknown id', 'settings.difficulty', 'normal'],
     ['data.settings: unknown field "devUnlocks"', 'settings.devUnlocks', ['shop']],
     ['data.currencies: expected a plain object', 'currencies', new Map()],
+    ['data: missing field "loadouts"', 'loadouts', DELETE],
+    ['data.loadouts.byMap: unknown map id', 'loadouts.byMap', { a9_m99: PRESET }],
+    [
+      'data.loadouts.last.towers: expected at most 4',
+      'loadouts.last',
+      { towers: ['rivet', 'thumper', 'sprinkler', 'rivet', 'thumper'], ability: null },
+    ],
+    [
+      'data.loadouts.last.towers[1]: duplicate id',
+      'loadouts.last',
+      { towers: ['rivet', 'rivet'], ability: null },
+    ],
+    [
+      'data.loadouts.last.towers: expected at least one tower',
+      'loadouts.last',
+      { towers: [], ability: null },
+    ],
+    [
+      'data.loadouts.byMap.a1_m01.towers: "sprinkler" is not in unlocks.towers',
+      'loadouts.byMap',
+      { a1_m01: { towers: ['sprinkler'], ability: null } },
+    ],
+    [
+      'data.loadouts.last.ability: "suppressing_fire" is not in unlocks.abilities',
+      'loadouts.last',
+      { towers: ['rivet'], ability: 'suppressing_fire' },
+    ],
+    ['data.loadouts.last: unknown field "protocols"', 'loadouts.last', { ...PRESET, protocols: [] }],
   ];
 
   it.each(cases)('rejects %s', (expected, path, value) => {
@@ -173,6 +204,10 @@ describe('validateSave', () => {
       bricksTagIndex: 3,
       memorialTower: 'rivet',
       granted: ['q3_bonus'],
+    };
+    save.loadouts = {
+      last: { towers: ['sprinkler', 'rivet'], ability: null },
+      byMap: { a1_m01: { towers: ['thumper', 'rivet', 'sprinkler'], ability: 'orbital_strike' } },
     };
     const r = validateSave(save);
     expect(r).toEqual({ ok: true, value: save });

@@ -107,9 +107,8 @@ describe('A1M1 · Orientation Day', () => {
         },
       },
     ]);
-    const rivet = RAW_CONTENT.towers.rivet.tiers[0].attack;
-    const dps = (8 * 60) / 30;
-    expect(dps).toBe(rivet.damage * rivet.ratePerSec);
+    const rivet = RAW_CONTENT.towers.rivet.tiers[0].attack!; // tier 1 has an attack
+    expect((8 * 60) / 30).toBe(rivet.damage * rivet.ratePerSec); // 16 DPS each
   });
 
   it('awards Teamwork Makes the Dream Work™ for winning with Crossfire up, and par earns it', () => {

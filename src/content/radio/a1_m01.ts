@@ -1,7 +1,6 @@
 // A1M1's radio (story/campaign/act1.md § A1M1, *Radio*, *Barks*, and *Debrief*), verbatim. Lines
-// that need a system M1 doesn't have are left out: Bricks's W5 Suppressing Fire line (no companion
-// ability until T207) and Goldie's `arrival_reason = lettuce` variant (no onboarding form or
-// flags). Bricks's W2 line is in the briefing (D026), so the W2 slot has none; the first wave's
+// that need a system the game doesn't have yet are left out: Goldie's `arrival_reason = lettuce`
+// variant (no onboarding form or flags). Bricks's W2 line is in the briefing (D026), so the W2 slot has none; the first wave's
 // clear plays the `wave_cleared` jingle barks there instead. The debrief (`mapWon`) shows on the
 // win's results card, not the ticker (D028).
 import type { RadioLine } from './types.ts';
@@ -27,6 +26,13 @@ export const A1_M01_RADIO: readonly RadioLine[] = [
     wave: 4,
     speaker: 'goldie',
     text: "Oh! You're the new tech! Want to meet Duchess? She's a butterhead. She's shy. Don't look directly at her.",
+  },
+  // The w05 line: Bricks walks this shift with you (T125), so slot 2 is his Suppressing Fire.
+  {
+    on: 'countdown',
+    wave: 5,
+    speaker: 'bricks',
+    text: "Fast ones. Lay my Suppressing Fire across the road. That's what it's for.",
   },
   {
     on: 'perfectWave',

@@ -49,13 +49,13 @@ export const A1_M02_RADIO: readonly RadioLine[] = [
   // The first Hauler down (W5's lone one, if it doesn't get through): QUILL's glee, Bricks's tip.
   {
     on: 'enemyKilled',
-    enemy: 'brood_hauler',
+    enemy: 'hauler',
     speaker: 'quill',
     text: 'Sack ruptured! Glitter everywhere! Tidybots are on it!',
   },
   {
     on: 'enemyKilled',
-    enemy: 'brood_hauler',
+    enemy: 'hauler',
     speaker: 'bricks',
     text: 'Strong targeting on the big ones.',
   },
