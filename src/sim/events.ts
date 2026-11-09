@@ -401,6 +401,20 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly toY: number;
     }
   | { readonly type: 'BlinkInterrupted'; readonly uid: number }
+  | {
+      /**
+       * A pulse tower's burst went off (Flash Freeze; T407a): its effects reached every enemy the
+       * pulse reaches within `radiusTiles` of the tower at (x, y), and `frozen` of them entered
+       * Stasis (a boss's converted chill, an immune unit, or one already frozen doesn't count).
+       * The frost ring for render and audio.
+       */
+      readonly type: 'PulseBurst';
+      readonly towerUid: number;
+      readonly x: number;
+      readonly y: number;
+      readonly radiusTiles: number;
+      readonly frozen: number;
+    }
   /** A cloaked unit became Revealed (T406), or slipped back into its cloak (`Cloaked`). */
   | { readonly type: 'Revealed'; readonly uid: number }
   | { readonly type: 'Cloaked'; readonly uid: number }

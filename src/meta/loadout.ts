@@ -23,6 +23,7 @@ import type {
   ThreatIntelId,
   Trait,
 } from '../content/types.ts';
+import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS } from '../content/upgrades/index.ts';
 import { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
 import { isSystemUnlocked, type MetaSystem } from './progress.ts';
@@ -388,19 +389,37 @@ export interface TowerAnswerNote {
   readonly spec: string | null;
 }
 
-/** A spec's display name, by tower and letter (from the compiled tower data). */
+/**
+ * A spec's display name, by tower and letter (from the compiled tower data), or null when the
+ * tower has no such spec authored: an answer through it then doesn't count (T319).
+ */
 export type SpecNames = (tower: TowerId, spec: 'a' | 'b') => string | null;
+
+/** The live registry's spec names: null for a tower whose specs ship later (D064). */
+export const LIVE_SPEC_NAMES: SpecNames = (tower, spec) => {
+  const def: { readonly specs?: Readonly<Record<'a' | 'b', { readonly name: string }>> } =
+    TOWERS[tower];
+  return def.specs?.[spec].name ?? null;
+};
+
+/**
+ * The towers whose spec unlock `save` owns and that have specs authored (T319): a save can own an
+ * unlock for specs still to ship (the all_unlocked dev save once did), which answers nothing.
+ */
+export function specsOwned(save: SaveData, names: SpecNames = LIVE_SPEC_NAMES): TowerId[] {
+  return save.unlocks.specs.filter((t) => names(t, 'a') !== null);
+}
 
 /**
  * The map's counters a tower can answer (mapCounters), each by its easiest route: a plain answer
  * first, then the lowest tier, then a spec. Spec answers count only with `specsOwned` (the save's
- * Engineering unlock for this tower).
+ * Engineering unlock for this tower) and only for a spec that exists (`specName` isn't null; T319).
  */
 export function towerAnswers(
   tower: TowerId,
   specsOwned: boolean,
   map: LoadoutMap,
-  specName: SpecNames = () => null,
+  specName: SpecNames = LIVE_SPEC_NAMES,
 ): TowerAnswerNote[] {
   const out: TowerAnswerNote[] = [];
   for (const counter of mapCounters(map)) {
@@ -408,7 +427,8 @@ export function towerAnswers(
     let best: TowerAnswerNote | null = null;
     for (const entry of COUNTER_ANSWERS[counter].towers) {
       if (entry.tower !== tower) continue;
-      if (entry.spec !== undefined && !specsOwned) continue;
+      const name = entry.spec === undefined ? null : specName(tower, entry.spec);
+      if (entry.spec !== undefined && (!specsOwned || name === null)) continue;
       const reached: ReachedTower =
         entry.spec === undefined
           ? { tower, tier: entry.minTier ?? 1, spec: null }
@@ -421,7 +441,7 @@ export function towerAnswers(
           : {
               counter,
               minTier: MAX_TIER_BEFORE_SPEC + 1,
-              spec: specName(tower, entry.spec) ?? entry.specName ?? entry.spec,
+              spec: name,
             };
       if (best === null || note.minTier < best.minTier) best = note;
     }

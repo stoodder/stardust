@@ -342,6 +342,14 @@ function Body({ result }: { result: RunResult }) {
             {result.integrity} / {result.maxIntegrity}
           </dd>
         </div>
+        {result.asset !== null && (
+          <div data-testid="results-asset">
+            <dt>{result.asset.name}</dt>
+            <dd>
+              {result.asset.value} / {result.asset.max}
+            </dd>
+          </div>
+        )}
       </dl>
       <div class="sd-results-counts">
         <Counter n={result.pestsProcessed} shown={counted} />

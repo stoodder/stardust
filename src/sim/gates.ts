@@ -156,7 +156,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   specs: null,
   storyDifficulty: null,
   // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
-  // (D101): Stasis with Flash Freeze (T407a), homing and charge with the Skyhook and Zapcoil specs
+  // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
   // (T407b), Pin, line, and target filters with the Harpoon and Crane (T408), detection with the
   // Lookout (T406). Beams (Prism) and Unnerved (Mindspike) are M5's; spawners (Scuttle Den) M6's.
   'attack.projectile': null,
@@ -168,7 +168,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'attack.line': 'T408',
   'attack.targetFilter': 'T408',
   'status.pinned': 'T408',
-  'status.stasis': 'T407a',
+  'status.stasis': null,
   'status.unnerved': 'M5',
   'tower.detection': null,
   'tower.economy': 'T408',
@@ -207,7 +207,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.hush': null,
   'enemy.skittish': null,
   'enemy.pulse': null,
-  'enemy.blink': 'T404',
+  'enemy.blink': null,
   'enemy.cloak': null,
   'map.objectives': null,
   'map.protect': null,
@@ -258,6 +258,8 @@ type Use = (f: Feature, what: string) => void;
 interface GateTier {
   readonly attack?: {
     readonly kind?: AttackKind;
+    /** A pulse's burst (Flash Freeze): its statuses are gated like the tier's own. */
+    readonly burst?: { readonly effects?: readonly { readonly status?: StatusId }[] } | null;
     readonly homing?: boolean;
     readonly volley?: number;
     readonly targetFilter?: object | null;
@@ -287,7 +289,7 @@ function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
     if (tier.economy !== undefined && tier.economy !== null) {
       use('tower.economy', `tower economy (${id})`);
     }
-    for (const e of tier.effects ?? []) {
+    for (const e of [...(tier.effects ?? []), ...(a?.burst?.effects ?? [])]) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
         use(`status.${status}`, `the ${status} status (${id})`);

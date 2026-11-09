@@ -28,6 +28,7 @@ export {
   protocolProblems,
   resolveLoadout,
   showsLoadoutScreen,
+  specsOwned,
   takesTowerPick,
   toggleProtocol,
   toggleTower,

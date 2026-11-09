@@ -15,12 +15,14 @@
 // - The interrupt (§ 2.4): while a unit is in Stasis, a tell can't start or go on: the pulse is
 //   cancelled, even mid-tell (ShieldPulse 'interrupted' if its tell had begun), and its cooldown
 //   restarts from zero. A boss never enters Stasis (it converts to Chilled 50%, which doesn't
-//   interrupt; D101). Unnerved joins with its status (M5).
+//   interrupt; D101). Unnerved joins with its status (M5). The test is the shared interrupt hook,
+//   systems/status.ts `isInterrupted`.
 // Story difficulty's −30% shields scales the amount with the shield (systems/waves.ts
 // `scaledEnemy`), so a pulse restores the same share of a weaker shield.
 import type { CompiledPulse } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
+import { isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 
 /** The pulse `e` runs now (its boss phase's, else its own), or null. */
@@ -42,11 +44,6 @@ export function pulseTelling(e: Readonly<Enemy>, pulse: CompiledPulse): boolean 
   );
 }
 
-/** Whether something stops `e`'s pulse tell (Stasis on a non-boss; § 2.4, D101). */
-function interrupted(e: Enemy): boolean {
-  return e.stasisTicks > 0 && e.def !== null && e.def.boss === null;
-}
-
 /** One tick of a unit's shield pulse: count down, tell, fire, or be interrupted. */
 export function pulseStep(
   state: SimState,
@@ -61,7 +58,7 @@ export function pulseStep(
   }
   const wasTelling = e.pulseTicks <= pulse.tellTicks;
   const left = --e.pulseTicks;
-  if (left <= pulse.tellTicks && interrupted(e)) {
+  if (left <= pulse.tellTicks && isInterrupted(e)) {
     e.pulseTicks = pulse.everyTicks;
     if (wasTelling) pulseEvent(state, e, pulse, 'interrupted', 0);
     return;

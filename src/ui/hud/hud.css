@@ -229,6 +229,47 @@ section.chamfer,
   text-align: right;
 }
 
+/* A Protect map's asset meter (T305a): a second row under the core's, its own glyph (a rig's
+   roofline) and flash. */
+.hud-asset {
+  position: relative;
+}
+
+.hud-asset .hud-label {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.hud-asset-glyph {
+  width: 6px;
+  height: 8px;
+  background: var(--sd-gold-3);
+  clip-path: polygon(50% 0, 100% 35%, 100% 100%, 0 100%, 0 35%);
+}
+
+.hud-asset[data-damage='critical'] .hud-asset-glyph,
+.hud-asset[data-damage='lost'] .hud-asset-glyph {
+  background: var(--sd-red-3);
+}
+
+.hud-asset-flash {
+  position: absolute;
+  inset: -1px -2px;
+  background: var(--sd-red-3);
+  opacity: 0;
+  pointer-events: none;
+  animation: hud-asset-flash 300ms steps(1, end) forwards;
+}
+
+@keyframes hud-asset-flash {
+  0% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ── Top-right: speed, waves, preview ─────────────────────────────────────────────────────── */
 
 .hud-top-right {

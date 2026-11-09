@@ -316,7 +316,11 @@ function checkGroundRoute(
     if (prev !== undefined && Math.abs(pos[0] - prev[0]) + Math.abs(pos[1] - prev[1]) !== 1) {
       ctx.errors.push(`${at}: not one orthogonal step from the tile before`);
     }
-    if (i === last && asset !== null && Math.abs(pos[0] - asset[0]) + Math.abs(pos[1] - asset[1]) !== 1) {
+    if (
+      i === last &&
+      asset !== null &&
+      Math.abs(pos[0] - asset[0]) + Math.abs(pos[1] - asset[1]) !== 1
+    ) {
       ctx.errors.push(`${at}: a path to the asset ends next to it (${asset[0]},${asset[1]})`);
     }
   }
@@ -345,7 +349,8 @@ function checkAirLane(
     }
     if (i !== last || last === 0) continue;
     if (asset === null) {
-      if (tile !== 'C') ctx.errors.push(`${at}: is '${tile}', but an air lane ends on the core 'C'`);
+      if (tile !== 'C')
+        ctx.errors.push(`${at}: is '${tile}', but an air lane ends on the core 'C'`);
     } else if (pos[0] !== asset[0] || pos[1] !== asset[1]) {
       ctx.errors.push(`${at}: an air lane to the asset ends on it (${asset[0]},${asset[1]})`);
     }

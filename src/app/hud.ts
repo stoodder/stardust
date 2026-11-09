@@ -4,7 +4,7 @@
 // change, so a steady frame re-renders nothing. The view models are built by hudViews.ts and
 // hudPanel.ts, and their words by hudText.ts (T225).
 import type { IdSpace } from '../content/types.ts';
-import { UPGRADE_HINT } from '../meta/index.ts';
+import { specsOwned, UPGRADE_HINT } from '../meta/index.ts';
 import { mapOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
@@ -13,6 +13,7 @@ import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
+import { bindAssetMeter } from './hudAsset.ts';
 import { selectedView } from './hudPanel.ts';
 import {
   displayName,
@@ -67,7 +68,7 @@ export interface HudSaveInfo {
   readonly heldMedals: readonly string[];
   /** Towers the player owns (the required counters' answers); the loadout without a save. */
   readonly ownedTowers: readonly string[];
-  /** Towers whose specs are unlocked (the answers that need a spec). */
+  /** Towers whose specs are unlocked and authored (the answers that need a spec; T319). */
   readonly specsUnlocked: readonly string[];
   /** The spare-runners controls show (`meta/progress.ts`: after A1M5, or `devUnlocks`). */
   readonly spareRunnersOpen: boolean;
@@ -115,7 +116,7 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
     engineeringOpen: systemOpen('engineering'),
     heldMedals: Object.hasOwn(maps, mapId) ? (maps[mapId]?.medals ?? []) : [],
     ownedTowers: save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t)),
-    specsUnlocked: save.unlocks.specs,
+    specsUnlocked: specsOwned(save),
     spareRunnersOpen: systemOpen('spareRunners'),
     newTowers: newTowersIn(loadout),
     upgradeHintSeen: hintShown(UPGRADE_HINT),
@@ -525,6 +526,7 @@ export function bindHud(
   syncInteraction();
   syncTowers();
   const offs = [
+    bindAssetMeter(host),
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     // Inputs refused before the sim (render/input/apply.ts): a path ability aimed off the path

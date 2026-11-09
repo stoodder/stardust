@@ -46,9 +46,9 @@ describe('purchases in the save session', () => {
     expect(storeShelf('engineering').map((o) => o.refusal)).toEqual([
       'maxed',
       'maxed',
+      'maxed', // the Sprinkler's (T407a)
       'maxed', // the Lookout's (T406)
-      'no_specs',
-      'no_specs',
+      'no_specs', // Skyhook's and Zapcoil's ship later (T407b)
       'no_specs',
     ]);
   });

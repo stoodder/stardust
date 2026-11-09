@@ -283,6 +283,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       waveCount: sim.map.waves.length,
       maxIntegrity: s.maxIntegrity,
       integrity: s.integrity,
+      ...(sim.map.asset === null
+        ? {}
+        : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
       skitterkinKilled: s.stats.skitterkinKilled,
       wavesCleared,
       firstLeakAgo:

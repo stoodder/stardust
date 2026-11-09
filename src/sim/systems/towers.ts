@@ -74,6 +74,7 @@ export function towers(state: SimState, ctx: TickContext): void {
     const attack = tier.attack;
     if (attack === null) continue;
     if (t.cooldownTicks > 0) t.cooldownTicks--;
+    if (t.burstTicks > 0) t.burstTicks--;
     if (t.holdFire) {
       t.targetUid = 0;
       t.targetSlot = -1;
@@ -385,8 +386,10 @@ function launch(
 
 /**
  * A pulse: when ready and anything is in range, hits every enemy in range, in slot order. With the
- * spare-runners filter it waits until an unspared unit is in range. Returns whether it hit a
- * Skitterkin.
+ * spare-runners filter it waits until an unspared unit is in range. Its burst (Flash Freeze), if
+ * any, runs on its own timer over the same victims: when ready it applies the burst's effects
+ * (after the pulse's hit when both go off together) and emits PulseBurst. Returns whether it hit
+ * a Skitterkin.
  */
 function pulse(
   state: SimState,
@@ -395,7 +398,10 @@ function pulse(
   tier: CompiledTier,
   attack: Extract<CompiledAttack, { kind: 'pulse' }>,
 ): boolean {
-  if (t.cooldownTicks > 0) return false;
+  const burst = attack.burst;
+  const bursting = burst !== null && t.burstTicks === 0;
+  const firing = t.cooldownTicks === 0;
+  if (!firing && !bursting) return false;
   const enemies = state.enemies;
   const layers = tier.targets;
   const range = rangeOf(ctx, t, attack);
@@ -416,7 +422,23 @@ function pulse(
     victims.length = 0;
     return false;
   }
+  if (firing) pulseHit(state, ctx, t, tier, attack, victims);
+  if (bursting) pulseBurst(state, t, attack, burst, victims);
+  victims.length = 0;
+  if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;
+  return skitterkin;
+}
 
+/** The pulse's own hit on `victims` (enemy slots): damage, its tier's effects, link statuses. */
+function pulseHit(
+  state: SimState,
+  ctx: TickContext,
+  t: Tower,
+  tier: CompiledTier,
+  attack: Extract<CompiledAttack, { kind: 'pulse' }>,
+  victims: readonly number[],
+): void {
+  const enemies = state.enemies;
   emit(state, {
     type: 'ProjectileFired',
     uid: 0,
@@ -452,10 +474,38 @@ function pulse(
     applyEffects(e, tier.effects);
     applyLinkStatuses(t, e);
   }
-  victims.length = 0;
   t.cooldownTicks = bonusPeriodTicks(attack, t);
-  if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;
-  return skitterkin;
+}
+
+/**
+ * A pulse's burst (Flash Freeze's Stasis; T407a) on `victims` still alive: its effects, then
+ * PulseBurst with how many entered Stasis. It deals no damage; its period takes no rate bonus.
+ */
+function pulseBurst(
+  state: SimState,
+  t: Tower,
+  attack: Extract<CompiledAttack, { kind: 'pulse' }>,
+  burst: NonNullable<Extract<CompiledAttack, { kind: 'pulse' }>['burst']>,
+  victims: readonly number[],
+): void {
+  const enemies = state.enemies;
+  let frozen = 0;
+  for (let k = 0; k < victims.length; k++) {
+    const e = enemies.items[victims[k]!]!; // collected slots < used
+    if (!e.alive) continue; // the pulse's hit may have killed it
+    const before = e.stasisTicks;
+    applyEffects(e, burst.effects);
+    if (e.stasisTicks > before) frozen++;
+  }
+  t.burstTicks = burst.everyTicks;
+  emit(state, {
+    type: 'PulseBurst',
+    towerUid: t.uid,
+    x: t.x,
+    y: t.y,
+    radiusTiles: bonusRangeTiles(attack, t),
+    frozen,
+  });
 }
 
 /**

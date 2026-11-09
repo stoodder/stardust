@@ -294,7 +294,11 @@ export type AttackDef = AttackCommon &
       }
     | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
     // Sprinkler: every period, hits every enemy within rangeTiles (no target, no priority)
-    | { readonly kind: 'pulse' }
+    | {
+        readonly kind: 'pulse';
+        /** A second, slower pulse on the same radius (Flash Freeze's Stasis; T407a). */
+        readonly burst?: PulseBurstDef;
+      }
     | {
         // Capacitor Bank (T407b): charges `chargeSec` on a target, then discharges `damage` into
         // it plus `splashPct` of that to enemies within `splashTiles` of it.
@@ -325,6 +329,17 @@ export interface BombletsDef {
   readonly scatterTiles: number;
   readonly flightSec: number;
   readonly projectile: SpriteId;
+}
+
+/**
+ * A pulse tower's burst (Flash Freeze, design/towers.md § 7: Stasis 1.0 s every 8 s): every
+ * `everySec` it also applies `effects` to every enemy the pulse reaches, on its own timer. Like
+ * the pulse, it waits until something is in range, so the first burst lands on the first enemy.
+ * It deals no damage of its own.
+ */
+export interface PulseBurstDef {
+  readonly everySec: number;
+  readonly effects: readonly EffectDef[];
 }
 
 /** On-hit status effects (design/enemies.md §2.4). `pct` is a fraction: 25% → 0.25. */
@@ -1033,7 +1048,7 @@ export type WavePhase = 'countdown' | 'start' | 'cleared';
 export type ScriptTrigger<K extends IdSpace = LiveIds> =
   // 'countdown': that wave's build-phase countdown begins (W1's is the pre-game build phase)
   | { readonly wave: number; readonly phase: WavePhase | { readonly afterSec: number } }
-  | { readonly bossHpPct: number; readonly boss?: K['enemy'] } // crossing downward
+  | { readonly bossHpPct: number; readonly boss?: K['enemy'] } // HP share (0.55), crossing down
   | { readonly bossPhase: number }
   | { readonly refugeesRemaining: number }
   | { readonly restProgressPct: number }

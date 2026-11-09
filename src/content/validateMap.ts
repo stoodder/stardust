@@ -1,8 +1,8 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
 // - [feature]: Defend and Protect maps only until T305c (Escort safe exits, Holdout, Choir).
-// - [asset]: a Protect map has an `asset` (and only it does): a name, a meter ≥ 1, at least one
-//   route, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
+// - [asset]: a Protect map has an `asset` (and only it does): a short name, a meter ≥ 1, one or more
+//   routes, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
 //   content; a pick list is non-empty with no repeats.
 // - [ally]: ally posts have a positive attack rate and range, damage ≥ 0, and a layer to hit;
@@ -325,6 +325,9 @@ function validateGeometry(
   }
 }
 
+/** The asset meter's label fits the HUD's status panel beside its number (ui/hud/AssetMeter.tsx). */
+const ASSET_NAME_MAX_CHARS = 10;
+
 /** [asset]: a Protect map has an asset and only it does; its meter is a whole number ≥ 1. */
 function validateAsset(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const a = def.asset;
@@ -332,7 +335,13 @@ function validateAsset(issues: Issues, def: MapDef<IdSpace>, where: string): voi
     issues.add('asset', `${where}.asset`, "goes with objective 'protect' (and only with it)");
   }
   if (a === undefined) return;
-  if (a.name.trim() === '') issues.add('asset', `${where}.asset.name`, 'names the meter');
+  if (a.name.trim() === '' || a.name.length > ASSET_NAME_MAX_CHARS) {
+    issues.add(
+      'asset',
+      `${where}.asset.name`,
+      `names the meter in 1–${ASSET_NAME_MAX_CHARS} characters`,
+    );
+  }
   if (!isPositiveInt(a.integrity)) {
     issues.add('asset', `${where}.asset.integrity`, 'must be a whole number ≥ 1');
   }

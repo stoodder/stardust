@@ -9,7 +9,7 @@ import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import { defineUpgrade, sameEachRank } from '../../content/upgrades/define.ts';
 import type { MetaCatalog } from '../../meta/index.ts';
 import type { HeadlessResult } from '../../sim/index.ts';
-import type { RunRecord, RunRequest } from '../checks.ts';
+import { marginOf, type RunRecord, type RunRequest } from '../checks.ts';
 
 /** `content` with every wave tag removed from fx_map (no #16 runs). */
 function withoutTags(content: CompiledContent<FixtureIds>): CompiledContent<FixtureIds> {
@@ -67,6 +67,8 @@ export function fakeResult(
     outcome,
     integrity,
     maxIntegrity: 20,
+    asset: 0,
+    maxAsset: 0,
     credits: 0,
     lostAtWave,
     stats: {
@@ -122,7 +124,7 @@ export function fakeRun(req: RunRequest, result: HeadlessResult): RunRecord {
     repeat: req.repeat === true,
     error: null,
     result,
-    marginPct: (100 * result.integrity) / result.maxIntegrity,
+    marginPct: marginOf(result),
     ms: 1,
   };
 }

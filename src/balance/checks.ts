@@ -30,7 +30,10 @@ export interface RunRecord {
   /** Why the run couldn't happen (a refused config or build), else null. */
   readonly error: string | null;
   readonly result: HeadlessResult | null;
-  /** Par margin %: integrity left ÷ max integrity (design/maps.md § 6.1); 0 without a result. */
+  /**
+   * Par margin % (design/maps.md § 6.1; `marginOf`): integrity left ÷ max integrity, and on a
+   * Protect map the lower of that and the asset's; 0 without a result.
+   */
   readonly marginPct: number;
   /** Wall time. */
   readonly ms: number;
@@ -50,6 +53,20 @@ export interface CheckSpec {
   readonly subject: string;
   readonly needs: readonly RunRequest[];
   evaluate(get: (r: RunRequest) => RunRecord): CheckOutcome;
+}
+
+/**
+ * A run's margin % (design/maps.md § 6.1): integrity left ÷ max integrity × 100, and on a Protect
+ * map the lower of that and asset left ÷ max asset (D101: the weaker objective decides, as losing
+ * either loses), so a loss is 0.
+ */
+export function marginOf(
+  r: Pick<HeadlessResult, 'integrity' | 'maxIntegrity' | 'asset' | 'maxAsset'>,
+): number {
+  const core = (100 * r.integrity) / r.maxIntegrity;
+  if (r.maxAsset <= 0) return core;
+  const asset = (100 * r.asset) / r.maxAsset;
+  return asset < core ? asset : core;
 }
 
 export const runKey = (r: RunRequest): string => `${r.build}#${r.seed}${r.repeat ? '#again' : ''}`;
@@ -160,14 +177,21 @@ export const margins = (recs: readonly RunRecord[]): string =>
 export const won = (rec: RunRecord): string | null =>
   rec.result?.outcome === 'won' ? null : describeRun(rec);
 
-/** Integrity lost per wave, "0,0,3,8,9" (waves that never started read 0). */
+/**
+ * Integrity lost per wave, "0,0,3,8,9" (waves that never started read 0); on a Protect map each
+ * wave adds its asset loss, "0,2+1a,3".
+ */
 export const lossPerWave = (r: HeadlessResult | null): string =>
-  r === null ? '-' : r.waves.map((w) => w.integrityLost).join(',');
+  r === null
+    ? '-'
+    : r.waves
+        .map((w) => (w.assetLost > 0 ? `${w.integrityLost}+${w.assetLost}a` : `${w.integrityLost}`))
+        .join(',');
 
 /**
  * Why a run hits a wall rather than losing gradually (the `gradual` check, D028), or null: a
- * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity, or a loss in the very wave its
- * leaks start (they must start LEAK_LEAD_WAVES earlier).
+ * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity (or of a Protect map's asset
+ * meter), or a loss in the very wave its leaks start (they must start LEAK_LEAD_WAVES earlier).
  */
 export function notGradual(r: HeadlessResult): string | null {
   const cap = (r.maxIntegrity * MAX_WAVE_LOSS_PCT) / 100;
@@ -175,9 +199,14 @@ export function notGradual(r: HeadlessResult): string | null {
   if (wall !== undefined) {
     return `W${wall.wave} costs ${wall.integrityLost} of ${r.maxIntegrity} integrity, over ${MAX_WAVE_LOSS_PCT}%`;
   }
+  const assetCap = (r.maxAsset * MAX_WAVE_LOSS_PCT) / 100;
+  const assetWall = r.maxAsset > 0 ? r.waves.find((w) => w.assetLost > assetCap) : undefined;
+  if (assetWall !== undefined) {
+    return `W${assetWall.wave} costs ${assetWall.assetLost} of ${r.maxAsset} asset, over ${MAX_WAVE_LOSS_PCT}%`;
+  }
   if (r.outcome === 'lost') {
     const lost = r.lostAtWave ?? r.waves.length;
-    const first = r.waves.find((w) => w.integrityLost > 0)?.wave ?? lost;
+    const first = r.waves.find((w) => w.integrityLost > 0 || w.assetLost > 0)?.wave ?? lost;
     if (first > lost - LEAK_LEAD_WAVES) {
       return `it loses in W${lost}, but its leaks only start in W${first} (they must start by W${lost - LEAK_LEAD_WAVES})`;
     }

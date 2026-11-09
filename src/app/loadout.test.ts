@@ -45,8 +45,8 @@ describe('the loadout screen (app side)', () => {
       ['rivet', ['T3']],
       ['thumper', ['T1']],
       ['sprinkler', []],
-      // all_unlocked owns every tower's specs, Skyhook's M4 Seeker Swarm too (T304a report).
-      ['skyhook', ['Seeker Swarm']],
+      // Skyhook's Seeker Swarm answers armor once its specs are built (T407b), not before (T319).
+      ['skyhook', []],
       ['zapcoil', []], // plays since T304b; A1M2 asks only for Armor
       ['lookout', []], // plays since T406
     ]);
@@ -98,7 +98,7 @@ describe('the loadout screen (app side)', () => {
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper or Skyhook (Seeker Swarm) would.',
+        'Thumper would.',
     ]);
     expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
     const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };

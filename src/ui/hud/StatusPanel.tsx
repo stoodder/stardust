@@ -1,7 +1,8 @@
 // Top-left: the name plate ("JPT-1 · SPROUT", core-loop §5), the meter (core integrity, or the
-// map's own meter), credits, the medal tracker (T202d), and the map's optional objectives under it
+// map's own meter), a Protect map's asset meter under it (T305a), credits, the medal tracker (T202d), and the map's optional objectives under it
 // (T312c).
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
+import { AssetMeter } from './AssetMeter.tsx';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
@@ -37,6 +38,7 @@ export function StatusPanel() {
         </span>
         <span class={low ? 'big num danger' : 'big num'}>{integrity}</span>
       </div>
+      <AssetMeter />
       <div class="hud-credits" aria-label={`Credits ${hud.credits.value}`}>
         <Icon id="icon.credits" />
         <span class="hud-label">Credits</span>

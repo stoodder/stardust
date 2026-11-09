@@ -57,13 +57,14 @@ describe('effect summaries', () => {
     expect(effectText(byId(rnd, 'orbital_strike_mk2'))).toBe('+0.5 Orbital Strike radius');
     expect(effectText(byId(rnd, 'protocol_slots'))).toBe('+1 Field Protocol slot');
     const eng = shelf(dev.build(), 'engineering', ['engineering']);
-    expect(eng.slice(0, 3).map(effectText)).toEqual([
+    expect(eng.slice(0, 4).map(effectText)).toEqual([
       'Unlocks tier 4: Rivet Storm or Railspike',
       'Unlocks tier 4: Cluster Thumper or Bunker Buster',
+      'Unlocks tier 4: Flash Freeze or Cloudburst', // the Sprinkler's (T407a)
       "Unlocks tier 4: Crow's Nest or Overclock Rig", // the Lookout's (T406)
     ]);
-    // A tower whose specs ship later (D064) has no pair to name yet.
-    const later = eng.find((o) => o.refusal === 'no_specs');
+    // A tower whose specs ship later (D064; Skyhook's, T407b) has no pair to name yet.
+    const later = eng.find((o) => o.tower === 'skyhook');
     expect(later === undefined ? null : effectText(later)).toBe(
       'Unlocks both tier-4 specializations',
     );

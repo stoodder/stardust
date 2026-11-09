@@ -5,10 +5,10 @@
 // 1. Reset each live unit's per-tick ability state (`paceMul` 1, `huddleUid` 0).
 // 2. Each unit's own abilities: a leaving unit only leaves (leave.ts); otherwise burrow.ts (the
 //    Digger's dig cycle) and boss.ts (a boss's phase abilities: sneezes, burrows, haste). Act II
-//    (T400a seams, stubs until their tasks): skittish.ts (a bolting fleeing unit's haste; T402),
-//    pulse.ts (shield pulses, a unit's or its boss phase's; T403), and
-//    blink.ts (a unit's or its boss phase's; T404). cloak.ts is the untouchable rule's query
-//    (T406), run from targeting rather than here.
+//    (T400a seams): skittish.ts (a bolting fleeing unit's haste; T402), pulse.ts (shield pulses,
+//    a unit's or its boss phase's; T403), and blink.ts (a unit's or its boss phase's, holding it
+//    still through the tell; T404). cloak.ts is the untouchable rule's query (T406), run from
+//    targeting rather than here.
 // 3. The hush rule over every unit at once (hush.ts; T402): tells count down and land, then new
 //    contacts are matched order-independently; a unit in a tell stands still (`paceMul` 0).
 // 4. Huddles (huddle.ts: the Elder, a boss's huddle phase), last, so each leader's pace is final.
@@ -34,6 +34,7 @@ export { bossDamage, startBossEnding } from './bossPhases.ts';
 export { bossNextAbility, bossTelling, type BossAbility } from './boss.ts';
 export { burrowTelling } from './burrow.ts';
 export { cloakedOut } from './cloak.ts';
+export { activeBlink, blinkLanding, blinkTelling } from './blink.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
   const pool = state.enemies;

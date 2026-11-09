@@ -110,12 +110,13 @@ describe('offers', () => {
     save.unlocks.towers = ['rivet', 'thumper'];
     expect(offerFor(save, { kind: 'upgrade', id: 'tune_sprinkler' })?.refusal).toBe('not_owned');
     expect(offerFor(save, { kind: 'upgrade', id: 'tune_rivet' })?.refusal).toBe(null);
-    save.unlocks.towers.push('sprinkler');
-    // The Sprinkler's specs ship later (D064): Engineering lists it after the built ones, refused.
-    expect(offerFor(save, { kind: 'specs', tower: 'sprinkler' })?.refusal).toBe('no_specs');
+    save.unlocks.towers.push('sprinkler', 'skyhook');
+    // The Sprinkler's specs are built (T407a): Engineering sells them beside Rivet's and Thumper's.
+    expect(offerFor(save, { kind: 'specs', tower: 'sprinkler' })?.refusal).toBe(null);
     const engineering = shelf(save, 'engineering');
-    expect(engineering.slice(0, 2).map((o) => o.tower)).toEqual(['rivet', 'thumper']);
-    expect(engineering.find((o) => o.tower === 'sprinkler')?.refusal).toBe('no_specs');
+    expect(engineering.slice(0, 3).map((o) => o.tower)).toEqual(['rivet', 'thumper', 'sprinkler']);
+    // Skyhook's ship later (D064, T407b): listed after the built ones, refused.
+    expect(engineering.find((o) => o.tower === 'skyhook')?.refusal).toBe('no_specs');
     // Towers not owned still say so first.
     expect(engineering.find((o) => o.tower === 'zapcoil')?.refusal).toBe('not_owned');
   });
@@ -274,8 +275,8 @@ describe('buying', () => {
     for (const pane of ['rnd', 'shop', 'engineering'] as const) {
       const offers = shelf(save, pane, dev.devUnlocks);
       expect(offers.length).toBeGreaterThan(0);
-      // Everything is owned; only the specs that ship later (D064) can't be.
-      const later = new Set(['sprinkler', 'skyhook', 'zapcoil']);
+      // Everything is owned; only the specs that ship later (D064, T407b) can't be.
+      const later = new Set(['skyhook', 'zapcoil']);
       for (const o of offers) {
         const deferred = pane === 'engineering' && later.has(o.tower ?? '');
         expect(o.refusal).toBe(deferred ? 'no_specs' : 'maxed');

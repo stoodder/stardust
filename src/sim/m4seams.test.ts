@@ -22,7 +22,6 @@ import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './_
 import { copyCommand, type Command } from './commands.ts';
 import { evaluateCondition, settledCondition } from './conditions.ts';
 import type { SimConfig } from './config.ts';
-import { blinkStep } from './enemyAbilities/blink.ts';
 import { cloakedOut } from './enemyAbilities/cloak.ts';
 import { ENEMY_BLANK, PROJECTILE_BLANK, TOWER_BLANK } from './entities.ts';
 import type { SimEvent } from './events.ts';
@@ -102,7 +101,13 @@ describe('M4 state fields', () => {
   });
 
   it("starts a Protect map's asset meter full", () => {
-    const asset = { integrity: 10, marker: 'rock', tile: [0, 2] as const, routes: ['a'] };
+    const asset = {
+      name: 'Rock',
+      integrity: 10,
+      marker: 'rock',
+      tile: [0, 2] as const,
+      routes: ['a'],
+    };
     const state = createState({ ...MAP, objective: 'protect', asset }, 1);
     expect([state.asset, state.maxAsset]).toEqual([10, 10]);
   });
@@ -127,16 +132,13 @@ describe('M4 state fields', () => {
 });
 
 describe('stub systems change nothing', () => {
-  it('detection, and the blink, cloak, and asset stubs', () => {
+  it('detection, and the cloak stub; no asset on a Defend map', () => {
     const { state, ctx } = setup();
     const mote = spawn(state, LIVE.enemies.mote, { dist: 2 });
-    const witch = spawn(state, LIVE.enemies.glass_witch, { dist: 1 });
     const before = JSON.stringify(state);
     detection(state, ctx);
-    const phases = LIVE.enemies.glass_witch.boss!.phases;
-    blinkStep(state, ctx, witch, phases[1]!.blink!);
     expect(cloakedOut(mote)).toBe(false);
-    expect(leakToAsset(state, MAP, mote)).toBe(false);
+    expect(leakToAsset(state, MAP, mote, 1, 0)).toBe(false);
     expect(JSON.stringify(state)).toBe(before);
   });
 });
@@ -262,15 +264,18 @@ describe('wreckage by marker and objectives as conditions', () => {
 describe('FEATURE_GATES (T400a rows)', () => {
   it('names the lifting task for every M4 mechanic (D101)', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'enemy.blink': 'T404',
-      'map.protect': 'T305a',
+      // Blinks run since T404 (enemyAbilities/blink.test.ts).
+      'enemy.blink': null,
+      // Protect plays since T305a (sim/protect.test.ts).
+      'map.protect': null,
       'run.checkpoints': 'T305b',
       // Cloaks, detection, the Lookout, and Scanner Sweep run since T406 (systems/detection.test.ts).
       'enemy.cloak': null,
       'tower.detection': null,
       'tower.lookout': null,
       'ability.reveal': null,
-      'status.stasis': 'T407a',
+      // Stasis (Flash Freeze) runs since T407a (sim/stasis.test.ts).
+      'status.stasis': null,
       'attack.homing': 'T407b',
       'attack.charge': 'T407b',
       'status.pinned': 'T408',
@@ -307,9 +312,8 @@ describe('FEATURE_GATES (T400a rows)', () => {
     );
     expect(gateRefusals(contentWith(null, { waves: groups }))).toEqual([]);
     // Her pulse runs since T403 (enemyAbilities/pulse.test.ts).
-    expect(gateRefusals(contentWith(e.glass_witch))).toEqual([
-      'a blink (glass_witch) is not simulated until T404',
-    ]);
+    // Her blink runs since T404 (enemyAbilities/blink.test.ts).
+    expect(gateRefusals(contentWith(e.glass_witch))).toEqual([]);
     // Cloaks run since T406 (systems/detection.test.ts).
     const veil = enemyDef('fx_veil', { cloaked: true, traits: ['cloaked'] });
     expect(gateRefusals(contentWith(veil))).toEqual([]);
@@ -319,11 +323,15 @@ describe('FEATURE_GATES (T400a rows)', () => {
     }
   });
 
-  it('refuses Protect, revisits, and clickable objects on the map', () => {
-    const asset = { integrity: 10, marker: 'rock', tile: [0, 2] as const, routes: ['a'] };
-    expect(gateRefusals(contentWith(null, { objective: 'protect', asset }))).toEqual([
-      'a Protect asset is not simulated until T305a',
-    ]);
+  it('refuses revisits and clickable objects on the map (Protect plays since T305a)', () => {
+    const asset = {
+      name: 'Rock',
+      integrity: 10,
+      marker: 'rock',
+      tile: [0, 2] as const,
+      routes: ['a'],
+    };
+    expect(gateRefusals(contentWith(null, { objective: 'protect', asset }))).toEqual([]);
     expect(gateRefusals(contentWith(null, { revisitOf: 'a1_m02', revisitAt: [2, 1] }))).toEqual([
       "a revisit of 'a1_m02' is not simulated until T410a",
     ]);

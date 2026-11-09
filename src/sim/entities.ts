@@ -98,6 +98,11 @@ export interface Tower extends PoolEntity {
   linkKillCredits: number;
   /** A charge attack's progress on its target, in ticks (Capacitor Bank; T407b). */
   chargeTicks: number;
+  /**
+   * Ticks until a pulse's burst may go off again (Flash Freeze; T407a): like `cooldownTicks`, it
+   * goes off on a tick that starts at 0 with an enemy in range, then waits `burst.everyTicks`.
+   */
+  burstTicks: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -136,6 +141,7 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   bonusDetectTiles: 0,
   linkKillCredits: 0,
   chargeTicks: 0,
+  burstTicks: 0,
 });
 
 export interface Enemy extends PoolEntity {

@@ -277,6 +277,17 @@ export interface LeakFlash {
   readonly amount: number;
 }
 
+/**
+ * A Protect map's asset meter (T305a; core-loop § 2.10): its name ("Rigs"), what's left, and its
+ * full value. `damage` is the sim's band (`assetDamage`): `critical` is the low-asset alarm.
+ */
+export interface AssetMeterView {
+  readonly name: string;
+  readonly value: number;
+  readonly max: number;
+  readonly damage: 'intact' | 'damaged' | 'critical' | 'lost';
+}
+
 /** The "WAVE n" banner as a wave starts. `id` changes with every wave. */
 export interface WaveBanner {
   readonly id: number;
@@ -297,6 +308,10 @@ export const hud = {
   integrity: signal(0),
   /** The meter's label (map data `meterLabel`; Defend maps say Core). */
   meterLabel: signal('Core'),
+  /** A Protect map's asset meter (app/hudAsset.ts), or null on other maps. */
+  asset: signal<AssetMeterView | null>(null),
+  /** The latest hit on the asset, for its meter's flash, or null. */
+  assetHit: signal<LeakFlash | null>(null),
   /** The last wave started (0 during the setup phase). */
   wave: signal(0),
   waveCount: signal(0),

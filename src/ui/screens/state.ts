@@ -16,6 +16,8 @@ export interface RunResult {
   /** Core integrity left, and the map's starting integrity. */
   readonly integrity: number;
   readonly maxIntegrity: number;
+  /** A Protect map's asset as the run left it ("Rigs 7 / 10"; T305a), or null on other maps. */
+  readonly asset: RunAsset | null;
   /** Pests Processed: this run's `stats.skitterkinKilled`. */
   readonly pestsProcessed: number;
   /**
@@ -30,6 +32,13 @@ export interface RunResult {
   readonly stamps: readonly string[];
   /** What the run paid into the save in play (meta run end); null outside a campaign (`?map=`). */
   readonly rewards: RunRewards | null;
+}
+
+/** A Protect map's asset meter at the run's end: its name, what's left, and its full value. */
+export interface RunAsset {
+  readonly name: string;
+  readonly value: number;
+  readonly max: number;
 }
 
 /** One of the map's medals on the results card. */

@@ -44,6 +44,7 @@ function lossy(outcome: 'won' | 'lost', losses: readonly number[]): HeadlessResu
     killed: 0,
     leaked: integrityLost,
     integrityLost,
+    assetLost: 0,
     startTick: 0,
     early: false,
     earlyBonus: 0,

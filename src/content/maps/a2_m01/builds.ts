@@ -1,0 +1,153 @@
+// A2M1 balance-harness builds: docs/story/campaign/act2.md § A2M1, Par build (the step tables
+// there mirror these).
+import { defineBuilds } from '../../define.ts';
+import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
+import type { BuildStep, GridPos } from '../../types.ts';
+import { OPEN } from './waves.ts';
+
+/** The west canyon ledge, over the Spires road's first bend. */
+const LEDGE_W: GridPos = [4, 2];
+/** The east canyon ledge, inside the bore road's bend. */
+const LEDGE_E: GridPos = [13, 4];
+/** The stardust conduit (power node), beside the merged road just south of the merge. */
+const NODE: GridPos = [9, 7];
+/** Inside the Spires road's first bend. */
+const BEND_W: GridPos = [3, 4];
+/** Between the Spires road's drop and the merge. */
+const MID_W: GridPos = [6, 4];
+/** Just north of the merge, over row 6. */
+const MERGE_N: GridPos = [7, 5];
+/** Between the roads, over row 6's east run. */
+const MID_E: GridPos = [10, 5];
+/** Inside the bore road's bend, west of its drop. */
+const BEND_E: GridPos = [11, 4];
+/** South of row 6's west run. */
+const ROW_W: GridPos = [4, 7];
+/** South-west of the merge, beside the merged road. */
+const MERGE_SW: GridPos = [7, 7];
+/** The rig yard, inside the merged road's bend. */
+const YARD: GridPos = [9, 9];
+/** Beside the lift road's last stretch. */
+const LIFT: GridPos = [12, 9];
+/** South of the bore road's drop. */
+const BORE_S: GridPos = [13, 7];
+/** The crew-log rigs (wreckage over pads). */
+const LOG_BORE: GridPos = [13, 5];
+const LOG_YARD: GridPos = [10, 10];
+/** Strike points: the merge, and the bore road's drop. */
+const MERGE: GridPos = [8, 6];
+const BORE_DROP: GridPos = [12, 5];
+
+function parSteps(): BuildStep[] {
+  return [
+    { wave: 1, build: 'rivet', tile: LEDGE_W },
+    { wave: 1, build: 'thumper', tile: NODE },
+    { wave: 1, build: 'sprinkler', tile: MERGE_SW },
+    { wave: 1, clear: LOG_BORE },
+    { wave: 1, clear: LOG_YARD },
+    { wave: 2, build: 'thumper', tile: MERGE_N },
+    { wave: 3, build: 'zapcoil', tile: MID_E },
+    { wave: 4, upgrade: NODE },
+    { wave: 4, upgrade: MERGE_N },
+    { wave: 5, upgrade: MID_E },
+    { wave: 5, upgrade: LEDGE_W },
+    { wave: 6, build: 'zapcoil', tile: BEND_E },
+    { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
+    { wave: 7, upgrade: NODE },
+    { wave: 7, upgrade: MERGE_N },
+    { wave: 8, upgrade: MID_E },
+    { wave: 8, upgrade: BEND_E },
+    { wave: 9, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 12 } },
+    { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
+    { wave: 9, specialize: NODE, spec: 'a' }, // Cluster Thumper
+    { wave: 10, ability: 1, target: MERGE, when: { afterSec: OPEN + 24 } },
+  ];
+}
+
+const PAR_STEPS = parSteps();
+const PAR_LOADOUT = ['rivet', 'thumper', 'sprinkler', 'zapcoil'] as const;
+
+export const builds = defineBuilds({
+  // A2M1's reference profile (campaign.md § 4.9): A1M5's, plus the Lookout Shack's license.
+  referenceProfile: REFERENCE_PROFILES.a2_m01,
+  // The first map after Act I's boss: judged against Act II's band, and the chain restarts here.
+  rebaseline: true,
+  parBuild: { loadout: PAR_LOADOUT, steps: PAR_STEPS },
+  noCounterBuilds: {
+    // No splash answer: Rivets, a Sprinkler, a Skyhook, and a Lookout (no Thumper or Zapcoil).
+    splash: {
+      loadout: ['rivet', 'sprinkler', 'skyhook', 'lookout'],
+      steps: [
+        { wave: 1, build: 'rivet', tile: LEDGE_W },
+        { wave: 1, build: 'rivet', tile: NODE },
+        { wave: 1, build: 'sprinkler', tile: MERGE_SW },
+        { wave: 1, clear: LOG_BORE },
+        { wave: 1, clear: LOG_YARD },
+        { wave: 2, build: 'rivet', tile: MERGE_N },
+        { wave: 3, build: 'rivet', tile: MID_E },
+        { wave: 3, build: 'lookout', tile: MID_W },
+        { wave: 4, upgrade: NODE },
+        { wave: 4, upgrade: MERGE_N },
+        { wave: 5, upgrade: MID_E },
+        { wave: 5, upgrade: LEDGE_W },
+        { wave: 6, build: 'rivet', tile: BEND_E },
+        { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
+        { wave: 7, upgrade: NODE },
+        { wave: 7, upgrade: MERGE_N },
+        { wave: 7, build: 'skyhook', tile: YARD },
+      ],
+    },
+  },
+  // The splash test is W6's clusters, so the no-splash build must lose by W7 (act2.md § A2M1).
+  noCounterLoseByWave: 7,
+  altBuilds: {
+    // Thumper, Zapcoil, Skyhook, Lookout.
+    shell_and_scope: {
+      loadout: ['thumper', 'zapcoil', 'skyhook', 'lookout'],
+      steps: [
+        { wave: 1, build: 'thumper', tile: NODE },
+        { wave: 1, build: 'zapcoil', tile: MERGE_N },
+        { wave: 1, clear: LOG_BORE },
+        { wave: 1, clear: LOG_YARD },
+        { wave: 2, build: 'lookout', tile: MERGE_SW },
+        { wave: 3, build: 'thumper', tile: MID_W },
+        { wave: 4, upgrade: NODE },
+        { wave: 4, upgrade: MERGE_N },
+        { wave: 5, build: 'zapcoil', tile: MID_E },
+        { wave: 6, upgrade: MID_W },
+        { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
+        { wave: 7, upgrade: MID_E },
+        { wave: 7, upgrade: NODE },
+        { wave: 8, build: 'skyhook', tile: YARD },
+        { wave: 9, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 12 } },
+        { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
+      ],
+    },
+    // Thumper, Rivet, Skyhook, Lookout.
+    shell_and_rivet: {
+      loadout: ['thumper', 'rivet', 'skyhook', 'lookout'],
+      steps: [
+        { wave: 1, build: 'rivet', tile: LEDGE_W },
+        { wave: 1, build: 'thumper', tile: NODE },
+        { wave: 1, clear: LOG_BORE },
+        { wave: 1, clear: LOG_YARD },
+        { wave: 2, build: 'thumper', tile: MERGE_N },
+        { wave: 3, build: 'lookout', tile: MERGE_SW },
+        { wave: 4, upgrade: NODE },
+        { wave: 4, upgrade: MERGE_N },
+        { wave: 5, build: 'thumper', tile: MID_E },
+        { wave: 6, upgrade: LEDGE_W },
+        { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
+        { wave: 7, upgrade: MID_E },
+        { wave: 7, upgrade: NODE },
+        { wave: 8, build: 'skyhook', tile: YARD },
+        { wave: 9, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 12 } },
+        { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
+      ],
+    },
+  },
+  // Unused pads, named for the step tables: the west bend, the west row, the yard, the lift, the
+  // bore's south pad, and the east ledge.
+});
+
+export const PADS = { BEND_W, ROW_W, YARD, LIFT, BORE_S, LEDGE_E } as const;

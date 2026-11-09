@@ -10,6 +10,10 @@
 // (smoke/hudAct1.spec.ts) before A1M4 lands. A fourth, `dev_boss` (T312b), brings A1M4–A1M5's
 // Skitterkin (Diggers, Bunchlings, an Elder with younglings) and a short Chitterbloom fight, so the
 // burrow, split, huddle, and boss smoke flow (smoke/boss.spec.ts) runs before A1M5 lands.
+// `dev_protect` (T305a) is dev_act2 as a Protect map, its south road the branch to the rigs.
+// `dev_witch` (T404) walks a short Glass Witch (her real phases, pulse, blink, and retreat) down
+// dev_act2's north road behind a few Glimmers, so her blink's tell and afterimage show
+// (smoke/witch.spec.ts) before A2M2 lands.
 import {
   defineAbility,
   defineEnemy,
@@ -25,6 +29,7 @@ import { chitterbloom } from '../../content/enemies/chitterbloom.ts';
 import { digger } from '../../content/enemies/digger.ts';
 import { elder } from '../../content/enemies/elder.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
+import { glass_witch } from '../../content/enemies/glass_witch.ts';
 import { glimmer } from '../../content/enemies/glimmer.ts';
 import { lightwing } from '../../content/enemies/lightwing.ts';
 import { mote } from '../../content/enemies/mote.ts';
@@ -137,6 +142,15 @@ const devCantor = defineEnemy({
   pulse: { everySec: 4, tellSec: 1.5, radiusTiles: 2, shield: 40 },
 });
 
+// dev_witch's (T404): the Glass Witch on a quarter of her HP and a sixth of her shield, her phases, pulse, blink,
+// and retreat unchanged, so a few Zapcoils push her through phase 2 in one walk down the road.
+const devGlassWitch = defineEnemy({
+  ...glass_witch,
+  id: 'dev_glass_witch',
+  hp: 450,
+  shield: { hp: 200, regenPerSec: 30, regenDelaySec: 4 },
+});
+
 const devStrike = defineAbility({
   id: 'dev_strike',
   name: 'Dev Strike',
@@ -173,6 +187,8 @@ const DEV_ENTITIES = {
     dev_cantor: devCantor,
     // dev_hollow's (T402).
     mote,
+    // dev_witch's (T404).
+    dev_glass_witch: devGlassWitch,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -729,6 +745,124 @@ const hollowMap = dev.defineMap({
   },
 });
 
+// dev_witch (T404): dev_act2's north road, walked by four Glimmers and then a short Glass Witch
+// (pulse every 8 s; blink 2.5 tiles every 7 s from 70%; retreat at 40%), so the blink's tell (a
+// ghost of her where she will land), the afterimage, and the retreat show (smoke/witch.spec.ts).
+// Par lines the road with Zapcoils; the smoke flow builds its own.
+const witchMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_witch',
+  startCredits: 1500,
+  threatIntel: ['shielded', 'boss'],
+  requiredCounters: ['shield'],
+  waves: dev.defineWaves([
+    {
+      groups: [
+        { enemy: 'glimmer', count: 4, route: 'a', intervalSec: 0.8 },
+        { enemy: 'dev_glass_witch', count: 1, route: 'a', delaySec: 2 },
+      ],
+    },
+  ]),
+  referenceProfile: {
+    towers: ['zapcoil', 'rivet'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['zapcoil', 'rivet'],
+    steps: [
+      { wave: 1, build: 'zapcoil', tile: [4, 2] },
+      { wave: 1, build: 'zapcoil', tile: [5, 4] },
+      { wave: 1, build: 'zapcoil', tile: [8, 4] },
+      { wave: 1, build: 'zapcoil', tile: [10, 3] },
+      { wave: 1, build: 'zapcoil', tile: [12, 3] },
+      { wave: 1, build: 'zapcoil', tile: [13, 1] },
+      { wave: 1, build: 'zapcoil', tile: [14, 4] },
+    ],
+  },
+  noCounterBuilds: {
+    shield: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [8, 4] }] },
+  },
+});
+
+// dev_protect (T305a): dev_act2 as a Protect map. The north road still runs to the core; the
+// south road is the rig branch, ending on (13,7) beside the rigs on the decor tile (14,7), so its
+// leaks cost the rigs' meter (10), not the core. Nibblers on both roads, and fleeing ones on the
+// branch that cost the rigs nothing, so the HUD's asset meter, its flash, and its low state show
+// (smoke/protect.spec.ts) before A2M2 lands. Nothing is built: W2 takes the rigs to 0.
+const protectMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_protect',
+  objective: 'protect',
+  // prettier-ignore
+  tiles: [
+    '..o.........o.....',
+    'S######......o....',
+    '....o.#....#####..',
+    '......#...o#o..#..',
+    '.....o#.o..#.^o#..',
+    '......######...#o.',
+    '...o........o..#..',
+    '.......#######.#..',
+    '.....o.#..o..+.#o.',
+    'S#######.....o.#..',
+    '...o.....o.....##C',
+    '................o.',
+  ],
+  paths: [
+    act2Layout.paths[0]!, // dev_act2 has its north road
+    {
+      id: 'rigs',
+      tiles: [
+        [0, 9],
+        [1, 9],
+        [2, 9],
+        [3, 9],
+        [4, 9],
+        [5, 9],
+        [6, 9],
+        [7, 9],
+        [7, 8],
+        [7, 7],
+        [8, 7],
+        [9, 7],
+        [10, 7],
+        [11, 7],
+        [12, 7],
+        [13, 7],
+      ],
+    },
+  ],
+  markers: { rigs: [14, 7] },
+  // The branch's fleeing runners bring Skittish's intel (validation derives it from the tag).
+  threatIntel: ['skittish'],
+  asset: { name: 'Rigs', integrity: 10, marker: 'rigs', routes: ['rigs'] },
+  waves: dev.defineWaves([
+    {
+      groups: [
+        { enemy: 'dev_nibbler', count: 4, route: 'a' },
+        { enemy: 'dev_nibbler', count: 3, route: 'rigs', delaySec: 1 },
+        { enemy: 'nibbler', count: 3, route: 'rigs', delaySec: 3, tags: ['fleeing'] },
+      ],
+    },
+    {
+      countdownSec: 10,
+      groups: [{ enemy: 'dev_nibbler', count: 8, route: 'rigs', intervalSec: 0.6 }],
+    },
+  ]),
+  ...act2Builds,
+  parBuild: {
+    loadout: ['rivet', 'sprinkler'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [8, 4] },
+      { wave: 1, build: 'rivet', tile: [10, 8] },
+      { wave: 1, build: 'sprinkler', tile: [5, 8] },
+    ],
+  },
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -740,6 +874,8 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_act2: act2Map,
     dev_aelari: aelariMap,
     dev_hollow: hollowMap,
+    dev_witch: witchMap,
+    dev_protect: protectMap,
   }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too

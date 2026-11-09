@@ -2,8 +2,8 @@
 // tests and the owner can start partway through the campaign, or reach systems gated behind maps
 // that don't exist yet. Each is built from the live registries, so it stays valid as content
 // lands: `mid_m2` covers the first two campaign maps, the Act II saves (`after_a1m5_ref` on) win
-// only the Act II maps already registered, and `all_unlocked` owns every registered tower, spec,
-// and ability. devSaves.test.ts validates every one.
+// only the Act II maps already registered, and `all_unlocked` owns every registered tower, every
+// spec unlock for specs already built, and every ability. devSaves.test.ts validates every one.
 // `devUnlocks` opens gated systems whose maps don't exist yet (D031). It lives here, never in
 // SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
 import { CAMPAIGN, type CampaignMapId } from '../../content/campaign.ts';
@@ -15,6 +15,7 @@ import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content
 import type { CallsignId } from '../../content/dialogue/profile.ts';
 import { tagIndexAfter } from '../../story/tags.ts';
 import { withIssuedTowers } from '../issued.ts';
+import { LIVE_SPEC_NAMES } from '../loadout.ts';
 import { isMapWon, type MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
 import { buy, type PurchaseItem } from '../purchase.ts';
@@ -335,7 +336,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   },
   all_unlocked: {
     description:
-      'Every campaign map won with every medal; every registered tower, spec, ability, protocol, ' +
+      'Every campaign map won with every medal; every registered tower, built spec, ability, protocol, ' +
       'and upgrade (at its top rank) owned; deep pockets for the shop and R&D; every gated ' +
       'system open; the intake done and the story caught up to the wins (memos all read).',
     devUnlocks: META_SYSTEMS,
@@ -345,7 +346,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       // The registries' ids, typed back from the known-id sets.
       const towers = [...LIVE_KNOWN_IDS.towers] as SaveData['unlocks']['towers'];
       save.unlocks.towers = towers;
-      save.unlocks.specs = [...towers];
+      // Every spec unlock Engineering can sell: towers whose specs ship later have none (T319).
+      save.unlocks.specs = towers.filter((t) => LIVE_SPEC_NAMES(t, 'a') !== null);
       save.unlocks.abilities = [...LIVE_KNOWN_IDS.abilities] as SaveData['unlocks']['abilities'];
       save.unlocks.protocols = [...LIVE_KNOWN_IDS.protocols];
       for (const u of Object.values(UPGRADES)) save.upgrades[u.id] = u.ranks.length;

@@ -170,7 +170,14 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly falloffPct: number;
       }
     | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
-    | { readonly kind: 'pulse' }
+    | {
+        readonly kind: 'pulse';
+        /** PulseBurstDef in ticks (Flash Freeze), or null. */
+        readonly burst: {
+          readonly everyTicks: number;
+          readonly effects: readonly CompiledEffect[];
+        } | null;
+      }
     | {
         readonly kind: 'charge';
         readonly chargeTicks: number;

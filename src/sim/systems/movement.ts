@@ -35,10 +35,12 @@ import { emit, type SimState } from '../state.ts';
 /**
  * An enemy's speed this tick, in tiles per tick, ground or air: its base speed (×HUSH_SPEED_MUL
  * once Heavy, enemies.md § 5.4), ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier,
- * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop). Lead targeting
- * and flak intercepts predict with the same number.
+ * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop); 0 in Stasis
+ * (so a huddle's leader in Stasis holds its group still too). Lead targeting and flak intercepts
+ * predict with the same number.
  */
 export function enemySpeedPerTick(e: Enemy): number {
+  if (e.stasisTicks > 0) return 0; // frozen in Stasis (systems/status.ts; enemies.md § 2.4)
   const own = e.def === null ? 0 : e.def.speedTilesPerTick;
   const base = e.heavy ? own * HUSH_SPEED_MUL : own;
   return (

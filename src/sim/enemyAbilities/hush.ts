@@ -11,6 +11,10 @@
 //   (HushStarted). Towers can still shoot either one: if the victim dies or leaks first, the
 //   Hollow unit walks on with its hush unspent; if the Hollow unit dies, the victim runs on (and
 //   so does either one if the other digs in or starts leaving with a boss).
+// - **The interrupt** (§ 2.4; T407a): while the interrupt hook holds a Hollow unit
+//   (systems/status.ts `isInterrupted`: Stasis), it can't start a hush, and a tell under way is
+//   cancelled: the victim runs on and the hush stays unspent (no event: render sees `hushUid`
+//   clear).
 // - **The hush:** the victim is removed, marked `leaving` so cleanup counts it neither a kill nor a
 //   leak (Hushed, then TurnedHeavy), and the Skitterkin around it bolt (skittish.ts).
 // - **Order independence:** new contacts are matched on the tick's state before any is applied. A
@@ -24,6 +28,7 @@ import type { Enemy } from '../entities.ts';
 import { poolKill, type Pool } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { isInterrupted } from '../systems/status.ts';
 import { boltNear } from './skittish.ts';
 
 export const HUSH_TELL_TICKS = secToTicks(HUSH_TELL_SEC);
@@ -39,7 +44,8 @@ export function canHush(h: Enemy): boolean {
     !h.heavy &&
     h.hushUid === 0 &&
     !h.burrowed &&
-    !h.leaving
+    !h.leaving &&
+    !isInterrupted(h)
   );
 }
 
@@ -131,7 +137,8 @@ export function hushPass(state: SimState, ctx: TickContext): void {
     if (!e.alive || e.hushUid === 0 || e.def === null) continue;
     const other = liveByUid(pool, e.hushUid);
     if (e.def.hushes) {
-      if (other === null || e.leaving || e.burrowed || other.leaving || other.burrowed) {
+      const gone = other === null || other.leaving || other.burrowed;
+      if (gone || e.leaving || e.burrowed || isInterrupted(e)) {
         e.hushUid = 0;
         e.hushTicks = 0;
         if (other !== null) other.hushUid = 0;

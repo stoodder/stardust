@@ -298,6 +298,7 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
         case 'BlinkTell':
         case 'Blinked':
         case 'BlinkInterrupted':
+        case 'PulseBurst':
         case 'Revealed':
         case 'Cloaked':
         case 'AssetHit':

@@ -165,8 +165,21 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
   };
   switch (a.kind) {
     case 'hitscan':
-    case 'pulse':
       return { ...common, kind: a.kind };
+    case 'pulse':
+      return {
+        ...common,
+        kind: a.kind,
+        burst:
+          a.burst === undefined
+            ? null
+            : {
+                everyTicks: ticks(ctx, a.burst.everySec, `${where}.burst.everySec`),
+                effects: a.burst.effects.map((e, i) =>
+                  compileEffect(ctx, e, `${where}.burst.effects[${i}]`),
+                ),
+              },
+      };
     case 'projectile': {
       const splash = a.splashTiles ?? 0;
       return {

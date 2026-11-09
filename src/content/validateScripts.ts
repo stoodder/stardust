@@ -117,8 +117,9 @@ export function validateScripts(issues: Issues, def: MapDef<IdSpace>, mapWhere: 
     }
     if ('tick' in t && !isNonNegativeInt(t.tick))
       issues.add('script', w, 'tick must be a whole number ≥ 0');
-    if ('bossHpPct' in t && !(t.bossHpPct > 0 && t.bossHpPct < 100)) {
-      issues.add('script', w, 'bossHpPct must be in (0, 100)');
+    // A share of the boss's HP, as the sim reads it (0.55, never 55: that would fire at spawn).
+    if ('bossHpPct' in t && !(t.bossHpPct > 0 && t.bossHpPct < 1)) {
+      issues.add('script', w, 'bossHpPct must be a share of HP in (0, 1)');
     }
     if ('objectiveCompleted' in t && !objectives.has(t.objectiveCompleted)) {
       issues.add('script', w, `unknown objective '${t.objectiveCompleted}'`);

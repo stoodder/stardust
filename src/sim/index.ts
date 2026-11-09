@@ -32,6 +32,7 @@ export { isBossWave } from './systems/cleanup.ts';
 export { bossNextAbility, bossTelling, type BossAbility } from './enemyAbilities/boss.ts';
 export { burrowTelling } from './enemyAbilities/burrow.ts';
 export { activePulse, pulseTelling } from './enemyAbilities/pulse.ts';
+export { activeBlink, blinkLanding, blinkTelling } from './enemyAbilities/blink.ts';
 // Detection (T406): whether a cloaked unit is hidden now (render's shimmer), and a detector's ring.
 export { cloakedOut } from './enemyAbilities/cloak.ts';
 export { detectRadiusTiles, supportPct } from './systems/detection.ts';

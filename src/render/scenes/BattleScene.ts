@@ -31,6 +31,8 @@
 // full HP too (EnemyView). T330: on A1M5's Quiet Wave Bricks lowers his cannon a beat after the
 // wave starts and keeps it low (allyPose.ts); Suppressing Fire's streaks then come from off the map.
 // M4 (T403): a hit on a shield ripples, and a shield pulse tells and rings (ShieldView).
+// M4 (T404): a blink's tell shows a ghost where the unit will land, and leaves an afterimage
+// (BlinkView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -70,6 +72,7 @@ import { AllyView } from '../views/AllyView.ts';
 import { quietWaves, weaponsLowered } from '../views/allyPose.ts';
 import { ChainFx } from '../views/ChainFx.ts';
 import { CoreView } from '../views/CoreView.ts';
+import { BlinkView } from '../views/BlinkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
 import { CuePropView } from '../views/CuePropView.ts';
 import { CursorView } from '../views/CursorView.ts';
@@ -159,6 +162,8 @@ export class BattleScene extends Phaser.Scene {
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
+  /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
+  #blinks!: BlinkView;
   #leaves!: LeaveFx;
   #cueProps!: CuePropView;
   /** The salvage drone's time per tile under the run's modifiers (ticks). */
@@ -278,6 +283,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
+    this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
@@ -366,6 +372,7 @@ export class BattleScene extends Phaser.Scene {
       }),
       interaction.onPoke(() => this.#peeker?.poke()),
       this.#shields.bind(bus, () => sim.state.enemies),
+      this.#blinks.bind(bus, () => sim.state.enemies),
     );
     this.#hover.bindPointer(this, (button) => this.#click(button));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -384,6 +391,7 @@ export class BattleScene extends Phaser.Scene {
       this.#bossBar.reset();
       this.#huddles.reset();
       this.#shields.reset();
+      this.#blinks.reset();
       this.#leaves.reset();
       this.#hover.reset();
     });
@@ -408,6 +416,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar.update(dt, state.enemies);
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
+    this.#blinks.update(dt, state.enemies);
     this.#leaves.update(dt);
     this.#cueProps.update(dt, state.towerAtTile);
     this.#airLanes.update(state.wave, this.#armedHitsAir());

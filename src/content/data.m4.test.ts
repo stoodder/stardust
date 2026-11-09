@@ -145,14 +145,22 @@ describe('M4 map and condition rules', () => {
   });
 
   it('[asset] goes with a protect objective, and only with it', () => {
-    const asset = { integrity: 10, marker: 'rig', routes: ['a'] };
+    // The air lane leads to the asset (its routes end beside it; T305a), not the core.
+    const asset = { name: 'Rig', integrity: 10, marker: 'rig', routes: ['sky'] };
     const markers = { ...fxMap.markers, rig: [5, 0] as const };
+    const airLanes = [{ id: 'sky', points: [[2, 0] as const, [5, 0] as const] }];
     expect(errors(withMap({ objective: 'protect' }), 'asset')).toHaveLength(1);
-    expect(errors(withMap({ asset, markers }), 'asset')).toHaveLength(1);
-    expect(validate(withMap({ objective: 'protect', asset, markers }))).toEqual([]);
+    expect(errors(withMap({ asset, markers, airLanes }), 'asset')).toHaveLength(1);
+    expect(validate(withMap({ objective: 'protect', asset, markers, airLanes }))).toEqual([]);
     expect(
       errors(
-        withMap({ objective: 'protect', asset: { ...asset, integrity: 0 }, markers }),
+        withMap({ objective: 'protect', asset: { ...asset, integrity: 0 }, markers, airLanes }),
+        'asset',
+      ),
+    ).toHaveLength(1);
+    expect(
+      errors(
+        withMap({ objective: 'protect', asset: { ...asset, name: ' ' }, markers, airLanes }),
         'asset',
       ),
     ).toHaveLength(1);

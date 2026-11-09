@@ -7,10 +7,13 @@
 //   splash, or status reaches it (layers.ts) but the burrowed answers (Scuttle Den, Underfoot;
 //   § 2.6), none of which is in Act I. It keeps following its route, and leaks normally.
 // - Then it surfaces and the cycle restarts. A fresh spawn starts at the top of a surface stretch.
-// The interrupt (Stasis or Unnerved block the dig, § 2.4) and Truthlight arrive with those
-// statuses (M4 gates: `status.stasis`, `status.unnerved`).
+// - The interrupt (§ 2.4; T407a): while the interrupt hook (systems/status.ts `isInterrupted`:
+//   Stasis on a non-boss; Unnerved in M5) holds, the dig tell can't start or go on: the dig is
+//   cancelled and the surface stretch restarts from zero. A boss's own burrows (its phases) are
+//   never interrupted. Truthlight arrives with the Lantern (M5).
 import type { CompiledBurrow } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
+import { isInterrupted } from '../systems/status.ts';
 
 /** Ticks a burrower spends on the surface between digs (at least its tell, and 1). */
 export function surfaceTicks(burrow: CompiledBurrow): number {
@@ -28,7 +31,9 @@ export function burrowStep(e: Enemy, burrow: CompiledBurrow): void {
     }
   } else if (e.abilityTicks <= 0) {
     e.abilityTicks = surfaceTicks(burrow); // first tick alive
-  } else if (--e.abilityTicks <= 0) {
+  } else if (--e.abilityTicks <= burrow.tellTicks && isInterrupted(e)) {
+    e.abilityTicks = surfaceTicks(burrow); // the dig is cancelled; its cooldown restarts
+  } else if (e.abilityTicks <= 0) {
     e.burrowed = true;
     e.abilityTicks = burrow.durationTicks;
   }

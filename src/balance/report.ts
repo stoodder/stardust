@@ -155,7 +155,7 @@ export function formatMarkdown(report: CampaignReport): string {
             w.spawned,
             w.killed,
             w.leaked,
-            w.integrityLost,
+            w.assetLost > 0 ? `${w.integrityLost} (+${w.assetLost} asset)` : w.integrityLost,
             w.bankAtPhase < 0 ? '—' : w.bankAtPhase,
             w.startTick < 0 ? '—' : w.unspentAtStart,
             w.early ? w.earlyBonus : '—',

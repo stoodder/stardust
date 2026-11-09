@@ -19,6 +19,8 @@ export interface WaveSummary {
   leaked: number;
   /** Core integrity its leaks cost. */
   integrityLost: number;
+  /** The Protect map's asset meter its leaks cost (AssetHit; 0 on other maps). */
+  assetLost: number;
   /** The tick it started, or −1. */
   startTick: number;
   /** Called during its countdown, and the bonus that paid. */
@@ -53,6 +55,9 @@ export interface RunSummary {
   readonly integrity: number;
   /** The integrity the run started with (the map's, after modifiers); margins divide by it. */
   readonly maxIntegrity: number;
+  /** A Protect map's asset meter at the end, and its full value (both 0 on other maps; T305a). */
+  readonly asset: number;
+  readonly maxAsset: number;
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -96,6 +101,7 @@ export function createRunTracker<K extends IdSpace>(
     killed: 0,
     leaked: 0,
     integrityLost: 0,
+    assetLost: 0,
     startTick: -1,
     early: false,
     earlyBonus: 0,
@@ -258,6 +264,11 @@ export function createRunTracker<K extends IdSpace>(
             if (t !== undefined) t.damage += e.damage;
             break;
           }
+          case 'AssetHit': {
+            const w = waveOf(enemyWave.get(e.uid) ?? 0);
+            if (w !== undefined) w.assetLost += e.lost;
+            break;
+          }
           case 'TowerClassUnlocked':
           case 'ScriptCue':
           case 'AbilityUsed':
@@ -277,7 +288,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'BossPhase':
           case 'BossEnded':
           case 'WreckageCleared':
-          // Act II (T400a seams): their tasks may tally them (a hush, an asset hit).
+          // Act II (T400a seams): their tasks may tally them.
           case 'HushStarted':
           case 'Hushed':
           case 'TurnedHeavy':
@@ -287,9 +298,9 @@ export function createRunTracker<K extends IdSpace>(
           case 'BlinkTell':
           case 'Blinked':
           case 'BlinkInterrupted':
+          case 'PulseBurst':
           case 'Revealed':
           case 'Cloaked':
-          case 'AssetHit':
           case 'AssetLost':
           case 'CheckpointReached':
           case 'ClickableChanged':
@@ -312,6 +323,12 @@ export function createRunTracker<K extends IdSpace>(
         violate(`integrity ${state.integrity} above ${maxIntegrity}`);
       }
       if (state.outcome === 'won' && state.integrity <= 0) violate('won with no integrity left');
+      if (state.asset < 0 || state.asset > state.maxAsset) {
+        violate(`asset ${state.asset} outside 0–${state.maxAsset}`);
+      }
+      if (state.outcome === 'won' && state.maxAsset > 0 && state.asset <= 0) {
+        violate('won with the asset lost');
+      }
       // The credits ledger: every credit is the start, plus income, minus net spending.
       const st = state.stats;
       const ledger = startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
@@ -399,6 +416,8 @@ export function createRunTracker<K extends IdSpace>(
       return {
         integrity: state.integrity,
         maxIntegrity,
+        asset: state.asset,
+        maxAsset: state.maxAsset,
         credits: state.credits,
         lostAtWave,
         stats: { ...state.stats, killsByEnemy: { ...state.stats.killsByEnemy } },

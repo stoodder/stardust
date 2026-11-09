@@ -11,6 +11,7 @@ import {
   pickProblems,
   resolveLoadout,
   showsLoadoutScreen,
+  specsOwned,
   toggleTower,
   towerAnswers,
   uncoveredCounters,
@@ -236,6 +237,35 @@ describe('counters and links', () => {
     expect(towerAnswers('thumper', true, act3, () => 'Bunker Buster')).toEqual([
       { counter: 'armor', minTier: 4, spec: 'Bunker Buster' },
     ]);
+  });
+
+  it('counts a spec answer only when the spec exists (T319)', () => {
+    const act2Air: LoadoutMap = {
+      ...ARMOR_MAP,
+      act: 2,
+      threatIntel: ['flying', 'armored'],
+      requiredCounters: ['air', 'armor'],
+      enemies: [{ traits: ['flying', 'armored'], body: 'organic', layer: 'air' }],
+    };
+    // Cloudburst is built (T407a): the Sprinkler answers air through it once the pair is owned.
+    expect(towerAnswers('sprinkler', false, act2Air)).toEqual([]);
+    expect(towerAnswers('sprinkler', true, act2Air)).toEqual([
+      { counter: 'air', minTier: 4, spec: 'Cloudburst' },
+    ]);
+    // Seeker Swarm ships later (T407b): an owned unlock for it answers nothing yet.
+    expect(towerAnswers('skyhook', true, act2Air)).toEqual([
+      { counter: 'air', minTier: 1, spec: null },
+    ]);
+    const save = createNewSave();
+    save.unlocks.towers.push('sprinkler', 'skyhook');
+    save.unlocks.specs = ['sprinkler', 'skyhook'];
+    expect(specsOwned(save)).toEqual(['sprinkler']);
+    expect(
+      uncoveredCounters({ towers: ['sprinkler'], ability: null }, save, {
+        ...act2Air,
+        requiredCounters: ['air'],
+      }),
+    ).toEqual([]);
   });
 
   it('warns about required counters the pick leaves unanswered', () => {

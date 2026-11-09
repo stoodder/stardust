@@ -9,6 +9,7 @@ import {
   describeRun,
   flagsFor,
   fmtPct,
+  marginOf,
   median,
   runKey,
   splitMeta,
@@ -205,7 +206,7 @@ export function runMap<K extends IdSpace = LiveIds>(
         build,
         opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks },
       );
-      const marginPct = (100 * result.integrity) / result.maxIntegrity;
+      const marginPct = marginOf(result);
       return { ...base, error: null, result, marginPct, ms: now() - start };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);

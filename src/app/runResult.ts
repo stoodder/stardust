@@ -19,7 +19,13 @@ import { linesUntilChoice } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
-import type { MedalResult, ObjectiveResult, RunResult, RunRewards } from '../ui/screens/state.ts';
+import type {
+  MedalResult,
+  ObjectiveResult,
+  RunAsset,
+  RunResult,
+  RunRewards,
+} from '../ui/screens/state.ts';
 import { towerName } from './hudText.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
@@ -46,6 +52,8 @@ export interface RunEndInput {
   readonly waveCount: number;
   readonly maxIntegrity: number;
   readonly integrity: number;
+  /** A Protect map's asset meter at the end (T305a); absent on other maps. */
+  readonly asset?: RunAsset;
   readonly skitterkinKilled: number;
   /** `WaveCleared` events seen this run. */
   readonly wavesCleared: number;
@@ -319,6 +327,8 @@ export function runResultOf(
     waveCount: input.waveCount,
     integrity: Math.max(0, input.integrity),
     maxIntegrity: input.maxIntegrity,
+    asset:
+      input.asset === undefined ? null : { ...input.asset, value: Math.max(0, input.asset.value) },
     pestsProcessed: input.skitterkinKilled,
     debrief: debriefLines(input, outcome),
     stamps: resultStamps(input, outcome),

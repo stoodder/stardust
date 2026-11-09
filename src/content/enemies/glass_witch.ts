@@ -1,13 +1,14 @@
 // The Glass Witch (design/enemies.md § 6; A2M2's boss): Ves'thara's lumenglass avatar. "The Glass
 // Witch" is a working name the story may keep. HP 1800, shield 1200 (regen 30/s after 4 s), speed
 // 0.5, no armor, bounty 0 (her wave's clear bonus is tripled). She walks the rig branch of a
-// Protect map and targets only the extraction rigs (design/maps.md § 5.2; T305a). Phases: (1)
-// a Cantor-style shield pulse every 8 s (1.5 s tell) that restores 120 shield to her and Aelari
-// within 2 tiles (D101); (2) from 70%, she also blinks 2.5 tiles every 7 s (1.5 s tell). At 40%
-// she retreats (`retreat`; enemies.md § 6.1). A Stasis converted to Chilled on her doesn't
-// interrupt a blink (D101). Her blinks are boss behaviour, not the Blink trait (her intel shows
-// the `boss` icon). First-pass data: whether phase 2 keeps the pulse is T404's call (it does
-// here); `leak` 3 never applies (a leaking boss drains everything it reaches).
+// Protect map, so her leak drains the asset (the extraction rigs; design/maps.md § 5.2, T305a).
+// Phases: (1) a Cantor-style shield pulse every 8 s (1.5 s tell) that restores 120 shield to her
+// and Aelari within 2 tiles (D101; enemyAbilities/pulse.ts); (2) from 70% she keeps the pulse and
+// also blinks 2.5 tiles along her route every 7 s (1.5 s tell, holding still; enemyAbilities/
+// blink.ts), the first tell starting as the phase does. At 40% she retreats (`retreat`; enemies.md
+// § 6.1). A Stasis converted to Chilled on her interrupts nothing (D101). Her blinks are boss
+// behaviour, not the Blink trait (her intel shows the `boss` icon), and count toward Glass Half
+// Empty (`stats.bossBlinks`). `leak` 3 never applies (a leaking boss drains everything it reaches).
 // Sprites are placeholders under their final ids (T440b).
 import { defineEnemy } from '../define.ts';
 

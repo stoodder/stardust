@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TOWERS } from '../content/towers/index.ts';
 import { CAMPAIGN } from '../content/campaign.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { exportCode, importCode } from './codec.ts';
@@ -107,10 +108,15 @@ describe('dev saves (the ?save= fixtures)', () => {
     }
   });
 
-  it('all_unlocked owns every registered tower, spec, and ability, and wins every map', () => {
+  it('all_unlocked owns every registered tower, built spec, and ability, and wins every map', () => {
     const save = DEV_SAVES.all_unlocked.build();
     expect(save.unlocks.towers).toEqual(LIVE_KNOWN_IDS.towers);
-    expect(save.unlocks.specs).toEqual(LIVE_KNOWN_IDS.towers);
+    // Every spec unlock Engineering sells: none for specs that ship later (T319).
+    expect(save.unlocks.specs).toEqual(
+      LIVE_KNOWN_IDS.towers.filter((t) => TOWERS[t as keyof typeof TOWERS].specs !== undefined),
+    );
+    expect(save.unlocks.specs).toContain('sprinkler');
+    expect(save.unlocks.specs).not.toContain('skyhook');
     expect(save.unlocks.abilities).toEqual(LIVE_KNOWN_IDS.abilities);
     expect(save.unlocks.protocols).toEqual(LIVE_KNOWN_IDS.protocols);
     expect(Object.keys(save.upgrades).toSorted()).toEqual(
