@@ -72,7 +72,7 @@ describe('createSim', () => {
     expect(
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
-    expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' is not simulated until T207a/);
+    expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
     expect(bad({ difficulty: 'story' })).toMatch(/Story difficulty is not simulated until T204b/);
     expect(
       bad({ modifiers: [{ kind: 'economy', stat: 'startCredits', flat: 50, source: 'test' }] }),
@@ -90,9 +90,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, companion: 'bricks' });
+    const both = bad({ seed: -1, difficulty: 'story' });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/T207a/);
+    expect(both).toMatch(/T204b/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

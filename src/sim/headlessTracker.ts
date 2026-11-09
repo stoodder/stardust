@@ -7,6 +7,7 @@ import type { SimEvent } from './events.ts';
 import { isBuildableTile, tileIndex } from './grid.ts';
 import type { Sim } from './sim.ts';
 import type { SimStats } from './state.ts';
+import { allyMayTarget } from './systems/allies.ts';
 
 /** One wave of a run. */
 export interface WaveSummary {
@@ -101,6 +102,17 @@ export function createRunTracker<K extends IdSpace>(
   const violate = (what: string): void => {
     if (violations.length < MAX_VIOLATIONS) violations.push(`tick ${state.tick}: ${what}`);
   };
+  /** Enemies allies may never target, by uid (recorded at spawn from their wave tags). */
+  const allyExempt = new Set<number>();
+  const noteAllyExempt = (uid: number): void => {
+    const pool = state.enemies;
+    for (let i = 0; i < pool.used; i++) {
+      const e = pool.items[i]!; // i < used
+      if (e.uid !== uid) continue;
+      if (!allyMayTarget(e.tags)) allyExempt.add(uid);
+      return;
+    }
+  };
   if (sim.config.loadout.length > MAX_LOADOUT)
     violate(`loadout has ${sim.config.loadout.length} towers`);
 
@@ -112,6 +124,7 @@ export function createRunTracker<K extends IdSpace>(
         switch (e.type) {
           case 'EnemySpawned': {
             enemyWave.set(e.uid, e.wave);
+            if (checkInvariants) noteAllyExempt(e.uid);
             const w = waveOf(e.wave);
             if (w !== undefined) w.spawned++;
             break;
@@ -194,6 +207,12 @@ export function createRunTracker<K extends IdSpace>(
           case 'MapLost':
             lostAtWave = state.wave;
             break;
+          case 'AllyAttacked':
+            // Allies never target quiet-wave, youngling, or fleeing units (D005).
+            if (checkInvariants && allyExempt.has(e.targetUid)) {
+              violate(`ally ${e.uid} attacked exempt enemy ${e.targetUid}`);
+            }
+            break;
           case 'ProjectileHit':
           case 'TowerClassUnlocked':
           case 'ScriptCue':
@@ -206,7 +225,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'LinkFormed':
           case 'LinkBroken':
           case 'AllySpawned':
-          case 'AllyAttacked':
           case 'AllyRemoved':
           case 'MedalProgress':
             break;
@@ -288,6 +306,25 @@ export function createRunTracker<K extends IdSpace>(
       }
       if (alive !== liveTowers.size) {
         violate(`${liveTowers.size - alive} tower(s) vanished without a sell`);
+      }
+      // Allies stay on the map, never-vulnerable ones are never harmed, and an ally's current
+      // target is never exempt (this also covers a target spawned and attacked on one tick).
+      const allyPool = state.allies;
+      for (let i = 0; i < allyPool.used; i++) {
+        const a = allyPool.items[i]!; // i < used
+        if (!a.alive) continue;
+        if (!(a.x >= 0 && a.y >= 0 && a.x <= map.cols && a.y <= map.rows)) {
+          violate(`ally ${a.uid} is off the map at (${a.x}, ${a.y})`);
+        }
+        if (a.vulnerability === 'never' && a.health !== 1) {
+          violate(`ally ${a.uid} can't be hurt but has health ${a.health}`);
+        }
+        if (a.targetUid !== 0) {
+          const t = enemies.items[a.targetSlot];
+          if (t !== undefined && t.uid === a.targetUid && !allyMayTarget(t.tags)) {
+            violate(`ally ${a.uid} targets exempt enemy ${t.uid}`);
+          }
+        }
       }
     },
 

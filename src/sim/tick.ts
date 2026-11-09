@@ -25,11 +25,18 @@ export interface Scratch {
   readonly point: Point;
   /** The damage source a tower's hits name, reused so firing doesn't allocate. */
   readonly towerSource: { readonly kind: 'tower'; uid: number };
+  /** A tower's range after its bonuses (sim/bonuses.ts), for the targeting calls. */
+  readonly range: { rangeSq: number; minRangeSq: number };
 }
 
 /** Fresh scratch space for one sim. */
 export function createScratch(): Scratch {
-  return { slots: [], point: { x: 0, y: 0 }, towerSource: { kind: 'tower', uid: 0 } };
+  return {
+    slots: [],
+    point: { x: 0, y: 0 },
+    towerSource: { kind: 'tower', uid: 0 },
+    range: { rangeSq: 0, minRangeSq: 0 },
+  };
 }
 
 /** A run's immutable inputs, plus scratch. Never hashed: it's the same for every tick. */

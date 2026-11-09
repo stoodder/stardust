@@ -28,6 +28,7 @@
       "memorialTower": null,
       "granted": []
     },
-    "stats": { "pestsProcessed": 187, "runs": 3 }
+    "stats": { "pestsProcessed": 187, "runs": 3 },
+    "settings": { "difficulty": "story" }
   }
 }

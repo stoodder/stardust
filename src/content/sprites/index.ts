@@ -11,6 +11,7 @@ import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
 import { iconCore, iconCredits, iconLock, iconTellFast } from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
+import { iconAbilitySuppressingFire } from './icons/suppressing_fire.ts';
 import { iconTowerSprinkler } from './icons/sprinkler.ts';
 import { iconTowerThumper } from './icons/thumper.ts';
 import { iconEnemyZoomer } from './icons/zoomer.ts';
@@ -67,6 +68,7 @@ export const SPRITES = [
   iconEnemyZoomer,
   iconEnemyChonk,
   iconAbilityOrbitalStrike,
+  iconAbilitySuppressingFire,
   iconCredits,
   iconCore,
   iconLock,

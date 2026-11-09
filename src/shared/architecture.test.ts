@@ -32,6 +32,7 @@ const PURE_ALLOWED: Readonly<Partial<Record<ModuleName, readonly ModuleName[]>>>
   content: ['shared', 'content'],
   sim: ['shared', 'content', 'sim'],
   story: ['shared', 'content', 'sim', 'story'],
+  meta: ['shared', 'content', 'sim', 'meta'],
   balance: ['shared', 'content', 'sim', 'meta', 'balance'],
 };
 

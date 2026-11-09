@@ -179,6 +179,7 @@ describe('callWaveBonus', () => {
             remaining: [],
             resolved: [],
           },
+          economy: { bountyPct: 0, bountyCarry: 0, earlyCallPct: 0, sellRefundPct: 0.7 },
         },
         { waves },
       );

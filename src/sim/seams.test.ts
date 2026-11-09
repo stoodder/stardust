@@ -182,7 +182,7 @@ describe('FEATURE_GATES', () => {
 
   it('refuses only what a config uses, once per feature, and lifts per row', () => {
     const cfg = fixtureConfig({
-      companion: 'bricks',
+      specsUnlocked: ['fx_gun'],
       difficulty: 'story',
       modifiers: [
         { kind: 'linkBonus', pct: 0.5, source: 'protocol:linked_up' },
@@ -190,11 +190,11 @@ describe('FEATURE_GATES', () => {
       ],
     });
     expect(gateRefusals(cfg)).toEqual([
-      "companion 'bricks' is not simulated until T207a",
+      'tier-4 specializations is not simulated until T202b',
       'Story difficulty is not simulated until T204b',
       "a 'linkBonus' modifier (protocol:linked_up) is not simulated until T202a",
     ]);
-    const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, companion: null };
+    const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, specs: null };
     expect(gateRefusals(cfg, lifted)).toHaveLength(2);
     expect(gateRefusals(fixtureConfig())).toEqual([]);
   });

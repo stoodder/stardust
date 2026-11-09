@@ -114,6 +114,35 @@ export const HIGH_GROUND_RANGE_PCT = 0.25;
 export const POWER_NODE_RATE_PCT = 0.2;
 export const POWER_NODE_AURA_PCT = 0.2;
 
+// ── Synergy links (design/towers.md § 6) ─────────────────────────────────────────────────────
+
+/**
+ * Adjacency (rule): tiles that share an edge or a corner (the 8-neighborhood). A link is active
+ * while both partners stand adjacent; each link type counts once per tower.
+ */
+export const LINK_ADJACENCY_TILES = 1;
+/** A tower's active links are a 32-bit mask (`Tower.linkMask`), so the registry holds ≤ 31. */
+export const MAX_LINKS = 31;
+/**
+ * Status ids in bit order, for a conditional link bonus's status mask (`vsStatus`): bit i is
+ * STATUS_BITS[i]. Chosen: the order of `EffectDef` in types.ts.
+ */
+export const STATUS_BITS: readonly StatusId[] = [
+  'chilled',
+  'soaked',
+  'corroded',
+  'marked',
+  'pinned',
+  'stasis',
+  'unnerved',
+];
+/** The bit mask of a status list (0 for none). */
+export function statusMask(statuses: readonly StatusId[]): number {
+  let mask = 0;
+  for (const s of statuses) mask |= 1 << STATUS_BITS.indexOf(s);
+  return mask;
+}
+
 // ── Jamming (design/enemies.md § 4) ──────────────────────────────────────────────────────────
 
 /** The only jammers (an exhaustive list: adding one needs a decisions.md entry). */
@@ -314,6 +343,8 @@ export const BOSS_LEAK_DRAINS_ALL = true;
 export const TOWER_DEPLOY_SEC = 0.5;
 /** Selling refunds 70% of everything spent on the tower (core-loop.md § 2.3; shop can raise it). */
 export const SELL_REFUND_PCT = 0.7;
+/** Resale Value never raises the refund past everything invested. */
+export const MAX_SELL_REFUND_PCT = 1;
 /**
  * Misclick grace (core-loop.md § 2.3, rule): a tower sold before it first fires and within 10 s
  * of sim time of being built (whichever ends first; paused time doesn't count) refunds 100%.
@@ -338,10 +369,17 @@ export const EARLY_CALL_COOLDOWN_SHARE = 0.25;
  * `round(0.5 × clearBonus × secondsRemaining / countdown)`, in ticks (the ratio is the same).
  * Halves round up. 0 when nothing is skipped.
  */
-export function earlyCallBonus(wave: number, ticksLeft: number, countdownTicks: number): number {
+export function earlyCallBonus(
+  wave: number,
+  ticksLeft: number,
+  countdownTicks: number,
+  /** Early Bird's `economy.earlyCallBonus` percentage, applied before the rounding. */
+  pct = 0,
+): number {
   if (ticksLeft <= 0 || countdownTicks <= 0) return 0;
   const left = ticksLeft < countdownTicks ? ticksLeft : countdownTicks;
-  return Math.round((EARLY_CALL_BONUS_SHARE * waveClearBonus(wave) * left) / countdownTicks);
+  const exact = (EARLY_CALL_BONUS_SHARE * waveClearBonus(wave) * left) / countdownTicks;
+  return Math.round(exact * (1 + pct));
 }
 /** Kill bounties for tagged units (enemies.md § 5.1 youngling modifier, § 5.4 fleeing). */
 export const YOUNGLING_BOUNTY = 0;

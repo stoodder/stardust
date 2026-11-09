@@ -127,6 +127,26 @@ describe('validate: entities', () => {
       abilities: { fx_strike: { ...strike, effect: { ...strike.effect, radiusTiles: 0 } } },
     };
     rejects(raw, 'ability-range');
+    const suppress: AbilityDef = FIXTURE.abilities.fx_suppress;
+    const withSegment = (patch: Record<string, number>): RawContent<IdSpace> => ({
+      ...BASE,
+      abilities: {
+        ...BASE.abilities,
+        fx_suppress: { ...suppress, effect: { ...suppress.effect, ...patch } },
+      },
+    });
+    rejects(withSegment({ slowPct: 0.8 }), 'ability-range'); // over the chill cap
+    rejects(withSegment({ lengthTiles: 2 }), 'ability-range'); // even: no center tile
+    rejects(withSegment({ durationSec: 0 }), 'ability-range');
+    rejects(withSegment({ damagePerSec: -1 }), 'ability-range');
+  });
+
+  it('[companion] one ability per companion', () => {
+    const strike: AbilityDef = FIXTURE.abilities.fx_strike;
+    rejects(
+      { ...BASE, abilities: { ...BASE.abilities, fx_strike: { ...strike, companion: 'bricks' } } },
+      'companion',
+    );
   });
 
   it('[campaign] a map listed twice', () => {
@@ -135,9 +155,52 @@ describe('validate: entities', () => {
 });
 
 describe('validate: maps', () => {
-  it('[feature] non-Defend objectives and companions', () => {
+  it('[feature] non-Defend objectives', () => {
     rejects(withMap({ objective: 'escort' }), 'feature');
-    rejects(withMap({ companion: { id: 'bricks', state: 'present' } }), 'feature');
+  });
+
+  it('[companion] every companion named has an ability; pick lists are non-empty and unique', () => {
+    expect(validate(withMap({ companion: { id: 'bricks', state: 'present' } }))).toEqual([]);
+    expect(validate(withMap({ companion: { pick: ['bricks'] } }))).toEqual([]);
+    // An absent companion's slot is dark: it needs no ability.
+    expect(validate(withMap({ companion: { id: 'quill', state: 'absent' } }))).toEqual([]);
+    rejects(withMap({ companion: { id: 'quill', state: 'present' } }), 'companion');
+    rejects(withMap({ companion: { pick: ['bricks', 'quill'] } }), 'companion');
+    rejects(withMap({ companion: { pick: ['bricks', 'bricks'] } }), 'companion');
+    rejects(withMap({ companion: { pick: [] } }), 'companion');
+  });
+
+  it('[ally] ally posts: a decor marker, sane numbers, one ally per post', () => {
+    const attack = {
+      type: 'kinetic',
+      damage: 8,
+      ratePerSec: 2,
+      rangeTiles: 3,
+      targets: { ground: true, air: true },
+    } as const;
+    const post = { kind: 'bricks', post: 'rock', attack } as const;
+    expect(validate(withMap({ allies: [post] }))).toEqual([]);
+    rejects(withMap({ allies: [post, { ...post, kind: 'militia' }] }), 'ally');
+    rejects(
+      withMap({
+        markers: { rock: [0, 2], rock2: [1, 2] },
+        allies: [post, { ...post, post: 'rock2' }],
+      }),
+      'ally',
+    ); // Bricks twice
+    rejects(withMap({ allies: [{ ...post, attack: { ...attack, ratePerSec: 0 } }] }), 'ally');
+    rejects(withMap({ allies: [{ ...post, attack: { ...attack, rangeTiles: 0 } }] }), 'ally');
+    rejects(
+      withMap({
+        allies: [{ ...post, attack: { ...attack, targets: { ground: false, air: false } } }],
+      }),
+      'ally',
+    );
+    // A post on the path breaks the marker rule; an unknown marker doesn't compile.
+    rejects(withMap({ markers: { rock: [2, 1] }, allies: [post] }), 'marker');
+    expect(() => compileContent(withMap({ allies: [{ ...post, post: 'nope' }] }))).toThrow(
+      /allies\[0\]\.post: unknown marker 'nope'/,
+    );
   });
 
   it('[map-range] start credits, integrity, Stardust', () => {
@@ -331,8 +394,39 @@ describe('validate: builds', () => {
     rejects(withPar({ loadout: ['fx_gun', 'fx_sprinkler'] }), 'loadout');
   });
 
-  it('[feature] a build with a companion', () => {
-    rejects(withPar({ companion: 'bricks' }), 'feature');
+  it('[loadout] a build picks a companion only from a pick list', () => {
+    rejects(withPar({ companion: 'bricks' }), 'loadout'); // the map has no companion
+    const pick = (companion: 'bricks' | 'quill'): RawContent<IdSpace> =>
+      withMap({ companion: { pick: ['bricks'] }, parBuild: { ...par, companion } });
+    expect(validate(pick('bricks'))).toEqual([]);
+    rejects(pick('quill'), 'loadout');
+    rejects(
+      withMap({
+        companion: { id: 'bricks', state: 'present' },
+        parBuild: { ...par, companion: 'bricks' },
+      }),
+      'loadout',
+    );
+  });
+
+  it('[build-step] slot 2 needs a present companion or a pick', () => {
+    const cast = [{ wave: 1, ability: 2, target: [2, 1] }] as const;
+    rejects(withSteps(cast), 'build-step'); // no companion
+    rejects(
+      withMap({
+        companion: { id: 'bricks', state: 'absent' },
+        parBuild: { ...par, steps: cast },
+      }),
+      'build-step',
+    );
+    expect(
+      validate(
+        withMap({
+          companion: { id: 'bricks', state: 'present' },
+          parBuild: { ...par, steps: cast },
+        }),
+      ),
+    ).toEqual([]);
   });
 
   it('[build-step] what each step means', () => {

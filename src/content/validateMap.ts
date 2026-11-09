@@ -1,7 +1,11 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
-// - [feature]: Defend maps only until T305 (Escort safe exits, Holdout, Protect, Choir); no
-//   companion until T207.
+// - [feature]: Defend maps only until T305 (Escort safe exits, Holdout, Protect, Choir).
+// - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
+//   content; a pick list is non-empty with no repeats.
+// - [ally]: ally posts have a positive attack rate and range, damage ≥ 0, and a layer to hit;
+//   no two share a post, and Bricks is on a map at most once. (The post marker resolving is a
+//   compile error; [marker] puts it on decor.)
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
 // - [core]: a Defend map has exactly one core `C`.
@@ -37,6 +41,7 @@ import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
 import {
   Issues,
+  duplicates,
   fmt,
   gridOf,
   isNonNegativeInt,
@@ -61,7 +66,11 @@ export function validateCampaignMaps<K extends IdSpace>(
       .filter((t) => t.specs !== undefined)
       .map((t) => t.id),
   );
-  const ctx = { enemies, towersWithSpecs, rules, mapIds: new Set(maps.keys()) };
+  const companionAbilities = new Set<string>();
+  for (const a of Object.values<{ companion?: string }>(raw.abilities)) {
+    if (a.companion !== undefined) companionAbilities.add(a.companion);
+  }
+  const ctx = { enemies, towersWithSpecs, companionAbilities, rules, mapIds: new Set(maps.keys()) };
   const history = emptyHistory();
   const done = new Set<string>();
   for (const [index, id] of raw.campaign.entries()) {
@@ -78,6 +87,8 @@ export function validateCampaignMaps<K extends IdSpace>(
 export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
   readonly towersWithSpecs: ReadonlySet<string>;
+  /** Companions that have a slot-2 ability in the content. */
+  readonly companionAbilities: ReadonlySet<string>;
   readonly rules: ValidationRules;
   readonly mapIds: ReadonlySet<string>;
 }
@@ -99,9 +110,8 @@ function validateMap(
       `'${def.objective}' maps arrive with T305 (Escort safe exits, Holdout, Protect); only 'defend' runs now`,
     );
   }
-  if (def.companion !== null) {
-    issues.add('feature', `${where}.companion`, 'companions arrive with T207; use null');
-  }
+  validateCompanion(issues, ctx, def, where);
+  validateAllies(issues, def, where);
 
   if (!isNonNegativeInt(def.startCredits)) {
     issues.add('map-range', `${where}.startCredits`, 'must be a whole number ≥ 0');
@@ -206,5 +216,45 @@ function validateGeometry(
         issues.add('wreckage', `${where}.salvage`, `wreckage at ${fmt([c, r])} needs an entry`);
       }
     }
+  }
+}
+
+function validateCompanion(issues: Issues, ctx: MapCtx, def: MapDef<IdSpace>, where: string): void {
+  const c = def.companion;
+  if (c === null) return;
+  const needAbility = (id: string, w: string): void => {
+    if (!ctx.companionAbilities.has(id)) {
+      issues.add(
+        'companion',
+        w,
+        `'${id}' has no ability with \`companion: '${id}'\` in the content`,
+      );
+    }
+  };
+  if ('pick' in c) {
+    if (c.pick.length === 0) issues.add('companion', `${where}.companion.pick`, 'is empty');
+    for (const id of duplicates(c.pick)) {
+      issues.add('companion', `${where}.companion.pick`, `'${id}' is listed twice`);
+    }
+    for (const id of c.pick) needAbility(id, `${where}.companion.pick`);
+  } else if (c.state === 'present') {
+    needAbility(c.id, `${where}.companion`);
+  }
+}
+
+function validateAllies(issues: Issues, def: MapDef<IdSpace>, where: string): void {
+  const posts = new Set<string>();
+  let bricks = 0;
+  for (const [i, a] of (def.allies ?? []).entries()) {
+    const w = `${where}.allies[${i}]`;
+    const bad = (msg: string): void => issues.add('ally', w, msg);
+    if (posts.has(a.post)) bad(`post '${a.post}' already has an ally`);
+    posts.add(a.post);
+    if (a.kind === 'bricks' && ++bricks === 2) bad('Bricks is on this map twice');
+    const at = a.attack;
+    if (!(at.damage >= 0)) bad('attack.damage must be ≥ 0');
+    if (!(at.ratePerSec > 0)) bad('attack.ratePerSec must be > 0');
+    if (!(at.rangeTiles > 0)) bad('attack.rangeTiles must be > 0');
+    if (!at.targets.ground && !at.targets.air) bad('attack.targets hits neither layer');
   }
 }

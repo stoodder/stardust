@@ -16,7 +16,7 @@ import {
 } from './rules.ts';
 
 /**
- * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'alt:x',
+ * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'companion:x', 'alt:x',
  * 'noCounter:x', 'guard:x').
  */
 export interface RunRequest {
@@ -366,6 +366,28 @@ export function mapChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
+  }
+
+  // #15: on a pick-list map (the finale), par passes #1–2 with each companion (seeds 1–3).
+  if (map.companion !== null && 'pick' in map.companion) {
+    for (const id of map.companion.pick) {
+      checks.push(
+        perRun(
+          '15',
+          `par with ${id} wins with its margin in band`,
+          `companion:${id}`,
+          few,
+          (rec) => {
+            if (rec.result?.outcome !== 'won') return describeRun(rec);
+            if (band === null) return `act ${map.act} has no par band yet`;
+            return rec.marginPct >= band.lo && rec.marginPct <= band.hi
+              ? null
+              : `margin ${fmtPct(rec.marginPct)} is outside the band ${band.lo}–${band.hi}`;
+          },
+          (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+        ),
+      );
+    }
   }
 
   const once: RunRequest = { build: 'par', seed: 1 };

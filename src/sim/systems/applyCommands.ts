@@ -8,7 +8,7 @@ import { assertNever } from '../../shared/types.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
-import { sellValue } from '../economy.ts';
+import { costFor, sellValue } from '../economy.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -47,7 +47,7 @@ function applyCommand(
     case 'build':
       return build(state, ctx, cmd);
     case 'upgrade':
-      return upgrade(state, cmd.towerUid);
+      return upgrade(state, ctx, cmd.towerUid);
     case 'specialize':
       return applySpecialize(state, ctx, cmd);
     case 'holdFire':
@@ -86,11 +86,12 @@ function build(
   if (state.towerAtTile[idx] !== -1) return 'tileOccupied';
   const def = ctx.content.towers[cmd.tower]!; // validateConfig checked every loadout id
   const tier = def.tiers[0];
-  if (state.credits < tier.cost) return 'cantAfford';
+  const cost = costFor(ctx.config.modifiers, def.id, tier.cost);
+  if (state.credits < cost) return 'cantAfford';
 
-  // TODO(T202a): cost modifiers (towerCost); Clearance Sale with its ability.
-  state.credits -= tier.cost;
-  state.stats.creditsSpent += tier.cost;
+  // TODO(M3): Clearance Sale with its ability.
+  state.credits -= cost;
+  state.stats.creditsSpent += cost;
   state.stats.towersBuilt++;
   const tower = poolAlloc(state.towers, TOWER_BLANK, takeUid(state));
   tower.def = def;
@@ -101,7 +102,7 @@ function build(
   tower.x = col + 0.5;
   tower.y = row + 0.5;
   tower.priority = tier.defaultPriority;
-  tower.invested = tier.cost;
+  tower.invested = cost;
   tower.builtTick = state.tick;
   tower.cooldownTicks = DEPLOY_TICKS + 1;
   state.towerAtTile[idx] = tower.slot;
@@ -112,38 +113,39 @@ function build(
     uid: tower.uid,
     tower: def.id,
     tile: [col, row],
-    cost: tier.cost,
+    cost,
   });
   return null;
 }
 
-function upgrade(state: SimState, towerUid: number): RejectReason | null {
+function upgrade(state: SimState, ctx: TickContext, towerUid: number): RejectReason | null {
   const tower = poolFind(state.towers, towerUid);
   if (tower === null || tower.def === null) return 'noSuchTower';
   // Tier 4 is a specialization (`specialize`, T202), not an upgrade.
   if (tower.tier >= MAX_TIER_BEFORE_SPEC) return 'maxTier';
   const next = tower.def.tiers[tower.tier]!; // tier < MAX_TIER_BEFORE_SPEC = tiers.length
-  if (state.credits < next.cost) return 'cantAfford';
-  state.credits -= next.cost;
-  state.stats.creditsSpent += next.cost;
+  const cost = costFor(ctx.config.modifiers, tower.def.id, next.cost);
+  if (state.credits < cost) return 'cantAfford';
+  state.credits -= cost;
+  state.stats.creditsSpent += cost;
   tower.tier++;
   tower.tierDef = next;
-  tower.invested += next.cost;
+  tower.invested += cost;
   state.linksDirty = true;
-  emit(state, { type: 'TowerUpgraded', uid: tower.uid, tier: tower.tier, cost: next.cost });
+  emit(state, { type: 'TowerUpgraded', uid: tower.uid, tier: tower.tier, cost });
   return null;
 }
 
 /**
  * Sells a tower (design/core-loop.md § 2.3): refunds `sellValue` (everything inside the misclick
- * grace, else 70% rounded down). The tower dies now, so nothing fires from it this tick, and its
+ * grace, else 70% rounded down, or Resale Value's raised fraction). The tower dies now, so nothing fires from it this tick, and its
  * tile is free at once (a sell and a rebuild can share a tick, or a pause); cleanup releases its
  * slot. Shells already in flight still land (they carry their own stats).
  */
 function sell(state: SimState, ctx: TickContext, towerUid: number): RejectReason | null {
   const tower = poolFind(state.towers, towerUid);
   if (tower === null) return 'noSuchTower';
-  const { value } = sellValue(tower, state.tick);
+  const { value } = sellValue(tower, state.tick, state.economy.sellRefundPct);
   poolKill(state.towers, tower);
   const idx = tileIndex(ctx.map, tower.col, tower.row);
   if (state.towerAtTile[idx] === tower.slot) state.towerAtTile[idx] = -1;

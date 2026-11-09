@@ -78,6 +78,12 @@ export function buildFor<K extends IdSpace>(
   }
   const [kind, name = ''] = label.split(':');
   if (kind === 'alt') return b.altBuilds[name] ?? null;
+  if (kind === 'companion') {
+    // #15: par with one companion from the map's pick list.
+    const pick = map.companion !== null && 'pick' in map.companion ? map.companion.pick : [];
+    const id = pick.find((c) => c === name);
+    return id === undefined ? null : { ...b.parBuild, companion: id };
+  }
   if (kind === 'noCounter') {
     const entry = Object.entries(b.noCounterBuilds).find(([c]) => c === name);
     return entry?.[1] ?? null;

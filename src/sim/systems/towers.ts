@@ -8,10 +8,27 @@
 // Cooldowns: a tower fires on a tick whose cooldown starts at 0, then waits `cooldownTicks`.
 // A tower picks a fresh target when it's ready to fire, and otherwise keeps its current one while
 // it stays valid (performance rule 6), so `targetUid` (render aims with it) is always current.
+// Stats: damage, rate, and range go through the stacking formula with the tower's bonuses
+// (sim/bonuses.ts; the links system sums them), and a link's conditional `vsStatus` bonus is
+// checked per victim: on the hit for hitscan and pulses, on impact for shells.
 import type { CompiledAttack, CompiledTier } from '../../content/compiled.ts';
 import { assertNever } from '../../shared/types.ts';
+import {
+  bonusDamage,
+  bonusDamageVs,
+  bonusPeriodTicks,
+  bonusRangeTiles,
+  hasStatusIn,
+} from '../bonuses.ts';
 import { applyDamage, applyEffects } from '../combat/damage.ts';
-import { canHit, distSqTo, isInRange, isStillTarget, pickTarget } from '../combat/targeting.ts';
+import {
+  canHit,
+  distSqTo,
+  isInRange,
+  isStillTarget,
+  pickTarget,
+  type RangeSpec,
+} from '../combat/targeting.ts';
 import { PROJECTILE_BLANK, type Enemy, type Tower } from '../entities.ts';
 import { pointAt } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
@@ -27,8 +44,6 @@ export function towers(state: SimState, ctx: TickContext): void {
     const attack = tier.attack;
     if (attack === null) continue;
     if (t.cooldownTicks > 0) t.cooldownTicks--;
-    // TODO(T105b+): stat modifiers (towers.md §4) scale damage, rate, and range here once
-    // modifiers land; M1 configs have none (createSim refuses them).
     switch (attack.kind) {
       case 'hitscan':
       case 'lobbed':
@@ -60,12 +75,13 @@ function aimAndFire(
 ): void {
   const enemies = state.enemies;
   const layers = tier.targets;
+  const range = rangeOf(ctx, t, attack);
   let target: Enemy | null = null;
   if (t.cooldownTicks > 0) {
-    target = isStillTarget(enemies, t.targetSlot, t.targetUid, t.x, t.y, layers, attack);
+    target = isStillTarget(enemies, t.targetSlot, t.targetUid, t.x, t.y, layers, range);
   }
   if (target === null) {
-    target = pickTarget(enemies, t.x, t.y, layers, attack, t.priority ?? 'first');
+    target = pickTarget(enemies, t.x, t.y, layers, range, t.priority ?? 'first');
   }
   if (target === null) {
     t.targetUid = 0;
@@ -85,7 +101,7 @@ function aimAndFire(
 
   if (attack.kind === 'hitscan') fireHitscan(state, ctx, t, tier, attack, target);
   else fireShell(state, ctx, t, tier, attack, target);
-  t.cooldownTicks = attack.cooldownTicks;
+  t.cooldownTicks = bonusPeriodTicks(attack, t);
   if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;
 }
 
@@ -121,7 +137,7 @@ function fireHitscan(
   });
   const source = ctx.scratch.towerSource;
   source.uid = t.uid;
-  applyDamage(state, target, attack.damage, attack.type, source, attack);
+  applyDamage(state, target, damageOn(t, attack, target), attack.type, source, attack);
   applyEffects(target, tier.effects);
 }
 
@@ -159,7 +175,9 @@ function fireShell(
   p.targetY = ay;
   p.flightTicks = attack.flightTicks;
   p.ticksLeft = attack.flightTicks;
-  p.damage = attack.damage;
+  p.damage = bonusDamage(attack, t);
+  p.damageVs = t.vsStatusMask === 0 ? p.damage : bonusDamageVs(attack, t);
+  p.vsStatusMask = t.vsStatusMask;
   p.damageType = attack.type;
   p.armorPierce = attack.armorPierce;
   p.ignoresArmor = attack.ignoresArmor;
@@ -194,11 +212,12 @@ function pulse(
   if (t.cooldownTicks > 0) return;
   const enemies = state.enemies;
   const layers = tier.targets;
+  const range = rangeOf(ctx, t, attack);
   const victims = ctx.scratch.slots;
   victims.length = 0;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
-    if (canHit(e, layers) && isInRange(distSqTo(t.x, t.y, e), attack)) victims.push(i);
+    if (canHit(e, layers) && isInRange(distSqTo(t.x, t.y, e), range)) victims.push(i);
   }
   if (victims.length === 0) return;
 
@@ -214,7 +233,7 @@ function pulse(
     targetY: t.y,
     sprite: null,
     flightTicks: 0,
-    radiusTiles: attack.rangeTiles,
+    radiusTiles: bonusRangeTiles(attack, t),
   });
   emit(state, {
     type: 'ProjectileHit',
@@ -228,10 +247,30 @@ function pulse(
   source.uid = t.uid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
-    applyDamage(state, e, attack.damage, attack.type, source, attack);
+    applyDamage(state, e, damageOn(t, attack, e), attack.type, source, attack);
     applyEffects(e, tier.effects);
   }
   victims.length = 0;
-  t.cooldownTicks = attack.cooldownTicks;
+  t.cooldownTicks = bonusPeriodTicks(attack, t);
   if (t.firstFiredTick < 0) t.firstFiredTick = state.tick;
+}
+
+/**
+ * The tower's range as targeting reads it: the attack's own fields when no range bonus applies,
+ * else the bonus range in the tick's scratch (minimum range never changes).
+ */
+function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec {
+  if (t.flatRange === 0 && t.pctRange === 0) return attack;
+  const r = bonusRangeTiles(attack, t);
+  const out = ctx.scratch.range;
+  out.rangeSq = r * r;
+  out.minRangeSq = attack.minRangeSq;
+  return out;
+}
+
+/** One hit's damage on `e`: with the conditional `vsStatus` bonus when `e` has the status. */
+function damageOn(t: Tower, attack: CompiledAttack, e: Enemy): number {
+  return t.vsStatusMask !== 0 && hasStatusIn(e, t.vsStatusMask)
+    ? bonusDamageVs(attack, t)
+    : bonusDamage(attack, t);
 }

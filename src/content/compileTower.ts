@@ -54,7 +54,7 @@ export function compileTower<Id extends string>(
     role: def.role,
     tiers,
     specs,
-    links: def.links ?? [],
+    links: [], // compileContent fills it from the link registry (compileLinks.ts)
     sprites: { base: def.sprites.base, head: def.sprites.head ?? null, icon: def.sprites.icon },
     lightRadiusTiles: def.lightRadiusTiles ?? null,
   };

@@ -1,6 +1,7 @@
 // The shape of `window.__sd` (docs/tech/conventions.md § Browser smoke tests).
 // DOM-free on purpose: the smoke specs (tsconfig.node.json) import these types too.
 import type { IdSpace } from '../content/types.ts';
+import type { SaveData } from '../meta/saveData.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import type { Command, SimState } from '../sim/index.ts';
 
@@ -10,9 +11,9 @@ export type HookCommand = Command<IdSpace>;
 
 /**
  * Screens `goto` can jump to. `results` shows the last finished run's results (it rejects if no
- * run has ended yet).
+ * run has ended yet); `campaign` (the Shift board) needs a loaded save, and `base` an open base.
  */
-export type ScreenId = 'title' | 'battle' | 'results';
+export type ScreenId = 'title' | 'campaign' | 'base' | 'settings' | 'battle' | 'results';
 
 /** How a finished run ended. */
 export type RunOutcome = 'won' | 'lost';
@@ -70,6 +71,8 @@ export interface TestHooks {
   perf(): PerfSample;
   /** The audio (T205): its state, and offline renders of its sounds for the level checks. */
   readonly audio: AudioHooks;
+  /** A copy of the campaign save in play (T209), or `null` (the Title, or a `?map=` battle). */
+  save(): SaveData | null;
 }
 
 /** Peak, RMS, and audible length of a render (`src/audio/analyze.ts`). */
@@ -112,7 +115,7 @@ export interface AudioHooks {
   render(what: string): Promise<RenderSample>;
 }
 
-/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1&audio=1`). */
+/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1&audio=1&save=…`). */
 export interface BootParams {
   readonly test: boolean;
   /**
@@ -128,4 +131,9 @@ export interface BootParams {
   readonly seed: number | null;
   readonly map: string | null;
   readonly skipIntro: boolean;
+  /**
+   * A dev save to play (`meta/__fixtures__/devSaves.ts`), in an in-memory scratch slot with its
+   * `devUnlocks`. Read only with `?test=1` (D031); null otherwise.
+   */
+  readonly save: string | null;
 }

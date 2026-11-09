@@ -2,6 +2,7 @@
 // Installed only when the URL has `?test=1`. They read state and issue the same commands a player
 // could, through the same paths (app/commands.ts and the host loop).
 import type { IdSpace } from '../content/types.ts';
+import type { SaveData } from '../meta/index.ts';
 import type { Sim } from '../sim/index.ts';
 import type { Host } from './host.ts';
 import type {
@@ -48,6 +49,8 @@ export interface HookEnv {
   readonly viewWidth: number;
   /** The audio hooks (app/audio.ts). */
   readonly audio: AudioHooks;
+  /** A copy of the save in play, or null (app/save.ts). */
+  save(): SaveData | null;
 }
 
 const SPEEDS: ReadonlySet<number> = new Set([0, 1, 2]);
@@ -98,6 +101,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
     },
     goto: (screen: ScreenId) => env.goto(screen),
     audio: env.audio,
+    save: () => env.save(),
     perf: (): PerfSample => {
       const b = env.battle();
       const s = b?.host.sim.state;

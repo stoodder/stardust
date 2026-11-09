@@ -13,7 +13,7 @@ import { abilities, applyAbilityCommand, reduceAbilityCooldowns } from './abilit
 
 type AbilityCmd = Extract<Command<IdSpace>, { type: 'ability' }>;
 const STRIKE = FIXTURE_CONTENT.abilities.fx_strike;
-const DELAY = STRIKE.effect.delayTicks; // 60
+const DELAY = STRIKE.effect.kind === 'strike' ? STRIKE.effect.delayTicks : NaN; // 60
 const COOLDOWN = STRIKE.cooldownTicks; // 2700
 /** Tile (2,2): its center (2.5, 2.5) lies on the path at route distance 4. */
 const TARGET = [2, 2] as const;

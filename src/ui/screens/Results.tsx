@@ -1,13 +1,14 @@
 // The results screen (T115): shown over the frozen battle when a run ends. One headline and the
 // counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and integrity,
 // and the debrief with its speakers' name plates (D028).
-// The counter is the Act I line (design/core-loop.md §6.2) and ticks up (art-direction §9). No
-// medals or currencies until M2.
+// The counter is the Act I line (design/core-loop.md §6.2) and ticks up (art-direction §9). Medals
+// and rewards arrive with T204c. The way on is Continue (base or Shift board) or Retry.
 import { useEffect, useState } from 'preact/hooks';
-import { retryRun, toTitle } from '../../app/navigation.ts';
+import { afterWin, retryRun, toCampaign, toTitle } from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
-import { runResult, type RunResult } from './state.ts';
+import { focusOnce } from './focus.ts';
+import { campaign, runResult, type RunResult } from './state.ts';
 import { colorVar } from '../color.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
@@ -92,6 +93,26 @@ function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
   );
 }
 
+/**
+ * The way on from Results. In a campaign: after a win, Continue (to the base once it's open, else
+ * the Shift board); after a loss, the Shift board. Without one (a `?map=` dev battle): Title.
+ */
+function OnwardButton({ won }: { won: boolean }) {
+  const inCampaign = campaign.value !== null;
+  const label = !inCampaign ? 'Title' : won ? 'Continue' : 'Shift board';
+  const go = !inCampaign ? toTitle : won ? afterWin : toCampaign;
+  return (
+    <button
+      type="button"
+      class={won ? 'sd-button sd-button-primary' : 'sd-button'}
+      ref={won ? focusOnce : null}
+      onClick={go}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
   return (
@@ -125,23 +146,12 @@ function Body({ result }: { result: RunResult }) {
         <button
           type="button"
           class={won ? 'sd-button' : 'sd-button sd-button-primary'}
-          ref={(el) => {
-            if (!won) el?.focus();
-          }}
+          ref={won ? null : focusOnce}
           onClick={retryRun}
         >
           Retry
         </button>
-        <button
-          type="button"
-          class={won ? 'sd-button sd-button-primary' : 'sd-button'}
-          ref={(el) => {
-            if (won) el?.focus();
-          }}
-          onClick={toTitle}
-        >
-          Title
-        </button>
+        <OnwardButton won={won} />
       </div>
     </section>
   );

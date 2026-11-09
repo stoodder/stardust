@@ -17,17 +17,46 @@
 // every validation and compile problem, so invalid content never compiles.
 import type {
   CompiledAbilityDef,
+  CompiledAbilityEffect,
   CompiledContent,
   CompiledEnemyDef,
   CompiledMapDef,
   CompiledTowerDef,
 } from './compiled.ts';
 import { checkKey, deepFreeze, entriesOf, ticks, type Ctx, type Refs } from './compileHelpers.ts';
+import { compileLinks } from './compileLinks.ts';
 import { compileMap } from './compileMap.ts';
 import { compileTower } from './compileTower.ts';
-import type { IdSpace, LiveIds, RawContent } from './types.ts';
+import type { AbilityEffect, IdSpace, LiveIds, RawContent } from './types.ts';
 import { validate, type ValidationRules } from './validate.ts';
 import { perSecToPerTick } from '../shared/time.ts';
+import { assertNever } from '../shared/types.ts';
+
+/** An ability's effect in ticks. */
+function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): CompiledAbilityEffect {
+  switch (e.kind) {
+    case 'strike':
+      return {
+        kind: 'strike',
+        type: e.type,
+        damage: e.damage,
+        radiusTiles: e.radiusTiles,
+        radiusSq: e.radiusTiles * e.radiusTiles,
+        delayTicks: ticks(ctx, e.delaySec, `${where}.delaySec`),
+      };
+    case 'segment':
+      return {
+        kind: 'segment',
+        type: e.type,
+        damagePerSec: e.damagePerSec,
+        slowPct: e.slowPct,
+        durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
+        reachTiles: (e.lengthTiles - 1) / 2,
+      };
+    default:
+      return assertNever(e);
+  }
+}
 
 /** Thrown when content is invalid or can't be compiled; `errors` lists every problem found. */
 export class ContentCompileError extends Error {
@@ -54,6 +83,10 @@ export function compileContent<K extends IdSpace = LiveIds>(
     checkKey(ctx, 'towers', key, def.id);
     const tower = compileTower(ctx, def);
     if (tower !== null) towers.set(key, tower);
+  }
+  const linked = compileLinks(ctx, raw.links ?? {}, new Set(Object.keys(raw.towers)));
+  for (const [key, tower] of towers) {
+    towers.set(key, { ...tower, links: linked.byTower.get(tower.id) ?? [] });
   }
   const enemies = new Map<string, CompiledEnemyDef<K['enemy']>>();
   for (const [key, def] of entriesOf(raw.enemies)) {
@@ -92,19 +125,12 @@ export function compileContent<K extends IdSpace = LiveIds>(
   for (const [key, def] of entriesOf(raw.abilities)) {
     checkKey(ctx, 'abilities', key, def.id);
     const where = `abilities.${def.id}`;
-    const e = def.effect;
     abilities.set(key, {
       id: def.id,
       name: def.name,
       cooldownTicks: ticks(ctx, def.cooldownSec, `${where}.cooldownSec`),
-      effect: {
-        kind: e.kind,
-        type: e.type,
-        damage: e.damage,
-        radiusTiles: e.radiusTiles,
-        radiusSq: e.radiusTiles * e.radiusTiles,
-        delayTicks: ticks(ctx, e.delaySec, `${where}.effect.delaySec`),
-      },
+      effect: compileAbilityEffect(ctx, def.effect, `${where}.effect`),
+      companion: def.companion ?? null,
       sprites: def.sprites,
     });
   }
@@ -126,6 +152,7 @@ export function compileContent<K extends IdSpace = LiveIds>(
     enemies: toRecord(enemies),
     abilities: toRecord(abilities),
     maps: toRecord(maps),
+    links: linked.links,
     campaign: [...raw.campaign],
   };
   return deepFreeze(out);

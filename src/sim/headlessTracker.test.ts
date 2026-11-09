@@ -2,8 +2,10 @@
 import { describe, expect, it } from 'vitest';
 import { fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import type { SimEvent } from './events.ts';
+import { ALLY_BLANK, ENEMY_BLANK } from './entities.ts';
 import { createRunTracker } from './headlessTracker.ts';
-import type { SimState } from './state.ts';
+import { poolAlloc } from './pool.ts';
+import { takeUid, type SimState } from './state.ts';
 
 /** A fixture sim with a gun on (1, 1), its tracker fed the build, and the mutable state behind it. */
 function tracked() {
@@ -56,5 +58,55 @@ describe('run tracker invariants', () => {
     const t = tracked();
     t.state.towerAtTile.fill(-1);
     expect(check(t)).toEqual([expect.stringMatching(/tile \(1, 1\) doesn't map to tower/)]);
+  });
+});
+
+/** A tracked fixture sim with one hand-placed ally and a fleeing enemy announced by its spawn. */
+function withAlly() {
+  const t = tracked();
+  const ally = poolAlloc(t.state.allies, ALLY_BLANK, takeUid(t.state));
+  ally.x = 0.5;
+  ally.y = 2.5;
+  const enemy = poolAlloc(t.state.enemies, ENEMY_BLANK, takeUid(t.state));
+  enemy.tags = ['fleeing'];
+  t.tracker.consume([
+    { type: 'EnemySpawned', uid: enemy.uid, enemy: 'fx_runner', route: 'a', wave: 1 },
+  ]);
+  return { ...t, ally, enemy };
+}
+
+describe('run tracker: ally invariants (allies are never harmed, never target exempt units)', () => {
+  it('a clean ally has none', () => {
+    expect(check(withAlly())).toEqual([]);
+  });
+
+  it('an attack on (or a target that is) an exempt unit', () => {
+    const t = withAlly();
+    const attacked: SimEvent<FixtureIds> = {
+      type: 'AllyAttacked',
+      uid: t.ally.uid,
+      targetUid: t.enemy.uid,
+      x: 0.5,
+      y: 2.5,
+      targetX: 0,
+      targetY: 0,
+    };
+    t.tracker.consume([attacked]);
+    t.ally.targetUid = t.enemy.uid;
+    t.ally.targetSlot = t.enemy.slot;
+    expect(check(t)).toEqual([
+      expect.stringMatching(/ally \d+ attacked exempt enemy \d+/),
+      expect.stringMatching(/ally \d+ targets exempt enemy \d+/),
+    ]);
+  });
+
+  it('a never-vulnerable ally that lost health, or one off the map', () => {
+    const t = withAlly();
+    t.ally.health = 0.5;
+    t.ally.x = -1;
+    expect(check(t)).toEqual([
+      expect.stringMatching(/ally \d+ is off the map/),
+      expect.stringMatching(/ally \d+ can't be hurt but has health 0.5/),
+    ]);
   });
 });

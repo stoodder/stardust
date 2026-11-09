@@ -142,11 +142,19 @@ export function deltaText(d: TierStatDelta | null): string | null {
   return parts.length === 0 ? null : parts.join(' · ');
 }
 
-/** An ability's one-line description (D026), e.g. "200 damage in an area after 1 s. Recharges 45 s." */
+/**
+ * An ability's one-line description (D026), e.g. "200 damage in an area after 1 s. Recharges
+ * 45 s." or "Slows a stretch of path 50% and deals 20 damage/s for 5 s. Recharges 50 s."
+ */
 export function abilityDescription(def: CompiledAbilityDef): string {
   const e = def.effect;
-  const delay = statNum(e.delayTicks / TICK_HZ);
   const cd = statNum(def.cooldownTicks / TICK_HZ);
+  if (e.kind === 'segment') {
+    const slow = statNum(Math.round(e.slowPct * 100));
+    const sec = statNum(e.durationTicks / TICK_HZ);
+    return `Slows a stretch of path ${slow}% and deals ${statNum(e.damagePerSec)} damage/s for ${sec} s. Recharges ${cd} s.`;
+  }
+  const delay = statNum(e.delayTicks / TICK_HZ);
   return `${statNum(e.damage)} damage in an area after ${delay} s. Recharges ${cd} s.`;
 }
 

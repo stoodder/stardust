@@ -4,6 +4,7 @@
 // tick its countdown starts at 0, after that tick's movement, so it lands `flightTicks` ticks
 // after the tick it was fired. Its victims are all chosen before any damage, so the order of
 // hits within one impact can't change who is in the blast.
+import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects } from '../combat/damage.ts';
 import type { Projectile } from '../entities.ts';
 import { poolKill } from '../pool.ts';
@@ -52,7 +53,9 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
   source.uid = p.towerUid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
-    applyDamage(state, e, p.damage, p.damageType, source, p);
+    // A link's conditional bonus (Sitting Ducks) is checked per victim, as the shell lands.
+    const damage = p.vsStatusMask !== 0 && hasStatusIn(e, p.vsStatusMask) ? p.damageVs : p.damage;
+    applyDamage(state, e, damage, p.damageType, source, p);
     applyEffects(e, p.effects);
   }
   victims.length = 0;

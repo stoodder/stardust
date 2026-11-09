@@ -17,7 +17,6 @@ import type {
   GridPos,
   IdSpace,
   Layer,
-  LinkId,
   LiveIds,
   MarkerId,
   MeterLabel,
@@ -45,6 +44,8 @@ export interface CompiledContent<K extends IdSpace = LiveIds> {
   readonly enemies: Readonly<Record<K['enemy'], CompiledEnemyDef<K['enemy']>>>;
   readonly abilities: Readonly<Record<K['ability'], CompiledAbilityDef<K['ability']>>>;
   readonly maps: Readonly<Record<K['map'], CompiledMapDef<K>>>;
+  /** Synergy links in registry order: `links[i].bit === 1 << i` (Tower.linkMask). */
+  readonly links: readonly CompiledLinkDef<K>[];
   readonly campaign: readonly K['map'][];
 }
 
@@ -58,7 +59,8 @@ export interface CompiledTowerDef<Id extends string = string> {
   readonly tiers: readonly [CompiledTier, CompiledTier, CompiledTier];
   /** Tier 4, each resolved on top of tier 3; null until the tower's specs are authored. */
   readonly specs: { readonly a: CompiledTier; readonly b: CompiledTier } | null;
-  readonly links: readonly LinkId[];
+  /** The ids of the links this tower is a partner in (`links/`), in registry order. */
+  readonly links: readonly string[];
   readonly sprites: {
     readonly base: SpriteId;
     readonly head: SpriteId | null;
@@ -144,6 +146,31 @@ export interface CompiledAura {
   readonly pct: number;
 }
 
+// ── Synergy links ────────────────────────────────────────────────────────────────────────────
+
+export interface CompiledLinkDef<K extends IdSpace = LiveIds> {
+  /** A LinkId for live content. */
+  readonly id: string;
+  readonly name: string;
+  /** Its position in the registry, and its bit in `Tower.linkMask` (`1 << index`). */
+  readonly index: number;
+  readonly bit: number;
+  readonly partners: readonly [CompiledLinkPartner<K>, CompiledLinkPartner<K>];
+}
+/** One partner's bonuses, summed per stat (towers.md § 4). Percentages are fractions. */
+export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
+  readonly tower: K['tower'];
+  readonly flatDamage: number;
+  readonly flatRate: number;
+  readonly flatRange: number;
+  readonly pctDamage: number;
+  readonly pctRate: number;
+  readonly pctRange: number;
+  /** A conditional damage bonus (`vsStatus`): the statuses' mask (rules.ts STATUS_BITS; 0: none). */
+  readonly vsStatusMask: number;
+  readonly vsStatusPct: number;
+}
+
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────
 
 export interface CompiledEnemyDef<Id extends string = string> {
@@ -172,15 +199,44 @@ export interface CompiledAbilityDef<Id extends string = string> {
   readonly id: Id;
   readonly name: string;
   readonly cooldownTicks: number;
-  readonly effect: {
-    readonly kind: 'strike';
+  readonly effect: CompiledAbilityEffect;
+  /** The companion whose slot-2 ability this is, or null (Technician only). */
+  readonly companion: CompanionId | null;
+  readonly sprites: { readonly icon: SpriteId };
+}
+export type CompiledAbilityEffect =
+  | {
+      readonly kind: 'strike';
+      readonly type: DamageType;
+      readonly damage: number;
+      readonly radiusTiles: number;
+      readonly radiusSq: number;
+      readonly delayTicks: number;
+    }
+  | {
+      readonly kind: 'segment';
+      readonly type: DamageType;
+      readonly damagePerSec: number;
+      readonly slowPct: number;
+      readonly durationTicks: number;
+      /** Path tiles covered on each side of the clicked one: (lengthTiles − 1) / 2. */
+      readonly reachTiles: number;
+    };
+
+/** A compiled ally post (AllyPostDef): the marker resolved to its tile, the attack in ticks. */
+export interface CompiledAllyPost {
+  readonly kind: AllyKind;
+  readonly post: MarkerId;
+  readonly tile: GridPos;
+  readonly attack: {
     readonly type: DamageType;
     readonly damage: number;
-    readonly radiusTiles: number;
-    readonly radiusSq: number;
-    readonly delayTicks: number;
+    readonly periodTicks: number;
+    readonly rangeTiles: number;
+    readonly rangeSq: number;
+    readonly hitsGround: boolean;
+    readonly hitsAir: boolean;
   };
-  readonly sprites: { readonly icon: SpriteId };
 }
 
 // ── Maps ─────────────────────────────────────────────────────────────────────────────────────
@@ -341,6 +397,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
     readonly ability: K['ability'];
     readonly when: ConditionDef<K>;
   }[];
+  /** Ally posts, spawned on the first tick (systems/allies.ts). */
+  readonly allies: readonly CompiledAllyPost[];
   readonly revisitOf: string | null;
   readonly builds: CompiledBuilds<K>;
 }

@@ -12,11 +12,13 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 
 export const migrations: Readonly<Record<number, Migration>> = {
   /**
-   * v0 is the pre-release draft of the format (no shipped build wrote it): v1 without `stats`.
-   * It exists so the framework and its fixture test run from day one.
+   * v0 is the pre-release draft of the format (no shipped build wrote it): v1 without `stats` and
+   * `settings`. It exists so the framework and its fixture test run from day one.
    */
   0: (old) =>
-    isRecord(old) && !('stats' in old) ? { ...old, stats: { pestsProcessed: 0, runs: 0 } } : old,
+    isRecord(old) && !('stats' in old) && !('settings' in old)
+      ? { ...old, stats: { pestsProcessed: 0, runs: 0 }, settings: { difficulty: 'standard' } }
+      : old,
 };
 
 export type Migrated =

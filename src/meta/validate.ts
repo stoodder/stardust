@@ -5,7 +5,7 @@
 // parsed object (no extra keys, no shared references, no prototype tricks).
 import type { FlagValue, MapId } from '../content/types.ts';
 import type { KnownIds, MapRecord, SaveData, SaveEnvelope, StoryFlagId } from './saveData.ts';
-import { CODEX_VERSIONS, LIVE_KNOWN_IDS } from './saveData.ts';
+import { CODEX_VERSIONS, DIFFICULTIES, LIVE_KNOWN_IDS } from './saveData.ts';
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
@@ -194,6 +194,7 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
     'upgrades',
     'story',
     'stats',
+    'settings',
   ]);
   if (root === null) return null;
   if (root['profile'] !== null) {
@@ -208,8 +209,11 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   const upgrades = checkUpgrades(c, root['upgrades'], `${path}.upgrades`, known);
   const story = checkStory(c, root['story'], `${path}.story`, known);
   const stats = checkStats(c, root['stats'], `${path}.stats`);
-  if (!campaign || !currencies || !unlocks || !upgrades || !story || !stats) return null;
-  return { profile: null, campaign, currencies, unlocks, upgrades, story, stats };
+  const settings = checkSettings(c, root['settings'], `${path}.settings`);
+  if (!campaign || !currencies || !unlocks || !upgrades || !story || !stats || !settings) {
+    return null;
+  }
+  return { profile: null, campaign, currencies, unlocks, upgrades, story, stats, settings };
 }
 
 function checkCampaign(
@@ -299,7 +303,7 @@ function checkUpgrades(
       c.fail(path, `unknown upgrade id ${JSON.stringify(id.slice(0, 64))}`);
       continue;
     }
-    out[id] = c.int(rank, `${path}.${String(id)}`, 1, SAVE_LIMITS.upgradeRank);
+    out[id] = c.int(rank, `${path}.${id}`, 1, SAVE_LIMITS.upgradeRank);
   }
   return out;
 }
@@ -399,4 +403,11 @@ function checkStats(c: Checker, x: unknown, path: string): SaveData['stats'] | n
     pestsProcessed: c.int(s['pestsProcessed'], `${path}.pestsProcessed`, 0, SAVE_LIMITS.count),
     runs: c.int(s['runs'], `${path}.runs`, 0, SAVE_LIMITS.count),
   };
+}
+
+function checkSettings(c: Checker, x: unknown, path: string): SaveData['settings'] | null {
+  const s = c.object(x, path, ['difficulty']);
+  if (s === null) return null;
+  const difficulty = c.id(s['difficulty'], `${path}.difficulty`, DIFFICULTIES);
+  return difficulty === null ? null : { difficulty };
 }

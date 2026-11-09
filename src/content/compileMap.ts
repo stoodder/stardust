@@ -3,6 +3,7 @@
 // is part of the route format, so compile checks it (design/maps.md §4): a path lists its spawn
 // `S`, every `#` tile, and the core `C`, in order, one orthogonal step at a time.
 import type {
+  CompiledAllyPost,
   CompiledRoute,
   CompiledMapDef,
   CompiledScriptAction,
@@ -12,7 +13,7 @@ import type {
   CompiledWaveGroup,
 } from './compiled.ts';
 import { compileBuilds } from './compileBuilds.ts';
-import { checkId, entriesOf, ticks, type Ctx, type Refs } from './compileHelpers.ts';
+import { checkId, entriesOf, periodTicks, ticks, type Ctx, type Refs } from './compileHelpers.ts';
 import { DEFAULT_CORE_INTEGRITY, DEFAULT_COUNTDOWN_SEC } from './rules.ts';
 import type {
   Act,
@@ -101,6 +102,7 @@ export function compileMap<K extends IdSpace>(
     };
   });
 
+  const allies = compileAllies(ctx, def, where);
   const builds = compileBuilds(ctx, refs, def, where);
   if (ctx.errors.length > errorsBefore) return null;
   return {
@@ -132,9 +134,39 @@ export function compileMap<K extends IdSpace>(
     objectives,
     companion: def.companion,
     lockedAbilities: def.lockedAbilities ?? [],
+    allies,
     revisitOf: def.revisitOf ?? null,
     builds,
   };
+}
+
+/** Ally posts: the marker resolved to its tile (validateMap checks it's decor), rates in ticks. */
+function compileAllies(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledAllyPost[] {
+  const out: CompiledAllyPost[] = [];
+  for (const [i, a] of (def.allies ?? []).entries()) {
+    const w = `${where}.allies[${i}]`;
+    const tile = def.markers?.[a.post];
+    if (tile === undefined) {
+      ctx.errors.push(`${w}.post: unknown marker '${a.post}'`);
+      continue;
+    }
+    const at = a.attack;
+    out.push({
+      kind: a.kind,
+      post: a.post,
+      tile: [tile[0], tile[1]],
+      attack: {
+        type: at.type,
+        damage: at.damage,
+        periodTicks: periodTicks(ctx, at.ratePerSec, `${w}.attack.ratePerSec`),
+        rangeTiles: at.rangeTiles,
+        rangeSq: at.rangeTiles * at.rangeTiles,
+        hitsGround: at.targets.ground,
+        hitsAir: at.targets.air,
+      },
+    });
+  }
+  return out;
 }
 
 function compileTiles(ctx: Ctx, def: MapDef<IdSpace>, where: string): TileChar[] {

@@ -60,9 +60,11 @@ export interface Tower extends PoolEntity {
    */
   linkMask: number;
   /**
-   * The dynamic bonuses (links, auras, tiles) summed per stat (architecture.md § Sim public API,
-   * stacking): flat, then percent as a fraction. Recomputed only when something changes, never
-   * per tick (T202a). Static modifiers fold into the tier's stats instead.
+   * Every bonus on the tower summed per stat (architecture.md § Sim public API, stacking): static
+   * `towerStat` modifiers, links, auras, and tiles; flat, then percent as a fraction (uncapped:
+   * the cap applies when a stat is read, sim/bonuses.ts). The links system recomputes them only
+   * when something changes, never per tick. They don't depend on the tier, so an upgrade or spec
+   * takes effect at once.
    */
   flatDamage: number;
   flatRate: number;
@@ -70,6 +72,13 @@ export interface Tower extends PoolEntity {
   pctDamage: number;
   pctRate: number;
   pctRange: number;
+  /**
+   * A conditional damage bonus from a link (`vsStatus`, Sitting Ducks): against an enemy with
+   * any status in the mask (content/rules.ts STATUS_BITS), `vsStatusPct` adds to `pctDamage`.
+   * 0 / 0 for none.
+   */
+  vsStatusMask: number;
+  vsStatusPct: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -101,6 +110,8 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   pctDamage: 0,
   pctRate: 0,
   pctRange: 0,
+  vsStatusMask: 0,
+  vsStatusPct: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -186,6 +197,12 @@ export interface Projectile extends PoolEntity {
   flightTicks: number;
   ticksLeft: number;
   damage: number;
+  /**
+   * The damage against a victim with any status in `vsStatusMask` (a link's conditional bonus,
+   * checked per victim on impact); equal to `damage` when the mask is 0.
+   */
+  damageVs: number;
+  vsStatusMask: number;
   damageType: DamageType;
   armorPierce: number;
   ignoresArmor: boolean;
@@ -213,6 +230,8 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
   flightTicks: 0,
   ticksLeft: 0,
   damage: 0,
+  damageVs: 0,
+  vsStatusMask: 0,
   damageType: 'kinetic',
   armorPierce: 0,
   ignoresArmor: false,
@@ -298,6 +317,9 @@ export interface Ally extends PoolEntity {
   damageType: DamageType;
   periodTicks: number;
   rangeSq: number;
+  /** The layers its attack hits. */
+  hitsGround: boolean;
+  hitsAir: boolean;
   /** Ticks until it may attack again (fires on a tick that starts at 0, like a tower). */
   cooldownTicks: number;
   /** The current target (0 = none) and its enemy-pool slot hint. */
@@ -324,6 +346,8 @@ export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
   damageType: 'kinetic',
   periodTicks: 0,
   rangeSq: 0,
+  hitsGround: false,
+  hitsAir: false,
   cooldownTicks: 0,
   targetUid: 0,
   targetSlot: -1,

@@ -5,6 +5,7 @@
 import { ABILITIES } from '../content/abilities/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
+import type { DifficultyId } from '../sim/index.ts';
 import type {
   AbilityId,
   FlagValue,
@@ -80,7 +81,12 @@ export interface SaveData {
     granted: GrantId[];
   };
   stats: { pestsProcessed: number; runs: number };
+  /** Per-campaign settings (progression.md § 9): changeable any time between maps. */
+  settings: { difficulty: DifficultyId };
 }
+
+/** Every difficulty a save can hold; the first is a new save's. */
+export const DIFFICULTIES: readonly DifficultyId[] = ['standard', 'story'];
 
 /** What a slot or an export code holds: the data plus its schema version and write time. */
 export interface SaveEnvelope {
@@ -142,5 +148,6 @@ export function createNewSave(): SaveData {
       granted: [],
     },
     stats: { pestsProcessed: 0, runs: 0 },
+    settings: { difficulty: 'standard' },
   };
 }

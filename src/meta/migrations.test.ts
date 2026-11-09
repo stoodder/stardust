@@ -31,10 +31,11 @@ describe('save migrations', () => {
     },
   );
 
-  it('v0 → v1 adds empty stats and keeps everything else', () => {
+  it('v0 → v1 adds empty stats and Standard difficulty and keeps everything else', () => {
     const decoded = decodeEnvelope(saveV0);
     if (!decoded.ok) throw new Error(decoded.problem.message);
     expect(decoded.envelope.data.stats).toEqual({ pestsProcessed: 0, runs: 0 });
+    expect(decoded.envelope.data.settings).toEqual({ difficulty: 'standard' });
     expect(decoded.envelope.data.campaign.maps.a1_m01?.medals).toEqual(['victory']);
     expect(decoded.envelope.savedAt).toBe(saveV0.savedAt);
   });

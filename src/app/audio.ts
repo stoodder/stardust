@@ -151,7 +151,9 @@ export function installAudio(enabled: boolean): () => void {
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
       const s = screen.value;
-      if (s !== 'battle') setMusic(screenMusic(s));
+      // The menus over the backdrop (Shift board, Base, Settings) keep the title's music.
+      const menu = s === 'campaign' || s === 'base' || s === 'settings';
+      if (s !== 'battle') setMusic(screenMusic(menu ? 'title' : s));
     }),
   ];
   uninstall = () => {

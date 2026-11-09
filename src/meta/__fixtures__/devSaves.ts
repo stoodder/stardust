@@ -3,9 +3,13 @@
 // Each is built from the live registries, so it stays valid as content lands: `mid_m2` covers
 // the first two campaign maps once A1M2 is in CAMPAIGN, and `all_unlocked` owns every registered
 // tower, spec, and ability. devSaves.test.ts validates every one.
+// `devUnlocks` opens gated systems whose maps don't exist yet (D031). It lives here, never in
+// SaveData, so no save or import code can carry it, and the app honours it only under `?test=1`.
 import { CAMPAIGN } from '../../content/campaign.ts';
 import { MAPS } from '../../content/maps/index.ts';
 import type { MapId, MedalId } from '../../content/types.ts';
+import type { MetaSystem } from '../progress.ts';
+import { META_SYSTEMS } from '../progress.ts';
 import type { MapRecord, SaveData } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 
@@ -15,6 +19,8 @@ export interface DevSave {
   readonly description: string;
   /** Returns a fresh copy every call. */
   readonly build: () => SaveData;
+  /** Systems to open regardless of campaign progress (meta/progress.ts `isSystemUnlocked`). */
+  readonly devUnlocks?: readonly MetaSystem[];
 }
 
 /**
@@ -67,7 +73,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   all_unlocked: {
     description:
       'Every campaign map won with every medal; every registered tower, spec, and ability owned; ' +
-      'deep pockets for the shop and R&D.',
+      'deep pockets for the shop and R&D; every gated system open.',
+    devUnlocks: META_SYSTEMS,
     build: () => {
       const save = createNewSave();
       for (const map of CAMPAIGN) save.campaign.maps[map] = won(map, medalIds(map));

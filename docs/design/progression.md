@@ -2,7 +2,9 @@
 
 Meta currencies, medals, Zibzab's shop, Field Protocols (meta perks), veteran modifiers, the R&D tree, tower acquisition, difficulty settings, and pacing targets.
 
-> **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Tuning values live in data files (`upgrades`, `shop`, `research` data). Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
+> **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
+>
+> **As built:** the catalog is [`src/content/upgrades/`](../../src/content/upgrades/index.ts): `shop.ts` (§4.3), `tuneUps.ts` (§4.2), `protocols.ts` (§5), `rnd.ts` (§7.3 Command), and `access.ts` (§8 tower and ability access, §7.1 Engineering prices). Each item names its `availableAfter` map on the campaign plan (`src/content/campaign.ts`) and grants sim modifiers. Vrell licenses, Aelari attunements, Scanner Sweep, System Reboot, the other four Rapports, and the Zibzab Tune-up join with their towers and abilities. The §10 purchasable-profiles rule is the `[purchasable]` validator ([`validatePurchasable.ts`](../../src/content/validatePurchasable.ts)); `upgrades/reference.ts` holds the reference economy it assumes (1 Intel per map, the bank reset at A2M4's C2 Return).
 >
 > **Ordering:** [../story/campaign.md](../story/campaign.md) is **authoritative** for when shops, towers, and abilities unlock. This doc defines *what* they are and what they cost.
 

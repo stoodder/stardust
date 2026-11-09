@@ -408,3 +408,14 @@ The owner said "start M2 … continue through to the end" and is away, so the or
   - Audio is off under `?test=1` unless `&audio=1`.
 - **Limit:** the title theme starts on the first click or key press, because of the browser's autoplay policy.
 - **The owner should listen** when back; tuning by ear is the one check the automated pass can't do.
+
+### D034 — 2026-11-09 — T204a catalog data
+- **The catalog** (`src/content/upgrades/`):
+  - 12 ranked upgrades: 6 global shop upgrades, 3 tower tune-ups, and 3 R&D items. The R&D items are Orbital Strike Mk II and Bricks Rapport (2 Intel each, stocked after A1M1) and protocol slots (after A1M3).
+  - 10 Field Protocols (after A1M3).
+  - Tower and ability access, plus Engineering prices: Everglow 2 Intel, others 3, after A1M4.
+  - `availableAfter` means "once that map is won". Rapport is stocked after the companion's ability first appears.
+- **Grants restate the sim's `Modifier` kinds**, because content can't import sim; a sim test checks every grant is a valid `Modifier`. Effects the kinds can't express yet (support-tower and Crane tune-ups, Specialist's pick, the Vrell-only Zibzab Tune-up) belong to later milestones.
+- **`CAMPAIGN_PLAN`** lists all 18 maps. `CAMPAIGN` is the registered subset in that order.
+- **Par-purchasable** (`validatePurchasable.ts`): every reference-profile item must exist, be stocked before its map, fit what earlier maps pay, and fit the protocol slots.
+- New towers now need a `TOWER_ACCESS` entry and a tune-up.

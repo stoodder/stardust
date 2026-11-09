@@ -2,7 +2,8 @@
 // `fx_` and the numbers are only shaped like the design's (real content is T105c / T103 / T107).
 // Sprites are real registered ids (content may only name registered sprites).
 // It covers each M1 shape: a hitscan tower, a lobbed lead-targeting tower, a pulse (chill aura)
-// tower, two enemies, a strike ability, and a map with a towerUnlockWave, events, and builds.
+// tower, two enemies, a strike ability, two companions' abilities (a segment for Bricks, a strike
+// for QUILL), and a map with a towerUnlockWave, events, and builds.
 import {
   defineAbility,
   defineEnemy,
@@ -156,11 +157,38 @@ const fxStrike = defineAbility({
   sprites: { icon: 'icon.ability.orbital_strike' },
 });
 
+/** A companion's segment ability (Suppressing Fire's shape): Bricks's slot 2 in fixtures. */
+const fxSuppress = defineAbility({
+  id: 'fx_suppress',
+  name: 'Fixture Suppress',
+  cooldownSec: 50,
+  effect: {
+    kind: 'segment',
+    type: 'kinetic',
+    damagePerSec: 20,
+    slowPct: 0.5,
+    durationSec: 5,
+    lengthTiles: 3,
+  },
+  companion: 'bricks',
+  sprites: { icon: 'icon.ability.suppressing_fire' },
+});
+
+/** A second companion's ability (a strike), so a pick list has two companions to run. */
+const fxChime = defineAbility({
+  id: 'fx_chime',
+  name: 'Fixture Chime',
+  cooldownSec: 30,
+  effect: { kind: 'strike', type: 'energy', damage: 50, radiusTiles: 1, delaySec: 0.5 },
+  companion: 'quill',
+  sprites: { icon: 'icon.ability.orbital_strike' },
+});
+
 /** The fixture's entity registries. */
 export const FIXTURE_ENTITIES = {
   towers: defineRegistry({ fx_gun: fxGun, fx_mortar: fxMortar, fx_sprinkler: fxSprinkler }),
   enemies: defineRegistry({ fx_walker: fxWalker, fx_runner: fxRunner }),
-  abilities: defineRegistry({ fx_strike: fxStrike }),
+  abilities: defineRegistry({ fx_strike: fxStrike, fx_suppress: fxSuppress, fx_chime: fxChime }),
 };
 export type FixtureIds = IdsOf<typeof FIXTURE_ENTITIES, 'fx_map'>;
 

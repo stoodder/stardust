@@ -1,12 +1,23 @@
 // A tower tier's stat line for the HUD (the tower panel's "8 dmg · 2/s · range 3" and the
-// upgrade's "+3 dmg"): what the sim actually runs, read from the compiled tier. Pure, so the HUD,
-// tests, and tools all show the same numbers. Modifiers (towers.md §4) arrive with T204; until
-// then a tier's stats are its compiled ones.
+// upgrade's "+3 dmg"): what the sim actually runs, read from the compiled tier under the tower's
+// bonuses (static modifiers, links, auras, tiles: the Tower's `flat*`/`pct*` fields, through the
+// same stacking functions the towers system uses, sim/bonuses.ts). Pure, so the HUD, tests, and
+// tools all show the same numbers. Without bonuses it's the tier as authored.
 import type { CompiledTowerDef } from '../content/compiled.ts';
-import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
-import type { AttackKind, DamageType } from '../content/types.ts';
+import { MAX_TIER_BEFORE_SPEC, STATUS_BITS } from '../content/rules.ts';
+import type { AttackKind, DamageType, IdSpace, StatusId } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import type { DeepReadonly } from '../shared/types.ts';
+import {
+  NO_BONUSES,
+  bonusDamage,
+  bonusDamageVs,
+  bonusPeriodTicks,
+  bonusRangeTiles,
+  type TowerBonuses,
+} from './bonuses.ts';
+import type { Modifier } from './config.ts';
+import { costFor } from './economy.ts';
 
 /** One tier's combat numbers. All 0 (and `kind` null) for a tier with no attack. */
 export interface TierStats {
@@ -26,6 +37,12 @@ export interface TierStats {
   /** A lobbed shell's splash radius in tiles; 0 for every other kind. */
   readonly splashTiles: number;
   readonly armorPierce: number;
+  /**
+   * A link's conditional damage bonus (Sitting Ducks: vs Chilled): the statuses it applies
+   * against, and the damage per hit against them. `[]` and `damage` when there's none.
+   */
+  readonly vsStatuses: readonly StatusId[];
+  readonly vsStatusDamage: number;
 }
 
 /** What upgrading to the next tier changes: each stat's difference (next − current). */
@@ -56,45 +73,59 @@ const NO_ATTACK: TierStats = {
   minRangeTiles: 0,
   splashTiles: 0,
   armorPierce: 0,
+  vsStatuses: [],
+  vsStatusDamage: 0,
 };
 
 const round2 = (x: number): number => Math.round(x * 100) / 100;
 
-function tierStats(def: DeepReadonly<Pick<CompiledTowerDef, 'tiers'>>, tier: number): TierStats {
+function tierStats(
+  def: DeepReadonly<Pick<CompiledTowerDef, 'tiers'>>,
+  tier: number,
+  b: TowerBonuses,
+): TierStats {
   const attack = def.tiers[tier - 1]!.attack; // callers keep 1 ≤ tier ≤ 3
   if (attack === null) return NO_ATTACK;
+  const damage = round2(bonusDamage(attack, b));
+  const vs = b.vsStatusMask === 0 ? [] : STATUS_BITS.filter((_, i) => (b.vsStatusMask & (1 << i)) !== 0);
   return {
     kind: attack.kind,
     damageType: attack.type,
-    damage: attack.damage,
-    ratePerSec: round2(TICK_HZ / attack.cooldownTicks),
-    rangeTiles: attack.rangeTiles,
+    damage,
+    ratePerSec: round2(TICK_HZ / bonusPeriodTicks(attack, b)),
+    rangeTiles: round2(bonusRangeTiles(attack, b)),
     minRangeTiles: attack.minRangeTiles,
     splashTiles: attack.kind === 'lobbed' ? attack.splashTiles : 0,
     armorPierce: attack.armorPierce,
+    vsStatuses: vs,
+    vsStatusDamage: vs.length === 0 ? damage : round2(bonusDamageVs(attack, b)),
   };
 }
 
 /**
- * The stat line of `def` at in-map tier `tier` (1–3), with the next tier's delta. Throws a
- * RangeError for any other tier (specializations arrive with T202).
+ * The stat line of `def` at in-map tier `tier` (1–3) under `bonuses` (pass the Tower itself for
+ * a built tower; none: the tier as authored), with the next tier's delta under the same bonuses
+ * and its cost after the run's `towerCost` modifiers (pass `sim.config.modifiers`). Throws a
+ * RangeError for any other tier (specializations arrive with T202b).
  */
 export function towerStats(
-  def: DeepReadonly<Pick<CompiledTowerDef, 'tiers'>>,
+  def: DeepReadonly<Pick<CompiledTowerDef, 'id' | 'tiers'>>,
   tier: number,
+  bonuses: TowerBonuses = NO_BONUSES,
+  modifiers: DeepReadonly<Modifier<IdSpace>[]> = [],
 ): TowerStatLine {
   if (!Number.isInteger(tier) || tier < 1 || tier > MAX_TIER_BEFORE_SPEC) {
     throw new RangeError(`towerStats: tier must be 1–${MAX_TIER_BEFORE_SPEC} (got ${tier})`);
   }
-  const now = tierStats(def, tier);
+  const now = tierStats(def, tier, bonuses);
   if (tier === MAX_TIER_BEFORE_SPEC) return { ...now, tier, next: null };
-  const after = tierStats(def, tier + 1);
+  const after = tierStats(def, tier + 1, bonuses);
   return {
     ...now,
     tier,
     next: {
       tier: tier + 1,
-      cost: def.tiers[tier]!.cost, // tier < 3, so index tier is tier + 1's
+      cost: costFor(modifiers, def.id, def.tiers[tier]!.cost), // tier < 3: index tier is tier + 1's
       damage: round2(after.damage - now.damage),
       ratePerSec: round2(after.ratePerSec - now.ratePerSec),
       rangeTiles: round2(after.rangeTiles - now.rangeTiles),

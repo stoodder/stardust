@@ -32,4 +32,21 @@ describe('profiles', () => {
       abilities: { slot1: 'fx_strike', slot2: null, slot2State: 'none' },
     });
   });
+
+  it("fills slot 2 from the map's companion, or the build's pick on a pick-list map", () => {
+    const b = map.builds.parBuild;
+    const bricks = { ...map, companion: { id: 'bricks', state: 'present' } } as const;
+    expect(runConfig(FIXTURE_CONTENT, bricks, b, [], 1)).toMatchObject({
+      companion: 'bricks',
+      abilities: { slot1: 'fx_strike', slot2: 'fx_suppress', slot2State: 'present' },
+    });
+    const pick = { ...map, companion: { pick: ['bricks', 'quill'] } } as const;
+    expect(runConfig(FIXTURE_CONTENT, pick, { ...b, companion: 'quill' }, [], 1)).toMatchObject({
+      companion: 'quill',
+      abilities: { slot2: 'fx_chime', slot2State: 'present' },
+    });
+    expect(() => runConfig(FIXTURE_CONTENT, map, { ...b, companion: 'bricks' }, [], 1)).toThrow(
+      /no companion to pick/,
+    );
+  });
 });

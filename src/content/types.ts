@@ -11,11 +11,13 @@
 // what keeps the type-level imports below free of cycles.
 import type { ABILITIES } from './abilities/index.ts';
 import type { ENEMIES } from './enemies/index.ts';
+import type { LINKS } from './links/index.ts';
 import type { MAPS } from './maps/index.ts';
 import type { AuraKind } from './rules.ts';
 import type { SpriteId as RegisteredSpriteId } from './sprites/index.ts';
 import type { EnvPaletteId } from './sprites/types.ts';
 import type { TOWERS } from './towers/index.ts';
+import type { PROTOCOLS, UPGRADES } from './upgrades/index.ts';
 
 export type { EnvPaletteId };
 
@@ -59,12 +61,12 @@ export interface EntityRegistries {
 
 /** A sprite id content may name: a registered sprite (`sprites/index.ts`). */
 export type SpriteId = RegisteredSpriteId;
-/** No registry yet: links arrive with T202, so towers list none until then. */
-export type LinkId = never;
-/** No registry yet: shop and R&D upgrades arrive with T204. */
-export type UpgradeId = never;
-/** No registry yet: Field Protocols arrive with T204. */
-export type ProtocolId = never;
+/** Synergy links (design/towers.md § 6): the `links/` registry. */
+export type LinkId = Extract<keyof typeof LINKS, string>;
+/** Ranked shop and R&D upgrades (tune-ups, global upgrades, R&D Command): `upgrades/index.ts`. */
+export type UpgradeId = Extract<keyof typeof UPGRADES, string>;
+/** Field Protocols: `upgrades/index.ts`. */
+export type ProtocolId = Extract<keyof typeof PROTOCOLS, string>;
 /** Story flags that map scripts may read (story-runtime.md § Map scripts). */
 export type ScriptFlagId = 'door_choice' | 'spared_quiet_wave' | 'stardust_choice' | 'quill_choice';
 export type FlagValue = string | number | boolean;
@@ -155,7 +157,7 @@ export interface TowerDef<Id extends string = string> {
   readonly tiers: readonly [TierDef, TierPatch, TierPatch];
   /** Tier 4; both patch tier 3, and one R&D purchase unlocks both. Optional until T202. */
   readonly specs?: { readonly a: SpecDef; readonly b: SpecDef };
-  readonly links?: readonly LinkId[];
+  // A tower's links live in `links/` (one home); compile lists them on CompiledTowerDef.links.
   readonly sprites: { readonly base: SpriteId; readonly head?: SpriteId; readonly icon: SpriteId };
   /** A light source under darkness (Prism Spire). */
   readonly lightRadiusTiles?: number;
@@ -244,6 +246,35 @@ export interface AuraDef {
   readonly pct: number;
 }
 
+// ── Synergy links (design/towers.md § 6) ─────────────────────────────────────────────────────
+
+/**
+ * A synergy link: two tower types that boost each other while they stand adjacent (edge or
+ * corner). Each partner lists what it gets. Links are flat: they don't scale with tier.
+ */
+export interface LinkDef<K extends IdSpace = LiveIds, Id extends string = string> {
+  readonly id: Id;
+  /** Display name ("Crossfire"). */
+  readonly name: string;
+  /** Two different tower types, each with its bonuses while the link is active. */
+  readonly partners: readonly [LinkPartnerDef<K>, LinkPartnerDef<K>];
+}
+export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
+  readonly tower: K['tower'];
+  readonly bonuses: readonly LinkBonusDef[];
+}
+/**
+ * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a
+ * fraction) adds to its percent total. With `vsStatus` it's a conditional damage bonus: `pct`
+ * only, applied against an enemy with any of those statuses (Sitting Ducks: +20% vs Chilled).
+ */
+export interface LinkBonusDef {
+  readonly stat: TowerStat;
+  readonly flat?: number;
+  readonly pct?: number;
+  readonly vsStatus?: readonly StatusId[];
+}
+
 // ── Enemies ──────────────────────────────────────────────────────────────────────────────────
 
 export interface EnemyDef<Id extends string = string> {
@@ -280,17 +311,57 @@ export interface AbilityDef<Id extends string = string> {
   readonly name: string;
   readonly cooldownSec: number;
   readonly effect: AbilityEffect;
+  /**
+   * A companion's signature ability (slot 2, design/core-loop.md § 3.1): the companion it belongs
+   * to. At most one ability per companion; absent for Technician-only abilities.
+   */
+  readonly companion?: CompanionId;
   readonly sprites: { readonly icon: SpriteId };
 }
-/** Other effect kinds (Suppressing Fire, Time Dilation, …) arrive with their tasks. */
-export type AbilityEffect = {
-  // Orbital Strike: a targeted area hit after a visible reticle
-  readonly kind: 'strike';
-  readonly type: DamageType;
-  readonly damage: number;
-  readonly radiusTiles: number;
-  readonly delaySec: number;
-};
+/** Other effect kinds (Time Dilation, Stillness, …) arrive with their tasks. */
+export type AbilityEffect =
+  | {
+      // Orbital Strike: a targeted area hit after a visible reticle
+      readonly kind: 'strike';
+      readonly type: DamageType;
+      readonly damage: number;
+      readonly radiusTiles: number;
+      readonly delaySec: number;
+    }
+  | {
+      /**
+       * Suppressing Fire: a targeted stretch of ground path, `lengthTiles` long (odd), centered
+       * on the clicked path tile along each route through it (D031: the tile ±1). For
+       * `durationSec`, enemies on it are slowed (`slowPct`, as Chilled) and take `damagePerSec`
+       * in beam ticks (enemies.md § 2.3: armor per second).
+       */
+      readonly kind: 'segment';
+      readonly type: DamageType;
+      readonly damagePerSec: number;
+      readonly slowPct: number;
+      readonly durationSec: number;
+      readonly lengthTiles: number;
+    };
+
+/**
+ * A scripted ally at a fixed post beside the path (design/maps.md § 5.4: Bricks in person,
+ * colonist militia). It is never hurt (vulnerability `never`; Bricks's A3M3 health timeline is
+ * M3), never targets `quiet_wave`, `youngling`, or `fleeing` units, and fires at the nearest
+ * enemy in range. Its numbers are map data.
+ */
+export interface AllyPostDef {
+  readonly kind: 'bricks' | 'militia';
+  /** The decor marker its post stands on (`markers`). */
+  readonly post: MarkerId;
+  /** A hitscan attack, like a Rivet's. */
+  readonly attack: {
+    readonly type: DamageType;
+    readonly damage: number;
+    readonly ratePerSec: number;
+    readonly rangeTiles: number;
+    readonly targets: { readonly ground: boolean; readonly air: boolean };
+  };
+}
 
 // ── Maps ─────────────────────────────────────────────────────────────────────────────────────
 // A map is four files (conventions.md § Add a map): map.ts (MapLayoutDef), waves.ts (WaveDef[]),
@@ -350,7 +421,11 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
     readonly intel: number;
     readonly onComplete?: readonly ScriptAction<K>[];
   }[];
-  /** Slot 2. `null` until T207 on every M1 map. */
+  /**
+   * Slot 2 (design/core-loop.md § 3.1): the companion and its state, a pick list (the finale; the
+   * first is the default), or null (the slot is hidden). Each companion named needs an ability
+   * with that `companion` in the content.
+   */
   readonly companion:
     | { readonly id: CompanionId; readonly state: 'present' | 'absent' }
     | { readonly pick: readonly CompanionId[] }
@@ -364,7 +439,12 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly revisitOf?: string;
   /** Map scripts (story-runtime.md § Map scripts). */
   readonly events?: readonly ScriptedEvent<K>[];
-  // Not yet: allies (T207), song (finale), dressing and presentation (M3).
+  /**
+   * Scripted allies on the map from the start (design/maps.md § 5.4). M2: posts only (Bricks);
+   * route allies, ally groups for `spawnAllies`, and health timelines are M3.
+   */
+  readonly allies?: readonly AllyPostDef[];
+  // Not yet: song (finale), dressing and presentation (M3).
 }
 
 export interface WaveDef<K extends IdSpace = LiveIds> {
@@ -396,7 +476,7 @@ export interface ProfileDef<K extends IdSpace = LiveIds> {
   readonly towers: readonly K['tower'][];
   /** Towers whose tier-4 pair is unlocked. */
   readonly specs: readonly K['tower'][];
-  // oxlint-disable-next-line typescript/no-generated-empty-object-type -- UpgradeId is never until T204
+  /** Owned shop and R&D ranks. */
   readonly shop: Readonly<Partial<Record<UpgradeId, number>>>;
   readonly protocols: readonly ProtocolId[];
   readonly technicianAbility: K['ability'] | null;
@@ -427,6 +507,10 @@ export type BuildStep<K extends IdSpace = LiveIds> = { readonly wave: number } &
 export interface ScriptedBuild<K extends IdSpace = LiveIds> {
   /** At most 4, all from the profile. */
   readonly loadout: readonly K['tower'][];
+  /**
+   * Pick-list maps only: who walks with this build (default: the list's first). A map with one
+   * companion always uses it, so its builds leave this out.
+   */
   readonly companion?: CompanionId;
   /** Default: the profile's. */
   readonly technicianAbility?: K['ability'];
@@ -571,6 +655,8 @@ export interface RawContent<K extends IdSpace = LiveIds> {
   readonly enemies: Readonly<Record<K['enemy'], EnemyDef<K['enemy']>>>;
   readonly abilities: Readonly<Record<K['ability'], AbilityDef<K['ability']>>>;
   readonly maps: Readonly<Record<K['map'], MapDef<K, K['map']>>>;
+  /** Synergy links by id; registry order is each link's bit in `Tower.linkMask`. Default none. */
+  readonly links?: Readonly<Record<string, LinkDef<K>>>;
   /** Campaign map order (mirrors story/campaign.md). */
   readonly campaign: readonly K['map'][];
 }

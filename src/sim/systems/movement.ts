@@ -1,6 +1,7 @@
 // System 6: movement. Advances every live enemy along its route by its speed this tick (Chilled
 // slows it through `chillMul`), and leaks the ones that reach the route's end: the core loses the
-// leak cost (design/core-loop.md §2.9) and the enemy is removed. Losing at 0 integrity is
+// leak cost (design/core-loop.md §2.9), less what Emergency Bulkhead absorbs, and the enemy is
+// removed. Losing at 0 integrity is
 // cleanup's check (T105b), at the end of the tick. Slots run in ascending order (determinism).
 import { poolKill } from '../pool.ts';
 import { pointAt } from '../path.ts';
@@ -33,10 +34,16 @@ export function movement(state: SimState): void {
 
 /**
  * Applies a leak to the core: its cost, never more than the integrity left. Fleeing Skitterkin
- * leak for 0 (design/enemies.md §5.4). EnemyLeaked reports what was actually lost.
+ * leak for 0 (design/enemies.md §5.4). Emergency Bulkhead (`leakAbsorb`) absorbs the first
+ * `state.leakAbsorbLeft` of it over the map. EnemyLeaked reports what was actually lost.
  */
 function leak(state: SimState, enemy: string, cost: number, isFleeing: boolean, uid: number): void {
-  const amount = isFleeing ? 0 : cost;
+  let amount = isFleeing ? 0 : cost;
+  if (state.leakAbsorbLeft > 0 && amount > 0) {
+    const absorbed = amount < state.leakAbsorbLeft ? amount : state.leakAbsorbLeft;
+    state.leakAbsorbLeft -= absorbed;
+    amount -= absorbed;
+  }
   const lost = amount < state.integrity ? amount : state.integrity;
   state.integrity -= lost;
   state.stats.integrityLost += lost;

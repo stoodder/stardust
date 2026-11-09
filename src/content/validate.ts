@@ -13,17 +13,20 @@
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
 //   ⇔ shield), and every trait shows its tell (enemies.md § 1, rule 1).
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
+// - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
+// - [purchasable]: reference profiles are affordable and available in time (validatePurchasable.ts).
 // - Maps (validateMap.ts) and builds (validateBuilds.ts): see their headers.
 //
 // Feature guards ([feature]): content that needs a system that doesn't exist yet is refused
 // rather than silently mis-simulated: bosses (M3; the boss-leak rule), non-Defend objectives
-// (T305; Escort safe exits), companions (T207).
+// (T305; Escort safe exits).
 import { mergePatch } from './compileHelpers.ts';
 import { validatePalettes } from './palettes/validate.ts';
 import { ENV_PALETTE_IDS } from './palettes/env.ts';
 import { PALETTES, PALETTE_IDS } from './palettes/index.ts';
 import {
+  CHILL_CAP,
   COUNTER_ANSWERS,
   JAMMER_ENEMIES,
   MAX_STATUS_PCT,
@@ -44,6 +47,7 @@ import type {
   TowerDef,
 } from './types.ts';
 import { validateCampaignMaps } from './validateMap.ts';
+import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
 import {
   Issues,
   duplicates,
@@ -57,6 +61,8 @@ import {
 export interface ValidationRules {
   /** Which towers and abilities answer each counter category (rules.ts COUNTER_ANSWERS). */
   readonly counterAnswers: Readonly<Record<CounterId, CounterAnswers>>;
+  /** The catalog and campaign plan for [purchasable]; default LIVE_PURCHASE_RULES. */
+  readonly purchases?: PurchaseRules;
 }
 export const DEFAULT_VALIDATION_RULES: ValidationRules = { counterAnswers: COUNTER_ANSWERS };
 
@@ -69,11 +75,14 @@ export function validate<K extends IdSpace>(
   issues.errors.push(...artErrors());
   for (const def of Object.values<TowerDef>(raw.towers)) validateTower(issues, def);
   for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def);
-  for (const def of Object.values<AbilityDef>(raw.abilities)) validateAbility(issues, def);
+  const abilities = Object.values<AbilityDef>(raw.abilities);
+  for (const def of abilities) validateAbility(issues, def);
+  validateCompanionAbilities(issues, abilities);
   for (const id of duplicates(raw.campaign)) {
     issues.add('campaign', 'campaign', `map '${id}' is listed more than once`);
   }
   validateCampaignMaps(issues, raw, rules);
+  validatePurchasable(issues, raw, rules.purchases);
   return issues.errors;
 }
 
@@ -293,6 +302,35 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
   const bad = (field: string, msg: string): void =>
     issues.add('ability-range', `${where}.${field}`, msg);
   if (!isPositive(def.cooldownSec)) bad('cooldownSec', 'must be > 0');
-  if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
-  if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+  if (e.kind === 'strike') {
+    if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
+    if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+  } else {
+    if (!isNonNegative(e.damagePerSec)) bad('effect.damagePerSec', 'must be ≥ 0');
+    // The slow lands as Chilled (strongest source wins), so it can't pass the chill cap.
+    if (!(e.slowPct >= 0 && e.slowPct <= CHILL_CAP)) {
+      bad('effect.slowPct', `must be in [0, ${CHILL_CAP}] (it lands as Chilled)`);
+    }
+    if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
+    if (!isPositiveInt(e.lengthTiles) || e.lengthTiles % 2 === 0) {
+      bad('effect.lengthTiles', 'must be an odd whole number of tiles (centered on the click)');
+    }
+  }
+}
+
+/** [companion]: at most one ability per companion (its slot-2 signature). */
+function validateCompanionAbilities(issues: Issues, defs: readonly AbilityDef[]): void {
+  const owner = new Map<string, string>();
+  for (const def of defs) {
+    if (def.companion === undefined) continue;
+    const prev = owner.get(def.companion);
+    if (prev !== undefined) {
+      issues.add(
+        'companion',
+        `abilities.${def.id}.companion`,
+        `'${def.companion}' already has '${prev}'; a companion has one ability`,
+      );
+    }
+    owner.set(def.companion, def.id);
+  }
 }

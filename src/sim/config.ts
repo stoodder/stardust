@@ -12,6 +12,7 @@ import type {
   TowerStat,
 } from '../content/types.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
+import { abilityConfigErrors } from './systems/abilities.ts';
 import { unsupportedScript } from './systems/triggers.ts';
 import { gateRefusals } from './gates.ts';
 
@@ -189,6 +190,8 @@ export function validateConfig(cfg: SimConfig<IdSpace>): CompiledMapDef<IdSpace>
     if (specSeen.has(id)) errors.push(`specsUnlocked: '${id}' appears twice`);
     specSeen.add(id);
   }
+  // The companion's slot and ability modifiers (systems/abilities.ts).
+  errors.push(...abilityConfigErrors(cfg));
   // Refuse rather than ignore what the sim can't simulate yet (gates.ts), so a run can't
   // silently differ from its config.
   errors.push(...gateRefusals(cfg));

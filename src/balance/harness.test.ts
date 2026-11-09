@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
-import { PLAIN_CONTENT } from './__fixtures__/harness.ts';
+import { PICK_CONTENT, PLAIN_CONTENT } from './__fixtures__/harness.ts';
 import { buildFor, runCampaign, runMap } from './harness.ts';
 
 describe('balance harness', () => {
@@ -101,5 +101,26 @@ describe('balance harness', () => {
     expect(one.maps[0]!.checks.find((c) => c.id === '3')).toBeUndefined();
     expect(one.maps[0]!.notChecked.join()).toMatch(/monotonic/);
     expect(() => runCampaign(PLAIN_CONTENT, { mapId: 'a1_m01' })).toThrow(/unknown campaign map/);
+  });
+
+  it('#15: on a pick-list map, runs par with each companion (seeds 1–3); the first is the default', () => {
+    const r = runMap(PICK_CONTENT, 'fx_map', { seeds: 3 });
+    const pick = r.checks.filter((c) => c.id === '15');
+    expect(pick.map((c) => c.subject)).toEqual(['companion:bricks', 'companion:quill']);
+    for (const c of pick) expect(c.summary).not.toMatch(/refused/);
+    const hash = (build: string, seed: number): string | undefined =>
+      r.runs.find((x) => x.build === build && x.seed === seed && !x.repeat)?.result?.hash;
+    for (const seed of [1, 2, 3]) {
+      expect(hash('companion:bricks', seed)).toBeDefined();
+      expect(hash('companion:bricks', seed)).toBe(hash('par', seed));
+      expect(hash('companion:quill', seed)).not.toBe(hash('par', seed));
+    }
+    // The runs cast slot 2 cleanly with either companion.
+    expect(r.checks.find((c) => c.id === 'steps')?.failures.join()).not.toMatch(/companion:/);
+    expect(r.checks.find((c) => c.id === '12')?.ok).toBe(true);
+    const map = PICK_CONTENT.maps.fx_map;
+    expect(buildFor('companion:quill', map, PICK_CONTENT)?.companion).toBe('quill');
+    expect(buildFor('companion:zibzab', map, PICK_CONTENT)).toBeNull();
+    expect(buildFor('companion:bricks', PLAIN_CONTENT.maps.fx_map, PLAIN_CONTENT)).toBeNull();
   });
 });

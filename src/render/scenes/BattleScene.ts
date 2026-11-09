@@ -229,9 +229,11 @@ export class BattleScene extends Phaser.Scene {
         fx.burst(e.x, e.y);
       }),
       bus.on('AbilityUsed', (e) => {
-        if (e.uid !== 0 && e.target !== null) {
-          const radius = content.abilities[e.ability]?.effect.radiusTiles ?? 0;
-          fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, radius);
+        // Strikes only: a segment (Suppressing Fire) draws nothing until T207b. The reticle uses
+        // the content radius, not Mk II's (abilityStats; T207b).
+        const effect = content.abilities[e.ability]?.effect;
+        if (e.uid !== 0 && e.target !== null && effect?.kind === 'strike') {
+          fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, effect.radiusTiles);
         }
       }),
     );

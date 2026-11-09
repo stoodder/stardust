@@ -9,11 +9,13 @@ import { hud, screen } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import { dismissBriefing, issue, setSpeed } from './commands.ts';
 import { installKeys } from './keys.ts';
+import { logError } from './log.ts';
 import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
 import { setRadioEnabled } from './radio.ts';
 import { audioTestHooks, installAudio } from './audio.ts';
+import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
 import { initSettings } from './settings.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
@@ -31,6 +33,8 @@ export function parseBootParams(search: string): BootParams {
     seed,
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
+    // Dev saves load only under ?test=1 (D031): a player URL can't open gated systems.
+    save: test ? q.get('save') : null,
   };
 }
 
@@ -43,14 +47,17 @@ function requireElement(id: string): HTMLElement {
 }
 
 /**
- * Boots the game. Resolves once the first screen has rendered: the title, or with `?map=<id>` or
- * `?skipIntro=1`, the battle's first frame.
+ * Boots the game. Resolves once the first screen has rendered: the title; with `?map=<id>` or
+ * `?skipIntro=1`, the battle's first frame; with `?test=1&save=<id>`, that dev save's Shift board.
  */
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
   setRadioEnabled(params.radio);
   initSettings();
   installAudio(params.audio);
+  initSaves(browserKeyValueStore());
+  const devSave = params.save !== null && loadDevSave(params.save);
+  if (params.save !== null && !devSave) logError(`boot: unknown dev save '${params.save}'`);
   const gameRoot = requireElement('game');
   const uiRoot = requireElement('ui');
 
@@ -77,7 +84,9 @@ export async function boot(): Promise<void> {
   const router: Router = createRouter(game, { mapId: params.map, seed: params.seed });
   setNavigator(router);
   const startInBattle = params.map !== null || params.skipIntro;
-  const ready = sceneReady.then(() => router.goto(startInBattle ? 'battle' : 'title'));
+  // A dev save (`?test=1&save=<id>`) opens on its Shift board.
+  const first = startInBattle ? 'battle' : devSave ? 'campaign' : 'title';
+  const ready = sceneReady.then(() => router.goto(first));
 
   if (params.test) {
     installTestHooks(
@@ -101,6 +110,10 @@ export async function boot(): Promise<void> {
         canvas: () => game.canvas,
         viewWidth: VIEW_W,
         audio: audioTestHooks(),
+        save: () => {
+          const save = activeSave();
+          return save === null ? null : structuredClone(save);
+        },
       }),
     );
   }

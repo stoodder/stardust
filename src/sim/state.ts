@@ -2,6 +2,7 @@
 // the output buffers (HASH_EXCLUDED), so two runs that agree on hash() agree on every field.
 // Immutable inputs (content, the map, the config) live in the TickContext instead (tick.ts).
 import type { CompiledMapDef } from '../content/compiled.ts';
+import { SELL_REFUND_PCT } from '../content/rules.ts';
 import type { IdSpace, WaveTag } from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
 import type { Command, CommandLogEntry } from './commands.ts';
@@ -84,6 +85,26 @@ export interface SimStats {
   tagKilled: TagCounts;
   /** Leaks by medal-exempt units, which never break Perfect Core (core-loop.md § 2.7; T202c). */
   medalExemptLeaks: number;
+  /**
+   * Link uptime: per link id, the ticks on which at least one pair of that link was active
+   * (counted by the links system). A key appears on the link's first active tick.
+   */
+  linkTicks: Record<string, number>;
+}
+
+/**
+ * The run's credit rules after modifiers (economy.ts `applyRunModifiers`, at createSim). Kept in
+ * state, not the config, so the HUD's helpers read the same numbers the sim pays.
+ */
+export interface RunEconomy {
+  /** Σ `economy.bounty` pct: Bounty Hunter, Bounty Board. */
+  bountyPct: number;
+  /** The fraction of a credit the bounty bonus has earned but not yet paid (0 ≤ carry < 1). */
+  bountyCarry: number;
+  /** Σ `economy.earlyCallBonus` pct: Early Bird. */
+  earlyCallPct: number;
+  /** The sell refund fraction: SELL_REFUND_PCT plus Resale Value's `sellRefund` flats. */
+  sellRefundPct: number;
 }
 
 /**
@@ -167,8 +188,14 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * jam): the links system recomputes them, and the towers' dynamic bonuses, then clears it.
    */
   linksDirty: boolean;
+  /**
+   * The active synergy links as flat triples `[linkIndex, uidA, uidB]` (uidA < uidB), sorted:
+   * what the links system diffs against to emit LinkFormed and LinkBroken (T202a).
+   */
+  linkPairs: number[];
   /** Emergency Bulkhead: integrity loss still to absorb (from a `leakAbsorb` modifier; T202a). */
   leakAbsorbLeft: number;
+  economy: RunEconomy;
   /** Each medal's standing this run (T202c). */
   medals: Record<MedalKind, MedalStatus>;
   /** Commands enqueued and not yet applied (FIFO). */
@@ -237,12 +264,15 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       tagLeaked: tagCounts(),
       tagKilled: tagCounts(),
       medalExemptLeaks: 0,
+      linkTicks: {},
     },
     abilityCooldownTicks: [0, 0],
     holdFireAll: false,
     spareRunnersAll: false,
     linksDirty: false,
+    linkPairs: [],
     leakAbsorbLeft: 0,
+    economy: { bountyPct: 0, bountyCarry: 0, earlyCallPct: 0, sellRefundPct: SELL_REFUND_PCT },
     medals: { victory: 'open', perfectCore: 'open', challenge: 'open' },
     pending: [],
     commandLog: [],

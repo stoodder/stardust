@@ -1,7 +1,8 @@
-// Screen routing (architecture.md § Rendering, "Battles"): which screen the overlay shows, whether a
-// battle is running, and run end. Title shows the animated backdrop; Battle runs a session; when
-// the sim emits MapWon or MapLost, the battle freezes where it stands, and RESULTS_DELAY_MS later
-// (the last radio line and the leak feedback play out; D028) Results shows over it.
+// Screen routing (architecture.md § Rendering, "Screens and run end"): which screen the overlay
+// shows, whether a battle is running, and run end. The menus (Title, Campaign, Base, Settings) show
+// the animated backdrop; Battle runs a session; when the sim emits MapWon or MapLost, the battle
+// freezes where it stands, and RESULTS_DELAY_MS later (the last radio line and the leak feedback
+// play out; D028) Results shows over it. A won campaign map is recorded in the save in play.
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
@@ -11,6 +12,7 @@ import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
+import { activeSave, closeSession, recordWin, systemOpen } from './save.ts';
 import { runResultOf } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
@@ -18,9 +20,9 @@ import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 export const RESULTS_DELAY_MS = 1500;
 
 export interface BattleRequest {
-  /** Default: DEFAULT_MAP_ID. */
+  /** Default: the router defaults' (the URL's `?map=`), else DEFAULT_MAP_ID. */
   readonly mapId?: string | null;
-  /** Default: a random seed. */
+  /** Default: the router defaults' (the URL's `?seed=`), else a random seed. */
   readonly seed?: number | null;
 }
 
@@ -41,7 +43,12 @@ export interface Router {
   endRun(outcome: RunOutcome): Promise<void>;
   /** Shows a pending Results now (skips the rest of RESULTS_DELAY_MS); no-op when none waits. */
   flushResults(): Promise<void>;
+  /** Settings → Back: the menu Settings was opened from (the Title when none). */
+  closeSettings(): Promise<void>;
 }
+
+/** Menus Settings can return to. */
+type MenuId = 'title' | 'campaign' | 'base';
 
 /** Creates the router over a booted game (the backdrop scene must be registered). */
 export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): Router {
@@ -54,6 +61,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   /** The map ended and Results waits out RESULTS_DELAY_MS. */
   let pending: { outcome: RunOutcome; timer: ReturnType<typeof setTimeout> } | null = null;
   let lastRequest: BattleRequest = defaults;
+  let settingsFrom: MenuId = 'title';
 
   const showBackdrop = (on: boolean): void => {
     const running = game.scene.isActive(BACKDROP_SCENE_KEY);
@@ -75,15 +83,16 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     stopBattle();
     showBackdrop(false);
     lastRequest = request;
-    const mapId = request.mapId ?? DEFAULT_MAP_ID;
-    const seed = request.seed ?? randomSeed();
+    // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
+    const mapId = request.mapId ?? defaults.mapId ?? DEFAULT_MAP_ID;
+    const seed = request.seed ?? defaults.seed ?? randomSeed();
     setSpeed(1);
     runResult.value = null;
     ended = false;
     wavesCleared = 0;
     firstLeakAt = null;
     endedAt = null;
-    const next = startBattle(game, battleConfig(mapId, seed), { briefing });
+    const next = startBattle(game, battleConfig(mapId, seed, activeSave()), { briefing });
     battle = next;
     const { bus } = next.host;
     bus.on('WaveCleared', () => {
@@ -113,6 +122,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     return next.firstFrame;
   };
 
+  /** Shows a menu over the backdrop, ending any battle. */
+  const showMenu = (id: MenuId | 'settings'): Promise<void> => {
+    stopBattle();
+    showBackdrop(true);
+    screen.value = id;
+    return Promise.resolve();
+  };
+
   const router: Router = {
     get battle() {
       return battle;
@@ -120,10 +137,24 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     goto(id, request = defaults) {
       switch (id) {
         case 'title':
-          stopBattle();
-          showBackdrop(true);
-          screen.value = 'title';
-          return Promise.resolve();
+          // The Title lists the slots; Continue or Load opens one again.
+          closeSession();
+          return showMenu('title');
+        case 'campaign':
+          if (activeSave() === null) {
+            return Promise.reject(new Error('router: the Shift board needs a loaded save'));
+          }
+          return showMenu('campaign');
+        case 'base':
+          if (!systemOpen('base')) {
+            return Promise.reject(new Error('router: the base is locked for this save'));
+          }
+          return showMenu('base');
+        case 'settings': {
+          const from = screen.value;
+          settingsFrom = from === 'campaign' || from === 'base' ? from : 'title';
+          return showMenu('settings');
+        }
         case 'battle':
           return openBattle(request, true);
         case 'results':
@@ -136,6 +167,10 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         default:
           return assertNever(id);
       }
+    },
+    closeSettings() {
+      const back = settingsFrom === 'title' || activeSave() !== null ? settingsFrom : 'title';
+      return back === 'title' ? showMenu('title') : router.goto(back);
     },
     retry() {
       // A retry skips the briefing: the player read it moments ago.
@@ -171,6 +206,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         },
         outcome,
       );
+      // A won campaign map opens the next and the systems after it (T204c adds the rewards).
+      if (outcome === 'won') recordWin(sim.map.id, s.integrity);
       // The battle freezes where it ended and stays drawn behind the results.
       setSpeed(0);
       cancel();

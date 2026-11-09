@@ -3,12 +3,13 @@
 // steps mean:
 // - [profile]: the reference profile lists no tower twice, and its spec unlocks are towers it
 //   owns that have specs.
-// - [loadout]: at most 4 towers, no duplicates, all owned by the reference profile; no companion
-//   until T207.
+// - [loadout]: at most 4 towers, no duplicates, all owned by the reference profile; a build
+//   names a companion only on a pick-list map, from its list.
 // - [build-step]: steps run in wave order on waves of the map; builds go on buildable, empty
 //   tiles (wreckage once cleared), with a loadout tower that is unlocked by then; upgrades,
 //   specs, sells, and per-tower settings address a tower built by then; tier 3 is the last
-//   upgrade and a spec needs tier 3 and an unlocked spec; ability steps have an ability to use;
+//   upgrade and a spec needs tier 3 and an unlocked spec; ability steps have an ability to use
+//   (slot 2: a present companion or a pick);
 //   clear, interact, scriptInput, and holdFireWhile name things the map has.
 // - [no-counter-build]: `noCounterBuilds[c]` uses no tower or ability that answers `c`.
 // - [alt-builds]: every alt build answers every required counter; from A1M4, at least 2 alt
@@ -197,9 +198,24 @@ function validateBuild(
       issues.add('loadout', `${where}.loadout`, `'${t}' isn't in the reference profile`);
     }
   }
-  if (b.companion !== undefined) {
-    issues.add('feature', `${where}.companion`, 'companions arrive with T207');
+  const mapCompanion = def.companion;
+  const pick = mapCompanion !== null && 'pick' in mapCompanion ? mapCompanion.pick : null;
+  if (b.companion !== undefined && (pick === null || !pick.includes(b.companion))) {
+    issues.add(
+      'loadout',
+      `${where}.companion`,
+      pick === null
+        ? 'only a pick-list map lets a build choose its companion'
+        : `'${b.companion}' isn't in the map's pick list`,
+    );
   }
+  // Slot 2 holds a usable ability with a present companion or a pick (validateMap's [companion]).
+  const slot2 =
+    mapCompanion === null
+      ? 'the map has no companion'
+      : 'state' in mapCompanion && mapCompanion.state === 'absent'
+        ? 'the companion is absent'
+        : null;
 
   const ability = b.technicianAbility ?? def.referenceProfile.technicianAbility;
   const unlockWave = def.towerUnlockWave ?? {};
@@ -283,8 +299,9 @@ function validateBuild(
     } else if ('spareRunners' in s) {
       if (s.spareRunners !== 'all') tower(s.spareRunners);
     } else if ('ability' in s) {
-      if (s.ability === 2) bad('slot 2 is the companion slot; companions arrive with T207');
-      else if (ability === null) bad('slot 1 is empty: the build has no technicianAbility');
+      if (s.ability === 2) {
+        if (slot2 !== null) bad(`slot 2 is empty: ${slot2}`);
+      } else if (ability === null) bad('slot 1 is empty: the build has no technicianAbility');
       if (s.target !== undefined) inMap(s.target);
       if (typeof s.when === 'object' && !(s.when.afterSec >= 0)) bad('when.afterSec must be ≥ 0');
     } else if ('clear' in s) {

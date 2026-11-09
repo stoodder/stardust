@@ -5,7 +5,7 @@
 // rather than ignored (D013), so the harness never tests a different game than it claims to.
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, LiveIds, ProfileDef } from '../content/types.ts';
-import type { Modifier, SimConfig } from '../sim/index.ts';
+import { companionSlot, type Modifier, type SimConfig } from '../sim/index.ts';
 
 /** The modifiers a profile grants. Throws a RangeError for purchases (not composable before T204b). */
 export function profileModifiers<K extends IdSpace = LiveIds>(
@@ -41,16 +41,18 @@ export function runConfig<K extends IdSpace = LiveIds>(
   modifiers: readonly Modifier<K>[],
   seed: number,
 ): SimConfig<K> {
+  // The map's companion fills slot 2; on a pick-list map the build's pick does (default: the
+  // list's first). A pick the map doesn't offer throws, and the run reports it.
+  const slot = companionSlot(content, map, build.companion);
   return {
     content,
     mapId: map.id,
     seed,
     loadout: build.loadout,
-    // createSim refuses a companion until T207a, so a build that names one fails loudly.
-    companion: build.companion,
+    companion: slot.companion,
     modifiers,
     difficulty: 'standard',
-    abilities: { slot1: build.technicianAbility, slot2: null, slot2State: 'none' },
+    abilities: { slot1: build.technicianAbility, slot2: slot.slot2, slot2State: slot.slot2State },
     scriptFlags: {},
     specsUnlocked: [],
   };

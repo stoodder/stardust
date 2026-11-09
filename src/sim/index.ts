@@ -14,6 +14,14 @@ export {
   type SimConfig,
 } from './config.ts';
 export { FEATURE_GATES, type Feature, type GateOwner } from './gates.ts';
+export { companionAbility, companionSlot, type CompanionSlot } from './companion.ts';
+export {
+  SEGMENT_TICK_TICKS,
+  abilityInSlot,
+  abilityStats,
+  type AbilityStats,
+} from './systems/abilities.ts';
+export { allyMayTarget } from './systems/allies.ts';
 export type {
   Command,
   CommandLogEntry,
@@ -36,6 +44,7 @@ export type { Pool, PoolEntity } from './pool.ts';
 export type {
   MedalStatus,
   Outcome,
+  RunEconomy,
   SchedulePhase,
   SimRngs,
   SimState,
@@ -47,9 +56,19 @@ export {
   MISCLICK_GRACE_TICKS,
   bountyFor,
   callWaveBonus,
+  costFor,
   sellValue,
   type SellValue,
 } from './economy.ts';
+export {
+  NO_BONUSES,
+  bonusDamage,
+  bonusDamageVs,
+  bonusPeriodTicks,
+  bonusRangeTiles,
+  type TowerBonuses,
+} from './bonuses.ts';
+export { isLinkActive } from './systems/links.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   towerStats,

@@ -2,7 +2,10 @@
 import { render } from 'preact';
 import { assertNever } from '../shared/types.ts';
 import { Hud } from './hud/index.tsx';
+import { Base } from './screens/Base.tsx';
+import { Campaign } from './screens/Campaign.tsx';
 import { Results } from './screens/Results.tsx';
+import { Settings } from './screens/Settings.tsx';
 import { Title } from './screens/Title.tsx';
 import { screen } from './state.ts';
 
@@ -14,6 +17,12 @@ export function Overlay() {
       return null;
     case 'title':
       return <Title />;
+    case 'campaign':
+      return <Campaign />;
+    case 'base':
+      return <Base />;
+    case 'settings':
+      return <Settings />;
     case 'battle':
       return <Hud />;
     case 'results':

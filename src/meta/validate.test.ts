@@ -123,6 +123,9 @@ describe('validateSave', () => {
     ['data.stats.runs', 'stats.runs', -1],
     ['data.stats: missing field "pestsProcessed"', 'stats.pestsProcessed', DELETE],
     ['data.stats.pestsProcessed', 'stats.pestsProcessed', 2 ** 60],
+    ['data: missing field "settings"', 'settings', DELETE],
+    ['data.settings.difficulty: unknown id', 'settings.difficulty', 'normal'],
+    ['data.settings: unknown field "devUnlocks"', 'settings.devUnlocks', ['shop']],
     ['data.currencies: expected a plain object', 'currencies', new Map()],
   ];
 

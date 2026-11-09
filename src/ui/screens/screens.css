@@ -309,3 +309,519 @@
   gap: 8px;
   margin-top: 2px;
 }
+
+/* ---- Shared menu parts (T209): Title panels, Shift board, Base, Settings ---- */
+
+.sd-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.sd-row-left {
+  justify-content: flex-start;
+}
+
+.sd-dim {
+  color: var(--sd-steel-3);
+}
+
+.sd-warn {
+  color: var(--sd-orange-3);
+}
+
+.sd-ok {
+  color: var(--sd-teal-4);
+}
+
+.sd-stardust {
+  color: var(--sd-gold-3);
+}
+
+.sd-intel {
+  color: var(--sd-teal-3);
+}
+
+.sd-message {
+  font-family: var(--font-heading);
+  line-height: 10px;
+}
+
+.sd-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Small buttons for list rows: still at least 16 game px tall. */
+.sd-button-small {
+  min-width: 40px;
+  padding: 4px 6px;
+}
+
+.sd-button-danger {
+  --sd-edge: var(--sd-coral-3);
+  --sd-fill: var(--sd-red-1);
+}
+
+.sd-button:disabled,
+.sd-button[aria-disabled='true'] {
+  --sd-edge: var(--sd-ink-4);
+  --sd-fill: var(--sd-ink-2);
+  color: var(--sd-steel-2);
+  cursor: default;
+  transform: none;
+}
+
+.sd-panel-heading,
+.sd-field-label {
+  font-family: var(--font-heading);
+  font-size: 8px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sd-kicker {
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+/* A padlock: a 7×8 pixel glyph in the text color (shackle over a body). */
+.sd-lock {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 8px;
+  margin-right: 3px;
+  vertical-align: -1px;
+}
+
+.sd-lock::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0;
+  width: 3px;
+  height: 3px;
+  border: 1px solid currentColor;
+  border-bottom: 0;
+}
+
+.sd-lock::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 7px;
+  height: 4px;
+  background: currentColor;
+}
+
+.sd-lock-big {
+  zoom: 2;
+  margin: 0 0 2px;
+  color: var(--sd-steel-2);
+}
+
+/* Code fields: monospace, because a code is case-sensitive and Silkscreen is all caps. */
+.sd-code {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 4px;
+  border: 1px solid var(--sd-steel-1);
+  background: var(--sd-ink-0);
+  color: var(--sd-white-0);
+  font-family: ui-monospace, monospace;
+  font-size: 8px;
+  line-height: 10px;
+  resize: none;
+  word-break: break-all;
+}
+
+.sd-code:focus-visible {
+  border-color: var(--sd-teal-4);
+  outline: none;
+}
+
+/* ---- Title: panels and the button menu ---- */
+
+.sd-title-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.sd-title-paneled .sd-title-logo {
+  font-size: 16px;
+  line-height: 16px;
+  letter-spacing: 2px;
+}
+
+.sd-title-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 400px;
+  margin-top: 10px;
+  padding: 8px 10px 10px;
+  text-align: left;
+}
+
+.sd-title-message {
+  max-width: 400px;
+  margin-top: 8px;
+  color: var(--sd-pink-3);
+}
+
+/* ---- Slot lists ---- */
+
+.sd-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  padding: 2px 4px;
+  background: var(--sd-ink-2);
+  font-family: var(--font-heading);
+}
+
+.sd-slot-label {
+  flex: none;
+  width: 40px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.sd-slot-summary {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sd-slot-progress {
+  flex: 1;
+  color: var(--sd-white-1);
+}
+
+.sd-slot-banks {
+  display: flex;
+  gap: 8px;
+}
+
+.sd-slot-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.sd-import {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- Menus over the backdrop (Shift board, Base, Settings) ---- */
+
+.sd-menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 432px;
+  min-height: 240px;
+  padding: 10px 12px 12px;
+  text-align: left;
+}
+
+.sd-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.sd-menu-heading {
+  margin-top: 4px;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: var(--sd-gold-4);
+  text-shadow: 1px 1px 0 var(--sd-pink-1);
+}
+
+.sd-menu-footer {
+  margin-top: auto;
+  justify-content: flex-end;
+}
+
+.sd-banks {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+.sd-banks div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.sd-banks dt {
+  text-transform: uppercase;
+}
+
+.sd-banks dd {
+  margin: 0;
+  color: var(--sd-white-1);
+}
+
+/* ---- Shift board ---- */
+
+.sd-shifts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-shift {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 2px 4px 2px 6px;
+  border-left: 2px solid var(--accent);
+  background: var(--sd-ink-2);
+  font-family: var(--font-heading);
+}
+
+.sd-shift-index {
+  flex: none;
+  width: 52px;
+  color: var(--sd-steel-3);
+  text-transform: uppercase;
+}
+
+.sd-shift-name {
+  flex: 1;
+  color: var(--sd-white-1);
+  text-transform: uppercase;
+}
+
+.sd-shift-state {
+  flex: none;
+  width: 72px;
+  text-align: right;
+  color: var(--sd-teal-3);
+  text-transform: uppercase;
+}
+
+.sd-shift-won .sd-shift-state {
+  color: var(--sd-gold-3);
+}
+
+.sd-shift-locked,
+.sd-shift-coming_soon {
+  border-left-color: var(--sd-ink-4);
+}
+
+.sd-shift-locked .sd-shift-name,
+.sd-shift-coming_soon .sd-shift-name,
+.sd-shift-locked .sd-shift-state,
+.sd-shift-coming_soon .sd-shift-state {
+  color: var(--sd-steel-2);
+}
+
+.sd-shift .sd-button-small {
+  min-width: 52px;
+}
+
+/* Where a locked row's button would be: a padlock the same width. */
+.sd-shift-lock {
+  flex: none;
+  width: 52px;
+  height: 8px;
+  color: var(--sd-steel-2);
+}
+
+.sd-medals {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.sd-medal {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--sd-steel-1);
+  transform: rotate(45deg);
+}
+
+.sd-medal-on {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}
+
+/* ---- Base tabs ---- */
+
+.sd-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--accent);
+}
+
+.sd-tab {
+  min-width: 72px;
+  min-height: 16px;
+  padding: 4px 8px;
+  border: 0;
+  background: var(--sd-ink-2);
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+  cursor: pointer;
+}
+
+.sd-tab-on {
+  background: var(--accent-dim);
+  color: var(--sd-white-1);
+}
+
+.sd-tab-locked {
+  color: var(--sd-steel-2);
+}
+
+.sd-tab-on.sd-tab-locked {
+  background: var(--sd-ink-3);
+  color: var(--sd-steel-3);
+}
+
+.sd-tab:hover,
+.sd-tab:focus-visible {
+  outline: none;
+  color: var(--sd-white-1);
+  box-shadow: inset 0 -2px 0 var(--sd-teal-4);
+}
+
+.sd-tab-pane {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  background: var(--sd-ink-2);
+}
+
+.sd-pane-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  text-align: center;
+  font-family: var(--font-heading);
+}
+
+.sd-pane-who {
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sd-pane-line {
+  line-height: 10px;
+  color: var(--sd-white-0);
+}
+
+.sd-tab-pane-locked .sd-pane-who {
+  color: var(--sd-steel-3);
+}
+
+.sd-pane-bank {
+  color: var(--sd-gold-3);
+}
+
+/* ---- Settings ---- */
+
+.sd-settings-grid {
+  display: flex;
+  gap: 12px;
+}
+
+.sd-settings-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sd-fieldset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--font-heading);
+}
+
+.sd-fieldset > legend {
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.sd-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sd-slider-label {
+  width: 48px;
+  color: var(--sd-steel-3);
+  text-transform: uppercase;
+}
+
+.sd-slider input {
+  flex: 1;
+  height: 8px;
+  margin: 0;
+  accent-color: var(--sd-teal-3);
+}
+
+.sd-slider-value {
+  width: 18px;
+  text-align: right;
+  color: var(--sd-white-1);
+}

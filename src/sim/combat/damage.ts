@@ -18,7 +18,7 @@ import {
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { assertNever } from '../../shared/types.ts';
-import { bountyFor, earn } from '../economy.ts';
+import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
 import { poolKill } from '../pool.ts';
@@ -123,9 +123,9 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   const stats = state.stats;
   stats.killsByEnemy[def.id] = (stats.killsByEnemy[def.id] ?? 0) + 1;
   if (def.faction === 'skitterkin') stats.skitterkinKilled++;
-  // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3); leaks pay nothing (movement).
-  const bounty = bountyFor(def.bounty, enemy.tags);
-  earn(state, bounty);
+  // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3), then the bounty modifiers;
+  // leaks pay nothing (movement).
+  const bounty = payBounty(state, def.bounty, enemy.tags);
   emit(state, {
     type: 'EnemyDied',
     uid: enemy.uid,

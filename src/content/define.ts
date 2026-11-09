@@ -6,6 +6,7 @@ import type {
   BuildsDef,
   EnemyDef,
   IdSpace,
+  LinkDef,
   LiveIds,
   MapDef,
   MapLayoutDef,
@@ -25,6 +26,13 @@ export function defineEnemy<const Id extends string>(def: EnemyDef<Id>): EnemyDe
 
 /** Defines a commander ability (one per file in `abilities/`). */
 export function defineAbility<const Id extends string>(def: AbilityDef<Id>): AbilityDef<Id> {
+  return def;
+}
+
+/** Defines a synergy link (one per file in `links/`). */
+export function defineLink<const Id extends string>(
+  def: LinkDef<LiveIds, Id>,
+): LinkDef<LiveIds, Id> {
   return def;
 }
 
