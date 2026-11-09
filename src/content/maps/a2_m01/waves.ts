@@ -57,7 +57,7 @@ export const OPEN = 6;
  * The build phase before W2–W10 (Act II's default is 20 s): room to read the next wave's preview
  * and place the drone, and par's shift lands near ten minutes at 1×.
  */
-export const COUNTDOWN = 30;
+export const COUNTDOWN = 35;
 
 /** A packed cluster's spacing (seconds): 0.32 tiles apart at a Mote's 1.6 tiles/s. */
 export const PACKED = 0.2;
