@@ -15,8 +15,11 @@ import {
   type IntakeForm,
   type IntakeSubmit,
 } from './profile.ts';
+import { pauseMenu } from '../ui/pause/state.ts';
 import type { Router } from './router.ts';
+import { leaveResults } from './runFlow.ts';
 import {
+  activeSave,
   continueSlot,
   firstEmptySlot,
   hasAnySave,
@@ -79,7 +82,7 @@ export function loadoutOfferedAfterRun(mapId: string): boolean {
 
 /** Results → Change loadout (T220): the finished run's map's loadout screen, then its briefing. */
 export function changeLoadoutAfterRun(mapId: string): void {
-  run('change loadout', (r) => r.goto('loadout', { mapId }));
+  leaveResults(() => run('change loadout', (r) => r.goto('loadout', { mapId })));
 }
 
 /** Plays the save's next map, or shows the Shift board when there is none. */
@@ -178,8 +181,15 @@ export function toBase(): void {
 
 /** Results → Continue after a win: the base if it's open, else the Shift board. */
 export function afterWin(): void {
-  if (systemOpen('base')) toBase();
-  else toCampaign();
+  leaveResults(() => {
+    if (systemOpen('base')) toBase();
+    else toCampaign();
+  });
+}
+
+/** Results → the Shift board (after a loss), or the Title outside a campaign. */
+export function leaveResultsTo(where: 'campaign' | 'title'): void {
+  leaveResults(where === 'campaign' ? toCampaign : toTitle);
 }
 
 /** Opens Settings; Back returns to the menu it was opened from. */
@@ -194,7 +204,34 @@ export function closeSettings(): void {
 
 /** Results → Retry: replays the last battle's map. */
 export function retryRun(): void {
-  run('retry', (r) => r.retry());
+  leaveResults(() => run('retry', (r) => r.retry()));
+}
+
+/** Where the pause menu's Quit goes: the base once it's open, else the Shift board (no save: Title). */
+export function quitDestination(): 'base' | 'campaign' | 'title' {
+  if (activeSave() === null) return 'title';
+  return systemOpen('base') ? 'base' : 'campaign';
+}
+
+/**
+ * The pause menu's Retry (T316): the run ends in the save as a loss (meta-runtime.md § Run end, on
+ * retry too), and the same map starts again with the same loadout, minus the briefing.
+ */
+export function retryFromPause(): void {
+  pauseMenu.value = false;
+  run('retry', (r) => {
+    r.abandon();
+    return r.retry();
+  });
+}
+
+/** The pause menu's Quit (T316): the run ends in the save as a loss, then `quitDestination`. */
+export function quitFromPause(): void {
+  pauseMenu.value = false;
+  run('quit', (r) => {
+    r.abandon();
+    return r.goto(quitDestination());
+  });
 }
 
 /** Back to the Title (leaves the save in play). */

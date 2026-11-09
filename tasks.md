@@ -118,7 +118,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
 - [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
-- [ ] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
+- [x] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
 - [x] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
@@ -151,7 +151,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
 - [x] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [x] **T312c** HUD: price builds/upgrades/specs with `purchasePriceInto` (Clearance Sale, Rapid Deploy) instead of `costFor` in commands/hudViews/hudPanel/loadout; `abilityReady`/`freeCastReady` for slot states; slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
-- [~] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
+- [x] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
 - [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
 - [x] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
 - [x] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
@@ -166,6 +166,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke; switch `hud.ts` to `objectiveStatusById(state, map)` (D090).
 - [ ] **T327** `skipScene` transcript bug; `saveModifiers` ignores protocols.
 - [ ] **T328** Render follow-ups from T312b: enemy health bars (art-direction §8); the tell-glyph timer counts rendered frames, so it lingers through fast-forward (use sim ticks).
+- [ ] **T329** Results follow-ups from T316: build floaters overlap link callouts (`render/scenes/battleEvents.ts`: raise or delay the callout when `LinkFormed` lands with `TowerBuilt`); core-loop §1's Debrief row ("only after a victory") vs the supportive loss line (D059); full-screen scenes outside the debrief can't read `thisRun`/`outcome` (`storyContext.run` is null); the counter's `aria-label` on a `<p>` (fix with `m1.spec`); a confirm step before Retry/Quit if playtests show misclicks. Debrief choices on Results land with A2M4 (C2).
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.

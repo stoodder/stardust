@@ -192,8 +192,22 @@ export function validateNovelty(
   const newFlyer = newEnemies.some((id) => ctx.enemies.get(id)?.layer === 'air');
   if (used('air') && !history.airLane && !newFlyer) modifiers.push('air lane');
   if (used('rift') && !history.rift) modifiers.push('rift lanes');
+  // A capstone boss built only from mechanics already taught is exempt (maps.md § 6.3, rule 2):
+  // every trait it has is known, and so is every unit its phases bring.
+  const capstone = (id: string): boolean => {
+    const e = ctx.enemies.get(id);
+    if (e?.boss === undefined) return false;
+    const brings = e.boss.phases.flatMap((p) => [
+      ...(p.spawn === undefined ? [] : [p.spawn.enemy]),
+      ...(p.burrow?.surfaceSpawn === undefined ? [] : [p.burrow.surfaceSpawn.enemy]),
+    ]);
+    return (
+      e.traits.every((t) => history.traits.has(t)) &&
+      brings.every((b) => history.enemies.has(b))
+    );
+  };
   const threats = [
-    ...newEnemies.map((e) => `enemy ${e}`),
+    ...newEnemies.filter((e) => !capstone(e)).map((e) => `enemy ${e}`),
     ...newTraits.map((t) => `trait ${t}`),
     ...modifiers,
   ];

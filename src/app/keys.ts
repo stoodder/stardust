@@ -9,7 +9,9 @@
 //   the next Enter acts on the playfield.
 // - Esc closes a blocking modal (the M1 briefing) wherever the focus is, before anything else.
 //   In the menus it closes the innermost panel or screen (Settings, a Title panel, the Base;
-//   ui/screens/escape.ts), from a text field too.
+//   ui/screens/escape.ts), from a text field too. In a live battle it cancels (the armed build,
+//   the aim, the selection, then the tile cursor), and with nothing to cancel opens the pause
+//   menu (T316), where it resumes. While the pause menu is open, game hotkeys are off.
 // - Global keys (M: mute) work on every screen, under the same text-entry and modifier rules.
 // - Ctrl and Meta chords are the browser's. Shift and Alt pick a chord binding when the key has one
 //   (Shift+H: Hold fire on every tower; Alt+H: spare runners on every tower); a Shift press with
@@ -18,7 +20,6 @@
 import { runEscape } from '../ui/screens/escape.ts';
 import {
   callWave,
-  cancel,
   cycleTargeting,
   moveCursor,
   pressAbility,
@@ -32,13 +33,15 @@ import {
   toggleSpareRunnersAll,
   upgradeSelected,
 } from './commands.ts';
+import { pauseMenu } from '../ui/pause/state.ts';
+import { escapeInBattle, resumeFromPause } from './pause.ts';
 import { toggleMute } from './settings.ts';
 
 /** A hotkey's action, by `KeyboardEvent.code` (layout-independent). */
 export const BINDINGS: Readonly<Record<string, () => void>> = {
   Space: togglePause,
   KeyF: toggleFastSpeed,
-  Escape: cancel,
+  Escape: escapeInBattle,
   Digit1: () => pressBuildSlot(0),
   Digit2: () => pressBuildSlot(1),
   Digit3: () => pressBuildSlot(2),
@@ -165,6 +168,20 @@ export function installKeys(routing: KeyRouting): () => void {
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.code === 'Escape' && !e.repeat && routing.dismissModal?.() === true) {
       e.preventDefault();
+      return;
+    }
+    // The pause menu (T316): Esc resumes; the rest are its buttons' and the global keys'.
+    if (pauseMenu.value) {
+      if (e.code === 'Escape' && !e.repeat && !(e.ctrlKey || e.metaKey || e.altKey)) {
+        e.preventDefault();
+        resumeFromPause();
+        return;
+      }
+      const global = GLOBAL_BINDINGS[e.code];
+      if (global !== undefined && routeGlobalKey(e, document.activeElement)) {
+        e.preventDefault();
+        global();
+      }
       return;
     }
     // Esc in the menus: the innermost panel or screen closes (none registers during a battle).

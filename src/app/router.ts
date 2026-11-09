@@ -2,8 +2,9 @@
 // shows, whether a battle is running, and run end. The menus (Title, Campaign, Base, Settings) show
 // the animated backdrop; Battle runs a session; when the sim emits MapWon or MapLost, the battle
 // freezes where it stands, and RESULTS_DELAY_MS later (the last radio line and the leak feedback
-// play out; D028) Results shows over it. Every run in a campaign ends in the save in play (meta's
-// run end: Pests Processed, medals, rewards). A campaign map opens through `play`: the loadout
+// play out; D028) Results shows over it, after a win's before-Results scenes (app/runFlow.ts;
+// A1M5's party). Every run in a campaign ends in the save in play (meta's run end: Pests Processed,
+// medals, rewards), an abandoned one too (the pause menu's Retry and Quit: a loss, no Results). A campaign map opens through `play`: the loadout
 // screen first when the save has a choice to make (meta/loadout.ts, the skip rule), then the
 // battle with its briefing, which offers Change loadout back to the screen. The intake
 // (character creation, app/profile.ts) is a menu too: navigation.ts opens it before a new
@@ -12,7 +13,9 @@ import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
 import { loadoutChangeable } from '../ui/screens/loadoutView.ts';
-import { menuNotice, runResult } from '../ui/screens/state.ts';
+import type { Scene } from '../content/dialogue/index.ts';
+import { pauseMenu } from '../ui/pause/state.ts';
+import { menuNotice, runResult, type RunResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
@@ -28,6 +31,7 @@ import {
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
+import { flowScenes, playInOrder, setAfterResults } from './runFlow.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
 /** The menu notice when a battle can't start (the error itself is logged by navigation). */
@@ -43,6 +47,12 @@ export interface BattleRequest {
   readonly mapId?: string | null;
   /** Default: the router defaults' (the URL's `?seed=`), else a random seed. */
   readonly seed?: number | null;
+}
+
+/** The scenes around a results card: before it shows, and after it's dismissed. */
+export interface ResultsScenes {
+  readonly before: readonly Scene[];
+  readonly after: readonly Scene[];
 }
 
 export interface Router {
@@ -67,6 +77,18 @@ export interface Router {
   endRun(outcome: RunOutcome): Promise<void>;
   /** Shows a pending Results now (skips the rest of RESULTS_DELAY_MS); no-op when none waits. */
   flushResults(): Promise<void>;
+  /**
+   * Abandons the running battle (the pause menu's Retry or Quit): the run ends in the save in play
+   * as a loss (meta-runtime.md § Run end: on retry or quit too), with no Results. No-op once the
+   * map has ended or outside a battle. The caller then goes on (`retry`, `goto`).
+   */
+  abandon(): void;
+  /**
+   * Shows `result` as the finished run: a win's before-Results scenes first (A1M5's party), then
+   * Results, whose dismissal plays the after-Results scenes (app/runFlow.ts). `flow` replaces the
+   * map's own scenes (the test hooks' results fixture).
+   */
+  presentResults(result: RunResult, flow?: ResultsScenes): Promise<void>;
   /** Settings → Back: the menu Settings was opened from (the Title when none). */
   closeSettings(): Promise<void>;
 }
@@ -98,6 +120,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   };
   const stopBattle = (): void => {
     clearPending();
+    pauseMenu.value = false;
+    setAfterResults([]);
     battle?.stop();
     battle = null;
     loadoutChangeable.value = false;
@@ -189,6 +213,48 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     return Promise.resolve();
   };
 
+  /**
+   * Ends the battle's run in the save in play (meta-runtime.md § Run end: Pests Processed, medals,
+   * rewards) and freezes it where it stands. Once per battle.
+   */
+  const recordEnd = (
+    b: Battle,
+    outcome: RunOutcome,
+  ): { input: RunEndInput; summary: ReturnType<typeof recordRun> } => {
+    clearPending();
+    ended = true;
+    const { sim } = b.host;
+    const s = sim.state;
+    const end = endedAt ?? { ms: performance.now(), tick: s.tick };
+    const input: RunEndInput = {
+      mapId: sim.map.id,
+      waveCount: sim.map.waves.length,
+      maxIntegrity: s.maxIntegrity,
+      integrity: s.integrity,
+      skitterkinKilled: s.stats.skitterkinKilled,
+      wavesCleared,
+      firstLeakAgo:
+        firstLeakAt === null
+          ? null
+          : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
+      stardust: sim.map.stardust,
+      medals: offeredMedals(sim.map),
+      earnedMedals: earnedMedalIds(s, sim.map),
+      objectives: sim.map.objectives.map((o, i) => ({
+        id: o.id,
+        name: o.name,
+        intel: o.intel,
+        status: s.objectives[i] ?? 'open',
+      })),
+      stats: s.stats,
+    };
+    const summary = recordRun(metaRunEndOf(input, outcome));
+    // The battle freezes where it ended and stays drawn behind the results.
+    setSpeed(0);
+    cancel();
+    return { input, summary };
+  };
+
   const router: Router = {
     get battle() {
       return battle;
@@ -264,43 +330,35 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     endRun(outcome) {
       if (battle === null) return Promise.reject(new Error('router: no battle to end'));
       if (ended) return Promise.resolve();
-      clearPending();
-      ended = true;
-      const { sim } = battle.host;
-      const s = sim.state;
-      const end = endedAt ?? { ms: performance.now(), tick: s.tick };
-      const input: RunEndInput = {
-        mapId: sim.map.id,
-        waveCount: sim.map.waves.length,
-        maxIntegrity: s.maxIntegrity,
-        integrity: s.integrity,
-        skitterkinKilled: s.stats.skitterkinKilled,
-        wavesCleared,
-        firstLeakAgo:
-          firstLeakAt === null
-            ? null
-            : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
-        stardust: sim.map.stardust,
-        medals: offeredMedals(sim.map),
-        earnedMedals: earnedMedalIds(s, sim.map),
-        completedObjectives: sim.map.objectives
-          .filter((_, i) => s.objectives[i] === 'done')
-          .map((o) => ({ id: o.id, intel: o.intel })),
-        stats: s.stats,
-      };
-      // Run end (meta-runtime.md § Run end): Pests Processed, medals, and rewards into the save
-      // in play, then the results card shows what it paid.
-      const summary = recordRun(metaRunEndOf(input, outcome));
+      const input = recordEnd(battle, outcome);
       // The debrief reads the save as the run left it (its flags, seen list, and profile).
-      runResult.value = runResultOf(
-        { ...input, ...debriefStoryOf(activeSave()) },
+      const result = runResultOf(
+        { ...input.input, ...debriefStoryOf(activeSave()) },
         outcome,
-        summary,
+        input.summary,
       );
-      // The battle freezes where it ended and stays drawn behind the results.
-      setSpeed(0);
-      cancel();
-      return router.goto('results');
+      return router.presentResults(result);
+    },
+    abandon() {
+      if (battle === null || ended || pending !== null) return;
+      recordEnd(battle, 'lost');
+    },
+    presentResults(result, flow) {
+      runResult.value = result;
+      const shown = battle;
+      const before = flow?.before ?? flowScenes(result.mapId, result.outcome, 'before');
+      const after = flow?.after ?? flowScenes(result.mapId, result.outcome, 'after');
+      return new Promise<void>((resolve, reject) => {
+        playInOrder(before, () => {
+          // A battle stopped meanwhile (a menu took over) has no Results to show.
+          if (battle !== shown) {
+            resolve();
+            return;
+          }
+          setAfterResults(after);
+          router.goto('results').then(resolve, reject);
+        });
+      });
     },
   };
   return router;

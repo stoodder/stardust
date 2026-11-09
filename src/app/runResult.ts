@@ -2,6 +2,8 @@
 // battle into a RunEndInput; app/save.ts folds it into the save in play (meta's runEnd) and returns
 // what it paid; this module turns both into the results card's RunResult.
 import { barksFor, SCENES, SPEAKER_DEFS } from '../content/dialogue/index.ts';
+import type { CampaignMapId } from '../content/campaign.ts';
+import { resultsFlow } from '../content/dialogue/resultsFlow.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { SpeakerId } from '../content/dialogue/types.ts';
 import {
@@ -17,7 +19,7 @@ import { linesUntilChoice } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
-import type { MedalResult, RunResult, RunRewards } from '../ui/screens/state.ts';
+import type { MedalResult, ObjectiveResult, RunResult, RunRewards } from '../ui/screens/state.ts';
 import { towerName } from './hudText.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
@@ -60,10 +62,21 @@ export interface RunEndInput {
   readonly medals: readonly MapMedal[];
   /** The medal ids the sim settled as earned (`earnedMedalIds`; D042). */
   readonly earnedMedals: readonly string[];
-  /** The optional objectives the sim settled as done, with their Intel (T304f; paid on a win). */
-  readonly completedObjectives?: readonly { readonly id: string; readonly intel: number }[];
+  /**
+   * The map's optional objectives in map order, with how the run left them (`state.objectives`;
+   * T304f). The done ones pay their Intel on a win (meta's runEnd); Results lists them all (T316).
+   */
+  readonly objectives?: readonly RunObjective[];
   /** The run's `state.stats`, for the story run-end flag rules (meta's runEnd, step 2). */
   readonly stats?: FlagRuleStats;
+}
+
+/** An optional objective as the run left it. */
+export interface RunObjective {
+  readonly id: string;
+  readonly name: string;
+  readonly intel: number;
+  readonly status: 'open' | 'done' | 'failed';
 }
 
 /** What the debrief's conditions and tokens read. `run` and `map` come from the run itself. */
@@ -132,9 +145,13 @@ export function metaRunEndOf(
     waveCount: input.waveCount,
     wavesResolved: wavesResolved(input, outcome),
     earnedMedals: input.earnedMedals,
-    ...(input.completedObjectives === undefined
+    ...(input.objectives === undefined
       ? {}
-      : { completedObjectives: input.completedObjectives }),
+      : {
+          completedObjectives: input.objectives
+            .filter((o) => o.status === 'done')
+            .map((o) => ({ id: o.id, intel: o.intel })),
+        }),
     ...(input.stats === undefined ? {} : { stats: input.stats }),
     skitterkinKilled: input.skitterkinKilled,
     meter: Math.max(0, input.integrity),
@@ -162,14 +179,29 @@ export function runRewardsOf(
       intel: won?.intel ?? 0,
     };
   });
+  const objectives = (input.objectives ?? []).map((o): ObjectiveResult => {
+    const paid = summary.objectives.find((e) => e.id === o.id);
+    return {
+      id: o.id,
+      name: o.name,
+      done: o.status === 'done',
+      isNew: paid?.isNew ?? false,
+      intel: paid?.intel ?? 0,
+    };
+  });
   const { source, amount, base, waveCount } = summary.stardust;
+  // The shop's note (set while the shop is locked) shows on the first payday only (T235).
+  const note = summary.stardustNote ?? null;
+  const firstPayday = summary.firstPayday && note !== null;
   return {
     medals,
+    objectives,
     stardust: { source, amount, base, wavesResolved: summary.stardust.wavesResolved, waveCount },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
     issued: summary.issued.map(towerName),
-    stardustNote: summary.stardustNote ?? null,
+    stardustNote: firstPayday ? note : null,
+    firstPayday,
     saveNotice: summary.writeFailed ?? null,
   };
 }
@@ -180,10 +212,43 @@ function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLi
 }
 
 /**
+ * What the card's story reads: the save as the run left it, and the run itself (`outcome`, and
+ * `thisRun` over its stats).
+ */
+function runStoryContext(
+  map: CampaignMapId,
+  input: Pick<RunEndInput, 'stats' | 'story'>,
+  outcome: RunOutcome,
+): StoryContext {
+  const run =
+    input.stats === undefined
+      ? { outcome, ruleFlags: {} }
+      : runContextOf(map, outcome, input.stats);
+  return { ...(input.story ?? NO_STORY).story, map, run };
+}
+
+/**
+ * The card's story stamps (core-loop.md § 6.2), as stamped: the map's `stamps` whose `when` holds
+ * over this run (content/dialogue/resultsFlow.ts), so a replay shows what that run did.
+ */
+export function resultStamps(
+  input: Pick<RunEndInput, 'mapId' | 'stats' | 'story'>,
+  outcome: RunOutcome,
+): string[] {
+  const map = input.mapId;
+  if (!isCampaignMapId(map)) return [];
+  const ctx = runStoryContext(map, input, outcome);
+  return (resultsFlow(map).stamps ?? [])
+    .filter((s) => evaluateCondition(s.when, ctx))
+    .map((s) => s.text);
+}
+
+/**
  * The results card's spoken lines (D028): the map's `first_leak` bark when the first leak came
  * within FIRST_LEAK_RECENT_MS (and FIRST_LEAK_RECENT_TICKS) of the end and the bark could play
  * this run (its `when` holds; a once-per-campaign bark not already in the save's seen list), then
- * the map's `<map>_debrief` scene as the run's outcome plays it, up to any choice (T316's).
+ * the map's `<map>_debrief` scene as the run's outcome plays it, up to any choice (a debrief's
+ * choice isn't played yet; the first is A2M4's C2).
  */
 export function debriefLines(
   input: Pick<RunEndInput, 'mapId' | 'firstLeakAgo' | 'stats' | 'story'>,
@@ -192,11 +257,7 @@ export function debriefLines(
   const map = input.mapId;
   if (!isCampaignMapId(map)) return [];
   const story = input.story ?? NO_STORY;
-  const run =
-    input.stats === undefined
-      ? { outcome, ruleFlags: {} }
-      : runContextOf(map, outcome, input.stats);
-  const ctx: StoryContext = { ...story.story, map, run };
+  const ctx = runStoryContext(map, input, outcome);
   const ago = input.firstLeakAgo;
   const recent =
     ago !== null && ago.ms <= FIRST_LEAK_RECENT_MS && ago.ticks <= FIRST_LEAK_RECENT_TICKS;
@@ -235,6 +296,7 @@ export function runResultOf(
     maxIntegrity: input.maxIntegrity,
     pestsProcessed: input.skitterkinKilled,
     debrief: debriefLines(input, outcome),
+    stamps: resultStamps(input, outcome),
     rewards: summary === null ? null : runRewardsOf(input, summary),
   };
 }

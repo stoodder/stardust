@@ -55,6 +55,11 @@ export interface RunEndSummary {
   /** The map was won before this run (a replay). */
   readonly wonBefore: boolean;
   readonly stardust: StardustPayout;
+  /**
+   * The run paid Stardust into an empty bank. Until Zibzab's shop opens (the only Stardust sink)
+   * the bank only grows, so then this is the save's first payday (T235: Results marks it once).
+   */
+  readonly firstPayday: boolean;
   /** The medals this run earned, in the sim's order; `isNew` ones paid Intel. */
   readonly medals: readonly EarnedMedal[];
   /** The objectives this run completed (on a win), in map order; `isNew` ones paid Intel. */
@@ -165,6 +170,7 @@ export function runEnd(
       outcome: input.outcome,
       wonBefore,
       stardust,
+      firstPayday: stardust.amount > 0 && save.currencies.stardust <= 0,
       medals,
       objectives,
       intel,

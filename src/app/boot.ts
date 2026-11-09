@@ -11,6 +11,7 @@ import { hud, screen } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import { dismissBriefing, issue, setSpeed } from './commands.ts';
 import { installKeys } from './keys.ts';
+import { fixtureResult, fixtureScenes } from './resultsFixture.ts';
 import { logError } from './log.ts';
 import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
@@ -121,6 +122,12 @@ export async function boot(): Promise<void> {
         save: () => {
           const save = activeSave();
           return save === null ? null : structuredClone(save);
+        },
+        results: async (fixture) => {
+          await sceneReady;
+          if (router.battle !== null) throw new Error('__sd.results: not during a battle');
+          const result = fixtureResult(fixture, activeSave());
+          await router.presentResults(result, fixtureScenes(fixture));
         },
       }),
     );

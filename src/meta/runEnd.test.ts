@@ -218,6 +218,17 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
     expect(summary.pestsProcessed).toEqual({ run: 3, lifetime: 110 });
   });
 
+  it('marks the first payday: Stardust paid into an empty bank (T235)', () => {
+    // A 0-Stardust win (A1M1) pays nothing, so it's no payday.
+    expect(runEnd(createNewSave(), { ...RUN, mapStardust: 0 }).summary.firstPayday).toBe(false);
+    const first = runEnd(createNewSave(), RUN);
+    expect(first.summary.firstPayday).toBe(true);
+    // A defeat stipend can be the first payday too; a later run into a full bank isn't.
+    expect(runEnd(createNewSave(), lost(4)).summary.firstPayday).toBe(true);
+    expect(runEnd(first.save, RUN).summary.firstPayday).toBe(false);
+    expect(runEnd(createNewSave(), lost(0)).summary.firstPayday).toBe(false);
+  });
+
   it('pays Story difficulty in full (progression.md § 9)', () => {
     const story = { ...createNewSave(), settings: { difficulty: 'story' as const } };
     expect(runEnd(story, RUN).save.currencies).toEqual({ stardust: 120, intel: 2 });

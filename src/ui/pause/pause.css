@@ -1,0 +1,39 @@
+/* The pause menu (PauseMenu.tsx; T316): a small panel over the frozen battle, whose own PAUSED
+   scrim (hud.css) stays under it. */
+
+.sd-pause {
+  /* ink.0 at 45%, the results card's scrim. */
+  background: rgb(5 3 10 / 45%);
+}
+
+.sd-pause-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 200px;
+  padding: 10px 12px 10px;
+}
+
+.sd-pause-heading {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--sd-teal-4);
+  text-shadow: 1px 1px 0 var(--sd-teal-1);
+}
+
+.sd-pause-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 160px;
+}
+
+.sd-pause-note {
+  font-family: var(--font-body);
+  line-height: 10px;
+  color: var(--sd-steel-3);
+}

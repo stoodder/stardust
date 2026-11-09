@@ -6,6 +6,8 @@
 // (T225). Every control is a real <button> of at least 16×16 game px.
 import { CommsPanel } from '../dialogue/CommsPanel.tsx';
 import { dialogue, sceneBlocks } from '../dialogue/state.ts';
+import { MenuButton, PauseMenu } from '../pause/PauseMenu.tsx';
+import { pauseMenu } from '../pause/state.ts';
 import { hud } from '../state.ts';
 import { MuteButton } from './MuteButton.tsx';
 import { AbilityBar } from './AbilityBar.tsx';
@@ -30,10 +32,11 @@ import './hud.css';
 export function Hud() {
   const selected = hud.selected.value;
   const briefing = dialogue.scene.value?.mode === 'briefing' ? dialogue.scene.value : null;
-  const open = hud.briefing.value !== null || sceneBlocks.value;
+  const open = hud.briefing.value !== null || sceneBlocks.value || pauseMenu.value;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud">
-      {/* Everything but the briefing: inert (unfocusable, unclickable) while it or a scene is open. */}
+      {/* Everything but the briefing: inert (unfocusable, unclickable) while it, a scene, or the
+          pause menu is open. */}
       <div class="hud-play" inert={open}>
         <PausedOverlay />
         <WaveBannerView />
@@ -44,6 +47,7 @@ export function Hud() {
         </div>
         <div class="hud-top-right">
           <div class="hud-top-row">
+            <MenuButton />
             <MuteButton />
             <SpeedControls />
           </div>
@@ -66,6 +70,7 @@ export function Hud() {
         <ActionAnnouncer />
       </div>
       {hud.briefing.value !== null && briefing !== null && <Briefing view={briefing} />}
+      {pauseMenu.value && <PauseMenu />}
     </div>
   );
 }

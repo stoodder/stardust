@@ -12,6 +12,7 @@ import type {
   HookCommand,
   HookState,
   PerfSample,
+  ResultsFixture,
   ScreenId,
   Speed,
   TestHooks,
@@ -54,6 +55,8 @@ export interface HookEnv {
   readonly dialogue: DialogueHooks;
   /** A copy of the save in play, or null (app/save.ts). */
   save(): SaveData | null;
+  /** Shows a made-up finished run's Results and its flow (app/resultsFixture.ts). */
+  results(fixture: ResultsFixture): Promise<void>;
 }
 
 const SPEEDS: ReadonlySet<number> = new Set([0, 1, 2]);
@@ -106,6 +109,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
     audio: env.audio,
     dialogue: env.dialogue,
     save: () => env.save(),
+    results: (fixture: ResultsFixture) => env.results(fixture),
     perf: (): PerfSample => {
       const b = env.battle();
       const s = b?.host.sim.state;

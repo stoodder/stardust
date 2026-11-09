@@ -78,6 +78,26 @@ export interface TestHooks {
   save(): SaveData | null;
   /** Dialogue (T302b): plays scenes and barks by id, and reads what shows. */
   readonly dialogue: DialogueHooks;
+  /**
+   * Shows a made-up finished run's Results (T316; app/resultsFixture.ts), with the map's flow: a
+   * win's before-Results scenes, then the card, whose dismissal plays the after-Results scenes
+   * (scenes play only with `&dialogue=1`). It reads the save in play but never writes it. From a
+   * menu, not a battle (it throws during one). Resolves once the card shows.
+   */
+  results(fixture: ResultsFixture): Promise<void>;
+}
+
+/** A finished run for `results` (T316). */
+export interface ResultsFixture {
+  /** A campaign map id (registered or not: an unregistered one pays nothing and has no medals). */
+  readonly map: string;
+  readonly outcome: RunOutcome;
+  /** This run's Pests Processed. Default 120. */
+  readonly pests?: number;
+  /** The Quiet Wave (`quiet_wave` group) units that spawned and leaked, for C1's `thisRun`. */
+  readonly quietWave?: { readonly spawned: number; readonly leaked: number };
+  /** Scenes in place of the map's flow, by id (registered or dev, `ui/dialogue/dev.ts`). */
+  readonly flow?: { readonly before?: readonly string[]; readonly after?: readonly string[] };
 }
 
 export interface DialogueHooks {

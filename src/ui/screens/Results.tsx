@@ -1,29 +1,39 @@
-// The results screen (T115, T204c): shown over the frozen battle when a run ends. One headline and
-// the counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and
-// integrity, the lifetime count, the payroll (the Stardust paid and why; on a win the map's medals,
-// this run's lit and first-time ones tagged NEW with their Intel), and the debrief with its
-// speakers' name plates (D028). The counter is the Act I line (design/core-loop.md §6.2) and ticks up
-// (art-direction §9). The way on is Continue (base or Shift board) or Retry, with Change loadout
-// beside Retry where the map offers the loadout screen (T220).
+// The results screen (T115, T204c, T316): shown over the frozen battle when a run ends. One headline
+// (with any story stamp beside it: A1M5's CONTAINMENT LAPSE, core-loop.md § 6.2), the run's waves
+// and integrity on one line, the counter and the lifetime count, which tick up together
+// (art-direction §9; T235), the payroll (the Stardust paid and why, the first payday marked; on a
+// win the map's medals and optional objectives, this run's lit and first-time ones tagged NEW with
+// their Intel), and the debrief with its speakers' name plates (D028). The way on is Continue (base
+// or Shift board) or Retry, with Change loadout beside Retry where the map offers the loadout
+// screen (T220); after a win, leaving plays the map's after-Results scenes first (app/runFlow.ts).
+// Compact by design: everything fits 360 game px of height.
 import { silkText } from '../silk.ts';
 import { useEffect, useState } from 'preact/hooks';
 import {
   afterWin,
   changeLoadoutAfterRun,
+  leaveResultsTo,
   loadoutOfferedAfterRun,
   retryRun,
-  toCampaign,
-  toTitle,
 } from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
-import { campaign, runResult, type MedalResult, type RunResult, type RunRewards } from './state.ts';
+import {
+  campaign,
+  runResult,
+  type MedalResult,
+  type ObjectiveResult,
+  type RunResult,
+  type RunRewards,
+} from './state.ts';
+import { sceneBlocks } from '../dialogue/state.ts';
 import { colorVar } from '../color.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
 import './screens.css';
+import './results.css';
 
 /**
  * Headlines in Everglow's voice. A loss is never scolded: it is a "minor operational hiccup", the
@@ -63,8 +73,8 @@ function useCountUp(target: number): number {
   return shown;
 }
 
-function Counter({ n }: { n: number }) {
-  const shown = useCountUp(n);
+/** This run's count, ticking up (`shown`) to `n`. */
+function Counter({ n, shown }: { n: number; shown: number }) {
   const done = shown === n;
   return (
     // The live text updates every frame while counting; screen readers get the final line only.
@@ -163,6 +173,34 @@ function MedalRow({ medal }: { medal: MedalResult }) {
   );
 }
 
+/** One of the map's optional objectives: done (NEW! and its Intel the first time) or Next time! */
+function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
+  const status = o.isNew ? 'new!' : o.done ? 'on file' : 'next time';
+  return (
+    <li
+      class={o.done ? 'sd-results-objective sd-results-objective-done' : 'sd-results-objective'}
+      aria-label={`${o.name}: ${status}`}
+    >
+      <span class="sd-results-pay-label">
+        <span class="sd-results-objective-box" aria-hidden="true" />
+        {silkText(o.name)}
+        {o.isNew && (
+          <span class="sd-results-new" aria-hidden="true">
+            NEW!
+          </span>
+        )}
+      </span>
+      {o.isNew ? (
+        <Amount n={o.intel} currency="intel" />
+      ) : (
+        <span class="sd-results-pay-note" aria-hidden="true">
+          {o.done ? 'On file' : 'Next time!'}
+        </span>
+      )}
+    </li>
+  );
+}
+
 /**
  * The payroll: the run's Stardust with where it came from, then (on a win) the map's medals, each
  * paying its Intel the first time it is earned.
@@ -179,6 +217,7 @@ function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
           <span class="sd-results-pay-label">
             {label}
             {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
+            {rewards.firstPayday && <span class="sd-results-payday">FIRST PAYDAY!</span>}
           </span>
           <Amount n={rewards.stardust.amount} currency="stardust" />
         </li>
@@ -203,15 +242,37 @@ function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
           ))}
         </ul>
       )}
+      {/* Under the medals (core-loop.md § 2.13): a loss pays none, so like the medals, a win's only. */}
+      {won && rewards.objectives.length > 0 && (
+        <ul aria-label="Objectives">
+          {rewards.objectives.map((o) => (
+            <ObjectiveRow key={o.id} objective={o} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
 
-/** The lifetime count under this run's (design/core-loop.md § 6.2). */
-function Career({ n }: { n: number }) {
+/**
+ * The lifetime count beside this run's (design/core-loop.md § 6.2): it ticks up with the counter,
+ * from the total before this run (`counted` is how far the counter has got, of `run`; T235).
+ */
+function Career({ n, run, counted }: { n: number; run: number; counted: number }) {
+  const shown = n - run + counted;
   return (
     <p class="sd-results-career">
-      Career total: <span class="sd-results-career-count">{formatCount(n)}</span>
+      {/* Screen readers get the final count only; the ticking one is for the eyes. */}
+      <span class="sd-visually-hidden">Career total: {formatCount(n)}</span>
+      <span aria-hidden="true">
+        Career total:{' '}
+        <span
+          class={shown === n ? 'sd-results-career-count done' : 'sd-results-career-count'}
+          style={{ minWidth: `${formatCount(n).length}ch` }}
+        >
+          {formatCount(shown)}
+        </span>
+      </span>
     </p>
   );
 }
@@ -223,7 +284,11 @@ function Career({ n }: { n: number }) {
 function OnwardButton({ won }: { won: boolean }) {
   const inCampaign = campaign.value !== null;
   const label = !inCampaign ? 'Title' : won ? 'Continue' : 'Shift board';
-  const go = !inCampaign ? toTitle : won ? afterWin : toCampaign;
+  const go = !inCampaign
+    ? () => leaveResultsTo('title')
+    : won
+      ? afterWin
+      : () => leaveResultsTo('campaign');
   return (
     <button
       type="button"
@@ -236,9 +301,20 @@ function OnwardButton({ won }: { won: boolean }) {
   );
 }
 
+/** A story stamp (core-loop.md § 6.2): red, askew, over the headline's right. Never pays. */
+function Stamp({ text, index }: { text: string; index: number }) {
+  return (
+    <p class="sd-results-stamp" style={{ top: `${20 + index * 18}px` }}>
+      <span class="sd-visually-hidden">Stamped: </span>
+      {silkText(text)}
+    </p>
+  );
+}
+
 function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
   const { rewards } = result;
+  const counted = useCountUp(result.pestsProcessed);
   return (
     <section
       class={`sd-panel sd-results-panel ${won ? 'sd-results-won' : 'sd-results-lost'}`}
@@ -250,6 +326,9 @@ function Body({ result }: { result: RunResult }) {
       <h1 id="sd-results-heading" class="sd-results-heading">
         {HEADLINE[result.outcome]}
       </h1>
+      {result.stamps.map((t, i) => (
+        <Stamp key={t} text={t} index={i} />
+      ))}
       <dl class="sd-results-stats">
         <div>
           <dt>Waves survived</dt>
@@ -264,8 +343,12 @@ function Body({ result }: { result: RunResult }) {
           </dd>
         </div>
       </dl>
-      <Counter n={result.pestsProcessed} />
-      {rewards !== null && <Career n={rewards.lifetimePests} />}
+      <div class="sd-results-counts">
+        <Counter n={result.pestsProcessed} shown={counted} />
+        {rewards !== null && (
+          <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
+        )}
+      </div>
       {rewards !== null && <Payroll rewards={rewards} won={won} />}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
       <div class="sd-results-buttons">
@@ -298,7 +381,8 @@ export function Results() {
   const result = runResult.value;
   if (result === null) return null;
   return (
-    <main class="sd-screen sd-results">
+    // Inert under a scene (the stinger plays over the card as it's dismissed).
+    <main class="sd-screen sd-results" inert={sceneBlocks.value}>
       <Body result={result} />
     </main>
   );

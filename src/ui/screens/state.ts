@@ -23,6 +23,11 @@ export interface RunResult {
    * when the map ended, then the map's debrief for this outcome. Empty for a map with no radio.
    */
   readonly debrief: readonly SpokenLine[];
+  /**
+   * Story stamps on the card (core-loop.md § 6.2; A1M5's "CONTAINMENT LAPSE"), as stamped, from
+   * the run that just ended (content/dialogue/resultsFlow.ts). Story-only: they never pay.
+   */
+  readonly stamps: readonly string[];
   /** What the run paid into the save in play (meta run end); null outside a campaign (`?map=`). */
   readonly rewards: RunRewards | null;
 }
@@ -35,6 +40,19 @@ export interface MedalResult {
   /** Earned this run. */
   readonly earned: boolean;
   /** Earned this run for the first time (it paid Intel). */
+  readonly isNew: boolean;
+  /** The Intel it paid this run (0 unless new). */
+  readonly intel: number;
+}
+
+/** One of the map's optional objectives on the results card (core-loop.md § 2.13). */
+export interface ObjectiveResult {
+  readonly id: string;
+  /** Its name ("Clean Audit"). */
+  readonly name: string;
+  /** Done this run (else it failed, or was still open when the map was lost). */
+  readonly done: boolean;
+  /** Done this run for the first time on a win (it paid Intel). */
   readonly isNew: boolean;
   /** The Intel it paid this run (0 unless new). */
   readonly intel: number;
@@ -55,16 +73,23 @@ export interface RunRewards {
     readonly wavesResolved: number;
     readonly waveCount: number;
   };
-  /** Intel paid: one per newly earned medal. */
+  /** The map's optional objectives in map order, with this run's standing (none on most maps). */
+  readonly objectives: readonly ObjectiveResult[];
+  /** Intel paid: one per newly earned medal, plus new objectives' Intel. */
   readonly intel: number;
   /** The lifetime Pests Processed after this run (design/core-loop.md § 6.2). */
   readonly lifetimePests: number;
   /**
    * Where the Stardust goes while it can't be spent yet ("Banked for Zibzab's shop. Opens after
-   * Shift 3 (coming soon)."), for the payroll's Stardust line; null once the shop is open or when
-   * the run paid none.
+   * Shift 3 (coming soon)."), under the payroll's Stardust line on the first payday only (T235);
+   * null on every other run.
    */
   readonly stardustNote: string | null;
+  /**
+   * The run paid the save's first Stardust, before the shop opens (T235): the payroll tags its
+   * Stardust line "FIRST PAYDAY!".
+   */
+  readonly firstPayday: boolean;
   /** Display names of the towers this win issued for the next map (the Sprinkler after A1M1). */
   readonly issued: readonly string[];
   /**

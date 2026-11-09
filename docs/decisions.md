@@ -1157,3 +1157,12 @@ Real art went in behind T300a's ids. No data changed.
 - **Clean Audit** (core-loop §2.13): a tower's build phase lasts until the next wave starts after it was built; selling after that is a *late sell* and fails the objective at once. A misclick-grace refund is never a sale.
 - **A1M4 as built:** par 85 (A1M3 90; campaign.md §7's target 87 → 85, since integrity moves in 5-point steps). Mk II → 90, no casts → 70. W5 (10 Chonks + 20 Bunchlings) is the armor and splash test; W9's Elder convoys keep the no-armor build losing with the full catalog. The alt `slow_and_shell` scores 100, above par; allowed (par is the reference, not the ceiling).
 - **Ruling for T315:** par's only leak is a designed W1 rush of 32 Zoomers, and it ends with ~1,400 credits unspent. A map-4 margin that comes from wave 1 reads as cheap (D026 R3 ruled the same for A1M1). T315 moves the margin into the late waves and makes par spend its bank, keeping par ≤ 85.
+
+### D091 — 2026-11-09 — T316 Results, the scene flow, the pause menu
+- **Leaving mid-map counts as a loss** (meta-runtime: run end on "win, loss, retry, or quit"): `router.abandon()` records kills, the run and the defeat stipend for the waves resolved, never medals, objectives or flags, and shows no Results card. No more generous than losing at that moment.
+- **Pause menu:** Esc cancels in order (armed build, aim, selection, keyboard cursor) and then opens the menu; a HUD Menu button too. Resume / Retry shift (same loadout, briefing skipped) / Quit (to Base, else the Shift board, else Title). Sim frozen, HUD inert, focus trapped.
+- **Scenes around Results** live in content (`content/dialogue/resultsFlow.ts`): A1M5 plays `a1_m05_scene_party` before Results and `a1_m05_scene_stinger` after it, on every win, skippable, whichever button leaves the card; only registered scenes play, and only with dialogue on.
+- **Stamps read the run** (`thisRun`), not the saved flag: a replay that cleared the Quiet Wave shows no CONTAINMENT LAPSE stamp.
+- **Objective rows** show on a win, like medals ("NEW!" with Intel, "On file", "Next time!").
+- **First payday:** a run that pays Stardust into an empty bank while the shop is locked; "Banked for Zibzab's shop…" shows only then (T235).
+- Follow-ups: T329.

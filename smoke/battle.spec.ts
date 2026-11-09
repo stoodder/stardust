@@ -102,9 +102,13 @@ test('battle: Esc and right-click cancel the selection; paths never take towers'
   // Right-click shows no context menu and builds nothing.
   const pad = await page.evaluate(() => globalThis.__sd?.tileToClient(1, 1) ?? null);
   await page.mouse.click(pad!.x, pad!.y, { button: 'right' });
-  await page.keyboard.press('Escape');
   await page.evaluate(() => globalThis.__sd?.fastForward(1));
   expect(await page.evaluate(() => globalThis.__sd?.state()?.towers.live)).toBe(0);
+  // Esc with nothing left to cancel opens the pause menu (T316); Esc again resumes.
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Shift paused' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Shift paused' })).toBeHidden();
   // Space pauses: the tick stops advancing.
   await page.keyboard.press('Space');
   const a = await page.evaluate(() => globalThis.__sd?.state()?.tick);

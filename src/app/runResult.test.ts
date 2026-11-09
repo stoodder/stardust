@@ -6,6 +6,7 @@ import {
   FIRST_LEAK_RECENT_TICKS,
   metaRunEndOf,
   offeredMedals,
+  resultStamps,
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
@@ -41,6 +42,7 @@ describe('runResultOf', () => {
           text: 'Back on the pads, Sprout. Everybody loses some lettuce on day one.',
         },
       ],
+      stamps: [],
       rewards: null,
     });
   });
@@ -102,10 +104,12 @@ describe('the run end and the rewards on the card', () => {
         { id: 'perfect_core', name: 'Perfect Core', earned: false, isNew: false, intel: 0 },
         { id: 'teamwork', name: 'Teamwork!', earned: true, isNew: true, intel: 1 },
       ],
+      objectives: [],
       stardust: { source: 'replay', amount: 48, base: 120, wavesResolved: 7, waveCount: 7 },
       intel: 1,
       lifetimePests: 114,
       stardustNote: null,
+      firstPayday: false,
       issued: [],
       saveNotice: null,
     });
@@ -122,6 +126,104 @@ describe('the run end and the rewards on the card', () => {
     }).rewards;
     expect(rewards?.issued).toEqual(['Sprinkler']);
     expect(rewards?.saveNotice).toBe('Records hiccup.');
+  });
+});
+
+const recorded = (save: ReturnType<typeof createNewSave>, input: RunEndInput) =>
+  runEnd(save, { ...metaRunEndOf(input, 'won'), mapId: 'a1_m04' });
+
+describe('objectives and the first payday on the card (T316, T235)', () => {
+  const AUDIT = { id: 'clean_audit', name: 'Clean Audit', intel: 1 };
+  const winWith = (status: 'open' | 'done' | 'failed'): RunEndInput => ({
+    ...INPUT,
+    mapId: 'a1_m04',
+    objectives: [{ ...AUDIT, status }],
+  });
+
+  it('lists each objective with its standing, and pays a done one once', () => {
+    const first = recorded(createNewSave(), winWith('done'));
+    const rewards = runResultOf(winWith('done'), 'won', first.summary).rewards;
+    expect(rewards?.objectives).toEqual([
+      { id: 'clean_audit', name: 'Clean Audit', done: true, isNew: true, intel: 1 },
+    ]);
+    const again = recorded(first.save, winWith('done'));
+    expect(runResultOf(winWith('done'), 'won', again.summary).rewards?.objectives).toEqual([
+      { id: 'clean_audit', name: 'Clean Audit', done: true, isNew: false, intel: 0 },
+    ]);
+    const failed = recorded(createNewSave(), winWith('failed'));
+    expect(runResultOf(winWith('failed'), 'won', failed.summary).rewards?.objectives).toEqual([
+      { id: 'clean_audit', name: 'Clean Audit', done: false, isNew: false, intel: 0 },
+    ]);
+    // meta pays only the done ones (completedObjectives).
+    expect(metaRunEndOf(winWith('failed'), 'won').completedObjectives).toEqual([]);
+    expect(metaRunEndOf(winWith('done'), 'won').completedObjectives).toEqual([
+      { id: 'clean_audit', intel: 1 },
+    ]);
+  });
+
+  it("marks the first payday, and shows the shop's note then only", () => {
+    const note = "Banked for Zibzab's shop. Opens after Shift 3 (coming soon).";
+    const first = runEnd(createNewSave(), { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
+    const paid = runResultOf(INPUT, 'won', { ...first.summary, stardustNote: note }).rewards;
+    expect(paid?.firstPayday).toBe(true);
+    expect(paid?.stardustNote).toBe(note);
+    const later = runEnd(first.save, { ...metaRunEndOf(INPUT, 'won'), mapId: 'a1_m01' });
+    const again = runResultOf(INPUT, 'won', { ...later.summary, stardustNote: note }).rewards;
+    expect(again?.firstPayday).toBe(false);
+    expect(again?.stardustNote).toBeNull();
+    // Once the shop is open (no note), an empty bank's pay is no "first" payday.
+    expect(runResultOf(INPUT, 'won', first.summary).rewards?.firstPayday).toBe(false);
+  });
+});
+
+/** Run stats with `quiet` Quiet Wave units spawned and `leaked` of them leaked. */
+const tags = (quiet: number, leaked: number) => {
+  const none = { quiet_wave: 0, youngling: 0, fleeing: 0, medal_exempt: 0 };
+  return {
+    holdFireUses: 1,
+    holdFireTicks: 0,
+    integrityLost: 0,
+    towersBuilt: 0,
+    creditsSpent: 0,
+    abilityUses: 0,
+    tagSpawned: { ...none, quiet_wave: quiet },
+    tagLeaked: { ...none, quiet_wave: leaked },
+    tagKilled: { ...none, quiet_wave: quiet - leaked },
+  };
+};
+
+/** A run of A1M5 whose Quiet Wave (7 units) leaked `leaked`. */
+const a1m05 = (leaked: number): RunEndInput => ({
+  ...INPUT,
+  mapId: 'a1_m05',
+  stats: tags(7, leaked),
+});
+
+describe('story stamps (core-loop.md § 6.2; C1)', () => {
+  it("stamps A1M5's card CONTAINMENT LAPSE when this run spared the Quiet Wave", () => {
+    expect(resultStamps(a1m05(7), 'won')).toEqual(['CONTAINMENT LAPSE']);
+    expect(resultStamps(a1m05(6), 'won')).toEqual(['CONTAINMENT LAPSE']); // ≥ 75%
+    expect(resultStamps(a1m05(5), 'won')).toEqual([]);
+    expect(runResultOf(a1m05(7), 'won').stamps).toEqual(['CONTAINMENT LAPSE']);
+  });
+
+  it("reads this run, not the save's flag: a replay that cleared it has no stamp", () => {
+    const save = createNewSave();
+    const spared = {
+      ...save,
+      story: { ...save.story, flags: { spared_quiet_wave: true as const } },
+    };
+    expect(resultStamps({ ...a1m05(0), ...debriefStoryOf(spared) }, 'won')).toEqual([]);
+    expect(resultStamps({ ...a1m05(7), ...debriefStoryOf(save) }, 'won')).toEqual([
+      'CONTAINMENT LAPSE',
+    ]);
+  });
+
+  it('stamps only a win, only on its map, and nothing without stats', () => {
+    expect(resultStamps(a1m05(7), 'lost')).toEqual([]);
+    expect(resultStamps({ ...a1m05(7), mapId: 'a1_m04' }, 'won')).toEqual([]);
+    expect(resultStamps({ ...INPUT, mapId: 'a1_m05' }, 'won')).toEqual([]);
+    expect(resultStamps({ ...a1m05(7), mapId: 'dev_range' }, 'won')).toEqual([]);
   });
 });
 

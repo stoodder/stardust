@@ -24,7 +24,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 | **Mission briefing** | Reads a short briefing (a memo, QUILL, or the companion NPC). Sees the **threat intel** strip: one icon for every defense trait on this map (the map's `threatIntel`, for example *Flying*, *Shielded*, *Cloaked*) and the three medal conditions. | Rule: threat intel is always shown and always accurate. Losses should teach, never ambush (vision pillar 3). A map may hold back *one* surprise for its final wave, and the briefing hints at it ("QUILL: sensors show something big under the soil"). Which traits a map *requires* an answer to is a separate field ([maps.md §6.3](maps.md#63-one-new-thing-per-map)). |
 | **Loadout** | Picks **up to 4 tower types**, a **Technician ability**, and **Field Protocols** (meta perks). Sees which synergy links the chosen towers can form. | Rule: the 4-tower limit is a hard rule (`/CLAUDE.md`). The loadout locks when the map starts. Restarting a map lets you change it. **Rule:** the loadout screen is shown only when there is a choice to make: the player owns more than 4 tower types, or has a real choice of Technician ability, Field Protocols, or companion (the finale pick list). Otherwise it is skipped and the map starts with everything owned (A1M1 skips it; a map can also hold a tower back until a wave with `towerUnlockWave`, [maps.md §9](maps.md#9-map-data-shape-for-implementers)). |
 | **Play the map** | Plays the waves (section 2). | Typically 6–20 minutes at 1x; see [maps.md §6](maps.md#6-difficulty-curve). |
-| **Results** | Sees victory or defeat, medals earned, Stardust and Intel gained, and the act's counter line (§6.2). | On a loss, offers: Retry (same loadout), Retry from a checkpoint (§2.12, Act II on), Change loadout, Back to star map. Change loadout shows after a win too, wherever the map offers the loadout screen; it opens that map's loadout screen. |
+| **Results** | Sees victory or defeat, medals earned, Stardust and Intel gained, and the act's counter line (§6.2). | On a loss, offers: Retry (same loadout), Retry from a checkpoint (§2.12, Act II on), Change loadout, Back to star map. Change loadout shows after a win too, wherever the map offers the loadout screen; it opens that map's loadout screen. A win can play full-screen scenes around the card, every time and skippable: A1M5's party before it, and its stinger as the card is left, whichever way (`content/dialogue/resultsFlow.ts`). |
 | **Debrief** | Reads a short scene (≤ 6 lines) and, after some maps, makes a story choice (C2–C4, [../story/bible.md §9](../story/bible.md#9-the-choices)). | Only after a victory (or a Holdout's scripted end). Skippable on replays. |
 | **Base** | Reads the **Everglow Inbox** (§6.4), spends Stardust at **Zibzab's shop**, Intel in **R&D**, reads the **codex** (§6.5), checks the **Pest Bounty Board** (§6.6, Acts I–II), talks to NPCs. | The base hub is the Perimeter Office (working name). Story scenes can play here. See [progression.md](progression.md). |
 
@@ -34,7 +34,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 - Each tower shows its icon, role, cost (after the save's discounts), and which of the map's counters it answers, from which tier or spec.
 - Under the towers, the Field Protocols toggle on and off; with one slot, picking another swaps it in, and Specialist picks its tower once equipped.
 - A side column shows slot 2 (the map's companion), the links the owned towers can form (lit when the pick forms them), and a heads-up for any required counter the pick leaves unanswered. The heads-up names the towers that would answer it and never blocks the pick.
-- The last pick on each map is remembered; a map with none starts from the last pick anywhere. Retry keeps it, and the briefing's *Change loadout* goes back to the screen. Results doesn't offer *Change loadout* yet.
+- The last pick on each map is remembered; a map with none starts from the last pick anywhere. Retry keeps it, and the briefing's *Change loadout* and Results' *Change loadout* go back to the screen.
 
 The rules and the code are in [../tech/meta-runtime.md § Meta](../tech/meta-runtime.md#meta-srcmeta).
 
@@ -129,6 +129,7 @@ From **A2M1**, when the first fleeing Skitterkin appear, the player can tell tow
 ### 2.8 Speed and pause
 
 - Speeds: **1x** and **2x**. Pause at any time (hotkey Space).
+- **The pause menu** (Esc with nothing to cancel, or the HUD's Menu button) freezes play under **Resume**, **Retry shift** (the same map and loadout, minus the briefing), and **Quit** (to the base, or the Shift board before it opens). Leaving mid-map ends the run as a **loss** ([../tech/meta-runtime.md § Run end](../tech/meta-runtime.md#run-end)): its Pests Processed count, a map not yet won pays the defeat stipend for the waves resolved (no more than losing there would), and no medal or objective is recorded. No Results card shows.
 - **Rule:** all timers (cooldowns, countdowns, effects) run on simulation time, so 2x halves real-world waits and pause freezes everything. The sim runs a fixed timestep; 2x doubles the rate at which the host's tick accumulator fills, so twice as many fixed ticks run per real second ([../tech/architecture.md § Game speed](../tech/architecture.md#game-speed-pause-and-the-host-loop)).
 - 3x is a possible post-game unlock (open question).
 
@@ -240,7 +241,8 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | Pause / speed | HUD buttons | Space pause, F toggle 1x/2x |
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |
 | Spare runners (from A2M1, §2.7) | Tower panel toggle (one tower) or HUD button (all) | Alt+H (all) |
-| Cancel | Right-click | Esc (with nothing to cancel, it hides the tile cursor) |
+| Cancel | Right-click | Esc (with nothing to cancel, it hides the tile cursor; with no cursor either, it opens the pause menu) |
+| Pause menu: Resume, Retry shift, Quit | The Menu button, top right | Esc with nothing to cancel; Esc again resumes |
 | Back out of a menu (Settings, a Title panel, the Base) | Its Back button | Esc |
 | Mute sound (any screen) | The speaker button, top right | M |
 
