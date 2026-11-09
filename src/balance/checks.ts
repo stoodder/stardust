@@ -2,8 +2,9 @@
 // the build it's about (its subject, for `--build`), the runs it needs, and how it judges them.
 // Checks the harness can't make yet are refused for maps that need them, never skipped quietly.
 import type { CompiledMapDef } from '../content/compiled.ts';
-import type { IdSpace } from '../content/types.ts';
-import type { HeadlessResult } from '../sim/index.ts';
+import type { FlagValue, IdSpace, ScriptFlagId } from '../content/types.ts';
+import type { HeadlessResult, ScriptFlags } from '../sim/index.ts';
+import { evaluateFlagRule, flagRule } from '../story/flags.ts';
 import { refusal } from './refusals.ts';
 import {
   EARLY_CALL_SLACK_PCT,
@@ -17,7 +18,7 @@ import {
 
 /**
  * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
- * 'holdFireWhile:quiet_wave', 'companion:x', 'alt:x', 'noCounter:x', 'guard:x'), run on the map's
+ * 'holdFireWhile:quiet_wave', 'companion:x', 'flag:x=v', 'alt:x', 'noCounter:x', 'guard:x'), run on the map's
  * reference profile on Standard unless a `@<meta>` suffix says otherwise ('par@story',
  * 'noCounter:armor@fullCatalog'; `splitMeta`).
  */
@@ -74,6 +75,32 @@ export function splitMeta(label: string): { readonly build: string; readonly met
     throw new RangeError(`unknown run meta '${meta}' in '${label}'`);
   }
   return { build: label.slice(0, at), meta };
+}
+
+/** The run label of par under one story-flag value (#14): 'flag:door_choice=convoy'. */
+export const flagVariantLabel = (flag: string, value: FlagValue): string =>
+  `flag:${flag}=${String(value)}`;
+
+/**
+ * The story flags a run sets (`SimConfig.scriptFlags`): for a 'flag:x=v' label, x set to the
+ * `flagVariants` value that reads v; none for other labels. Null for a 'flag:' label naming a
+ * value the map doesn't list.
+ */
+export function flagsFor<K extends IdSpace>(
+  label: string,
+  map: CompiledMapDef<K>,
+): ScriptFlags | null {
+  const build = splitMeta(label).build;
+  if (!build.startsWith('flag:')) return {};
+  for (const [flag, values] of Object.entries(map.builds.flagVariants) as [
+    ScriptFlagId,
+    readonly FlagValue[],
+  ][]) {
+    for (const value of values) {
+      if (flagVariantLabel(flag, value) === build) return { [flag]: value };
+    }
+  }
+  return null;
 }
 
 /** "won (100%)", "lost at W4", or the run's error. */
@@ -209,13 +236,16 @@ export function mapChecks<K extends IdSpace>(
     ),
   );
 
-  const loseBy = noCounterLoseByWave(map.waves.length);
+  // A map may push the lose-by wave later (BuildsDef.noCounterLoseByWave, capped by the validator).
+  const loseBy = b.noCounterLoseByWave ?? noCounterLoseByWave(map.waves.length);
+  const loseByWhy =
+    b.noCounterLoseByWave === null ? 'before the final third' : "by the map's override";
   for (const counter of Object.keys(b.noCounterBuilds)) {
     const label = `noCounter:${counter}`;
     checks.push(
       perRun(
         '5',
-        `${label} loses before the final third (by W${loseBy})`,
+        `${label} loses ${loseByWhy} (by W${loseBy})`,
         label,
         few,
         (rec) =>
@@ -426,6 +456,28 @@ export function mapChecks<K extends IdSpace>(
     );
   }
 
+  // #14: par passes #1–2 under each value of each story flag the map's scripts read (seeds 1–3).
+  for (const [flag, values] of Object.entries(b.flagVariants)) {
+    for (const value of values) {
+      checks.push(
+        perRun(
+          '14',
+          `par with ${flag} = ${String(value)} wins with its margin in band`,
+          flagVariantLabel(flag, value),
+          few,
+          (rec) => {
+            if (rec.result?.outcome !== 'won') return describeRun(rec);
+            if (band === null) return `act ${map.act} has no par band yet`;
+            return rec.marginPct >= band.lo && rec.marginPct <= band.hi
+              ? null
+              : `margin ${fmtPct(rec.marginPct)} is outside the band ${band.lo}–${band.hi}`;
+          },
+          (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+        ),
+      );
+    }
+  }
+
   // #15: on a pick-list map (the finale), par passes #1–2 with each companion (seeds 1–3).
   if (map.companion !== null && 'pick' in map.companion) {
     for (const id of map.companion.pick) {
@@ -480,12 +532,15 @@ export function mapChecks<K extends IdSpace>(
 const quietLeaked = (r: HeadlessResult): string =>
   `${r.stats.tagLeaked.quiet_wave}/${r.stats.tagSpawned.quiet_wave}`;
 
+/** The run-end rule C1's flag comes from (content/dialogue/flags.ts). */
+const SPARED_RULE = flagRule('spared_quiet_wave');
+
 /**
  * #16, free choices stay free (D006): (a) on a map with a `quiet_wave` group, par with
- * `holdFireWhile: 'quiet_wave'` wins inside the band, and every quiet-wave unit leaks (until the
- * run-end flag rules exist, T206b, this stands in for `spared_quiet_wave = true`: a full leak
- * meets any share threshold); (b) on a map with `fleeing` groups, the spareFleeing policy's margin
- * is ≥ par's − SPARE_FLEEING_SLACK_PCT on the same seed.
+ * `holdFireWhile: 'quiet_wave'` wins inside the band, and its run sets `spared_quiet_wave` by the
+ * flag's own run-end rule (story/flags.ts), whatever map the rule names; (b) on a map with
+ * `fleeing` groups, the spareFleeing policy's margin is ≥ par's − SPARE_FLEEING_SLACK_PCT on the
+ * same seed.
  */
 function freeChoiceChecks<K extends IdSpace>(
   map: CompiledMapDef<K>,
@@ -498,7 +553,7 @@ function freeChoiceChecks<K extends IdSpace>(
     out.push(
       perRun(
         '16',
-        '(a) par holding fire through the Quiet Wave wins in band, and the whole wave leaks',
+        '(a) par holding fire through the Quiet Wave wins in band and sets spared_quiet_wave',
         'holdFireWhile:quiet_wave',
         few,
         (rec) => {
@@ -508,10 +563,10 @@ function freeChoiceChecks<K extends IdSpace>(
           if (rec.marginPct < band.lo || rec.marginPct > band.hi) {
             return `margin ${fmtPct(rec.marginPct)} is outside the band ${band.lo}–${band.hi}`;
           }
-          const { tagSpawned, tagLeaked } = r.stats;
-          return tagSpawned.quiet_wave > 0 && tagLeaked.quiet_wave === tagSpawned.quiet_wave
+          if (SPARED_RULE === undefined) return 'no run-end rule sets spared_quiet_wave';
+          return evaluateFlagRule(SPARED_RULE.value, r.stats)
             ? null
-            : `only ${quietLeaked(r)} quiet-wave units leaked`;
+            : `only ${quietLeaked(r)} quiet-wave units leaked: spared_quiet_wave stays false`;
         },
         (recs) =>
           `${wonCount(recs)}, margins ${margins(recs)}, quiet wave leaked ${recs

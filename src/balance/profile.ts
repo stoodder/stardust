@@ -20,6 +20,7 @@ import {
   modifierFeature,
   type DifficultyId,
   type Modifier,
+  type ScriptFlags,
   type SimConfig,
 } from '../sim/index.ts';
 
@@ -145,13 +146,17 @@ export function fullCatalogProfile<K extends IdSpace = LiveIds>(
   };
 }
 
-/** A config for one run of `build` on `map` under `profile`. */
+/**
+ * A config for one run of `build` on `map` under `profile`, with the story flags its scripts read
+ * (none, except on a flag-variant run, #14).
+ */
 export function runConfig<K extends IdSpace = LiveIds>(
   content: CompiledContent<K>,
   map: CompiledMapDef<K>,
   build: CompiledBuild<K>,
   profile: Pick<RunProfile<K>, 'difficulty' | 'modifiers' | 'specs'>,
   seed: number,
+  scriptFlags: ScriptFlags = {},
 ): SimConfig<K> {
   // The map's companion fills slot 2; on a pick-list map the build's pick does (default: the
   // list's first). A pick the map doesn't offer throws, and the run reports it.
@@ -165,7 +170,7 @@ export function runConfig<K extends IdSpace = LiveIds>(
     modifiers: profile.modifiers,
     difficulty: profile.difficulty,
     abilities: { slot1: build.technicianAbility, slot2: slot.slot2, slot2State: slot.slot2State },
-    scriptFlags: {},
+    scriptFlags,
     specsUnlocked: profile.specs.filter((t) => build.loadout.includes(t)),
   };
 }

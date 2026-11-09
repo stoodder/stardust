@@ -9,7 +9,12 @@ import { DEV_SAVES, type DevSaveId } from '../meta/__fixtures__/devSaves.ts';
 import {
   type ImportProblemCode,
   type KeyValueStore,
+  type LoadoutPick,
   type MetaSystem,
+  type Offer,
+  type PurchaseItem,
+  type Refusal,
+  type StorePane,
   type RunEndInput,
   type RunEndSummary,
   type SaveData,
@@ -18,6 +23,7 @@ import {
   type SlotWrite,
   MemoryStore,
   SAVE_KEYS,
+  buy,
   createNewSave,
   deleteSlot,
   exportCode,
@@ -28,8 +34,11 @@ import {
   loadSlot,
   nextShift,
   runEnd,
+  shelf,
   shiftBoard,
+  showsLoadoutScreen,
   unlockHint,
+  withPreset,
   writeSlot,
 } from '../meta/index.ts';
 import {
@@ -230,6 +239,52 @@ export function setDifficulty(difficulty: Difficulty): SaveResult {
   if (session.save.settings.difficulty === difficulty) return { ok: true };
   session.save = { ...session.save, settings: { ...session.save.settings, difficulty } };
   return persist();
+}
+
+/**
+ * Whether the loadout screen comes before `mapId` for the save in play (meta/loadout.ts: the
+ * system is open and there's a choice to make). Never for a non-campaign map (a `?map=` battle).
+ */
+export function loadoutOffered(mapId: string): boolean {
+  return (
+    session !== null && isCampaignMap(mapId) && showsLoadoutScreen(session.save, session.devUnlocks)
+  );
+}
+
+/** Remembers a locked-in loadout as `mapId`'s preset and the last one (T201), and writes it. */
+export function rememberLoadout(mapId: string, pick: LoadoutPick): SaveResult {
+  if (session === null) return { ok: false, message: 'No save is loaded.' };
+  if (!isCampaignMap(mapId)) return { ok: false, message: `'${mapId}' is not a campaign map.` };
+  session.save = withPreset(session.save, mapId, pick);
+  return persist();
+}
+
+/** One base pane's offers for the save in play (empty without one). */
+export function storeShelf(pane: StorePane): Offer[] {
+  return session === null ? [] : shelf(session.save, pane, session.devUnlocks);
+}
+
+/** A purchase at the base: what was bought (and whether the write held), or why not. */
+export type PurchaseResult =
+  | {
+      readonly ok: true;
+      readonly offer: Offer;
+      /** The slot write failed: the purchase holds for this session only (the message says so). */
+      readonly writeFailed: string | null;
+    }
+  | { readonly ok: false; readonly reason: Refusal; readonly message: string };
+
+/**
+ * Buys `item` for the save in play (meta/purchase.ts: pane open, stocked, next rank, affordable)
+ * and writes the save at once (meta-runtime.md § Save system: after purchases).
+ */
+export function purchase(item: PurchaseItem): PurchaseResult {
+  if (session === null) return { ok: false, reason: 'unknown', message: 'No save is loaded.' };
+  const r = buy(session.save, item, session.devUnlocks);
+  if (!r.ok) return r;
+  session.save = r.save;
+  const w = persist();
+  return { ok: true, offer: r.offer, writeFailed: w.ok ? null : w.message };
 }
 
 /** The save in play as an SD code (Settings → Export). */

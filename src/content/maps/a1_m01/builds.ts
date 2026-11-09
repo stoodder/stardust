@@ -1,23 +1,25 @@
 // A1M1 balance-harness builds: docs/story/campaign/act1.md § A1M1, Par build (the step lists
-// there mirror these). Tuned by T127 and T130 (D026, D028) without links or tile bonuses; T202a
-// then made both live (Crossfire between (10,4) and (10,5), +25% range on the roof) and nudged
-// the map just enough to keep every harness check green, until T125 re-tunes it: par skips the
-// Thumper's tier 2, and W5's and W7's Zoomer groups grew from 12 to 14. Par now wins at 100 (its
-// strikes still save 4 integrity in W7); rivet_only wins lower, because W7's big clumps are what
-// the Thumper's splash is for; par without its last step still ends well clear of a loss; and the
-// under-built alts lose integrity over several waves, never to one.
+// there mirror these). Tuned by T127 and T130 (D026, D028) without links or tile bonuses, then
+// re-tuned by T125 with Crossfire between (10,4) and (10,5), +25% range on the roof, Bricks's post
+// by the gate, and his Suppressing Fire in slot 2. Par (the Thumper left at tier 1) wins at 95 with
+// one W7 leak and the Teamwork medal (Crossfire up at the win); its W7 strike saves 8 integrity;
+// rivet_only wins lower, because W7's big clumps are what the Thumper's splash is for; par without
+// its last step still ends well clear of a loss; and the under-built alts lose integrity over
+// several waves, never to one.
 //
 // Economy (core-loop.md § 2.3: bounties plus a 20 + 4 × wave clear bonus; 350 to start): under
-// par, the bank in each wave's build phase is W1 350, W2 198, W3 176, W4 119, W5 221, W6 215,
-// W7 311. W4's phase buys nothing: par saves for the roof Rivet's tier 3 (150), which W4's
+// par, the bank in each wave's build phase is W1 350, W2 198, W3 176, W4 119, W5 235, W6 237,
+// W7 369. W4's phase buys nothing: par saves for the roof Rivet's tier 3 (150), which W4's
 // bounties complete.
 //
-// Not yet here: medals, Suppressing Fire, and the Bricks ally (T125). The Technician's Orbital
-// Strike (owned from A1M1, campaign.md § 4.2) hits the first clump of W5 and of W7 at the road's
-// first corner (4,3): a clump's lead Nibbler (1 tile/s) is at route distance 3.4 when a strike
-// cast 2.4 s into the wave lands 1 s later, and its tail is within 1.4 tiles behind (W5's 4 and
-// W7's 8 at 0.2 s), so the whole clump sits inside the 1.5-tile radius around (4,3). In W5 it
-// also catches the Zoomer burst running over that clump.
+// The Technician's Orbital Strike (owned from A1M1, campaign.md § 4.2) hits the first clump of W5
+// and of W7 at the road's first corner (4,3): a clump's lead Nibbler (1 tile/s) is at route
+// distance 3.4 when a strike cast 2.4 s into the wave lands 1 s later, and its tail is within 1.4
+// tiles behind (W5's 4 and W7's 8 at 0.2 s), so the whole clump sits inside the 1.5-tile radius
+// around (4,3). In W5 it also catches the Zoomer burst running over that clump. Bricks's
+// Suppressing Fire (50 s cooldown) goes down beside the Crossfire pair in W4 and W6, the waves his
+// prompts point at; in the sim's par run neither cast changes a leak (a W7 cast would hold par's
+// last one), so par stays at 95 rather than 100.
 import { defineBuilds } from '../../define.ts';
 import type { BuildStep } from '../../types.ts';
 

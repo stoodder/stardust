@@ -12,7 +12,7 @@ export const hauler = defineEnemy({
   body: 'organic',
   layer: 'ground',
   hp: 300,
-  armor: 6,
+  armor: Number(process.env.HA ?? 6),
   speedTilesPerSec: 0.7,
   leak: 3,
   bounty: 15,

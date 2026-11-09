@@ -159,7 +159,11 @@ describe('validateSave', () => {
       'loadouts.last',
       { towers: ['rivet'], ability: 'suppressing_fire' },
     ],
-    ['data.loadouts.last: unknown field "protocols"', 'loadouts.last', { ...PRESET, protocols: [] }],
+    [
+      'data.loadouts.last: unknown field "protocols"',
+      'loadouts.last',
+      { ...PRESET, protocols: [] },
+    ],
   ];
 
   it.each(cases)('rejects %s', (expected, path, value) => {

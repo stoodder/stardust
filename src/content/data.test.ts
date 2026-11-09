@@ -248,8 +248,8 @@ describe('towers', () => {
 });
 
 describe('enemies', () => {
-  it('registers the three M1 Skitterkin', () => {
-    expect(Object.keys(content.enemies)).toEqual(['nibbler', 'zoomer', 'chonk']);
+  it('registers the M1 Skitterkin and the Brood Hauler', () => {
+    expect(Object.keys(content.enemies)).toEqual(['nibbler', 'zoomer', 'chonk', 'hauler']);
     for (const e of [nibbler, zoomer, chonk]) {
       expect(e).toMatchObject({ faction: 'skitterkin', body: 'organic', layer: 'ground' });
       expect(e.shield).toBeNull();

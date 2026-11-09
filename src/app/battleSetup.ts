@@ -8,8 +8,9 @@ import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
-import { saveModifiers, type SaveData } from '../meta/index.ts';
+import { resolveLoadout, saveModifiers, type LoadoutPick, type SaveData } from '../meta/index.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
+import { scriptFlagsOf } from '../story/flags.ts';
 import {
   companionSlot,
   FEATURE_GATES,
@@ -56,10 +57,10 @@ export function hasBattleMap(mapId: string): boolean {
 const simulated = (f: Feature): boolean => FEATURE_GATES[f] === null;
 
 /**
- * The towers a save brings into a map, until the loadout screen (T201) picks them: every owned,
+ * The towers a save brings into a map when the loadout screen doesn't pick them (the skip rule, or
+ * no preset yet; meta/loadout.ts), and where the screen starts without a preset: every owned,
  * unrevoked tower when there are at most four; otherwise the par build's owned towers first, then
- * the rest in ownership order, up to four. T201 replaces this with the player's pick (and the last
- * preset); the skip rule there keeps this result when the player owns four or fewer.
+ * the rest in ownership order, up to four.
  */
 export function defaultLoadout(
   owned: readonly string[],
@@ -78,6 +79,24 @@ function slot1Ability(save: SaveData, par: string | null): string | null {
     (a) => !save.unlocks.revokedAbilities.includes(a),
   );
   return par !== null && usable.includes(par) ? par : (usable[0] ?? null);
+}
+
+/**
+ * The save's default loadout on a map: defaultLoadout's towers and slot1Ability's ability. Typed
+ * as a save's pick: only a save's own ids reach it (a dev map's par ids are never owned).
+ */
+export function defaultPick(
+  save: SaveData,
+  par: { readonly loadout: readonly string[]; readonly technicianAbility: string | null },
+): LoadoutPick {
+  const { towers: owned, abilities } = save.unlocks;
+  const towers = defaultLoadout(owned, save.unlocks.revokedTowers, par.loadout);
+  const ability = slot1Ability(save, par.technicianAbility);
+  return {
+    // defaultLoadout's order, as the save's typed ids.
+    towers: towers.flatMap((t) => owned.filter((o) => o === t)),
+    ability: abilities.find((a) => a === ability) ?? null,
+  };
 }
 
 /**
@@ -134,17 +153,19 @@ export function battleConfig(
       specsUnlocked: [],
     };
     if (save === null) return base;
-    const loadout = defaultLoadout(save.unlocks.towers, save.unlocks.revokedTowers, par.loadout);
+    // The loadout screen's pick for this map (its preset), or the default (meta/loadout.ts).
+    const pick = resolveLoadout(save, mapId, defaultPick(save, par));
+    const loadout: readonly string[] = pick.towers;
     return {
       ...base,
-      loadout,
+      loadout: [...loadout],
       modifiers: simulatedSaveModifiers(save),
       difficulty:
         save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
       // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
-      abilities: { slot1: slot1Ability(save, par.technicianAbility), slot2, slot2State },
-      // Story flags reach map scripts with T206b (meta-runtime.md § Pools, `scriptFlags`).
-      scriptFlags: {},
+      abilities: { slot1: pick.ability, slot2, slot2State },
+      // The save's story flags that map scripts may read (story-runtime.md § Map scripts).
+      scriptFlags: scriptFlagsOf(save.story.flags),
       specsUnlocked: simulated('specs')
         ? save.unlocks.specs.filter((t) => loadout.includes(t))
         : [],

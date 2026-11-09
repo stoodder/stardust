@@ -219,7 +219,8 @@ function checkSave(c: Checker, x: unknown, path: string, known: KnownIds): SaveD
   const story = checkStory(c, root['story'], `${path}.story`, known);
   const stats = checkStats(c, root['stats'], `${path}.stats`);
   const settings = checkSettings(c, root['settings'], `${path}.settings`);
-  const loadouts = unlocks && checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks);
+  const loadouts =
+    unlocks && checkLoadouts(c, root['loadouts'], `${path}.loadouts`, known, unlocks);
   if (
     !campaign ||
     !currencies ||
@@ -468,7 +469,8 @@ function checkLoadouts(
     const preset = checkPreset(c, raw, `${path}.byMap.${mapId}`, known, unlocks);
     if (preset !== null) outMaps[mapId] = preset;
   }
-  const last = l['last'] === null ? null : checkPreset(c, l['last'], `${path}.last`, known, unlocks);
+  const last =
+    l['last'] === null ? null : checkPreset(c, l['last'], `${path}.last`, known, unlocks);
   return { last, byMap: outMaps };
 }
 
@@ -488,6 +490,7 @@ function checkPreset(
   c.subset(towers, unlocks.towers, `${path}.towers`, 'unlocks.towers');
   const raw = p['ability'];
   const ability = raw === null ? null : c.id(raw, `${path}.ability`, known.abilities);
-  if (ability !== null) c.subset([ability], unlocks.abilities, `${path}.ability`, 'unlocks.abilities');
+  if (ability !== null)
+    c.subset([ability], unlocks.abilities, `${path}.ability`, 'unlocks.abilities');
   return { towers, ability };
 }

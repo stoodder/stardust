@@ -369,6 +369,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly flagVariants: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
   /** Medals the par build must earn on every seed (default none). */
   readonly parMedals: readonly MedalKind[];
+  /** The map's no-counter lose-by override (BuildsDef.noCounterLoseByWave), or null. */
+  readonly noCounterLoseByWave: number | null;
 }
 
 export interface CompiledMapDef<K extends IdSpace = LiveIds> {

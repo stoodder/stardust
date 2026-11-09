@@ -53,10 +53,39 @@ export interface AbilityCooldownView {
   readonly remaining: number;
 }
 
+/** One tier-4 specialization the tower panel offers at tier 3 (T202d). */
+export interface SpecOptionView {
+  readonly choice: 'a' | 'b';
+  /** The spec's name ("Rivet Storm"). */
+  readonly name: string;
+  /** Its price after modifiers (`costFor(..., true)`). */
+  readonly cost: number;
+  /** A short description from its stats, e.g. "9 dmg · 7.5/s · 1 s spin-up". */
+  readonly description: string;
+  /** The description wrapped to the panel's width. */
+  readonly descLines: readonly string[];
+}
+
+/** The tower panel's tier-4 choice (T202d): both specs, or both locked with what unlocks them. */
+export interface SpecChoiceView {
+  /** The pair isn't unlocked for this run (`SimConfig.specsUnlocked`). */
+  readonly locked: boolean;
+  /** What unlocks them, wrapped to the panel's width ("Engineering unlocks after Shift 4"). */
+  readonly lockLines: readonly string[];
+  readonly options: readonly [SpecOptionView, SpecOptionView];
+}
+
 /** The selected tower, for its upgrade / sell / targeting panel. */
 export interface SelectedTowerView {
   readonly uid: number;
+  /**
+   * Changes whenever anything the panel shows changes (tier, spec, bonuses, sell value, ...): the
+   * view is rebuilt only then.
+   */
+  readonly key: string;
   readonly label: string;
+  /** The specialization's name once the tower has one (tier 4), else null. */
+  readonly specName: string | null;
   readonly icon: string;
   readonly tier: number;
   /** The highest in-map tier (3; tier 4 is a specialization, T202). */
@@ -69,10 +98,21 @@ export interface SelectedTowerView {
   readonly fullRefund: boolean;
   /** null for towers that pick no target (pulse and support). */
   readonly priority: TargetPriority | null;
-  /** The current tier's stats, e.g. "8 dmg · 2/s · range 3". */
+  /** The current tier's stats after every bonus (`towerStats`), e.g. "8 dmg · 2.22/s · range 3". */
   readonly stats: string;
+  /**
+   * Where the bonuses come from, one per line: "+10% rate (Crossfire)", "+25% range (high
+   * ground)". Empty with none.
+   */
+  readonly bonuses: readonly string[];
   /** What the next upgrade adds, e.g. "+3 dmg", or null at the top tier. */
   readonly upgradeDelta: string | null;
+  /** "Next: …" wrapped to the panel's width (empty at the top tier). */
+  readonly deltaLines: readonly string[];
+  /** The tier-4 choice while the tower is at tier 3 and its type has specs; else null. */
+  readonly specs: SpecChoiceView | null;
+  /** The share a sell returns after the grace (70%, or more with Resale Value), in percent. */
+  readonly refundPct: number;
   /** The tower's tile center in game pixels, for placing the panel beside it. */
   readonly x: number;
   readonly y: number;
@@ -99,6 +139,46 @@ export interface WavePreview {
 export interface BriefingLine {
   readonly speaker: string | null;
   readonly text: string;
+}
+
+/** Which of a map's three medals (design/progression.md § 3). */
+export type MedalKindView = 'victory' | 'perfectCore' | 'challenge';
+
+/** One of the map's medals, for the briefing and the HUD's medal tracker (T202d). */
+export interface MedalView {
+  readonly kind: MedalKindView;
+  /** The save id (`victory`, `perfect_core`, or the Challenge's id). */
+  readonly id: string;
+  readonly name: string;
+  /** What earns it (the Challenge's description; the two fixed medals say it in their name). */
+  readonly description: string;
+  /** Already on file in the save in play. */
+  readonly held: boolean;
+  /** This run: still open, earned, or out of reach (`MedalProgress`). */
+  readonly status: 'open' | 'earned' | 'forfeited';
+}
+
+/** One threat the briefing's intel strip shows: a trait (or tell) and its glyph, if one is drawn. */
+export interface ThreatView {
+  readonly id: string;
+  readonly label: string;
+  /** The 8×8 `icon.tell.*` glyph, or null (the label stands alone). */
+  readonly glyph: string | null;
+}
+
+/** A required counter (campaign.md § 4.8) and the owned towers that answer it. */
+export interface RequiredCounterView {
+  readonly counter: string;
+  /** "Armor". */
+  readonly label: string;
+  /** Owned towers that answer it, e.g. "Rivet T3", "Thumper"; empty when none does yet. */
+  readonly answers: readonly string[];
+}
+
+/** The briefing's threat-intel strip (T202d). */
+export interface ThreatIntelView {
+  readonly threats: readonly ThreatView[];
+  readonly required: readonly RequiredCounterView[];
 }
 
 /** A short HUD message (a rejected command, a locked slot). `id` changes with every notice. */
@@ -192,6 +272,10 @@ export const hud = {
    * hotkeys are off while it's open.
    */
   briefing: signal<readonly BriefingLine[] | null>(null),
+  /** The map's threat intel, for the briefing (T202d); null outside a battle. */
+  intel: signal<ThreatIntelView | null>(null),
+  /** The map's medals with this run's progress and what the save already holds (T202d). */
+  medals: signal<readonly MedalView[]>([]),
   /** The radio line on screen, or null (app/radio.ts). */
   radio: signal<RadioView | null>(null),
   /** The latest leak, for the meter's edge flash, or null. */

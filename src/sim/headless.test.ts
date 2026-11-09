@@ -295,10 +295,10 @@ describe('A1M1 builds through runHeadless', () => {
         mapId: 'a1_m01',
         seed: 1,
         loadout: b.loadout,
-        companion: null,
+        companion: 'bricks', // A1M1's companion (T125): slot 2 is his Suppressing Fire
         modifiers: [],
         difficulty: 'standard',
-        abilities: { slot1: b.technicianAbility, slot2: null, slot2State: 'none' },
+        abilities: { slot1: b.technicianAbility, slot2: 'suppressing_fire', slot2State: 'present' },
         scriptFlags: {},
         specsUnlocked: [],
       },
@@ -309,9 +309,9 @@ describe('A1M1 builds through runHeadless', () => {
     const r = run(map.builds.parBuild);
     expect(r.steps.map((s) => [s.error, s.late])).toEqual(r.steps.map(() => [null, false]));
     expect(r.outcome).toBe('won');
-    // With Crossfire and high ground live (T202a), par holds every wave until T125 re-tunes.
-    expect(r.waves.map((w) => w.leaked)).toEqual([0, 0, 0, 0, 0, 0, 0]);
-    expect(r.integrity).toBe(20);
+    // Par's one leak is in W7's finale (T125's tuning, act1.md § A1M1).
+    expect(r.waves.map((w) => w.leaked)).toEqual([0, 0, 0, 0, 0, 0, 1]);
+    expect(r.integrity).toBe(19);
     expect(r.violations).toEqual([]);
   });
 

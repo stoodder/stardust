@@ -207,6 +207,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         stardust: sim.map.stardust,
         medals: offeredMedals(sim.map),
         earnedMedals: earnedMedalIds(s, sim.map),
+        stats: s.stats,
       };
       // Run end (meta-runtime.md § Run end): Pests Processed, medals, and rewards into the save
       // in play, then the results card shows what it paid.

@@ -1,0 +1,202 @@
+import { describe, expect, it } from 'vitest';
+import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
+import { DEV_SAVES } from './__fixtures__/devSaves.ts';
+import { saveModifiers } from './modifiers.ts';
+import { buy, offerFor, shelf, type PurchaseItem } from './purchase.ts';
+import { createNewSave, type SaveData } from './saveData.ts';
+import { validateSave } from './validate.ts';
+
+const MK2: PurchaseItem = { kind: 'upgrade', id: 'orbital_strike_mk2' };
+const RAPPORT: PurchaseItem = { kind: 'upgrade', id: 'rapport_bricks' };
+const SLOTS: PurchaseItem = { kind: 'upgrade', id: 'protocol_slots' };
+
+/** A1M1 through A1M4 won (the shop and Engineering open), with deep pockets. */
+function afterA1M4(): SaveData {
+  const save = DEV_SAVES.after_a1m1.build();
+  for (const id of ['a1_m02', 'a1_m03', 'a1_m04'] as const) {
+    // Unregistered maps can't be in a valid save; the pure rules only read `completed`.
+    (save.campaign.maps as Record<string, unknown>)[id] = {
+      completed: true,
+      medals: [],
+      bestMeter: 0,
+    };
+  }
+  save.currencies = { stardust: 1000, intel: 20 };
+  return save;
+}
+
+function expectValid(save: SaveData): void {
+  const v = validateSave(save);
+  expect(v.ok ? [] : v.errors).toEqual([]);
+}
+
+describe('offers', () => {
+  it('after A1M1, R&D sells Mk II and Rapport; the protocol slot arrives after A1M3', () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    const rnd = shelf(save, 'rnd');
+    expect(rnd.map((o) => [o.item, o.refusal])).toEqual([
+      [MK2, null],
+      [RAPPORT, null],
+      [SLOTS, 'not_stocked'],
+    ]);
+    expect(rnd[0]).toMatchObject({ currency: 'intel', price: 2, owned: 0, ranks: 1 });
+    expect(rnd[2]).toMatchObject({ availableAfter: 'a1_m03', price: 4, ranks: 2 });
+  });
+
+  it('a pane that has not opened refuses everything', () => {
+    const fresh = createNewSave();
+    expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
+    const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
+    expect(shop.length).toBe(Object.keys(UPGRADES).length - 3 + Object.keys(PROTOCOLS).length);
+    expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
+    expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
+  });
+
+  it('lists the shop as global upgrades, then tune-ups, then protocols', () => {
+    const shop = shelf(afterA1M4(), 'shop');
+    const kinds = shop.map((o) =>
+      o.item.kind === 'protocol' ? 'protocol' : o.tower === null ? 'global' : 'tune',
+    );
+    expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(3);
+  });
+
+  it('a tune-up needs its tower, and a spec unlock needs specs', () => {
+    const save = afterA1M4();
+    save.unlocks.towers = ['rivet', 'thumper'];
+    expect(offerFor(save, { kind: 'upgrade', id: 'tune_sprinkler' })?.refusal).toBe('not_owned');
+    expect(offerFor(save, { kind: 'upgrade', id: 'tune_rivet' })?.refusal).toBe(null);
+    save.unlocks.towers.push('sprinkler');
+    // The Sprinkler's specs aren't built yet (D031), so Engineering doesn't list it.
+    expect(offerFor(save, { kind: 'specs', tower: 'sprinkler' })?.refusal).toBe('no_specs');
+    expect(shelf(save, 'engineering').map((o) => o.tower)).toEqual(['rivet', 'thumper']);
+  });
+
+  it('prices Engineering by faction', () => {
+    const rivet = offerFor(afterA1M4(), { kind: 'specs', tower: 'rivet' });
+    expect(rivet).toMatchObject({ currency: 'intel', price: 2, refusal: null, grants: [] });
+  });
+
+  it('a short bank refuses with the price kept', () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    save.currencies.intel = 1;
+    expect(offerFor(save, MK2)).toMatchObject({ price: 2, refusal: 'short' });
+  });
+
+  it('unknown items have no offer', () => {
+    const save = afterA1M4();
+    expect(offerFor(save, { kind: 'upgrade', id: 'nope' })).toBeNull();
+    expect(offerFor(save, { kind: 'protocol', id: '__proto__' })).toBeNull();
+    expect(offerFor(save, { kind: 'specs', tower: 'gloop' })).toBeNull();
+    expect(buy(save, { kind: 'upgrade', id: 'nope' })).toMatchObject({
+      ok: false,
+      reason: 'unknown',
+    });
+  });
+
+  it('devUnlocks opens a pane fully stocked', () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    save.currencies.intel = 10;
+    expect(offerFor(save, { kind: 'specs', tower: 'rivet' })?.refusal).toBe('pane_locked');
+    expect(offerFor(save, { kind: 'specs', tower: 'rivet' }, ['engineering'])?.refusal).toBe(null);
+    expect(offerFor(save, SLOTS, ['rnd'])?.refusal).toBe(null);
+  });
+});
+
+function order(kind: string): number {
+  return ['global', 'tune', 'protocol'].indexOf(kind);
+}
+
+describe('buying', () => {
+  it("A1M1's 3 Intel buys Mk II or Rapport, not both", () => {
+    const save = DEV_SAVES.after_a1m1.build();
+    const first = buy(save, MK2);
+    if (!first.ok) throw new Error(first.message);
+    expect(first.save.upgrades.orbital_strike_mk2).toBe(1);
+    expect(first.save.currencies.intel).toBe(1);
+    expect(first.offer).toMatchObject({ owned: 1, ranks: 1 });
+    // The input is untouched.
+    expect(save.currencies.intel).toBe(3);
+    expect(save.upgrades).toEqual({});
+    expectValid(first.save);
+
+    expect(buy(first.save, MK2)).toMatchObject({ ok: false, reason: 'maxed' });
+    const second = buy(first.save, RAPPORT);
+    expect(second.ok).toBe(false);
+    if (!second.ok) {
+      expect(second.reason).toBe('short');
+      expect(second.message).toContain('costs 2 intel; the bank holds 1');
+    }
+  });
+
+  it('Mk II reaches the battle as +0.5 strike radius', () => {
+    const r = buy(DEV_SAVES.after_a1m1.build(), MK2);
+    if (!r.ok) throw new Error(r.message);
+    expect(saveModifiers(r.save)).toContainEqual({
+      kind: 'abilityStat',
+      ability: 'orbital_strike',
+      stat: 'radius',
+      flat: 0.5,
+      source: 'rnd:orbital_strike_mk2',
+    });
+  });
+
+  it('buys ranks in order, each at its own price', () => {
+    let save = afterA1M4();
+    const core: PurchaseItem = { kind: 'upgrade', id: 'reinforced_core' };
+    const paid: number[] = [];
+    for (;;) {
+      const r = buy(save, core);
+      if (!r.ok) {
+        expect(r.reason).toBe('maxed');
+        break;
+      }
+      paid.push(save.currencies.stardust - r.save.currencies.stardust);
+      save = r.save;
+    }
+    expect(paid).toEqual([120, 200, 300]);
+    expect(save.upgrades.reinforced_core).toBe(3);
+    expect(offerFor(save, core)).toMatchObject({ owned: 3, price: 300, refusal: 'maxed' });
+  });
+
+  it('a protocol is bought once, with Stardust', () => {
+    const r = buy(afterA1M4(), { kind: 'protocol', id: 'head_start' });
+    if (!r.ok) throw new Error(r.message);
+    expect(r.save.unlocks.protocols).toEqual(['head_start']);
+    expect(r.save.currencies).toEqual({ stardust: 900, intel: 20 });
+    expect(buy(r.save, { kind: 'protocol', id: 'head_start' })).toMatchObject({
+      ok: false,
+      reason: 'maxed',
+    });
+  });
+
+  it('a spec unlock records the tower in unlocks.specs', () => {
+    const r = buy(afterA1M4(), { kind: 'specs', tower: 'thumper' });
+    if (!r.ok) throw new Error(r.message);
+    expect(r.save.unlocks.specs).toEqual(['thumper']);
+    expect(r.save.currencies.intel).toBe(18);
+    expect(offerFor(r.save, { kind: 'specs', tower: 'thumper' })?.refusal).toBe('maxed');
+  });
+
+  it('refuses in check order, with a reason', () => {
+    const fresh = createNewSave();
+    fresh.currencies.intel = 0;
+    // Locked beats short.
+    expect(buy(fresh, MK2)).toMatchObject({ ok: false, reason: 'pane_locked' });
+    const save = DEV_SAVES.after_a1m1.build();
+    save.currencies.intel = 0;
+    // Not stocked beats short.
+    expect(buy(save, SLOTS)).toMatchObject({ ok: false, reason: 'not_stocked' });
+    expect(buy(save, MK2)).toMatchObject({ ok: false, reason: 'short' });
+  });
+
+  it('all_unlocked owns everything already', () => {
+    const dev = DEV_SAVES.all_unlocked;
+    const save = dev.build();
+    for (const pane of ['rnd', 'shop', 'engineering'] as const) {
+      const offers = shelf(save, pane, dev.devUnlocks);
+      expect(offers.length).toBeGreaterThan(0);
+      for (const o of offers) expect(o.refusal).toBe('maxed');
+    }
+  });
+});

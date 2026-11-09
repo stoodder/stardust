@@ -17,7 +17,9 @@
 //   least 2 alt builds, each sharing at most 2 tower types with the par loadout.
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
 //   build expectations name alt builds and at least one expectation, their minMarginPct is
-//   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar.
+//   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar; a
+//   `noCounterLoseByWave` override is a whole wave from 1 to ⌈¾ × waves⌉ on a map with
+//   no-counter builds.
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
 // Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
@@ -29,6 +31,7 @@ import {
   MAX_LOADOUT,
   MAX_TIER_BEFORE_SPEC,
   MIN_ALT_BUILDS,
+  NO_COUNTER_LOSE_BY_MAX_SHARE,
 } from './rules.ts';
 import { STEP_KEYS } from './compileBuilds.ts';
 import { answerScope, answersCarried, towersReached, type ReachStep } from './counterAnswers.ts';
@@ -123,6 +126,21 @@ export function validateBuilds(
           `shares ${shared.join(', ')} with par; at most ${ALT_BUILD_MAX_SHARED_TOWERS} tower types`,
         );
       }
+    }
+  }
+
+  const loseBy = def.noCounterLoseByWave;
+  if (loseBy !== undefined) {
+    const max = Math.ceil(def.waves.length * NO_COUNTER_LOSE_BY_MAX_SHARE);
+    if (!Number.isInteger(loseBy) || loseBy < 1 || loseBy > max) {
+      issues.add(
+        'builds-range',
+        `${where}.noCounterLoseByWave`,
+        `must be a whole wave from 1 to ${max} (⌈¾ × ${def.waves.length} waves⌉)`,
+      );
+    }
+    if (Object.keys(def.noCounterBuilds).length === 0) {
+      issues.add('builds-range', `${where}.noCounterLoseByWave`, 'the map has no no-counter builds');
     }
   }
 

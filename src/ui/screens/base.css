@@ -1,0 +1,205 @@
+/* The base's shelves (T204d), in the art-direction §9 style: the pane is an ink.2 well holding
+   the presenter's line over a scrolling list of offers. Each offer is a row with a 2 px bar on its
+   left (the act accent when it can be bought, gold when owned, ink.4 while it waits), the name in
+   Silkscreen, square rank pips, the effect in teal, and the seller's copy in steel; the price and
+   the button sit on the right. Authored in game pixels. */
+
+/* The base panel keeps one height across tabs, so switching tabs never moves the footer. */
+.sd-base-panel {
+  height: 340px;
+  box-sizing: border-box;
+}
+
+.sd-tab-pane-store {
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sd-store {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 6px 4px 4px 8px;
+  gap: 6px;
+  text-align: left;
+}
+
+.sd-store-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 4px;
+  font-family: var(--font-heading);
+}
+
+.sd-store-line {
+  min-height: 20px;
+  font-family: var(--font-body);
+  line-height: 10px;
+  color: var(--sd-white-0);
+}
+
+.sd-store-speaker {
+  font-family: var(--font-heading);
+  color: var(--accent);
+}
+
+.sd-store-thanks {
+  color: var(--sd-white-1);
+}
+
+.sd-store-refusal {
+  color: var(--sd-orange-3);
+}
+
+.sd-store-warn {
+  color: var(--sd-orange-3);
+}
+
+.sd-store-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+}
+
+.sd-store-group + .sd-store-group {
+  margin-top: 8px;
+}
+
+.sd-store-group-title {
+  margin: 0 0 3px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-offer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px 3px 6px;
+  border-left: 2px solid var(--accent);
+  background: var(--sd-ink-1);
+}
+
+.sd-offer-maxed {
+  border-left-color: var(--sd-gold-3);
+}
+
+.sd-offer-not_stocked,
+.sd-offer-not_owned,
+.sd-offer-pane_locked,
+.sd-offer-no_specs {
+  border-left-color: var(--sd-ink-4);
+}
+
+.sd-offer-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sd-offer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sd-offer-name {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-white-1);
+}
+
+.sd-offer-not_stocked .sd-offer-name,
+.sd-offer-not_owned .sd-offer-name {
+  color: var(--sd-steel-3);
+}
+
+.sd-offer-effect {
+  line-height: 9px;
+  color: var(--sd-teal-4);
+}
+
+.sd-offer-not_stocked .sd-offer-effect,
+.sd-offer-not_owned .sd-offer-effect {
+  color: var(--sd-steel-3);
+}
+
+.sd-offer-copy {
+  line-height: 9px;
+  color: var(--sd-steel-3);
+}
+
+.sd-offer-side {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 108px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.sd-offer-side .sd-button-small {
+  min-width: 48px;
+}
+
+.sd-offer-price {
+  white-space: nowrap;
+}
+
+.sd-offer-short {
+  color: var(--sd-red-3);
+}
+
+.sd-offer-owned {
+  color: var(--sd-gold-3);
+}
+
+.sd-offer-wait {
+  max-width: 120px;
+  text-align: right;
+  line-height: 10px;
+  color: var(--sd-steel-2);
+}
+
+/* Rank pips: 5 px squares, a steel.1 outline when empty, gold.3 with a gold.4 edge when owned
+   (the medal pips' colors, squared off so the two never read as one). */
+.sd-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.sd-pip {
+  box-sizing: border-box;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--sd-steel-1);
+}
+
+.sd-pip-on {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}

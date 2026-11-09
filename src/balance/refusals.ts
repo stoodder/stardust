@@ -51,7 +51,7 @@ export type HarnessFeature =
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
   objectives: 'T305',
-  flagVariants: 'M3',
+  flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
   jamLimit: 'M3',

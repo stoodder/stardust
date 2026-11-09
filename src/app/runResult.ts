@@ -4,6 +4,7 @@
 import { SPEAKERS, type RadioLine } from '../content/radio/index.ts';
 import type { RunEndInput as MetaRunEndInput, RunEndSummary } from '../meta/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
+import type { FlagRuleStats } from '../story/flags.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
 import type { MedalResult, RunResult, RunRewards } from '../ui/screens/state.ts';
@@ -45,6 +46,8 @@ export interface RunEndInput {
   readonly medals: readonly MapMedal[];
   /** The medal ids the sim settled as earned (`earnedMedalIds`; D042). */
   readonly earnedMedals: readonly string[];
+  /** The run's `state.stats`, for the story run-end flag rules (meta's runEnd, step 2). */
+  readonly stats?: FlagRuleStats;
 }
 
 /** One of a map's medals: its save id and the name the results card shows. */
@@ -90,6 +93,7 @@ export function metaRunEndOf(
     waveCount: input.waveCount,
     wavesResolved: wavesResolved(input, outcome),
     earnedMedals: input.earnedMedals,
+    ...(input.stats === undefined ? {} : { stats: input.stats }),
     skitterkinKilled: input.skitterkinKilled,
     meter: Math.max(0, input.integrity),
   };

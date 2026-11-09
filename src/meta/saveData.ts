@@ -3,17 +3,18 @@
 // docs/design/progression.md § 11. Bump SAVE_VERSION only together with a new entry in
 // migrations.ts and a new __fixtures__/save.v<n>.json (meta-runtime.md § Versioning and migrations).
 import { ABILITIES } from '../content/abilities/index.ts';
+import { FLAGS } from '../content/dialogue/flags.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import type { DifficultyId } from '../sim/index.ts';
 import type {
   AbilityId,
+  FlagId,
   FlagValue,
   MapId,
   MedalId,
   ProtocolId,
-  ScriptFlagId,
   TowerId,
   UpgradeId,
 } from '../content/types.ts';
@@ -21,15 +22,8 @@ import type {
 /** The current schema version. Codes carry it as their `SD<v>-` prefix. */
 export const SAVE_VERSION = 1;
 
-/** Story flags a save can hold. T206b replaces this with `content/dialogue/flags.ts`'s ids. */
-export type StoryFlagId = ScriptFlagId;
-/** Every story flag id (a record, so a missing id is a compile error). */
-const STORY_FLAGS: Readonly<Record<StoryFlagId, StoryFlagId>> = {
-  door_choice: 'door_choice',
-  spared_quiet_wave: 'spared_quiet_wave',
-  stardust_choice: 'stardust_choice',
-  quill_choice: 'quill_choice',
-};
+/** Story flags a save can hold: every flag in `content/dialogue/flags.ts`. */
+export type StoryFlagId = FlagId;
 
 /** Ids with no registry yet (dialogue scenes, memos, codex entries, one-time grants). */
 export type SceneId = string;
@@ -131,7 +125,7 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   maps: Object.values(MAPS).map((m) => m.id),
   upgrades: Object.values(UPGRADES).map((u) => u.id),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
-  storyFlags: Object.values(STORY_FLAGS),
+  storyFlags: Object.keys(FLAGS) as StoryFlagId[],
 };
 
 /** Towers issued before A1M1 (campaign.md § 4.1). */

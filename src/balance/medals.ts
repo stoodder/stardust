@@ -1,5 +1,5 @@
 // Medals in the balance harness: the `medals` check (a map's `parMedals` says which medals its par
-// build must earn on every seed; T125 makes A1M1's par earn Teamwork) and the medal marks the
+// build must earn on every seed; A1M1's par must earn Teamwork) and the medal marks the
 // reports print beside each run.
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, MedalKind } from '../content/types.ts';

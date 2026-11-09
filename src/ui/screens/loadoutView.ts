@@ -1,0 +1,90 @@
+// The loadout screen's view model (T201): app/loadout.ts builds it from the save in play and the
+// map when the router opens the screen; Loadout.tsx reads it and acts through app/loadout.ts.
+import { signal } from '@preact/signals';
+
+/** How a tower answers one of the map's counters (meta/loadout.ts TowerAnswerNote, as text). */
+export interface LoadoutAnswerView {
+  readonly counter: string;
+  /** "Armor". */
+  readonly label: string;
+  /** "T3" or a spec's name ("Bunker Buster"), or null when tier 1 already answers. */
+  readonly via: string | null;
+  /** One of the map's required counters. */
+  readonly required: boolean;
+}
+
+/** A tower on offer. */
+export interface LoadoutTowerView {
+  readonly id: string;
+  /** "Rivet". */
+  readonly name: string;
+  /** "Single-target DPS". */
+  readonly role: string;
+  /** Its tier-1 build cost in credits, after the save's cost modifiers. */
+  readonly cost: number;
+  /** The build icon's sprite id. */
+  readonly icon: string;
+  /** The map's counters it answers, in enemies.md § 3.1 order. */
+  readonly answers: readonly LoadoutAnswerView[];
+}
+
+/** A Technician ability on offer (slot 1). */
+export interface LoadoutAbilityView {
+  readonly id: string;
+  readonly name: string;
+  readonly icon: string;
+  /** Labels of the map's counters it answers when cast (detection, jam). */
+  readonly answers: readonly string[];
+}
+
+/** A synergy link two towers in the pool can form. */
+export interface LoadoutLinkView {
+  readonly id: string;
+  /** "Crossfire". */
+  readonly name: string;
+  readonly partners: readonly [string, string];
+  /** "Rivet + Thumper". */
+  readonly partnerNames: string;
+  /** "Rivet +10% fire rate · Thumper +10% fire rate". */
+  readonly bonus: string;
+}
+
+/** A counter category the map calls for (from its threat intel, or required). */
+export interface LoadoutCounterView {
+  readonly id: string;
+  readonly label: string;
+  /** The map requires an answer (maps.md § 6.3); the screen warns when the pick has none. */
+  readonly required: boolean;
+}
+
+export interface LoadoutPickView {
+  readonly towers: readonly string[];
+  readonly ability: string | null;
+}
+
+/** The loadout screen for one map and the save in play. */
+export interface LoadoutView {
+  readonly mapId: string;
+  readonly mapName: string;
+  /** Its shift number on the campaign plan, or null off the plan. */
+  readonly shift: number | null;
+  /** The map's threat intel, as words ("Fast", "Armored"). */
+  readonly threats: readonly string[];
+  readonly counters: readonly LoadoutCounterView[];
+  readonly towers: readonly LoadoutTowerView[];
+  readonly abilities: readonly LoadoutAbilityView[];
+  /** Links among the pool's towers, in registry order. */
+  readonly links: readonly LoadoutLinkView[];
+  /** Slot 2 is the map's companion's ("Bricks · Suppressing Fire"), or null for none. */
+  readonly companion: string | null;
+  /** Where the pick starts: the map's preset, else the last one, else the default. */
+  readonly initial: LoadoutPickView;
+  /** The tower limit (the CLAUDE.md 4-tower rule). */
+  readonly max: number;
+}
+
+/** The open loadout screen's view, or null. */
+export const loadout = signal<LoadoutView | null>(null);
+
+/** Whether the running battle's briefing offers Change loadout (the screen came before it). */
+export const loadoutChangeable = signal(false);

@@ -1,6 +1,6 @@
 // The base (T209, D031): R&D, Zibzab's shop, and Engineering as tabs. A tab whose system the
 // campaign hasn't opened yet shows a locked pane with what opens it ("Opens after The Audit";
-// meta/progress.ts SYSTEM_UNLOCKS). The open panes are BasePanes.tsx's seams for T204d.
+// meta/progress.ts SYSTEM_UNLOCKS). An open tab shows its shelf (BasePanes.tsx, T204d).
 import { useState } from 'preact/hooks';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
 import { BASE_PANES, type BaseTab } from './BasePanes.tsx';
@@ -9,6 +9,7 @@ import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { campaign } from './state.ts';
 import './screens.css';
+import './base.css';
 
 const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
   { id: 'rnd', label: 'R&D' },
@@ -36,7 +37,7 @@ export function Base() {
   };
   return (
     <main class="sd-screen sd-menu" aria-labelledby="sd-base-heading">
-      <section class="sd-panel sd-menu-panel">
+      <section class="sd-panel sd-menu-panel sd-base-panel">
         <header class="sd-menu-header">
           <div>
             <p class="sd-kicker">Everglow · Dome Row Perimeter · Base</p>
@@ -77,7 +78,7 @@ export function Base() {
         </div>
         <div
           id="sd-tab-pane"
-          class={`sd-tab-pane${system.unlocked ? '' : ' sd-tab-pane-locked'}`}
+          class={`sd-tab-pane${system.unlocked ? ' sd-tab-pane-store' : ' sd-tab-pane-locked'}`}
           role="tabpanel"
           aria-labelledby={`sd-tab-${tab}`}
         >

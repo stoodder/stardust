@@ -7,6 +7,7 @@ import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
 import { runHeadless } from '../sim/index.ts';
 import {
   describeRun,
+  flagsFor,
   fmtPct,
   mapChecks,
   median,
@@ -90,6 +91,8 @@ export function buildFor<K extends IdSpace>(
   if (kind === 'holdFireWhile') {
     return name === 'quiet_wave' ? withHoldFireWhile(b.parBuild, name) : null;
   }
+  // #14: par under one story-flag value (flagsFor gives the flags).
+  if (kind === 'flag') return flagsFor(label, map) === null ? null : b.parBuild;
   if (kind === 'companion') {
     // #15: par with one companion from the map's pick list.
     const pick = map.companion !== null && 'pick' in map.companion ? map.companion.pick : [];
@@ -172,7 +175,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     }
     const start = now();
     try {
-      const cfg = runConfig(content, map, build, profile, req.seed);
+      const cfg = runConfig(content, map, build, profile, req.seed, flagsFor(req.build, map) ?? {});
       const result = runHeadless(
         cfg,
         build,

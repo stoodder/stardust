@@ -32,8 +32,8 @@ const PURE_ALLOWED: Readonly<Partial<Record<ModuleName, readonly ModuleName[]>>>
   content: ['shared', 'content'],
   sim: ['shared', 'content', 'sim'],
   story: ['shared', 'content', 'sim', 'story'],
-  meta: ['shared', 'content', 'sim', 'meta'],
-  balance: ['shared', 'content', 'sim', 'meta', 'balance'],
+  meta: ['shared', 'content', 'sim', 'story', 'meta'],
+  balance: ['shared', 'content', 'sim', 'story', 'meta', 'balance'],
 };
 
 /** Members of Math that differ between JS engines or break determinism (architecture.md § Determinism). */
@@ -284,6 +284,8 @@ describe('scanner catches violations', () => {
     ).toHaveLength(1);
     expect(messages('sim/a.ts', "export { b } from '../balance/policies.ts';")).toHaveLength(1);
     expect(messages('content/a.ts', "import { s } from '../sim/index.ts';")).toHaveLength(1);
+    expect(messages('story/a.ts', "import { s } from '../meta/saveData.ts';")).toHaveLength(1);
+    expect(messages('story/a.ts', "import { c } from '../balance/checks.ts';")).toHaveLength(1);
     expect(messages('shared/a.ts', "import '../app/boot.ts';")).toHaveLength(1);
     expect(messages('sim/a.ts', "const m = await import('../ui/state.ts');")).toHaveLength(1);
     expect(messages('sim/a.ts', "import {\n  a,\n  b,\n} from '../app/x.ts';")).toEqual([
@@ -296,6 +298,8 @@ describe('scanner catches violations', () => {
     expect(messages('sim/a.ts', "import { c } from '../content/compile.ts';")).toEqual([]);
     expect(messages('sim/a.ts', "import { r } from '../shared/rng.ts';")).toEqual([]);
     expect(messages('balance/a.ts', "import { m } from '../meta/modifiers.ts';")).toEqual([]);
+    expect(messages('meta/a.ts', "import { f } from '../story/flags.ts';")).toEqual([]);
+    expect(messages('balance/a.ts', "import { f } from '../story/flags.ts';")).toEqual([]);
     expect(messages('story/a.ts', "import type { E } from '../sim/index.ts';")).toEqual([]);
     expect(messages('render/a.ts', "import type { S } from '../sim/index.ts';")).toEqual([]);
     expect(messages('ui/a.ts', "import { a } from '../render/sprites/atlas.ts';")).toEqual([]);

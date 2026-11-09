@@ -10,6 +10,7 @@
 // Definitions never refer to their own kind's registry (a MapDef can't name a MapId), which is
 // what keeps the type-level imports below free of cycles.
 import type { ABILITIES } from './abilities/index.ts';
+import type { FLAGS, FlagValueOf } from './dialogue/flags.ts';
 import type { ENEMIES } from './enemies/index.ts';
 import type { LINKS } from './links/index.ts';
 import type { MAPS } from './maps/index.ts';
@@ -67,8 +68,12 @@ export type LinkId = Extract<keyof typeof LINKS, string>;
 export type UpgradeId = Extract<keyof typeof UPGRADES, string>;
 /** Field Protocols: `upgrades/index.ts`. */
 export type ProtocolId = Extract<keyof typeof PROTOCOLS, string>;
-/** Story flags that map scripts may read (story-runtime.md § Map scripts). */
-export type ScriptFlagId = 'door_choice' | 'spared_quiet_wave' | 'stardust_choice' | 'quill_choice';
+/** Story flags: the `dialogue/flags.ts` registry (story-runtime.md § Flags). */
+export type FlagId = Extract<keyof typeof FLAGS, string>;
+/** Story flags that map scripts may read: `script: true` in the registry (story-runtime.md § Map scripts). */
+export type ScriptFlagId = {
+  [F in FlagId]: (typeof FLAGS)[F] extends { readonly script: true } ? F : never;
+}[FlagId];
 export type FlagValue = string | number | boolean;
 export type CompanionId = 'bricks' | 'quill' | 'zibzab' | 'vesthara' | 'bramble';
 /** Map-local names: markers, routes, timers, ally groups, wave groups. validate() checks them. */
@@ -580,9 +585,14 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   /** The first map after a boss restarts the monotonic-difficulty chain. */
   readonly rebaseline?: boolean;
   /** Story-flag values the harness runs par under, one run each. Per-value build overrides arrive with A3M5. */
-  readonly flagVariants?: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
+  readonly flagVariants?: { readonly [F in ScriptFlagId]?: readonly FlagValueOf<F>[] };
   /** Medals the par build must earn on every seed (the harness's `medals` check; default none). */
   readonly parMedals?: readonly MedalKind[];
+  /**
+   * Overrides the wave each no-counter build must lose by (default ⌊⅔ × waves⌋, "before the
+   * final third"; design/maps.md § 6.1), up to ⌈¾ × waves⌉. Say why in a one-line comment.
+   */
+  readonly noCounterLoseByWave?: number;
 }
 
 export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>

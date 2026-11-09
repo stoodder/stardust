@@ -70,7 +70,7 @@ export {
   bonusRangeTiles,
   type TowerBonuses,
 } from './bonuses.ts';
-export { isLinkActive } from './systems/links.ts';
+export { isLinkActive, tileAndLinkRules } from './systems/links.ts';
 export {
   ANY_ENEMY,
   evaluateCondition,

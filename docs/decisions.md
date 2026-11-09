@@ -567,3 +567,10 @@ Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star
 
 ### D049 — 2026-11-09 — Per-map override for when a no-counter build must lose
 A1M2's armor test is its Brood Hauler (armor 6). act1.md teaches it with one lone Hauler in W5, then pairs and triples in W7–8. A 300 HP Hauler takes about 49 s to walk A1M2's switchbacks, so a no-armor build's first real leaks land in W6, after the global "lose before the final third" line (⌊⅔ × 8⌋ = W5). Rather than break the teach wave or loosen the rule for every map, `BuildsDef.noCounterLoseByWave` overrides it per map. The validator caps it at ⌈0.75 × waves⌉, and builds.ts must carry a one-line reason. A1M2 uses 6, matching act1.md's and D038's "must lose by W6".
+
+### D050 — 2026-11-09 — A1M2's armor must really be required (amends D049)
+T210b's numbers showed the Hauler at armor 6 isn't an armor test: a T2 Rivet does 5 per hit to it, so an armor answer is worth at most about 2× per pad. A no-armor build therefore wins A1M2 with the full catalog, which breaks D005's threat model: a required counter must be required. Rulings:
+- **The Brood Hauler's armor goes 6 → 9.** A T1/T2 Rivet hits the 20% damage floor, while a T3 Rivet and the Thumper still bite (about 3× per pad). HP may rise ≤ 20% if needed. enemies.md's row is updated.
+- **The per-map lose-by override's cap becomes `waves − 1`**, never the final wave, replacing D049's ⌈0.75·n⌉. **A1M2 = W7**, on Standard and with the full catalog.
+- act1.md's wave plan stays intact: a lone teach Hauler in W5, pairs and triples in W7–8.
+- **Hard limit:** if armor 9 (at most 10) can't make the full-catalog no-armor build lose by W7, the agent stops and reports rather than distorting the map.

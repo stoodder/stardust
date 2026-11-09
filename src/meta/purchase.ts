@@ -11,7 +11,8 @@
 // the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
 import type { CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
-import type { TowerFaction, TowerId } from '../content/types.ts';
+import type { ProtocolId, TowerFaction, TowerId } from '../content/types.ts';
+import { assertNever } from '../shared/types.ts';
 import {
   ENGINEERING,
   PROTOCOLS,
@@ -100,6 +101,10 @@ export type BuyResult =
   | { readonly ok: true; readonly save: SaveData; readonly offer: Offer }
   | { readonly ok: false; readonly reason: Refusal; readonly message: string };
 
+function isLiveProtocol(id: string): id is ProtocolId {
+  return Object.hasOwn(PROTOCOLS, id);
+}
+
 /** The pane that sells an upgrade (by its catalog kind). */
 function upgradePane(def: UpgradeDef): StorePane {
   return def.kind === 'rnd' ? 'rnd' : 'shop';
@@ -179,6 +184,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         tower: item.tower,
       };
     }
+    default:
+      return assertNever(item);
   }
 }
 
@@ -241,6 +248,8 @@ export function refusalMessage(save: SaveData, item: PurchaseItem, offer: Offer 
       return `${what} is already owned at its top rank`;
     case 'short':
       return `${what} costs ${offer.price} ${offer.currency}; the bank holds ${save.currencies[offer.currency]}`;
+    default:
+      return assertNever(offer.refusal);
   }
 }
 
@@ -272,15 +281,19 @@ export function buy(
       // offerFor checked the id against the catalog, and save ids are the registry's.
       next.upgrades = { ...save.upgrades, [item.id]: offer.owned + 1 };
       break;
-    case 'protocol':
-      next.unlocks = {
-        ...save.unlocks,
-        protocols: [...save.unlocks.protocols, item.id as SaveData['unlocks']['protocols'][number]],
-      };
+    case 'protocol': {
+      // A save holds only live protocol ids; a fixture catalog's other ids can't be stored.
+      if (!isLiveProtocol(item.id)) {
+        return { ok: false, reason: 'unknown', message: refusalMessage(save, item, null) };
+      }
+      next.unlocks = { ...save.unlocks, protocols: [...save.unlocks.protocols, item.id] };
       break;
+    }
     case 'specs':
       next.unlocks = { ...save.unlocks, specs: [...save.unlocks.specs, offer.tower!] };
       break;
+    default:
+      return assertNever(item);
   }
   return { ok: true, save: next, offer: { ...offer, owned: offer.owned + 1 } };
 }

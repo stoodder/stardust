@@ -3,6 +3,31 @@
 // The save API for app/ and the screens. Dev saves for `?save=` are in __fixtures__/devSaves.ts.
 export type { ImportProblemCode, ImportResult } from './codec.ts';
 export { CODE_LIMITS, exportCode, importCode } from './codec.ts';
+export type {
+  LinkPair,
+  LoadoutMap,
+  LoadoutPick,
+  LoadoutPools,
+  SpecNames,
+  TowerAnswerNote,
+} from './loadout.ts';
+export {
+  abilityAnswers,
+  fitPick,
+  hasLoadoutChoice,
+  initialPick,
+  isValidPick,
+  linksAmong,
+  loadoutPools,
+  mapCounters,
+  pickProblems,
+  resolveLoadout,
+  showsLoadoutScreen,
+  toggleTower,
+  towerAnswers,
+  uncoveredCounters,
+  withPreset,
+} from './loadout.ts';
 export { migrate, migrations } from './migrations.ts';
 export type { MetaCatalog, MetaLoadout } from './modifiers.ts';
 export {
@@ -50,7 +75,14 @@ export {
   serializeSave,
   writeSlot,
 } from './save.ts';
-export type { KnownIds, MapRecord, SaveData, SaveEnvelope, StoryFlagId } from './saveData.ts';
+export type {
+  KnownIds,
+  LoadoutPreset,
+  MapRecord,
+  SaveData,
+  SaveEnvelope,
+  StoryFlagId,
+} from './saveData.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
 export { MemoryStore, SAVE_KEYS, SLOT_IDS, isSlotId } from './store.ts';
