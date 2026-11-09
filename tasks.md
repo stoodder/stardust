@@ -96,8 +96,8 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1. Also wire the radio's `enemyKilled` trigger (`app/radio.ts` `EnemyDied` case: one line; A1M2's two Hauler barks use it) and list it in architecture §4.
 - [x] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
-## M3 — Star Map & Act I
-**Status: current (started 2026-11-09; scope cut and plan in progress).** Carried over from M2:
+## M3 — Act I (the star map moved to M4, D064)
+**Status: done, shipped (D099); release `m3`.** Open items below (T216, T229, T318–T335) carry over to M4. Carried over from M2:
 - [x] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [x] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [x] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
@@ -116,12 +116,12 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** A1M2's never-spend wall (W7 −12, W8 loss) is a UI fix (D096): fire the bank nudge by W7, e.g. at ~200 credits or after two build phases with no purchase (`app/` dialogue/bark trigger) + a test.
 - [x] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
-- [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
+- [x] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
 - [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
 - [x] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
 - [x] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
-- [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
-- [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
+- [x] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
+- [x] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 
 M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a·T300b·T310a → W2 T304a·T304c·T302a·T311a → W3 T304b·T304d·T313·T306 → W4 T304e·T302b·T312a·T311b → W5 T304f·T302c·T308·T312c → W6 T304g·T303·T312b·T310b → W7 T316·T314·T309·T311c → W8 T315·T317, then review. Housekeeping: T204b and T210c landed in D045/D048.
 
@@ -147,8 +147,8 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [x] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
-- [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
-- [ ] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
+- [x] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
+- [x] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
 - [x] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [x] **T312c** HUD: price builds/upgrades/specs with `purchasePriceInto` (Clearance Sale, Rapid Deploy) instead of `costFor` in commands/hudViews/hudPanel/loadout; `abilityReady`/`freeCastReady` for slot states; slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
 - [x] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
