@@ -34,3 +34,16 @@ export {
   type MapGrid,
 } from './grid.ts';
 export { pointAt, remainingDist, segmentAt, type Point, type RouteFollower } from './path.ts';
+export {
+  DEFAULT_MAX_TICKS,
+  assertRunnableBuild,
+  createBuildExecutor,
+  runHeadless,
+  type BuildExecutor,
+  type HeadlessOptions,
+  type HeadlessResult,
+  type RunSummary,
+  type StepRecord,
+  type TowerSummary,
+  type WaveSummary,
+} from './headless.ts';

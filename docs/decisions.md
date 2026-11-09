@@ -216,3 +216,19 @@ Architecture §2 has a *Waves, economy, and the end of a map* block, and the for
   Phaser 4's WebGL Graphics doesn't draw 1-px rects, so tracers use the `rivet_tracer` sprite and beams are at least 2 px wide.
 - **`SpriteId`** is now exactly the registered sprite ids (the `icon.*` carve-out is gone).
 - **For the UX review:** pulse rings read faintly, and the strike's impact could be juicier.
+
+### D023 — 2026-11-09 — T108a balance harness
+`npm run sim` is real: `runHeadless()` and `createBuildExecutor()` in `src/sim/headless.ts`, the harness in `src/balance/`, the CLI in `tools/sim.ts` (`--map`, `--seeds`, `--build`, `--report` → `reports/balance.{json,md}`), and a non-zero exit on any failed check. Conventions § Balance sims documents the step semantics and the checks. Rulings:
+- **Executor:** it applies each step at once with `applyPending()`, buys each step as soon as it is affordable (D021), and never drains events, so T107's `__sd.autoplay` can drive the same executor through the host.
+- **Ability step timing:** a `waveStart` cast lands on the first tick after the wave starts, and an `afterSec` cast counts from the wave start. Both wait for the cooldown, and a step issued after its moment is recorded as late.
+- **Step errors:** a step error (e.g. no tower on the tile) is recorded and fails the harness, and the build continues. A step kind the sim has no command for throws.
+- **Margin** = integrity left ÷ max × 100. "Loses before the final third" means the last started wave is ≤ ⌊⅔ × waves⌋.
+- **Refuse, don't skip:** map features the harness can't check yet fail as "refused": non-integrity objectives, flag variants, companion picks, fleeing/quiet groups, jammers, `noCounterBuilds` (the full-catalog run needs T204), and purchases in the reference profile. Story difficulty is listed as not checked.
+- The band numbers' code home is `src/balance/rules.ts`. A1M1's "rivet_only below par" expectation is in `src/balance/expectations.ts` for now.
+- **First A1M1 results** (13 runs, 0.2 s):
+  - par wins at 100 in every seed.
+  - none loses at W3.
+  - alwaysCallEarly wins at 100. Its W7 strike never fires because the ability is still on cooldown.
+  - rivet_only wins at 100.
+  
+  **Check #8 fails:** rivet_only's margin isn't below par's. Both are perfect, so Thumper isn't earning its slot, and act1.md targets a par margin of about 95. Tuning is T107's job, and the gate's `sim` step stays red until T107 lands. This was committed anyway so the harness survives container restarts.

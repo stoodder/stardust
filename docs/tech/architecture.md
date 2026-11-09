@@ -16,7 +16,7 @@ How Stardust is built: the stack, the module layout, the sim/render boundary, co
 > | **Commands** | `build`, `upgrade`, `sell`, `targeting`, `ability` (slot 1), `callWave` | `specialize` (T202), `holdFire` and `spareRunners` (T206), `clear`, `interact`, `scriptInput` |
 > | **Events** | `EnemySpawned`, `EnemyDied`, `EnemyLeaked`, `ProjectileFired`, `ProjectileHit`, `TowerBuilt`, `TowerUpgraded`, `TowerSold`, `TowerClassUnlocked`, `WaveStarted`, `CountdownStarted`, `WaveCleared`, `ScriptCue`, `AbilityUsed`, `MapWon`, `MapLost`, `CommandRejected` | The other story-facing events |
 > | **Render and UI** (T104, T112, T106, T115, T113, T122) | `BootScene`, `BattleScene`, sprite baker and gallery page, HUD (with the slot-1 ability), effects (`FxView`: tracers, pulse rings, shell bursts, the Orbital Strike), keyboard routing rule, Title and Results screens (the run's Pests Processed count; no medals) | Loadout, shop, dialogue, codex, star map |
-> | **Harness** (T108a) | A1M1 has `requiredCounters: []`, so it has no no-counter builds. Its runs: do-nothing loses; par wins with its margin in band; a Rivet-only alt build (`altBuilds.rivet_only`) wins, with a lower margin than par; `alwaysCallEarly` stays at or under `min(band top, par margin + 10)`. Plus determinism, invariants, and runtime ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). A1M1's reference profile is `towers: ['rivet', 'thumper']` plus `technicianAbility: 'orbital_strike'`, with no specs, shop items, or protocols | No-counter builds and the full-catalog check (no map in M1 has a required counter), monotonic chain (one map), the ≥ 2 `altBuilds` rule (from A1M4), Story difficulty, jam limit, flag and companion variants, Hold Fire and `spareFleeing` variants, the full par-purchasable check (A1M1's profile has no purchases) |
+> | **Harness** (T108a) | A1M1 has `requiredCounters: []`, so it has no no-counter builds. Its runs: do-nothing loses; par wins with its margin in band; a Rivet-only alt build (`altBuilds.rivet_only`) wins, with a lower margin than par; `alwaysCallEarly` wins and stays at or under `min(band top, par margin + 10)`. Plus determinism, invariants, and runtime ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). A1M1's reference profile is `towers: ['rivet', 'thumper']` plus `technicianAbility: 'orbital_strike'`, with no specs, shop items, or protocols | No-counter builds and the full-catalog check (no map in M1 has a required counter), monotonic chain (one map), the ≥ 2 `altBuilds` rule (from A1M4), Story difficulty, jam limit, flag and companion variants, Hold Fire and `spareFleeing` variants, the full par-purchasable check (A1M1's profile has no purchases) |
 > | **Smoke and hooks** (T101, T108b) | Boot, no console errors, every map boots, the M1 flow, the lose flow. `__sd`: `ready`, `state`, `enqueue`, `setSpeed`, `autoplay`, `fastForward`, `tileToClient`, `goto`, `forceOutcome`, `perf` | M2+ flows |
 
 ---
@@ -243,15 +243,17 @@ interface Sim<K> {
   drainEvents(out: SimEvent<K>[]): void;   // appends to out, empties the buffer
   hash(): string;                     // 16 hex digits over all state, for determinism checks
 }
-// src/sim/headless.ts
-export function runHeadless(cfg: SimConfig, build: ScriptedBuild, opts?: HeadlessOptions): HeadlessResult;
+// src/sim/headless.ts (also exported from src/sim/index.ts)
+export function runHeadless<K>(cfg: SimConfig<K>, build: CompiledBuild<K>, opts?: HeadlessOptions): HeadlessResult;
+export function createBuildExecutor<K>(sim: Sim<K>, build: CompiledBuild<K>): BuildExecutor;   // beforeTick(), steps, waveCalls
 ```
 
 - **Id typing.** `K` is the content's id space ([§3 Data shapes](#data-shapes)): the game uses the live registries, tests use `src/sim/__fixtures__/sim.ts` over the content fixture. It types only the API's edges (config, commands, events); inside, the sim runs on plain string ids.
 - **`createSim` validates the config** and throws a `RangeError` listing every problem: an unknown map, tower, or ability, a bad seed, or a loadout over 4 or with duplicates. Until their tasks land it also refuses what it can't simulate, rather than ignoring it: a companion or slot 2 (T207), any modifier (T204), Story difficulty, and map-script triggers, actions, or `when` conditions the `triggers` system doesn't run yet (`unsupportedScript` in `systems/triggers.ts`).
 - **`state`** ([`src/sim/state.ts`](../../src/sim/state.ts)) holds everything that changes: `tick` (ticks completed; during a step, the tick being run, starting at 0), `nextUid`, `outcome`, `credits`, `integrity`, `wave`, `schedule` (the wave schedule; see *Waves, economy, and the end of a map* above), `scriptFired`, `lockedTowers`, `towerAtTile`, the five pools, the RNG streams, `stats`, `abilityCooldownTicks`, the `pending` queue, and the output buffers `commandLog` and `events`. Immutable inputs (content, map, config) and per-tick scratch live in the `TickContext` that systems receive, not in state.
 - **`hash()`** walks all of `state` generically except the output buffers, so a field added later is covered automatically. Numbers hash by their exact bits; a frozen object with a string `id` (a compiled definition or route) hashes as its id, so two runs over separately compiled but identical content agree. Two lanes (FNV-1a plus a second mix, `src/shared/hash.ts`) give a 64-bit digest. It isn't for hot loops.
-- **`runHeadless`** runs one map to the end with no frame cap, issuing the build's steps through the scripted-build executor ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). It takes a ready `SimConfig`; it never imports `meta/`.
+- **`runHeadless`** runs one map to the end (or `maxTicks`, default 30 minutes of sim time) with no frame cap, issuing the build's steps through the scripted-build executor ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)). It takes a ready `SimConfig` and a compiled build (`map.builds.*`, or a policy's); it never imports `meta/`. Its `HeadlessResult` holds the outcome, final integrity and credits, `hash()`, the wave a loss happened in, per-wave tallies (spawned, killed, leaked, integrity lost, the bank as the build phase opened, credits unspent at the wave's start, early-call bonus), per-tower shots and kills, each step's issue tick, lateness and error, and any invariant violations (`headlessTracker.ts` checks them after every tick).
+- **`createBuildExecutor`** is the executor on its own: call `beforeTick()` before each `sim.step()`, and it issues whatever steps are due through `enqueue` + `applyPending()`. It never drains events, so a host can drive it alongside rendering (T107's `__sd.autoplay`).
 - **The sim knows nothing about meta progression.** Permanent upgrades, Field Protocols, and difficulty arrive as a list of `Modifier`s. In the game, `app/` gets them from `meta/`. In the harness, `src/balance/profile.ts` composes a map's `referenceProfile` into modifiers through the same pure `meta/modifiers.ts` functions the game uses. For M1, A1M1's profile is empty, so its modifier list is empty.
 
 **Modifiers follow the design's stacking formula** ([design/towers.md §4](../design/towers.md#4-stat-modifiers-and-stacking)): `stat_final = (stat_tier + Σ flat) × (1 + Σ pct)`, with percentages **added, never multiplied**, and per-stat caps on the total percentage.
@@ -332,7 +334,7 @@ type Modifier =
 | `src/content/` | pure | Game data, validation, compilation (§3) |
 | `src/story/` | pure | Dialogue runner, story flags, bark selection ([story-runtime.md](story-runtime.md)) |
 | `src/meta/` | logic pure, I/O via adapters | Saves, progression, shop and R&D, medals, profile → modifiers ([meta-runtime.md](meta-runtime.md)) |
-| `src/balance/` | pure | The balance harness: reference profile → `SimConfig` (through `meta/modifiers.ts`), built-in policies, and assertions. `tools/sim.ts` is its CLI |
+| `src/balance/` | pure | The balance harness: reference profile → `SimConfig` (through `meta/modifiers.ts`; until T204 it refuses a profile with purchases), built-in policies, the run list, assertions, and reports. `tools/sim.ts` is its CLI, and the only place that touches the clock and the file system |
 | `src/render/` | browser + Phaser | Phaser scenes, views, sprite baking, VFX, input |
 | `src/ui/` | browser + Preact | DOM overlay: HUD, menus, loadout, shop, dialogue, codex |
 | `src/audio/` | browser (WebAudio) | Procedural chiptune SFX and music (M2+) |
@@ -488,7 +490,7 @@ stardust/
     │   ├── systems/            # applyCommands, waves, triggers, status, abilities, movement, towers, projectiles, cleanup
     │   ├── behaviors/          # tower attack kinds (hitscan, projectile, lobbed, beam, chain, pulse, spawner)
     │   ├── abilities/          # enemy ability kinds (blink, burrow, gather, jam, hush, …) and commander abilities
-    │   └── headless.ts         # runHeadless() and the scripted-build executor
+    │   └── headless.ts         # runHeadless() and the scripted-build executor (headlessTracker.ts: run tallies, invariants)
     ├── content/                # pure data
     │   ├── types.ts  compiled.ts  define.ts  registry.ts  validate.ts  content.test.ts
     │   ├── compile.ts  compileTower.ts  compileMap.ts  compileBuilds.ts  compileHelpers.ts
@@ -502,7 +504,7 @@ stardust/
     │   └── sprites/            # types.ts legend.ts defineSprite.ts helpers.ts validate.ts index.ts; tiles/ props/ towers/ enemies/ projectiles/ fx/ (later icons/ portraits/ ui/)
     ├── story/                  # pure: runner.ts conditions.ts flags.ts barks.ts text.ts counter.ts codex.ts inbox.ts epilogue.ts presentation.ts tags.ts
     ├── meta/                   # save.ts, migrations.ts, codec.ts, store.ts, progression.ts, modifiers.ts, shop.ts, __fixtures__/
-    ├── balance/                # pure: profile.ts (profile → SimConfig), policies.ts, assertions.ts, report.ts
+    ├── balance/                # pure: harness.ts (plan, run, judge), checks.ts (the assertions), refusals.ts (checks not possible yet), rules.ts (bands, seeds, budgets), expectations.ts, profile.ts (profile → SimConfig), policies.ts, report.ts
     ├── render/
     │   ├── scale.ts  iso.ts  depth.ts  layers.ts
     │   ├── scenes/             # BootScene, BattleScene, StarMapScene, BackdropScene
