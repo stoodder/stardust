@@ -171,8 +171,8 @@ describe('FEATURE_GATES', () => {
       ],
     });
     expect(gateRefusals(cfg)).toEqual([
-      "a 'firstBuildFree' modifier (protocol:rapid_deploy) is not simulated until M3",
-      "a 'freeCast' modifier (protocol:ready_room) is not simulated until M3",
+      "a 'firstBuildFree' modifier (protocol:rapid_deploy) is not simulated until T304d",
+      "a 'freeCast' modifier (protocol:ready_room) is not simulated until T304d",
     ]);
     const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, 'modifier.firstBuildFree': null };
     expect(gateRefusals(cfg, lifted)).toHaveLength(1);

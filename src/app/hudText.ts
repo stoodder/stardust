@@ -4,6 +4,7 @@
 import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { CompiledAbilityDef, CompiledLinkDef, CompiledTier } from '../content/compiled.ts';
 import { STATUS_BITS } from '../content/rules.ts';
+import { TOWERS } from '../content/towers/index.ts';
 import { SYSTEM_UNLOCKS } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -20,6 +21,16 @@ import {
   type TowerStatLine,
 } from '../sim/index.ts';
 import type { BuildSlotView } from '../ui/state.ts';
+
+const TOWER_NAMES: Readonly<Record<string, { readonly name: string } | undefined>> = TOWERS;
+
+/**
+ * A tower's display name (T119): its content `name` ("Rivet"), or, for an id outside the live
+ * registry (the dev battle's), the id as a display name.
+ */
+export function towerName(id: string): string {
+  return (Object.hasOwn(TOWER_NAMES, id) ? TOWER_NAMES[id]?.name : undefined) ?? displayName(id);
+}
 
 /** A content id as a display name: `dev_` dropped, words capitalized (`rivet` → `Rivet`). */
 export function displayName(id: string): string {
@@ -215,7 +226,7 @@ export function specLockText(engineeringOpen: boolean): string {
 /** "rivet T3" (a counter-answer label) → "Rivet T3"; "thumper [Bunker Buster]" → "Thumper [Bunker Buster]". */
 export function answerLabel(label: string): string {
   const [tower = '', ...rest] = label.split(' ');
-  return [displayName(tower), ...rest].join(' ');
+  return [towerName(tower), ...rest].join(' ');
 }
 
 /** What each tile type is called in the cursor's announcement. */
@@ -250,12 +261,12 @@ export function cursorText(
   const tower = slot < 0 ? null : (sim.state.towers.items[slot] ?? null);
   const what =
     tower !== null && tower.alive && tower.def !== null
-      ? `${displayName(tower.def.id)} tier ${tower.tier}, ${where}`
+      ? `${tower.def.name} tier ${tower.tier}, ${where}`
       : `${TILE_NAMES[tile]}, ${where}${isBuildableTile(tile) ? ', empty' : ''}`;
   if (aimingLabel !== null) return `${what}. Enter fires ${aimingLabel} here.`;
   if (tower !== null && tower.alive) return `${what}. Enter selects it.`;
   if (armed !== null && isBuildableTile(tile))
-    return `${what}. Enter builds ${displayName(armed)}.`;
+    return `${what}. Enter builds ${sim.config.content.towers[armed]?.name ?? towerName(armed)}.`;
   return `${what}.`;
 }
 

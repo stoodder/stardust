@@ -13,6 +13,7 @@ import { logError } from './log.ts';
 import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
+import { setIntakeEnabled } from './profile.ts';
 import { setRadioEnabled } from './radio.ts';
 import { audioTestHooks, installAudio } from './audio.ts';
 import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
@@ -33,6 +34,7 @@ export function parseBootParams(search: string): BootParams {
     seed,
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
+    intake: !test || q.get('intake') === '1',
     // Dev saves load only under ?test=1 (D031): a player URL can't open gated systems.
     save: test ? q.get('save') : null,
   };
@@ -53,6 +55,7 @@ function requireElement(id: string): HTMLElement {
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
   setRadioEnabled(params.radio);
+  setIntakeEnabled(params.intake);
   initSettings();
   installAudio(params.audio);
   initSaves(browserKeyValueStore());

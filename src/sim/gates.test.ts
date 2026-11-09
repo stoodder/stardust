@@ -19,7 +19,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
   it('a spec counts only once its pair is unlocked (fx_mortar spec A fires a projectile)', () => {
     expect(gateRefusals(fixtureConfig())).toEqual([]);
     expect(gateRefusals(fixtureConfig({ specsUnlocked: ['fx_mortar'] }))).toEqual([
-      "a 'projectile' attack (fx_mortar) is not simulated until M3",
+      "a 'projectile' attack (fx_mortar) is not simulated until T304a",
     ]);
     expect(() => fixtureSim({ specsUnlocked: ['fx_mortar'] })).toThrow(/'projectile' attack/);
     expect(() => fixtureSim({ specsUnlocked: ['fx_gun'] })).not.toThrow();
@@ -29,7 +29,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     const pinned = { status: 'pinned', durationTicks: 60 } as const;
     const content = withGunTier(1, { ...GUN.tiers[1], effects: [pinned] });
     expect(gateRefusals(fixtureConfig({ content }))).toEqual([
-      'the pinned status (fx_gun) is not simulated until M3',
+      'the pinned status (fx_gun) is not simulated until M4',
     ]);
     // Not in the loadout: nothing to refuse.
     expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }))).toEqual([]);
@@ -52,23 +52,23 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     });
     const cfg = fixtureConfig({ content });
     expect(gateRefusals(cfg)).toEqual([
-      "a 'beam' attack (fx_gun) is not simulated until M3",
-      'the stasis status (fx_gun) is not simulated until M3',
-      'the unnerved status (fx_gun) is not simulated until M3',
+      "a 'beam' attack (fx_gun) is not simulated until M4",
+      'the stasis status (fx_gun) is not simulated until M4',
+      'the unnerved status (fx_gun) is not simulated until M4',
     ]);
     const lifted = { ...FEATURE_GATES, 'attack.beam': null, 'status.stasis': null };
     expect(gateRefusals(cfg, lifted)).toEqual([
-      'the unnerved status (fx_gun) is not simulated until M3',
+      'the unnerved status (fx_gun) is not simulated until M4',
     ]);
   });
 
-  it('every closed T121 row names M3, and the specs row is open', () => {
+  it('every closed T121 row names its task (D064: M3 lifts projectiles and chains)', () => {
     expect(FEATURE_GATES.specs).toBeNull();
-    for (const f of ['projectile', 'beam', 'chain', 'spawner'] as const) {
-      expect(FEATURE_GATES[`attack.${f}`]).toBe('M3');
-    }
+    expect(FEATURE_GATES['attack.projectile']).toBe('T304a');
+    expect(FEATURE_GATES['attack.chain']).toBe('T304b');
+    for (const f of ['beam', 'spawner'] as const) expect(FEATURE_GATES[`attack.${f}`]).toBe('M4');
     for (const s of ['pinned', 'stasis', 'unnerved'] as const) {
-      expect(FEATURE_GATES[`status.${s}`]).toBe('M3');
+      expect(FEATURE_GATES[`status.${s}`]).toBe('M4');
     }
   });
 });

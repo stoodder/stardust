@@ -1,10 +1,20 @@
 // The one door for screen changes from the UI (the menu and Results buttons), the way commands.ts
 // is for battle actions: components call these, never the router directly. Save actions that
-// change screens (New game, Continue, Load, Import) go through here too; the rest are app/save.ts.
+// change screens (New game, Continue, Load, Import, the intake) go through here too; the rest are
+// app/save.ts.
 import type { SaveData, SlotId } from '../meta/index.ts';
 import type { LoadoutPickView } from '../ui/screens/loadoutView.ts';
 import { loadoutMapId, savePick } from './loadout.ts';
 import { logError } from './log.ts';
+import {
+  holdNewGame,
+  intakeBeforeNewGame,
+  intakeMode,
+  needsIntake,
+  signIntake,
+  type IntakeForm,
+  type IntakeSubmit,
+} from './profile.ts';
 import type { Router } from './router.ts';
 import {
   continueSlot,
@@ -15,6 +25,7 @@ import {
   newGame as newSave,
   nextMapId,
   openSlot,
+  slotEmpty,
   systemOpen,
   type SaveResult,
 } from './save.ts';
@@ -89,11 +100,45 @@ export function startGame(): SaveResult {
   return newGame(slot);
 }
 
-/** Title → New game → a slot: a new campaign there, into its first map's briefing. */
+/**
+ * Title → New game → a slot: the intake (character creation, T306), then a new campaign there,
+ * into its first map's briefing. The save is created when the form is signed.
+ */
 export function newGame(slot: SlotId): SaveResult {
+  if (intakeBeforeNewGame()) {
+    if (!slotEmpty(slot)) return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
+    holdNewGame(slot);
+    run('intake', (r) => r.goto('intake'));
+    return { ok: true };
+  }
   const r = newSave(slot);
   if (r.ok) playNext();
   return r;
+}
+
+/**
+ * Intake → Sign and submit: files the profile (app/profile.ts), then a new campaign's first map,
+ * or the Shift board of the save in play. Returns the form's problems instead while it can't file.
+ */
+export function submitIntake(form: IntakeForm): IntakeSubmit {
+  const mode = intakeMode();
+  const r = signIntake(form);
+  if (!r.ok) return r;
+  if (mode?.kind === 'new') playNext();
+  else toCampaign();
+  return r;
+}
+
+/** Intake → Back: the Title (a held new game is dropped; nothing was written). */
+export function cancelIntake(): void {
+  holdNewGame(null);
+  toTitle();
+}
+
+/** The Shift board of a save just opened, after its intake if it has no profile yet (T306). */
+function toOpenedCampaign(): void {
+  if (needsIntake()) run('intake', (r) => r.goto('intake'));
+  else toCampaign();
 }
 
 /** Title → Continue: the slot written last, on its Shift board. */
@@ -103,17 +148,20 @@ export function continueGame(): SaveResult {
   return loadGame(slot);
 }
 
-/** Title → Load → a slot: that campaign's Shift board. */
+/** Title → Load → a slot: that campaign's Shift board (after its intake, if it has no profile). */
 export function loadGame(slot: SlotId): SaveResult {
   const r = openSlot(slot);
-  if (r.ok) toCampaign();
+  if (r.ok) toOpenedCampaign();
   return r;
 }
 
-/** Import → a slot (the player confirmed any overwrite): that campaign's Shift board. */
+/**
+ * Import → a slot (the player confirmed any overwrite): that campaign's Shift board (after its
+ * intake, if it has no profile).
+ */
 export function importGame(slot: SlotId, save: SaveData): SaveResult {
   const r = importInto(slot, save);
-  if (r.ok) toCampaign();
+  if (r.ok) toOpenedCampaign();
   return r;
 }
 

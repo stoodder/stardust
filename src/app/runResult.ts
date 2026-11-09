@@ -8,7 +8,7 @@ import type { FlagRuleStats } from '../story/flags.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
 import type { MedalResult, RunResult, RunRewards } from '../ui/screens/state.ts';
-import { displayName } from './hudText.ts';
+import { towerName } from './hudText.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
@@ -127,7 +127,7 @@ export function runRewardsOf(
     stardust: { source, amount, base, wavesResolved: summary.stardust.wavesResolved, waveCount },
     intel: summary.intel,
     lifetimePests: summary.pestsProcessed.lifetime,
-    issued: summary.issued.map(displayName),
+    issued: summary.issued.map(towerName),
     stardustNote: summary.stardustNote ?? null,
     saveNotice: summary.writeFailed ?? null,
   };

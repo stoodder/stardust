@@ -349,7 +349,7 @@ export function bindHud(
         const pool = sim.state.towers;
         for (let i = 0; i < pool.used; i++) {
           const t = pool.items[i]!; // i < used
-          if (t.alive && t.uid === e.target) name = displayName(t.def?.id ?? 'turret');
+          if (t.alive && t.uid === e.target) name = t.def?.name ?? null;
         }
       }
       announce(holdFireText(e.on, e.target === 'all' ? null : (name ?? 'Turret')));

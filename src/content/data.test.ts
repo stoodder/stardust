@@ -103,7 +103,7 @@ const parList = (splash: string): string[] => [
 ];
 
 describe('towers', () => {
-  it('registers the three M1 Everglow towers (and M3\'s two, data.m3.test.ts)', () => {
+  it("registers the three M1 Everglow towers (and M3's two, data.m3.test.ts)", () => {
     expect(Object.keys(content.towers)).toEqual([
       'rivet',
       'thumper',
@@ -259,7 +259,7 @@ describe('towers', () => {
 });
 
 describe('enemies', () => {
-  it('registers the M1 Skitterkin and the Brood Hauler (and M3\'s six, data.m3.test.ts)', () => {
+  it("registers the M1 Skitterkin and the Brood Hauler (and M3's six, data.m3.test.ts)", () => {
     expect(Object.keys(content.enemies)).toEqual([
       'nibbler',
       'zoomer',
@@ -272,12 +272,11 @@ describe('enemies', () => {
       'chitterbloom',
       'gerald',
     ]);
-    expect(Object.values(content.enemies).slice(0, 4).map((e) => e.name)).toEqual([
-      'Nibbler',
-      'Zoomer',
-      'Chonk',
-      'Brood Hauler',
-    ]);
+    expect(
+      Object.values(content.enemies)
+        .slice(0, 4)
+        .map((e) => e.name),
+    ).toEqual(['Nibbler', 'Zoomer', 'Chonk', 'Brood Hauler']);
     for (const e of [nibbler, zoomer, chonk]) {
       expect(e).toMatchObject({ faction: 'skitterkin', body: 'organic', layer: 'ground' });
       expect(e.shield).toBeNull();

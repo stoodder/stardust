@@ -13,10 +13,7 @@ import { ball, blobWalk, box, type BlobSpec } from './shapes.ts';
 const TUFT = ['.dc.', 'cdcb', '.bb.'];
 
 /** A Skitterkin placeholder sprite and its icon (same body, fitted to 14×14). */
-function skitter(
-  spec: BlobSpec,
-  icon: { rx: number; ry: number; features: BlobSpec['se'] },
-) {
+function skitter(spec: BlobSpec, icon: { rx: number; ry: number; features: BlobSpec['se'] }) {
   const walk = blobWalk(spec);
   return {
     body: {
@@ -25,7 +22,14 @@ function skitter(
       frames: walk.frames,
       anims: walk.anims,
     },
-    icon: enemyIcon({ cx: 7, cy: 8, rx: icon.rx, ry: icon.ry, belly: 0.4, features: icon.features }),
+    icon: enemyIcon({
+      cx: 7,
+      cy: 8,
+      rx: icon.rx,
+      ry: icon.ry,
+      belly: 0.4,
+      features: icon.features,
+    }),
   };
 }
 

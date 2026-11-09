@@ -74,11 +74,11 @@ describe('createSim', () => {
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
     expect(bad({ modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] })).toMatch(
-      /'freeCast' modifier \(test\) is not simulated until M3/,
+      /'freeCast' modifier \(test\) is not simulated until T304d/,
     );
     // T121: fx_mortar's spec A fires a straight projectile, which the towers system doesn't run.
     expect(bad({ specsUnlocked: ['fx_mortar'] })).toMatch(
-      /a 'projectile' attack \(fx_mortar\) is not simulated until M3/,
+      /a 'projectile' attack \(fx_mortar\) is not simulated until T304a/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
@@ -94,7 +94,7 @@ describe('createSim', () => {
     );
     const both = bad({ seed: -1, modifiers: [{ kind: 'freeCast', wave: 1, source: 'test' }] });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until M3/);
+    expect(both).toMatch(/until T304d/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

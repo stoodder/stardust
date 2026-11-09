@@ -84,9 +84,7 @@ export function ball(
   mid: string,
   dark: string,
 ): void {
-  disc(g, cx, cy, r, (d, x, y) =>
-    d > r - 1 ? dark : x + 0.5 < cx && y + 0.5 < cy ? lit : mid,
-  );
+  disc(g, cx, cy, r, (d, x, y) => (d > r - 1 ? dark : x + 0.5 < cx && y + 0.5 < cy ? lit : mid));
 }
 
 /** Head frame size and anchor shared by the placeholder turret heads. */

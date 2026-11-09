@@ -5,7 +5,9 @@
 // play out; D028) Results shows over it. Every run in a campaign ends in the save in play (meta's
 // run end: Pests Processed, medals, rewards). A campaign map opens through `play`: the loadout
 // screen first when the save has a choice to make (meta/loadout.ts, the skip rule), then the
-// battle with its briefing, which offers Change loadout back to the screen.
+// battle with its briefing, which offers Change loadout back to the screen. The intake
+// (character creation, app/profile.ts) is a menu too: navigation.ts opens it before a new
+// campaign's first map and before the Shift board of a save with no profile.
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
@@ -19,6 +21,7 @@ import { cancel, setSpeed } from './commands.ts';
 import { earnedMedalIds } from '../sim/index.ts';
 import { closeLoadout, openLoadout } from './loadout.ts';
 import { activeSave, closeSession, loadoutOffered, recordRun, systemOpen } from './save.ts';
+import { holdNewGame, intakeMode } from './profile.ts';
 import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
@@ -173,7 +176,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     activeSave() === null ? showMenu('title') : showMenu('campaign');
 
   /** Shows a menu over the backdrop, ending any battle. */
-  const showMenu = (id: MenuId | 'settings' | 'loadout'): Promise<void> => {
+  const showMenu = (id: MenuId | 'settings' | 'loadout' | 'intake'): Promise<void> => {
     stopBattle();
     if (id !== 'loadout') closeLoadout();
     showBackdrop(true);
@@ -190,7 +193,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         case 'title':
           // The Title lists the slots; Continue or Load opens one again.
           closeSession();
+          holdNewGame(null);
           return showMenu('title');
+        case 'intake':
+          // Character creation (T306): a held new game, or the save in play (app/profile.ts).
+          if (intakeMode() === null) {
+            return Promise.reject(new Error('router: the intake needs a new game or a loaded save'));
+          }
+          return showMenu('intake');
         case 'campaign':
           if (activeSave() === null) {
             return Promise.reject(new Error('router: the Shift board needs a loaded save'));

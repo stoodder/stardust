@@ -6,7 +6,11 @@ import {
   type UpgradeDef,
 } from '../content/upgrades/index.ts';
 import type { IdSpace } from '../content/types.ts';
-import { createSim, type Modifier } from '../sim/index.ts';
+import { ABILITIES } from '../content/abilities/index.ts';
+import { TOWERS } from '../content/towers/index.ts';
+import type { AbilityId, TowerId } from '../content/types.ts';
+import { FEATURE_GATES, createSim, type Modifier } from '../sim/index.ts';
+import { abilityRefusal, towerRefusal } from '../sim/gates.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import {
   DIFFICULTY_MODIFIERS,
@@ -176,13 +180,25 @@ describe('meta modifiers', () => {
   });
 });
 
+const towerPlays = (t: TowerId): boolean => towerRefusal(TOWERS[t]) === null;
+const abilityPlays = (a: AbilityId): boolean => abilityRefusal(ABILITIES[a]) === null;
+
 describe('pools', () => {
-  it('towers and abilities: owned minus revoked; protocols: owned', () => {
+  it('towers and abilities: owned minus revoked, played by the sim today; protocols: owned', () => {
     const save = DEV_SAVES.all_unlocked.build();
     save.unlocks.revokedTowers = ['thumper'];
     save.unlocks.revokedAbilities = ['orbital_strike'];
-    expect(towerPool(save)).toEqual(save.unlocks.towers.filter((t) => t !== 'thumper'));
-    expect(abilityPool(save)).toEqual(save.unlocks.abilities.filter((a) => a !== 'orbital_strike'));
+    // A tower or ability the sim still refuses (sim/gates.ts; T300a) stays out until its task.
+    expect(towerPool(save)).toEqual(
+      save.unlocks.towers.filter((t) => t !== 'thumper' && towerPlays(t)),
+    );
+    expect(abilityPool(save)).toEqual(
+      save.unlocks.abilities.filter((a) => a !== 'orbital_strike' && abilityPlays(a)),
+    );
+    expect(towerPool(save).includes('skyhook')).toBe(FEATURE_GATES['attack.projectile'] === null);
+    expect(abilityPool(save).includes('time_dilation')).toBe(
+      FEATURE_GATES['ability.slowAll'] === null,
+    );
     expect(protocolPool(save)).toEqual(save.unlocks.protocols);
   });
 

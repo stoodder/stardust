@@ -110,6 +110,8 @@ export type Condition =
   | { readonly mapAtLeast: CampaignMapId }
   | { readonly mapIs: CampaignMapId }
   | { readonly stat: 'pestsProcessed'; readonly gte: number }
+  /** The scene (or once-per-campaign bark) is in the save's `story.seen`. */
+  | { readonly seen: SceneId | BarkId }
   | { readonly outcome: 'won' | 'lost' }
   /** The value `flag`'s run-end rule gives over the run that just ended (FLAG_RULES). */
   | { readonly thisRun: BooleanFlagId; readonly eq: boolean }

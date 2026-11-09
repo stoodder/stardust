@@ -53,6 +53,7 @@ import {
   slots,
   type CampaignView,
   type Difficulty,
+  type ProfileView,
   type SlotView,
   type SystemView,
 } from '../ui/screens/state.ts';
@@ -163,12 +164,27 @@ function persist(): SaveResult {
   return w.ok ? { ok: true } : writeFailure(w);
 }
 
-/** Starts a new campaign in an empty slot and makes it the save in play. */
-export function newGame(slot: SlotId): SaveResult {
-  if (loadSlot(store, slot).status !== 'empty') {
+/** Whether `slot` holds nothing (New game may start there). */
+export function slotEmpty(slot: SlotId): boolean {
+  return loadSlot(store, slot).status === 'empty';
+}
+
+/**
+ * Starts a new campaign in an empty slot and makes it the save in play. `init` fills in the new
+ * save before its first write (the intake's profile, app/profile.ts).
+ */
+export function newGame(slot: SlotId, init?: (save: SaveData) => SaveData): SaveResult {
+  if (!slotEmpty(slot)) {
     return { ok: false, message: `Slot ${slot} is taken. Pick an empty one!` };
   }
-  session = { store, slot, scratch: false, devUnlocks: [], save: createNewSave() };
+  const fresh = createNewSave();
+  session = {
+    store,
+    slot,
+    scratch: false,
+    devUnlocks: [],
+    save: init === undefined ? fresh : init(fresh),
+  };
   menuNotice.value = null;
   return persist();
 }
@@ -264,6 +280,16 @@ export function recordRun(
 function isCampaignMap(id: string): id is MapId {
   const campaignMaps: readonly string[] = CAMPAIGN;
   return campaignMaps.includes(id);
+}
+
+/**
+ * Replaces the save in play with `update(save)` and writes it (the intake and Settings' profile,
+ * app/profile.ts). A failed write is logged; the session keeps the new save, and the message says so.
+ */
+export function updateActiveSave(update: (save: SaveData) => SaveData): SaveResult {
+  if (session === null) return { ok: false, message: 'No save is loaded.' };
+  session.save = update(session.save);
+  return persist();
 }
 
 /** Sets the campaign's difficulty (Settings; any time between maps, progression.md § 9). */
@@ -455,6 +481,18 @@ function slotView(slot: SlotId, load: SlotLoad): SlotView {
   }
 }
 
+function profileView(save: SaveData): ProfileView | null {
+  const p = save.profile;
+  if (p === null) return null;
+  const arrival = save.story.flags.arrival_reason;
+  return {
+    name: p.name,
+    pronouns: p.pronouns,
+    callsign: p.callsign,
+    arrival: arrival === 'bonus' || arrival === 'family' || arrival === 'lettuce' ? arrival : null,
+  };
+}
+
 function systemView(s: Session, id: MetaSystem): SystemView {
   return { unlocked: isSystemUnlocked(s.save, id, s.devUnlocks), hint: unlockHint(id) };
 }
@@ -466,6 +504,7 @@ function campaignView(s: Session): CampaignView {
     intel: s.save.currencies.intel,
     pestsProcessed: s.save.stats.pestsProcessed,
     difficulty: s.save.settings.difficulty,
+    profile: profileView(s.save),
     board: shiftBoard(s.save).map((e) => ({
       id: e.id,
       name: e.name,

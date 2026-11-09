@@ -11,12 +11,12 @@ export type HookCommand = Command<IdSpace>;
 
 /**
  * Screens `goto` can jump to. `results` shows the last finished run's results (it rejects if no
- * run has ended yet); `campaign` (the Shift board) needs a loaded save, `base` an open base, and
+ * run has ended yet); `intake` (character creation, T306) a loaded save or a held new game; `campaign` (the Shift board) needs a loaded save, `base` an open base, and
  * `loadout` a loaded save (it opens for the URL's `?map=`, else the default map, whether or not
  * the skip rule would show it).
  */
 export type ScreenId =
-  'title' | 'campaign' | 'base' | 'settings' | 'loadout' | 'battle' | 'results';
+  'title' | 'intake' | 'campaign' | 'base' | 'settings' | 'loadout' | 'battle' | 'results';
 
 /** How a finished run ended. */
 export type RunOutcome = 'won' | 'lost';
@@ -134,6 +134,12 @@ export interface BootParams {
   readonly seed: number | null;
   readonly map: string | null;
   readonly skipIntro: boolean;
+  /**
+   * Whether the intake (character creation, T306) runs on New game and for a save with no
+   * profile. On for players; `?test=1` turns it off (a new game starts with no profile, as a v1
+   * save plays), and `&intake=1` turns it back on for the specs that assert it.
+   */
+  readonly intake: boolean;
   /**
    * A dev save to play (`meta/__fixtures__/devSaves.ts`), in an in-memory scratch slot with its
    * `devUnlocks`. Read only with `?test=1` (D031); null otherwise.

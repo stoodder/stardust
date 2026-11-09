@@ -160,7 +160,7 @@ export function selectedView(
   return {
     uid,
     key,
-    label: silkText(displayName(t.def.id)),
+    label: silkText(t.def.name),
     specName: specName === null ? null : silkText(specName),
     icon: t.def.sprites.icon,
     tier: t.tier,

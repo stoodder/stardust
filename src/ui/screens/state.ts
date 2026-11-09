@@ -3,6 +3,7 @@
 // through app/navigation.ts and app/save.ts.
 import { signal } from '@preact/signals';
 import type { RunOutcome } from '../../app/testHookTypes.ts';
+import type { ArrivalReason, CallsignId, PronounId } from '../../content/dialogue/profile.ts';
 import type { SpokenLine } from '../state.ts';
 
 /** A finished run, as the results screen shows it (built by app/runResult.ts at run end). */
@@ -96,6 +97,15 @@ export interface SystemView {
 export type Difficulty = 'standard' | 'story';
 
 /** The campaign that's being played: its slot, banks, Shift board, and which systems are open. */
+/** The player's file (SaveData.profile and the `arrival_reason` flag), for the menus. */
+export interface ProfileView {
+  readonly name: string;
+  readonly pronouns: PronounId;
+  readonly callsign: CallsignId;
+  /** The intake's reason for joining (the flag), or null if the save has none. */
+  readonly arrival: ArrivalReason | null;
+}
+
 export interface CampaignView {
   /** 1–3, or null for the dev hook's in-memory scratch slot (`?test=1&save=`). */
   readonly slot: 1 | 2 | 3 | null;
@@ -103,6 +113,8 @@ export interface CampaignView {
   readonly intel: number;
   readonly pestsProcessed: number;
   readonly difficulty: Difficulty;
+  /** The player's file from the intake (T306), or null until it's filled in. */
+  readonly profile: ProfileView | null;
   readonly board: readonly ShiftView[];
   readonly systems: {
     readonly base: SystemView;

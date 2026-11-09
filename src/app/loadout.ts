@@ -34,7 +34,7 @@ import {
   type LoadoutView,
 } from '../ui/screens/loadoutView.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
-import { displayName } from './hudText.ts';
+import { displayName, towerName } from './hudText.ts';
 import { threatNames } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
@@ -98,7 +98,7 @@ function towerView(
   const required: readonly string[] = c.map.requiredCounters;
   return {
     id,
-    name: silkText(displayName(id)),
+    name: silkText(def.name),
     role: silkText(def.role),
     cost: costFor(modifiers, id, def.tiers[0].cost),
     icon: def.sprites.icon,
@@ -117,9 +117,9 @@ function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
     id: l.id,
     name: silkText(l.name),
     partners: [a.tower, b.tower],
-    partnerNames: `${displayName(a.tower)} + ${displayName(b.tower)}`,
+    partnerNames: `${towerName(a.tower)} + ${towerName(b.tower)}`,
     bonus: l.partners
-      .map((p) => `${displayName(p.tower)} ${p.bonuses.map(bonusText).join(', ')}`)
+      .map((p) => `${towerName(p.tower)} ${p.bonuses.map(bonusText).join(', ')}`)
       .join(' · '),
   };
 }

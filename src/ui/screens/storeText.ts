@@ -4,7 +4,7 @@
 // these are the screens' own strings. They show from Act I to the finale, so like the catalog copy
 // they use no exclamation points and no protected word (story/style-guide.md §§ 2, 3, 6.3, 6.4).
 import { silkText } from '../silk.ts';
-import { displayName } from '../../app/hudText.ts';
+import { displayName, towerName as hudTowerName } from '../../app/hudText.ts';
 import { ABILITIES } from '../../content/abilities/index.ts';
 import { TOWERS } from '../../content/towers/index.ts';
 import {
@@ -45,9 +45,9 @@ function signed(x: number): string {
   return `${x < 0 ? '−' : '+'}${Math.abs(x)}`;
 }
 
-/** A tower id's display name (`rivet` → "Rivet"). */
+/** A tower id's display name (`rivet` → "Rivet"; T119: its content `name`). */
 export function towerName(id: string): string {
-  return displayName(id);
+  return hudTowerName(id);
 }
 
 function abilityName(id: string): string {

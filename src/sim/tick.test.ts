@@ -21,10 +21,12 @@ describe('the system pipeline', () => {
   it('runs in the documented order (architecture.md § Entity model)', () => {
     expect(SYSTEMS.map((s) => s.name)).toEqual([
       'applyCommands',
+      'wreckage',
       'waves',
       'triggers',
       'status',
       'links',
+      'enemyAbilities',
       'abilities',
       'movement',
       'towers',

@@ -53,6 +53,10 @@ function withSteps(steps: typeof fxBuilds.parBuild.steps): RawContent<IdSpace> {
   return withMap({ parBuild: { ...fxBuilds.parBuild, steps } });
 }
 /** compileContent() must throw, and the message must name the rule. */
+/** The entity rules' errors only (a fixture enemy's new trait also moves the map's threat rules). */
+function entityErrors(raw: RawContent<IdSpace>): string[] {
+  return validate(raw).filter((e) => /^\[(enemy|ability)-/.test(e));
+}
 function rejects(raw: RawContent<IdSpace>, rule: string, rules?: ValidationRules): void {
   expect(() => compileContent(raw, rules)).toThrow(new RegExp(`\\[${rule}\\] `));
 }
@@ -125,8 +129,50 @@ describe('validate: entities', () => {
     rejects(withEnemy('fx_walker', { traits: ['jammer'], tells: ['disabler'] }), 'jammer-source');
   });
 
-  it('[feature] bosses, until M3', () => {
-    rejects(withEnemy('fx_walker', { tells: ['boss'] }), 'feature');
+  it('[enemy-traits] M3 abilities and their traits go together (T300a)', () => {
+    const burrow = { everySec: 6, durationSec: 2, speedMul: 1.5, tellSec: 0.8 };
+    expect(
+      entityErrors(withEnemy('fx_walker', { burrow, traits: ['burrowing'], tells: ['burrower'] })),
+    ).toEqual([]);
+    rejects(withEnemy('fx_walker', { burrow }), 'enemy-traits');
+    rejects(withEnemy('fx_walker', { traits: ['splitting'], tells: ['splitter'] }), 'enemy-traits');
+    rejects(
+      withEnemy('fx_walker', { huddle: { radiusTiles: 1.5, regenPerSec: 4 } }),
+      'enemy-traits',
+    );
+    rejects(withEnemy('fx_walker', { tells: ['boss'] }), 'enemy-traits'); // a boss tell, no `boss`
+  });
+
+  it('[enemy-ability] enemy abilities, bosses, and neutral units (T300a)', () => {
+    const split = (enemy: string, count = 3): RawContent<IdSpace> =>
+      withEnemy('fx_walker', {
+        split: { enemy, count },
+        traits: ['splitting'],
+        tells: ['splitter'],
+      });
+    expect(entityErrors(split('fx_runner'))).toEqual([]);
+    rejects(split('fx_nobody'), 'enemy-ability');
+    rejects(split('fx_walker'), 'enemy-ability'); // itself
+    rejects(split('fx_runner', 0), 'enemy-ability');
+    const boss = (b: NonNullable<EnemyDef['boss']>, bounty = 0): RawContent<IdSpace> =>
+      withEnemy('fx_walker', { boss: b, bounty, tells: ['boss'] });
+    const phases = [
+      { fromPct: 1, spawn: { enemy: 'fx_runner', count: 2, everySec: 5 } },
+      { fromPct: 0.5, hastePct: 0.5 },
+    ];
+    expect(entityErrors(boss({ phases, ending: 'driveOff', endAtPct: 0 }))).toEqual([]);
+    rejects(boss({ phases, ending: 'driveOff', endAtPct: 0 }, 3), 'enemy-ability'); // a bounty
+    rejects(boss({ phases: [], ending: 'driveOff', endAtPct: 0 }), 'enemy-ability');
+    const late = [phases[0]!, { fromPct: 1, hastePct: 0.5 }]; // phases must fall
+    rejects(boss({ phases: late, ending: 'driveOff', endAtPct: 0 }), 'enemy-ability');
+    rejects(boss({ phases, ending: 'retreat', endAtPct: 0.6 }), 'enemy-ability'); // above phase 2
+    const neutral = { neutral: true, leak: 0, bounty: 0 } as const;
+    expect(entityErrors(withEnemy('fx_walker', neutral))).toEqual([]);
+    rejects(withEnemy('fx_walker', { ...neutral, leak: 1 }), 'enemy-ability');
+    rejects(
+      withEnemy('fx_runner', { ...neutral }), // fast and shielded: a threat, not neutral
+      'enemy-ability',
+    );
   });
 
   it('[ability-range] out-of-range ability numbers', () => {
@@ -148,6 +194,22 @@ describe('validate: entities', () => {
     rejects(withSegment({ lengthTiles: 2 }), 'ability-range'); // even: no center tile
     rejects(withSegment({ durationSec: 0 }), 'ability-range');
     rejects(withSegment({ damagePerSec: -1 }), 'ability-range');
+    // M3's untargeted effects and the wave-count cooldown (T300a).
+    const withAbility = (over: Record<string, unknown>): RawContent<IdSpace> => ({
+      ...BASE,
+      abilities: { ...BASE.abilities, fx_strike: { ...strike, ...over } },
+    });
+    const slow = { kind: 'slowAll', slowPct: 0.4, bossSlowPct: 0.2, durationSec: 6 } as const;
+    const sale = { kind: 'discount', pct: 0.4, charges: 3 } as const;
+    expect(validate(withAbility({ effect: slow }))).toEqual([]);
+    expect(
+      validate(withAbility({ effect: sale, cooldownSec: undefined, cooldownWaves: 4 })),
+    ).toEqual([]);
+    rejects(withAbility({ effect: { ...slow, slowPct: 1 } }), 'ability-range');
+    rejects(withAbility({ effect: { ...slow, durationSec: 0 } }), 'ability-range');
+    rejects(withAbility({ effect: { ...sale, charges: 0 } }), 'ability-range');
+    rejects(withAbility({ effect: { ...sale, pct: 0 } }), 'ability-range');
+    rejects(withAbility({ cooldownSec: undefined, cooldownWaves: 1.5 }), 'ability-range');
   });
 
   it('[companion] one ability per companion', () => {

@@ -72,7 +72,7 @@ export function buildSlots(
     if (def === undefined) throw new RangeError(`hud: loadout tower '${id}' is not in the content`);
     return {
       tower: id,
-      label: displayName(id),
+      label: def.name,
       icon: def.sprites.icon,
       cost: costFor(modifiers, id, def.tiers[0].cost),
       unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
@@ -96,7 +96,7 @@ export function wavePreview(map: CompiledMapDef<IdSpace>, wave: number): WavePre
     if (prev === undefined) {
       groups.push({
         enemy: g.enemy.id,
-        label: displayName(g.enemy.id),
+        label: g.enemy.name,
         icon: g.enemy.sprites.icon,
         count: g.count,
         air,

@@ -58,7 +58,7 @@ describe('offers', () => {
       o.item.kind === 'protocol' ? 'protocol' : o.tower === null ? 'global' : 'tune',
     );
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
-    expect(kinds.filter((k) => k === 'tune')).toHaveLength(3);
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(5); // Skyhook's and Zapcoil's too
   });
 
   it('orders each group by arrival, then entry price, then name', () => {

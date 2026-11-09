@@ -163,7 +163,8 @@ interface GateTier {
 function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
   for (const tier of tiers) {
     const kind = tier.attack?.kind;
-    if (kind !== undefined && isGatedKind(kind)) use(`attack.${kind}`, `a '${kind}' attack (${id})`);
+    if (kind !== undefined && isGatedKind(kind))
+      use(`attack.${kind}`, `a '${kind}' attack (${id})`);
     for (const e of tier.effects ?? []) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
@@ -215,7 +216,8 @@ export function gateRefusals(cfg: SimConfig<IdSpace>, gates: Gates = FEATURE_GAT
   }
   for (const id of [slot1, slot2]) {
     const kind = id === null ? undefined : cfg.content.abilities[id]?.effect.kind;
-    if (kind !== undefined && isGatedEffect(kind)) use(`ability.${kind}`, `the '${kind}' ability (${id})`);
+    if (kind !== undefined && isGatedEffect(kind))
+      use(`ability.${kind}`, `the '${kind}' ability (${id})`);
   }
   for (const m of cfg.modifiers) {
     const f = modifierFeature(m);
@@ -260,5 +262,7 @@ export function abilityRefusal(
   const kind = ability.effect.kind;
   if (!isGatedEffect(kind)) return null;
   const owner = gates[`ability.${kind}`];
-  return owner === null ? null : `the '${kind}' ability (${ability.id}) is not simulated until ${owner}`;
+  return owner === null
+    ? null
+    : `the '${kind}' ability (${ability.id}) is not simulated until ${owner}`;
 }
