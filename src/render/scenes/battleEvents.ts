@@ -7,7 +7,9 @@
 // in where it's born (a split's children, a sneeze, a surfacing), a splitter's pink pop, a boss's
 // phase change (its bar flashes, gold and white rings, a 1 px shake) and the sparks of shots
 // plinking off it while it's invulnerable, its ending fading the bar, and props on cues landing
-// with their wave's countdown. Render-only: it reads sim state.
+// with their wave's countdown; T328's health bars scaled to each unit's def (none on a boss or a
+// neutral unit); and T329's: a link formed by this frame's build floats its callout clear of the
+// new tower's `−cost`. Render-only: it reads sim state.
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -21,7 +23,13 @@ import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
-import { calloutText, LINK_CALLOUT, type LinkEnd, type LinkView } from '../views/LinkView.ts';
+import {
+  calloutLiftOver,
+  calloutText,
+  LINK_CALLOUT,
+  type LinkEnd,
+  type LinkView,
+} from '../views/LinkView.ts';
 import type { PlinkFx } from '../views/PlinkFx.ts';
 import type { ProjectileView } from '../views/ProjectileView.ts';
 import type { SackBurstView } from '../views/SackBurstView.ts';
@@ -29,6 +37,7 @@ import { enemyBody, facingOf, tellGlyph } from '../views/spriteInfo.ts';
 import type { TowerView } from '../views/TowerView.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from '../views/TransientFx.ts';
 import type { ViewPool } from '../views/ViewPool.ts';
+import { barMaxHp } from '../vfx/healthBar.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
 import {
   BUILD_PUFF_MS,
@@ -153,6 +162,15 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   }
   /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
   const told = new Set<string>();
+  /**
+   * Towers built in this frame's dispatch (its events all carry the same sim tick), whose `−cost`
+   * floaters a link's callout must clear (T329), and that tick.
+   */
+  const builtNow = new Set<number>();
+  let builtTick = -1;
+  /** Scratch grid points for the callout's placement. */
+  const calloutMid: Vec2 = { x: 0, y: 0 };
+  const calloutEnd: Vec2 = { x: 0, y: 0 };
   /** A linked tower's tile and lift, for its tether; null if it's gone. */
   const linkEnd = (uid: number): LinkEnd | null => {
     const t = findLiveTower(sim.state.towers, uid);
@@ -212,6 +230,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   const offs = [
     bus.on('TowerBuilt', (e) => {
       views.onBuilt();
+      if (sim.state.tick !== builtTick) {
+        builtNow.clear();
+        builtTick = sim.state.tick;
+      }
+      builtNow.add(e.uid);
       const tower = content.towers[e.tower]!; // built from the loadout
       const [c, r] = e.tile;
       const lift = views.liftPx(c, r);
@@ -259,10 +282,19 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       // rings and chime, and skips the text rather than throwing mid-battle (D061).
       const text = name === undefined ? '' : calloutText(name);
       if (text === '' || !canDraw(text)) return;
-      const lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
-      const mx = (a.col + b.col) / 2 + 0.5;
-      const my = (a.row + b.row) / 2 + 0.5;
-      fx.floatText(text, look.text, mx, my, lift, LINK_CALLOUT_MS);
+      let lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
+      calloutMid.x = (a.col + b.col) / 2 + 0.5;
+      calloutMid.y = (a.row + b.row) / 2 + 0.5;
+      // A link formed by this frame's build floats over the new tower's `−cost` (T329).
+      if (builtTick === sim.state.tick) {
+        for (const t of [a, b]) {
+          if (!builtNow.has(t.uid)) continue;
+          calloutEnd.x = t.col + 0.5;
+          calloutEnd.y = t.row + 0.5;
+          lift = calloutLiftOver(lift, calloutMid, calloutEnd, TOWER_FLOAT_LIFT_PX + t.liftPx);
+        }
+      }
+      fx.floatText(text, look.text, calloutMid.x, calloutMid.y, lift, LINK_CALLOUT_MS);
     }),
     bus.on('LinkBroken', (e) => {
       views.links.break(e.link, e.a, e.b);
@@ -287,6 +319,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const body = enemyBody(def.sprites.body, unit?.tags ?? []);
       const v = views.enemies.acquire(e.uid);
       v.show(e.uid, body, def.layer === 'air', glyph, route);
+      v.setBar(barMaxHp(def), def.shield?.hp ?? 0);
       // A brood (a split's children, a sneeze, a surfacing) is born mid-route: it pops in.
       if (unit !== null && unit.dist > BROOD_MIN_DIST_TILES) v.popIn();
     }),
@@ -451,5 +484,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     shells.clear();
     flak.clear();
     chainTower = 0;
+    builtNow.clear();
+    builtTick = -1;
   };
 }

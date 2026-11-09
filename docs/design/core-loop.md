@@ -20,16 +20,16 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 
 | Step | What the player does | Notes |
 |---|---|---|
-| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). |
+| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). **As built,** Act I is linear and the **Shift board** (Everglow's duty roster: each shift's name, medals, and Start or Replay) stands in for it; the star map opens in Act II as the world widens (M4, [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)). |
 | **Mission briefing** | Reads a short briefing (a memo, QUILL, or the companion NPC). Sees the **threat intel** strip: one icon for every defense trait on this map (the map's `threatIntel`, for example *Flying*, *Shielded*, *Cloaked*) and the three medal conditions. | Rule: threat intel is always shown and always accurate. Losses should teach, never ambush (vision pillar 3). A map may hold back *one* surprise for its final wave, and the briefing hints at it ("QUILL: sensors show something big under the soil"). Which traits a map *requires* an answer to is a separate field ([maps.md §6.3](maps.md#63-one-new-thing-per-map)). |
 | **Loadout** | Picks **up to 4 tower types**, a **Technician ability**, and **Field Protocols** (meta perks). Sees which synergy links the chosen towers can form. | Rule: the 4-tower limit is a hard rule (`/CLAUDE.md`). The loadout locks when the map starts. Restarting a map lets you change it. **Rule:** the loadout screen is shown only when there is a choice to make: the player owns more than 4 tower types, or has a real choice of Technician ability, Field Protocols, or companion (the finale pick list). Otherwise it is skipped and the map starts with everything owned (A1M1 skips it; a map can also hold a tower back until a wave with `towerUnlockWave`, [maps.md §9](maps.md#9-map-data-shape-for-implementers)). |
 | **Play the map** | Plays the waves (section 2). | Typically 6–20 minutes at 1x; see [maps.md §6](maps.md#6-difficulty-curve). |
 | **Results** | Sees victory or defeat, medals earned, Stardust and Intel gained, and the act's counter line (§6.2). | On a loss, offers: Retry (same loadout), Retry from a checkpoint (§2.12, Act II on), Change loadout, Back to star map. Change loadout shows after a win too, wherever the map offers the loadout screen; it opens that map's loadout screen. A win can play full-screen scenes around the card, every time and skippable: A1M5's party before it, and its stinger as the card is left, whichever way (`content/dialogue/resultsFlow.ts`). |
-| **Debrief** | Reads a short scene (≤ 6 lines) and, after some maps, makes a story choice (C2–C4, [../story/bible.md §9](../story/bible.md#9-the-choices)). | Only after a victory (or a Holdout's scripted end). Skippable on replays. |
+| **Debrief** | Reads a short scene (≤ 6 lines) and, after some maps, makes a story choice (C2–C4, [../story/bible.md §9](../story/bible.md#9-the-choices)). | The story choice comes only after a victory (or a Holdout's scripted end). As built, the debrief's lines show on the Results card after a win or a loss: a loss gets a short supportive line, never a scolding ([D059](../decisions.md#d059--2026-11-09--m2-review-round-1-rulings)). Skippable on replays. Debrief choices on Results arrive with A2M4's C2. |
 | **Base** | Reads the **Everglow Inbox** (§6.4), spends Stardust at **Zibzab's shop**, Intel in **R&D**, reads the **codex** (§6.5), checks the **Pest Bounty Board** (§6.6, Acts I–II), talks to NPCs. | The base hub is the Perimeter Office (working name). Story scenes can play here. See [progression.md](progression.md). |
 
-**The loadout screen as built (T201, M2; protocols T308, M3).** It offers the towers, the Technician ability, and the Field Protocols (owned ones, up to the save's slots; one save-wide set, so a change carries to every map). The finale's companion pick joins with the finale (M5).
-- It comes before the briefing, which opens over the battle (the star map and its briefing are M3).
+**The loadout screen as built.** It offers the towers, the Technician ability, and the Field Protocols (owned ones, up to the save's slots; one save-wide set, so a change carries to every map). The finale's companion pick joins with the finale (M5).
+- It comes before the briefing, which opens over the battle as the map's `_brief` scene (the star map's own briefing waits for the star map, M4).
 - The order the player picks towers in is their build-slot order (keys 1–4).
 - Each tower shows its icon, role, cost (after the save's discounts), and which of the map's counters it answers, from which tier or spec.
 - Under the towers, the Field Protocols toggle on and off; with one slot, picking another swaps it in, and Specialist picks its tower once equipped.
@@ -274,6 +274,7 @@ Systems the story rides on outside the wave loop. Writing rules, lengths, and vo
 - **When:** New Game, before A1M1, framed as an Everglow onboarding form ("Frontier Futures: New Hire Intake").
 - **Fields:** **name** (1–16 characters; letters, digits, space, apostrophe, hyphen, and period, so the in-world bitmap font can draw it on a name tag), **pronouns** (she/her, he/him, they/them; each set carries its verb agreement for `{v:…}` tokens), and **`arrival_reason`** (`bonus`: "The signing bonus"; `family`: "Money for family back home"; `lettuce`: "I like lettuce"). The reason only flavors a few lines.
 - Name and pronouns can be changed later in Settings; `arrival_reason` can't.
+- **As built ([D068](../decisions.md#d068--2026-11-09--t306-character-creation)):** the intake opens on New game (the save is written only when the form is signed; Back or Esc writes nothing) and on Continue, Load, or Import for a save with no profile (one migrated from v1). Nothing is pre-selected. The callsign line reads "Assigned in the field by your supervisor", so Bricks still names the player in A1M1's briefing, and the small print says the field supervisor may read the file (seeding A3M3). Settings' *Your file* edits name and pronouns and shows the callsign and arrival reason read-only. The copy's home is [act1.md § Character creation](../story/campaign/act1.md#character-creation--new-hire-intake).
 - **Callsign:** Sprout (A1M1) → Thorn (A2M2) → Waykeeper (A3M6), set by dialogue `set` nodes and shown on the HUD (§5). Sterling's employee number **#ED-447** is fixed and shown on memos and the onboarding form.
 
 ### 6.2 Results screen and the lifetime counter
@@ -282,7 +283,9 @@ Systems the story rides on outside the wave loop. Writing rules, lengths, and vo
 - **Per-act results line** (copy owned by the style guide, [§2](../story/style-guide.md#2-voice-by-act)): Act I `PESTS PROCESSED: {n} ★ Top 5% of Technicians!` (the "Top 5%" is always true, and it's a lie nobody checks); Act II `Pests processed: {n}.` (no star); Act III the counter is **hidden** and replaced by the map's meter line (`Evacuated: {n}.`, `Held.`, or `Sheltered: {n}.`); Finale `REMEMBERED: {n}`. Act I results also show the cheerful star rating; Act III shows no stars at all.
 - **Ves'thara reads the live number** in A2M2 through the `{pests_processed}` token, which resolves to the lifetime total plus the current run's kills so far.
 - **The countdown:** in the finale's Phase 2 the counter returns at the lifetime total and **counts down to 0** as the Hollow is laid to rest, then flips to **REMEMBERED: {n}**. Its pacing rules are in [maps.md §5.5](maps.md#55-the-leaving-song-finale-rules).
-- **Story stamps:** a results screen can carry a story-only stamp (for example A1M5's red "Containment Lapse" when the Quiet Wave was spared). Stamps never change rewards.
+- **Story stamps:** a results screen can carry a story-only stamp (for example A1M5's red "Containment Lapse" when the Quiet Wave was spared). A stamp reads **this run** (`thisRun`), not the saved flag, so a replay that cleared the Quiet Wave shows none ([D091](../decisions.md#d091--2026-11-09--t316-results-the-scene-flow-the-pause-menu)). Stamps never change rewards. The stamps are content (`content/dialogue/resultsFlow.ts`).
+- **Medals and objectives on Results.** A win lists the medals and then the optional objectives (§2.13), each marked "NEW!" with its Intel, "On file" if an earlier run earned it, or "Next time!".
+- **The first payday.** A run that pays Stardust into an empty bank while Zibzab's shop is still locked is marked as the first payday, and only then does Results add "Banked for Zibzab's shop…" (where the Stardust waits).
 - **Held-back toasts (A3M3).** The Holdout's results screen shows no medal toasts or reward fanfare: medals and rewards are recorded silently (they show on the star map and in the base), so the screen plays identically at any score.
 
 ### 6.3 Barks
@@ -328,12 +331,14 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 - From A3M1 the codex is retitled ***Field Journal***, and entries with a corrected version show **original and corrected side by side**. The original is never deleted.
 - Before Act III, an entry shows its newest unlocked version, with a tab to read older ones.
 - **Rule:** the codex is optional depth; nothing in it is required to follow the story or to play.
+- Annotated versions (Act II) arrive with M4 ([D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)).
 - **As built (T303):** Act I's originals, 32 entries (every enemy, tower, place, and person the Act I maps list), in [`src/content/codex/act1.ts`](../../src/content/codex/act1.ts). An enemy entry unlocks once the enemy has been met in a run, a tower or ability entry once it's owned, and a place, person, or thing once its map is won. Each shows its picture (the unit's icon, or a prop or portrait; "Photo pending" for the rest). Annotations and corrections arrive with their acts (D064 defers them to M4).
 
 ### 6.6 The Pest Bounty Board
 
 - A fake leaderboard in the base during **Act I and Act II**. Kip is #1 ("three quarters running"), the player is always #2, and a few colonist names fill out the rest. Kip's score is computed to stay ahead of the player's Pests Processed. Rows are cosmetic.
 - From A2M4 Kip's row reads "(on assignment: Reclamation)". From A3M1 the board is simply **gone** from the base, with no message.
+- **Not built yet:** the board was deferred to M4 ([D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)), so Act I's base has no board.
 
 ### 6.7 Per-act presentation dials
 

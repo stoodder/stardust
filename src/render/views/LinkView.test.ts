@@ -3,7 +3,13 @@
 import { describe, expect, it } from 'vitest';
 import { LINKS } from '../../content/links/index.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
-import { calloutText, LINK_CALLOUT, TETHER_LIFT_PX, tetherLift } from './LinkView.ts';
+import {
+  calloutLiftOver,
+  calloutText,
+  LINK_CALLOUT,
+  TETHER_LIFT_PX,
+  tetherLift,
+} from './LinkView.ts';
 
 describe('link callouts', () => {
   it('every link name floats as drawable text, with a callout look', () => {
@@ -26,5 +32,21 @@ describe('link callouts', () => {
     // Either way round, each end is half a step (4 px) from its head.
     expect(tetherLift(0, 8)).toBe(4 + TETHER_LIFT_PX);
     expect(tetherLift(8, 0)).toBe(4 + TETHER_LIFT_PX);
+  });
+});
+
+describe('a callout over a build floater (T329)', () => {
+  it('stays put when the floater is already below it', () => {
+    // Built tower right of the pair's middle on the same screen row: the plain lift clears it.
+    expect(calloutLiftOver(40, { x: 3, y: 3 }, { x: 3, y: 3 }, 24)).toBe(40);
+  });
+
+  it("rises over a floater higher on screen than the pair's middle", () => {
+    // Partner one tile down-right (x + 1, y + 1): the middle is 8 px lower on screen than the new
+    // tower, so the callout's base must clear the floater's top (24 + 7 px) plus 2 px from there.
+    const lift = calloutLiftOver(30, { x: 4, y: 4 }, { x: 3.5, y: 3.5 }, 24);
+    expect(lift).toBe(8 + 24 + 7 + 2);
+    // On high ground the floater sits 8 px higher, and so does the callout.
+    expect(calloutLiftOver(30, { x: 4, y: 4 }, { x: 3.5, y: 3.5 }, 32)).toBe(lift + 8);
   });
 });

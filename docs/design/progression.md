@@ -198,6 +198,8 @@ R&D is run by QUILL in the base. Ves'thara takes over the Xenotech branch when s
 
 There are 16 spec unlocks: 4 × 2 + 12 × 3 = **44 Intel** for all of them.
 
+**As built:** only the Rivet and Thumper specs exist. The Sprinkler, Skyhook, and Zapcoil specs are deferred to M4 ([D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut); the reference profile buys none before A2M2), so Engineering lists their unlocks as "No specs yet" and they can't be bought (`no_specs`, [../tech/meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)).
+
 ### 7.2 Xenotech: Aelari attunement
 
 | Item | Cost | Prerequisite | Available after |
@@ -243,7 +245,7 @@ There are 16 spec unlocks: 4 × 2 + 12 × 3 = **44 Intel** for all of them.
 |---|---|
 | Splash | Thumper (issued); Zapcoil chains (free sample) |
 | Air | Skyhook Flak, Rivet (issued) |
-| Shield | Zapcoil (free sample); Sprinkler T3 Soaked |
+| Shield | Zapcoil (free sample); Sprinkler T3 Soaked (its Soak lands with M4, T321; the Conductive link Soaks today) |
 | Armor (light, Acts I–II) | Rivet T3 armor pierce; Thumper splash |
 | Armor (heavy, Act III) | **Grapple Harpoon** (licensed after A2M1, 250) and **Prism Spire** (gift, A2M5; its beam's armor applies per second). Mindspike Obelisk answers armored Hollow only: at ×0.35 it is no answer to Everglow armor. Gloop Spitter is a C3 bonus, not the guarantee |
 | Detection | Lookout Shack (150 Stardust, after A1M5); Scanner Sweep (2 Intel, after A2M1) |

@@ -11,6 +11,7 @@ import {
   tileHighlightImage,
   tileTintImage,
 } from './overlayPixels.ts';
+import { healthStripImage, type HealthStrip } from './healthBar.ts';
 import { textImage } from './pixelFont.ts';
 
 /** Tile highlight styles: hover, the selected tower's tile, and an invalid placement. */
@@ -108,6 +109,14 @@ export function floatTextTexture(scene: Phaser.Scene, text: string, color: Color
   const key = `fx.text.${color}.${text}`;
   if (!scene.textures.exists(key))
     scene.textures.addCanvas(key, imageToCanvas(textImage(text, color)));
+  return key;
+}
+
+/** An enemy health bar's strip (healthStripImage: track, HP, or shield), registered once. */
+export function healthStripTexture(scene: Phaser.Scene, strip: HealthStrip): string {
+  const key = `fx.hbar.${strip}`;
+  if (!scene.textures.exists(key))
+    scene.textures.addCanvas(key, imageToCanvas(healthStripImage(strip)));
   return key;
 }
 

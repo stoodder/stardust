@@ -2,7 +2,7 @@
 
 Grid rules, tile types, paths and lanes, map modifiers and objective variants, the difficulty curve, the balance harness, and using maps for storytelling.
 
-> **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
+> **Numbers:** this doc's numbers are **targets** (per-act ranges, budgets) or **rules**. A built map's exact numbers (layout, waves, credits, builds) live in its folder in [`src/content/maps/`](../../src/content/maps/), and the harness thresholds in [`src/balance/rules.ts`](../../src/balance/rules.ts) ([D019](../decisions.md#d019--2026-11-09--t105c-content-data-first-pass-numbers)).
 >
 > **Ordering:** this doc defines *what* maps are made of and *how hard* they should be. [../story/campaign.md](../story/campaign.md) is **authoritative** for the map-by-map list, each map's story beats, and which tower, enemy, or modifier each map introduces.
 
@@ -76,7 +76,7 @@ S # # # # # # . . o o . . .
 - **Rule (route format):** a path lists **every tile it walks, ends included**: the spawn `S` first, then only `#` tiles, then the core `C` last, each step one tile up, down, left, or right (no diagonals, no gaps). Every `#` and `S` tile on the map lies on some path; a decorative road is drawn as decor. An enemy spawns at the `S` tile's center and leaks when it reaches the `C` tile's center, so it visibly walks into the gate. Content compile rejects a path that breaks this, so a path can't cross a buildable tile. (Escort maps' safe exits extend the last-tile rule when the first Escort map lands.)
 - **Forks:** a path can fork and merge. **Rule (determinism):** each enemy's route is fixed by the wave data (`route` ID), never chosen at random at runtime. The wave preview shows which fork each group takes.
 - **Multiple spawns:** allowed from Act I late. Each spawn's flag shows in the wave preview.
-- **Air lanes:** flyers follow straight or gently curved polylines from an air spawn to the core. They ignore ground paths and may cross any tile. **Rule:** a lane's last point is the core `C` (content compile rejects one that isn't), so flyers leak at the core like ground units. The lane is drawn dotted whenever a flyer is in the current or next wave. A neutral flyer (Gerald) flies a ground path instead ([core-loop.md §2.7](core-loop.md#27-hold-fire)).
+- **Air lanes:** flyers follow straight or gently curved polylines from an air spawn to the core. They ignore ground paths and may cross any tile. **Rule:** a lane's last point is the core `C` (content compile rejects one that isn't), so flyers leak at the core like ground units. The lane is drawn dotted while a flyer on it is in the current or next wave (so it shows from the setup phase when wave 1 brings flyers), and also while the player has a tower that hits air armed to build, so they see where the flyers will come before placing it. A neutral flyer (Gerald) flies a ground path instead ([core-loop.md §2.7](core-loop.md#27-hold-fire)).
 - **Rift lanes (Act III, Hollow only):** ground routes that cut through decor where no path should exist. They appear as cracks that open, telegraphed one wave ahead. **Rule:** a rift lane never passes over a buildable tile, so "towers never on paths" holds in both directions. Rift-lane enemies are ground units for targeting.
 - **"First" targeting** measures remaining distance along each enemy's own route ([towers.md §5](towers.md#5-targeting)).
 
@@ -250,7 +250,7 @@ The harness runs, per map:
 9. **Reports:** credits over time, leaks per wave, DPS per tower, link uptime, and jam uptime (≤ 25% rule, [enemies.md §4](enemies.md#4-tower-disabling-jamming)).
 10. **Story variants:**
     - Forced inputs are pressed by the build script (`scriptInput` steps).
-    - A1M5's par build must also win with Hold Fire on the Quiet Wave, and that run must end with `spared_quiet_wave = true` (allies never fire on it).
+    - A1M5's par build must also win with Hold Fire on the Quiet Wave, inside the band once the wave's own designed cost (Old Thrum's leak) is given back, since sparing must never read as failing the map, and that run must end with `spared_quiet_wave = true` (allies never fire on it).
     - Every flag combination that changes the sim (§5.3) runs its own par check.
     - Mixed waves and escorts run with the hush rule on ([enemies.md § The hush rule](enemies.md#the-hush-rule)).
     - Maps with `fleeing` units also run **`spareFleeing`**: the par build with Spare runners on for every tower ([core-loop.md § Spare runners](core-loop.md#spare-runners)). Its margin must be ≥ par margin − 5.
@@ -262,7 +262,7 @@ How the harness encodes these is in [../tech/conventions.md § Balance sims](../
 
 **A1M1, the tutorial.** A1M1 has `requiredCounters: []`: it must never punish a player who skips the Thumper, so it has no no-counter run. Its harness runs are: do-nothing loses; par wins inside the band; par without its strikes scores lower; a **Rivet-only** build wins at a lower margin than par and at ≥ 40%; par one purchase short (`par_minus_last`) wins at ≥ 40%; `alwaysCallEarly`; and two under-built alts, par never upgraded (`no_upgrades`, which may win or lose) and two setup Rivets with nothing after (`two_rivets`, which must lose), both held to the no-single-wave-wall rule, so an under-built player is never wiped in one wave. Splash first becomes a required counter at A1M4.
 
-**The M1 cut.** Under [D004](../decisions.md), M1 shipped A1M1 without adjacency links (Crossfire), tile bonuses, medals, Suppressing Fire, or the Bricks ally, and tuned its par build without them. Links and tile bonuses are live since T202a, which nudged A1M1 only enough to keep the harness green (par skips the Thumper's tier 2, and W5's and W7's Zoomer groups grew to 14; par now wins at 100). T125 re-tunes it with medals, Bricks, and Suppressing Fire. In M1 the Sprinkler (sim-tested content, not placed on A1M1) applies Chilled only; Soaked is left out until a map needs it. A1M1's reference profile carries no meta purchases (nothing has been bought yet).
+A1M1 is tuned with everything its act file gives it: Crossfire, the roof's high-ground bonus, Bricks's post and Suppressing Fire in slot 2, and its Teamwork Challenge, which par must earn ([D051](../decisions.md#d051--2026-11-09--t125-a1m1-with-bricks-and-teamwork-t124-report-columns)). Its reference profile carries no meta purchases (nothing has been bought yet).
 
 ---
 

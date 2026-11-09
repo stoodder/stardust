@@ -166,8 +166,8 @@ export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
 const dev = mapDefinersFor<DevIds>();
 
 // An S-bend from the spawn (top left) to the core (bottom right), with pads on both sides. Sgt.
-// Bricks stands at his post on decor (7,2), beside the bend, with Suppressing Fire in slot 2 (the
-// dev stand-in for A1M1's post until T125 places it there).
+// Bricks stands at his post on decor (7,2), beside the bend, with Suppressing Fire in slot 2 (as
+// on A1M1, which places his post the same way).
 const devLayout = dev.defineMapLayout({
   id: 'dev_range',
   act: 1,

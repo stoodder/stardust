@@ -81,6 +81,18 @@ export class BattleHover {
   }
 
   /**
+   * Writes the pointer's spot (game px) into `out` and returns true, or false while it's off the
+   * canvas or the keyboard tile cursor shows (the hover follows the cursor's tile then).
+   */
+  pointerAt(out: Vec2): boolean {
+    const { x, y } = this.#pointer;
+    if (Number.isNaN(x) || this.#deps.interaction.cursor >= 0) return false;
+    out.x = x;
+    out.y = y;
+    return true;
+  }
+
+  /**
    * Fills the tile scratch with the facts about the tile under the pointer, or under the keyboard
    * cursor while it shows (`keyboard`).
    */

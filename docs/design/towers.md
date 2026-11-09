@@ -2,7 +2,7 @@
 
 The tower roster, roles, upgrade paths, stacking rules, targeting, and adjacency synergies ("links").
 
-> **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Tuning values live in data files (`towers` data), not engine code. Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
+> **Numbers ([D019](../decisions.md#d019--2026-11-09--t105c-content-data-first-pass-numbers)):** a tower with a data file in [`src/content/towers/`](../../src/content/towers/) (Rivet, Thumper, Sprinkler, Skyhook, Zapcoil) has its exact numbers there, and this doc keeps its role, rules, and target ranges ("about", "~"). A tower or specialization with no data yet keeps its **first-pass numbers** here, its only home, until its data lands and they move. A number labeled a **rule** is a rule wherever it sits.
 >
 > **Ordering:** each tower lists a *recommended* act of introduction. [../story/campaign.md](../story/campaign.md) is **authoritative** for when each tower actually appears and unlocks.
 
@@ -22,26 +22,26 @@ Related docs: [enemies.md §2](enemies.md#2-combat-resolution) (damage types, th
 
 ## 2. Roster overview
 
-Targets: **G** = ground, **A** = air. Damage types and their effects are defined in [enemies.md §2.1](enemies.md#21-damage-types).
+Targets: **G** = ground, **A** = air. Damage types and their effects are defined in [enemies.md §2.1](enemies.md#21-damage-types). **T1 price** is a band (target): **Low** about 90–100 credits, **Mid** 110–130, **High** 140–160; the exact price is the tower's data file, or its §7 entry while it has none.
 
-| # | ID | Tower | Faction | Role | Damage | Targets | T1 cost | Recommended act | Acquired by |
+| # | ID | Tower | Faction | Role | Damage | Targets | T1 price | Recommended act | Acquired by |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | `rivet` | **Rivet Autoturret** | Everglow | Single-target DPS (generalist) | Kinetic | G+A | 100 | Act I start | Issued (free) |
-| 2 | `thumper` | **Thumper Mortar** | Everglow | Splash | Explosive | G | 125 | Act I early | Issued |
-| 3 | `sprinkler` | **Frostline Sprinkler** | Everglow | Slow / control | Kinetic (tiny) | G (A with spec B) | 90 | Act I early | Issued |
-| 4 | `skyhook` | **Skyhook Flak Battery** | Everglow | Anti-air splash | Explosive | A only | 110 | Act I mid | Issued |
-| 5 | `crane` | **Salvage Crane** | Vrell | Economy | none (Kinetic with spec B) | G (spec B) | 150 | Act II early | Zibzab, Stardust |
-| 6 | `zapcoil` | **Zapcoil** | Vrell | Anti-shield chain | Energy | G+A | 120 | Act I late | Zibzab, free sample |
-| 7 | `harpoon` | **Grapple Harpoon** | Vrell | Anti-armor; grounds flyers (spec B) | Kinetic, high per hit | G+A | 150 | Act II early | Zibzab, Stardust |
-| 8 | `lookout` | **Lookout Shack** | Vrell | Detection + support (range) | none | — | 100 | Act II early | Zibzab, Stardust |
-| 9 | `prism` | **Prism Spire** | Aelari | Ramping beam (anti-shield, boss killer) | Energy | G+A | 160 | Act II mid | Ves'thara, gift (A2M5) |
-| 10 | `mindspike` | **Mindspike Obelisk** | Aelari | Armor-ignoring DPS; anti-Hollow | Psionic | G+A | 150 | Act II late | R&D attunement, Intel |
-| 11 | `lantern` | **Seer's Lantern** | Aelari | Detection + debuff (Mark) | Psionic (tiny) | G+A | 120 | Act II late | R&D attunement, Intel |
-| 12 | `bloom` | **Stasis Bloom** | Aelari | Hard control; interrupts abilities | none | G+A | 140 | Act III early | R&D attunement, Intel |
-| 13 | `burrow` | **Scuttle Den** | Skitterkin | DoT swarm; hits burrowed enemies | Kinetic DoT | G (A with spec B) | 140 | Act III early | Gift (A3M1) |
-| 14 | `choir` | **Hum Choir** | Skitterkin | Support (damage aura, jam protection) | none | — | 130 | Act III early–mid | Gift (A3M1 if C1 spared; otherwise A3M4) |
-| 15 | `gloop` | **Gloop Spitter** | Skitterkin | Splash + armor shred | Explosive | G | 120 | Act III mid | Gift |
-| 16 | `sproing` | **Sproing Pad** | Skitterkin | Anti-air; grounds flyers | Kinetic | G+A (air first) | 130 | Act III mid–late | Gift |
+| 1 | `rivet` | **Rivet Autoturret** | Everglow | Single-target DPS (generalist) | Kinetic | G+A | Low | Act I start | Issued (free) |
+| 2 | `thumper` | **Thumper Mortar** | Everglow | Splash | Explosive | G | Mid | Act I early | Issued |
+| 3 | `sprinkler` | **Frostline Sprinkler** | Everglow | Slow / control | Kinetic (tiny) | G (A with spec B) | Low | Act I early | Issued |
+| 4 | `skyhook` | **Skyhook Flak Battery** | Everglow | Anti-air splash | Explosive | A only | Mid | Act I mid | Issued |
+| 5 | `crane` | **Salvage Crane** | Vrell | Economy | none (Kinetic with spec B) | G (spec B) | High | Act II early | Zibzab, Stardust |
+| 6 | `zapcoil` | **Zapcoil** | Vrell | Anti-shield chain | Energy | G+A | Mid | Act I late | Zibzab, free sample |
+| 7 | `harpoon` | **Grapple Harpoon** | Vrell | Anti-armor; grounds flyers (spec B) | Kinetic, high per hit | G+A | High | Act II early | Zibzab, Stardust |
+| 8 | `lookout` | **Lookout Shack** | Vrell | Detection + support (range) | none | — | Low | Act II early | Zibzab, Stardust |
+| 9 | `prism` | **Prism Spire** | Aelari | Ramping beam (anti-shield, boss killer) | Energy | G+A | High | Act II mid | Ves'thara, gift (A2M5) |
+| 10 | `mindspike` | **Mindspike Obelisk** | Aelari | Armor-ignoring DPS; anti-Hollow | Psionic | G+A | High | Act II late | R&D attunement, Intel |
+| 11 | `lantern` | **Seer's Lantern** | Aelari | Detection + debuff (Mark) | Psionic (tiny) | G+A | Mid | Act II late | R&D attunement, Intel |
+| 12 | `bloom` | **Stasis Bloom** | Aelari | Hard control; interrupts abilities | none | G+A | High | Act III early | R&D attunement, Intel |
+| 13 | `burrow` | **Scuttle Den** | Skitterkin | DoT swarm; hits burrowed enemies | Kinetic DoT | G (A with spec B) | High | Act III early | Gift (A3M1) |
+| 14 | `choir` | **Hum Choir** | Skitterkin | Support (damage aura, jam protection) | none | — | Mid | Act III early–mid | Gift (A3M1 if C1 spared; otherwise A3M4) |
+| 15 | `gloop` | **Gloop Spitter** | Skitterkin | Splash + armor shred | Explosive | G | Mid | Act III mid | Gift |
+| 16 | `sproing` | **Sproing Pad** | Skitterkin | Anti-air; grounds flyers | Kinetic | G+A (air first) | Mid | Act III mid–late | Gift |
 
 Acquisition rules and the story-timed gift schedule are in [progression.md §8](progression.md#8-tower-acquisition).
 
@@ -133,16 +133,18 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 - **Each link type counts once per tower.** A Rivet touching two Thumpers gets Crossfire once.
 - A tower can have several *different* active links (each tower has 2–3 possible partners by design). Their bonuses add under the stacking formula (section 4).
 - Links are **flat**: they don't scale with tier (first pass). The Linked Up protocol scales every link bonus by ×1.5.
-- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, and Conductive so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down) and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts 3 s, the Sprinkler's tier-3 duration. The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
+- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, and Conductive so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down) and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts as long as the Sprinkler's tier-3 Soak is designed to (3 s). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
 - **Readability:** active links show as a soft animated tether between the towers, in a color per link. The loadout screen lists which links the chosen four can form. The tower panel lists active links.
 
 ### 6.2 Link table
 
+Crossfire, Sitting Ducks, and Conductive are built: their exact values are their files in `src/content/links/`, and their rows give the intent. The other rows are first-pass numbers.
+
 | Link | Partners | Effect | Available from (recommended) | Faction mix |
 |---|---|---|---|---|
-| **Crossfire** | Rivet + Thumper | Both +10% fire rate. | Act I early (the teaching link) | Everglow + Everglow |
-| **Sitting Ducks** | Thumper + Sprinkler | Thumper +20% damage vs Chilled enemies. Sprinkler +0.3 radius. | Act I early | Everglow + Everglow |
-| **Conductive** | Sprinkler + Zapcoil | Zapcoil +2 chain jumps. Sprinkler applies Soaked from tier 1. | Act I late | Everglow + Vrell |
+| **Crossfire** | Rivet + Thumper | Both fire faster (about +10%). | Act I early (the teaching link) | Everglow + Everglow |
+| **Sitting Ducks** | Thumper + Sprinkler | Thumper deals more damage to Chilled enemies (about +20%). Sprinkler's radius grows a little. | Act I early | Everglow + Everglow |
+| **Conductive** | Sprinkler + Zapcoil | Zapcoil gains chain jumps (+2). Sprinkler applies Soaked from tier 1. | Act I late | Everglow + Vrell |
 | **Overwatch** | Rivet + Lookout | Rivet +15% damage. Lookout +0.5 detection radius. | Act II early | Everglow + Vrell |
 | **Skywatch** | Skyhook + Lookout | Skyhook +20% range. Lookout +0.5 detection radius. | Act II early | Everglow + Vrell |
 | **Reel It In** | Crane + Harpoon | Harpoon kills give +3 credits. Harpoon +10% fire rate. | Act II early | Vrell + Vrell |
@@ -164,51 +166,51 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 ## 7. Tower details
 
-Format: **T1** is the base stats. Each later tier lists only what changes. The T4 cost assumes the default curve unless stated. DPS figures ignore armor and shields.
+Format: **T1** is the base. Each later tier lists only what changes. DPS figures ignore armor and shields.
 
-**Where the exact numbers live.** Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil tiers 1–3, and the Rivet and Thumper specializations, are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), which are the home of those numbers; the entries below are the spec they encode. (Skyhook's flak flight speed, 10 tiles/s, isn't in its entry: its data file is its home.) The other towers' entries, and the other specializations, are still the only home of their numbers until their data lands.
+**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), and the Rivet and Thumper specializations are there too. Their entries below give each tier's job and target ranges, not the numbers. **Specs not built yet** (the Sprinkler's, Skyhook's, and Zapcoil's, deferred to M4 by [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut): they need homing, charge, Soaked, and Stasis) and **every other tower** keep their first-pass numbers here, with a T4 cost on the default curve unless stated. Engineering lists those towers' spec unlocks as "No specs yet" ([progression.md §7.1](progression.md#71-engineering-specializations)).
 
 **Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
 - **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.
 - **Priority.** A spec whose default priority differs from tier 3's (Railspike's Strong) switches the tower to it. Otherwise the player's chosen priority stays.
-- **Rivet Storm's spin-up** restarts on specializing, even mid-fight, then runs from acquiring a target after having none (section 5). It fires every 8 ticks (7.5/s) after 60 ticks of spin-up.
-- **Cluster Thumper's bomblets.** After the shell's own splash, its 4 bomblets fly 0.3 s from the impact point. Each lands at a point drawn uniformly within 1.2 tiles (seeded, so replays match) as its own 0.6-radius splash. Bomblets hit the shell's layers, apply the shell's effects, take the tower's damage bonuses (links included) fixed at fire time, and still land if the tower is sold. They don't scatter again.
-- **Bunker Buster's Corroded** is capped at 3 stacks (its max), so each shell refreshes the 3 stacks rather than adding more.
+- **Rivet Storm's spin-up** restarts on specializing, even mid-fight, then runs from acquiring a target after having none (section 5). Its spin-up and whole-tick fire period are in `rivet.ts`.
+- **Cluster Thumper's bomblets.** After the shell's own splash, its bomblets fly a short way from the impact point. Each lands at a point drawn uniformly within the scatter radius (seeded, so replays match) as its own small splash. Bomblets hit the shell's layers, apply the shell's effects, take the tower's damage bonuses (links included) fixed at fire time, and still land if the tower is sold. They don't scatter again. Count, damage, radii, and flight time: `thumper.ts`.
+- **Bunker Buster's Corroded** is applied at its max stacks, so each shell refreshes the stacks rather than adding more.
 
 ### Everglow towers
 
 Corporate-issue perimeter kit with cheerful product names, safety stickers, and warranty-void warnings. They are reliable and readable, and they make up the starting kit. In A3M2 Sterling revokes the player's Corporate Tower License for one Everglow class mid-wave, and it comes back in A3M4 as jailbroken firmware (section 9).
 
 #### Rivet Autoturret (`rivet`), "Everglow RV-1: Perimeter Peace of Mind™"
-- **T1 (100):** 8 Kinetic, 2.0 shots/s, range 3.0, single target, **hitscan**, G+A. 16 DPS. Default: First.
-- **T2 (80):** damage 11.
-- **T3 (150):** 2.5 shots/s, **armor pierce 3** (ignores 3 armor per hit).
-- **A: Rivet Storm (300):** minigun. 7.5 shots/s after a 1 s spin-up, 9 damage, pierce 0. A swarm shredder, poor against armor.
-- **B: Railspike (300):** sniper. 120 damage, 0.5 shots/s, range 6.0, **ignores all armor**. Default: Strong.
+- **T1:** the cheap generalist: Kinetic, single target, **hitscan**, G+A, about 15–20 DPS at short range (about 3 tiles). Default: First.
+- **T2:** a damage step.
+- **T3:** fires faster and gains **armor pierce**, enough that it answers Act I's armor ([enemies.md §3.1](enemies.md#31-counter-categories)).
+- **A: Rivet Storm:** minigun. A very high fire rate after a short spin-up, low damage per shot, and no pierce. A swarm shredder, poor against armor.
+- **B: Railspike:** sniper. One huge shot every couple of seconds at long range (about double T3's), **ignoring all armor**. Default: Strong.
 - **Links:** Crossfire (Thumper), Overwatch (Lookout).
 
 #### Thumper Mortar (`thumper`), "Everglow TM-4: Because Pests Hate Surprises"
-- **T1 (125):** 20 Explosive, 0.5 shots/s, range 3.5 (minimum 1.0, exclusive), splash radius 0.9, G only. Shells take 0.8 s to land and use **lead targeting**: each aims at the target's predicted route position after the flight time, fixed when it fires (section 5). Default: First.
-- **T2 (100):** damage 30.
-- **T3 (190):** splash 1.2, 0.6 shots/s.
-- **A: Cluster Thumper (375):** each shell also scatters 4 bomblets (12 damage, splash 0.6) within 1.2 tiles.
-- **B: Bunker Buster (375):** 140 damage, splash 0.6, 0.4 shots/s, applies 3 Corroded stacks.
+- **T1:** lobbed Explosive splash (radius about 1 tile), G only: a slow shell (about one every 2 s) that hits everything it lands on. Medium range with a **minimum range** (exclusive), so an enemy at its foot is safe. Shells take under a second to land and use **lead targeting**: each aims at the target's predicted route position after the flight time, fixed when it fires (section 5). Default: First.
+- **T2:** a damage step.
+- **T3:** a wider splash and a slightly faster fire rate.
+- **A: Cluster Thumper:** each shell also scatters a handful of small bomblets around the impact. Built for clumps.
+- **B: Bunker Buster:** a heavy, narrow, slower shell that applies Corroded stacks. Built for armor.
 - **Links:** Crossfire (Rivet), Sitting Ducks (Sprinkler), Acid Rain (Gloop).
 
 #### Frostline Sprinkler (`sprinkler`), "AquaGuard irrigation head, *creatively* repurposed"
-- **T1 (90):** pulses every 1.0 s in radius 2.0: 2 Kinetic plus **Chilled 25%** for 1.5 s. G only.
-- **T2 (70):** Chilled 30%, radius 2.3.
-- **T3 (135):** Chilled 35%. Also applies **Soaked** for 3 s (more Energy damage, and Kinetic and Explosive bite harder into shields; [enemies.md §2.4](enemies.md#24-status-effects)).
-- **A: Flash Freeze (270):** every 8 s, puts all enemies in radius into **Stasis** for 1.0 s (bosses: Chilled 50% instead).
-- **B: Cloudburst (270):** radius 2.8 and **now also hits air**; flyers are Chilled and Soaked.
+- **T1:** a `pulse` with no target: about once a second it hits every ground enemy within about 2 tiles for a token Kinetic hit plus a short **Chilled** (about 25%). G only.
+- **T2:** a stronger chill and a wider radius.
+- **T3:** a stronger chill again (about 35%). By design it also applies **Soaked** for 3 s (more Energy damage, and Kinetic and Explosive bite harder into shields; [enemies.md §2.4](enemies.md#24-status-effects)); that Soak isn't in its data yet (T321, M4), so today Soaked's only source is the Conductive link (section 6).
+- **A: Flash Freeze (270; M4):** every 8 s, puts all enemies in radius into **Stasis** for 1.0 s (bosses: Chilled 50% instead).
+- **B: Cloudburst (270; M4):** radius 2.8 and **now also hits air**; flyers are Chilled and Soaked.
 - **Links:** Sitting Ducks (Thumper), Conductive (Zapcoil), Splash Zone (Burrow).
 
 #### Skyhook Flak Battery (`skyhook`), "Everglow SK-2: Keep Your Skies Corporate"
-- **T1 (110):** 14 Explosive, 1.0 shots/s, range 3.5, splash 0.8, **air only**. Default: First.
-- **T2 (90):** damage 20.
-- **T3 (165):** 1.3 shots/s, range 4.0.
-- **A: Flak Curtain (330):** 3.0 shots/s, 12 damage, splash 1.2. Built for flocks.
-- **B: Seeker Swarm (330):** volleys of 4 homing missiles, 25 damage each, armor pierce 4, range 5.0. Default: Strong. Built for armored gunships.
+- **T1:** flak, **air only**: a fast straight shot (not homing) that bursts at the intercept point (section 5) in a splash of under a tile, so a burst catches two or three flyers of a close flock. About one shot a second at medium range. Default: First.
+- **T2:** a damage step.
+- **T3:** fires faster and reaches a little further.
+- **A: Flak Curtain (330; M4):** 3.0 shots/s, 12 damage, splash 1.2. Built for flocks.
+- **B: Seeker Swarm (330; M4):** volleys of 4 homing missiles, 25 damage each, armor pierce 4, range 5.0. Default: Strong. Built for armored gunships.
 - **Links:** Skywatch (Lookout), Sticky Flak (Gloop).
 
 ### Vrell towers
@@ -226,12 +228,12 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **Links:** Reel It In (Harpoon), Finders Keepers (Burrow).
 
 #### Zapcoil (`zapcoil`)
-- **T1 (120):** 10 Energy, 1.0 shots/s, range 2.5, **chains to 3 targets** (jump range 1.5, −20% damage per jump), G+A. Default: First.
-- **The chain as built:** each jump goes from the last enemy struck to the nearest enemy this shot hasn't struck within jump range (ties: the lowest uid), on the layers the tier hits, and stops early when there's none. The falloff compounds (10, 8, 6.4), so long Conductive chains never reach 0. Jumps skip neutral units and land on spared runners, as splash does. A neutral first target plinks and the arc still jumps on. The full rules are [`src/sim/attacks/chain.ts`](../../src/sim/attacks/chain.ts)'s header.
-- **T2 (95):** damage 14.
-- **T3 (180):** chains to 4, 1.2 shots/s.
-- **A: Overload Coil (360):** chains to 8, −10% per jump.
-- **B: Capacitor Bank (360):** charges for 4 s, then discharges 250 Energy into one target plus 50% to enemies within 1 tile. Default: Strong.
+- **T1:** an Energy arc, G+A, about one shot a second at short range, that **chains to 3 targets** (a short jump range, each jump weaker by a fixed share). Default: First. In data, `jumps` counts the jumps after the first hit (2 here).
+- **The chain as built:** each jump goes from the last enemy struck to the nearest enemy this shot hasn't struck within jump range (ties: the lowest uid), on the layers the tier hits, and stops early when there's none. The falloff compounds (each hit is the last one's share), so long Conductive chains never reach 0. Jumps skip neutral units and land on spared runners, as splash does. A neutral first target plinks and the arc still jumps on. The full rules are [`src/sim/attacks/chain.ts`](../../src/sim/attacks/chain.ts)'s header.
+- **T2:** a damage step.
+- **T3:** chains to one more target and fires a little faster.
+- **A: Overload Coil (360; M4):** chains to 8, −10% per jump.
+- **B: Capacitor Bank (360; M4):** charges for 4 s, then discharges 250 Energy into one target plus 50% to enemies within 1 tile. Default: Strong.
 - **Links:** Conductive (Sprinkler), Resonance (Prism).
 
 #### Grapple Harpoon (`harpoon`)

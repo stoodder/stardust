@@ -20,6 +20,8 @@ const COURT_W: GridPos = [11, 5];
 const COURT_E: GridPos = [12, 5];
 /** The gate court's north pad. */
 const COURT_N: GridPos = [11, 4];
+/** South of the south side, below the fountain. */
+const S_PAD: GridPos = [7, 8];
 /** West of the west side, by the entrance. */
 const WEST_N: GridPos = [1, 3];
 /** The west side, where W1's Zoomer rush catches up with the Nibblers. */
@@ -49,14 +51,19 @@ function parSteps(): BuildStep[] {
     { wave: 5, ability: 1, target: SE_STRIKE, when: { afterSec: 12 } },
     { wave: 6, upgrade: NW_PAD },
     { wave: 6, upgrade: COURT_N },
+    { wave: 6, build: 'sprinkler', tile: SE_CART }, // Sitting Ducks with the bend's Thumper
     { wave: 7, upgrade: NW_PAD }, // T3: pierce
     { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+    { wave: 7, build: 'thumper', tile: S_PAD },
     { wave: 8, ability: 2 },
     { wave: 8, upgrade: SE_BEND },
     { wave: 8, upgrade: NODE },
     { wave: 8, upgrade: COURT_E },
+    { wave: 8, upgrade: S_PAD },
     { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
     { wave: 9, upgrade: COURT_N },
+    { wave: 9, upgrade: S_PAD },
+    { wave: 9, upgrade: SE_CART },
   ];
 }
 
@@ -143,11 +150,15 @@ export const builds = defineBuilds({
         { wave: 6, upgrade: COURT_E },
         { wave: 7, build: 'thumper', tile: SE_CART },
         { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+        { wave: 7, upgrade: SE_CART },
         { wave: 8, ability: 2 },
         { wave: 8, upgrade: SE_BEND },
         { wave: 8, upgrade: NODE },
         { wave: 8, upgrade: COURT_N },
+        { wave: 8, upgrade: SE_CART },
         { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+        { wave: 9, build: 'thumper', tile: S_PAD },
+        { wave: 9, upgrade: S_PAD },
       ],
     },
     // Thumper, Sprinkler, Skyhook (idle): Sprinklers slow the rush and the huddles into the bends,
@@ -172,11 +183,15 @@ export const builds = defineBuilds({
         { wave: 6, build: 'thumper', tile: SE_CART },
         { wave: 6, upgrade: SE_CART },
         { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+        { wave: 7, build: 'thumper', tile: S_PAD },
         { wave: 8, ability: 2 },
         { wave: 8, upgrade: SE_BEND },
         { wave: 8, upgrade: NODE },
         { wave: 8, upgrade: COURT_N },
+        { wave: 8, upgrade: S_PAD },
         { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
+        { wave: 9, upgrade: SE_CART },
+        { wave: 9, upgrade: S_PAD },
       ],
     },
   },

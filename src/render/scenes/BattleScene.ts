@@ -27,6 +27,9 @@
 // puffs a dirt ring; a boss shows its bar (BossBarView); a huddle links its leader and young
 // (HuddleView); driven-off units run on past the edge as they fade (LeaveFx); props on cues land
 // (CuePropView); and A1M4's Peeker hides in its planter.
+// T328: an enemy under the pointer (the front-most body) is hovered, so its health bar shows at
+// full HP too (EnemyView). T330: on A1M5's Quiet Wave Bricks lowers his cannon a beat after the
+// wave starts and keeps it low (allyPose.ts); Suppressing Fire's streaks then come from off the map.
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -63,6 +66,7 @@ import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { AirLaneView } from '../views/AirLaneView.ts';
 import { AllyView } from '../views/AllyView.ts';
+import { quietWaves, weaponsLowered } from '../views/allyPose.ts';
 import { ChainFx } from '../views/ChainFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -88,6 +92,7 @@ import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
 import { ViewPool } from '../views/ViewPool.ts';
+import { barMaxHp } from '../vfx/healthBar.ts';
 import { WreckageView } from '../views/WreckageView.ts';
 import { bindBattleEvents, findLiveTower, type LiveTower } from './battleEvents.ts';
 import { BattleHover } from './BattleHover.ts';
@@ -188,6 +193,11 @@ export class BattleScene extends Phaser.Scene {
   readonly #strikeRadius: [number, number] = [0, 0];
   readonly #segmentReach: [number, number] = [0, 0];
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
+  /** The pointer's spot (game px; scratch), and the enemy hovered there (0: none). */
+  readonly #pointerPx: Vec2 = { x: 0, y: 0 };
+  #hoveredEnemy = 0;
+  /** Per wave: whether it's a Quiet Wave (allies lower their weapons; allyPose.ts). */
+  #quietWaves: readonly boolean[] = [];
   /** The ally Suppressing Fire's streaks come from (Bricks), and his post (grid), or null. */
   #shooter: AllyView | null = null;
   #shooterX = 0;
@@ -305,6 +315,8 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#built = false;
     this.#teachShown = false;
+    this.#hoveredEnemy = 0;
+    this.#quietWaves = quietWaves(map.waves);
     this.#hover = new BattleHover({
       sim,
       interaction,
@@ -524,6 +536,9 @@ export class BattleScene extends Phaser.Scene {
 
     // Enemies first, so towers can aim at their fresh positions.
     const enemies = state.enemies;
+    const pointed = this.#hover.pointerAt(this.#pointerPx);
+    let hovered: EnemyView | undefined;
+    let hoveredUid = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used
       if (!e.alive || e.def === null) continue;
@@ -531,15 +546,28 @@ export class BattleScene extends Phaser.Scene {
       if (v === undefined) {
         v = this.#enemies.acquire(e.uid);
         v.show(e.uid, enemyBody(e.def.sprites.body, e.tags), e.def.layer === 'air', null, e.route);
+        v.setBar(barMaxHp(e.def), e.def.shield?.hp ?? 0);
       }
       v.stamp = stamp;
-      v.sync(e);
+      v.sync(e, state.tick);
       const under = v.burrowed;
       v.syncPose(e);
       if (under !== v.burrowed)
         this.#fx.ring(e.x, e.y, DIRT_RING_TILES, 'grime.3', DIRT_RING_MS, true);
+      // The front-most body under the pointer is hovered (its health bar shows).
+      if (pointed && v.contains(this.#pointerPx.x, this.#pointerPx.y)) {
+        if (hovered === undefined || v.depth > hovered.depth) {
+          hovered = v;
+          hoveredUid = e.uid;
+        }
+      }
     }
     this.#enemies.sweep(stamp);
+    if (hoveredUid !== this.#hoveredEnemy) {
+      this.#enemies.get(this.#hoveredEnemy)?.setHovered(false);
+      hovered?.setHovered(true);
+      this.#hoveredEnemy = hoveredUid;
+    }
 
     const towers = state.towers;
     for (let i = 0; i < towers.used; i++) {
@@ -572,8 +600,16 @@ export class BattleScene extends Phaser.Scene {
     this.#projectiles.sweep(stamp);
 
     // Allies face their current target; the first one with a sprite (Bricks) is where
-    // Suppressing Fire's streaks come from.
+    // Suppressing Fire's streaks come from. On a Quiet Wave they lower their weapons a beat after
+    // it starts (allyPose.ts, T330); a lowered Bricks stays lowered, so the streaks come from off
+    // the map then, as on a map without him.
     const allies = state.allies;
+    const lowered = weaponsLowered(
+      this.#quietWaves,
+      state.wave,
+      state.tick,
+      state.schedule.startTick,
+    );
     let fireFrom: AllyView | null = null;
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used
@@ -585,9 +621,10 @@ export class BattleScene extends Phaser.Scene {
       }
       v.stamp = stamp;
       v.sync(a);
+      v.setLowered(lowered);
       const target = a.targetUid === 0 ? undefined : this.#enemies.get(a.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - a.x, target.y - a.y));
-      if (fireFrom === null && v.sprite !== null) {
+      if (fireFrom === null && v.sprite !== null && !v.lowered) {
         fireFrom = v;
         this.#shooterX = a.x;
         this.#shooterY = a.y;

@@ -4,13 +4,15 @@
 // towers (his ground point is his post plate's center), with the additive @glow halo of the frame
 // he shows in the `vfx` layer (his visor and the glinting stone; T216), following each anim frame.
 // Allies with no sprite yet (militia, M3) draw nothing.
+// Lowered (`setLowered`, allyPose.ts: A1M5's Quiet Wave, T330), he idles on `lowered_<facing>`
+// instead, the cannon held low across his hip, and stays so: a silent tell, never mentioned.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { AllyKind } from '../../content/types.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
-import type { Facing } from './spriteInfo.ts';
+import { hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
 
@@ -76,10 +78,14 @@ export class AllyView implements PooledView {
   /** Ground point in screen px (NaN before the first sync). */
   #sx = Number.NaN;
   #sy = Number.NaN;
-  /** Anim keys by facing index: idle, then fire. */
+  /** Anim keys by facing index: idle, fire, and lowered (empty when the sprite has none). */
   readonly #idle: string[] = [];
   readonly #fire: string[] = [];
+  readonly #lowered: string[] = [];
   readonly #anchors: { x: number; y: number }[] = [];
+  readonly #loweredAnchors: { x: number; y: number }[] = [];
+  /** Weapon lowered: idles on `lowered_<facing>` (when the sprite has it). */
+  #isLowered = false;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -113,7 +119,10 @@ export class AllyView implements PooledView {
     this.#y = Number.NaN;
     this.#idle.length = 0;
     this.#fire.length = 0;
+    this.#lowered.length = 0;
     this.#anchors.length = 0;
+    this.#loweredAnchors.length = 0;
+    this.#isLowered = false;
     if (this.#id === null) {
       this.#body.setVisible(false);
       return;
@@ -125,10 +134,27 @@ export class AllyView implements PooledView {
       this.#fire[i] = sprites.anim(this.#id, `fire_${f}`, DEFAULT_VARIANT);
       // Mirrored frames of an off-center sprite have their own anchor (tech-spec § Sprite anchoring).
       this.#anchors[i] = sprites.frameAnchor(this.#id, `idle_${f}_0`);
+      if (hasAnim(this.#id, `lowered_${f}`)) {
+        this.#lowered[i] = sprites.anim(this.#id, `lowered_${f}`, DEFAULT_VARIANT);
+        this.#loweredAnchors[i] = sprites.frameAnchor(this.#id, `lowered_${f}_0`);
+      }
     }
     this.#body.setVisible(true);
     this.sync({ x, y });
     this.#play(false);
+  }
+
+  /** Whether it shows its weapon lowered (the smoke flows' view of it). */
+  get lowered(): boolean {
+    return this.#isLowered && this.#lowered.length > 0;
+  }
+
+  /** Lowers or raises the weapon (its idle swaps); a shot in progress finishes first. */
+  setLowered(lowered: boolean): void {
+    if (lowered === this.#isLowered) return;
+    this.#isLowered = lowered;
+    const current = this.#body.anims.currentAnim?.key;
+    if (!this.#body.anims.isPlaying || !this.#fire.includes(current ?? '')) this.#play(false);
   }
 
   /** Turns to a facing (idle anim); a shot in progress finishes first. */
@@ -197,6 +223,7 @@ export class AllyView implements PooledView {
   release(): void {
     this.#uid = 0;
     this.#id = null;
+    this.#isLowered = false;
     this.#x = Number.NaN;
     this.#y = Number.NaN;
     this.#sx = Number.NaN;
@@ -209,9 +236,10 @@ export class AllyView implements PooledView {
   #play(fire: boolean): void {
     if (this.#id === null) return;
     const i = FACING_INDEX[this.#facing];
-    const idle = this.#idle[i];
+    const low = !fire && this.#isLowered ? this.#lowered[i] : undefined;
+    const idle = low ?? this.#idle[i];
     const shot = this.#fire[i];
-    const a = this.#anchors[i];
+    const a = low === undefined ? this.#anchors[i] : this.#loweredAnchors[i];
     if (idle === undefined || shot === undefined || a === undefined) return;
     // A new shot restarts the fire anim; an idle already playing carries on.
     this.#body.play(fire ? shot : idle, !fire);

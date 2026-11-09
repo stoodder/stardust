@@ -8,7 +8,7 @@ Always read `CLAUDE.md`, your task in `tasks.md`, and `decisions.md` first. Then
 
 | Task kind | Read | Skip |
 |---|---|---|
-| **M1 (any task)** | [tech/architecture.md](tech/architecture.md) top note *M1 subset* for scope, plus `decisions.md` D004 (the M1 cut). Then your lane's row below (Sim / Maps / Rendering / UI / Harness). A1M1's layout, waves, credits, and par build live in [story/campaign/act1.md § A1M1](story/campaign/act1.md#a1m1--orientation-day), and its threat intel is in [story/campaign.md](story/campaign.md) §4.8 | progression, meta-runtime, the rest of story/, and story-runtime except its *Not in M1* line |
+| **Any task: what runs today** | [tech/architecture.md](tech/architecture.md) top note *Built so far* (and `src/sim/gates.ts` `FEATURE_GATES`). Then your lane's row below | — |
 | **Sim / combat / economy** | architecture §2–3; [tech/conventions.md](tech/conventions.md) (style, testing, test loop); [design/core-loop.md](design/core-loop.md) §2; [design/enemies.md](design/enemies.md) §2 (combat math) and the rows you're implementing; [design/towers.md](design/towers.md) the rows you're implementing | art, story |
 | **Maps / content data** | `src/content/types.ts` (the canonical data shapes) and architecture §3; conventions *Recipes*; [design/maps.md](design/maps.md); [story/campaign.md](story/campaign.md) §4.8 (threat intel / required counters) and §4.9 (reference profiles); the map's entry in its act file under `story/campaign/`; [tech/story-runtime.md § Map scripts](tech/story-runtime.md#map-scripts-story-driven-sim-changes) for `events` | the other act files |
 | **Balance harness** | conventions *The test loop*; maps.md §6; [design/progression.md](design/progression.md) §10 (profile rules); [story/campaign.md](story/campaign.md) §4.8–4.9 (per-map counters and the reference profile); the map's par/alt builds in its act file | the rest of story |
@@ -17,6 +17,7 @@ Always read `CLAUDE.md`, your task in `tasks.md`, and `decisions.md` first. Then
 | **Meta / saves / shop** | [tech/meta-runtime.md](tech/meta-runtime.md); progression.md | art |
 | **Dialogue / story systems** | [tech/story-runtime.md](tech/story-runtime.md); [story/style-guide.md](story/style-guide.md); core-loop §6 | — |
 | **Writing story content for a map** | [story/bible.md](story/bible.md) (the relevant act); [story/characters.md](story/characters.md) (the speakers); style-guide; the map's act file | tech, art |
+| **A story map (Act I-style: dialogue, objectives, boss)** | conventions *Add a map* (step 5) and *Add dialogue*; maps.md §5.3, §6; enemies.md §3.1, §6; core-loop §2.13; story-runtime § Dialogue runner, § Dialogue in play; the map's act-file entry; style-guide §5; campaign.md §4.8–4.9 | art, progression beyond §10 |
 | **Review: story angles** | all of `story/`; research | tech |
 
 ## Foundation
@@ -46,7 +47,7 @@ Always read `CLAUDE.md`, your task in `tasks.md`, and `decisions.md` first. Then
 - [art/tech-spec.md](art/tech-spec.md): isometric spec and the code-generated pixel-art format
 
 ## Tech (`tech/`)
-- [tech/architecture.md](tech/architecture.md): stack, sim/render split, data shapes, modules, build and deploy (starts with the M1 subset)
+- [tech/architecture.md](tech/architecture.md): stack, sim/render split, data shapes, modules, build and deploy (starts with what's built so far)
 - [tech/conventions.md](tech/conventions.md): code style, recipes, the test loop, testing, performance
 - [tech/story-runtime.md](tech/story-runtime.md): map scripts, dialogue runner, conditions, flags, text tokens, barks
 - [tech/meta-runtime.md](tech/meta-runtime.md): meta progression runtime, run end, save system

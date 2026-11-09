@@ -1175,3 +1175,10 @@ Real art went in behind T300a's ids. No data changed.
 - **Alts as built** (act1.md's planned ones lost: an air-only Skyhook leaves two ground towers for two roads): `ducks_and_chain` (Thumper Bunker Buster + Sprinkler + Zapcoil) 81.0, `shell_and_chain` (Rivet + Thumper + Zapcoil) 52.4.
 - **C1 on replays:** the debrief branches on `thisRun: spared_quiet_wave`, the stamp reads the run (D091), later payoffs read the saved flag.
 - New canon lines in act1.md § A1M5: Sterling's brief and loss lines, Bricks's Marguerite name tag, the stinger caption "Rig Nine. Status: not answering." Follow-ups: T330; the runtime (~9.7 min) goes to T315.
+
+### D093 — 2026-11-09 — T317 the M3 docs pass
+- **T120's table convention:** design tables for *built* content give roles and target ranges (tower price bands Low 90–100 / Mid 110–130 / High 140–160; enemy toughness fodder/light/tank/heavy and pace slow/normal/fast) and point to the data files; content with no data yet keeps its numbers in the docs as their only home (D019).
+- architecture.md's *Built so far (M3: Act I)* table replaces the M1 subset note; README's first reading-path row points there, and a new row covers story maps (dialogue, objectives, a boss).
+- The Results debrief shows after a loss too (a supportive line, D059); core-loop §1 now says so.
+- **Engineering's deferred-spec copy** is D064's "Arrives in a later shipment", not the built "No specs yet" (in voice; T331 changes the string).
+- **Bug found:** the Shift board still stopped at A1M2 (`SHIFT_BOARD_SIZE = 2`), so A1M3–A1M5 were reachable only through dev hooks. T331 (high) fixes it before ship; the smoke suite gains a normal-flow step past A1M2.

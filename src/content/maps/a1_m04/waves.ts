@@ -51,7 +51,7 @@ export const ELDER_GAP = 10;
 
 export const waves = defineWaves([
   // W1 · Nibblers, then a Zoomer rush [the Clearance Sale prompt]
-  { groups: [g('nibbler', 18, 0, 0.7), g('zoomer', 32, 10, 0.3)] },
+  { groups: [g('nibbler', 18, 0, 0.7), g('zoomer', 20, 10, 0.3)] },
   // W2 · Bunchlings ×4 [T: splitting]
   { teach: true, groups: [g('bunchling', 4, 0, 2.5), g('nibbler', 10, 12, 0.6)] },
   // W3 · Bunchlings + Zoomers [X]

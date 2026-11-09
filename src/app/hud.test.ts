@@ -248,7 +248,7 @@ describe('hud view models', () => {
     ]);
     const none = { slot1: null, slot2: null, slot2State: 'none' } as const;
     expect(abilitySlots({ ...sim.config, abilities: none })).toEqual([]);
-    // No companion (A1M1 until T125): slot 2 is hidden, not empty.
+    // A map's companion fills slot 2; with none, slot 2 is hidden, not empty (A1M1 has Bricks).
     const a1 = createSim(battleConfig('a1_m01', 1));
     expect(abilitySlots(a1.config).map((a) => a.slot)).toEqual(
       a1.config.companion === null ? [1] : [1, 2],

@@ -14,14 +14,31 @@
 // instead. A leaving unit (driven off with its boss) is untargetable, so it draws at 60%; when the
 // sim lets it go at the map edge, it hands its sprite to LeaveFx, which carries it on past the edge
 // as it fades.
+// Its health bar (art-direction §8; T328) shows over the body while it's damaged or hovered: HP
+// and shield on an `ink.1` track (vfx/healthBar.ts), three pooled images cropped to width, so it
+// allocates nothing per frame. A boss and a neutral unit have none (`setBar(0, 0)`; the boss has
+// BossBarView); a burrowed or leaving unit hides it. The first of each type's tell glyph shows for
+// 3 s of sim time (TELL_TICKS), so fast-forward shortens it and a pause holds it.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
+import { TICK_HZ } from '../../shared/time.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { animKey, DEFAULT_VARIANT } from '../sprites/bake.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
+import {
+  HEALTH_BAR_FRAME_PX,
+  HEALTH_BAR_GAP_PX,
+  HEALTH_BAR_H,
+  HEALTH_BAR_ROOM_PX,
+  healthBarFill,
+  healthBarShown,
+  healthBarWidth,
+  type HealthBarFill,
+} from '../vfx/healthBar.ts';
+import { healthStripTexture } from '../vfx/overlayTextures.ts';
 import {
   blankFacts,
   ENEMY_POSES,
@@ -45,6 +62,9 @@ export interface EnemyLike {
   readonly x: number;
   readonly y: number;
   readonly hp: number;
+  readonly shieldHp: number;
+  /** The sim tick it spawned on (its tell glyph's clock). */
+  readonly spawnTick: number;
 }
 
 /** Flyers draw this far above their ground point. */
@@ -65,10 +85,13 @@ const LANE_STEP_PX = 1.5;
 const FACINGS: readonly Facing[] = ['ne', 'nw', 'se', 'sw'];
 /** Each facing's slot in the anim-key and anchor arrays (keys: facing × 2 + selected). */
 const FACING_INDEX: Readonly<Record<Facing, number>> = { ne: 0, nw: 1, se: 2, sw: 3 };
-/** A tell glyph shows above a new enemy for 3 s (art-direction §8), counted in rendered frames. */
-const TELL_FRAMES = 180;
-/** The glyph's gap above the body's top (px). */
-const TELL_GAP_PX = 2;
+/**
+ * A tell glyph shows above a new enemy for 3 s (art-direction §8), counted in sim ticks: at 2× it
+ * shows for 1.5 s of real time (still far past the 12-frame floor), and a pause holds it.
+ */
+export const TELL_TICKS = 3 * TICK_HZ;
+/** The glyph's gap above the body's top (px): room for the health bar between them. */
+const TELL_GAP_PX = HEALTH_BAR_ROOM_PX;
 /** The invulnerable shimmer: the `puff` anim swaps to its white-outlined variant this often (ms). */
 export const SHIMMER_MS = 125;
 /** A leaving unit is untargetable: it draws at this alpha (the stepped-alpha ladder's 60%). */
@@ -110,6 +133,8 @@ export function sideOf(dx: number, dy: number, out: Vec2): Vec2 | null {
 }
 
 const side: Vec2 = { x: 0, y: 0 };
+/** Scratch for the health bar's fill. */
+const fill: HealthBarFill = { hpPx: 0, shieldPx: 0 };
 
 /**
  * A sprite's anims for every pose, facing, and selection (keys[(pose × 4 + facing) × 2 +
@@ -169,8 +194,23 @@ export class EnemyView implements PooledView {
   readonly #mound: Phaser.GameObjects.Sprite;
   /** Plays the death anim where the unit died; hides itself when the anim ends. */
   readonly #corpse: Phaser.GameObjects.Sprite;
+  /** The health bar: its `ink.1` track, the HP fill, and the shield segments (each cropped). */
+  readonly #barTrack: Phaser.GameObjects.Image;
+  readonly #barHp: Phaser.GameObjects.Image;
+  readonly #barShield: Phaser.GameObjects.Image;
+  /** The bar's width (px) for this body, and the maxima it measures against (0 HP: no bar). */
+  #barW = 0;
+  #maxHp = 0;
+  #maxShield = 0;
+  #shieldHp = 0;
+  /** What the bar shows (−1: not drawn yet), and whether it's up. */
+  #barHpPx = -1;
+  #barShieldPx = -1;
+  #barShown = false;
+  #hovered = false;
   #set: AnimSet | null = null;
-  #tellFrames = 0;
+  /** The tell glyph is up (until TELL_TICKS after the unit spawned). */
+  #telling = false;
   /** The body's height above its anchor (px), for placing the tell glyph. */
   #headroom = 0;
   #id: SpriteId | null = null;
@@ -227,6 +267,15 @@ export class EnemyView implements PooledView {
     this.#corpse.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.#corpse.setVisible(false);
     });
+    const strip = (kind: 'track' | 'hp' | 'shield'): Phaser.GameObjects.Image => {
+      const img = ctx.scene.make.image({}, false);
+      img.setTexture(healthStripTexture(ctx.scene, kind)).setOrigin(0, 0).setVisible(false);
+      ctx.layers.overlay.add(img);
+      return img;
+    };
+    this.#barTrack = strip('track');
+    this.#barHp = strip('hp');
+    this.#barShield = strip('shield');
     this.release();
   }
 
@@ -247,6 +296,44 @@ export class EnemyView implements PooledView {
   /** Whether it's drawn as burrowed (its mound or `under` anim). */
   get burrowed(): boolean {
     return this.#statePose === 'under';
+  }
+
+  /** Whether its health bar shows (the smoke flows' and tests' view of it). */
+  get barShown(): boolean {
+    return this.#barShown;
+  }
+
+  /** The drawn body's depth (front-most wins a hover). */
+  get depth(): number {
+    return this.#body.depth;
+  }
+
+  /**
+   * The bar's scale: `maxHp` and `maxShield` (its def's; 0 HP for none: a boss, which has
+   * BossBarView, or a neutral unit, which is never hurt). Call after `show`.
+   */
+  setBar(maxHp: number, maxShield: number): void {
+    this.#maxHp = maxHp;
+    this.#maxShield = maxShield;
+    this.#barHpPx = -1;
+    this.#barShieldPx = -1;
+    this.#syncBar();
+  }
+
+  /** The pointer is over it: its health bar shows even at full HP. */
+  setHovered(hovered: boolean): void {
+    if (hovered === this.#hovered) return;
+    this.#hovered = hovered;
+    this.#syncBar();
+  }
+
+  /** Whether screen point (px, py) is on its drawn body's frame (a hover). Allocation-free. */
+  contains(px: number, py: number): boolean {
+    const b = this.#body;
+    if (!b.visible || Number.isNaN(this.#x)) return false;
+    const x0 = b.x - b.displayOriginX;
+    const y0 = b.y - b.displayOriginY;
+    return px >= x0 && px < x0 + b.width && py >= y0 && py < y0 + b.height;
   }
 
   /**
@@ -299,8 +386,16 @@ export class EnemyView implements PooledView {
       .setDisplayOrigin(a.x, a.y)
       .setAlpha(sh.alpha)
       .setVisible(false);
-    this.#headroom = sprites.meta(this.#id).anchor.y;
-    this.#tellFrames = tell === null ? 0 : TELL_FRAMES;
+    const meta = sprites.meta(this.#id);
+    this.#headroom = meta.anchor.y;
+    this.#barW = healthBarWidth(meta.w);
+    this.#maxHp = 0;
+    this.#maxShield = 0;
+    this.#hovered = false;
+    this.#barHpPx = -1;
+    this.#barShieldPx = -1;
+    this.#hideBar();
+    this.#telling = tell !== null;
     if (tell !== null) {
       const g = sprites.frame(tell, 'icon');
       this.#tell.setTexture(g.texture, g.frame);
@@ -314,11 +409,20 @@ export class EnemyView implements PooledView {
     this.#play();
   }
 
-  /** Positions the enemy from sim state and turns it to face where it moved. */
-  sync(e: EnemyLike): void {
+  /**
+   * Positions the enemy from sim state (at sim tick `tick`, the tell glyph's clock), turns it to
+   * face where it moved, and updates its health bar.
+   */
+  sync(e: EnemyLike, tick: number): void {
+    const hit = e.hp !== this.#hp || e.shieldHp !== this.#shieldHp;
     this.#syncFlash(e.hp);
-    if (this.#tellFrames > 0 && --this.#tellFrames === 0) this.#tell.setVisible(false);
+    this.#shieldHp = e.shieldHp;
+    if (this.#telling && tick - e.spawnTick >= TELL_TICKS) {
+      this.#telling = false;
+      this.#tell.setVisible(false);
+    }
     if (e.x === this.#x && e.y === this.#y) {
+      if (hit) this.#syncBar();
       if (this.#flying) this.#syncBob();
       return;
     }
@@ -357,11 +461,67 @@ export class EnemyView implements PooledView {
     if (this.#body.depth !== depth) this.#body.setDepth(depth);
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
     this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
-    if (this.#tellFrames > 0) {
-      const top = this.#body.y - this.#headroom - TELL_GAP_PX;
+    if (this.#telling) {
       // A burrowed unit's glyph waits underground with it.
-      this.#tell.setPosition(this.#body.x, top).setVisible(!this.#burrowedLook());
+      this.#tell.setVisible(!this.#burrowedLook());
     }
+    this.#placeOverhead();
+    this.#syncBar();
+  }
+
+  /** Puts the tell glyph and the health bar over the body's top, where it's drawn now. */
+  #placeOverhead(): void {
+    const top = this.#body.y - this.#headroom;
+    if (this.#telling) this.#tell.setPosition(this.#body.x, top - TELL_GAP_PX);
+    const x = Math.round(this.#body.x) - this.#barW / 2;
+    const y = Math.round(top) - HEALTH_BAR_GAP_PX - HEALTH_BAR_FRAME_PX - HEALTH_BAR_H;
+    this.#barTrack.setPosition(x - HEALTH_BAR_FRAME_PX, y - HEALTH_BAR_FRAME_PX);
+    this.#barHp.setPosition(x, y);
+    this.#barShield.setPosition(x + Math.max(0, this.#barHpPx), y);
+  }
+
+  /**
+   * Shows or hides the health bar (damaged or hovered, and not burrowed, leaving, or dead), and
+   * recrops it when its HP or shield moved a pixel.
+   */
+  #syncBar(): void {
+    const hp = this.#hp;
+    const show =
+      this.#body.visible &&
+      !Number.isNaN(this.#x) &&
+      !this.#leaving &&
+      !this.#burrowedLook() &&
+      healthBarShown(hp, this.#maxHp, this.#shieldHp, this.#maxShield, this.#hovered);
+    if (!show) {
+      if (this.#barShown) this.#hideBar();
+      return;
+    }
+    healthBarFill(hp, this.#maxHp, this.#shieldHp, this.#maxShield, this.#barW, fill);
+    if (fill.hpPx !== this.#barHpPx || fill.shieldPx !== this.#barShieldPx) {
+      this.#barHpPx = fill.hpPx;
+      this.#barShieldPx = fill.shieldPx;
+      const frame = HEALTH_BAR_FRAME_PX * 2;
+      this.#barTrack.setCrop(0, 0, this.#barW + frame, HEALTH_BAR_H + frame);
+      this.#barHp.setCrop(0, 0, fill.hpPx, HEALTH_BAR_H);
+      this.#barShield.setCrop(0, 0, fill.shieldPx, HEALTH_BAR_H);
+      this.#barShield.x = this.#barHp.x + fill.hpPx;
+    }
+    if (!this.#barShown) {
+      this.#barShown = true;
+      this.#barTrack.setVisible(true);
+      this.#barHp.setVisible(fill.hpPx > 0);
+      this.#barShield.setVisible(fill.shieldPx > 0);
+    } else {
+      this.#barHp.visible = fill.hpPx > 0;
+      this.#barShield.visible = fill.shieldPx > 0;
+    }
+  }
+
+  #hideBar(): void {
+    this.#barShown = false;
+    this.#barTrack.setVisible(false);
+    this.#barHp.setVisible(false);
+    this.#barShield.setVisible(false);
   }
 
   /**
@@ -376,7 +536,7 @@ export class EnemyView implements PooledView {
       this.#statePose = next;
       if (shot !== null && this.#has(shot)) this.#oneShot = shot;
       else if (this.#oneShot !== null && interruptsOneShot(next)) this.#oneShot = null;
-      if (this.#tellFrames > 0) this.#tell.setVisible(next !== 'under');
+      if (this.#telling) this.#tell.setVisible(next !== 'under');
       if (!Number.isNaN(this.#x)) this.#shadow.setVisible(next !== 'under');
       dirty = true;
     }
@@ -392,7 +552,10 @@ export class EnemyView implements PooledView {
       this.#leaving = e.leaving;
       this.#body.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
       this.#shadow.setAlpha(e.leaving ? LEAVING_ALPHA : 1);
+      dirty = true;
     }
+    // Burrowing, surfacing, or leaving hides or shows the health bar.
+    if (dirty) this.#syncBar();
   }
 
   /** A brood's arrival (split, sneezed, or surfaced): a short white pop over its first frames. */
@@ -415,9 +578,7 @@ export class EnemyView implements PooledView {
     if (up === this.#bob) return;
     this.#bob = up;
     this.#body.setPosition(this.#bodyX, this.#bodyY - up);
-    if (this.#tellFrames > 0) {
-      this.#tell.setPosition(this.#body.x, this.#body.y - this.#headroom - TELL_GAP_PX);
-    }
+    this.#placeOverhead();
   }
 
   /**
@@ -457,7 +618,10 @@ export class EnemyView implements PooledView {
     this.#tell.setVisible(false);
     this.#mound.stop().setVisible(false);
     this.#mounded = false;
-    this.#tellFrames = 0;
+    this.#telling = false;
+    this.#hovered = false;
+    this.#maxHp = 0;
+    this.#hideBar();
   }
 
   /** Starts the flash when HP dropped since the last frame; ends it after HIT_FLASH_FRAMES. */

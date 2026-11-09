@@ -10,7 +10,8 @@
 import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
 import { tetherDir } from '../../content/sprites/fx/link_tether.ts';
-import { gridToScreen, type Vec2 } from '../iso.ts';
+import { gridToScreen, HALF_H, type Vec2 } from '../iso.ts';
+import { GLYPH_H } from '../vfx/pixelFont.ts';
 import { PULSE_PERIOD_MS } from '../motion.ts';
 import { hasAnim, spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -55,6 +56,30 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */
 export function calloutText(name: string): string {
   return `${name.toUpperCase()}!`;
+}
+
+/** A floating number's height in the 3×5 font with its 1 px outline, and the gap kept over it (px). */
+const FLOAT_TEXT_H = GLYPH_H + 2;
+const CALLOUT_CLEAR_PX = 2;
+
+/**
+ * How far up a link's callout floats (px) when one of its towers was built this same frame, whose
+ * `−cost` floater rises from that tower's tile at the same moment (T329): at least `liftPx`, and
+ * high enough that the callout's bottom clears the floater's top by CALLOUT_CLEAR_PX. `mid` is the
+ * callout's grid point (between the towers), `end` the built tower's tile center, `floatLiftPx`
+ * its floater's lift. Both rise at the same rate, so clearing them at the start clears them
+ * throughout.
+ */
+export function calloutLiftOver(
+  liftPx: number,
+  mid: Readonly<Vec2>,
+  end: Readonly<Vec2>,
+  floatLiftPx: number,
+): number {
+  // Screen y grows HALF_H per grid step along x + y; a lift raises a point by its px.
+  const dy = (mid.x + mid.y - (end.x + end.y)) * HALF_H;
+  const clear = Math.ceil(dy + floatLiftPx + FLOAT_TEXT_H + CALLOUT_CLEAR_PX);
+  return clear > liftPx ? clear : liftPx;
 }
 
 interface Tether {
