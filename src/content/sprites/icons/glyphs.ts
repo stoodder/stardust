@@ -62,3 +62,24 @@ export const iconLock = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconTellFast = defineSprite({
+  id: 'icon.tell.fast',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `fast` tell (art-direction §8): a double chevron », `orange.4` lit over `orange.3`.
+  legend: { C: 'orange.3', D: 'orange.4' },
+  frames: {
+    icon: [
+      'D..D..',
+      'DD.DD.',
+      '.DD.DD',
+      '.CC.CC',
+      'CC.CC.',
+      'C..C..',
+    ],
+  },
+});

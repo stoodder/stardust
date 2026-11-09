@@ -54,6 +54,6 @@ export const tilePad = defineSprite({
   palette: 'act1',
   variants: ENV_VARIANTS,
   // The plate is Everglow hardware, so its steel and teal stay the same in every act.
-  legend: { K: 'steel.0', L: 'steel.1', M: 'steel.2', N: 'steel.0', P: 'steel.3', T: 'teal.3' },
+  legend: { K: 'steel.0', L: 'steel.1', M: 'steel.2', N: 'steel.0', P: 'steel.2', T: 'teal.3' },
   frames: { v0: padGrid() },
 });

@@ -18,14 +18,14 @@ export const ENV_VARIANTS: readonly EnvPaletteId[] = ['act2.gold', 'act2.dusk', 
 
 export const TILE_ANCHOR = { x: 16, y: 0 }; // top vertex: a tile's top-left sits at (sx − 16, sy)
 
-/** Grass: base `2`, tufts (`3` over `1`), sparse bright blades, soft edge shading. */
+/** Grass: base `2`, thin speckle, tufts (`3` over `1`), rare bright blades, soft edge shading. */
 export function grassGrid(seed: number): CharGrid {
   const g = grid(TILE_W, TILE_H);
   for (let y = 0; y < TILE_H; y++) {
     for (let x = 0; x < TILE_W; x++) {
       if (!inTileMask(x, y)) continue;
       const h = hash01(x, y, seed);
-      plot(g, x, y, h < 0.07 ? '1' : h < 0.2 ? '3' : '2');
+      plot(g, x, y, h < 0.07 ? '1' : h < 0.13 ? '3' : '2');
     }
   }
   // Tufts: a bright blade with a dark root below it.
@@ -33,7 +33,7 @@ export function grassGrid(seed: number): CharGrid {
     const x = 4 + Math.floor(hash01(i, 1, seed) * 24);
     const y = 2 + Math.floor(hash01(i, 2, seed) * 11);
     if (!inTileMask(x, y) || !inTileMask(x, y + 1)) continue;
-    plot(g, x, y, hash01(i, 3, seed) < 0.3 ? '4' : '3');
+    plot(g, x, y, hash01(i, 3, seed) < 0.15 ? '4' : '3');
     plot(g, x, y + 1, '1');
   }
   shadeEdges(g, '1', '3');

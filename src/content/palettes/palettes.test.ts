@@ -120,3 +120,59 @@ describe('path vs pad contrast (art-direction §8 Tile readability)', () => {
     }
   });
 });
+
+/** Mean luminance of a frame's body pixels: no outline, eye, or shadow (the value of its mass). */
+function bodyLuminance(def: SpriteDef, frame: string, palette: SlotPalette): number {
+  const fd = def.frames[frame];
+  if (fd === undefined || !Array.isArray(fd))
+    throw new Error(`${def.id}:${frame} is not a grid frame`);
+  const rows: readonly string[] = fd;
+  let sum = 0;
+  let n = 0;
+  for (const row of rows) {
+    for (const ch of row) {
+      const slot = STANDARD_LEGEND[ch];
+      if (slot === 'outline' || slot === 'eye' || slot === 'shadow') continue;
+      const color =
+        slot !== undefined ? palette[slot] : isCustomChar(ch) ? def.legend?.[ch] : undefined;
+      if (color === undefined) continue;
+      sum += luminance(rgbOf(color));
+      n++;
+    }
+  }
+  return sum / n;
+}
+
+function sprite(id: string): SpriteDef {
+  const d = SPRITES.find((s) => s.id === id) as SpriteDef | undefined;
+  if (d === undefined) throw new Error(`no sprite ${id}`);
+  return d;
+}
+
+describe('Act I value bands (art-direction §1)', () => {
+  const env = ENV_PALETTES.act1;
+  const grass = bodyLuminance(sprite('tile.grass'), 'v0', env);
+  const path = bodyLuminance(sprite('tile.path'), 'tread_x', env);
+
+  it('keeps the grass below the path, so the road reads in grayscale', () => {
+    expect(contrastRatio(path, grass)).toBeGreaterThanOrEqual(1.3);
+    expect(path).toBeGreaterThan(grass);
+  });
+
+  it('puts every enemy and tower body a band above the path they stand beside', () => {
+    const actors: readonly [string, string][] = [
+      ['enemy.nibbler', 'walk_se_0'],
+      ['enemy.zoomer', 'walk_se_0'],
+      ['enemy.chonk', 'walk_se_0'],
+      ['tower.rivet', 't1'],
+      ['tower.thumper', 't1'],
+      ['tower.sprinkler', 't1'],
+    ];
+    for (const [id, frame] of actors) {
+      const d = sprite(id);
+      const l = bodyLuminance(d, frame, PALETTES[d.palette]);
+      expect(contrastRatio(l, path), id).toBeGreaterThanOrEqual(1.2);
+      expect(l, id).toBeGreaterThan(path);
+    }
+  });
+});

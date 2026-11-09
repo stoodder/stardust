@@ -26,9 +26,10 @@ export function skitterBody(b: SkitterBody): CharGrid {
       const d = Math.hypot(dx, dy);
       if (d > 1) continue;
       const lit = -0.6 * dx - 0.8 * dy; // toward the upper-left light
+      // Lit mostly in `3`, so bodies sit a value band above Act I's ground (art-direction §1).
       let ch = '2';
-      if (lit > 0.55 && d < 0.75) ch = '4';
-      else if (lit > 0.2) ch = '3';
+      if (lit > 0.4 && d < 0.8) ch = '4';
+      else if (lit > -0.25) ch = '3';
       else if (d > 0.82 && lit < -0.15) ch = '1';
       const inBelly =
         b.facing === 'se' && dy > 0.75 - b.belly && Math.abs(dx - 0.2) < 0.25 + b.belly && d < 0.95;

@@ -2,9 +2,11 @@
 // integer zoom on dark and light backgrounds, plus small dioramas that exercise anchors, tile
 // seams, head mounts, and environment palette swaps. Deterministic, so its screenshot can be
 // compared milestone to milestone. Smoke reads the data-* counters on <body>.
-import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
+import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.ts';
+import { MASTER } from '../content/palettes/master.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
+import { groundShadowFor } from '../content/sprites/shadows.ts';
 import type { EnvPaletteId } from '../content/sprites/types.ts';
 import {
   bakeAll,
@@ -195,8 +197,7 @@ function diorama(
   c.height = h;
   const ctx = c.getContext('2d');
   if (ctx === null) return c;
-  ctx.fillStyle = '#05030a';
-  ctx.fillRect(0, 0, w, h);
+  backdrop(ctx, env, w, h);
   const ev = env === 'act1' ? DEFAULT_VARIANT : env;
   const frameOf = (id: SpriteId, frame: string, variant: string): BakedFrame | undefined => {
     const b = baked.get(id);
@@ -273,6 +274,16 @@ function diorama(
       tier: 1 + (n % 3),
     })),
   ];
+  // Ground enemies stand on contact shadows (decal layer, under everything in `world`).
+  for (const o of objects) {
+    const [id, , gx, gy] = o;
+    if (!id.startsWith('enemy.')) continue;
+    const s = groundShadowFor(id);
+    const [sx, sy] = screen(gx, gy);
+    ctx.globalAlpha = s.alpha;
+    draw(frameOf(s.sprite, s.frame, DEFAULT_VARIANT), sx, sy);
+    ctx.globalAlpha = 1;
+  }
   const gxy = (o: (typeof all)[number]): number => ('tower' in o ? o.gx + o.gy : o[2] + o[3]);
   for (const o of all.toSorted((a, b) => gxy(a) - gxy(b))) {
     if ('tower' in o) {
@@ -317,6 +328,37 @@ function diorama(
     octx.drawImage(c, 0, 0, out.width, out.height);
   }
   return out;
+}
+
+// prettier-ignore
+const BAYER4 = [
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+] as const;
+
+/**
+ * The diorama's backdrop: the env's sky gradient as stepped bands across the top (4×4 ordered
+ * dither at each seam), over its `shade` below, so palettes that share ground ramps
+ * (act2.gold, act2.dusk) still read apart.
+ */
+function backdrop(ctx: CanvasRenderingContext2D, env: EnvPaletteId, w: number, h: number): void {
+  const sky = ENV_SKY[env];
+  const bands = [...sky, ENV_PALETTES[env].outline];
+  const bandH = Math.round((h * 0.6) / sky.length);
+  for (let y = 0; y < h; y++) {
+    const band = Math.min(Math.floor(y / bandH), bands.length - 1);
+    const next = Math.min(band + 1, bands.length - 1);
+    // Over a band's last 4 rows, the ordered dither steps 0 → 75% into the next band.
+    const threshold = Math.max(0, y - band * bandH - (bandH - 4)) * 4;
+    const row = BAYER4[y % 4] ?? BAYER4[0];
+    for (let x = 0; x < w; x++) {
+      const c = (row[x % 4] ?? 0) < threshold ? bands[next] : bands[band];
+      ctx.fillStyle = MASTER[c ?? 'ink.0'];
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
 }
 
 function glowOf(

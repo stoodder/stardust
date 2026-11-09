@@ -1,6 +1,8 @@
 // Which sprites dress each map tile (art-direction.md § Tile readability): the ground tile, and a
-// prop standing on it, if any. Pure, so the choices are unit-tested; GroundView draws them.
+// prop standing on it, if any; plus the decor apron around the grid (art-direction §3). Pure, so
+// the choices are unit-tested; GroundView draws them.
 import type { SpriteId } from '../../content/sprites/index.ts';
+import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
 import type { TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
@@ -78,4 +80,114 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
     default:
       return assertNever(t);
   }
+}
+
+/** Props that are Everglow hardware keep their faction palette in every act; the rest follow env. */
+const HARDWARE: ReadonlySet<SpriteId> = new Set<SpriteId>([
+  'prop.core',
+  'prop.fence',
+  'prop.dome',
+  'prop.billboard',
+]);
+
+/** The palette variant a prop draws in on a map of env `env`. */
+export function propVariant(sprite: SpriteId, env: string): string {
+  return HARDWARE.has(sprite) ? DEFAULT_VARIANT : envVariant(env);
+}
+
+/** One apron cell: a tile outside the grid, `ring` steps from it (1 touches the grid). */
+export interface ApronCell extends TileDressing {
+  readonly col: number;
+  readonly row: number;
+  readonly ring: number;
+}
+
+type Prop = NonNullable<TileDressing['prop']>;
+const prop = (sprite: SpriteId, frame: string): Prop => ({ sprite, frame, anim: null });
+
+/**
+ * Act I's colony dressing on the apron's second ring, behind the map (north edges), so it never
+ * hides the playfield (and clear of the HUD's top-center banner): an Evie billboard and lettuce
+ * patches along the north-west edge, Dome Row along the north-east. Positions scale with the map; a cell the road uses is
+ * skipped.
+ */
+function colonyDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
+  const m = new Map<string, Prop>();
+  m.set(`-2,${Math.round(g.rows * 0.2)}`, prop('prop.billboard', 'beaming'));
+  m.set(`${Math.round(g.cols * 0.55)},-2`, prop('prop.dome', 'v0'));
+  m.set(`${g.cols - 2},-2`, prop('prop.dome', 'v0'));
+  for (let r = Math.round(g.rows * 0.4); r < Math.round(g.rows * 0.4) + 3; r++) {
+    m.set(`-2,${r}`, prop('prop.lettuce', 'v0'));
+  }
+  return m;
+}
+
+const DECOR_BY_ENV: Readonly<Record<string, (g: GroundGrid) => ReadonlyMap<string, Prop>>> = {
+  act1: colonyDecor,
+};
+
+/**
+ * The decor apron: every cell within `APRON_RINGS` of the grid, back to front. Ground darkens
+ * and dithers to ink ring by ring; the road runs on out of every border core tile (the road out
+ * through the gate); ring 1 carries the perimeter fence, with gaps where the road leaves and
+ * beside border spawns; ring 2 carries the env's decor and sparse brush. Never picked.
+ */
+export function apronCells(g: GroundGrid, env: string): ApronCell[] {
+  const R = APRON_RINGS;
+  const inGrid = (c: number, r: number): boolean => c >= 0 && r >= 0 && c < g.cols && r < g.rows;
+  const tileAt = (c: number, r: number): TileChar | undefined =>
+    inGrid(c, r) ? g.tiles[r * g.cols + c] : undefined;
+  const roads = new Map<string, 'x' | 'y'>();
+  const gaps = new Set<string>();
+  for (let r = 0; r < g.rows; r++) {
+    for (let c = 0; c < g.cols; c++) {
+      const t = tileAt(c, r);
+      if (t !== 'C' && t !== 'S') continue;
+      for (const [dc, dr] of [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0],
+      ] as const) {
+        if (inGrid(c + dc, r + dr)) continue;
+        gaps.add(`${c + dc},${r + dr}`);
+        if (t !== 'C') continue;
+        for (let k = 1; k <= R; k++) roads.set(`${c + k * dc},${r + k * dr}`, dc === 0 ? 'y' : 'x');
+      }
+    }
+  }
+  const decor = DECOR_BY_ENV[env]?.(g) ?? new Map<string, Prop>();
+  const out: ApronCell[] = [];
+  for (let d = -2 * R; d <= g.cols + g.rows - 2 + 2 * R; d++) {
+    for (let col = -R; col < g.cols + R; col++) {
+      const row = d - col;
+      if (row < -R || row >= g.rows + R || inGrid(col, row)) continue;
+      const ring = Math.max(
+        col < 0 ? -col : col >= g.cols ? col - g.cols + 1 : 0,
+        row < 0 ? -row : row >= g.rows ? row - g.rows + 1 : 0,
+      );
+      const key = `${col},${row}`;
+      const road = roads.get(key);
+      const ground: TileLook = {
+        sprite: 'tile.apron',
+        frame: road === undefined ? `r${ring}` : `road_${road}_r${ring}`,
+      };
+      let p: Prop | null = null;
+      if (road === undefined && !gaps.has(key)) {
+        if (ring === 1) {
+          const alongX = row === -1 || row === g.rows;
+          const alongY = col === -1 || col === g.cols;
+          if (alongX !== alongY) p = prop('prop.fence', alongX ? 'x' : 'y');
+        } else if (ring === 2) {
+          p = decor.get(key) ?? null;
+          if (p === null) {
+            const h = (((col + 16) * 7 + (row + 16) * 11) >>> 0) % 9;
+            p = h === 0 ? prop('prop.flora', 'v0') : h === 4 ? prop('prop.rock', 'v0') : null;
+          }
+        }
+      }
+      out.push({ col, row, ring, ground, prop: p });
+    }
+  }
+  return out;
 }

@@ -29,9 +29,9 @@ export const MASTER = {
 
   // Environment ramps (art-direction §3), namespaced by act.
   // Act I: the Long Afternoon
-  'act1.grass.0': '#1c5a3e', 'act1.grass.1': '#2c8c4c', 'act1.grass.2': '#4cc25e', 'act1.grass.3': '#8ae872', 'act1.grass.4': '#ccffa6',
+  'act1.grass.0': '#123a2c', 'act1.grass.1': '#1e6438', 'act1.grass.2': '#348c48', 'act1.grass.3': '#56b056', 'act1.grass.4': '#98d878',
   'act1.clay.0': '#4c2244', 'act1.clay.1': '#7c3a5c', 'act1.clay.2': '#b85c7c', 'act1.clay.3': '#e892a2', 'act1.clay.4': '#ffc6c8',
-  'act1.path.0': '#6e4c5e', 'act1.path.1': '#a07a7e', 'act1.path.2': '#d0a8a2', 'act1.path.3': '#f2d2c0', 'act1.path.4': '#fff0e2',
+  'act1.path.0': '#44303e', 'act1.path.1': '#6e5260', 'act1.path.2': '#957470', 'act1.path.3': '#b48e80', 'act1.path.4': '#d8baa2',
   'act1.water.0': '#1c6ab0', 'act1.water.1': '#2e9ae0', 'act1.water.2': '#6ad4f4', 'act1.water.3': '#c2f6ff',
   'act1.sky.0': '#7ccbee', 'act1.sky.1': '#b2e6f8', 'act1.sky.2': '#e2f8ff',
   'act1.shade': '#3a2c5e', 'act1.light': '#fff4dc',

@@ -97,18 +97,22 @@ Actors (towers, enemies, projectiles) **keep their faction palettes in every act
 
 ### Act I: the Long Afternoon (`act1`)
 
-Bright greens, pink clay, pale sand, and a cyan sky. Shadows are lavender, not black, but still clearly dark.
+Deep, saturated greens, pink clay, a dusty-rose sand track, and a cyan sky. Shadows are lavender, not black, but still clearly dark. The ground sits a value band **below** the actors (principle 1): body luminance runs grass ≈ 0.21 < path ≈ 0.31 < every enemy and tower ≈ 0.41, so a Skitterkin on the road reads in grayscale by its value, not only its outline. A palette test holds the order (grass < path, path/grass ≥ 1.3:1, each actor ≥ 1.2:1 over the path).
 
 | Role | 0 | 1 | 2 | 3 | 4 |
 |---|---|---|---|---|---|
-| `grass` | `#1c5a3e` | `#2c8c4c` | `#4cc25e` | `#8ae872` | `#ccffa6` |
+| `grass` | `#123a2c` | `#1e6438` | `#348c48` | `#56b056` | `#98d878` |
 | `clay` (cliffs, soil) | `#4c2244` | `#7c3a5c` | `#b85c7c` | `#e892a2` | `#ffc6c8` |
-| `path` (sand track) | `#6e4c5e` | `#a07a7e` | `#d0a8a2` | `#f2d2c0` | `#fff0e2` |
+| `path` (sand track) | `#44303e` | `#6e5260` | `#957470` | `#b48e80` | `#d8baa2` |
 | `water` | `#1c6ab0` | `#2e9ae0` | `#6ad4f4` | `#c2f6ff` | |
 | `sky` (backdrop gradient) | `#7ccbee` | `#b2e6f8` | `#e2f8ff` | | |
 | `shade` / `light` | `#3a2c5e` | `#fff4dc` | | | |
 
 Flora accents: `pink.3`, `pink.4`, `gold.4`. Everglow billboards and domes: `white.0` and `teal.3`.
+
+### The apron (every act)
+
+No map floats in the void. `GroundView` draws a 4-tile **apron** of non-playable ground around the grid (`tile.apron`): ring 1 is the env's ground one ramp step darker, and rings 2–4 dither it to `ink.0` with a 4×4 ordered pattern that thickens ring by ring (4, 9, then 14 of 16 cells), so the map's edge sinks into the deep dark instead of stopping at a hard diamond. Ring 1 carries the colony's perimeter **fence** (`prop.fence`, Everglow steel posts and wire), with gaps beside border spawns and where the road leaves. The **road runs on** out of every border core tile, across all four rings (the road out through the gate). Ring 2 carries sparse brush and rocks plus the act's dressing, always on the north edges so it never hides the playfield or the HUD's top-center banner. Act I's dressing is the colony: an Evie billboard and lettuce patches on the north-west, Dome Row domes on the north-east. The apron is outside the grid, so picking never reaches it. Placement rules: `apronCells` in `src/render/views/groundTiles.ts`.
 
 ### Act II: the Long Dusk (`act2.gold`, `act2.dusk`)
 
@@ -193,7 +197,7 @@ Portraits and icons are authored at their display size and shown 1:1 in game pix
 | Commander ability icons | 16×16 | Authored 14×14 plus outline, like tower icons, on no plinth. `icon.ability.<id>` (Orbital Strike: the Everglow uplink satellite firing its teal beam into an orange reticle) |
 | Tower and build icons | 16×16 | Readable silhouette, faction palette. Front view on a small faction plinth (Everglow: the steel slab with the teal and orange chevrons). Authored 14×14; the auto outline makes 16×16. `icon.tower.<id>` |
 | Enemy icons (wave preview) | 16×16 | The enemy's own body builder, front-facing (Skitterkin: `enemies/skitter.ts`). Authored 14×14 plus outline. `icon.enemy.<id>` |
-| Status and tell glyphs | 8×8 | See §8 |
+| Status and tell glyphs | 8×8 | See §8. `icon.tell.<id>` (M1: `icon.tell.fast`). Authored 6×6 plus outline |
 | Currency icons | 8×8 | Credits (gold chip, `icon.credits`), Stardust (shimmer cycle), Intel (teal data shard) |
 | HUD glyphs | 8×8 | The meter's core orb (`icon.core`) and the locked-slot padlock (`icon.lock`). Glyphs are authored 6×6 plus outline |
 
@@ -237,7 +241,10 @@ Sprites the maps and story need beyond the tower and enemy rosters. Lore and cha
 | **Colonist militia** | Colonists holding a firing post beside the path |
 | **Choir singers** | Skitterkin with `skitterkin.ally` and a singing loop |
 | **Hauler bearers** | The Brood Hauler with a sack that can warm from unsung to sung |
-| **Evie billboards** | Three states: `beaming`, `peeling`, and `dark` with a hum-glyph painted over the smile |
+| **Evie billboards** | Three states: `beaming`, `peeling`, and `dark` with a hum-glyph painted over the smile. `prop.billboard` has `beaming` (M1): a white panel in a teal frame with the gold Evie sun, a rising `pink.3` bar chart, and "38%" in 3×5 digits (A1M1's "PESTS PROCESSED THIS QUARTER: 38% MORE!"; the words don't survive 1×, so the rest is small-print lines) |
+| **Dome Row** | `prop.dome`: a white Everglow habitat dome on a steel ring, a teal band with lit window slits, and a round door |
+| **Lettuce patch** | `prop.lettuce`: rows of `green.2`–`green.4` heads on tilled soil (the path's sand, a step darker); the colony's crop |
+| **Perimeter fence** | `prop.fence`: steel posts with two sagging wires and an orange hazard tag; frames `x` and `y` run along each grid axis |
 | **Memorial wrecks** | A `wreck` frame per tower type, used for Bricks's `{name}` turret |
 | **HE HELD THE DOOR** | The blast door with the painted words |
 | **Deep Bore** | The drill rig, glowing `stardust.unsung` |
@@ -282,8 +289,10 @@ The numbers are `render/vfx/fxTiming.ts`; FxView draws them ([architecture.md §
 
 - **Hitscan tracer (Rivet):** the `projectile.rivet_tracer` streak (warm tail, white head toward the target) flies from the muzzle to the target in about 90 ms. The hit itself landed the tick the tower fired; the streak is only the read.
 - **Pulse ring (Sprinkler):** a solid 1 px `blue.4` ellipse grows from the tower to its pulse radius in quarter-tile steps over about 360 ms, fading down the stepped-alpha ladder, drawn in `decal` under the enemies it chills.
-- **Shell burst (Thumper):** `fx.explosion` at the impact point.
-- **Orbital Strike:** the `fx.orbital_reticle` (its dashed ellipse sized to the 1.5-tile radius, dashes marching) sits on the target for the whole 1 s telegraph and holds while paused; at 60% alpha it also follows the pointer while the player aims. On impact a beam drops from the top of the screen (teal edges around a white core, 8 → 6 → 4 → 2 px over 200 ms, with a flat `teal.4` and white flash where it meets the ground), seven `fx.explosion` bursts roll outward (the center, then a ring of six at 0.9 tiles, 50 and 100 ms late), and the screen shakes.
+- **Shell burst (Thumper):** `fx.explosion` at the impact point, over a solid `orange.3` ring at the firing tier's splash radius for 200 ms, so the player sees what the shell covered.
+- **Orbital Strike:** the `fx.orbital_reticle` (its dashed ellipse sized to the 1.5-tile radius, dashes marching) sits on the target for the whole 1 s telegraph and holds while paused; at 60% alpha it also follows the pointer while the player aims. On impact a beam drops from the top of the screen (teal edges around a white core, 8 → 6 → 4 → 2 px over 200 ms, with a flat `teal.4` and white flash where it meets the ground), the ground flashes out to the strike's radius (a filled `teal.4` ellipse at 60% with a `white.1` edge, fading in steps over 240 ms), seven `fx.explosion` bursts roll outward (the center, then a ring of six at 0.9 tiles, 50 and 100 ms late) with two more just off the center for a big core, a dithered `ink.0` scorch (0.75 tiles) fades over 1.5 s, and the screen shakes.
+- **Feedback juice (D026):** an enemy death pops `fx.explosion` (Act I's slapstick poof until the death-tone ramp lands). A new tower drops in from 4 px above (1 px per 2 frames) inside a `steel.4` dust ring; an upgrade fills the tower white for 2 frames inside a growing `teal.4` ring. Credits float as numbers in the 3×5 font with a 1 px `ink.0` outline, rising 10 px over 0.9 s: "−cost" in `gold.3` on a build or upgrade, "+refund" in `gold.4` on a sale.
+- **A leak:** the core fills white for 2 frames, a `red.3` ring grows from it to 1 tile, the camera shakes 1 px for 120 ms (off under reduced motion), and "−N" floats up in `red.3`. At integrity 5 or less the core's glow halo turns `red.3`, blinking between full and 60% at 1 Hz (steady under reduced motion).
 
 ### Glow and bloom
 
@@ -301,7 +310,8 @@ Particles are pooled 1×1 and 2×2 palette pixels (Phaser particle emitters with
 
 ### Range rings and placement
 
-- **Range rings** are pre-rasterized 1 px dashed pixel ellipses (2:1), baked per radius in 0.25-tile steps, drawn in the `decal` layer: `white.0` when valid, `red.3` when the placement is invalid.
+- **Range rings** are pre-rasterized 1 px dashed pixel ellipses (2:1), baked per radius in 0.25-tile steps, drawn in the `decal` layer: `white.0` when valid, `red.3` when the placement is invalid, with a 1 px `ink.0` under-stroke so they read on light ground.
+- **Onboarding:** until the first build, every free pad blinks the `teal.3` tile highlight at 1 Hz (steady under reduced motion).
 - The **placement ghost** is the tower sprite at 60% alpha over the target tile, plus the tile mask highlight.
 
 ---
@@ -340,7 +350,7 @@ Each enemy trait in [design/enemies.md §3](../design/enemies.md#3-defense-trait
 | Healer aura | `healer` | Plus ✚ | Expanding ring pulse | `green.3` |
 | Shield-recharge aura | `shield_aura` | Hexagon with plus | Expanding ring pulse with a dashed edge | `blue.4` |
 | Haste aura | `haste_aura` | Double chevron with ring | Speed lines on the source and on affected allies | `orange.3` |
-| Fast (base speed) | `fast` | Double chevron » | Speed lines trailing; a lean-forward walk frame | `orange.4` |
+| Fast (base speed) | `fast` | Double chevron » | Speed lines trailing (two alternating `orange.4` patterns behind the body); a lean-forward walk frame. The Zoomer's body also runs hot, its ramp shifted to `orange.2`–`orange.4` | `orange.4` |
 | Blink | `blink` | Dotted arrow | Shimmer during the tell; afterimage outline at the destination | `violet.4` |
 | Phasing | `phasing` | Broken circle | Alternating-frame flicker (visible / dithered) during the tell; dithered while untargetable | pattern + `teal.4` |
 | Gathering | `consumer` | Inward arrows | Tendrils pulling inward during the tell; sprite grows in pixel steps | `acid.2` (Hollow) |
@@ -388,6 +398,7 @@ The in-map HUD, menus, and dialogue are a **DOM overlay** sized to the 640×360 
 - **Layout: HUD in the corners.** An isometric map leaves the four screen corners empty ([tech-spec.md § Tile and screen](tech-spec.md#tile-and-screen)), so: top-left has core integrity (or Evacuated) and credits; top-right has the wave counter, wave preview, call-wave, and speed and pause; bottom-left has the two commander ability slots (with the companion's portrait); bottom-right has the 4 loadout build slots (16×16 icons and costs). A contextual upgrade/sell/targeting/hold-fire panel opens next to the selected tower, on the side away from the map center. The playfield stays unobstructed.
 - **Numbers** use tabular figures; counters tick up and don't jump (credits close any gap in about 250 ms; reduced motion jumps). Core integrity turns `red.3` at 5 or below.
 - **HUD details (T106):** panels cut 3 px, buttons 2 px. The 1 px edge is a separate ring drawn over the 92% fill (an even-odd `clip-path`), so the fill never shows the edge color through it. Buttons are `ink.2` with a `steel.1` edge; hover and the armed or pressed state take the act accent edge (pressed: over `--accent-dim`); keyboard focus turns the edge `white.1`. Hotkeys show as small `steel.3` key badges on their controls. Unaffordable costs are `red.3` with the icon at 45% opacity; a locked slot shows the padlock in place of its cost. Notices (a rejected command) sit top center in a panel edged in the act's secondary color for about 2 s.
+- **Feedback (D026):** a leak flashes the status panel's edge `red.3` for 300 ms, and at integrity 5 or less a blinking `red.3` box with an `ink.0` "!" sits beside the meter's label (a shape, not only the red number). "Do this now" controls pulse their accent edge and fill at 1 Hz: build slot 1 until the first build, Start once a tower stands, and Call while an early call pays with nothing alive; a ready ability slot flashes its edge `white.1` three times as each countdown starts. A "WAVE n" banner in Silkscreen 16, accent-colored with a 1 px `ink.0` outline, shows top center for 1.2 s as a wave starts. While paused, a 15% `ink.0` scrim covers the playfield and a pinned "PAUSED" notice sits bottom center. Pulses and blinks stop under reduced motion.
 - **Hit targets:** at least 16×16 game px (32 screen px at 2×). Nothing important lives only on hover, so touch can be added later (D001 #8).
 
 ### Act themes
@@ -416,14 +427,14 @@ Fonts are used only at sizes where their pixel grid lines up with the game-pixel
 
 - **Backdrop:** menus without a battle behind them sit on `BackdropScene`: a night sky in dithered bands (`ink.0` → `ink.1` → `ink.2` → `violet.0` → `pink.0` at the horizon, 4×4 ordered dither across each seam) over the dark silhouette of Dome Row (`ink.0` domes with a `violet.1` rim and lit `gold`/`teal` window slits), the two small moons, a static starfield, 5×5 twinkling stars (stepped alpha), and 1–2 px motes rising on the `stardust.sung` cycle. The layout is seeded, so it's the same every boot. Reduced motion freezes it.
 - **Title:** the logo is Silkscreen at **32** (a multiple of its grid) in `gold.4` with hard drop shadows (`pink.3` 2 px down, then `violet.1`), under an Everglow brand line in `teal.3` with `pink.3` chevrons. One large chamfered Start button (Silkscreen 16, at least 96×24, the forced-input shape without the pulse). A loading tip sits at the bottom with a `pink.3` TIP badge.
-- **Results:** a 45% `ink.0` scrim over the frozen battle and one centered chamfered panel (act accent edge), 336 px wide (the longest headline fits on one line): a small `steel.3` kicker (victory or defeat in plain words), the headline in Silkscreen 16 (`teal.4` for a win, `orange.3` for a loss, never red; the loss panel's edge is `coral.3`), the waves and integrity rows, the counter, then the buttons. In Act I the counter is a rounded badge (`gold.2` border, `gold.3` label, `pink.3` star, `teal.3` brag) that counts up on arrival (eased, 0.6–1.8 s; instant under reduced motion) with its width reserved, so the line never shifts.
+- **Results:** a 45% `ink.0` scrim over the frozen battle and one centered chamfered panel (act accent edge), 336 px wide (the longest headline fits on one line): a small `steel.3` kicker (victory or defeat in plain words), the headline in Silkscreen 16 (`teal.4` for a win, `orange.3` for a loss, never red; the loss panel's edge is `coral.3`), the waves and integrity rows (Silkscreen), the counter, then the buttons. In Act I the counter is a rounded badge (`gold.2` border, `gold.3` label, `pink.3` star, `teal.3` brag) that counts up on arrival (eased, 0.6–1.8 s; instant under reduced motion) with its width reserved, so the line never shifts.
 - **Menu panels are opaque.** The chamfered edge is the element and the fill is an inset layer, so a translucent fill would show the edge color through it. Menu panels sit over a scrim anyway, so they use opaque `ink.1` plus the scanlines; the 92% fill is for HUD panels over the playfield, which need an edge drawn without a layer under the fill.
 - **Buttons:** Silkscreen 8, at least 16 px tall, chamfered. Primary: the act accent edge over its dim fill (Act I: `teal.3` over `teal.1`); secondary: `ink.2` with `steel.2`. Hover and keyboard focus brighten to `teal.2` with a `teal.4` edge (the chamfer clips an outline, so focus is shown by the fill).
 
 ### Dialogue presentation
 
 - **Scenes** (pause the game): a bottom panel with a 48×48 portrait framed in the speaker's faction accent, a name plate, a typewriter text reveal (about 40 chars/s, click to finish), and a 2-frame mouth flap while text types.
-- **Barks and radio** (build phase, don't pause): a compact comms panel at the top-left with the portrait and 1–2 lines, auto-dismissed. The format and the rules for when each is used are in [story/style-guide.md](../story/style-guide.md).
+- **Barks and radio** (build phase, don't pause): a compact comms panel at the top-left with the portrait and 1–2 lines, auto-dismissed. M1's radio ticker (D026) is this panel without the portrait: 200 game px wide under the status panel, the speaker's name plate in their color (QUILL `teal.4`, Bricks `orange.4`, Goldie `green.4`) over the line in `white.1`, edged in the act's secondary color. The format and the rules for when each is used are in [story/style-guide.md](../story/style-guide.md).
 - **Silence lines:** the speaker's frame shows its `dark` variant (Bricks after A3M3) with an empty text box for the line's duration. No typing sound.
 - **Portrait-less speakers:** `pa` lines show a small speaker icon and a PA-styled name plate; `kfa` and form lines render on an off-white form panel (`white.0` on `ink.1` text, numbered clauses, a stamp box); `narrator` lines are centered captions with no panel; `hollow` lines have no panel and no name plate, drawn in `hollow.3` with distortion (letters dropped, glyphs offset by 1 px, re-rolled every 6 frames; plain grey in reduced-motion mode).
 - **Memos** use an Everglow letterhead panel (`white.0` with `teal.3` chevrons and the Evie sun), with small print collapsed under a "Small print" toggle. In Act III the letterhead loses its color (`everglow.worn`) and, after A3M2, the sun.

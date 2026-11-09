@@ -1,14 +1,29 @@
 // The Everglow tower base: an iso plinth with the 3×3 teal logo chevron on its left face and
 // orange tier chevrons on its right face (one per tier). Shared by every Everglow tower.
-import { grid, isoBox, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+// Tiers also change the silhouette, so they read at 1× without the chevrons: T2 bolts armor
+// pods onto both side corners, and T3 adds a sensor mast with a teal tip on the left pod.
+import { grid, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
-export const BASE_W = 26;
-export const BASE_H = 20;
+export const BASE_W = 30;
+export const BASE_H = 32;
+/** Canvas room left of and above the plinth (for the T2 pods and the T3 mast). */
+const OX = 2;
+const OY = 12;
 /** Footprint center: the tower's anchor (the tile center). */
-export const BASE_ANCHOR = { x: 13, y: 13 } as const;
+export const BASE_ANCHOR = { x: 13 + OX, y: 13 + OY } as const;
 const HEIGHT = 5;
 /** Top-face center, where heads mount. */
-export const BASE_MOUNT = { x: 13, y: BASE_ANCHOR.y - HEIGHT } as const;
+export const BASE_MOUNT = { x: BASE_ANCHOR.x, y: BASE_ANCHOR.y - HEIGHT } as const;
+
+/** One armor pod at a side corner of the plinth: a block standing proud of the top face. */
+function pod(g: CharGrid, cx: number, cy: number): void {
+  isoBox(g, cx, cy, 3, 8, { top: '4', rim: '4', left: '2', right: '1' });
+  // An orange safety stripe across both side faces.
+  for (let x = Math.floor(cx - 3); x < Math.ceil(cx + 3); x++) {
+    const y = cy - 3 + (Math.abs(x + 0.5 - cx) <= 1 ? 1 : 0);
+    if (g[y]?.[x] === '2' || g[y]?.[x] === '1') plot(g, x, y, x + 0.5 < cx ? 'c' : 'b');
+  }
+}
 
 /** One base frame per tier (1–3). `trim` recolors the top-face ring per tower. */
 export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
@@ -21,23 +36,38 @@ export function everglowBase(tier: 1 | 2 | 3, trim: string): string[] {
   isoBox(g, cx, cy - HEIGHT, 4, 0, { top: '2', rim: '2', left: '2', right: '2' });
   // Logo plate: the teal chevron on the left face.
   // prettier-ignore
-  stamp(g, 5, 13, [
+  stamp(g, 5 + OX, 13 + OY, [
     '8.8',
     '.8.',
   ]);
-  plot(g, 6, 12, '7');
+  plot(g, 6 + OX, 12 + OY, '7');
   // Tier chevrons on the right face, stepping down its slope.
   for (let t = 0; t < tier; t++) {
-    const x = 15 + t * 3;
-    const y = 14 - Math.floor((t * 3) / 2);
+    const x = 15 + OX + t * 3;
+    const y = 14 + OY - Math.floor((t * 3) / 2);
     // prettier-ignore
     stamp(g, x, y, [
       'd.d',
       '.d.',
     ]);
   }
+  if (tier >= 2) {
+    pod(g, cx - 10, cy + 1);
+    pod(g, cx + 10, cy + 1);
+  }
   if (tier === 3) {
-    // T3: a status light at the front corner.
+    // The sensor mast on the left pod: a 2 px pole, lit left, with a crossbar and a teal tip.
+    const mx = Math.round(cx - 10);
+    for (let y = cy - 18; y <= cy - 7; y++) {
+      plot(g, mx - 1, y, '3');
+      plot(g, mx, y, '1');
+    }
+    line(g, mx - 3, cy - 15, mx + 2, cy - 15, '2');
+    plot(g, mx - 1, cy - 19, '+');
+    plot(g, mx, cy - 19, '+');
+    plot(g, mx - 1, cy - 20, '*');
+    plot(g, mx, cy - 20, '*');
+    // A status light at the front corner.
     plot(g, cx, cy + 4, '+');
     plot(g, cx - 1, cy + 4, '+');
   }
