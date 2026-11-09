@@ -165,15 +165,15 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T325** A1M3 dialogue gaps.
 - [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke; switch `hud.ts` to `objectiveStatusById(state, map)` (D090).
 - [ ] **T327** `skipScene` transcript bug; `saveModifiers` ignores protocols.
-- [ ] **T328** Render follow-ups from T312b: enemy health bars (art-direction §8); the tell-glyph timer counts rendered frames, so it lingers through fast-forward (use sim ticks).
+- [~] **T328** Render follow-ups from T312b: enemy health bars (art-direction §8); the tell-glyph timer counts rendered frames, so it lingers through fast-forward (use sim ticks).
 - [ ] **T329** Results follow-ups from T316: build floaters overlap link callouts (`render/scenes/battleEvents.ts`: raise or delay the callout when `LinkFormed` lands with `TowerBuilt`); core-loop §1's Debrief row ("only after a victory") vs the supportive loss line (D059); full-screen scenes outside the debrief can't read `thisRun`/`outcome` (`storyContext.run` is null); the counter's `aria-label` on a `<p>` (fix with `m1.spec`); a confirm step before Retry/Quit if playtests show misclicks. Debrief choices on Results land with A2M4 (C2).
 - [ ] **T330** A1M5 follow-ups from T304g: AllyView never plays `ally.bricks`'s `lowered` frames (Bricks lowering his cannon in W10); `BarkTrigger` `not_firing` has no wave filter, so holding fire earlier spends Bricks's W10 line; the briefing can't list "Boss" as threat intel (campaign.md §4.8; `boss` isn't a `Trait`: add one with TRAIT_COUNTER/TRAIT_TELL or change the doc).
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [x] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
-- [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090); A1M5 runs ~9.7 min at 1× against Act I's 6–9 min (trim the `OPEN` delays, D092); add `a1_m05` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
-- [ ] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
+- [~] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict; A1M4: move par's margin off the W1 Zoomer rush into the late waves and spend its ~1,400 unspent credits (D090); A1M5 runs ~9.7 min at 1× against Act I's 6–9 min (trim the `OPEN` delays, D092); add `a1_m05` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
+- [~] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish
 To be split up when we reach them. Known items:
