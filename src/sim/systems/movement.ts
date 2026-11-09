@@ -2,15 +2,18 @@
 // slows it through `chillMul`; younglings move at YOUNGLING_SPEED_MUL), and leaks the ones that
 // reach the route's end: the core loses the leak cost (design/core-loop.md §2.9; 0 for `fleeing`
 // and `youngling` units; a boss drains it all, BOSS_LEAK_DRAINS_ALL), less what Emergency Bulkhead
-// absorbs (a `quiet_wave` unit never takes it below 1, D097), the leak counts toward its tags'
-// `stats.tagLeaked`, and the enemy is removed. Losing at 0 integrity is cleanup's check (T105b),
-// at the end of the tick. Slots run in ascending order (determinism).
+// absorbs, the leak counts toward its tags' `stats.tagLeaked`, and the enemy is removed. Losing at
+// 0 integrity is cleanup's check (T105b), at the end of the tick. Slots run in ascending order
+// (determinism), except that `quiet_wave` units leak last in the tick (D098): a Quiet Wave leak
+// never takes the core below 1 (D097), so leaking after every other leak of the tick means sparing
+// it can never be what empties the core, whichever slots the units hold.
 // Flyers move the same way along their air lane (design/maps.md §4: a polyline from an air spawn
 // to the core, crossing any tile; compileMap.ts checks it ends on the core), and leak at the core
 // like ground units. A neutral unit (Gerald, core-loop.md §2.7) never leaks: at its route's end it
 // delivers and leaves (`NeutralExited`), with no integrity lost, no tag counted, and no leak for
 // Perfect Core (sim/medals.ts `leakedThisTick`).
 import { BOSS_LEAK_DRAINS_ALL, LEAK_FREE_TAGS, YOUNGLING_SPEED_MUL } from '../../content/rules.ts';
+import type { CompiledEnemyDef } from '../../content/compiled.ts';
 import type { WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
@@ -47,6 +50,7 @@ export const ARRIVE_EPS_TILES = 1e-9;
 
 export function movement(state: SimState): void {
   const enemies = state.enemies;
+  let quietArrived = false;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!e.alive || e.def === null || e.route === null || e.leaving) continue; // a leaving boss and its brood move in enemyAbilities (T304c)
@@ -60,39 +64,57 @@ export function movement(state: SimState): void {
         poolKill(enemies, e);
         continue;
       }
-      countTags(state.stats.tagLeaked, e.tags);
-      leak(
-        state,
-        e.def.id,
-        e.def.boss !== null && BOSS_LEAK_DRAINS_ALL
-          ? state.integrity + state.leakAbsorbLeft
-          : leaksFree(e.tags)
-            ? 0
-            : e.def.leak,
-        e.uid,
-        e.tags.includes('quiet_wave') ? 1 : 0,
-      );
-      poolKill(enemies, e);
+      if (e.tags.includes('quiet_wave')) {
+        quietArrived = true; // leaks in the second pass, below
+        continue;
+      }
+      arrive(state, e, e.def, 0);
     } else {
       e.seg = pointAt(route, e.dist, e, e.seg);
     }
   }
+  if (!quietArrived) return;
+  // The Quiet Wave's arrivals leak after every other leak this tick (D098), floored at 1.
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (!e.alive || e.def === null || e.route === null || e.leaving) continue;
+    if (e.dist < e.route.lengthTiles || !e.tags.includes('quiet_wave')) continue;
+    arrive(state, e, e.def, 1);
+  }
+}
+
+/** Leaks an enemy that reached its route's end (never below `floor`) and removes it. */
+function arrive(state: SimState, e: Enemy, def: CompiledEnemyDef, floor: number): void {
+  countTags(state.stats.tagLeaked, e.tags);
+  leak(
+    state,
+    def.id,
+    def.boss !== null && BOSS_LEAK_DRAINS_ALL
+      ? state.integrity + state.leakAbsorbLeft
+      : leaksFree(e.tags)
+        ? 0
+        : def.leak,
+    e.uid,
+    floor,
+  );
+  poolKill(state.enemies, e);
 }
 
 /**
- * Applies a leak to the core: its cost, never taking the integrity below `floor`. Emergency
- * Bulkhead (`leakAbsorb`) absorbs the first `state.leakAbsorbLeft` of it over the map. EnemyLeaked
- * reports what was actually lost. A `quiet_wave` unit's floor is 1 (D097): sparing the Quiet Wave
- * never loses the map (core-loop.md § 2.7, C1 rule 1), for every player, not only par.
+ * Applies a leak to the core: its cost, never taking the integrity below `floor`. A `quiet_wave`
+ * unit's floor is 1 (D097): sparing the Quiet Wave never loses the map (core-loop.md § 2.7, C1
+ * rule 1), for every player, not only par. The floor applies first (D098), so a leak the floor
+ * already cancels spends none of Emergency Bulkhead (`leakAbsorb`), which absorbs the first
+ * `state.leakAbsorbLeft` of what is left over the map. EnemyLeaked reports what was actually lost.
  */
 function leak(state: SimState, enemy: string, cost: number, uid: number, floor: number): void {
-  let amount = cost;
+  const room = state.integrity > floor ? state.integrity - floor : 0;
+  let amount = floor > 0 && cost > room ? room : cost;
   if (state.leakAbsorbLeft > 0 && amount > 0) {
     const absorbed = amount < state.leakAbsorbLeft ? amount : state.leakAbsorbLeft;
     state.leakAbsorbLeft -= absorbed;
     amount -= absorbed;
   }
-  const room = state.integrity > floor ? state.integrity - floor : 0;
   const lost = amount < room ? amount : room;
   state.integrity -= lost;
   state.stats.integrityLost += lost;

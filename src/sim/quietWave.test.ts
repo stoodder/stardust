@@ -1,7 +1,8 @@
 // The Quiet Wave's sim rules (D097; design/core-loop.md § 2.1, § 2.4, § 2.7): a wave with
 // `countdownAfter: 'bossEnded'` waits (`held`) until the boss fight ends, then runs its own
 // countdown; callWave refuses a `quiet_wave` wave (no bonus); a `quiet_wave` leak never takes the
-// core below 1. On fx_map with wave 1 replaced by Chitterbloom (live content) and wave 2 by
+// core below 1, leaks after every other leak of its tick, and is floored before Emergency Bulkhead
+// absorbs (D098). On fx_map with wave 1 replaced by Chitterbloom (live content) and wave 2 by
 // `quietW2` (fx_walker, which the 9-tile road takes 540 ticks).
 import { describe, expect, it } from 'vitest';
 import { RAW_CONTENT } from '../content/registry.ts';
@@ -175,6 +176,61 @@ describe('a quiet_wave leak never takes the core below 1', () => {
 
   it('leaves every other leak alone', () => {
     expect(leakAt(2, [])).toEqual({ integrity: 0, leak: 2 });
+  });
+
+  it('applies the floor before Emergency Bulkhead: a floored leak spends no absorb (D098)', () => {
+    const { state } = setup();
+    state.integrity = 1;
+    state.leakAbsorbLeft = 3;
+    const thrum = Object.freeze({ ...WALKER, id: 'thrum', leak: 2 });
+    spawn(state, thrum, { dist: MAP.routes.a!.lengthTiles, tags: ['quiet_wave'] });
+    movement(state);
+    expect(state.integrity).toBe(1);
+    expect(state.leakAbsorbLeft).toBe(3);
+    // At 2, the floor leaves room for 1: absorb takes that 1, the core keeps 2.
+    state.integrity = 2;
+    spawn(state, thrum, { dist: MAP.routes.a!.lengthTiles, tags: ['quiet_wave'] });
+    movement(state);
+    expect(state.integrity).toBe(2);
+    expect(state.leakAbsorbLeft).toBe(2);
+  });
+
+  /**
+   * A Quiet Wave unit (leak 2) and a plain one (leak `plain`) reach the core on the same tick at
+   * integrity 3, the quiet one in the lower slot or the higher one.
+   */
+  function sharedTick(quietFirst: boolean, plain = 2) {
+    const { state } = setup();
+    state.integrity = 3;
+    const end = MAP.routes.a!.lengthTiles;
+    const thrum = Object.freeze({ ...WALKER, id: 'thrum', leak: 2 });
+    const pest = Object.freeze({ ...WALKER, id: 'pest', leak: plain });
+    const spawnQuiet = () => spawn(state, thrum, { dist: end, tags: ['quiet_wave'] });
+    const spawnPlain = () => spawn(state, pest, { dist: end });
+    if (quietFirst) {
+      spawnQuiet();
+      spawnPlain();
+    } else {
+      spawnPlain();
+      spawnQuiet();
+    }
+    movement(state);
+    return {
+      integrity: state.integrity,
+      leaks: state.events.flatMap((e) => (e.type === 'EnemyLeaked' ? [[e.enemy, e.leak]] : [])),
+    };
+  }
+
+  it('a same-tick plain leak never turns sparing into a loss, in either slot order (D098)', () => {
+    // The plain leak (2) is charged first, then Thrum is floored at 1: the core survives at 1.
+    const expected = { integrity: 1, leaks: [['pest', 2], ['thrum', 0]] };
+    expect(sharedTick(true)).toEqual(expected);
+    expect(sharedTick(false)).toEqual(expected);
+  });
+
+  it('a same-tick plain leak that empties the core on its own still loses, in either order', () => {
+    expect(sharedTick(true, 3).integrity).toBe(0);
+    expect(sharedTick(false, 3).integrity).toBe(0);
   });
 
   it('a spared Quiet Wave never loses the map', () => {

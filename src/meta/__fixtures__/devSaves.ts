@@ -12,6 +12,7 @@ import { MEMO_IDS } from '../../content/memos/index.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
 import { withIssuedTowers } from '../issued.ts';
+import { withFirstPaydayCaughtUp } from '../runEnd.ts';
 import type { MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
 import type { MapRecord, SaveData } from '../saveData.ts';
@@ -140,7 +141,7 @@ function actOneThrough(last: 'a1_m03' | 'a1_m04' | 'a1_m05'): SaveData {
   }
   withTowers.currencies.stardust = Math.max(0, withTowers.currencies.stardust);
   withTowers.stats = { pestsProcessed: 400 + 300 * played.length, runs: 2 + 2 * played.length };
-  return withTowers;
+  return withFirstPaydayCaughtUp(withTowers); // A1M2's Results showed the first payday
 }
 
 /** The registered tower `id`, if it is registered yet. */
@@ -179,7 +180,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
         save.currencies.stardust += MAPS[second].stardust;
       }
       save.stats = { pestsProcessed: 540, runs: 5 };
-      return save;
+      return withFirstPaydayCaughtUp(save); // A1M2's Results showed the first payday
     },
   },
   after_a1m3: {
@@ -218,7 +219,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       for (const u of Object.values(UPGRADES)) save.upgrades[u.id] = u.ranks.length;
       save.currencies = { stardust: 99_999, intel: 999 };
       save.stats = { pestsProcessed: 9_999, runs: 40 };
-      return save;
+      return withFirstPaydayCaughtUp(save);
     },
   },
 };

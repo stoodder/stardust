@@ -3,7 +3,8 @@ import saveV0 from './__fixtures__/save.v0.json' with { type: 'json' };
 import saveV1 from './__fixtures__/save.v1.json' with { type: 'json' };
 import saveV2 from './__fixtures__/save.v2.json' with { type: 'json' };
 import { migrate, migrations } from './migrations.ts';
-import { decodeEnvelope } from './save.ts';
+import { FIRST_PAYDAY_SEEN_ID, runEnd, type RunEndInput } from './runEnd.ts';
+import { decodeEnvelope, serializeSave } from './save.ts';
 import { SAVE_VERSION, createNewSave } from './saveData.ts';
 
 /** A deep copy of JSON data. */
@@ -11,6 +12,18 @@ function clone<T>(x: T): T {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON round trip of a T
   return JSON.parse(JSON.stringify(x)) as T;
 }
+
+/** A won A1M2 run (130 Stardust, first clear). */
+const PAYING_WIN: RunEndInput = {
+  mapId: 'a1_m02',
+  outcome: 'won',
+  mapStardust: 130,
+  waveCount: 8,
+  wavesResolved: 8,
+  earnedMedals: [],
+  skitterkinKilled: 0,
+  meter: 20,
+};
 
 /** One fixture per schema version ever written (meta-runtime.md § Versioning and migrations). */
 const FIXTURES: Readonly<Record<number, unknown>> = { 0: saveV0, 1: saveV1, 2: saveV2 };
@@ -97,6 +110,33 @@ describe('save migrations', () => {
     const decoded = decodeEnvelope({ v: 1, savedAt: 0, data: v1 });
     if (!decoded.ok) throw new Error(decoded.problem.message);
     expect(decoded.envelope.data).toEqual(createNewSave());
+  });
+
+  it('marks the first payday on a save from before its id that has won a paying map (D098)', () => {
+    // saveV2 predates FIRST_PAYDAY_SEEN_ID and has won A1M2 (130 Stardust): its payday was shown.
+    expect(saveV2.data.story.seen).not.toContain(FIRST_PAYDAY_SEEN_ID);
+    const v2 = decodeEnvelope(saveV2);
+    if (!v2.ok) throw new Error(v2.problem.message);
+    expect(v2.envelope.data.story.seen).toEqual([...saveV2.data.story.seen, FIRST_PAYDAY_SEEN_ID]);
+    expect(runEnd(v2.envelope.data, PAYING_WIN).summary.firstPayday).toBe(false);
+    // Idempotent: a save that has the id keeps exactly one.
+    const again = decodeEnvelope(JSON.parse(serializeSave(v2.envelope.data, 0)));
+    if (!again.ok) throw new Error(again.problem.message);
+    expect(again.envelope.data.story.seen.filter((id) => id === FIRST_PAYDAY_SEEN_ID)).toHaveLength(1);
+    // A1M1 pays no Stardust, so saveV1 (A1M1 only) still has its payday ahead.
+    const v1 = decodeEnvelope(saveV1);
+    if (!v1.ok) throw new Error(v1.problem.message);
+    expect(v1.envelope.data.story.seen).not.toContain(FIRST_PAYDAY_SEEN_ID);
+    expect(runEnd(v1.envelope.data, PAYING_WIN).summary.firstPayday).toBe(true);
+  });
+
+  it('never reads the bank: a defeat stipend alone leaves the first payday ahead (D097)', () => {
+    const stipend = clone(saveV2);
+    stipend.data.campaign.maps = { a1_m01: saveV2.data.campaign.maps.a1_m01 };
+    stipend.data.currencies.stardust = 40;
+    const decoded = decodeEnvelope(stipend);
+    if (!decoded.ok) throw new Error(decoded.problem.message);
+    expect(decoded.envelope.data.story.seen).toEqual(saveV2.data.story.seen);
   });
 
   it('passes unrecognized shapes through for validation to reject', () => {

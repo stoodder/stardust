@@ -337,13 +337,27 @@ describe('Bricks at his post', () => {
         'lowered_sw',
       ].toSorted(),
     );
-    // Lowered, the cannon's front half (right of his body, above the post) sits lower than aimed.
-    const muzzleTop = (f: string): number =>
-      grid('ally.bricks', f).findIndex((r, y) => y < 20 && /[1-4w]/.test(r.slice(19, 24)));
+    // Lowered, the cannon is grounded (S11): its top sits well down his body, not up by his head
+    // as the shouldered tube does, and it stands on end, a tall run of tube pixels down to its
+    // dark butt on the post plate, with skin (his hands) resting right on its muzzle.
+    const tubeTop = (f: string): number =>
+      grid('ally.bricks', f).findIndex((r) => /[1-4]/.test(r));
     for (const facing of ['se', 'ne']) {
-      expect(muzzleTop(`lowered_${facing}_0`), facing).toBeGreaterThan(
-        muzzleTop(`idle_${facing}_0`),
-      );
+      for (const k of [0, 1]) {
+        const f = `lowered_${facing}_${k}`;
+        const rows = grid('ally.bricks', f);
+        expect(tubeTop(f), f).toBeGreaterThanOrEqual(tubeTop(`idle_${facing}_0`) + 6);
+        let standing = false;
+        for (let x = 0; x < rows[0]!.length; x++) {
+          const col = rows.map((r) => r.charAt(x));
+          const butt = col.lastIndexOf('0', 25);
+          const top = col.findIndex((c, y) => y < butt && /[1-4]/.test(c));
+          const run = col.slice(top, butt).every((c) => /[0-4b-ew]/.test(c));
+          const hands = /[A-D]/.test(col.slice(Math.max(0, top - 3), top).join(''));
+          if (butt >= 23 && top >= 0 && butt - top >= 9 && run && hands) standing = true;
+        }
+        expect(standing, f).toBe(true);
+      }
     }
     // Human-scale: 16–24 px of figure above the post (art-direction §6).
     const b = bounds(grid('ally.bricks', 'idle_se_0'));

@@ -20,6 +20,7 @@
 import { ENEMIES } from '../content/enemies/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
+import { SHARED_BARKS } from '../content/dialogue/barks/index.ts';
 import { barksFor, BARKS, mapDialogue, SCENES } from '../content/dialogue/index.ts';
 import type { FlagSet } from '../content/dialogue/flags.ts';
 import { isCampaignMapId, parseSceneId } from '../content/dialogue/rules.ts';
@@ -28,6 +29,7 @@ import {
   SCENE_ID,
   type Bark,
   type BarkTrigger,
+  type LineNode,
   type ReplyButton,
   type Scene,
   type SpeakerId,
@@ -35,6 +37,7 @@ import {
 import type { EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
+import { isBossWave } from '../sim/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import {
   campaignBarksPlayed,

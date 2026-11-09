@@ -3,6 +3,7 @@
 // the app can offer to export it, and a write only rotates the old value into `:bak` when that
 // old value is itself readable, so a good backup is never replaced by a corrupt one.
 import { migrate } from './migrations.ts';
+import { withFirstPaydayCaughtUp } from './runEnd.ts';
 import type { KnownIds, SaveData, SaveEnvelope } from './saveData.ts';
 import { LIVE_KNOWN_IDS, SAVE_VERSION } from './saveData.ts';
 import type { KeyValueStore, SlotId } from './store.ts';
@@ -34,7 +35,10 @@ function problem(
   return { code, message, errors };
 }
 
-/** Migrates and validates a parsed envelope `{ v, savedAt, data }` of any known version. */
+/**
+ * Migrates and validates a parsed envelope `{ v, savedAt, data }` of any known version, then applies
+ * the save catch-ups no version marks (`withFirstPaydayCaughtUp`).
+ */
 export function decodeEnvelope(raw: unknown, known: KnownIds = LIVE_KNOWN_IDS): DecodedSave {
   if (!isPlainRecord(raw)) {
     return { ok: false, problem: problem('invalid', 'a save must be a JSON object') };
@@ -50,9 +54,11 @@ export function decodeEnvelope(raw: unknown, known: KnownIds = LIVE_KNOWN_IDS): 
   if (!checked.ok) {
     return { ok: false, problem: problem('invalid', 'the save data is malformed', checked.errors) };
   }
+  // Catch-ups no schema version marks (D098): the first payday a pre-id save already had.
+  const data = withFirstPaydayCaughtUp(checked.value.data);
   return {
     ok: true,
-    envelope: checked.value,
+    envelope: data === checked.value.data ? checked.value : { ...checked.value, data },
     migratedFrom: migrated.from === SAVE_VERSION ? null : migrated.from,
   };
 }

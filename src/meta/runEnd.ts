@@ -6,7 +6,9 @@ import type { CodexId } from '../content/codex/index.ts';
 import type { MemoId } from '../content/memos/index.ts';
 import type { MapId, MedalId, TowerId } from '../content/types.ts';
 import { runEndFlags, type FlagRuleStats } from '../story/flags.ts';
+import { MAPS } from '../content/maps/index.ts';
 import { withIssuedTowers } from './issued.ts';
+import { isMapWon } from './progress.ts';
 import {
   medalPayout,
   objectivePayout,
@@ -61,6 +63,23 @@ export interface RunEndInput {
  * card shows the payday, so a run that never reaches Results can't use it up.
  */
 export const FIRST_PAYDAY_SEEN_ID = 'results_first_payday';
+
+/**
+ * `save` with FIRST_PAYDAY_SEEN_ID added when it has already won a map that pays Stardust (D098),
+ * so a save from before the id existed (pre-M3, or an M3 build before D097) doesn't see FIRST
+ * PAYDAY twice: every such win reached a payday under the rule of its day. Applied to every save
+ * the app reads (decodeEnvelope: load and import). Never read from the bank, so a defeat stipend
+ * still can't use the payday up. Returns `save` itself when nothing changes.
+ */
+export function withFirstPaydayCaughtUp(
+  save: SaveData,
+  maps: Readonly<Record<string, { readonly stardust: number }>> = MAPS,
+): SaveData {
+  if (save.story.seen.includes(FIRST_PAYDAY_SEEN_ID)) return save;
+  const paid = Object.keys(maps).some((id) => maps[id]!.stardust > 0 && isMapWon(save, id));
+  if (!paid) return save;
+  return { ...save, story: { ...save.story, seen: [...save.story.seen, FIRST_PAYDAY_SEEN_ID] } };
+}
 
 /** What a run end paid and recorded, for the results screen. */
 export interface RunEndSummary {
