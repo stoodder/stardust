@@ -472,3 +472,8 @@ The owner said "start M2 … continue through to the end" and is away, so the or
 
 ### D039 — 2026-11-09 — T210a M2 art
 New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and render-only scurrying young, Bricks at his post (idle and fire per facing, the post plate in every frame), raised high-ground tiles (drawn 8 px up) and pulsing power nodes, Crossfire and Sitting Ducks link tethers, and tier-2+ head frames for Rivet and Thumper (the m1 verdict). Grass gains mid-dark clumps, the second m1 verdict item. The value-band test now covers the new actors. Views that draw them come in T207b (Bricks), T202d (tethers, tower lift on high ground), and T210b (the Hauler).
+
+### D040 — 2026-11-09 — T126 keyboard-only play and T212 menu polish
+- **Tile cursor** (`src/render/input/cursor.ts`): arrow keys move a cursor to the nearest target in that screen direction. Targets are pads and towers, or any tile while aiming. Enter builds, selects, or fires the strike; Esc drops the selection, arm, or aim first, then hides the cursor. An aria-live region announces the tile. Moving the mouse hides the cursor. A test checks that every pad on every map is reachable.
+- **Tower panel placement** (`ui/hud/layout.ts`): it tries the far side, then the near side, then above or below. The first spot that covers no other tower wins.
+- **Menus:** Esc closes the innermost panel or screen (`ui/screens/escape.ts`). Art-direction §9 now describes the M2 menus.
