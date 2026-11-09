@@ -1,0 +1,15 @@
+{
+  // Node-side code: tools, smoke specs, build configs, and the architecture test (reads files).
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": [
+    "tools",
+    "smoke",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "src/shared/architecture.test.ts"
+  ]
+}

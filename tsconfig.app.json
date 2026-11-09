@@ -1,0 +1,11 @@
+{
+  // Browser modules: DOM lib, Vite client types, Preact JSX.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
+  "include": ["src/main.ts", "src/app", "src/render", "src/ui", "src/audio"]
+}

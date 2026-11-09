@@ -1,0 +1,121 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "rules": {
+    "eqeqeq": "error",
+    "no-console": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "import/no-default-export": "error",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    "no-underscore-dangle": ["error", { "allow": ["__sd"] }]
+  },
+  "ignorePatterns": ["dist/**", "test-results/**", "playwright-report/**", "reports/**"],
+  "overrides": [
+    {
+      "files": ["tools/**", "smoke/**", "src/app/log.ts"],
+      "rules": { "no-console": "off" }
+    },
+    {
+      "files": ["vite.config.ts", "playwright.config.ts"],
+      "rules": { "import/no-default-export": "off" }
+    },
+    {
+      "files": ["src/shared/**", "src/content/**", "src/sim/**", "src/story/**", "src/balance/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "phaser",
+                "message": "Pure modules never import Phaser (architecture.md § 2)."
+              },
+              {
+                "name": "preact",
+                "message": "Pure modules never import Preact (architecture.md § 2)."
+              },
+              {
+                "name": "@preact/signals",
+                "message": "Pure modules never import Preact (architecture.md § 2)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/render/**", "**/ui/**", "**/audio/**", "**/app/**", "node:*"],
+                "message": "Pure modules may not import browser modules or Node APIs (architecture.md § 4)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/sim/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "phaser",
+                "message": "Pure modules never import Phaser (architecture.md § 2)."
+              },
+              {
+                "name": "preact",
+                "message": "Pure modules never import Preact (architecture.md § 2)."
+              },
+              {
+                "name": "@preact/signals",
+                "message": "Pure modules never import Preact (architecture.md § 2)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/render/**",
+                  "**/ui/**",
+                  "**/audio/**",
+                  "**/app/**",
+                  "**/meta/**",
+                  "**/balance/**",
+                  "node:*"
+                ],
+                "message": "sim/ may import only shared/ and content/ (architecture.md § 4)."
+              }
+            ]
+          }
+        ],
+        "no-restricted-properties": [
+          "error",
+          { "object": "Math", "property": "sin", "message": "Banned in sim (determinism)." },
+          { "object": "Math", "property": "cos", "message": "Banned in sim (determinism)." },
+          { "object": "Math", "property": "atan2", "message": "Banned in sim (determinism)." },
+          { "object": "Math", "property": "pow", "message": "Banned in sim (determinism)." },
+          { "object": "Math", "property": "random", "message": "Banned in sim (determinism)." }
+        ],
+        "no-restricted-globals": [
+          "error",
+          "Date",
+          "performance",
+          "setTimeout",
+          "setInterval",
+          "requestAnimationFrame",
+          "localStorage",
+          "globalThis"
+        ]
+      }
+    },
+    {
+      "files": ["src/shared/architecture.test.ts"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
+}

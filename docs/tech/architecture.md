@@ -83,8 +83,8 @@ TypeScript 7.0 (July 2026) is the native compiler: same language, and roughly 10
 **`src/sim/` is pure TypeScript.** It never imports Phaser, the DOM, `render/`, `ui/`, `audio/`, `meta/`, or `balance/`, and never uses `Date`, `Math.random`, `performance`, timers, or `localStorage`. This is enforced three ways:
 
 1. **Separate tsconfig.** `tsconfig.pure.json` covers `src/sim`, `src/content`, `src/story`, `src/balance`, and `src/shared` with `"lib": ["ES2023"]` and `"types": []`. Any DOM global (`window`, `document`, `HTMLCanvasElement`) is a **type error** there.
-2. **An architecture test** (`src/shared/architecture.test.ts`) scans the import statements of every file in the pure modules and fails on forbidden imports. It also scans `src/sim/` for the banned `Math` members below. This is the authoritative check.
-3. **Lint** (`no-restricted-imports` and `no-restricted-properties` in `.oxlintrc.json`) gives fast editor feedback.
+2. **An architecture test** (`src/shared/architecture.test.ts`) scans the imports (static, re-export, dynamic `import()`, `require`) of every file in `src/` and fails on any edge the [allowed dependencies](#4-other-modules) forbid: pure modules may import no packages (only `vitest`, in tests) and only the modules they depend on; `render`, `ui`, and `audio` reach `sim` only through `sim/index.ts`. It also scans `src/sim/` (comments and strings excluded) for the banned `Math` members below, any `Math` use other than `Math.<member>` (so aliasing can't hide a ban), and the globals `Date`, `performance`, `setTimeout`, `setInterval`, `requestAnimationFrame`, `localStorage`, and `globalThis`. This is the authoritative check.
+3. **Lint** (`no-restricted-imports`, `no-restricted-properties`, and `no-restricted-globals` in `.oxlintrc.json`) gives fast editor feedback.
 
 Rendering **reads** sim state and **sends commands**. It never mutates sim state.
 
@@ -488,10 +488,11 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `typecheck` | `tsc -p tsconfig.pure.json --noEmit && tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit` |
 | `lint` | `oxlint --type-aware && prettier --check .` |
 | `format` | `prettier --write .` |
+| `format:check` | `prettier --check .` (the formatting half of `lint`) |
 | `test` | `vitest run`: unit, sim, content, save, balance-harness, and architecture tests |
 | `test:watch` | `vitest` |
 | `sim` | `node --experimental-strip-types tools/sim.ts`: headless balance sims for every map (args: `--map <id>`, `--seeds <n>`, `--build <name>`, `--report`) |
-| `smoke` | `playwright test`: browser smoke tests against `npm run preview` |
+| `smoke` | `playwright test --trace off`: browser smoke tests against `npm run preview` |
 | `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
 | `check` | **The whole gate:** `typecheck && lint && test && build && sim && smoke && check:docs` |
 | `check:fast` | `typecheck && lint && test` (inner dev loop only, never the gate) |
@@ -505,7 +506,9 @@ From T101, `sim` and `smoke` exist as passing stubs ("0 maps") so the gate runs 
 - `tsconfig.pure.json`: the pure modules, no DOM lib.
 - `tsconfig.app.json`: the browser modules, with the DOM lib and Preact JSX (`"jsx": "react-jsx"`, `"jsxImportSource": "preact"`).
 - `tsconfig.node.json`: Node-side code with `"types": ["node"]`: `tools/`, `smoke/`, `vite.config.ts`, `playwright.config.ts`, and `src/shared/architecture.test.ts` (it reads files with `node:fs`).
-- `vite.config.ts` (with `base: './'` so the build works from any subpath, and Vitest config inline), `playwright.config.ts`, `.oxlintrc.json`, `.prettierrc.json`, `.editorconfig`.
+- `tsconfig.json`: a solution-style root (`"files": []` plus references to the three projects) for editors and oxlint's type-aware mode. `typecheck` runs the three projects directly.
+- `vite.config.ts` (with `base: './'` so the build works from any subpath, JSX through Vite's `oxc` option with `importSource: 'preact'`, and Vitest config inline), `playwright.config.ts`, `.oxlintrc.json`, `.prettierrc.json` (with `.prettierignore`: Markdown is hand-formatted and not run through Prettier), `.editorconfig`.
+- **Playwright's browser:** `playwright.config.ts` launches `CHROME_PATH` when it's set (Claude Code cloud sessions, where the preinstalled Chromium doesn't match the pinned Playwright's revision, so never run `playwright install` there), and otherwise Playwright's own Chromium (CI installs it). It passes `--use-angle=swiftshader --enable-unsafe-swiftshader` so headless WebGL always uses SwiftShader. Smoke runs always pass `--trace off`.
 
 **Imports use relative paths with explicit `.ts` extensions** (`allowImportingTsExtensions`), and there are no path aliases. That lets the pure modules run unchanged in Vite, Vitest, and plain Node (`tools/sim.ts`), with no loader or alias config to keep in sync.
 
@@ -525,19 +528,20 @@ From T101, `sim` and `smoke` exist as passing stubs ("0 maps") so the gate runs 
 stardust/
 ├── index.html                  # #game canvas host + #ui overlay root
 ├── package.json
-├── tsconfig.base.json  tsconfig.pure.json  tsconfig.app.json  tsconfig.node.json
+├── tsconfig.json  tsconfig.base.json  tsconfig.pure.json  tsconfig.app.json  tsconfig.node.json
 ├── vite.config.ts      playwright.config.ts
-├── .oxlintrc.json      .prettierrc.json    .editorconfig
+├── .oxlintrc.json      .prettierrc.json    .prettierignore    .editorconfig
 ├── tools/
 │   ├── sim.ts                  # npm run sim: CLI over src/balance/
 │   └── check-docs.ts           # npm run check:docs
-├── smoke/                      # Playwright specs (*.spec.ts) and helpers
+├── smoke/                      # Playwright specs (*.spec.ts); fixtures.ts (console-error fixture), allowedConsole.ts, hooks.ts (__sd helpers)
 ├── docs/ … CLAUDE.md  tasks.md
 └── src/
     ├── main.ts                 # entry: calls app/boot
     ├── app/                    # composition root
     │   ├── boot.ts  host.ts  router.ts  commands.ts  keys.ts  checkpoints.ts
     │   ├── settings.ts  log.ts  testHooks.ts    # log.ts: the only console user in src/
+    │   ├── testHookTypes.ts    # the __sd shape, DOM-free so smoke specs can import it
     ├── shared/                 # pure utilities
     │   ├── rng.ts  bus.ts  hash.ts  math.ts  types.ts
     │   └── architecture.test.ts
@@ -571,6 +575,7 @@ stardust/
     ├── ui/
     │   ├── theme.css           # tokens from the master palette, act themes
     │   ├── state.ts            # signals / view models
+    │   ├── Overlay.tsx         # overlay root: mountUi() and the current screen
     │   ├── components/         # Panel, Button, Icon, Portrait, …
     │   ├── hud/                # TopBar, BuildBar, TowerPanel, BossBar
     │   └── screens/            # Title, Loadout, Shop, Codex, Dialogue, Results, Settings

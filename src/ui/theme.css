@@ -1,0 +1,62 @@
+/* Page layout and the overlay root. Tokens and act themes arrive with the HUD (T106). */
+:root {
+  --ink-0: #05030a;
+  --text: #e8f6ff;
+  --accent: #2fd6c4;
+  --ui-scale: 1;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--ink-0);
+  color: var(--text);
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  place-items: center;
+}
+
+#stage {
+  position: relative;
+  line-height: 0;
+}
+
+#game canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* A 640×360 box in game pixels, scaled by the same factor as the canvas. */
+#ui {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 640px;
+  height: 360px;
+  zoom: var(--ui-scale);
+  pointer-events: none;
+  line-height: normal;
+  font-family: monospace;
+  font-size: 8px;
+}
+
+.screen {
+  position: absolute;
+  inset: auto 0 24px 0;
+  text-align: center;
+}
+
+.screen h1 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--accent);
+  letter-spacing: 2px;
+}
+
+.screen p {
+  margin: 4px 0 0;
+}

@@ -1,0 +1,11 @@
+{
+  // Pure modules: no DOM lib and no ambient types, so any browser or Node global is a type error.
+  // See docs/tech/architecture.md § 2.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": []
+  },
+  "include": ["src/shared", "src/content", "src/sim", "src/story", "src/balance"],
+  "exclude": ["src/shared/architecture.test.ts"]
+}

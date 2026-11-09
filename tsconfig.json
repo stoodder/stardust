@@ -1,0 +1,10 @@
+{
+  // Solution-style root config for editors and oxlint's type-aware mode.
+  // `npm run typecheck` runs each project directly.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.pure.json" },
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

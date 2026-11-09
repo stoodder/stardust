@@ -19,12 +19,13 @@ function stripFences(md: string): string {
   const out: string[] = [];
   let fence: { ch: string; len: number } | null = null;
   for (const line of md.split('\n')) {
-    const m = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    const run = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
     if (fence) {
-      if (m && m[1][0] === fence.ch && m[1].length >= fence.len && line.trim() === m[1]) fence = null;
+      if (run && run[0] === fence.ch && run.length >= fence.len && line.trim() === run)
+        fence = null;
       out.push('');
-    } else if (m) {
-      fence = { ch: m[1][0], len: m[1].length };
+    } else if (run) {
+      fence = { ch: run.charAt(0), len: run.length };
       out.push('');
     } else {
       out.push(line);
@@ -55,8 +56,10 @@ function anchorsOf(file: string): Set<string> {
   if (set) return set;
   set = new Set();
   const counts = new Map<string, number>();
-  for (const m of stripFences(readFileSync(file, 'utf8')).matchAll(/^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$/gm)) {
-    const base = slug(m[1]);
+  for (const m of stripFences(readFileSync(file, 'utf8')).matchAll(
+    /^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$/gm,
+  )) {
+    const base = slug(m[1] ?? '');
     const n = counts.get(base) ?? 0;
     counts.set(base, n + 1);
     set.add(n === 0 ? base : `${base}-${n}`);
@@ -68,9 +71,11 @@ function anchorsOf(file: string): Set<string> {
 /** Every link target in a doc: inline [t](u), reference definitions [r]: u, and <autolinks>. */
 function linkTargets(body: string): string[] {
   const targets: string[] = [];
-  for (const m of body.matchAll(/\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) targets.push(m[1]);
-  for (const m of body.matchAll(/^ {0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+["'(].*)?$/gm)) targets.push(m[1]);
-  for (const m of body.matchAll(/<([^\s<>]+\.md(?:#[^\s<>]*)?)>/g)) targets.push(m[1]);
+  for (const m of body.matchAll(/\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g))
+    targets.push(m[1] ?? '');
+  for (const m of body.matchAll(/^ {0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+["'(].*)?$/gm))
+    targets.push(m[1] ?? '');
+  for (const m of body.matchAll(/<([^\s<>]+\.md(?:#[^\s<>]*)?)>/g)) targets.push(m[1] ?? '');
   return targets;
 }
 
@@ -124,17 +129,20 @@ if (!existsSync(readme)) {
 } else {
   const listed = new Set(
     linkTargets(stripInline(stripFences(readFileSync(readme, 'utf8'))))
-      .map((t) => t.split('#')[0])
+      .map((t) => t.split('#')[0] ?? '')
       .filter(Boolean)
       .map((t) => resolve(dirname(readme), t)),
   );
   for (const doc of walk(join(ROOT, 'docs'))) {
-    if (doc !== readme && !listed.has(doc)) errors.push(`docs/README.md does not list ${relative(ROOT, doc)}`);
+    if (doc !== readme && !listed.has(doc))
+      errors.push(`docs/README.md does not list ${relative(ROOT, doc)}`);
   }
 }
 
 if (errors.length) {
-  console.error(`check:docs — ${errors.length} problem(s):\n` + errors.map((e) => `  ✗ ${e}`).join('\n'));
+  console.error(
+    `check:docs — ${errors.length} problem(s):\n` + errors.map((e) => `  ✗ ${e}`).join('\n'),
+  );
   process.exit(1);
 }
 console.log(`check:docs — OK (${files.length} files)`);

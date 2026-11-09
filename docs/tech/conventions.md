@@ -272,7 +272,7 @@ Why Playwright: it drives a real browser, captures console output and page error
 | `goto(screen)` | Jumps to a screen |
 | `perf()` | Recent frame CPU time, sim ms per tick, and live entity and particle counts |
 
-Boot parameters: `seed`, `map`, `skipIntro`. The hooks only read state and issue the same commands a player could, so they're safe to ship.
+Boot parameters: `seed`, `map`, `skipIntro`. The hooks only read state and issue the same commands a player could, so they're safe to ship. Without `?test=1`, `window.__sd` doesn't exist. The hook types live in `src/app/testHookTypes.ts` (DOM-free, so specs import them too). Until the sim and BattleScene exist, the sim-facing hooks are documented no-op stubs: `state()` returns `null`, `tileToClient` returns `null`, and `enqueue`, `autoplay`, and `fastForward` do nothing (T112 and T107 make them real).
 
 **What the smoke tests check:**
 
@@ -318,7 +318,7 @@ What must have tests (Vitest, unless noted):
 | **Saves** | Every `__fixtures__/save.v<n>.json` migrates to current and validates. The export→import round trip is lossless. Corrupt, truncated, and oversized codes are rejected cleanly. |
 | **Story runner** | Branching, choices setting flags, conditions, and text substitution: every token with each pronoun set (including `{v:…}` agreement and capitalized forms), `{pests_processed}` formatting and its live in-map value, `{glyph:…}`, and unknown tokens failing. Run-end flag rules (the Quiet Wave threshold at 74%, 75%, and 100%; `held_fire_second_look` at 49% and 50% fleeing leaked, with and without a Hold Fire use). Bark buttons (pressing applies `set` and plays `reply`; ignoring them changes nothing). Bark selection (priority, spacing, presence, no-repeat, silence for an absent speaker). Epilogue selection for every flag combination, codex version unlocking, memo delivery, and the countdown display at `p` = 0, 0.5, and 1. |
 | **Story transactions and run end** | `meta/`: the Q3 grant applies once, on A2M4's results; C2 Sell, Return, and none; jailbreak pricing under each `door_choice`; revocation refunds (Orbital Strike Mk II Intel); C4 Keep's Time Dilation inheritance and Purge's Rapport refund; Zibzab's crate (missing tune-ups, or a protocol when all are owned); Pests Processed accumulates on win, loss, and retry; a checkpoint run forfeits Perfect and Challenge; a defeat after a checkpoint retry pays only for waves from `resumedFromWave` on, and a defeat on a completed map pays 0; one spec purchase unlocks both specs; `availableAfter` hides items until their map is completed. |
-| **Architecture** | `shared/architecture.test.ts`: no forbidden imports in the pure modules, and no `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, or `Math.random` in `src/sim/`. |
+| **Architecture** | `shared/architecture.test.ts`: no forbidden imports anywhere in `src/` (the edges in [architecture.md §4](architecture.md#4-other-modules)); no `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, or `Math.random`, no aliased `Math`, and no `Date`, `performance`, timers, `localStorage`, or `globalThis` in `src/sim/`. Fixture strings prove the scanner catches each kind of violation. |
 | **Balance harness code** | `src/balance/*.test.ts`: profile → modifier composition (including the full-catalog profile), the policies' generated steps, and each assertion on a tiny fixture map. |
 | **Balance** | `npm run sim` (above), not Vitest. |
 | **UI and render** | Covered by smoke tests. Component unit tests are optional. |
@@ -332,9 +332,10 @@ Every bug fix comes with a regression test that fails without the fix. There's n
 - **oxlint** with type-aware rules (`oxlint --type-aware`), configured in `.oxlintrc.json`:
   - Categories: `correctness` as error, `suspicious` as error, `perf` as warn.
   - Key rules: `no-explicit-any`, `no-floating-promises`, `no-misused-promises`, `switch-exhaustiveness-check`, `eqeqeq`, `no-console` (allowed only in `tools/`, `smoke/`, and `app/log.ts`), and `no-restricted-imports` for the module boundaries ([architecture.md §4](architecture.md#4-other-modules): pure modules may not import `phaser`, `preact`, or `render/`, `ui/`, `audio/`, `app/`; `sim/` also may not import `meta/` or `balance/`).
-  - **Determinism ban:** `no-restricted-properties` on `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, and `Math.random` in `src/sim/**` ([architecture.md § Determinism](architecture.md#determinism)). The architecture test repeats the check, so it holds even if the lint rule is unavailable.
+  - **Determinism ban:** `no-restricted-properties` on `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, and `Math.random`, and `no-restricted-globals` on `Date`, `performance`, timers, `localStorage`, and `globalThis`, in `src/sim/**` ([architecture.md § Determinism](architecture.md#determinism)). The architecture test repeats the check, so it holds even if the lint rule is unavailable.
+  - Also on: `import/no-default-export` (off for `vite.config.ts` and `playwright.config.ts`, which need one), and `import/no-unassigned-import` except for `*.css`.
   - A suppression needs a reason: `// oxlint-disable-next-line <rule> -- <why>`.
-- **Prettier** (`.prettierrc.json`): `printWidth: 100`, `singleQuote: true`, `trailingComma: "all"`, `semi: true`. **Exception:** sprite grids and map grids are wrapped in `// prettier-ignore` so their columns stay aligned.
+- **Prettier** (`.prettierrc.json`): `printWidth: 100`, `singleQuote: true`, `trailingComma: "all"`, `semi: true`. `npm run format` rewrites, `npm run format:check` only checks (and runs inside `lint`). **Exceptions:** sprite grids and map grids are wrapped in `// prettier-ignore` so their columns stay aligned, and Markdown is excluded in `.prettierignore` (docs are hand-formatted).
 - `.editorconfig`: 2-space indent, LF, final newline, UTF-8.
 
 ---

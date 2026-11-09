@@ -8,9 +8,21 @@ A web-based **2D isometric pixel-art tower defense game** with a story that begi
 
 **Status:** Milestone M0 (design, story, and technical docs) is complete. M1 (a playable vertical slice of map A1M1) is next.
 
+## Running it
+
+Needs Node 22.6 or newer.
+
+```sh
+npm install
+npm run dev      # dev server at http://localhost:5173
+npm run check    # the whole test gate: typecheck, lint, test, build, sim, smoke, docs
+```
+
+The smoke tests need a Chromium: set `CHROME_PATH`, or run `npx playwright install chromium`. The full script list is in [`docs/tech/architecture.md` § 5](docs/tech/architecture.md#5-build-test-and-deploy).
+
 ## For contributors and agents
 
 - **Start with [`CLAUDE.md`](CLAUDE.md)**: the workflow, roles, and rules.
 - Docs index and reading paths: [`docs/README.md`](docs/README.md).
 - Task board: [`tasks.md`](tasks.md). Decision log: [`docs/decisions.md`](docs/decisions.md).
-- Docs check: `npm run check:docs` (Node 22+).
+- Docs check: `npm run check:docs`.

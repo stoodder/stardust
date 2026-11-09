@@ -1,0 +1,8 @@
+dist/
+coverage/
+test-results/
+playwright-report/
+reports/
+package-lock.json
+# Docs are hand-formatted prose (tables, line breaks); Prettier covers code and config only.
+*.md
