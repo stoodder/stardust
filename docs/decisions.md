@@ -1203,3 +1203,13 @@ Real art went in behind T300a's ids. No data changed.
 - **T226 is met by a test**, not a retune: with Sitting Ducks' bonuses zeroed, A1M2's par and three alts leak in W8.
 - **T229 is a UI fix:** the bank nudge arrives a wave after A1M2's W7 wall; a waves-only fix broke early-call.
 - **T228 verdict:** Mk II changes par on A1M1 (replay), A1M3, A1M4 and A1M5; Bricks's Rapport on A1M5; **QUILL's Rapport nowhere in Act I** (A1M3 is the only Time Dilation map and par's casts are three waves apart). Accepted: Act I's pick is Mk II vs Bricks, and QUILL's Rapport is an investment that pays from A2M2 (T401). The verdict's home is act1.md's Act I curve section.
+
+### D097 — 2026-11-09 — M3 review round 1 rulings
+Reviewers: correctness/architecture/performance (no high-severity findings), gameplay/story/emotion, UX/art/accessibility/audio. Art trail M2 → M3: better overall (portraits, Chitterbloom, terraces; watch the crowded 2× diorama and Everglow props blurring into towers).
+- **C1 is the player's choice, seen before it's made.** The Quiet Wave's countdown starts after the boss is driven off (a wave field `countdownAfter: 'bossEnded'`), it can't be called early (`callWave` refused on `quiet_wave` waves), its groups walk in after Bricks's cannon visibly lowers, and a validator `[quiet-wave-reach]` keeps its first route tiles out of every pad's reach. No pause on the cue.
+- **Spared means Old Thrum lived:** `spared_quiet_wave` = Thrum leaked and ≥ 75% of the younglings leaked. Quiet-wave leaks never take the core below 1, for every player, not only par.
+- **The stinger and the party get staging** (a Rig 9 camera feed with six frames of the wrong shape; confetti and the record counter). They are Act I's payoff.
+- **Teach before testing:** A1M3 teaches the Skyhook, per-tower Hold Fire on Gerald and Time Dilation; wreckage tells mouse players how to clear it. **Act I keeps talking:** act-wide shared barks for A1M3–A1M5.
+- **The Shift board shows a dimmed "Shift 6 · Coming soon" row after A1M5** (supersedes D095's no-teaser call: a dead end reads as the game ending).
+- **"Met" means spawned:** `seenEnemies` comes from actual spawns, so quitting before a wave doesn't spend its NEW badge, first bark or codex unlock. **First payday is marked by Results showing it** (a `story.seen` id), so an abandon can't consume it; D091 stands.
+- **Neutrals aren't pests in the preview** (Gerald: "MAIL", no NEW/AIR). **Dialogue is never buried:** blips and typing outrank combat SFX, which duck while someone speaks.
