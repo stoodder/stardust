@@ -117,21 +117,24 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
     const dy = e.y - p.targetY;
     if (dx * dx + dy * dy <= p.splashSq) victims.push(i);
   }
-  emit(state, {
-    type: 'ProjectileHit',
+  const hit = {
+    type: 'ProjectileHit' as const,
     uid: p.uid,
     towerUid: p.towerUid,
     x: p.targetX,
     y: p.targetY,
     hits: victims.length,
-  });
+    damage: 0,
+  };
+  emit(state, hit);
   const source = ctx.scratch.towerSource;
   source.uid = p.towerUid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
     // A link's conditional bonus (Sitting Ducks) is checked per victim, as the shell lands.
     const damage = p.vsStatusMask !== 0 && hasStatusIn(e, p.vsStatusMask) ? p.damageVs : p.damage;
-    applyDamage(state, e, damage, p.damageType, source, p);
+    // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).
+    hit.damage += applyDamage(state, e, damage, p.damageType, source, p);
     applyEffects(e, p.effects);
   }
   victims.length = 0;

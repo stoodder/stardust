@@ -89,7 +89,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
 - [x] **T210a** Art: Brood Hauler (`carrier` tell, sack burst, scurrying young), power-node and high-ground tiles, Bricks's post, link tether.
 - [x] **T206a** Hold Fire + spare runners (global inherit); per-tag stats; youngling leak 0 and ×0.5 speed (absorbs T123); `holdFireWhile` / `spareFleeing` harness variants.
-- [~] **T204c** Run end (meta-runtime order); rewards (progression §2: defeat share, replays, already-won pays 0); medals → Intel; Results shows rewards and the lifetime Pests Processed.
+- [x] **T204c** Run end (meta-runtime order); rewards (progression §2: defeat share, replays, already-won pays 0); medals → Intel; Results shows rewards and the lifetime Pests Processed.
 - [~] **T207b** HUD ability slot 2 (E, path-segment aiming); AllyView.
 - [~] **T210b** Brood Hauler data + A1M2 (layout, 8 waves, medals, `pump_station` marker, par, `no_armor`, alt builds); tune.
 - [x] **T117a** Spec frames, Thumper NE muzzle, explosion punch, Bricks's cannon-lowered frame; trim the art-direction hex tables (part of T117). The gallery page is 14,897 px tall, close to Chrome's 16,384 px screenshot limit: paginate the gallery or the art-trail capture so `m2.png` stays complete.
@@ -98,7 +98,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
 - [ ] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
 - [ ] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1.
-- [ ] **T204d** R&D and Shop screens: buy, availability, locked panes.
+- [~] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
 ## M3 — Star Map & Act I
 - [ ] **T307** Counter model follow-ups from T208 (D038): placement-aware answers (A1M3's no-air build: Rivets out of the air lane's reach), A1M5's no-armor build needs "no Seeker Swarm", consider Harpoon [Skewer] / Prism [Refractor] as splash answers, move `MEDAL_EXEMPT_TAGS` into `rules.ts`.

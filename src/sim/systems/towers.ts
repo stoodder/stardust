@@ -183,17 +183,20 @@ function fireHitscan(
     flightTicks: 0,
     radiusTiles: 0,
   });
-  emit(state, {
-    type: 'ProjectileHit',
+  const hit = {
+    type: 'ProjectileHit' as const,
     uid: 0,
     towerUid: t.uid,
     x: target.x,
     y: target.y,
     hits: 1,
-  });
+    damage: 0,
+  };
+  emit(state, hit);
   const source = ctx.scratch.towerSource;
   source.uid = t.uid;
-  applyDamage(state, target, damageOn(t, attack, target), attack.type, source, attack);
+  // Filled in after the damage lands (events.ts, ProjectileHit).
+  hit.damage = applyDamage(state, target, damageOn(t, attack, target), attack.type, source, attack);
   applyEffects(target, tier.effects);
 }
 
@@ -314,19 +317,22 @@ function pulse(
     flightTicks: 0,
     radiusTiles: bonusRangeTiles(attack, t),
   });
-  emit(state, {
-    type: 'ProjectileHit',
+  const hit = {
+    type: 'ProjectileHit' as const,
     uid: 0,
     towerUid: t.uid,
     x: t.x,
     y: t.y,
     hits: victims.length,
-  });
+    damage: 0,
+  };
+  emit(state, hit);
   const source = ctx.scratch.towerSource;
   source.uid = t.uid;
   for (let k = 0; k < victims.length; k++) {
     const e = enemies.items[victims[k]!]!; // collected slots < used
-    applyDamage(state, e, damageOn(t, attack, e), attack.type, source, attack);
+    // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).
+    hit.damage += applyDamage(state, e, damageOn(t, attack, e), attack.type, source, attack);
     applyEffects(e, tier.effects);
   }
   victims.length = 0;

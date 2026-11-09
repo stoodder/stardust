@@ -44,6 +44,8 @@ export interface TowerSummary {
   tier: number;
   shots: number;
   kills: number;
+  /** HP its hits took (ProjectileHit's `damage`): shield-absorbed damage and overkill excluded. */
+  damage: number;
 }
 
 export interface RunSummary {
@@ -59,6 +61,8 @@ export interface RunSummary {
   readonly towers: readonly TowerSummary[];
   /** Kills by commander abilities. */
   readonly abilityKills: number;
+  /** Kills by scripted allies (Bricks's post). */
+  readonly allyKills: number;
   /** The first violations found (at most MAX_VIOLATIONS), as "tick N: what". */
   readonly violations: readonly string[];
 }
@@ -103,6 +107,7 @@ export function createRunTracker<K extends IdSpace>(
   const liveTowers = new Set<number>();
   const violations: string[] = [];
   let abilityKills = 0;
+  let allyKills = 0;
   let lostAtWave: number | null = null;
 
   const violate = (what: string): void => {
@@ -160,6 +165,7 @@ export function createRunTracker<K extends IdSpace>(
             const w = waveOf(enemyWave.get(e.uid) ?? 0);
             if (w !== undefined) w.killed++;
             if (e.killer.kind === 'ability') abilityKills++;
+            else if (e.killer.kind === 'ally') allyKills++;
             else {
               const t = towerByUid.get(e.killer.uid);
               if (t !== undefined) t.kills++;
@@ -190,6 +196,7 @@ export function createRunTracker<K extends IdSpace>(
               tier: 1,
               shots: 0,
               kills: 0,
+              damage: 0,
             };
             towers.push(t);
             towerByUid.set(e.uid, t);
@@ -241,7 +248,11 @@ export function createRunTracker<K extends IdSpace>(
               violate(`ally ${e.uid} attacked exempt enemy ${e.targetUid}`);
             }
             break;
-          case 'ProjectileHit':
+          case 'ProjectileHit': {
+            const t = towerByUid.get(e.towerUid);
+            if (t !== undefined) t.damage += e.damage;
+            break;
+          }
           case 'TowerClassUnlocked':
           case 'ScriptCue':
           case 'AbilityUsed':
@@ -366,6 +377,7 @@ export function createRunTracker<K extends IdSpace>(
         waves,
         towers,
         abilityKills,
+        allyKills,
         violations,
       };
     },

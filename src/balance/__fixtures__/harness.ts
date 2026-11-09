@@ -91,6 +91,7 @@ export function fakeResult(
     waves: [],
     towers: [],
     abilityKills: 0,
+    allyKills: 0,
     violations: [],
     ticks: 1000,
     hash: '0000000000000000',

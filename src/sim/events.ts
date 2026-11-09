@@ -97,6 +97,12 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly x: number;
       readonly y: number;
       readonly hits: number;
+      /**
+       * The HP it took, summed over its victims (applyDamage's return: shield-absorbed damage and
+       * overkill don't count). The emitter fills it in once the damage has landed, so the event
+       * still precedes the EnemyDied events its hit causes. The harness's per-tower damage tally.
+       */
+      readonly damage: number;
     }
   | {
       readonly type: 'TowerBuilt';

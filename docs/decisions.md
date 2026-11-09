@@ -541,3 +541,14 @@ Also: the Thumper NE muzzle is fixed, `fx.explosion` is bigger with a white star
 - **Harness:** profiles build `SimConfig` through `meta/modifiers`. Check #6 (full catalog) leaves out grants the sim still refuses (only Salvage Rights until M3), names them in its summary, and keeps the reference profile's spec unlocks. On a fixture map with a required splash counter, the no-counter build loses at W2 with and without the full catalog. On A1M1 (no required counters), #9 Story wins at 100.
 - The tracker now measures max integrity and the credits ledger from the run's actual start, so modifiers don't break the margins.
 - T214's constants moved into `rules.ts`.
+
+### D046 — 2026-11-09 — T204c run end and rewards
+- **Payouts** (`src/meta/rewards.ts`, `REWARD_RULES`):
+  - A first win pays the map's full Stardust.
+  - A replay win pays 40% (× a veteran bonus, 0 until M6).
+  - A loss on an unwon map pays 25% × the share of waves resolved; a loss on a won map pays 0.
+  - Each medal pays 1 Intel, only the first time it's earned. A loss pays no medal Intel.
+  - Story difficulty pays the same as Standard: no penalty for choosing accessibility.
+- **Run end** (`src/meta/runEnd.ts`, pure, in meta-runtime's order): it adds the run's kills to the lifetime Pests Processed, increments `stats.runs`, adds only newly earned medals, and records completion and the best meter. Checkpoints, objective Intel, and the story steps are TODOs for M3.
+- **Results:** a "Career total" under the counter, and a **Payroll** section listing the Stardust line, then each medal marked "NEW!" with its Intel, "On file", or "Next time!". A1M1's Stardust line reads "Training shifts are unpaid!" The copy is in style-guide §2.
+- No mid-map retry or quit exists yet, so every run ends through Results.

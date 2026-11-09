@@ -2,10 +2,26 @@
 // run, and the Markdown report `--report` writes beside reports/balance.json. Pure strings; the
 // CLI does the printing and writing.
 import { describeRun, fmtPct, type RunRecord } from './checks.ts';
+import type { HeadlessResult, TowerSummary } from '../sim/index.ts';
 import type { CampaignReport, MapReport } from './harness.ts';
 import { medalMarks } from './medals.ts';
 
 const fmtSec = (ms: number): string => `${(ms / 1000).toFixed(2)} s`;
+const TICKS_PER_SEC = 60;
+
+/** Each link's uptime as a share of the run ("crossfire 78%"), or "—" with none. */
+export function linkUptime(r: HeadlessResult | null): string {
+  if (r === null || r.ticks <= 0) return '—';
+  const links = Object.entries(r.stats.linkTicks);
+  if (links.length === 0) return '—';
+  return links.map(([id, ticks]) => `${id} ${Math.round((ticks / r.ticks) * 100)}%`).join(', ');
+}
+
+/** A tower's average damage per second from its build to its sale (or the end of the run). */
+export function towerDps(t: TowerSummary, endTick: number): number {
+  const ticks = (t.soldTick < 0 ? endTick : t.soldTick) - t.builtTick;
+  return ticks <= 0 ? 0 : (t.damage * TICKS_PER_SEC) / ticks;
+}
 const runName = (r: RunRecord): string => `${r.build}${r.repeat ? ' (again)' : ''}`;
 
 /** The first run of each build, in the order they ran (seed 1 for almost all of them). */
@@ -88,10 +104,11 @@ export function formatMarkdown(report: CampaignReport): string {
         'Credits left',
         'Late steps',
         'Medals',
+        'Link uptime',
         'Hash',
         'ms',
       ]),
-      row(['---', '---', '---', '---', '---', '---', '---', '---', '---', '---']),
+      row(['---', '---', '---', '---', '---', '---', '---', '---', '---', '---', '---']),
     );
     for (const r of map.runs) {
       const res = r.result;
@@ -105,6 +122,7 @@ export function formatMarkdown(report: CampaignReport): string {
           res?.credits ?? '—',
           res === null ? '—' : res.steps.filter((s) => s.late).length,
           medalMarks(res),
+          linkUptime(res),
           res?.hash ?? '—',
           Math.round(r.ms),
         ]),
@@ -148,17 +166,26 @@ export function formatMarkdown(report: CampaignReport): string {
       if (res.towers.length > 0) {
         out.push(
           '',
-          row(['Tower', 'Tile', 'Tier', 'Built (tick)', 'Shots', 'Kills']),
-          row(['---', '---', '---', '---', '---', '---']),
+          row(['Tower', 'Tile', 'Tier', 'Built (tick)', 'Shots', 'Kills', 'Damage', 'DPS']),
+          row(['---', '---', '---', '---', '---', '---', '---', '---']),
         );
         for (const t of res.towers) {
           out.push(
-            row([t.tower, `(${t.tile[0]}, ${t.tile[1]})`, t.tier, t.builtTick, t.shots, t.kills]),
+            row([
+              t.tower,
+              `(${t.tile[0]}, ${t.tile[1]})`,
+              t.tier,
+              t.builtTick,
+              t.shots,
+              t.kills,
+              Math.round(t.damage),
+              towerDps(t, res.ticks).toFixed(1),
+            ]),
           );
         }
         out.push(
           '',
-          `Ability kills: ${res.abilityKills}. Link and jam uptime: none in M1 (no links or jammers yet).`,
+          `Ability kills: ${res.abilityKills}. Ally kills: ${res.allyKills}. Link uptime: ${linkUptime(res)}. Jam uptime: none yet (no jammers).`,
         );
       }
     }
