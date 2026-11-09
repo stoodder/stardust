@@ -99,7 +99,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [~] **T202d** TowerView: use base frames `spec_a`/`spec_b` at tier 4 and the `_t2`/`_spec_<a|b>` heads, lift towers on high ground 8 px, and fix PlacementView's highlight under the block; set Cluster Thumper bomblets' `projectile` to `projectile.thumper_bomblet` (+ `fx.bomblet_burst`). HUD: link tethers; panel shows links, tile bonus, and modified stats; the T4 choice (locked + price); briefing shows medals and the threat-intel strip.
 - [~] **T201** Loadout screen (pick up to 4 towers + ability; skipped when you own ≤4 types; last preset; Change loadout). Gated until A1M4.
 - [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
-- [ ] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
+- [x] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
 - [ ] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1. Also wire the radio's `enemyKilled` trigger (`app/radio.ts` `EnemyDied` case: one line; A1M2's two Hauler barks use it) and list it in architecture §4.
 - [~] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
