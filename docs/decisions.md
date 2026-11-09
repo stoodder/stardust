@@ -344,3 +344,27 @@ M1 (the playable vertical slice, D004 as amended by D026) ships: A1M1 *Orientati
 - **The gate:** typecheck, lint, 581 unit/sim tests, build, a 25-run A1M1 balance harness, 17 Playwright smoke flows, and the docs check, about 40 s in all. Two review rounds ran: D026 to D029.
 - **Art trail:** the M1 baseline is [art/gallery/m1.png](art/gallery/m1.png). M2's image should show stronger tier-2 silhouettes and more mid-darks inside the playfield.
 - **Release:** shipped as the `M1: ship` commit on `main`. Cloud sessions can't push tags, so the owner creates the `m1` release on GitHub.
+
+### D031 — 2026-11-09 — M2 scope ("the M2 cut")
+The owner said "start M2 … continue through to the end" and is away, so the orchestrator decided these forks under the kickoff's "use your best judgement". Each can be overturned on review.
+- **A1M2 *Hatching Season* joins M2.** With one map, medals, Intel, Stardust, and R&D have nowhere to go. A1M2 costs one new enemy (Brood Hauler) and debuts the power node, the Sitting Ducks link, the first Stardust payout, and the **first required counter (Armor)**. That gives the harness's no-counter, full-catalog, and par-purchasable checks a real subject.
+- **The playable M2 loop:**
+  1. New game or continue: 3 save slots, plus SD1 export/import codes.
+  2. A *Shift board* listing A1M1 and A1M2 (it stands in for the star map, T301).
+  3. A briefing that shows the medals.
+  4. Battle: Crossfire and Sitting Ducks links, tile bonuses, Bricks's ally post, Suppressing Fire on E, and Hold Fire.
+  5. Results with medals, Intel, Stardust, and the lifetime Pests Processed.
+  6. A Base with R&D Command open after A1M1. Mk II and Bricks Rapport cost 2 Intel each, so A1M1's 3 Intel buys one, which is a real choice.
+- **Built and gated in campaign order** (campaign.md decides when each first appears): the loadout screen (A1M4), tier-4 specializations (Engineering after A1M4), the shop and full catalog (after A1M3), and spare runners (A2M1). The Hold Fire button is live now, because core-loop §2.7 says it "must always be available". A test-only `?save=<fixture>` hook (with `?test=1`) loads dev saves so smoke tests and the owner can reach the gated systems early.
+- **Deferred to M3+:** the star map, dialogue/barks/codex/Inbox/Bounty Board/name tags (A1M2's lines play through the M1 radio ticker), character creation, Peeker, checkpoints, the Sprinkler specs (they need Soaked and Stasis), the protocol picker, wreckage, veteran modifiers, objective Intel, and A1M3 onward.
+- **Story difficulty ships in M2.** It's cheap through modifiers, it un-refuses harness check #9, and it helps accessibility.
+- **Field Protocols:** data for all 10, sim effects for the 3 the full-catalog check uses, and the picker in M3.
+- **Gaps the plan found, settled by the tasks that hit them:**
+  - The sim never applies the tile bonuses (high ground, power node) (T202a).
+  - `Modifier` needs kinds for Mk II, Rapport, Coolant, Resale, Bounty, Linked Up, and Bulkhead (T200).
+  - A1M2's Challenge medal gets a `passedMarker` condition (T202c).
+  - Conditional link bonuses get `vsStatus` (T202a).
+  - Suppressing Fire's segment is the clicked path tile ±1 along the route (T207a).
+  - `SaveData.profile` is `null` until T306.
+  - A new save grants Orbital Strike directly until the memo exists (T203a).
+- **Plan:** 24 subtasks in waves of up to 3 agents. Critical paths: T200 → T202a → T202c → T125/T210b, and T203a → T209 → T204c → T204d/T201. T200 adds the sim seams (types, stubs, fields) up front so the sim tasks can run in parallel without sharing files.

@@ -60,24 +60,40 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
-- [ ] **T121** `createSim` refuses loadouts that use attack kinds or statuses the towers system doesn't run yet (projectile/beam/chain/spawner; pinned/stasis/unnerved), per D013. Apply stat modifiers in `towers` once modifiers exist.
-- [ ] **T123** Younglings: leaks cost 0 (`LEAK_FREE_TAGS`) and the ×0.5 speed (no M1 content uses them; needed before the first youngling map). Boss waves triple the clear bonus (with T304).
+- [ ] **T121** (folded into T202b) `createSim` refuses loadouts that use attack kinds or statuses the towers system doesn't run yet (projectile/beam/chain/spawner; pinned/stasis/unnerved), per D013. Apply stat modifiers in `towers` once modifiers exist.
+- [ ] **T123** (absorbed by T206a) Younglings: leaks cost 0 (`LEAK_FREE_TAGS`) and the ×0.5 speed (no M1 content uses them; needed before the first youngling map). Boss waves triple the clear bonus (with T304).
 - [ ] **T124** Harness follow-ups (the `BuildsDef` expectations and the maps.md §6.1 pointers are done, D027): add a per-tower damage tally (e.g. `damage` on `ProjectileHit`) so the report shows DPS per tower; switch `src/sim/a1m1.test.ts`'s mini-executor to `runHeadless`.
-- [ ] **T125** Balance: when T202 re-tunes A1M1 (links, Bricks), keep `src/balance/a1m1.test.ts` green; rivet_only sits on its 40% floor at a −0.2 s clump shift (D027). Add a threat-intel strip to the briefing once trait icons exist.
+- [ ] **T125** (with T124, wave 5) Balance: A1M1 gets the companion, ally marker, and Teamwork medal; when T202 re-tunes A1M1 (links, Bricks), keep `src/balance/a1m1.test.ts` green; rivet_only sits on its 40% floor at a −0.2 s clump shift (D027). Add a threat-intel strip to the briefing once trait icons exist.
 - [ ] **T126** Accessibility: keyboard-only building and selecting (a tile cursor: arrows hop between pads and towers, Enter builds/selects). Also reposition the tower panel so it doesn't cover neighbouring towers.
 - [ ] **T128** Story: canonise the Thumper unlock radio line ("New hardware! Thumper Mortar, ready to deploy!") in act1.md § A1M1, or replace it with a canon line and drop its exemption in `tools/radioLines.test.ts`. Polish: phase-sync the 1 Hz HUD slot and pad pulses; a clearer low-integrity core frame (ART).
-- [ ] **T129** Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
+- [ ] **T129** (folded into T200) Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
-M2 scope:
-- [ ] **T201** Loadout screen (pick up to 4 towers; skipped when you own ≤4 types and have no choice to make)
-- [ ] **T202** Tier-4 specialization choice; adjacency links (incl. Crossfire); medals (in-map evaluation + results screen)
-- [ ] **T203** Save system (localStorage plus export/import codes)
-- [ ] **T204** Stardust and Intel currencies (medals → Intel payout); permanent upgrade shop (Zibzab) and R&D tree
-- [ ] **T207** Companion slot + Suppressing Fire (ability slot 2 on key E); allies pool with the Bricks ally (never targets `quiet_wave`, `youngling`, or `fleeing` units)
-- [ ] **T206** Hold Fire command, `spareRunners` filter (per tower + global Alt+H; new towers inherit the global toggle), and story-flag tracking (feeds choices)
-- [ ] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches (air reach is proven by the harness). Docs gaps from M0 review round 3: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; settle `youngling` as a wave modifier vs a `WaveTag`. Replace `COUNTER_ANSWERS` (tower lists) with `{tower, minTier?, spec?}` entries.
-- [~] **T205** Procedural audio: SFX first, then music layers
+M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
+
+- [ ] **T200** Sim seams: widen `Modifier` (ability cooldown/radius, cost, refund, bounty, link bonus, leak absorb); `SimConfig.specsUnlocked`; declare every M2 command and event (stubs reject); entity, ally, and stat fields; stub `links` and `allies` in tick order; split refusals per feature; fold in T129.
+- [ ] **T203a** Save core: `src/meta/` KeyValueStore, SaveData v1 (`profile: null`), migrations, validateSave, `:bak`, the SD1 export/import codec with caps; a new save grants Orbital Strike.
+- [~] **T205** Procedural audio: SFX first, then music layers.
+- [ ] **T202a** Stacking formula and caps; apply the tile bonuses (high ground, power node); links (Crossfire, Sitting Ducks, `vsStatus`); tower and economy modifiers; modifier-aware `towerStats`.
+- [ ] **T207a** Ability slot 2 + Suppressing Fire (segment = clicked path tile ±1); the allies system (Bricks never targets `quiet_wave`/`youngling`/`fleeing`); Mk II and Rapport modifiers.
+- [ ] **T209** Flow shell: Title (new / continue / import), slots, Shift board, Base tabs, Settings (codes, difficulty); the battle config built from the save; `?save=<fixture>` dev hook.
+- [ ] **T202c** Condition evaluator (medals, trigger `when` incl. flags); Victory / Perfect Core / Challenge medals; `passedMarker`; the medal validator.
+- [ ] **T204a** Catalog data (tune-ups, global upgrades, 10 protocols, R&D, `availableAfter`); campaign order; the par-purchasable check.
+- [ ] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches. M0 doc gaps: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; `youngling` stays a `WaveTag`.
+- [ ] **T202b** `specialize` command; Rivet and Thumper tier-4 specs (gated); fold in T121.
+- [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
+- [ ] **T210a** Art: Brood Hauler (`carrier` tell, sack burst, scurrying young), power-node and high-ground tiles, Bricks's post, link tether.
+- [ ] **T206a** Hold Fire + spare runners (global inherit); per-tag stats; youngling leak 0 and ×0.5 speed (absorbs T123); `holdFireWhile` / `spareFleeing` harness variants.
+- [ ] **T204c** Run end (meta-runtime order); rewards (progression §2: defeat share, replays, already-won pays 0); medals → Intel; Results shows rewards and the lifetime Pests Processed.
+- [ ] **T207b** HUD ability slot 2 (E, path-segment aiming); AllyView.
+- [ ] **T210b** Brood Hauler data + A1M2 (layout, 8 waves, medals, `pump_station` marker, par, `no_armor`, alt builds); tune.
+- [ ] **T117a** Spec frames, Thumper NE muzzle, explosion punch; trim the art-direction hex tables (part of T117).
+- [ ] **T202d** HUD: link tethers; panel shows links, tile bonus, and modified stats; the T4 choice (locked + price); briefing shows medals and the threat-intel strip.
+- [ ] **T201** Loadout screen (pick up to 4 towers + ability; skipped when you own ≤4 types; last preset; Change loadout). Gated until A1M4.
+- [ ] **T210c** Story: A1M2 radio lines verbatim; Zibzab and QUILL item copy (≤100 chars); settle T128's line.
+- [ ] **T206b** `content/dialogue/flags.ts` + run-end rules; `src/story/flags.ts`; save → `scriptFlags`.
+- [ ] **T206c** HUD Hold Fire (H, Shift+H, an "all" button); Alt+H hidden until A2M1.
+- [ ] **T204d** R&D and Shop screens: buy, availability, locked panes.
 
 ## M3 — Star Map & Act I
 - [ ] **T301** Star map / campaign select screen
