@@ -505,6 +505,140 @@ const bossBuilds = dev.defineBuilds({
 
 const bossMap = dev.defineMap({ ...bossLayout, waves: bossWaves, ...bossBuilds });
 
+// dev_act2 (T400a): an 18×12 Act II map, the size of A2M1–A2M3, so the camera, the HUD corners,
+// the comms panel, and the gallery's budget prove they fit before the Act II maps land (D101). Two
+// spawns (west and south-west) merge on the east road into the core; `act2.gold` tiles; plain
+// Nibblers on the real Rivet and Sprinkler. `?map=dev_act2`; the battle smoke boots it with every
+// dev map.
+const act2Layout = dev.defineMapLayout({
+  id: 'dev_act2',
+  act: 2,
+  env: 'act2.gold',
+  objective: 'defend',
+  size: { cols: 18, rows: 12 },
+  // prettier-ignore
+  tiles: [
+    '..o.........o.....',
+    'S######......o....',
+    '....o.#....#####..',
+    '......#...o#o..#..',
+    '.....o#.o..#.^o#..',
+    '......######...#o.',
+    '...o........o..#..',
+    '.......#########..',
+    '.....o.#..o..+.#o.',
+    'S#######.....o.#..',
+    '...o.....o.....##C',
+    '................o.',
+  ],
+  paths: [
+    {
+      id: 'a',
+      tiles: [
+        [0, 1],
+        [1, 1],
+        [2, 1],
+        [3, 1],
+        [4, 1],
+        [5, 1],
+        [6, 1],
+        [6, 2],
+        [6, 3],
+        [6, 4],
+        [6, 5],
+        [7, 5],
+        [8, 5],
+        [9, 5],
+        [10, 5],
+        [11, 5],
+        [11, 4],
+        [11, 3],
+        [11, 2],
+        [12, 2],
+        [13, 2],
+        [14, 2],
+        [15, 2],
+        [15, 3],
+        [15, 4],
+        [15, 5],
+        [15, 6],
+        [15, 7],
+        [15, 8],
+        [15, 9],
+        [15, 10],
+        [16, 10],
+        [17, 10],
+      ],
+    },
+    {
+      id: 'b',
+      tiles: [
+        [0, 9],
+        [1, 9],
+        [2, 9],
+        [3, 9],
+        [4, 9],
+        [5, 9],
+        [6, 9],
+        [7, 9],
+        [7, 8],
+        [7, 7],
+        [8, 7],
+        [9, 7],
+        [10, 7],
+        [11, 7],
+        [12, 7],
+        [13, 7],
+        [14, 7],
+        [15, 7],
+        [15, 8],
+        [15, 9],
+        [15, 10],
+        [16, 10],
+        [17, 10],
+      ],
+    },
+  ],
+  startCredits: 600,
+  stardust: 0,
+  threatIntel: [],
+  requiredCounters: [],
+  markers: {},
+  companion: null,
+});
+
+const act2Waves = dev.defineWaves([
+  { groups: [{ enemy: 'dev_nibbler', count: 8, route: 'a' }] },
+  {
+    countdownSec: 15,
+    groups: [
+      { enemy: 'dev_nibbler', count: 8, route: 'a' },
+      { enemy: 'dev_nibbler', count: 8, route: 'b', delaySec: 2 },
+    ],
+  },
+]);
+
+const act2Builds = dev.defineBuilds({
+  referenceProfile: {
+    towers: ['rivet', 'sprinkler'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'sprinkler'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [8, 4] },
+      { wave: 1, build: 'rivet', tile: [14, 4] },
+      { wave: 1, build: 'sprinkler', tile: [16, 8] },
+    ],
+  },
+  noCounterBuilds: {},
+});
+
+const act2Map = dev.defineMap({ ...act2Layout, waves: act2Waves, ...act2Builds });
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -513,6 +647,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_sky: skyMap,
     dev_market: marketMap,
     dev_boss: bossMap,
+    dev_act2: act2Map,
   }),
   // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too

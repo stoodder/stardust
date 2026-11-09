@@ -1,6 +1,6 @@
 // Cloaks (design/enemies.md § 2.5; T400a seam, run by T406). The rule: an undetected cloaked unit
 // is untouchable (no targeting, splash, auras, or links; it still leaks), and a Revealed one is
-// open to every tower. systems/detection.ts keeps `Enemy.revealTicks`; targeting and the damage
+// open to every tower. systems/detection.ts keeps `Enemy.revealedTicks`; targeting and the damage
 // pipeline ask `cloakedOut` (T406 wires it into layers.ts beside burrowing).
 //
 // A stub until T406: no live unit is cloaked yet, and createSim refuses one (`enemy.cloak`).

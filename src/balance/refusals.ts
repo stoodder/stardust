@@ -35,6 +35,8 @@ export function refusal(
 export type HarnessFeature =
   /** #2 margins for non-integrity objectives (escort, holdout, choir). */
   | 'objectives'
+  /** #2 a Protect map's margin: min(core %, asset %) (D101). */
+  | 'protect'
   /** #14 one par run per story-flag value. */
   | 'flagVariants'
   /** #15 one par run per companion on a pick-list map. */
@@ -50,7 +52,8 @@ export type HarnessFeature =
  * the sim's FEATURE_GATES (sim/gates.ts), each task flips only its own row.
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
-  objectives: 'T305',
+  objectives: 'T305c',
+  protect: 'T305a',
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
@@ -82,6 +85,9 @@ export function refusedFeatures<K extends IdSpace>(
       `${map.objective} margins`,
       'the harness measures only integrity margins until objectives land',
     );
+  }
+  if (map.objective === 'protect') {
+    refuse('protect', '2', 'protect margins', 'a Protect margin is min(core %, asset %)');
   }
   if (Object.keys(map.builds.flagVariants).length > 0) {
     refuse('flagVariants', '14', 'flag variants', 'flag-variant runs need story flags in the sim');

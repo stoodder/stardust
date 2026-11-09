@@ -213,7 +213,7 @@ export interface Enemy extends PoolEntity {
   pulseTicks: number;
   blinkTicks: number;
   /** Revealed (T406): ticks it stays Revealed (detection or a Scanner Sweep, plus linger); 0: not. */
-  revealTicks: number;
+  revealedTicks: number;
   /** Stasis (T407a) and Pinned (T408): ticks left, and the immunity after each. */
   stasisTicks: number;
   stasisImmuneTicks: number;
@@ -259,7 +259,7 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   skittishTicks: 0,
   pulseTicks: 0,
   blinkTicks: 0,
-  revealTicks: 0,
+  revealedTicks: 0,
   stasisTicks: 0,
   stasisImmuneTicks: 0,
   pinnedTicks: 0,

@@ -94,7 +94,7 @@ describe('M4 state fields', () => {
       skittishTicks: 0,
       pulseTicks: 0,
       blinkTicks: 0,
-      revealTicks: 0,
+      revealedTicks: 0,
       stasisTicks: 0,
       stasisImmuneTicks: 0,
       pinnedTicks: 0,
