@@ -72,3 +72,22 @@ Development continues in Claude Code cloud sessions against `github.com/stoodder
 
 ### D010 — 2026-11-09 — The art trail: a gallery screenshot every milestone
 The owner's request, from an orchestrator pitch. Starting with M1, every milestone review looks at the sprite gallery screenshot (T104's gallery page, captured by `npm run smoke`) next to the previous milestone's. At ship, the final screenshot is committed as `docs/art/gallery/m<N>.png`. It is never overwritten, it is linked from the "M<N> shipped" entry, and it is sent to the owner. Why: it gives the art a visible history the owner can scan without running the game, and it catches palette or style drift between milestones. These screenshots are the only binaries allowed under `docs/`. The procedure lives in `CLAUDE.md` steps 6 and 8.
+
+### D011 — 2026-11-09 — T111 content pipeline: type and compile rules
+`src/content/types.ts` (raw) and `compiled.ts` (compiled) are now the canonical home of the data shapes, and architecture §3 is a summary that links to them. Rulings:
+- **Id typing without cycles.** Cross-kind references are generic over an id space (default: the live registries), so a typo'd id is a compile error in live content and in test fixtures alike. Kinds with no registry yet (links, upgrades, protocols) are `never`.
+- **Departures from the M0 sketch:**
+  - `targets` and `defaultPriority` live on tiers, so specs can change them.
+  - A new `pulse` attack kind covers the Sprinkler.
+  - `armorPierce`, `ignoresArmor`, and `spinUpSec` sit on every attack.
+  - `specs` stays optional until T202.
+  - Enemies carry `spawnIntervalSec`, and a group's `intervalSec` overrides it.
+  - Wave groups have no `spawn` field, because the route fixes the spawn.
+  - Enemy abilities, bosses, allies, and presentation wait for their milestones.
+- **Compile rules:**
+  - Seconds become ticks by rounding to nearest, with halves rounding up, after snapping float error. A positive duration is at least 1 tick.
+  - Distances stay in tiles.
+  - Tier patches deep-merge; arrays replace; an attack whose `kind` changes is replaced whole.
+  - `towerUnlockWave` compiles to `once` countdown events, which come before authored events.
+  - Every error is collected into one `ContentCompileError`.
+  - The entry point is `compileContent()`.

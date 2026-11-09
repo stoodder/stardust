@@ -19,7 +19,7 @@ Rules:
 - **Pure modules** (`sim`, `content`, `story`, `shared`) have **no module-level mutable state**. Everything lives in an explicit state object, so many sims can run in one process.
 - Functions and plain data in pure modules. Classes are fine where the framework wants them (Phaser scenes, views).
 - Content and compiled definitions are `readonly`. The sim exposes its state as `DeepReadonly<SimState>`.
-- **Units go in the name** wherever a number has a unit: `rangeTiles`, `ratePerSec`, `speedTilesPerSec` in content, and `cooldownTicks` and `speedPerTick` in compiled sim data. Credits, HP, and damage are integers.
+- **Units go in the name** wherever a number has a unit: `rangeTiles`, `ratePerSec`, `speedTilesPerSec` in content, and `cooldownTicks` and `speedTilesPerTick` in compiled sim data (the tile is the sim's distance unit). Credits, HP, and damage are integers.
 - Comments explain *why*, not *what*. Public functions of a module get a one-line TSDoc.
 
 ## Naming
@@ -58,29 +58,28 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
 
 1. **Confirm the design.** The tower must exist in [design/towers.md](../design/towers.md) (role, tiers, specializations, unlock). If it doesn't, stop and ask the orchestrator; don't invent towers.
 2. **Sprites** in `src/content/sprites/towers/<id>.ts`: a base with `t1`, `t2`, `t3`, `spec_a`, and `spec_b` frames; a head with at least SE and NE facings (mirrored to 4); a `fire` animation; and a 16×16 `icon.tower.<id>`. Add a projectile sprite in `sprites/projectiles/` if the tower needs a new one. Register them in `sprites/index.ts`. Format: [art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format).
-3. **Data** in `src/content/towers/<id>.ts`. The shape is `TowerDef` in [architecture.md § Data shapes](architecture.md#data-shapes) until `src/content/types.ts` exists; then the code is the home.
+3. **Data** in `src/content/towers/<id>.ts`. The shape is `TowerDef` in [`src/content/types.ts`](../../src/content/types.ts).
    ```ts
    export const exampleBlaster = defineTower({
      id: 'example_blaster',
      faction: 'everglow',
      role: 'Single-target DPS',
-     targets: { ground: true, air: false },
-     defaultPriority: 'first',
      sprites: { base: 'tower.example_blaster', head: 'tower.example_blaster_head', icon: 'icon.tower.example_blaster' },
      tiers: [
-       { cost: 100, attack: { kind: 'projectile', projectile: 'rivet_small', speedTilesPerSec: 8,
-                              type: 'kinetic', damage: 6, ratePerSec: 1.6, rangeTiles: 2.5 } },
+       { cost: 100, targets: { ground: true, air: false }, defaultPriority: 'first',
+         attack: { kind: 'projectile', projectile: 'projectile.rivet_small', speedTilesPerSec: 8,
+                   type: 'kinetic', damage: 6, ratePerSec: 1.6, rangeTiles: 2.5 } },
        { cost: 80,  attack: { damage: 9 } },                  // later tiers patch the previous tier
        { cost: 140, attack: { damage: 14, rangeTiles: 2.75 } },
      ],
-     specs: {                                                 // one R&D purchase unlocks both
+     specs: {                                                 // tier 4: one R&D purchase unlocks both
        a: { name: 'Overcharge', cost: 300, attack: { damage: 30, ratePerSec: 0.8 } },
        b: { name: 'Rapid',      cost: 300, attack: { ratePerSec: 4 }, effects: [{ status: 'chilled', pct: 0.1, durationSec: 1 }] },
      },
-     links: ['example_link'],
+     links: ['example_link'],                                 // from T202, when the links registry exists
    });
    ```
-   Numbers come from towers.md. Modifiers stack by the design formula (flat first, then summed percentages; see [architecture.md §2](architecture.md#sim-public-api)).
+   Tiers 2 and 3 patch the tier before, and specs patch tier 3 (`compileContent()` resolves them; the merge rule is in `src/content/compile.ts`). A tier may also change `targets` or `defaultPriority`. Numbers come from towers.md. Modifiers stack by the design formula (flat first, then summed percentages; see [architecture.md §2](architecture.md#sim-public-api)).
 4. **Register** it in `src/content/towers/index.ts`.
 5. **New behavior?** If the attack `kind` doesn't exist yet (for example `chain`), add `src/sim/behaviors/<kind>.ts`, add its variant to `AttackDef`, and write `<kind>.test.ts` (damage, cooldown, range edge cases, targeting modes, jammed state, hold fire, determinism).
 6. **New visuals?** Add the projectile or beam handling in `render/views/ProjectileView.ts`, following [art-direction.md §7](../art/art-direction.md#7-vfx).
@@ -91,19 +90,19 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
 
 1. **Confirm the design** in [design/enemies.md](../design/enemies.md): abilities, counters, and **tell ids** from the vocabulary in [art-direction.md §8](../art/art-direction.md#8-readability-and-enemy-ability-tells). A new kind of tell must be added to that table first.
 2. **Sprites** in `src/content/sprites/enemies/<id>.ts`: SE and NE walk cycles (mirrored to 4 facings), the faction palette, and a death animation (or the faction's shared one; Skitterkin death VFX vary by act).
-3. **Data** in `src/content/enemies/<id>.ts` via `defineEnemy({ id, faction, body, layer, hp, armor, shield?, speedTilesPerSec, leak, bounty, traits: [...], abilities: [...], tells: [...], sprites })`. Column meanings and numbers come from the roster tables in enemies.md.
-4. **New ability?** Add `src/sim/abilities/<kind>.ts` as a state machine (`idle → telegraph → active → cooldown`), with the telegraph time as data, and implement interrupts (Stasis, Unnerved) per [design/enemies.md §2.4](../design/enemies.md#24-status-effects). **Jamming** must follow [design/enemies.md §4](../design/enemies.md#4-tower-disabling-jamming): its minimum tell, maximum duration, post-jam immunity, and exhaustive source list (a new jammer needs a decision entry). `content/validate.ts` enforces the numeric limits from `content/rules.ts`. Write tests for the full cycle, including interrupts, and that a jam never removes or damages a tower.
+3. **Data** in `src/content/enemies/<id>.ts` via `defineEnemy({ id, faction, body, layer, hp, armor, shield?, speedTilesPerSec, leak, bounty, spawnIntervalSec, traits: [...], tells: [...], sprites })` (`EnemyDef` in [`src/content/types.ts`](../../src/content/types.ts)). Column meanings and numbers come from the roster tables in enemies.md.
+4. **New ability?** Add its shape to `EnemyDef` (the first enemy with an ability adds the field), then `src/sim/abilities/<kind>.ts` as a state machine (`idle → telegraph → active → cooldown`), with the telegraph time as data, and implement interrupts (Stasis, Unnerved) per [design/enemies.md §2.4](../design/enemies.md#24-status-effects). **Jamming** must follow [design/enemies.md §4](../design/enemies.md#4-tower-disabling-jamming): its minimum tell, maximum duration, post-jam immunity, and exhaustive source list (a new jammer needs a decision entry). `content/validate.ts` enforces the numeric limits from `content/rules.ts`. Write tests for the full cycle, including interrupts, and that a jam never removes or damages a tower.
 5. **Codex entry** in `src/content/codex/<id>.ts` (voice per [story/style-guide.md](../story/style-guide.md)).
 6. **Register** it, add it to waves, and run `npm run check`, plus `npm run sim -- --map <id>` for every map whose waves include it.
 
 ### Add a map
 
 1. **Confirm the design:** [design/maps.md](../design/maps.md) (tile legend, layout intent, per-act targets, the one new thing this map introduces) and [story/campaign.md](../story/campaign.md) (beats, unlocks, companion, choices). Add the map id to `content/campaign.ts` in campaign order.
-2. **Create `src/content/maps/<id>/`** with four files. Together they form one `MapDef` ([architecture.md § Data shapes](architecture.md#data-shapes)). Values below are illustrative.
+2. **Create `src/content/maps/<id>/`** with four files. Together they form one `MapDef` ([`src/content/types.ts`](../../src/content/types.ts)). The id and values below are illustrative; they are not A1M1's.
    - **`map.ts`**: layout and rules.
      ```ts
      export const map = defineMapLayout({
-       id: 'a1_m01', act: 1, env: 'act1', objective: 'defend',
+       id: 'example_map', act: 1, env: 'act1', objective: 'defend',
        size: { cols: 10, rows: 5 },
        // prettier-ignore
        tiles: [                     // legend: design/maps.md §3 (# path, o pad, ^ high ground,
@@ -120,15 +119,15 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
        towerUnlockWave: { example_mortar: 3 },            // unlocks when W3's countdown starts
        threatIntel: ['fast'],                             // every trait in waves.ts
        requiredCounters: [],                              // A1M1 requires none; ≤ 3, each with a noCounterBuild
-       medals: { challenge: { id: 'teamwork', condition: { linkActive: 'example_link' } } },
+       medals: { challenge: { id: 'one_mortar', condition: { towers: { tower: 'example_mortar' }, lte: 1 } } },
        objectives: [{ id: 'clean_w4', condition: { stat: 'integrityLost', lte: 0 }, intel: 1 }],
        companion: { id: 'bricks', state: 'present' },     // or { pick: [...] }, or null
-       events: [{ id: 'w03_radio', on: { wave: 3, phase: 'start' }, actions: [{ cue: 'a1_m01_w03' }] }],
+       events: [{ id: 'w03_radio', on: { wave: 3, phase: 'start' }, actions: [{ cue: 'example_map_w03' }] }],
      });
      ```
-   - **`waves.ts`**: wave groups (`enemy`, `count`, `intervalSec`, `spawn`, `route`, `delaySec`, `tags`).
-   - **`builds.ts`**: `referenceProfile`, `parBuild`, `noCounterBuilds` (one per required counter), `altBuilds` (at least 2 from A1M4), and optionally `flagVariants` and `guards` (see [Balance sims](#balance-sims-npm-run-sim)).
-   - **`index.ts`**: `export const a1_m01 = defineMap({ ...map, waves, ...builds })`.
+   - **`waves.ts`**: `defineWaves([...])`, one entry per wave (`countdownSec` defaults by act) with its groups: `enemy`, `count`, `route` (a path, air-lane, or rift-lane id, which also fixes the spawn), and optionally `intervalSec` (default: the enemy's `spawnIntervalSec`), `delaySec`, and `tags`.
+   - **`builds.ts`**: `defineBuilds({ ... })` with `referenceProfile`, `parBuild`, `noCounterBuilds` (one per required counter), `altBuilds` (at least 2 from A1M4), and optionally `flagVariants` and `guards` (see [Balance sims](#balance-sims-npm-run-sim)).
+   - **`index.ts`**: `export const exampleMap = defineMap({ ...map, waves, ...builds })`.
 3. **Register** the map in `src/content/maps/index.ts`. The content test runs every check in [architecture.md § Validation](architecture.md#validation): geometry, threat intel and required counters, the new-threat limits, revisit rules, builds, and the par-purchasable check.
 4. **Dialogue cues and scripts:** map `events` are triggers with actions ([story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)); a `cue` action emits an id (`<map_id>_wNN` for wave cues) that story content binds to a scene or bark (next recipe). Story moments that change play (revocation, pivot, forced input, clickable objects, allies, timers, checkpoints) are script actions too, never special-case code. If a script reads a story flag, add a `flagVariants` entry to `builds.ts` for each value that changes the sim.
 5. **Tune** with `npm run sim -- --map <id> --report` until it passes. Read the per-wave leak table and the jam-uptime column, not only the verdict.

@@ -1,6 +1,6 @@
 # Story Runtime
 
-How the story runs in code: map scripts (story moments that change play, inside the sim), and `src/story/` (dialogue, conditions, flags, text tokens, barks, and the other story systems). The module layout and the sim are in [architecture.md](architecture.md); content data shapes are in [architecture.md § Data shapes](architecture.md#data-shapes). Saves and the meta-side story transactions are in [meta-runtime.md](meta-runtime.md).
+How the story runs in code: map scripts (story moments that change play, inside the sim), and `src/story/` (dialogue, conditions, flags, text tokens, barks, and the other story systems). The module layout and the sim are in [architecture.md](architecture.md); content data shapes are in [`src/content/types.ts`](../../src/content/types.ts) ([architecture.md § Data shapes](architecture.md#data-shapes)). Saves and the meta-side story transactions are in [meta-runtime.md](meta-runtime.md).
 
 The authoring format and voice rules are owned by [story/style-guide.md](../story/style-guide.md); the TS types in `content/dialogue/types.ts` must map one-to-one onto its §5. The design homes for the systems below are in [design/core-loop.md §6](../design/core-loop.md#6-story-facing-systems).
 
@@ -11,6 +11,8 @@ The authoring format and voice rules are owned by [story/style-guide.md](../stor
 ## Map scripts (story-driven sim changes)
 
 Story moments that change play run **inside the sim** as map data, so headless runs, replays, and the balance harness see exactly what a player sees ([design/maps.md §5.3](../design/maps.md#53-map-scripts)). The `triggers` system ([architecture.md § Entity model](architecture.md#entity-model-typed-pools-not-an-ecs)) evaluates them. Dialogue stays in `story/`; the sim only emits `ScriptCue` ids.
+
+The exact types are `ScriptedEvent`, `ScriptTrigger`, and `ScriptAction` in [`src/content/types.ts`](../../src/content/types.ts); this sketch annotates what each trigger and action is for. An event fires at most once per run unless it sets `once: false`.
 
 ```ts
 interface ScriptedEvent { id: string; on: ScriptTrigger; when?: ConditionDef; actions: ScriptAction[]; once?: boolean }
@@ -47,7 +49,7 @@ type ScriptAction =
 `towerUnlockWave: { [towerId]: N }` in map data compiles to `{ on: { wave: N, phase: 'countdown' }, actions: [{ unlockTowerClass: towerId }] }` (A1M1: `{ thumper: 3 }`).
 
 - **Cue ids** follow `<map_id>_wNN` for wave-bound cues (`a1_m01_w03`), and the other `<map_id>_<slot>` forms from [story/style-guide.md](../story/style-guide.md) for the rest. Validation checks the pattern.
-- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([architecture.md § Data shapes](architecture.md#data-shapes)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
+- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([`src/content/types.ts`](../../src/content/types.ts)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
 - **Forced input.** `forceInput` sets `state.pendingInput`. While it is set, the wave schedule, movement, firing, cooldowns, and timers are frozen. The sim still ticks (so render can animate and `tick` stays monotonic), and `applyCommands` accepts only `{ type: 'scriptInput', id }`. The host shows the single-button overlay on `ForcedInputRequested`. Real-time lines (Bricks's line after 20 s on the SEAL) are a story-side timer on wall-clock time, not sim ticks. The balance harness presses it with a `scriptInput` build step.
 - **Clickable world objects.** `setClickable` marks a marker (for example `peeker` in A2M3) as clickable and emits `ClickableChanged`; render highlights it ([art-direction.md §6](../art/art-direction.md#6-story-and-world-sprites)). An `interact` command (valid only while the marker is clickable), or the `fallback` trigger if the player never clicks, fires the `interacted` trigger once and emits `Interacted { by }`. Pebble's A2M3 rescue is built this way, with "W6 cleared" as its fallback. Clicks that change nothing in the sim (poking the Peeker in Act I) are UI events instead (`peeker_poked`, [§ Flags](#flags)).
 - **Revocation** selects the class deterministically (most credits invested, then most towers placed, then loadout slot; [design/towers.md §9](../design/towers.md#9-rules-for-story-driven-tower-changes)), sells every tower of it at 100%, adds it to `state.revoked`, and emits `TowerClassRevoked`. Meta copies `revoked` into the save at run end.
@@ -78,7 +80,7 @@ type DialogueNode =
 
 ## Conditions
 
-Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast: MapId }`, `{ mapIs: MapId }`, `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`. Map order comes from `content/campaign.ts`. (In-map medal and objective conditions use the sim's `ConditionDef`, [architecture.md § Data shapes](architecture.md#data-shapes).)
+Story conditions are data, not strings: `{ flag, eq }`, `{ act }`, `{ mapAtLeast: MapId }`, `{ mapIs: MapId }`, `{ stat: 'pestsProcessed', gte }`, `{ all: [...] }`, `{ any: [...] }`, `{ not: … }`. Map order comes from `content/campaign.ts`. (In-map medal and objective conditions use the sim's `ConditionDef` in [`src/content/types.ts`](../../src/content/types.ts).)
 
 ## Flags
 

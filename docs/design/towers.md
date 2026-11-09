@@ -360,7 +360,7 @@ The story adds towers as gifts ([progression.md §8](progression.md#8-tower-acqu
 
 ## 10. Data shape (for implementers)
 
-The canonical type sketch for `TowerDef` (tiers, specializations, attack delivery, effects, sprites) is [../tech/architecture.md § Data shapes](../tech/architecture.md#data-shapes), until `src/content/types.ts` exists and becomes the home. This doc's tables are the human-readable spec those types encode: the roster (section 2), tiers and specs (sections 3 and 7), stacking (section 4), targeting and delivery (section 5), and links (section 6).
+The type is `TowerDef` (tiers, specializations, attack delivery, effects, sprites) in [`src/content/types.ts`](../../src/content/types.ts) (overview: [architecture.md § Data shapes](../tech/architecture.md#data-shapes)). This doc's tables are the human-readable spec those types encode: the roster (section 2), tiers and specs (sections 3 and 7), stacking (section 4), targeting and delivery (section 5), and links (section 6).
 
 ---
 

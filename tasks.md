@@ -34,21 +34,23 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 **Parallel lanes:** sim (T111 → T102 → T103 → T110 → T105a/b/c → T108a) · sprites (T104, any time after T101) · render/UI (T112 → T106/T115/T113, once the sim API from T102 exists). T107 integrates everything; T108b closes the milestone.
 
 - [x] **T101** Scaffold per `docs/tech/architecture.md`: Vite + TS + Phaser 4 + Preact overlay + Vitest + Playwright, oxlint/Prettier, `tsconfig.pure.json` + `tsconfig.node.json` (tools, smoke, configs), every npm script, and `npm run check`. `sim` and `smoke` start as passing stubs ("0 maps"). Add `__sd` test hooks, including `fastForward(ticks)`. Confirm package versions with `npm view`, pin them, and report them for D003. **Cloud checks first:** `node -v`; that a Vite dev server on localhost is reachable from inside the session (curl it); Playwright launches Chrome for Testing (`CHROME_PATH`) headless. Report the results for D008.
-- [~] **T111** Content pipeline (also: the conventions *Add a map* example uses the real id `a1_m01` with illustrative values; rename it or match A1M1: 350 credits, `companion: null`, no medals): `content/types.ts`, `define.ts`, `registry.ts`, `compile.ts` (seconds→ticks, `CompiledContent`). Becomes the canonical home of data shapes (design docs link to it).
+- [x] **T111** Content pipeline (also: the conventions *Add a map* example uses the real id `a1_m01` with illustrative values; rename it or match A1M1: 350 credits, `companion: null`, no medals): `content/types.ts`, `define.ts`, `registry.ts`, `compile.ts` (seconds→ticks, `CompiledContent`). Becomes the canonical home of data shapes (design docs link to it).
 - [ ] **T102** Pure-TS sim core: fixed 60 Hz tick, typed pools, per-system seeded RNG, command queue + `applyPending()` (commands while paused), events, `hash()`, determinism test.
-- [ ] **T103** Iso grid + map data format (incl. `towerUnlockWave`), buildable pads vs paths, path following, `iso.ts` math.
-- [ ] **T110** `content/rules.ts` (damage matrix, stacking formula and caps, jam limits) + content validator (paths vs pads, threatIntel/requiredCounters vs waves, cross-refs). (Absorbs the former T109.)
+- [ ] **T103** Iso grid + map data format (compile already emits route polylines and a row-major `TileChar[]`; settle whether paths list the S and C tiles), buildable pads vs paths, path following, `iso.ts` math.
+- [ ] **T110** `content/rules.ts` (damage matrix, stacking formula and caps, jam limits) + content validator (paths vs pads, threatIntel/requiredCounters vs waves, cross-refs). (Absorbs the former T109.) Also: wire `validate()` into `compileContent()`; move `DEFAULT_COUNTDOWN_SEC` from `compileMap.ts` into `rules.ts`.
 - [ ] **T105a** Combat: damage pipeline, armor/shields, targeting priorities, tower behaviors (Rivet hitscan, Thumper lead-targeting splash, Sprinkler chill aura).
 - [ ] **T105b** Waves: spawner (spawn intervals), early wave call (bonus formula per `docs/design/core-loop.md`), credits economy, build/upgrade/sell (misclick grace rule), core integrity, win/lose.
 - [ ] **T105c** Content data: towers Rivet, Thumper, Sprinkler (tiers 1–3); enemies Nibbler, Zoomer, Chonk. Sprinkler and Chonk are sim-tested but not used on A1M1.
 - [ ] **T108a** Headless runner + `npm run sim` (A1M1 runs: par, do-nothing, `altBuilds.rivet_only`, alwaysCallEarly; the no-counter runner is built but unused until a map has required counters) composed in `tools/` or `src/balance/` (not `sim/`). Also assert alwaysCallEarly *wins* (its upper bound can't fail on A1M1–A1M3).
-- [~] **T104** Code-generated sprite pipeline (palette-indexed grids → textures, palette swaps, outlines) + sprite gallery dev page.
+- [~] **T104** Code-generated sprite pipeline (palette-indexed grids → textures, palette swaps, outlines) + sprite gallery dev page. Follow-up: `content/types.ts` imports T104's real `SpriteId` / `EnvPaletteId` in place of T111's template type.
 - [ ] **T112** BattleScene: host loop (accumulator, 1×/2×/pause), pooled views, depth sorting, tile picking, range rings, pointer input → commands.
 - [ ] **T106** In-map HUD (Preact overlay): build menu, upgrade/sell panel, wave call, speed controls, credits/integrity/wave readouts, keyboard routing rule.
 - [ ] **T113** Orbital Strike commander ability (cooldown, targeting, VFX).
 - [ ] **T115** Minimal title screen and results screen (PESTS PROCESSED counter shown; no medals yet).
 - [ ] **T107** A1M1 playable end to end per the M1 cut: briefing as static text, with no Bricks ally, Suppressing Fire, Crossfire link, or medals. Par build tuned to match. Write A1M1 par and `rivet_only` as **explicit step lists** in `docs/story/campaign/act1.md`. Round-3 math puts the bank at 95 in W6's build phase, below the 125 the second Thumper costs. Either state "W6 Thumper built when affordable (≈ mid-W6)" or move it to W7 (bank ≈ 179). State the T2 timing.
 - [ ] **T108b** Playwright smoke flows (boot, build, wave, win via `fastForward`, lose) with screenshots, wired into `npm run check`.
+
+- [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 ## M2 — Loadout, Upgrades & Meta Progression
 - [ ] **T201** Loadout screen (pick up to 4 towers; skipped when you own ≤4 types and have no choice to make)

@@ -12,7 +12,7 @@ How Stardust is built: the stack, the module layout, the sim/render boundary, co
 > |---|---|---|
 > | **Modules** | `shared`, `content`, `sim`, `render`, `ui`, `app`, `balance`, `tools/` | `story` (A1M1's briefing is a static string in map data), `meta` (no saves or currencies), `audio` |
 > | **Content** (T111, T110, T105c) | `types.ts`, `define.ts`, `registry.ts`, `validate.ts`, `compile.ts`, `rules.ts`; towers `rivet`, `thumper`, `sprinkler` (tiers 1–3); enemies `nibbler`, `zoomer`, `chonk`; map `a1_m01`; ability `orbital_strike`. Sprinkler and Chonk are sim-tested but not placed on A1M1 | Tier-4 specs, links, medals, objectives, allies, companion (A1M1's `companion` is `null` until T207) |
-> | **Sim systems** (T102, T103, T105a/b, T113) | `applyCommands`, `waves`, `triggers` (only `unlockTowerClass`, compiled from `towerUnlockWave`: Thumper unlocks when W3's countdown starts), `status` (Chilled only), `abilities` (Orbital Strike only; no enemy abilities), `movement`, `towers` (hitscan Rivet, lobbed lead-targeting Thumper, Sprinkler aura), `projectiles`, `cleanup` (win/lose). Plus `applyPending()`, `hash()`, and per-system RNG streams | Allies, hold fire, the spare-runners filter, links, jams, story stats beyond `skitterkinKilled` |
+> | **Sim systems** (T102, T103, T105a/b, T113) | `applyCommands`, `waves`, `triggers` (only `unlockTowerClass`, compiled from `towerUnlockWave`: Thumper unlocks when W3's countdown starts), `status` (Chilled only), `abilities` (Orbital Strike only; no enemy abilities), `movement`, `towers` (hitscan Rivet, lobbed lead-targeting Thumper, the Sprinkler's chill aura as a `pulse` attack), `projectiles`, `cleanup` (win/lose). Plus `applyPending()`, `hash()`, and per-system RNG streams | Allies, hold fire, the spare-runners filter, links, jams, story stats beyond `skitterkinKilled` |
 > | **Commands** | `build`, `upgrade`, `sell`, `targeting`, `ability` (slot 1), `callWave` | `specialize` (T202), `holdFire` and `spareRunners` (T206), `clear`, `interact`, `scriptInput` |
 > | **Events** | `EnemySpawned`, `EnemyDied`, `EnemyLeaked`, `ProjectileFired`, `ProjectileHit`, `TowerBuilt`, `TowerUpgraded`, `TowerSold`, `TowerClassUnlocked`, `WaveStarted`, `WaveCleared`, `AbilityUsed`, `MapWon`, `MapLost`, `CommandRejected` | Every story-facing event |
 > | **Render and UI** (T104, T112, T106, T115) | `BootScene`, `BattleScene`, sprite baker and gallery page, HUD, keyboard routing rule, Title and Results screens (the run's Pests Processed count; no medals) | Loadout, shop, dialogue, codex, star map |
@@ -91,7 +91,7 @@ Rendering **reads** sim state and **sends commands**. It never mutates sim state
 ### Determinism
 
 - Same content + same map + same seed + same command list ⇒ the **same outcome**, on the same JS engine. That's what tests, balance sims, checkpoints, and reproducible bug reports need. Bit-exact results across browsers aren't a goal (there's no multiplayer or server replay).
-- **Fixed timestep: 60 ticks per second.** `TICK_HZ = 60`. Sim time is an integer `tick` counter. Content is authored in seconds and tiles, and converted to ticks once at content compile time.
+- **Fixed timestep: 60 ticks per second.** `TICK_HZ = 60` (`src/shared/time.ts`, with the seconds → ticks conversions). Sim time is an integer `tick` counter. Content is authored in seconds and tiles, and converted to ticks once at content compile time.
 - **Seeded RNG:** `sfc32` (128-bit state, serializable) in `src/shared/rng.ts`. The sim derives one **stream per system** from the map seed (`rng.fork('spawn')`, `rng.fork('combat')`), so adding a random roll in one system doesn't shift every other system's results. Cosmetic randomness (particles, Hollow glitches, bark choice) uses separate render-side or story-side RNGs and **never** touches the sim's.
 - Iteration order is always array order (entities are processed in ascending slot order). No `for…in` over objects, and no sorting without a deterministic tie-break.
 - **Banned in `src/sim/`:** `Math.sin`, `Math.cos`, `Math.atan2`, `Math.pow`, and `Math.random` (lint rule plus the architecture test). Their results can differ between engines, and none is needed: use squared distances, precomputed polyline lengths, and `x * x`. Lead targeting solves along the route's `dist`, not with angles.
@@ -102,7 +102,7 @@ We have about 5 entity kinds and at most a few hundred live entities. A generic 
 
 - One **typed pool per kind**: `towers`, `enemies` (including neutral units such as Gerald, flagged `neutral`), `projectiles`, `zones` (ground effects, ability areas, and song auras), and `allies`. Each pool is a preallocated array of plain objects with every field initialized (monomorphic shapes), plus a free list.
 - **Allies** are every friendly non-tower unit ([design/maps.md §5.4](../design/maps.md#54-allies-on-the-map)). Each has an `allyKind` (`swarmling`, `leaper`, `refugee`, `bearer`, `singer`, `bricks`, `militia`, `ward`), a movement mode (`route`, `post`, `owner`, or `stationary`), an optional attack (Bricks and militia), an optional song aura (singers, bearers), and a **vulnerability**: `never` (swarmlings, leapers, militia, wards, Pebble, Old Thrum), `hush` (refugees, singers, bearers), or `scripted` (Bricks in A3M3: Hollow units stop at his post, but his health bar follows a per-wave timeline in map data, never the player's DPS). Enemies never target towers.
-- **Ally targeting.** Ally attacks never target units whose wave group is tagged `quiet_wave`, `youngling`, or `fleeing` (the tags are in [§3](#data-shapes)).
+- **Ally targeting.** Ally attacks never target units whose wave group is tagged `quiet_wave`, `youngling`, or `fleeing` (`WaveTag`, [§3 Data shapes](#data-shapes)).
 - **Hushing:** a non-boss Hollow unit hushes at most one `fleeing` enemy or `hush` ally and turns Heavy. The fleeing and hush rules (tell, heal, speed, the Maw's gather) have one home, [design/enemies.md](../design/enemies.md) §5.4. In code, the victim is removed and the unit sets `hasHushed = true` so it can't hush again.
 - Each entity has a `uid` (a monotonic integer, never reused within a run) and an `alive` flag. Dead slots return to the free list at the end of the tick.
 - Entities hold a **direct reference to their compiled definition** (`def: CompiledEnemyDef`), resolved at spawn, so hot loops never look up string ids.
@@ -256,10 +256,10 @@ type Modifier =
 | `campaign.ts` | Campaign map order (mirrors [story/campaign.md](../story/campaign.md)) |
 | `rules.ts` | Rule data: damage matrix, stacking caps, aura kinds, jam limits, the speed rule, counter categories, the trait → counter-category map (canonical table: [design/enemies.md](../design/enemies.md) §3; intel-only traits map to no category), which towers answer each category, `SPARE_TAGS`, checkpoint interval, bark thresholds |
 | `sprites/`, `palettes/` | Pixel art data ([art/tech-spec.md §2](../art/tech-spec.md#2-code-generated-pixel-art-format)) |
-| `types.ts`, `define.ts` | Definition types plus `defineTower()`, `defineEnemy()`, and similar identity helpers that give type inference |
+| `types.ts`, `compiled.ts`, `define.ts` | Definition types (authored and compiled; [§ Data shapes](#data-shapes)) plus `defineTower()`, `defineEnemy()`, `defineMap()`, and similar identity helpers that give type inference |
 | `registry.ts` | Imports every registry and exports `RAW_CONTENT` |
 | `validate.ts` | Cross-reference, range, and design-rule validation (below) |
-| `compile.ts` | Resolves ids to references, converts seconds to ticks, compiles `towerUnlockWave` into script events, and freezes the result into `CompiledContent` |
+| `compile.ts` | `compileContent()`: resolves ids to references, converts seconds to ticks, resolves tier patches, compiles routes and `towerUnlockWave`, and freezes the result into `CompiledContent` (its parts: `compileTower.ts`, `compileMap.ts`, `compileBuilds.ts`, `compileHelpers.ts`) |
 
 - **Ids** are `snake_case` strings, unique per kind. Id union types are derived from the registries (`type TowerId = keyof typeof TOWERS`), so a typo in a wave file is a compile error.
 - **Exact numbers live in content files.** Design docs hold intent, roles, and target ranges, and link to the content file rather than copying its numbers.
@@ -267,122 +267,15 @@ type Modifier =
 
 ### Data shapes
 
-**This section is the canonical type sketch** until `src/content/types.ts` exists (T111); then the code is the home and this section shrinks to a link. Design docs link here instead of keeping their own sketches. Units are in field names ([conventions.md § TypeScript style](conventions.md#typescript-style)); content is authored in seconds and tiles.
+**The code is the home of the data shapes:** [`src/content/types.ts`](../../src/content/types.ts) defines what content authors write (`TowerDef`, `EnemyDef`, `AbilityDef`, `MapDef` and its parts, waves, builds, conditions, and the map-script triggers and actions), and [`src/content/compiled.ts`](../../src/content/compiled.ts) defines what the sim reads (`CompiledContent`). Design docs link there instead of keeping their own sketches. The essentials:
 
-```ts
-type GridPos = [col: number, row: number];
-type TileKey = `${number},${number}`;               // "col,row"
-type TargetPriority = 'first' | 'last' | 'strong' | 'close';
-type DamageType = 'kinetic' | 'explosive' | 'energy' | 'psionic';
-type WaveTag = 'quiet_wave' | 'youngling' | 'fleeing' | 'medal_exempt' | string;  // allies never target the first three
-type CounterId = 'splash' | 'armor' | 'air' | 'shield' | 'detection' | …;     // listed in content/rules.ts
+- **Units are in field names** ([conventions.md § TypeScript style](conventions.md#typescript-style)). Content is authored in seconds and tiles (`ratePerSec`, `rangeTiles`, `flightSec`); compiled data is in ticks and tiles (`cooldownTicks`, `rangeSq`, `speedTilesPerTick`). The tile is the sim's only distance unit; tile `(c, r)` has its center at `(c + 0.5, r + 0.5)` ([art/tech-spec.md § Grid ↔ screen math](../art/tech-spec.md#grid--screen-math)).
+- **Id unions come from the registries** (`type TowerId = Extract<keyof typeof TOWERS, string>`). Types that refer to another kind's ids take an id space `K` that defaults to the live registries, so test fixtures (`src/content/__fixtures__/`) get the same typo checking against their own registries. A definition never names its own kind's ids (`MapDef.revisitOf` is a plain string that `validate()` checks), which keeps the types free of cycles. Kinds without a registry yet (links, upgrades, protocols) are `never`, so nothing can reference them until their task adds one.
+- **Towers:** tier 1 is complete; tiers 2 and 3 are patches on the tier before, and the tier-4 specs (optional until T202) patch tier 3. Targets and default priority live on the tier, so a spec can change them (Railspike's Strong, Cloudburst's air). Attack kinds: `hitscan`, `projectile`, `lobbed` (fixed flight time, optional lead), `beam`, `chain`, `spawner`, and `pulse` (hits every enemy in range each period, with no target: the Sprinkler's chill aura). Armor pierce and ignore-armor are attack fields on every kind.
+- **Waves:** a group's `intervalSec` defaults to the enemy's `spawnIntervalSec` ([design/enemies.md §5](../design/enemies.md#5-roster)), and its `route` (a path, air-lane, or rift-lane id) also fixes its spawn. A wave's `countdownSec` defaults by act ([design/core-loop.md §2.1](../design/core-loop.md#21-phases)). Wave tags (`WaveTag`) include `quiet_wave`, `youngling`, and `fleeing`, which allies and the spare-runners filter never pick.
+- **A map** is `MapLayoutDef` (`map.ts`) + `WaveDef[]` (`waves.ts`) + `BuildsDef` (`builds.ts`), composed by `defineMap` ([conventions.md § Add a map](conventions.md#add-a-map)).
 
-interface TowerDef {
-  id: TowerId;                                      // 'rivet'
-  faction: 'everglow' | 'vrell' | 'aelari' | 'skitterkin';
-  role: string;                                     // display only
-  targets: { ground: boolean; air: boolean };
-  defaultPriority: TargetPriority | null;           // null: the tower doesn't attack
-  sprites: { base: SpriteId; head?: SpriteId; icon: SpriteId };
-  tiers: [TierDef, TierPatch, TierPatch];           // T1 in full; T2 and T3 patch the previous tier
-  specs: { a: SpecDef; b: SpecDef };                // tier 4; one R&D purchase unlocks both
-  links: LinkId[];                                  // link effects live in the links table
-  lightRadiusTiles?: number;                        // a light source under darkness (Prism Spire)
-}
-interface TierDef { cost: number; attack?: AttackDef; effects?: EffectDef[]; auras?: AuraDef[] }
-type TierPatch = { cost: number } & DeepPartial<Omit<TierDef, 'cost'>>;
-interface SpecDef extends TierPatch { name: string }
-type AttackDef = { type: DamageType; damage: number; ratePerSec: number; rangeTiles: number;
-                   minRangeTiles?: number /* exclusive: hits only at distance > min */ } & (
-  | { kind: 'hitscan'; pierce?: number }                                       // Rivet
-  | { kind: 'projectile'; projectile: ProjectileId; speedTilesPerSec: number }
-  | { kind: 'lobbed'; projectile: ProjectileId; flightSec: number; splashTiles: number; lead: boolean }  // Thumper
-  | { kind: 'beam'; tickSec: number }               // non-DoT: armor applies per tick (design/enemies.md §2.3)
-  | { kind: 'chain'; jumps: number; jumpRangeTiles: number; falloffPct: number }
-  | { kind: 'spawner'; ally: AllyKind; maxAlive: number });
-// AuraDef: { kind: AuraKind; radiusTiles; stat or status; pct }; same-kind auras don't stack
-
-interface EnemyDef {
-  id: EnemyId;
-  faction: 'skitterkin' | 'aelari' | 'everglow' | 'hollow';
-  body: 'organic' | 'crystalline' | 'mechanical' | 'void';
-  layer: 'ground' | 'air';
-  hp: number; armor: number; shield?: { hp: number; regenPerSec: number; regenDelaySec: number };
-  speedTilesPerSec: number; leak: number; bounty: number;
-  traits: Trait[]; abilities: AbilityRef[]; tells: TellId[];
-  restValue?: number;                               // finale; default 1
-  boss?: BossDef;                                   // phases and scripted endings (design/enemies.md §6.1)
-  sprites: { body: SpriteId; icon: SpriteId };
-}
-
-interface WaveDef {
-  countdownSec?: number;                            // defaults by act
-  teach?: boolean;                                  // the teach wave for a new trait: exempt from the soft-trait cap
-  groups: WaveGroup[];
-}
-interface WaveGroup {
-  enemy: EnemyId; count: number; intervalSec: number; delaySec?: number;
-  spawn: string; route: string;                     // a path, air-lane, or rift-lane id
-  tags?: WaveTag[];                                 // fleeing: leak 0, medal-exempt (design/enemies.md §5.4)
-  teach?: boolean;                                  // a teach group inside a mixed wave: only its threat is exempt
-}
-
-interface MapDef {
-  id: MapId; act: 1 | 2 | 3 | 'finale' | 'challenge' | 'endless'; env: EnvPaletteId;
-  size: { cols: number; rows: number };
-  tiles: string[];                                  // one string per row; legend in design/maps.md §3
-  underWreckage?: Record<TileKey, TileChar>; salvage?: Record<TileKey, number>;
-  paths: { id: string; tiles: GridPos[] }[];
-  airLanes?: { id: string; points: GridPos[] }[];
-  riftLanes?: { id: string; tiles: GridPos[]; opensAtWave: number }[];
-  markers?: Record<MarkerId, GridPos>;              // named decor positions: 'peeker' (the Peeker rock), exits, wreckage sites
-  objective: ObjectiveKind;                         // 'defend' | 'escort' | 'holdout' | 'protect' | 'choir'; a script may pivot it
-  meterLabel?: MeterLabel;                          // 'integrity' | 'evacuated' | 'sheltered' | 'voices'
-  maxLost?: number; minVoices?: number; evacuatedFloor?: number;
-  startCredits: number; coreIntegrity?: number;     // default 20
-  stardust: number;                                 // first-clear reward (flat; A1M1 pays 0)
-  briefing?: string;                                // M1 only: the static briefing before story/ exists
-  towerUnlockWave?: Partial<Record<TowerId, number>>;  // the build button unlocks when that wave's countdown starts
-  threatIntel: Trait[];                             // every trait in the waves; shown as icons
-  requiredCounters: CounterId[];                    // ≤ 3; each backed by a noCounterBuild that must lose
-  waves: WaveDef[];
-  medals?: { challenge: { id: MedalId; condition: ConditionDef } }; // required on campaign maps from T202 (§ Validation)
-  objectives?: { id: string; condition: ConditionDef; intel: number; onComplete?: ScriptAction[] }[];
-  companion: { id: CompanionId; state: 'present' | 'absent' } | { pick: CompanionId[] } | null;
-  lockedAbilities?: { ability: AbilityId; when: Condition }[];  // unequippable here (A3M5: system_reboot under quill_choice = rewrite)
-  allies?: AllyPlacement[];                         // posts, groups, routes; Bricks's A3M3 health timeline
-  revisitOf?: MapId;                                // reuses that map's layout, centred (design/maps.md §7)
-  dressing?: { layer: string; when?: Condition }[]; // state-dependent dressing (story Condition)
-  presentation?: Partial<PresentationDials>;
-  events?: ScriptedEvent[];                         // { id, on, when?, actions[] }; story-runtime.md § Map scripts
-  song?: SongDef;                                   // finale only (design/maps.md §5.5)
-  // builds.ts
-  referenceProfile: ProfileDef;
-  parBuild: ScriptedBuild;
-  noCounterBuilds: Partial<Record<CounterId, ScriptedBuild>>;  // keys = requiredCounters
-  altBuilds?: Record<string, ScriptedBuild>;        // ≥ 2 from A1M4
-  flagVariants?: Partial<{ [F in ScriptFlagId]: FlagValue<F>[] }>;
-  guards?: Record<string, { policy: PolicyId; expect: 'lose' | { maxMarginPct: number } }>;
-}
-
-// Medal and objective conditions: one grammar, evaluated by the sim over run state.
-type ConditionDef =
-  | { stat: RunStat; gte?: number; lte?: number }   // integrityLost, towersBuilt, creditsSpent, abilityUses, …
-  | { towers: { tower?: TowerId; faction?: TowerFaction }; gte?: number; lte?: number }
-  | { linkActive: LinkId }                          // evaluated at the moment of victory when used by a medal
-  | { tagRatio: { tag: WaveTag; of: 'leaked' | 'killed'; gte: number } }
-  | { flag: ScriptFlagId; eq: FlagValue }           // reads SimConfig.scriptFlags
-  | { all: ConditionDef[] } | { any: ConditionDef[] } | { not: ConditionDef };
-
-interface ProfileDef {                              // what a Standard player owns here (design/progression.md §10)
-  towers: TowerId[]; specs: TowerId[];              // specs: towers whose tier-4 pair is unlocked
-  shop: Partial<Record<UpgradeId, number>>; protocols: ProtocolId[];
-  technicianAbility: AbilityId | null;
-}
-interface ScriptedBuild { loadout: TowerId[]; companion?: CompanionId; technicianAbility?: AbilityId;  // default: the profile's
-                          callEarly?: boolean; steps: BuildStep[] }
-// BuildStep kinds and their semantics: conventions.md § Balance sims
-```
+**Compiling** (`compileContent()` in `src/content/compile.ts`; its header comment is the home of the conversion and merge rules) turns seconds into whole ticks and rates into whole-tick periods, resolves tier patches into full per-tier definitions, gives wave groups direct references to their compiled enemy and route, turns routes into polylines through tile centers with cumulative lengths, compiles `towerUnlockWave` into `{ wave: N, phase: 'countdown' }` → `unlockTowerClass` events (ahead of the authored events) plus the map's `lockedTowersAtStart`, turns build steps into tagged steps, resolves every optional field to a value or `null`, and deep-freezes the result. Anything it can't compile past (an unknown id, a registry key that differs from its id, a malformed tile grid) throws one `ContentCompileError` listing every problem.
 
 ### Validation
 
@@ -543,18 +436,20 @@ stardust/
     │   ├── settings.ts  log.ts  testHooks.ts    # log.ts: the only console user in src/
     │   ├── testHookTypes.ts    # the __sd shape, DOM-free so smoke specs can import it
     ├── shared/                 # pure utilities
-    │   ├── rng.ts  bus.ts  hash.ts  math.ts  types.ts
+    │   ├── rng.ts  bus.ts  hash.ts  math.ts  time.ts  types.ts
     │   └── architecture.test.ts
     ├── sim/                    # pure, deterministic
     │   ├── index.ts            # public API
     │   ├── state.ts  constants.ts  commands.ts  events.ts  pool.ts  path.ts  grid.ts
     │   ├── tick.ts             # system order
     │   ├── systems/            # applyCommands, waves, triggers, status, abilities, movement, towers, projectiles, cleanup
-    │   ├── behaviors/          # tower attack kinds (hitscan, projectile, lobbed, beam, chain, aura, spawner)
+    │   ├── behaviors/          # tower attack kinds (hitscan, projectile, lobbed, beam, chain, pulse, spawner)
     │   ├── abilities/          # enemy ability kinds (blink, burrow, gather, jam, hush, …) and commander abilities
     │   └── headless.ts         # runHeadless() and the scripted-build executor
     ├── content/                # pure data
-    │   ├── types.ts  define.ts  registry.ts  validate.ts  compile.ts  content.test.ts
+    │   ├── types.ts  compiled.ts  define.ts  registry.ts  validate.ts  content.test.ts
+    │   ├── compile.ts  compileTower.ts  compileMap.ts  compileBuilds.ts  compileHelpers.ts
+    │   ├── __fixtures__/       # test-only content (fixture towers, enemies, ability, map)
     │   ├── towers/  enemies/  abilities/  maps/<id>/  upgrades/  codex/
     │   ├── rules.ts            # rule data: damage matrix, stacking caps, aura kinds, jam limits, counters
     │   ├── presentation.ts     # per-act presentation dials

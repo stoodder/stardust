@@ -300,7 +300,7 @@ How the harness encodes these is in [../tech/conventions.md § Balance sims](../
 
 ## 9. Map data shape (for implementers)
 
-The canonical type sketch for `MapDef` is [../tech/architecture.md § Data shapes](../tech/architecture.md#data-shapes), until `src/content/types.ts` exists and becomes the home. This table says what each field means for design and where its rules live.
+The type is `MapDef` in [`src/content/types.ts`](../../src/content/types.ts) (overview: [architecture.md § Data shapes](../tech/architecture.md#data-shapes)). This table says what each field means for design and where its rules live.
 
 | Field(s) | Design meaning | Rules |
 |---|---|---|
