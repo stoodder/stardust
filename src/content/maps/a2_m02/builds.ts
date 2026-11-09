@@ -39,6 +39,8 @@ const EAST_RUN: GridPos = [5, 7];
 const BACK_RUN: GridPos = [13, 4];
 /** The branch's hairpin, where she turns back for the rigs. */
 const HAIRPIN: GridPos = [10, 5];
+/** The branch's far corner, where the ledge run turns down. */
+const CORNER: GridPos = [16, 3];
 
 function parSteps(): BuildStep[] {
   return [
@@ -137,23 +139,23 @@ export const builds = defineBuilds({
         { wave: 1, build: 'zapcoil', tile: LEDGE_E },
         { wave: 2, upgrade: NODE },
         { wave: 3, upgrade: LEDGE_W },
-        { wave: 4, build: 'thumper', tile: POCKET },
+        { wave: 4, build: 'thumper', tile: MID },
         { wave: 4, upgrade: LEDGE_E },
         { wave: 5, build: 'thumper', tile: BEND },
         { wave: 5, build: 'lookout', tile: OUTCROP },
         { wave: 6, upgrade: BEND },
         { wave: 6, upgrade: LEDGE_W },
         { wave: 7, upgrade: LEDGE_E },
-        { wave: 7, upgrade: POCKET },
+        { wave: 7, upgrade: MID },
         { wave: 8, build: 'zapcoil', tile: RIG_END },
         { wave: 8, upgrade: RIG_END },
         { wave: 9, upgrade: RIG_END },
         { wave: 9, build: 'zapcoil', tile: RIG_W },
         { wave: 10, upgrade: RIG_W },
         { wave: 10, upgrade: RIG_W },
-        { wave: 10, build: 'skyhook', tile: RELAY },
+        { wave: 10, build: 'zapcoil', tile: RIG_C },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST } },
-        { wave: 11, ability: 1, target: HAIRPIN, when: { afterSec: WITCH_DELAY + 54 } },
+        { wave: 11, ability: 1, target: CORNER, when: { afterSec: WITCH_DELAY + 34 } },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST + TD_GAP } },
       ],
     },
@@ -182,8 +184,6 @@ export const builds = defineBuilds({
         { wave: 9, upgrade: RIG_C },
         { wave: 9, upgrade: RIG_END },
         { wave: 10, specialize: LEDGE_E, spec: 'b' }, // Bunker Buster
-        { wave: 10, upgrade: RIG_END },
-        { wave: 10, build: 'skyhook', tile: RELAY },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST } },
         { wave: 11, ability: 1, target: HAIRPIN, when: { afterSec: WITCH_DELAY + 54 } },
         { wave: 11, ability: 2, when: { afterSec: TD_FIRST + TD_GAP } },

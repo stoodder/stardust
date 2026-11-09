@@ -26,9 +26,9 @@ export const map = defineMapLayout({
     '...#.+..o######...',
     '...#......oooo#...',
     '...#####......#...',
-    '......o#o.....###.',
-    '.....###..........',
-    '....o#............',
+    '......o#o.....#...',
+    '.....###......#...',
+    '....o#........###.',
     '.....C............',
   ],
   // prettier-ignore
@@ -58,8 +58,8 @@ export const map = defineMapLayout({
         [15, 4], [14, 4], [13, 4], [12, 4], [11, 4], [10, 4], [9, 4], // back west
         [9, 5],                                                 // round the hairpin
         [10, 5], [11, 5], [12, 5], [13, 5], [14, 5],            // east again
-        [14, 6], [14, 7], [14, 8],                              // down off the ledge
-        [15, 8], [16, 8],                                       // to the rigs
+        [14, 6], [14, 7], [14, 8], [14, 9], [14, 10],           // down off the ledge
+        [15, 10], [16, 10],                                     // to the rigs
       ],
     },
   ],
@@ -67,7 +67,7 @@ export const map = defineMapLayout({
   // asset, on decor at the branch's end), the habitat domes on the west edge (decor she never
   // goes near), and the fork, where the branch leaves the road.
   markers: {
-    rigs: [17, 8],
+    rigs: [17, 10],
     dome_north: [1, 3],
     dome_south: [1, 8],
     fork: [4, 1],
