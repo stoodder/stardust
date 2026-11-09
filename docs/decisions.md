@@ -368,3 +368,22 @@ The owner said "start M2 … continue through to the end" and is away, so the or
   - `SaveData.profile` is `null` until T306.
   - A new save grants Orbital Strike directly until the memo exists (T203a).
 - **Plan:** 24 subtasks in waves of up to 3 agents. Critical paths: T200 → T202a → T202c → T125/T210b, and T203a → T209 → T204c → T204d/T201. T200 adds the sim seams (types, stubs, fields) up front so the sim tasks can run in parallel without sharing files.
+
+### D032 — 2026-11-09 — M2 wave 1: sim seams (T200) and save core (T203a)
+- **T200 sim seams:**
+  - `Modifier` has 12 kinds (`towerStat`, `towerCost`, `enemyStat`, `economy`, `sellRefund`, `abilityStat`, `countdown`, `linkBonus`, `tileBonus`, `leakAbsorb`, `firstBuildFree`, `freeCast`).
+  - `SimConfig.specsUnlocked` exists.
+  - New commands: `specialize`, `holdFire`, `spareRunners`. New events: links, allies, hold fire, `MedalProgress`, `TowerSpecialized`.
+  - The `links` (4b) and `allies` (7b) systems are in the tick order.
+  - Refusals are split into the per-feature tables `FEATURE_GATES` (`src/sim/gates.ts`) and `HARNESS_GATES` (`src/balance/refusals.ts`). Each task lifts only its own row.
+  - A1M1's numbers didn't change, only its hash. `systems/waves.ts` (where `enemyStat` and `countdown` apply) belongs to T204b.
+- **T203a save core** (`src/meta/`, pure):
+  - SaveData v1 has `profile: null`, and a new save owns Rivet, Thumper, and Orbital Strike.
+  - It's stored as `{v, savedAt, data}`, with a `:bak` rotation only from a readable save. Loading never writes.
+  - Export/import codes look like `SD<v>-<base64url(deflate-raw)>-<4 hex fnv>`, capped at 64 KB of code and 512 KB unpacked (counted while streaming). Unknown ids are rejected.
+  - Dev saves: `fresh`, `after_a1m1`, `mid_m2`, `all_unlocked`.
+- **Rulings:**
+  - **SaveData v1 may change freely until M2 ships, then it freezes** (nothing has shipped, so no migration is owed). Difficulty and loadout presets go into v1.
+  - The `?test=1&save=` hook may set a dev-only `devUnlocks` override (never honoured from imports), because the shop, Engineering, and loadout unlock at A1M3/A1M4, which don't exist yet.
+  - Medal ids are `victory` / `perfect_core` / `<challenge id>` until T202c.
+- **Gate flakiness:** under 4–5 concurrent agents, the ±0.2 s A1M1 robustness test can exceed Vitest's 5 s timeout, and overlapping builds swap asset hashes mid-smoke. The test gets a longer timeout; one gate run at a time.

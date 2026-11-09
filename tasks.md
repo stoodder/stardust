@@ -66,17 +66,17 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T125** (with T124, wave 5) Balance: A1M1 gets the companion, ally marker, and Teamwork medal; when T202 re-tunes A1M1 (links, Bricks), keep `src/balance/a1m1.test.ts` green; rivet_only sits on its 40% floor at a −0.2 s clump shift (D027). Add a threat-intel strip to the briefing once trait icons exist.
 - [ ] **T126** Accessibility: keyboard-only building and selecting (a tile cursor: arrows hop between pads and towers, Enter builds/selects). Also reposition the tower panel so it doesn't cover neighbouring towers.
 - [ ] **T128** Story: canonise the Thumper unlock radio line ("New hardware! Thumper Mortar, ready to deploy!") in act1.md § A1M1, or replace it with a canon line and drop its exemption in `tools/radioLines.test.ts`. Polish: phase-sync the 1 Hz HUD slot and pad pulses; a clearer low-integrity core frame (ART).
-- [ ] **T129** (folded into T200) Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
+- [x] **T129** (folded into T200) Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
 
-- [ ] **T200** Sim seams: widen `Modifier` (ability cooldown/radius, cost, refund, bounty, link bonus, leak absorb); `SimConfig.specsUnlocked`; declare every M2 command and event (stubs reject); entity, ally, and stat fields; stub `links` and `allies` in tick order; split refusals per feature; fold in T129.
-- [ ] **T203a** Save core: `src/meta/` KeyValueStore, SaveData v1 (`profile: null`), migrations, validateSave, `:bak`, the SD1 export/import codec with caps; a new save grants Orbital Strike.
+- [x] **T200** Sim seams: widen `Modifier` (ability cooldown/radius, cost, refund, bounty, link bonus, leak absorb); `SimConfig.specsUnlocked`; declare every M2 command and event (stubs reject); entity, ally, and stat fields; stub `links` and `allies` in tick order; split refusals per feature; fold in T129.
+- [x] **T203a** Save core: `src/meta/` KeyValueStore, SaveData v1 (`profile: null`), migrations, validateSave, `:bak`, the SD1 export/import codec with caps; a new save grants Orbital Strike.
 - [~] **T205** Procedural audio: SFX first, then music layers.
-- [ ] **T202a** Stacking formula and caps; apply the tile bonuses (high ground, power node); links (Crossfire, Sitting Ducks, `vsStatus`); tower and economy modifiers; modifier-aware `towerStats`.
-- [ ] **T207a** Ability slot 2 + Suppressing Fire (segment = clicked path tile ±1); the allies system (Bricks never targets `quiet_wave`/`youngling`/`fleeing`); Mk II and Rapport modifiers.
-- [ ] **T209** Flow shell: Title (new / continue / import), slots, Shift board, Base tabs, Settings (codes, difficulty); the battle config built from the save; `?save=<fixture>` dev hook.
+- [~] **T202a** Stacking formula and caps; apply the tile bonuses (high ground, power node); links (Crossfire, Sitting Ducks, `vsStatus`); tower and economy modifiers; modifier-aware `towerStats`.
+- [~] **T207a** Ability slot 2 + Suppressing Fire (segment = clicked path tile ±1); the allies system (Bricks never targets `quiet_wave`/`youngling`/`fleeing`); Mk II and Rapport modifiers.
+- [~] **T209** Flow shell: Title (new / continue / import), slots, Shift board, Base tabs, Settings (codes, difficulty); the battle config built from the save; `?save=<fixture>` dev hook.
 - [ ] **T202c** Condition evaluator (medals, trigger `when` incl. flags); Victory / Perfect Core / Challenge medals; `passedMarker`; the medal validator.
 - [ ] **T204a** Catalog data (tune-ups, global upgrades, 10 protocols, R&D, `availableAfter`); campaign order; the par-purchasable check.
 - [ ] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches. M0 doc gaps: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; `youngling` stays a `WaveTag`.
