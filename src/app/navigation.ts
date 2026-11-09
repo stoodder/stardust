@@ -2,6 +2,8 @@
 // is for battle actions: components call these, never the router directly. Save actions that
 // change screens (New game, Continue, Load, Import) go through here too; the rest are app/save.ts.
 import type { SaveData, SlotId } from '../meta/index.ts';
+import type { LoadoutPickView } from '../ui/screens/loadoutView.ts';
+import { loadoutMapId, savePick } from './loadout.ts';
 import { logError } from './log.ts';
 import type { Router } from './router.ts';
 import {
@@ -30,9 +32,29 @@ function run(what: string, go: (r: Router) => Promise<void>): void {
   });
 }
 
-/** Opens a map's battle (with its briefing): the Shift board's Start. */
+/**
+ * The Shift board's Start: a map's loadout screen when the save has a choice to make (T201),
+ * else its battle (with its briefing).
+ */
 export function playMap(mapId: string): void {
-  run('play', (r) => r.goto('battle', { mapId }));
+  run('play', (r) => r.play({ mapId }));
+}
+
+/** Loadout → Lock in: remembers the pick as the map's preset, then its battle and briefing. */
+export function lockInLoadout(pick: LoadoutPickView): void {
+  const mapId = loadoutMapId();
+  if (mapId === null) return;
+  // A failed write is logged; the save in play holds the pick, so the battle still uses it.
+  savePick(pick);
+  run('lock in', (r) => r.goto('battle', { mapId }));
+}
+
+/** The briefing's Change loadout: back to the running map's loadout screen. */
+export function changeLoadout(): void {
+  run('change loadout', (r) => {
+    const mapId = r.battle?.host.sim.map.id;
+    return mapId === undefined ? Promise.resolve() : r.goto('loadout', { mapId });
+  });
 }
 
 /** Plays the save's next map, or shows the Shift board when there is none. */

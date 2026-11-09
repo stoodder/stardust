@@ -3,13 +3,18 @@
 import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
-import { QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
+import {
+  FLAG_VARIANT_CONTENT,
+  QUIET_WAVE_CONTENT,
+  THANK_YOU_CREDITS,
+} from './__fixtures__/fireControl.ts';
 import {
   FIXTURE_CATALOG,
   NO_SPLASH_CONTENT,
   PICK_CONTENT,
   PLAIN_CONTENT,
 } from './__fixtures__/harness.ts';
+import { evaluateFlagRule, flagRule } from '../story/flags.ts';
 import { buildFor, runCampaign, runMap } from './harness.ts';
 
 describe('balance harness', () => {
@@ -96,6 +101,42 @@ describe('balance harness', () => {
       // Par itself fires on the Quiet Wave.
       expect(par.result!.stats.tagKilled.quiet_wave).toBe(5);
     }
+    expect(r.checks.find((c) => c.id === '12')?.ok).toBe(true);
+  });
+
+  it('#16a: the held run sets spared_quiet_wave by its rule; par, which fires, does not', () => {
+    const r = runMap(QUIET_WAVE_CONTENT, 'fx_map', { seeds: 1, build: 'holdFireWhile:quiet_wave' });
+    const held = r.runs.find((x) => x.build === 'holdFireWhile:quiet_wave')!.result!;
+    const rule = flagRule('spared_quiet_wave')!;
+    expect(evaluateFlagRule(rule.value, held.stats)).toBe(true);
+    const par = runMap(QUIET_WAVE_CONTENT, 'fx_map', { seeds: 1, build: 'par' });
+    const parRun = par.runs.find((x) => x.build === 'par')!.result!;
+    expect(evaluateFlagRule(rule.value, parRun.stats)).toBe(false);
+  });
+
+  it('#14: a map whose script reads a flag runs par under each value, on seeds 1–3', () => {
+    const r = runMap(FLAG_VARIANT_CONTENT, 'fx_map', { seeds: 3 });
+    const variants = r.checks.filter((c) => c.id === '14');
+    expect(variants.map((c) => [c.subject, c.ok])).toEqual([
+      ['flag:spared_quiet_wave=true', true],
+      ['flag:spared_quiet_wave=false', true],
+    ]);
+    expect(r.checks.some((c) => c.summary === 'refused')).toBe(false);
+    for (const seed of [1, 2, 3]) {
+      const run = (b: string) => r.runs.find((x) => x.build === b && x.seed === seed)!.result!;
+      // The flag reaches the script: only `true` gets the W3 grant.
+      const t = run('flag:spared_quiet_wave=true').stats.creditsEarned;
+      const f = run('flag:spared_quiet_wave=false').stats.creditsEarned;
+      expect(t - f).toBe(THANK_YOU_CREDITS);
+      expect(run('par').stats.creditsEarned).toBe(f);
+    }
+    expect(
+      buildFor(
+        'flag:spared_quiet_wave=maybe',
+        FLAG_VARIANT_CONTENT.maps.fx_map,
+        FLAG_VARIANT_CONTENT,
+      ),
+    ).toBeNull();
     expect(r.checks.find((c) => c.id === '12')?.ok).toBe(true);
   });
 

@@ -3,18 +3,22 @@
 // the animated backdrop; Battle runs a session; when the sim emits MapWon or MapLost, the battle
 // freezes where it stands, and RESULTS_DELAY_MS later (the last radio line and the leak feedback
 // play out; D028) Results shows over it. Every run in a campaign ends in the save in play (meta's
-// run end: Pests Processed, medals, rewards).
+// run end: Pests Processed, medals, rewards). A campaign map opens through `play`: the loadout
+// screen first when the save has a choice to make (meta/loadout.ts, the skip rule), then the
+// battle with its briefing, which offers Change loadout back to the screen.
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
 import { radioLines } from '../content/radio/index.ts';
+import { loadoutChangeable } from '../ui/screens/loadoutView.ts';
 import { runResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { earnedMedalIds } from '../sim/index.ts';
-import { activeSave, closeSession, recordRun, systemOpen } from './save.ts';
+import { closeLoadout, openLoadout } from './loadout.ts';
+import { activeSave, closeSession, loadoutOffered, recordRun, systemOpen } from './save.ts';
 import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
@@ -36,6 +40,11 @@ export interface Router {
    * last finished run and rejects if no run has ended.
    */
   goto(id: ScreenId, request?: BattleRequest): Promise<void>;
+  /**
+   * Opens a map from the Shift board: the loadout screen when it's offered for the save in play
+   * (the system is open and there's a choice to make), else the battle and its briefing.
+   */
+  play(request: BattleRequest): Promise<void>;
   /** Replays the last battle's map (Results → Retry), with the same request, minus the briefing. */
   retry(): Promise<void>;
   /**
@@ -78,15 +87,19 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     clearPending();
     battle?.stop();
     battle = null;
+    loadoutChangeable.value = false;
   };
+  const mapOf = (request: BattleRequest): string =>
+    request.mapId ?? defaults.mapId ?? DEFAULT_MAP_ID;
 
   /** Starts a battle; `briefing` opens the map's briefing over it (a fresh start, not a retry). */
   const openBattle = (request: BattleRequest, briefing: boolean): Promise<void> => {
     stopBattle();
     showBackdrop(false);
+    closeLoadout();
     lastRequest = request;
     // The URL's seed (`?seed=`) seeds every battle it doesn't override, so smoke runs repeat.
-    const mapId = request.mapId ?? defaults.mapId ?? DEFAULT_MAP_ID;
+    const mapId = mapOf(request);
     const seed = request.seed ?? defaults.seed ?? randomSeed();
     setSpeed(1);
     runResult.value = null;
@@ -120,13 +133,16 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     };
     bus.on('MapWon', onEnd('won'));
     bus.on('MapLost', onEnd('lost'));
+    // The briefing's Change loadout: only where the loadout screen came before it.
+    loadoutChangeable.value = briefing && loadoutOffered(mapId);
     screen.value = 'battle';
     return next.firstFrame;
   };
 
   /** Shows a menu over the backdrop, ending any battle. */
-  const showMenu = (id: MenuId | 'settings'): Promise<void> => {
+  const showMenu = (id: MenuId | 'settings' | 'loadout'): Promise<void> => {
     stopBattle();
+    if (id !== 'loadout') closeLoadout();
     showBackdrop(true);
     screen.value = id;
     return Promise.resolve();
@@ -157,6 +173,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           settingsFrom = from === 'campaign' || from === 'base' ? from : 'title';
           return showMenu('settings');
         }
+        case 'loadout':
+          if (activeSave() === null) {
+            return Promise.reject(new Error('router: the loadout screen needs a loaded save'));
+          }
+          if (!openLoadout(mapOf(request))) {
+            return Promise.reject(new Error(`router: no loadout for map '${mapOf(request)}'`));
+          }
+          return showMenu('loadout');
         case 'battle':
           return openBattle(request, true);
         case 'results':
@@ -169,6 +193,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         default:
           return assertNever(id);
       }
+    },
+    play(request) {
+      return router.goto(loadoutOffered(mapOf(request)) ? 'loadout' : 'battle', request);
     },
     closeSettings() {
       const back = settingsFrom === 'title' || activeSave() !== null ? settingsFrom : 'title';

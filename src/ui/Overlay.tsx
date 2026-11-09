@@ -4,6 +4,7 @@ import { assertNever } from '../shared/types.ts';
 import { Hud } from './hud/index.tsx';
 import { Base } from './screens/Base.tsx';
 import { Campaign } from './screens/Campaign.tsx';
+import { Loadout } from './screens/Loadout.tsx';
 import { Results } from './screens/Results.tsx';
 import { Settings } from './screens/Settings.tsx';
 import { Title } from './screens/Title.tsx';
@@ -23,6 +24,8 @@ export function Overlay() {
       return <Base />;
     case 'settings':
       return <Settings />;
+    case 'loadout':
+      return <Loadout />;
     case 'battle':
       return <Hud />;
     case 'results':

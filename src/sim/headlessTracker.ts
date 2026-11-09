@@ -172,6 +172,9 @@ export function createRunTracker<K extends IdSpace>(
             }
             break;
           }
+          // A carrier's burst sack is render-only: nothing to tally.
+          case 'SackBurst':
+            break;
           case 'EnemyLeaked': {
             const w = waveOf(enemyWave.get(e.uid) ?? 0);
             if (w !== undefined) {

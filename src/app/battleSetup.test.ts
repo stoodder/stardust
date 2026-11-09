@@ -78,6 +78,13 @@ describe('battleSetup from a save', () => {
     }
   });
 
+  it("passes the save's set script-readable story flags to map scripts", () => {
+    const save = createNewSave();
+    expect(battleConfig(DEFAULT_MAP_ID, 1, save).scriptFlags).toEqual({});
+    save.story.flags = { spared_quiet_wave: true, peeker_poked: true };
+    expect(battleConfig(DEFAULT_MAP_ID, 1, save).scriptFlags).toEqual({ spared_quiet_wave: true });
+  });
+
   it('no slot-1 ability when every owned one is revoked', () => {
     const save = createNewSave();
     save.unlocks.revokedAbilities = ['orbital_strike'];

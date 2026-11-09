@@ -251,6 +251,8 @@ export const hud = {
    * column 4, row 2, empty. Enter builds Rivet."), or null while the cursor is hidden.
    */
   cursor: signal<string | null>(null),
+  /** Whether the keyboard tile cursor shows (the aim hint then says Enter fires, T213). */
+  cursorShown: signal(false),
   /** The tower armed for building (a build slot), or null. */
   armedTower: signal<string | null>(null),
   /** The commander ability slots, in slot order (bottom-left; empty when none is equipped). */

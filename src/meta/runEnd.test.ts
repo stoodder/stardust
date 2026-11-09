@@ -1,6 +1,9 @@
 // Run end and its rewards (meta-runtime.md § Run end; progression.md § 2–3): the payout table,
 // medal Intel paid once, the lifetime Pests Processed, and the order's records.
 import { describe, expect, it } from 'vitest';
+import type { FlagRule } from '../content/dialogue/flags.ts';
+import type { WaveTag } from '../content/types.ts';
+import type { FlagRuleStats } from '../story/flags.ts';
 import { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
 import { runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
@@ -179,5 +182,69 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
     expect(before).toEqual(frozen);
     expect(validateSave(save).ok).toBe(true);
     expect(validateSave(runEnd(save, lost(2)).save).ok).toBe(true);
+  });
+});
+
+describe('runEnd step 2: story run-end flag rules (story-runtime.md § Flags)', () => {
+  // A1M5's Quiet Wave rule, moved onto A1M1 (the only maps a RunEndInput can name in M2).
+  const RULES: FlagRule[] = [
+    {
+      flag: 'spared_quiet_wave',
+      onMapEnd: 'a1_m01',
+      value: { tagRatio: { tag: 'quiet_wave', of: 'leaked', gte: 0.75 } },
+    },
+  ];
+  const tags = (n: number): Record<WaveTag, number> => ({
+    quiet_wave: n,
+    youngling: 0,
+    fleeing: 0,
+    medal_exempt: 0,
+  });
+  const stats = (leaked: number): FlagRuleStats => ({
+    holdFireUses: 1,
+    holdFireTicks: 90,
+    integrityLost: 5,
+    towersBuilt: 4,
+    creditsSpent: 300,
+    abilityUses: 1,
+    tagSpawned: tags(5),
+    tagLeaked: tags(leaked),
+    tagKilled: tags(5 - leaked),
+  });
+  const spare = { ...RUN, stats: stats(5) };
+  const clear = { ...RUN, stats: stats(0) };
+
+  it('the run that first wins the map sets the flag, true or false, and says so', () => {
+    const spared = runEnd(createNewSave(), spare, RULES);
+    expect(spared.save.story.flags).toEqual({ spared_quiet_wave: true });
+    expect(spared.summary.flags).toEqual({ spared_quiet_wave: true });
+    const cleared = runEnd(createNewSave(), clear, RULES);
+    expect(cleared.save.story.flags).toEqual({ spared_quiet_wave: false });
+    expect(validateSave(spared.save).ok).toBe(true);
+  });
+
+  it('replays and losses never change it', () => {
+    const won = runEnd(createNewSave(), spare, RULES).save;
+    const replay = runEnd(won, clear, RULES);
+    expect(replay.save.story.flags).toEqual({ spared_quiet_wave: true });
+    expect(replay.summary.flags).toEqual({});
+    const lostFirst = runEnd(createNewSave(), { ...lost(3), stats: stats(5) }, RULES);
+    expect(lostFirst.save.story.flags).toEqual({});
+    // A loss, then the first win: the win's run decides.
+    expect(runEnd(lostFirst.save, clear, RULES).save.story.flags).toEqual({
+      spared_quiet_wave: false,
+    });
+  });
+
+  it('keeps the save’s other flags, and sets nothing without stats or a rule for the map', () => {
+    const base = createNewSave();
+    const held = { ...base, story: { ...base.story, flags: { door_choice: 'warren' as const } } };
+    expect(runEnd(held, spare, RULES).save.story.flags).toEqual({
+      door_choice: 'warren',
+      spared_quiet_wave: true,
+    });
+    expect(runEnd(base, RUN, RULES).save.story.flags).toEqual({});
+    // The live rules name A1M5 and A2M3, not A1M1.
+    expect(runEnd(base, spare).save.story.flags).toEqual({});
   });
 });

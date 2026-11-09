@@ -2,20 +2,40 @@
 // interaction change. Components read `hud` and `speed`, and act through app/commands.ts. Signals
 // only notify on a changed value; arrays and view objects are replaced only when their contents
 // change, so a steady frame re-renders nothing.
-import type { CompiledAbilityDef, CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
-import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
+import { CAMPAIGN_PLAN } from '../content/campaign.ts';
+import type {
+  CompiledAbilityDef,
+  CompiledLinkDef,
+  CompiledMapDef,
+  CompiledTier,
+  CompiledTowerDef,
+} from '../content/compiled.ts';
+import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, STATUS_BITS } from '../content/rules.ts';
+import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
+import { SPRITES } from '../content/sprites/index.ts';
+import { SYSTEM_UNLOCKS } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { gridToScreen, mapOrigin, type IsoOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import { assertNever } from '../shared/types.ts';
+import { assertNever, type DeepReadonly } from '../shared/types.ts';
 import {
   abilityStats,
   callWaveBonus,
+  costFor,
   isBuildableTile,
+  MEDAL_KINDS,
+  medalId,
+  type MedalKind,
+  type MedalStatus,
   sellValue,
+  tileAndLinkRules,
   towerStats,
+  type SellValue,
+  type SpecChoice,
+  type Tower,
+  type TowerBonuses,
   type RejectReason,
   type TierStatDelta,
   type TowerStatLine,
@@ -31,11 +51,22 @@ import {
   type AbilitySlotView,
   type BriefingLine,
   type BuildSlotView,
+  type MedalView,
+  type RequiredCounterView,
   type SelectedTowerView,
+  type ThreatIntelView,
+  type ThreatView,
+  type SpecChoiceView,
+  type SpecOptionView,
   type WavePreview,
   type WavePreviewGroup,
 } from '../ui/state.ts';
+import { CARD_CHARS, PANEL_CHARS, wrapParts } from '../ui/hud/layout.ts';
 import type { Host } from './host.ts';
+import { activeSave, systemOpen } from './save.ts';
+
+/** Every registered sprite id (the tell glyphs the briefing may show). */
+const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((d) => d.id));
 
 /** How long a notice stays up, in ms of real time. */
 export const NOTICE_MS = 1800;
@@ -339,6 +370,13 @@ export function specChoice(
   };
 }
 
+/** "Next: +0.5/s · +3 pierce" as wrappable parts, the label on the first. */
+function nextParts(delta: string): string[] {
+  const parts = delta.split(' · ');
+  parts[0] = `Next: ${parts[0] ?? ''}`;
+  return parts;
+}
+
 /** What the battle knows about the save in play, for the tower panel and the briefing. */
 export interface HudSaveInfo {
   /** Engineering (tier-4 unlocks) is open for this save (the lock note's wording). */
@@ -352,16 +390,8 @@ export interface HudSaveInfo {
 }
 
 /** The selected tower's panel inputs, as a key: the view is rebuilt only when it changes. */
-function selectedKey(
-  t: DeepReadonly<Tower>,
-  sell: SellValue,
-  credits: number,
-  x: number,
-  y: number,
-): string {
-  // Credits only matter at tier 3 (whether a spec is affordable doesn't change the view; the
-  // component reads credits itself), so they stay out of the key.
-  void credits;
+function selectedKey(t: DeepReadonly<Tower>, sell: SellValue, x: number, y: number): string {
+  // Credits stay out: the component reads them itself (an unaffordable button dims).
   return [
     t.uid,
     t.tier,
@@ -411,7 +441,7 @@ export function selectedView(
   gridToScreen(t.x, t.y, origin, p);
   const { state, config, map } = sim;
   const sell = sellValue(t, state.tick, state.economy.sellRefundPct);
-  const key = selectedKey(t, sell, state.credits, p.x, p.y);
+  const key = selectedKey(t, sell, p.x, p.y);
   if (prev !== null && prev.key === key) return prev;
   const mods = config.modifiers;
   // A specialized tower (tier 4) reads its spec's stats.
@@ -435,8 +465,7 @@ export function selectedView(
     stats: statLineText(stats),
     bonuses: bonusList.flatMap((b) => wrapParts([b], PANEL_CHARS)),
     upgradeDelta,
-    deltaLines:
-      upgradeDelta === null ? [] : wrapParts([`Next: ${upgradeDelta}`], PANEL_CHARS, ' · '),
+    deltaLines: upgradeDelta === null ? [] : wrapParts(nextParts(upgradeDelta), PANEL_CHARS),
     specs: specChoice(
       t.def,
       t.tier,
@@ -447,6 +476,111 @@ export function selectedView(
     ),
     x: p.x,
     y: p.y,
+  };
+}
+
+/** The two fixed medals' one-liners for the briefing and the tracker (progression.md § 3). */
+const MEDAL_TEXT = {
+  victory: { name: 'Victory', description: 'Win the shift.' },
+  perfectCore: { name: 'Perfect Core', description: 'Win with no leaks.' },
+} as const;
+
+/**
+ * The map's medals in display order (Victory, Perfect Core, the Challenge if any) with this run's
+ * standing and whether the save already holds each (`held`: medal ids on file for the map).
+ */
+export function medalViews(
+  map: Pick<CompiledMapDef<IdSpace>, 'medals'>,
+  status: Readonly<Record<MedalKind, MedalStatus>>,
+  held: readonly string[],
+): MedalView[] {
+  const out: MedalView[] = [];
+  for (const kind of MEDAL_KINDS) {
+    const id = medalId(map, kind);
+    if (id === null) continue;
+    const text =
+      kind === 'challenge'
+        ? { name: map.medals?.challenge.name ?? '', description: map.medals?.challenge.description ?? '' }
+        : MEDAL_TEXT[kind];
+    out.push({ kind, id, ...text, held: held.includes(id), status: status[kind] });
+  }
+  return out;
+}
+
+/** "rivet T3" (a counter-answer label) → "Rivet T3"; "thumper [Bunker Buster]" → "Thumper [Bunker Buster]". */
+function answerLabel(label: string): string {
+  const [tower = '', ...rest] = label.split(' ');
+  return [displayName(tower), ...rest].join(' ');
+}
+
+/**
+ * The briefing's threat intel (campaign.md § 4.8; T202d): each `threatIntel` trait with its tell
+ * glyph if one is drawn, then any other tell of the map's enemies that has a glyph (the Hauler's
+ * `carrier`); and each required counter with the owned towers that answer it, by the counter
+ * model (content/counterAnswers.ts: the highest in-map tier, and a spec only when its pair is
+ * unlocked).
+ */
+export function threatIntel(
+  map: Pick<CompiledMapDef<IdSpace>, 'act' | 'threatIntel' | 'requiredCounters' | 'waves'>,
+  owned: readonly string[],
+  specsUnlocked: readonly string[],
+): ThreatIntelView {
+  const enemies = new Map<string, CompiledMapDef<IdSpace>['waves'][number]['groups'][number]['enemy']>();
+  for (const w of map.waves) for (const g of w.groups) enemies.set(g.enemy.id, g.enemy);
+  const threats: ThreatView[] = map.threatIntel.map((trait) => ({
+    id: trait,
+    label: displayName(trait),
+    glyph: tellGlyph([trait]),
+  }));
+  const seen = new Set<string>(map.threatIntel);
+  for (const e of enemies.values()) {
+    for (const tell of e.tells) {
+      const glyph = tellGlyph([tell]);
+      if (seen.has(tell) || glyph === null) continue;
+      seen.add(tell);
+      threats.push({ id: tell, label: displayName(tell), glyph });
+    }
+  }
+  const required: RequiredCounterView[] = map.requiredCounters.map((counter) => {
+    const scope = answerScope(counter, map.act, enemies.values());
+    const answers: string[] = [];
+    for (const tower of owned) {
+      const reached: ReachedTower[] = [{ tower, tier: MAX_TIER_BEFORE_SPEC, spec: null }];
+      if (specsUnlocked.includes(tower)) {
+        reached.push({ tower, tier: MAX_TIER_BEFORE_SPEC + 1, spec: 'a' });
+        reached.push({ tower, tier: MAX_TIER_BEFORE_SPEC + 1, spec: 'b' });
+      }
+      for (const l of answersCarried(COUNTER_ANSWERS[counter], scope, reached, [])) {
+        answers.push(answerLabel(l));
+      }
+    }
+    return { counter, label: displayName(counter), answers };
+  });
+  return { threats, required };
+}
+
+/** The tell glyph sprite for a trait or tell id, if one is drawn (`icon.tell.<id>`). */
+function tellGlyph(ids: readonly string[]): string | null {
+  for (const id of ids) {
+    const glyph = `icon.tell.${id}`;
+    if (SPRITE_IDS.has(glyph)) return glyph;
+  }
+  return null;
+}
+
+/** The save in play as the HUD reads it (app/save.ts); a `?map=` battle has none. */
+export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveInfo {
+  const save = activeSave();
+  if (save === null) {
+    return { engineeringOpen: false, heldMedals: [], ownedTowers: loadout, specsUnlocked: [] };
+  }
+  const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
+    save.campaign.maps;
+  return {
+    engineeringOpen: systemOpen('engineering'),
+    heldMedals: Object.hasOwn(maps, mapId) ? (maps[mapId]?.medals ?? []) : [],
+    ownedTowers: save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t)),
+    specsUnlocked: save.unlocks.specs,
   };
 }
 
@@ -669,6 +803,8 @@ export function showNotice(text: string): void {
 export interface HudOptions {
   /** Open the map's static briefing (if it has one) over the battle until it's dismissed. */
   readonly briefing: boolean;
+  /** The save in play as the HUD reads it; default: app/save.ts's (`hudSaveInfo`). */
+  readonly save?: HudSaveInfo;
 }
 
 /** Wires the HUD signals to a battle. Returns the unwiring (which also resets them). */
@@ -692,6 +828,11 @@ export function bindHud(
   hud.notice.value = null;
   const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
   hud.briefing.value = lines.length === 0 ? null : lines;
+  const saveInfo = opts.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
+  const specLock = specLockText(saveInfo.engineeringOpen);
+  hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
+  hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);
+  let medalState = { ...sim.state.medals };
   hud.leak.value = null;
   hud.waveBanner.value = null;
   hud.built.value = false;
@@ -721,7 +862,22 @@ export function bindHud(
     hud.callPulse.value =
       s.outcome === 'playing' &&
       callPulses(s.wave, hud.countdown.value, s.enemies.live, hud.built.value);
-    hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
+    hud.selected.value = selectedView(
+      sim,
+      interaction.selectedTower,
+      origin,
+      hud.selected.value,
+      specLock,
+    );
+    const m = s.medals;
+    if (
+      m.victory !== medalState.victory ||
+      m.perfectCore !== medalState.perfectCore ||
+      m.challenge !== medalState.challenge
+    ) {
+      medalState = { ...m };
+      hud.medals.value = medalViews(sim.map, m, saveInfo.heldMedals);
+    }
     hud.upgradeHint.value = upgradeHintShows(
       teachStarted,
       upgraded,
@@ -756,7 +912,14 @@ export function bindHud(
     hud.selectedTower.value = interaction.selectedTower;
     hud.armedTower.value = interaction.armed;
     hud.aimingAbility.value = interaction.aiming;
-    hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
+    hud.cursorShown.value = interaction.cursor >= 0;
+    hud.selected.value = selectedView(
+      sim,
+      interaction.selectedTower,
+      origin,
+      hud.selected.value,
+      specLock,
+    );
     syncCursor();
   };
   sync();
@@ -795,6 +958,7 @@ export function bindHud(
       syncCursor();
     }),
     host.bus.on('TowerSold', syncTowers),
+    host.bus.on('TowerSpecialized', syncCursor),
     host.bus.on('CommandRejected', (e) => {
       const text = rejectText(e.reason);
       if (text !== null) showNotice(text);
@@ -819,6 +983,9 @@ export function bindHud(
     hud.nextWave.value = null;
     hud.notice.value = null;
     hud.briefing.value = null;
+    hud.intel.value = null;
+    hud.medals.value = [];
+    hud.cursorShown.value = false;
     hud.countdown.value = null;
     hud.callBonus.value = 0;
   };

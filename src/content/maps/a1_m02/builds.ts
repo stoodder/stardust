@@ -13,7 +13,7 @@ const BESIDE_PUMP: GridPos = [10, 7];
 const BOTTOM: GridPos = [12, 7];
 /** The west switchback, where a Hauler pair walks into the strike. */
 const WEST_TURN: GridPos = [2, 3];
-const STRIKE_WHEN = { afterSec: Number(process.env.SK ?? 17.5) } as const;
+const STRIKE_WHEN = { afterSec: 17.5 } as const;
 const SUPPRESS: GridPos = [11, 7];
 
 function parSteps(): BuildStep[] {

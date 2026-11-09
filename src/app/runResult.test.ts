@@ -69,6 +69,19 @@ describe('the run end and the rewards on the card', () => {
       skitterkinKilled: 57,
     });
     expect(metaRunEndOf(INPUT, 'won').wavesResolved).toBe(7);
+    // The run's stats pass through for the story run-end flag rules (step 2).
+    expect(metaRunEndOf(INPUT, 'won')).not.toHaveProperty('stats');
+    const tags = { quiet_wave: 5, youngling: 4, fleeing: 0, medal_exempt: 0 };
+    const counters = { holdFireTicks: 9, integrityLost: 0, towersBuilt: 3, creditsSpent: 0 };
+    const stats = {
+      ...counters,
+      holdFireUses: 1,
+      abilityUses: 0,
+      tagSpawned: tags,
+      tagLeaked: tags,
+      tagKilled: tags,
+    };
+    expect(metaRunEndOf({ ...INPUT, stats }, 'won').stats).toBe(stats);
   });
 
   it('shows every medal, the earned and new ones marked, with the payouts', () => {

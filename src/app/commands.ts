@@ -103,6 +103,15 @@ export function upgradeSelected(): void {
   if (uid !== 0) issue({ type: 'upgrade', towerUid: uid });
 }
 
+/**
+ * The tower panel's tier-4 choice (T202d): specializes the selected tower into spec `choice`. The
+ * sim checks it (locked, not tier 3, can't afford, ...), and a rejection shows as a notice.
+ */
+export function specializeSelected(choice: 'a' | 'b'): void {
+  const uid = target?.interaction.selectedTower ?? 0;
+  if (uid !== 0) issue({ type: 'specialize', towerUid: uid, spec: choice });
+}
+
 /** S: sells the selected tower. */
 export function sellSelected(): void {
   const uid = target?.interaction.selectedTower ?? 0;

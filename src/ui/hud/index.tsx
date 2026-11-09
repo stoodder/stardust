@@ -13,6 +13,7 @@ import {
   pressBuildSlot,
   sellSelected,
   setSpeed,
+  specializeSelected,
   upgradeSelected,
 } from '../../app/commands.ts';
 import type { TargetPriority } from '../../content/types.ts';
@@ -23,12 +24,22 @@ import {
   type AbilitySlotView,
   type BriefingLine,
   type BuildSlotView,
+  type MedalView,
   type SelectedTowerView,
+  type SpecOptionView,
+  type ThreatIntelView,
 } from '../state.ts';
 import { lockedText } from '../../app/hud.ts';
 import { Icon } from './Icon.tsx';
 import { MuteButton } from './MuteButton.tsx';
-import { placePanel, tickToward } from './layout.ts';
+import {
+  HUD_CORNERS,
+  PANEL_W,
+  placePanel,
+  specCardHeight,
+  tickToward,
+  towerPanelHeight,
+} from './layout.ts';
 import { alignPulse } from './pulse.ts';
 import { colorVar } from '../color.ts';
 import { prefersReducedMotion } from '../motion.ts';
@@ -36,9 +47,6 @@ import './hud.css';
 
 /** Build slots shown, whatever the loadout size (the loadout limit, CLAUDE.md). */
 const SLOT_COUNT = 4;
-/** The tower panel's size in game px (fixed, so it can be placed before it renders). */
-export const PANEL_W = 124;
-export const PANEL_H = 96;
 /** Integrity at or below this shows the low-integrity alarm (art-direction §9: red at 5). */
 const LOW_INTEGRITY = 5;
 
@@ -124,6 +132,7 @@ function StatusPanel() {
         <span class="hud-label">Credits</span>
         <span class="big num gold">{credits}</span>
       </div>
+      <MedalTracker />
     </section>
   );
 }
@@ -356,6 +365,12 @@ function AbilityBar() {
       {aimed !== undefined && (
         <div class="hud-aim-hint chamfer" role="status">
           {aimed.aim === 'path' ? 'Pick a stretch of path' : 'Pick a target'}
+          {/* With the keyboard cursor up, Enter is how it fires (T213). */}
+          {hud.cursorShown.value && (
+            <span class="dim">
+              <Key k="Enter" /> fires
+            </span>
+          )}
           <span class="dim">
             <Key k="Esc" /> cancels
           </span>
@@ -365,10 +380,10 @@ function AbilityBar() {
   );
 }
 
-/** Tier pips: filled up to the current tier. */
+/** Tier pips: filled up to the current tier (a specialized tower shows T4 with every pip lit). */
 function Tier({ tier, max }: { tier: number; max: number }) {
   return (
-    <span class="hud-tier" aria-label={`Tier ${tier} of ${max}`}>
+    <span class="hud-tier" aria-label={`Tier ${tier}${tier > max ? '' : ` of ${max}`}`}>
       <span class="hud-label">T{tier}</span>
       {Array.from({ length: max }, (_, i) => (
         <span key={i} class={i < tier ? 'pip on' : 'pip'} />
@@ -377,21 +392,56 @@ function Tier({ tier, max }: { tier: number; max: number }) {
   );
 }
 
-/** The selected tower's panel: upgrade, sell, and targeting, beside the tower. */
+/**
+ * One tier-4 specialization in the tower panel's choice (T202d): its name and price, and a short
+ * description; the whole card is the Specialize button. A locked pair shows the padlock in place
+ * of the price (the lock note sits under the cards).
+ */
+function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; credits: number }) {
+  const poor = !locked && credits < o.cost;
+  return (
+    <button
+      type="button"
+      class={`hud-btn chamfer hud-spec${locked ? ' locked' : ''}${poor ? ' poor' : ''}`}
+      style={{ height: `${specCardHeight(o.descLines.length)}px` }}
+      aria-disabled={locked || poor}
+      aria-label={`Specialize: ${o.name}, ${o.cost} credits${locked ? ', locked' : poor ? ', not enough credits' : ''}. ${o.description}`}
+      onClick={() => specializeSelected(o.choice)}
+    >
+      <span class="hud-spec-row">
+        <span class="hud-spec-name">{o.name}</span>
+        {locked ? <Icon id="icon.lock" /> : <Credits value={o.cost} />}
+      </span>
+      {o.descLines.map((l, i) => (
+        <span key={i} class="hud-spec-desc">
+          {l}
+        </span>
+      ))}
+    </button>
+  );
+}
+
+/**
+ * The selected tower's panel, beside the tower: its stats after every bonus and where the bonuses
+ * come from, then upgrade (or, at tier 3, the tier-4 choice), sell, and targeting. Its height
+ * follows its rows (layout.ts `towerPanelHeight`), so it's placed before it renders.
+ */
 function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
-  const { left, top } = placePanel(t.x, t.y, PANEL_W, PANEL_H, others);
+  const h = towerPanelHeight(t);
+  const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, HUD_CORNERS);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;
   const poor = !max && credits < (t.upgradeCost ?? 0);
   // The upgrade teach (D028): the Upgrade button pulses while it's on.
   const teach = hud.upgradeHint.value && !max && !poor;
   const upgradeClass = `hud-btn chamfer wide${poor ? ' poor' : ''}${teach ? ' pulse' : ''}`;
+  const specs = t.specs;
   return (
     <section
       class="hud-tower chamfer"
-      style={{ left: `${left}px`, top: `${top}px`, width: `${PANEL_W}px`, height: `${PANEL_H}px` }}
-      aria-label={`${t.label} tower`}
+      style={{ left: `${left}px`, top: `${top}px`, width: `${PANEL_W}px`, height: `${h}px` }}
+      aria-label={`${t.specName ?? t.label} tower`}
       onContextMenu={(e) => {
         e.preventDefault();
         cancel();
@@ -399,32 +449,55 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
     >
       <header class="hud-tower-head">
         <Icon id={t.icon} />
-        <span class="hud-name">{t.label}</span>
+        <span class="hud-name">{t.specName ?? t.label}</span>
         <Tier tier={t.tier} max={t.maxTier} />
       </header>
       <p class="hud-stats">{t.stats}</p>
-      <p class="hud-delta">{t.upgradeDelta === null ? '' : `Next: ${t.upgradeDelta}`}</p>
-      <button
-        type="button"
-        class={upgradeClass}
-        ref={(el) => alignPulse(el)}
-        aria-disabled={max || poor}
-        aria-label={
-          max
-            ? 'Max tier'
-            : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits${t.upgradeDelta === null ? '' : `: ${t.upgradeDelta}`}`
-        }
-        onClick={upgradeSelected}
-      >
-        <span class="grow">{max ? 'Max tier' : 'Upgrade'}</span>
-        {!max && <Credits value={t.upgradeCost ?? 0} />}
-        <Key k="U" />
-      </button>
+      {t.bonuses.map((b, i) => (
+        <p key={`b${i}`} class="hud-bonus-line">
+          {b}
+        </p>
+      ))}
+      {t.deltaLines.map((l, i) => (
+        <p key={`d${i}`} class="hud-delta">
+          {l}
+        </p>
+      ))}
+      {specs === null ? (
+        <button
+          type="button"
+          class={upgradeClass}
+          ref={(el) => alignPulse(el)}
+          aria-disabled={max || poor}
+          aria-label={
+            max
+              ? 'Max tier'
+              : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits${t.upgradeDelta === null ? '' : `: ${t.upgradeDelta}`}`
+          }
+          onClick={upgradeSelected}
+        >
+          <span class="grow">{max ? 'Max tier' : 'Upgrade'}</span>
+          {!max && <Credits value={t.upgradeCost ?? 0} />}
+          <Key k="U" />
+        </button>
+      ) : (
+        <>
+          <p class="hud-spec-head">Specialize: pick one</p>
+          {specs.options.map((o) => (
+            <SpecCard key={o.choice} o={o} locked={specs.locked} credits={credits} />
+          ))}
+          {specs.lockLines.map((l, i) => (
+            <p key={`l${i}`} class="hud-spec-lock">
+              {l}
+            </p>
+          ))}
+        </>
+      )}
       <button
         type="button"
         class={t.fullRefund ? 'hud-btn chamfer wide full' : 'hud-btn chamfer wide'}
         aria-label={`Sell for ${t.sellValue} credits${t.fullRefund ? ', full refund' : ''}`}
-        title={t.fullRefund ? 'Full refund: not fired yet' : 'Sell (70% back)'}
+        title={t.fullRefund ? 'Full refund: not fired yet' : `Sell (${t.refundPct}% back)`}
         onClick={sellSelected}
       >
         <span class="grow">Sell</span>
@@ -449,6 +522,34 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
         <Key k="T" />
       </button>
     </section>
+  );
+}
+
+/**
+ * The medal tracker (T202d), in the status panel: one diamond per medal, lit while still in
+ * reach, gold once earned, and quietly dimmed when this run can't earn it any more (never a
+ * scolding: the tooltip says "Next time!"). A medal already on file shows a small tick.
+ */
+function MedalTracker() {
+  const medals = hud.medals.value;
+  if (medals.length === 0) return null;
+  const word = (m: MedalView): string =>
+    m.status === 'earned' ? 'earned' : m.status === 'forfeited' ? 'next time' : 'in reach';
+  return (
+    <ul
+      class="hud-medals"
+      aria-label={`Medals: ${medals.map((m) => `${m.name} ${word(m)}`).join(', ')}`}
+    >
+      {medals.map((m) => (
+        <li
+          key={m.id}
+          class={`hud-medal ${m.status}${m.held ? ' held' : ''}`}
+          title={`${m.name}: ${m.status === 'forfeited' ? 'Next time!' : m.description}`}
+          data-medal={m.kind}
+          data-status={m.status}
+        />
+      ))}
+    </ul>
   );
 }
 
@@ -541,6 +642,58 @@ function PausedOverlay() {
   );
 }
 
+/**
+ * The briefing's threat-intel strip (T202d; campaign.md § 4.8): the map's threats as tell glyphs
+ * with their names, then each required counter ("Required: Armor") with the owned towers that
+ * answer it. Every glyph has its word beside it (art-direction §8: never the shape alone).
+ */
+function IntelStrip({ intel }: { intel: ThreatIntelView }) {
+  return (
+    <section class="hud-intel" aria-label="Threat intel" data-testid="threat-intel">
+      <ul class="hud-intel-threats">
+        <li class="hud-label">Threats</li>
+        {intel.threats.map((t) => (
+          <li key={t.id} class="hud-intel-threat">
+            {t.glyph !== null && <Icon id={t.glyph} />}
+            <span>{t.label}</span>
+          </li>
+        ))}
+      </ul>
+      {intel.required.map((r) => (
+        <p key={r.counter} class="hud-intel-required">
+          <span class="hud-intel-req">Required: {r.label}</span>
+          <span class="hud-intel-answers">
+            {r.answers.length === 0 ? 'Nothing owned answers it yet' : r.answers.join(', ')}
+          </span>
+        </p>
+      ))}
+    </section>
+  );
+}
+
+/**
+ * The map's medals in the briefing (T202d): each one's name and what earns it, with a lit diamond
+ * for the ones already on file ("On file").
+ */
+function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
+  return (
+    <ul class="hud-briefing-medals" aria-label="Medals" data-testid="briefing-medals">
+      {medals.map((m) => (
+        <li
+          key={m.id}
+          class={m.held ? 'held' : ''}
+          aria-label={`${m.name}: ${m.description}${m.held ? ' On file.' : ''}`}
+        >
+          <span class={m.held ? 'hud-medal earned' : 'hud-medal'} aria-hidden="true" />
+          <span class="hud-briefing-medal-name">{m.name}</span>
+          <span class="hud-briefing-medal-desc">{m.description}</span>
+          {m.held && <span class="hud-briefing-medal-held">On file</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The focusable controls inside `root`, in tab order. */
 function focusables(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]')].filter(
@@ -554,6 +707,8 @@ function focusables(root: HTMLElement): HTMLElement[] {
  * `inert` while it's open, and Tab cycles inside it.
  */
 function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
+  const intel = hud.intel.value;
+  const medals = hud.medals.value;
   return (
     <div class="hud-briefing-scrim">
       <section
@@ -583,6 +738,8 @@ function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
             </li>
           ))}
         </ul>
+        {intel !== null && <IntelStrip intel={intel} />}
+        {medals.length > 0 && <BriefingMedals medals={medals} />}
         <button
           type="button"
           class="hud-btn chamfer hud-briefing-go"

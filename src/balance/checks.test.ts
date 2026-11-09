@@ -1,10 +1,12 @@
 // Each assertion's judgment, on synthetic runs of the fixture map (no sim needed).
 import { describe, expect, it } from 'vitest';
 import type { HeadlessResult } from '../sim/index.ts';
-import { QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
+import { FLAG_VARIANT_CONTENT, QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
 import { PLAIN_CONTENT, fakeResult, fakeRun } from './__fixtures__/harness.ts';
 import {
   VACUOUS_NOTE,
+  flagVariantLabel,
+  flagsFor,
   mapChecks,
   median,
   notGradual,
@@ -276,11 +278,41 @@ describe('balance checks', () => {
     expect(judge(g, {}).ok).toBe(false);
   });
 
+  it('#14: one par run per flag value, judged like #1–2; flagsFor gives each run its flag', () => {
+    expect(mapChecks(map, [1], [1]).filter((c) => c.id === '14')).toEqual([]);
+    const fx = FLAG_VARIANT_CONTENT.maps.fx_map;
+    const runs = mapChecks(fx, [1], [1, 2]).filter((c) => c.id === '14');
+    expect(runs.map((c) => c.subject)).toEqual([
+      'flag:spared_quiet_wave=true',
+      'flag:spared_quiet_wave=false',
+    ]);
+    const t = runs[0]!;
+    expect(t.needs).toEqual([
+      { build: 'flag:spared_quiet_wave=true', seed: 1 },
+      { build: 'flag:spared_quiet_wave=true', seed: 2 },
+    ]);
+    expect(judge(t, {}).ok).toBe(true); // won at 100 (band 80–100)
+    const low = { 'flag:spared_quiet_wave=true#2': fakeResult('won', 15) };
+    expect(judge(t, low).failures).toEqual(['seed 2: margin 75 is outside the band 80–100']);
+    const lostRun = { 'flag:spared_quiet_wave=true#1': fakeResult('lost', 0, 3) };
+    expect(judge(t, lostRun).failures[0]).toMatch(/seed 1: lost at W3/);
+
+    expect(flagVariantLabel('door_choice', 'convoy')).toBe('flag:door_choice=convoy');
+    expect(flagsFor('flag:spared_quiet_wave=false', fx)).toEqual({ spared_quiet_wave: false });
+    expect(flagsFor('flag:spared_quiet_wave=true@story', fx)).toEqual({ spared_quiet_wave: true });
+    expect(flagsFor('flag:spared_quiet_wave=maybe', fx)).toBeNull();
+    expect(flagsFor('flag:door_choice=convoy', fx)).toBeNull();
+    expect(flagsFor('par', fx)).toEqual({});
+  });
+
   it('refuses map features it cannot check yet', () => {
     expect(refusedFeatures(map)).toEqual([]);
     // #16 is lifted (T206a): fleeing runners are checked, not refused.
     expect(HARNESS_GATES.holdFireRuns).toBeNull();
     expect(refusedFeatures(FIXTURE_CONTENT.maps.fx_map)).toEqual([]);
+    // #14 is lifted (T206b): flag variants run, not refused.
+    expect(HARNESS_GATES.flagVariants).toBeNull();
+    expect(refusedFeatures(FLAG_VARIANT_CONTENT.maps.fx_map)).toEqual([]);
     // A gate still closed refuses with its task.
     const closed = { ...HARNESS_GATES, holdFireRuns: 'T999' };
     const refused = refusedFeatures(FIXTURE_CONTENT.maps.fx_map, closed);
@@ -304,8 +336,12 @@ describe('balance checks', () => {
 
     const quiet = mapChecks(QUIET_WAVE_CONTENT.maps.fx_map, [1], [1]);
     const a = quiet.find((c) => c.subject === 'holdFireWhile:quiet_wave')!;
+    // spared_quiet_wave's own rule judges it: ≥ 75% of the Quiet Wave leaked.
     expect(judge(a, heldRun(18, 5)).ok).toBe(true);
-    expect(judge(a, heldRun(18, 4)).failures[0]).toMatch(/only 4\/5 quiet-wave units leaked/);
+    expect(judge(a, heldRun(18, 4)).ok).toBe(true); // 80%
+    expect(judge(a, heldRun(18, 3)).failures[0]).toMatch(
+      /only 3\/5 quiet-wave units leaked: spared_quiet_wave stays false/,
+    );
     expect(judge(a, heldRun(15, 5)).failures[0]).toMatch(/outside the band 80–100/);
     expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);
   });

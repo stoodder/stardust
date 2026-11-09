@@ -11,9 +11,12 @@ export type HookCommand = Command<IdSpace>;
 
 /**
  * Screens `goto` can jump to. `results` shows the last finished run's results (it rejects if no
- * run has ended yet); `campaign` (the Shift board) needs a loaded save, and `base` an open base.
+ * run has ended yet); `campaign` (the Shift board) needs a loaded save, `base` an open base, and
+ * `loadout` a loaded save (it opens for the URL's `?map=`, else the default map, whether or not
+ * the skip rule would show it).
  */
-export type ScreenId = 'title' | 'campaign' | 'base' | 'settings' | 'battle' | 'results';
+export type ScreenId =
+  'title' | 'campaign' | 'base' | 'settings' | 'loadout' | 'battle' | 'results';
 
 /** How a finished run ended. */
 export type RunOutcome = 'won' | 'lost';

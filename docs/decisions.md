@@ -600,3 +600,9 @@ T210b's numbers showed the Hauler at armor 6 isn't an armor test: a T2 Rivet doe
   - no_upgrades ≈ par, so upgrading barely matters on A1M1.
   - Par's Suppressing Fire casts change nothing.
 - **T124:** `ProjectileHit.damage`, a per-tower damage/DPS table, a link-uptime column, and ability/ally kill lines in the balance report. The A1M1 sim test runs through `runHeadless`.
+
+### D052 — 2026-11-09 — A1M2: why the no-armor build survived, and the fix order
+T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the no-armor build's real Hauler killer is **Orbital Strike**: 200 Explosive, 191 through armor 9. The full catalog makes the strike better (Mk II radius, Coolant) and adds core and Bulkhead. With Haulers in clumps, one strike substitutes for an armor answer. Rulings, in order:
+1. **The no-armor build keeps its strike.** Excluding it would make the check lie, because a real player would cast it.
+2. **The fix is to space the Haulers out:** release them one at a time, ≥12 s apart, in W7–8. Then the strike's ~41–45 s cooldown kills at most one per cast. This is act1.md's own escalation (a lone teach Hauler in W5, then many).
+3. **Fallback, only if (2) fails:** a **teach-map exception**. The map that introduces a required counter may require the loss by its final wave (`teachMap: true`, with a reason). If the full catalog still wins there, #6 is reported as a **warning** behind an explicit `knownLimits: ['fullCatalog']` for A1M2 only, and goes to the owner. This would be the one place where D005's "the catalog can't replace counters" isn't enforced.

@@ -31,6 +31,42 @@ export const BATTLE_SFX = {
       },
     ],
   },
+  /**
+   * A carrier's sack bursts (the Brood Hauler, SackBurst): a wet, low "plop" under a glitter
+   * sparkle, after its death pop.
+   */
+  sack_pop: {
+    gain: 0.3,
+    priority: 1,
+    minGapMs: 120,
+    maxVoices: 2,
+    jitter: 1,
+    layers: [
+      {
+        wave: 'sine',
+        freq: 180,
+        glide: 0.45,
+        glideSec: 0.12,
+        env: { a: 0.002, d: 0.12, s: 0, r: 0.05 },
+        gain: 0.7,
+      },
+      {
+        wave: 'noise',
+        freq: 300,
+        filter: { type: 'lowpass', freq: 900 },
+        env: { a: 0.002, d: 0.08, s: 0, r: 0.04 },
+        gain: 0.35,
+      },
+      {
+        wave: 'noise',
+        at: 0.06,
+        freq: 440,
+        filter: { type: 'highpass', freq: 6000 },
+        env: { a: 0.005, d: 0.25, s: 0, r: 0.1 },
+        gain: 0.15,
+      },
+    ],
+  },
   /** A leak at the core: a clear two-tone alarm the player can't miss. */
   leak: {
     gain: 0.42,

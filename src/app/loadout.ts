@@ -3,11 +3,11 @@
 // (toggling a tower, the links a pick forms, the counters it leaves unanswered) through the pure
 // rules in meta/loadout.ts. Locking a pick in writes it as the map's preset (app/save.ts); the
 // battle reads it back through battleConfig (app/battleSetup.ts), so a retry keeps it too.
-import { CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { LINKS } from '../content/links/index.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
-import type { CounterId, IdSpace, LinkBonusDef, TowerStat } from '../content/types.ts';
+import type { CounterId, IdSpace, LinkBonusDef, TowerId, TowerStat } from '../content/types.ts';
 import {
   abilityAnswers,
   initialPick,
@@ -21,8 +21,8 @@ import {
   type LoadoutPick,
   type LoadoutPools,
   type SaveData,
+  mapName,
 } from '../meta/index.ts';
-import { mapName } from '../meta/index.ts';
 import { costFor } from '../sim/index.ts';
 import {
   loadout,
@@ -89,10 +89,10 @@ function towerView(
   content: CompiledContent<IdSpace>,
   c: Context,
   modifiers: Parameters<typeof costFor>[0],
-  id: string,
+  id: TowerId,
 ): LoadoutTowerView {
   const def = content.towers[id]!; // pool towers are registered (validateSave)
-  const specsOwned = c.save.unlocks.specs.some((t) => t === id);
+  const specsOwned = c.save.unlocks.specs.includes(id);
   const required: readonly string[] = c.map.requiredCounters;
   return {
     id,
@@ -100,14 +100,12 @@ function towerView(
     role: def.role,
     cost: costFor(modifiers, id, def.tiers[0].cost),
     icon: def.sprites.icon,
-    answers: towerAnswers(c.pools.towers.find((t) => t === id)!, specsOwned, c.map, c.specName).map(
-      (a) => ({
-        counter: a.counter,
-        label: COUNTER_LABELS[a.counter],
-        via: a.spec ?? (a.minTier > 1 ? `T${a.minTier}` : null),
-        required: required.includes(a.counter),
-      }),
-    ),
+    answers: towerAnswers(id, specsOwned, c.map, c.specName).map((a) => ({
+      counter: a.counter,
+      label: COUNTER_LABELS[a.counter],
+      via: a.spec ?? (a.minTier > 1 ? `T${a.minTier}` : null),
+      required: required.includes(a.counter),
+    })),
   };
 }
 
@@ -124,20 +122,27 @@ function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
   };
 }
 
+/** The map's battle config for the save (its content, modifiers, and slot 2), or null. */
+function configFor(mapId: string, save: SaveData): ReturnType<typeof battleConfig> | null {
+  try {
+    return battleConfig(mapId, 0, save);
+  } catch (err) {
+    logError(`loadout: no map '${mapId}'`, err);
+    return null;
+  }
+}
+
 /**
  * Builds the loadout screen for `mapId` and the save in play into the `loadout` view. Returns
  * false (and shows nothing) without a save or for a map no battle can open.
  */
 export function openLoadout(mapId: string): boolean {
   const save = activeSave();
-  if (save === null) return false;
-  let cfg;
-  try {
-    cfg = battleConfig(mapId, 0, save);
-  } catch (err) {
-    logError(`loadout: no map '${mapId}'`, err);
-    return false;
-  }
+  // Campaign maps only: a dev battle's towers aren't the save's.
+  const campaignMaps: readonly string[] = CAMPAIGN;
+  if (save === null || !campaignMaps.includes(mapId)) return false;
+  const cfg = configFor(mapId, save);
+  if (cfg === null) return false;
   const content = cfg.content;
   const map = content.maps[mapId]!; // battleConfig found it
   const pools = loadoutPools(save);
@@ -163,14 +168,12 @@ export function openLoadout(mapId: string): boolean {
       required: required.includes(id),
     })),
     towers: pools.towers.map((id) => towerView(content, c, cfg.modifiers, id)),
-    abilities: pools.abilities.map(
-      (id): LoadoutAbilityView => ({
-        id,
-        name: content.abilities[id]!.name, // pool abilities are registered (validateSave)
-        icon: content.abilities[id]!.sprites.icon,
-        answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
-      }),
-    ),
+    abilities: pools.abilities.map((id): LoadoutAbilityView => ({
+      id,
+      name: content.abilities[id]!.name, // pool abilities are registered (validateSave)
+      icon: content.abilities[id]!.sprites.icon,
+      answers: abilityAnswers(id, c.map).map((k) => COUNTER_LABELS[k]),
+    })),
     links: linksAmong(pools.towers, Object.values(LINKS)).map(linkView),
     companion:
       slot2 === null || cfg.companion === null

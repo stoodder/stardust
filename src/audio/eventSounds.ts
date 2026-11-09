@@ -37,6 +37,7 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   nibbler: 0,
   zoomer: 4,
   chonk: -6,
+  hauler: -9,
 };
 
 /**
@@ -123,6 +124,9 @@ export function createEventSounds(act: Act): EventSounds {
           return;
         case 'EnemyLeaked':
           if (e.leak > 0) out.push(sfx('leak'));
+          return;
+        case 'SackBurst':
+          out.push(sfx('sack_pop'));
           return;
         case 'WaveStarted':
           if (e.early) out.push(sfx('wave_call'), sfx('wave_start', 0, HORN_AFTER_CALL_SEC));
