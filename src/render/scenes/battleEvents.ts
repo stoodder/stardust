@@ -296,7 +296,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.enemies.release(e.uid);
       if (!popped) fx.burst(e.x, e.y);
       // A splitter's pop (its children spawn here this tick and pop in).
-      if (content.enemies[e.enemy]?.split != null) {
+      const split = Object.hasOwn(content.enemies, e.enemy)
+        ? content.enemies[e.enemy]?.split
+        : null;
+      if (split !== null && split !== undefined) {
         fx.ring(e.x, e.y, SPLIT_RING_TILES, 'pink.3', SPLIT_RING_MS, true);
       }
     }),

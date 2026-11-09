@@ -75,11 +75,12 @@ import { FxView } from '../views/FxView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
 import { LeaveFx } from '../views/LeaveFx.ts';
 import { drawGround } from '../views/GroundView.ts';
+import { peekerCover } from '../views/groundTiles.ts';
 import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
-import { PeekerView, peekerCover } from '../views/PeekerView.ts';
+import { PeekerView } from '../views/PeekerView.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
@@ -256,7 +257,7 @@ export class BattleScene extends Phaser.Scene {
     this.#drone = new DroneView(ctx, map);
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
-    this.#cueProps = new CuePropView(ctx, map.markers, map.cols, map.env, this.#fx);
+    this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
@@ -378,7 +379,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar.update(dt, state.enemies);
     this.#huddles.update(state.enemies);
     this.#leaves.update(dt);
-    this.#cueProps.update(dt);
+    this.#cueProps.update(dt, state.towerAtTile);
     this.#airLanes.update(state.wave, this.#armedHitsAir());
     this.#sacks.update(delta);
     this.#links.update();
@@ -535,7 +536,8 @@ export class BattleScene extends Phaser.Scene {
       v.sync(e);
       const under = v.burrowed;
       v.syncPose(e);
-      if (under !== v.burrowed) this.#fx.ring(e.x, e.y, DIRT_RING_TILES, 'grime.3', DIRT_RING_MS, true);
+      if (under !== v.burrowed)
+        this.#fx.ring(e.x, e.y, DIRT_RING_TILES, 'grime.3', DIRT_RING_MS, true);
     }
     this.#enemies.sweep(stamp);
 

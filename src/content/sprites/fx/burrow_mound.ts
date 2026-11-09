@@ -7,18 +7,18 @@
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows } from '../helpers.ts';
 
-const W = 16;
-const H = 8;
+const W = 18;
+const H = 9;
 /** The hump's center (pixel edges) and size. */
-const CX = 8;
-const BASE_Y = 6;
-const RX = 4.6;
-const RY = 3.4;
+const CX = 9;
+const BASE_Y = 7;
+const RX = 5.6;
+const RY = 4.2;
 
 function mound(k: 0 | 1): string[] {
   const g = grid(W, H);
   // The ripple: dashes of dark disturbed ground either side, spreading out a pixel on frame 1.
-  const reach = 6 + k;
+  const reach = 7 + k;
   for (const side of [-1, 1] as const) {
     for (let i = 0; i < 3; i++) {
       const x = Math.round(CX + side * (reach - i * 0.5)) - (side < 0 ? 1 : 0);
@@ -33,15 +33,17 @@ function mound(k: 0 | 1): string[] {
       if (nx * nx + ny * ny > 1 || y > BASE_Y) continue;
       const h = BASE_Y - y;
       plot(g, x, y, h >= 3 ? 'O' : h >= 1 ? 'N' : 'M');
+      // Its sunlit left shoulder, a step lighter (turned earth catching the light).
+      if (h === 2 && x + 0.5 < CX - 1) plot(g, x, y, 'O');
     }
   }
   // Clods in the body, then crumbs tumbling off the crown (they hop between frames).
-  plot(g, 6 + k, 4, 'M');
-  plot(g, 10 - k, 5, 'M');
-  plot(g, k === 0 ? 5 : 11, k === 0 ? 1 : 2, 'N');
-  plot(g, k === 0 ? 11 : 4, k === 0 ? 2 : 1, 'O');
+  plot(g, 7 + k, 5, 'M');
+  plot(g, 11 - k, 6, 'M');
+  plot(g, k === 0 ? 5 : 13, k === 0 ? 1 : 2, 'N');
+  plot(g, k === 0 ? 13 : 4, k === 0 ? 2 : 1, 'O');
   // Its contact shadow.
-  for (let x = 4; x < 12; x++) plot(g, x, BASE_Y + 1, '_');
+  for (let x = 5; x < 14; x++) plot(g, x, BASE_Y + 1, '_');
   return rows(g);
 }
 

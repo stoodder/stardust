@@ -1,7 +1,7 @@
 // The huddle (design/enemies.md § 3 Huddle; art-direction §8, the `huddle` tell: "allies cluster;
 // a soft ring under the group"; T312b). Each frame, for every leader holding at least one ally back
 // (an Elder, Chitterbloom in her phase-3 panic): a soft `gold.4` ring on the ground at its huddle
-// radius, at 35%, and a dotted `gold.4` tether (1 px dots, 3 px apart, 60%) from each huddled ally
+// radius, at 60%, and a dotted `gold.4` tether (1 px dots, 3 px apart, solid) from each huddled ally
 // (`Enemy.huddleUid`) to it, both pulsing down a step on the shared 1 Hz clock (steady under
 // reduced motion). The leader's own flank spots pulse in its sprite. In `decal`, under the units.
 // Allocation-free per frame: the rings are pooled, the tethers redrawn into one Graphics.
@@ -22,8 +22,8 @@ export interface HuddlePool {
 const MAX_RINGS = 8;
 /** Tether dots: one every DOT_STEP_PX along the line. */
 const DOT_STEP_PX = 3;
-const RING_ALPHA = { on: 0.35, off: 0.15 } as const;
-const TETHER_ALPHA = { on: 0.6, off: 0.35 } as const;
+const RING_ALPHA = { on: 0.6, off: 0.35 } as const;
+const TETHER_ALPHA = { on: 1, off: 0.6 } as const;
 const COLOR = (() => {
   const c = rgbOf('gold.4');
   return (c.r << 16) | (c.g << 8) | c.b;

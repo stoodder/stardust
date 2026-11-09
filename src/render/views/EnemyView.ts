@@ -359,7 +359,8 @@ export class EnemyView implements PooledView {
     this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
     if (this.#tellFrames > 0) {
       const top = this.#body.y - this.#headroom - TELL_GAP_PX;
-      this.#tell.setPosition(this.#body.x, top).setVisible(true);
+      // A burrowed unit's glyph waits underground with it.
+      this.#tell.setPosition(this.#body.x, top).setVisible(!this.#burrowedLook());
     }
   }
 
@@ -375,6 +376,8 @@ export class EnemyView implements PooledView {
       this.#statePose = next;
       if (shot !== null && this.#has(shot)) this.#oneShot = shot;
       else if (this.#oneShot !== null && interruptsOneShot(next)) this.#oneShot = null;
+      if (this.#tellFrames > 0) this.#tell.setVisible(next !== 'under');
+      if (!Number.isNaN(this.#x)) this.#shadow.setVisible(next !== 'under');
       dirty = true;
     }
     const shimmer =
@@ -522,8 +525,9 @@ export class EnemyView implements PooledView {
       const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
       this.#body.play({ key, startFrame: tempo.startFrame % frames });
       this.#body.anims.timeScale = tempo.timeScale;
-    } else if (pose === 'puff' && was === 'puff') {
-      // The shimmer swaps the variant mid-cycle: keep the frame it was on.
+    } else if (pose === was && this.#body.anims.isPlaying) {
+      // The same pose in a new facing or variant (the shimmer): carry on from the frame it was on,
+      // so a turn mid-sneeze or mid-surfacing doesn't start the one-shot over.
       const frame = this.#body.anims.currentFrame?.index ?? 1;
       this.#body.play({ key, startFrame: frame - 1 });
       this.#body.anims.timeScale = 1;

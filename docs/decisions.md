@@ -1142,3 +1142,12 @@ Real art went in behind T300a's ids. No data changed.
 - **The early ask** is a shop row, not a click on the locked tab. act1.md and progression §4 place the question from A1M3 to A2M4. Answering "Still asking." sets `asked_zibzab_early` and removes the row; "Not today." keeps it.
 - **QUILL's Rapport** (`rapport_quill`): 2 Intel for −15% Time Dilation cooldown, stocked after A1M3.
 - **Protocol picker:** in the loadout under the tower grid. Protocols count toward the loadout's skip rule, a full slot swaps, and Specialist picks a tower. Equipped protocols reach the battle's modifiers.
+
+### D089 — 2026-11-09 — T312b boss, burrow, split and huddle render
+- **Enemy pose from sim state** (`views/enemyPose.ts`): the Digger's dig tell, a generic `fx.burrow_mound` while underground (new sprite; the docs give the Digger no underground art), and Chitterbloom's tell/sneeze/dig/under/surface/panic/puff/flee anims. Sim helpers `bossTelling`, `bossNextAbility`, `burrowTelling` are exported from `sim/index.ts` (read-only).
+- **Boss bar** (`BossBarView`): name, HP fill with a damage chip, phase markers; flashes on a phase change, shimmers while invulnerable, fades after `driveOff`.
+- **driveOff:** leaving units draw at 60%; `LeaveFx` carries them past the edge and fades them (render-only).
+- **Cue props:** `CUE_DECOR` entries are `{sprite, wave}`; a cue prop fades to 60% over a tower behind it (the core's rule, D028). Zibzab's shell-shop drops onto A1M3's verge at W6's countdown, with his scene.
+- **T232:** the Suppressing Fire strip is depth-sorted in `world` (bias `strip: 0.25`): over enemies, under towers.
+- **`dev_boss`** dev map (a 200 HP Chitterbloom with Diggers, Bunchlings, an Elder) for smoke and the gallery.
+- Follow-ups: T328.

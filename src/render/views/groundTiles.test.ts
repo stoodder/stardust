@@ -9,6 +9,7 @@ import {
   DECOR_MARKERS,
   dressTile,
   envVariant,
+  peekerCover,
   propVariant,
   tilesBehind,
 } from './groundTiles.ts';
@@ -175,6 +176,13 @@ describe('dressTile', () => {
     // Hardware keeps its own palette.
     expect(propVariant('prop.podium', 'act3')).toBe('default');
     expect(propVariant('prop.zibzab_shop', 'act2.dusk')).toBe('default');
+  });
+
+  it("hides the Peeker in A1M4's planter, and behind the rock elsewhere (T312b)", () => {
+    expect(peekerCover('a1_m04')).toBe('planter');
+    expect(peekerCover('a1_m03')).toBe('rock');
+    expect(peekerCover('dev_range')).toBe('rock');
+    expect(peekerCover('toString')).toBe('rock');
   });
 
   it('maps env ids to sprite variants', () => {

@@ -2,6 +2,7 @@
 // prop standing on it, if any; plus the decor apron around the grid (art-direction §3). Pure, so
 // the choices are unit-tested; GroundView draws them.
 import type { SpriteId } from '../../content/sprites/index.ts';
+import type { PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
 import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/cliff.ts';
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
@@ -103,6 +104,18 @@ export interface CueDecor {
 export const CUE_DECOR: Readonly<Record<MarkerId, CueDecor>> = {
   zibzab_shop: { sprite: 'prop.zibzab_shop', wave: 6 },
 };
+
+/**
+ * Each map's own cover for the Peeker, where it isn't the default rock (art-direction §6, act1.md
+ * per map; T312b): A1M4's planter by the fountain. A1M3's fallen mailbox is a decor prop of its own
+ * in front of the rock, and A1M5 keeps the rock.
+ */
+const PEEKER_COVER_BY_MAP: Readonly<Record<string, PeekerCover>> = { a1_m04: 'planter' };
+
+/** What the Peeker hides behind on map `mapId` (PeekerView plays `peekerFrame(cover, …)`). */
+export function peekerCover(mapId: string): PeekerCover {
+  return Object.hasOwn(PEEKER_COVER_BY_MAP, mapId) ? PEEKER_COVER_BY_MAP[mapId]! : 'rock'; // hasOwn
+}
 
 /** The decor id a marker id names: itself, or itself less a `_<n>` suffix. */
 function decorSprite(id: MarkerId): SpriteId | undefined {

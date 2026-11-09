@@ -17,8 +17,8 @@ import type * as Phaser from 'phaser';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { pointAt, type Point, type Zone } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
-import { worldDepth } from '../depth.ts';
-import { gridToScreen, HALF_H, type Vec2 } from '../iso.ts';
+import { stripDepth } from '../depth.ts';
+import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   BEAM_MS,
   beamCore,
@@ -424,15 +424,6 @@ export class FxView extends TransientFx {
     this.#seed = (Math.imul(this.#seed, 1664525) + 1013904223) >>> 0;
     return this.#seed / 2 ** 32;
   }
-}
-
-/**
- * A live strip tile's sort depth (T232), from its center's screen y: just above its bottom vertex,
- * so the enemies on the tile draw under it and a tower or high-ground block on the tile in front
- * (footY one HALF_H lower) draws over it.
- */
-export function stripDepth(centerY: number): number {
-  return worldDepth(centerY + HALF_H - 1, 'strip', 0);
 }
 
 function zoneAlive(zones: ZonePoolLike, uid: number): boolean {

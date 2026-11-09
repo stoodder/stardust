@@ -173,6 +173,15 @@ From **Act II** on, a lost run can be resumed from a checkpoint instead of from 
 - **No farming (rule):** a defeat after a checkpoint retry pays defeat Stardust only for the waves resolved **in this attempt beyond the checkpoint**, and a defeat on a map already won pays **0** ([progression.md §2](progression.md#2-earning-stardust)).
 - Act I and the A3M3 Holdout (which has no defeat) have no checkpoints.
 
+### 2.13 Optional objectives
+
+A few story maps carry an **optional objective** worth +1 Intel (Objective Intel, [progression.md §3](progression.md#3-medals-and-intel); 7 across the campaign). It is never moral and never required: it rewards playing a certain way, like a Challenge medal, and uses the same condition grammar (map data `objectives`, [maps.md §5.3](maps.md#53-map-scripts)).
+
+- **Standing.** Each objective is **open** until it settles. It is **done** the moment its condition can no longer fail (a counter reaching its target), or at victory if it still holds then; it **fails** the moment it can no longer hold (Clean Audit's first late sell) or when the map is lost. The HUD's tracker, under the medals, shows each one's standing as it changes.
+- **Completion actions.** An objective may run script actions the moment it is done (A3M5's "Cut the Feed" shrinks a later wave).
+- **Payout.** A won run pays each done objective's Intel **once per save**, like a medal; a loss pays none. Results lists it under the medals.
+- **Late sells** (A1M4's **Clean Audit**). A tower's build phase lasts until the next wave starts after it was built: in that countdown it can be sold and rebuilt freely. A sale once a wave has started since the build is a **late sell**. A misclick-grace refund (§2.3) is never a sale.
+
 ---
 
 ## 3. Commander abilities

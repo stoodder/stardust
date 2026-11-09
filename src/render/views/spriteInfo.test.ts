@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { baseFrame, facingOf, firstLook, headStyle, headSuffix, spriteId } from './spriteInfo.ts';
+import {
+  baseFrame,
+  enemyBody,
+  facingOf,
+  firstLook,
+  headStyle,
+  headSuffix,
+  spriteId,
+  YOUNGLING_SPRITE,
+} from './spriteInfo.ts';
 
 describe('spriteInfo', () => {
   it('resolves registered ids and rejects unknown ones', () => {
@@ -46,5 +55,15 @@ describe('spriteInfo', () => {
     expect(facingOf(-1, 0)).toBe('nw');
     expect(facingOf(0, -1)).toBe('ne');
     expect(facingOf(0, 0)).toBe('se');
+  });
+});
+
+describe('enemyBody (D074)', () => {
+  it('draws a youngling-tagged unit as the youngling', () => {
+    expect(enemyBody('enemy.nibbler', ['youngling'])).toBe(YOUNGLING_SPRITE);
+    expect(enemyBody('enemy.nibbler', ['quiet_wave', 'youngling'])).toBe('enemy.youngling');
+    expect(enemyBody('enemy.nibbler', [])).toBe('enemy.nibbler');
+    expect(enemyBody('enemy.nibbler', ['quiet_wave'])).toBe('enemy.nibbler');
+    expect(spriteId(YOUNGLING_SPRITE)).toBe('enemy.youngling');
   });
 });

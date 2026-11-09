@@ -149,7 +149,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
 - [ ] **T308** The shop opens: the Zapcoil sample, the early-ask scene, QUILL's Rapport, protocol slots in the loadout and battle setup.
 - [ ] **T312a** Render: Time Dilation's tint while a `field` zone lives; the flak burst fx; air altitude and shadows, the dotted lane, flak/chain FX, Gerald, Time Dilation's tint, wreckage and the drone, the clear intent.
-- [~] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
+- [x] **T312b** Render: hook the Peeker's `planter` cover on A1M4 (`peekerFrame('planter', …)`); WreckageView passes `terraces`; draw `enemy.youngling` for `youngling`-tagged units and play the Digger's `dig_<facing>` tell; burrow, split, huddle, the boss bar and phases, `driveOff`, props on cues, T232.
 - [x] **T312c** HUD: price builds/upgrades/specs with `purchasePriceInto` (Clearance Sale, Rapid Deploy) instead of `costFor` in commands/hudViews/hudPanel/loadout; `abilityReady`/`freeCastReady` for slot states; slot-2 charges, the Hold Fire pulse, route flags and NEW, the callsign plate, the objective tracker; T216, T213, T221, T222.
 - [ ] **T316** Results and flow: the Containment Lapse stamp, objective Intel, the debrief, party → Results → stinger, a pause menu (Retry/Quit); T235.
 - [x] **T310a** Portraits: the player, Bricks, QUILL (`policy`, `party_hat`), Sterling.
@@ -157,6 +157,15 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
 - [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
 - [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
+- [ ] **T320** Inbox follow-ups (from T303's hand-back).
+- [ ] **T321** Sprinkler T3 Soak data.
+- [ ] **T322** Peeker polish.
+- [ ] **T323** Audio follow-ups: delete `src/audio/sfx/radio.ts` (needs the owner's OK; an agent's delete was refused), restore storm headroom (−1.1 dB, only 0.2 dB margin), story-runtime ~158, the `testHookTypes` `render()` comment.
+- [ ] **T324** Dialogue cleanup: `MapDef.briefing`, `briefingLines`, the name-tag plate.
+- [ ] **T325** A1M3 dialogue gaps.
+- [ ] **T326** HUD leftovers: spawn flags, the slot-2 portrait, an objective-tracker smoke.
+- [ ] **T327** `skipScene` transcript bug; `saveModifiers` ignores protocols.
+- [ ] **T328** Render follow-ups from T312b: enemy health bars (art-direction §8); the tell-glyph timer counts rendered frames, so it lingers through fast-forward (use sim ticks).
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [x] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.

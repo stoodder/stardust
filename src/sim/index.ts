@@ -99,11 +99,7 @@ export {
   mapMedalIds,
   medalId,
 } from './medals.ts';
-export {
-  completedObjectiveIds,
-  isLateSell,
-  objectiveStatusById,
-} from './objectives.ts';
+export { completedObjectiveIds, isLateSell, objectiveStatusById } from './objectives.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   towerStats,

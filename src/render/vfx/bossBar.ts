@@ -9,8 +9,8 @@ export const BOSS_LABEL_Y = 30;
 export const BOSS_BAR_Y = 39;
 /** Phase markers stand this far above and below the bar (px). */
 export const MARK_OVERHANG_PX = 2;
-/** The damage chip (`white.0` behind the fill) drains this many px per ms toward the fill. */
-export const CHIP_PX_PER_MS = 0.08;
+/** The damage chip (`red.3` behind the fill) drains this many px per ms toward the fill. */
+export const CHIP_PX_PER_MS = 0.16;
 /** A phase change flashes the whole bar white for this long (ms). */
 export const PHASE_FLASH_MS = 120;
 /** After the boss's ending starts, the bar holds this long, then steps out over BAR_FADE_MS. */

@@ -20,9 +20,10 @@ const COURT_W: GridPos = [11, 5];
 const COURT_E: GridPos = [12, 5];
 /** The gate court's north pad. */
 const COURT_N: GridPos = [11, 4];
-/** West of the west side. */
+/** West of the west side, by the entrance. */
 const WEST_N: GridPos = [1, 3];
-const WEST_S: GridPos = [1, 6];
+/** The west side, where W1's Zoomer rush catches up with the Nibblers. */
+const W1_STRIKE: GridPos = [2, 4];
 /** The strike points: the south-west bend and the south side's east end. */
 const SW_STRIKE: GridPos = [3, 7];
 const SE_STRIKE: GridPos = [9, 7];
@@ -32,6 +33,7 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'rivet', tile: NW_PAD },
     { wave: 1, build: 'thumper', tile: SE_BEND },
     { wave: 1, clear: NODE },
+    { wave: 1, ability: 1, target: W1_STRIKE, when: { afterSec: 12 } }, // the Zoomer rush
     { wave: 2, build: 'zapcoil', tile: COURT_E },
     { wave: 2, clear: SE_CART },
     { wave: 3, build: 'thumper', tile: NODE },
@@ -59,6 +61,7 @@ function parSteps(): BuildStep[] {
 }
 
 const PAR_STEPS = parSteps();
+const PAR_LOADOUT = ['rivet', 'thumper', 'sprinkler', 'zapcoil'] as const;
 
 const key = ([c, r]: GridPos): string => `${c},${r}`;
 
@@ -87,7 +90,6 @@ function swapped(swap: readonly string[], rivetCap: number): BuildStep[] {
   }
   return steps;
 }
-const PAR_LOADOUT = ['rivet', 'thumper', 'sprinkler', 'zapcoil'] as const;
 
 export const builds = defineBuilds({
   // A1M4's reference profile (campaign.md § 4.9): the issued kit and Zibzab's Zapcoil sample, Head
@@ -103,26 +105,34 @@ export const builds = defineBuilds({
   noCounterBuilds: {
     // No splash answer (enemies.md § 3.1): par with every Thumper and the Zapcoil swapped for a
     // Rivet (the Rivets may reach T3), an idle Skyhook for the fourth slot, the same casts.
-    splash: { loadout: ['rivet', 'sprinkler', 'skyhook'], steps: swapped(['thumper', 'zapcoil'], 3) },
+    splash: {
+      loadout: ['rivet', 'sprinkler', 'skyhook'],
+      steps: swapped(['thumper', 'zapcoil'], 3),
+    },
     // No armor answer: par with every Thumper swapped for a Rivet and every Rivet held at T2 (no
     // pierce); the same Sprinkler, Zapcoil, and casts, and an idle Skyhook.
-    armor: { loadout: ['rivet', 'sprinkler', 'skyhook', 'zapcoil'], steps: swapped(['thumper'], 2) },
+    armor: {
+      loadout: ['rivet', 'sprinkler', 'skyhook', 'zapcoil'],
+      steps: swapped(['thumper'], 2),
+    },
   },
-  // The armor test is W7's six Haulers, and they walk the plaza for 44 s: their leaks land after
-  // W8's countdown has started, so both no-counter builds must lose by W8 rather than W6.
-  noCounterLoseByWave: 8,
+  // Par clears all five carts, so it earns Asset Recovery.
+  parMedals: ['challenge'],
+  // Mk II's wider blast takes more of W1's Zoomer rush: one leak fewer (T228).
+  rndPickChanges: ['orbital_strike_mk2'],
   altBuilds: {
-    // Skyhook (idle), Thumper, Zapcoil: the Zapcoil chains through the huddles, the Thumpers take
-    // the Chonks and Haulers.
+    // Skyhook (idle), Thumper, Zapcoil: the Zapcoils chain through the huddles and the rush, the
+    // Thumpers take the Chonks and Haulers.
     chain_and_shell: {
       loadout: ['skyhook', 'thumper', 'zapcoil'],
       steps: [
         { wave: 1, build: 'thumper', tile: SE_BEND },
         { wave: 1, build: 'zapcoil', tile: NW_PAD },
         { wave: 1, clear: NODE },
+        { wave: 1, ability: 1, target: W1_STRIKE, when: { afterSec: 12 } },
+        { wave: 2, build: 'zapcoil', tile: COURT_E },
         { wave: 2, clear: SE_CART },
         { wave: 3, build: 'thumper', tile: NODE },
-        { wave: 3, build: 'zapcoil', tile: COURT_E },
         { wave: 4, ability: 2 },
         { wave: 4, upgrade: SE_BEND },
         { wave: 4, upgrade: NODE },
@@ -131,8 +141,8 @@ export const builds = defineBuilds({
         { wave: 5, ability: 1, target: SE_STRIKE, when: { afterSec: 12 } },
         { wave: 6, upgrade: COURT_N },
         { wave: 6, upgrade: COURT_E },
-        { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
         { wave: 7, build: 'thumper', tile: SE_CART },
+        { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
         { wave: 8, ability: 2 },
         { wave: 8, upgrade: SE_BEND },
         { wave: 8, upgrade: NODE },
@@ -140,25 +150,28 @@ export const builds = defineBuilds({
         { wave: 9, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
       ],
     },
-    // Thumper, Sprinkler, Skyhook (idle): the Sprinklers slow the huddles into the bends, where
-    // three Thumpers shell them.
+    // Thumper, Sprinkler, Skyhook (idle): Sprinklers slow the rush and the huddles into the bends,
+    // where the Thumpers shell them.
     slow_and_shell: {
       loadout: ['thumper', 'sprinkler', 'skyhook'],
       steps: [
         { wave: 1, build: 'thumper', tile: SE_BEND },
-        { wave: 1, build: 'sprinkler', tile: COURT_W },
+        { wave: 1, build: 'sprinkler', tile: WEST_N },
+        { wave: 1, build: 'sprinkler', tile: NW_PAD },
         { wave: 1, clear: NODE },
+        { wave: 1, ability: 1, target: W1_STRIKE, when: { afterSec: 12 } },
+        { wave: 2, build: 'thumper', tile: COURT_N },
+        { wave: 2, clear: SE_CART },
         { wave: 3, build: 'thumper', tile: NODE },
-        { wave: 3, build: 'sprinkler', tile: NW_PAD },
         { wave: 4, ability: 2 },
         { wave: 4, upgrade: SE_BEND },
         { wave: 4, upgrade: NODE },
-        { wave: 4, build: 'thumper', tile: COURT_N },
+        { wave: 4, upgrade: COURT_N },
         { wave: 5, ability: 1, target: SE_STRIKE, when: { afterSec: 12 } },
-        { wave: 6, upgrade: COURT_N },
-        { wave: 6, build: 'thumper', tile: WEST_N },
+        { wave: 5, build: 'sprinkler', tile: COURT_W },
+        { wave: 6, build: 'thumper', tile: SE_CART },
+        { wave: 6, upgrade: SE_CART },
         { wave: 7, ability: 1, target: SW_STRIKE, when: { afterSec: 14 } },
-        { wave: 7, upgrade: WEST_N },
         { wave: 8, ability: 2 },
         { wave: 8, upgrade: SE_BEND },
         { wave: 8, upgrade: NODE },

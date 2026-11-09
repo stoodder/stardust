@@ -2,7 +2,8 @@
 // on the map, its name in the 3×5 font (`gold.4`) over a 160×4 bar at the top of the screen,
 // between the notices and the wave banner, in `overlay` and fixed to the screen (the camera shake
 // doesn't move it). The bar is a 1 px `ink.0` frame round an `ink.2` track; the HP is `gold.3`
-// under a lit `gold.4` top row, with a `white.0` chip behind it that drains after each hit, and a
+// under a lit `gold.4` top row, with a `red.3` chip behind it that drains after each hit (the
+// damage just dealt), and a
 // `white.1` 1 px marker at each phase threshold standing 2 px proud of the bar (Chitterbloom's 60%
 // and 25%; the next one is the stop no burst skips). A phase change flashes the whole bar white;
 // while the boss is invulnerable after it, the fill shimmers `white.1` ↔ `gold.4` (steady white
@@ -47,7 +48,7 @@ const C = {
   track: hex('ink.2'),
   fill: hex('gold.3'),
   lit: hex('gold.4'),
-  chip: hex('white.0'),
+  chip: hex('red.3'),
   mark: hex('white.1'),
   flash: hex('white.1'),
 };
@@ -192,7 +193,11 @@ export class BossBarView {
     const chip = Math.round(this.#chip);
     const flash = this.#flashMs > 0;
     // A cheap change key: the drawn values (ints and flags), no string building unless it changed.
-    const k = this.#fill * 1e6 + chip * 1e3 + (flash ? 4 : 0) + (invulnerable ? 2 : 0) +
+    const k =
+      this.#fill * 1e6 +
+      chip * 1e3 +
+      (flash ? 4 : 0) +
+      (invulnerable ? 2 : 0) +
       (this.#shimmer ? 1 : 0);
     if (k === this.#key) return;
     this.#key = k;

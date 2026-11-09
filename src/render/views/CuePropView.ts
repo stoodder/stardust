@@ -3,13 +3,16 @@
 // arrives with his W6 scene on A1M3: it drops in from 4 px up (1 px every 2 frames, like a new
 // tower) inside a `steel.4` dust ring, and stands there for the rest of the map, playing its first
 // anim. The sim knows nothing of it: the countdown that plays the cue scene is the signal
-// (`reveal`, from CountdownStarted, and from WaveStarted in case a countdown was skipped).
+// (`reveal`, from CountdownStarted, and from WaveStarted in case a countdown was skipped). Like the
+// core (D028), a landed prop that would hide a tower on a tile behind it draws at 60%: A1M3's shop
+// stands right in front of the (11,7) pad.
 import * as Phaser from 'phaser';
 import type { GridPos, MarkerId } from '../../content/types.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { BUILD_PUFF_MS, BUILD_PUFF_TILES } from '../vfx/fxTiming.ts';
-import { CUE_DECOR, propVariant, type CueDecor } from './groundTiles.ts';
+import { OCCLUDING_ALPHA } from './CoreView.ts';
+import { CUE_DECOR, propVariant, tilesBehind, type CueDecor } from './groundTiles.ts';
 import { firstLook } from './spriteInfo.ts';
 import type { TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -26,6 +29,8 @@ interface CueProp {
   readonly row: number;
   readonly sprite: Phaser.GameObjects.Sprite;
   readonly y: number;
+  /** Tiles whose tower its sprite would hide (tilesBehind). */
+  readonly behind: readonly number[];
   /** ms since it landed (−1: not yet). */
   ms: number;
 }
@@ -39,11 +44,15 @@ export class CuePropView {
   /** The cue props on a map's `markers`, hidden until their cue; `env` picks their palette. */
   constructor(
     ctx: ViewContext,
-    markers: Readonly<Record<MarkerId, GridPos>>,
-    cols: number,
+    grid: {
+      readonly cols: number;
+      readonly tiles: readonly unknown[];
+      readonly markers: Readonly<Record<MarkerId, GridPos>>;
+    },
     env: string,
     fx: TransientFx,
   ) {
+    const { cols, markers } = grid;
     this.#fx = fx;
     const { scene, sprites, layers, origin } = ctx;
     for (const [id, [col, row]] of Object.entries(markers)) {
@@ -60,7 +69,8 @@ export class CuePropView {
         .setVisible(false);
       if (look.anim !== null) sprite.play(sprites.anim(cue.sprite, look.anim, variant));
       layers.world.add(sprite);
-      this.#props.push({ cue, col, row, sprite, y: pos.y, ms: -1 });
+      const behind = tilesBehind(grid, col, row, a.y);
+      this.#props.push({ cue, col, row, sprite, y: pos.y, behind, ms: -1 });
     }
   }
 
@@ -81,12 +91,19 @@ export class CuePropView {
     }
   }
 
-  update(dt: number): void {
+  /** One frame: the drop, and the fade over a tower behind. `towerAtTile`: the sim's tile map. */
+  update(dt: number, towerAtTile: readonly number[]): void {
     for (const p of this.#props) {
-      if (p.ms < 0 || p.ms > DROP_PX * DROP_STEP_MS) continue;
-      p.ms += dt;
-      const lift = Math.max(0, DROP_PX - Math.floor(p.ms / DROP_STEP_MS));
-      p.sprite.setY(p.y - lift);
+      if (p.ms < 0) continue;
+      if (p.ms <= DROP_PX * DROP_STEP_MS) {
+        p.ms += dt;
+        const lift = Math.max(0, DROP_PX - Math.floor(p.ms / DROP_STEP_MS));
+        p.sprite.setY(p.y - lift);
+      }
+      let hides = false;
+      for (const i of p.behind) if ((towerAtTile[i] ?? -1) >= 0) hides = true;
+      const alpha = hides ? OCCLUDING_ALPHA : 1;
+      if (p.sprite.alpha !== alpha) p.sprite.setAlpha(alpha);
     }
   }
 }

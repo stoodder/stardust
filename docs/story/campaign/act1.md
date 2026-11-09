@@ -345,7 +345,38 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
 
 **Layout.** A U-shaped road around the plaza fountain under three giant Evie billboards, entering north-west and leaving south-east through the plaza gate (core). The audit podium (decor) faces the path; Prim hovers there all map. Five wreckage carts ring the fountain; the power node is under the cart nearest the podium. The Peeker's rock is a planter by the fountain. A3M2 revisits this plaza: the podium, billboards, and fountain must be landmark-clear.
 
-**Waves.** 1 Nibblers [Clearance Sale prompt] · 2 Bunchlings ×3 [T: splitting] · 3 Bunchlings + Zoomers [X] · 4 one Elder + 6 huddled Nibblers [T: huddle; splash] · 5 Chonks + Bunchlings · 6 Elders ×2 + Bunchlings [X] · 7 Haulers ×2 + Elder · 8 Zoomer flood + Bunchlings · 9 Elders ×3 with big huddles + Haulers [X].
+**Waves.** 1 Nibblers, then a Zoomer rush [Clearance Sale prompt] · 2 Bunchlings ×4 [T: splitting] · 3 Bunchlings + Zoomers [X] · 4 one Elder + 10 huddled Nibblers [T: huddle; splash] · 5 a column of Chonks + Bunchlings [X: armor and splash] · 6 Elders ×2 + Bunchlings [X] · 7 Haulers ×2 + Elder · 8 Zoomer flood + Bunchlings · 9 Elders ×3 with big huddles + Haulers [X].
+
+**Layout data** (the data is [`src/content/maps/a1_m04/map.ts`](../../../src/content/maps/a1_m04/map.ts)). Spawn (2,0); the road runs down the plaza's west side (column 2), east along its south side (row 7), back up its east side (column 10), east past the billboards (row 2), and down the east edge to the plaza gate (13,9): 31 tiles, about 31 s for a Nibbler and 44 s for a Hauler. The open north side is under the three billboards (markers `billboard_west` (5,0), `billboard_center` (8,0), `billboard_east` (11,0)); the fountain (`fountain`, 6,4) is the plaza's heart, the podium (`podium`, 3,5) faces the south-west bend, and the Peeker's planter (`peeker`, 8,3) is beside the fountain. Buildable: 12 pads: (13,1) above the billboard stretch, (3,2) and (9,2) in the plaza's north corners, (1,3) and (1,6) west of the west side, (9,6) inside the south-east bend, (11,4), (11,5), (12,5), and (11,7) in the **gate court** between the east side and the east edge (a tower there covers both), and (4,8) and (7,8) south of the south side. Wreckage (toppled lettuce carts): (4,5) by the podium hides the **power node** (salvage 50); (8,5) inside the south-east bend hides a pad (40); (5,2), (7,2), and (6,6) lie on the paving (30 each).
+
+```
+..S...........
+..#..........o
+..#o.x.x.o####
+.o#.......#..#
+..#.......#o.#
+..#.x...x.#oo#
+.o#...x..o#..#
+..#########o.#
+....o..o.....#
+.............C
+```
+
+**Wave data** (the data is [`src/content/maps/a1_m04/waves.ts`](../../../src/content/maps/a1_m04/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Bunchling 1.0 s, Elder 2.0 s; everything takes the road). A **huddle** is an Elder with Nibblers packed 0.3 s apart 0.4 s behind it: they keep to its pace and regenerate while they stay close, so a single-target turret chews on a healing clump while a shell or an arc hits all of it. **W1's Zoomer rush** catches the Nibblers on the west side: the Technician's strike there is the difference between two or three leaks and six. **W5 is the armor and splash test:** ten Chonks walk 2 s apart (1.2 tiles), a column the shells roll down, with twenty Bunchlings behind it; Rivets alone can't stop either. W7 and W9 release their Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)), and W6's and W9's Elders walk 10 s apart, so one strike never catches two huddles.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler ×18 @ 0.7, 0 · Zoomer ×32 @ 0.3, 10 | 50 |
+| W2 | Bunchling ×4 @ 2.5, 0 (`teach`) · Nibbler ×10 @ 0.6, 12 | 14 |
+| W3 | Bunchling ×10 @ 1.0, 0 · Zoomer ×18 @ 0.4, 6 | 28 |
+| W4 | huddle: Elder, 0 · Nibbler ×10 @ 0.3, 0.4 (`teach`) · Nibbler ×13 @ 0.5, 20 | 24 |
+| W5 | Chonk ×10 @ 2, 0 · Bunchling ×20 @ 0.8, 6 | 30 |
+| W6 | huddles (Elder + Nibbler ×10) at 0 and 10 · Bunchling ×13 @ 0.8, 16 | 35 |
+| W7 | Hauler ×2 @ 12, 0 · huddle (Elder + Nibbler ×13) at 6 · Zoomer ×21 @ 0.35, 20 | 37 |
+| W8 | Zoomer ×39 @ 0.3, 0 · Bunchling ×18 @ 0.7, 6 | 57 |
+| W9 | Hauler ×4 @ 12, 0 · huddles (Elder + Nibbler ×16) at 4, 14, and 24 · Bunchling ×13 @ 0.8, 30 | 68 |
+
+Totals count spawns; each Bunchling adds three Nibblers when it dies.
 
 **Story delivery.**
 - *Briefing:* Prim: "Compliance Officer Prim. Audit 2361-Q2-447. Please continue working. I will be watching your face." · Sterling: "Smiling is mandatory! (Kidding! It's in your contract, though.)" · Prim: "Smiling detected at 61% of mandated sincerity."
@@ -357,13 +388,53 @@ Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3
   - w07 Prim: "Observation: Technician has blinked 1,140 times this shift. Recommended maximum: 900. Noted."
   - w08 Sterling: "Tier approvals are on me, Four-Forty-Seven. My signature, my risk!"
 - *Barks:* Zibzab `map_start`: "Clearance Sale! Everything must go. Not you. You're not for sale. Yet." · Zibzab `tower_built` (Zapcoil): "Ten percent better than new. Honestly, eight. The ten is marketing." · QUILL `new_enemy` elder: "Elder! Slow, old, and in the way. Clear it first for efficiency!"
-- *Debrief:* Sterling: "Prim filed a report. I filed it under 'recycling.' Super!" · Kip: "Audited, huh? I hold that record. 'Fewest Blinks Under Audit.' Prim didn't count them. I did." · Sterling's sign-off opens R&D Engineering (specializations).
+- *Debrief:* Sterling: "Prim filed a report. I filed it under 'recycling.' Super!" · Kip: "Audited, huh? I hold that record. 'Fewest Blinks Under Audit.' Prim didn't count them. I did." · Sterling's sign-off opens R&D Engineering (specializations). On a loss, Sterling: "Prim's report says 'room for growth.' Growth is our whole brand, Four-Forty-Seven! Go again!"
+- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m04/`](../../../src/content/dialogue/a1/a1_m04/scenes.ts)): the briefing is `a1_m04_brief`; the radio lines are `a1_m04_w03`–`_w08`, one per countdown, the Joke of the Shift's three lines in one scene with Prim's fact-check in the middle; the debrief is `a1_m04_debrief`. The barks are `zibzab_map_start_a1_04`, `zibzab_tower_built_zapcoil_a1_04`, and `quill_new_enemy_elder_a1_04`.
 - *Codex:* Elder (original, citing "Survey 2346, Okonkwo"), Bunchling, Zapcoil, Admin Plaza, Evie, Compliance Officer Prim, the Smile Audit.
 - *Memo after:* `memo_a1_04` *Buffer Populations and You: A Quick FAQ!* (body about "wildlife management" that says nothing; small print: "Tier approvals contingent on Q3 extraction targets.")
 
-**Medals.** Victory · Perfect Core · **Asset Recovery:** clear all 5 wreckage tiles. **Objective Intel +1, Clean Audit:** sell no tower after its build phase (a misclick-grace refund doesn't count as a sale).
+**Medals.** Victory · Perfect Core · **Asset Recovery:** clear all 5 wreckage tiles (`wreckageCleared ≥ 5`). **Objective Intel +1, Clean Audit:** no write-offs: sell no tower once a wave has started since you built it; the first late sell fails it (`lateSells ≤ 0`; what counts is in [core-loop.md §2.13](../../design/core-loop.md#213-optional-objectives)).
 **Rewards.** Stardust 150 · Intel 3 (+1).
-**Par build.** Rivet, Thumper, Sprinkler, Zapcoil (no flyers in the intel, so Skyhook stays home: the lesson). Thumper ×3 at the fountain bends for huddles; Sprinkler + Zapcoil adjacent (Conductive); clear the podium cart by W3 and put Thumper on the node. Clearance Sale on W4 and W8 upgrades. Target 87. **Alt builds** (≤ 2 towers shared with par, each must win with ≥ 20%; the only owned tower outside par is Skyhook, so each alt carries it, idle on a map with no flyers): Skyhook + Thumper + Zapcoil (Zapcoil chains on the huddles, Thumper takes the Chonks and Haulers); Thumper + Sprinkler + Skyhook (Sprinkler slows the huddles into the fountain bend for Thumper ×3). `noCounterBuilds`: **no-splash**, Rivet + Sprinkler + Skyhook, no Thumper or Zapcoil (must lose by W6); **no-armor**, Rivets held below T3 + Sprinkler + Skyhook + Zapcoil, no Thumper (must lose by W6).
+**Par build.** Rivet, Thumper, Sprinkler, Zapcoil (all owned: the reference profile is the issued kit plus Zibzab's Zapcoil sample, with Head Start and the Rivet and Thumper tune-ups, [../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile); no flyers in the intel, so the Skyhook stays home: the lesson). Thumper ×3 at the bends for the huddles (the south-east bend, the podium's node, and the gate court); the Sprinkler and Zapcoil side by side in the gate court (Conductive); the podium cart cleared in W1 and a Thumper on its node in W3; Clearance Sale on W4's and W8's upgrades. Par never sells, so it completes **Clean Audit**, and it clears all five carts, so it earns **Asset Recovery** (`parMedals`). Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a1_m04/builds.ts`](../../../src/content/maps/a1_m04/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Rivet (3,2) in the north-west corner; Thumper (9,6) inside the south-east bend; the drone to the podium cart (4,5); Orbital Strike on the west side (2,4), 12 s in (the Zoomer rush) |
+| W2 | Zapcoil (12,5) in the gate court; the drone to the south-east cart (8,5) |
+| W3 | Thumper on the podium's node (4,5); Sprinkler (11,5) beside the Zapcoil (Conductive); the drone to the three paving carts |
+| W4 | Clearance Sale; upgrade the Thumpers (9,6) and (4,5) and the Zapcoil to T2 |
+| W5 | Thumper (11,4) in the gate court; Orbital Strike on the south side's east end (9,7), 12 s in (the Chonk column) |
+| W6 | Upgrade the Rivet and the court Thumper to T2 |
+| W7 | Upgrade the Rivet to T3 (pierce); Orbital Strike on the south-west bend (3,7), 14 s in |
+| W8 | Clearance Sale; upgrade the Thumpers (9,6) and (4,5) and the Zapcoil to T3 |
+| W9 | Upgrade the court Thumper to T3; Orbital Strike on the south-west bend, 14 s in |
+
+Par's bank at each build phase: 352, 228, 311, 315, 404, 410, 716, 845, 788 (W1–W8 plus W9). **Par's one leak is designed:** W1's Zoomer rush slips three Zoomers past the opening Rivet and Thumper (85). Without the casts six get through (70); with **Orbital Strike Mk II** the wider blast leaves two (90; `rndPickChanges: ['orbital_strike_mk2']`, T228). From W2 on par loses nothing.
+
+**No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); both must lose by W6, the default for nine waves):
+- **no-splash:** par with every Thumper and the Zapcoil swapped for a Rivet (the Rivets may reach T3), an idle Skyhook, the same casts.
+- **no-armor:** par with every Thumper swapped for a Rivet held below T3 (no pierce); the same Sprinkler, Zapcoil, and casts, and an idle Skyhook.
+
+**Alt builds** (≤ 2 towers shared with par, each must win with ≥ 20%; the only owned tower outside par is the Skyhook, so each alt carries it, idle on a map with no flyers): `chain_and_shell`, Skyhook + Thumper + Zapcoil (Zapcoils at (3,2) and in the court chain through the huddles and the rush; Thumpers at the bends and the court take the Chonks and Haulers); `slow_and_shell`, Thumper + Sprinkler + Skyhook (two Sprinklers at the entrance slow the rush and the huddles into the bends, where four Thumpers shell them).
+
+**Harness runs** (every seed; margin, then integrity lost per wave W1–W9):
+
+| Run | Result | Integrity lost |
+|---|---|---|
+| par | wins at **85** (band 80–100; target 87), with Asset Recovery and Clean Audit | 3 in W1 |
+| par with Orbital Strike Mk II | 90 | 2 in W1 |
+| par without its casts | 70 | 6 in W1 |
+| `alwaysCallEarly` | 85 | 3 in W1 |
+| no-splash | loses in W4 | 17 in W1, 3 in W3 |
+| no-splash, full catalog | loses in W6 | 5 in W1, 9 in W3, 9 in W5 |
+| no-armor | loses in W6 | 10 in W1, 10 in W5 |
+| no-armor, full catalog | loses in W9 | 23 in W9 |
+| Story | 100, and the Challenge | none |
+| `chain_and_shell` | 70 | 1 in W1, 5 in W3 |
+| `slow_and_shell` | 100: two Sprinklers at the entrance stop the rush cold | none |
+| do-nothing | loses at W1 | |
+
+Par's 85 continues the monotonic chain under A1M3's 90. [`src/balance/a1m4.test.ts`](../../../src/balance/a1m4.test.ts) re-runs the harness with W5's Chonks ±0.2 s apart, W7's and W9's Haulers 1 s closer or further apart, and W3–W9's other groups shifted ±0.2 s: every check holds, Mk II's included, and par stays at 85. W1's rush moves par between 80 and 90 when it's nudged, never out of the band.
 
 ## A1M5 · Record Quarter
 

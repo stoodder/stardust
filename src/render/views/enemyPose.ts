@@ -12,12 +12,7 @@
 // ends in the sneeze (not in a dig, a phase change, or a retreat), and `surface` when a burrowed
 // boss comes up. Each holds until its anim ends, unless the boss leaves, burrows, or goes
 // invulnerable meanwhile.
-import {
-  bossNextAbility,
-  bossTelling,
-  burrowTelling,
-  type Enemy,
-} from '../../sim/index.ts';
+import { bossNextAbility, bossTelling, burrowTelling, type Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 
 export const ENEMY_POSES = [
