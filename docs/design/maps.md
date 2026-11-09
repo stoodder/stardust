@@ -57,8 +57,9 @@ S # # # # # # . . o o . . .
 | `C` | **Core** | No | The colony core (the lose condition, [core-loop.md §2.9](core-loop.md#29-core-integrity-lose-condition)) | |
 
 **Wreckage clearing (rules):**
-- Click a wreckage tile to send the **salvage drone**. Clearing takes **6 s** of sim time, and only one wreckage clears at a time (a queue is allowed). It costs nothing.
-- A Salvage Crane in range doubles clearing speed and adds +25% salvage ([towers.md](towers.md#vrell-towers)).
+- Click a wreckage tile to send the **salvage drone**. Clearing takes **6 s** of sim time (the drone's flight included), and only one wreckage clears at a time: further clicks join a queue, cleared in click order. It costs nothing, works before wave 1 and while paused, and a tile already queued or cleared can't be sent again.
+- The salvage is paid as income the moment the tile clears, and the tile is buildable (or a power node pays its bonus) from then on.
+- Salvage Rights and Salvage Expert apply, with salvage rounded to whole credits ([progression.md §4.3](progression.md#43-global-upgrades), [§5](progression.md#5-field-protocols-meta-perks)). A Salvage Crane in range doubles clearing speed and adds +25% salvage ([towers.md](towers.md#vrell-towers)); it arrives in Act II.
 - Map data defines what lies underneath. A hidden power node under wreckage is a deliberate discovery reward, and the map's intel can hint at it ("QUILL: reading a power signature under that junk").
 - **Script-added wreckage** (the crash-site modifier, §5.1) appears only on **decor tiles predefined in map data** (named crash-site `markers`, §5.3), never on a pad, path, or built tower's tile, so no event ever takes a tile the player is using.
 - **Memorial wreckage** (a story variant) can't be cleared. It is decor with a codex tooltip. It never blocks a tile the par build needs. The canonical one is the wreck of the turret Bricks named `{name}` in A3M3, standing on the ridge above Okonkwo's Gap on the finale route: its sprite is the wrecked variant of the tower type that carried the tag (saved as `memorialTower`, [towers.md §8](towers.md#8-presentation-and-personality)), and its tooltip shows the name tag.

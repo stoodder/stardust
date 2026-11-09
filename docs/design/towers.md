@@ -133,7 +133,7 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 - **Each link type counts once per tower.** A Rivet touching two Thumpers gets Crossfire once.
 - A tower can have several *different* active links (each tower has 2–3 possible partners by design). Their bonuses add under the stacking formula (section 4).
 - Links are **flat**: they don't scale with tier (first pass). The Linked Up protocol scales every link bonus by ×1.5.
-- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire and Sitting Ducks so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
+- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, and Conductive so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down) and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts 3 s, the Sprinkler's tier-3 duration. The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
 - **Readability:** active links show as a soft animated tether between the towers, in a color per link. The loadout screen lists which links the chosen four can form. The tower panel lists active links.
 
 ### 6.2 Link table
@@ -227,6 +227,7 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 
 #### Zapcoil (`zapcoil`)
 - **T1 (120):** 10 Energy, 1.0 shots/s, range 2.5, **chains to 3 targets** (jump range 1.5, −20% damage per jump), G+A. Default: First.
+- **The chain as built:** each jump goes from the last enemy struck to the nearest enemy this shot hasn't struck within jump range (ties: the lowest uid), on the layers the tier hits, and stops early when there's none. The falloff compounds (10, 8, 6.4), so long Conductive chains never reach 0. Jumps skip neutral units and land on spared runners, as splash does. A neutral first target plinks and the arc still jumps on. The full rules are [`src/sim/attacks/chain.ts`](../../src/sim/attacks/chain.ts)'s header.
 - **T2 (95):** damage 14.
 - **T3 (180):** chains to 4, 1.2 shots/s.
 - **A: Overload Coil (360):** chains to 8, −10% per jump.

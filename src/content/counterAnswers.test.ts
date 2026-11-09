@@ -12,6 +12,8 @@ import {
   towersReached,
   type AnswerScope,
   type ReachStep,
+  type RangedTower,
+  type ReachedTower,
   type ReachTile,
   type ScopeEnemy,
 } from './counterAnswers.ts';
@@ -148,6 +150,27 @@ describe('the live answer table (enemies.md § 3.1, towers.md § 2.1)', () => {
 
 // ── Placement (T313): a placed tower answers only from where it can reach the enemies' routes ──
 
+const LIVE_RANGES: Readonly<Partial<Record<string, RangedTower>>> = TOWERS;
+/** A build step placing `tower` on `tile`. */
+const at = (tower: string, tile: ReachTile, highGround = false): ReachStep => ({
+  op: 'build',
+  tower,
+  tile: `${tile[0]},${tile[1]}`,
+  at: { tile, highGround },
+});
+/** A live tower's range as placed (null for a tower the live data doesn't have yet). */
+const rangeOf = (t: ReachedTower): number | null => {
+  const def = LIVE_RANGES[t.tower];
+  return def === undefined ? null : rangeReached(def, t);
+};
+/** A rivet reached at `tier` (and `spec`), placed nowhere. */
+const rivetAt = (tier: number, spec: 'a' | 'b' | null = null): ReachedTower => ({
+  tower: 'rivet',
+  tier,
+  spec,
+  at: null,
+});
+
 describe('placement-aware answers (T313)', () => {
   /** An air lane along row 0, from (0,0) to (10,0). */
   const LANE: ReachTile[] = [
@@ -161,15 +184,6 @@ describe('placement-aware answers (T313)', () => {
   const puffwing: ScopeEnemy = { traits: ['flying'], body: 'organic', layer: 'air', route: LANE };
   /** Gerald: neutral, flying, on the ground road (D072). */
   const gerald: ScopeEnemy = { ...puffwing, body: 'mechanical', neutral: true, route: ROAD };
-  const at = (tower: string, tile: ReachTile, highGround = false): ReachStep => ({
-    op: 'build',
-    tower,
-    tile: `${tile[0]},${tile[1]}`,
-    at: { tile, highGround },
-  });
-  const towers = TOWERS as unknown as Record<string, Parameters<typeof rangeReached>[0]>;
-  const rangeOf = (t: Parameters<typeof rangeReached>[1]): number | null =>
-    towers[t.tower] === undefined ? null : rangeReached(towers[t.tower]!, t);
   const air = (steps: ReachStep[], loadout: string[] = [], enemies: ScopeEnemy[] = [puffwing]) =>
     answersCarried(
       COUNTER_ANSWERS.air,
@@ -196,19 +210,13 @@ describe('placement-aware answers (T313)', () => {
   });
 
   it('reads the range a tower reaches: tiers inherit, a spec may outrange', () => {
-    const rivet = TOWERS.rivet as unknown as Parameters<typeof rangeReached>[0];
-    const t = (tier: number, spec: 'a' | 'b' | null = null) => ({
-      tower: 'rivet',
-      tier,
-      spec,
-      at: null,
-    });
-    const t1 = rangeReached(rivet, t(1))!;
+    const rivet = LIVE_RANGES.rivet!;
+    const t1 = rangeReached(rivet, rivetAt(1))!;
     expect(t1).toBeGreaterThan(0);
-    expect(rangeReached(rivet, t(3))!).toBeGreaterThanOrEqual(t1);
+    expect(rangeReached(rivet, rivetAt(3))!).toBeGreaterThanOrEqual(t1);
     // Railspike (spec b) is the long-range sniper (range 6).
-    expect(rangeReached(rivet, t(4, 'b'))).toBe(6);
-    expect(rangeReached({ tiers: [{}, {}, {}] }, t(3))).toBeNull();
+    expect(rangeReached(rivet, rivetAt(4, 'b'))).toBe(6);
+    expect(rangeReached({ tiers: [{}, {}, {}] }, rivetAt(3))).toBeNull();
   });
 
   it('a Rivet answers air only where it can reach the lane', () => {
@@ -306,8 +314,23 @@ const WIDE = {
 } as const;
 
 describe('validate: answers by the tiers and specs a build reaches (T208)', () => {
+  it("[build-step] holdFireWhile: 'neutral' needs a map that spawns a neutral unit (T313)", () => {
+    const par = { ...fxBuilds.parBuild, steps: [{ wave: 1, holdFireWhile: 'neutral' as const }] };
+    const errs = errors(armorMap(gunT2, { parBuild: par }));
+    expect(errs).toEqual([
+      '[build-step] maps.fx_map.parBuild.steps[0]: no wave group spawns a neutral unit',
+    ]);
+    const raw = armorMap(gunT2, { parBuild: par });
+    const neutral = { ...raw.enemies.fx_walker!, neutral: true as const, leak: 0, bounty: 0 };
+    expect(
+      errors({ ...raw, enemies: { ...raw.enemies, fx_walker: neutral } }).filter((e) =>
+        e.startsWith('[build-step]'),
+      ),
+    ).toEqual([]);
+  });
+
   it("[no-counter-build] a T3 gun out of the path's reach is no armor answer (T313)", () => {
-    const far = { ...gunT2, steps: [...gunT2.steps.filter((s) => !('ability' in s))] };
+    const far = { ...gunT2, steps: gunT2.steps.filter((s) => !('ability' in s)) };
     const farT3: ScriptedBuild<IdSpace> = {
       ...far,
       steps: [

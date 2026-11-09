@@ -55,12 +55,20 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   scarecrow: 'prop.scarecrow',
 };
 
-/** The decor prop a marker puts on (col, row), if any. */
-function decorAt(g: GroundGrid, col: number, row: number): SpriteId | null {
+/**
+ * Markers drawn by a view of their own, which leave their tile bare of sparse decor: the Peeker
+ * (PeekerView, T309).
+ */
+export const VIEW_MARKERS: readonly MarkerId[] = ['peeker'];
+
+/** The decor prop a marker puts on (col, row), if any; 'bare' for a view marker's tile. */
+function decorAt(g: GroundGrid, col: number, row: number): SpriteId | 'bare' | null {
   if (g.markers === undefined) return null;
   for (const [id, [c, r]] of Object.entries(g.markers)) {
+    if (c !== col || r !== row) continue;
+    if (VIEW_MARKERS.includes(id)) return 'bare';
     const sprite = Object.hasOwn(DECOR_MARKERS, id) ? DECOR_MARKERS[id] : undefined;
-    if (sprite !== undefined && c === col && r === row) return sprite;
+    if (sprite !== undefined) return sprite;
   }
   return null;
 }
@@ -117,11 +125,14 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
     case '.':
     case undefined: {
       // A decor marker's prop; else sparse decor, so blocked ground reads as neither pad nor path.
+      // A view marker's tile (the Peeker's rock) stays bare: its view draws what stands there.
       const decor = t === undefined ? null : decorAt(g, col, row);
-      let sprite: SpriteId | null = decor;
-      if (sprite === null && t === 'x') sprite = 'prop.rock';
-      else if (sprite === null && (col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
-      else if (sprite === null && (col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
+      let sprite: SpriteId | null = decor === 'bare' ? null : decor;
+      if (decor === null) {
+        if (t === 'x') sprite = 'prop.rock';
+        else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
+        else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
+      }
       const prop = sprite === null ? null : { sprite, frame: 'v0', anim: null };
       // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
       const verge: string[] = [];

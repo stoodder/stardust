@@ -45,13 +45,20 @@ describe('the loadout screen (app side)', () => {
       ['sprinkler', []],
       // all_unlocked owns every tower's specs, Skyhook's M4 Seeker Swarm too (T304a report).
       ['skyhook', ['Seeker Swarm']],
+      ['zapcoil', []], // plays since T304b; A1M2 asks only for Armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
     expect(view.towers[0]?.cost).toBeLessThan(cfg.content.towers['rivet']!.tiers[0].cost);
-    expect(view.abilities.map((a) => a.name)).toEqual(['Orbital Strike', 'Suppressing Fire']);
-    expect(view.links.map((l) => l.name)).toEqual(['Crossfire', 'Sitting Ducks']);
+    expect(view.abilities.map((a) => a.name)).toEqual([
+      'Orbital Strike',
+      'Suppressing Fire',
+      'Time Dilation', // plays since T304d
+      'Clearance Sale',
+    ]);
+    expect(view.links.map((l) => l.name)).toEqual(['Crossfire', 'Sitting Ducks', 'Conductive']);
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');
+    expect(view.links[2]?.bonus).toBe('Sprinkler Soaks for 3 s · Zapcoil +2 chain jumps');
     expect(view.initial).toEqual({
       towers: ['rivet', 'thumper', 'sprinkler', 'skyhook'],
       ability: 'orbital_strike',

@@ -154,6 +154,10 @@ Field Protocols are loadout perks: rule-benders chosen before each map, separate
 | **Bounty Board** | +10% kill bounties | 150 Stardust |
 | **Ready Room** | +1 extra use of each commander ability on wave 1: the first use during wave 1 doesn't start its cooldown | 180 Stardust |
 
+**Rules for the two rule-benders:**
+- **Rapid Deploy** makes the run's first build free, at tier 1 only (upgrades always cost). A free tower refunds nothing when sold, and building another tower afterwards pays full price. The free build doesn't spend a Clearance Sale charge ([core-loop.md § 3.2](core-loop.md#32-ability-roster)).
+- **Ready Room**'s "during wave 1" runs from wave 1's start until wave 2 starts (the build phase before wave 1 doesn't count). Each slot gets its own free cast, and it covers a cooldown counted in waves too: two Clearance Sales in wave 1 are possible.
+
 ---
 
 ## 6. Veteran modifiers (replays)

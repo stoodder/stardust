@@ -68,6 +68,36 @@ export const BATTLE_SFX = {
       },
     ],
   },
+  /**
+   * The Peeker is poked (T309, design/core-loop.md § 6.9): a tiny rising "eep!" and a falling
+   * chirp, a youngling's squeak, softer than a pop.
+   */
+  peeker_squeak: {
+    gain: 0.3,
+    priority: 1,
+    minGapMs: 120,
+    maxVoices: 1,
+    jitter: 1,
+    layers: [
+      {
+        wave: 'triangle',
+        freq: 1300,
+        glide: 1.6,
+        glideSec: 0.06,
+        env: { a: 0.003, d: 0.06, s: 0, r: 0.02 },
+        gain: 0.7,
+      },
+      {
+        wave: 'triangle',
+        at: 0.08,
+        freq: 1900,
+        glide: 0.7,
+        glideSec: 0.05,
+        env: { a: 0.002, d: 0.05, s: 0, r: 0.02 },
+        gain: 0.5,
+      },
+    ],
+  },
   /** A leak at the core: a clear two-tone alarm the player can't miss. */
   leak: {
     gain: 0.42,

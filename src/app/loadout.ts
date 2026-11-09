@@ -65,6 +65,14 @@ function bonusText(b: LinkBonusDef): string {
   return vs === undefined ? parts.join(', ') : `${parts.join(', ')} vs ${vs}`;
 }
 
+/** A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b). */
+function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
+  const parts = p.bonuses.map(bonusText);
+  if (p.chainJumps !== undefined) parts.push(`+${p.chainJumps} chain jumps`);
+  if (p.soakedSec !== undefined) parts.push(`Soaks for ${p.soakedSec} s`);
+  return parts.join(', ');
+}
+
 /** What the open screen works from: the save it was built for, its pools, and the map. */
 interface Context {
   readonly mapId: string;
@@ -118,9 +126,7 @@ function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
     name: silkText(l.name),
     partners: [a.tower, b.tower],
     partnerNames: `${towerName(a.tower)} + ${towerName(b.tower)}`,
-    bonus: l.partners
-      .map((p) => `${towerName(p.tower)} ${p.bonuses.map(bonusText).join(', ')}`)
-      .join(' · '),
+    bonus: l.partners.map((p) => `${towerName(p.tower)} ${partnerText(p)}`).join(' · '),
   };
 }
 

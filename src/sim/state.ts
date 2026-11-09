@@ -223,7 +223,7 @@ export interface SimState<K extends IdSpace = IdSpace> {
    */
   abilityCooldownWaves: number[];
   /**
-   * Clearance Sale's discount (T304d): purchases (builds or upgrades) it still covers, and the
+   * Clearance Sale's discount (T304d): purchases (builds, upgrades, or specializations) it still covers, and the
    * fraction each saves. Counted per purchase, so pausing can't stretch it.
    */
   discountCharges: number;

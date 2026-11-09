@@ -42,10 +42,12 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
     'aria-checked',
     'true',
   );
-  // A1M1 has Bricks in slot 2, and the pool can form both links (all three picked: both lit).
+  // A1M1 has Bricks in slot 2, and the pool can form three links: Crossfire and Sitting Ducks lit,
+  // Conductive waiting on the Zapcoil (owned, not in the default four).
   await expect(page.getByText('Bricks · Suppressing Fire')).toBeVisible();
   const links = page.locator('.sd-lo-link');
-  await expect(links).toHaveCount(2);
+  await expect(links).toHaveCount(3);
+  await expect(links.filter({ hasText: 'Conductive' })).toContainText('Needs Zapcoil');
   await expect(links.filter({ hasText: 'Crossfire' })).toContainText('Linked');
   await expect(links.filter({ hasText: 'Sitting Ducks' })).toContainText('Linked');
   await page.waitForTimeout(200);

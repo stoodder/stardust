@@ -12,6 +12,7 @@ import {
   emptyTileFacts,
   fillTileFacts,
   isGroundPathTile,
+  peekerTile,
   slotAimsAtPath,
 } from '../render/input/tileFacts.ts';
 import { costFor, isBuildableTile, type Command } from '../sim/index.ts';
@@ -265,7 +266,8 @@ export function cancel(): void {
 /**
  * The tiles the keyboard cursor lands on: while an ability is aimed, every tile (a strike lands
  * on paths), or only the ground-route tiles for one that targets the path (Suppressing Fire);
- * else the buildable tiles (pads, high ground, power nodes, so every tower too).
+ * else the buildable tiles (pads, high ground, power nodes, so every tower too), and with nothing
+ * armed the Act I Peeker's rock too (Enter pokes it, as a click does; D040).
  */
 function cursorTargets(t: CommandTarget): (index: number) => boolean {
   const { sim } = t.host;
@@ -275,9 +277,10 @@ function cursorTargets(t: CommandTarget): (index: number) => boolean {
     if (slotAimsAtPath(sim, aiming)) return (i) => isGroundPathTile(sim.map, i);
     return () => true;
   }
+  const peeker = t.interaction.armed === null ? peekerTile(sim.map) : -1;
   return (i) => {
     const tile = tiles[i];
-    return tile !== undefined && isBuildableTile(tile);
+    return i === peeker || (tile !== undefined && isBuildableTile(tile));
   };
 }
 
@@ -332,7 +335,8 @@ const cursorFacts = emptyTileFacts();
 
 /**
  * Enter on the playfield (T126): acts on the cursor's tile as a click would (fires an aimed
- * ability there, selects a tower, builds the armed tower on a free pad). No-op while it's hidden.
+ * ability there, selects a tower, builds the armed tower on a free pad, pokes the Peeker). No-op
+ * while it's hidden.
  */
 export function pressCursor(): void {
   if (target === null) return;

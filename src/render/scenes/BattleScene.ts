@@ -16,6 +16,8 @@
 // high ground's block, ELEV_H up; picking knows raised tiles, so a click on a block's top face
 // lands on it. Linked towers show a tether (LinkView, from LinkFormed / LinkBroken). A Cluster
 // Thumper's bomblets pop with their own small burst.
+// The Peeker (T309) is PeekerView's: on a map with a `peeker` marker it peeks, ducks from enemies
+// and the cursor, and ducks when poked (BattleInteraction's `onPoke`, a UI event).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
 // previews, range rings) BattleHover's (T225). The scene only reads sim state; every change goes
 // through a command.
@@ -58,6 +60,7 @@ import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
+import { PeekerView } from '../views/PeekerView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { facingOf } from '../views/spriteInfo.ts';
@@ -111,6 +114,10 @@ export class BattleScene extends Phaser.Scene {
   #links!: LinkView;
   #sacks!: SackBurstView;
   #ping!: PingView;
+  /** The Peeker on the map's `peeker` marker, or null on a map without one. */
+  #peeker: PeekerView | null = null;
+  /** The sim tick at the last frame: play time only passes while it moves. */
+  #lastTick = 0;
   /** The radio pointer id last pinged (0: none). */
   #pinged = 0;
   /** The tower that pointer pinged (0: none), and ms since its ring last pulsed. */
@@ -213,6 +220,12 @@ export class BattleScene extends Phaser.Scene {
     };
     this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
     this.#cursor = new CursorView(ctx);
+    const peekerAt = map.markers['peeker'];
+    this.#peeker =
+      peekerAt === undefined
+        ? null
+        : new PeekerView(ctx, peekerAt[0], peekerAt[1], map.cols, map.env, sim.config.seed);
+    this.#lastTick = sim.state.tick;
     const teach: [number, number][] = [];
     map.tiles.forEach((t, i) => {
       if (isBuildableTile(t)) teach.push([i % map.cols, Math.floor(i / map.cols)]);
@@ -262,6 +275,7 @@ export class BattleScene extends Phaser.Scene {
           this.#built = true;
         },
       }),
+      interaction.onPoke(() => this.#peeker?.poke()),
     );
     this.#hover.bindPointer(this, (button) => this.#click(button));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -287,6 +301,7 @@ export class BattleScene extends Phaser.Scene {
     this.#sacks.update(delta);
     this.#links.update();
     this.#syncPing(delta);
+    this.#syncPeeker(delta);
     this.#core.update(state.integrity, state.towerAtTile);
     this.#syncTeach();
   }
@@ -308,6 +323,25 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#teachShown = true;
     this.#placement.showTeach(prefersReducedMotion() || pulseOn(), tiles);
+  }
+
+  /**
+   * The Peeker's frame: play time passes only while the sim ticks, and it's shy of enemies and of
+   * the pointer or keyboard cursor on its rock.
+   */
+  #syncPeeker(delta: number): void {
+    const p = this.#peeker;
+    if (p === null) return;
+    const state = this.#deps.sim.state;
+    const played = state.tick !== this.#lastTick;
+    this.#lastTick = state.tick;
+    const hovered = this.#hover.pointerTile(true).index === p.tile;
+    p.update(delta, played ? delta : 0, state.enemies, hovered);
+  }
+
+  /** The Peeker's pose (the smoke hooks' view of it), or null on a map without one. */
+  get peekerPose(): 'hidden' | 'peek' | 'duck' | null {
+    return this.#peeker?.pose ?? null;
   }
 
   /** How far up a tower on tile (col, row) stands (px): one ELEV_H step on high ground. */

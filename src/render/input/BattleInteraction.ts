@@ -8,7 +8,9 @@
 // was on (where it reappears), and the line its last arrow moves travelled (input/cursor.ts). It
 // is independent of the three above: it marks a tile, and Enter acts there as a click would.
 // Refusals (a path ability aimed at a tile off the path) go out to `onRefusal` listeners, so the
-// HUD can say why without the scene knowing about notices.
+// HUD can say why without the scene knowing about notices. Pokes (a plain click or Enter on the
+// Act I Peeker, design/core-loop.md § 6.9) go out to `onPoke` listeners the same way: the scene
+// plays the duck, and the app plays the squeak and sets `peeker_poked` (app/peeker.ts).
 import type { CursorAxis } from './cursor.ts';
 
 /** Why an input was refused before reaching the sim (the HUD words it, app/hud.ts `rejectText`). */
@@ -40,6 +42,7 @@ export class BattleInteraction {
   #cursorNav: CursorNav | null = null;
   readonly #listeners: ((s: InteractionSnapshot) => void)[] = [];
   readonly #refusals: ((r: InputRefusal) => void)[] = [];
+  readonly #pokes: (() => void)[] = [];
 
   constructor(armed: string | null = null) {
     this.#armed = armed;
@@ -132,6 +135,20 @@ export class BattleInteraction {
     return () => {
       const i = this.#refusals.indexOf(listener);
       if (i >= 0) this.#refusals.splice(i, 1);
+    };
+  }
+
+  /** The Peeker was poked (a UI event: nothing in the sim changes). */
+  poke(): void {
+    for (const l of this.#pokes) l();
+  }
+
+  /** Subscribes to pokes. Returns the unsubscribe. */
+  onPoke(listener: () => void): () => void {
+    this.#pokes.push(listener);
+    return () => {
+      const i = this.#pokes.indexOf(listener);
+      if (i >= 0) this.#pokes.splice(i, 1);
     };
   }
 

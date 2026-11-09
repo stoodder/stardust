@@ -19,6 +19,8 @@ export interface TileFacts {
   readonly towerUid: number;
   /** On a ground route (paths and rift lanes, spawn and core tiles included): a segment's target. */
   readonly groundPath: boolean;
+  /** The Peeker's rock on an Act I map (tileFacts.ts `peekerTile`): a plain click pokes it. */
+  readonly peeker?: boolean;
 }
 
 /** What a click does. The scene applies the selection and issues the command. */
@@ -36,7 +38,9 @@ export type Intent =
   /** An aimed path ability (a segment) clicked off the path: the HUD says so; it stays aimed. */
   | { readonly kind: 'cantTarget' }
   /** Right-click: drops the selection and disarms (like Esc). */
-  | { readonly kind: 'cancel' };
+  | { readonly kind: 'cancel' }
+  /** A plain click on the Act I Peeker: a UI event, never a command (design/core-loop.md § 6.9). */
+  | { readonly kind: 'poke' };
 
 /**
  * Decides a click: right-click cancels (and disarms, and stops aiming); while aiming an ability, a
@@ -44,8 +48,8 @@ export type Intent =
  * for an ability that targets the path (`aimOnPath`: Suppressing Fire's segment), a click on a
  * ground-route tile fires it and a click on any other tile says it can't target there; a
  * tower selects it; an armed click on a free pad builds (the slot stays armed, so the next click
- * builds another), and an armed click on any other tile says it can't build there. Anything else
- * deselects.
+ * builds another), and an armed click on any other tile says it can't build there. A plain click
+ * (nothing armed or aimed) on the Act I Peeker pokes it. Anything else deselects.
  */
 export function resolveClick(
   tile: TileFacts,
@@ -62,6 +66,7 @@ export function resolveClick(
   }
   if (tile.index < 0) return { kind: 'deselect' };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
+  if (armed === null && tile.peeker === true) return { kind: 'poke' };
   if (armed !== null) {
     return tile.buildable
       ? { kind: 'build', tower: armed, tile: [tile.col, tile.row] }

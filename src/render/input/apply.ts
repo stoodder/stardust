@@ -48,5 +48,10 @@ export function applyIntent(
     case 'cancel':
       interaction.clear();
       return;
+    case 'poke':
+      // A click off a tower deselects, as anywhere else; the poke itself is a UI event.
+      interaction.selectTower(0);
+      interaction.poke();
+      return;
   }
 }

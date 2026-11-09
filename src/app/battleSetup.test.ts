@@ -105,8 +105,9 @@ describe('battleSetup from a save', () => {
   it('defaultPick is the default towers and the par ability, as the save owns them', () => {
     const save = DEV_SAVES.all_unlocked.build();
     const par = { loadout: ['thumper', 'rivet'], technicianAbility: 'orbital_strike' };
+    // Five owned towers (Zapcoil plays since T304b): the par build's first, then ownership order.
     expect(defaultPick(save, par)).toEqual({
-      towers: ['rivet', 'thumper', 'sprinkler', 'skyhook'],
+      towers: ['thumper', 'rivet', 'sprinkler', 'skyhook'],
       ability: 'orbital_strike',
     });
     expect(defaultPick(save, { loadout: [], technicianAbility: 'nope' }).ability).toBe(
@@ -129,12 +130,12 @@ describe('battleSetup from a save', () => {
     if (FEATURE_GATES.specs !== null) expect(cfg.specsUnlocked).toEqual([]);
     else expect(cfg.specsUnlocked).toEqual(cfg.loadout);
     expect(() => createSim(cfg)).not.toThrow();
-    // Every top-rank upgrade arrives, less Salvage Rights (wreckage is M3), plus Story's.
+    // Every top-rank upgrade arrives (Salvage Rights too, since T304b), plus Story's.
     const sources = new Set(cfg.modifiers.map((m) => m.source));
     expect(sources).toContain('rnd:orbital_strike_mk2');
     expect(sources).toContain('shop:tune_rivet');
     expect(sources).toContain('difficulty:story');
-    expect(sources).not.toContain('shop:salvage_rights');
+    expect(sources).toContain('shop:salvage_rights');
   });
 
   it("brings the save's purchases and difficulty in as modifiers (meta/modifiers.ts)", () => {

@@ -12,7 +12,7 @@ import { createSim } from './sim.ts';
 
 type Step = CompiledBuildStep<FixtureIds>;
 /** A starting bank of `n` credits. */
-const credits = (n: number): Modifier<FixtureIds> => ({
+const startBank = (n: number): Modifier<FixtureIds> => ({
   kind: 'economy',
   stat: 'startCredits',
   set: n,
@@ -181,7 +181,7 @@ describe('scripted-build executor', () => {
     const sim = fixtureSim({
       loadout: ['fx_gun', 'fx_mortar'],
       specsUnlocked: ['fx_gun'],
-      modifiers: [credits(625)],
+      modifiers: [startBank(625)],
     });
     const { exec, credits: bank } = play(
       build([
@@ -216,7 +216,7 @@ describe('scripted-build executor', () => {
     const sim = fixtureSim({
       loadout: ['fx_gun', 'fx_mortar'],
       specsUnlocked: ['fx_gun'],
-      modifiers: [credits(10_000)],
+      modifiers: [startBank(10_000)],
     });
     const low = play(
       build([

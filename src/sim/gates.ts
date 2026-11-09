@@ -41,8 +41,9 @@ export type Feature =
   | 'status.stasis'
   | 'status.unnerved'
   /**
-   * A commander ability effect in slot 1 or 2 that the abilities system doesn't run yet: Time
-   * Dilation (`slowAll`) and Clearance Sale (`discount`, with its wave-count cooldown).
+   * A commander ability effect in slot 1 or 2 that the abilities system doesn't run yet. Time
+   * Dilation (`slowAll`) and Clearance Sale (`discount`, with its wave-count cooldown) run since
+   * T304d.
    */
   | 'ability.slowAll'
   | 'ability.discount'

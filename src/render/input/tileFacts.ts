@@ -10,7 +10,27 @@ export type MutableTileFacts = { -readonly [K in keyof TileFacts]: TileFacts[K] 
 
 /** A fresh scratch object for `fillTileFacts` (off the map until filled). */
 export function emptyTileFacts(): MutableTileFacts {
-  return { index: -1, col: -1, row: -1, buildable: false, towerUid: 0, groundPath: false };
+  return {
+    index: -1,
+    col: -1,
+    row: -1,
+    buildable: false,
+    towerUid: 0,
+    groundPath: false,
+    peeker: false,
+  };
+}
+
+/**
+ * The tile index of the Peeker's rock (the `peeker` marker) where poking it is a UI event: on an
+ * Act I map (design/core-loop.md § 6.9). −1 on a map without one, and from Act II on, where the
+ * rock is a clickable world object only while a script says so (an `interact` command).
+ */
+export function peekerTile(map: CompiledMapDef<IdSpace>): number {
+  const at = map.act === 1 ? map.markers['peeker'] : undefined;
+  if (at === undefined) return -1;
+  const [c, r] = at;
+  return c >= 0 && r >= 0 && c < map.cols && r < map.rows ? r * map.cols + c : -1;
 }
 
 /** Each map's ground-route tiles (1 where a path or rift lane runs), computed once per map. */
@@ -47,6 +67,7 @@ export function fillTileFacts(
     out.buildable = false;
     out.towerUid = 0;
     out.groundPath = false;
+    out.peeker = false;
     return out;
   }
   out.index = index;
@@ -56,6 +77,7 @@ export function fillTileFacts(
   const slot = sim.state.towerAtTile[index] ?? -1;
   out.towerUid = slot < 0 ? 0 : (sim.state.towers.items[slot]?.uid ?? 0);
   out.groundPath = isGroundPathTile(map, index);
+  out.peeker = index === peekerTile(map);
   return out;
 }
 

@@ -976,3 +976,12 @@ Real art went in behind T300a's ids. No data changed.
   - **Dwell rule:** an item the pane opens on its own counts as read after 0.8 s; one you pick counts at once.
   - **Storage:** read marks live in `story.seen` (`codex_<entry>__<version>`), with no new save field.
 - **Base tabs:** Inbox · Codex · Research · Shop · Engineering, opening on Research. NEW badges, fully keyboard-driven, with small print behind a toggle.
+
+### D076 — 2026-11-09 — T304b Zapcoil chain, Conductive, and wreckage
+- **Chain** (`src/sim/attacks/chain.ts`):
+  - **Targeting:** it aims like Rivet, then each jump goes from the last enemy struck to the nearest unstruck enemy in range. Ties go to the lowest uid, and the chain stops when nothing is in range.
+  - **Falloff** compounds (10 → 8 → 6.4).
+  - **Neutrals and spared units:** jumps skip neutrals but land on spared units, like splash. A neutral first target is a `hitNeutral`, and the arc still jumps on.
+  - **Events:** one `ProjectileFired`, then one `ProjectileHit` per victim in order, which gives render the arc.
+- **Conductive (a new link):** a Zapcoil next to a Sprinkler gets +2 jumps (Linked Up scales it, rounding down), and the Sprinkler Soaks targets for 3 s from tier 1. Soaked's only live source is this link until the Sprinkler's own tier-3 Soak (T321, M4).
+- **Wreckage:** `clear` queues the salvage drone, which clears one tile every 6 s (3 s with Salvage Expert). Cleared tiles read as their `underWreckage` everywhere, so builds, tile bonuses (a hidden node pays), and invariants all use the live tile. Salvage is paid through `earn`. Salvage Rights and Salvage Expert are live.

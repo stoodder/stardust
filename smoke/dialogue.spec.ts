@@ -29,6 +29,7 @@ test('dialogue: the briefing plays as a scene, by keyboard alone', async ({ page
   await shot(page, 'dialogue', 1, 'briefing-typing');
   // Enter finishes the typing, Enter again reads on: four lines, then Clock in has the focus.
   for (let i = 0; i < 4; i++) {
+    await expect(next).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(next).toHaveText('Next');
     await page.keyboard.press('Enter');
@@ -63,9 +64,11 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await expect(scene.locator('.dlg-portrait img')).toBeVisible();
   await shot(page, 'dialogue', 3, 'scene-panel');
   // Keyboard: each line takes Enter to finish typing and Enter to read on.
+  const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
   for (let i = 0; i < 2; i++) {
+    await expect(next).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(scene.getByRole('button', { name: 'Next' })).toBeVisible();
+    await expect(next).toHaveText('Next');
     await page.keyboard.press('Enter');
   }
   const answer = scene.getByRole('group', { name: 'Your answer' });
@@ -76,7 +79,9 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await expect(answer.getByRole('button', { name: /Ask me after lunch/ })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(scene).toContainText('Lunch is at noon. (Per policy.)');
+  await expect(next).toBeFocused();
   await page.keyboard.press('Enter');
+  await expect(next).toHaveText('Next');
   await page.keyboard.press('Enter');
   await expect(scene).toBeHidden();
   // The sim didn't move under the scene, and the speed came back.
@@ -96,13 +101,23 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
 test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
   await startShift(page);
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m01_scene_dev_party'));
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toBeVisible();
+  // The narrator's caption first; Next takes the focus as it arrives.
+  const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
+  await expect(next).toBeFocused();
   await page.keyboard.press('Enter');
+  await expect(next).toHaveText('Next');
   await page.keyboard.press('Enter');
   await expect(scene).toContainText('QUILL');
+  await expect(next).toBeFocused();
   await page.keyboard.press('Enter');
+  await expect(next).toHaveText('Next');
+  await page.keyboard.press('Enter');
+  await expect(scene).toContainText('Bricks');
+  await page.waitForTimeout(1500); // Bricks's line types out
   await nextFrames(page);
   await shot(page, 'dialogue', 5, 'fullscreen');
   await page.keyboard.press('Escape');
@@ -112,7 +127,8 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
 test('dialogue: barks on the comms panel with a portrait, and a reply button', async ({ page }) => {
   await page.goto('/?test=1&skipIntro=1&seed=1&dialogue=1');
   await waitForReady(page);
-  // The first leak: QUILL's bark (the adapted radio), with its portrait.
+  // The first leak: QUILL's line (the adapted radio), with its portrait. The bank nudge may
+  // speak first (nothing is built, so W2's build phase opens with a big bank).
   await page.evaluate(() => {
     const sd = globalThis.__sd!; // installed: waitForReady passed
     sd.setSpeed(0);
@@ -120,7 +136,7 @@ test('dialogue: barks on the comms panel with a portrait, and a reply button', a
     for (let i = 0; i < 400 && sd.state()!.integrity === 20; i++) sd.fastForward(10);
   });
   const comms = page.getByRole('log', { name: 'Radio' });
-  await expect(comms).toContainText('Pest escaped containment!');
+  await expect(comms).toContainText('Pest escaped containment!', { timeout: 10_000 });
   await expect(comms.locator('.dlg-portrait img')).toBeVisible();
   await page.waitForTimeout(2000); // let it type out
   await nextFrames(page);

@@ -50,7 +50,6 @@ import type { TickContext } from '../tick.ts';
 
 type AbilityCommand = Extract<Command<IdSpace>, { type: 'ability' }>;
 type SegmentEffect = Extract<CompiledAbilityEffect, { kind: 'segment' }>;
-type StrikeEffect = Extract<CompiledAbilityEffect, { kind: 'strike' }>;
 
 /** The damage source each slot's hits name (frozen constants, so resolving allocates nothing). */
 const SLOT_SOURCES: readonly DamageSource[] = Object.freeze([
@@ -236,7 +235,7 @@ export function applyAbilityCommand(
     const t = cmd.target;
     if (t === undefined || tileIndex(ctx.map, t[0], t[1]) < 0) return 'invalidTarget';
     target = [t[0], t[1]];
-    uid = openTargeted(state, ctx, e, t[0], t[1], cmd.slot);
+    uid = openTargeted(state, ctx, def, t[0], t[1], cmd.slot);
     if (uid === 0) return 'invalidTarget';
   }
   startCooldown(state, ctx, def, cmd.slot);
@@ -273,13 +272,14 @@ function startCooldown(
 function openTargeted(
   state: SimState,
   ctx: TickContext,
-  e: StrikeEffect | SegmentEffect,
+  def: CompiledAbilityDef,
   col: number,
   row: number,
   slot: 1 | 2,
 ): number {
+  const e = def.effect;
+  if (e.kind === 'segment') return openSegments(state, ctx, e, col, row, slot);
   if (e.kind === 'strike') {
-    const def = abilityInSlot(ctx, slot)!; // the caller found it
     const radius = abilityStats(def, ctx.config.modifiers).radiusTiles;
     const zone = poolAlloc(state.zones, ZONE_BLANK, takeUid(state));
     zone.x = col + 0.5;
@@ -291,7 +291,7 @@ function openTargeted(
     zone.abilitySlot = slot;
     return zone.uid;
   }
-  return openSegments(state, ctx, e, col, row, slot);
+  return 0; // an untargeted effect opens nothing here (the caller handles slowAll and discount)
 }
 
 /** The stretch of one route a segment covers (`segmentSpan`). */

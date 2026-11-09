@@ -38,6 +38,9 @@ export function tetherAlpha(ms: number, now: number, reduced: boolean): number {
 export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: ColorName }>> = {
   crossfire: { ring: 'orange.3', text: 'orange.4' },
   sitting_ducks: { ring: 'blue.3', text: 'blue.4' },
+  // Conductive (T304b): water carrying a spark. Its tether art is T312a's; until then it shows
+  // only this callout (`form` draws nothing for a link with no tether frames).
+  conductive: { ring: 'teal.3', text: 'teal.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */
