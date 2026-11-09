@@ -70,6 +70,9 @@ function isPortrait(id: string): boolean {
 test('gallery: every registered sprite and frame renders, with no console errors', async ({
   page,
 }) => {
+  // Baking every sprite and stitching a ~28,000 px capture legitimately outlasts the default 30 s
+  // when the gate runs the smoke specs in parallel.
+  test.setTimeout(90_000);
   // Wide enough that variants wrap side by side, keeping the full page short.
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto('/gallery.html');

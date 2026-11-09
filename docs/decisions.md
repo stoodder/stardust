@@ -902,3 +902,17 @@ A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields 
   - Chitterbloom's phase-3 huddle and leak.
 - Gerald is provisionally an air unit; T304a settles it.
 - Meta pools leave out anything still gated.
+
+### D070 — 2026-11-09 — T302a story runtime
+- **Runner** (`src/story/runner.ts`): pure and deterministic, with a plain-data cursor `{scene, index, step, effects, chose}`. API: `start`, `advance(scene, cursor, ctx, choice?)`, `resume`, `scenePlays`, `pressButton`, `sceneSlot`. Branch nodes use `goto` (lint refuses a `then:` key).
+- **Tokens:** `resolveText` with worst-case lengths `{name}` 16, `{callsign}` 9, `{pests_processed}` 9, `{evacuated}` 5. A missing profile falls back to Technician / Sprout / they. The token grammar's home is `content/dialogue/rules.ts`, because content can't import story.
+- **Conditions:** flag, act, `mapAtLeast`/`mapIs`, stat, `seen`, `outcome`, `thisRun`, and `all`/`any`/`not`.
+- **Barks:**
+  - a candidate needs its trigger, its `when`, and its speaker present;
+  - **once per map** by default, or `once: 'campaign'`, or `cooldownSec` to repeat;
+  - most specific wins, unplayed before played, ties by seeded draw;
+  - **6 s of spacing**, and a blocked bark is dropped, never queued;
+  - priority boss > first-time > repeat;
+  - barks are standalone, never replies (the D061 lesson).
+- **Name tags:** Bricks's names are bound to maps, so `bricksTagIndex` is the position after the furthest map tagged. A failed tag waits for the next wave clear.
+- **`validateDialogue`:** 18 rules, including line lengths, `{name}` use, the policy tell, the "!" budget per act, speaker/expression validity, reachable nodes, and no dangling jumps.

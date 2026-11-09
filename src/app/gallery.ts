@@ -187,7 +187,7 @@ function isRestFrame(frame: string): boolean {
 }
 
 /** A portrait with more frames than this gets a full-width card in the two-column portrait grid. */
-const WIDE_PORTRAIT_FRAMES = 12;
+const WIDE_PORTRAIT_FRAMES = 16;
 
 /**
  * A portrait's card (T310a): each portrait variant's expressions at 2× in a comms-panel frame, as

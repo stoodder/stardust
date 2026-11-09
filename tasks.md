@@ -134,10 +134,10 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
   A1M1/A1M2 must stay hash-identical.
 - [x] **T300b** Story and save seams (folds in T218, T116): `dialogue/types.ts` (1:1 with style-guide §5), `speakers.ts`, empty scene and bark files per map, the codex and memo registries, `src/story/` stubs, SaveData v2 (profile, seen scenes, memos, codex, seen enemies, `bricksTagIndex`, protocols) with the migration from v1, dev saves `after_a1m3`/`4`/`5`.
 - [x] **T225** Split the oversized files (+ T234).
-- [~] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
-- [ ] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
+- [x] **T302a** Pure story runtime: the runner, tokens, conditions, bark selection, `tags.ts`, `counter.ts`, `validateDialogue` (lengths, `{name}`, the policy tell, the `!` budget).
+- [~] **T302b** Dialogue UI: the comms panel with portrait, scenes (pause, typewriter), choices, the bark button, full-screen scenes, the briefing as a scene; `app/dialogue.ts` replaces `radio.ts`.
 - [ ] **T302c** Migrate the A1M1–A1M2 radio verbatim; A1M1's briefing choice, the callsign, the Goldie/Kip variants, "You sold Denise".
-- [ ] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
+- [~] **T303** Codex and the Everglow Inbox (Act I): logic, originals and memo bodies, the Base tabs, small print, gifts, the NEW badge.
 - [~] **T304a** Air lanes and air targeting; Puffwing; Skyhook T1–3; Gerald (neutral).
 - [ ] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
 - [~] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
