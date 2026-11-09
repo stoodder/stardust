@@ -1313,3 +1313,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **A blinking unit holds still through its tell**, so the landing point it shows is exactly where it appears (and the tell is a window to punish). A boss phase's blink tell starts as the phase begins (after the 1.5 s phase invulnerability); a unit's own blink waits one period after spawning. The Witch's blinks land about 3, 10 and 17 s after she crosses 70%; Glass Half Empty is `bossBlinks ≤ 2`.
 - **A blink moves along the route, round corners, clamped to its end; a blink onto the end leaks that tick**, through the normal leak path (so on A2M2 it drains the rigs, D101). A leaving unit never blinks; Stasis interrupts non-bosses only (`isInterrupted`, T407a).
 - **`bossHpPct` is a share (0–1)**: validation now refuses whole-number percents, which would have fired a cue at spawn.
+
+### D111 — 2026-11-09 — T305a Protect the asset
+- **A leak on an asset route costs the asset its leak value** under the core's rules (fleeing and younglings 0, a Quiet Wave unit floored, a boss drains it all); asset 0 loses the map. It emits `EnemyLeaked {leak: 0}` then `AssetHit`, so first-leak barks and lines still work and the core doesn't flash.
+- **Perfect Core needed no change:** a leak at the asset is a leak, so the medal already means nothing got through to either. **Emergency Bulkhead and Reinforced Core guard only the core.**
+- **Asset routes end beside the asset** (a path's last tile next to its decor marker; an air lane's last point on it); the asset's `name` is required, ≤ 10 characters ("Rigs"). The low-asset alarm is the `critical` band (≤ 50%: on A2M2, one rig of two down).
+- **The harness margin is min(core %, asset %)**, and the gradual rule applies to each meter.

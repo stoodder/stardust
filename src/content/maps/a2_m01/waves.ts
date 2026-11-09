@@ -53,6 +53,11 @@ export const FLEE_LEAD = 3;
  * so a player who calls waves early isn't buying turrets mid-fight (the harness's early-call check).
  */
 export const OPEN = 6;
+/**
+ * The build phase before W2–W10 (Act II's default is 20 s): room to read the next wave's preview
+ * and place the drone, and par's shift lands near ten minutes at 1×.
+ */
+export const COUNTDOWN = 30;
 
 /** A packed cluster's spacing (seconds): 0.32 tiles apart at a Mote's 1.6 tiles/s. */
 export const PACKED = 0.2;
@@ -72,6 +77,7 @@ export const waves = defineWaves([
   },
   // W2 · Puffwings + Diggers, fleeing ("They keep looking back.")
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('digger', 4, 'spires', OPEN),
       run('puffwing', 8, 'sky', OPEN + 4),
@@ -80,6 +86,7 @@ export const waves = defineWaves([
   },
   // W3 · a fleeing group, then Motes ×6 behind it on the same road [T: Mote; the hush, Heavy]
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('nibbler', 6, 'spires', OPEN),
       { ...motes(6, 'spires', OPEN + FLEE_LEAD, 0.6), teach: true },
@@ -87,6 +94,7 @@ export const waves = defineWaves([
   },
   // W4 · Haulers fleeing + Motes [X: shoot the Hollow, not the runners]; the bore opens
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('hauler', 3, 'spires', OPEN),
       motes(10, 'spires', OPEN + FLEE_LEAD),
@@ -95,6 +103,7 @@ export const waves = defineWaves([
   },
   // W5 · an Elder with her younglings + Motes, on both roads
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('elder', 1, 'spires', OPEN),
       g('nibbler', 6, 'spires', OPEN + 0.4, 0.3, ['fleeing', 'youngling']),
@@ -104,6 +113,7 @@ export const waves = defineWaves([
   },
   // W6 · Mote clusters out of the bore [X: splash], meeting runners and their chasers at the merge
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('nibbler', 8, 'spires', OPEN),
       motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
@@ -113,6 +123,7 @@ export const waves = defineWaves([
   },
   // W7 · Bunchlings fleeing + Motes, both roads
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('bunchling', 6, 'spires', OPEN),
       motes(50, 'spires', OPEN + FLEE_LEAD, PACKED),
@@ -123,6 +134,7 @@ export const waves = defineWaves([
   // W8 · mixed: Zoomers and Diggers fleeing down the Spires road, Puffwings overhead, Motes; the
   // yard cut opens
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('zoomer', 20, 'spires', OPEN, 0.4),
       motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
@@ -135,25 +147,27 @@ export const waves = defineWaves([
   },
   // W9 · Motes ×40 from the bore [X], too long for one strike, half of them down the cut
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('nibbler', 10, 'spires', OPEN),
       motes(24, 'spires', OPEN + FLEE_LEAD, PACKED),
       motes(20, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
-      motes(20, 'cut', OPEN + 12),
+      motes(26, 'cut', OPEN + 12),
     ],
   },
   // W10 · everything, both roads and the cut
   {
+    countdownSec: COUNTDOWN,
     groups: [
       run('zoomer', 24, 'spires', OPEN, 0.4),
       motes(30, 'spires', OPEN + FLEE_LEAD, PACKED),
       motes(30, 'bore', OPEN + FLEE_LEAD - BORE_HEAD, PACKED),
       run('puffwing', 8, 'sky', OPEN + 8),
-      motes(16, 'cut', OPEN + 12),
+      motes(20, 'cut', OPEN + 12),
       run('hauler', 2, 'spires', OPEN + 24),
       motes(30, 'spires', OPEN + 24 + FLEE_LEAD, PACKED),
       motes(30, 'bore', OPEN + 24 + FLEE_LEAD - BORE_HEAD, PACKED),
-      motes(16, 'cut', OPEN + 30),
+      motes(20, 'cut', OPEN + 30),
     ],
   },
 ]);
