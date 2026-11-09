@@ -378,10 +378,11 @@ export const SALVAGE_MAX = 80;
 export const ALT_BUILDS_FROM_CAMPAIGN_INDEX = 3;
 export const MIN_ALT_BUILDS = 2;
 /**
- * A map's `noCounterLoseByWave` override may push the no-counter lose-by wave up to ⌈this ×
- * waves⌉ (default ⌊⅔ × waves⌋, balance/rules.ts; maps.md § 6.1).
+ * A map's `noCounterLoseByWave` override may push the no-counter lose-by wave as late as this
+ * many waves before the end, never the final wave (default ⌊⅔ × waves⌋, balance/rules.ts;
+ * maps.md § 6.1).
  */
-export const NO_COUNTER_LOSE_BY_MAX_SHARE = 0.75;
+export const NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT = 1;
 /** Each alt build shares at most this many tower types with the par loadout (maps.md § 6.1). */
 export const ALT_BUILD_MAX_SHARED_TOWERS = 2;
 /** The loadout limit (CLAUDE.md hard rule). */

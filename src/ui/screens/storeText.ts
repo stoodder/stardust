@@ -200,7 +200,7 @@ export const PRESENTERS: Readonly<Record<StorePane, Presenter>> = {
       'Installed and logged. I checked it twice. Then I checked the checking.',
       "Done. That's one more option on file. I like options.",
     ],
-    verb: 'Requisition',
+    verb: 'Order',
     short: (o, bank) =>
       `That one is ${priceText(o)}. You have ${formatCount(bank)}. Medals pay Intel, one each.`,
     owned: 'Already on file, Technician. It stays installed.',

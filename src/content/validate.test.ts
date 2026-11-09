@@ -550,7 +550,7 @@ describe('validate: builds', () => {
       withMap({ altExpectations: { gun_only: { outcome: 'lose', minMarginPct: 40 } } }),
       'builds-range',
     );
-    // The no-counter lose-by override: only with no-counter builds, a whole wave ≤ ⌈¾ × waves⌉.
+    // The no-counter lose-by override: only with no-counter builds, a whole wave before the final one.
     rejects(withMap({ noCounterLoseByWave: 1 }), 'builds-range'); // no no-counter builds
     for (const w of [0, 1.5, 99]) {
       expect(validate(withMap({ noCounterLoseByWave: w })).join('\n')).toMatch(

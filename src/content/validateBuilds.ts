@@ -18,7 +18,7 @@
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
 //   build expectations name alt builds and at least one expectation, their minMarginPct is
 //   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar; a
-//   `noCounterLoseByWave` override is a whole wave from 1 to ⌈¾ × waves⌉ on a map with
+//   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a map with
 //   no-counter builds.
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
@@ -31,7 +31,7 @@ import {
   MAX_LOADOUT,
   MAX_TIER_BEFORE_SPEC,
   MIN_ALT_BUILDS,
-  NO_COUNTER_LOSE_BY_MAX_SHARE,
+  NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT,
 } from './rules.ts';
 import { STEP_KEYS } from './compileBuilds.ts';
 import { answerScope, answersCarried, towersReached, type ReachStep } from './counterAnswers.ts';
@@ -131,12 +131,12 @@ export function validateBuilds(
 
   const loseBy = def.noCounterLoseByWave;
   if (loseBy !== undefined) {
-    const max = Math.ceil(def.waves.length * NO_COUNTER_LOSE_BY_MAX_SHARE);
+    const max = def.waves.length - NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT;
     if (!Number.isInteger(loseBy) || loseBy < 1 || loseBy > max) {
       issues.add(
         'builds-range',
         `${where}.noCounterLoseByWave`,
-        `must be a whole wave from 1 to ${max} (⌈¾ × ${def.waves.length} waves⌉)`,
+        `must be a whole wave from 1 to ${max} (never the final wave)`,
       );
     }
     if (Object.keys(def.noCounterBuilds).length === 0) {

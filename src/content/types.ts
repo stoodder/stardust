@@ -590,7 +590,8 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly parMedals?: readonly MedalKind[];
   /**
    * Overrides the wave each no-counter build must lose by (default ⌊⅔ × waves⌋, "before the
-   * final third"; design/maps.md § 6.1), up to ⌈¾ × waves⌉. Say why in a one-line comment.
+   * final third"; design/maps.md § 6.1), up to waves − 1 (never the final wave). Say why in a
+   * one-line comment.
    */
   readonly noCounterLoseByWave?: number;
 }

@@ -3,9 +3,9 @@
 // walker (Old Thrum, leak 1) leading four `quiet_wave` + `youngling` walkers (leak 0, half
 // speed, bounty 0). No live map has fleeing or quiet-wave groups yet.
 //
-// FLAG_VARIANT_CONTENT is the same map with a script that reads a story flag (assertion #14, T206b):
-// under `spared_quiet_wave = true` Old Thrum's kin send a 20-credit thank-you at W3's countdown
-// (in the spirit of A3M1's payoff), so its flagVariants entry runs par under true and false.
+// FLAG_VARIANT_CONTENT is the same map with a script that reads a story flag (assertion #14,
+// T206b): under `spared_quiet_wave = true` it grants 20 credits at W3's countdown, and its
+// flagVariants entry runs par under true and false.
 import type { CompiledContent } from '../../content/compiled.ts';
 import { compileContent } from '../../content/compile.ts';
 import type { MapDef } from '../../content/types.ts';
@@ -39,7 +39,7 @@ export const QUIET_WAVE_CONTENT: CompiledContent<FixtureIds> = compileContent<Fi
   maps: { fx_map: quietMap },
 });
 
-/** The thank-you's credits under `spared_quiet_wave = true`. */
+/** The `thank_you` event's grant under `spared_quiet_wave = true`. */
 export const THANK_YOU_CREDITS = 20;
 
 export const FLAG_VARIANT_CONTENT: CompiledContent<FixtureIds> = compileContent<FixtureIds>({

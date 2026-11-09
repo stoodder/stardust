@@ -215,34 +215,186 @@ export function countdownSeconds(phase: SchedulePhase, ticksLeft: number): numbe
   return phase === 'countdown' && ticksLeft > 0 ? Math.ceil(ticksLeft / TICK_HZ) : null;
 }
 
-function sameSelected(a: SelectedTowerView | null, b: SelectedTowerView): boolean {
-  return (
-    a !== null &&
-    a.uid === b.uid &&
-    a.label === b.label &&
-    a.icon === b.icon &&
-    a.tier === b.tier &&
-    a.maxTier === b.maxTier &&
-    a.upgradeCost === b.upgradeCost &&
-    a.sellValue === b.sellValue &&
-    a.fullRefund === b.fullRefund &&
-    a.priority === b.priority &&
-    a.stats === b.stats &&
-    a.upgradeDelta === b.upgradeDelta &&
-    a.x === b.x &&
-    a.y === b.y
-  );
+/** "+10%" from a fraction (0.1), or "+0.3" for a flat amount. */
+function pctText(frac: number): string {
+  return `+${statNum(Math.round(frac * 1000) / 10)}%`;
+}
+
+/** A status mask's names for a conditional bonus, e.g. "Chilled". */
+function statusNames(mask: number): string {
+  return STATUS_BITS.filter((_, i) => (mask & (1 << i)) !== 0)
+    .map((st) => displayName(st))
+    .join('/');
 }
 
 /**
- * The selected tower's panel view, or null if it's gone. Reuses `prev` when nothing changed, and
- * `prev`'s stat lines while the tower and tier are the same (no stat work on a steady frame).
+ * Where a tower's bonuses come from, one entry per source (the panel's lines; D037's stacking):
+ * its tile ("+25% range (high ground)", "+20% rate (power node)") and each active link
+ * ("+10% rate (Crossfire)", "+20% dmg vs Chilled (Sitting Ducks)"), after the run's `tileBonus`
+ * and `linkBonus` modifiers. Static `towerStat` modifiers show only in the stat line.
+ */
+export function bonusTexts(
+  tile: TileChar | undefined,
+  tower: Pick<Tower, 'linkMask'> & { readonly def: { readonly id: string } | null },
+  hasAttack: boolean,
+  links: readonly CompiledLinkDef<IdSpace>[],
+  modifiers: SimConfig<IdSpace>['modifiers'],
+): string[] {
+  const rules = tileAndLinkRules(modifiers);
+  const out: string[] = [];
+  if (tile === '^') out.push(`${pctText(rules.highGroundRangePct)} range (high ground)`);
+  else if (tile === '+') {
+    out.push(
+      hasAttack
+        ? `${pctText(rules.powerNodeRatePct)} rate (power node)`
+        : `${pctText(rules.powerNodeAuraPct)} aura (power node)`,
+    );
+  }
+  if (tower.def === null || tower.linkMask === 0) return out;
+  for (const link of links) {
+    if ((tower.linkMask & link.bit) === 0) continue;
+    const p = link.partners[0].tower === tower.def.id ? link.partners[0] : link.partners[1];
+    const k = rules.linkMult;
+    const parts: string[] = [];
+    if (p.pctDamage !== 0) parts.push(`${pctText(p.pctDamage * k)} dmg`);
+    if (p.vsStatusMask !== 0) {
+      parts.push(`${pctText(p.vsStatusPct * k)} dmg vs ${statusNames(p.vsStatusMask)}`);
+    }
+    if (p.pctRate !== 0) parts.push(`${pctText(p.pctRate * k)} rate`);
+    if (p.pctRange !== 0) parts.push(`${pctText(p.pctRange * k)} range`);
+    if (p.flatDamage !== 0) parts.push(`${signed(p.flatDamage * k)} dmg`);
+    if (p.flatRate !== 0) parts.push(`${signed(p.flatRate * k)}/s`);
+    if (p.flatRange !== 0) parts.push(`${signed(p.flatRange * k)} range`);
+    for (const part of parts) out.push(`${part} (${link.name})`);
+  }
+  return out;
+}
+
+/**
+ * A spec's short description from its stats (what changes from tier 3, and what's special about
+ * it), e.g. "9 dmg · 7.5/s · 1 s spin-up" or "120 dmg · 0.5/s · range 6 · ignores armor".
+ */
+export function specDescription(
+  t3: TowerStatLine,
+  spec: TowerStatLine,
+  tier: DeepReadonly<CompiledTier>,
+): string {
+  const parts: string[] = [];
+  if (spec.damage !== t3.damage) parts.push(`${statNum(spec.damage)} dmg`);
+  if (spec.ratePerSec !== t3.ratePerSec) parts.push(`${statNum(spec.ratePerSec)}/s`);
+  if (spec.rangeTiles !== t3.rangeTiles) parts.push(`range ${statNum(spec.rangeTiles)}`);
+  if (spec.splashTiles !== t3.splashTiles) parts.push(`splash ${statNum(spec.splashTiles)}`);
+  const a = tier.attack;
+  if (a !== null) {
+    if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
+    if (a.ignoresArmor) parts.push('ignores armor');
+    if (a.spinUpTicks > 0) parts.push(`${statNum(a.spinUpTicks / TICK_HZ)} s spin-up`);
+  }
+  for (const e of tier.effects) {
+    if (e.status === 'corroded') parts.push(`${e.stacks} Corroded`);
+  }
+  return parts.join(' · ');
+}
+
+/**
+ * What a locked tier-4 choice says (T202d): the Engineering pane opens after Shift n
+ * (`SYSTEM_UNLOCKS`), or, once it's open, that the pair is bought there.
+ */
+export function specLockText(engineeringOpen: boolean): string {
+  if (engineeringOpen) return 'Unlock in Engineering';
+  const n = CAMPAIGN_PLAN.findIndex((m) => m.id === SYSTEM_UNLOCKS.engineering) + 1;
+  return `Engineering unlocks after Shift ${n}`;
+}
+
+/** The tier-4 choice for a tier-3 tower whose type has specs (else null). */
+export function specChoice(
+  def: DeepReadonly<CompiledTowerDef>,
+  tier: number,
+  bonuses: TowerBonuses,
+  modifiers: SimConfig<IdSpace>['modifiers'],
+  unlocked: boolean,
+  lockText: string,
+): SpecChoiceView | null {
+  if (def.specs === null || tier !== MAX_TIER_BEFORE_SPEC) return null;
+  const t3 = towerStats(def, MAX_TIER_BEFORE_SPEC, bonuses, modifiers);
+  const option = (choice: SpecChoice): SpecOptionView => {
+    const tierDef = def.specs![choice]; // checked above
+    const description = specDescription(
+      t3,
+      towerStats(def, MAX_TIER_BEFORE_SPEC + 1, bonuses, modifiers, choice),
+      tierDef,
+    );
+    return {
+      choice,
+      name: tierDef.name ?? displayName(`${def.id}_${choice}`),
+      cost: costFor(modifiers, def.id, tierDef.cost, true),
+      description,
+      descLines: wrapParts(description.split(' · '), CARD_CHARS),
+    };
+  };
+  return {
+    locked: !unlocked,
+    lockLines: unlocked ? [] : wrapParts([lockText], PANEL_CHARS),
+    options: [option('a'), option('b')],
+  };
+}
+
+/** What the battle knows about the save in play, for the tower panel and the briefing. */
+export interface HudSaveInfo {
+  /** Engineering (tier-4 unlocks) is open for this save (the lock note's wording). */
+  readonly engineeringOpen: boolean;
+  /** Medal ids already on file for this map. */
+  readonly heldMedals: readonly string[];
+  /** Towers the player owns (the required counters' answers); the loadout without a save. */
+  readonly ownedTowers: readonly string[];
+  /** Towers whose specs are unlocked (the answers that need a spec). */
+  readonly specsUnlocked: readonly string[];
+}
+
+/** The selected tower's panel inputs, as a key: the view is rebuilt only when it changes. */
+function selectedKey(
+  t: DeepReadonly<Tower>,
+  sell: SellValue,
+  credits: number,
+  x: number,
+  y: number,
+): string {
+  // Credits only matter at tier 3 (whether a spec is affordable doesn't change the view; the
+  // component reads credits itself), so they stay out of the key.
+  void credits;
+  return [
+    t.uid,
+    t.tier,
+    t.spec,
+    t.linkMask,
+    t.flatDamage,
+    t.flatRate,
+    t.flatRange,
+    t.pctDamage,
+    t.pctRate,
+    t.pctRange,
+    t.vsStatusMask,
+    t.vsStatusPct,
+    sell.value,
+    sell.full,
+    t.priority,
+    x,
+    y,
+  ].join('|');
+}
+
+/**
+ * The selected tower's panel view, or null if it's gone (T106; T202d): its stats after every
+ * bonus (`towerStats` with the tower's bonuses and the run's modifiers), where those bonuses come
+ * from, the upgrade's cost after `towerCost` modifiers, the sell value at the run's refund rate,
+ * and at tier 3 the tier-4 choice. Reuses `prev` while nothing it shows changed.
  */
 export function selectedView(
   sim: Sim<IdSpace>,
   uid: number,
   origin: IsoOrigin,
   prev: SelectedTowerView | null,
+  specLock = specLockText(false),
 ): SelectedTowerView | null {
   if (uid === 0) return null;
   const pool = sim.state.towers;
@@ -257,34 +409,45 @@ export function selectedView(
   if (t === null || t.def === null) return null;
   const p = { x: 0, y: 0 };
   gridToScreen(t.x, t.y, origin, p);
-  const sell = sellValue(t, sim.state.tick);
-  let statLine: string;
-  let upgradeDelta: string | null;
-  if (prev !== null && prev.uid === uid && prev.tier === t.tier) {
-    statLine = prev.stats;
-    upgradeDelta = prev.upgradeDelta;
-  } else {
-    // A specialized tower (tier 4) reads its spec's stats.
-    const stats = towerStats(t.def, t.tier, undefined, undefined, t.spec);
-    statLine = statLineText(stats);
-    upgradeDelta = deltaText(stats.next);
-  }
-  const next: SelectedTowerView = {
+  const { state, config, map } = sim;
+  const sell = sellValue(t, state.tick, state.economy.sellRefundPct);
+  const key = selectedKey(t, sell, state.credits, p.x, p.y);
+  if (prev !== null && prev.key === key) return prev;
+  const mods = config.modifiers;
+  // A specialized tower (tier 4) reads its spec's stats.
+  const stats = towerStats(t.def, t.tier, t, mods, t.spec);
+  const upgradeDelta = deltaText(stats.next);
+  const tile = map.tiles[t.row * map.cols + t.col];
+  const bonusList = bonusTexts(tile, t, t.tierDef?.attack != null, config.content.links, mods);
+  return {
     uid,
+    key,
     label: displayName(t.def.id),
+    specName: t.spec === null ? null : (t.def.specs?.[t.spec].name ?? null),
     icon: t.def.sprites.icon,
     tier: t.tier,
     maxTier: MAX_TIER_BEFORE_SPEC,
-    upgradeCost: t.tier < MAX_TIER_BEFORE_SPEC ? (t.def.tiers[t.tier]?.cost ?? null) : null,
+    upgradeCost: stats.next?.cost ?? null,
     sellValue: sell.value,
     fullRefund: sell.full,
+    refundPct: Math.round(state.economy.sellRefundPct * 100),
     priority: t.priority,
-    stats: statLine,
+    stats: statLineText(stats),
+    bonuses: bonusList.flatMap((b) => wrapParts([b], PANEL_CHARS)),
     upgradeDelta,
+    deltaLines:
+      upgradeDelta === null ? [] : wrapParts([`Next: ${upgradeDelta}`], PANEL_CHARS, ' · '),
+    specs: specChoice(
+      t.def,
+      t.tier,
+      t,
+      mods,
+      config.specsUnlocked.includes(t.def.id),
+      specLock,
+    ),
     x: p.x,
     y: p.y,
   };
-  return sameSelected(prev, next) ? prev : next;
 }
 
 /** What each tile type is called in the cursor's announcement. */

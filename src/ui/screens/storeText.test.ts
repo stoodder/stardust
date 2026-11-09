@@ -1,0 +1,90 @@
+import { describe, expect, it } from 'vitest';
+import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
+import { DEV_SAVES } from '../../meta/__fixtures__/devSaves.ts';
+import { shelf, type Offer } from '../../meta/index.ts';
+import {
+  MISSING_COPY,
+  PRESENTERS,
+  arrivalText,
+  effectText,
+  grantText,
+  offerCopy,
+  offerName,
+  priceText,
+} from './storeText.ts';
+
+const byId = (offers: readonly Offer[], id: string): Offer => {
+  const o = offers.find((x) => x.item.kind !== 'specs' && x.item.id === id);
+  if (o === undefined) throw new Error(`no offer ${id}`);
+  return o;
+};
+
+describe('effect summaries', () => {
+  it('derive from the grants', () => {
+    expect(
+      grantText({ kind: 'abilityStat', ability: 'orbital_strike', stat: 'radius', flat: 0.5 }),
+    ).toBe('+0.5 Orbital Strike radius');
+    expect(
+      grantText({ kind: 'abilityStat', ability: 'suppressing_fire', stat: 'cooldown', pct: -0.15 }),
+    ).toBe('−15% Suppressing Fire cooldown');
+    expect(grantText({ kind: 'abilityStat', ability: '*', stat: 'cooldown', pct: -0.05 })).toBe(
+      '−5% ability cooldowns',
+    );
+    expect(grantText({ kind: 'towerCost', tower: 'rivet', tiers: 'all', pct: -0.05 })).toBe(
+      '−5% Rivet build and upgrade cost',
+    );
+    expect(grantText({ kind: 'economy', stat: 'coreIntegrity', flat: 1 })).toBe(
+      '+1 core integrity',
+    );
+    expect(grantText({ kind: 'sellRefund', flat: 0.05 })).toBe('+5% sell refund');
+    expect(grantText({ kind: 'tileBonus', tile: 'highGround', flat: 0.15 })).toBe(
+      '+15% high-ground range',
+    );
+  });
+
+  it('cover every catalog item, with no exclamation points', () => {
+    for (const u of Object.values(UPGRADES)) {
+      for (const r of u.ranks) for (const g of r.grants) expect(grantText(g)).toMatch(/\S/);
+    }
+    for (const p of Object.values(PROTOCOLS)) {
+      for (const g of p.grants) expect(grantText(g)).not.toContain('!');
+    }
+  });
+
+  it('name the next rank, the slot a protocol-slot rank adds, and a spec unlock’s pair', () => {
+    const dev = DEV_SAVES.after_a1m1;
+    const rnd = shelf(dev.build(), 'rnd', ['rnd']);
+    expect(effectText(byId(rnd, 'orbital_strike_mk2'))).toBe('+0.5 Orbital Strike radius');
+    expect(effectText(byId(rnd, 'protocol_slots'))).toBe('+1 Field Protocol slot');
+    const eng = shelf(dev.build(), 'engineering', ['engineering']);
+    expect(eng.map(effectText)).toEqual([
+      'Unlocks tier 4: Rivet Storm or Railspike',
+      'Unlocks tier 4: Cluster Thumper or Bunker Buster',
+    ]);
+    expect(eng.map(offerName)).toEqual(['Rivet specializations', 'Thumper specializations']);
+  });
+});
+
+describe('offer text', () => {
+  it('reads names, copy, prices, and arrivals', () => {
+    const rnd = shelf(DEV_SAVES.after_a1m1.build(), 'rnd');
+    const mk2 = byId(rnd, 'orbital_strike_mk2');
+    expect(offerName(mk2)).toBe('Orbital Strike Mk II');
+    expect(priceText(mk2)).toBe('2 Intel');
+    expect(offerCopy(mk2)).toBe(UPGRADES.orbital_strike_mk2.copy);
+    expect(arrivalText(byId(rnd, 'protocol_slots'))).toBe('Arrives after Special Delivery');
+    // Every shop and R&D item has its catalog copy (T210c).
+    for (const pane of ['rnd', 'shop'] as const) {
+      const all = shelf(DEV_SAVES.all_unlocked.build(), pane, [pane]);
+      for (const o of all) expect(offerCopy(o)).not.toBe(MISSING_COPY);
+    }
+  });
+
+  it('the presenters use no exclamation points', () => {
+    for (const p of Object.values(PRESENTERS)) {
+      for (const line of [p.who, p.intro, p.owned, ...p.thanks]) {
+        expect(line).not.toContain('!');
+      }
+    }
+  });
+});

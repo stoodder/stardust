@@ -574,3 +574,29 @@ T210b's numbers showed the Hauler at armor 6 isn't an armor test: a T2 Rivet doe
 - **The per-map lose-by override's cap becomes `waves − 1`**, never the final wave, replacing D049's ⌈0.75·n⌉. **A1M2 = W7**, on Standard and with the full catalog.
 - act1.md's wave plan stays intact: a lone teach Hauler in W5, pairs and triples in W7–8.
 - **Hard limit:** if armor 9 (at most 10) can't make the full-catalog no-armor build lose by W7, the agent stops and reports rather than distorting the map.
+
+### D051 — 2026-11-09 — T125 A1M1 with Bricks and Teamwork; T124 report columns
+- **A1M1** now has:
+  - Bricks's post at `bricks_post` (5,8), east of the road by the gate: Kinetic 8 at 2/s, range 2.
+  - Companion `{bricks, present}`, so slot 2 is Suppressing Fire.
+  - The Challenge medal **Teamwork Makes the Dream Work™** (`linkActive: crossfire`), which par must earn.
+  - Bricks's W5 Suppressing Fire radio line.
+- **Waves re-tuned:** 8/10/12/22/32/46/72 enemies per wave.
+
+  | Build | Result |
+  |---|---|
+  | par | **95** (Victory + Teamwork; one W7 leak costs Perfect Core) |
+  | par without abilities | 55 (the W7 strike saves 8) |
+  | rivet_only | 65, no Teamwork |
+  | par_minus_last | 90 |
+  | no_upgrades | 90 |
+  | two_rivets | loses gradually in W6 |
+  | alwaysCallEarly | 100 |
+  | none | loses W3 |
+
+  Every check holds under ±0.2 s.
+- **Known weak spots, for the M2 balance review:**
+  - The three-Rivets reference passes with zero headroom (W6 costs exactly the 50% cap), and other three-Rivet placements lose 14–17 in W6, a single-wave wall the harness doesn't test.
+  - no_upgrades ≈ par, so upgrading barely matters on A1M1.
+  - Par's Suppressing Fire casts change nothing.
+- **T124:** `ProjectileHit.damage`, a per-tower damage/DPS table, a link-uptime column, and ability/ally kill lines in the balance report. The A1M1 sim test runs through `runHeadless`.

@@ -29,7 +29,7 @@ export const waves = defineWaves([
   // W5 · one Brood Hauler, alone [T]
   { groups: [g('hauler', 1)] },
   // W6 · a Zoomer rush + Chonks [X: early call]
-  { groups: [g('zoomer', 24, 0, 0.4), g('chonk', 4, 4, 2), g('hauler', Number(process.env.H6 ?? 2), Number(process.env.H6D ?? 8))] },
+  { groups: [g('zoomer', 24, 0, 0.4), g('chonk', 4, 4, 2)] },
   // W7 · Haulers ×2 + Nibblers [X]
   { groups: [g('hauler', 2), g('nibbler', 20, 3, 0.4)] },
   // W8 · Haulers ×3 + Chonks + Zoomers [X]

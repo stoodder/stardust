@@ -148,7 +148,7 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
     await expect(pane).not.toContainText('Locked');
   };
   await open('R&D', 'R&D Command');
-  await open('Shop', "Zibzab's Emporium");
+  await open('Shop', "Zibzab's Genuine Pre-Owned");
   await open('Engineering', 'R&D Engineering');
   await shot(page, 'meta', 10, 'base-all-unlocked');
   // A battle from this save brings at most four towers and still plays.
