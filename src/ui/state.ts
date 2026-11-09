@@ -157,6 +157,13 @@ export const hud = {
   selectedTower: signal(0),
   /** The selected tower's panel data, or null. */
   selected: signal<SelectedTowerView | null>(null),
+  /** Every standing tower's tile center in game pixels, so the tower panel can avoid them (T126). */
+  towerPoints: signal<readonly { readonly x: number; readonly y: number }[]>([]),
+  /**
+   * What the keyboard tile cursor is on (T126), for the HUD's aria-live announcement ("Pad,
+   * column 4, row 2, empty. Enter builds Rivet."), or null while the cursor is hidden.
+   */
+  cursor: signal<string | null>(null),
   /** The tower armed for building (a build slot), or null. */
   armedTower: signal<string | null>(null),
   /** The commander ability slots, in slot order (bottom-left; empty when none is equipped). */

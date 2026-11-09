@@ -9,7 +9,7 @@ import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
 import { createState, takeUid, type SimState } from '../state.ts';
 import { createScratch, runTick, type TickContext } from '../tick.ts';
-import { movement } from './movement.ts';
+import { enemySpeedPerTick, movement, YOUNGLING_SPEED_MUL } from './movement.ts';
 
 const map = FIXTURE_CONTENT.maps.fx_map;
 const road = map.routes.a!; // length 9
@@ -110,6 +110,30 @@ describe('movement', () => {
     expect(state.integrity).toBe(map.coreIntegrity);
     expect(state.stats.integrityLost).toBe(0);
     expect(state.events).toMatchObject([{ type: 'EnemyLeaked', leak: 0 }]);
+  });
+
+  it('younglings leak for 0 and move at half speed (enemies.md § 5.1); a leak counts its tags', () => {
+    const { state, ctx } = setup();
+    const young = spawn(state, walker, road, { tags: ['quiet_wave', 'youngling'] });
+    expect(enemySpeedPerTick(young)).toBe(walker.speedTilesPerTick * YOUNGLING_SPEED_MUL);
+    expect(ticksUntilGone(state, ctx, young)).toBe(1080); // 9 tiles at 0.5/s
+    expect(state.integrity).toBe(map.coreIntegrity);
+    expect(state.stats.tagLeaked).toEqual({
+      quiet_wave: 1,
+      youngling: 1,
+      fleeing: 0,
+      medal_exempt: 0,
+    });
+    // Chilled stacks with it: ×0.5 × chillMul.
+    const chilled = spawn(state, walker, road, { tags: ['youngling'], chillMul: 0.5 });
+    expect(enemySpeedPerTick(chilled)).toBeCloseTo(walker.speedTilesPerTick * 0.25, 15);
+  });
+
+  it('a quiet_wave unit without the youngling tag leaks its normal cost (Old Thrum)', () => {
+    const { state } = setup();
+    spawn(state, walker, road, { dist: 8.99, tags: ['quiet_wave'] });
+    movement(state);
+    expect(state.integrity).toBe(map.coreIntegrity - 1);
   });
 
   it('integrity never goes below 0; integrityLost and EnemyLeaked.leak count only what was there', () => {

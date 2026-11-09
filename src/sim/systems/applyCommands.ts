@@ -12,7 +12,7 @@ import { costFor, sellValue } from '../economy.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
-import { applyHoldFire, applySpareRunners } from '../fireControl.ts';
+import { applyHoldFire, applySpareRunners, inheritFireControl } from '../fireControl.ts';
 import { applySpecialize } from '../specialize.ts';
 import { applyAbilityCommand } from './abilities.ts';
 import { callWave } from './waves.ts';
@@ -106,7 +106,7 @@ function build(
   tower.builtTick = state.tick;
   tower.cooldownTicks = DEPLOY_TICKS + 1;
   state.towerAtTile[idx] = tower.slot;
-  // TODO(T206a): inherit state.holdFireAll / spareRunnersAll.
+  inheritFireControl(state, tower);
   state.linksDirty = true;
   emit(state, {
     type: 'TowerBuilt',

@@ -77,4 +77,21 @@ describe('BattleInteraction', () => {
       { selectedTower: 2, armed: null, aiming: null },
     ]);
   });
+
+  it('keeps the keyboard cursor apart from selection, arming, and aiming (T126)', () => {
+    const { i, seen } = watched();
+    expect(i.cursor).toBe(-1);
+    i.setCursor(12, { axis: 'h', anchor: 4 });
+    expect([i.cursor, i.cursorLast, i.cursorNav]).toEqual([12, 12, { axis: 'h', anchor: 4 }]);
+    i.arm('rivet');
+    i.selectTower(3);
+    i.clear();
+    expect(i.cursor).toBe(12);
+    // Hidden, it remembers its tile and forgets its line.
+    i.hideCursor();
+    expect([i.cursor, i.cursorLast, i.cursorNav]).toEqual([-1, 12, null]);
+    const n = seen.length;
+    i.hideCursor();
+    expect(seen).toHaveLength(n);
+  });
 });

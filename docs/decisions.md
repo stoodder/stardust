@@ -459,3 +459,13 @@ The owner said "start M2 … continue through to the end" and is away, so the or
   - **Economy:** `sellRefund`, `bounty` (fractions carry over), `earlyCallBonus`, `startCredits`, and `coreIntegrity` (the lowest `set` wins).
   - **Movement:** `leakAbsorb`.
 - **A1M1 interim:** the live links and high ground made par win at 100 with its strikes irrelevant. The minimal nudge: par skips the W6 Thumper T2, and W5/W7 Zoomer groups go 12 → 14. The results are par 100, rivet_only 70, par_minus_last 85, no_upgrades 55, and two_rivets loses in W6. Every check and the ±0.2 s robustness pass. **T125 re-tunes par back to ≈95** once Bricks's post and the Teamwork medal land.
+
+### D038 — 2026-11-09 — T208 counter-answer model
+- **Answer entries** are `{tower, minTier?, spec?, acts?, vsBodies?, vsAir?}` in `rules.ts`, sourced from towers.md. The shared model is `src/content/counterAnswers.ts`. Examples:
+  - armor: Rivet T3+, Thumper in Acts I–II only (or [Bunker Buster]), Harpoon, Prism, Gloop, Skyhook [Seeker Swarm], and Mindspike only vs void/crystalline armor.
+  - splash: Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike], Sproing [Big Bonk], and Skyhook only when a splash-category enemy flies.
+- **Reach-once rule:** a build is judged by the highest tier and spec each tower *reaches*. Reaching T3 counts even if the tower is later sold or specialized away. A loadout tower that's never built counts at T1.
+- **Abilities** (either slot) count only when cast, and **a cooldown hit never answers by damage**: Orbital Strike, Suppressing Fire, and Underfoot are not armor or splash answers. Detection and jam abilities (Scanner Sweep, System Reboot, Stillness) do answer.
+- **A1M2's `no_armor` build:** no Thumper, Rivets at most T2. It may cast both abilities. The harness has a new #5 check: a no-counter build carries no answer.
+- The M0 doc gaps are fixed: Sproing in the splash row, Underfoot, A3M4's "no Seeker Swarm", A3M2/FIN's "no Rivet Storm / Echo Spike", conventions #6's protocols, and `youngling` staying a WaveTag.
+- **Known limit:** answers aren't placement-aware, so A1M3's no-air build ("Rivets out of the air lane's reach") would be rejected. That's a task for whoever builds A1M3 (M3).

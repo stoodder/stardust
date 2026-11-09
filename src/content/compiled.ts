@@ -8,6 +8,7 @@ import type {
   AllyKind,
   AltBuildExpectation,
   Body,
+  ChallengeMedalDef,
   CompanionId,
   ConditionDef,
   CounterId,
@@ -19,6 +20,7 @@ import type {
   Layer,
   LiveIds,
   MarkerId,
+  MedalKind,
   MeterLabel,
   ObjectiveKind,
   PolicyId,
@@ -349,6 +351,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly marginBand: { readonly minPct: number; readonly maxPct: number } | null;
   readonly rebaseline: boolean;
   readonly flagVariants: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
+  /** Medals the par build must earn on every seed (default none). */
+  readonly parMedals: readonly MedalKind[];
 }
 
 export interface CompiledMapDef<K extends IdSpace = LiveIds> {
@@ -380,9 +384,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly waves: readonly CompiledWave<K>[];
   /** Compiled `towerUnlockWave` events first, then the authored events, in order. */
   readonly events: readonly CompiledScriptedEvent<K>[];
-  readonly medals: {
-    readonly challenge: { readonly id: string; readonly condition: ConditionDef<K> };
-  } | null;
+  /** The Challenge medal, or null on a map without one (sim/medals.ts). */
+  readonly medals: { readonly challenge: ChallengeMedalDef<K> } | null;
   readonly objectives: readonly {
     readonly id: string;
     readonly condition: ConditionDef<K>;

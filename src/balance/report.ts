@@ -3,6 +3,7 @@
 // CLI does the printing and writing.
 import { describeRun, fmtPct, type RunRecord } from './checks.ts';
 import type { CampaignReport, MapReport } from './harness.ts';
+import { medalMarks } from './medals.ts';
 
 const fmtSec = (ms: number): string => `${(ms / 1000).toFixed(2)} s`;
 const runName = (r: RunRecord): string => `${r.build}${r.repeat ? ' (again)' : ''}`;
@@ -40,7 +41,7 @@ export function formatText(report: CampaignReport): string {
       for (const r of runs) {
         const cells = r.result!.waves.map((w) => `${w.leaked}`.padStart(3)).join(' '); // has a result
         lines.push(
-          `    ${runName(r).padEnd(width)}  ${cells}  ${describeRun(r)}, ${r.result!.credits} credits left`,
+          `    ${runName(r).padEnd(width)}  ${cells}  ${describeRun(r)}, ${r.result!.credits} credits left, medals ${medalMarks(r.result)}`,
         );
       }
     }
@@ -76,6 +77,7 @@ export function formatMarkdown(report: CampaignReport): string {
     if (map.notChecked.length > 0) out.push('', `Not checked: ${map.notChecked.join('; ')}.`);
 
     out.push('', '### Runs', '');
+    out.push('Medals: V Victory, P Perfect Core, C Challenge; `·` not earned.', '');
     out.push(
       row([
         'Build',
@@ -85,10 +87,11 @@ export function formatMarkdown(report: CampaignReport): string {
         'Ticks',
         'Credits left',
         'Late steps',
+        'Medals',
         'Hash',
         'ms',
       ]),
-      row(['---', '---', '---', '---', '---', '---', '---', '---', '---']),
+      row(['---', '---', '---', '---', '---', '---', '---', '---', '---', '---']),
     );
     for (const r of map.runs) {
       const res = r.result;
@@ -101,6 +104,7 @@ export function formatMarkdown(report: CampaignReport): string {
           res?.ticks ?? '—',
           res?.credits ?? '—',
           res === null ? '—' : res.steps.filter((s) => s.late).length,
+          medalMarks(res),
           res?.hash ?? '—',
           Math.round(r.ms),
         ]),

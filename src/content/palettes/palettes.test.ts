@@ -159,11 +159,15 @@ describe('Act I value bands (art-direction §1)', () => {
     expect(path).toBeGreaterThan(grass);
   });
 
-  it('puts every enemy and tower body a band above the path they stand beside', () => {
+  it('puts every enemy, ally, and tower body a band above the path they stand beside', () => {
     const actors: readonly [string, string][] = [
       ['enemy.nibbler', 'walk_se_0'],
       ['enemy.zoomer', 'walk_se_0'],
       ['enemy.chonk', 'walk_se_0'],
+      ['enemy.brood_hauler', 'walk_se_0'],
+      ['enemy.brood_hauler', 'walk_ne_0'],
+      ['enemy.hauler_young', 'walk_se_0'],
+      ['ally.bricks', 'idle_se_0'],
       ['tower.rivet', 't1'],
       ['tower.thumper', 't1'],
       ['tower.sprinkler', 't1'],

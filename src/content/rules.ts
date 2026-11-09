@@ -168,7 +168,8 @@ export const COUNTER_CATEGORIES: readonly CounterId[] = [
 
 /**
  * The trait → counter-category map (enemies.md § 3.1 is the human-readable table). `null` is
- * intel-only: shown in the threat intel, never a required counter, never soft.
+ * intel-only: shown in the threat intel, never a required counter, never soft. `youngling` is a
+ * WaveTag, not a trait (enemies.md § 5.1), so it has no category.
  */
 export const TRAIT_COUNTER: Readonly<Record<Trait, CounterId | null>> = {
   armored: 'armor',
@@ -209,66 +210,129 @@ export const TRAIT_TELL: Readonly<Record<Trait, TellId>> = {
   huddle: 'huddle',
 };
 
-/** What answers a counter category: tower ids and Technician/companion ability ids. */
+/**
+ * One tower answer to a counter category (enemies.md § 3.1). A build carries it when one of its
+ * towers reaches `minTier` (default 1; a spec is tier 4, so it counts) and, with `spec`, takes
+ * that tier-4 spec, on a map that meets every condition given. A loadout tower the build never
+ * builds still counts at tier 1. Reaching it once is enough: a Rivet that passes T3 on its way to
+ * Rivet Storm answers armor, though the spec drops the pierce.
+ */
+export interface TowerAnswer {
+  readonly tower: string;
+  readonly minTier?: number;
+  readonly spec?: 'a' | 'b';
+  /** The spec's display name (towers.md § 7), checked against the tower data once it has specs. */
+  readonly specName?: string;
+  /** Only on maps of these acts (Thumper vs light armor: Acts I–II). */
+  readonly acts?: readonly Act[];
+  /** Only when one of the map's enemies in this category has one of these bodies (Psionic). */
+  readonly vsBodies?: readonly Body[];
+  /** Only when one of the map's enemies in this category flies (Skyhook vs air clusters). */
+  readonly vsAir?: true;
+}
+
+/**
+ * What answers a counter category: tower entries, and the commander abilities (either slot)
+ * that do. An ability counts only when the build casts it, so a no-counter build may keep a
+ * map's fixed companion in slot 2 as long as it never uses it (A3M5's no-jam build).
+ */
 export interface CounterAnswers {
-  readonly towers: readonly string[];
+  readonly towers: readonly TowerAnswer[];
   readonly abilities: readonly string[];
 }
 
 /**
- * Which towers and abilities answer each category (enemies.md § 3.1, Answers column). M1 model:
- * a plain id list that names every tower answering the category at *any* tier or spec, so a
- * no-counter build that leaves them all out can't hold an answer. That is stricter than the
- * design for conditional answers (Rivet answers armor only from T3, Skyhook only as Seeker
- * Swarm, Mindspike never against Everglow); T208 replaces this with `{ tower, minTier?, spec? }`
- * entries. Links (Acid Rain, Sticky Flak, Conductive) arrive with T202. Ids are plain strings:
- * most of these towers don't exist yet.
+ * Which towers, specs, and abilities answer each category: enemies.md § 3.1's Answers column,
+ * with the tiers and specs from towers.md § 2.1 and § 7. Ids are plain strings: most of these
+ * towers don't exist yet.
+ *
+ * - **Links** (Acid Rain, Sticky Flak, Conductive) are covered by their partners: each pairs a
+ *   tower with Gloop or Zapcoil, which answer on their own, so a build that leaves those out
+ *   can't form the link.
+ * - **Abilities** answer only through what § 3.1 lists them for: revealing (Scanner Sweep),
+ *   hitting underground (Underfoot), and clearing or interrupting jams (System Reboot,
+ *   Stillness). A cooldown hit never answers a category by its damage: Orbital Strike (one
+ *   200-damage strike per 45 s), Suppressing Fire (D035), and Underfoot's 30 Kinetic answer
+ *   neither armor nor splash. The harness's no-counter runs still cast them, so a counter the
+ *   strike could replace fails assertion #5.
  */
 export const COUNTER_ANSWERS: Readonly<Record<CounterId, CounterAnswers>> = {
   armor: {
-    // Rivet T3+ and Railspike; Skyhook [Seeker Swarm]; Thumper (light armor, Acts I–II, and
-    // [Bunker Buster]); Mindspike only against Hollow and Aelari armor.
-    towers: ['harpoon', 'rivet', 'skyhook', 'prism', 'gloop', 'thumper', 'mindspike'],
+    towers: [
+      { tower: 'harpoon' },
+      // T3 armor pierce 3; Railspike (spec b) ignores all armor, and is past T3 anyway.
+      { tower: 'rivet', minTier: 3 },
+      { tower: 'skyhook', spec: 'b', specName: 'Seeker Swarm' },
+      // A beam: armor subtracts per second, not per tick (enemies.md § 2.3).
+      { tower: 'prism' },
+      // Corroded sources.
+      { tower: 'gloop' },
+      { tower: 'thumper', spec: 'b', specName: 'Bunker Buster' },
+      // Light armor in Acts I–II (A1M2's guaranteed answer, campaign.md § 4.8).
+      { tower: 'thumper', acts: [1, 2] },
+      // Psionic ignores armor, but Everglow machines take it at ×0.35 (enemies.md § 2.2).
+      { tower: 'mindspike', vsBodies: ['void', 'crystalline'] },
+    ],
     abilities: [],
   },
   shield: {
-    // Energy (Zapcoil, Prism) and Soaked (Sprinkler T3+, Cloudburst).
-    towers: ['zapcoil', 'prism', 'sprinkler'],
+    // Every Energy source and every Soaked source (Sprinkler from T3; Cloudburst is past T3).
+    towers: [{ tower: 'zapcoil' }, { tower: 'prism' }, { tower: 'sprinkler', minTier: 3 }],
     abilities: [],
   },
-  detection: { towers: ['lookout', 'lantern'], abilities: ['scanner_sweep'] },
+  detection: {
+    towers: [{ tower: 'lookout' }, { tower: 'lantern' }],
+    abilities: ['scanner_sweep'],
+  },
   air: {
-    // Everything that hits air (Sprinkler only as Cloudburst, Scuttle Den only as Brave Hearts),
-    // plus the Pins that ground flyers (Harpoon spec B, Sproing).
+    // Every tower that hits air (Sprinkler only as Cloudburst, Scuttle Den only as Brave
+    // Hearts), plus the Pins that ground flyers (Harpoon [Tether] and Sproing hit air anyway).
     towers: [
-      'skyhook',
-      'rivet',
-      'zapcoil',
-      'harpoon',
-      'prism',
-      'mindspike',
-      'lantern',
-      'sproing',
-      'sprinkler',
-      'burrow',
+      { tower: 'skyhook' },
+      { tower: 'rivet' },
+      { tower: 'zapcoil' },
+      { tower: 'harpoon' },
+      { tower: 'prism' },
+      { tower: 'mindspike' },
+      { tower: 'lantern' },
+      { tower: 'sproing' },
+      { tower: 'sprinkler', spec: 'b', specName: 'Cloudburst' },
+      { tower: 'burrow', spec: 'b', specName: 'Brave Hearts' },
     ],
     abilities: [],
   },
   burrowed: {
-    // Scuttle Den, Stasis Bloom, Lantern [Truthlight], Mindspike [Dread].
-    towers: ['burrow', 'bloom', 'lantern', 'mindspike'],
+    // Scuttle Den and Underfoot hit underground; Stasis Bloom, Truthlight, and Dread (Unnerved)
+    // block the dig.
+    towers: [
+      { tower: 'burrow' },
+      { tower: 'bloom' },
+      { tower: 'lantern', spec: 'b', specName: 'Truthlight' },
+      { tower: 'mindspike', spec: 'b', specName: 'Dread' },
+    ],
     abilities: ['underfoot'],
   },
   splash: {
-    // towers.md § 2.1's Splash row (Rivet as [Rivet Storm], Mindspike as [Echo Spike]), plus
-    // Skyhook against air clusters. Sproing [Big Bonk] waits for T208's docs fix.
-    towers: ['thumper', 'gloop', 'zapcoil', 'rivet', 'mindspike', 'skyhook'],
+    // towers.md § 2.1's Splash row, plus Skyhook against air clusters.
+    towers: [
+      { tower: 'thumper' },
+      { tower: 'gloop' },
+      { tower: 'zapcoil' },
+      { tower: 'rivet', spec: 'a', specName: 'Rivet Storm' },
+      { tower: 'mindspike', spec: 'a', specName: 'Echo Spike' },
+      { tower: 'sproing', spec: 'b', specName: 'Big Bonk' },
+      { tower: 'skyhook', vsAir: true },
+    ],
     abilities: [],
   },
   jam: {
-    // Hum Choir and the tell interrupters: Stasis Bloom, Flash Freeze (Sprinkler spec A), Dread
-    // (Mindspike spec), and Ves'thara's Stillness.
-    towers: ['choir', 'bloom', 'sprinkler', 'mindspike'],
+    // Hum Choir and the tell interrupters: Stasis Bloom, Flash Freeze, Dread, and Stillness.
+    towers: [
+      { tower: 'choir' },
+      { tower: 'bloom' },
+      { tower: 'sprinkler', spec: 'a', specName: 'Flash Freeze' },
+      { tower: 'mindspike', spec: 'b', specName: 'Dread' },
+    ],
     abilities: ['system_reboot', 'stillness'],
   },
 };

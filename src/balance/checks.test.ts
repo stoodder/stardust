@@ -1,6 +1,7 @@
 // Each assertion's judgment, on synthetic runs of the fixture map (no sim needed).
 import { describe, expect, it } from 'vitest';
 import type { HeadlessResult } from '../sim/index.ts';
+import { QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
 import { PLAIN_CONTENT, fakeResult, fakeRun } from './__fixtures__/harness.ts';
 import {
   VACUOUS_NOTE,
@@ -235,14 +236,48 @@ describe('balance checks', () => {
 
   it('refuses map features it cannot check yet', () => {
     expect(refusedFeatures(map)).toEqual([]);
-    const refused = refusedFeatures(FIXTURE_CONTENT.maps.fx_map); // fleeing runners
+    // #16 is lifted (T206a): fleeing runners are checked, not refused.
+    expect(HARNESS_GATES.holdFireRuns).toBeNull();
+    expect(refusedFeatures(FIXTURE_CONTENT.maps.fx_map)).toEqual([]);
+    // A gate still closed refuses with its task.
+    const closed = { ...HARNESS_GATES, holdFireRuns: 'T999' };
+    const refused = refusedFeatures(FIXTURE_CONTENT.maps.fx_map, closed);
     expect(refused.map((c) => c.id)).toEqual(['16']);
-    expect(
-      refused[0]!.evaluate(() => fakeRun({ build: 'par', seed: 1 }, fakeResult('won', 20))).ok,
-    ).toBe(false);
-    // Each task lifts its own row.
-    const lifted = { ...HARNESS_GATES, holdFireRuns: null };
-    expect(refusedFeatures(FIXTURE_CONTENT.maps.fx_map, lifted)).toEqual([]);
+    const out = refused[0]!.evaluate(() =>
+      fakeRun({ build: 'par', seed: 1 }, fakeResult('won', 20)),
+    );
+    expect(out.ok).toBe(false);
+    expect(out.failures[0]).toMatch(/T999/);
+  });
+
+  it('#16: Quiet Wave and fleeing maps get the free-choice checks; plain maps none', () => {
+    expect(mapChecks(map, [1], [1]).filter((c) => c.id === '16')).toEqual([]);
+    const fleeing = mapChecks(FIXTURE_CONTENT.maps.fx_map, [1], [1, 2]);
+    const b = fleeing.find((c) => c.id === '16')!;
+    expect(b.subject).toBe('spareFleeing');
+    const runs = (spare: number, par: number): Record<string, HeadlessResult> => ({
+      'spareFleeing#1': fakeResult('won', spare),
+      'spareFleeing#2': fakeResult('won', spare),
+      'par#1': fakeResult('won', par),
+      'par#2': fakeResult('won', par),
+    });
+    expect(judge(b, runs(19, 20)).ok).toBe(true); // 95 ≥ 100 − 5
+    expect(judge(b, runs(18, 20)).ok).toBe(false); // 90 < 95
+    expect(judge(b, runs(18, 20)).failures[0]).toMatch(/below par's 100 − 5/);
+    expect(judge(b, runs(20, 18)).ok).toBe(true); // sparing may beat par
+
+    const quiet = mapChecks(QUIET_WAVE_CONTENT.maps.fx_map, [1], [1]);
+    const a = quiet.find((c) => c.subject === 'holdFireWhile:quiet_wave')!;
+    const held = (integrity: number, leaked: number): Record<string, HeadlessResult> => {
+      const r = fakeResult('won', integrity);
+      r.stats.tagSpawned.quiet_wave = 5;
+      r.stats.tagLeaked.quiet_wave = leaked;
+      return { 'holdFireWhile:quiet_wave#1': r };
+    };
+    expect(judge(a, held(18, 5)).ok).toBe(true);
+    expect(judge(a, held(18, 4)).failures[0]).toMatch(/only 4\/5 quiet-wave units leaked/);
+    expect(judge(a, held(15, 5)).failures[0]).toMatch(/outside the band 80–100/);
+    expect(judge(a, { 'holdFireWhile:quiet_wave#1': fakeResult('lost', 0, 3) }).ok).toBe(false);
   });
 
   it('median', () => {

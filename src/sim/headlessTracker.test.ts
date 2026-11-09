@@ -110,3 +110,42 @@ describe('run tracker: ally invariants (allies are never harmed, never target ex
     ]);
   });
 });
+
+describe('run tracker: fire-control invariants (core-loop.md § 2.7)', () => {
+  const fired = (towerUid: number, targetUid: number): SimEvent<FixtureIds> => ({
+    type: 'ProjectileFired',
+    uid: 0,
+    towerUid,
+    kind: 'hitscan',
+    targetUid,
+    x: 0,
+    y: 0,
+    targetX: 0,
+    targetY: 0,
+    sprite: null,
+    flightTicks: 0,
+    radiusTiles: 0,
+  });
+
+  it('a shot from a tower holding fire', () => {
+    const t = withAlly();
+    const gun = t.state.towers.items[0]!;
+    t.tracker.consume([fired(gun.uid, 0)]);
+    expect(check(t)).toEqual([]);
+    gun.holdFire = true;
+    t.tracker.consume([fired(gun.uid, 0)]);
+    expect(check(t)).toEqual([expect.stringMatching(/tower \d+ fired while holding fire/)]);
+  });
+
+  it('a shot at a spared unit from a tower with spare runners on', () => {
+    const t = withAlly();
+    const gun = t.state.towers.items[0]!;
+    t.tracker.consume([fired(gun.uid, t.enemy.uid)]); // the filter is off: fine
+    expect(check(t)).toEqual([]);
+    gun.spareRunners = true;
+    t.tracker.consume([fired(gun.uid, t.enemy.uid)]);
+    expect(check(t)).toEqual([
+      expect.stringMatching(/tower \d+ with spare runners on targeted spared enemy \d+/),
+    ]);
+  });
+});

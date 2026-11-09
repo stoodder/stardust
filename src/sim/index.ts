@@ -69,6 +69,22 @@ export {
   type TowerBonuses,
 } from './bonuses.ts';
 export { isLinkActive } from './systems/links.ts';
+export {
+  ANY_ENEMY,
+  evaluateCondition,
+  isMedalExempt,
+  markerPassedTick,
+  settledCondition,
+  type ConditionContext,
+} from './conditions.ts';
+export {
+  MEDAL_KINDS,
+  PERFECT_CORE_MEDAL_ID,
+  VICTORY_MEDAL_ID,
+  earnedMedalIds,
+  mapMedalIds,
+  medalId,
+} from './medals.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   towerStats,

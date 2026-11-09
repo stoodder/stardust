@@ -7,8 +7,14 @@
 //   leaks or not. Waves overlap, so they can resolve out of order; one tick resolves in wave order.
 // - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
 //   everything before it) with integrity above 0.
+// It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
+// conditions latch (sim/conditions.ts) while this tick's dead are still in their pools, a
+// Challenge that can no longer hold is forfeited, and a loss or win settles every medal just
+// before MapLost or MapWon.
 import { waveClearBonus } from '../../content/rules.ts';
+import { trackConditions } from '../conditions.ts';
 import { earn } from '../economy.ts';
+import { bookLeak, leakedThisTick, settleLoss, settleWin, watchChallenge } from '../medals.ts';
 import { poolReleaseDead } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -28,8 +34,11 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   const remaining = state.schedule.remaining;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
-    if (!e.alive && e.uid !== 0 && e.wave > 0) remaining[e.wave - 1]!--; // wave ≤ waves.length
+    if (e.alive || e.uid === 0) continue;
+    if (e.wave > 0) remaining[e.wave - 1]!--; // wave ≤ waves.length
+    if (leakedThisTick(e)) bookLeak(state, e);
   }
+  trackConditions(state, ctx.map);
   poolReleaseDead(towers);
   poolReleaseDead(enemies);
   poolReleaseDead(state.projectiles);
@@ -38,9 +47,11 @@ export function cleanup(state: SimState, ctx: TickContext): void {
 
   if (state.integrity <= 0) {
     state.outcome = 'lost';
+    settleLoss(state, ctx.map);
     emit(state, { type: 'MapLost' });
     return;
   }
+  watchChallenge(state, ctx.map, ctx);
   const s = state.schedule;
   let allResolved = true;
   for (let w = 0; w < remaining.length; w++) {
@@ -56,6 +67,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   }
   if (allResolved) {
     state.outcome = 'won';
+    settleWin(state, ctx.map, ctx);
     emit(state, { type: 'MapWon' });
   }
 }

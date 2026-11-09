@@ -7,6 +7,8 @@ import type { SimEvent } from './events.ts';
 import { isBuildableTile, tileIndex } from './grid.ts';
 import type { Sim } from './sim.ts';
 import type { SimStats } from './state.ts';
+import { isSpared } from './fireControl.ts';
+import { poolFind } from './pool.ts';
 import { allyMayTarget } from './systems/allies.ts';
 
 /** One wave of a run. */
@@ -104,13 +106,29 @@ export function createRunTracker<K extends IdSpace>(
   };
   /** Enemies allies may never target, by uid (recorded at spawn from their wave tags). */
   const allyExempt = new Set<number>();
-  const noteAllyExempt = (uid: number): void => {
+  /** Enemies the spare-runners filter never picks (fleeing, youngling), by uid. */
+  const spared = new Set<number>();
+  const noteExempt = (uid: number): void => {
     const pool = state.enemies;
     for (let i = 0; i < pool.used; i++) {
       const e = pool.items[i]!; // i < used
       if (e.uid !== uid) continue;
       if (!allyMayTarget(e.tags)) allyExempt.add(uid);
+      if (isSpared(e.tags)) spared.add(uid);
       return;
+    }
+  };
+  /**
+   * Fire control (core-loop.md § 2.7): a tower holding fire never fires, and one with the
+   * spare-runners filter never fires at a spared unit as its target. The tower's flags are read
+   * as the drain finds them, which is how they stood when it fired (commands apply first).
+   */
+  const checkShot = (towerUid: number, targetUid: number): void => {
+    const t = poolFind(state.towers, towerUid);
+    if (t === null) return;
+    if (t.holdFire) violate(`tower ${towerUid} fired while holding fire`);
+    if (t.spareRunners && targetUid !== 0 && spared.has(targetUid)) {
+      violate(`tower ${towerUid} with spare runners on targeted spared enemy ${targetUid}`);
     }
   };
   if (sim.config.loadout.length > MAX_LOADOUT)
@@ -124,7 +142,7 @@ export function createRunTracker<K extends IdSpace>(
         switch (e.type) {
           case 'EnemySpawned': {
             enemyWave.set(e.uid, e.wave);
-            if (checkInvariants) noteAllyExempt(e.uid);
+            if (checkInvariants) noteExempt(e.uid);
             const w = waveOf(e.wave);
             if (w !== undefined) w.spawned++;
             break;
@@ -150,6 +168,7 @@ export function createRunTracker<K extends IdSpace>(
           case 'ProjectileFired': {
             const t = towerByUid.get(e.towerUid);
             if (t !== undefined) t.shots++;
+            if (checkInvariants) checkShot(e.towerUid, e.targetUid);
             break;
           }
           case 'TowerBuilt': {

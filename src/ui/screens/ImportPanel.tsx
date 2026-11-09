@@ -4,6 +4,7 @@
 import { useState } from 'preact/hooks';
 import { importGame } from '../../app/navigation.ts';
 import { checkImport, type ImportCheck } from '../../app/save.ts';
+import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { SlotList } from './SlotList.tsx';
 import { slots, type SlotView } from './state.ts';
@@ -18,6 +19,12 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
   const [step, setStep] = useState<Step>({ kind: 'paste', error: null, busy: false });
   const [confirm, setConfirm] = useState<1 | 2 | 3 | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
+  // Esc (T212): a Replace confirm says Keep; otherwise it's Back.
+  useEscape(() => {
+    if (confirm !== null) setConfirm(null);
+    else onCancel();
+    return true;
+  });
 
   const check = async (): Promise<void> => {
     setStep({ kind: 'paste', error: null, busy: true });

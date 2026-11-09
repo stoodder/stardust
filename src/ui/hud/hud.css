@@ -798,3 +798,13 @@ section.chamfer,
     --edge: var(--sd-teal-3);
   }
 }
+
+/* Read by screen readers, never seen: the keyboard tile cursor's announcement (T126). */
+.hud-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

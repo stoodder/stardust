@@ -15,7 +15,9 @@ import {
   type RunRecord,
   type RunRequest,
 } from './checks.ts';
-import { policyBuild, withoutAbilityCasts } from './policies.ts';
+import { noCounterAnswerChecks } from './counterChecks.ts';
+import { medalChecks } from './medals.ts';
+import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
 import { NOT_CHECKED_IN_M1, refusedFeatures } from './refusals.ts';
 import { profileModifiers, runConfig } from './profile.ts';
 import {
@@ -73,11 +75,15 @@ export function buildFor<K extends IdSpace>(
   const b = map.builds;
   if (label === 'par') return b.parBuild;
   if (label === 'parNoAbilities') return withoutAbilityCasts(b.parBuild);
-  if (label === 'none' || label === 'alwaysCallEarly') {
+  if (label === 'none' || label === 'alwaysCallEarly' || label === 'spareFleeing') {
     return policyBuild(label, map, content.towers);
   }
   const [kind, name = ''] = label.split(':');
   if (kind === 'alt') return b.altBuilds[name] ?? null;
+  // #16a: par with Hold Fire while the tagged (medal-exempt story) units are on the field.
+  if (kind === 'holdFireWhile') {
+    return name === 'quiet_wave' ? withHoldFireWhile(b.parBuild, name) : null;
+  }
   if (kind === 'companion') {
     // #15: par with one companion from the map's pick list.
     const pick = map.companion !== null && 'pick' in map.companion ? map.companion.pick : [];
@@ -111,7 +117,12 @@ export function runMap<K extends IdSpace = LiveIds>(
   const n = opts.seeds ?? DEFAULT_SEED_COUNT;
   const every = range(n);
   const few = range(Math.min(FEW_SEED_COUNT, n));
-  let specs: CheckSpec[] = [...refusedFeatures(map), ...mapChecks(map, every, few)];
+  let specs: CheckSpec[] = [
+    ...refusedFeatures(map),
+    ...mapChecks(map, every, few),
+    ...noCounterAnswerChecks(map, content),
+    ...medalChecks(map, every),
+  ];
   const only = opts.build;
   if (only !== undefined) {
     const known = [...new Set(specs.map((s) => s.subject).filter((s) => s !== '*'))];

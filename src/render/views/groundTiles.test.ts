@@ -24,6 +24,20 @@ describe('dressTile', () => {
     expect(dressTile(g, 3, 2).ground.sprite).toBe('tile.path');
   });
 
+  it('raises high ground as a block and pulses the power node', () => {
+    const h = grid(['^+o']);
+    expect(dressTile(h, 0, 0)).toMatchObject({
+      ground: { sprite: 'tile.grass' },
+      prop: null,
+      block: { sprite: 'tile.high_ground', frame: 'v0' },
+    });
+    expect(dressTile(h, 1, 0)).toEqual({
+      ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' },
+      prop: null,
+    });
+    expect(dressTile(h, 2, 0).block).toBeUndefined();
+  });
+
   it('runs path treads along the path', () => {
     expect(dressTile(g, 1, 0).ground.frame).toBe('tread_x'); // a horizontal run
     expect(dressTile(g, 2, 1).ground.frame).toBe('tread_y'); // a vertical run

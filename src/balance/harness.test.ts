@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
+import { QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
 import { PICK_CONTENT, PLAIN_CONTENT } from './__fixtures__/harness.ts';
 import { buildFor, runCampaign, runMap } from './harness.ts';
 
@@ -58,10 +59,38 @@ describe('balance harness', () => {
     expect(timed.runs[0]!.ms).toBe(5);
   });
 
-  it('refuses a map with features it cannot check, without hiding the rest', () => {
-    const r = runMap(FIXTURE_CONTENT, 'fx_map', { seeds: 1 });
-    expect(r.checks.find((c) => c.id === '16')?.ok).toBe(false);
-    expect(r.checks.find((c) => c.id === '1')?.ok).toBe(true);
+  it('#16b: a map with fleeing groups runs spareFleeing against par on seeds 1–3', () => {
+    const r = runMap(FIXTURE_CONTENT, 'fx_map', { seeds: 3 });
+    const free = r.checks.filter((c) => c.id === '16');
+    expect(free.map((c) => c.subject)).toEqual(['spareFleeing']);
+    expect(free[0]!.ok).toBe(true);
+    const spare = r.runs.find((x) => x.build === 'spareFleeing' && x.seed === 1)!.result!;
+    // Every tower spares the four runners: all of them leak (for 0), none is killed.
+    expect(spare.stats.tagLeaked.fleeing).toBe(4);
+    expect(spare.stats.tagKilled.fleeing).toBe(0);
+    expect(r.checks.find((c) => c.id === '12')?.ok).toBe(true);
+    expect(r.checks.find((c) => c.id === 'steps')?.failures.join()).not.toMatch(/spareFleeing/);
+  });
+
+  it('#16a: a map with a Quiet Wave runs par holding fire through it, on seeds 1–3', () => {
+    const r = runMap(QUIET_WAVE_CONTENT, 'fx_map', { seeds: 3 });
+    const free = r.checks.filter((c) => c.id === '16');
+    expect(free.map((c) => [c.subject, c.ok])).toEqual([
+      ['holdFireWhile:quiet_wave', true],
+      ['spareFleeing', true],
+    ]);
+    expect(free[0]!.summary).toMatch(/quiet wave leaked 5\/5/);
+    for (const seed of [1, 2, 3]) {
+      const held = r.runs.find((x) => x.build === 'holdFireWhile:quiet_wave' && x.seed === seed)!;
+      const par = r.runs.find((x) => x.build === 'par' && x.seed === seed)!;
+      // Old Thrum leaks 1 (5 points); the four younglings leak for 0.
+      expect(held.marginPct).toBe(par.marginPct - 5);
+      expect(held.result!.stats.holdFireUses).toBe(1);
+      expect(held.result!.stats.tagKilled.quiet_wave).toBe(0);
+      // Par itself fires on the Quiet Wave.
+      expect(par.result!.stats.tagKilled.quiet_wave).toBe(5);
+    }
+    expect(r.checks.find((c) => c.id === '12')?.ok).toBe(true);
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
@@ -92,6 +121,13 @@ describe('balance harness', () => {
     expect(quiet.steps.map((s) => s.kind)).toEqual(['build', 'upgrade', 'build', 'targeting']);
     expect(quiet.technicianAbility).toBe(map.builds.parBuild.technicianAbility);
     expect(buildFor('alt:nope', map, PLAIN_CONTENT)).toBeNull();
+    expect(buildFor('spareFleeing', map, PLAIN_CONTENT)?.steps[0]?.kind).toBe('spareRunners');
+    expect(buildFor('holdFireWhile:quiet_wave', map, PLAIN_CONTENT)?.steps[0]).toEqual({
+      wave: 1,
+      kind: 'holdFireWhile',
+      tag: 'quiet_wave',
+    });
+    expect(buildFor('holdFireWhile:fleeing', map, PLAIN_CONTENT)).toBeNull();
   });
 
   it('a campaign run adds the monotonic check; --map skips it and says so', () => {

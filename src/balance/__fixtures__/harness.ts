@@ -1,13 +1,13 @@
-// Test helpers for the balance harness: the sim fixture's content without fleeing tags (which
-// the harness refuses until T206), a pick-list variant (#15), and synthetic run records for
-// judging checks without a sim.
+// Test helpers for the balance harness: the sim fixture's content without wave tags (so a run
+// plans only the core checks, not #16's free-choice runs), a pick-list variant (#15), and
+// synthetic run records for judging checks without a sim.
 import type { CompiledContent } from '../../content/compiled.ts';
 import { compileContent } from '../../content/compile.ts';
 import { FIXTURE_CONTENT, SIM_FIXTURE, type FixtureIds } from '../../sim/__fixtures__/sim.ts';
 import type { HeadlessResult } from '../../sim/index.ts';
 import type { RunRecord, RunRequest } from '../checks.ts';
 
-/** `content` with every wave tag removed from fx_map, so no feature is refused. */
+/** `content` with every wave tag removed from fx_map (no #16 runs). */
 function withoutTags(content: CompiledContent<FixtureIds>): CompiledContent<FixtureIds> {
   const map = content.maps.fx_map;
   return {
@@ -23,7 +23,7 @@ function withoutTags(content: CompiledContent<FixtureIds>): CompiledContent<Fixt
   };
 }
 
-/** The fixture content with every wave tag removed, so no feature is refused. */
+/** The fixture content with every wave tag removed (no #16 runs). */
 export const PLAIN_CONTENT: CompiledContent<FixtureIds> = withoutTags(FIXTURE_CONTENT);
 
 const rawMap = SIM_FIXTURE.maps.fx_map;
@@ -82,6 +82,7 @@ export function fakeResult(
       tagKilled: { quiet_wave: 0, youngling: 0, fleeing: 0, medal_exempt: 0 },
       medalExemptLeaks: 0,
       linkTicks: {},
+      markersPassed: {},
     },
     waves: [],
     towers: [],
@@ -92,6 +93,11 @@ export function fakeResult(
     steps: [],
     waveCalls: [],
     commandCount: 0,
+    medals: {
+      victory: outcome === 'won' ? 'earned' : 'forfeited',
+      perfectCore: outcome === 'won' && integrity === 20 ? 'earned' : 'forfeited',
+      challenge: 'open',
+    },
   };
 }
 

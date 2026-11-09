@@ -7,6 +7,7 @@ import { closeSettings } from '../../app/navigation.ts';
 import { exportActive, setDifficulty } from '../../app/save.ts';
 import { setAudioSettings, settings, toggleMute, type AudioSettings } from '../../app/settings.ts';
 import { copyText } from './clipboard.ts';
+import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { ImportPanel } from './ImportPanel.tsx';
 import { campaign, type Difficulty } from './state.ts';
@@ -166,6 +167,11 @@ function Codes() {
 
 /** The settings screen. Back returns to the menu it was opened from. */
 export function Settings() {
+  // Esc (T212) is Back, unless the import panel inside is open (it closes first).
+  useEscape(() => {
+    closeSettings();
+    return true;
+  });
   return (
     <main class="sd-screen sd-menu" aria-labelledby="sd-settings-heading">
       <section class="sd-panel sd-menu-panel">

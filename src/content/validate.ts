@@ -16,7 +16,8 @@
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
 // - [purchasable]: reference profiles are affordable and available in time (validatePurchasable.ts).
-// - Maps (validateMap.ts) and builds (validateBuilds.ts): see their headers.
+// - Maps (validateMap.ts), builds (validateBuilds.ts), and medals and conditions
+//   (validateMedals.ts): see their headers.
 //
 // Feature guards ([feature]): content that needs a system that doesn't exist yet is refused
 // rather than silently mis-simulated: bosses (M3; the boss-leak rule), non-Defend objectives
@@ -47,6 +48,7 @@ import type {
   TowerDef,
 } from './types.ts';
 import { validateCampaignMaps } from './validateMap.ts';
+import { validateMedals } from './validateMedals.ts';
 import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
 import {
   Issues,
@@ -82,6 +84,7 @@ export function validate<K extends IdSpace>(
     issues.add('campaign', 'campaign', `map '${id}' is listed more than once`);
   }
   validateCampaignMaps(issues, raw, rules);
+  validateMedals(issues, raw);
   validatePurchasable(issues, raw, rules.purchases);
   return issues.errors;
 }

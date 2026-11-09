@@ -21,12 +21,8 @@ function drain(sim: ReturnType<typeof fixtureSim>): SimEvent<FixtureIds>[] {
 }
 
 describe('commands declared ahead of their tasks', () => {
-  const stubs: readonly Cmd[] = [
-    { type: 'specialize', towerUid: 1, spec: 'a' },
-    { type: 'holdFire', target: 'all', on: true },
-    { type: 'holdFire', target: 1, on: false },
-    { type: 'spareRunners', target: 'all', on: true },
-  ];
+  // holdFire and spareRunners are live (T206a; fireControl.test.ts).
+  const stubs: readonly Cmd[] = [{ type: 'specialize', towerUid: 1, spec: 'a' }];
 
   it('are logged and rejected notImplemented, changing nothing else', () => {
     const sim = fixtureSim();
@@ -44,7 +40,12 @@ describe('commands declared ahead of their tasks', () => {
   });
 
   it('copyCommand deep-copies every new command', () => {
-    for (const cmd of stubs) {
+    const fireControl: readonly Cmd[] = [
+      { type: 'holdFire', target: 'all', on: true },
+      { type: 'holdFire', target: 1, on: false },
+      { type: 'spareRunners', target: 'all', on: true },
+    ];
+    for (const cmd of [...stubs, ...fireControl]) {
       const copy = copyCommand(cmd);
       expect(copy).toEqual(cmd);
       expect(copy).not.toBe(cmd);
@@ -57,6 +58,7 @@ describe('M2 state fields', () => {
     const state = createState(FIXTURE_CONTENT.maps.fx_map, 1);
     expect(state.holdFireAll).toBe(false);
     expect(state.spareRunnersAll).toBe(false);
+    expect(state.notFiringAnnounced).toBe(false);
     expect(state.linksDirty).toBe(false);
     expect(state.leakAbsorbLeft).toBe(0);
     expect(state.medals).toEqual({ victory: 'open', perfectCore: 'open', challenge: 'open' });

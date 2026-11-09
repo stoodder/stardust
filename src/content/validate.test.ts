@@ -35,7 +35,9 @@ function answers(over: Partial<Record<CounterId, readonly string[]>>): Validatio
   const counterAnswers = { ...COUNTER_ANSWERS };
   for (const c of COUNTER_CATEGORIES) {
     const towers = over[c];
-    if (towers !== undefined) counterAnswers[c] = { towers, abilities: [] };
+    if (towers !== undefined) {
+      counterAnswers[c] = { towers: towers.map((tower) => ({ tower })), abilities: [] };
+    }
   }
   return { counterAnswers };
 }

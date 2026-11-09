@@ -1,6 +1,8 @@
-// Readability rules for specific sprites (art-direction §1, §5, §8): tier silhouettes, the
-// Zoomer's `fast` tell, contact shadows, and the apron's dither.
+// Readability rules for specific sprites (art-direction §1, §5, §6, §8): tier silhouettes, the
+// Zoomer's `fast` tell, contact shadows, the apron's dither, the Brood Hauler's sack, Bricks, the
+// raised and powered tiles, and link tethers.
 import { describe, expect, it } from 'vitest';
+import { tetherDir } from './fx/link_tether.ts';
 import { SPRITES, type SpriteId } from './index.ts';
 import { GROUND_SHADOW_ALPHA, groundShadowFor } from './shadows.ts';
 import { APRON_RINGS } from './tiles/apron.ts';
@@ -107,5 +109,121 @@ describe('apron tiles', () => {
       }
     }
     expect(count(grid('tile.apron', 'r1'), 'k')).toBe(0);
+  });
+});
+
+describe('tier-2 heads (D029: the upgrade reads in the head too)', () => {
+  for (const id of ['tower.rivet_head', 'tower.thumper_head'] as const) {
+    it(`${id}: the T2+ head is bigger than T1's in every authored facing`, () => {
+      for (const f of ['se', 'ne', 'se_fire', 'ne_fire']) {
+        const t1 = bounds(grid(id, f));
+        const t2 = bounds(grid(id, f.replace(/^(se|ne)/, '$1_t2')));
+        const area = (b: typeof t1): number => (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1);
+        expect(area(t2), `${id}:${f}`).toBeGreaterThan(area(t1) * 1.1);
+      }
+      for (const a of ['fire_se_t2', 'fire_sw_t2', 'fire_ne_t2', 'fire_nw_t2']) {
+        expect(def(id).anims?.[a], a).toBeDefined();
+      }
+    });
+  }
+});
+
+describe('Brood Hauler and its sack', () => {
+  it('carries a sack (the `carrier` tell) over its body in every facing', () => {
+    for (const f of ['walk_se_0', 'walk_se_1', 'walk_ne_0', 'walk_ne_1']) {
+      const rows = grid('enemy.brood_hauler', f);
+      expect(count(rows, 'GHJ'), f).toBeGreaterThan(40);
+      // The sack rides above the body: its top is the sprite's top.
+      const sackTop = rows.findIndex((r) => /[GHJ]/.test(r));
+      expect(sackTop, f).toBeLessThanOrEqual(bounds(rows).y0 + 1);
+    }
+    expect(def('enemy.brood_hauler').legend).toMatchObject({ S: 'steel.4', T: 'steel.3' });
+  });
+
+  it('has an 8×8 carrier glyph and a wave-preview icon', () => {
+    expect(def('icon.tell.carrier').size).toEqual({ w: 6, h: 6 });
+    expect(def('icon.enemy.brood_hauler').size).toEqual({ w: 14, h: 14 });
+  });
+
+  it('bursts once, and its young are tiny', () => {
+    const burst = def('fx.sack_burst');
+    expect(burst.anims?.['burst']).toMatchObject({ loop: false });
+    expect(def('enemy.hauler_young').size.w).toBeLessThan(def('enemy.nibbler').size.w);
+  });
+});
+
+describe('Bricks at his post', () => {
+  it('idles and fires in four facings (SE and NE authored, mirrored)', () => {
+    const anims = Object.keys(def('ally.bricks').anims ?? {}).toSorted();
+    expect(anims).toEqual(
+      [
+        'fire_ne',
+        'fire_nw',
+        'fire_se',
+        'fire_sw',
+        'idle_ne',
+        'idle_nw',
+        'idle_se',
+        'idle_sw',
+      ].toSorted(),
+    );
+    // Human-scale: 16–24 px of figure above the post (art-direction §6).
+    const b = bounds(grid('ally.bricks', 'idle_se_0'));
+    expect(def('ally.bricks').anchor.y - b.y0).toBeGreaterThanOrEqual(16);
+    expect(def('ally.bricks').anchor.y - b.y0).toBeLessThanOrEqual(24);
+  });
+});
+
+describe('high ground and power node tiles', () => {
+  it('raises high ground one step: a 32×24 block anchored at its ground-plane top vertex', () => {
+    const d = def('tile.high_ground');
+    expect(d.size).toEqual({ w: 32, h: 24 });
+    expect(d.anchor).toEqual({ x: 16, y: 8 });
+    const rows = grid('tile.high_ground', 'v0');
+    // The bottom vertex sits on the ground diamond's bottom row (24 − 1), cliff faces above it.
+    expect(rows[23]?.slice(15, 17)).not.toBe('..');
+    expect(count(rows.slice(16), 'abcd')).toBeGreaterThan(100);
+  });
+
+  it('pulses the power node through four distinct frames', () => {
+    const d = def('tile.power_node');
+    expect(d.anims?.['pulse']).toMatchObject({ frames: ['v0', 'pulse_1', 'pulse_2', 'pulse_3'] });
+    const frames = ['v0', 'pulse_1', 'pulse_2', 'pulse_3'].map((f) =>
+      grid('tile.power_node', f).join(''),
+    );
+    expect(new Set(frames).size).toBe(4);
+    expect(count(grid('tile.power_node', 'v0'), '+*')).toBeGreaterThan(30);
+  });
+});
+
+describe('link tethers', () => {
+  it('covers every 8-neighbour with a left-to-right (or top-to-bottom) frame set', () => {
+    for (let dc = -1; dc <= 1; dc++) {
+      for (let dr = -1; dr <= 1; dr++) {
+        const t = tetherDir(dc, dr);
+        if (dc === 0 && dr === 0) expect(t).toBeNull();
+        else expect(t, `${dc},${dr}`).not.toBeNull();
+        // A pair and its reverse use the same frames from opposite ends.
+        if (t !== null) expect(tetherDir(-dc, -dr)).toEqual({ dir: t.dir, fromB: !t.fromB });
+      }
+    }
+  });
+
+  it('draws each link in its own shape and colour, animated', () => {
+    const d = def('fx.link_tether');
+    for (const link of ['crossfire', 'sitting_ducks']) {
+      for (const dir of ['e', 'se', 'ne', 's']) {
+        expect(d.anims?.[`${link}_${dir}`], `${link}_${dir}`).toBeDefined();
+        expect(grid('fx.link_tether', `${link}_${dir}_0`)).not.toEqual(
+          grid('fx.link_tether', `${link}_${dir}_1`),
+        );
+      }
+    }
+    // Crossfire is a solid orange line; Sitting Ducks a dashed blue one with gaps.
+    const cf = grid('fx.link_tether', 'crossfire_e_0');
+    const sd = grid('fx.link_tether', 'sitting_ducks_e_0');
+    expect(count(cf, 'd')).toBeGreaterThan(count(sd, 'd'));
+    expect(count(sd, 'B')).toBeGreaterThan(0);
+    expect(count(sd, 'Bw')).toBeLessThan(count(cf, 'dew'));
   });
 });

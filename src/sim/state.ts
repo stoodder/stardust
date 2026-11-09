@@ -51,7 +51,9 @@ export type TagCounts = Record<WaveTag, number>;
 /**
  * Per-run stats (integers): the run stats conditions read (`RunStat` in content/types.ts), the
  * Pests Processed count, and the story stats (architecture.md § Entity model). The fire-control
- * and per-tag stats are counted from T206a, `medalExemptLeaks` from T202c; until then they stay 0.
+ * stats are counted by sim/fireControl.ts and the towers system, the per-tag stats where units
+ * spawn (waves), leak (movement), and die (damage); `medalExemptLeaks` and `markersPassed` in
+ * cleanup (sim/medals.ts).
  */
 export interface SimStats {
   /** Pests Processed this run: Skitterkin enemies killed by towers or abilities. */
@@ -70,13 +72,13 @@ export interface SimStats {
   /** Credits earned in play: bounties, clear bonuses, early-call bonuses, and script grants. */
   creditsEarned: number;
   abilityUses: number;
-  /** Ticks on which any tower was holding fire (T206a). */
+  /** Ticks on which any live tower was holding fire. */
   holdFireTicks: number;
-  /** holdFire commands that turned Hold Fire on (T206a). */
+  /** holdFire commands that turned Hold Fire on where it was off (a tower's, or the global). */
   holdFireUses: number;
   /**
    * Ticks since a tower last fired at a Skitterkin while one was in range of a tower; frozen while
-   * none is (the "not firing" bark, NotFiringAtSkitterkin; T206a).
+   * none is (the "not firing" bark, NotFiringAtSkitterkin).
    */
   ticksSinceFiredAtSkitterkin: number;
   /** Per wave tag: units spawned, leaked, and killed by the player (towers, abilities, allies). */
@@ -90,6 +92,12 @@ export interface SimStats {
    * (counted by the links system). A key appears on the link's first active tick.
    */
   linkTicks: Record<string, number>;
+  /**
+   * `passedMarker` conditions (sim/conditions.ts): per marker, per enemy id (`*` for any enemy),
+   * the tick a non-exempt unit first went past it. Only markers a map's conditions name are
+   * watched; a key appears on the first pass.
+   */
+  markersPassed: Record<string, Record<string, number>>;
 }
 
 /**
@@ -183,6 +191,8 @@ export interface SimState<K extends IdSpace = IdSpace> {
   holdFireAll: boolean;
   /** The global spare-runners toggle: towers built while it's on start with the filter (T206a). */
   spareRunnersAll: boolean;
+  /** NotFiringAtSkitterkin has fired this run (it fires once; sim/fireControl.ts). */
+  notFiringAnnounced: boolean;
   /**
    * Something that changes links happened (a build, upgrade, specialization, or sell, or later a
    * jam): the links system recomputes them, and the towers' dynamic bonuses, then clears it.
@@ -265,10 +275,12 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       tagKilled: tagCounts(),
       medalExemptLeaks: 0,
       linkTicks: {},
+      markersPassed: {},
     },
     abilityCooldownTicks: [0, 0],
     holdFireAll: false,
     spareRunnersAll: false,
+    notFiringAnnounced: false,
     linksDirty: false,
     linkPairs: [],
     leakAbsorbLeft: 0,

@@ -28,6 +28,19 @@ export function grassGrid(seed: number): CharGrid {
       plot(g, x, y, h < 0.07 ? '1' : h < 0.13 ? '3' : '2');
     }
   }
+  // Mid-dark clumps: two soft patches of `1` (solid heart, dithered rim), so the playfield has
+  // mid-darks between the lit ground and the deep apron, and the grass doesn't read flat (D029).
+  for (let i = 0; i < 2; i++) {
+    const cx = 6 + hash01(i, 8, seed) * 20;
+    const cy = 4 + hash01(i, 9, seed) * 8;
+    for (let y = Math.floor(cy - 2); y <= Math.ceil(cy + 2); y++) {
+      for (let x = Math.floor(cx - 4); x <= Math.ceil(cx + 4); x++) {
+        if (!inTileMask(x, y)) continue;
+        const d = Math.hypot((x + 0.5 - cx) / 3.5, (y + 0.5 - cy) / 1.8);
+        if (d < 0.6 || (d < 1 && (x + y) % 2 === 0)) plot(g, x, y, '1');
+      }
+    }
+  }
   // Tufts: a bright blade with a dark root below it.
   for (let i = 0; i < 9; i++) {
     const x = 4 + Math.floor(hash01(i, 1, seed) * 24);

@@ -36,11 +36,13 @@ describe('icon sprites (art-direction §5)', () => {
     }
   });
 
-  it('gives every M1 tower and enemy sprite a matching icon', () => {
+  it('gives every tower and enemy sprite a matching icon', () => {
     const ids = new Set<string>(SPRITES.map((s) => s.id));
+    // Render-only actors never appear in a wave preview or the build bar.
+    const renderOnly = new Set(['enemy.hauler_young']);
     for (const s of SPRITES) {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
-      if (m === null || s.id.endsWith('_head')) continue;
+      if (m === null || s.id.endsWith('_head') || renderOnly.has(s.id)) continue;
       expect(ids.has(`icon.${m[1]}.${m[2]}`), s.id).toBe(true);
     }
   });

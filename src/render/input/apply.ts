@@ -14,7 +14,11 @@ export interface IntentSink {
   onCantBuild(): void;
 }
 
-export function applyIntent(intent: Intent, interaction: BattleInteraction, sink: IntentSink): void {
+export function applyIntent(
+  intent: Intent,
+  interaction: BattleInteraction,
+  sink: IntentSink,
+): void {
   switch (intent.kind) {
     case 'ability':
       // One shot per aim; the sim re-validates (cooldown, target) and the HUD shows rejections.

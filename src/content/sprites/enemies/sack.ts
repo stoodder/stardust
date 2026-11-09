@@ -4,14 +4,18 @@
 // Shared by the walking body, its icon, and the burst.
 import { at, plot, type CharGrid } from '../helpers.ts';
 
-/** Custom legend for the sack: burlap ramp, rope, and the pink half of the glitter. */
+/**
+ * Custom legend for the sack: pale burlap lit to cream (`gold.4`) so the cargo sits in the actor
+ * value band (art-direction §1), rope, and the glitter's pink and gold.
+ */
 export const SACK_LEGEND = {
-  G: 'grime.4',
-  H: 'grime.3',
-  J: 'grime.2',
-  I: 'grime.1',
+  G: 'gold.4',
+  H: 'grime.4',
+  J: 'grime.3',
+  I: 'grime.2',
   R: 'gold.1',
   P: 'pink.3',
+  Y: 'gold.3',
 } as const;
 
 export interface SackShape {
@@ -37,7 +41,7 @@ export function sack(g: CharGrid, s: SackShape): void {
       if (d > 1) continue;
       const lit = -0.7 * dx - 0.7 * dy;
       let ch = 'H';
-      if (lit > 0.05 && d < 0.9) ch = 'G';
+      if (lit > -0.15 && d < 0.9) ch = 'G';
       else if (lit < -0.5 || (d > 0.88 && dy > 0.4)) ch = 'J';
       if (dy > 0.8 && d > 0.9) ch = 'I';
       plot(g, x, y, ch);
@@ -63,26 +67,27 @@ export function sack(g: CharGrid, s: SackShape): void {
   plot(g, nx + 2, top - 3, 'H');
   plot(g, nx, top, 'R');
   plot(g, nx + 1, top, 'R');
-  // Glitter: gold (the emissive slots, so they glow) and pink, twinkling between two patterns.
+  // Glitter: gold and pink, twinkling between two patterns; one or two flecks are emissive, so
+  // the sack glints without its halo washing out the burlap.
   const flecks: readonly (readonly [number, number, string])[] =
     s.twinkle === 0
       ? [
           [-3, 1, '*'],
-          [2, -1, '+'],
+          [2, -1, 'Y'],
           [-1, 3, 'P'],
-          [3, 2, '+'],
+          [3, 2, 'Y'],
           [0, -3, 'P'],
-          [-2, -3, '*'],
+          [-2, -3, 'Y'],
           [1, 4, '+'],
         ]
       : [
-          [-2, -1, '+'],
+          [-2, -1, 'Y'],
           [1, 1, '*'],
-          [-3, 3, '+'],
+          [-3, 3, 'Y'],
           [3, -2, 'P'],
           [1, 4, 'P'],
           [-1, -4, '+'],
-          [3, 3, '*'],
+          [3, 3, 'Y'],
         ];
   for (const [fx, fy, ch] of flecks) {
     const x = Math.round(s.cx + (fx * s.rx) / 6);

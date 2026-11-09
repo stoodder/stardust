@@ -9,6 +9,7 @@ import type { IdSpace } from '../../content/types.ts';
 import type { RejectReason } from '../commands.ts';
 import { callWaveBonus, earn } from '../economy.ts';
 import { ENEMY_BLANK } from '../entities.ts';
+import { countTags } from '../fireControl.ts';
 import { placeOnRoute } from '../path.ts';
 import { poolAlloc } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
@@ -109,6 +110,7 @@ function spawn(state: SimState, wave: number, g: CompiledWave<IdSpace>['groups']
   e.def = def;
   e.wave = wave;
   e.tags = g.tags;
+  countTags(state.stats.tagSpawned, g.tags);
   e.hp = def.hp;
   e.shieldHp = def.shield === null ? 0 : def.shield.hp;
   e.spawnTick = state.tick;

@@ -1,6 +1,7 @@
 // The in-map HUD (T106, T113; art-direction §9, core-loop §4): status top-left, waves and speed
 // top-right, commander abilities bottom-left, build slots bottom-right, the selected tower's panel
-// beside it, and notices top center. Components read the `hud` signals (kept in sync by app/hud.ts) and act only through
+// beside it (clear of its neighbours, T126), notices top center, and the keyboard tile cursor's
+// announcement (a visually hidden aria-live region). Components read the `hud` signals (kept in sync by app/hud.ts) and act only through
 // app/commands.ts. Every control is a real <button> of at least 16×16 game px.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
@@ -360,7 +361,8 @@ function Tier({ tier, max }: { tier: number; max: number }) {
 
 /** The selected tower's panel: upgrade, sell, and targeting, beside the tower. */
 function TowerPanel({ t }: { t: SelectedTowerView }) {
-  const { left, top } = placePanel(t.x, t.y, PANEL_W, PANEL_H);
+  const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
+  const { left, top } = placePanel(t.x, t.y, PANEL_W, PANEL_H, others);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;
   const poor = !max && credits < (t.upgradeCost ?? 0);
@@ -442,6 +444,15 @@ function Notice() {
           {n.text}
         </div>
       )}
+    </div>
+  );
+}
+
+/** What the keyboard tile cursor is on (T126), for screen readers; empty while it's hidden. */
+function CursorAnnouncer() {
+  return (
+    <div class="hud-sr-only" role="status" aria-live="polite" data-testid="cursor-announce">
+      {hud.cursor.value ?? ''}
     </div>
   );
 }
@@ -592,6 +603,7 @@ export function Hud() {
         {selected !== null && <TowerPanel t={selected} />}
         <UpgradeHint />
         <Notice />
+        <CursorAnnouncer />
       </div>
       {briefing !== null && <Briefing lines={briefing} />}
     </div>

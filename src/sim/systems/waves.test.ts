@@ -300,9 +300,7 @@ describe('createSim and map scripts', () => {
         } as const,
       ],
     };
-    expect(unsupportedScript(cond)).toEqual([
-      "event 'cond': 'when' conditions are not simulated yet",
-    ]);
+    expect(unsupportedScript(cond)).toEqual([]); // `when` runs since T202c (triggers.test.ts)
   });
 
   it('runs a tick trigger once, whatever its `once` says (every M1 trigger is monotonic)', () => {

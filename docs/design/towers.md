@@ -50,16 +50,18 @@ Acquisition rules and the story-timed gift schedule are in [progression.md §8](
 | Need | Towers that answer it (spec in brackets when only a specialization does) |
 |---|---|
 | Single-target DPS | Rivet, Harpoon, Mindspike, Prism, Rivet [Railspike] |
-| Splash / swarm clear | Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike] |
+| Splash / swarm clear | Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike], Sproing Pad [Big Bonk] |
 | Slow / control | Sprinkler, Stasis Bloom, Scuttle Den, Mindspike [Dread], Hum Choir [Lullaby] (slows enemy abilities, not movement) |
 | Anti-air | Skyhook, Sproing Pad, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Sprinkler [Cloudburst] |
 | Detection (cloaked) | Lookout Shack, Seer's Lantern, *Scanner Sweep ability* |
 | Anti-shield | Zapcoil, Prism Spire, Sprinkler (Soaked status, T3) |
-| Anti-armor | Harpoon, Prism Spire (its beam's armor applies per second, so it beats heavy armor), Gloop (shred), Rivet T3 (pierce), Rivet [Railspike], Thumper [Bunker Buster], Mindspike (not against Everglow machines, ×0.35) |
+| Anti-armor | Harpoon, Prism Spire (its beam's armor applies per second, so it beats heavy armor), Gloop (shred), Rivet T3+ (pierce), Rivet [Railspike], Skyhook [Seeker Swarm] (pierce), Thumper [Bunker Buster], Thumper against light armor (Acts I–II), Mindspike (not against Everglow machines, ×0.35) |
 | Burrowed enemies | Scuttle Den, Underfoot ability, Stasis Bloom (prevents burrowing), Seer's Lantern [Truthlight] |
 | Support / buffer | Lookout Shack (range or fire rate), Hum Choir (damage, jam protection), Seer's Lantern (Mark) |
 | Economy | Salvage Crane |
 | Jam protection | Hum Choir (shorter jams; immunity only with [Rally Chorus]), *System Reboot ability* |
+
+Which of these count as a **counter answer**, at which tier or spec and on which maps, is owned by [enemies.md §3.1](enemies.md#31-counter-categories).
 
 ---
 

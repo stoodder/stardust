@@ -12,6 +12,8 @@ export const PAR_BAND_WIDTH = 20;
 
 /** Assertion 7: alwaysCallEarly's margin ≤ min(band top, par margin + this). */
 export const EARLY_CALL_SLACK_PCT = 10;
+/** Assertion 16b: spareFleeing's margin ≥ par margin − this, on the same seed (D006). */
+export const SPARE_FLEEING_SLACK_PCT = 5;
 /** Assertion 3: a map's median par margin ≤ the previous map's in its chain + this. */
 export const MONOTONIC_TOLERANCE_PCT = 5;
 /** Assertion 8: the forgiving floor for every alt build. */

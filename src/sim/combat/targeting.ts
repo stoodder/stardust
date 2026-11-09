@@ -1,9 +1,14 @@
 // Targeting (design/towers.md §5): who a tower may hit, and which one it picks. Deterministic:
 // candidates are scanned in ascending slot order, squared distances only, and every priority
 // ends in the documented tie-break (First, then the lowest uid). Allocation-free.
+// The spare-runners filter (design/core-loop.md § Spare runners) sits on top of every priority:
+// with `spare` on, a unit whose wave group carries a SPARE_TAGS tag (fleeing, youngling) is never
+// picked or kept as the target. It's only about picking: splash still lands on them, and so does
+// a pulse fired for another unit in range (systems/towers.ts).
 import type { CompiledAttack } from '../../content/compiled.ts';
 import type { TargetPriority } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
+import { isSpared } from '../fireControl.ts';
 import type { Pool } from '../pool.ts';
 
 /** The layers a tier can hit (`CompiledTier.targets`). */
@@ -47,7 +52,7 @@ function remaining(e: Enemy): number {
 /**
  * The best target from (x, y) under `priority`, or null. Priorities (towers.md §5): First (least
  * route distance left), Last (most left), Strong (highest HP + shield), Close (nearest). Ties:
- * First, then the lowest uid.
+ * First, then the lowest uid. With `spare` (the spare-runners filter), spared units are skipped.
  */
 export function pickTarget(
   enemies: Pool<Enemy>,
@@ -56,6 +61,7 @@ export function pickTarget(
   layers: TargetLayers,
   range: RangeSpec,
   priority: TargetPriority,
+  spare = false,
 ): Enemy | null {
   let best: Enemy | null = null;
   let bRem = 0;
@@ -64,6 +70,7 @@ export function pickTarget(
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!canHit(e, layers)) continue;
+    if (spare && isSpared(e.tags)) continue;
     const d2 = distSqTo(x, y, e);
     if (!isInRange(d2, range)) continue;
     const rem = remaining(e);
@@ -112,7 +119,8 @@ function isBetter(
 
 /**
  * Whether the enemy in `slot` is still the live, hittable, in-range enemy `uid` (a tower's current
- * target), so a cooling tower can keep it without a full scan.
+ * target), so a cooling tower can keep it without a full scan. With `spare`, a spared unit isn't
+ * kept (the filter was turned on while the tower was cooling).
  */
 export function isStillTarget(
   enemies: Pool<Enemy>,
@@ -122,9 +130,11 @@ export function isStillTarget(
   y: number,
   layers: TargetLayers,
   range: RangeSpec,
+  spare = false,
 ): Enemy | null {
   if (uid === 0 || slot < 0 || slot >= enemies.used) return null;
   const e = enemies.items[slot]!; // 0 ≤ slot < used ≤ items.length
   if (e.uid !== uid || !canHit(e, layers)) return null;
+  if (spare && isSpared(e.tags)) return null;
   return isInRange(distSqTo(x, y, e), range) ? e : null;
 }

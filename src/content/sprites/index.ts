@@ -8,18 +8,13 @@ import { enemyZoomer } from './enemies/zoomer.ts';
 import { fxExplosion } from './fx/explosion.ts';
 import { fxSackBurst } from './fx/sack_burst.ts';
 import { fxGroundShadow } from './fx/ground_shadow.ts';
+import { fxLinkTether } from './fx/link_tether.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxShadow } from './fx/shadow.ts';
 import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
 import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
-import {
-  iconCore,
-  iconCredits,
-  iconLock,
-  iconTellCarrier,
-  iconTellFast,
-} from './icons/glyphs.ts';
+import { iconCore, iconCredits, iconLock, iconTellCarrier, iconTellFast } from './icons/glyphs.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconTowerRivet } from './icons/rivet.ts';
 import { iconAbilitySuppressingFire } from './icons/suppressing_fire.ts';
@@ -79,6 +74,7 @@ export const SPRITES = [
   fxGroundShadow,
   fxExplosion,
   fxSackBurst,
+  fxLinkTether,
   fxOrbitalReticle,
   iconTowerRivet,
   iconTowerThumper,

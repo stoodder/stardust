@@ -4,7 +4,7 @@
 // change, so a steady frame re-renders nothing.
 import type { CompiledAbilityDef, CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
-import type { IdSpace, MeterLabel } from '../content/types.ts';
+import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { gridToScreen, mapOrigin, type IsoOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
@@ -12,6 +12,7 @@ import { TICK_HZ } from '../shared/time.ts';
 import { assertNever } from '../shared/types.ts';
 import {
   callWaveBonus,
+  isBuildableTile,
   sellValue,
   towerStats,
   type RejectReason,
@@ -278,6 +279,61 @@ export function selectedView(
   return sameSelected(prev, next) ? prev : next;
 }
 
+/** What each tile type is called in the cursor's announcement. */
+const TILE_NAMES: Readonly<Record<TileChar, string>> = {
+  '#': 'Path',
+  o: 'Pad',
+  '^': 'High ground',
+  '+': 'Power node',
+  x: 'Wreckage',
+  '.': 'Ground',
+  S: 'Spawn',
+  C: 'Core',
+};
+
+/**
+ * What the keyboard tile cursor on tile `index` announces (T126; the HUD's aria-live region):
+ * the tile (columns and rows counted from 1), what stands on it, and what Enter does there.
+ * `aimingLabel` is the aimed ability's name, or null. Null while the cursor is hidden.
+ */
+export function cursorText(
+  sim: Sim<IdSpace>,
+  index: number,
+  armed: string | null,
+  aimingLabel: string | null,
+): string | null {
+  const map = sim.map;
+  const tile = map.tiles[index];
+  if (index < 0 || tile === undefined) return null;
+  const col = index % map.cols;
+  const where = `column ${col + 1}, row ${(index - col) / map.cols + 1}`;
+  const slot = sim.state.towerAtTile[index] ?? -1;
+  const tower = slot < 0 ? null : (sim.state.towers.items[slot] ?? null);
+  const what =
+    tower !== null && tower.alive && tower.def !== null
+      ? `${displayName(tower.def.id)} tier ${tower.tier}, ${where}`
+      : `${TILE_NAMES[tile]}, ${where}${isBuildableTile(tile) ? ', empty' : ''}`;
+  if (aimingLabel !== null) return `${what}. Enter fires ${aimingLabel} here.`;
+  if (tower !== null && tower.alive) return `${what}. Enter selects it.`;
+  if (armed !== null && isBuildableTile(tile))
+    return `${what}. Enter builds ${displayName(armed)}.`;
+  return `${what}.`;
+}
+
+/** Every standing tower's tile center in game pixels (for the tower panel's placement). */
+export function towerPoints(sim: Sim<IdSpace>, origin: IsoOrigin): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  const pool = sim.state.towers;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (!t.alive) continue;
+    const p = { x: 0, y: 0 };
+    gridToScreen(t.x, t.y, origin, p);
+    out.push(p);
+  }
+  return out;
+}
+
 /**
  * The armed-slot rule after a build (T106): the slot stays armed while another of the same tower
  * is affordable, so the player can place several in a row; otherwise it disarms.
@@ -494,19 +550,31 @@ export function bindHud(
     }
     if (next !== null) hud.abilityCooldowns.value = next;
   };
+  const syncCursor = (): void => {
+    const aiming = interaction.aiming;
+    const label = aiming === null ? null : (abilityViews[aiming - 1]?.label ?? 'the ability');
+    hud.cursor.value = cursorText(sim, interaction.cursor, interaction.armed, label);
+  };
+  const syncTowers = (): void => {
+    hud.towerPoints.value = towerPoints(sim, origin);
+    syncCursor();
+  };
   const syncInteraction = (): void => {
     hud.selectedTower.value = interaction.selectedTower;
     hud.armedTower.value = interaction.armed;
     hud.aimingAbility.value = interaction.aiming;
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
+    syncCursor();
   };
   sync();
   syncInteraction();
+  syncTowers();
   const offs = [
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     host.bus.on('TowerBuilt', (e) => {
       hud.built.value = true;
+      syncTowers();
       const cost = towers[e.tower]?.tiers[0].cost ?? Infinity;
       if (!staysArmed(interaction.armed, e.tower, sim.state.credits, cost)) {
         if (interaction.armed === e.tower) interaction.arm(null);
@@ -529,7 +597,9 @@ export function bindHud(
     }),
     host.bus.on('TowerUpgraded', () => {
       upgraded = true;
+      syncCursor();
     }),
+    host.bus.on('TowerSold', syncTowers),
     host.bus.on('CommandRejected', (e) => {
       const text = rejectText(e.reason);
       if (text !== null) showNotice(text);
@@ -545,6 +615,8 @@ export function bindHud(
     hud.upgradeHint.value = false;
     hud.selectedTower.value = 0;
     hud.selected.value = null;
+    hud.towerPoints.value = [];
+    hud.cursor.value = null;
     hud.armedTower.value = null;
     hud.aimingAbility.value = null;
     hud.abilities.value = [];

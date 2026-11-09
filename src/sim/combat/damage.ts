@@ -21,6 +21,7 @@ import { assertNever } from '../../shared/types.ts';
 import { payBounty } from '../economy.ts';
 import type { Enemy } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
+import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 
@@ -114,7 +115,7 @@ export function applyDamage(
 
 /**
  * Kills an enemy that ran out of HP: frees it for cleanup, counts the kill (Pests Processed for
- * Skitterkin, `killsByEnemy`), credits the bounty, and emits EnemyDied naming the killer. The one
+ * Skitterkin, `killsByEnemy`, `tagKilled` per wave tag), credits the bounty, and emits EnemyDied naming the killer. The one
  * place a kill is booked.
  */
 function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
@@ -123,6 +124,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
   const stats = state.stats;
   stats.killsByEnemy[def.id] = (stats.killsByEnemy[def.id] ?? 0) + 1;
   if (def.faction === 'skitterkin') stats.skitterkinKilled++;
+  countTags(stats.tagKilled, enemy.tags);
   // Youngling units pay 0 and fleeing ones 1 (core-loop.md § 2.3), then the bounty modifiers;
   // leaks pay nothing (movement).
   const bounty = payBounty(state, def.bounty, enemy.tags);

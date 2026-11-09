@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FIXTURE_CONTENT } from '../sim/__fixtures__/sim.ts';
-import { policyBuild } from './policies.ts';
+import { policyBuild, withHoldFireWhile } from './policies.ts';
 
 const map = FIXTURE_CONTENT.maps.fx_map;
 const par = map.builds.parBuild;
@@ -36,6 +36,12 @@ describe('policies', () => {
   it('spareFleeing: par with spare runners on for every tower before W1', () => {
     const b = policyBuild('spareFleeing', map, towers);
     expect(b.steps[0]).toEqual({ wave: 1, kind: 'spareRunners', target: 'all', on: true });
+    expect(b.steps.slice(1)).toEqual(par.steps);
+  });
+
+  it('withHoldFireWhile: the build with the macro armed before W1', () => {
+    const b = withHoldFireWhile(par, 'quiet_wave');
+    expect(b.steps[0]).toEqual({ wave: 1, kind: 'holdFireWhile', tag: 'quiet_wave' });
     expect(b.steps.slice(1)).toEqual(par.steps);
   });
 });

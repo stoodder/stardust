@@ -161,8 +161,60 @@ describe('scripted-build executor', () => {
 
   it("refuses step kinds the sim can't run yet", () => {
     const sim = fixtureSim();
-    const b = build([{ wave: 1, kind: 'holdFire', target: 'all', on: true }]);
-    expect(() => createBuildExecutor(sim, b)).toThrow(/can't run yet: 0:holdFire/);
+    const b = build([{ wave: 1, kind: 'clear', tile: [4, 3] }]);
+    expect(() => createBuildExecutor(sim, b)).toThrow(/can't run yet: 0:clear/);
+  });
+
+  it('holdFire and spareRunners steps address a tower by tile or all; no tower is a step error', () => {
+    const { sim, exec } = play(
+      build([
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+        { wave: 1, kind: 'spareRunners', target: [1, 1], on: true },
+        { wave: 1, kind: 'holdFire', target: 'all', on: true },
+        { wave: 1, kind: 'holdFire', target: [1, 1], on: false },
+        { wave: 1, kind: 'spareRunners', target: [3, 1], on: true },
+      ]),
+      10,
+    );
+    expect(exec.steps.map((s) => [s.issuedTick, s.error])).toEqual([
+      [0, null],
+      [0, null],
+      [0, null],
+      [0, null],
+      [0, 'noSuchTower'],
+    ]);
+    const t = sim.state.towers.items[0]!;
+    expect([t.spareRunners, t.holdFire, sim.state.holdFireAll]).toEqual([true, false, true]);
+  });
+
+  it('holdFireWhile holds every tower from the first tagged spawn until the last is gone', () => {
+    // fx_map W2: 4 fleeing runners, 0.5 s apart from 1 s in; a gun covers the road's start.
+    const { exec, events, sim } = play(
+      build([
+        { wave: 1, kind: 'holdFireWhile', tag: 'fleeing' },
+        { wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] },
+      ]),
+    );
+    expect(exec.steps.map((s) => [s.issuedTick, s.error])).toEqual([
+      [0, null],
+      [0, null],
+    ]);
+    const toggles = events.filter((l) => l.e.type === 'HoldFireChanged');
+    expect(toggles.map((l) => l.e)).toEqual([
+      { type: 'HoldFireChanged', target: 'all', on: true },
+      { type: 'HoldFireChanged', target: 'all', on: false },
+    ]);
+    const spawns = events.filter((l) => l.e.type === 'EnemySpawned' && l.e.enemy === 'fx_runner');
+    const gone = events.filter(
+      (l) => (l.e.type === 'EnemyLeaked' || l.e.type === 'EnemyDied') && l.e.enemy === 'fx_runner',
+    );
+    // On the tick after the first runner spawns; off the tick after the last one leaves.
+    expect(toggles[0]!.tick).toBe(spawns[0]!.tick + 1);
+    expect(toggles[1]!.tick).toBe(gone.at(-1)!.tick + 1);
+    expect(gone.every((l) => l.e.type === 'EnemyLeaked')).toBe(true);
+    expect(sim.state.stats.tagLeaked.fleeing).toBe(4);
+    expect(sim.state.stats.holdFireUses).toBe(1);
+    expect(sim.state.holdFireAll).toBe(false);
   });
 });
 

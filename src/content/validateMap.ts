@@ -32,9 +32,9 @@
 // [route-walk], [wave-tag]), validateThreats.ts (intel, counters, teach, novelty),
 // validateScripts.ts ([script], [flag-variants]), and validateBuilds.ts (builds).
 //
-// TODO stubs (their content can't exist yet): the revisit layout rules (A3M6, M5); medals
-// (`medals.challenge` required on campaign maps, conditions never reading medal-exempt groups;
-// T202).
+// Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
+//
+// TODO stubs (their content can't exist yet): the revisit layout rules (A3M6, M5).
 import { MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
 import type { EnemyDef, IdSpace, MapDef, RawContent } from './types.ts';
 import type { ValidationRules } from './validate.ts';
@@ -66,9 +66,9 @@ export function validateCampaignMaps<K extends IdSpace>(
       .filter((t) => t.specs !== undefined)
       .map((t) => t.id),
   );
-  const companionAbilities = new Set<string>();
-  for (const a of Object.values<{ companion?: string }>(raw.abilities)) {
-    if (a.companion !== undefined) companionAbilities.add(a.companion);
+  const companionAbilities = new Map<string, string>();
+  for (const a of Object.values<{ id: string; companion?: string }>(raw.abilities)) {
+    if (a.companion !== undefined) companionAbilities.set(a.companion, a.id);
   }
   const ctx = { enemies, towersWithSpecs, companionAbilities, rules, mapIds: new Set(maps.keys()) };
   const history = emptyHistory();
@@ -87,8 +87,8 @@ export function validateCampaignMaps<K extends IdSpace>(
 export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
   readonly towersWithSpecs: ReadonlySet<string>;
-  /** Companions that have a slot-2 ability in the content. */
-  readonly companionAbilities: ReadonlySet<string>;
+  /** Each companion with a slot-2 ability in the content → that ability's id. */
+  readonly companionAbilities: ReadonlyMap<string, string>;
   readonly rules: ValidationRules;
   readonly mapIds: ReadonlySet<string>;
 }
@@ -134,8 +134,6 @@ function validateMap(
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
   validateBuilds(issues, def, grid, ctx, campaign?.index ?? null);
-  // TODO(T202): medals — `medals.challenge` on every campaign map, and medal conditions never
-  // reference medal-exempt groups.
 }
 
 // ── Geometry ─────────────────────────────────────────────────────────────────────────────────

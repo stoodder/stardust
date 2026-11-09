@@ -8,6 +8,7 @@ import { continueGame, loadGame, newGame, openSettings, startGame } from '../../
 import { continueSlot, deleteSave, rawSlotText, type SaveResult } from '../../app/save.ts';
 import { MuteButton } from '../hud/MuteButton.tsx';
 import { copyText } from './clipboard.ts';
+import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { ImportPanel } from './ImportPanel.tsx';
 import { SlotList } from './SlotList.tsx';
@@ -161,6 +162,16 @@ export function Title() {
     setConfirming(null);
   };
   const act = (r: SaveResult): void => setMessage(r.ok ? null : r.message);
+  // Esc (T212): a Delete confirm says Keep; a panel goes back to the main buttons.
+  useEscape(() => {
+    if (confirming !== null) {
+      setConfirming(null);
+      return true;
+    }
+    if (panel === 'main') return false;
+    open('main');
+    return true;
+  });
 
   return (
     <main

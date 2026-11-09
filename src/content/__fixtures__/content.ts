@@ -243,6 +243,14 @@ export const fxLayout = fx.defineMapLayout({
   towerUnlockWave: { fx_sprinkler: 2, fx_mortar: 2 },
   threatIntel: ['fast', 'shielded'],
   requiredCounters: [],
+  medals: {
+    challenge: {
+      id: 'fx_one_gun',
+      name: 'Gun Show',
+      description: 'Win with a gun on the field.',
+      condition: { towers: { tower: 'fx_gun' }, gte: 1 },
+    },
+  },
   companion: null,
   events: [
     { id: 'w02_radio', on: { wave: 2, phase: 'countdown' }, actions: [{ cue: 'fx_map_w02' }] },

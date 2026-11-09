@@ -1,7 +1,7 @@
 // Built-in policies (conventions.md § Balance sims): builds generated from a map rather than
 // authored. Each returns a plain CompiledBuild, so the executor runs it like any other.
 import type { CompiledBuild, CompiledBuildStep, CompiledMapDef } from '../content/compiled.ts';
-import type { IdSpace, LiveIds, PolicyId } from '../content/types.ts';
+import type { IdSpace, LiveIds, PolicyId, WaveTag } from '../content/types.ts';
 import { isBuildableTile } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
 
@@ -44,6 +44,18 @@ export function policyBuild<K extends IdSpace = LiveIds>(
     default:
       return assertNever(policy);
   }
+}
+
+/**
+ * `build` with a `holdFireWhile: tag` macro armed before W1 (assertion 16a): plain Hold Fire on
+ * every tower while units with that tag are on the field, as a player sparing them would.
+ */
+export function withHoldFireWhile<K extends IdSpace>(
+  build: CompiledBuild<K>,
+  tag: WaveTag,
+): CompiledBuild<K> {
+  const step: CompiledBuildStep<K> = { wave: 1, kind: 'holdFireWhile', tag };
+  return { ...build, steps: [step, ...build.steps] };
 }
 
 /**

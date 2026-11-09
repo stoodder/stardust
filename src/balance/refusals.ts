@@ -53,7 +53,7 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   objectives: 'T305',
   flagVariants: 'M3',
   companionPick: null,
-  holdFireRuns: 'T206a',
+  holdFireRuns: null,
   jamLimit: 'M3',
 });
 

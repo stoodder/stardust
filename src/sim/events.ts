@@ -9,6 +9,7 @@ import type {
   GridPos,
   IdSpace,
   LiveIds,
+  MedalKind,
   RouteId,
   SpriteId,
 } from '../content/types.ts';
@@ -24,8 +25,8 @@ export type DamageSource =
   | { readonly kind: 'ability'; readonly slot: 1 | 2 }
   | { readonly kind: 'ally'; readonly uid: number };
 
-/** The three medals every campaign map has (design/progression.md § 3). */
-export type MedalKind = 'victory' | 'perfectCore' | 'challenge';
+/** The three medals every campaign map has (design/progression.md § 3; content/types.ts). */
+export type { MedalKind };
 
 export type SimEvent<K extends IdSpace = LiveIds> =
   | {
@@ -131,8 +132,8 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly on: boolean;
     }
   /**
-   * Story-facing (T206a): `stats.ticksSinceFiredAtSkitterkin` crossed the threshold in
-   * content/rules.ts (the "not firing" bark, core-loop.md § 6.3). Once per run.
+   * Story-facing: `stats.ticksSinceFiredAtSkitterkin` reached NOT_FIRING_TICKS (sim/fireControl.ts;
+   * the "not firing" bark, core-loop.md § 6.3). Once per run.
    */
   | { readonly type: 'NotFiringAtSkitterkin' }
   | {

@@ -6,6 +6,7 @@ import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.
 import { rgbOf } from '../content/palettes/master.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
+import { tetherDir } from '../content/sprites/fx/link_tether.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
 import type { EnvPaletteId } from '../content/sprites/types.ts';
 import {
@@ -169,12 +170,12 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
   return card;
 }
 
-// A corner of A1M1 (story/campaign/act1.md § A1M1): S spawn, # path, o pad, C core, . decor.
+// A corner of an Act I map: S spawn, # path, o pad, ^ high ground, + power node, C core, . decor.
 // prettier-ignore
 const DIORAMA_MAP = [
   '....S....',
-  '....#.o..',
-  '..o.#.o..',
+  '....#.o+.',
+  '.^^.#.o..',
   '....####.',
   '...o...#o',
   '...o...#.',
@@ -191,6 +192,22 @@ const DIORAMA_GRID: GroundGrid = {
   rows: DIORAMA_MAP.length,
   tiles: DIORAMA_MAP.join('').split('').filter(isTileChar),
 };
+
+/**
+ * The head frame a tower of `tier` shows: from tier 2, the up-armored `<facing>_t2` frames where
+ * the head has them (`se` → `se_t2`, `se_fire` → `se_t2_fire`); idle heads keep their frame.
+ */
+function headFrame(
+  baked: ReadonlyMap<string, BakedSprite>,
+  id: SpriteId,
+  frame: string,
+  tier: number,
+): string {
+  if (tier < 2) return frame;
+  const [facing, ...rest] = frame.split('_');
+  const t2 = [facing, 't2', ...rest].join('_');
+  return baked.get(id)?.frameNames.includes(t2) === true ? t2 : frame;
+}
 
 type Placed = readonly [
   spriteId: SpriteId,
@@ -237,11 +254,15 @@ function diorama(
     }
   };
   // Ground and props as the game dresses them (render/views/groundTiles.ts, GroundView): the apron
-  // with its fence and the env's decor first, then the grid, each back to front.
+  // with its fence and the env's decor first, then the grid, each back to front. High-ground
+  // blocks stand in `world`, sorted with the props by their tile center.
   const objects: Placed[] = [];
+  const blocks: { id: SpriteId; frame: string; i: number; j: number }[] = [];
   const cell = (i: number, j: number, look: TileDressing): void => {
     const [sx, sy] = screen(i, j);
     draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
+    if (look.block !== undefined)
+      blocks.push({ id: look.block.sprite, frame: look.block.frame, i, j });
     const p = look.prop;
     if (p !== null) objects.push([p.sprite, p.frame, i + 0.5, j + 0.5, propVariant(p.sprite, env)]);
   };
@@ -253,33 +274,50 @@ function diorama(
   }
   // World objects sorted by ground y (tech-spec § Depth sorting).
   objects.push(
-    ['enemy.nibbler', 'walk_se_0', 4.5, 1.3],
-    ['enemy.nibbler', 'walk_se_1', 4.5, 2.2],
-    ['enemy.zoomer', 'walk_se_0', 5.6, 3.5],
+    ['enemy.nibbler', 'walk_sw_0', 4.5, 1.1],
+    ['enemy.brood_hauler', 'walk_sw_1', 4.5, 2.5],
+    ['enemy.zoomer', 'walk_se_0', 5.8, 3.5],
     ['enemy.chonk', 'walk_se_0', 7.5, 4.6],
-    ['enemy.nibbler', 'walk_sw_1', 6.4, 6.5],
+    ['enemy.nibbler', 'walk_sw_1', 4.6, 6.5],
+    // A burst sack, its young scurrying back up the road the way they came.
+    ['fx.sack_burst', 'f2', 6.1, 6.5],
+    ['enemy.hauler_young', 'walk_se_0', 6.8, 6.3],
+    ['enemy.hauler_young', 'walk_se_1', 7.2, 6.75],
+    // Bricks at his post beside the road.
+    ['ally.bricks', 'fire_nw_0', 8.5, 6.5],
   );
-  const towers: readonly [base: SpriteId, head: SpriteId, gx: number, gy: number, frame: string][] =
-    [
-      ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw'],
-      ['tower.thumper', 'tower.thumper_head', 6, 2, 'se'],
-      ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0'],
-      ['tower.rivet', 'tower.rivet_head', 8, 4, 'nw'],
-      ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne'],
-      ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire'],
-    ];
-  const all: (
-    | Placed
-    | { tower: SpriteId; headId: SpriteId; gx: number; gy: number; head: string; tier: number }
-  )[] = [
+  // [base, head, col, row, head frame, tier]; the Rivet on (2, 2) stands on high ground.
+  const towers: readonly [SpriteId, SpriteId, number, number, string, number][] = [
+    ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw', 1],
+    ['tower.thumper', 'tower.thumper_head', 6, 2, 'se', 2],
+    ['tower.rivet', 'tower.rivet_head', 2, 2, 'se', 2],
+    ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 3],
+    ['tower.rivet', 'tower.rivet_head', 8, 4, 'nw', 2],
+    ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne', 1],
+    ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire', 3],
+  ];
+  const raised = new Set(blocks.map((b) => `${b.i},${b.j}`));
+  type Tower = {
+    tower: SpriteId;
+    headId: SpriteId;
+    gx: number;
+    gy: number;
+    head: string;
+    tier: number;
+    z: number;
+  };
+  type Block = { block: SpriteId; frame: string; gx: number; gy: number };
+  const all: (Placed | Tower | Block)[] = [
     ...objects,
-    ...towers.map(([t, headId, i, j, head], n) => ({
+    ...blocks.map((b) => ({ block: b.id, frame: b.frame, gx: b.i + 0.5, gy: b.j + 0.5 })),
+    ...towers.map(([t, headId, i, j, head, tier]) => ({
       tower: t,
       headId,
       gx: i + 0.5,
       gy: j + 0.5,
-      head,
-      tier: 1 + (n % 3),
+      head: headFrame(baked, headId, head, tier),
+      tier,
+      z: raised.has(`${i},${j}`) ? 1 : 0,
     })),
   ];
   // Ground enemies stand on contact shadows (decal layer, under everything in `world`).
@@ -292,12 +330,22 @@ function diorama(
     draw(frameOf(s.sprite, s.frame, DEFAULT_VARIANT), sx, sy);
     ctx.globalAlpha = 1;
   }
-  const gxy = (o: (typeof all)[number]): number => ('tower' in o ? o.gx + o.gy : o[2] + o[3]);
-  for (const o of all.toSorted((a, b) => gxy(a) - gxy(b))) {
-    if ('tower' in o) {
+  // Sorted by footY plus the kind bias (render/depth.ts): blocks, props, enemies, towers.
+  const key = (o: (typeof all)[number]): number =>
+    'tower' in o
+      ? (o.gx + o.gy) * 8 + 0.3
+      : 'block' in o
+        ? (o.gx + o.gy) * 8 + 0.05
+        : (o[2] + o[3]) * 8 + (o[0].startsWith('prop.') ? 0.1 : 0.2);
+  for (const o of all.toSorted((a, b) => key(a) - key(b))) {
+    if ('block' in o) {
+      const [sx, sy] = screen(o.gx - 0.5, o.gy - 0.5);
+      draw(frameOf(o.block, o.frame, envVariant(env)), sx, sy);
+    } else if ('tower' in o) {
       const baseId = o.tower;
       const headId = o.headId;
-      const [sx, sy] = screen(o.gx, o.gy);
+      const [sx, gy] = screen(o.gx, o.gy);
+      const sy = gy - o.z * 8; // on high ground, the anchor draws one step up
       const base = frameOf(baseId, `t${o.tier}`, DEFAULT_VARIANT);
       draw(base, sx, sy, glowOf(baked, baseId, `t${o.tier}`));
       const def = SPRITES.find((d) => d.id === baseId);
@@ -326,6 +374,18 @@ function diorama(
   draw(frameOf('fx.orbital_reticle', 'march_0', DEFAULT_VARIANT), rx, ry);
   const [tx, ty] = screen(6.5, 2.0);
   draw(frameOf('projectile.rivet_tracer', 'e', DEFAULT_VARIANT), tx - 6, ty - 6);
+  // Link tethers over everything: Crossfire (Rivet + Thumper) and Sitting Ducks (Thumper +
+  // Sprinkler), each drawn from its left (or upper) tower's ground point.
+  for (const [link, a, b, phase] of [
+    ['crossfire', [6, 1], [6, 2], 0],
+    ['sitting_ducks', [3, 4], [3, 5], 2],
+  ] as const) {
+    const t = tetherDir(b[0] - a[0], b[1] - a[1]);
+    if (t === null) continue;
+    const from = t.fromB ? b : a;
+    const [lx, ly] = screen(from[0] + 0.5, from[1] + 0.5);
+    draw(frameOf('fx.link_tether', `${link}_${t.dir}_${phase}`, DEFAULT_VARIANT), lx, ly);
+  }
 
   const out = el('canvas');
   out.width = w * zoom;

@@ -13,11 +13,12 @@ import {
   MAX_WAVE_LOSS_PCT,
   noCounterLoseByWave,
   parBand,
+  SPARE_FLEEING_SLACK_PCT,
 } from './rules.ts';
 
 /**
- * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'companion:x', 'alt:x',
- * 'noCounter:x', 'guard:x').
+ * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
+ * 'holdFireWhile:quiet_wave', 'companion:x', 'alt:x', 'noCounter:x', 'guard:x').
  */
 export interface RunRequest {
   readonly build: string;
@@ -390,6 +391,8 @@ export function mapChecks<K extends IdSpace>(
     }
   }
 
+  checks.push(...freeChoiceChecks(map, few, band));
+
   const once: RunRequest = { build: 'par', seed: 1 };
   const again: RunRequest = { build: 'par', seed: 1, repeat: true };
   checks.push({
@@ -414,4 +417,69 @@ export function mapChecks<K extends IdSpace>(
     },
   });
   return checks;
+}
+
+/**
+ * #16, free choices stay free (D006): (a) on a map with a `quiet_wave` group, par with
+ * `holdFireWhile: 'quiet_wave'` wins inside the band, and every quiet-wave unit leaks (until the
+ * run-end flag rules exist, T206b, this stands in for `spared_quiet_wave = true`: a full leak
+ * meets any share threshold); (b) on a map with `fleeing` groups, the spareFleeing policy's margin
+ * is ≥ par's − SPARE_FLEEING_SLACK_PCT on the same seed.
+ */
+function freeChoiceChecks<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  few: readonly number[],
+  band: { readonly lo: number; readonly hi: number } | null,
+): CheckSpec[] {
+  const groups = map.waves.flatMap((w) => w.groups);
+  const out: CheckSpec[] = [];
+  if (groups.some((g) => g.tags.includes('quiet_wave'))) {
+    const leaked = (r: HeadlessResult): string =>
+      `${r.stats.tagLeaked.quiet_wave}/${r.stats.tagSpawned.quiet_wave}`;
+    out.push(
+      perRun(
+        '16',
+        '(a) par holding fire through the Quiet Wave wins in band, and the whole wave leaks',
+        'holdFireWhile:quiet_wave',
+        few,
+        (rec) => {
+          const r = rec.result;
+          if (r?.outcome !== 'won') return describeRun(rec);
+          if (band === null) return `act ${map.act} has no par band yet`;
+          if (rec.marginPct < band.lo || rec.marginPct > band.hi) {
+            return `margin ${fmtPct(rec.marginPct)} is outside the band ${band.lo}–${band.hi}`;
+          }
+          const { tagSpawned, tagLeaked } = r.stats;
+          return tagSpawned.quiet_wave > 0 && tagLeaked.quiet_wave === tagSpawned.quiet_wave
+            ? null
+            : `only ${leaked(r)} quiet-wave units leaked`;
+        },
+        (recs) =>
+          `${wonCount(recs)}, margins ${margins(recs)}, quiet wave leaked ${recs
+            .map((r) => (r.result === null ? '-' : leaked(r.result)))
+            .join(' / ')}`,
+      ),
+    );
+  }
+  if (groups.some((g) => g.tags.includes('fleeing'))) {
+    out.push(
+      perRun(
+        '16',
+        `(b) spareFleeing's margin ≥ par's − ${SPARE_FLEEING_SLACK_PCT}`,
+        'spareFleeing',
+        few,
+        (rec, get) => {
+          const par = get({ build: 'par', seed: rec.seed });
+          const floor = par.marginPct - SPARE_FLEEING_SLACK_PCT;
+          return rec.marginPct >= floor
+            ? null
+            : `margin ${fmtPct(rec.marginPct)} is below par's ${fmtPct(par.marginPct)} − ${SPARE_FLEEING_SLACK_PCT}`;
+        },
+        (recs, get) =>
+          `margins ${margins(recs)} vs par ${few.map((seed) => fmtPct(get({ build: 'par', seed }).marginPct)).join(' / ')}`,
+        seedRuns('par', few),
+      ),
+    );
+  }
+  return out;
 }

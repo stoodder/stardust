@@ -11,26 +11,36 @@
 //   upgrade and a spec needs tier 3 and an unlocked spec; ability steps have an ability to use
 //   (slot 2: a present companion or a pick);
 //   clear, interact, scriptInput, and holdFireWhile name things the map has.
-// - [no-counter-build]: `noCounterBuilds[c]` uses no tower or ability that answers `c`.
-// - [alt-builds]: every alt build answers every required counter; from A1M4, at least 2 alt
-//   builds, each sharing at most 2 tower types with the par loadout.
+// - [no-counter-build]: `noCounterBuilds[c]` carries no answer to `c` (counterAnswers.ts: the
+//   tiers and specs its towers reach, on this map's act and enemies, and the abilities it casts).
+// - [alt-builds]: every alt build carries an answer to every required counter; from A1M4, at
+//   least 2 alt builds, each sharing at most 2 tower types with the par loadout.
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
 //   build expectations name alt builds and at least one expectation, their minMarginPct is
 //   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar.
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
 // Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
-// under its flag variant (A3M5, M5); answer tiers and specs (T208).
+// under its flag variant (A3M5, M5).
 import {
   ALT_BUILD_MAX_SHARED_TOWERS,
   ALT_BUILDS_FROM_CAMPAIGN_INDEX,
+  COUNTER_CATEGORIES,
   MAX_LOADOUT,
   MAX_TIER_BEFORE_SPEC,
   MIN_ALT_BUILDS,
-  type CounterAnswers,
 } from './rules.ts';
 import { STEP_KEYS } from './compileBuilds.ts';
-import type { CounterId, GridPos, IdSpace, MapDef, ScriptedBuild } from './types.ts';
+import { answerScope, answersCarried, towersReached, type ReachStep } from './counterAnswers.ts';
+import type {
+  BuildStep,
+  CounterId,
+  EnemyDef,
+  GridPos,
+  IdSpace,
+  MapDef,
+  ScriptedBuild,
+} from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
 
@@ -66,11 +76,16 @@ export function validateBuilds(
   ];
   for (const [name, b] of builds) validateBuild(issues, def, grid, ctx, b, `${where}.${name}`);
 
-  // Counter builds (by category: maps.md § 6.1).
+  // Counter builds (by category: maps.md § 6.1), judged by what each build reaches.
   const answers = ctx.rules.counterAnswers;
+  const enemies = def.waves
+    .flatMap((w) => w.groups.map((g) => ctx.enemies.get(g.enemy)))
+    .filter((e): e is EnemyDef => e !== undefined);
+  const carried = (b: ScriptedBuild<IdSpace>, c: CounterId): string[] =>
+    answersCarried(answers[c], answerScope(c, def.act, enemies), reachedBy(b), castBy(def, ctx, b));
   for (const [c, b] of Object.entries(def.noCounterBuilds)) {
     if (b === undefined || !isCounter(c)) continue;
-    const hits = answersIn(def, b, answers[c]);
+    const hits = carried(b, c);
     if (hits.length > 0) {
       issues.add(
         'no-counter-build',
@@ -82,7 +97,7 @@ export function validateBuilds(
   const alts = Object.entries(def.altBuilds ?? {});
   for (const [n, b] of alts) {
     for (const c of def.requiredCounters) {
-      if (answersIn(def, b, answers[c]).length === 0) {
+      if (carried(b, c).length === 0) {
         issues.add(
           'alt-builds',
           `${where}.altBuilds.${n}`,
@@ -149,28 +164,46 @@ export function validateBuilds(
   // TODO(A3M5, M5): a build's technicianAbility is never in lockedAbilities under its variant.
 }
 
-const COUNTERS: ReadonlySet<string> = new Set<CounterId>([
-  'armor',
-  'shield',
-  'detection',
-  'air',
-  'burrowed',
-  'splash',
-  'jam',
-]);
+const COUNTERS: ReadonlySet<string> = new Set<string>(COUNTER_CATEGORIES);
 function isCounter(c: string): c is CounterId {
   return COUNTERS.has(c);
 }
 
-/** The answers to a category a build carries: its loadout towers and its ability. */
-function answersIn(
-  def: MapDef<IdSpace>,
-  b: ScriptedBuild<IdSpace>,
-  answers: CounterAnswers,
-): string[] {
-  const out = b.loadout.filter((t) => answers.towers.includes(t));
-  const ability = b.technicianAbility ?? def.referenceProfile.technicianAbility;
-  if (ability !== null && answers.abilities.includes(ability)) out.push(ability);
+/** A raw step as a ReachStep (null for steps that don't change towers or tiers). */
+function reachStep(s: BuildStep<IdSpace>): ReachStep | null {
+  if ('build' in s) return { op: 'build', tower: s.build, tile: keyOf(s.tile) };
+  if ('upgrade' in s) return { op: 'upgrade', tile: keyOf(s.upgrade) };
+  if ('specialize' in s) return { op: 'specialize', tile: keyOf(s.specialize), spec: s.spec };
+  if ('sell' in s) return { op: 'sell', tile: keyOf(s.sell) };
+  return null;
+}
+
+/** The towers a build reaches (counterAnswers.ts towersReached). */
+function reachedBy(b: ScriptedBuild<IdSpace>): ReturnType<typeof towersReached> {
+  const steps = b.steps.map(reachStep).filter((s): s is ReachStep => s !== null);
+  return towersReached(b.loadout, steps);
+}
+
+/**
+ * The abilities a build casts: slot 1's (the build's, else the profile's) and slot 2's (the
+ * map's companion, or the build's pick on a pick-list map), each only if a step uses its slot.
+ */
+function castBy(def: MapDef<IdSpace>, ctx: MapCtx, b: ScriptedBuild<IdSpace>): string[] {
+  const out: string[] = [];
+  const slots = new Set(b.steps.flatMap((s) => ('ability' in s ? [s.ability] : [])));
+  const technician = b.technicianAbility ?? def.referenceProfile.technicianAbility;
+  if (slots.has(1) && technician !== null) out.push(technician);
+  const c = def.companion;
+  const companion =
+    c === null
+      ? null
+      : 'pick' in c
+        ? (b.companion ?? c.pick[0] ?? null)
+        : c.state === 'present'
+          ? c.id
+          : null;
+  const companionAbility = companion === null ? undefined : ctx.companionAbilities.get(companion);
+  if (slots.has(2) && companionAbility !== undefined) out.push(companionAbility);
   return out;
 }
 

@@ -5,6 +5,7 @@ import { useState } from 'preact/hooks';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
 import { BASE_PANES, type BaseTab } from './BasePanes.tsx';
 import { Banks } from './Campaign.tsx';
+import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { campaign } from './state.ts';
 import './screens.css';
@@ -18,6 +19,11 @@ const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
 /** The base for the save in play. Arrow keys move between tabs (the WAI-ARIA tabs pattern). */
 export function Base() {
   const [tab, setTab] = useState<BaseTab>('rnd');
+  // Esc (T212) goes back to the Shift board, as its button does.
+  useEscape(() => {
+    toCampaign();
+    return true;
+  });
   const view = campaign.value;
   if (view === null) return null;
   const system = view.systems[tab];

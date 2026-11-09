@@ -6,6 +6,8 @@
 // juice: leaks, builds, upgrades, sells, deaths) are FxView's; the core's flash and low-integrity
 // glow are CoreView's. Until the first build, free pads pulse (onboarding, D026); from W2's
 // countdown until the first upgrade, built towers pulse (`deps.teachUpgrade`, D028).
+// The keyboard tile cursor (T126) is CursorView's; while it shows, the hover feedback follows it
+// instead of the pointer, and moving the mouse (or clicking) hides it.
 // The scene only reads sim state; every change goes through a command.
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
@@ -20,7 +22,9 @@ import {
 } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { BattleInteraction } from '../input/BattleInteraction.ts';
+import { applyIntent } from '../input/apply.ts';
 import { hoverLook, resolveClick, type TileFacts } from '../input/intents.ts';
+import { emptyTileFacts, fillTileFacts } from '../input/tileFacts.ts';
 import { gridToScreen, mapOrigin, pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import { createLayers } from '../layers.ts';
 import { prefersReducedMotion, pulseOn } from '../motion.ts';
@@ -28,6 +32,7 @@ import { VIEW_H, VIEW_W } from '../scale.ts';
 import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { CoreView } from '../views/CoreView.ts';
+import { CursorView } from '../views/CursorView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
@@ -81,6 +86,7 @@ export class BattleScene extends Phaser.Scene {
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
+  #cursor!: CursorView;
   /** Lobbed shells in flight, by uid → splash radius (tiles): their impact draws a burst and ring. */
   readonly #shells = new Map<number, number>();
   /** Whether a tower has been built this battle (the onboarding pulse stops). */
@@ -98,14 +104,8 @@ export class BattleScene extends Phaser.Scene {
   #px = Number.NaN;
   #py = Number.NaN;
   readonly #offs: (() => void)[] = [];
-  /** Scratch for the tile under the pointer, reused every frame. */
-  readonly #tile: { -readonly [K in keyof TileFacts]: TileFacts[K] } = {
-    index: -1,
-    col: -1,
-    row: -1,
-    buildable: false,
-    towerUid: 0,
-  };
+  /** Scratch for the tile under the pointer (or the keyboard cursor), reused every frame. */
+  readonly #tile = emptyTileFacts();
 
   /** `key` must be unique among live scenes (the app numbers successive battles). */
   constructor(deps: BattleSceneDeps, key: string = BATTLE_SCENE_KEY) {
@@ -140,6 +140,7 @@ export class BattleScene extends Phaser.Scene {
     this.#placement = new PlacementView(ctx);
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
+    this.#cursor = new CursorView(ctx);
     const teach: [number, number][] = [];
     map.tiles.forEach((t, i) => {
       if (isBuildableTile(t)) teach.push([i % map.cols, Math.floor(i / map.cols)]);
@@ -240,10 +241,13 @@ export class BattleScene extends Phaser.Scene {
 
     this.input.mouse?.disableContextMenu();
     this.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => {
+      // A real move hides the keyboard cursor (the mouse takes over the hover again).
+      if (p.x !== this.#px || p.y !== this.#py) interaction.hideCursor();
       this.#px = p.x;
       this.#py = p.y;
     });
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
+      interaction.hideCursor();
       this.#px = p.x;
       this.#py = p.y;
       this.#click(p.rightButtonDown() ? 'right' : 'left');
@@ -323,60 +327,27 @@ export class BattleScene extends Phaser.Scene {
     return null;
   }
 
-  /** Fills the tile scratch with the facts about the tile under the pointer. */
-  #pointerTile(): TileFacts {
-    const { sim } = this.#deps;
+  /**
+   * Fills the tile scratch with the facts about the tile under the pointer, or under the keyboard
+   * cursor while it shows (`keyboard`).
+   */
+  #pointerTile(keyboard = false): TileFacts {
+    const { sim, interaction } = this.#deps;
     const map = sim.map;
-    const t = this.#tile;
+    if (keyboard && interaction.cursor >= 0) {
+      return fillTileFacts(sim, interaction.cursor, this.#tile);
+    }
     // Every tile is drawn flat for now (no high-ground art yet), so picking uses no elevation.
     const index = Number.isNaN(this.#px)
       ? -1
       : pickTile(this.#px, this.#py, this.#origin, map.cols, map.rows);
-    t.index = index;
-    if (index < 0) {
-      t.col = -1;
-      t.row = -1;
-      t.buildable = false;
-      t.towerUid = 0;
-      return t;
-    }
-    t.col = index % map.cols;
-    t.row = (index - t.col) / map.cols;
-    t.buildable = isBuildableTile(map.tiles[index]!); // index < cols·rows
-    const slot = sim.state.towerAtTile[index] ?? -1;
-    t.towerUid = slot < 0 ? 0 : (sim.state.towers.items[slot]?.uid ?? 0);
-    return t;
+    return fillTileFacts(sim, index, this.#tile);
   }
 
   #click(button: 'left' | 'right'): void {
     const { interaction } = this.#deps;
     const intent = resolveClick(this.#pointerTile(), button, interaction.armed, interaction.aiming);
-    switch (intent.kind) {
-      case 'ability':
-        // One shot per aim; the sim re-validates (cooldown, target) and the HUD shows rejections.
-        this.#deps.issue({ type: 'ability', slot: intent.slot, target: intent.tile });
-        interaction.aimAbility(null);
-        return;
-      case 'none':
-        return;
-      case 'selectTower':
-        interaction.selectTower(intent.uid);
-        return;
-      case 'build':
-        // The slot stays armed; app/hud.ts disarms it once another can't be afforded.
-        this.#deps.issue({ type: 'build', tile: intent.tile, tower: intent.tower });
-        return;
-      case 'deselect':
-        interaction.selectTower(0);
-        return;
-      case 'cantBuild':
-        interaction.selectTower(0);
-        this.#deps.onCantBuild();
-        return;
-      case 'cancel':
-        this.cancel();
-        return;
-    }
+    applyIntent(intent, interaction, this.#deps);
   }
 
   /** The armed tower's definition, if it's in this sim's content. */
@@ -456,7 +427,8 @@ export class BattleScene extends Phaser.Scene {
 
   #syncFeedback(selectedTower: LiveTower | null): void {
     const placement = this.#placement;
-    const tile = this.#pointerTile();
+    const tile = this.#pointerTile(true);
+    this.#cursor.set(this.#deps.interaction.cursor, this.#deps.sim.map.cols);
     const armed = this.#armedDef();
     const look = hoverLook(
       tile,

@@ -1,6 +1,6 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared; the handlers that aren't live yet reject `notImplemented` and name
-// their task (specialize.ts, fireControl.ts). clear, interact, and scriptInput arrive in M3.
+// their task (specialize.ts). clear, interact, and scriptInput arrive in M3.
 import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 

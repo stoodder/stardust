@@ -19,7 +19,9 @@ import {
   rejectText,
   briefingLines,
   countdownSeconds,
+  cursorText,
   selectedView,
+  towerPoints,
   staysArmed,
   UPGRADE_TEACH_WAVE,
   upgradeHintShows,
@@ -91,6 +93,27 @@ describe('hud view models', () => {
       sellValue: 126,
       fullRefund: false,
     });
+  });
+
+  it('announces what the keyboard cursor is on, and what Enter does there (T126)', () => {
+    const sim = devSim();
+    const at = (c: number, r: number): number => r * sim.map.cols + c;
+    expect(cursorText(sim, -1, null, null)).toBeNull();
+    expect(cursorText(sim, at(3, 1), null, null)).toBe('Pad, column 4, row 2, empty.');
+    expect(cursorText(sim, at(3, 1), 'dev_rivet', null)).toBe(
+      'Pad, column 4, row 2, empty. Enter builds Rivet.',
+    );
+    expect(cursorText(sim, at(1, 0), 'dev_rivet', null)).toBe('Path, column 2, row 1.');
+    expect(cursorText(sim, at(1, 0), null, 'Orbital Strike')).toBe(
+      'Path, column 2, row 1. Enter fires Orbital Strike here.',
+    );
+    sim.enqueue({ type: 'build', tile: [3, 1], tower: 'dev_rivet' });
+    sim.applyPending();
+    expect(cursorText(sim, at(3, 1), 'dev_rivet', null)).toBe(
+      'Rivet tier 1, column 4, row 2. Enter selects it.',
+    );
+    const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
+    expect(towerPoints(sim, origin)).toHaveLength(1);
   });
 
   it('splits a static briefing into lines with their speakers', () => {

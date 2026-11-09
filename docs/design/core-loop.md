@@ -94,6 +94,7 @@ Every attacking tower has a targeting priority the player can change at any time
 
 The player can order any tower, or all towers at once, to **hold fire**. A holding tower keeps its auras and links but does not attack. Commander abilities still fire if the player uses them. **Rule:** Hold Fire must always be available, because the story depends on it: the player must be able to *choose* not to shoot.
 
+- **One tower or all.** A tower's panel toggle holds that tower. The HUD's Hold Fire (all) toggle is a master switch: on, it holds every tower, and towers built while it's on start holding; off, it releases every tower, including ones held one by one. A released tower can fire at once (its reload kept running while it held).
 - **Taught in A1M3** by Gerald the mail drone, who flies along the path as a **neutral unit**: towers that aren't holding fire target him like an enemy (wasting their shots while real pests slip by), he takes no damage (shots plink off), and each hit plays a QUILL bark ("Do NOT shoot Gerald"). The HUD's Hold Fire (all) button pulses until the player uses it. Gerald never leaks, pays nothing, and can't make the map lost. He flies the same way once more in A3M4.
 - **Story tracking.** The sim records per run: total ticks with any tower holding fire, the ticks since any tower last fired at a Skitterkin while one was in range of a tower (for the "not firing" bark, §6.3), and, for every **wave tag** ([enemies.md §7](enemies.md#7-wave-design-rules)), how many tagged units spawned, leaked, and were killed by the player.
 - **C1, the Quiet Wave (A1M5), is tracked silently.** The flag `spared_quiet_wave` is set at map end if **at least 75%** of the `quiet_wave` units leaked (tuning value; the share, not the count, so it survives wave-size tuning). Nothing on screen acknowledges it in A1M5 except Bricks's line and Sterling's story-only memo and results stamp ([../story/bible.md §9](../story/bible.md#c1-the-quiet-wave-a1m5-implicit)). **Rules:** (1) the map must be winnable on Standard by the par build even if every Quiet Wave unit leaks, and the harness's Hold Fire variant must end with `spared_quiet_wave = true` ([maps.md §6.4](maps.md#64-balance-harness)); (2) Quiet Wave leaks never cost a medal (medal exemption below); (3) the wave's integrity cost is small (≤ 2, [enemies.md §5.1](enemies.md#51-skitterkin-body-organic)).
@@ -106,7 +107,7 @@ The player can order any tower, or all towers at once, to **hold fire**. A holdi
 
 From **A2M1**, when the first fleeing Skitterkin appear, the player can tell towers to **spare runners**: a toggle in each attacking tower's panel, plus a global HUD toggle (hotkey **Alt+H**) that sets it on every tower.
 
-- **Rule:** while it is on, a tower never **picks** a `fleeing`-tagged unit or a `youngling` unit as its primary target. It takes the best other target by its priority (§2.6), or waits if there is none. Its attacks are otherwise unchanged, so splash, chains, and multi-target hits can still catch those units. Abilities are unaffected.
+- **Rule:** while it is on, a tower never **picks** a `fleeing`-tagged unit or a `youngling` unit as its primary target. It takes the best other target by its priority (§2.6), or waits if there is none. Its attacks are otherwise unchanged, so splash, chains, and multi-target hits can still catch those units. A pulse tower, which picks no target, waits while only spared units are in range, and still catches them when it pulses for another unit. Abilities are unaffected. The global toggle works like Hold Fire's: towers built while it's on start with it on.
 - **Why (rule):** sparing must cost nothing in play, not only in the leak and medal rules. The balance harness proves it: the `spareFleeing` policy (the par build with the filter on for every tower) must end with a margin ≥ par margin − 5 ([maps.md §6.4](maps.md#64-balance-harness)). Fleeing units pay a bounty of only 1 ([enemies.md § Fleeing Skitterkin](enemies.md#fleeing-skitterkin)), so the filter gives up almost nothing.
 - **Plain Hold Fire is unchanged.** It stops all fire, and it is still the only tool for C1 in A1M5, where the filter doesn't exist yet. The filter is taught in A2M1 by one short line in voice ([../story/campaign/act2.md § A2M1](../story/campaign/act2.md#a2m1--rig-nine)).
 - The filter is a sim command (`spareRunners`, separate from Hold Fire), so it is in the command log and the harness can set it ([../tech/architecture.md § Commands](../tech/architecture.md#commands-input-into-the-sim)).
@@ -204,17 +205,21 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 
 | Action | Mouse | Key |
 |---|---|---|
-| Build | Click one of the 4 **build slots** in the HUD's bottom-right corner (only loadout towers, with costs), then click a buildable tile; a placement ghost and range ring follow the cursor ([../art/art-direction.md §9](../art/art-direction.md#9-ui-style)) | 1–4 selects a build slot, then click a tile |
-| Upgrade / specialize / sell / retarget | Click a tower to open its panel | U upgrade, S sell, T cycle targeting |
+| Build | Click one of the 4 **build slots** in the HUD's bottom-right corner (only loadout towers, with costs), then click a buildable tile; a placement ghost and range ring follow the cursor ([../art/art-direction.md §9](../art/art-direction.md#9-ui-style)) | 1–4 selects a build slot, then the arrows and Enter (the tile cursor, below) |
+| Point at a tile | Move the mouse | Arrows move the **tile cursor**; Enter acts there as a click would |
+| Upgrade / specialize / sell / retarget | Click a tower to open its panel | Enter on a tower selects it; U upgrade, S sell, T cycle targeting |
 | Call wave early | Click an incoming flag | W |
 | Abilities | Click the ability button, then the target | Q (slot 1), E (slot 2) |
 | Pause / speed | HUD buttons | Space pause, F toggle 1x/2x |
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |
 | Spare runners (from A2M1, §2.7) | Tower panel toggle (one tower) or HUD button (all) | Alt+H (all) |
-| Cancel | Right-click | Esc |
+| Cancel | Right-click | Esc (with nothing to cancel, it hides the tile cursor) |
+| Back out of a menu (Settings, a Title panel, the Base) | Its Back button | Esc |
 | Mute sound (any screen) | The speaker button, top right | M |
 
 **The armed-tower rule.** A battle starts with nothing armed. A build slot (click, or 1–4) arms its tower, and pressing it again disarms. A locked slot doesn't arm and says when it ships ("Thumper ships at wave 3"); an unaffordable one says "Not enough credits". With a tower armed, clicking a free pad builds it, and the slot **stays armed while another copy is affordable**, so several can go down in a row; clicking any other tile says "Can't build there" and keeps the slot armed. Selecting a tower, aiming an ability, Esc, or right-click disarms. Until the first build, slot 1 and the free pads pulse to show where to start.
+
+**The tile cursor (keyboard-only play).** The first arrow key shows a cursor on the playfield (on the selected tower, else where it was last, else on the pad nearest the map's middle), and each arrow moves it to the nearest pad or tower in that direction on screen; while an ability is aimed it moves over every tile instead, so a strike can land on the road. Enter does what a click on that tile would: build the armed tower on a free pad, select a tower, or fire the aimed ability. The ghost, range ring, and reticle follow the cursor, and a screen reader hears the tile and what stands on it. Moving the mouse hides it. The exact rule is in [architecture.md § Rendering](../tech/architecture.md#rendering) (*Input*).
 
 Every control is a hit target of at least **16×16 game px** (32×32 screen px at the 2× scale) so touch support can come later (D001). Key remapping is a backlog item.
 

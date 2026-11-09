@@ -14,8 +14,13 @@
 //   wave has started), or `afterTicks` into their wave; then for the slot's cooldown.
 // - Wave 1 starts once the setup's affordable steps are in. `callEarly` calls each later wave
 //   the moment its countdown starts, after that phase's affordable steps.
+// - `holdFire` and `spareRunners` steps address a tower by tile (an error if none stands there)
+//   or `'all'`. The `holdFireWhile: <tag>` macro arms a watcher when it's reached: from then on,
+//   it issues plain `holdFire 'all'` on once a unit with that tag is alive, and off once every
+//   such unit the map spawns has spawned and none is left alive (conventions.md § Balance sims).
+//   It's what a player does by hand, so the run stays a plain command log.
 import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
-import type { GridPos, IdSpace, LiveIds } from '../content/types.ts';
+import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
 import type { SimEvent } from './events.ts';
@@ -23,15 +28,19 @@ import { tileIndex } from './grid.ts';
 import { createRunTracker, type RunSummary } from './headlessTracker.ts';
 import { assertNever } from '../shared/types.ts';
 import { createSim, type Sim } from './sim.ts';
+import type { MedalStatus } from './state.ts';
 
 export type { RunSummary, TowerSummary, WaveSummary } from './headlessTracker.ts';
 
-/** Step kinds the M1 sim has commands for. The rest are refused, not ignored (D013). */
+/** Step kinds the sim has commands for. The rest are refused, not ignored (D013). */
 const SUPPORTED_STEPS: ReadonlySet<CompiledBuildStep['kind']> = new Set([
   'build',
   'upgrade',
   'sell',
   'targeting',
+  'holdFire',
+  'spareRunners',
+  'holdFireWhile',
   'ability',
   'callWave',
 ]);
@@ -87,6 +96,8 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
   const waveCalls: number[] = [];
   const state = sim.state;
   let next = 0;
+  /** Armed holdFireWhile macros: the tag, how many such units the map spawns, and its record. */
+  const watchers: { tag: WaveTag; total: number; holding: boolean; rec: StepRecord }[] = [];
   /** The build phase (countdownWave) already called early, so each is called once. */
   let calledPhase = 0;
 
@@ -171,6 +182,24 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
             : { type: 'ability', slot: s.slot, target: s.target };
         return finish(apply(cmd), s.when !== 'asap' && state.tick > due);
       }
+      case 'holdFire':
+      case 'spareRunners': {
+        let target: number | 'all' = 'all';
+        if (s.target !== 'all') {
+          const t = towerAt(s.target);
+          if (t === null) return finish('noSuchTower', lateForPhase);
+          target = t.uid;
+        }
+        return finish(apply({ type: s.kind, target, on: s.on }), lateForPhase);
+      }
+      case 'holdFireWhile': {
+        const total = sim.map.waves.reduce(
+          (n, w) => n + w.groups.reduce((m, g) => m + (g.tags.includes(s.tag) ? g.count : 0), 0),
+          0,
+        );
+        watchers.push({ tag: s.tag, total, holding: false, rec });
+        return finish(null, false);
+      }
       case 'callWave': {
         // A call for a wave that already started has nothing left to do.
         if (lateForPhase) return finish(null, true);
@@ -179,16 +208,38 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
         return finish(apply({ type: 'callWave' }), false);
       }
       case 'specialize':
-      case 'holdFire':
-      case 'spareRunners':
       case 'clear':
       case 'interact':
       case 'scriptInput':
-      case 'holdFireWhile':
         // assertRunnableBuild refused these up front.
         throw new RangeError(`unsupported step kind '${s.kind}'`);
       default:
         return assertNever(s);
+    }
+  };
+
+  /** Whether a live enemy carries `tag`. */
+  const tagAlive = (tag: WaveTag): boolean => {
+    const enemies = state.enemies;
+    for (let i = 0; i < enemies.used; i++) {
+      const e = enemies.items[i]!; // i < used
+      if (e.alive && e.tags.includes(tag)) return true;
+    }
+    return false;
+  };
+
+  /** Runs the armed holdFireWhile macros; a rejected toggle is recorded on the macro's step. */
+  const watch = (): void => {
+    for (const w of watchers) {
+      if (w.holding) {
+        if (state.stats.tagSpawned[w.tag] < w.total || tagAlive(w.tag)) continue;
+        w.holding = false;
+        w.total = -1; // done: never again
+        w.rec.error ??= apply({ type: 'holdFire', target: 'all', on: false });
+      } else if (w.total > 0 && tagAlive(w.tag)) {
+        w.holding = true;
+        w.rec.error ??= apply({ type: 'holdFire', target: 'all', on: true });
+      }
     }
   };
 
@@ -197,6 +248,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
     waveCalls,
     beforeTick() {
       if (state.outcome !== 'playing') return;
+      watch();
       while (next < build.steps.length) {
         const s = build.steps[next]!; // next < length
         if (state.schedule.countdownWave < s.wave) break;
@@ -230,6 +282,8 @@ export interface HeadlessResult extends RunSummary {
   readonly steps: readonly StepRecord[];
   readonly waveCalls: readonly number[];
   readonly commandCount: number;
+  /** Each medal's final standing (`state.medals`; sim/medals.ts). */
+  readonly medals: Readonly<Record<MedalKind, MedalStatus>>;
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -267,5 +321,6 @@ export function runHeadless<K extends IdSpace = LiveIds>(
     steps: exec.steps,
     waveCalls: exec.waveCalls,
     commandCount: sim.state.commandLog.length,
+    medals: { ...sim.state.medals },
   };
 }

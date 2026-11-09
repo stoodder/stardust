@@ -384,6 +384,8 @@ function checkCondition<K extends IdSpace>(
 ): void {
   if ('towers' in c && c.towers.tower !== undefined) {
     checkId(ctx, refs.towers, c.towers.tower, `${where}.towers`, 'tower');
+  } else if ('passedMarker' in c && c.passedMarker.enemy !== undefined) {
+    checkId(ctx, refs.enemies, c.passedMarker.enemy, `${where}.passedMarker`, 'enemy');
   } else if ('all' in c) {
     for (const [i, s] of c.all.entries()) checkCondition(ctx, refs, s, `${where}.all[${i}]`);
   } else if ('any' in c) {

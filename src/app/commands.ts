@@ -4,8 +4,12 @@
 // build slot, the aimed ability) go to the battle's BattleInteraction, which the scene and the HUD
 // both read.
 import type { IdSpace, TargetPriority } from '../content/types.ts';
+import { applyIntent } from '../render/input/apply.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
-import type { Command } from '../sim/index.ts';
+import { cursorStart, cursorStep, type CursorDir } from '../render/input/cursor.ts';
+import { resolveClick } from '../render/input/intents.ts';
+import { emptyTileFacts, fillTileFacts } from '../render/input/tileFacts.ts';
+import { isBuildableTile, type Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import { lockedText, rejectText, showNotice } from './hud.ts';
@@ -155,7 +159,83 @@ export function dismissBriefing(): void {
   hud.briefing.value = null;
 }
 
-/** Esc / right-click: drops the selection, disarms the build slot, and stops aiming. */
+/**
+ * Esc / right-click: drops the selection, disarms the build slot, and stops aiming. With none of
+ * those to drop, Esc hides the keyboard cursor (it remembers its tile).
+ */
 export function cancel(): void {
-  target?.cancel();
+  if (target === null) return;
+  const i = target.interaction;
+  if (i.selectedTower === 0 && i.armed === null && i.aiming === null) i.hideCursor();
+  else target.cancel();
+}
+
+/**
+ * The tiles the keyboard cursor lands on: every tile while an ability is aimed (a strike lands
+ * on paths), else the buildable tiles (pads, high ground, power nodes, so every tower too).
+ */
+function cursorTargets(t: CommandTarget): (index: number) => boolean {
+  const tiles = t.host.sim.map.tiles;
+  if (t.interaction.aiming !== null) return () => true;
+  return (i) => {
+    const tile = tiles[i];
+    return tile !== undefined && isBuildableTile(tile);
+  };
+}
+
+/** The tile index of the tower `uid`, or −1. */
+function towerTile(t: CommandTarget, uid: number): number {
+  if (uid === 0) return -1;
+  const { sim } = t.host;
+  const pool = sim.state.towers;
+  for (let i = 0; i < pool.used; i++) {
+    const tw = pool.items[i]!; // i < used ≤ items.length
+    if (tw.alive && tw.uid === uid) return tw.row * sim.map.cols + tw.col;
+  }
+  return -1;
+}
+
+/**
+ * An arrow key (T126): the first press shows the keyboard cursor (on the selected tower, else on
+ * its last tile, else on the target nearest the map's middle); later presses move it to the
+ * nearest target that way (render/input/cursor.ts has the rule).
+ */
+export function moveCursor(dir: CursorDir): void {
+  if (target === null) return;
+  const { interaction } = target;
+  const map = target.host.sim.map;
+  const isTarget = cursorTargets(target);
+  if (interaction.cursor < 0) {
+    const sel = towerTile(target, interaction.selectedTower);
+    const at = cursorStart(map.cols, map.rows, sel >= 0 ? sel : interaction.cursorLast, isTarget);
+    if (at >= 0) interaction.setCursor(at);
+    return;
+  }
+  const from = interaction.cursor;
+  const move = cursorStep(
+    map.cols,
+    map.cols * map.rows,
+    from,
+    dir,
+    isTarget,
+    interaction.cursorNav,
+  );
+  interaction.setCursor(move.index, { axis: move.axis, anchor: move.anchor });
+}
+
+const cursorFacts = emptyTileFacts();
+
+/**
+ * Enter on the playfield (T126): acts on the cursor's tile as a click would (fires an aimed
+ * ability there, selects a tower, builds the armed tower on a free pad). No-op while it's hidden.
+ */
+export function pressCursor(): void {
+  if (target === null) return;
+  const { host, interaction } = target;
+  if (interaction.cursor < 0) return;
+  const facts = fillTileFacts(host.sim, interaction.cursor, cursorFacts);
+  applyIntent(resolveClick(facts, 'left', interaction.armed, interaction.aiming), interaction, {
+    issue,
+    onCantBuild: () => showNotice(rejectText('notBuildable') ?? ''),
+  });
 }

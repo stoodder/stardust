@@ -411,10 +411,11 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly threatIntel: readonly Trait[];
   /** At most 3; each backed by a noCounterBuild that must lose. */
   readonly requiredCounters: readonly CounterId[];
-  /** Required on campaign maps from T202; M1 maps have none. */
-  readonly medals?: {
-    readonly challenge: { readonly id: MedalId; readonly condition: ConditionDef<K> };
-  };
+  /**
+   * The map's Challenge medal (Victory and Perfect Core are every map's; design/progression.md
+   * § 3). Required on campaign maps (validateMedals.ts).
+   */
+  readonly medals?: { readonly challenge: ChallengeMedalDef<K> };
   readonly objectives?: readonly {
     readonly id: string;
     readonly condition: ConditionDef<K>;
@@ -556,6 +557,8 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly rebaseline?: boolean;
   /** Story-flag values the harness runs par under, one run each. Per-value build overrides arrive with A3M5. */
   readonly flagVariants?: Readonly<Partial<Record<ScriptFlagId, readonly FlagValue[]>>>;
+  /** Medals the par build must earn on every seed (the harness's `medals` check; default none). */
+  readonly parMedals?: readonly MedalKind[];
 }
 
 export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>
@@ -565,13 +568,19 @@ export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>
 
 // ── Conditions and map scripts (story-runtime.md § Map scripts) ───────────────────────────────
 
-/** Run stats a condition can read. More arrive with medals (T202). */
+/** Run stats a condition can read: run counters, so they only ever grow during a run. */
 export type RunStat = 'integrityLost' | 'towersBuilt' | 'creditsSpent' | 'abilityUses';
 
-/** Medal and objective conditions: one grammar, evaluated by the sim over run state. */
+/**
+ * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
+ * (sim/conditions.ts; story-runtime.md § Conditions). State atoms (`towers`, `linkActive`,
+ * `tagRatio`) are judged when the condition is evaluated (a medal's at the moment of victory);
+ * run atoms (`stat`, `passedMarker`) accumulate over the whole run; `flag` is fixed for the run.
+ */
 export type ConditionDef<K extends IdSpace = LiveIds> =
   | { readonly stat: RunStat; readonly gte?: number; readonly lte?: number }
   | {
+      /** Live towers of that tower (or faction; both optional, all towers if neither). */
       readonly towers: { readonly tower?: K['tower']; readonly faction?: TowerFaction };
       readonly gte?: number;
       readonly lte?: number;
@@ -584,10 +593,32 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
         readonly gte: number;
       };
     }
+  | {
+      /**
+       * True once a unit of `enemy` (any enemy if omitted) has gone past `marker` this run: its
+       * route distance passed the route point closest to the marker. Medal-exempt units never
+       * count (design/core-loop.md § 2.7).
+       */
+      readonly passedMarker: { readonly marker: MarkerId; readonly enemy?: K['enemy'] };
+    }
   | { readonly flag: ScriptFlagId; readonly eq: FlagValue }
   | { readonly all: readonly ConditionDef<K>[] }
   | { readonly any: readonly ConditionDef<K>[] }
   | { readonly not: ConditionDef<K> };
+
+/** The three medals every campaign map has (design/progression.md § 3). */
+export type MedalKind = 'victory' | 'perfectCore' | 'challenge';
+
+/** A map's Challenge medal: its save id, what the briefing shows, and its condition. */
+export interface ChallengeMedalDef<K extends IdSpace = LiveIds> {
+  /** The save id (snake_case; never `victory`, `perfect_core`, or `challenge`). */
+  readonly id: MedalId;
+  /** The medal's name, as the briefing and results show it ("Aim for the Sack!"). */
+  readonly name: string;
+  /** One line saying what earns it ("No Brood Hauler gets past the pump station."). */
+  readonly description: string;
+  readonly condition: ConditionDef<K>;
+}
 
 export interface ScriptedEvent<K extends IdSpace = LiveIds> {
   readonly id: string;

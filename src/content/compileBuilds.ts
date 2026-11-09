@@ -48,6 +48,7 @@ export function compileBuilds<K extends IdSpace>(
     marginBand: def.marginBand ?? null,
     rebaseline: def.rebaseline ?? false,
     flagVariants: { ...def.flagVariants },
+    parMedals: def.parMedals ?? [],
   };
 }
 

@@ -5,7 +5,7 @@
 // Everglow post plate with a hazard-striped rim, so he reads as a person at a station, never as a
 // tower (no plinth block, no chevrons, no teal sensor).
 import { defineSprite } from '../defineSprite.ts';
-import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
+import { disc, grid, line, plot, rows, type CharGrid } from '../helpers.ts';
 
 const W = 28;
 const H = 30;
@@ -24,7 +24,7 @@ function post(g: CharGrid): void {
     for (let x = CX - 9; x <= CX + 9; x++) {
       const top = Math.hypot((x + 0.5 - CX) / 8, (y + 0.5 - CY + 1) / 3.2) <= 1;
       const side = Math.hypot((x + 0.5 - CX) / 8, (y + 0.5 - CY) / 3.2) <= 1;
-      if (top) plot(g, x, y, (x + y) % 5 === 0 ? '2' : '3');
+      if (top) plot(g, x, y, (x + y) % 5 === 0 ? '2' : (x + 2 * y) % 3 === 0 ? '3' : '4');
       else if (side) plot(g, x, y, Math.floor((x + 40) / 2) % 2 === 0 ? 'c' : '0');
     }
   }
@@ -35,11 +35,12 @@ function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean):
   const b = breath; // shoulders and head rise 1 px on the in-breath
   // Legs in fatigues, planted wide; boots.
   for (let y = 19; y <= 24; y++) {
-    for (const [x0, x1] of [
+    const legs: readonly (readonly [number, number])[] = [
       [8, 10],
       [13, 15],
-    ] as const) {
-      for (let x = x0; x <= x1; x++) plot(g, x, y, y >= 23 ? 'I' : x === x0 ? 'N' : 'M');
+    ];
+    for (const [x0, x1] of legs) {
+      for (let x = x0; x <= x1; x++) plot(g, x, y, y >= 23 ? 'I' : x === x1 ? 'M' : 'N');
     }
   }
   // Torso: the broad jacket, shoulders wider than the waist, lit left, with a darker hem.
@@ -47,7 +48,7 @@ function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean):
     const r = y - (10 - b);
     const inset = r === 0 ? 1 : r <= 4 ? 0 : r <= 7 ? 1 : 2;
     for (let x = 5 + inset; x <= 18 - inset; x++) {
-      const ch = y === 19 ? 'I' : x <= 7 + inset ? 'L' : x <= 13 ? 'K' : 'J';
+      const ch = y === 19 ? 'O' : x <= 7 + inset ? 'L' : x <= 13 ? 'K' : 'J';
       plot(g, x, y, ch);
     }
   }
@@ -95,7 +96,7 @@ function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean):
   const kick = fire ? -1 : 0;
   const dir = facing === 'se' ? 1 : -1;
   const x0 = (facing === 'se' ? 13 : 11) + kick;
-  const y0 = (facing === 'se' ? 7 : 14) - b + (fire ? -dir * 0 : 0);
+  const y0 = (facing === 'se' ? 7 : 14) - b;
   const x1 = (facing === 'se' ? 23 : 21) + kick;
   const y1 = y0 + dir * 5;
   const tube: CharGrid = grid(W, H);
@@ -195,9 +196,9 @@ export const allyBricks = defineSprite({
   glow: { slots: ['a4', 'hi'], radius: 1 },
   // prettier-ignore
   legend: {
-    A: 'skin.c.1', B: 'skin.c.2', C: 'skin.c.3', D: 'skin.c.4', E: 'steel.2',
-    I: 'grime.1', J: 'grime.2', K: 'grime.3', L: 'grime.4',
-    M: 'teal.1', N: 'teal.2', Q: 'pink.3', R: 'steel.3',
+    A: 'skin.c.2', B: 'skin.c.3', C: 'skin.c.4', D: 'skin.b.4', E: 'steel.3',
+    I: 'grime.2', J: 'grime.3', K: 'grime.4', L: 'orange.4', O: 'grime.3',
+    M: 'teal.2', N: 'teal.3', Q: 'pink.3', R: 'steel.3',
   },
   frames: {
     idle_se_0: bricks('se', 0, false),
