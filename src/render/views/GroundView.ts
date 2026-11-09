@@ -1,7 +1,8 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
-// front: by i + j, then i; the power node's pulse is the one animated tile), and what stands on
-// tiles depth-sorted in `world`: high-ground blocks (raised one step, `highGround` bias) and props
-// (core, fence, decor). Drawn once per map. The apron lies outside the grid, so picking never
+// front: by i + j, then i; the power node's pulse is the one animated tile; the road's grass
+// verge overlays its tile), and what stands on tiles depth-sorted in `world`: high-ground blocks
+// (raised one step, `highGround` bias) and props (core, fence, decor, and the map's decor
+// markers). Drawn once per map. The apron lies outside the grid, so picking never
 // reaches it.
 import * as Phaser from 'phaser';
 import { worldDepth } from '../depth.ts';
@@ -46,6 +47,12 @@ function drawCell(
     const tile = new Phaser.GameObjects.Sprite(scene, pos.x, pos.y, f.texture, f.frame);
     tile.setOrigin(0, 0).play(sprites.anim(look.ground.sprite, look.ground.anim, ev));
     layers.ground.add(tile);
+  }
+  for (const frame of look.verge ?? []) {
+    const vf = sprites.frame('tile.verge', frame, ev);
+    layers.ground.add(
+      new Phaser.GameObjects.Image(scene, pos.x, pos.y, vf.texture, vf.frame).setOrigin(0, 0),
+    );
   }
   if (look.block !== undefined) {
     // The block's frame anchor is the footprint's top vertex on the ground plane; it sorts by the

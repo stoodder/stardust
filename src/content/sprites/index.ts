@@ -49,12 +49,14 @@ import { tilePad } from './tiles/pad.ts';
 import { tileHighGround } from './tiles/high_ground.ts';
 import { tilePowerNode } from './tiles/power_node.ts';
 import { tileSpawn } from './tiles/spawn.ts';
+import { tileVerge } from './tiles/verge.ts';
 import { towerRivet, towerRivetHead } from './towers/rivet.ts';
 import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
 
 export const SPRITES = [
   tileGrass,
+  tileVerge,
   tilePath,
   tilePad,
   tileHighGround,

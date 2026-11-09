@@ -183,6 +183,19 @@ function Payroll({ rewards, won }: { rewards: RunRewards; won: boolean }) {
           <Amount n={rewards.stardust.amount} currency="stardust" />
         </li>
       </ul>
+      {rewards.stardustNote !== null && (
+        <p class="sd-results-pay-aside">{silkText(rewards.stardustNote)}</p>
+      )}
+      {rewards.issued.length > 0 && (
+        <p class="sd-results-pay-aside sd-results-issued">
+          Issued for next shift: {silkText(rewards.issued.join(', '))}
+        </p>
+      )}
+      {rewards.saveNotice !== null && (
+        <p class="sd-results-save-notice" role="alert">
+          {silkText(rewards.saveNotice)}
+        </p>
+      )}
       {won && (
         <ul aria-label="Medals">
           {rewards.medals.map((m) => (

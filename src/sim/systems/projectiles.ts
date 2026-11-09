@@ -74,7 +74,8 @@ function scatterBomblets(state: SimState, shell: Projectile): void {
     p.targetY = shell.targetY + dy * b.scatterTiles;
     p.flightTicks = b.flightTicks;
     p.ticksLeft = b.flightTicks > 1 ? b.flightTicks - 1 : 0;
-    const t = 1 - p.ticksLeft / p.flightTicks;
+    // compile refuses flightTicks < 1; the guard keeps a 0 from making NaN positions.
+    const t = p.flightTicks > 0 ? 1 - p.ticksLeft / p.flightTicks : 1;
     p.x = p.originX + (p.targetX - p.originX) * t;
     p.y = p.originY + (p.targetY - p.originY) * t;
     p.damage = shell.bombletDamage;

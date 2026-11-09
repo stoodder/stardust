@@ -36,7 +36,8 @@ export const BATTLE_SFX = {
    * sparkle, after its death pop.
    */
   sack_pop: {
-    gain: 0.3,
+    // +4 dB over T210a's 0.3 (D059): the burst is a moment, so it's heard over the wave.
+    gain: 0.475,
     priority: 1,
     minGapMs: 120,
     maxVoices: 2,

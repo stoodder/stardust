@@ -104,3 +104,25 @@ export const iconTellCarrier = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconTellArmored = defineSprite({
+  id: 'icon.tell.armored',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'everglow',
+  outline: 'auto',
+  // The `armored` tell (art-direction §8): a square plate, `steel.4` lit to `white.0`, with a
+  // dark rivet in each corner.
+  legend: { A: 'steel.2', B: 'steel.3', C: 'steel.4', D: 'white.0', R: 'steel.1' },
+  frames: {
+    icon: [
+      'DCCCCB',
+      'CRCCRB',
+      'CCCCCB',
+      'CCCCCB',
+      'CRCCRA',
+      'BBBBAA',
+    ],
+  },
+});

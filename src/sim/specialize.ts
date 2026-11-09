@@ -14,7 +14,8 @@ type SpecializeCommand = Extract<Command<IdSpace>, { type: 'specialize' }>;
 
 /**
  * Validates and applies a `specialize` command; returns null on success, else why it was
- * rejected, checked in this order: `noSuchTower`, `noSpecs` (the type has none authored),
+ * rejected, checked in this order: `noSuchTower`, `noSpecs` (the type has none authored, or the
+ * command's spec key is neither 'a' nor 'b'),
  * `specLocked` (not in `specsUnlocked`), `alreadySpecialized`, `needsTier3`, `cantAfford`.
  *
  * On success it pays `costFor(…, spec = true)` (so Specialist's tier-4 discount applies), adds it
@@ -32,7 +33,8 @@ export function applySpecialize(
   const tower = poolFind(state.towers, cmd.towerUid);
   if (tower === null || tower.def === null) return 'noSuchTower';
   const def = tower.def;
-  if (def.specs === null) return 'noSpecs';
+  // A spec key other than 'a' or 'b' (a hand-built or replayed command) names no spec either.
+  if (def.specs === null || (cmd.spec !== 'a' && cmd.spec !== 'b')) return 'noSpecs';
   if (!ctx.config.specsUnlocked.includes(def.id)) return 'specLocked';
   if (tower.spec !== null) return 'alreadySpecialized';
   if (tower.tier < MAX_TIER_BEFORE_SPEC) return 'needsTier3';

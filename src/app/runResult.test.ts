@@ -111,7 +111,10 @@ describe('the run end and the rewards on the card', () => {
       ...metaRunEndOf(INPUT, 'won'),
       mapId: 'a1_m01',
     });
-    const rewards = runResultOf(INPUT, 'won', { ...summary, writeFailed: 'Records hiccup.' }).rewards;
+    const rewards = runResultOf(INPUT, 'won', {
+      ...summary,
+      writeFailed: 'Records hiccup.',
+    }).rewards;
     expect(rewards?.issued).toEqual(['Sprinkler']);
     expect(rewards?.saveNotice).toBe('Records hiccup.');
   });

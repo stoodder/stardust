@@ -1,5 +1,5 @@
 // Brood Hauler (`hauler`): a big, slow Skitterkin waddling under a glittering sack, with broad
-// steel-lit shell plates (heavy armor). The sack on its back is the `carrier` tell (art-direction
+// pale steel shell plates (heavy armor, in the `armored` tell's `steel.4`). The sack on its back is the `carrier` tell (art-direction
 // §8: a pack on the back). Act I sells it as stolen stardust; it is a cluster of young.
 import { defineSprite } from '../defineSprite.ts';
 import { at, line, plot, type CharGrid } from '../helpers.ts';

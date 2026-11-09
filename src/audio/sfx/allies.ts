@@ -65,7 +65,8 @@ export const ALLY_SFX = {
   },
   /** Suppressing Fire is called in: a four-round rattle, "brrrt". */
   suppress_burst: {
-    gain: 0.7,
+    // +10 dB over T207b's (D059): 0.7 × 0.3 → 1 × 0.66 per crack, so it cuts through a busy wave.
+    gain: 1,
     priority: 2,
     maxVoices: 2,
     layers: [0, 0.065, 0.13, 0.195].map((at) => ({
@@ -73,8 +74,9 @@ export const ALLY_SFX = {
       at,
       freq: 440,
       filter: { type: 'bandpass' as const, freq: 1800, q: 0.8 },
-      env: { a: 0.001, d: 0.05, s: 0, r: 0.02 },
-      gain: 0.3,
+      // Each crack ends before the next starts (61 ms of a 65 ms gap), so they never sum.
+      env: { a: 0.001, d: 0.05, s: 0, r: 0.01 },
+      gain: 0.66,
     })),
   },
 } as const satisfies Readonly<Record<string, SfxRecipe>>;

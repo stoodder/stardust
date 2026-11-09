@@ -145,6 +145,26 @@ describe('compileContent: towers and tier patches', () => {
       'towers.fx_gun.specs.b.attack',
     ]);
   });
+
+  it('refuses bomblets that land in no time (flightSec rounding to 0 ticks; C9)', () => {
+    const mortar = FIXTURE.towers.fx_mortar;
+    const bomblets = {
+      count: 2,
+      damage: 5,
+      splashTiles: 0.5,
+      scatterTiles: 1,
+      flightSec: 0,
+      projectile: 'projectile.thumper_shell' as const,
+    };
+    const broken: TowerDef = {
+      ...mortar,
+      tiers: [mortar.tiers[0], mortar.tiers[1], { ...mortar.tiers[2], attack: { bomblets } }],
+    };
+    const errors = errorsFor({ ...FIXTURE, towers: { ...FIXTURE.towers, fx_mortar: broken } });
+    expect(errors).toContain(
+      'towers.fx_mortar.tiers[2].attack.bomblets.flightSec: must last at least one tick (got 0)',
+    );
+  });
 });
 
 describe('compileContent: enemies and abilities', () => {
@@ -169,6 +189,11 @@ describe('compileContent: maps', () => {
     expect(map.tiles[4 * map.cols + 5]).toBe('C');
     expect(map.coreIntegrity).toBe(20);
     expect(map.companion).toBeNull();
+  });
+
+  it('caches the route list in route order, the same objects as `routes`', () => {
+    expect(map.routeList).toEqual(Object.values(map.routes));
+    map.routeList.forEach((r) => expect(map.routes[r.id]).toBe(r));
   });
 
   it('compiles routes into polylines through tile centers with cumulative lengths', () => {

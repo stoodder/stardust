@@ -167,7 +167,11 @@ describe('the segment (D031: the clicked path tile ±1 along the route)', () => 
 
   it('opens one zone per ground route through the tile (and none for air lanes)', () => {
     const second: CompiledRoute = Object.freeze({ ...ROAD, id: 'b' });
-    const map: CompiledMapDef<IdSpace> = { ...MAP, routes: { ...MAP.routes, b: second } };
+    const map: CompiledMapDef<IdSpace> = {
+      ...MAP,
+      routes: { ...MAP.routes, b: second },
+      routeList: [...MAP.routeList, second],
+    };
     const s = setup(BRICKS);
     const ctx = { ...s.ctx, map };
     expect(applyAbilityCommand(s.state, ctx, cast(2, 2))).toBeNull();

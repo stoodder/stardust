@@ -165,7 +165,7 @@ describe('the save session', () => {
     expect(newGame(2)).toMatchObject({ ok: false });
   });
 
-  it('a win issues the next map\'s towers (the Sprinkler after A1M1), once', () => {
+  it("a win issues the next map's towers (the Sprinkler after A1M1), once", () => {
     newGame(1);
     expect(run('a1_m01', 20)).toMatchObject({ issued: ['sprinkler'] });
     expect(activeSave()?.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);
@@ -194,9 +194,7 @@ describe('the save session', () => {
     };
     const r = run('a1_m02', 20, { mapStardust: 130 });
     expect(r?.writeFailed).toMatch(/Records couldn't file that/);
-    expect(r?.stardustNote).toBe(
-      "Banked for Zibzab's shop. Opens after Shift 3 (coming soon).",
-    );
+    expect(r?.stardustNote).toBe("Banked for Zibzab's shop. Opens after Shift 3 (coming soon).");
     // The session keeps the run.
     expect(activeSave()?.currencies.stardust).toBe(130);
   });

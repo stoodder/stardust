@@ -5,8 +5,9 @@
 import { at, plot, type CharGrid } from '../helpers.ts';
 
 /**
- * Custom legend for the sack: pale burlap lit to cream (`gold.4`) so the cargo sits in the actor
- * value band (art-direction §1), rope, and the glitter's pink and gold.
+ * Custom legend for the sack: burlap lit to parchment (`brass.4`), bright enough that the cargo
+ * sits in the actor value band (art-direction §1) and a step below the glitter's gold, so the
+ * flecks read; rope, and the glitter's pink and gold.
  */
 export const SACK_LEGEND = {
   G: 'brass.4',

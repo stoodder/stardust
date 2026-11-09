@@ -249,7 +249,9 @@ function openSegments(
   slot: 1 | 2,
 ): number {
   let first = 0;
-  for (const route of Object.values(ctx.map.routes)) {
+  const routes = ctx.map.routeList;
+  for (let i = 0; i < routes.length; i++) {
+    const route = routes[i]!; // i < length
     if (!segmentSpan(route, col, row, e.reachTiles, span)) continue;
     const zone = poolAlloc(state.zones, ZONE_BLANK, takeUid(state));
     zone.kind = 'segment';

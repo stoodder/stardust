@@ -186,4 +186,18 @@ describe('event sounds', () => {
     // Act III has no wave-clear jingle (core-loop §6.7).
     expect(run([cleared(1)], 3)).toEqual([]);
   });
+
+  it("gives M2's best moments a sound: a link's chime, a spec's flourish, a kind forfeit (D059)", () => {
+    expect(ids(run([{ type: 'LinkFormed', link: 'crossfire', a: 1, b: 2 }]))).toEqual([
+      'sfx:link_chime',
+    ]);
+    expect(ids(run([{ type: 'LinkBroken', link: 'crossfire', a: 1, b: 2 }]))).toEqual([]);
+    expect(ids(run([{ type: 'TowerSpecialized', uid: 1, spec: 'a', cost: 200 }]))).toEqual([
+      'sfx:specialize',
+    ]);
+    expect(ids(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'forfeited' }]))).toEqual([
+      'sfx:medal_forfeit',
+    ]);
+    expect(run([{ type: 'MedalProgress', medal: 'perfectCore', status: 'earned' }])).toEqual([]);
+  });
 });

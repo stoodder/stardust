@@ -165,6 +165,19 @@ describe('specialize: rejections change nothing', () => {
     expect(reject(sim, { type: 'specialize', towerUid: uid, spec: 'a' })).toEqual(['noSpecs']);
   });
 
+  it('noSpecs: a spec key other than a or b (a hand-built command) names none, and changes nothing', () => {
+    const sim = richSim();
+    const uid = gunAtTier(sim, 3);
+    const credits = sim.state.credits;
+    for (const spec of ['c', 'constructor', '__proto__']) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a hostile command on purpose
+      const cmd = { type: 'specialize', towerUid: uid, spec } as unknown as Command<FixtureIds>;
+      expect(reject(sim, cmd)).toEqual(['noSpecs']);
+    }
+    expect(gunOf(sim)).toMatchObject({ tier: 3, spec: null });
+    expect(sim.state.credits).toBe(credits);
+  });
+
   it('specLocked: the pair is not in specsUnlocked (checked before the tier)', () => {
     const sim = richSim({ specsUnlocked: [] });
     const uid = gunAtTier(sim, 1);

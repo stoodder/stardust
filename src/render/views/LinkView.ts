@@ -4,15 +4,52 @@
 // LinkFormed and LinkBroken events with the two towers' tiles; a tether is placed once, since
 // towers never move. The frame set comes from `tetherDir`: the direction, and which tower it's
 // drawn from, so every tether runs left to right (or top to bottom). A tower on high ground lifts
-// its tether's anchor with it. Tethers draw in `vfx`, above the heads they join. Under reduced
-// motion the beads hold still.
+// its tether's anchor with it. Tethers draw in `vfx`, lifted TETHER_LIFT_PX so the arc joins the
+// heads, above the bases (D059), and pulse 100% ↔ 60% on the page's 1 Hz clock, a quick 4 Hz
+// shimmer for their first second. Under reduced motion the beads hold still and nothing pulses.
 import type * as Phaser from 'phaser';
+import type { ColorName } from '../../content/palettes/master.ts';
 import { tetherDir } from '../../content/sprites/fx/link_tether.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { PULSE_PERIOD_MS } from '../motion.ts';
 import { hasAnim, spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const TETHER = spriteId('fx.link_tether');
+/** How far up the tether's ends sit (px): at the heads' mounts, above the bases (D059). */
+export const TETHER_LIFT_PX = 9;
+/** The pulse's dim step (the stepped-alpha 60%, art-direction §7). */
+const DIM_ALPHA = 0.6;
+/** A new tether shimmers this long (ms) at SHIMMER_HZ before settling into the 1 Hz pulse. */
+const SHIMMER_MS = 1000;
+const SHIMMER_PERIOD_MS = 250;
+
+/**
+ * A tether's alpha `ms` after it formed, at page time `now` (ms): a 4 Hz shimmer for its first
+ * second, then the shared 1 Hz pulse; steady under reduced motion.
+ */
+export function tetherAlpha(ms: number, now: number, reduced: boolean): number {
+  if (reduced) return 1;
+  if (ms < SHIMMER_MS) return ms % SHIMMER_PERIOD_MS < SHIMMER_PERIOD_MS / 2 ? 1 : DIM_ALPHA;
+  return now % PULSE_PERIOD_MS < PULSE_PERIOD_MS / 2 ? 1 : DIM_ALPHA;
+}
+
+/** A link's callout look (D059): its ring and text colors, the tether's own (art-direction §7). */
+export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: ColorName }>> = {
+  crossfire: { ring: 'orange.3', text: 'orange.4' },
+  sitting_ducks: { ring: 'blue.3', text: 'blue.4' },
+};
+
+/** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */
+export function calloutText(name: string): string {
+  return `${name.toUpperCase()}!`;
+}
+
+interface Tether {
+  readonly sprite: Phaser.GameObjects.Sprite;
+  /** When it formed (page ms). */
+  readonly at: number;
+}
 
 /** One end of a link: the tower's uid, tile, and how far up it stands (px; ELEV_H on high ground). */
 export interface LinkEnd {
@@ -32,7 +69,7 @@ function key(link: string, a: number, b: number): string {
 export class LinkView {
   readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
-  readonly #live = new Map<string, Phaser.GameObjects.Sprite>();
+  readonly #live = new Map<string, Tether>();
   /** Released sprites, reused before new ones are made. */
   readonly #free: Phaser.GameObjects.Sprite[] = [];
 
@@ -65,7 +102,7 @@ export class LinkView {
     }
     const anchor = sprites.meta(TETHER).anchor;
     gridToScreen(from.col + 0.5, from.row + 0.5, origin, pos);
-    s.setPosition(pos.x, pos.y - from.liftPx).setVisible(true);
+    s.setPosition(pos.x, pos.y - from.liftPx - TETHER_LIFT_PX).setAlpha(1).setVisible(true);
     if (this.#reducedMotion()) {
       const f = sprites.frame(TETHER, `${anim}_0`);
       s.stop().setTexture(f.texture, f.frame);
@@ -73,24 +110,35 @@ export class LinkView {
       s.play(sprites.anim(TETHER, anim));
     }
     s.setDisplayOrigin(anchor.x, anchor.y);
-    this.#live.set(k, s);
+    this.#live.set(k, { sprite: s, at: performance.now() });
+  }
+
+  /** Pulses every tether (once per rendered frame). */
+  update(): void {
+    if (this.#live.size === 0) return;
+    const now = performance.now();
+    const reduced = this.#reducedMotion();
+    for (const t of this.#live.values()) {
+      const a = tetherAlpha(now - t.at, now, reduced);
+      if (t.sprite.alpha !== a) t.sprite.setAlpha(a);
+    }
   }
 
   /** Removes the tether of `link` between towers `a` and `b` (uids), if it shows. */
   break(link: string, a: number, b: number): void {
     const k = key(link, a, b);
-    const s = this.#live.get(k);
-    if (s === undefined) return;
-    s.stop().setVisible(false);
+    const t = this.#live.get(k);
+    if (t === undefined) return;
+    t.sprite.stop().setVisible(false);
     this.#live.delete(k);
-    this.#free.push(s);
+    this.#free.push(t.sprite);
   }
 
   /** Removes every tether (the scene is shutting down). */
   reset(): void {
-    for (const s of this.#live.values()) {
-      s.stop().setVisible(false);
-      this.#free.push(s);
+    for (const t of this.#live.values()) {
+      t.sprite.stop().setVisible(false);
+      this.#free.push(t.sprite);
     }
     this.#live.clear();
   }

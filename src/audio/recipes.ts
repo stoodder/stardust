@@ -11,8 +11,8 @@ export const MAX_SFX_SEC = 3;
 /** The most layers one recipe may stack (each is a voice). */
 export const MAX_LAYERS = 4;
 /**
- * A recipe's summed peak (recipe gain × the sum of its layers' gains) stays under this, so no
- * single sound can overload the SFX bus on its own.
+ * A recipe's summed peak (recipe gain × the summed gains of the layers that can sound together,
+ * `overlapPeak`) stays under this, so no single sound can overload the SFX bus on its own.
  */
 export const MAX_RECIPE_PEAK = 1;
 
@@ -33,6 +33,23 @@ export function recipePeak(r: { readonly layers: readonly ToneLayer[]; readonly 
   let sum = 0;
   for (const l of r.layers) sum += l.gain;
   return sum * r.gain;
+}
+
+/**
+ * The summed peak gain of the layers that can sound together: like `recipePeak`, except that
+ * layers that never overlap in time (a rattle's separate cracks) don't add up. The overload limit
+ * (MAX_RECIPE_PEAK) is checked on this.
+ */
+export function overlapPeak(r: { readonly layers: readonly ToneLayer[]; readonly gain: number }) {
+  let peak = 0;
+  for (const l of r.layers) {
+    // The sum peaks at some layer's start: add every layer sounding then.
+    const t = l.at ?? 0;
+    let sum = 0;
+    for (const o of r.layers) if ((o.at ?? 0) <= t && t < layerEnd(o)) sum += o.gain;
+    peak = Math.max(peak, sum);
+  }
+  return peak * r.gain;
 }
 
 const finite = (n: number): boolean => Number.isFinite(n);
@@ -100,8 +117,8 @@ export function recipeProblems(id: string, r: SfxRecipe): string[] {
   }
   r.layers.forEach((l, i) => out.push(...layerProblems(l, `${id}[${i}]`, true)));
   if (!(r.gain > 0 && r.gain <= 1)) out.push(`${id}: gain ${r.gain} must be in (0, 1]`);
-  if (recipePeak(r) > MAX_RECIPE_PEAK) {
-    out.push(`${id}: summed peak ${recipePeak(r).toFixed(2)} is over ${MAX_RECIPE_PEAK}`);
+  if (overlapPeak(r) > MAX_RECIPE_PEAK) {
+    out.push(`${id}: summed peak ${overlapPeak(r).toFixed(2)} is over ${MAX_RECIPE_PEAK}`);
   }
   if (recipeDuration(r) > MAX_SFX_SEC) {
     out.push(`${id}: rings ${recipeDuration(r).toFixed(2)} s, over ${MAX_SFX_SEC} s`);

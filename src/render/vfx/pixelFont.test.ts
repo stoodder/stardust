@@ -24,4 +24,13 @@ describe('the 3×5 pixel font', () => {
     expect(canDraw('x')).toBe(false);
     expect(() => textImage('a', 'gold.4')).toThrow(/no glyph/);
   });
+
+  it('draws the floating callouts in capitals (D059), with S and 5 told apart', () => {
+    expect(canDraw('CROSSFIRE!')).toBe(true);
+    expect(canDraw('SITTING DUCKS!')).toBe(true);
+    expect(canDraw('ABCDEFGHIJKLMNOPQRSTUVWXYZ ! 0123456789')).toBe(true);
+    const lit = (ch: string): string =>
+      Array.from(textImage(ch, 'white.1').data.filter((_, i) => i % 4 === 0)).join(',');
+    expect(lit('S')).not.toBe(lit('5'));
+  });
 });

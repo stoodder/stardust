@@ -346,6 +346,22 @@
   color: var(--sd-steel-3);
 }
 
+.sd-results-pay-aside {
+  margin: 1px 0 0;
+  color: var(--sd-steel-3);
+}
+
+.sd-results-issued {
+  color: var(--sd-teal-4);
+}
+
+.sd-results-save-notice {
+  margin: 2px 0 0;
+  padding: 1px 3px;
+  border: 1px solid var(--sd-red-3);
+  color: var(--sd-red-4);
+}
+
 .sd-results-pay-amount {
   flex: none;
 }

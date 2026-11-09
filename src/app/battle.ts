@@ -55,6 +55,10 @@ export function startBattle(
       onFirstFrame: () => resolveFirstFrame?.(),
       onCantBuild: () => showNotice(rejectText('notBuildable') ?? ''),
       teachUpgrade: () => hud.upgradeHint.value,
+      pointFirstTower: () => {
+        const r = hud.radio.value;
+        return r !== null && r.pointFirstTower ? r.id : 0;
+      },
     },
     key,
   );

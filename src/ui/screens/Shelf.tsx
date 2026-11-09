@@ -2,10 +2,10 @@
 // shows the item's name, rank pips, effect summary, and its seller's copy, with its price and a
 // buy button, or "Owned", or what it waits for ("Arrives after The Audit"). A purchase writes the
 // save at once (app/save.ts `purchase`), plays the upgrade sound, and the presenter says thanks in
-// a polite live region. A button stays put after a purchase (it turns into the next rank or
-// "Owned"), so the focus never drops; one the bank can't cover is aria-disabled and explains
-// itself when pressed.
-import { useState } from 'preact/hooks';
+// a polite live region. After a purchase the focus stays on that row: its button (the next rank)
+// or, when the item is now owned in full and the button is gone, the row itself (U6). A button the
+// bank can't cover is aria-disabled and explains itself when pressed.
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
 import { purchase, storeShelf } from '../../app/save.ts';
 import type { Offer, StorePane } from '../../meta/index.ts';
@@ -57,6 +57,11 @@ function effectLine(o: Offer): string {
   return `Rank ${rank}: ${effect}`;
 }
 
+/** A row's stable key: the item it sells. */
+function offerKey(o: Offer): string {
+  return o.item.kind === 'specs' ? `specs:${o.item.tower}` : `${o.item.kind}:${o.item.id}`;
+}
+
 function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void }) {
   const p = PRESENTERS[offer.pane];
   const name = offerName(offer);
@@ -98,7 +103,7 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
     );
   }
   return (
-    <li class={`sd-offer sd-offer-${state}`}>
+    <li class={`sd-offer sd-offer-${state}`} data-offer={offerKey(offer)} tabIndex={-1}>
       <div class="sd-offer-main">
         <p class="sd-offer-head">
           <span class="sd-offer-name">{name}</span>
@@ -115,6 +120,16 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
 /** A base pane: its presenter, then its offers. */
 export function Shelf({ pane, view, group }: ShelfProps) {
   const [said, setSaid] = useState<Said>(null);
+  const root = useRef<HTMLDivElement>(null);
+  /** The row just bought from: the focus returns to it after the re-render. */
+  const bought = useRef<string | null>(null);
+  useEffect(() => {
+    const key = bought.current;
+    if (key === null) return;
+    bought.current = null;
+    const row = root.current?.querySelector<HTMLElement>(`[data-offer="${CSS.escape(key)}"]`);
+    (row?.querySelector<HTMLElement>('button') ?? row)?.focus();
+  });
   const p = PRESENTERS[pane];
   const offers = storeShelf(pane);
   const groups = group?.(offers) ?? [{ title: '', offers }];
@@ -140,6 +155,7 @@ export function Shelf({ pane, view, group }: ShelfProps) {
       });
       return;
     }
+    bought.current = offerKey(o);
     playSfx(o.item.kind === 'specs' ? 'unlock' : 'upgrade');
     const line = p.thanks[thanked[pane]++ % p.thanks.length] ?? '';
     setSaid(
@@ -150,7 +166,7 @@ export function Shelf({ pane, view, group }: ShelfProps) {
   };
 
   return (
-    <div class="sd-store">
+    <div class="sd-store" ref={root}>
       <div class="sd-store-intro">
         <p class="sd-pane-who">{p.who}</p>
         <p
@@ -174,15 +190,7 @@ export function Shelf({ pane, view, group }: ShelfProps) {
             {g.title !== '' && <h2 class="sd-store-group-title">{g.title}</h2>}
             <ul class="sd-offers">
               {g.offers.map((o) => (
-                <OfferRow
-                  key={
-                    o.item.kind === 'specs'
-                      ? `specs:${o.item.tower}`
-                      : `${o.item.kind}:${o.item.id}`
-                  }
-                  offer={o}
-                  onBuy={onBuy}
-                />
+                <OfferRow key={offerKey(o)} offer={o} onBuy={onBuy} />
               ))}
             </ul>
           </section>

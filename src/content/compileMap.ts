@@ -120,6 +120,7 @@ export function compileMap<K extends IdSpace>(
     underWreckage: { ...def.underWreckage },
     salvage: { ...def.salvage },
     routes: Object.fromEntries(routes),
+    routeList: [...routes.values()],
     markers: { ...def.markers },
     startCredits: def.startCredits,
     coreIntegrity: def.coreIntegrity ?? DEFAULT_CORE_INTEGRITY,

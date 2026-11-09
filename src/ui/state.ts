@@ -208,6 +208,8 @@ export interface SpokenLine {
 /** A radio line on screen (D026's M1 radio ticker). `id` changes with every line. */
 export interface RadioView extends SpokenLine {
   readonly id: number;
+  /** The playfield pings the first-built tower while this line shows (D059's Denise pointer). */
+  readonly pointFirstTower: boolean;
   /** The line this one replies to, kept up above it (D028), or null. */
   readonly cue: SpokenLine | null;
 }

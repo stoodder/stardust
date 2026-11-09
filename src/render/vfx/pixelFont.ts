@@ -1,6 +1,6 @@
 // The in-world 3×5 bitmap font (art-direction §9, Fonts: "in-world Phaser text uses a
-// code-generated 3×5 bitmap font defined as glyph grids"). Only what floating numbers need so far:
-// digits, plus, and minus. Pure RGBA output (no canvas), so it's unit-tested; overlayTextures.ts
+// code-generated 3×5 bitmap font defined as glyph grids"). Digits, plus, and minus for floating
+// numbers, and capitals, space, and "!" for floating callouts ("CROSSFIRE!", D059). Pure RGBA output (no canvas), so it's unit-tested; overlayTextures.ts
 // registers the strings render draws.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
@@ -23,6 +23,34 @@ const GLYPHS: Readonly<Record<string, readonly string[]>> = {
   '+': ['...', '.#.', '###', '.#.', '...'],
   '-': ['...', '...', '###', '...', '...'],
   '−': ['...', '...', '###', '...', '...'],
+  ' ': ['...', '...', '...', '...', '...'],
+  '!': ['.#.', '.#.', '.#.', '...', '.#.'],
+  A: ['.#.', '#.#', '###', '#.#', '#.#'],
+  B: ['##.', '#.#', '##.', '#.#', '##.'],
+  C: ['.##', '#..', '#..', '#..', '.##'],
+  D: ['##.', '#.#', '#.#', '#.#', '##.'],
+  E: ['###', '#..', '##.', '#..', '###'],
+  F: ['###', '#..', '##.', '#..', '#..'],
+  G: ['.##', '#..', '#.#', '#.#', '.##'],
+  H: ['#.#', '#.#', '###', '#.#', '#.#'],
+  I: ['###', '.#.', '.#.', '.#.', '###'],
+  J: ['..#', '..#', '..#', '#.#', '.#.'],
+  K: ['#.#', '#.#', '##.', '#.#', '#.#'],
+  L: ['#..', '#..', '#..', '#..', '###'],
+  M: ['#.#', '###', '###', '#.#', '#.#'],
+  N: ['##.', '#.#', '#.#', '#.#', '#.#'],
+  O: ['.#.', '#.#', '#.#', '#.#', '.#.'],
+  P: ['##.', '#.#', '##.', '#..', '#..'],
+  Q: ['.#.', '#.#', '#.#', '##.', '.##'],
+  R: ['##.', '#.#', '##.', '#.#', '#.#'],
+  S: ['.##', '#..', '.#.', '..#', '##.'],
+  T: ['###', '.#.', '.#.', '.#.', '.#.'],
+  U: ['#.#', '#.#', '#.#', '#.#', '###'],
+  V: ['#.#', '#.#', '#.#', '#.#', '.#.'],
+  W: ['#.#', '#.#', '###', '###', '#.#'],
+  X: ['#.#', '#.#', '.#.', '#.#', '#.#'],
+  Y: ['#.#', '#.#', '.#.', '.#.', '.#.'],
+  Z: ['###', '..#', '.#.', '#..', '###'],
 };
 
 /** Whether the font can draw every character of `text`. */

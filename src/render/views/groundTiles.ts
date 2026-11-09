@@ -3,7 +3,8 @@
 // the choices are unit-tested; GroundView draws them.
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
-import type { TileChar } from '../../content/types.ts';
+import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
+import type { GridPos, MarkerId, TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 
@@ -19,6 +20,11 @@ export interface GroundLook extends TileLook {
 
 export interface TileDressing {
   readonly ground: GroundLook;
+  /**
+   * `tile.verge` overlay frames drawn over the ground, in order: darker grass clumps along each
+   * edge a grass tile shares with the road (art-direction §3). Absent with none.
+   */
+  readonly verge?: readonly string[];
   /** A prop on the tile's center (the core, wreckage, decor), or null. */
   readonly prop: (TileLook & { readonly anim: string | null }) | null;
   /**
@@ -34,7 +40,38 @@ export interface GroundGrid {
   readonly cols: number;
   readonly rows: number;
   readonly tiles: readonly TileChar[];
+  /** The map's markers; the ones named in `DECOR_MARKERS` are drawn as props. */
+  readonly markers?: Readonly<Record<MarkerId, GridPos>>;
 }
+
+/**
+ * Decor markers (maps.md: markers are map-local names on non-path tiles): a marker with one of
+ * these ids is drawn as its prop, on any map, in place of the tile's sparse decor. Other markers
+ * (a Challenge's power node, an ally post) draw nothing here.
+ */
+export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
+  rig3: 'prop.rig',
+  housing: 'prop.housing',
+  scarecrow: 'prop.scarecrow',
+};
+
+/** The decor prop a marker puts on (col, row), if any. */
+function decorAt(g: GroundGrid, col: number, row: number): SpriteId | null {
+  if (g.markers === undefined) return null;
+  for (const [id, [c, r]] of Object.entries(g.markers)) {
+    const sprite = DECOR_MARKERS[id];
+    if (sprite !== undefined && c === col && r === row) return sprite;
+  }
+  return null;
+}
+
+/** Each tile edge's neighbour offset (verge.ts names the edges). */
+const EDGES: readonly (readonly [VergeEdge, number, number])[] = [
+  ['nw', -1, 0],
+  ['ne', 0, -1],
+  ['se', 1, 0],
+  ['sw', 0, 1],
+];
 
 const GRASS_VARIANTS = 3;
 
@@ -77,35 +114,45 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
     case '+':
       return { ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' }, prop: null };
     case 'x':
-      return { ground: grass, prop: { sprite: 'prop.rock', frame: 'v0', anim: null } };
     case '.':
     case undefined: {
-      // Sparse decor, so blocked ground reads as neither pad nor path.
-      const h = (col * 3 + row * 5) % 7;
-      const prop =
-        h === 0
-          ? { sprite: 'prop.flora' as const, frame: 'v0', anim: null }
-          : (col * 5 + row * 3) % 11 === 0
-            ? { sprite: 'prop.rock' as const, frame: 'v0', anim: null }
-            : null;
-      return { ground: grass, prop };
+      // A decor marker's prop; else sparse decor, so blocked ground reads as neither pad nor path.
+      const decor = t === undefined ? null : decorAt(g, col, row);
+      let sprite: SpriteId | null = decor;
+      if (sprite === null && t === 'x') sprite = 'prop.rock';
+      else if (sprite === null && (col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
+      else if (sprite === null && (col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
+      const prop = sprite === null ? null : { sprite, frame: 'v0', anim: null };
+      // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
+      const verge: string[] = [];
+      for (const [edge, dc, dr] of EDGES) {
+        if (isPathLike(at(col + dc, row + dr)))
+          verge.push(`${edge}_${(col + row) % VERGE_VARIANTS}`);
+      }
+      return verge.length === 0 ? { ground: grass, prop } : { ground: grass, prop, verge };
     }
     default:
       return assertNever(t);
   }
 }
 
-/** Props that are Everglow hardware keep their faction palette in every act; the rest follow env. */
-const HARDWARE: ReadonlySet<SpriteId> = new Set<SpriteId>([
+/**
+ * Props that keep their own palette in every act (Everglow hardware, and the scarecrow in his
+ * Everglow cap); the rest follow env.
+ */
+const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.core',
   'prop.fence',
   'prop.dome',
   'prop.billboard',
+  'prop.rig',
+  'prop.housing',
+  'prop.scarecrow',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */
 export function propVariant(sprite: SpriteId, env: string): string {
-  return HARDWARE.has(sprite) ? DEFAULT_VARIANT : envVariant(env);
+  return OWN_PALETTE.has(sprite) ? DEFAULT_VARIANT : envVariant(env);
 }
 
 /** One apron cell: a tile outside the grid, `ring` steps from it (1 touches the grid). */

@@ -15,8 +15,10 @@ export function issuedTowers(
   save: SaveData,
   access: Readonly<Record<TowerId, Access<string>>> = TOWER_ACCESS,
 ): TowerId[] {
+  const isTower = (k: string): k is TowerId => Object.hasOwn(access, k);
   const out: TowerId[] = [];
-  for (const [id, a] of Object.entries(access) as [TowerId, Access<string>][]) {
+  for (const id of Object.keys(access).filter(isTower)) {
+    const a = access[id];
     if (a.how !== 'issued') continue;
     if (a.availableAfter === null || isMapWon(save, a.availableAfter)) out.push(id);
   }

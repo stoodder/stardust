@@ -216,7 +216,9 @@ describe('economy modifiers (progression.md § 4.3, § 5, § 9; T202a)', () => {
     expect(s.state.integrity).toBe(7); // set 5 (lowest) + 2
     // The run's full meter is the modified start, not the map's (Results showed "30 / 20").
     expect(s.state.maxIntegrity).toBe(7);
-    const story = sim([{ kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' }]);
+    const story = sim([
+      { kind: 'economy', stat: 'coreIntegrity', set: 30, source: 'difficulty:story' },
+    ]);
     expect(story.state.maxIntegrity).toBe(30);
     expect(sim([]).state.maxIntegrity).toBe(sim([]).state.integrity);
   });

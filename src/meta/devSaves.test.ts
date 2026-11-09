@@ -39,7 +39,9 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(save.unlocks.specs).toEqual(LIVE_KNOWN_IDS.towers);
     expect(save.unlocks.abilities).toEqual(LIVE_KNOWN_IDS.abilities);
     expect(save.unlocks.protocols).toEqual(LIVE_KNOWN_IDS.protocols);
-    expect(Object.keys(save.upgrades).toSorted()).toEqual(Object.keys(LIVE_KNOWN_IDS.upgradeRanks).toSorted());
+    expect(Object.keys(save.upgrades).toSorted()).toEqual(
+      Object.keys(LIVE_KNOWN_IDS.upgradeRanks).toSorted(),
+    );
     for (const map of CAMPAIGN) expect(save.campaign.maps[map]?.medals).toHaveLength(3);
   });
 });

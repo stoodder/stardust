@@ -12,6 +12,7 @@ export const A1_M02_RADIO: readonly RadioLine[] = [
     on: 'waveCleared',
     wave: 1,
     speaker: 'bricks',
+    point: 'firstTower', // the playfield pings the turret he means (D059)
     text: "That one's Denise. After my first wife. Keeps her distance, fires on schedule, never calls.",
   },
   {

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { TileChar } from '../../content/types.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
-import { apronCells, dressTile, envVariant, propVariant, tilesBehind } from './groundTiles.ts';
+import { map as a1m02 } from '../../content/maps/a1_m02/map.ts';
+import {
+  apronCells,
+  DECOR_MARKERS,
+  dressTile,
+  envVariant,
+  propVariant,
+  tilesBehind,
+} from './groundTiles.ts';
 
 function grid(rows: readonly string[]): {
   cols: number;
@@ -51,6 +59,38 @@ describe('dressTile', () => {
         if (t === 'o' || t === '#' || t === 'S') expect(dressTile(g, c, r).prop).toBeNull();
       }
     }
+  });
+
+  it('lines grass beside the road with a verge on each shared edge, and nowhere else', () => {
+    // (0,1) has the spawn on its NE edge; (1,2) the road on its SE; the rock at (3,1) the road on
+    // its NW and the core on its SW. (1,1) is a pad.
+    expect(dressTile(g, 0, 1).verge).toEqual(['ne_1']);
+    expect(dressTile(g, 1, 2).verge).toEqual(['se_1']);
+    expect(dressTile(g, 3, 1).verge).toEqual(['nw_0', 'sw_0']);
+    expect(dressTile(g, 1, 1).verge).toBeUndefined();
+    expect(dressTile(g, 1, 0).verge).toBeUndefined(); // the road itself
+    const open = grid(['...', '...']);
+    expect(dressTile(open, 1, 1).verge).toBeUndefined();
+  });
+
+  it('draws decor markers as their props, on any map, and ignores other markers', () => {
+    const m = { ...grid(['....', '.o..']), markers: { scarecrow: [3, 1], post: [2, 1] } } as const;
+    expect(dressTile(m, 3, 1).prop).toEqual({ sprite: 'prop.scarecrow', frame: 'v0', anim: null });
+    expect(dressTile(m, 2, 1).prop?.sprite).not.toBe('prop.scarecrow');
+    expect(propVariant('prop.scarecrow', 'act3')).toBe('default');
+    // A1M2 places all three of its decor markers (act1.md § A1M2) on open ground.
+    const a1 = {
+      cols: a1m02.size.cols,
+      rows: a1m02.size.rows,
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- map rows use only TileChars
+      tiles: a1m02.tiles.join('').split('') as TileChar[],
+      markers: a1m02.markers,
+    };
+    const drawn = Object.entries(a1m02.markers ?? {}).flatMap(([id, [c, r]]) => {
+      const sprite = dressTile(a1, c, r).prop?.sprite;
+      return sprite === undefined ? [] : [[id, sprite]];
+    });
+    expect(Object.fromEntries(drawn)).toMatchObject(DECOR_MARKERS);
   });
 
   it('maps env ids to sprite variants', () => {

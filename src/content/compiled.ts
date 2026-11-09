@@ -390,6 +390,8 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly salvage: Readonly<Partial<Record<TileKey, number>>>;
   /** Paths, air lanes, and rift lanes by id (ids are unique across all three). */
   readonly routes: Readonly<Record<RouteId, CompiledRoute>>;
+  /** `routes`' values in the map's route order, cached so hot paths don't allocate a list. */
+  readonly routeList: readonly CompiledRoute[];
   readonly markers: Readonly<Record<MarkerId, GridPos>>;
   readonly startCredits: number;
   readonly coreIntegrity: number;

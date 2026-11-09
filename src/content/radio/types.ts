@@ -49,6 +49,11 @@ export interface RadioLine {
   /** The enemy an `enemyKilled` or `enemyLeaked` names. */
   readonly enemy?: string;
   readonly speaker: RadioSpeaker;
+  /**
+   * What the playfield points at while the line shows (D059): `firstTower` pings the battle's
+   * first-built tower still standing (Bricks's "That one's Denise." on A1M2).
+   */
+  readonly point?: 'firstTower';
   /** Verbatim from the map's act file (story/campaign/act<N>.md). */
   readonly text: string;
 }

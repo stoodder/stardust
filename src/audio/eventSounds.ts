@@ -179,17 +179,24 @@ export function createEventSounds(act: Act): EventSounds {
           out.push(sfx(id, FIRE_CONTROL_SOUNDS.sparePitch));
           return;
         }
+        // M2's best moments get their own sounds (D059): a link's chime, a spec's flourish, and
+        // a soft, kind falling third when a medal slips away this run (never a buzzer).
+        case 'LinkFormed':
+          out.push(sfx('link_chime'));
+          return;
+        case 'TowerSpecialized':
+          out.push(sfx('specialize'));
+          return;
+        case 'MedalProgress':
+          if (e.status === 'forfeited') out.push(sfx('medal_forfeit'));
+          return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
         case 'CountdownStarted':
         case 'ScriptCue':
-        // Their sounds come with their M2 tasks (T202 specs and links).
-        case 'TowerSpecialized':
         case 'NotFiringAtSkitterkin':
-        case 'LinkFormed':
         case 'LinkBroken':
-        case 'MedalProgress':
           return;
         default:
           assertNever(e);

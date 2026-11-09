@@ -145,7 +145,14 @@ export function radioView(line: RadioLine, cue: RadioLine | null = null): RadioV
           color: SPEAKERS[cue.speaker].color,
           text: silkText(cue.text),
         };
-  return { id: ++radioId, name: look.name, color: look.color, text: silkText(line.text), cue: prev };
+  return {
+    id: ++radioId,
+    name: look.name,
+    color: look.color,
+    text: silkText(line.text),
+    cue: prev,
+    pointFirstTower: line.point === 'firstTower',
+  };
 }
 
 /** A line on (or waiting for) the ticker: when it was queued and the event batch it came in. */

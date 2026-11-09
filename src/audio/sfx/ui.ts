@@ -86,4 +86,30 @@ export const UI_SFX = {
       },
     ],
   },
+  /**
+   * A medal slips out of reach this run (MedalProgress forfeited; D059): a soft, warm falling
+   * third on a sine, quiet and kind ("Next time!"), never a buzzer.
+   */
+  medal_forfeit: {
+    gain: 0.2,
+    priority: 1,
+    minGapMs: 400,
+    maxVoices: 1,
+    layers: [
+      {
+        wave: 'sine',
+        freq: 659.25,
+        steps: [[0.12, 0.8]],
+        env: { a: 0.01, d: 0.08, s: 0.6, hold: 0.16, r: 0.25 },
+        gain: 0.7,
+      },
+      {
+        wave: 'triangle',
+        freq: 329.63,
+        steps: [[0.12, 0.8]],
+        env: { a: 0.01, d: 0.08, s: 0.5, hold: 0.16, r: 0.25 },
+        gain: 0.35,
+      },
+    ],
+  },
 } as const satisfies Readonly<Record<string, SfxRecipe>>;

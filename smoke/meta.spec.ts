@@ -1,6 +1,7 @@
 // The M2 flow shell (T209; D031): slots, the Shift board, the base, Settings, and codes, through
-// the real UI. New game → A1M1 (autoplay par) → Results → Continue → Base (R&D open, the rest
-// locked with their hints) → Shift board → Title → reload → Continue. An export → import round
+// the real UI. New game → A1M1 (autoplay par) → Results → Continue → Base (Research open, the rest
+// locked with their hints) → Shift board → A1M2 with the Sprinkler issued (D059) → Title → reload
+// → Continue. An export → import round
 // trip through Settings and the Title. `?test=1&save=all_unlocked` reaches every gated pane.
 // Screenshots in test-results/screens/meta/.
 import type { Page } from '@playwright/test';
@@ -48,33 +49,58 @@ test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Contin
   await expect(onward).toBeFocused();
   await shot(page, 'meta', 2, 'results');
 
-  // Continue: A1M1 opened the base. R&D is open; the Shop and Engineering show their hints.
+  // The win issued the Sprinkler for A1M2 (D059: TOWER_ACCESS `how: 'issued'`).
+  const towers = await page.evaluate(() => globalThis.__sd!.save()?.unlocks.towers);
+  expect(towers).toEqual(['rivet', 'thumper', 'sprinkler']);
+
+  // Continue: A1M1 opened the base. Research is open; the Shop and Engineering show their hints,
+  // which name only maps the Shift board shows (G8).
   await onward.click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
   const pane = page.getByRole('tabpanel');
-  await expect(page.getByRole('tab', { name: 'R&D' })).toHaveAttribute('aria-selected', 'true');
-  await expect(pane).toContainText('R&D Command');
+  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(pane).toContainText('Research Command');
   await shot(page, 'meta', 3, 'base-rnd');
+  // A purchase that maxes an item (Mk II, one rank) turns its button into "Owned"; the focus stays
+  // on its row instead of dropping to the page (U6).
+  expect(await page.evaluate(() => globalThis.__sd!.save()?.currencies.intel)).toBeGreaterThan(1);
+  await pane.getByRole('button', { name: /^Order Orbital Strike Mk II/ }).click();
+  const mk2 = pane.locator('[data-offer="upgrade:orbital_strike_mk2"]');
+  await expect(mk2).toContainText('Owned');
+  await expect(mk2).toBeFocused();
   await page.getByRole('tab', { name: /Shop/ }).click();
-  await expect(pane).toContainText('Opens after Special Delivery');
+  await expect(pane).toContainText('Opens after Shift 3 (coming soon)');
+  await expect(pane).not.toContainText('Special Delivery');
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: /Engineering/ })).toBeFocused();
-  await expect(pane).toContainText('Opens after The Audit');
+  await expect(pane).toContainText('Opens after Shift 4 (coming soon)');
   await shot(page, 'meta', 4, 'base-engineering-locked');
 
-  // The Shift board: A1M1 cleared; A1M2 next up once its content exists, else coming soon.
+  // The Shift board: A1M1 cleared; A1M2 next up.
   await page.getByRole('button', { name: 'Shift board' }).click();
   await expect(page.getByRole('heading', { name: 'Shift board' })).toBeVisible();
   await expect(shiftRow(page, 'Orientation Day')).toContainText('Cleared');
   await expect(shiftRow(page, 'Orientation Day').getByRole('button')).toHaveAccessibleName(
     'Replay Orientation Day',
   );
-  await expect(shiftRow(page, 'Hatching Season')).toContainText(/Next up|Coming soon/);
+  await expect(shiftRow(page, 'Hatching Season')).toContainText('Next up');
   await expect(page.getByRole('button', { name: 'Base' })).toBeVisible();
   await shot(page, 'meta', 5, 'shift-board');
 
+  // A1M2: no loadout choice yet (three towers), so straight to the briefing; the HUD's build bar
+  // holds the issued Sprinkler.
+  await shiftRow(page, 'Hatching Season').getByRole('button').click();
+  await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeVisible();
+  const build = page.getByRole('navigation', { name: 'Build' }).getByRole('button');
+  await expect(build).toHaveCount(3);
+  await expect(build.nth(2)).toHaveAccessibleName(/^Build Sprinkler/);
+  await shot(page, 'meta', 11, 'a1m2-sprinkler-slot');
+
   // Title → reload: the campaign is still there, and Continue lands on its Shift board.
-  await page.getByRole('button', { name: 'Title' }).click();
+  await page.evaluate(() => globalThis.__sd!.goto('title'));
   await page.reload();
   await waitForReady(page);
   const cont = page.getByRole('button', { name: 'Continue' });
@@ -124,6 +150,8 @@ test('meta: export a code from Settings, import it on the Title into slot 2', as
   await expect(page.getByRole('status')).toContainText('Code checks out!');
   await shot(page, 'meta', 9, 'import-pick');
   const targets = page.getByRole('list', { name: 'Import into' }).getByRole('listitem');
+  // The focus moves from the gone Check code button to the first slot's (U6).
+  await expect(targets.nth(0).getByRole('button')).toBeFocused();
   await targets.nth(1).getByRole('button', { name: 'Import here' }).click();
 
   // The imported campaign is in slot 2, on its Shift board, with its difficulty.
@@ -147,9 +175,9 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
     await expect(pane).toContainText(text);
     await expect(pane).not.toContainText('Locked');
   };
-  await open('R&D', 'R&D Command');
+  await open('Research', 'Research Command');
   await open('Shop', "Zibzab's Genuine Pre-Owned");
-  await open('Engineering', 'R&D Engineering');
+  await open('Engineering', 'Engineering · QUILL');
   await shot(page, 'meta', 10, 'base-all-unlocked');
   // A battle from this save brings at most four towers and still plays (through the loadout
   // screen, T201: this save has a choice of ability).

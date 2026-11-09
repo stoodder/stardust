@@ -17,6 +17,8 @@ const WEST: GridPos = [3, 4];
 const WEST_TURN: GridPos = [2, 3];
 const STRIKE_WHEN = { afterSec: 17.5 } as const;
 const SUPPRESS: GridPos = [11, 7];
+/** Beside the housing block on Terrace 2. */
+const HOUSING_PAD: GridPos = [5, 3];
 
 function parSteps(): BuildStep[] {
   return [
@@ -25,7 +27,6 @@ function parSteps(): BuildStep[] {
     { wave: 2, build: 'thumper', tile: WEST },
     { wave: 2, build: 'sprinkler', tile: PUMP }, // Sitting Ducks with the Thumper beside it
     { wave: 3, upgrade: IRRIGATION },
-    { wave: 3, targeting: IRRIGATION, mode: 'strong' }, // W3 teaches Strong on the Chonks
     { wave: 4, build: 'thumper', tile: BOTTOM },
     { wave: 5, upgrade: BESIDE_PUMP },
     { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN }, // the teach Hauler
@@ -39,6 +40,13 @@ function parSteps(): BuildStep[] {
 
 const PAR_STEPS = parSteps();
 const PAR_LOADOUT = ['rivet', 'thumper', 'sprinkler'] as const;
+
+/** Steps in wave order, keeping each wave's own order. */
+const byWave = (steps: readonly BuildStep[]): BuildStep[] =>
+  steps
+    .map((s, i) => [s, i] as const)
+    .toSorted((a, b) => a[0].wave - b[0].wave || a[1] - b[1])
+    .map(([s]) => s);
 
 /** No armor answer (D038): no Thumper, Rivets held at T2, and both abilities still cast. */
 function noArmorSteps(): BuildStep[] {
@@ -79,6 +87,9 @@ export const builds = defineBuilds({
   // in W7–W8 (act1.md § A1M2), so a no-armor defense breaks in W8, not before the final third.
   teachMap: true,
   noCounterLoseByWave: 8,
+  // The act's band, kept: par holds every wave (100) because one Hauler leak costs 15 points, so
+  // the act's target of 92 can't be met without faking a leak (D059); A1M3 resumes below 90.
+  marginBand: { minPct: 80, maxPct: 100 },
   altBuilds: {
     // No Sprinkler (so no Sitting Ducks): a Rivet takes the pump station instead. The Thumpers
     // still answer the armor.
@@ -98,9 +109,65 @@ export const builds = defineBuilds({
       loadout: PAR_LOADOUT,
       steps: PAR_STEPS.filter((s) => s.wave <= 5 || 'ability' in s),
     },
+    // A Thumper fan: Thumpers on the pump-side pad, the west switchback, and the irrigation tower
+    // (no Sprinkler), upgrades on the Thumpers, the same casts.
+    thumper_heavy: {
+      loadout: ['thumper', 'rivet'],
+      steps: [
+        { wave: 1, build: 'thumper', tile: BESIDE_PUMP },
+        { wave: 1, build: 'thumper', tile: WEST },
+        { wave: 2, build: 'thumper', tile: IRRIGATION },
+        { wave: 3, upgrade: IRRIGATION },
+        { wave: 4, build: 'thumper', tile: BOTTOM },
+        { wave: 5, upgrade: BESIDE_PUMP },
+        { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+        { wave: 6, build: 'thumper', tile: HOUSING_PAD },
+        { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } },
+        { wave: 6, upgrade: WEST },
+        { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+        { wave: 7, upgrade: BESIDE_PUMP },
+        { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+      ],
+    },
+    // Wide, not tall: par's first towers, then a new tower on a fresh pad every wave and never an
+    // upgrade (eight towers by W8), the same casts.
+    build_wide: {
+      loadout: PAR_LOADOUT,
+      steps: [
+        { wave: 1, build: 'rivet', tile: IRRIGATION },
+        { wave: 1, build: 'thumper', tile: BESIDE_PUMP },
+        { wave: 2, build: 'thumper', tile: WEST },
+        { wave: 2, build: 'sprinkler', tile: PUMP },
+        { wave: 4, build: 'thumper', tile: BOTTOM },
+        { wave: 5, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+        { wave: 5, build: 'thumper', tile: HOUSING_PAD },
+        { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: 4 } },
+        { wave: 6, build: 'thumper', tile: [8, 3] },
+        { wave: 7, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+        { wave: 7, build: 'thumper', tile: [7, 6] },
+        { wave: 7, build: 'rivet', tile: [6, 7] },
+        { wave: 8, ability: 1, target: WEST_TURN, when: STRIKE_WHEN },
+        { wave: 8, build: 'thumper', tile: [5, 1] },
+      ],
+    },
+    // Par's towers and casts, never upgraded; the one purchase is a fourth Thumper beside the
+    // housing block in W6, when QUILL's bank nudge plays. (Par without that Thumper banks 560
+    // credits and meets W8 as a wall: the nudge is for that player.) It's the alt where Orbital
+    // Strike Mk II changes the result (a1m2.test.ts).
+    no_upgrades: {
+      loadout: PAR_LOADOUT,
+      steps: byWave([
+        ...PAR_STEPS.filter((s) => !('upgrade' in s)),
+        { wave: 6, build: 'thumper', tile: HOUSING_PAD },
+      ]),
+    },
   },
   altExpectations: {
     par_minus_last: { minMarginPct: 40 },
     stops_after_w5: { outcome: 'either' },
+    // Plausible human builds that should stay comfortable: the easy side of the tuning.
+    thumper_heavy: { minMarginPct: 40 },
+    build_wide: { minMarginPct: 40 },
+    no_upgrades: { outcome: 'either' },
   },
 });

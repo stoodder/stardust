@@ -78,8 +78,13 @@ const MAX_SEGMENT_TILES = 5;
 /** Tiles in the aiming preview (a segment on up to four routes). */
 const MAX_PREVIEW_TILES = 12;
 
-/** Suppressing Fire's ground strip and its aiming preview (Kinetic's warm color, art-direction §7). */
-const SUPPRESS_TINT = { color: 'orange.3', fill: 0.6, edge: 1 } as const;
+/**
+ * Suppressing Fire's strip and its aiming preview (Kinetic's warm color, art-direction §7). The
+ * live strip is hazard-striped at 50% and drawn in `overlay`, over the enemies it pins (D059).
+ */
+const SUPPRESS_TINT = { color: 'orange.3', fill: 0.5, edge: 1 } as const;
+/** Suppressing Fire's streaks are 3 px thick and twice a Rivet's length (D059): heavy fire. */
+const SUPPRESS_STREAK_SCALE = { x: 2, y: 3 } as const;
 /** The preview: the same hazard stripes in the lighter orange, held still (no flicker, no fire). */
 const PREVIEW_TINT = { color: 'orange.4', fill: 0.6, edge: 1 } as const;
 const PREVIEW_ALPHA = 1;
@@ -111,6 +116,8 @@ function hex(name: Parameters<typeof rgbOf>[0]): number {
 
 interface Tracer {
   active: boolean;
+  /** A Suppressing Fire streak (drawn thick), not a Rivet's. */
+  thick: boolean;
   ms: number;
   x0: number;
   y0: number;
@@ -144,6 +151,7 @@ interface Decal {
 interface Float {
   active: boolean;
   ms: number;
+  durationMs: number;
   x: number;
   y: number;
   img: Phaser.GameObjects.Image;
@@ -209,6 +217,11 @@ export class FxView {
   readonly #aim: Phaser.GameObjects.Sprite;
   /** The aim reticle's radius as last drawn (tiles), so it re-textures only on a change. */
   #aimRadius = -1;
+  /**
+   * Called with each Suppressing Fire streak's landing (grid), so the scene can flash Bricks's
+   * muzzle toward it (D059); null without him.
+   */
+  onRake: ((x: number, y: number) => void) | null = null;
   /** Where Suppressing Fire's streaks start (Bricks's muzzle, screen px), or NaN without him. */
   #fireX = Number.NaN;
   #fireY = Number.NaN;
@@ -237,7 +250,7 @@ export class FxView {
       img.setTexture(streak.texture, streak.frame).setDisplayOrigin(streakAnchor.x, streakAnchor.y);
       img.setVisible(false);
       layers.vfx.add(img);
-      this.#tracers.push({ active: false, ms: 0, x0: 0, y0: 0, x1: 0, y1: 0, img });
+      this.#tracers.push({ active: false, thick: false, ms: 0, x0: 0, y0: 0, x1: 0, y1: 0, img });
     }
     for (let i = 0; i < MAX_PULSES; i++) {
       const img = scene.make.image({}, false).setVisible(false);
@@ -262,7 +275,7 @@ export class FxView {
     for (let i = 0; i < MAX_FLOATS; i++) {
       const img = scene.make.image({}, false).setVisible(false);
       layers.overlay.add(img);
-      this.#floats.push({ active: false, ms: 0, x: 0, y: 0, img });
+      this.#floats.push({ active: false, ms: 0, durationMs: FLOAT_MS, x: 0, y: 0, img });
     }
     const boom = sprites.meta('fx.explosion').anchor;
     const boomFrame = sprites.frame('fx.explosion', 'f0');
@@ -298,14 +311,17 @@ export class FxView {
       SUPPRESS_TINT.color,
       SUPPRESS_TINT.fill,
       SUPPRESS_TINT.edge,
+      true,
     );
-    const tileImage = (key: string): Phaser.GameObjects.Image => {
+    const tileImage = (key: string, layer = layers.decal): Phaser.GameObjects.Image => {
       const img = scene.make.image({}, false).setTexture(key).setOrigin(0.5, 0.5).setVisible(false);
-      layers.decal.add(img);
+      layer.add(img);
       return img;
     };
     for (let i = 0; i < MAX_SEGMENTS; i++) {
-      const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () => tileImage(tint));
+      const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () =>
+        tileImage(tint, layers.overlay),
+      );
       this.#segments.push({
         zoneUid: 0,
         seen: 0,
@@ -340,10 +356,14 @@ export class FxView {
     this.#streak(sx, sy, pos.x, pos.y - BODY_LIFT_PX - (targetAir ? AIR_LIFT_PX : 0));
   }
 
-  /** A tracer streak between two screen points. */
-  #streak(x0: number, y0: number, x1: number, y1: number): void {
+  /** A tracer streak between two screen points; `thick` for Suppressing Fire's. */
+  #streak(x0: number, y0: number, x1: number, y1: number, thick = false): void {
     const t = this.#tracers[this.#nextTracer]!; // index < MAX_TRACERS
     this.#nextTracer = (this.#nextTracer + 1) % MAX_TRACERS;
+    if (thick !== t.thick) {
+      t.img.setScale(thick ? SUPPRESS_STREAK_SCALE.x : 1, thick ? SUPPRESS_STREAK_SCALE.y : 1);
+      t.thick = thick;
+    }
     t.x0 = x0;
     t.y0 = y0;
     t.x1 = x1;
@@ -387,8 +407,18 @@ export class FxView {
     this.#syncPulse(p);
   }
 
-  /** A floating number (the 3×5 font) rising from grid (x, y), `liftPx` above the ground. */
-  floatText(text: string, color: ColorName, x: number, y: number, liftPx: number): void {
+  /**
+   * A floating number or callout (the 3×5 font) rising from grid (x, y), `liftPx` above the
+   * ground, for `ms` (a callout stays up longer, to be read).
+   */
+  floatText(
+    text: string,
+    color: ColorName,
+    x: number,
+    y: number,
+    liftPx: number,
+    ms = FLOAT_MS,
+  ): void {
     const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
     this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
     gridToScreen(x, y, this.#ctx.origin, pos);
@@ -398,6 +428,7 @@ export class FxView {
     f.x = Math.round(pos.x);
     f.y = Math.round(pos.y - liftPx);
     f.ms = 0;
+    f.durationMs = ms;
     f.active = true;
     this.#syncFloat(f);
   }
@@ -541,7 +572,7 @@ export class FxView {
     for (const f of this.#floats) {
       if (!f.active) continue;
       f.ms += dt;
-      if (f.ms >= FLOAT_MS) {
+      if (f.ms >= f.durationMs) {
         f.active = false;
         f.img.setVisible(false);
       } else {
@@ -614,8 +645,8 @@ export class FxView {
 
   #syncFloat(f: Float): void {
     f.img
-      .setPosition(f.x, f.y - floatRise(f.ms))
-      .setAlpha(fadeAlpha(f.ms / FLOAT_MS))
+      .setPosition(f.x, f.y - floatRise(Math.min(f.ms, FLOAT_MS)))
+      .setAlpha(fadeAlpha(f.ms / f.durationMs))
       .setVisible(true);
   }
 
@@ -772,9 +803,10 @@ export class FxView {
     const ty = pos.y - BODY_LIFT_PX;
     if (Number.isNaN(this.#fireX)) {
       const jitter = Math.round((this.#rand() - 0.5) * 16);
-      this.#streak(tx + OFFMAP_SOURCE_PX.x + jitter, ty + OFFMAP_SOURCE_PX.y, tx, ty);
+      this.#streak(tx + OFFMAP_SOURCE_PX.x + jitter, ty + OFFMAP_SOURCE_PX.y, tx, ty, true);
     } else {
-      this.#streak(this.#fireX, this.#fireY, tx, ty);
+      this.onRake?.(x, y);
+      this.#streak(this.#fireX, this.#fireY, tx, ty, true);
     }
     this.ring(x, y, SPARK_TILES, 'orange.4', SPARK_MS, false);
   }

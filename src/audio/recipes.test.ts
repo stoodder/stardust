@@ -8,6 +8,7 @@ import {
   layerProblems,
   MAX_SFX_SEC,
   recipeDuration,
+  overlapPeak,
   recipePeak,
   recipeProblems,
 } from './recipes.ts';
@@ -51,7 +52,9 @@ describe('sound effect recipes', () => {
         'hold_fire_off',
         'hold_fire_on',
         'leak',
+        'link_chime',
         'low_integrity',
+        'medal_forfeit',
         'radio_bricks',
         'radio_goldie',
         'radio_quill',
@@ -59,6 +62,7 @@ describe('sound effect recipes', () => {
         'rivet_shot',
         'sack_pop',
         'sell',
+        'specialize',
         'sprinkler_pulse',
         'strike_beam',
         'strike_boom',
@@ -99,6 +103,21 @@ describe('sound effect recipes', () => {
       expect(SFX[id].priority).toBe(3);
       expect(peakOf(id)).toBeGreaterThan(peakOf('rivet_shot') * 2);
     }
+  });
+
+  it("don't sum layers that never sound together (a rattle's separate cracks)", () => {
+    const crack = (at: number): ToneLayer => ({
+      wave: 'square',
+      at,
+      freq: 440,
+      env: { a: 0.001, d: 0.05, s: 0, r: 0.01 },
+      gain: 0.6,
+    });
+    const rattle = { gain: 1, layers: [crack(0), crack(0.065), crack(0.13)] };
+    expect(overlapPeak(rattle)).toBeCloseTo(0.6);
+    expect(recipePeak(rattle)).toBeCloseTo(1.8);
+    const chord = { gain: 1, layers: [crack(0), crack(0.03)] };
+    expect(overlapPeak(chord)).toBeCloseTo(1.2);
   });
 
   it('time the strike charge to its 1 s reticle (D022)', () => {

@@ -58,7 +58,8 @@ import { CursorView } from '../views/CursorView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FxView } from '../views/FxView.ts';
 import { drawGround } from '../views/GroundView.ts';
-import { LinkView, type LinkEnd } from '../views/LinkView.ts';
+import { calloutText, LINK_CALLOUT, LinkView, type LinkEnd } from '../views/LinkView.ts';
+import { PingView } from '../views/PingView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
@@ -94,10 +95,26 @@ export interface BattleSceneDeps {
   onCantBuild(): void;
   /** Whether built towers pulse to teach upgrading (app/hud.ts decides; D028). */
   teachUpgrade(): boolean;
+  /**
+   * A nonzero id while a radio line points at the first-built tower (D059's Denise pointer; a new
+   * id is a new ping), else 0. Optional: without it nothing is pointed at.
+   */
+  pointFirstTower?(): number;
 }
 
 /** Where floating numbers start above a ground point (px): a tower's head, the core's heart. */
 const TOWER_FLOAT_LIFT_PX = 24;
+/** A link's callout (D059): its rings, and its name floated above the pair, held to be read. */
+const LINK_RING_TILES = 0.75;
+const LINK_RING_MS = 450;
+const LINK_CALLOUT_LIFT_PX = 6;
+const LINK_CALLOUT_MS = 1600;
+/** A specialization's extra flash (D059): a gold ring past the upgrade's teal one. */
+const SPEC_RING_TILES = 1.25;
+const SPEC_RING_MS = 500;
+/** The Denise pointer's ring (D059). */
+const PING_RING_TILES = 1;
+const PING_RING_MS = 700;
 const CORE_FLOAT_LIFT_PX = 46;
 type LiveTower = DeepReadonly<Tower>;
 /** Most route tiles a segment preview can tint (FxView draws up to 12). */
@@ -116,6 +133,9 @@ export class BattleScene extends Phaser.Scene {
   #cursor!: CursorView;
   #links!: LinkView;
   #sacks!: SackBurstView;
+  #ping!: PingView;
+  /** The radio pointer id last pinged (0: none). */
+  #pinged = 0;
   /**
    * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
    * draws a burst and a ring (a bomblet: its small pop, no ring).
@@ -157,6 +177,10 @@ export class BattleScene extends Phaser.Scene {
   /** The tile the segment preview was last drawn for, so it's recomputed only on a move. */
   #previewAt = -2;
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
+  /** The ally Suppressing Fire's streaks come from (Bricks), and his post (grid), or null. */
+  #shooter: AllyView | null = null;
+  #shooterX = 0;
+  #shooterY = 0;
 
   /** `key` must be unique among live scenes (the app numbers successive battles). */
   constructor(deps: BattleSceneDeps, key: string = BATTLE_SCENE_KEY) {
@@ -220,6 +244,17 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#sacks = new SackBurstView(ctx);
+    this.#shooter = null;
+    this.#ping = new PingView(ctx, prefersReducedMotion);
+    this.#pinged = 0;
+    // Each Suppressing Fire streak flashes Bricks's muzzle toward where it lands (D059).
+    this.#fx.onRake = (x, y) => {
+      const v = this.#shooter;
+      if (v === null) return;
+      v.fire(facingOf(x - this.#shooterX, y - this.#shooterY));
+      v.muzzle(this.#muzzle);
+      this.#fx.setFireSource(this.#muzzle.x, this.#muzzle.y);
+    };
     this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
     this.#cursor = new CursorView(ctx);
     const teach: [number, number][] = [];
@@ -271,12 +306,27 @@ export class BattleScene extends Phaser.Scene {
         v.setTier(t.tier, t.spec);
         v.flash();
         fx.ring(t.x, t.y, UPGRADE_RING_TILES, 'teal.4', UPGRADE_RING_MS, true);
+        fx.ring(t.x, t.y, SPEC_RING_TILES, 'gold.3', SPEC_RING_MS, true);
         fx.floatText(`−${e.cost}`, 'gold.3', t.x, t.y, TOWER_FLOAT_LIFT_PX);
       }),
       bus.on('LinkFormed', (e) => {
         const a = this.#linkEnd(e.a);
         const b = this.#linkEnd(e.b);
-        if (a !== null && b !== null) this.#links.form(e.link, a, b);
+        if (a === null || b === null) return;
+        this.#links.form(e.link, a, b);
+        // The moment gets its feedback (D059): a ring on both towers and the link's name, floated
+        // between them ("CROSSFIRE!"); the chime is the audio's.
+        const look = LINK_CALLOUT[e.link];
+        const name = content.links.find((l) => l.id === e.link)?.name;
+        if (look === undefined) return;
+        for (const t of [a, b]) {
+          fx.ring(t.col + 0.5, t.row + 0.5, LINK_RING_TILES, look.ring, LINK_RING_MS, true);
+        }
+        if (name === undefined) return;
+        const lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
+        const mx = (a.col + b.col) / 2 + 0.5;
+        const my = (a.row + b.row) / 2 + 0.5;
+        fx.floatText(calloutText(name), look.text, mx, my, lift, LINK_CALLOUT_MS);
       }),
       bus.on('LinkBroken', (e) => {
         this.#links.break(e.link, e.a, e.b);
@@ -401,6 +451,7 @@ export class BattleScene extends Phaser.Scene {
       this.#offs.length = 0;
       this.#fx.reset();
       this.#sacks.reset();
+      this.#ping.reset();
       this.#links.reset();
       this.#shells.clear();
     });
@@ -416,6 +467,8 @@ export class BattleScene extends Phaser.Scene {
     const state = this.#deps.sim.state;
     this.#fx.update(delta, state.zones);
     this.#sacks.update(delta);
+    this.#links.update();
+    this.#syncPing(delta);
     this.#core.update(state.integrity, state.towerAtTile);
     this.#syncTeach();
   }
@@ -469,6 +522,30 @@ export class BattleScene extends Phaser.Scene {
       if (e.uid === uid) return e.def?.layer === 'air';
     }
     return false;
+  }
+
+  /** Pings the first-built tower still standing (the lowest uid) when the radio asks (D059). */
+  #syncPing(delta: number): void {
+    const id = this.#deps.pointFirstTower?.() ?? 0;
+    if (id !== 0 && id !== this.#pinged) {
+      this.#pinged = id;
+      let first: LiveTower | null = null;
+      const pool = this.#deps.sim.state.towers;
+      for (let i = 0; i < pool.used; i++) {
+        const t = pool.items[i]!; // i < used ≤ items.length
+        if (t.alive && (first === null || t.uid < first.uid)) first = t;
+      }
+      if (first !== null) {
+        this.#ping.point(first.col, first.row, this.#liftPx(first.col, first.row));
+        this.#fx.ring(first.x, first.y, PING_RING_TILES, 'gold.3', PING_RING_MS, true);
+      }
+    }
+    this.#ping.update(delta);
+  }
+
+  /** The ping's arrow, for the smoke hooks: whether one shows. */
+  get pinging(): boolean {
+    return this.#ping.showing;
   }
 
   #findTower(uid: number): LiveTower | null {
@@ -593,8 +670,13 @@ export class BattleScene extends Phaser.Scene {
       v.sync(a);
       const target = a.targetUid === 0 ? undefined : this.#enemies.get(a.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - a.x, target.y - a.y));
-      if (fireFrom === null && v.sprite !== null) fireFrom = v;
+      if (fireFrom === null && v.sprite !== null) {
+        fireFrom = v;
+        this.#shooterX = a.x;
+        this.#shooterY = a.y;
+      }
     }
+    this.#shooter = fireFrom;
     this.#allies.sweep(stamp);
     if (fireFrom === null) {
       this.#fx.setFireSource(Number.NaN, Number.NaN);

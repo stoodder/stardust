@@ -20,7 +20,7 @@ function groundY(x: number): number {
 function housingGrid(): string[] {
   const g = grid(W, H);
   isoBox(g, CX, FOOT_Y + 1, HW + 2, 0, { top: '_', rim: '_', left: '_', right: '_' });
-  isoBox(g, CX, FOOT_Y, HW, WALL, { top: '3', rim: '4', left: '4', right: '2' });
+  isoBox(g, CX, FOOT_Y, HW, WALL, { top: '2', rim: '4', left: '4', right: '2' });
   // The teal band between storeys, following each face's slope.
   for (let x = CX - HW; x < CX + HW; x++) {
     plot(g, x, Math.round(groundY(x)) - 8, x < CX ? '8' : '7');
@@ -30,6 +30,7 @@ function housingGrid(): string[] {
     [CX - 10, 4, 'L'],
     [CX - 6, 4, 'K'],
     [CX - 10, 11, 'K'],
+    [CX - 6, 11, '0'],
     [CX - 3, 11, 'L'],
     [CX + 3, 4, '0'],
     [CX + 7, 4, 'J'],
@@ -38,9 +39,8 @@ function housingGrid(): string[] {
   ];
   for (const [x, up, ch] of windows) {
     const y = Math.round(groundY(x)) - up - 2;
-    const slope = x < CX ? 1 : -1; // pixels step with the face
     plot(g, x, y, ch);
-    plot(g, x + 1, y + (slope > 0 ? 0 : 0), ch);
+    plot(g, x + 1, y, ch);
     plot(g, x, y + 1, ch);
     plot(g, x + 1, y + 1, ch);
     plot(g, x, y + 2, x < CX ? '3' : '1'); // the sill

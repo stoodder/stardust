@@ -198,7 +198,7 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
     expect(clampCurrency(12.7)).toBe(12);
   });
 
-  it('issues the next map\'s towers on the first win of the map before it (meta/issued.ts)', () => {
+  it("issues the next map's towers on the first win of the map before it (meta/issued.ts)", () => {
     const first = runEnd(createNewSave(), RUN);
     expect(first.summary.issued).toEqual(['sprinkler']);
     expect(first.save.unlocks.towers).toEqual(['rivet', 'thumper', 'sprinkler']);

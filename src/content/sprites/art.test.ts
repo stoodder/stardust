@@ -3,6 +3,9 @@
 // shadows, the apron's dither, the Brood Hauler's sack, Bricks, the raised and powered tiles, and
 // link tethers.
 import { describe, expect, it } from 'vitest';
+import { luminance } from '../palettes/color.ts';
+import { rgbOf, type ColorName } from '../palettes/master.ts';
+import { SACK_LEGEND } from './enemies/sack.ts';
 import { tetherDir } from './fx/link_tether.ts';
 import { SPRITES, type SpriteId } from './index.ts';
 import { GROUND_SHADOW_ALPHA, groundShadowFor } from './shadows.ts';
@@ -233,6 +236,12 @@ describe('Brood Hauler and its sack', () => {
     expect(def('enemy.brood_hauler').legend).toMatchObject({ S: 'white.0', T: 'steel.4' });
   });
 
+  it("keeps the burlap below the glitter's gold, so the flecks read (the m2 art verdict)", () => {
+    const lum = (c: ColorName): number => luminance(rgbOf(c));
+    expect(lum(SACK_LEGEND.G)).toBeLessThan(lum(SACK_LEGEND.Y));
+    expect(lum(SACK_LEGEND.G)).toBeLessThan(lum('gold.4'));
+  });
+
   it('has an 8×8 carrier glyph and a wave-preview icon', () => {
     expect(def('icon.tell.carrier').size).toEqual({ w: 6, h: 6 });
     expect(def('icon.enemy.brood_hauler').size).toEqual({ w: 14, h: 14 });
@@ -242,6 +251,54 @@ describe('Brood Hauler and its sack', () => {
     const burst = def('fx.sack_burst');
     expect(burst.anims?.['burst']).toMatchObject({ loop: false });
     expect(def('enemy.hauler_young').size.w).toBeLessThan(def('enemy.nibbler').size.w);
+  });
+});
+
+describe("A1M2's decor (act1.md § A1M2)", () => {
+  it('fits each prop on one tile, standing on its tile center', () => {
+    for (const id of ['prop.rig', 'prop.housing', 'prop.scarecrow'] as const) {
+      const d = def(id);
+      expect(d.size.w, id).toBeLessThanOrEqual(32);
+      expect(d.size.h, id).toBeLessThanOrEqual(48);
+      expect(bounds(grid(id, 'v0')).y1, id).toBeGreaterThanOrEqual(d.anchor.y);
+    }
+  });
+
+  it("paints Rig 3's number and its spoil cold violet (unsung: art-direction §1, principle 6)", () => {
+    expect(def('prop.rig').legend).toMatchObject({ U: 'violet.3', V: 'violet.4' });
+    expect(count(grid('prop.rig', 'v0'), 'UV')).toBeGreaterThan(0);
+    expect(count(grid('prop.rig', 'v0'), 'd')).toBeGreaterThanOrEqual(8); // the orange "3"
+  });
+
+  it('gives the scarecrow his faded cap and his Employee of the Month badge', () => {
+    const rows = grid('prop.scarecrow', 'v0');
+    expect(count(rows, '7')).toBeGreaterThan(8); // the cap, teal.2: faded
+    expect(def('prop.scarecrow').legend).toMatchObject({ Y: 'gold.3' });
+    expect(count(rows, 'Y')).toBeGreaterThan(0);
+  });
+
+  it('lights the housing block warm: people live there', () => {
+    expect(count(grid('prop.housing', 'v0'), 'KL')).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('the road verge (art-direction §3 mid-darks)', () => {
+  it('draws only mid-dark grass, on each edge, in two variants', () => {
+    for (const edge of ['nw', 'ne', 'se', 'sw']) {
+      for (const k of [0, 1]) {
+        const rows = grid('tile.verge', `${edge}_${k}`);
+        expect(count(rows, '01'), `${edge}_${k}`).toBeGreaterThan(12);
+        expect(count(rows, '234'), `${edge}_${k}`).toBe(0);
+      }
+    }
+  });
+});
+
+describe('the armored tell glyph', () => {
+  it('is an 8×8 steel plate', () => {
+    const g = def('icon.tell.armored');
+    expect(g.size).toEqual({ w: 6, h: 6 });
+    expect(g.legend).toMatchObject({ C: 'steel.4' });
   });
 });
 

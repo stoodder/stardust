@@ -1,6 +1,7 @@
 // Import a shift code (Title → Import, Settings → Import): paste, check, then pick the slot it
 // goes into. A slot that holds a save asks before replacing it. Problems read in the Act I voice
-// and never blame the player (app/save.ts).
+// and never blame the player (app/save.ts). Once a code checks out, the focus moves to the first
+// slot's button (U6); Keep returns it to that slot's Replace.
 import { useState } from 'preact/hooks';
 import { importGame } from '../../app/navigation.ts';
 import { checkImport, type ImportCheck } from '../../app/save.ts';
@@ -8,6 +9,11 @@ import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { SlotList } from './SlotList.tsx';
 import { slots, type SlotView } from './state.ts';
+
+/** A ref callback that leaves the focus alone. */
+function noFocus(): void {
+  // The focus goes elsewhere.
+}
 
 type Step =
   | { readonly kind: 'paste'; readonly error: string | null; readonly busy: boolean }
@@ -18,10 +24,16 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
   const [text, setText] = useState('');
   const [step, setStep] = useState<Step>({ kind: 'paste', error: null, busy: false });
   const [confirm, setConfirm] = useState<1 | 2 | 3 | null>(null);
+  /** The slot whose Replace takes the focus: the first one, then the one Keep backed out of. */
+  const [focusSlot, setFocusSlot] = useState<1 | 2 | 3 | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const keep = (slot: 1 | 2 | 3): void => {
+    setConfirm(null);
+    setFocusSlot(slot);
+  };
   // Esc (T212): a Replace confirm says Keep; otherwise it's Back.
   useEscape(() => {
-    if (confirm !== null) setConfirm(null);
+    if (confirm !== null) keep(confirm);
     else onCancel();
     return true;
   });
@@ -30,6 +42,7 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
     setStep({ kind: 'paste', error: null, busy: true });
     const r = await checkImport(text);
     setStep(r.ok ? { kind: 'pick', check: r } : { kind: 'paste', error: r.message, busy: false });
+    if (r.ok) setFocusSlot(slots.value[0]?.slot ?? null);
   };
 
   if (step.kind === 'paste') {
@@ -76,9 +89,15 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
     if (!r.ok) setWriteError(r.message);
   };
   const actions = (view: SlotView) => {
+    const focus = view.slot === focusSlot ? focusOnce : noFocus;
     if (view.status === 'empty') {
       return (
-        <button type="button" class="sd-button sd-button-small" onClick={() => place(view.slot)}>
+        <button
+          type="button"
+          class="sd-button sd-button-small"
+          ref={focus}
+          onClick={() => place(view.slot)}
+        >
           Import here
         </button>
       );
@@ -94,14 +113,19 @@ export function ImportPanel({ onCancel }: { onCancel: () => void }) {
           >
             Yes, replace
           </button>
-          <button type="button" class="sd-button sd-button-small" onClick={() => setConfirm(null)}>
+          <button type="button" class="sd-button sd-button-small" onClick={() => keep(view.slot)}>
             Keep
           </button>
         </>
       );
     }
     return (
-      <button type="button" class="sd-button sd-button-small" onClick={() => setConfirm(view.slot)}>
+      <button
+        type="button"
+        class="sd-button sd-button-small"
+        ref={focus}
+        onClick={() => setConfirm(view.slot)}
+      >
         Replace
       </button>
     );

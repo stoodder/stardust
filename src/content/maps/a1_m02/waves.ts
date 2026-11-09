@@ -11,6 +11,9 @@ const ROUTE = 'road';
  * answer (D049).
  */
 const HAULER_GAP = 12;
+/** W4's Nibbler clumps: this many, this far apart (s), so one Orbital Strike catches a clump whole. */
+const CLUMP = 4;
+const CLUMP_GAP = 0.25;
 
 /** `count` of `enemy`, starting `delaySec` into the wave, `intervalSec` apart (default spacing). */
 function g(enemy: EnemyId, count: number, delaySec = 0, intervalSec?: number): WaveGroup {
@@ -28,10 +31,16 @@ export const waves = defineWaves([
   { groups: [g('nibbler', 10, 0, 0.7)] },
   // W2 · Nibblers + Zoomers; the early-call prompt
   { groups: [g('nibbler', 10), g('zoomer', 10, 5)] },
-  // W3 · two Chonks [T: armor plink; Strong targeting]
+  // W3 · two Chonks [T: armor plink]
   { groups: [g('chonk', 2, 0, 3)] },
-  // W4 · Chonks + a Nibbler swarm [X; Sitting Ducks]
-  { groups: [g('chonk', 3, 0, 2), g('nibbler', 16, 2, 0.3)] },
+  // W4 · Chonks + a Nibbler swarm in four tight clumps [X; Sitting Ducks]: a strike catches a
+  // clump whole (D059)
+  {
+    groups: [
+      g('chonk', 3, 0, 2),
+      ...[2, 8, 14, 20].map((at) => g('nibbler', CLUMP, at, CLUMP_GAP)),
+    ],
+  },
   // W5 · one Brood Hauler, alone [T]
   { groups: [g('hauler', 1)] },
   // W6 · a Zoomer rush + Chonks [X: early call]

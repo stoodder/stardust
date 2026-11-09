@@ -193,6 +193,10 @@ function compileBomblets(ctx: Ctx, b: BombletsDef, where: string): CompiledBombl
   for (const f of ['splashTiles', 'scatterTiles'] as const) {
     if (!(b[f] > 0)) ctx.errors.push(`${where}.${f}: must be > 0 (got ${b[f]})`);
   }
+  const flightTicks = ticks(ctx, b.flightSec, `${where}.flightSec`);
+  if (flightTicks < 1) {
+    ctx.errors.push(`${where}.flightSec: must last at least one tick (got ${b.flightSec})`);
+  }
   return {
     count: b.count,
     damage: b.damage,
@@ -200,7 +204,7 @@ function compileBomblets(ctx: Ctx, b: BombletsDef, where: string): CompiledBombl
     splashSq: b.splashTiles * b.splashTiles,
     scatterTiles: b.scatterTiles,
     scatterSq: b.scatterTiles * b.scatterTiles,
-    flightTicks: ticks(ctx, b.flightSec, `${where}.flightSec`),
+    flightTicks,
     projectile: b.projectile,
   };
 }

@@ -22,6 +22,9 @@ import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
+/** Scratch damage source for ally shots (no allocation per shot). */
+const allySource: { kind: 'ally'; uid: number } = { kind: 'ally', uid: 0 };
+
 export function allies(state: SimState, ctx: TickContext): void {
   if (state.tick === 0) spawnPosts(state, ctx);
   const pool = state.allies;
@@ -47,8 +50,9 @@ export function allies(state: SimState, ctx: TickContext): void {
       targetX: target.x,
       targetY: target.y,
     });
-    // A fresh source per shot: EnemyDied keeps a copy, and allies fire a few times a second.
-    applyDamage(state, target, a.damage, a.damageType, { kind: 'ally', uid: a.uid }, PLAIN_HIT);
+    // One scratch source for every shot (applyDamage copies what an EnemyDied keeps).
+    allySource.uid = a.uid;
+    applyDamage(state, target, a.damage, a.damageType, allySource, PLAIN_HIT);
     a.cooldownTicks = a.periodTicks;
   }
 }

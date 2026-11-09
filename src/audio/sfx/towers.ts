@@ -76,6 +76,102 @@ export const TOWER_SFX = {
       },
     ],
   },
+  /**
+   * A link forms (Crossfire, Sitting Ducks; D059): a two-note chime, a fourth up, bright and
+   * bell-like, so "these two are working together" has its own sound.
+   */
+  link_chime: {
+    gain: 0.36,
+    priority: 2,
+    minGapMs: 150,
+    maxVoices: 2,
+    layers: [
+      {
+        wave: 'triangle',
+        freq: 1318.5,
+        env: { a: 0.002, d: 0.08, s: 0.35, hold: 0.04, r: 0.18 },
+        gain: 0.55,
+      },
+      {
+        wave: 'pulse12',
+        freq: 1318.5,
+        filter: { type: 'lowpass', freq: 6000 },
+        env: { a: 0.002, d: 0.05, s: 0.2, hold: 0.02, r: 0.1 },
+        gain: 0.25,
+      },
+      {
+        wave: 'triangle',
+        at: 0.09,
+        freq: 1760,
+        vibrato: { hz: 6, cents: 12 },
+        env: { a: 0.002, d: 0.1, s: 0.4, hold: 0.1, r: 0.3 },
+        gain: 0.6,
+      },
+      {
+        wave: 'pulse12',
+        at: 0.09,
+        freq: 1760,
+        filter: { type: 'lowpass', freq: 6000 },
+        env: { a: 0.002, d: 0.06, s: 0.2, hold: 0.04, r: 0.16 },
+        gain: 0.25,
+      },
+    ],
+  },
+  /**
+   * A tier-4 specialization (D059): bigger than an upgrade. A low thunk, then a rising fifth-and-
+   * octave sweep with a shimmer, so the choice lands.
+   */
+  specialize: {
+    gain: 0.42,
+    priority: 2,
+    minGapMs: 120,
+    duck: 0.7,
+    layers: [
+      {
+        wave: 'square',
+        freq: 130.81,
+        filter: { type: 'lowpass', freq: 900 },
+        glide: 0.5,
+        glideSec: 0.12,
+        env: { a: 0.002, d: 0.12, s: 0, r: 0.04 },
+        gain: 0.55,
+      },
+      {
+        wave: 'pulse25',
+        at: 0.06,
+        freq: 523.25,
+        filter: { type: 'lowpass', freq: 5000 },
+        steps: [
+          [0.06, 1.498],
+          [0.12, 2],
+          [0.18, 2.52],
+          [0.24, 3],
+        ],
+        env: { a: 0.002, d: 0.05, s: 0.7, hold: 0.26, r: 0.2 },
+        gain: 0.45,
+      },
+      {
+        wave: 'triangle',
+        at: 0.06,
+        freq: 261.63,
+        steps: [
+          [0.06, 1.498],
+          [0.12, 2],
+          [0.18, 2.52],
+        ],
+        env: { a: 0.002, d: 0.05, s: 0.75, hold: 0.26, r: 0.2 },
+        gain: 0.5,
+      },
+      {
+        wave: 'noise',
+        at: 0.24,
+        freq: 440,
+        filter: { type: 'highpass', freq: 6500 },
+        env: { a: 0.02, d: 0.3, s: 0, r: 0.08 },
+        gain: 0.18,
+      },
+    ],
+  },
   /** A sale: two bright register pings. */
   sell: {
     gain: 0.32,

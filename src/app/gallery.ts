@@ -191,6 +191,9 @@ const DIORAMA_GRID: GroundGrid = {
   cols: DIORAMA_MAP[0]?.length ?? 0,
   rows: DIORAMA_MAP.length,
   tiles: DIORAMA_MAP.join('').split('').filter(isTileChar),
+  // A1M2's decor markers (groundTiles DECOR_MARKERS): Rig 3 by the power node, the housing block,
+  // and the scarecrow.
+  markers: { rig3: [8, 2], housing: [0, 1], scarecrow: [8, 8] },
 };
 
 /** A tower's look: a tier (1–3) or a tier-4 spec, named like its base frame. */
@@ -265,6 +268,7 @@ function diorama(
   const cell = (i: number, j: number, look: TileDressing): void => {
     const [sx, sy] = screen(i, j);
     draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
+    for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
     if (look.block !== undefined)
       blocks.push({ id: look.block.sprite, frame: look.block.frame, i, j });
     const p = look.prop;
