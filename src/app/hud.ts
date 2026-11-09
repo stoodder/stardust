@@ -218,7 +218,10 @@ function sameSelected(a: SelectedTowerView | null, b: SelectedTowerView): boolea
   );
 }
 
-/** The selected tower's panel view, or null if it's gone. Reuses `prev` when nothing changed. */
+/**
+ * The selected tower's panel view, or null if it's gone. Reuses `prev` when nothing changed, and
+ * `prev`'s stat lines while the tower and tier are the same (no stat work on a steady frame).
+ */
 export function selectedView(
   sim: Sim<IdSpace>,
   uid: number,
@@ -239,7 +242,16 @@ export function selectedView(
   const p = { x: 0, y: 0 };
   gridToScreen(t.x, t.y, origin, p);
   const sell = sellValue(t, sim.state.tick);
-  const stats = towerStats(t.def, t.tier);
+  let statLine: string;
+  let upgradeDelta: string | null;
+  if (prev !== null && prev.uid === uid && prev.tier === t.tier) {
+    statLine = prev.stats;
+    upgradeDelta = prev.upgradeDelta;
+  } else {
+    const stats = towerStats(t.def, t.tier);
+    statLine = statLineText(stats);
+    upgradeDelta = deltaText(stats.next);
+  }
   const next: SelectedTowerView = {
     uid,
     label: displayName(t.def.id),
@@ -250,8 +262,8 @@ export function selectedView(
     sellValue: sell.value,
     fullRefund: sell.full,
     priority: t.priority,
-    stats: statLineText(stats),
-    upgradeDelta: deltaText(stats.next),
+    stats: statLine,
+    upgradeDelta,
     x: p.x,
     y: p.y,
   };
@@ -278,6 +290,22 @@ export function callPulses(
 ): boolean {
   if (wave === 0) return built;
   return countdown !== null && countdown > CALL_PULSE_MIN_SEC && enemiesAlive === 0;
+}
+
+/** The first wave whose countdown starts the upgrade teach (D028: W2's build phase). */
+export const UPGRADE_TEACH_WAVE = 2;
+
+/**
+ * Whether the upgrade teach shows (D028): it has started (W2's countdown came) and no tower has
+ * been upgraded yet, while a tower stands and the map is still being played.
+ */
+export function upgradeHintShows(
+  started: boolean,
+  upgraded: boolean,
+  towersLive: number,
+  playing: boolean,
+): boolean {
+  return started && !upgraded && towersLive > 0 && playing;
 }
 
 /** Notice text for a rejected command, or null for rejections the player needn't hear about. */
@@ -402,6 +430,9 @@ export function bindHud(
   hud.waveBanner.value = null;
   hud.built.value = false;
   hud.callPulse.value = false;
+  hud.upgradeHint.value = false;
+  let teachStarted = false;
+  let upgraded = false;
   let previewFor = -1;
   let leakId = 0;
   let bannerId = 0;
@@ -425,6 +456,12 @@ export function bindHud(
       s.outcome === 'playing' &&
       callPulses(s.wave, hud.countdown.value, s.enemies.live, hud.built.value);
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
+    hud.upgradeHint.value = upgradeHintShows(
+      teachStarted,
+      upgraded,
+      s.towers.live,
+      s.outcome === 'playing',
+    );
     syncCooldowns();
     speed.value = host.speed;
   };
@@ -470,8 +507,12 @@ export function bindHud(
         hud.waveBanner.value = null;
       }, WAVE_BANNER_MS);
     }),
-    host.bus.on('CountdownStarted', () => {
+    host.bus.on('CountdownStarted', (e) => {
       hud.countdownCue.value++;
+      if (e.wave >= UPGRADE_TEACH_WAVE) teachStarted = true;
+    }),
+    host.bus.on('TowerUpgraded', () => {
+      upgraded = true;
     }),
     host.bus.on('CommandRejected', (e) => {
       const text = rejectText(e.reason);
@@ -485,6 +526,7 @@ export function bindHud(
     hud.leak.value = null;
     hud.waveBanner.value = null;
     hud.callPulse.value = false;
+    hud.upgradeHint.value = false;
     hud.selectedTower.value = 0;
     hud.selected.value = null;
     hud.armedTower.value = null;

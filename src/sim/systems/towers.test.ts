@@ -69,6 +69,10 @@ describe('towers: deploy delay (core-loop.md § 2.5)', () => {
     expect(ofType(evs, 'ProjectileFired').map((f) => [f.tick, f.kind, f.sprite])).toEqual([
       [30, 'pulse', null],
     ]);
+    // A pulse carries its reach, so the renderer sizes its ring without looking the tower up.
+    expect(ofType(evs, 'ProjectileFired')[0]?.radiusTiles).toBe(
+      SPRINKLER.tiers[0].attack?.rangeTiles,
+    );
   });
 });
 
@@ -88,6 +92,7 @@ describe('towers: hitscan (Rivet)', () => {
       targetUid: eUid,
       sprite: null,
       flightTicks: 0,
+      radiusTiles: 0,
     });
     expect(ofType(evs, 'ProjectileHit').map((h) => [h.tick, h.hits])).toEqual([
       [0, 1],
@@ -170,6 +175,8 @@ function shoot(over: { lead?: boolean; dist?: number; chill?: number; def?: type
     applyEffects(e, [{ status: 'chilled', pct: over.chill, durationTicks: 600 }]);
   const evs = run(state, ctx, 1);
   const fired = ofType(evs, 'ProjectileFired')[0]!; // the mortar fires on tick 0 (in range)
+  const shell = mortar.tierDef?.attack;
+  expect(fired.radiusTiles).toBe(shell?.kind === 'lobbed' ? shell.splashTiles : NaN);
   let hit: (Ev<'ProjectileHit'> & { tick: number }) | undefined;
   while (hit === undefined && state.tick < 200) {
     const tick = state.tick;

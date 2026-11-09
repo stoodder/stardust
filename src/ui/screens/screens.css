@@ -265,6 +265,38 @@
   color: var(--sd-teal-3);
 }
 
+/* The debrief (D028): spoken lines under their name plates, like the radio ticker's. */
+.sd-results-debrief {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 4px 0;
+  border-top: 1px solid var(--sd-ink-3);
+  list-style: none;
+  text-align: left;
+}
+
+.sd-results-debrief li {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.sd-results-speaker {
+  flex: none;
+  min-width: 40px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.sd-results-line {
+  font-family: var(--font-body);
+  line-height: 10px;
+  color: var(--sd-white-1);
+}
+
 .sd-results-buttons {
   display: flex;
   gap: 8px;

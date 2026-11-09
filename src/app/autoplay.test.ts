@@ -12,13 +12,14 @@ function a1m1Host() {
 describe('autoplay', () => {
   it('names the builds a smoke test can play', () => {
     const { sim } = a1m1Host();
+    // par, the two references, then every alt build the map lists, in its order.
     expect(buildNames(sim.map)).toEqual([
       'par',
       'none',
       'alwaysCallEarly',
-      'rivet_only',
-      'par_minus_last',
+      ...Object.keys(sim.map.builds.altBuilds),
     ]);
+    expect(buildNames(sim.map)).toContain('rivet_only');
     expect(namedBuild(sim.map, 'par')).toBe(sim.map.builds.parBuild);
     expect(namedBuild(sim.map, 'none')?.steps).toEqual([]);
     expect(namedBuild(sim.map, 'alwaysCallEarly')?.callEarly).toBe(true);

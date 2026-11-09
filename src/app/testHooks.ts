@@ -37,6 +37,8 @@ export interface HookEnv {
   autoplay(build: string): void;
   setSpeed(speed: Speed): void;
   goto(screen: ScreenId): Promise<void>;
+  /** Shows a finished map's Results now, skipping the rest of the results delay (if one waits). */
+  flushResults(): void;
   /** Mean CPU time of recent frames, in ms. */
   frameMs(): number;
   /** The game canvas, to map game pixels to client coordinates. */
@@ -74,7 +76,11 @@ export function createTestHooks(env: HookEnv): TestHooks {
       if (!Number.isInteger(ticks) || ticks < 0) {
         throw new Error(`__sd.fastForward: ticks must be a non-negative integer, got ${ticks}`);
       }
-      env.battle()?.host.fastForward(ticks);
+      const b = env.battle();
+      if (b === null) return;
+      b.host.fastForward(ticks);
+      // Fast-forwarded time is test time: a map that just ended shows its Results now.
+      env.flushResults();
     },
     tileToClient: (x: number, y: number): ClientPoint | null => {
       const b = env.battle();

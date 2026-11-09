@@ -23,6 +23,7 @@ function propTieBreak(index: number): number {
   return index & 0xff;
 }
 
+/** Draws one cell's ground and prop; returns the prop's sprite (null with none). */
 function drawCell(
   ctx: ViewContext,
   env: string,
@@ -30,7 +31,7 @@ function drawCell(
   j: number,
   look: TileDressing,
   id: number,
-): void {
+): Phaser.GameObjects.Sprite | null {
   const { scene, sprites, layers, origin } = ctx;
   const f = sprites.frame(look.ground.sprite, look.ground.frame, envVariant(env));
   tileImageTopLeft(i, j, origin, pos);
@@ -38,7 +39,7 @@ function drawCell(
     new Phaser.GameObjects.Image(scene, pos.x, pos.y, f.texture, f.frame).setOrigin(0, 0),
   );
   const prop = look.prop;
-  if (prop === null) return;
+  if (prop === null) return null;
   const pv = propVariant(prop.sprite, env);
   const pf = sprites.frame(prop.sprite, prop.frame, pv);
   const pa = sprites.frameAnchor(prop.sprite, prop.frame);
@@ -48,10 +49,19 @@ function drawCell(
     .setDepth(worldDepth(pos.y, 'prop', propTieBreak(id)));
   if (prop.anim !== null) img.play(sprites.anim(prop.sprite, prop.anim, pv));
   layers.world.add(img);
+  return img;
 }
 
-/** Draws a map's apron, ground, and props. Static: called once when the battle starts. */
-export function drawGround(ctx: ViewContext, grid: GroundGrid, env: string): void {
+/**
+ * Draws a map's apron, ground, and props. Static: called once when the battle starts. Returns the
+ * core props by tile index, for CoreView (it fades a core that hides a tower behind it).
+ */
+export function drawGround(
+  ctx: ViewContext,
+  grid: GroundGrid,
+  env: string,
+): Map<number, Phaser.GameObjects.Sprite> {
+  const cores = new Map<number, Phaser.GameObjects.Sprite>();
   // The apron first: its tiles never overlap the map's, so only the props need sorting.
   apronCells(grid, env).forEach((cell, n) => {
     drawCell(ctx, env, cell.col, cell.row, cell, APRON_ID_BASE + n);
@@ -60,7 +70,10 @@ export function drawGround(ctx: ViewContext, grid: GroundGrid, env: string): voi
   for (let d = 0; d <= grid.cols + grid.rows - 2; d++) {
     for (let i = Math.max(0, d - grid.rows + 1); i <= Math.min(d, grid.cols - 1); i++) {
       const j = d - i;
-      drawCell(ctx, env, i, j, dressTile(grid, i, j), j * grid.cols + i);
+      const index = j * grid.cols + i;
+      const prop = drawCell(ctx, env, i, j, dressTile(grid, i, j), index);
+      if (prop !== null && grid.tiles[index] === 'C') cores.set(index, prop);
     }
   }
+  return cores;
 }

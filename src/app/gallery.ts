@@ -3,7 +3,7 @@
 // seams, head mounts, and environment palette swaps. Deterministic, so its screenshot can be
 // compared milestone to milestone. Smoke reads the data-* counters on <body>.
 import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.ts';
-import { MASTER } from '../content/palettes/master.ts';
+import { rgbOf } from '../content/palettes/master.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
@@ -19,6 +19,16 @@ import {
 } from '../render/sprites/bake.ts';
 import { imageToCanvas } from '../render/sprites/canvas.ts';
 import type { RgbaImage } from '../render/sprites/rasterize.ts';
+import { APRON_RINGS } from '../content/sprites/tiles/apron.ts';
+import type { TileChar } from '../content/types.ts';
+import {
+  apronCells,
+  dressTile,
+  envVariant,
+  propVariant,
+  type GroundGrid,
+  type TileDressing,
+} from '../render/views/groundTiles.ts';
 import { logError } from './log.ts';
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -173,6 +183,15 @@ const DIORAMA_MAP = [
   '....C....',
 ];
 
+const isTileChar = (c: string): c is TileChar => '#o^+x.SC'.includes(c);
+
+/** The diorama as a map grid, so groundTiles dresses it exactly as GroundView dresses a map. */
+const DIORAMA_GRID: GroundGrid = {
+  cols: DIORAMA_MAP[0]?.length ?? 0,
+  rows: DIORAMA_MAP.length,
+  tiles: DIORAMA_MAP.join('').split('').filter(isTileChar),
+};
+
 type Placed = readonly [
   spriteId: SpriteId,
   frame: string,
@@ -188,17 +207,18 @@ function diorama(
 ): HTMLCanvasElement {
   const rowsN = DIORAMA_MAP.length;
   const colsN = DIORAMA_MAP[0]?.length ?? 0;
-  const w = (colsN + rowsN) * 16 + 32;
-  const h = (colsN + rowsN) * 8 + 56;
-  const ox = rowsN * 16 + 16;
-  const oy = 40;
+  // The grid plus the decor apron the game draws around it (APRON_RINGS on every side).
+  const R = APRON_RINGS;
+  const w = (colsN + rowsN + 4 * R) * 16;
+  const oy = R * 16 + 24; // headroom over the back corner for the props
+  const h = oy + (colsN + rowsN + 2 * R - 2) * 8 + 16;
+  const ox = (rowsN + 2 * R) * 16;
   const c = el('canvas');
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d');
   if (ctx === null) return c;
   backdrop(ctx, env, w, h);
-  const ev = env === 'act1' ? DEFAULT_VARIANT : env;
   const frameOf = (id: SpriteId, frame: string, variant: string): BakedFrame | undefined => {
     const b = baked.get(id);
     return b?.frames.find((f) => f.key === frameKey(id, variant, frame));
@@ -216,34 +236,22 @@ function diorama(
       ctx.globalCompositeOperation = 'source-over';
     }
   };
-  // Ground, back to front.
-  DIORAMA_MAP.forEach((line, j) => {
-    line.split('').forEach((ch, i) => {
-      const [sx, sy] = screen(i, j);
-      const vertical =
-        DIORAMA_MAP[j - 1]?.charAt(i) === '#' || DIORAMA_MAP[j + 1]?.charAt(i) === '#';
-      const f =
-        ch === 'o'
-          ? frameOf('tile.pad', 'v0', ev)
-          : ch === 'S'
-            ? frameOf('tile.spawn', 'v0', ev)
-            : ch === '#' || ch === 'C'
-              ? frameOf('tile.path', vertical ? 'tread_y' : 'tread_x', ev)
-              : frameOf('tile.grass', `v${(i * 7 + j * 13) % 3}`, ev);
-      draw(f, sx, sy);
-    });
-  });
-  // World objects sorted by ground y (tech-spec § Depth sorting).
+  // Ground and props as the game dresses them (render/views/groundTiles.ts, GroundView): the apron
+  // with its fence and the env's decor first, then the grid, each back to front.
   const objects: Placed[] = [];
-  DIORAMA_MAP.forEach((line, j) => {
-    line.split('').forEach((ch, i) => {
-      if (ch === 'C') objects.push(['prop.core', 'idle_0', i + 0.5, j + 0.5]);
-      if (ch === '.' && (i * 3 + j * 5) % 7 === 0)
-        objects.push(['prop.flora', 'v0', i + 0.5, j + 0.5, ev]);
-      if (ch === '.' && (i * 5 + j * 3) % 11 === 0)
-        objects.push(['prop.rock', 'v0', i + 0.5, j + 0.5, ev]);
-    });
-  });
+  const cell = (i: number, j: number, look: TileDressing): void => {
+    const [sx, sy] = screen(i, j);
+    draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
+    const p = look.prop;
+    if (p !== null) objects.push([p.sprite, p.frame, i + 0.5, j + 0.5, propVariant(p.sprite, env)]);
+  };
+  for (const a of apronCells(DIORAMA_GRID, env)) cell(a.col, a.row, a);
+  for (let d = 0; d <= colsN + rowsN - 2; d++) {
+    for (let i = Math.max(0, d - rowsN + 1); i <= Math.min(d, colsN - 1); i++) {
+      cell(i, d - i, dressTile(DIORAMA_GRID, i, d - i));
+    }
+  }
+  // World objects sorted by ground y (tech-spec § Depth sorting).
   objects.push(
     ['enemy.nibbler', 'walk_se_0', 4.5, 1.3],
     ['enemy.nibbler', 'walk_se_1', 4.5, 2.2],
@@ -347,18 +355,27 @@ function backdrop(ctx: CanvasRenderingContext2D, env: EnvPaletteId, w: number, h
   const sky = ENV_SKY[env];
   const bands = [...sky, ENV_PALETTES[env].outline];
   const bandH = Math.round((h * 0.6) / sky.length);
+  // Written as pixels in one ImageData (a fillRect per pixel is slow at the dioramas' size).
+  const img = ctx.createImageData(w, h);
+  const data = img.data;
   for (let y = 0; y < h; y++) {
     const band = Math.min(Math.floor(y / bandH), bands.length - 1);
     const next = Math.min(band + 1, bands.length - 1);
     // Over a band's last 4 rows, the ordered dither steps 0 → 75% into the next band.
     const threshold = Math.max(0, y - band * bandH - (bandH - 4)) * 4;
     const row = BAYER4[y % 4] ?? BAYER4[0];
+    const on = rgbOf(bands[band] ?? 'ink.0');
+    const off = rgbOf(bands[next] ?? 'ink.0');
     for (let x = 0; x < w; x++) {
-      const c = (row[x % 4] ?? 0) < threshold ? bands[next] : bands[band];
-      ctx.fillStyle = MASTER[c ?? 'ink.0'];
-      ctx.fillRect(x, y, 1, 1);
+      const c = (row[x % 4] ?? 0) < threshold ? off : on;
+      const i = (y * w + x) * 4;
+      data[i] = c.r;
+      data[i + 1] = c.g;
+      data[i + 2] = c.b;
+      data[i + 3] = 255;
     }
   }
+  ctx.putImageData(img, 0, 0);
 }
 
 function glowOf(

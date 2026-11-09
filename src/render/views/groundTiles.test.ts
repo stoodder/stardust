@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TileChar } from '../../content/types.ts';
 import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
-import { apronCells, dressTile, envVariant, propVariant } from './groundTiles.ts';
+import { apronCells, dressTile, envVariant, propVariant, tilesBehind } from './groundTiles.ts';
 
 function grid(rows: readonly string[]): {
   cols: number;
@@ -107,5 +107,34 @@ describe('apronCells', () => {
     expect(propVariant('prop.core', 'act2.gold')).toBe('default');
     expect(propVariant('prop.flora', 'act3')).toBe('act3');
     expect(propVariant('prop.lettuce', 'act1')).toBe('default');
+  });
+});
+
+describe('tilesBehind (the core fades over them; D028)', () => {
+  // A1M1's south end: the core at (4,9), its pad two steps up the same screen column at (2,7).
+  const a1 = grid([
+    '....S.........',
+    '....#.o.......',
+    '..o.#.o^......',
+    '....######....',
+    '...o.....#o...',
+    '...o.....#o...',
+    '....######....',
+    '..o.#.o.......',
+    '....#.........',
+    '....C.........',
+  ]);
+  const at = (c: number, r: number) => r * a1.cols + c;
+
+  it('lists the tiles up the core’s screen column that its 33 px sprite covers', () => {
+    expect(tilesBehind(a1, 4, 9, 33)).toEqual([at(3, 8), at(2, 7)]);
+    // A taller core reaches one step further; a short one only the tile right behind.
+    expect(tilesBehind(a1, 4, 9, 48)).toEqual([at(3, 8), at(2, 7), at(1, 6)]);
+    expect(tilesBehind(a1, 4, 9, 12)).toEqual([at(3, 8)]);
+  });
+
+  it('stops at the grid edge', () => {
+    expect(tilesBehind(a1, 1, 9, 33)).toEqual([at(0, 8)]);
+    expect(tilesBehind(a1, 0, 9, 33)).toEqual([]);
   });
 });

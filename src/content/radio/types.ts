@@ -1,6 +1,6 @@
-// The M1 radio ticker's data (D026): a map's between-wave radio lines and barks from its act file,
-// verbatim, keyed to the sim events that play them. This is not the dialogue system (T302): no
-// portraits, choices, flags, or conditions; each line plays at most once per battle.
+// The M1 radio ticker's data (D026): a map's between-wave radio lines, barks, and debrief from its
+// act file, verbatim, keyed to the sim events that play them. This is not the dialogue system
+// (T302): no portraits, choices, flags, or conditions; each line plays at most once per battle.
 import type { ColorName } from '../palettes/master.ts';
 
 /**
@@ -12,8 +12,8 @@ import type { ColorName } from '../palettes/master.ts';
  * - `waveStart`: `WaveStarted` for `wave`.
  * - `waveCleared`: `WaveCleared` for `wave`.
  * - `perfectWave`: the first wave from `wave` on that resolves with no leaks.
- * - `mapWon` / `mapLost`: the map ends (the results screen covers the HUD, so M1 maps leave
- *   these empty).
+ * - `mapWon` / `mapLost`: the map's debrief. These never play on the ticker: the results card
+ *   shows them, with their name plates, after a win or a loss (D028).
  */
 export type RadioTrigger =
   | 'firstLeak'

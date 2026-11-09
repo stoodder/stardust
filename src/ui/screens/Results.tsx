@@ -1,5 +1,6 @@
 // The results screen (T115): shown over the frozen battle when a run ends. One headline and the
-// counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and integrity.
+// counter sub-line (story/style-guide.md §4, "Results screen"), plus the run's waves and integrity,
+// and the debrief with its speakers' name plates (D028).
 // The counter is the Act I line (design/core-loop.md §6.2) and ticks up (art-direction §9). No
 // medals or currencies until M2.
 import { useEffect, useState } from 'preact/hooks';
@@ -7,6 +8,9 @@ import { retryRun, toTitle } from '../../app/navigation.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { runResult, type RunResult } from './state.ts';
+import { colorVar } from '../color.ts';
+import { prefersReducedMotion } from '../motion.ts';
+import type { SpokenLine } from '../state.ts';
 import './screens.css';
 
 /**
@@ -23,10 +27,6 @@ const KICKER = {
   won: 'Shift report · Exemplary!',
   lost: 'Shift report · Incident logged',
 } as const;
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 /** Counts up from 0 to `target` once, on mount (instantly under reduced motion). */
 function useCountUp(target: number): number {
@@ -76,6 +76,22 @@ function Counter({ n }: { n: number }) {
   );
 }
 
+/** The debrief (D028): each line under its speaker's name plate. */
+function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
+  return (
+    <ul class="sd-results-debrief" aria-label="Debrief">
+      {lines.map((l, i) => (
+        <li key={i}>
+          <span class="sd-results-speaker" style={{ color: colorVar(l.color) }}>
+            {l.name}
+          </span>
+          <span class="sd-results-line">{l.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
   return (
@@ -104,6 +120,7 @@ function Body({ result }: { result: RunResult }) {
         </div>
       </dl>
       <Counter n={result.pestsProcessed} />
+      {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
       <div class="sd-results-buttons">
         <button
           type="button"

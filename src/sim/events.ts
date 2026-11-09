@@ -63,6 +63,12 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly sprite: SpriteId | null;
       /** A lobbed shell's flight time in ticks (it lands that many ticks later); else 0. */
       readonly flightTicks: number;
+      /**
+       * The area the attack covers, from the firing tier (tiles): a lobbed shell's splash radius,
+       * a pulse's range; 0 for single-target attacks. Lets the renderer size its rings without
+       * looking the tower up (it may be sold by the time a shell lands).
+       */
+      readonly radiusTiles: number;
     }
   | {
       /**

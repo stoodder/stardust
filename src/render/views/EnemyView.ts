@@ -31,10 +31,16 @@ const HIT_FLASH_COLOR = 0xffffff;
 /** Lateral offset step (px), perpendicular to the direction of travel: ((uid % 5) − 2) steps. */
 const LANE_STEP_PX = 1.5;
 const FACINGS: readonly Facing[] = ['ne', 'nw', 'se', 'sw'];
+/** Each facing's slot in the anim-key and anchor arrays (keys: facing × 2 + selected). */
+const FACING_INDEX: Readonly<Record<Facing, number>> = { ne: 0, nw: 1, se: 2, sw: 3 };
 /** A tell glyph shows above a new enemy for 3 s (art-direction §8), counted in rendered frames. */
 const TELL_FRAMES = 180;
 /** The glyph's gap above the body's top (px). */
 const TELL_GAP_PX = 2;
+
+/** The sideways direction before an enemy has moved, with no route to seed it (screen, unit). */
+const SIDE_DEFAULT_X = -0.894;
+const SIDE_DEFAULT_Y = 0.447;
 
 /** The sideways offset (px) for an enemy uid: −3 to +3 in 1.5 px steps. */
 export function laneOffsetPx(uid: number): number {
@@ -42,6 +48,30 @@ export function laneOffsetPx(uid: number): number {
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
+
+/** A route's polyline as EnemyView reads it (a CompiledRoute satisfies it). */
+export interface RouteLike {
+  readonly xs: readonly number[];
+  readonly ys: readonly number[];
+}
+
+/**
+ * The screen unit vector perpendicular to grid motion (dx, dy): the ground's sideways direction
+ * for the lateral offset (iso: grid x → (+2, +1), grid y → (−2, +1)). Null for no motion.
+ */
+export function sideOf(dx: number, dy: number, out: Vec2): Vec2 | null {
+  const qx = -dy;
+  const qy = dx;
+  const sx = (qx - qy) * 2;
+  const sy = qx + qy;
+  const len = Math.hypot(sx, sy);
+  if (len <= 1e-9) return null;
+  out.x = sx / len;
+  out.y = sy / len;
+  return out;
+}
+
+const side: Vec2 = { x: 0, y: 0 };
 
 export class EnemyView implements PooledView {
   stamp = 0;
@@ -63,11 +93,11 @@ export class EnemyView implements PooledView {
   #flashFrames = 0;
   /** Sideways offset (px), and the screen unit vector it runs along (the ground perpendicular to travel). */
   #lane = 0;
-  #sideX = -0.894;
-  #sideY = 0.447;
-  /** Anim keys and frame-0 anchors per facing, for the shown sprite and selection (show()). */
-  readonly #keys = new Map<string, string>();
-  readonly #anchors = new Map<string, { x: number; y: number }>();
+  #sideX = SIDE_DEFAULT_X;
+  #sideY = SIDE_DEFAULT_Y;
+  /** Anim keys (facing × 2 + selected) and frame-0 anchors (by facing) for the shown sprite. */
+  readonly #keys: string[] = [];
+  readonly #anchors: { x: number; y: number }[] = [];
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -90,10 +120,22 @@ export class EnemyView implements PooledView {
 
   /**
    * Shows the view for a spawned enemy. `flying` picks the `air` layer. `tell`: the 8×8 tell glyph
-   * to show above it for its first 3 s (null for none).
+   * to show above it for its first 3 s (null for none). `route`: the route it walks, whose first
+   * segment seeds the sideways direction (a pooled view never keeps its last enemy's).
    */
-  show(uid: number, body: string, flying: boolean, tell: SpriteId | null = null): void {
+  show(
+    uid: number,
+    body: string,
+    flying: boolean,
+    tell: SpriteId | null = null,
+    route: RouteLike | null = null,
+  ): void {
     this.#uid = uid;
+    const dx = route === null ? 0 : (route.xs[1] ?? 0) - (route.xs[0] ?? 0);
+    const dy = route === null ? 0 : (route.ys[1] ?? 0) - (route.ys[0] ?? 0);
+    const s = sideOf(dx, dy, side);
+    this.#sideX = s?.x ?? SIDE_DEFAULT_X;
+    this.#sideY = s?.y ?? SIDE_DEFAULT_Y;
     this.#id = spriteId(body);
     this.#flying = flying;
     this.#selected = false;
@@ -157,18 +199,9 @@ export class EnemyView implements PooledView {
     gridToScreen(e.x, e.y, this.#ctx.origin, pos);
     const gx = pos.x;
     const gy = pos.y;
-    if (!Number.isNaN(px)) {
-      // The ground perpendicular to travel (grid (dx, dy) → (−dy, dx)), on screen (iso: grid x →
-      // (+2, +1), grid y → (−2, +1)).
-      const qx = -(e.y - py);
-      const qy = e.x - px;
-      const sx = (qx - qy) * 2;
-      const sy = qx + qy;
-      const len = Math.hypot(sx, sy);
-      if (len > 1e-9) {
-        this.#sideX = sx / len;
-        this.#sideY = sy / len;
-      }
+    if (!Number.isNaN(px) && sideOf(e.x - px, e.y - py, side) !== null) {
+      this.#sideX = side.x;
+      this.#sideY = side.y;
     }
     const ox = Math.round(this.#sideX * this.#lane);
     const oy = Math.round(this.#sideY * this.#lane);
@@ -212,27 +245,25 @@ export class EnemyView implements PooledView {
 
   /** Looks up every facing's anim key (plain and selected) and anchor once per show. */
   #cacheAnims(): void {
-    this.#keys.clear();
-    this.#anchors.clear();
+    this.#keys.length = 0;
+    this.#anchors.length = 0;
     if (this.#id === null) return;
     const { sprites } = this.#ctx;
     for (const f of FACINGS) {
       const anim = `walk_${f}`;
-      for (const sel of [false, true]) {
-        this.#keys.set(
-          `${f}${sel ? '+' : ''}`,
-          sprites.anim(this.#id, anim, variantName(DEFAULT_VARIANT, sel)),
-        );
-      }
+      const i = FACING_INDEX[f];
+      this.#keys[i * 2] = sprites.anim(this.#id, anim, variantName(DEFAULT_VARIANT, false));
+      this.#keys[i * 2 + 1] = sprites.anim(this.#id, anim, variantName(DEFAULT_VARIANT, true));
       // Mirrored frames of an off-center sprite have their own anchor (tech-spec § Sprite anchoring).
-      this.#anchors.set(f, sprites.frameAnchor(this.#id, `${anim}_0`));
+      this.#anchors[i] = sprites.frameAnchor(this.#id, `${anim}_0`);
     }
   }
 
   #play(): void {
     if (this.#id === null) return;
-    const key = this.#keys.get(`${this.#facing}${this.#selected ? '+' : ''}`);
-    const a = this.#anchors.get(this.#facing);
+    const i = FACING_INDEX[this.#facing];
+    const key = this.#keys[i * 2 + (this.#selected ? 1 : 0)];
+    const a = this.#anchors[i];
     if (key === undefined || a === undefined) return;
     this.#body.play(key);
     this.#body.setDisplayOrigin(a.x, a.y);

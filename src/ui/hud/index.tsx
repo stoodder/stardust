@@ -27,6 +27,9 @@ import {
 import { lockedText } from '../../app/hud.ts';
 import { Icon } from './Icon.tsx';
 import { placePanel, tickToward } from './layout.ts';
+import { alignPulse } from './pulse.ts';
+import { colorVar } from '../color.ts';
+import { prefersReducedMotion } from '../motion.ts';
 import './hud.css';
 
 /** Build slots shown, whatever the loadout size (the loadout limit, CLAUDE.md). */
@@ -43,10 +46,6 @@ const PRIORITY_LABEL: Readonly<Record<TargetPriority, string>> = {
   strong: 'Strong',
   close: 'Close',
 };
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 /** A number that ticks toward `value` instead of jumping (art-direction § Look). */
 function useTicker(value: number): number {
@@ -79,11 +78,6 @@ function Key({ k }: { k: string }) {
 
 /** Keeps a pointer press from focusing a button, so its focus ring doesn't linger (D026). */
 const noFocusOnPress = (e: MouseEvent): void => e.preventDefault();
-
-/** A colour token for a master palette name (`teal.4` → `var(--sd-teal-4)`). */
-function colorVar(name: string): string {
-  return `var(--sd-${name.replaceAll('.', '-')})`;
-}
 
 /** A credits amount: the gold chip and the number. */
 function Credits({ value, short = false }: { value: number; short?: boolean }) {
@@ -185,6 +179,7 @@ function WavePanel() {
           <button
             type="button"
             class={hud.callPulse.value ? 'hud-btn chamfer call pulse' : 'hud-btn chamfer call'}
+            ref={(el) => alignPulse(el)}
             aria-label={callLabel}
             title={`${callLabel} (W)`}
             // Nothing to call while a wave is still spawning: the next countdown hasn't started.
@@ -245,6 +240,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
     <button
       type="button"
       class={`hud-btn hud-slot chamfer ${state}`}
+      ref={(el) => alignPulse(el)}
       aria-pressed={armed}
       aria-disabled={locked || poor}
       aria-label={`Build ${slot.label}, ${slot.cost} credits${status}`}
@@ -367,6 +363,9 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;
   const poor = !max && credits < (t.upgradeCost ?? 0);
+  // The upgrade teach (D028): the Upgrade button pulses while it's on.
+  const teach = hud.upgradeHint.value && !max && !poor;
+  const upgradeClass = `hud-btn chamfer wide${poor ? ' poor' : ''}${teach ? ' pulse' : ''}`;
   return (
     <section
       class="hud-tower chamfer"
@@ -386,7 +385,8 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
       <p class="hud-delta">{t.upgradeDelta === null ? '' : `Next: ${t.upgradeDelta}`}</p>
       <button
         type="button"
-        class={poor ? 'hud-btn chamfer wide poor' : 'hud-btn chamfer wide'}
+        class={upgradeClass}
+        ref={(el) => alignPulse(el)}
         aria-disabled={max || poor}
         aria-label={
           max
@@ -445,13 +445,38 @@ function Notice() {
   );
 }
 
-/** The radio ticker (D026): one line at a time, top-left under the status panel; never blocks. */
+/** The upgrade hint (D028), bottom center, while the teach is on and no tower is selected. */
+function UpgradeHint() {
+  if (!hud.upgradeHint.value || hud.selected.value !== null) return null;
+  return (
+    <div class="hud-hint-slot">
+      <div class="hud-hint chamfer" role="status" aria-label="Click a turret to upgrade it (U)">
+        Click a turret to upgrade it
+        <Key k="U" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The radio ticker (D026): one line at a time (a reply under its cue), top-left under the status
+ * panel; never blocks.
+ */
 function Radio() {
   const r = hud.radio.value;
   return (
     <div class="hud-radio-slot" role="log" aria-live="polite" aria-label="Radio">
       {r !== null && (
         <div key={r.id} class="hud-radio chamfer">
+          {/* A reply keeps its cue up above it, dimmed (D028). */}
+          {r.cue !== null && (
+            <div class="hud-radio-cue">
+              <span class="hud-radio-name" style={{ color: colorVar(r.cue.color) }}>
+                {r.cue.name}
+              </span>
+              <span class="hud-radio-text">{r.cue.text}</span>
+            </div>
+          )}
           <span class="hud-radio-name" style={{ color: colorVar(r.color) }}>
             {r.name}
           </span>
@@ -561,6 +586,7 @@ export function Hud() {
         <AbilityBar />
         <BuildBar />
         {selected !== null && <TowerPanel t={selected} />}
+        <UpgradeHint />
         <Notice />
       </div>
       {briefing !== null && <Briefing lines={briefing} />}

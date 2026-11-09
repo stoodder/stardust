@@ -1,10 +1,13 @@
 // The M1 flows (T108b; docs/tech/conventions.md § Browser smoke tests, "Key flows"), on A1M1 as a
 // player meets it: title → Start shift → briefing → Clock in → build through the HUD by real
-// clicks → start wave 1 → 2× → enemies on screen → `autoplay('par')` + `fastForward` → Thumper
-// shells in flight → the Victory results with a non-zero PESTS PROCESSED → Retry → a fresh battle.
-// The lose flow: `autoplay('none')` + `fastForward` → Defeat → Title. Screenshots in
-// test-results/screens/m1/ and test-results/screens/lose/. Selecting and upgrading through the
-// tower panel is hud.spec.ts; the Orbital Strike is ability.spec.ts.
+// clicks → start wave 1 → 2× → enemies on screen → W2's countdown brings the upgrade teach →
+// `autoplay('par')` + `fastForward` → Thumper shells in flight → the Victory results with a
+// non-zero PESTS PROCESSED and Bricks's debrief → Retry → a fresh battle. The lose flow:
+// `autoplay('none')` + `fastForward` to the last point of integrity, then real frames to the loss:
+// the battle freezes for the results delay → Defeat → Title. The core flow: a tower behind the
+// core and the low-integrity heart. Screenshots in test-results/screens/{m1,lose,core}/.
+// Selecting and upgrading through the tower panel is hud.spec.ts; the Orbital Strike is
+// ability.spec.ts. `fastForward` skips the 1.5 s results delay (D028), so the play-outs stay fast.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -117,6 +120,30 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   expect(w1.towers).toBe(1);
   await shot(page, 'm1', 2, 'enemies');
 
+  // W2's countdown starts the upgrade teach (D028): the HUD says how, and built towers pulse.
+  const hint = page.getByRole('status', { name: 'Click a turret to upgrade it (U)' });
+  await expect(hint).toBeHidden();
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    for (let i = 0; i < 400 && sd.state()!.wave < 2; i++) {
+      const s = sd.state()!;
+      if (s.wave === 1 && s.schedule.phase === 'countdown') break;
+      sd.fastForward(10);
+    }
+  });
+  await expect(hint).toBeVisible();
+  // Reduced motion holds the 1 Hz pulses on, so the shot shows them.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await nextFrames(page);
+  await shot(page, 'm1', 3, 'upgrade-hint');
+  await page.emulateMedia({ reducedMotion: null });
+  // Selecting the tower swaps the hint for a pulsing Upgrade button.
+  await page.mouse.click(roof!.x, roof!.y);
+  const upgrade = page.getByRole('button', { name: /^Upgrade to tier 2/ });
+  await expect(upgrade).toHaveClass(/\bpulse\b/);
+  await expect(hint).toBeHidden();
+  await page.keyboard.press('Escape');
+
   // 6. Par takes over (its roof Rivet is already built, so that step is rejected and par carries
   // on). Play on until W3's Thumper fires, then 20 ticks more: its shell (0.8 s of flight) is
   // mid-arc for the shot.
@@ -134,8 +161,10 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   expect(shells.wave).toBeGreaterThanOrEqual(3);
   expect(shells.projectiles).toBeGreaterThan(0);
   expect(shells.enemies).toBeGreaterThan(0);
+  // Par upgraded the roof in W2's phase: the teach is done for the battle.
+  await expect(hint).toBeHidden();
   await nextFrames(page);
-  await shot(page, 'm1', 3, 'projectiles');
+  await shot(page, 'm1', 4, 'projectiles');
 
   // 7. Play the map out: the real win, on the results screen.
   expect(await playOut(page)).toBe('won');
@@ -151,11 +180,22 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   await expect(counter(page)).toHaveText(
     new RegExp(`^PESTS PROCESSED: ${killed.toLocaleString('en-US')} ★ Top 5% of Technicians!$`),
   );
+  // Bricks's debrief (act1.md § A1M1), under his name plate. Par's one leak comes in W7; when
+  // it's moments before the end, QUILL's first-leak line leads the card (D028).
+  const lines = dialog.getByRole('list', { name: 'Debrief' }).getByRole('listitem');
+  const debrief = [
+    'BricksNot bad, Sprout.',
+    "BricksDon't name things on day one. You get attached.",
+  ];
+  const firstLeak = 'QUILLPest escaped containment! (Toward... the wilderness? Odd. Logging it.)';
+  await expect(lines.last()).toHaveText(debrief[1]!);
+  const shown = await lines.allTextContents();
+  expect(shown).toEqual(shown.length === 3 ? [firstLeak, ...debrief] : debrief);
   // The battle is frozen behind the results.
   const frozen = await tick(page);
   await page.waitForTimeout(200);
   expect(await tick(page)).toBe(frozen);
-  await shot(page, 'm1', 4, 'victory');
+  await shot(page, 'm1', 5, 'victory');
 
   // 8. Retry: a fresh run of the same map, at tick 0 with nothing built, the briefing already read.
   await page.getByRole('button', { name: 'Retry' }).click();
@@ -171,10 +211,12 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   expect(again).toEqual({ wave: 0, towers: 0, credits: 350 });
   await expect(briefing).toBeHidden();
   await expect(page.getByTestId('hud')).toBeVisible();
-  await shot(page, 'm1', 5, 'retried');
+  await shot(page, 'm1', 6, 'retried');
 });
 
-test('lose: no build plays out to a hiccup, not a scolding; Title returns', async ({ page }) => {
+test('lose: no build plays out to a hiccup after the results delay; Title returns', async ({
+  page,
+}) => {
   await page.goto('/?test=1&skipIntro=1&seed=1');
   await waitForReady(page);
   // An unknown build is an error, not a silent no-op.
@@ -188,16 +230,26 @@ test('lose: no build plays out to a hiccup, not a scolding; Title returns', asyn
   });
   expect(err).toMatch(/no build 'nope'/);
 
-  await page.evaluate(() => {
+  // Fast-forward to the last point of integrity, then let real frames lose it: the map's end
+  // freezes the battle, and Results waits out the 1.5 s results delay (D028).
+  const last = await page.evaluate(() => {
     const sd = globalThis.__sd!;
     sd.setSpeed(0);
     sd.autoplay('none'); // also closes the briefing
+    for (let i = 0; i < 20_000 && sd.state()!.integrity > 1; i++) sd.fastForward(1);
+    return sd.state()!.integrity;
   });
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
-  expect(await playOut(page)).toBe('lost');
-
+  expect(last).toBe(1);
+  await page.evaluate(() => globalThis.__sd?.setSpeed(2));
+  await page.waitForFunction(() => globalThis.__sd?.state()?.outcome === 'lost', null, {
+    timeout: 15_000,
+  });
   const dialog = page.getByRole('dialog', { name: 'MINOR OPERATIONAL HICCUP' });
-  await expect(dialog).toBeVisible();
+  const endTick = await tick(page);
+  await expect(dialog).toBeHidden(); // the leak's ring and shake play first
+  expect(await tick(page)).toBe(endTick); // frozen while it waits
+  await expect(dialog).toBeVisible({ timeout: 4000 });
   await expect(dialog.getByText('Shift report · Incident logged')).toBeVisible();
   // The counter is there on a loss too: nothing built, nothing processed.
   await expect(counter(page)).toBeVisible();
@@ -205,6 +257,8 @@ test('lose: no build plays out to a hiccup, not a scolding; Title returns', asyn
     await page.evaluate(() => globalThis.__sd!.state()!.stats.skitterkinKilled),
   );
   await expect(page.getByRole('button', { name: 'Retry' })).toBeFocused();
+  // A1M1 writes no loss debrief, and the first leak (W1) is long past: no spoken lines.
+  await expect(dialog.getByRole('list', { name: 'Debrief' })).toHaveCount(0);
   // Game hotkeys are off on the results screen: F doesn't touch the frozen battle.
   await page.keyboard.press('KeyF');
   const t0 = await tick(page);
@@ -242,5 +296,35 @@ test("radio and leak feedback: the first leak plays QUILL's line and flashes the
   );
   await expect(page.locator('.hud-leak-flash')).toBeAttached();
   await nextFrames(page);
-  await shot(page, 'm1', 6, 'first-leak-radio');
+  await shot(page, 'm1', 7, 'first-leak-radio');
+});
+
+test('core: a tower behind the core shows through it; low integrity turns its heart red', async ({
+  page,
+}) => {
+  await page.goto('/?test=1&skipIntro=1&seed=1');
+  await waitForReady(page);
+  const state = await page.evaluate(() => {
+    const sd = globalThis.__sd!; // installed: waitForReady passed
+    sd.setSpeed(0);
+    sd.autoplay('none'); // closes the briefing; nothing else is built
+    // The pad two diagonals behind the core (4,9), whose tower the core's pylon would hide.
+    sd.enqueue({ type: 'build', tile: [2, 7], tower: 'rivet' });
+    sd.fastForward(0);
+    for (let i = 0; i < 2000 && sd.state()!.integrity > 5; i++) sd.fastForward(10);
+    const s = sd.state()!;
+    return { towers: s.towers.live, integrity: s.integrity, outcome: s.outcome };
+  });
+  expect(state.towers).toBe(1);
+  expect(state.outcome).toBe('playing');
+  expect(state.integrity).toBeLessThanOrEqual(5);
+  const core = await page.evaluate(() => globalThis.__sd?.tileToClient(4, 9) ?? null);
+  expect(core).not.toBeNull();
+  await nextFrames(page);
+  // A close-up: the core at 60%, the Rivet behind it, and the red heart (both pulse phases).
+  const clip = { x: core!.x - 90, y: core!.y - 150, width: 180, height: 180 };
+  await page.screenshot({ path: 'test-results/screens/core/01-low-a.png', clip });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'test-results/screens/core/02-low-b.png', clip });
+  await shot(page, 'core', 3, 'full');
 });

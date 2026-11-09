@@ -4,7 +4,8 @@
 // input becomes intents (input/intents.ts), and intents become commands through `deps.issue`.
 // Event-driven effects (tracers, pulse rings, shell bursts, the Orbital Strike, and the feedback
 // juice: leaks, builds, upgrades, sells, deaths) are FxView's; the core's flash and low-integrity
-// glow are CoreView's. Until the first build, free pads pulse (onboarding, D026).
+// glow are CoreView's. Until the first build, free pads pulse (onboarding, D026); from W2's
+// countdown until the first upgrade, built towers pulse (`deps.teachUpgrade`, D028).
 // The scene only reads sim state; every change goes through a command.
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
@@ -22,6 +23,7 @@ import { BattleInteraction } from '../input/BattleInteraction.ts';
 import { hoverLook, resolveClick, type TileFacts } from '../input/intents.ts';
 import { gridToScreen, mapOrigin, pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import { createLayers } from '../layers.ts';
+import { prefersReducedMotion, pulseOn } from '../motion.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -47,11 +49,6 @@ import { ViewPool } from '../views/ViewPool.ts';
 
 export const BATTLE_SCENE_KEY = 'Battle';
 
-/** Reduced motion turns off screen shake (art-direction §7). */
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 /** What the scene needs from the app (app/battle.ts provides it). */
 export interface BattleSceneDeps {
   readonly sim: Sim<IdSpace>;
@@ -66,14 +63,13 @@ export interface BattleSceneDeps {
   onFirstFrame(): void;
   /** An armed click on a tile nothing can be built on (the HUD says so). */
   onCantBuild(): void;
+  /** Whether built towers pulse to teach upgrading (app/hud.ts decides; D028). */
+  teachUpgrade(): boolean;
 }
 
 /** Where floating numbers start above a ground point (px): a tower's head, the core's heart. */
 const TOWER_FLOAT_LIFT_PX = 24;
 const CORE_FLOAT_LIFT_PX = 46;
-/** The onboarding pulse on free pads: 1 Hz (on for half of each second). */
-const TEACH_PERIOD_MS = 1000;
-
 type LiveTower = DeepReadonly<Tower>;
 
 export class BattleScene extends Phaser.Scene {
@@ -89,7 +85,14 @@ export class BattleScene extends Phaser.Scene {
   readonly #shells = new Map<number, number>();
   /** Whether a tower has been built this battle (the onboarding pulse stops). */
   #built = false;
-  #teachMs = 0;
+  /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
+  readonly #told = new Set<string>();
+  /** Whether any teach pulse is showing (so a hidden pulse isn't re-hidden every frame). */
+  #teachShown = false;
+  /** Teach-pulse tile tests, bound once (not a closure per frame). */
+  readonly #freeTile = (col: number, row: number): boolean => this.#towerSlotAt(col, row) < 0;
+  readonly #towerTile = (col: number, row: number): boolean => this.#towerSlotAt(col, row) >= 0;
+  readonly #noTile = (): boolean => false;
   #stamp = 0;
   /** The pointer in game pixels, or NaN while it's off the canvas. */
   #px = Number.NaN;
@@ -130,20 +133,21 @@ export class BattleScene extends Phaser.Scene {
     this.#origin = mapOrigin(map.cols, map.rows, VIEW_W, VIEW_H);
     const ctx: ViewContext = { scene: this, sprites, layers, origin: this.#origin };
 
-    drawGround(ctx, map, map.env);
+    const coreProps = drawGround(ctx, map, map.env);
     this.#towers = new ViewPool(() => new TowerView(ctx));
     this.#enemies = new ViewPool(() => new EnemyView(ctx));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#placement = new PlacementView(ctx);
     this.#fx = new FxView(ctx, prefersReducedMotion);
-    this.#core = new CoreView(ctx, map, prefersReducedMotion);
+    this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
     const teach: [number, number][] = [];
     map.tiles.forEach((t, i) => {
       if (isBuildableTile(t)) teach.push([i % map.cols, Math.floor(i / map.cols)]);
     });
     this.#placement.setTeachTiles(teach);
     this.#built = false;
-    this.#teachMs = 0;
+    this.#teachShown = false;
+    this.#told.clear();
 
     const content = sim.config.content;
     const fx = this.#fx;
@@ -176,9 +180,14 @@ export class BattleScene extends Phaser.Scene {
       }),
       bus.on('EnemySpawned', (e) => {
         const def = content.enemies[e.enemy]!; // spawned from the map's waves
+        // A tell glyph shows over the first of each enemy type this battle, not every one (D028):
+        // the body cue carries the rest.
+        const glyph = this.#told.has(e.enemy) ? null : tellGlyph(def.tells);
+        if (glyph !== null) this.#told.add(e.enemy);
+        const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
         this.#enemies
           .acquire(e.uid)
-          .show(e.uid, def.sprites.body, def.layer === 'air', tellGlyph(def.tells));
+          .show(e.uid, def.sprites.body, def.layer === 'air', glyph, route);
       }),
       bus.on('EnemyDied', (e) => {
         this.#enemies.release(e.uid);
@@ -200,14 +209,11 @@ export class BattleScene extends Phaser.Scene {
         if (e.kind === 'hitscan') {
           this.#fx.tracer(e.x, e.y, e.targetX, e.targetY, this.#isFlyer(e.targetUid));
         } else if (e.kind === 'pulse') {
-          const range = this.#findTower(e.towerUid)?.tierDef?.attack?.rangeTiles ?? 0;
-          if (range > 0) this.#fx.pulse(e.x, e.y, range);
+          if (e.radiusTiles > 0) this.#fx.pulse(e.x, e.y, e.radiusTiles);
         } else if (e.sprite !== null) {
-          // The event carries the shot's look, so a tower sold mid-flight still shows its shell.
-          if (e.kind === 'lobbed') {
-            const a = this.#findTower(e.towerUid)?.tierDef?.attack;
-            this.#shells.set(e.uid, a?.kind === 'lobbed' ? a.splashTiles : 0);
-          }
+          // The event carries the shot's look and reach, so a tower sold mid-flight still shows
+          // its shell and splash.
+          if (e.kind === 'lobbed') this.#shells.set(e.uid, e.radiusTiles);
           this.#projectiles
             .acquire(e.uid)
             .show(e.uid, { sprite: e.sprite, flightTicks: e.flightTicks });
@@ -261,24 +267,33 @@ export class BattleScene extends Phaser.Scene {
     this.#syncViews();
     const state = this.#deps.sim.state;
     this.#fx.update(delta, state.zones);
-    this.#core.update(delta, state.integrity);
-    this.#syncTeach(delta);
+    this.#core.update(state.integrity, state.towerAtTile);
+    this.#syncTeach();
   }
 
-  /** The onboarding pulse on free pads, blinking at 1 Hz (steady under reduced motion). */
-  #syncTeach(delta: number): void {
-    if (this.#built) {
-      if (this.#teachMs >= 0) this.#placement.showTeach(false, () => false);
-      this.#teachMs = -1;
+  /**
+   * The teach pulses, blinking at 1 Hz in phase with the HUD's (steady under reduced motion):
+   * free pads until the first build (D026), then built towers while `deps.teachUpgrade()` (D028).
+   */
+  #syncTeach(): void {
+    const tiles = !this.#built
+      ? this.#freeTile
+      : this.#deps.teachUpgrade()
+        ? this.#towerTile
+        : null;
+    if (tiles === null) {
+      if (this.#teachShown) this.#placement.showTeach(false, this.#noTile);
+      this.#teachShown = false;
       return;
     }
-    this.#teachMs += Number.isFinite(delta) ? Math.max(0, delta) : 0;
-    const on = prefersReducedMotion() || this.#teachMs % TEACH_PERIOD_MS < TEACH_PERIOD_MS / 2;
+    this.#teachShown = true;
+    this.#placement.showTeach(prefersReducedMotion() || pulseOn(), tiles);
+  }
+
+  /** The tower slot on tile (col, row), or −1. */
+  #towerSlotAt(col: number, row: number): number {
     const { sim } = this.#deps;
-    this.#placement.showTeach(
-      on,
-      (c, r) => (sim.state.towerAtTile[r * sim.map.cols + c] ?? -1) < 0,
-    );
+    return sim.state.towerAtTile[row * sim.map.cols + col] ?? -1;
   }
 
   /** Esc and right-click: drops the selection, disarms the build slot, and stops aiming. */
@@ -396,7 +411,7 @@ export class BattleScene extends Phaser.Scene {
       let v = this.#enemies.get(e.uid);
       if (v === undefined) {
         v = this.#enemies.acquire(e.uid);
-        v.show(e.uid, e.def.sprites.body, e.def.layer === 'air');
+        v.show(e.uid, e.def.sprites.body, e.def.layer === 'air', null, e.route);
       }
       v.stamp = stamp;
       v.sync(e);

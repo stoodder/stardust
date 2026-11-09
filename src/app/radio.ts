@@ -1,6 +1,9 @@
-// The M1 radio ticker (D026): plays a map's radio lines (content/radio/) as HUD radio notices when
-// their sim events happen. Not the dialogue system (T302): each line plays once per battle, queued,
-// one at a time for a few seconds of real time, and never blocks input or pauses the game.
+// The M1 radio ticker (D026, D028): plays a map's radio lines (content/radio/) as HUD radio notices
+// when their sim events happen. Not the dialogue system (T302): each line plays once per battle,
+// queued, one at a time for a few seconds of real time, and never blocks input or pauses the game.
+// The lines one event plays are a batch: a batch plays whole once its first line has played, and a
+// reply (the next line of the batch, another speaker) follows its cue after a short beat, shown
+// under it. A map's debrief isn't the ticker's: the results card shows it (app/runResult.ts).
 import { radioLines, SPEAKERS, type RadioLine } from '../content/radio/index.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { Bus } from '../shared/bus.ts';
@@ -9,10 +12,16 @@ import { assertNever } from '../shared/types.ts';
 import { hud, type RadioView } from '../ui/state.ts';
 
 /**
- * A queued line older than this (ms of real time) is dropped instead of shown, so a fast game
- * (2×, early calls) never hears the W1 jingle in W5.
+ * A batch whose first line has waited longer than this (ms of real time) is dropped instead of
+ * shown, so a fast game (2×, early calls) never hears the W1 jingle in W5.
  */
 export const RADIO_STALE_MS = 15_000;
+
+/**
+ * The longest a line holds when the next queued line is its reply (D028): the reply's beat, so
+ * Bricks's "It's Wednesday." lands right on QUILL's punchline. The cue stays up above the reply.
+ */
+export const REPLY_BEAT_MS = 2500;
 
 /** How long a radio line stays up, in ms of real time: 4 s, plus time to read a long line. */
 export function radioLineMs(text: string): number {
@@ -69,10 +78,9 @@ export function createRadioScript(lines: readonly RadioLine[]) {
               (perfect && l.on === 'perfectWave' && e.wave >= (l.wave ?? 1)),
           );
         }
+        // The debrief is the results card's (app/runResult.ts), never the ticker's.
         case 'MapWon':
-          return take((l) => l.on === 'mapWon');
         case 'MapLost':
-          return take((l) => l.on === 'mapLost');
         case 'ProjectileFired':
         case 'ProjectileHit':
         case 'TowerBuilt':
@@ -98,10 +106,32 @@ export function setRadioEnabled(on: boolean): void {
 
 let radioId = 0;
 
-/** A line as the HUD shows it. */
-export function radioView(line: RadioLine): RadioView {
+/** A line as the HUD shows it; `cue`: the line it replies to, kept up above it. */
+export function radioView(line: RadioLine, cue: RadioLine | null = null): RadioView {
   const look = SPEAKERS[line.speaker];
-  return { id: ++radioId, name: look.name, color: look.color, text: line.text };
+  const prev =
+    cue === null
+      ? null
+      : { name: SPEAKERS[cue.speaker].name, color: SPEAKERS[cue.speaker].color, text: cue.text };
+  return { id: ++radioId, name: look.name, color: look.color, text: line.text, cue: prev };
+}
+
+/** A line on (or waiting for) the ticker: when it was queued and the event batch it came in. */
+interface Queued {
+  readonly line: RadioLine;
+  readonly at: number;
+  readonly batch: number;
+}
+
+/** Whether `next` replies to `line`: the same batch, another speaker. */
+function isReply(line: Queued, next: Queued | undefined): next is Queued {
+  return next !== undefined && next.batch === line.batch && next.line.speaker !== line.line.speaker;
+}
+
+/** How long `line` holds (ms): its reading time, capped at the reply beat when `next` replies. */
+export function radioHoldMs(text: string, nextIsReply: boolean): number {
+  const ms = radioLineMs(text);
+  return nextIsReply ? Math.min(ms, REPLY_BEAT_MS) : ms;
 }
 
 /** Wires a battle's radio to the HUD's `radio` signal. Returns the unwiring (which clears it). */
@@ -110,21 +140,37 @@ export function bindRadio(bus: Bus<SimEvent<IdSpace>>, mapId: string): () => voi
   const lines = radioLines(mapId);
   if (!enabled || lines.length === 0) return () => {};
   const script = createRadioScript(lines);
-  const queue: { line: RadioLine; at: number }[] = [];
+  const queue: Queued[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let batches = 0;
+  /** The line on screen (or last shown), or null. */
+  let shown: Queued | null = null;
   const showNext = (): void => {
     timer = null;
     const now = performance.now();
     let next = queue.shift();
-    while (next !== undefined && now - next.at > RADIO_STALE_MS) next = queue.shift();
-    hud.radio.value = next === undefined ? null : radioView(next.line);
-    if (next !== undefined) timer = setTimeout(showNext, radioLineMs(next.line.text));
+    // Staleness is judged per batch, on its first line: a batch already playing plays out, and a
+    // stale one is dropped whole (its later lines would be replies to nothing).
+    while (next !== undefined && next.batch !== shown?.batch && now - next.at > RADIO_STALE_MS) {
+      const stale = next.batch;
+      do next = queue.shift();
+      while (next !== undefined && next.batch === stale);
+    }
+    if (next === undefined) {
+      hud.radio.value = null;
+      return;
+    }
+    const cue = shown !== null && isReply(shown, next) ? shown.line : null;
+    hud.radio.value = radioView(next.line, cue);
+    shown = next;
+    timer = setTimeout(showNext, radioHoldMs(next.line.text, isReply(next, queue[0])));
   };
   const onEvent = (e: SimEvent<IdSpace>): void => {
     const add = script.lines(e);
     if (add.length === 0) return;
     const at = performance.now();
-    for (const line of add) queue.push({ line, at });
+    const batch = ++batches;
+    for (const line of add) queue.push({ line, at, batch });
     if (timer === null) showNext();
   };
   const types = [
@@ -135,8 +181,6 @@ export function bindRadio(bus: Bus<SimEvent<IdSpace>>, mapId: string): () => voi
     'TowerClassUnlocked',
     'WaveStarted',
     'WaveCleared',
-    'MapWon',
-    'MapLost',
   ] as const;
   const offs = types.map((t) => bus.on(t, onEvent));
   return () => {

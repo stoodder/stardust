@@ -191,3 +191,27 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
   }
   return out;
 }
+
+/**
+ * The tiles behind core tile (col, row) whose tower the core's sprite would hide: the same screen
+ * column (col − row equal; iso tiles in neighbouring columns sit 16 px aside, clear of the core's
+ * pylon) and 2 or more diagonals back (one diagonal back is the next screen column), while the
+ * tower's foot is still under the core's top (`heightPx`: the core's height above its anchor).
+ */
+export function tilesBehind(
+  grid: { readonly cols: number; readonly tiles: readonly unknown[] },
+  col: number,
+  row: number,
+  heightPx: number,
+): number[] {
+  const rows = Math.floor(grid.tiles.length / grid.cols);
+  const out: number[] = [];
+  // Each diagonal back is 8 px up the screen; a tower's base reaches about 6 px below its foot.
+  for (let k = 1; 16 * k < heightPx + 6; k++) {
+    const c = col - k;
+    const r = row - k;
+    if (c < 0 || r < 0 || c >= grid.cols || r >= rows) break;
+    out.push(r * grid.cols + c);
+  }
+  return out;
+}

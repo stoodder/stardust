@@ -58,7 +58,8 @@ export interface TestHooks {
   autoplay(build: string): void;
   /**
    * Steps the sim `ticks` times synchronously (ignoring speed, even while paused), then dispatches
-   * the events once. `fastForward(0)` applies pending commands without advancing time.
+   * the events once. `fastForward(0)` applies pending commands without advancing time. If the map
+   * has ended (now or earlier), its Results show at once, skipping the 1.5 s results delay.
    */
   fastForward(ticks: number): void;
   /** Client (CSS pixel) coordinates of tile (x, y)'s center, or `null` outside a battle. */

@@ -6,6 +6,7 @@ import type { IdSpace } from '../content/types.ts';
 import { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { BATTLE_SCENE_KEY, BattleScene } from '../render/scenes/BattleScene.ts';
 import { createSim, type SimConfig } from '../sim/index.ts';
+import { hud } from '../ui/state.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
 import { bindHud, rejectText, showNotice, type HudOptions } from './hud.ts';
@@ -52,6 +53,7 @@ export function startBattle(
       issue,
       onFirstFrame: () => resolveFirstFrame?.(),
       onCantBuild: () => showNotice(rejectText('notBuildable') ?? ''),
+      teachUpgrade: () => hud.upgradeHint.value,
     },
     key,
   );

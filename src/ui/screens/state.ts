@@ -2,6 +2,7 @@
 // the screens read them and act through app/navigation.ts.
 import { signal } from '@preact/signals';
 import type { RunOutcome } from '../../app/testHookTypes.ts';
+import type { SpokenLine } from '../state.ts';
 
 /** A finished run, as the results screen shows it (built by app/runResult.ts at run end). */
 export interface RunResult {
@@ -18,6 +19,11 @@ export interface RunResult {
    * (design/core-loop.md §6.2) is the run's count until `meta/` lands (T201).
    */
   readonly pestsProcessed: number;
+  /**
+   * The card's spoken lines, in order (D028): the first leak's radio line if it was still fresh
+   * when the map ended, then the map's debrief for this outcome. Empty for a map with no radio.
+   */
+  readonly debrief: readonly SpokenLine[];
 }
 
 /** The last finished run, or null before any run has ended. */

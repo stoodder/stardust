@@ -17,6 +17,7 @@ import {
   twinkleImage,
   type BackdropLayout,
 } from '../vfx/backdropPixels.ts';
+import { prefersReducedMotion } from '../motion.ts';
 
 export const BACKDROP_SCENE_KEY = 'Backdrop';
 
@@ -38,7 +39,7 @@ export class BackdropScene extends Phaser.Scene {
 
   create(): void {
     this.#layout = backdropLayout(VIEW_W, VIEW_H);
-    this.#still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.#still = prefersReducedMotion();
     this.#elapsed = 0;
     this.#registerTextures();
     this.add.image(0, 0, SKY_KEY).setOrigin(0, 0);

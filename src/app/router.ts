@@ -1,9 +1,11 @@
 // Screen routing (architecture.md § Rendering, "Battles"): which screen the overlay shows, whether a
 // battle is running, and run end. Title shows the animated backdrop; Battle runs a session; when
-// the sim emits MapWon or MapLost, the battle pauses where it stands and Results shows over it.
+// the sim emits MapWon or MapLost, the battle freezes where it stands, and RESULTS_DELAY_MS later
+// (the last radio line and the leak feedback play out; D028) Results shows over it.
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
+import { radioLines } from '../content/radio/index.ts';
 import { runResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
@@ -11,6 +13,9 @@ import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { runResultOf } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
+
+/** How long the frozen battle shows after the map ends, before Results (ms of real time; D028). */
+export const RESULTS_DELAY_MS = 1500;
 
 export interface BattleRequest {
   /** Default: DEFAULT_MAP_ID. */
@@ -30,10 +35,12 @@ export interface Router {
   /** Replays the last battle's map (Results → Retry), with the same request, minus the briefing. */
   retry(): Promise<void>;
   /**
-   * Ends the running battle with `outcome` and shows Results. The sim's MapWon / MapLost call it.
-   * Rejects outside a battle; a second call is a no-op.
+   * Ends the running battle with `outcome` and shows Results now. The sim's MapWon / MapLost call
+   * it after RESULTS_DELAY_MS. Rejects outside a battle; a second call is a no-op.
    */
   endRun(outcome: RunOutcome): Promise<void>;
+  /** Shows a pending Results now (skips the rest of RESULTS_DELAY_MS); no-op when none waits. */
+  flushResults(): Promise<void>;
 }
 
 /** Creates the router over a booted game (the backdrop scene must be registered). */
@@ -41,6 +48,11 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   let battle: Battle | null = null;
   let ended = false;
   let wavesCleared = 0;
+  /** performance.now() and the sim tick at the battle's first leak, and at the map's end. */
+  let firstLeakAt: { ms: number; tick: number } | null = null;
+  let endedAt: { ms: number; tick: number } | null = null;
+  /** The map ended and Results waits out RESULTS_DELAY_MS. */
+  let pending: { outcome: RunOutcome; timer: ReturnType<typeof setTimeout> } | null = null;
   let lastRequest: BattleRequest = defaults;
 
   const showBackdrop = (on: boolean): void => {
@@ -48,7 +60,12 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     if (on && !running) game.scene.start(BACKDROP_SCENE_KEY);
     else if (!on && running) game.scene.stop(BACKDROP_SCENE_KEY);
   };
+  const clearPending = (): void => {
+    if (pending !== null) clearTimeout(pending.timer);
+    pending = null;
+  };
   const stopBattle = (): void => {
+    clearPending();
     battle?.stop();
     battle = null;
   };
@@ -64,14 +81,31 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     runResult.value = null;
     ended = false;
     wavesCleared = 0;
+    firstLeakAt = null;
+    endedAt = null;
     const next = startBattle(game, battleConfig(mapId, seed), { briefing });
     battle = next;
     const { bus } = next.host;
     bus.on('WaveCleared', () => {
       wavesCleared++;
     });
+    // The radio's first-leak trigger: the battle's first EnemyLeaked (app/radio.ts).
+    bus.on('EnemyLeaked', () => {
+      firstLeakAt ??= { ms: performance.now(), tick: next.host.sim.state.tick };
+    });
+    // The map ended: freeze the battle now, show Results after the delay.
     const onEnd = (outcome: RunOutcome) => () => {
-      if (battle === next) void router.endRun(outcome);
+      if (battle !== next || ended || pending !== null) return;
+      endedAt = { ms: performance.now(), tick: next.host.sim.state.tick };
+      setSpeed(0);
+      cancel();
+      pending = {
+        outcome,
+        timer: setTimeout(() => {
+          pending = null;
+          if (battle === next) void router.endRun(outcome);
+        }, RESULTS_DELAY_MS),
+      };
     };
     bus.on('MapWon', onEnd('won'));
     bus.on('MapLost', onEnd('lost'));
@@ -107,12 +141,20 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // A retry skips the briefing: the player read it moments ago.
       return openBattle(lastRequest, false);
     },
+    flushResults() {
+      if (pending === null) return Promise.resolve();
+      const { outcome } = pending;
+      clearPending();
+      return router.endRun(outcome);
+    },
     endRun(outcome) {
       if (battle === null) return Promise.reject(new Error('router: no battle to end'));
       if (ended) return Promise.resolve();
+      clearPending();
       ended = true;
       const { sim } = battle.host;
       const s = sim.state;
+      const end = endedAt ?? { ms: performance.now(), tick: s.tick };
       runResult.value = runResultOf(
         {
           mapId: sim.map.id,
@@ -121,6 +163,11 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           integrity: s.integrity,
           skitterkinKilled: s.stats.skitterkinKilled,
           wavesCleared,
+          radio: radioLines(sim.map.id),
+          firstLeakAgo:
+            firstLeakAt === null
+              ? null
+              : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
         },
         outcome,
       );

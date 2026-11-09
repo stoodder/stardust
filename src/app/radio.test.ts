@@ -1,9 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { A1_M01_RADIO } from '../content/radio/a1_m01.ts';
-import { radioLines } from '../content/radio/index.ts';
+import { radioLines, type RadioLine } from '../content/radio/index.ts';
 import type { IdSpace } from '../content/types.ts';
+import { createBus } from '../shared/bus.ts';
 import type { SimEvent } from '../sim/index.ts';
-import { createRadioScript, radioLineMs } from './radio.ts';
+import { hud } from '../ui/state.ts';
+import {
+  bindRadio,
+  createRadioScript,
+  RADIO_STALE_MS,
+  radioHoldMs,
+  radioLineMs,
+  REPLY_BEAT_MS,
+} from './radio.ts';
 
 type Ev = SimEvent<IdSpace>;
 const spawn = (uid: number, wave: number): Ev => ({
@@ -65,8 +74,116 @@ describe('the A1M1 radio (D026)', () => {
     expect(radioLineMs('x'.repeat(120))).toBeGreaterThan(4000);
   });
 
+  it('a line followed by its reply holds only the reply beat (D028)', () => {
+    expect(radioHoldMs('x'.repeat(120), true)).toBe(REPLY_BEAT_MS);
+    expect(radioHoldMs('x'.repeat(120), false)).toBe(radioLineMs('x'.repeat(120)));
+    expect(REPLY_BEAT_MS).toBeLessThanOrEqual(2500);
+  });
+
+  it('leaves the debrief to the results card: the map ending plays nothing on the ticker', () => {
+    const r = createRadioScript(A1_M01_RADIO);
+    expect(r.lines({ type: 'MapWon' })).toEqual([]);
+    expect(r.lines({ type: 'MapLost' })).toEqual([]);
+  });
+
   it('has no radio for a map without a table', () => {
     expect(radioLines('dev_range')).toEqual([]);
     expect(radioLines('a1_m01')).toBe(A1_M01_RADIO);
+  });
+});
+
+const shown = () => hud.radio.value?.text ?? null;
+const cue = () => hud.radio.value?.cue?.text ?? null;
+const at = (line: RadioLine) => radioLineMs(line.text);
+
+describe('bindRadio: the ticker over real time (fake timers)', () => {
+  type Bus = ReturnType<typeof createBus<Ev>>;
+  let bus: Bus;
+  let unbind: () => void;
+  const JOKE_SETUP = A1_M01_RADIO.find((l) => l.text.startsWith('Time for Joke'))!; // in the table
+  const PUNCHLINE = A1_M01_RADIO.find((l) => l.text.startsWith('Why did the lettuce'))!;
+  const JINGLE = '(singing along) Ev-er-glow, Ev-er-glow!';
+  const JINGLE_REPLY = 'That jingle. Every time.';
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    bus = createBus<Ev>();
+    unbind = bindRadio(bus, 'a1_m01');
+  });
+  afterEach(() => {
+    unbind();
+    vi.useRealTimers();
+  });
+
+  it('plays queued lines in order, one at a time', () => {
+    bus.emit(countdown(4)); // Goldie
+    bus.emit({ type: 'TowerClassUnlocked', tower: 'thumper' }); // QUILL, queued behind her
+    expect(shown()).toMatch(/^Oh! You're the new tech!/);
+    vi.advanceTimersByTime(radioLineMs(shown()!) - 1);
+    expect(shown()).toMatch(/^Oh! You're the new tech!/);
+    vi.advanceTimersByTime(1);
+    expect(shown()).toBe('New hardware! Thumper Mortar, ready to deploy!');
+    vi.advanceTimersByTime(4000);
+    expect(shown()).toBeNull();
+  });
+
+  it('lands the reply on the punchline: a short beat, with the punchline kept up above it', () => {
+    bus.emit(countdown(6));
+    expect(shown()).toBe(JOKE_SETUP.text);
+    vi.advanceTimersByTime(at(JOKE_SETUP)); // QUILL to QUILL: the setup holds in full
+    expect(shown()).toBe(PUNCHLINE.text);
+    expect(cue()).toBeNull();
+    vi.advanceTimersByTime(REPLY_BEAT_MS - 1);
+    expect(shown()).toBe(PUNCHLINE.text);
+    vi.advanceTimersByTime(1);
+    expect(shown()).toBe("It's Wednesday.");
+    expect(cue()).toBe(PUNCHLINE.text);
+    expect(hud.radio.value?.name).toBe('Bricks');
+    expect(hud.radio.value?.cue?.name).toBe('QUILL');
+  });
+
+  it('judges staleness per batch: a batch that started plays out, a stale one drops whole', () => {
+    const heard: string[] = [];
+    const off = hud.radio.subscribe((r) => {
+      if (r !== null) heard.push(r.text);
+    });
+    bus.emit(countdown(4)); // Goldie: about 6 s
+    bus.emit({ type: 'TowerClassUnlocked', tower: 'thumper' }); // QUILL: 4 s
+    bus.emit(countdown(6)); // the joke: starts about 10 s in, its tail runs past the limit
+    bus.emit(cleared(1)); // the jingle pair: reached after the limit
+    vi.advanceTimersByTime(60_000);
+    off();
+    const jokeStarts = radioLineMs(heard[0]!) + 4000; // Goldie's line, then QUILL's 4 s one
+    expect(jokeStarts).toBeLessThan(RADIO_STALE_MS);
+    expect(jokeStarts + at(JOKE_SETUP)).toBeGreaterThan(RADIO_STALE_MS);
+    // The joke plays whole, reply and all; the stale jingle batch drops whole, so Bricks never
+    // answers a jingle nobody heard.
+    expect(heard.slice(2)).toEqual([JOKE_SETUP.text, PUNCHLINE.text, "It's Wednesday."]);
+    expect(shown()).toBeNull();
+  });
+
+  it('plays a reply whose cue started in time, however long the queue', () => {
+    bus.emit(cleared(1));
+    expect(shown()).toBe(JINGLE);
+    vi.advanceTimersByTime(RADIO_STALE_MS + 1_000); // past the limit, mid-batch
+    expect(shown()).toBeNull(); // both lines played: the jingle, then its reply
+    // Replay with a clock check: the reply came a beat after the jingle.
+    unbind();
+    unbind = bindRadio(bus, 'a1_m01');
+    bus.emit(cleared(1));
+    vi.advanceTimersByTime(REPLY_BEAT_MS);
+    expect(shown()).toBe(JINGLE_REPLY);
+    expect(cue()).toBe(JINGLE);
+  });
+
+  it('unbinding stops the ticker and clears the line', () => {
+    bus.emit(countdown(4));
+    expect(shown()).not.toBeNull();
+    unbind();
+    expect(shown()).toBeNull();
+    bus.emit(countdown(7));
+    vi.advanceTimersByTime(10_000);
+    expect(shown()).toBeNull();
+    unbind = () => {};
   });
 });

@@ -21,6 +21,8 @@ import {
   countdownSeconds,
   selectedView,
   staysArmed,
+  UPGRADE_TEACH_WAVE,
+  upgradeHintShows,
   wavePreview,
 } from './hud.ts';
 
@@ -253,5 +255,16 @@ describe('hud view models', () => {
 
   it('cycles targeting First → Last → Strong → Close → First', () => {
     expect(PRIORITY_CYCLE.map(nextPriority)).toEqual(['last', 'strong', 'close', 'first']);
+  });
+});
+
+describe('the upgrade teach (D028)', () => {
+  it("shows from W2's countdown until the first upgrade, while a tower stands and the map runs", () => {
+    expect(UPGRADE_TEACH_WAVE).toBe(2);
+    expect(upgradeHintShows(true, false, 1, true)).toBe(true);
+    expect(upgradeHintShows(false, false, 1, true)).toBe(false); // W2's countdown not yet
+    expect(upgradeHintShows(true, true, 1, true)).toBe(false); // upgraded once: done for good
+    expect(upgradeHintShows(true, false, 0, true)).toBe(false); // nothing to upgrade
+    expect(upgradeHintShows(true, false, 1, false)).toBe(false); // the map ended
   });
 });

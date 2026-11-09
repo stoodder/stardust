@@ -91,6 +91,7 @@ export async function boot(): Promise<void> {
           await sceneReady;
           await router.goto(id);
         },
+        flushResults: () => void router.flushResults(),
         frameMs: () => frames.frameMs(),
         canvas: () => game.canvas,
         viewWidth: VIEW_W,
@@ -108,7 +109,9 @@ export async function boot(): Promise<void> {
   window.addEventListener('resize', applyScale);
   installKeys({
     // The Title and Results screens and the briefing turn game hotkeys off.
-    isActive: () => screen.value === 'battle' && hud.briefing.value === null,
+    // So does the end of the map, while the frozen battle waits for Results (D028).
+    isActive: () =>
+      screen.value === 'battle' && hud.briefing.value === null && hud.outcome.value === 'playing',
     // No modals over a live battle until dialogue and settings exist.
     isModalOpen: () => false,
     // The briefing is a blocking modal: Esc closes it wherever the focus is.

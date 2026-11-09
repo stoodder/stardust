@@ -471,6 +471,27 @@ section.chamfer,
   pointer-events: none;
 }
 
+/* The upgrade hint (D028): bottom center, between the ability and build bars, above PAUSED. */
+.hud-hint-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 32px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.hud-hint {
+  --edge: var(--sd-teal-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  color: var(--sd-white-1);
+  background: var(--panel-fill);
+}
+
 /* ── Wave panel: countdown and the early-call bonus ───────────────────────────────────────── */
 
 .hud-countdown {
@@ -678,6 +699,18 @@ section.chamfer,
   line-height: 10px;
   color: var(--sd-white-1);
   text-transform: none;
+}
+
+/* A reply's cue line (D028): kept up above the reply, dimmed, with a rule under it. */
+.hud-radio-cue {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.hud-radio-cue .hud-radio-text {
+  color: var(--sd-steel-3);
 }
 
 /* ── The "WAVE n" banner ──────────────────────────────────────────────────────────────────── */

@@ -100,14 +100,20 @@ export interface HudNotice {
   readonly text: string;
 }
 
-/** A radio line on screen (D026's M1 radio ticker). `id` changes with every line. */
-export interface RadioView {
-  readonly id: number;
+/** A spoken line with its speaker's name plate (the radio ticker, the results card's debrief). */
+export interface SpokenLine {
   /** The speaker's name plate. */
   readonly name: string;
   /** The name plate's color. */
   readonly color: ColorName;
   readonly text: string;
+}
+
+/** A radio line on screen (D026's M1 radio ticker). `id` changes with every line. */
+export interface RadioView extends SpokenLine {
+  readonly id: number;
+  /** The line this one replies to, kept up above it (D028), or null. */
+  readonly cue: SpokenLine | null;
 }
 
 /** A leak at the core, for the meter's flash. `id` changes with every leak. */
@@ -184,4 +190,9 @@ export const hud = {
   callPulse: signal(false),
   /** Changes when a countdown starts, so a ready ability slot pulses. */
   countdownCue: signal(0),
+  /**
+   * The upgrade teach (D028): from W2's countdown until the first upgrade, while a tower stands,
+   * built towers pulse and the HUD says how to upgrade.
+   */
+  upgradeHint: signal(false),
 };
