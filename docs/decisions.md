@@ -994,3 +994,10 @@ Real art went in behind T300a's ids. No data changed.
 - **Price order:** `costFor`, then Rapid Deploy (first build free; no charge spent), then the sale (`round(cost × 0.6)`). `invested` records what was paid, so a refund is 70% of the discounted price and a free tower refunds 0.
 - **Ready Room:** one free cast per slot from W1's start until W2 starts.
 - **Suppressing Fire** now hits ground units only (it can't hit Gerald).
+
+### D078 — 2026-11-09 — T309 the Peeker
+`prop.peeker` sits on any map's `peeker` marker.
+- **Behaviour:** it peeks for 3 s every 20–40 s of play (pause stops the clock). It stays down while an enemy is within 2 tiles or the cursor is on it, and ducks if it was out. Its timing is seeded from the battle seed, never the sim's RNG.
+- **Poking:** a plain click, or Enter with the keyboard cursor, ducks it with a squeak. Only on Act I maps.
+- **The first poke writes `peeker_poked` to the save at once** (`app/peeker.ts`), not at run end. It counts whether the run is won, lost, or abandoned, and it never enters the sim's command log. The flag pays off in A3M6.
+- There's no bark, because act1.md has no Peeker line.

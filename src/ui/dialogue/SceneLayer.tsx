@@ -33,6 +33,19 @@ function CurrentLine({ line, step }: { line: LineView; step: SceneStep }) {
   );
 }
 
+/** The line a choice answers, whole and still (its portrait at rest). */
+function Prompt({ line }: { line: LineView }) {
+  return (
+    <div class={`dlg-line prompt dlg-frame-${line.frame}`}>
+      <Portrait line={line} talking={false} />
+      <div class="dlg-words">
+        <NamePlate line={line} />
+        <span class="dlg-text">{plainText(line.text)}</span>
+      </div>
+    </div>
+  );
+}
+
 /** Everything under the current line: choices, the "will remember", and Next. */
 function Controls({ view, step }: { view: SceneView; step: SceneStep }) {
   return (
@@ -71,6 +84,7 @@ const FULLSCREEN_HISTORY = 4;
 function ScenePanel({ view }: { view: SceneView }) {
   const step = useSceneStep(view);
   const full = view.mode === 'fullscreen';
+  const prompt = view.transcript.at(-1);
   return (
     <div class={full ? 'dlg-stage' : 'dlg-scrim'} data-act={hud.act.value}>
       <section
@@ -89,6 +103,10 @@ function ScenePanel({ view }: { view: SceneView }) {
           </div>
         )}
         {view.line !== null && <CurrentLine line={view.line} step={step} />}
+        {/* At a choice, the line it answers stays up above the options. */}
+        {view.line === null && view.choices !== null && prompt !== undefined && !full && (
+          <Prompt line={prompt} />
+        )}
         <Controls view={view} step={step} />
       </section>
     </div>

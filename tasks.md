@@ -115,7 +115,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T226** Make Sitting Ducks or the power node decide a leak in at least one A1M2 alt (today the Sprinkler's 0.7 DPS makes them decoration).
 - [ ] **T228** Make the R&D pick (Mk II vs Rapport) change a result from A1M3 on (strike-shaped clumps on a short route; a Suppressing Fire-limited wave) (D060).
 - [ ] **T229** Revisit the never-spend player's W7–W8 wall on A1M2 alongside A1M3's curve; consider an earlier, louder bank nudge or a W6 warning wave (D060).
-- [ ] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
+- [x] **T230** Peeker sprite (A2M3's clickable rock; no sprite yet).
 - [ ] **T232** Suppressing Fire's striped zone draws in `overlay` and covers towers next to the path; depth-sort it under towers (M3).
 - [x] **T234** Apply `silkText` in the view-model builders (medalViews, specChoice, selectedView, loadoutView) and fix architecture.md's claim; remove the remaining per-frame allocations (BattleScene ghost label, `sellValue` in selectedView, LinkView's Map iterator); `Object.hasOwn` for DECOR_MARKERS/LINK_CALLOUT; dedupe `towerLabel`/`displayName`; headlessTracker reads `state.maxIntegrity`.
 - [ ] **T235** Results polish: Career total counts up with PESTS PROCESSED; mark the first Stardust payday and show the "Banked for Zibzab's shop" note once; build floaters don't overlap link callouts; a compact Results layout before more rows land (M3).
@@ -159,7 +159,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
 - [~] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [ ] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
-- [ ] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
+- [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [ ] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
 - [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.
 - [ ] **T317** Docs: T217, T120, as-built tables.

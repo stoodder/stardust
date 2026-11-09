@@ -210,7 +210,7 @@
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 6px;
-  background: rgb(5 3 10 / 35%);
+  background: rgb(5 3 10 / 45%);
 }
 
 .dlg-panel {
@@ -219,9 +219,10 @@
   box-sizing: border-box;
   display: grid;
   gap: 6px;
-  width: 424px;
+  width: 400px;
   padding: 6px 8px;
-  background: var(--panel-fill);
+  /* Opaque: the HUD (and the PAUSED pill) under it never show through. */
+  background: var(--sd-ink-1);
 }
 
 .dlg-line {
@@ -285,6 +286,10 @@
   color: var(--sd-ink-0);
   background: var(--sd-steel-3);
   text-align: center;
+}
+
+.dlg-line.prompt {
+  cursor: default;
 }
 
 /* "{Speaker} will remember that." (C3, C4): grace, not a warning. */
