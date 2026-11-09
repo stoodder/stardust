@@ -16,6 +16,7 @@
 import { ALLY_NEVER_TARGET_TAGS } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
 import { applyDamage, PLAIN_HIT } from '../combat/damage.ts';
+import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
 import { untargetable } from '../enemyAbilities/layers.ts';
 import { ALLY_BLANK, type Ally, type Enemy } from '../entities.ts';
@@ -95,7 +96,8 @@ function pickAllyTarget(state: SimState, a: Ally): Enemy | null {
   let bestD2 = 0;
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
-    if (!e.alive || e.def === null || untargetable(e)) continue; // burrowed or leaving
+    // Burrowed or leaving units are out of reach; allies never shoot a neutral unit (Gerald).
+    if (!e.alive || e.def === null || untargetable(e) || isNeutral(e)) continue;
     if (e.def.layer === 'air' ? !a.hitsAir : !a.hitsGround) continue;
     if (!allyMayTarget(e.tags)) continue;
     const d2 = distSqTo(a.x, a.y, e);

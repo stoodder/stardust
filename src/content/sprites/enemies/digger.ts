@@ -29,9 +29,9 @@ function plates(g: CharGrid, facing: 'se' | 'ne', cy: number): void {
       if (ch === '.' || '789'.includes(ch)) continue;
       const dx = x + 0.5 - CX;
       const dy = y + 0.5 - cy;
-      // The shoulder plate: a band across the upper back, a dark seam under its lit edge.
+      // The shoulder plate: a band across the upper back.
       if (dy < -1.5 && Math.abs(dx - 1) < 4) plot(g, x, y, dy < -2.5 ? 'S' : 'T');
-      else if (dy >= -1.5 && dy < -0.5 && Math.abs(dx - 1) < 4) plot(g, x, y, '2');
+      else if (dy >= -1.5 && dy < -0.5 && Math.abs(dx - 1) < 4) plot(g, x, y, '3');
       // The snout scoop at the front (facing SE: the right end).
       if (facing === 'se' && dx > 4.5 && dy > -2.5 && dy < 1.5)
         plot(g, x, y, dy < 0.5 ? 'S' : 'T');
@@ -58,7 +58,7 @@ function digger(facing: 'se' | 'ne', step: 0 | 1, dig: boolean): string[] {
   if (dig) {
     // Nose down into the ground, claws scrabbling forward, dirt flying back.
     const claws =
-      step === 0 ? ['S.S.....S.S.S', 'T.T.....T.T.T'] : ['.S.S...S.S.S.', '.T.T...T.T.T.'];
+      step === 0 ? ['S.S.....S.S.S', 'S.S.....S.S.S'] : ['.S.S...S.S.S.', '.S.S...S.S.S.'];
     stamp(g, 4, H - 2, claws);
     stamp(g, 0, 0, SPRAY[step]);
     if (facing === 'se') {

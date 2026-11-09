@@ -9,7 +9,8 @@ import { finish, skitterBody } from './skitter.ts';
 const W = 11;
 const H = 10;
 
-function youngling(facing: 'se' | 'ne', step: 0 | 1): string[] {
+/** One youngling frame (the Peeker reuses the front view, props/peeker.ts). */
+export function youngling(facing: 'se' | 'ne', step: 0 | 1): string[] {
   const up = step === 1 ? 1 : 0;
   const g = skitterBody({
     w: W,

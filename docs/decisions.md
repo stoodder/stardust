@@ -937,3 +937,16 @@ A1M1/A1M2 harness numbers are unchanged. The hashes change because state fields 
   - Render releases Gerald on `NeutralExited` (T312a).
   - The harness holds fire from Gerald's spawn until `NeutralExited` (T313).
 - **Follow-up:** spec counter-answers should require *authored* specs. The `all_unlocked` dev save owns Skyhook's M4 specs, so loadout suggests "Skyhook (Seeker Swarm)" (T319).
+
+### D073 — 2026-11-09 — T304c split, huddle, burrow, and Chitterbloom
+- **Burrow:** 4 s on the surface (the last 0.8 s is a tell), then 2 s underground at 1.5× pace. Underground it is untargetable and immune, but it still leaks. **No Act I tower answers burrowing**, so Diggers stay threat intel only (never a required counter) until Act II's burrow answers. Those answers need a flag that lets hits reach burrowed units (M4).
+- **Split:** only a kill splits (a leak doesn't). Children spawn in `cleanup` with the run's scaled defs, joining the parent's wave and tags, 0.25 tiles apart.
+- **Huddle:** each ally gets one huddle per tick, capped at the leader's pace. A huddle never speeds anyone up.
+- **Chitterbloom (boss):**
+  - **Phase 1:** a sneeze every 5 s, each with a 1.5 s tell.
+  - **Thresholds:** damage stops at each one, and the new phase opens with 1.5 s of invulnerability (shots plink).
+  - **Phase 2:** two 3 s burrows, each surfacing with a Bunchling.
+  - **Phase 3:** Haste 50% plus the huddle.
+  - **At 0%:** `driveOff`. She becomes untargetable and leaves by the nearest edge within 4 s, taking every live unit of her wave with her.
+  - **Boss rules:** a boss leak drains all integrity (no Bulkhead). Bosses take chills at half strength. A boss wave's clear bonus is ×3; the early-call bonus uses the plain bonus.
+  - **Script hooks:** `bossPhase` and `bossHpPct` triggers; the `bossEnd` action (`driveOff`/`retreat`). `pivot` and `layToRest` stay M4.

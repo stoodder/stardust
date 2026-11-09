@@ -31,7 +31,7 @@ function shell(g: CharGrid, cx: number, cy: number, facing: 'se' | 'ne'): void {
       const d = plates.map((p) => Math.abs(x + 0.5 - p));
       const k = d.indexOf(Math.min(...d));
       const edge = Math.abs(x + 0.5 - (plates[k] ?? 0)) > 2.2;
-      plot(g, x, y, edge ? '1' : dy < -2.5 ? 'S' : dy > 0.5 ? '1' : 'T');
+      plot(g, x, y, edge ? 'T' : dy < 0 ? 'S' : 'T');
     }
   }
 }
@@ -72,6 +72,10 @@ function elder(facing: 'se' | 'ne', step: 0 | 1): string[] {
       [6 + ox, 12, [dim + '.' + spot]],
     ]);
   }
+  // Seen from behind she is lit across the whole broad back (the sun is over her shoulder), so
+  // the back view stays in the actors' value band: the shadow steps each come up one.
+  const lift: Readonly<Record<string, string>> = { '1': '2', '2': '3', T: 'S' };
+  for (const row of g) row.forEach((ch, x) => (row[x] = lift[ch] ?? ch));
   return finish(g, [
     [3, H - 2, legs],
     [11 + ox, 1, ['.W.W', 'WVWV']],

@@ -207,15 +207,6 @@ export interface SpokenLine {
   readonly text: string;
 }
 
-/** A radio line on screen (D026's M1 radio ticker). `id` changes with every line. */
-export interface RadioView extends SpokenLine {
-  readonly id: number;
-  /** The playfield pings the first-built tower while this line shows (D059's Denise pointer). */
-  readonly pointFirstTower: boolean;
-  /** The line this one replies to, kept up above it (D028), or null. */
-  readonly cue: SpokenLine | null;
-}
-
 /** A leak at the core, for the meter's flash. `id` changes with every leak. */
 export interface LeakFlash {
   readonly id: number;
@@ -288,16 +279,14 @@ export const hud = {
   /** What calling the next wave now would pay (core-loop §2.4); 0 outside a countdown. */
   callBonus: signal(0),
   /**
-   * The map's static briefing while it's open (M1; it opens as a battle starts), or null. Game
-   * hotkeys are off while it's open.
+   * The briefing scene's id while the briefing is open (it opens as a battle starts; app/
+   * dialogue.ts plays it into `dialogue.scene`), or null. Game hotkeys are off while it's open.
    */
-  briefing: signal<readonly BriefingLine[] | null>(null),
+  briefing: signal<string | null>(null),
   /** The map's threat intel, for the briefing (T202d); null outside a battle. */
   intel: signal<ThreatIntelView | null>(null),
   /** The map's medals with this run's progress and what the save already holds (T202d). */
   medals: signal<readonly MedalView[]>([]),
-  /** The radio line on screen, or null (app/radio.ts). */
-  radio: signal<RadioView | null>(null),
   /** The latest leak, for the meter's edge flash, or null. */
   leak: signal<LeakFlash | null>(null),
   /** The "WAVE n" banner while it shows, or null. */

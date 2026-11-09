@@ -6,13 +6,14 @@ import type { IdSpace } from '../content/types.ts';
 import { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { BATTLE_SCENE_KEY, BattleScene } from '../render/scenes/BattleScene.ts';
 import { createSim, type SimConfig } from '../sim/index.ts';
+import { speaking } from '../ui/dialogue/state.ts';
 import { hud } from '../ui/state.ts';
 import { issue, setCommandTarget } from './commands.ts';
 import { createHost, type Host } from './host.ts';
 import { bindHud, hudSaveInfo, showNotice, type HudOptions } from './hud.ts';
 import { rejectText } from './hudText.ts';
 import { bindBattleAudio } from './audio.ts';
-import { bindRadio } from './radio.ts';
+import { bindDialogue } from './dialogue.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
 let battleCount = 0;
@@ -56,9 +57,10 @@ export function startBattle(
       onFirstFrame: () => resolveFirstFrame?.(),
       onCantBuild: () => showNotice(rejectText('notBuildable') ?? ''),
       teachUpgrade: () => hud.upgradeHint.value,
+      // The line being spoken points at the first-built turret (D059's Denise pointer).
       pointFirstTower: () => {
-        const r = hud.radio.value;
-        return r !== null && r.pointFirstTower ? r.id : 0;
+        const l = speaking.value;
+        return l !== null && l.point ? l.id : 0;
       },
     },
     key,
@@ -66,7 +68,10 @@ export function startBattle(
   // Read once, before the HUD marks this run's newly issued towers as fielded (meta/hints.ts).
   const save = hudOptions.save ?? hudSaveInfo(sim.map.id, sim.config.loadout);
   const unbindHud = bindHud(host, interaction, { ...hudOptions, save });
-  const unbindRadio = bindRadio(host.bus, sim.map.id, () => sim.state.credits, save.newTowers);
+  const unbindDialogue = bindDialogue(host, {
+    briefing: hudOptions.briefing,
+    newTowers: save.newTowers,
+  });
   const unbindAudio = bindBattleAudio(host);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
@@ -78,8 +83,9 @@ export function startBattle(
     firstFrame,
     stop() {
       setCommandTarget(null);
+      // Dialogue first: closing the briefing as the HUD unwinds would start the map's lines.
+      unbindDialogue();
       unbindHud();
-      unbindRadio();
       unbindAudio();
       game.scene.remove(key);
     },

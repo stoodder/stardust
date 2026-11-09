@@ -63,6 +63,7 @@ import { propLettuce } from './props/lettuce.ts';
 import { propRig } from './props/rig.ts';
 import { propScarecrow } from './props/scarecrow.ts';
 import { propRock } from './props/rock.ts';
+import { propPeeker } from './props/peeker.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
 import { tilePath } from './tiles/path.ts';
@@ -107,6 +108,7 @@ export const SPRITES = [
   propRig,
   propHousing,
   propScarecrow,
+  propPeeker,
   towerRivet,
   towerRivetHead,
   towerThumper,

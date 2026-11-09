@@ -24,7 +24,6 @@ import {
 import {
   abilityCooldownTotals,
   abilitySlots,
-  briefingLines,
   buildSlots,
   cooldownView,
   countdownSeconds,
@@ -161,7 +160,7 @@ export function showNotice(text: string): void {
 }
 
 export interface HudOptions {
-  /** Open the map's static briefing (if it has one) over the battle until it's dismissed. */
+  /** Open the map's briefing (if it has one) over the battle until it's dismissed (app/dialogue.ts). */
   readonly briefing: boolean;
   /** The save in play as the HUD reads it; default: app/save.ts's (`hudSaveInfo`). */
   readonly save?: HudSaveInfo;
@@ -195,8 +194,6 @@ export function bindHud(
   const cooldownTotals = abilityCooldownTotals(sim.config);
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
-  const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
-  hud.briefing.value = lines.length === 0 ? null : lines;
   const specLock = specLockText(saveInfo.engineeringOpen);
   hud.intel.value = threatIntel(sim.map, saveInfo.ownedTowers, saveInfo.specsUnlocked);
   hud.medals.value = medalViews(sim.map, sim.state.medals, saveInfo.heldMedals);

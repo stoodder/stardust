@@ -334,6 +334,7 @@ describe('Matriarch Chitterbloom', () => {
       enemyAbilities(state, ctx);
       movement(state);
       if (!b.alive) gone = t;
+      else expect(b.x >= 0 && b.x <= MAP.cols && b.y >= 0 && b.y <= MAP.rows).toBe(true);
     }
     expect(gone).toBeGreaterThanOrEqual(0);
     expect(gone).toBeLessThan(LEAVE_MAX_TICKS);

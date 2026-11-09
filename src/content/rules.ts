@@ -420,8 +420,6 @@ export const BOSS_MIN_TELL_SEC = 1.5;
  * base speed or faster if that's what it takes; a driven-off boss's brood leaves the same way.
  */
 export const BOSS_LEAVE_MAX_SEC = 4;
-/** A leaving unit is gone once it is this far past the map edge (so its sprite clears the map). */
-export const LEAVE_PAST_EDGE_TILES = 0.5;
 /**
  * A boss phase change's invulnerability and telegraph (enemies.md § 6: at most 2 s). Damage that
  * crosses a phase threshold stops at it, so no burst skips a phase.

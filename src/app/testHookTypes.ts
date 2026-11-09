@@ -76,6 +76,20 @@ export interface TestHooks {
   readonly audio: AudioHooks;
   /** A copy of the campaign save in play (T209), or `null` (the Title, or a `?map=` battle). */
   save(): SaveData | null;
+  /** Dialogue (T302b): plays scenes and barks by id, and reads what shows. */
+  readonly dialogue: DialogueHooks;
+}
+
+export interface DialogueHooks {
+  /**
+   * Plays a scene by id: a registered one, or a dev scene (`ui/dialogue/dev.ts`). One that holds
+   * input opens now (in a battle it pauses the sim); a comms scene queues on the panel.
+   */
+  play(id: string): void;
+  /** Plays a bark by id (registered or dev) on the panel, as a map script cue would. In a battle. */
+  bark(id: string): void;
+  /** The scene holding input and the comms panel's line text, or null for each. */
+  shown(): { readonly scene: string | null; readonly comms: string | null };
 }
 
 /** Peak, RMS, and audible length of a render (`src/audio/analyze.ts`). */
@@ -118,14 +132,15 @@ export interface AudioHooks {
   render(what: string): Promise<RenderSample>;
 }
 
-/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1&audio=1&save=…`). */
+/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&dialogue=1&audio=1&save=…`). */
 export interface BootParams {
   readonly test: boolean;
   /**
-   * Whether the radio ticker plays (D026). On for players; `?test=1` turns it off so screenshots
-   * stay clear, and `&radio=1` turns it back on for the specs that assert it.
+   * Whether dialogue plays: the comms panel's radio and barks, and in-battle scenes (T302b; D026's
+   * radio rule). On for players; `?test=1` turns it off so screenshots stay clear (the briefing
+   * still shows, whole), and `&dialogue=1` (or M2's `&radio=1`) turns it back on.
    */
-  readonly radio: boolean;
+  readonly dialogue: boolean;
   /**
    * Whether audio plays (T205). On for players; `?test=1` turns it off (no AudioContext), and
    * `&audio=1` turns it back on for the specs that assert it.

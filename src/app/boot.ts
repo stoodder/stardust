@@ -5,6 +5,8 @@ import { computeScale, cssZoom, VIEW_H, VIEW_W } from '../render/scale.ts';
 import { BackdropScene } from '../render/scenes/BackdropScene.ts';
 import { BootScene } from '../render/scenes/BootScene.ts';
 import { mountUi } from '../ui/Overlay.tsx';
+import { dialogue as dialogueView, sceneBlocks } from '../ui/dialogue/state.ts';
+import { DEV_BARKS, DEV_SCENES } from '../ui/dialogue/dev.ts';
 import { hud, screen } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import { dismissBriefing, issue, setSpeed } from './commands.ts';
@@ -14,7 +16,7 @@ import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
 import { setIntakeEnabled } from './profile.ts';
-import { setRadioEnabled } from './radio.ts';
+import { dialogueTestHooks, setDevDialogue, setDialogueEnabled, skipScene } from './dialogue.ts';
 import { audioTestHooks, installAudio } from './audio.ts';
 import { activeSave, browserKeyValueStore, initSaves, loadDevSave } from './save.ts';
 import { initSettings } from './settings.ts';
@@ -29,7 +31,8 @@ export function parseBootParams(search: string): BootParams {
   const test = q.get('test') === '1';
   return {
     test,
-    radio: !test || q.get('radio') === '1',
+    // `&radio=1` is the M2 name for `&dialogue=1`.
+    dialogue: !test || q.get('dialogue') === '1' || q.get('radio') === '1',
     audio: !test || q.get('audio') === '1',
     seed,
     map: q.get('map'),
@@ -54,7 +57,7 @@ function requireElement(id: string): HTMLElement {
  */
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
-  setRadioEnabled(params.radio);
+  setDialogueEnabled(params.dialogue);
   setIntakeEnabled(params.intake);
   initSettings();
   installAudio(params.audio);
@@ -92,6 +95,7 @@ export async function boot(): Promise<void> {
   const ready = sceneReady.then(() => router.goto(first));
 
   if (params.test) {
+    setDevDialogue(DEV_SCENES, DEV_BARKS);
     installTestHooks(
       createTestHooks({
         ready,
@@ -113,6 +117,7 @@ export async function boot(): Promise<void> {
         canvas: () => game.canvas,
         viewWidth: VIEW_W,
         audio: audioTestHooks(),
+        dialogue: dialogueTestHooks(),
         save: () => {
           const save = activeSave();
           return save === null ? null : structuredClone(save);
@@ -130,14 +135,19 @@ export async function boot(): Promise<void> {
   game.events.once(Phaser.Core.Events.READY, applyScale);
   window.addEventListener('resize', applyScale);
   installKeys({
-    // The Title and Results screens and the briefing turn game hotkeys off.
-    // So does the end of the map, while the frozen battle waits for Results (D028).
+    // The Title and Results screens, the briefing, and a scene holding input turn game hotkeys
+    // off. So does the end of the map, while the frozen battle waits for Results (D028).
     isActive: () =>
-      screen.value === 'battle' && hud.briefing.value === null && hud.outcome.value === 'playing',
-    // No modals over a live battle until dialogue and settings exist.
-    isModalOpen: () => false,
-    // The briefing is a blocking modal: Esc closes it wherever the focus is.
+      screen.value === 'battle' &&
+      hud.briefing.value === null &&
+      !sceneBlocks.value &&
+      hud.outcome.value === 'playing',
+    // A scene holding input (app/dialogue.ts) is the one modal over a live battle.
+    isModalOpen: () => dialogueView.scene.value !== null,
+    // Blocking modals take Esc wherever the focus is: a scene skips to its next choice or its
+    // end, and the briefing clocks in.
     dismissModal: () => {
+      if (skipScene()) return true;
       if (screen.value !== 'battle' || hud.briefing.value === null) return false;
       dismissBriefing();
       return true;

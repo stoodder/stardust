@@ -101,6 +101,15 @@ export type {
 } from './saveData.ts';
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
+export type { StoryUnlocks } from './story.ts';
+export {
+  baseStoryContext,
+  deliverMemos,
+  enemiesMet,
+  furthestWon,
+  unlockCodex,
+  withStoryUnlocks,
+} from './story.ts';
 export { MemoryStore, SAVE_KEYS, SLOT_IDS, isSlotId } from './store.ts';
 export type { Validated } from './validate.ts';
 export { validateSave } from './validate.ts';

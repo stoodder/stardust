@@ -8,6 +8,7 @@ import type { Host } from './host.ts';
 import type {
   AudioHooks,
   ClientPoint,
+  DialogueHooks,
   HookCommand,
   HookState,
   PerfSample,
@@ -49,6 +50,8 @@ export interface HookEnv {
   readonly viewWidth: number;
   /** The audio hooks (app/audio.ts). */
   readonly audio: AudioHooks;
+  /** The dialogue hooks (app/dialogue.ts). */
+  readonly dialogue: DialogueHooks;
   /** A copy of the save in play, or null (app/save.ts). */
   save(): SaveData | null;
 }
@@ -101,6 +104,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
     },
     goto: (screen: ScreenId) => env.goto(screen),
     audio: env.audio,
+    dialogue: env.dialogue,
     save: () => env.save(),
     perf: (): PerfSample => {
       const b = env.battle();
