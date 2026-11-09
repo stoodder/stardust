@@ -10,7 +10,14 @@ import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import { FEATURE_GATES, type Feature, type Modifier, type SimConfig } from '../sim/index.ts';
+import {
+  companionSlot,
+  FEATURE_GATES,
+  type CompanionSlot,
+  type Feature,
+  type Modifier,
+  type SimConfig,
+} from '../sim/index.ts';
 
 /** The map a battle opens when nothing names one: the campaign's first map. */
 export const DEFAULT_MAP_ID = 'a1_m01';
@@ -73,19 +80,17 @@ function slot1Ability(save: SaveData, par: string | null): string | null {
 }
 
 /**
- * The companion and its slot-2 state from the map (a pick list takes its first entry until the
- * finale's picker exists). Slot 2's ability id is the sim's to resolve from the companion
- * (T207a); the HUD shows it (T207b). Dropped while the sim refuses companions.
+ * The companion and slot 2 from the map (`companionSlot`: a pick list takes its first entry until
+ * the finale's picker exists). Left out while the sim refuses companions or slot 2.
  */
 function companionOf(
+  content: CompiledContent<IdSpace>,
   map: CompiledMapDef<IdSpace>,
-): Pick<SimConfig<IdSpace>, 'companion'> & { slot2State: 'present' | 'absent' | 'none' } {
-  const c = map.companion;
-  if (c === null || !simulated('companion') || !simulated('abilitySlot2')) {
-    return { companion: null, slot2State: 'none' };
+): CompanionSlot<IdSpace> {
+  if (!simulated('companion') || !simulated('abilitySlot2')) {
+    return { companion: null, slot2: null, slot2State: 'none' };
   }
-  if ('pick' in c) return { companion: c.pick[0] ?? null, slot2State: 'present' };
-  return { companion: c.id, slot2State: c.state };
+  return companionSlot(content, map);
 }
 
 /**
@@ -97,8 +102,9 @@ function saveModifiers(_save: SaveData): Modifier<IdSpace>[] {
 }
 
 /**
- * The SimConfig for a map. With a save: its towers (defaultLoadout), its abilities, its spec
- * unlocks for the loadout's towers, its difficulty, and the map's companion. Each of those the
+ * The SimConfig for a map, always with the map's companion in slot 2. With a save: its towers
+ * (defaultLoadout), its Technician ability, its spec unlocks for the loadout's towers, and its
+ * difficulty. Each of those the
  * sim still refuses (FEATURE_GATES) is left out, so a save that runs ahead of the sim (the
  * all_unlocked dev save) plays rather than throws; it goes live when its task lifts the gate.
  * Without a save: the map's par loadout and Technician ability. Throws on an unknown map id.
@@ -113,29 +119,29 @@ export function battleConfig(
     const content = set.compile();
     const map = content.maps[mapId]!; // hasOwn above
     const par = map.builds.parBuild;
+    const { companion, slot2, slot2State } = companionOf(content, map);
     const base: SimConfig<IdSpace> = {
       content,
       mapId,
       seed,
       loadout: par.loadout,
-      companion: null,
+      companion,
       modifiers: [],
       difficulty: 'standard',
-      abilities: { slot1: par.technicianAbility, slot2: null, slot2State: 'none' },
+      abilities: { slot1: par.technicianAbility, slot2, slot2State },
       scriptFlags: {},
       specsUnlocked: [],
     };
     if (save === null) return base;
     const loadout = defaultLoadout(save.unlocks.towers, save.unlocks.revokedTowers, par.loadout);
-    const { companion, slot2State } = companionOf(map);
     return {
       ...base,
       loadout,
-      companion,
       modifiers: saveModifiers(save),
       difficulty:
         save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
-      abilities: { slot1: slot1Ability(save, par.technicianAbility), slot2: null, slot2State },
+      // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.
+      abilities: { slot1: slot1Ability(save, par.technicianAbility), slot2, slot2State },
       // Story flags reach map scripts with T206b (meta-runtime.md § Pools, `scriptFlags`).
       scriptFlags: {},
       specsUnlocked: simulated('specs')

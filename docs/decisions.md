@@ -429,3 +429,17 @@ The owner said "start M2 … continue through to the end" and is away, so the or
 - **Modifiers:** Rapport is −15% cooldown on its companion's ability, Mk II is +0.5 strike radius (flat), and Coolant is −5% on every cooldown (progression §7.3).
 - **Gates lifted:** companion, slot 2, `abilityStat`, and harness row #15 (par runs once per companion on pick-list maps).
 - **Not yet:** A1M1's Bricks post tile isn't in act1.md ("post by the core"), so T125 adds that marker. The no-counter check ignores slot-2 abilities until T208.
+
+### D036 — 2026-11-09 — T209 flow shell
+- **Title:**
+  - With no saves, *Start shift* makes slot 1 and drops straight into A1M1's briefing.
+  - With saves: *Continue* first, then *New game*, *Load* (delete asks first; an unreadable slot offers *Copy raw data*), *Import code*, and *Settings*.
+  - Import errors are written in Act I's voice and never scold.
+- **Shift board:** stands in for the star map. It lists A1M1 and A1M2 with medal pips and Next up / Cleared + Replay / Locked / Coming soon.
+- **Base:** R&D / Shop / Engineering tabs. Each locked tab shows its "Opens after …" hint.
+- **Settings:** mute and Master/Music/Effects sliders, **Standard**/Story difficulty (named "standard" to match the sim and progression.md), and export/import.
+- **Results:** Continue goes to the Base (or the Shift board while the Base is locked).
+- **Battle config** is built from the save, including slot 2 via `companionSlot`. Any feature the sim still gates is left out, so a save ahead of the sim plays instead of throwing.
+- **Unlock schedule** (`meta/progress.ts`, reading `CAMPAIGN_PLAN`): R&D after A1M1, Shop and Loadout after A1M3, Engineering after A1M4, spare runners after A1M5, Xenotech after A2M5.
+- **Dev override:** `devUnlocks` lives only on dev-save fixtures, never in `SaveData`, so an import can't carry it. `?save=` works only with `?test=1`.
+- **SaveData v1** gained `settings.difficulty` and `unlocks.protocols`, and is checked against the catalog. `?seed=` seeds every battle.

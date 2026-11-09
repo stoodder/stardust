@@ -7,6 +7,7 @@ import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
 import type { IdSpace, LinkDef, LinkPartnerDef } from './types.ts';
+import { assertNever } from '../shared/types.ts';
 
 /**
  * Compiles the link registry against the tower ids. Returns the links in registry order and,
@@ -104,6 +105,8 @@ function partner<K extends IdSpace>(
         out.flatRange += flat;
         out.pctRange += pct;
         break;
+      default:
+        assertNever(bonus.stat);
     }
   }
   return out;

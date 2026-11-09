@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { createNewSave } from '../meta/index.ts';
-import { createSim, FEATURE_GATES } from '../sim/index.ts';
+import { companionSlot, createSim, FEATURE_GATES } from '../sim/index.ts';
 import {
   battleConfig,
   battleMapIds,
@@ -64,6 +64,18 @@ describe('battleSetup from a save', () => {
       'a',
     ]);
     expect(defaultLoadout(owned, ['a', 'b'], [])).toEqual(['sprinkler', 'c', 'rivet', 'thumper']);
+  });
+
+  it("fills slot 2 with the map's companion, with or without a save", () => {
+    for (const id of battleMapIds()) {
+      const cfg = battleConfig(id, 1, createNewSave());
+      const slot = companionSlot(cfg.content, cfg.content.maps[id]!);
+      expect({ companion: cfg.companion, ...cfg.abilities, slot1: null }).toEqual({
+        ...slot,
+        slot1: null,
+      });
+      expect(battleConfig(id, 1).abilities.slot2).toBe(slot.slot2);
+    }
   });
 
   it('no slot-1 ability when every owned one is revoked', () => {

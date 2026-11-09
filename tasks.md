@@ -68,6 +68,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T128** Story: canonise the Thumper unlock radio line ("New hardware! Thumper Mortar, ready to deploy!") in act1.md § A1M1, or replace it with a canon line and drop its exemption in `tools/radioLines.test.ts`. Polish: phase-sync the 1 Hz HUD slot and pad pulses; a clearer low-integrity core frame (ART).
 - [x] **T129** (folded into T200) Cleanup: `sim/config.ts` duplicates `MAX_LOADOUT` from rules.ts.
 - [ ] **T211** Audio follow-ups: an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
+- [ ] **T212** Menus polish: Esc closes Settings and the Title panels; art-direction §9 describes the M2 menus (Shift board, Base, Settings, slot list, import).
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
@@ -77,7 +78,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T205** Procedural audio: SFX first, then music layers.
 - [~] **T202a** Stacking formula and caps; apply the tile bonuses (high ground, power node); links (Crossfire, Sitting Ducks, `vsStatus`); tower and economy modifiers; modifier-aware `towerStats`.
 - [x] **T207a** Ability slot 2 + Suppressing Fire (segment = clicked path tile ±1); the allies system (Bricks never targets `quiet_wave`/`youngling`/`fleeing`); Mk II and Rapport modifiers.
-- [~] **T209** Flow shell: Title (new / continue / import), slots, Shift board, Base tabs, Settings (codes, difficulty); the battle config built from the save; `?save=<fixture>` dev hook.
+- [x] **T209** Flow shell: Title (new / continue / import), slots, Shift board, Base tabs, Settings (codes, difficulty); the battle config built from the save; `?save=<fixture>` dev hook.
 - [ ] **T202c** Condition evaluator (medals, trigger `when` incl. flags); Victory / Perfect Core / Challenge medals; `passedMarker`; the medal validator.
 - [x] **T204a** Catalog data (tune-ups, global upgrades, 10 protocols, R&D, `availableAfter`); campaign order; the par-purchasable check.
 - [ ] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches. M0 doc gaps: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; `youngling` stays a `WaveTag`.
