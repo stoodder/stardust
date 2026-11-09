@@ -8,7 +8,7 @@ export const AFTERIMAGE_MS = 450;
 /** The afterimage's alpha as it starts (it steps down from here). */
 export const AFTERIMAGE_ALPHA = 0.7;
 /** The tell steps between these every TELL_STEP_TICKS sim ticks (4 Hz at 60 ticks/s). */
-const TELL_ALPHA = { on: 0.7, off: 0.4 } as const;
+const TELL_ALPHA = { on: 0.85, off: 0.5 } as const;
 const TELL_STEP_TICKS = 8;
 
 const GHOST_RGB = rgbOf('violet.4');

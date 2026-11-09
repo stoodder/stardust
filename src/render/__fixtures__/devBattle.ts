@@ -752,7 +752,7 @@ const hollowMap = dev.defineMap({
 const witchMap = dev.defineMap({
   ...act2Layout,
   id: 'dev_witch',
-  startCredits: 1500,
+  startCredits: 900,
   threatIntel: ['shielded', 'boss'],
   requiredCounters: ['shield'],
   waves: dev.defineWaves([

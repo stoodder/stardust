@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { AFTERIMAGE_MS, afterimageAlpha, blinkTellAlpha, GHOST_TINT } from './blinkLook.ts';
 
 describe('the blink look (T404)', () => {
-  it('the tell steps 70% ↔ 40% every 8 sim ticks, steady 70% under reduced motion', () => {
+  it('the tell steps 85% ↔ 50% every 8 sim ticks, steady 85% under reduced motion', () => {
     expect([0, 7, 8, 15, 16].map((t) => blinkTellAlpha(t, false))).toEqual([
-      0.7, 0.7, 0.4, 0.4, 0.7,
+      0.85, 0.85, 0.5, 0.5, 0.85,
     ]);
-    expect([0, 8, 90].map((t) => blinkTellAlpha(t, true))).toEqual([0.7, 0.7, 0.7]);
+    expect([0, 8, 90].map((t) => blinkTellAlpha(t, true))).toEqual([0.85, 0.85, 0.85]);
   });
 
   it('the afterimage fades in steps from 70% and is gone after its time', () => {

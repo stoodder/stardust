@@ -34,6 +34,7 @@ describe('runResultOf', () => {
       waveCount: 7,
       integrity: 0,
       maxIntegrity: 20,
+      asset: null,
       pestsProcessed: 57,
       debrief: [
         {
@@ -45,6 +46,11 @@ describe('runResultOf', () => {
       stamps: [],
       rewards: null,
     });
+  });
+
+  it("lists a Protect map's asset as the run left it (T305a)", () => {
+    const asset = { name: 'Rigs', value: -1, max: 10 };
+    expect(runResultOf({ ...INPUT, asset }, 'lost').asset).toEqual({ ...asset, value: 0 });
   });
 
   it('counts every wave on a win', () => {

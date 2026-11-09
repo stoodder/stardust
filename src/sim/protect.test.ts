@@ -119,23 +119,23 @@ describe('a leak on an asset route (movement)', () => {
   });
 });
 
-describe('a Protect run', () => {
-  const cfg = (integrity: number) =>
-    fixtureConfig({
-      loadout: [],
-      content: { ...FIXTURE_CONTENT, maps: { fx_map: protectMap(['a'], integrity) } },
-    });
-  const play = (integrity: number) => {
-    const sim = createSim(cfg(integrity));
-    const out: SimEvent<FixtureIds>[] = [];
-    sim.enqueue({ type: 'callWave' });
-    while (sim.state.outcome === 'playing' && sim.state.tick < 60 * 120) {
-      sim.step();
-      sim.drainEvents(out);
-    }
-    return { sim, out };
-  };
+/** Plays fx_map as a Protect map (every path leak at the asset) with nothing built, to its end. */
+function play(integrity: number) {
+  const cfg = fixtureConfig({
+    loadout: [],
+    content: { ...FIXTURE_CONTENT, maps: { fx_map: protectMap(['a'], integrity) } },
+  });
+  const sim = createSim(cfg);
+  const out: SimEvent<FixtureIds>[] = [];
+  sim.enqueue({ type: 'callWave' });
+  while (sim.state.outcome === 'playing' && sim.state.tick < 60 * 120) {
+    sim.step();
+    sim.drainEvents(out);
+  }
+  return { sim, out };
+}
 
+describe('a Protect run', () => {
   it('is lost when the asset reaches 0, with the core untouched', () => {
     const { sim, out } = play(3); // W1's three walkers
     expect(sim.state.outcome).toBe('lost');

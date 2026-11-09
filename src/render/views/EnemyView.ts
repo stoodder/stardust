@@ -56,6 +56,7 @@ import {
   type PoseEnemy,
 } from './enemyPose.ts';
 import { HEAVY_TINT, hushShakePx } from './hushLook.ts';
+import { isFrozen, STASIS_TINT } from './stasisLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
 import { facingOf, hasAnim, spriteId, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
@@ -252,6 +253,8 @@ export class EnemyView implements PooledView {
   #alpha = 1;
   /** Heavy (the hush rule, hushLook.ts): tinted for the rest of its life. */
   #heavy = false;
+  /** In Stasis (stasisLook.ts): its anim holds, its body tinted ice. */
+  #frozen = false;
   /** A held runner's shake offset now (px). */
   #shake = 0;
   readonly #facts = blankFacts();
@@ -580,6 +583,15 @@ export class EnemyView implements PooledView {
       this.#heavy = e.heavy;
       if (this.#flashFrames === 0) this.#stopFlash();
     }
+    // Stasis (T407a; stasisLook.ts): the anim holds its frame and the body goes icy.
+    const frozen = isFrozen(e);
+    if (frozen !== this.#frozen) {
+      this.#frozen = frozen;
+      if (this.#flashFrames === 0) this.#stopFlash();
+    }
+    const anims = this.#body.anims;
+    if (frozen && anims.isPlaying) anims.pause();
+    else if (!frozen && anims.isPaused) anims.resume();
     const shake = hushShakePx(e, performance.now(), prefersReducedMotion());
     if (shake !== this.#shake) {
       this.#shake = shake;
@@ -644,6 +656,7 @@ export class EnemyView implements PooledView {
     this.#alpha = 1;
     this.#oneShot = null;
     this.#heavy = false;
+    this.#frozen = false;
     this.#shake = 0;
     this.#stopFlash();
     this.#body.stop();
@@ -676,7 +689,8 @@ export class EnemyView implements PooledView {
 
   #stopFlash(): void {
     this.#flashFrames = 0;
-    if (this.#heavy) this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
+    if (this.#frozen) this.#body.setTint(STASIS_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
+    else if (this.#heavy) this.#body.setTint(HEAVY_TINT).setTintMode(Phaser.TintModes.MULTIPLY);
     else this.#body.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
   }
 

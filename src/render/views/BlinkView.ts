@@ -2,8 +2,8 @@
 // tell; afterimage outline at the destination", `violet.4`; enemies.md § 3). T430a polishes it.
 // - **The tell**, from sim state each frame (`blinkTelling`): the unit holds still while a
 //   `violet.4` silhouette of it (its walk frame, filled) stands where it will land
-//   (`blinkLanding`), over a `violet.4` ring on the ground, both stepping 70% ↔ 40% four times a
-//   second on sim ticks (held while paused; a steady 70% under reduced motion). It's where the
+//   (`blinkLanding`), over a `violet.4` ring on the ground, both stepping 85% ↔ 50% four times a
+//   second on sim ticks (held while paused; a steady 85% under reduced motion). It's where the
 //   player should aim: the unit will be there.
 // - **The blink** (`Blinked`): an afterimage (the same silhouette) stays where the unit stood and
 //   fades in steps over AFTERIMAGE_MS (blinkLook.ts), and a `white.1` flash ring pops where it lands.
@@ -22,12 +22,7 @@ import {
 } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { effectRingTexture } from '../vfx/overlayTextures.ts';
-import {
-  AFTERIMAGE_ALPHA,
-  afterimageAlpha,
-  blinkTellAlpha,
-  GHOST_TINT,
-} from './blinkLook.ts';
+import { AFTERIMAGE_ALPHA, afterimageAlpha, blinkTellAlpha, GHOST_TINT } from './blinkLook.ts';
 import { enemyBody, facingOf, spriteId, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, type TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
@@ -40,7 +35,7 @@ export interface BlinkPool {
 
 const MAX_TELLS = 6;
 const MAX_AFTERIMAGES = 6;
-const TELL_RING_TILES = 0.5;
+const TELL_RING_TILES = 0.75;
 const LAND_FLASH_TILES = 0.5;
 const LAND_FLASH_MS = 250;
 const WALK_FRAME: Readonly<Record<Facing, string>> = {

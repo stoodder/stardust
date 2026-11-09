@@ -11,6 +11,7 @@ import type { IdSpace, WaveTag } from '../content/types.ts';
 import { MAP, WALKER, enemyDef, placeTower, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 import { hasStatusIn } from './bonuses.ts';
+import type { SimConfig } from './config.ts';
 import { applyDamage, applyEffects } from './combat/damage.ts';
 import { burrowTelling, surfaceTicks } from './enemyAbilities/burrow.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
@@ -126,7 +127,7 @@ describe('the interrupt hook', () => {
     expect(ticks).toBe(up);
   });
 
-  it("blocks a hush from starting and cancels one under way (the runner runs on)", () => {
+  it('blocks a hush from starting and cancels one under way (the runner runs on)', () => {
     const { state, ctx } = setup();
     const flee: readonly WaveTag[] = ['fleeing'];
     const m = spawn(state, MOTE, { dist: 3 });
@@ -220,11 +221,12 @@ describe('the Sprinkler (T407a, T321)', () => {
       ...FIXTURE_CONTENT,
       towers: { ...FIXTURE_CONTENT.towers, sprinkler: SPRINKLER },
     };
-    const cfg = fixtureConfig({
+    const cfg: SimConfig<IdSpace> = {
+      ...fixtureConfig(),
       content,
       loadout: ['sprinkler'],
       specsUnlocked: ['sprinkler'],
-    });
+    };
     expect(gateRefusals(cfg)).toEqual([]);
   });
 });

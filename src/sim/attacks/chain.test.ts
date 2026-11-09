@@ -266,9 +266,9 @@ describe('Conductive (Sprinkler + Zapcoil) and Soaked', () => {
     expect(before - e.hp).toBeCloseTo(12.5, 9);
   });
 
-  it('an unlinked Sprinkler applies no Soak (its own tier-3 Soak is M4 data)', () => {
+  it('an unlinked Sprinkler applies no Soak below tier 3 (its own tier-3 Soak since T321)', () => {
     const { state, ctx } = liveSetup();
-    placeTower(state, SPRINKLER, 4, 2, 3);
+    placeTower(state, SPRINKLER, 4, 2, 2);
     const e = at(state, TANK, 4.5, 2.5);
     towers(state, ctx);
     expect(e.soakedTicks).toBe(0);

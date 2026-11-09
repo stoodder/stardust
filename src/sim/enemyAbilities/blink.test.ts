@@ -2,9 +2,8 @@
 // blink along the route and its clamp, the interrupt rules (Stasis on a non-boss; a boss's
 // converted Chilled never), the boss rules (a phase's first tell at once; waits between phases; a
 // retreat cancels), `bossBlinks` and Glass Half Empty, Story scaling, the in-stage cue triggers,
-// the lifted gate, and determinism on the dev map.
+// and the lifted gate. dev_witch's whole-sim run is render/__fixtures__/devWitch.test.ts.
 import { describe, expect, it } from 'vitest';
-import { battleConfig } from '../../app/battleSetup.ts';
 import type { CompiledBlink, CompiledScriptedEvent } from '../../content/compiled.ts';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
@@ -16,7 +15,6 @@ import { evaluateCondition, settledCondition } from '../conditions.ts';
 import type { Enemy } from '../entities.ts';
 import type { SimEvent } from '../events.ts';
 import { FEATURE_GATES, gateRefusals } from '../gates.ts';
-import { createSim } from '../sim.ts';
 import type { SimState } from '../state.ts';
 import { segmentAt } from '../path.ts';
 import { movement } from '../systems/movement.ts';
@@ -129,7 +127,7 @@ describe('the interrupt (enemies.md § 2.4; systems/status.ts isInterrupted)', (
     expect(e.blinkTicks).toBe(39);
   });
 
-  it("never touches the Witch: Stasis on a boss is Chilled 50% (D101)", () => {
+  it('never touches the Witch: Stasis on a boss is Chilled 50% (D101)', () => {
     const { state, w, step } = witchInPhase2();
     step(); // the tell begins
     expect(events(state, 'BlinkTell')).toHaveLength(1);
@@ -253,55 +251,59 @@ describe('Story difficulty (progression.md § 9)', () => {
   });
 });
 
+/** A script event that cues its own id. */
+function ev(
+  id: string,
+  on: CompiledScriptedEvent<IdSpace>['on'],
+  when: CompiledScriptedEvent<IdSpace>['when'] = null,
+): CompiledScriptedEvent<IdSpace> {
+  return { id, on, when, actions: [{ cue: id }], once: true };
+}
+
+/** The Witch through the cue thresholds on fx_map; the cues so far after each. */
+function cuesThrough(spared: boolean): string[] {
+  const script = [
+    ev('spawn', { bossPhase: 1 }, { flag: 'spared_quiet_wave', eq: true }),
+    ev('hp70', { bossHpPct: 0.7 }),
+    ev('hp55', { bossHpPct: 0.55 }),
+    ev('retreat', { bossHpPct: 0.4 }),
+  ];
+  const map = Object.assign({}, MAP, { events: script });
+  const { state, ctx } = setup({ scriptFlags: { spared_quiet_wave: spared } });
+  const c = Object.assign({}, ctx, { map });
+  state.scriptFired = map.events.map(() => false);
+  const w = spawn(state, WITCH, { dist: 1 });
+  w.shieldHp = 0;
+  const cues = (): string[] => events(state, 'ScriptCue').map((e) => e.cueId);
+  const tick = (): void => {
+    enemyAbilities(state, c);
+    triggers(state, c);
+  };
+  tick();
+  const out = [cues().join(',')];
+  applyDamage(state, w, WITCH.hp * 0.31, 'kinetic', SRC); // to 70%
+  tick();
+  out.push(cues().join(','));
+  while (w.invulnerableTicks > 0) tick();
+  applyDamage(state, w, WITCH.hp * 0.15, 'kinetic', SRC); // to 55%
+  tick();
+  out.push(cues().join(','));
+  applyDamage(state, w, WITCH.hp, 'kinetic', SRC); // to 40%: retreat
+  expect(w.leaving).toBe(true);
+  tick();
+  out.push(cues().join(','));
+  return out;
+}
+
 describe("the in-stage cues (act2.md § A2M2: spawn with C1's flag, 70%, 55%, retreat)", () => {
-  const ev = (
-    id: string,
-    on: CompiledScriptedEvent<IdSpace>['on'],
-    when: CompiledScriptedEvent<IdSpace>['when'] = null,
-  ): CompiledScriptedEvent<IdSpace> => ({ id, on, when, actions: [{ cue: id }], once: true });
-
-  function run(spared: boolean): string[] {
-    const events_ = [
-      ev('spawn', { bossPhase: 1 }, { flag: 'spared_quiet_wave', eq: true }),
-      ev('hp70', { bossHpPct: 0.7 }),
-      ev('hp55', { bossHpPct: 0.55 }),
-      ev('retreat', { bossHpPct: 0.4 }),
-    ];
-    const map = Object.assign({}, MAP, { events: events_ });
-    const { state, ctx } = setup({ scriptFlags: { spared_quiet_wave: spared } });
-    const c = Object.assign({}, ctx, { map });
-    state.scriptFired = map.events.map(() => false);
-    const w = spawn(state, WITCH, { dist: 1 });
-    w.shieldHp = 0;
-    const cues = (): string[] => events(state, 'ScriptCue').map((e) => e.cueId);
-    const tick = (): void => {
-      enemyAbilities(state, c);
-      triggers(state, c);
-    };
-    tick();
-    const out = [cues().join(',')];
-    applyDamage(state, w, WITCH.hp * 0.31, 'kinetic', SRC); // to 70%
-    tick();
-    out.push(cues().join(','));
-    while (w.invulnerableTicks > 0) tick();
-    applyDamage(state, w, WITCH.hp * 0.15, 'kinetic', SRC); // to 55%
-    tick();
-    out.push(cues().join(','));
-    applyDamage(state, w, WITCH.hp, 'kinetic', SRC); // to 40%: retreat
-    expect(w.leaving).toBe(true);
-    tick();
-    out.push(cues().join(','));
-    return out;
-  }
-
   it('each fires on the tick after its threshold, the spawn line only with the flag', () => {
-    expect(run(true)).toEqual([
+    expect(cuesThrough(true)).toEqual([
       'spawn',
       'spawn,hp70',
       'spawn,hp70,hp55',
       'spawn,hp70,hp55,retreat',
     ]);
-    expect(run(false)).toEqual(['', 'hp70', 'hp70,hp55', 'hp70,hp55,retreat']);
+    expect(cuesThrough(false)).toEqual(['', 'hp70', 'hp70,hp55', 'hp70,hp55,retreat']);
   });
 });
 
@@ -316,42 +318,5 @@ describe('the gate (T404 lifts enemy.blink)', () => {
       const cfg = fixtureConfig({ content: { ...FIXTURE_CONTENT, maps: { fx_map: fx } } });
       expect(gateRefusals(cfg), enemy.id).toEqual([]);
     }
-  });
-});
-
-describe('dev_witch (render/__fixtures__/devBattle.ts)', () => {
-  /** Par's Zapcoils, the wave called; the boss events and the end state. */
-  function play(): { log: string[]; hash: string; blinks: number; outcome: string } {
-    const sim = createSim(battleConfig('dev_witch', 1));
-    for (const s of sim.map.builds.parBuild.steps) {
-      if ('build' in s) sim.enqueue({ type: 'build', tower: s.build, tile: s.tile });
-    }
-    sim.enqueue({ type: 'callWave' });
-    const log: string[] = [];
-    const out: Ev[] = [];
-    while (sim.state.outcome === 'playing' && sim.state.tick < 60 * 120) {
-      sim.step();
-      out.length = 0;
-      sim.drainEvents(out);
-      for (const e of out) {
-        if (e.type === 'BlinkTell' || e.type === 'Blinked' || e.type === 'BossEnded') {
-          log.push(`${sim.state.tick} ${e.type}`);
-        }
-      }
-    }
-    return {
-      log,
-      hash: sim.hash(),
-      blinks: sim.state.stats.bossBlinks,
-      outcome: sim.state.outcome,
-    };
-  }
-
-  it('is deterministic, and par drives her through a blink to her retreat and a win', () => {
-    const a = play();
-    expect(play()).toEqual(a);
-    expect(a.outcome).toBe('won');
-    expect(a.blinks).toBeGreaterThanOrEqual(1);
-    expect(a.log.at(-1)).toMatch(/BossEnded$/);
   });
 });

@@ -112,6 +112,22 @@ describe('the live answer table (enemies.md § 3.1, towers.md § 2.1)', () => {
     ]);
   });
 
+  it('the Sprinkler (T407a): shield from T3 (its Soak), air as Cloudburst, jam as Flash Freeze', () => {
+    const t3: ReachStep[] = [build('sprinkler', 's'), up('s'), up('s')];
+    const spec = (s: 'a' | 'b'): ReachStep[] => [...t3, { op: 'specialize', tile: 's', spec: s }];
+    expect(live('shield', [build('sprinkler', 's'), up('s')], scope(2))).toEqual([]);
+    expect(live('shield', t3, scope(2))).toEqual(['sprinkler T3']);
+    expect(live('air', t3, scope(2, ['organic'], true))).toEqual([]);
+    expect(live('air', spec('a'), scope(2, ['organic'], true))).toEqual([]);
+    expect(live('air', spec('b'), scope(2, ['organic'], true))).toEqual(['sprinkler [Cloudburst]']);
+    expect(live('jam', spec('b'), scope(3))).toEqual([]);
+    expect(live('jam', spec('a'), scope(3))).toEqual(['sprinkler [Flash Freeze]']);
+    // A Cloudburst reaches 2.8 tiles (the counter model's range for its placement).
+    expect(
+      rangeReached(TOWERS.sprinkler, { tower: 'sprinkler', tier: 4, spec: 'b', at: null }),
+    ).toBe(2.8);
+  });
+
   it('abilities answer only when cast, and only through what § 3.1 lists them for', () => {
     expect(live('jam', [], scope(3), [], ['stillness'])).toEqual(['stillness']);
     expect(live('burrowed', [], scope(3), [], ['underfoot'])).toEqual(['underfoot']);

@@ -128,7 +128,11 @@ describe('towers', () => {
         icon: `icon.tower.${t.id}`,
       });
     }
-    expect(sprinkler.specs).toBeNull(); // Flash Freeze and Cloudburst need Stasis (M3, D031)
+    // Flash Freeze and Cloudburst since T407a (src/sim/stasis.test.ts runs them).
+    expect([sprinkler.specs?.a.name, sprinkler.specs?.b.name]).toEqual([
+      'Flash Freeze',
+      'Cloudburst',
+    ]);
   });
 
   it('Rivet: 8 → 11 kinetic hitscan at 2/s, then 2.5/s with armor pierce 3', () => {
@@ -242,7 +246,7 @@ describe('towers', () => {
     }
   });
 
-  it('Sprinkler: a 1 s pulse that chills 25% → 30% → 35% (Chilled only in M1)', () => {
+  it('Sprinkler: a 1 s pulse that chills 25% → 30% → 35%, and Soaks for 3 s from tier 3', () => {
     const common = {
       targets: { ground: true, air: false },
       priority: null,
@@ -257,8 +261,26 @@ describe('towers', () => {
     expect(sprinkler.tiers.map(summary)).toEqual([
       { ...common, cost: 90, rangeTiles: 2, effects: chill(0.25) },
       { ...common, cost: 70, rangeTiles: 2.3, effects: chill(0.3) },
-      { ...common, cost: 135, rangeTiles: 2.3, effects: chill(0.35) },
+      {
+        ...common,
+        cost: 135,
+        rangeTiles: 2.3,
+        effects: [...chill(0.35), { status: 'soaked', durationTicks: 180 }],
+      },
     ]);
+    // Flash Freeze: Stasis 1.0 s every 8 s on top; Cloudburst: radius 2.8 and air (T407a).
+    const [freeze, cloud] = [sprinkler.specs!.a, sprinkler.specs!.b];
+    expect([freeze.cost, cloud.cost]).toEqual([270, 270]);
+    expect(freeze.attack?.kind === 'pulse' ? freeze.attack.burst : null).toEqual({
+      everyTicks: 480,
+      effects: [{ status: 'stasis', durationTicks: 60 }],
+    });
+    expect(freeze.targets).toEqual({ ground: true, air: false });
+    expect(summary(cloud)).toMatchObject({
+      targets: { ground: true, air: true },
+      rangeTiles: 2.8,
+      effects: [...chill(0.35), { status: 'soaked', durationTicks: 180 }],
+    });
   });
 });
 

@@ -77,8 +77,9 @@ export function blinkStep(
 ): void {
   if (e.invulnerableTicks > 0) return; // a boss between phases: its timers wait
   if (e.blinkTicks <= 0) {
-    // First tick it blinks: a boss phase tells at once, a unit waits a period.
-    e.blinkTicks = e.def!.boss !== null ? blink.tellTicks + 1 : blink.everyTicks; // abilities only run on units with a def
+    // First tick it blinks: a boss phase tells at once, a unit waits a period. (Abilities only
+    // run on units with a def.)
+    e.blinkTicks = e.def!.boss !== null ? blink.tellTicks + 1 : blink.everyTicks;
     return;
   }
   const wasTelling = e.blinkTicks <= blink.tellTicks;

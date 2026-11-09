@@ -34,6 +34,7 @@ import type { PlinkFx } from '../views/PlinkFx.ts';
 import type { ProjectileView } from '../views/ProjectileView.ts';
 import type { SackBurstView } from '../views/SackBurstView.ts';
 import { enemyBody, facingOf, tellGlyph } from '../views/spriteInfo.ts';
+import { FREEZE_RING_COLOR, FREEZE_RING_MS } from '../views/stasisLook.ts';
 import type { TowerView } from '../views/TowerView.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from '../views/TransientFx.ts';
 import type { ViewPool } from '../views/ViewPool.ts';
@@ -394,6 +395,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         fx.ring(core.x, core.y, LEAK_RING_TILES, 'red.3', LEAK_RING_MS, true);
         fx.floatText(`−${e.leak}`, 'red.3', core.x, core.y, CORE_FLOAT_LIFT_PX);
       }
+    }),
+    // Flash Freeze's burst (T407a; stasisLook.ts): a pale ice ring over the pulse's reach.
+    bus.on('PulseBurst', (e) => {
+      fx.ring(e.x, e.y, e.radiusTiles, FREEZE_RING_COLOR, FREEZE_RING_MS, true);
     }),
     bus.on('ProjectileFired', (e) => {
       chainTower = 0;

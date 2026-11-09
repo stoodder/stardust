@@ -103,6 +103,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BlinkTell: false,
   Blinked: false,
   BlinkInterrupted: false,
+  // Flash Freeze's burst: Stasis's sound is T450's.
+  PulseBurst: false,
   Revealed: false,
   Cloaked: false,
   AssetHit: false,

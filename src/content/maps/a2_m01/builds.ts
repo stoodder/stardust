@@ -51,15 +51,10 @@ function parSteps(): BuildStep[] {
     { wave: 4, upgrade: MERGE_N },
     { wave: 5, upgrade: MID_E },
     { wave: 5, upgrade: LEDGE_W },
-    { wave: 6, build: 'zapcoil', tile: BEND_E },
     { wave: 6, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 3 } },
-    { wave: 7, upgrade: NODE },
-    { wave: 7, upgrade: MERGE_N },
     { wave: 8, upgrade: MID_E },
-    { wave: 8, upgrade: BEND_E },
     { wave: 9, ability: 1, target: BORE_DROP, when: { afterSec: OPEN + 12 } },
     { wave: 9, ability: 2, target: MERGE, when: { afterSec: OPEN + 16 } },
-    { wave: 9, specialize: NODE, spec: 'a' }, // Cluster Thumper
     { wave: 10, ability: 1, target: MERGE, when: { afterSec: OPEN + 24 } },
   ];
 }
