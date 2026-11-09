@@ -64,6 +64,11 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   bunchling: -3,
   digger: -2,
   elder: -8,
+  // M4's units (T400a placeholders; T450 gives the Hollow and the Aelari their own deaths).
+  mote: 9,
+  glimmer: 5,
+  weft_warden: -5,
+  lightwing: 8,
 };
 
 /** A splitter's death (a Bunchling, `split` in its content): this follows its pop, after `delay` s. */
@@ -100,6 +105,8 @@ export const DEFAULT_BOSS_SOUNDS: BossSounds = {
 };
 export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
   chitterbloom: { ...DEFAULT_BOSS_SOUNDS, spawnTell: 'sneeze_tell', spawn: 'sneeze' },
+  // T400a placeholder: T450 gives the Glass Witch her chimes.
+  glass_witch: DEFAULT_BOSS_SOUNDS,
 };
 
 /**
@@ -169,6 +176,8 @@ export const ABILITY_SOUNDS: Readonly<
   // Map-wide and instant (D077): everything sags as time slows; the register rings up the sale.
   time_dilation: { cast: 'dilation_swell', land: [] },
   clearance_sale: { cast: 'sale_kaching', land: [] },
+  // T400a placeholder: T450 gives Scanner Sweep its ping.
+  scanner_sweep: { cast: 'dilation_swell', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

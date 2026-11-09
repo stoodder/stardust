@@ -141,7 +141,7 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    // A beam attack on the par loadout's gun, which the sim refuses until M4.
+    // A beam attack on the par loadout's gun, which the sim refuses until M5.
     const gun = PLAIN_CONTENT.towers.fx_gun;
     const [t1, ...rest] = gun.tiers;
     if (t1 === undefined || t1.attack === null) throw new Error('fx_gun has no tier-1 attack');
@@ -159,7 +159,7 @@ describe('balance harness', () => {
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a 'beam' attack \(fx_gun\) is not simulated until M4/,
+      /seed 1: error: [^]*a 'beam' attack \(fx_gun\) is not simulated until M5/,
     );
   });
 

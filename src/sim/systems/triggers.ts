@@ -41,11 +41,7 @@ export function triggers(state: SimState, ctx: TickContext): void {
   }
 }
 
-function reached(
-  state: SimState,
-  ctx: TickContext,
-  on: CompiledScriptTrigger<IdSpace>,
-): boolean {
+function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<IdSpace>): boolean {
   if ('tick' in on) return state.tick >= on.tick;
   if ('wave' in on) {
     const s = state.schedule;

@@ -52,6 +52,10 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   sitting_ducks: { ring: 'blue.3', text: 'blue.4' },
   // Conductive (T304b): water carrying a spark; its tether is a zigzag teal line (T312a).
   conductive: { ring: 'teal.3', text: 'teal.4' },
+  // M4's links (T400a first pass; T430a may restyle them).
+  overwatch: { ring: 'gold.3', text: 'gold.4' },
+  skywatch: { ring: 'violet.3', text: 'violet.4' },
+  reel_it_in: { ring: 'green.3', text: 'green.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */

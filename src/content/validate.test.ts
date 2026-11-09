@@ -521,9 +521,7 @@ describe('validate: maps', () => {
       waves: raw.maps.fx_map!.waves,
       threatIntel: [...fxMap.threatIntel, 'boss'],
     });
-    expect(validate({ ...bossRaw, enemies: { ...raw.enemies, fx_crawler: capstone } })).toEqual(
-      [],
-    );
+    expect(validate({ ...bossRaw, enemies: { ...raw.enemies, fx_crawler: capstone } })).toEqual([]);
     const preview: EnemyDef = {
       ...capstone,
       armor: 2,

@@ -279,7 +279,8 @@ function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
     if (a?.targetFilter !== undefined && a.targetFilter !== null) {
       use('attack.targetFilter', `a target filter (${id})`);
     }
-    if (tier.detect !== undefined && tier.detect !== null) use('tower.detection', `detection (${id})`);
+    if (tier.detect !== undefined && tier.detect !== null)
+      use('tower.detection', `detection (${id})`);
     if (tier.economy !== undefined && tier.economy !== null) {
       use('tower.economy', `tower economy (${id})`);
     }

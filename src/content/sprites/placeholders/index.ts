@@ -52,11 +52,7 @@ export const enemyGlassWitch = placeholder(enemyChitterbloom, 'enemy.glass_witch
 export const iconEnemyMote = placeholder(iconEnemyNibbler, 'icon.enemy.mote', 'hollow');
 export const iconEnemyGlimmer = placeholder(iconEnemyZoomer, 'icon.enemy.glimmer', 'aelari');
 export const iconEnemyWeftWarden = placeholder(iconEnemyChonk, 'icon.enemy.weft_warden', 'aelari');
-export const iconEnemyLightwing = placeholder(
-  iconEnemyPuffwing,
-  'icon.enemy.lightwing',
-  'aelari',
-);
+export const iconEnemyLightwing = placeholder(iconEnemyPuffwing, 'icon.enemy.lightwing', 'aelari');
 export const iconEnemyGlassWitch = placeholder(
   iconEnemyChitterbloom,
   'icon.enemy.glass_witch',
