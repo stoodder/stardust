@@ -29,6 +29,8 @@ export type Intent =
   | { readonly kind: 'none' }
   /** Drops the selection; an armed build slot stays armed. */
   | { readonly kind: 'deselect' }
+  /** An armed click on a tile nothing can be built on: the HUD says so (D026); stays armed. */
+  | { readonly kind: 'cantBuild' }
   /** Right-click: drops the selection and disarms (like Esc). */
   | { readonly kind: 'cancel' };
 
@@ -36,7 +38,8 @@ export type Intent =
  * Decides a click: right-click cancels (and disarms, and stops aiming); while aiming an ability, a
  * click on any tile fires it there (towers included: the strike hits the ground around them); a
  * tower selects it; an armed click on a free pad builds (the slot stays armed, so the next click
- * builds another). Anything else deselects.
+ * builds another), and an armed click on any other tile says it can't build there. Anything else
+ * deselects.
  */
 export function resolveClick(
   tile: TileFacts,
@@ -52,8 +55,10 @@ export function resolveClick(
   }
   if (tile.index < 0) return { kind: 'deselect' };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
-  if (armed !== null && tile.buildable) {
-    return { kind: 'build', tower: armed, tile: [tile.col, tile.row] };
+  if (armed !== null) {
+    return tile.buildable
+      ? { kind: 'build', tower: armed, tile: [tile.col, tile.row] }
+      : { kind: 'cantBuild' };
   }
   return { kind: 'deselect' };
 }
@@ -71,9 +76,21 @@ export interface HoverLook {
   readonly aim: boolean;
 }
 
+type MutableHoverLook = { -readonly [K in keyof HoverLook]: HoverLook[K] };
+
+/** hoverLook's result, reused every call (it runs every frame; D026: no per-frame allocation). */
+const look: MutableHoverLook = {
+  highlight: null,
+  ghost: false,
+  ghostValid: false,
+  ringTowerUid: 0,
+  aim: false,
+};
+
 /**
  * The hover feedback for a tile. `canPlace` is the armed tower's full placement check
- * (buildable, empty, unlocked, affordable); the sim re-validates the command either way.
+ * (buildable, empty, unlocked, affordable); the sim re-validates the command either way. The
+ * result is a shared scratch object, valid until the next call: read it, don't keep it.
  */
 export function hoverLook(
   tile: TileFacts,
@@ -81,17 +98,24 @@ export function hoverLook(
   canPlace: boolean,
   aiming: AbilitySlot | null = null,
 ): HoverLook {
-  const none = { ghost: false, ghostValid: false, ringTowerUid: 0, aim: false } as const;
-  if (tile.index < 0) return { ...none, highlight: null };
-  if (aiming !== null) return { ...none, highlight: 'hover', aim: true };
-  if (tile.towerUid !== 0) return { ...none, highlight: 'hover', ringTowerUid: tile.towerUid };
-  if (armed !== null && tile.buildable) {
-    return {
-      ...none,
-      highlight: canPlace ? 'hover' : 'invalid',
-      ghost: true,
-      ghostValid: canPlace,
-    };
+  look.ghost = false;
+  look.ghostValid = false;
+  look.ringTowerUid = 0;
+  look.aim = false;
+  if (tile.index < 0) {
+    look.highlight = null;
+  } else if (aiming !== null) {
+    look.highlight = 'hover';
+    look.aim = true;
+  } else if (tile.towerUid !== 0) {
+    look.highlight = 'hover';
+    look.ringTowerUid = tile.towerUid;
+  } else if (armed !== null && tile.buildable) {
+    look.highlight = canPlace ? 'hover' : 'invalid';
+    look.ghost = true;
+    look.ghostValid = canPlace;
+  } else {
+    look.highlight = armed === null ? 'hover' : 'invalid';
   }
-  return { ...none, highlight: armed === null ? 'hover' : 'invalid' };
+  return look;
 }

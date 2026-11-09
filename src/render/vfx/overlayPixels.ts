@@ -71,14 +71,20 @@ export function ellipseQuadrant(a: number, b: number): [number, number][] {
 
 /**
  * A 1 px range ellipse for a range of `radiusTiles` (snapped to the bake step): dashed for range
- * rings, solid for effect rings (the Sprinkler's pulse, render/views/FxView.ts).
+ * rings, solid for effect rings (render/views/FxView.ts). `underStroke` adds a 1 px shadow in that
+ * color under every lit pixel (the image grows a row), so the ring reads on light ground.
  */
-export function ringImage(radiusTiles: number, color: ColorName, dashed = true): RingImage {
+export function ringImage(
+  radiusTiles: number,
+  color: ColorName,
+  dashed = true,
+  underStroke: ColorName | null = null,
+): RingImage {
   rangeEllipsePx(snapRingRadius(radiusTiles), scratch);
   const a = Math.max(1, Math.round(scratch.x));
   const b = Math.max(1, Math.round(scratch.y));
   const w = 2 * a + 1;
-  const h = 2 * b + 1;
+  const h = 2 * b + 1 + (underStroke === null ? 0 : 1);
   const data = new Uint8ClampedArray(w * h * 4);
   const c = rgbOf(color);
   const put = (x: number, y: number): void => {
@@ -96,6 +102,57 @@ export function ringImage(radiusTiles: number, color: ColorName, dashed = true):
     put(a - x, b + y);
     put(a + x, b - y);
     put(a - x, b - y);
+  }
+  if (underStroke !== null) {
+    const u = rgbOf(underStroke);
+    // Bottom-up, so a shadow never lands on a pixel that is itself a shadow source.
+    for (let y = h - 1; y >= 1; y--) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const above = ((y - 1) * w + x) * 4;
+        if (data[i + 3] !== 0 || data[above + 3] === 0) continue;
+        if (data[above] !== c.r || data[above + 1] !== c.g || data[above + 2] !== c.b) continue;
+        data[i] = u.r;
+        data[i + 1] = u.g;
+        data[i + 2] = u.b;
+        data[i + 3] = 255;
+      }
+    }
+  }
+  return { image: { w, h, data }, cx: a, cy: b };
+}
+
+/**
+ * A filled 2:1 ellipse of `radiusTiles` (ground-flash and scorch decals), in `color` at `alpha`
+ * (0–1). With `ditherEdge`, the outer band is a checkerboard, so the decal's edge is ragged.
+ */
+export function discImage(
+  radiusTiles: number,
+  color: ColorName,
+  alpha = 1,
+  ditherEdge = false,
+): RingImage {
+  rangeEllipsePx(snapRingRadius(radiusTiles), scratch);
+  const a = Math.max(1, Math.round(scratch.x));
+  const b = Math.max(1, Math.round(scratch.y));
+  const w = 2 * a + 1;
+  const h = 2 * b + 1;
+  const data = new Uint8ClampedArray(w * h * 4);
+  const c = rgbOf(color);
+  const al = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = (x - a) / (a + 0.5);
+      const dy = (y - b) / (b + 0.5);
+      const d = dx * dx + dy * dy;
+      if (d > 1) continue;
+      if (ditherEdge && d > 0.55 && (x + y) % 2 === 1) continue;
+      const i = (y * w + x) * 4;
+      data[i] = c.r;
+      data[i + 1] = c.g;
+      data[i + 2] = c.b;
+      data[i + 3] = al;
+    }
   }
   return { image: { w, h, data }, cx: a, cy: b };
 }

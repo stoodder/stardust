@@ -5,8 +5,14 @@ import { createSim } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { nextPriority, PRIORITY_CYCLE } from './commands.ts';
 import {
+  abilityDescription,
   abilitySlots,
   buildSlots,
+  callPulses,
+  deltaText,
+  lockedText,
+  statLineText,
+  towerUnlockWaves,
   cooldownView,
   displayName,
   meterLabelText,
@@ -35,8 +41,14 @@ describe('hud view models', () => {
   it('builds the slots from the loadout, in order, with tier-1 costs and icons', () => {
     const sim = devSim();
     expect(buildSlots(sim.config.content.towers, sim.config.loadout)).toEqual([
-      { tower: 'dev_rivet', label: 'Rivet', icon: 'icon.tower.rivet', cost: 100 },
-      { tower: 'dev_thumper', label: 'Thumper', icon: 'icon.tower.thumper', cost: 125 },
+      { tower: 'dev_rivet', label: 'Rivet', icon: 'icon.tower.rivet', cost: 100, unlockWave: null },
+      {
+        tower: 'dev_thumper',
+        label: 'Thumper',
+        icon: 'icon.tower.thumper',
+        cost: 125,
+        unlockWave: null,
+      },
     ]);
     expect(() => buildSlots(sim.config.content.towers, ['nope'])).toThrow(/nope/);
   });
@@ -52,6 +64,7 @@ describe('hud view models', () => {
           icon: 'icon.enemy.nibbler',
           count: 6,
           air: false,
+          fast: false,
         },
       ],
     });
@@ -134,7 +147,7 @@ describe('hud view models', () => {
     expect(rejectText('cantAfford')).toBe('Not enough credits');
     expect(rejectText('notImplemented')).toBe('Not online yet');
     expect(rejectText('mapEnded')).toBeNull();
-    expect(rejectText('abilityOnCooldown')).toBe('Recharging');
+    expect(rejectText('abilityOnCooldown')).toBe('Uplink recharging');
     expect(rejectText('invalidTarget')).toBe("Can't target there");
     expect(rejectText('noAbility')).toBe('No ability equipped');
     expect(rejectText('waveInProgress')).toBe('Wave in progress');
@@ -150,6 +163,7 @@ describe('hud view models', () => {
         label: 'Dev Strike',
         icon: 'icon.ability.orbital_strike',
         key: 'Q',
+        description: abilityDescription(sim.config.content.abilities['dev_strike']!),
       },
     ]);
     expect(abilitySlots(sim.config.content.abilities, null)).toEqual([]);
@@ -165,6 +179,76 @@ describe('hud view models', () => {
     expect(cooldownView(1350, 2700, full)).toEqual({ secondsLeft: 23, remaining: 0.5 });
     expect(cooldownView(1, 2700, null)).toEqual({ secondsLeft: 1, remaining: 1 / 16 });
     expect(cooldownView(0, 2700, ready)).toBe(ready);
+  });
+
+  it("says when a held-back tower ships (A1M1's Thumper at wave 3)", () => {
+    const sim = createSim(battleConfig('a1_m01', 1));
+    expect(towerUnlockWaves(sim.map)).toEqual({ thumper: 3 });
+    const slots = buildSlots(
+      sim.config.content.towers,
+      sim.config.loadout,
+      towerUnlockWaves(sim.map),
+    );
+    expect(slots.map((s) => s.unlockWave)).toEqual([null, 3]);
+    expect(lockedText(slots[1]!)).toBe('Thumper ships at wave 3');
+    expect(lockedText({ ...slots[1]!, unlockWave: null })).toBe('Thumper locked');
+    // A1M1's Zoomer carries the fast tell, so the preview marks it.
+    const zoomers = sim.map.waves.findIndex((w) => w.groups.some((g) => g.enemy.id === 'zoomer'));
+    const preview = wavePreview(sim.map, zoomers);
+    expect(preview?.groups.find((g) => g.enemy === 'zoomer')?.fast).toBe(true);
+  });
+
+  it('describes the Orbital Strike in one line (D026)', () => {
+    const sim = createSim(battleConfig('a1_m01', 1));
+    expect(abilityDescription(sim.config.content.abilities['orbital_strike']!)).toBe(
+      '200 damage in an area after 1 s. Recharges 45 s.',
+    );
+  });
+
+  it("writes the tower panel's stat line and upgrade delta from the sim's towerStats", () => {
+    const sim = devSim();
+    sim.enqueue({ type: 'build', tile: [3, 1], tower: 'dev_rivet' });
+    sim.applyPending();
+    const uid = sim.state.towers.items.find((t) => t.alive)!.uid; // just built
+    const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
+    const v = selectedView(sim, uid, origin, null)!; // just built
+    expect(v.stats).toMatch(/^\d+(\.\d+)? dmg · \d+(\.\d+)?\/s · range \d+(\.\d+)?$/);
+    expect(v.upgradeDelta).not.toBeNull();
+    expect(
+      deltaText({
+        tier: 2,
+        cost: 80,
+        damage: 3,
+        ratePerSec: 0,
+        rangeTiles: 0.5,
+        splashTiles: 0,
+        armorPierce: 0,
+      }),
+    ).toBe('+3 dmg · +0.5 range');
+    expect(deltaText(null)).toBeNull();
+    expect(
+      statLineText({
+        tier: 1,
+        kind: 'hitscan',
+        damageType: 'kinetic',
+        damage: 8,
+        ratePerSec: 2,
+        rangeTiles: 3,
+        minRangeTiles: 0,
+        splashTiles: 0,
+        armorPierce: 0,
+        next: null,
+      }),
+    ).toBe('8 dmg · 2/s · range 3');
+  });
+
+  it('pulses the call button when calling now pays, and Start once a tower stands', () => {
+    expect(callPulses(0, null, 0, false)).toBe(false);
+    expect(callPulses(0, null, 0, true)).toBe(true);
+    expect(callPulses(2, 20, 0, true)).toBe(true);
+    expect(callPulses(2, 20, 3, true)).toBe(false); // enemies still alive
+    expect(callPulses(2, 5, 0, true)).toBe(false); // too little time left to matter
+    expect(callPulses(2, null, 0, true)).toBe(false); // a wave is spawning
   });
 
   it('cycles targeting First → Last → Strong → Close → First', () => {

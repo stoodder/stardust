@@ -4,6 +4,7 @@ import { inTileMask } from '../../content/sprites/helpers.ts';
 import {
   ellipseQuadrant,
   HIGHLIGHT_FILL_ALPHA,
+  discImage,
   ringImage,
   snapRingRadius,
   tileHighlightImage,
@@ -68,6 +69,39 @@ describe('ringImage', () => {
     const i = (r.cy * r.image.w + 0) * 4;
     expect(r.image.data[i + 3]).toBe(255); // the leftmost point is a dash start
     expect(Array.from(r.image.data.subarray(i, i + 3))).toEqual(Object.values(rgbOf('white.0')));
+  });
+});
+
+describe('ringImage under-stroke', () => {
+  it('puts an ink pixel under every lit ring pixel that has none, one row taller', () => {
+    const plain = ringImage(2, 'white.0');
+    const r = ringImage(2, 'white.0', true, 'ink.0');
+    expect(r.image.h).toBe(plain.image.h + 1);
+    expect(r.cy).toBe(plain.cy);
+    const ink = Object.values(rgbOf('ink.0'));
+    let shadows = 0;
+    for (let y = 1; y < r.image.h; y++) {
+      for (let x = 0; x < r.image.w; x++) {
+        const i = (y * r.image.w + x) * 4;
+        const px = Array.from(r.image.data.subarray(i, i + 3));
+        if (r.image.data[i + 3] === 255 && px.join() === ink.join()) {
+          shadows++;
+          expect(alphaAt(r.image, x, y - 1)).toBe(255); // a ring pixel above it
+        }
+      }
+    }
+    expect(shadows).toBeGreaterThan(0);
+  });
+});
+
+describe('discImage', () => {
+  it('fills a 2:1 ellipse at the given alpha, centered on (cx, cy)', () => {
+    const d = discImage(1, 'teal.4', 0.6);
+    expect(d.image.w).toBe(2 * d.cx + 1);
+    expect(alphaAt(d.image, d.cx, d.cy)).toBe(Math.round(0.6 * 255));
+    expect(alphaAt(d.image, 0, 0)).toBe(0);
+    const dithered = discImage(1, 'ink.0', 1, true);
+    expect(alphaAt(dithered.image, dithered.cx, dithered.cy)).toBe(255);
   });
 });
 

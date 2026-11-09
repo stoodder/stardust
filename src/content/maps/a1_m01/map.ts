@@ -44,6 +44,7 @@ export const map = defineMapLayout({
     "QUILL: Hello, Technician! I'm QUILL, your Quantified Unified Integrated Logistics & Lethality assistant. I love my job!",
     "Bricks: Name's Okonkwo. Sergeant. I'll call you Sprout, 'cause you're green and you work with lettuce.",
     "QUILL: Today's forecast: Nibblers, with a chance of Zoomers!",
+    'Bricks: Turrets go on the pads. Bugs go on the path. Nothing goes on the path but bugs and bad decisions.',
   ].join('\n'),
   // Thumper's build button unlocks when W3's countdown starts (the build phase before W3).
   towerUnlockWave: { thumper: 3 },

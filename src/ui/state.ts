@@ -2,6 +2,7 @@
 // value changes); components read them and act through app/commands.ts.
 import { signal } from '@preact/signals';
 import type { ScreenId, Speed } from '../app/testHookTypes.ts';
+import type { ColorName } from '../content/palettes/master.ts';
 import type { TargetPriority } from '../content/types.ts';
 
 /** The screen the overlay shows. `null` while booting. */
@@ -19,6 +20,8 @@ export interface BuildSlotView {
   readonly icon: string;
   /** Tier-1 build cost. */
   readonly cost: number;
+  /** The wave whose countdown unlocks it, if the map holds it back (`towerUnlockWave`). */
+  readonly unlockWave: number | null;
 }
 
 /** One commander ability slot (core-loop §3.1): fixed for a battle. */
@@ -31,6 +34,8 @@ export interface AbilitySlotView {
   readonly icon: string;
   /** Hotkey label (Q for slot 1, E for slot 2). */
   readonly key: string;
+  /** One line on what it does, for its tooltip. */
+  readonly description: string;
 }
 
 /** An ability slot's cooldown as shown: 0 seconds left means ready. */
@@ -57,6 +62,10 @@ export interface SelectedTowerView {
   readonly fullRefund: boolean;
   /** null for towers that pick no target (pulse and support). */
   readonly priority: TargetPriority | null;
+  /** The current tier's stats, e.g. "8 dmg · 2/s · range 3". */
+  readonly stats: string;
+  /** What the next upgrade adds, e.g. "+3 dmg", or null at the top tier. */
+  readonly upgradeDelta: string | null;
   /** The tower's tile center in game pixels, for placing the panel beside it. */
   readonly x: number;
   readonly y: number;
@@ -69,6 +78,8 @@ export interface WavePreviewGroup {
   readonly icon: string;
   readonly count: number;
   readonly air: boolean;
+  /** The enemy has the `fast` tell (art-direction §8): the preview shows a » chip. */
+  readonly fast: boolean;
 }
 
 /** The next wave: its number and what it brings. */
@@ -87,6 +98,29 @@ export interface BriefingLine {
 export interface HudNotice {
   readonly id: number;
   readonly text: string;
+}
+
+/** A radio line on screen (D026's M1 radio ticker). `id` changes with every line. */
+export interface RadioView {
+  readonly id: number;
+  /** The speaker's name plate. */
+  readonly name: string;
+  /** The name plate's color. */
+  readonly color: ColorName;
+  readonly text: string;
+}
+
+/** A leak at the core, for the meter's flash. `id` changes with every leak. */
+export interface LeakFlash {
+  readonly id: number;
+  /** Integrity lost. */
+  readonly amount: number;
+}
+
+/** The "WAVE n" banner as a wave starts. `id` changes with every wave. */
+export interface WaveBanner {
+  readonly id: number;
+  readonly wave: number;
 }
 
 /**
@@ -138,4 +172,16 @@ export const hud = {
    * hotkeys are off while it's open.
    */
   briefing: signal<readonly BriefingLine[] | null>(null),
+  /** The radio line on screen, or null (app/radio.ts). */
+  radio: signal<RadioView | null>(null),
+  /** The latest leak, for the meter's edge flash, or null. */
+  leak: signal<LeakFlash | null>(null),
+  /** The "WAVE n" banner while it shows, or null. */
+  waveBanner: signal<WaveBanner | null>(null),
+  /** Whether a tower has been built this battle (onboarding pulses stop after the first). */
+  built: signal(false),
+  /** Whether the call-wave button pulses: nothing alive and time to spare, or a setup with a tower. */
+  callPulse: signal(false),
+  /** Changes when a countdown starts, so a ready ability slot pulses. */
+  countdownCue: signal(0),
 };

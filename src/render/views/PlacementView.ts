@@ -1,7 +1,7 @@
 // In-world placement and selection feedback (art-direction.md § Range rings and placement): the
 // tile-mask highlight under the pointer and under the selected tower, one range ring, and the
-// placement ghost (the armed tower at 60% alpha). Decals draw in `decal`; the ghost sorts in
-// `world` like a tower.
+// placement ghost (the armed tower at 60% alpha), and the onboarding pulse on free pads until the
+// first build (D026). Decals draw in `decal`; the ghost sorts in `world` like a tower.
 import type * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { worldDepth } from '../depth.ts';
@@ -29,6 +29,8 @@ export class PlacementView {
   #ringKey = '';
   #ghostBaseId: string | null = null;
   #ghostHeadId: string | null = null;
+  /** One `teal.3` highlight per buildable tile, for the onboarding pulse. */
+  readonly #teach: { col: number; row: number; img: Phaser.GameObjects.Image }[] = [];
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -122,6 +124,31 @@ export class PlacementView {
       .setPosition(bx + (mount?.x ?? this.#ghostBase.displayOriginX), by + (mount?.y ?? 0))
       .setDepth(depth + 0.00005)
       .setVisible(true);
+  }
+
+  /** The onboarding pulse's tiles (every buildable tile); call once. */
+  setTeachTiles(tiles: readonly (readonly [number, number])[]): void {
+    const { scene, layers, origin } = this.#ctx;
+    const key = highlightTexture(scene, 'selected');
+    for (const [col, row] of tiles) {
+      tileImageTopLeft(col, row, origin, pos);
+      const img = scene.make
+        .image({}, false)
+        .setTexture(key)
+        .setOrigin(0, 0)
+        .setPosition(pos.x, pos.y)
+        .setVisible(false);
+      layers.decal.addAt(img, 0);
+      this.#teach.push({ col, row, img });
+    }
+  }
+
+  /**
+   * Shows the onboarding pulse on the teach tiles `free` says are empty (`on`), or hides it all.
+   * The caller blinks it by toggling `on`.
+   */
+  showTeach(on: boolean, free: (col: number, row: number) => boolean): void {
+    for (const t of this.#teach) t.img.setVisible(on && free(t.col, t.row));
   }
 
   /** Hides everything (pointer left the canvas). */

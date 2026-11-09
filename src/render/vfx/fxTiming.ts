@@ -97,3 +97,52 @@ export function shakeOffset(ms: number): readonly [number, number] {
   if (ms < 0 || ms >= SHAKE_MS) return NO_SHAKE;
   return SHAKE_STEPS[Math.floor(ms / (SHAKE_MS / SHAKE_STEPS.length))] ?? NO_SHAKE;
 }
+
+// ── Feedback juice (D026) ────────────────────────────────────────────────────────────────────
+
+/** A leak: the core's red pulse ring grows to this radius (tiles) over LEAK_RING_MS. */
+export const LEAK_RING_TILES = 1;
+export const LEAK_RING_MS = 360;
+/** A leak shakes the camera 1 px for this long (off under reduced motion). */
+export const LEAK_SHAKE_MS = 120;
+const LEAK_SHAKE_STEPS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+];
+
+/** The camera offset `ms` into a leak shake ([0, 0] once it's over). Allocation-free. */
+export function leakShakeOffset(ms: number): readonly [number, number] {
+  if (ms < 0 || ms >= LEAK_SHAKE_MS) return NO_SHAKE;
+  return LEAK_SHAKE_STEPS[Math.floor(ms / (LEAK_SHAKE_MS / LEAK_SHAKE_STEPS.length))] ?? NO_SHAKE;
+}
+
+/** Floating numbers ("−2", "+126") rise this many px over FLOAT_MS, then fade. */
+export const FLOAT_MS = 900;
+export const FLOAT_RISE_PX = 10;
+
+/** A floating number's rise in whole pixels at `ms`. */
+export function floatRise(ms: number): number {
+  const t = Math.min(1, Math.max(0, ms / FLOAT_MS));
+  return Math.floor(t * FLOAT_RISE_PX);
+}
+
+/** A new tower drops in from this many px above its tile, one px per BUILD_DROP_STEP_FRAMES. */
+export const BUILD_DROP_PX = 4;
+export const BUILD_DROP_STEP_FRAMES = 2;
+/** The dust ring around a new tower: grows to BUILD_PUFF_TILES over BUILD_PUFF_MS. */
+export const BUILD_PUFF_TILES = 0.75;
+export const BUILD_PUFF_MS = 240;
+
+/** An upgrade: 2 frames of white, and a teal ring grown to UPGRADE_RING_TILES. */
+export const UPGRADE_FLASH_FRAMES = 2;
+export const UPGRADE_RING_TILES = 1;
+export const UPGRADE_RING_MS = 300;
+
+/** A Thumper shell's splash ring under its burst, at the splash radius. */
+export const SPLASH_RING_MS = 200;
+
+/** The Orbital Strike's ground flash (at its radius) and the scorch it leaves. */
+export const STRIKE_FLASH_MS = 240;
+export const SCORCH_MS = 1500;
+export const SCORCH_TILES = 0.75;

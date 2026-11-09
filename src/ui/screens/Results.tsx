@@ -18,6 +18,12 @@ const HEADLINE = {
   lost: 'MINOR OPERATIONAL HICCUP',
 } as const;
 
+/** The kicker above the headline, in the same corporate voice (D026). */
+const KICKER = {
+  won: 'Shift report · Exemplary!',
+  lost: 'Shift report · Incident logged',
+} as const;
+
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -79,7 +85,7 @@ function Body({ result }: { result: RunResult }) {
       aria-modal="true"
       aria-labelledby="sd-results-heading"
     >
-      <p class="sd-results-kicker">Shift report · {won ? 'Victory' : 'Defeat'}</p>
+      <p class="sd-results-kicker">{KICKER[result.outcome]}</p>
       <h1 id="sd-results-heading" class="sd-results-heading">
         {HEADLINE[result.outcome]}
       </h1>

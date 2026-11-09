@@ -13,7 +13,10 @@ import { assertNever } from '../shared/types.ts';
 import {
   callWaveBonus,
   sellValue,
+  towerStats,
   type RejectReason,
+  type TierStatDelta,
+  type TowerStatLine,
   type SchedulePhase,
   type Sim,
 } from '../sim/index.ts';
@@ -32,6 +35,10 @@ import type { Host } from './host.ts';
 
 /** How long a notice stays up, in ms of real time. */
 export const NOTICE_MS = 1800;
+/** How long the "WAVE n" banner shows, in ms of real time (D026). */
+export const WAVE_BANNER_MS = 1200;
+/** The call-wave button pulses only while more than this many seconds of countdown are left. */
+export const CALL_PULSE_MIN_SEC = 5;
 
 const sameList = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && a.every((v, i) => v === b[i]);
@@ -62,16 +69,85 @@ export function meterLabelText(label: MeterLabel | null): string {
   }
 }
 
-/** The build slots for a loadout. */
+/**
+ * The wave whose countdown unlocks each tower the map holds back (`towerUnlockWave`, compiled to
+ * `unlockTowerClass` events on a wave's countdown).
+ */
+export function towerUnlockWaves(map: CompiledMapDef<IdSpace>): Readonly<Record<string, number>> {
+  const out: Record<string, number> = {};
+  for (const ev of map.events) {
+    if (!('wave' in ev.on)) continue;
+    for (const a of ev.actions) {
+      if ('unlockTowerClass' in a && !Object.hasOwn(out, a.unlockTowerClass)) {
+        out[a.unlockTowerClass] = ev.on.wave;
+      }
+    }
+  }
+  return out;
+}
+
+/** The build slots for a loadout. `unlockWaves`: towerUnlockWaves(map). */
 export function buildSlots(
   towers: Readonly<Record<string, CompiledTowerDef>>,
   loadout: readonly string[],
+  unlockWaves: Readonly<Record<string, number>> = {},
 ): BuildSlotView[] {
   return loadout.map((id) => {
     const def = towers[id];
     if (def === undefined) throw new RangeError(`hud: loadout tower '${id}' is not in the content`);
-    return { tower: id, label: displayName(id), icon: def.sprites.icon, cost: def.tiers[0].cost };
+    return {
+      tower: id,
+      label: displayName(id),
+      icon: def.sprites.icon,
+      cost: def.tiers[0].cost,
+      unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
+    };
   });
+}
+
+/** What a locked slot says (D026): "Thumper ships at wave 3", or "Thumper locked" with no wave. */
+export function lockedText(slot: BuildSlotView): string {
+  return slot.unlockWave === null
+    ? `${slot.label} locked`
+    : `${slot.label} ships at wave ${slot.unlockWave}`;
+}
+
+/** A number for a stat line: whole, or up to two decimals (2, 0.8, 2.5). */
+function statNum(n: number): string {
+  return String(Math.round(n * 100) / 100);
+}
+
+/** A tower's stats as the tower panel shows them (sim `towerStats`), e.g. "8 dmg · 2/s · range 3". */
+export function statLineText(s: TowerStatLine): string {
+  if (s.kind === null) return 'Support';
+  const parts = [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
+  parts.push(`range ${statNum(s.rangeTiles)}`);
+  return parts.join(' · ');
+}
+
+/** A signed stat change: "+3", "-0.5". */
+function signed(n: number): string {
+  return n > 0 ? `+${statNum(n)}` : statNum(n);
+}
+
+/** What the next upgrade changes, e.g. "+3 dmg · +0.5 range", or null at the top (or no change). */
+export function deltaText(d: TierStatDelta | null): string | null {
+  if (d === null) return null;
+  const parts: string[] = [];
+  if (d.damage !== 0) parts.push(`${signed(d.damage)} dmg`);
+  if (d.ratePerSec !== 0) parts.push(`${signed(d.ratePerSec)}/s`);
+  if (d.rangeTiles !== 0) parts.push(`${signed(d.rangeTiles)} range`);
+  if (d.splashTiles !== 0) parts.push(`${signed(d.splashTiles)} splash`);
+  if (d.armorPierce !== 0) parts.push(`${signed(d.armorPierce)} pierce`);
+  return parts.length === 0 ? null : parts.join(' · ');
+}
+
+/** An ability's one-line description (D026), e.g. "200 damage in an area after 1 s. Recharges 45 s." */
+export function abilityDescription(def: CompiledAbilityDef): string {
+  const e = def.effect;
+  const delay = statNum(e.delayTicks / TICK_HZ);
+  const cd = statNum(def.cooldownTicks / TICK_HZ);
+  return `${statNum(e.damage)} damage in an area after ${delay} s. Recharges ${cd} s.`;
 }
 
 /**
@@ -93,6 +169,7 @@ export function wavePreview(map: CompiledMapDef<IdSpace>, wave: number): WavePre
         icon: g.enemy.sprites.icon,
         count: g.count,
         air,
+        fast: g.enemy.tells.includes('fast'),
       });
     } else {
       groups[i] = { ...prev, count: prev.count + g.count };
@@ -134,6 +211,8 @@ function sameSelected(a: SelectedTowerView | null, b: SelectedTowerView): boolea
     a.sellValue === b.sellValue &&
     a.fullRefund === b.fullRefund &&
     a.priority === b.priority &&
+    a.stats === b.stats &&
+    a.upgradeDelta === b.upgradeDelta &&
     a.x === b.x &&
     a.y === b.y
   );
@@ -160,6 +239,7 @@ export function selectedView(
   const p = { x: 0, y: 0 };
   gridToScreen(t.x, t.y, origin, p);
   const sell = sellValue(t, sim.state.tick);
+  const stats = towerStats(t.def, t.tier);
   const next: SelectedTowerView = {
     uid,
     label: displayName(t.def.id),
@@ -170,6 +250,8 @@ export function selectedView(
     sellValue: sell.value,
     fullRefund: sell.full,
     priority: t.priority,
+    stats: statLineText(stats),
+    upgradeDelta: deltaText(stats.next),
     x: p.x,
     y: p.y,
   };
@@ -182,6 +264,20 @@ export function selectedView(
  */
 export function staysArmed(armed: string | null, built: string, credits: number, cost: number) {
   return armed === built && credits >= cost;
+}
+
+/**
+ * Whether the call-wave button pulses (D026): during a countdown with nothing alive and more than
+ * CALL_PULSE_MIN_SEC left (calling now pays), or in the setup once a tower stands.
+ */
+export function callPulses(
+  wave: number,
+  countdown: number | null,
+  enemiesAlive: number,
+  built: boolean,
+): boolean {
+  if (wave === 0) return built;
+  return countdown !== null && countdown > CALL_PULSE_MIN_SEC && enemiesAlive === 0;
 }
 
 /** Notice text for a rejected command, or null for rejections the player needn't hear about. */
@@ -208,7 +304,7 @@ export function rejectText(reason: RejectReason): string | null {
     case 'noAbility':
       return 'No ability equipped';
     case 'abilityOnCooldown':
-      return 'Recharging';
+      return 'Uplink recharging';
     case 'invalidTarget':
       return "Can't target there";
     case 'mapEnded':
@@ -228,7 +324,16 @@ export function abilitySlots(
   if (slot1 === null) return [];
   const def = abilities[slot1];
   if (def === undefined) throw new RangeError(`hud: ability '${slot1}' is not in the content`);
-  return [{ slot: 1, ability: def.id, label: def.name, icon: def.sprites.icon, key: 'Q' }];
+  return [
+    {
+      slot: 1,
+      ability: def.id,
+      label: def.name,
+      icon: def.sprites.icon,
+      key: 'Q',
+      description: abilityDescription(def),
+    },
+  ];
 }
 
 /** Steps in the cooldown wipe (one per game pixel of the 16 px icon). */
@@ -287,13 +392,20 @@ export function bindHud(
   hud.waveCount.value = sim.map.waves.length;
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];
-  hud.slots.value = buildSlots(towers, sim.config.loadout);
+  hud.slots.value = buildSlots(towers, sim.config.loadout, towerUnlockWaves(sim.map));
   const abilityViews = abilitySlots(sim.config.content.abilities, sim.config.abilities.slot1);
   hud.abilities.value = abilityViews;
   hud.notice.value = null;
   const lines = opts.briefing ? briefingLines(sim.map.briefing) : [];
   hud.briefing.value = lines.length === 0 ? null : lines;
+  hud.leak.value = null;
+  hud.waveBanner.value = null;
+  hud.built.value = false;
+  hud.callPulse.value = false;
   let previewFor = -1;
+  let leakId = 0;
+  let bannerId = 0;
+  let bannerTimer: ReturnType<typeof setTimeout> | null = null;
   const sync = (): void => {
     const s = sim.state;
     hud.credits.value = s.credits;
@@ -309,6 +421,9 @@ export function bindHud(
     }
     hud.countdown.value = countdownSeconds(s.schedule.phase, s.schedule.countdownTicks);
     hud.callBonus.value = callWaveBonus(s, sim.map);
+    hud.callPulse.value =
+      s.outcome === 'playing' &&
+      callPulses(s.wave, hud.countdown.value, s.enemies.live, hud.built.value);
     hud.selected.value = selectedView(sim, interaction.selectedTower, origin, hud.selected.value);
     syncCooldowns();
     speed.value = host.speed;
@@ -338,10 +453,25 @@ export function bindHud(
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     host.bus.on('TowerBuilt', (e) => {
+      hud.built.value = true;
       const cost = towers[e.tower]?.tiers[0].cost ?? Infinity;
       if (!staysArmed(interaction.armed, e.tower, sim.state.credits, cost)) {
         if (interaction.armed === e.tower) interaction.arm(null);
       }
+    }),
+    host.bus.on('EnemyLeaked', (e) => {
+      if (e.leak > 0) hud.leak.value = { id: ++leakId, amount: e.leak };
+    }),
+    host.bus.on('WaveStarted', (e) => {
+      hud.waveBanner.value = { id: ++bannerId, wave: e.wave };
+      if (bannerTimer !== null) clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(() => {
+        bannerTimer = null;
+        hud.waveBanner.value = null;
+      }, WAVE_BANNER_MS);
+    }),
+    host.bus.on('CountdownStarted', () => {
+      hud.countdownCue.value++;
     }),
     host.bus.on('CommandRejected', (e) => {
       const text = rejectText(e.reason);
@@ -350,7 +480,11 @@ export function bindHud(
   ];
   return () => {
     for (const off of offs) off();
+    if (bannerTimer !== null) clearTimeout(bannerTimer);
     hud.mapId.value = null;
+    hud.leak.value = null;
+    hud.waveBanner.value = null;
+    hud.callPulse.value = false;
     hud.selectedTower.value = 0;
     hud.selected.value = null;
     hud.armedTower.value = null;

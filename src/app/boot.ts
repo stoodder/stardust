@@ -12,6 +12,7 @@ import { installKeys } from './keys.ts';
 import { setNavigator } from './navigation.ts';
 import { meterFrames } from './perf.ts';
 import { createRouter, type Router } from './router.ts';
+import { setRadioEnabled } from './radio.ts';
 import { createTestHooks, installTestHooks } from './testHooks.ts';
 import type { BootParams } from './testHookTypes.ts';
 
@@ -20,8 +21,10 @@ export function parseBootParams(search: string): BootParams {
   const q = new URLSearchParams(search);
   const seedRaw = q.get('seed');
   const seed = seedRaw !== null && /^\d+$/.test(seedRaw) ? Number(seedRaw) : null;
+  const test = q.get('test') === '1';
   return {
-    test: q.get('test') === '1',
+    test,
+    radio: !test || q.get('radio') === '1',
     seed,
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
@@ -42,6 +45,7 @@ function requireElement(id: string): HTMLElement {
  */
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
+  setRadioEnabled(params.radio);
   const gameRoot = requireElement('game');
   const uiRoot = requireElement('ui');
 
@@ -107,6 +111,12 @@ export async function boot(): Promise<void> {
     isActive: () => screen.value === 'battle' && hud.briefing.value === null,
     // No modals over a live battle until dialogue and settings exist.
     isModalOpen: () => false,
+    // The briefing is a blocking modal: Esc closes it wherever the focus is.
+    dismissModal: () => {
+      if (screen.value !== 'battle' || hud.briefing.value === null) return false;
+      dismissBriefing();
+      return true;
+    },
   });
 
   mountUi(uiRoot);

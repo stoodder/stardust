@@ -37,6 +37,13 @@ Tone moves on several slow dials at once, a little every map ([../research/emoti
 
 **Act I rules.** It's a comedy, and every joke is a planted seed. Nobody is a person yet; the Skitterkin are "pests," squeaky and cartoonish (the Kingdom Rush contract). The darkness exists only as background facts the player can notice: the path direction, the Tidybots, the Peeker, "(Per policy.)" One crack is allowed, at the very end (the Quiet Wave and the camera frame), and it stays quiet.
 
+**Act I system copy (the M1 HUD and results).** Everglow's voice, brief, never scolding; the code homes are `src/ui/screens/Results.tsx`, `src/ui/hud/index.tsx`, and `src/app/hud.ts`.
+- **Results:** kicker "Shift report · Exemplary!" (win) or "Shift report · Incident logged" (loss); headline "PERIMETER SECURED!" or "MINOR OPERATIONAL HICCUP" (the euphemism dictionary's word for a disaster); the counter "PESTS PROCESSED: {n} ★ Top 5% of Technicians!"; buttons Retry and Title. Title: "Start shift" and "EVERGLOW · Brighter Every Day!".
+- **Briefing:** the heading "Shift briefing" and the button "Clock in".
+- **HUD notices:** "Not enough credits", "{Tower} ships at wave {n}" (a held-back tower; "{Tower} locked" with no wave), "Can't build there", "Uplink recharging" (the Orbital Strike's cooldown), "Can't target there", "Max tier", "Wave in progress", "No waves left", "Not online yet". While paused: "PAUSED". As a wave starts: "WAVE {n}".
+- **HUD labels:** "Start" / "Call +{n}" (the early-call bonus), "Ready", "Pick a target · Esc cancels", the tower panel's stat line ("8 dmg · 2/s · range 3") and "Next: +3 dmg", and the strike's tooltip "200 damage in an area after 1 s. Recharges 45 s."
+- **Radio (M1):** the map's radio lines and barks from its act file, verbatim, with the speaker's name plate (QUILL, Bricks, Goldie).
+
 **Act II rules.** The jokes keep coming and start landing wrong. Characters notice and stop finishing sentences. Satire turns creepy through *content*, not tone: Sterling's memos sound exactly the same and say worse things. Ves'thara is the first voice that refuses to joke at all. Each map lowers the dials a little.
 
 **Act III rules.** Humor survives only as care: Pebble mangling QUILL's jokes, Bricks being gruff at a teacup-sized child, Goldie's lettuce in the evacuation trucks. Use silence as a line (§5.6). No corporate voice except Sterling, who never changes. Specific, concrete details carry the grief ("He stopped counting the days.").

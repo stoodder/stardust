@@ -4,6 +4,7 @@
 // - On a focused button, Space and 1–4 go to the game hotkey (preventDefault, so the button doesn't
 //   also activate), unless a modal is open, in which case the modal keeps them.
 // - Enter always activates the focused button (never a game hotkey).
+// - Esc closes a blocking modal (the M1 briefing) wherever the focus is, before anything else.
 // Bindings (design/core-loop.md §4) live in the table below. Still to come: E (the companion's
 // ability, T207), H and Shift+H (Hold Fire, T206), and Alt+H (spare runners).
 import {
@@ -56,6 +57,11 @@ export interface KeyRouting {
   isActive(): boolean;
   /** Whether a modal dialog is open (it keeps Space and 1–4). */
   isModalOpen(): boolean;
+  /**
+   * Esc: closes the open blocking modal (the briefing), whatever has the focus. Returns false when
+   * none is open, so Esc goes on to its game binding.
+   */
+  dismissModal?(): boolean;
 }
 
 function isTextEntry(el: Element | null): boolean {
@@ -84,6 +90,10 @@ export function routeKey(
 /** Installs the listener. Returns its removal. */
 export function installKeys(routing: KeyRouting): () => void {
   const onKeyDown = (e: KeyboardEvent): void => {
+    if (e.code === 'Escape' && !e.repeat && routing.dismissModal?.() === true) {
+      e.preventDefault();
+      return;
+    }
     if (!routing.isActive()) return;
     const action = routeKey(e, document.activeElement, routing.isModalOpen());
     if (action === null) return;

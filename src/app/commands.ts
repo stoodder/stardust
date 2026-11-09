@@ -8,7 +8,7 @@ import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import type { Command } from '../sim/index.ts';
 import { hud, speed as speedSignal } from '../ui/state.ts';
 import type { Host } from './host.ts';
-import { rejectText, showNotice } from './hud.ts';
+import { lockedText, rejectText, showNotice } from './hud.ts';
 import type { Speed } from './testHookTypes.ts';
 
 /** What commands act on: the running battle, or null outside one. */
@@ -71,13 +71,13 @@ export function pressBuildSlot(index: number): void {
   }
   const state = host.sim.state;
   const cost = host.sim.config.content.towers[tower]?.tiers[0].cost ?? Infinity;
-  const why = state.lockedTowers.includes(tower)
-    ? 'towerLocked'
-    : state.credits < cost
-      ? 'cantAfford'
-      : null;
-  if (why !== null) {
-    showNotice(rejectText(why) ?? '');
+  if (state.lockedTowers.includes(tower)) {
+    const slot = hud.slots.value[index];
+    showNotice(slot === undefined ? (rejectText('towerLocked') ?? '') : lockedText(slot));
+    return;
+  }
+  if (state.credits < cost) {
+    showNotice(rejectText('cantAfford') ?? '');
     return;
   }
   interaction.arm(tower);

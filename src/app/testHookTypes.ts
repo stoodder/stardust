@@ -69,9 +69,14 @@ export interface TestHooks {
   perf(): PerfSample;
 }
 
-/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1`). */
+/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&radio=1`). */
 export interface BootParams {
   readonly test: boolean;
+  /**
+   * Whether the radio ticker plays (D026). On for players; `?test=1` turns it off so screenshots
+   * stay clear, and `&radio=1` turns it back on for the specs that assert it.
+   */
+  readonly radio: boolean;
   readonly seed: number | null;
   readonly map: string | null;
   readonly skipIntro: boolean;

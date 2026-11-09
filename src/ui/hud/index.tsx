@@ -24,6 +24,7 @@ import {
   type BuildSlotView,
   type SelectedTowerView,
 } from '../state.ts';
+import { lockedText } from '../../app/hud.ts';
 import { Icon } from './Icon.tsx';
 import { placePanel, tickToward } from './layout.ts';
 import './hud.css';
@@ -31,8 +32,10 @@ import './hud.css';
 /** Build slots shown, whatever the loadout size (the loadout limit, CLAUDE.md). */
 const SLOT_COUNT = 4;
 /** The tower panel's size in game px (fixed, so it can be placed before it renders). */
-export const PANEL_W = 100;
-export const PANEL_H = 78;
+export const PANEL_W = 124;
+export const PANEL_H = 96;
+/** Integrity at or below this shows the low-integrity alarm (art-direction §9: red at 5). */
+const LOW_INTEGRITY = 5;
 
 const PRIORITY_LABEL: Readonly<Record<TargetPriority, string>> = {
   first: 'First',
@@ -74,6 +77,14 @@ function Key({ k }: { k: string }) {
   );
 }
 
+/** Keeps a pointer press from focusing a button, so its focus ring doesn't linger (D026). */
+const noFocusOnPress = (e: MouseEvent): void => e.preventDefault();
+
+/** A colour token for a master palette name (`teal.4` → `var(--sd-teal-4)`). */
+function colorVar(name: string): string {
+  return `var(--sd-${name.replaceAll('.', '-')})`;
+}
+
 /** A credits amount: the gold chip and the number. */
 function Credits({ value, short = false }: { value: number; short?: boolean }) {
   return (
@@ -89,12 +100,28 @@ function StatusPanel() {
   const credits = useTicker(hud.credits.value);
   const integrity = hud.integrity.value;
   const label = hud.meterLabel.value;
+  const leak = hud.leak.value;
+  const low = integrity <= LOW_INTEGRITY;
   return (
     <section class="hud-status chamfer" aria-label="Status">
-      <div class="hud-meter" role="status" aria-label={`${label} ${integrity}`}>
+      {/* A leak flashes the panel's edge red (D026); the key restarts it on every leak. */}
+      {leak !== null && <span key={leak.id} class="hud-leak-flash chamfer" aria-hidden="true" />}
+      <div
+        class="hud-meter"
+        role="status"
+        aria-label={`${label} ${integrity}${low ? ', integrity low' : ''}`}
+      >
         <Icon id="icon.core" />
-        <span class="hud-label">{label}</span>
-        <span class={integrity <= 5 ? 'big num danger' : 'big num'}>{integrity}</span>
+        <span class="hud-label">
+          {label}
+          {/* Low integrity: a blinking alarm shape, not only a red number. */}
+          {low && (
+            <span class="hud-alarm" aria-hidden="true">
+              !
+            </span>
+          )}
+        </span>
+        <span class={low ? 'big num danger' : 'big num'}>{integrity}</span>
       </div>
       <div class="hud-credits" aria-label={`Credits ${hud.credits.value}`}>
         <Icon id="icon.credits" />
@@ -157,7 +184,7 @@ function WavePanel() {
         {callLabel !== null && (
           <button
             type="button"
-            class="hud-btn chamfer call"
+            class={hud.callPulse.value ? 'hud-btn chamfer call pulse' : 'hud-btn chamfer call'}
             aria-label={callLabel}
             title={`${callLabel} (W)`}
             // Nothing to call while a wave is still spawning: the next countdown hasn't started.
@@ -165,7 +192,12 @@ function WavePanel() {
             onClick={callWave}
           >
             {wave === 0 ? 'Start' : 'Call'}
-            {bonus > 0 && <span class="hud-bonus num gold">+{bonus}</span>}
+            {bonus > 0 && (
+              <span class="hud-bonus num gold">
+                +{bonus}
+                <Icon id="icon.credits" />
+              </span>
+            )}
             <Key k="W" />
           </button>
         )}
@@ -177,10 +209,12 @@ function WavePanel() {
             <li
               key={`${g.enemy}:${g.air ? 'air' : 'ground'}`}
               class="hud-preview-group"
-              aria-label={`${g.count} ${g.label}${g.air ? ', air' : ''}`}
+              aria-label={`${g.count} ${g.label}${g.air ? ', air' : ''}${g.fast ? ', fast' : ''}`}
+              title={`${g.label}${g.fast ? ' (fast)' : ''}${g.air ? ' (air)' : ''}`}
             >
               <Icon id={g.icon} />
               <span class="num">x{g.count}</span>
+              {g.fast && <Icon id="icon.tell.fast" class="hud-fast" />}
               {g.air && <span class="hud-air">Air</span>}
             </li>
           ))}
@@ -203,8 +237,10 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
   const locked = hud.lockedTowers.value.includes(slot.tower);
   const poor = hud.credits.value < slot.cost;
   const armed = hud.armedTower.value === slot.tower;
-  const state = locked ? 'locked' : poor ? 'poor' : '';
-  const status = locked ? ', locked' : poor ? ', not enough credits' : '';
+  // Onboarding (D026): the first slot pulses until the first tower is built.
+  const teach = index === 0 && !hud.built.value && !locked && !poor && !armed;
+  const state = `${locked ? 'locked' : poor ? 'poor' : ''}${teach ? ' pulse' : ''}`;
+  const status = locked ? `, ${lockedText(slot)}` : poor ? ', not enough credits' : '';
   return (
     <button
       type="button"
@@ -212,7 +248,8 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       aria-pressed={armed}
       aria-disabled={locked || poor}
       aria-label={`Build ${slot.label}, ${slot.cost} credits${status}`}
-      title={`${slot.label} (${index + 1})`}
+      title={locked ? lockedText(slot) : `${slot.label} (${index + 1})`}
+      onMouseDown={noFocusOnPress}
       onClick={() => pressBuildSlot(index)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -251,6 +288,7 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
   const left = cd?.secondsLeft ?? 0;
   const ready = left === 0;
   const aiming = hud.aimingAbility.value === a.slot;
+  const cue = hud.countdownCue.value;
   const status = aiming
     ? ', aiming: click a target'
     : ready
@@ -263,7 +301,8 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
       aria-pressed={aiming}
       aria-disabled={!ready}
       aria-label={`${a.label}${status}`}
-      title={`${a.label} (${a.key})`}
+      title={`${a.label} (${a.key}): ${a.description}`}
+      onMouseDown={noFocusOnPress}
       onClick={() => pressAbility(a.slot)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -280,6 +319,8 @@ function AbilitySlot({ a, cd }: { a: AbilitySlotView; cd: AbilityCooldownView | 
           />
         )}
       </span>
+      {/* A countdown starting pulses a ready slot once; the key restarts it each countdown. */}
+      {ready && cue > 0 && <span key={cue} class="hud-ready-cue chamfer" aria-hidden="true" />}
       <span class="hud-cd num">{ready ? 'Ready' : `${left}s`}</span>
     </button>
   );
@@ -341,12 +382,16 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
         <span class="hud-name">{t.label}</span>
         <Tier tier={t.tier} max={t.maxTier} />
       </header>
+      <p class="hud-stats">{t.stats}</p>
+      <p class="hud-delta">{t.upgradeDelta === null ? '' : `Next: ${t.upgradeDelta}`}</p>
       <button
         type="button"
         class={poor ? 'hud-btn chamfer wide poor' : 'hud-btn chamfer wide'}
         aria-disabled={max || poor}
         aria-label={
-          max ? 'Max tier' : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits`
+          max
+            ? 'Max tier'
+            : `Upgrade to tier ${t.tier + 1}, ${t.upgradeCost ?? 0} credits${t.upgradeDelta === null ? '' : `: ${t.upgradeDelta}`}`
         }
         onClick={upgradeSelected}
       >
@@ -400,7 +445,59 @@ function Notice() {
   );
 }
 
-/** The map's static briefing (M1), over the battle until dismissed (its button, Enter, or Esc). */
+/** The radio ticker (D026): one line at a time, top-left under the status panel; never blocks. */
+function Radio() {
+  const r = hud.radio.value;
+  return (
+    <div class="hud-radio-slot" role="log" aria-live="polite" aria-label="Radio">
+      {r !== null && (
+        <div key={r.id} class="hud-radio chamfer">
+          <span class="hud-radio-name" style={{ color: colorVar(r.color) }}>
+            {r.name}
+          </span>
+          <span class="hud-radio-text">{r.text}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The "WAVE n" banner as a wave starts (D026). */
+function WaveBannerView() {
+  const b = hud.waveBanner.value;
+  if (b === null) return null;
+  return (
+    <div key={b.id} class="hud-wave-banner" aria-hidden="true">
+      Wave {b.wave}
+    </div>
+  );
+}
+
+/** While paused: a light scrim over the playfield and a pinned PAUSED notice (D026). */
+function PausedOverlay() {
+  if (speed.value !== 0 || hud.outcome.value !== 'playing') return null;
+  return (
+    <>
+      <div class="hud-paused-scrim" aria-hidden="true" />
+      <div class="hud-paused chamfer" role="status">
+        Paused
+      </div>
+    </>
+  );
+}
+
+/** The focusable controls inside `root`, in tab order. */
+function focusables(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]')].filter(
+    (el) => el.tabIndex >= 0 && !el.hasAttribute('disabled'),
+  );
+}
+
+/**
+ * The map's static briefing (M1), a blocking modal over the battle until dismissed (its button,
+ * Enter, or Esc, which app/keys.ts routes here wherever the focus is). The rest of the HUD is
+ * `inert` while it's open, and Tab cycles inside it.
+ */
 function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
   return (
     <div class="hud-briefing-scrim">
@@ -410,10 +507,14 @@ function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
         aria-modal="true"
         aria-labelledby="hud-briefing-heading"
         onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            dismissBriefing();
-          }
+          if (e.key !== 'Tab') return;
+          const items = focusables(e.currentTarget);
+          if (items.length === 0) return;
+          const active = document.activeElement;
+          const i = active instanceof HTMLElement ? items.indexOf(active) : -1;
+          const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i + 1) % items.length;
+          e.preventDefault();
+          items[next]?.focus();
         }}
       >
         <h2 id="hud-briefing-heading" class="hud-briefing-title">
@@ -447,15 +548,21 @@ export function Hud() {
   const briefing = hud.briefing.value;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud">
-      <StatusPanel />
-      <div class="hud-top-right">
-        <SpeedControls />
-        <WavePanel />
+      {/* Everything but the briefing: inert (unfocusable, unclickable) while the briefing is open. */}
+      <div class="hud-play" inert={briefing !== null}>
+        <PausedOverlay />
+        <WaveBannerView />
+        <StatusPanel />
+        <Radio />
+        <div class="hud-top-right">
+          <SpeedControls />
+          <WavePanel />
+        </div>
+        <AbilityBar />
+        <BuildBar />
+        {selected !== null && <TowerPanel t={selected} />}
+        <Notice />
       </div>
-      <AbilityBar />
-      <BuildBar />
-      {selected !== null && <TowerPanel t={selected} />}
-      <Notice />
       {briefing !== null && <Briefing lines={briefing} />}
     </div>
   );

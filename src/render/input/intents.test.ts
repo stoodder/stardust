@@ -16,7 +16,8 @@ describe('resolveClick', () => {
   });
 
   it('never builds on a path (hard rule) or with nothing armed', () => {
-    expect(resolveClick(path, 'left', 'rivet')).toEqual({ kind: 'deselect' });
+    // Armed on a path: "Can't build there" (D026), and the slot stays armed.
+    expect(resolveClick(path, 'left', 'rivet')).toEqual({ kind: 'cantBuild' });
     expect(resolveClick(pad, 'left', null)).toEqual({ kind: 'deselect' });
   });
 
@@ -32,6 +33,10 @@ describe('resolveClick', () => {
 });
 
 describe('hoverLook', () => {
+  it('reuses one result object (no per-frame allocation)', () => {
+    expect(hoverLook(pad, null, false)).toBe(hoverLook(path, 'rivet', false));
+  });
+
   it('shows a valid ghost on a placeable pad and an invalid one on an unaffordable pad', () => {
     expect(hoverLook(pad, 'rivet', true)).toMatchObject({
       highlight: 'hover',

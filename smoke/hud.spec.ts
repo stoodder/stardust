@@ -67,6 +67,11 @@ test('hud: build from a slot, then select, upgrade, retarget, and sell', async (
   const panel = page.getByRole('region', { name: 'Rivet tower' });
   await expect(panel).toBeVisible();
   await expect(panel.getByLabel('Tier 1 of 3')).toBeVisible();
+  // The stat line and what the next tier adds (sim towerStats, D026).
+  await expect(panel.locator('.hud-stats')).toHaveText(
+    /^\d+(\.\d+)? dmg · [\d.]+\/s · range [\d.]+$/,
+  );
+  await expect(panel.locator('.hud-delta')).toHaveText(/^Next: \+/);
   await page.mouse.move(0, 0);
   await shot(page, 'hud', 3, 'tower-panel');
 

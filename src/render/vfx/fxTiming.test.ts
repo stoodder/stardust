@@ -9,6 +9,11 @@ import {
   shakeOffset,
   STEPPED_ALPHA,
   STRIKE_BURSTS,
+  FLOAT_MS,
+  FLOAT_RISE_PX,
+  floatRise,
+  LEAK_SHAKE_MS,
+  leakShakeOffset,
 } from './fxTiming.ts';
 
 describe('fadeAlpha', () => {
@@ -53,5 +58,22 @@ describe('shakeOffset', () => {
       expect(Math.max(Math.abs(x), Math.abs(y))).toBeLessThanOrEqual(2);
     }
     expect(shakeOffset(SHAKE_MS)).toEqual([0, 0]);
+  });
+});
+
+describe('feedback juice timing (D026)', () => {
+  it('shakes 1 px on a leak, then settles', () => {
+    for (let ms = 0; ms < LEAK_SHAKE_MS; ms += 10) {
+      const [x, y] = leakShakeOffset(ms);
+      expect(Math.abs(x) + Math.abs(y)).toBeLessThanOrEqual(1);
+    }
+    expect(leakShakeOffset(LEAK_SHAKE_MS)).toEqual([0, 0]);
+  });
+
+  it('rises floating numbers in whole pixels up to the full rise', () => {
+    expect(floatRise(0)).toBe(0);
+    expect(Number.isInteger(floatRise(333))).toBe(true);
+    expect(floatRise(FLOAT_MS)).toBe(FLOAT_RISE_PX);
+    expect(floatRise(FLOAT_MS * 2)).toBe(FLOAT_RISE_PX);
   });
 });

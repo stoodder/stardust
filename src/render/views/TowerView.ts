@@ -1,12 +1,14 @@
 // A pooled tower: the tier's base frame, the head on the base's mount (aimed by facing, or an
 // idle anim), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier 2).
-// Selection swaps both to the baked `+selected` variant (white outline).
+// Selection swaps both to the baked `+selected` variant (white outline). A new build drops in a few
+// px (D026), and an upgrade flashes both white for 2 frames.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { BUILD_DROP_PX, BUILD_DROP_STEP_FRAMES, UPGRADE_FLASH_FRAMES } from '../vfx/fxTiming.ts';
 import { headStyle, spriteId, type Facing, type HeadStyle } from './spriteInfo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -30,6 +32,8 @@ const pos: Vec2 = { x: 0, y: 0 };
 const GLOW_SUFFIX = '@glow';
 /** The head draws just in front of its own base, below the next uid's tie-break step. */
 const HEAD_DEPTH_EPS = 0.00005;
+/** `white.1`: the upgrade flash's fill tint. */
+const FLASH_COLOR = 0xffffff;
 
 export class TowerView implements PooledView {
   stamp = 0;
@@ -47,6 +51,10 @@ export class TowerView implements PooledView {
   #uid = 0;
   #x = Number.NaN;
   #y = Number.NaN;
+  /** Frames left in the build drop-in (0 when standing). */
+  #dropFrames = 0;
+  /** Frames left in the upgrade flash. */
+  #flashFrames = 0;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -60,8 +68,19 @@ export class TowerView implements PooledView {
     this.release();
   }
 
-  /** Shows the view for a newly built (or newly seen) tower. */
-  show(uid: number, sprites: TowerSprites, tier: number): void {
+  /** The last synced position, in grid units (NaN before the first sync). */
+  get x(): number {
+    return this.#x;
+  }
+
+  get y(): number {
+    return this.#y;
+  }
+
+  /** Shows the view for a newly seen tower; `dropIn` for one just built (it drops into place). */
+  show(uid: number, sprites: TowerSprites, tier: number, dropIn = false): void {
+    this.#dropFrames = dropIn ? BUILD_DROP_PX * BUILD_DROP_STEP_FRAMES : 0;
+    this.#endFlash();
     this.#uid = uid;
     this.#baseId = spriteId(sprites.base);
     this.#headId = sprites.head === null ? null : spriteId(sprites.head);
@@ -85,6 +104,13 @@ export class TowerView implements PooledView {
     this.#refreshFrames(false);
   }
 
+  /** The upgrade flash: base and head fill white for a couple of frames. */
+  flash(): void {
+    this.#flashFrames = UPGRADE_FLASH_FRAMES;
+    this.#base.setTint(FLASH_COLOR).setTintMode(Phaser.TintModes.FILL);
+    this.#head.setTint(FLASH_COLOR).setTintMode(Phaser.TintModes.FILL);
+  }
+
   setSelected(selected: boolean): void {
     if (selected === this.#selected) return;
     this.#selected = selected;
@@ -100,17 +126,30 @@ export class TowerView implements PooledView {
 
   /** Positions the tower at its sim position (a tile center). Called every frame; cheap if still. */
   sync(t: TowerLike): void {
-    if (t.x === this.#x && t.y === this.#y) return;
+    if (this.#flashFrames > 0 && --this.#flashFrames === 0) this.#endFlash();
+    const dropping = this.#dropFrames > 0;
+    if (dropping) this.#dropFrames--;
+    if (t.x === this.#x && t.y === this.#y && !dropping) return;
     this.#x = t.x;
     this.#y = t.y;
     gridToScreen(t.x, t.y, this.#ctx.origin, pos);
+    // Sorted by its tile, wherever the drop has it drawn.
     const depth = worldDepth(pos.y, 'tower', this.#uid);
-    this.#base.setPosition(pos.x, pos.y).setDepth(depth);
-    this.#baseGlow.setPosition(pos.x, pos.y);
+    const lift = Math.ceil(this.#dropFrames / BUILD_DROP_STEP_FRAMES);
+    this.#base.setPosition(pos.x, pos.y - lift).setDepth(depth);
+    this.#baseGlow.setPosition(pos.x, pos.y - lift);
     this.#placeHead(depth);
   }
 
+  #endFlash(): void {
+    this.#flashFrames = 0;
+    this.#base.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+    this.#head.clearTint().setTintMode(Phaser.TintModes.MULTIPLY);
+  }
+
   release(): void {
+    this.#endFlash();
+    this.#dropFrames = 0;
     this.#uid = 0;
     this.#baseId = null;
     this.#headId = null;

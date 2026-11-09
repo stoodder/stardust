@@ -7,10 +7,13 @@
 // - Pulse rings (Sprinkler): a solid ring expanding to the pulse radius in quarter-tile steps.
 // - Shell bursts (Thumper): fx.explosion at the impact point.
 // - Orbital Strike: fx.orbital_reticle while the zone counts down (and at the pointer while aiming),
-//   then a white-cored beam from the top of the screen, a rolling ring of bursts, and a 2 px screen
-//   shake (skipped under reduced motion).
+//   then a white-cored beam from the top of the screen, a ground flash at the strike's radius, a
+//   big center burst inside a rolling ring of bursts, a scorch decal, and a 2 px screen shake
+//   (skipped under reduced motion).
+// - Feedback juice (D026): effect rings (a leak at the core, a Thumper's splash, a build's dust, an
+//   upgrade), floating numbers in the 3×5 pixel font, and a 1 px leak shake.
 import * as Phaser from 'phaser';
-import { rgbOf } from '../../content/palettes/master.ts';
+import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { Zone } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
@@ -20,6 +23,13 @@ import {
   beamWidth,
   BURST_MS,
   fadeAlpha,
+  floatRise,
+  FLOAT_MS,
+  LEAK_SHAKE_MS,
+  leakShakeOffset,
+  SCORCH_MS,
+  SCORCH_TILES,
+  STRIKE_FLASH_MS,
   PULSE_MS,
   pulseRadius,
   SHAKE_MS,
@@ -28,7 +38,12 @@ import {
   STRIKE_MS,
   TRACER_MS,
 } from '../vfx/fxTiming.ts';
-import { pulseRingTexture } from '../vfx/overlayTextures.ts';
+import {
+  discTexture,
+  effectRingTexture,
+  floatTextTexture,
+  PULSE_COLOR,
+} from '../vfx/overlayTextures.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The zone pool as render reads it. */
@@ -39,7 +54,9 @@ export interface ZonePoolLike {
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
 const MAX_TRACERS = 48;
-const MAX_PULSES = 16;
+const MAX_PULSES = 24;
+const MAX_DECALS = 8;
+const MAX_FLOATS = 16;
 const MAX_BURSTS = 40;
 const MAX_STRIKES = 4;
 
@@ -72,12 +89,34 @@ interface Tracer {
   img: Phaser.GameObjects.Image;
 }
 
+/** An effect ring: grows (in quarter tiles) or holds at its radius, and fades in steps. */
 interface Pulse {
   active: boolean;
   ms: number;
+  durationMs: number;
   radiusTiles: number;
+  grow: boolean;
+  color: ColorName;
   img: Phaser.GameObjects.Image;
   shownRadius: number;
+  shownColor: ColorName | null;
+}
+
+/** A ground decal (a strike's flash, a scorch) that fades in steps. */
+interface Decal {
+  active: boolean;
+  ms: number;
+  durationMs: number;
+  img: Phaser.GameObjects.Image;
+}
+
+/** A floating number rising from a point. */
+interface Float {
+  active: boolean;
+  ms: number;
+  x: number;
+  y: number;
+  img: Phaser.GameObjects.Image;
 }
 
 interface Burst {
@@ -94,6 +133,7 @@ interface Strike {
   ms: number;
   x: number;
   y: number;
+  radiusTiles: number;
   reticle: Phaser.GameObjects.Sprite;
 }
 
@@ -106,13 +146,19 @@ export class FxView {
   readonly #gfx: Phaser.GameObjects.Graphics;
   readonly #tracers: Tracer[] = [];
   readonly #pulses: Pulse[] = [];
+  readonly #decals: Decal[] = [];
+  readonly #floats: Float[] = [];
   readonly #bursts: Burst[] = [];
   readonly #strikes: Strike[] = [];
   readonly #aim: Phaser.GameObjects.Sprite;
   #nextTracer = 0;
   #nextPulse = 0;
   #nextBurst = 0;
+  #nextDecal = 0;
+  #nextFloat = 0;
   #shakeMs = -1;
+  /** Which shake runs: the strike's 2 px or a leak's 1 px. */
+  #shakeSmall = false;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
@@ -132,7 +178,27 @@ export class FxView {
     for (let i = 0; i < MAX_PULSES; i++) {
       const img = scene.make.image({}, false).setVisible(false);
       layers.decal.add(img);
-      this.#pulses.push({ active: false, ms: 0, radiusTiles: 0, img, shownRadius: 0 });
+      this.#pulses.push({
+        active: false,
+        ms: 0,
+        durationMs: PULSE_MS,
+        radiusTiles: 0,
+        grow: true,
+        color: PULSE_COLOR,
+        img,
+        shownRadius: 0,
+        shownColor: null,
+      });
+    }
+    for (let i = 0; i < MAX_DECALS; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      layers.decal.add(img);
+      this.#decals.push({ active: false, ms: 0, durationMs: 0, img });
+    }
+    for (let i = 0; i < MAX_FLOATS; i++) {
+      const img = scene.make.image({}, false).setVisible(false);
+      layers.overlay.add(img);
+      this.#floats.push({ active: false, ms: 0, x: 0, y: 0, img });
     }
     const boom = sprites.meta('fx.explosion').anchor;
     const boomFrame = sprites.frame('fx.explosion', 'f0');
@@ -153,7 +219,14 @@ export class FxView {
       return s;
     };
     for (let i = 0; i < MAX_STRIKES; i++) {
-      this.#strikes.push({ zoneUid: 0, ms: -1, x: 0, y: 0, reticle: makeReticle() });
+      this.#strikes.push({
+        zoneUid: 0,
+        ms: -1,
+        x: 0,
+        y: 0,
+        radiusTiles: 0,
+        reticle: makeReticle(),
+      });
     }
     this.#aim = makeReticle().setAlpha(AIM_ALPHA);
   }
@@ -175,17 +248,58 @@ export class FxView {
     this.#drawTracer(t);
   }
 
-  /** A pulse ring from a tower at grid (x, y) out to `radiusTiles`. */
+  /** A Sprinkler pulse ring from a tower at grid (x, y) out to `radiusTiles`. */
   pulse(x: number, y: number, radiusTiles: number): void {
+    this.ring(x, y, radiusTiles, PULSE_COLOR, PULSE_MS, true);
+  }
+
+  /**
+   * An effect ring on the ground at grid (x, y): grows from a quarter tile to `radiusTiles` over
+   * `ms` (`grow`), or holds at it, fading in steps either way.
+   */
+  ring(
+    x: number,
+    y: number,
+    radiusTiles: number,
+    color: ColorName,
+    ms: number,
+    grow: boolean,
+  ): void {
+    if (radiusTiles <= 0) return;
     const p = this.#pulses[this.#nextPulse]!; // index < MAX_PULSES
     this.#nextPulse = (this.#nextPulse + 1) % MAX_PULSES;
     gridToScreen(x, y, this.#ctx.origin, pos);
     p.img.setPosition(pos.x, pos.y);
     p.radiusTiles = radiusTiles;
+    p.durationMs = ms;
+    p.grow = grow;
+    p.color = color;
     p.shownRadius = 0;
     p.ms = 0;
     p.active = true;
     this.#syncPulse(p);
+  }
+
+  /** A floating number (the 3×5 font) rising from grid (x, y), `liftPx` above the ground. */
+  floatText(text: string, color: ColorName, x: number, y: number, liftPx: number): void {
+    const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
+    this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
+    gridToScreen(x, y, this.#ctx.origin, pos);
+    const key = floatTextTexture(this.#ctx.scene, text, color);
+    f.img.setTexture(key);
+    f.img.setOrigin(0.5, 1);
+    f.x = Math.round(pos.x);
+    f.y = Math.round(pos.y - liftPx);
+    f.ms = 0;
+    f.active = true;
+    this.#syncFloat(f);
+  }
+
+  /** A 1 px camera shake for a leak (skipped under reduced motion; a strike's shake wins). */
+  leakShake(): void {
+    if (this.#reducedMotion() || (this.#shakeMs >= 0 && !this.#shakeSmall)) return;
+    this.#shakeSmall = true;
+    this.#shakeMs = 0;
   }
 
   /** An explosive burst on the ground at grid (x, y), after `delayMs`. */
@@ -200,14 +314,18 @@ export class FxView {
     b.active = true;
   }
 
-  /** An Orbital Strike cast: the reticle shows on (x, y) while the sim zone `zoneUid` lives. */
-  strike(zoneUid: number, x: number, y: number): void {
+  /**
+   * An Orbital Strike cast: the reticle shows on (x, y) while the sim zone `zoneUid` lives; the
+   * landing flashes the ground out to `radiusTiles`.
+   */
+  strike(zoneUid: number, x: number, y: number, radiusTiles: number): void {
     let s = this.#strikes.find((k) => k.zoneUid === 0 && k.ms < 0);
     s ??= this.#strikes[0]!; // MAX_STRIKES > 0; a 5th live strike reuses the first
     s.zoneUid = zoneUid;
     s.ms = -1;
     s.x = x;
     s.y = y;
+    s.radiusTiles = radiusTiles;
     gridToScreen(x, y, this.#ctx.origin, pos);
     s.reticle.setPosition(pos.x, pos.y).setAlpha(1).setVisible(true);
     s.reticle.play(this.#ctx.sprites.anim('fx.orbital_reticle', 'march'), true);
@@ -245,11 +363,31 @@ export class FxView {
     for (const p of this.#pulses) {
       if (!p.active) continue;
       p.ms += dt;
-      if (p.ms >= PULSE_MS) {
+      if (p.ms >= p.durationMs) {
         p.active = false;
         p.img.setVisible(false);
       } else {
         this.#syncPulse(p);
+      }
+    }
+    for (const d of this.#decals) {
+      if (!d.active) continue;
+      d.ms += dt;
+      if (d.ms >= d.durationMs) {
+        d.active = false;
+        d.img.setVisible(false);
+      } else {
+        d.img.setAlpha(fadeAlpha(d.ms / d.durationMs));
+      }
+    }
+    for (const f of this.#floats) {
+      if (!f.active) continue;
+      f.ms += dt;
+      if (f.ms >= FLOAT_MS) {
+        f.active = false;
+        f.img.setVisible(false);
+      } else {
+        this.#syncFloat(f);
       }
     }
     for (const b of this.#bursts) {
@@ -278,6 +416,14 @@ export class FxView {
       p.active = false;
       p.img.setVisible(false);
     }
+    for (const d of this.#decals) {
+      d.active = false;
+      d.img.setVisible(false);
+    }
+    for (const f of this.#floats) {
+      f.active = false;
+      f.img.setVisible(false);
+    }
     for (const b of this.#bursts) {
       b.active = false;
       b.sprite.stop().setVisible(false);
@@ -293,14 +439,38 @@ export class FxView {
   }
 
   #syncPulse(p: Pulse): void {
-    const t = p.ms / PULSE_MS;
-    const r = pulseRadius(p.radiusTiles, t);
-    if (r !== p.shownRadius) {
-      const tex = pulseRingTexture(this.#ctx.scene, r);
+    const t = p.ms / p.durationMs;
+    const r = p.grow ? pulseRadius(p.radiusTiles, t) : p.radiusTiles;
+    if (r !== p.shownRadius || p.color !== p.shownColor) {
+      const tex = effectRingTexture(this.#ctx.scene, r, p.color);
       p.img.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
       p.shownRadius = r;
+      p.shownColor = p.color;
     }
     p.img.setAlpha(fadeAlpha(t)).setVisible(true);
+  }
+
+  #syncFloat(f: Float): void {
+    f.img
+      .setPosition(f.x, f.y - floatRise(f.ms))
+      .setAlpha(fadeAlpha(f.ms / FLOAT_MS))
+      .setVisible(true);
+  }
+
+  /** A ground decal at grid (x, y) that fades over `ms`. */
+  #decal(x: number, y: number, tex: { key: string; ox: number; oy: number }, ms: number): void {
+    const d = this.#decals[this.#nextDecal]!; // index < MAX_DECALS
+    this.#nextDecal = (this.#nextDecal + 1) % MAX_DECALS;
+    gridToScreen(x, y, this.#ctx.origin, pos);
+    d.img
+      .setTexture(tex.key)
+      .setDisplayOrigin(tex.ox, tex.oy)
+      .setPosition(pos.x, pos.y)
+      .setAlpha(1)
+      .setVisible(true);
+    d.ms = 0;
+    d.durationMs = ms;
+    d.active = true;
   }
 
   /** Places the streak `ms / TRACER_MS` of the way from the muzzle to the target. */
@@ -318,8 +488,19 @@ export class FxView {
       s.zoneUid = 0;
       s.ms = 0;
       s.reticle.stop().setVisible(false);
+      const scene = this.#ctx.scene;
+      // The scorch first, so the flash draws over it; both sit under the actors (decal layer).
+      this.#decal(s.x, s.y, discTexture(scene, SCORCH_TILES, 'ink.0', 0.6, true), SCORCH_MS);
+      this.#decal(s.x, s.y, discTexture(scene, s.radiusTiles, 'teal.4', 0.6), STRIKE_FLASH_MS);
+      this.ring(s.x, s.y, s.radiusTiles, 'white.1', STRIKE_FLASH_MS, false);
       for (const b of STRIKE_BURSTS) this.burst(s.x + b.dx, s.y + b.dy, b.delayMs);
-      if (!this.#reducedMotion()) this.#shakeMs = 0;
+      // A big center: two more bursts just off the middle, a beat later.
+      this.burst(s.x - 0.2, s.y + 0.1, 30);
+      this.burst(s.x + 0.2, s.y - 0.1, 70);
+      if (!this.#reducedMotion()) {
+        this.#shakeSmall = false;
+        this.#shakeMs = 0;
+      }
     }
     if (s.ms < 0) return;
     this.#drawBeam(s);
@@ -352,10 +533,10 @@ export class FxView {
   #updateShake(dt: number): void {
     if (this.#shakeMs < 0) return;
     const cam = this.#ctx.scene.cameras.main;
-    const [ox, oy] = shakeOffset(this.#shakeMs);
+    const [ox, oy] = this.#shakeSmall ? leakShakeOffset(this.#shakeMs) : shakeOffset(this.#shakeMs);
     cam.setScroll(ox, oy);
     this.#shakeMs += dt;
-    if (this.#shakeMs >= SHAKE_MS) {
+    if (this.#shakeMs >= (this.#shakeSmall ? LEAK_SHAKE_MS : SHAKE_MS)) {
       this.#shakeMs = -1;
       cam.setScroll(0, 0);
     }

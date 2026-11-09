@@ -61,14 +61,26 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   const pause = page.getByRole('button', { name: 'Pause' });
   await pause.click();
   await expect(pause).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status').filter({ hasText: /^Paused$/ })).toBeVisible();
   const start = await page.evaluate(() => {
     const s = globalThis.__sd!.state()!; // a battle is running
     return { credits: s.credits, wave: s.wave, towers: s.towers.live };
   });
   expect(start).toEqual({ credits: 350, wave: 0, towers: 0 }); // A1M1's start (map.ts)
 
-  // 3. Build a Rivet through the HUD: its slot, then a real click on the roof.
-  await page.getByRole('button', { name: /^Build Rivet/ }).click();
+  // 3. Build a Rivet through the HUD: its slot, then a real click on the roof. Until the first
+  // build, slot 1 pulses (onboarding, D026). The held-back Thumper says when it ships.
+  const rivetSlot = page.getByRole('button', { name: /^Build Rivet/ });
+  await expect(rivetSlot).toHaveClass(/\bpulse\b/);
+  await page.keyboard.press('Digit2');
+  await expect(page.getByText('Thumper ships at wave 3')).toBeVisible();
+  await rivetSlot.click();
+  await expect(rivetSlot).not.toBeFocused(); // a pointer press leaves no focus ring behind
+  // An armed click on the road explains itself, and the slot stays armed.
+  const road = await page.evaluate(() => globalThis.__sd?.tileToClient(4, 3) ?? null);
+  await page.mouse.click(road!.x, road!.y); // A1M1's road corner (map.ts)
+  await expect(page.getByText("Can't build there")).toBeVisible();
+  await expect(rivetSlot).toHaveAttribute('aria-pressed', 'true');
   const roof = await page.evaluate(([c, r]) => globalThis.__sd?.tileToClient(c, r) ?? null, [
     ROOF[0],
     ROOF[1],
@@ -80,11 +92,15 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   const credits = page.getByLabel(/^Credits /);
   await expect(credits).toHaveAttribute('aria-label', 'Credits 250');
   await expect(credits).toContainText('250'); // the readout ticks down to it
+  await expect(rivetSlot).not.toHaveClass(/\bpulse\b/);
   await page.mouse.move(0, 0);
   await shot(page, 'm1', 1, 'built');
 
-  // 4. Start wave 1 by the HUD button, then run at 2× for a moment: the frame loop drives the sim.
-  await page.getByRole('button', { name: 'Start wave 1' }).click();
+  // 4. Start wave 1 by the HUD button (pulsing now that a tower stands), then run at 2× for a
+  // moment: the frame loop drives the sim.
+  const startWave = page.getByRole('button', { name: 'Start wave 1' });
+  await expect(startWave).toHaveClass(/\bpulse\b/);
+  await startWave.click();
   await expect(page.getByLabel('Wave 1 of 7')).toBeVisible();
   const fast = page.getByRole('button', { name: 'Double speed' });
   await fast.click();
@@ -125,7 +141,7 @@ test('m1: title → briefing → HUD build → wave → par plays out → Victor
   expect(await playOut(page)).toBe('won');
   const dialog = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('Shift report · Victory')).toBeVisible();
+  await expect(dialog.getByText('Shift report · Exemplary!')).toBeVisible();
   await expect(dialog.getByText('Waves survived')).toBeVisible();
   await expect(dialog.getByText('Core integrity')).toBeVisible();
   const killed = await page.evaluate(() => globalThis.__sd!.state()!.stats.skitterkinKilled);
@@ -182,7 +198,7 @@ test('lose: no build plays out to a hiccup, not a scolding; Title returns', asyn
 
   const dialog = page.getByRole('dialog', { name: 'MINOR OPERATIONAL HICCUP' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('Shift report · Defeat')).toBeVisible();
+  await expect(dialog.getByText('Shift report · Incident logged')).toBeVisible();
   // The counter is there on a loss too: nothing built, nothing processed.
   await expect(counter(page)).toBeVisible();
   expect(await pestsProcessed(page)).toBe(
@@ -203,4 +219,28 @@ test('lose: no build plays out to a hiccup, not a scolding; Title returns', asyn
   await shot(page, 'lose', 2, 'title');
   await page.evaluate(() => globalThis.__sd?.goto('results'));
   await expect(dialog).toBeVisible();
+});
+
+test("radio and leak feedback: the first leak plays QUILL's line and flashes the core", async ({
+  page,
+}) => {
+  // `radio=1`: the ticker is off under test=1 unless a spec asks for it (D026).
+  await page.goto('/?test=1&skipIntro=1&seed=1&radio=1');
+  await waitForReady(page);
+  const integrity = await page.evaluate(() => {
+    const sd = globalThis.__sd!; // installed: waitForReady passed
+    sd.setSpeed(0);
+    sd.autoplay('none'); // nothing built: W1's first Nibbler leaks
+    for (let i = 0; i < 400 && sd.state()!.integrity === 20; i++) sd.fastForward(10);
+    return sd.state()!.integrity;
+  });
+  expect(integrity).toBeLessThan(20);
+  const radio = page.getByRole('log', { name: 'Radio' });
+  await expect(radio).toContainText('QUILL');
+  await expect(radio).toContainText(
+    'Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)',
+  );
+  await expect(page.locator('.hud-leak-flash')).toBeAttached();
+  await nextFrames(page);
+  await shot(page, 'm1', 6, 'first-leak-radio');
 });

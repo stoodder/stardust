@@ -208,6 +208,8 @@
 }
 
 .sd-results-stats {
+  /* Silkscreen like the rest of the panel's labels (D026): crisp at 8 px. */
+  font-family: var(--font-heading);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -227,7 +229,7 @@
 }
 
 .sd-results-stats dd {
-  font-family: var(--font-heading);
+  margin: 0;
   color: var(--sd-white-1);
 }
 

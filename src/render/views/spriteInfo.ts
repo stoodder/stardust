@@ -13,6 +13,18 @@ export function spriteId(id: string): SpriteId {
   return id as SpriteId;
 }
 
+/**
+ * The 8×8 tell glyph (art-direction §8) for an enemy's tells: the first `icon.tell.<tell>` that's
+ * registered, or null.
+ */
+export function tellGlyph(tells: readonly string[]): SpriteId | null {
+  for (const t of tells) {
+    const id = `icon.tell.${t}`;
+    if (BY_ID.has(id)) return spriteId(id);
+  }
+  return null;
+}
+
 /** How a tower head is drawn: aimed by facing (se/sw/ne/nw frames), or an idle anim. */
 export type HeadStyle = { readonly kind: 'aim' } | { readonly kind: 'idle'; readonly anim: string };
 

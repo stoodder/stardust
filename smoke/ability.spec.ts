@@ -73,7 +73,7 @@ test('ability: aim from the HUD, fire at a tile, see the strike land and recharg
   // Q while recharging explains itself instead of aiming.
   await page.keyboard.press('KeyQ');
   await expect(slot).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByText('Recharging')).toBeVisible();
+  await expect(page.getByText('Uplink recharging')).toBeVisible();
 
   // Through the 1 s reticle to the impact: the zone resolves and the effect plays.
   await page.evaluate(() => globalThis.__sd?.fastForward(61));

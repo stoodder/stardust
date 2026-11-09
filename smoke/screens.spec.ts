@@ -33,8 +33,20 @@ test('screens: title → Start (Enter) → battle', async ({ page }) => {
   await page.keyboard.press('KeyW');
   await page.evaluate(() => globalThis.__sd?.fastForward(1));
   expect(await page.evaluate(() => globalThis.__sd?.state()?.wave)).toBe(0);
+  // A real modal (D026): the HUD behind it is inert, and Tab stays on the dialog's button.
+  await expect(page.locator('.hud-play')).toHaveAttribute('inert', '');
+  const clockIn = briefing.getByRole('button', { name: 'Clock in' });
+  await page.keyboard.press('Tab');
+  await expect(clockIn).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(clockIn).toBeFocused();
+  // Esc closes it whatever has the focus (app/keys.ts routes it), even with nothing focused: a
+  // click on the scrim drops the focus to the page.
+  await page.mouse.click(4, 4);
+  await expect(clockIn).not.toBeFocused();
   await page.keyboard.press('Escape');
   await expect(briefing).toBeHidden();
+  await expect(page.locator('.hud-play')).not.toHaveAttribute('inert', '');
   await shot(page, 'screens', 3, 'battle');
 });
 
