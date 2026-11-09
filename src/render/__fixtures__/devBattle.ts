@@ -119,7 +119,7 @@ const devNibbler = defineEnemy({
 
 // A short Chitterbloom for dev_boss: her real phases, sneezes, burrows, and driveOff, on a fifth of
 // her HP, so the smoke flow can push her through every phase in a few seconds of fire.
-const devChitterbloom = defineEnemy({ ...chitterbloom, id: 'dev_chitterbloom', hp: 500 });
+const devChitterbloom = defineEnemy({ ...chitterbloom, id: 'dev_chitterbloom', hp: 300 });
 
 const devStrike = defineAbility({
   id: 'dev_strike',
@@ -409,9 +409,9 @@ const bossLayout = dev.defineMapLayout({
     '..o..#........',
     '.....####o....',
     '..o.o...#.....',
-    '......o.#o....',
+    '......o.#o..o.',
     '.o......####..',
-    '...o.......#C.',
+    '...o......o#C.',
   ],
   paths: [
     {
@@ -475,7 +475,7 @@ const bossWaves = dev.defineWaves([
     ],
   },
   {
-    countdownSec: 5,
+    countdownSec: 15,
     groups: [
       { enemy: 'dev_chitterbloom', count: 1, route: 'a' },
       { enemy: 'nibbler', count: 2, route: 'a', delaySec: 2.5 },
