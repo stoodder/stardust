@@ -2,6 +2,7 @@
 // Its body runs hotter than a Nibbler's (toward `orange.3`) and it trails `orange.4` speed lines,
 // the body cue of the `fast` tell (art-direction §8).
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { fromRows, recolor, rows } from '../helpers.ts';
 import { EYE, finish, skitterBody } from './skitter.ts';
 
@@ -77,11 +78,13 @@ export const enemyZoomer = defineSprite({
     walk_ne_0: zoomer('ne', 0),
     walk_ne_1: zoomer('ne', 1),
     walk_ne_2: zoomer('ne', 2),
+    ...deathFrames(zoomer('se', 0), { x: 9 + OX, y: 9 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2'], fps: 10 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1', 'walk_ne_2'], fps: 10 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

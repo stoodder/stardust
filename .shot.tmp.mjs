@@ -4,6 +4,8 @@ const [name, map, ticks = '0', build = 'par'] = process.argv.slice(2);
 const OUT = '/tmp/claude-0/-home-user-stardust/7156e6b1-e125-514b-89a1-eaea2df28fd8/scratchpad/shots';
 const b = await chromium.launch({ executablePath: process.env.CHROME_PATH, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
+p.on('pageerror', (e) => console.log('PAGEERR', e.message));
+p.on('console', (m) => m.type() === 'error' && console.log('CONSOLE', m.text()));
 if (map === 'card') {
   await p.goto('http://localhost:4481/gallery.html');
   await p.waitForTimeout(2500);
@@ -26,10 +28,19 @@ if (map === 'card') {
   await p.evaluate(() => globalThis.__sd.ready);
   {
     await p.evaluate((bd) => globalThis.__sd.autoplay(bd), build);
-    await p.evaluate((t) => globalThis.__sd.fastForward(t), Number(ticks));
+    const [tk, wave] = ticks.split('@');
+    await p.evaluate((t) => globalThis.__sd.fastForward(t), Number(tk));
+    if (wave) {
+      for (let i = 0; i < 400; i++) {
+        const st = await p.evaluate(() => { const s = globalThis.__sd.state(); return { w: s.wave, n: s.enemies?.live ?? s.enemies?.count ?? 0 }; });
+        if (st.w >= Number(wave)) break;
+        await p.evaluate(() => globalThis.__sd.fastForward(60));
+      }
+      await p.evaluate((t) => globalThis.__sd.fastForward(t), Number(process.env.EXTRA ?? 600));
+    }
     await p.evaluate(() => globalThis.__sd.setSpeed(0));
   }
-  await p.waitForTimeout(600);
+  await p.waitForTimeout(Number(process.env.WAIT ?? 600));
   await p.screenshot({ path: `${OUT}/${name}.png` });
 }
 await b.close();

@@ -24,8 +24,11 @@ const GATE_SIDE: GridPos = [11, 7];
 /** The salvage-only drones. */
 const EAST_WRECK: GridPos = [12, 6];
 const SOUTH_WRECK: GridPos = [6, 8];
-/** Where W4's Chonks walk into the upper leg while par holds fire for Gerald. */
-const CHONK_STRIKE: GridPos = [4, 3];
+/**
+ * The hairpin's corner, where W4's Chonks round into the bend while par holds fire for Gerald:
+ * the turn bunches them, so Mk II's blast takes all three and Mk I's leaves the last.
+ */
+const CHONK_STRIKE: GridPos = [2, 3];
 /** The hairpin's bend: the Haulers' strike point. */
 const BEND: GridPos = [2, 5];
 

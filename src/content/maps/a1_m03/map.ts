@@ -39,7 +39,15 @@ export const map = defineMapLayout({
     },
   ],
   // Flyers cross the hairpin on the diagonal, north-west corner to the core (maps.md § 4).
-  airLanes: [{ id: 'sky', points: [[0, 0], [10, 9]] }],
+  airLanes: [
+    {
+      id: 'sky',
+      points: [
+        [0, 0],
+        [10, 9],
+      ],
+    },
+  ],
   // Three crashed delivery drones in Gerald's livery ("Gerald's colleagues"). The one at the
   // hairpin's bend hides a pad; the other two lie on decor and pay salvage only.
   underWreckage: { '1,5': 'o', '12,6': '.', '6,8': '.' },

@@ -52,10 +52,12 @@ describe('sprite registry', () => {
       ).toEqual(['walk_ne', 'walk_nw', 'walk_se', 'walk_sw']);
       expect(anims['walk_sw'], def.id).toEqual({ mirrorOf: 'walk_se' });
       expect(anims['walk_nw'], def.id).toEqual({ mirrorOf: 'walk_ne' });
-      // Any other anim (the Digger's `dig_<facing>` tell) comes in the same four facings.
+      // Any other anim (the Digger's `dig_<facing>` tell) comes in the same four facings, except
+      // `death` (T311c): one pop, played once wherever the unit fell.
+      if ('death' in anims) expect(anims['death'], def.id).toMatchObject({ loop: false });
       const extra = new Set(
         Object.keys(anims)
-          .filter((a) => !a.startsWith('walk_'))
+          .filter((a) => !a.startsWith('walk_') && a !== 'death')
           .map((a) => a.replace(/_(se|sw|ne|nw)$/, '')),
       );
       for (const a of extra) {

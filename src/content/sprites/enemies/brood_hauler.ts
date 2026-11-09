@@ -2,6 +2,7 @@
 // pale steel shell plates (heavy armor, in the `armored` tell's `steel.4`). The sack on its back is the `carrier` tell (art-direction
 // §8: a pack on the back). Act I sells it as stolen stardust; it is a cluster of young.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { at, line, plot, type CharGrid } from '../helpers.ts';
 import { sack, SACK_LEGEND } from './sack.ts';
 import { EYE, finish, skitterBody } from './skitter.ts';
@@ -94,11 +95,13 @@ export const enemyBroodHauler = defineSprite({
     walk_se_1: hauler('se', 1),
     walk_ne_0: hauler('ne', 0),
     walk_ne_1: hauler('ne', 1),
+    ...deathFrames(hauler('se', 0), { x: 14, y: 24 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 5 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 5 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

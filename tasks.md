@@ -101,7 +101,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [x] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
-- [ ] **T211** Audio follow-ups: Kip's own radio blip (he borrows Goldie's); an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
+- [x] **T211** Audio follow-ups: Kip's own radio blip (he borrows Goldie's); an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
 - [ ] **T213** HUD polish from T126: the aim hint says "Enter fires" when the cursor shows (style-guide wording); the panel's "Next:" line clips "+3 pierce"; the panel avoids the HUD corners.
 - [x] **T215** Specs follow-ups: the headless executor runs `specialize` steps (it refuses them today); `validate.ts` checks bomblet sprite ids.
 - [ ] **T216** Allies polish: a glow halo for AllyView; the companion portrait on slot 2 (M3, with portraits); check in the UX review that the suppression tracers are juicy enough.
@@ -160,7 +160,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T311b** Sprites: Chitterbloom, wreckage, the drone.
 - [~] **T311c** Props for A1M3–A1M5 (incl. the Peeker's per-map covers); terraces and cliffs (T223); death animations, scutes, clump separation (T117).
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
-- [~] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
+- [x] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
 - [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.
 - [ ] **T317** Docs: T217, T120, as-built tables; maps.md §4 "air lanes also show while an armed tower hits air"; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 

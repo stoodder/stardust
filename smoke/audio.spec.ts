@@ -1,8 +1,8 @@
-// Audio (T205): off under ?test=1 unless &audio=1; unlocked by the first gesture; the battle's
-// music and sounds play from real events; M and the speaker button mute it, and the choice
-// persists. Nobody can listen in CI, so every sound, cue, and theme is also rendered offline
-// through the real master chain and its levels asserted, plus a W7-intensity storm that must not
-// clip (architecture.md § Audio).
+// Audio (T205, T314): off under ?test=1 unless &audio=1; unlocked by the first gesture; the
+// battle's music and sounds play from real events; a spoken line blips and its typewriter ticks; M
+// and the speaker button mute it, and the choice persists. Nobody can listen in CI, so every
+// sound, cue, and theme is also rendered offline through the real master chain and its levels
+// asserted, plus a storm past W7 and the boss wave that must not clip (architecture.md § Audio).
 import type { Page } from '@playwright/test';
 import type { AudioSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
@@ -51,6 +51,19 @@ test('audio: unlocks on the first gesture and scores the battle', async ({ page 
   const s = await status(page);
   expect(s?.voices ?? 99).toBeLessThanOrEqual(16);
   await shot(page, 'audio', 1, 'battle');
+});
+
+test("audio: a spoken line blips in its speaker's voice and the typewriter ticks", async ({
+  page,
+}) => {
+  await page.goto('/?test=1&seed=1&audio=1&dialogue=1');
+  await waitForReady(page);
+  await page.getByRole('button', { name: 'Start shift' }).click();
+  // The briefing opens on QUILL's line, typing: its blip, then the soft per-character tick.
+  await expect(page.getByTestId('briefing-lines')).toContainText('QUILL');
+  await expect
+    .poll(async () => (await status(page))?.played ?? {}, { timeout: 10_000 })
+    .toMatchObject({ 'blip.quill': expect.any(Number), type_tick: expect.any(Number) });
 });
 
 test('audio: M and the speaker button mute it, and the choice persists', async ({ page }) => {

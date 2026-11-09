@@ -5,6 +5,7 @@ import { map as a1m02 } from '../../content/maps/a1_m02/map.ts';
 import {
   apronCells,
   cliffFrames,
+  CUE_DECOR,
   DECOR_MARKERS,
   dressTile,
   envVariant,
@@ -91,7 +92,11 @@ describe('dressTile', () => {
       const sprite = dressTile(a1, c, r).prop?.sprite;
       return sprite === undefined ? [] : [[id, sprite]];
     });
-    expect(Object.fromEntries(drawn)).toMatchObject(DECOR_MARKERS);
+    expect(Object.fromEntries(drawn)).toMatchObject({
+      rig3: DECOR_MARKERS['rig3'],
+      housing: DECOR_MARKERS['housing'],
+      scarecrow: DECOR_MARKERS['scarecrow'],
+    });
     // The Peeker's rock is PeekerView's (T309): its tile has no sparse decor of its own.
     const [pc, pr] = a1.markers['peeker'] ?? [-1, -1];
     expect(dressTile(a1, pc, pr).prop).toBeNull();
@@ -134,6 +139,42 @@ describe('dressTile', () => {
     expect(faced).not.toContain('2,3');
     expect(faced).not.toContain('11,6');
     expect(faced.every((k) => k.endsWith(',3') || k.endsWith(',6'))).toBe(true);
+  });
+
+  it("draws A1M3–A1M5's decor markers, numbered markers, and their looks (T311c)", () => {
+    const m = {
+      ...grid(['.....', '.#...', '.#...', '.....']),
+      markers: {
+        mailbox: [0, 0],
+        podium: [2, 0],
+        billboard_2: [3, 0],
+        banner_line: [2, 1],
+        party_tent: [0, 3],
+        zibzab_shop: [3, 3],
+        fountain: [2, 3],
+      },
+    } as const;
+    expect(dressTile(m, 0, 0).prop).toEqual({ sprite: 'prop.mailbox', frame: 'v0', anim: null });
+    // Prim hovers at the podium all map; the fountain flows.
+    expect(dressTile(m, 2, 0).prop).toEqual({
+      sprite: 'prop.podium',
+      frame: 'prim_0',
+      anim: 'prim',
+    });
+    expect(dressTile(m, 2, 3).prop?.anim).toBe('flow');
+    // `<decor>_<n>` names one of several (A1M4's three billboards).
+    expect(dressTile(m, 3, 0).prop?.sprite).toBe('prop.billboard');
+    expect(dressTile(m, 0, 3).prop?.sprite).toBe('prop.party_tent');
+    // The banner line slings back across the road behind its tile: along x here (road at col − 1).
+    expect(dressTile(m, 2, 1).prop).toEqual({ sprite: 'prop.bunting', frame: 'x', anim: null });
+    const across = { ...grid(['.#.', '...']), markers: { banner_line: [1, 1] } } as const;
+    expect(dressTile(across, 1, 1).prop?.frame).toBe('y');
+    // A cue's prop (Zibzab's shop, T312b) leaves its tile bare until the cue.
+    expect(CUE_DECOR['zibzab_shop']).toBe('prop.zibzab_shop');
+    expect(dressTile(m, 3, 3).prop).toBeNull();
+    // Hardware keeps its own palette.
+    expect(propVariant('prop.podium', 'act3')).toBe('default');
+    expect(propVariant('prop.zibzab_shop', 'act2.dusk')).toBe('default');
   });
 
   it('maps env ids to sprite variants', () => {

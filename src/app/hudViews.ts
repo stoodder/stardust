@@ -2,20 +2,29 @@
 // briefing's lines, medals, threat intel, the towers on the field (hold-fire count, panel points),
 // and the ability slots and their cooldowns. Content text goes through `silkText` here, so the
 // components draw it as given (D059).
-import type { CompiledMapDef, CompiledTowerDef } from '../content/compiled.ts';
+import type {
+  CompiledAbilityEffect,
+  CompiledMapDef,
+  CompiledTowerDef,
+} from '../content/compiled.ts';
 import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
 import { SPRITES } from '../content/sprites/index.ts';
 import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import { TICK_HZ } from '../shared/time.ts';
+import { assertNever } from '../shared/types.ts';
 import {
   abilityStats,
   costFor,
   MEDAL_KINDS,
   medalId,
+  purchasePriceInto,
   type MedalKind,
   type MedalStatus,
+  type PurchaseKind,
+  type PurchasePrice,
+  type PurchaseState,
   type SchedulePhase,
   type Sim,
   type SimConfig,
@@ -26,7 +35,11 @@ import type {
   BriefingLine,
   BuildSlotView,
   MedalView,
+  ObjectiveStatusView,
+  ObjectiveView,
+  PriceTag,
   RequiredCounterView,
+  SaleView,
   ThreatIntelView,
   ThreatView,
   WavePreview,
@@ -56,9 +69,63 @@ export function towerUnlockWaves(map: CompiledMapDef<IdSpace>): Readonly<Record<
 }
 
 /**
+ * A purchase state with nothing in play: a tower already built (so Rapid Deploy's free first
+ * build doesn't apply) and no sale. Prices read against it are list prices (tune-ups only), what
+ * the loadout screen shows before a battle.
+ */
+export const LIST_PRICE_STATE: PurchaseState = Object.freeze({
+  stats: Object.freeze({ towersBuilt: 1 }),
+  discountCharges: 0,
+  discountPct: 0,
+});
+
+/** Scratch for `priceOf` (one price at a time, never kept). */
+const quote: PurchasePrice = { cost: 0, discounted: false };
+
+/**
+ * What a purchase costs right now and how that came about (D077: `purchasePriceInto`, the price
+ * the sim charges): tune-ups, then Rapid Deploy's free first build, then Clearance Sale.
+ */
+export function priceOf(
+  state: PurchaseState,
+  modifiers: SimConfig<IdSpace>['modifiers'],
+  tower: string,
+  base: number,
+  kind: PurchaseKind,
+): { readonly cost: number; readonly price: PriceTag } {
+  const p = purchasePriceInto(state, modifiers, tower, base, kind, quote);
+  const listed = p.cost === costFor(modifiers, tower, base, kind === 'spec');
+  const price: PriceTag = p.discounted ? 'sale' : p.cost === 0 && !listed ? 'free' : 'list';
+  return { cost: p.cost, price };
+}
+
+/**
+ * What changes a build slot's price mid-battle (`purchasePriceInto`'s state inputs), as a key:
+ * the HUD rebuilds the slots only when it changes.
+ */
+export function priceKey(state: PurchaseState): string {
+  return `${state.stats.towersBuilt === 0 ? 'first' : 'later'}|${state.discountCharges}|${state.discountPct}`;
+}
+
+/** Clearance Sale while it has charges (the tag over the build slots), else null. */
+export function saleView(state: PurchaseState, prev: SaleView | null): SaleView | null {
+  if (state.discountCharges <= 0 || state.discountPct <= 0) return null;
+  const pct = Math.round(state.discountPct * 100);
+  if (prev !== null && prev.charges === state.discountCharges && prev.pct === pct) return prev;
+  return { charges: state.discountCharges, pct };
+}
+
+/** The sale tag's words (core-loop §3.2): "SALE -40% x3". ASCII: Silkscreen has no − or ×. */
+export function saleText(sale: SaleView): string {
+  return `Sale -${sale.pct}% x${sale.charges}`;
+}
+
+/**
  * The build slots for a loadout. `unlockWaves`: towerUnlockWaves(map). Costs are what the sim
- * charges: tier 1 after the run's `towerCost` modifiers (`costFor`, D037). `newTowers`: the
- * loadout's newly issued towers (meta/hints.ts), whose slots wear a NEW pip.
+ * charges for a build now (`purchasePriceInto` on `state`, D077): tier 1 after the run's
+ * `towerCost` modifiers, then Rapid Deploy's free first build, then Clearance Sale; without a
+ * state, the list price. `newTowers`: the loadout's newly issued towers (meta/hints.ts), whose
+ * slots wear a NEW pip.
  */
 export function buildSlots(
   towers: Readonly<Record<string, CompiledTowerDef>>,
@@ -66,32 +133,72 @@ export function buildSlots(
   unlockWaves: Readonly<Record<string, number>> = {},
   modifiers: SimConfig<IdSpace>['modifiers'] = [],
   newTowers: readonly string[] = [],
+  state: PurchaseState = LIST_PRICE_STATE,
 ): BuildSlotView[] {
   return loadout.map((id) => {
     const def = towers[id];
     if (def === undefined) throw new RangeError(`hud: loadout tower '${id}' is not in the content`);
+    const base = def.tiers[0].cost;
+    const { cost, price } = priceOf(state, modifiers, id, base, 'build');
     return {
       tower: id,
       label: def.name,
       icon: def.sprites.icon,
-      cost: costFor(modifiers, id, def.tiers[0].cost),
+      cost,
+      listCost: costFor(modifiers, id, base),
+      price,
       unlockWave: Object.hasOwn(unlockWaves, id) ? (unlockWaves[id] ?? null) : null,
       isNew: newTowers.includes(id),
     };
   });
 }
 
+/** The first tile of each ground route, as "col,row" (a map's spawn points). */
+function spawnKey(route: { readonly tiles: readonly (readonly [number, number])[] }): string {
+  const t = route.tiles[0];
+  return t === undefined ? '' : `${t[0]},${t[1]}`;
+}
+
 /**
  * The preview of the wave after `wave` (the last wave started), or null if none is left. Groups
- * of the same enemy on the same layer merge, in first-appearance order (core-loop §2.2).
+ * of the same enemy on the same layer and spawn merge, in first-appearance order (core-loop
+ * §2.2). `seen`: the enemy types the save has met (`campaign.seenEnemies`); a type that's in none
+ * of them nor in an earlier wave of the map wears NEW, except in the Quiet Wave (`quiet_wave`
+ * groups: no NEW badge, no prompt; act1.md § A1M5). On a map whose ground routes start at more
+ * than one spawn, each ground group names its spawn, and a spawn that sent nothing before opens
+ * (`newSpawn`).
  */
-export function wavePreview(map: CompiledMapDef<IdSpace>, wave: number): WavePreview | null {
+export function wavePreview(
+  map: Pick<CompiledMapDef<IdSpace>, 'waves'>,
+  wave: number,
+  seen: ReadonlySet<string> = new Set(),
+): WavePreview | null {
   const next = map.waves[wave];
   if (next === undefined) return null;
+  const met = new Set(seen);
+  const usedSpawns = new Set<string>();
+  // Each ground spawn's name: the first route the map's waves send from it ("west" → "West").
+  const spawns = new Map<string, string>();
+  for (const w of map.waves) {
+    for (const g of w.groups) {
+      const k = spawnKey(g.route);
+      if (g.route.layer === 'ground' && !spawns.has(k)) spawns.set(k, displayName(g.route.id));
+    }
+  }
+  for (const w of map.waves.slice(0, wave)) {
+    for (const g of w.groups) {
+      met.add(g.enemy.id);
+      usedSpawns.add(spawnKey(g.route));
+    }
+  }
+  const named = spawns.size > 1;
   const groups: WavePreviewGroup[] = [];
   for (const g of next.groups) {
     const air = g.enemy.layer === 'air';
-    const i = groups.findIndex((x) => x.enemy === g.enemy.id && x.air === air);
+    const spawn =
+      named && g.route.layer === 'ground' ? (spawns.get(spawnKey(g.route)) ?? null) : null;
+    const isNew = !met.has(g.enemy.id) && !g.tags.includes('quiet_wave');
+    const i = groups.findIndex((x) => x.enemy === g.enemy.id && x.air === air && x.spawn === spawn);
     const prev = groups[i];
     if (prev === undefined) {
       groups.push({
@@ -101,9 +208,12 @@ export function wavePreview(map: CompiledMapDef<IdSpace>, wave: number): WavePre
         count: g.count,
         air,
         fast: g.enemy.tells.includes('fast'),
+        isNew,
+        spawn,
+        newSpawn: spawn !== null && wave > 0 && !usedSpawns.has(spawnKey(g.route)),
       });
     } else {
-      groups[i] = { ...prev, count: prev.count + g.count };
+      groups[i] = { ...prev, count: prev.count + g.count, isNew: prev.isNew && isNew };
     }
   }
   return { number: next.number, groups };
@@ -292,13 +402,32 @@ export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
       icon: def.sprites.icon,
       key: ABILITY_KEYS[slot],
       description: silkText(abilityDescription(def, abilityStats(def, cfg.modifiers))),
-      aim: def.effect.kind === 'segment' ? 'path' : 'area',
+      aim: aimOf(def.effect.kind),
+      wavesCooldown: def.cooldownWaves > 0,
       absent,
     };
   };
   if (slot1 !== null) out.push(view(1, slot1, false));
   if (slot2 !== null && slot2State !== 'none') out.push(view(2, slot2, slot2State === 'absent'));
   return out;
+}
+
+/**
+ * What aiming an ability picks (core-loop §3.1): a stretch of path (a segment), a spot (a
+ * strike), or nothing at all: Time Dilation and Clearance Sale cast on the press (D082).
+ */
+export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim'] {
+  switch (kind) {
+    case 'segment':
+      return 'path';
+    case 'strike':
+      return 'area';
+    case 'slowAll':
+    case 'discount':
+      return 'none';
+    default:
+      return assertNever(kind);
+  }
 }
 
 /** The cooldown each ability slot starts when cast (`abilityStats`), by slot (0 when empty). */
@@ -312,24 +441,94 @@ export function abilityCooldownTotals(cfg: AbilityConfig): [number, number] {
 
 /** Steps in the cooldown wipe (one per game pixel of the 16 px icon). */
 export const COOLDOWN_STEPS = 16;
-const READY: AbilityCooldownView = Object.freeze({ secondsLeft: 0, remaining: 0 });
+const READY: AbilityCooldownView = Object.freeze({
+  secondsLeft: 0,
+  wavesLeft: 0,
+  remaining: 0,
+  free: false,
+  charges: 0,
+});
+
+/** What else a slot shows besides its countdown: waves left, Ready Room's FREE, sale charges. */
+export interface SlotExtras {
+  /** Wave starts until ready (a cooldown counted in waves), else 0. */
+  readonly wavesLeft: number;
+  /** The wave cooldown's full length, for the wipe (0 for a tick cooldown). */
+  readonly totalWaves: number;
+  readonly free: boolean;
+  readonly charges: number;
+}
+
+const NO_EXTRAS: SlotExtras = Object.freeze({ wavesLeft: 0, totalWaves: 0, free: false, charges: 0 });
 
 /**
- * An ability's cooldown as the HUD shows it: whole seconds left (rounded up) and the share still
- * to recharge in 1/16 steps (the icon's wipe). Reuses `prev` when neither changed, so the slot
- * re-renders about once a second, not every tick.
+ * An ability's cooldown as the HUD shows it: whole seconds left (rounded up), or wave starts left
+ * for one counted in waves (Clearance Sale), and the share still to recharge in 1/16 steps (the
+ * icon's wipe); plus Ready Room's FREE and the charges it has loaded. Reuses `prev` when nothing
+ * changed, so the slot re-renders about once a second, not every tick.
  */
 export function cooldownView(
   ticksLeft: number,
   totalTicks: number,
   prev: AbilityCooldownView | null,
+  extras: SlotExtras = NO_EXTRAS,
 ): AbilityCooldownView {
-  if (ticksLeft <= 0 || totalTicks <= 0)
-    return prev !== null && prev.secondsLeft === 0 ? prev : READY;
-  const secondsLeft = Math.ceil(ticksLeft / TICK_HZ);
-  const remaining =
-    Math.ceil(Math.min(1, ticksLeft / totalTicks) * COOLDOWN_STEPS) / COOLDOWN_STEPS;
-  if (prev !== null && prev.secondsLeft === secondsLeft && prev.remaining === remaining)
+  const { wavesLeft, totalWaves, free, charges } = extras;
+  const ticking = ticksLeft > 0 && totalTicks > 0;
+  if (!ticking && wavesLeft <= 0) {
+    if (!free && charges === 0) {
+      return prev !== null && prev.secondsLeft === 0 && prev.wavesLeft === 0 && !prev.free && prev.charges === 0
+        ? prev
+        : READY;
+    }
+  }
+  const secondsLeft = ticking ? Math.ceil(ticksLeft / TICK_HZ) : 0;
+  const share = ticking
+    ? Math.min(1, ticksLeft / totalTicks)
+    : wavesLeft > 0
+      ? Math.min(1, wavesLeft / Math.max(1, totalWaves))
+      : 0;
+  const remaining = Math.ceil(share * COOLDOWN_STEPS) / COOLDOWN_STEPS;
+  const waves = wavesLeft > 0 ? wavesLeft : 0;
+  if (
+    prev !== null &&
+    prev.secondsLeft === secondsLeft &&
+    prev.wavesLeft === waves &&
+    prev.remaining === remaining &&
+    prev.free === free &&
+    prev.charges === charges
+  ) {
     return prev;
-  return { secondsLeft, remaining };
+  }
+  return { secondsLeft, wavesLeft: waves, remaining, free, charges };
+}
+
+/** What a recharging slot's chip reads: "12s", or "1 wave" / "3 waves" for a wave cooldown. */
+export function cooldownChip(cd: AbilityCooldownView): string {
+  if (cd.wavesLeft > 0) return cd.wavesLeft === 1 ? '1 wave' : `${cd.wavesLeft} waves`;
+  return `${cd.secondsLeft}s`;
+}
+
+/** The slot's recharge in words, for its label and notices: "Ready in 2 waves", "Ready in 12 s". */
+export function cooldownWords(cd: AbilityCooldownView): string {
+  if (cd.wavesLeft > 0) return `Ready in ${cd.wavesLeft} ${cd.wavesLeft === 1 ? 'wave' : 'waves'}`;
+  return `Ready in ${cd.secondsLeft} s`;
+}
+
+/**
+ * The map's optional objectives (Objective Intel; maps.md § 5.3) for the HUD's tracker, each with
+ * its standing this run. `status`: what the sim says about each id; the sim doesn't settle
+ * objectives until T304f, so an id it doesn't name is open.
+ */
+export function objectiveViews(
+  map: Pick<CompiledMapDef<IdSpace>, 'objectives'>,
+  status: Readonly<Record<string, ObjectiveStatusView>> = {},
+): ObjectiveView[] {
+  return map.objectives.map((o) => ({
+    id: o.id,
+    name: silkText(o.name),
+    description: silkText(o.description),
+    intel: o.intel,
+    status: Object.hasOwn(status, o.id) ? (status[o.id] ?? 'open') : 'open',
+  }));
 }

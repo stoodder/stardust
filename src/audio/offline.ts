@@ -111,16 +111,16 @@ export function renderStorm(): Promise<RenderLevels> {
         if (i % 40 === 10) at(t, 'burrow_dig');
         if (i % 40 === 30) at(t, 'burrow_surface');
       }
-      // at(0.5, 'boss_arrive');
+      at(0.5, 'boss_arrive');
       at(1, 'wave_start');
-      // at(1.5, 'sneeze_tell');
-      // at(2, 'dilation_swell');
-      // at(3, 'sneeze');
-      // at(3.5, 'drone_fly');
-      // at(4.5, 'gerald_chime');
-      // at(5, 'boss_phase');
-      // at(6, 'huddle_coo');
-      // at(6.5, 'sale_kaching');
+      at(1.5, 'sneeze_tell');
+      at(2, 'dilation_swell');
+      at(3, 'sneeze');
+      at(3.5, 'drone_fly');
+      at(4.5, 'gerald_chime');
+      at(5, 'boss_phase');
+      at(6, 'huddle_coo');
+      at(6.5, 'sale_kaching');
       for (const t of [2, 5, 8]) at(t, 'leak');
       at(3, 'strike_charge');
       at(4, 'strike_beam');
@@ -131,15 +131,15 @@ export function renderStorm(): Promise<RenderLevels> {
       at(7.4, 'sell');
       at(7.6, 'blip.quill');
       for (let t = 7.8; t < 8.8; t += 0.025) at(t, 'type_tick', 5);
-      // at(8, 'gerald_whistle');
-      // at(8.5, 'drone_cleared');
-      // at(8.8, 'boss_retreat');
+      at(8, 'gerald_whistle');
+      at(8.5, 'drone_cleared');
+      at(8.8, 'boss_retreat');
       // In time order, so the voice book sees them as the live game would.
       for (const [t, id, pitch] of plays.toSorted((a, b) => a[0] - b[0])) {
         s.play(id, { delay: t, pitch });
       }
       // A cue starts on the offline clock's zero: the boss sting over the storm's opening.
-      // s.cue('boss_sting');
+      s.cue('boss_sting');
       s.pump(STORM_SEC);
     },
     true,

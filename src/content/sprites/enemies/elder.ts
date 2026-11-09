@@ -8,6 +8,7 @@
 // lit one step brighter on alternate steps so it pulses as she walks; render adds the soft ring
 // under the group. She sways from foot to foot rather than bouncing.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { at, plot, stamp, type CharGrid } from '../helpers.ts';
 import { finish, skitterBody } from './skitter.ts';
 
@@ -99,11 +100,13 @@ export const enemyElder = defineSprite({
     walk_se_1: elder('se', 1),
     walk_ne_0: elder('ne', 0),
     walk_ne_1: elder('ne', 1),
+    ...deathFrames(elder('se', 0), { x: 13, y: H - 1 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 4 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 4 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

@@ -18,12 +18,31 @@ export interface BuildSlotView {
   readonly label: string;
   /** The `icon.tower.*` sprite id. */
   readonly icon: string;
-  /** Tier-1 build cost. */
+  /**
+   * What building it costs right now (`purchasePriceInto`: tune-ups, then Rapid Deploy's free
+   * first build, then Clearance Sale's discount), so the slot never refuses what the sim would
+   * take (D077).
+   */
   readonly cost: number;
+  /** Its price after tune-ups alone (`costFor`): what it costs with no sale and no free build. */
+  readonly listCost: number;
+  /** How `cost` came about: the list price, Clearance Sale's discount, or Rapid Deploy's free build. */
+  readonly price: PriceTag;
   /** The wave whose countdown unlocks it, if the map holds it back (`towerUnlockWave`). */
   readonly unlockWave: number | null;
   /** Newly issued, in its first battle for this save: the slot wears a NEW pip (D061). */
   readonly isNew: boolean;
+}
+
+/** How a purchase's price came about (D077): as listed, on sale, or free (Rapid Deploy). */
+export type PriceTag = 'list' | 'sale' | 'free';
+
+/** Clearance Sale while it has charges left (core-loop §3.2): "SALE -40% x3". */
+export interface SaleView {
+  /** Purchases left at the discount. */
+  readonly charges: number;
+  /** The discount in whole percent (40). */
+  readonly pct: number;
 }
 
 /** One commander ability slot (core-loop §3.1): fixed for a battle. */
@@ -38,8 +57,13 @@ export interface AbilitySlotView {
   readonly key: string;
   /** One line on what it does, with its real numbers (`abilityStats`), for its tooltip. */
   readonly description: string;
-  /** What aiming it picks: a spot on the map (a strike) or a stretch of path (a segment). */
-  readonly aim: 'area' | 'path';
+  /**
+   * What aiming it picks: a spot on the map (a strike) or a stretch of path (a segment); `none`
+   * for an untargeted ability (Time Dilation, Clearance Sale), which casts on the press.
+   */
+  readonly aim: 'area' | 'path' | 'none';
+  /** Its cooldown counts wave starts, not seconds (Clearance Sale: "Ready in 2 waves"). */
+  readonly wavesCooldown: boolean;
   /**
    * The companion is `absent` (A3M4, core-loop §3.1): the slot shows, dark and disabled, with no
    * label; its ability can't be used.
@@ -47,12 +71,18 @@ export interface AbilitySlotView {
   readonly absent: boolean;
 }
 
-/** An ability slot's cooldown as shown: 0 seconds left means ready. */
+/** An ability slot's cooldown as shown: 0 seconds and 0 waves left means ready. */
 export interface AbilityCooldownView {
   /** Whole seconds until ready, rounded up. */
   readonly secondsLeft: number;
+  /** Wave starts until ready, for a cooldown counted in waves (Clearance Sale); else 0. */
+  readonly wavesLeft: number;
   /** The share still recharging (0–1, in 1/16 steps): the height of the icon's dark wipe. */
   readonly remaining: number;
+  /** A cast now is Ready Room's free one (`freeCastReady`): the slot says FREE. */
+  readonly free: boolean;
+  /** Charges the slot's ability has loaded and not yet spent (Clearance Sale's), or 0. */
+  readonly charges: number;
 }
 
 /** One tier-4 specialization the tower panel offers at tier 3 (T202d). */
@@ -60,8 +90,10 @@ export interface SpecOptionView {
   readonly choice: 'a' | 'b';
   /** The spec's name ("Rivet Storm"). */
   readonly name: string;
-  /** Its price after modifiers (`costFor(..., true)`). */
+  /** What specializing costs right now (`purchasePriceInto`, a `spec` purchase). */
   readonly cost: number;
+  /** How the price came about (a Clearance Sale charge discounts it). */
+  readonly price: PriceTag;
   /** A short description from its stats, e.g. "9 dmg · 7.5/s · 1 s spin-up". */
   readonly description: string;
   /** The description wrapped to the panel's width. */
@@ -92,8 +124,10 @@ export interface SelectedTowerView {
   readonly tier: number;
   /** The highest in-map tier (3; tier 4 is a specialization, T202). */
   readonly maxTier: number;
-  /** The next tier's cost, or null at the top tier. */
+  /** What the next tier costs right now (`purchasePriceInto`), or null at the top tier. */
   readonly upgradeCost: number | null;
+  /** How the upgrade's price came about (a Clearance Sale charge discounts it). */
+  readonly upgradePrice: PriceTag;
   /** Credits a sell returns right now (100% inside the misclick grace). */
   readonly sellValue: number;
   /** True while a sell would still refund everything (core-loop §2.3 misclick grace). */
@@ -138,12 +172,39 @@ export interface WavePreviewGroup {
   readonly air: boolean;
   /** The enemy has the `fast` tell (art-direction §8): the preview shows a » chip. */
   readonly fast: boolean;
+  /**
+   * A type the player has never met (core-loop §2.2): not in the save's `seenEnemies` and not in
+   * an earlier wave of this map. The Quiet Wave never wears it (act1.md § A1M5).
+   */
+  readonly isNew: boolean;
+  /**
+   * Where it comes from on a map with more than one spawn ("West", "East"), or null with one
+   * spawn (the preview never lies about the lane: core-loop §2.2).
+   */
+  readonly spawn: string | null;
+  /** This group's spawn sends nothing in any earlier wave: the route opens now (A1M5's W3). */
+  readonly newSpawn: boolean;
 }
 
 /** The next wave: its number and what it brings. */
 export interface WavePreview {
   readonly number: number;
   readonly groups: readonly WavePreviewGroup[];
+}
+
+/** An optional objective's standing this run (T304f settles it in the sim; until then, open). */
+export type ObjectiveStatusView = 'open' | 'done' | 'failed';
+
+/** One optional objective (Objective Intel; design/progression.md § 3), for the HUD's tracker. */
+export interface ObjectiveView {
+  readonly id: string;
+  /** "Clean Audit". */
+  readonly name: string;
+  /** What completes it ("Sell no turret after its build phase."). */
+  readonly description: string;
+  /** The Intel it pays on a win. */
+  readonly intel: number;
+  readonly status: ObjectiveStatusView;
 }
 
 /** One line of a map's static briefing (M1), with its speaker if it names one. */
@@ -306,6 +367,17 @@ export const hud = {
   holdFireAll: signal(false),
   /** Towers holding fire right now, one by one or through the master switch. */
   holdingCount: signal(0),
+  /**
+   * The Hold Fire teach (core-loop §2.7, A1M3): a neutral unit (Gerald) is on the field and the
+   * master switch hasn't been used this run, so Hold (all) pulses and a hint says why.
+   */
+  holdFireTeach: signal(false),
+  /** Clearance Sale while it has charges (the "SALE -40% x3" tag over the build slots), or null. */
+  sale: signal<SaleView | null>(null),
+  /** The HUD's name plate (core-loop §5): "JPT-1 · SPROUT", the profile's callsign. */
+  callsign: signal('Sprout'),
+  /** The map's optional objectives with this run's standing (under the medal tracker). */
+  objectives: signal<readonly ObjectiveView[]>([]),
   /** Spare runners (all) is on (`state.spareRunnersAll`). */
   spareRunnersAll: signal(false),
   /** The spare-runners controls show (unlocked after A1M5, or by `devUnlocks`; Alt+H works). */

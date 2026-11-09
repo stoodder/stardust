@@ -238,8 +238,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       views.enemies.acquire(e.uid).show(e.uid, def.sprites.body, def.layer === 'air', glyph, route);
     }),
     bus.on('EnemyDied', (e) => {
+      // Act I's comic pop: the unit's own `death` anim (T311c); a sprite without one bursts.
+      const popped = views.enemies.get(e.uid)?.die() === true;
       views.enemies.release(e.uid);
-      fx.burst(e.x, e.y); // the Act I death pop
+      if (!popped) fx.burst(e.x, e.y);
     }),
     bus.on('SackBurst', (e) => {
       // The young run back up the route toward the warren (D059); render-only.

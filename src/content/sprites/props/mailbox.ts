@@ -17,7 +17,10 @@ const AX = 12;
 const AY = 12;
 
 /** Which face of the lying box pixel (x, y) shows: its top, long side, or end, with coordinates. */
-function face(x: number, y: number): { f: 'top' | 'side' | 'end'; a: number; b: number; z: number } | null {
+function face(
+  x: number,
+  y: number,
+): { f: 'top' | 'side' | 'end'; a: number; b: number; z: number } | null {
   const px = x + 0.5 - OX;
   const py = y + 0.5 - OY;
   // Top: py + Z = a + b, px = 2a − 2b.

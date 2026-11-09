@@ -5,6 +5,7 @@
 // tell's body cue: "a packed sprite with bulges", art-direction §8). It waddles with the lobes
 // jiggling out of step.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { at, fromRows, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { EYE, skitterBody } from './skitter.ts';
 
@@ -93,11 +94,13 @@ export const enemyBunchling = defineSprite({
     walk_se_1: bunchling('se', 1),
     walk_ne_0: bunchling('ne', 0),
     walk_ne_1: bunchling('ne', 1),
+    ...deathFrames(bunchling('se', 0), { x: 10, y: H - 1 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 6 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 6 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

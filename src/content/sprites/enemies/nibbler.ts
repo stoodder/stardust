@@ -1,5 +1,6 @@
 // Nibbler (`nibbler`): the basic Skitterkin. Small, round, all eyes and tuft, with a bounce.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { BIG_EYE, finish, skitterBody } from './skitter.ts';
 
 const W = 14;
@@ -52,11 +53,13 @@ export const enemyNibbler = defineSprite({
     walk_se_1: nibbler('se', 1),
     walk_ne_0: nibbler('ne', 0),
     walk_ne_1: nibbler('ne', 1),
+    ...deathFrames(nibbler('se', 0), { x: 7, y: 11 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 8 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 8 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

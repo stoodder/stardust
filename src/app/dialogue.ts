@@ -640,11 +640,15 @@ export function pressCommsButton(): void {
 
 /**
  * Offers one moment's triggers to the bark pools (`pickBarkOf`). Nothing plays over a line on the
- * panel or a scene, and nothing waits: the triggers still count as fired.
+ * panel or a scene, and nothing waits: the triggers still count as fired. A queued trigger's bark
+ * (`isQueuedTrigger`) queues first, so the moment's other triggers find the panel busy.
  */
-function offerBarks(triggers: readonly BarkTrigger[]): void {
+function offerBarks(all: readonly BarkTrigger[]): void {
   const s = session;
-  if (s === null || !enabled || triggers.length === 0) return;
+  if (s === null || !enabled) return;
+  for (const t of all) if (isQueuedTrigger(t)) queueBark(t);
+  const triggers = all.filter((t) => !isQueuedTrigger(t));
+  if (triggers.length === 0) return;
   const atSec = s.simSec();
   const events: BarkEvent[] = triggers.map((trigger) => ({ trigger, atSec, present: s.present }));
   const busy = commsNow !== null || commsHeld || commsQueue.length > 0;
@@ -841,11 +845,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       const w = waveOf.get(e.uid);
       if (w !== undefined) leakedWaves.add(w);
       waveOf.delete(e.uid);
+      const triggers: BarkTrigger[] = [];
       if (!leaked) {
         leaked = true;
-        queueBark({ on: 'first_leak' });
+        triggers.push({ on: 'first_leak' });
       }
-      const triggers: BarkTrigger[] = [];
       if (!leakedEnemies.has(e.enemy)) {
         leakedEnemies.add(e.enemy);
         if (isEnemy(e.enemy)) triggers.push({ on: 'enemy_leaked', enemy: e.enemy });
@@ -867,10 +871,9 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('TowerSold', (e) => {
       const t = towerOf.get(e.uid);
       towerOf.delete(e.uid);
-      const tagged = stepTags(e);
+      const tagged = stepTags(e) ? { tagged: true } : {};
       const tower = t !== undefined && isTower(t) ? { tower: t } : {};
-      if (tagged) queueBark({ on: 'tower_sold', ...tower, tagged: true });
-      else offerBarks([{ on: 'tower_sold', ...tower }]);
+      offerBarks([{ on: 'tower_sold', ...tower, ...tagged }]);
     }),
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);

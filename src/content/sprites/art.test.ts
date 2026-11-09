@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { luminance } from '../palettes/color.ts';
 import { rgbOf, type ColorName } from '../palettes/master.ts';
 import { SACK_LEGEND } from './enemies/sack.ts';
+import { peekerFrame } from './props/peeker.ts';
 import { tetherDir } from './fx/link_tether.ts';
 import { SPRITES, type SpriteId } from './index.ts';
 import { GROUND_SHADOW_ALPHA, groundShadowFor } from './shadows.ts';
@@ -484,7 +485,13 @@ describe("M3's enemies (T311a)", () => {
     expect(def('enemy.youngling').size.w).toBeLessThan(def('enemy.nibbler').size.w);
     expect(def('enemy.youngling').size.w).toBeGreaterThan(def('enemy.hauler_young').size.w);
     const p = def('prop.peeker');
-    expect(Object.keys(p.frames)).toEqual(['hidden', 'peek_0', 'peek_1', 'duck']);
+    // Each map's own cover (T311c) repeats the four poses behind it: `<cover>_<frame>`.
+    for (const cover of ['rock', 'planter'] as const) {
+      for (const f of ['hidden', 'peek_0', 'peek_1', 'duck']) {
+        expect(Object.keys(p.frames)).toContain(peekerFrame(cover, f));
+      }
+      expect(p.anims?.[peekerFrame(cover, 'duck')]).toMatchObject({ loop: false });
+    }
     expect(p.anims?.['duck']).toMatchObject({ loop: false });
     // The little one keeps its Skitterkin colors in every act (custom legend, not the env's).
     expect(p.legend).toMatchObject({ M: 'coral.3', V: 'green.3' });

@@ -5,6 +5,7 @@
 // feet dangle. Render draws it 12 px up over a ground shadow (the `flying` tell's body cue; tech-
 // spec § Sprite anchoring); the sprite itself only flaps: wings up, level, down, level.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { plot, type CharGrid } from '../helpers.ts';
 import { BIG_EYE, finish, skitterBody } from './skitter.ts';
 
@@ -93,6 +94,7 @@ export const enemyPuffwing = defineSprite({
     walk_ne_0: puffwing('ne', FLAP.ne[0]),
     walk_ne_1: puffwing('ne', FLAP.ne[1]),
     walk_ne_2: puffwing('ne', FLAP.ne[2]),
+    ...deathFrames(puffwing('se', FLAP.se[0]), { x: CX, y: H - 1 }),
   },
   anims: {
     // Up, level, down, level: a lazy flap.
@@ -100,5 +102,6 @@ export const enemyPuffwing = defineSprite({
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1', 'walk_ne_2', 'walk_ne_1'], fps: 8 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

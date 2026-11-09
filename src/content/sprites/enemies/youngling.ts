@@ -4,6 +4,7 @@
 // eyes too big for it, a single sprout of a tuft, and the faint pink-gold shimmer frost of the very
 // young on its back. It toddles: a hop, a wobble, a hop.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { finish, skitterBody } from './skitter.ts';
 
 const W = 11;
@@ -54,11 +55,13 @@ export const enemyYoungling = defineSprite({
     walk_se_1: youngling('se', 1),
     walk_ne_0: youngling('ne', 0),
     walk_ne_1: youngling('ne', 1),
+    ...deathFrames(youngling('se', 0), { x: 5, y: H - 1 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 8 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 8 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
   },
 });

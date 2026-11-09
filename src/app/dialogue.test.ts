@@ -23,6 +23,7 @@ import {
   bindDialogue,
   chooseOption,
   commsHoldMs,
+  isQueuedTrigger,
   presentSpeakers,
   playScene,
   readMs,
@@ -83,6 +84,13 @@ describe('dialogue helpers', () => {
     expect(sceneMode(party!)).toBe('fullscreen');
     expect(sceneMode(knock!)).toBe('comms');
     expect(sceneMode(defineScene('a1_m01_brief', [{ kind: 'end' }]))).toBe('briefing');
+  });
+
+  it('queues only the first leak and a tagged sale (never lost); every other bark drops', () => {
+    expect(isQueuedTrigger({ on: 'first_leak' })).toBe(true);
+    expect(isQueuedTrigger({ on: 'tower_sold', tower: 'rivet', tagged: true })).toBe(true);
+    expect(isQueuedTrigger({ on: 'tower_sold', tower: 'rivet' })).toBe(false);
+    expect(isQueuedTrigger({ on: 'perfect_wave' })).toBe(false);
   });
 
   it('puts QUILL and a present companion on the radio', () => {

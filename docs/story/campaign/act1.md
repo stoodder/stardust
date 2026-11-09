@@ -243,6 +243,35 @@ Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par d
 
 **Waves.** 1 Nibblers + Gerald pass 1 [T: Hold Fire (all); the button pulses] · 2 Zoomers [salvage-drone prompt] · 3 Puffwings ×4 [T: air lane, Skyhook] · 4 Chonks + Gerald pass 2 [X: hold fire on single towers] · 5 Puffwing flock ×10 [X; Time Dilation prompt] · 6 Haulers + Puffwings · 7 mixed + Gerald pass 3 (carrying the form) · 8 mixed + big flock.
 
+**Layout data** (the data is [`src/content/maps/a1_m03/map.ts`](../../../src/content/maps/a1_m03/map.ts)). Spawn (11,0); the road runs down to the upper leg (row 3), west along it to the hairpin's bend (column 2), round the bend, east along the lower leg (row 6), and down to the gate (10,9): 26 tiles, about 22 s for Gerald and 37 s for a Hauler. The air lane `sky` runs straight from the north-west corner (0,0) to the core, crossing both legs. Buildable: one high ground `^` (9,2), the depot roof north of the upper leg, and 10 pads: (6,1) and (3,2) north of the upper leg, (12,2) by the spawn road, (1,4) west of the bend, (4,4), (8,4), and (7,5) inside the hairpin, and (3,7), (6,7), and (11,7) south of the lower leg. Wreckage (crashed delivery drones): (1,5) at the bend hides a pad (salvage 40); (12,6) and (6,8) lie on decor (salvage 30 each). Markers: `peeker` (13,4), `mailbox` (13,5, the fallen mailbox the Peeker hides behind), and `zibzab_shop` (12,8, the decor patch the shell-shop lands on at W6). The Skyhook unlocks as W3's countdown starts (`towerUnlockWave`). The high ground and (12,2) are the only buildable tiles more than 3.5 tiles from the air lane: a Rivet there can't reach the flyers ([D079](../../decisions.md#d079--2026-11-09--t313-harness-extensions-for-act-i)).
+
+```
+...........S..
+......o....#..
+...o.....^.#o.
+..##########..
+.o#.o...o.....
+.x#....o......
+..#########.x.
+...o..o...#o..
+......x...#...
+..........C...
+```
+
+**Wave data** (the data is [`src/content/maps/a1_m03/waves.ts`](../../../src/content/maps/a1_m03/waves.ts); every countdown is Act I's 25 s; default spacing Nibbler 0.8 s, Zoomer 0.5 s, Chonk 1.5 s, Hauler 2.5 s, Puffwing 0.6 s; Puffwings fly `sky`, everything else, Gerald included, takes the road). A held pass lasts about 22 s, so **each Gerald pass opens its wave** and the wave's threats come in behind him, and **the wave before a pass ends on a trailing group** well after its slow units (W3 is four Puffwings; W6 ends on a Nibbler pack at 80 s): a player who calls waves early isn't holding fire over the previous wave's Haulers. W4's three Chonks walk 3 s apart (3.6 tiles end to end): longer than a Mk I strike's 3 tiles, inside Mk II's 4, so **the R&D pick decides whether the last one leaks** (T228). W6–W8 release their Haulers one every 12 s ([D052](../../decisions.md#d052--2026-11-09--a1m2-why-the-no-armor-build-survived-and-the-fix-order)).
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Gerald, 0 · Nibbler ×10 @ 0.7, 18 | 10 + Gerald |
+| W2 | Nibbler ×4, 0 · Zoomer ×10, 4 | 14 |
+| W3 | Puffwing ×4, 0 (`teach`) | 4 |
+| W4 | Chonk ×3 @ 3, 0 · Gerald, 8 · Nibbler ×6 @ 0.6, 16 | 9 + Gerald |
+| W5 | Puffwing ×10, 0 · Zoomer ×8, 6 | 18 |
+| W6 | Puffwing ×6, 0 · Hauler ×5 @ 12, 8 · Puffwing ×6, 24 · Nibbler ×6 @ 0.7, 80 | 23 |
+| W7 | Gerald, 0 · Hauler ×2 @ 12, 12 · Chonk ×3 @ 2, 20 · Nibbler ×16 @ 0.5, 24 · Puffwing ×6, 28 · Zoomer ×12 @ 0.4, 42 | 39 + Gerald |
+| W8 | Hauler ×3 @ 12, 0 · Chonk ×4 @ 2, 4 · Zoomer ×16 @ 0.4, 12 · Puffwing ×20 @ 0.5, 18 | 43 |
+
+
 **Story delivery.**
 - *Briefing:* QUILL: "Today's route includes Gerald. Gerald is the mail. Gerald has right of way."
 - *Radio:*
@@ -255,13 +284,52 @@ Par earns Victory and Perfect Core; **Aim for the Sack!** is a skill medal par d
   - w07 Zibzab: "No refunds, no regrets! It's on the shell. Right there. Next to the other thing I won't refund."
   - w08 Bricks (after Gerald's pass 3): "Pension form. Rejected. 'Missing signature.' I signed it. Twice. In pen."
 - *Barks:* QUILL (Gerald hit): "Do NOT shoot Gerald. Gerald is the mail." / "Hold Fire, please, Technician. He's doing his best." · Gerald (status text, after a hit): "DELIVERY: ATTEMPTED. RECIPIENT: ARMED." · QUILL `hold_fire_used`: "Thank you! Gerald thanks you. Gerald can't talk." · QUILL `new_enemy` puffwing: "Flying pests! They're fluffy. Don't let that stop you!"
+- *Where it plays* (the data is [`src/content/dialogue/a1/a1_m03/`](../../../src/content/dialogue/a1/a1_m03/scenes.ts)): the briefing is `a1_m03_brief`; QUILL's wreckage line is w02's second line (the salvage-drone prompt wave); the knock-knock's **Who's there?** button plays `a1_m03_cue_knock_answer`, and ignored, w04 runs on to QUILL's *nobody home*, Bricks's fact-check closing both; Bricks's form line is w08, the countdown after Gerald's third pass. QUILL's two Gerald-hit lines are a `neutral_hit` pool, one a hit. Gerald's status text has no presentation yet: he is never on the radio.
 - *Base:* the shop opens; the Zapcoil sample ("Price first: your next visit. First one's on me. Zibzab is patient."); the optional question "Where does stardust come from?" (sets `asked_zibzab_early`; available until A2M3). Asked, Zibzab answers plainly ([characters.md](../characters.md#zibzab)'s Act I lines).
 - *Codex:* Puffwing, Skyhook, Gerald ("Do not target. Do not reroute without Form 88-B."), Form 88-B, Zibzab, Vrell, Hold Fire.
 - *Memo after:* `memo_a1_03` *Mandatory Fun Friday Is Back! (Attendance Optional) (Required)* (small print: "Mail-drone incidents must be reported on Form 88-B.")
 
 **Medals.** Victory · Perfect Core · **Return to Sender:** Gerald is never hit.
 **Rewards.** Stardust 140 · Intel 3.
-**Par build.** Rivet, Thumper, Sprinkler, Skyhook (all four owned). Skyhook ×2 under the air lane; Rivet T3 (pierce) on Strong at the hairpin for the W4 Chonks and W6 Haulers; Hold Fire (all) toggled for each Gerald pass in the script; clear the hairpin wreckage at W2. Time Dilation on W5. Target 90. `noCounterBuilds`: **no-air**, Thumper + Sprinkler, with Rivets only where they can't reach the air lane (must lose by W6); **no-armor**, Rivets held below T3 + Sprinkler + Skyhook, no Thumper (must lose by W6).
+**Par build.** Rivet, Thumper, Sprinkler, Skyhook (all four owned: the reference profile is the issued kit plus the Skyhook, nothing bought, [../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile)). Gerald's macro (`holdFireWhile: 'neutral'`, Hold Fire (all) for each pass, then release) is armed before W1, so par earns **Return to Sender** (`parMedals`); every pass costs it 22 s of fire. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a1_m03/builds.ts`](../../../src/content/maps/a1_m03/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Gerald's macro; Rivet (4,4) inside the hairpin; Thumper (8,4) at its east end |
+| W2 | The salvage drone to all three wrecks, the bend's first; Sprinkler (7,5): Sitting Ducks with (8,4) |
+| W3 | Skyhook (3,2) under the air lane |
+| W4 | Upgrade the Rivet to T2; Orbital Strike on the hairpin's corner (2,3), 16 s in (the Chonks rounding the bend during Gerald's pass) |
+| W5 | Thumper on the cleared bend pad (1,5); Time Dilation 8 s in (the flock) |
+| W6 | Upgrade the Thumper (8,4) to T2 and the Rivet to T3 (pierce), Strong targeting; Orbital Strike on the bend (2,5), 42 s in (a Hauler) |
+| W7 | Upgrade the bend Thumper to T2; Skyhook (6,7) under the air lane; Orbital Strike on the bend, 20 s in |
+| W8 | Upgrade the Skyhook (3,2) to T2; Time Dilation 22 s in (the big flock); Orbital Strike on the bend, 20 s in |
+
+Par's bank at each build phase: 310, 85, 163, 119, 103, 92, 57, 31 (W1–W8); W6–W8's purchases land late as the bounties arrive. **Par's one leak is designed:** while it holds fire for Gerald's W4 pass, the three Chonks walk on into the bend, and the Mk I strike there catches two of them; the third leaks (2 integrity: 90). With **Orbital Strike Mk II** bought, the blast takes all three, and par wins at 100 with Perfect Core (`rndPickChanges: ['orbital_strike_mk2']`, T228). A player who holds fire only on the towers that can hit Gerald (Rivet, Skyhook; the Thumpers and the Sprinkler can't) loses nothing there: that's W4's test.
+
+**No-counter builds** (`noCounterBuilds`, by category, [enemies.md §3.1](../../design/enemies.md#31-counter-categories); both must lose by W7, `noCounterLoseByWave: 7`, because the armor test is W6–W7's Haulers, after W5's flock tests the air):
+- **no-air:** Thumpers (8,4), (4,4), and (1,5), the Sprinkler (7,5), and Rivets only on the high ground (9,2) and (12,2), out of the air lane's reach; par's casts.
+- **no-armor:** par with every Thumper swapped for a Rivet and every Rivet held at T2 (no pierce), the same Sprinkler, Skyhooks, and casts.
+
+**Alt builds** (A1M3 needs none; these guard the tuning): `par_minus_last` (no W8 Skyhook upgrade, ≥ 40%), `no_sprinkler` (a Rivet on the Sprinkler's pad, ≥ 40%), and the under-built `no_upgrades` (`outcome: 'either'`): par's towers and casts never upgraded, the hoard spent on three more Thumpers, (3,7) and (1,4) in W6 and (11,7) in W7.
+
+**Harness runs** (every seed; margin, then integrity lost per wave W1–W8):
+
+| Run | Result | Integrity lost |
+|---|---|---|
+| par | wins at **90** (band 80–100; target 90), with Return to Sender | 2 in W4 |
+| par with Orbital Strike Mk II | 100, Perfect Core | none |
+| par without its casts | 40 | 4 in W4, 3 in W6, 5 in W8 |
+| `alwaysCallEarly` | 50 | 6 in W5, 4 in W6 |
+| no-air | loses in W6 | 4 in W3, 2 in W4, 10 in W5, 4 in W6 |
+| no-air, full catalog | loses in W7 | 9 in W5, 12 in W6, 2 in W7 |
+| no-armor | loses in W7 | 2 in W4, 12 in W6, 6 in W7 |
+| no-armor, full catalog | loses in W8 | 7 in W6, 10 in W7, 6 in W8 |
+| Story | 100, and the Challenge | none |
+| `par_minus_last`, `no_sprinkler` | 90 | 2 in W4 |
+| `no_upgrades` | 35 | 2 in W4, 6 in W6, 5 in W8 |
+| do-nothing | loses at W2 | |
+
+Par's 90 resumes the monotonic chain under A1M2's 100 (T224). [`src/balance/a1m3.test.ts`](../../../src/balance/a1m3.test.ts) re-runs the harness with W6–W8's Haulers 0.5–1 s closer or further apart, Gerald's W4 and W7 passes 1 s earlier or later, W4's Chonks 0.4 s closer or further apart, and W5–W8's other groups shifted ±0.2 s: every check holds, Mk II's included. It also checks W4's Chonk spacing against both strike sizes and that the Haulers walk further apart than a strike covers.
 
 ## A1M4 · The Audit
 

@@ -3,15 +3,18 @@
 // white when its HP drops (art-direction §7, Impacts: 2 frames of white tint fill). Each one walks a
 // little to the side of the path's center line, by uid (D026), so a tight clump reads as a crowd,
 // not a centipede. Flyers bob 1 px at 2 Hz (art-direction §8 Flying: "drawn 12 px up with a bob";
-// still under reduced motion), each on its own beat by uid.
+// still under reduced motion), each on its own beat by uid. When it dies it plays its sprite's
+// `death` anim (Act I's comic pop, T311c) where it stood, on a corpse sprite of its own, so the
+// view can go back to the pool at once.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { prefersReducedMotion } from '../motion.ts';
-import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { animKey, DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { facingOf, spriteId, type Facing } from './spriteInfo.ts';
+import { walkTempo } from './walkTempo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
 
@@ -84,6 +87,11 @@ export class EnemyView implements PooledView {
   readonly #body: Phaser.GameObjects.Sprite;
   readonly #shadow: Phaser.GameObjects.Image;
   readonly #tell: Phaser.GameObjects.Image;
+  /** Plays the death anim where the unit died; hides itself when the anim ends. */
+  readonly #corpse: Phaser.GameObjects.Sprite;
+  /** The shown sprite's `death` anim key and its frame-0 anchor, or null without one. */
+  #deathKey: string | null = null;
+  #deathAnchor = { x: 0, y: 0 };
   #tellFrames = 0;
   /** The body's height above its anchor (px), for placing the tell glyph. */
   #headroom = 0;
@@ -115,6 +123,10 @@ export class EnemyView implements PooledView {
     ctx.layers.decal.add(this.#shadow);
     this.#tell = ctx.scene.make.image({}, false).setOrigin(0.5, 1);
     ctx.layers.overlay.add(this.#tell);
+    this.#corpse = ctx.scene.make.sprite({}, false).setVisible(false);
+    this.#corpse.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.#corpse.setVisible(false);
+    });
     this.release();
   }
 
@@ -246,6 +258,23 @@ export class EnemyView implements PooledView {
     }
   }
 
+  /**
+   * Plays the unit's death anim where it stands, if its sprite has one (call before `release`).
+   * Returns false when it has none, or was never placed, so the caller can show another effect.
+   */
+  die(): boolean {
+    const key = this.#deathKey;
+    if (key === null || Number.isNaN(this.#x) || !this.#body.visible) return false;
+    const c = this.#corpse;
+    (this.#flying ? this.#ctx.layers.air : this.#ctx.layers.world).add(c);
+    c.setPosition(this.#body.x, this.#body.y)
+      .setDepth(this.#body.depth)
+      .setDisplayOrigin(this.#deathAnchor.x, this.#deathAnchor.y)
+      .setVisible(true)
+      .play(key);
+    return true;
+  }
+
   release(): void {
     this.#uid = 0;
     this.#id = null;
@@ -278,8 +307,14 @@ export class EnemyView implements PooledView {
   #cacheAnims(): void {
     this.#keys.length = 0;
     this.#anchors.length = 0;
+    this.#deathKey = null;
     if (this.#id === null) return;
     const { sprites } = this.#ctx;
+    const death = animKey(this.#id, DEFAULT_VARIANT, 'death');
+    if (this.#ctx.scene.anims.exists(death)) {
+      this.#deathKey = death;
+      this.#deathAnchor = sprites.frameAnchor(this.#id, 'death_0');
+    }
     for (const f of FACINGS) {
       const anim = `walk_${f}`;
       const i = FACING_INDEX[f];
@@ -296,7 +331,10 @@ export class EnemyView implements PooledView {
     const key = this.#keys[i * 2 + (this.#selected ? 1 : 0)];
     const a = this.#anchors[i];
     if (key === undefined || a === undefined) return;
-    this.#body.play(key);
+    const tempo = walkTempo(this.#uid);
+    const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
+    this.#body.play({ key, startFrame: tempo.startFrame % frames });
+    this.#body.anims.timeScale = tempo.timeScale;
     this.#body.setDisplayOrigin(a.x, a.y);
   }
 }

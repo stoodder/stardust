@@ -228,12 +228,13 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       }
       // Wreckage alternates its two wrecks by tile (a crashed drone, a toppled cart); WreckageView
       // swaps the frame as the drone works and hides it once the tile is cleared.
-      let prop: Prop | null = null;
-      if (sprite === 'prop.bunting') prop = { sprite, frame: buntingFrame(g, col, row), anim: null };
-      else if (sprite !== null) {
+      let onTile: Prop | null = null;
+      if (sprite === 'prop.bunting') {
+        onTile = { sprite, frame: buntingFrame(g, col, row), anim: null };
+      } else if (sprite !== null) {
         const look = DECOR_LOOKS[sprite];
         const frame = t === 'x' ? wreckageFrame(col, row) : (look?.frame ?? 'v0');
-        prop = { sprite, frame, anim: t === 'x' ? null : (look?.anim ?? null) };
+        onTile = { sprite, frame, anim: t === 'x' ? null : (look?.anim ?? null) };
       }
       // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
       const verge: string[] = [];
@@ -241,7 +242,9 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
         if (isPathLike(at(col + dc, row + dr)))
           verge.push(`${edge}_${(col + row) % VERGE_VARIANTS}`);
       }
-      return verge.length === 0 ? { ground: grass, prop } : { ground: grass, prop, verge };
+      return verge.length === 0
+        ? { ground: grass, prop: onTile }
+        : { ground: grass, prop: onTile, verge };
     }
     default:
       return assertNever(t);

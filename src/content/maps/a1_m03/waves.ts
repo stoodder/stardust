@@ -37,11 +37,11 @@ const gerald = (delaySec: number): WaveGroup => g('gerald', 1, delaySec);
 /** W6–W8 release their Haulers one at a time, this far apart (D052): a strike takes one at most. */
 export const HAULER_GAP = 12;
 /**
- * W4's three Chonks, this far apart (2 tiles; 3.96 end to end): longer than a Mk I strike's
- * 3-tile blast covers whole and just inside Mk II's 4 tiles, so the R&D pick decides whether the
- * last one leaks (T228).
+ * W4's three Chonks, this far apart (1.8 tiles; 3.6 end to end): more than a Mk I strike's 3-tile
+ * blast covers whole and inside Mk II's 4 tiles, so the R&D pick decides whether the last one
+ * leaks (T228).
  */
-export const CHONK_GAP = 3.3;
+export const CHONK_GAP = 3;
 
 export const waves = defineWaves([
   // W1 · Gerald pass 1, then Nibblers [T: Hold Fire (all); the button pulses]

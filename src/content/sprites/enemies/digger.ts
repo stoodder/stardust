@@ -7,6 +7,7 @@
 // up, claws flinging a fan of dirt clods up behind it in two alternating patterns. Underground it
 // has no sprite (render draws the ripple trail), so there is no mound frame.
 import { defineSprite } from '../defineSprite.ts';
+import { DEATH_ANIM, deathFrames } from './death.ts';
 import { at, plot, stamp, type CharGrid } from '../helpers.ts';
 import { finish, skitterBody } from './skitter.ts';
 
@@ -102,12 +103,14 @@ export const enemyDigger = defineSprite({
     dig_se_1: digger('se', 1, true),
     dig_ne_0: digger('ne', 0, true),
     dig_ne_1: digger('ne', 1, true),
+    ...deathFrames(digger('se', 0, false), { x: CX, y: H - 1 }),
   },
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 8 },
     walk_sw: { mirrorOf: 'walk_se' },
     walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 8 },
     walk_nw: { mirrorOf: 'walk_ne' },
+    death: DEATH_ANIM,
     // The 0.8 s dig-in tell: the spray alternates at 10 fps, so it reads at 2× too.
     dig_se: { frames: ['dig_se_0', 'dig_se_1'], fps: 10 },
     dig_sw: { mirrorOf: 'dig_se' },

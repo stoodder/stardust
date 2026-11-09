@@ -1051,3 +1051,23 @@ Real art went in behind T300a's ids. No data changed.
   - The drone flies in from the core, chains between queued wrecks, then flies home.
   - **A plain click or Enter clears.** "Drone already on it" and "Clear it first" are the notices. Every render and input path reads the *live* tile.
 - **Bug fixed:** zero-delay bursts in `TransientFx` never played, which had hidden death pops and shell bursts.
+
+### D083 — 2026-11-09 — T314 Act I audio
+- **Sounds:** every event type now has a sound row (D062).
+  - **Combat:**
+    - flak fire and burst;
+    - a zap per chain jump (45 ms apart, rising 2 semitones each, rate-limited);
+    - the armor plink on `reduced` hits.
+  - **Units:**
+    - flock wing-flaps (one voice per flock);
+    - burrow and surface;
+    - the split pop;
+    - a huddle coo;
+    - Gerald's chime and exit whistle.
+  - **The boss:** arrival, sneeze tell, sneeze, phase change, retreat, and a `boss_sting` cue. The docs ask for no boss music layer, so there isn't one.
+  - **Abilities and the drone:** Time Dilation's pitch-down swell, Clearance Sale's ka-ching, and the drone's fly/work/cleared sounds.
+  - Sounds that no event announces come from `fieldSounds.ts`, which reads sim state after each frame.
+- **Voices:**
+  - **Blips:** 14 per-speaker blips, including Kip's own. The narrator, system, KFA, and Hollow speakers are silent by design.
+  - **Typewriter tick:** pitched per speaker, at most once every 55 ms, and quiet for 160 ms after a line's blip.
+- **Levels:** every sound peaks between −34 and −4.3 dBFS with nothing clipping. **The W7/boss storm peaks at −1.1 dB**, the same as M2's storm, so D033's −3.0 dB figure is out of date and the headroom margin is just 0.2 dB (restore it: T323).
