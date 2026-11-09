@@ -985,3 +985,12 @@ Real art went in behind T300a's ids. No data changed.
   - **Events:** one `ProjectileFired`, then one `ProjectileHit` per victim in order, which gives render the arc.
 - **Conductive (a new link):** a Zapcoil next to a Sprinkler gets +2 jumps (Linked Up scales it, rounding down), and the Sprinkler Soaks targets for 3 s from tier 1. Soaked's only live source is this link until the Sprinkler's own tier-3 Soak (T321, M4).
 - **Wreckage:** `clear` queues the salvage drone, which clears one tile every 6 s (3 s with Salvage Expert). Cleared tiles read as their `underWreckage` everywhere, so builds, tile bonuses (a hidden node pays), and invariants all use the live tile. Salvage is paid through `earn`. Salvage Rights and Salvage Expert are live.
+
+### D077 — 2026-11-09 — T304d Time Dilation and Clearance Sale
+- **Time Dilation** (core-loop §3.2): 60 s cooldown, untargeted. A map-wide field chills every enemy 40% for 6 s, including air, burrowed units, and late spawns. Neutral units are never slowed. The strongest chill still wins, and bosses get half (20%) through `applyChill`.
+- **Clearance Sale:**
+  - **Charges:** loads 3 charges at 40% off. Each build, upgrade, or specialization spends one. A recast replaces the charges left rather than adding to them.
+  - **Cooldown:** counted in **wave starts**. Cast in W1, it's ready as W5 starts. Rapport and Coolant apply as percentages rounded to whole waves, so Coolant leaves it at 4 and Rapport makes it 3.
+- **Price order:** `costFor`, then Rapid Deploy (first build free; no charge spent), then the sale (`round(cost × 0.6)`). `invested` records what was paid, so a refund is 70% of the discounted price and a free tower refunds 0.
+- **Ready Room:** one free cast per slot from W1's start until W2 starts.
+- **Suppressing Fire** now hits ground units only (it can't hit Gerald).

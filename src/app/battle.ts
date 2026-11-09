@@ -14,6 +14,7 @@ import { bindHud, hudSaveInfo, showNotice, type HudOptions } from './hud.ts';
 import { rejectText } from './hudText.ts';
 import { bindBattleAudio } from './audio.ts';
 import { bindDialogue } from './dialogue.ts';
+import { bindPeeker } from './peeker.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
 let battleCount = 0;
@@ -73,6 +74,7 @@ export function startBattle(
     newTowers: save.newTowers,
   });
   const unbindAudio = bindBattleAudio(host);
+  const unbindPeeker = bindPeeker(sim.map, interaction);
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
   return {
@@ -87,6 +89,7 @@ export function startBattle(
       unbindDialogue();
       unbindHud();
       unbindAudio();
+      unbindPeeker();
       game.scene.remove(key);
     },
   };
