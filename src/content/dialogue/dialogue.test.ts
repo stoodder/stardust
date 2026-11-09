@@ -90,7 +90,7 @@ describe('the dialogue registries', () => {
 
   it('looks up scenes and maps safely', () => {
     expect(sceneById('__proto__')).toBeUndefined();
-    expect(mapDialogue('a2_m03')).toEqual({ map: 'a2_m03', scenes: [], barks: [] });
+    expect(mapDialogue('a2_m04')).toEqual({ map: 'a2_m04', scenes: [], barks: [] });
     expect(barksFor('a1_m03')).toEqual([...mapDialogue('a1_m03').barks, ...SHARED_BARKS]);
   });
 

@@ -17,11 +17,17 @@ function grid(id: string, frame: string): readonly string[] {
 }
 
 function count(rows: readonly string[], chars: string): number {
-  return rows.join('').split('').filter((c) => chars.includes(c)).length;
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => chars.includes(c)).length;
 }
 
 function opaque(rows: readonly string[]): number {
-  return rows.join('').split('').filter((c) => c !== '.' && c !== '_').length;
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => c !== '.' && c !== '_').length;
 }
 
 /** Transparent pixels the outside can't reach (4-connected): the holes in a silhouette. */
@@ -143,6 +149,11 @@ describe('the Aelari constructs (woven, never plated: art-direction §4)', () =>
   });
 });
 
+/** The topmost row with tuft (moss) in it. */
+function topOf(rows: readonly string[]): number {
+  return rows.findIndex((r) => /[a-e]/.test(r));
+}
+
 /** The eyes in the top rows: the young's, in the sack's mouth, above the Hauler's own face. */
 function eyesUp(rows: readonly string[]): number {
   return count(rows.slice(0, 8), 'k');
@@ -197,7 +208,6 @@ describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
     ] as const) {
       const scurry = grid(id, 'walk_se_0');
       const walk = grid(id.replace(/_fleeing$/, ''), 'walk_se_0');
-      const topOf = (rows: readonly string[]): number => rows.findIndex((r) => /[a-e]/.test(r));
       expect(topOf(scurry), id).toBeGreaterThan(topOf(walk));
     }
   });

@@ -15,6 +15,8 @@ export const ATTACK_SOUNDS: Readonly<
   projectile: { fire: 'flak_fire', land: 'flak_burst' },
   // The Zapcoil's arc; its jumps are CHAIN_SOUNDS.
   chain: { fire: 'zap_arc', land: null },
+  // Capacitor Bank's discharge (T407b): the arc's snap for now (its own sound is a follow-up).
+  charge: { fire: 'zap_arc', land: null },
 };
 
 /**

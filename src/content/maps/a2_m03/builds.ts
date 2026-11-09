@@ -53,7 +53,7 @@ function parSteps(): BuildStep[] {
 }
 
 const PAR_STEPS = parSteps();
-const PAR_LOADOUT = ['zapcoil', 'sprinkler', 'rivet', 'skyhook'] as const;
+const PAR_LOADOUT = ['zapcoil', 'sprinkler', 'skyhook'] as const;
 
 export const builds = defineBuilds({
   // A2M3's reference profile (campaign.md § 4.9): A2M2's, plus Sprinkler tune 2.
@@ -121,52 +121,50 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
-    // Zapcoil, Thumper, Lookout: three Zapcoils for the shields and the air, Thumpers for the
-    // clusters.
+    // Zapcoil, Thumper, Lookout: Zapcoils on all four benches for the mine and the air and three
+    // on the road for the Wardens; a Thumper over the gate for the clusters.
     coil_and_shell: {
       loadout: ['zapcoil', 'thumper', 'lookout'],
       steps: [
-        { wave: 1, build: 'zapcoil', tile: PUMP_S },
-        { wave: 1, build: 'thumper', tile: PUMP },
         { wave: 1, build: 'zapcoil', tile: BENCH_8 },
-        { wave: 2, upgrade: PUMP_S },
-        { wave: 3, upgrade: PUMP },
-        { wave: 4, upgrade: BENCH_8 },
-        { wave: 5, build: 'zapcoil', tile: BENCH_2 },
-        { wave: 6, upgrade: BENCH_2 },
-        { wave: 6, build: 'lookout', tile: BENCH_9 },
-        { wave: 7, upgrade: PUMP_S },
-        { wave: 7, upgrade: BENCH_8 },
-        { wave: 8, build: 'thumper', tile: T3_MID },
-        { wave: 8, upgrade: BENCH_2 },
-        { wave: 9, upgrade: T3_MID },
-        { wave: 9, build: 'zapcoil', tile: SWITCH_E },
+        { wave: 1, build: 'zapcoil', tile: BENCH_1 },
+        { wave: 1, build: 'zapcoil', tile: PUMP },
+        { wave: 1, build: 'zapcoil', tile: SWITCH_E },
+        { wave: 2, upgrade: BENCH_8 },
+        { wave: 3, build: 'thumper', tile: GATE },
+        { wave: 4, build: 'zapcoil', tile: T3_MID },
+        { wave: 5, build: 'zapcoil', tile: BENCH_9 },
+        { wave: 6, upgrade: BENCH_1 },
+        { wave: 6, upgrade: PUMP },
+        { wave: 7, build: 'zapcoil', tile: BENCH_2 },
+        { wave: 8, build: 'lookout', tile: PUMP_S },
+        { wave: 9, upgrade: BENCH_9 },
+        { wave: 9, upgrade: BENCH_2 },
         { wave: 10, upgrade: SWITCH_E },
-        { wave: 10, upgrade: SWITCH_E },
+        { wave: 10, upgrade: T3_MID },
       ],
     },
-    // Sprinkler (Soaked), Zapcoil, Thumper, Lookout: one Zapcoil on the Wardens and the
-    // Lightwings, Thumpers into Soaked shields.
+    // Sprinkler (Soaked), Zapcoil, Thumper, Lookout: Thumpers into Soaked shields on the road, the
+    // Zapcoils and a Cloudburst on the benches for the mine and the air.
     soak_and_shell: {
       loadout: ['sprinkler', 'zapcoil', 'thumper', 'lookout'],
       steps: [
-        { wave: 1, build: 'sprinkler', tile: PUMP },
-        { wave: 1, build: 'thumper', tile: PUMP_S },
         { wave: 1, build: 'zapcoil', tile: BENCH_8 },
-        { wave: 2, upgrade: PUMP },
-        { wave: 3, upgrade: PUMP },
+        { wave: 1, build: 'sprinkler', tile: BENCH_9 },
+        { wave: 1, build: 'thumper', tile: PUMP },
+        { wave: 1, build: 'zapcoil', tile: BENCH_1 },
+        { wave: 2, build: 'zapcoil', tile: SWITCH_E },
+        { wave: 3, build: 'sprinkler', tile: PUMP_S }, // Sitting Ducks with the pump's Thumper
+        { wave: 4, upgrade: BENCH_8 },
         { wave: 4, upgrade: PUMP_S },
-        { wave: 5, build: 'sprinkler', tile: BENCH_9 },
-        { wave: 5, upgrade: BENCH_8 },
+        { wave: 5, upgrade: PUMP_S }, // T3: Soaked
+        { wave: 6, upgrade: BENCH_1 },
         { wave: 6, upgrade: BENCH_9 },
-        { wave: 6, upgrade: BENCH_9 },
-        { wave: 7, upgrade: BENCH_8 },
-        { wave: 7, build: 'lookout', tile: BENCH_2 },
-        { wave: 8, build: 'thumper', tile: T3_MID },
-        { wave: 9, upgrade: T3_MID },
-        { wave: 9, upgrade: PUMP_S },
-        { wave: 10, build: 'thumper', tile: SWITCH_E },
-        { wave: 10, upgrade: SWITCH_E },
+        { wave: 7, build: 'thumper', tile: T3_MID },
+        { wave: 8, upgrade: BENCH_9 },
+        { wave: 9, specialize: BENCH_9, spec: 'b' }, // Cloudburst
+        { wave: 10, upgrade: PUMP },
+        { wave: 10, build: 'lookout', tile: BENCH_2 },
       ],
     },
   },

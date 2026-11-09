@@ -131,7 +131,7 @@ export const waves = defineWaves([
   // The long build phase lets W8's Elders walk out first.
   {
     countdownSec: LONG_COUNTDOWN,
-    groups: [wardens(3, OPEN, 3), glimmers(16, OPEN, 0.8), lightwings(9, OPEN + 14, 1.4)],
+    groups: [wardens(3, OPEN, 3), glimmers(16, OPEN, 0.8), lightwings(8, OPEN + 20, 2.0)],
   },
   // W10 · the Hollow push, both routes: runners with the Hollow behind them down the road, then a
   // cluster down the mine and a bigger one down the road

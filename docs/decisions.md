@@ -1361,3 +1361,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **A retry replays the lost run's command log headlessly** to the checkpoint (exact, no state serialization; A2M2's W10 in ~124 ms). Listeners rebuild their own story state from the replayed events but play nothing visible or audible while replaying; bark spacing is approximate, once-limits and met enemies exact.
 - **The pause menu's Retry stays a full retry:** checkpoints recover a lost run, never rewind a wave that went badly mid-run.
 - **A checkpoint run forfeits Perfect Core and the Challenge, never objectives** (they carry story content and replay exactly). Pests Processed counts per attempt; flags and stamps read the whole run. A defeat pays only the waves beyond the checkpoint.
+
+### D119 — 2026-11-09 — T440a Act II unit sprites
+- **Fleeing looks are separate sprite ids chosen by the wave tag** (`<body>_fleeing`: ears flat, a glance back, a panic hop; canvases 2 px taller for the hop), like the youngling. **Every Act II Hauler flees, so its sack shows its young** (`enemy.brood_hauler_fleeing`: the sack untied, three young in its mouth) — A2M3's reveal needs no data change.
+- **Heavy is an anim family** (`heavy_<facing>`, the victim pale inside), not a baked variant; the Hollow's dropped pixels are baked per frame from a seed, so render needs no RNG.
+- **Aelari lattices have real holes** and a hand-drawn outside-only outline. A derived **`cloak` variant** (50% checker, white dashed outline) is baked for the Aelari and Hollow palettes, drawn at 35–60% alpha.
+- **Value band to fix:** Act I Skitterkin (≈ 0.42 luminance) now match Act II's path; the outline and saturation carry them for now, and T440c re-bands the `act2.*` path.

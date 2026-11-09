@@ -200,7 +200,7 @@ R&D is run by QUILL in the base. Ves'thara takes over the Xenotech branch when s
 
 There are 16 spec unlocks: 4 × 2 + 12 × 3 = **44 Intel** for all of them.
 
-**As built:** the Rivet, Thumper, Sprinkler (T407a), and Lookout specs exist. The Skyhook and Zapcoil specs are deferred to M4's T407b ([D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)), so Engineering lists their unlocks as "Arrives in a later shipment" and they can't be bought (`no_specs`, [../tech/meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)). A spec unlock answers a counter on the loadout screen and the briefing only once its specs exist.
+**As built:** Engineering sells the Rivet's, Thumper's, Sprinkler's (T407a), Lookout's (T406), and Skyhook's and Zapcoil's (T407b) specs; the Harpoon's and Crane's stay off the shelves with their towers until T408. A tower registered without specs would be listed as "Arrives in a later shipment" and refused (`no_specs`, [../tech/meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)); none is today. A spec unlock answers a counter on the loadout screen and the briefing only once its specs exist.
 
 ### 7.2 Xenotech: Aelari attunement
 

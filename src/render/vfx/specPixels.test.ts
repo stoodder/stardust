@@ -6,6 +6,8 @@ import {
   CURTAIN_PUFF,
   ORB_RADIUS_PX,
   SEEKER_CLIMB_TICKS,
+  SEEKER_FAN_PX,
+  SEEKER_FAN_TICKS,
   TRAIL_STEPS,
   chargeAlpha,
   chargeLevel,
@@ -13,6 +15,7 @@ import {
   puffAlpha,
   puffImage,
   puffRise,
+  seekerFan,
   seekerLift,
 } from './specPixels.ts';
 import { STEPPED_ALPHA, TELL_STEP_TICKS } from './fxTiming.ts';
@@ -28,12 +31,24 @@ describe('seekers', () => {
     }
   });
 
-  it('trail an exhaust spark, then smoke down the stepped-alpha ladder', () => {
-    expect(TRAIL_STEPS.map((s) => s.alpha)).toEqual([...STEPPED_ALPHA]);
-    expect(TRAIL_STEPS[0]).toMatchObject({ color: 'orange.4', size: 1 });
-    expect(TRAIL_STEPS.slice(1).every((s) => s.color.startsWith('steel.') && s.size === 2)).toBe(
+  it('trail white-hot exhaust, flame, then smoke down the stepped-alpha ladder', () => {
+    expect(TRAIL_STEPS[0]).toMatchObject({ color: 'white.1', alpha: 1 });
+    expect(TRAIL_STEPS[1]?.color).toBe('orange.4');
+    // Never brighter further back; the last step is the faintest one.
+    for (let k = 1; k < TRAIL_STEPS.length; k++) {
+      expect(TRAIL_STEPS[k]!.alpha).toBeLessThanOrEqual(TRAIL_STEPS[k - 1]!.alpha);
+    }
+    expect(TRAIL_STEPS.at(-1)).toMatchObject({ alpha: STEPPED_ALPHA[3] });
+    expect(TRAIL_STEPS.every((s) => (STEPPED_ALPHA as readonly number[]).includes(s.alpha))).toBe(
       true,
     );
+  });
+
+  it('fan out from their volley-mates and ease back onto their line', () => {
+    expect([0, 1, 2, 3].map((k) => seekerFan(k, 0))).toEqual([...SEEKER_FAN_PX]);
+    expect([0, 1, 2, 3].map((k) => seekerFan(k, SEEKER_FAN_TICKS))).toEqual([0, 0, 0, 0]);
+    expect(Math.abs(seekerFan(3, SEEKER_FAN_TICKS / 2))).toBe(4);
+    expect(seekerFan(4, 0)).toBe(seekerFan(0, 0));
   });
 });
 
@@ -82,21 +97,24 @@ describe('the capacitor orb', () => {
 });
 
 describe("Flak Curtain's puff", () => {
-  it('is a 3×3 dark blot with rounded corners, a lighter rim', () => {
+  it('is a 5×5 grey blot with rounded corners, a lighter rim round a dark core', () => {
     const img = puffImage();
-    const alpha = (x: number, y: number): number => img.data[(y * 3 + x) * 4 + 3]!;
-    expect(alpha(0, 0)).toBe(0);
-    expect(alpha(1, 1)).toBe(255);
-    expect(alpha(1, 0)).toBe(255);
+    expect([img.w, img.h]).toEqual([5, 5]);
+    const px = (x: number, y: number): number[] =>
+      Array.from(img.data.slice((y * 5 + x) * 4, (y * 5 + x) * 4 + 4));
+    expect(px(0, 0)[3]).toBe(0);
     const core = rgbOf(CURTAIN_PUFF.core);
-    expect(Array.from(img.data.slice(16, 19))).toEqual([core.r, core.g, core.b]);
+    const rim = rgbOf(CURTAIN_PUFF.rim);
+    expect(px(2, 2)).toEqual([core.r, core.g, core.b, 255]);
+    expect(px(2, 0)).toEqual([rim.r, rim.g, rim.b, 255]);
   });
 
-  it('hangs 600 ms, fading 60 → 35 → 15%, rising a pixel every 200 ms', () => {
-    expect(puffAlpha(0)).toBe(STEPPED_ALPHA[1]);
-    expect(puffAlpha(250)).toBe(STEPPED_ALPHA[2]);
-    expect(puffAlpha(450)).toBe(STEPPED_ALPHA[3]);
-    expect(puffAlpha(600)).toBe(0);
-    expect([0, 199, 200, 599].map(puffRise)).toEqual([0, 0, 1, 2]);
+  it('hangs 1.2 s, fading 100 → 60 → 35 → 15%, rising a pixel every 300 ms', () => {
+    expect(puffAlpha(0)).toBe(STEPPED_ALPHA[0]);
+    expect(puffAlpha(300)).toBe(STEPPED_ALPHA[1]);
+    expect(puffAlpha(700)).toBe(STEPPED_ALPHA[2]);
+    expect(puffAlpha(1000)).toBe(STEPPED_ALPHA[3]);
+    expect(puffAlpha(1200)).toBe(0);
+    expect([0, 299, 300, 1199].map(puffRise)).toEqual([0, 0, 1, 3]);
   });
 });

@@ -50,6 +50,8 @@ const FLASH_MS = 280;
 const DISCHARGE_RING_MS = 400;
 const SPUTTER_TILES = 0.3;
 const SPUTTER_MS = 250;
+/** A puff hangs this far (px) above its burst. */
+const PUFF_ABOVE_PX = 4;
 /** Puffs alive at once (Flak Curtain fires 3 a second; a few of them at once). */
 const MAX_PUFFS = 48;
 const ORB_KEY = (level: number): string => `fx.charge.orb${level}`;
@@ -259,7 +261,8 @@ export class SpecFx {
     this.#nextPuff = (this.#nextPuff + 1) % MAX_PUFFS;
     gridToScreen(x, y, this.#ctx.origin, pos);
     p.x = Math.round(pos.x);
-    p.y = Math.round(pos.y - AIR_LIFT_PX);
+    // Just above the burst, so the burst's own smoke ring doesn't hide it while it plays.
+    p.y = Math.round(pos.y - AIR_LIFT_PX - PUFF_ABOVE_PX);
     p.ms = 0;
     p.active = true;
     p.img.setPosition(p.x, p.y).setAlpha(puffAlpha(0)).setVisible(true);

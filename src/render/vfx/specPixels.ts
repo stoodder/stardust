@@ -2,18 +2,17 @@
 // rules and pixel images that ProjectileView and SpecFx draw.
 // - **Seekers** (Seeker Swarm): each missile climbs from the barrels to its flyer's height over its
 //   first SEEKER_CLIMB_TICKS sim ticks, fans out from its volley-mates and eases back onto its line
-//   (`seekerFan`), turns along its flight (a 3×3 sprite may rotate), and
-//   leaves a smoke trail: a point dropped every TRAIL_SAMPLE_TICKS sim ticks, the newest an
-//   exhaust spark, the older ones grey puffs fading down the stepped-alpha ladder (TRAIL_STEPS).
-//   On sim ticks, so a pause holds the trail and 2× stretches nothing.
+//   (`seekerFan`), turns along its flight (a 3×4 sprite may rotate), and leaves a trail: a point
+//   dropped every TRAIL_SAMPLE_TICKS sim ticks, the newest white-hot, then flame, then pale smoke
+//   fading down the stepped-alpha ladder (TRAIL_STEPS). On sim ticks, so a pause holds the trail.
 // - **The capacitor charge** (Capacitor Bank): an orb at the coil's claw that grows in four steps
 //   as the charge fills (`chargeLevel`, from the sim's `chargeTicks`), a `blue.4` disc in a
 //   `blue.3` halo round a white-hot heart; full (the last quarter) it flickers 100% ↔ 60% on the
 //   sim's 3 Hz tell step (steady under reduced motion). A charge that fizzles (drops to 0 without
 //   a discharge) sputters a small `steel.4` ring.
-// - **Flak Curtain**: every burst leaves a puff of dark flak smoke hanging in the air where it
-//   burst (CURTAIN_PUFF), drifting up a pixel at a time and fading in steps, so a stream of bursts
-//   draws a curtain across the air lane.
+// - **Flak Curtain**: every burst leaves a 5×5 puff of grey flak smoke hanging in the air where it
+//   burst (CURTAIN_PUFF), drifting up a pixel at a time and fading down the stepped-alpha ladder
+//   over 1.2 s (three or four hang behind a firing Curtain), so a stream of bursts draws a curtain across the air lane.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 import { STEPPED_ALPHA, TELL_STEP_TICKS } from './fxTiming.ts';
@@ -39,7 +38,8 @@ export const SEEKER_FAN_TICKS = 30;
 export function seekerFan(k: number, ageTicks: number): number {
   const fan = SEEKER_FAN_PX[k % SEEKER_FAN_PX.length]!; // index < length
   const left = 1 - Math.min(1, Math.max(0, ageTicks / SEEKER_FAN_TICKS));
-  return Math.round(fan * left);
+  const px = Math.round(fan * left);
+  return px === 0 ? 0 : px; // never −0
 }
 
 /** A trail point is dropped every this many sim ticks. */
@@ -52,12 +52,17 @@ export interface TrailStep {
   readonly alpha: number;
 }
 
-/** The trail, newest point first: an exhaust spark, then grey smoke fading out. */
+/**
+ * The trail, newest point first: a white-hot exhaust, flame, then pale smoke fading down the
+ * stepped-alpha ladder. Bright on purpose: it is what reads a 3×4 missile at 1× on any ground.
+ */
 export const TRAIL_STEPS: readonly TrailStep[] = [
-  { color: 'orange.4', size: 1, alpha: STEPPED_ALPHA[0] },
+  { color: 'white.1', size: 2, alpha: STEPPED_ALPHA[0] },
+  { color: 'orange.4', size: 2, alpha: STEPPED_ALPHA[0] },
+  { color: 'orange.3', size: 1, alpha: STEPPED_ALPHA[1] },
   { color: 'steel.4', size: 2, alpha: STEPPED_ALPHA[1] },
-  { color: 'steel.3', size: 2, alpha: STEPPED_ALPHA[2] },
-  { color: 'steel.2', size: 2, alpha: STEPPED_ALPHA[3] },
+  { color: 'steel.4', size: 2, alpha: STEPPED_ALPHA[2] },
+  { color: 'steel.3', size: 2, alpha: STEPPED_ALPHA[3] },
 ];
 
 /**
@@ -111,39 +116,42 @@ export function dotImage(size: number): RgbaImage {
   return { w: size, h: size, data: new Uint8ClampedArray(size * size * 4).fill(255) };
 }
 
-/** Flak Curtain's smoke puff: a 3×3 dark blot rimmed lighter, its life and drift. */
+/** Flak Curtain's smoke puff: a 5×5 grey blot rimmed lighter, its life and drift. */
 export const CURTAIN_PUFF = {
-  core: 'ink.2' as ColorName,
-  rim: 'steel.2' as ColorName,
-  ms: 600,
+  core: 'steel.1' as ColorName,
+  rim: 'steel.3' as ColorName,
+  size: 5,
+  ms: 1200,
   /** It rises a pixel every this many ms. */
-  riseEveryMs: 200,
+  riseEveryMs: 300,
 } as const;
 
-/** The puff image: a rounded 3×3, a dark core inside a lighter rim. */
+/** The puff image: a rounded square (corners cut), a dark core inside a lighter rim. */
 export function puffImage(): RgbaImage {
+  const n = CURTAIN_PUFF.size;
   const core = rgbOf(CURTAIN_PUFF.core);
   const rim = rgbOf(CURTAIN_PUFF.rim);
-  const data = new Uint8ClampedArray(3 * 3 * 4);
-  for (let y = 0; y < 3; y++) {
-    for (let x = 0; x < 3; x++) {
-      if ((x === 0 || x === 2) && (y === 0 || y === 2)) continue; // round the corners
-      const c = x === 1 && y === 1 ? core : rim;
-      const i = (y * 3 + x) * 4;
+  const data = new Uint8ClampedArray(n * n * 4);
+  const edge = (v: number): boolean => v === 0 || v === n - 1;
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (edge(x) && edge(y)) continue; // round the corners
+      const c = edge(x) || edge(y) ? rim : core;
+      const i = (y * n + x) * 4;
       data[i] = c.r;
       data[i + 1] = c.g;
       data[i + 2] = c.b;
       data[i + 3] = 255;
     }
   }
-  return { w: 3, h: 3, data };
+  return { w: n, h: n, data };
 }
 
-/** A puff's alpha `ms` into its life: 60%, then 35%, then 15%, then gone (0). */
+/** A puff's alpha `ms` into its life: down the whole stepped-alpha ladder, then gone (0). */
 export function puffAlpha(ms: number): number {
   if (ms < 0 || ms >= CURTAIN_PUFF.ms) return 0;
-  const k = Math.floor((3 * ms) / CURTAIN_PUFF.ms);
-  return STEPPED_ALPHA[1 + k]!; // k < 3
+  const k = Math.floor((STEPPED_ALPHA.length * ms) / CURTAIN_PUFF.ms);
+  return STEPPED_ALPHA[k]!; // k < length
 }
 
 /** How far a puff has risen (px) `ms` into its life. */

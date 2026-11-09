@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITIES } from '../content/abilities/index.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
-import { TOWERS } from '../content/towers/index.ts';
+import { TOWERS, TOWERS_AHEAD_OF_TASK } from '../content/towers/index.ts';
 import type { AttackKind, IdSpace } from '../content/types.ts';
 import type { SimEvent, SimEventType } from '../sim/index.ts';
 import {
@@ -187,9 +187,12 @@ describe('Act I event sounds', () => {
 });
 
 describe('the sound tables cover the content', () => {
-  it('every tower attack kind has its shot', () => {
+  it('every tower attack kind has its shot (specs too; stubs wait for their task)', () => {
     for (const t of Object.values(TOWERS)) {
-      for (const tier of t.tiers) {
+      if (TOWERS_AHEAD_OF_TASK.includes(t.id)) continue;
+      const specs: readonly { readonly attack?: { readonly kind?: string } | null }[] =
+        'specs' in t ? [t.specs.a, t.specs.b] : [];
+      for (const tier of [...t.tiers, ...specs]) {
         const kind = tier.attack?.kind;
         if (kind !== undefined) expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
       }

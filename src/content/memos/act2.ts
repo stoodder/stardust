@@ -2,14 +2,16 @@
 // line), in delivery order, plus the Q3 Bonus memo that lands on A2M4's results screen. This file
 // is the home of their text (style-guide § 6.1; the voice is § 2's Act II row: the same template,
 // creepier contents). Subjects and small print are the act file's, verbatim. `memo_a2_01`'s and
-// `memo_a2_02`'s bodies came with their maps (T420, T421); T411 writes `memo_a2_03` and may revise
-// them. `memo_a2_02` carries A2M2's KFA form as its last paragraph (the act file's "plus a KFA
+// `memo_a2_02`'s and `memo_a2_03`'s bodies came with their maps (T420, T421, T422); T411 may
+// revise them. `memo_a2_02` carries A2M2's KFA form as its last paragraph (the act file's "plus a KFA
 // form"): the automated filing Sterling asks everyone to disregard, which calls it what it is.
 import type { MemoDef } from './types.ts';
 
 const STERLING = 'Director Joy Sterling, Frontier Operations';
 const TO_447 = 'Employee #ED-447 (Junior Perimeter Technician)';
 const SIGN_OFF = 'Stay Everglow! {glyph:sun} — Joy';
+/** A2M3's memo is Bricks's, copied to the player: it's the one he reads aloud at the debrief. */
+const TO_OKONKWO = 'Sgt. I. Okonkwo (Senior Perimeter Sergeant) · cc: Employee #ED-447';
 
 /** Every Act II memo, in delivery order. */
 export const ACT2_MEMOS: readonly MemoDef[] = [
@@ -43,5 +45,21 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
     signOff: SIGN_OFF,
     smallPrint: 'Incident footage is retained by Legal. The vandal is not to be described as sad.',
     afterMap: 'a2_m02',
+  },
+  {
+    id: 'memo_a2_03',
+    from: STERLING,
+    to: TO_OKONKWO,
+    subject: 'Pension Restructuring Opportunity!',
+    body:
+      'Great news, Sergeant! After nineteen years of loyal service, your pension has been ' +
+      'restructured into something even better: a Lifetime Company Store Coupon, good for one (1) ' +
+      'Everglow item of your choice!\n\n' +
+      'The Long Dusk calls for flexibility, and flexibility starts at the top. Near the top. ' +
+      'It starts with you!\n\n' +
+      'Wellness tip: retirement is a mindset. You can start it today, at your post!',
+    signOff: SIGN_OFF,
+    smallPrint: 'Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person.',
+    afterMap: 'a2_m03',
   },
 ];

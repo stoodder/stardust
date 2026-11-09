@@ -116,7 +116,7 @@ Tile bonuses ([maps.md §3](maps.md#3-tile-types)): **high ground +25% range**, 
 - Towers **never** target enemies that are undetected-cloaked, burrowed, phased, or in a layer the tower can't hit (for example a ground-only tower and a flyer that isn't Pinned).
 - **Retargeting:** a tower picks its target by priority each time it's ready to fire. Between shots it keeps its current target while that target stays in range.
 - **Beam stickiness:** the Prism Spire keeps its target until the target dies or leaves range, regardless of priority, because ramp-up is its whole point.
-- **Delivery.** Each attack is **hitscan** (damage lands the tick it fires; the Rivet), a **projectile** with a flight time (the Thumper's lobbed shells; the Skyhook's flak, a straight shot that bursts at the intercept point: where its target will be when it arrives, at the target's current speed, fixed when it fires; not homing), or a **beam** (the Prism Spire and the Lantern's light-beam; beams are not DoT, and armor applies per beam tick: [enemies.md §2.3](enemies.md#23-damage-pipeline)). Each tower's delivery is set in its data.
+- **Delivery.** Each attack is **hitscan** (damage lands the tick it fires; the Rivet), a **projectile** with a flight time (the Thumper's lobbed shells; the Skyhook's flak, a straight shot that bursts at the intercept point: where its target will be when it arrives, at the target's current speed, fixed when it fires; Seeker Swarm's missiles, which home: section 7), a **charge** (Capacitor Bank: section 7), or a **beam** (the Prism Spire and the Lantern's light-beam; beams are not DoT, and armor applies per beam tick: [enemies.md §2.3](enemies.md#23-damage-pipeline)). Each tower's delivery is set in its data.
 - **Lead targeting (artillery).** A tower whose shells land after a delay (Thumper) aims at where its target will be along its route after the flight time, at the target's current speed. The impact point is fixed when it fires, so a target that speeds up, slows, or blinks can dodge. The splash hits only the layers the tower targets (a Thumper shell never hits flyers).
 - Defaults are listed in each tower's entry. Support towers have no targeting.
 
@@ -168,7 +168,7 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base. Each later tier lists only what changes. DPS figures ignore armor and shields.
 
-**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`), and the Rivet, Thumper, and Sprinkler specializations are there too (the Sprinkler's since T407a). Their entries below give each tier's job and target ranges, not the numbers. **Specs not built yet** (Skyhook's and Zapcoil's, deferred to M4 by [D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut) for homing and charge attacks; T407b) and **every other tower** keep their first-pass numbers here, with a T4 cost on the default curve unless stated. Engineering lists those towers' spec unlocks as "Arrives in a later shipment" ([progression.md §7.1](progression.md#71-engineering-specializations)).
+**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 and both specializations in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`; the Sprinkler's specs since T407a, the Skyhook's and Zapcoil's since T407b). Their entries below give each tier's job and target ranges, not the numbers. **Every other tower** keeps its first-pass numbers here, with a T4 cost on the default curve unless stated.
 
 **Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
 - **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.
@@ -210,8 +210,9 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **T1:** flak, **air only**: a fast straight shot (not homing) that bursts at the intercept point (section 5) in a splash of under a tile, so a burst catches two or three flyers of a close flock. About one shot a second at medium range. Default: First.
 - **T2:** a damage step.
 - **T3:** fires faster and reaches a little further.
-- **A: Flak Curtain (330; M4):** 3.0 shots/s, 12 damage, splash 1.2. Built for flocks.
-- **B: Seeker Swarm (330; M4):** volleys of 4 homing missiles, 25 damage each, armor pierce 4, range 5.0. Default: Strong. Built for armored gunships.
+- **A: Flak Curtain:** the same flak, faster and wider: 3.0 shots/s, 12 damage, splash 1.2. Built for flocks.
+- **B: Seeker Swarm:** volleys of 4 homing missiles, 25 damage each, armor pierce 4, range 5.0, a volley every 2 s. Default: Strong. Each missile goes to its own target where it can (the tower's target, then the next best by its priority; with too few targets the extras go round them again). No splash. Built for armored gunships, so it answers armor only where the armored units fly (it hits air only).
+- **Homing as built** ([`src/sim/systems/projectiles.ts`](../../src/sim/systems/projectiles.ts)'s header has the full rules): a missile flies 6 tiles/s straight at where its target is each tick, so it catches anything slower. When its target dies, leaks, burrows, slips into its cloak, or leaves, it switches to the nearest enemy within 3 tiles of itself (never a neutral unit, and never a spared runner if its tower spares them); with none, it flies on to where it last saw its target and fizzles. After 3 s it fizzles where it is. A missile fired at Gerald plinks off him.
 - **Links:** Skywatch (Lookout), Sticky Flak (Gloop).
 
 ### Vrell towers
@@ -233,8 +234,9 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **The chain as built:** each jump goes from the last enemy struck to the nearest enemy this shot hasn't struck within jump range (ties: the lowest uid), on the layers the tier hits, and stops early when there's none. The falloff compounds (each hit is the last one's share), so long Conductive chains never reach 0. Jumps skip neutral units and land on spared runners, as splash does. A neutral first target plinks and the arc still jumps on. The full rules are [`src/sim/attacks/chain.ts`](../../src/sim/attacks/chain.ts)'s header.
 - **T2:** a damage step.
 - **T3:** chains to one more target and fires a little faster.
-- **A: Overload Coil (360; M4):** chains to 8, −10% per jump.
-- **B: Capacitor Bank (360; M4):** charges for 4 s, then discharges 250 Energy into one target plus 50% to enemies within 1 tile. Default: Strong.
+- **A: Overload Coil:** chains to 8, −10% per jump, on tier 3's damage, rate, and reach. Built for swarms.
+- **B: Capacitor Bank:** charges for 4 s on its target, then discharges 250 Energy into it plus 50% to enemies within 1 tile; range 2.5. Default: Strong. Built for tanks and bosses.
+- **The charge as built** ([`src/sim/attacks/charge.ts`](../../src/sim/attacks/charge.ts)'s header has the full rules): the bank holds its target while it stays in range, whatever its priority says, and the charge grows each tick it holds one; rate bonuses shorten it. **What interrupts a charge:** when its target dies or leaks (or the spare-runners filter drops it), the bank swings to a new target in range and keeps its charge, so teamwork never wastes it. When its target **escapes** (burrows, slips into its cloak, leaves, or walks out of range), or nothing is left in range, the charge fizzles back to 0. Hold Fire vents it. Blink, burrow, and cloak are the Capacitor's natural enemies; Stasis and Pins hold its target for it.
 - **Links:** Conductive (Sprinkler), Resonance (Prism).
 
 #### Grapple Harpoon (`harpoon`)

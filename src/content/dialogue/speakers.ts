@@ -26,9 +26,17 @@ export interface PortraitVariantRule {
   readonly when: Condition;
 }
 
+/** A name plate other than the speaker's own, and when it shows. The first rule that holds wins. */
+export interface NamePlateRule {
+  readonly name: string;
+  readonly when: Condition;
+}
+
 export interface SpeakerDef {
   /** The name plate. */
   readonly name: string;
+  /** Other name plates, in priority order (Pebble's "???" before she's named); none: `name`. */
+  readonly names?: readonly NamePlateRule[];
   /** The name plate's color (a master palette name). */
   readonly color: ColorName;
   readonly frame: SpeakerFrame;
@@ -60,7 +68,19 @@ export const SPEAKERS = {
     color: 'orange.4',
     frame: 'portrait',
     portrait: 'portrait.bricks',
-    variants: [{ variant: 'pebble', when: { mapAtLeast: 'a2_m03' } }],
+    // Pebble in his breast pocket (D103): from her rescue on, live mid-battle (the cue is saved as
+    // seen as it ends), and on every map after.
+    variants: [
+      {
+        variant: 'pebble',
+        when: {
+          any: [
+            { mapAtLeast: 'a2_m04' },
+            { all: [{ mapIs: 'a2_m03' }, { seen: 'a2_m03_cue_pebble' }] },
+          ],
+        },
+      },
+    ],
     blip: 'blip.bricks',
   },
   quill: {
@@ -104,6 +124,13 @@ export const SPEAKERS = {
   },
   pebble: {
     name: 'Pebble',
+    // Nobody knows her name until Bricks gives her one (A2M3 w07; D103).
+    names: [
+      {
+        name: '???',
+        when: { not: { any: [{ mapAtLeast: 'a2_m04' }, { seen: 'a2_m03_w07' }] } },
+      },
+    ],
     color: 'coral.4',
     frame: 'portrait',
     portrait: 'portrait.pebble',

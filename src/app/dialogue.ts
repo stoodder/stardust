@@ -165,8 +165,9 @@ function speakerGone(speaker: SpeakerId, ctx: StoryContext): boolean {
 }
 
 /**
- * The view of line `s`: its speaker's plate and portrait (the variant the speaker's rules pick;
- * the `dark` bake for a silence from an absent speaker), and its text with tokens resolved.
+ * The view of line `s`: its speaker's name plate and portrait (the plate and the variant the
+ * speaker's rules pick; the `dark` bake for a silence from an absent speaker), and its text with
+ * tokens resolved.
  * `present`: who is on the radio (a battle), or null (anyone not gone for good).
  */
 export function lineView(
@@ -180,10 +181,11 @@ export function lineView(
   const absent = present === null ? speakerGone(s.speaker, ctx) : !present.includes(s.speaker);
   const expression = s.expression ?? 'neutral';
   const variant = def.variants.find((r) => evaluateCondition(r.when, ctx))?.variant ?? null;
+  const name = def.names?.find((r) => evaluateCondition(r.when, ctx))?.name ?? def.name;
   return {
     id: ++lineSerial,
     speaker: s.speaker,
-    name: def.name,
+    name,
     color: def.color,
     frame: def.frame,
     portrait:

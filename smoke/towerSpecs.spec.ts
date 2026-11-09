@@ -116,19 +116,42 @@ test('tower specs: seekers, the capacitor charge and discharge, and the flak cur
   );
   await shot(page, 'tower-specs', 2, 'capacitor-discharge');
 
-  // The flock comes down the lane: the Seekers' volley steers in, trailing smoke. Several frames
-  // with ticks between them lay the trail (it samples on sim ticks).
+  // The flock comes down the lane into the Seekers' reach (5 tiles).
+  const near = await page.evaluate(
+    ([c, r]) => {
+      const sd = globalThis.__sd!;
+      const enemies = sd.state()!.enemies;
+      for (let k = 0; k < 1800; k++) {
+        for (let i = 0; i < enemies.used; i++) {
+          const e = enemies.items[i]!;
+          if (!e.alive || e.def?.id !== 'puffwing') continue;
+          if (Math.hypot(e.x - c - 0.5, e.y - r - 0.5) <= 4.5) return true;
+        }
+        sd.fastForward(1);
+      }
+      return false;
+    },
+    [SEEKER[0], SEEKER[1]] as const,
+  );
+  expect(near).toBe(true);
+  // Frame by frame (the trail samples on sim ticks) until a volley is a few ticks into its flight:
+  // the missiles fan out, climb, and trail smoke as they steer in.
   let seekers = 0;
-  for (let k = 0; k < 300 && seekers === 0; k++) {
-    await page.evaluate(() => globalThis.__sd!.fastForward(2));
+  for (let k = 0; k < 150; k++) {
+    await page.evaluate(() => globalThis.__sd!.fastForward(1));
     await nextFrames(page);
+    const aged = await page.evaluate(() => {
+      const shots = globalThis.__sd!.state()!.projectiles;
+      for (let i = 0; i < shots.used; i++) {
+        const p = shots.items[i]!;
+        if (p.alive && p.homing && p.flightTicks - p.ticksLeft >= 18) return true;
+      }
+      return false;
+    });
     seekers = (await page.evaluate(() => globalThis.__sd!.render()!.specs)).seekers;
+    if (aged && seekers > 0) break;
   }
   expect(seekers).toBeGreaterThan(0);
-  for (let k = 0; k < 3; k++) {
-    await page.evaluate(() => globalThis.__sd!.fastForward(2));
-    await nextFrames(page);
-  }
   await shot(page, 'tower-specs', 3, 'seeker-swarm');
 
   // Flak Curtain's bursts leave puffs hanging over the lane (they fade on real time).
