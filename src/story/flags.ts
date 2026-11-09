@@ -2,6 +2,7 @@
 // finished run's stats, the value story reads for a flag, and the flags a run's map scripts see.
 // Pure functions over content data (content/dialogue/flags.ts) and sim stats.
 import {
+  FLAG_IDS,
   FLAG_RULES,
   FLAGS,
   type FlagRule,
@@ -10,7 +11,7 @@ import {
   type FlagSet,
 } from '../content/dialogue/flags.ts';
 import type { FlagId, FlagValue, ScriptFlagId, WaveTag } from '../content/types.ts';
-import type { ScriptFlags, SimStats } from '../sim/index.ts';
+import type { ScriptFlags } from '../sim/index.ts';
 
 /** The run stats run-end rules read: the per-tag counts and the counters (`FlagRuleStat`). */
 export type FlagRuleStats = {
@@ -18,10 +19,6 @@ export type FlagRuleStats = {
 } & {
   readonly [T in 'tagSpawned' | 'tagLeaked' | 'tagKilled']: Readonly<Record<WaveTag, number>>;
 };
-
-// SimStats must keep every field the rules read (a compile error here if one is renamed).
-const _statsFit = (s: SimStats): FlagRuleStats => s;
-void _statsFit;
 
 /** Whether `c` holds over a finished run's stats (FlagRuleCondition's atoms). */
 export function evaluateFlagRule(c: FlagRuleCondition, stats: FlagRuleStats): boolean {
@@ -74,9 +71,14 @@ export function flagValue(flags: FlagSet, flag: FlagId): FlagValue | null {
 }
 
 /** The registry's script-readable flags (`script: true`), in registry order. */
-export const SCRIPT_FLAG_IDS: readonly ScriptFlagId[] = (Object.keys(FLAGS) as FlagId[]).filter(
+export const SCRIPT_FLAG_IDS: readonly ScriptFlagId[] = FLAG_IDS.filter(
   (f): f is ScriptFlagId => 'script' in FLAGS[f],
 );
+
+/** Whether `id` names a flag map scripts may read. */
+export function isScriptFlagId(id: string): id is ScriptFlagId {
+  return SCRIPT_FLAG_IDS.some((f) => f === id);
+}
 
 /**
  * The story flags a run's map scripts see (`SimConfig.scriptFlags`): the save's set flags that

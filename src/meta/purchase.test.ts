@@ -61,6 +61,23 @@ describe('offers', () => {
     expect(kinds.filter((k) => k === 'tune')).toHaveLength(3);
   });
 
+  it('orders each group by arrival, then entry price, then name', () => {
+    const shop = shelf(afterA1M4(), 'shop');
+    const globals = shop.filter((o) => o.item.kind === 'upgrade' && o.tower === null);
+    expect(globals.map((o) => (o.item.kind === 'upgrade' ? o.item.id : ''))).toEqual([
+      'salvage_rights',
+      'seed_money',
+      'ability_coolant',
+      'resale_value',
+      'reinforced_core',
+      'bounty_hunter',
+    ]);
+    // A bought rank doesn't move an item.
+    const save = afterA1M4();
+    save.upgrades.salvage_rights = 1;
+    expect(shelf(save, 'shop')[0]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
+  });
+
   it('a tune-up needs its tower, and a spec unlock needs specs', () => {
     const save = afterA1M4();
     save.unlocks.towers = ['rivet', 'thumper'];

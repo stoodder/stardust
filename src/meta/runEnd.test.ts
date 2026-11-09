@@ -185,6 +185,27 @@ describe('runEnd (meta-runtime.md § Run end)', () => {
   });
 });
 
+/** Per-tag counts with `n` quiet-wave units (step 2's stats). */
+const tags = (n: number): Record<WaveTag, number> => ({
+  quiet_wave: n,
+  youngling: 0,
+  fleeing: 0,
+  medal_exempt: 0,
+});
+
+/** A finished run's stats with `leaked` of 5 quiet-wave units leaked. */
+const stats = (leaked: number): FlagRuleStats => ({
+  holdFireUses: 1,
+  holdFireTicks: 90,
+  integrityLost: 5,
+  towersBuilt: 4,
+  creditsSpent: 300,
+  abilityUses: 1,
+  tagSpawned: tags(5),
+  tagLeaked: tags(leaked),
+  tagKilled: tags(5 - leaked),
+});
+
 describe('runEnd step 2: story run-end flag rules (story-runtime.md § Flags)', () => {
   // A1M5's Quiet Wave rule, moved onto A1M1 (the only maps a RunEndInput can name in M2).
   const RULES: FlagRule[] = [
@@ -194,23 +215,6 @@ describe('runEnd step 2: story run-end flag rules (story-runtime.md § Flags)', 
       value: { tagRatio: { tag: 'quiet_wave', of: 'leaked', gte: 0.75 } },
     },
   ];
-  const tags = (n: number): Record<WaveTag, number> => ({
-    quiet_wave: n,
-    youngling: 0,
-    fleeing: 0,
-    medal_exempt: 0,
-  });
-  const stats = (leaked: number): FlagRuleStats => ({
-    holdFireUses: 1,
-    holdFireTicks: 90,
-    integrityLost: 5,
-    towersBuilt: 4,
-    creditsSpent: 300,
-    abilityUses: 1,
-    tagSpawned: tags(5),
-    tagLeaked: tags(leaked),
-    tagKilled: tags(5 - leaked),
-  });
   const spare = { ...RUN, stats: stats(5) };
   const clear = { ...RUN, stats: stats(0) };
 

@@ -6,6 +6,8 @@ The authoring format and voice rules are owned by [story/style-guide.md](../stor
 
 **Not in M1.** M1 uses only the `unlockTowerClass` action (compiled from `towerUnlockWave`); A1M1's briefing is static text ([architecture.md, M1 subset](architecture.md#architecture)).
 
+**Built so far (M2).** The flag registry, its run-end rules, and `scriptFlags` from the save ([§ Flags](#flags), T206b). The dialogue runner, text substitution, barks, and the other story systems below are M3+.
+
 ---
 
 ## Map scripts (story-driven sim changes)
@@ -50,7 +52,7 @@ type ScriptAction =
 
 - **Cue ids** follow `<map_id>_wNN` for wave-bound cues (`a1_m01_w03`), and the other `<map_id>_<slot>` forms from [story/style-guide.md](../story/style-guide.md) for the rest. Validation checks the pattern.
 - **`when`** is judged once, on the tick its event's trigger is reached ([§ Conditions](#conditions)). If it doesn't hold then, the event is spent without running; it never waits for the condition to come true.
-- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/`. `ConditionDef` tests them with `{ flag, eq }` ([`src/content/types.ts`](../../src/content/types.ts)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
+- **Flags in the sim.** `SimConfig.scriptFlags` carries the story flags a map's scripts and setup may read (`ScriptFlagId`: the registry's flags marked `script: true`, now `door_choice`, `spared_quiet_wave`, `stardust_choice`, `quill_choice`), copied from the save by `app/battleSetup.ts` with `scriptFlagsOf` (only flags that are set; defaults never reach the sim). `ConditionDef` tests them with `{ flag, eq }` ([`src/content/types.ts`](../../src/content/types.ts)). The sim never sets flags; story derives flags from `state.stats` when the run ends ([§ Flags](#flags)). C4's in-play effects are flag-conditioned map data (events, modifiers, and `lockedAbilities`); the rules are in [design/core-loop.md](../design/core-loop.md) §6.11.
 - **Forced input.** `forceInput` sets `state.pendingInput`. While it is set, the wave schedule, movement, firing, cooldowns, and timers are frozen. The sim still ticks (so render can animate and `tick` stays monotonic), and `applyCommands` accepts only `{ type: 'scriptInput', id }`. The host shows the single-button overlay on `ForcedInputRequested`. Real-time lines (Bricks's line after 20 s on the SEAL) are a story-side timer on wall-clock time, not sim ticks. The balance harness presses it with a `scriptInput` build step.
 - **Clickable world objects.** `setClickable` marks a marker (for example `peeker` in A2M3) as clickable and emits `ClickableChanged`; render highlights it ([art-direction.md §6](../art/art-direction.md#6-story-and-world-sprites)). An `interact` command (valid only while the marker is clickable), or the `fallback` trigger if the player never clicks, fires the `interacted` trigger once and emits `Interacted { by }`. Pebble's A2M3 rescue is built this way, with "W6 cleared" as its fallback. Clicks that change nothing in the sim (poking the Peeker in Act I) are UI events instead (`peeker_poked`, [§ Flags](#flags)).
 - **Revocation** selects the class deterministically (most credits invested, then most towers placed, then loadout slot; [design/towers.md §9](../design/towers.md#9-rules-for-story-driven-tower-changes)), sells every tower of it at 100%, adds it to `state.revoked`, and emits `TowerClassRevoked`. Meta copies `revoked` into the save at run end.
@@ -99,15 +101,25 @@ A condition **settles** once the rest of the run can't change it (`settledCondit
 
 ## Flags
 
-Flags are declared in `content/dialogue/flags.ts` with a type (`boolean`, or a string union such as `'convoy' | 'warren'`) and a one-line description. The canonical flag table is [story/campaign.md](../story/campaign.md) §6.2 (the bible's table is a summary). Flags are set by `choice`/`set` nodes, by UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or by **run-end rules**: data in `content/dialogue/flags.ts` that derives a flag from `state.stats` when a map ends, for example:
+Flags are declared in `content/dialogue/flags.ts` (`FLAGS`): each with its `values` (a boolean flag lists `true` and `false`; a choice lists its ids, such as `'convoy'`, `'warren'`), a `default`, an optional `script: true`, and a one-line description. `FlagId` and `ScriptFlagId` (`content/types.ts`) are derived from it, so a typo'd flag is a compile error, and a map's `flagVariants` may list only that flag's values. The registry is exactly the canonical flag table, [story/campaign.md](../story/campaign.md) §6.2, in its order and with its values (`tools/flagLedger.test.ts` checks it; the bible's table is a summary).
+
+- **Defaults** are what story reads while a flag is unset (`flagValue` in `src/story/flags.ts`): `false` for a boolean (not done yet), `null` for a choice not made yet. The sim never sees a default ([§ Map scripts](#map-scripts-story-driven-sim-changes)).
+- **Who sets them:** `choice`/`set` nodes, UI events (`peeker_poked`, `asked_zibzab_early`, optional bark buttons), or **run-end rules**.
+- **Saves** hold `story.flags` keyed by `FlagId` ([meta-runtime.md § Save system](meta-runtime.md#save-system)).
+
+**Run-end rules** (`FLAG_RULES` in `content/dialogue/flags.ts`) derive a boolean flag from the finished run's `state.stats` when a map ends:
 
 ```ts
 { flag: 'spared_quiet_wave', onMapEnd: 'a1_m05',
   value: { tagRatio: { tag: 'quiet_wave', of: 'leaked', gte: 0.75 } } },          // design/core-loop.md §2.7
 { flag: 'held_fire_second_look', onMapEnd: 'a2_m03',
   value: { all: [{ tagRatio: { tag: 'fleeing', of: 'leaked', gte: 0.5 } },
-                 { stat: 'holdFireUses', gte: 1 }] } },
+                 { stat: 'holdFireUses', gte: 1 }] } },                          // plain Hold Fire only
 ```
+
+- **The grammar** (`FlagRuleCondition`) is the sim's condition atoms that make sense after a run: `tagRatio` (leaked or killed ÷ spawned for a wave tag; false when none spawned), `stat` over the run counters `holdFireUses`, `holdFireTicks`, `integrityLost`, `towersBuilt`, `creditsSpent`, and `abilityUses` (`gte`/`lte`), and `all`, `any`, `not`. `holdFireUses` counts only plain Hold Fire turned on, never the Spare runners filter ([architecture.md § Commands](architecture.md#commands-input-into-the-sim)).
+- **When they apply:** `src/story/flags.ts` `runEndFlags(mapId, stats)` evaluates the rules whose `onMapEnd` is the ended map, and meta's run end applies them only on the run that **first wins** that map ([meta-runtime.md § Run end](meta-runtime.md#run-end), step 2). Each rule sets its flag to `true` or `false`, so the flag is always set once the map is won. Losses and replays never change it: the map's results stamp, its memo, and every later payoff follow the run that completed the map.
+- **The harness** judges C1 with the same rule: assertion #16(a)'s held run must make `spared_quiet_wave`'s rule true ([conventions.md § Balance sims](conventions.md#balance-sims-npm-run-sim)).
 
 ## Text substitution
 

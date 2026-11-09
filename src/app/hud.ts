@@ -448,7 +448,13 @@ export function selectedView(
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
   const upgradeDelta = deltaText(stats.next);
   const tile = map.tiles[t.row * map.cols + t.col];
-  const bonusList = bonusTexts(tile, t, t.tierDef?.attack != null, config.content.links, mods);
+  const bonusList = bonusTexts(
+    tile,
+    t,
+    (t.tierDef?.attack ?? null) !== null,
+    config.content.links,
+    mods,
+  );
   return {
     uid,
     key,
@@ -466,14 +472,7 @@ export function selectedView(
     bonuses: bonusList.flatMap((b) => wrapParts([b], PANEL_CHARS)),
     upgradeDelta,
     deltaLines: upgradeDelta === null ? [] : wrapParts(nextParts(upgradeDelta), PANEL_CHARS),
-    specs: specChoice(
-      t.def,
-      t.tier,
-      t,
-      mods,
-      config.specsUnlocked.includes(t.def.id),
-      specLock,
-    ),
+    specs: specChoice(t.def, t.tier, t, mods, config.specsUnlocked.includes(t.def.id), specLock),
     x: p.x,
     y: p.y,
   };
@@ -500,7 +499,10 @@ export function medalViews(
     if (id === null) continue;
     const text =
       kind === 'challenge'
-        ? { name: map.medals?.challenge.name ?? '', description: map.medals?.challenge.description ?? '' }
+        ? {
+            name: map.medals?.challenge.name ?? '',
+            description: map.medals?.challenge.description ?? '',
+          }
         : MEDAL_TEXT[kind];
     out.push({ kind, id, ...text, held: held.includes(id), status: status[kind] });
   }
@@ -525,7 +527,10 @@ export function threatIntel(
   owned: readonly string[],
   specsUnlocked: readonly string[],
 ): ThreatIntelView {
-  const enemies = new Map<string, CompiledMapDef<IdSpace>['waves'][number]['groups'][number]['enemy']>();
+  const enemies = new Map<
+    string,
+    CompiledMapDef<IdSpace>['waves'][number]['groups'][number]['enemy']
+  >();
   for (const w of map.waves) for (const g of w.groups) enemies.set(g.enemy.id, g.enemy);
   const threats: ThreatView[] = map.threatIntel.map((trait) => ({
     id: trait,
@@ -550,9 +555,10 @@ export function threatIntel(
         reached.push({ tower, tier: MAX_TIER_BEFORE_SPEC + 1, spec: 'a' });
         reached.push({ tower, tier: MAX_TIER_BEFORE_SPEC + 1, spec: 'b' });
       }
-      for (const l of answersCarried(COUNTER_ANSWERS[counter], scope, reached, [])) {
-        answers.push(answerLabel(l));
-      }
+      const labels = answersCarried(COUNTER_ANSWERS[counter], scope, reached, []);
+      // A tower that answers at an in-map tier needn't list its spec too.
+      const plain = labels.filter((l) => !l.includes('['));
+      for (const l of plain.length > 0 ? plain : labels) answers.push(answerLabel(l));
     }
     return { counter, label: displayName(counter), answers };
   });

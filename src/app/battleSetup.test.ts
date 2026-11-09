@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
-import { createNewSave } from '../meta/index.ts';
+import { createNewSave, withPreset } from '../meta/index.ts';
 import { companionSlot, createSim, FEATURE_GATES } from '../sim/index.ts';
 import {
   battleConfig,
   battleMapIds,
   DEFAULT_MAP_ID,
   defaultLoadout,
+  defaultPick,
   hasBattleMap,
   randomSeed,
 } from './battleSetup.ts';
@@ -83,6 +84,34 @@ describe('battleSetup from a save', () => {
     expect(battleConfig(DEFAULT_MAP_ID, 1, save).scriptFlags).toEqual({});
     save.story.flags = { spared_quiet_wave: true, peeker_poked: true };
     expect(battleConfig(DEFAULT_MAP_ID, 1, save).scriptFlags).toEqual({ spared_quiet_wave: true });
+  });
+
+  it("plays the map's loadout preset when the save has a choice (T201), else everything owned", () => {
+    const save = withPreset(DEV_SAVES.all_unlocked.build(), 'a1_m01', {
+      towers: ['sprinkler', 'rivet'],
+      ability: 'suppressing_fire',
+    });
+    const cfg = battleConfig(DEFAULT_MAP_ID, 1, save);
+    expect(cfg.loadout).toEqual(['sprinkler', 'rivet']);
+    expect(cfg.abilities.slot1).toBe('suppressing_fire');
+    expect(() => createSim(cfg)).not.toThrow();
+    // No choice left (one ability): the skip rule brings everything owned, preset or not.
+    save.unlocks.revokedAbilities = ['suppressing_fire'];
+    const skipped = battleConfig(DEFAULT_MAP_ID, 1, save);
+    expect(skipped.loadout).toEqual(['rivet', 'thumper', 'sprinkler']);
+    expect(skipped.abilities.slot1).toBe('orbital_strike');
+  });
+
+  it('defaultPick is the default towers and the par ability, as the save owns them', () => {
+    const save = DEV_SAVES.all_unlocked.build();
+    const par = { loadout: ['thumper', 'rivet'], technicianAbility: 'orbital_strike' };
+    expect(defaultPick(save, par)).toEqual({
+      towers: ['rivet', 'thumper', 'sprinkler'],
+      ability: 'orbital_strike',
+    });
+    expect(defaultPick(save, { loadout: [], technicianAbility: 'nope' }).ability).toBe(
+      'orbital_strike',
+    );
   });
 
   it('no slot-1 ability when every owned one is revoked', () => {

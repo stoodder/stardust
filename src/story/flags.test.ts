@@ -17,9 +17,12 @@ import {
   type FlagRuleStats,
 } from './flags.ts';
 
-const TAGS: readonly WaveTag[] = ['quiet_wave', 'youngling', 'fleeing', 'medal_exempt'];
-const zero = (): Record<WaveTag, number> =>
-  Object.fromEntries(TAGS.map((t) => [t, 0])) as Record<WaveTag, number>;
+const zero = (): Record<WaveTag, number> => ({
+  quiet_wave: 0,
+  youngling: 0,
+  fleeing: 0,
+  medal_exempt: 0,
+});
 
 /** Stats with `spawned` units of `tag`, `leaked` of them leaked, and the rest killed. */
 function stats(
@@ -132,9 +135,12 @@ describe('the flag registry (content/dialogue/flags.ts)', () => {
   });
 
   it('lets scripts read the four flags map data reads (story-runtime.md § Map scripts)', () => {
-    expect([...SCRIPT_FLAG_IDS].sort()).toEqual(
-      ['door_choice', 'quill_choice', 'spared_quiet_wave', 'stardust_choice'].sort(),
-    );
+    expect(SCRIPT_FLAG_IDS.toSorted()).toEqual([
+      'door_choice',
+      'quill_choice',
+      'spared_quiet_wave',
+      'stardust_choice',
+    ]);
   });
 
   it('flagValue falls back to the default; isFlagValue checks the declared values', () => {

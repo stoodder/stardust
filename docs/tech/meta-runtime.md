@@ -2,7 +2,7 @@
 
 How meta progression and saves work in code: `src/meta/`, what happens at run end, the story transactions, and the save system. The module layout is in [architecture.md](architecture.md); the rules (currencies, shop, R&D, medals, pacing) are owned by [design/progression.md](../design/progression.md). Story state that lives in the save is described in [story-runtime.md](story-runtime.md).
 
-**Built so far (M2).** The save core (T203a): `KeyValueStore`, `SaveData` v1, migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), under [Meta](#meta-srcmeta). Run end and rewards (T204c), under [Run end](#run-end). Purchases and the story transactions are not built yet ([tasks.md](../../tasks.md)).
+**Built so far (M2).** The save core (T203a): `KeyValueStore`, `SaveData` v1, migrations, validation, slots with `:bak`, the SD export/import codec, and the dev saves, all described under [Save system](#save-system). Campaign progress and gating (T209): the Shift board and when each between-map system opens, under [Progress and gating](#progress-and-gating); the app's save session and screens are in [architecture.md § Rendering](architecture.md#rendering) and [§ UI: DOM overlay](architecture.md#ui-dom-overlay). Modifiers and pools (T204b), under [Meta](#meta-srcmeta). Run end and rewards (T204c), with its story flag step (T206b), under [Run end](#run-end). Purchases at the base (T204d), under [Purchases](#purchases). The story transactions are not built yet ([tasks.md](../../tasks.md)).
 
 ---
 
@@ -16,9 +16,20 @@ Meta turns a save into the inputs of a run:
   - **Order:** upgrades in catalog order, then protocols in slot order, then the difficulty's modifiers (`DIFFICULTY_MODIFIERS`; Story's are in [design/progression.md § 9](../design/progression.md#9-difficulty-settings), all sourced `difficulty:story`).
   - **Refused, not ignored:** an unknown upgrade or protocol, a rank outside the item's ranks, a protocol equipped twice, more protocols than slots (`protocolSlots`: 1 plus R&D's slots), or a Specialist with no pick throws.
   - `saveModifiers(save)` is the game's call (`app/battleSetup.ts`, which leaves out what the sim still refuses, so a save ahead of the sim plays). A save equips no protocols until the picker (M3), so owning one grants nothing yet.
-- **Pools** (`meta/pools.ts`): `towerPool` and `abilityPool` (owned minus revoked), `protocolPool` (owned), and `protocolSlotCount` (0 before the shop opens, then 1 plus R&D's). Still to come: the map's `lockedAbilities` whose condition holds leave the ability pool once story flags reach runs (T206b), and the companion (or the finale's pick list) and `scriptFlags` join with them.
-- **Availability.** Every shop and R&D item has `availableAfter: MapId | null` in `content/upgrades/` ([design/progression.md](../design/progression.md)). An item shows in the shop or tree only once that map is completed. One Engineering purchase unlocks **both** tier-4 specializations of a tower, so the save stores tower ids, not spec ids.
+- **Pools** (`meta/pools.ts`): `towerPool` and `abilityPool` (owned minus revoked), `protocolPool` (owned), and `protocolSlotCount` (0 before the shop opens, then 1 plus R&D's). Story flags reach runs as `scriptFlags` (`app/battleSetup.ts`, [story-runtime.md § Map scripts](story-runtime.md#map-scripts-story-driven-sim-changes)). Still to come: the map's `lockedAbilities` whose condition holds leave the ability pool, and the companion (or the finale's pick list) joins the pools.
+- **Availability.** Every shop and R&D item has `availableAfter: MapId | null` in `content/upgrades/` ([design/progression.md](../design/progression.md)). An item is stocked (buyable) once that map is completed; until then its pane lists it greyed out as "Arrives after <map>" ([Purchases](#purchases)). One Engineering purchase unlocks **both** tier-4 specializations of a tower, so the save stores tower ids, not spec ids.
 - **The loadout screen** is skipped when the player owns at most 4 tower types and has no protocol or ability choice to make ([design/core-loop.md §1](../design/core-loop.md#1-session-loop-between-maps)).
+
+## Purchases
+
+`src/meta/purchase.ts`, pure functions over a `SaveData`; the base's panes show them (R&D Command, Zibzab's shop, and Engineering; [architecture.md § UI: DOM overlay](architecture.md#ui-dom-overlay)).
+
+- **Items** (`PurchaseItem`): an `upgrade` (a ranked shop or R&D upgrade; buying it buys the next rank), a `protocol` (a Field Protocol unlock, bought once), or `specs` (a tower's Engineering unlock, bought once; priced by its faction from `ENGINEERING`). Vrell licenses, Aelari attunements, and Scanner Sweep join with their towers and ability.
+- **Can it be bought?** `offerFor(save, item, devUnlocks)` returns the `Offer` (price, currency, ranks owned and in all, the next rank's grants, `availableAfter`) with a `refusal`, checked in this order: `unknown` (not in the catalog), `pane_locked` (the item's system isn't open: `isSystemUnlocked`), `not_stocked` (its `availableAfter` map isn't won), `not_owned` (a tune-up or spec unlock for a tower the save doesn't own), `no_specs` (a tower with no tier-4 specs yet), `maxed` (every rank owned, or the one-time item owned), `short` (the bank is short of the price); null means it can be bought.
+- **Buying** (`buy`) returns a new save (the input is untouched) with the price deducted and the item recorded: the upgrade's rank + 1 in `upgrades`, the protocol in `unlocks.protocols`, or the tower in `unlocks.specs` (the battle config's `specsUnlocked`). A refusal comes back as `{ ok: false, reason, message }`.
+- **Shelves** (`shelf(save, pane, devUnlocks)`): a pane's offers in a fixed order (R&D's upgrades; the shop's global upgrades, then tune-ups, then protocols; Engineering's towers with specs), each group sorted by arrival on the campaign, then entry price, then name.
+- **The dev override:** a pane that `devUnlocks` opens is also fully stocked, so `?test=1&save=` reaches items whose maps don't exist yet.
+- **The app** (`app/save.ts` `purchase`) buys for the save in play and writes the slot at once. A failed write keeps the purchase for the session and says so.
 
 ## Progress and gating
 
@@ -38,11 +49,12 @@ On win, loss, retry, or quit to menu, in this order:
 5. Pay rewards by the table in [design/progression.md](../design/progression.md) §2: first-clear Stardust is the map's flat `stardust` value (A3M3 included), plus medal and objective Intel. **Defeat payouts can't be farmed:** a defeat on a map already completed pays 0 Stardust, and after a checkpoint retry `wavesResolved` counts only the waves resolved in this attempt from the run's `resumedFromWave` on ([architecture.md § Checkpoints](architecture.md#checkpoints)).
 6. Run the map's story transactions (below), then save.
 
-**As built (T204c).** `runEnd(save, input)` (`src/meta/runEnd.ts`) is pure: it returns a new save and a `RunEndSummary`, and never touches storage or the clock. Its `RunEndInput` is the map id, the outcome, the map's `stardust` and wave count, the waves resolved, the earned medal ids, the run's `skitterkinKilled`, the final meter, and an optional veteran bonus (0 until veteran modifiers exist).
+**As built (T204c).** `runEnd(save, input)` (`src/meta/runEnd.ts`) is pure: it returns a new save and a `RunEndSummary`, and never touches storage or the clock. Its `RunEndInput` is the map id, the outcome, the map's `stardust` and wave count, the waves resolved, the earned medal ids, the run's `skitterkinKilled`, the final meter, an optional veteran bonus (0 until veteran modifiers exist), and the run's `stats` (the router passes `state.stats`; without them no flag rule applies).
 - **Step 1** adds the kills on every outcome, and the run also adds 1 to `stats.runs`.
+- **Step 2** (T206b): on the run that first wins the map, `runEndFlags` (`src/story/flags.ts`) evaluates the map's run-end rules over `stats` and merges the flags they set into `story.flags`; losses and replays set none ([story-runtime.md § Flags](story-runtime.md#flags)). The summary lists them (`flags`); Results doesn't show them, since C1 is silent.
 - **Step 4:** a win appends each earned medal the map's record doesn't hold yet; a loss records none. A won map's record is `completed` with `bestMeter` as the best of the old one and this run's meter. A loss on a map with no record leaves `{ completed: false, medals: [], bestMeter: 0 }` (the map has been played to an end), and a loss never changes an existing record.
 - **Step 5** (`src/meta/rewards.ts`, rates in `REWARD_RULES`): `stardustPayout` returns the amount with its `source`: `first_clear` (the full value), `replay` (`round(0.4 × stardust × (1 + veteranBonus))`), `defeat` on a map not yet won (`round(0.25 × stardust × wavesResolved / waveCount)`, with the waves clamped to the map), or `defeat_replay` (0). `medalPayout` pays `medalIntel` (1) per medal the record didn't hold, so a medal pays its Intel once. Difficulty never changes a payout ([progression.md § 9](../design/progression.md#9-difficulty-settings)).
-- **Not yet:** steps 2, 3, and 6 wait for the story runtime (T206b, M3), checkpoints and their anti-farming clause for M3 (the clause is a TODO in `stardustPayout`), and objective Intel for M3's optional objectives. Each is marked in the code.
+- **Not yet:** step 3 waits for revocation (A3M2; the sim has no revoked state yet) and step 6 for the story transactions (the first is A2M4's), both M3+, checkpoints and their anti-farming clause for M3 (the clause is a TODO in `stardustPayout`), and objective Intel for M3's optional objectives. Each is marked in the code.
 - **The app** (`app/router.ts` → `app/save.ts` `recordRun`) calls it once per battle when the map ends (`MapWon` or `MapLost`), writes the result to the save's slot, and gives the summary to Results ([architecture.md § Rendering](architecture.md#rendering)). A battle outside a campaign (the `?map=` dev battle) records nothing. There is no mid-map retry or quit to menu yet, so every run ends through Results.
 
 ## Story transactions
@@ -85,7 +97,7 @@ interface SaveData {
   };
   upgrades: Partial<Record<UpgradeId, number>>;  // owned ranks (≥ 1), including the C2 Zibzab Tune-up
   story: {
-    flags: Partial<Record<StoryFlagId, FlagValue>>;  // StoryFlagId is ScriptFlagId until content/dialogue/flags.ts
+    flags: Partial<Record<StoryFlagId, FlagValue>>;  // StoryFlagId = FlagId (content/dialogue/flags.ts)
     seen: SceneId[];                    // scenes played (skippable on replay)
     memosRead: MemoId[]; memosDelivered: MemoId[];
     codex: Record<CodexId, ('original' | 'annotated' | 'corrected')[]>;

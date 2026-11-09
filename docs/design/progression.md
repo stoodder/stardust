@@ -4,7 +4,7 @@ Meta currencies, medals, Zibzab's shop, Field Protocols (meta perks), veteran mo
 
 > **Numbers:** every number in this doc is a **first-pass tuning value** unless it is labeled a **rule**. Once the content files exist, they become the home for exact numbers, and this doc keeps roles, rules, and target ranges (see [../tech/architecture.md](../tech/architecture.md)).
 >
-> **As built:** the catalog is [`src/content/upgrades/`](../../src/content/upgrades/index.ts): `shop.ts` (§4.3), `tuneUps.ts` (§4.2), `protocols.ts` (§5), `rnd.ts` (§7.3 Command), and `access.ts` (§8 tower and ability access, §7.1 Engineering prices). Each item names its `availableAfter` map on the campaign plan (`src/content/campaign.ts`) and grants sim modifiers. Vrell licenses, Aelari attunements, Scanner Sweep, System Reboot, the other four Rapports, and the Zibzab Tune-up join with their towers and abilities. The §10 purchasable-profiles rule is the `[purchasable]` validator ([`validatePurchasable.ts`](../../src/content/validatePurchasable.ts)); `upgrades/reference.ts` holds the reference economy it assumes (1 Intel per map, the bank reset at A2M4's C2 Return). The run-end payouts (§2 Stardust, §3 medal Intel) are [`src/meta/rewards.ts`](../../src/meta/rewards.ts) (`REWARD_RULES`); the order they run in is [meta-runtime.md § Run end](../tech/meta-runtime.md#run-end).
+> **As built:** the catalog is [`src/content/upgrades/`](../../src/content/upgrades/index.ts): `shop.ts` (§4.3), `tuneUps.ts` (§4.2), `protocols.ts` (§5), `rnd.ts` (§7.3 Command), and `access.ts` (§8 tower and ability access, §7.1 Engineering prices). Each item names its `availableAfter` map on the campaign plan (`src/content/campaign.ts`) and grants sim modifiers. Vrell licenses, Aelari attunements, Scanner Sweep, System Reboot, the other four Rapports, and the Zibzab Tune-up join with their towers and abilities. The §10 purchasable-profiles rule is the `[purchasable]` validator ([`validatePurchasable.ts`](../../src/content/validatePurchasable.ts)); `upgrades/reference.ts` holds the reference economy it assumes (1 Intel per map, the bank reset at A2M4's C2 Return). The run-end payouts (§2 Stardust, §3 medal Intel) are [`src/meta/rewards.ts`](../../src/meta/rewards.ts) (`REWARD_RULES`); the order they run in is [meta-runtime.md § Run end](../tech/meta-runtime.md#run-end). The buy rules (stocked, next rank, affordable) are [`src/meta/purchase.ts`](../../src/meta/purchase.ts) ([meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)).
 >
 > **Ordering:** [../story/campaign.md](../story/campaign.md) is **authoritative** for when shops, towers, and abilities unlock. This doc defines *what* they are and what they cost.
 
@@ -105,7 +105,7 @@ Zibzab's shop opens after A1M3, when he arrives. Item names carry Zibzab's voice
 
 ### 4.2 Tune-ups (per tower)
 
-Every tower has 3 tune-up ranks, bought in order:
+Every tower has 3 tune-up ranks, bought in order. **Rule:** a tower's tune-up can be bought only once the tower is owned (the shop lists it with "Needs the <tower>" until then).
 
 | Rank | Effect | Price |
 |---|---|---|
@@ -181,7 +181,7 @@ Post-game, **challenge maps** and **endless mode** reuse these modifiers ([maps.
 
 R&D is run by QUILL in the base. Ves'thara takes over the Xenotech branch when she joins (A2M5). Under C4 Rewrite, R&D still works during A3M5's offline stretch but shows no QUILL tip text ([core-loop.md §2.11](core-loop.md#211-scripted-moments)). It has three branches. **Rule:** R&D unlocks are permanent and never need a respec, because they add options rather than forcing exclusive choices.
 
-**Availability (rule).** Every R&D item has an `availableAfter` map in its data: it is hidden until that map is won, so each branch opens with only a few items. Branches open in this order: **Command after A1M1** (offering only Orbital Strike Mk II and Companion Rapport at first), **Engineering after A1M4** (Sterling signs off your tier approvals), **Xenotech after A2M5** (Ves'thara joins).
+**Availability (rule).** Every R&D item has an `availableAfter` map in its data: it can't be bought until that map is won, and until then its branch lists it greyed out with "Arrives after <map>", so each branch opens with only a few items for sale. Branches open in this order: **Command after A1M1** (offering only Orbital Strike Mk II and Companion Rapport at first), **Engineering after A1M4** (Sterling signs off your tier approvals), **Xenotech after A2M5** (Ves'thara joins).
 
 ### 7.1 Engineering: specializations
 

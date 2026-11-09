@@ -2,9 +2,9 @@
 // the build it's about (its subject, for `--build`), the runs it needs, and how it judges them.
 // Checks the harness can't make yet are refused for maps that need them, never skipped quietly.
 import type { CompiledMapDef } from '../content/compiled.ts';
-import type { FlagValue, IdSpace, ScriptFlagId } from '../content/types.ts';
+import type { FlagValue, IdSpace } from '../content/types.ts';
 import type { HeadlessResult, ScriptFlags } from '../sim/index.ts';
-import { evaluateFlagRule, flagRule } from '../story/flags.ts';
+import { evaluateFlagRule, flagRule, isScriptFlagId } from '../story/flags.ts';
 import { refusal } from './refusals.ts';
 import {
   EARLY_CALL_SLACK_PCT,
@@ -92,10 +92,8 @@ export function flagsFor<K extends IdSpace>(
 ): ScriptFlags | null {
   const build = splitMeta(label).build;
   if (!build.startsWith('flag:')) return {};
-  for (const [flag, values] of Object.entries(map.builds.flagVariants) as [
-    ScriptFlagId,
-    readonly FlagValue[],
-  ][]) {
+  for (const [flag, values] of Object.entries(map.builds.flagVariants)) {
+    if (!isScriptFlagId(flag)) continue; // the type allows only script flags
     for (const value of values) {
       if (flagVariantLabel(flag, value) === build) return { [flag]: value };
     }

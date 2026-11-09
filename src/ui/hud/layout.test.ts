@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { EDGE, placePanel, tickToward, TOWER_BOX, UI_H, UI_W, type Point } from './layout.ts';
+import {
+  EDGE,
+  HUD_CORNERS,
+  placePanel,
+  tickToward,
+  TOWER_BOX,
+  towerPanelHeight,
+  UI_H,
+  UI_W,
+  wrapParts,
+  type Point,
+} from './layout.ts';
 
 describe('placePanel', () => {
   it('opens on the side away from the screen center', () => {
@@ -87,5 +98,37 @@ describe('tickToward', () => {
   it('never stalls on a zero or negative delta', () => {
     expect(tickToward(0, 3, 0)).toBe(1);
     expect(tickToward(0, 3, -10)).toBe(1);
+  });
+});
+
+describe('the tower panel around the HUD corners (T213)', () => {
+  it('keeps clear of a HUD corner when another spot is free', () => {
+    // A tower near the bottom-right build slots: the panel's level spot would cover them.
+    const at = placePanel(560, 300, 136, 120, [], HUD_CORNERS);
+    for (const r of HUD_CORNERS) {
+      const covers =
+        at.left < r.x + r.w && r.x < at.left + 136 && at.top < r.y + r.h && r.y < at.top + 120;
+      expect(covers).toBe(false);
+    }
+  });
+});
+
+describe('wrapParts', () => {
+  it('packs parts into lines and splits a long part at its spaces', () => {
+    expect(wrapParts(['Next: +0.5/s', '+3 pierce'], 25)).toEqual(['Next: +0.5/s · +3 pierce']);
+    expect(wrapParts(['Next: +0.5/s', '+3 pierce'], 20)).toEqual(['Next: +0.5/s', '+3 pierce']);
+    expect(wrapParts(['Engineering unlocks after Shift 4'], 25)).toEqual([
+      'Engineering unlocks after',
+      'Shift 4',
+    ]);
+    expect(wrapParts([], 25)).toEqual([]);
+  });
+
+  it('sizes the panel by its rows', () => {
+    // Header 18, stats 8, Upgrade, Sell, Target 16 each; 4 gaps of 2; padding 4 + 4.
+    expect(towerPanelHeight({ bonuses: [], deltaLines: [], specs: null })).toBe(
+      18 + 8 + 48 + 8 + 8,
+    );
+    expect(towerPanelHeight({ bonuses: ['a'], deltaLines: ['b'], specs: null })).toBe(110);
   });
 });

@@ -3,7 +3,7 @@
 // docs/design/progression.md § 11. Bump SAVE_VERSION only together with a new entry in
 // migrations.ts and a new __fixtures__/save.v<n>.json (meta-runtime.md § Versioning and migrations).
 import { ABILITIES } from '../content/abilities/index.ts';
-import { FLAGS } from '../content/dialogue/flags.ts';
+import { FLAG_IDS } from '../content/dialogue/flags.ts';
 import { MAPS } from '../content/maps/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
@@ -125,7 +125,7 @@ export const LIVE_KNOWN_IDS: KnownIds = {
   maps: Object.values(MAPS).map((m) => m.id),
   upgrades: Object.values(UPGRADES).map((u) => u.id),
   protocols: Object.values(PROTOCOLS).map((p) => p.id),
-  storyFlags: Object.keys(FLAGS) as StoryFlagId[],
+  storyFlags: FLAG_IDS,
 };
 
 /** Towers issued before A1M1 (campaign.md § 4.1). */

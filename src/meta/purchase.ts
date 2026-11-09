@@ -9,7 +9,7 @@
 // stocks the whole pane); its tower is owned (tune-ups, spec unlocks) and has specs (spec
 // unlocks); a next rank exists (ranked upgrades; a protocol or a spec unlock is bought once); and
 // the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
-import type { CampaignMapId } from '../content/campaign.ts';
+import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { ProtocolId, TowerFaction, TowerId } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -298,9 +298,28 @@ export function buy(
   return { ok: true, save: next, offer: { ...offer, owned: offer.owned + 1 } };
 }
 
+/** An item's place in the campaign: its `availableAfter` map's index (−1 from the start). */
+function arrival(o: Offer): number {
+  return o.availableAfter === null ? -1 : CAMPAIGN_PLAN_IDS.indexOf(o.availableAfter);
+}
+
+/** The display name an upgrade or protocol sorts by (a spec unlock keeps its registry order). */
+function sortName(o: Offer, catalog: StoreCatalog): string {
+  if (o.item.kind === 'upgrade') return catalog.upgrades[o.item.id]?.name ?? o.item.id;
+  if (o.item.kind === 'protocol') return catalog.protocols[o.item.id]?.name ?? o.item.id;
+  return '';
+}
+
+/** The first rank's price (a ranked item sorts by its entry price, whatever rank is owned). */
+function entryPrice(o: Offer, catalog: StoreCatalog): number {
+  return o.item.kind === 'upgrade' ? (catalog.upgrades[o.item.id]?.ranks[0]?.price ?? 0) : o.price;
+}
+
 /**
- * One pane's offers in catalog order: R&D Command's upgrades; the shop's global upgrades, then
- * tune-ups, then Field Protocols; Engineering's spec unlock for each registered tower with specs.
+ * One pane's offers, in a fixed display order: R&D Command's upgrades; the shop's global
+ * upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each registered
+ * tower with specs. Within each group, by when the item is stocked (campaign order), then by entry
+ * price, then by name, so the order never depends on how a module namespace lists its exports.
  */
 export function shelf(
   save: SaveData,
@@ -308,22 +327,37 @@ export function shelf(
   devUnlocks: readonly MetaSystem[] = [],
   catalog: StoreCatalog = LIVE_STORE,
 ): Offer[] {
-  const items: PurchaseItem[] = [];
+  const groups: PurchaseItem[][] = [];
   if (pane === 'engineering') {
-    for (const [id, t] of Object.entries(catalog.towers)) {
-      if (t.specs !== undefined) items.push({ kind: 'specs', tower: id });
-    }
+    groups.push(
+      Object.entries(catalog.towers)
+        .filter(([, t]) => t.specs !== undefined)
+        .map(([id]) => ({ kind: 'specs', tower: id })),
+    );
   } else {
     const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
     // Global upgrades before tune-ups (a tune-up names its tower).
-    for (const u of upgrades) if (u.tower === undefined) items.push({ kind: 'upgrade', id: u.id });
-    for (const u of upgrades) if (u.tower !== undefined) items.push({ kind: 'upgrade', id: u.id });
+    groups.push(
+      upgrades.filter((u) => u.tower === undefined).map((u) => ({ kind: 'upgrade', id: u.id })),
+    );
+    groups.push(
+      upgrades.filter((u) => u.tower !== undefined).map((u) => ({ kind: 'upgrade', id: u.id })),
+    );
     if (pane === 'shop') {
-      for (const p of Object.values(catalog.protocols)) items.push({ kind: 'protocol', id: p.id });
+      groups.push(Object.values(catalog.protocols).map((p) => ({ kind: 'protocol', id: p.id })));
     }
   }
-  return items.flatMap((item) => {
-    const o = offerFor(save, item, devUnlocks, catalog);
-    return o === null ? [] : [o];
-  });
+  return groups.flatMap((items) =>
+    items
+      .flatMap((item) => {
+        const o = offerFor(save, item, devUnlocks, catalog);
+        return o === null ? [] : [o];
+      })
+      .toSorted(
+        (a, b) =>
+          arrival(a) - arrival(b) ||
+          entryPrice(a, catalog) - entryPrice(b, catalog) ||
+          sortName(a, catalog).localeCompare(sortName(b, catalog), 'en'),
+      ),
+  );
 }

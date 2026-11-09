@@ -30,6 +30,8 @@ import {
   type ThreatIntelView,
 } from '../state.ts';
 import { lockedText } from '../../app/hud.ts';
+import { changeLoadout } from '../../app/navigation.ts';
+import { loadoutChangeable } from '../screens/loadoutView.ts';
 import { Icon } from './Icon.tsx';
 import { MuteButton } from './MuteButton.tsx';
 import {
@@ -525,6 +527,11 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
   );
 }
 
+/** A medal's standing in words, for the tracker's screen-reader label. */
+function medalWord(m: MedalView): string {
+  return m.status === 'earned' ? 'earned' : m.status === 'forfeited' ? 'next time' : 'in reach';
+}
+
 /**
  * The medal tracker (T202d), in the status panel: one diamond per medal, lit while still in
  * reach, gold once earned, and quietly dimmed when this run can't earn it any more (never a
@@ -533,12 +540,10 @@ function TowerPanel({ t }: { t: SelectedTowerView }) {
 function MedalTracker() {
   const medals = hud.medals.value;
   if (medals.length === 0) return null;
-  const word = (m: MedalView): string =>
-    m.status === 'earned' ? 'earned' : m.status === 'forfeited' ? 'next time' : 'in reach';
   return (
     <ul
       class="hud-medals"
-      aria-label={`Medals: ${medals.map((m) => `${m.name} ${word(m)}`).join(', ')}`}
+      aria-label={`Medals: ${medals.map((m) => `${m.name} ${medalWord(m)}`).join(', ')}`}
     >
       {medals.map((m) => (
         <li
@@ -740,15 +745,23 @@ function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
         </ul>
         {intel !== null && <IntelStrip intel={intel} />}
         {medals.length > 0 && <BriefingMedals medals={medals} />}
-        <button
-          type="button"
-          class="hud-btn chamfer hud-briefing-go"
-          // Focused on arrival, so Enter (or Space) clocks in.
-          ref={(el) => el?.focus()}
-          onClick={dismissBriefing}
-        >
-          Clock in
-        </button>
+        <div class="hud-briefing-actions">
+          {/* Back to the loadout screen, where it came before this map (T201). */}
+          {loadoutChangeable.value && (
+            <button type="button" class="hud-btn chamfer" onClick={changeLoadout}>
+              Change loadout
+            </button>
+          )}
+          <button
+            type="button"
+            class="hud-btn chamfer hud-briefing-go"
+            // Focused on arrival, so Enter (or Space) clocks in.
+            ref={(el) => el?.focus()}
+            onClick={dismissBriefing}
+          >
+            Clock in
+          </button>
+        </div>
       </section>
     </div>
   );

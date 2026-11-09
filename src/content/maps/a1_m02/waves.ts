@@ -5,6 +5,12 @@ import { defineWaves } from '../../define.ts';
 import type { EnemyId, WaveGroup } from '../../types.ts';
 
 const ROUTE = 'road';
+/**
+ * W7–W8 release their Haulers one at a time, this far apart: longer than a strike's radius covers
+ * and, across a wave, longer than its cooldown, so the Orbital Strike can't stand in for an armor
+ * answer (D049).
+ */
+const HAULER_GAP = 12;
 
 /** `count` of `enemy`, starting `delaySec` into the wave, `intervalSec` apart (default spacing). */
 function g(enemy: EnemyId, count: number, delaySec = 0, intervalSec?: number): WaveGroup {
@@ -30,8 +36,8 @@ export const waves = defineWaves([
   { groups: [g('hauler', 1)] },
   // W6 · a Zoomer rush + Chonks [X: early call]
   { groups: [g('zoomer', 24, 0, 0.4), g('chonk', 4, 4, 2)] },
-  // W7 · Haulers ×2 + Nibblers [X]
-  { groups: [g('hauler', 2), g('nibbler', 20, 3, 0.4)] },
-  // W8 · Haulers ×3 + Chonks + Zoomers [X]
-  { groups: [g('hauler', 3), g('chonk', 4, 6, 2), g('zoomer', 20, 10, 0.4)] },
+  // W7 · Haulers + Nibblers [X]: four Haulers, one every 12 s
+  { groups: [g('hauler', 4, 0, HAULER_GAP), g('nibbler', 20, 3, 0.4)] },
+  // W8 · Haulers + Chonks + Zoomers [X]: five Haulers, one every 12 s
+  { groups: [g('hauler', 5, 0, HAULER_GAP), g('chonk', 4, 6, 2), g('zoomer', 20, 10, 0.4)] },
 ]);

@@ -817,3 +817,179 @@ section.chamfer,
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ── The tower panel's bonuses and tier-4 choice (T202d) ──────────────────────────────────── */
+
+/* Every row has a fixed height, so layout.ts `towerPanelHeight` knows the panel's size. */
+.hud-tower .hud-btn.wide {
+  height: 16px;
+}
+
+.hud-bonus-line,
+.hud-spec-head,
+.hud-spec-lock {
+  height: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Where a bonus comes from: the link or tile, in the cool accent (the stat line carries the sum). */
+.hud-bonus-line {
+  color: var(--sd-teal-4);
+}
+
+.hud-spec-head {
+  color: var(--accent);
+}
+
+.hud-spec-lock {
+  color: var(--sd-steel-3);
+}
+
+/* A spec card: the whole card is its Specialize button. */
+.hud-btn.hud-spec {
+  box-sizing: border-box;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  width: 100%;
+  padding: 3px 4px;
+  text-align: left;
+}
+
+.hud-spec-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 8px;
+}
+
+.hud-spec-name {
+  flex: 1;
+  color: var(--sd-white-1);
+  white-space: nowrap;
+}
+
+.hud-spec-desc {
+  height: 8px;
+  color: var(--sd-steel-3);
+  white-space: nowrap;
+}
+
+.hud-spec.locked .hud-spec-name {
+  color: var(--sd-steel-2);
+}
+
+/* ── Medals (T202d): the tracker in the status panel, and the briefing's list ─────────────── */
+
+.hud-medals {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 2px;
+  list-style: none;
+}
+
+/* A medal: a small diamond. In reach: the accent outline. Earned: gold. Out of reach this run:
+   quietly dimmed (never red, never a cross). On file in the save: a gold tick under it. */
+.hud-medal {
+  position: relative;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  margin: 1px;
+  border: 1px solid var(--accent);
+  transform: rotate(45deg);
+}
+
+.hud-medal.earned {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}
+
+.hud-medal.forfeited {
+  border-color: var(--sd-steel-1);
+  opacity: 0.6;
+}
+
+.hud-medal.held::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 2px;
+  height: 2px;
+  background: var(--sd-gold-3);
+}
+
+.hud-briefing-medals {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-briefing-medals li {
+  display: grid;
+  grid-template-columns: 8px 76px 1fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-briefing-medal-name {
+  color: var(--sd-gold-3);
+}
+
+.hud-briefing-medal-desc {
+  color: var(--sd-white-1);
+  text-transform: none;
+}
+
+.hud-briefing-medal-held {
+  color: var(--sd-green-3);
+}
+
+/* ── The briefing's threat-intel strip (T202d) ────────────────────────────────────────────── */
+
+.hud-intel {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 0;
+  border-top: 1px solid var(--sd-ink-3);
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.hud-intel-threats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-intel-threat {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--sd-white-1);
+}
+
+.hud-intel-required {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin: 0;
+}
+
+.hud-intel-req {
+  color: var(--accent-2);
+}
+
+.hud-intel-answers {
+  color: var(--sd-white-1);
+}

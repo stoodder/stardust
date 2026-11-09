@@ -79,6 +79,14 @@ export const FLAGS = {
   },
 } as const satisfies Readonly<Record<string, FlagDef>>;
 
+/** Whether `id` names a registered flag. */
+export function isFlagId(id: string): id is FlagId {
+  return Object.hasOwn(FLAGS, id);
+}
+
+/** Every flag id, in registry order. */
+export const FLAG_IDS: readonly FlagId[] = Object.keys(FLAGS).filter(isFlagId);
+
 /** The values one flag can hold. */
 export type FlagValueOf<F extends FlagId> = (typeof FLAGS)[F]['values'][number];
 

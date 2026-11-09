@@ -430,7 +430,7 @@ describe('the validator on A1M1', () => {
   it('checks threat intel against the waves (no stub-map exemption)', () => {
     const noWaves: RawContent = {
       ...RAW_CONTENT,
-      maps: { a1_m01: { ...RAW_CONTENT.maps.a1_m01, waves: [] } },
+      maps: { ...RAW_CONTENT.maps, a1_m01: { ...RAW_CONTENT.maps.a1_m01, waves: [] } },
     };
     expect(validate(noWaves)).toContainEqual(
       expect.stringMatching(/^\[threat-intel\] maps\.a1_m01\.threatIntel: lists fast/),

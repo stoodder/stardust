@@ -151,9 +151,11 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
   await open('Shop', "Zibzab's Genuine Pre-Owned");
   await open('Engineering', 'R&D Engineering');
   await shot(page, 'meta', 10, 'base-all-unlocked');
-  // A battle from this save brings at most four towers and still plays.
+  // A battle from this save brings at most four towers and still plays (through the loadout
+  // screen, T201: this save has a choice of ability).
   await page.getByRole('button', { name: 'Shift board' }).click();
   await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await page.getByRole('button', { name: 'Lock in' }).click();
   await page.waitForFunction(() => (globalThis.__sd?.state()?.tick ?? -1) >= 0);
   const loadout = await page.evaluate(() => globalThis.__sd!.state()!.towers.live);
   expect(loadout).toBe(0);

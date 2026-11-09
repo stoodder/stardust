@@ -606,3 +606,13 @@ T210b's sweep (armor 9–10, HP 300–360, 2–6 Haulers in W7) found that the n
 1. **The no-armor build keeps its strike.** Excluding it would make the check lie, because a real player would cast it.
 2. **The fix is to space the Haulers out:** release them one at a time, ≥12 s apart, in W7–8. Then the strike's ~41–45 s cooldown kills at most one per cast. This is act1.md's own escalation (a lone teach Hauler in W5, then many).
 3. **Fallback, only if (2) fails:** a **teach-map exception**. The map that introduces a required counter may require the loss by its final wave (`teachMap: true`, with a reason). If the full catalog still wins there, #6 is reported as a **warning** behind an explicit `knownLimits: ['fullCatalog']` for A1M2 only, and goes to the owner. This would be the one place where D005's "the catalog can't replace counters" isn't enforced.
+
+### D053 — 2026-11-09 — T206b story flags
+- **Flags:** `src/content/dialogue/flags.ts` declares the 9 flags of campaign.md §6.2. Each has a default (false, or null for an unmade choice) and a description. The script-readable four are `door_choice`, `spared_quiet_wave`, `stardust_choice`, and `quill_choice`. `FlagId` and `ScriptFlagId` derive from the registry, and `tools/flagLedger.test.ts` checks it against the doc table.
+- **Run-end rules** (`src/story/flags.ts`, a new pure module):
+  - `spared_quiet_wave` is set on A1M5 when ≥75% of the quiet wave leaked.
+  - `held_fire_second_look` is set on A2M3 when ≥50% of the fleeing units leaked and plain Hold Fire was used.
+  - **They apply only on a map's first win**, so later scenes follow the run that completed the map.
+  - The save's set flags reach scripts as `scriptFlags`.
+- **Module edges:** `meta` and `balance` may import `story`.
+- **Harness:** #16(a) uses the real `spared_quiet_wave` rule. #14 (flag variants) is live, with one par run per flag value on a fixture.

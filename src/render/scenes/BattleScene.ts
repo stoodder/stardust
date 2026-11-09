@@ -40,6 +40,7 @@ import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFact
 import {
   ELEV_H,
   gridToScreen,
+  HALF_H,
   mapOrigin,
   pickTile,
   type IsoOrigin,
@@ -169,6 +170,19 @@ export class BattleScene extends Phaser.Scene {
   tileCenter(col: number, row: number, out: Vec2): void {
     // A raised tile's center is on its block's top face, where a click picks it.
     gridToScreen(col + 0.5, row + 0.5, this.#origin, out, this.#elevationOf(col, row));
+    // A flat tile right behind high ground has its center on the block's top vertex, which picks
+    // the block: nudge up into the tile's own visible top half.
+    const map = this.#deps.sim.map;
+    const index = row * map.cols + col;
+    for (let dy = 0; dy < HALF_H; dy++) {
+      if (
+        pickTile(out.x, out.y - dy, this.#origin, map.cols, map.rows, this.#elevationAt) !== index
+      ) {
+        continue;
+      }
+      out.y -= dy;
+      return;
+    }
   }
 
   /** How many link tethers show (the smoke flows' check). */

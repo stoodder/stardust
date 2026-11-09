@@ -129,12 +129,15 @@ function validateMap(
   // TODO(A3M6, M5): revisit layout rules — the original's pads unchanged, new pads only in the
   // added band, the original layout centred.
 
+  // Before validateNovelty adds this map's counters to the history.
+  const introducesCounter =
+    campaign !== null && def.requiredCounters.some((c) => !campaign.history.counters.has(c));
   if (grid !== null) validateGeometry(issues, def, grid, campaign !== null, where);
   validateWaves(issues, ctx, def, where);
   validateThreats(issues, ctx, def, campaign?.history ?? emptyHistory(), where);
   if (campaign !== null) validateNovelty(issues, ctx, def, grid, campaign.history, where);
   validateScripts(issues, def, where);
-  validateBuilds(issues, def, grid, ctx, campaign?.index ?? null);
+  validateBuilds(issues, def, grid, ctx, campaign?.index ?? null, introducesCounter);
 }
 
 /** Tiles a route walks: a marker never sits on one. */

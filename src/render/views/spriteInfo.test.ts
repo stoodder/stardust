@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  baseFrame,
-  facingOf,
-  firstLook,
-  headStyle,
-  headSuffix,
-  spriteId,
-} from './spriteInfo.ts';
+import { baseFrame, facingOf, firstLook, headStyle, headSuffix, spriteId } from './spriteInfo.ts';
 
 describe('spriteInfo', () => {
   it('resolves registered ids and rejects unknown ones', () => {

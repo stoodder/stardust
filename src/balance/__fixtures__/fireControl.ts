@@ -13,7 +13,7 @@ import { SIM_FIXTURE, type FixtureIds } from '../../sim/__fixtures__/sim.ts';
 
 const rawMap = SIM_FIXTURE.maps.fx_map;
 
-const quietMap: MapDef<FixtureIds> = {
+const quietMap: MapDef<FixtureIds, 'fx_map'> = {
   ...rawMap,
   waves: [
     ...rawMap.waves,

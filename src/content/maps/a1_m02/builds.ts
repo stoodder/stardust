@@ -71,7 +71,8 @@ export const builds = defineBuilds({
   noCounterBuilds: {
     armor: { loadout: ['rivet', 'sprinkler'], steps: noArmorSteps() },
   },
-  // Why W7, not ⌊⅔ × 8⌋ = W5: the Haulers are the armor test, W5's teach Hauler walks alone, and
-  // the pairs and triples come in W7–W8 (act1.md § A1M2), so a no-armor defense breaks in W7.
-  noCounterLoseByWave: 7,
+  // A teach map (armor is new here): W5's Hauler walks alone and the Haulers come in numbers only
+  // in W7–W8 (act1.md § A1M2), so a no-armor defense breaks in W8, not before the final third.
+  teachMap: true,
+  noCounterLoseByWave: 8,
 });

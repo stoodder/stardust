@@ -5,14 +5,14 @@
    the button sit on the right. Authored in game pixels. */
 
 /* The base panel keeps one height across tabs, so switching tabs never moves the footer. */
-.sd-base-panel {
+.sd-menu-panel.sd-base-panel {
   height: 340px;
   box-sizing: border-box;
 }
 
-.sd-tab-pane-store {
+/* Doubled class: screens.css's .sd-tab-pane centers a locked pane's text, and may load after. */
+.sd-tab-pane.sd-tab-pane-store {
   align-items: stretch;
-  justify-content: stretch;
   min-height: 0;
   overflow: hidden;
 }

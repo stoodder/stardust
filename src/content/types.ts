@@ -594,6 +594,11 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
    * one-line comment.
    */
   readonly noCounterLoseByWave?: number;
+  /**
+   * The map that introduces a required-counter category may set `noCounterLoseByWave` as late as
+   * its final wave (the validator checks it introduces one). Say why in a one-line comment.
+   */
+  readonly teachMap?: boolean;
 }
 
 export interface MapDef<K extends IdSpace = LiveIds, Id extends string = string>

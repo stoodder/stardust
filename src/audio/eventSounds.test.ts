@@ -9,7 +9,8 @@ import {
   type SoundCall,
 } from './eventSounds.ts';
 
-const fired = (kind: AttackKind, uid: number): SimEvent<IdSpace> => ({
+type Fired = Extract<SimEvent<IdSpace>, { type: 'ProjectileFired' }>;
+const fired = (kind: AttackKind, uid: number): Fired => ({
   type: 'ProjectileFired',
   uid,
   towerUid: 1,

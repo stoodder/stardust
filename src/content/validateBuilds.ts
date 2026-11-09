@@ -18,8 +18,9 @@
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
 //   build expectations name alt builds and at least one expectation, their minMarginPct is
 //   0–100, and an `outcome` (an under-built build) comes without a win floor or belowPar; a
-//   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a map with
-//   no-counter builds.
+//   `noCounterLoseByWave` override is a whole wave from 1 to waves − 1 (never the final wave) on a
+//   map with no-counter builds, or up to the final wave on a `teachMap` (a campaign map that
+//   introduces a required-counter category).
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
 // Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
@@ -53,6 +54,8 @@ export function validateBuilds(
   grid: Grid | null,
   ctx: MapCtx,
   campaignIndex: number | null,
+  /** The map's required counters include one no earlier campaign map required. */
+  introducesCounter = false,
 ): void {
   const where = `maps.${def.id}`;
   const profile = def.referenceProfile;
@@ -131,17 +134,30 @@ export function validateBuilds(
 
   const loseBy = def.noCounterLoseByWave;
   if (loseBy !== undefined) {
-    const max = def.waves.length - NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT;
+    // A teach map (the one that introduces a required counter) may ask only for a loss by its
+    // final wave; every other map, never later than the wave before it.
+    const n = def.waves.length;
+    const max = def.teachMap === true ? n : n - NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT;
     if (!Number.isInteger(loseBy) || loseBy < 1 || loseBy > max) {
       issues.add(
         'builds-range',
         `${where}.noCounterLoseByWave`,
-        `must be a whole wave from 1 to ${max} (never the final wave)`,
+        `must be a whole wave from 1 to ${max} (${
+          def.teachMap === true ? 'the final wave on a teach map' : 'never the final wave'
+        })`,
       );
     }
     if (Object.keys(def.noCounterBuilds).length === 0) {
       issues.add('builds-range', `${where}.noCounterLoseByWave`, 'the map has no no-counter builds');
     }
+  }
+
+  if (def.teachMap === true && !introducesCounter) {
+    issues.add(
+      'builds-range',
+      `${where}.teachMap`,
+      'only a campaign map whose required counters include one no earlier map required is a teach map',
+    );
   }
 
   const band = def.marginBand;

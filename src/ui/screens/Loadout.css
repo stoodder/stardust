@@ -1,0 +1,302 @@
+/* The loadout screen (T201), in the menu-panel style (art-direction §9): a wider panel with the
+   tower grid on the left and the Technician, slot 2, links, and heads-ups on the right. Game
+   pixels; colors are theme.css tokens. */
+
+.sd-lo-panel {
+  width: 584px;
+  min-height: 300px;
+  max-height: 348px;
+}
+
+/* Header right: the map's threat intel and required counters. */
+.sd-lo-intel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 0;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.sd-lo-intel div {
+  display: flex;
+  gap: 6px;
+}
+
+.sd-lo-intel dt {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-intel dd {
+  margin: 0;
+  color: var(--sd-white-1);
+}
+
+.sd-lo-intel .sd-lo-need {
+  color: var(--sd-gold-3);
+}
+
+.sd-lo-body {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  min-height: 0;
+}
+
+.sd-lo-main {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  width: 356px;
+  min-height: 0;
+}
+
+.sd-lo-side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--font-heading);
+}
+
+.sd-lo-heading {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.sd-lo-count {
+  color: var(--sd-white-1);
+}
+
+/* The tower grid: two columns of cards; it scrolls when the collection outgrows the panel. */
+.sd-lo-towers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.sd-lo-tower,
+.sd-lo-ability {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 16px;
+  padding: 3px 4px 3px 2px;
+  border: 0;
+  border-left: 2px solid var(--sd-ink-4);
+  background: var(--sd-ink-2);
+  color: var(--sd-white-0);
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sd-lo-tower {
+  min-height: 36px;
+}
+
+.sd-lo-tower.sd-lo-on,
+.sd-lo-ability.sd-lo-on {
+  border-left-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--sd-white-1);
+}
+
+/* Full: the unpicked cards dim (still focusable, so the limit can be explained). */
+.sd-lo-tower.sd-lo-full {
+  color: var(--sd-steel-2);
+}
+
+.sd-lo-tower.sd-lo-full .sd-lo-icon {
+  opacity: 0.45;
+}
+
+.sd-lo-tower:hover,
+.sd-lo-tower:focus-visible,
+.sd-lo-ability:hover,
+.sd-lo-ability:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--sd-teal-4);
+}
+
+/* The build slot a picked tower takes (1–4), or an empty box. */
+.sd-lo-slot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border: 1px solid var(--sd-steel-1);
+  color: var(--sd-ink-0);
+  text-align: center;
+  line-height: 8px;
+}
+
+.sd-lo-on .sd-lo-slot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.sd-lo-icon {
+  flex: none;
+}
+
+.sd-lo-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sd-lo-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sd-lo-name {
+  color: inherit;
+}
+
+.sd-lo-cost {
+  color: var(--sd-gold-3);
+}
+
+.sd-lo-full .sd-lo-cost,
+.sd-lo-full .sd-lo-role {
+  color: var(--sd-steel-2);
+}
+
+.sd-lo-role {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* A counter the tower (or ability) answers on this map; a required one is gold. */
+.sd-lo-chip {
+  padding: 1px 2px;
+  border: 1px solid var(--sd-teal-3);
+  color: var(--sd-teal-4);
+}
+
+.sd-lo-chip-need {
+  border-color: var(--sd-gold-3);
+  color: var(--sd-gold-4);
+}
+
+.sd-lo-hint {
+  margin-top: auto;
+  color: var(--sd-steel-3);
+  font-family: var(--font-heading);
+  line-height: 10px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+/* The Technician's ability: a radio group of rows. */
+.sd-lo-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sd-lo-ability {
+  align-items: center;
+}
+
+.sd-lo-ability-name {
+  flex: 1;
+}
+
+.sd-lo-companion {
+  color: var(--sd-white-1);
+  text-transform: uppercase;
+}
+
+.sd-lo-dim {
+  color: var(--sd-steel-3);
+  text-transform: uppercase;
+}
+
+.sd-lo-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-lo-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 4px;
+  border-left: 2px solid var(--sd-ink-4);
+  background: var(--sd-ink-2);
+  color: var(--sd-steel-2);
+  line-height: 9px;
+  text-transform: uppercase;
+}
+
+.sd-lo-link-on {
+  border-left-color: var(--accent-2);
+  color: var(--sd-white-0);
+}
+
+.sd-lo-link-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sd-lo-link-on .sd-lo-link-name {
+  color: var(--accent-2);
+}
+
+.sd-lo-link-state {
+  color: var(--sd-steel-3);
+}
+
+.sd-lo-link-on .sd-lo-link-state {
+  color: var(--sd-teal-4);
+}
+
+/* Heads-ups: orange, never red (a warning, not a scold). */
+.sd-lo-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+}
+
+.sd-lo-warning {
+  color: var(--sd-orange-3);
+  line-height: 10px;
+}
+
+/* The battle briefing's buttons (ui/hud/index.tsx): Change loadout beside Clock in, which stays
+   at the right edge where the briefing has always put it. */
+.hud-briefing-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  justify-self: stretch;
+}

@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FLAGS } from '../src/content/dialogue/flags.ts';
+import { FLAG_IDS, FLAGS, isFlagId } from '../src/content/dialogue/flags.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -30,10 +30,10 @@ describe('the flag registry matches campaign.md § 6.2', () => {
   it('declares the ledger’s flags in its order, with its values', () => {
     const rows = ledger();
     expect(rows.size).toBeGreaterThan(0);
-    expect(Object.keys(FLAGS)).toEqual([...rows.keys()]);
+    expect(FLAG_IDS).toEqual([...rows.keys()]);
     for (const [id, values] of rows) {
-      const def: { readonly values: readonly unknown[] } = FLAGS[id as keyof typeof FLAGS];
-      expect(def.values, id).toEqual(values);
+      if (!isFlagId(id)) throw new Error(`${id}: not in the registry`);
+      expect(FLAGS[id].values, id).toEqual(values);
     }
   });
 });

@@ -53,7 +53,9 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   // Rapport is now 1 Intel short: its button says so and explains itself, and buys nothing.
   const short = rapport.getByRole('button', { name: /not enough/ });
   await expect(short).toHaveAttribute('aria-disabled', 'true');
-  await short.click();
+  // (Playwright won't click an aria-disabled button, so press it from the keyboard.)
+  await short.focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('store-line')).toContainText('You have 1');
   expect(await page.evaluate(() => globalThis.__sd!.save()?.upgrades)).toEqual({
     orbital_strike_mk2: 1,
@@ -79,9 +81,11 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
 
   await page.getByRole('tab', { name: 'Shop', exact: true }).click();
   await expect(pane).toContainText("Zibzab's Genuine Pre-Owned Defensive Solutions");
-  for (const group of ['Global upgrades', 'Tune-ups', 'Field Protocols']) {
-    await expect(pane.getByRole('heading', { name: group })).toBeVisible();
-  }
+  await Promise.all(
+    ['Global upgrades', 'Tune-ups', 'Field Protocols'].map((group) =>
+      expect(pane.getByRole('heading', { name: group })).toBeVisible(),
+    ),
+  );
   const core = offerRow(page, 'Reinforced Core');
   await expect(core).toContainText('Rank 3: +1 core integrity');
   await expect(core).toContainText('Owned');
