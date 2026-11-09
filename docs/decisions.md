@@ -1001,3 +1001,15 @@ Real art went in behind T300a's ids. No data changed.
 - **Poking:** a plain click, or Enter with the keyboard cursor, ducks it with a squeak. Only on Act I maps.
 - **The first poke writes `peeker_poked` to the save at once** (`app/peeker.ts`), not at run end. It counts whether the run is won, lost, or abandoned, and it never enters the sim's command log. The flag pays off in A3M6.
 - There's no bark, because act1.md has no Peeker line.
+
+### D079 — 2026-11-09 — T313 harness extensions for Act I
+- **Placement-aware answers:** a placed tower answers a counter category only if one of its placements reaches a route that category's enemies take. Reach = its longest attack range (×1.25 on high ground) + 0.5 tiles of slack. Unplaced loadout towers and towers with no range still count. The validator and the harness share the model.
+- **New executor steps:**
+  - `specialize`;
+  - `clear` (a later build on that tile waits for the drone);
+  - `holdFireWhile: 'neutral'`, Gerald's macro: hold fire on each pass until he exits.
+  
+  Buys wait for the price the sim will actually charge, and ability steps wait until the slot is ready.
+- **R&D-pick runs (T228):** par runs once per allowed R&D pick (`par@rnd:<id>`) and must win. A builds field `rndPickChanges` requires a listed pick to change par's outcome, margin, or medals on some seed.
+- **Timing:** 70 runs in 4–7 s, single-threaded, so no worker threads are needed yet. The whole-map balance tests get a 30 s timeout under load.
+- **For A1M3:** the build uses `holdFireWhile: 'neutral'`, a W2 `clear`, and `rndPickChanges: ['orbital_strike_mk2']`. The no-air build keeps its Rivets more than 3.5 tiles from the air lane.

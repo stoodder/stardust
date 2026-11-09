@@ -511,3 +511,95 @@ describe('M3 tell glyphs (art-direction §8)', () => {
     }
   });
 });
+
+describe('Matriarch Chitterbloom (T311b)', () => {
+  const id = 'enemy.chitterbloom';
+  const width = (rows: readonly string[]): number => {
+    const b = bounds(rows);
+    return b.x1 - b.x0 + 1;
+  };
+
+  it('is the biggest thing on the road, within the boss canvas (tech-spec: up to 64×64)', () => {
+    const d = def(id);
+    expect(d.size.w + 2).toBeLessThanOrEqual(64);
+    expect(d.size.h + 2).toBeLessThanOrEqual(64);
+    const her = width(grid(id, 'walk_se_0'));
+    for (const big of ['enemy.brood_hauler', 'enemy.elder'] as const) {
+      expect(her, big).toBeGreaterThan(width(grid(big, 'walk_se_0')) + 8);
+    }
+  });
+
+  it('has every boss state the sim reads, in four facings where she moves', () => {
+    const anims = def(id).anims ?? {};
+    for (const a of ['walk', 'tell', 'sneeze', 'dig', 'panic', 'puff', 'flee']) {
+      for (const f of ['se', 'sw', 'ne', 'nw']) expect(anims[`${a}_${f}`], `${a}_${f}`).toBeDefined();
+    }
+    expect(anims['under']).toBeDefined();
+    // The one-shot beats play once; the tells and states loop.
+    expect(anims['sneeze_se']).toMatchObject({ loop: false });
+    expect(anims['surface']).toMatchObject({ loop: false });
+    expect(anims['tell_se']).not.toHaveProperty('loop');
+  });
+
+  it('wears her blossom crown in every pose, even underground', () => {
+    for (const f of ['walk_se_0', 'walk_ne_0', 'dig_se_0', 'under_0', 'panic_ne_1', 'flee_se_0']) {
+      expect(count(grid(id, f), 'PQ'), f).toBeGreaterThan(20);
+    }
+    expect(def(id).legend).toMatchObject({ P: 'pink.3', Q: 'pink.4' });
+  });
+
+  it('shows each tell with a shape change, not only a color', () => {
+    const walk = grid(id, 'walk_se_1');
+    // The sneeze tell stretches her taller; the sneeze squashes her and blows fluff out in front.
+    const tall = (f: string): number => {
+      const b = bounds(grid(id, f).map((r) => r.replace(/[PQcdbF+*]/g, '.')));
+      return b.y1 - b.y0;
+    };
+    expect(tall('tell_se_1')).toBeGreaterThan(tall('walk_se_1'));
+    expect(count(grid(id, 'sneeze_se_0'), 'Fw')).toBeGreaterThan(count(walk, 'Fw') + 20);
+    // The dig flings dirt; phase 3 trails the haste speed lines; the puff bristles wider.
+    expect(count(grid(id, 'dig_se_0'), 'MNO')).toBeGreaterThan(40);
+    expect(count(grid(id, 'panic_se_0'), 'L')).toBeGreaterThan(6);
+    expect(width(grid(id, 'puff_se_0'))).toBeGreaterThan(width(walk));
+    // Underground she is a mound, far lower than her standing silhouette.
+    const under = bounds(grid(id, 'under_0'));
+    expect(under.y1 - under.y0).toBeLessThan(tall('walk_se_1') / 2);
+  });
+
+  it('has a wave-preview icon with the crown', () => {
+    expect(count(grid('icon.enemy.chitterbloom', 'icon'), 'PQ')).toBeGreaterThan(6);
+  });
+});
+
+describe('wreckage and the salvage drone (T311b)', () => {
+  it('stands each wreck on its tile center, with lit and half-cleared frames', () => {
+    const d = def('prop.wreckage');
+    expect(d.size.w).toBe(32);
+    expect(d.anchor).toEqual({ x: 16, y: d.size.h - 8 });
+    for (const v of ['v0', 'v1']) {
+      expect(grid('prop.wreckage', `${v}_lit`), v).not.toEqual(grid('prop.wreckage', v));
+      expect(count(grid('prop.wreckage', `${v}_half`), 'WVST'), v).toBeLessThan(
+        count(grid('prop.wreckage', v), 'WVST') / 2,
+      );
+      // The salvage stake's hazard stripes: the "clear me" cue on every wreck.
+      expect(count(grid('prop.wreckage', v), 'O'), v).toBeGreaterThan(4);
+    }
+    // Everglow hardware keeps its colors in every act (custom legend), the dirt follows the env.
+    expect(d.legend).toMatchObject({ W: 'white.0', O: 'orange.3', E: 'teal.3' });
+    expect(d.variants).toContain('act3');
+  });
+
+  it('flies the drone with blurring rotors and clears with a beam down to its anchor', () => {
+    const d = def('prop.salvage_drone');
+    expect(d.anims?.['fly']).toBeDefined();
+    expect(d.anims?.['work']).toBeDefined();
+    expect(grid('prop.salvage_drone', 'fly_0')).not.toEqual(grid('prop.salvage_drone', 'fly_1'));
+    // No beam in flight; while working, the beam's emissive reaches the ground point.
+    const beamRow = (f: string): string => grid('prop.salvage_drone', f)[d.anchor.y] ?? '';
+    expect(count([beamRow('fly_0')], '+*')).toBe(0);
+    expect(count([beamRow('work_0')], '+*')).toBeGreaterThan(2);
+    // Boxy Everglow white with orange hazard bands, not Gerald's round capsule.
+    expect(d.palette).toBe('everglow');
+    expect(count(grid('prop.salvage_drone', 'fly_0'), 'bc')).toBeGreaterThan(6);
+  });
+});

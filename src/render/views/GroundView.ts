@@ -26,8 +26,11 @@ function propTieBreak(index: number): number {
   return index & 0xff;
 }
 
-/** Draws one cell's ground and prop; returns the prop's sprite (null with none). */
-function drawCell(
+/**
+ * Draws one cell's ground and prop; returns the prop's sprite (null with none). WreckageView draws
+ * a cleared wreckage tile's live tile with it.
+ */
+export function drawCell(
   ctx: ViewContext,
   env: string,
   i: number,
@@ -82,12 +85,15 @@ function drawCell(
 
 /**
  * Draws a map's apron, ground, and props. Static: called once when the battle starts. Returns the
- * core props by tile index, for CoreView (it fades a core that hides a tower behind it).
+ * core props by tile index, for CoreView (it fades a core that hides a tower behind it), and puts
+ * the wreckage props by tile index into `wreckage` (WreckageView swaps their frames as the drone
+ * works and hides them once cleared).
  */
 export function drawGround(
   ctx: ViewContext,
   grid: GroundGrid,
   env: string,
+  wreckage: Map<number, Phaser.GameObjects.Sprite> | null = null,
 ): Map<number, Phaser.GameObjects.Sprite> {
   const cores = new Map<number, Phaser.GameObjects.Sprite>();
   // The apron first: its tiles never overlap the map's, so only the props need sorting.
@@ -101,6 +107,7 @@ export function drawGround(
       const index = j * grid.cols + i;
       const prop = drawCell(ctx, env, i, j, dressTile(grid, i, j), index);
       if (prop !== null && grid.tiles[index] === 'C') cores.set(index, prop);
+      if (prop !== null && grid.tiles[index] === 'x') wreckage?.set(index, prop);
     }
   }
   return cores;

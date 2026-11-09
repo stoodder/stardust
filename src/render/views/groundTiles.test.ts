@@ -27,7 +27,7 @@ describe('dressTile', () => {
   it('dresses each tile type with its own ground', () => {
     expect(dressTile(g, 0, 0).ground.sprite).toBe('tile.spawn');
     expect(dressTile(g, 1, 1)).toEqual({ ground: { sprite: 'tile.pad', frame: 'v0' }, prop: null });
-    expect(dressTile(g, 3, 1).prop?.sprite).toBe('prop.rock');
+    expect(dressTile(g, 3, 1).prop).toEqual({ sprite: 'prop.wreckage', frame: 'v0', anim: null });
     expect(dressTile(g, 3, 2).prop).toEqual({ sprite: 'prop.core', frame: 'idle_0', anim: 'idle' });
     expect(dressTile(g, 3, 2).ground.sprite).toBe('tile.path');
   });

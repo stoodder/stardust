@@ -84,10 +84,11 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await expect(next).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(next).toHaveText('Next');
+  // The sim didn't move under the scene.
+  expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(tick);
   await page.keyboard.press('Enter');
   await expect(scene).toBeHidden();
-  // The sim didn't move under the scene, and the speed came back.
-  expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(tick);
+  // The speed came back.
   await expect(page.getByRole('button', { name: 'Pause' })).toHaveAttribute(
     'aria-pressed',
     'false',

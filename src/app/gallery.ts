@@ -288,7 +288,8 @@ function portraitCard(b: BakedSprite, count: Counters): HTMLElement {
   return card;
 }
 
-// A corner of an Act I map: S spawn, # path, o pad, ^ high ground, + power node, C core, . decor.
+// A corner of an Act I map: S spawn, # path, o pad, ^ high ground, + power node, x wreckage,
+// C core, . decor.
 // prettier-ignore
 const DIORAMA_MAP = [
   '....S..o.',
@@ -296,8 +297,8 @@ const DIORAMA_MAP = [
   '.^^.#.o..',
   '....####.',
   '.o.o...#o',
-  '...o...#.',
-  '....####.',
+  'x..o...#.',
+  'x...####.',
   '..o.#.o..',
   '..o.C....',
 ];
@@ -344,6 +345,17 @@ type Placed = readonly [
   gy: number,
   variant?: string,
 ];
+
+/**
+ * The diorama's wreckage (T311b): the drone is half way through the tile at (0, 5); the one at
+ * (0, 6) waits its turn. Wreckage is drawn as `prop.wreckage` (a variant per tile, half cleared
+ * while the drone works it), whatever groundTiles puts on an `x` tile.
+ */
+function wreckageLook(i: number, j: number): { sprite: SpriteId; frame: string } | null {
+  if (DIORAMA_MAP[j]?.[i] !== 'x') return null;
+  const v = (i + j) % 2;
+  return { sprite: 'prop.wreckage', frame: i === 0 && j === 5 ? `v${v}_half` : `v${v}` };
+}
 
 function diorama(
   baked: ReadonlyMap<string, BakedSprite>,
@@ -392,7 +404,7 @@ function diorama(
     for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
     if (look.block !== undefined)
       blocks.push({ id: look.block.sprite, frame: look.block.frame, i, j });
-    const p = look.prop;
+    const p = wreckageLook(i, j) ?? look.prop;
     if (p !== null) objects.push([p.sprite, p.frame, i + 0.5, j + 0.5, propVariant(p.sprite, env)]);
   };
   for (const a of apronCells(DIORAMA_GRID, env)) cell(a.col, a.row, a);
@@ -405,11 +417,12 @@ function diorama(
   objects.push(
     ['enemy.nibbler', 'walk_sw_0', 4.5, 1.1],
     ['enemy.brood_hauler', 'walk_sw_1', 4.5, 2.5],
-    // A Digger digging in (its burrower tell), a Bunchling, a Zoomer, and a Chonk down the road.
+    // A Digger digging in (its burrower tell), a Bunchling, and a Zoomer down the road.
     ['enemy.digger', 'dig_se_0', 5.2, 3.5],
     ['enemy.bunchling', 'walk_se_1', 6.5, 3.45],
-    ['enemy.chonk', 'walk_se_0', 7.5, 4.6],
-    ['enemy.zoomer', 'walk_se_0', 7.45, 5.6],
+    // Matriarch Chitterbloom lumbering down the road (the boss's silhouette among her brood).
+    ['enemy.chitterbloom', 'walk_sw_1', 7.55, 4.75],
+    ['enemy.zoomer', 'walk_se_0', 7.45, 5.9],
     // An Elder holding three younglings to her pace (the Quiet Wave's look).
     ['enemy.elder', 'walk_sw_0', 4.75, 6.45],
     ['enemy.youngling', 'walk_sw_1', 5.45, 6.2],
@@ -521,6 +534,16 @@ function diorama(
     draw(frameOf('fx.shadow', shadow, DEFAULT_VARIANT), fx, fy);
     draw(frameOf(id, frame, DEFAULT_VARIANT), fx, fy - FLY_LIFT_PX, glowOf(baked, id, frame));
   }
+  // The salvage drone at work over the half-cleared wreck (its anchor is the ground point; the
+  // body hovers inside its frame), over its shadow.
+  const [dx, dy] = screen(0.5, 5.5);
+  draw(frameOf('fx.shadow', 'small', DEFAULT_VARIANT), dx, dy);
+  draw(
+    frameOf('prop.salvage_drone', 'work_1', DEFAULT_VARIANT),
+    dx,
+    dy,
+    glowOf(baked, 'prop.salvage_drone', 'work_1'),
+  );
   const [qx, qy] = screen(2.6, 2.4);
   draw(frameOf('projectile.skyhook_flak', 'e', DEFAULT_VARIANT), qx, qy - 6);
   // VFX on top: a shell mid-arc over its shadow, a burst, and the Orbital Strike reticle.

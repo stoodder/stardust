@@ -88,6 +88,11 @@ export function envVariant(env: string): string {
   return env === 'act1' ? DEFAULT_VARIANT : env;
 }
 
+/** The `prop.wreckage` wreck on tile (col, row): `v0` or `v1`, alternating (T311b's frames). */
+export function wreckageFrame(col: number, row: number): 'v0' | 'v1' {
+  return (col + row) % 2 === 0 ? 'v0' : 'v1';
+}
+
 function isPathLike(t: TileChar | undefined): boolean {
   return t === '#' || t === 'S' || t === 'C';
 }
@@ -129,11 +134,14 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
       const decor = t === undefined ? null : decorAt(g, col, row);
       let sprite: SpriteId | null = decor === 'bare' ? null : decor;
       if (decor === null) {
-        if (t === 'x') sprite = 'prop.rock';
+        if (t === 'x') sprite = 'prop.wreckage';
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
         else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
       }
-      const prop = sprite === null ? null : { sprite, frame: 'v0', anim: null };
+      // Wreckage alternates its two wrecks by tile (a crashed drone, a toppled cart); WreckageView
+      // swaps the frame as the drone works and hides it once the tile is cleared.
+      const frame = t === 'x' ? wreckageFrame(col, row) : 'v0';
+      const prop = sprite === null ? null : { sprite, frame, anim: null };
       // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
       const verge: string[] = [];
       for (const [edge, dc, dr] of EDGES) {

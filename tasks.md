@@ -103,7 +103,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
 - [ ] **T211** Audio follow-ups: Kip's own radio blip (he borrows Goldie's); an armor "plink" (needs a reduced-damage flag on `ProjectileHit`); sounds for links, allies, Hold Fire, and medals as those land; Act II/III themes and the other six "Everglow Bright" cue variants (M4+); an `icon.ui.sound` sprite to replace the SVG glyph.
 - [ ] **T213** HUD polish from T126: the aim hint says "Enter fires" when the cursor shows (style-guide wording); the panel's "Next:" line clips "+3 pierce"; the panel avoids the HUD corners.
-- [ ] **T215** Specs follow-ups: the headless executor runs `specialize` steps (it refuses them today); `validate.ts` checks bomblet sprite ids.
+- [x] **T215** Specs follow-ups: the headless executor runs `specialize` steps (it refuses them today); `validate.ts` checks bomblet sprite ids.
 - [ ] **T216** Allies polish: a glow halo for AllyView; the companion portrait on slot 2 (M3, with portraits); check in the UX review that the suppression tracers are juicy enough.
 - [ ] **T217** Docs: stale "T125" references in architecture.md (lines ~14, ~162), meta-runtime.md (~145), maps.md (~262), and comments in `hud.test.ts` / `devBattle.ts`.
 - [x] **T218** `meta/validate.ts` checks each saved flag's value against the flag's declared values (any id-shaped string passes today).
@@ -142,8 +142,8 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T304b** Zapcoil chain; Conductive (+ a minimal Soaked); `clear` and the drone queue; the hidden node; salvage gates.
 - [x] **T304c** Split, huddle, burrow; Chitterbloom's phases and `driveOff`; a boss leak drains integrity; the boss clear bonus ×3; boss triggers.
 - [x] **T304d** Time Dilation; Clearance Sale; lift the `firstBuildFree`/`freeCast` gates.
-- [~] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
-- [ ] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
+- [x] **T313** Harness: placement-aware answers (T307), `specialize` steps (T215), `clear` steps, Gerald's hold-fire macro, R&D-pick variants (T228), the gate-time budget.
+- [~] **T304e** A1M3 (par ≤ 90, T224; Mk II decides a result, T228; Return to Sender; the knock-knock; Zibzab).
 - [ ] **T304f** A1M4 (the Clean Audit objective; ≥ 2 alts).
 - [ ] **T304g** A1M5 (the boss; second spawn; the Quiet Wave with check #16 live; Cluster par; party and stinger scenes; Bricks's Rapport matters).
 - [x] **T306** Character creation: intake, editing in Settings, `arrival_reason`, the intake on Continue for v1 saves.
@@ -162,7 +162,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T309** The Peeker (`prop.peeker`: frames hidden/peek_0/peek_1/duck): view + click sets `peeker_poked`.
 - [ ] **T314** Audio (T211): new sounds, per-speaker blips, the typewriter, the plink.
 - [ ] **T315** Act I curve pass: Story difficulty everywhere; T226, T229; the T228 verdict.
-- [ ] **T317** Docs: T217, T120, as-built tables.
+- [ ] **T317** Docs: T217, T120, as-built tables; enemies.md §3.1 + architecture § Validation mention placement-aware answers (D079); conventions open question 1 records sim timing.
 
 ## M4 — Act II · M5 — Act III & Finale · M6 — Post-game & Polish
 To be split up when we reach them. Known items:

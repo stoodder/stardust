@@ -187,6 +187,10 @@ describe('Act I value bands (art-direction §1)', () => {
       ['enemy.elder', 'walk_ne_0'],
       ['enemy.youngling', 'walk_se_0'],
       ['enemy.gerald', 'walk_se_0'],
+      ['enemy.chitterbloom', 'walk_se_0'],
+      ['enemy.chitterbloom', 'walk_ne_0'],
+      ['enemy.chitterbloom', 'panic_se_0'],
+      ['prop.salvage_drone', 'fly_0'],
     ];
     for (const [id, frame] of actors) {
       const d = sprite(id);
