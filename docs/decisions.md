@@ -1293,3 +1293,11 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **The Lookout's aura is one aura kind; the strongest wins** whatever its stat (an Overclock Rig's +20% rate replaces a neighbour's +15% range). High ground and power nodes don't change detection radius; a power node still gives a support tower +20% aura strength. Crow's Nest's +10% is a Mark (highest only) on the cloaked units it reveals, lasting the reveal.
 - **`[quiet-wave-reach]` counts range auras only from support towers ownable on the run that first wins the map** (flags are set only on a first win, so that run is where the C1 choice must be seen first). The Lookout is stocked after A1M5, so A1M5 passes unchanged; counting it unconditionally would have moved two A1M5 pads and Act I par. T408 may apply the same scope to attack ranges for the Harpoon.
 - **R&D sells abilities** (`{ kind: 'ability' }` items, Scanner Sweep 2 Intel after A2M1); support tune-ups use a new `supportStat` modifier kind; the counter model's reach is max(attack range, detection radius).
+
+### D108 — 2026-11-09 — T412 the Act II harness
+- **Reference profiles are data** (`REFERENCE_PROFILES` in `content/upgrades/reference.ts`, A1M1 through A2M3, per campaign §4.9); every map's builds take its row, and the purchase check refuses a row that owns a tower still waiting on its task.
+- **Re-baselining after a boss:** a map with `rebaseline: true` is judged against its own act's band (A2M1: Act II's 65–85), refused unless the previous campaign map has a boss; the chain continues from it.
+- **Run-end flags are checked:** a map's builds list each run-end rule ending on it (`runEndFlags`: runs that must set it, runs that must not), and the validator requires every rule to be listed. The hold-fire macro on fleeing runners holds once per wave.
+- **Under-built alts** don't count toward the two required alts and may use par's towers; they and par on Story skip "every step issued". A1M5's `no_spec` is a real alt (81.0).
+- **A `?map=` battle with no save uses the map's reference profile**, so `autoplay('par')` reproduces par.
+- **Gate budget: 7 min**, printed per step by `tools/gate.ts` (over budget warns, never fails); `npm run sim` runs maps on worker threads with identical output at any job count.
