@@ -1,6 +1,7 @@
 // Root of the DOM overlay (docs/tech/architecture.md § UI: DOM overlay): picks the current screen.
 import { render } from 'preact';
 import { assertNever } from '../shared/types.ts';
+import { SceneLayer } from './dialogue/SceneLayer.tsx';
 import { Hud } from './hud/index.tsx';
 import { Base } from './screens/Base.tsx';
 import { Campaign } from './screens/Campaign.tsx';
@@ -11,8 +12,18 @@ import { Settings } from './screens/Settings.tsx';
 import { Title } from './screens/Title.tsx';
 import { screen } from './state.ts';
 
-/** The overlay's root component: picks the current screen. */
+/** The overlay's root component: the current screen, and a scene holding input over it. */
 export function Overlay() {
+  return (
+    <>
+      <Screen />
+      <SceneLayer />
+    </>
+  );
+}
+
+/** The current screen. */
+function Screen() {
   const current = screen.value;
   switch (current) {
     case null:

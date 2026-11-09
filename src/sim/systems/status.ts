@@ -2,7 +2,24 @@
 // M1: Chilled, Soaked, Corroded, Marked, shields), in ascending slot order. Runs before movement,
 // so a Chilled of N ticks slows exactly N movement ticks: it's applied by a tower after movement,
 // counts down on the next N status passes, and clears on the one after.
+//
+// Soaked (enemies.md § 2.4; minimal since T304b): the damage pipeline reads `soakedTicks`
+// (combat/damage.ts: +25% Energy, Kinetic and Explosive strip shields at ×0.8), a new Soak
+// refreshes to the longer duration, and this pass counts it down. Its one live source is the
+// Conductive link (`applyLinkStatuses`); the Sprinkler's own tier-3 Soak and Cloudburst's come
+// with the Sprinkler's data and specs (M4).
+import type { Enemy, Tower } from '../entities.ts';
 import type { SimState } from '../state.ts';
+
+/**
+ * The statuses a tower's links add to its hits (Conductive: the Sprinkler Soaks from tier 1),
+ * applied after the hit's damage like its tier's own effects. Soaked refreshes to the longer of
+ * the remaining and the new duration (combat/damage.ts `applyEffects`' rule).
+ */
+export function applyLinkStatuses(t: Tower, e: Enemy): void {
+  const soak = t.linkSoakedTicks;
+  if (soak > e.soakedTicks && e.alive) e.soakedTicks = soak;
+}
 
 export function status(state: SimState): void {
   const enemies = state.enemies;

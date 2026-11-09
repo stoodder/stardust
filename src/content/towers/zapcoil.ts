@@ -1,6 +1,7 @@
 // Zapcoil (design/towers.md § 7): Zibzab's anti-shield chain, Vrell, ground and air. "Chains to 3
-// targets" is the first hit plus `jumps: 2` (each jump −20%); tier 3 chains to 4. createSim refuses
-// it until T304b runs chain attacks (FEATURE_GATES `attack.chain`; sim/attacks/chain.ts). Licensed
+// targets" is the first hit plus `jumps: 2`, each jump 20% weaker than the one before (compounding:
+// 10 / 8 / 6.4); tier 3 chains to 4. Energy, so Soaked enemies take +25% (the Conductive link with
+// the Sprinkler adds 2 jumps and the Soak). The chain rules are sim/attacks/chain.ts's. Licensed
 // as Zibzab's free sample after A1M3 (upgrades/access.ts). Its specs (Overload Coil, Capacitor Bank)
 // are M4's (D064). Sprites are placeholders under their final ids (T311a).
 import { defineTower } from '../define.ts';

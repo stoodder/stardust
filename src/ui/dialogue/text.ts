@@ -112,7 +112,7 @@ export function distort(text: string, seed: number): DistortedChar[] {
     s >>>= 0;
     return s / 0x1_0000_0000;
   };
-  return [...text].map((ch) => {
+  return text.split('').map((ch) => {
     const r = next();
     const dropped = ch !== ' ' && r < 0.14;
     const nudge = next();

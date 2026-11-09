@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ENEMIES } from '../../enemies/index.ts';
 import { SPRITES } from '../index.ts';
 import type { SpriteDef } from '../types.ts';
 
@@ -45,6 +46,13 @@ describe('icon sprites (art-direction §5)', () => {
       const m = /^(tower|enemy)\.([a-z_]+)$/.exec(s.id);
       if (m === null || s.id.endsWith('_head') || renderOnly.has(s.id)) continue;
       expect(ids.has(`icon.${m[1]}.${m[2]}`), s.id).toBe(true);
+    }
+  });
+
+  it("draws a tell glyph for every tell an enemy's data names (art-direction §8)", () => {
+    const ids = new Set<string>(SPRITES.map((s) => s.id));
+    for (const e of Object.values(ENEMIES)) {
+      for (const t of e.tells) expect(ids.has(`icon.tell.${t}`), `${e.id}: ${t}`).toBe(true);
     }
   });
 });

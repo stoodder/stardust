@@ -8,7 +8,7 @@ import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
 import { tetherDir } from '../content/sprites/fx/link_tether.ts';
 import { groundShadowFor } from '../content/sprites/shadows.ts';
-import type { EnvPaletteId } from '../content/sprites/types.ts';
+import type { EnvPaletteId, SpriteDef } from '../content/sprites/types.ts';
 import {
   bakeAll,
   DEFAULT_VARIANT,
@@ -48,20 +48,69 @@ function hasOpaque(img: RgbaImage): boolean {
   return false;
 }
 
-/** An integer zoom that keeps frames readable without making big ones huge. */
 /**
- * Derived variants (`+selected`, `+jammed`) are shown for the default palette only: they are the
- * same recolor on every palette, and showing them all makes the page too tall to capture.
+ * Which palette variant a sprite card shows beside `default`: one per sprite keeps the page
+ * capturable (D044), and the dioramas show every environment palette anyway. Env-tinted sprites
+ * show `act3` (the deepest dark), the others their first variant (`skitterkin.ally`,
+ * `everglow.worn`).
  */
+function secondVariant(b: BakedSprite): string | undefined {
+  const palettes = b.variants.filter((v) => v !== DEFAULT_VARIANT && !v.includes('+'));
+  return palettes.includes('act3') ? 'act3' : palettes[0];
+}
+
+const DEFS: ReadonlyMap<string, SpriteDef> = new Map(SPRITES.map((d) => [d.id, d as SpriteDef]));
+
+/** A frame made by mirroring (`walk_sw_0`, `nw_fire`): its source frame is on show already. */
+function isMirrorFrame(b: BakedSprite, name: string): boolean {
+  const fd = DEFS.get(b.id)?.frames[name];
+  return fd === undefined || 'mirrorOf' in fd;
+}
+
+/** Portraits show `default` and its derived `+dark` (the derived variants of the default only). */
 function isShownVariant(name: string): boolean {
   return !name.includes('+') || name.startsWith(`${DEFAULT_VARIANT}+`);
 }
 
-/** The variant part of a frame key (`<id>#<variant>:<frame>`). */
-function variantOfKey(key: string): string {
-  return key.slice(key.indexOf('#') + 1, key.indexOf(':'));
+/**
+ * What a sprite card shows (T311a, to keep the art trail under the capture limit):
+ * - `default`, every frame (mirrors too), at 1× and zoomed, on dark (with its `@glow` added) and on
+ *   light (without);
+ * - one more palette variant (`secondVariant`), its authored frames only, zoomed on dark;
+ * - each derived variant (`default+selected`, `default+jammed`), its first frame only.
+ */
+export interface CardPlan {
+  readonly rows: readonly {
+    readonly variant: string;
+    readonly frames: readonly string[];
+    readonly light: boolean;
+    readonly glow: boolean;
+  }[];
 }
 
+function cardPlan(b: BakedSprite): CardPlan {
+  const authored = b.frameNames.filter((n) => !isMirrorFrame(b, n));
+  const second = secondVariant(b);
+  const first = b.frameNames[0];
+  return {
+    rows: [
+      { variant: DEFAULT_VARIANT, frames: b.frameNames, light: true, glow: true },
+      ...(second === undefined
+        ? []
+        : [{ variant: second, frames: authored, light: false, glow: false }]),
+      ...b.variants
+        .filter((v) => v.startsWith(`${DEFAULT_VARIANT}+`))
+        .map((variant) => ({
+          variant,
+          frames: first === undefined ? [] : [first],
+          light: false,
+          glow: false,
+        })),
+    ],
+  };
+}
+
+/** An integer zoom that keeps frames readable without making big ones huge. */
 function zoomFor(b: BakedSprite): number {
   const size = Math.max(b.meta.w, b.meta.h);
   return size <= 20 ? 3 : 2;
@@ -94,6 +143,7 @@ function scaled(
 }
 
 interface Counters {
+  expected: number;
   rendered: number;
 }
 
@@ -130,7 +180,7 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
     el(
       'small',
       undefined,
-      `${m.w}×${m.h} · anchor ${m.anchor.x},${m.anchor.y} · ${b.frameNames.length} frames · ${b.anims.length / b.variants.length} anims`,
+      `${m.w}×${m.h} · anchor ${m.anchor.x},${m.anchor.y} · ${b.frameNames.length} frames · ${b.anims.length / b.variants.length} anims · ${b.variants.length} variants`,
     ),
   );
   card.append(title);
@@ -138,33 +188,25 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
   const byKey = new Map(b.frames.map((f) => [f.key, f]));
   const variants = el('div', 'variants');
   card.append(variants);
-  for (const v of b.variants.filter(isShownVariant)) {
-    const frames = b.frameNames.flatMap((name) => {
-      const f = byKey.get(frameKey(b.id, v, name));
+  for (const row of cardPlan(b).rows) {
+    const frames = row.frames.flatMap((name) => {
+      const f = byKey.get(frameKey(b.id, row.variant, name));
       return f === undefined ? [] : [{ name, f }];
     });
+    count.expected += frames.length;
+    const glows = new Map<string, BakedFrame>();
+    if (row.glow) {
+      for (const { f } of frames) {
+        const g = byKey.get(glowKey(f.key));
+        if (g !== undefined) glows.set(f.key, g);
+      }
+    }
     const block = el('div', 'variant');
     const panels = el('div', 'panels');
-    panels.append(panel(frames, zoom, 'dark', count), panel(frames, zoom, 'light', null));
-    block.append(el('div', 'vlabel', v), panels);
-    variants.append(block);
-  }
-  const glows = new Map<string, BakedFrame>();
-  for (const name of b.frameNames) {
-    const k = frameKey(b.id, DEFAULT_VARIANT, name);
-    const g = byKey.get(glowKey(k));
-    if (g !== undefined) glows.set(k, g);
-  }
-  if (glows.size > 0) {
-    const frames = b.frameNames.flatMap((name) => {
-      const f = byKey.get(frameKey(b.id, DEFAULT_VARIANT, name));
-      return f === undefined ? [] : [{ name, f }];
-    });
-    const block = el('div', 'variant');
-    block.append(
-      el('div', 'vlabel', 'default + @glow (additive)'),
-      panel(frames, zoom, 'dark', null, glows),
-    );
+    panels.append(panel(frames, zoom, 'dark', count, glows));
+    if (row.light) panels.append(panel(frames, zoom, 'light', null));
+    const label = glows.size > 0 ? `${row.variant} (dark: + @glow)` : row.variant;
+    block.append(el('div', 'vlabel', label), panels);
     variants.append(block);
   }
   return card;
@@ -225,6 +267,7 @@ function portraitCard(b: BakedSprite, count: Counters): HTMLElement {
     for (const name of b.frameNames) {
       const f = byKey.get(frameKey(b.id, v, name));
       if (f === undefined) continue;
+      count.expected++;
       if (hasOpaque(f.image)) count.rendered++;
       const box = el('div', 'frame');
       box.append(imageToCanvas(f.image), el('span', undefined, name));
@@ -280,6 +323,9 @@ function headFrame(
   const named = [facing, look.startsWith('spec') ? look : 't2', ...rest].join('_');
   return baked.get(id)?.frameNames.includes(named) === true ? named : frame;
 }
+
+/** Flyers draw this far above their ground point (render/views/EnemyView.ts). */
+const FLY_LIFT_PX = 12;
 
 type Placed = readonly [
   spriteId: SpriteId,
@@ -349,9 +395,18 @@ function diorama(
   objects.push(
     ['enemy.nibbler', 'walk_sw_0', 4.5, 1.1],
     ['enemy.brood_hauler', 'walk_sw_1', 4.5, 2.5],
-    ['enemy.zoomer', 'walk_se_0', 5.8, 3.5],
+    // A Digger digging in (its burrower tell), a Bunchling, a Zoomer, and a Chonk down the road.
+    ['enemy.digger', 'dig_se_0', 5.2, 3.5],
+    ['enemy.bunchling', 'walk_se_1', 6.5, 3.45],
     ['enemy.chonk', 'walk_se_0', 7.5, 4.6],
-    ['enemy.nibbler', 'walk_sw_1', 4.6, 6.5],
+    ['enemy.zoomer', 'walk_se_0', 7.45, 5.6],
+    // An Elder holding three younglings to her pace (the Quiet Wave's look).
+    ['enemy.elder', 'walk_sw_0', 4.75, 6.45],
+    ['enemy.youngling', 'walk_sw_1', 5.45, 6.2],
+    ['enemy.youngling', 'walk_sw_0', 5.5, 6.8],
+    ['enemy.youngling', 'walk_sw_1', 4.3, 7.3],
+    // The Peeker behind its rock in the brush.
+    ['prop.peeker', 'peek_0', 5.5, 0.5],
     // A burst sack, its young scurrying back up the road the way they came.
     ['fx.sack_burst', 'f2', 6.1, 6.5],
     ['enemy.hauler_young', 'walk_se_0', 6.8, 6.3],
@@ -360,13 +415,15 @@ function diorama(
     ['ally.bricks', 'fire_nw_0', 8.5, 6.5],
   );
   // [base, head, col, row, head frame, look]; the Rivet on (2, 2) stands on high ground. Every
-  // tier and both specs of the Rivet and Thumper are on show, facing both ways.
+  // tier and both specs of the Rivet and Thumper are on show, facing both ways, with a Skyhook
+  // and a Zapcoil (on the power node, firing).
   const towers: readonly [SpriteId, SpriteId, number, number, string, TowerLook][] = [
     ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw', 't1'],
     ['tower.thumper', 'tower.thumper_head', 6, 2, 'se', 't2'],
     ['tower.rivet', 'tower.rivet_head', 2, 2, 'se', 't2'],
     ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 't3'],
-    ['tower.rivet', 'tower.rivet_head', 8, 4, 'nw', 't2'],
+    ['tower.skyhook', 'tower.skyhook_head', 8, 4, 'nw', 't2'],
+    ['tower.zapcoil', 'tower.zapcoil_head', 7, 1, 'sw_fire', 't3'],
     ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne', 't1'],
     ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire', 't3'],
     ['tower.thumper', 'tower.thumper_head', 7, 0, 'nw', 'spec_a'],
@@ -442,6 +499,20 @@ function diorama(
       draw(frameOf(id, frame, variant ?? DEFAULT_VARIANT), sx, sy, glowOf(baked, id, frame));
     }
   }
+  // Flyers in the `air` layer: drawn 12 px up over a ground shadow (tech-spec § Sprite anchoring),
+  // a Puffwing flock over the grass, Gerald on his round, and a flak round climbing at them.
+  for (const [id, frame, gx, gy, shadow] of [
+    ['enemy.puffwing', 'walk_se_0', 1.6, 1.4, 'medium'],
+    ['enemy.puffwing', 'walk_se_2', 2.5, 0.9, 'medium'],
+    ['enemy.puffwing', 'walk_sw_1', 2.2, 2.1, 'medium'],
+    ['enemy.gerald', 'walk_se_1', 1.5, 6.4, 'large'],
+  ] as const) {
+    const [fx, fy] = screen(gx, gy);
+    draw(frameOf('fx.shadow', shadow, DEFAULT_VARIANT), fx, fy);
+    draw(frameOf(id, frame, DEFAULT_VARIANT), fx, fy - FLY_LIFT_PX, glowOf(baked, id, frame));
+  }
+  const [qx, qy] = screen(2.6, 2.4);
+  draw(frameOf('projectile.skyhook_flak', 'e', DEFAULT_VARIANT), qx, qy - 6);
   // VFX on top: a shell mid-arc over its shadow, a burst, and the Orbital Strike reticle.
   const [shx, shy] = screen(5.5, 6.5);
   draw(frameOf('fx.shadow', 'medium', DEFAULT_VARIANT), shx, shy);
@@ -547,7 +618,6 @@ function render(root: HTMLElement): void {
   const bakeMs = performance.now() - t0;
   const byId = new Map(baked.map((b) => [b.id, b]));
   const frames = baked.flatMap((b) => b.frames.filter((f) => !f.key.endsWith('@glow')));
-  const shown = frames.filter((f) => isShownVariant(variantOfKey(f.key)));
 
   root.append(
     el('h1', undefined, 'Stardust sprite gallery'),
@@ -569,9 +639,17 @@ function render(root: HTMLElement): void {
   }
   root.append(envRow);
 
-  root.append(el('h2', undefined, 'Sprites'));
-  const count: Counters = { rendered: 0 };
-  for (const b of baked) if (!isPortrait(b)) root.append(spriteCard(b, count));
+  root.append(
+    el(
+      'h2',
+      undefined,
+      'Sprites: default (every frame), one more palette (authored frames), derived (first frame)',
+    ),
+  );
+  const count: Counters = { expected: 0, rendered: 0 };
+  const cards = el('div', 'cards');
+  for (const b of baked) if (!isPortrait(b)) cards.append(spriteCard(b, count));
+  root.append(cards);
   root.append(el('h2', undefined, 'Portraits: expressions at 2× as the comms panel frames them'));
   const portraits = el('div', 'portraits');
   for (const b of baked) if (isPortrait(b)) portraits.append(portraitCard(b, count));
@@ -579,7 +657,7 @@ function render(root: HTMLElement): void {
 
   const ds = document.body.dataset;
   ds['spriteCount'] = String(baked.length);
-  ds['framesExpected'] = String(shown.length);
+  ds['framesExpected'] = String(count.expected);
   ds['framesRendered'] = String(count.rendered);
   ds['bakeMs'] = bakeMs.toFixed(1);
   ds['galleryReady'] = '1';

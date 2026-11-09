@@ -290,6 +290,13 @@ export interface LinkDef<K extends IdSpace = LiveIds, Id extends string = string
 export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
   readonly tower: K['tower'];
   readonly bonuses: readonly LinkBonusDef[];
+  /** Whole jumps added to the partner's chain attack (Conductive: Zapcoil +2; T304b). */
+  readonly chainJumps?: number;
+  /**
+   * The partner's hits also apply Soaked for this long, at any tier (Conductive: the Sprinkler
+   * Soaks from tier 1; T304b). Soaked is the only status a link grants so far.
+   */
+  readonly soakedSec?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a

@@ -9,6 +9,9 @@
 //   target. Not homing (Seeker Swarm's homing is M4's).
 // - pulse (Sprinkler): every period, hits every enemy in range; no target, no priority. It waits
 //   (cooldown 0) until an enemy is in range, so its first pulse always affects one.
+// - chain (Zapcoil, T304b): sim/attacks/chain.ts.
+// A link's statuses (Conductive's Soak; systems/status.ts `applyLinkStatuses`) land after the
+// tier's own on hitscan, pulse, and chain hits.
 // Cooldowns: a tower fires on a tick whose cooldown starts at 0, then waits `cooldownTicks`.
 // A tower picks a fresh target when it's ready to fire, and otherwise keeps its current one while
 // it stays valid (performance rule 6), so `targetUid` (render aims with it) is always current.
@@ -57,6 +60,7 @@ import { poolAlloc } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { enemySpeedPerTick } from './movement.ts';
+import { applyLinkStatuses } from './status.ts';
 
 export function towers(state: SimState, ctx: TickContext): void {
   const pool = state.towers;
@@ -216,6 +220,7 @@ function fireHitscan(
   // Filled in after the damage lands (events.ts, ProjectileHit).
   hit.damage = applyDamage(state, target, damageOn(t, attack, target), attack.type, source, attack);
   applyEffects(target, tier.effects);
+  applyLinkStatuses(t, target);
 }
 
 /**
@@ -442,6 +447,7 @@ function pulse(
     // Summed into the emitted event as each victim takes its damage (events.ts, ProjectileHit).
     hit.damage += applyDamage(state, e, damageOn(t, attack, e), attack.type, source, attack);
     applyEffects(e, tier.effects);
+    applyLinkStatuses(t, e);
   }
   victims.length = 0;
   t.cooldownTicks = bonusPeriodTicks(attack, t);
@@ -453,7 +459,7 @@ function pulse(
  * The tower's range as targeting reads it: the attack's own fields when no range bonus applies,
  * else the bonus range in the tick's scratch (minimum range never changes).
  */
-function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec {
+export function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec {
   if (t.flatRange === 0 && t.pctRange === 0) return attack;
   const r = bonusRangeTiles(attack, t);
   const out = ctx.scratch.range;
@@ -463,7 +469,7 @@ function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec 
 }
 
 /** One hit's damage on `e`: with the conditional `vsStatus` bonus when `e` has the status. */
-function damageOn(t: Tower, attack: CompiledAttack, e: Enemy): number {
+export function damageOn(t: Tower, attack: CompiledAttack, e: Enemy): number {
   return t.vsStatusMask !== 0 && hasStatusIn(e, t.vsStatusMask)
     ? bonusDamageVs(attack, t)
     : bonusDamage(attack, t);

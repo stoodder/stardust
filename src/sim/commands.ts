@@ -1,8 +1,7 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
-// fireControl.ts). M3's `clear` is declared (T300a) and rejected `notImplemented` until T304b
-// (systems/wreckage.ts); interact and scriptInput arrive with their maps (M4). `notImplemented` is
-// kept for handlers declared ahead of their task.
+// fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b); interact and scriptInput
+// arrive with their maps (M4). `notImplemented` is kept for handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
 
@@ -26,7 +25,8 @@ export type Command<K extends IdSpace = LiveIds> =
   | { readonly type: 'spareRunners'; readonly target: number | 'all'; readonly on: boolean }
   /**
    * Send the salvage drone to a wreckage tile (design/maps.md § 3): it joins the drone's queue, and
-   * the tile clears 6 s of sim time after it reaches the head (systems/wreckage.ts, T304b).
+   * the tile clears 6 s of sim time after it reaches the head (systems/wreckage.ts, T304b). Off
+   * the map: `invalidTile`; not wreckage, or already queued or cleared: `invalidTarget`.
    */
   | { readonly type: 'clear'; readonly tile: GridPos }
   /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */
@@ -62,7 +62,10 @@ export type RejectReason =
   /** No ability is equipped in that slot. */
   | 'noAbility'
   | 'abilityOnCooldown'
-  /** The ability's target is missing or off the map. */
+  /**
+   * The ability's target is missing or off the map; or a `clear` on a tile that isn't wreckage,
+   * or is already queued or cleared.
+   */
   | 'invalidTarget'
   /** specialize: the tower's specs aren't in `SimConfig.specsUnlocked`. */
   | 'specLocked'

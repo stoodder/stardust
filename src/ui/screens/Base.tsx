@@ -1,21 +1,36 @@
-// The base (T209, D031): Research, Zibzab's shop, and Engineering as tabs. A tab whose system the
-// campaign hasn't opened yet shows a locked pane with what opens it ("Opens after The Audit";
-// meta/progress.ts SYSTEM_UNLOCKS). An open tab shows its shelf (BasePanes.tsx, T204d).
-import { useState } from 'preact/hooks';
+// The base (T209, D031, T303): the Everglow Inbox, the codex, Research, Zibzab's shop, and
+// Engineering as tabs. The Inbox and the codex are open whenever the base is, and carry a NEW
+// badge while something in them is unread; a shelf tab whose system the campaign hasn't opened yet
+// shows a locked pane with what opens it ("Opens after The Audit"; meta/progress.ts
+// SYSTEM_UNLOCKS). An open tab shows its pane (BasePanes.tsx). Entering the base delivers any memo
+// or codex unlock a save missed (app/inbox.ts).
+import { useEffect, useState } from 'preact/hooks';
+import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
-import { BASE_PANES, type BaseTab } from './BasePanes.tsx';
+import { BASE_PANES, isStoryTab, type BaseTab } from './BasePanes.tsx';
+import { NewTag } from './Inbox.tsx';
 import { Banks } from './Campaign.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
-import { campaign } from './state.ts';
+import { campaign, type CampaignView, type SystemView } from './state.ts';
 import './screens.css';
 import './base.css';
+import './inbox.css';
 
+/** In tab order. Research stays the tab the base opens on; the badges point at the story tabs. */
 const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'codex', label: 'Codex' },
   { id: 'rnd', label: 'Research' },
   { id: 'shop', label: 'Shop' },
   { id: 'engineering', label: 'Engineering' },
 ];
+
+const OPEN: SystemView = { unlocked: true, hint: '' };
+
+function systemOf(view: CampaignView, tab: BaseTab): SystemView {
+  return isStoryTab(tab) ? OPEN : view.systems[tab];
+}
 
 /** The base for the save in play. Arrow keys move between tabs (the WAI-ARIA tabs pattern). */
 export function Base() {
@@ -25,10 +40,17 @@ export function Base() {
     toCampaign();
     return true;
   });
+  // Entering the base: memos due and codex unlocks a save missed arrive now (a no-op after a run).
+  useEffect(() => {
+    catchUpStory();
+  }, []);
   const view = campaign.value;
   if (view === null) return null;
-  const system = view.systems[tab];
+  const system = systemOf(view, tab);
   const Pane = BASE_PANES[tab];
+  const badges = storyBadges();
+  const badgeOf = (id: BaseTab): number =>
+    id === 'inbox' ? badges.inbox : id === 'codex' ? badges.codex : 0;
   const move = (by: number): void => {
     const i = TABS.findIndex((t) => t.id === tab);
     const next = TABS[(i + by + TABS.length) % TABS.length]!;
@@ -49,7 +71,8 @@ export function Base() {
         </header>
         <div class="sd-tabs" role="tablist" aria-label="Base">
           {TABS.map((t) => {
-            const open = view.systems[t.id].unlocked;
+            const open = systemOf(view, t.id).unlocked;
+            const badge = badgeOf(t.id);
             return (
               <button
                 key={t.id}
@@ -72,13 +95,19 @@ export function Base() {
                 {!open && <span class="sd-lock" aria-hidden="true" />}
                 {t.label}
                 {!open && <span class="sd-visually-hidden"> (locked)</span>}
+                {badge > 0 && (
+                  <>
+                    <NewTag count={badge} />
+                    <span class="sd-visually-hidden">{` (${badge} new)`}</span>
+                  </>
+                )}
               </button>
             );
           })}
         </div>
         <div
           id="sd-tab-pane"
-          class={`sd-tab-pane${system.unlocked ? ' sd-tab-pane-store' : ' sd-tab-pane-locked'}`}
+          class={`sd-tab-pane${paneClass(tab, system.unlocked)}`}
           role="tabpanel"
           aria-labelledby={`sd-tab-${tab}`}
         >
@@ -103,4 +132,9 @@ export function Base() {
       </section>
     </main>
   );
+}
+
+function paneClass(tab: BaseTab, unlocked: boolean): string {
+  if (!unlocked) return ' sd-tab-pane-locked';
+  return isStoryTab(tab) ? ' sd-tab-pane-story' : ' sd-tab-pane-store';
 }

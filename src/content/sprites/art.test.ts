@@ -1,5 +1,5 @@
 // Readability rules for specific sprites (art-direction §1, §5, §6, §7, §8): tier and spec
-// silhouettes, the Thumper's NE muzzle, the explosion's punch, the Zoomer's `fast` tell, contact
+// silhouettes, the Thumper's NE muzzle, M3's towers, flyers, and Skitterkin (T311a), the explosion's punch, the Zoomer's `fast` tell, contact
 // shadows, the apron's dither, the Brood Hauler's sack, Bricks, the raised and powered tiles, and
 // link tethers.
 import { describe, expect, it } from 'vitest';
@@ -55,7 +55,13 @@ function count(rows: readonly string[], chars: string): number {
 }
 
 describe('tower tier silhouettes', () => {
-  for (const id of ['tower.rivet', 'tower.thumper', 'tower.sprinkler'] as const) {
+  for (const id of [
+    'tower.rivet',
+    'tower.thumper',
+    'tower.sprinkler',
+    'tower.skyhook',
+    'tower.zapcoil',
+  ] as const) {
     it(`${id}: T2 is wider than T1 and T3 taller than T2`, () => {
       const [t1, t2, t3] = (['t1', 't2', 't3'] as const).map((t) => bounds(grid(id, t)));
       if (t1 === undefined || t2 === undefined || t3 === undefined) throw new Error('tiers');
@@ -213,7 +219,12 @@ describe('apron tiles', () => {
 });
 
 describe('tier-2 heads (D029: the upgrade reads in the head too)', () => {
-  for (const id of ['tower.rivet_head', 'tower.thumper_head'] as const) {
+  for (const id of [
+    'tower.rivet_head',
+    'tower.thumper_head',
+    'tower.skyhook_head',
+    'tower.zapcoil_head',
+  ] as const) {
     it(`${id}: the T2+ head is bigger than T1's in every authored facing`, () => {
       for (const f of ['se', 'ne', 'se_fire', 'ne_fire']) {
         const t1 = bounds(grid(id, f));
@@ -390,5 +401,113 @@ describe('link tethers', () => {
     expect(count(cf, 'd')).toBeGreaterThan(count(sd, 'd'));
     expect(count(sd, 'B')).toBeGreaterThan(0);
     expect(count(sd, 'Bw')).toBeLessThan(count(cf, 'dew'));
+  });
+});
+
+/** A frame's opaque height in pixels. */
+function tall(id: SpriteId, f: string): number {
+  const b = bounds(grid(id, f));
+  return b.y1 - b.y0;
+}
+
+/** A frame's emissive pixels (`+` and `*`) in reading order. */
+function spots(rows: readonly string[]): string {
+  return rows.join('').replace(/[^+*]/g, '');
+}
+
+describe("M3's towers (T311a)", () => {
+  it('Skyhook aims at the sky: its barrels stand taller than any ground gun', () => {
+    expect(tall('tower.skyhook_head', 'se')).toBeGreaterThan(tall('tower.rivet_head', 'se') + 6);
+    expect(def('tower.skyhook').legend).toMatchObject({ B: 'blue.3' });
+  });
+
+  it('Zapcoil is Vrell scrap: no Everglow logo, a price tag, and blue-white arcs when it fires', () => {
+    expect(def('tower.zapcoil').palette).toBe('vrell');
+    expect(count(grid('tower.zapcoil', 't1'), '8')).toBe(0);
+    expect(count(grid('tower.zapcoil', 't1'), 'W')).toBeGreaterThan(4);
+    expect(def('tower.zapcoil_head').legend).toMatchObject({ Z: 'blue.4' });
+    for (const f of ['se', 'ne']) {
+      const at = count(grid('tower.zapcoil_head', f), 'Zw');
+      expect(count(grid('tower.zapcoil_head', `${f}_fire`), 'Zw'), f).toBeGreaterThan(at + 8);
+    }
+  });
+});
+
+describe("M3's enemies (T311a)", () => {
+  const nibbler = bounds(grid('enemy.nibbler', 'walk_se_0'));
+  const width = (b: typeof nibbler): number => b.x1 - b.x0 + 1;
+
+  it('Puffwing and Gerald are flyers: winged or rotored, wider than a Nibbler, and they flap', () => {
+    for (const id of ['enemy.puffwing', 'enemy.gerald'] as const) {
+      expect(width(bounds(grid(id, 'walk_se_0'))), id).toBeGreaterThan(width(nibbler) + 4);
+      expect(grid(id, 'walk_se_0'), id).not.toEqual(grid(id, 'walk_se_1'));
+    }
+    // The Puffwing's fluff wings are the brightest mass on it.
+    expect(count(grid('enemy.puffwing', 'walk_se_1'), 'Fw')).toBeGreaterThan(30);
+    // Gerald is Everglow's: white and teal, with his satchel and a letter in it.
+    expect(def('enemy.gerald').palette).toBe('everglow');
+    expect(count(grid('enemy.gerald', 'walk_se_0'), 'de')).toBeGreaterThan(10);
+  });
+
+  it('Bunchling is packed: three lobes, three tufts, stretched pink between them', () => {
+    const rows = grid('enemy.bunchling', 'walk_se_0');
+    expect(def('enemy.bunchling').legend).toMatchObject({ P: 'pink.3' });
+    expect(count(rows, 'P')).toBeGreaterThan(5);
+    expect(width(bounds(rows))).toBeGreaterThan(width(nibbler) + 3);
+  });
+
+  it('Digger has a dig-in tell (burrower): nose down, dirt flung, in four facings', () => {
+    const d = def('enemy.digger');
+    for (const f of ['se', 'sw', 'ne', 'nw']) expect(d.anims?.[`dig_${f}`], f).toBeDefined();
+    for (const f of ['se', 'ne']) {
+      expect(count(grid('enemy.digger', `walk_${f}_0`), 'MO'), f).toBeLessThan(6);
+      expect(count(grid('enemy.digger', `dig_${f}_0`), 'NO'), f).toBeGreaterThan(10);
+      expect(grid('enemy.digger', `dig_${f}_0`), f).not.toEqual(grid('enemy.digger', `dig_${f}_1`));
+    }
+    // Low and long: wider than it is tall.
+    const b = bounds(grid('enemy.digger', 'walk_se_0'));
+    expect(b.x1 - b.x0).toBeGreaterThan((b.y1 - b.y0) * 1.5);
+  });
+
+  it('Elder is big and old: white brows and whiskers, armored steel, and pulsing huddle spots', () => {
+    const f0 = grid('enemy.elder', 'walk_se_0');
+    const f1 = grid('enemy.elder', 'walk_se_1');
+    expect(width(bounds(f0))).toBeGreaterThan(width(nibbler) * 1.5);
+    expect(count(f0, 'W')).toBeGreaterThan(8);
+    expect(count(f0, 'S')).toBeGreaterThan(10);
+    // The huddle spots trade their bright and dim steps between the two walk frames.
+    expect(spots(f0).length).toBeGreaterThanOrEqual(4);
+    expect(spots(f0)).not.toEqual(spots(f1));
+  });
+
+  it('the youngling is a small Nibbler, and the Peeker is that youngling behind a rock', () => {
+    expect(def('enemy.youngling').size.w).toBeLessThan(def('enemy.nibbler').size.w);
+    expect(def('enemy.youngling').size.w).toBeGreaterThan(def('enemy.hauler_young').size.w);
+    const p = def('prop.peeker');
+    expect(Object.keys(p.frames)).toEqual(['hidden', 'peek_0', 'peek_1', 'duck']);
+    expect(p.anims?.['duck']).toMatchObject({ loop: false });
+    // The little one keeps its Skitterkin colors in every act (custom legend, not the env's).
+    expect(p.legend).toMatchObject({ M: 'coral.3', V: 'green.3' });
+    expect(count(grid('prop.peeker', 'peek_0'), 'Q')).toBeGreaterThan(
+      count(grid('prop.peeker', 'hidden'), 'Q'),
+    );
+    expect(count(grid('prop.peeker', 'peek_1'), 'Q')).toBeLessThan(
+      count(grid('prop.peeker', 'peek_0'), 'Q'),
+    );
+  });
+});
+
+describe('M3 tell glyphs (art-direction §8)', () => {
+  it('are 8×8, in their tell colors', () => {
+    for (const [id, c] of [
+      ['icon.tell.flying', 'white.0'],
+      ['icon.tell.burrower', 'grime.3'],
+      ['icon.tell.splitter', 'pink.3'],
+      ['icon.tell.huddle', 'gold.3'],
+      ['icon.tell.boss', 'gold.4'],
+    ] as const) {
+      expect(def(id).size, id).toEqual({ w: 6, h: 6 });
+      expect(Object.values(def(id).legend ?? {}), id).toContain(c);
+    }
   });
 });

@@ -105,6 +105,18 @@ export {
   tileIndex,
   type MapGrid,
 } from './grid.ts';
+export {
+  WRECKAGE_CLEAR_TICKS,
+  clearCommand,
+  clearTicksFor,
+  liveTile,
+  liveTileAt,
+  salvageFor,
+  wreckageStatus,
+  type WreckageMap,
+  type WreckageStatus,
+  type WreckageView,
+} from './systems/wreckage.ts';
 export { pointAt, remainingDist, segmentAt, type Point, type RouteFollower } from './path.ts';
 export {
   DEFAULT_MAX_TICKS,

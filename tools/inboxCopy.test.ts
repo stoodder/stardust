@@ -50,8 +50,12 @@ describe("each Act I memo's subject and small print are its act-file lines", () 
   }
 });
 
+/** An entry's original text. */
+function original(id: string): string {
+  return CODEX[id]?.versions.original?.text ?? '';
+}
+
 describe('codex lines the docs quote', () => {
-  const original = (id: string): string => CODEX[id]?.versions.original?.text ?? '';
   it.each([
     ['codex_brood_hauler', STYLE],
     ['codex_elder', STYLE],

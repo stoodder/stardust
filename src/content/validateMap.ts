@@ -52,6 +52,7 @@ import {
   type Grid,
 } from './validateHelpers.ts';
 import { validateScripts } from './validateScripts.ts';
+import type { RangedTower } from './counterAnswers.ts';
 import { emptyHistory, validateNovelty, validateThreats, type History } from './validateThreats.ts';
 import { validateWaves } from './validateWaves.ts';
 
@@ -72,7 +73,15 @@ export function validateCampaignMaps<K extends IdSpace>(
   for (const a of Object.values<{ id: string; companion?: string }>(raw.abilities)) {
     if (a.companion !== undefined) companionAbilities.set(a.companion, a.id);
   }
-  const ctx = { enemies, towersWithSpecs, companionAbilities, rules, mapIds: new Set(maps.keys()) };
+  const towers = new Map<string, RangedTower>(Object.entries<RangedTower>(raw.towers));
+  const ctx = {
+    enemies,
+    towers,
+    towersWithSpecs,
+    companionAbilities,
+    rules,
+    mapIds: new Set(maps.keys()),
+  };
   const history = emptyHistory();
   const done = new Set<string>();
   for (const [index, id] of raw.campaign.entries()) {
@@ -88,6 +97,8 @@ export function validateCampaignMaps<K extends IdSpace>(
 
 export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
+  /** Each tower's tiers and specs, for the range a placed tower reaches (counterAnswers.ts). */
+  readonly towers: ReadonlyMap<string, RangedTower>;
   readonly towersWithSpecs: ReadonlySet<string>;
   /** Each companion with a slot-2 ability in the content → that ability's id. */
   readonly companionAbilities: ReadonlyMap<string, string>;

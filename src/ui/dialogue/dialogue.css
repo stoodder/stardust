@@ -1,0 +1,351 @@
+/* Dialogue (art-direction.md § Dialogue presentation), in game pixels inside the zoomed #ui box:
+   the comms panel (top-left, never blocking), the scene panel (bottom center over the paused
+   battle), and full-screen scenes. Text is Silkscreen 8 (D058's body font; Pixelify Sans draws
+   "5" as "S", so dialogue doesn't use it). Portraits show 1:1 in a 1 px frame of the speaker's
+   colour. Colours come from the tokens in ../theme.css. */
+
+/* ── Shared ───────────────────────────────────────────────────────────────────────────────── */
+
+.dlg-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  text-transform: uppercase;
+}
+
+.dlg-text {
+  position: relative;
+  line-height: 10px;
+  color: var(--sd-white-1);
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.dlg-text em {
+  font-style: italic;
+  color: var(--sd-white-0);
+}
+
+/* The untyped rest of a line, laid out but unseen, so the panel never grows as it types. */
+.dlg-untyped {
+  visibility: hidden;
+}
+
+/* The whole line for screen readers, never seen. */
+.dlg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The Evie sun glyph ({glyph:sun}). */
+.dlg-glyph-sun {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 1px;
+  border-radius: 50%;
+  background: var(--sd-gold-3);
+  box-shadow: 0 0 0 1px var(--sd-gold-1);
+  vertical-align: -1px;
+}
+
+/* The Hollow: no plate, no panel colour of its own, letters dropped and nudged. */
+.dlg-hollow {
+  color: var(--sd-violet-3);
+}
+
+.dlg-hollow .up {
+  position: relative;
+  top: -1px;
+}
+
+.dlg-hollow .down {
+  position: relative;
+  top: 1px;
+}
+
+.dlg-hollow-plain {
+  color: var(--sd-steel-3);
+}
+
+/* Silence: the frame, no words. */
+.dlg-silence {
+  min-height: 10px;
+}
+
+/* A PA line's plate carries a tiny speaker glyph. */
+.dlg-pa-icon {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border: 1px solid currentcolor;
+  border-right-width: 3px;
+}
+
+/* KFA forms: an off-white form panel. */
+.dlg-frame-form .dlg-text {
+  padding: 2px 4px;
+  color: var(--sd-ink-1);
+  background: var(--sd-white-0);
+}
+
+/* ── Portraits ────────────────────────────────────────────────────────────────────────────── */
+
+.dlg-portrait {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border: 1px solid var(--dlg-edge, var(--accent));
+  background: var(--sd-ink-0);
+}
+
+.dlg-portrait img {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* Gerald: a 16×16 icon in a small frame, top-aligned beside his status text. */
+.dlg-portrait.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.dlg-portrait.dark {
+  border-color: var(--sd-ink-3);
+}
+
+.dlg-portrait-missing {
+  font-size: 16px;
+  line-height: 16px;
+  color: var(--dlg-edge, var(--accent));
+}
+
+/* ── The comms panel: top-left under the status panel, never blocking ────────────────────── */
+
+.dlg-comms-slot {
+  position: absolute;
+  left: 4px;
+  top: 68px;
+  width: 236px;
+  pointer-events: none;
+}
+
+.dlg-comms {
+  --edge: var(--accent-2);
+  display: grid;
+  gap: 3px;
+  padding: 4px 6px 4px 4px;
+  background: var(--panel-fill);
+  animation: dlg-in 160ms steps(1, end);
+}
+
+@keyframes dlg-in {
+  0% {
+    opacity: 0.6;
+  }
+}
+
+.dlg-comms-line {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px;
+  align-items: start;
+}
+
+.dlg-comms.no-portrait .dlg-comms-line {
+  grid-template-columns: 1fr;
+}
+
+.dlg-comms-words {
+  display: grid;
+  gap: 3px;
+  align-content: start;
+  justify-items: start;
+}
+
+/* A reply's cue (D028): kept up above it, dimmed, with a rule under it. */
+.dlg-comms-cue {
+  display: grid;
+  gap: 3px;
+  padding: 0 0 3px 2px;
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.dlg-comms-cue .dlg-text {
+  color: var(--sd-steel-3);
+}
+
+/* The optional reply button (core-loop.md § 6.10): small, in the act accent, never pulsing. */
+.dlg-reply {
+  --edge: var(--accent);
+  margin-top: 1px;
+  color: var(--accent);
+  pointer-events: auto;
+}
+
+/* ── Scenes that hold input ───────────────────────────────────────────────────────────────── */
+
+.dlg-scrim,
+.dlg-stage {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-white-0);
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: auto;
+}
+
+/* The bottom panel: the battle shows through, paused, under a light scrim. */
+.dlg-scrim {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  background: rgb(5 3 10 / 35%);
+}
+
+.dlg-panel {
+  --cut: 3px;
+  --edge: var(--accent);
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  width: 424px;
+  padding: 6px 8px;
+  background: var(--panel-fill);
+}
+
+.dlg-line {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  min-height: 50px;
+  cursor: pointer;
+}
+
+.dlg-words {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.dlg-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dlg-actions:empty {
+  display: none;
+}
+
+.dlg-next {
+  --edge: var(--accent);
+  color: var(--accent);
+}
+
+/* A small right-pointing triangle after Next. */
+.dlg-next-mark {
+  width: 0;
+  height: 0;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-left: 3px solid currentcolor;
+}
+
+.dlg-choices {
+  display: grid;
+  gap: 3px;
+}
+
+.dlg-choice {
+  min-height: 16px;
+  text-transform: none;
+}
+
+.dlg-choice:focus-visible,
+.dlg-choice:focus {
+  --edge: var(--sd-white-1);
+  background: var(--sd-ink-3);
+}
+
+.dlg-choice-n {
+  flex: none;
+  min-width: 5px;
+  padding: 1px 1px 0;
+  color: var(--sd-ink-0);
+  background: var(--sd-steel-3);
+  text-align: center;
+}
+
+/* "{Speaker} will remember that." (C3, C4): grace, not a warning. */
+.dlg-remember {
+  margin: 0;
+  color: var(--sd-teal-4);
+  text-transform: none;
+}
+
+/* ── Full-screen scenes: a dark stage, the lines so far above the current one ────────────── */
+
+.dlg-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 60%, rgb(42 20 64 / 55%), transparent 70%), var(--sd-ink-0);
+}
+
+.dlg-fullscreen {
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  width: 432px;
+  padding: 8px;
+}
+
+.dlg-history {
+  display: grid;
+  gap: 6px;
+}
+
+.dlg-past {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 6px;
+  margin: 0;
+}
+
+.dlg-past .dlg-text {
+  color: var(--sd-steel-3);
+}
+
+/* Narrator: a centered caption, no plate, no panel. */
+.dlg-caption {
+  margin: 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+.dlg-caption .dlg-text {
+  color: var(--sd-white-0);
+}
+
+.dlg-caption.past {
+  color: var(--sd-steel-3);
+  text-transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dlg-comms {
+    animation: none;
+  }
+}

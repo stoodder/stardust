@@ -1,9 +1,11 @@
 // The credits economy's pure rules (design/core-loop.md § 2.3–2.4), shared by the sim and the
 // HUD: what a build or upgrade costs, what a sell returns, what a kill pays, and what calling
 // the next wave now would pay. The numbers are rule data in content/rules.ts. Economy modifiers
-// (design/progression.md § 4.3, § 5, § 9) apply here: `towerCost` in costFor(), and the rest
-// once, at createSim, through applyRunModifiers() into `state` (`credits`, `integrity`,
-// `leakAbsorbLeft`, `economy`), so the HUD's helpers read the same numbers the sim pays.
+// (design/progression.md § 4.3, § 5, § 9) apply here: `towerCost` in costFor(), Rapid Deploy and
+// Clearance Sale's charges in purchasePriceInto() (what a purchase costs right now; `pay` spends
+// it), and the rest once, at createSim, through applyRunModifiers() into `state` (`credits`,
+// `integrity`, `leakAbsorbLeft`, `economy`), so the HUD's helpers read the same numbers the sim
+// pays.
 import type { CompiledMapDef } from '../content/compiled.ts';
 import {
   FLEEING_BOUNTY,
@@ -83,6 +85,102 @@ export function costFor(
   if (pct === 0) return base;
   const cost = Math.round(base * (1 + pct));
   return cost > 0 ? cost : 0;
+}
+
+/** What a purchase is: a build (tier 1), an upgrade (tier 2 or 3), or a specialization (tier 4). */
+export type PurchaseKind = 'build' | 'upgrade' | 'spec';
+
+/** The state a purchase's price reads (the HUD passes `sim.state`). */
+export interface PurchaseState {
+  readonly stats: { readonly towersBuilt: number };
+  readonly discountCharges: number;
+  readonly discountPct: number;
+}
+
+/** A purchase's price now (`purchasePrice`): what it costs, and whether it spends a sale charge. */
+export interface PurchasePrice {
+  cost: number;
+  /** Clearance Sale's discount applied, so paying spends one of its charges. */
+  discounted: boolean;
+}
+
+/**
+ * What a purchase costs right now, after everything (core-loop.md § 2.5, § 3.2; progression.md
+ * § 5), in this order:
+ * 1. `costFor`: the `towerCost` modifiers (tune-ups, Specialist).
+ * 2. Rapid Deploy (`firstBuildFree`): the run's first build (tier 1, `stats.towersBuilt` 0) costs
+ *    nothing, and spends no sale charge.
+ * 3. Clearance Sale: while `discountCharges` remain, a purchase that still costs credits costs
+ *    `round(cost × (1 − discountPct))` and spends one charge. It's a sale on the price you'd pay,
+ *    so it multiplies after the modifiers rather than adding to them. Builds, upgrades, and
+ *    specializations all count as purchases.
+ * Writes into `out` and returns it (the HUD reads it every frame without allocating).
+ */
+export function purchasePriceInto(
+  state: PurchaseState,
+  modifiers: readonly Modifier<IdSpace>[],
+  tower: string,
+  base: number,
+  kind: PurchaseKind,
+  out: PurchasePrice,
+): PurchasePrice {
+  const cost = costFor(modifiers, tower, base, kind === 'spec');
+  out.discounted = false;
+  if (kind === 'build' && state.stats.towersBuilt === 0 && firstBuildFree(modifiers)) {
+    out.cost = 0;
+  } else if (cost > 0 && state.discountCharges > 0) {
+    out.cost = Math.round(cost * (1 - state.discountPct));
+    out.discounted = true;
+  } else {
+    out.cost = cost;
+  }
+  return out;
+}
+
+/** `purchasePriceInto`'s cost alone (allocates; the sim and the HUD use the `Into` form). */
+export function purchaseCost(
+  state: PurchaseState,
+  modifiers: readonly Modifier<IdSpace>[],
+  tower: string,
+  base: number,
+  kind: PurchaseKind,
+): number {
+  return purchasePriceInto(state, modifiers, tower, base, kind, { cost: 0, discounted: false })
+    .cost;
+}
+
+function firstBuildFree(modifiers: readonly Modifier<IdSpace>[]): boolean {
+  for (let i = 0; i < modifiers.length; i++) {
+    if (modifiers[i]!.kind === 'firstBuildFree') return true; // i < length
+  }
+  return false;
+}
+
+/** Scratch for `pay` (the sim pays one purchase at a time). */
+const price: PurchasePrice = { cost: 0, discounted: false };
+
+/**
+ * Pays for a purchase at `purchasePriceInto`'s price: returns the credits paid (the caller adds
+ * them to the tower's `invested`, so a sell refunds a share of what was actually paid), or −1
+ * when the bank can't cover it (nothing changes). Paying counts `creditsSpent` and spends a
+ * Clearance Sale charge when the discount applied.
+ */
+export function pay(
+  state: SimState,
+  modifiers: readonly Modifier<IdSpace>[],
+  tower: string,
+  base: number,
+  kind: PurchaseKind,
+): number {
+  const p = purchasePriceInto(state, modifiers, tower, base, kind, price);
+  if (state.credits < p.cost) return -1;
+  state.credits -= p.cost;
+  state.stats.creditsSpent += p.cost;
+  if (p.discounted) {
+    state.discountCharges--;
+    if (state.discountCharges === 0) state.discountPct = 0;
+  }
+  return p.cost;
 }
 
 /**

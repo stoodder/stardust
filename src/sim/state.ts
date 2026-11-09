@@ -228,6 +228,11 @@ export interface SimState<K extends IdSpace = IdSpace> {
    */
   discountCharges: number;
   discountPct: number;
+  /**
+   * Ready Room (`freeCast` modifiers, T304d): by slot, the wave whose free cast that slot has
+   * used; 0 = none yet.
+   */
+  freeCastWave: number[];
   /** Wreckage and the salvage drone's queue (T304b). */
   wreckage: WreckageState;
   /** Global Hold Fire is on: every tower holds, and towers built now start holding (T206a). */
@@ -328,6 +333,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     abilityCooldownWaves: [0, 0],
     discountCharges: 0,
     discountPct: 0,
+    freeCastWave: [0, 0],
     wreckage: { queue: [], progressTicks: 0, cleared: [] },
     holdFireAll: false,
     spareRunnersAll: false,

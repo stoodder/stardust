@@ -12,7 +12,8 @@
 //   (slot 2: a present companion or a pick);
 //   clear, interact, scriptInput, and holdFireWhile name things the map has.
 // - [no-counter-build]: `noCounterBuilds[c]` carries no answer to `c` (counterAnswers.ts: the
-//   tiers and specs its towers reach, on this map's act and enemies, and the abilities it casts).
+//   tiers and specs its towers reach, from placements that reach its enemies' routes, on this
+//   map's act and enemies, and the abilities it casts).
 // - [alt-builds]: every alt build carries an answer to every required counter; from A1M4, at
 //   least 2 alt builds, each sharing at most 2 tower types with the par loadout.
 // - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
@@ -35,16 +36,16 @@ import {
   NO_COUNTER_LOSE_BY_MIN_WAVES_LEFT,
 } from './rules.ts';
 import { STEP_KEYS } from './compileBuilds.ts';
-import { answerScope, answersCarried, towersReached, type ReachStep } from './counterAnswers.ts';
-import type {
-  BuildStep,
-  CounterId,
-  EnemyDef,
-  GridPos,
-  IdSpace,
-  MapDef,
-  ScriptedBuild,
-} from './types.ts';
+import {
+  answerScope,
+  answersCarried,
+  rangeReached,
+  towersReached,
+  type ReachedTower,
+  type ReachStep,
+  type ScopeEnemy,
+} from './counterAnswers.ts';
+import type { BuildStep, CounterId, GridPos, IdSpace, MapDef, ScriptedBuild } from './types.ts';
 import type { MapCtx } from './validateMap.ts';
 import { BUILDABLE, Issues, duplicates, fmt, keyOf, type Grid } from './validateHelpers.ts';
 
@@ -82,13 +83,33 @@ export function validateBuilds(
   ];
   for (const [name, b] of builds) validateBuild(issues, def, grid, ctx, b, `${where}.${name}`);
 
-  // Counter builds (by category: maps.md § 6.1), judged by what each build reaches.
+  // Counter builds (by category: maps.md § 6.1), judged by what each build reaches, and from where
+  // (a placed tower answers only if it can reach a route the category's enemies take).
   const answers = ctx.rules.counterAnswers;
-  const enemies = def.waves
-    .flatMap((w) => w.groups.map((g) => ctx.enemies.get(g.enemy)))
-    .filter((e): e is EnemyDef => e !== undefined);
+  const routes = new Map<string, readonly GridPos[]>();
+  for (const p of def.paths) routes.set(p.id, p.tiles);
+  for (const p of def.airLanes ?? []) routes.set(p.id, p.points);
+  for (const p of def.riftLanes ?? []) routes.set(p.id, p.tiles);
+  const enemies = def.waves.flatMap((w) =>
+    w.groups.flatMap((g): ScopeEnemy[] => {
+      const e = ctx.enemies.get(g.enemy);
+      if (e === undefined) return [];
+      const route = routes.get(g.route);
+      return [{ ...e, neutral: e.neutral === true, ...(route === undefined ? {} : { route }) }];
+    }),
+  );
+  const rangeOf = (t: ReachedTower): number | null => {
+    const tower = ctx.towers.get(t.tower);
+    return tower === undefined ? null : rangeReached(tower, t);
+  };
   const carried = (b: ScriptedBuild<IdSpace>, c: CounterId): string[] =>
-    answersCarried(answers[c], answerScope(c, def.act, enemies), reachedBy(b), castBy(def, ctx, b));
+    answersCarried(
+      answers[c],
+      answerScope(c, def.act, enemies),
+      reachedBy(def, grid, b),
+      castBy(def, ctx, b),
+      rangeOf,
+    );
   for (const [c, b] of Object.entries(def.noCounterBuilds)) {
     if (b === undefined || !isCounter(c)) continue;
     const hits = carried(b, c);
@@ -207,18 +228,41 @@ function isCounter(c: string): c is CounterId {
   return COUNTERS.has(c);
 }
 
-/** A raw step as a ReachStep (null for steps that don't change towers or tiers). */
-function reachStep(s: BuildStep<IdSpace>): ReachStep | null {
-  if ('build' in s) return { op: 'build', tower: s.build, tile: keyOf(s.tile) };
+/**
+ * A raw step as a ReachStep (null for steps that don't change towers or tiers). A build is placed
+ * on its tile, high ground included (a cleared wreckage tile is what lies under it).
+ */
+function reachStep(
+  def: MapDef<IdSpace>,
+  grid: Grid | null,
+  s: BuildStep<IdSpace>,
+): ReachStep | null {
+  if ('build' in s) {
+    const key = keyOf(s.tile);
+    const raw = grid?.at(s.tile);
+    const tile = raw === 'x' ? def.underWreckage?.[key] : raw;
+    return {
+      op: 'build',
+      tower: s.build,
+      tile: key,
+      at: { tile: s.tile, highGround: tile === '^' },
+    };
+  }
   if ('upgrade' in s) return { op: 'upgrade', tile: keyOf(s.upgrade) };
   if ('specialize' in s) return { op: 'specialize', tile: keyOf(s.specialize), spec: s.spec };
   if ('sell' in s) return { op: 'sell', tile: keyOf(s.sell) };
   return null;
 }
 
-/** The towers a build reaches (counterAnswers.ts towersReached). */
-function reachedBy(b: ScriptedBuild<IdSpace>): ReturnType<typeof towersReached> {
-  const steps = b.steps.map(reachStep).filter((s): s is ReachStep => s !== null);
+/** The towers a build reaches, and where (counterAnswers.ts towersReached). */
+function reachedBy(
+  def: MapDef<IdSpace>,
+  grid: Grid | null,
+  b: ScriptedBuild<IdSpace>,
+): ReachedTower[] {
+  const steps = b.steps
+    .map((s) => reachStep(def, grid, s))
+    .filter((s): s is ReachStep => s !== null);
   return towersReached(b.loadout, steps);
 }
 

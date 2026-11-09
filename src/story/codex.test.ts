@@ -61,7 +61,10 @@ describe('codex unlocks', () => {
       'corrected',
     ]);
     // A later version with no condition never unlocks (a draft can't leak early).
-    const draft: CodexEntryDef = { ...HAULER, versions: { ...HAULER.versions, corrected: { text: 'x' } } };
+    const draft: CodexEntryDef = {
+      ...HAULER,
+      versions: { ...HAULER.versions, corrected: { text: 'x' } },
+    };
     expect(unlockedVersions(draft, ctx('fin_m01'), met)).toEqual(['original', 'annotated']);
   });
 
@@ -70,11 +73,13 @@ describe('codex unlocks', () => {
     expect(newCodexUnlocks({}, ctx('a2_m03'), met, [HAULER])).toEqual({
       codex_test_hauler: ['original', 'annotated'],
     });
-    expect(newCodexUnlocks({ codex_test_hauler: ['original'] }, ctx('a2_m03'), met, [HAULER])).toEqual(
-      { codex_test_hauler: ['annotated'] },
-    );
     expect(
-      newCodexUnlocks({ codex_test_hauler: ['original', 'annotated'] }, ctx('a2_m03'), met, [HAULER]),
+      newCodexUnlocks({ codex_test_hauler: ['original'] }, ctx('a2_m03'), met, [HAULER]),
+    ).toEqual({ codex_test_hauler: ['annotated'] });
+    expect(
+      newCodexUnlocks({ codex_test_hauler: ['original', 'annotated'] }, ctx('a2_m03'), met, [
+        HAULER,
+      ]),
     ).toEqual({});
   });
 

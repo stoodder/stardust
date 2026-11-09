@@ -1,8 +1,20 @@
-// The map's static briefing (M1), a blocking modal over the battle: its lines, the threat-intel
-// strip, and the medals on offer.
+// The map's briefing as a scene (T302b), a blocking modal over the battle: its lines in the comms
+// style, the threat-intel strip, and the medals on offer.
 import { dismissBriefing } from '../../app/commands.ts';
-import { hud, type BriefingLine, type MedalView, type ThreatIntelView } from '../state.ts';
+import { hud, type MedalView, type ThreatIntelView } from '../state.ts';
 import { changeLoadout } from '../../app/navigation.ts';
+import { NamePlate } from '../dialogue/CommsPanel.tsx';
+import { LineText } from '../dialogue/LineText.tsx';
+import { Portrait } from '../dialogue/Portrait.tsx';
+import {
+  ChoiceList,
+  NextButton,
+  trapTab,
+  useFocusOn,
+  useSceneStep,
+} from '../dialogue/SceneParts.tsx';
+import type { LineView, SceneView } from '../dialogue/state.ts';
+import { plainText } from '../dialogue/text.ts';
 import { loadoutChangeable } from '../screens/loadoutView.ts';
 import { Icon } from './Icon.tsx';
 
@@ -58,21 +70,21 @@ function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
   );
 }
 
-/** The focusable controls inside `root`, in tab order. */
-function focusables(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]')].filter(
-    (el) => el.tabIndex >= 0 && !el.hasAttribute('disabled'),
-  );
-}
-
 /**
- * The map's static briefing (M1), a blocking modal over the battle until dismissed (its button,
- * Enter, or Esc, which app/keys.ts routes here wherever the focus is). The rest of the HUD is
- * `inert` while it's open, and Tab cycles inside it.
+ * The map's briefing (story/style-guide.md § 4: before play, ≤ 8 lines), a scene in the comms
+ * style and a blocking modal over the battle until Clock in (its button, or Esc, which
+ * app/keys.ts routes here wherever the focus is). The speaker's portrait sits beside the lines so
+ * far; the current one types, and Next (focused) reads on. Once it has played out, Clock in takes
+ * the focus. With dialogue off (`?test=1`) the lines show whole at once. The threat intel and the
+ * medals are always up. The rest of the HUD is `inert` while it's open, and Tab cycles inside it.
  */
-export function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
+export function Briefing({ view }: { view: SceneView }) {
   const intel = hud.intel.value;
   const medals = hud.medals.value;
+  const step = useSceneStep(view);
+  // The portrait shows whoever speaks now (or spoke last).
+  const speaker = view.line ?? view.transcript.at(-1) ?? null;
+  const clockIn = useFocusOn(view.ended, view.ended);
   return (
     <div class="hud-briefing-scrim">
       <section
@@ -80,28 +92,38 @@ export function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="hud-briefing-heading"
-        onKeyDown={(e) => {
-          if (e.key !== 'Tab') return;
-          const items = focusables(e.currentTarget);
-          if (items.length === 0) return;
-          const active = document.activeElement;
-          const i = active instanceof HTMLElement ? items.indexOf(active) : -1;
-          const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i + 1) % items.length;
-          e.preventDefault();
-          items[next]?.focus();
-        }}
+        onKeyDown={trapTab}
       >
         <h2 id="hud-briefing-heading" class="hud-briefing-title">
           Shift briefing
         </h2>
-        <ul class="hud-briefing-lines">
-          {lines.map((l, i) => (
-            <li key={i}>
-              {l.speaker !== null && <span class="hud-briefing-speaker">{l.speaker}</span>}
-              <span class="hud-briefing-text">{l.text}</span>
-            </li>
-          ))}
-        </ul>
+        <div class="hud-briefing-comms">
+          {speaker !== null && speaker.portrait !== null ? (
+            <Portrait line={speaker} talking={view.line !== null && !step.typed.done} />
+          ) : (
+            <span class="hud-briefing-noportrait" aria-hidden="true" />
+          )}
+          <div class="hud-briefing-lines" data-testid="briefing-lines">
+            {view.transcript.map((l) => (
+              <BriefingRow key={l.id} line={l} />
+            ))}
+            {view.line !== null && (
+              <p class="hud-briefing-line now" onClick={step.next}>
+                <NamePlate line={view.line} />
+                <LineText line={view.line} typed={step.typed} />
+              </p>
+            )}
+            {view.choices !== null && <ChoiceList choices={view.choices} />}
+            {view.remember !== null && (
+              <p class="dlg-remember" role="status">
+                {view.remember}
+              </p>
+            )}
+            <div class="hud-briefing-next">
+              <NextButton step={step} lineKey={view.line?.id ?? 'none'} />
+            </div>
+          </div>
+        </div>
         {intel !== null && <IntelStrip intel={intel} />}
         {medals.length > 0 && <BriefingMedals medals={medals} />}
         <div class="hud-briefing-actions">
@@ -114,8 +136,9 @@ export function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
           <button
             type="button"
             class="hud-btn chamfer hud-briefing-go"
-            // Focused on arrival, so Enter (or Space) clocks in.
-            ref={(el) => el?.focus()}
+            // Focused once the briefing has played out (at once while dialogue is off), so Enter
+            // (or Space) clocks in.
+            ref={clockIn}
             onClick={dismissBriefing}
           >
             Clock in
@@ -123,5 +146,15 @@ export function Briefing({ lines }: { lines: readonly BriefingLine[] }) {
         </div>
       </section>
     </div>
+  );
+}
+
+/** A line already said: its plate and words. */
+function BriefingRow({ line }: { line: LineView }) {
+  return (
+    <p class="hud-briefing-line">
+      <NamePlate line={line} />
+      <span class="dlg-text">{plainText(line.text)}</span>
+    </p>
   );
 }

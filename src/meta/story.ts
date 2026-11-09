@@ -4,13 +4,14 @@
 // entering the base, so a save from before a memo or entry existed catches up.
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import type { CodexId } from '../content/codex/index.ts';
-import type { FlagSet } from '../content/dialogue/flags.ts';
+import { FLAG_IDS, type FlagSet } from '../content/dialogue/flags.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { MemoGift, MemoId } from '../content/memos/index.ts';
-import type { EnemyId, MapId } from '../content/types.ts';
+import type { EnemyId, FlagId, FlagValue, MapId } from '../content/types.ts';
 import { newCodexUnlocks } from '../story/codex.ts';
 import type { StoryContext } from '../story/conditions.ts';
+import { isFlagValue } from '../story/flags.ts';
 import { memosDue } from '../story/inbox.ts';
 import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
@@ -34,9 +35,7 @@ function isWon(save: SaveData, id: CampaignMapId): boolean {
  */
 export function baseStoryContext(save: SaveData): StoryContext {
   return {
-    // A valid save holds only each flag's declared values (validate.ts, T218), so its flags are a
-    // FlagSet.
-    flags: save.story.flags as FlagSet,
+    flags: flagSetOf(save.story.flags),
     map: furthestWon(save),
     pestsProcessed: save.stats.pestsProcessed,
     seen: save.story.seen,
@@ -44,8 +43,25 @@ export function baseStoryContext(save: SaveData): StoryContext {
   };
 }
 
+/**
+ * The save's flags as story reads them: each set flag whose value is one it declares (a valid
+ * save holds nothing else; validate.ts, T218).
+ */
+function flagSetOf(flags: Readonly<Partial<Record<FlagId, FlagValue>>>): FlagSet {
+  const out: FlagSet = {};
+  for (const f of FLAG_IDS) {
+    const v = flags[f];
+    if (v !== undefined && isFlagValue(f, v)) Object.assign(out, { [f]: v });
+  }
+  return out;
+}
+
+function isEnemyId(id: string): id is EnemyId {
+  return Object.hasOwn(ENEMIES, id);
+}
+
 function pushNew(out: EnemyId[], id: string): void {
-  if (Object.hasOwn(ENEMIES, id) && !out.includes(id as EnemyId)) out.push(id as EnemyId);
+  if (isEnemyId(id) && !out.includes(id)) out.push(id);
 }
 
 /**
@@ -89,7 +105,10 @@ export interface StoryUnlocks {
 function grant(save: SaveData, gift: MemoGift): SaveData {
   if ('ability' in gift) {
     if (save.unlocks.abilities.includes(gift.ability)) return save;
-    return { ...save, unlocks: { ...save.unlocks, abilities: [...save.unlocks.abilities, gift.ability] } };
+    return {
+      ...save,
+      unlocks: { ...save.unlocks, abilities: [...save.unlocks.abilities, gift.ability] },
+    };
   }
   if ('tower' in gift) {
     if (save.unlocks.towers.includes(gift.tower)) return save;

@@ -572,7 +572,7 @@ section.chamfer,
   color: var(--sd-white-1);
 }
 
-/* ── The static briefing (M1): a modal over the battle until it's dismissed ───────────────── */
+/* ── The briefing (T302b): a scene in the comms style, a modal until Clock in ─────────────── */
 
 .hud-briefing-scrim {
   position: absolute;
@@ -587,9 +587,9 @@ section.chamfer,
 .hud-briefing {
   box-sizing: border-box;
   display: grid;
-  justify-items: start;
+  justify-items: stretch;
   gap: 8px;
-  width: 360px;
+  width: 408px;
   padding: 10px 12px 10px;
 }
 
@@ -600,34 +600,59 @@ section.chamfer,
   color: var(--accent);
 }
 
+/* The speaker's portrait beside the lines so far. */
+.hud-briefing-comms {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.hud-briefing-noportrait {
+  width: 50px;
+}
+
 .hud-briefing-lines {
   display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.hud-briefing-line {
+  display: grid;
+  grid-template-columns: 44px 1fr;
   gap: 6px;
   margin: 0;
-  padding: 0;
-  list-style: none;
-  text-transform: none;
 }
 
-.hud-briefing-lines li {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 6px;
-  line-height: 10px;
+.hud-briefing-line .dlg-text {
+  color: var(--sd-steel-4);
 }
 
-.hud-briefing-speaker {
-  color: var(--sd-gold-3);
-  text-transform: uppercase;
+.hud-briefing-line.now {
+  cursor: pointer;
 }
 
-.hud-briefing-text {
-  grid-column: 2;
+.hud-briefing-line.now .dlg-text {
   color: var(--sd-white-1);
 }
 
+.hud-briefing-next {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hud-briefing-next:empty {
+  display: none;
+}
+
+.hud-briefing-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
 .hud-briefing-go {
-  justify-self: end;
   --edge: var(--accent);
   color: var(--accent);
 }
@@ -739,53 +764,6 @@ section.chamfer,
   color: var(--sd-green-3);
 }
 
-/* ── The radio ticker (D026): top-left under the status panel, never blocking ──────────────── */
-
-.hud-radio-slot {
-  position: absolute;
-  left: 4px;
-  top: 68px;
-  width: 200px;
-  pointer-events: none;
-}
-
-.hud-radio {
-  --edge: var(--accent-2);
-  display: grid;
-  gap: 3px;
-  padding: 5px 7px 5px 6px;
-  background: var(--panel-fill);
-  animation: hud-radio-in 160ms steps(1, end);
-}
-
-@keyframes hud-radio-in {
-  0% {
-    opacity: 0.6;
-  }
-}
-
-.hud-radio-name {
-  text-transform: uppercase;
-}
-
-.hud-radio-text {
-  line-height: 10px;
-  color: var(--sd-white-1);
-  text-transform: none;
-}
-
-/* A reply's cue line (D028): kept up above the reply, dimmed, with a rule under it. */
-.hud-radio-cue {
-  display: grid;
-  gap: 3px;
-  padding-bottom: 3px;
-  border-bottom: 1px solid var(--sd-ink-3);
-}
-
-.hud-radio-cue .hud-radio-text {
-  color: var(--sd-steel-3);
-}
-
 /* ── The "WAVE n" banner ──────────────────────────────────────────────────────────────────── */
 
 .hud-wave-banner {
@@ -852,7 +830,6 @@ section.chamfer,
 @media (prefers-reduced-motion: reduce) {
   .hud-alarm,
   .hud-btn.pulse,
-  .hud-radio,
   .hud-wave-banner {
     animation: none;
   }

@@ -5,6 +5,7 @@ import type { IdSpace } from '../content/types.ts';
 import { MAX_LOADOUT } from './config.ts';
 import type { SimEvent } from './events.ts';
 import { isBuildableTile, tileIndex } from './grid.ts';
+import { liveTileAt } from './systems/wreckage.ts';
 import type { Sim } from './sim.ts';
 import type { SimStats } from './state.ts';
 import { isSpared } from './fireControl.ts';
@@ -335,7 +336,7 @@ export function createRunTracker<K extends IdSpace>(
         if (!liveTowers.has(t.uid)) violate(`tower ${t.uid} is alive but was never built`);
         // Towers stand only on buildable tiles (hard rule), and the tile map points back at them.
         const idx = tileIndex(map, t.col, t.row);
-        if (idx < 0 || !isBuildableTile(map.tiles[idx]!)) {
+        if (idx < 0 || !isBuildableTile(liveTileAt(map, state.wreckage, idx))) {
           violate(`tower ${t.uid} stands on a non-buildable tile (${t.col}, ${t.row})`);
         } else if (state.towerAtTile[idx] !== t.slot) {
           violate(`tile (${t.col}, ${t.row}) doesn't map to tower ${t.uid}`);

@@ -85,7 +85,10 @@ export function codexTitle(ctx: StoryContext): string {
  * (older ones a tab away); in the *Field Journal* an entry with a correction shows its original and
  * its correction side by side (core-loop.md § 6.5).
  */
-export function shownVersions(unlocked: readonly CodexVersion[], ctx: StoryContext): CodexVersion[] {
+export function shownVersions(
+  unlocked: readonly CodexVersion[],
+  ctx: StoryContext,
+): CodexVersion[] {
   const ordered = CODEX_VERSIONS.filter((v) => unlocked.includes(v));
   const newest = ordered[ordered.length - 1];
   if (newest === undefined) return [];

@@ -33,8 +33,7 @@ function plates(g: CharGrid, facing: 'se' | 'ne', cy: number): void {
       if (dy < -1.5 && Math.abs(dx - 1) < 4) plot(g, x, y, dy < -2.5 ? 'S' : 'T');
       else if (dy >= -1.5 && dy < -0.5 && Math.abs(dx - 1) < 4) plot(g, x, y, '3');
       // The snout scoop at the front (facing SE: the right end).
-      if (facing === 'se' && dx > 4.5 && dy > -2.5 && dy < 1.5)
-        plot(g, x, y, dy < 0.5 ? 'S' : 'T');
+      if (facing === 'se' && dx > 4.5 && dy > -2.5 && dy < 1.5) plot(g, x, y, dy < 0.5 ? 'S' : 'T');
     }
   }
 }

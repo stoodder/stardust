@@ -4,6 +4,8 @@
 // announcement (a visually hidden aria-live region). Components read the `hud` signals (kept in
 // sync by app/hud.ts) and act only through app/commands.ts; each lives in its own file here
 // (T225). Every control is a real <button> of at least 16×16 game px.
+import { CommsPanel } from '../dialogue/CommsPanel.tsx';
+import { dialogue, sceneBlocks } from '../dialogue/state.ts';
 import { hud } from '../state.ts';
 import { MuteButton } from './MuteButton.tsx';
 import { AbilityBar } from './AbilityBar.tsx';
@@ -15,7 +17,6 @@ import {
   CursorAnnouncer,
   ActionAnnouncer,
   UpgradeHint,
-  Radio,
   WaveBannerView,
   PausedOverlay,
 } from './Notices.tsx';
@@ -27,15 +28,16 @@ import './hud.css';
 /** The battle HUD. */
 export function Hud() {
   const selected = hud.selected.value;
-  const briefing = hud.briefing.value;
+  const briefing = dialogue.scene.value?.mode === 'briefing' ? dialogue.scene.value : null;
+  const open = hud.briefing.value !== null || sceneBlocks.value;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud">
-      {/* Everything but the briefing: inert (unfocusable, unclickable) while the briefing is open. */}
-      <div class="hud-play" inert={briefing !== null}>
+      {/* Everything but the briefing: inert (unfocusable, unclickable) while it or a scene is open. */}
+      <div class="hud-play" inert={open}>
         <PausedOverlay />
         <WaveBannerView />
         <StatusPanel />
-        <Radio />
+        <CommsPanel />
         <div class="hud-top-right">
           <div class="hud-top-row">
             <MuteButton />
@@ -58,7 +60,7 @@ export function Hud() {
         <CursorAnnouncer />
         <ActionAnnouncer />
       </div>
-      {briefing !== null && <Briefing lines={briefing} />}
+      {hud.briefing.value !== null && briefing !== null && <Briefing view={briefing} />}
     </div>
   );
 }

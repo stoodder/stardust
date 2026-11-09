@@ -5,7 +5,7 @@
 // two-pronged electrode that swings toward its target. Energy reads blue-white (art-direction §7):
 // the prongs spark `blue.4`, and each shot cracks a jagged blue-white arc off the prongs while the
 // toroid flares. From tier 2 (D029) the coil is up-rated: patina insulator discs stacked on the
-// windings, a bigger toroid, and a scrap counterweight on the arm's far side.
+// windings, a bigger toroid with a discharge spike, and a scrap counterweight on the arm's far side.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
@@ -48,6 +48,13 @@ function toroid(g: CharGrid, t2: boolean, fire: boolean): void {
       if (d > 1) continue;
       plot(g, x, y, d < 0.45 ? 'w' : y + 0.5 < cy ? 'd' : d > 0.8 ? 'a' : 'c');
     }
+  }
+  if (t2) {
+    // The up-rated toroid wears a discharge spike on its crown.
+    const top = Math.floor(cy - ry);
+    plot(g, CX - 1, top - 1, '4');
+    plot(g, CX - 1, top - 2, '3');
+    plot(g, CX - 1, top - 3, 'w');
   }
   if (fire) {
     for (const [x, y] of [

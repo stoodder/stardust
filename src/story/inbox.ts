@@ -44,9 +44,6 @@ export function memoBody(memo: MemoDef, ctx: StoryContext): string[] {
 }
 
 /** The delivered memos not read yet, in delivery order. */
-export function unreadMemos(
-  delivered: readonly MemoId[],
-  read: readonly MemoId[],
-): MemoId[] {
+export function unreadMemos(delivered: readonly MemoId[], read: readonly MemoId[]): MemoId[] {
   return delivered.filter((m) => !read.includes(m));
 }

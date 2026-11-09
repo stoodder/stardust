@@ -2,8 +2,9 @@
 // the air, so its guns never point at the ground: twin long flak barrels stand almost straight up
 // from a white cradle, leaning a little toward the target, with a teal radar dish on the cradle's
 // shoulder. That steep, tall silhouette is what sets it apart from the Rivet's level barrels at 1×.
-// Its base wears a sky-blue trim ring. Each shot is a white-hot, orange-rimmed muzzle flash at the top. From tier 2 (D029: the upgrade reads in the head too) it is a quad mount: two
-// more barrels outboard and an orange ready-round box on the cradle's flank.
+// Its base wears a sky-blue trim ring. Each shot is a white-hot, orange-rimmed flash at the
+// muzzles. From tier 2 (D029: the upgrade reads in the head too) it is a quad mount: two more
+// barrels outboard and an orange ready-round box on the cradle's flank.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W, everglowBase } from './base.ts';

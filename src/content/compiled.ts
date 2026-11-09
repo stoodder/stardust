@@ -190,6 +190,10 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   /** A conditional damage bonus (`vsStatus`): the statuses' mask (rules.ts STATUS_BITS; 0: none). */
   readonly vsStatusMask: number;
   readonly vsStatusPct: number;
+  /** Jumps added to the partner's chain attack (Conductive; 0: none). */
+  readonly chainJumps: number;
+  /** Soaked its hits apply while linked, in ticks (Conductive's Sprinkler; 0: none). */
+  readonly soakedTicks: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // The HUD's transient messages: the notice, the screen-reader announcers (the tile cursor, the
-// last action), the upgrade hint, the radio ticker, the WAVE banner, and the paused overlay.
+// last action), the upgrade hint, the WAVE banner, and the paused overlay. The comms panel (radio
+// and barks) is ui/dialogue/CommsPanel.tsx.
 import { hud, speed } from '../state.ts';
-import { colorVar } from '../color.ts';
 import { Key } from './parts.tsx';
 
 /** A short message (a rejected command), top center. */
@@ -45,35 +45,6 @@ export function UpgradeHint() {
         Click a turret to upgrade it
         <Key k="U" />
       </div>
-    </div>
-  );
-}
-
-/**
- * The radio ticker (D026): one line at a time (a reply under its cue), top-left under the status
- * panel; never blocks.
- */
-export function Radio() {
-  const r = hud.radio.value;
-  return (
-    <div class="hud-radio-slot" role="log" aria-live="polite" aria-label="Radio">
-      {r !== null && (
-        <div key={r.id} class="hud-radio chamfer">
-          {/* A reply keeps its cue up above it, dimmed (D028). */}
-          {r.cue !== null && (
-            <div class="hud-radio-cue">
-              <span class="hud-radio-name" style={{ color: colorVar(r.cue.color) }}>
-                {r.cue.name}
-              </span>
-              <span class="hud-radio-text">{r.cue.text}</span>
-            </div>
-          )}
-          <span class="hud-radio-name" style={{ color: colorVar(r.color) }}>
-            {r.name}
-          </span>
-          <span class="hud-radio-text">{r.text}</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,22 +1,25 @@
 // The no-counter checks (conventions.md § Balance sims): #5 and #6 (T225: moved from checks.ts),
 // and the runs' own precondition: a no-counter build
 // must carry no answer to its category, judged by the same model as the content validator
-// (content/counterAnswers.ts: the tiers and specs its towers reach, and the abilities it casts).
+// (content/counterAnswers.ts: the tiers and specs its towers reach, from placements that reach
+// the category's routes, and the abilities it casts).
 // Compile already rejects such content; this keeps the harness honest when it runs content
 // compiled under other answer tables (fixtures) and states the premise next to the result.
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import {
   answerScope,
   answersCarried,
+  rangeReached,
   towersReached,
+  type RangedTower,
   type ReachStep,
 } from '../content/counterAnswers.ts';
 import { COUNTER_ANSWERS, COUNTER_CATEGORIES, type CounterAnswers } from '../content/rules.ts';
-import type { CounterId, IdSpace } from '../content/types.ts';
+import type { CounterId, IdSpace, TileKey } from '../content/types.ts';
 import { describeRun, perRun, type CheckSpec } from './checks.ts';
 import { noCounterLoseByWave } from './rules.ts';
 
-const tileKey = (t: readonly [number, number]): string => `${t[0]},${t[1]}`;
+const tileKey = (t: readonly [number, number]): TileKey => `${t[0]},${t[1]}`;
 
 /** The abilities a compiled build casts (slot 1, and slot 2's companion ability). */
 function castBy<K extends IdSpace>(
@@ -54,18 +57,30 @@ export function compiledAnswersCarried<K extends IdSpace>(
 ): string[] {
   const steps: ReachStep[] = [];
   for (const s of b.steps) {
-    if (s.kind === 'build') steps.push({ op: 'build', tower: s.tower, tile: tileKey(s.tile) });
-    else if (s.kind === 'upgrade') steps.push({ op: 'upgrade', tile: tileKey(s.tile) });
+    if (s.kind === 'build') {
+      const key = tileKey(s.tile);
+      const raw = map.tiles[s.tile[1] * map.cols + s.tile[0]];
+      const tile = raw === 'x' ? map.underWreckage[key] : raw;
+      const at = { tile: s.tile, highGround: tile === '^' };
+      steps.push({ op: 'build', tower: s.tower, tile: key, at });
+    } else if (s.kind === 'upgrade') steps.push({ op: 'upgrade', tile: tileKey(s.tile) });
     else if (s.kind === 'specialize') {
       steps.push({ op: 'specialize', tile: tileKey(s.tile), spec: s.spec });
     } else if (s.kind === 'sell') steps.push({ op: 'sell', tile: tileKey(s.tile) });
   }
-  const enemies = map.waves.flatMap((w) => w.groups.map((g) => g.enemy));
+  const enemies = map.waves.flatMap((w) =>
+    w.groups.map((g) => ({ ...g.enemy, route: g.route.tiles })),
+  );
+  const towers: Readonly<Record<string, RangedTower | undefined>> = content.towers;
   return answersCarried(
     answers[counter],
     answerScope(counter, map.act, enemies),
     towersReached(b.loadout, steps),
     castBy(map, content, b),
+    (t) => {
+      const def = towers[t.tower];
+      return def === undefined ? null : rangeReached(def, t);
+    },
   );
 }
 

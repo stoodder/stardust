@@ -8,7 +8,7 @@ import { assertNever } from '../../shared/types.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
-import { costFor, sellValue } from '../economy.ts';
+import { pay, sellValue } from '../economy.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -16,7 +16,7 @@ import { applyHoldFire, applySpareRunners, inheritFireControl } from '../fireCon
 import { applySpecialize } from '../specialize.ts';
 import { applyAbilityCommand } from './abilities.ts';
 import { callWave } from './waves.ts';
-import { applyClearCommand } from './wreckage.ts';
+import { applyClearCommand, liveTileAt } from './wreckage.ts';
 
 /**
  * The deploy delay (core-loop.md § 2.5) as a starting cooldown. The towers system runs later on
@@ -85,16 +85,15 @@ function build(
   const [col, row] = cmd.tile;
   const idx = tileIndex(ctx.map, col, row);
   if (idx < 0) return 'invalidTile';
-  if (!isBuildableTile(ctx.map.tiles[idx]!)) return 'notBuildable'; // idx is in range
+  // Cleared wreckage builds as the tile under it (systems/wreckage.ts).
+  if (!isBuildableTile(liveTileAt(ctx.map, state.wreckage, idx))) return 'notBuildable';
   if (state.towerAtTile[idx] !== -1) return 'tileOccupied';
   const def = ctx.content.towers[cmd.tower]!; // validateConfig checked every loadout id
   const tier = def.tiers[0];
-  const cost = costFor(ctx.config.modifiers, def.id, tier.cost);
-  if (state.credits < cost) return 'cantAfford';
+  // Tune-ups, Rapid Deploy, and Clearance Sale (economy.ts purchasePriceInto).
+  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'build');
+  if (cost < 0) return 'cantAfford';
 
-  // TODO(M3): Clearance Sale with its ability.
-  state.credits -= cost;
-  state.stats.creditsSpent += cost;
   state.stats.towersBuilt++;
   const tower = poolAlloc(state.towers, TOWER_BLANK, takeUid(state));
   tower.def = def;
@@ -127,10 +126,8 @@ function upgrade(state: SimState, ctx: TickContext, towerUid: number): RejectRea
   // Tier 4 is a specialization (`specialize`, T202), not an upgrade.
   if (tower.tier >= MAX_TIER_BEFORE_SPEC) return 'maxTier';
   const next = tower.def.tiers[tower.tier]!; // tier < MAX_TIER_BEFORE_SPEC = tiers.length
-  const cost = costFor(ctx.config.modifiers, tower.def.id, next.cost);
-  if (state.credits < cost) return 'cantAfford';
-  state.credits -= cost;
-  state.stats.creditsSpent += cost;
+  const cost = pay(state, ctx.config.modifiers, tower.def.id, next.cost, 'upgrade');
+  if (cost < 0) return 'cantAfford';
   tower.tier++;
   tower.tierDef = next;
   tower.invested += cost;

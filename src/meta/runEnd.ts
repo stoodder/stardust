@@ -137,10 +137,7 @@ export function runEnd(
   // 8. Story unlocks (meta/story.ts): the enemies this run met join the seen list, the memos now
   //    due are delivered with their gifts, and the codex versions now unlocked are added. After
   //    step 7, so an issued tower's entry unlocks with it.
-  const story = withStoryUnlocks(
-    withTowers,
-    enemiesMet(input.mapId, won, input.wavesResolved),
-  );
+  const story = withStoryUnlocks(withTowers, enemiesMet(input.mapId, won, input.wavesResolved));
   return {
     save: story.save,
     summary: {

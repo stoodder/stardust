@@ -3,12 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { runEnd, type RunEndInput } from './runEnd.ts';
 import { createNewSave, type SaveData } from './saveData.ts';
-import {
-  baseStoryContext,
-  enemiesMet,
-  furthestWon,
-  withStoryUnlocks,
-} from './story.ts';
+import { baseStoryContext, enemiesMet, furthestWon, withStoryUnlocks } from './story.ts';
 import { validateSave } from './validate.ts';
 
 const WIN: RunEndInput = {
@@ -29,7 +24,10 @@ function m2Save(): SaveData {
     ...s,
     unlocks: { ...s.unlocks, abilities: ['orbital_strike'] },
     story: { ...s.story, memosDelivered: [], granted: [] },
-    campaign: { ...s.campaign, maps: { a1_m01: { completed: true, medals: ['victory'], bestMeter: 20 } } },
+    campaign: {
+      ...s.campaign,
+      maps: { a1_m01: { completed: true, medals: ['victory'], bestMeter: 20 } },
+    },
   };
 }
 
@@ -84,7 +82,12 @@ describe('run end delivers memos and unlocks the codex (step 8)', () => {
     });
     expect(summary.memos).toEqual([]);
     expect(save.campaign.seenEnemies).toEqual(['nibbler']);
-    expect(summary.codex).toEqual(['codex_nibbler', 'codex_rivet', 'codex_thumper', 'codex_orbital_strike']);
+    expect(summary.codex).toEqual([
+      'codex_nibbler',
+      'codex_rivet',
+      'codex_thumper',
+      'codex_orbital_strike',
+    ]);
   });
 
   it('a replay adds nothing new', () => {

@@ -96,7 +96,7 @@ export function inboxView(save: SaveData | null = activeSave()): readonly MemoVi
       unread: !save.story.memosRead.includes(id),
     });
   }
-  return out.reverse();
+  return out.toReversed();
 }
 
 /** Marks a delivered memo read (its NEW badge clears). A no-op for one read already. */
@@ -200,5 +200,8 @@ export function markCodexRead(id: string): SaveResult | null {
   const shown = shownVersions(unlockedOf(save, entry), baseStoryContext(save));
   const fresh = unreadVersions(id, shown, save.story.seen).map((v) => codexSeenId(id, v));
   if (fresh.length === 0) return null;
-  return updateActiveSave((s) => ({ ...s, story: { ...s.story, seen: [...s.story.seen, ...fresh] } }));
+  return updateActiveSave((s) => ({
+    ...s,
+    story: { ...s.story, seen: [...s.story.seen, ...fresh] },
+  }));
 }

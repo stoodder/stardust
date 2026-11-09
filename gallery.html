@@ -42,6 +42,19 @@
         margin: 0 0 10px;
         padding: 8px 10px;
       }
+      /* Sprite cards pack side by side, each as wide as its frames (T311a): together with one
+         extra palette per card, this keeps the page under the stitched capture's height limit. */
+      .cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 10px;
+        align-items: flex-start;
+      }
+      .cards .card {
+        flex: 0 1 auto;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
       .card h3 {
         margin: 0 0 6px;
         font-size: 13px;

@@ -30,8 +30,8 @@ import {
 } from '../content/dialogue/types.ts';
 import type { EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
+import { baseStoryContext } from '../meta/story.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import type { SimEvent } from '../sim/index.ts';
 import {
   campaignBarksPlayed,
   cueBark,
@@ -203,16 +203,16 @@ function mapOfScene(sceneId: string): CampaignMapId | null {
   return parseSceneId(sceneId)?.map ?? null;
 }
 
+const NO_FLAGS: FlagSet = {};
+
+/** The story context for `map`: the save's (meta/story.ts), plus the run's kills so far. */
 function storyContext(map: CampaignMapId | null): StoryContext {
   const save = activeSave();
-  return {
-    // A valid save holds only each flag's declared values (meta/validate.ts), so they're a FlagSet.
-    flags: (save?.story.flags ?? {}) as FlagSet,
-    map,
-    pestsProcessed: (save?.stats.pestsProcessed ?? 0) + (session?.runKills() ?? 0),
-    seen: save?.story.seen ?? [],
-    run: null,
-  };
+  const kills = session?.runKills() ?? 0;
+  if (save === null) {
+    return { flags: NO_FLAGS, map, pestsProcessed: kills, seen: [], run: null };
+  }
+  return { ...baseStoryContext(save), map, pestsProcessed: save.stats.pestsProcessed + kills };
 }
 
 function textContext(): TextContext {
@@ -268,7 +268,8 @@ export interface PlayOptions {
   readonly onEnd?: () => void;
 }
 
-function present(): readonly SpeakerId[] | null {
+/** Who is on the radio: the battle's speakers, or null outside one. */
+function onRadio(): readonly SpeakerId[] | null {
   return session?.present ?? null;
 }
 
@@ -300,7 +301,7 @@ function settle(h: Holding): void {
   for (;;) {
     const step = h.cursor.step;
     if (step.kind !== 'line') break;
-    const view = lineView(step.node, ctx, textContext(), present());
+    const view = lineView(step.node, ctx, textContext(), onRadio());
     if (!h.instant) {
       h.line = view;
       break;
@@ -515,7 +516,7 @@ function showCommsLine(): void {
     return;
   }
   const node = step.node;
-  const view = lineView(node, ctx, textContext(), present());
+  const view = lineView(node, ctx, textContext(), onRadio());
   const cue = c.prev !== null && c.prev.speaker !== view.speaker ? c.prev : null;
   c.button = node.button ?? null;
   dialogue.comms.value = { line: view, cue, button: c.button === null ? null : silkText(c.button.label) };
@@ -598,7 +599,7 @@ const isEnemy = (id: string): id is EnemyId => Object.hasOwn(ENEMIES, id);
 const isTower = (id: string): id is TowerId => Object.hasOwn(TOWERS, id);
 
 /** Who is on the radio on `map`: QUILL and a present companion (style-guide § 5.5). */
-export function presentSpeakers(map: MapDef<IdSpace>): SpeakerId[] {
+export function presentSpeakers(map: Pick<MapDef<IdSpace>, 'companion'>): SpeakerId[] {
   const out: SpeakerId[] = ['quill'];
   const c = map.companion;
   if (c !== null && 'id' in c && c.state === 'present') {
@@ -609,9 +610,12 @@ export function presentSpeakers(map: MapDef<IdSpace>): SpeakerId[] {
 }
 
 /** The briefing scene of `map`: its `<map>_brief`, else its static briefing (app/radio.ts). */
-export function briefingScene(map: MapDef<IdSpace>): Scene | null {
+export function briefingScene(map: {
+  readonly id: string;
+  readonly briefing?: string | null;
+}): Scene | null {
   const id = `${map.id}_brief`;
-  return SCENES[id] ?? staticBriefingScene(map.id, map.briefing);
+  return SCENES[id] ?? staticBriefingScene(map.id, map.briefing ?? undefined);
 }
 
 export interface DialogueOptions {
@@ -704,119 +708,86 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     else onIdle = fire;
   };
 
-  const handle = (e: SimEvent<IdSpace>): void => {
-    switch (e.type) {
-      case 'CountdownStarted':
-        playMoment(`countdown:${e.wave}`);
-        if (e.wave >= 2 && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
-        return;
-      case 'TowerClassUnlocked':
-        playMoment(`unlock:${e.tower}`);
-        return;
-      case 'WaveStarted':
-        wave = Math.max(wave, e.wave);
-        playMoment(`waveStart:${e.wave}`);
-        offerBarks([{ on: 'wave_start', wave: e.wave }]);
-        return;
-      case 'WaveCleared': {
-        playMoment(`waveCleared:${e.wave}`);
-        const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave }];
-        if (!leakedWaves.has(e.wave)) triggers.push({ on: 'perfect_wave' });
-        offerBarks(triggers, e.wave);
-        return;
-      }
-      case 'EnemySpawned':
-        waveOf.set(e.uid, e.wave);
-        if (!met.has(e.enemy)) {
-          met.add(e.enemy);
-          if (isEnemy(e.enemy)) offerBarks([{ on: 'new_enemy', enemy: e.enemy }]);
-        }
-        return;
-      case 'EnemyDied': {
-        waveOf.delete(e.uid);
-        const first = !killedEnemies.has(e.enemy);
+  const offs = [
+    bus.on('CountdownStarted', (e) => {
+      playMoment(`countdown:${e.wave}`);
+      if (e.wave >= 2 && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
+    }),
+    bus.on('TowerClassUnlocked', (e) => playMoment(`unlock:${e.tower}`)),
+    bus.on('WaveStarted', (e) => {
+      wave = Math.max(wave, e.wave);
+      playMoment(`waveStart:${e.wave}`);
+      offerBarks([{ on: 'wave_start', wave: e.wave }]);
+    }),
+    bus.on('WaveCleared', (e) => {
+      playMoment(`waveCleared:${e.wave}`);
+      const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave }];
+      if (!leakedWaves.has(e.wave)) triggers.push({ on: 'perfect_wave' });
+      offerBarks(triggers, e.wave);
+    }),
+    bus.on('EnemySpawned', (e) => {
+      waveOf.set(e.uid, e.wave);
+      if (met.has(e.enemy)) return;
+      met.add(e.enemy);
+      if (isEnemy(e.enemy)) offerBarks([{ on: 'new_enemy', enemy: e.enemy }]);
+    }),
+    bus.on('EnemyDied', (e) => {
+      waveOf.delete(e.uid);
+      if (!killedEnemies.has(e.enemy)) {
         killedEnemies.add(e.enemy);
-        if (first) playMoment(`enemyKilled:${e.enemy}`);
-        if (isEnemy(e.enemy)) offerBarks([{ on: 'enemy_killed', enemy: e.enemy }]);
+        playMoment(`enemyKilled:${e.enemy}`);
+      }
+      if (isEnemy(e.enemy)) offerBarks([{ on: 'enemy_killed', enemy: e.enemy }]);
+    }),
+    bus.on('EnemyLeaked', (e) => {
+      const w = waveOf.get(e.uid);
+      if (w !== undefined) leakedWaves.add(w);
+      waveOf.delete(e.uid);
+      const triggers: BarkTrigger[] = [];
+      if (!leaked) {
+        leaked = true;
+        playMoment('firstLeak');
+        triggers.push({ on: 'first_leak' });
+      }
+      if (!leakedEnemies.has(e.enemy)) {
+        leakedEnemies.add(e.enemy);
+        playMoment(`enemyLeaked:${e.enemy}`);
+        if (isEnemy(e.enemy)) triggers.push({ on: 'enemy_leaked', enemy: e.enemy });
+      }
+      const st = sim.state;
+      if (!lowFired && st.integrity > 0 && st.integrity <= st.maxIntegrity * LOW_INTEGRITY_SHARE) {
+        lowFired = true;
+        triggers.push({ on: 'low_integrity' });
+      }
+      offerBarks(triggers);
+    }),
+    bus.on('TowerBuilt', (e) => {
+      towerOf.set(e.uid, e.tower);
+      offerBarks([isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' }]);
+    }),
+    bus.on('TowerSold', (e) => {
+      // Name tags (story/tags.ts) join with T302c: whether the turret was tagged isn't known yet.
+      const t = towerOf.get(e.uid);
+      towerOf.delete(e.uid);
+      offerBarks([t !== undefined && isTower(t) ? { on: 'tower_sold', tower: t } : { on: 'tower_sold' }]);
+    }),
+    bus.on('HoldFireChanged', (e) => {
+      if (e.on) offerBarks([{ on: 'hold_fire_used' }]);
+    }),
+    bus.on('NotFiringAtSkitterkin', () => offerBarks([{ on: 'not_firing' }])),
+    bus.on('NeutralHit', () => offerBarks([{ on: 'neutral_hit' }])),
+    bus.on('BossPhase', (e) => offerBarks([{ on: 'boss_phase', phase: e.phase }])),
+    // A map script's cue: the scene with its id (`<map>_cue_*`, `<map>_scene_*`), or a bark.
+    bus.on('ScriptCue', (e) => {
+      const scene = SCENES[e.cueId];
+      if (scene !== undefined) {
+        if (enabled) playScene(scene);
         return;
       }
-      case 'EnemyLeaked': {
-        const w = waveOf.get(e.uid);
-        if (w !== undefined) leakedWaves.add(w);
-        waveOf.delete(e.uid);
-        const triggers: BarkTrigger[] = [];
-        if (!leaked) {
-          leaked = true;
-          playMoment('firstLeak');
-          triggers.push({ on: 'first_leak' });
-        }
-        if (!leakedEnemies.has(e.enemy)) {
-          leakedEnemies.add(e.enemy);
-          playMoment(`enemyLeaked:${e.enemy}`);
-          if (isEnemy(e.enemy)) triggers.push({ on: 'enemy_leaked', enemy: e.enemy });
-        }
-        const st = sim.state;
-        if (!lowFired && st.integrity > 0 && st.integrity <= st.maxIntegrity * LOW_INTEGRITY_SHARE) {
-          lowFired = true;
-          triggers.push({ on: 'low_integrity' });
-        }
-        offerBarks(triggers);
-        return;
-      }
-      case 'TowerBuilt':
-        towerOf.set(e.uid, e.tower);
-        offerBarks([isTower(e.tower) ? { on: 'tower_built', tower: e.tower } : { on: 'tower_built' }]);
-        return;
-      case 'TowerSold': {
-        // Name tags (story/tags.ts) join with T302c: `tagged` isn't known here yet.
-        const t = towerOf.get(e.uid);
-        towerOf.delete(e.uid);
-        offerBarks([t !== undefined && isTower(t) ? { on: 'tower_sold', tower: t } : { on: 'tower_sold' }]);
-        return;
-      }
-      case 'HoldFireChanged':
-        if (e.on) offerBarks([{ on: 'hold_fire_used' }]);
-        return;
-      case 'NotFiringAtSkitterkin':
-        offerBarks([{ on: 'not_firing' }]);
-        return;
-      case 'NeutralHit':
-        offerBarks([{ on: 'neutral_hit' }]);
-        return;
-      case 'BossPhase':
-        offerBarks([{ on: 'boss_phase', phase: e.phase }]);
-        return;
-      case 'ScriptCue': {
-        const scene = SCENES[e.cueId];
-        if (scene !== undefined) {
-          if (enabled) playScene(scene);
-          return;
-        }
-        const bark = BARKS[e.cueId];
-        if (bark !== undefined) playCueBark(bark);
-        return;
-      }
-      default:
-        return;
-    }
-  };
-  const types = [
-    'CountdownStarted',
-    'TowerClassUnlocked',
-    'WaveStarted',
-    'WaveCleared',
-    'EnemySpawned',
-    'EnemyDied',
-    'EnemyLeaked',
-    'TowerBuilt',
-    'TowerSold',
-    'HoldFireChanged',
-    'NotFiringAtSkitterkin',
-    'NeutralHit',
-    'BossPhase',
-    'ScriptCue',
-  ] as const;
-  const offs = types.map((t) => bus.on(t, handle));
+      const bark = BARKS[e.cueId];
+      if (bark !== undefined) playCueBark(bark);
+    }),
+  ];
   return () => {
     for (const off of offs) off();
     offBriefing();

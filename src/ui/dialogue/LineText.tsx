@@ -33,7 +33,7 @@ export interface Typewriter {
   readonly shown: number;
   readonly done: boolean;
   /** Shows the rest of the line now (a click or Enter while it types). */
-  finish(): void;
+  readonly finish: () => void;
 }
 
 /**
@@ -53,7 +53,7 @@ export function useTypewriter(line: LineView | null, instant: boolean): Typewrit
     line === null ? 0 : s.finished ? total : revealedAt(line.text, performance.now() - s.at);
   const done = shown >= total;
   useEffect(() => {
-    if (line === null || done) return;
+    if (line === null || done) return undefined;
     const id = setInterval(() => redraw((n) => n + 1), TICK_MS);
     return () => clearInterval(id);
   }, [line?.id, done]);
@@ -93,7 +93,7 @@ function HollowText({ text, shown }: { text: string; shown: number }) {
   const still = prefersReducedMotion();
   const [roll, setRoll] = useState(1);
   useEffect(() => {
-    if (still) return;
+    if (still) return undefined;
     const id = setInterval(() => setRoll((n) => n + 1), HOLLOW_ROLL_MS);
     return () => clearInterval(id);
   }, [still]);

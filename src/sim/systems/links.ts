@@ -4,10 +4,12 @@
 // it also counts link uptime (`stats.linkTicks`). It runs after status and before the towers
 // fire. The bonuses summed onto each tower (`flat*`, `pct*`, `vsStatus*`):
 // - static `towerStat` modifiers for the tower (or `'*'`);
-// - its tile: high ground +25% range, a power node +20% fire rate (a support tower with no
-//   attack gets +20% aura strength instead); `tileBonus` modifiers raise those fractions;
+// - its tile as the run stands (cleared wreckage is the tile under it: a hidden power node pays):
+//   high ground +25% range, a power node +20% fire rate (a support tower with no attack gets +20%
+//   aura strength instead); `tileBonus` modifiers raise those fractions;
 // - each active link type once (both partners built and adjacent, edge or corner), its bonus
-//   scaled by `linkBonus` modifiers (Linked Up);
+//   scaled by `linkBonus` modifiers (Linked Up), plus Conductive's extras (`bonusJumps`, rounded
+//   down after scaling, and `linkSoakedTicks`, which doesn't scale);
 // - auras from other towers, strongest per aura kind (same-kind auras don't stack; a support
 //   tower never covers itself).
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
@@ -26,6 +28,7 @@ import type { Modifier } from '../config.ts';
 import type { Tower } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { liveTileAt } from './wreckage.ts';
 
 export function links(state: SimState, ctx: TickContext): void {
   if (state.linksDirty) {
@@ -80,7 +83,7 @@ function recompute(state: SimState, ctx: TickContext): void {
       if (m.kind !== 'towerStat' || (m.tower !== '*' && m.tower !== t.def.id)) continue;
       addBonus(t, m.stat, m.flat ?? 0, m.pct ?? 0);
     }
-    const tile = map.tiles[t.row * map.cols + t.col];
+    const tile = liveTileAt(map, state.wreckage, t.row * map.cols + t.col); // cleared wreckage too
     if (tile === '^') t.pctRange += rules.highGroundRangePct;
     else if (tile === '+' && t.tierDef.attack !== null) t.pctRate += rules.powerNodeRatePct;
   }
@@ -125,6 +128,10 @@ function recompute(state: SimState, ctx: TickContext): void {
         t.vsStatusMask |= p.vsStatusMask;
         t.vsStatusPct += p.vsStatusPct * k;
       }
+      // Conductive (T304b): jumps scale with Linked Up and round down to whole jumps; the Soaked
+      // a link grants is a duration, not a bonus, so it doesn't scale (the longest applies).
+      if (p.chainJumps !== 0) t.bonusJumps += Math.floor(p.chainJumps * k + 1e-9);
+      if (p.soakedTicks > t.linkSoakedTicks) t.linkSoakedTicks = p.soakedTicks;
     }
   }
 
@@ -145,7 +152,9 @@ function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: number)
       for (let j = 0; j < pool.used; j++) {
         const s = pool.items[j]!; // j < used ≤ items.length
         if (j === i || !s.alive || s.tierDef === null || s.tierDef.auras.length === 0) continue;
-        const onNode = map.tiles[s.row * map.cols + s.col] === '+' && s.tierDef.attack === null;
+        const onNode =
+          liveTileAt(map, state.wreckage, s.row * map.cols + s.col) === '+' &&
+          s.tierDef.attack === null;
         const strength = onNode ? 1 + powerNodeAuraPct : 1;
         const dx = s.x - t.x;
         const dy = s.y - t.y;
@@ -174,6 +183,8 @@ function clearBonuses(t: Tower): void {
   t.pctRange = 0;
   t.vsStatusMask = 0;
   t.vsStatusPct = 0;
+  t.bonusJumps = 0;
+  t.linkSoakedTicks = 0;
 }
 
 function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {

@@ -2,9 +2,10 @@
 // `Tower.linkMask`, and every tower's list of links. Problems are collected into the compile
 // errors: an unknown or repeated partner, a link past MAX_LINKS, a malformed bonus, and a tower
 // with two conditional (`vsStatus`) bonuses, which the sim's one pair of `vsStatus*` fields can't
-// hold (no link in the design gives a tower two).
+// hold (no link in the design gives a tower two). A partner can also take chain jumps and a Soaked
+// it applies (Conductive, T304b): `chainJumps` a whole number ≥ 0, `soakedSec` a duration > 0.
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
-import { entriesOf, checkKey, type Ctx } from './compileHelpers.ts';
+import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
 import type { IdSpace, LinkDef, LinkPartnerDef } from './types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -73,7 +74,18 @@ function partner<K extends IdSpace>(
     pctRange: 0,
     vsStatusMask: 0,
     vsStatusPct: 0,
+    chainJumps: 0,
+    soakedTicks: 0,
   };
+  if (def.chainJumps !== undefined) {
+    if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
+    else ctx.errors.push(`${where}.chainJumps: needs a whole number > 0`);
+  }
+  if (def.soakedSec !== undefined) {
+    if (Number.isFinite(def.soakedSec) && def.soakedSec > 0) {
+      out.soakedTicks = ticks(ctx, def.soakedSec, `${where}.soakedSec`);
+    } else ctx.errors.push(`${where}.soakedSec: needs a duration > 0`);
+  }
   for (const [i, bonus] of def.bonuses.entries()) {
     const at = `${where}.bonuses[${i}]`;
     const flat = bonus.flat ?? 0;

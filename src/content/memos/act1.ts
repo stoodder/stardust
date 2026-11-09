@@ -65,7 +65,7 @@ export const ACT1_MEMOS: readonly MemoDef[] = [
     to: 'All Dome Row Staff',
     subject: 'Mandatory Fun Friday Is Back! (Attendance Optional) (Required)',
     body:
-      "Fun Friday returns to Dome 4! Snacks, games, and a guided gratitude circle. This " +
+      'Fun Friday returns to Dome 4! Snacks, games, and a guided gratitude circle. This ' +
       "quarter's theme is Resilience, because it's been a tough one for our lettuce: pests ate " +
       '40% of the crop (per our KFA crop-insurance filing). Brave little leaves!\n\n' +
       'Lettuce costumes encouraged. Attendance is optional, and will be taken.\n\n' +

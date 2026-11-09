@@ -47,52 +47,28 @@ export function radioNode(l: RadioLine): LineNode {
   return { kind: 'line', speaker: l.speaker, text: l.text, ...point };
 }
 
-/** The moment a line plays on, as a key; null for the debrief (the results card's). */
-function momentOf(l: RadioLine): string | null {
-  switch (l.on) {
-    case 'countdown':
-    case 'waveStart':
-    case 'waveCleared':
-      return `${l.on}:${l.wave ?? 0}`;
-    case 'unlock':
-    case 'issued':
-      return `${l.on}:${l.tower ?? ''}`;
-    case 'enemyKilled':
-    case 'enemyLeaked':
-      return `${l.on}:${l.enemy ?? ''}`;
-    case 'firstLeak':
-    case 'perfectWave':
-    case 'bankNudge':
-      return l.on;
-    case 'mapWon':
-    case 'mapLost':
-      return null;
+/** The moment a line plays on, as a key (`countdown:4`); null for the debrief (the results card's). */
+export function momentOf(l: RadioLine): string | null {
+  if (l.on === 'mapWon' || l.on === 'mapLost') return null;
+  if (l.on === 'countdown' || l.on === 'waveStart' || l.on === 'waveCleared') {
+    return `${l.on}:${l.wave ?? 0}`;
   }
+  if (l.on === 'unlock' || l.on === 'issued') return `${l.on}:${l.tower ?? ''}`;
+  if (l.on === 'enemyKilled' || l.on === 'enemyLeaked') return `${l.on}:${l.enemy ?? ''}`;
+  return l.on;
 }
 
 /** The bark trigger a lone event line plays on, or null (it plays as a scene). */
 function barkTrigger(l: RadioLine): BarkTrigger | null {
-  switch (l.on) {
-    case 'firstLeak':
-      return { on: 'first_leak' };
-    case 'perfectWave':
-      return { on: 'perfect_wave' };
-    case 'bankNudge':
-      return { on: 'bank_nudge' };
-    case 'enemyKilled':
-      return l.enemy !== undefined && isEnemy(l.enemy) ? { on: 'enemy_killed', enemy: l.enemy } : null;
-    case 'enemyLeaked':
-      return l.enemy !== undefined && isEnemy(l.enemy) ? { on: 'enemy_leaked', enemy: l.enemy } : null;
-    case 'issued':
-      return l.tower !== undefined && isTower(l.tower) ? { on: 'tower_issued', tower: l.tower } : null;
-    case 'countdown':
-    case 'waveStart':
-    case 'waveCleared':
-    case 'unlock':
-    case 'mapWon':
-    case 'mapLost':
-      return null;
-  }
+  const enemy = l.enemy !== undefined && isEnemy(l.enemy) ? l.enemy : null;
+  const tower = l.tower !== undefined && isTower(l.tower) ? l.tower : null;
+  if (l.on === 'firstLeak') return { on: 'first_leak' };
+  if (l.on === 'perfectWave') return { on: 'perfect_wave' };
+  if (l.on === 'bankNudge') return { on: 'bank_nudge' };
+  if (l.on === 'enemyKilled' && enemy !== null) return { on: 'enemy_killed', enemy };
+  if (l.on === 'enemyLeaked' && enemy !== null) return { on: 'enemy_leaked', enemy };
+  if (l.on === 'issued' && tower !== null) return { on: 'tower_issued', tower };
+  return null;
 }
 
 /** The adapted radio of map `mapId`, or null when it has no radio table. */

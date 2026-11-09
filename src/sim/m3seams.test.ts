@@ -152,10 +152,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'enemy.boss': null, // T304c
       'enemy.boss.pivot': 'M4',
       'enemy.boss.layToRest': 'M4',
-      'ability.slowAll': 'T304d',
-      'ability.discount': 'T304d',
-      'modifier.firstBuildFree': 'T304d',
-      'modifier.freeCast': 'T304d',
+      'ability.slowAll': null, // T304d
+      'ability.discount': null, // T304d
+      'modifier.firstBuildFree': null, // T304d
+      'modifier.freeCast': null, // T304d
       'modifier.economy.salvage': 'T304b',
       'modifier.economy.clearSpeed': 'T304b',
       'map.objectives': 'T304f',
@@ -208,7 +208,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(gateRefusals(fixtureConfig({ content: contentWith(e.puffwing) }), lifted)).toEqual([]);
   });
 
-  it('refuses optional objectives (T304f) and the new ability effects (T304d)', () => {
+  it('refuses optional objectives (T304f); plays the new ability effects (T304d)', () => {
     const objective = {
       id: 'clean_audit',
       name: 'Clean Audit',
@@ -232,10 +232,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
       content: withLive,
       abilities: { slot1, slot2: null, slot2State: 'none' },
     });
-    expect(gateRefusals(cfg('time_dilation'))).toEqual([
-      "the 'slowAll' ability (time_dilation) is not simulated until T304d",
-    ]);
-    expect(gateRefusals(cfg('clearance_sale'))).toEqual([
+    expect(gateRefusals(cfg('time_dilation'))).toEqual([]);
+    expect(gateRefusals(cfg('clearance_sale'))).toEqual([]);
+    const closed = { ...FEATURE_GATES, 'ability.discount': 'T304d' } as const;
+    expect(gateRefusals(cfg('clearance_sale'), closed)).toEqual([
       "the 'discount' ability (clearance_sale) is not simulated until T304d",
     ]);
   });
@@ -251,8 +251,10 @@ describe('FEATURE_GATES (T300a rows)', () => {
       towerRefusal(RAW_CONTENT.towers.zapcoil, { ...FEATURE_GATES, 'attack.chain': null }),
     ).toBeNull();
     expect(abilityRefusal(RAW_CONTENT.abilities.orbital_strike)).toBeNull();
-    expect(abilityRefusal(RAW_CONTENT.abilities.time_dilation)).toMatch(/T304d$/);
-    expect(abilityRefusal(LIVE.abilities.clearance_sale)).toMatch(/T304d$/);
+    expect(abilityRefusal(RAW_CONTENT.abilities.time_dilation)).toBeNull(); // T304d
+    expect(abilityRefusal(LIVE.abilities.clearance_sale)).toBeNull();
+    const closed = { ...FEATURE_GATES, 'ability.slowAll': 'T304d' } as const;
+    expect(abilityRefusal(RAW_CONTENT.abilities.time_dilation, closed)).toMatch(/T304d$/);
   });
 
   it('leaves the live campaign maps playable', () => {

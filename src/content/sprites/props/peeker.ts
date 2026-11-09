@@ -11,7 +11,7 @@
 // T311c adds each map's own cover (the fallen mailbox on A1M3, the fountain planter on A1M4) as
 // further frames.
 import { defineSprite } from '../defineSprite.ts';
-import { fromRows, grid, recolor, rows, stamp, type CharGrid } from '../helpers.ts';
+import { fromRows, grid, plot, recolor, rows, stamp, type CharGrid } from '../helpers.ts';
 import { youngling } from '../enemies/youngling.ts';
 import { ENV_VARIANTS } from '../tiles/tileGen.ts';
 
@@ -57,18 +57,31 @@ type Pose = 'hidden' | 'peek' | 'blink' | 'duck';
 function peeker(pose: Pose): string[] {
   const g: CharGrid = grid(W, H);
   const critter = recolor(youngling('se', 0), CRITTER);
-  // How far the youngling stands up behind the rock (its top row's y).
-  const top = { hidden: 9, peek: 1, blink: 1, duck: 5 }[pose];
-  if (pose === 'duck') {
+  if (pose === 'hidden') {
+    // Only the tip of the sprout shows over the rock.
+    stamp(g, 6, 6, critter.slice(0, 2));
+  } else if (pose === 'duck') {
     // Squashed: the top half of the body only, pressed flat, sprout up in alarm.
-    stamp(g, 6, top, critter.slice(1, 5));
-    stamp(g, 10, top - 2, ['V', 'V']);
+    stamp(g, 6, 5, critter.slice(1, 5));
+    stamp(g, 10, 3, ['V', 'V']);
   } else {
-    stamp(g, 6, top, critter);
-    if (pose === 'blink') stamp(g, 11, top + 3, ['MM.MM', 'QQ.QQ', 'MM.MM']);
+    stamp(g, 6, 1, critter);
+    if (pose === 'blink') stamp(g, 11, 4, ['MM.MM', 'QQ.QQ', 'MM.MM']);
   }
+  // A hand-placed outline around the little one, so it reads apart from the rock in front of it
+  // (both are warm), then the rock over its lower half.
+  const body = g.map((r) => [...r]);
+  body.forEach((r, y) =>
+    r.forEach((ch, x) => {
+      if (ch !== '.') return;
+      const near = [body[y - 1]?.[x], body[y + 1]?.[x], r[x - 1], r[x + 1]];
+      if (near.some((n) => n !== undefined && n !== '.')) plot(g, x, y, 'x');
+    }),
+  );
   const rock = fromRows(ROCK);
-  rock.forEach((r, y) => r.forEach((ch, x) => ch !== '.' && stamp(g, x, H - ROCK.length + y, [ch])));
+  rock.forEach((r, y) =>
+    r.forEach((ch, x) => ch !== '.' && stamp(g, x, H - ROCK.length + y, [ch])),
+  );
   return rows(g);
 }
 

@@ -1,0 +1,358 @@
+/* The base's story panes (T303): the Everglow Inbox and the codex, in the art-direction §9 style.
+   Each pane is a list beside a reader inside the base's ink.2 well. Memos sit on Everglow letterhead
+   (white.0 with teal.3 chevrons and the Evie sun); codex entries on the ink well with their picture.
+   The NEW tag is the HUD's build-slot tag (teal.3 with ink.0 text and edge). Authored in game
+   pixels. */
+
+/* Doubled class: screens.css's .sd-tab-pane centers a locked pane's text, and may load after. */
+.sd-tab-pane.sd-tab-pane-story {
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sd-story-pane {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 6px;
+  padding: 6px 4px 4px 6px;
+  text-align: left;
+}
+
+/* ---- The list ---- */
+
+.sd-story-list {
+  display: flex;
+  flex: 0 0 150px;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+}
+
+.sd-story-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-story-list-title {
+  margin: 0 0 4px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sd-codex-section + .sd-codex-section {
+  margin-top: 6px;
+}
+
+.sd-story-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 18px;
+  margin-bottom: 2px;
+  padding: 2px 4px 2px 6px;
+  border: 0;
+  box-shadow: inset 2px 0 0 var(--sd-ink-4);
+  background: var(--sd-ink-1);
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 9px;
+  text-align: left;
+  color: var(--sd-white-1);
+  cursor: pointer;
+}
+
+.sd-story-item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-story-item:hover,
+.sd-story-item:focus-visible {
+  outline: none;
+  background: var(--sd-teal-2);
+  box-shadow: inset 2px 0 0 var(--sd-teal-4);
+}
+
+.sd-story-item-on {
+  background: var(--accent-dim);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.sd-new-tag {
+  flex: none;
+  padding: 1px 1px 0;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  color: var(--sd-ink-0);
+  background: var(--sd-teal-3);
+  box-shadow: 0 0 0 1px var(--sd-ink-0);
+}
+
+/* The tab's badge sits after its label. */
+.sd-tab .sd-new-tag {
+  margin-left: 4px;
+}
+
+/* ---- The reader ---- */
+
+.sd-story-reader {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
+}
+
+.sd-story-reader:focus-visible {
+  outline: 1px solid var(--sd-teal-4);
+  outline-offset: -1px;
+}
+
+/* ---- The memo: Everglow letterhead ---- */
+
+.sd-memo {
+  padding: 6px 8px 6px;
+  background: var(--sd-white-0);
+  box-shadow: inset 0 0 0 1px var(--sd-teal-3);
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 10px;
+  color: var(--sd-ink-1);
+}
+
+.sd-memo-head {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--sd-teal-3);
+}
+
+.sd-memo-brand {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-teal-3);
+}
+
+/* Three teal chevrons, the Everglow brand mark (art-direction § 9). */
+.sd-memo-chevrons {
+  width: 12px;
+  height: 6px;
+  background: linear-gradient(135deg, transparent 50%, var(--sd-teal-3) 50%) 0 0 / 4px 6px repeat-x;
+}
+
+.sd-memo-fields {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 1px 4px;
+  margin: 0;
+}
+
+.sd-memo-fields dt {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: var(--sd-steel-1);
+}
+
+.sd-memo-fields dd {
+  margin: 0;
+}
+
+.sd-memo-subject {
+  color: var(--sd-teal-1);
+}
+
+.sd-memo-body p {
+  margin: 6px 0 0;
+  white-space: pre-line;
+}
+
+.sd-memo-sign {
+  color: var(--sd-teal-1);
+}
+
+/* The Evie sun: a gold disc with four rays, drawn in pixels (the font has no glyph for it). */
+.sd-glyph-sun {
+  display: inline-block;
+  position: relative;
+  width: 4px;
+  height: 4px;
+  margin: 0 3px;
+  vertical-align: 0;
+  background: var(--sd-gold-3);
+  box-shadow:
+    0 -2px 0 -1px var(--sd-gold-3),
+    0 2px 0 -1px var(--sd-gold-3),
+    -2px 0 0 -1px var(--sd-gold-3),
+    2px 0 0 -1px var(--sd-gold-3);
+}
+
+.sd-glyph-sun-big {
+  width: 6px;
+  height: 6px;
+  margin: 0 3px 0 1px;
+}
+
+/* ---- Small print ---- */
+
+.sd-small-print {
+  margin-top: 6px;
+}
+
+.sd-small-print-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 16px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-1);
+  cursor: pointer;
+}
+
+.sd-small-print-toggle:hover,
+.sd-small-print-toggle:focus-visible {
+  outline: none;
+  color: var(--sd-teal-1);
+  box-shadow: inset 0 -1px 0 var(--sd-teal-3);
+}
+
+.sd-small-print-caret {
+  width: 6px;
+  text-align: center;
+}
+
+.sd-small-print-text {
+  margin: 2px 0 0;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 9px;
+  color: var(--sd-steel-1);
+}
+
+/* On the codex's dark well, the toggle and the print read in steel.3. */
+.sd-codex .sd-small-print-toggle,
+.sd-codex .sd-small-print-text {
+  color: var(--sd-steel-3);
+}
+
+.sd-codex .sd-small-print-toggle:hover,
+.sd-codex .sd-small-print-toggle:focus-visible {
+  color: var(--sd-white-1);
+  box-shadow: inset 0 -1px 0 var(--sd-teal-4);
+}
+
+/* ---- The codex entry ---- */
+
+.sd-codex-thumb {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+}
+
+.sd-codex-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.sd-codex-photo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: var(--sd-ink-1);
+  box-shadow: inset 0 0 0 1px var(--sd-steel-1);
+}
+
+.sd-codex-sprite {
+  image-rendering: pixelated;
+}
+
+.sd-codex-x3 {
+  width: 48px;
+  height: 48px;
+}
+
+.sd-codex-pending {
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 9px;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-codex-kicker {
+  margin: 0 0 2px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-codex-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 16px;
+  color: var(--sd-gold-4);
+}
+
+.sd-codex-versions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.sd-codex-side {
+  flex-direction: row;
+}
+
+.sd-codex-side .sd-codex-version {
+  flex: 1;
+}
+
+.sd-codex-version-label {
+  margin: 0 0 2px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sd-codex-text {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 10px;
+  color: var(--sd-white-0);
+}

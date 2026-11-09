@@ -81,6 +81,13 @@ export interface Tower extends PoolEntity {
    */
   vsStatusMask: number;
   vsStatusPct: number;
+  /**
+   * Link extras (Conductive; T304b), recomputed with the bonuses: `bonusJumps` whole jumps added
+   * to a chain attack (attacks/chain.ts), and `linkSoakedTicks` a Soaked its hits apply at any
+   * tier (systems/status.ts `applyLinkStatuses`). 0 for none.
+   */
+  bonusJumps: number;
+  linkSoakedTicks: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -114,6 +121,8 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   pctRange: 0,
   vsStatusMask: 0,
   vsStatusPct: 0,
+  bonusJumps: 0,
+  linkSoakedTicks: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -289,9 +298,11 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
 
 /**
  * What a zone does: `strike` lands once on every ground enemy in its radius (Orbital Strike);
- * `segment` covers a stretch of one route for its duration (Suppressing Fire, T207a).
+ * `segment` covers a stretch of one route for its duration (Suppressing Fire, T207a); `field`
+ * covers the whole map for its duration (Time Dilation, T304d: `slowPct` on every enemy; it has
+ * no position or route, and render tints the battlefield while it lives).
  */
-export type ZoneKind = 'strike' | 'segment';
+export type ZoneKind = 'strike' | 'segment' | 'field';
 
 /** Ground effects and ability areas (the Orbital Strike reticle, T113). */
 export interface Zone extends PoolEntity {
@@ -313,7 +324,7 @@ export interface Zone extends PoolEntity {
   route: CompiledRoute | null;
   distFrom: number;
   distTo: number;
-  /** A segment's slow on the enemies inside it, as a fraction (0.5 = −50% speed). */
+  /** A segment's or field's slow on the enemies inside it, as a fraction (0.5 = −50% speed). */
   slowPct: number;
 }
 

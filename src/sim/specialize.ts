@@ -5,7 +5,7 @@
 import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { Command, RejectReason } from './commands.ts';
-import { costFor } from './economy.ts';
+import { pay } from './economy.ts';
 import { poolFind } from './pool.ts';
 import { emit, type SimState } from './state.ts';
 import type { TickContext } from './tick.ts';
@@ -18,8 +18,8 @@ type SpecializeCommand = Extract<Command<IdSpace>, { type: 'specialize' }>;
  * command's spec key is neither 'a' nor 'b'),
  * `specLocked` (not in `specsUnlocked`), `alreadySpecialized`, `needsTier3`, `cantAfford`.
  *
- * On success it pays `costFor(…, spec = true)` (so Specialist's tier-4 discount applies), adds it
- * to `invested` (the sell value's base), sets `spec`, tier 4, and its tier def, and sets
+ * On success it pays `pay(…, 'spec')` (Specialist's tier-4 discount; a Clearance Sale charge),
+ * adds it to `invested` (the sell value's base), sets `spec`, tier 4, and its tier def, and sets
  * `state.linksDirty`. Bonuses don't depend on tier, so the new stats apply at once. Its cooldown
  * carries over, and a spin-up (Rivet Storm) starts from the top: the new barrels spin up even
  * mid-fight. A spec with its own default priority (Railspike's Strong) switches the tower to it;
@@ -39,11 +39,9 @@ export function applySpecialize(
   if (tower.spec !== null) return 'alreadySpecialized';
   if (tower.tier < MAX_TIER_BEFORE_SPEC) return 'needsTier3';
   const tier = def.specs[cmd.spec];
-  const cost = costFor(ctx.config.modifiers, def.id, tier.cost, true);
-  if (state.credits < cost) return 'cantAfford';
+  const cost = pay(state, ctx.config.modifiers, def.id, tier.cost, 'spec');
+  if (cost < 0) return 'cantAfford';
 
-  state.credits -= cost;
-  state.stats.creditsSpent += cost;
   const before = def.tiers[2].defaultPriority; // tier 3's
   tower.tier = MAX_TIER_BEFORE_SPEC + 1;
   tower.spec = cmd.spec;

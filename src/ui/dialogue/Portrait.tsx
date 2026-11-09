@@ -11,9 +11,9 @@ import { SPRITES } from '../../content/sprites/index.ts';
 import type { SpriteDef } from '../../content/sprites/types.ts';
 import { bakeSprite, DEFAULT_VARIANT, frameKey, type BakedSprite } from '../../render/sprites/bake.ts';
 import { imageToCanvas } from '../../render/sprites/canvas.ts';
-import { colorVar } from '../color.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { pickFrame, type FramePhase } from './portraitFrames.ts';
+import { plateColor } from './plate.ts';
 import type { LineView, PortraitView } from './state.ts';
 
 /** QUILL's policy flash lasts one frame of its 8 fps `policy_in` (125 ms). */
@@ -33,11 +33,11 @@ function spriteFrames(id: string): SpriteFrames | null {
   const hit = sprites.get(id);
   if (hit !== undefined) return hit;
   const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
-  const out =
-    def === undefined
-      ? null
-      : { baked: bakeSprite(def, PALETTES), names: new Set<string>(), urls: new Map<string, string>() };
-  if (out !== null) for (const n of out.baked.frameNames) (out.names as Set<string>).add(n);
+  let out: SpriteFrames | null = null;
+  if (def !== undefined) {
+    const baked = bakeSprite(def, PALETTES);
+    out = { baked, names: new Set(baked.frameNames), urls: new Map<string, string>() };
+  }
   sprites.set(id, out);
   return out;
 }
@@ -77,7 +77,7 @@ function useClock(key: number, running: boolean): number {
   if (start.current.key !== key) start.current = { key, at: performance.now() };
   const [, tick] = useState(0);
   useEffect(() => {
-    if (!running) return;
+    if (!running) return undefined;
     const id = setInterval(() => tick((n) => n + 1), 1000 / (TALK_FPS * 2));
     return () => clearInterval(id);
   }, [running, key]);
@@ -93,7 +93,7 @@ export function Portrait({ line, talking }: { line: LineView; talking: boolean }
   const p = line.portrait;
   const still = prefersReducedMotion();
   const ms = useClock(line.id, p !== null && !still);
-  const style = { '--dlg-edge': colorVar(line.color) };
+  const style = { '--dlg-edge': plateColor(line.color) };
   if (p === null) return null;
   const s = spriteFrames(p.sprite);
   const frame = s === null ? null : pickFrame(s.names, p.variant, p.expression, phaseAt(p, ms, talking, still));

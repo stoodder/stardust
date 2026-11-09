@@ -170,11 +170,18 @@ describe('FEATURE_GATES', () => {
         { kind: 'freeCast', wave: 2, source: 'again' },
       ],
     });
-    expect(gateRefusals(cfg)).toEqual([
+    // Both rows are open since T304d; close them again to test the mechanism.
+    const closed: typeof FEATURE_GATES = {
+      ...FEATURE_GATES,
+      'modifier.firstBuildFree': 'T304d',
+      'modifier.freeCast': 'T304d',
+    };
+    expect(gateRefusals(cfg)).toEqual([]);
+    expect(gateRefusals(cfg, closed)).toEqual([
       "a 'firstBuildFree' modifier (protocol:rapid_deploy) is not simulated until T304d",
       "a 'freeCast' modifier (protocol:ready_room) is not simulated until T304d",
     ]);
-    const lifted: typeof FEATURE_GATES = { ...FEATURE_GATES, 'modifier.firstBuildFree': null };
+    const lifted: typeof FEATURE_GATES = { ...closed, 'modifier.firstBuildFree': null };
     expect(gateRefusals(cfg, lifted)).toHaveLength(1);
     expect(gateRefusals(fixtureConfig())).toEqual([]);
   });

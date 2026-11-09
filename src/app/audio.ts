@@ -27,10 +27,11 @@ import {
   type SoundCall,
 } from '../audio/index.ts';
 import { renderCue, renderSfx, renderStorm, renderTheme } from '../audio/offline.ts';
-import { SPEAKERS, type RadioSpeaker } from '../content/radio/types.ts';
+import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import type { SimEvent } from '../sim/index.ts';
+import { speaking } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import type { AudioHooks } from './testHookTypes.ts';
@@ -79,14 +80,13 @@ function setMusic(m: MusicIntent): void {
   engine.setMusic(m.theme, m.layers, m.level);
 }
 
-/** The radio speaker behind a name plate. */
-const SPEAKER_BY_NAME = new Map<string, RadioSpeaker>();
-for (const id of Object.keys(SPEAKERS)) {
-  if (isSpeaker(id)) SPEAKER_BY_NAME.set(SPEAKERS[id].name, id);
-}
-
-function isSpeaker(id: string): id is RadioSpeaker {
-  return Object.hasOwn(SPEAKERS, id);
+/**
+ * A speaker's voice blip as a line starts (the radio's per-speaker blips; T314 authors the rest
+ * and the typewriter's per-character tick, `setTypeTick` in ui/dialogue/LineText.tsx). Null: none.
+ */
+export function blipFor(speaker: SpeakerId): SfxId | null {
+  const blips: Readonly<Partial<Record<string, SfxId>>> = RADIO_BLIP;
+  return Object.hasOwn(blips, speaker) ? (blips[speaker] ?? null) : null;
 }
 
 /** The button a DOM event happened on, if it's an enabled one. */
@@ -126,7 +126,7 @@ export function installAudio(enabled: boolean): () => void {
   document.addEventListener('click', onClick, true);
   document.addEventListener('pointerover', onHover, true);
   let noticeId = 0;
-  let radioId = 0;
+  let lineId = 0;
   const offs = [
     effect(() => {
       const a = settings.value.audio;
@@ -140,13 +140,14 @@ export function installAudio(enabled: boolean): () => void {
         engine.play('reject');
       }
     }),
+    // A spoken line (the comms panel or a scene) ducks the music and blips as it starts.
     effect(() => {
-      const r = hud.radio.value;
-      engine.holdDuck('radio', r === null ? null : RADIO_DUCK);
-      if (r !== null && r.id !== radioId) {
-        radioId = r.id;
-        const speaker = SPEAKER_BY_NAME.get(r.name);
-        if (speaker !== undefined) engine.play(RADIO_BLIP[speaker]);
+      const l = speaking.value;
+      engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
+      if (l !== null && l.id !== lineId) {
+        lineId = l.id;
+        const blip = l.silence ? null : blipFor(l.speaker);
+        if (blip !== null) engine.play(blip);
       }
     }),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).

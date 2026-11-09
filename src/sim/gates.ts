@@ -9,8 +9,8 @@
 // Features come from three places: the config (a companion, slot 2, specs, difficulty, each
 // modifier kind, and each ability effect in a slot), the loadout's reachable tiers (attack kinds
 // and on-hit statuses), and the map (T300a: flyers, neutral units, enemy abilities, bosses, and
-// optional objectives). Wreckage needs no gate: until T304b a map's wreckage simply stays (it was
-// never buildable), and the `clear` command is rejected `notImplemented` (systems/wreckage.ts).
+// optional objectives). Wreckage needs no gate: the `clear` command and the salvage drone run since
+// T304b (systems/wreckage.ts).
 // `towerRefusal` and `abilityRefusal` answer the same question for one raw tower or ability, so
 // meta can keep a save that runs ahead of the sim out of play.
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
@@ -88,12 +88,12 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   abilitySlot2: null,
   specs: null,
   storyDifficulty: null,
-  // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain are M3's (D064); beams,
+  // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's; beams,
   // spawners, Pin, Stasis, and Unnerved arrive with their Act II towers and specs (Prism, Burrow,
   // Harpoon, Flash Freeze, Mindspike; the M3 cut defers the Sprinkler, Skyhook, and Zapcoil specs).
   'attack.projectile': null,
   'attack.beam': 'M4',
-  'attack.chain': 'T304b',
+  'attack.chain': null,
   'attack.spawner': 'M4',
   'status.pinned': 'M4',
   'status.stasis': 'M4',
@@ -105,18 +105,18 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'modifier.economy.coreIntegrity': null,
   'modifier.economy.bounty': null,
   'modifier.economy.earlyCallBonus': null,
-  'modifier.economy.salvage': 'T304b',
-  'modifier.economy.clearSpeed': 'T304b',
+  'modifier.economy.salvage': null,
+  'modifier.economy.clearSpeed': null,
   'modifier.sellRefund': null,
   'modifier.abilityStat': null,
   'modifier.countdown': null,
   'modifier.linkBonus': null,
   'modifier.tileBonus': null,
   'modifier.leakAbsorb': null,
-  'modifier.firstBuildFree': 'T304d',
-  'modifier.freeCast': 'T304d',
-  'ability.slowAll': 'T304d',
-  'ability.discount': 'T304d',
+  'modifier.firstBuildFree': null,
+  'modifier.freeCast': null,
+  'ability.slowAll': null,
+  'ability.discount': null,
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
