@@ -126,7 +126,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss': null,
   'enemy.boss.pivot': 'M4',
   'enemy.boss.layToRest': 'M4',
-  'map.objectives': 'T304f',
+  'map.objectives': null,
 });
 
 type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner';

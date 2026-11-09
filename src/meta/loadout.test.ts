@@ -343,7 +343,7 @@ describe('Field Protocols (T308; progression.md § 5)', () => {
     const pick = { towers: ['rivet' as const], ability: 'orbital_strike' as const };
     const equipped = withPreset(save, 'a1_m01', {
       ...pick,
-      protocols: { equipped: ['head_start'], picks: {} },
+      equip: { equipped: ['head_start'], picks: {} },
     });
     expect(equipped.loadouts.protocols).toEqual(['head_start']);
     expect(withPreset(equipped, 'a1_m02', pick).loadouts.protocols).toEqual(['head_start']);

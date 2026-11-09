@@ -7,6 +7,7 @@ import { scenes as a1m01Scenes } from './a1/a1_m01/scenes.ts';
 import { barks as a1m02Barks } from './a1/a1_m02/barks.ts';
 import { scenes as a1m02Scenes } from './a1/a1_m02/scenes.ts';
 import { barks as a1m03Barks } from './a1/a1_m03/barks.ts';
+import { scenes as a1m03BaseScenes } from './a1/a1_m03/base.ts';
 import { scenes as a1m03Scenes } from './a1/a1_m03/scenes.ts';
 import { barks as a1m04Barks } from './a1/a1_m04/barks.ts';
 import { scenes as a1m04Scenes } from './a1/a1_m04/scenes.ts';
@@ -24,7 +25,7 @@ export type { BlipId, PortraitSpriteId, SpeakerDef, SpeakerFrame } from './speak
 export const MAP_DIALOGUE: readonly MapDialogue[] = [
   { map: 'a1_m01', scenes: a1m01Scenes, barks: a1m01Barks },
   { map: 'a1_m02', scenes: a1m02Scenes, barks: a1m02Barks },
-  { map: 'a1_m03', scenes: a1m03Scenes, barks: a1m03Barks },
+  { map: 'a1_m03', scenes: [...a1m03Scenes, ...a1m03BaseScenes], barks: a1m03Barks },
   { map: 'a1_m04', scenes: a1m04Scenes, barks: a1m04Barks },
   { map: 'a1_m05', scenes: a1m05Scenes, barks: a1m05Barks },
 ];

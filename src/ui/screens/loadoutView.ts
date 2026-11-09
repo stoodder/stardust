@@ -57,9 +57,24 @@ export interface LoadoutCounterView {
   readonly required: boolean;
 }
 
+/** A Field Protocol on offer (owned; progression.md § 5). */
+export interface LoadoutProtocolView {
+  readonly id: string;
+  /** "Head Start". */
+  readonly name: string;
+  /** "+10% starting credits", from its grants. */
+  readonly effect: string;
+  /** It takes a tower pick when equipped (Specialist). */
+  readonly takesTower: boolean;
+}
+
 export interface LoadoutPickView {
   readonly towers: readonly string[];
   readonly ability: string | null;
+  /** Equipped Field Protocols, in slot order (save-wide: the same on every map). */
+  readonly protocols: readonly string[];
+  /** The tower each equipped tower-pick protocol (Specialist) takes. */
+  readonly protocolPicks: Readonly<Record<string, string>>;
 }
 
 /** The loadout screen for one map and the save in play. */
@@ -77,7 +92,14 @@ export interface LoadoutView {
   readonly links: readonly LoadoutLinkView[];
   /** Slot 2 is the map's companion's ("Bricks · Suppressing Fire"), or null for none. */
   readonly companion: string | null;
-  /** Where the pick starts: the map's preset, else the last one, else the default. */
+  /** The Field Protocols owned, in ownership order (none before Zibzab's shop). */
+  readonly protocols: readonly LoadoutProtocolView[];
+  /** Field Protocol slots: 0 before the shop opens, then 1, plus R&D's. */
+  readonly protocolSlots: number;
+  /**
+   * Where the pick starts: the map's preset, else the last one, else the default; and the
+   * protocols equipped now.
+   */
   readonly initial: LoadoutPickView;
   /** The tower limit (the CLAUDE.md 4-tower rule). */
   readonly max: number;

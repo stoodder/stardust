@@ -1118,3 +1118,20 @@ Real art went in behind T300a's ids. No data changed.
 - **Clumps:** a per-unit walk tempo (×0.88–1.12) and a start-frame offset, so a clump reads as individuals (T117).
 - **Chonk:** its scutes are staggered, steel-rimmed plates.
 - **Gallery:** 23,492 px tall.
+
+### D087 — 2026-11-09 — T312c the HUD for Act I
+- **Prices** everywhere use the sim's sale-aware price. Sale prices show in pink with an under-tick, a "SALE −40% ×3" tag sits over the build slots, and Rapid Deploy shows "FREE".
+- **Abilities:**
+  - Untargeted abilities (Time Dilation, Clearance Sale) cast on one press of Q/E.
+  - Wave cooldowns read "3 waves", with a screen-reader label like ", recharging, 4 waves".
+  - Charges show as "×3" on the icon, and a free cast is tagged "FREE".
+- **The Hold Fire teach:** while Gerald is out and Hold (all) hasn't been used this run, the button pulses with "Gerald is the mail. Hold fire" and a Shift+H badge.
+- **Wave preview:** a NEW tag marks enemy types the save hasn't seen (never on the Quiet Wave). Two-spawn maps show each group's spawn, flagged when it first opens.
+- **Status:** the callsign plate "JPT-1 · SPROUT" heads the status panel. An objective tracker sits under the medals.
+- **Playfield:**
+  - the tower panel's bonuses read the live tile;
+  - towers play their fire anims, including spec variants and the spin;
+  - Bricks gets a glow halo;
+  - rings sit on high ground;
+  - a flat-to-high tether rides at the mean height of its ends.
+- T213, T221, and T222 are closed. Leftovers: spawn "incoming" flags, the slot-2 companion portrait, and an objective-tracker smoke (T326).

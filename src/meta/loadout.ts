@@ -48,7 +48,7 @@ export interface LoadoutPools<T extends string = TowerId, A extends string = Abi
 export interface LoadoutPick<T extends string = TowerId, A extends string = AbilityId> {
   readonly towers: readonly T[];
   readonly ability: A | null;
-  readonly protocols?: ProtocolPick;
+  readonly equip?: ProtocolPick;
 }
 
 /** Field Protocols to equip, in slot order, and the tower each `choice: 'tower'` one picked. */
@@ -205,7 +205,7 @@ export function withPreset(
       byMap: { ...save.loadouts.byMap, [mapId]: preset() },
     },
   };
-  return pick.protocols === undefined ? next : withProtocols(next, pick.protocols, devUnlocks);
+  return pick.equip === undefined ? next : withProtocols(next, pick.equip, devUnlocks);
 }
 
 /**

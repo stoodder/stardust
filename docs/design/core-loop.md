@@ -226,7 +226,7 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | Point at a tile | Move the mouse | Arrows move the **tile cursor**; Enter acts there as a click would |
 | Upgrade / specialize / sell / retarget | Click a tower to open its panel | Enter on a tower selects it; U upgrade, S sell, T cycle targeting |
 | Call wave early | Click an incoming flag | W |
-| Abilities | Click the ability button, then the target | Q (slot 1), E (slot 2) |
+| Abilities | Click the ability button, then the target; an untargeted one (Time Dilation, Clearance Sale) casts on the click | Q (slot 1), E (slot 2) |
 | Pause / speed | HUD buttons | Space pause, F toggle 1x/2x |
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |
 | Spare runners (from A2M1, §2.7) | Tower panel toggle (one tower) or HUD button (all) | Alt+H (all) |

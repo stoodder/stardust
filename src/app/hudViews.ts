@@ -523,9 +523,13 @@ export function readyInWaves(waves: number): string {
   return `Ready in ${waves} ${waves === 1 ? 'wave' : 'waves'}`;
 }
 
-/** The slot's recharge in words, for its label: "Ready in 2 waves", "Ready in 12 s". */
+/**
+ * The slot's recharge for its screen-reader label (after ", recharging, "): "34 s", or "1 wave" /
+ * "3 waves" for a wave cooldown.
+ */
 export function cooldownWords(cd: AbilityCooldownView): string {
-  return cd.wavesLeft > 0 ? readyInWaves(cd.wavesLeft) : `Ready in ${cd.secondsLeft} s`;
+  if (cd.wavesLeft > 0) return cd.wavesLeft === 1 ? '1 wave' : `${cd.wavesLeft} waves`;
+  return `${cd.secondsLeft} s`;
 }
 
 /**

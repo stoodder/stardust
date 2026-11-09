@@ -271,6 +271,7 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
         case 'ScriptCue':
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
+        case 'ObjectiveProgress':
           return;
         default:
           assertNever(e);

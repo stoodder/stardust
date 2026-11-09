@@ -141,25 +141,18 @@ describe('balance harness', () => {
   });
 
   it('reports a run whose config is refused as a failed run, not a crash', () => {
-    const objective = {
-      id: 'clean_audit',
-      name: 'Clean Audit',
-      description: 'x',
-      condition: { stat: 'lateSells', lte: 0 } as const,
-      intel: 1,
-      onComplete: [],
-    };
+    // A beam attack on the par loadout's gun, which the sim refuses until M4.
+    const gun = PLAIN_CONTENT.towers.fx_gun;
+    const [t1, ...rest] = gun.tiers;
+    const beam = { ...t1!, attack: { ...t1!.attack!, kind: 'beam' as const } };
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
-      maps: {
-        // Optional objectives, which the sim refuses until T304f.
-        fx_map: { ...PLAIN_CONTENT.maps.fx_map, objectives: [objective] },
-      },
+      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [beam, ...rest] } },
     };
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*optional objectives \(clean_audit\) is not simulated until T304f/,
+      /seed 1: error: [^]*a 'beam' attack \(fx_gun\) is not simulated until M4/,
     );
   });
 

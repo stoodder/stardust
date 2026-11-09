@@ -47,6 +47,7 @@ export type {
 export type { Pool, PoolEntity } from './pool.ts';
 export type {
   MedalStatus,
+  ObjectiveStatus,
   Outcome,
   RunEconomy,
   SchedulePhase,
@@ -95,6 +96,11 @@ export {
   mapMedalIds,
   medalId,
 } from './medals.ts';
+export {
+  completedObjectiveIds,
+  isLateSell,
+  objectiveStatusById,
+} from './objectives.ts';
 export { SYSTEMS, type SystemName } from './tick.ts';
 export {
   towerStats,

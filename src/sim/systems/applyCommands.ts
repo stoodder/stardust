@@ -9,6 +9,7 @@ import type { Command, RejectReason } from '../commands.ts';
 import { TOWER_BLANK } from '../entities.ts';
 import { isBuildableTile, tileIndex } from '../grid.ts';
 import { pay, sellValue } from '../economy.ts';
+import { isLateSell } from '../objectives.ts';
 import { poolAlloc, poolFind, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -146,6 +147,7 @@ function sell(state: SimState, ctx: TickContext, towerUid: number): RejectReason
   const tower = poolFind(state.towers, towerUid);
   if (tower === null) return 'noSuchTower';
   const { value } = sellValue(tower, state.tick, state.economy.sellRefundPct);
+  if (isLateSell(tower, state)) state.stats.lateSells++;
   poolKill(state.towers, tower);
   const idx = tileIndex(ctx.map, tower.col, tower.row);
   if (state.towerAtTile[idx] === tower.slot) state.towerAtTile[idx] = -1;

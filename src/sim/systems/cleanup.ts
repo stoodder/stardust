@@ -14,7 +14,7 @@
 // It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
 // conditions latch (sim/conditions.ts) while this tick's dead are still in their pools, a
 // Challenge that can no longer hold is forfeited, and a loss or win settles every medal just
-// before MapLost or MapWon.
+// before MapLost or MapWon. Optional objectives (sim/objectives.ts) settle beside the medals.
 import type { CompiledWave } from '../../content/compiled.ts';
 import { waveClearBonusFor } from '../../content/rules.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -22,6 +22,7 @@ import { trackConditions } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { splitOnDeath } from '../enemyAbilities/split.ts';
 import { bookLeak, leakedThisTick, settleLoss, settleWin, watchChallenge } from '../medals.ts';
+import { settleObjectivesLoss, settleObjectivesWin, watchObjectives } from '../objectives.ts';
 import { poolReleaseDead } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -56,10 +57,12 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   if (state.integrity <= 0) {
     state.outcome = 'lost';
     settleLoss(state, ctx.map);
+    settleObjectivesLoss(state, ctx.map);
     emit(state, { type: 'MapLost' });
     return;
   }
   watchChallenge(state, ctx.map, ctx);
+  watchObjectives(state, ctx.map, ctx);
   const s = state.schedule;
   let allResolved = true;
   for (let w = 0; w < remaining.length; w++) {
@@ -76,6 +79,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
   if (allResolved) {
     state.outcome = 'won';
     settleWin(state, ctx.map, ctx);
+    settleObjectivesWin(state, ctx.map, ctx);
     emit(state, { type: 'MapWon' });
   }
 }

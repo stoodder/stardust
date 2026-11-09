@@ -1,7 +1,14 @@
 // Item copy (copy.ts) against story/style-guide.md § 6.3 (Zibzab) and § 6.4 (QUILL).
 import { describe, expect, it } from 'vitest';
 import { ITEM_COPY, itemCopy } from './copy.ts';
-import { PROTOCOLS, UPGRADES, type ProtocolDef, type UpgradeDef } from './index.ts';
+import {
+  PROTOCOLS,
+  TOWER_ACCESS,
+  UPGRADES,
+  type Access,
+  type ProtocolDef,
+  type UpgradeDef,
+} from './index.ts';
 
 const upgrades = Object.values<UpgradeDef>(UPGRADES);
 const protocols = Object.values<ProtocolDef>(PROTOCOLS);
@@ -14,10 +21,18 @@ const zibzab = [
   ...protocols.map((p) => ({ id: p.id, prices: [p.price] })),
 ];
 const quill = upgrades.filter((u) => u.kind === 'rnd');
+/** Vrell licenses' copy ids: `license_<tower>` for each `how: 'license'` access row. */
+const licenses = Object.entries<Access>(TOWER_ACCESS)
+  .filter(([, a]) => a.how === 'license')
+  .map(([tower, a]) => ({ id: `license_${tower}`, price: a.how === 'license' ? a.price : 0 }));
 
 describe('item copy', () => {
   it('every catalog item carries its copy.ts line, and copy.ts has no line for a missing item', () => {
-    const ids = [...upgrades.map((u) => u.id), ...protocols.map((p) => p.id)];
+    const ids = [
+      ...upgrades.map((u) => u.id),
+      ...protocols.map((p) => p.id),
+      ...licenses.map((l) => l.id),
+    ];
     for (const item of [...upgrades, ...protocols]) {
       expect(item.copy, item.id).not.toBeNull();
       expect(item.copy, item.id).toBe(ITEM_COPY[item.id]);
@@ -47,6 +62,15 @@ describe('item copy', () => {
         .map(Number);
       expect(named, id).toEqual(prices.slice(0, named.length));
       // He never says "free"; "friend" is said once, in A3M6 (style-guide § 6.3, § 7).
+      expect(text, id).not.toMatch(/\bfree\b|\bfriend\b/i);
+    }
+  });
+
+  it('license lines put the price first; a sample (0) names its price without saying "free"', () => {
+    for (const { id, price } of licenses) {
+      const text = ITEM_COPY[id] ?? '';
+      expect(text, id).toMatch(price === 0 ? /^Price first: your next visit\./ : /^Price first: /);
+      if (price > 0) expect(text, id).toContain(`${price} stardust`);
       expect(text, id).not.toMatch(/\bfree\b|\bfriend\b/i);
     }
   });

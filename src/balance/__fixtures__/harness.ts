@@ -106,6 +106,7 @@ export function fakeResult(
       perfectCore: outcome === 'won' && integrity === 20 ? 'earned' : 'forfeited',
       challenge: 'open',
     },
+    objectives: [],
   };
 }
 

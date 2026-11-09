@@ -7,6 +7,7 @@ import { silkText } from '../silk.ts';
 import { displayName, towerName as hudTowerName } from '../../app/hudText.ts';
 import { ABILITIES } from '../../content/abilities/index.ts';
 import { TOWERS } from '../../content/towers/index.ts';
+import { itemCopy } from '../../content/upgrades/copy.ts';
 import {
   PROTOCOLS,
   UPGRADES,
@@ -29,6 +30,7 @@ const TOWER_SPECS: Readonly<
     { readonly specs?: { readonly a: { name: string }; readonly b: { name: string } } }
   >
 > = TOWERS;
+const TOWER_ROLES: Readonly<Record<string, { readonly role: string }>> = TOWERS;
 
 function lookup<T>(table: Readonly<Record<string, T>>, id: string): T | undefined {
   return Object.hasOwn(table, id) ? table[id] : undefined;
@@ -114,8 +116,16 @@ export function grantText(g: ModifierGrant): string {
   }
 }
 
-/** An offer's effect summary: its next (or top) rank's grants, or what a spec unlock opens. */
+/**
+ * An offer's effect summary: its next (or top) rank's grants, what a spec unlock opens, or the
+ * turret a license adds.
+ */
 export function effectText(o: Offer): string {
+  if (o.item.kind === 'license') {
+    const role = lookup(TOWER_ROLES, o.item.tower)?.role;
+    const what = `Adds the ${towerName(o.item.tower)} to your turrets`;
+    return silkText(role === undefined ? what : `${what}: ${role}`);
+  }
   if (o.item.kind === 'specs') {
     const specs = lookup(TOWER_SPECS, o.item.tower)?.specs;
     return specs === undefined
@@ -138,6 +148,8 @@ export function offerName(o: Offer): string {
       return silkText(lookup(PROTOCOL_DEFS, o.item.id)?.name ?? o.item.id);
     case 'specs':
       return `${towerName(o.item.tower)} specializations`;
+    case 'license':
+      return `${towerName(o.item.tower)} license`;
     default:
       return assertNever(o.item);
   }
@@ -155,6 +167,8 @@ export function offerCopy(o: Offer): string | null {
       return silkText(lookup(PROTOCOL_DEFS, o.item.id)?.copy ?? MISSING_COPY);
     case 'specs':
       return null;
+    case 'license':
+      return silkText(itemCopy(`license_${o.item.tower}`) ?? MISSING_COPY);
     default:
       return assertNever(o.item);
   }

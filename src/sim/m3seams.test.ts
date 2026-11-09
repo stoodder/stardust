@@ -160,7 +160,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'modifier.freeCast': null, // T304d
       'modifier.economy.salvage': null, // T304b
       'modifier.economy.clearSpeed': null, // T304b
-      'map.objectives': 'T304f',
+      'map.objectives': null, // T304f
     });
   });
 
@@ -210,7 +210,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(gateRefusals(fixtureConfig({ content: contentWith(e.puffwing) }), lifted)).toEqual([]);
   });
 
-  it('refuses optional objectives (T304f); plays the new ability effects (T304d)', () => {
+  it('plays optional objectives (T304f) and the new ability effects (T304d)', () => {
     const objective = {
       id: 'clean_audit',
       name: 'Clean Audit',
@@ -221,7 +221,9 @@ describe('FEATURE_GATES (T300a rows)', () => {
     };
     const fxWalker = FIXTURE_CONTENT.enemies.fx_walker;
     const content = contentWith(fxWalker, { objectives: [objective] });
-    expect(gateRefusals(fixtureConfig({ content }))).toEqual([
+    expect(gateRefusals(fixtureConfig({ content }))).toEqual([]);
+    const closedObjectives = { ...FEATURE_GATES, 'map.objectives': 'T304f' } as const;
+    expect(gateRefusals(fixtureConfig({ content }), closedObjectives)).toEqual([
       'optional objectives (clean_audit) is not simulated until T304f',
     ]);
     // The live abilities, slotted on the fixture map.

@@ -72,7 +72,7 @@ test('hud act1: NEW tags, the plate, the Gerald pulse, and Time Dilation on a pr
   await expect
     .poll(() => page.evaluate(() => globalThis.__sd!.state()!.abilityCooldownTicks[1] ?? 0))
     .toBeGreaterThan(0);
-  await expect(td).toHaveAttribute('aria-label', /recharging, Ready in \d+ s/);
+  await expect(td).toHaveAttribute('aria-label', /, recharging, \d+ s$/);
   await expect(page.locator('.hud-aim-hint')).toHaveCount(0);
   await page.evaluate(() => globalThis.__sd!.fastForward(20));
   await nextFrames(page);
@@ -95,7 +95,7 @@ test('hud act1: Clearance Sale prices the slots and the panel', async ({ page })
   await expect(slot1).toHaveAttribute('aria-label', /^Build Rivet, 60 credits, on sale$/);
   await expect(sale).toHaveAttribute(
     'aria-label',
-    /^Clearance Sale, recharging, Ready in 4 waves, 3 purchases left$/,
+    /^Clearance Sale, recharging, 4 waves, 3 purchases left$/,
   );
   await page.mouse.move(0, 0);
   await shot(page, 'hud-act1', 4, 'sale-slots');

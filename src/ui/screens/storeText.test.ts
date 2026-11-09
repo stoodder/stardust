@@ -14,7 +14,7 @@ import {
 } from './storeText.ts';
 
 const byId = (offers: readonly Offer[], id: string): Offer => {
-  const o = offers.find((x) => x.item.kind !== 'specs' && x.item.id === id);
+  const o = offers.find((x) => 'id' in x.item && x.item.id === id);
   if (o === undefined) throw new Error(`no offer ${id}`);
   return o;
 };

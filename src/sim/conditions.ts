@@ -135,12 +135,16 @@ export function markerPassedTick(
 }
 
 /**
- * Latches `passedMarker` for every marker the map's conditions watch (its Challenge and its
- * events' `when`s). cleanup runs it every tick before dead enemies are released, so a unit that
- * went past a marker and died or leaked on the same tick still counts.
+ * Latches `passedMarker` for every marker the map's conditions watch (its Challenge, its optional
+ * objectives, and its events' `when`s). cleanup runs it every tick before dead enemies are
+ * released, so a unit that went past a marker and died or leaked on the same tick still counts.
  */
 export function trackConditions(state: SimState, map: CompiledMapDef<IdSpace>): void {
   if (map.medals !== null) track(map.medals.challenge.condition, state, map);
+  const objectives = map.objectives;
+  for (let i = 0; i < objectives.length; i++) {
+    track(objectives[i]!.condition, state, map); // i < length
+  }
   const events = map.events;
   for (let i = 0; i < events.length; i++) {
     const when = events[i]!.when; // i < length

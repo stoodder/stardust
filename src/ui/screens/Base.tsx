@@ -3,8 +3,10 @@
 // badge while something in them is unread; a shelf tab whose system the campaign hasn't opened yet
 // shows a locked pane with what opens it ("Opens after The Audit"; meta/progress.ts
 // SYSTEM_UNLOCKS). An open tab shows its pane (BasePanes.tsx). Entering the base delivers any memo
-// or codex unlock a save missed (app/inbox.ts).
+// or codex unlock a save missed (app/inbox.ts). The first visit with Zibzab's shop open lands on
+// the Shop tab and plays his arrival (app/baseScenes.ts, T308).
 import { useEffect, useState } from 'preact/hooks';
+import { arrivalDue, playArrivalIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
 import { BASE_PANES, isStoryTab, type BaseTab } from './BasePanes.tsx';
@@ -34,7 +36,8 @@ function systemOf(view: CampaignView, tab: BaseTab): SystemView {
 
 /** The base for the save in play. Arrow keys move between tabs (the WAI-ARIA tabs pattern). */
 export function Base() {
-  const [tab, setTab] = useState<BaseTab>('rnd');
+  // Zibzab's arrival opens on his shop; otherwise Research.
+  const [tab, setTab] = useState<BaseTab>(() => (arrivalDue() ? 'shop' : 'rnd'));
   // Esc (T212) goes back to the Shift board, as its button does.
   useEscape(() => {
     toCampaign();
@@ -43,6 +46,7 @@ export function Base() {
   // Entering the base: memos due and codex unlocks a save missed arrive now (a no-op after a run).
   useEffect(() => {
     catchUpStory();
+    if (playArrivalIfDue()) setTab('shop');
   }, []);
   const view = campaign.value;
   if (view === null) return null;

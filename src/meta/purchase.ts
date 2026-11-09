@@ -123,11 +123,15 @@ function isTower(id: string, catalog: StoreCatalog): id is TowerId {
   return Object.hasOwn(catalog.towers, id);
 }
 
+/** A tower's license terms: its price and when it's stocked. */
+interface License {
+  readonly currency: Currency;
+  readonly price: number;
+  readonly availableAfter: CampaignMapId | null;
+}
+
 /** The license row for `tower`, if the catalog sells one. */
-function licenseOf(
-  tower: string,
-  catalog: StoreCatalog,
-): (Access & { readonly how: 'license' }) | null {
+function licenseOf(tower: string, catalog: StoreCatalog): License | null {
   const access = catalog.towerAccess ?? {};
   if (!Object.hasOwn(access, tower)) return null;
   const a = access[tower]!;

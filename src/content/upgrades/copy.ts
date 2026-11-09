@@ -8,8 +8,14 @@
 // - The base shows this copy from Act I to the finale, so no line uses an exclamation point
 //   (style-guide § 2's Act III budget) and none says a protected word early (§ 3).
 
-/** Each catalog item's copy, by item id (UpgradeId or ProtocolId). */
+/**
+ * Each catalog item's copy, by item id (UpgradeId or ProtocolId; a Vrell license is
+ * `license_<tower>`, from access.ts's `how: 'license'` rows).
+ */
 export const ITEM_COPY: Readonly<Record<string, string>> = {
+  // Zibzab: Vrell tower licenses (access.ts). The Zapcoil sample's line is act1.md's (A1M3, *Base*).
+  license_zapcoil: "Price first: your next visit. First one's on me. Zibzab is patient.",
+
   // Zibzab: global upgrades (shop.ts).
   reinforced_core:
     'Price first: 120 stardust, then 200, then 300. Your core takes one more hit. Not a big hit. One.',

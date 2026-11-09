@@ -35,7 +35,7 @@ export function triggers(state: SimState, ctx: TickContext): void {
     if (!reached(state, ev.on)) continue;
     fired[i] = true;
     if (ev.when !== null && !evaluateCondition(ev.when, state, ctx)) continue;
-    for (let a = 0; a < ev.actions.length; a++) run(state, ev.actions[a]!); // a < length
+    for (let a = 0; a < ev.actions.length; a++) runScriptAction(state, ev.actions[a]!); // a < length
   }
 }
 
@@ -69,7 +69,8 @@ function bossReached(state: SimState, boss: string | null, hpPct: number, phase:
   return false;
 }
 
-function run(state: SimState, action: CompiledScriptAction<IdSpace>): void {
+/** Runs one script action (an event's, or a completed objective's `onComplete`; sim/objectives.ts). */
+export function runScriptAction(state: SimState, action: CompiledScriptAction<IdSpace>): void {
   if ('unlockTowerClass' in action) {
     const idx = state.lockedTowers.indexOf(action.unlockTowerClass);
     if (idx < 0) return;
@@ -94,8 +95,8 @@ function run(state: SimState, action: CompiledScriptAction<IdSpace>): void {
 /**
  * The map-script parts the sim can't run yet. createSim refuses a map whose events use any other
  * trigger or action, listing each one, until its task lands. Every condition atom (`when`, the
- * Challenge medal) is simulated. Optional objectives are a feature gate (`map.objectives`,
- * sim/gates.ts; T304f).
+ * Challenge medal, objectives) is simulated; an objective's `onComplete` actions are held to the
+ * same list as an event's (sim/objectives.ts runs them).
  */
 export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
   const out: string[] = [];
@@ -104,18 +105,23 @@ export function unsupportedScript(map: CompiledMapDef<IdSpace>): string[] {
     if (!('tick' in on) && !('wave' in on) && !('bossHpPct' in on) && !('bossPhase' in on)) {
       out.push(`event '${ev.id}': trigger ${Object.keys(on).join('/')} is not simulated yet`);
     }
-    for (const a of ev.actions) {
-      if ('bossEnd' in a && a.bossEnd === 'pivot') {
-        out.push(`event '${ev.id}': action bossEnd 'pivot' is not simulated yet`);
-      } else if (
-        !('unlockTowerClass' in a) &&
-        !('cue' in a) &&
-        !('grantCredits' in a) &&
-        !('bossEnd' in a)
-      ) {
-        out.push(`event '${ev.id}': action ${Object.keys(a).join('/')} is not simulated yet`);
-      }
-    }
+    for (const a of ev.actions) unsupportedAction(a, `event '${ev.id}'`, out);
+  }
+  for (const o of map.objectives) {
+    for (const a of o.onComplete) unsupportedAction(a, `objective '${o.id}'`, out);
   }
   return out;
+}
+
+function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out: string[]): void {
+  if ('bossEnd' in a && a.bossEnd === 'pivot') {
+    out.push(`${where}: action bossEnd 'pivot' is not simulated yet`);
+  } else if (
+    !('unlockTowerClass' in a) &&
+    !('cue' in a) &&
+    !('grantCredits' in a) &&
+    !('bossEnd' in a)
+  ) {
+    out.push(`${where}: action ${Object.keys(a).join('/')} is not simulated yet`);
+  }
 }

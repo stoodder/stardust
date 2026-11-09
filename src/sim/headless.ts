@@ -39,7 +39,7 @@ import { assertNever } from '../shared/types.ts';
 import { createSim, type Sim } from './sim.ts';
 import { abilityReady } from './systems/abilities.ts';
 import { clearCommand, wreckageStatus } from './systems/wreckage.ts';
-import type { MedalStatus } from './state.ts';
+import type { MedalStatus, ObjectiveStatus } from './state.ts';
 
 export type { RunSummary, TowerSummary, WaveSummary } from './headlessTracker.ts';
 
@@ -362,6 +362,8 @@ export interface HeadlessResult extends RunSummary {
   readonly commandCount: number;
   /** Each medal's final standing (`state.medals`; sim/medals.ts). */
   readonly medals: Readonly<Record<MedalKind, MedalStatus>>;
+  /** Each optional objective's final standing, in map order (`state.objectives`; T304f). */
+  readonly objectives: readonly ObjectiveStatus[];
 }
 
 /** 30 minutes of sim time: longer than any map (the finale is about 25). */
@@ -400,5 +402,6 @@ export function runHeadless<K extends IdSpace = LiveIds>(
     waveCalls: exec.waveCalls,
     commandCount: sim.state.commandLog.length,
     medals: { ...sim.state.medals },
+    objectives: [...sim.state.objectives],
   };
 }

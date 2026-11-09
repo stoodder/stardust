@@ -134,7 +134,8 @@ describe('the ability slots (D077, D082)', () => {
     expect(cd).toEqual({ secondsLeft: 0, wavesLeft: 3, remaining: 0.75, free: false, charges: 2 });
     expect(cooldownView(0, 0, cd, extras)).toBe(cd);
     expect(cooldownChip(cd)).toBe('3 waves');
-    expect(cooldownWords(cd)).toBe('Ready in 3 waves');
+    expect(cooldownWords(cd)).toBe('3 waves');
+    expect(cooldownWords(cooldownView(450, 900, null))).toBe('8 s');
     expect(readyInWaves(1)).toBe('Ready in 1 wave');
     expect(cooldownChip(cooldownView(450, 900, null))).toBe('8s');
     const free = cooldownView(0, 900, null, {

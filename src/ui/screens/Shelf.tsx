@@ -5,6 +5,7 @@
 // a polite live region. After a purchase the focus stays on that row: its button (the next rank)
 // or, when the item is now owned in full and the button is gone, the row itself (U6). A button the
 // bank can't cover is aria-disabled and explains itself when pressed.
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
 import { purchase, storeShelf } from '../../app/save.ts';
@@ -31,6 +32,8 @@ export interface ShelfProps {
   readonly view: CampaignView;
   /** Splits the pane's offers into titled groups (default: one untitled group). */
   readonly group?: (offers: readonly Offer[]) => readonly ShelfGroup[];
+  /** Shown above the groups (the shop's open question). */
+  readonly lead?: ComponentChildren;
 }
 
 /** Purchases made per pane this session, so the thank-you lines take turns. */
@@ -59,7 +62,9 @@ function effectLine(o: Offer): string {
 
 /** A row's stable key: the item it sells. */
 function offerKey(o: Offer): string {
-  return o.item.kind === 'specs' ? `specs:${o.item.tower}` : `${o.item.kind}:${o.item.id}`;
+  return o.item.kind === 'specs' || o.item.kind === 'license'
+    ? `${o.item.kind}:${o.item.tower}`
+    : `${o.item.kind}:${o.item.id}`;
 }
 
 function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void }) {
@@ -118,7 +123,7 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
 }
 
 /** A base pane: its presenter, then its offers. */
-export function Shelf({ pane, view, group }: ShelfProps) {
+export function Shelf({ pane, view, group, lead }: ShelfProps) {
   const [said, setSaid] = useState<Said>(null);
   const root = useRef<HTMLDivElement>(null);
   /** The row just bought from: the focus returns to it after the re-render. */
@@ -156,7 +161,7 @@ export function Shelf({ pane, view, group }: ShelfProps) {
       return;
     }
     bought.current = offerKey(o);
-    playSfx(o.item.kind === 'specs' ? 'unlock' : 'upgrade');
+    playSfx(o.item.kind === 'specs' || o.item.kind === 'license' ? 'unlock' : 'upgrade');
     const line = p.thanks[thanked[pane]++ % p.thanks.length] ?? '';
     setSaid(
       r.writeFailed === null
@@ -185,6 +190,7 @@ export function Shelf({ pane, view, group }: ShelfProps) {
         </p>
       </div>
       <div class="sd-store-list">
+        {lead}
         {groups.map((g) => (
           <section key={g.title} class="sd-store-group" aria-label={g.title || p.who}>
             {g.title !== '' && <h2 class="sd-store-group-title">{g.title}</h2>}
