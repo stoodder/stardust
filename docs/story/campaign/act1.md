@@ -42,21 +42,21 @@ The five Act I maps, A1M1–A1M5, during the Long Afternoon. The campaign overvi
 
 Dressing: Evie billboards (`beaming`), Goldie's Dome 1 with Duchess in the window, sprinklers ticking, a sign reading "PESTS PROCESSED THIS QUARTER: 38% MORE!"
 
-**Waves.** 1 Nibblers ×8 [T: build] · 2 Nibblers ×10 [T: upgrade; high-ground prompt] · 3 Nibbler clumps ×12 [T: Thumper unlocks, Crossfire] · 4 Zoomers ×4 [T: fast; Suppressing Fire prompt] · 5 Nibblers ×8 + Zoomers ×4 [X; Orbital Strike prompt] · 6 Zoomer rush ×10 [X] · 7 Nibbler big clumps ×30 + Zoomers ×16 [X].
+**Waves.** 1 Nibblers ×8 [T: build] · 2 Nibblers ×10 [T: upgrade; high-ground prompt] · 3 Nibbler clumps ×12 [T: Thumper unlocks, Crossfire] · 4 Zoomers ×6 [T: fast; Suppressing Fire prompt] · 5 Nibbler clumps ×24 + Zoomers ×12 [X; Orbital Strike prompt] · 6 Zoomer rush ×20 + Nibbler clumps ×12 [X] · 7 Nibbler big clumps ×32 + Zoomers ×24 [X].
 
-**Wave data** (A1M1 is the M1 map, so its waves are fully specified; the data is [`src/content/maps/a1_m01/waves.ts`](../../../src/content/maps/a1_m01/waves.ts)). A **clump** is a group of 4 Nibblers at 0.25 s spacing, with 3 s between one clump's last spawn and the next clump's first (so clumps start 3.75 s apart). W7's **big clumps** are 6 Nibblers at 0.2 s, starting 2.25 s apart: tight knots a Thumper shell catches whole, which is the wave the Thumper earns its slot on. Groups without an interval use the enemy's default spacing (Nibbler 0.8 s, Zoomer 0.5 s; [enemies.md §5](../../design/enemies.md#5-roster)). `delaySec` is measured from the wave's start. Every route is the one road; every countdown is the Act I 25 s.
+**Wave data** (A1M1 is the M1 map, so its waves are fully specified; the data is [`src/content/maps/a1_m01/waves.ts`](../../../src/content/maps/a1_m01/waves.ts)). A **clump** is a knot of Nibblers 0.2–0.25 s apart: W3's hold 4, W5's and W6's 6, and W7's **big clumps** 8. Tight knots are what a Thumper shell and the Orbital Strike catch whole, so W5 and W7 are where the Thumper earns its slot. Groups without an interval use the enemy's default spacing (Nibbler 0.8 s, Zoomer 0.5 s; [enemies.md §5](../../design/enemies.md#5-roster)). `delaySec` is measured from the wave's start. Every route is the one road; every countdown is the Act I 25 s. Pressure ramps through W4–W7 rather than piling into W7 ([D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings)).
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
 | W1 | Nibbler ×8 @ 0.65, 0 | 8 |
 | W2 | Nibbler ×10 @ 0.8, 0 | 10 |
-| W3 | Nibbler ×4 @ 0.25, 0 · ×4 @ 0.25, 3.75 · ×4 @ 0.25, 7.5 | 12 |
-| W4 | Zoomer ×4 @ 0.5, 0 | 4 |
-| W5 | Nibbler ×4 @ 0.25, 0 · Nibbler ×4 @ 0.25, 3.75 · Zoomer ×4 @ 0.5, 7.5 | 12 |
-| W6 | Zoomer ×10 @ 0.5, 0 | 10 |
-| W7 | Nibbler ×6 @ 0.2 at 0, 2.25, 4.5, 6.75, and 9.0 (five big clumps) · Zoomer ×8 @ 0.5, 3.25 · Zoomer ×8 @ 0.5, 7.75 | 46 |
+| W3 | Nibbler ×4 @ 0.25 at 0, 3.75, and 7.5 (three clumps) | 12 |
+| W4 | Zoomer ×6 @ 0.5, 0 | 6 |
+| W5 | Nibbler ×6 @ 0.2 at 0, 3.75, 7.5, and 11.25 (four clumps) · Zoomer ×12 @ 0.4, 15 | 36 |
+| W6 | Zoomer ×20 @ 0.5, 0 · Nibbler ×6 @ 0.25 at 2 and 5.75 (two clumps) | 32 |
+| W7 | Nibbler ×8 @ 0.2 at 0, 2.25, 4.5, and 6.75 (four big clumps) · Zoomer ×12 @ 0.4, 0.5 · Zoomer ×12 @ 0.4, 6.5 | 56 |
 
-Each W7 Zoomer group starts as the second and as the fourth big clump finish spawning. A1M1 has no teach-flagged waves: with no required counters it has no soft enemies to exempt.
+W7's first Zoomer group runs in among the first big clumps; the second starts as the last clump finishes spawning. A1M1 has no teach-flagged waves: with no required counters it has no soft enemies to exempt.
 
 **Story delivery.**
 - *Before:* character creation (the onboarding form), then memo `memo_a1_00` *WELCOME TO THE GARDENS!* (grants Orbital Strike; small print per [style-guide.md §6.1](../style-guide.md#61-everglow-memos)).
@@ -83,13 +83,25 @@ Each W7 Zoomer group starts as the second and as the fourth big clump finish spa
 
 | Wave | Par | Rivet-only (`altBuilds.rivet_only`) |
 |---|---|---|
-| W1 | Rivet on the greenhouse roof (7,2) | same |
+| W1 | Rivet on the greenhouse roof (7,2), then Rivet (10,4) | same |
 | W2 | Upgrade the roof Rivet to T2 | same |
-| W3 | Rivet (10,4), then Thumper (10,5): the Crossfire pair | Rivet (10,4), then Rivet (10,5) |
+| W3 | Thumper (10,5), beside the (10,4) Rivet: the Crossfire pair | Rivet (10,5) |
+| W4 | Nothing: saving for the roof's T3 | same |
 | W5 | Upgrade the roof Rivet to T3; Orbital Strike on the road's first corner (4,3), 2.4 s into the wave (it lands on the first clump) | same |
-| W7 | Thumper (3,5); Orbital Strike on (4,3), 2.4 s in | Rivet (3,5); the same strike |
+| W6 | Upgrade the Thumper (10,5) and the Rivet (10,4) to T2 | Upgrade the Rivets (10,5) and (10,4) to T2 |
+| W7 | Rivet (3,4); Orbital Strike on (4,3), 2.4 s in | same |
 
-Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. **Par margin 95**, tuned (T107): W1's eight Nibblers are one more than the lone roof Rivet stops, so par lets one through: its first leak, and QUILL's `first_leak` bark, come in W1. A player who builds a second tower in the setup loses nothing there. Under par, the bank at the start of each build phase is 350, 295, 273, 116, 168, 98, 182 (W1–W7; every pest but that one dies). So the second Thumper waits for **W7**: with 98 banked before W6, it would become affordable only after most of W6's 10 Zoomers die, too late to matter there. **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs: do-nothing loses (at W3); par wins at **95**, inside the band; the **Rivet-only** build wins at **70**, leaking 5 of W7's big clumps that par's Thumpers hold, which is the Thumper's lesson; `alwaysCallEarly` wins at 100 (≤ the band top). A loose Rivet-heavy build that spends its credits early (two or three Rivets in the setup) wins at 100.
+`altBuilds.par_minus_last` is par without its last purchase, the W7 Rivet: a player one step short.
+
+Orbital Strike on the W5 and W7 clumps; Suppressing Fire on W6. **Par margin 95**, tuned (T127, [D026](../../decisions.md#d026--2026-11-09--m1-review-round-1-rulings)). Par holds W1–W6 and lets one W7 Nibbler through, so its first leak comes in the last wave; a player who builds a single Rivet in the setup leaks in W1 and hears QUILL's `first_leak` bark on the first shift. Par spends its bank as it goes: under par, the bank at the start of each build phase is 350, 198, 176, 119, 179, 189, 169 (W1–W7; every pest before W7 dies), W4's phase buys nothing while it saves for the roof's T3 (150), and W7 starts with 69 unspent, short of any purchase. **No required counters** ([maps.md §6.4](../../design/maps.md#64-balance-harness)): the tutorial never punishes a player who skips the Thumper, so there are no `noCounterBuilds`, and Splash first becomes required at A1M4. The harness runs:
+- do-nothing loses (at W3);
+- par wins at **95**, inside the band;
+- par without its strike casts wins at 65: W7's strike alone saves 6;
+- the **Rivet-only** build wins at **60**, below par: it leaks 4 of W5's clumps and 4 of W7's big clumps that par's Thumper holds, which is the Thumper's lesson;
+- `par_minus_last` wins at 85;
+- `alwaysCallEarly` wins at 75.
+
+An under-built player loses gradually: three Rivets bought in the setup and never upgraded leak 2 in W5 and 5 in W6, then lose in W7. These verdicts hold with W5–W7's clumps shifted ±0.2 s apart ([`src/balance/a1m1.test.ts`](../../../src/balance/a1m1.test.ts)).
 
 **The M1 cut** ([D004](../../decisions.md#d004--2026-11-08--m1-scope-the-m1-cut)). M1 tunes this par **without Crossfire (links), medals, Suppressing Fire, or the Bricks ally**, and re-tunes it when they land. Until T202 the W3 Crossfire teach is cosmetic: QUILL's line plays and nothing links, and the Teamwork medal isn't evaluated. M1's Sprinkler (sim-tested, not placed here) applies **Chilled only**; Soaked is left out until a map needs it.
 

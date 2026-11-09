@@ -46,6 +46,14 @@ export function policyBuild<K extends IdSpace = LiveIds>(
   }
 }
 
+/**
+ * `build` with its commander-ability casts removed (the "par without abilities" check: the casts
+ * must matter, conventions.md § Balance sims). Everything else, the slot included, stays.
+ */
+export function withoutAbilityCasts<K extends IdSpace>(build: CompiledBuild<K>): CompiledBuild<K> {
+  return { ...build, steps: build.steps.filter((s) => s.kind !== 'ability') };
+}
+
 /** The loadout tower with the lowest tier-1 cost (the first on a tie), or null for none. */
 function cheapestTower<T extends string>(
   loadout: readonly T[],

@@ -6,6 +6,7 @@
 import type {
   Act,
   AllyKind,
+  AltBuildExpectation,
   Body,
   CompanionId,
   ConditionDef,
@@ -282,6 +283,7 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly parBuild: CompiledBuild<K>;
   readonly noCounterBuilds: Readonly<Partial<Record<CounterId, CompiledBuild<K>>>>;
   readonly altBuilds: Readonly<Record<string, CompiledBuild<K>>>;
+  readonly altExpectations: Readonly<Record<string, AltBuildExpectation>>;
   readonly guards: Readonly<
     Record<
       string,

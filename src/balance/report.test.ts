@@ -12,7 +12,7 @@ describe('balance reports', () => {
     expect(text).toMatch(/^ {2}ok {3}#1 par wins: 1\/1 won$/m);
     expect(text).toMatch(/^ {2}FAIL #steps build steps run cleanly/m);
     expect(text).toMatch(/^ {4}none +3 +6 +won/m);
-    expect(text.split('\n').at(-1)).toMatch(/^sim: 1 map · .* · FAIL \(2 failed checks\)$/);
+    expect(text.split('\n').at(-1)).toMatch(/^sim: 1 map · .* · FAIL \(3 failed checks\)$/);
   });
 
   it('the Markdown report has the check table and a per-wave table per build', () => {

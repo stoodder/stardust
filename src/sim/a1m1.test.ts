@@ -193,27 +193,26 @@ describe('A1M1 economy and outcomes', () => {
     expect(ofType(run, 'MapWon')).toEqual([]);
   });
 
-  it('par, issued through commands, wins letting one W1 Nibbler through, with act1.md’s banks', () => {
+  it('par, issued through commands, wins letting one W7 Nibbler through, with act1.md’s banks', () => {
     const run = play(par);
     expect(ofType(run, 'CommandRejected')).toEqual([]);
-    // act1.md § A1M1: the lone roof Rivet lets one of W1's eight Nibblers through (margin 95).
+    // act1.md § A1M1: par holds W1–W6 and lets one of W7's Nibblers through (margin 95).
     const leaks = ofType(run, 'EnemyLeaked');
     expect(leaks.map((l) => [l.e.enemy, l.e.leak])).toEqual([['nibbler', 1]]);
-    const w2Start = ofType(run, 'WaveStarted').find((l) => l.e.wave === 2)!.tick;
-    expect(leaks[0]!.tick).toBeLessThan(w2Start);
+    const w7Start = ofType(run, 'WaveStarted').find((l) => l.e.wave === 7)!.tick;
+    expect(leaks[0]!.tick).toBeGreaterThan(w7Start);
     expect(ofType(run, 'AbilityUsed')).toHaveLength(2);
-    // Every other enemy dies, so each build phase's bank is act1.md's (and data.test.ts's)
-    // number less the leaked Nibbler's 3-credit bounty from W2 on.
-    expect(run.banks).toEqual([350, 295, 273, 116, 168, 98, 182]);
+    // Every enemy before W7 dies, so each build phase's bank is act1.md's (and data.test.ts's).
+    expect(run.banks).toEqual([350, 198, 176, 119, 179, 189, 169]);
     expect(ofType(run, 'WaveCleared').map((l) => l.e.wave)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     const s = run.sim.state;
     expect(s.outcome).toBe('won');
     expect(s.integrity).toBe(19);
     const total = map.waves.reduce((n, w) => n + w.groups.reduce((k, g) => k + g.count, 0), 0);
     expect(s.stats.skitterkinKilled).toBe(total - 1);
-    // The final bank: W7's phase bank, less its Thumper, plus W7's payout.
+    // The final bank: W7's phase bank, less its Rivet, plus W7's payout less the leaked bounty.
     const w7 = map.waves[6]!.groups.reduce((n, g) => n + g.count * g.enemy.bounty, 0) + 48;
-    expect(s.credits).toBe(182 - 125 + w7);
+    expect(s.credits).toBe(169 - 100 + w7 - 3);
     expect(s.credits).toBe(350 + s.stats.creditsEarned - s.stats.creditsSpent);
     // The map is decided: no tick runs after it.
     const tick = s.tick;
@@ -221,10 +220,12 @@ describe('A1M1 economy and outcomes', () => {
     expect(run.sim.state.tick).toBe(tick);
   });
 
-  it('rivet_only also wins', () => {
-    const run = play(map.builds.altBuilds.rivet_only!);
-    expect(ofType(run, 'CommandRejected')).toEqual([]);
-    expect(run.sim.state.outcome).toBe('won');
+  it('rivet_only and par_minus_last also win', () => {
+    for (const alt of ['rivet_only', 'par_minus_last']) {
+      const run = play(map.builds.altBuilds[alt]!);
+      expect(ofType(run, 'CommandRejected')).toEqual([]);
+      expect(run.sim.state.outcome).toBe('won');
+    }
   });
 });
 

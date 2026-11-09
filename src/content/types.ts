@@ -437,6 +437,14 @@ export interface ScriptedBuild<K extends IdSpace = LiveIds> {
 
 export type PolicyId = 'none' | 'spamCheapest' | 'alwaysCallEarly' | 'spareFleeing';
 
+/** What the harness expects of one alt build beyond the forgiving floor (conventions.md § Balance sims). */
+export interface AltBuildExpectation {
+  /** It wins at a lower margin than par on the same seed: par's choices earn their slots. */
+  readonly belowPar?: true;
+  /** It wins with at least this margin (%), stricter than the forgiving floor. */
+  readonly minMarginPct?: number;
+}
+
 export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly referenceProfile: ProfileDef<K>;
   readonly parBuild: ScriptedBuild<K>;
@@ -444,6 +452,8 @@ export interface BuildsDef<K extends IdSpace = LiveIds> {
   readonly noCounterBuilds: Readonly<Partial<Record<CounterId, ScriptedBuild<K>>>>;
   /** At least 2 from A1M4. */
   readonly altBuilds?: Readonly<Record<string, ScriptedBuild<K>>>;
+  /** Extra expectations for named alt builds; keys are altBuilds names. */
+  readonly altExpectations?: Readonly<Record<string, AltBuildExpectation>>;
   readonly guards?: Readonly<
     Record<
       string,

@@ -403,8 +403,9 @@ describe('validate: builds', () => {
     rejects({ ...BASE, maps, campaign: Object.keys(maps) }, 'alt-builds');
   });
 
-  it('[builds-range] margin bands and flag variants', () => {
+  it('[builds-range] margin bands, flag variants, and alt build expectations', () => {
     rejects(withMap({ marginBand: { minPct: 80, maxPct: 60 } }), 'builds-range');
     rejects(withMap({ flagVariants: { door_choice: [] } }), 'builds-range');
+    rejects(withMap({ altExpectations: { no_such_build: { belowPar: true } } }), 'builds-range');
   });
 });

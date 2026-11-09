@@ -4,7 +4,6 @@
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { HeadlessResult } from '../sim/index.ts';
-import { ALT_BELOW_PAR } from './expectations.ts';
 import { fullCatalogModifiers } from './profile.ts';
 import { refusal } from './refusals.ts';
 import {
@@ -14,7 +13,10 @@ import {
   parBand,
 } from './rules.ts';
 
-/** One run: a build label ('par', 'none', 'alwaysCallEarly', 'alt:x', 'noCounter:x', 'guard:x'). */
+/**
+ * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'alt:x',
+ * 'noCounter:x', 'guard:x').
+ */
 export interface RunRequest {
   readonly build: string;
   readonly seed: number;
@@ -71,6 +73,9 @@ export function median(xs: readonly number[]): number {
   return s.length % 2 === 1 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2; // mid ≥ 1 when even
 }
 
+/** Check #7's summary note when its cap is 100 on every seed, so the fairness bound can't fail. */
+export const VACUOUS_NOTE = '(cap 100: the fairness bound is vacuous; only the win is checked)';
+
 const seedRuns = (build: string, seeds: readonly number[]): RunRequest[] =>
   seeds.map((seed) => ({ build, seed }));
 
@@ -81,7 +86,7 @@ function perRun(
   build: string,
   seeds: readonly number[],
   judge: (rec: RunRecord, get: (r: RunRequest) => RunRecord) => string | null,
-  summarize: (recs: readonly RunRecord[]) => string,
+  summarize: (recs: readonly RunRecord[], get: (r: RunRequest) => RunRecord) => string,
   extraNeeds: readonly RunRequest[] = [],
 ): CheckSpec {
   const needs = [...seedRuns(build, seeds), ...extraNeeds];
@@ -97,7 +102,7 @@ function perRun(
         const why = rec.result === null ? describeRun(rec) : judge(rec, get);
         if (why !== null) failures.push(`seed ${rec.seed}: ${why}`);
       }
-      return { ok: failures.length === 0, summary: summarize(recs), failures };
+      return { ok: failures.length === 0, summary: summarize(recs, get), failures };
     },
   };
 }
@@ -177,6 +182,8 @@ export function mapChecks<K extends IdSpace>(
   }
 
   const ace = 'alwaysCallEarly';
+  const aceCap = (seed: number, get: (r: RunRequest) => RunRecord): number =>
+    Math.min(band?.hi ?? Infinity, get({ build: 'par', seed }).marginPct + EARLY_CALL_SLACK_PCT);
   checks.push(
     perRun(
       '7',
@@ -185,16 +192,39 @@ export function mapChecks<K extends IdSpace>(
       few,
       (rec, get) => {
         if (rec.result?.outcome !== 'won') return describeRun(rec);
+        const cap = aceCap(rec.seed, get);
         const par = get({ build: 'par', seed: rec.seed });
-        const cap = Math.min(band?.hi ?? Infinity, par.marginPct + EARLY_CALL_SLACK_PCT);
         return rec.marginPct <= cap
           ? null
           : `margin ${fmtPct(rec.marginPct)} is above min(band top, par ${fmtPct(par.marginPct)} + ${EARLY_CALL_SLACK_PCT}) = ${fmtPct(cap)}`;
       },
-      (recs) => `${wonCount(recs)}, margins ${margins(recs)}`,
+      // With par within the slack of 100 the cap is 100, so only the win can fail: flag it.
+      (recs, get) =>
+        `${wonCount(recs)}, margins ${margins(recs)}${few.every((seed) => aceCap(seed, get) >= 100) ? ` ${VACUOUS_NOTE}` : ''}`,
       seedRuns('par', few),
     ),
   );
+
+  const castsAbilities = b.parBuild.steps.some((st) => st.kind === 'ability');
+  if (castsAbilities) {
+    const label = 'parNoAbilities';
+    checks.push(
+      perRun(
+        'abilities',
+        'par without its ability casts scores below par',
+        label,
+        few,
+        (rec, get) => {
+          const par = get({ build: 'par', seed: rec.seed });
+          return rec.marginPct < par.marginPct
+            ? null
+            : `margin ${fmtPct(rec.marginPct)} is not below par's ${fmtPct(par.marginPct)}: the casts change nothing`;
+        },
+        (recs) => recs.map(describeRun).join(', '),
+        seedRuns('par', few),
+      ),
+    );
+  }
 
   for (const name of Object.keys(b.altBuilds)) {
     checks.push(
@@ -213,33 +243,52 @@ export function mapChecks<K extends IdSpace>(
       ),
     );
   }
-  for (const name of ALT_BELOW_PAR[map.id] ?? []) {
+  for (const [name, expect] of Object.entries(b.altExpectations)) {
     const label = `alt:${name}`;
     if (!(name in b.altBuilds)) {
+      // The validator rejects this; the harness refuses rather than skips, in case it runs first.
       checks.push(
-        refusal('8', `${label} below par`, label, () => {
-          throw new RangeError(`the map has no alt build '${name}' (expectations.ts expects one)`);
+        refusal('8', `${label} expectations`, label, () => {
+          throw new RangeError(`the map has no alt build '${name}' (altExpectations names it)`);
         }),
       );
       continue;
     }
-    checks.push(
-      perRun(
-        '8',
-        `${label} wins below par's margin`,
-        label,
-        few,
-        (rec, get) => {
-          if (rec.result?.outcome !== 'won') return describeRun(rec);
-          const par = get({ build: 'par', seed: rec.seed });
-          return rec.marginPct < par.marginPct
-            ? null
-            : `margin ${fmtPct(rec.marginPct)} is not below par's ${fmtPct(par.marginPct)}`;
-        },
-        (recs) => `margins ${margins(recs)}`,
-        seedRuns('par', few),
-      ),
-    );
+    const min = expect.minMarginPct;
+    if (min !== undefined) {
+      checks.push(
+        perRun(
+          '8',
+          `${label} wins with margin ≥ ${min}`,
+          label,
+          few,
+          (rec) => {
+            if (rec.result?.outcome !== 'won') return describeRun(rec);
+            return rec.marginPct >= min ? null : `margin ${fmtPct(rec.marginPct)} is below ${min}`;
+          },
+          (recs) => `margins ${margins(recs)}`,
+        ),
+      );
+    }
+    if (expect.belowPar === true) {
+      checks.push(
+        perRun(
+          '8',
+          `${label} wins below par's margin`,
+          label,
+          few,
+          (rec, get) => {
+            if (rec.result?.outcome !== 'won') return describeRun(rec);
+            const par = get({ build: 'par', seed: rec.seed });
+            return rec.marginPct < par.marginPct
+              ? null
+              : `margin ${fmtPct(rec.marginPct)} is not below par's ${fmtPct(par.marginPct)}`;
+          },
+          (recs) => `margins ${margins(recs)}`,
+          seedRuns('par', few),
+        ),
+      );
+    }
   }
 
   for (const [name, guard] of Object.entries(b.guards)) {

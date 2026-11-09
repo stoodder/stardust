@@ -252,12 +252,12 @@ describe('A1M1 builds through runHeadless', () => {
       b,
     );
 
-  it('par issues every step on time, with no error, and wins letting one W1 Nibbler through', () => {
+  it('par issues every step on time, with no error, and wins letting one W7 Nibbler through', () => {
     const r = run(map.builds.parBuild);
     expect(r.steps.map((s) => [s.error, s.late])).toEqual(r.steps.map(() => [null, false]));
     expect(r.outcome).toBe('won');
-    // act1.md § A1M1: par's margin is 95, from one W1 leak past the lone roof Rivet.
-    expect(r.waves.map((w) => w.leaked)).toEqual([1, 0, 0, 0, 0, 0, 0]);
+    // act1.md § A1M1: par's margin is 95, from one leak in W7.
+    expect(r.waves.map((w) => w.leaked)).toEqual([0, 0, 0, 0, 0, 0, 1]);
     expect(r.integrity).toBe(19);
     expect(r.violations).toEqual([]);
   });

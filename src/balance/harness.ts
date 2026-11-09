@@ -15,7 +15,7 @@ import {
   type RunRecord,
   type RunRequest,
 } from './checks.ts';
-import { policyBuild } from './policies.ts';
+import { policyBuild, withoutAbilityCasts } from './policies.ts';
 import { NOT_CHECKED_IN_M1, refusedFeatures } from './refusals.ts';
 import { profileModifiers, runConfig } from './profile.ts';
 import {
@@ -72,6 +72,7 @@ export function buildFor<K extends IdSpace>(
 ): CompiledBuild<K> | null {
   const b = map.builds;
   if (label === 'par') return b.parBuild;
+  if (label === 'parNoAbilities') return withoutAbilityCasts(b.parBuild);
   if (label === 'none' || label === 'alwaysCallEarly') {
     return policyBuild(label, map, content.towers);
   }

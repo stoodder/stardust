@@ -43,6 +43,7 @@ export function compileBuilds<K extends IdSpace>(
     altBuilds: Object.fromEntries(
       Object.entries(def.altBuilds ?? {}).map(([name, b]) => [name, build(b, `altBuilds.${name}`)]),
     ),
+    altExpectations: { ...def.altExpectations },
     guards: { ...def.guards },
     marginBand: def.marginBand ?? null,
     rebaseline: def.rebaseline ?? false,

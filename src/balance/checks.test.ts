@@ -2,7 +2,14 @@
 import { describe, expect, it } from 'vitest';
 import type { HeadlessResult } from '../sim/index.ts';
 import { PLAIN_CONTENT, fakeResult, fakeRun } from './__fixtures__/harness.ts';
-import { mapChecks, median, runKey, type CheckSpec, type RunRequest } from './checks.ts';
+import {
+  VACUOUS_NOTE,
+  mapChecks,
+  median,
+  runKey,
+  type CheckSpec,
+  type RunRequest,
+} from './checks.ts';
 import { refusedFeatures } from './refusals.ts';
 import { FIXTURE_CONTENT } from '../sim/__fixtures__/sim.ts';
 
@@ -57,6 +64,70 @@ describe('balance checks', () => {
       judge(c, { ...parAt(16), 'alwaysCallEarly#1': fakeResult('won', 19) }).failures[0],
     ).toMatch(/margin 95 is above .* = 90/);
     expect(judge(c, { 'alwaysCallEarly#1': fakeResult('lost', 0, 2) }).ok).toBe(false);
+  });
+
+  it('#7 flags its fairness bound as vacuous when the cap is 100 on every seed', () => {
+    const c = find('7', 'alwaysCallEarly');
+    expect(judge(c, { ...parAt(18), 'alwaysCallEarly#1': fakeResult('won', 20) }).summary).toBe(
+      `1/1 won, margins 100 ${VACUOUS_NOTE}`,
+    );
+    expect(judge(c, { ...parAt(17), 'alwaysCallEarly#1': fakeResult('won', 19) }).summary).toBe(
+      '1/1 won, margins 95',
+    );
+  });
+
+  it('par without its ability casts must score below par', () => {
+    const c = find('abilities', 'parNoAbilities');
+    expect(c.needs).toEqual([
+      { build: 'parNoAbilities', seed: 1 },
+      { build: 'par', seed: 1 },
+    ]);
+    expect(judge(c, { ...parAt(19), 'parNoAbilities#1': fakeResult('won', 15) }).ok).toBe(true);
+    expect(judge(c, { ...parAt(19), 'parNoAbilities#1': fakeResult('won', 19) }).failures).toEqual([
+      "seed 1: margin 95 is not below par's 95: the casts change nothing",
+    ]);
+    // A par build that casts nothing has no such check.
+    const quiet = {
+      ...map,
+      builds: {
+        ...map.builds,
+        parBuild: {
+          ...map.builds.parBuild,
+          steps: map.builds.parBuild.steps.filter((s) => s.kind !== 'ability'),
+        },
+      },
+    };
+    expect(mapChecks(quiet, [1], [1]).some((x) => x.id === 'abilities')).toBe(false);
+  });
+
+  it('#8 alt build expectations: a stricter floor, and below par', () => {
+    const expecting = {
+      ...map,
+      builds: {
+        ...map.builds,
+        altExpectations: { gun_only: { belowPar: true as const, minMarginPct: 40 } },
+      },
+    };
+    const checks = mapChecks(expecting, [1], [1]).filter((x) => x.subject === 'alt:gun_only');
+    expect(checks.map((x) => x.title)).toEqual([
+      'alt:gun_only wins with margin ≥ 20',
+      'alt:gun_only wins with margin ≥ 40',
+      "alt:gun_only wins below par's margin",
+    ]);
+    const [, floor, below] = checks;
+    expect(judge(floor!, { 'alt:gun_only#1': fakeResult('won', 8) }).ok).toBe(true); // 40%
+    expect(judge(floor!, { 'alt:gun_only#1': fakeResult('won', 7) }).failures).toEqual([
+      'seed 1: margin 35 is below 40',
+    ]);
+    expect(judge(below!, { ...parAt(19), 'alt:gun_only#1': fakeResult('won', 18) }).ok).toBe(true);
+    expect(judge(below!, { ...parAt(18), 'alt:gun_only#1': fakeResult('won', 18) }).ok).toBe(false);
+    // An expectation for a build the map lacks is refused, not skipped.
+    const stray = {
+      ...map,
+      builds: { ...map.builds, altExpectations: { nope: { belowPar: true as const } } },
+    };
+    const refused = mapChecks(stray, [1], [1]).find((x) => x.subject === 'alt:nope')!;
+    expect(judge(refused, {}).ok).toBe(false);
   });
 
   it('#8 every alt build wins at or above the forgiving floor', () => {

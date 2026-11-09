@@ -13,7 +13,8 @@
 // - [no-counter-build]: `noCounterBuilds[c]` uses no tower or ability that answers `c`.
 // - [alt-builds]: every alt build answers every required counter; from A1M4, at least 2 alt
 //   builds, each sharing at most 2 tower types with the par loadout.
-// - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values.
+// - [builds-range]: margin bands are 0 ≤ min < max ≤ 100; flag variants list values; alt
+//   build expectations name alt builds, and their minMarginPct is 0–100.
 //
 // TODO stubs (their content can't exist yet): par is purchasable (availableAfter and the
 // Stardust/Intel totals; T204); a build's ability is never one of the map's lockedAbilities
@@ -114,6 +115,14 @@ export function validateBuilds(
     !(band.minPct >= 0 && band.minPct < band.maxPct && band.maxPct <= 100)
   ) {
     issues.add('builds-range', `${where}.marginBand`, 'must have 0 ≤ minPct < maxPct ≤ 100');
+  }
+  for (const [name, expect] of Object.entries(def.altExpectations ?? {})) {
+    const at = `${where}.altExpectations.${name}`;
+    if (!(name in (def.altBuilds ?? {}))) issues.add('builds-range', at, 'names no alt build');
+    const min = expect.minMarginPct;
+    if (min !== undefined && !(min >= 0 && min <= 100)) {
+      issues.add('builds-range', at, 'minMarginPct must be 0–100');
+    }
   }
   for (const [flag, values] of Object.entries(def.flagVariants ?? {})) {
     if (values === undefined || values.length === 0) {

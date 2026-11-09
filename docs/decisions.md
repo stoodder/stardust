@@ -268,3 +268,34 @@ Three reviews ran: Correctness/Architecture, Gameplay/Story, and UX/Art/Performa
   - Impacts and builds get more juice.
 - **Deferred:** keyboard-only building (a tile cursor) is T126.
 - **Art-trail baseline:** M1's gallery is the first art-trail image. M2's should show the darker Act I ground, distinct tier silhouettes, and the Zoomer tell.
+
+### D027 — 2026-11-09 — M1 review round 1 fixes landed
+Four fixers applied D026: sim, art, UI, and balance. Notes beyond D026:
+- **A1M1 curve** (supersedes D024's waves): W1–W3 are unchanged. W4 is Zoomer ×6. W5 is four Nibbler clumps plus Zoomer ×12. W6 is Zoomer ×20 plus two clumps. W7 is four big clumps of 8 plus two Zoomer ×12 groups.
+  - **Par** builds two Rivets in setup and spends its whole bank (W7 starts with 69 unspent).
+  - **Results** on every seed (margin; leaks W1–W7):
+
+    | Build | Margin | Leaks |
+    |---|---|---|
+    | par | **95** | 1 in W7 |
+    | rivet_only | 60 | 4 in W5, 4 in W7 |
+    | par_minus_last | 85 | |
+    | par without strikes | 65 | the W7 strike alone saves 6 |
+    | alwaysCallEarly | 75 | |
+    | none | loses at W3 | |
+    | three Rivets then nothing | loses at W7 | 2 in W5, 5 in W6, 13 in W7 (gradual) |
+
+  - **Robustness:** `src/balance/a1m1.test.ts` re-runs the harness with the W5–W7 clumps shifted ±0.1/±0.2 s, and every check holds. rivet_only touches its 40% floor at −0.2 s, so it sits at the edge (T125).
+  - A first-time player with one setup Rivet leaks in W1, and the radio's first-leak line explains it. Par itself doesn't leak there.
+  - W5's planning threat is slightly above W6's; round 2 judges whether that reads as a dip.
+- **Harness:**
+  - Alt expectations (`belowPar`, `minMarginPct`) live in `BuildsDef.altExpectations`, so `src/balance/expectations.ts` is gone and D023's line about it is stale.
+  - A new `abilities` check: par without its casts must score below par.
+  - Check #7 is flagged as vacuous when its cap is 100, not capped.
+- **Value bands:** the art fixer went darker than D026's suggested hex values (grass `#348c48`, path centred on `#b48e80`), because the ruled values left the path no brighter than the grass. A palette test now enforces grass < path < every actor.
+- **Decor is placed by an env rule**, not map data: the apron, fence, domes, billboard, lettuce, and the road running past the core.
+- **Radio:**
+  - Every line is verbatim from act1.md except "New hardware! Thumper Mortar, ready to deploy!", which is exempted by name in `tools/radioLines.test.ts` (Story task T128).
+  - Triggers: first leak, W1 cleared (the jingle, which fills the W2 slot now that Bricks's pads line is in the briefing), Thumper unlock, W4 countdown (Goldie), first clean wave, W6 (Joke of the Shift, "It's Wednesday."), W7 (the grievance).
+  - Name plates: QUILL teal.4, Bricks orange.4, Goldie green.4.
+  - Each line shows for 4 s plus 40 ms per character over 60.

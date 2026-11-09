@@ -37,8 +37,9 @@ const chill = (pct: number): unknown[] => [{ status: 'chilled', pct, durationTic
 /** `enemy×count@intervalTicks+delayTicks` per group of a wave (0-based). */
 const groupsOf = (w: number): string[] =>
   a1m1.waves[w]!.groups.map((g) => `${g.enemy.id}×${g.count}@${g.intervalTicks}+${g.delayTicks}`);
-const clumps = (...delays: number[]): string[] => delays.map((d) => `nibbler×4@15+${d}`);
-const bigClumps = (...delays: number[]): string[] => delays.map((d) => `nibbler×6@12+${d}`);
+/** Clumps of `count` Nibblers `every` ticks apart, one per start delay (ticks). */
+const clumps = (count: number, every: number, ...delays: number[]): string[] =>
+  delays.map((d) => `nibbler×${count}@${every}+${d}`);
 
 /** A build step as `W<wave> <kind> [tower] <tile>`. */
 const stepOf = (s: CompiledBuild['steps'][number]): string =>
@@ -84,6 +85,20 @@ function banks(b: CompiledBuild): number[] {
   }
   return out;
 }
+
+/** Par's step list, with `splash` in the Thumper's place. */
+const parList = (splash: string): string[] => [
+  'W1 build rivet 7,2', // the greenhouse roof (high ground)
+  'W1 build rivet 10,4',
+  'W2 upgrade 7,2', // T2
+  `W3 build ${splash} 10,5`, // the Crossfire pair
+  'W5 upgrade 7,2', // T3
+  'W5 ability 4,3',
+  'W6 upgrade 10,5',
+  'W6 upgrade 10,4',
+  'W7 build rivet 3,4',
+  'W7 ability 4,3',
+];
 
 describe('towers', () => {
   it('registers the three M1 Everglow towers', () => {
@@ -212,7 +227,7 @@ describe('enemies', () => {
 describe('A1M1 waves', () => {
   it('has seven waves with the documented totals, all on the road', () => {
     expect(a1m1.waves.map((w) => w.groups.reduce((n, g) => n + g.count, 0))).toEqual([
-      8, 10, 12, 4, 12, 10, 46,
+      8, 10, 12, 6, 36, 32, 56,
     ]);
     for (const w of a1m1.waves) {
       expect(w.teach).toBe(false);
@@ -220,17 +235,17 @@ describe('A1M1 waves', () => {
     }
   });
 
-  it('spaces groups as the wave table says (clumps 3.75 s apart, W7 big clumps 2.25 s)', () => {
+  it('spaces groups as the wave table says (clumps of 4, 6, and 8; Zoomer groups)', () => {
     expect(groupsOf(0)).toEqual(['nibbler×8@39+0']);
     expect(groupsOf(1)).toEqual(['nibbler×10@48+0']);
-    expect(groupsOf(2)).toEqual(clumps(0, 225, 450));
-    expect(groupsOf(3)).toEqual(['zoomer×4@30+0']);
-    expect(groupsOf(4)).toEqual([...clumps(0, 225), 'zoomer×4@30+450']);
-    expect(groupsOf(5)).toEqual(['zoomer×10@30+0']);
+    expect(groupsOf(2)).toEqual(clumps(4, 15, 0, 225, 450));
+    expect(groupsOf(3)).toEqual(['zoomer×6@30+0']);
+    expect(groupsOf(4)).toEqual([...clumps(6, 12, 0, 225, 450, 675), 'zoomer×12@24+900']);
+    expect(groupsOf(5)).toEqual(['zoomer×20@30+0', ...clumps(6, 15, 120, 345)]);
     expect(groupsOf(6)).toEqual([
-      ...bigClumps(0, 135, 270, 405, 540),
-      'zoomer×8@30+195',
-      'zoomer×8@30+465',
+      ...clumps(8, 12, 0, 135, 270, 405),
+      'zoomer×12@24+30',
+      'zoomer×12@24+390',
     ]);
   });
 
@@ -278,40 +293,35 @@ describe('A1M1 builds', () => {
     const par = a1m1.builds.parBuild;
     expect(par.loadout).toEqual(['rivet', 'thumper']);
     expect(par.callEarly).toBe(false);
-    expect(par.steps.map(stepOf)).toEqual([
-      'W1 build rivet 7,2', // the greenhouse roof (high ground)
-      'W2 upgrade 7,2', // T2
-      'W3 build rivet 10,4',
-      'W3 build thumper 10,5',
-      'W5 upgrade 7,2', // T3
-      'W5 ability 4,3',
-      'W7 build thumper 3,5',
-      'W7 ability 4,3',
-    ]);
+    expect(par.steps.map(stepOf)).toEqual(parList('thumper'));
     for (const s of par.steps.filter((x) => x.kind === 'ability')) {
       expect(s).toMatchObject({ slot: 1, target: [4, 3], when: { afterTicks: 144 } });
     }
-    // The economy act1.md and builds.ts describe: par lets one W1 Nibbler through (its 3-credit
-    // bounty is missing from W2 on), and 98 in W6's build phase is short of a Thumper.
-    expect(banks(par).map((b, i) => (i === 0 ? b : b - 3))).toEqual([
-      350, 295, 273, 116, 168, 98, 182,
-    ]);
+    // The economy act1.md and builds.ts describe (par's only leak is in W7, after the last
+    // phase): W4's phase buys nothing, saving for the roof's tier 3.
+    expect(banks(par)).toEqual([350, 198, 176, 119, 179, 189, 169]);
   });
 
-  it('rivet_only: par with every Thumper swapped for a Rivet, affordable too', () => {
+  it('rivet_only: par with the Thumper swapped for a Rivet, affordable too', () => {
     const alt = a1m1.builds.altBuilds.rivet_only!;
     expect(alt.loadout).toEqual(['rivet']);
-    expect(alt.steps.map(stepOf)).toEqual([
-      'W1 build rivet 7,2',
-      'W2 upgrade 7,2',
-      'W3 build rivet 10,4',
-      'W3 build rivet 10,5',
-      'W5 upgrade 7,2',
-      'W5 ability 4,3',
-      'W7 build rivet 3,5',
-      'W7 ability 4,3',
-    ]);
+    expect(alt.steps.map(stepOf)).toEqual(parList('rivet'));
     expect(() => banks(alt)).not.toThrow();
+  });
+
+  it('par_minus_last: par without its last purchase (the W7 Rivet)', () => {
+    const alt = a1m1.builds.altBuilds.par_minus_last!;
+    expect(alt.loadout).toEqual(['rivet', 'thumper']);
+    expect(alt.steps.map(stepOf)).toEqual(
+      parList('thumper').filter((s) => s !== 'W7 build rivet 3,4'),
+    );
+  });
+
+  it('expects rivet_only below par and both alt builds at ≥ 40% (D026)', () => {
+    expect(a1m1.builds.altExpectations).toEqual({
+      rivet_only: { belowPar: true, minMarginPct: 40 },
+      par_minus_last: { minMarginPct: 40 },
+    });
   });
 });
 

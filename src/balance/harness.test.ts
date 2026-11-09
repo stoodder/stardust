@@ -20,9 +20,10 @@ describe('balance harness', () => {
         'none#1',
         'alwaysCallEarly#2',
         'alt:gun_only#2',
+        'parNoAbilities#2',
       ]),
     );
-    expect(keys).toHaveLength(8);
+    expect(keys).toHaveLength(10);
   });
 
   it('judges the fixture: its par build leaves steps unissued, which fails the steps check', () => {
@@ -87,6 +88,9 @@ describe('balance harness', () => {
     expect(buildFor('par', map, PLAIN_CONTENT)).toBe(map.builds.parBuild);
     expect(buildFor('alt:gun_only', map, PLAIN_CONTENT)).toBe(map.builds.altBuilds.gun_only);
     expect(buildFor('alwaysCallEarly', map, PLAIN_CONTENT)?.callEarly).toBe(true);
+    const quiet = buildFor('parNoAbilities', map, PLAIN_CONTENT)!;
+    expect(quiet.steps.map((s) => s.kind)).toEqual(['build', 'upgrade', 'build', 'targeting']);
+    expect(quiet.technicianAbility).toBe(map.builds.parBuild.technicianAbility);
     expect(buildFor('alt:nope', map, PLAIN_CONTENT)).toBeNull();
   });
 

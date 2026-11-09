@@ -186,7 +186,7 @@ The finale is one map in three phases (splittable into two maps at the Phase 1 /
 | III | 22 × 14 | 14–20 | 14–20 | 12–18 min | 2–3, plus air and rift | 550–800 | **50–70** | **50–70** |
 | Finale | 22 × 14 | 18–22 | 25–30 | 20–25 min | 3, plus air and rift | ~900 | — | **40–60** (Voices %) |
 
-**Par margin** is what the par build (§6.4) has left at the end on Standard: remaining integrity ÷ max integrity (including Reinforced Core ranks) on Defend and Protect-the-asset maps, and the meter % (Evacuated, Sheltered, or Voices) on Escort and Choir maps. Integrity absorbed by Emergency Bulkhead doesn't count as lost. A *lower* par margin means a harder map. **Rule (par band):** the par build's margin must land **inside** its act's band. Below the band the map is too hard for the intended solution; above it (the top is the floor + 20 points) the map is trivial for it. A map may override its band in its build data with a comment saying why. The Holdout (A3M3) has no band; it asserts an Evacuated floor of **50%** instead (§6.4).
+**Par margin** is what the par build (§6.4) has left at the end on Standard: remaining integrity ÷ max integrity (including Reinforced Core ranks) on Defend and Protect-the-asset maps, and the meter % (Evacuated, Sheltered, or Voices) on Escort and Choir maps. Integrity absorbed by Emergency Bulkhead doesn't count as lost. A *lower* par margin means a harder map. **Rule (par band):** the par build's margin must land **inside** its act's band. Below the band the map is too hard for the intended solution; above it (the top is the floor + 20 points) the map is trivial for it. A map may override its band in its build data with a comment saying why. The Holdout (A3M3) has no band; it asserts an Evacuated floor of **50%** instead (§6.4). The band floors and width, and the harness's other thresholds (the 20% forgiving floor, the +10 early-call slack, the 5-point monotonic tolerance), live in code in [`src/balance/rules.ts`](../../src/balance/rules.ts); if they differ from this section, fix one of them.
 
 **Difficulty curve rules:**
 - **Rule (monotonic, two chains):** Defend/Protect maps and Escort maps form **two separate chains** in campaign order, because an integrity % and an Evacuated % don't measure the same thing. Within each chain, each map's par margin is ≤ the previous map's in that chain (5 points of tolerance), so each map is harder than the last (vision pillar 5). The first map after a boss may re-baseline within that tolerance. The Holdout belongs to neither chain.
@@ -232,12 +232,12 @@ Each map's data includes:
 - `referenceProfile`: what a Standard player owns at that point ([progression.md §10](progression.md#10-pacing-targets-and-tuning-assumptions)).
 - `parBuild`: a scripted loadout, placement order, upgrade order, and targeting settings that a designer considers a good-but-not-optimal solution.
 - `noCounterBuilds`: exactly one scripted build per entry in `requiredCounters`, each omitting every answer in that category (§6.1; a map with no required counters, such as A1M1, has none).
-- `altBuilds`: sensible non-par builds (at least two from A1M4, §6.1).
+- `altBuilds`: sensible non-par builds (at least two from A1M4, §6.1), with optional `altExpectations` per build: a stricter floor than 20%, or a margin below par's.
 
 The harness runs, per map:
-1. **Par build, Standard:** must win, with its margin **inside the par band** (§6.1).
+1. **Par build, Standard:** must win, with its margin **inside the par band** (§6.1). If it casts a commander ability, the same build without those casts must score lower: the ability has to matter.
 2. **No-counter builds:** each must lose before the final third.
-3. **Alt builds:** each must win with a margin of ≥ 20%, and (from A1M4) there are at least two, each sharing at most 2 towers with the par loadout.
+3. **Alt builds:** each must win with a margin of ≥ 20% (or its `altExpectations` floor), below par's margin where `altExpectations` says so, and (from A1M4) there are at least two, each sharing at most 2 towers with the par loadout.
 4. **Par build, Story:** must win comfortably.
 5. **Monotonic check:** par margin ≤ the previous map's in the same chain (§6.1, within tolerance).
 6. **Purchasable:** the reference profile is affordable on its timeline and the par build uses only what it owns ([progression.md §10](progression.md#10-pacing-targets-and-tuning-assumptions)).
@@ -256,7 +256,7 @@ The harness runs, per map:
 
 How the harness encodes these is in [../tech/conventions.md § Balance sims](../tech/conventions.md#balance-sims-npm-run-sim).
 
-**A1M1, the tutorial.** A1M1 has `requiredCounters: []`: it must never punish a player who skips the Thumper, so it has no no-counter run. Its harness runs are: do-nothing loses, par wins inside the band, a **Rivet-only** build wins (at a lower margin than par), and `alwaysCallEarly`. Splash first becomes a required counter at A1M4.
+**A1M1, the tutorial.** A1M1 has `requiredCounters: []`: it must never punish a player who skips the Thumper, so it has no no-counter run. Its harness runs are: do-nothing loses; par wins inside the band; par without its strikes scores lower; a **Rivet-only** build wins at a lower margin than par and at ≥ 40%; par one purchase short (`par_minus_last`) wins at ≥ 40%, so an under-built player is never wiped; and `alwaysCallEarly`. Splash first becomes a required counter at A1M4.
 
 **The M1 cut.** Under [D004](../decisions.md), M1 ships A1M1 without adjacency links (Crossfire), medals, Suppressing Fire, or the Bricks ally, so A1M1's par build is tuned without them for M1 and re-tuned when they land (links and medals in T202, Bricks and Suppressing Fire in M2). Until T202 the W3 Crossfire teach is cosmetic: the line plays, but no link forms. In M1 the Sprinkler (sim-tested content, not placed on A1M1) applies Chilled only; Soaked is left out until a map needs it. A1M1's reference profile carries no meta purchases (nothing has been bought yet).
 
