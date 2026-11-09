@@ -7,6 +7,7 @@ import type { IdSpace } from '../../content/types.ts';
 import { enemyDef, placeTower, setup, spawn } from '../__fixtures__/combat.ts';
 import type { SimEvent as LiveSimEvent } from '../events.ts';
 import { hashState } from '../hashState.ts';
+import { poolKill } from '../pool.ts';
 import type { SimState } from '../state.ts';
 import { runTick, type TickContext } from '../tick.ts';
 
@@ -64,7 +65,7 @@ describe('Cluster Thumper: bomblets', () => {
         targetUid: 0,
         x: shell!.targetX, // fired 5 above
         y: shell!.targetY,
-        sprite: 'projectile.thumper_shell',
+        sprite: 'projectile.thumper_bomblet',
         flightTicks: 18,
         radiusTiles: 0.6,
       });
@@ -120,7 +121,7 @@ describe('Cluster Thumper: bomblets', () => {
     const t = placeTower(state, THUMPER, 3, 1, CLUSTER);
     spawn(state, still, { dist: 4 });
     run(state, ctx, 1);
-    t.alive = false; // sold mid-flight (as poolKill leaves it)
+    poolKill(state.towers, t); // sold mid-flight
     const evs = run(state, ctx, 66);
     expect(ofType(evs, 'ProjectileFired')).toHaveLength(4);
     expect(ofType(evs, 'ProjectileHit')).toHaveLength(5);
@@ -148,9 +149,13 @@ describe('Bunker Buster', () => {
   it('Corroded strips armor for the next hit, never past its max of 3', () => {
     const { state, ctx } = setup();
     placeTower(state, THUMPER, 3, 1, BUSTER);
-    const plated = spawn(state, enemyDef('fx_plated', { hp: 100000, speedTilesPerTick: 0, armor: 8 }), {
-      dist: 4,
-    });
+    const plated = spawn(
+      state,
+      enemyDef('fx_plated', { hp: 100000, speedTilesPerTick: 0, armor: 8 }),
+      {
+        dist: 4,
+      },
+    );
     run(state, ctx, 49); // the first shell lands at 48
     const first = 100000 - plated.hp;
     expect(plated.corrodedStacks).toBe(3);

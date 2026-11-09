@@ -39,7 +39,7 @@ export const MEDAL_EXEMPT_TAGS: readonly WaveTag[] = [
 export const RESERVED_MEDAL_IDS: readonly string[] = ['victory', 'perfect_core', 'challenge'];
 
 /** Campaign maps still waiting for their Challenge medal, each with the task that adds it. */
-export const CHALLENGE_PENDING: Readonly<Record<string, string>> = { a1_m01: 'T125' };
+export const CHALLENGE_PENDING: Readonly<Record<string, string>> = {};
 
 /** Briefing limits for a Challenge's name and description (characters). */
 export const MEDAL_NAME_MAX = 40;

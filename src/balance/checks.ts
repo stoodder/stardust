@@ -4,7 +4,6 @@
 import type { CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { HeadlessResult } from '../sim/index.ts';
-import { fullCatalogModifiers } from './profile.ts';
 import { refusal } from './refusals.ts';
 import {
   EARLY_CALL_SLACK_PCT,
@@ -18,7 +17,9 @@ import {
 
 /**
  * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
- * 'holdFireWhile:quiet_wave', 'companion:x', 'alt:x', 'noCounter:x', 'guard:x').
+ * 'holdFireWhile:quiet_wave', 'companion:x', 'alt:x', 'noCounter:x', 'guard:x'), run on the map's
+ * reference profile on Standard unless a `@<meta>` suffix says otherwise ('par@story',
+ * 'noCounter:armor@fullCatalog'; `splitMeta`).
  */
 export interface RunRequest {
   readonly build: string;
@@ -58,6 +59,23 @@ export interface CheckSpec {
 
 export const runKey = (r: RunRequest): string => `${r.build}#${r.seed}${r.repeat ? '#again' : ''}`;
 
+/**
+ * A run's meta (balance/profile.ts): the reference profile on Standard (`standard`) or on Story
+ * (`story`, assertion 9), or the full-catalog profile on Standard (`fullCatalog`, assertion 6).
+ */
+export type RunMeta = 'standard' | 'story' | 'fullCatalog';
+
+/** A run label's build and meta: 'par@story' → par on Story; 'par' → par on Standard. */
+export function splitMeta(label: string): { readonly build: string; readonly meta: RunMeta } {
+  const at = label.lastIndexOf('@');
+  if (at < 0) return { build: label, meta: 'standard' };
+  const meta = label.slice(at + 1);
+  if (meta !== 'story' && meta !== 'fullCatalog') {
+    throw new RangeError(`unknown run meta '${meta}' in '${label}'`);
+  }
+  return { build: label.slice(0, at), meta };
+}
+
 /** "won (100%)", "lost at W4", or the run's error. */
 export function describeRun(rec: RunRecord): string {
   const r = rec.result;
@@ -91,12 +109,13 @@ function perRun(
   judge: (rec: RunRecord, get: (r: RunRequest) => RunRecord) => string | null,
   summarize: (recs: readonly RunRecord[], get: (r: RunRequest) => RunRecord) => string,
   extraNeeds: readonly RunRequest[] = [],
+  subject: string = build,
 ): CheckSpec {
   const needs = [...seedRuns(build, seeds), ...extraNeeds];
   return {
     id,
     title,
-    subject: build,
+    subject,
     needs,
     evaluate(get) {
       const recs = seeds.map((seed) => get({ build, seed }));
@@ -142,11 +161,15 @@ export function notGradual(r: HeadlessResult): string | null {
   return null;
 }
 
-/** Every check for `map` that needs runs. `every` and `few` are the seed lists. */
+/**
+ * Every check for `map` that needs runs. `every` and `few` are the seed lists; `leftOut` lists
+ * the full-catalog grants the sim doesn't simulate yet (assertion 6 names them).
+ */
 export function mapChecks<K extends IdSpace>(
   map: CompiledMapDef<K>,
   every: readonly number[],
   few: readonly number[],
+  leftOut: readonly string[] = [],
 ): CheckSpec[] {
   const b = map.builds;
   const band = parBand(map.act, b.marginBand);
@@ -202,12 +225,45 @@ export function mapChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
+    // #6: meta can't replace a counter (design/progression.md § 10).
+    const note = leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
     checks.push(
-      refusal('6', `${label} loses with the full-catalog profile`, label, () => {
-        fullCatalogModifiers();
-      }),
+      perRun(
+        '6',
+        `${label} still loses with the full-catalog profile`,
+        `${label}@fullCatalog`,
+        few,
+        (rec) => (rec.result?.outcome === 'lost' ? null : describeRun(rec)),
+        (recs) => `${recs.map(describeRun).join(', ')}${note}`,
+        [],
+        label,
+      ),
     );
   }
+
+  // #9: Story difficulty is easier than Standard: par on Story (seed 1) wins with a margin at
+  // least par's Standard median over every seed.
+  const standardMedian = (get: (r: RunRequest) => RunRecord): number =>
+    median(every.map((seed) => get({ build: 'par', seed }).marginPct));
+  checks.push(
+    perRun(
+      '9',
+      "par on Story wins with margin ≥ its Standard median",
+      'par@story',
+      [1],
+      (rec, get) => {
+        if (rec.result?.outcome !== 'won') return describeRun(rec);
+        const med = standardMedian(get);
+        return rec.marginPct >= med
+          ? null
+          : `margin ${fmtPct(rec.marginPct)} is below the Standard median ${fmtPct(med)}`;
+      },
+      (recs, get) =>
+        `${recs.map(describeRun).join(', ')} vs Standard median ${fmtPct(standardMedian(get))}`,
+      seedRuns('par', every),
+      'par',
+    ),
+  );
 
   const ace = 'alwaysCallEarly';
   const aceCap = (seed: number, get: (r: RunRequest) => RunRecord): number =>

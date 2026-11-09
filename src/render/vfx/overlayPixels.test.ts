@@ -8,6 +8,7 @@ import {
   ringImage,
   snapRingRadius,
   tileHighlightImage,
+  tileTintImage,
 } from './overlayPixels.ts';
 
 const alphaAt = (img: { w: number; data: Uint8ClampedArray }, x: number, y: number): number =>
@@ -118,5 +119,24 @@ describe('tileHighlightImage', () => {
     }
     expect(alphaAt(img, 15, 0)).toBe(255); // top vertex
     expect(alphaAt(img, 16, 8)).toBe(fill); // center
+  });
+});
+
+describe('tileTintImage', () => {
+  it('fills the tile mask at its fill alpha, with its edge at the edge alpha', () => {
+    const img = tileTintImage('orange.3', 0.35, 0.6);
+    expect(alphaAt(img, 16, 8)).toBe(Math.round(0.35 * 255)); // center
+    expect(alphaAt(img, 15, 0)).toBe(Math.round(0.6 * 255)); // top vertex
+    expect(alphaAt(img, 0, 0)).toBe(0); // outside the diamond
+  });
+});
+
+describe('ringImage dash shift', () => {
+  it('marches the dashes without changing the ring', () => {
+    const a = ringImage(2, 'teal.3', true, null, 0);
+    const b = ringImage(2, 'teal.3', true, null, 2);
+    expect(b.image.w).toBe(a.image.w);
+    expect(b.cx).toBe(a.cx);
+    expect(Array.from(b.image.data)).not.toEqual(Array.from(a.image.data));
   });
 });

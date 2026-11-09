@@ -1,6 +1,7 @@
-// Readability rules for specific sprites (art-direction §1, §5, §6, §8): tier silhouettes, the
-// Zoomer's `fast` tell, contact shadows, the apron's dither, the Brood Hauler's sack, Bricks, the
-// raised and powered tiles, and link tethers.
+// Readability rules for specific sprites (art-direction §1, §5, §6, §7, §8): tier and spec
+// silhouettes, the Thumper's NE muzzle, the explosion's punch, the Zoomer's `fast` tell, contact
+// shadows, the apron's dither, the Brood Hauler's sack, Bricks, the raised and powered tiles, and
+// link tethers.
 import { describe, expect, it } from 'vitest';
 import { tetherDir } from './fx/link_tether.ts';
 import { SPRITES, type SpriteId } from './index.ts';
@@ -55,6 +56,95 @@ describe('tower tier silhouettes', () => {
       expect(t3.y0).toBeLessThanOrEqual(t2.y0 - 6);
     });
   }
+});
+
+/** The opaque pixels of a grid as a set of `x,y` keys (shadow pixels excluded). */
+function opaque(rows: readonly string[]): Set<string> {
+  const out = new Set<string>();
+  rows.forEach((r, y) => {
+    for (let x = 0; x < r.length; x++) if (!'._'.includes(r.charAt(x))) out.add(`${x},${y}`);
+  });
+  return out;
+}
+
+/** How many pixels differ in opacity between two same-size grids (the silhouette difference). */
+function silhouetteDiff(a: readonly string[], b: readonly string[]): number {
+  const sa = opaque(a);
+  const sb = opaque(b);
+  return [...sa].filter((k) => !sb.has(k)).length + [...sb].filter((k) => !sa.has(k)).length;
+}
+
+describe('tier-4 spec frames (the tower changed, base and head)', () => {
+  for (const [base, head] of [
+    ['tower.rivet', 'tower.rivet_head'],
+    ['tower.thumper', 'tower.thumper_head'],
+  ] as const) {
+    it(`${base}: each spec base is as wide as T2 and its silhouette differs from T3 and the other`, () => {
+      const t2 = bounds(grid(base, 't2'));
+      for (const spec of ['spec_a', 'spec_b']) {
+        const b = bounds(grid(base, spec));
+        expect(b.x1 - b.x0, spec).toBeGreaterThanOrEqual(t2.x1 - t2.x0);
+        expect(silhouetteDiff(grid(base, spec), grid(base, 't3')), spec).toBeGreaterThan(30);
+      }
+      expect(silhouetteDiff(grid(base, 'spec_a'), grid(base, 'spec_b'))).toBeGreaterThan(30);
+    });
+
+    it(`${head}: each spec head differs from the T2+ head and the other spec, with fire anims`, () => {
+      for (const facing of ['se', 'ne']) {
+        const t2 = grid(head, `${facing}_t2`);
+        const a = grid(head, `${facing}_spec_a`);
+        const b = grid(head, `${facing}_spec_b`);
+        expect(silhouetteDiff(a, t2), `${facing} a`).toBeGreaterThan(12);
+        expect(silhouetteDiff(b, t2), `${facing} b`).toBeGreaterThan(12);
+        expect(silhouetteDiff(a, b), facing).toBeGreaterThan(12);
+      }
+      for (const spec of ['spec_a', 'spec_b']) {
+        for (const f of ['se', 'sw', 'ne', 'nw']) {
+          expect(def(head).anims?.[`fire_${f}_${spec}`], `fire_${f}_${spec}`).toMatchObject({});
+        }
+      }
+    });
+  }
+
+  it('Rivet Storm is short and fat, Railspike long and thin', () => {
+    const storm = bounds(grid('tower.rivet_head', 'se_spec_a'));
+    const rail = bounds(grid('tower.rivet_head', 'se_spec_b'));
+    expect(rail.x1).toBeGreaterThan(storm.x1 + 3);
+  });
+
+  it('Cluster Thumper flings bomblets, which pop small', () => {
+    expect(def('projectile.thumper_bomblet').size.w).toBeLessThan(
+      def('projectile.thumper_shell').size.w,
+    );
+    expect(def('fx.bomblet_burst').size.w).toBeLessThan(def('fx.explosion').size.w);
+    expect(def('fx.bomblet_burst').anims?.['burst']).toMatchObject({ loop: false });
+  });
+});
+
+describe('Thumper NE muzzle', () => {
+  it('shows a 1 px bore sliver under the far lip, with no tube showing above it', () => {
+    for (const f of ['ne', 'ne_t2', 'ne_spec_a', 'ne_spec_b']) {
+      const rows = grid('tower.thumper_head', f);
+      const boreRows = rows.flatMap((r, y) => (r.includes('k') ? [y] : []));
+      expect(boreRows, f).toHaveLength(1);
+      // At most the far lip's one row sits above the bore.
+      expect(boreRows[0]! - bounds(rows).y0, f).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe('explosion punch (D024)', () => {
+  it('opens on its biggest, brightest frame', () => {
+    const area = (f: string): number => opaque(grid('fx.explosion', f)).size;
+    const white = (f: string): number => count(grid('fx.explosion', f), 'w');
+    expect(white('f0')).toBeGreaterThan(white('f1'));
+    const b0 = bounds(grid('fx.explosion', 'f0'));
+    expect(b0.x1 - b0.x0 + 1).toBeGreaterThanOrEqual(17);
+    expect(area('f1')).toBeGreaterThan(150);
+    expect(def('fx.explosion').anims?.['burst']).toMatchObject({ fps: 12, loop: false });
+    // Four frames: render/vfx/fxTiming.ts BURST_MS is four frames at 12 fps.
+    expect((def('fx.explosion').anims?.['burst'] as { frames: string[] }).frames).toHaveLength(4);
+  });
 });
 
 /** The 4 columns behind a Zoomer's body, where its speed lines run. */
@@ -153,7 +243,7 @@ describe('Brood Hauler and its sack', () => {
 });
 
 describe('Bricks at his post', () => {
-  it('idles and fires in four facings (SE and NE authored, mirrored)', () => {
+  it('idles, fires, and lowers his cannon in four facings (SE and NE authored, mirrored)', () => {
     const anims = Object.keys(def('ally.bricks').anims ?? {}).toSorted();
     expect(anims).toEqual(
       [
@@ -165,8 +255,20 @@ describe('Bricks at his post', () => {
         'idle_nw',
         'idle_se',
         'idle_sw',
+        'lowered_ne',
+        'lowered_nw',
+        'lowered_se',
+        'lowered_sw',
       ].toSorted(),
     );
+    // Lowered, the cannon's front half (right of his body, above the post) sits lower than aimed.
+    const muzzleTop = (f: string): number =>
+      grid('ally.bricks', f).findIndex((r, y) => y < 20 && /[1-4w]/.test(r.slice(19, 24)));
+    for (const facing of ['se', 'ne']) {
+      expect(muzzleTop(`lowered_${facing}_0`), facing).toBeGreaterThan(
+        muzzleTop(`idle_${facing}_0`),
+      );
+    }
     // Human-scale: 16–24 px of figure above the post (art-direction §6).
     const b = bounds(grid('ally.bricks', 'idle_se_0'));
     expect(def('ally.bricks').anchor.y - b.y0).toBeGreaterThanOrEqual(16);

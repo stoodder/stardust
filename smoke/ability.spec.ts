@@ -20,7 +20,8 @@ test('ability: aim from the HUD, fire at a tile, see the strike land and recharg
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
   const bar = page.getByRole('navigation', { name: 'Abilities' });
-  const slot = bar.getByRole('button');
+  // Slot 1 (A1M1 may also show Bricks's slot 2; smoke/suppress.spec.ts covers that one).
+  const slot = bar.getByRole('button', { name: /^Orbital Strike/ });
   await expect(slot).toHaveAttribute('aria-label', /, ready$/);
 
   // Start wave 1 and let it walk in, so the strike has something to hit (if waves are online).

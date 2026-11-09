@@ -93,5 +93,31 @@ describe('battleSetup from a save', () => {
     if (FEATURE_GATES.specs !== null) expect(cfg.specsUnlocked).toEqual([]);
     else expect(cfg.specsUnlocked).toEqual(cfg.loadout);
     expect(() => createSim(cfg)).not.toThrow();
+    // Every top-rank upgrade arrives, less Salvage Rights (wreckage is M3), plus Story's.
+    const sources = new Set(cfg.modifiers.map((m) => m.source));
+    expect(sources).toContain('rnd:orbital_strike_mk2');
+    expect(sources).toContain('shop:tune_rivet');
+    expect(sources).toContain('difficulty:story');
+    expect(sources).not.toContain('shop:salvage_rights');
+  });
+
+  it("brings the save's purchases and difficulty in as modifiers (meta/modifiers.ts)", () => {
+    const save = createNewSave();
+    save.upgrades = { orbital_strike_mk2: 1 };
+    expect(battleConfig(DEFAULT_MAP_ID, 1, save).modifiers).toEqual([
+      {
+        kind: 'abilityStat',
+        ability: 'orbital_strike',
+        stat: 'radius',
+        flat: 0.5,
+        source: 'rnd:orbital_strike_mk2',
+      },
+    ]);
+    save.settings.difficulty = 'story';
+    const story = battleConfig(DEFAULT_MAP_ID, 1, save);
+    expect(story.difficulty).toBe('story');
+    const sim = createSim(story);
+    expect(sim.state.integrity).toBe(30);
+    expect(sim.state.credits).toBe(Math.round(sim.map.startCredits * 1.5));
   });
 });

@@ -121,6 +121,9 @@ describe('aiming an ability', () => {
     expect(resolveClick(tower, 'left', null, 2, true)).toEqual({ kind: 'cantTarget' });
     expect(resolveClick(off, 'left', null, 2, true)).toEqual({ kind: 'none' });
     expect(hoverLook(path, null, false, 2, true)).toMatchObject({ highlight: 'hover', aim: true });
-    expect(hoverLook(pad, null, false, 2, true)).toMatchObject({ highlight: 'invalid', aim: false });
+    expect(hoverLook(pad, null, false, 2, true)).toMatchObject({
+      highlight: 'invalid',
+      aim: false,
+    });
   });
 });

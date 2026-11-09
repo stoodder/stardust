@@ -173,15 +173,15 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
 // A corner of an Act I map: S spawn, # path, o pad, ^ high ground, + power node, C core, . decor.
 // prettier-ignore
 const DIORAMA_MAP = [
-  '....S....',
+  '....S..o.',
   '....#.o+.',
   '.^^.#.o..',
   '....####.',
-  '...o...#o',
+  '.o.o...#o',
   '...o...#.',
   '....####.',
-  '..o.#....',
-  '....C....',
+  '..o.#.o..',
+  '..o.C....',
 ];
 
 const isTileChar = (c: string): c is TileChar => '#o^+x.SC'.includes(c);
@@ -193,20 +193,24 @@ const DIORAMA_GRID: GroundGrid = {
   tiles: DIORAMA_MAP.join('').split('').filter(isTileChar),
 };
 
+/** A tower's look: a tier (1–3) or a tier-4 spec, named like its base frame. */
+type TowerLook = 't1' | 't2' | 't3' | 'spec_a' | 'spec_b';
+
 /**
- * The head frame a tower of `tier` shows: from tier 2, the up-armored `<facing>_t2` frames where
- * the head has them (`se` → `se_t2`, `se_fire` → `se_t2_fire`); idle heads keep their frame.
+ * The head frame a tower of `look` shows: from tier 2, the up-armored `<facing>_t2` frames, and
+ * for a spec its `<facing>_spec_<a|b>` frames, where the head has them (`se_fire` → `se_t2_fire`,
+ * `se_spec_a_fire`); idle heads keep their frame.
  */
 function headFrame(
   baked: ReadonlyMap<string, BakedSprite>,
   id: SpriteId,
   frame: string,
-  tier: number,
+  look: TowerLook,
 ): string {
-  if (tier < 2) return frame;
+  if (look === 't1') return frame;
   const [facing, ...rest] = frame.split('_');
-  const t2 = [facing, 't2', ...rest].join('_');
-  return baked.get(id)?.frameNames.includes(t2) === true ? t2 : frame;
+  const named = [facing, look.startsWith('spec') ? look : 't2', ...rest].join('_');
+  return baked.get(id)?.frameNames.includes(named) === true ? named : frame;
 }
 
 type Placed = readonly [
@@ -286,15 +290,20 @@ function diorama(
     // Bricks at his post beside the road.
     ['ally.bricks', 'fire_nw_0', 8.5, 6.5],
   );
-  // [base, head, col, row, head frame, tier]; the Rivet on (2, 2) stands on high ground.
-  const towers: readonly [SpriteId, SpriteId, number, number, string, number][] = [
-    ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw', 1],
-    ['tower.thumper', 'tower.thumper_head', 6, 2, 'se', 2],
-    ['tower.rivet', 'tower.rivet_head', 2, 2, 'se', 2],
-    ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 3],
-    ['tower.rivet', 'tower.rivet_head', 8, 4, 'nw', 2],
-    ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne', 1],
-    ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire', 3],
+  // [base, head, col, row, head frame, look]; the Rivet on (2, 2) stands on high ground. Every
+  // tier and both specs of the Rivet and Thumper are on show, facing both ways.
+  const towers: readonly [SpriteId, SpriteId, number, number, string, TowerLook][] = [
+    ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw', 't1'],
+    ['tower.thumper', 'tower.thumper_head', 6, 2, 'se', 't2'],
+    ['tower.rivet', 'tower.rivet_head', 2, 2, 'se', 't2'],
+    ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 't3'],
+    ['tower.rivet', 'tower.rivet_head', 8, 4, 'nw', 't2'],
+    ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne', 't1'],
+    ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire', 't3'],
+    ['tower.thumper', 'tower.thumper_head', 7, 0, 'nw', 'spec_a'],
+    ['tower.thumper', 'tower.thumper_head', 1, 4, 'se', 'spec_b'],
+    ['tower.rivet', 'tower.rivet_head', 6, 7, 'sw_fire', 'spec_a'],
+    ['tower.rivet', 'tower.rivet_head', 2, 8, 'ne', 'spec_b'],
   ];
   const raised = new Set(blocks.map((b) => `${b.i},${b.j}`));
   type Tower = {
@@ -303,20 +312,20 @@ function diorama(
     gx: number;
     gy: number;
     head: string;
-    tier: number;
+    look: TowerLook;
     z: number;
   };
   type Block = { block: SpriteId; frame: string; gx: number; gy: number };
   const all: (Placed | Tower | Block)[] = [
     ...objects,
     ...blocks.map((b) => ({ block: b.id, frame: b.frame, gx: b.i + 0.5, gy: b.j + 0.5 })),
-    ...towers.map(([t, headId, i, j, head, tier]) => ({
+    ...towers.map(([t, headId, i, j, head, look]) => ({
       tower: t,
       headId,
       gx: i + 0.5,
       gy: j + 0.5,
-      head: headFrame(baked, headId, head, tier),
-      tier,
+      head: headFrame(baked, headId, head, look),
+      look,
       z: raised.has(`${i},${j}`) ? 1 : 0,
     })),
   ];
@@ -346,8 +355,8 @@ function diorama(
       const headId = o.headId;
       const [sx, gy] = screen(o.gx, o.gy);
       const sy = gy - o.z * 8; // on high ground, the anchor draws one step up
-      const base = frameOf(baseId, `t${o.tier}`, DEFAULT_VARIANT);
-      draw(base, sx, sy, glowOf(baked, baseId, `t${o.tier}`));
+      const base = frameOf(baseId, o.look, DEFAULT_VARIANT);
+      draw(base, sx, sy, glowOf(baked, baseId, o.look));
       const def = SPRITES.find((d) => d.id === baseId);
       const mount = def === undefined ? null : mountOf(def);
       if (base !== undefined && mount !== null) {
@@ -369,7 +378,23 @@ function diorama(
   draw(frameOf('fx.shadow', 'medium', DEFAULT_VARIANT), shx, shy);
   draw(frameOf('projectile.thumper_shell', 'spin_0', DEFAULT_VARIANT), shx, shy - 18);
   const [bx, by] = screen(4.5, 7.5);
-  draw(frameOf('fx.explosion', 'f1', DEFAULT_VARIANT), bx, by, glowOf(baked, 'fx.explosion', 'f1'));
+  draw(frameOf('fx.explosion', 'f0', DEFAULT_VARIANT), bx, by, glowOf(baked, 'fx.explosion', 'f0'));
+  // A cluster shell's bomblets: one still falling over its shadow, two popping on the road.
+  const [cx, cy] = screen(7.6, 3.2);
+  draw(frameOf('fx.shadow', 'small', DEFAULT_VARIANT), cx, cy);
+  draw(frameOf('projectile.thumper_bomblet', 'spin_0', DEFAULT_VARIANT), cx, cy - 10);
+  for (const [gx, gy, f] of [
+    [4.4, 4.5, 'f1'],
+    [5.1, 5.4, 'f0'],
+  ] as const) {
+    const [px, py] = screen(gx, gy);
+    draw(
+      frameOf('fx.bomblet_burst', f, DEFAULT_VARIANT),
+      px,
+      py,
+      glowOf(baked, 'fx.bomblet_burst', f),
+    );
+  }
   const [rx, ry] = screen(7.5, 3.5);
   draw(frameOf('fx.orbital_reticle', 'march_0', DEFAULT_VARIANT), rx, ry);
   const [tx, ty] = screen(6.5, 2.0);

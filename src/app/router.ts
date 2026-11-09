@@ -2,7 +2,8 @@
 // shows, whether a battle is running, and run end. The menus (Title, Campaign, Base, Settings) show
 // the animated backdrop; Battle runs a session; when the sim emits MapWon or MapLost, the battle
 // freezes where it stands, and RESULTS_DELAY_MS later (the last radio line and the leak feedback
-// play out; D028) Results shows over it. A won campaign map is recorded in the save in play.
+// play out; D028) Results shows over it. Every run in a campaign ends in the save in play (meta's
+// run end: Pests Processed, medals, rewards).
 import type * as Phaser from 'phaser';
 import { BACKDROP_SCENE_KEY } from '../render/scenes/BackdropScene.ts';
 import { assertNever } from '../shared/types.ts';
@@ -12,8 +13,9 @@ import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
 import { cancel, setSpeed } from './commands.ts';
-import { activeSave, closeSession, recordWin, systemOpen } from './save.ts';
-import { runResultOf } from './runResult.ts';
+import { earnedMedalIds } from '../sim/index.ts';
+import { activeSave, closeSession, recordRun, systemOpen } from './save.ts';
+import { metaRunEndOf, offeredMedals, runResultOf, type RunEndInput } from './runResult.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
 /** How long the frozen battle shows after the map ends, before Results (ms of real time; D028). */
@@ -190,24 +192,26 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       const { sim } = battle.host;
       const s = sim.state;
       const end = endedAt ?? { ms: performance.now(), tick: s.tick };
-      runResult.value = runResultOf(
-        {
-          mapId: sim.map.id,
-          waveCount: sim.map.waves.length,
-          maxIntegrity: sim.map.coreIntegrity,
-          integrity: s.integrity,
-          skitterkinKilled: s.stats.skitterkinKilled,
-          wavesCleared,
-          radio: radioLines(sim.map.id),
-          firstLeakAgo:
-            firstLeakAt === null
-              ? null
-              : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
-        },
-        outcome,
-      );
-      // A won campaign map opens the next and the systems after it (T204c adds the rewards).
-      if (outcome === 'won') recordWin(sim.map.id, s.integrity);
+      const input: RunEndInput = {
+        mapId: sim.map.id,
+        waveCount: sim.map.waves.length,
+        maxIntegrity: sim.map.coreIntegrity,
+        integrity: s.integrity,
+        skitterkinKilled: s.stats.skitterkinKilled,
+        wavesCleared,
+        radio: radioLines(sim.map.id),
+        firstLeakAgo:
+          firstLeakAt === null
+            ? null
+            : { ms: end.ms - firstLeakAt.ms, ticks: end.tick - firstLeakAt.tick },
+        stardust: sim.map.stardust,
+        medals: offeredMedals(sim.map),
+        earnedMedals: earnedMedalIds(s, sim.map),
+      };
+      // Run end (meta-runtime.md § Run end): Pests Processed, medals, and rewards into the save
+      // in play, then the results card shows what it paid.
+      const summary = recordRun(metaRunEndOf(input, outcome));
+      runResult.value = runResultOf(input, outcome, summary);
       // The battle freezes where it ended and stays drawn behind the results.
       setSpeed(0);
       cancel();

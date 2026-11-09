@@ -8,14 +8,21 @@
 // countdown until the first upgrade, built towers pulse (`deps.teachUpgrade`, D028).
 // The keyboard tile cursor (T126) is CursorView's; while it shows, the hover feedback follows it
 // instead of the pointer, and moving the mouse (or clicking) hides it.
+// Allies (Bricks at his post, T207b) are AllyView's: they face their targets and fire with a
+// tracer. Aiming a strike shows its reticle at its real radius (`abilityStats`, so Orbital Strike
+// Mk II's is wider); aiming Suppressing Fire tints the stretch of path it would cover (the sim's
+// `segmentSpan`), and a live segment is FxView's strip of suppressive fire.
 // The scene only reads sim state; every change goes through a command.
 import * as Phaser from 'phaser';
 import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
 import {
+  abilityStats,
   isBuildableTile,
+  segmentSpan,
   type Command,
+  type SegmentSpan,
   type Sim,
   type SimEvent,
   type Tower,
@@ -24,13 +31,14 @@ import type { DeepReadonly } from '../../shared/types.ts';
 import { BattleInteraction } from '../input/BattleInteraction.ts';
 import { applyIntent } from '../input/apply.ts';
 import { hoverLook, resolveClick, type TileFacts } from '../input/intents.ts';
-import { emptyTileFacts, fillTileFacts } from '../input/tileFacts.ts';
+import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
 import { gridToScreen, mapOrigin, pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import { createLayers } from '../layers.ts';
 import { prefersReducedMotion, pulseOn } from '../motion.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
 import { SPRITE_SOURCE_KEY } from '../sprites/CodeSpriteSource.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
+import { AllyView } from '../views/AllyView.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { CursorView } from '../views/CursorView.ts';
 import { EnemyView } from '../views/EnemyView.ts';
@@ -76,6 +84,8 @@ export interface BattleSceneDeps {
 const TOWER_FLOAT_LIFT_PX = 24;
 const CORE_FLOAT_LIFT_PX = 46;
 type LiveTower = DeepReadonly<Tower>;
+/** Most route tiles a segment preview can tint (FxView draws up to 12). */
+const MAX_PREVIEW_TILES = 12;
 
 export class BattleScene extends Phaser.Scene {
   readonly #deps: BattleSceneDeps;
@@ -83,6 +93,7 @@ export class BattleScene extends Phaser.Scene {
   #towers!: ViewPool<TowerView>;
   #enemies!: ViewPool<EnemyView>;
   #projectiles!: ViewPool<ProjectileView>;
+  #allies!: ViewPool<AllyView>;
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
@@ -106,6 +117,15 @@ export class BattleScene extends Phaser.Scene {
   readonly #offs: (() => void)[] = [];
   /** Scratch for the tile under the pointer (or the keyboard cursor), reused every frame. */
   readonly #tile = emptyTileFacts();
+  /** Each ability slot's strike radius after modifiers (Mk II), and segment reach (tiles; 0: none). */
+  readonly #strikeRadius: [number, number] = [0, 0];
+  readonly #segmentReach: [number, number] = [0, 0];
+  /** Scratch for the segment preview: the span on one route, and the tiles (col, row pairs). */
+  readonly #span: SegmentSpan = { lo: 0, hi: 0, distFrom: 0, distTo: 0 };
+  readonly #previewTiles: number[] = Array.from({ length: 2 * MAX_PREVIEW_TILES }, () => 0);
+  /** The tile the segment preview was last drawn for, so it's recomputed only on a move. */
+  #previewAt = -2;
+  readonly #muzzle: Vec2 = { x: 0, y: 0 };
 
   /** `key` must be unique among live scenes (the app numbers successive battles). */
   constructor(deps: BattleSceneDeps, key: string = BATTLE_SCENE_KEY) {
@@ -137,6 +157,7 @@ export class BattleScene extends Phaser.Scene {
     this.#towers = new ViewPool(() => new TowerView(ctx));
     this.#enemies = new ViewPool(() => new EnemyView(ctx));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
+    this.#allies = new ViewPool(() => new AllyView(ctx));
     this.#placement = new PlacementView(ctx);
     this.#fx = new FxView(ctx, prefersReducedMotion);
     this.#core = new CoreView(ctx, map, prefersReducedMotion, coreProps);
@@ -146,6 +167,18 @@ export class BattleScene extends Phaser.Scene {
       if (isBuildableTile(t)) teach.push([i % map.cols, Math.floor(i / map.cols)]);
     });
     this.#placement.setTeachTiles(teach);
+    this.#previewAt = -2;
+    for (const slot of [1, 2] as const) {
+      const a = sim.config.abilities;
+      const id = slot === 1 ? a.slot1 : a.slot2;
+      const def = id === null ? undefined : sim.config.content.abilities[id];
+      const e = def?.effect;
+      this.#strikeRadius[slot - 1] =
+        def !== undefined && e?.kind === 'strike'
+          ? abilityStats(def, sim.config.modifiers).radiusTiles
+          : 0;
+      this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
+    }
     this.#built = false;
     this.#teachShown = false;
     this.#told.clear();
@@ -230,12 +263,29 @@ export class BattleScene extends Phaser.Scene {
         fx.burst(e.x, e.y);
       }),
       bus.on('AbilityUsed', (e) => {
-        // Strikes only: a segment (Suppressing Fire) draws nothing until T207b. The reticle uses
-        // the content radius, not Mk II's (abilityStats; T207b).
-        const effect = content.abilities[e.ability]?.effect;
-        if (e.uid !== 0 && e.target !== null && effect?.kind === 'strike') {
-          fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, effect.radiusTiles);
+        // A strike's reticle and landing at its real radius (abilityStats: Mk II). A segment
+        // (Suppressing Fire) needs nothing here: FxView draws every live segment zone.
+        const radius = this.#strikeRadius[e.slot - 1] ?? 0;
+        if (e.uid !== 0 && e.target !== null && radius > 0) {
+          fx.strike(e.uid, e.target[0] + 0.5, e.target[1] + 0.5, radius);
         }
+      }),
+      bus.on('AllySpawned', (e) => {
+        this.#allies.acquire(e.uid).show(e.uid, e.kind, e.x, e.y);
+      }),
+      bus.on('AllyAttacked', (e) => {
+        const v = this.#allies.get(e.uid);
+        const air = this.#isFlyer(e.targetUid);
+        if (v === undefined || v.sprite === null) {
+          fx.tracer(e.x, e.y, e.targetX, e.targetY, air);
+          return;
+        }
+        v.fire(facingOf(e.targetX - e.x, e.targetY - e.y));
+        v.muzzle(this.#muzzle);
+        fx.tracerFrom(this.#muzzle.x, this.#muzzle.y, e.targetX, e.targetY, air);
+      }),
+      bus.on('AllyRemoved', (e) => {
+        this.#allies.release(e.uid);
       }),
     );
 
@@ -258,6 +308,7 @@ export class BattleScene extends Phaser.Scene {
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       for (const off of this.#offs) off();
+      this.#allies.releaseAll();
       this.#offs.length = 0;
       this.#fx.reset();
       this.#shells.clear();
@@ -345,8 +396,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   #click(button: 'left' | 'right'): void {
-    const { interaction } = this.#deps;
-    const intent = resolveClick(this.#pointerTile(), button, interaction.armed, interaction.aiming);
+    const { interaction, sim } = this.#deps;
+    const onPath = slotAimsAtPath(sim, interaction.aiming);
+    const tile = this.#pointerTile();
+    const intent = resolveClick(tile, button, interaction.armed, interaction.aiming, onPath);
     applyIntent(intent, interaction, this.#deps);
   }
 
@@ -421,8 +474,62 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#projectiles.sweep(stamp);
 
+    // Allies face their current target; the first one with a sprite (Bricks) is where
+    // Suppressing Fire's streaks come from.
+    const allies = state.allies;
+    let fireFrom: AllyView | null = null;
+    for (let i = 0; i < allies.used; i++) {
+      const a = allies.items[i]!; // i < used
+      if (!a.alive || a.kind === null) continue;
+      let v = this.#allies.get(a.uid);
+      if (v === undefined) {
+        v = this.#allies.acquire(a.uid);
+        v.show(a.uid, a.kind, a.x, a.y);
+      }
+      v.stamp = stamp;
+      v.sync(a);
+      const target = a.targetUid === 0 ? undefined : this.#enemies.get(a.targetUid);
+      if (target !== undefined) v.setFacing(facingOf(target.x - a.x, target.y - a.y));
+      if (fireFrom === null && v.sprite !== null) fireFrom = v;
+    }
+    this.#allies.sweep(stamp);
+    if (fireFrom === null) {
+      this.#fx.setFireSource(Number.NaN, Number.NaN);
+    } else {
+      fireFrom.muzzle(this.#muzzle);
+      this.#fx.setFireSource(this.#muzzle.x, this.#muzzle.y);
+    }
+
     if (selected !== 0 && selectedTower === null) interaction.selectTower(0);
     this.#syncFeedback(selectedTower);
+  }
+
+  /**
+   * The aimed ability's feedback on the hovered tile: a strike's reticle at its real radius, or
+   * the stretch of path a segment would cover there (exactly the sim's `segmentSpan`, on every
+   * ground route through the tile).
+   */
+  #syncAim(aim: boolean, tile: TileFacts, aiming: 1 | 2 | null): void {
+    const slot = aiming === null ? -1 : aiming - 1;
+    const radius = this.#strikeRadius[slot] ?? 0;
+    const reach = this.#segmentReach[slot] ?? 0;
+    this.#fx.setAim(aim && radius > 0 ? tile.col : -1, tile.row, radius);
+    const at = aim && reach > 0 ? tile.index : -1;
+    if (at === this.#previewAt) return;
+    this.#previewAt = at;
+    let n = 0;
+    if (at >= 0) {
+      for (const route of Object.values(this.#deps.sim.map.routes)) {
+        if (!segmentSpan(route, tile.col, tile.row, reach, this.#span)) continue;
+        for (let i = this.#span.lo; i <= this.#span.hi && n < MAX_PREVIEW_TILES; i++) {
+          const t = route.tiles[i]!; // lo ≤ i ≤ hi < tiles.length
+          this.#previewTiles[2 * n] = t[0];
+          this.#previewTiles[2 * n + 1] = t[1];
+          n++;
+        }
+      }
+    }
+    this.#fx.setSegmentAim(this.#previewTiles, n);
   }
 
   #syncFeedback(selectedTower: LiveTower | null): void {
@@ -430,14 +537,16 @@ export class BattleScene extends Phaser.Scene {
     const tile = this.#pointerTile(true);
     this.#cursor.set(this.#deps.interaction.cursor, this.#deps.sim.map.cols);
     const armed = this.#armedDef();
+    const aiming = this.#deps.interaction.aiming;
     const look = hoverLook(
       tile,
       armed === null ? null : armed.id,
       armed !== null && this.#canPlace(armed, tile),
-      this.#deps.interaction.aiming,
+      aiming,
+      slotAimsAtPath(this.#deps.sim, aiming),
     );
     placement.setHover(tile.col, tile.row, look.highlight);
-    this.#fx.setAim(look.aim ? tile.col : -1, tile.row);
+    this.#syncAim(look.aim, tile, aiming);
     placement.setSelectedTile(selectedTower?.col ?? -1, selectedTower?.row ?? -1);
 
     if (look.ghost && armed !== null) {

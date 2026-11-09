@@ -1,8 +1,18 @@
-// meta/: saves and campaign progress (gating, the Shift board) now; progression, shop, R&D, and modifiers as they land (meta-runtime.md).
+// meta/: saves, campaign progress (gating, the Shift board), modifiers, and pools now; run end, shop, and R&D as they land (meta-runtime.md).
 // The save API for app/ and the screens. Dev saves for `?save=` are in __fixtures__/devSaves.ts.
 export type { ImportProblemCode, ImportResult } from './codec.ts';
 export { CODE_LIMITS, exportCode, importCode } from './codec.ts';
 export { migrate, migrations } from './migrations.ts';
+export type { MetaCatalog, MetaLoadout } from './modifiers.ts';
+export {
+  DIFFICULTY_MODIFIERS,
+  LIVE_CATALOG,
+  maxRanks,
+  metaModifiers,
+  protocolSlots,
+  saveModifiers,
+} from './modifiers.ts';
+export { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
 export type { MetaSystem, ShiftEntry, ShiftState } from './progress.ts';
 export {
   META_SYSTEMS,
@@ -16,6 +26,10 @@ export {
   shiftBoard,
   unlockHint,
 } from './progress.ts';
+export type { EarnedMedal, PayoutInput, StardustPayout, StardustSource } from './rewards.ts';
+export { REWARD_RULES, medalPayout, stardustPayout } from './rewards.ts';
+export type { RunEndInput, RunEndResult, RunEndSummary } from './runEnd.ts';
+export { runEnd } from './runEnd.ts';
 export type { DecodedSave, SaveProblem, SaveProblemCode, SlotLoad, SlotWrite } from './save.ts';
 export {
   MAX_SAVE_JSON_CHARS,

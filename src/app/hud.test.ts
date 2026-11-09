@@ -215,9 +215,9 @@ describe('hud view models', () => {
     // An absent companion's slot shows, dark.
     const absent = { ...sim.config.abilities, slot2State: 'absent' } as const;
     expect(abilitySlots({ ...sim.config, abilities: absent })[1]?.absent).toBe(true);
-    expect(() =>
-      abilitySlots({ ...sim.config, abilities: { ...none, slot1: 'nope' } }),
-    ).toThrow(/nope/);
+    expect(() => abilitySlots({ ...sim.config, abilities: { ...none, slot1: 'nope' } })).toThrow(
+      /nope/,
+    );
   });
 
   it('describes and times abilities with their modified numbers (Mk II, Rapport)', () => {

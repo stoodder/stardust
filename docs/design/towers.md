@@ -166,7 +166,14 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base stats. Each later tier lists only what changes. The T4 cost assumes the default curve unless stated. DPS figures ignore armor and shields.
 
-**Where the exact numbers live.** Rivet, Thumper, and Sprinkler tiers 1–3 are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`), which are the home of those numbers; the entries below are the spec they encode. The other towers' entries, and every specialization, are still the only home of their numbers until their data lands.
+**Where the exact numbers live.** Rivet, Thumper, and Sprinkler tiers 1–3, and the Rivet and Thumper specializations, are in their data files, [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`), which are the home of those numbers; the entries below are the spec they encode. The other towers' entries, and the other specializations, are still the only home of their numbers until their data lands.
+
+**Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
+- **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.
+- **Priority.** A spec whose default priority differs from tier 3's (Railspike's Strong) switches the tower to it. Otherwise the player's chosen priority stays.
+- **Rivet Storm's spin-up** restarts on specializing, even mid-fight, then runs from acquiring a target after having none (section 5). It fires every 8 ticks (7.5/s) after 60 ticks of spin-up.
+- **Cluster Thumper's bomblets.** After the shell's own splash, its 4 bomblets fly 0.3 s from the impact point. Each lands at a point drawn uniformly within 1.2 tiles (seeded, so replays match) as its own 0.6-radius splash. Bomblets hit the shell's layers, apply the shell's effects, take the tower's damage bonuses (links included) fixed at fire time, and still land if the tower is sold. They don't scatter again.
+- **Bunker Buster's Corroded** is capped at 3 stacks (its max), so each shell refreshes the 3 stacks rather than adding more.
 
 ### Everglow towers
 

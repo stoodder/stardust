@@ -186,7 +186,7 @@ describe('towers', () => {
         splashTiles: 0.6,
         scatterTiles: 1.2,
         flightTicks: 18,
-        projectile: 'projectile.thumper_shell',
+        projectile: 'projectile.thumper_bomblet',
       },
     });
     expect(summary(buster)).toEqual({

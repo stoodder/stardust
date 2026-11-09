@@ -3,7 +3,7 @@
 // bonuses (static modifiers, links, auras, tiles: the Tower's `flat*`/`pct*` fields, through the
 // same stacking functions the towers system uses, sim/bonuses.ts). Pure, so the HUD, tests, and
 // tools all show the same numbers. Without bonuses it's the tier as authored.
-import type { CompiledTowerDef } from '../content/compiled.ts';
+import type { CompiledTier, CompiledTowerDef } from '../content/compiled.ts';
 import { MAX_TIER_BEFORE_SPEC, STATUS_BITS } from '../content/rules.ts';
 import type { AttackKind, DamageType, IdSpace, StatusId } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -16,6 +16,7 @@ import {
   bonusRangeTiles,
   type TowerBonuses,
 } from './bonuses.ts';
+import type { SpecChoice } from './commands.ts';
 import type { Modifier } from './config.ts';
 import { costFor } from './economy.ts';
 
@@ -79,12 +80,8 @@ const NO_ATTACK: TierStats = {
 
 const round2 = (x: number): number => Math.round(x * 100) / 100;
 
-function tierStats(
-  def: DeepReadonly<Pick<CompiledTowerDef, 'tiers'>>,
-  tier: number,
-  b: TowerBonuses,
-): TierStats {
-  const attack = def.tiers[tier - 1]!.attack; // callers keep 1 ≤ tier ≤ 3
+function tierStats(tierDef: DeepReadonly<CompiledTier>, b: TowerBonuses): TierStats {
+  const attack = tierDef.attack;
   if (attack === null) return NO_ATTACK;
   const damage = round2(bonusDamage(attack, b));
   const vs =
@@ -106,21 +103,29 @@ function tierStats(
 /**
  * The stat line of `def` at in-map tier `tier` (1–3) under `bonuses` (pass the Tower itself for
  * a built tower; none: the tier as authored), with the next tier's delta under the same bonuses
- * and its cost after the run's `towerCost` modifiers (pass `sim.config.modifiers`). Throws a
- * RangeError for any other tier (specializations arrive with T202b).
+ * and its cost after the run's `towerCost` modifiers (pass `sim.config.modifiers`). Tier 4 needs
+ * `spec` (a specialized tower's `spec`, or the choice the panel previews) and has no next tier.
+ * Throws a RangeError for any other tier, or for tier 4 without a spec or with none authored.
  */
 export function towerStats(
-  def: DeepReadonly<Pick<CompiledTowerDef, 'id' | 'tiers'>>,
+  def: DeepReadonly<Pick<CompiledTowerDef, 'id' | 'tiers' | 'specs'>>,
   tier: number,
   bonuses: TowerBonuses = NO_BONUSES,
   modifiers: DeepReadonly<Modifier<IdSpace>[]> = [],
+  spec: SpecChoice | null = null,
 ): TowerStatLine {
-  if (!Number.isInteger(tier) || tier < 1 || tier > MAX_TIER_BEFORE_SPEC) {
-    throw new RangeError(`towerStats: tier must be 1–${MAX_TIER_BEFORE_SPEC} (got ${tier})`);
+  if (tier === MAX_TIER_BEFORE_SPEC + 1) {
+    if (spec === null || def.specs === null) {
+      throw new RangeError(`towerStats: tier 4 needs a spec, and '${def.id}' to have specs`);
+    }
+    return { ...tierStats(def.specs[spec], bonuses), tier, next: null };
   }
-  const now = tierStats(def, tier, bonuses);
+  if (!Number.isInteger(tier) || tier < 1 || tier > MAX_TIER_BEFORE_SPEC) {
+    throw new RangeError(`towerStats: tier must be 1–${MAX_TIER_BEFORE_SPEC + 1} (got ${tier})`);
+  }
+  const now = tierStats(def.tiers[tier - 1]!, bonuses); // 1 ≤ tier ≤ 3
   if (tier === MAX_TIER_BEFORE_SPEC) return { ...now, tier, next: null };
-  const after = tierStats(def, tier + 1, bonuses);
+  const after = tierStats(def.tiers[tier]!, bonuses); // tier < 3: index tier is tier + 1's
   return {
     ...now,
     tier,

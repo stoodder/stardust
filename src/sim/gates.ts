@@ -129,7 +129,7 @@ export function gateRefusals(
     for (const tier of reach) {
       const kind = tier.attack?.kind;
       if (kind !== undefined && isGatedKind(kind)) {
-        use(`attack.${kind}`, `'${kind}' attacks (${id})`);
+        use(`attack.${kind}`, `a '${kind}' attack (${id})`);
       }
       for (const e of tier.effects) {
         if (isGatedStatus(e.status)) use(`status.${e.status}`, `the ${e.status} status (${id})`);

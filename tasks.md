@@ -60,7 +60,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [ ] **T117** Art pass (any time; uses the gallery and the D010 art trail): tier-4 `spec_a`/`spec_b` tower frames (needed by T202), enemy death animations, Chonk scutes, Thumper NE muzzle. Make W7's big clumps read as separate bugs (lateral offset or spacing) and give Thumper's shell explosion more punch (D024). Also trim the art-direction §2/§3 hex tables to a link to `src/content/palettes/master.ts` (one home per fact).
 - [ ] **T119** Add a display `name` to `TowerDef` and `EnemyDef`; the HUD derives labels from ids until then.
 - [ ] **T120** Design docs: shrink the towers.md / enemies.md number columns to roles + target ranges with pointers to the content files (D019).
-- [ ] **T121** (folded into T202b) `createSim` refuses loadouts that use attack kinds or statuses the towers system doesn't run yet (projectile/beam/chain/spawner; pinned/stasis/unnerved), per D013. Apply stat modifiers in `towers` once modifiers exist.
+- [x] **T121** (folded into T202b) `createSim` refuses loadouts that use attack kinds or statuses the towers system doesn't run yet (projectile/beam/chain/spawner; pinned/stasis/unnerved), per D013. Apply stat modifiers in `towers` once modifiers exist.
 - [x] **T123** (absorbed by T206a; boss-wave clear bonus moved to T304) Younglings: leaks cost 0 (`LEAK_FREE_TAGS`) and the ×0.5 speed (no M1 content uses them; needed before the first youngling map). Boss waves triple the clear bonus (with T304).
 - [ ] **T124** Harness follow-ups (the `BuildsDef` expectations and the maps.md §6.1 pointers are done, D027): add a per-tower damage tally (e.g. `damage` on `ProjectileHit`) so the report shows DPS per tower; switch `src/sim/a1m1.test.ts`'s mini-executor to `runHeadless`.
 - [~] **T125** (with T124, wave 5) Balance: A1M1 gets the companion, ally marker, and Teamwork medal; when T202 re-tunes A1M1 (links, Bricks), keep `src/balance/a1m1.test.ts` green; rivet_only sits on its 40% floor at a −0.2 s clump shift (D027). Add a threat-intel strip to the briefing once trait icons exist.
@@ -71,6 +71,7 @@ Goal: map A1M1 (the "M1 cut", see `docs/decisions.md` D004) winnable and losable
 - [x] **T212** Menus polish: Esc closes Settings and the Title panels; art-direction §9 describes the M2 menus (Shift board, Base, Settings, slot list, import).
 - [ ] **T213** HUD polish from T126: the aim hint says "Enter fires" when the cursor shows (style-guide wording); the panel's "Next:" line clips "+3 pierce"; the panel avoids the HUD corners.
 - [ ] **T214** Move `NOT_FIRING_SEC` and `YOUNGLING_SPEED_MUL` (TODOs in sim) into `content/rules.ts`.
+- [ ] **T215** Specs follow-ups: the headless executor runs `specialize` steps (it refuses them today); `validate.ts` checks bomblet sprite ids.
 - [ ] **T116** Docs: shrink the map-script sketch in `docs/tech/story-runtime.md` to a link once script types land in `content/types.ts` (they partly duplicate it now). Low priority.
 
 M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a·T205 → W2 T202a·T207a·T209 → W3 T202c·T204a·T208 → W4 T202b·T204b·T210a → W5 T206a·T204c·T125 → W6 T210b·T207b·T117a → W7 T202d·T201·T210c → W8 T206b·T206c·T204d → fillers.
@@ -84,7 +85,7 @@ M2 cut and plan: `docs/decisions.md` D031. Waves of ≤3 agents: W1 T200·T203a�
 - [x] **T202c** Condition evaluator (medals, trigger `when` incl. flags); Victory / Perfect Core / Challenge medals; `passedMarker`; the medal validator.
 - [x] **T204a** Catalog data (tune-ups, global upgrades, 10 protocols, R&D, `availableAfter`); campaign order; the par-purchasable check.
 - [x] **T208** Counter-answer model: `rules.ts` answer entries `{tower, minTier?, spec?}`; the validator checks the tiers and specs a build reaches. M0 doc gaps: Sproing [Big Bonk] in the towers §2.1 Splash row and the FIN no-splash build; Underfoot in A3M1 §4.8 vs enemies §3.1; A3M4 no-armor needs "no Seeker Swarm"; A3M2 no-splash needs "no Rivet Storm / Echo Spike"; conventions assertion #6 should name the full-catalog protocols; `youngling` stays a `WaveTag`.
-- [~] **T202b** `specialize` command; Rivet and Thumper tier-4 specs (gated); fold in T121.
+- [x] **T202b** `specialize` command; Rivet and Thumper tier-4 specs (gated); fold in T121.
 - [ ] **T204b** `meta/modifiers` + pools (incl. Story difficulty); profiles through them; harness checks #5, #6 (full catalog), and #9 (Story).
 - [x] **T210a** Art: Brood Hauler (`carrier` tell, sack burst, scurrying young), power-node and high-ground tiles, Bricks's post, link tether.
 - [x] **T206a** Hold Fire + spare runners (global inherit); per-tag stats; youngling leak 0 and ×0.5 speed (absorbs T123); `holdFireWhile` / `spareFleeing` harness variants.

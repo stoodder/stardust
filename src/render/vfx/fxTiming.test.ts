@@ -14,6 +14,9 @@ import {
   floatRise,
   LEAK_SHAKE_MS,
   leakShakeOffset,
+  SUPPRESS_FADE_TICKS,
+  SUPPRESS_FLICKER_MS,
+  suppressAlpha,
 } from './fxTiming.ts';
 
 describe('fadeAlpha', () => {
@@ -75,5 +78,16 @@ describe('feedback juice timing (D026)', () => {
     expect(Number.isInteger(floatRise(333))).toBe(true);
     expect(floatRise(FLOAT_MS)).toBe(FLOAT_RISE_PX);
     expect(floatRise(FLOAT_MS * 2)).toBe(FLOAT_RISE_PX);
+  });
+});
+
+describe("suppressAlpha (Suppressing Fire's ground strip)", () => {
+  it('flickers 100/60 while it runs, steady under reduced motion, then fades in steps', () => {
+    expect(suppressAlpha(0, 300, false)).toBe(STEPPED_ALPHA[0]);
+    expect(suppressAlpha(SUPPRESS_FLICKER_MS, 300, false)).toBe(STEPPED_ALPHA[1]);
+    expect(suppressAlpha(2 * SUPPRESS_FLICKER_MS, 300, false)).toBe(STEPPED_ALPHA[0]);
+    expect(suppressAlpha(SUPPRESS_FLICKER_MS, 300, true)).toBe(STEPPED_ALPHA[0]);
+    expect(suppressAlpha(0, SUPPRESS_FADE_TICKS, false)).toBe(STEPPED_ALPHA[2]);
+    expect(suppressAlpha(0, 1, true)).toBe(STEPPED_ALPHA[3]);
   });
 });

@@ -37,6 +37,15 @@ export const ABILITY_SOUNDS: Readonly<
   Partial<Record<string, { readonly cast: SfxId; readonly land: readonly SfxId[] }>>
 > = {
   orbital_strike: { cast: 'strike_charge', land: ['strike_beam', 'strike_boom'] },
+  // The segment starts as it's cast; its end is quiet.
+  suppressing_fire: { cast: 'suppress_burst', land: [] },
+};
+
+/** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */
+export const ALLY_SOUNDS: Readonly<
+  Partial<Record<string, { readonly spawn: SfxId | null; readonly attack: SfxId | null }>>
+> = {
+  bricks: { spawn: 'bricks_ready', attack: 'bricks_shot' },
 };
 
 /** Semitones an upgrade's arpeggio rises per tier above 2. */
@@ -60,6 +69,8 @@ export interface EventSounds {
 export function createEventSounds(act: Act): EventSounds {
   /** Fired projectiles' kinds by uid, so their landing finds its sound. */
   const flying = new Map<number, string>();
+  /** Allies' kinds by uid, so their shots find their sound. */
+  const allies = new Map<number, string>();
   let pendingClear = false;
   let ended = false;
   return {
@@ -109,6 +120,21 @@ export function createEventSounds(act: Act): EventSounds {
           if (s !== undefined) out.push(sfx(s.cast));
           return;
         }
+        case 'AllySpawned': {
+          allies.set(e.uid, e.kind);
+          const id = ALLY_SOUNDS[e.kind]?.spawn;
+          if (id) out.push(sfx(id));
+          return;
+        }
+        case 'AllyAttacked': {
+          const kind = allies.get(e.uid);
+          const id = kind === undefined ? null : ALLY_SOUNDS[kind]?.attack;
+          if (id) out.push(sfx(id));
+          return;
+        }
+        case 'AllyRemoved':
+          allies.delete(e.uid);
+          return;
         case 'MapWon':
         case 'MapLost':
           ended = true;
@@ -120,16 +146,13 @@ export function createEventSounds(act: Act): EventSounds {
         case 'EnemySpawned':
         case 'CountdownStarted':
         case 'ScriptCue':
-        // Their sounds come with their M2 tasks (T202 specs and links, T206 Hold Fire, T207 allies).
+        // Their sounds come with their M2 tasks (T202 specs and links, T206 Hold Fire).
         case 'TowerSpecialized':
         case 'HoldFireChanged':
         case 'SpareRunnersChanged':
         case 'NotFiringAtSkitterkin':
         case 'LinkFormed':
         case 'LinkBroken':
-        case 'AllySpawned':
-        case 'AllyAttacked':
-        case 'AllyRemoved':
         case 'MedalProgress':
           return;
         default:

@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 import type { CompiledContent } from '../content/compiled.ts';
 import { FIXTURE_CONTENT, type FixtureIds } from '../sim/__fixtures__/sim.ts';
 import { QUIET_WAVE_CONTENT } from './__fixtures__/fireControl.ts';
-import { PICK_CONTENT, PLAIN_CONTENT } from './__fixtures__/harness.ts';
+import {
+  FIXTURE_CATALOG,
+  NO_SPLASH_CONTENT,
+  PICK_CONTENT,
+  PLAIN_CONTENT,
+} from './__fixtures__/harness.ts';
 import { buildFor, runCampaign, runMap } from './harness.ts';
 
 describe('balance harness', () => {
@@ -22,9 +27,10 @@ describe('balance harness', () => {
         'alwaysCallEarly#2',
         'alt:gun_only#2',
         'parNoAbilities#2',
+        'par@story#1',
       ]),
     );
-    expect(keys).toHaveLength(10);
+    expect(keys).toHaveLength(11);
   });
 
   it('judges the fixture: its par build leaves steps unissued, which fails the steps check', () => {
@@ -102,14 +108,17 @@ describe('balance harness', () => {
           ...PLAIN_CONTENT.maps.fx_map,
           builds: {
             ...PLAIN_CONTENT.maps.fx_map.builds,
-            referenceProfile: { ...ref, specs: ['fx_gun' as const] },
+            // fx_mortar's spec A fires a straight projectile, which the sim refuses until M3.
+            referenceProfile: { ...ref, specs: ['fx_mortar' as const] },
           },
         },
       },
     };
     const r = runMap(bought, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
-    expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(/seed 1: error: .*T204/);
+    expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
+      /seed 1: error: .*'projectile' attacks \(fx_mortar\) is not simulated until M3/,
+    );
   });
 
   it('names builds by label', () => {
@@ -158,5 +167,50 @@ describe('balance harness', () => {
     expect(buildFor('companion:quill', map, PICK_CONTENT)?.companion).toBe('quill');
     expect(buildFor('companion:zibzab', map, PICK_CONTENT)).toBeNull();
     expect(buildFor('companion:bricks', PLAIN_CONTENT.maps.fx_map, PLAIN_CONTENT)).toBeNull();
+  });
+
+  it('#9: par on Story (seed 1) wins with a margin at least its Standard median', () => {
+    const r = runMap(PLAIN_CONTENT, 'fx_map', { seeds: 3, build: 'par' });
+    const story = r.checks.find((c) => c.id === '9')!;
+    expect(story.subject).toBe('par');
+    expect(story.ok).toBe(true);
+    expect(story.summary).toMatch(/won \(100%\) vs Standard median \d+/);
+    const run = r.runs.find((x) => x.build === 'par@story')!;
+    expect(run.result!.maxIntegrity).toBe(30);
+    expect(buildFor('par@story', PLAIN_CONTENT.maps.fx_map, PLAIN_CONTENT)).toBe(
+      PLAIN_CONTENT.maps.fx_map.builds.parBuild,
+    );
+  });
+
+  it('#5 and #6: a no-counter build loses on the reference profile and with the full catalog', () => {
+    const r = runMap(NO_SPLASH_CONTENT, 'fx_map', { seeds: 3, catalog: FIXTURE_CATALOG });
+    const five = r.checks.find((c) => c.id === '5')!;
+    const six = r.checks.find((c) => c.id === '6')!;
+    expect([five.subject, five.ok]).toEqual(['noCounter:splash', true]);
+    expect([six.subject, six.ok]).toEqual(['noCounter:splash', true]);
+    expect(six.summary).toMatch(/lost at W\d.*left out, not simulated yet: shop:salvage_rights \(M3\)/);
+    // The full-catalog runs really carry the catalog: more integrity, more credits, the Bulkhead.
+    const full = r.runs.find((x) => x.build === 'noCounter:splash@fullCatalog' && x.seed === 1)!;
+    const ref = r.runs.find((x) => x.build === 'noCounter:splash' && x.seed === 1)!;
+    expect(full.result!.maxIntegrity).toBe(ref.result!.maxIntegrity + 3);
+    expect(full.result!.stats.integrityLost).toBeGreaterThan(ref.result!.stats.integrityLost);
+    // --build splash keeps both no-counter checks and their runs.
+    const only = runMap(NO_SPLASH_CONTENT, 'fx_map', {
+      seeds: 1,
+      build: 'splash',
+      catalog: FIXTURE_CATALOG,
+    });
+    expect(only.runs.map((x) => x.build).sort()).toEqual([
+      'noCounter:splash',
+      'noCounter:splash@fullCatalog',
+    ]);
+  });
+
+  it('#6 fails when the catalog does replace the counter, and when the catalog is refused', () => {
+    // On the live catalog the fixture content has no Rivet: the full-catalog profile is refused.
+    const live = runMap(NO_SPLASH_CONTENT, 'fx_map', { seeds: 1, build: 'splash' });
+    const six = live.checks.find((c) => c.id === '6')!;
+    expect(six.ok).toBe(false);
+    expect(six.failures[0]).toMatch(/fullCatalog profile: .*names a tower or ability/);
   });
 });

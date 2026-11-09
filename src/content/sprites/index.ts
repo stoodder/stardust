@@ -5,6 +5,7 @@ import { enemyChonk } from './enemies/chonk.ts';
 import { enemyHaulerYoung } from './enemies/hauler_young.ts';
 import { enemyNibbler } from './enemies/nibbler.ts';
 import { enemyZoomer } from './enemies/zoomer.ts';
+import { fxBombletBurst } from './fx/bomblet_burst.ts';
 import { fxExplosion } from './fx/explosion.ts';
 import { fxSackBurst } from './fx/sack_burst.ts';
 import { fxGroundShadow } from './fx/ground_shadow.ts';
@@ -22,6 +23,7 @@ import { iconTowerSprinkler } from './icons/sprinkler.ts';
 import { iconTowerThumper } from './icons/thumper.ts';
 import { iconEnemyZoomer } from './icons/zoomer.ts';
 import { projectileRivetTracer } from './projectiles/rivet_tracer.ts';
+import { projectileThumperBomblet } from './projectiles/thumper_bomblet.ts';
 import { projectileThumperShell } from './projectiles/thumper_shell.ts';
 import { propBillboard } from './props/billboard.ts';
 import { propCore } from './props/core.ts';
@@ -70,9 +72,11 @@ export const SPRITES = [
   allyBricks,
   projectileRivetTracer,
   projectileThumperShell,
+  projectileThumperBomblet,
   fxShadow,
   fxGroundShadow,
   fxExplosion,
+  fxBombletBurst,
   fxSackBurst,
   fxLinkTether,
   fxOrbitalReticle,

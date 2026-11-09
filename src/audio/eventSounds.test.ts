@@ -122,6 +122,21 @@ describe('event sounds', () => {
     expect(ids(cast)).toEqual(['sfx:strike_charge']);
   });
 
+  it('rattles Suppressing Fire on cast, and gives Bricks his post and his shots', () => {
+    const calls = run([
+      { type: 'AbilityUsed', slot: 2, uid: 5, ability: 'suppressing_fire', target: [4, 2] },
+      { type: 'AllySpawned', uid: 2, kind: 'bricks', x: 7.5, y: 2.5 },
+      { type: 'AllyAttacked', uid: 2, targetUid: 9, x: 7.5, y: 2.5, targetX: 6, targetY: 3 },
+      // An ally with no sounds yet (a militia post), and an unknown uid, stay silent.
+      { type: 'AllySpawned', uid: 3, kind: 'militia', x: 1.5, y: 1.5 },
+      { type: 'AllyAttacked', uid: 3, targetUid: 9, x: 1.5, y: 1.5, targetX: 6, targetY: 3 },
+      { type: 'AllyAttacked', uid: 8, targetUid: 9, x: 1.5, y: 1.5, targetX: 6, targetY: 3 },
+      { type: 'AllyRemoved', uid: 2 },
+      { type: 'AllyAttacked', uid: 2, targetUid: 9, x: 7.5, y: 2.5, targetX: 6, targetY: 3 },
+    ]);
+    expect(ids(calls)).toEqual(['sfx:suppress_burst', 'sfx:bricks_ready', 'sfx:bricks_shot']);
+  });
+
   it('stings each wave clear once per frame, but not when the map ends in the same frame', () => {
     expect(ids(run([cleared(1), cleared(2)]))).toEqual(['cue:bright_sting']);
     expect(ids(run([cleared(7), { type: 'MapWon' }]))).toEqual(['cue:win']);

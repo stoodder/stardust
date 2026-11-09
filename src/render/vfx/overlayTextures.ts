@@ -4,7 +4,13 @@
 import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
-import { discImage, ringImage, snapRingRadius, tileHighlightImage } from './overlayPixels.ts';
+import {
+  discImage,
+  ringImage,
+  snapRingRadius,
+  tileHighlightImage,
+  tileTintImage,
+} from './overlayPixels.ts';
 import { textImage } from './pixelFont.ts';
 
 /** Tile highlight styles: hover, the selected tower's tile, and an invalid placement. */
@@ -103,4 +109,49 @@ export function floatTextTexture(scene: Phaser.Scene, text: string, color: Color
   if (!scene.textures.exists(key))
     scene.textures.addCanvas(key, imageToCanvas(textImage(text, color)));
   return key;
+}
+
+/** A tile tint texture (tileTintImage), registered once per color and alphas. */
+export function tileTintTexture(
+  scene: Phaser.Scene,
+  color: ColorName,
+  fillAlpha: number,
+  edgeAlpha = 1,
+): string {
+  const key = `fx.tint.${color}.${fillAlpha}.${edgeAlpha}`;
+  if (!scene.textures.exists(key)) {
+    scene.textures.addCanvas(key, imageToCanvas(tileTintImage(color, fillAlpha, edgeAlpha)));
+  }
+  return key;
+}
+
+/** The reticle ring's colors: the reticle sprite's dash ramp (teal), on an ink under-stroke. */
+const RETICLE_COLOR: ColorName = 'teal.3';
+/** Frames in a marching reticle ring, and how far each shifts the dashes (px). */
+const RETICLE_FRAMES = 2;
+const RETICLE_SHIFT_PX = 2;
+/** The reticle sprite marches at 6 fps (content/sprites/fx/orbital_reticle.ts). */
+const RETICLE_FPS = 6;
+
+/**
+ * A marching dashed reticle ring for a strike of `radiusTiles` (snapped to quarter tiles) that the
+ * baked `fx.orbital_reticle` doesn't fit (Orbital Strike Mk II's 2 tiles): two frames registered
+ * once, and an anim playing them. Returns the anim key and the ring's center.
+ */
+export function reticleRingAnim(scene: Phaser.Scene, radiusTiles: number): RingTexture {
+  const r = snapRingRadius(radiusTiles);
+  const key = `fx.reticle.${r}`;
+  const frames: { key: string }[] = [];
+  let center: { cx: number; cy: number } | null = null;
+  for (let f = 0; f < RETICLE_FRAMES; f++) {
+    const fk = `${key}.${f}`;
+    const ring = ringImage(r, RETICLE_COLOR, true, 'ink.0', f * RETICLE_SHIFT_PX);
+    if (!scene.textures.exists(fk)) scene.textures.addCanvas(fk, imageToCanvas(ring.image));
+    center = { cx: ring.cx, cy: ring.cy };
+    frames.push({ key: fk });
+  }
+  if (!scene.anims.exists(key)) {
+    scene.anims.create({ key, frames, frameRate: RETICLE_FPS, repeat: -1 });
+  }
+  return { key, ox: center?.cx ?? 0, oy: center?.cy ?? 0 };
 }

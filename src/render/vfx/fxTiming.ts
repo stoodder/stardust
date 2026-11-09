@@ -146,3 +146,29 @@ export const SPLASH_RING_MS = 200;
 export const STRIKE_FLASH_MS = 240;
 export const SCORCH_MS = 1500;
 export const SCORCH_TILES = 0.75;
+
+/** The radius (tiles) the baked `fx.orbital_reticle` is drawn for; any other gets a ring anim. */
+export const RETICLE_SPRITE_TILES = 1.5;
+
+// ── Suppressing Fire (T207b): a strip of fire along its path segment ────────────────────────
+
+/** A new tracer streak lands somewhere on each live segment this often (ms). */
+export const SUPPRESS_TRACER_MS = 45;
+/** The ground strip flickers between its two top alpha steps this often (ms). */
+export const SUPPRESS_FLICKER_MS = 125;
+/** The strip fades down the stepped ladder over its last ticks (sim time: it holds while paused). */
+export const SUPPRESS_FADE_TICKS = 30;
+
+/**
+ * The ground strip's alpha: flickering 100% ↔ 60% every SUPPRESS_FLICKER_MS while the zone has
+ * more than SUPPRESS_FADE_TICKS left (a steady 100% under reduced motion), then 35% and 15% as it
+ * runs out.
+ */
+export function suppressAlpha(ms: number, ticksLeft: number, reducedMotion: boolean): number {
+  if (ticksLeft <= SUPPRESS_FADE_TICKS / 2) return STEPPED_ALPHA[3];
+  if (ticksLeft <= SUPPRESS_FADE_TICKS) return STEPPED_ALPHA[2];
+  if (reducedMotion) return STEPPED_ALPHA[0];
+  return Math.floor(Math.max(0, ms) / SUPPRESS_FLICKER_MS) % 2 === 0
+    ? STEPPED_ALPHA[0]
+    : STEPPED_ALPHA[1];
+}

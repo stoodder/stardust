@@ -8,11 +8,12 @@ import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
-import type { SaveData } from '../meta/index.ts';
+import { saveModifiers, type SaveData } from '../meta/index.ts';
 import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
 import {
   companionSlot,
   FEATURE_GATES,
+  modifierFeature,
   type CompanionSlot,
   type Feature,
   type Modifier,
@@ -94,11 +95,11 @@ function companionOf(
 }
 
 /**
- * Modifiers from the save's purchases and difficulty: the seam for meta/modifiers.ts (T204b).
- * Until then a save buys nothing, so there are none.
+ * Modifiers from the save's purchases and difficulty (meta/modifiers.ts), less any the sim still
+ * refuses (Salvage Rights until wreckage, M3), so a save ahead of the sim plays.
  */
-function saveModifiers(_save: SaveData): Modifier<IdSpace>[] {
-  return [];
+function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
+  return saveModifiers(save).filter((m) => simulated(modifierFeature(m)));
 }
 
 /**
@@ -137,7 +138,7 @@ export function battleConfig(
     return {
       ...base,
       loadout,
-      modifiers: saveModifiers(save),
+      modifiers: simulatedSaveModifiers(save),
       difficulty:
         save.settings.difficulty === 'story' && simulated('storyDifficulty') ? 'story' : 'standard',
       // Slot 1 is the Technician's, from the save; slot 2 is the map's companion's.

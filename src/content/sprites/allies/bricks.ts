@@ -30,8 +30,17 @@ function post(g: CharGrid): void {
   }
 }
 
-/** The figure, facing SE (toward the camera) or NE (back turned), with the cannon on his shoulder. */
-function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean): void {
+/**
+ * The figure, facing SE (toward the camera) or NE (back turned), with the cannon on his shoulder,
+ * or (`lowered`) held low across his hip, muzzle to the ground ahead: at ease, nothing to shoot.
+ */
+function figure(
+  g: CharGrid,
+  facing: 'se' | 'ne',
+  breath: 0 | 1,
+  fire: boolean,
+  lowered = false,
+): void {
   const b = breath; // shoulders and head rise 1 px on the in-breath
   // Legs in fatigues, planted wide; boots.
   for (let y = 19; y <= 24; y++) {
@@ -95,10 +104,11 @@ function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean):
   // an orange band, a dark breech; it kicks back 1 px when it fires.
   const kick = fire ? -1 : 0;
   const dir = facing === 'se' ? 1 : -1;
-  const x0 = (facing === 'se' ? 13 : 11) + kick;
-  const y0 = (facing === 'se' ? 7 : 14) - b;
-  const x1 = (facing === 'se' ? 23 : 21) + kick;
-  const y1 = y0 + dir * 5;
+  // Lowered, the breech rides at his hip and the muzzle dips toward the ground ahead.
+  const x0 = (lowered ? (facing === 'se' ? 12 : 11) : facing === 'se' ? 13 : 11) + kick;
+  const y0 = (lowered ? (facing === 'se' ? 14 : 16) : facing === 'se' ? 7 : 14) - b;
+  const x1 = (lowered ? 21 : facing === 'se' ? 23 : 21) + kick;
+  const y1 = y0 + (lowered ? (facing === 'se' ? 6 : 2) : dir * 5);
   const tube: CharGrid = grid(W, H);
   // Four rows thick: white top, lit, mid, dark underside.
   ['4', '3', '2', '1'].forEach((ch, i) => {
@@ -180,10 +190,10 @@ function figure(g: CharGrid, facing: 'se' | 'ne', breath: 0 | 1, fire: boolean):
   }
 }
 
-function bricks(facing: 'se' | 'ne', breath: 0 | 1, fire: boolean): string[] {
+function bricks(facing: 'se' | 'ne', breath: 0 | 1, fire: boolean, lowered = false): string[] {
   const g = grid(W, H);
   post(g);
-  figure(g, facing, breath, fire);
+  figure(g, facing, breath, fire, lowered);
   return rows(g);
 }
 
@@ -207,6 +217,10 @@ export const allyBricks = defineSprite({
     idle_ne_0: bricks('ne', 0, false),
     idle_ne_1: bricks('ne', 1, false),
     fire_ne_0: bricks('ne', 0, true),
+    lowered_se_0: bricks('se', 0, false, true),
+    lowered_se_1: bricks('se', 1, false, true),
+    lowered_ne_0: bricks('ne', 0, false, true),
+    lowered_ne_1: bricks('ne', 1, false, true),
   },
   anims: {
     idle_se: { frames: ['idle_se_0', 'idle_se_1'], fps: 2 },
@@ -217,5 +231,10 @@ export const allyBricks = defineSprite({
     fire_sw: { mirrorOf: 'fire_se' },
     fire_ne: { frames: ['fire_ne_0', 'idle_ne_0'], fps: 10, loop: false },
     fire_nw: { mirrorOf: 'fire_ne' },
+    // Cannon lowered (no targets in reach): the idle breath, cannon held low.
+    lowered_se: { frames: ['lowered_se_0', 'lowered_se_1'], fps: 2 },
+    lowered_sw: { mirrorOf: 'lowered_se' },
+    lowered_ne: { frames: ['lowered_ne_0', 'lowered_ne_1'], fps: 2 },
+    lowered_nw: { mirrorOf: 'lowered_ne' },
   },
 });

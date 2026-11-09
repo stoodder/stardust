@@ -9,7 +9,7 @@ import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W, everglowBase, everglowSpecBase } from './base.ts';
 
-const W = 32;
+const W = 34;
 const H = 22;
 const CX = 8;
 const CY = 19;
@@ -20,9 +20,7 @@ type Kit = 't1' | 't2' | 'storm' | 'rail';
 
 /** Where a gun leaves the housing, and the screen slope it runs along (down-right for SE). */
 function gunStart(facing: Facing): { x0: number; y0: number; dir: 1 | -1 } {
-  return facing === 'se'
-    ? { x0: CX + 3, y0: CY - 6, dir: 1 }
-    : { x0: CX + 3, y0: CY - 9, dir: -1 };
+  return facing === 'se' ? { x0: CX + 3, y0: CY - 6, dir: 1 } : { x0: CX + 3, y0: CY - 9, dir: -1 };
 }
 
 function barrels(g: CharGrid, facing: Facing, fire: boolean, long: boolean): void {
@@ -165,12 +163,12 @@ function rivetHead(facing: Facing, fire: boolean, kit: Kit = 't1', spin = false)
   return rows(g);
 }
 
-/** A band across a block's side faces (`y` px above its footprint center), over `under` only. */
+/** A band across a block's side faces, `y` px above its footprint center (side-face pixels only). */
 function band(g: CharGrid, cx: number, cy: number, hw: number, y: number, ch: string): void {
   for (let x = Math.floor(cx - hw); x < Math.ceil(cx + hw); x++) {
     const yy = cy - y + (Math.abs(x + 0.5 - cx) <= 1 ? 1 : 0);
     const under = g[yy]?.[x];
-    if (under === 'c' || under === 'b' || under === '1' || under === '2') plot(g, x, yy, ch);
+    if (under === 'd' || under === 'c' || under === '1' || under === '2') plot(g, x, yy, ch);
   }
 }
 
@@ -178,9 +176,10 @@ function band(g: CharGrid, cx: number, cy: number, hw: number, y: number, ch: st
 function stormKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 10;
-    isoBox(g, x, cy + 1, 3.5, 9, { top: 'd', rim: 'e', left: 'c', right: 'b' });
-    band(g, x, cy + 1, 3.5, 3, '0');
-    band(g, x, cy + 1, 3.5, 7, '0');
+    // Lit bright (top and left in the light steps), so the crates sit in the actors' value band.
+    isoBox(g, x, cy + 1, 3.5, 9, { top: 'e', rim: 'e', left: 'd', right: 'c' });
+    band(g, x, cy + 1, 3.5, 3, '1');
+    band(g, x, cy + 1, 3.5, 7, '1');
     plot(g, Math.round(x) + side * 2 - (side < 0 ? 1 : 0), cy - 1, 'w');
   }
 }
@@ -263,14 +262,30 @@ export const towerRivetHead = defineSprite({
     fire_ne_t2: { frames: ['ne_t2_fire', 'ne_t2'], fps: 12, loop: false },
     fire_nw_t2: { mirrorOf: 'fire_ne_t2' },
     // Rivet Storm fires 7.5 shots/s: flash, the barrels turn, rest (about one shot's length).
-    fire_se_spec_a: { frames: ['se_spec_a_fire', 'se_spec_a_spin', 'se_spec_a'], fps: 24, loop: false },
+    fire_se_spec_a: {
+      frames: ['se_spec_a_fire', 'se_spec_a_spin', 'se_spec_a'],
+      fps: 24,
+      loop: false,
+    },
     fire_sw_spec_a: { mirrorOf: 'fire_se_spec_a' },
-    fire_ne_spec_a: { frames: ['ne_spec_a_fire', 'ne_spec_a_spin', 'ne_spec_a'], fps: 24, loop: false },
+    fire_ne_spec_a: {
+      frames: ['ne_spec_a_fire', 'ne_spec_a_spin', 'ne_spec_a'],
+      fps: 24,
+      loop: false,
+    },
     fire_nw_spec_a: { mirrorOf: 'fire_ne_spec_a' },
     // Railspike: a long flash for a slow, heavy shot.
-    fire_se_spec_b: { frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'], fps: 12, loop: false },
+    fire_se_spec_b: {
+      frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'],
+      fps: 12,
+      loop: false,
+    },
     fire_sw_spec_b: { mirrorOf: 'fire_se_spec_b' },
-    fire_ne_spec_b: { frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'], fps: 12, loop: false },
+    fire_ne_spec_b: {
+      frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'],
+      fps: 12,
+      loop: false,
+    },
     fire_nw_spec_b: { mirrorOf: 'fire_ne_spec_b' },
   },
 });

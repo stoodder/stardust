@@ -10,6 +10,8 @@ import {
   type ImportProblemCode,
   type KeyValueStore,
   type MetaSystem,
+  type RunEndInput,
+  type RunEndSummary,
   type SaveData,
   type SlotId,
   type SlotLoad,
@@ -24,8 +26,8 @@ import {
   isSystemUnlocked,
   listSlots,
   loadSlot,
-  markMapWon,
   nextShift,
+  runEnd,
   shiftBoard,
   unlockHint,
   writeSlot,
@@ -203,13 +205,18 @@ export function closeSession(): void {
 }
 
 /**
- * Marks a map won in the save in play and writes it: the minimal run end until T204c's runEnd
- * (rewards, medals, Pests Processed) replaces it. No-op without a save or for a non-campaign map.
+ * Ends a run in the save in play (meta-runtime.md § Run end: Pests Processed, medals, rewards) and
+ * writes it. Returns what the run paid, or null without a save or for a non-campaign map (a `?map=`
+ * dev battle), which leave no record. A failed write is logged; the session keeps the new save.
  */
-export function recordWin(mapId: string, meter: number): SaveResult {
-  if (session === null || !isCampaignMap(mapId)) return { ok: true };
-  session.save = markMapWon(session.save, mapId, meter);
-  return persist();
+export function recordRun(
+  input: Omit<RunEndInput, 'mapId'> & { readonly mapId: string },
+): RunEndSummary | null {
+  if (session === null || !isCampaignMap(input.mapId)) return null;
+  const { save, summary } = runEnd(session.save, { ...input, mapId: input.mapId });
+  session.save = save;
+  persist();
+  return summary;
 }
 
 function isCampaignMap(id: string): id is MapId {

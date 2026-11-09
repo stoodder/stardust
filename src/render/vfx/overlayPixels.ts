@@ -73,12 +73,14 @@ export function ellipseQuadrant(a: number, b: number): [number, number][] {
  * A 1 px range ellipse for a range of `radiusTiles` (snapped to the bake step): dashed for range
  * rings, solid for effect rings (render/views/FxView.ts). `underStroke` adds a 1 px shadow in that
  * color under every lit pixel (the image grows a row), so the ring reads on light ground.
+ * `dashShift` moves the dashes along the ring by that many pixels (a marching reticle's frames).
  */
 export function ringImage(
   radiusTiles: number,
   color: ColorName,
   dashed = true,
   underStroke: ColorName | null = null,
+  dashShift = 0,
 ): RingImage {
   rangeEllipsePx(snapRingRadius(radiusTiles), scratch);
   const a = Math.max(1, Math.round(scratch.x));
@@ -96,7 +98,7 @@ export function ringImage(
   };
   const quad = ellipseQuadrant(a, b);
   for (let i = 0; i < quad.length; i++) {
-    if (dashed && i % DASH_PERIOD >= DASH_ON) continue;
+    if (dashed && (i + dashShift) % DASH_PERIOD >= DASH_ON) continue;
     const [x, y] = quad[i]!; // i < length
     put(a + x, b + y);
     put(a - x, b + y);
@@ -175,6 +177,33 @@ export function tileHighlightImage(color: ColorName): RgbaImage {
       data[i + 1] = c.g;
       data[i + 2] = c.b;
       data[i + 3] = edge ? 255 : fill;
+    }
+  }
+  return { w: TILE_W, h: TILE_H, data };
+}
+
+/**
+ * A tile tint (Suppressing Fire's ground strip and its aiming preview): the canonical tile mask in
+ * `color`, its 1 px edge at `edgeAlpha` and its fill at `fillAlpha` (stepped alphas, 0–1).
+ */
+export function tileTintImage(color: ColorName, fillAlpha: number, edgeAlpha = 1): RgbaImage {
+  const data = new Uint8ClampedArray(TILE_W * TILE_H * 4);
+  const c = rgbOf(color);
+  const fill = Math.round(Math.min(1, Math.max(0, fillAlpha)) * 255);
+  const edge = Math.round(Math.min(1, Math.max(0, edgeAlpha)) * 255);
+  for (let y = 0; y < TILE_H; y++) {
+    for (let x = 0; x < TILE_W; x++) {
+      if (!inTileMask(x, y)) continue;
+      const onEdge =
+        !inTileMask(x - 1, y) ||
+        !inTileMask(x + 1, y) ||
+        !inTileMask(x, y - 1) ||
+        !inTileMask(x, y + 1);
+      const i = (y * TILE_W + x) * 4;
+      data[i] = c.r;
+      data[i + 1] = c.g;
+      data[i + 2] = c.b;
+      data[i + 3] = onEdge ? edge : fill;
     }
   }
   return { w: TILE_W, h: TILE_H, data };

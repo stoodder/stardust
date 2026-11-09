@@ -35,8 +35,10 @@ export const map = defineMapLayout({
       ],
     },
   ],
-  // The Peeker's rock, in the brush beside the spawn road (clickable from M3).
-  markers: { peeker: [3, 1] },
+  // The Peeker's rock, in the brush beside the spawn road (clickable from M3), and Bricks's post
+  // in the grass just inside the gate, east of the road (not west: the core's sprite hides the
+  // tiles in its own screen column, render/views/groundTiles.ts).
+  markers: { peeker: [3, 1], bricks_post: [5, 8] },
   startCredits: 350,
   coreIntegrity: 20,
   stardust: 0,
@@ -50,5 +52,30 @@ export const map = defineMapLayout({
   towerUnlockWave: { thumper: 3 },
   threatIntel: ['fast'],
   requiredCounters: [],
-  companion: null,
+  // Teamwork Makes the Dream Work™ (act1.md § A1M1, Medals): judged at the moment of victory.
+  medals: {
+    challenge: {
+      id: 'teamwork',
+      name: 'Teamwork Makes the Dream Work™',
+      description: 'Win with a Crossfire link active.',
+      condition: { linkActive: 'crossfire' },
+    },
+  },
+  // Bricks walks this shift with you: slot 2 is his Suppressing Fire.
+  companion: { id: 'bricks', state: 'present' },
+  // Bricks in person at his post by the gate (design/maps.md § 5.4): his rivet cannon, about a
+  // tier-1 Rivet's DPS, the last line before the core.
+  allies: [
+    {
+      kind: 'bricks',
+      post: 'bricks_post',
+      attack: {
+        type: 'kinetic',
+        damage: 8,
+        ratePerSec: 2,
+        rangeTiles: 2.5,
+        targets: { ground: true, air: true },
+      },
+    },
+  ],
 });

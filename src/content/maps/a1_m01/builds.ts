@@ -27,6 +27,10 @@ const ROOF = [7, 2] as const;
 const CORNER = [4, 3] as const;
 /** Cast 2.4 s into the wave; the strike lands 1 s later, on the lead clump at the corner. */
 const STRIKE_WHEN = { afterSec: 2.4 } as const;
+/** Suppressing Fire's segment: the road beside the Crossfire pair, (9,3)–(9,5). */
+const SUPPRESS = [9, 4] as const;
+const SF4 = Number(process.env.SF4 ?? 5);
+const SF6 = Number(process.env.SF6 ?? 5);
 
 /** Par's steps; `splash` is the tower in the Thumper's place (the Rivet in rivet_only). */
 function parSteps(splash: 'thumper' | 'rivet'): BuildStep[] {
@@ -35,11 +39,13 @@ function parSteps(splash: 'thumper' | 'rivet'): BuildStep[] {
     { wave: 1, build: 'rivet', tile: [10, 4] },
     { wave: 2, upgrade: ROOF }, // T2: W2 teaches upgrading
     { wave: 3, build: splash, tile: [10, 5] }, // the Crossfire pair with (10,4)
+    { wave: 4, ability: 2, target: SUPPRESS, when: { afterSec: SF4 } },
     { wave: 5, upgrade: ROOF }, // T3, once W4's bounties complete the 150
     { wave: 5, ability: 1, target: CORNER, when: STRIKE_WHEN }, // W5 teaches the strike
     // T202a's interim nudge (header): par leaves the Thumper at tier 1; rivet_only still upgrades.
     ...(splash === 'rivet' ? [{ wave: 6, upgrade: [10, 5] } as const] : []),
     { wave: 6, upgrade: [10, 4] },
+    { wave: 6, ability: 2, target: SUPPRESS, when: { afterSec: SF6 } },
     { wave: 7, build: 'rivet', tile: [3, 4] },
     { wave: 7, ability: 1, target: CORNER, when: STRIKE_WHEN },
   ];
@@ -82,4 +88,6 @@ export const builds = defineBuilds({
     no_upgrades: { outcome: 'either' },
     two_rivets: { outcome: 'lose' },
   },
+  // Par wins with Crossfire up: the Teamwork medal (act1.md § A1M1, Medals).
+  parMedals: ['challenge'],
 });

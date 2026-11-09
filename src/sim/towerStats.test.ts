@@ -51,7 +51,22 @@ describe('towerStats', () => {
       next: null,
     });
     expect(() => towerStats(gun, 0)).toThrow(RangeError);
-    expect(() => towerStats(gun, 4)).toThrow(RangeError);
+    expect(() => towerStats(gun, 4)).toThrow(RangeError); // tier 4 needs a spec
+    expect(() => towerStats(gun, 5, NO_BONUSES, [], 'a')).toThrow(RangeError);
+  });
+
+  it('tier 4: the chosen spec, with no next tier', () => {
+    expect(towerStats(gun, 4, NO_BONUSES, [], 'a')).toMatchObject({
+      tier: 4,
+      kind: 'hitscan',
+      damage: 9,
+      ratePerSec: 7.5,
+      armorPierce: 0,
+      next: null,
+    });
+    expect(towerStats(gun, 4, NO_BONUSES, [], 'b')).toMatchObject({ damage: 120, rangeTiles: 6 });
+    const plain = { ...gun, specs: null };
+    expect(() => towerStats(plain, 4, NO_BONUSES, [], 'a')).toThrow(RangeError);
   });
 
   it('reports splash for lobbed shells and the simulated rate', () => {

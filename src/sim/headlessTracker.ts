@@ -48,6 +48,7 @@ export interface TowerSummary {
 
 export interface RunSummary {
   readonly integrity: number;
+  /** The integrity the run started with (the map's, after modifiers); margins divide by it. */
   readonly maxIntegrity: number;
   /** Credits left at the end (unspent). */
   readonly credits: number;
@@ -79,6 +80,10 @@ export function createRunTracker<K extends IdSpace>(
 ): RunTracker {
   const state = sim.state;
   const map = sim.map;
+  // The integrity and credits the run starts with: the map's, after the run's modifiers
+  // (Reinforced Core, Seed Money, Story). The tracker is created before the first tick.
+  const maxIntegrity = state.integrity;
+  const startCredits = state.credits;
   const waves: WaveSummary[] = map.waves.map((w) => ({
     wave: w.number,
     spawned: 0,
@@ -264,13 +269,13 @@ export function createRunTracker<K extends IdSpace>(
       }
       if (!Number.isFinite(state.integrity) || state.integrity < 0) {
         violate(`integrity ${state.integrity}`);
-      } else if (state.integrity > map.coreIntegrity) {
-        violate(`integrity ${state.integrity} above ${map.coreIntegrity}`);
+      } else if (state.integrity > maxIntegrity) {
+        violate(`integrity ${state.integrity} above ${maxIntegrity}`);
       }
       if (state.outcome === 'won' && state.integrity <= 0) violate('won with no integrity left');
       // The credits ledger: every credit is the start, plus income, minus net spending.
       const st = state.stats;
-      const ledger = map.startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
+      const ledger = startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
       if (state.credits !== ledger) {
         violate(`credits ${state.credits} ≠ ledger ${ledger} (start + earned − spent + refunded)`);
       }
@@ -354,7 +359,7 @@ export function createRunTracker<K extends IdSpace>(
     summary() {
       return {
         integrity: state.integrity,
-        maxIntegrity: map.coreIntegrity,
+        maxIntegrity,
         credits: state.credits,
         lostAtWave,
         stats: { ...state.stats, killsByEnemy: { ...state.stats.killsByEnemy } },

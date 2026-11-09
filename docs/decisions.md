@@ -507,3 +507,13 @@ New sprites: the Brood Hauler (with the `carrier` tell), its sack burst and rend
   - Challenges need `name` and `description` data.
 - **Ruling, markers on special tiles:** a script marker may sit on any **non-path** tile (decor, power node, high ground), not only decor, so A1M2's pump-station marker can mark its power node. T210b relaxes the `[marker]` rule accordingly.
 - `createSim` refuses optional objectives until M3.
+
+### D043 — 2026-11-09 — T202b tier-4 specializations
+- **Specs as built** (towers.md §7, "Specializations as built"):
+  - **Rivet Storm** (300): 9 dmg at 7.5/s after a 1 s spin-up.
+  - **Railspike** (300): 120 dmg, 0.5/s, range 6, ignores armor, defaults to Strong.
+  - **Cluster Thumper** (375): the T3 shell plus 4 bomblets (12 dmg, 0.6 splash, scattered within 1.2 tiles by the seeded combat RNG).
+  - **Bunker Buster** (375): 140 dmg, 0.6 splash, 0.4/s, 3 Corroded stacks.
+- **`specialize`** checks, in order: no tower, no specs, locked, already specialized, needs T3, can't afford. Spec cost goes through `costFor(..., true)` into `invested`.
+- **Rulings where the docs were silent:** a spec whose default priority differs switches the tower to it; otherwise the player's chosen priority stays. Bunker Buster's Corroded is capped at 3 stacks.
+- **T121:** `createSim` refuses loadouts whose reachable tiers or unlocked specs use the projectile, beam, chain, or spawner attack kinds, or the pinned, stasis, or unnerved statuses. They come in M3.

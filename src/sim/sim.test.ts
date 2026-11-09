@@ -78,7 +78,7 @@ describe('createSim', () => {
     );
     // T121: fx_mortar's spec A fires a straight projectile, which the towers system doesn't run.
     expect(bad({ specsUnlocked: ['fx_mortar'] })).toMatch(
-      /'projectile' attacks \(fx_mortar\) is not simulated until M3/,
+      /a 'projectile' attack \(fx_mortar\) is not simulated until M3/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);

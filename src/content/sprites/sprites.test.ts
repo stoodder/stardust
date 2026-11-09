@@ -52,10 +52,14 @@ describe('sprite registry', () => {
     }
   });
 
-  it('gives every tower base t1–t3 frames and a head mount', () => {
+  it('gives every tower base t1–t3 frames (plus spec_a/spec_b once it has specs) and a mount', () => {
     for (const def of SPRITES as readonly SpriteDef[]) {
       if (!def.id.startsWith('tower.') || def.id.endsWith('_head')) continue;
-      expect(Object.keys(def.frames), def.id).toEqual(['t1', 't2', 't3']);
+      const frames = Object.keys(def.frames);
+      const tiers = frames.includes('spec_a')
+        ? ['t1', 't2', 't3', 'spec_a', 'spec_b']
+        : ['t1', 't2', 't3'];
+      expect(frames, def.id).toEqual(tiers);
       expect(def.mount, def.id).toBeDefined();
       expect(
         SPRITES.some((s) => s.id === `${def.id}_head`),

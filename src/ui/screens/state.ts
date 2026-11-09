@@ -15,16 +15,47 @@ export interface RunResult {
   /** Core integrity left, and the map's starting integrity. */
   readonly integrity: number;
   readonly maxIntegrity: number;
-  /**
-   * Pests Processed: this run's `stats.skitterkinKilled`. The lifetime counter (design/core-loop.md
-   * §6.2) arrives with run-end rewards (T204c).
-   */
+  /** Pests Processed: this run's `stats.skitterkinKilled`. */
   readonly pestsProcessed: number;
   /**
    * The card's spoken lines, in order (D028): the first leak's radio line if it was still fresh
    * when the map ended, then the map's debrief for this outcome. Empty for a map with no radio.
    */
   readonly debrief: readonly SpokenLine[];
+  /** What the run paid into the save in play (meta run end); null outside a campaign (`?map=`). */
+  readonly rewards: RunRewards | null;
+}
+
+/** One of the map's medals on the results card. */
+export interface MedalResult {
+  readonly id: string;
+  /** "Victory", "Perfect Core", or the Challenge's name. */
+  readonly name: string;
+  /** Earned this run. */
+  readonly earned: boolean;
+  /** Earned this run for the first time (it paid Intel). */
+  readonly isNew: boolean;
+}
+
+/** How the run's Stardust was earned (meta/rewards.ts StardustSource). */
+export type StardustSourceView = 'first_clear' | 'replay' | 'defeat' | 'defeat_replay';
+
+/** A run's rewards (meta-runtime.md § Run end), as the results card shows them. */
+export interface RunRewards {
+  /** The map's medals in display order (Victory, Perfect Core, Challenge). */
+  readonly medals: readonly MedalResult[];
+  readonly stardust: {
+    readonly source: StardustSourceView;
+    readonly amount: number;
+    /** The map's first-clear value. */
+    readonly base: number;
+    readonly wavesResolved: number;
+    readonly waveCount: number;
+  };
+  /** Intel paid: one per newly earned medal. */
+  readonly intel: number;
+  /** The lifetime Pests Processed after this run (design/core-loop.md § 6.2). */
+  readonly lifetimePests: number;
 }
 
 /** The last finished run, or null before any run has ended. */

@@ -3,6 +3,7 @@
 // writes the files.
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, LiveIds } from '../content/types.ts';
+import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
 import { runHeadless } from '../sim/index.ts';
 import {
   describeRun,
@@ -10,6 +11,8 @@ import {
   mapChecks,
   median,
   runKey,
+  splitMeta,
+  type RunMeta,
   type CheckOutcome,
   type CheckSpec,
   type RunRecord,
@@ -18,8 +21,13 @@ import {
 import { noCounterAnswerChecks } from './counterChecks.ts';
 import { medalChecks } from './medals.ts';
 import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.ts';
-import { NOT_CHECKED_IN_M1, refusedFeatures } from './refusals.ts';
-import { profileModifiers, runConfig } from './profile.ts';
+import { NOT_CHECKED, refusedFeatures } from './refusals.ts';
+import {
+  fullCatalogProfile,
+  referenceRunProfile,
+  runConfig,
+  type RunProfile,
+} from './profile.ts';
 import {
   DEFAULT_SEED_COUNT,
   FEW_SEED_COUNT,
@@ -36,6 +44,8 @@ export interface HarnessOptions {
   /** Wall clock in ms (the CLI passes performance.now); without it, runtimes read 0. */
   readonly now?: () => number;
   readonly maxTicks?: number;
+  /** The meta catalog profiles are built from (default: the live one; tests pass a fixture's). */
+  readonly catalog?: MetaCatalog;
 }
 
 export interface CheckResult extends CheckOutcome {
@@ -73,6 +83,7 @@ export function buildFor<K extends IdSpace>(
   content: CompiledContent<K>,
 ): CompiledBuild<K> | null {
   const b = map.builds;
+  label = splitMeta(label).build;
   if (label === 'par') return b.parBuild;
   if (label === 'parNoAbilities') return withoutAbilityCasts(b.parBuild);
   if (label === 'none' || label === 'alwaysCallEarly' || label === 'spareFleeing') {
@@ -117,9 +128,30 @@ export function runMap<K extends IdSpace = LiveIds>(
   const n = opts.seeds ?? DEFAULT_SEED_COUNT;
   const every = range(n);
   const few = range(Math.min(FEW_SEED_COUNT, n));
+  const catalog = opts.catalog ?? LIVE_CATALOG;
+  // The run profiles (conventions.md § Balance sims, Profiles), each built once; a profile the
+  // mapping refuses fails every run that needs it, with the reason.
+  const profiles = new Map<RunMeta, RunProfile<K> | string>();
+  const profileFor = (meta: RunMeta): RunProfile<K> | string => {
+    let p = profiles.get(meta);
+    if (p === undefined) {
+      try {
+        p =
+          meta === 'fullCatalog'
+            ? fullCatalogProfile(map, content, catalog)
+            : referenceRunProfile(map, content, meta === 'story' ? 'story' : 'standard', catalog);
+      } catch (err) {
+        p = `${meta} profile: ${err instanceof Error ? err.message : String(err)}`;
+      }
+      profiles.set(meta, p);
+    }
+    return p;
+  };
+  const catalogProfile = profileFor('fullCatalog');
+  const leftOut = typeof catalogProfile === 'string' ? [] : catalogProfile.leftOut;
   let specs: CheckSpec[] = [
     ...refusedFeatures(map),
-    ...mapChecks(map, every, few),
+    ...mapChecks(map, every, few, leftOut),
     ...noCounterAnswerChecks(map, content),
     ...medalChecks(map, every),
   ];
@@ -132,25 +164,18 @@ export function runMap<K extends IdSpace = LiveIds>(
     specs = specs.filter((s) => s.subject === '*' || selects(only, s.subject));
   }
 
-  let modifiers: ReturnType<typeof profileModifiers<K>> = [];
-  let profileError: string | null = null;
-  try {
-    modifiers = profileModifiers(map.builds.referenceProfile);
-  } catch (err) {
-    profileError = err instanceof Error ? err.message : String(err);
-  }
-
   const runs = new Map<string, RunRecord>();
   const execute = (req: RunRequest): RunRecord => {
     const build = buildFor(req.build, map, content);
+    const profile = profileFor(splitMeta(req.build).meta);
     const base = { build: req.build, seed: req.seed, repeat: req.repeat === true };
-    if (build === null || profileError !== null) {
-      const error = profileError ?? `unknown build '${req.build}'`;
+    if (build === null || typeof profile === 'string') {
+      const error = build === null ? `unknown build '${req.build}'` : profile;
       return { ...base, error, result: null, marginPct: 0, ms: 0 };
     }
     const start = now();
     try {
-      const cfg = runConfig(content, map, build, modifiers, req.seed);
+      const cfg = runConfig(content, map, build, profile, req.seed);
       const result = runHeadless(
         cfg,
         build,
@@ -189,7 +214,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     ok: checks.every((c) => c.ok),
     checks,
     runs: all,
-    notChecked: [...NOT_CHECKED_IN_M1],
+    notChecked: [...NOT_CHECKED],
     ms: now() - t0,
   };
 }
@@ -206,7 +231,8 @@ function runLevelChecks(runs: readonly RunRecord[]): CheckResult[] {
     if (r === null) continue;
     for (const v of r.violations) invariants.push(`${name}: ${v}`);
     // Authored builds that should win must get every step in; no build may misfire a step.
-    const mustFinish = rec.build === 'par' || rec.build.startsWith('alt:');
+    const build = splitMeta(rec.build).build;
+    const mustFinish = build === 'par' || build.startsWith('alt:');
     for (const s of r.steps) {
       if (s.error !== null)
         steps.push(`${name}: step ${s.index} (${s.kind}, W${s.wave}) ${s.error}`);

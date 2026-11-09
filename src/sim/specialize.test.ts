@@ -3,7 +3,6 @@
 // The spec stats themselves are content (data.test.ts); here, how a specialized tower behaves.
 import { describe, expect, it } from 'vitest';
 import type { CompiledTowerDef } from '../content/compiled.ts';
-import type { IdSpace } from '../content/types.ts';
 import { enemyDef, GUN, placeTower, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import type { Command } from './commands.ts';
@@ -72,7 +71,11 @@ describe('specialize: success', () => {
     expect(sim.state.credits).toBe(credits - 300);
     expect(sim.state.stats.creditsSpent).toBe(spent + 300);
     expect(sim.state.linksDirty).toBe(true);
-    expect(sim.state.commandLog.at(-1)?.cmd).toEqual({ type: 'specialize', towerUid: uid, spec: 'a' });
+    expect(sim.state.commandLog.at(-1)?.cmd).toEqual({
+      type: 'specialize',
+      towerUid: uid,
+      spec: 'a',
+    });
   });
 
   it("switches to a spec's own default priority (Railspike's Strong); otherwise keeps the player's", () => {
@@ -134,22 +137,22 @@ describe('specialize: success', () => {
   });
 });
 
-describe('specialize: rejections change nothing', () => {
-  /** Applies `cmd` and returns its rejection reason, checking the state hash didn't move. */
-  function reject(sim: Sim, cmd: Command<FixtureIds>): string[] {
-    const before = sim.hash();
-    const reasons = rejectedWith(apply(sim, cmd));
-    expect(sim.hash()).toBe(before);
-    return reasons;
-  }
+/** Applies `cmd` and returns its rejection reason, checking the state hash didn't move. */
+function reject(sim: Sim, cmd: Command<FixtureIds>): string[] {
+  const before = sim.hash();
+  const reasons = rejectedWith(apply(sim, cmd));
+  expect(sim.hash()).toBe(before);
+  return reasons;
+}
 
+describe('specialize: rejections change nothing', () => {
   it('noSuchTower', () => {
     const sim = richSim();
     expect(reject(sim, { type: 'specialize', towerUid: 999, spec: 'a' })).toEqual(['noSuchTower']);
   });
 
   it('noSpecs: the type has none authored', () => {
-    const plain: CompiledTowerDef<'fx_gun'> = Object.freeze({
+    const plain: CompiledTowerDef<FixtureIds['tower']> = Object.freeze({
       ...FIXTURE_CONTENT.towers.fx_gun,
       specs: null,
     });
@@ -201,19 +204,19 @@ describe('specialize: rejections change nothing', () => {
   });
 });
 
+function fireTicks(state: SimState, ctx: TickContext, n: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const tick = state.tick;
+    runTick(state, ctx);
+    for (const e of state.events) if (e.type === 'ProjectileFired') out.push(tick);
+    state.events.length = 0;
+  }
+  return out;
+}
+
 describe('specialized towers in combat', () => {
   const sturdy = enemyDef('fx_sturdy', { hp: 100000 });
-
-  function fireTicks(state: SimState, ctx: TickContext, n: number): number[] {
-    const out: number[] = [];
-    for (let i = 0; i < n; i++) {
-      const tick = state.tick;
-      runTick(state, ctx);
-      for (const e of state.events) if (e.type === 'ProjectileFired') out.push(tick);
-      state.events.length = 0;
-    }
-    return out;
-  }
 
   it('specializing mid-fight takes effect at once; Rivet Storm spins up from the top', () => {
     const { state, ctx } = setup({ specsUnlocked: ['fx_gun'] });
@@ -238,11 +241,10 @@ describe('specialized towers in combat', () => {
   });
 
   it('a spec patches tier 3: unchanged fields carry over', () => {
-    const towers: CompiledTowerDef<IdSpace['tower']> = GUN;
-    const t3 = towers.tiers[2].attack!; // fx_gun attacks
-    const storm = towers.specs!.a.attack!; // fx_gun has specs
+    const t3 = GUN.tiers[2].attack!; // fx_gun attacks
+    const storm = GUN.specs!.a.attack!; // fx_gun has specs
     expect(storm.rangeTiles).toBe(t3.rangeTiles);
     expect(storm.type).toBe(t3.type);
-    expect(towers.specs!.b.attack!.armorPierce).toBe(t3.armorPierce);
+    expect(GUN.specs!.b.attack!.armorPierce).toBe(t3.armorPierce);
   });
 });

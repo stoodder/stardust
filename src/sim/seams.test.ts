@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { FIXTURE_CONTENT, fixtureConfig, fixtureSim, type FixtureIds } from './__fixtures__/sim.ts';
 import { copyCommand, type Command } from './commands.ts';
 import { ALLY_BLANK, TOWER_BLANK, ZONE_BLANK } from './entities.ts';
-import type { SimEvent } from './events.ts';
 import { FEATURE_GATES, gateRefusals, modifierFeature } from './gates.ts';
 import type { Modifier } from './config.ts';
 import { createState } from './state.ts';
@@ -13,12 +12,6 @@ import { links } from './systems/links.ts';
 import { createScratch, type TickContext } from './tick.ts';
 
 type Cmd = Command<FixtureIds>;
-
-function drain(sim: ReturnType<typeof fixtureSim>): SimEvent<FixtureIds>[] {
-  const out: SimEvent<FixtureIds>[] = [];
-  sim.drainEvents(out);
-  return out;
-}
 
 describe('commands declared ahead of their tasks', () => {
   // Every M2 command is live: holdFire and spareRunners (T206a; fireControl.test.ts) and

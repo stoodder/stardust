@@ -168,15 +168,20 @@ describe('Act I value bands (art-direction §1)', () => {
       ['enemy.brood_hauler', 'walk_ne_0'],
       ['enemy.hauler_young', 'walk_se_0'],
       ['ally.bricks', 'idle_se_0'],
+      ['ally.bricks', 'lowered_se_0'],
       ['tower.rivet', 't1'],
+      ['tower.rivet', 'spec_a'],
+      ['tower.rivet', 'spec_b'],
       ['tower.thumper', 't1'],
+      ['tower.thumper', 'spec_a'],
+      ['tower.thumper', 'spec_b'],
       ['tower.sprinkler', 't1'],
     ];
     for (const [id, frame] of actors) {
       const d = sprite(id);
       const l = bodyLuminance(d, frame, PALETTES[d.palette]);
-      expect(contrastRatio(l, path), id).toBeGreaterThanOrEqual(1.2);
-      expect(l, id).toBeGreaterThan(path);
+      expect(contrastRatio(l, path), `${id}:${frame}`).toBeGreaterThanOrEqual(1.2);
+      expect(l, `${id}:${frame}`).toBeGreaterThan(path);
     }
   });
 });

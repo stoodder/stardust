@@ -19,10 +19,24 @@ import {
   nextMapId,
   openSlot,
   rawSlotText,
-  recordWin,
+  recordRun,
   setDifficulty,
   systemOpen,
 } from './save.ts';
+
+/** A run end on `mapId`: a win with Victory and Perfect Core unless overridden. */
+const run = (mapId: string, meter: number, over: Partial<Parameters<typeof recordRun>[0]> = {}) =>
+  recordRun({
+    mapId,
+    outcome: 'won',
+    mapStardust: 0,
+    waveCount: 7,
+    wavesResolved: 7,
+    earnedMedals: ['victory', 'perfect_core'],
+    skitterkinKilled: 40,
+    meter,
+    ...over,
+  });
 
 let store: MemoryStore;
 beforeEach(() => {
@@ -52,10 +66,10 @@ describe('the save session', () => {
     expect(newGame(2)).toMatchObject({ ok: false });
   });
 
-  it('a win opens the base and R&D, and survives a reload', () => {
+  it('a win opens the base and R&D, pays its medals, and survives a reload', () => {
     newGame(1);
     expect(systemOpen('rnd')).toBe(false);
-    expect(recordWin('a1_m01', 19)).toEqual({ ok: true });
+    expect(run('a1_m01', 19)).toMatchObject({ intel: 2, pestsProcessed: { lifetime: 40 } });
     expect(systemOpen('base')).toBe(true);
     expect(systemOpen('rnd')).toBe(true);
     expect(systemOpen('shop')).toBe(false);
@@ -64,15 +78,34 @@ describe('the save session', () => {
     expect(openSlot(1)).toEqual({ ok: true });
     expect(activeSave()?.campaign.maps.a1_m01).toEqual({
       completed: true,
-      medals: [],
+      medals: ['victory', 'perfect_core'],
       bestMeter: 19,
     });
+    expect(activeSave()?.currencies.intel).toBe(2);
+    expect(activeSave()?.stats).toEqual({ pestsProcessed: 40, runs: 1 });
+    expect(campaign.value).toMatchObject({ intel: 2, pestsProcessed: 40 });
   });
 
-  it('a win on a non-campaign map (the dev battle) changes nothing', () => {
+  it('a loss is a run end too: Pests Processed and the run count, no win', () => {
     newGame(1);
-    recordWin('dev_range', 5);
+    expect(run('a1_m01', 0, { outcome: 'lost', earnedMedals: [], wavesResolved: 3 })).toMatchObject({
+      stardust: { source: 'defeat', amount: 0 },
+      intel: 0,
+    });
+    expect(activeSave()?.stats).toEqual({ pestsProcessed: 40, runs: 1 });
+    expect(systemOpen('base')).toBe(false);
+    openSlot(1);
+    expect(activeSave()?.stats.runs).toBe(1);
+  });
+
+  it('a run on a non-campaign map (the dev battle) changes nothing and pays nothing', () => {
+    newGame(1);
+    expect(run('dev_range', 5)).toBeNull();
     expect(activeSave()).toEqual(createNewSave());
+  });
+
+  it('a run with no save in play records nothing', () => {
+    expect(run('a1_m01', 5)).toBeNull();
   });
 
   it('difficulty persists', () => {
@@ -86,7 +119,7 @@ describe('the save session', () => {
 
   it('export → import round trip into another slot', async () => {
     newGame(1);
-    recordWin('a1_m01', 20);
+    run('a1_m01', 20);
     const code = await exportActive();
     expect(code).toMatch(/^SD1-/);
     const check = await checkImport(`\n  ${code ?? ''}  \n`);
@@ -146,7 +179,7 @@ describe('dev saves (?test=1&save=)', () => {
     expect(activeSave()).toEqual(DEV_SAVES.after_a1m1.build());
     expect(campaign.value?.slot).toBeNull();
     expect(store.entries.size).toBe(0);
-    recordWin('a1_m01', 3);
+    run('a1_m01', 3);
     expect(store.entries.size).toBe(0);
   });
 

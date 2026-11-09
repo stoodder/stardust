@@ -11,7 +11,7 @@ import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
 import { notGradual } from './checks.ts';
 import { runMap } from './harness.ts';
-import { runConfig } from './profile.ts';
+import { NO_PURCHASES, runConfig } from './profile.ts';
 
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.a1_m01;
@@ -43,7 +43,7 @@ function shiftClumps(wave: number, shiftSec: number): typeof content {
 
 /** One headless run of `build` on A1M1 (seed 1; A1M1's runs don't vary by seed). */
 function run(build: CompiledBuild): HeadlessResult {
-  return runHeadless(runConfig(content, map, build, [], 1), build);
+  return runHeadless(runConfig(content, map, build, NO_PURCHASES, 1), build);
 }
 
 describe('A1M1 balance', () => {

@@ -4,9 +4,12 @@ import {
   debriefLines,
   FIRST_LEAK_RECENT_MS,
   FIRST_LEAK_RECENT_TICKS,
+  metaRunEndOf,
+  offeredMedals,
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
+import { createNewSave, runEnd } from '../meta/index.ts';
 
 const INPUT: RunEndInput = {
   mapId: 'a1_m01',
@@ -17,6 +20,9 @@ const INPUT: RunEndInput = {
   wavesCleared: 4,
   radio: [],
   firstLeakAgo: null,
+  stardust: 120,
+  medals: offeredMedals({ medals: { challenge: { id: 'teamwork', name: 'Teamwork!' } } }),
+  earnedMedals: [],
 };
 
 describe('runResultOf', () => {
@@ -30,6 +36,7 @@ describe('runResultOf', () => {
       maxIntegrity: 20,
       pestsProcessed: 57,
       debrief: [],
+      rewards: null,
     });
   });
 
@@ -44,6 +51,43 @@ describe('runResultOf', () => {
     const r = runResultOf({ ...INPUT, wavesCleared: 9, integrity: -3 }, 'lost');
     expect(r.wavesSurvived).toBe(7);
     expect(r.integrity).toBe(0);
+  });
+});
+
+describe('the run end and the rewards on the card', () => {
+  it('names every medal the map offers, its Challenge by its own name', () => {
+    expect(offeredMedals({ medals: null }).map((m) => m.name)).toEqual(['Victory', 'Perfect Core']);
+    expect(INPUT.medals.map((m) => m.id)).toEqual(['victory', 'perfect_core', 'teamwork']);
+  });
+
+  it("reads meta's input from the battle: waves resolved and the meter", () => {
+    expect(metaRunEndOf({ ...INPUT, integrity: -2 }, 'lost')).toMatchObject({
+      outcome: 'lost',
+      mapStardust: 120,
+      wavesResolved: 4,
+      meter: 0,
+      skitterkinKilled: 57,
+    });
+    expect(metaRunEndOf(INPUT, 'won').wavesResolved).toBe(7);
+  });
+
+  it('shows every medal, the earned and new ones marked, with the payouts', () => {
+    const input = { ...INPUT, earnedMedals: ['victory', 'teamwork'] };
+    const held = runEnd(createNewSave(), {
+      ...metaRunEndOf({ ...input, earnedMedals: ['victory'] }, 'won'),
+      mapId: 'a1_m01',
+    }).save;
+    const { summary } = runEnd(held, { ...metaRunEndOf(input, 'won'), mapId: 'a1_m01' });
+    expect(runResultOf(input, 'won', summary).rewards).toEqual({
+      medals: [
+        { id: 'victory', name: 'Victory', earned: true, isNew: false },
+        { id: 'perfect_core', name: 'Perfect Core', earned: false, isNew: false },
+        { id: 'teamwork', name: 'Teamwork!', earned: true, isNew: true },
+      ],
+      stardust: { source: 'replay', amount: 48, base: 120, wavesResolved: 7, waveCount: 7 },
+      intel: 1,
+      lifetimePests: 114,
+    });
   });
 });
 

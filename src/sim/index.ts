@@ -13,7 +13,7 @@ export {
   type ScriptFlags,
   type SimConfig,
 } from './config.ts';
-export { FEATURE_GATES, type Feature, type GateOwner } from './gates.ts';
+export { FEATURE_GATES, modifierFeature, type Feature, type GateOwner } from './gates.ts';
 export { companionAbility, companionSlot, type CompanionSlot } from './companion.ts';
 export {
   SEGMENT_TICK_TICKS,

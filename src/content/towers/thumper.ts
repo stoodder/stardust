@@ -40,7 +40,7 @@ export const thumper = defineTower({
           splashTiles: 0.6,
           scatterTiles: 1.2,
           flightSec: 0.3,
-          projectile: 'projectile.thumper_shell',
+          projectile: 'projectile.thumper_bomblet',
         },
       },
     },

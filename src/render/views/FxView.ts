@@ -10,11 +10,17 @@
 //   then a white-cored beam from the top of the screen, a ground flash at the strike's radius, a
 //   big center burst inside a rolling ring of bursts, a scorch decal, and a 2 px screen shake
 //   (skipped under reduced motion).
+//   The reticle fits the strike's real radius (`abilityStats`: Mk II's 2 tiles get a marching
+//   ring of their own, since the baked sprite is 1.5 tiles).
+// - Suppressing Fire (T207b): while its path tile is aimed, the segment it would cover (the sim's
+//   `segmentSpan`) is tinted on the ground; while a segment zone lives, its tiles flicker in a warm
+//   ground strip and tracer streaks rake it from Bricks's post (or from off the map without him).
+// - Ally shots (Bricks): a tracer from his muzzle to the target, like a Rivet's.
 // - Feedback juice (D026): effect rings (a leak at the core, a Thumper's splash, a build's dust, an
 //   upgrade), floating numbers in the 3×5 pixel font, and a 1 px leak shake.
 import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import type { Zone } from '../../sim/index.ts';
+import { pointAt, type Point, type Zone } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
@@ -32,10 +38,13 @@ import {
   STRIKE_FLASH_MS,
   PULSE_MS,
   pulseRadius,
+  RETICLE_SPRITE_TILES,
   SHAKE_MS,
   shakeOffset,
   STRIKE_BURSTS,
   STRIKE_MS,
+  SUPPRESS_TRACER_MS,
+  suppressAlpha,
   TRACER_MS,
 } from '../vfx/fxTiming.ts';
 import {
@@ -43,6 +52,8 @@ import {
   effectRingTexture,
   floatTextTexture,
   PULSE_COLOR,
+  reticleRingAnim,
+  tileTintTexture,
 } from '../vfx/overlayTextures.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -53,13 +64,25 @@ export interface ZonePoolLike {
 }
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
-const MAX_TRACERS = 48;
+const MAX_TRACERS = 64;
 const MAX_PULSES = 24;
 const MAX_DECALS = 8;
 const MAX_FLOATS = 16;
 const MAX_BURSTS = 40;
 const MAX_STRIKES = 4;
+/** Live Suppressing Fire zones drawn at once (one per ground route through the tile), and tiles each. */
+const MAX_SEGMENTS = 4;
+const MAX_SEGMENT_TILES = 5;
+/** Tiles in the aiming preview (a segment on up to four routes). */
+const MAX_PREVIEW_TILES = 12;
 
+/** Suppressing Fire's ground strip and its aiming preview (Kinetic's warm color, art-direction §7). */
+const SUPPRESS_TINT = { color: 'orange.3', fill: 0.35, edge: 0.6 } as const;
+const PREVIEW_TINT = { color: 'orange.4', fill: 0.15, edge: 1 } as const;
+/** Without Bricks on the map, the streaks come in from this far up-screen (px) of where they land. */
+const OFFMAP_SOURCE_PX = { x: -48, y: -72 } as const;
+/** Streaks land up to this far (tiles) to either side of the path's center line. */
+const SUPPRESS_SPREAD_TILES = 0.35;
 /** Where a tower's shot leaves its head, above the tile center (px). */
 const MUZZLE_LIFT_PX = 10;
 /** Where a shot meets its target, above the ground point (px); flyers draw 12 px higher. */
@@ -126,6 +149,19 @@ interface Burst {
   sprite: Phaser.GameObjects.Sprite;
 }
 
+/** A live Suppressing Fire zone's strip: its tiles' tints and its tracer cadence. */
+interface Segment {
+  /** The sim zone's uid, or 0 when free. */
+  zoneUid: number;
+  /** The last update that found its zone alive. */
+  seen: number;
+  ms: number;
+  /** ms until its next tracer streak. */
+  nextMs: number;
+  tiles: Phaser.GameObjects.Image[];
+  shown: number;
+}
+
 interface Strike {
   /** The sim zone's uid while the reticle shows; 0 once it has landed (or when free). */
   zoneUid: number;
@@ -138,6 +174,7 @@ interface Strike {
 }
 
 const pos: Vec2 = { x: 0, y: 0 };
+const onRoute: Point = { x: 0, y: 0 };
 
 export class FxView {
   readonly #ctx: ViewContext;
@@ -150,7 +187,17 @@ export class FxView {
   readonly #floats: Float[] = [];
   readonly #bursts: Burst[] = [];
   readonly #strikes: Strike[] = [];
+  readonly #segments: Segment[] = [];
+  readonly #preview: Phaser.GameObjects.Image[] = [];
   readonly #aim: Phaser.GameObjects.Sprite;
+  /** The aim reticle's radius as last drawn (tiles), so it re-textures only on a change. */
+  #aimRadius = -1;
+  /** Where Suppressing Fire's streaks start (Bricks's muzzle, screen px), or NaN without him. */
+  #fireX = Number.NaN;
+  #fireY = Number.NaN;
+  /** Cosmetic RNG for where streaks land (never the sim's). */
+  #seed = 0x2f6b;
+  #frame = 0;
   #nextTracer = 0;
   #nextPulse = 0;
   #nextBurst = 0;
@@ -229,18 +276,50 @@ export class FxView {
       });
     }
     this.#aim = makeReticle().setAlpha(AIM_ALPHA);
+    const tint = tileTintTexture(
+      scene,
+      SUPPRESS_TINT.color,
+      SUPPRESS_TINT.fill,
+      SUPPRESS_TINT.edge,
+    );
+    const tileImage = (key: string): Phaser.GameObjects.Image => {
+      const img = scene.make.image({}, false).setTexture(key).setOrigin(0.5, 0.5).setVisible(false);
+      layers.decal.add(img);
+      return img;
+    };
+    for (let i = 0; i < MAX_SEGMENTS; i++) {
+      const tiles = Array.from({ length: MAX_SEGMENT_TILES }, () => tileImage(tint));
+      this.#segments.push({ zoneUid: 0, seen: 0, ms: 0, nextMs: 0, tiles, shown: 0 });
+    }
+    const preview = tileTintTexture(
+      scene,
+      PREVIEW_TINT.color,
+      PREVIEW_TINT.fill,
+      PREVIEW_TINT.edge,
+    );
+    for (let i = 0; i < MAX_PREVIEW_TILES; i++) this.#preview.push(tileImage(preview));
   }
 
   /** A hitscan shot from a tower at grid (x0, y0) to a target at grid (x1, y1). */
   tracer(x0: number, y0: number, x1: number, y1: number, targetAir: boolean): void {
+    gridToScreen(x0, y0, this.#ctx.origin, pos);
+    this.tracerFrom(pos.x, pos.y - MUZZLE_LIFT_PX, x1, y1, targetAir);
+  }
+
+  /** A hitscan shot from screen point (sx, sy) (an ally's muzzle) to a target at grid (x1, y1). */
+  tracerFrom(sx: number, sy: number, x1: number, y1: number, targetAir: boolean): void {
+    gridToScreen(x1, y1, this.#ctx.origin, pos);
+    this.#streak(sx, sy, pos.x, pos.y - BODY_LIFT_PX - (targetAir ? AIR_LIFT_PX : 0));
+  }
+
+  /** A tracer streak between two screen points. */
+  #streak(x0: number, y0: number, x1: number, y1: number): void {
     const t = this.#tracers[this.#nextTracer]!; // index < MAX_TRACERS
     this.#nextTracer = (this.#nextTracer + 1) % MAX_TRACERS;
-    gridToScreen(x0, y0, this.#ctx.origin, pos);
-    t.x0 = pos.x;
-    t.y0 = pos.y - MUZZLE_LIFT_PX;
-    gridToScreen(x1, y1, this.#ctx.origin, pos);
-    t.x1 = pos.x;
-    t.y1 = pos.y - BODY_LIFT_PX - (targetAir ? AIR_LIFT_PX : 0);
+    t.x0 = x0;
+    t.y0 = y0;
+    t.x1 = x1;
+    t.y1 = y1;
     t.ms = 0;
     t.active = true;
     // The streak's head (its white end) points at the target.
@@ -328,20 +407,61 @@ export class FxView {
     s.radiusTiles = radiusTiles;
     gridToScreen(x, y, this.#ctx.origin, pos);
     s.reticle.setPosition(pos.x, pos.y).setAlpha(1).setVisible(true);
-    s.reticle.play(this.#ctx.sprites.anim('fx.orbital_reticle', 'march'), true);
+    this.#playReticle(s.reticle, radiusTiles);
   }
 
-  /** The aim reticle on tile (col, row) while the player targets an ability; col < 0 hides it. */
-  setAim(col: number, row: number): void {
+  /**
+   * The aim reticle, sized to the strike's `radiusTiles`, on tile (col, row) while the player
+   * targets a strike; col < 0 hides it.
+   */
+  setAim(col: number, row: number, radiusTiles = RETICLE_SPRITE_TILES): void {
     if (col < 0) {
       if (this.#aim.visible) this.#aim.stop().setVisible(false);
+      this.#aimRadius = -1;
       return;
     }
     gridToScreen(col + 0.5, row + 0.5, this.#ctx.origin, pos);
     this.#aim.setPosition(pos.x, pos.y);
-    if (!this.#aim.visible) {
-      this.#aim.setVisible(true).play(this.#ctx.sprites.anim('fx.orbital_reticle', 'march'));
+    if (!this.#aim.visible || radiusTiles !== this.#aimRadius) {
+      this.#aim.setVisible(true);
+      this.#playReticle(this.#aim, radiusTiles);
+      this.#aimRadius = radiusTiles;
     }
+  }
+
+  /**
+   * The aiming preview of a segment ability (Suppressing Fire): tints the first `count` tiles of
+   * `tiles` (col, row pairs, flat); 0 hides it.
+   */
+  setSegmentAim(tiles: readonly number[], count: number): void {
+    const n = Math.min(count, MAX_PREVIEW_TILES);
+    for (let i = 0; i < MAX_PREVIEW_TILES; i++) {
+      const img = this.#preview[i]!; // i < MAX_PREVIEW_TILES
+      if (i >= n) {
+        if (img.visible) img.setVisible(false);
+        continue;
+      }
+      gridToScreen((tiles[2 * i] ?? 0) + 0.5, (tiles[2 * i + 1] ?? 0) + 0.5, this.#ctx.origin, pos);
+      img.setPosition(pos.x, pos.y).setVisible(true);
+    }
+  }
+
+  /** Where Suppressing Fire's streaks start: Bricks's muzzle (screen px), or NaN without him. */
+  setFireSource(x: number, y: number): void {
+    this.#fireX = x;
+    this.#fireY = y;
+  }
+
+  /** Plays the marching reticle on `s` at `radiusTiles`: the baked sprite, or a ring that fits. */
+  #playReticle(s: Phaser.GameObjects.Sprite, radiusTiles: number): void {
+    const { sprites, scene } = this.#ctx;
+    if (Math.abs(radiusTiles - RETICLE_SPRITE_TILES) < 1e-6) {
+      const a = sprites.meta('fx.orbital_reticle').anchor;
+      s.play(sprites.anim('fx.orbital_reticle', 'march'), true).setDisplayOrigin(a.x, a.y);
+      return;
+    }
+    const ring = reticleRingAnim(scene, radiusTiles);
+    s.play(ring.key, true).setDisplayOrigin(ring.ox, ring.oy);
   }
 
   /** Advances every effect by a frame of `deltaMs` and redraws. `zones` is the sim's zone pool. */
@@ -403,6 +523,7 @@ export class FxView {
       }
     }
     for (const s of this.#strikes) this.#updateStrike(s, dt, zones);
+    this.#updateSegments(dt, zones);
     this.#updateShake(dt);
   }
 
@@ -433,6 +554,8 @@ export class FxView {
       s.ms = -1;
       s.reticle.stop().setVisible(false);
     }
+    for (const g of this.#segments) this.#freeSegment(g);
+    this.setSegmentAim([], 0);
     this.#gfx.clear();
     this.#shakeMs = -1;
     this.#ctx.scene.cameras.main.setScroll(0, 0);
@@ -528,6 +651,95 @@ export class FxView {
     g.fillRect(x - w, bottom - 2, 2 * w, 4);
     g.fillStyle(C.beamCore, 1);
     g.fillRect(x - w / 2, bottom - 1, w, 2);
+  }
+
+  /**
+   * Draws every live Suppressing Fire zone: its covered tiles tinted (flickering, then fading as
+   * the zone runs out), and a tracer streak raking a random spot on it every SUPPRESS_TRACER_MS.
+   * Allocation-free.
+   */
+  #updateSegments(dt: number, zones: ZonePoolLike): void {
+    const frame = ++this.#frame;
+    const reduced = this.#reducedMotion();
+    for (let i = 0; i < zones.used; i++) {
+      const z = zones.items[i]!; // i < used ≤ items.length
+      if (!z.alive || z.kind !== 'segment' || z.route === null) continue;
+      let g = this.#segmentFor(z.uid);
+      if (g === null) {
+        g = this.#segmentFor(0);
+        if (g === null) continue; // more live segments than slots: the extra goes undrawn
+        this.#openSegment(g, z);
+      }
+      g.seen = frame;
+      g.ms += dt;
+      const alpha = suppressAlpha(g.ms, z.ticksLeft, reduced);
+      for (let t = 0; t < g.shown; t++) g.tiles[t]!.setAlpha(alpha); // t < shown ≤ length
+      // Real time, so the strip holds still while paused (a paused frame has dt 0); a long frame
+      // (a background tab) catches up at most a few streaks.
+      g.nextMs = Math.max(g.nextMs - dt, -4 * SUPPRESS_TRACER_MS);
+      if (dt <= 0) continue;
+      while (g.nextMs <= 0) {
+        g.nextMs += SUPPRESS_TRACER_MS;
+        this.#rake(z);
+      }
+    }
+    for (const g of this.#segments) {
+      if (g.zoneUid !== 0 && g.seen !== frame) this.#freeSegment(g);
+    }
+  }
+
+  /** The segment slot drawing zone `uid` (0: a free slot), or null. */
+  #segmentFor(uid: number): Segment | null {
+    for (const g of this.#segments) if (g.zoneUid === uid) return g;
+    return null;
+  }
+
+  /** Starts drawing segment zone `z` in slot `g`: tints the route tiles it covers. */
+  #openSegment(g: Segment, z: DeepReadonly<Zone>): void {
+    g.zoneUid = z.uid;
+    g.ms = 0;
+    g.nextMs = 0;
+    g.shown = 0;
+    const route = z.route;
+    if (route === null) return;
+    const cum = route.cumLenTiles;
+    for (let i = 0; i < route.tiles.length && g.shown < MAX_SEGMENT_TILES; i++) {
+      const d = cum[i] ?? -1;
+      if (d < z.distFrom || d > z.distTo) continue;
+      const [c, r] = route.tiles[i]!; // i < length
+      gridToScreen(c + 0.5, r + 0.5, this.#ctx.origin, pos);
+      g.tiles[g.shown++]!.setPosition(pos.x, pos.y).setAlpha(1).setVisible(true); // < MAX
+    }
+  }
+
+  #freeSegment(g: Segment): void {
+    g.zoneUid = 0;
+    g.shown = 0;
+    for (const img of g.tiles) img.setVisible(false);
+  }
+
+  /** One streak of suppressive fire landing on a random spot of segment `z`. */
+  #rake(z: DeepReadonly<Zone>): void {
+    if (z.route === null) return;
+    const d = z.distFrom + this.#rand() * (z.distTo - z.distFrom);
+    pointAt(z.route, d, onRoute);
+    const x = onRoute.x + (this.#rand() - 0.5) * 2 * SUPPRESS_SPREAD_TILES;
+    const y = onRoute.y + (this.#rand() - 0.5) * 2 * SUPPRESS_SPREAD_TILES;
+    gridToScreen(x, y, this.#ctx.origin, pos);
+    const tx = pos.x;
+    const ty = pos.y - BODY_LIFT_PX;
+    if (Number.isNaN(this.#fireX)) {
+      const jitter = Math.round((this.#rand() - 0.5) * 16);
+      this.#streak(tx + OFFMAP_SOURCE_PX.x + jitter, ty + OFFMAP_SOURCE_PX.y, tx, ty);
+    } else {
+      this.#streak(this.#fireX, this.#fireY, tx, ty);
+    }
+  }
+
+  /** Cosmetic randomness in [0, 1) (a small LCG, so screenshots repeat; never the sim's RNG). */
+  #rand(): number {
+    this.#seed = (Math.imul(this.#seed, 1664525) + 1013904223) >>> 0;
+    return this.#seed / 2 ** 32;
   }
 
   #updateShake(dt: number): void {

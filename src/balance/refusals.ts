@@ -109,7 +109,5 @@ export function refusedFeatures<K extends IdSpace>(
   return out;
 }
 
-/** Assertions not made for any map yet (architecture.md, M1 subset: Harness). */
-export const NOT_CHECKED_IN_M1: readonly string[] = [
-  '#9 Story difficulty (createSim refuses Story until T204b)',
-];
+/** Assertions not made for any map yet, listed in each map's report (none since T204b). */
+export const NOT_CHECKED: readonly string[] = [];

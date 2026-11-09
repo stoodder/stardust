@@ -1,9 +1,13 @@
 // Test helpers for the balance harness: the sim fixture's content without wave tags (so a run
-// plans only the core checks, not #16's free-choice runs), a pick-list variant (#15), and
-// synthetic run records for judging checks without a sim.
+// plans only the core checks, not #16's free-choice runs), a pick-list variant (#15), a meta
+// catalog for the fixture content and a map with a no-counter build (#5, #6), and synthetic run
+// records for judging checks without a sim.
 import type { CompiledContent } from '../../content/compiled.ts';
 import { compileContent } from '../../content/compile.ts';
 import { FIXTURE_CONTENT, SIM_FIXTURE, type FixtureIds } from '../../sim/__fixtures__/sim.ts';
+import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
+import { defineUpgrade, sameEachRank } from '../../content/upgrades/define.ts';
+import type { MetaCatalog } from '../../meta/index.ts';
 import type { HeadlessResult } from '../../sim/index.ts';
 import type { RunRecord, RunRequest } from '../checks.ts';
 
@@ -113,3 +117,63 @@ export function fakeRun(req: RunRequest, result: HeadlessResult): RunRecord {
     ms: 1,
   };
 }
+
+/** A strong fixture upgrade: +25% damage for every tower per rank, 3 ranks. */
+const fx_power = defineUpgrade({
+  id: 'fx_power',
+  name: 'Fixture Power',
+  copy: null,
+  kind: 'shop',
+  currency: 'stardust',
+  availableAfter: null,
+  ranks: sameEachRank([1, 1, 1], [{ kind: 'towerStat', tower: '*', stat: 'damage', pct: 0.25 }]),
+});
+
+/**
+ * A meta catalog the fixture content can take (the live one names Rivet and Orbital Strike):
+ * fx_power, the live id-free global upgrades (Salvage Rights among them, which the sim refuses
+ * until M3), the protocol slots, and the three protocols the full-catalog profile equips.
+ */
+export const FIXTURE_CATALOG: MetaCatalog = {
+  upgrades: {
+    fx_power,
+    reinforced_core: UPGRADES.reinforced_core,
+    seed_money: UPGRADES.seed_money,
+    salvage_rights: UPGRADES.salvage_rights,
+    protocol_slots: UPGRADES.protocol_slots,
+  },
+  protocols: {
+    head_start: PROTOCOLS.head_start,
+    emergency_bulkhead: PROTOCOLS.emergency_bulkhead,
+    linked_up: PROTOCOLS.linked_up,
+  },
+};
+
+/**
+ * The plain fixture requiring a splash counter, with a no-counter build (no mortar: one T1 gun
+ * by the spawn) that loses on the reference profile and with the full catalog.
+ */
+export const NO_SPLASH_CONTENT: CompiledContent<FixtureIds> = (() => {
+  const map = PLAIN_CONTENT.maps.fx_map;
+  return {
+    ...PLAIN_CONTENT,
+    maps: {
+      fx_map: {
+        ...map,
+        requiredCounters: ['splash'],
+        builds: {
+          ...map.builds,
+          noCounterBuilds: {
+            splash: {
+              loadout: ['fx_gun'],
+              companion: null,
+              technicianAbility: null,
+              callEarly: false,
+              steps: [{ wave: 1, kind: 'build', tower: 'fx_gun', tile: [1, 1] }],
+            },
+          },
+        },
+      },
+    },
+  };
+})();

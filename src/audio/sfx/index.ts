@@ -1,6 +1,7 @@
 // The sound effect registry: every recipe by id (architecture.md § Audio). Recipes are data; the
 // synth plays any of them the same way, and recipes.test.ts validates each one.
 import type { SfxRecipe } from '../types.ts';
+import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
 import { RADIO_SFX } from './radio.ts';
 import { TOWER_SFX } from './towers.ts';
@@ -12,6 +13,7 @@ export const SFX = {
   ...UI_SFX,
   ...TOWER_SFX,
   ...BATTLE_SFX,
+  ...ALLY_SFX,
   ...RADIO_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 
