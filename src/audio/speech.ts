@@ -58,6 +58,8 @@ export interface TypeTick {
 export interface TypeTicker {
   /** A line's blip played at `nowMs` (ticks hold off for a moment). */
   blipped(nowMs: number): void;
+  /** Ticks hold off until `untilMs` (a sung line's cue plays alone; audio/storyCues.ts). */
+  quietUntil(untilMs: number): void;
   /** The typewriter typed a character of `speaker`'s line at `nowMs`: the tick to play, or null. */
   tick(speaker: SpeakerId, nowMs: number): TypeTick | null;
 }
@@ -65,14 +67,17 @@ export interface TypeTicker {
 /** The typewriter's tick gate: per-speaker pitch, at most one tick per TYPE_TICK_GAP_MS. */
 export function createTypeTicker(): TypeTicker {
   let last = -Infinity;
-  let quietUntil = -Infinity;
+  let holdUntil = -Infinity;
   return {
     blipped(nowMs) {
-      quietUntil = nowMs + TYPE_TICK_AFTER_BLIP_MS;
+      holdUntil = nowMs + TYPE_TICK_AFTER_BLIP_MS;
+    },
+    quietUntil(untilMs) {
+      holdUntil = Math.max(holdUntil, untilMs);
     },
     tick(speaker, nowMs) {
       if (!isVoiced(speaker)) return null;
-      if (nowMs < quietUntil || nowMs - last < TYPE_TICK_GAP_MS) return null;
+      if (nowMs < holdUntil || nowMs - last < TYPE_TICK_GAP_MS) return null;
       last = nowMs;
       return { id: 'type_tick', pitch: TYPE_TICK_PITCH[speaker] };
     },
