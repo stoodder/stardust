@@ -246,7 +246,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [~] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
 - [ ] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
 - [x] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.
-- [ ] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
+- [~] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
 - [~] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
 - [ ] **T562** Corrosive Kiss's "Corroded enemies regenerate shields 50% slower" (towers.md; a listed `shield_aura` counter in enemies.md) isn't in the sim's shield regen: build it and decide whether it also halves the Cantor's aura.
 - [ ] **T563** A content check that a link's `vsShielded` bonus sits only on towers whose attacks read `damageOn` (shells and projectiles ignore it today; fine for the Zapcoil and the Prism).

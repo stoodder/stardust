@@ -321,3 +321,25 @@ export const iconTellSkittish = defineSprite({
     ],
   },
 });
+
+// prettier-ignore
+export const iconRefugee = defineSprite({
+  id: 'icon.refugee',
+  size: { w: GLYPH, h: GLYPH },
+  anchor: { x: 0, y: 0 },
+  palette: 'skitterkin',
+  outline: 'auto',
+  // The Escort meter's glyph (T531, T540c): a little coral refugee with its tuft, walking, a
+  // burlap bundle on its back (ally.refugee's colours), what the meter counts home.
+  legend: { B: 'brass.3', C: 'brass.2' },
+  frames: {
+    icon: [
+      '..d...',
+      '.c3.BB',
+      '3w33BC',
+      '3k32CC',
+      '33322C',
+      '.2.2..',
+    ],
+  },
+});
