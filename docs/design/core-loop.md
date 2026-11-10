@@ -20,7 +20,7 @@ After the finale: Ending choice (C5) ─► Epilogue cards over the credits (§6
 
 | Step | What the player does | Notes |
 |---|---|---|
-| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). Act I plays from the **Shift board** (Everglow's duty roster: each shift's name, medals, and Start or Replay); once A1M5 is won, the star map (on screen, the **Sector map**) replaces it as the world widens (§1.1). **As built,** the Shift board runs all of Act I; the star map is T301b (M4). |
+| **Star map** | Picks a mission node. | The main campaign path is linear; [campaign.md](../story/campaign.md) decides any side missions. Replayable nodes show earned medals and offer veteran modifiers ([progression.md §6](progression.md#6-veteran-modifiers-replays)). Act I plays from the **Shift board** (Everglow's duty roster: each shift's name, medals, and Start or Replay); once A1M5 is won, the star map (on screen, the **Sector map**) replaces it as the world widens (§1.1). **As built,** both: the Shift board through Act I, the star map from A1M5 won (T301b). |
 | **Mission briefing** | Reads a short briefing (a memo, QUILL, or the companion NPC). Sees the **threat intel** strip: one icon for every defense trait on this map (the map's `threatIntel`, for example *Flying*, *Shielded*, *Cloaked*) and the three medal conditions. | Rule: threat intel is always shown and always accurate. Losses should teach, never ambush (vision pillar 3). A map may hold back *one* surprise for its final wave, and the briefing hints at it ("QUILL: sensors show something big under the soil"). Which traits a map *requires* an answer to is a separate field ([maps.md §6.3](maps.md#63-one-new-thing-per-map)). |
 | **Loadout** | Picks **up to 4 tower types**, a **Technician ability**, and **Field Protocols** (meta perks). Sees which synergy links the chosen towers can form. | Rule: the 4-tower limit is a hard rule (`/CLAUDE.md`). The loadout locks when the map starts. Restarting a map lets you change it. **Rule:** the loadout screen is shown only when there is a choice to make: the player owns more than 4 tower types, or has a real choice of Technician ability, Field Protocols, or companion (the finale pick list). Otherwise it is skipped and the map starts with everything owned (A1M1 skips it; a map can also hold a tower back until a wave with `towerUnlockWave`, [maps.md §9](maps.md#9-map-data-shape-for-implementers)). |
 | **Play the map** | Plays the waves (section 2). | Typically 6–20 minutes at 1x; see [maps.md §6](maps.md#6-difficulty-curve). |
@@ -90,6 +90,8 @@ Example: with A2M3 won and A2M4 not built, the frontier is the teaser *Second Ha
 **Screen readers.** The chart is an image with a one-line description; the region labels are hidden from screen readers. The nodes are a labelled list of buttons, each named with its shift, map, place, state, and medals (a teaser adds its tagline), and the marker's node is marked as the current location. The panel is a region named by its map. Maps not shown are not in the page at all.
 
 **Reduced motion.** The frontier's beacon holds still, the marker doesn't bob or walk (it is simply at its node), and the first-visit sweep is skipped (the notice still shows).
+
+**As built (T301b).** All of the above, for Act II's phases (`act2.gold`, and `act2.dusk` from A2M4's frontier; `act3` and `dawn` are sketches). The first-visit notice shows top centre for 4 s after the sweep; the panel stays clear of the selected node's plate; the marker's walk animates only within a session (a reload shows it at its node).
 
 ---
 
@@ -397,7 +399,7 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 
 - A fake leaderboard in the base during **Act I and Act II**. Kip is #1 ("three quarters running"), the player is always #2, and a few colonist names fill out the rest. Kip's score is computed to stay ahead of the player's Pests Processed. Rows are cosmetic.
 - From A2M4 Kip's row reads "(on assignment: Reclamation)". From A3M1 the board is simply **gone** from the base, with no message.
-- **Not built yet:** the board was deferred to M4 ([D064](../decisions.md#d064--2026-11-09--m3-scope-the-m3-cut)), so Act I's base has no board.
+- **As built (T301b):** the base's last tab, "Bounty", appears once A1M2 is won (its memo, `memo_a1_02`, introduces the board) and is gone once A2M6 is won; Kip's row goes on assignment once A2M4 is won. Five rows: K. Vandermeer (the player's lifetime Pests Processed + 13 + 6%), the player ("JPT-1 {name}", "You!"), and three colonists at a fixed share of the player's score (M. Haddad, P. Lindqvist, Tidybot 4, honorary), so the order never changes. Its copy is [style-guide.md §2](../story/style-guide.md#2-voice-by-act)'s; the rules and numbers are `src/ui/screens/bountyBoard.ts`.
 
 ### 6.7 Per-act presentation dials
 
