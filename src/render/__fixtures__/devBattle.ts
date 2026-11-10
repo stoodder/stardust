@@ -62,6 +62,12 @@ import { mindMap } from './devMind.ts';
 import { lanternMap } from './devLantern.ts';
 import { lantern } from '../../content/towers/lantern.ts';
 import { lightsong } from '../../content/links/lightsong.ts';
+import { underfoot } from '../../content/abilities/underfoot.ts';
+import { compliance } from '../../content/enemies/compliance.ts';
+import { expediter } from '../../content/enemies/expediter.ts';
+import { maw } from '../../content/enemies/maw.ts';
+import { undertow } from '../../content/enemies/undertow.ts';
+import { burrow } from '../../content/towers/burrow.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
@@ -217,6 +223,8 @@ const DEV_ENTITIES = {
     mindspike,
     // dev_lantern's (T508).
     lantern,
+    // M6's dev maps (devM6.ts; T600a): dev_den's Scuttle Den (T604).
+    burrow,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -248,6 +256,11 @@ const DEV_ENTITIES = {
     // dev_penitent's (T506): the short Penitent and its real shards.
     dev_penitent: devPenitent,
     glimmer_shard,
+    // M6's dev maps (devM6.ts; T600a): the Maw and the Undertow (T602), Everglow Security (T603).
+    maw,
+    undertow,
+    compliance,
+    expediter,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -259,6 +272,8 @@ const DEV_ENTITIES = {
     clearance_sale,
     // Ves'thara's Stillness for dev_mind (T507).
     stillness,
+    // Bramble's Underfoot for dev_den (devM6.ts; T604).
+    underfoot,
   }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;

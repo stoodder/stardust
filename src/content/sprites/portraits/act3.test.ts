@@ -14,7 +14,7 @@ import { STANDARD_LEGEND } from '../legend.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { BRAMBLE_EXPRESSIONS, BRAMBLE_FACE, portraitBramble } from './bramble.ts';
 import { portraitGoldie } from './goldie.ts';
-import { portraitPebble } from './pebble.ts';
+import { PEBBLE_EXPRESSIONS, portraitPebble, SURVEY_PATCH } from './pebble.ts';
 import {
   BASE_EXPRESSIONS,
   portraitFrame,
@@ -372,6 +372,67 @@ describe('Goldie `act3`: the convoy organizer at night', () => {
       expect(used, e).toContain('white.0');
       expect(used.has('green.4'), e).toBe(false);
       expect(used.has('coral.2'), `${e}: no terracotta pot`).toBe(false);
+    }
+  });
+});
+
+/** A Pebble frame in a variant. */
+const pebbleIn = (variant: string, e: string, mouth: 'closed' | 'talk' = 'closed'): string[] =>
+  resolve(portraitPebble, portraitFrame(e, { variant, mouth }));
+
+describe('Pebble `patch` (T641b): the cap carrying Bricks’s Survey Corps patch', () => {
+  it('has every expression and talking mouth, patched over its own neutral', () => {
+    const neutral = portraitPebble.frames[portraitFrame('neutral', { variant: 'patch' })];
+    expect(neutral !== undefined && isPatch(neutral) && neutral.from === 'neutral').toBe(true);
+    const faces = new Set<string>();
+    for (const e of PEBBLE_EXPRESSIONS) {
+      const name = portraitFrame(e, { variant: 'patch' });
+      const talk = portraitFrame(e, { variant: 'patch', mouth: 'talk' });
+      const rows = resolve(portraitPebble, name);
+      expect(rows, `${name} differs from cap`).not.toEqual(pebbleIn('cap', e));
+      expect(resolve(portraitPebble, talk), talk).not.toEqual(rows);
+      expect(portraitPebble.anims?.[portraitTalkAnim(e, 'patch')]).toEqual({
+        frames: [name, talk],
+        fps: TALK_FPS,
+      });
+      if (e !== 'neutral') {
+        const fd = portraitPebble.frames[name];
+        expect(fd !== undefined && isPatch(fd) && fd.from === 'patch.neutral', name).toBe(true);
+      }
+      faces.add(rows.join('\n'));
+    }
+    expect(faces.size).toBe(PEBBLE_EXPRESSIONS.length);
+    expect(SPEAKER_DEFS.pebble.variants.map((v) => v.variant)).toContain('patch');
+  });
+
+  it('is the cap, the seedling and her face unchanged: only the patch box differs', () => {
+    const { x, y, w, h } = SURVEY_PATCH;
+    for (const e of PEBBLE_EXPRESSIONS) {
+      for (const mouth of ['closed', 'talk'] as const) {
+        const cap = pebbleIn('cap', e, mouth);
+        const patch = pebbleIn('patch', e, mouth);
+        patch.forEach((r, py) => {
+          for (let px = 0; px < r.length; px++) {
+            if (r.charAt(px) === cap[py]?.charAt(px)) continue;
+            const inBox = px >= x && px < x + w && py >= y && py < y + h;
+            expect(inBox, `${e} ${mouth} ${px},${py}`).toBe(true);
+          }
+        });
+        // The seedling still grows out of the cap's hole.
+        for (let sy = 10; sy <= 12; sy++) expect(patch[sy]?.charAt(24), `${e} stem`).toBe('G');
+      }
+    }
+  });
+
+  it('wears his patch’s colours (a grime rim and ring, a coral needle, a slate stone)', () => {
+    const { x, y, w, h } = SURVEY_PATCH;
+    for (const e of PEBBLE_EXPRESSIONS) {
+      const box = region(pebbleIn('patch', e), x, y, x + w - 1, y + h - 1)
+        .replace(/\|/g, '')
+        .split('')
+        .map((ch) => colorOf(portraitPebble, ch));
+      for (const c of ['grime.1', 'grime.4', 'coral.2', 'steel.1'] as const)
+        expect(box, `${e}: ${c}`).toContain(c);
     }
   });
 });

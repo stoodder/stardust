@@ -231,7 +231,7 @@ export function validateBuilds(
   }
   validateRunEndFlags(issues, def, where, campaignIndex !== null);
   // Par is purchasable (available by this map and affordable): validatePurchasable.ts.
-  // TODO(A3M5, M5): a build's technicianAbility is never in lockedAbilities under its variant.
+  // TODO(A3M5, M7): a build's technicianAbility is never in lockedAbilities under its variant.
 }
 
 /** [run-end-flags]: the runs each run-end flag check names exist, and every rule is covered. */

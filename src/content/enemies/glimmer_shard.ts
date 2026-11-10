@@ -5,7 +5,7 @@
 // shield). They walk at the Penitent's pace, so they stay round it and inside the detection that
 // covers it; a shard that leaks costs 1, and one killed pays 3 (half a Glimmer). Born only from
 // the boss (never in a wave group), they stand down with it at the pivot.
-// Sprites: placeholders under their final ids (T540a).
+// Sprites: sprites/enemies/glimmer_shard.ts (T540a).
 import { defineEnemy } from '../define.ts';
 
 export const glimmer_shard = defineEnemy({

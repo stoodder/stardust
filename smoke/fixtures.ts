@@ -3,7 +3,31 @@
 import { test as base, expect } from '@playwright/test';
 import { isAllowedConsole } from './allowedConsole.ts';
 
-export const test = base.extend<{ consoleProblems: string[] }>({
+const FPS = Number(process.env['SMOKE_FPS'] ?? 60);
+
+export const test = base.extend<{ consoleProblems: string[]; frameCap: void }>({
+  frameCap: [
+    async ({ page }, use) => {
+      if (FPS < 60) {
+        await page.addInitScript((fps) => {
+          const raf = window.requestAnimationFrame.bind(window);
+          const every = 1000 / fps - 2;
+          let last = -1e9;
+          window.requestAnimationFrame = (cb) => {
+            const step = (t: number): void => {
+              if (t === last || t - last >= every) {
+                last = t;
+                cb(t);
+              } else raf(step);
+            };
+            return raf(step);
+          };
+        }, FPS);
+      }
+      await use();
+    },
+    { auto: true },
+  ],
   consoleProblems: [
     async ({ page }, use) => {
       const problems: string[] = [];

@@ -163,6 +163,7 @@ Every portrait has the five base expressions from [../art/art-direction.md](../a
 |---|---|---|---|
 | `quill` | `policy` | Every directive-driven line: a one-frame yellow flash and a flat mouth. This is the fair-play tell, so it must never be skipped | `neutral` |
 | `pebble` | `singing` | The Leaving Song (eyes closed, round mouth) | `happy` |
+| `thrum` | `singing` | The Leaving Song, humming along with Pebble in A3M1 (eyes closed, round mouth, her shell's seams lit) | `happy` |
 | `sterling` | — | She has no extra. Her five expressions change only the eyes and brows; the smile is identical in all of them | — |
 
 Portrait *variants* are chosen by flags or act, not by expression: Ves'thara's fraying threads, Kip's coat, QUILL's Purge status bar, and the player's visor reflections.

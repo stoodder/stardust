@@ -2,7 +2,7 @@
 // splash: air only, issued for A1M3 (campaign.md § 4.1). Its shots are a projectile with a burst
 // on arrival (`splashTiles`), so createSim refuses it until T304a runs projectiles and air
 // targeting (FEATURE_GATES `attack.projectile`). The flak's flight speed isn't in the docs: 10
-// tiles/s is a first pass for T304a to tune. Sprites are placeholders under their final ids (T311a).
+// tiles/s is a first pass for T304a to tune. Sprites: sprites/towers/skyhook.ts.
 // Its specs (T407b; design/towers.md § 7):
 // - Flak Curtain: the same flak, faster and wider: 3.0 shots/s, 12 damage, splash 1.2.
 // - Seeker Swarm: volleys of 4 homing missiles (`homing`, `volley`; sim/systems/projectiles.ts),

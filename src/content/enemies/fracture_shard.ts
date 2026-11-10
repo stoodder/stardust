@@ -3,7 +3,7 @@
 // Shards is a splash problem, like a Mote cluster. The roster leaves the rest to its data (T503):
 // no armor, leak 1 (a Fracture's 2 shared by its two Shards), bounty 4 (between the Fracture's
 // 0.04 credits per HP and the Mote's 0.08). It only ever spawns from a Fracture, so its spawn
-// interval is unused. Sprites: placeholders under their final ids (T540a).
+// interval is unused. Sprites: sprites/enemies/fracture_shard.ts (T540a).
 import { defineEnemy } from '../define.ts';
 
 export const fracture_shard = defineEnemy({

@@ -1,6 +1,8 @@
 // Story conditions (story-runtime.md § Conditions): every atom, the combinators, the context
 // before A1M1, and the run-end atoms with and without a run.
 import { describe, expect, it } from 'vitest';
+import type { CampaignMapId } from '../content/campaign.ts';
+import { SPEAKER_DEFS } from '../content/dialogue/speakers.ts';
 import type { Condition } from '../content/dialogue/types.ts';
 import type { WaveTag } from '../content/types.ts';
 import {
@@ -215,5 +217,20 @@ describe('actOf and withFlags', () => {
       peeker_poked: true,
       door_choice: 'warren',
     });
+  });
+});
+
+/** Bramble's name plate on `map`, between maps (the speaker registry's `names` rule). */
+function plate(map: CampaignMapId): string {
+  const def = SPEAKER_DEFS.chitterbloom;
+  return def.names?.find((r) => evaluateCondition(r.when, { ...base, map }))?.name ?? def.name;
+}
+
+describe("Bramble's name plate (T600b)", () => {
+  it("names the matriarch Bramble from A3M1 (Everglow's codename before)", () => {
+    expect(plate('a1_m05')).toBe('Chitterbloom');
+    expect(plate('a2_m06')).toBe('Chitterbloom');
+    for (const map of ['a3_m01', 'a3_m03', 'fin_m01'] as const)
+      expect(plate(map), map).toBe('Bramble');
   });
 });

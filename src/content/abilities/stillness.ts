@@ -4,7 +4,7 @@
 // answers jam as a tell interrupter (rules.ts COUNTER_ANSWERS).
 //
 // The sim runs the `stasisArea` effect since T507 (sim/abilities/stillness.ts: instant, ground and
-// air, never a unit out of reach). Icon: a placeholder under its final id (T540b).
+// air, never a unit out of reach). Icon: sprites/icons/stillness.ts (T540b).
 import { defineAbility } from '../define.ts';
 
 export const stillness = defineAbility({

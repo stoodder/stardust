@@ -26,8 +26,6 @@ import { SHARED_BARKS } from './barks/index.ts';
 import { FLAGS } from './flags.ts';
 import { ACT1_SPEAKERS } from './speakers.ts';
 import { EXPRESSION_EXTRAS, SPEAKER_IDS } from './types.ts';
-import { evaluateCondition, type StoryContext } from '../../story/conditions.ts';
-import type { CampaignMapId } from '../campaign.ts';
 
 describe('speakers (style-guide § 5.1)', () => {
   it('registers every speaker id, in order', () => {
@@ -60,30 +58,8 @@ describe('speakers (style-guide § 5.1)', () => {
   });
 });
 
-/** A story context on `map`, between maps. */
-const storyAt = (map: CampaignMapId): StoryContext => ({
-  flags: {},
-  map,
-  pestsProcessed: 0,
-  seen: [],
-  run: null,
-});
-
-/** Bramble's name plate on `map`. */
-function plate(map: CampaignMapId): string {
-  const def = SPEAKER_DEFS.chitterbloom;
-  return def.names?.find((r) => evaluateCondition(r.when, storyAt(map)))?.name ?? def.name;
-}
-
-describe('Act III speaker rules (T600b)', () => {
-  it("names the matriarch Bramble from A3M1 (Everglow's codename before)", () => {
-    expect(plate('a1_m05')).toBe('Chitterbloom');
-    expect(plate('a2_m06')).toBe('Chitterbloom');
-    for (const map of ['a3_m01', 'a3_m03', 'fin_m01'] as const)
-      expect(plate(map), map).toBe('Bramble');
-  });
-
-  it("gives Old Thrum Pebble's `singing` for the Leaving Song (T641 draws it)", () => {
+describe('Old Thrum sings (T600b)', () => {
+  it("gives him Pebble's `singing` for the Leaving Song (T641 draws it)", () => {
     expect(EXPRESSION_EXTRAS.thrum).toEqual({ singing: 'happy' });
   });
 });

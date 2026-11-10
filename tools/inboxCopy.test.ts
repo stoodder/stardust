@@ -16,16 +16,18 @@ const flat = (s: string): string => s.replace(/\s+/g, ' ').trim();
 const STYLE = flat(read('docs/story/style-guide.md'));
 const ACT1 = flat(read('docs/story/campaign/act1.md'));
 const ACT2 = flat(read('docs/story/campaign/act2.md'));
+const ACT3 = flat(read('docs/story/campaign/act3.md'));
 /** A memo's act file, by its id (`memo_a2_01` → act2.md). */
-const actDoc = (id: string): string => (id.startsWith('memo_a2_') ? ACT2 : ACT1);
+const actDoc = (id: string): string =>
+  id.startsWith('memo_a3_') ? ACT3 : id.startsWith('memo_a2_') ? ACT2 : ACT1;
 
 /** `doc` holds `text` (a boolean check, so a miss prints the text, not the whole doc). */
 function expectQuoted(doc: string, text: string): void {
   expect(doc.includes(text), `the doc doesn't quote: ${text}`).toBe(true);
 }
 
-/** Memos whose small print the act file leaves to the content (A1M5's names none). */
-const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05']);
+/** Memos whose small print the act file leaves to the content (A1M5's and A3M2's name none). */
+const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05', 'memo_a3_02']);
 
 describe('the welcome memo is the style guide sample', () => {
   const m = MEMOS.memo_a1_00!;
@@ -47,7 +49,11 @@ describe("each memo's subject and small print are its act-file lines", () => {
       const subject = m.subject.replace(' {glyph:sun}', '');
       expectQuoted(actDoc(m.id), `\`${m.id}\` *${subject}*`);
       if (!UNQUOTED_SMALL_PRINT.has(m.id)) {
-        expectQuoted(actDoc(m.id), `small print: "${m.smallPrint ?? ''}")`);
+        // Inline, `(small print: "…")`; or its own sentence after the quote, `Small print: "…"`.
+        const doc = actDoc(m.id);
+        const inline = `small print: "${m.smallPrint ?? ''}")`;
+        const own = `Small print: "${m.smallPrint ?? ''}"`;
+        expect(doc.includes(inline) || doc.includes(own), `small print of ${m.id}`).toBe(true);
       }
     });
   }

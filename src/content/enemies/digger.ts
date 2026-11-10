@@ -1,7 +1,7 @@
 // Digger (design/enemies.md § 5.1): every 6 s it digs in for 2 s at 1.5× speed (4 s up, 2 s
 // down), after the burrowing tell's 0.8 s dirt spray (§ 3; sim/enemyAbilities/burrow.ts). Its
 // armor 1 makes it Armored (light) too. The spawn interval isn't in the docs: 1.0 s is a first
-// pass. Sprites are placeholders (T311a).
+// pass. Sprites: sprites/enemies/digger.ts.
 import { defineEnemy } from '../define.ts';
 
 export const digger = defineEnemy({

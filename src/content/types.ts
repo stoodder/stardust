@@ -787,7 +787,7 @@ interface AbilityCommon<Id extends string> {
 export type AbilityCooldown =
   | { readonly cooldownSec: number; readonly cooldownWaves?: never }
   | { readonly cooldownWaves: number; readonly cooldownSec?: never };
-/** Other effect kinds (Underfoot, System Reboot, …) arrive with their tasks. */
+/** Other effect kinds (System Reboot, …) arrive with their tasks. */
 export type AbilityEffect =
   | {
       // Orbital Strike: a targeted area hit after a visible reticle
@@ -1028,7 +1028,7 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly events?: readonly ScriptedEvent<K>[];
   /**
    * Scripted allies on the map from the start (design/maps.md § 5.4): posts (Bricks, militia).
-   * Refugees are `refugees` (spawned by script); health timelines arrive with A3M3.
+   * Refugees are `refugees` (spawned by script); a blocker's health timeline is its `block`.
    */
   readonly allies?: readonly AllyPostDef[];
   // Not yet: song (finale); flag-conditioned dressing (maps.md § 7, with its maps).

@@ -59,7 +59,11 @@ export default defineConfig({
     launchOptions: {
       ...(executablePath ? { executablePath } : {}),
       // Software WebGL (SwiftShader), explicitly: Chrome's automatic fallback to it is deprecated.
-      args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+      args: [
+        '--use-angle=swiftshader',
+        '--enable-unsafe-swiftshader',
+        ...(process.env['SMOKE_GPU_COMPOSITING'] === '1' ? [] : ['--disable-gpu-compositing']),
+      ],
     },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

@@ -6,6 +6,8 @@
 // knows her). The faint pink-gold shimmer frost on her back is still faint, because she's young.
 // In the `skitterkin.ally` palette. Bare-headed at A2M3; variant `cap` (from A2M4) is Bricks's
 // Everglow bottle cap worn as a hat, the seedling poking up through a hole punched in its middle.
+// Variant `patch` (from A3M3) is the same cap carrying Bricks's faded Survey Corps patch (a compass
+// over a stone, as on his sleeve) stitched to the front of its skirt.
 // The seedling is her tell: it perks up when she's happy and droops when she's worried or sad.
 // `singing` (the Leaving Song, A3M1): eyes closed, a round mouth, the shimmer lit; its two talk
 // frames are a small and a large round mouth, a hum.
@@ -266,10 +268,29 @@ function bottleCap(g: CharGrid): void {
   plot(g, cx + 8, CAP_Y + 2, 'x');
 }
 
+/** Where Bricks's Survey Corps patch sits on the cap's skirt (the `patch` variant), for tests. */
+export const SURVEY_PATCH = { x: 21, y: 14, w: 7, h: 7 } as const;
+
+/**
+ * Bricks's faded Survey Corps patch (his sleeve's, art-direction § Portrait roster `bricks`): a
+ * compass (a pale ring round a coral needle) over a slate stone, in a worn grime rim, stitched to
+ * the front of the cap's skirt above her brows.
+ */
+// prettier-ignore
+const SURVEY_PATCH_ROWS = [
+  '.KKKKK.',
+  'KLLLLLK',
+  'KLKNKLK',
+  'KLLLLLK',
+  'KMMMMMK',
+  'KMMMMMK',
+  '.KKKKK.',
+] as const;
+
 function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   const e = MOUTHS[expression] === undefined ? 'neutral' : expression;
-  const capped = variant === 'cap';
+  const capped = variant === 'cap' || variant === 'patch';
   body(g);
   feet(g);
   shimmer(g, e === 'singing');
@@ -277,6 +298,7 @@ function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   put(g, 18, capped ? 5 - CAP_LIFT : 5, SPROUTS[SPROUT_OF[e] ?? 'up']);
   // Capped, the stem runs on down into the hole.
   if (capped) for (let y = 12 - CAP_LIFT; y < CAP_Y + 2; y++) plot(g, 24, y, 'G');
+  if (variant === 'patch') put(g, SURVEY_PATCH.x, SURVEY_PATCH.y, SURVEY_PATCH_ROWS);
   if (e === 'happy' || e === 'singing') {
     closedEye(g, EYE_L, EYE_Y, e === 'happy');
     closedEye(g, EYE_R, EYE_Y, e === 'happy');
@@ -330,8 +352,13 @@ export const portraitPebble = definePortrait({
     R: 'steel.3',
     S: 'steel.4',
     U: 'steel.2',
+    // Bricks's Survey Corps patch: the worn rim, the compass ring and needle, the stone.
+    K: 'grime.1',
+    L: 'grime.4',
+    N: 'coral.2',
+    M: 'steel.1',
   },
   expressions: PEBBLE_EXPRESSIONS,
-  variants: ['cap'],
+  variants: ['cap', 'patch'],
   paint,
 });

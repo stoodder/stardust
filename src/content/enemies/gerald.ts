@@ -12,8 +12,8 @@
 // HP 100 only matters to Strong targeting (he is never hurt): it sits under a Chonk's 180, so a
 // Strong tower prefers a real Chonk but picks him over Nibblers and Puffwings. Speed 1.2 tiles/s
 // (his pace isn't in the docs) lets him overtake a wave of Nibblers, so First towers lock onto him
-// and the Hold Fire lesson bites; A1M3's wave data times his passes (T304e). Sprites are
-// placeholders under their final ids (T311a).
+// and the Hold Fire lesson bites; A1M3's wave data times his passes (T304e). Sprites:
+// sprites/enemies/gerald.ts.
 import { defineEnemy } from '../define.ts';
 
 export const gerald = defineEnemy({
