@@ -321,12 +321,15 @@ function commit(sceneId: string, effects: DialogueEffects): void {
   updateActiveSave((s) => withSceneEffects(s, sceneId, effects));
 }
 
-/** How a scene plays: full-screen (`scene_*`), a pausing panel (it has a choice), or comms. */
+/**
+ * How a scene plays: full-screen (`scene_*`), a pausing panel (it has a choice, or it's flagged
+ * `pause`: the sim is held until it ends), or comms.
+ */
 export function sceneMode(scene: Scene): SceneMode | 'comms' {
   const slot = sceneSlot(scene.id);
   if (slot?.kind === 'scene') return 'fullscreen';
   if (slot?.kind === 'brief') return 'briefing';
-  if (scene.nodes.some((n) => n.kind === 'choice')) return 'panel';
+  if (scene.pause === true || scene.nodes.some((n) => n.kind === 'choice')) return 'panel';
   return 'comms';
 }
 

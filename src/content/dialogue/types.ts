@@ -251,6 +251,12 @@ export interface Scene {
   readonly nodes: readonly DialogueNode[];
   /** The scene plays only when this holds (judged when its trigger fires). */
   readonly when?: Condition;
+  /**
+   * A battle cue that must be read, not glanced at (D134): it plays as a pausing panel, the sim
+   * held until it ends, instead of on the comms panel. Rare by design (Pebble's rescue, the Witch's
+   * "I have watched you count").
+   */
+  readonly pause?: true;
 }
 
 // ─── Barks (style-guide § 5.5; design/core-loop.md § 6.3) ─────────────────────────────────────
