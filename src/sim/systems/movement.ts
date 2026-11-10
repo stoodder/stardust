@@ -1,5 +1,6 @@
 // System 6: movement. Advances every live enemy along its route by its speed this tick (Chilled
-// slows it through `chillMul`; younglings move at YOUNGLING_SPEED_MUL), and leaks the ones that
+// slows it through `chillMul`, Unnerved through `unnervedSpeedMul` (T507); younglings move at
+// YOUNGLING_SPEED_MUL), and leaks the ones that
 // reach the route's end: the core loses the leak cost (design/core-loop.md §2.9; 0 for `fleeing`
 // and `youngling` units; a boss drains it all, BOSS_LEAK_DRAINS_ALL), less what Emergency Bulkhead
 // absorbs, the leak counts toward its tags' `stats.tagLeaked` (and, unless medal-exempt, toward
@@ -34,11 +35,13 @@ import { leakToAsset } from '../objectives.ts';
 import { poolKill } from '../pool.ts';
 import { pointAt } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
+import { unnervedSpeedMul } from './status.ts';
 
 /**
  * An enemy's speed this tick, in tiles per tick, ground or air: its base speed (×HUSH_SPEED_MUL
  * once Heavy, enemies.md § 5.4), ×YOUNGLING_SPEED_MUL for a youngling, × its Chilled multiplier,
- * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop); 0 in Stasis
+ * × its pace (`paceMul`: a huddle, a boss's or Skittish haste, a hush tell's stop), × 0.8 while
+ * Unnerved (not a boss; T507); 0 in Stasis
  * or Pinned (so a huddle's leader in either holds its group still too). Lead targeting and flak intercepts
  * predict with the same number.
  */
@@ -48,7 +51,10 @@ export function enemySpeedPerTick(e: Enemy): number {
   const own = e.def === null ? 0 : e.def.speedTilesPerTick;
   const base = e.heavy ? own * HUSH_SPEED_MUL : own;
   return (
-    (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) * e.chillMul * e.paceMul
+    (e.tags.includes('youngling') ? base * YOUNGLING_SPEED_MUL : base) *
+    e.chillMul *
+    e.paceMul *
+    unnervedSpeedMul(e) // Unnerved's −20% on a non-boss (systems/status.ts; T507)
   );
 }
 

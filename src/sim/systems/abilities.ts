@@ -27,10 +27,14 @@
 //     takes it at half strength through `applyChill` (enemies.md § 6), the content's `bossSlowPct`.
 //   - A **reveal** zone (Scanner Sweep, T406) lives `durationTicks` ticks from the cast tick at the
 //     target tile; systems/detection.ts Reveals the cloaked units inside it on each of those ticks.
-//   - An undetected cloaked unit is untouchable (enemyAbilities/cloak.ts): a strike or segment
-//     tick deals it nothing (the damage pipeline's `immune`), and a segment doesn't slow it.
+//   - **Stillness** (`stasisArea`, T507) opens no zone: it lands on the cast's tick, after
+//     AbilityUsed (sim/abilities/stillness.ts: Stasis in a circle, then StasisArea).
+//   - A unit out of reach (cloaked out, burrowed, Phased, or leaving; enemyAbilities/layers.ts
+//     `untargetable`) is untouchable: a strike or segment tick deals it nothing (the damage
+//     pipeline's `immune`), and a segment doesn't slow it (T507 widened that from cloaks alone).
+//     Time Dilation is map-wide, not aimed, so its field still slows them.
 // - Modifiers (`abilityStat`, by ability id or '*') change cooldowns (Ability Coolant, Companion
-//   Rapport) and strike radii (Orbital Strike Mk II): `abilityStats`.
+//   Rapport) and radii (Orbital Strike Mk II; any strike, reveal, or Stillness): `abilityStats`.
 // - Cooldowns run on sim time, so pausing doesn't advance them, and an ability aimed while paused
 //   lands when play resumes (core-loop §3.1). An early wave call cuts them (`reduceAbilityCooldowns`).
 import type {
@@ -44,7 +48,8 @@ import { secToTicks, TICK_HZ } from '../../shared/time.ts';
 import { applyChill, applyDamage, PLAIN_HIT, type HitMods } from '../combat/damage.ts';
 import type { Command, RejectReason } from '../commands.ts';
 import type { Modifier, SimConfig } from '../config.ts';
-import { cloakedOut } from '../enemyAbilities/cloak.ts';
+import { castStillness } from '../abilities/stillness.ts';
+import { untargetable } from '../enemyAbilities/layers.ts';
 import { ZONE_BLANK, type Zone } from '../entities.ts';
 import type { DamageSource } from '../events.ts';
 import { tileIndex } from '../grid.ts';
@@ -88,7 +93,7 @@ export interface AbilityStats {
   readonly cooldownTicks: number;
   /** The cooldown each cast starts, in waves (Clearance Sale; at least 1); else 0. */
   readonly cooldownWaves: number;
-  /** A strike's or reveal's radius in tiles; 0 for effects without one (a segment). */
+  /** A strike's, reveal's, or Stillness's radius in tiles; 0 for effects without one (a segment). */
   readonly radiusTiles: number;
 }
 
@@ -120,8 +125,7 @@ export function abilityStats(
     }
   }
   const e = def.effect;
-  const radius =
-    e.kind === 'strike' || e.kind === 'reveal' ? (e.radiusTiles + rFlat) * (1 + rPct) : 0;
+  const radius = hasRadiusEffect(e) ? (e.radiusTiles + rFlat) * (1 + rPct) : 0;
   const radiusTiles = radius > 0 ? radius : 0;
   if (def.cooldownWaves > 0) {
     const cooldownWaves = Math.max(1, Math.round(def.cooldownWaves * (1 + cdPct)));
@@ -209,15 +213,21 @@ export function abilityConfigErrors(cfg: SimConfig<IdSpace>): string[] {
   return out;
 }
 
-/** Whether an ability has a radius a modifier may change (a strike or a reveal). */
+/** Whether an ability has a radius a modifier may change (a strike, a reveal, or Stillness). */
 function hasRadius(def: CompiledAbilityDef): boolean {
-  return def.effect.kind === 'strike' || def.effect.kind === 'reveal';
+  return hasRadiusEffect(def.effect);
+}
+
+function hasRadiusEffect(
+  e: CompiledAbilityEffect,
+): e is Extract<CompiledAbilityEffect, { kind: 'strike' | 'reveal' | 'stasisArea' }> {
+  return e.kind === 'strike' || e.kind === 'reveal' || e.kind === 'stasisArea';
 }
 
 /**
  * Validates and applies an `ability` command: the slot holds an ability, it is off cooldown (in
- * ticks and in waves), and a targeted one's target is a tile on the map (a strike or a reveal
- * may land on any tile; a segment needs a tile of a ground route). Time Dilation and Clearance Sale take no
+ * ticks and in waves), and a targeted one's target is a tile on the map (a strike, a reveal, or
+ * Stillness may land on any tile; a segment needs a tile of a ground route). Time Dilation and Clearance Sale take no
  * target and ignore one if given. Returns null on success, else why it was rejected.
  */
 export function applyAbilityCommand(
@@ -242,6 +252,11 @@ export function applyAbilityCommand(
     // A new sale replaces any charges left (a Ready Room recast), never adds to them.
     state.discountCharges = e.charges;
     state.discountPct = e.pct;
+  } else if (e.kind === 'stasisArea') {
+    // Stillness (T507): instant, so it opens no zone; it lands after AbilityUsed, below.
+    const t = cmd.target;
+    if (t === undefined || tileIndex(ctx.map, t[0], t[1]) < 0) return 'invalidTarget';
+    target = [t[0], t[1]];
   } else {
     const t = cmd.target;
     if (t === undefined || tileIndex(ctx.map, t[0], t[1]) < 0) return 'invalidTarget';
@@ -252,6 +267,10 @@ export function applyAbilityCommand(
   startCooldown(state, ctx, def, cmd.slot);
   state.stats.abilityUses++;
   emit(state, { type: 'AbilityUsed', slot: cmd.slot, uid, ability: def.id, target });
+  if (e.kind === 'stasisArea' && target !== null) {
+    const radius = abilityStats(def, ctx.config.modifiers).radiusTiles;
+    castStillness(state, e, target[0], target[1], radius, cmd.slot);
+  }
   return null;
 }
 
@@ -491,7 +510,9 @@ function suppress(state: SimState, ctx: TickContext, z: Zone, damageTick: boolea
     // Ground units only: Gerald flies the ground route but is an air unit (D072).
     if (e.def.layer === 'air') continue;
     if (e.dist < z.distFrom || e.dist > z.distTo) continue;
-    if (cloakedOut(e)) continue; // untouchable: no slow, and its damage tick would deal nothing
+    // Out of reach (cloaked out, burrowed, Phased, or leaving; enemyAbilities/layers.ts): no
+    // slow, and its damage tick would deal nothing (T507: the docs' reach rule, enemies.md § 2.6).
+    if (untargetable(e)) continue;
     applyChill(e, z.slowPct, 1);
     if (damageTick) victims.push(i);
   }

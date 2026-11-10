@@ -28,10 +28,23 @@
 // - **Immunity:** a Pin lands only on a unit neither pinned nor immune, so it never extends or
 //   stacks; once it ends the unit is immune to Pin for PIN_IMMUNITY_SEC (1 s).
 // - **A boss** takes Chilled 50% for the same duration instead (not halved again, no immunity).
+//
+// Unnerved (enemies.md § 2.4; T507, Mindspike [Dread]): `applyUnnerved` is the one way in.
+// - **Any unit, a boss too**, is interrupted for `unnervedTicks`, counting the tick it lands:
+//   `isInterrupted` holds, so every ability with a tell (a pulse, a blink, a dig, a phase, a hush)
+//   can't start or go on and its cooldown restarts from zero. That is how a boss's tell is
+//   interrupted at all (its Stasis converts to Chilled, which interrupts nothing).
+// - **A non-boss** also moves UNNERVED_SLOW (20%) slower: its own factor in the speed rule
+//   (movement.ts `enemySpeedPerTick` × `unnervedSpeedMul`), multiplied with Chilled and outside
+//   the chill cap, never a chill source (so it never competes with the strongest chill). A boss
+//   isn't slowed (§ 6: interrupt only).
+// - **Stacking:** a new Unnerved refreshes it to the longer of the remaining and the new duration
+//   (Soaked's rule); there is no immunity.
 import {
   BOSS_CONVERTED_CHILL,
   PIN_IMMUNITY_SEC,
   STASIS_IMMUNITY_MULT,
+  UNNERVED_SLOW,
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { applyChill } from '../combat/damage.ts';
@@ -41,13 +54,34 @@ import type { SimState } from '../state.ts';
 /**
  * **The interrupt hook** (enemies.md § 2.4's interrupt rule): whether a status interrupts and
  * blocks `e`'s active abilities this tick. Every enemy ability with a tell asks it each tick (the
- * shield pulse, the blink, the dig, the hush): while it's true, a tell can't start, a tell under
- * way is cancelled, and the ability's cooldown restarts from zero. Today: Stasis on a non-boss
- * (a boss's converted Chilled interrupts nothing, D101). Unnerved joins it in M5 (and interrupts
- * bosses too).
+ * shield pulse, the blink, the dig, the phase, the hush): while it's true, a tell can't start, a
+ * tell under way is cancelled, and the ability's cooldown restarts from zero. Stasis on a non-boss
+ * (a boss's converted Chilled interrupts nothing, D101), and Unnerved on any unit, a boss too
+ * (T507).
  */
 export function isInterrupted(e: Readonly<Enemy>): boolean {
-  return e.stasisTicks > 0 && e.def !== null && e.def.boss === null;
+  return e.unnervedTicks > 0 || (e.stasisTicks > 0 && e.def !== null && e.def.boss === null);
+}
+
+/** Whether `e` is Unnerved this tick (render's mark reads it). */
+export function isUnnerved(e: Readonly<Enemy>): boolean {
+  return e.unnervedTicks > 0;
+}
+
+/** Unnerved's factor in the speed rule: 1 − UNNERVED_SLOW on an Unnerved non-boss, else 1. */
+export function unnervedSpeedMul(e: Readonly<Enemy>): number {
+  return e.unnervedTicks > 0 && e.def !== null && e.def.boss === null ? 1 - UNNERVED_SLOW : 1;
+}
+
+/**
+ * Unnerved for `ticks` (enemies.md § 2.4; see the header): any live unit, a boss too, refreshed
+ * to the longer of the remaining and the new duration. Returns whether it landed (false for a
+ * dead unit or a shorter refresh).
+ */
+export function applyUnnerved(e: Enemy, ticks: number): boolean {
+  if (!e.alive || e.def === null || ticks <= e.unnervedTicks) return false;
+  e.unnervedTicks = ticks;
+  return true;
 }
 
 /** Whether `e` is frozen in Stasis this tick (render and movement read it). */
@@ -120,6 +154,7 @@ export function status(state: SimState): void {
       }
     }
     if (e.soakedTicks > 0) e.soakedTicks--;
+    if (e.unnervedTicks > 0) e.unnervedTicks--;
     if (e.stasisTicks > 0) e.stasisTicks--;
     else if (e.stasisImmuneTicks > 0) e.stasisImmuneTicks--;
     // A Pin's immunity starts the pass it ends, so the next Pin waits PIN_IMMUNITY_TICKS passes.

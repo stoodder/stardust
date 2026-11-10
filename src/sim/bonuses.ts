@@ -76,18 +76,18 @@ export function bonusPeriodTicks(attack: AttackStats, b: TowerBonuses): number {
 
 /**
  * Whether `e` has any status in `mask` (bit i = content/rules.ts STATUS_BITS[i]). Stasis runs
- * since T407a and Pinned since T408; Unnerved (M5) isn't simulated yet (createSim refuses it), so
- * its bit never matches.
+ * since T407a, Pinned since T408, and Unnerved since T507.
  */
 export function hasStatusIn(e: Enemy, mask: number): boolean {
   if (mask === 0) return false;
-  // Bits: chilled 1, soaked 2, corroded 4, marked 8, pinned 16, stasis 32 (STATUS_BITS order).
+  // Bits: chilled 1, soaked 2, corroded 4, marked 8, pinned 16, stasis 32, unnerved 64
+  // (STATUS_BITS order).
   if ((mask & 1) !== 0 && e.chillPct > 0) return true;
   if ((mask & 2) !== 0 && e.soakedTicks > 0) return true;
   if ((mask & 4) !== 0 && e.corrodedStacks > 0) return true;
   if ((mask & 8) !== 0 && e.markTicks > 0) return true;
   if ((mask & 16) !== 0 && e.pinnedTicks > 0) return true;
   if ((mask & 32) !== 0 && e.stasisTicks > 0) return true;
-  // TODO(M5): unnerved (64) once it runs.
+  if ((mask & 64) !== 0 && e.unnervedTicks > 0) return true;
   return false;
 }

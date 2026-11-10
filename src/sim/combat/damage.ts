@@ -29,7 +29,7 @@ import type { DamageSource } from '../events.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
-import { applyPin, applyStasis } from '../systems/status.ts';
+import { applyPin, applyStasis, applyUnnerved } from '../systems/status.ts';
 import { payKillIncome } from '../towerEconomy.ts';
 
 export type { DamageSource };
@@ -184,6 +184,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  * - Marked: highest only, like Chilled.
  * - Stasis: never stacks or extends, then 2× immunity; a boss takes Chilled 50% (applyStasis).
  * - Pinned: never stacks or extends, then 1 s immunity; a boss takes Chilled 50% (applyPin).
+ * - Unnerved: refreshes to the longer duration; a boss is interrupted but not slowed (applyUnnerved).
  */
 export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): void {
   if (!enemy.alive || untargetable(enemy)) return;
@@ -214,8 +215,9 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         // Held in place, a flyer grounded, or a boss's Chilled 50% (systems/status.ts; T408).
         applyPin(enemy, fx.durationTicks);
         break;
-      // Unnerved (M5) arrives with the Mindspike; createSim refuses it until then (FEATURE_GATES).
       case 'unnerved':
+        // Interrupted (a boss too), and a non-boss 20% slower (systems/status.ts; T507, Dread).
+        applyUnnerved(enemy, fx.durationTicks);
         break;
       default:
         assertNever(fx);

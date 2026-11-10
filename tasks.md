@@ -222,7 +222,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 
 - [x] **T500a** Sim/content seams: types for phasing (Phased layer), `shieldAura`, the `shieldBroken` phase + shards + re-form, two-level split, lighting `dark` + `lights` markers, escort data (`refugees`, `safeExit`), Ward def, `stasisArea`, `unnerved`/`marked`, `noEvade`; stats `pivotWave`, leaks by wave, unrevealed-passed, evacuated/lost; events; stubs for every new id; dev maps `dev_escort`, `dev_dark`; gate retargets (`jamLimit`, `objectiveCompleted` → M6); T501k's stub-tower seam.
 - [x] **T500b** Story/meta seams: dialogue folders `a2_m04..06`, codex/memo stubs, transaction signatures + runEnd step 6's hook, the `ally_hushed` trigger, a bank condition (C2 `none`), reference rows A2M4–A2M6, dev saves (`after_a2m3_ref`, `after_a2m4_returned`/`_sold`, `after_a2m5`, `after_a2m6`); T501l. No SaveData bump.
-- [~] **T501j** The gate first: ≤ 400 s at M4 content (fast text in c1-radio/staging/results-flow, worker/share rebalance, a quiet-machine timing) and a gallery split (29.4k of 32.7k px; ~20 sprites are coming). The budget becomes 8 min (D137).
+- [x] **T501j** The gate first: ≤ 400 s at M4 content (fast text in c1-radio/staging/results-flow, worker/share rebalance, a quiet-machine timing) and a gallery split (29.4k of 32.7k px; ~20 sprites are coming). The budget becomes 8 min (D137).
 - [x] **T541** Portraits: Kip `act2`, Pebble `cap`, Ves'thara `touched` (characters.md's frayed grey threads win; T501a); stretch: `touched_deep`, `dawn`.
 - [x] **T502** Veilwalker, Blinkstrider, Aegis Cantor (a continuous 15/s shield aura); T501b's cloak smoke; `blink.ts` scratch.
 - [x] **T503** Phasing (Phased layer: 1.5 s in 5, a 0.5 s tell that Stasis/Unnerved interrupt), Fracture (two-level split; Shards `clustered`), Rift Moth.
@@ -235,7 +235,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [ ] **T521** A2M5 *The Long Walk*: 12 waves (5 + 7), Bricks companion, Cantors, the Penitent; the pivot cue pauses mid-fight (test), refugees from W6, Kneel reachable, `ally_hushed`, the Prism gift, `memo_a2_06`; par ~71 Evacuated; no-detection loses by the pivot, no-shield by W5, no-splash by W8; a Capacitor Bank alt; median 1× runtime ≤ 15 min, recorded.
 - [~] **T507** Unnerved (−20% speed; interrupts tells, bosses' too), Mindspike (T1–3, Echo Spike, Dread), Stillness (Stasis 3 s, r 2.5, 45 s) and Ves'thara as a companion.
 - [ ] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
-- [ ] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
+- [~] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
 - [ ] **T522** A2M6 *Sundown*: the wall, gates, merge, diagonal air lane, watchtower, lamps; 14 waves; full dark by W12 with Goldie's line in the dark (test); Ves'thara + Stillness; Bricks's post; Before the Dark; the Ishael debrief; `base_a2_loophole`, `base_a2_whistle`; par ~68; no-splash loses by W9, no-air by W10; a Seeker Swarm alt.
 - [ ] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
 - [ ] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
@@ -250,6 +250,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [ ] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
 - [ ] **T562** Corrosive Kiss's "Corroded enemies regenerate shields 50% slower" (towers.md; a listed `shield_aura` counter in enemies.md) isn't in the sim's shield regen: build it and decide whether it also halves the Cantor's aura.
 - [ ] **T563** A content check that a link's `vsShielded` bonus sits only on towers whose attacks read `damageOn` (shells and projectiles ignore it today; fine for the Zapcoil and the Prism).
+- [ ] **T564** Gate follow-ups (T501j): take a quiet-machine gate timing (load ≤ 3) and confirm smoke ≤ 325 s, then settle Playwright workers (2 vs 3); split the audio levels smoke test (47 s, the run's tail); watch `dialogue.spec`'s "a scene with a choice…" and "the briefing…" (failed under heavy load); trim the darkness smoke (22 s loaded) and import `hasDarkness` in `gates.ts`.
 - [ ] **T561** Docs: *Built so far (M5)*, data pointers, enemies.md open question 4, maps.md §5.1–5.2, art-direction §7 and §10.
 
 Carry-overs from M4, folded in:

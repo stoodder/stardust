@@ -1,6 +1,7 @@
 // System 7: towers. Targeting, cooldowns, and firing (design/towers.md §5), in ascending slot
 // order. Four attack kinds run here:
-// - hitscan (Rivet): damage lands the tick it fires.
+// - hitscan (Rivet): damage lands the tick it fires. With an `echo` (Mindspike [Echo Spike],
+//   T507), a share of each hit lands on the units around its target: sim/attacks/echo.ts.
 // - lobbed (Thumper): a shell aimed with lead targeting at the target's predicted route position
 //   after the flight time, fixed when it fires; the projectiles system lands it as splash.
 // - projectile (Skyhook's flak, T304a): a straight shot at `speedTilesPerTick` to the intercept
@@ -59,6 +60,7 @@ import {
 import { beamAttack, beamOff } from '../attacks/beam.ts';
 import { chainAttack } from '../attacks/chain.ts';
 import { chargeAttack } from '../attacks/charge.ts';
+import { echoHit } from '../attacks/echo.ts';
 import { lineAttack } from '../attacks/line.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
@@ -233,6 +235,10 @@ function fireHitscan(
     radiusTiles: 0,
   });
   const neutral = isNeutral(target);
+  // Where the target stood and who it was, for an echo after the hit (a kill frees its slot).
+  const tx = target.x;
+  const ty = target.y;
+  const tuid = target.uid;
   const hit = {
     type: 'ProjectileHit' as const,
     uid: 0,
@@ -254,6 +260,8 @@ function fireHitscan(
   hit.damage = applyDamage(state, target, damageOn(t, attack, target), attack.type, source, attack);
   applyEffects(target, tier.effects);
   applyLinkStatuses(t, target);
+  // Echo Spike (T507; attacks/echo.ts): a share of the hit to the units around the target.
+  if (attack.echo !== null) echoHit(state, ctx, t, tier, attack, attack.echo, tuid, tx, ty);
 }
 
 /**
