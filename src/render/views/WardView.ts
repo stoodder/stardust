@@ -1,6 +1,6 @@
 // The Ward (design/enemies.md § 6.1 `pivot`; maps.md § 5.4; T506's minimal view, T530a and T540b
 // polish): a pivoted boss kneeling where it stood, as an ally (`Ally.kind` 'ward'; AllyView draws
-// no ward). Each frame, for every live Ward: its boss's body sprite (`Ally.enemyId`'s, in a
+// no ward). Each frame, for every live Ward: its boss's body sprite (`Ally.enemyId`'s def's, in a
 // `kneel` pose when the art has one, else the bowed `puff` pose the Glass Witch's placeholder
 // shares, else its first walk frame) on its ground point in `world`, and a solid `blue.3` ring at
 // its aura's radius (`Ally.rangeSq`) over a 1 px `ink.0` under-stroke in `decal`, steady: the
@@ -46,9 +46,12 @@ export class WardView {
   readonly #slots: Slot[] = [];
   /** The body sprite for each boss id (resolved once). */
   readonly #bodyOf = new Map<string, SpriteId>();
+  /** A boss id's body sprite id, from the run's content. */
+  readonly #spriteOf: (enemyId: string) => string;
 
-  constructor(ctx: ViewContext) {
+  constructor(ctx: ViewContext, spriteOf: (enemyId: string) => string) {
     this.#ctx = ctx;
+    this.#spriteOf = spriteOf;
     for (let i = 0; i < MAX_WARDS; i++) {
       const body = ctx.scene.make.image({}, false).setVisible(false);
       const ring = ctx.scene.make.image({}, false).setVisible(false);
@@ -113,7 +116,7 @@ export class WardView {
   #body(enemyId: string): SpriteId {
     let id = this.#bodyOf.get(enemyId);
     if (id === undefined) {
-      id = spriteId(`enemy.${enemyId}`);
+      id = spriteId(this.#spriteOf(enemyId));
       this.#bodyOf.set(enemyId, id);
     }
     return id;

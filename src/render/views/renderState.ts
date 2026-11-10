@@ -63,6 +63,8 @@ export interface RenderState {
     readonly tells: number;
     readonly auras: number;
   };
+  /** Wards kneeling now (T506, WardView). */
+  readonly wards: number;
   /** BlinkView's tells up now and afterimages since the battle began. */
   readonly blinks: { readonly tells: number; readonly afterimages: number };
   /** PhaseView's rings up now (telling, Phased) and units seen phasing in since the battle began. */

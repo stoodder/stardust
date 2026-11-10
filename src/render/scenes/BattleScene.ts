@@ -123,6 +123,7 @@ import {
 import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldAuraView } from '../views/ShieldAuraView.ts';
+import { WardView } from '../views/WardView.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
@@ -218,6 +219,8 @@ export class BattleScene extends Phaser.Scene {
   #shields!: ShieldView;
   /** The Aegis Cantor's shield aura ring (T502). */
   #auras!: ShieldAuraView;
+  /** The Ward (T506): a pivoted boss kneeling, its chill ring. */
+  #wards!: WardView;
   /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
   #blinks!: BlinkView;
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
@@ -363,6 +366,10 @@ export class BattleScene extends Phaser.Scene {
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     this.#auras = new ShieldAuraView(ctx, prefersReducedMotion);
+    this.#wards = new WardView(
+      ctx,
+      (id) => this.#deps.sim.config.content.enemies[id]?.sprites.body ?? `enemy.${id}`,
+    );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
@@ -510,6 +517,7 @@ export class BattleScene extends Phaser.Scene {
       this.#huddles.reset();
       this.#shields.reset();
       this.#auras.reset();
+      this.#wards.reset();
       this.#blinks.reset();
       this.#phases.reset();
       this.#harpoon.reset();
@@ -547,6 +555,7 @@ export class BattleScene extends Phaser.Scene {
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
+    this.#wards.update(state.allies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
@@ -659,6 +668,7 @@ export class BattleScene extends Phaser.Scene {
         tells: sh.tells,
         auras: this.#auras.rings,
       },
+      wards: this.#wards.shown,
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
       phases: { ...this.#phases.shown, phasedIn: this.#phases.phasedIn },
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
