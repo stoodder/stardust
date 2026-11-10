@@ -34,12 +34,13 @@ import {
   SCENE_ID,
   type Bark,
   type BarkTrigger,
+  type HushableAllyKind,
   type LineNode,
   type ReplyButton,
   type Scene,
   type SpeakerId,
 } from '../content/dialogue/types.ts';
-import type { EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
+import type { AllyKind, EnemyId, IdSpace, MapDef, TowerId } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
 import { baseStoryContext } from '../meta/story.ts';
 import { isBossWave } from '../sim/index.ts';
@@ -1094,6 +1095,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   let tagGiven = false;
   let leaked = false;
   let lowFired = false;
+  const maxLost = mapDef.maxLost;
   /** Cue scenes this battle has played (a cue scene plays once a battle). */
   const cuedScenes = new Set<string>();
   /** The run's fleeing kills already offered as `skitterkin_killed_ahead` (the sim's tagKilled). */
@@ -1232,10 +1234,22 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       }
       offerBarks(triggers);
     }),
-    // A Hollow unit hushed a fleeing Skitterkin (enemies.md § 5.4; the bark's once-per-map limit).
+    // A Hollow unit hushed a fleeing Skitterkin (enemies.md § 5.4; the bark's once-per-map limit),
+    // or a route ally: a refugee, a bearer, a singer (`ally_hushed` with its kind; T513).
     bus.on('Hushed', (e) => {
       routeOf.delete(e.victim);
       if (e.victimEnemy !== null) offerBarks([{ on: 'skitterkin_hushed' }]);
+      else if (isHushableAlly(e.victimAlly)) offerBarks([{ on: 'ally_hushed', ally: e.victimAlly }]);
+    }),
+    // On an Escort the meter is the refugees (T513): `low_integrity` once the losses left before
+    // defeat are LOW_INTEGRITY_SHARE of `maxLost` or fewer (`escortLow`), the core's rule's twin.
+    bus.on('RefugeeLost', () => {
+      const st = sim.state;
+      if (lowFired || st.objective !== 'escort' || !escortLow(st.stats.refugeesLost, maxLost)) {
+        return;
+      }
+      lowFired = true;
+      offerBarks([{ on: 'low_integrity' }]);
     }),
     bus.on('EnemyLeaked', (e) => {
       const w = waveOf.get(e.uid);
@@ -1377,6 +1391,27 @@ export function dialogueTestHooks(): {
       comms: dialogue.comms.value?.line.text ?? null,
     }),
   };
+}
+
+/** The route allies a Hollow unit can hush, by the `ally_hushed` bark's `ally` parameter. */
+const HUSHABLE_ALLIES: ReadonlySet<string> = new Set<HushableAllyKind>([
+  'refugee',
+  'bearer',
+  'singer',
+]);
+
+/** Whether a hushed ally's kind (the sim's `Hushed.victimAlly`) is one `ally_hushed` names. */
+export function isHushableAlly(kind: AllyKind | undefined): kind is HushableAllyKind {
+  return kind !== undefined && HUSHABLE_ALLIES.has(kind);
+}
+
+/**
+ * Whether an Escort's losses are low on the meter (`low_integrity`, T513): the losses left before
+ * defeat (lost > `maxLost`) are LOW_INTEGRITY_SHARE of `maxLost` or fewer. Never without a
+ * `maxLost` (no limit, no defeat) or before the first loss.
+ */
+export function escortLow(lost: number, maxLost: number | null): boolean {
+  return maxLost !== null && lost > 0 && maxLost - lost <= maxLost * LOW_INTEGRITY_SHARE;
 }
 
 /** Whether a Hollow unit is alive on route `route` (the runners' reason to run; D134). */

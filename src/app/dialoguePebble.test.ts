@@ -19,6 +19,8 @@ const ctx = (map: CampaignMapId, seen: readonly string[] = []): StoryContext => 
 const TEXT = { profile: null, pestsProcessed: 0, evacuated: null };
 const bricks = (c: StoryContext) =>
   lineView({ speaker: 'bricks', text: 'Small Fry.' }, c, TEXT, null).portrait?.variant ?? null;
+const pebble = (c: StoryContext) =>
+  lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).portrait?.variant ?? null;
 const plate = (c: StoryContext) =>
   lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).name;
 
@@ -37,5 +39,13 @@ describe("Bricks's pocket and Pebble's name plate", () => {
     expect(plate(ctx('a2_m03', ['a2_m03_cue_pebble', 'a2_m03_w07']))).toBe('Pebble');
     expect(plate(ctx('a2_m04'))).toBe('Pebble');
     expect(plate(ctx('a3_m01'))).toBe('Pebble');
+  });
+
+  it("wears Bricks's bottle cap from A2M4 (T513), and his patch on it from A3M3", () => {
+    expect(pebble(ctx('a2_m03', ['a2_m03_cue_pebble', 'a2_m03_w07']))).toBeNull();
+    for (const map of ['a2_m04', 'a2_m05', 'a2_m06', 'a3_m01', 'a3_m02'] as const) {
+      expect(pebble(ctx(map)), map).toBe('cap');
+    }
+    expect(pebble(ctx('a3_m03'))).toBe('patch');
   });
 });
