@@ -47,7 +47,6 @@ export const COUNTDOWN = 20;
 /** A packed Mote cluster's spacing (seconds). */
 export const PACKED = 0.2;
 
-
 export const waves = defineWaves([
   // W1 · Motes down the west road
   {
@@ -148,7 +147,7 @@ export const waves = defineWaves([
       motes('east', 24, OPEN + 2, PACKED),
       fractures('west', 2, OPEN + 8, 1.5),
       fractures('east', 2, OPEN + 9, 1.5),
-      moths(23, OPEN + 12, 0.4),
+      moths(22, OPEN + 12, 0.4),
       motes('west', 24, OPEN + 22, PACKED),
       motes('east', 24, OPEN + 24, PACKED),
     ],

@@ -1,11 +1,14 @@
 // The Mindspike's and Stillness's minimal look (T507; art-direction §8 *Unnerved*, §7 Psionic):
-// pure rules, unit-tested, applied by MindView. T530a polishes them (the 1 px jitter on the body
-// is EnemyView's, and waits for it).
+// pure rules, unit-tested, applied by MindView and EnemyView (T530a's polish).
 // - **Unnerved:** a wobbling squiggle above the head: a 9×5 zigzag in `violet.4` on an `ink.0`
 //   rim (so it reads on bright ground and dark), two frames that swap every UNNERVED_WOBBLE_MS
-//   (held on the first under reduced motion). It stands UNNERVED_GAP_PX over the body's top, so
-//   it clears the health bar and the tell glyph.
-// - **Echo Spike's echo:** a `violet.3` ring that grows to the echo's radius at the target, fast.
+//   (held on the first under reduced motion). It stands UNNERVED_GAP_PX over the body's top as
+//   drawn (its lane offset and lift included, so it sits over the body, not the route's line),
+//   clearing the health bar and the tell glyph. The body jitters 1 px side to side
+//   (`unnervedJitterPx`, EnemyView: an uneven step every JITTER_STEP_MS, seeded per uid; still
+//   under reduced motion).
+// - **Echo Spike's echo:** a `violet.4` ring that grows to the echo's radius at the target, with
+//   a small `white.1` pop at its heart, so it reads over a busy fight.
 // - **Stillness:** the circle it froze, a pale `blue.4` disc that fades over the Stasis it gave,
 //   and a ring that grows out to its radius as it lands.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -23,8 +26,14 @@ export const UNNERVED_WOBBLE_MS = 160;
  * (EnemyView's), so neither covers it, with a pixel between.
  */
 export const UNNERVED_GAP_PX = HEALTH_BAR_ROOM_PX + TELL_GLYPH_PX + 1;
-export const ECHO_COLOR: ColorName = 'violet.3';
-export const ECHO_MS = 320;
+export const ECHO_COLOR: ColorName = 'violet.4';
+export const ECHO_MS = 360;
+/** The echo's heart: a small `white.1` ring popping at the target as the echo goes out. */
+export const ECHO_POP_COLOR: ColorName = 'white.1';
+export const ECHO_POP_TILES = 0.35;
+export const ECHO_POP_MS = 160;
+/** The Unnerved body's jitter steps this often (ms, page time). */
+export const JITTER_STEP_MS = 90;
 export const STILLNESS_COLOR: ColorName = 'blue.4';
 export const STILLNESS_RING_MS = 420;
 /** The disc fades over Stillness's Stasis (core-loop.md § 3.2: 3 s), in render time. */
@@ -69,4 +78,18 @@ export function squiggleImage(frame: 0 | 1): RgbaImage {
 export function squiggleFrame(ms: number, reducedMotion: boolean): 0 | 1 {
   if (reducedMotion) return 0;
   return Math.floor(ms / UNNERVED_WOBBLE_MS) % 2 === 0 ? 0 : 1;
+}
+
+/**
+ * An Unnerved body's sideways jitter (px: −1, 0 or +1) at page time `ms` for unit `uid`: a new
+ * uneven step every JITTER_STEP_MS, offset per uid so a cluster doesn't shake in unison; 0 under
+ * reduced motion (the squiggle still tells).
+ */
+export function unnervedJitterPx(uid: number, ms: number, reducedMotion: boolean): -1 | 0 | 1 {
+  if (reducedMotion) return 0;
+  const step = Math.floor(ms / JITTER_STEP_MS) + uid * 7;
+  // A cheap integer hash of the step, so the shake never settles into a beat.
+  const h = Math.imul(step ^ (step >>> 3), 0x9e3779b1) >>> 0;
+  const k = h % 3;
+  return k === 0 ? -1 : k === 1 ? 0 : 1;
 }

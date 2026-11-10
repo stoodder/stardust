@@ -149,36 +149,33 @@ export const builds = defineBuilds({
         STILL_W14,
       ],
     },
-    // Rivet, Skyhook, Zapcoil: no Prism and no Thumper. Rivets on the watchtower and in the yard on
-    // the Fractures, Zapcoils' chains on the clusters at the merge and by the domes, Skyhooks
-    // under the air lane.
-    rivets_and_coils: {
-      loadout: ['rivet', 'skyhook', 'zapcoil'],
+    // Thumper, Sprinkler, Skyhook: no Prism and no Rivet. Four Thumpers on the roads in, the yard
+    // and the domes, a Sprinkler slowing everything through the merge, par's Skyhooks.
+    shells_and_slow: {
+      loadout: ['thumper', 'sprinkler', 'skyhook'],
       steps: [
-        { wave: 1, build: 'rivet', tile: TOWER },
-        { wave: 1, build: 'zapcoil', tile: MERGE_W },
-        { wave: 1, build: 'rivet', tile: YARD_MID },
-        { wave: 1, build: 'zapcoil', tile: SOUTH_MID },
-        { wave: 2, upgrade: TOWER },
-        { wave: 3, upgrade: MERGE_W },
-        { wave: 4, build: 'skyhook', tile: YARD_IN },
-        { wave: 5, build: 'skyhook', tile: WALL_E },
-        { wave: 5, upgrade: YARD_MID },
-        { wave: 6, upgrade: SOUTH_MID },
-        { wave: 6, upgrade: YARD_IN },
-        { wave: 7, build: 'zapcoil', tile: POCKET_W },
-        { wave: 7, upgrade: WALL_E },
-        { wave: 8, upgrade: TOWER },
-        { wave: 8, upgrade: MERGE_W },
+        { wave: 1, build: 'thumper', tile: MERGE_W },
+        { wave: 1, build: 'sprinkler', tile: MERGE_E },
+        { wave: 1, build: 'thumper', tile: YARD_MID },
+        { wave: 1, build: 'thumper', tile: SOUTH_MID },
+        { wave: 2, upgrade: MERGE_W },
+        { wave: 3, build: 'skyhook', tile: YARD_IN },
+        { wave: 4, build: 'skyhook', tile: WALL_E },
+        { wave: 4, upgrade: YARD_IN },
+        { wave: 5, upgrade: SOUTH_MID },
+        { wave: 5, upgrade: WALL_E },
+        { wave: 6, upgrade: YARD_MID },
+        { wave: 6, upgrade: MERGE_E },
+        { wave: 7, build: 'skyhook', tile: SOUTH_W },
+        { wave: 7, upgrade: YARD_IN },
         STILL_W9,
-        { wave: 9, upgrade: YARD_MID },
-        { wave: 9, upgrade: POCKET_W },
-        { wave: 10, upgrade: SOUTH_MID },
-        { wave: 10, build: 'rivet', tile: YARD_E },
-        { wave: 11, upgrade: YARD_IN },
-        { wave: 11, upgrade: YARD_E },
-        { wave: 12, upgrade: WALL_E },
-        { wave: 12, specialize: MERGE_W, spec: 'a' }, // Overload Coil
+        { wave: 9, upgrade: WALL_E },
+        { wave: 9, upgrade: SOUTH_W },
+        { wave: 10, upgrade: MERGE_W },
+        { wave: 10, upgrade: SOUTH_W },
+        { wave: 11, build: 'thumper', tile: YARD_E },
+        { wave: 11, upgrade: MERGE_E },
+        { wave: 12, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
         STILL_W14,
       ],
     },
@@ -195,58 +192,64 @@ export const SEEKER_ALT: ScriptedBuild = {
   steps: [
     { wave: 1, build: 'thumper', tile: MERGE_W },
     { wave: 1, build: 'zapcoil', tile: TOWER },
-    { wave: 1, build: 'sprinkler', tile: MERGE_E }, // Conductive with the watchtower's Zapcoil
+    { wave: 1, build: 'thumper', tile: YARD_MID },
     { wave: 1, build: 'thumper', tile: SOUTH_MID },
+    { wave: 2, build: 'sprinkler', tile: MERGE_E }, // Conductive with the watchtower's Zapcoil
     { wave: 2, upgrade: MERGE_W },
-    { wave: 3, upgrade: TOWER },
-    { wave: 3, upgrade: SOUTH_MID },
-    { wave: 4, build: 'skyhook', tile: YARD_IN },
-    { wave: 4, upgrade: MERGE_E },
-    { wave: 5, build: 'skyhook', tile: WALL_E },
-    { wave: 5, upgrade: YARD_IN },
+    { wave: 3, build: 'skyhook', tile: YARD_IN },
+    { wave: 4, build: 'skyhook', tile: WALL_E },
+    { wave: 4, upgrade: YARD_IN },
+    { wave: 5, upgrade: TOWER },
+    { wave: 5, upgrade: SOUTH_MID },
     { wave: 6, upgrade: YARD_IN },
-    { wave: 6, build: 'thumper', tile: YARD_MID },
+    { wave: 6, upgrade: YARD_MID },
     { wave: 7, specialize: YARD_IN, spec: 'b' }, // Seeker Swarm
-    { wave: 8, upgrade: MERGE_W },
     STILL_W9,
     { wave: 9, upgrade: WALL_E },
-    { wave: 9, upgrade: YARD_MID },
-    { wave: 10, upgrade: TOWER },
-    { wave: 10, upgrade: SOUTH_MID },
-    { wave: 11, upgrade: WALL_E },
-    { wave: 12, upgrade: MERGE_E },
+    { wave: 9, upgrade: MERGE_E },
+    { wave: 10, build: 'skyhook', tile: SOUTH_W },
+    { wave: 10, upgrade: WALL_E },
+    { wave: 11, upgrade: SOUTH_W },
+    { wave: 11, upgrade: YARD_MID },
+    { wave: 12, upgrade: SOUTH_W },
+    { wave: 12, upgrade: MERGE_W },
     STILL_W14,
   ],
 };
 
 /**
- * The Sunlance/Resonance probe (T522; act2.md § A2M6): par's loadout with a Zapcoil for the Rivet,
- * the Prism on the watchtower specialized as a Sunlance (×10 ramp) and Resonance-linked to a
- * Zapcoil beside it. Its margin is reported, not banded: it must not trivialize the late surges
- * (the Hollow carries no shields, so Resonance adds nothing here; the Sunlance's ramp is spent on
- * a single target at a time). It runs on the reference profile plus the Prism's specs.
+ * The Sunlance/Resonance probe (T522; act2.md § A2M6): par with a Zapcoil beside the watchtower for
+ * the Rivet (Resonance with the Prism) and the Prism specialized as a Sunlance (×10 ramp) for the
+ * Thumper's Cluster. Its margin is reported, not banded: it must not trivialize the late surges.
+ * The Hollow carry no shields, so Resonance adds nothing here, and a Sunlance spends its ramp on one
+ * target at a time while the surges come as crowds. It runs on the reference profile plus the
+ * Prism's specs (balance/a2m6.test.ts).
  */
 export const SUNLANCE_PROBE: ScriptedBuild = {
   loadout: ['prism', 'thumper', 'skyhook', 'zapcoil'],
   steps: [
     { wave: 1, build: 'thumper', tile: MERGE_W },
-    { wave: 1, build: 'zapcoil', tile: MERGE_E },
     { wave: 1, build: 'prism', tile: TOWER },
-    { wave: 2, build: 'thumper', tile: YARD_MID },
-    { wave: 3, upgrade: MERGE_W },
+    { wave: 1, build: 'thumper', tile: YARD_MID },
+    { wave: 1, build: 'thumper', tile: SOUTH_MID },
+    { wave: 2, upgrade: MERGE_W },
+    { wave: 3, upgrade: SOUTH_MID },
     { wave: 4, build: 'skyhook', tile: YARD_IN },
+    { wave: 5, build: 'skyhook', tile: WALL_E },
     { wave: 5, upgrade: TOWER },
-    { wave: 6, upgrade: TOWER },
-    { wave: 7, specialize: TOWER, spec: 'b' }, // Sunlance
-    { wave: 8, upgrade: MERGE_W },
-    { wave: 8, upgrade: YARD_IN },
+    { wave: 6, upgrade: YARD_IN },
+    { wave: 6, upgrade: YARD_MID },
+    { wave: 7, upgrade: WALL_E },
+    { wave: 7, build: 'zapcoil', tile: MERGE_E }, // Resonance with the Prism
     STILL_W9,
-    { wave: 9, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
-    { wave: 10, build: 'skyhook', tile: SOUTH_MID },
-    { wave: 10, upgrade: YARD_MID },
-    { wave: 11, upgrade: MERGE_E },
+    { wave: 9, upgrade: TOWER },
+    { wave: 9, upgrade: MERGE_W },
+    { wave: 10, upgrade: YARD_IN },
+    { wave: 10, upgrade: WALL_E },
+    { wave: 10, upgrade: MERGE_E },
+    { wave: 11, specialize: TOWER, spec: 'b' }, // Sunlance
     { wave: 12, upgrade: SOUTH_MID },
-    { wave: 13, upgrade: MERGE_E },
+    STILL_W14,
   ],
 };
 

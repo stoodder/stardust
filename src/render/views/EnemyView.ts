@@ -47,6 +47,18 @@
 //   inside a green target bracket.
 // Its death (`die`) plays the act's tone (deathLook.ts): Act I's comic pop, Act II's quiet one (the
 // pop without the confetti).
+// T530a's M5 polish:
+// - **Fray** (T501d; art-direction §4): an Aelari construct below two thirds of its HP walks in its
+//   `fray1` frames, below a third in `fray2` (enemyPose.ts `frayBand`), picking up the walk on the
+//   frame it was on, so the threads come loose mid-stride.
+// - **Phased** shows the Rift Moth's `phase` pose (dithered and faint, phaseLook.ts), and a
+//   shield-broken boss with its shield down marches `broken` (the Penitent).
+// - **Unnerved** (mindLook.ts): the body jitters 1 px side to side; MindView's squiggle sits over it.
+// - **Over an armed clickable** (D134 K2): a flyer whose body crosses the spot kept clear draws at
+//   KEEP_CLEAR_FLYER_ALPHA (walkers already pass behind the rock), so it never hides the rock.
+// - **Bunched bars:** health bars and tell glyphs sort like their bodies (front-most on top) inside
+//   `overlay`, under the floaters (OVERHEAD_DEPTH), so a crowd's bars stack instead of tangling.
+// `box` reports the body as drawn (unitAnchor.ts) for the views that mark it.
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { activeBlink, activePulse, blinkTelling, pulseTelling } from '../../sim/index.ts';
@@ -68,7 +80,7 @@ import {
   type HealthBarFill,
 } from '../vfx/healthBar.ts';
 import { SHIMMER_MS, STEPPED_ALPHA, tellHigh } from '../vfx/fxTiming.ts';
-import type { KeepClear } from '../vfx/keepClear.ts';
+import { KEEP_CLEAR_FLYER_ALPHA, type KeepClear } from '../vfx/keepClear.ts';
 import { healthStripTexture } from '../vfx/overlayTextures.ts';
 import {
   blankFacts,
@@ -80,10 +92,14 @@ import {
   oneShotFor,
   POSE_INDEX,
   poseFacts,
+  frayBand,
   statePose,
+  strideFor,
   type EnemyPose,
   type PoseEnemy,
 } from './enemyPose.ts';
+import { unnervedJitterPx } from './mindLook.ts';
+import type { UnitBox } from './unitAnchor.ts';
 import type { DeathStyle } from './deathLook.ts';
 import { QUIET_DEATH_FRAMES } from './deathLook.ts';
 import { EnemyDress, type RimMode } from './EnemyDress.ts';
@@ -151,6 +167,19 @@ export { SHIMMER_MS };
 const RIM_LOW_ALPHA = STEPPED_ALPHA[1];
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
+/**
+ * Health bars and tell glyphs sort among themselves in `overlay` by their body's screen y, in a
+ * band over the overlay's unsorted pieces (depth 0) and under the floaters (TransientFx's depth 1).
+ */
+export const OVERHEAD_DEPTH = 0.5;
+/** Screen y's share of the band (a playfield is under 10,000 px tall), and a uid's tie-break. */
+const OVERHEAD_Y_STEP = 1e-5;
+const OVERHEAD_UID_STEP = 1e-9;
+
+/** The overhead's depth for a body whose ground point sits at screen y `y` (T501i). */
+export function overheadDepth(y: number, uid: number): number {
+  return OVERHEAD_DEPTH + Math.max(0, y) * OVERHEAD_Y_STEP + (uid % 1000) * OVERHEAD_UID_STEP;
+}
 
 /** The sideways direction before an enemy has moved, with no route to seed it (screen, unit). */
 const SIDE_DEFAULT_X = -0.894;
@@ -374,6 +403,12 @@ export class EnemyView implements PooledView {
   /** Glancing back (a fleeing runner), and its walk's tempo multiplier. */
   #glance = false;
   #tempoMul = 1;
+  /** Its fray band (0 whole, 1, 2; enemyPose.ts `frayBand`). */
+  #fray: 0 | 1 | 2 = 0;
+  /** A flyer over a spot kept clear, drawn faint. */
+  #overClear = false;
+  /** It has played a stride since it was shown (a new stride carries on from its frame). */
+  #strode = false;
 
   /**
    * `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes);
@@ -553,6 +588,9 @@ export class EnemyView implements PooledView {
     this.#hitch = false;
     this.#glance = false;
     this.#tempoMul = 1;
+    this.#fray = 0;
+    this.#overClear = false;
+    this.#strode = false;
     this.#stopFlash();
     const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
     layer.add(this.#body);
@@ -670,7 +708,15 @@ export class EnemyView implements PooledView {
     this.#placeBody();
     if (this.#flying) this.#syncBob();
     const depth = worldDepth(gy + oy, 'enemy', this.#uid);
-    if (this.#body.depth !== depth) this.#body.setDepth(depth);
+    if (this.#body.depth !== depth) {
+      this.#body.setDepth(depth);
+      // The overhead sorts like the body: a front unit's bar over the one behind it (T501i).
+      const od = overheadDepth(gy + oy, this.#uid);
+      this.#barTrack.setDepth(od);
+      this.#barHp.setDepth(od);
+      this.#barShield.setDepth(od);
+      this.#tell.setDepth(od);
+    }
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
     this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
     this.#syncClear();
@@ -829,6 +875,12 @@ export class EnemyView implements PooledView {
       this.#glance = glance;
       dirty = true;
     }
+    // Fray (T501d): the walk frays by HP band.
+    const band = e.def === null || e.def.boss !== null ? 0 : frayBand(e.hp, e.def.hp);
+    if (band !== this.#fray) {
+      this.#fray = band;
+      dirty = true;
+    }
     if (dirty) this.#play();
     // Scurrying: a fleeing runner's legs run faster than its pace, a bolting one's faster still.
     const tempo = fleeTempo(this.#fleeing, bolting);
@@ -842,9 +894,11 @@ export class EnemyView implements PooledView {
       dirty = true;
     }
     const high = reduced || Math.floor(now / SHIMMER_MS) % 2 === 0;
+    this.#overClear = this.#flying && this.#overSpot();
     const alpha =
       cloakAlpha(e, this.#leaving, high, this.#cloakOn) *
-      phaseAlpha(e, this.#set?.cloak === true, reduced);
+      phaseAlpha(e, this.#set?.cloak === true, reduced) *
+      (this.#overClear ? KEEP_CLEAR_FLYER_ALPHA : 1);
     if (alpha !== this.#alpha) {
       this.#alpha = alpha;
       this.#body.setAlpha(alpha);
@@ -880,6 +934,10 @@ export class EnemyView implements PooledView {
     let offX = hushShakePx(e, now, reduced);
     let offY = 0;
     if (glitching) offX += glitch.offsetPx;
+    // Unnerved (T507, T530a): a 1 px jitter while the status holds (the squiggle is MindView's).
+    if (e.unnervedTicks > 0 && !e.leaving && !e.phased && !e.burrowed && !frozen) {
+      offX += unnervedJitterPx(this.#uid, now, reduced);
+    }
     if (hushing) {
       const sx = this.#dirX - this.#dirY;
       const sy = this.#dirX + this.#dirY;
@@ -975,6 +1033,36 @@ export class EnemyView implements PooledView {
     );
   }
 
+  /**
+   * The body as drawn (unitAnchor.ts), into `out`: its centre line and frame top and bottom (lift
+   * and bob included, not its shakes), its ground point, and half its width. False before it's
+   * placed, or while it's hidden (burrowed under the mound).
+   */
+  box(out: UnitBox): boolean {
+    if (Number.isNaN(this.#x) || !this.#body.visible) return false;
+    const y = this.#bodyY - this.#bob;
+    out.x = this.#bodyX;
+    out.top = y - this.#headroom;
+    out.bottom = y - this.#headroom + this.#metaH;
+    out.groundY = this.#flying ? this.#bodyY + FLY_LIFT_PX : this.#bodyY;
+    out.halfW = this.#metaW / 2;
+    return true;
+  }
+
+  /** Whether it draws faint over a spot kept clear (a flyer over the armed rock; T501i). */
+  get overClear(): boolean {
+    return this.#overClear;
+  }
+
+  /** Whether its drawn frame overlaps a spot kept clear on screen (D134 K2). */
+  #overSpot(): boolean {
+    const k = this.#keepClear;
+    if (k === null || k.size === 0 || Number.isNaN(this.#x)) return false;
+    const left = this.#bodyX - this.#metaW / 2;
+    const top = this.#bodyY - this.#bob - this.#headroom;
+    return k.covers(left, top, left + this.#metaW, top + this.#metaH);
+  }
+
   /** A brood's arrival (split, sneezed, or surfaced): a short white pop over its first frames. */
   popIn(): void {
     this.#flash(POP_FLASH_FRAMES);
@@ -1047,6 +1135,8 @@ export class EnemyView implements PooledView {
     this.#glyph = null;
     this.#glance = false;
     this.#hitch = false;
+    this.#fray = 0;
+    this.#overClear = false;
     this.#dress.hideAll();
     this.#stopFlash();
     this.#body.stop();
@@ -1117,6 +1207,9 @@ export class EnemyView implements PooledView {
       }
     }
     if (!this.#has(pose)) pose = 'walk';
+    // A hurt construct's walk frays (T501d), where its sprite draws the band.
+    const frayed = strideFor(pose, this.#fray);
+    if (frayed !== pose && this.#has(frayed)) pose = frayed;
     // A fleeing runner's glance back (fleeLook.ts): its `glance` frame where its body draws one
     // (T440a), else the facing that looks over its shoulder.
     let facing = this.#facing;
@@ -1138,7 +1231,11 @@ export class EnemyView implements PooledView {
     if (isStride(pose)) {
       const tempo = walkTempo(this.#uid);
       const frames = this.#ctx.scene.anims.get(key)?.frames.length ?? 1;
-      this.#body.play({ key, startFrame: tempo.startFrame % frames });
+      // Stride to stride (a turn, a fray band, a glance) carries on from the frame it was on.
+      const on = this.#body.anims.currentFrame;
+      const start = this.#strode && isStride(was) && on !== null ? on.index - 1 : tempo.startFrame;
+      this.#strode = true;
+      this.#body.play({ key, startFrame: start % frames });
       this.#body.anims.timeScale = tempo.timeScale * this.#tempoMul;
     } else if (pose === was && this.#body.anims.isPlaying) {
       // The same pose in a new facing or variant (the shimmer): carry on from the frame it was on,

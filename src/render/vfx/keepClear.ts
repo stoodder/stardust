@@ -11,7 +11,8 @@
 // KEEP_CLEAR_TILES, or whose health bar and tell glyph would reach over the spot on screen, hides
 // them (EnemyView). Inside the world the rock
 // itself (PeekerView) sorts KEEP_CLEAR_RAISE_PX further forward, so the walkers round it pass
-// behind it. Pure and allocation-free (fixed arrays the scene refills each frame), so the rule is
+// behind it; a flyer whose body crosses the spot draws faint (KEEP_CLEAR_FLYER_ALPHA, EnemyView).
+// Pure and allocation-free (fixed arrays the scene refills each frame), so the rule is
 // unit-tested.
 import { HALF_H, HALF_W } from '../iso.ts';
 
@@ -27,6 +28,12 @@ export const KEEP_CLEAR_HALF_H_PX = Math.ceil(KEEP_CLEAR_TILES * Math.SQRT2 * HA
  * a walker on that row's edge sorts behind it too.
  */
 export const KEEP_CLEAR_RAISE_PX = KEEP_CLEAR_HALF_H_PX + 2 * HALF_H + 1;
+/**
+ * A flyer whose body crosses a spot kept clear draws at this alpha (the stepped-alpha ladder's
+ * 35%; T501i): walkers pass behind the raised rock, but flyers draw in `air` over the whole world,
+ * so they fade over it instead and the rock stays readable under a Lightwing's pass.
+ */
+export const KEEP_CLEAR_FLYER_ALPHA = 0.35;
 /** Spots at most (clickables armed at once, plus a lift). */
 const MAX_SPOTS = 8;
 

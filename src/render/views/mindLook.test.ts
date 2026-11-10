@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import {
+  JITTER_STEP_MS,
   SQUIGGLE_H,
   SQUIGGLE_W,
   squiggleFrame,
@@ -9,6 +10,7 @@ import {
   UNNERVED_COLOR,
   UNNERVED_RIM,
   UNNERVED_WOBBLE_MS,
+  unnervedJitterPx,
 } from './mindLook.ts';
 
 /** Each column's rows lit in `color` (opaque). */
@@ -52,5 +54,29 @@ describe('the Unnerved squiggle', () => {
     expect(squiggleFrame(UNNERVED_WOBBLE_MS, false)).toBe(1);
     expect(squiggleFrame(2 * UNNERVED_WOBBLE_MS, false)).toBe(0);
     expect(squiggleFrame(UNNERVED_WOBBLE_MS, true)).toBe(0);
+  });
+});
+
+describe('the Unnerved jitter (T530a)', () => {
+  it('shakes the body 1 px either way, unevenly, and holds still under reduced motion', () => {
+    const seen = new Set<number>();
+    let changes = 0;
+    let last = unnervedJitterPx(3, 0, false);
+    for (let ms = 0; ms < 100 * JITTER_STEP_MS; ms += JITTER_STEP_MS) {
+      const j = unnervedJitterPx(3, ms, false);
+      seen.add(j);
+      if (j !== last) changes++;
+      last = j;
+      expect(unnervedJitterPx(3, ms, true)).toBe(0);
+    }
+    expect([...seen].toSorted()).toEqual([-1, 0, 1]);
+    expect(changes).toBeGreaterThan(30); // it shakes, not drifts
+    // Steady within a step, and a neighbour shakes on its own beat.
+    expect(unnervedJitterPx(3, 5, false)).toBe(unnervedJitterPx(3, JITTER_STEP_MS - 1, false));
+    let same = 0;
+    for (let ms = 0; ms < 50 * JITTER_STEP_MS; ms += JITTER_STEP_MS) {
+      if (unnervedJitterPx(3, ms, false) === unnervedJitterPx(4, ms, false)) same++;
+    }
+    expect(same).toBeLessThan(40);
   });
 });

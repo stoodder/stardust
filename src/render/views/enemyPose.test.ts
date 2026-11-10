@@ -4,11 +4,15 @@ import { createSim, type Enemy, type Sim } from '../../sim/index.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   blankFacts,
+  frayBand,
+  FRAY1_PCT,
+  FRAY2_PCT,
   interruptsOneShot,
   isStride,
   oneShotFor,
   poseFacts,
   statePose,
+  strideFor,
   type EnemyPose,
   type PoseFacts,
 } from './enemyPose.ts';
@@ -20,6 +24,8 @@ const calm: PoseFacts = {
   telling: null,
   panic: false,
   heavy: false,
+  phased: false,
+  shieldDown: false,
 };
 
 describe('statePose (T312b)', () => {
@@ -38,9 +44,40 @@ describe('statePose (T312b)', () => {
   });
 
   it('strides on the walk, the Heavy walk, and the glance back (their tempo follows the pace)', () => {
-    for (const p of ['walk', 'heavy', 'glance'] as const) expect(isStride(p)).toBe(true);
-    for (const p of ['tell', 'panic', 'flee', 'puff', 'sneeze'] as const)
+    for (const p of ['walk', 'heavy', 'glance', 'broken', 'fray1', 'fray2'] as const)
+      expect(isStride(p)).toBe(true);
+    for (const p of ['tell', 'panic', 'flee', 'puff', 'sneeze', 'phase'] as const)
       expect(isStride(p)).toBe(false);
+  });
+
+  it('shows Phased as `phase` under leaving, burrowed and invulnerable, over a tell (T530a)', () => {
+    expect(statePose({ ...calm, phased: true })).toBe('phase');
+    expect(statePose({ ...calm, phased: true, telling: 'tell' })).toBe('phase');
+    expect(statePose({ ...calm, phased: true, invulnerable: true })).toBe('puff');
+    expect(statePose({ ...calm, phased: true, leaving: true })).toBe('flee');
+  });
+
+  it("marches `broken` while a shield-broken boss's shield is down, under its tells (T530a)", () => {
+    expect(statePose({ ...calm, shieldDown: true })).toBe('broken');
+    expect(statePose({ ...calm, shieldDown: true, telling: 'tell' })).toBe('tell');
+    expect(statePose({ ...calm, shieldDown: true, leaving: true })).toBe('flee');
+    expect(oneShotFor('broken', 'walk')).toBeNull();
+  });
+
+  it('frays the walk by HP band: whole, then fray1 below two thirds, fray2 below a third', () => {
+    expect(frayBand(90, 90)).toBe(0);
+    expect(frayBand(90 * FRAY1_PCT, 90)).toBe(0);
+    expect(frayBand(59, 90)).toBe(1);
+    expect(frayBand(90 * FRAY2_PCT, 90)).toBe(1);
+    expect(frayBand(29, 90)).toBe(2);
+    expect(frayBand(1, 90)).toBe(2);
+    expect(frayBand(5, 0)).toBe(0); // nothing to measure against
+    expect(strideFor('walk', 0)).toBe('walk');
+    expect(strideFor('walk', 1)).toBe('fray1');
+    expect(strideFor('walk', 2)).toBe('fray2');
+    // Only the walk frays: a tell, the Heavy walk, a glance keep their own frames.
+    for (const p of ['tell', 'heavy', 'glance', 'phase', 'broken'] as const)
+      expect(strideFor(p, 2)).toBe(p);
   });
 
   it('plays the sneeze when a sneeze tell ends in a stride, and the surfacing out of the ground', () => {
@@ -163,5 +200,33 @@ describe('poseFacts for the Glass Witch (T430b, D123)', () => {
     expect(statePose({ ...calm, telling: 'blink', leaving: true })).toBe('flee');
     expect(isStride('blink')).toBe(false);
     expect(oneShotFor('blink', 'walk')).toBeNull();
+  });
+});
+
+describe('poseFacts for M5 units (T530a)', () => {
+  it('folds a Phased Rift Moth into its `phase` pose, and back to the walk when it solidifies', () => {
+    const sim = createSim(battleConfig('dev_rift', 1));
+    sim.enqueue({ type: 'callWave' });
+    const moth = (e: LiveEnemy): boolean => e.def!.id === 'riftmoth';
+    expect(poseWhen(sim, (e) => moth(e) && e.phased)).toBe('phase');
+    expect(poseWhen(sim, (e) => moth(e) && !e.phased && e.phaseTicks > 40)).toBe('walk');
+  });
+
+  it("marches the Penitent `broken` while its shield is down in phase 2, and whole once it re-forms", () => {
+    const sim = createSim(battleConfig('dev_penitent', 1));
+    sim.enqueue({ type: 'callWave' });
+    const penitent = (e: LiveEnemy): boolean => e.def!.boss !== null; // dev_penitent, the only boss
+    expect(poseWhen(sim, penitent)).toBe('walk');
+    const pool = sim.state.enemies;
+    const found = pool.items.slice(0, pool.used).find((e) => e.alive && penitent(e))!;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test sets its state directly
+    const boss = found as Enemy;
+    const f = blankFacts();
+    boss.shieldHp = 0;
+    expect(statePose(poseFacts(boss, f))).toBe('walk'); // phase 1: a broken shield is just down
+    boss.bossPhase = 2;
+    expect(statePose(poseFacts(boss, f))).toBe('broken');
+    boss.shieldHp = 10;
+    expect(statePose(poseFacts(boss, f))).toBe('walk'); // re-formed
   });
 });
