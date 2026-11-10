@@ -69,6 +69,18 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
   },
 };
 
+/**
+ * The buildable pads' teal corner brackets (Everglow plates): they glow faintly in the dark only,
+ * so where a tower can go still reads at night (art-direction §8, *Tile readability*).
+ */
+export const PAD_GLOW: PropGlow & { readonly sprite: string; readonly peak: number } = {
+  sprite: 'tile.pad',
+  colors: ['teal.3'],
+  radius: 1,
+  dusk: 0,
+  peak: 0.7,
+};
+
 /** A glow's alpha at darkness `dark` (0–1): its dusk strength at none, full in the dark. */
 export function glowAlpha(glow: { readonly dusk: number }, dark: number): number {
   const k = Math.min(1, Math.max(0, dark));
@@ -159,10 +171,12 @@ export const POOL_BANDS: readonly { readonly share: number; readonly alpha: numb
  * The pool of light round a source of `radiusTiles` (its lit disc), in `color`: stepped bands
  * (POOL_BANDS) by grid distance from its centre, every one inside the disc. The image's centre
  * pixel (`ax`, `ay`) sits on the source's ground point. A negative alpha is a 50% dither of it.
+ * `strength` scales every band (a cold light pools fainter: it washes warm ground grey).
  */
 export function poolImage(
   radiusTiles: number,
   color: ColorName,
+  strength = 1,
 ): { readonly img: RgbaImage; readonly ax: number; readonly ay: number } {
   const ex = Math.ceil(radiusTiles * Math.SQRT2 * HALF_W) + 1;
   const ey = Math.ceil(radiusTiles * Math.SQRT2 * HALF_H) + 1;
@@ -184,7 +198,7 @@ export function poolImage(
       data[i] = c.r;
       data[i + 1] = c.g;
       data[i + 2] = c.b;
-      data[i + 3] = Math.round(255 * Math.abs(band.alpha));
+      data[i + 3] = Math.round(255 * strength * Math.abs(band.alpha));
     }
   }
   return { img: { w, h, data }, ax: ex, ay: ey };

@@ -5,6 +5,8 @@
 //   additive, a little at dusk and fully in the dark. On a map with darkness, every other piece of
 //   scenery with a baked `@glow` frame (a dome's window slits, the flora's glow) lights up with the
 //   dark too (the core's heart at full strength: CoreView's red overlays still sit over it).
+// - **Pads:** on a map with darkness, the buildable pads' teal brackets glow faintly in `decal`
+//   (under the towers on them), so where a tower can go still reads at night.
 // - **Lamp pools:** in the dark, warm light pools inside each lamp's lit disc (a beaming Prism's
 //   cool), in `decal` under everything standing there, stepped bands that stop short of the
 //   disc's edge, so the edge stays the sim's lit range exactly (D137).
@@ -22,6 +24,7 @@ import type { RgbaImage } from '../sprites/rasterize.ts';
 import {
   emissiveGlow,
   glowAlpha,
+  PAD_GLOW,
   poolImage,
   prismHaloImage,
   PROP_GLOWS,
@@ -41,6 +44,8 @@ const CRYSTAL_HALO_PX = 6;
 /** The pools' colors: lamplight, and the Prism's cold Aelari light. */
 const LAMP_POOL = 'orange.4';
 const PRISM_POOL = 'blue.4';
+/** The Prism's pool is fainter: cold light over the warm ground washes it grey. */
+const PRISM_POOL_STRENGTH = 0.5;
 /** How bright the moons come back over the full night. */
 const MOON_ALPHA = 0.85;
 /** Just in front of its prop at the same footing (under the next tie-break step). */
@@ -118,6 +123,23 @@ export class WorldGlowView {
       }
     }
     if (!map.dark) return;
+    // The pads' brackets, in `decal` (over the night's ground, under the towers on them).
+    for (const obj of layers.ground.list) {
+      if (!(obj instanceof Phaser.GameObjects.Image)) continue;
+      const key = parseFrameKey(obj.frame.name);
+      if (key === null || key.id !== PAD_GLOW.sprite) continue;
+      const tex = this.#propTexture(key.id, key.variant, key.frame, PAD_GLOW);
+      if (tex === null) continue;
+      const img = new Phaser.GameObjects.Image(
+        scene,
+        obj.x - tex.radius,
+        obj.y - tex.radius,
+        tex.key,
+      );
+      img.setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+      layers.decal.add(img);
+      this.#props.push({ prop: obj, img, dusk: 0, peak: PAD_GLOW.peak, alpha: 0 });
+    }
     for (let i = 0; i < MAX_POOLS; i++) {
       const img = scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
       layers.decal.add(img);
@@ -298,7 +320,9 @@ export class WorldGlowView {
     const key = `glow.pool.${color}.${radiusSq}`;
     const { scene } = this.#ctx;
     if (!scene.textures.exists(key)) {
-      scene.textures.addCanvas(key, imageToCanvas(poolImage(Math.sqrt(radiusSq), color).img));
+      const strength = color === PRISM_POOL ? PRISM_POOL_STRENGTH : 1;
+      const img = poolImage(Math.sqrt(radiusSq), color, strength).img;
+      scene.textures.addCanvas(key, imageToCanvas(img));
     }
     return key;
   }
