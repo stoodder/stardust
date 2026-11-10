@@ -140,8 +140,9 @@ export function minReadMs(text: string): number {
 
 /**
  * How long a comms line holds, in ms (its `durationSec` for a silence or a timed line): its
- * reading time, and at least REPLY_BEAT_MS once typed (just that beat when the next line answers
- * it), but never less than its minimum read time once typed (`minReadMs`; D135).
+ * reading time, at least REPLY_BEAT_MS once typed, and at least its minimum read time once typed
+ * (`minReadMs`; D135). A line the next answers holds just that beat: it stays up above the answer
+ * as its cue (D028), so it's still read.
  */
 export function commsHoldMs(
   text: string,
@@ -151,9 +152,8 @@ export function commsHoldMs(
   if (durationSec !== undefined) return durationSec * 1000;
   // Reading starts as the line types; a short line still stays up a beat once it's whole.
   const typing = typeMs(text);
-  const floor = typing + minReadMs(text);
-  if (nextIsReply) return Math.max(typing + REPLY_BEAT_MS, floor);
-  return Math.max(readMs(text), typing + REPLY_BEAT_MS, floor);
+  if (nextIsReply) return typing + REPLY_BEAT_MS;
+  return Math.max(readMs(text), typing + REPLY_BEAT_MS, typing + minReadMs(text));
 }
 
 /**

@@ -82,6 +82,7 @@ export const scenes = defineScenes([
     {
       kind: 'line',
       speaker: 'vesthara',
+      expression: 'sad',
       text: 'Keep shooting. You are very good at it. That has never been the question.',
     },
   ]),

@@ -26,6 +26,7 @@ import {
   isQueuedTrigger,
   presentSpeakers,
   playScene,
+  minReadMs,
   readMs,
   REPLY_BEAT_MS,
   sceneMode,
@@ -72,8 +73,10 @@ describe('dialogue helpers', () => {
     expect(readMs('short')).toBe(4000);
     expect(readMs('x'.repeat(100))).toBe(4000 + 40 * 40);
     expect(commsHoldMs('hello', undefined, false)).toBe(4000);
+    // A long line: its minimum read time once typed (D135) outlasts its reading time.
     const long = 'x'.repeat(200);
-    expect(commsHoldMs(long, undefined, false)).toBe(readMs(long));
+    expect(commsHoldMs(long, undefined, false)).toBe(typeMs(long) + minReadMs(long));
+    expect(minReadMs(long)).toBe(1500 + 45 * 200);
     expect(commsHoldMs('hello', undefined, true)).toBe(typeMs('hello') + REPLY_BEAT_MS);
     expect(commsHoldMs('', 2.5, false)).toBe(2500);
   });
