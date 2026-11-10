@@ -19,10 +19,15 @@ import {
   propVariant,
   soilFrame,
   tilesBehind,
+  wallSpan,
+  type GroundGrid,
   wreckageFrame,
 } from './groundTiles.ts';
 import { map as a2m01 } from '../../content/maps/a2_m01/map.ts';
 import { map as a2m02 } from '../../content/maps/a2_m02/map.ts';
+import { map as a2m04 } from '../../content/maps/a2_m04/map.ts';
+import { map as a2m05 } from '../../content/maps/a2_m05/map.ts';
+import { map as a2m06 } from '../../content/maps/a2_m06/map.ts';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
 import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
@@ -504,5 +509,110 @@ describe('kerbs between lanes side by side (T430b)', () => {
       }
     }
     expect(kerbEdges(grid(['##', '##']), 0, 0)).toEqual([]);
+  });
+});
+
+/** A map's layout as GroundView reads it (its tiles, markers, and env). */
+function dress(m: typeof a2m04 | typeof a2m05 | typeof a2m06): GroundGrid {
+  return { ...grid(m.tiles), markers: m.markers ?? {}, env: m.env };
+}
+
+describe("M5's maps: the plant, the Preserve Road, the wall (T540c)", () => {
+  it("dresses A2M4's plant: Intake B, the churning vats, the seams, the hatch, the hoppers", () => {
+    const g = dress(a2m04);
+    expect(dressTile(g, 2, 6).prop).toEqual({ sprite: 'prop.intake', frame: 'v0', anim: null });
+    for (const [c, r] of [
+      [6, 4],
+      [8, 5],
+      [10, 4],
+    ] as const)
+      expect(dressTile(g, c, r).prop).toEqual({ sprite: 'prop.vat', frame: 'v0', anim: 'churn' });
+    expect(dressTile(g, 6, 0).prop).toEqual({ sprite: 'prop.seam', frame: 'v0', anim: 'glint' });
+    // The spawn inside the map is the vats' drain hatch; the edge spawn stays a burrow.
+    expect(dressTile(g, 8, 7).ground).toEqual({ sprite: 'tile.spawn', frame: 'hatch' });
+    expect(dressTile(g, 14, 0).ground).toEqual({ sprite: 'tile.spawn', frame: 'v0' });
+    // The intake hoppers are wrecked hoppers, the same look GroundView and WreckageView pick.
+    const looks = [dressTile(g, 3, 6).prop?.frame, dressTile(g, 3, 7).prop?.frame];
+    expect(new Set(looks)).toEqual(new Set(['v4', 'v5']));
+    expect(wreckageFrame(3, 6, g.env, g.markers)).toBe(looks[0]);
+    expect(wreckageFrame(3, 6, g.env)).toBe('v3'); // no markers given: Act II's rigs
+  });
+
+  it('builds catwalks and a watchtower where a marker names them', () => {
+    const h = { ...grid(['^^^']), markers: { catwalk_west: [0, 0], watchtower: [1, 0] } as const };
+    expect(highGroundLook(h, 0, 0)).toBe('catwalk');
+    expect(highGroundLook(h, 1, 0)).toBe('watchtower');
+    expect(highGroundLook(h, 2, 0)).toBe('v0');
+  });
+
+  it("dresses A2M5: the relocation fencing, the Preserve's basin, the rig yard", () => {
+    const g = dress(a2m05);
+    expect(dressTile(g, 4, 0).prop).toEqual({
+      sprite: 'prop.relocation_fence',
+      frame: 'v0',
+      anim: null,
+    });
+    expect(dressTile(g, 16, 10).prop).toEqual({ sprite: 'prop.basin', frame: 'v0', anim: null });
+    expect(dressTile(g, 17, 3).prop).toEqual({ sprite: 'prop.rig', frame: 'yard', anim: null });
+    // A numbered run of fencing is the plain run.
+    const n = { ...grid(['..']), markers: { fence_north_2: [0, 0] } as const };
+    expect(dressTile(n, 0, 0).prop?.frame).toBe('v1');
+  });
+
+  it("raises A2M6's wall along its row: parapets, lamps at the gates, ends, pads behind it", () => {
+    const g = dress(a2m06);
+    expect(wallSpan(g)).toEqual({ row: 3, from: 0, to: 17 });
+    // Each lamp's post stands on the side that meets its gate.
+    expect(dressTile(g, 5, 3).prop?.frame).toBe('lamp_e');
+    expect(dressTile(g, 7, 3).prop?.frame).toBe('lamp_w');
+    expect(dressTile(g, 10, 3).prop?.frame).toBe('lamp_e');
+    expect(dressTile(g, 12, 3).prop?.frame).toBe('lamp_w');
+    expect(dressTile(g, 0, 3).prop?.frame).toBe('end_w');
+    expect(dressTile(g, 17, 3).prop?.frame).toBe('end_e');
+    // The walk between, Bricks's post included, and the pads on it carry the parapet.
+    for (const c of [1, 2, 3, 4, 8, 9, 13, 14, 15, 16])
+      expect(dressTile(g, c, 3).prop?.sprite, `col ${c}`).toBe('prop.wall');
+    expect(dressTile(g, 4, 3).ground).toEqual({ sprite: 'tile.pad', frame: 'v0' });
+    // The gates are road; nothing stands on them, and off the wall row nothing does either.
+    expect(dressTile(g, 6, 3).prop).toBeNull();
+    expect(dressTile(g, 4, 4).prop?.sprite).not.toBe('prop.wall');
+    // Dome 3's window.
+    expect(dressTile(g, 15, 11).prop).toEqual({ sprite: 'prop.dome', frame: 'window', anim: null });
+    // A map without both ends has no wall.
+    expect(wallSpan(dress(a2m04))).toBeNull();
+  });
+
+  it('names a decor id through every suffix, never a wreck', () => {
+    const g = {
+      ...grid(['.x']),
+      markers: { lamp_west_gate: [0, 0], intake_hopper_n: [1, 0] } as const,
+    };
+    expect(dressTile(g, 0, 0).prop?.sprite).toBe('prop.wall');
+    expect(dressTile(g, 1, 0).prop?.sprite).toBe('prop.wreckage');
+  });
+
+  it('draws every frame it names, in its own palette where it is hardware', () => {
+    for (const [sprite, frame] of [
+      ['prop.intake', 'v0'],
+      ['prop.vat', 'v0'],
+      ['prop.seam', 'v0'],
+      ['prop.relocation_fence', 'v1'],
+      ['prop.basin', 'v0'],
+      ['prop.rig', 'yard'],
+      ['prop.wall', 'walk_1'],
+      ['prop.wall', 'lamp_w'],
+      ['prop.wall', 'end_e'],
+      ['prop.dome', 'window'],
+      ['tile.spawn', 'hatch'],
+      ['tile.high_ground', 'catwalk'],
+      ['tile.high_ground', 'watchtower'],
+      ['prop.wreckage', 'v5_half'],
+    ] as const) {
+      expect(frames(sprite), `${sprite}:${frame}`).toContain(frame);
+    }
+    for (const id of ['prop.vat', 'prop.intake', 'prop.wall', 'prop.relocation_fence'] as const)
+      expect(propVariant(id, 'act2.dusk'), id).toBe('default');
+    expect(propVariant('prop.basin', 'act2.dusk')).toBe('act2.dusk');
+    expect(propVariant('prop.seam', 'act2.gold')).toBe('act2.gold');
   });
 });

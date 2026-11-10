@@ -233,6 +233,7 @@ export const ACT2_CODEX: readonly CodexEntryDef[] = [
     id: 'codex_second_harvest',
     title: 'Second Harvest',
     kind: 'place',
+    sprite: { id: 'prop.vat', frame: 'v0' },
     versions: {
       original: {
         text:

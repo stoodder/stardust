@@ -41,6 +41,10 @@ interface PhaseLook {
   readonly scar: boolean;
   /** Dome windows: none, lit (`gold.3`), or half dark (`act3.emergency`). */
   readonly windows: 'none' | 'lit' | 'emergency';
+  /** The domes' shells: white by day and dusk, steel in the dark at night (Act III). */
+  readonly domes: 'day' | 'night';
+  /** Cold violet crystal glints on the Spires' peaks (unsung stardust spreading; Act III). */
+  readonly glints: boolean;
   /** Violet cracks from the band toward the Terraces (Act III). */
   readonly cracks: boolean;
   /** The Halls' mouth glows (dawn). */
@@ -55,12 +59,16 @@ const ACT2: Pick<PhaseLook, 'ground' | 'clay' | 'path'> = {
   path: ['act2.path.0', 'act2.path.1', 'act2.path.2', 'act2.path.3', 'act2.path.4'],
 };
 const ACT3_PATH: Ramp = ['act3.path.0', 'act3.path.1', 'act3.path.2', 'act3.path.3', 'act3.path.3'];
-const CRYSTAL: Ramp = [
+/**
+ * Act III's cliffs at night: dark rock from the act's ground ramp, the crystal only on the lit
+ * upper faces (`act3.crystal` growths, never so bright they outshine the glyphs).
+ */
+const NIGHT_ROCK: Ramp = [
+  'act3.ground.0',
+  'act3.ground.2',
+  'act3.ground.3',
   'act3.crystal.0',
   'act3.crystal.1',
-  'act3.crystal.2',
-  'act3.crystal.3',
-  'act3.crystal.3',
 ];
 
 export const PHASE_LOOKS: Readonly<Record<StarMapPhase, PhaseLook>> = {
@@ -74,6 +82,8 @@ export const PHASE_LOOKS: Readonly<Record<StarMapPhase, PhaseLook>> = {
     silhouette: false,
     scar: false,
     windows: 'none',
+    domes: 'day',
+    glints: false,
     cracks: false,
     glow: false,
     tint: 0,
@@ -88,13 +98,15 @@ export const PHASE_LOOKS: Readonly<Record<StarMapPhase, PhaseLook>> = {
     silhouette: true,
     scar: true,
     windows: 'lit',
+    domes: 'day',
+    glints: false,
     cracks: false,
     glow: false,
     tint: 0.32,
   },
   act3: {
     ground: ['act3.ground.0', 'act3.ground.1', 'act3.ground.2', 'act3.ground.3', 'act3.ground.4'],
-    clay: CRYSTAL,
+    clay: NIGHT_ROCK,
     path: ACT3_PATH,
     shade: 'act3.shade',
     light: 'act3.light',
@@ -104,6 +116,8 @@ export const PHASE_LOOKS: Readonly<Record<StarMapPhase, PhaseLook>> = {
     silhouette: true,
     scar: true,
     windows: 'emergency',
+    domes: 'night',
+    glints: true,
     cracks: true,
     glow: false,
     tint: 0,
@@ -126,6 +140,8 @@ export const PHASE_LOOKS: Readonly<Record<StarMapPhase, PhaseLook>> = {
     silhouette: false,
     scar: true,
     windows: 'lit',
+    domes: 'day',
+    glints: false,
     cracks: false,
     glow: true,
     tint: 0,
@@ -481,6 +497,14 @@ function paintRoads(c: Canvas, look: PhaseLook): void {
   }
 }
 
+/** A dome's colours: its lit rim, its shell, and its shell's south-east shade. */
+const DOME_COLORS: Readonly<
+  Record<PhaseLook['domes'], { rim: ColorName; shell: ColorName; shade: ColorName }>
+> = {
+  day: { rim: 'teal.3', shell: 'white.0', shade: 'steel.4' },
+  night: { rim: 'steel.1', shell: 'steel.0', shade: 'ink.3' },
+};
+
 function paintDome(
   c: Canvas,
   cx: number,
@@ -495,7 +519,8 @@ function paintDome(
       if (d > r + 0.5) continue;
       const rim = d > r - 0.7;
       const shade = x + y > r * 0.6;
-      put(c, cx + x, cy + y, rim ? (shade ? 'ink.1' : 'teal.3') : shade ? 'steel.4' : 'white.0');
+      const k = DOME_COLORS[look.domes];
+      put(c, cx + x, cy + y, rim ? (shade ? 'ink.1' : k.rim) : shade ? k.shade : k.shell);
     }
   }
   if (lit) put(c, cx, cy, look.windows === 'emergency' ? 'act3.emergency' : 'gold.3');
@@ -582,7 +607,7 @@ function paintPeak(c: Canvas, bx: number, by: number, h: number, look: PhaseLook
   put(c, bx, by - h, look.light);
 }
 
-function paintSpires(c: Canvas, look: PhaseLook, rng: Rng): void {
+function paintSpires(c: Canvas, look: PhaseLook, rng: Rng, glints: Rng): void {
   const peaks: { x: number; y: number; h: number }[] = [];
   for (let x = 196; x < 620; x += 9 + nextInt(rng, 7)) {
     const edge = ridgeEdge(x);
@@ -595,6 +620,16 @@ function paintSpires(c: Canvas, look: PhaseLook, rng: Rng): void {
   }
   peaks.sort((a, b) => a.y - b.y);
   for (const p of peaks) paintPeak(c, p.x, p.y, p.h, look, rng);
+  if (!look.glints) return;
+  // Crystal growing on the lit faces (its own stream, so the peaks stand where they always do):
+  // a bright point with a dimmer one under it, on a little over half the peaks.
+  for (const p of peaks) {
+    if (nextFloat(glints) > 0.55) continue;
+    const x = p.x - 1 - nextInt(glints, Math.max(1, Math.round(p.h / 4)));
+    const y = p.y - Math.round(p.h * (0.3 + 0.4 * nextFloat(glints)));
+    put(c, x, y, 'act3.crystal.3');
+    put(c, x, y + 1, 'act3.crystal.2');
+  }
 }
 
 function paintDerrick(c: Canvas, x: number, y: number, look: PhaseLook, dark: boolean): void {
@@ -766,7 +801,7 @@ export function starMapChart(phase: StarMapPhase, legs: readonly ChartLeg[] = []
   paintLongWalk(c, look);
   paintRoads(c, look);
   paintColony(c, look, stream(3));
-  paintSpires(c, look, stream(4));
+  paintSpires(c, look, stream(4), stream(5));
   paintRigs(c, look);
   paintPlant(c);
   if (look.tint > 0) {

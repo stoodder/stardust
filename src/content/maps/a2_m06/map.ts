@@ -90,6 +90,7 @@ export const map = defineMapLayout({
     wall_west_end: [0, 3],
     wall_east_end: [17, 3],
     dome_window: [15, 11],
+    watchtower: [9, 6],
   },
   // The lamps along the wall stay on all night (radius 1.5, LAMP_RADIUS_TILES): the wall walk's
   // pads and the pocket between the gates are lit; the yard is not.

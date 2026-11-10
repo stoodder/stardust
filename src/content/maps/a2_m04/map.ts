@@ -88,6 +88,8 @@ export const map = defineMapLayout({
     vat_east: [10, 4],
     seam_west: [6, 0],
     seam_east: [10, 0],
+    catwalk_west: [6, 7],
+    catwalk_east: [10, 7],
   },
   startCredits: 480,
   stardust: 225,
