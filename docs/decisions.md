@@ -1445,3 +1445,10 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Radio at speed:** a line's hold scales with game speed but always stays whole on screen ≥ 1.5 s after it finishes typing, and never longer than at 1×; a queued radio scene is dropped when its wave starts (one already on the panel plays on). Map-end holds don't scale.
 - **Floaters stack** up to three 7 px rows on a spot, then further ones are dropped (bounding fast-forward piles), and draw above health bars and tells. Pebble lifts off the rock in steps (both on a click and the fallback) with a small puff. The battle sky has its two moons on maps with a lighting schedule.
 - **The kerb is a generic render rule:** an edge between two road tiles no route steps across draws as a kerb (A2M2's hairpin), and road treads follow route steps. Wreckage's scorch now shows round the debris.
+
+### D133 — 2026-11-10 — T461 the M4 docs pass and the gate
+- **Assertion #13 judges each run's own thread CPU time** (2 s limit unchanged; wall time only on a Node without the call), so a loaded machine no longer fails it; the slowest run is ~0.55 s.
+- **`test.isolate: false` was tried and rejected:** a split that shared the module cache passed every test but measured no faster (the step is bound by the tests' own work). The default test timeout is 20 s.
+- **Test-only fast text** (`?test=1&fasttext=1`): lines show whole and timed holds shorten to 40% (≥ 1.5 s); used only by smoke flows that don't assert typing or hold timing.
+- Dev saves from `after_a1m4` on have seen Zibzab's arrival; the star map's marker memory clears when the save in play changes; the Base's opening tab never overrides a tab the player picked (a load-timing flake in `shop.spec`).
+- The docs describe M4 as built (architecture's *Built so far: M4*); README gains a reading path for the gate, tests and smoke. The gate's smoke step still runs over its share under load (T501j).

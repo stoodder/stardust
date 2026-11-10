@@ -6,7 +6,7 @@
 // or codex unlock a save missed (app/inbox.ts). The first visit with Zibzab's shop open lands on
 // the Shop tab and plays his arrival (app/baseScenes.ts, T308); otherwise an unread memo opens the
 // Inbox (T320), and nothing new opens Research.
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { arrivalDue, playArrivalIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
@@ -51,6 +51,9 @@ export function openingTab(arrival: boolean, unreadMemos: number): BaseTab {
 /** The base for the save in play. Arrow keys move between tabs (the WAI-ARIA tabs pattern). */
 export function Base() {
   const [tab, setTab] = useState<BaseTab>(() => openingTab(arrivalDue(), storyBadges().inbox));
+  // Whether the player has picked a tab yet: the catch-up below never takes the pick back (T461:
+  // on a loaded machine an arrow key could land before this effect and be undone by it).
+  const picked = useRef(false);
   // Esc (T212) goes back to the campaign screen, as its button does.
   useEscape(() => {
     toCampaign();
@@ -61,7 +64,7 @@ export function Base() {
     // A memo the catch-up delivers (an older save's) opens the Inbox as one from a run end would.
     const delivered = catchUpStory() !== null;
     if (playArrivalIfDue()) setTab('shop');
-    else if (delivered && storyBadges().inbox > 0) setTab('inbox');
+    else if (delivered && storyBadges().inbox > 0 && !picked.current) setTab('inbox');
   }, []);
   const view = campaign.value;
   if (view === null) return null;
@@ -72,6 +75,7 @@ export function Base() {
     id === 'inbox' ? badges.inbox : id === 'codex' ? badges.codex : 0;
   const tabs = TABS.filter((t) => t.id !== 'bounty' || view.bountyBoard.shown);
   const move = (by: number): void => {
+    picked.current = true;
     const i = tabs.findIndex((t) => t.id === tab);
     const next = tabs[(i + by + tabs.length) % tabs.length]!;
     setTab(next.id);
@@ -104,7 +108,10 @@ export function Base() {
                 aria-controls="sd-tab-pane"
                 tabIndex={t.id === tab ? 0 : -1}
                 ref={t.id === tab ? focusOnce : null}
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+                  picked.current = true;
+                  setTab(t.id);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight') move(1);
                   else if (e.key === 'ArrowLeft') move(-1);
