@@ -112,7 +112,7 @@ export const propRig = defineSprite({
   variants: ['everglow.worn'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  legend: { M: 'grime.2', N: 'grime.3', U: 'violet.3', V: 'violet.4', K: 'ink.2', J: 'steel.1' },
+  legend: { M: 'steel.1', N: 'steel.2', U: 'violet.3', V: 'violet.4', K: 'ink.2', J: 'steel.1' },
   frames: {
     v0: rigGrid('v0'),
     strip: rigGrid('strip'),

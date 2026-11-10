@@ -19,6 +19,11 @@
 //   patch, its crown block nose-down; `v3` a pump house burst open, its pipe torn up out of the
 //   roof; both spill grey drill spoil flecked cold violet, and carry a crew log (a battered steel
 //   data case with a glinting teal screen) strapped to the salvage stake.
+// - `v4`, `v5` (and theirs): A2M4's wrecked intake hoppers (act2.md § A2M4, the Intake Manifest;
+//   render picks them under an `intake_hopper*` marker, T540c): `v4` a hopper toppled on its side,
+//   its hazard-striped mouth gaping at us, a leg snapped and sticking up; `v5` a hopper listing on a
+//   buckled leg, its mouth split down the front. Both spill the vats' grey slurry flecked cold
+//   violet, and the stake carries the intake manifest (the same battered data case).
 // A cleared tile draws its `underWreckage` tile and no prop.
 import { defineSprite } from '../defineSprite.ts';
 import {
@@ -246,6 +251,69 @@ function pumpHouse(g: CharGrid): void {
   soot(g, 4);
 }
 
+/** v4 (A2M4): an intake hopper toppled on its side, its striped mouth gaping, a leg snapped. */
+function toppledHopper(g: CharGrid): void {
+  // The funnel, lying on its side: wide at the mouth (left), narrowing to the neck (right).
+  for (let x = 9; x <= 22; x++) {
+    const h = 6 - (x - 9) * 0.3;
+    const cy = TOP + 5 + (x - 9) * 0.15;
+    for (let y = Math.round(cy - h); y <= Math.round(cy + h); y++) {
+      const t = (y - (cy - h)) / (2 * h);
+      plot(g, x, y, t < 0.3 ? 'V' : t < 0.65 ? 'W' : t < 0.9 ? 'S' : 'T');
+    }
+  }
+  // The mouth: a hazard-striped rim round a dark throat.
+  disc(g, 9, TOP + 5, 6.4, (_d, x, y) => {
+    const e = Math.hypot((x + 0.5 - 9) / 2.6, (y + 0.5 - TOP - 5) / 6.4);
+    if (e > 1) return g[y]?.[x] ?? '.';
+    return e > 0.7 ? ((x + y) % 3 === 0 ? 'K' : 'O') : 'K';
+  });
+  // The neck's chute, and a snapped leg sticking up from the shoulder.
+  isoBox(g, 24, TOP + 8, 2, 3, { top: 'S', rim: 'W', left: 'S', right: 'T' });
+  line(g, 17, TOP - 1, 19, TOP - 7, 'U');
+  line(g, 18, TOP - 1, 20, TOP - 7, 'S');
+  spoil(g, 3, TOP + 10);
+  spoil(g, 19, TOP + 11);
+  soot(g, 5);
+}
+
+/** v5 (A2M4): an intake hopper listing on a buckled leg, its mouth split down the front. */
+function buckledHopper(g: CharGrid): void {
+  // Legs: the left one straight, the right one buckled at the knee.
+  line(g, 9, TOP + 3, 9, TOP + 10, 'S');
+  line(g, 21, TOP + 1, 23, TOP + 5, 'T');
+  line(g, 23, TOP + 5, 21, TOP + 9, 'T');
+  // The funnel, leaning right: a square funnel from a narrow neck up to its striped mouth.
+  for (let z = 0; z <= 7; z++) {
+    const hw = 3 + (6 * z) / 7;
+    const cx = 15 + z * 0.4;
+    const cy = TOP + 6 - z;
+    for (let y = Math.floor(cy - hw / 2) - 1; y <= Math.ceil(cy + hw / 2) + 1; y++) {
+      for (let x = Math.floor(cx - hw) - 1; x <= Math.ceil(cx + hw) + 1; x++) {
+        if (Math.abs(x + 0.5 - cx) / hw + Math.abs(y + 0.5 - cy) / (hw / 2) > 1) continue;
+        let ch = x + 0.5 < cx ? 'W' : 'S';
+        if (z === 7)
+          ch =
+            Math.abs(x + 0.5 - cx) / hw + Math.abs(y + 0.5 - cy) / (hw / 2) < 0.6
+              ? 'K'
+              : (x + y) % 3 === 0
+                ? 'K'
+                : 'O';
+        plot(g, x, y, ch);
+      }
+    }
+  }
+  // The split down the front, and the slurry run out of the neck.
+  crack(g, [
+    [16, TOP - 1],
+    [17, TOP + 2],
+    [15, TOP + 5],
+  ]);
+  spoil(g, 12, TOP + 10);
+  spoil(g, 4, TOP + 9);
+  soot(g, 6);
+}
+
 /** The half-cleared wreck: the big piece is gone; a few scraps, the parcels, and the stake. */
 function half(g: CharGrid, v: WreckIndex): void {
   if (v === 0) {
@@ -254,6 +322,9 @@ function half(g: CharGrid, v: WreckIndex): void {
   } else if (v === 1) {
     disc(g, 22, TOP + 9, 1.8, (d) => (d > 1.2 ? 'G' : 'H'));
     stamp(g, 9, TOP + 5, ['..SW.', '.TWWS', 'KUTT.']);
+  } else if (v >= 4) {
+    spoil(g, v === 4 ? 3 : 12, TOP + 10);
+    stamp(g, 14, TOP + 6, ['.OK.', 'KWWS', '.TT.']);
   } else if (v === 2) {
     spoil(g, 18, TOP + 9);
     line(g, 9, TOP + 13, 14, TOP + 13, 'S');
@@ -288,13 +359,15 @@ function outlined(g: CharGrid, debris: CharGrid): void {
 }
 
 /** The wrecks: Act I's drone and cart (`v0`, `v1`), Act II's broken rigs (`v2`, `v3`). */
-type WreckIndex = 0 | 1 | 2 | 3;
+type WreckIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
   0: [27, TOP - 6],
   1: [26, TOP - 5],
   2: [27, TOP - 3],
   3: [26, TOP - 4],
+  4: [27, TOP - 4],
+  5: [27, TOP - 4],
 };
 
 function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
@@ -305,7 +378,9 @@ function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
   else if (v === 0) drone(d);
   else if (v === 1) cart(d);
   else if (v === 2) derrick(d);
-  else pumpHouse(d);
+  else if (v === 3) pumpHouse(d);
+  else if (v === 4) toppledHopper(d);
+  else buckledHopper(d);
   const [sx, sy] = STAKE_AT[v];
   stake(d, sx, sy, state === 'lit');
   if (v >= 2) crewLog(d, sx, sy + 3);
@@ -345,8 +420,8 @@ export const propWreckage = defineSprite({
     H: 'green.3',
     I: 'green.4',
     // Act II's rigs: drill spoil and its cold violet flecks, and the crew log's case and screen.
-    A: 'grime.2',
-    M: 'grime.3',
+    A: 'ink.4',
+    M: 'steel.2',
     F: 'violet.3',
     R: 'teal.2',
   },
@@ -363,6 +438,12 @@ export const propWreckage = defineSprite({
     v3_lit: wreck(3, 'lit'),
     v2_half: wreck(2, 'half'),
     v3_half: wreck(3, 'half'),
+    v4: wreck(4, 'dark'),
+    v5: wreck(5, 'dark'),
+    v4_lit: wreck(4, 'lit'),
+    v5_lit: wreck(5, 'lit'),
+    v4_half: wreck(4, 'half'),
+    v5_half: wreck(5, 'half'),
   },
   anims: {
     blink_v0: { frames: ['v0', 'v0_lit'], fps: 2 },
@@ -375,5 +456,9 @@ export const propWreckage = defineSprite({
     blink_v3: { frames: ['v3', 'v3_lit'], fps: 2 },
     idle_v2: { frames: ['v2', 'v2', 'v2', 'v2', 'v2', 'v2', 'v2', 'v2_lit'], fps: 4 },
     idle_v3: { frames: ['v3', 'v3', 'v3', 'v3', 'v3', 'v3', 'v3', 'v3_lit'], fps: 4 },
+    blink_v4: { frames: ['v4', 'v4_lit'], fps: 2 },
+    blink_v5: { frames: ['v5', 'v5_lit'], fps: 2 },
+    idle_v4: { frames: ['v4', 'v4', 'v4', 'v4', 'v4', 'v4', 'v4', 'v4_lit'], fps: 4 },
+    idle_v5: { frames: ['v5', 'v5', 'v5', 'v5', 'v5', 'v5', 'v5', 'v5_lit'], fps: 4 },
   },
 });

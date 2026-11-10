@@ -1,6 +1,7 @@
 // Spoil heaps (`prop.spoil`; Act II decor): what the digging leaves. `drill_0`, `drill_1`: drill
-// spoil, grey tailings (`grime`) dumped beside a bore, flecked cold violet (unsung stardust,
-// art-direction §1 principle 6), with a dead drill bit or a burst sack of core samples; the yard
+// spoil, cold blue-grey tailings (steel lit, violet-black in the shade, so a heap reads off the
+// warm gold grass by hue and value, never grey on grey: T501k) dumped beside a bore, flecked cold
+// violet (unsung stardust, art-direction §1 principle 6), with a dead drill bit or a burst sack of core samples; the yard
 // cut's dressing on A2M1, and Act II's mining apron. `warren`: a warren's own dug earth heaped at
 // its mouth, the act's clay (env palette), crumbly and warm, never flecked violet (A2M3's spoil
 // over the warren mouth).
@@ -35,11 +36,15 @@ function drill(v: 0 | 1): string[] {
         [AX - 4, AY - 2],
         [AX + 1, AY],
         [AX + 6, AY - 1],
+        [AX - 7, AY - 1],
+        [AX - 2, AY - 5],
       ]
     : [
         [AX - 6, AY],
         [AX - 1, AY - 3],
         [AX + 4, AY],
+        [AX - 4, AY - 4],
+        [AX + 6, AY - 2],
       ])
     plot(g, x ?? 0, y ?? 0, (x ?? 0) % 2 === 0 ? 'V' : 'U');
   if (v === 0) {
@@ -77,13 +82,13 @@ export const propSpoil = defineSprite({
   variants: ENV_VARIANTS,
   outline: 'auto',
   legend: {
-    L: 'grime.1',
-    M: 'grime.2',
-    N: 'grime.3',
+    L: 'ink.4',
+    M: 'steel.1',
+    N: 'steel.2',
     U: 'violet.3',
     V: 'violet.4',
-    S: 'steel.2',
-    T: 'steel.3',
+    S: 'steel.3',
+    T: 'steel.4',
     A: 'grime.2',
     B: 'grime.4',
   },

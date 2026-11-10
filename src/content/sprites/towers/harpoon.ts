@@ -204,11 +204,11 @@ export const towerHarpoon = defineSprite({
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: { ...VRELL_BASE_LEGEND, ...LEGEND },
   frames: {
-    t1: vrellBase(1),
-    t2: vrellBase(2),
-    t3: vrellBase(3),
-    spec_a: vrellSpecBase(skewerKit),
-    spec_b: vrellSpecBase(tetherKit),
+    t1: vrellBase(1, 'harpoon'),
+    t2: vrellBase(2, 'harpoon'),
+    t3: vrellBase(3, 'harpoon'),
+    spec_a: vrellSpecBase(skewerKit, 'harpoon'),
+    spec_b: vrellSpecBase(tetherKit, 'harpoon'),
   },
 });
 

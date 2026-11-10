@@ -225,11 +225,11 @@ export const towerLookout = defineSprite({
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: { ...VRELL_BASE_LEGEND, ...LEGEND },
   frames: {
-    t1: vrellBase(1),
-    t2: vrellBase(2),
-    t3: vrellBase(3),
-    spec_a: vrellSpecBase(nestKit),
-    spec_b: vrellSpecBase(rigKit),
+    t1: vrellBase(1, 'lookout'),
+    t2: vrellBase(2, 'lookout'),
+    t3: vrellBase(3, 'lookout'),
+    spec_a: vrellSpecBase(nestKit, 'lookout'),
+    spec_b: vrellSpecBase(rigKit, 'lookout'),
   },
 });
 

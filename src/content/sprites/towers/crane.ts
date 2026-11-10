@@ -206,11 +206,11 @@ export const towerCrane = defineSprite({
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: VRELL_BASE_LEGEND,
   frames: {
-    t1: vrellBase(1),
-    t2: vrellBase(2),
-    t3: vrellBase(3),
-    spec_a: vrellSpecBase(stallKit),
-    spec_b: vrellSpecBase(magnetKit),
+    t1: vrellBase(1, 'crane'),
+    t2: vrellBase(2, 'crane'),
+    t3: vrellBase(3, 'crane'),
+    spec_a: vrellSpecBase(stallKit, 'crane'),
+    spec_b: vrellSpecBase(magnetKit, 'crane'),
   },
 });
 

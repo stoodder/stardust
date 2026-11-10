@@ -14,6 +14,10 @@
 //   lines drawing a few bright flecks up into it.
 // - `chime_0`, `chime_1`, anim `chime` (6 fps, once): the chime lamp flashes and rings (a note
 //   puff over the bell), ending on `chime_1`.
+// - `unload_0`–`unload_2`, anim `unload` (8 fps): A2M4, at Intake B (T501f, T540c): hovering high,
+//   the hose hanging straight down and the nozzle turned to blow, a stream of the swept remains
+//   (pink and gold flecks) pouring out of it, falling a step further each frame. T530b hangs the
+//   drone over the hopper's mouth (`prop.intake`), so the stream falls in.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
@@ -23,7 +27,7 @@ const H = 28;
 const AX = 11;
 const AY = H - 1;
 
-type Pose = 'fly' | 'vac' | 'chime';
+type Pose = 'fly' | 'vac' | 'chime' | 'unload';
 
 /** Rings a layer's opaque pixels with hand-placed ink, then lays the layer over `g`. */
 function outlined(g: CharGrid, layer: CharGrid): void {
@@ -62,7 +66,11 @@ function craft(pose: Pose, k: number, y0: number): CharGrid {
   const lit = pose === 'chime';
   stamp(d, AX - 1, y0, ['.B.', 'BAB', lit ? '*+*' : '+A+']);
   // The hose: slung under the puck to the orange nozzle; down to the ground while it vacuums.
-  if (pose === 'vac') {
+  if (pose === 'unload') {
+    // The hose hanging straight down, the nozzle turned to blow.
+    for (let y = y0 + 11; y < y0 + 16; y++) plot(d, AX + (y % 2 === 0 ? 0 : 1), y, '1');
+    stamp(d, AX - 1, y0 + 16, ['cdc', '.d.']);
+  } else if (pose === 'vac') {
     const bottom = AY - 2;
     for (let y = y0 + 11; y < bottom; y++) plot(d, AX + ((y + k) % 4 < 2 ? 0 : 1), y, '1');
     stamp(d, AX - 1, bottom, ['dcd', 'c.c']);
@@ -100,10 +108,28 @@ function suction(g: CharGrid, k: number): void {
   stamp(g, AX - 3, AY - 6 + k, flecks[k % 3] ?? []);
 }
 
+/** The stream: the remains pouring out of the nozzle, falling a step further each frame `k`. */
+function stream(g: CharGrid, y0: number, k: number): void {
+  const top = y0 + 18;
+  for (let y = top; y < AY; y++) {
+    const s = (y - top + 3 * 3 - k * 3) % 9;
+    if (s === 0) plot(g, AX, y, 'P');
+    else if (s === 3) plot(g, AX + 1, y, 'Q');
+    else if (s === 6) plot(g, AX - 1, y, 'Q');
+    else if (s === 1) plot(g, AX, y, 'Q');
+  }
+}
+
 function frame(pose: Pose, k: number): string[] {
   const g = grid(W, H);
-  const y0 = pose === 'vac' ? 6 + (k === 1 ? 1 : 0) : 4 + (k === 1 ? 1 : 0);
+  const y0 =
+    pose === 'vac'
+      ? 6 + (k === 1 ? 1 : 0)
+      : pose === 'unload'
+        ? 1 + (k === 1 ? 1 : 0)
+        : 4 + (k === 1 ? 1 : 0);
   if (pose === 'vac') suction(g, k);
+  if (pose === 'unload') stream(g, y0, k);
   outlined(g, craft(pose, k, y0));
   if (pose === 'chime') {
     // The chime: a ring of light round the bell, and a note puff on the second frame.
@@ -131,10 +157,14 @@ export const propTidybot = defineSprite({
     vac_2: frame('vac', 2),
     chime_0: frame('chime', 0),
     chime_1: frame('chime', 1),
+    unload_0: frame('unload', 0),
+    unload_1: frame('unload', 1),
+    unload_2: frame('unload', 2),
   },
   anims: {
     fly: { frames: ['fly_0', 'fly_1'], fps: 10 },
     vacuum: { frames: ['vac_0', 'vac_1', 'vac_2'], fps: 8 },
     chime: { frames: ['chime_0', 'chime_1'], fps: 6, loop: false },
+    unload: { frames: ['unload_0', 'unload_1', 'unload_2'], fps: 8 },
   },
 });

@@ -8,13 +8,31 @@
 // corner (a patina capacitor can on the left, a rusty crate on the right), and T3 adds a lightning
 // rod with a welding-hot tip on the crate. A tier-4 spec (`vrellSpecBase`) keeps the three welds,
 // lights a welding-hot status lamp under the tag, and swaps the pods and rod for the spec's own kit.
+// Each Vrell tower patches its plinth its own way (`VrellMark`, T501k/T540c), so two Vrell towers
+// read apart from their bases alone: the Zapcoil's rusted left panel, the Lookout's patina-green
+// panel with a brass ladder up it, the Harpoon's rope coiled on the plinth's front, and the
+// Crane's hazard chevrons painted across its panel.
 import { grid, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_W } from './base.ts';
 
 const HEIGHT = 5;
 
-/** The patched plinth with `tier` weld tallies. */
-function plinth(tier: number): CharGrid {
+/** Which tower's patches the plinth wears. */
+export type VrellMark = 'coil' | 'lookout' | 'harpoon' | 'crane';
+
+/**
+ * The ring round the head's socket, painted per tower: the Zapcoil's patina, the Lookout's
+ * detection green, the Harpoon's rust red, the Crane's hazard stripes (yellow and ink).
+ */
+const RING: Readonly<Record<VrellMark, string>> = {
+  coil: 'c',
+  lookout: 'K',
+  harpoon: '6',
+  crane: 'L',
+};
+
+/** The patched plinth with `tier` weld tallies, patched as tower `mark`'s. */
+function plinth(tier: number, mark: VrellMark): CharGrid {
   const g: CharGrid = grid(BASE_W, BASE_H);
   const { x: cx, y: cy } = BASE_ANCHOR;
   isoBox(g, cx, cy + 1, 12, 0, { top: '_', rim: '_', left: '_', right: '_' });
@@ -22,10 +40,31 @@ function plinth(tier: number): CharGrid {
   isoBox(g, cx, cy, 11, HEIGHT, { top: '4', rim: '4', left: '3', right: '2' });
   for (let x = cx - 8; x < cx - 3; x++) {
     const y0 = cy + 1 + Math.floor((x - (cx - 11)) / 2);
-    for (let y = y0 - 3; y <= y0; y++) plot(g, x, y, x === cx - 8 || y === y0 - 3 ? '6' : '7');
+    for (let y = y0 - 3; y <= y0; y++) {
+      const edge = x === cx - 8 || y === y0 - 3;
+      let ch = edge ? '6' : '7';
+      if (mark === 'lookout') ch = edge ? 'b' : 'c';
+      else if (mark === 'crane') ch = edge ? '6' : (x + y) % 3 === 0 ? 'x' : 'e';
+      plot(g, x, y, ch);
+    }
+  }
+  if (mark === 'lookout') {
+    // A brass ladder up the panel to the top.
+    for (let y = cy - 4; y <= cy + 3; y++) {
+      plot(g, cx - 9, y, '4');
+      if (y % 2 === 0) plot(g, cx - 8, y, '3');
+    }
   }
   // A patina ring on top where the head turns, around a darker brass socket.
-  isoBox(g, cx, cy - HEIGHT, 6, 0, { top: 'c', rim: 'c', left: 'c', right: 'c' });
+  const ring = RING[mark];
+  isoBox(g, cx, cy - HEIGHT, 6, 0, { top: ring, rim: ring, left: ring, right: ring });
+  if (mark === 'crane') {
+    // Hazard-striped, the crane yard's paint.
+    for (let y = cy - HEIGHT - 4; y <= cy - HEIGHT + 4; y++) {
+      for (let x = cx - 7; x <= cx + 7; x++)
+        if (g[y]?.[x] === 'L' && (x + y) % 3 === 0) plot(g, x, y, 'x');
+    }
+  }
   isoBox(g, cx, cy - HEIGHT, 4, 0, { top: '2', rim: '2', left: '2', right: '2' });
   // A patina plate bolted over part of the right face, crooked.
   for (let x = cx + 3; x < cx + 8; x++) {
@@ -40,6 +79,15 @@ function plinth(tier: number): CharGrid {
   line(g, cx + 8, cy - 9, cx + 8, cy - 6, '1');
   line(g, cx + 9, cy - 9, cx + 9, cy - 6, '2');
   plot(g, cx + 10, cy - 9, '2');
+  if (mark === 'harpoon') {
+    // A coil of rope on the plinth's front, spare line for the harpoon.
+    // prettier-ignore
+    stamp(g, cx - 7, cy - 3, [
+      '.443.',
+      '42.24',
+      '.432.',
+    ]);
+  }
   // The price tag at the front corner: a string, a white tag, a scrawled price.
   plot(g, cx, cy + 1, '1');
   // prettier-ignore
@@ -51,9 +99,9 @@ function plinth(tier: number): CharGrid {
   return g;
 }
 
-/** One base frame per tier (1–3). */
-export function vrellBase(tier: 1 | 2 | 3): string[] {
-  const g = plinth(tier);
+/** One base frame per tier (1–3), patched as tower `mark`'s. */
+export function vrellBase(tier: 1 | 2 | 3, mark: VrellMark = 'coil'): string[] {
+  const g = plinth(tier, mark);
   const { x: cx, y: cy } = BASE_ANCHOR;
   if (tier >= 2) {
     // A patina capacitor can on the left corner, banded in brass with a dark cap.
@@ -89,8 +137,11 @@ export function vrellBase(tier: 1 | 2 | 3): string[] {
  * the price tag, and the spec's own kit (drawn by `kit` around the plinth's anchor) instead of T2's
  * pods and T3's rod, so the base says which spec the tower took (tech-spec § Format rules).
  */
-export function vrellSpecBase(kit: (g: CharGrid, cx: number, cy: number) => void): string[] {
-  const g = plinth(3);
+export function vrellSpecBase(
+  kit: (g: CharGrid, cx: number, cy: number) => void,
+  mark: VrellMark = 'coil',
+): string[] {
+  const g = plinth(3, mark);
   const { x: cx, y: cy } = BASE_ANCHOR;
   kit(g, cx, cy);
   plot(g, cx + 2, cy + 3, '*');
@@ -98,5 +149,10 @@ export function vrellSpecBase(kit: (g: CharGrid, cx: number, cy: number) => void
   return rows(g);
 }
 
-/** The custom colors the Vrell base uses: the price tag's white and its scrawled blue price. */
-export const VRELL_BASE_LEGEND = { W: 'white.0', U: 'blue.3' } as const;
+/** The custom colors the Vrell base uses: the price tag's white and blue price, the ring paints. */
+export const VRELL_BASE_LEGEND = {
+  W: 'white.0',
+  U: 'blue.3',
+  K: 'green.3',
+  L: 'gold.3',
+} as const;

@@ -144,6 +144,9 @@ export function kerbEdges(g: GroundGrid, col: number, row: number): VergeEdge[] 
   return out;
 }
 
+/** A wreck's look (`prop.wreckage`'s base frames; `wreckageFrame`). */
+export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5';
+
 /** The env palettes whose maps take Act II's looks (art-direction §3, §6). */
 const ACT2_ENVS: ReadonlySet<string> = new Set(['act2.gold', 'act2.dusk']);
 
@@ -179,6 +182,18 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   dome: 'prop.dome',
   warren: 'prop.warren',
   warren_spoil: 'prop.spoil',
+  // M5 (act2.md per map, T540c): A2M4's plant (Intake B, the three vats, the gold seams on the
+  // north cliff); A2M5's relocation fencing, the Preserve's fenced basin, and the dead rig where
+  // the rig road starts; A2M6's wall (its lamps on the gateposts, its two ends; the walk between is
+  // `wallSpan`'s) and Dome 3's window (`dome_window`, a `prop.dome` frame).
+  intake_b: 'prop.intake',
+  vat: 'prop.vat',
+  seam: 'prop.seam',
+  fence: 'prop.relocation_fence',
+  basin: 'prop.basin',
+  rig_yard: 'prop.rig',
+  lamp: 'prop.wall',
+  wall: 'prop.wall',
 };
 
 /**
@@ -187,8 +202,12 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
  */
 function markerFrame(id: MarkerId): string | null {
   if (id === 'rig_nine') return 'nine';
+  if (id === 'rig_yard') return 'yard';
   if (id === 'warren_spoil') return 'warren';
+  if (id === 'dome_window') return 'window';
   const n = Number(/_(\d+)$/.exec(id)?.[1] ?? 0);
+  // The first run of relocation fencing carries Everglow's sign; numbered runs are plain.
+  if (id.startsWith('fence')) return n === 0 ? 'v0' : 'v1';
   if (id.startsWith('spoil')) return `drill_${n % 2}`;
   if (id.startsWith('warren')) return `v${n % 2}`;
   return null;
@@ -201,6 +220,9 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   'prop.podium': { frame: 'prim_0', anim: 'prim' },
   'prop.billboard': { frame: 'beaming', anim: null },
   'prop.confetti_cannon': { frame: 'idle', anim: null },
+  // A2M4's vats churn, and its seams glint (T540c).
+  'prop.vat': { frame: 'v0', anim: 'churn' },
+  'prop.seam': { frame: 'v0', anim: 'glint' },
 };
 
 /**
@@ -257,13 +279,51 @@ export function peekerCover(mapId: string): PeekerCover {
 }
 
 /**
- * The decor id a marker id names: itself, or itself less a `_<suffix>` (`billboard_2`, a map with
- * several; `dome_north`, a name).
+ * The decor id a marker id names: itself, or itself less its `_<suffix>`es, the longest match
+ * first (`billboard_2`, a map with several; `dome_north`, a name; `lamp_west_gate`, two).
  */
 function decorSprite(id: MarkerId): SpriteId | undefined {
-  if (Object.hasOwn(DECOR_MARKERS, id)) return DECOR_MARKERS[id];
-  const base = id.replace(/_[a-z0-9]+$/, '');
-  return base !== id && Object.hasOwn(DECOR_MARKERS, base) ? DECOR_MARKERS[base] : undefined;
+  for (let base = id; ;) {
+    if (Object.hasOwn(DECOR_MARKERS, base)) return DECOR_MARKERS[base];
+    const shorter = base.replace(/_[a-z0-9]+$/, '');
+    if (shorter === base) return undefined;
+    base = shorter;
+  }
+}
+
+/** The wall's ends (A2M6): markers on one row; the wall runs between them (inclusive). */
+const WALL_ENDS = ['wall_west_end', 'wall_east_end'] as const;
+
+/**
+ * The wall row's span on a map with both wall-end markers on one row (A2M6, T540c), or null: its
+ * row and its first and last column. Every non-road tile in it carries the parapet.
+ */
+export function wallSpan(
+  g: GroundGrid,
+): { readonly row: number; readonly from: number; readonly to: number } | null {
+  const a = g.markers?.[WALL_ENDS[0]];
+  const b = g.markers?.[WALL_ENDS[1]];
+  if (a === undefined || b === undefined || a[1] !== b[1]) return null;
+  return { row: a[1], from: Math.min(a[0], b[0]), to: Math.max(a[0], b[0]) };
+}
+
+/** True when (col, row) is on the wall row's span (road tiles included). */
+function onWall(g: GroundGrid, col: number, row: number): boolean {
+  const w = wallSpan(g);
+  return w !== null && row === w.row && col >= w.from && col <= w.to;
+}
+
+/**
+ * A wall marker's frame (A2M6): a lamp is a gatepost on the side that meets the gate (`lamp_w`
+ * with the road to its west, else `lamp_e`); a wall end's buttress stands at the grid edge it ends
+ * on.
+ */
+function wallFrame(g: GroundGrid, id: MarkerId, col: number, row: number): string {
+  if (id.startsWith('lamp')) {
+    const west = col > 0 && isPathLike(g.tiles[row * g.cols + col - 1]);
+    return west ? 'lamp_w' : 'lamp_e';
+  }
+  return col < g.cols / 2 ? 'end_w' : 'end_e';
 }
 
 /** A marker's decor on its tile: its sprite and, where it names one, its own frame. */
@@ -283,6 +343,7 @@ function decorAt(g: GroundGrid, col: number, row: number): MarkerDecor | 'bare' 
     if (VIEW_MARKERS.includes(id) || Object.hasOwn(CUE_DECOR, id) || g.asset?.marker === id)
       return 'bare';
     const sprite = decorSprite(id);
+    if (sprite === 'prop.wall') return { sprite, frame: wallFrame(g, id, col, row) };
     if (sprite !== undefined) return { sprite, frame: markerFrame(id) };
   }
   return null;
@@ -325,20 +386,35 @@ export function envVariant(env: string): string {
 /**
  * The `prop.wreckage` wreck on tile (col, row), alternating by tile: Act I's `v0` (a crashed drone)
  * or `v1` (a toppled cart), T311b's; on an Act II map (`env`) its broken mining rigs, `v2` (a
- * snapped derrick) or `v3` (a burst pump house), each with a crew log on its stake (T440c).
+ * snapped derrick) or `v3` (a burst pump house), each with a crew log on its stake (T440c). A tile
+ * under an `intake_hopper*` marker (A2M4's Intake Manifest, T540c) is a wrecked intake hopper,
+ * `v4` (toppled) or `v5` (buckled and split), whatever the act.
  */
-export function wreckageFrame(col: number, row: number, env?: string): 'v0' | 'v1' | 'v2' | 'v3' {
+export function wreckageFrame(
+  col: number,
+  row: number,
+  env?: string,
+  markers?: Readonly<Record<MarkerId, GridPos>>,
+): WreckLook {
   const odd = (col + row) % 2 !== 0;
+  if (markers !== undefined) {
+    for (const [id, [c, r]] of Object.entries(markers)) {
+      if (c === col && r === row && id.startsWith('intake_hopper')) return odd ? 'v5' : 'v4';
+    }
+  }
   if (isActTwo(env)) return odd ? 'v3' : 'v2';
   return odd ? 'v1' : 'v0';
 }
 
 /**
- * The high-ground block's look on tile (col, row): an `outcrop*` marker's thread-glass (A2M2), an
- * Act II map's canyon ledge (A2M1), else Act I's grassy block.
+ * The high-ground block's look on tile (col, row): an `outcrop*` marker's thread-glass (A2M2), a
+ * `catwalk*` marker's plant catwalk (A2M4), a `watchtower*` marker's old watchtower (A2M6), an Act
+ * II map's canyon ledge (A2M1), else Act I's grassy block.
  */
 export function highGroundLook(g: GroundGrid, col: number, row: number): HighGroundLook {
   if (markerOn(g, 'outcrop', col, row)) return 'outcrop';
+  if (markerOn(g, 'catwalk', col, row)) return 'catwalk';
+  if (markerOn(g, 'watchtower', col, row)) return 'watchtower';
   return isActTwo(g.env) ? 'ledge' : 'v0';
 }
 
@@ -359,6 +435,11 @@ export function hushFrame(g: GroundGrid, col: number, row: number): string | nul
   if (reach <= 3) return 'd2';
   if (reach <= 4.5) return 'd1';
   return null;
+}
+
+/** The parapet on a wall-walk tile, its variant alternating along the wall. */
+function wallWalk(col: number): Prop {
+  return { sprite: 'prop.wall', frame: `walk_${col % 2}`, anim: null };
 }
 
 function isPathLike(t: TileChar | undefined): boolean {
@@ -468,10 +549,19 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
         prop: t === 'C' ? { sprite: 'prop.core', frame: 'idle_0', anim: 'idle' } : null,
       };
     }
-    case 'S':
-      return { ground: { sprite: 'tile.spawn', frame: 'v0' }, prop: null };
+    case 'S': {
+      // A spawn inside the map, off every edge, is a hatch the enemy comes up out of (A2M4's vat
+      // drain hatch); one on the edge is a burrow at the head of the road.
+      const inside = col > 0 && row > 0 && col < g.cols - 1 && row < g.rows - 1;
+      return { ground: { sprite: 'tile.spawn', frame: inside ? 'hatch' : 'v0' }, prop: null };
+    }
     case 'o':
-      return { ground: { sprite: 'tile.pad', frame: 'v0' }, prop: null };
+      // A pad on the wall walk (A2M6) keeps the parapet behind its plate; a tower on it draws in
+      // front of the parapet (tower bias).
+      return {
+        ground: { sprite: 'tile.pad', frame: 'v0' },
+        prop: onWall(g, col, row) ? wallWalk(col) : null,
+      };
     case '^': {
       // The block covers its whole footprint; the grass under it only backs its seams.
       const frame = highGroundLook(g, col, row);
@@ -491,6 +581,7 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       let sprite: SpriteId | null = decor === 'bare' || decor === null ? null : decor.sprite;
       if (decor === null) {
         if (t === 'x') sprite = 'prop.wreckage';
+        else if (onWall(g, col, row)) sprite = 'prop.wall';
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
         else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
       }
@@ -500,7 +591,9 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       if (sprite === 'prop.bunting') {
         onTile = { sprite, frame: buntingFrame(g, col, row), anim: null };
       } else if (sprite !== null && t === 'x' && decor === null) {
-        onTile = { sprite, frame: wreckageFrame(col, row, g.env), anim: null };
+        onTile = { sprite, frame: wreckageFrame(col, row, g.env, g.markers), anim: null };
+      } else if (sprite === 'prop.wall' && decor === null) {
+        onTile = wallWalk(col);
       } else if (sprite !== null) {
         const look = decorLook(sprite, g.env);
         const own = decor !== null && decor !== 'bare' ? decor.frame : null;
@@ -543,6 +636,11 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.rigs',
   'prop.crew_hut',
   'prop.tidybot',
+  // M5's plant and colony hardware (T540c).
+  'prop.vat',
+  'prop.intake',
+  'prop.wall',
+  'prop.relocation_fence',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */

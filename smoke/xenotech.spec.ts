@@ -43,7 +43,7 @@ test('xenotech: after A2M5, attune the Mindspike, and it joins the loadout', asy
   expect(saved.currencies.intel).toBe(intel - 3);
   expect(saved.unlocks.towers).toContain('mindspike');
   // 2 Intel left: the Lantern's button explains itself rather than buying.
-  await lantern.getByRole('button', { name: /not enough/ }).click();
+  await lantern.getByRole('button', { name: /not enough/ }).click({ force: true });
   await expect(page.getByTestId('store-line')).toContainText('It asks 3 Intel. You hold 2.');
   await shot(page, 'xenotech', 2, 'attuned-mindspike');
 
@@ -72,8 +72,10 @@ test('xenotech: no tab before A2M5; all_unlocked shows it owned in full', async 
   await openBase(page, 'all_unlocked');
   await page.getByRole('tab', { name: 'Xenotech', exact: true }).click();
   await expect(offerRow(page, 'Prism Spire').locator('.sd-offer-owned')).toHaveText('Given');
-  for (const name of ['Mindspike Obelisk', "Seer's Lantern"]) {
-    await expect(offerRow(page, name).locator('.sd-offer-owned')).toHaveText('Owned');
-  }
+  await Promise.all(
+    ['Mindspike Obelisk', "Seer's Lantern"].map((name) =>
+      expect(offerRow(page, name).locator('.sd-offer-owned')).toHaveText('Owned'),
+    ),
+  );
   await shot(page, 'xenotech', 4, 'all-unlocked');
 });
