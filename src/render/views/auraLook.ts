@@ -5,7 +5,8 @@
 //   not neutral and not a boss, in reach, its shield short of full, and inside the radius of
 //   another unit of its faction projecting an aura. It stops the moment its shield is whole.
 // - **The glint:** light catching the glass at the top right of its shield bubble: a 5×5 star,
-//   a `white.1` heart with `blue.4` arms (the aura's colour), twinkling to a 3×3 one on the sim's
+//   a `white.1` heart with `blue.4` arms (the aura's colour) inside a 1 px `ink.0` rim (so it reads
+//   on the bubble's pale blue and on bright ground; 7×7), twinkling to a 3×3 one on the sim's
 //   3 Hz tell step (vfx/fxTiming.ts: holds while paused, keeps pace at 2×), offset per uid so a
 //   refilled pack doesn't blink in unison; the large star, steady, under reduced motion.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -16,7 +17,9 @@ import { TELL_STEP_TICKS } from '../vfx/fxTiming.ts';
 
 export const GLINT_HEART: ColorName = 'white.1';
 export const GLINT_ARM: ColorName = 'blue.4';
-export const GLINT_SIZE = 5;
+export const GLINT_RIM: ColorName = 'ink.0';
+/** The glint with its rim (px). */
+export const GLINT_SIZE = 7;
 
 /** The two glint frames: the large star (0) and the small one (1). 'H' heart, 'A' arm. */
 const STARS: readonly (readonly string[])[] = [
@@ -24,18 +27,33 @@ const STARS: readonly (readonly string[])[] = [
   ['.....', '..A..', '.AHA.', '..A..', '.....'],
 ];
 
-/** Glint frame `frame` (0 large, 1 small), 5×5. */
+/** Whether the star of `frame` lights pixel (x, y) of the 7×7 image (its 5×5 sits at 1, 1). */
+function starAt(rows: readonly string[], x: number, y: number): string {
+  const ch = rows[y - 1]?.[x - 1];
+  return ch === undefined ? '.' : ch;
+}
+
+/** Glint frame `frame` (0 large, 1 small), GLINT_SIZE square: the star in its `ink.0` rim. */
 export function glintImage(frame: 0 | 1): RgbaImage {
   const w = GLINT_SIZE;
   const data = new Uint8ClampedArray(w * w * 4);
   const heart = rgbOf(GLINT_HEART);
   const arm = rgbOf(GLINT_ARM);
+  const rim = rgbOf(GLINT_RIM);
   const rows = STARS[frame]!; // frame is 0 or 1
   for (let y = 0; y < w; y++) {
     for (let x = 0; x < w; x++) {
-      const ch = rows[y]![x]; // y, x < 5
-      if (ch === '.') continue;
-      const c = ch === 'H' ? heart : arm;
+      const ch = starAt(rows, x, y);
+      let c = ch === 'H' ? heart : ch === 'A' ? arm : null;
+      if (c === null) {
+        const next =
+          starAt(rows, x - 1, y) !== '.' ||
+          starAt(rows, x + 1, y) !== '.' ||
+          starAt(rows, x, y - 1) !== '.' ||
+          starAt(rows, x, y + 1) !== '.';
+        if (!next) continue;
+        c = rim;
+      }
       const i = (y * w + x) * 4;
       data[i] = c.r;
       data[i + 1] = c.g;

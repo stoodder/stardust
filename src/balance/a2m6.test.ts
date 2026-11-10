@@ -1,15 +1,18 @@
-// A2M6's tuning is robust where it matters (T522). As tuned, par wins at 16/22 (72.7%) on every seed,
-// holding every wave to the last and losing all six in W14, where the biggest Rift Moth flock comes
-// in full dark with everything else (so par never earns Before the Dark; Story does). Ves'thara's
-// Stillness on that flock is par's margin: without its casts par falls to 50. Each no-counter build
-// loses: without splash, W6–W7's clusters drown it by W7 (by W9, act2.md); without air, the Rift
-// Moths fly over it by W10. Both alts win (54.5, 54.5); so do the Seeker Swarm alt (45.5), which
-// runs here on the reference profile plus the Skyhook's specs because the reference never owns
-// them (D137; campaign.md § 4.9), and the Sunlance/Resonance probe (81.8, inside the band: it does
-// not trivialize the late surges). The dark reaches full as W11 starts, so Goldie's W12 radio line
-// plays in full dark (a countdown opens once the previous wave finishes spawning, D135) in every
-// reference run and under every shift. The waves and builds are documented in
-// docs/story/campaign/act2.md § A2M6.
+// A2M6's tuning is robust where it matters (T522). As tuned, par wins at 17/22 (77.3%) on every seed,
+// holding every wave and losing all five in W14, where the last Rift Moth flock comes in full dark
+// with everything else (so par never earns Before the Dark; Story does). Ves'thara's Stillness on
+// W9's tight flock, frozen over the merge beside the watchtower's Prism, is worth W9 whole: without
+// the cast four Moths get through. Each no-counter build loses: without splash, W6–W7's clusters
+// drown it by W7 (act2.md: by W9); without air, the Rift Moths fly over it by W10. Both alts win
+// (50, 45.5); so does the Seeker Swarm alt (31.8), which runs here on the reference profile plus
+// the Skyhook's specs because the reference never owns them (D137; campaign.md § 4.9). The
+// Sunlance/Resonance probe (par with the Prism's Sunlance and a Resonance Zapcoil) wins at 86.4,
+// two integrity over par and still leaking in W14: it doesn't trivialize the late surges. The dark
+// reaches full as W11 starts, so Goldie's W12 radio line plays in full dark (a countdown opens once
+// the previous wave finishes spawning, D135) in every reference run and under every shift. The
+// flocks make W14 noisy (±0.2 s moves par between 15 and 18 of 22), so the shifts ask every
+// harness check to pass, par in the band, rather than one integrity. The waves and builds are
+// documented in docs/story/campaign/act2.md § A2M6.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
@@ -23,13 +26,13 @@ import {
   type HeadlessResult,
   type SimEvent,
 } from '../sim/index.ts';
-import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
+import { bothWays, delay, judgeShift, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
 import { referenceRunProfile, runConfig, type RunProfile } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const content = compileContent(RAW_CONTENT);
-const PAR_INTEGRITY = 16;
+const PAR_INTEGRITY = 17;
 const MAX_INTEGRITY = 22;
 
 const isMoth = (g: WaveGroup): boolean => g.enemy === 'riftmoth';
@@ -41,9 +44,10 @@ const SHIFTS = {
     9: delay(isMoth, 0.2 * s),
     14: delay(isMoth, 0.2 * s),
   }),
-  'W6’s, W7’s and W14’s Mote clusters': (s: number) => ({
+  'W6’s, W7’s, W11’s and W14’s Mote clusters': (s: number) => ({
     6: delay(isMote, 0.2 * s),
     7: delay(isMote, 0.2 * s),
+    11: delay(isMote, 0.2 * s),
     14: delay(isMote, 0.2 * s),
   }),
 } as const;
@@ -157,22 +161,24 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a2_m06', { seeds: 1 });
   const run = (build: string) => report.runs.find((r) => r.build === build && !r.repeat)!;
 
-  it('passes every harness check as tuned, par at 16/22 with its losses in W14', () => {
+  it('passes every harness check as tuned, par at 17/22 with its losses in W14', () => {
     expect(report.checks.filter((k) => !k.ok).map((k) => k.id)).toEqual([]);
     const par = run('par').result!;
     expect([par.integrity, par.maxIntegrity]).toEqual([PAR_INTEGRITY, MAX_INTEGRITY]);
     expect(par.waves.map((w) => w.integrityLost)).toEqual([
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
     ]);
     // Par leaks in the last three waves, so it never earns Before the Dark.
     expect(par.medals.challenge).not.toBe('earned');
   });
 
-  it('makes Stillness par’s margin: both casts freeze Rift Moths, and par falls without them', () => {
+  it('makes Stillness worth W9: the cast freezes the flock, and without it Moths get through', () => {
     const b = beats(content, 'par');
-    expect(b.stillness.map((s) => s.wave)).toEqual([9, 14]);
-    for (const s of b.stillness) expect(s.frozen).toBeGreaterThan(0);
-    expect(run('parNoAbilities').result!.integrity).toBeLessThan(PAR_INTEGRITY);
+    expect(b.stillness.map((s) => s.wave)).toEqual([9]);
+    expect(b.stillness[0]!.frozen).toBeGreaterThanOrEqual(6);
+    const bare = run('parNoAbilities').result!;
+    expect(bare.waves[8]!.integrityLost).toBeGreaterThan(0);
+    expect(bare.integrity).toBeLessThan(PAR_INTEGRITY);
   });
 
   it('makes splash and air the answers: no-splash loses by W9, no-air by W10', () => {
@@ -200,8 +206,9 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const probe = runOn(content, 'sunlance');
     expect(probe.outcome).toBe('won');
     expect(probe.steps.every((s) => s.error === null)).toBe(true);
-    // 18/22 (81.8): above par, still under the band's top, and still leaking in W14.
-    expect(probe.integrity).toBe(18);
+    // 19/22 (86.4): two over par, still leaking in W14 (the surges come as crowds; a Sunlance
+    // spends its ramp on one target at a time, and Resonance's bonus is against shields only).
+    expect(probe.integrity).toBe(19);
     expect(probe.waves[13]!.integrityLost).toBeGreaterThan(0);
   });
 
@@ -227,10 +234,12 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it.each(bothWays(SHIFTS))(
-    'holds par at 16/22 and Goldie’s line in full dark with %s shifted %s',
+    'passes every harness check, par in the band, and keeps Goldie’s line in full dark with %s shifted %s',
     (_name, _way, patches) => {
       const c = shiftedContent('a2_m06', patches);
-      expect(runOn(c, 'par').integrity).toBe(PAR_INTEGRITY);
+      const { failed, par } = judgeShift(c, 'a2_m06');
+      expect(failed).toEqual([]);
+      expect(par.result!.integrity).toBeGreaterThanOrEqual(15);
       expectFullDarkForGoldie(c, 'par');
     },
   );

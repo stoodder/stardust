@@ -76,7 +76,8 @@ function bonusText(b: LinkBonusDef): string {
   const parts: string[] = [];
   if (b.pct !== undefined) parts.push(`+${Math.round(b.pct * 100)}% ${STAT_TEXT[b.stat]}`);
   if (b.flat !== undefined) parts.push(`+${b.flat} ${STAT_TEXT[b.stat]}`);
-  const vs = b.vsStatus?.map(displayName).join('/');
+  // Resonance's bonus holds only while the target's shield is up (T504).
+  const vs = b.vsShielded === true ? 'shields' : b.vsStatus?.map(displayName).join('/');
   return vs === undefined ? parts.join(', ') : `${parts.join(', ')} vs ${vs}`;
 }
 

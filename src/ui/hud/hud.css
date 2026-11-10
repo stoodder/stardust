@@ -231,15 +231,116 @@ section.chamfer,
   text-align: right;
 }
 
-/* An Escort's meter (T305c) stands in for the core's: evacuated of the total, then the lost count
-   on its own row. The minimal readout; T531 builds the real one. */
 .hud-meter[hidden] {
   display: none;
 }
 
-.hud-escort [data-testid='escort-lost'] {
-  grid-column: 2 / 4;
-  text-align: right;
+/* An Escort's meter (T305c, T531) stands in for the core's: the meter row (the refugees safe),
+   "of 36" under the label, and the lost row: one 3x6 pip per loss the map allows, filled red.3 as
+   refugees are lost. Its two small rows add ESCORT_EXTRA_H to the status panel (layout.ts). */
+.hud-escort {
+  position: relative;
+  display: grid;
+  gap: 2px;
+}
+
+.hud-escort-of,
+.hud-escort-lost {
+  margin-left: 12px;
+  line-height: 8px;
+}
+
+.hud-escort-of {
+  color: var(--sd-steel-3);
+}
+
+.hud-escort-lost {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 8px;
+}
+
+.hud-escort-lost .hud-label.danger {
+  color: var(--sd-red-3);
+}
+
+.hud-pips {
+  display: flex;
+  gap: 1px;
+}
+
+.hud-pip {
+  box-sizing: border-box;
+  width: 3px;
+  height: 6px;
+  border: 1px solid var(--sd-steel-1);
+}
+
+.hud-pip.on {
+  border-color: var(--sd-red-3);
+  background: var(--sd-red-3);
+}
+
+/* The relabel moment (T531): the old label, struck through, for the first 0.5 s, then the new one
+   in the accent colour with its edge blinking three times. It waits while the HUD is inert (a
+   scene, such as A2M5's pivot cue, or the pause menu), so the player sees it when play resumes. */
+.hud-relabel {
+  position: relative;
+}
+
+.hud-relabel-from {
+  position: absolute;
+  inset: 0;
+  text-decoration: line-through;
+  animation: hud-relabel-from 2s steps(1, end) forwards;
+}
+
+.hud-relabel-to {
+  animation: hud-relabel-to 2s steps(1, end) forwards;
+}
+
+@keyframes hud-relabel-from {
+  0% {
+    visibility: visible;
+  }
+  25% {
+    visibility: hidden;
+  }
+  100% {
+    visibility: hidden;
+  }
+}
+
+@keyframes hud-relabel-to {
+  0% {
+    visibility: hidden;
+    color: var(--accent);
+    outline: none;
+  }
+  25%,
+  55%,
+  85% {
+    visibility: visible;
+    color: var(--accent);
+    outline: 1px solid var(--accent);
+  }
+  40%,
+  70% {
+    visibility: visible;
+    color: var(--accent);
+    outline: none;
+  }
+  100% {
+    visibility: visible;
+    color: var(--sd-steel-3);
+    outline: none;
+  }
+}
+
+.hud-play[inert] .hud-relabel-from,
+.hud-play[inert] .hud-relabel-to {
+  animation-play-state: paused;
 }
 
 /* A Protect map's asset meter (T305a, T431): a second row under the core's, built like it, with
@@ -963,6 +1064,14 @@ section.chamfer,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hud-relabel-from {
+    display: none;
+  }
+
+  .hud-relabel-to {
+    animation: none;
+  }
+
   .hud-alarm,
   .hud-btn.pulse,
   .hud-wave-banner {
@@ -1002,6 +1111,43 @@ section.chamfer,
 /* Where a bonus comes from: the link or tile, in the cool accent (the stat line carries the sum). */
 .hud-bonus-line {
   color: var(--sd-teal-4);
+}
+
+/* Sundown's line (T531): the range an unlit tower loses, in the dusk's violet, never red (it isn't
+   the player's fault the sun set); "Lit: full range" in the lamps' gold. */
+.hud-dark-line {
+  height: 8px;
+  margin: 0;
+  white-space: nowrap;
+  color: var(--sd-violet-4);
+}
+
+.hud-dark-line.lit {
+  color: var(--sd-gold-3);
+}
+
+/* A ramping beam's live ramp (T531): "Ramp", a 1 px-edged bar filling from x1 to the cap in the
+   act accent, and the multiplier (accent once full). */
+.hud-ramp {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  height: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.hud-ramp-bar {
+  box-sizing: border-box;
+  height: 6px;
+  border: 1px solid var(--sd-steel-1);
+}
+
+.hud-ramp-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
 }
 
 .hud-spec-head {

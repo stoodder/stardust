@@ -586,12 +586,52 @@ Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1�
 
 *The first Hollow assault on the colony itself. Everyone on the wall. The sun goes down.*
 
-- **Facts:** Colony perimeter (north wall) · `act2.dusk` with the **Sundown** lighting modifier (full Long Night darkness by W12) · Defend (core: the dome cluster where Pebble sleeps) · 18×12, 16 buildable · 14 waves · 550 credits · two ground spawns + one air lane · companion Ves'thara (Stillness) · Bricks ally post on the wall · Technician Orbital Strike.
+- **Facts:** Colony perimeter (north wall) · `act2.dusk` with the **Sundown** lighting modifier (full Long Night darkness by W12) · Defend (core: the dome cluster where Pebble sleeps) · 18×12, 16 buildable (1 watchtower high ground) · 14 waves · 550 credits · two ground spawns + one air lane · companion Ves'thara (Stillness) · Bricks ally post on the wall · Technician Orbital Strike.
 - **Story purpose:** Pays the alliance; Ves'thara's mother; plants QUILL's directives; the sun sets. No Skitterkin enemies: they are inside the domes now, and the results line shows the same number as last map. **Target: togetherness against the dark.**
 
 **Layout.** Two roads come down from the Spires and meet the wall at two gates that merge inside, ending at Goldie's dome cluster. The air lane crosses the wall diagonally. Pads sit on the wall walk; one high ground is the old watchtower. Lamps along the wall are light sources in the darkness overlay; they stay on. **Prism Spire's beam pushes the darkness back**, so towers near a Prism keep their full range ([maps.md §5.1](../../design/maps.md#51-layout-and-event-modifiers)). Through a dome window, a small shape sleeps in the lettuce.
 
+**Layout data** (the data is [`src/content/maps/a2_m06/map.ts`](../../../src/content/maps/a2_m06/map.ts); [`a2_m06.test.ts`](../../../src/content/maps/a2_m06/a2_m06.test.ts) pins it). The **wall** runs the whole of row 3, broken by the **west gate** (6,3) and the **east gate** (11,3). The **west road** (`west`, 32 tiles) comes down from the Spires at (3,0), east under the wall to its gate, and in to the **merge** (8,5); the **east road** (`east`, 33 tiles) comes down at (14,0), west to its gate, and in to the merge from the east. From the merge one road runs down past the **watchtower** (9,6, the high ground, just inside the wall), west across the yard, down, and east along row 9 into the **dome cluster** (13,11). The **air lane** (`sky`) comes in at the north-east corner (17,0), crosses the wall diagonally near the east gate, passes over the merge to the yard's west side (5,8), and turns down to the domes. **Four lamps** stand on the wall at (5,3), (7,3), (10,3) and (12,3), each lighting 1.5 tiles (the default `LAMP_RADIUS_TILES`; no map overrides it): they light the wall walk's pads (4,3), (8,3), (9,3), (13,3) and the pocket's (7,4), (10,4) between the gates, never the yard, so deep in the night only a beaming Prism keeps the yard's towers at full range (the watchtower's Prism lights (7,6), (10,6) and (9,8) round it). Bricks's post stands on the wall by the east gate (15,3), over the east road. Markers: `lamp_west_gate`, `lamp_west_walk`, `lamp_east_walk`, `lamp_east_gate`, `bricks_post`, `wall_west_end`, `wall_east_end`, `dome_window` (15,11) (the wall, gates, watchtower, lamps and the dome window with Pebble asleep are T540c's props).
+
+```
+...S..........S...
+...#..........#...
+...####....####...
+....o.#.oo.#.o....
+......#o..o#......
+......######......
+.......o#^o.......
+...######.........
+..o#.o...o..o.....
+...###########....
+......o...o..#o...
+.............C....
+```
+
 **Waves.** 1 Motes · 2 Motes, both roads · 3 Fractures ×2 [T: Hollow splitting; splash at the death point] · 4 Mote clusters · 5 Rift Moths ×3 [T: phasing; burst; Stillness, Prism] · 6 Fractures + Motes [X] · 7 both roads · 8 Rift Moths + Fractures · 9 Rift Moth flock [X] · 10 big mixed · 11 surge, west road · 12 surge, east road (full dark) · 13 both · 14 everything.
+
+**Wave data** (the data is [`src/content/maps/a2_m06/waves.ts`](../../../src/content/maps/a2_m06/waves.ts)). W2–W14 have a **20 s** countdown and **open 6 s into the wave**. Packed clusters are 0.2 s apart; default spacing Mote 0.3 s, Fracture 1.2 s, Rift Moth 0.8 s. A Fracture splits into 2 Shards and each Shard into 2 Motes (a whole Fracture pays 24). *west*/*east* name the road; the Rift Moths fly the air lane.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Mote ×12 @ 0.5, 0 *west* | 12 |
+| W2 | Mote ×12, 6 *west* · Mote ×12, 10 *east* | 24 |
+| W3 | Fracture, 6 *west* · Fracture, 9 *east* | 2 |
+| W4 | Mote ×20 packed, 6 *west* · Mote ×20 packed, 16 *east* | 40 |
+| W5 | Rift Moth ×3 @ 2, 6 (teach) | 3 |
+| W6 | Fracture, 6 *west* · Mote ×40 packed, 12 *east* | 41 |
+| W7 | Fracture, 6 *west* · Fracture, 7.5 *east* · Mote ×18 packed, 18 *west* · Mote ×18 packed, 20 *east* | 38 |
+| W8 | Fracture ×3 @ 2.5, 6 *east* · Rift Moth ×5 @ 1.2, 12 | 8 |
+| W9 | Rift Moth ×16 @ 0.25, 6 · Mote ×30 packed, 14 *west* | 46 |
+| W10 | Fracture, 6 *west* · Fracture ×2 @ 2.5, 7 *east* · Rift Moth ×5 @ 1, 14 · Mote ×10 packed, 20 *west* · Mote ×10 packed, 22 *east* | 28 |
+| W11 | Mote ×30 packed, 6 *west* · Fracture ×2 @ 1.5, 12 *west* · Mote ×24 packed, 22 *west* | 56 |
+| W12 | Mote ×30 packed, 6 *east* · Fracture ×2 @ 1.5, 12 *east* · Rift Moth ×4 @ 0.8, 16 · Mote ×24 packed, 22 *east* | 60 |
+| W13 | Fracture ×2 @ 3, 6 *west* · Fracture, 7.5 *east* · Rift Moth ×12 @ 0.5, 12 · Mote ×20 packed, 18 *west* · Mote ×20 packed, 20 *east* | 55 |
+| W14 | Mote ×24 packed, 6 *west* · Mote ×24 packed, 8 *east* · Fracture ×2 @ 1.5, 14 *west* · Fracture ×2 @ 1.5, 15 *east* · Rift Moth ×17 @ 0.4, 18 · Mote ×24 packed, 28 *west* · Mote ×24 packed, 30 *east* | 117 |
+
+**The Sundown** (`lighting`): dusk through W3; from W4 the dark deepens in equal steps (⅛ a wave, eased over 4 s as each wave starts) to **full Long Night darkness as W11 starts**, and stays full to the end. So W12's build phase, where Goldie's line plays, is always in full dark. Unlit towers lose up to 15% range; the lamps keep the wall at full range, and par's Prism on the watchtower keeps the merge's at full range. It matters: with no darkness `coil_and_soak` would score 77.3 and `shells_and_slow` 100, and with no lamps par falls to 59.1 and `coil_and_soak` to 13.6. Par barely feels the dark (its Prism lights the merge), which is the map's lesson.
+
+**The merge is the splash test** (the Fractures' Shards and Motes, the clusters from both gates meeting), **the air lane is the air test** (the Rift Moths over the wall, W8 on), and **W9's tight flock is Stillness's**: frozen over the merge beside the watchtower's Prism, it dies whole.
 
 **Story delivery.**
 - *Briefing:* Ves'thara: "Tonight I fight beside the Old Soldier. Do not make me regret it, Thorn." · QUILL (threat intel): "Splitting shapes and flickering flyers. And then the sun goes down."
@@ -603,11 +643,61 @@ Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1�
   - w12 (full dark) Goldie: "Lights out in Dome 3. Pebble's asleep in the butterheads. Don't let anything wake her." · QUILL: "Knock knock. ...I've forgotten the rest. That's never happened before."
 - *Barks:* Ves'thara `tower_built` (the first Prism after W8): "Build the Spire there. I will hold the light." · Ves'thara `new_enemy` fracture: "It breaks. It does not end. Remember that." · Ves'thara `perfect_wave`: "Good. Again."
 - *Debrief (Ves'thara's mother):* Ves'thara: "Rig Nine bored into the oldest chamber. The Watch sang our dead there. My mother, Ishael, among them." · Ves'thara: "She is in it now. In the shapes we broke tonight. I have been fighting for her for three years." · Bricks: (silence, 2 s) "...I'm sorry." · Ves'thara: "Do not be sorry, Old Soldier. Be awake."
+  - *On a loss*, Bricks: "Wall's still standing. So are we. Back up there, Thorn."
 - *Base scene* `base_a2_loophole` (QUILL's partial confession, its own scene): QUILL: "There are things I am not permitted to tell you. I am permitted to tell you that. It's a loophole. I found it myself."
-- *Base vignette* `base_a2_whistle`: Bricks tries to teach Pebble to whistle. She can't. She hums instead: a low family hum, not the jingle.
+- *Base vignette* `base_a2_whistle`: Bricks tries to teach Pebble to whistle. She can't. She hums instead: a low family hum, not the jingle (the four-note motif, D137).
+  - Bricks: "Two fingers in, blow out. Like this, Pebble." · Pebble: "(pfffft)" · Bricks: "That's a raspberry. Some mouths aren't built for it."
+  - Pebble (`singing`): "Hm. Hm-hm. Hmmm." · Bricks: (silence, 2 s) "...That's not the jingle. What is that?" · Pebble: "(squeak) Home." · Bricks: "Yeah. Keep that one."
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m06/`](../../../src/content/dialogue/a2/a2_m06/scenes.ts)): the briefing is `a2_m06_brief`; the radio lines are `a2_m06_w02`, `_w04`, `_w06`, `_w09`, `_w12`, each as its wave's build phase opens (Goldie's in W12's, in full dark in every reference run: [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts)); the barks are map-scoped (`a2/a2_m06/barks.ts`; the Prism line waits until `a2_m06_w09` is seen, once a map); the debrief is `a2_m06_debrief`; the base scenes file as `a2_m06_base_loophole` and `a2_m06_base_whistle` and play in that order on the first base visit after A2M6 is won (`app/baseScenes.ts`), so Act II's base ends on Pebble's hum.
 - *Codex:* Fracture, Rift Moth, Prism Spire (Everglow's asset register: "Everglow thanks the donor, who does not exist."), the Long Night ("Too dark" in its photo frame; "Remember: a clean perimeter."). Once Sundown is won, **Ves'thara's margin notes** appear on earlier entries: each a `margin` version, "[In the margin, in Ves'thara's hand: …]", shown under the record and under QUILL's note where there is one ([style-guide §6.2](../style-guide.md#62-codex-entries)): the Brood Hauler ("They are carrying their children away from what you made."), the Hushed ("They do not answer because it took the answer. Sit with them anyway. Say their names."), the Glass Witch ("Not sad. Awake. I have been awake for three years."), lumenglass ("It hums because it was sung. It stops when no one sings it again."), and the Aelari ("We are known to you. The Watch wrote to you in 2355. No one wrote back."). The texts are in [`src/content/codex/act2.ts`](../../../src/content/codex/act2.ts).
 - *Memo after:* none from Sterling. The PA's shift-change jingle plays once over the dark, in minor.
 
-**Medals.** Victory · Perfect Core · **Before the Dark:** no leaks in the last three waves.
+**Medals.** Victory · Perfect Core · **Before the Dark:** no leaks in the last three waves (`{ leaks: { waves: [12, 14] }, lte: 0 }`, counted by the leaker's spawn wave).
 **Rewards.** Stardust 260 · Intel 3.
-**Par build.** Prism, Thumper (Cluster), Skyhook, Rivet. Thumper ×2 at the inner merge for Fracture splits; Skyhook ×2 under the air lane; Prism on the watchtower, holding the light over the merge for the late surges. Stillness on Rift Moth flocks. Target 68. **Alt builds:** Prism + Thumper + Zapcoil + Sprinkler (Cloudburst); Rivet + Skyhook + Zapcoil + Lookout. `noCounterBuilds`: **no-splash**, Prism + Rivet + Skyhook + Sprinkler, no Thumper or Zapcoil (must lose by W9 to Fracture children); **no-air**, Thumper (Cluster) + Sprinkler (no Cloudburst) + Lookout, nothing in reach of the air lane (must lose by W10).
+**Par build.** Prism, Thumper (Cluster), Skyhook, Rivet, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M5's, plus the Prism and Reinforced Core 2, so 22 integrity). Thumpers at the merge (7,6), in the yard's loop (5,8) and over the yard road's east end (10,10); the Prism on the watchtower, holding the light over the merge for the late surges; Skyhooks under the air lane in the yard (9,8) and on the wall walk (13,3); a Rivet in the lit pocket (7,4). Stillness on W9's Rift Moth flock as it crosses the merge (16 s in). Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m06/builds.ts`](../../../src/content/maps/a2_m06/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Thumper (7,6) at the merge, Prism (9,6) on the watchtower, Thumpers (5,8) in the yard and (10,10) |
+| W2 | The merge Thumper to T2 |
+| W3 | The (10,10) Thumper to T2 |
+| W4 | Skyhook (9,8) under the air lane |
+| W5 | Skyhook (13,3) on the wall walk; the Prism to T2 |
+| W6 | The yard Skyhook and the yard Thumper to T2 |
+| W7 | The wall Skyhook to T2; Rivet (7,4) in the pocket |
+| W9 | Stillness on the flock at the merge; the Prism and the merge Thumper to T3 |
+| W10 | Both Skyhooks to T3; the Rivet to T2 |
+| W11 | Cluster Thumper at the merge |
+| W12 | The (10,10) Thumper to T3 |
+
+Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 131, 30, 17, 285 (W1 after the setup, W2–W14), 456 unspent at the end, so calling waves early buys it nothing. **Par's margin is all in W14:** it holds every wave whole until the last, where five of the biggest flock's 17 Rift Moths cross the wall in full dark with everything else, so it wins at **17/22 (77.3%)** on every seed (campaign.md §7's target 68, a step and a half above it; one more Moth in W14's flock gives 16/22, 72.7, see the shifts below) and never earns Before the Dark.
+
+**No-counter builds** (`noCounterBuilds`, by category; `noCounterLoseByWave` 10; each also loses with the full catalog):
+- **no-splash:** Prism, Rivet, Skyhook, Sprinkler (no Thumper or Zapcoil), par's yard with Rivets where its Thumpers stand: W6–W7's clusters drown it; it loses in W7 (W13 with the full catalog).
+- **no-air:** Thumper (Cluster), Sprinkler (no Cloudburst), Lookout; nothing reaches the air lane: the Rift Moths fly over it from W5; it loses in W9 (W10 with the full catalog).
+
+**Alt builds** (each shares at most 2 towers with par and must win with ≥ 20%; the Rift Moths make the Skyhook every alt's air answer: without one, neither the planned Cloudburst-and-Zapcoil air nor a second Prism kept W8–W9's Moths off the domes):
+- `coil_and_soak`, Zapcoil + Sprinkler + Skyhook + Thumper: a Zapcoil on the watchtower beside a Sprinkler at the merge (Conductive), par's Thumpers and Skyhooks, Overload from W11. **50.**
+- `shells_and_slow`, Thumper + Sprinkler + Skyhook: four Thumpers, a Sprinkler slowing the merge, three Skyhooks. **45.5.**
+- **The Seeker Swarm alt** (Skyhook (Seeker Swarm) + Thumper + Zapcoil + Sprinkler): three Thumpers, the watchtower Zapcoil with its Sprinkler, three Skyhooks, the yard's a Seeker Swarm from W7. The reference never owns Skyhook specs, so it isn't an `altBuilds` entry: [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts) runs it on the reference profile plus the Skyhook's specs ([D137](../../decisions.md#d137--2026-11-10--m5-cut-act-ii-part-two-a2m4a2m6); T501c). **31.8.**
+- **The Sunlance/Resonance probe** (par with the Prism a Sunlance from W11 and a Zapcoil beside the watchtower for the Rivet, Resonance): **86.4**, two integrity over par and still leaking in W14. It doesn't trivialize the late surges: the Hollow carry no shields, so Resonance adds nothing, and a Sunlance spends its ×10 ramp on one target while the surges come as crowds. On the reference profile plus the Prism's specs, reported in [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts), not banded.
+
+**Harness runs** (every seed; margin, then integrity lost per wave):
+
+| Run | Result | Lost |
+|---|---|---|
+| par | wins at **77.3** (band 65–85; 17/22) | 5 in W14 |
+| par without Stillness | 59.1 | 4 in W9, 5 in W14 |
+| `alwaysCallEarly` | 77.3 | 5 in W14 |
+| no-splash | loses in W7 | |
+| no-splash, full catalog | loses in W13 | |
+| no-air | loses in W9 | |
+| no-air, full catalog | loses in W10 | |
+| Story | 100, Victory, Perfect Core, and Before the Dark | |
+| `coil_and_soak` | 50 | 3 in W7, 2 in W8, 4 in W9, 2 in W13 |
+| `shells_and_slow` | 45.5 | 2 each in W8, W10, W11, W13; 4 in W14 |
+| the Seeker Swarm alt | 31.8 | |
+| the Sunlance/Resonance probe | 86.4 | 3 in W14 |
+| do-nothing | loses at W2 | |
+
+Par's shift runs about **9.1 min at 1×** (Story 11.2), plus the radio and the debrief. **Goldie's line** ([`src/balance/a2m6.test.ts`](../../../src/balance/a2m6.test.ts)): in par, both alts, `alwaysCallEarly`, the Seeker Swarm alt, the Sunlance probe, and Story, W12's build phase opens at full darkness (1.0), and W11's still below it. Robustness: with W9's and W14's Rift Moth flocks, or W6's, W7's, W11's and W14's Mote clusters, shifted ±0.2 s, every harness check passes and par stays in the band; the flocks make W14 noisy (par moves between 15 and 18 of 22 under such shifts), which is why par sits a step above the target rather than on it.

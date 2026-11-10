@@ -24,6 +24,8 @@ export interface EnemyRenderState {
   readonly bracket: boolean;
   /** A fleeing runner glancing back. */
   readonly glance: boolean;
+  /** A flyer drawn faint over a spot kept clear (the armed rock; T501i). */
+  readonly overClear: boolean;
 }
 
 /** The light as drawn (LightingView `look`, D135). */
@@ -54,7 +56,7 @@ export interface RenderState {
   readonly allies: readonly AllyRenderState[];
   /**
    * ShieldView's counts since the battle began, the pulse tells up now, and the shield-aura rings
-   * up now (ShieldAuraView, T502).
+   * up now and the units glinting as the aura refills them (ShieldAuraView, T502, T530a).
    */
   readonly shields: {
     readonly ripples: number;
@@ -62,19 +64,35 @@ export interface RenderState {
     readonly pulseRings: number;
     readonly tells: number;
     readonly auras: number;
+    readonly glints: number;
   };
-  /** Wards kneeling now (T506, WardView). */
+  /** Wards kneeling now (T506, WardView), and the first one's body alpha (its fade-in; T530a). */
   readonly wards: number;
+  readonly wardAlpha: number;
   /** BlinkView's tells up now and afterimages since the battle began. */
   readonly blinks: { readonly tells: number; readonly afterimages: number };
   /** PhaseView's rings up now (telling, Phased) and units seen phasing in since the battle began. */
-  readonly phases: { readonly tells: number; readonly phased: number; readonly phasedIn: number };
+  readonly phases: {
+    readonly tells: number;
+    readonly phased: number;
+    readonly phasedIn: number;
+    /** Units seen coming back solid (their white pop; T530a). */
+    readonly phasedOut: number;
+  };
   /** Refugees drawn now (on the field), and those frozen in a hush (T305c, RefugeeView). */
   readonly refugees: { readonly shown: number; readonly held: number };
   /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
   readonly harpoon: { readonly pins: number; readonly skewered: number };
-  /** Beams drawn now, and the brightest ramp step among them (−1: none; T504, BeamView). */
-  readonly beams: { readonly drawn: number; readonly topStep: number };
+  /**
+   * Beams drawn now, the brightest ramp step among them (−1: none; T504), the knots burning at
+   * their ends now, and the threads thrown since the battle began (T530a; BeamView).
+   */
+  readonly beams: {
+    readonly drawn: number;
+    readonly topStep: number;
+    readonly knots: number;
+    readonly throws: number;
+  };
   /**
    * Unnerved squiggles up now, and Echo Spike bursts and Stillness casts seen since the battle
    * began (T507, MindView).

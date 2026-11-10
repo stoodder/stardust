@@ -9,6 +9,7 @@ import {
   toggleSpareRunnersSelected,
   upgradeSelected,
 } from '../../app/commands.ts';
+import { rampNow } from '../../app/hudText.ts';
 import { PRIORITY_LABEL } from './words.ts';
 import { hud, type SelectedTowerView, type SpecOptionView } from '../state.ts';
 import { Icon } from './Icon.tsx';
@@ -58,6 +59,25 @@ function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; 
 }
 
 /**
+ * A ramping beam's live ramp (T531; towers.md § Prism Spire): "Ramp ×2.4" and a bar that fills
+ * from ×1 to the cap while a beam holds its target (`hud.beamRamp`: the strongest lit beam), and
+ * empties when it retargets. Its own signal, so the panel isn't rebuilt as the ramp grows.
+ */
+function RampRow({ cap }: { cap: number }) {
+  const ramp = hud.beamRamp.value ?? 1;
+  const fill = Math.max(0, Math.min(1, (ramp - 1) / (cap - 1)));
+  return (
+    <p class="hud-ramp" data-testid="beam-ramp" aria-label={`Ramp ${rampNow(ramp)} of ×${cap}`}>
+      <span class="hud-label">Ramp</span>
+      <span class="hud-ramp-bar" aria-hidden="true">
+        <span class="hud-ramp-fill" style={{ width: `${Math.round(fill * 100)}%` }} />
+      </span>
+      <span class={fill >= 1 ? 'num accent' : 'num'}>{rampNow(ramp)}</span>
+    </p>
+  );
+}
+
+/**
  * The selected tower's panel, beside the tower: its stats after every bonus and where the bonuses
  * come from, then upgrade (or, at tier 3, the tier-4 choice), sell, and targeting. Its height
  * follows its rows (layout.ts `towerPanelHeight`), so it's placed before it renders.
@@ -65,7 +85,11 @@ function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; 
 export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
   const h = towerPanelHeight(t);
-  const corners = hudCorners(hud.objectives.value.length, hud.asset.value !== null);
+  const corners = hudCorners(
+    hud.objectives.value.length,
+    hud.asset.value !== null,
+    hud.escort.value !== null,
+  );
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;
@@ -94,9 +118,19 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
           {l}
         </p>
       ))}
+      {t.rampCap !== null && <RampRow cap={t.rampCap} />}
       {t.bonuses.map((b, i) => (
         <p key={`b${i}`} class="hud-bonus-line">
           {b}
+        </p>
+      ))}
+      {t.dark.map((l, i) => (
+        <p
+          key={`k${i}`}
+          class={t.darkLit ? 'hud-dark-line lit' : 'hud-dark-line'}
+          data-testid="dark-line"
+        >
+          {l}
         </p>
       ))}
       {t.deltaLines.map((l, i) => (

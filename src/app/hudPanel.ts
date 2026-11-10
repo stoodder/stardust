@@ -15,17 +15,22 @@ import {
   type SimConfig,
   type SpecChoice,
   type PurchaseState,
+  type TierStatDelta,
   type Tower,
   type TowerBonuses,
+  type TowerStatLine,
 } from '../sim/index.ts';
 import { LIST_PRICE_STATE, priceOf } from './hudViews.ts';
 import type { SelectedTowerView, SpecChoiceView, SpecOptionView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import { CARD_CHARS, PANEL_CHARS, wrapParts } from '../ui/hud/layout.ts';
 import {
+  beamDps,
   bonusTexts,
+  darkTexts,
   deltaText,
   displayName,
+  rampText,
   specDescription,
   specLockText,
   statLineText,
@@ -75,6 +80,49 @@ export function specChoice(
   };
 }
 
+/** A beam's damage-per-second change from an upgrade (T531): the tier's dps after, less now. */
+function beamDpsDelta(
+  now: Pick<TowerStatLine, 'damage' | 'ratePerSec'>,
+  d: Pick<TierStatDelta, 'damage' | 'ratePerSec'>,
+  tickSec: number,
+): number {
+  const after = { damage: now.damage + d.damage, ratePerSec: now.ratePerSec + d.ratePerSec };
+  return beamDps(after, tickSec) - beamDps(now, tickSec);
+}
+
+/** What an upgrade does to a beam's ramp, for the "Next:" line ("ramp ×5 in 8 s"), if anything. */
+function rampDelta(
+  now: { readonly rampCap: number; readonly rampPctPerTick: number },
+  next: DeepReadonly<CompiledTowerDef['tiers'][number]['attack']>,
+): string[] {
+  if (next === null || next.kind !== 'beam') return [];
+  if (next.rampCap === now.rampCap && next.rampPctPerTick === now.rampPctPerTick) return [];
+  return next.rampCap > 1 ? [rampText(next.rampCap, next.rampPctPerTick)] : [];
+}
+
+/**
+ * The selected beam tower's live ramp for the panel's ramp row (T531): its strongest lit beam's
+ * multiplier (Refractor's three each ramp on their own), floored to a tenth so the signal moves
+ * about five times a second, not every frame; 1 with no beam on a target, or null when `uid`
+ * isn't a standing beam tower that ramps.
+ */
+export function selectedRamp(sim: Sim<IdSpace>, uid: number): number | null {
+  if (uid === 0) return null;
+  const pool = sim.state.towers;
+  for (let i = 0; i < pool.used; i++) {
+    const t = pool.items[i]!; // i < used ≤ items.length
+    if (!t.alive || t.uid !== uid) continue;
+    const a = t.tierDef?.attack ?? null;
+    if (a === null || a.kind !== 'beam' || a.rampCap <= 1) return null;
+    let r = 1;
+    if (t.targetUid !== 0 && t.beamRamp > r) r = t.beamRamp;
+    if (t.beam2Uid !== 0 && t.beam2Ramp > r) r = t.beam2Ramp;
+    if (t.beam3Uid !== 0 && t.beam3Ramp > r) r = t.beam3Ramp;
+    return Math.floor(r * 10 + 1e-6) / 10;
+  }
+  return null;
+}
+
 /** The last selected-panel key's parts and string (selectedKey reuses them while unchanged). */
 const keyParts: (number | string | boolean | null)[] = [];
 const keyNext: (number | string | boolean | null)[] = [];
@@ -92,6 +140,7 @@ function selectedKey(
   y: number,
   sale: PurchaseState,
   tile: string,
+  dark: number,
 ): string {
   // Credits stay out: the component reads them itself (an unaffordable button dims).
   const k = keyNext;
@@ -119,6 +168,10 @@ function selectedKey(
   k[19] = sale.discountCharges;
   k[20] = sale.discountPct;
   k[21] = tile;
+  // Sundown (T505, T531): the range the dark takes (it eases over 4 s at a wave start) and whether
+  // the tower stands in the light while the map is dark.
+  k[22] = t.darkRangePct;
+  k[23] = dark > 0 && t.lit;
   let same = keyParts.length === k.length;
   for (let i = 0; same && i < k.length; i++) same = keyParts[i] === k[i];
   if (same) return keyText;
@@ -163,13 +216,20 @@ export function selectedView(
   const sell = sellValueInto(t, state.tick, state.economy.sellRefundPct, panelSell);
   // The live tile: a cleared wreck reads as what it uncovered (D076, D082).
   const tile = liveTileAt(map, state.wreckage, t.row * map.cols + t.col);
-  const key = selectedKey(t, sell, p.x, p.y, state, tile);
+  const key = selectedKey(t, sell, p.x, p.y, state, tile, state.dark);
   if (prev !== null && prev.key === key) return prev;
   const mods = config.modifiers;
   // A specialized tower (tier 4) reads its spec's stats.
   const stats = towerStats(t.def, t.tier, t, mods, t.spec);
-  const upgradeDelta = deltaText(stats.next);
+  const attack = t.tierDef?.attack ?? null;
+  const beam = attack !== null && attack.kind === 'beam' ? attack : null;
+  const upgradeDelta = deltaText(
+    stats.next,
+    beam === null || stats.next === null ? null : beamDpsDelta(stats, stats.next, beam.beamTickSec),
+    beam === null ? [] : rampDelta(beam, t.def.tiers[t.tier]?.attack ?? null),
+  );
   const statLine = statLineText(stats, t.tierDef);
+  const dark = darkTexts(t.darkRangePct, t.lit, state.dark);
   const bonusList = bonusTexts(
     tile,
     t,
@@ -204,6 +264,9 @@ export function selectedView(
     stats: statLine,
     statsLines: wrapParts(statLine.split(' · '), PANEL_CHARS),
     bonuses: bonusList.flatMap((b) => wrapParts([silkText(b)], PANEL_CHARS)),
+    dark: dark.flatMap((d) => wrapParts([d], PANEL_CHARS)),
+    darkLit: t.darkRangePct === 0 && dark.length > 0,
+    rampCap: beam !== null && beam.rampCap > 1 ? beam.rampCap : null,
     upgradeDelta,
     deltaLines: upgradeDelta === null ? [] : wrapParts(nextParts(upgradeDelta), PANEL_CHARS),
     specs: specChoice(

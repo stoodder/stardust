@@ -9,6 +9,7 @@ import {
   auraRefilling,
   GLINT_ARM,
   GLINT_HEART,
+  GLINT_RIM,
   GLINT_SIZE,
   glintFrame,
   glintImage,
@@ -26,13 +27,18 @@ describe('the aura glint (T530a)', () => {
   it('is a white-hearted star in the aura’s blue, large and small', () => {
     const heart = rgbOf(GLINT_HEART);
     const arm = rgbOf(GLINT_ARM);
+    const rim = rgbOf(GLINT_RIM);
     for (const f of [0, 1] as const) {
       const img = glintImage(f);
       expect([img.w, img.h]).toEqual([GLINT_SIZE, GLINT_SIZE]);
-      const c = (2 * GLINT_SIZE + 2) * 4; // the centre pixel
-      expect([img.data[c], img.data[c + 1], img.data[c + 2]]).toEqual([heart.r, heart.g, heart.b]);
-      const up = (1 * GLINT_SIZE + 2) * 4;
-      expect([img.data[up], img.data[up + 1], img.data[up + 2]]).toEqual([arm.r, arm.g, arm.b]);
+      const at = (x: number, y: number): number[] => {
+        const i = (y * GLINT_SIZE + x) * 4;
+        return [img.data[i]!, img.data[i + 1]!, img.data[i + 2]!, img.data[i + 3]!];
+      };
+      expect(at(3, 3)).toEqual([heart.r, heart.g, heart.b, 255]); // the heart
+      expect(at(3, 2)).toEqual([arm.r, arm.g, arm.b, 255]); // an arm
+      expect(at(2, 2)).toEqual([rim.r, rim.g, rim.b, 255]); // the rim round it
+      expect(at(0, 0)[3]).toBe(0);
     }
     expect(lit(0)).toBeGreaterThan(lit(1));
   });

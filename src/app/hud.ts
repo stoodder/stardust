@@ -22,7 +22,7 @@ import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
 import { bindEscortMeter } from './hudEscort.ts';
-import { selectedView } from './hudPanel.ts';
+import { selectedRamp, selectedView } from './hudPanel.ts';
 import {
   displayName,
   holdFireText,
@@ -468,6 +468,8 @@ export function bindHud(
       specLock,
       saveInfo.spareRunnersOpen,
     );
+    // The selected beam's live ramp (T531): a tenth at a time, so it re-renders ~5 times a second.
+    hud.beamRamp.value = selectedRamp(sim, interaction.selectedTower);
     const m = s.medals;
     const perfectCore = resumed ? 'forfeited' : m.perfectCore;
     const challenge = resumed ? 'forfeited' : m.challenge;
@@ -732,6 +734,7 @@ export function bindHud(
     hud.upgradeHint.value = false;
     hud.selectedTower.value = 0;
     hud.selected.value = null;
+    hud.beamRamp.value = null;
     hud.towerPoints.value = [];
     hud.cursor.value = null;
     hud.armedTower.value = null;

@@ -43,16 +43,21 @@ export const HUD_CORNERS: readonly Rect[] = [
 /** What a Protect map's asset meter row adds to it (a 16 px meter row and the grid gap; T305a). */
 const ASSET_ROW_H = 20;
 
+/** What an Escort's meter adds over the core's: its "of N" and lost rows (8 px and a 2 px gap each; T531). */
+export const ESCORT_EXTRA_H = 20;
+
 /**
- * The corner blocks with the status panel grown by `objectives` tracker rows (T312c) and, on a
- * Protect map, the asset meter's row (T431).
+ * The corner blocks with the status panel grown by `objectives` tracker rows (T312c), on a
+ * Protect map the asset meter's row (T431), and while the map is an Escort its meter's two extra
+ * rows (T531).
  */
-export function hudCorners(objectives: number, asset = false): readonly Rect[] {
-  if (objectives <= 0 && !asset) return HUD_CORNERS;
+export function hudCorners(objectives: number, asset = false, escort = false): readonly Rect[] {
+  if (objectives <= 0 && !asset && !escort) return HUD_CORNERS;
   const [status, ...rest] = HUD_CORNERS;
   if (status === undefined) return HUD_CORNERS;
   const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
-  return [{ ...status, h: status.h + rows + (asset ? ASSET_ROW_H : 0) }, ...rest];
+  const extra = (asset ? ASSET_ROW_H : 0) + (escort ? ESCORT_EXTRA_H : 0);
+  return [{ ...status, h: status.h + rows + extra }, ...rest];
 }
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;
@@ -221,16 +226,19 @@ export function specCardHeight(descLines: number): number {
 
 /**
  * The tower panel's height for a view (its rows in hud/TowerPanel.tsx's order): the header,
- * the stats lines, the bonus lines, the "Next:" lines, then either the tier-4 choice (a heading,
+ * the stats lines, a beam's ramp row, the bonus lines, Sundown's line, the "Next:" lines, then either the tier-4 choice (a heading,
  * two cards, and the lock note) or the Upgrade button, and the Sell, Target, and Hold fire
  * buttons, plus Spare runners once it shows.
  */
 export function towerPanelHeight(
   t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'> &
-    Partial<Pick<SelectedTowerView, 'spareRunners'>>,
+    Partial<Pick<SelectedTowerView, 'spareRunners' | 'dark' | 'rampCap'>>,
 ): number {
   const rows: number[] = [PANEL_HEAD_H];
-  const lines = t.statsLines.length + t.bonuses.length + t.deltaLines.length;
+  // A ramping beam's live ramp row (T531) sits under the stats; Sundown's line under the bonuses.
+  const ramp = t.rampCap !== undefined && t.rampCap !== null ? 1 : 0;
+  const lines =
+    t.statsLines.length + ramp + t.bonuses.length + (t.dark?.length ?? 0) + t.deltaLines.length;
   for (let i = 0; i < lines; i++) rows.push(LINE_H);
   if (t.specs === null) rows.push(BUTTON_H);
   else {

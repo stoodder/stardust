@@ -57,12 +57,12 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [motes('west', 12, OPEN), motes('east', 12, OPEN + 4)],
   },
-  // W3 · Fractures ×2 (Hollow splitting: splash at the death point)
+  // W3 · Fractures ×2, one down each road (Hollow splitting: splash at the death point)
   {
     countdownSec: COUNTDOWN,
     groups: [fractures('west', 1, OPEN), fractures('east', 1, OPEN + 3)],
   },
-  // W4 · Mote clusters
+  // W4 · Mote clusters, both roads
   {
     countdownSec: COUNTDOWN,
     groups: [motes('west', 20, OPEN, PACKED), motes('east', 20, OPEN + 10, PACKED)],
@@ -73,27 +73,27 @@ export const waves = defineWaves([
     teach: true,
     groups: [moths(3, OPEN, 2)],
   },
-  // W6 · Fractures + Motes [X]
+  // W6 · a Fracture and a big Mote cluster [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [fractures('west', 1, OPEN, 3), motes('east', 40, OPEN + 6, PACKED)],
+    groups: [fractures('west', 1, OPEN), motes('east', 40, OPEN + 6, PACKED)],
   },
-  // W7 · both roads
+  // W7 · both roads: a Fracture down each, then clusters
   {
     countdownSec: COUNTDOWN,
     groups: [
-      fractures('west', 1, OPEN, 3),
-      fractures('east', 1, OPEN + 1.5, 3),
+      fractures('west', 1, OPEN),
+      fractures('east', 1, OPEN + 1.5),
       motes('west', 18, OPEN + 12, PACKED),
       motes('east', 18, OPEN + 14, PACKED),
     ],
   },
-  // W8 · Rift Moths + Fractures
+  // W8 · Fractures down the east road, Rift Moths over the wall
   {
     countdownSec: COUNTDOWN,
     groups: [fractures('east', 3, OPEN, 2.5), moths(5, OPEN + 6, 1.2)],
   },
-  // W9 · a Rift Moth flock [X]
+  // W9 · a tight Rift Moth flock [X] (Ves'thara's Stillness), a cluster behind it
   {
     countdownSec: COUNTDOWN,
     groups: [moths(16, OPEN, 0.25), motes('west', 30, OPEN + 8, PACKED)],
@@ -102,7 +102,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      fractures('west', 1, OPEN, 2.5),
+      fractures('west', 1, OPEN),
       fractures('east', 2, OPEN + 1, 2.5),
       moths(5, OPEN + 8, 1),
       motes('west', 10, OPEN + 14, PACKED),
@@ -128,18 +128,18 @@ export const waves = defineWaves([
       motes('east', 24, OPEN + 16, PACKED),
     ],
   },
-  // W13 · both roads
+  // W13 · both roads, a Rift Moth flock over them
   {
     countdownSec: COUNTDOWN,
     groups: [
       fractures('west', 2, OPEN, 3),
-      fractures('east', 1, OPEN + 1.5, 3),
+      fractures('east', 1, OPEN + 1.5),
       moths(12, OPEN + 6, 0.5),
       motes('west', 20, OPEN + 12, PACKED),
       motes('east', 20, OPEN + 14, PACKED),
     ],
   },
-  // W14 · everything
+  // W14 · everything, and the biggest flock
   {
     countdownSec: COUNTDOWN,
     groups: [

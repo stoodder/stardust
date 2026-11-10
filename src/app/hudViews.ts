@@ -254,11 +254,34 @@ const MEDAL_TEXT = {
 } as const;
 
 /**
+ * Perfect Core's one-liner on an Escort (maps.md § 5.2, T531): no refugee lost; on a map that turns
+ * Escort mid-map (A2M5's pivot), Perfect Core's own rule until then.
+ */
+export const ESCORT_PERFECT = {
+  escort: 'Win with no refugee lost.',
+  pivot: 'No leaks, then no refugee lost.',
+} as const;
+
+/** Perfect Core's one-liner for a map: its Escort's, or the core's. */
+function perfectText(
+  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
+): { readonly name: string; readonly description: string } {
+  const core = MEDAL_TEXT.perfectCore;
+  if (map.objective === 'escort') return { name: core.name, description: ESCORT_PERFECT.escort };
+  if (map.objective === 'defend' && (map.escort ?? null) !== null) {
+    return { name: core.name, description: ESCORT_PERFECT.pivot };
+  }
+  return core;
+}
+
+/**
  * The map's medals in display order (Victory, Perfect Core, the Challenge if any) with this run's
  * standing and whether the save already holds each (`held`: medal ids on file for the map).
+ * Perfect Core reads as the Escort's on an Escort map (`perfectText`).
  */
 export function medalViews(
-  map: Pick<CompiledMapDef<IdSpace>, 'medals'>,
+  map: Pick<CompiledMapDef<IdSpace>, 'medals'> &
+    Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
   status: Readonly<Record<MedalKind, MedalStatus>>,
   held: readonly string[],
 ): MedalView[] {
@@ -272,7 +295,9 @@ export function medalViews(
             name: silkText(map.medals?.challenge.name ?? ''),
             description: silkText(map.medals?.challenge.description ?? ''),
           }
-        : MEDAL_TEXT[kind];
+        : kind === 'perfectCore'
+          ? perfectText(map)
+          : MEDAL_TEXT[kind];
     out.push({ kind, id, ...text, held: held.includes(id), status: status[kind] });
   }
   return out;

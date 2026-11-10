@@ -47,9 +47,14 @@ export function displayName(id: string): string {
 
 /**
  * A threat's name where it isn't its id in words (campaign.md § 4.8's threat column): the Motes'
- * `clustered` trait is "Hollow clusters".
+ * `clustered` trait is "Hollow clusters"; the auras read in sentence case ("Shield aura", T531).
  */
-const THREAT_LABELS: Readonly<Record<string, string>> = { clustered: 'Hollow clusters' };
+const THREAT_LABELS: Readonly<Record<string, string>> = {
+  clustered: 'Hollow clusters',
+  shield_aura: 'Shield aura',
+  healer_aura: 'Healer aura',
+  haste_aura: 'Haste aura',
+};
 
 /** A threat trait or tell as the briefing's strip names it: "Armored", "Hollow clusters". */
 export function threatLabel(id: string): string {
@@ -85,13 +90,29 @@ function statNum(n: number): string {
   return String(Math.round(n * 100) / 100);
 }
 
-/** A tower's stats as the tower panel shows them (sim `towerStats`), e.g. "8 dmg · 2/s · range 3". */
+/**
+ * A beam's damage per second as it lands (T531): the tier's `damage` is per second at the authored
+ * tick (`beamTickSec`), and the rate counts beam ticks, so a rate bonus (more ticks, each the same
+ * size) raises it: damage × ticks/s × beamTickSec. Never damage × rate (that reads 4× too high).
+ */
+export function beamDps(s: Pick<TowerStatLine, 'damage' | 'ratePerSec'>, tickSec: number): number {
+  return s.damage * s.ratePerSec * tickSec;
+}
+
+/**
+ * A tower's stats as the tower panel shows them (sim `towerStats`), e.g. "8 dmg · 2/s · range 3";
+ * a beam's as its damage per second ("12 dmg/s · range 3 · ramp ×4 in 6 s").
+ */
 export function statLineText(
   s: TowerStatLine,
   tier: DeepReadonly<CompiledTier> | null = null,
 ): string {
   if (s.kind === null) return supportText(tier);
-  const parts = [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
+  const a = tier?.attack ?? null;
+  const parts =
+    a !== null && a.kind === 'beam'
+      ? [`${statNum(beamDps(s, a.beamTickSec))} dmg/s`]
+      : [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
   parts.push(`range ${statNum(s.rangeTiles)}`);
   if (s.splashTiles > 0) parts.push(`splash ${statNum(s.splashTiles)}`);
   if (tier !== null) parts.push(...traitTexts(tier));
@@ -127,12 +148,21 @@ function supportText(tier: DeepReadonly<CompiledTier> | null): string {
  * What's special about a tier's attack, beyond its numbers (D059: the panel's stat line and the
  * spec cards say the same): "+4 bomblets", "ignores armor", "1 s spin-up", "2 Corroded"; and
  * T407b's, so the Skyhook's and Zapcoil's spec cards read apart from tier 3: "chains to 8",
- * "4 homing", "4 s charge", "50% splash 1", "pierce 4".
+ * "4 homing", "4 s charge", "50% splash 1", "pierce 4"; and M5's (T531), so the Prism's,
+ * Mindspike's and Lantern's do too: "3 beams", "ramp ×4 in 6 s", "50% echo 1.2", "Unnerves
+ * 1.5 s", "Mark +35%", "no evading", "detect 3.5", "Marks all in 3.5".
  */
-function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
+export function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
   const parts: string[] = [];
   const a = tier.attack;
   if (a !== null) {
+    if (a.kind === 'beam') {
+      if (a.beams > 1) parts.push(`${a.beams} beams`);
+      if (a.rampCap > 1 && a.rampPctPerTick > 0) parts.push(rampText(a.rampCap, a.rampPctPerTick));
+    }
+    if (a.kind === 'hitscan' && a.echo !== null) {
+      parts.push(`${statNum(Math.round(a.echo.pct * 100))}% echo ${statNum(a.echo.radiusTiles)}`);
+    }
     if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
     if (a.kind === 'chain') parts.push(`chains to ${a.jumps + 1}`);
     if (a.kind === 'projectile' && a.volley > 1) {
@@ -150,8 +180,32 @@ function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
   }
   for (const e of tier.effects) {
     if (e.status === 'corroded') parts.push(`${e.stacks} Corroded`);
+    if (e.status === 'unnerved') parts.push(`Unnerves ${statNum(e.durationTicks / TICK_HZ)} s`);
+    if (e.status === 'marked') {
+      parts.push(`Mark ${pctText(e.pct)}`);
+      if (e.noEvade) parts.push('no evading');
+    }
+  }
+  // An attacking tier that also detects (the Lantern): its sight, then an area Mark (All-Seeing).
+  if (a !== null && tier.detect !== null) parts.push(`detect ${statNum(tier.detect.radiusTiles)}`);
+  if (tier.markArea !== null) {
+    parts.push(`Marks all in ${statNum(tier.markArea.radiusTiles)} ${pctText(tier.markArea.pct)}`);
   }
   return parts;
+}
+
+/**
+ * A beam's ramp (T531; sim/attacks/beam.ts): its cap and how long a held target takes to reach it,
+ * e.g. "ramp ×4 in 6 s" (linear: + `rampPctPerTick` a tick from ×1).
+ */
+export function rampText(cap: number, pctPerTick: number): string {
+  const sec = (cap - 1) / (pctPerTick * TICK_HZ);
+  return `ramp ×${statNum(cap)} in ${statNum(Math.round(sec * 10) / 10)} s`;
+}
+
+/** A live ramp multiplier as the panel's ramp row shows it: "×2.4". */
+export function rampNow(ramp: number): string {
+  return `×${(Math.floor(ramp * 10) / 10).toFixed(1)}`;
 }
 
 /** A signed stat change: "+3", "-0.5". */
@@ -159,15 +213,28 @@ function signed(n: number): string {
   return n > 0 ? `+${statNum(n)}` : statNum(n);
 }
 
-/** What the next upgrade changes, e.g. "+3 dmg · +0.5 range", or null at the top (or no change). */
-export function deltaText(d: TierStatDelta | null): string | null {
+/**
+ * What the next upgrade changes, e.g. "+3 dmg · +0.5 range", or null at the top (or no change).
+ * For a beam (T531) pass its damage-per-second change (`beamDpsDelta`: it reads "+4 dmg/s", in
+ * place of the damage and rate), and `extra` adds what the stats don't carry ("ramp ×5").
+ */
+export function deltaText(
+  d: TierStatDelta | null,
+  beamDpsDelta: number | null = null,
+  extra: readonly string[] = [],
+): string | null {
   if (d === null) return null;
   const parts: string[] = [];
-  if (d.damage !== 0) parts.push(`${signed(d.damage)} dmg`);
-  if (d.ratePerSec !== 0) parts.push(`${signed(d.ratePerSec)}/s`);
+  if (beamDpsDelta !== null) {
+    if (beamDpsDelta !== 0) parts.push(`${signed(beamDpsDelta)} dmg/s`);
+  } else {
+    if (d.damage !== 0) parts.push(`${signed(d.damage)} dmg`);
+    if (d.ratePerSec !== 0) parts.push(`${signed(d.ratePerSec)}/s`);
+  }
   if (d.rangeTiles !== 0) parts.push(`${signed(d.rangeTiles)} range`);
   if (d.splashTiles !== 0) parts.push(`${signed(d.splashTiles)} splash`);
   if (d.armorPierce !== 0) parts.push(`${signed(d.armorPierce)} pierce`);
+  parts.push(...extra);
   return parts.length === 0 ? null : parts.join(' · ');
 }
 
@@ -267,6 +334,16 @@ export function bonusTexts(
     for (const part of parts) out.push(`${part} (${link.name})`);
   }
   return out;
+}
+
+/**
+ * The darkness's line in the tower panel (Sundown, T505; T531), among the bonus lines: an unlit
+ * tower's lost range ("-15% range (dark)": the stat line's range already has it), or, while the
+ * map is dark at all, a lit tower's "Lit: full range". Nothing on a map in daylight.
+ */
+export function darkTexts(darkRangePct: number, lit: boolean, dark: number): string[] {
+  if (darkRangePct > 0) return [`-${statNum(Math.round(darkRangePct * 1000) / 10)}% range (dark)`];
+  return dark > 0 && lit ? ['Lit: full range'] : [];
 }
 
 /**

@@ -158,6 +158,15 @@ export interface SelectedTowerView {
    * ground)". Empty with none.
    */
   readonly bonuses: readonly string[];
+  /**
+   * Sundown's line (T531; app/hudText.ts `darkTexts`), wrapped: "-15% range (dark)" for an unlit
+   * tower, "Lit: full range" for a lit one while the map is dark; empty in daylight.
+   */
+  readonly dark: readonly string[];
+  /** Sundown's line is the lit one (gold), not the range lost (violet). */
+  readonly darkLit: boolean;
+  /** A ramping beam's cap (the panel's ramp row: ×1 up to this; `hud.beamRamp` is now), or null. */
+  readonly rampCap: number | null;
   /** What the next upgrade adds, e.g. "+3 dmg", or null at the top tier. */
   readonly upgradeDelta: string | null;
   /** "Next: …" wrapped to the panel's width (empty at the top tier). */
@@ -315,6 +324,20 @@ export interface EscortMeterView {
   readonly total: number;
   readonly lost: number;
   readonly maxLost: number | null;
+  /**
+   * The lost row's pips (T531), one per loss the map allows (`maxLost`), true once lost; null
+   * when there's no `maxLost` or too many to draw (the row then reads "3/20" in words).
+   */
+  readonly pips: readonly boolean[] | null;
+  /** Few losses left before defeat (app/dialogue.ts `escortLow`): the lost row's alarm. */
+  readonly low: boolean;
+}
+
+/** The meter's relabel moment (T531): the label it had before an objective change. */
+export interface MeterRelabel {
+  /** Changes with every relabel, so the transition restarts. */
+  readonly id: number;
+  readonly from: string;
 }
 
 /**
@@ -358,6 +381,12 @@ export const hud = {
   assetHit: signal<LeakFlash | null>(null),
   /** An Escort's meter (app/hudEscort.ts) while the map is one, else null (T305c). */
   escort: signal<EscortMeterView | null>(null),
+  /** The latest refugee lost, for the Escort meter's flash, or null (T531). */
+  escortLost: signal<LeakFlash | null>(null),
+  /** The meter's relabel as the map turns Escort mid-map (A2M5's pivot), or null (T531). */
+  relabel: signal<MeterRelabel | null>(null),
+  /** The selected beam tower's live ramp (app/hudPanel.ts `selectedRamp`), or null (T531). */
+  beamRamp: signal<number | null>(null),
   /** The last wave started (0 during the setup phase). */
   wave: signal(0),
   waveCount: signal(0),

@@ -110,18 +110,34 @@ function Counter({ counter, shown }: { counter: ResultsCounter; shown: number })
   );
 }
 
-/** The debrief (D028): each line under its speaker's name plate. */
+/**
+ * The debrief (D028): each line under its speaker's name plate. A silence (a line with no text,
+ * style-guide § 5.6: A2M5's unanswered "Then where?") has no name plate on the card: it holds as a
+ * quiet "…" in its speaker's colour (T531).
+ */
 function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
   return (
     <ul class="sd-results-debrief" aria-label="Debrief">
-      {lines.map((l, i) => (
+      {lines.map((l, i) =>
+        l.text === '' ? (
+          <li
+            key={i}
+            class="sd-results-silence"
+            data-testid="debrief-silence"
+            aria-label={`${l.name} says nothing`}
+            style={{ color: colorVar(l.color) }}
+          >
+            <span aria-hidden="true">…</span>
+          </li>
+        ) : (
         <li key={i}>
           <span class="sd-results-speaker" style={{ color: colorVar(l.color) }}>
             {l.name}
           </span>
           <span class="sd-results-line">{silkText(l.text)}</span>
         </li>
-      ))}
+        ),
+      )}
     </ul>
   );
 }
