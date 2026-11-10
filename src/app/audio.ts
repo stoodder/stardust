@@ -58,7 +58,7 @@ import type { Host } from './host.ts';
 import { activeSave } from './save.ts';
 import type { AudioHooks } from './testHookTypes.ts';
 import { settings } from './settings.ts';
-import { createTidyChimes } from './tidybotChimes.ts';
+import { createTidyChimes, tidyDock } from './tidybotChimes.ts';
 
 const NO_SCENES: readonly string[] = [];
 
@@ -322,8 +322,13 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
       return null;
     },
   });
-  // The Tidybots' chime as each drone finishes its sweep (render draws the sweep).
-  const tidy = createTidyChimes(dials.tidybots !== 'off', sim.map.waves.length);
+  // The Tidybots' chime as each drone finishes its sweep (render draws the sweep, unloading where
+  // the map's drones do, so a sweep ends when render's does).
+  const tidy = createTidyChimes(
+    dials.tidybots !== 'off',
+    sim.map.waves.length,
+    tidyDock(dials.tidybots, sim.map.markers),
+  );
   const chimes: number[] = [];
   const calls: SoundCall[] = [];
   /** Ability zones waiting to land, with the sounds they land with. */
