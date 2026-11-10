@@ -4,7 +4,8 @@
 // carry its wave tags, follow its route, and spawn with full HP from the run's scaled def (the
 // `enemyStat` modifiers: Story difficulty, Hardened Hides), exactly as the wave spawner's units do.
 // The first lands at the parent's route distance and each next one BROOD_SPREAD_TILES behind it,
-// so they read as a burst rather than one stacked sprite.
+// so they read as a burst rather than one stacked sprite; a boss's shards instead spread evenly
+// from `spreadTiles` behind it to `spreadTiles` ahead (ShardsDef; D138).
 import type { CompiledEnemyDef, CompiledRoute } from '../../content/compiled.ts';
 import { BROOD_SPREAD_TILES } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
@@ -36,7 +37,9 @@ export function broodDef(ctx: TickContext, id: string): CompiledEnemyDef {
 
 /**
  * Spawns `count` of enemy `id` on the parent's route, in its wave (EnemySpawned for each), each
- * with `ownerUid` (a boss's shards name the boss: shieldBroken.ts; 0 for none).
+ * with `ownerUid` (a boss's shards name the boss: shieldBroken.ts; 0 for none). With `spreadTiles`
+ * (a boss's shards) they spread evenly from that far behind the parent to that far ahead, kept on
+ * the route; without, they trail it BROOD_SPREAD_TILES apart.
  */
 export function spawnBrood(
   state: SimState,
@@ -45,6 +48,7 @@ export function spawnBrood(
   count: number,
   parent: BroodParent,
   ownerUid = 0,
+  spreadTiles: number | null = null,
 ): void {
   const route = parent.route;
   if (route === null || count <= 0) return;
@@ -59,8 +63,11 @@ export function spawnBrood(
     e.shieldHp = def.shield === null ? 0 : def.shield.hp;
     e.spawnTick = state.tick;
     e.ownerUid = ownerUid;
-    const back = parent.dist - i * BROOD_SPREAD_TILES;
-    placeOnRoute(e, route, back > 0 ? back : 0);
+    const at =
+      spreadTiles === null
+        ? parent.dist - i * BROOD_SPREAD_TILES
+        : parent.dist + (count > 1 ? spreadTiles * ((2 * i) / (count - 1) - 1) : 0);
+    placeOnRoute(e, route, Math.min(Math.max(at, 0), route.lengthTiles));
     if (parent.wave > 0) state.schedule.remaining[parent.wave - 1]!++; // wave ≤ waves.length
     emit(state, { type: 'EnemySpawned', uid: e.uid, enemy: def.id, route: route.id, wave: e.wave });
   }

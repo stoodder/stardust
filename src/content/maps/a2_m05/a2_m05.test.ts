@@ -28,7 +28,7 @@ describe('A2M5 · The Long Walk', () => {
       rows: 12,
       startCredits: 550,
       stardust: 240,
-      maxLost: 14,
+      maxLost: 15,
       requiredCounters: ['shield', 'detection', 'splash'],
     });
     expect(map.waves).toHaveLength(12);

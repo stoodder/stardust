@@ -2,8 +2,9 @@
 // D137; T506). Run from the boss's step (boss.ts), once a tick, before its phase abilities:
 // - **The break.** The first tick a boss with a shield-broken phase ahead (`onShieldBroken`) is
 //   found with its shield at 0, that phase begins (BossPhase; no invulnerability: the shattered
-//   shield is its telegraph, and the window is the player's), and it releases its `shards` at its
-//   position, into its wave (brood.ts), each carrying the boss's uid (`Enemy.ownerUid`).
+//   shield is its telegraph, and the window is the player's), and it releases its `shards` spread
+//   along its route about its position (`spreadTiles` behind to ahead; D138), into its wave
+//   (brood.ts), each carrying the boss's uid (`Enemy.ownerUid`).
 // - **The re-form.** Each time its shield is found at 0 in that phase while any of its shards is
 //   alive, the re-form clock starts (`Enemy.reformTicks`, the shards' `reformTicks`: 4 s). When it
 //   runs out with a shard still alive, the shield comes back to full (ShieldReformed) under fire or
@@ -53,7 +54,7 @@ export function shieldBrokenStep(
     enterBossPhase(state, boss, def, pending, false);
     const shards = def.phases[pending - 1]!.shards; // pending ≤ phases.length
     if (shards === null) return;
-    spawnBrood(state, ctx, shards.enemy, shards.count, boss, boss.uid);
+    spawnBrood(state, ctx, shards.enemy, shards.count, boss, boss.uid, shards.spreadTiles);
     boss.reformTicks = shards.reformTicks - 1; // counted from the breaking hit's tick
     return;
   }

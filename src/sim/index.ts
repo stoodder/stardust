@@ -76,7 +76,7 @@ export {
   bountyFor,
   callWaveBonus,
   costFor,
-  nextWaveIsQuiet,
+  nextWaveNoCall,
   purchaseCost,
   purchasePriceInto,
   sellValue,

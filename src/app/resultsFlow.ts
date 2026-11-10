@@ -1,26 +1,47 @@
-// The debrief's story choice on the results card (T510; T329's C2 half): C2, Zibzab's Price, on
-// A2M4's win. The card shows the debrief up to its choice (app/runResult.ts `debriefLines`); when
-// that choice decides a story transaction's flag (`RESULTS_CHOICES`: `stardust_choice` → meta's
-// `resolveC2`) and the save hasn't made it yet, the card offers its options in place of its way
-// on, price first (the whole bank). Taking one makes the transaction on the save in play, shows
-// what it did in the payroll, and plays the rest of the debrief onto the card. A debrief that
-// reaches the decision without a choice (an empty bank: "No refunds. I did say.", `none`) makes it
-// as the card opens. Guarded by the flag, never by the debrief's seen id, so a win whose card was
-// never answered (the tab closed) offers it again on the next win.
+// The debrief's story choice (T510; T329's C2 half): C2, Zibzab's Price, on A2M4's win. The card
+// shows the debrief up to its choice (app/runResult.ts `debriefLines`); when that choice decides a
+// story transaction's flag (`RESULTS_CHOICES`: `stardust_choice` → meta's `resolveC2`) and the save
+// hasn't made it yet, the card offers its options in place of its way on, price first (the whole
+// bank, and what each option pays under it, D138). Taking one makes the transaction on the save in
+// play, shows what it did in the payroll, and plays the rest of the debrief onto the card. A
+// debrief that reaches the decision without a choice (an empty bank: "No refunds. I did say.",
+// `none`) makes it as the card opens. Guarded by the flag, never by the debrief's seen id: a win
+// whose card was never answered (the tab closed) is offered it at the base (app/baseChoice.ts,
+// which plays the same offer through `openChoice` and `takeChoice`).
 import { SCENES } from '../content/dialogue/index.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { FlagSet } from '../content/dialogue/flags.ts';
 import type { FlagId } from '../content/types.ts';
 import type { ChoiceNode, LineNode, Scene } from '../content/dialogue/types.ts';
-import { resolveC2, type C2Choice, type SaveData, type TransactionResult } from '../meta/index.ts';
+import { UPGRADES } from '../content/upgrades/index.ts';
+import {
+  c2Windfall,
+  resolveC2,
+  ZIBZAB_TUNE_UP,
+  type C2Choice,
+  type SaveData,
+  type TransactionResult,
+} from '../meta/index.ts';
 import type { StoryContext } from '../story/conditions.ts';
 import { advance, readThrough, type DialogueCursor } from '../story/runner.ts';
 import { resolveText } from '../story/text.ts';
 import type { SpokenLine } from '../ui/state.ts';
-import { runResult, type ResultsChoice, type RunResult } from '../ui/screens/state.ts';
+import {
+  runResult,
+  type ResultsChoice,
+  type ResultsPay,
+  type ResultsTransaction,
+  type RunResult,
+} from '../ui/screens/state.ts';
 import { withSceneEffects } from './dialogue.ts';
 import { transactionView } from './resultsStory.ts';
-import { debriefStory, runStoryContext, spoken, type RunEndInput } from './runResult.ts';
+import {
+  debriefStory,
+  runStoryContext,
+  spoken,
+  type DebriefStory,
+  type RunEndInput,
+} from './runResult.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
@@ -29,11 +50,32 @@ export interface ResultsChoiceRule {
   readonly flag: FlagId;
   /** Makes the choice `value` (one of the flag's values) on `save`; idempotent per flag. */
   readonly resolve: (save: SaveData, value: string) => TransactionResult;
+  /** What choosing `value` would pay over `save`, shown before the pick (price first, D138). */
+  readonly pays: (save: SaveData, value: string) => ResultsPay;
+}
+
+/** The note under C2's Return, as its payroll row will read ("Carried home", "Fee: an IOU"). */
+export const C2_RETURN_NOTE = 'Carried home · Fee: an IOU';
+
+/** What C2's `value` would pay over `save`: Sell's windfall and Tune-up, Return's IOU. */
+function c2Pays(save: SaveData, value: string): ResultsPay {
+  const choice = c2Choice(value);
+  if (choice === 'sold') {
+    return {
+      intel: c2Windfall(save.currencies.stardust),
+      note: UPGRADES[ZIBZAB_TUNE_UP].name,
+    };
+  }
+  return { intel: 0, note: choice === 'returned' ? C2_RETURN_NOTE : '' };
 }
 
 /** The flags a debrief's choice decides on Results: C2 (C4 joins with A3M4). */
 export const RESULTS_CHOICES: readonly ResultsChoiceRule[] = [
-  { flag: 'stardust_choice', resolve: (save, value) => resolveC2(save, c2Choice(value)) },
+  {
+    flag: 'stardust_choice',
+    resolve: (save, value) => resolveC2(save, c2Choice(value)),
+    pays: c2Pays,
+  },
 ];
 
 /** `value` as C2's choice (a `stardust_choice` value); anything else is a content bug. */
@@ -53,14 +95,14 @@ function isMade(rule: ResultsChoiceRule, save: SaveData): boolean {
   return save.story.flags[rule.flag] !== undefined;
 }
 
-/** The choice the card waits on, with what taking it needs. */
-interface Pending {
+/** A story choice waiting on the player (on the card or at the base), with what taking it needs. */
+export interface PendingChoice {
   readonly view: ResultsChoice;
   readonly rule: ResultsChoiceRule;
   readonly scene: Scene;
   readonly cursor: DialogueCursor;
   readonly ctx: StoryContext;
-  readonly input: Pick<RunEndInput, 'story' | 'escort'>;
+  readonly story: DebriefStory;
   /**
    * False for the results fixture (`__sd.results`): the choice plays on a copy of `save`, and
    * nothing is written.
@@ -69,7 +111,14 @@ interface Pending {
   readonly save: SaveData;
 }
 
-let pending: Pending | null = null;
+/** What reading a debrief up to its decision found. */
+export type ChoiceOpening =
+  /** It rests on a choice the save hasn't made: offer it (`lines`: the lines before it). */
+  | { readonly kind: 'offer'; readonly pending: PendingChoice; readonly lines: readonly LineNode[] }
+  /** It decides the flag without a choice (C2's `none`): `t` made it. */
+  | { readonly kind: 'decided'; readonly t: TransactionResult }
+  /** Nothing to decide: no choice in RESULTS_CHOICES, or the save has made it. */
+  | { readonly kind: 'none' };
 
 /** The rule a choice node decides (every option sets its flag), or none. */
 function ruleOf(node: ChoiceNode): ResultsChoiceRule | null {
@@ -78,12 +127,101 @@ function ruleOf(node: ChoiceNode): ResultsChoiceRule | null {
   );
 }
 
+/**
+ * Reads `scene` over `ctx` to its decision: a choice to offer (priced over `save`: its bank and
+ * what each option pays), a decision made without one, or nothing to decide.
+ */
+export function openChoice(
+  scene: Scene,
+  ctx: StoryContext,
+  story: DebriefStory,
+  save: SaveData,
+  record: boolean,
+): ChoiceOpening {
+  const { lines, cursor } = readThrough(scene, ctx);
+  if (cursor.step.kind === 'choice') {
+    const rule = ruleOf(cursor.step.node);
+    if (rule === null || isMade(rule, save)) return { kind: 'none' };
+    const by = lines.at(-1);
+    const options = cursor.step.node.options;
+    const view: ResultsChoice = {
+      by: by === undefined ? '' : spoken(by.speaker, '', story).name,
+      bank: save.currencies.stardust,
+      options: options.map((o) => resolveText(o.text, story.text)),
+      pays: options.map((o) => rule.pays(save, valueOf(rule, o.set) ?? '')),
+      picked: null,
+    };
+    return {
+      kind: 'offer',
+      pending: { view, rule, scene, cursor, ctx, story, record, save },
+      lines,
+    };
+  }
+  // Decided without a choice (C2's `none`: nothing to trade).
+  for (const rule of RESULTS_CHOICES) {
+    const value = valueOf(rule, cursor.effects.flags);
+    if (value === undefined || isMade(rule, save)) continue;
+    return { kind: 'decided', t: rule.resolve(save, value) };
+  }
+  return { kind: 'none' };
+}
+
+/** What taking a choice did: the save it made, the transaction, and the lines after the pick. */
+export interface ChoiceTaken {
+  readonly save: SaveData;
+  readonly t: TransactionResult;
+  readonly lines: readonly SpokenLine[];
+}
+
+/** What a scene plays from `cursor` on, to its next choice or its end: its lines and effects. */
+function playFrom(
+  scene: Scene,
+  cursor: DialogueCursor,
+  ctx: StoryContext,
+): { lines: LineNode[]; effects: DialogueCursor['effects'] } {
+  const lines: LineNode[] = [];
+  let c = cursor;
+  while (c.step.kind === 'line') {
+    lines.push(c.step.node);
+    c = advance(scene, c, ctx);
+  }
+  return { lines, effects: c.effects };
+}
+
+/**
+ * Takes option `index` of `p` over `save`: its transaction, the rest of the debrief, and the save
+ * with both (the debrief recorded seen; anything else it sets joins, the choice's own flag being
+ * the transaction's). Null for an option that isn't one. Writes nothing.
+ */
+export function takeChoice(p: PendingChoice, index: number, save: SaveData): ChoiceTaken | null {
+  if (p.cursor.step.kind !== 'choice') return null;
+  const option = p.cursor.step.node.options[index];
+  const value = option === undefined ? undefined : valueOf(p.rule, option.set);
+  if (value === undefined) return null;
+  const t = p.rule.resolve(save, value);
+  const after = advance(p.scene, p.cursor, p.ctx, index);
+  const { lines: rest, effects } = playFrom(p.scene, after, p.ctx);
+  const { [p.rule.flag]: _taken, ...flags } = effects.flags;
+  return {
+    save: withSceneEffects(t.save, p.scene.id, { ...effects, flags }),
+    t,
+    lines: rest.map((l) => spoken(l.speaker, l.text, p.story)),
+  };
+}
+
 /** Writes a transaction's save (record) and says whether the write failed. */
-function commit(next: SaveData, record: boolean): string | null {
+export function commitChoice(next: SaveData, record: boolean): string | null {
   if (!record) return null;
   const r = updateActiveSave(() => next);
   return r.ok ? null : r.message;
 }
+
+/** The payroll row a made transaction shows, or null when it had already applied. */
+export function madeView(t: TransactionResult): ResultsTransaction | null {
+  return t.applied === null ? null : transactionView(t.applied);
+}
+
+let pending: PendingChoice | null = null;
 
 /** `result` with a made transaction in its payroll (and a failed write's notice). */
 function withTransaction(
@@ -92,15 +230,13 @@ function withTransaction(
   notice: string | null,
 ): RunResult {
   const rewards = result.rewards;
-  if (rewards === null || (t.applied === null && notice === null)) return result;
+  const made = madeView(t);
+  if (rewards === null || (made === null && notice === null)) return result;
   return {
     ...result,
     rewards: {
       ...rewards,
-      transactions:
-        t.applied === null
-          ? rewards.transactions
-          : [...rewards.transactions, transactionView(t.applied)],
+      transactions: made === null ? rewards.transactions : [...rewards.transactions, made],
       saveNotice: notice ?? rewards.saveNotice,
     },
   };
@@ -128,45 +264,22 @@ export function withResultsChoice(
   if (outcome !== 'won' || save === null || scene === undefined || !isCampaignMapId(map)) {
     return result;
   }
-  const ctx = runStoryContext(map, input, outcome);
-  const { lines, cursor } = readThrough(scene, ctx);
-  if (cursor.step.kind === 'choice') {
-    const rule = ruleOf(cursor.step.node);
-    if (rule === null || isMade(rule, save)) return result;
-    const story = debriefStory(input);
-    const by = lines.at(-1);
-    const view: ResultsChoice = {
-      by: by === undefined ? '' : spoken(by.speaker, '', story).name,
-      bank: save.currencies.stardust,
-      options: cursor.step.node.options.map((o) => resolveText(o.text, story.text)),
-      picked: null,
-    };
-    pending = { view, rule, scene, cursor, ctx, input, record, save };
-    return { ...result, choice: view };
+  const opening = openChoice(
+    scene,
+    runStoryContext(map, input, outcome),
+    debriefStory(input),
+    save,
+    record,
+  );
+  switch (opening.kind) {
+    case 'offer':
+      pending = opening.pending;
+      return { ...result, choice: opening.pending.view };
+    case 'decided':
+      return withTransaction(result, opening.t, commitChoice(opening.t.save, record));
+    case 'none':
+      return result;
   }
-  // Decided without a choice (C2's `none`: nothing to trade).
-  for (const rule of RESULTS_CHOICES) {
-    const value = valueOf(rule, cursor.effects.flags);
-    if (value === undefined || isMade(rule, save)) continue;
-    const t = rule.resolve(save, value);
-    return withTransaction(result, t, commit(t.save, record));
-  }
-  return result;
-}
-
-/** What a scene plays from `cursor` on, to its next choice or its end: its lines and effects. */
-function playFrom(
-  scene: Scene,
-  cursor: DialogueCursor,
-  ctx: StoryContext,
-): { lines: LineNode[]; effects: DialogueCursor['effects'] } {
-  const lines: LineNode[] = [];
-  let c = cursor;
-  while (c.step.kind === 'line') {
-    lines.push(c.step.node);
-    c = advance(scene, c, ctx);
-  }
-  return { lines, effects: c.effects };
 }
 
 /**
@@ -177,42 +290,19 @@ function playFrom(
 export function pickResultsChoice(index: number): void {
   const p = pending;
   const result = runResult.value;
-  if (
-    p === null ||
-    result === null ||
-    result.choice !== p.view ||
-    p.cursor.step.kind !== 'choice'
-  ) {
-    return;
-  }
-  const option = p.cursor.step.node.options[index];
-  const value = option === undefined ? undefined : valueOf(p.rule, option.set);
-  if (value === undefined) return;
-  pending = null;
+  if (p === null || result === null || result.choice !== p.view) return;
   const save = p.record ? (activeSave() ?? p.save) : p.save;
-  const t = p.rule.resolve(save, value);
-  const after = advance(p.scene, p.cursor, p.ctx, index);
-  const { lines: rest, effects } = playFrom(p.scene, after, p.ctx);
-  // Anything else the debrief sets on the way to its end (none in C2's) joins the save; the
-  // choice's own flag is the transaction's.
-  const { [p.rule.flag]: _taken, ...flags } = effects.flags;
-  const next = withSceneEffects(t.save, p.scene.id, { ...effects, flags });
-  const notice = commit(next, p.record);
-  const story = debriefStory(p.input);
-  const lines: SpokenLine[] = rest.map((l) => spoken(l.speaker, l.text, story));
+  const taken = takeChoice(p, index, save);
+  if (taken === null) return;
+  pending = null;
+  const notice = commitChoice(taken.save, p.record);
   runResult.value = withTransaction(
     {
       ...result,
       choice: { ...p.view, picked: index },
-      debrief: [...result.debrief, ...lines],
+      debrief: [...result.debrief, ...taken.lines],
     },
-    t,
+    taken.t,
     notice,
   );
-}
-
-/** Whether the card on screen waits on a story choice (its way on is the choice). */
-export function resultsChoicePending(): boolean {
-  const choice = runResult.value?.choice;
-  return choice !== undefined && choice !== null && choice.picked === null;
 }

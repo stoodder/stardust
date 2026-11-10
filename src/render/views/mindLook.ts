@@ -74,6 +74,24 @@ export function squiggleImage(frame: 0 | 1): RgbaImage {
   return { w, h, data };
 }
 
+/** What the squiggle reads of a unit. */
+export interface UnnervedUnit {
+  readonly alive: boolean;
+  readonly unnervedTicks: number;
+  readonly burrowed: boolean;
+  readonly phased: boolean;
+  readonly leaving: boolean;
+}
+
+/**
+ * Whether a unit wears the squiggle: alive and Unnerved, and out in the open (not burrowed or
+ * Phased), and not leaving (a fleeing, standing-down or leaked unit; review C7, as MarkView and
+ * EnemyView's jitter): a stood-down Aelari is out of the fight, not rattled.
+ */
+export function showsUnnerved(e: UnnervedUnit): boolean {
+  return e.alive && e.unnervedTicks > 0 && !e.burrowed && !e.phased && !e.leaving;
+}
+
 /** The squiggle's frame at `ms` (render time): it wobbles, or holds still under reduced motion. */
 export function squiggleFrame(ms: number, reducedMotion: boolean): 0 | 1 {
   if (reducedMotion) return 0;

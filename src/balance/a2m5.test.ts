@@ -172,8 +172,7 @@ function beats(
         sim.enqueue(replay![next]!.cmd);
       }
     }
-    sim.drainEvents(out);
-    out.length = 0;
+    // A command applied before the step (an early call) emits now: it's logged with the step's.
     sim.step();
     sim.drainEvents(out);
     for (const e of out) {
@@ -344,6 +343,16 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     for (const label of ['par', 'alt:capacitor', 'alt:coil_and_hook']) {
       expectBeats(beats(content, label), label);
     }
+  });
+
+  it('never lets W6 be called early, so alwaysCallEarly plays the whole fight too (D138)', () => {
+    expect(content.maps.a2_m05.waves.map((w) => w.noCall)).toEqual(
+      Array.from({ length: 12 }, (_, i) => i === 5),
+    );
+    const b = beats(content, 'alwaysCallEarly');
+    expectBeats(b, 'alwaysCallEarly');
+    // Every other wave is called early; W6 walks in on its own, the window whole.
+    expect(b.commands.filter((c) => c.cmd.type === 'callWave')).toHaveLength(11);
   });
 
   it('lands the beats on Story too, where par breaks her to half (Kneel) before W6', () => {

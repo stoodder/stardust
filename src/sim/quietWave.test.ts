@@ -11,7 +11,7 @@ import type { CompiledContent, CompiledScriptedEvent, CompiledWave } from '../co
 import type { IdSpace, WaveTag } from '../content/types.ts';
 import { MAP, WALKER, setup, spawn } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
-import { callWaveBonus, nextWaveIsQuiet } from './economy.ts';
+import { callWaveBonus, nextWaveNoCall } from './economy.ts';
 import type { SimEvent } from './events.ts';
 import { createSim, type Sim } from './sim.ts';
 import { movement } from './systems/movement.ts';
@@ -30,7 +30,11 @@ const DRIVE: CompiledScriptedEvent<IdSpace> = {
 
 /** fx_map: W1 one Chitterbloom (driven off at DRIVE_AT, unless `drive` is false), W2 3 walkers. */
 function content(
-  w2: { readonly after?: 'bossEnded'; readonly tags?: readonly WaveTag[] },
+  w2: {
+    readonly after?: 'bossEnded';
+    readonly tags?: readonly WaveTag[];
+    readonly noCall?: boolean;
+  },
   drive = true,
 ): CompiledContent<FixtureIds> {
   const [w1, w2Base] = MAP.waves;
@@ -43,6 +47,7 @@ function content(
       groups: [walkers],
       lastSpawnTicks: 2 * base.intervalTicks,
       countdownAfter: w2.after ?? null,
+      noCall: w2.noCall ?? false,
     }),
   ];
   const map = Object.assign({}, MAP, { waves, events: drive ? [DRIVE] : [] });
@@ -133,26 +138,41 @@ describe("countdownAfter: 'bossEnded'", () => {
 });
 
 describe('the Quiet Wave refuses callWave', () => {
-  it("is never called early: 'quietWave' while held and during its countdown, no bonus", () => {
+  it("is never called early: 'noCall' while held and during its countdown, no bonus", () => {
     const sim = start(content({ after: 'bossEnded', tags: ['quiet_wave'] }));
     runTo(sim, 100);
-    expect(nextWaveIsQuiet(sim.state, sim.map)).toBe(true);
-    expect(call(sim)).toBe('quietWave');
+    expect(nextWaveNoCall(sim.state, sim.map)).toBe(true);
+    expect(call(sim)).toBe('noCall');
     runTo(sim, DRIVE_AT + 60);
     expect(sim.state.schedule.phase).toBe('countdown');
     expect(callWaveBonus(sim.state, sim.map)).toBe(0);
     const credits = sim.state.credits;
-    expect(call(sim)).toBe('quietWave');
+    expect(call(sim)).toBe('noCall');
     expect(sim.state.credits).toBe(credits);
     expect(sim.state.wave).toBe(1);
+  });
+
+  it("refuses a wave flagged `noCall` the same way, with no Quiet Wave tag (A2M5's W6)", () => {
+    const sim = start(content({ noCall: true }));
+    runTo(sim, 10);
+    expect(sim.state.schedule.phase).toBe('countdown');
+    expect(nextWaveNoCall(sim.state, sim.map)).toBe(true);
+    expect(callWaveBonus(sim.state, sim.map)).toBe(0);
+    const credits = sim.state.credits;
+    expect(call(sim)).toBe('noCall');
+    expect([sim.state.credits, sim.state.wave]).toEqual([credits, 1]);
+    // It walks in on its own when the countdown runs out.
+    const left = sim.state.schedule.countdownTicks;
+    runTo(sim, 10 + left + 1);
+    expect(sim.state.wave).toBe(2);
   });
 
   it('a plain next wave is not quiet, and nothing is quiet once no wave is left', () => {
     const sim = start(content({}));
     runTo(sim, 10);
-    expect(nextWaveIsQuiet(sim.state, sim.map)).toBe(false);
+    expect(nextWaveNoCall(sim.state, sim.map)).toBe(false);
     expect(callWaveBonus(sim.state, sim.map)).toBeGreaterThan(0);
-    expect(nextWaveIsQuiet({ wave: 2 }, sim.map)).toBe(false);
+    expect(nextWaveNoCall({ wave: 2 }, sim.map)).toBe(false);
   });
 });
 

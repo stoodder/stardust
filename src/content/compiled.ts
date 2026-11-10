@@ -401,6 +401,7 @@ export interface CompiledBossPhase {
   readonly shards: {
     readonly enemy: string;
     readonly count: number;
+    readonly spreadTiles: number;
     readonly reformTicks: number;
   } | null;
   readonly spawn: {
@@ -514,6 +515,8 @@ export interface CompiledWave<K extends IdSpace = LiveIds> {
   /** When that countdown begins (WaveDef.countdownAfter); null: as the wave before finishes spawning. */
   readonly countdownAfter: 'bossEnded' | null;
   readonly teach: boolean;
+  /** WaveDef.noCall: never called early (the Quiet Wave is refused by its tag; nextWaveNoCall). */
+  readonly noCall: boolean;
   readonly groups: readonly CompiledWaveGroup<K>[];
   /** Ticks from the wave's start to its last spawn: spawning has finished after this. */
   readonly lastSpawnTicks: number;

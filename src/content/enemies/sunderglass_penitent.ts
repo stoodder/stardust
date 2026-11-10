@@ -5,7 +5,8 @@
 //     it restores 60 shield (a tenth of its own, the Glass Witch's share) to itself and every
 //     Aelari within 2 tiles (the Cantor's radius; enemyAbilities/pulse.ts).
 // (2) the moment its shield breaks (`fromPct: 'shieldBroken'`; enemyAbilities/shieldBroken.ts) it
-//     releases 3 cloaked Glimmer-shards, and its shield re-forms to full 4 s after each break
+//     sheds 3 cloaked Glimmer-shards onto the road, 0.6 tiles behind it, at it, and 0.6 ahead
+//     (D138: pieces you can find, not hidden in its sprite), and its shield re-forms to full 4 s after each break
 //     while any shard lives (D137). No pulse here: only the shards bring the wall back, so killing
 //     them is the answer, not out-damaging a refill.
 // It ends at 50%, or when the Hollow surge wave starts if that comes first (D137; the map's
@@ -40,7 +41,7 @@ export const sunderglass_penitent = defineEnemy({
       { fromPct: 1, pulse: { everySec: 8, tellSec: 1.5, radiusTiles: 2, shield: 60 } },
       {
         fromPct: 'shieldBroken',
-        shards: { enemy: 'glimmer_shard', count: 3, reformSec: 4 },
+        shards: { enemy: 'glimmer_shard', count: 3, spreadTiles: 0.6, reformSec: 4 },
       },
     ],
     ending: 'pivot',

@@ -537,6 +537,12 @@ describe('validate: maps', () => {
     );
   });
 
+  it('[wave] noCall is true or absent, and never on wave 1 (the player starts it)', () => {
+    rejects(withMap({ waves: [{ ...fxMap.waves[0]!, noCall: true }, fxMap.waves[1]!] }), 'wave');
+    const bad = { ...fxMap.waves[1]!, noCall: false as unknown as true };
+    rejects(withMap({ waves: [fxMap.waves[0]!, bad] }), 'wave');
+  });
+
   it('[threat-intel] must equal the traits in the waves', () => {
     rejects(withMap({ threatIntel: ['fast'] }), 'threat-intel');
     rejects(withMap({ threatIntel: ['fast', 'shielded', 'flying'] }), 'threat-intel');

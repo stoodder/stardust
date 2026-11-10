@@ -10,7 +10,9 @@
 // (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
 // (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
 // A2M5's gift, C2's trade), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
-// choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts).
+// choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts; StoryChoice.tsx:
+// price first, its heading focused, its options locked for a beat). The card is a real modal: Tab
+// stays on it.
 // Compact by design: everything fits 360 game px of height.
 import { campaignScreenName } from '../../app/starMap.ts';
 import { silkText } from '../silk.ts';
@@ -28,17 +30,18 @@ import { resultsStats } from '../../app/runResult.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
+import { StoryChoice } from './StoryChoice.tsx';
 import {
   campaign,
   runResult,
   type MedalResult,
   type ObjectiveResult,
-  type ResultsChoice,
   type ResultsTransaction,
   type RunResult,
   type RunRewards,
 } from './state.ts';
 import { sceneBlocks } from '../dialogue/state.ts';
+import { trapTab } from '../dialogue/SceneParts.tsx';
 import { colorVar } from '../color.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
@@ -416,36 +419,6 @@ function OnwardButton({ won }: { won: boolean }) {
   );
 }
 
-/**
- * A debrief's story choice (C2; app/resultsFlow.ts), in the way on's place until answered: the
- * stake first (price first: the whole bank), then the options as the debrief writes them, side by
- * side and alike (neither is wrong), the first focused.
- */
-function Choice({ choice }: { choice: ResultsChoice }) {
-  return (
-    <div
-      class="sd-results-buttons sd-results-choice"
-      role="group"
-      aria-label={choice.by === '' ? 'Your answer' : `${choice.by}'s offer`}
-    >
-      <p class="sd-results-stake">
-        The whole bank: <span class="sd-stardust">{formatCount(choice.bank)} Stardust</span>
-      </p>
-      {choice.options.map((text, i) => (
-        <button
-          key={i}
-          type="button"
-          class="sd-button"
-          ref={i === 0 ? focusOnce : null}
-          onClick={() => pickResultsChoice(i)}
-        >
-          {silkText(text)}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** A story stamp (core-loop.md § 6.2): red, askew, over the headline's right. Never pays. */
 function Stamp({ text, index }: { text: string; index: number }) {
   return (
@@ -477,6 +450,8 @@ function Body({ result }: { result: RunResult }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="sd-results-heading"
+      // A real modal (D138): Tab stays on the card, like the pause menu.
+      onKeyDown={trapTab}
     >
       <p class="sd-results-kicker">{header.kicker}</p>
       <h1 id="sd-results-heading" class="sd-results-heading">
@@ -507,7 +482,9 @@ function Body({ result }: { result: RunResult }) {
         <Payroll rewards={rewards} won={won} resumedFromWave={result.resumedFromWave} />
       )}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
-      {asking && result.choice !== null && <Choice choice={result.choice} />}
+      {asking && result.choice !== null && (
+        <StoryChoice choice={result.choice} onPick={pickResultsChoice} />
+      )}
       {!asking && <WayOn result={result} won={won} checkpoint={checkpoint} />}
     </section>
   );

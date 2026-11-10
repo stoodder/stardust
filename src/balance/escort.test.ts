@@ -1,7 +1,7 @@
 // Escort maps in the harness (T305c; design/maps.md § 6.1): the margin is Evacuated % for a run
 // that ends as an Escort (from the start or by a pivot), escort maps form their own monotonic
 // chain, the per-wave tallies carry refugees lost, the `gradual` judge walls on them against the
-// losses that lose the map (`maxLost` + 1), and the harness no longer refuses an Escort.
+// losses that lose the map (`maxLost`), and the harness no longer refuses an Escort.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
@@ -41,7 +41,7 @@ function escortContent(
   return { ...compiled, maps: { fx_map: Object.assign({}, map, { waves }) } };
 }
 
-/** A result ending as an Escort of 12 refugees (`maxLost` 5), with refugees lost per wave. */
+/** A result ending as an Escort of 12 refugees (`maxLost` 6), with refugees lost per wave. */
 function escortResult(
   evacuated: number,
   lostPerWave: readonly number[] = [],
@@ -53,7 +53,7 @@ function escortResult(
     ...r,
     objective: 'escort',
     escortTotal: 12,
-    maxLost: 5,
+    maxLost: 6,
     stats: { ...r.stats, refugeesSpawned: 12, evacuated, refugeesLost: lost },
     waves: lostPerWave.map((refugeesLost, i) => ({
       wave: i + 1,
@@ -83,7 +83,7 @@ describe('the Escort margin', () => {
   });
 
   it('walls on refugees against the losses that lose the map, and tallies them per wave', () => {
-    // maxLost 5: six lose the map, so a wave may lose at most 3.
+    // maxLost 6: six lose the map, so a wave may lose at most 3.
     expect(notGradual(escortResult(9, [1, 2]))).toBeNull();
     expect(notGradual(escortResult(8, [0, 4]))).toBe(
       'W2 loses 4 refugees of the 6 that lose the map, over 50%',

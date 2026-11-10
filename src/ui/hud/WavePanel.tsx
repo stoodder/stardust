@@ -56,9 +56,9 @@ export function WavePanel() {
   const ended = hud.outcome.value !== 'playing';
   const countdown = hud.countdown.value;
   const bonus = hud.callBonus.value;
-  // The Quiet Wave walks in on its own (D097): nothing to call, so no button and no bonus.
+  // A `noCall` wave walks in on its own (the Quiet Wave, D097; A2M5's W6): no button, no bonus.
   const callLabel =
-    next === null || hud.nextQuiet.value
+    next === null || hud.nextNoCall.value
       ? null
       : wave === 0
         ? `Start wave ${next.number}`

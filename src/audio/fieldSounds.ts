@@ -3,7 +3,8 @@
 // the sneeze itself, a huddle forming, the loops while a kind of enemy is on the field (a
 // Puffwing flock's wingbeats, the Aelari's hum, the Hollow humming the jingle wrong), a hidden
 // cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
-// charge fizzles), a beam's hum climbing with its ramp, the night's air at Sundown, and the salvage
+// charge fizzles), a beam's hum climbing with its ramp (and held once it caps), the night's air at
+// Sundown, and the salvage
 // drone flying and working. It also keeps where the Hollow units stand, for their quiet (`quietAt`,
 // HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet. It reads only public sim
 // state (the same fields render reads), and never touches it.
@@ -86,8 +87,9 @@ export interface FieldState {
 }
 
 /**
- * The beam hum's pitch for tower `t` (semitones, whole steps up to BEAM_SOUNDS.maxPitch) from its
- * strongest beam's ramp toward the attack's cap, or null when it isn't beaming.
+ * The beam hum's pitch for tower `t` (whole semitones, 0 to BEAM_SOUNDS.maxPitch) from its
+ * strongest beam's ramp toward the attack's cap, or null when it isn't beaming. The top step is
+ * the cap itself (rounded down), so `maxPitch` means the ramp has capped and the bed takes over.
  */
 export function beamPitch(t: FieldTower): number | null {
   const attack = t.tierDef?.attack ?? null;
@@ -96,7 +98,7 @@ export function beamPitch(t: FieldTower): number | null {
   if ((t.beam2Uid ?? 0) !== 0) ramp = Math.max(ramp, t.beam2Ramp ?? 1);
   if ((t.beam3Uid ?? 0) !== 0) ramp = Math.max(ramp, t.beam3Ramp ?? 1);
   const share = attack.rampCap > 1 ? (ramp - 1) / (attack.rampCap - 1) : 0;
-  return Math.round(Math.min(1, Math.max(0, share)) * BEAM_SOUNDS.maxPitch);
+  return Math.floor(Math.min(1, Math.max(0, share)) * BEAM_SOUNDS.maxPitch);
 }
 
 /**
@@ -162,9 +164,14 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   let nextCharges = new Map<number, { ticks: number; step: number }>();
   /** The sim tick of the last frame (a charge's reset is a discharge or a fizzle by the gap). */
   let lastTick = -1;
-  /** When the beam hum plays next, and the night's air (sim ticks; -1: not playing). */
+  /**
+   * When the beam's climbing hum plays next, its capped bed, and the night's air (sim ticks; -1:
+   * not playing).
+   */
   let beamAt = -1;
   const beamEvery = Math.max(1, Math.round(BEAM_SOUNDS.everySec * TICK_HZ));
+  let bedAt = -1;
+  const bedEvery = Math.max(1, Math.round(BEAM_SOUNDS.bedEverySec * TICK_HZ));
   let airAt = -1;
   const airEvery = Math.max(1, Math.round(DARK_SOUNDS.airEverySec * TICK_HZ));
   const workEvery = Math.max(1, Math.round(DRONE_SOUNDS.workEverySec * TICK_HZ));
@@ -277,11 +284,18 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
       nextCharges = c;
       nextCharges.clear();
       lastTick = state.tick;
-      // A beam holding a target hums, one sound for every beam, climbing with the strongest ramp.
-      if (beamPitchNow === null) beamAt = -1;
+      // A beam holding a target hums, one sound for every beam, climbing with the strongest ramp;
+      // once that ramp has capped it settles into the held bed (and climbs again as it resets).
+      const capped = beamPitchNow === BEAM_SOUNDS.maxPitch;
+      if (beamPitchNow === null || capped) beamAt = -1;
       else if (state.tick >= beamAt) {
         out.push(sfx(BEAM_SOUNDS.hum, beamPitchNow));
         beamAt = state.tick + beamEvery;
+      }
+      if (!capped) bedAt = -1;
+      else if (state.tick >= bedAt) {
+        out.push(sfx(BEAM_SOUNDS.bed, BEAM_SOUNDS.maxPitch));
+        bedAt = state.tick + bedEvery;
       }
       // Sundown: the night's air while it's dark enough, as loud as it is dark.
       const dark = state.dark ?? 0;

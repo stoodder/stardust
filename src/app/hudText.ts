@@ -470,8 +470,9 @@ export function rejectText(reason: RejectReason): string | null {
       return 'Uplink recharging';
     case 'invalidTarget':
       return "Can't target there";
-    // The Quiet Wave can't be called early (D097): the HUD hides Call, so only W reaches this.
-    case 'quietWave':
+    // A `noCall` wave can't be called early (the Quiet Wave, D097; A2M5's W6, D138): the HUD hides
+    // Call, so only W reaches this.
+    case 'noCall':
       return 'This one comes in its own time';
     // Clickable world objects (T409): only a click that races the fallback, or a stale one.
     case 'notClickable':

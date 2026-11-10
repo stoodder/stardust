@@ -111,7 +111,12 @@ describe('the Penitent’s data (T506 settles the stub)', () => {
       shield: 60,
     });
     expect(p2).toMatchObject({ onShieldBroken: true, pulse: null });
-    expect(p2!.shards).toEqual({ enemy: 'glimmer_shard', count: 3, reformTicks: REFORM });
+    expect(p2!.shards).toEqual({
+      enemy: 'glimmer_shard',
+      count: 3,
+      spreadTiles: 0.6,
+      reformTicks: REFORM,
+    });
     expect(SHARD).toMatchObject({ hp: 60, shield: null, cloaked: true, leak: 1, bounty: 3 });
     expect(SHARD.speedTilesPerTick).toBe(PENITENT.speedTilesPerTick);
   });
@@ -130,7 +135,7 @@ describe('the Penitent’s data (T506 settles the stub)', () => {
 });
 
 describe('phase 2 begins when the shield breaks (not by HP)', () => {
-  it('the break: BossPhase 2 the next tick, no invulnerability, 3 cloaked shards at its side', () => {
+  it('the break: BossPhase 2 the next tick, no invulnerability, 3 cloaked shards along the road', () => {
     const { state, ctx } = setup();
     const boss = penitent(state, ctx);
     expect(boss.bossPhase).toBe(1);
@@ -156,7 +161,8 @@ describe('phase 2 begins when the shield breaks (not by HP)', () => {
     for (const [i, s] of shards.entries()) {
       expect(s.def!.id).toBe('glimmer_shard');
       expect(s.wave).toBe(1);
-      expect(s.dist).toBeCloseTo(boss.dist - i * 0.25, 9); // BROOD_SPREAD_TILES behind it
+      // Spread along the road: 0.6 tiles behind it, at it, 0.6 ahead (D138).
+      expect(s.dist).toBeCloseTo(boss.dist + (i - 1) * 0.6, 9);
       expect(untargetable(s)).toBe(true); // cloaked, not Revealed
     }
     expect(state.schedule.remaining[0]).toBe(remaining + 3); // they join its wave
@@ -165,6 +171,14 @@ describe('phase 2 begins when the shield breaks (not by HP)', () => {
     breakShield(state, boss);
     abilityTicks(state, ctx, 2);
     expect(liveShards(state, boss)).toHaveLength(3);
+  });
+
+  it('keeps the spread shards on the road at its start (none before dist 0)', () => {
+    const { state, ctx } = setup();
+    const boss = penitent(state, ctx, 0.3);
+    breakShield(state, boss);
+    abilityTicks(state, ctx, 1);
+    expect(liveShards(state, boss).map((s) => s.dist)).toEqual([0, 0.3, 0.3 + 0.6]);
   });
 
   it('HP skips the shield-broken phase: the boss keeps phase 1 down to its 50% pivot', () => {

@@ -40,7 +40,7 @@ import type { GridPos, IdSpace, LiveIds, MedalKind, WaveTag } from '../content/t
 import type { Command, RejectReason } from './commands.ts';
 import type { SimConfig } from './config.ts';
 import {
-  nextWaveIsQuiet,
+  nextWaveNoCall,
   purchasePriceInto,
   type PurchaseKind,
   type PurchasePrice,
@@ -398,7 +398,7 @@ export function createBuildExecutor<K extends IdSpace = LiveIds>(
       const phase = state.schedule.phase;
       if (phase === 'setup' || (build.callEarly && phase === 'countdown')) {
         if (calledPhase === state.schedule.countdownWave) return;
-        if (phase === 'countdown' && nextWaveIsQuiet(state, sim.map)) return; // never called (D097)
+        if (phase === 'countdown' && nextWaveNoCall(state, sim.map)) return; // never called (D097)
         calledPhase = state.schedule.countdownWave;
         waveCalls.push(state.tick);
         apply({ type: 'callWave' });

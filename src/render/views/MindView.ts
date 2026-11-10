@@ -1,7 +1,7 @@
 // The Mindspike's and Stillness's views (T507; mindLook.ts has the rules; T530a's polish):
 // - **Unnerved:** a wobbling `violet.4` squiggle over the head of each Unnerved unit (a boss's
 //   too: it is interrupted, if not slowed), from the sim's `unnervedTicks`, so it holds while
-//   paused and goes the tick the status does. It sits over the body as EnemyView draws it (its
+//   paused and goes the tick the status does; never on a leaving unit (a stood-down one). It sits over the body as EnemyView draws it (its
 //   lane offset, a flyer's lift; unitAnchor.ts), falling back to the grid point without a view.
 //   The body's 1 px jitter is EnemyView's.
 // - **Echo Spike:** on EchoBurst, a fast `violet.4` ring out to the echo's radius at the target,
@@ -25,6 +25,7 @@ import {
   ECHO_POP_TILES,
   SQUIGGLE_H,
   SQUIGGLE_W,
+  showsUnnerved,
   squiggleFrame,
   squiggleImage,
   STILLNESS_COLOR,
@@ -117,7 +118,7 @@ export class MindView {
     let n = 0;
     for (let i = 0; i < enemies.used && n < MAX_MARKS; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
-      if (!e.alive || e.def === null || e.unnervedTicks <= 0 || e.burrowed || e.phased) continue;
+      if (e.def === null || !showsUnnerved(e)) continue;
       const mark = this.#marks[n++]!; // n < MAX_MARKS
       let x: number;
       let top: number;

@@ -540,6 +540,7 @@ function compileWave<K extends IdSpace>(
     ),
     countdownAfter: wave.countdownAfter ?? null,
     teach: wave.teach ?? false,
+    noCall: wave.noCall === true,
     groups,
     lastSpawnTicks,
   };

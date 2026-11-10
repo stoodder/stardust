@@ -144,6 +144,7 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
           : {
               enemy: p.shards.enemy,
               count: p.shards.count,
+              spreadTiles: p.shards.spreadTiles,
               reformTicks: ticks(ctx, p.shards.reformSec, `${w}.shards.reformSec`),
             },
       spawn:

@@ -71,10 +71,11 @@ export type RejectReason =
   /** callWave after the last wave has started. */
   | 'noWavesLeft'
   /**
-   * callWave while the next wave is a Quiet Wave (a `quiet_wave` group, A1M5): it is never called
-   * early, so the player sees it walk in before choosing (D097), nor while it waits for the boss.
+   * callWave while the next wave is never called early (`nextWaveNoCall`): a wave that sets
+   * `noCall` (A2M5's W6: its build phase is the Penitent's fight) or a Quiet Wave (a `quiet_wave`
+   * group, A1M5: the player sees it walk in before choosing, D097), nor while it waits for the boss.
    */
-  | 'quietWave'
+  | 'noCall'
   /** No ability is equipped in that slot. */
   | 'noAbility'
   | 'abilityOnCooldown'

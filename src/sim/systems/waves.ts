@@ -16,7 +16,7 @@ import {
 import type { Act, IdSpace, ObjectiveKind } from '../../content/types.ts';
 import type { EnemyStat, Modifier, SimConfig } from '../config.ts';
 import type { RejectReason } from '../commands.ts';
-import { callWaveBonus, earn, nextWaveIsQuiet } from '../economy.ts';
+import { callWaveBonus, earn, nextWaveNoCall } from '../economy.ts';
 import { ENEMY_BLANK } from '../entities.ts';
 import { countTags } from '../fireControl.ts';
 import { placeOnRoute } from '../path.ts';
@@ -57,12 +57,13 @@ function bossFightOn(state: SimState): boolean {
 /**
  * The callWave command: starts wave 1 from the setup phase (free), or the next wave during a
  * countdown, paying the early-call bonus and cutting ability cooldowns. Its first spawns land in
- * this tick's waves system (or the next tick's, when applied while paused). A Quiet Wave is never
- * called early (`quietWave`), and a wave waiting for the boss can't be called (`waveInProgress`).
+ * this tick's waves system (or the next tick's, when applied while paused). A no-call wave (`noCall`
+ * or the Quiet Wave) is never called early (`noCall`), and a wave waiting for the boss can't be
+ * called (`waveInProgress`).
  */
 export function callWave(state: SimState, ctx: TickContext): RejectReason | null {
   const s = state.schedule;
-  if (s.phase !== 'setup' && nextWaveIsQuiet(state, ctx.map)) return 'quietWave';
+  if (s.phase !== 'setup' && nextWaveNoCall(state, ctx.map)) return 'noCall';
   switch (s.phase) {
     case 'setup':
       startWave(state, false, 0);

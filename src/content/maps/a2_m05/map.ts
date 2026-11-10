@@ -23,9 +23,9 @@ export const map = defineMapLayout({
   env: 'act2.dusk',
   // Defend until the pivot, then an Escort (`setObjective` below).
   objective: 'defend',
-  // The refugees lost (hushed on the road, or taken at the gate) that lose the map once passed:
-  // generous, because the escort is taught here (act2.md § A2M5) and tested in A3M1.
-  maxLost: 14,
+  // The refugees lost (hushed on the road, or taken at the gate) that lose the map, every pip full
+  // (D138): generous, because the escort is taught here (act2.md § A2M5) and tested in A3M1.
+  maxLost: 15,
   size: { cols: 18, rows: 12 },
   // prettier-ignore
   tiles: [

@@ -5,6 +5,7 @@ import {
   JITTER_STEP_MS,
   SQUIGGLE_H,
   SQUIGGLE_W,
+  showsUnnerved,
   squiggleFrame,
   squiggleImage,
   UNNERVED_COLOR,
@@ -78,5 +79,19 @@ describe('the Unnerved jitter (T530a)', () => {
       if (unnervedJitterPx(3, ms, false) === unnervedJitterPx(4, ms, false)) same++;
     }
     expect(same).toBeLessThan(40);
+  });
+});
+
+describe('who wears the squiggle (review C7)', () => {
+  const unit = { alive: true, unnervedTicks: 30, burrowed: false, phased: false, leaving: false };
+  it('an Unnerved unit out in the open does', () => {
+    expect(showsUnnerved(unit)).toBe(true);
+  });
+  it('a leaving (stood-down), burrowed, Phased, dead or calm unit does not', () => {
+    expect(showsUnnerved({ ...unit, leaving: true })).toBe(false);
+    expect(showsUnnerved({ ...unit, burrowed: true })).toBe(false);
+    expect(showsUnnerved({ ...unit, phased: true })).toBe(false);
+    expect(showsUnnerved({ ...unit, alive: false })).toBe(false);
+    expect(showsUnnerved({ ...unit, unnervedTicks: 0 })).toBe(false);
   });
 });

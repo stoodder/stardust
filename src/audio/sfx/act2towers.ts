@@ -1,6 +1,7 @@
 // Act II, part two's towers (T550, T501h): the Aelari towers chime and hold tones (design/towers.md
 // § 9: "glass chimes, sustained tones"). A Prism Spire's beam rings as it locks a target and hums
-// while it holds one, the hum climbing with its ramp (fieldSounds.ts); the Seer's Lantern opens
+// while it holds one, the hum climbing with its ramp and settling into a held bed once the ramp
+// caps (fieldSounds.ts); the Seer's Lantern opens
 // its eye on a lock; a Mindspike's shot is a soft psionic pressure with a violet shimmer, and Echo
 // Spike's echo repeats it, fading; Ves'thara's Stillness holds its breath. And the M4 towers'
 // own voices (T501h): Skewer's harpoon tearing down its line, Magnet Crane's hum and slam, a
@@ -40,35 +41,85 @@ export const ACT2_TOWER_SFX = {
     ],
   },
   /**
-   * A beam holding a target (fieldSounds.ts, a loop while any beam is on; BEAM_SOUNDS): a
-   * sustained glass fifth with a faint buzz under it, pitched up as the strongest beam's ramp
-   * climbs. Each tone overlaps the next, so it holds.
+   * A beam holding a target as its ramp climbs (fieldSounds.ts, a loop while any beam is on;
+   * BEAM_SOUNDS): a sustained glass fifth on C5 with a faint buzz an octave under it, a step
+   * higher as the strongest beam's ramp climbs. Each tone overlaps the next, so it holds.
    */
   beam_hum: {
-    gain: 0.13,
+    gain: 0.092,
     priority: 1,
     minGapMs: 400,
     maxVoices: 2,
     layers: [
       {
         wave: 'sine',
-        freq: 1046.5,
+        freq: 523.25,
         vibrato: { hz: 6, cents: 8 },
         env: { a: 0.08, d: 0.1, s: 0.8, hold: 0.35, r: 0.12 },
         gain: 0.4,
       },
       {
         wave: 'sine',
-        freq: 1567.98,
+        freq: 783.99,
         env: { a: 0.1, d: 0.1, s: 0.7, hold: 0.3, r: 0.12 },
         gain: 0.2,
       },
       {
         wave: 'sawtooth',
-        freq: 523.25,
-        filter: { type: 'lowpass', freq: 1500 },
+        freq: 261.63,
+        filter: { type: 'lowpass', freq: 900 },
         env: { a: 0.08, d: 0.1, s: 0.7, hold: 0.35, r: 0.12 },
         gain: 0.12,
+      },
+    ],
+  },
+  /**
+   * The same beam once its ramp has capped (BEAM_SOUNDS `bed`, every `bedEverySec`): the hum's
+   * fifth at its top step, softer, turning over like a prism. The fifth (C5 and G5, the buzz an
+   * octave under) swells and hands over to its inversion (G4 and C6) halfway through, which hands
+   * over to the next one's fifth; the overlapping swells never share a pitch, so they cross-fade
+   * into a held tone instead of cancelling, and a beam held for minutes is a bed, not a pulse.
+   */
+  beam_bed: {
+    gain: 0.065,
+    priority: 1,
+    minGapMs: 1500,
+    maxVoices: 2,
+    layers: [
+      {
+        wave: 'sine',
+        freq: 523.25,
+        vibrato: { hz: 3, cents: 5 },
+        env: { a: 0.5, d: 0.2, s: 0.85, hold: 0.9, r: 0.45 },
+        gain: 0.4,
+      },
+      {
+        wave: 'sine',
+        freq: 783.99,
+        env: { a: 0.55, d: 0.2, s: 0.75, hold: 0.85, r: 0.45 },
+        gain: 0.18,
+      },
+      {
+        wave: 'sawtooth',
+        freq: 261.63,
+        filter: { type: 'lowpass', freq: 700 },
+        env: { a: 0.5, d: 0.2, s: 0.7, hold: 0.9, r: 0.45 },
+        gain: 0.1,
+      },
+      {
+        wave: 'sine',
+        at: 1.3,
+        freq: 392,
+        vibrato: { hz: 3, cents: 5 },
+        env: { a: 0.5, d: 0.2, s: 0.85, hold: 0.9, r: 0.45 },
+        gain: 0.42,
+      },
+      {
+        wave: 'sine',
+        at: 1.3,
+        freq: 1046.5,
+        env: { a: 0.55, d: 0.2, s: 0.75, hold: 0.85, r: 0.45 },
+        gain: 0.14,
       },
     ],
   },

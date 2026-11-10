@@ -268,6 +268,24 @@ function drawPane(g: CharGrid, top: number, look: 'whole' | 'lit' | 'broken', be
   stamp(g, kx, hy - 1, look === 'lit' ? ['d*c', '***', 'c*b'] : ['.d.', 'd+c', '.c.']);
 }
 
+/**
+ * The closed weave's backing (T5r1, U4): half the weave's gaps take an `ink.0` fill behind the
+ * strands, so the big body reads as one dark woven mass on Act II's gold, not as a sieve; the
+ * other half (≈ 1 px in 4 of the body) stay real see-through gaps, the Aelari's mark. On the
+ * spacing-3 diagonal weave a gap is a pair of pixels: the level pair is filled, the upright pair
+ * stays open.
+ */
+function backing(g: CharGrid, mask: Mask, rise: number): void {
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!mask(x, y) || at(g, x, y) !== '.') continue;
+      const u = (((x + y + rise) % 3) + 3) % 3;
+      const v = (((x - y - rise) % 3) + 3) % 3;
+      if (u === v) plot(g, x, y, 'K');
+    }
+  }
+}
+
 /** The hood: a deep cowl of dense weave, its face a dark recess with two dim eyes cast down. */
 function drawHead(g: CharGrid, f: Frame): void {
   const cy = 13.5 + f.drop + f.bow;
@@ -284,6 +302,14 @@ function drawHead(g: CharGrid, f: Frame): void {
     6,
   );
   rim(g, hood, CX - 3, cy - 3);
+  // The hood's dense weave, closed like the body's: its gaps backed in ink but one in four, so the
+  // bowed head reads as a solid cowl.
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!hood(x, y) || recess(x, y) || at(g, x, y) !== '.') continue;
+      if (y % 2 === 0 || (x + y) % 4 !== 0) plot(g, x, y, 'K');
+    }
+  }
   // A ruby knot at the hood's brow (on its crown from behind).
   plot(g, CX - 1, Math.round(cy - 5), 'd');
   plot(g, CX, Math.round(cy - 5), 'c');
@@ -365,7 +391,7 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   if (!front && top !== null && pose !== 'broken')
     drawPane(g, top, pose === 'tell' ? 'lit' : 'whole', beat);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (body(x, y)) plot(g, x, y, '.');
-  weave(g, body, { mode: 'diag', spacing: 4, phase: 0, rise: f.drop, lx: CX, ly: heartY }, 8);
+  weave(g, body, { mode: 'diag', spacing: 3, phase: 0, rise: f.drop, lx: CX, ly: heartY }, 8);
   // Warp ribs down the torso, following its taper (lit left, shaded right): the cloth's structure,
   // so the big body reads as woven, not as a mesh.
   for (let y = 0; y < H; y++) {
@@ -391,6 +417,7 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   const pane = front && top !== null ? paneMask(top) : null;
   const shown: Mask = (x, y) => torso(x, y) && (pane === null || !pane(x, y));
   hum(g, shown, beat === 0 ? 0 : 1, (front ? 41 : 42) + beat);
+  backing(g, body, f.drop);
 
   if (front) {
     if (pose === 'broken') {
@@ -481,6 +508,8 @@ export const enemySunderglassPenitent = defineSprite({
   // The outline is the weave's own (lattice.ts `outlineOutside`), so the gaps stay see-through.
   outline: 'none',
   glow: { slots: ['e0', 'e1'], radius: 1 },
+  // The closed weave's backing behind the strands (`backing`).
+  legend: { K: 'ink.0' },
   frames,
   anims,
 });

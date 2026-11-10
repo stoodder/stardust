@@ -332,15 +332,45 @@
   white-space: nowrap;
 }
 
-/* A debrief's story choice (C2; T510) in the way on's place: the stake first, price first, then
-   the options, alike (neither is wrong). */
+/* A debrief's story choice (C2; T510; StoryChoice.tsx) in the way on's place: the stake first,
+   price first, then the options, alike (neither is wrong), each with what it pays under it. */
 .sd-results-choice {
   align-items: center;
 }
 
+/* The group's heading: it takes the focus as the choice shows (D138), never an option. */
 .sd-results-stake {
   margin: 0 4px 0 0;
   font-family: var(--font-heading);
+  font-size: inherit;
+  font-weight: inherit;
   white-space: nowrap;
   color: var(--sd-steel-3);
+}
+
+.sd-results-stake:focus {
+  outline: none;
+}
+
+.sd-results-stake:focus-visible {
+  outline: 1px dotted var(--sd-steel-3);
+  outline-offset: 2px;
+}
+
+.sd-choice-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sd-choice-pays {
+  white-space: nowrap;
+  color: var(--sd-steel-3);
+}
+
+/* The options' first beat (CHOICE_LOCK_MS): they show, but a press doesn't take yet. */
+.sd-choice-locked {
+  opacity: 0.7;
+  cursor: default;
 }

@@ -293,13 +293,14 @@ describe('the exit rule', () => {
 });
 
 describe('defeat and victory', () => {
-  it('losing more than maxLost loses the map', () => {
+  it('losing maxLost refugees loses the map (every pip full)', () => {
     const { state, ctx } = setup();
-    state.stats.refugeesLost = 2;
+    state.stats.refugeesLost = 1;
     expect(escortLost(state, MAP)).toBe(false);
     cleanup(state, ctx);
     expect(state.outcome).toBe('playing');
-    state.stats.refugeesLost = 3;
+    state.stats.refugeesLost = 2;
+    expect(escortLost(state, MAP)).toBe(true);
     cleanup(state, ctx);
     expect(state.outcome).toBe('lost');
     // Not while the map isn't an Escort (yet), and never without a maxLost.

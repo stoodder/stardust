@@ -105,7 +105,12 @@ describe('M5 enemies (stubs under their final ids)', () => {
       [1, false],
       [0, true],
     ]);
-    expect(boss.phases[1]?.shards).toEqual({ enemy: 'glimmer_shard', count: 3, reformTicks: 240 });
+    expect(boss.phases[1]?.shards).toEqual({
+      enemy: 'glimmer_shard',
+      count: 3,
+      spreadTiles: 0.6,
+      reformTicks: 240,
+    });
     expect(boss.phases[0]?.shards).toBeNull();
   });
 
@@ -309,6 +314,17 @@ describe('M5 map rules', () => {
     expect(errors(withMap({ objective: 'escort' }), 'escort')).toHaveLength(1);
     const bad = { ...escort, refugees: { g1: { route: 'a', count: 0 } } };
     expect(errors(withMap(bad), 'escort')).toHaveLength(1);
+  });
+
+  it('[escort] maxLost is 1 to the refugees total (losing that many loses the map, D138)', () => {
+    // g1 alone: six refugees (REFUGEE_GROUP_SIZE).
+    expect(errors(withMap({ ...escort, maxLost: 1 }), 'escort')).toEqual([]);
+    expect(errors(withMap({ ...escort, maxLost: 6 }), 'escort')).toEqual([]);
+    expect(errors(withMap({ ...escort, maxLost: 0 }), 'escort')).toHaveLength(1);
+    expect(errors(withMap({ ...escort, maxLost: 2.5 }), 'escort')).toHaveLength(1);
+    expect(errors(withMap({ ...escort, maxLost: 7 }), 'escort')).toEqual([
+      "[escort] maps.fx_map.maxLost: 7 is more than the map's 6 refugees",
+    ]);
   });
 
   it('[escort] spawnAllies names a refugee group; setObjective escort needs refugees', () => {

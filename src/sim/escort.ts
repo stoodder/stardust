@@ -15,7 +15,8 @@
 //   Heavy unit too; a leak-free unit (fleeing, youngling) takes no one, and with nobody sheltered
 //   yet it takes no one. It costs no integrity (EnemyLeaked with leak 0, so the leak barks still
 //   see it). **A boss at the exit loses the map** (cleanup; enemies.md § 6).
-// - **Defeat** also comes when the lost count passes the map's `maxLost` (`escortLost`).
+// - **Defeat** also comes when the lost count reaches the map's `maxLost` (`escortLost`): every pip
+//   of the HUD's lost row full is the map lost (D138).
 // - **Perfect** on an Escort is "no refugee lost": a lost refugee forfeits Perfect Core, and a leak
 //   while the map is an Escort doesn't by itself (sim/medals.ts). Pebble never counts.
 // - **Victory** waits for the road to empty: every wave resolved and no refugee still walking
@@ -147,13 +148,13 @@ export function bossAtExit(
   return state.objective === 'escort' && e.def !== null && e.def.boss !== null;
 }
 
-/** Whether an Escort has lost more refugees than its `maxLost` allows (cleanup: defeat). */
+/** Whether an Escort has lost its `maxLost` refugees (cleanup: defeat; D138). */
 export function escortLost(
   state: DeepReadonly<Pick<SimState, 'objective' | 'stats'>>,
   map: Pick<CompiledMapDef<IdSpace>, 'maxLost'>,
 ): boolean {
   return (
-    state.objective === 'escort' && map.maxLost !== null && state.stats.refugeesLost > map.maxLost
+    state.objective === 'escort' && map.maxLost !== null && state.stats.refugeesLost >= map.maxLost
   );
 }
 

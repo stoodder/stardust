@@ -635,12 +635,15 @@ export interface WardDef {
 
 /**
  * A shield-broken phase's shards (the Penitent's 3 cloaked Glimmer-shards; T506): as the phase
- * begins it releases `count` of `enemy` (an EnemyId) at its position. Its shield re-forms to full
- * `reformSec` after it broke unless every shard is dead by then (D137: 4 s).
+ * begins it releases `count` of `enemy` (an EnemyId) spread evenly along its route from
+ * `spreadTiles` behind it to `spreadTiles` ahead (D138: ±0.6, so they read as pieces shed onto the
+ * road, not hidden in its sprite). Its shield re-forms to full `reformSec` after it broke unless
+ * every shard is dead by then (D137: 4 s).
  */
 export interface ShardsDef {
   readonly enemy: string;
   readonly count: number;
+  readonly spreadTiles: number;
   readonly reformSec: number;
 }
 
@@ -984,6 +987,13 @@ export interface WaveDef<K extends IdSpace = LiveIds> {
   readonly countdownAfter?: 'bossEnded';
   /** The teach wave for a new trait: exempt from the soft-trait cap. */
   readonly teach?: boolean;
+  /**
+   * Never called early (core-loop.md § 2.4): callWave refuses it (`noCall`), so the HUD hides Call
+   * and its bonus while it's next. For a wave whose build phase is a scripted fight (A2M5's W6,
+   * the Penitent's window). A wave with a `quiet_wave` group is never called either, flag or not
+   * (the Quiet Wave, D097). Not on wave 1 (the player starts it).
+   */
+  readonly noCall?: true;
   readonly groups: readonly WaveGroup<K>[];
 }
 export interface WaveGroup<K extends IdSpace = LiveIds> {

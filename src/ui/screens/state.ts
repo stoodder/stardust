@@ -73,16 +73,43 @@ export interface RunEscort {
   readonly lost: number;
 }
 
-/** A debrief's story choice on the card (C2: Zibzab's Price). */
+/** A debrief's story choice on the card (C2: Zibzab's Price), or at the base (app/baseChoice.ts). */
 export interface ResultsChoice {
   /** Who makes the offer, for the group's name ("Zibzab's offer"). */
   readonly by: string;
   /** Price first: the stake, the whole Stardust bank. */
   readonly bank: number;
-  /** The options' text, as the debrief writes them (never previewing the payoff). */
+  /** The options' text, as the debrief writes them. */
   readonly options: readonly string[];
+  /**
+   * What each option pays, in `options`' order, shown under it before the pick (price first,
+   * D138): Sell's Intel windfall and the Zibzab Tune-up; Return's "Carried home · Fee: an IOU".
+   */
+  readonly pays: readonly ResultsPay[];
   /** The option taken, or null while the card waits. */
   readonly picked: number | null;
+}
+
+/** What a story choice's option pays, as the payroll row will name it. */
+export interface ResultsPay {
+  /** The Intel it pays (Sell's windfall), or 0. */
+  readonly intel: number;
+  /** The rest, in plain words ("Zibzab Tune-up", "Carried home · Fee: an IOU"). */
+  readonly note: string;
+}
+
+/**
+ * C2 offered at the base (D138: a win whose card was never answered, the tab closed): the
+ * offerer's lines up to the choice, the choice, and once taken what it did and the lines after.
+ */
+export interface BaseChoiceView {
+  /** The offerer's lines leading to the choice, then (once taken) the rest of the debrief. */
+  readonly lines: readonly SpokenLine[];
+  readonly choice: ResultsChoice;
+  /** The trade it made (its payroll row), once taken; null while it waits. */
+  readonly made: ResultsTransaction | null;
+  /** A failed save write's notice, else null. */
+  readonly notice: string | null;
 }
 
 /** A story transaction as the card shows it (meta/storyTransactions.ts `StoryTransaction`). */
@@ -190,6 +217,9 @@ export interface RunRewards {
 
 /** The last finished run, or null before any run has ended. */
 export const runResult = signal<RunResult | null>(null);
+
+/** C2 offered at the base (app/baseChoice.ts), as a panel over it; null when none shows. */
+export const baseChoice = signal<BaseChoiceView | null>(null);
 
 /** A Shift board row (meta/progress.ts ShiftEntry, as the Campaign screen shows it). */
 export interface ShiftView {

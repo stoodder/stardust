@@ -26,17 +26,28 @@ export const TOWER_SOUNDS: Readonly<
 
 /**
  * Beams (T504; design/towers.md § 2): the lock is ATTACK_SOUNDS `beam` (or the tower's own), once
- * per lock. While any tower beams, `hum` plays every `everySec` of sim time (one sound however
- * many beams; fieldSounds.ts), pitched up to `maxPitch` semitones, in whole steps, as the
- * strongest ramp climbs toward its cap. A beam ticks every 0.25 s, so its "wrong tool" plinks
- * (armor, or a hit that took nothing) sound once per lock, not once per tick: the first tells the
- * player, the rest would nag.
+ * per lock. While any tower beams, one sound plays however many beams (fieldSounds.ts): as the
+ * strongest ramp climbs, `hum` every `everySec` of sim time, a semitone step higher for each
+ * `maxPitch`-th of the climb (the top step only at the cap); once that ramp has capped, `bed` at
+ * the top step every `bedEverySec`, slow swells that overlap into a held tone (R16: a Prism held
+ * through a 12-minute map stays present, never a 2 Hz pulse). A ramp that starts over (a new
+ * target) brings the climbing hum straight back. A beam ticks every 0.25 s, so its "wrong tool"
+ * plinks (armor, or a hit that took nothing) sound once per lock, not once per tick: the first
+ * tells the player, the rest would nag.
  */
 export const BEAM_SOUNDS = {
   hum: 'beam_hum',
   everySec: 0.5,
-  maxPitch: 7,
-} as const satisfies { readonly hum: SfxId; readonly everySec: number; readonly maxPitch: number };
+  maxPitch: 5,
+  bed: 'beam_bed',
+  bedEverySec: 2.6,
+} as const satisfies {
+  readonly hum: SfxId;
+  readonly everySec: number;
+  readonly maxPitch: number;
+  readonly bed: SfxId;
+  readonly bedEverySec: number;
+};
 
 /**
  * Phasing (PhaseShift; T503, the Rift Moth): the flicker as the tell starts, the fall as it goes

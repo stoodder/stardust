@@ -87,9 +87,11 @@ export const waves = defineWaves([
     groups: [road('sunderglass_penitent', 1, OPEN)],
   },
   // (the pivot) W6 · the surge: Motes from the rig road toward the first refugee group [T:
-  // escort, gently]
+  // escort, gently]. Never called early (D138): its build phase is the Penitent's fight, and its
+  // start forces the pivot.
   {
     countdownSec: PENITENT_WINDOW,
+    noCall: true,
     groups: [motes(12, OPEN + 8, 0.5)],
   },
   // W7 · Motes + the second group, the Motes down the road behind it

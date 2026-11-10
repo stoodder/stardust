@@ -469,6 +469,9 @@ function validateEnemyAbilities(
       if (from !== 'shieldBroken') bad(`${w}.shards`, 'only a shield-broken phase releases shards');
       child(`${w}.shards`, p.shards.enemy, p.shards.count);
       if (!isPositive(p.shards.reformSec)) bad(`${w}.shards.reformSec`, 'must be > 0');
+      if (!(p.shards.spreadTiles >= 0 && p.shards.spreadTiles <= 2)) {
+        bad(`${w}.shards.spreadTiles`, 'must be in [0, 2] tiles');
+      }
     }
     if (p.spawn !== undefined) {
       child(`${w}.spawn`, p.spawn.enemy, p.spawn.count);

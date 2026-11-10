@@ -210,7 +210,7 @@ function waveLoss(w: HeadlessResult['waves'][number]): string {
 /**
  * Why a run hits a wall rather than losing gradually (the `gradual` check, D028), or null: a
  * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity (or of a Protect map's asset
- * meter, or of the refugees an Escort may lose before it's lost: `maxLost` + 1), or a loss in the
+ * meter, or of the refugees whose loss loses an Escort: `maxLost`), or a loss in the
  * very wave its leaks start (they must start LEAK_LEAD_WAVES earlier).
  */
 export function notGradual(r: HeadlessResult): string | null {
@@ -224,8 +224,8 @@ export function notGradual(r: HeadlessResult): string | null {
   if (assetWall !== undefined) {
     return `W${assetWall.wave} costs ${assetWall.assetLost} of ${r.maxAsset} asset, over ${MAX_WAVE_LOSS_PCT}%`;
   }
-  // An Escort's budget is the losses that lose it: maxLost + 1 refugees (T305c).
-  const budget = r.maxLost === null ? 0 : r.maxLost + 1;
+  // An Escort's budget is the losses that lose it: maxLost refugees (T305c, D138).
+  const budget = r.maxLost ?? 0;
   const refugeeCap = (budget * MAX_WAVE_LOSS_PCT) / 100;
   const refugeeWall = budget > 0 ? r.waves.find((w) => w.refugeesLost > refugeeCap) : undefined;
   if (refugeeWall !== undefined) {

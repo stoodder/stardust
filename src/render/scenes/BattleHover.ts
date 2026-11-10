@@ -11,7 +11,6 @@ import type { IdSpace } from '../../content/types.ts';
 import {
   costFor,
   darkRangeMul,
-  detectRadiusTiles,
   isLitAt,
   liveTileAt,
   salvageFor,
@@ -22,6 +21,7 @@ import {
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import { ghostLabel, ghostLabels, salvageLabel, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';
+import { ringDimmed, ringRangeTiles } from '../input/ringRange.ts';
 import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
 import { pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import type { CursorView } from '../views/CursorView.ts';
@@ -192,14 +192,13 @@ export class BattleHover {
     // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
     const ringTower =
       look.ringTowerUid !== 0 ? findLiveTower(sim.state.towers, look.ringTowerUid) : selectedTower;
-    const attack = ringTower?.tierDef?.attack ?? null;
-    const range =
-      ringTower === null
-        ? 0
-        : (attack?.rangeTiles ?? detectRadiusTiles(ringTower, sim.config.modifiers));
-    // Sundown (T505): a tower the darkness reaches shows its shortened range, dimmed.
-    const dark = attack === null ? 0 : (ringTower?.darkRangePct ?? 0);
-    placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range * (1 - dark), true, dark > 0);
+    placement.setRing(
+      ringTower?.x ?? 0,
+      ringTower?.y ?? 0,
+      ringRangeTiles(ringTower, sim.config.modifiers),
+      true,
+      ringDimmed(ringTower),
+    );
   }
 
   /** Puts the default cursor back (the scene is shutting down). */

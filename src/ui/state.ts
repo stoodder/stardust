@@ -446,8 +446,8 @@ export const hud = {
   waveBanner: signal<WaveBanner | null>(null),
   /** Whether a tower has been built this battle (onboarding pulses stop after the first). */
   built: signal(false),
-  /** The next wave is the Quiet Wave (D097): it can't be called early, so Call is hidden. */
-  nextQuiet: signal(false),
+  /** The next wave comes in its own time (`noCall`: the Quiet Wave, D097; A2M5's W6, D138): Call is hidden. */
+  nextNoCall: signal(false),
   /** Whether the call-wave button pulses: nothing alive and time to spare, or a setup with a tower. */
   callPulse: signal(false),
   /** Changes when a countdown starts, so a ready ability slot pulses. */

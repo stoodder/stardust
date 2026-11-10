@@ -12,7 +12,7 @@ import {
   abilityStats,
   callWaveBonus,
   freeCastReady,
-  nextWaveIsQuiet,
+  nextWaveNoCall,
   objectiveStatusById,
 } from '../sim/index.ts';
 import { CALLSIGNS } from '../content/dialogue/profile.ts';
@@ -454,11 +454,12 @@ export function bindHud(
     }
     hud.countdown.value = countdownSeconds(s.schedule.phase, s.schedule.countdownTicks);
     hud.callBonus.value = callWaveBonus(s, sim.map);
-    // The Quiet Wave can't be called (D097, K3): no Call button, no bonus, no pulse.
-    hud.nextQuiet.value = nextWaveIsQuiet(s, sim.map);
+    // A `noCall` wave can't be called (the Quiet Wave, D097, K3; A2M5's W6, D138): no Call button,
+    // no bonus, no pulse.
+    hud.nextNoCall.value = nextWaveNoCall(s, sim.map);
     hud.callPulse.value =
       s.outcome === 'playing' &&
-      !hud.nextQuiet.value &&
+      !hud.nextNoCall.value &&
       callPulses(s.wave, hud.countdown.value, s.enemies.live, hud.built.value);
     hud.selected.value = selectedView(
       sim,
@@ -750,7 +751,7 @@ export function bindHud(
     hud.cursorShown.value = false;
     hud.countdown.value = null;
     hud.callBonus.value = 0;
-    hud.nextQuiet.value = false;
+    hud.nextNoCall.value = false;
     hud.holdFireAll.value = false;
     hud.holdingCount.value = 0;
     hud.spareRunnersAll.value = false;

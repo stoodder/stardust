@@ -192,19 +192,24 @@ export function bountyFor(bounty: number, tags: readonly WaveTag[]): number {
   return bounty;
 }
 
-/** A map's waves, as nextWaveIsQuiet and callWaveBonus read them (a CompiledMapDef fits). */
+/** A map's waves, as nextWaveNoCall and callWaveBonus read them (a CompiledMapDef fits). */
 export interface WaveTagsView {
-  readonly waves: readonly { readonly groups: readonly { readonly tags: readonly WaveTag[] }[] }[];
+  readonly waves: readonly {
+    readonly noCall: boolean;
+    readonly groups: readonly { readonly tags: readonly WaveTag[] }[];
+  }[];
 }
 
 /**
- * Whether the next wave (wave `state.wave + 1`) is a Quiet Wave: any group tagged `quiet_wave`
- * (A1M5). callWave refuses it (`quietWave`, D097), so the HUD hides its Call button and bonus
- * while it's next. False when no wave is left. No allocation (the HUD reads it every frame).
+ * Whether the next wave (wave `state.wave + 1`) is never called early: it sets `noCall` (A2M5's
+ * W6, the Penitent's fight) or it's a Quiet Wave, any group tagged `quiet_wave` (A1M5, D097).
+ * callWave refuses it (`noCall`), so the HUD hides its Call button and bonus while it's next.
+ * False when no wave is left. No allocation (the HUD reads it every frame).
  */
-export function nextWaveIsQuiet(state: { readonly wave: number }, map: WaveTagsView): boolean {
+export function nextWaveNoCall(state: { readonly wave: number }, map: WaveTagsView): boolean {
   const next = map.waves[state.wave];
   if (next === undefined) return false;
+  if (next.noCall) return true;
   const groups = next.groups;
   for (let i = 0; i < groups.length; i++) {
     if (groups[i]!.tags.includes('quiet_wave')) return true; // i < length
@@ -215,7 +220,7 @@ export function nextWaveIsQuiet(state: { readonly wave: number }, map: WaveTagsV
 /**
  * What calling the next wave right now would pay (core-loop.md § 2.4): the early-call bonus while
  * a countdown runs, else 0 (starting wave 1 is free, there's nothing to call while a wave spawns
- * or after the last one, and a Quiet Wave is never called). The HUD shows it on the call button.
+ * or after the last one, and a no-call wave is never called). The HUD shows it on the call button.
  */
 export function callWaveBonus(
   state: {
@@ -227,7 +232,7 @@ export function callWaveBonus(
 ): number {
   const s = state.schedule;
   if (s.phase !== 'countdown' || state.wave >= map.waves.length) return 0;
-  if (nextWaveIsQuiet(state, map)) return 0;
+  if (nextWaveNoCall(state, map)) return 0;
   return earlyCallBonus(
     state.wave + 1,
     s.countdownTicks,

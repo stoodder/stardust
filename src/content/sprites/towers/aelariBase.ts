@@ -10,21 +10,38 @@
 // rules): T2 stands a sapphire crystal shard on each side corner (4+ px wider), and T3 floats a
 // lit crystal over the left shard (6+ px taller). A tier-4 spec (`aelariSpecBase`) keeps the three
 // knots, lights a white status knot at the front corner, and swaps the shards and crystal for the
-// spec's own kit.
+// spec's own kit. Each tower wears its own **trim** (`Trim`, U5) on the shared dais, so the three
+// tell apart at a glance while staying one family: the dais's top rim thread, its chord-knot's
+// weave, and the tier shards and crystal are drawn in the tower's signature ramp (the Prism's
+// ruby-pink, the Mindspike's psionic violet, the Lantern's sapphire with gold-white light).
 import { grid, isoBox, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_W } from './base.ts';
+
+/**
+ * A tower's signature on the shared dais: `rim` the top face's lit rim thread and the chord-knot's
+ * weave; `ramp` the shards' and floating crystal's facets, lit to dark (four characters); `tip` the
+ * light at a shard's tip and the crystal's heart.
+ */
+export interface Trim {
+  readonly rim: string;
+  readonly ramp: readonly [string, string, string, string];
+  readonly tip: string;
+}
+
+/** The plain Aelari trim: emerald rim, sapphire crystal, white light. */
+export const SAPPHIRE: Trim = { rim: '9', ramp: ['4', '3', '2', '1'], tip: '*' };
 
 /** The dais floats this many rows over its shadow. */
 const LIFT = 2;
 const HEIGHT = 3;
 
 /** The floating dais with `knots` tier knots. */
-function dais(knots: number): CharGrid {
+function dais(knots: number, trim: Trim): CharGrid {
   const g: CharGrid = grid(BASE_W, BASE_H);
   const { x: cx, y: cy } = BASE_ANCHOR;
   isoBox(g, cx, cy + 1, 12, 0, { top: '_', rim: '_', left: '_', right: '_' });
   // The glass slab, woven on the diagonal: lit threads over a lighter pane on the top face.
-  isoBox(g, cx, cy - LIFT, 11, HEIGHT, { top: '3', rim: '9', left: '3', right: '2' });
+  isoBox(g, cx, cy - LIFT, 11, HEIGHT, { top: '3', rim: trim.rim, left: '3', right: '2' });
   for (let y = 0; y < BASE_H; y++) {
     for (let x = 0; x < BASE_W; x++) {
       const c = g[y]?.[x];
@@ -39,9 +56,9 @@ function dais(knots: number): CharGrid {
   // The chord-knot on the left face: a ruby knot in a little emerald weave.
   // prettier-ignore
   stamp(g, cx - 8, cy - LIFT, [
-    '9.9',
+    `${trim.rim}.${trim.rim}`,
     '.d.',
-    '9.9',
+    `${trim.rim}.${trim.rim}`,
   ]);
   // Tier knots, ruby, stepping down the right face.
   for (let t = 0; t < knots; t++) {
@@ -53,43 +70,51 @@ function dais(knots: number): CharGrid {
   return g;
 }
 
-/** A sapphire crystal shard standing on a side corner: lit left facet, shaded right, a lit tip. */
-export function shard(g: CharGrid, x: number, foot: number, tall: number): void {
+/** A crystal shard standing on a side corner (in the trim's ramp): lit left, shaded right, a lit tip. */
+export function shard(g: CharGrid, x: number, foot: number, tall: number, trim = SAPPHIRE): void {
+  const [lit, mid, shade, dark] = trim.ramp;
   for (let k = 0; k < tall; k++) {
     const y = foot - k;
     const hw = k >= tall - 2 ? (k === tall - 1 ? 0 : 1) : 2;
     for (let dx = -hw; dx < Math.max(hw, 1); dx++) {
-      plot(g, x + dx, y, dx < 0 ? (dx === -hw ? '4' : '3') : dx === 0 ? '2' : '1');
+      plot(g, x + dx, y, dx < 0 ? (dx === -hw ? lit : mid) : dx === 0 ? shade : dark);
     }
   }
-  plot(g, x - 1, foot - tall + 1, '9');
-  plot(g, x, foot - tall + 1, '*');
+  plot(g, x - 1, foot - tall + 1, trim.rim);
+  plot(g, x, foot - tall + 1, trim.tip);
 }
 
-/** A crystal floating free: a lit diamond with a white heart. */
-export function floatingCrystal(g: CharGrid, cx: number, cy: number, r: number): void {
+/** A crystal floating free (in the trim's ramp): a lit diamond with a white heart. */
+export function floatingCrystal(
+  g: CharGrid,
+  cx: number,
+  cy: number,
+  r: number,
+  trim = SAPPHIRE,
+): void {
+  const [lit, mid, shade] = trim.ramp;
   for (let y = cy - r; y <= cy + r; y++) {
     const hw = r - Math.abs(y - cy);
     for (let x = cx - hw; x <= cx + hw - 1; x++) {
-      plot(g, x, y, x < cx - hw / 2 ? '4' : x < cx ? '3' : '2');
+      plot(g, x, y, x < cx - hw / 2 ? lit : x < cx ? mid : shade);
     }
-    if (hw === 0) plot(g, cx - 1, y, '9');
+    if (hw === 0) plot(g, cx - 1, y, trim.rim);
   }
-  plot(g, cx - 1, cy, '*');
+  plot(g, cx - 1, cy, trim.tip);
   plot(g, cx, cy, '+');
 }
 
-/** One base frame per tier (1–3). */
-export function aelariBase(tier: 1 | 2 | 3): string[] {
-  const g = dais(tier);
+/** One base frame per tier (1–3), in the tower's trim. */
+export function aelariBase(tier: 1 | 2 | 3, trim = SAPPHIRE): string[] {
+  const g = dais(tier, trim);
   const { x: cx, y: cy } = BASE_ANCHOR;
   if (tier >= 2) {
-    shard(g, cx - 11, cy - 1, 9);
-    shard(g, cx + 12, cy - 1, 7);
+    shard(g, cx - 11, cy - 1, 9, trim);
+    shard(g, cx + 12, cy - 1, 7, trim);
   }
   if (tier === 3) {
     // The crystal floating over the left shard, its light caught in the right one.
-    floatingCrystal(g, cx - 11, cy - 16, 4);
+    floatingCrystal(g, cx - 11, cy - 16, 4, trim);
     plot(g, cx + 11, cy - 6, '+');
   }
   return rows(g);
@@ -99,8 +124,11 @@ export function aelariBase(tier: 1 | 2 | 3): string[] {
  * A tier-4 spec base: the dais with three ruby knots, a white status knot at the front corner, and
  * the spec's own kit (drawn by `kit` around the dais's anchor) instead of the shards and crystal.
  */
-export function aelariSpecBase(kit: (g: CharGrid, cx: number, cy: number) => void): string[] {
-  const g = dais(3);
+export function aelariSpecBase(
+  kit: (g: CharGrid, cx: number, cy: number) => void,
+  trim = SAPPHIRE,
+): string[] {
+  const g = dais(3, trim);
   const { x: cx, y: cy } = BASE_ANCHOR;
   kit(g, cx, cy);
   plot(g, cx - 1, cy + 3 - LIFT, '*');
