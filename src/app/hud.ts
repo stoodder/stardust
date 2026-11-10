@@ -436,6 +436,8 @@ export function bindHud(
   let upgraded = false;
   let upgradeHintMarked = false;
   let previewFor = -1;
+  let walkingFor = -1;
+  let walkingPivot = -1;
   let leakId = 0;
   let bannerId = 0;
   let bannerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -457,8 +459,13 @@ export function bindHud(
     // A `noCall` wave can't be called (the Quiet Wave, D097, K3; A2M5's W6, D138): no Call button,
     // no bonus, no pulse.
     hud.nextNoCall.value = nextWaveNoCall(s, sim.map);
-    // An Escort's next refugee groups: a `when` can change mid-countdown (A2M5's pivot).
-    hud.nextWalking.value = refugeesWalking(sim, s.wave + 1);
+    // An Escort's next refugee groups, read again as the wave or the pivot moves (a `when` can
+    // change mid-countdown: A2M5's W6 releases its group only if she hasn't pivoted).
+    if (walkingFor !== s.wave || walkingPivot !== s.stats.pivotWave) {
+      walkingFor = s.wave;
+      walkingPivot = s.stats.pivotWave;
+      hud.nextWalking.value = refugeesWalking(sim, s.wave + 1);
+    }
     hud.callPulse.value =
       s.outcome === 'playing' &&
       !hud.nextNoCall.value &&
