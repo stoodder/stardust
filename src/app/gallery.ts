@@ -957,7 +957,7 @@ function m5Corner(
       const [px, py] = screen(disc.x, disc.y);
       image(pool.img, px - pool.ax, py - pool.ay, dark, 'lighter');
     }
-    // A resting Prism's ghost (LightGhostView): the rim of the disc it would light, dashed.
+    // A resting Prism's ghost (LightGhostView): the rim of the disc it would light, in dotted golds.
     const ghost = ghostDiscImage(discs[1]!.radiusSq);
     const [gx, gy] = screen(CORNER_REST[0] + 0.5, CORNER_REST[1] + 0.5);
     image(ghost.image, gx - ghost.cx, gy - ghost.cy, GHOST_REST_ALPHA);

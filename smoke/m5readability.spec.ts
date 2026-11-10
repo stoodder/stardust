@@ -1,6 +1,6 @@
 // M5 review round 1 (D138), render's readability fixes, asserted through `__sd.render()`:
 // - R9: on Sundown's dev map (`?map=dev_dark`) a Prism at rest shows the ghost of the disc it will
-//   light (its rim, dashed), never a lit hole; arming a Prism previews its disc from the hovered
+//   light (its rim, dotted gold), never a lit hole; arming a Prism previews its disc from the hovered
 //   tile; the real holes stay the sim's lit discs (no light source while its beam is off).
 // - R6: on the dev Penitent range (`?map=dev_penitent`) the boss bar shows the Penitent's shield as
 //   a strip under its HP and marks the 50% where it kneels; the strip empties as the shield breaks.
