@@ -43,7 +43,7 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   const next = scene.getByRole('button', { name: /^(Next|Skip)$/ });
   await expect(next).toHaveText('Next');
   await next.click();
-  await expect(scene).toContainText('The jingle plays once, over the dark. In minor.');
+  await expect(scene).toContainText('(The jingle, once. Slower.)');
   // The jingle, in minor, as the caption shows: once, and never Act I's bright sting.
   await expect.poll(minorJingles).toBe(1);
   expect((await status()).played).not.toHaveProperty('cue:bright_sting');

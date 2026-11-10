@@ -146,9 +146,20 @@ export const map = defineMapLayout({
   companion: { id: 'bricks', state: 'present' },
   events: [
     // The Penitent comes down the road (its spawn): Ves'thara's challenge, and Bricks's answer.
-    { id: 'penitent_cue', on: { bossPhase: 1 }, actions: [{ cue: 'a2_m05_cue_penitent' }] },
+    // Neither of her cues plays once the pivot has come (D138: never after she kneels).
+    {
+      id: 'penitent_cue',
+      on: { bossPhase: 1 },
+      when: { stat: 'pivotWave', lte: 0 },
+      actions: [{ cue: 'a2_m05_cue_penitent' }],
+    },
     // Its shield breaks (phase 2, the shards): Ves'thara counts back.
-    { id: 'shield_cue', on: { bossPhase: 2 }, actions: [{ cue: 'a2_m05_cue_shield' }] },
+    {
+      id: 'shield_cue',
+      on: { bossPhase: 2 },
+      when: { stat: 'pivotWave', lte: 0 },
+      actions: [{ cue: 'a2_m05_cue_shield' }],
+    },
     // The pivot, whichever comes first (D137; enemies.md § 6.1, the worked example): the Penitent
     // broken to 50% (its own `pivot` ending ran)...
     { id: 'pivot_hp', on: { bossHpPct: 0.5, boss: 'sunderglass_penitent' }, actions: PIVOT },
