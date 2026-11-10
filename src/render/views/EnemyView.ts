@@ -99,6 +99,7 @@ import {
 } from './hushLook.ts';
 import { bubbleAlpha } from './shieldLook.ts';
 import { isFrozen, STASIS_TINT } from './stasisLook.ts';
+import { phaseAlpha, phaseDithered } from './phaseLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
 import { facingOf, hasAnim, isRunner, spriteId, unitGlyph, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
@@ -802,7 +803,8 @@ export class EnemyView implements PooledView {
     // the outline shimmers brighter than the body as its alpha steps.
     // A sprite with a baked `cloak` variant draws that instead (T440a).
     const cloaked = this.#cloakable && !e.leaving && e.revealedTicks <= 0;
-    const dithered = cloaked && this.#set?.cloak === true;
+    // Phasing (T503; phaseLook.ts): the tell flickers whole and dithered; Phased, a dithered ghost.
+    const dithered = (cloaked || phaseDithered(e, reduced)) && this.#set?.cloak === true;
     const shimmer =
       (cloaked && !dithered) ||
       ((pose === 'puff' || blinkTell) && (reduced || Math.floor(now / SHIMMER_MS) % 2 === 0));
@@ -840,7 +842,9 @@ export class EnemyView implements PooledView {
       dirty = true;
     }
     const high = reduced || Math.floor(now / SHIMMER_MS) % 2 === 0;
-    const alpha = cloakAlpha(e, this.#leaving, high, this.#cloakOn);
+    const alpha =
+      cloakAlpha(e, this.#leaving, high, this.#cloakOn) *
+      phaseAlpha(e, this.#set?.cloak === true, reduced);
     if (alpha !== this.#alpha) {
       this.#alpha = alpha;
       this.#body.setAlpha(alpha);

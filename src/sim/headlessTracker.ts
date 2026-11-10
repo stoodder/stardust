@@ -1,7 +1,7 @@
 // What a headless run reports (runHeadless, headless.ts): per-wave and per-tower tallies built
 // from the drained events, and the debug invariant checks the harness asserts
 // (conventions.md § Balance sims, #12). Reads the public sim API only.
-import type { IdSpace } from '../content/types.ts';
+import type { IdSpace, ObjectiveKind } from '../content/types.ts';
 import { MAX_LOADOUT } from './config.ts';
 import type { SimEvent } from './events.ts';
 import { isBuildableTile, tileIndex } from './grid.ts';
@@ -21,6 +21,11 @@ export interface WaveSummary {
   integrityLost: number;
   /** The Protect map's asset meter its leaks cost (AssetHit; 0 on other maps). */
   assetLost: number;
+  /**
+   * Refugees its units cost an Escort (RefugeeLost, by the wave of the unit that hushed one or
+   * reached the exit; 0 on other maps; T305c).
+   */
+  refugeesLost: number;
   /** The tick it started, or −1. */
   startTick: number;
   /** Called during its countdown, and the bonus that paid. */
@@ -58,6 +63,13 @@ export interface RunSummary {
   /** A Protect map's asset meter at the end, and its full value (both 0 on other maps; T305a). */
   readonly asset: number;
   readonly maxAsset: number;
+  /**
+   * The map's objective at the end (an Escort from the start or by a pivot measures Evacuated;
+   * T305c), its refugees (`escort.total`; 0 without escort data), and its `maxLost` (null: none).
+   */
+  readonly objective: ObjectiveKind;
+  readonly escortTotal: number;
+  readonly maxLost: number | null;
   /** Credits left at the end (unspent). */
   readonly credits: number;
   /** The last wave started when the map was lost, or null. */
@@ -102,6 +114,7 @@ export function createRunTracker<K extends IdSpace>(
     leaked: 0,
     integrityLost: 0,
     assetLost: 0,
+    refugeesLost: 0,
     startTick: -1,
     early: false,
     earlyBonus: 0,
@@ -269,6 +282,11 @@ export function createRunTracker<K extends IdSpace>(
             if (w !== undefined) w.assetLost += e.lost;
             break;
           }
+          case 'RefugeeLost': {
+            const w = waveOf(enemyWave.get(e.enemyUid) ?? 0);
+            if (w !== undefined) w.refugeesLost++;
+            break;
+          }
           case 'TowerClassUnlocked':
           case 'ScriptCue':
           case 'AbilityUsed':
@@ -311,7 +329,6 @@ export function createRunTracker<K extends IdSpace>(
           case 'StoodDown':
           case 'ObjectiveChanged':
           case 'RefugeeEvacuated':
-          case 'RefugeeLost':
           case 'BeamChanged':
           case 'EchoBurst':
           case 'StasisArea':
@@ -342,6 +359,10 @@ export function createRunTracker<K extends IdSpace>(
       }
       // The credits ledger: every credit is the start, plus income, minus net spending.
       const st = state.stats;
+      // Every refugee spawned is walking, evacuated, or lost, never more (T305c).
+      if (st.evacuated < 0 || st.evacuated + st.refugeesLost > st.refugeesSpawned) {
+        violate(`refugees: ${st.evacuated} evacuated + ${st.refugeesLost} lost of ${st.refugeesSpawned}`);
+      }
       const ledger = startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
       if (state.credits !== ledger) {
         violate(`credits ${state.credits} ≠ ledger ${ledger} (start + earned − spent + refunded)`);
@@ -429,6 +450,9 @@ export function createRunTracker<K extends IdSpace>(
         maxIntegrity,
         asset: state.asset,
         maxAsset: state.maxAsset,
+        objective: state.objective,
+        escortTotal: map.escort?.total ?? 0,
+        maxLost: map.maxLost,
         credits: state.credits,
         lostAtWave,
         stats: {

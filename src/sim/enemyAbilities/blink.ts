@@ -23,6 +23,7 @@
 //   (BlinkInterrupted if its tell had begun), and its cooldown restarts from zero. A boss's Stasis
 //   converts to Chilled 50%, which interrupts nothing (D101).
 // Story difficulty changes no blink number (systems/waves.ts `scaledEnemy` keeps it).
+// Allocation-free and stateless: the landing point is worked out in `ctx.scratch.point`.
 import type { CompiledBlink } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { pointAt, type Point } from '../path.ts';
@@ -66,15 +67,8 @@ export function blinkLanding(e: Readonly<Enemy>, blink: CompiledBlink, out: Poin
   return dist;
 }
 
-const landing: Point = { x: 0, y: 0 };
-
 /** One tick of a unit's blink: count down, tell (holding still), blink, or be interrupted. */
-export function blinkStep(
-  state: SimState,
-  _ctx: TickContext,
-  e: Enemy,
-  blink: CompiledBlink,
-): void {
+export function blinkStep(state: SimState, ctx: TickContext, e: Enemy, blink: CompiledBlink): void {
   if (e.invulnerableTicks > 0) return; // a boss between phases: its timers wait
   if (e.blinkTicks <= 0) {
     // First tick it blinks: a boss phase tells at once, a unit waits a period. (Abilities only
@@ -93,6 +87,7 @@ export function blinkStep(
     if (left > blink.tellTicks) return;
     e.paceMul = 0; // it holds still through the tell
     if (left === blink.tellTicks) {
+      const landing = ctx.scratch.point;
       blinkLanding(e, blink, landing);
       emit(state, {
         type: 'BlinkTell',
@@ -111,7 +106,7 @@ export function blinkStep(
   const y = e.y;
   const route = e.route;
   if (route !== null) {
-    e.dist = blinkLanding(e, blink, landing);
+    e.dist = blinkLanding(e, blink, ctx.scratch.point);
     e.seg = pointAt(route, e.dist, e, e.seg);
   }
   if (e.def!.boss !== null) state.stats.bossBlinks++;

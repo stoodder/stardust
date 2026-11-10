@@ -20,6 +20,9 @@ export const ATTACK_SOUNDS: Readonly<
   charge: { fire: 'capacitor_discharge', land: null },
   // The Harpoon's Skewer (T408): the hitscan's crack for now (its own sound is a follow-up).
   line: { fire: 'rivet_shot', land: null },
+  // A beam locking a target (T504; ProjectileFired kind 'beam', once per lock, not per beam tick).
+  // TODO(T550): a stub (the Zapcoil's arc) until the Prism's own lock chime and beam hum.
+  beam: { fire: 'zap_arc', land: null },
 };
 
 /**

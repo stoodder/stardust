@@ -158,9 +158,9 @@ describe('M5 towers, ability, links, and catalog rows', () => {
     expect(l.tiers[0].markArea).toBeNull();
   });
 
-  it('the three wait for their tasks (STUB_TOWER_TASKS), with their access rows', () => {
-    expect(STUB_TOWER_TASKS).toEqual({ prism: 'T504', mindspike: 'T507', lantern: 'T508' });
-    expect(TOWERS_AHEAD_OF_TASK).toEqual(['prism', 'mindspike', 'lantern']);
+  it('two wait for their tasks (STUB_TOWER_TASKS; T504 lifted the Prism), with access rows', () => {
+    expect(STUB_TOWER_TASKS).toEqual({ mindspike: 'T507', lantern: 'T508' });
+    expect(TOWERS_AHEAD_OF_TASK).toEqual(['mindspike', 'lantern']);
     expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
     for (const id of ['mindspike', 'lantern'] as const) {
       expect(TOWER_ACCESS[id], id).toEqual({

@@ -1,8 +1,8 @@
 // npm run check: the whole gate (docs/tech/conventions.md § The test loop). Runs each step as
 // `npm run <step>`, in order, stopping at the first that fails, then prints how long each took
-// against its share of the gate-time budget (GATE_BUDGET: 7 minutes in all, under the 10-minute
-// command cap). A step over its share is a warning, not a failure: wall time is noisy under load,
-// and a red gate must mean broken code. The table is the guardrail: read it on every run, and fix
+// against its share of the gate-time budget (GATE_BUDGET: 8 minutes in all, under the 10-minute
+// command cap; D137). A step over its share is a warning, not a failure: wall time is noisy under
+// load, and a red gate must mean broken code. The table is the guardrail: read it on every run, and fix
 // the step that drifts (conventions.md § Gate time says how).
 import { spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';

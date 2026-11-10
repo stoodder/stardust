@@ -153,10 +153,10 @@ describe('passedMarker.unrevealed (Nothing Unseen)', () => {
 describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', () => {
   it('name the task that lifts each M5 mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'enemy.shieldAura': 'T502',
-      'enemy.phase': 'T503',
-      'attack.beam': 'T504',
-      'map.escort': 'T305c',
+      // Beams run since T504 (attacks/beam.test.ts).
+      'attack.beam': null,
+      // Escort runs since T305c (escort.test.ts).
+      'map.escort': null,
       'enemy.boss.pivot': 'T506',
       'enemy.boss.shieldBroken': 'T506',
       'map.darkness': 'T505',
@@ -167,9 +167,6 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'status.noEvade': 'T508',
     });
     expect(SCRIPT_GATES).toMatchObject({
-      refugeesRemaining: 'T305c',
-      setObjective: 'T305c',
-      spawnAllies: 'T305c',
       standDown: 'T506',
       'bossEnd.pivot': 'T506',
       // No M5 map uses these (D137).
@@ -179,25 +176,28 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
   });
 
   it('refuse the M5 enemies by mechanic, naming the enemy', () => {
-    expect(gateRefusals(withMap({}, 'cantor'))).toEqual([
-      'a shield aura (cantor) is not simulated until T502',
-    ]);
-    expect(gateRefusals(withMap({}, 'riftmoth'))).toEqual([
-      'phasing (riftmoth) is not simulated until T503',
-    ]);
     expect(gateRefusals(withMap({}, 'sunderglass_penitent'))).toEqual([
       "a boss ending 'pivot' (sunderglass_penitent) is not simulated until T506",
       'a shield-broken phase (sunderglass_penitent) is not simulated until T506',
     ]);
-    // Their mechanics ran before M5: the Veilwalker's cloak, the Blinkstrider's blink, the split.
-    for (const id of ['veilwalker', 'blinkstrider', 'fracture', 'glimmer_shard']) {
+    // Their mechanics ran before M5: the Veilwalker's cloak, the Blinkstrider's blink, the split;
+    // phasing runs since T503 (phase.test.ts).
+    // The Cantor's aura runs since T502 (shieldAura.test.ts).
+    for (const id of [
+      'veilwalker',
+      'blinkstrider',
+      'cantor',
+      'fracture',
+      'glimmer_shard',
+      'riftmoth',
+    ]) {
       expect(gateRefusals(withMap({}, id)), id).toEqual([]);
     }
   });
 
-  it('refuse Escort and Sundown on the map', () => {
-    const escort = withMap({ objective: 'escort' });
-    expect(gateRefusals(escort)).toEqual(['an Escort (refugees) is not simulated until T305c']);
+  it('refuse Sundown on the map (Escort runs since T305c)', () => {
+    // Escort runs since T305c (escort.test.ts).
+    expect(gateRefusals(withMap({ objective: 'escort' }))).toEqual([]);
     const lighting = [{ wave: 1, env: 'act2.dusk' as const, dark: 0.4 }];
     expect(gateRefusals(withMap({ lighting }))).toEqual([
       "Sundown's darkness is not simulated until T505",
@@ -215,7 +215,8 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
 
 describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
   it('are refused whole, naming their task, whatever their tiers use', () => {
-    expect(stubTowerGate('prism')).toBe('T504');
+    expect(stubTowerGate('mindspike')).toBe('T507');
+    expect(stubTowerGate('prism')).toBeNull(); // lifted by T504
     expect(stubTowerGate('rivet')).toBeNull();
     expect(stubTowerGate('lantern', {})).toBeNull();
     const towers: Readonly<Record<string, (typeof TOWERS)[keyof typeof TOWERS]>> = TOWERS;
@@ -224,10 +225,9 @@ describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
         `the '${id}' tower is not simulated until ${task}`,
       );
     }
-    // Lifted (no entry), the Prism is refused only by what its tiers use.
-    expect(towerRefusal(TOWERS.prism, FEATURE_GATES, {})).toBe(
-      "a 'beam' attack (prism) is not simulated until T504",
-    );
+    // Lifted (no entry), a tower is refused only by what its tiers use: the Prism by nothing
+    // since T504.
+    expect(towerRefusal(TOWERS.prism)).toBeNull();
     const cfg: SimConfig<IdSpace> = {
       ...fixtureConfig(),
       content: LIVE,

@@ -58,11 +58,26 @@ export interface CheckSpec {
 /**
  * A run's margin % (design/maps.md § 6.1): integrity left ÷ max integrity × 100, and on a Protect
  * map the lower of that and asset left ÷ max asset (D101: the weaker objective decides, as losing
- * either loses), so a loss is 0.
+ * either loses), so a loss is 0. A run that ends as an Escort (from the start, or by a pivot;
+ * T305c) measures Evacuated instead: refugees evacuated ÷ the map's refugees × 100, 0 on a loss.
  */
 export function marginOf(
-  r: Pick<HeadlessResult, 'integrity' | 'maxIntegrity' | 'asset' | 'maxAsset'>,
+  r: Pick<
+    HeadlessResult,
+    | 'integrity'
+    | 'maxIntegrity'
+    | 'asset'
+    | 'maxAsset'
+    | 'objective'
+    | 'escortTotal'
+    | 'stats'
+    | 'outcome'
+  >,
 ): number {
+  if (r.objective === 'escort') {
+    if (r.outcome === 'lost' || r.escortTotal <= 0) return 0;
+    return (100 * r.stats.evacuated) / r.escortTotal;
+  }
   const core = (100 * r.integrity) / r.maxIntegrity;
   if (r.maxAsset <= 0) return core;
   const asset = (100 * r.asset) / r.maxAsset;
@@ -179,19 +194,24 @@ export const won = (rec: RunRecord): string | null =>
 
 /**
  * Integrity lost per wave, "0,0,3,8,9" (waves that never started read 0); on a Protect map each
- * wave adds its asset loss, "0,2+1a,3".
+ * wave adds its asset loss, "0,2+1a,3", and on an Escort its refugees lost, "0,0+2r".
  */
 export const lossPerWave = (r: HeadlessResult | null): string =>
-  r === null
-    ? '-'
-    : r.waves
-        .map((w) => (w.assetLost > 0 ? `${w.integrityLost}+${w.assetLost}a` : `${w.integrityLost}`))
-        .join(',');
+  r === null ? '-' : r.waves.map(waveLoss).join(',');
+
+/** One wave's losses: integrity, "+Na" for the asset's, "+Nr" for refugees lost (T305c). */
+function waveLoss(w: HeadlessResult['waves'][number]): string {
+  let out = `${w.integrityLost}`;
+  if (w.assetLost > 0) out += `+${w.assetLost}a`;
+  if (w.refugeesLost > 0) out += `+${w.refugeesLost}r`;
+  return out;
+}
 
 /**
  * Why a run hits a wall rather than losing gradually (the `gradual` check, D028), or null: a
  * wave that costs more than MAX_WAVE_LOSS_PCT of max integrity (or of a Protect map's asset
- * meter), or a loss in the very wave its leaks start (they must start LEAK_LEAD_WAVES earlier).
+ * meter, or of the refugees an Escort may lose before it's lost: `maxLost` + 1), or a loss in the
+ * very wave its leaks start (they must start LEAK_LEAD_WAVES earlier).
  */
 export function notGradual(r: HeadlessResult): string | null {
   const cap = (r.maxIntegrity * MAX_WAVE_LOSS_PCT) / 100;
@@ -204,9 +224,18 @@ export function notGradual(r: HeadlessResult): string | null {
   if (assetWall !== undefined) {
     return `W${assetWall.wave} costs ${assetWall.assetLost} of ${r.maxAsset} asset, over ${MAX_WAVE_LOSS_PCT}%`;
   }
+  // An Escort's budget is the losses that lose it: maxLost + 1 refugees (T305c).
+  const budget = r.maxLost === null ? 0 : r.maxLost + 1;
+  const refugeeCap = (budget * MAX_WAVE_LOSS_PCT) / 100;
+  const refugeeWall = budget > 0 ? r.waves.find((w) => w.refugeesLost > refugeeCap) : undefined;
+  if (refugeeWall !== undefined) {
+    return `W${refugeeWall.wave} loses ${refugeeWall.refugeesLost} refugees of the ${budget} that lose the map, over ${MAX_WAVE_LOSS_PCT}%`;
+  }
   if (r.outcome === 'lost') {
     const lost = r.lostAtWave ?? r.waves.length;
-    const first = r.waves.find((w) => w.integrityLost > 0 || w.assetLost > 0)?.wave ?? lost;
+    const first =
+      r.waves.find((w) => w.integrityLost > 0 || w.assetLost > 0 || w.refugeesLost > 0)?.wave ??
+      lost;
     if (first > lost - LEAK_LEAD_WAVES) {
       return `it loses in W${lost}, but its leaks only start in W${first} (they must start by W${lost - LEAK_LEAD_WAVES})`;
     }

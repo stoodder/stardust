@@ -1,9 +1,9 @@
 // Shard (design/enemies.md § 5.4, the Fracture's row): what a Fracture breaks into: 80 HP, 1.1
-// tiles/s, Hollow, void; it splits again into 2 Motes. `clustered` (D137): a pair of Shards is a
-// splash problem, like a Mote cluster.
-//
-// A stub registered ahead of its task (T500a): T503 settles what the docs leave out (here leak 1,
-// bounty 4, no armor) and confirms the rest. Sprites: placeholders under their final ids (T540a).
+// tiles/s, Hollow, void; killed, it splits again into 2 Motes. `clustered` (D137): a pair of
+// Shards is a splash problem, like a Mote cluster. The roster leaves the rest to its data (T503):
+// no armor, leak 1 (a Fracture's 2 shared by its two Shards), bounty 4 (between the Fracture's
+// 0.04 credits per HP and the Mote's 0.08). It only ever spawns from a Fracture, so its spawn
+// interval is unused. Sprites: placeholders under their final ids (T540a).
 import { defineEnemy } from '../define.ts';
 
 export const fracture_shard = defineEnemy({

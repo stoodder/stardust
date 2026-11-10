@@ -155,7 +155,7 @@ export function formatMarkdown(report: CampaignReport): string {
             w.spawned,
             w.killed,
             w.leaked,
-            w.assetLost > 0 ? `${w.integrityLost} (+${w.assetLost} asset)` : w.integrityLost,
+            lostCell(w),
             w.bankAtPhase < 0 ? '—' : w.bankAtPhase,
             w.startTick < 0 ? '—' : w.unspentAtStart,
             w.early ? w.earlyBonus : '—',
@@ -191,4 +191,13 @@ export function formatMarkdown(report: CampaignReport): string {
     }
   }
   return `${out.join('\n')}\n`;
+}
+
+/** A wave's losses in the report: integrity, plus the asset's and refugees lost (T305c). */
+function lostCell(w: HeadlessResult['waves'][number]): string | number {
+  if (w.assetLost === 0 && w.refugeesLost === 0) return w.integrityLost;
+  let out = `${w.integrityLost}`;
+  if (w.assetLost > 0) out += ` (+${w.assetLost} asset)`;
+  if (w.refugeesLost > 0) out += ` (+${w.refugeesLost} refugees)`;
+  return out;
 }

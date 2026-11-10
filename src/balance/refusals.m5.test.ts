@@ -1,11 +1,14 @@
-// The harness's M5 rows (T500a; D137): Escort margins wait for T305c, and the jam limit moves to
-// M6 (no M5 map has a jammer).
+// The harness's M5 rows (T500a; D137): Escort margins are measured since T305c (the Holdout's
+// floor and the Choir's Voices wait for their maps), and the jam limit moves to M6 (no M5 map has
+// a jammer).
 import { describe, expect, it } from 'vitest';
 import { HARNESS_GATES } from './refusals.ts';
 
 describe('HARNESS_GATES (M5)', () => {
   it('name the task or milestone that lifts each row', () => {
-    expect(HARNESS_GATES.objectives).toBe('T305c');
+    expect(HARNESS_GATES.objectives).toBeNull();
+    expect(HARNESS_GATES.holdout).toBe('M6');
+    expect(HARNESS_GATES.choir).toBe('M7');
     expect(HARNESS_GATES.jamLimit).toBe('M6');
   });
 });

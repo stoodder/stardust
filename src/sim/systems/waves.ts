@@ -218,7 +218,8 @@ export function waveModifiers(
 
 /**
  * An enemy def with its HP, shield (capacity and regeneration, so it refills in the same time, and
- * any shield pulse's amount, its own or a boss phase's, so a pulse restores the same share; T403),
+ * any shield pulse's amount, its own or a boss phase's, so a pulse restores the same share; T403;
+ * and a shield aura's rate, likewise; T502),
  * and speed scaled by `1 + pct` (design/progression.md § 9 Story, § 6 Hardened Hides and Double
  * Time). HP stays fractional, as the damage pipeline's is.
  */
@@ -240,6 +241,13 @@ export function scaledEnemy(
             regenPerTick: def.shield.regenPerTick * shieldMul,
           }),
     pulse: scaledPulse(def.pulse, shieldMul),
+    shieldAura:
+      def.shieldAura === null || shieldMul === 1
+        ? def.shieldAura
+        : Object.freeze({
+            ...def.shieldAura,
+            shieldPerTick: def.shieldAura.shieldPerTick * shieldMul,
+          }),
     boss:
       boss === null || shieldMul === 1 || !boss.phases.some((p) => p.pulse !== null)
         ? boss

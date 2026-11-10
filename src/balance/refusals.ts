@@ -33,8 +33,12 @@ export function refusal(
 }
 
 export type HarnessFeature =
-  /** #2 margins for non-integrity objectives (escort, holdout, choir). */
+  /** #2 Escort margins: Evacuated % (from the start or by a pivot; T305c). */
   | 'objectives'
+  /** #2 the Holdout's Evacuated floor instead of a win (A3M3). */
+  | 'holdout'
+  /** #2 the Choir escort's Voices margins (the finale). */
+  | 'choir'
   /** #2 a Protect map's margin: min(core %, asset %) (D101). */
   | 'protect'
   /** #14 one par run per story-flag value. */
@@ -52,7 +56,9 @@ export type HarnessFeature =
  * the sim's FEATURE_GATES (sim/gates.ts), each task flips only its own row.
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
-  objectives: 'T305c',
+  objectives: null,
+  holdout: 'M6',
+  choir: 'M7',
   protect: null,
   flagVariants: null,
   companionPick: null,
@@ -79,13 +85,14 @@ export function refusedFeatures<K extends IdSpace>(
       }),
     );
   };
-  if (map.objective !== 'defend' && map.objective !== 'protect') {
-    refuse(
-      'objectives',
-      '2',
-      `${map.objective} margins`,
-      'the harness measures only integrity margins until objectives land',
-    );
+  if (map.objective === 'escort') {
+    refuse('objectives', '2', 'escort margins', 'an Escort margin is Evacuated %');
+  }
+  if (map.objective === 'holdout') {
+    refuse('holdout', '2', 'holdout floor', 'a Holdout asserts an Evacuated floor, not a win');
+  }
+  if (map.objective === 'choir') {
+    refuse('choir', '2', 'choir margins', 'a Choir margin is Voices %');
   }
   if (map.objective === 'protect') {
     refuse('protect', '2', 'protect margins', 'a Protect margin is min(core %, asset %)');

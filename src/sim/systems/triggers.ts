@@ -4,10 +4,12 @@
 // of that id if named, at or below that share of its HP; `bossPhase`: a live boss in that phase
 // or a later one), and `wreckageCleared` (the drone cleared the wreckage under that marker; T400a:
 // A2M1's crew logs), and `interacted` (T409: a clickable world object was interacted with, by
-// click or by fallback; sim/clickables.ts), guarded by an optional `when` condition
+// click or by fallback; sim/clickables.ts), and `refugeesRemaining` (T305c: at most that many
+// refugees not yet safe or lost; sim/escort.ts), guarded by an optional `when` condition
 // (sim/conditions.ts), with the actions `unlockTowerClass` (what `towerUnlockWave` compiles to),
 // `cue`, `grantCredits`, `bossEnd` (`driveOff` or `retreat`: every live boss starts its ending now,
-// whatever its HP; enemyAbilities/bossPhases.ts), and `setClickable` (T409). Before the events,
+// whatever its HP; enemyAbilities/bossPhases.ts), `setClickable` (T409), and the Escort's
+// `setObjective` and `spawnAllies` (T305c; sim/escort.ts). Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
 // uses anything else
@@ -29,6 +31,7 @@ import type { IdSpace } from '../../content/types.ts';
 import { interact, setClickable } from '../clickables.ts';
 import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
+import { refugeesRemaining, setObjective, spawnRefugees } from '../escort.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -43,7 +46,7 @@ export function triggers(state: SimState, ctx: TickContext): void {
     if (!reached(state, ctx, ev.on)) continue;
     fired[i] = true;
     if (ev.when !== null && !evaluateCondition(ev.when, state, ctx)) continue;
-    for (let a = 0; a < ev.actions.length; a++) runScriptAction(state, ev.actions[a]!); // a < length
+    for (let a = 0; a < ev.actions.length; a++) runScriptAction(state, ev.actions[a]!, ctx.map); // a < length
   }
 }
 
@@ -78,6 +81,9 @@ function reached(state: SimState, ctx: TickContext, on: CompiledScriptTrigger<Id
   if ('bossPhase' in on) return bossReached(state, null, 2, on.bossPhase);
   if ('wreckageCleared' in on) return wreckageClearedAt(state, ctx.map, on.wreckageCleared);
   if ('interacted' in on) return state.interacted.includes(on.interacted);
+  if ('refugeesRemaining' in on) {
+    return ctx.map.escort !== null && refugeesRemaining(state, ctx.map) <= on.refugeesRemaining;
+  }
   return false; // refused by createSim (unsupportedScript)
 }
 
@@ -95,7 +101,11 @@ function bossReached(state: SimState, boss: string | null, hpPct: number, phase:
 }
 
 /** Runs one script action (an event's, or a completed objective's `onComplete`; sim/objectives.ts). */
-export function runScriptAction(state: SimState, action: CompiledScriptAction<IdSpace>): void {
+export function runScriptAction(
+  state: SimState,
+  action: CompiledScriptAction<IdSpace>,
+  map: Pick<CompiledMapDef<IdSpace>, 'escort'>,
+): void {
   if ('unlockTowerClass' in action) {
     const idx = state.lockedTowers.indexOf(action.unlockTowerClass);
     if (idx < 0) return;
@@ -116,6 +126,10 @@ export function runScriptAction(state: SimState, action: CompiledScriptAction<Id
   } else if ('setClickable' in action) {
     const { marker, on, fallback } = action.setClickable;
     setClickable(state, marker, on, fallback);
+  } else if ('setObjective' in action) {
+    setObjective(state, action.setObjective, action.meterLabel);
+  } else if ('spawnAllies' in action) {
+    spawnRefugees(state, map, action.spawnAllies);
   }
   // Anything else is refused by createSim (unsupportedScript).
 }
@@ -128,7 +142,6 @@ export function runScriptAction(state: SimState, action: CompiledScriptAction<Id
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   // Triggers. `objectiveCompleted` waits for M6 (no M5 map uses it; D137).
   objectiveCompleted: 'M6',
-  refugeesRemaining: 'T305c',
   restProgressPct: 'M7',
   forcedInputResolved: 'M6',
   // Actions.
@@ -137,8 +150,6 @@ export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   setLighting: 'M7',
   // The finale's Phase 2 checkpoint (T305b runs the wave checkpoints, not this action).
   checkpoint: 'M7',
-  setObjective: 'T305c',
-  spawnAllies: 'T305c',
   standDown: 'T506',
   'bossEnd.pivot': 'T506',
 });
@@ -178,7 +189,8 @@ function unsupportedTrigger(
     !('bossHpPct' in on) &&
     !('bossPhase' in on) &&
     !('wreckageCleared' in on) &&
-    !('interacted' in on)
+    !('interacted' in on) &&
+    !('refugeesRemaining' in on)
   ) {
     const key = Object.keys(on).join('/');
     out.push(`${where} ${key} ${notYet(key)}`);
@@ -196,7 +208,9 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('unlockTowerClass' in a) &&
     !('cue' in a) &&
     !('grantCredits' in a) &&
-    !('bossEnd' in a)
+    !('bossEnd' in a) &&
+    !('setObjective' in a) &&
+    !('spawnAllies' in a)
   ) {
     const key = Object.keys(a).join('/');
     out.push(`${where}: action ${key} ${notYet(key)}`);

@@ -1,10 +1,10 @@
 // Aegis Cantor (design/enemies.md § 5.2): A2M5's shield-aura teach ("kill it first"). The roster
 // row: 150 HP, no armor, shield 100 (regen 15/s after 3 s), 0.8 tiles/s, leak 2, bounty 14,
 // ground, crystalline; a shield-recharge aura: allies within 2 tiles regain 15 shield/s,
-// continuously (D137: not a pulse; `shieldAura`, enemyAbilities/shieldAura.ts).
-//
-// A stub registered ahead of its task (T500a): T502 runs the aura (FEATURE_GATES `enemy.shieldAura`)
-// and confirms the numbers. Sprites: placeholders under their final ids (T540a).
+// continuously (D137: not a pulse; `shieldAura`, enemyAbilities/shieldAura.ts, T502; the rule is
+// enemies.md § 3's: not itself, not a boss, the strongest of two rings). Spawn interval 1.2 s (no
+// doc number: a support unit walks among its escorts). Sprites: placeholders under their final ids
+// (T540a draws them).
 import { defineEnemy } from '../define.ts';
 
 export const cantor = defineEnemy({

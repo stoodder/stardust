@@ -196,22 +196,20 @@ describe('balance harness', () => {
     if (t1 === undefined || t1.attack === null) throw new Error('fx_gun has no tier-1 attack');
     const attack: CompiledAttack = {
       ...t1.attack,
-      kind: 'beam',
-      beamTickTicks: 6,
-      beamTickSec: 0.1,
-      rampPctPerTick: 0,
-      rampCap: 1,
-      beams: 1,
+      // Spawners wait for M6 (beams run since T504).
+      kind: 'spawner',
+      ally: 'swarmling',
+      maxAlive: 1,
     };
-    const beam: CompiledTier = { ...t1, attack };
+    const spawner: CompiledTier = { ...t1, attack };
     const refused: CompiledContent<FixtureIds> = {
       ...PLAIN_CONTENT,
-      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [beam, ...rest] } },
+      towers: { ...PLAIN_CONTENT.towers, fx_gun: { ...gun, tiers: [spawner, ...rest] } },
     };
     const r = runMap(refused, 'fx_map', { seeds: 1, build: 'par' });
     expect(r.ok).toBe(false);
     expect(r.checks.find((c) => c.id === '1')?.failures[0]).toMatch(
-      /seed 1: error: [^]*a 'beam' attack \(fx_gun\) is not simulated until T504/,
+      /seed 1: error: [^]*a 'spawner' attack \(fx_gun\) is not simulated until M6/,
     );
   });
 

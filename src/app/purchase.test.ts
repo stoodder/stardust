@@ -52,6 +52,7 @@ describe('purchases in the save session', () => {
       'maxed',
       'maxed', // the Harpoon's and Crane's (T408)
       'maxed',
+      'maxed', // the Prism's (T504)
     ]);
   });
 });

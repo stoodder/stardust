@@ -44,6 +44,7 @@ function result(
       leaked: 0,
       integrityLost,
       assetLost,
+      refugeesLost: 0,
       startTick: 0,
       early: false,
       earlyBonus: 0,
@@ -102,12 +103,11 @@ describe('the Protect margin', () => {
 });
 
 describe('the harness on a Protect map', () => {
-  it('lifts its refusal (escort and holdout stay refused for T305c)', () => {
+  it('lifts its refusal (the Holdout and the Choir stay refused)', () => {
     expect(HARNESS_GATES.protect).toBeNull();
-    expect(HARNESS_GATES.objectives).toBe('T305c');
     expect(refusedFeatures(PROTECT.maps.fx_map)).toEqual([]);
-    const escort = Object.assign({}, PLAIN_CONTENT.maps.fx_map, { objective: 'escort' as const });
-    expect(refusedFeatures(escort).map((c) => c.title)).toEqual(['escort margins']);
+    const holdout = Object.assign({}, PLAIN_CONTENT.maps.fx_map, { objective: 'holdout' as const });
+    expect(refusedFeatures(holdout).map((c) => c.title)).toEqual(['holdout floor']);
   });
 
   it("judges par by min(core %, asset %) and tallies the asset's losses per wave", () => {

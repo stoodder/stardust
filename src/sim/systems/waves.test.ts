@@ -310,9 +310,9 @@ describe('createSim and map scripts', () => {
     ).toThrow(/'rock': setClickable fallback restProgressPct is not simulated until M7/);
     expect(() =>
       simWith({
-        events: [{ id: 'boss', on: { refugeesRemaining: 2 }, actions: [{ cue: 'fx_map_boss' }] }],
+        events: [{ id: 'boss', on: { restProgressPct: 50 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger refugeesRemaining is not simulated until T305c/);
+    ).toThrow(/'boss': trigger restProgressPct is not simulated until M7/);
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),
     ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated until T506/);

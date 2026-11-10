@@ -25,7 +25,7 @@ import { wreckage } from './systems/wreckage.ts';
 export interface Scratch {
   /** General-purpose slot or uid list; clear it (`length = 0`) before use. */
   readonly slots: number[];
-  /** A point for route predictions (lead targeting). */
+  /** A point for route predictions (lead targeting, a blink's landing). */
   readonly point: Point;
   /** The damage source a tower's hits name, reused so firing doesn't allocate. */
   readonly towerSource: { readonly kind: 'tower'; uid: number };

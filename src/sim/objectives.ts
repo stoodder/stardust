@@ -24,7 +24,7 @@ import type { Enemy, Tower } from './entities.ts';
 import { emit, type ObjectiveStatus, type SimState } from './state.ts';
 import { runScriptAction } from './systems/triggers.ts';
 
-type ObjectiveMap = Pick<CompiledMapDef<IdSpace>, 'objectives'>;
+type ObjectiveMap = Pick<CompiledMapDef<IdSpace>, 'objectives' | 'escort'>;
 
 /**
  * Whether selling `tower` now is a late sell (Clean Audit): a wave has started since it was built
@@ -106,7 +106,7 @@ export function watchObjectives(state: SimState, map: ObjectiveMap, ctx: Conditi
     set(state, map, i, v ? 'done' : 'failed');
     if (v) {
       const actions = def.onComplete;
-      for (let a = 0; a < actions.length; a++) runScriptAction(state, actions[a]!); // a < length
+      for (let a = 0; a < actions.length; a++) runScriptAction(state, actions[a]!, map); // a < length
     }
   }
 }

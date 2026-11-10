@@ -54,6 +54,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Sharper tip, cheaper winch, longer rope. The rope is mostly rope.',
   tune_crane:
     'Price first: 40 stardust, rising. More per shift, cheaper parts, a longer arm. My cut is small.',
+  // TODO(T509): a placeholder in Zibzab's voice until T509 settles where Aelari tune-ups live.
+  tune_prism:
+    'Price first: 40 stardust, rising. Aelari glass, Vrell tools. She watched me the whole time.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

@@ -328,12 +328,7 @@ export function monotonicCheck<K extends IdSpace>(
   const last = new Map<string, number>();
   for (const report of reports) {
     const map = content.maps[report.mapId as K['map']];
-    const chain =
-      map.objective === 'escort' || map.objective === 'choir'
-        ? 'escort'
-        : map.objective === 'holdout'
-          ? null
-          : 'integrity';
+    const chain = marginChain(map);
     const pars = report.runs.filter((r) => r.build === 'par' && !r.repeat).map((r) => r.marginPct);
     if (chain === null || pars.length === 0) continue;
     const med = median(pars);
@@ -363,6 +358,23 @@ export function monotonicCheck<K extends IdSpace>(
       ...outcome,
     });
   }
+}
+
+/**
+ * The chain a map's par margin belongs to (#3; maps.md § 6.1): `escort` for an Escort or Choir
+ * map, and for a map a script pivots into an Escort (A2M5: Defend → Escort, judged on Evacuated
+ * %; T305c); none for a Holdout; `integrity` for the rest (Defend, Protect).
+ */
+export function marginChain<K extends IdSpace>(
+  map: Pick<CompiledMapDef<K>, 'objective' | 'events' | 'objectives'>,
+): 'escort' | 'integrity' | null {
+  if (map.objective === 'holdout') return null;
+  if (map.objective === 'escort' || map.objective === 'choir') return 'escort';
+  const pivots = (actions: readonly object[]): boolean =>
+    actions.some((a) => 'setObjective' in a && a.setObjective === 'escort');
+  if (map.events.some((e) => pivots(e.actions)) || map.objectives.some((o) => pivots(o.onComplete)))
+    return 'escort';
+  return 'integrity';
 }
 
 /** #3 for a `rebaseline` map: after a boss, its median is judged against its own band. */

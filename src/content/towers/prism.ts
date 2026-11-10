@@ -6,9 +6,10 @@
 // second, cap ×10. While its beam is active it is a light source at Sundown (radius 2.0; maps.md
 // § 5.1; T505).
 //
-// A stub registered ahead of its task (T500a): T504 confirms the numbers, runs the beam, and lifts
-// it from towers/index.ts STUB_TOWER_TASKS. `ratePerSec` restates the beam tick (4/s) until T504
-// settles what a beam's rate means. Sprites: placeholders under their final ids (T540b).
+// The beam's rules are sim/attacks/beam.ts's (T504): `damage` is per second, landing in 0.25 s beam
+// ticks, and `ratePerSec` restates that tick (4/s): a fire-rate bonus means more beam ticks. The
+// ramp is linear (+`rampPctPerSec` of the base each second held). Sprites: placeholders under
+// their final ids (T540b).
 import { DEFAULT_BEAM_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 

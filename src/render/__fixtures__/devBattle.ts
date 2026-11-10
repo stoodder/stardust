@@ -25,10 +25,14 @@ import {
 import { clearance_sale } from '../../content/abilities/clearance_sale.ts';
 import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
 import { time_dilation } from '../../content/abilities/time_dilation.ts';
+import { blinkstrider } from '../../content/enemies/blinkstrider.ts';
 import { bunchling } from '../../content/enemies/bunchling.ts';
+import { cantor } from '../../content/enemies/cantor.ts';
 import { chitterbloom } from '../../content/enemies/chitterbloom.ts';
 import { digger } from '../../content/enemies/digger.ts';
 import { elder } from '../../content/enemies/elder.ts';
+import { fracture } from '../../content/enemies/fracture.ts';
+import { fracture_shard } from '../../content/enemies/fracture_shard.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
 import { glass_witch } from '../../content/enemies/glass_witch.ts';
 import { glimmer } from '../../content/enemies/glimmer.ts';
@@ -36,8 +40,12 @@ import { lightwing } from '../../content/enemies/lightwing.ts';
 import { mote } from '../../content/enemies/mote.ts';
 import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
+import { riftmoth } from '../../content/enemies/riftmoth.ts';
+import { veilwalker } from '../../content/enemies/veilwalker.ts';
 import { weft_warden } from '../../content/enemies/weft_warden.ts';
 import { conductive } from '../../content/links/conductive.ts';
+import { resonance } from '../../content/links/resonance.ts';
+import { prism } from '../../content/towers/prism.ts';
 import { lookout } from '../../content/towers/lookout.ts';
 import { map as a1m2 } from '../../content/maps/a1_m02/map.ts';
 import { rivet } from '../../content/towers/rivet.ts';
@@ -45,6 +53,7 @@ import { skyhook } from '../../content/towers/skyhook.ts';
 import { sprinkler } from '../../content/towers/sprinkler.ts';
 import { zapcoil } from '../../content/towers/zapcoil.ts';
 import type { IdsOf, LinkDef, RawContent } from '../../content/types.ts';
+import { prismMap } from './devPrism.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
@@ -134,16 +143,16 @@ const devNibbler = defineEnemy({
 const devChitterbloom = defineEnemy({ ...chitterbloom, id: 'dev_chitterbloom', hp: 200 });
 
 // dev_aelari's pulser (T403): a Glimmer with a quick shield pulse (every 4 s, 1.5 s tell, 40
-// shield within 2 tiles), standing in for M5's Aegis Cantor so the pulse's tell and ring show.
+// shield within 2 tiles), so the pulse's tell and ring show (the Glass Witch's and the Penitent's
+// pulse, quicker). Not the Aegis Cantor: hers is a continuous aura (`shieldAura`, the
+// `shield_aura` trait and tell; D137), which walks dev_aura (T502). The id stays for the smoke flow.
 const devCantor = defineEnemy({
   ...glimmer,
   id: 'dev_cantor',
-  name: 'Dev Cantor',
+  name: 'Dev Pulser',
   hp: 120,
-  // A pulse, not the `shield_aura` trait: the trait goes with the Cantor's continuous aura
-  // (`shieldAura`, T502; T500a), and this unit shows the pulse's tell and ring. The tell stays.
   traits: ['shielded'],
-  tells: ['shielded', 'regen', 'shield_aura'],
+  tells: ['shielded', 'regen'],
   pulse: { everySec: 4, tellSec: 1.5, radiusTiles: 2, shield: 40 },
 });
 
@@ -154,20 +163,6 @@ const devGlassWitch = defineEnemy({
   id: 'dev_glass_witch',
   hp: 450,
   shield: { hp: 200, regenPerSec: 30, regenDelaySec: 4 },
-});
-
-// dev_cloak's (T430a): a Veilwalker-shaped cloaked Aelari (enemies.md § 5.2's numbers) in the
-// Glimmer's body, so the cloak's shimmer, its Revealed bracket, and the reveal edge show before a
-// cloaked unit ships (M5's Veilwalker, T501b).
-const devVeil = defineEnemy({
-  ...glimmer,
-  id: 'dev_veil',
-  name: 'Dev Veil',
-  hp: 90,
-  shield: { hp: 30, regenPerSec: 10, regenDelaySec: 3 },
-  speedTilesPerSec: 1,
-  traits: ['cloaked', 'shielded'],
-  tells: ['stealth', 'shielded'],
 });
 
 const devStrike = defineAbility({
@@ -190,6 +185,8 @@ const DEV_ENTITIES = {
     sprinkler,
     // dev_cloak's detector (T430a).
     lookout,
+    // dev_prism's (T504).
+    prism,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -210,8 +207,14 @@ const DEV_ENTITIES = {
     mote,
     // dev_witch's (T404).
     dev_glass_witch: devGlassWitch,
-    // dev_cloak's (T430a).
-    dev_veil: devVeil,
+    // M5's Aelari (T502): dev_cloak's Veilwalkers, dev_aura's Cantor and Blinkstriders.
+    veilwalker,
+    blinkstrider,
+    cantor,
+    // M5's Hollow (T503): dev_rift's Fractures (their Shards split into Motes) and Rift Moths.
+    fracture,
+    fracture_shard,
+    riftmoth,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -1065,17 +1068,23 @@ const clickMap = dev.defineMap({
   },
 });
 
-// dev_cloak (T430a): dev_act2's north road walked by cloaked Dev Veils, a Lookout midway along it
-// and a Rivet past it, so a unit shimmers in, is Revealed (whole, in its target bracket) inside the
-// Lookout's radius, takes fire, and slips back under its cloak beyond it. `?map=dev_cloak`; no
-// cloaked unit ships in M4 (T501b's smoke flow uses the Veilwalker).
+// dev_cloak (T430a; T501b): dev_act2's north road walked by Veilwalkers in two waves, a Lookout
+// midway along it and a Rivet past it, so a unit shimmers in, is Revealed (whole, in its target
+// bracket) inside the Lookout's radius, takes fire, and slips back under its cloak beyond it.
+// smoke/cloak.spec.ts builds the Rivet alone for wave 1 (the Veilwalkers walk past it untouched and
+// leak) and adds the Lookout for wave 2. `?map=dev_cloak`.
 const cloakMap = dev.defineMap({
   ...act2Layout,
   id: 'dev_cloak',
   threatIntel: ['cloaked', 'shielded'],
   requiredCounters: ['detection'],
   waves: dev.defineWaves([
-    { groups: [{ enemy: 'dev_veil', count: 4, route: 'a', intervalSec: 1.5 }] },
+    { groups: [{ enemy: 'veilwalker', count: 4, route: 'a', intervalSec: 1.5 }] },
+    // Long enough for wave 1 to walk the road and leak first (the flow calls it early).
+    {
+      countdownSec: 35,
+      groups: [{ enemy: 'veilwalker', count: 4, route: 'a', intervalSec: 1.5 }],
+    },
   ]),
   referenceProfile: {
     towers: ['lookout', 'rivet'],
@@ -1096,6 +1105,148 @@ const cloakMap = dev.defineMap({
   },
 });
 
+// dev_aura (T502): dev_act2's two roads. Glimmers walk the north road round an Aegis Cantor, its
+// continuous shield aura ringing it (15 shield/s to the Aelari within 2 tiles), past a Rivet that
+// chips their shields for the aura to refill and a Zapcoil that breaks them; Blinkstriders walk
+// the south-west road, holding still through each blink's tell. smoke/aura.spec.ts.
+const auraMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_aura',
+  threatIntel: ['shielded', 'shield_aura', 'blink'],
+  requiredCounters: ['shield'],
+  waves: dev.defineWaves([
+    {
+      groups: [
+        // The Glimmers (1.1 tiles/s) catch the Cantor (0.8) up by the Rivet and pass through its ring.
+        { enemy: 'cantor', count: 1, route: 'a' },
+        { enemy: 'glimmer', count: 5, route: 'a', delaySec: 2, intervalSec: 0.6 },
+        { enemy: 'blinkstrider', count: 3, route: 'b', delaySec: 1, intervalSec: 2 },
+      ],
+    },
+  ]),
+  referenceProfile: {
+    towers: ['rivet', 'zapcoil'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'zapcoil'],
+    steps: [
+      { wave: 1, build: 'rivet', tile: [8, 4] },
+      { wave: 1, build: 'zapcoil', tile: [14, 4] },
+    ],
+  },
+  noCounterBuilds: {
+    shield: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [8, 4] }] },
+  },
+});
+
+// dev_rift (T503): dev_act2 with an air lane across it, Fractures on the north road and Rift Moths
+// on the lane, so phasing's tell and Phased look (the flicker, the ghost, the broken teal ring) and
+// the Fracture's two-level split show (smoke/phase.spec.ts) before A2M6 lands. Par lines the lane
+// with Skyhooks and the road with Zapcoils.
+const riftMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_rift',
+  env: 'act2.dusk',
+  startCredits: 1400,
+  airLanes: [
+    {
+      id: 'sky',
+      points: [
+        [0, 6],
+        [9, 6],
+        [13, 3],
+        [17, 10],
+      ],
+    },
+  ],
+  threatIntel: ['flying', 'phasing', 'splitting'],
+  requiredCounters: ['air', 'splash'],
+  waves: dev.defineWaves([
+    {
+      groups: [
+        { enemy: 'fracture', count: 3, route: 'a', intervalSec: 2 },
+        { enemy: 'riftmoth', count: 4, route: 'sky', delaySec: 1, intervalSec: 1.5 },
+      ],
+    },
+  ]),
+  referenceProfile: {
+    towers: ['skyhook', 'rivet', 'zapcoil', 'sprinkler'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['skyhook', 'rivet', 'zapcoil'],
+    steps: [
+      { wave: 1, build: 'skyhook', tile: [3, 6] },
+      { wave: 1, build: 'skyhook', tile: [12, 6] },
+      { wave: 1, build: 'rivet', tile: [4, 2] },
+      { wave: 1, build: 'rivet', tile: [5, 4] },
+      { wave: 1, build: 'rivet', tile: [8, 4] },
+      { wave: 1, build: 'rivet', tile: [10, 3] },
+      { wave: 1, build: 'rivet', tile: [12, 3] },
+      { wave: 1, build: 'rivet', tile: [14, 4] },
+      { wave: 1, build: 'rivet', tile: [16, 5] },
+      { wave: 1, build: 'zapcoil', tile: [13, 1] },
+      { wave: 1, build: 'zapcoil', tile: [16, 8] },
+    ],
+  },
+  noCounterBuilds: {
+    air: { loadout: ['sprinkler'], steps: [{ wave: 1, build: 'sprinkler', tile: [5, 4] }] },
+    splash: { loadout: ['skyhook'], steps: [{ wave: 1, build: 'skyhook', tile: [3, 6] }] },
+  },
+});
+
+// dev_escort (T305c; registered from devM5.ts's plan): dev_act2 as an Escort from the start. Two
+// refugee groups (Pebble rides with the first) walk the west road to the gate, the core tile
+// (`safeExit`), while Motes come down the south-west road to the merge and follow the second group
+// in. `maxLost` 6. The escort smoke (smoke/escort.spec.ts) watches them walk, hushed and evacuated.
+export const escortMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_escort',
+  objective: 'escort',
+  meterLabel: 'evacuated',
+  maxLost: 6,
+  markers: { gate: [17, 10] },
+  safeExit: 'gate',
+  refugees: { first: { route: 'a', withPebble: true }, second: { route: 'a' } },
+  threatIntel: ['clustered'],
+  requiredCounters: ['splash'],
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'mote', count: 6, route: 'b', delaySec: 6, intervalSec: 0.3 }] },
+    {
+      countdownSec: 10,
+      groups: [{ enemy: 'mote', count: 8, route: 'a', delaySec: 8, intervalSec: 0.3 }],
+    },
+  ]),
+  events: [
+    { id: 'first_group', on: { wave: 1, phase: 'start' }, actions: [{ spawnAllies: 'first' }] },
+    { id: 'second_group', on: { wave: 2, phase: 'start' }, actions: [{ spawnAllies: 'second' }] },
+  ],
+  referenceProfile: {
+    towers: ['rivet', 'zapcoil'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'zapcoil'],
+    steps: [
+      { wave: 1, build: 'zapcoil', tile: [14, 4] },
+      { wave: 1, build: 'rivet', tile: [16, 8] },
+    ],
+  },
+  noCounterBuilds: {
+    splash: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [16, 8] }] },
+  },
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -1113,9 +1264,18 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_terraces: terracesMap,
     dev_revisit: revisitMap,
     dev_cloak: cloakMap,
+    dev_escort: escortMap, // T305c
+    dev_aura: auraMap,
+    dev_rift: riftMap,
+    dev_prism: prismMap, // T504 (devPrism.ts)
   }),
-  // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
-  links: { conductive: conductive as unknown as LinkDef<DevIds> },
+  links: {
+    // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    conductive: conductive as unknown as LinkDef<DevIds>,
+    // Resonance (T504): the real Zapcoil and Prism, for dev_prism.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    resonance: resonance as unknown as LinkDef<DevIds>,
+  },
   campaign: ['dev_range'],
 };

@@ -31,14 +31,14 @@ function rejections(events: readonly Ev[]): string[] {
   return events.flatMap((e) => (e.type === 'CommandRejected' ? [e.reason] : []));
 }
 
-/** fx_gun with a beam attack on tier 1: a feature the sim still refuses (FEATURE_GATES, T504). */
-const BEAM_GUN = {
+/** fx_gun with a spawner attack on tier 1: a feature the sim still refuses (FEATURE_GATES, M6). */
+const SPAWNER_GUN = {
   ...FIXTURE_CONTENT,
   towers: {
     ...FIXTURE_CONTENT.towers,
     fx_gun: {
       ...GUN,
-      tiers: [tierWith(GUN.tiers[0], { kind: 'beam' }), GUN.tiers[1], GUN.tiers[2]],
+      tiers: [tierWith(GUN.tiers[0], { kind: 'spawner' }), GUN.tiers[1], GUN.tiers[2]],
     },
   },
 } as typeof FIXTURE_CONTENT;
@@ -86,8 +86,8 @@ describe('createSim', () => {
       bad({ loadout: ['fx_gun', 'fx_mortar', 'fx_sprinkler', 'fx_gun', 'fx_mortar'] }),
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
-    expect(bad({ content: BEAM_GUN })).toMatch(
-      /'beam' attack \(fx_gun\) is not simulated until T504/,
+    expect(bad({ content: SPAWNER_GUN })).toMatch(
+      /'spawner' attack \(fx_gun\) is not simulated until M6/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);
@@ -101,9 +101,9 @@ describe('createSim', () => {
     expect(bad({ content: { ...FIXTURE_CONTENT, maps: { fx_map: waveless } } })).toMatch(
       /map 'fx_map' has no waves/,
     );
-    const both = bad({ seed: -1, content: BEAM_GUN });
+    const both = bad({ seed: -1, content: SPAWNER_GUN });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until T504/);
+    expect(both).toMatch(/until M6/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {

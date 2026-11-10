@@ -51,6 +51,7 @@ describe('the loadout screen (app side)', () => {
       ['lookout', []], // plays since T406
       ['harpoon', ['T1']], // plays since T408: anti-armor from tier 1
       ['crane', []],
+      ['prism', ['T1']], // plays since T504: its beam's armor applies per second
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -69,6 +70,7 @@ describe('the loadout screen (app side)', () => {
       'Overwatch', // the Lookout's (T406)
       'Skywatch',
       'Reel It In', // the Harpoon's and Crane's (T408): the Crane gets nothing itself
+      'Resonance', // the Zapcoil's and Prism's (T504)
     ]);
     expect(view.links[3]?.bonus).toContain('Lookout Shack +0.5 detection radius');
     expect(view.links[5]?.bonus).toBe('Grapple Harpoon +10% fire rate, +3 credits per kill');
@@ -102,7 +104,7 @@ describe('the loadout screen (app side)', () => {
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper or Grapple Harpoon would.',
+        'Thumper or Grapple Harpoon or Prism Spire would.',
     ]);
     expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
     const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };

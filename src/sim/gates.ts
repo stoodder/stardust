@@ -167,11 +167,11 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
   // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
-  // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504), Unnerved
+  // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
   // and echoes with the Mindspike (T507), area Marks and Truthlight with the Lantern (T508); spawners
   // (Scuttle Den) are M6's.
   'attack.projectile': null,
-  'attack.beam': 'T504',
+  'attack.beam': null,
   'attack.chain': null,
   'attack.spawner': 'M6',
   'attack.homing': null,
@@ -223,12 +223,12 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.blink': null,
   'enemy.cloak': null,
   'enemy.phase': null,
-  'enemy.shieldAura': 'T502',
+  'enemy.shieldAura': null,
   'map.objectives': null,
   'map.protect': null,
   'map.revisit': null,
   'map.clickable': null,
-  'map.escort': 'T305c',
+  'map.escort': null,
   'map.darkness': 'T505',
   'run.checkpoints': null,
 });

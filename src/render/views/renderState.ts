@@ -52,17 +52,27 @@ export interface AllyRenderState {
 export interface RenderState {
   readonly enemies: readonly EnemyRenderState[];
   readonly allies: readonly AllyRenderState[];
-  /** ShieldView's counts since the battle began, and the pulse tells up now. */
+  /**
+   * ShieldView's counts since the battle began, the pulse tells up now, and the shield-aura rings
+   * up now (ShieldAuraView, T502).
+   */
   readonly shields: {
     readonly ripples: number;
     readonly breaks: number;
     readonly pulseRings: number;
     readonly tells: number;
+    readonly auras: number;
   };
   /** BlinkView's tells up now and afterimages since the battle began. */
   readonly blinks: { readonly tells: number; readonly afterimages: number };
+  /** PhaseView's rings up now (telling, Phased) and units seen phasing in since the battle began. */
+  readonly phases: { readonly tells: number; readonly phased: number; readonly phasedIn: number };
+  /** Refugees drawn now (on the field), and those frozen in a hush (T305c, RefugeeView). */
+  readonly refugees: { readonly shown: number; readonly held: number };
   /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
   readonly harpoon: { readonly pins: number; readonly skewered: number };
+  /** Beams drawn now, and the brightest ramp step among them (−1: none; T504, BeamView). */
+  readonly beams: { readonly drawn: number; readonly topStep: number };
   /** Debris pixels in flight (shards, motes, flecks). */
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */

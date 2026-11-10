@@ -69,6 +69,9 @@ export function fakeResult(
     maxIntegrity: 20,
     asset: 0,
     maxAsset: 0,
+    objective: 'defend',
+    escortTotal: 0,
+    maxLost: null,
     credits: 0,
     lostAtWave,
     stats: {

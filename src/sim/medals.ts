@@ -5,7 +5,8 @@
 // each tick:
 // - A leak books against Perfect Core: a medal-exempt unit's counts in `stats.medalExemptLeaks`
 //   and never breaks it; any other unit's forfeits it ("no leaks", even one Emergency Bulkhead
-//   absorbs or one whose leak cost is 0).
+//   absorbs or one whose leak cost is 0). While the map is an Escort, Perfect means "no refugee
+//   lost" instead (T305c): a lost refugee forfeits it, a leak doesn't by itself (sim/escort.ts).
 // - While playing, a Challenge whose condition has settled false (settledCondition: a run atom
 //   broke, such as a Brood Hauler past the pump station) is forfeited at once.
 // - A loss forfeits everything still open. A win earns Victory and an open Perfect Core, and
@@ -72,10 +73,18 @@ export function leakedThisTick(e: Enemy): boolean {
   return e.route !== null && e.dist >= e.route.lengthTiles && e.def?.neutral !== true;
 }
 
-/** Books one leak (cleanup, for each enemy leakedThisTick). */
+/**
+ * Books one leak (cleanup, for each enemy leakedThisTick). While the map is an Escort, a leak
+ * forfeits nothing by itself: Perfect there is "no refugee lost" (bookRefugeeLost; T305c).
+ */
 export function bookLeak(state: SimState, e: Enemy): void {
   if (isMedalExempt(e.tags)) state.stats.medalExemptLeaks++;
-  else forfeit(state, 'perfectCore');
+  else if (state.objective !== 'escort') forfeit(state, 'perfectCore');
+}
+
+/** A refugee was lost (sim/escort.ts): Perfect on an Escort is "no refugee lost". */
+export function bookRefugeeLost(state: SimState): void {
+  forfeit(state, 'perfectCore');
 }
 
 /** Forfeits an open Challenge whose condition can no longer hold (cleanup, every tick in play). */

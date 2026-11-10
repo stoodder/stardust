@@ -519,9 +519,9 @@ export interface EnemyDef<Id extends string = string> {
   readonly phase?: PhaseDef;
   /**
    * A shield-recharge aura (the `shield_aura` trait; the Aegis Cantor): continuously restores
-   * `shieldPerSec` to every shielded unit of its faction within `radiusTiles` (itself included),
-   * never past each one's max (D137: continuous, not a pulse). Run by enemyAbilities/shieldAura.ts
-   * (T502).
+   * `shieldPerSec` to every other shielded unit of its faction within `radiusTiles` (not itself, not
+   * a boss; two auras don't stack), never past each one's max (D137: continuous, not a pulse). Run
+   * by enemyAbilities/shieldAura.ts (T502; enemies.md § 3's rule).
    */
   readonly shieldAura?: ShieldAuraDef;
   /**

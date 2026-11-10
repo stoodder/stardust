@@ -13,11 +13,18 @@
 //   the player's choice. Damage goes through `applyDamage` with `{ kind: 'ally', uid }`, and
 //   AllyAttacked fires once per shot.
 // - **Removal.** `removeAlly` (scripts, M3) frees an ally and emits AllyRemoved; posts never leave.
+// - **Route allies** (T305c: refugees; sim/escort.ts spawns them): each walks its route at its own
+//   pace (`speedTilesPerTick`), first, in ascending slot order, and stands still while a Hollow
+//   unit's hush tell holds it (`hushUid`; enemyAbilities/hush.ts). One that reaches its route's
+//   end (the safe exit) is evacuated (sim/escort.ts `evacuate`) and leaves the map.
 import { ALLY_NEVER_TARGET_TAGS } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
 import { applyDamage, PLAIN_HIT } from '../combat/damage.ts';
 import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
+import { evacuate } from '../escort.ts';
+import { pointAt } from '../path.ts';
+import { ARRIVE_EPS_TILES } from './movement.ts';
 import { onLayers, untargetable } from '../enemyAbilities/layers.ts';
 import { ALLY_BLANK, type Ally, type Enemy } from '../entities.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
@@ -29,6 +36,7 @@ const allySource: { kind: 'ally'; uid: number } = { kind: 'ally', uid: 0 };
 
 export function allies(state: SimState, ctx: TickContext): void {
   if (state.tick === 0) spawnPosts(state, ctx);
+  walkRouteAllies(state);
   const pool = state.allies;
   for (let i = 0; i < pool.used; i++) {
     const a = pool.items[i]!; // i < used ≤ items.length
@@ -56,6 +64,24 @@ export function allies(state: SimState, ctx: TickContext): void {
     allySource.uid = a.uid;
     applyDamage(state, target, a.damage, a.damageType, allySource, PLAIN_HIT);
     a.cooldownTicks = a.periodTicks;
+  }
+}
+
+/** Walks each route ally (refugees) one tick along its route; evacuates the ones that arrive. */
+function walkRouteAllies(state: SimState): void {
+  const pool = state.allies;
+  for (let i = 0; i < pool.used; i++) {
+    const a = pool.items[i]!; // i < used ≤ items.length
+    const route = a.route;
+    if (!a.alive || a.mode !== 'route' || route === null || a.hushUid !== 0) continue;
+    a.dist += a.speedTilesPerTick;
+    if (a.dist >= route.lengthTiles - ARRIVE_EPS_TILES) {
+      a.dist = route.lengthTiles;
+      a.seg = pointAt(route, a.dist, a, a.seg);
+      evacuate(state, a);
+    } else if (a.dist >= 0) {
+      a.seg = pointAt(route, a.dist, a, a.seg);
+    }
   }
 }
 

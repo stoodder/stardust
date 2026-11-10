@@ -8,6 +8,7 @@
 // countdown until the first upgrade, built towers pulse (`deps.teachUpgrade`, D028).
 // The keyboard tile cursor (T126) is CursorView's; while it shows, the hover feedback follows it
 // instead of the pointer, and moving the mouse (or clicking) hides it.
+// Escort refugees walk their road as RefugeeViews (T305c).
 // Allies (Bricks at his post, T207b) are AllyView's: they face their targets and fire with a
 // tracer. Aiming a strike shows its reticle at its real radius (`abilityStats`, so Orbital Strike
 // Mk II's is wider); aiming Suppressing Fire tints the stretch of path it would cover (the sim's
@@ -35,6 +36,11 @@
 // M4 (T403): a hit on a shield ripples, and a shield pulse tells and rings (ShieldView).
 // M4 (T404): a blink's tell shows a ghost where the unit will land, and leaves an afterimage
 // (BlinkView).
+// M5 (T503): a phaser's tell and Phased stretch show a broken teal ring under it (PhaseView).
+// M5 (T502): an Aegis Cantor's continuous shield aura shows as a crawling dashed blue ring
+// (ShieldAuraView).
+// M5 (T504): a beam tower's lit beams run from its crystal to their targets, wider and brighter as
+// each ramps (BeamView).
 // M4 (T410a): a map's lighting schedule crossfades the sky and a multiply grade as its waves start
 // (LightingView; cosmetic), and its dressing greys the grass (GroundView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
@@ -78,6 +84,7 @@ import { ChainFx } from '../views/ChainFx.ts';
 import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
+import { PhaseView } from '../views/PhaseView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
 import { AssetView } from '../views/AssetView.ts';
 import { CuePropView } from '../views/CuePropView.ts';
@@ -91,6 +98,7 @@ import { LightingView } from '../views/LightingView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HarpoonView } from '../views/HarpoonView.ts';
+import { BeamView } from '../views/BeamView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
 import { LeaveFx } from '../views/LeaveFx.ts';
 import { drawGround } from '../views/GroundView.ts';
@@ -112,9 +120,11 @@ import {
 } from '../views/peekerMotion.ts';
 import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
+import { ShieldAuraView } from '../views/ShieldAuraView.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
+import { RefugeeViews } from '../views/RefugeeView.ts';
 import { enemyBody, facingOf } from '../views/spriteInfo.ts';
 import { TowerView } from '../views/TowerView.ts';
 import type { ViewContext } from '../views/ViewContext.ts';
@@ -172,6 +182,8 @@ export class BattleScene extends Phaser.Scene {
   #enemies!: ViewPool<EnemyView>;
   #projectiles!: ViewPool<ProjectileView>;
   #allies!: ViewPool<AllyView>;
+  /** Escort refugees (T305c). */
+  #refugees!: RefugeeViews;
   #placement!: PlacementView;
   #fx!: FxView;
   #core!: CoreView;
@@ -200,9 +212,15 @@ export class BattleScene extends Phaser.Scene {
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
+  /** The Aegis Cantor's shield aura ring (T502). */
+  #auras!: ShieldAuraView;
   /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
   #blinks!: BlinkView;
+  /** Phasing: the broken ring under a telling or Phased unit (T503). */
+  #phases!: PhaseView;
   #harpoon!: HarpoonView;
+  /** The Prism's beams (T504). */
+  #beams!: BeamView;
   #leaves!: LeaveFx;
   #cueProps!: CuePropView;
   /** A Protect map's asset on its marker, by damage band (T440c). */
@@ -316,6 +334,7 @@ export class BattleScene extends Phaser.Scene {
     this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves, this.#keepClear));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#allies = new ViewPool(() => new AllyView(ctx));
+    this.#refugees = new RefugeeViews(ctx);
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
@@ -338,8 +357,11 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
+    this.#auras = new ShieldAuraView(ctx, prefersReducedMotion);
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
+    this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
+    this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r));
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#asset = new AssetView(ctx, map);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
@@ -447,6 +469,7 @@ export class BattleScene extends Phaser.Scene {
       ),
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
+      this.#phases.bind(bus),
       this.#harpoon.bind(bus, (uid) => {
         const t = sim.state.towers.items.find((x) => x.alive && x.uid === uid);
         return t === undefined ? 0 : this.#liftPx(t.col, t.row);
@@ -461,6 +484,7 @@ export class BattleScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       for (const off of this.#offs) off();
       this.#allies.releaseAll();
+      this.#refugees.releaseAll();
       this.#offs.length = 0;
       this.#fx.reset();
       this.#sacks.reset();
@@ -479,8 +503,11 @@ export class BattleScene extends Phaser.Scene {
       this.#bossBar.reset();
       this.#huddles.reset();
       this.#shields.reset();
+      this.#auras.reset();
       this.#blinks.reset();
+      this.#phases.reset();
       this.#harpoon.reset();
+      this.#beams.reset();
       this.#leaves.reset();
       this.#hover.reset();
       this.#clickables.reset();
@@ -512,8 +539,11 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar.update(dt, state.enemies);
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
+    this.#auras.update(state.enemies, state.tick);
     this.#blinks.update(dt, state.enemies);
+    this.#phases.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
+    this.#beams.update(dt, state.towers, state.enemies);
     this.#leaves.update(dt);
     this.#cueProps.update(dt, state.towerAtTile);
     this.#asset.update(state.asset, state.maxAsset, state.towerAtTile);
@@ -614,14 +644,18 @@ export class BattleScene extends Phaser.Scene {
     return {
       enemies,
       allies,
+      refugees: this.#refugees.counts,
       shields: {
         ripples: sh.ripples,
         breaks: sh.breaks,
         pulseRings: sh.pulseRings,
         tells: sh.tells,
+        auras: this.#auras.rings,
       },
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
+      phases: { ...this.#phases.shown, phasedIn: this.#phases.phasedIn },
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
+      beams: { drawn: this.#beams.beams, topStep: this.#beams.topStep },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
       tethers: this.tethers,
@@ -887,7 +921,7 @@ export class BattleScene extends Phaser.Scene {
     let fireFrom: AllyView | null = null;
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used
-      if (!a.alive || a.kind === null) continue;
+      if (!a.alive || a.kind === null || a.group >= 0) continue; // refugees: RefugeeViews (T305c)
       let v = this.#allies.get(a.uid);
       if (v === undefined) {
         v = this.#allies.acquire(a.uid);
@@ -906,6 +940,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.#shooter = fireFrom;
     this.#allies.sweep(stamp);
+    this.#refugees.sync(allies, stamp);
     if (fireFrom === null) {
       this.#fx.setFireSource(Number.NaN, Number.NaN);
     } else {

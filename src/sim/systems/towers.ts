@@ -16,6 +16,8 @@
 // - chain (Zapcoil, T304b): sim/attacks/chain.ts.
 // - charge (Capacitor Bank, T407b): sim/attacks/charge.ts. Holding fire vents its charge.
 // - line (the Harpoon's Skewer, T408): sim/attacks/line.ts.
+// - beam (the Prism Spire, T504; the Lantern's light-beam, T508): sim/attacks/beam.ts. Holding
+//   fire puts its beams out (their ramps reset).
 // A `targetFilter` (Magnet Crane, T408) narrows a single-target tower's pick and keep to the units
 // it passes (combat/targeting.ts `passesFilter`).
 // A link's statuses (Conductive's Soak; systems/status.ts `applyLinkStatuses`) land after the
@@ -25,7 +27,9 @@
 // it stays valid (performance rule 6), so `targetUid` (render aims with it) is always current.
 // Stats: damage, rate, and range go through the stacking formula with the tower's bonuses
 // (sim/bonuses.ts; the links system sums them), and a link's conditional `vsStatus` bonus is
-// checked per victim: on the hit for hitscan and pulses, on impact for shells.
+// checked per victim: on the hit for hitscan and pulses, on impact for shells. Resonance's
+// `vsShieldPct` (T504) joins it the same way against a unit whose shield is up, in `damageOn`
+// (the Zapcoil's and the Prism's attacks; no shell reads it).
 // Fire control (design/core-loop.md § 2.7; sim/fireControl.ts):
 // - A tower holding fire (`holdFire`) doesn't attack: it drops its target and its cooldown keeps
 //   counting down, so it can fire the tick it's released. Its links and bonuses are untouched.
@@ -50,6 +54,7 @@ import {
   bonusRangeTiles,
   hasStatusIn,
 } from '../bonuses.ts';
+import { beamAttack, beamOff } from '../attacks/beam.ts';
 import { chainAttack } from '../attacks/chain.ts';
 import { chargeAttack } from '../attacks/charge.ts';
 import { lineAttack } from '../attacks/line.ts';
@@ -90,6 +95,7 @@ export function towers(state: SimState, ctx: TickContext): void {
       t.targetUid = 0;
       t.targetSlot = -1;
       t.chargeTicks = 0;
+      if (attack.kind === 'beam') beamOff(state, t);
       continue;
     }
     switch (attack.kind) {
@@ -110,9 +116,11 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'line':
         if (lineAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // Beams (Prism, M5) and spawners (Scuttle Den, M6) arrive with their towers. createSim
-      // refuses each until then (FEATURE_GATES).
       case 'beam':
+        if (beamAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
+        break;
+      // Spawners (Scuttle Den, M6) arrive with their tower. createSim refuses it until then
+      // (FEATURE_GATES).
       case 'spawner':
         break;
       default:
@@ -618,9 +626,16 @@ export function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): Ran
   return out;
 }
 
-/** One hit's damage on `e`: with the conditional `vsStatus` bonus when `e` has the status. */
+/**
+ * One hit's damage on `e`: with the conditional `vsStatus` bonus when `e` has the status, and
+ * Resonance's `vsShieldPct` (T504) when its shield is up (`shieldHp > 0` as the hit lands). Both
+ * join the damage percent before the cap (towers.md § 4).
+ */
 export function damageOn(t: Tower, attack: CompiledAttack, e: Enemy): number {
-  return t.vsStatusMask !== 0 && hasStatusIn(e, t.vsStatusMask)
-    ? bonusDamageVs(attack, t)
-    : bonusDamage(attack, t);
+  const vsStatus = t.vsStatusMask !== 0 && hasStatusIn(e, t.vsStatusMask);
+  if (t.vsShieldPct === 0 || e.shieldHp <= 0) {
+    return vsStatus ? bonusDamageVs(attack, t) : bonusDamage(attack, t);
+  }
+  const pct = t.pctDamage + (vsStatus ? t.vsStatusPct : 0) + t.vsShieldPct;
+  return stackedStat('damage', attack.damage, t.flatDamage, pct);
 }

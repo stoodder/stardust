@@ -535,11 +535,13 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       /**
        * A refugee was lost (T305c): hushed on the road (`hushed`, after its Hushed event) or at the
        * safe exit by an enemy that got there (`exit`: one already sheltered). `stats.refugeesLost`
-       * + 1. `uid` is the hushed refugee's (0 for `exit`: a sheltered one has no entity).
+       * + 1. `uid` is the hushed refugee's (0 for `exit`: a sheltered one has no entity);
+       * `enemyUid` is the unit that hushed it or reached the exit.
        */
       readonly type: 'RefugeeLost';
       readonly uid: number;
       readonly cause: 'hushed' | 'exit';
+      readonly enemyUid: number;
     }
   | {
       /**

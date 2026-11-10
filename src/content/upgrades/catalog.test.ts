@@ -195,8 +195,9 @@ describe('catalog: progression.md numbers', () => {
   });
 
   it('stocking (campaign.md § 4.6): the shop and protocols after A1M3, R&D Command after A1M1', () => {
+    // The Prism's tune-up waits for the Prism itself, Ves'thara's gift after A2M5 (T504).
     for (const u of upgrades.filter((x) => x.kind === 'shop')) {
-      expect(u.availableAfter, u.id).toBe('a1_m03');
+      expect(u.availableAfter, u.id).toBe(u.id === 'tune_prism' ? 'a2_m05' : 'a1_m03');
     }
     for (const p of protocols) expect(p.availableAfter, p.id).toBe('a1_m03');
     expect(UPGRADES.protocol_slots.availableAfter).toBe('a1_m03');

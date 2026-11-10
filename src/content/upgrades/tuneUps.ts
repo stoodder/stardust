@@ -10,18 +10,24 @@ import { defineUpgrade } from './define.ts';
 import type { UpgradeDef } from './types.ts';
 import { TOWERS } from '../towers/index.ts';
 import type { TowerId } from '../types.ts';
+import type { CampaignMapId } from '../campaign.ts';
 
 const PRICES = [40, 80, 140] as const;
 
 /** Rank 1 +5% damage, rank 2 −5% build and upgrade cost (specs included), rank 3 +5% range. */
-function tuneUp<const Id extends string>(id: Id, tower: TowerId, name: string): UpgradeDef<Id> {
+function tuneUp<const Id extends string>(
+  id: Id,
+  tower: TowerId,
+  name: string,
+  availableAfter: CampaignMapId = 'a1_m03',
+): UpgradeDef<Id> {
   return defineUpgrade({
     id,
     name,
     copy: itemCopy(id),
     kind: 'shop',
     currency: 'stardust',
-    availableAfter: 'a1_m03',
+    availableAfter,
     tower,
     ranks: [
       { price: PRICES[0], grants: [{ kind: 'towerStat', tower, stat: 'damage', pct: 0.05 }] },
@@ -83,6 +89,13 @@ export const tune_crane = defineUpgrade({
     { price: PRICES[2], grants: [{ kind: 'towerStat', tower: 'crane', stat: 'range', pct: 0.05 }] },
   ],
 });
+
+/**
+ * The Prism Spire's tune-up (T504): the usual three ranks, stocked once the Prism can be owned
+ * (Ves'thara's gift after A2M5). TODO(T509): decide whether Aelari tune-ups sit in Xenotech in
+ * Ves'thara's voice; until then it is Zibzab's, like every other tune-up.
+ */
+export const tune_prism = tuneUp('tune_prism', 'prism', 'Prism Tune-up', 'a2_m05');
 
 /**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%

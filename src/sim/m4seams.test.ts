@@ -307,8 +307,9 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'map.clickable': null,
       // Revisits run since T410a (content/compileRevisit.test.ts).
       'map.revisit': null,
-      // M5's rows name their tasks (D137; sim/m5seams.test.ts).
-      'attack.beam': 'T504',
+      // M5's rows name their tasks (D137; sim/m5seams.test.ts). Beams run since T504
+      // (attacks/beam.test.ts).
+      'attack.beam': null,
       'status.unnerved': 'T507',
       'enemy.boss.pivot': 'T506',
       'attack.spawner': 'M6',

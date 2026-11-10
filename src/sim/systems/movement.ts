@@ -16,7 +16,8 @@
 // Perfect Core (sim/medals.ts `leakedThisTick`).
 // On a Protect map (T305a), a unit whose route leads to the asset (`map.asset.routes`) leaks
 // there instead: the same cost, floor, and boss rule against `state.asset`
-// (sim/objectives.ts `leakToAsset`), and the core loses nothing.
+// (sim/objectives.ts `leakToAsset`), and the core loses nothing. While the map is an Escort
+// (T305c), every route ends at the safe exit: sim/escort.ts's exit rule takes the leak instead.
 import {
   BOSS_LEAK_DRAINS_ALL,
   HUSH_SPEED_MUL,
@@ -27,6 +28,7 @@ import type { CompiledEnemyDef, CompiledMapDef } from '../../content/compiled.ts
 import type { IdSpace, WaveTag } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
 import { isMedalExempt } from '../conditions.ts';
+import { leakAtExit } from '../escort.ts';
 import { countTags } from '../fireControl.ts';
 import { leakToAsset } from '../objectives.ts';
 import { poolKill } from '../pool.ts';
@@ -119,6 +121,11 @@ function arrive(
   countLeak(state, e, def);
   const drains = def.boss !== null && BOSS_LEAK_DRAINS_ALL;
   const cost = drains ? null : leaksFree(e.tags) ? 0 : def.leak;
+  // On an Escort (T305c) it reaches the safe exit instead: sim/escort.ts's exit rule.
+  if (leakAtExit(state, e, cost)) {
+    poolKill(state.enemies, e);
+    return;
+  }
   if (map === null || !leakToAsset(state, map, e, cost, floor)) {
     leak(state, def.id, cost ?? state.integrity + state.leakAbsorbLeft, e.uid, floor);
   }

@@ -1,6 +1,6 @@
 // M5's dev maps (devM5.ts; T500a): they compile and validate on dev_act2's layout, and createSim
 // refuses each until the task that runs it (T305c's Escort, T505's darkness), which then registers
-// it in DEV_CONTENT.
+// it in DEV_CONTENT (dev_escort since T305c).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -34,9 +34,7 @@ describe('the M5 dev maps', () => {
       total: 12,
     });
     expect(maps.dev_escort?.escort?.groups.map((g) => g.withPebble)).toEqual([true, false]);
-    expect(() => createSim(config('dev_escort'))).toThrow(
-      /an Escort \(refugees\) is not simulated until T305c[^]*spawnAllies is not simulated until T305c/,
-    );
+    expect(() => createSim(config('dev_escort'))).not.toThrow(); // T305c
   });
 
   it('dev_dark: half dark, then full dark, with two lamps', () => {
@@ -47,8 +45,8 @@ describe('the M5 dev maps', () => {
     );
   });
 
-  it('are not in DEV_CONTENT yet (the battle smoke boots every registered dev map)', () => {
-    for (const id of Object.keys(DEV_M5_MAPS))
-      expect(Object.hasOwn(DEV_CONTENT.maps, id)).toBe(false);
+  it('are in DEV_CONTENT once their task lands (the battle smoke boots every registered dev map)', () => {
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_escort')).toBe(true); // T305c
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_dark')).toBe(false);
   });
 });

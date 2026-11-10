@@ -11,7 +11,8 @@
 //    is the untouchable rule's query (T406), run from targeting rather than here.
 // 3. The hush rule over every unit at once (hush.ts; T402): tells count down and land, then new
 //    contacts are matched order-independently; a unit in a tell stands still (`paceMul` 0).
-// 4. Huddles (huddle.ts: the Elder, a boss's huddle phase), last, so each leader's pace is final.
+// 4. Huddles (huddle.ts: the Elder, a boss's huddle phase), so each leader's pace is final.
+// 5. Shield-recharge auras over every unit at once (shieldAura.ts: the Aegis Cantor; T502).
 // Units born this tick (a boss's young) are visited by the later passes like any other.
 // Elsewhere: splitting runs from cleanup over the tick's kills (split.ts); a boss's phase changes
 // and ending run from the damage pipeline (bossPhases.ts) and the `bossEnd` script action; who
@@ -27,6 +28,7 @@ import { hushPass } from './hush.ts';
 import { leaveStep } from './leave.ts';
 import { phaseStep } from './phase.ts';
 import { pulseStep } from './pulse.ts';
+import { shieldAuraPass } from './shieldAura.ts';
 import { skittishStep } from './skittish.ts';
 
 export { splitOnDeath, wasKilled } from './split.ts';
@@ -36,6 +38,7 @@ export { bossNextAbility, bossTelling, type BossAbility } from './boss.ts';
 export { burrowTelling } from './burrow.ts';
 export { cloakedOut } from './cloak.ts';
 export { activeBlink, blinkLanding, blinkTelling } from './blink.ts';
+export { projectedAura } from './shieldAura.ts';
 export { phaseTelling, solidTicks } from './phase.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
@@ -72,4 +75,5 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
     const huddle = def.boss !== null ? bossHuddle(e) : def.huddle;
     if (huddle !== null) huddleStep(state, e, huddle);
   }
+  shieldAuraPass(state, ctx);
 }
