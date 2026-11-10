@@ -65,6 +65,9 @@ describe('the lighting schedule (T410a)', () => {
   });
 });
 
+/** A channel of the dusk's light taken GRADE_STRENGTH of the way from white. */
+const at = (v: number): number => Math.round(255 - (255 - v) * GRADE_STRENGTH);
+
 describe('the grade (the shade)', () => {
   it("leaves the map's own env unchanged and only ever darkens", () => {
     expect(gradeOf('act2.gold', 'act2.gold')).toEqual({ r: 255, g: 255, b: 255 });
@@ -77,7 +80,6 @@ describe('the grade (the shade)', () => {
   it('lights gold as dusk with the dusk light at GRADE_STRENGTH (a lilac: blue over red over green)', () => {
     const dusk = gradeOf('act2.gold', 'act2.dusk');
     const light = rgbOf('act2.dusk.light');
-    const at = (v: number): number => Math.round(255 - (255 - v) * GRADE_STRENGTH);
     expect(dusk).toEqual({ r: at(light.r), g: at(light.g), b: at(light.b) });
     expect(dusk.b).toBeGreaterThan(dusk.r);
     expect(dusk.r).toBeGreaterThan(dusk.g);

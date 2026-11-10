@@ -67,8 +67,6 @@ export const YOUNG_HEAD = [
   'xCKCKDx',
   'xDDDDDx',
 ] as const;
-/** Rows a young head stands above its chin. */
-const HEAD_RISE = YOUNG_HEAD.length - 1;
 /** How far above the bag's top the young can reach (rows a frame must leave clear above it). */
 export const YOUNG_HEADROOM = 2;
 
