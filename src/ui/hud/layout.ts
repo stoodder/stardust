@@ -31,12 +31,12 @@ const OBJECTIVE_ROW_H = 10;
  * keeps clear of them when it can (T213).
  */
 export const HUD_CORNERS: readonly Rect[] = [
-  { x: 4, y: 4, w: 100, h: STATUS_H },
+  { x: 4, y: 4, w: 108, h: STATUS_H },
   // The wave panel grows a second preview row when a wave brings several kinds.
   { x: UI_W - 4 - 150, y: 4, w: 150, h: 92 },
-  // Two ability slots and Hold fire (all) (Spare runners (all), from A2M1, adds 47 px), with
-  // Ready Room's FREE tag over them.
-  { x: 4, y: UI_H - 4 - 44, w: 122, h: 44 },
+  // Two ability slots (slot 2 with its companion's face) and Hold fire (all) (Spare runners (all),
+  // from A2M1, adds 47 px), with Ready Room's FREE tag over them.
+  { x: 4, y: UI_H - 4 - 44, w: 138, h: 44 },
   { x: UI_W - 4 - 129, y: UI_H - 4 - 50, w: 129, h: 50 },
 ];
 

@@ -9,6 +9,7 @@ import type {
 } from '../content/compiled.ts';
 import { COUNTER_ANSWERS, MAX_TIER_BEFORE_SPEC, THREAT_INTEL_TELL } from '../content/rules.ts';
 import { answerScope, answersCarried, type ReachedTower } from '../content/counterAnswers.ts';
+import { SPEAKERS } from '../content/dialogue/speakers.ts';
 import { SPRITES } from '../content/sprites/index.ts';
 import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
@@ -33,6 +34,7 @@ import type {
   AbilityCooldownView,
   AbilitySlotView,
   BuildSlotView,
+  CompanionView,
   MedalView,
   ObjectiveStatusView,
   ObjectiveView,
@@ -370,7 +372,22 @@ export function towerPoints(sim: Sim<IdSpace>, origin: IsoOrigin): { x: number; 
 }
 
 /** The battle config fields the ability slots read. */
-type AbilityConfig = Pick<SimConfig<IdSpace>, 'content' | 'abilities' | 'modifiers'>;
+type AbilityConfig = Pick<SimConfig<IdSpace>, 'content' | 'abilities' | 'modifiers'> &
+  Partial<Pick<SimConfig<IdSpace>, 'companion'>>;
+
+const SPEAKER_DEFS_BY_ID: Readonly<
+  Record<string, { readonly name: string; readonly color: string; readonly portrait: string | null }>
+> = SPEAKERS;
+
+/** The companion slot 2 belongs to, as its portrait shows (T216), or null without a portrait. */
+export function companionView(companion: string | null | undefined): CompanionView | null {
+  if (companion === null || companion === undefined) return null;
+  const def = Object.hasOwn(SPEAKER_DEFS_BY_ID, companion)
+    ? SPEAKER_DEFS_BY_ID[companion]
+    : undefined;
+  if (def?.portrait === null || def === undefined) return null;
+  return { name: def.name, portrait: def.portrait, color: def.color };
+}
 
 /** The hotkey of each ability slot (core-loop §4). */
 const ABILITY_KEYS = { 1: 'Q', 2: 'E' } as const;
@@ -396,6 +413,7 @@ export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
       aim: aimOf(def.effect.kind),
       wavesCooldown: def.cooldownWaves > 0,
       absent,
+      companion: slot === 2 ? companionView(cfg.companion) : null,
     };
   };
   if (slot1 !== null) out.push(view(1, slot1, false));

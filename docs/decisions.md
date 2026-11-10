@@ -1397,3 +1397,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **An annotation is stored as the note alone and shown under its original, dimmed** (replacing core-loop §6.5's "tab to read older ones" and art-direction's strike-through). Everglow annotates too (Rig Nine's status update at A2M1); QUILL's notes begin at A2M3 (the Brood Hauler: the sacks are young; the Mote unredacted: "I filed them under weather").
 - **The KFA form is its own Inbox item** (`memo_a2_02_kfa`, a form panel with a PENDING stamp, "Signature: pending" setting up the epilogue), delivered just before Sterling's "Please disregard it".
 - **The Base opens on the Inbox when a memo is unread** (after Zibzab's arrival, else Research), replacing D075; after A1M5's stinger the player lands on the Record Quarter memo, whose small print is Rig Nine's "quiet period".
+
+### D125 — 2026-11-10 — T301b the Sector map and the Pest Bounty Board
+- **The Sector map is built** as D102 specs it: after A1M5 the campaign screen becomes Everglow's survey chart of the valley, showing won maps and the frontier only; every "Shift board" button reads "Sector map" then; the Shift board's sixth row is never named. Node places follow campaign.md §2's biome column; dusk takes a 32% shade wash so it reads apart from gold; the panel keeps clear of the selected node's plate. The marker's walk plays within a session only.
+- **The Pest Bounty Board** is the Base's last tab from A1M2 won until A2M6 won: Kip #1 (the player's count + 13 + 6%), the player #2, a few colonists (M. Haddad, P. Lindqvist, and Tidybot 4, "Honorary"); Kip's row reads "(on assignment: Reclamation)" once A2M4 is won.
+- The naming rule (D102) covers the Base shelves' "Arrives after {map}" too.

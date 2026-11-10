@@ -1,7 +1,7 @@
 // The map's briefing as a scene (T302b), a blocking modal over the battle: its lines in the comms
-// style, the threat-intel strip, and the medals on offer.
+// style, the threat-intel strip, the medals on offer, and the optional objectives (T431).
 import { dismissBriefing } from '../../app/commands.ts';
-import { hud, type MedalView, type ThreatIntelView } from '../state.ts';
+import { hud, type MedalView, type ObjectiveView, type ThreatIntelView } from '../state.ts';
 import { changeLoadout } from '../../app/navigation.ts';
 import { NamePlate } from '../dialogue/CommsPanel.tsx';
 import { LineText } from '../dialogue/LineText.tsx';
@@ -72,6 +72,34 @@ function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
 }
 
 /**
+ * The map's optional objectives in the briefing (T431; core-loop §2.13), under the medals and in
+ * their grammar: the tracker's square, the name, what does it, and the Intel it pays ("+1 Intel"),
+ * or "On file" once the save holds it (A2M1's Crew Logs).
+ */
+function BriefingObjectives({ objectives }: { objectives: readonly ObjectiveView[] }) {
+  return (
+    <ul class="hud-briefing-medals" aria-label="Optional objectives" data-testid="briefing-objectives">
+      {objectives.map((o) => (
+        <li
+          key={o.id}
+          class={o.held ? 'held' : ''}
+          aria-label={`Optional: ${o.name}: ${o.description}${o.held ? ' On file.' : ` +${o.intel} Intel.`}`}
+        >
+          <span class={`hud-objective-box${o.held ? ' done' : ''}`} aria-hidden="true" />
+          <span class="hud-briefing-medal-name">{o.name}</span>
+          <span class="hud-briefing-medal-desc">{o.description}</span>
+          {o.held ? (
+            <span class="hud-briefing-medal-held">On file</span>
+          ) : (
+            <span class="hud-briefing-objective-intel">+{o.intel} Intel</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
  * The map's briefing (story/style-guide.md § 4: before play, ≤ 8 lines), a scene in the comms
  * style and a blocking modal over the battle until Clock in (its button, or Esc, which
  * app/keys.ts routes here wherever the focus is). The speaker's portrait sits beside the lines so
@@ -82,6 +110,7 @@ function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
 export function Briefing({ view }: { view: SceneView }) {
   const intel = hud.intel.value;
   const medals = hud.medals.value;
+  const objectives = hud.objectives.value;
   const step = useSceneStep(view);
   // The portrait shows whoever speaks now (or spoke last).
   const speaker = view.line ?? view.transcript.at(-1) ?? null;
@@ -128,6 +157,7 @@ export function Briefing({ view }: { view: SceneView }) {
         <LineAnnouncer line={view.line} />
         {intel !== null && <IntelStrip intel={intel} />}
         {medals.length > 0 && <BriefingMedals medals={medals} />}
+        {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
         <div class="hud-briefing-actions">
           {/* Back to the loadout screen, where it came before this map (T201). */}
           {loadoutChangeable.value && (

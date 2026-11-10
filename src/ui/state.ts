@@ -69,6 +69,21 @@ export interface AbilitySlotView {
    * label; its ability can't be used.
    */
   readonly absent: boolean;
+  /**
+   * Slot 2's companion (T216, T431; art-direction §9: "the two commander ability slots (with the
+   * companion's portrait)"): their portrait sprite, their name plate's color, and their name; null
+   * on slot 1, or for a companion with no portrait.
+   */
+  readonly companion: CompanionView | null;
+}
+
+/** The companion beside slot 2: whose portrait shows on the slot (T216). */
+export interface CompanionView {
+  readonly name: string;
+  /** Their portrait sprite (`portrait.<speaker>`). */
+  readonly portrait: string;
+  /** Their name plate's color (a master palette name, speakers.ts). */
+  readonly color: string;
 }
 
 /** An ability slot's cooldown as shown: 0 seconds and 0 waves left means ready. */

@@ -296,6 +296,14 @@
 
 .sd-results-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 2px;
+}
+
+/* Each button keeps its label on one line (T431): a loss with a checkpoint shows four ("Retry
+   from wave 10", Retry, Change loadout, Sector map), so they pad tighter than the menu default. */
+.sd-results-buttons .sd-button {
+  min-width: 48px;
+  padding-inline: 7px;
+  white-space: nowrap;
 }

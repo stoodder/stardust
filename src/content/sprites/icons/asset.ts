@@ -15,9 +15,9 @@ export const iconAssetRig = defineSprite({
   outline: 'auto',
   // Steel legs lit from the upper left, a darker brace, the orange slab, and the beacon lamp.
   legend: {
-    A: 'steel.2',
+    A: 'steel.3',
     B: 'steel.4',
-    X: 'steel.1',
+    X: 'steel.2',
     O: 'orange.3',
     G: 'gold.4',
     R: 'red.3',

@@ -21,6 +21,7 @@ import {
 import {
   abilityCooldownTotals,
   abilitySlots,
+  companionView,
   buildSlots,
   cooldownView,
   countdownSeconds,
@@ -217,6 +218,7 @@ describe('hud view models', () => {
         aim: 'area',
         wavesCooldown: false,
         absent: false,
+        companion: null,
       },
       {
         slot: 2,
@@ -228,6 +230,7 @@ describe('hud view models', () => {
         aim: 'path',
         wavesCooldown: false,
         absent: false,
+        companion: companionView(sim.config.companion),
       },
     ]);
     const none = { slot1: null, slot2: null, slot2State: 'none' } as const;

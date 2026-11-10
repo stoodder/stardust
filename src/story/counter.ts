@@ -1,8 +1,9 @@
 // Pests Processed presentation (docs/design/core-loop.md § 6.2; docs/story/style-guide.md § 2;
 // docs/design/maps.md § 5.5): the counter's number format, its live in-map value, the results
-// line per act, and the finale's countdown display. Pure; the lifetime count itself is save data
+// line per counter style (the presentation dial; story/presentation.ts), and the finale's countdown display. Pure; the lifetime count itself is save data
 // (meta adds a run's kills when it ends).
-import type { StoryAct } from '../content/dialogue/types.ts';
+import type { CounterStyle } from '../content/presentation.ts';
+import { assertNever } from '../shared/types.ts';
 
 /** A non-negative integer with comma thousands separators ("1,234,567"), locale-independent. */
 export function formatCount(n: number): string {
@@ -21,44 +22,85 @@ export type ResultsMeter =
 
 /** What the results screen shows for the counter. */
 export interface ResultsCounter {
-  /** The headline counter line. */
+  /** The whole headline counter line, as a screen reader hears it. */
   readonly line: string;
+  /** The line's parts as the card draws them: the label, the number that counts up, the rest. */
+  readonly label: string;
+  /** The number the card counts up to, or null for a line with none ("Held."). */
+  readonly n: number | null;
+  /** What follows the number: "." (Act II, Act III's meter), or "" (Act I, the finale). */
+  readonly end: string;
+  /** Act I's brag after a star ("Top 5% of Technicians!"), or null where the act has none. */
+  readonly brag: string | null;
   /** The lifetime line under it ("Career total: 1,234"), or null where the act hides it. */
   readonly career: string | null;
   /** Whether the cheerful star rating shows (Act I only). */
   readonly stars: boolean;
 }
 
+/** Act I's brag: always true, and a lie nobody checks (core-loop.md § 6.2). */
+export const ACT_ONE_BRAG = 'Top 5% of Technicians!';
+
 /**
- * The results counter for `act` (core-loop.md § 6.2): Act I "PESTS PROCESSED: {n} ★ Top 5% of
- * Technicians!" with stars and the career line; Act II "Pests processed: {n}." with the career
- * line and no stars; Act III the map's meter line ("Evacuated: {n}.", "Held.", "Sheltered: {n}.";
- * "Held." when the map has no meter) and nothing else; the finale "REMEMBERED: {n}" over the
+ * The results counter in the map's `counter` style (the presentation dial, core-loop.md § 6.2 and
+ * § 6.7): `starred` (Act I) "PESTS PROCESSED: {n} ★ Top 5% of Technicians!" with stars and the
+ * career line; `plain` (Act II) "Pests processed: {n}." with the career line and no stars; `meter`
+ * (Act III) the map's meter line ("Evacuated: {n}.", "Held.", "Sheltered: {n}."; "Held." when the
+ * map has no meter) and nothing else; `remembered` (the finale) "REMEMBERED: {n}" over the
  * lifetime count. `run` is this run's kills; `lifetime` the save's total after this run.
  */
 export function resultsCounter(
-  act: StoryAct,
+  style: CounterStyle,
   run: number,
   lifetime: number,
   meter: ResultsMeter | null = null,
 ): ResultsCounter {
   const career = `Career total: ${formatCount(lifetime)}`;
-  if (act === 1) {
-    return {
-      line: `PESTS PROCESSED: ${formatCount(run)} ★ Top 5% of Technicians!`,
-      career,
-      stars: true,
-    };
+  switch (style) {
+    case 'starred':
+      return {
+        line: `PESTS PROCESSED: ${formatCount(run)} ★ ${ACT_ONE_BRAG}`,
+        label: 'PESTS PROCESSED:',
+        n: run,
+        end: '',
+        brag: ACT_ONE_BRAG,
+        career,
+        stars: true,
+      };
+    case 'plain':
+      return {
+        line: `Pests processed: ${formatCount(run)}.`,
+        label: 'Pests processed:',
+        n: run,
+        end: '.',
+        brag: null,
+        career,
+        stars: false,
+      };
+    case 'meter':
+      return meterCounter(meter);
+    case 'remembered':
+      return {
+        line: `REMEMBERED: ${formatCount(lifetime)}`,
+        label: 'REMEMBERED:',
+        n: lifetime,
+        end: '',
+        brag: null,
+        career: null,
+        stars: false,
+      };
+    default:
+      return assertNever(style);
   }
-  if (act === 2) return { line: `Pests processed: ${formatCount(run)}.`, career, stars: false };
-  if (act === 3) return { line: meterLine(meter), career: null, stars: false };
-  return { line: `REMEMBERED: ${formatCount(lifetime)}`, career: null, stars: false };
 }
 
-function meterLine(meter: ResultsMeter | null): string {
-  if (meter === null || meter.kind === 'held') return 'Held.';
-  const label = meter.kind === 'evacuated' ? 'Evacuated' : 'Sheltered';
-  return `${label}: ${formatCount(meter.n)}.`;
+function meterCounter(meter: ResultsMeter | null): ResultsCounter {
+  const none = { brag: null, career: null, stars: false } as const;
+  if (meter === null || meter.kind === 'held') {
+    return { line: 'Held.', label: 'Held.', n: null, end: '', ...none };
+  }
+  const label = meter.kind === 'evacuated' ? 'Evacuated:' : 'Sheltered:';
+  return { line: `${label} ${formatCount(meter.n)}.`, label, n: meter.n, end: '.', ...none };
 }
 
 /**

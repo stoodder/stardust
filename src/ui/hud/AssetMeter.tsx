@@ -1,8 +1,13 @@
-// The asset meter (T305a; core-loop § 2.10): on a Protect map, a second meter under the core's,
-// labelled with the asset's name ("Rigs"), its row flashing red on every hit that cost something
-// and showing the low-asset alarm from `critical` (half the meter; one rig of two down). A minimal
-// view: T431 polishes it. Other maps show nothing.
+// The asset meter (T305a, T431; core-loop § 2.10): on a Protect map, a second meter under the
+// core's, built like it: the asset's glyph (`icon.asset.rig`, its beacon lit red from `critical`),
+// its name ("Rigs"), and its value; the row flashes red on every hit that cost something and shows
+// the low-asset alarm from `critical` (half the meter; one rig of two down). Other maps show
+// nothing.
 import { hud } from '../state.ts';
+import { Icon } from './Icon.tsx';
+
+/** The asset's glyph (A2M2's rigs, the only asset so far; D111). */
+export const ASSET_ICON = 'icon.asset.rig';
 
 export function AssetMeter() {
   const a = hud.asset.value;
@@ -19,7 +24,7 @@ export function AssetMeter() {
     >
       {/* The key restarts the flash on every hit (like the core's leak flash, D026). */}
       {hit !== null && <span key={hit.id} class="hud-asset-flash" aria-hidden="true" />}
-      <span class="hud-asset-glyph" aria-hidden="true" />
+      <Icon id={ASSET_ICON} frame={low ? 'critical' : 'icon'} />
       <span class="hud-label">
         {a.name}
         {low && (

@@ -209,7 +209,8 @@ section.chamfer,
   left: 4px;
   top: 4px;
   box-sizing: border-box;
-  width: 100px;
+  /* Wide enough for four-digit credits ("1208") beside the label (T431). */
+  width: 108px;
   display: grid;
   gap: 4px;
   padding: 6px 8px 6px 6px;
@@ -229,8 +230,8 @@ section.chamfer,
   text-align: right;
 }
 
-/* A Protect map's asset meter (T305a): a second row under the core's, its own glyph (a rig's
-   roofline) and flash. */
+/* A Protect map's asset meter (T305a, T431): a second row under the core's, built like it, with
+   its own glyph (icon.asset.rig: its beacon turns red from `critical`) and flash. */
 .hud-asset {
   position: relative;
 }
@@ -238,18 +239,6 @@ section.chamfer,
 .hud-asset .hud-label {
   overflow: hidden;
   white-space: nowrap;
-}
-
-.hud-asset-glyph {
-  width: 6px;
-  height: 8px;
-  background: var(--sd-gold-3);
-  clip-path: polygon(50% 0, 100% 35%, 100% 100%, 0 100%, 0 35%);
-}
-
-.hud-asset[data-damage='critical'] .hud-asset-glyph,
-.hud-asset[data-damage='lost'] .hud-asset-glyph {
-  background: var(--sd-red-3);
 }
 
 .hud-asset-flash {
@@ -454,6 +443,39 @@ section.chamfer,
   width: 16px;
   height: 16px;
   margin: 0 auto;
+}
+
+/* The icon row: the ability's icon, after the companion's face on slot 2 (T216). */
+.hud-ability .ability-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* Slot 2 with its companion's face beside the icon (T216): wider by the face and its gap. */
+.hud-ability.companion {
+  width: 52px;
+}
+
+.hud-companion {
+  box-sizing: content-box;
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  overflow: hidden;
+  border: 1px solid var(--frame, var(--sd-white-1));
+  background: var(--sd-ink-0);
+}
+
+.hud-companion img {
+  display: block;
+  max-width: none;
+}
+
+.hud-ability.absent .hud-companion {
+  border-color: var(--sd-steel-1);
 }
 
 /* The cooldown wipe: an ink scrim over the top of the icon, one game pixel per 1/16 left. */
@@ -1030,6 +1052,17 @@ section.chamfer,
 
 .hud-briefing-medal-held {
   color: var(--sd-green-3);
+}
+
+/* The briefing's optional objectives (T431) share the medal rows; the tracker's square, gold once
+   on file, and the Intel it pays in the Intel bank's teal. */
+.hud-briefing-medals .hud-objective-box.done {
+  border-color: var(--sd-gold-4);
+  background: var(--sd-gold-3);
+}
+
+.hud-briefing-objective-intel {
+  color: var(--sd-teal-4);
 }
 
 /* ── The briefing's threat-intel strip (T202d) ────────────────────────────────────────────── */
