@@ -63,6 +63,7 @@ import {
   iconTellHollow,
   iconTellSkittish,
 } from './icons/glyphs.ts';
+import { iconAssetRig } from './icons/asset.ts';
 import { iconEnemyNibbler } from './icons/nibbler.ts';
 import { iconEnemyBunchling } from './icons/bunchling.ts';
 import { iconEnemyDigger } from './icons/digger.ts';
@@ -260,6 +261,7 @@ export const SPRITES = [
   iconCredits,
   iconCore,
   iconLock,
+  iconAssetRig,
   iconTellFast,
   iconTellArmored,
   iconTellCarrier,
