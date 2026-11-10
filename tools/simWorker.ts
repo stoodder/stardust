@@ -7,6 +7,7 @@ import { parentPort, workerData } from 'node:worker_threads';
 import { runMap, type HarnessOptions, type MapReport } from '../src/balance/harness.ts';
 import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
+import { cpuClockMs } from './simClock.ts';
 
 /** What the CLI hands each worker. */
 export interface SimWorkerData {
@@ -36,6 +37,7 @@ const opts: HarnessOptions = {
   ...(data.seeds === undefined ? {} : { seeds: data.seeds }),
   ...(data.build === undefined ? {} : { build: data.build }),
   now: () => performance.now(),
+  cpuNow: cpuClockMs,
 };
 const content = compileContent(RAW_CONTENT);
 

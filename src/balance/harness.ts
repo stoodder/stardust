@@ -46,8 +46,14 @@ export interface HarnessOptions {
   readonly seeds?: number;
   /** Run only the checks about this build (a label such as 'par', or an alt build's name). */
   readonly build?: string;
-  /** Wall clock in ms (the CLI passes performance.now); without it, runtimes read 0. */
+  /** Wall clock in ms for the map and campaign totals (the CLI passes performance.now). */
   readonly now?: () => number;
+  /**
+   * This thread's CPU time in ms (the CLI passes `cpuClockMs` from tools/simClock.ts): each run's
+   * `ms`, which assertion 13 judges. CPU time, not wall time, so another process's load can't
+   * trip it. Without it, runs fall back to `now`; without either, runtimes read 0.
+   */
+  readonly cpuNow?: () => number;
   readonly maxTicks?: number;
   /** The meta catalog profiles are built from (default: the live one; tests pass a fixture's). */
   readonly catalog?: MetaCatalog;
@@ -143,6 +149,7 @@ export function runMap<K extends IdSpace = LiveIds>(
   opts: HarnessOptions = {},
 ): MapReport {
   const now = opts.now ?? ((): number => 0);
+  const cpuNow = opts.cpuNow ?? now;
   const t0 = now();
   const map = content.maps[mapId];
   const n = opts.seeds ?? DEFAULT_SEED_COUNT;
@@ -198,7 +205,7 @@ export function runMap<K extends IdSpace = LiveIds>(
     if (typeof profile === 'string') {
       return { ...base, error: profile, result: null, marginPct: 0, ms: 0 };
     }
-    const start = now();
+    const start = cpuNow();
     try {
       const cfg = runConfig(content, map, build, profile, req.seed, flagsFor(req.build, map) ?? {});
       const result = runHeadless(
@@ -207,10 +214,10 @@ export function runMap<K extends IdSpace = LiveIds>(
         opts.maxTicks === undefined ? {} : { maxTicks: opts.maxTicks },
       );
       const marginPct = marginOf(result);
-      return { ...base, error: null, result, marginPct, ms: now() - start };
+      return { ...base, error: null, result, marginPct, ms: cpuNow() - start };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      return { ...base, error, result: null, marginPct: 0, ms: now() - start };
+      return { ...base, error, result: null, marginPct: 0, ms: cpuNow() - start };
     }
   };
   const get = (req: RunRequest): RunRecord => {
@@ -264,7 +271,7 @@ export function mustIssueEveryStep<K extends IdSpace>(
   return expect?.outcome === undefined;
 }
 
-/** Assertions 12 and 13 and clean build steps, over every run a map made. */
+/** Assertions 12 and 13 (on CPU time: `HarnessOptions.cpuNow`) and clean build steps, over every run a map made. */
 function runLevelChecks<K extends IdSpace>(
   map: CompiledMapDef<K>,
   runs: readonly RunRecord[],
@@ -294,7 +301,12 @@ function runLevelChecks<K extends IdSpace>(
   return [
     check('steps', 'build steps run cleanly', steps, `${runs.length} runs`),
     check('12', 'no invariant violations', invariants, `${runs.length} runs`),
-    check('13', `each run within ${RUN_BUDGET_MS} ms`, slow, `slowest ${Math.round(maxMs)} ms`),
+    check(
+      '13',
+      `each run within ${RUN_BUDGET_MS} ms CPU`,
+      slow,
+      `slowest ${Math.round(maxMs)} ms`,
+    ),
   ];
 }
 

@@ -103,6 +103,22 @@ describe('balance harness', () => {
     expect(timed.runs[0]!.ms).toBe(5);
   });
 
+  it('#13 times runs on the CPU clock when given one, and the map on the wall clock', () => {
+    let wall = 0;
+    let cpu = 0;
+    const r = runMap(PLAIN_CONTENT, 'fx_map', {
+      seeds: 1,
+      build: 'none',
+      now: () => (wall += 1000),
+      cpuNow: () => (cpu += 3000),
+    });
+    expect(r.runs[0]!.ms).toBe(3000);
+    expect(r.ms).toBe(1000);
+    const c13 = r.checks.find((c) => c.id === '13')!;
+    expect(c13.ok).toBe(false);
+    expect(c13.title).toMatch(/CPU/);
+  });
+
   it('#16b: a map with fleeing groups runs spareFleeing against par on seeds 1–3', () => {
     const r = runMap(FIXTURE_CONTENT, 'fx_map', { seeds: 3 });
     const free = r.checks.filter((c) => c.id === '16');

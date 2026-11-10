@@ -33,7 +33,10 @@ export const DEFAULT_SEED_COUNT = 5;
 /** Seeds for the "seeds 1–3" assertions (capped by `--seeds`). */
 export const FEW_SEED_COUNT = 3;
 
-/** Assertion 13: each run's wall-time budget. */
+/**
+ * Assertion 13: each run's budget in CPU ms, on its own thread (`HarnessOptions.cpuNow`). The
+ * slowest run today (A2M1's) takes about 0.5 s; the budget is sized for a 25-minute finale.
+ */
 export const RUN_BUDGET_MS = 2000;
 
 /** The par band for a map, or null when its act has none yet. */

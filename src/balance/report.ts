@@ -106,7 +106,7 @@ export function formatMarkdown(report: CampaignReport): string {
         'Medals',
         'Link uptime',
         'Hash',
-        'ms',
+        'CPU ms',
       ]),
       row(['---', '---', '---', '---', '---', '---', '---', '---', '---', '---', '---']),
     );

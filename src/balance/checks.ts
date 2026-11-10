@@ -35,7 +35,7 @@ export interface RunRecord {
    * Protect map the lower of that and the asset's; 0 without a result.
    */
   readonly marginPct: number;
-  /** Wall time. */
+  /** The run's CPU time in ms (`HarnessOptions.cpuNow`; assertion 13). */
   readonly ms: number;
 }
 

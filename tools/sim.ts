@@ -26,6 +26,7 @@ import {
 } from '../src/balance/harness.ts';
 import { compileContent } from '../src/content/compile.ts';
 import { RAW_CONTENT } from '../src/content/registry.ts';
+import { cpuClockMs } from './simClock.ts';
 import type { SimWorkerData, SimWorkerReply } from './simWorker.ts';
 
 const { values } = parseArgs({
@@ -95,6 +96,7 @@ const opts: HarnessOptions & { readonly mapId?: string } = {
   ...(seeds === undefined ? {} : { seeds }),
   ...(values.build === undefined ? {} : { build: values.build }),
   now: () => performance.now(),
+  cpuNow: cpuClockMs,
 };
 let report: CampaignReport;
 try {
