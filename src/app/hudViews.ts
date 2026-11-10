@@ -263,9 +263,10 @@ export const ESCORT_PERFECT = {
 } as const;
 
 /** Perfect Core's one-liner for a map: its Escort's, or the core's. */
-function perfectText(
-  map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>,
-): { readonly name: string; readonly description: string } {
+function perfectText(map: Partial<Pick<CompiledMapDef<IdSpace>, 'objective' | 'escort'>>): {
+  readonly name: string;
+  readonly description: string;
+} {
   const core = MEDAL_TEXT.perfectCore;
   if (map.objective === 'escort') return { name: core.name, description: ESCORT_PERFECT.escort };
   if (map.objective === 'defend' && (map.escort ?? null) !== null) {

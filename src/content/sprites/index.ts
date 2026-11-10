@@ -125,6 +125,8 @@ import { propVat } from './props/vat.ts';
 import { propIntake } from './props/intake.ts';
 import { propSeam } from './props/seam.ts';
 import { propWall } from './props/wall.ts';
+import { propRelocationFence } from './props/relocation_fence.ts';
+import { propBasin } from './props/basin.ts';
 import { tileHush } from './tiles/hush.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
@@ -227,6 +229,8 @@ export const SPRITES = [
   propIntake,
   propSeam,
   propWall,
+  propRelocationFence,
+  propBasin,
   tileHush,
   towerRivet,
   towerRivetHead,

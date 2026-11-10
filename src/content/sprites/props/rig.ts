@@ -5,7 +5,9 @@
 // QUILL's "(Per policy.)" build site sits beside it. Act II's frames: `strip` (Rig 3 working
 // A2M3's strip mine: its beacon hazard orange, the spoil heaped high, an ore skip loaded with cold
 // violet) and `nine` (A2M1's Rig Nine head frame over the bore mouth: dead beacon and status light,
-// a "9", grime run down the pump house, its spoil a cold violet drift with motes adrift).
+// a "9", grime run down the pump house, its spoil a cold violet drift with motes adrift), and
+// `yard` (A2M5's `rig_yard`, where the Hollow's road starts: the same dead rig, its number plate
+// blank, T540c).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, isoBox, line, plot, rows, stamp } from '../helpers.ts';
 
@@ -15,13 +17,14 @@ const CX = 15;
 const FOOT_Y = 37; // footprint center (the anchor)
 
 /** Which rig: A1M2's Rig 3, Rig 3 working A2M3's strip mine, or A2M1's dead Rig Nine. */
-type RigLook = 'v0' | 'strip' | 'nine';
+type RigLook = 'v0' | 'strip' | 'nine' | 'yard';
 
 // prettier-ignore
 const DIGIT: Readonly<Record<RigLook, readonly string[]>> = {
   v0: ['dd.', '..d', '.dd', '..d', 'dd.'],
   strip: ['dd.', '..d', '.dd', '..d', 'dd.'],
   nine: ['.d.', 'd.d', '.dd', '..d', 'dd.'],
+  yard: [],
 };
 
 function rigGrid(look: RigLook = 'v0'): string[] {
@@ -61,7 +64,7 @@ function rigGrid(look: RigLook = 'v0'): string[] {
     plot(g, x, y + 2, x < hx ? '8' : '7');
   }
   stamp(g, hx - 5, hy - 4, DIGIT[look]);
-  plot(g, hx + 2, hy - 3, look === 'nine' ? 'K' : '+'); // a status light on the shaded face
+  plot(g, hx + 2, hy - 3, look === 'nine' || look === 'yard' ? 'K' : '+'); // a status light on the shaded face
   // A pipe from the pump house to the drill string.
   for (let x = CX; x < hx - 6; x++) plot(g, x, hy - 5, '3');
   // The spoil heap, front left: grey drill tailings with two cold violet flecks.
@@ -84,7 +87,7 @@ function rigGrid(look: RigLook = 'v0'): string[] {
       'NNMMMMU.',
     ]);
     isoBox(g, CX + 9, FOOT_Y + 3, 4, 3, { top: 'U', rim: 'V', left: 'c', right: 'b' });
-  } else if (look === 'nine') {
+  } else if (look === 'nine' || look === 'yard') {
     // Rig Nine, dead: grime run down the pump house, the spoil a cold violet drift, a mote adrift.
     for (const x of [hx - 4, hx - 1, hx + 3]) {
       for (let y = hy - 7; y < hy - 2; y++) if ((x + y) % 2 === 0) plot(g, x, y, 'N');
@@ -110,5 +113,10 @@ export const propRig = defineSprite({
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: { M: 'grime.2', N: 'grime.3', U: 'violet.3', V: 'violet.4', K: 'ink.2', J: 'steel.1' },
-  frames: { v0: rigGrid('v0'), strip: rigGrid('strip'), nine: rigGrid('nine') },
+  frames: {
+    v0: rigGrid('v0'),
+    strip: rigGrid('strip'),
+    nine: rigGrid('nine'),
+    yard: rigGrid('yard'),
+  },
 });

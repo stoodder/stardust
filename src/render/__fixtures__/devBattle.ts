@@ -1109,6 +1109,8 @@ const clickMap = dev.defineMap({
 const cloakMap = dev.defineMap({
   ...act2Layout,
   id: 'dev_cloak',
+  // Enough for a Lookout taken to a spec (630; smoke/unitPolish.spec.ts, T501i).
+  startCredits: 700,
   threatIntel: ['cloaked', 'shielded'],
   requiredCounters: ['detection'],
   waves: dev.defineWaves([

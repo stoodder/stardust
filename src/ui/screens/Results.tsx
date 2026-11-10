@@ -130,12 +130,12 @@ function Debrief({ lines }: { lines: readonly SpokenLine[] }) {
             <span aria-hidden="true">…</span>
           </li>
         ) : (
-        <li key={i}>
-          <span class="sd-results-speaker" style={{ color: colorVar(l.color) }}>
-            {l.name}
-          </span>
-          <span class="sd-results-line">{silkText(l.text)}</span>
-        </li>
+          <li key={i}>
+            <span class="sd-results-speaker" style={{ color: colorVar(l.color) }}>
+              {l.name}
+            </span>
+            <span class="sd-results-line">{silkText(l.text)}</span>
+          </li>
         ),
       )}
     </ul>

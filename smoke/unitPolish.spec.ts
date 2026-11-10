@@ -31,37 +31,30 @@ async function lookout(page: Page, tile: readonly [number, number], spec: 'a' | 
 
 /** A screen clip round tile (col, row), `w` × `h` CSS px. */
 async function clipAt(page: Page, col: number, row: number, w: number, h: number) {
-  const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), [col, row]);
+  const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), [
+    col,
+    row,
+  ] as const);
   return { x: at!.x - w / 2, y: at!.y - h * 0.7, width: w, height: h };
 }
 
-test("the Lookout's spec heads, idling (T501i)", async ({ page }) => {
-  await page.goto('/?test=1&map=dev_cloak&seed=1');
-  await waitForReady(page);
-  await expect(page.getByTestId('hud')).toBeVisible();
-  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
-  // One at a time: the range's credits buy one spec, which sells back for the other.
-  expect(await lookout(page, [8, 4], 'a')).toBe('a');
-  await nextFrames(page);
-  await page.screenshot({
-    path: outPath('screens/unit-polish/01-lookout-a.png'),
-    clip: await clipAt(page, 8.5, 4.5, 120, 90),
+for (const [n, spec, name] of [
+  [1, 'a', 'crows-nest'],
+  [2, 'b', 'overclock-rig'],
+] as const) {
+  test(`the Lookout's spec ${spec} head, idling (T501i)`, async ({ page }) => {
+    await page.goto('/?test=1&map=dev_cloak&seed=1');
+    await waitForReady(page);
+    await expect(page.getByTestId('hud')).toBeVisible();
+    await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+    expect(await lookout(page, [8, 4], spec)).toBe(spec);
+    await nextFrames(page);
+    await page.screenshot({
+      path: outPath(`screens/unit-polish/0${n}-lookout-${name}.png`),
+      clip: await clipAt(page, 8.5, 4.5, 120, 90),
+    });
   });
-  await page.evaluate(() => {
-    const sd = globalThis.__sd!;
-    const pool = sd.state()!.towers;
-    for (const t of pool.items.slice(0, pool.used)) {
-      if (t.alive) sd.enqueue({ type: 'sell', towerUid: t.uid });
-    }
-    sd.fastForward(1);
-  });
-  expect(await lookout(page, [8, 4], 'b')).toBe('b');
-  await nextFrames(page);
-  await page.screenshot({
-    path: outPath('screens/unit-polish/02-lookout-b.png'),
-    clip: await clipAt(page, 8.5, 4.5, 120, 90),
-  });
-});
+}
 
 test("a fleeing Hauler's sack bursts with its young (T501i)", async ({ page }) => {
   await page.goto('/?test=1&map=a2_m03&seed=1');

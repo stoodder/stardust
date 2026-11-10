@@ -41,7 +41,7 @@ const a2m5 = () => {
 
 /** A tower's stat line at an in-map tier, as authored. */
 const line = (id: string, tier: number): string =>
-  statLineText(towerStats(tower(id), tier), tower(id).tiers[tier - 1]!);
+  statLineText(towerStats(tower(id), tier), tower(id).tiers[tier - 1]);
 
 /** A spec card's description, as authored. */
 const card = (id: string, spec: 'a' | 'b'): string =>
@@ -86,6 +86,7 @@ describe('beams in the tower panel (T531)', () => {
       beam3Uid: 5,
       beam3Ramp: 3.13,
     };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a stub with only the towers
     const sim = { state: { towers: { used: 1, items: [t] } } } as unknown as Sim<IdSpace>;
     expect(selectedRamp(sim, 7)).toBe(3.1);
     expect(selectedRamp(sim, 8)).toBeNull();
@@ -135,7 +136,9 @@ describe('briefing and strips (T531)', () => {
     const perfect = (map: Parameters<typeof medalViews>[0]): string | undefined =>
       medalViews(map, open, []).find((m) => m.kind === 'perfectCore')?.description;
     expect(perfect({ medals: null })).toBe('Win with no leaks.');
-    expect(perfect({ medals: null, objective: 'escort', escort: null })).toBe(ESCORT_PERFECT.escort);
+    expect(perfect({ medals: null, objective: 'escort', escort: null })).toBe(
+      ESCORT_PERFECT.escort,
+    );
     expect(perfect(a2m5())).toBe(ESCORT_PERFECT.pivot);
   });
 
