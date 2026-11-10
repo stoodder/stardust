@@ -90,10 +90,33 @@ function compileTestBuild(b: ScriptedBuild): CompiledBuild {
   };
 }
 
+/** The par Rivet's pad: the pocket inside the wall beside the west gate's road (builds.ts). */
+const POCKET_W = [7, 4] as const;
+
+/**
+ * Par with its fourth slot, the pocket's Rivet, swapped for `tower` (same pad, same waves), and
+ * from W12 that tower's spec `spec` if given: what a player who brings Xenotech's new tower to
+ * Sundown gets (D138: report-only probes).
+ */
+function parWith(tower: TowerId, spec: 'a' | 'b' | null): CompiledBuild {
+  const par = content.maps.a2_m06.builds.parBuild;
+  const steps: CompiledBuildStep[] = par.steps.map((st) =>
+    st.kind === 'build' && st.tower === 'rivet' ? { ...st, tower } : st,
+  );
+  if (spec !== null) steps.push({ wave: 12, kind: 'specialize', tile: POCKET_W, spec });
+  return { ...par, loadout: par.loadout.map((t) => (t === 'rivet' ? tower : t)), steps };
+}
+
 /** The test-level builds, with the specs each needs on top of the reference profile. */
 const TEST_LEVEL: Readonly<Record<string, { build: CompiledBuild; specs: readonly TowerId[] }>> = {
   seeker: { build: compileTestBuild(SEEKER_ALT), specs: ['skyhook'] },
   sunlance: { build: compileTestBuild(SUNLANCE_PROBE), specs: ['prism'] },
+  mindspike: { build: parWith('mindspike', null), specs: [] },
+  echo: { build: parWith('mindspike', 'a'), specs: ['mindspike'] },
+  dread: { build: parWith('mindspike', 'b'), specs: ['mindspike'] },
+  lantern: { build: parWith('lantern', null), specs: [] },
+  allseeing: { build: parWith('lantern', 'a'), specs: ['lantern'] },
+  truthlight: { build: parWith('lantern', 'b'), specs: ['lantern'] },
 };
 
 /** The build `label` on `c`: a harness label, or a test-level build's name. */
@@ -215,6 +238,13 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     // spends its ramp on one target at a time, and Resonance's bonus is against shields only).
     expect(probe.integrity).toBe(PAR_INTEGRITY);
     expect(probe.waves[13]!.integrityLost).toBeGreaterThan(0);
+  });
+
+  it('PROBE', () => {
+    for (const label of ['mindspike', 'echo', 'dread', 'lantern', 'allseeing', 'truthlight']) {
+      const r = runOn(content, label);
+      process.stderr.write(`PROBE ${label} ${JSON.stringify([r.outcome, r.integrity, r.maxIntegrity, r.waves.map((w) => w.integrityLost).join(','), r.steps.filter((x) => x.error !== null).map((x) => x.error), r.medals])}\n`);
+    }
   });
 
   it('wins on Story with every medal, Before the Dark included', () => {

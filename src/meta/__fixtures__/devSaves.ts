@@ -40,6 +40,7 @@ export type DevSaveId =
   | 'after_a2m3_ref'
   | 'after_a2m4_returned'
   | 'after_a2m4_sold'
+  | 'after_a2m4_unanswered'
   | 'after_a2m5'
   | 'after_a2m6'
   | 'all_unlocked';
@@ -260,8 +261,11 @@ function caughtUp(save: SaveData): SaveData {
 interface ActTwoPlan {
   /** Buy the next map's reference purchases too (the `_ref` saves: into that map). */
   readonly prepNext?: boolean;
-  /** C2's branch on A2M4's Results (default Return, the reference's). */
-  readonly c2?: C2Branch;
+  /**
+   * C2's branch on A2M4's Results (default Return, the reference's); `unanswered`: the tab closed
+   * on the card (the Q3 Bonus paid, C2 not made, the base not entered since).
+   */
+  readonly c2?: C2Branch | 'unanswered';
 }
 
 /**
@@ -292,7 +296,9 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
     }
     save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
     if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
-    if (step === 'a2_m04') {
+    if (step === 'a2_m04' && plan.c2 === 'unanswered') {
+      save = grantQ3Bonus(save).save;
+    } else if (step === 'a2_m04') {
       save = afterA2M4Results(save, plan.c2 ?? 'returned');
       // Won A2M4, the player has seen the truth scene (Act II's jingle turns minor on it) and,
       // having entered the base since, Bricks's handover (app/baseScenes.ts HANDOVER_SCENE).
@@ -424,6 +430,13 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       '(stardust_choice = sold, the bank 0, the Intel windfall, the Zibzab Tune-up). Skipped ' +
       'while A2M4 is not registered.',
     build: () => actTwoThrough('a2_m04', { c2: 'sold' }),
+  },
+  after_a2m4_unanswered: {
+    description:
+      'after_a2m3, then A2M4 won (Victory) with the Q3 Bonus paid and the tab closed on its ' +
+      'card: C2 never answered (stardust_choice unset, the bank whole), the base not entered ' +
+      'since (no handover). The base offers C2 (D138). Skipped while A2M4 is not registered.',
+    build: () => actTwoThrough('a2_m04', { c2: 'unanswered' }),
   },
   after_a2m5: {
     description:
