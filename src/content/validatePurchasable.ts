@@ -5,6 +5,8 @@
 //   obtainable (it has a catalog or access entry) and available: its `availableAfter` map comes
 //   earlier in the campaign plan; a tower registered ahead of its task (towers/index.ts
 //   TOWERS_AHEAD_OF_TASK: its license is on no shelf yet) isn't, until its task lifts it (T412);
+// - a tower whose access `requires` another (an attunement needs the Prism Spire owned; T566)
+//   comes with that tower in the same profile;
 // - shop ranks are whole numbers within the item's ranks, protocols are listed once, and no more
 //   protocols are equipped than the profile's slots;
 // - the Stardust spent is at most what the earlier maps' first clears paid (from each map's
@@ -156,7 +158,13 @@ function billOf(
     if (rules.aheadOfTask.includes(t)) {
       report('.towers', `'${t}' waits for its task: no shelf sells it yet (TOWERS_AHEAD_OF_TASK)`);
     }
-    if ('price' in access) pay(access.currency, access.price);
+    if ('price' in access) {
+      pay(access.currency, access.price);
+      const needs = access.requires;
+      if (needs !== undefined && !profile.towers.includes(needs)) {
+        report('.towers', `'${t}' needs '${needs}' owned first (its access \`requires\`)`);
+      }
+    }
   }
 
   const eng = rules.engineering;

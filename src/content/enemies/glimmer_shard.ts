@@ -16,7 +16,7 @@ export const glimmer_shard = defineEnemy({
   layer: 'ground',
   hp: 60,
   armor: 0,
-  speedTilesPerSec: 0.35,
+  speedTilesPerSec: 0.2,
   leak: 1,
   bounty: 3,
   spawnIntervalSec: 0.5,

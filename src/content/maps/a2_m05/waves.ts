@@ -8,7 +8,8 @@
 // `intervalSec` use the enemy's default spacing (Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s,
 // Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Cantor 1.2 s). After the pivot every group
 // is Motes (0.25–0.5 s apart): the rig road's groups reach the Preserve Road at the fencing's end
-// (8,4) 5.6 s after they spawn, the road's catch the refugees walking ahead of them.
+// (8,4) 5.6 s after they spawn, where a forced pivot kneels the Ward (its chill slows them through
+// the junction); the road's catch the refugees walking ahead of them.
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup } from '../../types.ts';
 
@@ -43,7 +44,8 @@ export const COUNTDOWN = 25;
 /**
  * W6's build phase: the Penitent's fight. It opens as she spawns (W5's only group), so W6 starts
  * (and forces the pivot) PENITENT_WINDOW s after her, long before she could walk the 36-tile road
- * to the gate (0.35 tiles/s: 100 s).
+ * to the gate (0.2 tiles/s: 180 s). She walks 12 tiles in it, to the fencing's end, so a forced
+ * pivot kneels the Ward where the rig road joins.
  */
 export const PENITENT_WINDOW = 60;
 
@@ -110,10 +112,11 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [motes(20, OPEN, 0.3)],
   },
-  // W11 · two groups at once, clusters from both ends
+  // W11 · two groups at once, clusters from both ends (the rig road's meets the line of twelve
+  // at the junction, inside the Ward's ring)
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(22, OPEN + 10, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
+    groups: [motes(22, OPEN + 7, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
   },
   // W12 · the last group + the largest surge
   {

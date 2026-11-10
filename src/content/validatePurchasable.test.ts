@@ -119,6 +119,28 @@ describe('[purchasable]', () => {
     expect(errorsOf(withProfile({}))).toEqual([]);
   });
 
+  it('fails an attuned tower without the tower its access requires (T566)', () => {
+    // fx_mortar stands in for an attunement that needs the Prism Spire owned.
+    const attuned = {
+      ...RULES,
+      towers: {
+        ...RULES.towers,
+        fx_mortar: {
+          how: 'attune',
+          currency: 'intel',
+          price: 0,
+          availableAfter: null,
+          requires: 'prism',
+        },
+        prism: { how: 'gift', availableAfter: null },
+      },
+    } satisfies PurchaseRules;
+    rejects(withProfile({}), /towers: 'fx_mortar' needs 'prism' owned first/, attuned);
+    // fx_prior's profile (the fixture's own) still lacks it; fx_map's now owns both.
+    const both = withProfile({ towers: ['fx_gun', 'fx_mortar', 'prism'] });
+    expect(errorsOf(both, attuned).filter((e) => e.includes('fx_map'))).toEqual([]);
+  });
+
   it('fails what has no catalog or access entry', () => {
     rejects(withProfile({ shop: { tune_rivet: 1 } }), /'tune_rivet' is not a shop or R&D upgrade/);
     rejects(withProfile({ protocols: ['ready_room'] }), /'ready_room' is not a Field Protocol/);
