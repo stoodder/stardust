@@ -2,13 +2,13 @@
 // Cantor's: allies within its radius regain `shieldPerTick` every tick, continuously (D137: not a
 // pulse, so there is no timer, no tell, and no event; render reads the def). One pass over every
 // unit at once, from the abilities system after the hush rule (enemyAbilities/index.ts):
-// - **Sources:** every live unit with `def.shieldAura` that isn't leaving or burrowed (a Cantor
+// - **Sources:** every live unit with `def.shieldAura` that isn't leaving, burrowed or Phased (a Cantor
 //   standing down or walking off projects nothing).
 // - **Who regains:** every live unit of the source's faction with a shield, within the radius
 //   (centres, any layer, so the Lightwings over a road are in it), never past its own max. Not the
 //   source itself ("allies": a Cantor is recharged only by another Cantor), not a boss (a boss's
 //   shield is its phases' business: the Penitent's broken shield, T506), not a neutral unit, and
-//   not one that's leaving or burrowed (nothing reaches those, the pulse's rule). A cloaked unit is
+//   not one that's leaving, burrowed or Phased (nothing reaches those, the pulse's rule). A cloaked unit is
 //   recharged whether or not it's Revealed: the untouchable rule is about what the player sends
 //   (enemies.md § 2.5).
 // - **Stacking:** auras of the same kind don't stack (towers.md § 4; Haste's "highest only"): a unit
@@ -25,12 +25,13 @@ import type { CompiledShieldAura } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import type { SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { outOfReach } from './layers.ts';
 
-/** The aura `e` projects now (render reads it), or null: none, dead, leaving, or burrowed. */
+/** The aura `e` projects now (render reads it), or null: none, dead, leaving, burrowed, or Phased. */
 export function projectedAura(e: Readonly<Enemy>): CompiledShieldAura | null {
   const def = e.def;
   if (def === null || def.shieldAura === null) return null;
-  if (!e.alive || e.leaving || e.burrowed) return null;
+  if (!e.alive || outOfReach(e)) return null;
   return def.shieldAura;
 }
 
@@ -47,7 +48,7 @@ export function shieldAuraPass(state: SimState, ctx: TickContext): void {
     const a = pool.items[i]!; // i < used ≤ items.length
     const d = a.def;
     if (!a.alive || d === null || d.shield === null || d.neutral || d.boss !== null) continue;
-    if (a.leaving || a.burrowed) continue;
+    if (outOfReach(a)) continue;
     const max = d.shield.hp;
     if (a.shieldHp >= max) continue;
     let best = 0;

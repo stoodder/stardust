@@ -24,9 +24,9 @@ describe('the aura ring crawl (T502)', () => {
     const frames = [0, 1, 2, 3, 4].map((k) => ringImage(2, 'blue.4', true, 'ink.0', k));
     const first = frames[0]!;
     for (const f of frames) {
-      expect([f.image.width, f.image.height, f.cx, f.cy]).toEqual([
-        first.image.width,
-        first.image.height,
+      expect([f.image.w, f.image.h, f.cx, f.cy]).toEqual([
+        first.image.w,
+        first.image.h,
         first.cx,
         first.cy,
       ]);
