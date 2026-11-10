@@ -13,6 +13,21 @@ export const BOUNTY_KIP_AWAY_AFTER: CampaignMapId = 'a2_m04';
 /** The board is gone from the base, with no message, once this map is won (Act III begins). */
 export const BOUNTY_BOARD_UNTIL: CampaignMapId = 'a2_m06';
 
+/**
+ * Whether the base shows the board, and Kip's row on assignment, for a save whose won maps
+ * `isWon` reports: from A1M2 won until A2M6 won. It retires with Act II, as Act III begins: no
+ * farewell, no notice, the tab simply gone (core-loop § 6.6; act3.md: "gone without comment").
+ */
+export function bountyBoardState(isWon: (map: CampaignMapId) => boolean): {
+  readonly shown: boolean;
+  readonly kipAway: boolean;
+} {
+  return {
+    shown: isWon(BOUNTY_BOARD_FROM) && !isWon(BOUNTY_BOARD_UNTIL),
+    kipAway: isWon(BOUNTY_KIP_AWAY_AFTER),
+  };
+}
+
 /** The pane's copy (story/style-guide.md § 2 *Pest Bounty Board*): Everglow PR, cheerful. */
 export const BOUNTY_COPY = {
   title: 'Pest Bounty Board',

@@ -32,6 +32,7 @@ import {
   type SoundCall,
 } from '../audio/index.ts';
 import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
+import { WAVE_CLEAR_CUE } from '../audio/music/index.ts';
 import {
   isStormId,
   renderCue,
@@ -76,6 +77,15 @@ export function audioStatus(): AudioStatus {
 /** Plays a sound effect now (UI code paths that aren't sim events). */
 export function playSfx(id: SfxId): void {
   engine.play(id);
+}
+
+/**
+ * Plays the colony jingle once in `variant`'s arrangement, outside a battle (a story beat: the PA's
+ * minor shift change that closes Act II, app/runFlow.ts). A variant with no cue plays nothing.
+ */
+export function playJingle(variant: JingleVariant): void {
+  const id = WAVE_CLEAR_CUE[variant];
+  if (id !== null) engine.cue(id);
 }
 
 function playCalls(calls: SoundCall[]): void {

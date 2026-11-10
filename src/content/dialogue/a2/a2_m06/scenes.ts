@@ -4,7 +4,8 @@
 // from the dome, Sterling is afraid for once, and as W12's build phase opens, in full Long Night
 // darkness (the map's lighting reaches it as W11 starts; balance/a2m6.test.ts checks every
 // reference run), Goldie puts the lights out in Dome 3 and QUILL forgets the end of its joke. The
-// debrief is Ishael: Ves'thara's mother, sung into the oldest chamber, in the shapes we broke.
+// debrief is Ishael: Ves'thara's mother, sung into the oldest chamber, in the shapes we broke. The
+// stinger closes Act II over the dark.
 import { defineScene, defineScenes } from '../../define.ts';
 
 export const scenes = defineScenes([
@@ -87,5 +88,18 @@ export const scenes = defineScenes([
       speaker: 'bricks',
       text: "Wall's still standing. So are we. Back up there, Thorn.",
     },
+  ]),
+  // Act II's close, after Results (content/dialogue/resultsFlow.ts): no memo from Sterling, only
+  // the dark, the PA's shift change, and the jingle once in its minor arrangement (played as the
+  // caption shows, `afterResultsJingle`), left to ring out before the base.
+  defineScene('a2_m06_scene_stinger', [
+    { kind: 'line', speaker: 'narrator', text: '', durationSec: 2 },
+    { kind: 'line', speaker: 'pa', text: 'Shift change.' },
+    {
+      kind: 'line',
+      speaker: 'narrator',
+      text: 'The jingle plays once, over the dark. In minor.',
+    },
+    { kind: 'line', speaker: 'narrator', text: '', durationSec: 3 },
   ]),
 ]);

@@ -89,6 +89,39 @@ describe('starMapView', () => {
     for (const name of later) expect(text).not.toContain(name);
   });
 
+  it("after A2M6 (Act II's close): the night chart, The Preserve as a teaser, nothing past it", () => {
+    const view = starMapView(DEV_SAVES.after_a2m6.build());
+    expect(view.phase).toBe('act3');
+    expect(view.act).toBe('3');
+    expect(view.marker).toBe('a2_m06');
+    expect(view.frontier).toBe('a3_m01');
+    expect(view.nodes).toHaveLength(12);
+    expect(view.nodes.slice(0, 11).every((n) => n.state === 'won')).toBe(true);
+    const teaser = view.nodes.at(-1)!;
+    // Coming soon: its name, place, and tagline only (no briefing facts, no Start).
+    expect(teaser).toMatchObject({
+      id: 'a3_m01',
+      state: 'coming_soon',
+      name: 'The Preserve',
+      place: 'The Preserve',
+      brief: null,
+      tagline: 'The Hollow is inside the Preserve, where you led them. Get them out.',
+    });
+    expect(teaser.label).toBe(
+      'Shift 12, The Preserve, The Preserve. Coming soon. The Hollow is inside the Preserve, ' +
+        'where you led them. Get them out.',
+    );
+    // The leg from Sundown to the Preserve is the accent's (Act III's red), the rest steel.
+    expect(view.legs.map((l) => l.accent)).toEqual([...Array<boolean>(10).fill(false), true]);
+    // The Long Walk is named; nothing later than the teaser is, in any field.
+    expect(view.regions.find((r) => r.id === 'long_walk')).toMatchObject({
+      text: 'The Long Walk',
+      struck: 'Surge corridor',
+    });
+    const text = JSON.stringify(view);
+    for (const m of CAMPAIGN_PLAN.slice(12)) expect(text).not.toContain(m.name);
+  });
+
   it('marks the first visit until the save has seen it', () => {
     const save = DEV_SAVES.after_a1m5_ref.build();
     save.story.seen.push(STAR_MAP_SEEN_ID);
@@ -112,7 +145,9 @@ describe('phaseFor', () => {
     expect(phaseFor('a2_m03')).toBe('act2.gold');
     expect(phaseFor('a2_m04')).toBe('act2.dusk');
     expect(phaseFor('a2_m06')).toBe('act2.dusk');
+    // Act II's close: A2M6 won makes A3M1 the frontier (built or not), so the chart goes to night.
     expect(phaseFor('a3_m01')).toBe('act3');
+    expect(phaseFor('a3_m06')).toBe('act3');
     expect(phaseFor('fin_m01')).toBe('act3');
     expect(phaseFor(null)).toBe('dawn');
   });

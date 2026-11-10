@@ -10,6 +10,14 @@ import { LEG_STOP, chartAccent, starMapChart } from './starMapChart.ts';
 
 const gold = starMapChart('act2.gold');
 const dusk = starMapChart('act2.dusk');
+const night = starMapChart('act3');
+
+/** The chart's mean luminance. */
+function mean(img: RgbaImage): number {
+  let sum = 0;
+  for (let y = 0; y < 360; y++) for (let x = 0; x < 640; x++) sum += luminance(at(img, x, y));
+  return sum / (640 * 360);
+}
 
 function at(img: RgbaImage, x: number, y: number): { r: number; g: number; b: number } {
   const i = (y * img.w + x) * 4;
@@ -99,5 +107,31 @@ describe('the star map chart', () => {
     for (let x = 200 + LEG_STOP; x < 260 - LEG_STOP; x++)
       if (is(accent, x, 300, 'orange.3')) xs.push(x);
     expect(xs.length).toBeLessThan(260 - 200 - 2 * LEG_STOP);
+  });
+
+  it("goes to night at Act II's close: darker, its domes dimmed, half their windows alarm red", () => {
+    expect(mean(night)).toBeLessThan(mean(dusk));
+    expect(band(night, 60)).toBe(true);
+    const colony = { x: 268, y: 196, w: 157, h: 109 };
+    // The domes' white shells and teal rims go dark; windows show in the act's emergency red.
+    expect(count(night, ['white.0', 'teal.3'], colony)).toBe(0);
+    expect(count(gold, ['white.0'], colony)).toBeGreaterThan(100);
+    // Half of them, at most one per dome (the colony holds at most 52 placed domes and Dome Row).
+    const windows = count(night, ['act3.emergency'], colony);
+    expect(windows).toBeGreaterThan(5);
+    expect(windows).toBeLessThan(40);
+  });
+
+  it('dresses the night Spires in dark rock with a few crystal glints, not violet peaks', () => {
+    const spires = { x: 196, y: 72, w: 424, h: 70 };
+    const glints = count(night, ['act3.crystal.3'], spires);
+    expect(glints).toBeGreaterThanOrEqual(4);
+    expect(glints).toBeLessThan(40);
+    // The bright crystal steps stay rare: the glyphs, not the cliffs, are what reads.
+    expect(count(night, ['act3.crystal.2', 'act3.crystal.3'], spires)).toBeLessThan(80);
+    // The day phases carry none.
+    expect(count(dusk, ['act3.crystal.3'])).toBe(0);
+    // The frontier's leg is Act III's red.
+    expect(chartAccent('act3')).toBe('red.3');
   });
 });

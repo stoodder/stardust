@@ -2,6 +2,7 @@
 // are short ASCII capitals whose conditions read a run of that map.
 import { describe, expect, it } from 'vitest';
 import { FLAG_RULES } from './flags.ts';
+import { SCENES } from './index.ts';
 import { RESULTS_FLOW, resultsFlow } from './resultsFlow.ts';
 import { parseSceneId } from './rules.ts';
 import type { Condition } from './types.ts';
@@ -21,6 +22,17 @@ describe('RESULTS_FLOW', () => {
         const parsed = parseSceneId(id);
         expect(parsed?.map, id).toBe(map);
         expect(parsed?.slot.kind, id).toBe('scene');
+      }
+    });
+
+    it(`${map}: each jingle plays on a spoken line of one of its own flow scenes`, () => {
+      const scenes = [...(flow.beforeResults ?? []), ...(flow.afterResults ?? [])];
+      for (const j of flow.jingles ?? []) {
+        expect(scenes, j.scene).toContain(j.scene);
+        const lines = (SCENES[j.scene]?.nodes ?? []).filter((n) => n.kind === 'line');
+        const line = lines[j.line];
+        expect(line?.kind, `${j.scene} line ${j.line}`).toBe('line');
+        expect(line?.kind === 'line' && line.text !== '', `${j.scene} line ${j.line}`).toBe(true);
       }
     });
 
@@ -45,6 +57,24 @@ describe('RESULTS_FLOW', () => {
     expect(a1m05.afterResults).toEqual(['a1_m05_scene_stinger']);
     expect(a1m05.stamps?.map((s) => s.text)).toEqual(['CONTAINMENT LAPSE']);
     expect(resultsFlow('a1_m01')).toEqual({});
+    expect(resultsFlow('dev_range')).toEqual({});
+  });
+
+  it("closes Act II after A2M6's card: the stinger, the PA's jingle in minor on its caption", () => {
+    const a2m06 = resultsFlow('a2_m06');
+    expect(a2m06.beforeResults).toBeUndefined();
+    expect(a2m06.afterResults).toEqual(['a2_m06_scene_stinger']);
+    expect(a2m06.jingles).toEqual([{ scene: 'a2_m06_scene_stinger', line: 2, jingle: 'minor' }]);
+    const lines = SCENES.a2_m06_scene_stinger?.nodes.filter((n) => n.kind === 'line') ?? [];
+    expect(lines.map((l) => (l.kind === 'line' ? l.speaker : null))).toEqual([
+      'narrator',
+      'pa',
+      'narrator',
+      'narrator',
+    ]);
+    // A silence over the dark first, and the jingle left to ring out before the base.
+    expect(lines[0]).toMatchObject({ text: '', durationSec: 2 });
+    expect(lines.at(-1)).toMatchObject({ text: '' });
     expect(resultsFlow('dev_range')).toEqual({});
   });
 });

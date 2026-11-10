@@ -287,6 +287,9 @@ export function StarMap() {
   }, [camp]);
   const [selected, setSelected] = useState(() => (view === null ? 0 : arrivalIndex(view)));
   const [panelPos, setPanelPos] = useState<{ left: number; top: number } | null>(null);
+  // The region labels the placed panel would sit over: hidden while it's there (T512).
+  const [covered, setCovered] = useState<ReadonlySet<string>>(() => new Set());
+  const regions = useRef<HTMLDivElement | null>(null);
   const [first] = useState(() => view?.firstVisit === true);
   const [noticeOn, setNoticeOn] = useState(first);
   const still = prefersReducedMotion();
@@ -340,6 +343,22 @@ export function StarMap() {
       placePanel(node.x, node.y, PANEL_W, h, others, STAR_MAP_RESERVED, NODE_CLEAR_BOX, NODE_BOX),
     );
   }, [view, selected]);
+
+  // A region label the panel covers hides (the panel's plate would show it through, half read).
+  useLayoutEffect(() => {
+    if (panelPos === null || panel.current === null || regions.current === null) return;
+    const p = panel.current.getBoundingClientRect();
+    const under = new Set<string>();
+    for (const el of regions.current.querySelectorAll<HTMLElement>('[data-region]')) {
+      const r = el.getBoundingClientRect();
+      if (r.left < p.right && p.left < r.right && r.top < p.bottom && p.top < r.bottom) {
+        under.add(el.dataset['region'] ?? '');
+      }
+    }
+    setCovered((prev) =>
+      prev.size === under.size && [...under].every((id) => prev.has(id)) ? prev : under,
+    );
+  }, [panelPos, selected]);
 
   // Esc in the panel returns to its node; on a node it does nothing (falls through).
   useEscape(() => {
@@ -401,11 +420,12 @@ export function StarMap() {
         <span class="sd-starmap-scan" aria-hidden="true" />
         {sweeping && <span class="sd-starmap-sweep" aria-hidden="true" data-testid="star-sweep" />}
       </div>
-      <div class="sd-starmap-regions" aria-hidden="true">
+      <div class="sd-starmap-regions" aria-hidden="true" ref={regions}>
         {view.regions.map((r) => (
           <span
             key={r.id}
-            class={`sd-star-region sd-star-region-${r.id}`}
+            data-region={r.id}
+            class={`sd-star-region sd-star-region-${r.id}${covered.has(r.id) ? ' sd-star-region-covered' : ''}`}
             style={{ left: `${r.x}px`, top: `${r.y}px` }}
           >
             {r.struck !== null && <s class="sd-star-region-old">{r.struck}</s>}

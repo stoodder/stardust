@@ -91,7 +91,7 @@ Example: with A2M3 won and A2M4 not built, the frontier is the teaser *Second Ha
 
 **Reduced motion.** The frontier's beacon holds still, the marker doesn't bob or walk (it is simply at its node), and the first-visit sweep is skipped (the notice still shows).
 
-**As built (T301b).** All of the above, for Act II's phases (`act2.gold`, and `act2.dusk` from A2M4's frontier; `act3` and `dawn` are sketches). The first-visit notice shows for 4 s after the sweep under the header (in the notices' column, clear of the region labels and the node panel); the panel stays clear of the selected node's plate; the marker's walk animates only within a session (a reload shows it at its node).
+**As built (T301b, T512).** All of the above, for Act II's phases (`act2.gold`, and `act2.dusk` from A2M4's frontier) and **Act II's close**: once A2M6 is won the frontier is A3M1, so the chart goes to `act3`, night (Act III's theme on the screen), with *The Preserve* as its *Coming soon* teaser at the Preserve's basin, reached by the accent's red leg from Sundown; it is the last screen Act II leaves the player on (after the stinger and the base: [act2.md § A2M6](../story/campaign/act2.md#a2m6--sundown)). `dawn` is a sketch, and Act III's built nodes and positions are its milestone's. The first-visit notice shows for 4 s after the sweep under the header (in the notices' column, clear of the region labels and the node panel); the panel stays clear of the selected node's plate, and a region label it would cover hides while it's there; the marker's walk animates only within a session (a reload shows it at its node).
 
 ---
 
@@ -402,7 +402,7 @@ Conditions can test the act, the map, flags, and run stats. Only speakers presen
 
 - A fake leaderboard in the base during **Act I and Act II**. Kip is #1 ("three quarters running"), the player is always #2, and a few colonist names fill out the rest. Kip's score is computed to stay ahead of the player's Pests Processed. Rows are cosmetic.
 - From A2M4 Kip's row reads "(on assignment: Reclamation)". From A3M1 the board is simply **gone** from the base, with no message.
-- **As built (T301b):** the base's last tab, "Bounty", appears once A1M2 is won (its memo, `memo_a1_02`, introduces the board) and is gone once A2M6 is won; Kip's row goes on assignment once A2M4 is won. Five rows: K. Vandermeer (the player's lifetime Pests Processed + 13 + 6%), the player ("JPT-1 {name}", "You!"), and three colonists at a fixed share of the player's score (M. Haddad, P. Lindqvist, Tidybot 4, honorary), so the order never changes. Its copy is [style-guide.md §2](../story/style-guide.md#2-voice-by-act)'s; the rules and numbers are `src/ui/screens/bountyBoard.ts`.
+- **As built (T301b, T512):** the base's last tab, "Bounty", appears once A1M2 is won (its memo, `memo_a1_02`, introduces the board) and retires once A2M6 is won (Act II's close: the tab is simply gone, with no message, and no replay brings it back); Kip's row goes on assignment once A2M4 is won. The rule is `bountyBoardState`. Five rows: K. Vandermeer (the player's lifetime Pests Processed + 13 + 6%), the player ("JPT-1 {name}", "You!"), and three colonists at a fixed share of the player's score (M. Haddad, P. Lindqvist, Tidybot 4, honorary), so the order never changes. Its copy is [style-guide.md §2](../story/style-guide.md#2-voice-by-act)'s; the rules and numbers are `src/ui/screens/bountyBoard.ts`.
 
 ### 6.7 Per-act presentation dials
 

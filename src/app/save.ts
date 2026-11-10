@@ -66,11 +66,7 @@ import {
   type SystemView,
 } from '../ui/screens/state.ts';
 import { assertNever } from '../shared/types.ts';
-import {
-  BOUNTY_BOARD_FROM,
-  BOUNTY_BOARD_UNTIL,
-  BOUNTY_KIP_AWAY_AFTER,
-} from '../ui/screens/bountyBoard.ts';
+import { bountyBoardState } from '../ui/screens/bountyBoard.ts';
 import { logError } from './log.ts';
 
 function storage(): Storage | null {
@@ -549,10 +545,7 @@ function campaignView(s: Session): CampaignView {
     pestsProcessed: s.save.stats.pestsProcessed,
     difficulty: s.save.settings.difficulty,
     profile: profileView(s.save),
-    bountyBoard: {
-      shown: isMapWon(s.save, BOUNTY_BOARD_FROM) && !isMapWon(s.save, BOUNTY_BOARD_UNTIL),
-      kipAway: isMapWon(s.save, BOUNTY_KIP_AWAY_AFTER),
-    },
+    bountyBoard: bountyBoardState((map) => isMapWon(s.save, map)),
     board: [
       ...shiftBoard(s.save).map((e): ShiftView => ({
         id: e.id,

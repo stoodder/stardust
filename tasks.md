@@ -245,12 +245,13 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [~] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
 - [~] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
 - [ ] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
-- [~] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.
+- [x] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.
 - [ ] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
 - [~] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
 - [ ] **T562** Corrosive Kiss's "Corroded enemies regenerate shields 50% slower" (towers.md; a listed `shield_aura` counter in enemies.md) isn't in the sim's shield regen: build it and decide whether it also halves the Cantor's aura.
 - [ ] **T563** A content check that a link's `vsShielded` bonus sits only on towers whose attacks read `damageOn` (shells and projectiles ignore it today; fine for the Zapcoil and the Prism).
 - [ ] **T564** Gate follow-ups (T501j): take a quiet-machine gate timing (load ≤ 3) and confirm smoke ≤ 325 s, then settle Playwright workers (2 vs 3); split the audio levels smoke test (47 s, the run's tail); watch `dialogue.spec`'s "a scene with a choice…" and "the briefing…" (failed under heavy load); trim the darkness smoke (22 s loaded) and import `hasDarkness` in `gates.ts`.
+- [ ] **T565** Results polish (M5 HUD/Escort): an Escort row lost count ("Evacuated 25 / 36 · lost 11"); confirm a real A2M5 pivot run hides Core integrity on Results (the fixture shows 18/20); debrief speakers wider than STERLING (VES'THARA) push their line out of the text column (results.css).
 - [ ] **T561** Docs: *Built so far (M5)*, data pointers, enemies.md open question 4, maps.md §5.1–5.2, art-direction §7 and §10.
 
 Carry-overs from M4, folded in:

@@ -560,10 +560,10 @@ The chart's **phase** is the frontier's (core-loop §1.1). Its ramps are the act
 |---|---|---|---|---|---|
 | `act2.gold` | A2M1–A2M3 | `act2.grass`, `act2.clay`, `act2.path` | `act2.gold`'s | `orange.3` (Act II) | 24 px deep, with a wedge to 40 px over the Diggings' ridge tops |
 | `act2.dusk` | A2M4–A2M6 | The same | `act2.dusk`'s | `orange.3` | 36 px, the wedge to 64 px; the Diggings' derricks in `ink.1` silhouette, their lights still on |
-| `act3` | A3M1–the finale | `act3.ground`, `act3.path`, `act3.crystal` on the cliffs | `act3`'s; dome windows `act3.emergency`, half of them dark | `red.3` | 72 px across the Spires, with two or three 1 px `violet.2`/`violet.3` cracks reaching south to the Terraces |
+| `act3` | A3M1–the finale (first shown at Act II's close, A2M6 won) | `act3.ground`, `act3.path`; the cliffs dark rock from the ground ramp, `act3.crystal`'s low steps on their lit upper faces, and a crystal glint (a `crystal.3` point over a `crystal.2`) on about half the peaks | `act3`'s; the domes' shells go dark (`steel.0`, `ink.3` shade, `steel.1` rims), their windows `act3.emergency`, half of them dark | `red.3` | 72 px across the Spires, with two or three 1 px `violet.2`/`violet.3` cracks reaching south to the Terraces |
 | `dawn` | None (post-game) | `finale.ground`, Act III's path | `finale`'s | `gold.3` | Recedes to 16 px; the Halls' mouth glows `gold.3` and `pink.3` (sung) in a 9 px dither, and the north faces take the warm light |
 
-The `act3` and `dawn` rows are sketches; Act III's and the finale's milestones settle them.
+The `act3` row is built for Act II's close (T512), where A3M1 is a teaser (its node the `soon` glyph, so only the frontier's leg, the plates, and the panel wear the accent); Act III's milestone settles the `next` glyph's `act3` core and its nodes' places. The `dawn` row is a sketch the finale's milestone settles.
 
 ### Nodes, legs, and the marker
 
@@ -580,7 +580,7 @@ The `act3` and `dawn` rows are sketches; Act III's and the finale's milestones s
 - **The header** (top left) and **the banks** (top right) are the menu panel's header (§9) split into two HUD plates over the chart; **the footer**'s buttons sit bottom right; the menu notice sits under the header plate.
 - **The theme** is the phase's act: the screen root carries its own `data-act`.
 - **The first-visit sweep:** a 1 px accent line runs from the top of the chart to the bottom in 1.2 s, stepping 2 px at a time, revealing the chart behind it with a 4 px dithered afterglow; then the notice shows top center for 4 s. Reduced motion skips the sweep.
-- *As built (T301b):* the chart's ground sits in the act's two darkest ground steps in noise patches (a speckle of the third), the Spires' ridge on that ground tinted toward clay with the peaks in clay, the hills one step up; `act2.dusk` takes 32% of its shade over the whole chart besides its deeper band, scar, and windows. The panel's medals are 4 px squares turned 45° (6 px across).
+- *As built (T301b):* the chart's ground sits in the act's two darkest ground steps in noise patches (a speckle of the third), the Spires' ridge on that ground tinted toward clay with the peaks in clay, the hills one step up; `act2.dusk` takes 32% of its shade over the whole chart besides its deeper band, scar, and windows. The panel's medals are 4 px squares turned 45° (6 px across). A region label the panel would cover hides while the panel is there.
 
 ---
 
