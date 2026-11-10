@@ -3,6 +3,7 @@
 // with its own overrides on top.
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
+import { SCENES } from '../content/dialogue/index.ts';
 import { TEXT_LIMITS, tokenProblems, worstCaseLength } from '../content/dialogue/rules.ts';
 import { PRESENTATION, type PresentationTable } from '../content/presentation.ts';
 import { actOf } from './conditions.ts';
@@ -35,8 +36,9 @@ describe('the presentation table', () => {
     }
   });
 
-  it('overrides only campaign maps', () => {
+  it('overrides only campaign maps, and keys scene overrides on registered scenes', () => {
     for (const map of Object.keys(PRESENTATION.byMap)) expect(CAMPAIGN_PLAN_IDS).toContain(map);
+    for (const o of PRESENTATION.afterScene) expect(SCENES[o.scene], o.scene).toBeDefined();
   });
 });
 
@@ -47,7 +49,10 @@ describe('presentationFor', () => {
       expect(presentationFor(map)).toEqual({ ...PRESENTATION.byAct[actOf(map)], ...own });
     }
     expect(presentationFor('a2_m03').jingle).toBe('minor_bridges');
-    expect(presentationFor('a2_m04')).toMatchObject({ jingle: 'minor', tidybots: 'unloading' });
+    expect(presentationFor('a2_m04')).toMatchObject({
+      jingle: 'minor_bridges',
+      tidybots: 'unloading',
+    });
     expect(presentationFor('a2_m05').tidybots).toBe('on');
     expect(presentationFor('a3_m03').holdRewardToasts).toBe(true);
   });
@@ -56,10 +61,52 @@ describe('presentationFor', () => {
     expect(presentationFor(null)).toBe(PRESENTATION.byAct[1]);
     const table: PresentationTable = {
       byAct: PRESENTATION.byAct,
+      afterScene: [],
       byMap: { a1_m02: { evie: 'dark' } },
     };
-    expect(presentationFor('a1_m02', table).evie).toBe('dark');
-    expect(presentationFor('a1_m03', table)).toBe(PRESENTATION.byAct[1]);
+    expect(presentationFor('a1_m02', [], table).evie).toBe('dark');
+    expect(presentationFor('a1_m03', [], table)).toBe(PRESENTATION.byAct[1]);
+  });
+});
+
+describe("the truth scene's minor jingle (A2M4; T513)", () => {
+  const TRUTH = 'a2_m04_scene_truth';
+
+  it("turns Act II's jingle minor once the truth scene is seen, on every Act II map", () => {
+    for (const map of ['a2_m01', 'a2_m03', 'a2_m04', 'a2_m05', 'a2_m06'] as const) {
+      expect(presentationFor(map).jingle, map).toBe('minor_bridges');
+      expect(presentationFor(map, [TRUTH]).jingle, map).toBe('minor');
+    }
+    // A2M4's own override still holds over it.
+    expect(presentationFor('a2_m04', [TRUTH]).tidybots).toBe('unloading');
+    // An Act II dev map follows its act.
+    expect(presentationOfMap({ id: 'dev_escort', act: 2 }, [TRUTH]).jingle).toBe('minor');
+  });
+
+  it('leaves the other acts and the other dials alone', () => {
+    expect(presentationFor('a1_m05', [TRUTH]).jingle).toBe('bright');
+    expect(presentationFor('a3_m01', [TRUTH]).jingle).toBe('none');
+    expect(presentationFor(null, [TRUTH])).toBe(PRESENTATION.byAct[1]);
+    const { jingle: _a, ...before } = presentationFor('a2_m05');
+    const { jingle: _b, ...after } = presentationFor('a2_m05', [TRUTH]);
+    expect(after).toEqual(before);
+  });
+
+  it('applies scene overrides in table order, and a map override wins', () => {
+    const table: PresentationTable = {
+      byAct: PRESENTATION.byAct,
+      afterScene: [
+        { scene: 'x', acts: [1], dials: { evie: 'dark', jingle: 'none' } },
+        { scene: 'y', acts: [1], dials: { evie: 'peeling' } },
+      ],
+      byMap: { a1_m02: { jingle: 'song' } },
+    };
+    expect(presentationFor('a1_m01', ['x', 'y'], table)).toMatchObject({
+      evie: 'peeling',
+      jingle: 'none',
+    });
+    expect(presentationFor('a1_m02', ['x'], table)).toMatchObject({ evie: 'dark', jingle: 'song' });
+    expect(presentationFor('a1_m01', ['y'], table).jingle).toBe('bright');
   });
 });
 

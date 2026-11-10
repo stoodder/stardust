@@ -4,6 +4,8 @@
 // the UI act theme (the `data-act` on the UI root, the HUD and Results), the Skitterkin death
 // (render's deathLook.ts), the Tidybots (render's TidybotView), the wave-clear jingle (audio's
 // eventSounds.ts), and the Evie billboards (render's groundTiles DECOR_LOOKS agrees with it).
+// Story moments can change dials too (`afterScene`: A2M4's truth scene turns Act II's jingle
+// minor), so a reader that should follow them passes the save's `story.seen`.
 import type { CampaignMapId } from '../content/campaign.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { StoryAct } from '../content/dialogue/types.ts';
@@ -15,13 +17,35 @@ import {
 import type { Act } from '../content/types.ts';
 import { actOf } from './conditions.ts';
 
-/** `map`'s dials: its act's, then its own overrides. Before A1M1 (`null`) the story is Act I's. */
+const NONE_SEEN: readonly string[] = [];
+
+/**
+ * An act's row with the scene overrides `seen` has reached (`afterScene`), in table order. The
+ * row itself when none applies.
+ */
+function actDials(
+  act: StoryAct,
+  seen: readonly string[],
+  table: PresentationTable,
+): PresentationDials {
+  let dials = table.byAct[act];
+  for (const o of table.afterScene) {
+    if (o.acts.includes(act) && seen.includes(o.scene)) dials = { ...dials, ...o.dials };
+  }
+  return dials;
+}
+
+/**
+ * `map`'s dials: its act's, then the scene overrides `seen` has reached, then its own overrides.
+ * Before A1M1 (`null`) the story is Act I's.
+ */
 export function presentationFor(
   map: CampaignMapId | null,
+  seen: readonly string[] = NONE_SEEN,
   table: PresentationTable = PRESENTATION,
 ): PresentationDials {
-  if (map === null) return table.byAct[1];
-  const base = table.byAct[actOf(map)];
+  if (map === null) return actDials(1, seen, table);
+  const base = actDials(actOf(map), seen, table);
   const own = Object.hasOwn(table.byMap, map) ? table.byMap[map] : undefined;
   return own === undefined ? base : { ...base, ...own };
 }
@@ -29,14 +53,16 @@ export function presentationFor(
 /**
  * The dials of any map a battle can open: a campaign map's own (`presentationFor`); a dev map's,
  * its act's row; a map outside the story (`challenge`, `endless`: post-game modes), the
- * post-game's, which is the finale's row (core-loop.md § 6.8).
+ * post-game's, which is the finale's row (core-loop.md § 6.8). `seen` (the save's `story.seen`)
+ * applies the scene overrides it has reached to the act's row.
  */
 export function presentationOfMap(
   map: { readonly id: string; readonly act: Act },
+  seen: readonly string[] = NONE_SEEN,
   table: PresentationTable = PRESENTATION,
 ): PresentationDials {
-  if (isCampaignMapId(map.id)) return presentationFor(map.id, table);
-  return table.byAct[storyActOf(map.act)];
+  if (isCampaignMapId(map.id)) return presentationFor(map.id, seen, table);
+  return actDials(storyActOf(map.act), seen, table);
 }
 
 /**
@@ -48,7 +74,7 @@ export function presentationBetweenMaps(
   frontier: CampaignMapId | null,
   table: PresentationTable = PRESENTATION,
 ): PresentationDials {
-  return frontier === null ? table.byAct.finale : presentationFor(frontier, table);
+  return frontier === null ? table.byAct.finale : presentationFor(frontier, NONE_SEEN, table);
 }
 
 /** The story act a map's act reads as: challenge and endless maps are post-game. */

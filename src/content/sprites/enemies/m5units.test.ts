@@ -108,6 +108,11 @@ function unlike(a: string, b: string): number {
 
 const FACINGS = ['se', 'sw', 'ne', 'nw'] as const;
 
+/** A unit's body area (opaque pixels) in its SE walk. */
+function area(id: string): number {
+  return opaque(grid(id, 'walk_se_0'));
+}
+
 const NEW_AELARI = [
   'enemy.veilwalker',
   'enemy.blinkstrider',
@@ -210,11 +215,11 @@ describe('the Aelari fray (art-direction §4; T501d)', () => {
         const outside = (rows: readonly string[]): number =>
           rows.reduce(
             (n, r, y) =>
-              n + [...r].filter((c, x) => solid(c) && c !== 'x' && !solid(walk[y]?.[x])).length,
+              n + r.split('').filter((c, x) => solid(c) && c !== 'x' && !solid(walk[y]?.[x])).length,
             0,
           );
         const changed = (rows: readonly string[]): number =>
-          rows.reduce((n, r, y) => n + [...r].filter((c, x) => c !== walk[y]?.[x]).length, 0);
+          rows.reduce((n, r, y) => n + r.split('').filter((c, x) => c !== walk[y]?.[x]).length, 0);
         expect(outside(f1), `${id}:${name} fray1`).toBeGreaterThan(0);
         expect(outside(f2), `${id}:${name} fray2`).toBeGreaterThanOrEqual(outside(f1));
         expect(changed(f2), `${id}:${name} fray2`).toBeGreaterThan(changed(f1));
@@ -272,7 +277,6 @@ describe("M5's Hollow units (art-direction §4 The Hollow)", () => {
   });
 
   it('read apart: a Shard is half a Fracture, bigger than a Mote; shadows by size', () => {
-    const area = (id: string): number => opaque(grid(id, 'walk_se_0'));
     expect(area('enemy.fracture_shard')).toBeLessThan(area('enemy.fracture'));
     expect(area('enemy.fracture_shard')).toBeGreaterThan(area('enemy.mote') * 0.8);
     // Small, medium contact shadows (shadows.ts sizes by authored width).

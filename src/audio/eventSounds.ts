@@ -177,7 +177,10 @@ const NO_ENEMIES: EnemyLookup = { splits: () => false, faction: () => null, quie
 
 /** The map's presentation dials the event sounds play by (story/presentation.ts). */
 export interface SoundDials {
-  /** The wave-clear jingle (WAVE_CLEAR_CUE). */
+  /**
+   * The wave-clear jingle (WAVE_CLEAR_CUE), read at each WaveCleared: it can change mid-battle
+   * (A2M4's truth scene turns it minor; app/audio.ts passes a live getter).
+   */
   readonly jingle: JingleVariant;
   /** How a Skitterkin dies (SKITTERKIN_DEATH_SOUNDS). */
   readonly skitterkinDeath: SkitterkinDeath;
@@ -199,7 +202,6 @@ export function createEventSounds(
   dials: SoundDials,
   enemies: EnemyLookup = NO_ENEMIES,
 ): EventSounds {
-  const { jingle } = dials;
   /** A Skitterkin's death sound under this map's dial. */
   const skitterkinDeath = SKITTERKIN_DEATH_SOUNDS[dials.skitterkinDeath];
   /** The death sound of `enemy` (by its faction; enemies.md § 8), or null for none. */
@@ -305,7 +307,7 @@ export function createEventSounds(
           else out.push(sfx('wave_start'));
           return;
         case 'WaveCleared':
-          if (!ended && WAVE_CLEAR_CUE[jingle] !== null) pendingClear = true;
+          if (!ended && WAVE_CLEAR_CUE[dials.jingle] !== null) pendingClear = true;
           return;
         case 'AbilityUsed': {
           const s = ABILITY_SOUNDS[e.ability];
@@ -452,7 +454,7 @@ export function createEventSounds(
     },
     endFrame(out) {
       flushPlink(out);
-      const cue = WAVE_CLEAR_CUE[jingle];
+      const cue = WAVE_CLEAR_CUE[dials.jingle];
       if (pendingClear && !ended && cue !== null) out.push({ kind: 'cue', id: cue });
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));
       pendingClear = false;

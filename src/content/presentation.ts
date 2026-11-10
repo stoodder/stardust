@@ -1,6 +1,6 @@
 // Per-act presentation dials (docs/design/core-loop.md § 6.7): the presentation that changes with
 // the act, as data, so a map's tone can be tuned without code. One table keyed by act, plus
-// per-map overrides; story/presentation.ts resolves a map's dials. The values are core-loop
+// per-map overrides, and overrides keyed on a scene seen; story/presentation.ts resolves a map's dials. The values are core-loop
 // § 6.7's defaults (the results line § 6.2, the Skitterkin death enemies.md § 8, the UI theme
 // art-direction § 9 *Act themes*). The copy of each tip is style-guide § 2's.
 import type { CampaignMapId } from './campaign.ts';
@@ -26,7 +26,8 @@ export type EvieState = 'beaming' | 'peeling' | 'dark';
 
 /**
  * The wave-clear jingle: the bright sting (Act I), the sting with minor bridges (Act II), the
- * minor arrangement (from A2M4), none (Act III), the song (the finale; architecture § Audio).
+ * minor arrangement (once A2M4's truth scene is seen), none (Act III), the song (the finale;
+ * architecture § Audio).
  */
 export type JingleVariant = 'bright' | 'minor_bridges' | 'minor' | 'none' | 'song';
 
@@ -51,13 +52,24 @@ export interface PresentationDials {
 /** A map's changes to its act's dials. */
 export type PresentationOverride = Partial<PresentationDials>;
 
-export interface PresentationTable {
-  readonly byAct: Readonly<Record<StoryAct, PresentationDials>>;
-  readonly byMap: Readonly<Partial<Record<CampaignMapId, PresentationOverride>>>;
+/**
+ * A story moment's change to the dials: once `scene` is in the save's `story.seen`, maps of
+ * `acts` take `dials` over their act's row (a map's own overrides still win). Live mid-battle:
+ * the scene is saved as seen as it ends, and a reader that asks again gets the new dials.
+ */
+export interface SceneOverride {
+  /** A registered scene id (presentation.test.ts checks it). */
+  readonly scene: string;
+  readonly acts: readonly StoryAct[];
+  readonly dials: PresentationOverride;
 }
 
-/** Act II's minor arrangement of the jingle, from A2M4 on (core-loop § 6.7). */
-const MINOR: PresentationOverride = { jingle: 'minor' };
+export interface PresentationTable {
+  readonly byAct: Readonly<Record<StoryAct, PresentationDials>>;
+  /** In order; a later one wins where two set the same dial. */
+  readonly afterScene: readonly SceneOverride[];
+  readonly byMap: Readonly<Partial<Record<CampaignMapId, PresentationOverride>>>;
+}
 
 export const PRESENTATION: PresentationTable = {
   byAct: {
@@ -103,10 +115,12 @@ export const PRESENTATION: PresentationTable = {
       holdRewardToasts: false,
     },
   },
+  // Act II's jingle turns minor once the player has asked where stardust comes from (A2M4's
+  // truth scene, act2.md § A2M4): mid-battle, from the next wave clear, and on every Act II map
+  // after, replays included.
+  afterScene: [{ scene: 'a2_m04_scene_truth', acts: [2], dials: { jingle: 'minor' } }],
   byMap: {
-    a2_m04: { ...MINOR, tidybots: 'unloading' },
-    a2_m05: MINOR,
-    a2_m06: MINOR,
+    a2_m04: { tidybots: 'unloading' },
     a3_m03: { holdRewardToasts: true },
   },
 };
