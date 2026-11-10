@@ -28,13 +28,16 @@ describe('T121: unsimulated attack kinds and statuses', () => {
   });
 
   it('refuses a status on any tier 1–3 of a loadout tower', () => {
+    // Unnerved runs since T507; closing its row again refuses it on any tier.
+    const closed = { ...FEATURE_GATES, 'status.unnerved': 'T507' } as const;
     const unnerved = { status: 'unnerved', durationTicks: 60 } as const;
     const content = withGunTier(1, { ...GUN.tiers[1], effects: [unnerved] });
-    expect(gateRefusals(fixtureConfig({ content }))).toEqual([
+    expect(gateRefusals(fixtureConfig({ content }), closed)).toEqual([
       'the unnerved status (fx_gun) is not simulated until T507',
     ]);
+    expect(gateRefusals(fixtureConfig({ content }))).toEqual([]);
     // Not in the loadout: nothing to refuse.
-    expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }))).toEqual([]);
+    expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }), closed)).toEqual([]);
   });
 
   it('refuses each kind and status once, and lifts per row', () => {
@@ -56,8 +59,14 @@ describe('T121: unsimulated attack kinds and statuses', () => {
       ],
     });
     const cfg = fixtureConfig({ content });
-    // Beams run since T504 and Stasis since T407a; closing their rows again refuses them.
-    const closed = { ...FEATURE_GATES, 'attack.beam': 'T504', 'status.stasis': 'T407a' } as const;
+    // Beams run since T504, Stasis since T407a, and Unnerved since T507; closing their rows again
+    // refuses them.
+    const closed = {
+      ...FEATURE_GATES,
+      'attack.beam': 'T504',
+      'status.stasis': 'T407a',
+      'status.unnerved': 'T507',
+    } as const;
     expect(gateRefusals(cfg, closed)).toEqual([
       "a 'beam' attack (fx_gun) is not simulated until T504",
       'the stasis status (fx_gun) is not simulated until T407a',
@@ -77,6 +86,6 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     expect(FEATURE_GATES['attack.spawner']).toBe('M6'); // Scuttle Den
     expect(FEATURE_GATES['status.stasis']).toBeNull(); // Flash Freeze (T407a)
     expect(FEATURE_GATES['status.pinned']).toBeNull(); // Tether, Magnet Crane (T408)
-    expect(FEATURE_GATES['status.unnerved']).toBe('T507'); // Mindspike
+    expect(FEATURE_GATES['status.unnerved']).toBeNull(); // Mindspike [Dread] (T507)
   });
 });

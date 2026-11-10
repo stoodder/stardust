@@ -1,10 +1,12 @@
-// A2M4's scene branches that the canon check (tools/dialogueCanon.test.ts, text only) can't see:
-// the truth scene's early-ask line, and the debrief's C2 shape (T510 reads it on Results).
+// A2M4's scene branches (content/dialogue/a2/a2_m04/scenes.ts) as the runner plays them, which the
+// canon check (tools/dialogueCanon.test.ts, text only) can't see: the truth scene's early-ask line,
+// and the debrief's C2 shape (T510 reads it on Results). It lives here because content may not
+// import story (shared/architecture.test.ts).
 import { describe, expect, it } from 'vitest';
-import { readThrough } from '../../../../story/runner.ts';
-import type { StoryContext } from '../../../../story/conditions.ts';
-import type { FlagSet } from '../../flags.ts';
-import { scenes } from './scenes.ts';
+import { scenes } from '../content/dialogue/a2/a2_m04/scenes.ts';
+import type { FlagSet } from '../content/dialogue/flags.ts';
+import type { StoryContext } from './conditions.ts';
+import { readThrough } from './runner.ts';
 
 const scene = (id: string) => scenes.find((s) => s.id === id)!;
 const ctx = (flags: FlagSet, run: StoryContext['run'] = null, stardust = 0): StoryContext => ({

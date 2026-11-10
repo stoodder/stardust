@@ -98,6 +98,12 @@ export const tune_crane = defineUpgrade({
 export const tune_prism = tuneUp('tune_prism', 'prism', 'Prism Tune-up', 'a2_m05');
 
 /**
+ * The Mindspike Obelisk's tune-up (T507): the usual three ranks, stocked once the Mindspike can be
+ * attuned (Xenotech, after A2M5). TODO(T509): where Aelari tune-ups are sold, as the Prism's.
+ */
+export const tune_mindspike = tuneUp('tune_mindspike', 'mindspike', 'Mindspike Tune-up', 'a2_m05');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

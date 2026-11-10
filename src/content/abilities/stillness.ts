@@ -3,8 +3,8 @@
 // instead, the Stasis rule), which interrupts abilities (enemies.md § 2.4). 45 s cooldown. It
 // answers jam as a tell interrupter (rules.ts COUNTER_ANSWERS).
 //
-// A stub registered ahead of its task (T500a): T507 runs the `stasisArea` effect and lifts its
-// FEATURE_GATES row. Icon: a placeholder under its final id (T540b).
+// The sim runs the `stasisArea` effect since T507 (sim/abilities/stillness.ts: instant, ground and
+// air, never a unit out of reach). Icon: a placeholder under its final id (T540b).
 import { defineAbility } from '../define.ts';
 
 export const stillness = defineAbility({

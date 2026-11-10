@@ -310,7 +310,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       // M5's rows name their tasks (D137; sim/m5seams.test.ts). Beams run since T504
       // (attacks/beam.test.ts).
       'attack.beam': null,
-      'status.unnerved': 'T507',
+      'status.unnerved': null, // T507
       'enemy.boss.pivot': null, // T506
       'attack.spawner': 'M6',
       'enemy.boss.layToRest': 'M7',

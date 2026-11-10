@@ -168,8 +168,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
   // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
-  // and echoes with the Mindspike (T507), area Marks and Truthlight with the Lantern (T508); spawners
-  // (Scuttle Den) are M6's.
+  // and echoes with the Mindspike and Stillness's Stasis area (T507, live), area Marks and Truthlight
+  // with the Lantern (T508); spawners (Scuttle Den) are M6's.
   'attack.projectile': null,
   'attack.beam': null,
   'attack.chain': null,
@@ -180,10 +180,10 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'attack.targetFilter': null,
   'status.pinned': null,
   'status.stasis': null,
-  'status.unnerved': 'T507',
+  'status.unnerved': null,
   'tower.detection': null,
   'tower.economy': null,
-  'attack.echo': 'T507',
+  'attack.echo': null,
   'tower.markArea': 'T508',
   'status.noEvade': 'T508',
   'modifier.towerStat': null,
@@ -207,7 +207,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ability.slowAll': null,
   'ability.discount': null,
   'ability.reveal': null,
-  'ability.stasisArea': 'T507',
+  'ability.stasisArea': null,
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,

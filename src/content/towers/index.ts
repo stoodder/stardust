@@ -17,11 +17,10 @@ import { zapcoil } from './zapcoil.ts';
  * waits for: stubs whose numbers that task confirms. This is the one home of the refusal: the sim
  * refuses a listed tower whole (sim/gates.ts `stubTowerGate`), meta keeps its license, attunement,
  * and spec unlock off the shelves, and [quiet-wave-reach] and the loadout pools leave it out. The
- * task lifts it by deleting its entry here. M5 (D137): the Mindspike (T507) and the Seer's Lantern
- * (T508, the cut lever); the Prism's (T504) is lifted.
+ * task lifts it by deleting its entry here. M5 (D137): the Seer's Lantern (T508, the cut lever);
+ * the Prism's (T504) and the Mindspike's (T507) are lifted.
  */
 export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({
-  mindspike: 'T507',
   lantern: 'T508',
 });
 /** The towers in STUB_TOWER_TASKS (its keys), for the checks that only ask whether one waits. */
@@ -37,7 +36,7 @@ export const TOWERS = defineRegistry({
   lookout,
   harpoon,
   crane,
-  // M5: the Prism (T504); the T500a stubs in STUB_TOWER_TASKS.
+  // M5: the Prism (T504), the Mindspike (T507); the T500a stubs in STUB_TOWER_TASKS.
   prism,
   mindspike,
   lantern,

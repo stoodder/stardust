@@ -57,6 +57,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // TODO(T509): a placeholder in Zibzab's voice until T509 settles where Aelari tune-ups live.
   tune_prism:
     'Price first: 40 stardust, rising. Aelari glass, Vrell tools. She watched me the whole time.',
+  tune_mindspike:
+    'Price first: 40 stardust, rising. It hums in my teeth. I tuned it anyway. Teeth are fine.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

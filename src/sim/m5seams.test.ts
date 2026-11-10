@@ -162,9 +162,10 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'enemy.boss.shieldBroken': null,
       // Sundown runs since T505 (darkness.test.ts).
       'map.darkness': null,
-      'status.unnerved': 'T507',
-      'attack.echo': 'T507',
-      'ability.stasisArea': 'T507',
+      // Unnerved, echoes, and Stillness run since T507 (sim/mindspike.test.ts).
+      'status.unnerved': null,
+      'attack.echo': null,
+      'ability.stasisArea': null,
       'tower.markArea': 'T508',
       'status.noEvade': 'T508',
     });
@@ -203,8 +204,10 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     expect(gateRefusals(withMap({ lighting: [{ ...lighting[0]!, dark: 0 }] }))).toEqual([]);
   });
 
-  it('refuse Stillness in a slot until T507', () => {
-    expect(abilityRefusal(RAW_CONTENT.abilities.stillness)).toBe(
+  it('refuse Stillness in a slot no longer (T507)', () => {
+    expect(abilityRefusal(RAW_CONTENT.abilities.stillness)).toBeNull();
+    const closed = { ...FEATURE_GATES, 'ability.stasisArea': 'T507' } as const;
+    expect(abilityRefusal(RAW_CONTENT.abilities.stillness, closed)).toBe(
       "the 'stasisArea' ability (stillness) is not simulated until T507",
     );
   });
@@ -212,8 +215,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
 
 describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
   it('are refused whole, naming their task, whatever their tiers use', () => {
-    expect(stubTowerGate('mindspike')).toBe('T507');
+    expect(stubTowerGate('lantern')).toBe('T508');
     expect(stubTowerGate('prism')).toBeNull(); // lifted by T504
+    expect(stubTowerGate('mindspike')).toBeNull(); // lifted by T507
     expect(stubTowerGate('rivet')).toBeNull();
     expect(stubTowerGate('lantern', {})).toBeNull();
     const towers: Readonly<Record<string, (typeof TOWERS)[keyof typeof TOWERS]>> = TOWERS;
@@ -223,14 +227,15 @@ describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
       );
     }
     // Lifted (no entry), a tower is refused only by what its tiers use: the Prism by nothing
-    // since T504.
+    // since T504, the Mindspike since T507.
     expect(towerRefusal(TOWERS.prism)).toBeNull();
+    expect(towerRefusal(TOWERS.mindspike)).toBeNull();
     const cfg: SimConfig<IdSpace> = {
       ...fixtureConfig(),
       content: LIVE,
       mapId: 'a1_m01',
-      loadout: ['rivet', 'mindspike'],
+      loadout: ['rivet', 'lantern'],
     };
-    expect(gateRefusals(cfg)).toContain("the 'mindspike' tower is not simulated until T507");
+    expect(gateRefusals(cfg)).toContain("the 'lantern' tower is not simulated until T508");
   });
 });

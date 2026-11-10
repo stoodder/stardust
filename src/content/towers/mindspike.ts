@@ -5,9 +5,8 @@
 // every enemy within 1.2 tiles of the target. Dread: damage 50, and each hit Unnerves for 1.5 s
 // (−20% speed, abilities interrupted and blocked; enemies.md § 2.4).
 //
-// A stub registered ahead of its task (T500a): T507 confirms the numbers, runs the echo and
-// Unnerved, and lifts it from towers/index.ts STUB_TOWER_TASKS. Sprites: placeholders under their
-// final ids (T540b).
+// Live since T507: the echo is sim/attacks/echo.ts, Unnerved systems/status.ts `applyUnnerved`.
+// Sprites: placeholders under their final ids (T540b).
 import { defineTower } from '../define.ts';
 
 export const mindspike = defineTower({
