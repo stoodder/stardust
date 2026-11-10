@@ -225,6 +225,20 @@ export const towerCraneHead = defineSprite({
     ne_spec_b_fire: craneHead('ne', true, 'magnet'),
   },
   anims: {
+    // Only the Magnet Crane attacks; the others' one-frame "fire" anims exist so the mirrored
+    // facings (`sw`, `nw`, …) are baked for render to turn the jib (tech-spec § Format rules).
+    fire_se: { frames: ['se'], fps: 1, loop: false },
+    fire_sw: { mirrorOf: 'fire_se' },
+    fire_ne: { frames: ['ne'], fps: 1, loop: false },
+    fire_nw: { mirrorOf: 'fire_ne' },
+    fire_se_t2: { frames: ['se_t2'], fps: 1, loop: false },
+    fire_sw_t2: { mirrorOf: 'fire_se_t2' },
+    fire_ne_t2: { frames: ['ne_t2'], fps: 1, loop: false },
+    fire_nw_t2: { mirrorOf: 'fire_ne_t2' },
+    fire_se_spec_a: { frames: ['se_spec_a'], fps: 1, loop: false },
+    fire_sw_spec_a: { mirrorOf: 'fire_se_spec_a' },
+    fire_ne_spec_a: { frames: ['ne_spec_a'], fps: 1, loop: false },
+    fire_nw_spec_a: { mirrorOf: 'fire_ne_spec_a' },
     // The grab and slam (every 6 s): the magnet drops white-hot, then hangs again.
     fire_se_spec_b: { frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'], fps: 6, loop: false },
     fire_sw_spec_b: { mirrorOf: 'fire_se_spec_b' },

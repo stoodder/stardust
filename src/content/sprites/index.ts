@@ -136,9 +136,8 @@ import {
   iconTowerCrane,
   iconTowerHarpoon,
   iconTowerLookout,
-  towerCrane,
-  towerCraneHead,
 } from './placeholders/index.ts';
+import { towerCrane, towerCraneHead } from './towers/crane.ts';
 import { towerHarpoon, towerHarpoonHead } from './towers/harpoon.ts';
 import { towerLookout, towerLookoutHead } from './towers/lookout.ts';
 

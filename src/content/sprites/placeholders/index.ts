@@ -45,8 +45,6 @@ export const iconEnemyGlassWitch = placeholder(
 // Towers (T440b): Vrell scrap, for now in borrowed Everglow shapes.
 
 
-export const towerCrane = placeholder(towerThumper, 'tower.crane', 'vrell');
-export const towerCraneHead = placeholder(towerThumperHead, 'tower.crane_head', 'vrell');
 export const iconTowerLookout = placeholder(iconTowerSprinkler, 'icon.tower.lookout', 'vrell');
 export const iconTowerHarpoon = placeholder(iconTowerRivet, 'icon.tower.harpoon', 'vrell');
 export const iconTowerCrane = placeholder(iconTowerThumper, 'icon.tower.crane', 'vrell');
