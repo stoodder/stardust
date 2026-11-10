@@ -24,7 +24,9 @@ import { applyStasis, isInterrupted, status } from '../systems/status.ts';
 import { scaledEnemy } from '../systems/waves.ts';
 import type { TickContext } from '../tick.ts';
 import { enemyAbilities, immune, untargetable } from './index.ts';
+import { outOfReach } from './layers.ts';
 import { phaseBlocked, phaseStep, phaseTelling, solidTicks } from './phase.ts';
+import { restoreShields } from './pulse.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
 const E = LIVE.enemies;
@@ -132,6 +134,27 @@ describe('the Phased layer', () => {
     expect(canHit(e, { ground: true, air: false })).toBe(false); // still a flyer
     expect(pickTarget(state.enemies, e.x, e.y, AIR, RANGE, 'first')).toBe(e);
     expect(applyDamage(state, e, 50, 'kinetic', SRC)).toBe(50);
+  });
+
+  it('enemy-side shields don’t reach it either (a pulse; the layer rule, enemies.md § 2.6)', () => {
+    // No Hollow unit has a shield yet: a shielded phaser and a pulser of one faction stand in.
+    const shield = { hp: 50, regenPerTick: 0, regenDelayTicks: 0 };
+    const phaser = enemyDef('fx_shielded_phaser', { faction: 'hollow', shield, phase: PHASE });
+    const pulser = enemyDef('fx_pulser', { faction: 'hollow', shield });
+    const pulse = { everyTicks: 60, tellTicks: 10, radiusTiles: 3, radiusSq: 9, shield: 20 };
+    const { state } = setup();
+    const src = spawn(state, pulser, { dist: 2 });
+    const e = spawn(state, phaser, { dist: 2.5 });
+    src.shieldHp = 50;
+    e.shieldHp = 0;
+    e.phased = true;
+    expect(outOfReach(e)).toBe(true);
+    expect(restoreShields(state, src, pulse)).toBe(0);
+    expect(e.shieldHp).toBe(0);
+    e.phased = false;
+    expect(outOfReach(e)).toBe(false);
+    expect(restoreShields(state, src, pulse)).toBe(1);
+    expect(e.shieldHp).toBe(20);
   });
 
   it('a ground phaser (any layer) is Phased the same way', () => {
