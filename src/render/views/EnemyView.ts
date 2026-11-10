@@ -166,6 +166,8 @@ const TELL_GAP_PX = HEALTH_BAR_ROOM_PX;
 export { SHIMMER_MS };
 /** A rim's low step while it flickers (its tell's off half). */
 const RIM_LOW_ALPHA = STEPPED_ALPHA[1];
+/** The `heavy` tell glyph (art-direction §8), worn from the moment a Hollow unit turns Heavy. */
+const HEAVY_GLYPH = spriteId('icon.tell.heavy');
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
 
@@ -398,6 +400,8 @@ export class EnemyView implements PooledView {
   #overClear = false;
   /** It has played a stride since it was shown (a new stride carries on from its frame). */
   #strode = false;
+  /** The sim tick its glyph's TELL_TICKS run from, when not its spawn (it turned Heavy); −1. */
+  #tellStart = -1;
 
   /**
    * `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes);
@@ -580,6 +584,7 @@ export class EnemyView implements PooledView {
     this.#fray = 0;
     this.#overClear = false;
     this.#strode = false;
+    this.#tellStart = -1;
     this.#stopFlash();
     const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
     layer.add(this.#body);
@@ -653,7 +658,8 @@ export class EnemyView implements PooledView {
     // A hit on the shield flashes its bubble (shieldLook.ts).
     if (e.shieldHp < this.#shieldHp) this.#bubbleHitAt = performance.now();
     this.#shieldHp = e.shieldHp;
-    if (this.#telling && tick - e.spawnTick >= TELL_TICKS) {
+    const tellFrom = this.#tellStart >= 0 ? this.#tellStart : e.spawnTick;
+    if (this.#telling && tick - tellFrom >= TELL_TICKS) {
       this.#telling = false;
       this.#syncGlyph();
     }
@@ -896,6 +902,13 @@ export class EnemyView implements PooledView {
     // The hush rule (T402; hushLook.ts): Heavy's tint (a hit flash ends back on it).
     if (e.heavy !== this.#heavy) {
       this.#heavy = e.heavy;
+      // Turning Heavy (T402, T530a): it wears the `heavy` glyph from now on, shown for TELL_TICKS.
+      if (e.heavy) {
+        this.#setGlyph(HEAVY_GLYPH);
+        this.#telling = true;
+        this.#tellStart = this.#tick;
+        this.#syncGlyph();
+      }
       if (this.#flashFrames === 0) this.#stopFlash();
     }
     // Stasis (T407a; stasisLook.ts): the anim holds its frame and the body goes icy.

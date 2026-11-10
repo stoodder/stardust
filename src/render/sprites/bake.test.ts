@@ -8,6 +8,7 @@ import type { SpriteDef } from '../../content/sprites/types.ts';
 import {
   bakeAll,
   bakeSprite,
+  CLOAK_UNDER_ALPHA,
   derivedFor,
   frameKey,
   glowKey,
@@ -174,13 +175,14 @@ describe('bakeSprite', () => {
       for (let x = 1; x <= 4; x++)
         expect(alphaAt(x, y), `${x},${y}`).toBe((x + y) % 2 === 0 ? 255 : 0);
     }
-    // The outline is white where it shows, and dashed: some of it clear.
+    // The outline is dashed: white dashes, and between them its ink.0 under-stroke at 60% (T501k).
     const ring = [1, 2, 3, 4].map((x) => pixel(f.image, x, 0));
-    expect(ring.filter((p) => p[3] === 255).every((p) => p.join() === rgba('white.1').join())).toBe(
-      true,
-    );
-    expect(ring.some((p) => p[3] === 0)).toBe(true);
-    expect(ring.some((p) => p[3] === 255)).toBe(true);
+    const dashes = ring.filter((p) => p[3] === 255);
+    const under = ring.filter((p) => p[3] !== 255);
+    expect(dashes.length).toBeGreaterThan(0);
+    expect(under.length).toBeGreaterThan(0);
+    expect(dashes.every((p) => p.join() === rgba('white.1').join())).toBe(true);
+    expect(under.every((p) => p.join() === rgba('ink.0', CLOAK_UNDER_ALPHA).join())).toBe(true);
   });
 
   it('gives shadow pixels 50% alpha', () => {

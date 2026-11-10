@@ -261,23 +261,34 @@ export function derivedLookup(base: ColorLookup, derived: DerivedVariant): Color
   }
 }
 
+/** The cloak's dashes run over a 1 px `ink.0` under-stroke at 60% (T501k), like the air lane's. */
+const CLOAK_UNDER = rgbaOf('ink.0');
+export const CLOAK_UNDER_ALPHA = 153;
+
 /**
  * The `cloak` pass (art-direction §8 Cloaked: a 50% checker dither on the body and a dashed
  * shimmer outline): body pixels on the odd squares of a checker go clear, and the outline (already
- * white) keeps two pixels in every four along each diagonal, so it reads as dashes. Shadow pixels
- * go too. In place on `img`, whose pixels came from `src`.
+ * white) keeps two pixels in every four along each diagonal, so it reads as dashes; the outline's
+ * gaps between them are its `ink.0` under-stroke at 60% (T501k), so the dashes read on bright
+ * ground. Shadow pixels go. In place on `img`, whose pixels came from `src`.
  */
 export function cloakDither(src: IndexedImage, img: RgbaImage): RgbaImage {
+  const d = img.data;
   for (let i = 0; i < src.px.length; i++) {
     const code = src.px[i] ?? 0;
     if (isClear(code)) continue;
     const x = i % src.w;
     const y = Math.floor(i / src.w);
-    const clear =
-      code === OUTLINE_CODE
-        ? Math.floor((x + y) / 2) % 2 === 1
-        : code === SHADOW_CODE || (x + y) % 2 === 1;
-    if (clear) img.data[i * 4 + 3] = 0;
+    if (code === OUTLINE_CODE) {
+      if (Math.floor((x + y) / 2) % 2 === 1) {
+        d[i * 4] = CLOAK_UNDER.r;
+        d[i * 4 + 1] = CLOAK_UNDER.g;
+        d[i * 4 + 2] = CLOAK_UNDER.b;
+        d[i * 4 + 3] = CLOAK_UNDER_ALPHA;
+      }
+    } else if (code === SHADOW_CODE || (x + y) % 2 === 1) {
+      d[i * 4 + 3] = 0;
+    }
   }
   return img;
 }

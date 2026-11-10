@@ -130,6 +130,7 @@ import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldAuraView } from '../views/ShieldAuraView.ts';
 import { WardView } from '../views/WardView.ts';
+import type { UnitAnchors } from '../views/unitAnchor.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
@@ -375,17 +376,25 @@ export class BattleScene extends Phaser.Scene {
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
-    this.#auras = new ShieldAuraView(ctx, prefersReducedMotion);
+    // T530a: views that mark a unit find its body as EnemyView draws it (unitAnchor.ts).
+    const anchors: UnitAnchors = { box: (uid, out) => this.#enemies.get(uid)?.box(out) ?? false };
+    this.#auras = new ShieldAuraView(ctx, prefersReducedMotion, anchors);
     this.#wards = new WardView(
       ctx,
       (id) => this.#deps.sim.config.content.enemies[id]?.sprites.body ?? `enemy.${id}`,
+      prefersReducedMotion,
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
-    this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion);
-    this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion);
+    this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
+    this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
-    this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r));
+    this.#beams = new BeamView(
+      ctx,
+      prefersReducedMotion,
+      (c, r) => this.#liftPx(c, r),
+      anchors,
+    );
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#asset = new AssetView(ctx, map);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
@@ -573,7 +582,7 @@ export class BattleScene extends Phaser.Scene {
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
-    this.#wards.update(state.allies);
+    this.#wards.update(state.allies, state.tick);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#mind.update(dt, state.enemies);

@@ -28,7 +28,7 @@ const SOUTH_MID: GridPos = [10, 10];
 /** The merge, where the Rift Moths' lane crosses the roads in. */
 const MERGE: GridPos = [8, 5];
 /** Ves'thara's Stillness on W9's Rift Moth flock as it crosses the merge. */
-const STILL_W9: BuildStep = { wave: 9, ability: 2, target: MERGE, when: { afterSec: 17 } };
+const STILL_W9: BuildStep = { wave: 9, ability: 2, target: MERGE, when: { afterSec: 14 } };
 /** ...and on W14's, the biggest flock. */
 const STILL_W14: BuildStep = { wave: 14, ability: 2, target: MERGE, when: { afterSec: 27 } };
 
