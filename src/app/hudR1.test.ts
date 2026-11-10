@@ -4,13 +4,13 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
-import { createSim, type PurchaseState } from '../sim/index.ts';
+import { createSim } from '../sim/index.ts';
 import { SHIFT_BOARD_SIZE } from '../meta/index.ts';
 import { pickHint } from '../ui/hud/Notices.tsx';
 import { battleConfig } from './battleSetup.ts';
 import { holdFireOneHintShows, salvageHintShows } from './hud.ts';
 import { CLEAR_FIRST_TEXT, refusalText } from './hudText.ts';
-import { priceKey, threatIntel, threatNames, wavePreview } from './hudViews.ts';
+import { threatIntel, threatNames, wavePreview } from './hudViews.ts';
 import { teaserRow } from './save.ts';
 
 const mapIds = Object.keys(MAPS);

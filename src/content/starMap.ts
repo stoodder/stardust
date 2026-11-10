@@ -99,7 +99,8 @@ export const STAR_MAP_NODES: Readonly<Record<CampaignMapId, StarMapNode>> = {
   },
   a2_m06: {
     place: 'Colony perimeter',
-    tagline: 'The first Hollow assault on the colony itself. Everyone on the wall. The sun goes down.',
+    tagline:
+      'The first Hollow assault on the colony itself. Everyone on the wall. The sun goes down.',
     x: 352,
     y: 200,
   },
@@ -117,7 +118,8 @@ export const STAR_MAP_NODES: Readonly<Record<CampaignMapId, StarMapNode>> = {
   },
   a3_m03: {
     place: "Okonkwo's Gap",
-    tagline: 'An unwinnable surge. Bricks holds the choke in person. The score is how many get out.',
+    tagline:
+      'An unwinnable surge. Bricks holds the choke in person. The score is how many get out.',
     x: 372,
     y: 136,
   },
@@ -158,12 +160,14 @@ export const STAR_MAP_NODES: Readonly<Record<CampaignMapId, StarMapNode>> = {
 export type StarMapPhase = 'act2.gold' | 'act2.dusk' | 'act3' | 'dawn';
 
 /** Each phase from its first frontier on, in campaign order. Before the first, `act2.gold`. */
-export const STAR_MAP_PHASES: readonly { readonly from: CampaignMapId; readonly phase: StarMapPhase }[] =
-  [
-    { from: 'a2_m01', phase: 'act2.gold' },
-    { from: 'a2_m04', phase: 'act2.dusk' },
-    { from: 'a3_m01', phase: 'act3' },
-  ];
+export const STAR_MAP_PHASES: readonly {
+  readonly from: CampaignMapId;
+  readonly phase: StarMapPhase;
+}[] = [
+  { from: 'a2_m01', phase: 'act2.gold' },
+  { from: 'a2_m04', phase: 'act2.dusk' },
+  { from: 'a3_m01', phase: 'act3' },
+];
 
 /** The UI theme (`data-act`, art-direction § 9 *Act themes*) each phase carries. */
 export const STAR_MAP_PHASE_ACT: Readonly<Record<StarMapPhase, '2' | '3' | 'finale'>> = {
@@ -240,14 +244,16 @@ export const NODE_CLEAR_BOX = { dx: -40, dy: -9, w: 80, h: 36 } as const;
 /** The nearest two nodes may stand, on at least one axis (px). */
 export const NODE_SPACING = 16;
 
+function overlaps(a: ChartRect, b: ChartRect): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
 /** Problems with the star map's data (empty when it holds): `starMap.test.ts` asserts none. */
 export function starMapProblems(
   nodes: Readonly<Record<string, StarMapNode>> = STAR_MAP_NODES,
 ): string[] {
   const out: string[] = [];
   const entries = Object.entries(nodes);
-  const overlaps = (a: ChartRect, b: ChartRect): boolean =>
-    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
   for (const [id, n] of entries) {
     const box = { x: n.x + NODE_BOX.dx, y: n.y + NODE_BOX.dy, w: NODE_BOX.w, h: NODE_BOX.h };
     if (box.x < 0 || box.y < 0 || box.x + box.w > CHART_W || box.y + box.h > CHART_H) {

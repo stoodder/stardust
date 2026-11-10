@@ -13,7 +13,7 @@ import {
 
 describe('the star map data', () => {
   it('has a node for every planned campaign map, and nothing else', () => {
-    expect(Object.keys(STAR_MAP_NODES).sort()).toEqual([...CAMPAIGN_PLAN_IDS].sort());
+    expect(Object.keys(STAR_MAP_NODES).toSorted()).toEqual([...CAMPAIGN_PLAN_IDS].toSorted());
   });
 
   it('keeps every node inside the chart, out of the chrome, and 16 px apart on an axis', () => {
@@ -36,8 +36,10 @@ describe('the star map data', () => {
   it('starts the star map after Act I, its phases in campaign order', () => {
     expect(STAR_MAP_AFTER).toBe('a1_m05');
     const order = STAR_MAP_PHASES.map((p) => CAMPAIGN_PLAN_IDS.indexOf(p.from));
-    expect(order).toEqual([...order].sort((x, y) => x - y));
-    expect(STAR_MAP_PHASES[0]?.from).toBe(CAMPAIGN_PLAN_IDS[CAMPAIGN_PLAN_IDS.indexOf('a1_m05') + 1]);
+    expect(order).toEqual(order.toSorted((x, y) => x - y));
+    expect(STAR_MAP_PHASES[0]?.from).toBe(
+      CAMPAIGN_PLAN_IDS[CAMPAIGN_PLAN_IDS.indexOf('a1_m05') + 1],
+    );
   });
 
   it('runs the Long Walk from the north edge to the south edge through both gates', () => {

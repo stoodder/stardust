@@ -4,7 +4,18 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { campaign, type CampaignView } from '../ui/screens/state.ts';
+import { MemoryStore } from '../meta/index.ts';
+import { initSaves, loadDevSave } from './save.ts';
 import { campaignScreenName, phaseFor, starMapView, STAR_MAP_SEEN_ID } from './starMap.ts';
+
+/** A campaign view to vary (any save's). */
+function campaignView(): CampaignView {
+  initSaves(new MemoryStore());
+  loadDevSave('after_a1m5_ref');
+  const v = campaign.value;
+  if (v === null) throw new Error('no campaign view');
+  return v;
+}
 
 afterEach(() => {
   campaign.value = null;
@@ -29,7 +40,9 @@ describe('starMapView', () => {
     const rig = view.nodes.at(-1)!;
     expect(rig).toMatchObject({ state: 'open', name: 'Rig Nine', place: 'The Diggings', x: 500 });
     expect(rig.label).toBe('Shift 6, Rig Nine, The Diggings. Next up. 0 of 3 medals.');
-    expect(rig.tagline).toBe('Rig Nine stopped answering. Go take a peek. Minor operational hiccup!');
+    expect(rig.tagline).toBe(
+      'Rig Nine stopped answering. Go take a peek. Minor operational hiccup!',
+    );
     expect(rig.brief?.threats.map((t) => t.label)).toContain('Skittish');
     expect(rig.brief?.required).toEqual(['Splash']);
     expect(rig.brief?.medals.map((m) => m.name)).toEqual([
@@ -40,7 +53,9 @@ describe('starMapView', () => {
     expect(rig.brief?.medals.some((m) => m.earned)).toBe(false);
     expect(rig.brief?.objectives.map((o) => o.name)).toEqual(['Crew Logs']);
     // Cleared nodes carry their medals; the legs join them in order, the last in the accent.
-    expect(view.nodes[0]?.label).toMatch(/^Shift 1, Orientation Day, Dome Row\. Cleared\. \d of 3 medals\.$/);
+    expect(view.nodes[0]?.label).toMatch(
+      /^Shift 1, Orientation Day, Dome Row\. Cleared\. \d of 3 medals\.$/,
+    );
     expect(view.nodes[0]?.brief?.medals.some((m) => m.earned)).toBe(true);
     expect(view.legs).toHaveLength(5);
     expect(view.legs.map((l) => l.accent)).toEqual([false, false, false, false, true]);
@@ -58,7 +73,9 @@ describe('starMapView', () => {
     expect(view.firstVisit).toBe(false);
     const teaser = view.nodes.at(-1)!;
     expect(teaser).toMatchObject({ id: 'a2_m04', state: 'coming_soon', brief: null });
-    expect(teaser.label).toMatch(/^Shift 9, Second Harvest, Reclamation Facility 2\. Coming soon\. /);
+    expect(teaser.label).toMatch(
+      /^Shift 9, Second Harvest, Reclamation Facility 2\. Coming soon\. /,
+    );
     expect(teaser.label).toContain('Ask Zibzab where stardust comes from.');
     // Nothing past the frontier, in any field.
     const later = CAMPAIGN_PLAN.slice(9).map((m) => m.name);
@@ -98,9 +115,9 @@ describe('phaseFor', () => {
 describe('campaignScreenName', () => {
   it('names the campaign screen for the buttons that go back to it', () => {
     expect(campaignScreenName()).toBe('Shift board');
-    campaign.value = { mode: 'starMap' } as CampaignView;
+    campaign.value = { ...campaignView(), mode: 'starMap' };
     expect(campaignScreenName()).toBe('Sector map');
-    campaign.value = { mode: 'shiftBoard' } as CampaignView;
+    campaign.value = { ...campaignView(), mode: 'shiftBoard' };
     expect(campaignScreenName()).toBe('Shift board');
   });
 });

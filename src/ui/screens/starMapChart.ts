@@ -471,15 +471,24 @@ function paintRoads(c: Canvas, look: PhaseLook): void {
   for (const road of ROADS) {
     const px = polylinePixels(road);
     for (const p of px) {
-      for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 2; dx++) put(c, p.x + dx, p.y + dy, look.path[1]);
+      for (let dy = -1; dy <= 2; dy++)
+        for (let dx = -1; dx <= 2; dx++) put(c, p.x + dx, p.y + dy, look.path[1]);
     }
     for (const p of px) {
-      for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) put(c, p.x + dx, p.y + dy, look.path[2]);
+      for (let dy = 0; dy <= 1; dy++)
+        for (let dx = 0; dx <= 1; dx++) put(c, p.x + dx, p.y + dy, look.path[2]);
     }
   }
 }
 
-function paintDome(c: Canvas, cx: number, cy: number, r: number, look: PhaseLook, lit: boolean): void {
+function paintDome(
+  c: Canvas,
+  cx: number,
+  cy: number,
+  r: number,
+  look: PhaseLook,
+  lit: boolean,
+): void {
   for (let y = -r - 1; y <= r + 1; y++) {
     for (let x = -r - 1; x <= r + 1; x++) {
       const d = Math.hypot(x, y);
@@ -492,11 +501,26 @@ function paintDome(c: Canvas, cx: number, cy: number, r: number, look: PhaseLook
   if (lit) put(c, cx, cy, look.windows === 'emergency' ? 'act3.emergency' : 'gold.3');
 }
 
+/** Whether (x, y) is in one of the colony wall's gate gaps. */
+function gate(x: number, y: number): boolean {
+  return GATES.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) <= 3);
+}
+
+/** The Long Walk's trail's x at row y inside the colony (north gate to south gate). */
+function trailX(y: number): number {
+  return 312 + ((304 - 312) * (y - 196)) / (304 - 196);
+}
+
+/** One random stream per feature, so a phase's extra pixels never move another feature. */
+function stream(k: number): Rng {
+  return createRng(CHART_SEED + k);
+}
+
 function paintColony(c: Canvas, look: PhaseLook, rng: Rng): void {
   const { x0, y0, x1, y1 } = COLONY;
-  const gate = (x: number, y: number): boolean => GATES.some((g) => Math.abs(g.x - x) + Math.abs(g.y - y) <= 3);
   // The paved yard inside the wall, a touch lighter than the valley.
-  for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) blend(c, x, y, look.ground[2], 0.18);
+  for (let y = y0 + 1; y < y1; y++)
+    for (let x = x0 + 1; x < x1; x++) blend(c, x, y, look.ground[2], 0.18);
   for (let x = x0; x <= x1; x++) {
     if (!gate(x, y0)) put(c, x, y0, 'steel.2');
     if (!gate(x, y1)) put(c, x, y1, 'steel.2');
@@ -511,7 +535,6 @@ function paintColony(c: Canvas, look: PhaseLook, rng: Rng): void {
   }
   for (const dx of [-4, 0, 4]) put(c, PLAZA.x + dx, PLAZA.y - 6, 'gold.4');
   // Domes clear of the plaza, the walk's trail, the roads in, and each other.
-  const trailX = (y: number): number => 312 + ((304 - 312) * (y - 196)) / (304 - 196);
   const placed: { x: number; y: number; r: number }[] = [];
   const fits = (x: number, y: number, r: number): boolean =>
     (Math.abs(x - PLAZA.x) > 8 + r || Math.abs(y - PLAZA.y) > 7 + r) &&
@@ -578,7 +601,7 @@ function paintDerrick(c: Canvas, x: number, y: number, look: PhaseLook, dark: bo
   // 5×7: legs, cross-braces, and the light on top.
   const rows = ['..o..', '..s..', '.s.s.', '.sss.', '.s.s.', 's.s.s', 's...s'];
   rows.forEach((row, dy) => {
-    [...row].forEach((ch, dx) => {
+    row.split('').forEach((ch, dx) => {
       const px = x - 2 + dx;
       const py = y - 6 + dy;
       if (ch === 'o') put(c, px, py, 'orange.3');
@@ -598,11 +621,17 @@ function paintRigs(c: Canvas, look: PhaseLook): void {
       put(c, BORE.x + x, BORE.y + 3 + y, y < -2 ? 'grime.3' : x + y > 6 ? 'grime.1' : 'grime.2');
     }
   }
-  for (let y = 0; y < 6; y++) for (let x = 0; x < 9; x++) {
-    const corner = (x === 0 || x === 8) && (y === 0 || y === 5);
-    if (!corner) put(c, BORE.x - 4 + x, BORE.y - 3 + y, 'ink.0');
-  }
-  for (const [dx, dy] of [[-9, 4], [7, 6], [10, 1], [-5, 7]] as const) {
+  for (let y = 0; y < 6; y++)
+    for (let x = 0; x < 9; x++) {
+      const corner = (x === 0 || x === 8) && (y === 0 || y === 5);
+      if (!corner) put(c, BORE.x - 4 + x, BORE.y - 3 + y, 'ink.0');
+    }
+  for (const [dx, dy] of [
+    [-9, 4],
+    [7, 6],
+    [10, 1],
+    [-5, 7],
+  ] as const) {
     put(c, BORE.x + dx, BORE.y + 3 + dy, 'violet.3');
   }
 }
@@ -628,7 +657,12 @@ function paintPlant(c: Canvas): void {
     for (let y = 0; y < b.h; y++) {
       for (let x = 0; x < b.w; x++) {
         const edge = x === b.w - 1 || y === b.h - 1;
-        put(c, PLANT.x + b.x + x, PLANT.y + b.y + y, edge ? 'steel.1' : y === 0 ? 'steel.3' : 'steel.2');
+        put(
+          c,
+          PLANT.x + b.x + x,
+          PLANT.y + b.y + y,
+          edge ? 'steel.1' : y === 0 ? 'steel.3' : 'steel.2',
+        );
       }
     }
   }
@@ -676,14 +710,17 @@ function paintNorthBand(c: Canvas, look: PhaseLook): void {
         { x: 330, y: 110 },
       ],
     ]) {
-      polylinePixels(crack).forEach((p, i) => put(c, p.x, p.y, i % 3 === 0 ? 'violet.3' : 'violet.2'));
+      polylinePixels(crack).forEach((p, i) =>
+        put(c, p.x, p.y, i % 3 === 0 ? 'violet.3' : 'violet.2'),
+      );
     }
   }
   if (look.glow) {
     for (let y = -4; y <= 4; y++) {
       for (let x = -4; x <= 4; x++) {
         if (Math.hypot(x, y) > 4.5) continue;
-        if (bayer(x + 412, y + 60) < 8) put(c, 412 + x, 60 + y, (x + y) % 2 === 0 ? 'gold.3' : 'pink.3');
+        if (bayer(x + 412, y + 60) < 8)
+          put(c, 412 + x, 60 + y, (x + y) % 2 === 0 ? 'gold.3' : 'pink.3');
       }
     }
   }
@@ -720,18 +757,16 @@ function paintLegs(c: Canvas, legs: readonly ChartLeg[], accent: ColorName): voi
 /** The chart for a phase and its legs: a 640×360 opaque image. */
 export function starMapChart(phase: StarMapPhase, legs: readonly ChartLeg[] = []): RgbaImage {
   const look = PHASE_LOOKS[phase];
-  // One stream per feature, so a phase's extra pixels never move another feature.
-  const rng = (k: number): Rng => createRng(CHART_SEED + k);
   const c: Canvas = { data: new Uint8ClampedArray(W * H * 4) };
-  paintRelief(c, look, rng(1));
+  paintRelief(c, look, stream(1));
   paintGrid(c, look);
-  paintLowlands(c, rng(2));
+  paintLowlands(c, stream(2));
   paintPreserve(c);
   paintTerraces(c, look);
   paintLongWalk(c, look);
   paintRoads(c, look);
-  paintColony(c, look, rng(3));
-  paintSpires(c, look, rng(4));
+  paintColony(c, look, stream(3));
+  paintSpires(c, look, stream(4));
   paintRigs(c, look);
   paintPlant(c);
   if (look.tint > 0) {

@@ -18,6 +18,7 @@ import {
   type StarNodeView,
 } from '../../app/starMap.ts';
 import { activeSave } from '../../app/save.ts';
+import type { CampaignMapId } from '../../content/campaign.ts';
 import {
   NODE_BOX,
   NODE_CLEAR_BOX,
@@ -55,7 +56,7 @@ const NODE_VARIANT: Readonly<Record<StarMapView['act'], string>> = {
 };
 
 /** The node the screen last showed the marker on, this session (UI memory, not saved). */
-let lastMarker: string | null = null;
+let lastMarker: CampaignMapId | null = null;
 
 /** The chart's pixels for the last phase and legs drawn (it repaints only when those change). */
 let chartCache: { readonly key: string; readonly image: RgbaImage } | null = null;
@@ -307,7 +308,7 @@ export function StarMap() {
 
   // The first visit is filed once it has shown; the notice holds for NOTICE_MS after the sweep.
   useEffect(() => {
-    if (!first) return;
+    if (!first) return undefined;
     markStarMapOpened();
     const sweep = still ? 0 : SWEEP_MS;
     const a = setTimeout(() => setSweeping(false), sweep);
@@ -320,7 +321,7 @@ export function StarMap() {
 
   useEffect(() => {
     lastMarker = view?.marker ?? null;
-    if (walk === null) return;
+    if (walk === null) return undefined;
     let raf = 0;
     const start = performance.now();
     const step = (now: number): void => {
@@ -370,7 +371,8 @@ export function StarMap() {
   const onKey = (i: number) => (e: KeyboardEvent) => {
     let to: number | null = null;
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = Math.max(0, i - 1);
-    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = Math.min(view.nodes.length - 1, i + 1);
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown')
+      to = Math.min(view.nodes.length - 1, i + 1);
     else if (e.key === 'Home') to = 0;
     else if (e.key === 'End') to = arrivalAt;
     if (to === null) return;
@@ -381,7 +383,7 @@ export function StarMap() {
   const markerNode = view.nodes.find((n) => n.id === view.marker) ?? null;
   let markerAt = markerNode === null ? null : { x: markerNode.x, y: markerNode.y };
   if (walk !== null && markerAt !== null && walkT < 1) {
-    const from = STAR_MAP_NODES[walk.from as keyof typeof STAR_MAP_NODES];
+    const from = STAR_MAP_NODES[walk.from];
     const e = walkT < 0.5 ? 2 * walkT * walkT : 1 - (-2 * walkT + 2) ** 2 / 2;
     markerAt = {
       x: Math.round(from.x + (markerAt.x - from.x) * e),

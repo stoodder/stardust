@@ -30,11 +30,17 @@ function count(img: RgbaImage, names: readonly ColorName[], area = { x: 0, y: 0,
   return n;
 }
 
+/** Whether column 100's row y is in the north band's hatch. */
+function band(img: RgbaImage, y: number): boolean {
+  return is(img, 100, y, 'ink.0') || is(img, 100, y, 'ink.2');
+}
+
 describe('the star map chart', () => {
   it('is a 640×360 opaque picture, the same every time', () => {
     expect(gold.w).toBe(640);
     expect(gold.h).toBe(360);
-    for (let i = 3; i < gold.data.length; i += 4) if (gold.data[i] !== 255) throw new Error('alpha');
+    for (let i = 3; i < gold.data.length; i += 4)
+      if (gold.data[i] !== 255) throw new Error('alpha');
     expect(starMapChart('act2.gold').data).toEqual(gold.data);
   });
 
@@ -43,24 +49,31 @@ describe('the star map chart', () => {
     for (let y = 0; y < 360; y++) for (let x = 0; x < 640; x++) sum += luminance(at(gold, x, y));
     expect(sum / (640 * 360)).toBeLessThan(luminance(rgbOf('act2.grass.2')));
     let duskSum = 0;
-    for (let y = 0; y < 360; y++) for (let x = 0; x < 640; x++) duskSum += luminance(at(dusk, x, y));
+    for (let y = 0; y < 360; y++)
+      for (let x = 0; x < 640; x++) duskSum += luminance(at(dusk, x, y));
     expect(duskSum).toBeLessThan(sum);
   });
 
   it("deepens the north band with the phase, and never draws the Hollow's acid", () => {
-    const band = (img: RgbaImage, y: number) =>
-      is(img, 100, y, 'ink.0') || is(img, 100, y, 'ink.2');
     expect(band(gold, 20)).toBe(true);
     expect(band(gold, 34)).toBe(false);
     expect(band(dusk, 34)).toBe(true);
-    const acid = Object.keys(MASTER).filter((k) => k.startsWith('acid.')) as ColorName[];
+    const acid: ColorName[] = ['acid.0', 'acid.1', 'acid.2', 'acid.3', 'acid.4'];
+    expect(Object.keys(MASTER).filter((k) => k.startsWith('acid.'))).toHaveLength(acid.length);
     for (const phase of ['act2.gold', 'act2.dusk', 'act3', 'dawn'] as const) {
       expect(count(starMapChart(phase), acid)).toBe(0);
     }
   });
 
   it('keeps landmarks out of the corner chrome', () => {
-    const landmarks: ColorName[] = ['white.0', 'teal.3', 'violet.3', 'orange.3', 'steel.2', 'blue.2'];
+    const landmarks: ColorName[] = [
+      'white.0',
+      'teal.3',
+      'violet.3',
+      'orange.3',
+      'steel.2',
+      'blue.2',
+    ];
     for (const r of STAR_MAP_RESERVED) expect(count(gold, landmarks, r)).toBe(0);
   });
 
@@ -83,7 +96,8 @@ describe('the star map chart', () => {
     expect(count(accent, [chartAccent('act2.gold')], near)).toBe(0);
     // Dashed: 2 on, 2 off.
     const xs = [];
-    for (let x = 200 + LEG_STOP; x < 260 - LEG_STOP; x++) if (is(accent, x, 300, 'orange.3')) xs.push(x);
+    for (let x = 200 + LEG_STOP; x < 260 - LEG_STOP; x++)
+      if (is(accent, x, 300, 'orange.3')) xs.push(x);
     expect(xs.length).toBeLessThan(260 - 200 - 2 * LEG_STOP);
   });
 });

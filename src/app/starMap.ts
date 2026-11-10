@@ -217,11 +217,12 @@ export function starMapView(save: SaveData): StarMapView {
     });
   }
   const regions = STAR_MAP_REGIONS.map((r): StarRegionView => {
-    const fixed = r.corrected !== undefined && isMapWon(save, r.corrected.after);
+    const fixed =
+      r.corrected !== undefined && isMapWon(save, r.corrected.after) ? r.corrected : null;
     return {
       id: r.id,
-      text: fixed ? r.corrected!.text : r.text,
-      struck: fixed ? r.text : null,
+      text: fixed === null ? r.text : fixed.text,
+      struck: fixed === null ? null : r.text,
       x: r.x,
       y: r.y,
     };
@@ -254,7 +255,10 @@ export function campaignScreenName(): 'Sector map' | 'Shift board' {
 export function markStarMapOpened(): void {
   const save = activeSave();
   if (save === null || save.story.seen.includes(STAR_MAP_SEEN_ID)) return;
-  updateActiveSave((s) => ({ ...s, story: { ...s.story, seen: [...s.story.seen, STAR_MAP_SEEN_ID] } }));
+  updateActiveSave((s) => ({
+    ...s,
+    story: { ...s.story, seen: [...s.story.seen, STAR_MAP_SEEN_ID] },
+  }));
 }
 
 /** The star map for the save in play, or null without one. */

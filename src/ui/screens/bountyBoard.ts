@@ -24,12 +24,15 @@ export const BOUNTY_COPY = {
 } as const;
 
 /** The colonists below the player: each one's name, note, and share of the player's score. */
-const COLONISTS: readonly { readonly name: string; readonly note: string; readonly share: number }[] =
-  [
-    { name: 'M. Haddad', note: 'Dome 3 · nights', share: 0.62 },
-    { name: 'P. Lindqvist', note: 'Terraces · on leave', share: 0.31 },
-    { name: 'Tidybot 4', note: 'Honorary', share: 0.04 },
-  ];
+const COLONISTS: readonly {
+  readonly name: string;
+  readonly note: string;
+  readonly share: number;
+}[] = [
+  { name: 'M. Haddad', note: 'Dome 3 · nights', share: 0.62 },
+  { name: 'P. Lindqvist', note: 'Terraces · on leave', share: 0.31 },
+  { name: 'Tidybot 4', note: 'Honorary', share: 0.04 },
+];
 
 export interface BountyRow {
   readonly rank: number;

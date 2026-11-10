@@ -3,13 +3,12 @@
 // (Pixelify Sans drew "1.5" as "1.S" and "files" as "Ales"). Screenshots of every screen with body
 // text, for a look: Research, Shop, Engineering, Settings, the loadout screen, and Results. In
 // test-results/screens/fonts/.
-import type { Locator, Page } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { playShift, shot, waitForReady } from './hooks.ts';
 
 /** The font family an element renders with. */
 const fontOf = (el: Locator) => el.evaluate((e) => getComputedStyle(e).fontFamily);
-
 
 test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen', async ({
   page,

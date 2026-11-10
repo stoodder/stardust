@@ -24,7 +24,11 @@
 .sd-starmap-scan {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(to bottom, rgb(255 255 255 / 6%) 0 1px, transparent 1px 2px);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 6%) 0 1px,
+    transparent 1px 2px
+  );
   pointer-events: none;
 }
 

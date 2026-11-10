@@ -14,7 +14,7 @@ describe('the Pest Bounty Board (core-loop § 6.6)', () => {
     expect(kipScore(100)).toBe(119);
   });
 
-  it("puts Kip on assignment from A2M4", () => {
+  it('puts Kip on assignment from A2M4', () => {
     expect(bountyRows(10, 'You', false)[0]?.note).toBe(BOUNTY_COPY.kip);
     expect(bountyRows(10, 'You', true)[0]?.note).toBe('(on assignment: Reclamation)');
   });

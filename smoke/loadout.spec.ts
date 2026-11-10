@@ -10,7 +10,6 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, playShift, shot, waitForReady } from './hooks.ts';
 
-
 const towerCard = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${name},`) });
 

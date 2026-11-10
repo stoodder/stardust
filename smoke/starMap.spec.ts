@@ -29,9 +29,12 @@ async function winByPar(page: Page): Promise<void> {
     return sd.state()?.outcome ?? null;
   });
   expect(outcome).toBe('won');
-  await page.getByRole('dialog', { name: 'PERIMETER SECURED!' }).getByRole('button', {
-    name: 'Continue',
-  }).click();
+  await page
+    .getByRole('dialog', { name: 'PERIMETER SECURED!' })
+    .getByRole('button', {
+      name: 'Continue',
+    })
+    .click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
 }
 
@@ -104,6 +107,7 @@ test('star map: after A1M5, the keyboard, Replay, and every way back', async ({ 
   // Act I's five nodes cleared with their pips, Rig Nine next up; nothing later in the page.
   await expect(nodes(page)).toHaveCount(6);
   for (const name of ['Orientation Day', 'Hatching Season', 'The Audit', 'Record Quarter']) {
+    // oxlint-disable-next-line no-await-in-loop -- one assertion per node, in order
     await expect(node(page, name)).toHaveAccessibleName(/\. Cleared\. \d of 3 medals\.$/);
   }
   await expect(node(page, 'Rig Nine')).toHaveAccessibleName(
@@ -119,6 +123,7 @@ test('star map: after A1M5, the keyboard, Replay, and every way back', async ({ 
   const start = page.getByRole('button', { name: 'Start Rig Nine' });
   await expect(start).toBeFocused();
   for (const later of ['The Glass Witch', 'Second Look', 'Second Harvest', 'The Long Walk']) {
+    // oxlint-disable-next-line no-await-in-loop -- one assertion per name
     await expect(page.locator('body')).not.toContainText(later);
   }
   await expect(page.getByRole('img', { name: /^Sector map of the valley/ })).toBeVisible();
@@ -206,7 +211,10 @@ test('star map: reduced motion holds still; after A2M3 the Second Harvest teaser
   await expect(page.getByTestId('star-sweep')).toHaveCount(0);
   await expect(page.getByTestId('star-notice')).toBeVisible();
   const anim = (sel: string) =>
-    page.locator(sel).first().evaluate((el) => getComputedStyle(el).animationName);
+    page
+      .locator(sel)
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName);
   expect(await anim('.sd-star-ping')).toBe('none');
   expect(await anim('.sd-star-marker img')).toBe('none');
 
@@ -218,7 +226,9 @@ test('star map: reduced motion holds still; after A2M3 the Second Harvest teaser
   // The teaser: its tagline, the padlock, no Start; its node takes the focus.
   const teaser = node(page, 'Second Harvest');
   await expect(teaser).toBeFocused();
-  await expect(teaser).toHaveAccessibleName(/\. Coming soon\. .*Ask Zibzab where stardust comes from\.$/);
+  await expect(teaser).toHaveAccessibleName(
+    /\. Coming soon\. .*Ask Zibzab where stardust comes from\.$/,
+  );
   const panel = page.getByRole('region', { name: 'Second Harvest' });
   await expect(panel).toContainText('Coming soon');
   await expect(panel).toContainText('Ask Zibzab where stardust comes from.');

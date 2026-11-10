@@ -1386,3 +1386,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **`NotFiringAtSkitterkin` fires at most once a wave and carries its wave**, so an early hold no longer spends Bricks's Quiet Wave line (A1M5's bark is `wave: 10`).
 - **The bank nudge also fires after two build phases with no purchase** while the cheapest tower is affordable, so A1M2's never-spend player hears it before the W7 wall (T229).
 - `MapDef.briefing` is gone (briefings are scenes); A1M3 has its debrief (new canon in act1.md); `saveModifiers` lives in `meta/loadout.ts` and counts equipped protocols; full-screen scenes around Results can read `thisRun`. The name-tag plate is still undrawn (T431).
+
+### D123 — 2026-11-10 — T440b the Glass Witch, the Vrell towers, every spec frame
+- **No placeholder art remains** (`sprites/placeholders/` is gone). The Glass Witch is recognisably Ves'thara's portrait (D103) as a 31×48 woven avatar: the pointed lattice veil, the ruby brow knot, emerald robes, the cut collar thread frayed in every frame; her states each have a shape (walk, pulse tell with light in her palms, blink tell swept tall and thin, bowed on a phase change, dimmed with a hand at the thread in retreat).
+- **The Vrell towers** (Lookout, Harpoon, Crane) share a scrap-and-price-tag spec base (`vrellSpecBase`); every Act I tower's specs have their own frames. Head canvases grew to fit their specs with anchors moved, so tier 1–3 draw where they did.
+- Render still has to pick some of this art (the Witch's tell and blink poses, idle spec heads, the young-sack burst): T430b.

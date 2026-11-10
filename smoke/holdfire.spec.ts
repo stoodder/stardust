@@ -35,7 +35,6 @@ const fireControl = (page: Page) =>
     return { holdFireAll: s?.holdFireAll ?? null, spareRunnersAll: s?.spareRunnersAll ?? null };
   });
 
-
 /** Fast-forwards the running battle until the map ends; returns the outcome. */
 const playOut = (page: Page) =>
   page.evaluate(() => {
