@@ -32,6 +32,7 @@ import {
   type Enemy,
 } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
+import { standDownAlpha } from './standDownLook.ts';
 
 export const ENEMY_POSES = [
   'walk',
@@ -193,6 +194,7 @@ export function cloakAlpha(
   shimmerHigh: boolean,
   dithered = false,
 ): number {
+  if (e.standDownTicks > 0) return standDownAlpha(e.standDownTicks); // T506: the stand-down fade
   if (leaving) return LEAVING_ALPHA;
   if (!cloakedOut(e)) return 1;
   if (dithered) return shimmerHigh ? CLOAK_DITHER_ALPHA_HIGH : CLOAK_DITHER_ALPHA_LOW;

@@ -312,3 +312,16 @@
   padding-inline: 7px;
   white-space: nowrap;
 }
+
+/* A debrief's story choice (C2; T510) in the way on's place: the stake first, price first, then
+   the options, alike (neither is wrong). */
+.sd-results-choice {
+  align-items: center;
+}
+
+.sd-results-stake {
+  margin: 0 4px 0 0;
+  font-family: var(--font-heading);
+  white-space: nowrap;
+  color: var(--sd-steel-3);
+}

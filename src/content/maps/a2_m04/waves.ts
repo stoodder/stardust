@@ -70,8 +70,9 @@ export const OPEN = 6;
 /** The build phase before most waves (Act II's default is 20 s). */
 export const COUNTDOWN = 25;
 /**
- * The build phase before W5: W4's runners and their chasers are off the road and the truth scene
- * plays (on W4's clear) with nothing on the field and W5 still to come, in every reference run.
+ * The build phase before W5 and W9. Before W5: W4's runners and their chasers are off the road
+ * and the truth scene plays (on W4's clear) with nothing on the field and W5 still to come, in
+ * every reference run. Before W9: W8's Wardens (0.6 tiles/s) finish the 39-tile road.
  */
 export const LONG_COUNTDOWN = 50;
 /** A packed Mote cluster's spacing (seconds). */
@@ -96,25 +97,34 @@ export const waves = defineWaves([
   // W4 · fleeing Skitterkin with the Hollow behind them, then a cluster
   {
     countdownSec: COUNTDOWN,
-    groups: [run('zoomer', 10, OPEN, 0.4), motes(4, OPEN + FLEE_LEAD), motes(16, OPEN + 10, PACKED)],
+    groups: [
+      run('zoomer', 10, OPEN, 0.4),
+      motes(4, OPEN + FLEE_LEAD),
+      motes(16, OPEN + 10, PACKED),
+    ],
   },
   // (the truth scene, on W4's clear) W5 · a Mote cluster
   {
     countdownSec: LONG_COUNTDOWN,
     groups: [motes(36, OPEN, PACKED), motes(36, OPEN + 12, PACKED)],
   },
-  // W6 · Blinkstriders ×3 [T: blink; depth placement]
+  // W6 · Blinkstriders ×6 [T: blink; depth placement]
   {
     countdownSec: COUNTDOWN,
     teach: true,
     groups: [blinks(6, OPEN, 2)],
   },
-  // W7 · Veilwalkers + Glimmers [X: cloak]
+  // W7 · Veilwalkers + Glimmers [X: cloak], two clusters behind them
   {
     countdownSec: COUNTDOWN,
-    groups: [veils(6, OPEN, 2.5), glimmers(12, OPEN + 12, 0.8), motes(40, OPEN + 22, PACKED), motes(30, OPEN + 30, PACKED)],
+    groups: [
+      veils(6, OPEN, 2.5),
+      glimmers(12, OPEN + 12, 0.8),
+      motes(40, OPEN + 22, PACKED),
+      motes(30, OPEN + 30, PACKED),
+    ],
   },
-  // W8 · Lightwings over the vats + Wardens down the road, Veilwalkers in their shadow
+  // W8 · Lightwings over the vats + Wardens down the road, Veilwalkers in their shadow, a cluster
   {
     countdownSec: COUNTDOWN,
     groups: [
@@ -124,7 +134,8 @@ export const waves = defineWaves([
       motes(40, OPEN + 16, PACKED),
     ],
   },
-  // W9 · Blinkstriders + Veilwalkers [X: blink]
+  // W9 · Blinkstriders + Veilwalkers [X: blink], Glimmers behind. The long build phase lets W8's
+  // slow Wardens finish their walk first.
   {
     countdownSec: LONG_COUNTDOWN,
     groups: [blinks(6, OPEN, 2), veils(6, OPEN + 6, 2), glimmers(8, OPEN + 16)],

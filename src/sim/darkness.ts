@@ -34,9 +34,7 @@ import type { TickContext } from './tick.ts';
 export const DARK_EASE_TICKS = 240;
 
 /** Whether `map` has darkness that changes play: a key with `dark` > 0, or lamps. */
-export function hasDarkness(
-  map: Pick<CompiledMapDef<IdSpace>, 'lighting' | 'lights'>,
-): boolean {
+export function hasDarkness(map: Pick<CompiledMapDef<IdSpace>, 'lighting' | 'lights'>): boolean {
   return map.lights.length > 0 || map.lighting.some((k) => k.dark > 0);
 }
 

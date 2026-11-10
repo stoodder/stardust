@@ -3,8 +3,21 @@
 // space (sim/darkness.ts isLitAt's test), so lit on screen is lit in the sim (D137).
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
+import { DARK_EASE_TICKS } from '../../sim/index.ts';
 import { screenToGrid, type Vec2 } from '../iso.ts';
-import { DARK_SHADE, DARK_SHADE_STRENGTH, darkTone, drawDarkness, packPixel } from './darknessPixels.ts';
+import { LIGHT_FADE_TICKS } from './lighting.ts';
+import {
+  DARK_SHADE,
+  DARK_SHADE_STRENGTH,
+  darkTone,
+  drawDarkness,
+  packPixel,
+} from './darknessPixels.ts';
+
+const lum = (d: number): number => {
+  const c = darkTone(d);
+  return c.r + c.g + c.b;
+};
 
 describe('the darkness tone', () => {
   it('is white at 0 and DARK_SHADE_STRENGTH toward the shade at full dark', () => {
@@ -17,13 +30,13 @@ describe('the darkness tone', () => {
       b: Math.round(255 + (s.b - 255) * k),
     });
     // Darker as the dark deepens, never past full.
-    const lum = (d: number) => {
-      const c = darkTone(d);
-      return c.r + c.g + c.b;
-    };
     expect(lum(0.25)).toBeGreaterThan(lum(0.5));
     expect(lum(0.5)).toBeGreaterThan(lum(1));
     expect(darkTone(2)).toEqual(darkTone(1));
+  });
+
+  it('moves with the sky and the grade: the sim eases the dark over the tint fade’s 4 s', () => {
+    expect(DARK_EASE_TICKS).toBe(LIGHT_FADE_TICKS);
   });
 
   it('packs opaque little-endian RGBA words', () => {

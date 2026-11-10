@@ -157,8 +157,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'attack.beam': null,
       // Escort runs since T305c (escort.test.ts).
       'map.escort': null,
-      'enemy.boss.pivot': 'T506',
-      'enemy.boss.shieldBroken': 'T506',
+      // The Penitent's shield-broken phase and the pivot run since T506 (penitent.test.ts).
+      'enemy.boss.pivot': null,
+      'enemy.boss.shieldBroken': null,
       // Sundown runs since T505 (darkness.test.ts).
       'map.darkness': null,
       'status.unnerved': 'T507',
@@ -167,9 +168,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'tower.markArea': 'T508',
       'status.noEvade': 'T508',
     });
+    expect(SCRIPT_GATES).not.toHaveProperty('standDown'); // T506
+    expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot');
     expect(SCRIPT_GATES).toMatchObject({
-      standDown: 'T506',
-      'bossEnd.pivot': 'T506',
       // No M5 map uses these (D137).
       objectiveCompleted: 'M6',
       checkpoint: 'M7',
@@ -177,10 +178,8 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
   });
 
   it('refuse the M5 enemies by mechanic, naming the enemy', () => {
-    expect(gateRefusals(withMap({}, 'sunderglass_penitent'))).toEqual([
-      "a boss ending 'pivot' (sunderglass_penitent) is not simulated until T506",
-      'a shield-broken phase (sunderglass_penitent) is not simulated until T506',
-    ]);
+    // The Penitent runs since T506 (penitent.test.ts).
+    expect(gateRefusals(withMap({}, 'sunderglass_penitent'))).toEqual([]);
     // Their mechanics ran before M5: the Veilwalker's cloak, the Blinkstrider's blink, the split;
     // phasing runs since T503 (phase.test.ts).
     // The Cantor's aura runs since T502 (shieldAura.test.ts).

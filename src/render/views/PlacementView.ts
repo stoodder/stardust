@@ -22,7 +22,7 @@ import type { ViewContext } from './ViewContext.ts';
 /** Stepped alpha (art-direction §7): the ghost is 60%. */
 const GHOST_ALPHA = 0.6;
 /** A dimmed range ring's alpha: a tower outside every light at Sundown (T505). */
-export const RING_DIM_ALPHA = 0.45;
+export const RING_DIM_ALPHA = 0.65;
 /** The ghost's tile-bonus label sits this far above its ground point (px): over a tier-1 head. */
 const GHOST_LABEL_LIFT_PX = 30;
 /** The salvage label sits over the wreck's stake, in the clickable-object gold. */

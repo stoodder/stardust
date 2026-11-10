@@ -9,7 +9,6 @@ import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { DARK_RANGE_PENALTY, LAMP_RADIUS_TILES } from '../content/rules.ts';
 import type { LightingKeyDef, LightDef } from '../content/types.ts';
-import { LIGHT_FADE_TICKS } from '../render/vfx/lighting.ts';
 import { GUN, placeTower, setup } from './__fixtures__/combat.ts';
 import {
   FIXTURE_CONTENT,
@@ -76,7 +75,7 @@ describe('the darkness level', () => {
   });
 
   it('eases linearly over 4 s of sim time as a wave starts (the tint fade’s length)', () => {
-    expect(DARK_EASE_TICKS).toBe(LIGHT_FADE_TICKS);
+    expect(DARK_EASE_TICKS).toBe(240); // render/vfx/lighting.ts LIGHT_FADE_TICKS (its test)
     const k = keys([[1, 0.5]]);
     expect(darkAt(k, [100], 0, 500)).toBe(0);
     expect(darkAt(k, [100], 1, 100)).toBe(0);
@@ -176,29 +175,29 @@ function replay(
   return sim;
 }
 
-describe('the darkness system in a run', () => {
-  const config = () => fixtureConfig({ content: DARK, loadout: ['fx_gun'] });
+const config = () => fixtureConfig({ content: DARK, loadout: ['fx_gun'] });
 
-  /** Builds by the lamp and out in the dark, calls W1, then W2 as soon as W1 has spawned. */
-  function play(
-    ticks: number,
-    darks: number[] = [],
-  ): { sim: Sim<FixtureIds>; events: SimEvent<FixtureIds>[] } {
-    const sim = createSim(config());
-    const events: SimEvent<FixtureIds>[] = [];
-    sim.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
-    sim.enqueue({ type: 'callWave' });
-    while (sim.state.tick < ticks && sim.state.outcome === 'playing') {
-      if (sim.state.wave === 1 && sim.state.schedule.phase !== 'spawning') {
-        sim.enqueue({ type: 'callWave' });
-      }
-      sim.step();
-      sim.drainEvents(events);
-      darks.push(sim.state.dark);
+/** Builds a gun by the lamp, calls W1, then W2 as soon as W1 has spawned. */
+function play(
+  ticks: number,
+  darks: number[] = [],
+): { sim: Sim<FixtureIds>; events: SimEvent<FixtureIds>[] } {
+  const sim = createSim(config());
+  const events: SimEvent<FixtureIds>[] = [];
+  sim.enqueue({ type: 'build', tile: [1, 1], tower: 'fx_gun' });
+  sim.enqueue({ type: 'callWave' });
+  while (sim.state.tick < ticks && sim.state.outcome === 'playing') {
+    if (sim.state.wave === 1 && sim.state.schedule.phase !== 'spawning') {
+      sim.enqueue({ type: 'callWave' });
     }
-    return { sim, events };
+    sim.step();
+    sim.drainEvents(events);
+    darks.push(sim.state.dark);
   }
+  return { sim, events };
+}
 
+describe('the darkness system in a run', () => {
   it('eases in ticks, shifts on each wave start, and lights the lamp-side tower', () => {
     const { sim, events } = play(1200);
     const s = sim.state;
@@ -243,9 +242,12 @@ describe('the darkness system in a run', () => {
     state.schedule.startTick[1] = 10;
     darkness(state, ctx);
     expect([state.dark, t.lit, t.darkRangePct, state.events.length]).toEqual([0, true, 0, 0]);
+    // Every live map but Sundown itself (A2M6, once T522 registers it) is without darkness.
+    const sundown: string = 'a2_m06';
     for (const map of Object.values(LIVE.maps)) {
-      if (map.id === 'a2_m06') continue; // Sundown itself (T522)
-      expect(hasDarkness(map), map.id).toBe(false);
+      const id: string = map.id;
+      if (id === sundown) continue;
+      expect(hasDarkness(map), id).toBe(false);
     }
   });
 });

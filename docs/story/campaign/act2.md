@@ -349,16 +349,53 @@ Par's shift runs about 11.8 min at 1×. Robustness ([`src/balance/a2m3.test.ts`]
 
 *Kip's new plant smells like burnt sugar. The Tidybots unload here. Ask Zibzab where stardust comes from.*
 
-- **Facts:** Reclamation Facility 2 · `act2.dusk` · Defend (the plant's control core) · 18×12, 15 buildable (2 catwalk high ground, 1 conduit node) + intake wreckage · 12 waves · 480 credits · one road through the intake yard plus an air lane over the vats · companion Zibzab (Clearance Sale) · Technician Orbital Strike or Scanner Sweep.
+- **Facts:** Reclamation Facility 2 · `act2.dusk` · Defend (the plant's control core) · 18×12, 15 buildable (2 catwalk high ground, 1 conduit node) + 2 intake wreckage · 12 waves · 480 credits · one road through the intake yard, the vats' surge route from W10, and an air lane over the vats · companion Zibzab (Clearance Sale) · Technician Orbital Strike or Scanner Sweep.
 - **Story purpose:** **The midpoint** (twist layer 2, told plainly by Zibzab). Pays the Tidybots, the counter, the currency, the early ask. You keep defending the plant after you know, because the Hollow is drawn to the vats, and the last killable Skitterkin of the campaign are in the waves after the truth. **Target: "I know, and I'm still doing it."**
 
-**Layout.** The road enters north, loops through the intake yard past Intake B (where Tidybots unload after every wave, in full view), and ends at the control core in the south. The big vats glow **violet** (unsung) in the middle of the map; natural seams on the north cliff glow gold. Ves'thara's scouts walk the same road toward the core: she is learning this as you are. A3M5 revisits this map: the vats, Intake B, and the control core are the landmarks.
+**Layout.** The road enters at the north-east, runs west along the foot of the north cliff (natural seams glowing gold above it), drops into the intake yard and loops round Intake B (where Tidybots unload after every wave, in full view), then runs east under the vats and turns down round the conduit into the control core on the south edge. The big vats glow **violet** (unsung) in the middle of the map; from W10 the Hollow surges up out of their drain hatch onto the road's last leg. Ves'thara's scouts walk the same road toward the core: she is learning this as you are. A3M5 revisits this map: the vats, Intake B, and the control core are the landmarks.
 
-**Waves.** 1 Skitterkin, fleeing · 2 Motes drawn toward the vats · 3 Veilwalkers ×2 [T: cloak; Lookout, Scanner Sweep] · 4 fleeing Skitterkin + Motes · *(cue: the truth scene)* · 5 Mote cluster · 6 Blinkstriders ×3 [T: blink; depth placement] · 7 Veilwalkers + Glimmers [X] · 8 Lightwings + Wardens · 9 Blinkstriders + Veilwalkers [X] · 10 Hollow surge at the vats, with fleeing Skitterkin ahead · 11 cloak + blink mixed [X] · 12 everything.
+**Layout data** (the data is [`src/content/maps/a2_m04/map.ts`](../../../src/content/maps/a2_m04/map.ts); [`a2_m04.test.ts`](../../../src/content/maps/a2_m04/a2_m04.test.ts) pins it). The **road** (`road`, 39 tiles) comes in at (14,0), west along row 2 under the cliff, down into the intake yard at (3,3), west to (1,4), down column 1 past **Intake B** (2,6), east along row 8 under the vats, down column 12 round the **conduit** (11,9, the power node), and west into the **control core** (9,11). The **vats' surge** (`vats`, 12 tiles) comes up out of the **drain hatch** (8,7), just south of the vats, onto row 8 and follows the road's last leg; only the Hollow walks it, from W10. The **air lane** (`sky`) flies in from (17,1), straight over the vats, and down to the core. The two **catwalks** either side of the hatch, (6,7) and (10,7), are the high ground. The **intake hoppers** (3,6) and (3,7), two wrecked hoppers beside Intake B, are the intake wreckage (40 salvage each, a pad under each). Markers: `intake_b`, `intake_hopper_n`/`_s`, `vat_west`/`_middle`/`_east`, `seam_west`/`_east` (the plant's props are T540c's). Every route and marker keeps its id and tile so A3M5 can compose this layout by reference ([maps.md §7](../../design/maps.md#7-storytelling-with-the-map)).
+
+```
+..............S...
+........o....o#o..
+...############...
+...#o.............
+.###o.............
+.#................
+o#.x..............
+.#.x..^.S.^.o.....
+.############.....
+....o..o..o+#o....
+........o####.....
+.........C........
+```
+
+**Waves.** 1 Skitterkin, fleeing · 2 Motes drawn toward the vats · 3 Veilwalkers ×2 [T: cloak; Lookout, Scanner Sweep] · 4 fleeing Skitterkin + Motes · *(cue: the truth scene, on W4's clear)* · 5 Mote clusters · 6 Blinkstriders ×6 [T: blink; depth placement] · 7 Veilwalkers + Glimmers [X], clusters behind · 8 Wardens + Lightwings, Veilwalkers in their shadow, a cluster · 9 Blinkstriders + Veilwalkers [X] · 10 Hollow surge at the vats, with fleeing Skitterkin ahead down the road · 11 cloak + blink mixed [X] · 12 everything.
+
+**Wave data** (the data is [`src/content/maps/a2_m04/waves.ts`](../../../src/content/maps/a2_m04/waves.ts)). W2–W12 have a **25 s** countdown, W5 and W9 a **50 s** one, and W2–W12 **open 6 s into the wave**. W5's long build phase is the truth scene's: W4's runners and their chasers are off the road and W4 is cleared before W5 starts in every run that doesn't call waves early, so the scene opens with nothing on the field (a countdown opens as the wave before it finishes spawning, [D135](../../decisions.md#d135--2026-11-10--m4-review-round-2-rulings-fixed-in-round-3-the-last)). W9's lets W8's slow Wardens finish the road. Every Skitterkin group is `fleeing` (†) and runs the road; younglings (‡) run with W1's families. Everything walks the road but the vats' surges (*vats*) and the Lightwings (the air lane). Packed clusters are 0.2 s apart; a fleeing group with Motes behind it leads them by 3 s. Default spacing Mote 0.3 s, Veilwalker 1 s, Blinkstrider 1 s, Glimmer 0.8 s, Weft Warden 2 s, Lightwing 0.7 s.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler† ×8 @ 1, 0 · Nibbler‡ ×6 @ 1, 0.5 | 14 |
+| W2 | Mote ×12, 6 · Mote ×12, 14 | 24 |
+| W3 | Veilwalker ×2 @ 3, 6 (teach) | 2 |
+| W4 | Zoomer† ×10 @ 0.4, 6 · Mote ×4, 9 · Mote ×16 packed, 16 | 30 |
+| W5 | Mote ×36 packed, 6 · Mote ×36 packed, 18 | 72 |
+| W6 | Blinkstrider ×6 @ 2, 6 (teach) | 6 |
+| W7 | Veilwalker ×6 @ 2.5, 6 · Glimmer ×12, 18 · Mote ×40 packed, 28 · Mote ×30 packed, 36 | 88 |
+| W8 | Weft Warden ×4 @ 3, 6 · Veilwalker ×3 @ 4, 8 · Lightwing ×6 @ 2, 18 · Mote ×40 packed, 22 | 53 |
+| W9 | Blinkstrider ×6 @ 2, 6 · Veilwalker ×6 @ 2, 12 · Glimmer ×8, 22 | 20 |
+| W10 | Nibbler† ×10 @ 0.6, 6 · Mote ×4, 9 · Mote ×40 packed, 20 *vats* · Mote ×40 packed, 30 *vats* | 94 |
+| W11 | Veilwalker ×8 @ 1.5, 6 · Blinkstrider ×8 @ 1.5, 7 · Glimmer ×12, 18 | 28 |
+| W12 | Weft Warden ×3 @ 4, 6 · Veilwalker ×8 @ 1.5, 12 · Blinkstrider ×8 @ 1.5, 16 · Lightwing ×9 @ 1.5, 22 · Glimmer ×12, 28 · Mote ×50 packed, 36 *vats* | 90 |
+
+**The intake yard is the detection test:** a Veilwalker is touchable only while Revealed, and the road loops round Intake B, so a Lookout on a cleared hopper sees the whole loop and every tower round it can fire. **The road's long middle is the shield test** (W7's Glimmers, W8's Wardens, the Blinkstriders landing deep), and **the clusters are the splash test** (W5, W7, W8, then the vats' short surges from W10).
 
 **Story delivery.**
 - *Briefing (the tour):* Kip: "Promoted! Reclamation Lead. Big vats, great benefits. Smells like burnt sugar, honestly. You get used to it." · Kip: "Youngest Reclamation Lead ever. Also the first ever. A record's a record." · Kip: "So the intake goes to the vats, and the vats—" · QUILL (`policy`): "(Per policy.) Reclamation details are confidential." · QUILL (the surprise hint): "Something under the vats is listening."
 - *Full-screen scene* `a2_m04_scene_truth` (after W4): the player asks Zibzab.
+  - Player: "Where does stardust come from?"
   - Zibzab: "You asked. Good. Stardust is the dead, Technician. Everyone in the trade knows. Nobody in the trade says."
   - (if `asked_zibzab_early`) Zibzab: "You asked me in the afternoon. I told you. You kept buying."
   - Player choice (earnest / wry / quiet): "You knew. All this time." / "Great. Love that. Very normal." / "..."
@@ -372,16 +409,69 @@ Par's shift runs about 11.8 min at 1×. Robustness ([`src/balance/a2m3.test.ts`]
   - w10 Sterling: "Throughput is up, morale is up, everything is up! Keep that plant safe, Four-Forty-Seven!"
 - *Barks:* Zibzab `skitterkin_killed_ahead`: "That one was worth eight stardust. Price first. I won't pretend." · QUILL `wave_cleared` (after the scene): "...Pests processed." · Zibzab `perfect_wave`: "Good work. Zibzab is careful what he calls good."
 - *Results:* `memo_a2_04` *Your Q3 Performance Bonus!* arrives **on the results screen** (+400 Stardust), so the bank is full when C2 is offered.
-- *Debrief:* Sterling: "Reclamation is a sustainability initiative, Four-Forty-Seven! Nothing on Tumble IV goes to waste. Isn't that beautiful?" · then "Let's call it the Humane Relocation Pilot. My budget, my risk. Just trust me, okay?" Then **C2**, Zibzab's offer (the options are in [../campaign.md §6.1](../campaign.md#61-the-choices)):
+- *Debrief:* Sterling: "Reclamation is a sustainability initiative, Four-Forty-Seven! Nothing on Tumble IV goes to waste. Isn't that beautiful?" · then "Let's call it the Humane Relocation Pilot. My budget, my risk. Just trust me, okay?" Then **C2**, Zibzab's offer (the options are [../campaign.md §6.1](../campaign.md#61-the-choices)'s):
   - Zibzab: "Price first. Two offers. I sell your stardust at market. Or I carry it home, at cost, plus my fee."
   - Zibzab: "Neither one is wrong. The dead don't mind being useful. They mind being forgotten."
+  - Player choice (wry / earnest): "Sell it. Market price." / "Take it to them."
+  - With an empty Stardust bank (`stardust_choice = none`), no offer: Zibzab: "No refunds. I did say."
+  - *On a loss*, Zibzab: "No charge for that one, Technician. Go again."
 - *Base:* Bricks hands Pebble over at Dome 3: "She's yours tonight, Goldie. She bites." · Pebble: "(squeak) Only a little." · Goldie takes her in: "She can sleep in the butterheads. She doesn't eat them. She just... sits in them. Like a little egg."
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m04/`](../../../src/content/dialogue/a2/a2_m04/scenes.ts)): the briefing is `a2_m04_brief`; the map script plays `a2_m04_scene_truth` on W4's clear (`{ wave: 4, phase: 'cleared' }`), in W5's long build phase, as a full-screen scene that holds the battle until it ends (a player who calls W5 early meets it once W4 is cleared, mid-W5); the radio lines are `a2_m04_w06`–`_w10`; the barks are map-scoped (`a2/a2_m04/barks.ts`; QUILL's line once the truth scene is seen, the same id the minor jingle keys on); the debrief is `a2_m04_debrief`: on a win its lines show on the Results card up to the choice, its options set `stardust_choice` and are C2's buttons while the flag is unset, and the `{ bank: 'stardust', lte: 0 }` branch (read after run end's step 6 pays the Q3 Bonus) sets `none`; the base scene is `a2_m04_base_handover`.
 - *Codex:* Second Harvest (original: "A sustainability success story!"), Veilwalker, Blinkstrider, Tidybot annotated, Stardust annotated, Kip Act II portrait.
 - *Memo after:* `memo_a2_05` *Humane Relocation Pilot: Next Steps!* (small print: "Preserve capacity planned per Protocol BP-2359.")
 
-**Medals.** Victory · Perfect Core · **Nothing Unseen:** every Veilwalker is revealed before it passes Intake B. **Objective Intel +1, Intake Manifest:** clear the intake wreckage (unlocks the manifest codex entry: tonnages, no names).
+**Medals.** Victory · Perfect Core · **Nothing Unseen:** every Veilwalker is revealed before it passes Intake B (`not` a `passedMarker` on `intake_b` by a Veilwalker never Revealed since it spawned). **Objective Intel +1, Intake Manifest:** clear both intake hoppers (unlocks the manifest codex entry: tonnages, no names).
 **Rewards.** Stardust 225, plus the 400 Q3 Bonus on the results screen · Intel 3 (+1) · C2 Sell adds 3–8 Intel ([progression.md §2.1](../../design/progression.md#21-story-hooks)).
-**Par build.** Lookout, Rivet, Zapcoil (Overload; its specs are bought just before this map), Sprinkler. Lookout + Rivet adjacent (Overwatch) at the yard entrance; Zapcoil (Overload) at the vats for the Mote clusters; Rivet + Zapcoil deep on the route so blinkers land in fire. Target 74. **Alt builds:** Lookout + Zapcoil + Skyhook + Thumper; Lookout + Sprinkler (Soaked) + Skyhook + Thumper. `noCounterBuilds`: **no-detection**, Rivet + Zapcoil + Sprinkler + Thumper, no Lookout and no Scanner Sweep (must lose by W8); **no-shield**, Lookout + Rivet + Thumper + Skyhook, no Energy and no Soaked (must lose by W8); **no-splash**, Lookout + Rivet + Sprinkler (Soaked) + Skyhook, no Zapcoil or Thumper (must lose by W8).
+**Par build.** Lookout, Rivet, Zapcoil (Overload; its specs are bought just before this map), Sprinkler, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M3's, plus Zapcoil specs and the Zapcoil and Rivet tune 2). A Zapcoil and a Sprinkler (Conductive) at the yard's entrance; the drone clears both hoppers before W1, and in W2 the Lookout and a Rivet (Overwatch) go on them, in the middle of the yard's loop, so every Veilwalker is Revealed before Intake B and dies in the loop; a Zapcoil on the east catwalk over the hatch and the air lane (Overload from W9); a Zapcoil west of Intake B; a Rivet by the control core and a Zapcoil inside the last bend so the Blinkstriders land in fire; a Zapcoil by the vats' east end at the end. Par casts no Clearance Sale (it isn't short of credits). Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m04/builds.ts`](../../../src/content/maps/a2_m04/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Zapcoil (4,4) and Sprinkler (4,3) at the yard's entrance (Conductive); Zapcoil (10,7) on the east catwalk; clear both hoppers |
+| W2 | Lookout (3,6) and Rivet (3,7) on the cleared hoppers (Overwatch) |
+| W3 | The entrance Zapcoil to T2 |
+| W4 | Zapcoil (0,6) west of Intake B |
+| W5 | The Lookout and the hopper Rivet to T2 |
+| W6 | Rivet (8,10) by the control core; Zapcoil (10,9) inside the last bend |
+| W7 | The catwalk Zapcoil to T2 |
+| W8 | The catwalk Zapcoil and the entrance Zapcoil to T3; the core Rivet to T2 |
+| W9 | Overload Coil on the catwalk |
+| W10 | The bend Zapcoil to T2; the Lookout to T3 |
+| W11 | The Zapcoil west of Intake B to T2 |
+| W12 | Zapcoil (12,7) by the vats' east end |
+
+Par's bank at each build phase: 480 (+80 salvage), 273, 162, 136, 89, 73, 90, 112, 167, 214, 110, 30 (W1–W12), about 630 unspent at the end. **Par's margin is late:** it holds everything until W12, where three Lightwings over the vats and a Veilwalker get through, so it wins at **16/21 (76.2%)** on every seed (campaign.md §7's target 74, snapped to the 1/21 step), with Nothing Unseen and Intake Manifest.
+
+**No-counter builds** (`noCounterBuilds`, by category; each must lose by W8, `noCounterLoseByWave`, and still lose with the full catalog; `teachMap`, detection being new here):
+- **no-detection:** Rivet, Zapcoil, Sprinkler, Thumper (no Lookout, and no Scanner Sweep: slot 1 stays the profile's Orbital Strike), the par yard blind: the Veilwalkers walk through it untouched (W3, W7, W8); it loses in W8 (W10 with the full catalog).
+- **no-shield:** Lookout, Rivet, Thumper, Skyhook (no Energy, no Soaked): W7's Glimmers and clusters get through; it loses in W7 (W10 with the full catalog).
+- **no-splash:** Lookout, Rivet, Sprinkler (Soaked), Skyhook (no Zapcoil or Thumper): W7's clusters behind the Glimmers drown it; it loses in W8 (W10 with the full catalog).
+
+**Alt builds** (each shares at most 2 towers with par and must win with ≥ 20%; every alt needs the Lookout, the only detector the reference owns, so the other share is the Zapcoil):
+- `watch_and_shell`, Lookout + Zapcoil + Skyhook + Thumper: par's yard with Zapcoils for the Rivet and the Sprinkler and a Thumper at the entrance; Zapcoils on the conduit and the catwalk (Overload), a Thumper under the vats, Skyhooks by the core and in the last bend. **47.6.**
+- `coil_and_shell`, Lookout + Zapcoil + Thumper: the same, with Zapcoils where the Skyhooks were (they hit air too). **61.9.**
+- **The Crane alt** (`crane_yard`, Lookout + Zapcoil + Thumper + Salvage Crane): a Crane below the yard's exit (4,9) pays every wave and clears the south hopper at double speed for +25%. The reference never owns the Crane, so it isn't an `altBuilds` entry: [`a2m4.test.ts`](../../../src/balance/a2m4.test.ts) runs it on the reference profile plus the Crane's license ([D137](../../decisions.md#d137--2026-11-10--m5-cut-act-ii-part-two-a2m4a2m6); T501c). **47.6**, with Intake Manifest.
+- The planned Sprinkler (Soaked) alt (Lookout + Sprinkler + Skyhook + Thumper) can't hold W3's Veilwalkers: Thumpers fire too slowly to kill a cloaked unit inside the Lookout's reach.
+
+**Harness runs** (every seed; margin, then integrity lost per wave):
+
+| Run | Result | Lost |
+|---|---|---|
+| par | wins at **76.2** (band 65–85; 16/21), Nothing Unseen, Intake Manifest | 5 in W12 |
+| `spareFleeing` | 76.2 | |
+| `alwaysCallEarly` | 76.2 | |
+| no-detection | loses in W8 | |
+| no-detection, full catalog | loses in W10 | |
+| no-shield | loses in W7 | |
+| no-shield, full catalog | loses in W10 | |
+| no-splash | loses in W8 | |
+| no-splash, full catalog | loses in W10 | |
+| Story | 100, Victory, Perfect Core, and Nothing Unseen | |
+| `watch_and_shell` | 47.6 | 7 in W8, 2 in W11, 2 in W12 |
+| `coil_and_shell` | 61.9 | 4 in W8, 2 in W11, 2 in W12 |
+| the Crane alt | 47.6 | |
+| do-nothing | loses at W2 | |
+
+Par's shift runs about 10.8 min at 1× (Story 13.3). **The truth scene's beat** ([`src/balance/a2m4.test.ts`](../../../src/balance/a2m4.test.ts)): in par, both alts, the Crane alt, `spareFleeing`, and Story, the cue fires once, with W4 the last wave started, W5's countdown running, and nothing on the field (par: 40 s before W5 starts); every other run that reaches W5, except `alwaysCallEarly`, clears W4 before W5 starts. Robustness: with W8's and W12's Lightwings and the vats' surges shifted ±0.2 s together, par holds at 16/21 and the beat holds (T520 also checked W7–W8 and W11–W12 as a whole ±1 s; the Lightwings and surges 1 s earlier lift par to 18/21, 85.7, just over the band).
 
 ## A2M5 · The Long Walk
 

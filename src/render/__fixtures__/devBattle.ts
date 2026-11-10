@@ -167,13 +167,20 @@ const devGlassWitch = defineEnemy({
   shield: { hp: 200, regenPerSec: 30, regenDelaySec: 4 },
 });
 
-// dev_penitent's (T506): the Sunderglass Penitent on under a quarter of its HP and a sixth of its
-// shield, its phases, pulse, shards, re-form, and pivot to the Ward unchanged.
+// dev_penitent's (T506): the Sunderglass Penitent on under an eighth of its HP and a sixteenth of
+// its shield (its pulse likewise), its shards, re-form, and pivot to the Ward unchanged.
 const devPenitent = defineEnemy({
   ...sunderglass_penitent,
   id: 'dev_penitent',
-  hp: 800,
-  shield: { hp: 400, regenPerSec: 40, regenDelaySec: 4 },
+  hp: 400,
+  shield: { hp: 150, regenPerSec: 40, regenDelaySec: 4 },
+  boss: {
+    ...sunderglass_penitent.boss!,
+    phases: [
+      { fromPct: 1, pulse: { everySec: 8, tellSec: 1.5, radiusTiles: 2, shield: 15 } },
+      sunderglass_penitent.boss!.phases[1]!,
+    ],
+  },
 });
 
 const devStrike = defineAbility({
@@ -1303,8 +1310,8 @@ export const darkMap = dev.defineMap({
 
 // dev_penitent (T506): A2M5's shape in six waves on dev_act2. W1–W4 send a Glimmer each down the
 // north road; W5 the short Penitent (its shield wall and pulse, then, once the shield breaks, 3
-// cloaked Glimmer-shards that re-form it 4 s later while any lives); W6 (25 s after) the Hollow
-// surge, Motes behind the refugees on the north road and down the south-west road. The pivot comes
+// cloaked Glimmer-shards that re-form it 4 s later while any lives); W6 the Hollow surge (40 s
+// after), Motes behind the refugees on the north road and down the south-west road. The pivot comes
 // at the Penitent's 50% or as W6 starts, whichever is first (D137): the Aelari stand down, the
 // Penitent kneels where it stands and becomes the Ward (Hollow within 2.5 tiles Chilled 40%), the
 // map becomes an Escort (the gate, the core tile, is the safe exit), and one group of 4 refugees
@@ -1321,7 +1328,7 @@ export const penitentMap = dev.defineMap({
   id: 'dev_penitent',
   env: 'act2.dusk',
   startCredits: 1000,
-  maxLost: 4,
+  maxLost: 2,
   markers: { gate: [17, 10] },
   safeExit: 'gate',
   refugees: { first: { route: 'a', count: 4 } },
@@ -1334,7 +1341,7 @@ export const penitentMap = dev.defineMap({
     { countdownSec: 5, groups: [{ enemy: 'glimmer', count: 1, route: 'a' }] },
     { countdownSec: 5, groups: [{ enemy: 'dev_penitent', count: 1, route: 'a' }] },
     {
-      countdownSec: 25,
+      countdownSec: 40,
       groups: [
         { enemy: 'mote', count: 4, route: 'a', delaySec: 8, intervalSec: 0.5 },
         { enemy: 'mote', count: 4, route: 'b', delaySec: 2, intervalSec: 0.5 },
@@ -1362,18 +1369,19 @@ export const penitentMap = dev.defineMap({
   parBuild: {
     loadout: ['lookout', 'zapcoil'],
     steps: [
-      { wave: 1, build: 'lookout', tile: [8, 4] },
+      { wave: 1, build: 'lookout', tile: [4, 2] },
+      { wave: 1, build: 'zapcoil', tile: [2, 0] },
       { wave: 1, build: 'zapcoil', tile: [5, 4] },
+      { wave: 1, build: 'zapcoil', tile: [8, 4] },
       { wave: 1, build: 'zapcoil', tile: [10, 3] },
+      { wave: 1, build: 'zapcoil', tile: [12, 6] },
       { wave: 1, build: 'zapcoil', tile: [12, 3] },
-      { wave: 1, build: 'zapcoil', tile: [4, 2] },
-      { wave: 1, build: 'zapcoil', tile: [13, 1] },
       { wave: 1, build: 'zapcoil', tile: [14, 4] },
     ],
   },
   noCounterBuilds: {
-    shield: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [8, 4] }] },
-    splash: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [8, 4] }] },
+    shield: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [4, 2] }] },
+    splash: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [4, 2] }] },
   },
 });
 

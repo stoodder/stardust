@@ -101,7 +101,11 @@ export interface RenderState {
    * without one), the light sources punched out of it, and whether the range ring shows dimmed
    * (its tower, or the ghost's tile, in the dark).
    */
-  readonly darkness: { readonly dark: number; readonly lights: number; readonly ringDimmed: boolean };
+  readonly darkness: {
+    readonly dark: number;
+    readonly lights: number;
+    readonly ringDimmed: boolean;
+  };
   /** Floating numbers and callouts up now. */
   readonly floats: number;
   /** Scanner Sweep's aim preview shows (T431: its own circle, not the strike's reticle). */

@@ -152,7 +152,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'enemy.split': null, // T304c
       'enemy.huddle': null, // T304c
       'enemy.boss': null, // T304c
-      'enemy.boss.pivot': 'T506', // the Penitent (D137)
+      'enemy.boss.pivot': null, // the Penitent (T506)
       'enemy.boss.layToRest': 'M7',
       'ability.slowAll': null, // T304d
       'ability.discount': null, // T304d
@@ -194,11 +194,8 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(closed(e.bunchling)).toEqual(['splitting (bunchling) is not simulated until T304c']);
     expect(closed(e.elder)).toEqual(['a huddle (elder) is not simulated until T304c']);
     expect(closed(e.chitterbloom)).toEqual(['a boss (chitterbloom) is not simulated until T304c']);
-    // Boss endings Act I doesn't use stay refused.
-    for (const [ending, owner] of [
-      ['pivot', 'T506'],
-      ['layToRest', 'M7'],
-    ] as const) {
+    // Boss endings Act I doesn't use stay refused (`pivot` runs since T506).
+    for (const [ending, owner] of [['layToRest', 'M7']] as const) {
       const boss = { ...e.chitterbloom.boss!, ending };
       expect(refusedWith({ ...e.chitterbloom, boss })).toEqual([
         `a boss ending '${ending}' (chitterbloom) is not simulated until ${owner}`,

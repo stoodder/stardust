@@ -206,7 +206,13 @@ function compileLights(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledL
       continue;
     }
     const r = l.radiusTiles ?? LAMP_RADIUS_TILES;
-    out.push({ marker: l.marker, x: tile[0] + 0.5, y: tile[1] + 0.5, radiusTiles: r, radiusSq: r * r });
+    out.push({
+      marker: l.marker,
+      x: tile[0] + 0.5,
+      y: tile[1] + 0.5,
+      radiusTiles: r,
+      radiusSq: r * r,
+    });
   }
   return out;
 }

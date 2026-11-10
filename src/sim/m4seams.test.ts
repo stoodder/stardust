@@ -265,8 +265,8 @@ describe('wreckage by marker and objectives as conditions', () => {
       // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's.
       setLighting: 'M7',
       checkpoint: 'M7',
-      'bossEnd.pivot': 'T506',
     });
+    expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot'); // the pivot runs since T506
     const events = [
       { id: 'a', on: { objectiveCompleted: 'x' }, when: null, actions: [], once: true },
       { id: 'b', on: { tick: 1 }, when: null, actions: [{ setLighting: 'dusk' }], once: true },
@@ -311,7 +311,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
       // (attacks/beam.test.ts).
       'attack.beam': null,
       'status.unnerved': 'T507',
-      'enemy.boss.pivot': 'T506',
+      'enemy.boss.pivot': null, // T506
       'attack.spawner': 'M6',
       'enemy.boss.layToRest': 'M7',
     });

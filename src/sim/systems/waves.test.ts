@@ -313,9 +313,10 @@ describe('createSim and map scripts', () => {
         events: [{ id: 'boss', on: { restProgressPct: 50 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
     ).toThrow(/'boss': trigger restProgressPct is not simulated until M7/);
+    // `bossEnd: 'pivot'` runs since T506 (sim/penitent.test.ts).
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),
-    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated until T506/);
+    ).not.toThrow();
     const cond = {
       ...FIXTURE_CONTENT.maps.fx_map,
       events: [

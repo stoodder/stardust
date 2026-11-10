@@ -14,13 +14,7 @@ const INTAKE_W: GridPos = [0, 6];
 /** The intake hoppers (wreckage over pads), beside Intake B. */
 const HOPPER_N: GridPos = [3, 6];
 const HOPPER_S: GridPos = [3, 7];
-/** On the cliff's ledge between the gold seams, over the road's run west. */
-const LEDGE: GridPos = [8, 1];
-/** The road's entry, on either side of its drop from the north-east. */
-const ENTRY_W: GridPos = [13, 1];
-const ENTRY_E: GridPos = [15, 1];
-/** The catwalks, either side of the vats' drain hatch (high ground). */
-const CATWALK_W: GridPos = [6, 7];
+/** The east catwalk, beside the vats' drain hatch (high ground). */
 const CATWALK_E: GridPos = [10, 7];
 /** Beside the vats' east end, over the road's turn down. */
 const VAT_E: GridPos = [12, 7];
@@ -31,8 +25,6 @@ const ROW9_MID: GridPos = [7, 9];
 const BEND: GridPos = [10, 9];
 /** The conduit (power node), inside the road's last bend. */
 const CONDUIT: GridPos = [11, 9];
-/** East of the road's drop round the conduit. */
-const BEND_E: GridPos = [13, 9];
 /** Beside the control core. */
 const CORE_W: GridPos = [8, 10];
 
@@ -248,24 +240,3 @@ export const CRANE_ALT: ScriptedBuild = {
     { wave: 11, upgrade: BEND },
   ],
 };
-
-/** Tiles the balance test and the smoke name (the Crane alt's and the clicks'). */
-export const TILES = {
-  YARD_N,
-  YARD_S,
-  INTAKE_W,
-  HOPPER_N,
-  HOPPER_S,
-  LEDGE,
-  ENTRY_W,
-  ENTRY_E,
-  CATWALK_W,
-  CATWALK_E,
-  VAT_E,
-  ROW9_W,
-  ROW9_MID,
-  BEND,
-  CONDUIT,
-  BEND_E,
-  CORE_W,
-} as const;
