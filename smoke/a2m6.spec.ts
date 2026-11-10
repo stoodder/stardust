@@ -5,7 +5,7 @@
 // Rift Moths flickering Phased over the wall, W9's flock frozen by Ves'thara's Stillness, W12's
 // build phase in full Long Night darkness with Goldie's "Lights out in Dome 3" on the radio (the
 // sim's darkness is 1 there: only the lamps and the Prism's light hold the dark back), the last
-// surge in the dark, and Ishael's debrief on Results. Before each shot the sim plays a moment at
+// surge in the dark, and Ishael's debrief full-screen before Results (D138). Before each shot the sim plays a moment at
 // 1×, so the frame isn't a fast-forward's pile. Fast text (`&fasttext=1`) shows each line whole.
 // Screenshots in <out>/screens/a2m6/ (look at them: the dusk, the splits, the flicker, the frozen
 // flock, the full dark).
@@ -161,11 +161,19 @@ test('A2M6: from the Sector map, the splits, the flicker, Stillness, full dark, 
   await play(page, 300);
   await shot(page, 'a2m6', 7, 'surge-dark');
 
-  // The win: Ishael, on Results.
+  // The win: Ishael, full-screen before the card (D138), then the card without her lines.
   expect(await until(page, 'end', 60 * 500)).toBe(true);
-  const card = page.getByRole('dialog').filter({ hasText: 'My mother, Ishael, among them.' });
-  await expect(card).toBeVisible({ timeout: 10_000 });
-  await expect(card).toContainText('Be awake.');
+  const scene = page.getByRole('dialog', { name: 'Scene' });
+  await expect(scene).toContainText('Ishael', { timeout: 10_000 });
   await nextFrames(page);
   await shot(page, 'a2m6', 8, 'debrief');
+  // Through to her last line (fast text shows each whole; the silence moves on by itself).
+  await expect(async () => {
+    await page.keyboard.press('Enter');
+    await expect(scene).toContainText('Be awake.', { timeout: 500 });
+  }).toPass({ timeout: 15_000 });
+  await page.keyboard.press('Escape');
+  const card = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
+  await expect(card).toBeVisible({ timeout: 10_000 });
+  await expect(card).not.toContainText('Be awake.');
 });
