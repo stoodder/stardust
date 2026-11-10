@@ -101,23 +101,23 @@ export const waves = defineWaves([
   // (the truth scene, on W4's clear) W5 · a Mote cluster
   {
     countdownSec: LONG_COUNTDOWN,
-    groups: [motes(24, OPEN, PACKED), motes(16, OPEN + 12, PACKED)],
+    groups: [motes(30, OPEN, PACKED), motes(30, OPEN + 10, PACKED)],
   },
   // W6 · Blinkstriders ×3 [T: blink; depth placement]
   {
     countdownSec: COUNTDOWN,
     teach: true,
-    groups: [blinks(3, OPEN, 3)],
+    groups: [blinks(4, OPEN, 2.5)],
   },
   // W7 · Veilwalkers + Glimmers [X: cloak]
   {
     countdownSec: COUNTDOWN,
-    groups: [veils(6, OPEN, 2.5), glimmers(4, OPEN + 12, 1.2)],
+    groups: [veils(6, OPEN, 2.5), glimmers(8, OPEN + 12, 1.0)],
   },
   // W8 · Lightwings over the vats + Wardens down the road, Veilwalkers in their shadow
   {
     countdownSec: COUNTDOWN,
-    groups: [wardens(2, OPEN, 4), veils(3, OPEN + 2, 4), lightwings(6, OPEN + 10, 2)],
+    groups: [wardens(3, OPEN, 4), veils(3, OPEN + 2, 4), lightwings(5, OPEN + 12, 2)],
   },
   // W9 · Blinkstriders + Veilwalkers [X: blink]
   {
