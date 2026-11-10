@@ -277,7 +277,7 @@ section.chamfer,
   border: 1px solid var(--sd-steel-2);
 }
 
-/* Up to ten fit wider (A2M5's fourteen keep 3 px). */
+/* Up to ten fit wider (A2M5's fifteen keep 3 px). All full is the loss (D138: lost ≥ maxLost). */
 .hud-pips.wide .hud-pip {
   width: 4px;
 }
@@ -475,6 +475,15 @@ section.chamfer,
 .hud-air {
   margin-left: 1px;
   color: var(--accent-2);
+}
+
+/* An Escort's next refugees (D138): a friendly chip, in green, never a threat's look. */
+.hud-walking {
+  color: var(--sd-green-4);
+}
+
+.hud-walking-word {
+  margin-left: 1px;
 }
 
 /* A neutral in the preview (Gerald, R9): the mail, with Hold fire's pause bars, never a pest. */

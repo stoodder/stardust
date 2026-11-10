@@ -167,7 +167,7 @@ function echoKit(g: CharGrid, cx: number, cy: number): void {
     }
     plot(g, x - 1, cy - 2, 'V');
     plot(g, x, cy - 2, 'U');
-    plot(g, x - 1, cy - 9, 'V');
+    plot(g, x - 1, cy - 9, '*');
   }
 }
 
@@ -182,8 +182,8 @@ function dreadKit(g: CharGrid, cx: number, cy: number): void {
     ] as const) {
       for (let k = 0; k < t; k++) {
         const px = x + ox + side * Math.floor((k * lean) / 4);
-        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : 'U');
-        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : 'V');
+        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'e' : 'U');
+        plot(g, px, cy - 1 - k, k === t - 1 ? 'd' : 'V');
       }
     }
   }

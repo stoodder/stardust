@@ -50,11 +50,11 @@ function unanswered(stardust: number): SaveData {
 describe('C2, price first (D138)', () => {
   it("shows each option's payout before the pick: Sell's windfall and Tune-up, Return's IOU", () => {
     const save = unanswered(940);
-    const { story } = debriefStoryOf(save);
+    const story = debriefStoryOf(save).story!;
     const opening = openChoice(
       SCENES.a2_m04_debrief!,
       runStoryContext('a2_m04', { story }, 'won'),
-      story!,
+      story,
       save,
       false,
     );

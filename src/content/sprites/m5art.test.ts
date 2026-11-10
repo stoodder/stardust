@@ -28,6 +28,14 @@ function count(rows: readonly string[], chars: string): number {
     .filter((c) => chars.includes(c)).length;
 }
 
+/** Opaque pixels (shadow excluded). */
+function opaque(rows: readonly string[]): number {
+  return rows
+    .join('')
+    .split('')
+    .filter((c) => !'._'.includes(c)).length;
+}
+
 /** Opaque bounds (shadow excluded). */
 function bounds(rows: readonly string[]): { x0: number; x1: number; y0: number; y1: number } {
   let x0 = Infinity;
@@ -219,7 +227,30 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
       // far edge below the head's mount.
       const t1 = grid(`tower.${t}`, 't1');
       expect(count(t1, '_'), t).toBeGreaterThan(10);
-      expect(count(t1, '9'), t).toBeGreaterThan(10);
+      // The emerald ring the head floats over, and the sapphire slab's glass.
+      expect(count(t1, '89'), t).toBeGreaterThan(10);
+      expect(count(t1, '23'), t).toBeGreaterThan(60);
+    }
+  });
+
+  it('each dais wears its tower’s trim (U5): one shape, three colourings', () => {
+    const trim = { prism: 'e', mindspike: 'U', lantern: 'GH' } as const;
+    for (const t of TOWERS) {
+      for (const f of ['t1', 't2', 't3', 'spec_a', 'spec_b']) {
+        expect(count(grid(`tower.${t}`, f), trim[t]), `${t}:${f}`).toBeGreaterThanOrEqual(12);
+      }
+    }
+    expect(def('tower.lantern').legend).toMatchObject({ G: 'gold.3', H: 'gold.4' });
+    // Same silhouette at T1, different pixels.
+    const t1 = TOWERS.map((t) => grid(`tower.${t}`, 't1'));
+    for (let i = 0; i < t1.length; i++) {
+      for (let j = i + 1; j < t1.length; j++) {
+        const a = t1[i] ?? [];
+        const b = t1[j] ?? [];
+        expect(silhouetteDiff(a, b)).toBe(0);
+        const differ = a.join('').split('').filter((c, k) => c !== b.join('').charAt(k)).length;
+        expect(differ, `${TOWERS[i]} vs ${TOWERS[j]}`).toBeGreaterThanOrEqual(20);
+      }
     }
   });
 
@@ -247,7 +278,7 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
         const t2 = grid(head, `${facing}_t2`);
         const a = grid(head, `${facing}_spec_a`);
         const b = grid(head, `${facing}_spec_b`);
-        expect(count(t2, '01234'), `${facing} t2`).toBeGreaterThan(count(base, '01234'));
+        expect(opaque(t2), `${facing} t2`).toBeGreaterThan(opaque(base));
         expect(silhouetteDiff(a, t2), `${facing} a`).toBeGreaterThan(12);
         expect(silhouetteDiff(b, t2), `${facing} b`).toBeGreaterThan(12);
         expect(silhouetteDiff(a, b), facing).toBeGreaterThan(12);
@@ -269,10 +300,13 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     expect(row).toContain('*');
   });
 
-  it('the Mindspike has a violet mind-eye (Psionic), the Lantern a white eye in its cage', () => {
-    expect(def('tower.mindspike_head').legend?.['U']).toBe('violet.4');
-    expect(count(grid('tower.mindspike_head', 'se'), 'UV')).toBeGreaterThanOrEqual(4);
-    expect(count(grid('tower.lantern_head', 'glow_0'), '*')).toBeGreaterThanOrEqual(1);
+  it('the Mindspike has a pink-ringed mind-eye (Psionic), the Lantern a gold-white light in its cage', () => {
+    expect(def('tower.mindspike_head').legend).toMatchObject({ U: 'violet.4', V: 'violet.3' });
+    expect(count(grid('tower.mindspike_head', 'se'), 'd')).toBeGreaterThanOrEqual(4);
+    expect(count(grid('tower.mindspike_head', 'se_fire'), 'w')).toBeGreaterThanOrEqual(1);
+    const lantern = grid('tower.lantern_head', 'glow_0');
+    expect(count(lantern, '*')).toBeGreaterThanOrEqual(1);
+    expect(count(lantern, 'GH')).toBeGreaterThanOrEqual(8);
   });
 
   it('the Lantern turns: an idle `glow` first, its frames all differ, and a spec anim each', () => {
@@ -285,14 +319,38 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     expect(def('tower.lantern_head').frames['se']).toBeUndefined();
   });
 
-  it('read apart at 1×: three different heads', () => {
-    expect(unlike(se('prism'), se('mindspike'))).toBeGreaterThan(0.15);
+  it('read apart at 1× (U5): a squat pink gem, a violet needle, a round gold-lit cage', () => {
+    expect(unlike(se('prism'), se('mindspike'))).toBeGreaterThan(0.35);
     expect(unlike(se('prism'), se('lantern'))).toBeGreaterThan(0.35);
     expect(unlike(se('mindspike'), se('lantern'))).toBeGreaterThan(0.35);
-    // The Prism is light glass, the Mindspike dark.
-    expect(light(grid('tower.prism_head', 'se'))).toBeGreaterThan(
-      light(grid('tower.mindspike_head', 'se')) + 0.1,
-    );
+    const prism = grid(...se('prism'));
+    const needle = grid(...se('mindspike'));
+    const lantern = grid(...se('lantern'));
+    // Each head is mostly its signature colour: ruby-pink, psionic violet, sapphire round gold.
+    expect(count(prism, 'bcde') / opaque(prism)).toBeGreaterThan(0.5);
+    expect(count(needle, 'STUV') / opaque(needle)).toBeGreaterThan(0.5);
+    expect(count(lantern, 'bcde')).toBeLessThan(6);
+    expect(count(lantern, 'STUV')).toBe(0);
+    // Shapes, above the cradle: the gem broad (≥ 10 px, under 2× as tall as wide), the needle ≤ 5 px
+    // wide and ≥ 4× as tall, the cage round (width and height within 2 px).
+    const above = (rows: readonly string[]): readonly string[] => rows.slice(0, rows.length - 6);
+    const p = bounds(above(prism));
+    const n = bounds(above(needle));
+    const l = bounds(above(lantern));
+    expect(p.x1 - p.x0 + 1).toBeGreaterThanOrEqual(10);
+    expect(p.y1 - p.y0 + 1).toBeLessThan(2 * (p.x1 - p.x0 + 1));
+    expect(n.x1 - n.x0 + 1).toBeLessThanOrEqual(5);
+    expect(n.y1 - n.y0 + 1).toBeGreaterThanOrEqual(4 * (n.x1 - n.x0 + 1));
+    expect(Math.abs(l.x1 - l.x0 - (l.y1 - l.y0))).toBeLessThanOrEqual(4);
+  });
+
+  it('their build icons tell apart the same way: pink, violet, gold', () => {
+    const icon = (t: string): readonly string[] => grid(`icon.tower.${t}`, 'icon');
+    expect(count(icon('prism'), 'bcde')).toBeGreaterThanOrEqual(30);
+    expect(count(icon('mindspike'), 'STUV')).toBeGreaterThanOrEqual(20);
+    expect(count(icon('lantern'), 'GH')).toBeGreaterThanOrEqual(12);
+    expect(silhouetteDiff(icon('prism'), icon('mindspike'))).toBeGreaterThan(15);
+    expect(silhouetteDiff(icon('mindspike'), icon('lantern'))).toBeGreaterThan(15);
   });
 });
 

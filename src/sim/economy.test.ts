@@ -187,7 +187,7 @@ describe('the sell command', () => {
 
 describe('callWaveBonus', () => {
   it('is 0 outside a countdown and the early-call bonus during one', () => {
-    const waves = [{ groups: [] }, { groups: [] }, { groups: [] }];
+    const waves = [0, 1, 2].map(() => ({ noCall: false, groups: [] }));
     const at = (phase: 'setup' | 'spawning' | 'countdown' | 'done', wave: number, left = 0) =>
       callWaveBonus(
         {
