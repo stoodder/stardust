@@ -156,10 +156,10 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T310b** Portraits: Zibzab, Goldie, Kip, Prim; Gerald's icon.
 - [x] **T311a** Sprites: Skyhook, Zapcoil, Puffwing, Bunchling, Elder, Digger, youngling, Gerald, the Peeker (T230), new tells.
 - [ ] **T318** Later-act portrait variants: Bricks `pebble`, QUILL `purge`, player `reflect_violet`/`reflect_pebble`, Goldie `act3`, Kip `act2`/`act3` (dialogue falls back to base frames until then) — with their acts (M4/M5).
-- [ ] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
+- [x] **T319** Counter-answers via specs require authored spec content (loadout currently suggests "Skyhook (Seeker Swarm)" from the `all_unlocked` dev save's M4 specs) (D072).
 - [x] **T320** Inbox follow-ups (from T303's hand-back); the Base opens on the Inbox when a memo is NEW (U-L5: needs the meta/shop/inbox smoke's Research-first expectations reworked).
-- [ ] **T321** Sprinkler T3 Soak data.
-- [ ] **T322** Peeker polish.
+- [x] **T321** Sprinkler T3 Soak data.
+- [x] **T322** Peeker polish.
 - [x] **T323** Audio follow-ups (the dead `src/audio/sfx/radio.ts` recipes were deleted with the owner's OK, D100): restore storm headroom (−1.1 dBFS after the limiter, ~0.2 dB short of the −3 dB target; unchanged by the speech duck), the `testHookTypes` `render()` comment.
 - [x] **T324** Dialogue cleanup: `MapDef.briefing`, `briefingLines`, the name-tag plate.
 - [x] **T325** A1M3 dialogue gaps: no `a1_m03_debrief` scene (the other maps have one with a `lost` branch); then add `a1_m03` and `a1_m04` to `COMPLETE` in `tools/dialogueCanon.test.ts`.
@@ -167,7 +167,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T327** `skipScene` transcript bug; `saveModifiers` ignores protocols.
 - [x] **T328** Render follow-ups from T312b: enemy health bars; the tell-glyph timer on sim ticks (D094).
 - [ ] **T329** Results follow-ups from T316: full-screen scenes outside the debrief can't read `thisRun`/`outcome` (`storyContext.run` is null); the counter's `aria-label` on a `<p>` (fix with `m1.spec`); a confirm step before Retry/Quit if playtests show misclicks. Debrief choices on Results land with A2M4 (C2).
-- [ ] **T330** A1M5 follow-ups from T304g: `BarkTrigger` `not_firing` has no wave filter, so holding fire earlier spends Bricks's W10 line; the briefing can't list "Boss" as threat intel (campaign.md §4.8; `boss` isn't a `Trait`: add one with TRAIT_COUNTER/TRAIT_TELL or change the doc).
+- [x] **T330** A1M5 follow-ups from T304g: `BarkTrigger` `not_firing` has no wave filter, so holding fire earlier spends Bricks's W10 line; the briefing can't list "Boss" as threat intel (campaign.md §4.8; `boss` isn't a `Trait`: add one with TRAIT_COUNTER/TRAIT_TELL or change the doc).
 - [x] **T331** (high) The Shift board stops at A1M2 (`SHIFT_BOARD_SIZE = 2` from the M2 cut): size from the registered campaign, real map names in unlock hints, a smoke step past A1M2 in normal flow; Engineering's deferred-spec copy → "Arrives in a later shipment" (D064); stale comments in validateBuilds/devSaves; `jamLimit` → M5.
 - [x] **T332** Render follow-ups: the tell glyph also shows on hover (art-direction §8; enemy hover now exists); an app-owned `__sd` render-state hook (bar shown, ally lowered) so smoke can assert render beats, not only screenshot them; the HUD's locked tier-4 card says "Engineering unlocks after Shift 4" (`app/hudText.ts`), the base hints say "after The Audit": match them; test-only fast-forward piles floaters/callouts into one frame; `?map=` + `autoplay('par')` runs without the harness's reference profile (Reinforced Core, spec unlock, R&D), so it can't reproduce par (A1M5's W8 Cluster specialize is refused).
 - [x] **T333** Balance follow-ups from T315: A1M4 par still holds 500+ credits at W6–W7 and ends ~920 (needs lower income or a layout/tower change); its billboard Rivet does little; harness: exempt `@story` runs from "every step issued" so par's W9 buys can precede the strike; A1M4 can join the canon test's `COMPLETE`.
@@ -215,26 +215,65 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T450** Audio: Skewer's and Magnet Crane's own sounds (Skewer borrows `rivet_shot`); Act II's wave-clear cues (`minor_bridges`/`minor` rows in `WAVE_CLEAR_CUE`, silent today), the Tidybot chime, Act II's sad squeak; a checkpoint-reached cue; a Capacitor charge hum and discharge (borrows `zap_arc`), a Seeker launch (rate-limited); the Act II theme, Hollow audio, Aelari chimes, shield ripple/shatter, blink, the sad squeak, Stasis and `PulseBurst`, `AssetHit`, `BlinkTell`/`Blinked`, `HushStarted`/`Hushed`/`SkittishBolt` (the panic squeak), cloak, the reveal ping (Scanner Sweep borrows `dilation_swell`), Stasis, `ShieldHit`/`ShieldPulse` incl. `interrupted`; a tuning pass on Ves'thara's and Pebble's existing blips; T323.
 - [x] **T408** Harpoon and Crane (the cut lever; look at their sprites in a battle once the gate opens): T1–3, specs, Pinned, Reel It In, licenses after A2M1; settle the Harpoon's 4.0 range vs A1M5's `[quiet-wave-reach]` before lifting its gate (D105; D107's first-win scope is one option); their tune-ups.
 
-## M5 — Act II, part two (A2M4–A2M6) · M6 — Act III · M7 — Finale, post-game & polish
-**M5 status: current (started 2026-11-10), planning.** M6 and M7 are split up when we reach them. Known items:
+## M5 — Act II, part two (A2M4–A2M6)
+**Status: current (started 2026-11-10).** Cut and plan: `docs/decisions.md` D137. Waves (≤ 4 agents; stagger final gates): W1 T500a·T500b·T501j·T541 → W2 T502·T503·T504·T305c → W3 T520·T506·T505·T510 → W4 T521·T507·T513·T540a → W5 T522·T508·T511·T540b → W6 T509·T512·T530a·T540c → W7 T530b·T531·T550·T560 → W8 T561, then review. Critical path: T500a → T305c → T506 → A2M5 → A2M6 (also waits on T503, T505, T507) → T560. Cut lever, in order: T508 + T509's Lantern half → T512's night chart → T501d's fray frames → T501h.
+
+Every map task: par in Act II's band on its reference profile, robustness shifts, do-nothing loses, each no-counter build loses, ≥ 2 alts ≥ 20%, Story wins, `balance/a2m0N.test.ts`, normal-flow smoke from the Sector map, screenshots looked at, and **a timing test for every scripted beat in par, alts, Story and shifts** (a countdown opens once the previous wave finishes spawning). Sim tasks keep A1M1–A2M3's harness numbers unchanged.
+
+- [~] **T500a** Sim/content seams: types for phasing (Phased layer), `shieldAura`, the `shieldBroken` phase + shards + re-form, two-level split, lighting `dark` + `lights` markers, escort data (`refugees`, `safeExit`), Ward def, `stasisArea`, `unnerved`/`marked`, `noEvade`; stats `pivotWave`, leaks by wave, unrevealed-passed, evacuated/lost; events; stubs for every new id; dev maps `dev_escort`, `dev_dark`; gate retargets (`jamLimit`, `objectiveCompleted` → M6); T501k's stub-tower seam.
+- [~] **T500b** Story/meta seams: dialogue folders `a2_m04..06`, codex/memo stubs, transaction signatures + runEnd step 6's hook, the `ally_hushed` trigger, a bank condition (C2 `none`), reference rows A2M4–A2M6, dev saves (`after_a2m3_ref`, `after_a2m4_returned`/`_sold`, `after_a2m5`, `after_a2m6`); T501l. No SaveData bump.
+- [~] **T501j** The gate first: ≤ 400 s at M4 content (fast text in c1-radio/staging/results-flow, worker/share rebalance, a quiet-machine timing) and a gallery split (29.4k of 32.7k px; ~20 sprites are coming). The budget becomes 8 min (D137).
+- [~] **T541** Portraits: Kip `act2`, Pebble `cap`, Ves'thara `touched` (characters.md's frayed grey threads win; T501a); stretch: `touched_deep`, `dawn`.
+- [ ] **T502** Veilwalker, Blinkstrider, Aegis Cantor (a continuous 15/s shield aura); T501b's cloak smoke; `blink.ts` scratch.
+- [ ] **T503** Phasing (Phased layer: 1.5 s in 5, a 0.5 s tell that Stasis/Unnerved interrupt), Fracture (two-level split; Shards `clustered`), Rift Moth.
+- [ ] **T504** Prism Spire and beams (per-tick armor, ramp, sticky, reset on retarget; T1–3, Refractor, Sunlance; `beamActive`) and the Resonance link.
+- [ ] **T305c** Escort: refugee route allies (groups of 6, 0.6 apart, 0.7 t/s; hushable), the exit rule, `maxLost` and a boss at the exit as defeats, Perfect = none lost (Pebble never counts), `spawnAllies`/`setObjective`/`refugeesRemaining`, Evacuated % margins in the harness; general enough for A3M1, A3M6 and the finale; checkpoint replays tested.
+- [ ] **T520** A2M4 *Second Harvest*: 12 waves, the vat route from W10, Zibzab companion, Intake Manifest, Nothing Unseen; the truth scene in a true build phase (test), the minor jingle after it, C2 in the debrief, the handover scene; par ~74 (`teachMap`), no-counter builds lose by W8, a Crane alt; markers composable for A3M5's revisit.
+- [ ] **T506** The Sunderglass Penitent and the pivot: shield wall + pulse, `shieldBroken` releases 3 cloaked shards (the shield refills 4 s after breaking unless all three are dead), the pivot at 50% or when W6 starts, `standDown` (1 s fade, no leak or bounty, the wave resolves), the Ward (Hollow Chilled 40% within 2.5), `bossEnd: 'pivot'`, `pivotWave`.
+- [ ] **T505** Sundown: darkness as sim state, eased in ticks (lit on screen = lit in the sim); range ×(1 − 0.15·dark) outside any light; lamps and a beaming Prism (r 2.0); a minimal overlay; dimmed range rings.
+- [ ] **T510** Story transactions and Results choices: runEnd step 6, the Q3 Bonus (+400, once per save, `memo_a2_04` on Results), C2 on Results (sold/returned/none, the Intel windfall, the Zibzab Tune-up; T329's C2 half), the Prism gift; idempotent; smoke for both branches.
+- [ ] **T521** A2M5 *The Long Walk*: 12 waves (5 + 7), Bricks companion, Cantors, the Penitent; the pivot cue pauses mid-fight (test), refugees from W6, Kneel reachable, `ally_hushed`, the Prism gift, `memo_a2_06`; par ~71 Evacuated; no-detection loses by the pivot, no-shield by W5, no-splash by W8; a Capacitor Bank alt; median 1× runtime ≤ 15 min, recorded.
+- [ ] **T507** Unnerved (−20% speed; interrupts tells, bosses' too), Mindspike (T1–3, Echo Spike, Dread), Stillness (Stasis 3 s, r 2.5, 45 s) and Ves'thara as a companion.
+- [ ] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
+- [ ] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
+- [ ] **T522** A2M6 *Sundown*: the wall, gates, merge, diagonal air lane, watchtower, lamps; 14 waves; full dark by W12 with Goldie's line in the dark (test); Ves'thara + Stillness; Bricks's post; Before the Dark; the Ishael debrief; `base_a2_loophole`, `base_a2_whistle`; par ~68; no-splash loses by W9, no-air by W10; a Seeker Swarm alt.
+- [ ] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
+- [ ] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
+- [ ] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
+- [ ] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
+- [ ] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
+- [ ] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
+- [ ] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
+- [ ] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
+- [ ] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.
+- [ ] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
+- [ ] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
+- [ ] **T561** Docs: *Built so far (M5)*, data pointers, enemies.md open question 4, maps.md §5.1–5.2, art-direction §7 and §10.
+
+Carry-overs from M4, folded in:
+
+- [ ] **T501a** (→ T541) M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
+- [ ] **T501b** (→ T502) M5: a cloak smoke flow with the Veilwalker (no cloaked unit ships in M4).
+- [ ] **T501c** (→ T520/T521/T522 (Crane, Capacitor Bank, Seeker Swarm alts); the Harpoon/Crane/Flak/Magnet alts → M6 (A3M2)) M5: give the first maps with armored flyers or tanks alt builds that use the Harpoon, the Crane, Seeker Swarm / Capacitor Bank / Flak Curtain / Overload (no campaign map exercises them yet; 0.5/s and 6 tiles/s are first-pass numbers).
+- [ ] **T501d** (→ T540a + T530a) M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
+- [ ] **T501e** (→ T511) M5: A2M6's Ves'thara margin note on the Brood Hauler needs a second annotation or a conditional paragraph (a version holds one text).
+- [ ] **T501f** (→ T530b) M5: A2M4's `unloading` Tidybots at the plant (the dial exists; it sweeps like Act I/II until then).
+- [ ] **T501g** (→ T560) M5: A2M1's Hiccup Contained is earned by every winning build (no Heavy leak is easy) — make it a real challenge or accept it as the Hollow's gentle intro; A1M4's W9 is fragile when robustness shifts combine (convoys −1 s + Bunchlings −0.2 s drops par to 70); A2M3's alts sit at 38/33.
+- [ ] **T501h** (→ T550) M5 audio: a low-asset alarm when the rigs reach the critical band; sounds for a fizzled/vented Capacitor charge and for `TowerIncome`; Skewer's and Magnet Crane's own sounds; a `bindBattleAudio` unit test with a fake engine (the Hollow duck releases at map end, the line dip fires per non-silent line); a listen to Zibzab's reshaped blip.
+- [ ] **T501i** (→ T530a) M5 render: the name-tag plate can sit over the Peeker rock on A2M3 (place plates clear of clickables); bunched enemies' health bars overlap; smoke shots of `burst_young` and the Lookout's spec heads (no `?map=` loadout carries the Lookout; `save=all_unlocked` fails SimConfig on dev maps); decide whether Lightwings flying over A2M3's armed rock should fade over it (walkers already pass behind).
+- [ ] **T501k** (→ T500a (stub seam), T502 (`blink.ts`), T530b (allocations), T540b (glyphs, under-stroke), T540c (grey-on-grey, Vrell bases)) M5 hygiene (M4 review): the dead stub-tower seam (`stubFeature`, `TOWERS_AHEAD_OF_TASK`) — remove or generalise when new towers arrive; module-level scratch in `blink.ts`; per-frame allocations in LightingView (crossfades) and TidybotView (`#leave`); cloak dashes' `ink.0` under-stroke and `icon.tell.stealth`/`heavy` glyphs before the Veilwalker; Act II's grey-on-grey wreckage/spoil/Motes and the identical tier-1 Vrell bases.
+- [ ] **T501l** (→ T500b) M5: a content check that `pause: true` is only set on cue scenes (no validation limits it today).
+
+## M6 — Act III · M7 — Finale, post-game & polish
+To be split up when we reach them. Known items:
 - [ ] **T601b** M6: settle the star map's Act III/finale node positions, the `act3` node accent and the `act3`/`dawn` chart phases; the Deep Halls label (D102, D125).
 - [ ] **T601c** M6: Act III's and the finale's Results kickers (they read Act II's today), Act III's meter line in Results (`resultsCounter('meter', …)` is ready; `RunResult` has no meter), the still Skitterkin body.
 - [ ] **T601d** M6: Act III's Hollow die with no sound (enemies.md §8) — `hollow_unravel` needs a presentation dial.
 - [ ] **T601** M6: draw Act III's `still` death (falls back to the quiet pop until then).
 - [ ] **T701** M7: finale.md's eastern horizon warms one step per Phase 1 wave, but art-direction says the light doesn't brighten per wave — reconcile with the finale's `setLighting` Dawn.
-- [ ] **T501c** M5: give the first maps with armored flyers or tanks alt builds that use the Harpoon, the Crane, Seeker Swarm / Capacitor Bank / Flak Curtain / Overload (no campaign map exercises them yet; 0.5/s and 6 tiles/s are first-pass numbers).
-- [ ] **T501b** M5: a cloak smoke flow with the Veilwalker (no cloaked unit ships in M4).
-- [ ] **T501d** M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
-- [ ] **T501e** M5: A2M6's Ves'thara margin note on the Brood Hauler needs a second annotation or a conditional paragraph (a version holds one text).
-- [ ] **T501f** M5: A2M4's `unloading` Tidybots at the plant (the dial exists; it sweeps like Act I/II until then).
-- [ ] **T501g** M5: A2M1's Hiccup Contained is earned by every winning build (no Heavy leak is easy) — make it a real challenge or accept it as the Hollow's gentle intro; A1M4's W9 is fragile when robustness shifts combine (convoys −1 s + Bunchlings −0.2 s drops par to 70); A2M3's alts sit at 38/33.
-- [ ] **T501h** M5 audio: a low-asset alarm when the rigs reach the critical band; sounds for a fizzled/vented Capacitor charge and for `TowerIncome`; Skewer's and Magnet Crane's own sounds; a `bindBattleAudio` unit test with a fake engine (the Hollow duck releases at map end, the line dip fires per non-silent line); a listen to Zibzab's reshaped blip.
-- [ ] **T501i** M5 render: the name-tag plate can sit over the Peeker rock on A2M3 (place plates clear of clickables); bunched enemies' health bars overlap; smoke shots of `burst_young` and the Lookout's spec heads (no `?map=` loadout carries the Lookout; `save=all_unlocked` fails SimConfig on dev maps); decide whether Lightwings flying over A2M3's armed rock should fade over it (walkers already pass behind).
-- [ ] **T501j** M5 gate: smoke runs ~352 s under load vs its 235 s share (gate ~496 s vs 420): use fast text in more story flows (c1-radio, staging, results-flow), trim the gallery's 20 s, or rebalance the shares; take a quiet-machine smoke timing; parallel fixers stagger their final gates (four at once ran 1,102 s).
-- [ ] **T501k** M5 hygiene (M4 review): the dead stub-tower seam (`stubFeature`, `TOWERS_AHEAD_OF_TASK`) — remove or generalise when new towers arrive; module-level scratch in `blink.ts`; per-frame allocations in LightingView (crossfades) and TidybotView (`#leave`); cloak dashes' `ink.0` under-stroke and `icon.tell.stealth`/`heavy` glyphs before the Veilwalker; Act II's grey-on-grey wreckage/spoil/Motes and the identical tier-1 Vrell bases.
-- [ ] **T501l** M5: a content check that `pause: true` is only set on cue scenes (no validation limits it today).
-- [ ] **T501a** M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
-- [ ] **T501** C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
+- [ ] **T501** M7: C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
+- [ ] **T501c-M6** M6: the Harpoon, Crane, Flak Curtain and Magnet Crane alts on A3M2, the first map with armored flyers or tanks (T501c's remainder).
+- [ ] **T318-M6** M6/M7: T318's Act III portrait variants (QUILL `purge`, player `reflect_*`, Goldie `act3`, Kip `act3`; Ves'thara `touched_deep`/`dawn` if T541 doesn't reach them) and T335's party hats.
 
 ## Backlog / Ideas
 - HUD wave preview: the NEW badge and codex hint (needs saves, M2+); the callsign plate (T306)
@@ -242,3 +281,4 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - GitHub Pages deploy workflow (once a GitHub remote exists)
 - Accessibility: colorblind-safe enemy tells, remappable keys, reduced-motion mode
 - Veteran modifiers, challenge maps, endless mode
+- Results: confirm before Retry (T329's remainder)
