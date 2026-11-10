@@ -59,7 +59,8 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
       'It starts with you!\n\n' +
       'Wellness tip: retirement is a mindset. You can start it today, at your post!',
     signOff: SIGN_OFF,
-    smallPrint: 'Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person.',
+    smallPrint:
+      'Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person.',
     afterMap: 'a2_m03',
   },
 ];

@@ -19,7 +19,8 @@ const ctx = (map: CampaignMapId, seen: readonly string[] = []): StoryContext => 
 const TEXT = { profile: null, pestsProcessed: 0, evacuated: null };
 const bricks = (c: StoryContext) =>
   lineView({ speaker: 'bricks', text: 'Small Fry.' }, c, TEXT, null).portrait?.variant ?? null;
-const plate = (c: StoryContext) => lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).name;
+const plate = (c: StoryContext) =>
+  lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).name;
 
 describe("Bricks's pocket and Pebble's name plate", () => {
   it('keeps Bricks bare-pocketed on A2M3 until the rescue cue has played', () => {

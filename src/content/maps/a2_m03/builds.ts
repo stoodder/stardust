@@ -8,22 +8,14 @@ import type { BuildStep, GridPos } from '../../types.ts';
 const PUMP: GridPos = [12, 7];
 /** Below the pump station, at the bottom of the east switchback over Terrace 3's road. */
 const PUMP_S: GridPos = [12, 8];
-/** Beside the east switchback's foot, over the strip mine's last drop. */
+/** At the east switchback's foot, two tiles from the strip mine: the road and the mine road. */
 const SWITCH_E: GridPos = [14, 8];
 /** Terrace 3, west of the pump station. */
 const T3_MID: GridPos = [9, 7];
-/** Terrace 3's lip by the gate. */
+/** Terrace 3's lip by the gate: the road's last run and, 3 tiles down, the foot of the terraces. */
 const GATE: GridPos = [8, 8];
-/** A1M2's irrigation tower (high ground), in the middle of Terrace 2. */
-const IRRIGATION: GridPos = [8, 5];
-/** Terrace 2, beside Rig 3 and beside the housing block. */
+/** Terrace 2, beside Rig 3. */
 const RIG3: GridPos = [10, 4];
-const HOUSING: GridPos = [7, 4];
-/** Inside the west switchback. */
-const WEST: GridPos = [5, 5];
-/** Terrace 1: west, and east by the warren mouth. */
-const T1_W: GridPos = [7, 2];
-const T1_E: GridPos = [14, 2];
 /** The strip mine's benches, under the air lane and over the mine road. */
 const BENCH_1: GridPos = [17, 1];
 const BENCH_2: GridPos = [17, 2];
@@ -39,7 +31,7 @@ function parSteps(): BuildStep[] {
     { wave: 2, upgrade: BENCH_8 },
     { wave: 3, build: 'sprinkler', tile: PUMP_S }, // Conductive with the pump's Zapcoil
     { wave: 4, build: 'zapcoil', tile: SWITCH_E },
-    { wave: 5, interact: 'peeker' },
+    { wave: 5, interact: 'peeker' }, // the click that pulls Pebble off the rock (non-blocking)
     { wave: 5, build: 'skyhook', tile: GATE },
     { wave: 5, build: 'zapcoil', tile: T3_MID },
     { wave: 6, upgrade: PUMP },
@@ -60,6 +52,7 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a2_m03,
   parBuild: { loadout: PAR_LOADOUT, steps: PAR_STEPS },
   noCounterBuilds: {
+    // No shield answer: no Energy and no Soaked (Rivet, Thumper, Skyhook, Lookout).
     shield: {
       loadout: ['rivet', 'thumper', 'skyhook', 'lookout'],
       steps: [
@@ -77,6 +70,8 @@ export const builds = defineBuilds({
         { wave: 7, upgrade: GATE },
       ],
     },
+    // No air answer: no Zapcoil in reach of the air lane (the Sprinklers, never a Cloudburst, and
+    // the Thumper hold the strip mine; neither hits air).
     air: {
       loadout: ['zapcoil', 'sprinkler', 'thumper', 'lookout'],
       steps: [
@@ -95,6 +90,7 @@ export const builds = defineBuilds({
         { wave: 7, build: 'lookout', tile: GATE },
       ],
     },
+    // No splash answer: no Zapcoil or Thumper (Rivets into the Soaking Sprinkler's shields).
     splash: {
       loadout: ['rivet', 'sprinkler', 'skyhook', 'lookout'],
       steps: [
@@ -113,7 +109,11 @@ export const builds = defineBuilds({
       ],
     },
   },
+  // The three tests all come by W8: the Warden and Glimmers (W4), the Lightwings (W6–W7), and the
+  // mine road's clusters (W5, W7, W8).
   noCounterLoseByWave: 8,
+  // A player who holds fire on every runner group (plain Hold Fire) sets it; par never holds fire,
+  // and the Spare runners filter alone doesn't count (core-loop.md § 2.7).
   runEndFlags: {
     held_fire_second_look: {
       setBy: ['holdFireWhile:fleeing'],
@@ -169,6 +169,3 @@ export const builds = defineBuilds({
     },
   },
 });
-
-// Tiles named for the alt builds (T422 tunes them).
-export const TILES = { GATE, IRRIGATION, HOUSING, WEST, T1_W, T1_E, BENCH_1 } as const;

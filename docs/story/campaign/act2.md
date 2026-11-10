@@ -233,30 +233,115 @@ Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): wi
 
 *The terraces again, at dusk. Same road. Everything on it is running south.*
 
-- **Facts:** The Terraces at dusk · `act2.gold` → `act2.dusk` across the waves · Defend · **revisit of A1M2**, 18×12 with A1M2's 14×10 centred (offset 2, 1); the new band holds a strip mine on the east · 15 buildable (A1M2's 11, unchanged, plus 4 on the strip-mine benches) · 11 waves · 460 credits · air lane over the strip mine · companion Bricks · Technician Orbital Strike.
+- **Facts:** The Terraces at dusk · `act2.gold` → `act2.dusk` across the waves · Defend · **revisit of A1M2**, 18×12 with A1M2's 14×10 centred (offset 2, 1); the new band holds a strip mine on the east · 15 buildable (A1M2's 11, unchanged, plus 4 on the strip-mine benches) · 11 waves · 550 credits · two roads (A1M2's switchbacks, and the mine road down the strip mine) plus an air lane over the strip mine · companion Bricks · Technician Orbital Strike.
 - **Story purpose:** **Where the player understands** (twist layer 1, by sight). The Haulers' cargo is visible; Pebble at the Peeker's rock, rescued by the player's own click; QUILL's first disobedience; the pension voided. **Target: recognition. Not darkness: seeing.** Threat novelty stays modest (two shield variants) so the player has room to look.
 
 **Layout and revisit dressing.** The same switchbacks and pump station as A1M2. Grey mining cuts slice across two terraces (through decor, never a pad); exposed warrens with eggs line the path; the soil is grey-streaked; Rig 3 is now a strip mine filling the east band, where Ves'thara's constructs strike. The scarecrow still stands on Terrace 2, badge faded, while everything streams past him. The Peeker's rock is still at the warren mouth; from W5 it holds Pebble and shows the clickable highlight ([core-loop.md §6.9](../../design/core-loop.md#69-the-peeker)). Skitterkin glance backward as they run. Evie billboard peeling.
 
-**Waves.** 1 Skitterkin families with younglings in tow, fleeing · 2 Glimmers on the strip mine · 3 Haulers fleeing (sacks visibly young) · 4 one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil] · 5 fleeing Skitterkin + Motes [the rock lights up] · 6 Lightwings ×4 over the strip mine [T: flying shields] · 7 Wardens ×2 + Lightwings [X] · 8 Elders with younglings + Motes · 9 big Aelari wave · 10 Hollow push, both routes · 11 everything.
+**Layout data** (the data is [`src/content/maps/a2_m03/map.ts`](../../../src/content/maps/a2_m03/map.ts); A1M2's layout is composed in by reference, [D114](../../decisions.md#d114--2026-11-09--t410a-revisits-by-reference-and-the-light), and [`a2_m03.test.ts`](../../../src/content/maps/a2_m03/a2_m03.test.ts) pins the pads it composes to). A1M2's road, pads, terraces, and markers sit unchanged at offset (2, 1): the **warren mouth** (A1M2's spawn) is (13,1), one tile in from the north edge, and stays there (the band row above it is spoil, not road); the road switchbacks down to the **gate** (6,10) as in A1M2 (35 tiles). The **pump station** (12,7) is the power node, the **irrigation tower** (8,5) the high ground, and the **Peeker's rock** (15,5) is on decor at the warren mouth halfway down the east side, beside the strip mine. The band is new: the **strip mine** fills the east edge, its floor cut down to the lowest terrace, with two pairs of **benches** on its far wall, (17,1)–(17,2) at the top and (17,8)–(17,9) at the foot. The **mine road** (`mine`, 23 tiles) runs down the strip mine's floor from (16,0), west along the foot of the terraces (row 11), and up into the gate from outside; the Aelari walk it, and the Hollow in W10–W11. The **air lane** (`sky`) flies the same line: down over the strip mine and along the foot of the terraces to the gate. The benches sit under the air lane and beside the mine road; A1M2's east pads (14,2) and (14,8) reach both the road and the mine road. Dressing ([maps.md §7](../../design/maps.md#7-storytelling-with-the-map)): grey soil over everything, the strip mine cut to bare grey earth. The light crossfades from `act2.gold` to `act2.dusk` across the shift and arrives as W11 starts (`lighting`, cosmetic).
+
+```
+................S.
+.............S..#o
+.......o.....#o.#o
+....##########..#.
+....#..o..o.....#.
+....#o..^.......#.
+....##########..#.
+.........o..+#..#.
+........o...o#o.#o
+......########..#o
+......C.........#.
+......###########.
+```
+
+**Waves.** 1 Skitterkin families with younglings in tow, fleeing · 2 Glimmers on the strip mine · 3 Haulers fleeing (sacks visibly young), nothing behind them · 4 one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil] · 5 a Mote cluster down the mine, then fleeing Skitterkin + Motes [the rock lights up as the wave starts] · 6 Lightwings ×4 over the strip mine [T: flying shields] + Glimmers · 7 Wardens ×2 + Lightwings [X] + a Mote cluster down the mine · 8 a Mote cluster down the mine, then Elders with younglings + Motes · 9 big Aelari wave · 10 Hollow push, both routes · 11 everything.
+
+**Wave data** (the data is [`src/content/maps/a2_m03/waves.ts`](../../../src/content/maps/a2_m03/waves.ts)). W3, W5–W8, W10, and W11 have a **30 s** countdown; W2, W4, and W9 a **60 s** one, so the slow runners before them (W1's younglings, W3's Haulers, W8's Elders) are off the road before the next wave's threats arrive: a player holding fire on every runner group isn't holding it on the Aelari too. W2–W11 **open 6 s into the wave**. Every Skitterkin group is `fleeing` (†) and runs the road; younglings (‡, `youngling`) run at half speed. Glimmers walk the *mine* road, Wardens the road, Lightwings the *sky*; Motes the road unless marked *mine*, **packed** at 0.2 s where marked. A fleeing group with Motes behind it leads them by 3 s ([fleeing-lead]); the big clusters come before the runners or after they've gone. Default spacing Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s, Lightwing 0.7 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s, Elder 2 s.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
+|---|---|---|
+| W1 | Nibbler† ×8 @ 1, 0 · Nibbler‡ ×6 @ 1, 0.5 | 14 |
+| W2 | Glimmer ×4 @ 1.5, 14 | 4 |
+| W3 | Hauler† ×3, 6 | 3 |
+| W4 | Weft Warden ×1, 6 · Glimmer ×6 @ 1.2, 10 | 7 |
+| W5 | Mote ×16 packed, 6 *mine* · Nibbler† ×8, 20 · Mote ×3, 23 | 27 |
+| W6 | Lightwing ×4 @ 4, 6 · Glimmer ×6, 22 | 10 |
+| W7 | Weft Warden ×2 @ 4, 6 · Lightwing ×5 @ 3, 12 · Mote ×20 packed, 26 *mine* | 27 |
+| W8 | Mote ×24 packed, 6 *mine* · Elder† ×2 @ 6, 22 · Nibbler‡ ×10 @ 0.6, 22.4 · Mote ×3, 25 | 39 |
+| W9 | Weft Warden ×3 @ 3, 6 · Glimmer ×16, 6 · Lightwing ×8 @ 2, 26 | 27 |
+| W10 | Zoomer† ×12 @ 0.4, 6 · Mote ×4, 9 · Mote ×30 packed, 26 *mine* · Mote ×50 packed, 32 | 96 |
+| W11 | Zoomer† ×10 @ 0.4, 6 · Mote ×4, 9 · Weft Warden ×2 @ 6, 18 · Glimmer ×16, 30 · Lightwing ×14 @ 1, 40 · Mote ×40 packed, 50 · Mote ×24 packed, 56 *mine* | 110 |
+
+Fleeing units leak for 0, so the threats are the Aelari and the Hollow. **The road is the heavy-shield test:** a Warden's 200 shield regenerates (20/s after 3 s), so it has to come down and stay down along the east switchback and Terrace 3, where the pump station's Zapcoil and its Conductive Sprinkler wait; each Warden through costs 3. **The strip mine is the air test:** the Lightwings' shields (60, regenerating after 4 s) come back over the foot of the terraces if they get through the strip mine, so the benches and Terrace 3's lip have to finish them. **The mine road is the splash test:** its packed clusters drown single-target towers.
 
 **Story delivery.**
 - *Briefing:* Bricks: "Same terraces. Different day. Keep your eyes on the path, Thorn."
 - *Radio:*
   - w02 Bricks: "Don't look at the eggs, Thorn. Look at the path. ...I said look at the path."
+  - First `wave_cleared` with a turret up (name tag) Bricks: "That one's Auntie Funmi. Raised me. Wrote every month for ten years. Then she didn't."
   - w04 QUILL: "Per policy, I am required to classify those as 'cargo.' I would like the record to show that I hesitated."
   - w06 Sterling: "Love the thoroughness, Four-Forty-Seven! Maybe a little less looking, a little more processing?"
   - w07 (after the rescue) Bricks: "You keep following me. Pebble. That's you. It's a rock thing." · QUILL: "Naming a pest violates Handbook Section 12.4. ...I've decided not to log it. I don't know why I said that out loud."
   - w09 Goldie: "There's grey creeping into Dome 3's soil. Plants know when something's wrong. People take longer."
 - *Rescue cue* `a2_m03_cue_pebble` (player-triggered by clicking the rock; fallback when W6 is cleared; a brief pause): Pebble: "(squeak)" · Bricks: "Small Fry. On your own? ...Pocket's got room. Just till we find her folks." · Pebble: "(squeak, smaller)"
 - *Barks:* Bricks `not_firing`: "...You okay, Thorn?" · Bricks `wave_cleared` (after the rescue): "She's not a pest, she's a passenger. Don't make it weird." · QUILL `skitterkin_killed_ahead`: "Logged. ...I'm logging the small ones separately now."
+- *Debrief:* Bricks reads the memo: "'Pension Restructuring Opportunity.' Nineteen years, restructured into a coupon. Ha." · *On a loss*, Bricks: "The terraces will keep. Go again, Thorn."
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m03/`](../../../src/content/dialogue/a2/a2_m03/scenes.ts)): the briefing is `a2_m03_brief`; the radio lines are `a2_m03_w02`, `_w04`, `_w06`, `_w07`, `_w09`; the name tag is `a2_m03_cue_name_tag`; the map script makes the rock clickable as W5 starts (`setClickable` on `peeker`, with W6's clear as the fallback) and plays `a2_m03_cue_pebble` on its `interacted` trigger, by the player's click or the fallback, so it always lands before W7's radio names her; the barks are map-scoped (`a2/a2_m03/barks.ts`; Bricks's passenger line once the rescue cue is seen; QUILL's runner line and the act-wide one share the pool); the debrief is `a2_m03_debrief`. **On screen:** Pebble's name plate reads `???` until Bricks names her (`a2_m03_w07` seen, or any later map), and Bricks's portrait carries her in his breast pocket (`pebble`) from the moment the rescue cue has played, mid-battle, and on every map after ([D103](../../decisions.md#d103--2026-11-09--t441-act-ii-portraits); [`speakers.ts`](../../../src/content/dialogue/speakers.ts)).
 - *Codex:* annotations begin. Brood Hauler annotated (QUILL's half), Weft Warden, Lightwing, a "Pebble" entry QUILL refuses to file ("Entry withheld.").
-- *Debrief:* Bricks reads the memo: "'Pension Restructuring Opportunity.' Nineteen years, restructured into a coupon. Ha."
-- *Memo after:* `memo_a2_03` *Pension Restructuring Opportunity!* (to Okonkwo, cc you).
+- *Memo after:* `memo_a2_03` *Pension Restructuring Opportunity!* (to Okonkwo, cc you; small print: "Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person."; the text is in [`src/content/memos/act2.ts`](../../../src/content/memos/act2.ts)).
 
-**Medals.** Victory · Perfect Core · **Clear Skies:** no Lightwing leaks. (No medal rewards or punishes sparing anyone.)
+**Medals.** Victory · Perfect Core · **Clear Skies:** no Lightwing leaks (`leaks: { enemy: 'lightwing' }, lte: 0`). (No medal rewards or punishes sparing anyone.)
 **Rewards.** Stardust 210 · Intel 3. **Sets** `held_fire_second_look` when at least 50% of the map's `fleeing` units leaked **and** plain Hold Fire was used at least once; the Spare runners filter alone doesn't count ([core-loop.md §2.7](../../design/core-loop.md#27-hold-fire)).
-**Par build.** Zapcoil, Sprinkler (Cloudburst), Rivet, Skyhook. Zapcoil + Sprinkler on the pump station (Conductive, Soaked for the Wardens); Zapcoil + Rivet + Skyhook under the air lane. Target 77. **Alt builds:** Zapcoil + Thumper + Lookout (Zapcoil ×3 for shields and air); Sprinkler (Soaked) + Zapcoil + Thumper + Lookout (one Zapcoil on the Wardens and the Lightwings, Thumper into Soaked shields). `noCounterBuilds`: **no-shield**, Rivet + Thumper + Skyhook + Lookout, no Energy and no Soaked (must lose by W8); **no-air**, Zapcoil + Sprinkler (no Cloudburst) + Thumper + Lookout, none of them in reach of the air lane (must lose by W8); **no-splash**, Rivet + Sprinkler (Soaked) + Skyhook + Lookout, no Zapcoil or Thumper (must lose by W8).
+**Par build.** Zapcoil, Sprinkler (Cloudburst), Skyhook, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M2's, plus Sprinkler tune 2; the gate holds 21). The fourth slot is free: par brings three. A Zapcoil and a Sprinkler on the strip mine's foot pair (Conductive; Cloudburst from W10) for the mine road and the air, a Zapcoil on the top pair; a Zapcoil on the pump station with a Sprinkler below it (Conductive, Soaked for the Wardens), a Zapcoil on (14,8) over the switchback's foot and the strip mine, and one on Terrace 3; a Skyhook on Terrace 3's lip by the gate for what crosses the foot of the terraces, and a second on the top pair at the end. Par clicks the rock as W5 starts. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m03/builds.ts`](../../../src/content/maps/a2_m03/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Zapcoil (17,8) and Sprinkler (17,9) on the foot pair (Conductive); Zapcoil (17,1) on the top pair; Zapcoil on the pump station (12,7) |
+| W2 | The foot Zapcoil to T2 |
+| W3 | Sprinkler (12,8) below the pump station (Conductive) |
+| W4 | Zapcoil (14,8) at the switchback's foot |
+| W5 | Click the Peeker's rock; Skyhook (8,8) on Terrace 3's lip; Zapcoil (9,7) on Terrace 3 |
+| W6 | The pump station's Zapcoil to T2; the top Zapcoil to T2 |
+| W7 | The lip Skyhook to T2 |
+| W8 | The foot Sprinkler to T2 |
+| W9 | The foot Sprinkler to T3 |
+| W10 | Cloudburst |
+| W11 | Skyhook (17,2) on the top pair |
+
+Par's bank at each build phase: 627, 181, 118, 84, 116, 8, 91, 83, 73, 104, 170 (W1–W11); most steps from W4 on land late in their wave as the bounties arrive, and about 410 is unspent at the end. **Par's margin is late:** three of W9's Lightwings get through before its Cloudburst exists, and two of W11's Motes, so par wins at **16/21 (76.2%)** on every seed (campaign.md §7's target 77, snapped to the 1/21 step), without Clear Skies. Nothing in Bricks's or Orbital Strike's R&D changes a par result here (par casts neither).
+
+**No-counter builds** (`noCounterBuilds`, by category; each must lose by W8, `noCounterLoseByWave`, and still lose with the full catalog):
+- **no-shield:** Rivet, Thumper, Skyhook, Lookout (no Energy, no Soaked): Thumpers on the pump station and at the switchback's foot, Rivets below the pump station and on the foot bench, a Skyhook on Terrace 3's lip, a Lookout on the other foot bench. The Glimmers and the W4 Warden get through, then W6's Lightwings and Glimmers: it loses in W6 (W9 with the full catalog, whose Reinforced Core and Emergency Bulkhead buy it time).
+- **no-air:** Zapcoil, Sprinkler (no Cloudburst), Thumper, Lookout, with no Zapcoil in reach of the air lane: Zapcoils on Terrace 3 (9,7) and beside Rig 3 (10,4), the Sprinklers on the pump station and the foot bench and the Thumper on the other foot bench (none of which hits air). It holds the mine badly and the air not at all: it loses in W6 (W8 with the full catalog).
+- **no-splash:** Rivet, Sprinkler (Soaked), Skyhook, Lookout (no Zapcoil or Thumper): the mine road's clusters get through from W5; it loses in W6 (W7 with the full catalog).
+
+**Alt builds** (each shares at most 2 towers with par and must win with ≥ 20%):
+- `coil_and_shell`, Zapcoil + Thumper + Lookout: Zapcoils on all four benches (the mine road and the air), on the pump station, at the switchback's foot, and on Terrace 3; a Thumper on Terrace 3's lip by the gate; a Lookout below the pump station. **38.1, with Clear Skies:** the benches never let a Lightwing through.
+- `soak_and_shell`, Sprinkler (Soaked) + Zapcoil + Thumper + Lookout: Thumpers on the pump station and Terrace 3 into Soaked shields, the Sprinkler below the pump station (Sitting Ducks, then T3's Soak); Zapcoils on the foot and top benches and at the switchback's foot, the foot Sprinkler a Cloudburst from W9. **33.3.**
+
+**Story variants** (harness): the map's run-end flag (`runEndFlags`): **`holdFireWhile:fleeing`** (par holding fire on every runner group, wave by wave) **wins at 28.6 and sets `held_fire_second_look`** (46 of 59 fleeing units leak; the Motes behind W5's, W8's, W10's, and W11's runners walk while it holds); par (it never holds fire) and **`spareFleeing`** (the filter, 76.2) leave it unset.
+
+**Harness runs** (every seed; margin, then integrity lost per wave):
+
+| Run | Result | Lost |
+|---|---|---|
+| par | wins at **76.2** (band 65–85; 16/21) | 3 in W9, 2 in W11 |
+| `holdFireWhile:fleeing` | 28.6, sets `held_fire_second_look` | |
+| `spareFleeing` | 76.2 | |
+| `alwaysCallEarly` | 23.8 | |
+| no-shield | loses in W6 | |
+| no-shield, full catalog | loses in W9 | |
+| no-air | loses in W6 | |
+| no-air, full catalog | loses in W8 | |
+| no-splash | loses in W6 | |
+| no-splash, full catalog | loses in W7 | |
+| Story | 100, Victory, Perfect Core, and Clear Skies | |
+| `coil_and_shell` | 38.1, Clear Skies | |
+| `soak_and_shell` | 33.3 | |
+| do-nothing | loses at W5 | |
+
+Par's shift runs about 11.7 min at 1×. Robustness ([`src/balance/a2m3.test.ts`](../../../src/balance/a2m3.test.ts)): with W9's Lightwings shifted ±0.2 s (±1 s checked in T422), or W5, W7, W9, or W11 shifted ±0.2 s as a whole, par holds at 16/21 and every verdict holds.
 
 ## A2M4 · Second Harvest
 

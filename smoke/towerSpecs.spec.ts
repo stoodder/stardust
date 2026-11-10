@@ -58,6 +58,29 @@ async function bankCharge(page: Page): Promise<number> {
   }, BANK);
 }
 
+/**
+ * Steps the sim `ticks` at a time, with two frames between steps (render samples trails and ages
+ * effects per frame), until `done` holds, for at most `max` steps; whether it held. Each step waits
+ * on the one before (recursion: the steps can't run in parallel).
+ */
+async function framesUntil(
+  page: Page,
+  ticks: number,
+  done: () => Promise<boolean>,
+  max: number,
+): Promise<boolean> {
+  if (await done()) return true;
+  if (max <= 0) return false;
+  await page.evaluate((n) => globalThis.__sd!.fastForward(n), ticks);
+  await nextFrames(page);
+  return framesUntil(page, ticks, done, max - 1);
+}
+
+/** What `__sd.render()` says of the spec looks now. */
+async function specLooks(page: Page): Promise<{ seekers: number; puffs: number }> {
+  return page.evaluate(() => globalThis.__sd!.render()!.specs);
+}
+
 test('tower specs: seekers, the capacitor charge and discharge, and the flak curtain', async ({
   page,
 }) => {
@@ -81,9 +104,7 @@ test('tower specs: seekers, the capacitor charge and discharge, and the flak cur
 
   // The Nibblers reach the bank: its orb grows a step per quarter of the charge. Step a few
   // frames through the charge so the view sees it fill.
-  for (let k = 0; k < 400 && (await bankCharge(page)) < 185; k++) {
-    await page.evaluate(() => globalThis.__sd!.fastForward(5));
-  }
+  expect(await framesUntil(page, 5, async () => (await bankCharge(page)) >= 185, 400)).toBe(true);
   expect(await bankCharge(page)).toBeGreaterThanOrEqual(185);
   await nextFrames(page);
   const charging = await page.evaluate(() => globalThis.__sd!.render()!.specs);
@@ -100,7 +121,8 @@ test('tower specs: seekers, the capacitor charge and discharge, and the flak cur
         const t = pool.items[i]!;
         if (t.alive && t.col === c && t.row === r) bank = t;
       }
-      for (let k = 0; k < 300 && bank !== null; k++) {
+      if (bank === null) return false;
+      for (let k = 0; k < 300; k++) {
         const before = bank.chargeTicks;
         sd.fastForward(1);
         if (bank.chargeTicks === 0 && before > 0) return true;
@@ -136,11 +158,9 @@ test('tower specs: seekers, the capacitor charge and discharge, and the flak cur
   expect(near).toBe(true);
   // Frame by frame (the trail samples on sim ticks) until a volley is a few ticks into its flight:
   // the missiles fan out, climb, and trail smoke as they steer in.
-  let seekers = 0;
-  for (let k = 0; k < 150; k++) {
-    await page.evaluate(() => globalThis.__sd!.fastForward(1));
-    await nextFrames(page);
-    const aged = await page.evaluate(() => {
+  const aged = async (): Promise<boolean> =>
+    (await specLooks(page)).seekers > 0 &&
+    page.evaluate(() => {
       const shots = globalThis.__sd!.state()!.projectiles;
       for (let i = 0; i < shots.used; i++) {
         const p = shots.items[i]!;
@@ -148,19 +168,10 @@ test('tower specs: seekers, the capacitor charge and discharge, and the flak cur
       }
       return false;
     });
-    seekers = (await page.evaluate(() => globalThis.__sd!.render()!.specs)).seekers;
-    if (aged && seekers > 0) break;
-  }
-  expect(seekers).toBeGreaterThan(0);
+  expect(await framesUntil(page, 1, aged, 150)).toBe(true);
   await shot(page, 'tower-specs', 3, 'seeker-swarm');
 
   // Flak Curtain's bursts leave puffs hanging over the lane (they fade on real time).
-  let puffs = 0;
-  for (let k = 0; k < 200 && puffs === 0; k++) {
-    await page.evaluate(() => globalThis.__sd!.fastForward(3));
-    await nextFrames(page);
-    puffs = (await page.evaluate(() => globalThis.__sd!.render()!.specs)).puffs;
-  }
-  expect(puffs).toBeGreaterThan(0);
+  expect(await framesUntil(page, 3, async () => (await specLooks(page)).puffs > 0, 200)).toBe(true);
   await shot(page, 'tower-specs', 4, 'flak-curtain');
 });

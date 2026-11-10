@@ -1,8 +1,8 @@
 // A2M3's tuning is robust where it matters (T422). As tuned, par wins at 16/21 (76.2%) on every
 // seed, its five lost late: three Lightwings in W9's big Aelari wave (before its Cloudburst lands)
-// and two Motes in W11. Its click on the Peeker's rock goes in the tick after W5 starts. A player who holds
-// fire on every runner group still wins, and sets `held_fire_second_look`; par and the Spare
-// runners filter don't. Each no-counter build loses by W8; the all-Zapcoil alt earns Clear Skies.
+// and two Motes in W11. Its click on the Peeker's rock goes in the tick after W5 starts. A player
+// who holds fire on every runner group still wins, and sets `held_fire_second_look`; par and the
+// Spare runners filter don't. Each no-counter build loses by W8; the all-Zapcoil alt earns Clear Skies.
 // With W9's Lightwings shifted ±0.2 s (and ±1 s, checked in T422) par holds at 16/21. The waves
 // and builds are documented in docs/story/campaign/act2.md § A2M3.
 import { describe, expect, it } from 'vitest';
@@ -18,16 +18,15 @@ const PAR_INTEGRITY = 16;
 
 /** The content with W9's Lightwings `d` s later. */
 function w9LightwingsShifted(d: number): typeof content {
-  const waves = raw.waves.map(
-    (w: WaveDef, i): WaveDef =>
-      i !== 8
-        ? w
-        : {
-            ...w,
-            groups: w.groups.map((g) =>
-              g.enemy === 'lightwing' ? { ...g, delaySec: (g.delaySec ?? 0) + d } : g,
-            ),
-          },
+  const waves = raw.waves.map((w: WaveDef, i): WaveDef =>
+    i !== 8
+      ? w
+      : {
+          ...w,
+          groups: w.groups.map((g) =>
+            g.enemy === 'lightwing' ? { ...g, delaySec: (g.delaySec ?? 0) + d } : g,
+          ),
+        },
   );
   const next: RawContent = {
     ...RAW_CONTENT,

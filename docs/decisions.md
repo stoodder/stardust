@@ -1367,3 +1367,9 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Heavy is an anim family** (`heavy_<facing>`, the victim pale inside), not a baked variant; the Hollow's dropped pixels are baked per frame from a seed, so render needs no RNG.
 - **Aelari lattices have real holes** and a hand-drawn outside-only outline. A derived **`cloak` variant** (50% checker, white dashed outline) is baked for the Aelari and Hollow palettes, drawn at 35–60% alpha.
 - **Value band to fix:** Act I Skitterkin (≈ 0.42 luminance) now match Act II's path; the outline and saturation carry them for now, and T440c re-bands the `act2.*` path.
+
+### D120 — 2026-11-10 — T407b Skyhook and Zapcoil specs; homing and charge
+- **Every M4 tower spec is built;** Engineering lists no "later shipment" rows for the Act I towers. No par or alt buys them yet (Act I–II numbers unchanged); M5 maps with armored flyers or tanks give them alts.
+- **Homing:** pure pursuit of the target each tick, at most 3 s of flight; on losing its target a missile retargets the nearest enemy within 3 tiles (lowest uid on a tie, never a neutral, never a spared runner if its tower spares them), else flies to the last seen point and fizzles. Seeker Swarm fires a volley of 4 every 2 s, air-only, the tower's target first.
+- **Charge (Capacitor Bank):** rate bonuses shorten the 4 s charge; it holds its target regardless of priority. A kill, a leak or the spare filter swings the charge to a new target; an escape (burrow, cloak, leaving, out of range) fizzles it; Hold Fire vents it. Blink, burrow and cloak counter it; Stasis and Pins help it.
+- **Seeker Swarm answers armor only where the armor flies** (`vsAir`), so the loadout never claims it answers ground armor.
