@@ -157,9 +157,9 @@ describe('dev_penitent', () => {
     // W5 (the Penitent alone) resolves a fade after the pivot, with nothing leaked from it.
     expect(tickOf(a, 'WaveCleared 5') - w6).toBe(59);
     expect(s.stats.leaksByWave[4]).toBe(0);
-    // Unguarded, the surge takes the refugees past `maxLost`.
+    // Unguarded, the surge takes the refugees to `maxLost`.
     expect(a.outcome).toBe('lost');
-    expect(s.stats.refugeesLost).toBeGreaterThan(a.sim.map.maxLost!);
+    expect(s.stats.refugeesLost).toBe(a.sim.map.maxLost!);
   });
 
   it('a retry from the W5 checkpoint replays across the pivot to the same state and end', () => {

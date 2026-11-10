@@ -21,7 +21,7 @@ import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
-import { bindEscortMeter } from './hudEscort.ts';
+import { bindEscortMeter, refugeesWalking } from './hudEscort.ts';
 import { selectedRamp, selectedView } from './hudPanel.ts';
 import {
   displayName,
@@ -457,6 +457,8 @@ export function bindHud(
     // A `noCall` wave can't be called (the Quiet Wave, D097, K3; A2M5's W6, D138): no Call button,
     // no bonus, no pulse.
     hud.nextNoCall.value = nextWaveNoCall(s, sim.map);
+    // An Escort's next refugee groups: a `when` can change mid-countdown (A2M5's pivot).
+    hud.nextWalking.value = refugeesWalking(sim, s.wave + 1);
     hud.callPulse.value =
       s.outcome === 'playing' &&
       !hud.nextNoCall.value &&
@@ -752,6 +754,7 @@ export function bindHud(
     hud.countdown.value = null;
     hud.callBonus.value = 0;
     hud.nextNoCall.value = false;
+    hud.nextWalking.value = 0;
     hud.holdFireAll.value = false;
     hud.holdingCount.value = 0;
     hud.spareRunnersAll.value = false;

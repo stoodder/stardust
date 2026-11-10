@@ -56,6 +56,7 @@ export function WavePanel() {
   const ended = hud.outcome.value !== 'playing';
   const countdown = hud.countdown.value;
   const bonus = hud.callBonus.value;
+  const walking = hud.nextWalking.value;
   // A `noCall` wave walks in on its own (the Quiet Wave, D097; A2M5's W6): no button, no bonus.
   const callLabel =
     next === null || hud.nextNoCall.value
@@ -131,6 +132,23 @@ export function WavePanel() {
               </li>
             );
           })}
+          {/* An Escort's next refugees (D138): a friendly chip, never a threat's. */}
+          {walking > 0 && (
+            <li
+              class="hud-preview-group hud-walking"
+              data-testid="preview-walking"
+              aria-label={`${walking} refugees walking`}
+              title="Refugees walking (get them out)"
+            >
+              <span class="hud-preview-icon">
+                <Icon id="icon.refugee" />
+              </span>
+              <span class="num">+{walking}</span>
+              <span class="hud-walking-word" aria-hidden="true">
+                walking
+              </span>
+            </li>
+          )}
           {countdown !== null && (
             <li class="hud-countdown" aria-label={`Starts in ${countdown} seconds`}>
               <span class="hud-label">in</span> <span class="num">{countdown}s</span>

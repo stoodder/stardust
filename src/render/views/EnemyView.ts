@@ -116,7 +116,7 @@ import {
 } from './hushLook.ts';
 import { bubbleAlpha } from './shieldLook.ts';
 import { isFrozen, STASIS_TINT } from './stasisLook.ts';
-import { phaseAlpha, phaseDithered } from './phaseLook.ts';
+import { PHASED_RIM_ALPHA, phaseAlpha, phaseDithered, phaseState } from './phaseLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
 import { facingOf, hasAnim, isRunner, spriteId, unitGlyph, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
@@ -1008,6 +1008,8 @@ export class EnemyView implements PooledView {
       rim = 'heavy';
     }
     d.rimOn(body, rim, rimAlpha);
+    // A Phased ghost keeps its shape: a faint white rim outside its silhouette (review U10).
+    d.ghostRimOn(body, phaseState(e) === 'phased' && !e.leaving ? PHASED_RIM_ALPHA : 0);
     // The shield bubble, faint while the shield holds, flashing on a hit (hidden by a cloak).
     const bubble =
       this.#shielded && e.shieldHp > 0 && !e.leaving && !cloaked

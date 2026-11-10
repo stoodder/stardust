@@ -4,7 +4,7 @@
 // The Aelari icons are drawn at 16×16 with their outline on the outside only (no `auto` pass).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { enemyMote, MOTE_LEGEND } from '../enemies/mote.ts';
+import { enemyMote } from '../enemies/mote.ts';
 import { outlineOutside, rim, weave, type Mask } from '../enemies/lattice.ts';
 import { ICON } from './iconGen.ts';
 
@@ -37,7 +37,8 @@ export const iconEnemyMote = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'hollow',
   outline: 'auto',
-  legend: MOTE_LEGEND,
+  // The walk frame's own legend (unsung violet, the body's ink contour).
+  legend: enemyMote.legend,
   frames: { icon: moteIcon() },
 });
 

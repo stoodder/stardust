@@ -4,11 +4,15 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
+import { rgbOf } from '../../content/palettes/master.ts';
 import type { Enemy } from '../../sim/index.ts';
 import {
   PHASED_ALPHA,
   PHASED_PLAIN_ALPHA,
+  PHASED_RIM_ALPHA,
+  PHASED_RIM_COLOR,
   TELL_DITHER_ALPHA,
+  ghostRimImage,
   phaseAlpha,
   phaseDithered,
   phaseRingAlpha,
@@ -57,5 +61,45 @@ describe('phasing’s look', () => {
     expect(phaseAlpha(e, false, false)).toBe(PHASED_PLAIN_ALPHA);
     expect(PHASED_PLAIN_ALPHA).toBeLessThan(PHASED_ALPHA);
     expect(phaseRingAlpha(e, false)).toBe(phaseRingAlpha(moth(true, 3), true));
+  });
+});
+
+describe('the Phased ghost’s rim (review U10)', () => {
+  // A 4×3 silhouette: a solid 2×2 block at (1,0)-(2,1), and one more pixel at (1,2).
+  const W = 4;
+  const H = 3;
+  const solid = new Set(['1,0', '2,0', '1,1', '2,1', '1,2']);
+  const data = new Uint8ClampedArray(W * H * 4);
+  for (const k of solid) {
+    const [x, y] = k.split(',').map(Number) as [number, number];
+    data[(y * W + x) * 4 + 3] = 255;
+  }
+
+  it('is 1 px of white.1 just outside the silhouette, never on it, in an image 1 px bigger', () => {
+    const img = ghostRimImage(data, W, H);
+    expect([img.w, img.h]).toEqual([W + 2, H + 2]);
+    const c = rgbOf(PHASED_RIM_COLOR);
+    const lit: string[] = [];
+    for (let y = 0; y < img.h; y++) {
+      for (let x = 0; x < img.w; x++) {
+        const o = (y * img.w + x) * 4;
+        if (img.data[o + 3] === 0) continue;
+        expect([img.data[o], img.data[o + 1], img.data[o + 2]]).toEqual([c.r, c.g, c.b]);
+        lit.push(`${x - 1},${y - 1}`); // back in the source's pixels
+      }
+    }
+    for (const p of lit) expect(solid.has(p), p).toBe(false);
+    // Every clear 4-neighbour of the silhouette is lit; diagonal-only corners are not.
+    for (const p of ['1,-1', '2,-1', '0,0', '3,0', '0,1', '3,1', '0,2', '2,2', '1,3']) {
+      expect(lit, p).toContain(p);
+    }
+    expect(lit).not.toContain('0,-1');
+    expect(lit).toHaveLength(9);
+    expect(PHASED_RIM_ALPHA).toBe(0.5);
+  });
+
+  it('rims nothing for an empty frame', () => {
+    const img = ghostRimImage(new Uint8ClampedArray(W * H * 4), W, H);
+    expect(img.data.some((v) => v !== 0)).toBe(false);
   });
 });

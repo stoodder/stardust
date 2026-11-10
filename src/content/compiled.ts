@@ -725,6 +725,11 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
    * state (Sundown; T505). Empty for none.
    */
   readonly lighting: readonly CompiledLightingKey[];
+  /**
+   * Whether the map has darkness that changes play (Sundown): a lighting key with `dark` > 0
+   * (lamps need one, [darkness]). Compiled once; sim/darkness.ts `hasDarkness` reads it.
+   */
+  readonly dark: boolean;
   /** Lamps (MapDef.lights; T505); empty for none. */
   readonly lights: readonly CompiledLight[];
   /** Escort data (MapDef.safeExit and refugees; T305c), or null. */

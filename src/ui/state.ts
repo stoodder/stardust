@@ -420,6 +420,8 @@ export const hud = {
   aimingAbility: signal<1 | 2 | null>(null),
   /** The next wave's preview, or null after the last wave has started. */
   nextWave: signal<WavePreview | null>(null),
+  /** Refugees the next wave sends walking (an Escort's "+6 walking" chip, D138); 0: no chip. */
+  nextWalking: signal(0),
   /** The latest notice, or null. */
   notice: signal<HudNotice | null>(null),
   /**

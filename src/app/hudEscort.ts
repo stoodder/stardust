@@ -7,10 +7,33 @@
 // Escort mid-map (A2M5's pivot). A resumed run's replay shows neither (app/checkpoints.ts).
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
+import { evaluateCondition, type Sim } from '../sim/index.ts';
 import { hud, type EscortMeterView } from '../ui/state.ts';
 import { escortLow } from './dialogue.ts';
 import { meterLabelText } from './hudText.ts';
 import type { Host } from './host.ts';
+
+/**
+ * The refugees wave `wave` sends walking (the next-wave preview's friendly "+6 walking" chip,
+ * D138): the groups its script releases (`spawnAllies`) on its countdown, its start, or a beat
+ * after, from events whose `when` holds now (A2M5's W6 releases the first group only when the
+ * Penitent hasn't already pivoted). Pebble isn't counted. 0 on a map without refugees.
+ */
+export function refugeesWalking(sim: Pick<Sim<IdSpace>, 'map' | 'state' | 'config'>, wave: number): number {
+  const escort = sim.map.escort;
+  if (escort === null) return 0;
+  const ctx = { content: sim.config.content, config: sim.config, map: sim.map };
+  let n = 0;
+  for (const e of sim.map.events) {
+    if (!('wave' in e.on) || e.on.wave !== wave || e.on.phase === 'cleared') continue;
+    if (e.when !== null && !evaluateCondition(e.when, sim.state, ctx)) continue;
+    for (const a of e.actions) {
+      if (!('spawnAllies' in a)) continue;
+      n += escort.groups.find((g) => g.id === a.spawnAllies)?.count ?? 0;
+    }
+  }
+  return n;
+}
 
 /** The most lost pips the meter draws (3 px each in the 100 px row); more read as words. */
 export const MAX_LOST_PIPS = 16;

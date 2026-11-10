@@ -163,6 +163,7 @@ export function compileMap<K extends IdSpace>(
         ? null
         : { cols: revisitSize.cols, rows: revisitSize.rows },
     lighting: (def.lighting ?? []).map((k) => ({ wave: k.wave, env: k.env, dark: k.dark ?? 0 })),
+    dark: (def.lighting ?? []).some((k) => (k.dark ?? 0) > 0),
     lights,
     escort,
     dressing: def.dressing ?? [],

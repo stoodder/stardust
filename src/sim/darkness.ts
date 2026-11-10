@@ -22,7 +22,7 @@
 //   draws, and the next tick's towers fire under it. A tower built this tick is lit or not by the
 //   tick's end (it deploys first, so it never fires in between).
 // - **DarknessShift** fires on the tick a wave starts whose level differs from the dark then.
-// On a map without darkness (no key with `dark` > 0 and no lamps) the system does nothing: `dark`
+// On a map without darkness (no key with `dark` > 0; `map.dark`) the system does nothing: `dark`
 // stays 0, every tower `lit`, and no range changes, so no earlier map's numbers move.
 import type { CompiledLight, CompiledLightingKey, CompiledMapDef } from '../content/compiled.ts';
 import { DARK_RANGE_PENALTY } from '../content/rules.ts';
@@ -33,9 +33,12 @@ import type { TickContext } from './tick.ts';
 /** How long the dark takes to reach a new wave's level: 4 s of sim time (the tint's fade). */
 export const DARK_EASE_TICKS = 240;
 
-/** Whether `map` has darkness that changes play: a key with `dark` > 0, or lamps. */
-export function hasDarkness(map: Pick<CompiledMapDef<IdSpace>, 'lighting' | 'lights'>): boolean {
-  return map.lights.length > 0 || map.lighting.some((k) => k.dark > 0);
+/**
+ * Whether `map` has darkness that changes play: a lighting key with `dark` > 0 (lamps need one,
+ * so a map with lamps has it too). The one home of the rule; the compiler sets `map.dark`.
+ */
+export function hasDarkness(map: Pick<CompiledMapDef<IdSpace>, 'dark'>): boolean {
+  return map.dark;
 }
 
 /**

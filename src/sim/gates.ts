@@ -27,6 +27,7 @@ import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
 import { STUB_TOWER_TASKS } from '../content/towers/index.ts';
 import type { AbilityEffect, AttackKind, IdSpace, StatusId } from '../content/types.ts';
 import type { EconomyStat, Modifier, SimConfig } from './config.ts';
+import { hasDarkness } from './darkness.ts';
 
 /** A task id from tasks.md (`T304a`), or a later milestone (`M5`) for features with no task yet. */
 export type GateOwner = `T${number}${string}` | `M${number}`;
@@ -373,9 +374,7 @@ function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
   const clickables = Object.keys(map.clickables);
   if (clickables.length > 0) use('map.clickable', `clickable objects (${clickables.join(', ')})`);
   if (map.objective === 'escort' || map.escort !== null) use('map.escort', 'an Escort (refugees)');
-  if (map.lights.length > 0 || map.lighting.some((k) => k.dark > 0)) {
-    use('map.darkness', "Sundown's darkness");
-  }
+  if (hasDarkness(map)) use('map.darkness', "Sundown's darkness");
 }
 
 /** What `cfg` uses that a closed gate refuses: one message per feature, in the order first used. */

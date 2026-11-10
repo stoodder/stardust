@@ -145,8 +145,20 @@ export const map = defineMapLayout({
   // Bricks walks this shift with you: slot 2 is his Suppressing Fire.
   companion: { id: 'bricks', state: 'present' },
   events: [
+    // The pivot, whichever comes first (D137; enemies.md § 6.1, the worked example): the Penitent
+    // broken to 50% (its own `pivot` ending ran)...
+    { id: 'pivot_hp', on: { bossHpPct: 0.5, boss: 'sunderglass_penitent' }, actions: PIVOT },
+    // ...or the Hollow surge wave starting, which forces it (and the event above is spent: a
+    // forced pivot leaves the Penitent above 50% and immune).
+    {
+      id: 'pivot_surge',
+      on: { wave: 6, phase: 'start' },
+      when: { stat: 'pivotWave', lte: 0 },
+      actions: [{ bossEnd: 'pivot' }, ...PIVOT],
+    },
     // The Penitent comes down the road (its spawn): Ves'thara's challenge, and Bricks's answer.
-    // Neither of her cues plays once the pivot has come (D138: never after she kneels).
+    // Neither of her cues plays once the pivot has come (D138: never after she kneels), so they
+    // follow the pivot's events: a pivot on the tick she spawns spends them unplayed.
     {
       id: 'penitent_cue',
       on: { bossPhase: 1 },
@@ -159,17 +171,6 @@ export const map = defineMapLayout({
       on: { bossPhase: 2 },
       when: { stat: 'pivotWave', lte: 0 },
       actions: [{ cue: 'a2_m05_cue_shield' }],
-    },
-    // The pivot, whichever comes first (D137; enemies.md § 6.1, the worked example): the Penitent
-    // broken to 50% (its own `pivot` ending ran)...
-    { id: 'pivot_hp', on: { bossHpPct: 0.5, boss: 'sunderglass_penitent' }, actions: PIVOT },
-    // ...or the Hollow surge wave starting, which forces it (and the event above is spent: a
-    // forced pivot leaves the Penitent above 50% and immune).
-    {
-      id: 'pivot_surge',
-      on: { wave: 6, phase: 'start' },
-      when: { stat: 'pivotWave', lte: 0 },
-      actions: [{ bossEnd: 'pivot' }, ...PIVOT],
     },
     // The rest of the refugees, as their waves start, early enough for the road to empty.
     { id: 'second', on: { wave: 7, phase: 'start' }, actions: [{ spawnAllies: 'second' }] },

@@ -7,6 +7,10 @@
 //   its hush tell, Stasis's crystal, the blink tell's violet, and a shield pulser's blue while it
 //   tells. (A rim needs an opaque body over it: a cloak's faint body would show the copies through
 //   it, so a cloak wears its white `selected` outline instead, EnemyView.)
+// - **The ghost rim** (a Phased unit's; phaseLook.ts `ghostRimImage`, review U10): one image, a
+//   1 px `white.1` line just outside the silhouette of the body's current frame (read from the
+//   frame's plain variant, so the ghost's dither holes never rim), at PHASED_RIM_ALPHA, just
+//   behind the body. Each frame's rim is baked once, on first use.
 // - **The shield bubble** (markPixels.ts), just in front of the body.
 // - **The hush ring** (a held runner's), on its ground point, in `overlay`.
 // - **The target bracket** (a Revealed unit's), round the body, in `overlay`.
@@ -14,7 +18,24 @@ import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { BUBBLE_PAD_X, BUBBLE_PAD_Y, BRACKET_PAD } from '../vfx/markPixels.ts';
 import { bracketTexture, bubbleTexture, effectRingTexture } from '../vfx/overlayTextures.ts';
+import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { ghostRimImage } from './phaseLook.ts';
+import { spriteId } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
+
+/** Each body frame's ghost-rim texture key (null: none can be read), baked on first use. */
+const ghostRims = new WeakMap<Phaser.Textures.Frame, string | null>();
+
+/** A frame's pixels, read back from its atlas page (a canvas; CodeSpriteSource keeps them). */
+function framePixels(frame: Phaser.Textures.Frame): ImageData | null {
+  const src: unknown = frame.source.image;
+  if (!(src instanceof HTMLCanvasElement)) return null;
+  const c = src.getContext('2d');
+  return c === null
+    ? null
+    : c.getImageData(frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight);
+}
 
 /** The rim's looks, by what it marks. */
 export type RimMode = 'none' | 'heavy' | 'hush' | 'crystal' | 'blink' | 'pulse';
@@ -63,6 +84,8 @@ export class EnemyDress {
   #ringRadius = 0;
   #bracket: Phaser.GameObjects.Image | null = null;
   #bracketKey = '';
+  #ghost: Phaser.GameObjects.Image | null = null;
+  #ghostFrame: Phaser.Textures.Frame | null = null;
   /** The layer the body is in (the rim and bubble join it). */
   #layer: Phaser.GameObjects.Layer | null = null;
 
@@ -93,6 +116,72 @@ export class EnemyDress {
     this.#layer = layer;
     if (this.#rim !== null) for (const img of this.#rim) layer.add(img);
     if (this.#bubble !== null) layer.add(this.#bubble);
+    if (this.#ghost !== null) layer.add(this.#ghost);
+  }
+
+  get ghostRimShown(): boolean {
+    return this.#ghost?.visible ?? false;
+  }
+
+  /** Shows the ghost rim round `body` at `alpha`, or hides it (alpha 0). */
+  ghostRimOn(body: Phaser.GameObjects.Sprite, alpha: number): void {
+    if (alpha <= 0) {
+      if (this.#ghost?.visible === true) this.#ghost.setVisible(false);
+      return;
+    }
+    const frame = body.frame;
+    const key = this.#ghostRimKey(frame);
+    if (key === null) {
+      if (this.#ghost?.visible === true) this.#ghost.setVisible(false);
+      return;
+    }
+    let g = this.#ghost;
+    if (g === null) {
+      g = this.#ctx.scene.make.image({}, false);
+      this.#layer?.add(g);
+      this.#ghost = g;
+    }
+    if (frame !== this.#ghostFrame) {
+      this.#ghostFrame = frame;
+      g.setTexture(key).setDisplayOrigin(body.displayOriginX + 1, body.displayOriginY + 1);
+    }
+    g.setPosition(body.x, body.y);
+    const depth = body.depth - BEHIND;
+    if (g.depth !== depth) g.setDepth(depth);
+    if (g.alpha !== alpha) g.setAlpha(alpha);
+    if (!g.visible) g.setVisible(true);
+  }
+
+  /** The rim texture for a body frame `<sprite>#<variant>:<frame>`, from its plain variant. */
+  #ghostRimKey(frame: Phaser.Textures.Frame): string | null {
+    const known = ghostRims.get(frame);
+    if (known !== undefined) return known;
+    let key: string | null = null;
+    const name = String(frame.name);
+    const hash = name.indexOf('#');
+    const colon = name.indexOf(':', hash + 1);
+    if (hash > 0 && colon > 0) {
+      const id = name.slice(0, hash);
+      const anim = name.slice(colon + 1);
+      key = `fx.ghost_rim.${id}.${anim}`;
+      const scene = this.#ctx.scene;
+      if (!scene.textures.exists(key)) {
+        try {
+          const ref = this.#ctx.sprites.frame(spriteId(id), anim, DEFAULT_VARIANT);
+          const px = framePixels(scene.textures.getFrame(ref.texture, ref.frame));
+          if (px === null) key = null;
+          else
+            scene.textures.addCanvas(
+              key,
+              imageToCanvas(ghostRimImage(px.data, px.width, px.height)),
+            );
+        } catch {
+          key = null; // not a baked sprite frame: no rim
+        }
+      }
+    }
+    ghostRims.set(frame, key);
+    return key;
   }
 
   /** Shows the rim `mode` round `body` at `alpha`, or hides it (`none`). */
@@ -216,6 +305,7 @@ export class EnemyDress {
     if (this.#bubble?.visible === true) this.#bubble.setVisible(false);
     if (this.#ring?.visible === true) this.#ring.setVisible(false);
     if (this.#bracket?.visible === true) this.#bracket.setVisible(false);
+    if (this.#ghost?.visible === true) this.#ghost.setVisible(false);
   }
 
   #hideRim(): void {

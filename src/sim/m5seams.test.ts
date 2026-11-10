@@ -201,7 +201,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     // Escort runs since T305c (escort.test.ts), Sundown's darkness since T505 (darkness.test.ts).
     expect(gateRefusals(withMap({ objective: 'escort' }))).toEqual([]);
     const lighting = [{ wave: 1, env: 'act2.dusk' as const, dark: 0.4 }];
-    expect(gateRefusals(withMap({ lighting }))).toEqual([]);
+    expect(gateRefusals(withMap({ lighting, dark: true }))).toEqual([]);
     expect(gateRefusals(withMap({ lighting: [{ ...lighting[0]!, dark: 0 }] }))).toEqual([]);
   });
 
