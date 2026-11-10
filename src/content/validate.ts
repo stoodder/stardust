@@ -27,6 +27,8 @@
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
+// - [vs-shielded]: a link's `vsShielded` bonus only on towers whose attacks read it
+//   (validateLinks.ts).
 // - [dialogue-*]: the style guide's mechanical rules over every scene, bark, and name tag
 //   (validateDialogue.ts; story-runtime.md § Validation).
 // - [purchasable]: reference profiles are affordable and available in time (validatePurchasable.ts).
@@ -72,6 +74,7 @@ import type {
 import { dialogueErrors } from './validateDialogue.ts';
 import { validateCampaignMaps } from './validateMap.ts';
 import { validateMedals } from './validateMedals.ts';
+import { validateLinks } from './validateLinks.ts';
 import { validatePurchasable, type PurchaseRules } from './validatePurchasable.ts';
 import type { ExceptRule } from './validateWaves.ts';
 import {
@@ -113,6 +116,7 @@ export function validate<K extends IdSpace>(
   }
   validateCampaignMaps(issues, raw, rules);
   validateMedals(issues, raw);
+  validateLinks(issues, raw);
   validatePurchasable(issues, raw, rules.purchases);
   return issues.errors;
 }
@@ -214,6 +218,10 @@ function validateTier(issues: Issues, tier: TierDef, cost: number, where: string
     if (e.status === 'corroded') {
       if (!isPositiveInt(e.stacks) || !isPositiveInt(e.maxStacks) || e.stacks > e.maxStacks) {
         bad(w, 'stacks and maxStacks must be whole numbers ≥ 1, with stacks ≤ maxStacks');
+      }
+      const slow = e.shieldRegenSlowPct;
+      if (slow !== undefined && (!isPositive(slow) || slow >= 1)) {
+        bad(`${w}.shieldRegenSlowPct`, `${slow} must be in (0, 1)`);
       }
     }
   }

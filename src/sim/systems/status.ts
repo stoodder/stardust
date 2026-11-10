@@ -208,18 +208,21 @@ export function status(state: SimState): void {
     if (e.pinnedTicks > 0) {
       if (--e.pinnedTicks === 0) e.pinImmuneTicks = PIN_IMMUNITY_TICKS;
     } else if (e.pinImmuneTicks > 0) e.pinImmuneTicks--;
-    if (e.corrodedTicks > 0 && --e.corrodedTicks === 0) e.corrodedStacks = 0;
+    if (e.corrodedTicks > 0 && --e.corrodedTicks === 0) {
+      e.corrodedStacks = 0;
+      e.corrodedShieldMul = 1;
+    }
     if (e.markTicks > 0 && --e.markTicks === 0) e.markPct = 0;
     if (e.noEvadeTicks > 0) e.noEvadeTicks--;
 
     // Shields regenerate after the delay without damage (applyDamage resets the delay), unless
-    // the enemy's data gives no regen.
+    // the enemy's data gives no regen; Corrosive Kiss's Corroded slows it (`corrodedShieldMul`).
     const shield = e.def.shield;
     if (shield !== null && e.shieldHp < shield.hp) {
       if (e.shieldRegenDelayTicks > 0) {
         e.shieldRegenDelayTicks--;
       } else {
-        const next = e.shieldHp + shield.regenPerTick;
+        const next = e.shieldHp + shield.regenPerTick * e.corrodedShieldMul;
         e.shieldHp = next < shield.hp ? next : shield.hp;
       }
     }

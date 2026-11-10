@@ -101,7 +101,9 @@ describe('compileContent: towers and tier patches', () => {
     expect(rocket?.kind).toBe('projectile');
     expect(rocket).toMatchObject({ minRangeTiles: 0, speedTilesPerTick: 0.1 });
     expect(rocket).not.toHaveProperty('flightTicks');
-    expect(mortar.specs?.b.effects).toEqual([{ status: 'corroded', stacks: 3, maxStacks: 3 }]);
+    expect(mortar.specs?.b.effects).toEqual([
+      { status: 'corroded', stacks: 3, maxStacks: 3, shieldRegenMul: 1 },
+    ]);
   });
 
   it('compiles pulse attacks and replaces effect arrays whole', () => {

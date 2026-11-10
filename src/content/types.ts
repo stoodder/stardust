@@ -386,7 +386,16 @@ export interface PulseBurstDef {
 export type EffectDef =
   | { readonly status: 'chilled'; readonly pct: number; readonly durationSec: number }
   | { readonly status: 'soaked'; readonly durationSec: number }
-  | { readonly status: 'corroded'; readonly stacks: number; readonly maxStacks: number }
+  | {
+      readonly status: 'corroded';
+      readonly stacks: number;
+      readonly maxStacks: number;
+      /**
+       * While these stacks hold, every shield the unit regains comes back this much slower: its
+       * own regeneration, an aura's and a pulse's (Gloop [Corrosive Kiss]: 0.5; T562). Optional.
+       */
+      readonly shieldRegenSlowPct?: number;
+    }
   | {
       readonly status: 'marked';
       readonly pct: number;

@@ -16,6 +16,8 @@
 // - **The regen delay** is untouched and doesn't stop it: the aura works under fire (that's why
 //   it's "kill it first"), and the unit's own regeneration still waits out its delay (status.ts).
 //   Both add up while both run.
+// - **Corrosive Kiss** (T562): a unit whose Corroded carries a shield slow regains the aura's rate
+//   times its `corrodedShieldMul` (0.5), so the Gloop is a counter (enemies.md § 3).
 // - **Interrupts** don't stop it: Stasis and Unnerved cancel abilities with a tell (§ 2.4), and an
 //   aura has none. A Pin, a jam, or a hush changes nothing either.
 // Story difficulty's −30% shields scales the rate with the shield (systems/waves.ts `scaledEnemy`),
@@ -63,7 +65,7 @@ export function shieldAuraPass(state: SimState, ctx: TickContext): void {
       if (dx * dx + dy * dy <= aura.radiusSq) best = aura.shieldPerTick;
     }
     if (best === 0) continue;
-    const next = a.shieldHp + best;
+    const next = a.shieldHp + best * a.corrodedShieldMul; // Corrosive Kiss slows it (T562)
     a.shieldHp = next < max ? next : max;
   }
 }

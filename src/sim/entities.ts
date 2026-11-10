@@ -215,6 +215,12 @@ export interface Enemy extends PoolEntity {
   /** Corroded: −1 armor per stack; every stack expires together when the timer runs out. */
   corrodedStacks: number;
   corrodedTicks: number;
+  /**
+   * While Corroded holds, every shield gain is multiplied by this (1 = none; Corrosive Kiss 0.5):
+   * own regen (systems/status.ts), auras and pulses (enemyAbilities/). Lowest source wins; it
+   * resets with the stacks (T562).
+   */
+  corrodedShieldMul: number;
   /** Marked: +markPct damage taken from all sources (highest only), active while markTicks > 0. */
   markPct: number;
   markTicks: number;
@@ -313,6 +319,7 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   soakedTicks: 0,
   corrodedStacks: 0,
   corrodedTicks: 0,
+  corrodedShieldMul: 1,
   markPct: 0,
   markTicks: 0,
   spawnTick: 0,

@@ -249,12 +249,12 @@ describe('statuses (enemies.md §2.4)', () => {
   it('Corroded stacks to the source max, refreshes, and expires together', () => {
     const { state } = setup();
     const e = spawn(state, armored(6));
-    const corrode = { status: 'corroded', stacks: 2, maxStacks: 3 } as const;
+    const corrode = { status: 'corroded', stacks: 2, maxStacks: 3, shieldRegenMul: 1 } as const;
     applyEffects(e, [corrode]);
     applyEffects(e, [corrode]);
     expect(e.corrodedStacks).toBe(3);
     // A lower-max source never strips stacks.
-    applyEffects(e, [{ status: 'corroded', stacks: 1, maxStacks: 1 }]);
+    applyEffects(e, [{ status: 'corroded', stacks: 1, maxStacks: 1, shieldRegenMul: 1 }]);
     expect(e.corrodedStacks).toBe(3);
     const ticks = secToTicks(CORRODED_STACK_SEC);
     expect(e.corrodedTicks).toBe(ticks);

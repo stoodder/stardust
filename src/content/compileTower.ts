@@ -320,7 +320,12 @@ function compileEffect(ctx: Ctx, e: EffectDef, where: string): CompiledEffect {
     case 'unnerved':
       return { status: e.status, durationTicks: ticks(ctx, e.durationSec, where) };
     case 'corroded':
-      return { status: e.status, stacks: e.stacks, maxStacks: e.maxStacks };
+      return {
+        status: e.status,
+        stacks: e.stacks,
+        maxStacks: e.maxStacks,
+        shieldRegenMul: 1 - (e.shieldRegenSlowPct ?? 0),
+      };
     default:
       return assertNever(e);
   }

@@ -106,6 +106,22 @@ describe('validate: entities', () => {
       withTower({ ...s, tiers: [s.tiers[0], s.tiers[1], { cost: 1, effects: [overChill] }] }),
       'tower-range',
     );
+    // Corrosive Kiss's shield slow is a fraction in (0, 1) (T562).
+    const m = FIXTURE.towers.fx_mortar;
+    const kiss = (shieldRegenSlowPct: number) =>
+      withTower({
+        ...m,
+        specs: {
+          a: m.specs!.a,
+          b: {
+            ...m.specs!.b,
+            effects: [{ status: 'corroded', stacks: 3, maxStacks: 3, shieldRegenSlowPct }],
+          },
+        },
+      });
+    expect(validate(kiss(0.5))).toEqual([]);
+    rejects(kiss(1), 'tower-range');
+    rejects(kiss(0), 'tower-range');
   });
 
   it('[enemy-range] out-of-range enemy numbers', () => {
@@ -223,6 +239,33 @@ describe('validate: entities', () => {
 
   it('[campaign] a map listed twice', () => {
     rejects({ ...BASE, campaign: ['fx_map', 'fx_map'] }, 'campaign');
+  });
+
+  it('[vs-shielded] a vsShielded bonus only on towers whose attacks read damageOn (T563)', () => {
+    const resonance = (tower: 'fx_gun' | 'fx_mortar', raw: RawContent<IdSpace> = BASE) => ({
+      ...raw,
+      links: {
+        fx_resonance: {
+          id: 'fx_resonance',
+          name: 'Fx Resonance',
+          partners: [
+            { tower, bonuses: [{ stat: 'damage', pct: 0.2, vsShielded: true }] },
+            { tower: 'fx_sprinkler', bonuses: [{ stat: 'rate', pct: 0.1 }] },
+          ],
+        },
+      },
+    } satisfies RawContent<IdSpace>);
+    expect(validate(resonance('fx_gun'))).toEqual([]); // hitscan on every tier and spec
+    rejects(resonance('fx_mortar'), 'vs-shielded'); // a shell bakes its damage at launch
+    // One spec that switches to a shell is enough to refuse it.
+    const shellSpec = {
+      ...gun.specs!.b,
+      attack: { ...FIXTURE.towers.fx_mortar.tiers[0].attack!, damage: 50 },
+    };
+    rejects(
+      resonance('fx_gun', withTower({ ...gun, specs: { a: gun.specs!.a, b: shellSpec } })),
+      'vs-shielded',
+    );
   });
 });
 

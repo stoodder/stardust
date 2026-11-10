@@ -8,7 +8,8 @@
 // - When the timer runs out it fires (ShieldPulse 'fired') and restarts: every live unit of its
 //   faction with a shield, itself included, within `radiusTiles` (centres, any layer; not one
 //   that's leaving, burrowed, or Phased: nothing reaches those) gets `shield` back, never past its own max.
-//   `restored` counts the units that gained any. The regen delay is untouched: a pulse refills,
+//   `restored` counts the units that gained any; a unit under Corrosive Kiss's Corroded gains the
+//   amount times its `corrodedShieldMul` (T562). The regen delay is untouched: a pulse refills,
 //   it doesn't restart anyone's regeneration.
 // - A boss's timer waits while it's invulnerable between phases, like its other ability timers
 //   (enemies.md § 6); the timer carries across a phase change.
@@ -88,7 +89,7 @@ export function restoreShields(state: SimState, source: Enemy, pulse: CompiledPu
     const dx = a.x - source.x;
     const dy = a.y - source.y;
     if (dx * dx + dy * dy > pulse.radiusSq) continue;
-    const next = a.shieldHp + pulse.shield;
+    const next = a.shieldHp + pulse.shield * a.corrodedShieldMul; // Corrosive Kiss (T562)
     a.shieldHp = next < max ? next : max;
     restored++;
   }

@@ -51,7 +51,8 @@ function parSteps(): BuildStep[] {
     { wave: 9, upgrade: TOWER },
     { wave: 9, upgrade: MERGE_W },
     { wave: 10, upgrade: YARD_IN },
-    { wave: 10, upgrade: WALL_E },
+    // The east wall's Skyhook stays at tier 2 (T560): par trims its air defence, so the last
+    // flock costs it 6 in the dark.
     { wave: 10, upgrade: POCKET_W },
     { wave: 11, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
     { wave: 12, upgrade: SOUTH_MID },
@@ -238,7 +239,6 @@ export const SUNLANCE_PROBE: ScriptedBuild = {
     { wave: 9, upgrade: TOWER },
     { wave: 9, upgrade: MERGE_W },
     { wave: 10, upgrade: YARD_IN },
-    { wave: 10, upgrade: WALL_E },
     { wave: 10, upgrade: MERGE_E },
     { wave: 11, specialize: TOWER, spec: 'b' }, // Sunlance
     { wave: 12, upgrade: SOUTH_MID },

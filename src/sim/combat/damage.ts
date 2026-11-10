@@ -180,7 +180,8 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  *   stronger one is active does nothing; an equal one extends the duration.
  * - Soaked: refreshes (the longer of the remaining and the new duration).
  * - Corroded: adds stacks up to the attack's max (never removing stacks a higher-max source left)
- *   and refreshes the shared 5 s timer.
+ *   and refreshes the shared 5 s timer. A shield slow (Corrosive Kiss) keeps the strongest until
+ *   the stacks expire (`corrodedShieldMul`).
  * - Marked: highest only, like Chilled; a Truthlight Mark also stops evading (applyMarked).
  * - Stasis: never stacks or extends, then 2× immunity; a boss takes Chilled 50% (applyStasis).
  * - Pinned: never stacks or extends, then 1 s immunity; a boss takes Chilled 50% (applyPin).
@@ -202,6 +203,7 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         const capped = stacks < fx.maxStacks ? stacks : fx.maxStacks;
         if (capped > enemy.corrodedStacks) enemy.corrodedStacks = capped;
         enemy.corrodedTicks = CORRODED_TICKS;
+        if (fx.shieldRegenMul < enemy.corrodedShieldMul) enemy.corrodedShieldMul = fx.shieldRegenMul;
         break;
       }
       case 'marked':

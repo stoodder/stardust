@@ -226,7 +226,13 @@ export interface CompiledBomblets {
 export type CompiledEffect =
   | { readonly status: 'chilled'; readonly pct: number; readonly durationTicks: number }
   | { readonly status: 'soaked'; readonly durationTicks: number }
-  | { readonly status: 'corroded'; readonly stacks: number; readonly maxStacks: number }
+  | {
+      readonly status: 'corroded';
+      readonly stacks: number;
+      readonly maxStacks: number;
+      /** Shield gains while these stacks hold: 1 − EffectDef's `shieldRegenSlowPct` (1 = none). */
+      readonly shieldRegenMul: number;
+    }
   | {
       readonly status: 'marked';
       readonly pct: number;

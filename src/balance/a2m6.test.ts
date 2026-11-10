@@ -1,17 +1,19 @@
-// A2M6's tuning is robust where it matters (T522). As tuned, par wins at 17/22 (77.3%) on every seed,
-// holding every wave and losing all five in W14, where the last Rift Moth flock comes in full dark
-// with everything else (so par never earns Before the Dark; Story does). Ves'thara's Stillness on
+// A2M6's tuning is robust where it matters (T522, T560). As tuned, par wins at 16/22 (72.7%) on every
+// seed, holding every wave and losing all six in W14, where the last Rift Moth flock comes in full dark
+// with everything else and par's east-wall Skyhook is still tier 2 (so par never earns Before the
+// Dark; Story does). Ves'thara's Stillness on
 // W9's tight flock, frozen over the merge beside the watchtower's Prism, is worth W9 whole: without
 // the cast four Moths get through. Each no-counter build loses: without splash, W6–W7's clusters
 // drown it by W7 (act2.md: by W9); without air, the Rift Moths fly over it by W10. Both alts win
 // (50, 45.5); so does the Seeker Swarm alt (31.8), which runs here on the reference profile plus
 // the Skyhook's specs because the reference never owns them (D137; campaign.md § 4.9). The
-// Sunlance/Resonance probe (par with the Prism's Sunlance and a Resonance Zapcoil) wins at 86.4,
-// two integrity over par and still leaking in W14: it doesn't trivialize the late surges. The dark
+// Sunlance/Resonance probe (par with the Prism's Sunlance and a Resonance Zapcoil) wins at 72.7,
+// level with par and still leaking in W14: it doesn't trivialize the late surges. The dark
 // reaches full as W11 starts, so Goldie's W12 radio line plays in full dark (a countdown opens once
 // the previous wave finishes spawning, D135) in every reference run and under every shift. The
-// flocks make W14 noisy (±0.2 s moves par between 15 and 18 of 22), so the shifts ask every
-// harness check to pass, par in the band, rather than one integrity. The waves and builds are
+// flocks make W14 noisy (±0.2 s moves par between 15 and 16 of 22), so the shifts ask every
+// harness check to pass, par in the band, rather than one integrity. Par sits at 16/22, not the
+// curve's 68 (15/22): one integrity lower, a shift would drop it to 14/22 (63.6), out of the band. The waves and builds are
 // documented in docs/story/campaign/act2.md § A2M6.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
@@ -33,7 +35,7 @@ import { secToTicks } from '../shared/time.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const content = compileContent(RAW_CONTENT);
-const PAR_INTEGRITY = 17;
+const PAR_INTEGRITY = 16;
 const MAX_INTEGRITY = 22;
 
 const isMoth = (g: WaveGroup): boolean => g.enemy === 'riftmoth';
@@ -164,12 +166,12 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a2_m06', { seeds: 1 });
   const run = (build: string) => report.runs.find((r) => r.build === build && !r.repeat)!;
 
-  it('passes every harness check as tuned, par at 17/22 with its losses in W14', () => {
+  it('passes every harness check as tuned, par at 16/22 with its losses in W14', () => {
     expect(report.checks.filter((k) => !k.ok).map((k) => k.id)).toEqual([]);
     const par = run('par').result!;
     expect([par.integrity, par.maxIntegrity]).toEqual([PAR_INTEGRITY, MAX_INTEGRITY]);
     expect(par.waves.map((w) => w.integrityLost)).toEqual([
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
     ]);
     // Par leaks in the last three waves, so it never earns Before the Dark.
     expect(par.medals.challenge).not.toBe('earned');
@@ -209,9 +211,9 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const probe = runOn(content, 'sunlance');
     expect(probe.outcome).toBe('won');
     expect(probe.steps.every((s) => s.error === null)).toBe(true);
-    // 19/22 (86.4): two over par, still leaking in W14 (the surges come as crowds; a Sunlance
+    // 16/22 (72.7): level with par, still leaking in W14 (the surges come as crowds; a Sunlance
     // spends its ramp on one target at a time, and Resonance's bonus is against shields only).
-    expect(probe.integrity).toBe(19);
+    expect(probe.integrity).toBe(PAR_INTEGRITY);
     expect(probe.waves[13]!.integrityLost).toBeGreaterThan(0);
   });
 
