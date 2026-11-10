@@ -336,6 +336,7 @@ describe('through the router: Retry from wave N', () => {
       // Paused in W5's countdown, with the notice.
       expect(speed.value).toBe(0);
       expect(hud.notice.value?.text).toBe(resumedNotice(5));
+      expect(hud.notice.value?.banner).toBe(true); // two lines below the HUD's top row (D135)
       expect(host.sim.state.schedule.phase).toBe('countdown');
 
       playLog(host, run.log);

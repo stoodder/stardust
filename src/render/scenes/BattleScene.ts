@@ -629,6 +629,7 @@ export class BattleScene extends Phaser.Scene {
         this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },
       spawnFlags: this.#spawnFlags.shown,
       keepClear: this.#keepClear.size,
+      peekerRaised: this.#peeker?.raised === true,
       lighting: this.#lighting.look(),
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,

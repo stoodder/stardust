@@ -73,8 +73,13 @@ export interface RenderState {
   readonly nameTag: { readonly uid: number; readonly text: string } | null;
   /** "Incoming" flags standing on the next wave's spawns (T326). */
   readonly spawnFlags: number;
-  /** Spots kept clear of floaters and the name plate now (D134 K2: armed clickables, a lift). */
+  /**
+   * Spots kept clear of floaters, the name plate and enemies' health bars and tell glyphs now
+   * (D134 K2, D135: armed clickables, a lift).
+   */
   readonly keepClear: number;
+  /** The Peeker's rock sorts raised over the walkers round it (held or lifting, D135). */
+  readonly peekerRaised: boolean;
   /**
    * The lighting grade (LightingView, D135): its color (white: none), whether it's the last thing
    * on the ground, and the world's scenery, how much of it is tinted, and how many of those are

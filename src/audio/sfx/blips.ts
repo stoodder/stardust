@@ -26,9 +26,11 @@ const SQUELCH: ToneLayer = {
 const VOICE = { priority: 3, minGapMs: 200, maxVoices: 1 } as const;
 
 /**
- * Every blip sits 5 dB under D134's one level (its loudest 50 ms ≈ −17.5 dBFS RMS before the
- * limiter, which each recipe's own gain below still evens out to): a lone blip stays well under the
- * strike's boom, and the line-start dip under it (synth.ts LINE_DIP) keeps it ≥ 6 dB over a storm.
+ * Blips sit back (D135): each recipe's own gain below evens the blips out to one level (D134: the
+ * loudest 50 ms at about −17.5 dBFS RMS before the limiter), and this sets them all 5 dB under it,
+ * so a lone blip peaks at −10 dBFS or under, well under the strike's boom. The line-start dip
+ * (synth.ts LINE_DIP) keeps each ≥ 6 dB over a storm. Peaky voices (Zibzab's buzz, QUILL's and
+ * Kip's notes) are shaped to stay under that peak.
  */
 const SIT_BACK = 10 ** (-5 / 20);
 
@@ -61,8 +63,8 @@ export const BLIP_SFX = {
         freq,
         glide: 1.33,
         glideSec: 0.04,
-        env: { a: 0.002, d: 0.025, s: 0.8, hold: 0.02 + i * 0.01, r: 0.02 },
-        gain: 0.7,
+        env: { a: 0.002, d: 0.025, s: 1, hold: 0.02 + i * 0.01, r: 0.02 },
+        gain: 0.52,
       })),
     ],
   },
@@ -125,8 +127,8 @@ export const BLIP_SFX = {
         glide: 1.5,
         glideSec: 0.07,
         filter: { type: 'lowpass', freq: 3500 },
-        env: { a: 0.003, d: 0.06, s: 0.5, hold: 0.03, r: 0.04 },
-        gain: 0.7,
+        env: { a: 0.003, d: 0.06, s: 0.7, hold: 0.03, r: 0.04 },
+        gain: 0.59,
       },
       {
         wave: 'pulse12',
@@ -163,15 +165,15 @@ export const BLIP_SFX = {
     layers: [
       SQUELCH,
       {
-        wave: 'pulse12',
+        wave: 'square',
         at: 0.065,
         freq: 311.13,
         glide: 0.94,
         glideSec: 0.12,
         vibrato: { hz: 14, cents: 40 },
-        filter: { type: 'lowpass', freq: 2500 },
-        env: { a: 0.005, d: 0.06, s: 0.8, hold: 0.08, r: 0.05 },
-        gain: 0.9,
+        filter: { type: 'lowpass', freq: 1800 },
+        env: { a: 0.005, d: 0.06, s: 1, hold: 0.08, r: 0.05 },
+        gain: 0.34,
       },
       { wave: 'sine', at: 0.27, freq: 2637, env: { a: 0.001, d: 0.05, s: 0, r: 0.04 }, gain: 0.3 },
     ],
@@ -216,7 +218,7 @@ export const BLIP_SFX = {
    */
   'blip.pebble': {
     ...VOICE,
-    gain: SIT_BACK,
+    gain: SIT_BACK * 0.89,
     layers: [
       {
         wave: 'triangle',

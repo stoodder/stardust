@@ -25,8 +25,10 @@ vi.mock('./audio.ts', async (orig) => ({
   ...(await orig<typeof import('./audio.ts')>()),
   playSfx: vi.fn(),
 }));
-const squeaks = (): number =>
-  vi.mocked(playSfx).mock.calls.filter(([id]) => id === 'peeker_squeak').length;
+const played = (sfx: string): number =>
+  vi.mocked(playSfx).mock.calls.filter(([id]) => id === sfx).length;
+const squeaks = (): number => played('peeker_squeak');
+const lightsUp = (): number => played('peeker_lights_up');
 
 const sim = (mapId: string) => createSim(battleConfig(mapId, 1, null));
 
@@ -107,15 +109,17 @@ describe('the Peeker', () => {
     expect(() => bindClickables(plain)()).not.toThrow();
   });
 
-  it("the Peeker's rock squeaks once as it lights up, never while a checkpoint replays (D134)", () => {
+  it("the Peeker's rock calls once as it lights up, never while a checkpoint replays (D135)", () => {
     vi.mocked(playSfx).mockClear();
     const host = createHost(sim('dev_click'));
     const off = bindClickables(host);
     host.sim.enqueue({ type: 'callWave' });
     host.fastForward(1);
-    expect(squeaks()).toBe(1);
+    // Its own lights-up call (D135), not the on-click squeak.
+    expect(lightsUp()).toBe(1);
+    expect(squeaks()).toBe(0);
     host.fastForward(30);
-    expect(squeaks()).toBe(1); // armed once a run: one squeak
+    expect(lightsUp()).toBe(1); // armed once a run: one call
     off();
     // The same run replayed to a later tick: it arms again in the replay, silently.
     vi.mocked(playSfx).mockClear();
@@ -127,7 +131,31 @@ describe('the Peeker', () => {
     const off2 = bindClickables(resumed);
     resumed.catchUp();
     expect(resumed.sim.state.tick).toBe(tick);
-    expect(squeaks()).toBe(0);
+    expect(lightsUp() + squeaks()).toBe(0);
     off2();
+  });
+
+  it('screen readers hear a rock already armed as a resumed battle binds, with no sound (D135)', () => {
+    const host = createHost(sim('dev_click'));
+    host.sim.enqueue({ type: 'callWave' });
+    host.fastForward(31);
+    expect(host.sim.state.clickable.length).toBeGreaterThan(0);
+    const tick = host.sim.state.tick;
+    const cp = checkpointOf({ wave: 1, tick }, host.sim.state.commandLog);
+    const resumed = createHost(sim('dev_click'), {
+      resume: resumeOf(host.sim.state.commandLog, cp),
+    });
+    // As app/battle.ts does: the replay runs first, then the clickables bind.
+    resumed.catchUp();
+    vi.mocked(playSfx).mockClear();
+    hud.announce.value = '';
+    const off = bindClickables(resumed);
+    expect(hud.announce.value).toBe(clickableText("The Peeker's rock"));
+    expect(lightsUp() + squeaks()).toBe(0);
+    off();
+    // A fresh battle with nothing armed yet hears nothing as it binds.
+    hud.announce.value = '';
+    bindClickables(createHost(sim('dev_click')))();
+    expect(hud.announce.value).toBe('');
   });
 });

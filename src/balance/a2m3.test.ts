@@ -1,6 +1,7 @@
 // A2M3's tuning is robust where it matters (T422, T460). As tuned, par wins at 16/21 (76.2%) on every
 // seed, its five lost late: three Lightwings in W9's big Aelari wave (before its Cloudburst lands)
-// and two Motes in W11. Its click on the Peeker's rock lands 1.2 s into W5's countdown. A player
+// and two Motes in W11. Its click on the Peeker's rock lands as the rock lights, once W3's Haulers
+// are gone (W3 cleared), 8.5 s before W4 starts: W4's long build phase, hands free. A player
 // who holds fire on every runner group still wins at 12/21 (57.1%, near the band's floor: mercy may
 // cost integrity, never most of it, D121): only W5's and W8's two Motes chasing the slow runners
 // get through while the hold lasts, and W10–W11's Zoomers outrun theirs. That player sets
@@ -13,8 +14,6 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { WaveGroup } from '../content/types.ts';
-import { COUNTDOWN } from '../content/maps/a2_m03/waves.ts';
-import { secToTicks } from '../shared/time.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
@@ -64,12 +63,32 @@ describe('A2M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const par = run('par').result!;
     expect([par.integrity, par.maxIntegrity]).toEqual([PAR_INTEGRITY, 21]);
     expect(par.waves.map((w) => w.integrityLost)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 2]);
-    // The rescue is par's own click in W5's build phase, as soon as its W4 Zapcoil is bought,
-    // 1.2 s into the countdown (the rock lights as it begins; D134), and the fallback never fires.
+    // The rescue is par's own click in W4's build phase: the rock lights as W3 is cleared, and par
+    // clicks on the next tick, 8.5 s before W4 starts (its Warden walks out 6 s later), so the
+    // fallback never fires. W4 itself is still being fought when W5 starts (its Warden), which is
+    // why the rock lights on W3's clear, not W4's.
+    const [w3, w4, w5] = [par.waves[2]!, par.waves[3]!, par.waves[4]!];
     const click = par.steps.find((s) => s.kind === 'interact')!;
     expect(click.error).toBeNull();
-    const countdownTick = par.waves[4]!.startTick - secToTicks(COUNTDOWN);
-    expect(click.issuedTick - countdownTick).toBe(secToTicks(1.2));
+    expect(click.issuedTick).toBe(w3.clearedTick + 1);
+    expect(w4.startTick - click.issuedTick).toBe(512); // 8.53 s at 60 Hz
+    expect(w4.clearedTick).toBeGreaterThan(w5.startTick);
+  });
+
+  it("lights the rock in W4's build phase, once W3 is cleared and before W4 starts, in every build", () => {
+    // Every run that doesn't call waves early clears W3 inside W4's countdown, before W4 starts
+    // (and so 6 s or more before anything of W4's spawns); the spared runners clear it soonest.
+    for (const r of report.runs) {
+      if (r.repeat || r.result === null || r.build === 'alwaysCallEarly') continue;
+      const [w3, w4] = [r.result.waves[2]!, r.result.waves[3]!];
+      expect(w3.clearedTick, r.build).toBeGreaterThan(0);
+      expect(w3.clearedTick, r.build).toBeLessThan(w4.startTick);
+    }
+    for (const b of ['holdFireWhile:fleeing', 'spareFleeing']) {
+      const r = run(b).result!;
+      const click = r.steps.find((s) => s.kind === 'interact')!;
+      expect([click.error, click.issuedTick], b).toEqual([null, r.waves[2]!.clearedTick + 1]);
+    }
   });
 
   it('lets a player who spares every runner win, and only that player sets the flag', () => {

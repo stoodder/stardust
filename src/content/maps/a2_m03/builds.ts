@@ -30,8 +30,8 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'zapcoil', tile: PUMP }, // the power node: +20% rate
     { wave: 2, upgrade: BENCH_8 },
     { wave: 3, build: 'sprinkler', tile: PUMP_S }, // Conductive with the pump's Zapcoil
+    { wave: 4, interact: 'peeker' }, // the click that pulls Pebble off the rock (non-blocking)
     { wave: 4, build: 'zapcoil', tile: SWITCH_E },
-    { wave: 5, interact: 'peeker' }, // the click that pulls Pebble off the rock (non-blocking)
     { wave: 5, build: 'skyhook', tile: GATE },
     { wave: 5, build: 'zapcoil', tile: T3_MID },
     { wave: 6, upgrade: PUMP },

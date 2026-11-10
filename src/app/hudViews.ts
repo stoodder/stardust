@@ -287,9 +287,15 @@ function mapEnemies(map: Pick<CompiledMapDef<IdSpace>, 'waves'>): Map<string, Ma
   return enemies;
 }
 
+/**
+ * A trait as the runner tooltip's list words it, where its chip label isn't an adjective (D135:
+ * "huddled", not the Huddle chip's noun).
+ */
+const RUNNER_TRAIT_WORDS: Readonly<Record<string, string>> = { huddle: 'huddled' };
+
 /** The runner chip's tooltip (D134): what the runners are, and that they don't hurt the core. */
 export function runnersTip(traits: readonly string[]): string {
-  const list = traits.map((t) => threatLabel(t).toLowerCase()).join(', ');
+  const list = traits.map((t) => RUNNER_TRAIT_WORDS[t] ?? threatLabel(t).toLowerCase()).join(', ');
   return list === ''
     ? "Runners · They don't hurt the core."
     : `Runners: ${list} · They don't hurt the core.`;

@@ -109,6 +109,7 @@ describe('sound effect recipes', () => {
         'low_integrity',
         'medal_forfeit',
         'panic_squeak',
+        'peeker_lights_up',
         'peeker_squeak',
         'reject',
         'pulse_fire',
@@ -180,6 +181,19 @@ describe('sound effect recipes', () => {
       expect(r.minGapMs, id).toBeGreaterThan(0);
     }
     expect(SFX.rivet_shot.maxVoices).toBeLessThanOrEqual(3);
+  });
+
+  it("make the Peeker's rock lighting up about 6 dB over the squeaks around it (D135)", () => {
+    // Each squeak's loudest layer (the layers barely touch; smoke/audio.spec.ts measures the
+    // rendered peaks, 6.0 dB apart as built).
+    const loudest = (id: keyof typeof SFX): number =>
+      SFX[id].gain * Math.max(...SFX[id].layers.map((l) => l.gain));
+    const squeaks = Math.max(loudest('panic_squeak'), loudest('sad_squeak'));
+    const over = 20 * Math.log10(loudest('peeker_lights_up') / squeaks);
+    expect(over).toBeGreaterThan(4.5);
+    expect(over).toBeLessThan(7.5);
+    // Kin to the poke's squeak, and louder than it.
+    expect(loudest('peeker_lights_up')).toBeGreaterThan(loudest('peeker_squeak'));
   });
 
   it('make the alarms the loudest and highest priority', () => {

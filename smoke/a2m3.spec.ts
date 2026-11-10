@@ -1,9 +1,9 @@
 // T422: A2M3 *Second Look* rendered and played by par (`autoplay('par')`), in the save after A2M2
 // (`?save=after_a2m2&map=a2_m03`, so the story context has a save to record the rescue in; the
 // Sector map's normal flow into it is starMap.spec.ts's). The briefing (Bricks), the setup in the
-// gold light, W3's fleeing Haulers with their young in the sacks, the Peeker's rock lighting up as
-// W5's countdown begins with Pebble on it (the build phase, hands free; D134), the player's own
-// click and the rescue cue as a pausing panel that holds the battle until it's read (her plate
+// gold light, W3's fleeing Haulers with their young in the sacks, the Peeker's rock lighting up
+// with Pebble on it once they're gone (W3 cleared: W4's long build phase, hands free, before its
+// Warden), the player's own click and the rescue cue as a pausing panel that holds the battle until it's read (her plate
 // reads ???), Bricks naming her at W7 with her in his pocket, the dusk by W11, and the debrief's
 // pension line on Results. Before each shot the sim plays a moment at 1×, so the frame isn't a
 // fast-forward's pile. Fast text (`&fasttext=1`, T461) shows each line whole (one Next a line) and
@@ -116,14 +116,22 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
     clip: { x: hauler!.x - 60, y: hauler!.y - 70, width: 120, height: 100 },
   });
 
-  // W5's countdown begins: the rock lights up with Pebble on it, in the build phase. The player's
-  // own click, before par's (par clicks once its last W4 purchase is in).
+  // W3 is cleared, the Haulers gone: the rock lights up with Pebble on it, in W4's build phase,
+  // with nothing on the field. The player's own click, before par's (par clicks on the next tick).
   expect(await until(page, 'rock')).toBe(true);
   const phase = await page.evaluate(() => {
     const st = globalThis.__sd!.state()!;
-    return { phase: st.schedule.phase, wave: st.schedule.countdownWave };
+    let alive = 0;
+    for (let i = 0; i < st.enemies.used; i++) if (st.enemies.items[i]!.alive) alive++;
+    return {
+      phase: st.schedule.phase,
+      countdown: st.schedule.countdownWave,
+      wave: st.wave,
+      w3cleared: st.schedule.resolved[2] === true,
+      alive,
+    };
   });
-  expect(phase).toEqual({ phase: 'countdown', wave: 5 });
+  expect(phase).toEqual({ phase: 'countdown', countdown: 4, wave: 3, w3cleared: true, alive: 0 });
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), ROCK);
   expect(at).not.toBeNull();
   await page.mouse.move(at!.x, at!.y);
@@ -135,8 +143,11 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   });
   await shot(page, 'a2m3', 5, 'rock');
   await page.mouse.click(at!.x, at!.y);
-  // Played at 1×: the click goes in on the next tick, the script cues the rescue the tick after,
-  // and the cue pauses the battle as a panel.
+  // Paused, the click applies on the next frame, so it's in before par's would be (par clicks on
+  // the tick after the rock lights). Then at 1× the script cues the rescue on the next tick, and
+  // the cue pauses the battle as a panel.
+  await nextFrames(page);
+  expect(await page.evaluate(() => [...globalThis.__sd!.state()!.interacted])).toEqual(['peeker']);
   await page.evaluate(() => globalThis.__sd!.setSpeed(1));
   const scene = page.getByRole('dialog', { name: 'Comms' });
   await expect(scene).toBeVisible({ timeout: 10_000 });

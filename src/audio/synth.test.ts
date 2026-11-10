@@ -17,6 +17,10 @@ import {
   MUSIC_TRIM,
   DUCK_ATTACK_SEC,
   DUCK_RELEASE_SEC,
+  LINE_DIP,
+  LINE_DIP_ATTACK_SEC,
+  LINE_DIP_RELEASE_SEC,
+  LINE_DIP_SEC,
   RADIO_DUCK,
   SFX_TRIM,
   SPEECH_SFX_DUCK,
@@ -165,6 +169,48 @@ describe('the synth', () => {
     expect(lastTarget(s.underSpeech.gain)).toBe(1);
   });
 
+  it('dips the under-speech bus a further 8 dB as each line starts, then lets it back (D135)', () => {
+    const { ctx, s } = synth();
+    // Its own gain after the held duck, so the two stack and neither cancels the other.
+    expect(reaches(s.underSpeech, s.lineDip)).toBe(true);
+    expect(reaches(s.lineDip, s.sfx)).toBe(true);
+    s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
+    ctx.currentTime = 2;
+    s.dipUnderSpeech();
+    const calls = fakeParam(s.lineDip.gain).calls.filter(([m]) => m === 'target');
+    expect(calls).toEqual([
+      ['target', LINE_DIP, 2],
+      ['target', 1, 2 + LINE_DIP_SEC],
+    ]);
+    expect(20 * Math.log10(LINE_DIP)).toBeCloseTo(-8, 5);
+    expect(LINE_DIP_SEC).toBeCloseTo(0.35);
+    // 30 ms down and 0.25 s back, each about 95% settled in three time constants.
+    expect(fakeParam(s.lineDip.gain).timeConstants).toEqual([
+      LINE_DIP_ATTACK_SEC / 3,
+      LINE_DIP_RELEASE_SEC / 3,
+    ]);
+    expect([LINE_DIP_ATTACK_SEC, LINE_DIP_RELEASE_SEC]).toEqual([0.03, 0.25]);
+    // The held duck is untouched.
+    expect(lastTarget(s.underSpeech.gain)).toBe(SPEECH_SFX_DUCK);
+    // An offline worst case with no ducking never dips.
+    const raw = new Synth(asContext(new FakeAudioContext()), { noDuck: true });
+    raw.dipUnderSpeech();
+    expect(fakeParam(raw.lineDip.gain).calls).toEqual([]);
+  });
+
+  it("hears the Peeker's rock light up over a line: never under speech's ducks (D135)", () => {
+    const { ctx, s } = synth();
+    expect(SFX.peeker_lights_up.priority).toBeLessThanOrEqual(UNDER_SPEECH_MAX_PRIORITY);
+    s.play('peeker_lights_up');
+    expect(reaches(ctx.started.at(-1), s.underSpeech)).toBe(false);
+    expect(reaches(ctx.started.at(-1), s.sfx)).toBe(true);
+    // Its kin, the poke's squeak, is a moment like any other.
+    s.play('peeker_squeak');
+    expect(reaches(ctx.started.at(-1), s.underSpeech)).toBe(true);
+    // Only the lights-up sound is heard over speech.
+    expect(SFX_IDS.filter((id) => 'overSpeech' in SFX[id])).toEqual(['peeker_lights_up']);
+  });
+
   it('never ducks or buries a line: blips outrank combat, ticks outrank the rattle (R10)', () => {
     for (const r of Object.values(BLIP_SFX)) expect(r.priority).toBe(3);
     expect(SFX.type_tick.priority).toBe(2);
@@ -184,6 +230,7 @@ describe('the engine', () => {
   it('is silent without WebAudio', () => {
     const e = createAudioEngine(() => null);
     e.unlock();
+    e.dipUnderSpeech();
     expect(e.play('build')).toBe(false);
     expect(e.status()).toMatchObject({ enabled: false, unlocked: false });
     expect(silentEngine(true).status().muted).toBe(true);

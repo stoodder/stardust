@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { worldDepth } from '../depth.ts';
+import { HALF_H } from '../iso.ts';
 import {
   KEEP_CLEAR_HALF_H_PX,
   KEEP_CLEAR_HALF_W_PX,
+  KEEP_CLEAR_RAISE_PX,
   KEEP_CLEAR_TILES,
   KeepClear,
 } from './keepClear.ts';
@@ -63,5 +66,19 @@ describe('KeepClear (D134 K2)', () => {
     expect(k.covers(190, 50, 210, 70)).toBe(false);
     k.clear();
     expect(k.covers(190, 80, 210, 100)).toBe(false);
+  });
+
+  it('raises an armed rock over the walkers round it, but not over the world further in front', () => {
+    // The rock's foot at y; it sorts as a prop KEEP_CLEAR_RAISE_PX further forward (PeekerView).
+    const y = 300;
+    const rock = worldDepth(y + KEEP_CLEAR_RAISE_PX, 'prop', 0xff);
+    // A walker anywhere in the footprint, or on the tile row in front of it (its head reaches up
+    // over the rock's base), sorts behind it, whatever its uid's tie-break.
+    for (let dy = -KEEP_CLEAR_HALF_H_PX; dy <= KEEP_CLEAR_HALF_H_PX + 2 * HALF_H; dy++) {
+      expect(worldDepth(y + dy, 'enemy', 0xff)).toBeLessThan(rock);
+    }
+    // A tower three rows in front still draws over it; so does a walker two rows past the footprint.
+    expect(worldDepth(y + 6 * HALF_H, 'tower', 0)).toBeGreaterThan(rock);
+    expect(worldDepth(y + KEEP_CLEAR_HALF_H_PX + 4 * HALF_H, 'enemy', 0)).toBeGreaterThan(rock);
   });
 });

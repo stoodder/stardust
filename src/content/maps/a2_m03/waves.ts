@@ -88,13 +88,12 @@ export const waves = defineWaves([
     groups: [run('hauler', 3, OPEN)],
   },
   // W4 · one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil]. The long build phase lets
-  // the Haulers walk out first.
+  // the Haulers walk out first [the rock lights up once they're gone: W3 cleared].
   {
     countdownSec: LONG_COUNTDOWN,
     groups: [wardens(1, OPEN), glimmers(6, OPEN + 4, 1.2)],
   },
   // W5 · a Mote cluster down the mine, then fleeing Skitterkin with the Hollow behind them
-  // [the rock lit up as its countdown began]
   {
     countdownSec: COUNTDOWN,
     groups: [

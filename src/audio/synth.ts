@@ -48,8 +48,9 @@ export const DUCK_RELEASE_SEC = 0.2;
  */
 export const UNDER_SPEECH_MAX_PRIORITY = 2;
 /**
- * The `underSpeech` bus's level while a line is spoken: −6 dB (R10; D134), so a speaker's blip
- * stands at least 6 dB over the mix (smoke/audio.spec.ts measures it in the ducked storms).
+ * The `underSpeech` bus's level while a line is spoken: −6 dB (R10; D134); with the line-start dip
+ * (LINE_DIP), a speaker's blip stands at least 6 dB over the mix (smoke/audio.spec.ts measures it
+ * in the ducked storms).
  */
 export const SPEECH_SFX_DUCK = 0.5;
 /**

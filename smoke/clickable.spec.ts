@@ -2,7 +2,9 @@
 // devBattle.ts): the Peeker's rock (9,6) is decor until W1 starts, then holds Pebble under a dashed
 // gold outline with the pointer hand on hover. A click (or, keyboard-only, the tile cursor and
 // Enter) issues `interact` into the command log and empties the rock; with no click, W1's clear
-// interacts by fallback. Screenshots in test-results/screens/clickable/.
+// interacts by fallback. While she can be reached and as she lifts, the rock sorts over the walkers
+// round it and their health bars hide near it (D135). Screenshots in
+// test-results/screens/clickable/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -34,6 +36,9 @@ const clicks = (page: Page) =>
     };
   });
 
+/** The rock sorts raised over the walkers round it (D135). */
+const raised = (page: Page) => page.evaluate(() => globalThis.__sd!.render()!.peekerRaised);
+
 const pointer = (page: Page) => page.evaluate(() => document.querySelector('canvas')?.style.cursor);
 
 async function rockClip(
@@ -64,6 +69,7 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   // Nothing draws over her while she can be reached (D134 K2): floaters and the name plate keep
   // clear of the armed rock.
   expect(await page.evaluate(() => globalThis.__sd!.render()!.keepClear)).toBe(1);
+  expect(await raised(page)).toBe(true);
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), ROCK);
   await page.mouse.move(at!.x, at!.y);
   await nextFrames(page);
@@ -77,8 +83,9 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await page.evaluate(() => globalThis.__sd!.fastForward(0));
   await nextFrames(page);
   expect(await clicks(page)).toEqual({ clickable: [], interacted: ['peeker'], interacts: 1 });
-  // As she lifts off the rock it's still kept clear (D134 K2).
+  // As she lifts off the rock it's still kept clear (D134 K2), and still over the walkers (D135).
   expect(await page.evaluate(() => globalThis.__sd!.render()!.keepClear)).toBe(1);
+  expect(await raised(page)).toBe(true);
   await page.mouse.move(at!.x + 1, at!.y);
   await nextFrames(page);
   expect(await pointer(page)).not.toBe('pointer');
@@ -125,4 +132,48 @@ test('clickable: with no click, W1 cleared reaches her by fallback', async ({ pa
   expect(await clicks(page)).toEqual({ clickable: [], interacted: ['peeker'], interacts: 0 });
   await nextFrames(page);
   await page.screenshot({ path: 'test-results/screens/clickable/06-fallback.png', clip });
+});
+
+test('clickable: walkers near the armed rock pass behind it with their health bars down', async ({
+  page,
+}) => {
+  await open(page, true);
+  // A Rivet by the road beside the rock, so the walkers come by hurt (their bars would show).
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.enqueue({ type: 'build', tower: 'rivet', tile: [8, 4] });
+    sd.fastForward(1);
+  });
+  // Step the sim (paused: speed 0) until a hurt walker is within 1.5 tiles of the rock's center,
+  // and another hurt one stands well away from it; let the views draw, then read their bars.
+  const seen = await page.evaluate(
+    async ([c, r]) => {
+      const sd = globalThis.__sd!;
+      const frame = () => new Promise((res) => requestAnimationFrame(() => res(null)));
+      const bars: { near: boolean | null; far: boolean | null } = { near: null, far: null };
+      for (let k = 0; k < 1500 && (bars.near === null || bars.far === null); k++) {
+        sd.fastForward(1);
+        const s = sd.state()!;
+        for (let i = 0; i < s.enemies.used; i++) {
+          const e = s.enemies.items[i]!;
+          if (!e.alive || e.def === null || e.hp >= e.def.hp) continue;
+          const d = Math.hypot(e.x - (c + 0.5), e.y - (r + 0.5));
+          const which = d < 1.45 ? 'near' : d > 2 ? 'far' : null;
+          if (which === null || bars[which] !== null) continue;
+          // oxlint-disable-next-line no-await-in-loop -- the views sync on the next frames
+          await frame();
+          // oxlint-disable-next-line no-await-in-loop -- as above
+          await frame();
+          bars[which] = sd.render()!.enemies.find((v) => v.uid === e.uid)?.bar ?? null;
+        }
+      }
+      return { ...bars, armed: sd.state()!.clickable.includes('peeker') };
+    },
+    [ROCK[0], ROCK[1]] as const,
+  );
+  expect(seen).toEqual({ near: false, far: true, armed: true });
+  await page.screenshot({
+    path: 'test-results/screens/clickable/07-walkers.png',
+    clip: await rockClip(page),
+  });
 });

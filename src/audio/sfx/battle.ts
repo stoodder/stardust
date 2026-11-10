@@ -105,7 +105,7 @@ export const BATTLE_SFX = {
    * a line (`overSpeech`): no line's duck ever buries it.
    */
   peeker_lights_up: {
-    gain: 0.55,
+    gain: 0.37,
     priority: 2,
     minGapMs: 500,
     maxVoices: 1,

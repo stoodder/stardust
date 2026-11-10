@@ -274,7 +274,7 @@ export interface HudNotice {
   readonly text: string;
   /**
    * A longer banner (the checkpoint resume's; D135): it wraps to two balanced lines, at most
-   * 320 px wide, centred below the HUD's top button row, clear of the corner panels.
+   * 310 px wide, centred below the HUD's top button row, clear of the corner panels.
    */
   readonly banner?: boolean;
 }

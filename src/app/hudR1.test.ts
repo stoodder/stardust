@@ -46,7 +46,7 @@ describe('runners on the threat strip (D134)', () => {
     expect(threats.map((t) => t.label)).toEqual(['Skittish', 'Hollow clusters']);
     expect(threats[0]?.glyph).toBe('icon.tell.skittish');
     expect(threats[0]?.tip).toBe(
-      "Runners: fast, flying, burrowing, armored, splitting, huddle · They don't hurt the core.",
+      "Runners: fast, flying, burrowing, armored, splitting, huddled · They don't hurt the core.",
     );
     expect(threats[1]?.tip).toBeNull();
   });

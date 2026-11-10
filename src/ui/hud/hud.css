@@ -622,12 +622,12 @@ section.chamfer,
   pointer-events: none;
 }
 
-/* A longer banner (the checkpoint resume's; D135): two balanced lines at most 320 px wide (640 on
+/* A longer banner (the checkpoint resume's; D135): two balanced lines at most 310 px wide (620 on
    screen), centred below the top-right button row (Menu, Mute, Pause, speeds: y 4–20), so it
-   never covers them, the callsign plate, or the wave panel (x 486 on). */
+   never covers them, the status panel's callsign plate (x ≤ 116), or the wave panel (x ≥ 481). */
 .hud-notice.banner {
   box-sizing: border-box;
-  max-width: 320px;
+  max-width: 310px;
   margin-top: 18px;
   text-align: center;
   text-wrap: balance;

@@ -212,11 +212,7 @@ export function CheckpointCueView() {
  * Whether the PAUSED notice shows (D026): paused while the map plays, unless a scene holds the
  * battle (a pausing panel or a full-screen scene; D135): its own opaque panel says so already.
  */
-export function showsPaused(
-  gameSpeed: number,
-  outcome: string,
-  scene: SceneMode | null,
-): boolean {
+export function showsPaused(gameSpeed: number, outcome: string, scene: SceneMode | null): boolean {
   if (gameSpeed !== 0 || outcome !== 'playing') return false;
   return scene === null || scene === 'briefing';
 }

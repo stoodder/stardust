@@ -1,5 +1,5 @@
 // Keep clear of what the player can reach (D134 K2, D135): while a world object is clickable (sim
-// `state.clickable`, A2M3's Peeker rock, armed once W4 is cleared) and as Pebble lifts off it,
+// `state.clickable`, A2M3's Peeker rock, armed in a build phase) and as Pebble lifts off it,
 // nothing drawn on top of the world covers it. Each spot is kept clear twice over:
 // - **on the grid**: nothing that rises from a point within KEEP_CLEAR_TILES of it (a floater
 //   spawned by a unit, a tower, a link) is drawn;
@@ -22,9 +22,10 @@ export const KEEP_CLEAR_HALF_H_PX = Math.ceil(KEEP_CLEAR_TILES * Math.SQRT2 * HA
 /**
  * How much further forward (screen px of foot y) an armed clickable sorts in the world while it can
  * be reached and as Pebble lifts off it: past every walker whose foot is inside the keep-clear
- * footprint, and the tile row in front of that (whose heads reach up over its base).
+ * footprint and on the tile row in front of it (whose heads reach up over its base), plus 1 px so
+ * a walker on that row's edge sorts behind it too.
  */
-export const KEEP_CLEAR_RAISE_PX = KEEP_CLEAR_HALF_H_PX + 2 * HALF_H;
+export const KEEP_CLEAR_RAISE_PX = KEEP_CLEAR_HALF_H_PX + 2 * HALF_H + 1;
 /** Spots at most (clickables armed at once, plus a lift). */
 const MAX_SPOTS = 8;
 
