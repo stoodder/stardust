@@ -75,7 +75,9 @@ describe('the Mote (art-direction §6)', () => {
       expect(count(f, '+*'), 'acid eyes, never many').toBeGreaterThanOrEqual(2);
       expect(count(f, '+*')).toBeLessThanOrEqual(4);
       expect(count(f, 'VU'), 'the unsung speck').toBe(1);
-      expect(count(f, '0123'), 'the drained body').toBeGreaterThan(30);
+      expect(count(f, '0123K'), 'the drained body').toBeGreaterThan(30);
+      // Its edge inked `ink.0` under the pale outline (U12), so clusters stay separate shapes.
+      expect(count(f, 'K'), 'the ink contour').toBeGreaterThanOrEqual(16);
     }
     // Small: it takes the small contact shadow.
     expect(d.size.w).toBeLessThanOrEqual(15);

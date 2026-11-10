@@ -16,7 +16,9 @@
 //   dark (`Tower.darkRangePct`, applied by bonuses.ts `bonusRangeTiles` after the stacking formula,
 //   outside the range cap, so targeting, a pulse's radius, a Skewer's length, and the HUD's
 //   towerStats all read the same range). Detection radii (the Lookout, Scanner Sweep) and allies'
-//   ranges don't change.
+//   ranges don't change. **Exempt** (D138; `darkDims`): a tower with no attack (the Lookout, the
+//   Crane: nothing to shorten), and one that detects as it attacks (the Seer's Lantern, whose
+//   beam reaches its detection radius, D137), so a Lantern never reveals what it can't mark.
 // - **When.** The darkness system runs after the towers act (tick order 7a): it sets `state.dark`
 //   and each tower's `lit` and `darkRangePct` from the state the tick leaves, which is what render
 //   draws, and the next tick's towers fire under it. A tower built this tick is lit or not by the
@@ -124,6 +126,16 @@ export function isLitAt(
   return false;
 }
 
+/**
+ * Whether the dark shortens a tower of this tier when unlit: it attacks, and it doesn't detect
+ * (the Lantern's beam reaches its detection radius, which the dark leaves alone; D138).
+ */
+export function darkDims(
+  tier: { readonly attack: unknown; readonly detect: unknown } | null,
+): boolean {
+  return tier !== null && tier.attack !== null && tier.detect === null;
+}
+
 /** An unlit tower's range multiplier at darkness `dark`: 1 − DARK_RANGE_PENALTY × dark. */
 export function darkRangeMul(dark: number, lit: boolean): number {
   return lit ? 1 : 1 - DARK_RANGE_PENALTY * dark;
@@ -146,6 +158,6 @@ export function darkness(state: SimState, ctx: TickContext): void {
     const t = pool.items[i]!; // i < used
     if (!t.alive) continue;
     t.lit = isLitAt(map.lights, pool, t.x, t.y);
-    t.darkRangePct = t.lit ? 0 : penalty;
+    t.darkRangePct = t.lit || !darkDims(t.tierDef) ? 0 : penalty;
   }
 }

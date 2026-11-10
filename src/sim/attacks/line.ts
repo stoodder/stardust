@@ -71,9 +71,12 @@ export function lineAttack(
   return atSkitterkin;
 }
 
-/** The line's length after the tower's range bonus (lengthTiles × bonus range / base range). */
+/**
+ * The line's length after the tower's range bonus and the dark (lengthTiles × its range / base
+ * range), so an unlit Skewer's line shrinks with its reach (D138).
+ */
 export function lineLengthTiles(attack: LineAttack, t: Tower): number {
-  if (t.flatRange === 0 && t.pctRange === 0) return attack.lengthTiles;
+  if (t.flatRange === 0 && t.pctRange === 0 && t.darkRangePct === 0) return attack.lengthTiles;
   return (attack.lengthTiles * bonusRangeTiles(attack, t)) / attack.rangeTiles;
 }
 

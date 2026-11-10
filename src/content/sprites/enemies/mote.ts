@@ -136,6 +136,9 @@ function mote(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
 /** Unsung stardust (art-direction §2 `stardust.unsung`): the cold violet the Hollow scatters into. */
 export const MOTE_LEGEND = { V: 'violet.3', U: 'violet.4' } as const;
 
+/** The Mote's own legend: unsung stardust's violet, and the body's `ink.0` contour (`K`). */
+export const MOTE_BODY_LEGEND = { ...MOTE_LEGEND, K: 'ink.0' } as const;
+
 const frames = {
   walk_se_0: mote('se', 0, 'walk'),
   walk_se_1: mote('se', 1, 'walk'),
@@ -159,8 +162,7 @@ export const enemyMote = defineSprite({
   anchor: { x: AX, y: AY },
   palette: 'hollow',
   outline: 'auto',
-  // Unsung stardust's violet, and the body's `ink.0` contour.
-  legend: { ...MOTE_LEGEND, K: 'ink.0' },
+  legend: MOTE_BODY_LEGEND,
   frames,
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2'], fps: 7 },

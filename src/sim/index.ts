@@ -98,6 +98,7 @@ export {
 export { isLinkActive, tileAndLinkRules } from './systems/links.ts';
 export {
   DARK_EASE_TICKS,
+  darkDims,
   darkRangeMul,
   hasDarkness,
   isLightSource,

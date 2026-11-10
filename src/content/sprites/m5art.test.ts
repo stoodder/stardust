@@ -212,11 +212,6 @@ function se(t: string): [string, string] {
   return t === 'lantern' ? [`tower.${t}_head`, 'glow_0'] : [`tower.${t}_head`, 'se'];
 }
 
-/** The share of a frame's sapphire that's lit glass. */
-function light(rows: readonly string[]): number {
-  return count(rows, '34') / count(rows, '01234');
-}
-
 describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
   it('stand on the floating Aelari dais: aelari palette, no Everglow logo or Vrell price tag', () => {
     for (const t of TOWERS) {
