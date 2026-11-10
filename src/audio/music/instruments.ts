@@ -63,6 +63,17 @@ export const INSTRUMENTS = {
       { wave: 'triangle', ratio: 2, env: { a: 0.002, d: 0.2, s: 0.2, r: 0.2 }, gain: 0.25 },
     ],
   },
+  /**
+   * Struck glass (the Aelari, T450): a sine with its inharmonic partial (2.76 ×, a bell's) that
+   * rings off first, so a note sounds like a lattice tapped.
+   */
+  glass: {
+    gain: 0.45,
+    layers: [
+      { wave: 'sine', env: { a: 0.002, d: 0.35, s: 0.35, r: 0.3 }, gain: 0.6 },
+      { wave: 'sine', ratio: 2.76, env: { a: 0.001, d: 0.12, s: 0, r: 0.08 }, gain: 0.25 },
+    ],
+  },
   /** A chiptune brass: a filtered square that swells a little. */
   brass: {
     gain: 0.4,

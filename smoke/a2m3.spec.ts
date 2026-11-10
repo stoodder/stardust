@@ -151,7 +151,6 @@ test('A2M3: the sacks, the rock, the click, and Pebble named', async ({ page }) 
   await page.waitForTimeout(1_500);
   await shot(page, 'a2m3', 7, 'cue-bricks');
   await expect(comms).toContainText('(squeak, smaller)', { timeout: 15_000 });
-  await page.waitForTimeout(2_500);
 
   // W7's radio: he names her, with her in his pocket.
   expect(await until(page, 'w7')).toBe(true);

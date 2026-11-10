@@ -1,6 +1,7 @@
-// One-shot music cues: the wave-clear sting, the win jingle, the loss sting, and the boss sting. The
-// wave-clear sting is the first "Everglow Bright" arrangement (`bright_sting`, architecture.md §
-// Audio); the later acts' arrangements join this file as their acts are built.
+// One-shot music cues: the wave-clear stings, the win jingle, the loss sting, and the boss stings.
+// The wave-clear stings are "Everglow Bright" arrangements (architecture.md § Audio): Act I's
+// `bright_sting`, Act II's `bright_minor` and `minor_sting`; the later acts' arrangements join
+// this file as their acts are built.
 import type { Song } from '../types.ts';
 import { KIT } from './instruments.ts';
 
@@ -135,6 +136,112 @@ export const BOSS_STING: Song = {
       gain: 0.7,
       pattern:
         'k . . . s . . . k . . . s . s s | k . . . . . . . s s s s s s s s | o . . . . . . . . . . . . . . .',
+    },
+  ],
+};
+
+/**
+ * Act II's wave-clear sting (the `minor_bridges` jingle, A2M1–A2M3): the same six notes, but the
+ * harmony slips to F minor under "Ev-er-glow" and a sighing A-flat falls to G instead of landing
+ * home. It only *feels* off (act2.md: Bricks: "Jingle sounds different out here.").
+ */
+export const BRIGHT_MINOR: Song = {
+  id: 'bright_minor',
+  bpm: 150,
+  bars: 2,
+  loop: false,
+  tracks: [
+    {
+      layer: 'lead',
+      instrument: 'chime',
+      stepsPerToken: 2,
+      gain: 0.65,
+      pattern: 'G5 C6 E6 - F6 D6 C6 - | Ab5 - G5 - - - . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'bass',
+      stepsPerToken: 2,
+      gain: 0.6,
+      pattern: 'C3 - - - F2 - Ab2 - | G2 - - - - - . .',
+    },
+  ],
+};
+
+/**
+ * The jingle in minor (the `minor` jingle, A2M4–A2M6, from Second Harvest on): slower, the third
+ * flattened, over C minor and F minor, ending low on the tonic with nothing bright left in it.
+ */
+export const MINOR_STING: Song = {
+  id: 'minor_sting',
+  bpm: 112,
+  bars: 2,
+  loop: false,
+  tracks: [
+    {
+      layer: 'lead',
+      instrument: 'chime',
+      stepsPerToken: 2,
+      gain: 0.55,
+      pattern: 'G5 C6 Eb6 - F6 D6 C6 - | - - - - . . . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'pad',
+      stepsPerToken: 2,
+      gain: 0.55,
+      pattern: 'Eb4 - - - Ab4 - - - | G4 - - - . . . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'bass',
+      stepsPerToken: 2,
+      gain: 0.6,
+      pattern: 'C3 - - - F2 - - - | C2 - - - . . . .',
+    },
+  ],
+};
+
+/**
+ * The Glass Witch withdraws (A2M2, BossEnded): the fanfare again, but the brass climbs into A-flat
+ * and stops on the dominant, and a glass answer rings the phrase over it. She isn't beaten; she
+ * left. Not a victory lap.
+ */
+export const WITCH_STING: Song = {
+  id: 'witch_sting',
+  bpm: 150,
+  bars: 3,
+  loop: false,
+  tracks: [
+    {
+      layer: 'lead',
+      instrument: 'brass',
+      stepsPerToken: 2,
+      gain: 0.5,
+      pattern: 'G4 C5 E5 - F5 D5 C5 - | Ab4 - - - G4 - - - | - - - - . . . .',
+    },
+    {
+      layer: 'lead',
+      instrument: 'glass',
+      stepsPerToken: 2,
+      gain: 0.45,
+      pattern: '. . . . . . . . | G5 C6 Eb6 - F6 D6 C6 - | - - - . . . . .',
+    },
+    {
+      layer: 'base',
+      instrument: 'bass',
+      stepsPerToken: 2,
+      gain: 0.6,
+      pattern: 'C3 - C3 - F2 - F2 - | Ab2 - - - G2 - - - | G2 - - - . . . .',
+    },
+    {
+      layer: 'drums',
+      instrument: 'kick',
+      kit: KIT,
+      stepsPerToken: 1,
+      gain: 0.6,
+      pattern:
+        'k . . . s . . . k . . . s . . . | k . . . . . . . o . . . . . . . | . . . . . . . . . . . . . . . .',
     },
   ],
 };

@@ -44,6 +44,11 @@ export interface TileDressing {
    * from each back neighbour that stands higher (`GroundGrid.terraces`; T223). Absent with none.
    */
   readonly cliff?: readonly string[];
+  /**
+   * The road tile's edges that carry a kerb (`kerbEdges`, T430b): it shares them with another
+   * road tile no route steps across (A2M2's hairpin lanes). Absent with none.
+   */
+  readonly kerb?: readonly VergeEdge[];
   /** A prop on the tile's center (the core, wreckage, decor), or null. */
   readonly prop: (TileLook & { readonly anim: string | null }) | null;
   /**
@@ -75,6 +80,68 @@ export interface GroundGrid {
   readonly env?: string;
   /** A Protect map's asset (CompiledMapDef.asset): AssetView draws it, so its tile stays bare. */
   readonly asset?: { readonly marker: MarkerId } | null;
+  /**
+   * The map's routes (CompiledMapDef.routeList): ground paths say which way the road runs on a
+   * tile and where two lanes only lie side by side (`kerbEdges`). Absent: the road runs wherever
+   * its tiles touch.
+   */
+  readonly routeList?: readonly { readonly kind: string; readonly tiles: readonly GridPos[] }[];
+}
+
+/** Each grid's route steps (tile index pairs, low × 65536 + high), built once per grid. */
+const STEPS = new WeakMap<GroundGrid, ReadonlySet<number>>();
+
+/** The set of tile pairs some ground route steps between, or null for a grid without routes. */
+function routeSteps(g: GroundGrid): ReadonlySet<number> | null {
+  const routes = g.routeList;
+  if (routes === undefined) return null;
+  const cached = STEPS.get(g);
+  if (cached !== undefined) return cached;
+  const steps = new Set<number>();
+  for (const r of routes) {
+    if (r.kind !== 'path') continue;
+    for (let k = 1; k < r.tiles.length; k++) {
+      const a = r.tiles[k - 1]!; // k − 1 < length
+      const b = r.tiles[k]!;
+      steps.add(stepKey(a[1] * g.cols + a[0], b[1] * g.cols + b[0]));
+    }
+  }
+  STEPS.set(g, steps);
+  return steps;
+}
+
+function stepKey(a: number, b: number): number {
+  return a < b ? a * 65536 + b : b * 65536 + a;
+}
+
+/**
+ * Whether the road joins (col, row) to its neighbour (dc, dr) away: both are road and, on a grid
+ * with routes, a route steps between them (else touching is enough).
+ */
+function roadJoins(g: GroundGrid, col: number, row: number, dc: number, dr: number): boolean {
+  const c = col + dc;
+  const r = row + dr;
+  if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return false;
+  if (!isPathLike(g.tiles[r * g.cols + c])) return false;
+  const steps = routeSteps(g);
+  return steps === null || steps.has(stepKey(row * g.cols + col, r * g.cols + c));
+}
+
+/**
+ * A road tile's kerbed edges (T430b): each it shares with another road tile that no ground route
+ * steps across, so two lanes side by side read as two (A2M2's hairpin). None on a grid without
+ * routes, or off the road.
+ */
+export function kerbEdges(g: GroundGrid, col: number, row: number): VergeEdge[] {
+  const out: VergeEdge[] = [];
+  if (routeSteps(g) === null || !isPathLike(g.tiles[row * g.cols + col])) return out;
+  for (const [edge, dc, dr] of EDGES) {
+    const c = col + dc;
+    const r = row + dr;
+    if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) continue;
+    if (isPathLike(g.tiles[r * g.cols + c]) && !roadJoins(g, col, row, dc, dr)) out.push(edge);
+  }
+  return out;
 }
 
 /** The env palettes whose maps take Act II's looks (art-direction §3, §6). */
@@ -340,6 +407,8 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
   }
   const cliff = cliffFrames(g, col, row);
   if (cliff.length > 0) look = { ...look, cliff };
+  const kerb = kerbEdges(g, col, row);
+  if (kerb.length > 0) look = { ...look, kerb };
   // The dark edge: over grass (decor) only, so a pad, the road, and a block keep their read.
   const hush = grass ? hushFrame(g, col, row) : null;
   return hush === null ? look : { ...look, hush };
@@ -390,8 +459,9 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
   switch (t) {
     case '#':
     case 'C': {
-      // Treads run along the path: rows above or below mean it runs along the grid's y axis.
-      const alongY = isPathLike(at(col, row - 1)) || isPathLike(at(col, row + 1));
+      // Treads run along the path: a road joined above or below runs along the grid's y axis
+      // (where routes say so: a lane beside another isn't joined to it, `roadJoins`).
+      const alongY = roadJoins(g, col, row, 0, -1) || roadJoins(g, col, row, 0, 1);
       const ground: TileLook = { sprite: 'tile.path', frame: alongY ? 'tread_y' : 'tread_x' };
       return {
         ground,

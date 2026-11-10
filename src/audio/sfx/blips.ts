@@ -169,36 +169,51 @@ export const BLIP_SFX = {
       { wave: 'sine', at: 0.2, freq: 2637, env: { a: 0.001, d: 0.05, s: 0, r: 0.04 }, gain: 0.3 },
     ],
   },
-  /** Ves'thara: a glassy fifth with a glint of light, formal and unhurried. */
+  /**
+   * Ves'thara: struck glass, then a glassy fifth, formal and unhurried, and a loose strand a hair
+   * flat beating against it (the cut thread at her collar, out of tune; story/characters.md).
+   */
   'blip.vesthara': {
     ...VOICE,
-    gain: 0.26,
+    gain: 0.24,
     layers: [
+      // The strike: glass's inharmonic partial (2.76 × the root) rings off first.
+      { wave: 'sine', freq: 2428.8, env: { a: 0.001, d: 0.12, s: 0, r: 0.08 }, gain: 0.18 },
       {
         wave: 'sine',
         freq: 880,
-        vibrato: { hz: 5, cents: 8 },
-        env: { a: 0.03, d: 0.1, s: 0.6, hold: 0.08, r: 0.12 },
+        vibrato: { hz: 4, cents: 6 },
+        env: { a: 0.04, d: 0.12, s: 0.6, hold: 0.1, r: 0.16 },
         gain: 0.5,
       },
       {
         wave: 'sine',
-        at: 0.02,
+        at: 0.03,
         freq: 1318.5,
-        env: { a: 0.03, d: 0.12, s: 0.5, hold: 0.06, r: 0.12 },
-        gain: 0.35,
+        env: { a: 0.04, d: 0.12, s: 0.5, hold: 0.08, r: 0.16 },
+        gain: 0.3,
       },
-      { wave: 'triangle', freq: 2637, env: { a: 0.002, d: 0.08, s: 0, r: 0.05 }, gain: 0.15 },
+      // The cut thread: 11 cents under the fifth, so the two beat slowly.
+      {
+        wave: 'triangle',
+        at: 0.06,
+        freq: 1310.1,
+        env: { a: 0.05, d: 0.1, s: 0.4, hold: 0.05, r: 0.14 },
+        gain: 0.12,
+      },
     ],
   },
-  /** Pebble: a tiny, bright squeak and a hop up (softer than the Peeker's "eep!"). */
+  /**
+   * Pebble: the Peeker's "eep!" made small (she was the Peeker, so her voice is its kin): a tiny
+   * rising squeak, then a chirp falling away, higher and quicker than `peeker_squeak`.
+   */
   'blip.pebble': {
     ...VOICE,
-    gain: 0.28,
+    gain: 0.3,
     layers: [
       {
         wave: 'triangle',
-        freq: 1174.66,
+        freq: 1396.91,
         glide: 1.5,
         glideSec: 0.05,
         env: { a: 0.003, d: 0.05, s: 0, r: 0.02 },
@@ -206,11 +221,11 @@ export const BLIP_SFX = {
       },
       {
         wave: 'triangle',
-        at: 0.07,
-        freq: 1568,
-        glide: 1.25,
-        glideSec: 0.04,
-        env: { a: 0.002, d: 0.04, s: 0, r: 0.02 },
+        at: 0.075,
+        freq: 2093,
+        glide: 0.75,
+        glideSec: 0.05,
+        env: { a: 0.002, d: 0.05, s: 0, r: 0.02 },
         gain: 0.45,
       },
     ],

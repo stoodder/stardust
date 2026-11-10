@@ -14,6 +14,7 @@ import {
   hushFrame,
   inDressingArea,
   isActTwo,
+  kerbEdges,
   peekerCover,
   propVariant,
   soilFrame,
@@ -464,5 +465,39 @@ describe("Act II's looks (T440c)", () => {
       }
     }
     expect(dressTile(g, 3, 0).hush).toBe('d3');
+  });
+});
+
+describe('kerbs between lanes side by side (T430b)', () => {
+  const compiled = compileContent(RAW_CONTENT).maps['a2_m02']!;
+
+  it("kerbs A2M2's hairpin lanes, rows 4 and 5, and nowhere else", () => {
+    const kerbed: string[] = [];
+    for (let r = 0; r < compiled.rows; r++) {
+      for (let c = 0; c < compiled.cols; c++) {
+        for (const e of kerbEdges(compiled, c, r)) kerbed.push(`${c},${r},${e}`);
+      }
+    }
+    const expected: string[] = [];
+    for (let c = 10; c <= 14; c++) expected.push(`${c},4,sw`, `${c},5,ne`);
+    expect(kerbed.sort()).toEqual(expected.sort());
+    expect(dressTile(compiled, 12, 4).kerb).toEqual(['sw']);
+  });
+
+  it('runs the treads along the lane, not across to the lane beside it', () => {
+    expect(dressTile(compiled, 12, 4).ground.frame).toBe('tread_x');
+    expect(dressTile(compiled, 12, 5).ground.frame).toBe('tread_x');
+    // The hairpin's corner turns down to the lower lane: it runs along y.
+    expect(dressTile(compiled, 9, 4).ground.frame).toBe('tread_y');
+  });
+
+  it('draws no kerb on a map whose lanes never lie side by side, or without routes', () => {
+    for (const id of ['a1_m01', 'a1_m02', 'a1_m05', 'a2_m01', 'a2_m03']) {
+      const m = compileContent(RAW_CONTENT).maps[id]!;
+      for (let r = 0; r < m.rows; r++) {
+        for (let c = 0; c < m.cols; c++) expect(kerbEdges(m, c, r), `${id} ${c},${r}`).toEqual([]);
+      }
+    }
+    expect(kerbEdges(grid(['##', '##']), 0, 0)).toEqual([]);
   });
 });

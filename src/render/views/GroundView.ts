@@ -1,13 +1,18 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
 // front: by i + j, then i; the power node's pulse is the one animated tile; the map's grey-soil
-// dressing, the road's grass verge, any terrace cliff face, and a map's dark edge overlay their
+// dressing, the road's grass verge, a kerb between two lanes side by side (T430b), any terrace
+// cliff face, and a map's dark edge overlay their
 // tile; Act II's maps take Act II's looks, groundTiles' `isActTwo`), and what stands
 // on tiles depth-sorted in `world`: high-ground blocks (raised one step, `highGround` bias) and
 // props (core, fence, decor, and the map's decor markers). Drawn once per map. The apron lies
 // outside the grid, so picking never reaches it.
 import * as Phaser from 'phaser';
 import { worldDepth } from '../depth.ts';
+import { ENV_PALETTE_IDS, ENV_PALETTES } from '../../content/palettes/env.ts';
+import { rgbOf } from '../../content/palettes/master.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { kerbImage, type KerbEdge } from '../vfx/kerbPixels.ts';
 import { gridToScreen, HALF_H, tileImageTopLeft, type Vec2 } from '../iso.ts';
 import {
   apronCells,
@@ -20,6 +25,17 @@ import {
 import type { ViewContext } from './ViewContext.ts';
 
 const pos: Vec2 = { x: 0, y: 0 };
+
+/** The kerb overlay for `edge` in env `env` (vfx/kerbPixels.ts), registered on first use. */
+function kerbTexture(scene: Phaser.Scene, env: string, edge: KerbEdge): string {
+  const key = `ground.kerb.${env}.${edge}`;
+  if (scene.textures.exists(key)) return key;
+  const id = ENV_PALETTE_IDS.find((e) => e === env) ?? 'act1';
+  const slots = ENV_PALETTES[id];
+  const colors = { top: rgbOf(slots.s4), face: rgbOf(slots.a1), shadow: rgbOf(slots.s0) };
+  scene.textures.addCanvas(key, imageToCanvas(kerbImage(edge, colors)));
+  return key;
+}
 /** Apron cells' tie-break ids start above any map tile's. */
 const APRON_ID_BASE = 4096;
 
@@ -59,6 +75,11 @@ export function drawCell(
     layers.ground.add(
       new Phaser.GameObjects.Image(scene, pos.x, pos.y, sf.texture, sf.frame).setOrigin(0, 0),
     );
+  }
+  for (const edge of look.kerb ?? []) {
+    // A kerb between two lanes side by side (T430b): drawn in render from the env's ramps.
+    const key = kerbTexture(scene, env, edge);
+    layers.ground.add(new Phaser.GameObjects.Image(scene, pos.x, pos.y, key).setOrigin(0, 0));
   }
   for (const frame of look.verge ?? []) {
     const vf = sprites.frame('tile.verge', frame, ev);
