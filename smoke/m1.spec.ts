@@ -304,8 +304,11 @@ test("radio and leak feedback: the first leak plays QUILL's line and flashes the
   expect(integrity).toBeLessThan(20);
   const radio = page.getByRole('log', { name: 'Radio' });
   await expect(radio).toContainText('QUILL');
+  // Queued behind the line on the panel (the bank nudge, when it's up), which keeps its minimum
+  // read time once typed (D135: ~6.8 s for the nudge), so wait past it.
   await expect(radio).toContainText(
     'Pest escaped containment! (Toward... the wilderness? Odd. Logging it.)',
+    { timeout: 10_000 },
   );
   await expect(page.locator('.hud-leak-flash')).toBeAttached();
   await nextFrames(page);

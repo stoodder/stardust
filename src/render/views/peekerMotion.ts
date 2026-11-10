@@ -18,7 +18,7 @@ export const PEEKER_MARKER = 'peeker';
  * The Peeker's story state, read from the sim each frame (T409). `shy` on a map where its rock is
  * only a rock (Act I: it peeks and ducks). Where the map lists the `peeker` marker as a clickable
  * world object (A2M3, `scripted`): `holding` Pebble while it's clickable, and `empty` before (the
- * old rock stands bare until she turns up on it, from W5) and after (Bricks has her).
+ * old rock stands bare until she turns up on it, in a build phase) and after (Bricks has her).
  */
 export type PeekerHold = 'shy' | 'holding' | 'empty';
 
