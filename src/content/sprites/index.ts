@@ -145,6 +145,8 @@ import { enemyGlassWitch } from './enemies/glass_witch.ts';
 import { towerCrane, towerCraneHead } from './towers/crane.ts';
 import { towerHarpoon, towerHarpoonHead } from './towers/harpoon.ts';
 import { towerLookout, towerLookoutHead } from './towers/lookout.ts';
+// M5's placeholders under their final ids (T500a; the art tasks replace each).
+import * as m5 from './placeholders/m5.ts';
 
 export const SPRITES = [
   tileGrass,
@@ -201,6 +203,13 @@ export const SPRITES = [
   towerHarpoonHead,
   towerCrane,
   towerCraneHead,
+  // M5's Aelari towers (placeholders until T540b).
+  m5.towerPrism,
+  m5.towerPrismHead,
+  m5.towerMindspike,
+  m5.towerMindspikeHead,
+  m5.towerLantern,
+  m5.towerLanternHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
@@ -228,6 +237,15 @@ export const SPRITES = [
   enemyWeftWarden,
   enemyLightwing,
   enemyGlassWitch,
+  // M5's units (placeholders until T540a; the Penitent T540b).
+  m5.enemyVeilwalker,
+  m5.enemyBlinkstrider,
+  m5.enemyCantor,
+  m5.enemySunderglassPenitent,
+  m5.enemyGlimmerShard,
+  m5.enemyFracture,
+  m5.enemyFractureShard,
+  m5.enemyRiftmoth,
   allyBricks,
   projectileRivetTracer,
   projectileThumperShell,
@@ -273,6 +291,19 @@ export const SPRITES = [
   iconEnemyLightwing,
   iconEnemyGlassWitch,
   iconAbilityScannerSweep,
+  // M5's icons (placeholders until T540a and T540b).
+  m5.iconTowerPrism,
+  m5.iconTowerMindspike,
+  m5.iconTowerLantern,
+  m5.iconEnemyVeilwalker,
+  m5.iconEnemyBlinkstrider,
+  m5.iconEnemyCantor,
+  m5.iconEnemySunderglassPenitent,
+  m5.iconEnemyGlimmerShard,
+  m5.iconEnemyFracture,
+  m5.iconEnemyFractureShard,
+  m5.iconEnemyRiftmoth,
+  m5.iconAbilityStillness,
   iconCredits,
   iconCore,
   iconLock,

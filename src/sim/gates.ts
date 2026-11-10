@@ -276,7 +276,9 @@ interface GateTier {
   readonly attack?: {
     readonly kind?: AttackKind;
     /** A pulse's burst (Flash Freeze): its statuses are gated like the tier's own. */
-    readonly burst?: { readonly effects?: readonly { readonly status?: StatusId }[] } | null;
+    readonly burst?: {
+      readonly effects?: readonly { readonly status?: StatusId; readonly noEvade?: boolean }[];
+    } | null;
     readonly homing?: boolean;
     readonly volley?: number;
     readonly targetFilter?: object | null;

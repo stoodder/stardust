@@ -65,6 +65,12 @@ const A2M4: ProfileDef = {
  * Q3 Bonus) went to the Skitterkin (REFERENCE_ECONOMY.bankResetAfter).
  */
 const A2M5: ProfileDef = A2M4;
+/** Ves'thara's Prism Spire (a gift at A2M5's debrief) and Reinforced Core 2 before A2M6. */
+const A2M6: ProfileDef = {
+  ...A2M5,
+  towers: [...A2M5.towers, 'prism'],
+  shop: { ...A2M5.shop, reinforced_core: 2 },
+};
 
 /**
  * The reference profile before each campaign map (story/campaign.md § 4.9: Standard, first-clear
@@ -82,4 +88,5 @@ export const REFERENCE_PROFILES = {
   a2_m03: A2M3,
   a2_m04: A2M4,
   a2_m05: A2M5,
+  a2_m06: A2M6,
 } as const satisfies Partial<Record<CampaignMapId, ProfileDef>>;

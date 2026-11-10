@@ -18,7 +18,7 @@
 //   with their maps (meta-runtime.md lists them).
 import type { CampaignMapId } from '../content/campaign.ts';
 import type { FlagValueOf } from '../content/dialogue/flags.ts';
-import type { MapId, TowerId } from '../content/types.ts';
+import type { MapId, TowerId, UpgradeId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
 
 /** C2's three outcomes: the `stardust_choice` flag's values (campaign.md § 6.2). */
@@ -33,6 +33,9 @@ export const STORY_TRANSACTION_RULES = {
   windfallMin: 3,
   windfallMax: 8,
 } as const;
+
+/** C2 Sell's Zibzab Tune-up: a granted-only upgrade (content/upgrades/tuneUps.ts), owned at rank 1. */
+export const ZIBZAB_TUNE_UP: UpgradeId = 'tune_zibzab';
 
 /** The `story.granted` id the Q3 Bonus records (meta-runtime.md § Save system). */
 export const Q3_BONUS_GRANT = 'q3_bonus';
@@ -117,13 +120,13 @@ export type RunEndTransactionDef =
 
 /**
  * Each map's run-end transactions, in order (campaign data: story/campaign/act2.md, A2M4's
- * *Results* and A2M5's *Debrief*). A2M5's Prism gift joins once the Prism Spire is registered
- * (T500a's stub, then T504).
+ * *Results* and A2M5's *Debrief*).
  */
 export const RUN_END_TRANSACTIONS: Readonly<
   Partial<Record<CampaignMapId, readonly RunEndTransactionDef[]>>
 > = {
   a2_m04: [{ kind: 'q3_bonus' }],
+  a2_m05: [{ kind: 'gift', tower: 'prism' }],
 };
 
 /** What run end's step 6 reads about the run. */

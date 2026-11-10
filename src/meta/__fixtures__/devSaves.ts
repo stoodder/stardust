@@ -28,6 +28,7 @@ import {
   Q3_BONUS_GRANT,
   STORY_TRANSACTION_RULES,
   c2Windfall,
+  ZIBZAB_TUNE_UP,
   giftGrantId,
 } from '../storyTransactions.ts';
 
@@ -208,7 +209,7 @@ type C2Branch = 'returned' | 'sold';
  * A2M4's Results as the story transactions leave them (meta/storyTransactions.ts; T510 builds the
  * transactions, so this applies their documented effects directly): the Q3 Bonus paid and
  * recorded, then C2 for the whole bank: Return empties it; Sell empties it for the Intel windfall
- * and the Zibzab Tune-up (once its upgrade is registered). `stardust_choice` records the branch.
+ * and the Zibzab Tune-up. `stardust_choice` records the branch.
  */
 export function afterA2M4Results(save: SaveData, c2: C2Branch): SaveData {
   save.currencies.stardust += STORY_TRANSACTION_RULES.q3BonusStardust;
@@ -218,21 +219,9 @@ export function afterA2M4Results(save: SaveData, c2: C2Branch): SaveData {
   save.story.flags.stardust_choice = c2;
   if (c2 === 'sold') {
     save.currencies.intel += c2Windfall(bank);
-    const tuneUp = knownUpgrade(ZIBZAB_TUNE_UP_ID);
-    if (tuneUp !== undefined) save.upgrades[tuneUp] = 1;
+    save.upgrades[ZIBZAB_TUNE_UP] = 1;
   }
   return save;
-}
-
-/**
- * The Zibzab Tune-up's upgrade id (C2 Sell's grant, progression.md § 2.1): registered as a
- * granted-only upgrade by T500a; a dev save grants it once it exists.
- */
-const ZIBZAB_TUNE_UP_ID = 'zibzab_tune_up';
-
-/** The registered upgrade `id`, if it is registered yet. */
-function knownUpgrade(id: string): keyof typeof UPGRADES | undefined {
-  return Object.keys(UPGRADES).find((k): k is keyof typeof UPGRADES => k === id);
 }
 
 /** A2M5's debrief gift (act2.md § A2M5: Ves'thara gives the Prism Spire), once registered. */
@@ -435,13 +424,13 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
   after_a2m4_sold: {
     description:
       'after_a2m3_ref, then A2M4 won (Victory) with the Q3 Bonus paid and C2 taken as Sell ' +
-      '(stardust_choice = sold, the bank 0, the Intel windfall, the Zibzab Tune-up once ' +
-      'registered). Skipped while A2M4 is not registered.',
+      '(stardust_choice = sold, the bank 0, the Intel windfall, the Zibzab Tune-up). Skipped ' +
+      'while A2M4 is not registered.',
     build: () => actTwoThrough('a2_m04', { c2: 'sold' }),
   },
   after_a2m5: {
     description:
-      'after_a2m4_returned, then A2M5 won (Victory): the Prism Spire given (once registered) ' +
+      'after_a2m4_returned, then A2M5 won (Victory): the Prism Spire given ' +
       'and Xenotech open. Skipped while A2M5 is not registered.',
     build: () => actTwoThrough('a2_m05'),
   },

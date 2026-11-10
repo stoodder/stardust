@@ -38,8 +38,11 @@ describe('grant ids', () => {
 });
 
 describe('run end step 6 (runEndTransactions)', () => {
-  it("lists A2M4's Q3 Bonus as its run-end transaction", () => {
-    expect(RUN_END_TRANSACTIONS.a2_m04).toEqual([{ kind: 'q3_bonus' }]);
+  it("lists A2M4's Q3 Bonus and A2M5's Prism gift as the run-end transactions", () => {
+    expect(RUN_END_TRANSACTIONS).toEqual({
+      a2_m04: [{ kind: 'q3_bonus' }],
+      a2_m05: [{ kind: 'gift', tower: 'prism' }],
+    });
   });
 
   it('transacts only on a first win, in table order', () => {

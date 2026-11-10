@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { CAMPAIGN } from '../campaign.ts';
 import { RAW_CONTENT } from '../registry.ts';
 import type { IdSpace, MapDef, RawContent } from '../types.ts';
-import { validate } from '../validate.ts';
+import { DEFAULT_VALIDATION_RULES, validate } from '../validate.ts';
+import { LIVE_PURCHASE_RULES, type PurchaseRules } from '../validatePurchasable.ts';
 import { REFERENCE_ECONOMY, REFERENCE_PROFILES } from './reference.ts';
 
 /** campaign.md § 4.9's first-clear Stardust for the maps the stand-ins replace. */
@@ -16,9 +17,10 @@ const STARDUST = [
   ['a2_m03', 210],
   ['a2_m04', 225],
   ['a2_m05', 240],
+  ['a2_m06', 260],
 ] as const;
 
-/** The live campaign with every map through A2M5 present, unbuilt ones stood in. */
+/** The live campaign with every map through A2M6 present, unbuilt ones stood in. */
 function withRows(): RawContent<IdSpace> {
   const a1m5: MapDef<IdSpace> = RAW_CONTENT.maps.a1_m05;
   const maps: Record<string, MapDef<IdSpace>> = { ...RAW_CONTENT.maps };
@@ -44,8 +46,25 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
     expect(REFERENCE_ECONOMY.bankResetAfter).toEqual(['a2_m04']);
   });
 
-  it('prices the rows on the campaign timeline', () => {
-    expect(validate(withRows()).filter((e) => e.startsWith('[purchasable]'))).toEqual([]);
+  it("follows campaign.md § 4.9 into A2M6: the Prism Spire (A2M5's gift) and Reinforced Core 2", () => {
+    const { a2_m05, a2_m06 } = REFERENCE_PROFILES;
+    expect(a2_m06.towers).toEqual([...a2_m05.towers, 'prism']);
+    expect(a2_m06.specs).toEqual(a2_m05.specs);
+    expect(a2_m06.shop).toEqual({ ...a2_m05.shop, reinforced_core: 2 });
+  });
+
+  it('prices the rows on the campaign timeline (the Prism as its task will leave it)', () => {
+    // The Prism Spire is a stub until T504 lifts it, so its row waits for that (see below).
+    const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
+    const purchasable = (rules: PurchaseRules): string[] =>
+      validate(withRows(), { ...DEFAULT_VALIDATION_RULES, purchases: rules }).filter((e) =>
+        e.startsWith('[purchasable]'),
+      );
+    expect(purchasable(live)).toEqual([]);
+    // While the Prism is ahead of its task, A2M6's row is refused for it alone.
+    const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['prism'] });
+    for (const e of ahead)
+      expect(e).toMatch(/a2_m06\.referenceProfile.*'prism' waits for its task/);
   });
 
   it("checks A2M5's row against the bank C2 Return emptied", () => {

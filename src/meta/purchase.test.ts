@@ -74,9 +74,11 @@ describe('offers', () => {
     const fresh = createNewSave();
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
-    // Every upgrade but R&D's four, every protocol, and the four Vrell licenses (T408: the
-    // Harpoon's and Crane's joined the Zapcoil's and Lookout's).
-    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 4);
+    // Every sellable upgrade but R&D's four, every protocol, and the four Vrell licenses (T408:
+    // the Harpoon's and Crane's joined the Zapcoil's and Lookout's). Granted-only upgrades (C2's
+    // Zibzab Tune-up) never reach a shelf: the story gives them.
+    const sellable = Object.values(UPGRADES).filter((u) => u.kind !== 'grant').length;
+    expect(shop.length).toBe(sellable - 4 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
