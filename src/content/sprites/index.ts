@@ -43,7 +43,7 @@ import { fxConfettiBurst } from './fx/confetti_burst.ts';
 import { sceneRig9Feed } from './scenes/rig9_feed.ts';
 import { uiStarMarker, uiStarNode, uiStarPips } from './starmap/star.ts';
 import { fxShadow } from './fx/shadow.ts';
-import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
+import { iconEnemyBroodHauler, iconEnemyBroodHaulerFleeing } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
 import { iconAbilityOrbitalStrike } from './icons/orbital_strike.ts';
 import {
@@ -250,6 +250,7 @@ export const SPRITES = [
   iconEnemyZoomer,
   iconEnemyChonk,
   iconEnemyBroodHauler,
+  iconEnemyBroodHaulerFleeing,
   iconAbilityOrbitalStrike,
   iconAbilitySuppressingFire,
   iconTowerSkyhook,

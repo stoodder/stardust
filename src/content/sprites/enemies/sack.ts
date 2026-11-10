@@ -59,12 +59,13 @@ export interface SackShape {
  */
 // prettier-ignore
 export const YOUNG_HEAD = [
-  'L.L..',
-  '.M...',
-  '.EEC.',
-  'CWCWC',
-  'CKCKD',
-  'DDDDD',
+  '.L.L...',
+  '..M....',
+  '.xxxxx.',
+  'xEECCDx',
+  'xCWCWCx',
+  'xCKCKDx',
+  'xDDDDDx',
 ] as const;
 /** Rows a young head stands above its chin. */
 const HEAD_RISE = YOUNG_HEAD.length - 1;
@@ -79,7 +80,8 @@ export function sack(g: CharGrid, s: SackShape): void {
       const dx = (x + 0.5 - s.cx) / s.rx;
       const dy = (y + 0.5 - s.cy) / s.ry;
       // A bag sags: narrower at the top, full at the bottom.
-      const w = dy < 0 ? 1 - 0.35 * dy * dy : 1;
+      // An untied one gapes open at the mouth.
+      const w = dy < 0 ? 1 - (s.young === undefined ? 0.35 : 0.12) * dy * dy : 1;
       const d = Math.hypot(dx / w, dy);
       if (d > 1) continue;
       const lit = -0.7 * dx - 0.7 * dy;
@@ -104,8 +106,6 @@ export function sack(g: CharGrid, s: SackShape): void {
   }
   if (s.young !== undefined) {
     glitter(g, s);
-    // The untied mouth: a dark fold of burlap the young stand in.
-    for (let x = nx - 4; x <= nx + 5; x++) if (at(g, x, top + 1) !== '.') plot(g, x, top + 1, 'J');
     return;
   }
   // The tied neck and its knot, with two cloth ears.
@@ -133,11 +133,21 @@ export function sackMouth(s: SackShape): { readonly nx: number; readonly top: nu
  */
 export function youngHeads(g: CharGrid, s: SackShape, dy: number, step: 0 | 1): void {
   const { nx, top } = sackMouth(s);
-  const half = s.rx * 0.62;
-  const chin = top + dy;
-  stamp(g, Math.round(nx - half) - 2, chin - HEAD_RISE, YOUNG_HEAD);
-  stamp(g, Math.round(nx + half) - 1, chin - HEAD_RISE, YOUNG_HEAD);
-  stamp(g, nx - 2, chin - 1 + step - HEAD_RISE, YOUNG_HEAD);
+  const t = top + dy;
+  const half = Math.ceil(s.rx * 0.8);
+  // The two at the sides peep over the bag's top to their eyes; its front lip (lit burlap over a
+  // shaded fold) wraps round their chins.
+  const eyes = YOUNG_HEAD.findIndex((r) => r.includes('K'));
+  stamp(g, nx - half - 3, t - eyes + 1, YOUNG_HEAD);
+  stamp(g, nx + half - 3, t - eyes + 1, YOUNG_HEAD);
+  for (let x = nx - half - 3; x <= nx + half + 4; x++) {
+    if (at(g, x, t + 3) === '.') continue;
+    plot(g, x, t + 2, 'G');
+    plot(g, x, t + 3, 'H');
+  }
+  // The middle one stands up out of the mouth in front, two rows higher, holding still as the
+  // bag bobs (`step` 1 lifts the bag a row), so the three jostle each step.
+  stamp(g, nx - 3, t - eyes - 1 + step, YOUNG_HEAD);
 }
 
 /**

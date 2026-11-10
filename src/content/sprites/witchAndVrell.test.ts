@@ -237,7 +237,7 @@ describe('Act II effects and icons (T440b)', () => {
       loop: false,
     });
     // The young's eyes in the sack's mouth.
-    expect(count(grid('fx.sack_burst', 'young_0'), 'k')).toBeGreaterThanOrEqual(3);
+    expect(count(grid('fx.sack_burst', 'young_0'), 'K')).toBeGreaterThanOrEqual(6);
     expect(count(grid('fx.sack_burst', 'f0'), 'k')).toBe(0);
   });
 

@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { SPRITES } from '../index.ts';
 import type { SpriteDef } from '../types.ts';
+import { YOUNG_HEADROOM } from './sack.ts';
 
 function def(id: string): SpriteDef {
   const d: SpriteDef | undefined = SPRITES.find((s) => s.id === id);
@@ -155,8 +156,9 @@ function topOf(rows: readonly string[]): number {
 }
 
 /** The eyes in the top rows: the young's, in the sack's mouth, above the Hauler's own face. */
+/** The young's eyes (custom `K`, sack.ts YOUNG_HEAD) over the sack's rim, in the top rows. */
 function eyesUp(rows: readonly string[]): number {
-  return count(rows.slice(0, 8), 'k');
+  return count(rows.slice(0, 10), 'K');
 }
 
 describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
@@ -181,9 +183,11 @@ describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
     for (const id of fleeing) {
       const d = def(id);
       const base = def(id.replace(/_fleeing$/, ''));
-      // Its body's canvas with room on top for the hop: the same width and ground point.
-      expect(d.size, id).toEqual({ w: base.size.w, h: base.size.h + 2 });
-      expect(d.anchor, id).toEqual({ x: base.anchor.x, y: base.anchor.y + 2 });
+      // Its body's canvas with room on top for the hop: the same width and ground point (the
+      // Hauler's with room for its young's heads too, D134).
+      const room = 2 + (id === 'enemy.brood_hauler_fleeing' ? YOUNG_HEADROOM : 0);
+      expect(d.size, id).toEqual({ w: base.size.w, h: base.size.h + room });
+      expect(d.anchor, id).toEqual({ x: base.anchor.x, y: base.anchor.y + room });
       expect(d.variants, id).toBeUndefined();
       for (const a of ['walk', 'glance', 'panic']) {
         for (const f of ['se', 'sw', 'ne', 'nw'])
@@ -215,8 +219,16 @@ describe('the fleeing runners (art-direction §6, §8 Skittish)', () => {
   it("shows the Hauler's young in its untied sack, eyes and all", () => {
     const se = grid('enemy.brood_hauler_fleeing', 'walk_se_0');
     const act1 = grid('enemy.brood_hauler', 'walk_se_0');
-    // The young's huge eyes sit in the sack's mouth, above the Hauler's own face.
-    expect(eyesUp(se)).toBeGreaterThanOrEqual(6);
+    // Three young over the rim (D134), two eyes each, above the Hauler's own face, in every walk
+    // frame and both facings; the middle one jostles against the bag between the two steps.
+    expect(eyesUp(se)).toBe(6);
     expect(eyesUp(act1)).toBe(0);
+    for (const f of ['walk_se_1', 'walk_ne_0', 'walk_ne_1']) {
+      expect(eyesUp(grid('enemy.brood_hauler_fleeing', f)), f).toBe(6);
+    }
+    // Each head wears the youngling's seedling (green leaves over a stem).
+    expect(count(se.slice(0, 6), 'L')).toBeGreaterThanOrEqual(6);
+    // Behind them the sack is lit pale: more lit burlap than the Act I sack shows.
+    expect(count(se, 'G')).toBeGreaterThan(count(act1, 'G'));
   });
 });

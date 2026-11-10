@@ -42,11 +42,11 @@ function burst(k: number, young = false): string[] {
   const g = grid(W, H);
   if (k === 0 && young) {
     // Act II: the untied sack swells with its young crowding the mouth, a white split down it.
-    const bag = { cx: CX, cy: CY + 2, rx: 7, ry: 6, twinkle: 0, young: 'se' } as const;
+    const bag = { cx: CX, cy: CY + 3, rx: 7, ry: 6, twinkle: 0, young: 'se' } as const;
     sack(g, bag);
-    youngHeads(g, bag, 0, 0);
     for (let y = 9; y <= 13; y++) plot(g, Math.round(CX - 0.5 + (y % 2)), y, 'w');
     glitter(g, 4, 7, 9, 1, 0);
+    youngHeads(g, bag, 0, 0);
   } else if (k === 0) {
     // Swelling: the bag strains, a white split down its middle, the first sparkles escaping.
     sack(g, { cx: CX, cy: CY + 1, rx: 7, ry: 6.5, twinkle: 0 });

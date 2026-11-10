@@ -29,7 +29,7 @@ export const BLIP_SFX = {
   /** The Technician: an even, unhurried two-note "mm-hm" (they rarely speak unprompted). */
   'blip.player': {
     ...VOICE,
-    gain: 0.26,
+    gain: 1,
     layers: [
       SQUELCH,
       {
@@ -37,15 +37,15 @@ export const BLIP_SFX = {
         at: 0.04,
         freq: 659.25,
         steps: [[0.07, 1.335]],
-        env: { a: 0.004, d: 0.05, s: 0.5, hold: 0.05, r: 0.05 },
-        gain: 0.55,
+        env: { a: 0.004, d: 0.05, s: 0.5, hold: 0.06, r: 0.05 },
+        gain: 0.65,
       },
     ],
   },
   /** QUILL: two bright rising chirps, eager and precise. */
   'blip.quill': {
     ...VOICE,
-    gain: 0.3,
+    gain: 1,
     layers: [
       SQUELCH,
       ...[1568, 1760].map((freq, i) => ({
@@ -54,15 +54,15 @@ export const BLIP_SFX = {
         freq,
         glide: 1.33,
         glideSec: 0.04,
-        env: { a: 0.002, d: 0.04 + i * 0.01, s: 0, r: 0.02 + i * 0.01 },
-        gain: 0.5,
+        env: { a: 0.002, d: 0.025, s: 0.8, hold: 0.02 + i * 0.01, r: 0.02 },
+        gain: 0.7,
       })),
     ],
   },
   /** Bricks: one low, unimpressed "hm". */
   'blip.bricks': {
     ...VOICE,
-    gain: 0.32,
+    gain: 0.54,
     layers: [
       SQUELCH,
       {
@@ -89,7 +89,7 @@ export const BLIP_SFX = {
   /** Goldie: a warm, quick two-note lilt. */
   'blip.goldie': {
     ...VOICE,
-    gain: 0.32,
+    gain: 1,
     layers: [
       SQUELCH,
       {
@@ -98,7 +98,7 @@ export const BLIP_SFX = {
         freq: 523.25,
         steps: [[0.07, 1.19]],
         env: { a: 0.004, d: 0.05, s: 0.5, hold: 0.06, r: 0.06 },
-        gain: 0.6,
+        gain: 0.66,
       },
     ],
   },
@@ -108,7 +108,7 @@ export const BLIP_SFX = {
    */
   'blip.kip': {
     ...VOICE,
-    gain: 0.3,
+    gain: 1,
     layers: [
       SQUELCH,
       {
@@ -118,22 +118,22 @@ export const BLIP_SFX = {
         glide: 1.5,
         glideSec: 0.07,
         filter: { type: 'lowpass', freq: 3500 },
-        env: { a: 0.003, d: 0.06, s: 0.4, hold: 0.03, r: 0.04 },
-        gain: 0.5,
+        env: { a: 0.003, d: 0.06, s: 0.5, hold: 0.03, r: 0.04 },
+        gain: 0.7,
       },
       {
         wave: 'pulse12',
         at: 0.16,
         freq: 1760,
         env: { a: 0.001, d: 0.04, s: 0, r: 0.03 },
-        gain: 0.35,
+        gain: 0.3,
       },
     ],
   },
   /** Sterling: a sparkly major "ding-ding-ding!" (exclamation points, all of them). */
   'blip.sterling': {
     ...VOICE,
-    gain: 0.28,
+    gain: 0.93,
     layers: [
       SQUELCH,
       ...[1046.5, 2093].map((freq, i) => ({
@@ -152,21 +152,21 @@ export const BLIP_SFX = {
   /** Zibzab: a nasal merchant's buzz, then the clink of a coin. Price first. */
   'blip.zibzab': {
     ...VOICE,
-    gain: 0.3,
+    gain: 1,
     layers: [
       SQUELCH,
       {
         wave: 'pulse12',
-        at: 0.04,
+        at: 0.065,
         freq: 311.13,
         glide: 0.94,
         glideSec: 0.12,
         vibrato: { hz: 14, cents: 40 },
         filter: { type: 'lowpass', freq: 2500 },
-        env: { a: 0.005, d: 0.06, s: 0.6, hold: 0.06, r: 0.05 },
-        gain: 0.5,
+        env: { a: 0.005, d: 0.06, s: 0.8, hold: 0.08, r: 0.05 },
+        gain: 0.9,
       },
-      { wave: 'sine', at: 0.2, freq: 2637, env: { a: 0.001, d: 0.05, s: 0, r: 0.04 }, gain: 0.3 },
+      { wave: 'sine', at: 0.27, freq: 2637, env: { a: 0.001, d: 0.05, s: 0, r: 0.04 }, gain: 0.3 },
     ],
   },
   /**
@@ -175,7 +175,7 @@ export const BLIP_SFX = {
    */
   'blip.vesthara': {
     ...VOICE,
-    gain: 0.24,
+    gain: 0.79,
     layers: [
       // The strike: glass's inharmonic partial (2.76 × the root) rings off first.
       { wave: 'sine', freq: 2428.8, env: { a: 0.001, d: 0.12, s: 0, r: 0.08 }, gain: 0.18 },
@@ -209,7 +209,7 @@ export const BLIP_SFX = {
    */
   'blip.pebble': {
     ...VOICE,
-    gain: 0.3,
+    gain: 1,
     layers: [
       {
         wave: 'triangle',
@@ -217,7 +217,7 @@ export const BLIP_SFX = {
         glide: 1.5,
         glideSec: 0.05,
         env: { a: 0.003, d: 0.05, s: 0, r: 0.02 },
-        gain: 0.6,
+        gain: 1,
       },
       {
         wave: 'triangle',
@@ -226,14 +226,14 @@ export const BLIP_SFX = {
         glide: 0.75,
         glideSec: 0.05,
         env: { a: 0.002, d: 0.05, s: 0, r: 0.02 },
-        gain: 0.45,
+        gain: 0.72,
       },
     ],
   },
   /** Old Thrum: a slow, low, warm hum with a faint glass overtone (Ves'thara translates). */
   'blip.thrum': {
     ...VOICE,
-    gain: 0.3,
+    gain: 0.67,
     layers: [
       {
         wave: 'sine',
@@ -258,7 +258,7 @@ export const BLIP_SFX = {
   /** Bramble (Chitterbloom): a low, dryly unimpressed "hmph" between two chitters. */
   'blip.chitterbloom': {
     ...VOICE,
-    gain: 0.32,
+    gain: 1,
     layers: [
       {
         wave: 'sawtooth',
@@ -267,7 +267,7 @@ export const BLIP_SFX = {
         glideSec: 0.2,
         filter: { type: 'lowpass', freq: 700 },
         env: { a: 0.01, d: 0.1, s: 0.5, hold: 0.08, r: 0.08 },
-        gain: 0.5,
+        gain: 0.53,
       },
       ...[0, 0.09].map((at) => ({
         wave: 'noise' as const,
@@ -282,7 +282,7 @@ export const BLIP_SFX = {
   /** Compliance Officer Prim: two flat, identical beeps. Polite. Relentless. */
   'blip.prim': {
     ...VOICE,
-    gain: 0.26,
+    gain: 0.97,
     layers: [
       SQUELCH,
       ...[0.04, 0.15].map((at) => ({
@@ -298,7 +298,7 @@ export const BLIP_SFX = {
   /** Gerald: his delivery chime, "ding-dong" (he speaks in chimes and status text only). */
   'blip.gerald': {
     ...VOICE,
-    gain: 0.28,
+    gain: 0.68,
     layers: [
       {
         wave: 'sine',
@@ -322,7 +322,7 @@ export const BLIP_SFX = {
    */
   'blip.pa': {
     ...VOICE,
-    gain: 0.26,
+    gain: 1,
     layers: [392, 784].map((freq, i) => ({
       wave: i === 0 ? ('sine' as const) : ('triangle' as const),
       freq,
@@ -332,7 +332,7 @@ export const BLIP_SFX = {
       ] as const,
       filter: { type: 'bandpass' as const, freq: 1200, q: 0.7 },
       env: { a: 0.003, d: 0.08, s: 0.6, hold: 0.3, r: 0.15 },
-      gain: i === 0 ? 0.6 : 0.25,
+      gain: i === 0 ? 0.62 : 0.26,
     })),
   },
 } as const satisfies Readonly<Record<SpeakerBlipId, SfxRecipe>>;

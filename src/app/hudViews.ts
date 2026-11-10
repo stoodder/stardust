@@ -206,11 +206,12 @@ export function wavePreview(
     const isNew = !met.has(g.enemy.id) && !g.tags.includes('quiet_wave') && !neutral;
     const i = groups.findIndex((x) => x.enemy === g.enemy.id && x.air === air && x.spawn === spawn);
     const prev = groups[i];
+    const icon = previewIcon(g.enemy.sprites.icon, g.tags.includes('fleeing'));
     if (prev === undefined) {
       groups.push({
         enemy: g.enemy.id,
         label: g.enemy.name,
-        icon: g.enemy.sprites.icon,
+        icon,
         count: g.count,
         air,
         neutral,
@@ -220,10 +221,25 @@ export function wavePreview(
         newSpawn: spawn !== null && wave > 0 && !usedSpawns.has(spawnKey(g.route)),
       });
     } else {
-      groups[i] = { ...prev, count: prev.count + g.count, isNew: prev.isNew && isNew };
+      // A merged group shows the fleeing look if any of its groups flees (A2M3's Haulers).
+      groups[i] = {
+        ...prev,
+        count: prev.count + g.count,
+        isNew: prev.isNew && isNew,
+        icon: icon === g.enemy.sprites.icon ? prev.icon : icon,
+      };
     }
   }
   return { number: next.number, groups };
+}
+
+/**
+ * A preview group's icon: a fleeing group's `<icon>_fleeing` where that sprite is registered (the
+ * Hauler's untied sack with its young looking out, D134 R3), else the plain icon.
+ */
+export function previewIcon(icon: string, fleeing: boolean): string {
+  const look = `${icon}_fleeing`;
+  return fleeing && SPRITE_IDS.has(look) ? look : icon;
 }
 
 /** Whole seconds left in the countdown to the next wave (rounded up), or null when none runs. */
