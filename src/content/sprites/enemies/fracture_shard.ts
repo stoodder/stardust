@@ -53,17 +53,24 @@ function shard(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
       if (c === '.') continue;
       const yy = y + (x <= edge + 1 ? sink : 0);
       // The broken edge: violet glowing through the cracks in it, dimmer once it's fed (Heavy).
-      const lit = heavy ? (y + step) % 3 === 0 : (y + step) % 2 === 0;
-      const glint = !heavy && (y + step) % 3 === 0;
-      plot(g, x, yy, x === edge ? (lit ? 'V' : glint ? 'U' : '0') : c);
+      const lit = heavy ? y % 4 === step : (y + step) % 2 === 0;
+      // One bright glint along it, moving as it hobbles.
+      const glint = !heavy && y === 4 + step;
+      plot(g, x, yy, x === edge ? (glint ? 'U' : lit ? 'V' : '0') : c);
     }
   }
   stamp(g, edge - 2, H - legs.length, heavy ? legs.slice(0, 1) : legs);
   const fy = Math.round(cy);
   const top = Math.round(cy - ry);
   if (facing === 'se') {
-    // Half a ring where a face should be, on the round side; one big acid eye, one pinprick.
-    stamp(g, Math.round(cx) + 2, fy, tell ? ['ww.', 'kkw', 'kkw', 'ww.'] : ['w.', 'kw', 'w.']);
+    // Half a ring where a face should be, on the round side (swallowed dark once it's fed); one
+    // big acid eye, one pinprick.
+    const face = tell
+      ? ['ww.', 'kkw', 'kkw', 'ww.']
+      : heavy
+        ? ['k.', 'kk', 'k.']
+        : ['w.', 'kw', 'w.'];
+    stamp(g, Math.round(cx) + 2, fy, face);
     stamp(g, Math.round(cx), top + 1, ['*', '+']);
     if (step !== 1) plot(g, Math.round(cx) + 3, top + 2, '+');
   } else {

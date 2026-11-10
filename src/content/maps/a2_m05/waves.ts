@@ -43,7 +43,7 @@ export const COUNTDOWN = 25;
  * (and forces the pivot) PENITENT_WINDOW s after her, long before she could walk the 36-tile road
  * to the gate (0.35 tiles/s: 100 s).
  */
-export const PENITENT_WINDOW = 60;
+export const PENITENT_WINDOW = 75;
 /** A packed Mote cluster's spacing (seconds). */
 export const PACKED = 0.2;
 

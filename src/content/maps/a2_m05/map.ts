@@ -102,7 +102,7 @@ export const map = defineMapLayout({
     fifth: { route: 'road' },
     last: { route: 'road' },
   },
-  startCredits: 500,
+  startCredits: 550,
   stardust: 240,
   // The Aelari's shields and the Cantors' aura (shield), the Veilwalkers and the Penitent's
   // cloaked shards (detection), and the Hollow's clusters after the pivot (splash) are the map's
