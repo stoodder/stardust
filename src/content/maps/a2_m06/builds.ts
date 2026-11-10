@@ -55,7 +55,6 @@ function parSteps(): BuildStep[] {
     { wave: 10, upgrade: POCKET_W },
     { wave: 11, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
     { wave: 12, upgrade: SOUTH_MID },
-    STILL_W14,
   ];
 }
 
