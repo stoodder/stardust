@@ -5,6 +5,7 @@
 // a slit of light for its gaze, and a broad white-hot heart. It is the biggest Aelari line unit
 // on the road, so its shield bubble (render) is too. Its `walk` is a slow glide: a 1 px bob, the
 // hum, the fringe swinging (3 fps). From behind: no gaze, a dimmer heart.
+// Hurt, it frays (`fray1_`/`fray2_<facing>`, T501d; lattice.ts `frayLooks`).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { frayLooks, hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';

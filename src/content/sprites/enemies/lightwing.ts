@@ -4,6 +4,7 @@
 // tail threads trailing. Its silhouette is wide and pointed where the Puffwing's is round and
 // fluffy, so the two flyers never read alike. Render draws it 12 px up over a shadow; the sprite
 // only beats its wings (up, level, down, level; 6 fps) while the threads hum.
+// Hurt, it frays (`fray1_`/`fray2_<facing>`, T501d; lattice.ts `frayLooks`).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { frayLooks, hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
