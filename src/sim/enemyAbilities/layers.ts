@@ -24,6 +24,15 @@ export function untargetable(e: Enemy): boolean {
   return e.burrowed || e.phased || e.leaving || cloakedOut(e);
 }
 
+/**
+ * Whether `e` is off the field for enemy-side effects too (a shield pulse or aura): burrowed,
+ * Phased, or leaving (enemies.md § 2.6: nothing reaches those layers). A cloaked unit isn't: it
+ * hides from the player's towers, not from its own side (§ 2.5).
+ */
+export function outOfReach(e: Enemy): boolean {
+  return e.burrowed || e.phased || e.leaving;
+}
+
 /** Whether a hit on `e` deals nothing: untargetable, or a boss between phases. */
 export function immune(e: Enemy): boolean {
   return untargetable(e) || e.invulnerableTicks > 0;

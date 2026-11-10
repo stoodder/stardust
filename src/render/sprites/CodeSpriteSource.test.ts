@@ -50,6 +50,7 @@ describe('CodeSpriteSource', () => {
       },
     );
     const pages: string[] = [];
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test double for the parts register uses
     const scene = {
       textures: {
         addCanvas: (key: string) => {

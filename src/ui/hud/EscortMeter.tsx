@@ -1,7 +1,7 @@
 // The Escort's meter (T305c; core-loop § 2.9–2.10): while the map is an Escort, it stands in for
-// the core's meter: the label the map gives it ("Evacuated", "Sheltered"), refugees evacuated of
-// the map's total, and those lost against `maxLost`, red once one more would lose the map. The
-// minimal readout; T531 builds the real meter (the relabel moment, the lost pips).
+// the core's meter: the label the map gives it ("Evacuated", "Sheltered"), refugees evacuated, and
+// under it "of 12 · lost 1/6" (the map's total; lost against `maxLost`, red once one more loses the
+// map). The minimal readout; T531 builds the real meter (the relabel moment, the lost pips).
 import { hud } from '../state.ts';
 import { Icon } from './Icon.tsx';
 
@@ -20,11 +20,9 @@ export function EscortMeter() {
     >
       <Icon id="icon.core" />
       <span class="hud-label">{label}</span>
-      <span class="big num">
-        {m.evacuated}/{m.total}
-      </span>
+      <span class="big num">{m.evacuated}</span>
       <span class={last ? 'num danger' : 'num'} data-testid="escort-lost">
-        Lost {lost}
+        of {m.total} · lost {lost}
       </span>
     </div>
   );

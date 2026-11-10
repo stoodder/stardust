@@ -7,7 +7,7 @@
 //   (ShieldPulse 'tell' as it begins; `pulseTelling` for render).
 // - When the timer runs out it fires (ShieldPulse 'fired') and restarts: every live unit of its
 //   faction with a shield, itself included, within `radiusTiles` (centres, any layer; not one
-//   that's leaving or burrowed: nothing reaches those) gets `shield` back, never past its own max.
+//   that's leaving, burrowed, or Phased: nothing reaches those) gets `shield` back, never past its own max.
 //   `restored` counts the units that gained any. The regen delay is untouched: a pulse refills,
 //   it doesn't restart anyone's regeneration.
 // - A boss's timer waits while it's invulnerable between phases, like its other ability timers
@@ -21,6 +21,7 @@
 // `scaledEnemy`), so a pulse restores the same share of a weaker shield.
 import type { CompiledPulse } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
+import { outOfReach } from './layers.ts';
 import { emit, type SimState } from '../state.ts';
 import { isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -81,7 +82,7 @@ export function restoreShields(state: SimState, source: Enemy, pulse: CompiledPu
     const a = pool.items[i]!; // i < used ≤ items.length
     const d = a.def;
     if (!a.alive || d === null || d.shield === null || d.faction !== faction || d.neutral) continue;
-    if (a.leaving || a.burrowed) continue;
+    if (outOfReach(a)) continue; // leaving, burrowed, or Phased (layers.ts)
     const max = d.shield.hp;
     if (a.shieldHp >= max) continue;
     const dx = a.x - source.x;

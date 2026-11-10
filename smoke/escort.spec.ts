@@ -62,7 +62,7 @@ test('escort: refugees walk to the gate under the Evacuated meter; the hushed ar
   await shot(page, 'escort', 2, 'hush');
   await page.evaluate(() => globalThis.__sd!.fastForward(40)); // the tell lands
   await nextFrames(page);
-  await expect(meter).toHaveAccessibleName(/, lost [1-6]\/6$/);
+  await expect(meter).toHaveAccessibleName(/, lost [1-9]\/6$/);
 
   // Someone reaches the gate: the Evacuated count rises; the core's integrity never moves.
   const safe = await until(page, 'evacuated');

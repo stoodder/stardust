@@ -1204,8 +1204,9 @@ const riftMap = dev.defineMap({
 
 // dev_escort (T305c; registered from devM5.ts's plan): dev_act2 as an Escort from the start. Two
 // refugee groups (Pebble rides with the first) walk the west road to the gate, the core tile
-// (`safeExit`), while Motes come down the south-west road to the merge and follow the second group
-// in. `maxLost` 6. The escort smoke (smoke/escort.spec.ts) watches them walk, hushed and evacuated.
+// (`safeExit`), while W1's Motes come down the south-west road to the merge (ahead of everyone:
+// nobody is sheltered yet) and W2's follow the second group down the west road and catch it.
+// `maxLost` 6. The escort smoke (smoke/escort.spec.ts) watches them walk, hushed and evacuated.
 export const escortMap = dev.defineMap({
   ...act2Layout,
   id: 'dev_escort',
@@ -1221,7 +1222,7 @@ export const escortMap = dev.defineMap({
     { groups: [{ enemy: 'mote', count: 6, route: 'b', delaySec: 6, intervalSec: 0.3 }] },
     {
       countdownSec: 10,
-      groups: [{ enemy: 'mote', count: 8, route: 'a', delaySec: 8, intervalSec: 0.3 }],
+      groups: [{ enemy: 'mote', count: 8, route: 'a', delaySec: 15, intervalSec: 0.3 }],
     },
   ]),
   events: [
