@@ -228,7 +228,8 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     !('setObjective' in a) &&
     !('spawnAllies' in a)
   ) {
-    const key = Object.keys(a).join('/');
+    // An action is named by its first key (`revokeTowerClass`, not its `refundPct` beside it).
+    const key = Object.keys(a)[0] ?? '?';
     out.push(`${where}: action ${key} ${notYet(key)}`);
   }
 }

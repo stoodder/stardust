@@ -26,6 +26,8 @@ export const SKITTERKIN_DEATH_SOUNDS: Readonly<Record<SkitterkinDeath, SfxId | n
 export const FACTION_DEATH_SOUNDS: Readonly<Partial<Record<EnemyFaction, SfxId>>> = {
   aelari: 'aelari_shatter',
   hollow: 'hollow_unravel',
+  // Everglow Security's clean shutdown (T600a stub row: the plain pop until T650 draws its own).
+  everglow: 'enemy_pop',
 };
 
 /**

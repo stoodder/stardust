@@ -67,12 +67,7 @@
 // (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
-import {
-  BLOCKER_HEALTH_FLOOR,
-  MAX_CAMPAIGN_GRID_SPAN,
-  SALVAGE_MAX,
-  SALVAGE_MIN,
-} from './rules.ts';
+import { BLOCKER_HEALTH_FLOOR, MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
 import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';

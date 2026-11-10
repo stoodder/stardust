@@ -201,7 +201,7 @@ describe('settling objectives', () => {
       { ...CLEAN_AUDIT, onComplete: [{ setModifier: 'previewHidden', on: true }] },
     ]).maps.fx_map!;
     expect(unsupportedScript(map)).toEqual([
-      "objective 'clean_audit': action setModifier/on is not simulated yet",
+      "objective 'clean_audit': action setModifier is not simulated until T606",
     ]);
   });
 });

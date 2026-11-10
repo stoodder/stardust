@@ -53,9 +53,9 @@ describe('the M6 dev maps', () => {
   it('dev_revoke: Everglow Security, then the revocation inside W2 (T603, T606)', () => {
     expect(refused('dev_revoke')).toEqual([
       'a haste aura (expediter) is not simulated until T603',
-      "event 'revoke': action revokeTowerClass/refundPct is not simulated until T606",
+      "event 'revoke': action revokeTowerClass is not simulated until T606",
       "event 'revoke': action revokeAbility is not simulated until T606",
-      "event 'revoke': action setModifier/on is not simulated until T606",
+      "event 'revoke': action setModifier is not simulated until T606",
     ]);
   });
 

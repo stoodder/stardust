@@ -279,9 +279,9 @@ describe('validate: maps', () => {
   it('[feature] Choir objectives (Escort is content since T500a, Holdout since T600a)', () => {
     rejects(withMap({ objective: 'choir' }), 'feature');
     // A Holdout is content (createSim refuses it until T605); it needs refugees ([escort]).
-    expect(validate(withMap({ objective: 'holdout' })).filter((e) => e.startsWith('[feature]'))).toEqual(
-      [],
-    );
+    expect(
+      validate(withMap({ objective: 'holdout' })).filter((e) => e.startsWith('[feature]')),
+    ).toEqual([]);
     rejects(withMap({ objective: 'holdout' }), 'escort');
   });
 

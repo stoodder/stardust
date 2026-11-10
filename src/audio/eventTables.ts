@@ -87,6 +87,11 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   fracture: -4,
   fracture_shard: 4,
   riftmoth: 6,
+  // M6's units (T600a stub rows: T650 settles them): pitched by size like the rest.
+  maw: -6,
+  undertow: -5,
+  compliance: 1,
+  expediter: -1,
 };
 
 /** A splitter's death (a Bunchling, `split` in its content): this follows its pop, after `delay` s. */
@@ -182,6 +187,9 @@ export const ENEMY_LOOPS: Readonly<
   fracture: { id: 'hollow_hum', everySec: 9 },
   fracture_shard: { id: 'hollow_hum', everySec: 9 },
   riftmoth: { id: 'hollow_hum', everySec: 9 },
+  // M6's Hollow (T600a stub rows: T650 settles them).
+  maw: { id: 'hollow_hum', everySec: 9 },
+  undertow: { id: 'hollow_hum', everySec: 9 },
 };
 
 /** Burrowing (D073): digging in and surfacing, for a Digger or a burrowing boss. */
@@ -233,6 +241,8 @@ export const ABILITY_SOUNDS: Readonly<
   // Ves'thara's Stillness (T550): her held breath as it's cast; the freeze locks in on its
   // StasisArea (STASIS_SOUNDS' lock, as Flash Freeze's does).
   stillness: { cast: 'stillness_cast', land: [] },
+  // Bramble's Underfoot (T600a stub row: T650 gives it its own; the warren digging in for now).
+  underfoot: { cast: 'burrow_dig', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */
