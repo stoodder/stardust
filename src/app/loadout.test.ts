@@ -49,6 +49,8 @@ describe('the loadout screen (app side)', () => {
       ['skyhook', []],
       ['zapcoil', []], // plays since T304b; A1M2 asks only for Armor
       ['lookout', []], // plays since T406
+      ['harpoon', ['T1']], // plays since T408: anti-armor from tier 1
+      ['crane', []],
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -66,8 +68,10 @@ describe('the loadout screen (app side)', () => {
       'Conductive',
       'Overwatch', // the Lookout's (T406)
       'Skywatch',
+      'Reel It In', // the Harpoon's and Crane's (T408): the Crane gets nothing itself
     ]);
     expect(view.links[3]?.bonus).toContain('Lookout Shack +0.5 detection radius');
+    expect(view.links[5]?.bonus).toBe('Grapple Harpoon +10% fire rate, +3 credits per kill');
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');
     expect(view.links[2]?.bonus).toBe('Sprinkler Soaks for 3 s · Zapcoil +2 chain jumps');
     expect(view.initial).toEqual({
@@ -98,7 +102,7 @@ describe('the loadout screen (app side)', () => {
     expect(formedLinks(pick)).toEqual([]);
     expect(pickWarnings(pick)).toEqual([
       'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-        'Thumper would.',
+        'Thumper or Grapple Harpoon would.',
     ]);
     expect(savePick({ ...pick, ability: 'suppressing_fire' })).toEqual({ ok: true });
     const preset = { towers: ['sprinkler'], ability: 'suppressing_fire' };

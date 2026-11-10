@@ -1402,3 +1402,11 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **The Sector map is built** as D102 specs it: after A1M5 the campaign screen becomes Everglow's survey chart of the valley, showing won maps and the frontier only; every "Shift board" button reads "Sector map" then; the Shift board's sixth row is never named. Node places follow campaign.md §2's biome column; dusk takes a 32% shade wash so it reads apart from gold; the panel keeps clear of the selected node's plate. The marker's walk plays within a session only.
 - **The Pest Bounty Board** is the Base's last tab from A1M2 won until A2M6 won: Kip #1 (the player's count + 13 + 6%), the player #2, a few colonists (M. Haddad, P. Lindqvist, and Tidybot 4, "Honorary"); Kip's row reads "(on assignment: Reclamation)" once A2M4 is won.
 - The naming rule (D102) covers the Base shelves' "Arrives after {map}" too.
+
+### D126 — 2026-11-10 — T410b Act II presentation
+- **Every presentation dial is read through `presentationFor`/`presentationOfMap`;** nothing checks the act directly. Between maps, menus take the next map's row (they turn Act II orange once A1M5 is won); the Title and the intake stay Act I as Everglow's front door; dev maps take their act's row; challenge and endless maps the post-game row.
+- **Act II's Results stop cheering:** the kicker reads "Shift report · Filed" and the counter "Pests processed: n." on a plain steel line (no badge, star or brag; the career total stays). The headline stays "PERIMETER SECURED!" in every act — the cheer curdles by repetition (style-guide).
+- **Tidybots tidy up stardust:** each Skitterkin death leaves a speck of stardust, and after every wave but the last, Tidybots fly in, vacuum the specks and chime away — a quiet plant for "where stardust comes from".
+- **Act II's wave-clear jingle stays silent until T450 writes the minor cue;** it never falls back to Act I's bright sting. The loading tip comes from the slot Continue would open.
+- **Ruling:** radio lines at 2× scale their holds by game speed (≥ 1.5 s) and drop once their wave has started (T430b).
+- **Process:** `SMOKE_PORT` must avoid Chrome's unsafe ports (5061 is one); ad-hoc Playwright configs must never output into `./test-results` (it's wiped on each run).

@@ -50,6 +50,8 @@ describe('purchases in the save session', () => {
       'maxed', // the Lookout's (T406)
       'maxed', // Skyhook's and Zapcoil's (T407b)
       'maxed',
+      'maxed', // the Harpoon's and Crane's (T408)
+      'maxed',
     ]);
   });
 });

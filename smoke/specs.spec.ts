@@ -166,7 +166,7 @@ test('specs: without the unlock the choice is locked and says what opens it', as
   }, rivet.uid);
   await clickTile(page, [6, 1]);
   const panel = page.getByRole('region', { name: 'Rivet tower' });
-  await expect(panel).toContainText(/Engineering unlocks\s*after Shift 4/);
+  await expect(panel).toContainText(/Engineering unlocks\s*after The Audit/);
   const storm = panel.getByRole('button', { name: /^Specialize: Rivet Storm/ });
   await expect(storm).toHaveAttribute('aria-disabled', 'true');
   // Pressing it anyway: the sim refuses, and the notice says so.

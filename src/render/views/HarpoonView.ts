@@ -3,7 +3,7 @@
 // - **Pinned**, from sim state each frame (`Enemy.pinnedTicks`): a taut rope from the unit's body
 //   to a stake driven into the ground beside it. A pinned flyer's rope runs from its body (at
 //   flying height) straight down to a stake at its ground point, so "grounded" reads as pulled
-//   down. Rope `gold.2` (Vrell hemp) over a 1 px `ink.0` under-stroke; the stake a 2×5 px
+//   down. A 2 px rope in `gold.2` (Vrell hemp) over an `ink.0` under-stroke; the stake a 2×5 px
 //   `steel.4` post rimmed in `ink.0`.
 // - **Skewer's line** (`ProjectileFired`, kind `line`): the harpoon's line from the muzzle to the
 //   line's far end at body height, a 2 px `steel.4` shaft over an `ink.0` rim that fades out over
@@ -137,8 +137,8 @@ export class HarpoonView {
       // A flyer is pulled straight down to its ground point; a walker staked beside its feet.
       const sx = flyer ? a.x : a.x + STAKE_DX;
       const sy = flyer ? a.y : a.y + STAKE_DY;
-      g.lineStyle(3, INK, 0.7).lineBetween(a.x, bodyY, sx, sy - STAKE_H + 1);
-      g.lineStyle(1, ROPE, 1).lineBetween(a.x, bodyY, sx, sy - STAKE_H + 1);
+      g.lineStyle(4, INK, 0.7).lineBetween(a.x, bodyY, sx, sy - STAKE_H + 1);
+      g.lineStyle(2, ROPE, 1).lineBetween(a.x, bodyY, sx, sy - STAKE_H + 1);
       g.fillStyle(INK, 1).fillRect(sx - 2, sy - STAKE_H - 1, STAKE_W + 2, STAKE_H + 2);
       g.fillStyle(STAKE, 1).fillRect(sx - 1, sy - STAKE_H, STAKE_W, STAKE_H);
     }
