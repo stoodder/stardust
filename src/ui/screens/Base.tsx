@@ -137,7 +137,11 @@ export function Base() {
                 class={`sd-tab${t.id === tab ? ' sd-tab-on' : ''}${open ? '' : ' sd-tab-locked'}`}
                 // One name, said once (D138, U3): "Xenotech (new)", "Inbox (2 new)", "Shop (locked)";
                 // the lock and the NEW tag are only for the eyes.
-                aria-label={tabName(t.label, open, t.id === 'xenotech' && badge > 0 ? 'new' : badge)}
+                aria-label={tabName(
+                  t.label,
+                  open,
+                  t.id === 'xenotech' && badge > 0 ? 'new' : badge,
+                )}
                 aria-selected={t.id === tab}
                 aria-controls="sd-tab-pane"
                 tabIndex={t.id === tab ? 0 : -1}

@@ -44,7 +44,10 @@ async function until(page: Page, cond: Cond, max = 3000): Promise<number> {
 }
 
 /** How the unit `uid` draws now (its body's alpha and pose), or null. */
-async function drawn(page: Page, uid: number): Promise<{ alpha: number; pose: string } | null> {
+async function drawn(
+  page: Page,
+  uid: number,
+): Promise<{ alpha: number; pose: string; ghostRim: boolean } | null> {
   return page.evaluate(
     (u) => globalThis.__sd!.render()!.enemies.find((e) => e.uid === u) ?? null,
     uid,
@@ -92,6 +95,7 @@ test('phasing: the flicker tell, the Phased ghost, and the Fracture’s two-leve
   const ghostLook = (await drawn(page, ghost))!; // checked: it's drawn
   expect(ghostLook.alpha).toBeLessThanOrEqual(0.55);
   expect(ghostLook.pose).toBe('phase'); // T530a: its wings folded into a blade
+  expect(ghostLook.ghostRim).toBe(true); // review U10: a faint white rim keeps its shape
   const phases = await page.evaluate(() => globalThis.__sd!.render()!.phases);
   expect(phases.phased).toBeGreaterThan(0);
   expect(phases.phasedIn).toBeGreaterThan(0);

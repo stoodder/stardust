@@ -7,6 +7,7 @@ import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import {
+  darkDims,
   liveTileAt,
   sellValueInto,
   towerStats,
@@ -231,7 +232,7 @@ export function selectedView(
     beam === null ? [] : rampDelta(beam, t.def.tiers[t.tier]?.attack ?? null),
   );
   const statLine = statLineText(stats, t.tierDef);
-  const dark = darkTexts(t.darkRangePct, t.lit, state.dark);
+  const dark = darkTexts(t.darkRangePct, t.lit, state.dark, darkDims(t.tierDef));
   const bonusList = bonusTexts(
     tile,
     t,

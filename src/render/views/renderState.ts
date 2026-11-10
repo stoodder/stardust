@@ -18,6 +18,8 @@ export interface EnemyRenderState {
   readonly glyph: string | null;
   /** The rim it wears (EnemyDress.ts): none, heavy, hush, crystal, blink, or pulse. */
   readonly rim: string;
+  /** A Phased ghost's white rim outside its silhouette (review U10). */
+  readonly ghostRim: boolean;
   /** Its shield bubble, a held runner's hush ring, a Revealed unit's target bracket. */
   readonly bubble: boolean;
   readonly hushRing: boolean;

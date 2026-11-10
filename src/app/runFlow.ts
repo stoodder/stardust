@@ -31,7 +31,10 @@ export function flowScenes(
   const flow = resultsFlow(mapId);
   const ids =
     slot === 'before'
-      ? [...(flow.beforeResults ?? []), ...(flow.debriefAsScene === true ? [`${mapId}_debrief`] : [])]
+      ? [
+          ...(flow.beforeResults ?? []),
+          ...(flow.debriefAsScene === true ? [`${mapId}_debrief`] : []),
+        ]
       : (flow.afterResults ?? []);
   return ids.flatMap((id) => {
     const scene = lookup(id);

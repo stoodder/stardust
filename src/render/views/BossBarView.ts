@@ -15,8 +15,8 @@
 // in `blue.4` segments (3 on, 1 off, as the small bars draw it), flashing white as it breaks and
 // as it re-forms; while a shield-broken boss's shards count the wall back, a `blue.2` ghost grows
 // along the empty strip (review R6). A boss whose fight ends above 0 (`endAtPct`) has the end
-// mark there: a `white.1` tick edged in `ink.0` under a 3 px flag over the bar, the place the HP
-// stops (the Witch's retreat, the Penitent's kneel). Allocation-free per frame: the Graphics
+// mark there: a `white.1` tick edged in `ink.0` through the whole bar, standing on a 3 px flag
+// under it, the place the HP stops (the Witch's retreat, the Penitent's kneel). Allocation-free per frame: the Graphics
 // redraws only when what it shows changes.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -307,16 +307,18 @@ export class BossBarView {
     if (shielded) this.#drawShield(x, y + h + 1, w, shieldFlash);
     // Phase markers: a white tick through the HP, standing proud of it, edged in ink.
     for (const m of this.#marks) this.#tick(x + m, y, h);
-    // The end mark: the same tick under a flag, where the fight ends.
+    // The end mark: a tick through the whole bar (the strip too), standing on a flag under it.
     if (this.#end >= 0) {
       const mx = x + this.#end;
-      this.#tick(mx, y, h);
       const half = (END_FLAG_W - 1) / 2;
-      const top = y - MARK_OVERHANG_PX - 2;
+      const top = y - MARK_OVERHANG_PX;
+      const foot = y + bodyH + MARK_OVERHANG_PX; // the flag's row, under the frame
       g.fillStyle(C.frame, 1);
-      g.fillRect(mx - half - 1, top - 1, END_FLAG_W + 2, 3);
+      g.fillRect(mx - 1, top - 1, 3, foot - top + 1);
+      g.fillRect(mx - half - 1, foot - 1, END_FLAG_W + 2, 3);
       g.fillStyle(C.mark, 1);
-      g.fillRect(mx - half, top, END_FLAG_W, 1);
+      g.fillRect(mx, top, 1, foot - top);
+      g.fillRect(mx - half, foot, END_FLAG_W, 1);
     }
   }
 

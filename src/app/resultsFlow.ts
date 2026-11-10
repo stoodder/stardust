@@ -25,6 +25,7 @@ import {
 import type { StoryContext } from '../story/conditions.ts';
 import { advance, readThrough, type DialogueCursor } from '../story/runner.ts';
 import { resolveText } from '../story/text.ts';
+import { assertNever } from '../shared/types.ts';
 import type { SpokenLine } from '../ui/state.ts';
 import {
   runResult,
@@ -279,6 +280,8 @@ export function withResultsChoice(
       return withTransaction(result, opening.t, commitChoice(opening.t.save, record));
     case 'none':
       return result;
+    default:
+      return assertNever(opening);
   }
 }
 

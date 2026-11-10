@@ -19,7 +19,10 @@ import type { Host } from './host.ts';
  * after, from events whose `when` holds now (A2M5's W6 releases the first group only when the
  * Penitent hasn't already pivoted). Pebble isn't counted. 0 on a map without refugees.
  */
-export function refugeesWalking(sim: Pick<Sim<IdSpace>, 'map' | 'state' | 'config'>, wave: number): number {
+export function refugeesWalking(
+  sim: Pick<Sim<IdSpace>, 'map' | 'state' | 'config'>,
+  wave: number,
+): number {
   const escort = sim.map.escort;
   if (escort === null) return 0;
   const ctx = { content: sim.config.content, config: sim.config, map: sim.map };

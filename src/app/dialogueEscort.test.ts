@@ -11,7 +11,13 @@ import { dialogue } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import { battleConfig } from './battleSetup.ts';
 import { setSpeed } from './commands.ts';
-import { bindDialogue, escortLow, isHushableAlly, setDialogueEnabled } from './dialogue.ts';
+import {
+  bindDialogue,
+  escortLow,
+  isHushableAlly,
+  setDialogueEnabled,
+  skipScene,
+} from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
 import { initSaves } from './save.ts';
 
@@ -142,6 +148,40 @@ describe('A2M5 on the radio', () => {
     state.stats.refugeesLost = 99;
     at(100);
     emit(lost(300));
+    expect(shown()).toBeNull();
+  });
+});
+
+describe('the pivot ends a beat (D138)', () => {
+  let unbind: () => void = noop;
+  let host: Host<IdSpace>;
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setDialogueEnabled(true);
+    initSaves(new MemoryStore(), () => 1_793_000_000_000);
+    screen.value = 'battle';
+    setSpeed(1);
+    host = createHost(createSim(battleConfig('a2_m05', 1, null)));
+    unbind = bindDialogue(host, { briefing: false, newTowers: [] });
+    drain();
+  });
+  afterEach(() => {
+    unbind();
+    unbind = noop;
+    skipScene();
+    vi.useRealTimers();
+    screen.value = null;
+  });
+
+  it("drops her half-read challenge and her queued shield line: they never play past the pivot", () => {
+    host.bus.emit({ type: 'ScriptCue', cueId: 'a2_m05_cue_penitent' });
+    host.bus.emit({ type: 'ScriptCue', cueId: 'a2_m05_cue_shield' });
+    expect(shown()).not.toBeNull();
+    host.bus.emit({ type: 'ScriptCue', cueId: 'a2_m05_cue_pivot' });
+    expect(dialogue.scene.value?.sceneId).toBe('a2_m05_cue_pivot');
+    expect(skipScene()).toBe(true);
+    expect(dialogue.scene.value).toBeNull();
+    vi.advanceTimersByTime(100);
     expect(shown()).toBeNull();
   });
 });

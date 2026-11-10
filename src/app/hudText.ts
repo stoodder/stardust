@@ -362,9 +362,12 @@ export function bonusTexts(
 /**
  * The darkness's line in the tower panel (Sundown, T505; T531), among the bonus lines: an unlit
  * tower's lost range ("-15% range (dark)": the stat line's range already has it), or, while the
- * map is dark at all, a lit tower's "Lit: full range". Nothing on a map in daylight.
+ * map is dark at all, a lit tower's "Lit: full range". Nothing on a map in daylight, and nothing
+ * for a tower the dark can't dim (`dims` false, the sim's `darkDims`: no attack, as the Lookout and
+ * the Crane; or a beam that reaches its detection radius, as the Lantern; D138).
  */
-export function darkTexts(darkRangePct: number, lit: boolean, dark: number): string[] {
+export function darkTexts(darkRangePct: number, lit: boolean, dark: number, dims = true): string[] {
+  if (!dims) return [];
   if (darkRangePct > 0) return [`-${statNum(Math.round(darkRangePct * 1000) / 10)}% range (dark)`];
   return dark > 0 && lit ? ['Lit: full range'] : [];
 }

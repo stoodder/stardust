@@ -214,6 +214,8 @@ export const GHOST_DASH_PX = 2;
 export const GHOST_GAP_PX = 2;
 /** The ghost disc's colour: the Prism's cold light (WorldGlowView's pool), as a promise. */
 export const GHOST_COLOR: ColorName = 'blue.4';
+/** The ghost's dashes carry a 1 px under-stroke (the range rings'), so they read on gold. */
+export const GHOST_UNDER: ColorName = 'ink.0';
 
 /** A ghost disc's pixels, and the pixel corner its source's ground point sits on. */
 export interface GhostDisc {
@@ -227,8 +229,10 @@ export interface GhostDisc {
  * one): only its rim, dashed, in `color`, so it promises light without reading as lit. The rim is
  * the edge of exactly the disc the dark mask clears (the same per-pixel test, `stampDiscs`): the
  * disc's pixels with a 4-neighbour outside it. The dashes run round the rim by angle (2 on, 2
- * off). The source's ground point is the image's pixel corner (`cx`, `cy`), as a tile centre
- * lands on a pixel corner on screen. Its inside stays clear: nothing under a ghost lightens.
+ * off), each over a 1 px `ink.0` under-stroke where the pixel under it is clear (as the range
+ * rings carry), so the dashes read on A2M6's gold before the dark. The source's ground point is
+ * the image's pixel corner (`cx`, `cy`), as a tile centre lands on a pixel corner on screen. Its
+ * inside stays clear but for those under-strokes: nothing under a ghost lightens.
  */
 export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR): GhostDisc {
   const r = Math.sqrt(Math.max(0, radiusSq));
@@ -266,6 +270,20 @@ export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR)
     data[o + 1] = c.g;
     data[o + 2] = c.b;
     data[o + 3] = 255;
+  }
+  // The under-strokes, bottom-up, so one never lands on a dash.
+  const u = rgbOf(GHOST_UNDER);
+  for (let y = h - 1; y >= 1; y--) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      const above = o - w * 4;
+      if (data[o + 3] !== 0 || data[above + 3] === 0) continue;
+      if (data[above] !== c.r || data[above + 1] !== c.g || data[above + 2] !== c.b) continue;
+      data[o] = u.r;
+      data[o + 1] = u.g;
+      data[o + 2] = u.b;
+      data[o + 3] = 255;
+    }
   }
   return { image: { w, h, data }, cx, cy };
 }

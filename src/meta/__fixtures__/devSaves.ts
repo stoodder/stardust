@@ -296,10 +296,11 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
     }
     save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
     if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
-    if (step === 'a2_m04' && plan.c2 === 'unanswered') {
+    const c2 = plan.c2 ?? 'returned';
+    if (step === 'a2_m04' && c2 === 'unanswered') {
       save = grantQ3Bonus(save).save;
-    } else if (step === 'a2_m04') {
-      save = afterA2M4Results(save, plan.c2 ?? 'returned');
+    } else if (step === 'a2_m04' && c2 !== 'unanswered') {
+      save = afterA2M4Results(save, c2);
       // Won A2M4, the player has seen the truth scene (Act II's jingle turns minor on it) and,
       // having entered the base since, Bricks's handover (app/baseScenes.ts HANDOVER_SCENE).
       save.story.seen.push(...A2M4_SEEN.filter((id) => !save.story.seen.includes(id)));

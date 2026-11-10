@@ -7,15 +7,14 @@ import { defineScene } from '../content/dialogue/define.ts';
 import { MemoryStore, ZIBZAB_TUNE_UP, type SaveData } from '../meta/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
 import { baseChoice } from '../ui/screens/state.ts';
-import { closeBaseChoice, dropBaseChoice, offerChoiceAtBase, pickBaseChoice } from './baseChoice.ts';
-import { HANDOVER_SCENE, playBaseScenesIfDue } from './baseScenes.ts';
 import {
-  closeScene,
-  endsBeat,
-  hostileWaves,
-  setDialogueEnabled,
-  skipScene,
-} from './dialogue.ts';
+  closeBaseChoice,
+  dropBaseChoice,
+  offerChoiceAtBase,
+  pickBaseChoice,
+} from './baseChoice.ts';
+import { HANDOVER_SCENE, playBaseScenesIfDue } from './baseScenes.ts';
+import { closeScene, endsBeat, hostileWaves, setDialogueEnabled, skipScene } from './dialogue.ts';
 import { C2_RETURN_NOTE, openChoice } from './resultsFlow.ts';
 import { flowScenes } from './runFlow.ts';
 import { debriefLines, debriefStoryOf, runStoryContext } from './runResult.ts';
@@ -147,9 +146,11 @@ describe("A2M6's debrief as a scene (D138)", () => {
   });
 });
 
+/** A wave whose groups carry `tags`. */
+const wave = (...tags: string[][]) => ({ groups: tags.map((t) => ({ tags: t })) });
+
 describe('Zibzab praises a clean wave only when it had something hostile in it (D138)', () => {
   it('reads a wave of runners alone as not hostile', () => {
-    const wave = (...tags: string[][]) => ({ groups: tags.map((t) => ({ tags: t })) });
     expect(hostileWaves([wave(['fleeing']), wave(['fleeing'], []), wave([]), wave()])).toEqual([
       false,
       true,

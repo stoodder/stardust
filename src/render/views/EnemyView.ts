@@ -484,6 +484,7 @@ export class EnemyView implements PooledView {
   /** What its body wears now (the render-state hook's view of it). */
   get dress(): {
     readonly rim: RimMode;
+    readonly ghostRim: boolean;
     readonly bubble: boolean;
     readonly hushRing: boolean;
     readonly bracket: boolean;
@@ -492,6 +493,7 @@ export class EnemyView implements PooledView {
     const d = this.#dress;
     return {
       rim: d.rim,
+      ghostRim: d.ghostRimShown,
       bubble: d.bubbleShown,
       hushRing: d.ringShown,
       bracket: d.bracketShown,

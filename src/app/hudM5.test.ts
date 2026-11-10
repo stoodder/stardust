@@ -8,7 +8,7 @@ import type { CompiledTowerDef } from '../content/compiled.ts';
 import type { IdSpace } from '../content/types.ts';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import type { DeepReadonly } from '../shared/types.ts';
-import { towerStats, type Sim } from '../sim/index.ts';
+import { darkDims, towerStats, type Sim } from '../sim/index.ts';
 import { ESCORT_EXTRA_H, HUD_CORNERS, hudCorners, towerPanelHeight } from '../ui/hud/layout.ts';
 import { battleConfig } from './battleSetup.ts';
 import { escortMeterView, lostPips, lostWords, MAX_LOST_PIPS } from './hudEscort.ts';
@@ -133,6 +133,11 @@ describe("Sundown's line (T531)", () => {
     expect(darkTexts(0.0525, false, 0.35)).toEqual(['-5.3% range (dark)']);
     expect(darkTexts(0, true, 0.6)).toEqual(['Lit: full range']);
     expect(darkTexts(0, true, 0)).toEqual([]);
+    // A tower the dark can't dim (the Lookout, the Crane, the Lantern; D138) has no dark line.
+    expect(darkTexts(0, true, 1, false)).toEqual([]);
+    expect(darkTexts(0, false, 1, darkDims(tower('lookout').tiers[0]))).toEqual([]);
+    expect(darkTexts(0, true, 1, darkDims(tower('lantern').tiers[0]))).toEqual([]);
+    expect(darkTexts(0, true, 1, darkDims(tower('prism').tiers[0]))).toEqual(['Lit: full range']);
   });
 });
 

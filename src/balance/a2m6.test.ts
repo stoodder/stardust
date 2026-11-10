@@ -8,7 +8,8 @@
 // (50, 45.5); so does the Seeker Swarm alt (31.8), which runs here on the reference profile plus
 // the Skyhook's specs because the reference never owns them (D137; campaign.md § 4.9). The
 // Sunlance/Resonance probe (par with the Prism's Sunlance and a Resonance Zapcoil) wins at 72.7,
-// level with par and still leaking in W14: it doesn't trivialize the late surges. The dark
+// level with par and still leaking in W14: it doesn't trivialize the late surges; nor do the
+// Mindspike and Lantern probes (D138, report-only: par's Rivet swapped for each, see below). The dark
 // reaches full as W11 starts, so Goldie's W12 radio line plays in full dark (a countdown opens once
 // the previous wave finishes spawning, D135) in every reference run and under every shift. The
 // flocks make W14 noisy (±0.2 s moves par between 15 and 16 of 22), so the shifts ask every
@@ -20,7 +21,7 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
 import { SEEKER_ALT, SUNLANCE_PROBE } from '../content/maps/a2_m06/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { BuildStep, ScriptedBuild, TowerId, WaveGroup } from '../content/types.ts';
+import type { BuildStep, GridPos, ScriptedBuild, TowerId, WaveGroup } from '../content/types.ts';
 import {
   createBuildExecutor,
   createSim,
@@ -91,21 +92,26 @@ function compileTestBuild(b: ScriptedBuild): CompiledBuild {
 }
 
 /** The par Rivet's pad: the pocket inside the wall beside the west gate's road (builds.ts). */
-const POCKET_W = [7, 4] as const;
+const POCKET_W: GridPos = [7, 4];
+/** East of the merge, in the crook of the east road in (builds.ts MERGE_E; par leaves it empty). */
+const MERGE_E: GridPos = [10, 6];
 
 /**
- * Par with its fourth slot, the pocket's Rivet, swapped for `tower` (same pad, same waves), and
- * from W12 that tower's spec `spec` if given: what a player who brings Xenotech's new tower to
- * Sundown gets (D138: report-only probes).
+ * Par with its fourth slot, the pocket's Rivet, swapped for `tower` on `tile` (same waves; by
+ * default the Rivet's own pad), and from W11 that tower's tier 3 and at W12 its spec `spec` if
+ * given: what a player who brings Xenotech's new tower to Sundown gets (D138: report-only probes).
  */
-function parWith(tower: TowerId, spec: 'a' | 'b' | null): CompiledBuild {
+function parWith(tower: TowerId, spec: 'a' | 'b' | null, tile: GridPos = POCKET_W): CompiledBuild {
   const par = content.maps.a2_m06.builds.parBuild;
-  const steps: CompiledBuildStep[] = par.steps.map((st) =>
-    st.kind === 'build' && st.tower === 'rivet' ? { ...st, tower } : st,
-  );
+  const onPocket = (t: GridPos): boolean => t[0] === POCKET_W[0] && t[1] === POCKET_W[1];
+  const steps: CompiledBuildStep[] = par.steps.map((st) => {
+    if (st.kind === 'build' && st.tower === 'rivet') return { ...st, tower, tile };
+    if (st.kind === 'upgrade' && onPocket(st.tile)) return { ...st, tile };
+    return st;
+  });
   if (spec !== null) {
-    steps.push({ wave: 11, kind: 'upgrade', tile: POCKET_W });
-    steps.push({ wave: 12, kind: 'specialize', tile: POCKET_W, spec });
+    steps.push({ wave: 11, kind: 'upgrade', tile });
+    steps.push({ wave: 12, kind: 'specialize', tile, spec });
   }
   return { ...par, loadout: par.loadout.map((t) => (t === 'rivet' ? tower : t)), steps };
 }
@@ -120,6 +126,9 @@ const TEST_LEVEL: Readonly<Record<string, { build: CompiledBuild; specs: readonl
   lantern: { build: parWith('lantern', null), specs: [] },
   allseeing: { build: parWith('lantern', 'a'), specs: ['lantern'] },
   truthlight: { build: parWith('lantern', 'b'), specs: ['lantern'] },
+  echoMerge: { build: parWith('mindspike', 'a', MERGE_E), specs: ['mindspike'] },
+  dreadMerge: { build: parWith('mindspike', 'b', MERGE_E), specs: ['mindspike'] },
+  truthMerge: { build: parWith('lantern', 'b', MERGE_E), specs: ['lantern'] },
 };
 
 /** The build `label` on `c`: a harness label, or a test-level build's name. */
@@ -243,10 +252,28 @@ describe('A2M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(probe.waves[13]!.integrityLost).toBeGreaterThan(0);
   });
 
-  it('PROBE', () => {
-    for (const label of ['mindspike', 'echo', 'dread', 'lantern', 'allseeing', 'truthlight']) {
+  // D138's report-only probes: Xenotech's other two towers in par's fourth slot (the Rivet's),
+  // with and without a W12 spec. As tuned, the Mindspike holds par's 16/22 on the Rivet's pad
+  // (plain, Echo Spike, or Dread) and 14/22 at the merge (Echo, Dread); the Lantern 14/22 plain
+  // and 12/22 with All-Seeing or Truthlight (13/22 Truthlight at the merge). Neither flattens the
+  // flocks (W14 still leaks in each); the Lantern is weak as a fourth gun here (its job is
+  // marking and revealing; Sundown has no cloaks). The numbers are reported, not banded.
+  it('reports the Mindspike and Lantern probes: each wins, none flattens the late flocks', () => {
+    const probes = ['mindspike', 'echo', 'dread', 'echoMerge', 'dreadMerge'].concat([
+      'lantern',
+      'allseeing',
+      'truthlight',
+      'truthMerge',
+    ]);
+    for (const label of probes) {
       const r = runOn(content, label);
-      process.stderr.write(`PROBE ${label} ${JSON.stringify([r.outcome, r.integrity, r.maxIntegrity, r.waves.map((w) => w.integrityLost).join(','), r.steps.filter((x) => x.error !== null).map((x) => x.error), r.medals])}\n`);
+      expect(r.outcome, label).toBe('won');
+      expect(
+        r.steps.every((st) => st.error === null),
+        label,
+      ).toBe(true);
+      expect(r.integrity, label).toBeLessThanOrEqual(PAR_INTEGRITY);
+      expect(r.waves[13]!.integrityLost, label).toBeGreaterThan(0);
     }
   });
 

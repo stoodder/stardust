@@ -17,6 +17,7 @@ import {
   drawLampMask,
   ghostDiscImage,
   GHOST_COLOR,
+  GHOST_UNDER,
   LAMP_LIGHT,
   noDark,
   rgbOfNumber,
@@ -179,6 +180,7 @@ describe('a Prism’s ghost disc (review R9)', () => {
     const mask = new Uint32Array(w * h);
     drawDarkMask(mask, w, h, 0, 0, { x: g.cx, y: g.cy }, [{ x: 0, y: 0, radiusSq }]);
     const c = rgbOf(GHOST_COLOR);
+    const u = rgbOf(GHOST_UNDER);
     let lit = 0;
     let rim = 0;
     const inDisc = (x: number, y: number): boolean =>
@@ -191,10 +193,17 @@ describe('a Prism’s ghost disc (review R9)', () => {
           !(inDisc(x - 1, y) && inDisc(x + 1, y) && inDisc(x, y - 1) && inDisc(x, y + 1));
         if (edge) rim++;
         if (data[o + 3] === 0) continue;
+        const px = [data[o], data[o + 1], data[o + 2], data[o + 3]];
+        if (px[0] === u.r && px[1] === u.g && px[2] === u.b) {
+          // An under-stroke: right under a dash.
+          const a = o - w * 4;
+          expect([data[a], data[a + 1], data[a + 2]], `${x},${y}`).toEqual([c.r, c.g, c.b]);
+          continue;
+        }
         lit++;
-        // Every ghost pixel is on the disc's rim (inside the lit disc, at its edge), opaque, cold.
+        // Every dash pixel is on the disc's rim (inside the lit disc, at its edge), opaque, cold.
         expect(edge, `${x},${y}`).toBe(true);
-        expect([data[o], data[o + 1], data[o + 2], data[o + 3]]).toEqual([c.r, c.g, c.b, 255]);
+        expect(px).toEqual([c.r, c.g, c.b, 255]);
       }
     }
     // Dashed: about half the rim is lit, so it never reads as a lit edge, let alone a lit disc.

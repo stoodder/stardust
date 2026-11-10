@@ -14,8 +14,10 @@
 // shards re-form it, and exactly one pivot event runs: the forced one, as W6 starts, mid-fight with
 // the Penitent on the road. The first refugees walk from the pivot. Kneel is a skill medal: par
 // never earns it, and a skilled build on the same economy (KNEEL_BUILD: the Lookout over the road's
-// first leg, the Orbital Strike on the break) breaks her to 50% in W5 and wins. Story's par earns it
-// too (90 s and a softer shield). A retry from the W5 and W10 checkpoints replays across the pivot
+// first leg, the Orbital Strike on the break) breaks her to 50% in W5 with 10–15 s to spare and
+// wins (D138). Story's par earns it too (90 s and a softer shield). W6 is never called early
+// (`noCall`, D138), so alwaysCallEarly plays her whole fight too; and her own cues never play once
+// the pivot has come. A retry from the W5 and W10 checkpoints replays across the pivot
 // to the same end. With the post-pivot Motes shifted ±0.2 s together, par stays in the band
 // (25–27 of 36) and every beat holds.
 import { describe, expect, it } from 'vitest';
@@ -378,7 +380,10 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(pivot).toHaveLength(1);
     expect(b.at['BossEnded pivot']).toEqual(pivot);
     for (const cue of ['a2_m05_cue_penitent', 'a2_m05_cue_shield']) {
-      expect((b.at[cue] ?? []).filter((t) => t >= pivot[0]!), cue).toEqual([]);
+      expect(
+        (b.at[cue] ?? []).filter((t) => t >= pivot[0]!),
+        cue,
+      ).toEqual([]);
     }
   });
 

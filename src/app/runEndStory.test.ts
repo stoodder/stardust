@@ -178,8 +178,10 @@ describe('the results hold lets cued lines finish on a win (T413)', () => {
     expect(playMapEndLines([], 'lost')).toBe(0);
     vi.advanceTimersByTime(30_000);
     expect(playMapEndLines([], 'won')).toBe(0);
-    emit({ type: 'WaveStarted', wave: 1, early: false, bonus: 0 });
-    emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
+    // W2 (Glimmers): a clean wave with something hostile in it earns its bark (W1's runners
+    // alone earn no praise, D138).
+    emit({ type: 'WaveStarted', wave: 2, early: false, bonus: 0 });
+    emit({ type: 'WaveCleared', wave: 2, bonus: 0 });
     expect(shown()).not.toBeNull();
     expect(playMapEndLines([], 'won')).toBe(0);
   });

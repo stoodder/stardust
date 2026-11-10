@@ -53,7 +53,7 @@ export const BOSS_SHIELD_H = 2;
 /** The shield strip's segments (the small health bar's): this many px lit in every period. */
 export const SHIELD_SEG_ON = 3;
 export const SHIELD_SEG_PERIOD = 4;
-/** The end mark's flag over the bar: this wide at its top (px), narrowing to the 1 px tick. */
+/** The end mark's flag under the bar: this wide (px), the 1 px tick standing on its middle. */
 export const END_FLAG_W = 3;
 
 /** The bar's whole height inside its frame (px): the HP, and for a shielded boss the strip. */
