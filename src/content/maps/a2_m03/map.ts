@@ -8,7 +8,8 @@
 // the warren sends runs south down the switchbacks to the gate. Ves'thara's constructs come another
 // way: down the strip mine's floor from the north-east and along the foot of the terraces to the
 // gate's outer side, and the Lightwings fly the same line overhead. The Peeker's rock is still at
-// the warren mouth halfway down the east side, beside the strip mine; from W5 it holds Pebble.
+// the warren mouth halfway down the east side, beside the strip mine; from W5's countdown it holds
+// Pebble.
 import { defineMapLayout } from '../../define.ts';
 
 export const map = defineMapLayout({

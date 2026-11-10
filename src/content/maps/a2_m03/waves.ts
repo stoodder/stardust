@@ -94,7 +94,7 @@ export const waves = defineWaves([
     groups: [wardens(1, OPEN), glimmers(6, OPEN + 4, 1.2)],
   },
   // W5 · a Mote cluster down the mine, then fleeing Skitterkin with the Hollow behind them
-  // [the rock lights up as the wave starts]
+  // [the rock lit up as its countdown began]
   {
     countdownSec: COUNTDOWN,
     groups: [
