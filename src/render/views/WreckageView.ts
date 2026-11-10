@@ -94,7 +94,7 @@ export class WreckageView {
         index,
         col,
         row,
-        look: wreckageFrame(col, row, map.env),
+        look: wreckageFrame(col, row, map.env, map.markers),
         prop: props.get(index) ?? null,
         marker,
         shown: Shown.Wreck,
