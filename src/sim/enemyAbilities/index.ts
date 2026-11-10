@@ -7,8 +7,8 @@
 //    Digger's dig cycle) and boss.ts (a boss's phase abilities: sneezes, burrows, haste). Act II
 //    (T400a seams): skittish.ts (a bolting fleeing unit's haste; T402), pulse.ts (shield pulses,
 //    a unit's or its boss phase's; T403), and blink.ts (a unit's or its boss phase's, holding it
-//    still through the tell; T404). cloak.ts is the untouchable rule's query (T406), run from
-//    targeting rather than here.
+//    still through the tell; T404). M5: phase.ts (the Rift Moth's Phased cycle; T503). cloak.ts
+//    is the untouchable rule's query (T406), run from targeting rather than here.
 // 3. The hush rule over every unit at once (hush.ts; T402): tells count down and land, then new
 //    contacts are matched order-independently; a unit in a tell stands still (`paceMul` 0).
 // 4. Huddles (huddle.ts: the Elder, a boss's huddle phase), last, so each leader's pace is final.
@@ -25,6 +25,7 @@ import { burrowStep } from './burrow.ts';
 import { huddleStep } from './huddle.ts';
 import { hushPass } from './hush.ts';
 import { leaveStep } from './leave.ts';
+import { phaseStep } from './phase.ts';
 import { pulseStep } from './pulse.ts';
 import { skittishStep } from './skittish.ts';
 
@@ -35,6 +36,7 @@ export { bossNextAbility, bossTelling, type BossAbility } from './boss.ts';
 export { burrowTelling } from './burrow.ts';
 export { cloakedOut } from './cloak.ts';
 export { activeBlink, blinkLanding, blinkTelling } from './blink.ts';
+export { phaseTelling, solidTicks } from './phase.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
   const pool = state.enemies;
@@ -60,6 +62,7 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
     if (pulse !== null) pulseStep(state, ctx, e, pulse);
     const blink = phase?.blink ?? def.blink;
     if (blink !== null) blinkStep(state, ctx, e, blink);
+    if (def.phase !== null) phaseStep(state, e, def.phase);
   }
   hushPass(state, ctx);
   for (let i = 0; i < pool.used; i++) {

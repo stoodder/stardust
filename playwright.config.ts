@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 import { SMOKE_OUT } from './smoke/out.ts';
 
@@ -8,10 +10,26 @@ const PORT = Number(process.env['SMOKE_PORT'] ?? 4173);
 // targeted smoke run needn't rebuild the shared dist/ under another agent's gate.
 const DIST = process.env['SMOKE_DIST'];
 
-// Browser resolution: CHROME_PATH (set in Claude Code cloud sessions, where the preinstalled
-// Chromium doesn't match the pinned Playwright's revision); otherwise Playwright's own Chromium
-// (`npx playwright install chromium`, as in CI).
-const executablePath = process.env['CHROME_PATH'];
+// Browser resolution (conventions.md § Gate time): SMOKE_CHROME if set; else, when CHROME_PATH is
+// set (Claude Code cloud sessions, where the preinstalled browsers don't match the pinned
+// Playwright's revision), the preinstalled Chrome Headless Shell beside it, which boots the game
+// ~0.5 s faster than full Chrome's headless mode (T501j); else CHROME_PATH; else Playwright's own
+// browser (`npx playwright install chromium`, as in CI: headless runs already use its shell).
+function preinstalledHeadlessShell(): string | undefined {
+  const root = process.env['PLAYWRIGHT_BROWSERS_PATH'];
+  if (root === undefined || !existsSync(root)) return undefined;
+  const dir = readdirSync(root)
+    .filter((d) => d.startsWith('chromium_headless_shell-'))
+    .toSorted()
+    .at(-1);
+  if (dir === undefined) return undefined;
+  const exe = join(root, dir, 'chrome-headless-shell-linux64', 'chrome-headless-shell');
+  return existsSync(exe) ? exe : undefined;
+}
+const executablePath =
+  process.env['SMOKE_CHROME'] ??
+  (process.env['CHROME_PATH'] === undefined ? undefined : preinstalledHeadlessShell()) ??
+  process.env['CHROME_PATH'];
 
 // Smoke workers (conventions.md § Gate time): SMOKE_WORKERS (a count, or a share of the cores
 // such as '75%'), else half the cores. Each worker's headless Chromium renders WebGL in software

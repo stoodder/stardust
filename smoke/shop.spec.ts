@@ -125,7 +125,7 @@ test('shop: all_unlocked shows the shop and Engineering, owned in full', async (
 test("shop: after A1M3, Zibzab's arrival, the Zapcoil sample, QUILL's Rapport, and the open question", async ({
   page,
 }) => {
-  await page.goto('/?test=1&seed=1&dialogue=1&save=after_a1m3');
+  await page.goto('/?test=1&seed=1&dialogue=1&fasttext=1&save=after_a1m3');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
 

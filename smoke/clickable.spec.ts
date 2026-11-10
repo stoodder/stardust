@@ -8,6 +8,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { outPath } from './out.ts';
 
 /** dev_click's `peeker` marker. */
 const ROCK = [9, 6] as const;
@@ -55,7 +56,7 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await open(page, false);
   const clip = await rockClip(page);
   expect(await clicks(page)).toEqual({ clickable: [], interacted: [], interacts: 0 });
-  await page.screenshot({ path: 'test-results/screens/clickable/01-decor.png', clip });
+  await page.screenshot({ path: outPath('screens/clickable/01-decor.png'), clip });
 
   // W1 starts: the rock turns clickable.
   await page.evaluate(() => {
@@ -74,7 +75,7 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await page.mouse.move(at!.x, at!.y);
   await nextFrames(page);
   expect(await pointer(page)).toBe('pointer');
-  await page.screenshot({ path: 'test-results/screens/clickable/02-holding.png', clip });
+  await page.screenshot({ path: outPath('screens/clickable/02-holding.png'), clip });
   await shot(page, 'clickable', 3, 'holding-field');
 
   // Armed or not, the click interacts: one `interact` in the log, and the rock stands empty.
@@ -89,7 +90,7 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await page.mouse.move(at!.x + 1, at!.y);
   await nextFrames(page);
   expect(await pointer(page)).not.toBe('pointer');
-  await page.screenshot({ path: 'test-results/screens/clickable/04-reached.png', clip });
+  await page.screenshot({ path: outPath('screens/clickable/04-reached.png'), clip });
 
   // A second click changes nothing: the rock is decor again.
   await page.mouse.click(at!.x, at!.y);
@@ -131,7 +132,7 @@ test('clickable: with no click, W1 cleared reaches her by fallback', async ({ pa
   expect(end).toBe(true);
   expect(await clicks(page)).toEqual({ clickable: [], interacted: ['peeker'], interacts: 0 });
   await nextFrames(page);
-  await page.screenshot({ path: 'test-results/screens/clickable/06-fallback.png', clip });
+  await page.screenshot({ path: outPath('screens/clickable/06-fallback.png'), clip });
 });
 
 test('clickable: walkers near the armed rock pass behind it with their health bars down', async ({
@@ -173,7 +174,7 @@ test('clickable: walkers near the armed rock pass behind it with their health ba
   );
   expect(seen).toEqual({ near: false, far: true, armed: true });
   await page.screenshot({
-    path: 'test-results/screens/clickable/07-walkers.png',
+    path: outPath('screens/clickable/07-walkers.png'),
     clip: await rockClip(page),
   });
 });

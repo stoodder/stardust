@@ -122,7 +122,7 @@ test('results: A1M5 stamps CONTAINMENT LAPSE when this run spared the Quiet Wave
 });
 
 test('results flow: a scene before the card, and one as it is dismissed', async ({ page }) => {
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m4');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a1m4');
   await waitForReady(page);
   const party = 'a1_m01_scene_dev_party';
   void page.evaluate(

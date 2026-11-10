@@ -9,14 +9,19 @@
 // - A boss's phase-change invulnerability: it can still be targeted (the shots that plink off are
 //   the tell), but it takes no damage.
 // - Cloaked and not Revealed (T406; cloak.ts): untouchable, as burrowed, but it still leaks.
+// - Phased (T503; phase.ts, the Rift Moth mid-phase): the Phased layer, which nothing can target
+//   or reach (§ 2.6); it keeps flying its lane and leaks normally.
 // - Pinned (T408; systems/status.ts): a pinned flyer is grounded, so a tier that hits ground can
 //   hit it as well as one that hits air (`onLayers`).
 import type { Enemy } from '../entities.ts';
 import { cloakedOut } from './cloak.ts';
 
-/** Whether no tower, ally, splash, or status can touch `e` (burrowed, leaving, or cloaked out). */
+/**
+ * Whether no tower, ally, splash, or status can touch `e` (burrowed, Phased, leaving, or cloaked
+ * out).
+ */
 export function untargetable(e: Enemy): boolean {
-  return e.burrowed || e.leaving || cloakedOut(e);
+  return e.burrowed || e.phased || e.leaving || cloakedOut(e);
 }
 
 /** Whether a hit on `e` deals nothing: untargetable, or a boss between phases. */

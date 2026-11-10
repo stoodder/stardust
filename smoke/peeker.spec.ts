@@ -5,6 +5,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { outPath } from './out.ts';
 
 /** A1M1's `peeker` marker (src/content/maps/a1_m01/map.ts). */
 const ROCK = [3, 1] as const;
@@ -34,13 +35,13 @@ test('peeker: a click pokes it, peeker_poked is saved and survives the run and a
   const clip = { x: rock!.x - 80, y: rock!.y - 70, width: 160, height: 110 }; // checked just above
   await page.mouse.move(rock!.x + 160, rock!.y + 120);
   await nextFrames(page);
-  await page.screenshot({ path: 'test-results/screens/peeker/01-rock.png', clip });
+  await page.screenshot({ path: outPath('screens/peeker/01-rock.png'), clip });
 
   // The poke: no command reaches the sim, and the flag is in the save at once.
   const before = await page.evaluate(() => globalThis.__sd!.state()!.tick);
   await page.mouse.click(rock!.x, rock!.y);
   await expect.poll(() => poked(page)).toBe(true);
-  await page.screenshot({ path: 'test-results/screens/peeker/02-poked.png', clip });
+  await page.screenshot({ path: outPath('screens/peeker/02-poked.png'), clip });
   await shot(page, 'peeker', 3, 'poked-field');
   const after = await page.evaluate(() => globalThis.__sd!.state());
   expect(after?.tick).toBe(before);

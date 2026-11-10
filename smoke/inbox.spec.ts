@@ -88,7 +88,7 @@ test('inbox: the NEW badge, a memo with its small print, and the codex', async (
 // (its small print: Rig Nine's "scheduled quiet period"), not on a bright shelf. The flow starts
 // from the base (a menu); the dev save has seen Zibzab's arrival, as real play has by A1M5.
 test('inbox: after the stinger, the base lands on the Record Quarter memo', async ({ page }) => {
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m5');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a1m5');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();

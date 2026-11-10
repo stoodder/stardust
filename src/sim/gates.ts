@@ -222,7 +222,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.pulse': null,
   'enemy.blink': null,
   'enemy.cloak': null,
-  'enemy.phase': 'T503',
+  'enemy.phase': null,
   'enemy.shieldAura': 'T502',
   'map.objectives': null,
   'map.protect': null,

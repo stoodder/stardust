@@ -14,6 +14,7 @@ import { BARKS, SCENES } from '../src/content/dialogue/index.ts';
 import { linesUntilChoice } from '../src/story/runner.ts';
 import { silkText } from '../src/ui/silk.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { outPath } from './out.ts';
 
 /** A1M1's greenhouse roof (map.ts): par's first Rivet goes here, and so does ours. */
 const ROOF = [7, 2] as const;
@@ -339,8 +340,8 @@ test('core: a tower behind the core shows through it; low integrity turns its he
   await nextFrames(page);
   // A close-up: the core at 60%, the Rivet behind it, and the red heart (both pulse phases).
   const clip = { x: core!.x - 90, y: core!.y - 150, width: 180, height: 180 };
-  await page.screenshot({ path: 'test-results/screens/core/01-low-a.png', clip });
+  await page.screenshot({ path: outPath('screens/core/01-low-a.png'), clip });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: 'test-results/screens/core/02-low-b.png', clip });
+  await page.screenshot({ path: outPath('screens/core/02-low-b.png'), clip });
   await shot(page, 'core', 3, 'full');
 });

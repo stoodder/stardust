@@ -13,6 +13,7 @@ const feedFrame = (page: Page) =>
   page.getByTestId('stage-feed').locator('img').getAttribute('data-frame');
 
 test('staging: the stinger feed leads in, then the caption and QUILL', async ({ page }) => {
+  // Real-time text: this flow tests the lead-in and Skip during it, which fast text cuts.
   await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m5');
   await waitForReady(page);
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m05_scene_stinger'));
@@ -58,7 +59,7 @@ test('staging: the stinger feed leads in, then the caption and QUILL', async ({ 
 test('staging: under reduced motion the feed holds three stills', async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   const page = await context.newPage();
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m5');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a1m5');
   await waitForReady(page);
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m05_scene_stinger'));
   expect(await feedFrame(page)).toBe('live_0');
@@ -74,7 +75,7 @@ test('staging: under reduced motion the feed holds three stills', async ({ brows
 });
 
 test('staging: the party fires the cannon and the record counter lands', async ({ page }) => {
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m4');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a1m4');
   await waitForReady(page);
   void page.evaluate(() =>
     globalThis.__sd!.results({

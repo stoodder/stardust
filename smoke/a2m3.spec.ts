@@ -12,6 +12,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { outPath } from './out.ts';
 
 /** What the flow waits for, checked in the page against the live sim state. */
 type Cond = 'setup' | 'haulers' | 'rock' | 'w7' | 'dusk' | 'end';
@@ -112,7 +113,7 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   });
   expect(hauler).not.toBeNull();
   await page.screenshot({
-    path: 'test-results/screens/a2m3/03b-sack-zoom.png',
+    path: outPath('screens/a2m3/03b-sack-zoom.png'),
     clip: { x: hauler!.x - 60, y: hauler!.y - 70, width: 120, height: 100 },
   });
 
@@ -138,7 +139,7 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   await page.waitForTimeout(1_500); // the last purchases' floaters fade (real time; the sim waits)
   await nextFrames(page);
   await page.screenshot({
-    path: 'test-results/screens/a2m3/04-rock-zoom.png',
+    path: outPath('screens/a2m3/04-rock-zoom.png'),
     clip: { x: at!.x - 90, y: at!.y - 70, width: 180, height: 120 },
   });
   await shot(page, 'a2m3', 5, 'rock');
@@ -166,7 +167,7 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   await nextFrames(page);
   await page.waitForTimeout(120);
   await page.screenshot({
-    path: 'test-results/screens/a2m3/05b-lift-zoom.png',
+    path: outPath('screens/a2m3/05b-lift-zoom.png'),
     clip: { x: at!.x - 90, y: at!.y - 70, width: 180, height: 120 },
   });
 

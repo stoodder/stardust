@@ -1,6 +1,7 @@
 // Helpers for driving `window.__sd` from Node-side specs.
 import type { Page } from '@playwright/test';
 import type { TestHooks } from '../src/app/testHookTypes.ts';
+import { outPath } from './out.ts';
 
 declare global {
   // `page.evaluate` callbacks run in the page, where boot installs the hooks (only with ?test=1).
@@ -15,10 +16,10 @@ export async function waitForReady(page: Page, timeoutMs = 10_000): Promise<void
   await page.evaluate(() => globalThis.__sd?.ready);
 }
 
-/** Saves a screenshot to `test-results/screens/<flow>/<nn>-<step>.png`. */
+/** Saves a screenshot to `<out>/screens/<flow>/<nn>-<step>.png` (smoke/out.ts). */
 export async function shot(page: Page, flow: string, n: number, step: string): Promise<void> {
   const nn = String(n).padStart(2, '0');
-  await page.screenshot({ path: `test-results/screens/${flow}/${nn}-${step}.png` });
+  await page.screenshot({ path: outPath(`screens/${flow}/${nn}-${step}.png`) });
 }
 
 /** Waits for two animation frames, so the canvas shows the sim state as it now stands. */

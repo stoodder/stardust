@@ -8,7 +8,7 @@ import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 test('c1 radio: Bricks reacts on the radio before the party', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.goto('/?test=1&dialogue=1&map=a1_m05&seed=1');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&map=a1_m05&seed=1');
   await waitForReady(page);
   await expect(page.getByTestId('hud')).toBeVisible();
   // Par to the Quiet Wave, then Hold Fire on all until one of its seven is left on the road.

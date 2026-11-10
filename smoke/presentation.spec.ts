@@ -7,6 +7,7 @@ import type { Page } from '@playwright/test';
 import { SAVE_VERSION } from '../src/meta/saveData.ts';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { outPath } from './out.ts';
 
 /** The UI root's act theme (`data-act` on #ui). */
 const uiAct = (page: Page) => page.locator('#ui').getAttribute('data-act');
@@ -99,7 +100,7 @@ async function droneShot(page: Page, name: string): Promise<void> {
   });
   expect(at).not.toBeNull();
   await page.screenshot({
-    path: `test-results/screens/presentation/${name}.png`,
+    path: outPath(`screens/presentation/${name}.png`),
     clip: { x: at!.x - 90, y: at!.y - 90, width: 180, height: 120 },
   });
 }
