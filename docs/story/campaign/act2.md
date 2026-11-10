@@ -119,7 +119,7 @@ Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1
 | `shell_and_rivet` | 85.7 | 2 in W6, 1 in W9 |
 | do-nothing | loses at W4 | 6 in W3, 15 in W4 |
 
-Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): with W7's double cluster and W8's and W10's cut groups shifted ±0.2 s together, every verdict holds, W7 costs par nothing, and par loses at most two more (the strike and the Zapcoil's chains land differently in the column). Every run that wins also earns Hiccup Contained.
+Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): with W7's double cluster and W8's and W10's cut groups shifted ±0.2 s together, every verdict holds, W7 costs par nothing, and par loses at most two more (the strike and the Zapcoil's chains land differently in the column). Every run that wins also earns Hiccup Contained, and that stays (T560): it is the Hollow's gentle introduction, a medal that teaches what a Heavy Mote is rather than tests it; Act II's hard medals come later (Nothing Unseen, Kneel, Before the Dark).
 
 **W7's peak stays** (T460): its 156 spawns put about 90 units on screen at once, and par's frame time there (`__sd.perf()`, about 2–3 ms in the smoke browser) matches W3's with seven; it is the wave the no-splash build loses to with the full catalog. The Spires road stays undefended by par (about 63 hushes a run, most of them in W3–W7, when par's bank is under 80): the hush is the map's lesson, and the pads at (3,4) and (4,7) are there for the player who wants to answer it.
 
@@ -343,6 +343,8 @@ Par's bank at each build phase: 627, 181, 118, 84, 116, 8, 91, 83, 73, 104, 170 
 | `soak_and_shell` | 33.3 | |
 | do-nothing | loses at W5 | |
 
+The alts sit well under par (38.1 and 33.3, over the 20% floor) and stay there (T560): A2M3 is the deliberately quiet map, and par's Skyhook answers W9's Lightwings far better than the alts' Zapcoils and Cloudburst, so the loadout choice costs here, as it should once the act turns.
+
 Par's shift runs about 11.8 min at 1×. Robustness ([`src/balance/a2m3.test.ts`](../../../src/balance/a2m3.test.ts)): with W9's Lightwings and the runners' chasers shifted ±0.2 s together, par holds at 16/21 and the hold-fire run at 12/21 (the Lightwings ±1 s, and W5, W7, W9, or W11 shifted as a whole, checked in T422; the chasers ±0.5 s in T460).
 
 ## A2M4 · Second Harvest
@@ -439,7 +441,7 @@ o#.x..............
 | W11 | The Zapcoil west of Intake B to T2 |
 | W12 | Zapcoil (12,7) by the vats' east end |
 
-Par's bank at each build phase: 480 (+80 salvage), 273, 162, 136, 89, 73, 90, 112, 167, 214, 110, 30 (W1–W12), about 630 unspent at the end. **Par's margin is late:** it holds everything until W12, where three Lightwings over the vats and a Veilwalker get through, so it wins at **16/21 (76.2%)** on every seed (campaign.md §7's target 74, snapped to the 1/21 step), with Nothing Unseen and Intake Manifest.
+Par's bank at each build phase: 480 (+80 salvage), 273, 162, 136, 89, 73, 90, 112, 167, 214, 110, 30 (W1–W12), about 630 unspent at the end. **Par's margin is late:** it holds everything until W12, where three Lightwings over the vats and a Veilwalker get through, so it wins at **16/21 (76.2%)** on every seed (campaign.md §7's target 74, snapped to the 1/21 step), with Nothing Unseen and Intake Manifest. It stays level with A2M3 on purpose (T560): the step below, 15/21 (71.4), would put A2M4 under A2M6's 72.7 and break the chain's fall.
 
 **No-counter builds** (`noCounterBuilds`, by category; each must lose by W8, `noCounterLoseByWave`, and still lose with the full catalog; `teachMap`, detection being new here):
 - **no-detection:** Rivet, Zapcoil, Sprinkler, Thumper (no Lookout, and no Scanner Sweep: slot 1 stays the profile's Orbital Strike), the par yard blind: the Veilwalkers walk through it untouched (W3, W7, W8); it loses in W8 (W10 with the full catalog).
@@ -501,7 +503,7 @@ S########.........
 
 **Waves.** 1 Glimmers + one Aegis Cantor [T: shield aura; kill it first] · 2 Wardens + Cantor [X] · 3 Blinkstriders + Veilwalkers [C] · 4 Lightwings + Cantors [X] · 5 **Sunderglass Penitent** (shield wall, recharge pulse; cloaked shards when its shield breaks; `pivot` at 50% or when W6 starts) · *pivot:* Aelari stand down, objective becomes Escort, meter relabels **Evacuated** · 6 the surge: Motes ×12 from the rig road toward the first refugee group [T: escort, gently; generous `maxLost`] · 7 Motes + second group · 8 Mote clusters from both ends · 9 larger Mote clusters, one ahead of the group · 10 Motes ×20 · 11 two groups at once · 12 last group + the largest surge.
 
-**Wave data** (the data is [`src/content/maps/a2_m05/waves.ts`](../../../src/content/maps/a2_m05/waves.ts)). W2–W12 have a **25 s** countdown except W6's **60 s**, and W2–W12 open **6 s** into the wave. W5 is the Penitent alone, so W6's countdown opens as she spawns (a countdown opens once the wave before it finishes spawning, [D135](../../decisions.md#d135--2026-11-10--m4-review-round-2-rulings-fixed-in-round-3-the-last)) and W6 starts, forcing the pivot if her 50% hasn't, 60 s later (90 s on Story): she walks 21 tiles (31 on Story) of the 36 to the gate (100 s), so she never reaches it. Nothing Aelari spawns after her. After the pivot every group is Motes: the rig road's reach the road at the fencing's end 5.6 s after they spawn (W8's, W11's, and W12's meet a group passing there), the road's catch the refugees walking ahead of them. Refugee groups: `first` at the pivot, `second` as W7 starts, `third` as W8 starts, `fourth` as W11 starts and `fifth` 5.2 s later on its heels (one line of twelve), `last` as W12 starts: 36 in all. Default spacing Glimmer 0.8 s, Cantor 1.2 s, Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Mote 0.3 s.
+**Wave data** (the data is [`src/content/maps/a2_m05/waves.ts`](../../../src/content/maps/a2_m05/waves.ts)). W2–W12 have a **25 s** countdown except W6's **60 s**, and W2–W12 open **6 s** into the wave. W5 is the Penitent alone, so W6's countdown opens as she spawns (a countdown opens once the wave before it finishes spawning, [D135](../../decisions.md#d135--2026-11-10--m4-review-round-2-rulings-fixed-in-round-3-the-last)) and W6 starts, forcing the pivot if her 50% hasn't, 60 s later (90 s on Story): she walks 12 tiles (18 on Story) of the 36 to the gate (180 s at 0.2 tiles/s), so she never reaches it, and a forced pivot kneels the Ward at the fencing's end, with the rig road's junction inside her ring. Nothing Aelari spawns after her. After the pivot every group is Motes: the rig road's reach the road at the fencing's end 5.6 s after they spawn (W8's, W11's, and W12's meet a group passing there, in the Ward's chill), the road's catch the refugees walking ahead of them. Refugee groups: `first` at the pivot, `second` as W7 starts, `third` as W8 starts, `fourth` as W11 starts and `fifth` 5.2 s later on its heels (one line of twelve), `last` as W12 starts: 36 in all. Default spacing Glimmer 0.8 s, Cantor 1.2 s, Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Mote 0.3 s.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`; *rig* = the rig road, *sky* = the air lane) | Total |
 |---|---|---|
@@ -516,7 +518,7 @@ S########.........
 | W9 | Mote ×18 @ 0.3, 10 *rig* · Mote ×18 @ 0.3, 22 | 36 |
 | W10 | Mote ×20 @ 0.3, 6 *rig* | 20 |
 | W11 | Mote ×22 @ 0.25, 16 *rig* · Mote ×22 @ 0.25, 26 | 44 |
-| W12 | Mote ×28 @ 0.25, 12 *rig* · Mote ×28 @ 0.25, 22 | 56 |
+| W12 | Mote ×28 @ 0.25, 11 *rig* · Mote ×28 @ 0.25, 22 | 56 |
 
 **The hairpins are the shield and detection tests** (the Cantor columns in W2 and W4, fourteen Veilwalkers over W2–W4), **the Penitent is the boss test** (break the shield, kill the shards before the re-form, then her HP), and **the rig road's junction is the escort test** (the Motes that meet a group there).
 
@@ -538,7 +540,7 @@ S########.........
 
 **Medals.** Victory · Perfect (no refugee lost) · **Kneel:** force the pivot by breaking the Penitent to 50% before W6 starts.
 **Rewards.** Stardust 240 · Intel 3. Prism Spire. Mindspike and Lantern attunable.
-**Par build.** Zapcoil, Lookout, Rivet, Thumper, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M4's; C2 Return emptied the bank). Zapcoils in both hairpins and on the knoll with the Lookout between row 4 and the valley floor, so every Veilwalker is Revealed where the Zapcoils reach it and the Cantor columns die in the turns; a Rivet west of the drop. The Penitent's shield breaks in W5 and the Lookout reveals her shards, but she re-forms once and W6 forces the pivot (no Kneel). After it, Thumpers south of the valley floor and beside the drop to the gate for the Motes; par leaves the rig road's junction to the hairpins' Zapcoils, and that is where it loses its refugees. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m05/builds.ts`](../../../src/content/maps/a2_m05/builds.ts).
+**Par build.** Zapcoil, Lookout, Rivet, Thumper, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M4's; C2 Return emptied the bank). Zapcoils in both hairpins and on the knoll with the Lookout between row 4 and the valley floor, so every Veilwalker is Revealed where the Zapcoils reach it and the Cantor columns die in the turns; a Rivet west of the drop. The Penitent's shield breaks in W5 on the road's first leg, out of the Lookout's sight, so her shards walk on unseen and it re-forms (three times) until W6 forces the pivot (no Kneel: about 300 of her 1400 HP come off) and she kneels at the fencing's end. After it, Thumpers south of the valley floor and beside the drop to the gate for the Motes; par leaves the rig road's junction to the hairpins' Zapcoils and the Ward, and that is where it loses its refugees. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m05/builds.ts`](../../../src/content/maps/a2_m05/builds.ts).
 
 | Wave | Par |
 |---|---|
@@ -554,7 +556,7 @@ S########.........
 | W10 | The valley Thumper to T3 |
 | W11 | The gate Thumper to T3 |
 
-Par's bank at each build phase: 627, 285, 201, 99, 123, 48, 54, 23, 19, 41, 49, 13 (W1–W12). **Par wins at 25/36 Evacuated (69.4%)** on every seed (campaign.md §7's target 71, the nearest 1/36 step below it; the Escort chain's first map, band 65–85), the core whole at the pivot, its eleven refugees lost at the rig road's junction (4 in W8, 4 in W11, 3 in W12).
+Par's bank at each build phase: 627, 285, 201, 99, 123, 48, 43, 14, 10, 32, 34, 2 (W1–W12). **Par wins at 27/36 Evacuated (75.0%)** on every seed (campaign.md §7's target 71; 26/36 and 25/36 were tried, but a ±0.2 s shift dropped them to 23/36 or made `alwaysCallEarly` lose; the Escort chain's first map, band 65–85), the core whole at the pivot, its nine refugees lost at the rig road's junction (3 each in W8, W11, and W12). **The Ward counts:** she kneels with the junction inside her ring, and her chill slows the rig road's Motes through it; without it par evacuates 24/36 (66.7).
 
 **No-counter builds** (`noCounterBuilds`, by category; each must lose by W8, the default, and still lose with the full catalog):
 - **no-detection:** Zapcoil, Rivet, Thumper, Sprinkler (no Lookout, and no Scanner Sweep: slot 1 stays the profile's Orbital Strike), par's hairpins blind: the Veilwalkers walk through (W2–W4); it loses in W4 (W5 with the full catalog), before the pivot.
@@ -562,25 +564,27 @@ Par's bank at each build phase: 627, 285, 201, 99, 123, 48, 54, 23, 19, 41, 49, 
 - **no-splash:** Lookout, Rivet, Sprinkler (Soaked), Skyhook (no Zapcoil or Thumper): without the Zapcoils' chains it can't hold the Cantor columns either, and loses in W4, well before the post-pivot Motes would test it.
 
 **Alt builds** (each shares at most 2 towers with par and must win with ≥ 20%; every alt needs the Lookout, the only detector the reference owns, and the Zapcoil, the shield answer that holds the Cantor columns):
-- `capacitor`, Lookout + Zapcoil + Sprinkler + Skyhook (T501c): par's hairpins, then from the pivot a Sprinkler and a Zapcoil guarding the rig road's junction, the Zapcoil a **Capacitor Bank** from W9. The reference can't afford a Capacitor (755 credits) before the Penitent without losing W4, so it serves the escort. **94.4.**
-- `coil_and_hook`, Lookout + Zapcoil + Skyhook: Zapcoils take the Motes, and from W8 an Overload Coil guards the rig road. **86.1.**
+- `capacitor`, Lookout + Zapcoil + Sprinkler + Skyhook (T501c): par's hairpins, then from the pivot a Sprinkler and a Zapcoil guarding the rig road's junction, the Zapcoil a **Capacitor Bank** from W9. The reference can't afford a Capacitor (755 credits) before the Penitent without losing W4, so it serves the escort. **97.2.**
+- `coil_and_hook`, Lookout + Zapcoil + Skyhook: Zapcoils take the Motes, and from W8 an Overload Coil guards the rig road. **83.3.**
 - The planned Sprinkler (Soaked) alt (Lookout + Sprinkler + Thumper + Skyhook) can't hold W2's and W4's Cantor columns: the Soak lets the shells bite, but too slowly under the aura.
 
 **Harness runs** (seed 1; margin, then refugees lost per wave):
 
 | Run | Result | Lost |
 |---|---|---|
-| par | wins at **69.4** (25/36), core 21/21, no Kneel | 4 in W8, 4 in W11, 3 in W12 |
-| `alwaysCallEarly` | 63.9 (the pivot at the Penitent's spawn) | |
+| par | wins at **75.0** (27/36), core 21/21, no Kneel | 3 in W8, 3 in W11, 3 in W12 |
+| par without the Ward's chill | 66.7 (24/36) | 4 in W8, 4 in W11, 4 in W12 |
+| the Kneel build | wins at 69.4 (25/36) with Kneel: she kneels in W5, 54 s after she spawns | |
+| `alwaysCallEarly` | 61.1 (the pivot at the Penitent's spawn, the Ward at the road's start) | |
 | no-detection | loses in W4 (W5 with the full catalog) | |
 | no-shield | loses in W4 (W4 with the full catalog) | |
 | no-splash | loses in W4 (W4 with the full catalog) | |
-| Story | 83.3, Victory | 4 in W11, 2 in W12 |
-| `capacitor` | 94.4 | 2 in W12 |
-| `coil_and_hook` | 86.1 | 1 in W6, 4 in W8 |
+| Story | 83.3, Victory and Kneel (her 50% in W5, 65 s after she spawns) | 3 in W11, 3 in W12 |
+| `capacitor` | 97.2 | 1 in W12 |
+| `coil_and_hook` | 83.3 | 1 in W6, 1 in W7, 4 in W8 |
 | do-nothing | loses at W3 | |
 
-Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1× runtime is 10.1 min**, well under the 15-minute split trigger (§1 of campaign.md). **The beats** ([`src/balance/a2m5.test.ts`](../../../src/balance/a2m5.test.ts)): in par, both alts, and Story, the Penitent's cue plays as she spawns in W5, her shield breaks in W5 (the shield cue the tick after, the shards, then a re-form), and exactly one pivot event runs, the forced one, as W6 starts, mid-fight with her on the road (one pivot cue, one objective switch); the first group walks from the pivot, before the surge's first Mote; a retry from the W5 checkpoint (before the pivot) and the W10 checkpoint (after it) replays to the same state and end. Robustness: with every post-pivot Mote group shifted ±0.2 s together, par holds at 25/36 and every beat holds (±0.5 s keeps par in the band; 1 s earlier drops it to 63.9). **Kneel** is the skill medal: no build the reference economy affords reaches 50% before W6 (par's Penitent kneels at 3296 of 3500 HP); it takes breaking the shield early, killing the shards inside the 4 s re-form, and 1,750 HP besides.
+Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1× runtime is 10.1 min**, well under the 15-minute split trigger (§1 of campaign.md). **The beats** ([`src/balance/a2m5.test.ts`](../../../src/balance/a2m5.test.ts)): in par and both alts, the Penitent's cue plays as she spawns in W5, her shield breaks in W5 (the shield cue the tick after, the shards, then a re-form), and exactly one pivot event runs, the forced one, as W6 starts, mid-fight with her on the road at the fencing's end (one pivot cue, one objective switch); the first group walks from the pivot, before the surge's first Mote; a retry from the W5 checkpoint (before the pivot) and the W10 checkpoint (after it) replays to the same state and end. On Story (90 s, a softer shield) the shards walk into the Lookout's reach and par breaks her to 50% itself: the same beats, with her own pivot in W5 and Kneel earned. Robustness: with every post-pivot Mote group shifted ±0.2 s together, par stays at 25–27 of 36 (in the band) and every beat holds. **Kneel** is the skill medal (the Penitent's numbers are tuned for it, T560: HP 1400, shield 600, speed 0.2; [enemies.md §6](../../design/enemies.md)). Par never earns it: her shield breaks on the road's first leg, where par's Lookout can't see the shards, so it keeps re-forming. A skilled build on par's own economy and towers does (`KNEEL_BUILD` in [`builds.ts`](../../../src/content/maps/a2_m05/builds.ts), run by the test): it swaps the Lookout and a Zapcoil so the Lookout stands over the first leg at (5,3), drops the Orbital Strike (and Bricks's Suppressing Fire) on the break, killing all three shards at once so the shield never re-forms, and breaks her to 50% 54 s after she spawns, 6 s before W6; it wins at 25/36.
 
 ## A2M6 · Sundown
 
@@ -629,7 +633,7 @@ Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1�
 | W13 | Fracture ×2 @ 3, 6 *west* · Fracture, 7.5 *east* · Rift Moth ×12 @ 0.5, 12 · Mote ×20 packed, 18 *west* · Mote ×20 packed, 20 *east* | 55 |
 | W14 | Mote ×24 packed, 6 *west* · Mote ×24 packed, 8 *east* · Fracture ×2 @ 1.5, 14 *west* · Fracture ×2 @ 1.5, 15 *east* · Rift Moth ×17 @ 0.4, 18 · Mote ×24 packed, 28 *west* · Mote ×24 packed, 30 *east* | 117 |
 
-**The Sundown** (`lighting`): dusk through W3; from W4 the dark deepens in equal steps (⅛ a wave, eased over 4 s as each wave starts) to **full Long Night darkness as W11 starts**, and stays full to the end. So W12's build phase, where Goldie's line plays, is always in full dark. Unlit towers lose up to 15% range; the lamps keep the wall at full range, and par's Prism on the watchtower keeps the merge's at full range. It matters: with no darkness `coil_and_soak` would score 77.3 and `shells_and_slow` 100, and with no lamps par falls to 59.1 and `coil_and_soak` to 13.6. Par barely feels the dark (its Prism lights the merge), which is the map's lesson.
+**The Sundown** (`lighting`): dusk through W3; from W4 the dark deepens in equal steps (⅛ a wave, eased over 4 s as each wave starts) to **full Long Night darkness as W11 starts**, and stays full to the end. So W12's build phase, where Goldie's line plays, is always in full dark. Unlit towers lose up to 15% range; the lamps keep the wall at full range, and par's Prism on the watchtower keeps the merge's at full range. It matters: with no darkness `coil_and_soak` would score 77.3 and `shells_and_slow` 100, and with no lamps par falls to 45.5 and `coil_and_soak` to 13.6. Par barely feels the dark (its Prism lights the merge), which is the map's lesson.
 
 **The merge is the splash test** (the Fractures' Shards and Motes, the clusters from both gates meeting), **the air lane is the air test** (the Rift Moths over the wall, W8 on), and **W9's tight flock is Stillness's**: frozen over the merge beside the watchtower's Prism, it dies whole.
 
@@ -666,11 +670,11 @@ Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1�
 | W6 | The yard Skyhook and the yard Thumper to T2 |
 | W7 | The wall Skyhook to T2; Rivet (7,4) in the pocket |
 | W9 | Stillness on the flock at the merge; the Prism and the merge Thumper to T3 |
-| W10 | Both Skyhooks to T3; the Rivet to T2 |
+| W10 | The yard Skyhook to T3 (the wall's stays T2); the Rivet to T2 |
 | W11 | Cluster Thumper at the merge |
 | W12 | The (10,10) Thumper to T3 |
 
-Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 131, 30, 17, 285 (W1 after the setup, W2–W14), 456 unspent at the end, so calling waves early buys it nothing. **Par's margin is all in W14:** it holds every wave whole until the last, where five of the biggest flock's 17 Rift Moths cross the wall in full dark with everything else, so it wins at **17/22 (77.3%)** on every seed (campaign.md §7's target is 68: the W14 flock is the lever, and it moves par in noisy steps, 18 Moths giving 15/22 but 14, below the band, under a ±0.2 s shift, so par sits at 17; the Act II curve is T560's) and never earns Before the Dark.
+Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 131, 30, 182, 55 (W1 after the setup, W2–W14), 611 unspent at the end, so calling waves early buys it nothing. **Par's margin is all in W14:** it holds every wave whole until the last, where six of the biggest flock's 17 Rift Moths cross the wall in full dark with everything else (the east wall's Skyhook stays at T2: par trims its air defence), so it wins at **16/22 (72.7%)** on every seed and never earns Before the Dark. campaign.md §7's target is 68 (15/22), but every way to it found (par one more air step short, a W12–W13 Moth or Fracture more, both Skyhooks short) leaves W14's flock deciding it, and a ±0.2 s shift then drops par to 14/22 (63.6), below the band; at 16 the same shifts move it between 15 and 16 (T560).
 
 **No-counter builds** (`noCounterBuilds`, by category; `noCounterLoseByWave` 10; each also loses with the full catalog):
 - **no-splash:** Prism, Rivet, Skyhook, Sprinkler (no Thumper or Zapcoil), par's yard with Rivets where its Thumpers stand: W6–W7's clusters drown it; it loses in W7 (W13 with the full catalog).
@@ -680,15 +684,15 @@ Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 
 - `coil_and_soak`, Zapcoil + Sprinkler + Skyhook + Thumper: a Zapcoil on the watchtower beside a Sprinkler at the merge (Conductive), par's Thumpers and Skyhooks, Overload from W11. **50.**
 - `shells_and_slow`, Thumper + Sprinkler + Skyhook: four Thumpers, a Sprinkler slowing the merge, three Skyhooks. **45.5.**
 - **The Seeker Swarm alt** (Skyhook (Seeker Swarm) + Thumper + Zapcoil + Sprinkler): three Thumpers, the watchtower Zapcoil with its Sprinkler, three Skyhooks, the yard's a Seeker Swarm from W7. The reference never owns Skyhook specs, so it isn't an `altBuilds` entry: [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts) runs it on the reference profile plus the Skyhook's specs ([D137](../../decisions.md#d137--2026-11-10--m5-cut-act-ii-part-two-a2m4a2m6); T501c). **31.8.**
-- **The Sunlance/Resonance probe** (par with the Prism a Sunlance from W11 and a Zapcoil beside the watchtower for the Rivet, Resonance): **86.4**, two integrity over par and still leaking in W14. It doesn't trivialize the late surges: the Hollow carry no shields, so Resonance adds nothing, and a Sunlance spends its ×10 ramp on one target while the surges come as crowds. On the reference profile plus the Prism's specs, reported in [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts), not banded.
+- **The Sunlance/Resonance probe** (par with the Prism a Sunlance from W11 and a Zapcoil beside the watchtower for the Rivet, Resonance): **72.7**, level with par and still leaking in W14. It doesn't trivialize the late surges: the Hollow carry no shields, so Resonance adds nothing, and a Sunlance spends its ×10 ramp on one target while the surges come as crowds. On the reference profile plus the Prism's specs, reported in [`a2m6.test.ts`](../../../src/balance/a2m6.test.ts), not banded.
 
 **Harness runs** (every seed; margin, then integrity lost per wave):
 
 | Run | Result | Lost |
 |---|---|---|
-| par | wins at **77.3** (band 65–85; 17/22) | 5 in W14 |
-| par without Stillness | 59.1 | 4 in W9, 5 in W14 |
-| `alwaysCallEarly` | 77.3 | 5 in W14 |
+| par | wins at **72.7** (band 65–85; 16/22) | 6 in W14 |
+| par without Stillness | 54.5 | 4 in W9, 6 in W14 |
+| `alwaysCallEarly` | 72.7 | 6 in W14 |
 | no-splash | loses in W7 | |
 | no-splash, full catalog | loses in W13 | |
 | no-air | loses in W9 | |
@@ -697,7 +701,7 @@ Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 
 | `coil_and_soak` | 50 | 3 in W7, 2 in W8, 4 in W9, 2 in W13 |
 | `shells_and_slow` | 45.5 | 2 each in W8, W10, W11, W13; 4 in W14 |
 | the Seeker Swarm alt | 31.8 | |
-| the Sunlance/Resonance probe | 86.4 | 3 in W14 |
+| the Sunlance/Resonance probe | 72.7 | 6 in W14 |
 | do-nothing | loses at W2 | |
 
-Par's shift runs about **9.1 min at 1×** (Story 11.2), plus the radio and the debrief. **Goldie's line** ([`src/balance/a2m6.test.ts`](../../../src/balance/a2m6.test.ts)): in par, both alts, `alwaysCallEarly`, the Seeker Swarm alt, the Sunlance probe, and Story, W12's build phase opens at full darkness (1.0), and W11's still below it. Robustness: with W9's and W14's Rift Moth flocks, or W6's, W7's, W11's and W14's Mote clusters, shifted ±0.2 s, every harness check passes and par stays in the band; the flocks make W14 noisy (par moves between 15 and 18 of 22 under such shifts), which is why par sits a step above the target rather than on it.
+Par's shift runs about **9.1 min at 1×** (Story 11.2), plus the radio and the debrief. **Goldie's line** ([`src/balance/a2m6.test.ts`](../../../src/balance/a2m6.test.ts)): in par, both alts, `alwaysCallEarly`, the Seeker Swarm alt, the Sunlance probe, and Story, W12's build phase opens at full darkness (1.0), and W11's still below it. Robustness: with W9's and W14's Rift Moth flocks, or W6's, W7's, W11's and W14's Mote clusters, shifted ±0.2 s, every harness check passes and par stays in the band; the flocks make W14 noisy (par moves between 15 and 16 of 22 under such shifts), which is why par sits a step above the target rather than on it.

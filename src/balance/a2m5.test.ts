@@ -89,7 +89,10 @@ function unchilled(): CompiledContent {
     ...raw,
     enemies: {
       ...raw.enemies,
-      sunderglass_penitent: { ...p, boss: { ...p.boss!, ward: { ...p.boss!.ward!, chillPct: 1e-4 } } },
+      sunderglass_penitent: {
+        ...p,
+        boss: { ...p.boss!, ward: { ...p.boss!.ward!, chillPct: 1e-4 } },
+      },
     },
   };
   return compileContent(next);

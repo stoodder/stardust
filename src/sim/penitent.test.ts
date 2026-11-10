@@ -102,13 +102,13 @@ function wardScene() {
 }
 
 describe('the Penitent’s data (T506 settles the stub)', () => {
-  it('phase 1: the shield wall and a 150-shield pulse every 8 s; phase 2 on the break, no pulse', () => {
+  it('phase 1: the shield wall and a 60-shield pulse every 8 s; phase 2 on the break, no pulse', () => {
     const [p1, p2] = PENITENT.boss!.phases;
     expect(p1!.pulse).toMatchObject({
       everyTicks: 480,
       tellTicks: 90,
       radiusTiles: 2,
-      shield: 150,
+      shield: 60,
     });
     expect(p2).toMatchObject({ onShieldBroken: true, pulse: null });
     expect(p2!.shards).toEqual({ enemy: 'glimmer_shard', count: 3, reformTicks: REFORM });
@@ -173,7 +173,8 @@ describe('phase 2 begins when the shield breaks (not by HP)', () => {
     expect(nextHpPhase(PENITENT.boss!, 1)).toBe(0);
     boss.shieldHp = 0; // as if broken, before the next tick sees it
     bossDamage(state, boss, PENITENT.hp * 0.3);
-    expect([boss.bossPhase, boss.hp]).toEqual([1, PENITENT.hp * 0.7]);
+    expect(boss.bossPhase).toBe(1);
+    expect(boss.hp).toBeCloseTo(PENITENT.hp * 0.7, 9);
     // A burst past 0 stops at the ending's threshold (never in a phase at 0 HP).
     bossDamage(state, boss, PENITENT.hp * 10);
     expect([boss.bossPhase, boss.hp]).toEqual([1, PENITENT.hp * 0.5]);

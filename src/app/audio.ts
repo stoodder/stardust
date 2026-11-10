@@ -1,8 +1,8 @@
 // Binds the audio (src/audio/) to the game (architecture.md § Audio): drained sim events and the
 // battle's state become sound effects, music layers, and cues; HUD signals (notices, spoken lines
-// and their typewriter, the screen) and UI buttons get their sounds; the settings drive the volumes
-// and mute. Audio is created on the first user gesture, and stays off under `?test=1` unless the
-// URL adds `&audio=1`.
+// and their typewriter, a sung line's cue, the screen, C2's choice on the Results card) and UI
+// buttons get their sounds; the settings drive the volumes and mute. Audio is created on the first
+// user gesture, and stays off under `?test=1` unless the URL adds `&audio=1`.
 import { effect } from '@preact/signals';
 import {
   ABILITY_SOUNDS,
@@ -13,6 +13,7 @@ import {
   createEventSounds,
   createFieldSounds,
   createTypeTicker,
+  type TypeTicker,
   crossedLowIntegrity,
   SOUND_EVENT_TYPES,
   RADIO_DUCK,
@@ -32,7 +33,9 @@ import {
   type SoundCall,
 } from '../audio/index.ts';
 import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
+import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
 import { WAVE_CLEAR_CUE } from '../audio/music/index.ts';
+import { C2_STINGS, lineCue, PA_JINGLE_CUE } from '../audio/storyCues.ts';
 import {
   isStormId,
   renderCue,
@@ -45,11 +48,13 @@ import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { JingleVariant } from '../content/presentation.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import { clearTicksFor, type SimEvent } from '../sim/index.ts';
+import { assetDamage, clearTicksFor, type SimEvent, type SimState } from '../sim/index.ts';
 import { setTypeTick } from '../ui/dialogue/LineText.tsx';
 import { presentationOfMap } from '../story/presentation.ts';
-import { speaking } from '../ui/dialogue/state.ts';
+import { dialogue, speaking } from '../ui/dialogue/state.ts';
+import { runResult, type ResultsChoice } from '../ui/screens/state.ts';
 import { hud, screen } from '../ui/state.ts';
+import { escortLow } from './dialogue.ts';
 import type { Host } from './host.ts';
 import { activeSave } from './save.ts';
 import type { AudioHooks } from './testHookTypes.ts';
@@ -80,18 +85,26 @@ export function playSfx(id: SfxId): void {
 }
 
 /**
- * Plays the colony jingle once in `variant`'s arrangement, outside a battle (a story beat: the PA's
- * minor shift change that closes Act II, app/runFlow.ts). A variant with no cue plays nothing.
+ * Plays the colony jingle once in `variant`'s arrangement on the PA, outside a battle (a story
+ * beat: the PA's minor shift change that closes Act II, app/runFlow.ts): its PA arrangement
+ * (PA_JINGLE_CUE: `minor` is `pa_shift_minor`), else its wave-clear cue. A variant with neither
+ * plays nothing.
  */
 export function playJingle(variant: JingleVariant): void {
-  const id = WAVE_CLEAR_CUE[variant];
+  const id = PA_JINGLE_CUE[variant] ?? WAVE_CLEAR_CUE[variant];
   if (id !== null) engine.cue(id);
 }
 
 function playCalls(calls: SoundCall[]): void {
   for (const c of calls) {
-    if (c.kind === 'sfx') engine.play(c.id, { pitch: c.pitch, delay: c.delay });
-    else engine.cue(c.id);
+    if (c.kind === 'sfx') {
+      engine.play(
+        c.id,
+        c.gain === undefined
+          ? { pitch: c.pitch, delay: c.delay }
+          : { pitch: c.pitch, delay: c.delay, gain: c.gain },
+      );
+    } else engine.cue(c.id);
   }
   calls.length = 0;
 }
@@ -127,18 +140,86 @@ function enabledButton(target: EventTarget | null): HTMLButtonElement | null {
   return b === null || b.disabled || b.getAttribute('aria-disabled') === 'true' ? null : b;
 }
 
+/** The music duck a sung line holds (LINE_CUES `musicDuck`) until the next spoken line. */
+const LINE_CUE_DUCK = 'line_cue';
+
+/**
+ * A spoken line (the comms panel or a scene) ducks the music and the low-priority sound effects,
+ * and blips as it starts; a sung line (LINE_CUES) plays its cue instead of the blip and hushes
+ * the music until the next spoken line. Returns the unwiring (installAudio's; tests).
+ */
+export function bindSpeechAudio(ticker: TypeTicker): () => void {
+  let lineId = 0;
+  let sung = false;
+  return effect(() => {
+    const l = speaking.value;
+    engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
+    // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line, and a
+    // further 8 dB for a moment as each line starts, under its blip (D135).
+    engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
+    if (l === null || l.id === lineId) {
+      if (l === null && sung) {
+        sung = false;
+        engine.holdDuck(LINE_CUE_DUCK, null);
+      }
+      return;
+    }
+    lineId = l.id;
+    if (l.silence) return;
+    engine.dipUnderSpeech();
+    const scene = dialogue.scene.peek();
+    const cue =
+      scene !== null && scene.line === l ? lineCue(scene.sceneId, scene.transcript.length) : null;
+    if (sung && cue === null) {
+      sung = false;
+      engine.holdDuck(LINE_CUE_DUCK, null);
+    }
+    if (cue !== null) {
+      sung = true;
+      engine.holdDuck(LINE_CUE_DUCK, cue.musicDuck);
+      engine.cue(cue.cue);
+      ticker.quietUntil(performance.now() + cue.quietMs);
+      return;
+    }
+    const blip = blipFor(l.speaker);
+    if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
+  });
+}
+
+/**
+ * C2's sting as its choice is taken on the Results card (C2_STINGS, by the transaction it made).
+ * Returns the unwiring (installAudio's; tests).
+ */
+export function bindResultsAudio(): () => void {
+  let was: ResultsChoice | null = null;
+  return effect(() => {
+    const r = runResult.value;
+    const choice = r?.choice ?? null;
+    if (r !== null && choice !== null && choice.picked !== null && was?.picked === null) {
+      const c2 = (r.rewards?.transactions ?? []).findLast((t) => t.kind === 'c2');
+      const cue = c2 === undefined || c2.kind !== 'c2' ? null : C2_STINGS[c2.choice];
+      if (cue !== null) engine.cue(cue);
+    }
+    was = choice;
+  });
+}
+
 /**
  * Installs the audio for the session: `enabled` false (`?test=1` without `&audio=1`) keeps it
- * silent and creates no AudioContext. Returns the uninstall (tests).
+ * silent and creates no AudioContext. `make` builds the engine (tests pass a recorder). Returns
+ * the uninstall (tests).
  */
-export function installAudio(enabled: boolean): () => void {
+export function installAudio(
+  enabled: boolean,
+  make: () => AudioEngine = createAudioEngine,
+): () => void {
   uninstall?.();
   if (!enabled) {
     engine = silentEngine(settings.value.audio.muted);
     uninstall = () => {};
     return uninstall;
   }
-  engine = createAudioEngine();
+  engine = make();
   lastMusic = null;
   const unlock = (): void => engine.unlock();
   const onVisibility = (): void => engine.setSuspended(document.hidden);
@@ -158,7 +239,6 @@ export function installAudio(enabled: boolean): () => void {
   document.addEventListener('click', onClick, true);
   document.addEventListener('pointerover', onHover, true);
   let noticeId = 0;
-  let lineId = 0;
   // The typewriter's tick: a soft, per-speaker patter as each line types (audio/speech.ts).
   const ticker = createTypeTicker();
   setTypeTick((speaker) => {
@@ -178,21 +258,8 @@ export function installAudio(enabled: boolean): () => void {
         engine.play('reject');
       }
     }),
-    // A spoken line (the comms panel or a scene) ducks the music and the low-priority sound
-    // effects, and blips as it starts.
-    effect(() => {
-      const l = speaking.value;
-      engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
-      // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line, and a
-      // further 8 dB for a moment as each line starts, under its blip (D135).
-      engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
-      if (l !== null && l.id !== lineId) {
-        lineId = l.id;
-        if (!l.silence) engine.dipUnderSpeech();
-        const blip = l.silence ? null : blipFor(l.speaker);
-        if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
-      }
-    }),
+    bindSpeechAudio(ticker),
+    bindResultsAudio(),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
       const s = screen.value;
@@ -246,6 +313,15 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     splits: (id) => (enemy(id)?.split ?? null) !== null,
     faction: (id) => enemy(id)?.faction ?? null,
     quietAt: (x, y) => field.quietAt(x, y),
+    // A tower the binder didn't see built (a resumed run's replay builds them unheard).
+    tower: (uid) => {
+      const t = sim.state.towers;
+      for (let i = 0; i < t.used; i++) {
+        const it = t.items[i]!; // i < used ≤ items.length
+        if (it.uid === uid) return it.def?.id ?? null;
+      }
+      return null;
+    },
   });
   // The Tidybots' chime as each drone finishes its sweep (render draws the sweep).
   const tidy = createTidyChimes(dials.tidybots !== 'off', sim.map.waves.length);
@@ -262,6 +338,16 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     hollowDuck = on;
     engine.holdDuck(HOLLOW_DUCK.key, on ? HOLLOW_DUCK.level : null, HOLLOW_DUCK.fadeSec);
   };
+  /** The music's level under Sundown's dark (DARK_SOUNDS), 1 when it isn't held. */
+  let darkLevel = 1;
+  const setDarkDuck = (level: number): void => {
+    if (level === darkLevel) return;
+    darkLevel = level;
+    engine.holdDuck(DARK_SOUNDS.duck, level < 1 ? level : null, DARK_SOUNDS.duckFadeSec);
+  };
+  // The meters' alarm (METER_ALARM), once as each crosses into its low band.
+  let assetLow = meterLow(sim.state, 'asset', sim.map.maxLost);
+  let escortWasLow = meterLow(sim.state, 'escort', sim.map.maxLost);
   const onEvent = (e: SimEvent<IdSpace>): void => {
     sounds.sounds(e, calls);
     if (e.type === 'AbilityUsed' && e.uid !== 0) {
@@ -274,7 +360,10 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     } else if (e.type === 'MapWon' || e.type === 'MapLost') {
       tidy.ended();
     }
-    playCalls(calls);
+    // A resumed run's replay keeps the books but plays nothing: the attempt that reached the
+    // checkpoint already played it (Host.replaying).
+    if (host.replaying) calls.length = 0;
+    else playCalls(calls);
   };
   const zoneAlive = (uid: number): boolean => {
     const z = sim.state.zones;
@@ -292,6 +381,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     // The music sits steadily ducked while any Hollow walks (one long dip, not one per hum), and
     // comes back as the map ends, whoever is still on the field (D135).
     setHollowDuck(s.outcome === 'playing' && field.hollowLive());
+    // The music sits back as Sundown's dark deepens, and comes back as the map ends.
+    setDarkDuck(s.outcome === 'playing' ? darkDuckLevel(s.dark) : 1);
     tidy.due(s.tick, chimes);
     for (const bot of chimes) {
       engine.play(TIDYBOT_SOUNDS.chime, { pitch: bot * TIDYBOT_SOUNDS.pitchPerBot });
@@ -315,6 +406,14 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
       engine.play('low_integrity', { delay: LOW_ALARM_DELAY_SEC });
     }
     integrity = s.integrity;
+    // The asset's critical band and the Escort's low mark sound the same alarm (T501h).
+    const assetNow = meterLow(s, 'asset', sim.map.maxLost);
+    const escortNow = meterLow(s, 'escort', sim.map.maxLost);
+    if ((assetNow && !assetLow) || (escortNow && !escortWasLow)) {
+      engine.play(METER_ALARM, { delay: LOW_ALARM_DELAY_SEC });
+    }
+    assetLow = assetNow;
+    escortWasLow = escortNow;
     if (screen.value === 'battle') {
       setMusic(
         battleMusic({
@@ -336,7 +435,30 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   return () => {
     for (const off of offs) off();
     setHollowDuck(false);
+    setDarkDuck(1);
   };
+}
+
+/** The music's level under Sundown's darkness `dark` (DARK_SOUNDS: in steps, 1 at none). */
+export function darkDuckLevel(dark: number): number {
+  const steps = Math.round(Math.min(1, Math.max(0, dark)) / DARK_SOUNDS.duckStep);
+  return Math.round((1 - DARK_SOUNDS.duckDepth * steps * DARK_SOUNDS.duckStep) * 1000) / 1000;
+}
+
+/**
+ * Whether a map's other meter is in its low band while the map is played: the asset's `critical`
+ * band (a Protect map), or an Escort's losses at its low mark (`escortLow`, the meter's alarm).
+ */
+export function meterLow(
+  s: Pick<SimState, 'outcome' | 'asset' | 'maxAsset' | 'objective'> & {
+    readonly stats: Pick<SimState['stats'], 'refugeesLost'>;
+  },
+  meter: 'asset' | 'escort',
+  maxLost: number | null,
+): boolean {
+  if (s.outcome !== 'playing') return false;
+  if (meter === 'asset') return assetDamage(s.asset, s.maxAsset) === 'critical';
+  return s.objective === 'escort' && escortLow(s.stats.refugeesLost, maxLost);
 }
 
 /** The `__sd.audio` hooks: live state, and offline renders for the level checks (offline.ts). */

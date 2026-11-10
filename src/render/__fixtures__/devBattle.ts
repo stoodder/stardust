@@ -179,6 +179,8 @@ const devPenitent = defineEnemy({
   ...sunderglass_penitent,
   id: 'dev_penitent',
   hp: 400,
+  // The dev map's pace (A2M5's Penitent walks 0.2 tiles/s since T560; this map is shorter).
+  speedTilesPerSec: 0.35,
   shield: { hp: 150, regenPerSec: 40, regenDelaySec: 4 },
   boss: {
     ...sunderglass_penitent.boss!,

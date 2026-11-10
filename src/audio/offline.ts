@@ -13,6 +13,7 @@ import { BLIP_SFX } from './sfx/blips.ts';
 import { isSfxId, SFX, type SfxId } from './sfx/index.ts';
 import { PUMP_MS } from './engine.ts';
 import { HOLLOW_DUCK } from './eventTablesAct2.ts';
+import { DARK_SOUNDS } from './eventTablesAct2b.ts';
 import { DEFAULT_VOLUMES, RADIO_DUCK, SPEECH_SFX_DUCK, Synth, type SynthOptions } from './synth.ts';
 
 const RATE = 44_100;
@@ -156,6 +157,8 @@ interface Storm {
   readonly line: { readonly at: number; readonly blip: SfxId };
   /** Hollow units walk throughout (a ducked render holds HOLLOW_DUCK from the start). */
   readonly hollow: boolean;
+  /** Sundown's dark throughout (a ducked render holds DARK_SOUNDS' duck at it), if any. */
+  readonly dark?: number;
 }
 
 /** How long a storm's line shows (s): its blip, 1 s of typing, and a held beat after. */
@@ -165,6 +168,9 @@ const LINE_SEC = 2.2;
 function typing(at: (t: number, id: SfxId, pitch?: number) => void, blipAt: number) {
   for (let t = blipAt + 0.2; t < blipAt + 1.2; t += 0.025) at(t, 'type_tick', 5);
 }
+
+/** The music's level under Sundown's `dark` (app/audio.ts `darkDuckLevel`, unstepped). */
+const darkLevel = (dark: number): number => 1 - DARK_SOUNDS.duckDepth * dark;
 
 /**
  * The worst cases the levels are checked against (`render('storm')`, `render('storm:act2')`),
@@ -183,6 +189,13 @@ function typing(at: (t: number, id: SfxId, pitch?: number) => void, blipAt: numb
  *   fizzle, her phase and retreat, Seeker volleys, a Capacitor Bank charging and discharging,
  *   Flash Freeze with Stasis, cloaked footsteps and reveals, Scanner Sweep, the rigs hit three
  *   times and a leak, a checkpoint, Tidybots, and Ves'thara speaking over it.
+ * - **act2_dusk**: A2M5's pivot and A2M6's W12 in full dark at once (T550): the Act II theme under
+ *   the PA's minor shift change, the rattle and the deaths, Fracture cracks, Rift Moths phasing,
+ *   two Prisms locking and humming at full ramp, the Lantern's lock, Mindspike shots and echoes,
+ *   Skewer, Magnet Crane, a fizzled charge, income coins, Cantors singing, the Penitent's arrival,
+ *   break, re-forming shield and kneel, the stand-down, refugees reaching the exit (Pebble too)
+ *   and two taken there, the meter's alarm, Stillness locking a freeze, the dusk's fall and the
+ *   night's air, the hush, the Hollow's hum, and Goldie speaking in the dark.
  */
 export const STORMS = {
   act1: {
@@ -298,6 +311,67 @@ export const STORMS = {
     line: { at: 7.6, blip: 'blip.vesthara' },
     hollow: true,
   },
+  act2_dusk: {
+    theme: 'act2_battle',
+    cue: 'pa_shift_minor',
+    sounds(at) {
+      for (let i = 1; i * 0.05 < STORM_SEC - 1; i++) {
+        const t = i * 0.05;
+        at(t, 'rivet_shot');
+        if (i % 2 === 0) at(t, 'sad_squeak', (i % 7) - 3);
+        if (i % 3 === 1) at(t, 'hollow_unravel', (i % 5) - 2);
+        if (i % 6 === 2) at(t + 0.04, 'void_crack');
+        if (i % 5 === 0) at(t, 'thumper_launch');
+        if (i % 5 === 2) at(t, 'thumper_impact');
+        if (i % 3 === 0) at(t, 'flak_fire');
+        if (i % 3 === 1) at(t, 'flak_burst');
+        if (i % 4 === 0) at(t, 'shield_ripple');
+        if (i % 6 === 0) at(t, 'aelari_shatter', (i % 3) * 2);
+        if (i % 10 === 0) at(t, 'beam_hum', 7);
+        if (i % 16 === 4) at(t, 'prism_lock');
+        if (i % 25 === 9) at(t, 'lantern_lock');
+        if (i % 4 === 2) at(t, 'mindspike_shot');
+        if (i % 8 === 2) at(t + 0.02, 'echo_burst');
+        if (i % 12 === 5) at(t, 'phase_tell');
+        if (i % 12 === 11) at(t, 'phase_in');
+        if (i % 12 === 3) at(t, 'phase_out');
+        if (i % 30 === 15) at(t, 'skewer_shot');
+        if (i % 40 === 25) at(t, 'magnet_grab');
+        if (i % 20 === 10) at(t, 'income_coin', 3);
+        if (i % 18 === 6) at(t, 'refugee_safe');
+        if (i % 48 === 0) at(t, 'cantor_song');
+        if (i % 36 === 0) at(t, 'aelari_hum');
+        if (i % 11 === 0) at(t, 'cloak_steps');
+        if (i % 50 === 0) at(t, 'night_air');
+      }
+      at(0.4, 'penitent_arrive');
+      at(1, 'wave_start');
+      at(1, 'dusk_fall');
+      at(1, 'hollow_hum');
+      at(1.5, 'pulse_tell');
+      at(2, 'hush_tell');
+      at(2.3, 'penitent_break');
+      at(2.5, 'hushed');
+      at(2.8, 'charge_fizzle');
+      at(3, 'pulse_fire');
+      at(3.4, 'stillness_cast');
+      at(3.45, 'stasis_lock');
+      at(4, 'refugee_taken');
+      at(4.3, 'low_integrity');
+      at(4.8, 'shield_reform');
+      at(5.4, 'penitent_kneel');
+      at(5.5, 'stand_down');
+      at(5.8, 'pebble_safe');
+      at(6.2, 'tell_fizzle');
+      at(6.6, 'refugee_taken');
+      at(7, 'hollow_hum');
+      at(7.2, 'upgrade');
+      at(8.4, 'checkpoint');
+    },
+    line: { at: 7.6, blip: 'blip.goldie' },
+    hollow: true,
+    dark: 1,
+  },
 } as const satisfies Readonly<Record<string, Storm>>;
 export type StormId = keyof typeof STORMS;
 
@@ -338,6 +412,13 @@ function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
     timed.push({
       t: 0,
       run: (s) => s.holdDuck(HOLLOW_DUCK.key, HOLLOW_DUCK.level, HOLLOW_DUCK.fadeSec),
+    });
+  }
+  const dark = storm.dark ?? 0;
+  if (dark > 0) {
+    timed.push({
+      t: 0,
+      run: (s) => s.holdDuck(DARK_SOUNDS.duck, darkLevel(dark), DARK_SOUNDS.duckFadeSec),
     });
   }
   const { at } = storm.line;

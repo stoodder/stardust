@@ -33,13 +33,19 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   await nextFrames(page);
   await shot(page, 'act2-close', 1, 'stinger-pa');
   const status = () => page.evaluate(() => globalThis.__sd!.audio.status());
-  expect((await status()).played).not.toHaveProperty('cue:minor_sting');
+  // The jingle in minor: the PA's arrangement (audio/storyCues.ts `PA_JINGLE_CUE`), else the
+  // wave-clear one's (`minor_sting`).
+  const minorJingles = async (): Promise<number> => {
+    const played = (await status()).played;
+    return (played['cue:pa_shift_minor'] ?? 0) + (played['cue:minor_sting'] ?? 0);
+  };
+  expect(await minorJingles()).toBe(0);
   const next = scene.getByRole('button', { name: /^(Next|Skip)$/ });
   await expect(next).toHaveText('Next');
   await next.click();
   await expect(scene).toContainText('The jingle plays once, over the dark. In minor.');
   // The jingle, in minor, as the caption shows: once, and never Act I's bright sting.
-  await expect.poll(async () => (await status()).played['cue:minor_sting'] ?? 0).toBe(1);
+  await expect.poll(minorJingles).toBe(1);
   expect((await status()).played).not.toHaveProperty('cue:bright_sting');
   await nextFrames(page);
   await shot(page, 'act2-close', 2, 'stinger-jingle');
@@ -49,7 +55,7 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   // Pebble's hum, so it opens clear: app/baseScenes.test.ts).
   await expect(scene).toBeHidden({ timeout: 6000 });
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
-  expect((await status()).played['cue:minor_sting']).toBe(1);
+  expect(await minorJingles()).toBe(1);
 
   // The Bounty Board is gone, with no message.
   const tabs = page.getByRole('tablist', { name: 'Base' });
