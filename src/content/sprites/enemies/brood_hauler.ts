@@ -3,8 +3,8 @@
 // §8: a pack on the back). Act I sells it as stolen stardust; it is a cluster of young.
 import { defineSprite } from '../defineSprite.ts';
 import { DEATH_ANIM, deathFrames } from './death.ts';
-import { at, line, plot, type CharGrid } from '../helpers.ts';
-import { sack, SACK_LEGEND } from './sack.ts';
+import { at, fromRows, line, plot, rows, type CharGrid } from '../helpers.ts';
+import { sack, SACK_LEGEND, type SackShape, YOUNG_HEADROOM, youngHeads } from './sack.ts';
 import { EYE, finish, skitterBody } from './skitter.ts';
 
 const W = 28;
@@ -60,44 +60,67 @@ export function hauler(facing: 'se' | 'ne', step: 0 | 1, young = false): string[
       : ['11...11....11...11..11..', '00...00....00...00..00..'];
   if (facing === 'se') {
     // The sack rides on the back (upper left), bobbing a step behind the body.
-    sack(g, {
+    const bag: SackShape = {
       cx: 9.5,
       cy: 9 + (1 - sink),
       rx: 6,
       ry: 5.5,
       twinkle: step,
       ...(young ? { young: 'se' as const } : {}),
-    });
+    };
+    sack(g, bag);
     // The rope strap from the sack's neck across the shell to the chest.
     line(g, 13, 6 + (1 - sink), 20, 18 + sink, 'R');
-    return finish(g, [
-      [2, H - 2, legs],
-      [19, 14 + sink, EYE],
-      [23, 14 + sink, EYE],
-      [21, 17 + sink, ['kk']],
-      // A moss tuft peeking over the brow plate.
-      [21, 11 + sink, ['.dc', 'cdb']],
-      // The brow plate over the eyes.
-      [18, 12 + sink, ['SSTT.TT']],
-    ]);
+    return withYoung(
+      bag,
+      step,
+      finish(g, [
+        [2, H - 2, legs],
+        [19, 14 + sink, EYE],
+        [23, 14 + sink, EYE],
+        [21, 17 + sink, ['kk']],
+        // A moss tuft peeking over the brow plate.
+        [21, 11 + sink, ['.dc', 'cdb']],
+        // The brow plate over the eyes.
+        [18, 12 + sink, ['SSTT.TT']],
+      ]),
+    );
   }
   // Seen from behind, the sack is most of the silhouette.
-  sack(g, {
+  const bag: SackShape = {
     cx: 14,
     cy: 9.5 + (1 - sink),
     rx: 8,
     ry: 7,
     twinkle: step,
     ...(young ? { young: 'ne' as const } : {}),
-  });
+  };
+  sack(g, bag);
   line(g, 8, 14 + sink, 6, 20 + sink, 'R');
   line(g, 20, 14 + sink, 22, 20 + sink, 'R');
-  return finish(g, [
-    [2, H - 2, legs],
-    [3, 17 + sink, ['+.', '.*']],
-    [23, 17 + sink, ['.+', '*.']],
-  ]);
+  return withYoung(
+    bag,
+    step,
+    finish(g, [
+      [2, H - 2, legs],
+      [3, 17 + sink, ['+.', '.*']],
+      [23, 17 + sink, ['.+', '*.']],
+    ]),
+  );
 }
+
+/** A fleeing Hauler's frame (D134): YOUNG_HEADROOM rows taller, its young over the sack's rim. */
+function withYoung(bag: SackShape, step: 0 | 1, frame: string[]): string[] {
+  if (bag.young === undefined) return frame;
+  const w = frame[0]?.length ?? W;
+  const g = fromRows([...Array<string>(YOUNG_HEADROOM).fill('.'.repeat(w)), ...frame]);
+  youngHeads(g, bag, YOUNG_HEADROOM, step);
+  return rows(g);
+}
+
+/** The fleeing Hauler's canvas and ground point: YOUNG_HEADROOM rows over the Hauler's. */
+export const HAULER_YOUNG_SIZE = { w: W, h: H + YOUNG_HEADROOM } as const;
+export const HAULER_YOUNG_ANCHOR = { x: 14, y: 24 + YOUNG_HEADROOM } as const;
 
 export const enemyBroodHauler = defineSprite({
   id: 'enemy.brood_hauler',

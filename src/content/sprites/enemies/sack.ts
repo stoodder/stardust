@@ -9,7 +9,7 @@ import { at, plot, stamp, type CharGrid } from '../helpers.ts';
  * tuft or face): the youngling's coral (`coral.2`–`.4`), its ink eyes with a white glint, and its
  * seedling's greens (art-direction §6; D134).
  */
-const YOUNG_LEGEND_FWD = {
+const YOUNG_LEGEND = {
   C: 'coral.3',
   D: 'coral.2',
   E: 'coral.4',
@@ -25,7 +25,7 @@ const YOUNG_LEGEND_FWD = {
  * flecks read; rope, and the glitter's pink and gold.
  */
 export const SACK_LEGEND = {
-  ...YOUNG_LEGEND_FWD,
+  ...YOUNG_LEGEND,
   G: 'brass.4',
   H: 'grime.4',
   J: 'grime.3',

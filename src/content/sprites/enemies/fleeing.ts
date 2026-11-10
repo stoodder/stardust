@@ -2,7 +2,12 @@
 // Act II's waves (A2M1–A2M3: Nibblers, Zoomers, younglings, Diggers, Puffwings, Haulers, Elders,
 // Bunchlings), drawn for a `fleeing`-tagged unit. The Brood Hauler's is its Act II self: the sack
 // untied and the young showing in its mouth (art-direction §6, A2M3's "sacks visibly young").
-import { enemyBroodHauler, hauler } from './brood_hauler.ts';
+import {
+  enemyBroodHauler,
+  hauler,
+  HAULER_YOUNG_ANCHOR,
+  HAULER_YOUNG_SIZE,
+} from './brood_hauler.ts';
 import { enemyBunchling } from './bunchling.ts';
 import { enemyDigger } from './digger.ts';
 import { enemyElder } from './elder.ts';
@@ -29,6 +34,9 @@ export const enemyElderFleeing = fleeingSprite(enemyElder, 'enemy.elder_fleeing'
 export const enemyBroodHaulerFleeing = fleeingSprite(
   {
     ...enemyBroodHauler,
+    // Taller, for the young's heads over the rim (D134).
+    size: HAULER_YOUNG_SIZE,
+    anchor: HAULER_YOUNG_ANCHOR,
     frames: {
       walk_se_0: hauler('se', 0, true),
       walk_se_1: hauler('se', 1, true),
