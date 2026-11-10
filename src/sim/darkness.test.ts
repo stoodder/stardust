@@ -168,16 +168,16 @@ describe('light and range', () => {
   });
 });
 
-describe('what the dark dims (D138)', () => {
-  /** Full dark, every tower placed far from the rock's lamp. */
-  function fullDark(): ReturnType<typeof darkSetup> {
-    const set = darkSetup();
-    set.state.wave = 2;
-    set.state.schedule.startTick[0] = -500;
-    set.state.schedule.startTick[1] = -300;
-    return set;
-  }
+/** Full dark, every tower placed far from the rock's lamp. */
+function fullDark(): ReturnType<typeof darkSetup> {
+  const set = darkSetup();
+  set.state.wave = 2;
+  set.state.schedule.startTick[0] = -500;
+  set.state.schedule.startTick[1] = -300;
+  return set;
+}
 
+describe('what the dark dims (D138)', () => {
   it('a tower with no attack keeps its numbers (no penalty, so no dark line)', () => {
     const { state, ctx } = fullDark();
     const look = placeTower(state, LOOKOUT, 4, 3);

@@ -14,6 +14,10 @@ const map = content.maps.a2_m05;
 const tilesOf = (ch: TileChar): [number, number][] =>
   map.tiles.flatMap((t, i) => (t === ch ? [[i % map.cols, Math.floor(i / map.cols)]] : []));
 
+/** A2M5's [wave] issues on `r`. */
+const waveIssues = (r: RawContent): string[] =>
+  validate(r).filter((m) => m.startsWith('[wave] maps.a2_m05'));
+
 /** A2M5's [new-threats] issues on `r`. */
 const newThreats = (r: RawContent): string[] =>
   validate(r).filter((m) => m.includes('[new-threats] maps.a2_m05'));
@@ -135,8 +139,6 @@ describe('A2M5 · The Long Walk', () => {
   });
 
   it('sends nothing Aelari after the Penitent pivots her side ([wave], D138)', () => {
-    const waveIssues = (r: RawContent): string[] =>
-      validate(r).filter((m) => m.startsWith('[wave] maps.a2_m05'));
     expect(waveIssues(RAW_CONTENT)).toEqual([]);
     const raw = RAW_CONTENT;
     const m = raw.maps.a2_m05;
@@ -147,11 +149,11 @@ describe('A2M5 · The Long Walk', () => {
         ...raw.maps,
         a2_m05: {
           ...m,
-          waves: m.waves.map((w) =>
-            w === w7
-              ? { ...w7, groups: [...w7.groups, { enemy: 'glimmer', count: 2, route: 'road' }] }
-              : w,
-          ),
+          waves: [
+            ...m.waves.slice(0, 6),
+            { ...w7, groups: [...w7.groups, { enemy: 'glimmer', count: 2, route: 'road' }] },
+            ...m.waves.slice(7),
+          ],
         },
       },
     };

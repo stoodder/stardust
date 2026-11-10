@@ -88,10 +88,8 @@ export function validateWaves(
       else if (!isPositive(wave.countdownSec))
         issues.add('wave', `${where}.countdownSec`, 'must be > 0');
     }
-    if (wave.noCall !== undefined) {
-      if (wave.noCall !== true) issues.add('wave', `${where}.noCall`, 'must be true or absent');
-      else if (w === 0)
-        issues.add('wave', `${where}.noCall`, 'wave 1 is started by the player, never called');
+    if (wave.noCall !== undefined && w === 0) {
+      issues.add('wave', `${where}.noCall`, 'wave 1 is started by the player, never called');
     }
     if (wave.countdownAfter !== undefined) {
       const bossBefore = def.waves
