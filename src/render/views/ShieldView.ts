@@ -6,6 +6,8 @@
 //   RIPPLES_PER_FRAME in all, so a Zapcoil's chain through a column reads as ripples, not a flood.
 //   The hit that breaks the shield always shows: a wider `white.1` flash, a `blue.4` ring, and the
 //   bubble's shards flying off and falling (TransientFx's debris).
+// - **The shed spark** (`EnemySpawned` of a unit with an owner, D139): a boss's shards each get a
+//   spark lobbed from its heart to their spot (TransientFx's `shed`), so the player sees them shed.
 // - **The pulse ring** (`ShieldPulse` 'fired'): a `white.1` flash at the pulser and a `blue.4` ring
 //   growing on the ground out to the pulse's radius, the dashed `shield_aura` ring.
 // - **The pulse tell**, from sim state each frame (`pulseTelling`): the reach laid on the ground as

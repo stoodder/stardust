@@ -499,26 +499,26 @@ describe('Lightsong (Prism + Lantern; towers.md § 6.2)', () => {
   });
 });
 
-describe('its reach is its detection radius, after stacking (D137, D139)', () => {
-  /** A Lantern T1 on fx_map's high ground (3, 2), its links recomputed under `modifiers`. */
-  function onHighGround(modifiers: SimConfig<IdSpace>['modifiers'] = []): {
-    state: SimState;
-    ctx: TickContext;
-    t: Tower;
-  } {
-    const { state, ctx } = setup({ modifiers });
-    const t = lantern(state, 3, 2, 1);
-    links(state, ctx);
-    return { state, ctx, t };
-  }
-  const RANGE_5: SimConfig<IdSpace>['modifiers'] = [
-    { kind: 'towerStat', tower: '*', stat: 'range', pct: 0.05, source: 'rnd' },
-  ];
-  const TUNE_RANK_3: SimConfig<IdSpace>['modifiers'] = [
-    { kind: 'towerStat', tower: 'lantern', stat: 'range', pct: 0.05, source: 'shop' },
-    { kind: 'supportStat', tower: 'lantern', stat: 'radius', pct: 0.05, source: 'shop' },
-  ];
+/** A Lantern T1 on fx_map's high ground (3, 2), its links recomputed under `modifiers`. */
+function onHighGround(modifiers: SimConfig<IdSpace>['modifiers'] = []): {
+  state: SimState;
+  ctx: TickContext;
+  t: Tower;
+} {
+  const { state, ctx } = setup({ modifiers });
+  const t = lantern(state, 3, 2, 1);
+  links(state, ctx);
+  return { state, ctx, t };
+}
+const RANGE_5: SimConfig<IdSpace>['modifiers'] = [
+  { kind: 'towerStat', tower: '*', stat: 'range', pct: 0.05, source: 'rnd' },
+];
+const TUNE_RANK_3: SimConfig<IdSpace>['modifiers'] = [
+  { kind: 'towerStat', tower: 'lantern', stat: 'range', pct: 0.05, source: 'shop' },
+  { kind: 'supportStat', tower: 'lantern', stat: 'radius', pct: 0.05, source: 'shop' },
+];
 
+describe('its reach is its detection radius, after stacking (D137, D139)', () => {
   it('high ground and a range grant stretch nothing: the beam stops where the reveal does', () => {
     for (const mods of [[], RANGE_5]) {
       const { ctx, t } = onHighGround(mods);

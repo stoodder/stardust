@@ -13,8 +13,8 @@
 //   the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
 // - Debris (T430a): pooled 1 and 2 px palette pixels with a velocity, gravity, and a stepped fade
 //   (art-direction § Particles: at most 0.8 s each, far under the 512 cap): an Aelari unit's
-//   shatter and a broken shield's shards, the Hollow's unravelling violet motes, and the stardust
-//   fleck an Act II Skitterkin leaves (deathLook.ts). Cosmetic RNG of its own, never the sim's.
+//   shatter and a broken shield's shards, the Hollow's unravelling violet motes, the stardust
+//   fleck an Act II Skitterkin leaves (deathLook.ts), and a boss's shed spark to each shard (D139). Cosmetic RNG of its own, never the sim's.
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';

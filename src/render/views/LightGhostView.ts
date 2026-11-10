@@ -2,7 +2,7 @@
 // on a map with darkness, a Prism whose beam is off (between waves, with nothing in range) shows
 // the disc it will light as a ghost, and arming a Prism shows the disc it would light from the
 // tile under the pointer, so the build phase reads what the light will do. A ghost is the lit
-// disc's rim only, dashed, in the Prism's cold `blue.4` (vfx/darknessPixels.ts `ghostDiscImage`):
+// disc's rim only, dotted, in the light's gold (vfx/darknessPixels.ts `ghostDiscImage`; D139):
 // it never lightens anything under it, so nothing reads lit that the sim keeps dark (D137: the
 // real holes stay exactly the sim's lit discs, DarknessView's). A resting Prism's ghost is faint
 // (GHOST_REST_ALPHA); the preview is clearer (GHOST_PREVIEW_ALPHA). A beaming Prism has no ghost:

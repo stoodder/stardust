@@ -16,7 +16,8 @@
 // as it re-forms; while a shield-broken boss's shards count the wall back, a `blue.2` ghost grows
 // along the empty strip (review R6). A boss whose fight ends above 0 (`endAtPct`) has the end
 // mark there: a `white.1` tick edged in `ink.0` through the whole bar, standing on a 3 px flag
-// under it, the place the HP stops (the Witch's retreat, the Penitent's kneel). Allocation-free per frame: the Graphics
+// under it, the place the HP stops (the Witch's retreat, the Penitent's kneel), and under the
+// kneel's flag a tiny "½" (D139). Allocation-free per frame: the Graphics
 // redraws only when what it shows changes.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
