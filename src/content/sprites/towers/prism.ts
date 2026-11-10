@@ -125,7 +125,12 @@ function prismHead(facing: Facing, fire: boolean, kit: Kit = 't1'): string[] {
     // The sun: a ring of light knots round the lance's heart.
     for (let a = 0; a < 12; a++) {
       const t = (a / 12) * Math.PI * 2;
-      plot(g, Math.floor(CX + Math.cos(t) * 7), Math.floor(HEART + Math.sin(t) * 6), a % 3 === 0 ? '*' : '+');
+      plot(
+        g,
+        Math.floor(CX + Math.cos(t) * 7),
+        Math.floor(HEART + Math.sin(t) * 6),
+        a % 3 === 0 ? '*' : '+',
+      );
     }
   }
   const hw = kit === 'sunlance' ? 2.6 : big ? 4.6 : 3.6;

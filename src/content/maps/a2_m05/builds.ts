@@ -11,7 +11,6 @@ const UPPER_MID: GridPos = [5, 3];
 const FENCE_END: GridPos = [7, 2];
 /** Above and below the rig road. */
 const RIG_N: GridPos = [11, 2];
-const RIG_E: GridPos = [15, 3];
 const RIG_S: GridPos = [12, 5];
 /** West of the road's drop to the valley floor. */
 const DROP_W: GridPos = [1, 5];
@@ -20,14 +19,10 @@ const VALLEY_W: GridPos = [4, 5];
 /** The knoll over the valley (high ground). */
 const KNOLL: GridPos = [6, 6];
 const VALLEY_MID: GridPos = [8, 6];
-/** By the valley floor's east end, under the air lane. */
-const VALLEY_E: GridPos = [13, 6];
 /** South of the valley floor. */
 const FLOOR_S: GridPos = [9, 8];
 /** Beside the road's drop to the gate. */
 const GATE_N: GridPos = [13, 8];
-const GATE_W: GridPos = [9, 10];
-const GATE_S: GridPos = [10, 11];
 
 function parSteps(): BuildStep[] {
   return [

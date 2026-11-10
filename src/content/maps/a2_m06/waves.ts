@@ -65,7 +65,7 @@ export const waves = defineWaves([
   // W4 · Mote clusters
   {
     countdownSec: COUNTDOWN,
-    groups: [motes('west', 30, OPEN, PACKED), motes('east', 30, OPEN + 10, PACKED)],
+    groups: [motes('west', 20, OPEN, PACKED), motes('east', 20, OPEN + 10, PACKED)],
   },
   // W5 · Rift Moths ×3 [T: phasing; burst; Stillness, Prism]
   {
@@ -76,7 +76,7 @@ export const waves = defineWaves([
   // W6 · Fractures + Motes [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [fractures('west', 2, OPEN, 3), motes('east', 30, OPEN + 6, PACKED)],
+    groups: [fractures('west', 2, OPEN, 3), motes('east', 20, OPEN + 6, PACKED)],
   },
   // W7 · both roads
   {
@@ -84,8 +84,8 @@ export const waves = defineWaves([
     groups: [
       fractures('west', 2, OPEN, 3),
       fractures('east', 2, OPEN + 1.5, 3),
-      motes('west', 24, OPEN + 12, PACKED),
-      motes('east', 24, OPEN + 14, PACKED),
+      motes('west', 16, OPEN + 12, PACKED),
+      motes('east', 16, OPEN + 14, PACKED),
     ],
   },
   // W8 · Rift Moths + Fractures
@@ -96,7 +96,7 @@ export const waves = defineWaves([
   // W9 · a Rift Moth flock [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(9, OPEN, 0.6), motes('west', 30, OPEN + 8, PACKED)],
+    groups: [moths(9, OPEN, 0.6), motes('west', 20, OPEN + 8, PACKED)],
   },
   // W10 · big mixed
   {
@@ -105,27 +105,27 @@ export const waves = defineWaves([
       fractures('west', 3, OPEN, 2.5),
       fractures('east', 3, OPEN + 1, 2.5),
       moths(6, OPEN + 8, 1),
-      motes('west', 30, OPEN + 14, PACKED),
-      motes('east', 30, OPEN + 16, PACKED),
+      motes('west', 20, OPEN + 14, PACKED),
+      motes('east', 20, OPEN + 16, PACKED),
     ],
   },
   // W11 · the surge down the west road (full dark as it starts)
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes('west', 50, OPEN, PACKED),
+      motes('west', 36, OPEN, PACKED),
       fractures('west', 4, OPEN + 6, 1.5),
-      motes('west', 40, OPEN + 16, PACKED),
+      motes('west', 24, OPEN + 16, PACKED),
     ],
   },
   // W12 · the surge down the east road, in full dark
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes('east', 50, OPEN, PACKED),
+      motes('east', 36, OPEN, PACKED),
       fractures('east', 4, OPEN + 6, 1.5),
       moths(6, OPEN + 10, 0.8),
-      motes('east', 40, OPEN + 16, PACKED),
+      motes('east', 24, OPEN + 16, PACKED),
     ],
   },
   // W13 · both roads
@@ -135,21 +135,21 @@ export const waves = defineWaves([
       fractures('west', 4, OPEN, 2),
       fractures('east', 4, OPEN + 1, 2),
       moths(8, OPEN + 6, 0.8),
-      motes('west', 40, OPEN + 12, PACKED),
-      motes('east', 40, OPEN + 14, PACKED),
+      motes('west', 24, OPEN + 12, PACKED),
+      motes('east', 24, OPEN + 14, PACKED),
     ],
   },
   // W14 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      motes('west', 40, OPEN, PACKED),
-      motes('east', 40, OPEN + 2, PACKED),
+      motes('west', 24, OPEN, PACKED),
+      motes('east', 24, OPEN + 2, PACKED),
       fractures('west', 5, OPEN + 8, 1.5),
       fractures('east', 5, OPEN + 9, 1.5),
       moths(10, OPEN + 12, 0.7),
-      motes('west', 50, OPEN + 22, PACKED),
-      motes('east', 50, OPEN + 24, PACKED),
+      motes('west', 30, OPEN + 22, PACKED),
+      motes('east', 30, OPEN + 24, PACKED),
     ],
   },
 ]);

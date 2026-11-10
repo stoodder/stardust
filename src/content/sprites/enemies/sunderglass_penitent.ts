@@ -57,20 +57,12 @@ interface Frame {
 function frameOf(pose: PenitentPose, facing: Facing, beat: number): Frame {
   // The march: down on frames 0 and 2 (both feet planted), up a pixel on 1 and 3 (a foot lifts).
   const land = beat % 2 === 0 ? 1 : 0;
-  switch (pose) {
-    case 'walk':
-      return { pose, facing, beat, drop: land, bow: 0, kneel: 0 };
-    case 'tell':
-      return { pose, facing, beat, drop: 0, bow: 0, kneel: 0 };
-    case 'broken':
-      return { pose, facing, beat, drop: land, bow: 2, kneel: 0 };
-    case 'kneel':
-      return { pose, facing, beat, drop: 12, bow: 3, kneel: 2 };
-    case 'flee':
-      return beat === 0
-        ? { pose, facing, beat, drop: 6, bow: 2, kneel: 1 }
-        : { pose, facing, beat, drop: 12, bow: 3, kneel: 2 };
-  }
+  if (pose === 'walk') return { pose, facing, beat, drop: land, bow: 0, kneel: 0 };
+  if (pose === 'tell') return { pose, facing, beat, drop: 0, bow: 0, kneel: 0 };
+  if (pose === 'broken') return { pose, facing, beat, drop: land, bow: 2, kneel: 0 };
+  // The kneel, and the stand-down's second frame; its first sinks half way.
+  if (pose === 'flee' && beat === 0) return { pose, facing, beat, drop: 6, bow: 2, kneel: 1 };
+  return { pose, facing, beat, drop: 12, bow: 3, kneel: 2 };
 }
 
 /** The torso: great shoulders sloping out like a cloak from the hood, tapering to the hips. */
@@ -199,7 +191,12 @@ function drawPane(g: CharGrid, top: number, look: 'whole' | 'lit' | 'broken', be
   }
   for (let a = 0; a < 16; a++) {
     const t = (a / 16) * Math.PI * 2;
-    plot(lead, Math.floor(hx + 0.5 + Math.cos(t) * 3.2), Math.floor(hy + 0.5 + Math.sin(t) * 3.2), '8');
+    plot(
+      lead,
+      Math.floor(hx + 0.5 + Math.cos(t) * 3.2),
+      Math.floor(hy + 0.5 + Math.sin(t) * 3.2),
+      '8',
+    );
   }
   // Which facet each glass pixel is in (flood-filled between the leads), for its tone.
   const facet = new Map<number, number>();
@@ -365,7 +362,8 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
 
   // From behind, the wall shows past its hips and (raised) over its shoulders: drawn first, the
   // body over it.
-  if (!front && top !== null && pose !== 'broken') drawPane(g, top, pose === 'tell' ? 'lit' : 'whole', beat);
+  if (!front && top !== null && pose !== 'broken')
+    drawPane(g, top, pose === 'tell' ? 'lit' : 'whole', beat);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (body(x, y)) plot(g, x, y, '.');
   weave(g, body, { mode: 'diag', spacing: 4, phase: 0, rise: f.drop, lx: CX, ly: heartY }, 8);
   // Warp ribs down the torso, following its taper (lit left, shaded right): the cloth's structure,

@@ -68,7 +68,12 @@ function eye(g: CharGrid, x: number, y: number, fire: boolean, big = false): voi
     for (let dx = -r; dx <= r; dx++) {
       const d = Math.abs(dx) + Math.abs(dy);
       if (d > r) continue;
-      plot(g, x + dx, y + dy, d === 0 ? (fire ? 'w' : 'U') : d < r ? (fire ? 'w' : 'U') : fire ? 'U' : 'V');
+      plot(
+        g,
+        x + dx,
+        y + dy,
+        d === 0 ? (fire ? 'w' : 'U') : d < r ? (fire ? 'w' : 'U') : fire ? 'U' : 'V',
+      );
     }
   }
 }
@@ -78,7 +83,12 @@ function ripple(g: CharGrid, cx: number, cy: number, r: number): void {
   for (let a = 0; a < 20; a++) {
     if (a % 5 === 4) continue;
     const t = (a / 20) * Math.PI * 2;
-    plot(g, Math.floor(cx + Math.cos(t) * r), Math.floor(cy + Math.sin(t) * r * 0.55), a % 2 === 0 ? 'U' : 'V');
+    plot(
+      g,
+      Math.floor(cx + Math.cos(t) * r),
+      Math.floor(cy + Math.sin(t) * r * 0.55),
+      a % 2 === 0 ? 'U' : 'V',
+    );
   }
 }
 
@@ -236,9 +246,17 @@ export const towerMindspikeHead = defineSprite({
     fire_ne_spec_a: { frames: ['ne_spec_a_fire', 'ne_spec_a'], fps: 10, loop: false },
     fire_nw_spec_a: { mirrorOf: 'fire_ne_spec_a' },
     // Dread's stare holds a beat longer.
-    fire_se_spec_b: { frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'], fps: 10, loop: false },
+    fire_se_spec_b: {
+      frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'],
+      fps: 10,
+      loop: false,
+    },
     fire_sw_spec_b: { mirrorOf: 'fire_se_spec_b' },
-    fire_ne_spec_b: { frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'], fps: 10, loop: false },
+    fire_ne_spec_b: {
+      frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'],
+      fps: 10,
+      loop: false,
+    },
     fire_nw_spec_b: { mirrorOf: 'fire_ne_spec_b' },
   },
 });
