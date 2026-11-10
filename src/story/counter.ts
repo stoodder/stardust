@@ -1,7 +1,8 @@
 // Pests Processed presentation (docs/design/core-loop.md § 6.2; docs/story/style-guide.md § 2;
 // docs/design/maps.md § 5.5): the counter's number format, its live in-map value, the results
-// line per counter style (the presentation dial; story/presentation.ts), and the finale's countdown display. Pure; the lifetime count itself is save data
-// (meta adds a run's kills when it ends).
+// line per counter style (the presentation dial, never the act; story/presentation.ts), and the
+// finale's countdown display. Pure; the lifetime count itself is save data (meta adds a run's
+// kills when it ends).
 import type { CounterStyle } from '../content/presentation.ts';
 import { assertNever } from '../shared/types.ts';
 

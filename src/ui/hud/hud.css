@@ -453,9 +453,14 @@ section.chamfer,
   gap: 3px;
 }
 
-/* Slot 2 with its companion's face beside the icon (T216): wider by the face and its gap. */
+/* Slot 2 with its companion's face beside the icon (T216): wider by the face and its gap, the
+   row nudged right of the key badge. */
 .hud-ability.companion {
   width: 52px;
+}
+
+.hud-ability.companion .ability-row {
+  padding-left: 7px;
 }
 
 .hud-companion {

@@ -21,7 +21,7 @@ const ICON_PX = 16;
  * their color. An absent companion's is the portrait's derived `dark` bake.
  */
 const FACE_PX = 14;
-const FACE_AT = { x: 17, y: 9 } as const;
+const FACE_AT = { x: 15, y: 13 } as const;
 
 /** The companion's face beside slot 2's icon. Decorative: the slot's label names the ability. */
 function CompanionFace({ c, absent }: { c: CompanionView; absent: boolean }) {
