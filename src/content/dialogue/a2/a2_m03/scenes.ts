@@ -65,17 +65,22 @@ export const scenes = defineScenes([
       text: "There's grey creeping into Dome 3's soil. Plants know when something's wrong. People take longer.",
     },
   ]),
-  // The rescue (design/core-loop.md § 6.9): the player's click on the rock, or W6's clear. A brief
-  // pause; she isn't named yet.
-  defineScene('a2_m03_cue_pebble', [
-    { kind: 'line', speaker: 'pebble', expression: 'worried', text: '(squeak)' },
-    {
-      kind: 'line',
-      speaker: 'bricks',
-      text: "Small Fry. On your own? ...Pocket's got room. Just till we find her folks.",
-    },
-    { kind: 'line', speaker: 'pebble', text: '(squeak, smaller)' },
-  ]),
+  // The rescue (design/core-loop.md § 6.9): the player's click on the rock, or W6's clear. It
+  // pauses the battle (a pausing panel, D134): the player's own act, read, not glanced at. She
+  // isn't named yet.
+  {
+    id: 'a2_m03_cue_pebble',
+    pause: true,
+    nodes: [
+      { kind: 'line', speaker: 'pebble', expression: 'worried', text: '(squeak)' },
+      {
+        kind: 'line',
+        speaker: 'bricks',
+        text: "Small Fry. On your own? ...Pocket's got room. Just till we find her folks.",
+      },
+      { kind: 'line', speaker: 'pebble', text: '(squeak, smaller)' },
+    ],
+  },
   // Bricks's name tag (campaign.md § 6.3): Auntie Funmi, on the earliest-built attacking turret.
   defineScene('a2_m03_cue_name_tag', [
     {

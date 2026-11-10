@@ -1,6 +1,6 @@
 // The Act I Peeker's poke (T309): a UI event that sets `peeker_poked` on the save in play, once,
 // and reaches the cursor and the click the same way (render/input).
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryStore, createNewSave } from '../meta/index.ts';
 import { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { applyIntent } from '../render/input/apply.ts';
@@ -18,6 +18,15 @@ import {
   withPeekerPoked,
 } from './peeker.ts';
 import { activeSave, initSaves, newGame } from './save.ts';
+import { playSfx } from './audio.ts';
+import { checkpointOf, resumeOf } from './checkpoints.ts';
+
+vi.mock('./audio.ts', async (orig) => ({
+  ...(await orig<typeof import('./audio.ts')>()),
+  playSfx: vi.fn(),
+}));
+const squeaks = (): number =>
+  vi.mocked(playSfx).mock.calls.filter(([id]) => id === 'peeker_squeak').length;
 
 const sim = (mapId: string) => createSim(battleConfig(mapId, 1, null));
 
@@ -96,5 +105,27 @@ describe('the Peeker', () => {
     // A map without clickables binds nothing.
     const plain = createHost(sim('a1_m01'));
     expect(() => bindClickables(plain)()).not.toThrow();
+  });
+
+  it("the Peeker's rock squeaks once as it lights up, never while a checkpoint replays (D134)", () => {
+    vi.mocked(playSfx).mockClear();
+    const host = createHost(sim('dev_click'));
+    const off = bindClickables(host);
+    host.sim.enqueue({ type: 'callWave' });
+    host.fastForward(1);
+    expect(squeaks()).toBe(1);
+    host.fastForward(30);
+    expect(squeaks()).toBe(1); // armed once a run: one squeak
+    off();
+    // The same run replayed to a later tick: it arms again in the replay, silently.
+    vi.mocked(playSfx).mockClear();
+    const tick = host.sim.state.tick;
+    const cp = checkpointOf({ wave: 1, tick }, host.sim.state.commandLog);
+    const resumed = createHost(sim('dev_click'), { resume: resumeOf(host.sim.state.commandLog, cp) });
+    const off2 = bindClickables(resumed);
+    resumed.catchUp();
+    expect(resumed.sim.state.tick).toBe(tick);
+    expect(squeaks()).toBe(0);
+    off2();
   });
 });

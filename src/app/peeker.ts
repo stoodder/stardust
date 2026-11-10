@@ -10,7 +10,8 @@
 // Clickable world objects (T409; A2M3's Peeker holding Pebble) are sim commands instead: a click
 // or Enter on one issues `interact` (render/input). `bindClickables` adds what the sim's events
 // call for outside the playfield: screen readers hear when one turns clickable (its name from the
-// map's `clickables`), and a click on the Peeker's marker squeaks (the scene it cues says the rest).
+// map's `clickables`), and the Peeker's marker squeaks as it lights up and again when clicked (the
+// scene it cues says the rest). Nothing squeaks while a checkpoint replays.
 import type { CompiledMapDef } from '../content/compiled.ts';
 import { PEEKER_MARKER } from '../render/views/peekerMotion.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -59,7 +60,8 @@ export function clickableText(name: string): string {
 
 /**
  * Listens for clickable world objects in a battle (T409): announces each as it turns clickable,
- * and squeaks when the player reaches the Peeker (the fallback doesn't: the scene tells it).
+ * and squeaks as the Peeker's rock lights up and when the player reaches it (the fallback doesn't:
+ * the scene tells it).
  * Returns the unsubscribe.
  */
 export function bindClickables(host: Host<IdSpace>): () => void {
@@ -69,10 +71,15 @@ export function bindClickables(host: Host<IdSpace>): () => void {
     (Object.hasOwn(map.clickables, marker) ? map.clickables[marker]?.name : null) ?? 'Something';
   const offs = [
     host.bus.on('ClickableChanged', (e) => {
-      if (e.on) announce(clickableText(nameOf(e.marker)));
+      if (!e.on) return;
+      announce(clickableText(nameOf(e.marker)));
+      // The rock lights up with the Act I squeak, once (D134: a map arms it once a run).
+      if (e.marker === PEEKER_MARKER && !host.replaying) playSfx('peeker_squeak');
     }),
     host.bus.on('Interacted', (e) => {
-      if (!e.byFallback && e.marker === PEEKER_MARKER) playSfx('peeker_squeak');
+      if (!e.byFallback && e.marker === PEEKER_MARKER && !host.replaying) {
+        playSfx('peeker_squeak');
+      }
     }),
   ];
   return () => {

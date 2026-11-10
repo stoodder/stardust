@@ -46,8 +46,8 @@ export const ACT2_CODEX: readonly CodexEntryDef[] = [
     versions: {
       original: {
         text:
-          "Everglow's pride of the northern ridges: nine extraction rigs bringing up premium " +
-          'stardust around the clock! Officially this is soil processing, and it is very good ' +
+          "Everglow's pride of the northern ridges, where the deepest of our extraction rigs " +
+          'bring up premium stardust around the clock! Officially this is soil processing, and it is very good ' +
           'soil. The deeper the rig, the richer the yield. Crews rotate monthly for wellness. ' +
           'Some rotate sooner. Hearing protection is issued, as the deep bores hum. The humming ' +
           'is normal. Please do not hum back.',

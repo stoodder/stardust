@@ -57,14 +57,19 @@ export const scenes = defineScenes([
       text: 'You let the small ones walk, once. I saw. It is why I have not struck you.',
     },
   ]),
-  // 70%: she reads the counter aloud (the lifetime count plus this run's, story/text.ts).
-  defineScene('a2_m02_cue_witch_counter', [
-    {
-      kind: 'line',
-      speaker: 'vesthara',
-      text: 'You are the Counter. {pests_processed}. I have watched you count.',
-    },
-  ]),
+  // 70%: she reads the counter aloud (the lifetime count plus this run's, story/text.ts). The
+  // act's thesis, so it pauses the battle (a pausing panel, D134): heard, not glanced at.
+  {
+    id: 'a2_m02_cue_witch_counter',
+    pause: true,
+    nodes: [
+      {
+        kind: 'line',
+        speaker: 'vesthara',
+        text: 'You are the Counter. {pests_processed}. I have watched you count.',
+      },
+    ],
+  },
   defineScene('a2_m02_cue_witch_strike', [
     {
       kind: 'line',
