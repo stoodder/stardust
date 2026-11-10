@@ -12,8 +12,15 @@
 // - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3; a runner held in a
 //   hush tell or bolting, T402): `panic` (a fleeing runner's panic hop, T440a).
 // - **A Hollow unit's hush tell** (T440a): `tell`, its reach (no sneeze follows: a Mote has none).
+// - **Phased** (T503, T530a): `phase`, the Rift Moth's wings folded into a blade (EnemyView draws it
+//   dithered and faint; its tell flickers the walk, phaseLook.ts).
+// - **Shield broken** (a boss in a shield-broken phase with its shield down, T530a): `broken`, the
+//   Penitent's march with its wall shattered; the re-formed shield marches in `walk`.
 // - **Heavy** (it has hushed someone, T440a): `heavy`, the swollen walk with the victim inside.
 // - Else `walk`.
+// **Fray** (T501d, T530a; art-direction §4): an Aelari construct's walk has two hurt copies, and
+// `strideFor` swaps the walk for `fray1` below FRAY1_PCT of its HP and `fray2` below FRAY2_PCT
+// (`frayBand`); a sprite without them walks.
 // `glance` (a fleeing runner's look back, T440a) isn't a state pose: EnemyView shows it over a walk
 // while fleeLook.ts says the runner is glancing, where the sprite authors it.
 // Two poses play once, on a change the sim makes in a single tick: `sneeze` when a sneeze tell
@@ -47,6 +54,10 @@ export const ENEMY_POSES = [
   'heavy',
   'glance',
   'blink',
+  'phase',
+  'broken',
+  'fray1',
+  'fray2',
 ] as const;
 export type EnemyPose = (typeof ENEMY_POSES)[number];
 
@@ -64,11 +75,39 @@ export const POSE_INDEX: Readonly<Record<EnemyPose, number>> = {
   heavy: 9,
   glance: 10,
   blink: 11,
+  phase: 12,
+  broken: 13,
+  fray1: 14,
+  fray2: 15,
 };
 
 /** The poses that stride along the route (their tempo follows the unit's pace, walkTempo.ts). */
 export function isStride(pose: EnemyPose): boolean {
-  return pose === 'walk' || pose === 'heavy' || pose === 'glance';
+  return (
+    pose === 'walk' ||
+    pose === 'heavy' ||
+    pose === 'glance' ||
+    pose === 'broken' ||
+    pose === 'fray1' ||
+    pose === 'fray2'
+  );
+}
+
+/** Below this share of its HP an Aelari construct walks in `fray1` (three threads loose). */
+export const FRAY1_PCT = 2 / 3;
+/** Below this share, `fray2` (six threads, the rim notched). */
+export const FRAY2_PCT = 1 / 3;
+
+/** The fray band for `hp` of `maxHp`: 0 whole (or no HP to measure), 1 or 2 (T501d). */
+export function frayBand(hp: number, maxHp: number): 0 | 1 | 2 {
+  if (!(maxHp > 0) || hp >= maxHp * FRAY1_PCT) return 0;
+  return hp < maxHp * FRAY2_PCT ? 2 : 1;
+}
+
+/** The stride drawn for state pose `pose` at fray band `band`: the walk frays, nothing else does. */
+export function strideFor(pose: EnemyPose, band: 0 | 1 | 2): EnemyPose {
+  if (pose !== 'walk' || band === 0) return pose;
+  return band === 2 ? 'fray2' : 'fray1';
 }
 
 /** The poses that play once and then hand back to the state pose. */
@@ -84,6 +123,10 @@ export interface PoseFacts {
   readonly panic: boolean;
   /** Heavy: a Hollow unit that has hushed someone (T402). */
   readonly heavy: boolean;
+  /** Phased (T503): out of every tower's reach. */
+  readonly phased: boolean;
+  /** A boss in a shield-broken phase with its shield down (the Penitent's phase 2, T506). */
+  readonly shieldDown: boolean;
 }
 
 /** The pose the state alone calls for (no one-shots). */
@@ -91,8 +134,10 @@ export function statePose(f: PoseFacts): EnemyPose {
   if (f.leaving) return 'flee';
   if (f.burrowed) return 'under';
   if (f.invulnerable) return 'puff';
+  if (f.phased) return 'phase';
   if (f.telling !== null) return f.telling;
   if (f.panic) return 'panic';
+  if (f.shieldDown) return 'broken';
   return f.heavy ? 'heavy' : 'walk';
 }
 
@@ -123,6 +168,8 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
   out.telling = null;
   out.panic = false;
   out.heavy = e.heavy;
+  out.phased = e.phased;
+  out.shieldDown = false;
   if (def === null) return out;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the sim's readers take a live Enemy and only read it
   const live = e as Enemy;
@@ -130,6 +177,7 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     if (bossTelling(live)) out.telling = bossNextAbility(live) === 'burrow' ? 'dig' : 'tell';
     const phase = def.boss.phases[e.bossPhase - 1];
     out.panic = phase !== undefined && (phase.hastePct > 0 || phase.huddle !== null);
+    out.shieldDown = phase !== undefined && phase.onShieldBroken && e.shieldHp <= 0;
   } else if (def.burrow !== null && burrowTelling(live, def.burrow)) {
     out.telling = 'dig';
   }
@@ -162,6 +210,8 @@ export function blankFacts(): MutablePoseFacts {
     telling: null,
     panic: false,
     heavy: false,
+    phased: false,
+    shieldDown: false,
   };
 }
 
