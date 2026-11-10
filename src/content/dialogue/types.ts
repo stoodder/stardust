@@ -50,6 +50,8 @@ export type BaseExpression = (typeof BASE_EXPRESSIONS)[number];
 export const EXPRESSION_EXTRAS = {
   quill: { policy: 'neutral' },
   pebble: { singing: 'happy' },
+  // A3M1's Leaving Song: Thrum, if alive, hums with Pebble (act3.md § A3M1; T641 draws it).
+  thrum: { singing: 'happy' },
 } as const satisfies Partial<Record<PortraitSpeakerId, Readonly<Record<string, BaseExpression>>>>;
 type Extras = typeof EXPRESSION_EXTRAS;
 export type ExtraExpression = { [S in keyof Extras]: keyof Extras[S] }[keyof Extras];
