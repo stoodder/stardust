@@ -207,6 +207,8 @@ export interface ObjectiveView {
   /** The Intel it pays on a win. */
   readonly intel: number;
   readonly status: ObjectiveStatusView;
+  /** The save already holds it (done on an earlier win): the briefing says "On file". */
+  readonly held: boolean;
 }
 
 /** Which of a map's three medals (design/progression.md § 3). */
@@ -280,6 +282,21 @@ export interface AssetMeterView {
   readonly value: number;
   readonly max: number;
   readonly damage: 'intact' | 'damaged' | 'critical' | 'lost';
+}
+
+/**
+ * Bricks's name tag on a turret (T431; story/tags.ts): the tower's uid and the plate's text, in
+ * the 3×5 font's capitals. The battle scene draws the plate over that tower.
+ */
+export interface NameTagView {
+  readonly uid: number;
+  readonly text: string;
+}
+
+/** The "Checkpoint" cue as a checkpoint is taken (T431; core-loop §2.12). `id` changes each time. */
+export interface CheckpointCue {
+  readonly id: number;
+  readonly wave: number;
 }
 
 /** The "WAVE n" banner as a wave starts. `id` changes with every wave. */
@@ -411,4 +428,13 @@ export const hud = {
   spareRunnersAll: signal(false),
   /** The spare-runners controls show (unlocked after A1M5, or by `devUnlocks`; Alt+H works). */
   spareRunnersOpen: signal(false),
+  /**
+   * The Spare runners teach (T431, A2M1): from the first wave that sends runners, until the filter
+   * is first used this run or two waves have started, Spare (all) pulses and a hint names Alt+H.
+   */
+  spareRunnersTeach: signal(false),
+  /** Bricks's name tag, while a turret carries it (app/dialogue.ts steps `tagStep`), or null. */
+  nameTag: signal<NameTagView | null>(null),
+  /** The latest checkpoint taken this attempt (a small cue under the wave panel), or null. */
+  checkpoint: signal<CheckpointCue | null>(null),
 };
