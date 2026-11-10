@@ -8,7 +8,8 @@
 //   a tower two tiles away can't reach up across the rock either.
 // Floaters (TransientFx) are dropped at spawn, or the moment a spot arms if one is already up; the
 // name-tag plate (NameTagView) hides until the spot clears; an enemy standing within
-// KEEP_CLEAR_TILES hides its health bar and tell glyph (EnemyView). Inside the world the rock
+// KEEP_CLEAR_TILES, or whose health bar and tell glyph would reach over the spot on screen, hides
+// them (EnemyView). Inside the world the rock
 // itself (PeekerView) sorts KEEP_CLEAR_RAISE_PX further forward, so the walkers round it pass
 // behind it. Pure and allocation-free (fixed arrays the scene refills each frame), so the rule is
 // unit-tested.

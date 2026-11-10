@@ -149,7 +149,6 @@ test('clickable: walkers near the armed rock pass behind it with their health ba
   const seen = await page.evaluate(
     async ([c, r]) => {
       const sd = globalThis.__sd!;
-      const frame = () => new Promise((res) => requestAnimationFrame(() => res(null)));
       const bars: { near: boolean | null; far: boolean | null } = { near: null, far: null };
       for (let k = 0; k < 1500 && (bars.near === null || bars.far === null); k++) {
         sd.fastForward(1);
@@ -160,10 +159,11 @@ test('clickable: walkers near the armed rock pass behind it with their health ba
           const d = Math.hypot(e.x - (c + 0.5), e.y - (r + 0.5));
           const which = d < 1.45 ? 'near' : d > 2 ? 'far' : null;
           if (which === null || bars[which] !== null) continue;
-          // oxlint-disable-next-line no-await-in-loop -- the views sync on the next frames
-          await frame();
-          // oxlint-disable-next-line no-await-in-loop -- as above
-          await frame();
+          // The views sync on the next frames (inline: this function runs in the page).
+          for (let f = 0; f < 2; f++) {
+            // oxlint-disable-next-line no-await-in-loop -- one frame after another
+            await new Promise((res) => requestAnimationFrame(() => res(null)));
+          }
           bars[which] = sd.render()!.enemies.find((v) => v.uid === e.uid)?.bar ?? null;
         }
       }

@@ -24,7 +24,8 @@
 // BossBarView); a burrowed or leaving unit hides it. The first of each type's tell glyph shows for
 // 3 s of sim time (TELL_TICKS), so fast-forward shortens it and a pause holds it; every unit's
 // shows while the pointer is on it (T332). Both hide while the unit stands within KEEP_CLEAR_TILES
-// of an armed clickable or Pebble's lift (D135; vfx/keepClear.ts), so nothing covers the rock.
+// of an armed clickable or Pebble's lift, or they would reach over one on screen (D135;
+// vfx/keepClear.ts), so nothing covers the rock.
 // T430a's Act II looks (EnemyDress.ts places them; the rules are the *Look.ts files):
 // - **The hush** (hushLook.ts): the Hollow unit in its tell freezes mid-reach, leans 1 px at its
 //   victim, and flickers an acid rim; the held runner shakes inside a closing pale ring (sim
@@ -628,11 +629,9 @@ export class EnemyView implements PooledView {
       this.#telling = false;
       this.#syncGlyph();
     }
-    // Near an armed clickable or a lift (it arms, or the unit walks up to one): the overhead hides.
-    const clear = this.#keepClear?.near(e.x, e.y) === true;
-    const cleared = clear !== this.#clear;
-    this.#clear = clear;
     if (e.x === this.#x && e.y === this.#y) {
+      // A spot may have armed or cleared round a unit standing still.
+      const cleared = this.#syncClear();
       if (cleared) this.#syncGlyph();
       if (hit || cleared) this.#syncBar();
       if (this.#flying) this.#syncBob();
@@ -673,9 +672,41 @@ export class EnemyView implements PooledView {
     if (this.#body.depth !== depth) this.#body.setDepth(depth);
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
     this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
+    this.#syncClear();
     // A burrowed unit's glyph waits underground with it.
     this.#syncGlyph();
     this.#syncBar();
+  }
+
+  /**
+   * Whether its overhead (the tell glyph and the health bar) must keep clear of an armed clickable
+   * or a lift (D135; vfx/keepClear.ts): it stands within KEEP_CLEAR_TILES of one, or the overhead's
+   * box would reach over one's on screen (a unit two tiles in front, its bar over the rock's
+   * base). Updates `#clear`; returns whether it changed.
+   */
+  #syncClear(): boolean {
+    const k = this.#keepClear;
+    let clear = false;
+    if (k !== null && k.size > 0 && !Number.isNaN(this.#x)) {
+      clear = k.near(this.#x, this.#y);
+      if (!clear) {
+        const top = Math.round(this.#bodyY - this.#bob - this.#headroom);
+        const glyphH = this.#glyph === null ? 0 : this.#tell.height;
+        const glyphHalf = this.#glyph === null ? 0 : this.#tell.width / 2;
+        const half = Math.max(this.#barW / 2 + HEALTH_BAR_FRAME_PX, glyphHalf);
+        const bx = Math.round(this.#bodyX);
+        const barTop = top - HEALTH_BAR_GAP_PX - 2 * HEALTH_BAR_FRAME_PX - HEALTH_BAR_H;
+        clear = k.covers(
+          bx - half,
+          Math.min(barTop, top - TELL_GAP_PX - glyphH),
+          bx + half,
+          top - HEALTH_BAR_GAP_PX,
+        );
+      }
+    }
+    if (clear === this.#clear) return false;
+    this.#clear = clear;
+    return true;
   }
 
   /** Puts the body where it stands now (its bob and look offsets on top), and its overhead. */

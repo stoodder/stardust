@@ -19,6 +19,9 @@ const instrumentIds = new Set([...Object.keys(INSTRUMENTS), ...Object.keys(DRUMS
 const drumIds = new Set(Object.keys(DRUMS));
 
 const peakOf = (id: keyof typeof SFX): number => recipePeak(sfxRecipe(id));
+/** A recipe's loudest single layer (for sounds whose layers barely overlap). */
+const loudest = (id: keyof typeof SFX): number =>
+  SFX[id].gain * Math.max(...SFX[id].layers.map((l) => l.gain));
 
 /** A short crack at `at` s (the overlap-peak test). */
 const crack = (at: number): ToneLayer => ({
@@ -184,10 +187,8 @@ describe('sound effect recipes', () => {
   });
 
   it("make the Peeker's rock lighting up about 6 dB over the squeaks around it (D135)", () => {
-    // Each squeak's loudest layer (the layers barely touch; smoke/audio.spec.ts measures the
+    // Each sound's loudest layer (the layers barely touch; smoke/audio.spec.ts measures the
     // rendered peaks, 6.0 dB apart as built).
-    const loudest = (id: keyof typeof SFX): number =>
-      SFX[id].gain * Math.max(...SFX[id].layers.map((l) => l.gain));
     const squeaks = Math.max(loudest('panic_squeak'), loudest('sad_squeak'));
     const over = 20 * Math.log10(loudest('peeker_lights_up') / squeaks);
     expect(over).toBeGreaterThan(4.5);
