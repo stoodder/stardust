@@ -45,7 +45,7 @@ import type {
   WavePreviewGroup,
 } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
-import { abilityDescription, answerLabel, displayName } from './hudText.ts';
+import { abilityDescription, answerLabel, displayName, threatLabel } from './hudText.ts';
 
 /** Every registered sprite id (the tell glyphs the briefing may show). */
 const SPRITE_IDS: ReadonlySet<string> = new Set(SPRITES.map((d) => d.id));
@@ -281,7 +281,7 @@ function threatViews(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>
     const tell = THREAT_INTEL_TELL[trait];
     if (seen.has(tell)) continue;
     seen.add(tell);
-    threats.push({ id: trait, label: displayName(trait), glyph: tellGlyph([tell]) });
+    threats.push({ id: trait, label: threatLabel(trait), glyph: tellGlyph([tell]) });
   }
   for (const e of mapEnemies(map).values()) {
     if (e.neutral) continue;
@@ -289,7 +289,7 @@ function threatViews(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>
       const glyph = tellGlyph([tell]);
       if (seen.has(tell) || glyph === null) continue;
       seen.add(tell);
-      threats.push({ id: tell, label: displayName(tell), glyph });
+      threats.push({ id: tell, label: threatLabel(tell), glyph });
     }
   }
   return threats;
@@ -525,13 +525,15 @@ export function cooldownWords(cd: AbilityCooldownView): string {
 }
 
 /**
- * The map's optional objectives (Objective Intel; maps.md § 5.3) for the HUD's tracker, each with
- * its standing this run. `status`: what the sim says about each id; the sim doesn't settle
- * objectives until T304f, so an id it doesn't name is open.
+ * The map's optional objectives (Objective Intel; maps.md § 5.3) for the HUD's tracker and the
+ * briefing, each with its standing this run. `status`: the sim's standing by id
+ * (`objectiveStatusById`); an id it doesn't name is open. `held`: the ids the save already holds
+ * for this map (`MapRecord.objectives`), which the briefing marks "On file".
  */
 export function objectiveViews(
   map: Pick<CompiledMapDef<IdSpace>, 'objectives'>,
   status: Readonly<Record<string, ObjectiveStatusView>> = {},
+  held: readonly string[] = [],
 ): ObjectiveView[] {
   return map.objectives.map((o) => ({
     id: o.id,
@@ -539,5 +541,6 @@ export function objectiveViews(
     description: silkText(o.description),
     intel: o.intel,
     status: Object.hasOwn(status, o.id) ? (status[o.id] ?? 'open') : 'open',
+    held: held.includes(o.id),
   }));
 }

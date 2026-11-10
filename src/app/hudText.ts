@@ -1,11 +1,10 @@
 // The HUD's words (T225 split from app/hud.ts): display names, the tower panel's stat, delta, and
 // bonus lines, ability descriptions, the cursor's announcement, and the notices a rejected command
 // or a Hold fire change gives. Pure text from content and sim values; no signals.
-import { CAMPAIGN_PLAN } from '../content/campaign.ts';
 import type { CompiledAbilityDef, CompiledLinkDef, CompiledTier } from '../content/compiled.ts';
 import { STATUS_BITS } from '../content/rules.ts';
 import { TOWERS } from '../content/towers/index.ts';
-import { SYSTEM_UNLOCKS } from '../meta/index.ts';
+import { mapMilestone, SYSTEM_UNLOCKS } from '../meta/index.ts';
 import type { IdSpace, MeterLabel, TileChar } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { assertNever, type DeepReadonly } from '../shared/types.ts';
@@ -43,6 +42,17 @@ export function displayName(id: string): string {
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+/**
+ * A threat's name where it isn't its id in words (campaign.md § 4.8's threat column): the Motes'
+ * `clustered` trait is "Hollow clusters".
+ */
+const THREAT_LABELS: Readonly<Record<string, string>> = { clustered: 'Hollow clusters' };
+
+/** A threat trait or tell as the briefing's strip names it: "Armored", "Hollow clusters". */
+export function threatLabel(id: string): string {
+  return Object.hasOwn(THREAT_LABELS, id) ? (THREAT_LABELS[id] ?? id) : displayName(id);
 }
 
 /** The meter's HUD label (core-loop §2.9). */
@@ -262,13 +272,14 @@ export function specDescription(spec: TowerStatLine, tier: DeepReadonly<Compiled
 }
 
 /**
- * What a locked tier-4 choice says (T202d): the Engineering pane opens after Shift n
- * (`SYSTEM_UNLOCKS`), or, once it's open, that the pair is bought there.
+ * What a locked tier-4 choice says (T202d): the map Engineering opens after, named as the base's
+ * hints name it (`mapMilestone`, D102's naming rule: "Engineering unlocks after The Audit"), or,
+ * once it's open, that the pair is bought there.
  */
 export function specLockText(engineeringOpen: boolean): string {
   if (engineeringOpen) return 'Unlock in Engineering';
-  const n = CAMPAIGN_PLAN.findIndex((m) => m.id === SYSTEM_UNLOCKS.engineering) + 1;
-  return `Engineering unlocks after Shift ${n}`;
+  // An Act I map, so always named (mapShown); a later one would read "Shift n" until it shows.
+  return `Engineering unlocks after ${mapMilestone(SYSTEM_UNLOCKS.engineering)}`;
 }
 
 /** "rivet T3" (a counter-answer label) → "Rivet T3"; "thumper [Bunker Buster]" → "Thumper [Bunker Buster]". */

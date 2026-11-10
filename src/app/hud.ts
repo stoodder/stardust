@@ -4,11 +4,17 @@
 // change, so a steady frame re-renders nothing. The view models are built by hudViews.ts and
 // hudPanel.ts, and their words by hudText.ts (T225).
 import type { IdSpace } from '../content/types.ts';
-import { specsOwned, UPGRADE_HINT } from '../meta/index.ts';
+import { isMapWon, specsOwned, UPGRADE_HINT } from '../meta/index.ts';
 import { mapOrigin } from '../render/iso.ts';
 import type { BattleInteraction } from '../render/input/BattleInteraction.ts';
 import { VIEW_H, VIEW_W } from '../render/scale.ts';
-import { abilityStats, callWaveBonus, freeCastReady, nextWaveIsQuiet } from '../sim/index.ts';
+import {
+  abilityStats,
+  callWaveBonus,
+  freeCastReady,
+  nextWaveIsQuiet,
+  objectiveStatusById,
+} from '../sim/index.ts';
 import { CALLSIGNS } from '../content/dialogue/profile.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
@@ -72,6 +78,13 @@ export interface HudSaveInfo {
   readonly specsUnlocked: readonly string[];
   /** The spare-runners controls show (`meta/progress.ts`: after A1M5, or `devUnlocks`). */
   readonly spareRunnersOpen: boolean;
+  /**
+   * The Spare runners teach can show (T431): the controls are open and the map that teaches the
+   * filter (SPARE_TEACH_MAP, A2M1) isn't won yet.
+   */
+  readonly spareRunnersTeach: boolean;
+  /** This map's optional objectives the save already holds (`MapRecord.objectives`). */
+  readonly heldObjectives: readonly string[];
   /** The loadout's newly issued towers, in their first battle for this save (meta/hints.ts). */
   readonly newTowers: readonly string[];
   /** The save has shown the upgrade teach before, so it stays off (once per save, D061). */
@@ -104,20 +117,30 @@ export function hudSaveInfo(mapId: string, loadout: readonly string[]): HudSaveI
       ownedTowers: loadout,
       specsUnlocked: [],
       spareRunnersOpen: false,
+      spareRunnersTeach: false,
+      heldObjectives: [],
       newTowers: [],
       upgradeHintSeen: false,
       seenEnemies: [],
       callsign: () => DEFAULT_CALLSIGN,
     };
   }
-  const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
-    save.campaign.maps;
+  const maps: Readonly<
+    Record<
+      string,
+      { readonly medals: readonly string[]; readonly objectives?: readonly string[] } | undefined
+    >
+  > = save.campaign.maps;
+  const record = Object.hasOwn(maps, mapId) ? maps[mapId] : undefined;
+  const spareOpen = systemOpen('spareRunners');
   return {
     engineeringOpen: systemOpen('engineering'),
-    heldMedals: Object.hasOwn(maps, mapId) ? (maps[mapId]?.medals ?? []) : [],
+    heldMedals: record?.medals ?? [],
+    heldObjectives: record?.objectives ?? [],
     ownedTowers: save.unlocks.towers.filter((t) => !save.unlocks.revokedTowers.includes(t)),
     specsUnlocked: specsOwned(save),
-    spareRunnersOpen: systemOpen('spareRunners'),
+    spareRunnersOpen: spareOpen,
+    spareRunnersTeach: spareOpen && !isMapWon(save, SPARE_TEACH_MAP),
     newTowers: newTowersIn(loadout),
     upgradeHintSeen: hintShown(UPGRADE_HINT),
     seenEnemies: save.campaign.seenEnemies,
@@ -193,6 +216,36 @@ export function salvageHintShows(
 ): boolean {
   return started && wavesSince < SALVAGE_HINT_WAVES && wreckStanding && !sent && playing;
 }
+
+/** The map whose shift teaches Spare runners (core-loop §2.7: QUILL's line on A2M1). */
+export const SPARE_TEACH_MAP = 'a2_m01';
+/** The Spare runners teach goes after this many wave starts (D098: a hint never goes stale). */
+export const SPARE_HINT_WAVES = 2;
+
+/**
+ * Whether the Spare runners teach shows (T431): the save may see it (`allowed`), a wave with
+ * runners (a `fleeing` group) has started (`started`), fewer than SPARE_HINT_WAVES waves have
+ * started since (`wavesSince`), and the filter hasn't been used this run, while the map is played.
+ */
+export function spareRunnersHintShows(
+  allowed: boolean,
+  started: boolean,
+  used: boolean,
+  playing: boolean,
+  wavesSince = 0,
+): boolean {
+  return allowed && started && !used && playing && wavesSince < SPARE_HINT_WAVES;
+}
+
+/** Per wave (index = wave − 1): whether it sends runners (a group tagged `fleeing`). */
+export function runnerWaves(
+  waves: readonly { readonly groups: readonly { readonly tags: readonly string[] }[] }[],
+): boolean[] {
+  return waves.map((w) => w.groups.some((g) => g.tags.includes('fleeing')));
+}
+
+/** How long the "Checkpoint" cue shows, in ms of real time (T431). */
+export const CHECKPOINT_CUE_MS = 3000;
 
 /** An air group this big is a flock (A1M3's W5: ten Puffwings), what Time Dilation is taught on. */
 export const FLOCK_SIZE = 10;
@@ -324,8 +377,15 @@ export function bindHud(
     challenge: resumed ? ('forfeited' as const) : sim.state.medals.challenge,
   };
   hud.medals.value = medalViews(sim.map, medalState, saveInfo.heldMedals);
-  // Objectives stay open until the sim settles them (T304f).
-  hud.objectives.value = objectiveViews(sim.map);
+  // Each objective's standing, redrawn whenever the sim settles one (T304f, D090).
+  const syncObjectives = (): void => {
+    hud.objectives.value = objectiveViews(
+      sim.map,
+      objectiveStatusById(sim.state, sim.map),
+      saveInfo.heldObjectives,
+    );
+  };
+  syncObjectives();
   hud.callsign.value = saveInfo.callsign();
   // The wave preview's NEW badges: types the save has met before this battle.
   const seen: ReadonlySet<string> = new Set(saveInfo.seenEnemies);
@@ -352,6 +412,15 @@ export function bindHud(
   let tdCast = false;
   hud.timeDilationTeach.value = 0;
   hud.spareRunnersOpen.value = saveInfo.spareRunnersOpen;
+  // The Spare runners teach (T431): from the first wave with runners, until the filter is used.
+  const runners = runnerWaves(sim.map.waves);
+  let spareStarted = false;
+  let spareWaves = 0;
+  let spareUsed = false;
+  hud.spareRunnersTeach.value = false;
+  hud.nameTag.value = null;
+  hud.checkpoint.value = null;
+  let checkpointTimer: ReturnType<typeof setTimeout> | null = null;
   hud.leak.value = null;
   hud.waveBanner.value = null;
   hud.built.value = false;
@@ -452,6 +521,13 @@ export function bindHud(
         ? tdSlot
         : 0;
     }
+    hud.spareRunnersTeach.value = spareRunnersHintShows(
+      saveInfo.spareRunnersTeach,
+      spareStarted,
+      spareUsed,
+      playing,
+      spareWaves,
+    );
     hud.holdFireAll.value = s.holdFireAll;
     hud.spareRunnersAll.value = s.spareRunnersAll;
     hud.holdingCount.value = holdingCount(s.towers);
@@ -562,6 +638,8 @@ export function bindHud(
     }),
     host.bus.on('WaveStarted', (e) => {
       if (salvageStarted) salvageWaves++;
+      if (spareStarted) spareWaves++;
+      else if (runners[e.wave - 1] === true) spareStarted = true;
       if (host.replaying) return;
       hud.waveBanner.value = { id: ++bannerId, wave: e.wave };
       if (bannerTimer !== null) clearTimeout(bannerTimer);
@@ -580,6 +658,20 @@ export function bindHud(
       syncCursor();
     }),
     host.bus.on('TowerSold', syncTowers),
+    host.bus.on('ObjectiveProgress', syncObjectives),
+    host.bus.on('SpareRunnersChanged', (e) => {
+      if (e.on) spareUsed = true;
+    }),
+    // A checkpoint taken (T305b; core-loop §2.12): a small cue for a few seconds (T450: its sound).
+    host.bus.on('CheckpointReached', (e) => {
+      if (host.replaying) return;
+      hud.checkpoint.value = { id: e.tick, wave: e.wave };
+      if (checkpointTimer !== null) clearTimeout(checkpointTimer);
+      checkpointTimer = setTimeout(() => {
+        checkpointTimer = null;
+        hud.checkpoint.value = null;
+      }, CHECKPOINT_CUE_MS);
+    }),
     host.bus.on('TowerSpecialized', syncCursor),
     // A clickable world object on the cursor's tile turned on or off (T409): say what it is now.
     host.bus.on('ClickableChanged', syncCursor),
@@ -625,6 +717,7 @@ export function bindHud(
   return () => {
     for (const off of offs) off();
     if (bannerTimer !== null) clearTimeout(bannerTimer);
+    if (checkpointTimer !== null) clearTimeout(checkpointTimer);
     hud.mapId.value = null;
     hud.leak.value = null;
     hud.waveBanner.value = null;
@@ -658,5 +751,8 @@ export function bindHud(
     hud.timeDilationTeach.value = 0;
     hud.sale.value = null;
     hud.objectives.value = [];
+    hud.spareRunnersTeach.value = false;
+    hud.nameTag.value = null;
+    hud.checkpoint.value = null;
   };
 }

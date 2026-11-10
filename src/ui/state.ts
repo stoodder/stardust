@@ -104,7 +104,7 @@ export interface SpecOptionView {
 export interface SpecChoiceView {
   /** The pair isn't unlocked for this run (`SimConfig.specsUnlocked`). */
   readonly locked: boolean;
-  /** What unlocks them, wrapped to the panel's width ("Engineering unlocks after Shift 4"). */
+  /** What unlocks them, wrapped to the panel's width ("Engineering unlocks after The Audit"). */
   readonly lockLines: readonly string[];
   readonly options: readonly [SpecOptionView, SpecOptionView];
 }

@@ -137,7 +137,7 @@ describe('the tower panel (T202d)', () => {
     sim.step();
     const v = selectedView(sim, uid, origin, null, specLockText(false))!; // built above
     expect(v.specs?.locked).toBe(true);
-    expect(v.specs?.lockLines.join(' ')).toBe('Engineering unlocks after Shift 4');
+    expect(v.specs?.lockLines.join(' ')).toBe('Engineering unlocks after The Audit');
     expect(specLockText(true)).toBe('Unlock in Engineering');
     // The panel grows with its rows: the choice is taller than one Upgrade button.
     expect(towerPanelHeight(v)).toBeGreaterThan(

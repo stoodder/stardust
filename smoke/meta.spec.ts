@@ -21,7 +21,7 @@ const playOut = (page: Page) =>
 const shiftRow = (page: Page, name: string) =>
   page.getByRole('list', { name: 'Shifts' }).getByRole('listitem').filter({ hasText: name });
 
-test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Continue after a reload', async ({
+test('meta: new game → A1M1 won → Base (the new memo first) → Shift board → Continue after a reload', async ({
   page,
 }) => {
   await page.goto('/?test=1&seed=1');

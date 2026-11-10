@@ -513,9 +513,9 @@ North is up. It is a top-down survey with hill shading lit from the north-west, 
 | **The Long Walk** | The content polyline: the north edge, the Halls' mouth (412, 60), Okonkwo's Gap, the north gate, the south gate, the south edge | A 1 px dotted trail (1 on, 1 off) in the path ramp's top step, drawn under the roads, leaving across both edges |
 | **The lowlands** | South of the colony | Ground dithered with `blue.1` pools toward the south edge; a 1–2 px `blue.2` creek from the west hills down past the colony's west side |
 | **Edges** | West, east, and south | Dither into `ink.0` over 4 px with the apron's pattern (§3 *The apron*) |
-| **Reserved corners** | The header (x 8–200, y 8–48), the banks (x 512–632, y 8–36), the footer (x 392–632, y 328–352) | Ground only: no landmark, label, or node under them |
+| **Reserved corners** | The header (x 8–216, y 8–48), the banks (x 512–632, y 8–36), the footer (x 392–632, y 328–352) | Ground only: no landmark, label, or node under them |
 
-**Node positions** (glyph centres; the data is `src/content/starMap.ts`, T301b, which validates that every node stays inside the chart, out of the reserved corners, and 16 px from every other node on at least one axis):
+**Node positions** (glyph centres; the data is `src/content/starMap.ts`, which validates that every node stays inside the chart, out of the reserved corners, and 16 px from every other node on at least one axis):
 
 | Map | Centre | Map | Centre |
 |---|---|---|---|
@@ -543,7 +543,7 @@ The `act3` and `dawn` rows are sketches; Act III's and the finale's milestones s
 
 ### Nodes, legs, and the marker
 
-- **`ui.star_node`** (15×15 frames, `ink.0` outline): `cleared`, a 9×9 diamond in `gold.3` with a `gold.4` top-left edge (a survey benchmark in the medal's shape); `next`, a chamfered 11×11 `white.1` square ring around a 5×5 core in the act accent, one palette variant per act (`act2`, `act3`, `finale`); `ping_0`–`ping_3`, a 1 px accent ring growing from 11 to 15 px with stepped alpha, played once every 2 s at 8 fps (the 3 Hz flicker cap holds); `soon`, a dashed `steel.3` ring around the menus' 7×8 padlock; `focus`, four 3 px `white.1` corner brackets at 15×15, overlaid on the selected node.
+- **`ui.star_node`** (15×15 frames, `ink.0` outline drawn by hand; `src/content/sprites/starmap/star.ts`; the accent is slot `e0`, so the `act3` variant takes `act3.crystal.2` until Act III settles its row): `cleared`, a 9×9 diamond in `gold.3` with a `gold.4` top-left edge (a survey benchmark in the medal's shape); `next`, a chamfered 11×11 `white.1` square ring around a 5×5 core in the act accent, one palette variant per act (`act2`, `act3`, `finale`); `ping_0`–`ping_3`, a 1 px accent ring growing from 11 to 15 px with stepped alpha, played once every 2 s at 8 fps (the 3 Hz flicker cap holds); `soon`, a dashed `steel.3` ring around the menus' 7×8 padlock; `focus`, four 3 px `white.1` corner brackets at 15×15, overlaid on the selected node.
 - **`ui.star_pips`** (13×3): frames `0`–`3`, three 3×3 diamonds, `gold.3` earned and `steel.1` not, 2 px under a cleared glyph.
 - **`ui.star_marker`** (9×13): a down-pointing pin in `white.1` with an `ink.0` outline and a `teal.3` visor slit (the Technician's JPT-1 visor), its tip 1 px above its node's glyph; `idle_0`/`idle_1` bob 1 px at 2 fps. Its walk to a new node takes 0.6 s along the leg, eased, in whole game pixels.
 - **Legs:** 1 px dashes, 2 on and 2 off, in whole game pixels, stopping 6 px short of each glyph: `steel.3` between cleared nodes, the act accent from the marker to the frontier.
@@ -556,6 +556,7 @@ The `act3` and `dawn` rows are sketches; Act III's and the finale's milestones s
 - **The header** (top left) and **the banks** (top right) are the menu panel's header (§9) split into two HUD plates over the chart; **the footer**'s buttons sit bottom right; the menu notice sits under the header plate.
 - **The theme** is the phase's act: the screen root carries its own `data-act`.
 - **The first-visit sweep:** a 1 px accent line runs from the top of the chart to the bottom in 1.2 s, stepping 2 px at a time, revealing the chart behind it with a 4 px dithered afterglow; then the notice shows top center for 4 s. Reduced motion skips the sweep.
+- *As built (T301b):* the chart's ground sits in the act's two darkest ground steps in noise patches (a speckle of the third), the Spires' ridge on that ground tinted toward clay with the peaks in clay, the hills one step up; `act2.dusk` takes 32% of its shade over the whole chart besides its deeper band, scar, and windows. The panel's medals are 4 px squares turned 45° (6 px across).
 
 ---
 

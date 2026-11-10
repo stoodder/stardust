@@ -50,20 +50,27 @@ export const SALVAGE_HINT = 'Click wreckage to send the salvage drone';
 /** The Time Dilation teach (A1M3's flock, D098): it casts on the key, and slows every pest. */
 export const TIME_DILATION_HINT = 'Time Dilation slows the flock';
 
+/**
+ * The Spare runners teach (T431, A2M1): QUILL's "New filter" in the HUD's words, beside the Spare
+ * button it names. Plain help: it never says what to do with the runners.
+ */
+export const SPARE_RUNNERS_HINT = 'New filter: Spare runners';
+
 /** Which hint the bottom-center slot shows, most urgent first. */
-export type HintKind = 'holdOne' | 'holdAll' | 'timeDilation' | 'salvage' | 'upgrade';
+export type HintKind = 'holdOne' | 'holdAll' | 'timeDilation' | 'spare' | 'salvage' | 'upgrade';
 
 /**
  * The bottom-center hint (one at a time): Gerald's second-pass lesson, then the Hold Fire teach
  * (both only while he's on the field, and neither while Hold (all) is on), then the Time Dilation
- * teach, then the salvage teach, then the upgrade teach (only with no tower selected, since the
- * tower panel answers it).
+ * teach, then the Spare runners teach, then the salvage teach, then the upgrade teach (only with
+ * no tower selected, since the tower panel answers it).
  */
 export function pickHint(h: {
   readonly holdFireOne: boolean;
   readonly holdFireTeach: boolean;
   readonly holdFireAll: boolean;
   readonly timeDilation: boolean;
+  readonly spare?: boolean;
   readonly salvage: boolean;
   readonly upgrade: boolean;
   readonly selected: boolean;
@@ -71,6 +78,7 @@ export function pickHint(h: {
   if (h.holdFireOne && !h.holdFireAll) return 'holdOne';
   if (h.holdFireTeach && !h.holdFireAll) return 'holdAll';
   if (h.timeDilation) return 'timeDilation';
+  if (h.spare === true) return 'spare';
   if (h.salvage) return 'salvage';
   if (h.upgrade && !h.selected) return 'upgrade';
   return null;
@@ -108,6 +116,7 @@ export function BottomHint() {
     holdFireTeach: hud.holdFireTeach.value,
     holdFireAll: hud.holdFireAll.value,
     timeDilation: tdSlot !== 0,
+    spare: hud.spareRunnersTeach.value,
     salvage: hud.salvageHint.value,
     upgrade: hud.upgradeHint.value,
     selected: hud.selected.value !== null,
@@ -141,6 +150,13 @@ export function BottomHint() {
         </HintBox>
       );
     }
+    case 'spare':
+      return (
+        <HintBox label={`${SPARE_RUNNERS_HINT} (Alt+H)`} testId="spare-runners-hint">
+          {SPARE_RUNNERS_HINT}
+          <Key k="Alt+H" />
+        </HintBox>
+      );
     case 'salvage':
       return (
         <HintBox label={SALVAGE_HINT} testId="salvage-hint">
@@ -166,6 +182,23 @@ export function WaveBannerView() {
   return (
     <div key={b.id} class="hud-wave-banner" aria-hidden="true">
       Wave {b.wave}
+    </div>
+  );
+}
+
+/**
+ * The "Checkpoint" cue (T431; core-loop §2.12) under the wave panel for a few seconds as a
+ * checkpoint is taken (the countdown to every 5th wave, Act II on): a flag and the wave a lost run
+ * could retry from. Screen readers hear it once.
+ */
+export function CheckpointCueView() {
+  const c = hud.checkpoint.value;
+  if (c === null) return null;
+  return (
+    <div key={c.id} class="hud-checkpoint chamfer" role="status" data-testid="checkpoint-cue">
+      <span class="hud-checkpoint-flag" aria-hidden="true" />
+      Checkpoint
+      <span class="hud-checkpoint-wave">Wave {c.wave}</span>
     </div>
   );
 }

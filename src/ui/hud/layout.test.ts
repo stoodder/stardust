@@ -117,9 +117,9 @@ describe('wrapParts', () => {
   it('packs parts into lines and splits a long part at its spaces', () => {
     expect(wrapParts(['Next: +0.5/s', '+3 pierce'], 25)).toEqual(['Next: +0.5/s · +3 pierce']);
     expect(wrapParts(['Next: +0.5/s', '+3 pierce'], 20)).toEqual(['Next: +0.5/s', '+3 pierce']);
-    expect(wrapParts(['Engineering unlocks after Shift 4'], 25)).toEqual([
+    expect(wrapParts(['Engineering unlocks after The Audit'], 25)).toEqual([
       'Engineering unlocks after',
-      'Shift 4',
+      'The Audit',
     ]);
     expect(wrapParts([], 25)).toEqual([]);
   });
