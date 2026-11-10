@@ -120,14 +120,14 @@ export const waves = defineWaves([
     groups: [
       wardens(4, OPEN, 3),
       veils(3, OPEN + 2, 4),
-      lightwings(6, OPEN + 12, 2),
+      lightwings(5, OPEN + 12, 2),
       motes(40, OPEN + 16, PACKED),
     ],
   },
   // W9 · Blinkstriders + Veilwalkers [X: blink]
   {
     countdownSec: LONG_COUNTDOWN,
-    groups: [blinks(5, OPEN, 2), veils(5, OPEN + 6, 2)],
+    groups: [blinks(6, OPEN, 2), veils(6, OPEN + 6, 2), glimmers(8, OPEN + 16)],
   },
   // W10 · the Hollow surges up at the vats, with fleeing Skitterkin ahead of it down the road
   {
@@ -135,25 +135,25 @@ export const waves = defineWaves([
     groups: [
       run('nibbler', 10, OPEN, 0.6),
       motes(4, OPEN + FLEE_LEAD),
-      motes(30, OPEN + 14, PACKED, 'vats'),
-      motes(30, OPEN + 24, PACKED, 'vats'),
+      motes(40, OPEN + 14, PACKED, 'vats'),
+      motes(40, OPEN + 24, PACKED, 'vats'),
     ],
   },
   // W11 · cloak and blink mixed [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [veils(6, OPEN, 1.5), blinks(6, OPEN + 1, 1.5), glimmers(8, OPEN + 12)],
+    groups: [veils(8, OPEN, 1.5), blinks(8, OPEN + 1, 1.5), glimmers(12, OPEN + 12)],
   },
   // W12 · everything: the Aelari down the road and over the vats, the Hollow up out of them
   {
     countdownSec: COUNTDOWN,
     groups: [
-      wardens(2, OPEN, 4),
-      veils(6, OPEN + 6, 1.5),
-      blinks(6, OPEN + 10, 1.5),
-      lightwings(8, OPEN + 16, 1.5),
-      glimmers(10, OPEN + 22),
-      motes(40, OPEN + 30, PACKED, 'vats'),
+      wardens(3, OPEN, 4),
+      veils(8, OPEN + 6, 1.5),
+      blinks(8, OPEN + 10, 1.5),
+      lightwings(6, OPEN + 16, 1.5),
+      glimmers(12, OPEN + 22),
+      motes(50, OPEN + 30, PACKED, 'vats'),
     ],
   },
 ]);

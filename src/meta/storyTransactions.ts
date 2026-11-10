@@ -2,10 +2,8 @@
 // story makes on a save, each idempotent, each recording itself so it never applies twice. Pure:
 // every one returns a new save (the input is untouched) and what it did.
 //
-// M5's seam (T500b): the signatures, the grant ids, the C2 rule's numbers, and run end's step 6
-// hook (`runEndTransactions`, which runEnd.ts calls). The bodies are T510's: until then each
-// transaction returns the save unchanged and `applied: null`, so nothing pays twice or throws
-// while A2M4 and A2M5 land.
+// Built by T500b (the seam: signatures, grant ids, the C2 rule's numbers, run end's step 6 hook)
+// and T510 (the bodies).
 //
 // Which ones run where:
 // - **Run end, step 6** (on the run that first wins the map, before the towers it issues and the
@@ -20,6 +18,7 @@ import type { CampaignMapId } from '../content/campaign.ts';
 import type { FlagValueOf } from '../content/dialogue/flags.ts';
 import type { MapId, TowerId, UpgradeId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
+import { clampCurrency } from './validate.ts';
 
 /** C2's three outcomes: the `stardust_choice` flag's values (campaign.md § 6.2). */
 export type C2Choice = FlagValueOf<'stardust_choice'>;
@@ -83,10 +82,22 @@ export interface TransactionResult {
 /**
  * The Q3 Performance Bonus (progression.md § 2.1): +400 Stardust (the bank clamped like any
  * payout), recorded as `q3_bonus` in `story.granted`, once per save. Run end's step 6 pays it on
- * A2M4's first win. Not built yet (T510): returns the save unchanged.
+ * A2M4's first win.
  */
 export function grantQ3Bonus(save: SaveData): TransactionResult {
-  return { save, applied: null }; // TODO(T510)
+  if (save.story.granted.includes(Q3_BONUS_GRANT)) return { save, applied: null };
+  const stardust = STORY_TRANSACTION_RULES.q3BonusStardust;
+  return {
+    save: {
+      ...save,
+      currencies: {
+        ...save.currencies,
+        stardust: clampCurrency(save.currencies.stardust + stardust),
+      },
+      story: { ...save.story, granted: [...save.story.granted, Q3_BONUS_GRANT] },
+    },
+    applied: { kind: 'q3_bonus', stardust },
+  };
 }
 
 /**
@@ -96,22 +107,46 @@ export function grantQ3Bonus(save: SaveData): TransactionResult {
  * - `returned`: the bank goes to 0 (his fee is an IOU, never cashed);
  * - `none`: only with an empty bank, nothing changes but the flag.
  * Each sets `stardust_choice`; a save whose flag is already set is left as it is (C2 is offered
- * once), so the transaction is idempotent without a `story.granted` id. Not built yet (T510):
- * returns the save unchanged.
+ * once), so the transaction is idempotent without a `story.granted` id. A choice the bank doesn't
+ * allow (`none` with Stardust banked, a trade with none) is a caller's bug and throws: the
+ * debrief offers the trade only when its `bank` test finds Stardust.
  */
 export function resolveC2(save: SaveData, choice: C2Choice): TransactionResult {
-  void choice;
-  return { save, applied: null }; // TODO(T510)
+  if (save.story.flags.stardust_choice !== undefined) return { save, applied: null };
+  const bank = Math.max(0, save.currencies.stardust);
+  if ((choice === 'none') !== (bank === 0)) {
+    throw new Error(`story: C2 '${choice}' with a bank of ${bank} Stardust`);
+  }
+  const sold = choice === 'sold';
+  const intel = sold ? c2Windfall(bank) : 0;
+  return {
+    save: {
+      ...save,
+      currencies: { stardust: 0, intel: clampCurrency(save.currencies.intel + intel) },
+      upgrades: sold ? { ...save.upgrades, [ZIBZAB_TUNE_UP]: 1 } : save.upgrades,
+      story: { ...save.story, flags: { ...save.story.flags, stardust_choice: choice } },
+    },
+    applied: { kind: 'c2', choice, bank, intel, tuneUp: sold },
+  };
 }
 
 /**
  * A tower given by the story (A2M5: Ves'thara's Prism Spire): added to `unlocks.towers`, recorded
  * as `giftGrantId(tower)` in `story.granted`, once (a tower the save already owns records the
- * grant and adds nothing). Not built yet (T510): returns the save unchanged.
+ * grant and adds nothing; `applied` still names the gift, so Results can say it was given).
  */
 export function grantGift(save: SaveData, tower: TowerId): TransactionResult {
-  void tower;
-  return { save, applied: null }; // TODO(T510)
+  const id = giftGrantId(tower);
+  if (save.story.granted.includes(id)) return { save, applied: null };
+  const owned = save.unlocks.towers.includes(tower);
+  return {
+    save: {
+      ...save,
+      unlocks: owned ? save.unlocks : { ...save.unlocks, towers: [...save.unlocks.towers, tower] },
+      story: { ...save.story, granted: [...save.story.granted, id] },
+    },
+    applied: { kind: 'gift', tower },
+  };
 }
 
 /** A transaction run end makes on a map's first win (step 6). */
