@@ -144,6 +144,7 @@ import { towerSprinkler, towerSprinklerHead } from './towers/sprinkler.ts';
 import { towerThumper, towerThumperHead } from './towers/thumper.ts';
 import { towerSkyhook, towerSkyhookHead } from './towers/skyhook.ts';
 import { towerZapcoil, towerZapcoilHead } from './towers/zapcoil.ts';
+import { portraitBramble } from './portraits/bramble.ts';
 import { portraitBricks } from './portraits/bricks.ts';
 import { portraitGerald } from './portraits/gerald.ts';
 import { portraitGoldie } from './portraits/goldie.ts';
@@ -153,6 +154,7 @@ import { portraitPlayer } from './portraits/player.ts';
 import { portraitPrim } from './portraits/prim.ts';
 import { portraitQuill } from './portraits/quill.ts';
 import { portraitSterling } from './portraits/sterling.ts';
+import { portraitThrum } from './portraits/thrum.ts';
 import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
 import { iconEnemyGlassWitch } from './icons/glass_witch.ts';
@@ -396,6 +398,8 @@ export const SPRITES = [
   portraitGerald,
   portraitVesthara,
   portraitPebble,
+  portraitBramble,
+  portraitThrum,
 ] as const;
 
 /** Every sprite id. */

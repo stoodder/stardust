@@ -2,7 +2,8 @@
 // integer zoom on dark and light backgrounds, plus small dioramas that exercise anchors, tile
 // seams, head mounts, and environment palette swaps. Deterministic, so its screenshot can be
 // compared milestone to milestone. Smoke reads the data-* counters on <body>. The page is laid
-// out as sheets of at most SHEET_MAX_PX, each captured as its own image (the art trail). After the
+// out as sheets of at most SHEET_MAX_PX, each captured as its own image (the art trail); the
+// dioramas fill sheet 1 alone, the sprite cards start on sheet 2. After the
 // environment dioramas comes the M5 corner (review U11), on A2M5–A2M6's dusk palette: by dusk, the
 // Ward kneeling over the road as refugees file past and a Prism beaming; at full dark, a lamp's
 // pool, a beaming Prism's lit disc and a resting one's ghost, composited with the game's own
@@ -1177,6 +1178,14 @@ class SheetPacker {
     }
   }
 
+  /**
+   * Ends the sheet being filled: the next section starts on a new one. The dioramas take sheet 1
+   * alone (T564), so it keeps headroom for later dioramas and the sprite cards start on sheet 2.
+   */
+  breakSheet(): void {
+    this.#newSheet();
+  }
+
   /** Titles every sheet "… sheet n of N" once all are packed. */
   finish(): void {
     this.sheets.forEach((sh, i) => {
@@ -1247,6 +1256,7 @@ function render(root: HTMLElement): void {
     pack.add(box);
   }
 
+  pack.breakSheet();
   pack.section(
     'Sprites: default (authored frames; mirrors at 1×), one more palette (authored frames), derived (first frame)',
     'cards',
