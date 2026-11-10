@@ -173,12 +173,15 @@ describe('offers', () => {
   });
 });
 
+/** A shelf's items as JSON, for membership checks. */
+function items(offers: readonly { readonly item: PurchaseItem }[]): string[] {
+  return offers.map((o) => JSON.stringify(o.item));
+}
+
 describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () => {
   const MINDSPIKE: PurchaseItem = { kind: 'attune', tower: 'mindspike' };
   const LANTERN: PurchaseItem = { kind: 'attune', tower: 'lantern' };
   const PRISM: PurchaseItem = { kind: 'attune', tower: 'prism' };
-  const items = (offers: readonly { readonly item: PurchaseItem }[]): string[] =>
-    offers.map((o) => JSON.stringify(o.item));
 
   it('before A2M5: Xenotech is locked, and no shelf names an Aelari tower or her Rapport', () => {
     const save = DEV_SAVES.after_a2m4_returned.build();

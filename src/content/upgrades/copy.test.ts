@@ -35,7 +35,8 @@ const licenses = Object.entries<Access>(TOWER_ACCESS)
  */
 const vesthara = Object.entries<Access>(TOWER_ACCESS).flatMap(([tower, a]) => {
   if (a.how === 'attune') return [`attune_${tower}`];
-  return a.how === 'gift' && TOWERS[tower as keyof typeof TOWERS].faction === 'aelari'
+  return a.how === 'gift' &&
+    (TOWERS as Readonly<Record<string, { readonly faction: string }>>)[tower]?.faction === 'aelari'
     ? [`gift_${tower}`]
     : [];
 });

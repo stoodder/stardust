@@ -205,7 +205,10 @@ describe('catalog: progression.md numbers', () => {
     const attuned = Object.entries(TOWER_ACCESS).filter(([, a]) => a.how === 'attune');
     expect(attuned.map(([t]) => t)).toEqual(['mindspike', 'lantern']);
     for (const [tower, a] of attuned) {
-      expect(TOWERS[tower as keyof typeof TOWERS].faction, tower).toBe('aelari');
+      expect(
+        (TOWERS as Readonly<Record<string, { readonly faction: string }>>)[tower]?.faction,
+        tower,
+      ).toBe('aelari');
       expect(a, tower).toEqual({
         how: 'attune',
         currency: 'intel',
