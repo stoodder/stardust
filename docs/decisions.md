@@ -1452,3 +1452,12 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Test-only fast text** (`?test=1&fasttext=1`): lines show whole and timed holds shorten to 40% (≥ 1.5 s); used only by smoke flows that don't assert typing or hold timing.
 - Dev saves from `after_a1m4` on have seen Zibzab's arrival; the star map's marker memory clears when the save in play changes; the Base's opening tab never overrides a tab the player picked (a load-timing flake in `shop.spec`).
 - The docs describe M4 as built (architecture's *Built so far: M4*); README gains a reading path for the gate, tests and smoke. The gate's smoke step still runs over its share under load (T501j).
+
+### D134 — 2026-11-10 — M4 review round 1 rulings
+Reviewers: correctness/architecture/performance (no high-severity findings), a playtester and story editor who played A2M1–A2M3 from the Sector map, and UX/art/accessibility/audio. **Art trail M3 → M4: better overall** (105 → 152 sprites; the Aelari lattices, the Glass Witch, the Mote and Pebble the strongest new art); watch Act II's murky gold and grey-on-grey.
+- **Pebble's rescue is the player's own act, seen and felt:** it pauses (a scene flag `pause: true`), nothing draws over the rock while it can be reached or as she lifts, and the rock lights at W5's countdown — the build phase, hands free — with the Peeker's squeak. **The Witch's "I have watched you count" pauses too.** Only those two scenes carry the flag.
+- **The young in the sacks read by sight at 1×** (heads over the rim, in W3's preview too); a fleeing Hauler shows no Carrier glyph — it drops nothing.
+- **Runners aren't threats:** the threat strip shows one Skittish chip for every fleeing unit ("They don't hurt the core.") and lists only real threats.
+- **A checkpoint can never soft-lock:** only one taken before the run's final tick is offered; a replay that ends the run fails safely. The resume banner says why medals are forfeit.
+- **Dusk dims the world, not the actors;** Act II's grass turns back toward gold at the same value band.
+- **The Hollow's sound is eerie, not broken:** one steady duck while any Hollow walks instead of a dip per hum; **speech stays ≥ 6 dB over the mix**, asserted.
