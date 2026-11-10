@@ -26,6 +26,7 @@ const POST: CompiledAllyPost = {
     hitsGround: true,
     hitsAir: true,
   },
+  block: null,
 };
 
 /** A bare state on fx_map with `posts`. */

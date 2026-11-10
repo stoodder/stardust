@@ -12,6 +12,7 @@ import type { SpriteDef } from '../sprites/types.ts';
 import { TOWERS } from '../towers/index.ts';
 import { ACT1_CODEX } from './act1.ts';
 import { ACT2_CODEX } from './act2.ts';
+import { ACT3_CODEX } from './act3.ts';
 import {
   CODEX,
   CODEX_ENTRIES,
@@ -93,13 +94,16 @@ const UNLOCKED_BY: Readonly<Record<string, Condition>> = {
 
 /**
  * The versions each entry has, where it has more than an original: Act II's annotations (Rig
- * Nine's status update from A2M1; QUILL's from A2M3 and A2M4) and Ves'thara's margin notes (from
- * A2M6), by the map that unlocks them.
+ * Nine's status update from A2M1; QUILL's from A2M3 and A2M4), Ves'thara's margin notes (from
+ * A2M6), and Act III's corrections (the Field Journal's, from A3M1; T600b's seam, T611 the rest),
+ * by the map that unlocks them.
  */
 const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, CampaignMapId>>>> = {
   codex_rig_nine: { annotated: 'a2_m01' },
   codex_mote: { annotated: 'a2_m03' },
-  codex_brood_hauler: { annotated: 'a2_m03', margin: 'a2_m06' },
+  codex_brood_hauler: { annotated: 'a2_m03', margin: 'a2_m06', corrected: 'a3_m01' },
+  codex_elder: { corrected: 'a3_m01' },
+  codex_chitterbloom: { corrected: 'a3_m01' },
   codex_rig_3: { annotated: 'a2_m03' },
   codex_tidybot: { annotated: 'a2_m04' },
   codex_stardust: { annotated: 'a2_m04' },
@@ -142,8 +146,7 @@ describe('the codex content', () => {
           expect(worstCaseLength(def.smallPrint)).toBeLessThanOrEqual(TEXT_LIMITS.smallPrint);
         }
       }
-      // Only the listed entries have more than an original, each unlocked from its map on
-      // (Act III's corrections are M6's).
+      // Only the listed entries have more than an original, each unlocked from its map on.
       const later = LATER_VERSIONS[e.id] ?? {};
       const laterVersions = CODEX_VERSIONS.filter((v) => later[v] !== undefined);
       expect(Object.keys(e.versions)).toEqual(['original', ...laterVersions]);
@@ -217,6 +220,7 @@ describe('the codex content', () => {
       'original',
       'annotated',
       'margin',
+      'corrected',
     ]);
   });
 
@@ -260,7 +264,7 @@ describe("the later acts' versions of earlier entries", () => {
   });
 
   it('every later version names a registered entry and adds a version it lacks', () => {
-    const own = [...ACT1_CODEX, ...ACT2_CODEX];
+    const own = [...ACT1_CODEX, ...ACT2_CODEX, ...ACT3_CODEX];
     for (const patch of CODEX_LATER_VERSIONS) {
       for (const [id, versions] of Object.entries(patch)) {
         const entry = own.find((e) => e.id === id);

@@ -1,8 +1,10 @@
 // The codex registry (docs/story/style-guide.md § 6.2): every entry by id. The entry texts are
 // written in the act files (their one home, like the item copy in content/upgrades/copy.ts); a
-// later act's versions of an earlier entry (Act II's annotations) are merged in here.
+// later act's versions of an earlier entry (Act II's annotations, Act III's corrections) are
+// merged in here.
 import { ACT1_CODEX } from './act1.ts';
 import { ACT2_CODEX, ACT2_CODEX_VERSIONS } from './act2.ts';
+import { ACT3_CODEX, ACT3_CODEX_VERSIONS } from './act3.ts';
 import {
   CODEX_VERSIONS,
   type CodexEntryDef,
@@ -15,7 +17,10 @@ import {
 export * from './types.ts';
 
 /** The later acts' versions of other entries, in act order (codex.test.ts checks each lands). */
-export const CODEX_LATER_VERSIONS: readonly CodexLaterVersions[] = [ACT2_CODEX_VERSIONS];
+export const CODEX_LATER_VERSIONS: readonly CodexLaterVersions[] = [
+  ACT2_CODEX_VERSIONS,
+  ACT3_CODEX_VERSIONS,
+];
 
 /**
  * `entries` with `later`'s versions merged in, in act order. A version an entry already has
@@ -41,7 +46,7 @@ export function withLaterVersions(
 
 /** Every codex entry, in codex order, with every act's versions. */
 export const CODEX_ENTRIES: readonly CodexEntryDef[] = withLaterVersions(
-  [...ACT1_CODEX, ...ACT2_CODEX],
+  [...ACT1_CODEX, ...ACT2_CODEX, ...ACT3_CODEX],
   CODEX_LATER_VERSIONS,
 );
 

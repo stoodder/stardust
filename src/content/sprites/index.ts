@@ -187,6 +187,30 @@ import {
 import { iconAbilityStillness } from './icons/stillness.ts';
 import { iconEnemySunderglassPenitent } from './icons/sunderglass_penitent.ts';
 import { towerLantern, towerLanternHead } from './towers/lantern.ts';
+import {
+  allyChampion,
+  allySwarmling,
+  enemyCompliance,
+  enemyExpediter,
+  enemyMaw,
+  enemyUndertow,
+  iconAbilityUnderfoot,
+  iconEnemyCompliance,
+  iconEnemyExpediter,
+  iconEnemyMaw,
+  iconEnemyUndertow,
+  iconTellConsumer,
+  iconTellHasteAura,
+  iconTowerBloom,
+  iconTowerBurrow,
+  iconTowerChoir,
+  towerBloom,
+  towerBloomHead,
+  towerBurrow,
+  towerBurrowHead,
+  towerChoir,
+  towerChoirHead,
+} from './placeholders/m6.ts';
 import { towerMindspike, towerMindspikeHead } from './towers/mindspike.ts';
 import { towerPrism, towerPrismHead } from './towers/prism.ts';
 
@@ -259,6 +283,13 @@ export const SPRITES = [
   towerMindspikeHead,
   towerLantern,
   towerLanternHead,
+  // M6's towers (placeholders until T640b: placeholders/m6.ts).
+  towerBurrow,
+  towerBurrowHead,
+  towerChoir,
+  towerChoirHead,
+  towerBloom,
+  towerBloomHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
@@ -295,10 +326,18 @@ export const SPRITES = [
   enemyFracture,
   enemyFractureShard,
   enemyRiftmoth,
+  // M6's units (placeholders until T640a: placeholders/m6.ts).
+  enemyMaw,
+  enemyUndertow,
+  enemyCompliance,
+  enemyExpediter,
   allyBricks,
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,
   allyPebble,
+  // M6's swarmlings and Champions (placeholders until T640a).
+  allySwarmling,
+  allyChampion,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,
@@ -357,6 +396,15 @@ export const SPRITES = [
   iconEnemyFractureShard,
   iconEnemyRiftmoth,
   iconAbilityStillness,
+  // M6's icons (placeholders until T640a, the units', and T640b, the towers' and Underfoot's).
+  iconTowerBurrow,
+  iconTowerChoir,
+  iconTowerBloom,
+  iconEnemyMaw,
+  iconEnemyUndertow,
+  iconEnemyCompliance,
+  iconEnemyExpediter,
+  iconAbilityUnderfoot,
   iconCredits,
   iconCore,
   iconLock,
@@ -382,6 +430,9 @@ export const SPRITES = [
   iconTellShieldAura,
   iconTellPhasing,
   iconTellHeavy,
+  // M6's tell glyphs (placeholders until T640b).
+  iconTellConsumer,
+  iconTellHasteAura,
   sceneRig9Feed,
   // The star map's glyphs (T301b).
   uiStarNode,

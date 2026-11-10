@@ -112,6 +112,24 @@ function body(g: CharGrid): void {
 /** A thin white tuft standing up off her crown, in front of the shell. */
 const TUFT = ['.W..W.', 'W.WW.W', '.WWWW.', '..VV..'] as const;
 
+/** The tuft, rimmed in dark steel so its white reads against the pale shell behind it. */
+function tuft(g: CharGrid, x0: number, y0: number): void {
+  TUFT.forEach((r, dy) => {
+    for (let dx = 0; dx < r.length; dx++) {
+      if (r.charAt(dx) === '.') continue;
+      for (const [ox, oy] of [
+        [1, 0],
+        [-1, 0],
+        [0, -1],
+      ] as const) {
+        if ((TUFT[dy + oy]?.charAt(dx + ox) ?? '.') === '.')
+          plot(g, x0 + dx + ox, y0 + dy + oy, 'K');
+      }
+    }
+  });
+  stamp(g, x0, y0, TUFT);
+}
+
 /** An old dark eye: smaller than a youngling's, its glints high (she's looking up at you). */
 function eye(g: CharGrid, cx: number, cy: number, look: 'up' | 'ahead'): void {
   disc(g, cx, cy, 3.1, (d, x, y) => {
@@ -125,7 +143,14 @@ function eye(g: CharGrid, cx: number, cy: number, look: 'up' | 'ahead'): void {
 }
 
 /** A heavy lid of fur over the top `rows` of an eye, tilted toward the nose (`slant` > 0) or away. */
-function lid(g: CharGrid, cx: number, cy: number, rows: number, slant: number, inner: 1 | -1): void {
+function lid(
+  g: CharGrid,
+  cx: number,
+  cy: number,
+  rows: number,
+  slant: number,
+  inner: 1 | -1,
+): void {
   const top = Math.floor(cy - 3);
   for (let y = top; y < top + rows + 2; y++) {
     for (let x = Math.floor(cx - 3); x <= Math.floor(cx + 3); x++) {
@@ -139,7 +164,12 @@ function lid(g: CharGrid, cx: number, cy: number, rows: number, slant: number, i
 
 /** A shut eye: an arc curving up (a smile) or down (peace, singing). */
 function shutEye(g: CharGrid, cx: number, cy: number, up: boolean): void {
-  stamp(g, Math.round(cx) - 3, Math.round(cy) - 1, up ? ['.xxxx.', 'x....x'] : ['x....x', '.xxxx.']);
+  stamp(
+    g,
+    Math.round(cx) - 3,
+    Math.round(cy) - 1,
+    up ? ['.xxxx.', 'x....x'] : ['x....x', '.xxxx.'],
+  );
 }
 
 /** Crow's feet at the outer corners. */
@@ -216,7 +246,7 @@ function paint({ expression, mouth }: PaintArgs): CharGrid {
   const singing = e === 'singing';
   shell(g, singing);
   body(g);
-  stamp(g, 21, 19, TUFT);
+  tuft(g, 21, 19);
   if (e === 'happy') {
     shutEye(g, EYE_L, EYE_Y, true);
     shutEye(g, EYE_R, EYE_Y, true);

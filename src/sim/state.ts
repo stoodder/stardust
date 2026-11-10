@@ -141,6 +141,17 @@ export interface SimStats {
   refugeesSpawned: number;
   evacuated: number;
   refugeesLost: number;
+  // M6 (T600a seams).
+  /**
+   * Refugees lost per group (index-aligned with `map.escort.groups`; empty without escort data):
+   * hushed, gathered, or taken at the exit (the `groupLost` condition: The Matriarch's Young).
+   * Counted by sim/escort.ts with `refugeesLost`.
+   */
+  lostByGroup: number[];
+  /** Refugees a Maw gathered (Nothing Gathered; counted by T602's gather, also a loss). */
+  refugeesGathered: number;
+  /** Revocations that took effect: each tower class and each ability counts one (T606). */
+  revocations: number;
 }
 
 /** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
@@ -340,6 +351,38 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * (`Interacted { byFallback: true }`; systems/triggers.ts).
    */
   clickFallback: (CompiledScriptTrigger<IdSpace> | null)[];
+  // M6 (T600a seams; each run by the task named).
+  /**
+   * Escort's meter total for this run (sim/escort.ts `escortTotal`): the refugees of every group
+   * whose `when` holds under the run's story flags (A3M3's `door_choice` side), Pebble not counted.
+   * Set by createSim; 0 on a map without refugees.
+   */
+  refugeeTotal: number;
+  /**
+   * What this run's script revoked (towers.md § 9; T606), in the order revoked: tower class ids
+   * (`revokeTowerClass`) and ability ids (`revokeAbility`). Empty on maps without a revocation.
+   * Classes revoked by an earlier map arrive as unowned config, never here.
+   */
+  revoked: { towers: string[]; abilities: string[] };
+  /**
+   * Script modifiers on now (`setModifier`; T606): `quillLockout` (A3M2: QUILL locks you out; her
+   * ability is disabled and the preview hidden, core-loop.md § 2.2 and § 2.11) and `previewHidden`
+   * (the wave preview reads "ACCESS RESTRICTED").
+   */
+  scriptModifiers: { quillLockout: boolean; previewHidden: boolean };
+  /**
+   * A forced single input (core-loop.md § 2.11: A3M3's SEAL; T605): the id it waits for while
+   * waves, movement, and firing freeze (the sim keeps ticking), or null. A `scriptInput` command
+   * with this id resolves it.
+   */
+  forcedInput: string | null;
+  /** Forced inputs resolved this run, in order (the `forcedInputResolved` trigger; T605). */
+  forcedResolved: string[];
+  /**
+   * Underfoot's traps (T604): flat pairs `[zoneUid, enemyUid]` of the enemies each live trap has
+   * already sprung on (once per enemy per trap). Pruned as traps expire.
+   */
+  trapSprung: number[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -425,6 +468,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       refugeesSpawned: 0,
       evacuated: 0,
       refugeesLost: 0,
+      lostByGroup: map.escort === null ? [] : map.escort.groups.map(() => 0),
+      refugeesGathered: 0,
+      revocations: 0,
     },
     abilityCooldownTicks: [0, 0],
     abilityCooldownWaves: [0, 0],
@@ -447,6 +493,12 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     clickable: [],
     interacted: [],
     clickFallback: [],
+    refugeeTotal: map.escort?.total ?? 0,
+    revoked: { towers: [], abilities: [] },
+    scriptModifiers: { quillLockout: false, previewHidden: false },
+    forcedInput: null,
+    forcedResolved: [],
+    trapSprung: [],
     pending: [],
     commandLog: [],
     events: [],

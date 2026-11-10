@@ -3,6 +3,10 @@
 // freckled under a wide straw sun hat (a pink band and a marigold), dark hair in a bob, soil-stained
 // green overalls over a white tee, a trowel in her bib pocket, and Duchess, her prize butterhead,
 // in a terracotta pot under her arm. Chirpy: her neutral is already a smile.
+// Variant `act3` (Act III, the Long Night; characters.md § Goldie): she runs the convoy now. A
+// headlamp strapped over her bob, lit, the sun hat pushed off and hanging down her back on its pink
+// cord (its brim shows behind her shoulders), and a clipboard in place of Duchess. Her face, brows
+// and mouth are the base frame's, so every expression reads as it does there.
 import { disc, grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -68,7 +72,7 @@ function overalls(g: CharGrid): void {
     plot(g, x, y, 'U');
 }
 
-function face(g: CharGrid): void {
+function face(g: CharGrid, hatted: boolean): void {
   // Ears, peeking out under the bob.
   stamp(g, 12, 24, ['CB', 'CA', 'BA']);
   stamp(g, 32, 24, ['BC', 'AB', 'AB']);
@@ -80,7 +84,7 @@ function face(g: CharGrid): void {
       if ((nx + 0.45) ** 2 + ((y + 0.5 - 27) / 9.4) ** 2 < 0.04) ch = 'D';
       if (nx > 0.55) ch = 'B';
       // The hat brim's shadow across her brow.
-      if (y < 20) ch = nx > 0.4 ? 'A' : 'B';
+      if (hatted && y < 20) ch = nx > 0.4 ? 'A' : 'B';
       plot(g, x, y, ch);
     }
   }
@@ -113,6 +117,65 @@ function hair(g: CharGrid): void {
   }
   // The fringe's uneven tips.
   for (const x of [15, 19, 23, 27]) plot(g, x, 21, 'F');
+}
+
+/** Bare-headed (`act3`): the crown of her bob, where the hat used to sit. */
+function crownHair(g: CharGrid): void {
+  for (let y = 9; y <= 20; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = x + 0.5 - CX;
+      const ny = (y + 0.5 - 20) / 9.5;
+      if ((dx / 12.4) ** 2 + ny * ny > 1) continue;
+      // Lit from the upper left.
+      plot(g, x, y, dx < -3 ? 'G' : dx > 5 ? 'E' : 'F');
+    }
+  }
+}
+
+/** The headlamp (`act3`): a dark strap round her head and the lamp on her brow, lit gold-white. */
+function headlamp(g: CharGrid): void {
+  for (let x = 11; x <= 34; x++) plot(g, x, Math.abs(x + 0.5 - CX) > 9 ? 16 : 15, '1');
+  // The lamp housing, its lens lit.
+  stamp(g, 20, 12, ['.22.', '2ww2', '2MM2', '.11.']);
+}
+
+/** The sun hat, pushed off and hanging down her back on its cord: the brim behind her shoulders. */
+function hatOnBack(g: CharGrid): void {
+  for (let y = 25; y <= 40; y++) {
+    for (let x = 0; x < S; x++) {
+      const nx = (x + 0.5 - CX) / 22.5;
+      const ny = (y + 0.5 - 32) / 7;
+      if (nx * nx + ny * ny > 1) continue;
+      let ch = (x + y) % 3 === 0 ? 'I' : 'J';
+      if (ny > 0.2) ch = (x + y) % 3 === 0 ? 'H' : 'I';
+      if (ny > 0.6 || nx > 0.85) ch = 'K';
+      plot(g, x, y, ch);
+    }
+  }
+  // The pink band, round the crown behind her neck.
+  for (let x = 4; x <= 10; x++) plot(g, x, 28 + (x > 7 ? 1 : 0), 'P');
+  for (let x = 35; x <= 41; x++) plot(g, x, 29 - (x > 38 ? 1 : 0), 'Q');
+}
+
+/** The hat's cord, round the front of her neck. */
+function hatCord(g: CharGrid): void {
+  stamp(g, 19, 33, ['P......Q', '.P....Q.', '..PPPQ..']);
+}
+
+/** The clipboard (`act3`), held up against her side where Duchess used to ride. */
+function clipboard(g: CharGrid): void {
+  // The board.
+  for (let y = 29; y < S; y++) for (let x = 32; x <= 45; x++) plot(g, x, y, x > 43 ? 'K' : 'H');
+  // The paper, with lines and ticks.
+  for (let y = 32; y < S; y++) for (let x = 33; x <= 43; x++) plot(g, x, y, 'W');
+  for (const y of [35, 38, 41, 44]) {
+    for (let x = 36; x <= 42; x++) plot(g, x, y, 'V');
+    stamp(g, 33, y - 1, ['.S', 'S.']);
+  }
+  // The steel clip.
+  stamp(g, 35, 27, ['.2222.', '233332', '211112', '.2222.']);
+  // Her hand, holding it.
+  stamp(g, 29, 40, ['CCCD', 'CCCC', '.BCC']);
 }
 
 /** The sun hat: a wide straw brim, a round crown with a pink band, and a marigold tucked in it. */
@@ -257,12 +320,17 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   },
 };
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
+  const act3 = variant === 'act3';
+  if (act3) hatOnBack(g);
   overalls(g);
-  face(g);
+  if (act3) hatCord(g);
+  face(g, !act3);
+  if (act3) crownHair(g);
   hair(g);
-  hat(g);
+  if (act3) headlamp(g);
+  else hat(g);
   // Rosy cheeks: rosier when she's happy.
   const cheek = expression === 'happy' ? 'O' : expression === 'sad' ? null : 'O';
   if (cheek !== null) {
@@ -272,7 +340,8 @@ function paint({ expression, mouth }: PaintArgs): CharGrid {
   stamp(g, 14, EYE_Y - 4, EYES[expression] ?? EYES['neutral'] ?? []);
   const m = MOUTHS[expression] ?? MOUTHS['neutral'];
   if (m !== undefined) stamp(g, 18, 29, mouth === 'talk' ? m.talk : m.closed);
-  duchess(g);
+  if (act3) clipboard(g);
+  else duchess(g);
   outlineInPlace(g);
   return g;
 }
@@ -291,5 +360,6 @@ export const portraitGoldie = definePortrait({
     W: 'white.0', V: 'steel.3', U: 'grime.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  variants: ['act3'],
   paint,
 });

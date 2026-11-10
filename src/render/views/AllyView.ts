@@ -27,6 +27,7 @@ export interface AllyLike {
 export const ALLY_SPRITES: Readonly<Record<AllyKind, SpriteId | null>> = {
   bricks: 'ally.bricks',
   swarmling: null,
+  champion: null,
   leaper: null,
   refugee: null,
   bearer: null,

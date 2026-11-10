@@ -377,6 +377,12 @@ function validateEnemy(
   if (has('shield_aura') !== (def.shieldAura !== undefined)) {
     traits('traits', "'shield_aura' goes with `shieldAura`");
   }
+  if (has('gathering') !== (def.gather !== undefined)) {
+    traits('traits', "'gathering' goes with `gather`");
+  }
+  if (has('haste_aura') !== (def.hasteAura !== undefined)) {
+    traits('traits', "'haste_aura' goes with `hasteAura`");
+  }
   if (def.tells.includes('boss') !== (def.boss !== undefined)) {
     traits('tells', "the 'boss' tell goes with `boss`");
   }
@@ -582,6 +588,10 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
     if (!isPositiveInt(e.charges)) bad('effect.charges', 'must be a whole number ≥ 1');
   } else if (e.kind === 'reveal' || e.kind === 'stasisArea') {
     if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
+    if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
+  } else if (e.kind === 'pathTrap') {
+    if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
+    if (!isPositive(e.pinSec)) bad('effect.pinSec', 'must be > 0');
     if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
   } else {
     if (!isNonNegative(e.damagePerSec)) bad('effect.damagePerSec', 'must be ≥ 0');

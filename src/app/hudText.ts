@@ -299,6 +299,12 @@ export function abilityDescription(def: CompiledAbilityDef, stats?: AbilityStats
     const sec = statNum(e.durationTicks / TICK_HZ);
     return `Freezes enemies in a ${radius}-tile radius for ${sec} s. Recharges ${cd} s.`;
   }
+  // Underfoot (T600a seam; T604 runs it, and T631 may reword the line).
+  if (e.kind === 'pathTrap') {
+    const sec = statNum(e.durationTicks / TICK_HZ);
+    const pin = statNum(e.pinTicks / TICK_HZ);
+    return `For ${sec} s, each enemy crossing the tile is pinned ${pin} s and takes ${statNum(e.damage)} damage. Hits burrowed. Recharges ${cd} s.`;
+  }
   const delay = statNum(e.delayTicks / TICK_HZ);
   const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
   return `${statNum(e.damage)} damage in a ${radius}-tile radius after ${delay} s. Recharges ${cd} s.`;

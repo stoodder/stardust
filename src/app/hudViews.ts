@@ -524,6 +524,7 @@ export function abilitySlots(cfg: AbilityConfig): AbilitySlotView[] {
 export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim'] {
   switch (kind) {
     case 'segment':
+    case 'pathTrap': // Underfoot: one path tile (T600a seam; T631 draws its aim)
       return 'path';
     case 'strike':
     case 'reveal':

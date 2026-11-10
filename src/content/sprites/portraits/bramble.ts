@@ -180,7 +180,14 @@ function eye(g: CharGrid, cx: number, cy: number, wide: boolean): void {
 }
 
 /** Lowers a lid of fur over the top `rows` of an eye; `slant` tilts it toward the nose (+1). */
-function lid(g: CharGrid, cx: number, cy: number, rows: number, slant: number, inner: 1 | -1): void {
+function lid(
+  g: CharGrid,
+  cx: number,
+  cy: number,
+  rows: number,
+  slant: number,
+  inner: 1 | -1,
+): void {
   const top = Math.floor(cy - 4);
   for (let y = top; y < top + rows + 2; y++) {
     for (let x = Math.floor(cx - 4); x <= Math.floor(cx + 4); x++) {

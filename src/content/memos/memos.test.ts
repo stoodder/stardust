@@ -23,6 +23,9 @@ describe('the memo content', () => {
       'memo_a2_04',
       'memo_a2_05',
       'memo_a2_06',
+      'memo_a3_01',
+      'memo_a3_02',
+      'memo_a3_03',
     ]);
     expect(MEMO_LIST.map((m) => m.afterMap)).toEqual([
       null,
@@ -38,6 +41,9 @@ describe('the memo content', () => {
       'a2_m04',
       'a2_m04',
       'a2_m05',
+      'a3_m01',
+      'a3_m02',
+      'a3_m03',
     ]);
     for (const id of MEMO_IDS) expect(id).toMatch(MEMO_ID);
   });
@@ -72,8 +78,15 @@ describe('the memo content', () => {
       expect(m.body).toMatch(/^1\. /m);
       expect(m.stamp).toMatch(/^[A-Z0-9 .!-]{1,20}$/);
       expect(`${m.subject}${m.body}`).not.toContain('!');
+    } else if (m.from === 'Everglow Automated Systems') {
+      // From A3M2 the Inbox is automated (core-loop.md § 6.4): terse, no exclamation point, no
+      // sun, no sign-off (style-guide § 6.1: A3M2's is the first memo without one).
+      expect(`${m.subject}${m.body}${m.smallPrint ?? ''}`).not.toContain('!');
+      expect(m.body).not.toContain('{glyph:sun}');
+      expect(m.signOff).toBeUndefined();
+      expect(m.stamp).toBeUndefined();
     } else {
-      // Subject lines are cheerful in every act (§ 6.1): every Everglow memo's so far exclaims.
+      // Subject lines are cheerful in every act (§ 6.1): every other Everglow memo exclaims.
       expect(m.subject).toContain('!');
       expect(m.stamp).toBeUndefined();
     }
@@ -114,5 +127,27 @@ describe('the memo content', () => {
       expect.objectContaining({ when: { flag: 'spared_quiet_wave', eq: true } }),
     ]);
     expect(MEMOS.memo_a1_05?.extra?.[0]?.text).toMatch(/^Performance Note: Containment Lapse\./);
+  });
+
+  it('files Act III part one as the act file quotes it (T600b): Sterling once more, then the machine', () => {
+    expect(MEMOS.memo_a3_01).toMatchObject({
+      from: 'Director Joy Sterling, Frontier Operations',
+      subject: "We'll Get Through This Together!",
+      smallPrint: 'Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core).',
+    });
+    expect(MEMOS.memo_a3_01?.body).toContain(
+      'I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure ' +
+        'the colony. Hang in there!',
+    );
+    expect(MEMOS.memo_a3_02).toMatchObject({
+      from: 'Everglow Automated Systems',
+      subject: 'Your Access Has Been Updated',
+    });
+    expect(MEMOS.memo_a3_03).toMatchObject({
+      from: 'Everglow Automated Systems',
+      subject: 'Personnel Update',
+      body: 'Employee #ED-112 (Okonkwo, I.): Unscheduled Departure. Pension: Restructured.',
+      smallPrint: 'Beneficiary changes are not accepted after departure.',
+    });
   });
 });
