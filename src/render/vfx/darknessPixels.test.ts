@@ -26,10 +26,11 @@ const tintOfColor = (name: typeof LAMP_LIGHT): number => {
   const c = rgbOf(name);
   return (c.r << 16) | (c.g << 8) | c.b;
 };
+const ch = (p: number, q: number) => Math.round((p * q) / 255);
+const bytes = (word: number) => [...new Uint8Array(new Uint32Array([word]).buffer)];
 const mul = (a: number, b: number): number => {
   const x = rgbOfNumber(a);
   const y = rgbOfNumber(b);
-  const ch = (p: number, q: number) => Math.round((p * q) / 255);
   return (ch(x.r, y.r) << 16) | (ch(x.g, y.g) << 8) | ch(x.b, y.b);
 };
 
@@ -146,7 +147,6 @@ describe('the light map', () => {
   });
 
   it('is opaque white where dark (the tint is the tone) and clear where lit (untouched)', () => {
-    const bytes = (word: number) => [...new Uint8Array(new Uint32Array([word]).buffer)];
     expect(bytes(MASK_DARK)).toEqual([255, 255, 255, 255]);
     expect(bytes(MASK_LIT)).toEqual([0, 0, 0, 0]);
   });

@@ -68,7 +68,8 @@ const toward = (s: number, k: number): number => Math.round(255 + (s - 255) * k)
 const pack = (r: number, g: number, b: number): number => (r << 16) | (g << 8) | b;
 
 /** `a` over `b` per channel (×255, capped at 255): what's left of `a` once `b` has multiplied. */
-const over = (a: number, b: number): number => Math.min(255, Math.round((255 * a) / Math.max(1, b)));
+const over = (a: number, b: number): number =>
+  Math.min(255, Math.round((255 * a) / Math.max(1, b)));
 
 /** Writes the night's tones at darkness `dark` (0–1) into `out` (no allocation). */
 export function darkTones(dark: number, out: DarkTones): DarkTones {
@@ -95,12 +96,14 @@ export function rgbOfNumber(c: number): Rgb {
   return { r: (c >> 16) & 0xff, g: (c >> 8) & 0xff, b: c & 0xff };
 }
 
+/** One sRGB channel (0–255), linearized. */
+function lin(v: number): number {
+  const x = v / 255;
+  return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+}
+
 /** Relative luminance (sRGB, 0–1) of a 0xRRGGBB color: how bright a multiply leaves white. */
 export function lumOf(c: number): number {
-  const lin = (v: number): number => {
-    const x = v / 255;
-    return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-  };
   return 0.2126 * lin((c >> 16) & 0xff) + 0.7152 * lin((c >> 8) & 0xff) + 0.0722 * lin(c & 0xff);
 }
 

@@ -13,7 +13,7 @@
 // Render-only and cosmetic. Allocation-free per frame: textures are baked once, images pooled,
 // and nothing is set that hasn't changed.
 import * as Phaser from 'phaser';
-import type { SpriteId } from '../../content/sprites/index.ts';
+import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
 import { isLightSource, type LightTowers } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { VIEW_H, VIEW_W } from '../scale.ts';
@@ -63,12 +63,16 @@ interface PropLight {
 
 const pos: Vec2 = { x: 0, y: 0 };
 
+const SPRITE_IDS: ReadonlyMap<string, SpriteId> = new Map(SPRITES.map((d) => [d.id, d.id]));
+
 /** `<spriteId>#<variant>:<frame>` (bake.ts `frameKey`), split; null for anything else. */
-function parseFrameKey(name: string): { id: string; variant: string; frame: string } | null {
+function parseFrameKey(name: string): { id: SpriteId; variant: string; frame: string } | null {
   const hash = name.indexOf('#');
   const colon = name.indexOf(':', hash + 1);
   if (hash <= 0 || colon < 0) return null;
-  return { id: name.slice(0, hash), variant: name.slice(hash + 1, colon), frame: name.slice(colon + 1) };
+  const id = SPRITE_IDS.get(name.slice(0, hash));
+  if (id === undefined) return null;
+  return { id, variant: name.slice(hash + 1, colon), frame: name.slice(colon + 1) };
 }
 
 export class WorldGlowView {
@@ -87,7 +91,11 @@ export class WorldGlowView {
   constructor(
     ctx: ViewContext,
     darkness: DarknessView,
-    map: { readonly lights: readonly unknown[]; readonly lighting: readonly unknown[]; readonly dark: boolean },
+    map: {
+      readonly lights: readonly unknown[];
+      readonly lighting: readonly unknown[];
+      readonly dark: boolean;
+    },
     liftPx: (col: number, row: number) => number,
   ) {
     this.#ctx = ctx;
@@ -104,9 +112,9 @@ export class WorldGlowView {
       if (key === null) continue;
       const glow = PROP_GLOWS[key.id];
       if (glow !== undefined && (glow.frames === undefined || glow.frames.includes(key.frame))) {
-        this.#addProp(obj, this.#propTexture(key.id as SpriteId, key.variant, key.frame, glow), glow);
+        this.#addProp(obj, this.#propTexture(key.id, key.variant, key.frame, glow), glow);
       } else if (map.dark) {
-        this.#addBaked(obj, key.id as SpriteId, key.variant, key.frame);
+        this.#addBaked(obj, key.id, key.variant, key.frame);
       }
     }
     if (!map.dark) return;
