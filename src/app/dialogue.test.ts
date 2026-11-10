@@ -85,7 +85,7 @@ describe('dialogue helpers', () => {
     expect(sceneMode(knock!)).toBe('comms');
     expect(sceneMode(defineScene('a1_m01_brief', [{ kind: 'end' }]))).toBe('briefing');
     // A cue flagged `pause` (D134) is a pausing panel too, with no choice in it.
-    const cue = defineScene('a2_m03_cue_test', [{ speaker: 'pebble', text: 'Hi.' }]);
+    const cue = defineScene('a2_m03_cue_test', [{ kind: 'line', speaker: 'pebble', text: 'Hi.' }]);
     expect(sceneMode(cue)).toBe('comms');
     expect(sceneMode({ ...cue, pause: true })).toBe('panel');
   });
@@ -412,8 +412,8 @@ describe("a battle's dialogue", () => {
     setSpeed(2);
     const cue: Scene = {
       ...defineScene('a1_m01_cue_test', [
-        { speaker: 'quill', text: 'One.' },
-        { speaker: 'quill', text: 'Two.' },
+        { kind: 'line', speaker: 'quill', text: 'One.' },
+        { kind: 'line', speaker: 'quill', text: 'Two.' },
       ]),
       pause: true,
     };
