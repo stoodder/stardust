@@ -1,9 +1,8 @@
 // CodeSpriteSource's atlas pages are CPU-backed canvases (T501j): every page's first 2D context
 // asks for `willReadFrequently`, so the bake's puts and Phaser's readback stay off the GPU. The
 // browser is stood in for by stubs (a canvas that records its context requests, an ImageData).
-import type * as Phaser from 'phaser';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CodeSpriteSource, PAGE_PREFIX } from './CodeSpriteSource.ts';
+import { CodeSpriteSource, PAGE_PREFIX, type SpriteScene } from './CodeSpriteSource.ts';
 
 interface FakeCanvas {
   width: number;
@@ -50,8 +49,7 @@ describe('CodeSpriteSource', () => {
       },
     );
     const pages: string[] = [];
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test double for the parts register uses
-    const scene = {
+    const scene: SpriteScene = {
       textures: {
         addCanvas: (key: string) => {
           pages.push(key);
@@ -59,7 +57,7 @@ describe('CodeSpriteSource', () => {
         },
       },
       anims: { create: () => undefined },
-    } as unknown as Phaser.Scene;
+    };
 
     const source = new CodeSpriteSource();
     source.register(scene);

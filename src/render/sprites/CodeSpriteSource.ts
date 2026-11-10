@@ -22,6 +22,26 @@ export const PAGE_PREFIX = 'sprites.';
 /** Where BootScene stores the source in the game registry. */
 export const SPRITE_SOURCE_KEY = 'spriteSource';
 
+/** The parts of a Phaser scene `register` uses (a `Phaser.Scene` is one; tests pass a fake). */
+export interface SpriteScene {
+  readonly textures: {
+    addCanvas(
+      key: string,
+      canvas: HTMLCanvasElement,
+    ): {
+      add(name: string, source: number, x: number, y: number, w: number, h: number): unknown;
+    } | null;
+  };
+  readonly anims: {
+    create(config: {
+      key: string;
+      frames: { key: string; frame: string }[];
+      frameRate: number;
+      repeat: number;
+    }): unknown;
+  };
+}
+
 export class CodeSpriteSource implements SpriteSource {
   readonly #where = new Map<string, FrameRef>();
   readonly #anchors = new Map<string, Point>();
@@ -35,7 +55,7 @@ export class CodeSpriteSource implements SpriteSource {
   }
 
   /** Synchronous `load`: bakes, packs, and registers everything with the scene's game. */
-  register(scene: Phaser.Scene): void {
+  register(scene: SpriteScene): void {
     const baked = bakeAll(SPRITES, PALETTES);
     for (const b of baked) this.#baked.set(b.id, b);
     for (const def of SPRITES) {
