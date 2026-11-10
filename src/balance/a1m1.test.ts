@@ -8,10 +8,10 @@ import { describe, expect, it } from 'vitest';
 import type { CompiledBuild } from '../content/compiled.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
+import type { WaveGroup } from '../content/types.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
 import { notGradual } from './checks.ts';
-import { runMap } from './harness.ts';
+import { judgeShift, shiftedContent, type GroupPatch } from './__fixtures__/shifts.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 import { NO_PURCHASES, runConfig } from './profile.ts';
 
@@ -25,22 +25,10 @@ const ROOF = [7, 2] as const;
 const isClump = (g: WaveGroup): boolean =>
   g.enemy === 'nibbler' && g.intervalSec !== undefined && g.intervalSec <= 0.25;
 
-/** The content with wave `wave`'s k-th clump (from 0) starting k × `shiftSec` later. */
-function shiftClumps(wave: number, shiftSec: number): typeof content {
-  const raw = RAW_CONTENT.maps.a1_m01;
-  const waves = raw.waves.map((w: WaveDef, i): WaveDef => {
-    if (i !== wave - 1) return w;
-    let k = 0;
-    const groups = w.groups.map((g) =>
-      isClump(g) ? { ...g, delaySec: (g.delaySec ?? 0) + shiftSec * k++ } : g,
-    );
-    return { ...w, groups };
-  });
-  const shifted: RawContent = {
-    ...RAW_CONTENT,
-    maps: { ...RAW_CONTENT.maps, a1_m01: { ...raw, waves } },
-  };
-  return compileContent(shifted);
+/** Each clump of a wave (the k-th from 0) starts k × `shiftSec` later. */
+function clumpsApart(shiftSec: number): GroupPatch {
+  let k = 0; // shiftedContent patches a wave's groups in order, a fresh patch per wave
+  return (g) => (isClump(g) ? { ...g, delaySec: (g.delaySec ?? 0) + shiftSec * k++ } : g);
 }
 
 /** One headless run of `build` on A1M1 (seed 1; A1M1's runs don't vary by seed). */
@@ -51,13 +39,19 @@ function run(build: CompiledBuild): HeadlessResult {
 // Each test re-runs a whole map's harness (A1M2 also runs its R&D picks, T313): seconds, not
 // milliseconds, and slower while other suites share the machine.
 describe('A1M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
-  it.each([5, 6, 7])('every harness check still passes with W%i’s clumps ±0.2 s apart', (wave) => {
-    for (const shiftSec of [-0.2, -0.1, 0.1, 0.2]) {
-      const report = runMap(shiftClumps(wave, shiftSec), 'a1_m01', { seeds: 1 });
-      const failed = report.checks.filter((c) => !c.ok).map((c) => `#${c.id} ${c.title}`);
-      expect({ shiftSec, failed }).toEqual({ shiftSec, failed: [] });
-    }
-  });
+  // W5–W7's clumps move together, one harness run per spacing (T460: the gate's time; T127
+  // checked each wave alone).
+  it.each([-0.2, -0.1, 0.1, 0.2])(
+    'every harness check still passes with W5–W7’s clumps %s s further apart',
+    (shiftSec) => {
+      const shifted = shiftedContent('a1_m01', {
+        5: clumpsApart(shiftSec),
+        6: clumpsApart(shiftSec),
+        7: clumpsApart(shiftSec),
+      });
+      expect(judgeShift(shifted, 'a1_m01').failed).toEqual([]);
+    },
+  );
 
   it('three Rivets in the setup and nothing else lose gradually, never to one wave', () => {
     const tiles: readonly (readonly [number, number])[] = [ROOF, [10, 4], [3, 5]];

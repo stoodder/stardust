@@ -112,6 +112,8 @@ export interface SimStats {
   lateSells: number;
   /** Blinks a boss completed (Glass Half Empty; counted by enemyAbilities/blink.ts, T404). */
   bossBlinks: number;
+  /** Leaks by Heavy units (Hiccup Contained; counted in movement with `leaksByFaction`, T460). */
+  heavyLeaks: number;
   /**
    * Leaks by faction and by enemy id, medal-exempt units never counted (the `leaks` condition
    * atom: Hiccup Contained; counted in movement). `leaksByEnemy` gets a key on its first leak.
@@ -374,6 +376,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       wreckageCleared: 0,
       lateSells: 0,
       bossBlinks: 0,
+      heavyLeaks: 0,
       leaksByFaction: factionCounts(),
       leaksByEnemy: {},
     },

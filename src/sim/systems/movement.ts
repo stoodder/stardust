@@ -3,7 +3,8 @@
 // reach the route's end: the core loses the leak cost (design/core-loop.md §2.9; 0 for `fleeing`
 // and `youngling` units; a boss drains it all, BOSS_LEAK_DRAINS_ALL), less what Emergency Bulkhead
 // absorbs, the leak counts toward its tags' `stats.tagLeaked` (and, unless medal-exempt, toward
-// `stats.leaksByFaction` and `leaksByEnemy`), and the enemy is removed. Losing at
+// `stats.leaksByFaction` and `leaksByEnemy`, and a Heavy unit's toward `heavyLeaks`), and the
+// enemy is removed. Losing at
 // 0 integrity is cleanup's check (T105b), at the end of the tick. Slots run in ascending order
 // (determinism), except that `quiet_wave` units leak last in the tick (D098): a Quiet Wave leak
 // never takes the core below 1 (D097), so leaking after every other leak of the tick means sparing
@@ -125,14 +126,16 @@ function arrive(
 }
 
 /**
- * Counts a leak by faction and by enemy id (the `leaks` condition atom: Hiccup Contained; T400a),
- * except a medal-exempt unit's, which no Challenge may read (core-loop.md § 2.7).
+ * Counts a leak by faction and by enemy id (the `leaks` condition atom; T400a) and a Heavy unit's
+ * (`heavyLeaks`: Hiccup Contained, T460), except a medal-exempt unit's, which no Challenge may read
+ * (core-loop.md § 2.7).
  */
 function countLeak(state: SimState, e: Enemy, def: CompiledEnemyDef): void {
   if (isMedalExempt(e.tags)) return;
   const stats = state.stats;
   stats.leaksByFaction[def.faction]++;
   stats.leaksByEnemy[def.id] = (stats.leaksByEnemy[def.id] ?? 0) + 1;
+  if (e.heavy) stats.heavyLeaks++; // Hiccup Contained (T460)
 }
 
 /**

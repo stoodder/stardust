@@ -165,6 +165,8 @@ test('hud: the Checkpoint cue on A2M2, with the rig glyph and four-digit credits
   expect(panel).not.toBeNull();
   expect(num).not.toBeNull();
   expect(num!.x + num!.width).toBeLessThanOrEqual(panel!.x + panel!.width);
+  // …and its digits fit their own column, not spilling into the panel's padding.
+  expect(await credits.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   await expect(page.getByTestId('asset-meter').locator('img')).toBeVisible();
   await shot(page, FLOW, 6, 'a2m2-checkpoint-cue');
 });

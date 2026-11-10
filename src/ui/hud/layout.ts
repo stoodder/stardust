@@ -31,7 +31,7 @@ const OBJECTIVE_ROW_H = 10;
  * keeps clear of them when it can (T213).
  */
 export const HUD_CORNERS: readonly Rect[] = [
-  { x: 4, y: 4, w: 108, h: STATUS_H },
+  { x: 4, y: 4, w: 112, h: STATUS_H },
   // The wave panel grows a second preview row when a wave brings several kinds.
   { x: UI_W - 4 - 150, y: 4, w: 150, h: 92 },
   // Two ability slots (slot 2 with its companion's face) and Hold fire (all) (Spare runners (all),
@@ -40,12 +40,19 @@ export const HUD_CORNERS: readonly Rect[] = [
   { x: UI_W - 4 - 129, y: UI_H - 4 - 50, w: 129, h: 50 },
 ];
 
-/** The corner blocks with the status panel grown by `objectives` tracker rows (T312c). */
-export function hudCorners(objectives: number): readonly Rect[] {
-  if (objectives <= 0) return HUD_CORNERS;
+/** What a Protect map's asset meter row adds to it (a 16 px meter row and the grid gap; T305a). */
+const ASSET_ROW_H = 20;
+
+/**
+ * The corner blocks with the status panel grown by `objectives` tracker rows (T312c) and, on a
+ * Protect map, the asset meter's row (T431).
+ */
+export function hudCorners(objectives: number, asset = false): readonly Rect[] {
+  if (objectives <= 0 && !asset) return HUD_CORNERS;
   const [status, ...rest] = HUD_CORNERS;
   if (status === undefined) return HUD_CORNERS;
-  return [{ ...status, h: status.h + objectives * OBJECTIVE_ROW_H + 2 }, ...rest];
+  const rows = objectives > 0 ? objectives * OBJECTIVE_ROW_H + 2 : 0;
+  return [{ ...status, h: status.h + rows + (asset ? ASSET_ROW_H : 0) }, ...rest];
 }
 /** What covering a HUD corner costs a candidate, against 1 per covered tower. */
 const CORNER_COST = 2;

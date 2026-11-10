@@ -1410,3 +1410,8 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **Act II's wave-clear jingle stays silent until T450 writes the minor cue;** it never falls back to Act I's bright sting. The loading tip comes from the slot Continue would open.
 - **Ruling:** radio lines at 2× scale their holds by game speed (≥ 1.5 s) and drop once their wave has started (T430b).
 - **Process:** `SMOKE_PORT` must avoid Chrome's unsafe ports (5061 is one); ad-hoc Playwright configs must never output into `./test-results` (it's wiped on each run).
+
+### D127 — 2026-11-10 — T440c Act II props, tiles and the value band
+- **Act II's ground is re-banded** (D119): grass ≈ 0.22, road ≈ 0.31, units ≥ 0.39 (Skitterkin 1.2–1.4× the road; the Mote 2.2× below it); the Aelari, whose mean sits level with the road, are held to bright knots ≥ 2:1 over it inside a dark rim ≥ 3:1 under it. `palettes.test.ts` checks both Act II palettes.
+- **A2M2's rigs draw one frame per damage band** (`assetLook` from `assetDamage`: intact, damaged, a pulsing critical, lost), apart from the decor list. **A map's dark edge grows from a `halls_dark` marker**; outcrops are high ground with an `outcrop*` marker; spoil heaps and warrens alternate frames by their marker's number.
+- Every A2M1–A2M3 prop in act2.md's lists is drawn (Rig Nine dead over the bore, the hut with three hushed miners, the warrens with eggs, the faded scarecrow, Rig 3 working the strip mine), and Pebble holds on the Peeker's rock. The gallery is 29.4k of 32.7k px: M5's art will need the card plan trimmed.

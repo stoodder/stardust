@@ -108,13 +108,14 @@ export const map = defineMapLayout({
     'clustered',
   ],
   requiredCounters: ['splash'],
-  // Hiccup Contained (act2.md § A2M1, Medals): no Hollow unit leaks (a Heavy one is still Hollow).
+  // Hiccup Contained (act2.md § A2M1, Medals; D113): no Heavy Mote leaks, so every Mote that
+  // hushed a runner on the way is stopped before the lift (Motes are the map's only Hollow unit).
   medals: {
     challenge: {
       id: 'hiccup_contained',
       name: 'Hiccup Contained',
-      description: 'No Hollow unit gets through.',
-      condition: { leaks: { faction: 'hollow' }, lte: 0 },
+      description: 'No Heavy Mote gets through.',
+      condition: { stat: 'heavyLeaks', lte: 0 },
     },
   },
   // Crew Logs (act2.md § A2M1, Medals): send the drone to both marked rigs. It unlocks the

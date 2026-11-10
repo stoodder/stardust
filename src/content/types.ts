@@ -983,7 +983,12 @@ export type RunStat =
   | 'wreckageCleared'
   | 'lateSells'
   /** Blinks a boss completed this run (Glass Half Empty: retreat before 3; counted by T404). */
-  | 'bossBlinks';
+  | 'bossBlinks'
+  /**
+   * Leaks by Heavy units: Hollow units that hushed someone on the way (Hiccup Contained: no Heavy
+   * Mote gets through; counted in movement, T460).
+   */
+  | 'heavyLeaks';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state

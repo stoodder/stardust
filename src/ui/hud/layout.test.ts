@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EDGE,
   HUD_CORNERS,
+  hudCorners,
   placePanel,
   tickToward,
   TOWER_BOX,
@@ -158,5 +159,22 @@ describe('placePanel around another box (T301b: a star map node)', () => {
     const p = placePanel(500, 180, 176, 100, [{ x: 300, y: 180 }], [], wide, NODE);
     const covers = p.left < 300 + 8 && 300 - 8 < p.left + 176 && p.top < 188 && 172 < p.top + 100;
     expect(covers).toBe(false);
+  });
+});
+
+/** The status panel's height among `r`, the HUD's corner blocks. */
+function status(r: readonly { h: number }[]): number {
+  return r[0]?.h ?? 0;
+}
+
+describe('hudCorners (T431)', () => {
+  it("grows the status panel by its objective rows and a Protect map's asset row", () => {
+    const base = status(HUD_CORNERS);
+    expect(hudCorners(0)).toBe(HUD_CORNERS);
+    expect(status(hudCorners(1))).toBe(base + 12);
+    expect(status(hudCorners(0, true))).toBe(base + 20);
+    expect(status(hudCorners(2, true))).toBe(base + 22 + 20);
+    // The status panel's width (hud.css: four-digit credits fit).
+    expect(HUD_CORNERS[0]?.w).toBe(112);
   });
 });

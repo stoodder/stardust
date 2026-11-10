@@ -65,7 +65,7 @@ function SpecCard({ o, locked, credits }: { o: SpecOptionView; locked: boolean; 
 export function TowerPanel({ t }: { t: SelectedTowerView }) {
   const others = hud.towerPoints.value.filter((p) => p.x !== t.x || p.y !== t.y);
   const h = towerPanelHeight(t);
-  const corners = hudCorners(hud.objectives.value.length);
+  const corners = hudCorners(hud.objectives.value.length, hud.asset.value !== null);
   const { left, top } = placePanel(t.x, t.y, PANEL_W, h, others, corners);
   const credits = hud.credits.value;
   const max = t.upgradeCost === null;

@@ -164,4 +164,7 @@ export const builds = defineBuilds({
       ],
     },
   },
+  // Hiccup Contained (D113): par's merge kills every Mote that hushed a runner on the Spires road,
+  // so none reaches the lift Heavy; its leaks are plain Motes down the yard cut (T460).
+  parMedals: ['challenge'],
 });

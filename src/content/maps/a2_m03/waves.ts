@@ -100,7 +100,7 @@ export const waves = defineWaves([
     groups: [
       motes(16, OPEN, PACKED, 'mine'),
       run('nibbler', 8, OPEN + 14),
-      motes(3, OPEN + 14 + FLEE_LEAD),
+      motes(2, OPEN + 14 + FLEE_LEAD),
     ],
   },
   // W6 · Lightwings ×4 over the strip mine [T: flying shields], Glimmers behind
@@ -124,7 +124,7 @@ export const waves = defineWaves([
       motes(24, OPEN, PACKED, 'mine'),
       run('elder', 2, OPEN + 16, 6),
       young(10, OPEN + 16.4, 0.6),
-      motes(3, OPEN + 16 + FLEE_LEAD),
+      motes(2, OPEN + 16 + FLEE_LEAD),
     ],
   },
   // W9 · the big Aelari wave: Wardens on the road, Glimmers down the mine, Lightwings over it.
@@ -138,7 +138,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('zoomer', 12, OPEN, 0.4),
+      run('zoomer', 12, OPEN, 0.25),
       motes(4, OPEN + FLEE_LEAD),
       motes(30, OPEN + 20, PACKED, 'mine'),
       motes(50, OPEN + 26, PACKED),
@@ -148,7 +148,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('zoomer', 10, OPEN, 0.4),
+      run('zoomer', 10, OPEN, 0.3),
       motes(4, OPEN + FLEE_LEAD),
       wardens(2, OPEN + 12, 6),
       glimmers(16, OPEN + 24, 0.8),

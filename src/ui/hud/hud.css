@@ -209,11 +209,12 @@ section.chamfer,
   left: 4px;
   top: 4px;
   box-sizing: border-box;
-  /* Wide enough for four-digit credits ("1208") beside the label (T431). */
-  width: 108px;
+  /* Wide enough for four-digit credits ("1208": 46 px in the 16 px font) beside the label, inside
+     the padding (T431). */
+  width: 112px;
   display: grid;
   gap: 4px;
-  padding: 6px 8px 6px 6px;
+  padding: 6px 6px 6px 6px;
 }
 
 .hud-meter,

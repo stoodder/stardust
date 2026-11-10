@@ -93,6 +93,7 @@ export function fakeResult(
       wreckageCleared: 0,
       lateSells: 0,
       bossBlinks: 0,
+      heavyLeaks: 0,
       leaksByFaction: { skitterkin: 0, aelari: 0, everglow: 0, hollow: 0 },
       leaksByEnemy: {},
     },

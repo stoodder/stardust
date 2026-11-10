@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMY_BLANK } from '../../sim/entities.ts';
+import type { Enemy } from '../../sim/index.ts';
 import { showsPin, SKEWER_MS, skewerAlpha } from './HarpoonView.ts';
 
 /** Skewer's alpha at fraction `f` of its time. */
 const at = (f: number, reduced: boolean): number => skewerAlpha(f * SKEWER_MS, reduced);
-/** A unit as the view reads it. */
-const unit = (alive: boolean, pinnedTicks: number) => ({ ...ENEMY_BLANK, alive, pinnedTicks });
+/** A unit as the view reads it (only the fields showsPin reads). */
+const unit = (alive: boolean, pinnedTicks: number): Enemy =>
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- showsPin reads only these two
+  ({ alive, pinnedTicks }) as Enemy;
 
 describe("the Harpoon's minimal view (T408)", () => {
   it("Skewer's line fades 1 → 0.66 → 0.33 over its time, held whole under reduced motion", () => {
