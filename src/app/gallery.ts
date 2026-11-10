@@ -874,7 +874,8 @@ class SheetPacker {
     if (box === null || sheet === null) throw new Error('gallery: add before section');
     box.append(block);
     // A sheet's first block stays even if it alone is too tall (the smoke test names it).
-    if (box.childElementCount > 1 && sheet.offsetHeight > SHEET_MAX_PX) {
+    // The fractional box the smoke test measures (offsetHeight rounds, so 8000.1 passed as 8000).
+    if (box.childElementCount > 1 && sheet.getBoundingClientRect().height > SHEET_MAX_PX) {
       block.remove();
       this.#newSheet();
       this.#open(`${this.#title} (continued)`);
@@ -906,7 +907,7 @@ class SheetPacker {
     const h = el('h2', undefined, title);
     this.#sheet?.append(h, box);
     // A heading never ends a sheet alone: the section starts on the next sheet instead.
-    if ((this.#sheet?.offsetHeight ?? 0) > SHEET_MAX_PX - 200) {
+    if ((this.#sheet?.getBoundingClientRect().height ?? 0) > SHEET_MAX_PX - 200) {
       h.remove();
       box.remove();
       this.#newSheet();

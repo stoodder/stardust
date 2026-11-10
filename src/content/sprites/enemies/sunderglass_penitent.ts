@@ -378,7 +378,10 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
     }
   }
   rim(g, body, CX - 6, heartY - 8);
-  hum(g, torso, beat, front ? 41 : 42);
+  // Beats 1–3 each slide their own strands (the planted beats differ too); beat 0 is still.
+  const pane = front && top !== null ? paneMask(top) : null;
+  const shown: Mask = (x, y) => torso(x, y) && (pane === null || !pane(x, y));
+  hum(g, shown, beat === 0 ? 0 : 1, (front ? 41 : 42) + beat);
 
   if (front) {
     if (pose === 'broken') {
@@ -457,7 +460,8 @@ for (const [pose, n, fps] of POSES) {
     const names: string[] = [];
     for (let k = 0; k < n; k++) {
       const name = `${pose}_${f}_${k}`;
-      frames[name] = penitent(pose, f, k);
+      // The stand-down ends on the Ward's own frame, so the two read as one figure.
+      frames[name] = pose === 'flee' && k === 1 ? penitent('kneel', f, 0) : penitent(pose, f, k);
       names.push(name);
     }
     anims[`${pose}_${f}`] =

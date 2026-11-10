@@ -17,8 +17,8 @@ describe('the stand-down fade', () => {
 });
 
 describe('the Ward', () => {
-  it('kneels in the bowed pose the placeholder Penitent has (the Witch’s `puff`)', () => {
-    expect(wardFrame(spriteId('enemy.sunderglass_penitent'))).toBe('puff_se_0');
+  it('kneels in the Penitent’s `kneel` pose', () => {
+    expect(wardFrame(spriteId('enemy.sunderglass_penitent'))).toBe('kneel_se_0');
     expect(wardFrame(spriteId('enemy.glimmer'))).toBe('walk_se_0');
   });
 });

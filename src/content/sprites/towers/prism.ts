@@ -166,7 +166,9 @@ function refractorKit(g: CharGrid, cx: number, cy: number): void {
 function sunlanceKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
-    for (let y = cy - 16; y <= cy - 1; y++) {
+    // A crystal foot the lance stands in.
+    shard(g, x, cy - 1, 4);
+    for (let y = cy - 16; y <= cy - 4; y++) {
       plot(g, x - 1, y, '4');
       plot(g, x, y, '2');
     }

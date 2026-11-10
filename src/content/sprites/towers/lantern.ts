@@ -14,7 +14,7 @@
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
-import { aelariBase, aelariSpecBase } from './aelariBase.ts';
+import { aelariBase, aelariSpecBase, shard } from './aelariBase.ts';
 
 const W = 26;
 const H = 34;
@@ -110,7 +110,9 @@ function lanternHead(beat: number, kit: Kit): string[] {
 function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
-    for (let y = cy - 14; y <= cy - 2; y++) plot(g, x, y, '7');
+    // A crystal foot the arch's post stands in.
+    shard(g, x, cy - 1, 4);
+    for (let y = cy - 14; y <= cy - 4; y++) plot(g, x, y, '7');
     plot(g, x - side, cy - 15, '8');
     plot(g, x - 2 * side, cy - 15, '8');
     plot(g, x - 3 * side, cy - 14, '7');
@@ -136,7 +138,8 @@ function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
 function truthlightKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
-    for (let y = cy - 15; y <= cy - 1; y++) {
+    shard(g, x, cy - 1, 4);
+    for (let y = cy - 15; y <= cy - 4; y++) {
       plot(g, x - 1, y, y < cy - 12 ? '9' : '4');
       plot(g, x, y, y < cy - 12 ? '8' : '2');
     }

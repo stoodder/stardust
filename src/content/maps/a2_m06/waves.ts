@@ -84,15 +84,15 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       fractures('west', 2, OPEN, 3),
-      fractures('east', 2, OPEN + 1.5, 3),
-      motes('west', 14, OPEN + 12, PACKED),
-      motes('east', 14, OPEN + 14, PACKED),
+      fractures('east', 1, OPEN + 1.5, 3),
+      motes('west', 10, OPEN + 12, PACKED),
+      motes('east', 10, OPEN + 14, PACKED),
     ],
   },
   // W8 · Rift Moths + Fractures
   {
     countdownSec: COUNTDOWN,
-    groups: [fractures('east', 2, OPEN, 2.5), moths(5, OPEN + 6, 1.2)],
+    groups: [fractures('east', 4, OPEN, 2.5), moths(5, OPEN + 6, 1.2)],
   },
   // W9 · a Rift Moth flock [X]
   {
@@ -106,8 +106,8 @@ export const waves = defineWaves([
       fractures('west', 2, OPEN, 2.5),
       fractures('east', 2, OPEN + 1, 2.5),
       moths(5, OPEN + 8, 1),
-      motes('west', 14, OPEN + 14, PACKED),
-      motes('east', 14, OPEN + 16, PACKED),
+      motes('west', 10, OPEN + 14, PACKED),
+      motes('east', 10, OPEN + 16, PACKED),
     ],
   },
   // W11 · the surge down the west road (full dark as it starts)
@@ -133,11 +133,11 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      fractures('west', 3, OPEN, 2),
-      fractures('east', 3, OPEN + 1, 2),
+      fractures('west', 2, OPEN, 3),
+      fractures('east', 1, OPEN + 1.5, 3),
       moths(12, OPEN + 6, 0.5),
-      motes('west', 24, OPEN + 12, PACKED),
-      motes('east', 24, OPEN + 14, PACKED),
+      motes('west', 20, OPEN + 12, PACKED),
+      motes('east', 20, OPEN + 14, PACKED),
     ],
   },
   // W14 · everything
@@ -146,9 +146,9 @@ export const waves = defineWaves([
     groups: [
       motes('west', 24, OPEN, PACKED),
       motes('east', 24, OPEN + 2, PACKED),
-      fractures('west', 4, OPEN + 8, 1.5),
-      fractures('east', 4, OPEN + 9, 1.5),
-      moths(20, OPEN + 12, 0.4),
+      fractures('west', 3, OPEN + 8, 1.5),
+      fractures('east', 3, OPEN + 9, 1.5),
+      moths(22, OPEN + 12, 0.4),
       motes('west', 24, OPEN + 22, PACKED),
       motes('east', 24, OPEN + 24, PACKED),
     ],

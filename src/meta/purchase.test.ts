@@ -95,8 +95,8 @@ describe('offers', () => {
     expect(kinds[0]).toBe('license');
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
     // One per registered tower (the Harpoon's and Crane's since T408, the Prism's since T504, the
-    // Mindspike's since T507).
-    expect(kinds.filter((k) => k === 'tune')).toHaveLength(10);
+    // Mindspike's since T507, the Lantern's since T508).
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(11);
   });
 
   it('orders each group by arrival, then entry price, then name', () => {

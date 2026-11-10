@@ -31,36 +31,38 @@ const SOUTH_W: GridPos = [6, 10];
 const SOUTH_MID: GridPos = [10, 10];
 const DOMES: GridPos = [14, 10];
 
+/** The merge, where the Rift Moths' lane crosses the roads in. */
+const MERGE: GridPos = [8, 5];
 /** Ves'thara's Stillness on W9's Rift Moth flock as it crosses the merge. */
-const STILL_W9: BuildStep = { wave: 9, ability: 2, target: MERGE_W, when: { afterSec: 15 } };
+const STILL_W9: BuildStep = { wave: 9, ability: 2, target: MERGE, when: { afterSec: 17 } };
+/** ...and on W14's, the biggest flock. */
+const STILL_W14: BuildStep = { wave: 14, ability: 2, target: MERGE, when: { afterSec: 27 } };
 
 function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'thumper', tile: MERGE_W },
     { wave: 1, build: 'prism', tile: TOWER },
+    { wave: 1, build: 'rivet', tile: YARD_MID },
     { wave: 1, build: 'thumper', tile: SOUTH_MID },
-    { wave: 1, build: 'rivet', tile: POCKET_W },
     { wave: 2, upgrade: MERGE_W },
-    { wave: 3, build: 'thumper', tile: YARD_MID },
+    { wave: 3, upgrade: SOUTH_MID },
     { wave: 4, build: 'skyhook', tile: YARD_IN },
-    { wave: 4, upgrade: TOWER },
     { wave: 5, build: 'skyhook', tile: WALL_E },
-    { wave: 6, upgrade: SOUTH_MID },
+    { wave: 5, upgrade: TOWER },
     { wave: 6, upgrade: YARD_IN },
+    { wave: 6, upgrade: YARD_MID },
+    { wave: 7, upgrade: WALL_E },
     { wave: 7, upgrade: MERGE_W },
-    { wave: 7, build: 'rivet', tile: YARD_E },
-    { wave: 8, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
     STILL_W9,
-    { wave: 9, upgrade: WALL_E },
     { wave: 9, upgrade: TOWER },
-    { wave: 10, upgrade: YARD_MID },
-    { wave: 10, upgrade: YARD_E },
-    { wave: 11, upgrade: SOUTH_MID },
-    { wave: 11, upgrade: YARD_IN },
-    { wave: 12, specialize: SOUTH_MID, spec: 'a' }, // Cluster Thumper
-    { wave: 13, upgrade: WALL_E },
-    { wave: 13, upgrade: YARD_E },
-    { wave: 14, upgrade: POCKET_W },
+    { wave: 9, upgrade: SOUTH_MID },
+    { wave: 10, upgrade: YARD_IN },
+    { wave: 10, upgrade: WALL_E },
+    { wave: 10, build: 'rivet', tile: YARD_E },
+    { wave: 11, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
+    { wave: 12, upgrade: YARD_MID },
+    STILL_W14,
+    { wave: 14, specialize: SOUTH_MID, spec: 'a' }, // Cluster Thumper
   ];
 }
 
@@ -110,7 +112,7 @@ export const builds = defineBuilds({
       ],
     },
   },
-  noCounterLoseByWave: 9,
+  noCounterLoseByWave: 10,
   altBuilds: {
     // Prism, Thumper, Zapcoil, Sprinkler (Cloudburst): the Zapcoils and a Cloudburst Sprinkler take
     // the Rift Moths instead of the Skyhooks.

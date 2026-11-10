@@ -152,15 +152,17 @@ describe('M5 towers, ability, links, and catalog rows', () => {
     ]);
     expect(l.tiers[2].attack).toMatchObject({ kind: 'beam', type: 'psionic', beams: 2 });
     expect(l.specs?.a.markArea).toEqual({ radiusTiles: 3.5, radiusSq: 12.25, pct: 0.15 });
+    expect(l.specs?.a.attack).toMatchObject({ beams: 2 }); // All-Seeing keeps T3's two beams
+    expect(l.specs?.b.attack).toMatchObject({ beams: 1 }); // Truthlight: one target
     expect(l.specs?.b.effects).toEqual([
       { status: 'marked', pct: 0.35, durationTicks: 60, noEvade: true },
     ]);
     expect(l.tiers[0].markArea).toBeNull();
   });
 
-  it('one waits for its task (STUB_TOWER_TASKS; T504, T507 lifted theirs), with access rows', () => {
-    expect(STUB_TOWER_TASKS).toEqual({ lantern: 'T508' });
-    expect(TOWERS_AHEAD_OF_TASK).toEqual(['lantern']);
+  it('none waits for its task (STUB_TOWER_TASKS; T504, T507, T508 lifted theirs), with access rows', () => {
+    expect(STUB_TOWER_TASKS).toEqual({});
+    expect(TOWERS_AHEAD_OF_TASK).toEqual([]);
     expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
     for (const id of ['mindspike', 'lantern'] as const) {
       expect(TOWER_ACCESS[id], id).toEqual({

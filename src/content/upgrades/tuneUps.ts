@@ -104,6 +104,14 @@ export const tune_prism = tuneUp('tune_prism', 'prism', 'Prism Tune-up', 'a2_m05
 export const tune_mindspike = tuneUp('tune_mindspike', 'mindspike', 'Mindspike Tune-up', 'a2_m05');
 
 /**
+ * The Seer's Lantern's tune-up (T508): the usual three ranks (its beam's damage, its cost, its
+ * beam's range), stocked once the Lantern can be attuned (Xenotech, after A2M5). TODO(T509): where
+ * Aelari tune-ups are sold, as the Prism's, and whether rank 3 should widen its detection radius
+ * (`supportStat` radius) instead.
+ */
+export const tune_lantern = tuneUp('tune_lantern', 'lantern', 'Lantern Tune-up', 'a2_m05');
+
+/**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
  * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
  * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell

@@ -59,6 +59,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Aelari glass, Vrell tools. She watched me the whole time.',
   tune_mindspike:
     'Price first: 40 stardust, rising. It hums in my teeth. I tuned it anyway. Teeth are fine.',
+  tune_lantern:
+    'Price first: 40 stardust, rising. It looked at me. All of me. I gave a discount. Why did I do that.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 

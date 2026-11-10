@@ -169,7 +169,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
   // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
   // and echoes with the Mindspike and Stillness's Stasis area (T507, live), area Marks and Truthlight
-  // with the Lantern (T508); spawners (Scuttle Den) are M6's.
+  // with the Lantern (T508, live); spawners (Scuttle Den) are M6's.
   'attack.projectile': null,
   'attack.beam': null,
   'attack.chain': null,
@@ -184,8 +184,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'tower.detection': null,
   'tower.economy': null,
   'attack.echo': null,
-  'tower.markArea': 'T508',
-  'status.noEvade': 'T508',
+  'tower.markArea': null,
+  'status.noEvade': null,
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,

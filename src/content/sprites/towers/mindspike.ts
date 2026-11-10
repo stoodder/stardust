@@ -177,8 +177,8 @@ function dreadKit(g: CharGrid, cx: number, cy: number): void {
     ] as const) {
       for (let k = 0; k < t; k++) {
         const px = x + ox + side * Math.floor((k * lean) / 4);
-        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : '3');
-        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : '0');
+        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : '4');
+        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : '2');
       }
     }
   }

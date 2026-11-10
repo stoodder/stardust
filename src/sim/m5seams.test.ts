@@ -1,8 +1,8 @@
 // The M5 seams (T500a): the new state fields, entity fields, and stats start blank; the new stats
 // are counted where they're cheap (`leaksByWave` in movement, `everRevealed` in detection) and read
 // by the condition atoms (`leaks.waves`, `passedMarker.unrevealed`); FEATURE_GATES, SCRIPT_GATES,
-// and HARNESS_GATES name the task that lifts each M5 row (D137); the three Aelari towers are
-// refused whole until their tasks (content's STUB_TOWER_TASKS). The harness's rows and the M5 dev
+// and HARNESS_GATES name the task that lifts each M5 row (D137); the three Aelari towers were
+// refused whole until their tasks (content's STUB_TOWER_TASKS; all lifted). The harness's rows and the M5 dev
 // maps: balance/refusals.m5.test.ts, render/__fixtures__/devM5.test.ts.
 import { describe, expect, it } from 'vitest';
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
@@ -166,8 +166,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'status.unnerved': null,
       'attack.echo': null,
       'ability.stasisArea': null,
-      'tower.markArea': 'T508',
-      'status.noEvade': 'T508',
+      // Area Marks and Truthlight run since T508 (sim/lantern.test.ts).
+      'tower.markArea': null,
+      'status.noEvade': null,
     });
     expect(SCRIPT_GATES).not.toHaveProperty('standDown'); // T506
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot');
@@ -215,27 +216,28 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
 
 describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
   it('are refused whole, naming their task, whatever their tiers use', () => {
-    expect(stubTowerGate('lantern')).toBe('T508');
-    expect(stubTowerGate('prism')).toBeNull(); // lifted by T504
-    expect(stubTowerGate('mindspike')).toBeNull(); // lifted by T507
-    expect(stubTowerGate('rivet')).toBeNull();
-    expect(stubTowerGate('lantern', {})).toBeNull();
-    const towers: Readonly<Record<string, (typeof TOWERS)[keyof typeof TOWERS]>> = TOWERS;
-    for (const [id, task] of Object.entries(STUB_TOWER_TASKS)) {
-      expect(towerRefusal(towers[id]!), id).toBe(
-        `the '${id}' tower is not simulated until ${task}`,
-      );
+    // Every M5 stub is lifted (the Prism by T504, the Mindspike by T507, the Lantern by T508), so
+    // the mechanism is checked on a stub map of its own.
+    expect(STUB_TOWER_TASKS).toEqual({});
+    for (const id of ['prism', 'mindspike', 'lantern', 'rivet']) {
+      expect(stubTowerGate(id), id).toBeNull();
     }
-    // Lifted (no entry), a tower is refused only by what its tiers use: the Prism by nothing
-    // since T504, the Mindspike since T507.
+    const stubs = { lantern: 'T508' } as const;
+    expect(stubTowerGate('lantern', stubs)).toBe('T508');
+    expect(towerRefusal(TOWERS.lantern, FEATURE_GATES, stubs)).toBe(
+      "the 'lantern' tower is not simulated until T508",
+    );
+    // Lifted (no entry), a tower is refused only by what its tiers use: none of the three since.
     expect(towerRefusal(TOWERS.prism)).toBeNull();
     expect(towerRefusal(TOWERS.mindspike)).toBeNull();
+    expect(towerRefusal(TOWERS.lantern)).toBeNull();
     const cfg: SimConfig<IdSpace> = {
       ...fixtureConfig(),
       content: LIVE,
       mapId: 'a1_m01',
       loadout: ['rivet', 'lantern'],
+      specsUnlocked: ['lantern'],
     };
-    expect(gateRefusals(cfg)).toContain("the 'lantern' tower is not simulated until T508");
+    expect(gateRefusals(cfg)).toEqual([]);
   });
 });
