@@ -38,14 +38,19 @@ export function HoldFireAllButton() {
   );
 }
 
-/** Spare runners (all), from A2M1 (hidden until it unlocks): Alt+H. */
+/**
+ * Spare runners (all), from A2M1 (hidden until it unlocks): Alt+H. It pulses while its teach shows
+ * (T431: A2M1's first runner waves, until the filter is first used this run).
+ */
 export function SpareRunnersAllButton() {
   if (!hud.spareRunnersOpen.value) return null;
   const on = hud.spareRunnersAll.value;
+  const teach = hud.spareRunnersTeach.value && !on;
   return (
     <button
       type="button"
-      class="hud-btn hud-slot hud-fire chamfer"
+      class={`hud-btn hud-slot hud-fire chamfer${teach ? ' pulse' : ''}`}
+      ref={(el) => alignPulse(el)}
       data-testid="spare-runners-all"
       aria-pressed={on}
       aria-label={`Spare runners, all${on ? ': on' : ''}`}

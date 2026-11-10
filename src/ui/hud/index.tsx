@@ -19,6 +19,7 @@ import {
   CursorAnnouncer,
   ActionAnnouncer,
   BottomHint,
+  CheckpointCueView,
   WaveBannerView,
   PausedOverlay,
 } from './Notices.tsx';
@@ -51,6 +52,7 @@ export function Hud() {
             <SpeedControls />
           </div>
           <WavePanel />
+          <CheckpointCueView />
         </div>
         {/* Bottom-left: the abilities, then fire control (always there: core-loop §2.7). */}
         <div class="hud-bottom-left">

@@ -90,6 +90,7 @@ test('star map: A2M1 won from its Start → The Glass Witch next; A2M2 won → S
   );
   await expect(page.getByTestId('star-notice')).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText('Second Look');
+  await page.waitForTimeout(650); // the marker's 0.6 s walk from Record Quarter
   await nextFrames(page);
   await shot(page, 'starmap', 4, 'after-a2m1');
   await startFrom(page, 'The Glass Witch', 7, false);
