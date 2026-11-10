@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { IdSpace, WaveGroup } from '../content/types.ts';
+import type { WaveGroup } from '../content/types.ts';
 import {
   createBuildExecutor,
   createSim,
@@ -59,7 +59,7 @@ interface Beats {
   readonly refugeesBeforeSurge: number;
   readonly hash: string;
   readonly checkpoints: ReadonlyMap<number, { tick: number; hash: string }>;
-  readonly commands: readonly CommandLogEntry<IdSpace>[];
+  readonly commands: readonly CommandLogEntry[];
 }
 
 const KEEP = new Set([
@@ -78,7 +78,7 @@ function beats(
   c: CompiledContent,
   label: string,
   difficulty: 'standard' | 'story' = 'standard',
-  replay: readonly CommandLogEntry<IdSpace>[] | null = null,
+  replay: readonly CommandLogEntry[] | null = null,
 ): Beats {
   const map = c.maps.a2_m05;
   const build = buildFor(label, map, c)!;

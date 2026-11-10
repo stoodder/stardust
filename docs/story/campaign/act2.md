@@ -477,12 +477,48 @@ Par's shift runs about 10.8 min at 1× (Story 13.3). **The truth scene's beat** 
 
 *Ves'thara comes for the Preserve Road in a glass giant. Then the Hollow comes for everyone on it.*
 
-- **Facts:** Preserve Road · `act2.dusk` · **Defend → Escort pivot** · 18×12, 15 buildable · 12 waves (5 before the pivot, 7 after) · 500 credits · one road to the Preserve gate (the core before the pivot, the **safe exit** after), plus a Hollow spawn on the rig road that opens at the pivot · companion Bricks · Technician Orbital Strike.
+- **Facts:** Preserve Road · `act2.dusk` · **Defend → Escort pivot** · 18×12, 15 buildable · 12 waves (5 before the pivot, 7 after) · 550 credits · one road to the Preserve gate (the core before the pivot, the **safe exit** after), plus a Hollow spawn on the rig road that opens at the pivot · companion Bricks · Technician Orbital Strike.
 - **Story purpose:** **Ves'thara's turn:** a boss fight with arguing, a Hollow surge, her shield and her Hollow-touch, the escort, "Not there. Never there." **Target: alliance under fire, and a wrong place to go.** Busiest story map in Act II; the escort is taught gently here and tested in A3M1.
 
 **Layout.** A long road from the north-west to the Preserve gate in the south-east, between Everglow relocation fencing. Before the pivot the core is the relocation checkpoint at the gate. At the pivot the Penitent kneels mid-road and becomes the **Ward** ally; refugee groups (6 each, walking 0.7 tiles/s) start from the north-west and walk to the gate. Behind the gate, the Preserve's fenced basin is visible and too quiet.
 
+**Layout data** (the data is [`src/content/maps/a2_m05/map.ts`](../../../src/content/maps/a2_m05/map.ts); [`a2_m05.test.ts`](../../../src/content/maps/a2_m05/a2_m05.test.ts) pins it). The **Preserve Road** (`road`, 36 tiles) comes in at (0,1), runs east under the fencing to (8,1), down to the fencing's end (8,4), back west along row 4 to (2,4), down to the valley floor (2,7), east the length of it to (12,7), and down to the **Preserve gate** (14,10), the core before the pivot and the safe exit (`gate`) after; the fenced basin (`basin`) lies behind it. The **rig road** (`rig`) comes in from the rigs at the east edge (17,4) and joins the road at the fencing's end, a third of the way along; only the Hollow walks it, from the pivot. The **air lane** (`sky`) flies in from the north (6,0), across the valley, to the gate. The two hairpins are the kill zones: pads between row 1 and row 4 and between row 4 and row 7 cover both legs, with the knoll (6,6) the high ground; three pads sit by the rig road and three by the gate. `maxLost` is **14**.
+
+```
+..................
+S########.........
+..o....o#..o......
+.....o..#......o..
+..###############S
+.o#.o.......o.....
+..#...^.o....o....
+..###########.....
+.........o..#o....
+............#.....
+.........o..##C...
+..........o.......
+```
+
 **Waves.** 1 Glimmers + one Aegis Cantor [T: shield aura; kill it first] · 2 Wardens + Cantor [X] · 3 Blinkstriders + Veilwalkers [C] · 4 Lightwings + Cantors [X] · 5 **Sunderglass Penitent** (shield wall, recharge pulse; cloaked shards when its shield breaks; `pivot` at 50% or when W6 starts) · *pivot:* Aelari stand down, objective becomes Escort, meter relabels **Evacuated** · 6 the surge: Motes ×12 from the rig road toward the first refugee group [T: escort, gently; generous `maxLost`] · 7 Motes + second group · 8 Mote clusters from both ends · 9 larger Mote clusters, one ahead of the group · 10 Motes ×20 · 11 two groups at once · 12 last group + the largest surge.
+
+**Wave data** (the data is [`src/content/maps/a2_m05/waves.ts`](../../../src/content/maps/a2_m05/waves.ts)). W2–W12 have a **25 s** countdown except W6's **60 s**, and W2–W12 open **6 s** into the wave. W5 is the Penitent alone, so W6's countdown opens as she spawns (a countdown opens once the wave before it finishes spawning, [D135](../../decisions.md#d135--2026-11-10--m4-review-round-2-rulings-fixed-in-round-3-the-last)) and W6 starts, forcing the pivot if her 50% hasn't, 60 s later (90 s on Story): she walks 21 tiles (31 on Story) of the 36 to the gate (100 s), so she never reaches it. Nothing Aelari spawns after her. After the pivot every group is Motes: the rig road's reach the road at the fencing's end 5.6 s after they spawn (W8's, W11's, and W12's meet a group passing there), the road's catch the refugees walking ahead of them. Refugee groups: `first` at the pivot, `second` as W7 starts, `third` as W8 starts, `fourth` as W11 starts and `fifth` 5.2 s later on its heels (one line of twelve), `last` as W12 starts: 36 in all. Default spacing Glimmer 0.8 s, Cantor 1.2 s, Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Mote 0.3 s.
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`; *rig* = the rig road, *sky* = the air lane) | Total |
+|---|---|---|
+| W1 | Glimmer ×4 @ 1.5, 0 · Cantor ×1, 2.5 (teach) | 5 |
+| W2 | Weft Warden ×1, 6 · Cantor ×1, 8 · Glimmer ×6 @ 1, 13 · Veilwalker ×2 @ 3, 26 | 10 |
+| W3 | Blinkstrider ×2 @ 3, 6 · Veilwalker ×6 @ 3.5, 11 | 8 |
+| W4 | Lightwing ×4 @ 1.5, 6 *sky* · Cantor ×4 @ 3, 8 · Glimmer ×12 @ 0.9, 8.5 · Veilwalker ×6 @ 3.5, 20 | 26 |
+| W5 | Sunderglass Penitent ×1, 6 | 1 |
+| W6 | Mote ×12 @ 0.5, 14 *rig* | 12 |
+| W7 | Mote ×10 @ 0.4, 6 *rig* · Mote ×10 @ 0.4, 18 | 20 |
+| W8 | Mote ×14 @ 0.3, 10 *rig* · Mote ×14 @ 0.3, 22 | 28 |
+| W9 | Mote ×18 @ 0.3, 10 *rig* · Mote ×18 @ 0.3, 22 | 36 |
+| W10 | Mote ×20 @ 0.3, 6 *rig* | 20 |
+| W11 | Mote ×22 @ 0.25, 16 *rig* · Mote ×22 @ 0.25, 26 | 44 |
+| W12 | Mote ×28 @ 0.25, 12 *rig* · Mote ×28 @ 0.25, 22 | 56 |
+
+**The hairpins are the shield and detection tests** (the Cantor columns in W2 and W4, fourteen Veilwalkers over W2–W4), **the Penitent is the boss test** (break the shield, kill the shards before the re-form, then her HP), and **the rig road's junction is the escort test** (the Motes that meet a group there).
 
 **Story delivery.**
 - *Briefing:* Bricks: "Relocation pilot. We walk 'em to the Preserve. Sterling's budget, Sterling's risk." · QUILL (pivot foreshadow): "Hollow readings rising behind the rig road. They may arrive during the engagement."
@@ -496,12 +532,55 @@ Par's shift runs about 10.8 min at 1× (Story 13.3). **The truth scene's beat** 
 - *Barks:* Bricks `ally_hushed`: "Lost one. Keep the rest moving." · QUILL `low_integrity`: "Too many. Too many on the road."
 - *Debrief:* Ves'thara, her threads fraying grey at the wrist: "Not there. Never there." · Bricks: "Then where?" · (silence, 2 s) · Ves'thara gives Prism Spire; R&D's Xenotech branch opens under her.
   - *On a loss*, Bricks: "The road's still there. So are they. Go again, Thorn."
+- *Where it plays* (the data is [`src/content/dialogue/a2/a2_m05/`](../../../src/content/dialogue/a2/a2_m05/scenes.ts)): the briefing is `a2_m05_brief`; the map script plays `a2_m05_cue_penitent` (Ves'thara's road line and Bricks's answer) as the Penitent spawns (`bossPhase: 1`) and `a2_m05_cue_shield` as her shield first breaks (`bossPhase: 2`); the pivot runs from one of two events, whichever is reached first (`pivot_hp` on her 50%, `pivot_surge` as W6 starts while `pivotWave` is 0, which adds `bossEnd: 'pivot'`), each playing `a2_m05_cue_pivot` with `setObjective: 'escort'` (meter `evacuated`) and the first refugee group; the pivot cue is the map's one **pausing** scene (`pause: true`: the battle holds mid-fight until it's read); the radio lines are `a2_m05_w08`, `_w10`, `_w11`; the name tag is `a2_m05_cue_name_tag`; the barks are map-scoped (`a2/a2_m05/barks.ts`: Bricks's on a refugee hushed, QUILL's on `low_integrity`); the debrief is `a2_m05_debrief` (the silence is Ves'thara's, 2 s); the Prism Spire is run end's gift on the first win ([meta-runtime](../../tech/meta-runtime.md)).
 - *Codex:* Aegis Cantor ("Shoot the singer first. Everglow is aware of how that sounds."), Sunderglass Penitent ("Security has filed this under 'surrender.'"), the Preserve (original: "Humane Relocation Preserve: a forever home!"; "very peaceful, and very quiet"; its small print: "For safety, its fencing faces inward."), and Ves'thara's first entry, Everglow's, over her `touched` portrait ("Ves'thara is not known to Everglow." … "Witnesses are reminded that it did not happen."). The Prism Spire's entry (A2M6's line) unlocks with the gift.
 - *Memo after:* `memo_a2_06` *Long Night Readiness: Stay Positive!* Sterling's one real-looking favour: "Goldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. Stay cozy!" (small print: "Shelter costs deducted from colonist wages in 48 easy installments.") The shelters are where A3M4 is fought. Above it, the pilot "was a real learning experience! Everyone who reached the Preserve is settling in. It's very peaceful out there."
 
 **Medals.** Victory · Perfect (no refugee lost) · **Kneel:** force the pivot by breaking the Penitent to 50% before W6 starts.
 **Rewards.** Stardust 240 · Intel 3. Prism Spire. Mindspike and Lantern attunable.
-**Par build.** Zapcoil (Overload), Lookout, Rivet, Thumper. Zapcoil + Lookout mid-road for Cantors and the cloaked shards; Thumper ×2 near the Ward for the Mote surges after the pivot. The Ward's chill does real work; the harness must see it. Target 71 (Evacuated %, on the escort band). **Alt builds:** Lookout + Zapcoil + Sprinkler + Skyhook; Lookout + Sprinkler (Soaked) + Thumper + Skyhook. `noCounterBuilds`: **no-detection**, Zapcoil + Rivet + Thumper + Sprinkler, no Lookout and no Scanner Sweep (the shards keep the shield up; must lose before the pivot or right after); **no-shield**, Lookout + Rivet + Thumper + Skyhook, no Energy and no Soaked (the Cantor waves leak through; must lose by W5); **no-splash**, Lookout + Rivet + Sprinkler (Soaked) + Skyhook, no Zapcoil or Thumper (the post-pivot Mote surges pass `maxLost`; must lose by W8).
+**Par build.** Zapcoil, Lookout, Rivet, Thumper, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M4's; C2 Return emptied the bank). Zapcoils in both hairpins and on the knoll with the Lookout between row 4 and the valley floor, so every Veilwalker is Revealed where the Zapcoils reach it and the Cantor columns die in the turns; a Rivet west of the drop. The Penitent's shield breaks in W5 and the Lookout reveals her shards, but she re-forms once and W6 forces the pivot (no Kneel). After it, Thumpers south of the valley floor and beside the drop to the gate for the Motes; par leaves the rig road's junction to the hairpins' Zapcoils, and that is where it loses its refugees. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a2_m05/builds.ts`](../../../src/content/maps/a2_m05/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Zapcoils (5,3) between the first hairpin's legs, (6,6) on the knoll, (7,2) by the fencing's end |
+| W2 | Lookout (4,5) between row 4 and the valley floor; the first-hairpin Zapcoil to T2 |
+| W3 | The knoll Zapcoil to T2; Zapcoil (2,2) inside the first turn |
+| W4 | Zapcoil (8,6); the fencing's-end Zapcoil to T2 |
+| W5 | Rivet (1,5) west of the drop; the first-turn Zapcoil to T2 |
+| W6 | Thumpers (9,8) south of the valley floor and (13,8) beside the drop to the gate |
+| W7 | The valley Thumper to T2 |
+| W8 | The gate Thumper to T2 |
+| W9 | The Rivet to T2 |
+| W10 | The valley Thumper to T3 |
+| W11 | The gate Thumper to T3 |
+
+Par's bank at each build phase: 627, 285, 201, 99, 123, 48, 54, 23, 19, 41, 49, 13 (W1–W12). **Par wins at 25/36 Evacuated (69.4%)** on every seed (campaign.md §7's target 71, the nearest 1/36 step below it; the Escort chain's first map, band 65–85), the core whole at the pivot, its eleven refugees lost at the rig road's junction (4 in W8, 4 in W11, 3 in W12).
+
+**No-counter builds** (`noCounterBuilds`, by category; each must lose by W8, the default, and still lose with the full catalog):
+- **no-detection:** Zapcoil, Rivet, Thumper, Sprinkler (no Lookout, and no Scanner Sweep: slot 1 stays the profile's Orbital Strike), par's hairpins blind: the Veilwalkers walk through (W2–W4); it loses in W4 (W5 with the full catalog), before the pivot.
+- **no-shield:** Lookout, Rivet, Thumper, Skyhook (no Energy, no Soaked): the Cantor columns walk through (W2, W4); it loses in W4, before the pivot.
+- **no-splash:** Lookout, Rivet, Sprinkler (Soaked), Skyhook (no Zapcoil or Thumper): without the Zapcoils' chains it can't hold the Cantor columns either, and loses in W4, well before the post-pivot Motes would test it.
+
+**Alt builds** (each shares at most 2 towers with par and must win with ≥ 20%; every alt needs the Lookout, the only detector the reference owns, and the Zapcoil, the shield answer that holds the Cantor columns):
+- `capacitor`, Lookout + Zapcoil + Sprinkler + Skyhook (T501c): par's hairpins, then from the pivot a Sprinkler and a Zapcoil guarding the rig road's junction, the Zapcoil a **Capacitor Bank** from W9. The reference can't afford a Capacitor (755 credits) before the Penitent without losing W4, so it serves the escort. **94.4.**
+- `coil_and_hook`, Lookout + Zapcoil + Skyhook: Zapcoils take the Motes, and from W8 an Overload Coil guards the rig road. **86.1.**
+- The planned Sprinkler (Soaked) alt (Lookout + Sprinkler + Thumper + Skyhook) can't hold W2's and W4's Cantor columns: the Soak lets the shells bite, but too slowly under the aura.
+
+**Harness runs** (seed 1; margin, then refugees lost per wave):
+
+| Run | Result | Lost |
+|---|---|---|
+| par | wins at **69.4** (25/36), core 21/21, no Kneel | 4 in W8, 4 in W11, 3 in W12 |
+| `alwaysCallEarly` | 63.9 (the pivot at the Penitent's spawn) | |
+| no-detection | loses in W4 (W5 with the full catalog) | |
+| no-shield | loses in W4 (W4 with the full catalog) | |
+| no-splash | loses in W4 (W4 with the full catalog) | |
+| Story | 83.3, Victory | 4 in W11, 2 in W12 |
+| `capacitor` | 94.4 | 2 in W12 |
+| `coil_and_hook` | 86.1 | 1 in W6, 4 in W8 |
+| do-nothing | loses at W3 | |
+
+Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1× runtime is 10.1 min**, well under the 15-minute split trigger (§1 of campaign.md). **The beats** ([`src/balance/a2m5.test.ts`](../../../src/balance/a2m5.test.ts)): in par, both alts, and Story, the Penitent's cue plays as she spawns in W5, her shield breaks in W5 (the shield cue the tick after, the shards, then a re-form), and exactly one pivot event runs, the forced one, as W6 starts, mid-fight with her on the road (one pivot cue, one objective switch); the first group walks from the pivot, before the surge's first Mote; a retry from the W5 checkpoint (before the pivot) and the W10 checkpoint (after it) replays to the same state and end. Robustness: with every post-pivot Mote group shifted ±0.2 s together, par holds at 25/36 and every beat holds (±0.5 s keeps par in the band; 1 s earlier drops it to 63.9). **Kneel** is the skill medal: no build the reference economy affords reaches 50% before W6 (par's Penitent kneels at 3296 of 3500 HP); it takes breaking the shield early, killing the shards inside the 4 s re-form, and 1,750 HP besides.
 
 ## A2M6 · Sundown
 

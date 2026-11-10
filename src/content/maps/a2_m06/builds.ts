@@ -73,23 +73,27 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a2_m06,
   parBuild: { loadout: PAR_LOADOUT, steps: parSteps() },
   noCounterBuilds: {
-    // No splash: no Thumper or Zapcoil (Prism, Rivet, Skyhook, Sprinkler).
+    // No splash: no Thumper or Zapcoil (Prism, Rivet, Skyhook, Sprinkler). Par's yard with Rivets
+    // where its Thumpers stand and a Sprinkler slowing the west road in.
     splash: {
       loadout: ['prism', 'rivet', 'skyhook', 'sprinkler'],
       steps: [
         { wave: 1, build: 'rivet', tile: MERGE_W },
-        { wave: 1, build: 'rivet', tile: POCKET_W },
         { wave: 1, build: 'prism', tile: TOWER },
-        { wave: 2, build: 'sprinkler', tile: YARD_MID },
-        { wave: 3, upgrade: MERGE_W },
+        { wave: 1, build: 'rivet', tile: YARD_MID },
+        { wave: 1, build: 'rivet', tile: SOUTH_MID },
+        { wave: 2, upgrade: MERGE_W },
+        { wave: 3, upgrade: SOUTH_MID },
         { wave: 4, build: 'skyhook', tile: YARD_IN },
+        { wave: 5, build: 'skyhook', tile: WALL_E },
         { wave: 5, upgrade: TOWER },
-        { wave: 6, upgrade: MERGE_W },
-        { wave: 7, build: 'rivet', tile: MERGE_E },
-        { wave: 7, build: 'skyhook', tile: SOUTH_MID },
-        { wave: 8, upgrade: YARD_IN },
-        { wave: 8, upgrade: POCKET_W },
-        { wave: 9, upgrade: MERGE_E },
+        { wave: 6, upgrade: YARD_IN },
+        { wave: 6, upgrade: YARD_MID },
+        { wave: 7, upgrade: WALL_E },
+        { wave: 7, build: 'sprinkler', tile: POCKET_W },
+        STILL_W9,
+        { wave: 9, upgrade: TOWER },
+        { wave: 9, upgrade: MERGE_W },
       ],
     },
     // No air answer: Thumper (Cluster), Sprinkler (no Cloudburst), Lookout; nothing reaches the

@@ -406,6 +406,7 @@ Statuses are defined in [design/enemies.md §2.4](../design/enemies.md#24-status
 | Pinned | Stakes or vines at the feet; flyers drop to ground height |
 | Stasis | Sprite frozen on its current frame, crystal outline overlay. As built (T407a, T430a): the anim holds, the body is screened with an ice blue (`act1.water.1`), and a `white.1` crystal rim hugs it (§7 *Rims*) |
 | Unnerved | Wobbling squiggle above the head; the sprite jitters 1 px |
+| Marked | An eye beside the head, right of the health bar's slot. As built (T508, `views/markLook.ts`): a 7×5 almond, its lid `pink.3` round one `pink.4` pupil, hollow inside, rimmed in `ink.0`; under Truthlight (can't evade) the lid turns `gold.3` and the whole eye fills `white.1` (filled vs hollow, so shape carries it). Static |
 | Revealed | Solid sprite with a target bracket; the dither is gone. As built (T430a): four 3 px `green.4` corner brackets (detection's green, the Scanner Sweep's) with a 1 px `ink.0` stroke outside them, 2 px clear of the body, in `overlay` |
 
 The shape and motion carry the meaning, and color only reinforces it.

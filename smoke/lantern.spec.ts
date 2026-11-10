@@ -82,7 +82,9 @@ test('lantern: All-Seeing Marks the crowd, Truthlight holds one, Lightsong links
       specs: lanterns.map((t) => String(t.spec)).toSorted(),
       markPct: Math.max(...lanterns.map((t) => t.linkMarkPct)),
       rampPct: Math.max(
-        ...st.towers.items.filter((t) => t.alive && t.def?.id === 'prism').map((t) => t.linkRampPct),
+        ...st.towers.items
+          .filter((t) => t.alive && t.def?.id === 'prism')
+          .map((t) => t.linkRampPct),
       ),
     };
   });

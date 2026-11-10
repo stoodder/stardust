@@ -100,14 +100,24 @@ test('A2M5: from the Sector map, the Penitent, the pivot mid-fight, the escort, 
   await expect(page.getByRole('heading', { name: 'Sector map' })).toBeVisible();
   await page.getByRole('button', { name: 'Start The Long Walk' }).click();
   await expect(page.getByText('Shift 10 · The Long Walk')).toBeVisible();
+  // Par's loadout: drop what the save's last four carry that par doesn't, then add par's.
   const want = ['Zapcoil', 'Lookout Shack', 'Rivet', 'Thumper'];
-  for (const name of ['Sprinkler', 'Skyhook', ...want]) {
-    const card = towerCard(page, name);
-    const on = (await card.getAttribute('aria-pressed')) === 'true';
-    if (on !== want.includes(name)) await card.click();
+  const names = ['Sprinkler', 'Skyhook', ...want];
+  const pressed = await Promise.all(
+    names.map(
+      async (name) => (await towerCard(page, name).getAttribute('aria-pressed')) === 'true',
+    ),
+  );
+  const toggle = names.filter((name, i) => pressed[i] !== want.includes(name));
+  const off = toggle.filter((name) => !want.includes(name));
+  const on = toggle.filter((name) => want.includes(name));
+  for (const name of [...off, ...on]) {
+    // oxlint-disable-next-line no-await-in-loop -- each toggle changes the next one's slot
+    await towerCard(page, name).click();
   }
-  for (const name of want)
-    await expect(towerCard(page, name)).toHaveAttribute('aria-pressed', 'true');
+  await Promise.all(
+    want.map((name) => expect(towerCard(page, name)).toHaveAttribute('aria-pressed', 'true')),
+  );
   await page.getByRole('button', { name: 'Lock in' }).click();
   await expect(page.getByTestId('hud')).toBeVisible();
 

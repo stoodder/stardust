@@ -30,6 +30,12 @@ const LIDS = ['..LLL..', '.LIIIL.', 'LIIPIIL', '.LIIIL.', '..LLL..'] as const;
 
 export type EyeKind = 'mark' | 'truth';
 
+/** Whether rim-space pixel (x, y) is part of the eye (lid, inside, or pupil). */
+function lit(x: number, y: number): boolean {
+  const row = LIDS[y - 1];
+  return row !== undefined && x >= 1 && x <= 7 && row[x - 1] !== '.';
+}
+
 /** The eye for `kind`: a plain Mark's (hollow, a pupil) or Truthlight's (filled). */
 export function eyeImage(kind: EyeKind): RgbaImage {
   const w = EYE_W;
@@ -39,10 +45,6 @@ export function eyeImage(kind: EyeKind): RgbaImage {
   const pupil = rgbOf(kind === 'mark' ? MARK_PUPIL : TRUTH_FILL);
   const fill = kind === 'truth' ? rgbOf(TRUTH_FILL) : null;
   const rim = rgbOf(MARK_RIM);
-  const lit = (x: number, y: number): boolean => {
-    const row = LIDS[y - 1];
-    return row !== undefined && x >= 1 && x <= 7 && row[x - 1] !== '.';
-  };
   const put = (x: number, y: number, c: { r: number; g: number; b: number }): void => {
     const i = (y * w + x) * 4;
     data[i] = c.r;
@@ -66,7 +68,11 @@ export function eyeImage(kind: EyeKind): RgbaImage {
 }
 
 /** Which eye a unit wears: Truthlight's while it can't evade, else a plain Mark's, else none. */
-export function eyeKindOf(markTicks: number, markPct: number, noEvadeTicks: number): EyeKind | null {
+export function eyeKindOf(
+  markTicks: number,
+  markPct: number,
+  noEvadeTicks: number,
+): EyeKind | null {
   if (noEvadeTicks > 0) return 'truth';
   return markTicks > 0 && markPct > 0 ? 'mark' : null;
 }

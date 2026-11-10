@@ -6,13 +6,17 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../compile.ts';
 import { scenes } from '../../dialogue/a2/a2_m05/scenes.ts';
 import { RAW_CONTENT } from '../../registry.ts';
-import type { EnemyDef, RawContent, TileChar } from '../../types.ts';
+import type { RawContent, TileChar } from '../../types.ts';
 import { validate } from '../../validate.ts';
 
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.a2_m05;
 const tilesOf = (ch: TileChar): [number, number][] =>
   map.tiles.flatMap((t, i) => (t === ch ? [[i % map.cols, Math.floor(i / map.cols)]] : []));
+
+/** A2M5's [new-threats] issues on `r`. */
+const newThreats = (r: RawContent): string[] =>
+  validate(r).filter((m) => m.includes('[new-threats] maps.a2_m05'));
 
 describe('A2M5 · The Long Walk', () => {
   it('has the facts act2.md gives', () => {
@@ -79,7 +83,7 @@ describe('A2M5 · The Long Walk', () => {
       ['sunderglass_penitent', 1],
     ]);
     // Kneel: the pivot forced before W6 starts.
-    expect(map.medals.challenge?.condition).toEqual({ stat: 'pivotWave', gte: 1, lte: 5 });
+    expect(map.medals?.challenge?.condition).toEqual({ stat: 'pivotWave', gte: 1, lte: 5 });
   });
 
   it('pauses the battle for the pivot cue, and only for it (the map script plays it)', () => {
@@ -96,12 +100,10 @@ describe('A2M5 · The Long Walk', () => {
   });
 
   it('counts the Penitent as a capstone: its shards bring only taught traits', () => {
-    const newThreats = (r: RawContent): string[] =>
-      validate(r).filter((m) => m.includes('[new-threats] maps.a2_m05'));
     expect(newThreats(RAW_CONTENT)).toEqual([]);
     // A shard with an untaught trait makes it a new threat: a third one on this map.
     const raw = RAW_CONTENT;
-    const shard: EnemyDef = {
+    const shard: (typeof raw.enemies)['glimmer_shard'] = {
       ...raw.enemies.glimmer_shard,
       traits: ['cloaked', 'phasing'],
       tells: ['stealth', 'phasing'],

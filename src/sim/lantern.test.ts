@@ -16,9 +16,13 @@ import { placeTower, setup as setupFixture, spawn, WALKER } from './__fixtures__
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 import { beamUid } from './attacks/beam.ts';
 import { applyDamage, applyEffects } from './combat/damage.ts';
+import type { SimConfig } from './config.ts';
 import type { Enemy, Tower } from './entities.ts';
 import { BOSS_ABILITY_TELL_TICKS, bossNextAbility } from './enemyAbilities/boss.ts';
-import { BOSS_BURROW_GAP_TICKS, BOSS_PHASE_INVULNERABLE_TICKS } from './enemyAbilities/bossPhases.ts';
+import {
+  BOSS_BURROW_GAP_TICKS,
+  BOSS_PHASE_INVULNERABLE_TICKS,
+} from './enemyAbilities/bossPhases.ts';
 import { blinkStep } from './enemyAbilities/blink.ts';
 import { burrowStep, surfaceTicks } from './enemyAbilities/burrow.ts';
 import { cloakedOut } from './enemyAbilities/cloak.ts';
@@ -91,6 +95,16 @@ function lantern(state: SimState, col: number, row: number, tier: number | Compi
   return t;
 }
 
+/** fx_map's config with the Lantern in the loadout and its specs unlocked. */
+function lanternConfig(): SimConfig<IdSpace> {
+  return {
+    ...fixtureConfig(),
+    content: CONTENT,
+    loadout: ['fx_gun', 'lantern'],
+    specsUnlocked: ['lantern'],
+  };
+}
+
 /** A sturdy organic walker (Psionic ×1, no armor). */
 const HIDE = Object.freeze({ ...WALKER, id: 'fx_hide', hp: 5000 });
 
@@ -106,7 +120,9 @@ describe('the Lantern as data (towers.md § 7; T508 settles the beam range and t
       rampCap: 1,
       rampPctPerTick: 0,
     });
-    expect(T1.effects).toEqual([{ status: 'marked', pct: 0.15, durationTicks: 60, noEvade: false }]);
+    expect(T1.effects).toEqual([
+      { status: 'marked', pct: 0.15, durationTicks: 60, noEvade: false },
+    ]);
     expect(T2.detect?.radiusTiles).toBe(3.5);
     expect(T2.attack?.rangeTiles).toBe(3.5);
     expect(T2.effects).toEqual([{ status: 'marked', pct: 0.2, durationTicks: 60, noEvade: false }]);
@@ -118,12 +134,7 @@ describe('the Lantern as data (towers.md § 7; T508 settles the beam range and t
   });
 
   it('plays: a Lantern loadout with its specs unlocked is refused nothing', () => {
-    const cfg = fixtureConfig({
-      content: CONTENT as never,
-      loadout: ['fx_gun', 'lantern'] as never,
-      specsUnlocked: ['lantern'] as never,
-    });
-    expect(gateRefusals(cfg as never)).toEqual([]);
+    expect(gateRefusals(lanternConfig())).toEqual([]);
   });
 });
 
@@ -211,7 +222,7 @@ describe('All-Seeing: every enemy within 3.5 is Marked +15%', () => {
     tick(state, ctx);
     expect(ALL_SEEING.attack).toMatchObject({ beams: 2 });
     expect([beamUid(t, 0), beamUid(t, 1)].filter((u) => u !== 0)).toHaveLength(2);
-    const marks = [a, b, c].map((e) => e.markPct).toSorted();
+    const marks = [a, b, c].map((e) => e.markPct).toSorted((x, y) => x - y);
     expect(marks).toEqual([0.15, 0.2, 0.2]);
     // Sold: the area's Mark lasts AREA_MARK_TICKS more.
     t.alive = false;
@@ -367,7 +378,6 @@ describe('Truthlight: its target can’t cloak, blink, phase, or burrow while Ma
     // While the Mark holds (no status pass here to run it down), every tell is cancelled.
     for (let i = 0; i < blink.everyTicks * 2; i++) blinkStep(state, ctx, witch, blink);
     expect(events(state, 'Blinked')).toHaveLength(0);
-
   });
 });
 
@@ -450,7 +460,7 @@ describe('Lightsong (Prism + Lantern; towers.md § 6.2)', () => {
 
   it('scales with Linked Up like any link bonus', () => {
     const { state, ctx } = setup({
-      modifiers: [{ kind: 'linkBonus', pct: 0.5, source: 'test' }] as never,
+      modifiers: [{ kind: 'linkBonus', pct: 0.5, source: 'protocol' }],
     });
     const l = lantern(state, 3, 1, 2);
     const p = placeTower(state, PRISM, 4, 2, 1);
@@ -487,22 +497,18 @@ describe('Lightsong (Prism + Lantern; towers.md § 6.2)', () => {
   });
 });
 
+/** A Lantern and an fx_gun on fx_map, run whole, to its end or 40 s: the final hash. */
+function runWhole(): string {
+  const sim = createSim(lanternConfig());
+  sim.enqueue({ type: 'build', tower: 'lantern', tile: [1, 1] });
+  sim.enqueue({ type: 'build', tower: 'fx_gun', tile: [3, 1] });
+  sim.enqueue({ type: 'callWave' });
+  for (let i = 0; i < 60 * 40 && sim.state.outcome === 'playing'; i++) sim.step();
+  return sim.hash();
+}
+
 describe('in a whole run', () => {
   it('a Lantern build is deterministic', () => {
-    const run = (): string => {
-      const sim = createSim(
-        fixtureConfig({
-          content: CONTENT as never,
-          loadout: ['fx_gun', 'lantern'] as never,
-          specsUnlocked: ['lantern'] as never,
-        }) as never,
-      );
-      sim.enqueue({ type: 'build', tower: 'lantern' as never, tile: [1, 1] });
-      sim.enqueue({ type: 'build', tower: 'fx_gun' as never, tile: [3, 1] });
-      sim.enqueue({ type: 'callWave' });
-      for (let i = 0; i < 60 * 40 && sim.state.outcome === 'playing'; i++) sim.step();
-      return sim.hash();
-    };
-    expect(run()).toBe(run());
+    expect(runWhole()).toBe(runWhole());
   });
 });
