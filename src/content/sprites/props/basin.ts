@@ -31,8 +31,10 @@ function hollow(g: CharGrid): void {
       if (r > 1) continue;
       const n = hash01(x, y, 31);
       let ch: string;
-      if (r > 0.86) ch = dy < 0 ? 'c' : 'b'; // the rim: lit along the far side
-      else if (dy < -0.35 && r > 0.62) ch = 'a'; // the far wall, in shadow
+      if (r > 0.86)
+        ch = dy < 0 ? 'c' : 'b'; // the rim: lit along the far side
+      else if (dy < -0.35 && r > 0.62)
+        ch = 'a'; // the far wall, in shadow
       else ch = n < 0.15 ? 'a' : n > 0.9 ? 'c' : 'b';
       plot(g, x, y, ch);
     }

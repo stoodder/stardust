@@ -4,7 +4,7 @@
 // round window on its lit side, warm inside, where rows of butterhead lettuce grow and a small
 // coral shape sleeps curled among them (Pebble; T530b lights it in the dark).
 import { defineSprite } from '../defineSprite.ts';
-import { grid, isoBox, plot, rows } from '../helpers.ts';
+import { grid, isoBox, plot, rows, stamp } from '../helpers.ts';
 
 const W = 30;
 const H = 24;
@@ -52,15 +52,11 @@ function domeGrid(look: 'v0' | 'window' = 'v0'): string[] {
       '.1LMML1.',
       '..1111..',
     ];
-    win.forEach((r, j) =>
-      [...r].forEach((ch, i) => ch !== '.' && plot(g, CX - 10 + i, by - 12 + j, ch)),
-    );
+    stamp(g, CX - 10, by - 12, win);
     // "3" on the band's shaded side.
     // prettier-ignore
     const three = ['cc.', '..c', '.c.', '..c', 'cc.'];
-    three.forEach((r, j) =>
-      [...r].forEach((ch, i) => ch !== '.' && plot(g, CX + 5 + i, by - 11 + j, ch)),
-    );
+    stamp(g, CX + 5, by - 11, three);
   }
   return rows(g);
 }

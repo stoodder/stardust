@@ -34,7 +34,13 @@ function hopper(g: CharGrid, cy: number): void {
         if (z === tall) {
           // The mouth: hazard-striped rim round a dark throat.
           const inner = inDiamond(x, y, CX, yc, hw - 2.5);
-          ch = inner ? (inDiamond(x, y, CX, yc + 1, hw - 4) ? 'K' : 'J') : (x + y) % 4 < 2 ? 'O' : 'K';
+          ch = inner
+            ? inDiamond(x, y, CX, yc + 1, hw - 4)
+              ? 'K'
+              : 'J'
+            : (x + y) % 4 < 2
+              ? 'O'
+              : 'K';
         }
         plot(g, x, y, ch);
       }

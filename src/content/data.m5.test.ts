@@ -170,6 +170,7 @@ describe('M5 towers, ability, links, and catalog rows', () => {
         currency: 'intel',
         price: 3,
         availableAfter: 'a2_m05',
+        requires: 'prism', // Xenotech sells them once the Prism is owned (T509)
       });
     }
     for (const id of ['prism', 'mindspike', 'lantern'] as const) {

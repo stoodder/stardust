@@ -50,7 +50,12 @@ function run(sign: boolean): string[] {
     for (let j = 0; j < 6; j++) {
       for (let i = 0; i < 7; i++) {
         const y = sy + j + Math.round(i / 2);
-        plot(g, sx + i, y, j === 0 || j === 5 ? '3' : j === 1 ? '8' : (i + j) % 3 === 0 ? '2' : '4');
+        plot(
+          g,
+          sx + i,
+          y,
+          j === 0 || j === 5 ? '3' : j === 1 ? '8' : (i + j) % 3 === 0 ? '2' : '4',
+        );
       }
     }
   }

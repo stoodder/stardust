@@ -12,7 +12,7 @@
 //   that meets the gate.
 // - `end_w`, `end_e`: the wall's end at the grid's west or east edge, a squat buttress.
 import { defineSprite } from '../defineSprite.ts';
-import { grid, isoBox, plot, rows, type CharGrid } from '../helpers.ts';
+import { grid, isoBox, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 
 const W = 34;
 const H = 34;
@@ -50,9 +50,11 @@ function parapet(g: CharGrid, seed: number, u0 = 0, u1 = 1): void {
     for (let k = 0; k <= h; k++) {
       const y = c.y - k;
       let ch: string;
-      if (k === h) ch = 'D'; // the cap
+      if (k === h)
+        ch = 'D'; // the cap
       else if (k === h - 1) ch = merlon ? 'C' : 'D';
-      else if (k === h - 2 && !merlon) ch = '7'; // the teal stripe under the cap
+      else if (k === h - 2 && !merlon)
+        ch = '7'; // the teal stripe under the cap
       else if (k === h - 2) ch = 'C';
       else ch = (k + along) % 6 === 0 || along % 8 === 0 ? 'B' : 'C'; // courses and joints
       if (c.u > 0.97) ch = k === h ? 'C' : 'A'; // the shaded east end
@@ -101,9 +103,7 @@ function gatepost(g: CharGrid, u: 0 | 1): void {
     'BGHGB',
     '.BBB.',
   ];
-  lamp.forEach((r, j) =>
-    [...r].forEach((ch, i) => ch !== '.' && plot(g, cx - 3 + i, cy - 21 + j, ch)),
-  );
+  stamp(g, cx - 3, cy - 21, lamp);
 }
 
 /** The wall's end at the grid edge: a squat buttress at end `u`. */

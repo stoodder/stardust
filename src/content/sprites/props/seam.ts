@@ -65,7 +65,18 @@ function veins(g: CharGrid, k: number): void {
   ] as const)
     plot(g, x, y, 'P');
   // Glints: the bright step along the veins, moving between frames.
-  const glints = k === 0 ? [[8, 10], [18, 14], [21, 12]] : [[13, 11], [6, 12], [23, 13]];
+  const glints =
+    k === 0
+      ? [
+          [8, 10],
+          [18, 14],
+          [21, 12],
+        ]
+      : [
+          [13, 11],
+          [6, 12],
+          [23, 13],
+        ];
   for (const [x, y] of glints) plot(g, x ?? 0, y ?? 0, 'H');
 }
 
