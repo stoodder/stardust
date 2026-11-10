@@ -5,8 +5,10 @@
 // few are left (app/dialogue.ts `escortLow`, the bark's threshold). Without `maxLost`, or with too
 // many to draw, the lost row reads in words ("3", "3/20"). Each refugee lost flashes the meter
 // red (like the core's leak flash, D026), and when a map turns Escort mid-map (A2M5's pivot) the
-// relabel moment plays: the old label, struck through, gives way to the new one, which blinks
-// its accent edge three times (2 s; it waits while a scene or the pause menu holds the HUD).
+// relabel moment plays: the old label, struck through, with the old meter's number (the core's
+// last integrity, or "—"; never "Core 0", D138), gives way to the new one, which blinks its accent
+// edge three times (2 s; it waits while a scene or the pause menu holds the HUD). Under reduced
+// motion nothing blinks: the struck label holds 2 s, then the new one shows in a steady accent.
 import { lostWords } from '../../app/hudEscort.ts';
 import { hud } from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
@@ -43,7 +45,17 @@ export function EscortMeter() {
             <span class="hud-relabel-to">{label}</span>
           </span>
         )}
-        <span class="big num">{m.evacuated}</span>
+        {relabel === null ? (
+          <span class="big num">{m.evacuated}</span>
+        ) : (
+          // The old meter's number stays with its struck label (D138: never "Core 0").
+          <span key={relabel.id} class="big num hud-relabel">
+            <span class="hud-relabel-num-from" data-testid="meter-relabel-from-value">
+              {relabel.fromValue ?? '—'}
+            </span>
+            <span class="hud-relabel-num-to">{m.evacuated}</span>
+          </span>
+        )}
       </div>
       <span class="hud-escort-of num" data-testid="escort-total">
         of {m.total}

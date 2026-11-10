@@ -26,7 +26,7 @@ type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'echo' | 'dread';
 
 /** The Mindspike's trim (U5): psionic violet (custom legend `S`–`V`), its light white. */
-export const MINDSPIKE_TRIM: Trim = { rim: 'V', weave: 'U', ramp: ['U', 'V', 'T', 'S'], tip: '*' };
+export const MINDSPIKE_TRIM: Trim = { rim: 'U', weave: 'U', ramp: ['U', 'V', 'T', 'S'], tip: '*' };
 
 /** The cradle: a woven emerald ring the obelisk floats over, ruby knots at its sides. */
 function cradle(g: CharGrid, rx: number): void {

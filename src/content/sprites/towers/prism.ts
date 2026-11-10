@@ -28,7 +28,7 @@ type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'refractor' | 'sunlance';
 
 /** The Prism's trim (U5): ruby-pink, its light white. */
-export const PRISM_TRIM: Trim = { rim: 'd', weave: 'e', ramp: ['e', 'd', 'c', 'b'], tip: '*' };
+export const PRISM_TRIM: Trim = { rim: 'e', weave: 'e', ramp: ['e', 'd', 'c', 'b'], tip: '*' };
 
 /** The cradle: a woven emerald ring the crystal floats over, ruby knots at its sides. */
 function cradle(g: CharGrid, rx: number): void {

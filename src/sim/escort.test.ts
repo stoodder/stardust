@@ -20,7 +20,6 @@ import { enemyAbilities } from './enemyAbilities/index.ts';
 import type { Ally } from './entities.ts';
 import {
   escortLost,
-  evacuatedShare,
   refugeesOnRoad,
   refugeesRemaining,
   setObjective,
@@ -137,7 +136,6 @@ describe('refugees (route allies)', () => {
     expect(events(state, 'RefugeeEvacuated').filter((e) => e.pebble)).toHaveLength(1);
     expect(events(state, 'AllyRemoved')).toHaveLength(REFUGEE_GROUP_SIZE + 1);
     expect(refugeesOnRoad(state)).toBe(0);
-    expect(evacuatedShare(state, MAP)).toBe(REFUGEE_GROUP_SIZE / (REFUGEE_GROUP_SIZE + 2));
     expect(state.medals.perfectCore).toBe('open');
   });
 });

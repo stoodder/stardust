@@ -338,6 +338,11 @@ export interface MeterRelabel {
   /** Changes with every relabel, so the transition restarts. */
   readonly id: number;
   readonly from: string;
+  /**
+   * The old meter's number as it changed (the core's last integrity), held beside the struck label
+   * until the new one shows (D138: never "Core 0"); null shows "—".
+   */
+  readonly fromValue: number | null;
 }
 
 /**

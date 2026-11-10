@@ -93,11 +93,13 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
     host.onAfterFrame(sync),
     host.bus.on('ObjectiveChanged', (e) => {
       const from = hud.meterLabel.value;
+      // The core's last integrity, held with the struck label (D138: never "Core 0").
+      const fromValue = hud.escort.value === null ? sim.state.integrity : null;
       hud.meterLabel.value = meterLabelText(e.meterLabel);
       sync();
       // The relabel moment: only a live change of the meter's name (a replay's played already).
       if (!host.replaying && from !== hud.meterLabel.value && hud.escort.value !== null) {
-        hud.relabel.value = { id: ++relabelId, from };
+        hud.relabel.value = { id: ++relabelId, from, fromValue };
       }
     }),
     host.bus.on('RefugeeLost', () => {

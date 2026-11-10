@@ -181,12 +181,3 @@ export function refugeesRemaining(
   const left = map.escort.total - state.stats.evacuated - state.stats.refugeesLost;
   return left > 0 ? left : 0;
 }
-
-/** The Evacuated meter as a share of the map's refugees, 0–1 (0 without escort data). */
-export function evacuatedShare(
-  state: DeepReadonly<Pick<SimState, 'stats'>>,
-  map: EscortMap,
-): number {
-  const total = map.escort?.total ?? 0;
-  return total > 0 ? state.stats.evacuated / total : 0;
-}
