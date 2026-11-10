@@ -90,8 +90,7 @@ test('gallery: every registered sprite and frame renders, with no console errors
 
   const cards = page.locator('section[data-sprite-id]');
   await expect(cards).toHaveCount(SPRITES.length);
-  // One round trip for every card's id (T460: a locator per card cost seconds of the gate).
-  const ids = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-sprite-id')));
+  const ids = await Promise.all(SPRITES.map((_, i) => cards.nth(i).getAttribute('data-sprite-id')));
   // Registry order, with the portraits gathered in their own section at the end.
   const order = SPRITES.map((s) => s.id as string);
   expect(ids).toEqual([...order.filter((id) => !isPortrait(id)), ...order.filter(isPortrait)]);

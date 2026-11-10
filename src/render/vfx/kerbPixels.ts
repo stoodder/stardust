@@ -61,8 +61,8 @@ export function kerbImage(edge: KerbEdge, colors: KerbColors): RgbaImage {
       if (!inMask(x, y)) continue;
       const d = edgeDistance(x, y, edge);
       if (front) {
-        // The kerb's top along the back lane's front edge.
-        if (d < 1.25) put(x, y, colors.top);
+        // The kerb's top along the back lane's front edge, two rows of light stone.
+        if (d < 1.75) put(x, y, colors.top);
       } else if (d < 1.25) {
         put(x, y, colors.face);
       } else if (d < 2.5 && (x + y) % 2 === 0) {

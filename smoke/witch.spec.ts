@@ -1,8 +1,8 @@
 // T404: the Glass Witch's blink on the dev Witch range (`?map=dev_witch`, render/__fixtures__/
 // devBattle.ts): par's Zapcoils push a short Witch past 70%; her blink's tell (a violet ghost of her
 // where she'll land, outlined in white over a ring, while she holds still, shimmers, and wears a
-// violet rim), the afterimage she leaves, and her retreat at 40% (T430a; asserted through
-// `__sd.render()`). Screenshots in test-results/screens/witch/ (look at them: the ghost is the
+// violet rim, drawn in her `blink` pose), the afterimage she leaves, and her retreat at 40% (T430a;
+// asserted through `__sd.render()`); first, her shield pulse's tell in her `tell` pose (T430b). Screenshots in test-results/screens/witch/ (look at them: the ghost is the
 // point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -10,7 +10,7 @@ import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 const MAP = 'dev_witch';
 
-type Cond = 'tell' | 'blinked' | 'retreat';
+type Cond = 'pulse' | 'tell' | 'blinked' | 'retreat';
 
 /** Steps the sim one tick at a time (up to `max`) until `cond` holds, then renders. */
 async function until(page: Page, cond: Cond, max = 4000): Promise<boolean> {
@@ -28,7 +28,17 @@ async function until(page: Page, cond: Cond, max = 4000): Promise<boolean> {
       const check = (): boolean => {
         const w = witch();
         const tell = w?.def?.boss?.phases[1]?.blink?.tellTicks ?? 0;
+        const pulse = w?.def?.boss?.phases[0]?.pulse?.tellTicks ?? 0;
         switch (c) {
+          case 'pulse':
+            // Half way into a shield pulse's tell.
+            return (
+              w !== null &&
+              !w.leaving &&
+              w.invulnerableTicks === 0 &&
+              w.pulseTicks > 0 &&
+              w.pulseTicks <= pulse / 2
+            );
           case 'tell':
             // Half way into the 1.5 s tell.
             return w !== null && !w.leaving && w.blinkTicks > 0 && w.blinkTicks <= tell / 2;
@@ -74,11 +84,19 @@ test('the Witch: the blink tell, the afterimage, the retreat', async ({ page }) 
   });
   expect(await page.evaluate(() => globalThis.__sd!.state()!.towers.live)).toBe(7);
 
+  // Her shield pulse's tell: arms raised, light in her palms (T430b, D123: her `tell` pose).
+  expect(await until(page, 'pulse')).toBe(true);
+  await page.waitForTimeout(400);
+  const pulse = await page.evaluate(() => globalThis.__sd!.render()!);
+  expect(pulse.enemies.some((e) => e.rim === 'pulse' && e.pose === 'tell')).toBe(true);
+  await shot(page, 'witch', 0, 'pulse-tell');
+
   expect(await until(page, 'tell')).toBe(true);
   await page.waitForTimeout(400); // the Zapcoils' arcs fade on real time; the tell holds (sim ticks)
   const tell = await page.evaluate(() => globalThis.__sd!.render()!);
   expect(tell.blinks.tells).toBe(1);
-  expect(tell.enemies.some((e) => e.rim === 'blink')).toBe(true);
+  // Drawn up tall and thin in her `blink` pose (T430b), wearing the violet rim.
+  expect(tell.enemies.some((e) => e.rim === 'blink' && e.pose === 'blink')).toBe(true);
   await shot(page, 'witch', 1, 'blink-tell');
 
   expect(await until(page, 'blinked')).toBe(true);

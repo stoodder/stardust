@@ -15,8 +15,9 @@ export const ATTACK_SOUNDS: Readonly<
   projectile: { fire: 'flak_fire', land: 'flak_burst' },
   // The Zapcoil's arc; its jumps are CHAIN_SOUNDS.
   chain: { fire: 'zap_arc', land: null },
-  // Capacitor Bank's discharge (T407b): the arc's snap for now (its own sound is a follow-up).
-  charge: { fire: 'zap_arc', land: null },
+  // Capacitor Bank's discharge (T407b, T450): its crack and thump; the charge's hum climbs to it
+  // (CHARGE_SOUNDS, fieldSounds.ts).
+  charge: { fire: 'capacitor_discharge', land: null },
   // The Harpoon's Skewer (T408): the hitscan's crack for now (its own sound is a follow-up).
   line: { fire: 'rivet_shot', land: null },
 };
@@ -58,7 +59,10 @@ export const BOMBLET_SOUNDS = { fire: null, land: 'bomblet_pop' } as const satis
   readonly land: SfxId | null;
 };
 
-/** Each enemy's pop pitch (semitones): small and quick is high, big and slow is low. */
+/**
+ * Each enemy's death pitch (semitones), whatever its death sound (a pop, a sad squeak, a shatter,
+ * an unravel; eventTablesAct2.ts): small and quick is high, big and slow is low.
+ */
 export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   nibbler: 0,
   zoomer: 4,
@@ -68,7 +72,6 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   bunchling: -3,
   digger: -2,
   elder: -8,
-  // M4's units (T400a placeholders; T450 gives the Hollow and the Aelari their own deaths).
   mote: 9,
   glimmer: 5,
   weft_warden: -5,
@@ -91,7 +94,8 @@ export const NEUTRAL_SOUNDS: Readonly<
 /**
  * A boss's sounds (design/enemies.md § 6): its arrival (BossPhase 1), each later phase, the tell
  * and the sneeze of its spawn ability (fieldSounds.ts watches the timer), and its ending
- * (BossEnded: the retreat, then the sting cue). Bosses without a row use DEFAULT_BOSS_SOUNDS.
+ * (BossEnded: the retreat, then the `endCue` sting). Bosses without a row use DEFAULT_BOSS_SOUNDS.
+ * Its pulse and blink are the Aelari's (eventTablesAct2.ts).
  */
 export interface BossSounds {
   readonly arrive: SfxId;
@@ -99,25 +103,32 @@ export interface BossSounds {
   readonly spawnTell: SfxId | null;
   readonly spawn: SfxId | null;
   readonly end: SfxId;
+  readonly endCue: CueId;
 }
+/**
+ * The default ending's sting: "Everglow Bright" triumphant, stopping a step short of home (Act
+ * I's held breath: the Quiet Wave follows; act1.md § A1M5).
+ */
 export const DEFAULT_BOSS_SOUNDS: BossSounds = {
   arrive: 'boss_arrive',
   phase: 'boss_phase',
   spawnTell: null,
   spawn: null,
   end: 'boss_retreat',
+  endCue: 'boss_sting',
 };
 export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
   chitterbloom: { ...DEFAULT_BOSS_SOUNDS, spawnTell: 'sneeze_tell', spawn: 'sneeze' },
-  // T400a placeholder: T450 gives the Glass Witch her chimes.
-  glass_witch: DEFAULT_BOSS_SOUNDS,
+  // Glass, not a tuba (T450): she withdraws to the fanfare's minor turn, `witch_sting`.
+  glass_witch: {
+    arrive: 'witch_arrive',
+    phase: 'witch_phase',
+    spawnTell: null,
+    spawn: null,
+    end: 'witch_retreat',
+    endCue: 'witch_sting',
+  },
 };
-
-/**
- * The sting as a boss is driven off (BossEnded): "Everglow Bright" triumphant, stopping a step
- * short of home (Act I's held breath: the Quiet Wave follows; act1.md § A1M5).
- */
-export const BOSS_END_CUE: CueId = 'boss_sting';
 
 /** A boss's sounds by enemy id. */
 export function bossSounds(enemy: string): BossSounds {
@@ -127,13 +138,19 @@ export function bossSounds(enemy: string): BossSounds {
 }
 
 /**
- * Sounds that loop while a kind of enemy is on the field (fieldSounds.ts): a Puffwing flock's
- * wingbeats, every `everySec` of sim time while one flies (subtle; one voice however big the flock).
+ * Sounds that loop while a kind of enemy is on the field (fieldSounds.ts), every `everySec` of
+ * sim time while one is (one voice however many): a Puffwing flock's wingbeats (subtle); an
+ * Aelari formation's faint glass hum; and the Hollow humming the jingle wrong, ducking the music
+ * (bible §8; the recipe's gap and single voice keep a mixed wave to one hum at a time).
  */
 export const ENEMY_LOOPS: Readonly<
   Partial<Record<string, { readonly id: SfxId; readonly everySec: number }>>
 > = {
   puffwing: { id: 'wing_flap', everySec: 0.45 },
+  glimmer: { id: 'aelari_hum', everySec: 1.8 },
+  weft_warden: { id: 'aelari_hum', everySec: 1.8 },
+  lightwing: { id: 'aelari_hum', everySec: 1.8 },
+  mote: { id: 'hollow_hum', everySec: 9 },
 };
 
 /** Burrowing (D073): digging in and surfacing, for a Digger or a burrowing boss. */
@@ -180,8 +197,8 @@ export const ABILITY_SOUNDS: Readonly<
   // Map-wide and instant (D077): everything sags as time slows; the register rings up the sale.
   time_dilation: { cast: 'dilation_swell', land: [] },
   clearance_sale: { cast: 'sale_kaching', land: [] },
-  // T400a placeholder: T450 gives Scanner Sweep its ping.
-  scanner_sweep: { cast: 'dilation_swell', land: [] },
+  // A wide sonar ping as the zone goes down (each unit it reveals pings too, CLOAK_SOUNDS).
+  scanner_sweep: { cast: 'scan_ping', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */
