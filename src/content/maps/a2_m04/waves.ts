@@ -126,7 +126,7 @@ export const waves = defineWaves([
   },
   // W9 · Blinkstriders + Veilwalkers [X: blink]
   {
-    countdownSec: COUNTDOWN,
+    countdownSec: LONG_COUNTDOWN,
     groups: [blinks(5, OPEN, 2), veils(5, OPEN + 6, 2)],
   },
   // W10 · the Hollow surges up at the vats, with fleeing Skitterkin ahead of it down the road
