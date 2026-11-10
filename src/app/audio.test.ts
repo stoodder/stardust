@@ -11,7 +11,7 @@ import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
 import { HOLLOW_DUCK } from '../audio/eventTablesAct2.ts';
 import type { IdSpace } from '../content/types.ts';
 import { MemoryStore } from '../meta/index.ts';
-import { createSim, type SimEvent, type SimState } from '../sim/index.ts';
+import { createSim, type SimState } from '../sim/index.ts';
 import { dialogue, type LineView, type SceneView } from '../ui/dialogue/state.ts';
 import { runResult, type RunResult } from '../ui/screens/state.ts';
 import { hud, screen } from '../ui/state.ts';
@@ -19,8 +19,6 @@ import { bindBattleAudio, darkDuckLevel, installAudio, playJingle } from './audi
 import { battleConfig } from './battleSetup.ts';
 import { createHost, type Host } from './host.ts';
 import { initSaves } from './save.ts';
-
-type Ev = SimEvent<IdSpace>;
 
 /** An engine that records what it was told: sounds and cues in order, and the ducks held now. */
 function recorder(): { engine: AudioEngine; log: string[]; ducks: Map<string, number> } {
@@ -46,10 +44,29 @@ function recorder(): { engine: AudioEngine; log: string[]; ducks: Map<string, nu
   return { engine, log, ducks };
 }
 
-const listeners = { addEventListener: () => {}, removeEventListener: () => {} };
+const noop = (): void => {};
+const listeners = { addEventListener: noop, removeEventListener: noop };
+
+/** Shows the rigs' meter in `damage`'s band (app/hudAsset.ts). */
+const asset = (damage: 'damaged' | 'critical'): void => {
+  hud.asset.value = { name: 'Rigs', value: damage === 'critical' ? 4 : 8, max: 10, damage };
+};
+
+/** A Results card with C2 offered (`picked` null) or taken, and the transaction it made. */
+const c2Card = (picked: number | null, choice: 'sold' | 'returned'): RunResult => {
+  const base = {
+    choice: { by: 'ZIBZAB', bank: 400, options: ['Sell it.', 'Take it to them.'], picked },
+    rewards: {
+      transactions:
+        picked === null ? [] : [{ kind: 'c2', choice, bank: 400, intel: 0, tuneUp: null }],
+    },
+  };
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only the fields the binder reads
+  return base as unknown as RunResult;
+};
 
 let rec = recorder();
-let uninstall: () => void = () => {};
+let uninstall: () => void = noop;
 
 beforeEach(() => {
   vi.stubGlobal('window', listeners);
@@ -71,7 +88,7 @@ afterEach(() => {
 describe('bindBattleAudio', () => {
   let host: Host<IdSpace>;
   let state: SimState;
-  let unbind: () => void = () => {};
+  let unbind: () => void = noop;
   const frame = (): void => host.fastForward(0);
 
   beforeEach(() => {
@@ -131,9 +148,6 @@ describe('bindBattleAudio', () => {
   });
 
   it("sounds the meters' alarm once as the rigs go critical, and once as an Escort runs low", () => {
-    const asset = (damage: 'damaged' | 'critical'): void => {
-      hud.asset.value = { name: 'Rigs', value: damage === 'critical' ? 4 : 8, max: 10, damage };
-    };
     asset('damaged');
     frame();
     asset('critical');
@@ -235,27 +249,16 @@ describe("installAudio's speech and Results", () => {
   });
 
   it("stings C2's choice as it's taken on the card, by what it did, and never on its offer", () => {
-    const result = (picked: number | null, choice: 'sold' | 'returned'): RunResult => {
-      const base = {
-        choice: { by: 'ZIBZAB', bank: 400, options: ['Sell it.', 'Take it to them.'], picked },
-        rewards: {
-          transactions:
-            picked === null ? [] : [{ kind: 'c2', choice, bank: 400, intel: 0, tuneUp: null }],
-        },
-      };
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only the fields the binder reads
-      return base as unknown as RunResult;
-    };
     rec.log.length = 0;
-    runResult.value = result(null, 'sold');
+    runResult.value = c2Card(null, 'sold');
     expect(rec.log).toEqual([]);
-    runResult.value = result(0, 'sold');
+    runResult.value = c2Card(0, 'sold');
     expect(rec.log).toEqual(['cue:c2_sold']);
     // A later change to the same card (its debrief lines) doesn't sting again.
-    runResult.value = result(0, 'sold');
+    runResult.value = c2Card(0, 'sold');
     expect(rec.log).toEqual(['cue:c2_sold']);
-    runResult.value = result(null, 'returned');
-    runResult.value = result(1, 'returned');
+    runResult.value = c2Card(null, 'returned');
+    runResult.value = c2Card(1, 'returned');
     expect(rec.log).toEqual(['cue:c2_sold', 'cue:c2_returned']);
   });
 

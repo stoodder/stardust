@@ -47,14 +47,17 @@ const MOON_ALPHA = 0.85;
 const GLOW_DEPTH = 0.00005;
 /** The sky's overhang (LightingView's), so the moons land on the sky's own. */
 const OVERHANG_PX = 8;
+/** A baked `@glow`'s strength in the full dark: the world's small lights, under the lamps'. */
+const BAKED_PEAK = 0.6;
 /** Props whose glow another view draws. */
 const OWN_GLOW: ReadonlySet<string> = new Set(['prop.core']);
 
 interface PropLight {
   readonly prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
   readonly img: Phaser.GameObjects.Image;
-  /** Its dusk strength (0: it shines only in the dark). */
+  /** Its dusk strength (0: it shines only in the dark), and its strength in the full dark. */
   readonly dusk: number;
+  readonly peak: number;
   alpha: number;
 }
 
@@ -163,7 +166,7 @@ export class WorldGlowView {
       this.#dark = dark;
       for (let i = 0; i < this.#props.length; i++) {
         const p = this.#props[i]!; // i < length
-        p.alpha = glowAlpha(p, dark);
+        p.alpha = p.peak * glowAlpha(p, dark);
       }
       this.#moons?.setVisible(dark > 0).setAlpha(MOON_ALPHA * dark);
     }
@@ -224,6 +227,7 @@ export class WorldGlowView {
     prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image,
     tex: { key: string; radius: number } | null,
     glow: { readonly dusk: number },
+    peak = 1,
   ): void {
     if (tex === null) return;
     const { scene, layers } = this.#ctx;
@@ -234,7 +238,7 @@ export class WorldGlowView {
       .setDepth(prop.depth + GLOW_DEPTH)
       .setVisible(false);
     layers.world.add(img);
-    this.#props.push({ prop, img, dusk: glow.dusk, alpha: 0 });
+    this.#props.push({ prop, img, dusk: glow.dusk, peak, alpha: 0 });
   }
 
   /** A baked `@glow` frame (shines only in the dark), if the prop has one. */
@@ -255,7 +259,7 @@ export class WorldGlowView {
       if (src === null) return;
       scene.textures.addCanvas(key, imageToCanvas(src));
     }
-    this.#addProp(prop, { key, radius }, { dusk: 0 });
+    this.#addProp(prop, { key, radius }, { dusk: 0 }, BAKED_PEAK);
   }
 
   /** The glow texture of a prop's frame (or its anim's union), baked once per battle's scene. */

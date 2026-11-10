@@ -100,6 +100,42 @@ const phase = (p: 'tell' | 'in' | 'out' | 'interrupted'): E => ({
   y: 1,
 });
 const dark = (d: number): E => ({ type: 'DarknessShift', wave: 1, dark: d });
+const down = (uid: number): E => ({
+  type: 'StoodDown',
+  uid,
+  enemy: 'cantor',
+  faction: 'aelari',
+  x: 1,
+  y: 1,
+});
+const safe = (pebble: boolean): E => ({ type: 'RefugeeEvacuated', uid: 3, pebble });
+const lost = (cause: 'hushed' | 'exit'): E => ({
+  type: 'RefugeeLost',
+  uid: 0,
+  cause,
+  enemyUid: 1,
+});
+const area = (frozen: number): E => ({
+  type: 'StasisArea',
+  slot: 2,
+  x: 1,
+  y: 1,
+  radiusTiles: 2.5,
+  frozen,
+});
+const income = (kind: 'wave' | 'kill' | 'interest'): E => ({
+  type: 'TowerIncome',
+  towerUid: 4,
+  kind,
+  credits: 5,
+  wave: 1,
+  x: 1,
+  y: 1,
+});
+const kindOf = (tier: { readonly attack?: object | null }): string | undefined => {
+  const a: { kind?: string } | null | undefined = tier.attack;
+  return a?.kind;
+};
 
 describe('M5 event sounds (T550)', () => {
   it('gives the M5 towers their own shots: the Prism and Lantern locks, Mindspike, Skewer, Magnet Crane', () => {
@@ -172,14 +208,6 @@ describe('M5 event sounds (T550)', () => {
   it('re-forms a shield, and breathes out once as the faction stands down', () => {
     const reform: E = { type: 'ShieldReformed', uid: 9, enemy: 'sunderglass_penitent', x: 1, y: 1 };
     expect(ids(run([reform]))).toEqual(['sfx:shield_reform']);
-    const down = (uid: number): E => ({
-      type: 'StoodDown',
-      uid,
-      enemy: 'cantor',
-      faction: 'aelari',
-      x: 1,
-      y: 1,
-    });
     // Every unit sends one; the recipe's single voice and gap make them one breath.
     expect(ids(run([down(1), down(2)]))).toEqual(['sfx:stand_down', 'sfx:stand_down']);
     expect(SFX.stand_down.maxVoices).toBe(1);
@@ -187,14 +215,7 @@ describe('M5 event sounds (T550)', () => {
   });
 
   it('chirps a refugee home (Pebble her own), and alarms one taken at the exit, not one hushed', () => {
-    const safe = (pebble: boolean): E => ({ type: 'RefugeeEvacuated', uid: 3, pebble });
     expect(ids(run([safe(false), safe(true)]))).toEqual(['sfx:refugee_safe', 'sfx:pebble_safe']);
-    const lost = (cause: 'hushed' | 'exit'): E => ({
-      type: 'RefugeeLost',
-      uid: 0,
-      cause,
-      enemyUid: 1,
-    });
     expect(ids(run([lost('exit'), lost('hushed')]))).toEqual(['sfx:refugee_taken']);
     // The Escort's alarm is an alarm, never the core's siren.
     expect(SFX.refugee_taken.priority).toBe(3);
@@ -204,14 +225,6 @@ describe('M5 event sounds (T550)', () => {
     const echo: E = { type: 'EchoBurst', towerUid: 3, x: 1, y: 1, radiusTiles: 1.2, hits: 2 };
     expect(ids(run([echo]))).toEqual(['sfx:echo_burst']);
     const cast: E = { type: 'AbilityUsed', slot: 2, uid: 0, ability: 'stillness', target: [1, 1] };
-    const area = (frozen: number): E => ({
-      type: 'StasisArea',
-      slot: 2,
-      x: 1,
-      y: 1,
-      radiusTiles: 2.5,
-      frozen,
-    });
     expect(ids(run([cast, area(3)]))).toEqual(['sfx:stillness_cast', 'sfx:stasis_lock']);
     expect(ids(run([cast, area(0)]))).toEqual(['sfx:stillness_cast']);
   });
@@ -225,15 +238,6 @@ describe('M5 event sounds (T550)', () => {
   });
 
   it("drops a coin for a tower's income, a kill's a few steps up (T501h)", () => {
-    const income = (kind: 'wave' | 'kill' | 'interest'): E => ({
-      type: 'TowerIncome',
-      towerUid: 4,
-      kind,
-      credits: 5,
-      wave: 1,
-      x: 1,
-      y: 1,
-    });
     const out = run([income('wave'), income('kill')]);
     expect(ids(out)).toEqual(['sfx:income_coin', 'sfx:income_coin']);
     expect(out.map((c) => (c.kind === 'sfx' ? c.pitch : null))).toEqual([0, 3]);
@@ -313,10 +317,6 @@ describe("the M5 tables cover M5's content", () => {
         ...t.tiers,
         ...('specs' in t ? [t.specs.a, t.specs.b] : []),
       ];
-      const kindOf = (tier: { readonly attack?: object | null }): string | undefined => {
-        const a: { kind?: string } | null | undefined = tier.attack;
-        return a?.kind;
-      };
       const has = new Set(tiers.map(kindOf).filter((k) => k !== undefined));
       for (const kind of Object.keys(kinds ?? {})) expect(has, `${id}: ${kind}`).toContain(kind);
     }

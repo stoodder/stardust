@@ -14,12 +14,18 @@ import {
   MASK_DARK,
   MASK_LIT,
   NIGHT_SHADE,
+  drawLampMask,
+  LAMP_LIGHT,
   noDark,
   rgbOfNumber,
   sceneryTint,
 } from './darknessPixels.ts';
 
 const tones = (d: number) => darkTones(d, noDark());
+const tintOfColor = (name: typeof LAMP_LIGHT): number => {
+  const c = rgbOf(name);
+  return (c.r << 16) | (c.g << 8) | c.b;
+};
 const mul = (a: number, b: number): number => {
   const x = rgbOfNumber(a);
   const y = rgbOfNumber(b);
@@ -29,12 +35,18 @@ const mul = (a: number, b: number): number => {
 
 describe('the night’s tones', () => {
   it('are no darkness at 0: white multiplies and no lift', () => {
-    expect(tones(0)).toEqual({ world: 0xffffff, ground: 0xffffff, veil: 0xffffff, lift: 0 });
+    expect(tones(0)).toEqual({
+      world: 0xffffff,
+      ground: 0xffffff,
+      veil: 0xffffff,
+      lift: 0,
+      lamp: 0xffffff,
+    });
   });
 
   it('fall deep on the world at full dark and only veil the actors (deep darks, D134)', () => {
     const t = tones(1);
-    // The world (ground, sky, scenery out of the light) keeps under a fifth of its light.
+    // The world (ground, sky, scenery out of the light) keeps a few percent of its light.
     expect(lumOf(t.world)).toBeLessThan(0.05);
     // The actors keep most of theirs, so they read in their faction palettes over the dark.
     expect(lumOf(t.veil)).toBeGreaterThan(0.5);
@@ -75,18 +87,29 @@ describe('the night’s tones', () => {
 });
 
 describe('the scenery’s tint', () => {
-  it('in the light, the grade alone; in the dark, the grade times the world over the veil', () => {
+  it('lit, the grade alone; in the dark, the grade times the world over the veil', () => {
     const t = tones(1);
-    expect(sceneryTint(0xffffff, t, true)).toBe(0xffffff);
-    expect(sceneryTint(0xd0c0ff, t, true)).toBe(0xd0c0ff);
-    expect(sceneryTint(0xffffff, t, false)).toBe(t.ground);
+    expect(sceneryTint(0xffffff, t, 'lit')).toBe(0xffffff);
+    expect(sceneryTint(0xd0c0ff, t, 'lit')).toBe(0xd0c0ff);
+    expect(sceneryTint(0xffffff, t, 'dark')).toBe(t.ground);
     // Under the veil, an unlit prop ends where the ground does: at the world's tone.
-    const total = rgbOfNumber(mul(sceneryTint(0xffffff, t, false), t.veil));
+    const total = rgbOfNumber(mul(sceneryTint(0xffffff, t, 'dark'), t.veil));
     const w = rgbOfNumber(t.world);
     expect(Math.abs(total.r - w.r)).toBeLessThanOrEqual(1);
     expect(Math.abs(total.b - w.b)).toBeLessThanOrEqual(1);
     // A grade composes with it.
-    expect(sceneryTint(0x808080, t, false)).toBe(mul(0x808080, t.ground));
+    expect(sceneryTint(0x808080, t, 'dark')).toBe(mul(0x808080, t.ground));
+  });
+
+  it('in a lamp’s disc, warm lamplight (the ground under it takes the same tone)', () => {
+    expect(tones(0).lamp).toBe(0xffffff);
+    const t = tones(1);
+    expect(t.lamp).toBe(tintOfColor(LAMP_LIGHT));
+    const lamp = rgbOfNumber(sceneryTint(0xffffff, t, 'lamp'));
+    expect(lamp.r).toBeGreaterThan(lamp.g);
+    expect(lamp.g).toBeGreaterThan(lamp.b);
+    // Lamplight is light: far brighter than the dark round it.
+    expect(lumOf(t.lamp)).toBeGreaterThan(10 * lumOf(t.world));
   });
 });
 
@@ -126,6 +149,16 @@ describe('the light map', () => {
     const bytes = (word: number) => [...new Uint8Array(new Uint32Array([word]).buffer)];
     expect(bytes(MASK_DARK)).toEqual([255, 255, 255, 255]);
     expect(bytes(MASK_LIT)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('the lamplight mask is the dark mask’s lamp holes exactly, filled', () => {
+    const dark = new Uint32Array(W * H);
+    const lamp = new Uint32Array(W * H);
+    drawDarkMask(dark, W, H, LEFT, TOP, origin, discs, 1);
+    drawLampMask(lamp, W, H, LEFT, TOP, origin, discs, 1);
+    for (let i = 0; i < W * H; i++) {
+      expect(lamp[i]).toBe(dark[i] === MASK_LIT ? MASK_DARK : MASK_LIT);
+    }
   });
 
   it('draws only the first `count` discs', () => {

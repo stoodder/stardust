@@ -20,10 +20,12 @@ import { VIEW_H, VIEW_W } from '../scale.ts';
 import {
   darkTones,
   drawDarkMask,
+  drawLampMask,
   noDark,
   sceneryTint,
   type DarkTones,
   type LightDisc,
+  type SceneryLight,
 } from '../vfx/darknessPixels.ts';
 import type { LightingView, NightTint } from './LightingView.ts';
 import { isScenery, sceneryGround } from './scenery.ts';
@@ -32,11 +34,11 @@ import type { ViewContext } from './ViewContext.ts';
 /** The light map overhangs the view by this much, so the camera shake never shows an edge. */
 const OVERHANG_PX = 8;
 const KEY = 'lighting.darkness';
+const LAMP_KEY = 'lighting.lamplight';
 /** Light sources one frame can punch (lamps plus beaming towers); more are left dark. */
 const MAX_DISCS = 64;
 
 const NO_TOWERS: LightTowers = { used: 0, items: [] };
-const WHITE = 0xffffff;
 const at: Vec2 = { x: 0, y: 0 };
 
 export class DarknessView implements NightTint {
@@ -48,6 +50,8 @@ export class DarknessView implements NightTint {
   readonly #ground: Phaser.GameObjects.Image | null = null;
   readonly #veil: Phaser.GameObjects.Image | null = null;
   readonly #lift: Phaser.GameObjects.Image | null = null;
+  /** Lamplight's tone over the ground in the lamps' discs. */
+  readonly #lamp: Phaser.GameObjects.Image | null = null;
   readonly #canvas: CanvasRenderingContext2D | null = null;
   readonly #data: ImageData | null = null;
   readonly #px: Uint32Array | null = null;
@@ -91,6 +95,25 @@ export class DarknessView implements NightTint {
         .setVisible(false);
     this.#ground = image(Phaser.BlendModes.MULTIPLY);
     lighting.overGround(this.#ground);
+    if (map.lights.length > 0) {
+      // The lamps never move: their lamplight mask is drawn once.
+      if (scene.textures.exists(LAMP_KEY)) scene.textures.remove(LAMP_KEY);
+      const lamp = scene.textures.createCanvas(LAMP_KEY, w, h);
+      if (lamp !== null) {
+        const lc = lamp.getContext();
+        const data = lc.createImageData(w, h);
+        const discs = map.lights.map((l) => ({ x: l.x, y: l.y, radiusSq: l.radiusSq }));
+        const px = new Uint32Array(data.data.buffer);
+        drawLampMask(px, w, h, -OVERHANG_PX, -OVERHANG_PX, ctx.origin, discs, discs.length);
+        lc.putImageData(data, 0, 0);
+        lamp.refresh();
+        this.#lamp = new Phaser.GameObjects.Image(scene, -OVERHANG_PX, -OVERHANG_PX, LAMP_KEY)
+          .setOrigin(0, 0)
+          .setBlendMode(Phaser.BlendModes.MULTIPLY)
+          .setVisible(false);
+        lighting.overGround(this.#lamp);
+      }
+    }
     this.#veil = image(Phaser.BlendModes.MULTIPLY);
     this.#lift = image(Phaser.BlendModes.ADD);
     layers.lighting.add(this.#veil);
@@ -155,6 +178,7 @@ export class DarknessView implements NightTint {
       this.#ground!.setTint(tones.ground).setVisible(true); // set with px
       veil.setTint(tones.veil).setVisible(true);
       this.#lift!.setTint(tones.lift).setVisible(true);
+      this.#lamp?.setTint(tones.lamp).setVisible(true);
     }
     if (moved || deeper || !this.#night) {
       this.#night = true;
@@ -164,19 +188,27 @@ export class DarknessView implements NightTint {
 
   /** The scenery's tint under the grade `grade`: the night's, unless it stands in the light. */
   tintFor(obj: object, grade: number): number {
+    return sceneryTint(grade, this.#tones, this.#lightOf(obj));
+  }
+
+  /** Where scenery `obj` stands: at the tile it was marked on, else under its screen position. */
+  #lightOf(obj: object): SceneryLight {
     const g = sceneryGround(obj);
-    let gx: number;
-    let gy: number;
-    if (g === null) {
-      const p = obj as { x?: number; y?: number };
-      screenToGrid(p.x ?? 0, p.y ?? 0, this.#ctx.origin, at);
-      gx = at.x;
-      gy = at.y;
-    } else {
-      gx = g.x;
-      gy = g.y;
+    if (g !== null) return this.#lightAt(g.x, g.y);
+    const p = obj as { x?: number; y?: number };
+    screenToGrid(p.x ?? 0, p.y ?? 0, this.#ctx.origin, at);
+    return this.#lightAt(at.x, at.y);
+  }
+
+  /** Where grid point (x, y) stands: in a lamp's disc, lit otherwise (the sim's test), or dark. */
+  #lightAt(x: number, y: number): SceneryLight {
+    for (let i = 0; i < this.#lamps.length; i++) {
+      const l = this.#lamps[i]!; // i < length
+      const dx = x - l.x;
+      const dy = y - l.y;
+      if (dx * dx + dy * dy <= l.radiusSq) return 'lamp';
     }
-    return sceneryTint(grade, this.#tones, isLitAt(this.#lamps, this.#towers, gx, gy));
+    return isLitAt(this.#lamps, this.#towers, x, y) ? 'lit' : 'dark';
   }
 
   /**
@@ -191,8 +223,8 @@ export class DarknessView implements NightTint {
       for (let i = 0; i < list.length; i++) {
         const obj = list[i]!; // i < length
         if (!isScenery(obj) || !('tintTopLeft' in obj)) continue;
-        if (this.tintFor(obj, WHITE) === WHITE) lit++;
-        else dark++;
+        if (this.#lightOf(obj) === 'dark') dark++;
+        else lit++;
       }
     }
     return { litScenery: lit, darkScenery: dark };
@@ -217,6 +249,7 @@ export class DarknessView implements NightTint {
     this.#ground?.setVisible(false);
     this.#veil?.setVisible(false);
     this.#lift?.setVisible(false);
+    this.#lamp?.setVisible(false);
     if (this.#night) {
       this.#night = false;
       this.#lighting.night(null);

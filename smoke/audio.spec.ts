@@ -136,6 +136,38 @@ test("audio: A2M1 plays Act II's theme, its deaths, and the Hollow's hum", async
   expect((await status(page))?.played ?? {}).not.toHaveProperty('cue:bright_sting');
 });
 
+test("audio: A2M6 plays Sundown's dusk and night, and the Prism's lock and hum", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.goto('/?test=1&audio=1&map=a2_m06&seed=1');
+  await waitForReady(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('hud')).toBeVisible();
+  await expect.poll(async () => (await status(page))?.state).toBe('running');
+  // Par into W6: the dark has stepped deeper at W4, W5 and W6's starts, and the Prism holds a beam
+  // on the merge (T550).
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    const st = sd.state()!;
+    for (let k = 0; k < 60 * 600 && !(st.wave >= 6 || st.outcome !== 'playing'); k++) {
+      sd.fastForward(1);
+    }
+    // Into W6's dark (its ease runs over 4 s).
+    sd.fastForward(300);
+  });
+  expect((await status(page))?.played ?? {}).toMatchObject({
+    dusk_fall: expect.any(Number),
+    night_air: expect.any(Number),
+    prism_lock: expect.any(Number),
+    beam_hum: expect.any(Number),
+  });
+  // The Prism's lock is its own, never the Zapcoil's arc it stood in with (par has no Zapcoil).
+  expect((await status(page))?.played ?? {}).not.toHaveProperty('zap_arc');
+});
+
 /** Renders `names` offline in the page (`__sd.audio.render`), by name. */
 async function renderAll(
   page: Page,
