@@ -811,6 +811,8 @@ const CORNER_GRID: GroundGrid = {
   tiles: CORNER_MAP.join('').split('').filter(isTileChar),
   markers: { lamp_corner: [1, 1] },
   env: 'act2.dusk',
+  // The road runs on through the apron's fence at both ends.
+  routeList: [{ kind: 'ground', tiles: [...Array(9).keys()].map((c) => [c, 2] as const) }],
 };
 /** The beaming Prism, the resting one (night only), the lamp, and the beam's Hollow target. */
 const CORNER_PRISM = [7, 0] as const;
@@ -866,10 +868,12 @@ function m5Corner(
   const env: EnvPaletteId = 'act2.dusk';
   const rowsN = CORNER_GRID.rows;
   const colsN = CORNER_GRID.cols;
-  const w = (colsN + rowsN) * 16 + 32;
-  const oy = 56; // headroom for the Prism's crystal over the back pads
-  const h = oy + (colsN + rowsN) * 8 + 16;
-  const ox = rowsN * 16 + 16;
+  // The grid plus the decor apron the game draws round it (APRON_RINGS on every side).
+  const R = APRON_RINGS;
+  const w = (colsN + rowsN + 4 * R) * 16;
+  const oy = R * 16 + 24; // headroom for the props on the back corner
+  const h = oy + (colsN + rowsN + 2 * R - 2) * 8 + 16;
+  const ox = (rowsN + 2 * R) * 16;
   const origin = { x: ox, y: oy };
   const c = el('canvas');
   c.width = w;
@@ -906,23 +910,20 @@ function m5Corner(
   };
   // The ground and its scenery (the lamp's gatepost), as the game dresses them.
   const props: Placed[] = [];
+  const cell = (i: number, j: number, look: TileDressing): void => {
+    const [sx, sy] = screen(i, j);
+    draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
+    for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
+    const p = look.prop;
+    if (p !== null) props.push([p.sprite, p.frame, i + 0.5, j + 0.5, propVariant(p.sprite, env)]);
+  };
+  for (const a of apronCells(CORNER_GRID, env)) cell(a.col, a.row, a);
   for (let d = 0; d <= colsN + rowsN - 2; d++) {
     for (let i = Math.max(0, d - rowsN + 1); i <= Math.min(d, colsN - 1); i++) {
-      const look = dressTile(CORNER_GRID, i, d - i);
-      const [sx, sy] = screen(i, d - i);
-      draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
-      for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
-      if (look.prop !== null) {
-        props.push([
-          look.prop.sprite,
-          look.prop.frame,
-          i + 0.5,
-          d - i + 0.5,
-          propVariant(look.prop.sprite, env),
-        ]);
-      }
+      cell(i, d - i, dressTile(CORNER_GRID, i, d - i));
     }
   }
+  props.sort((a, b) => a[2] + a[3] - (b[2] + b[3]));
   for (const [id, frame, gx, gy, variant] of props) {
     const [sx, sy] = screen(gx, gy);
     draw(frameOf(id, frame, variant), sx, sy);

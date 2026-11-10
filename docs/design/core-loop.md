@@ -361,7 +361,7 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 |---|---|
 | `map_start` / `wave_start` / `wave_cleared` | The map's first build phase; a wave starts; a wave resolves (both say `boss` for a boss wave). Act I's shared `wave_cleared` jingle jokes play only after a wave with no leaks |
 | `first_leak` | The first enemy of the map leaks |
-| `perfect_wave` | A wave resolves with no leaks (medal-exempt groups ignored) |
+| `perfect_wave` | A wave with something hostile in it (a group not tagged `fleeing`) resolves with no leaks (medal-exempt groups ignored) |
 | `tower_built` / `tower_sold` | A tower is built; sold (condition data can check whether it carried a name tag) |
 | `low_integrity` | The meter drops to 25% or below (once per map) |
 | `enemy_killed` | A specific enemy id (condition) dies, for the first time this map |

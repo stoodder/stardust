@@ -35,15 +35,9 @@ afterEach(() => {
 
 /** The save in play with A2M4 won but C2 never answered (the tab closed on its card). */
 function unanswered(stardust: number): SaveData {
-  loadDevSave('after_a2m4_returned');
-  updateActiveSave((s) => {
-    const { stardust_choice: _c, ...flags } = s.story.flags;
-    return {
-      ...s,
-      currencies: { ...s.currencies, stardust },
-      story: { ...s.story, flags, seen: s.story.seen.filter((id) => id !== HANDOVER_SCENE) },
-    };
-  });
+  loadDevSave('after_a2m4_unanswered');
+  expect(activeSave()?.story.flags.stardust_choice).toBeUndefined();
+  updateActiveSave((s) => ({ ...s, currencies: { ...s.currencies, stardust } }));
   return activeSave()!;
 }
 

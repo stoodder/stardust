@@ -227,6 +227,16 @@ function se(t: string): [string, string] {
   return t === 'lantern' ? [`tower.${t}_head`, 'glow_0'] : [`tower.${t}_head`, 'se'];
 }
 
+/** A head's rows above its cradle. */
+function above(rows: readonly string[]): readonly string[] {
+  return rows.slice(0, rows.length - 8);
+}
+
+/** A tower's build icon. */
+function towerIcon(t: string): readonly string[] {
+  return grid(`icon.tower.${t}`, 'icon');
+}
+
 describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
   it('stand on the floating Aelari dais: aelari palette, no Everglow logo or Vrell price tag', () => {
     for (const t of TOWERS) {
@@ -258,7 +268,10 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
         const a = t1[i] ?? [];
         const b = t1[j] ?? [];
         expect(silhouetteDiff(a, b)).toBe(0);
-        const differ = a.join('').split('').filter((c, k) => c !== b.join('').charAt(k)).length;
+        const differ = a
+          .join('')
+          .split('')
+          .filter((c, k) => c !== b.join('').charAt(k)).length;
         expect(differ, `${TOWERS[i]} vs ${TOWERS[j]}`).toBeGreaterThanOrEqual(20);
       }
     }
@@ -343,7 +356,6 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     expect(count(lantern, 'STUV')).toBe(0);
     // Shapes, above the cradle: the gem broad (≥ 10 px, under 2× as tall as wide), the needle ≤ 5 px
     // wide and ≥ 4× as tall, the cage round (width and height within 2 px).
-    const above = (rows: readonly string[]): readonly string[] => rows.slice(0, rows.length - 8);
     const p = bounds(above(prism));
     const n = bounds(above(needle));
     const l = bounds(above(lantern));
@@ -355,12 +367,11 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
   });
 
   it('their build icons tell apart the same way: pink, violet, gold', () => {
-    const icon = (t: string): readonly string[] => grid(`icon.tower.${t}`, 'icon');
-    expect(count(icon('prism'), 'bcde')).toBeGreaterThanOrEqual(30);
-    expect(count(icon('mindspike'), 'STUV')).toBeGreaterThanOrEqual(20);
-    expect(count(icon('lantern'), 'GH')).toBeGreaterThanOrEqual(12);
-    expect(silhouetteDiff(icon('prism'), icon('mindspike'))).toBeGreaterThan(15);
-    expect(silhouetteDiff(icon('mindspike'), icon('lantern'))).toBeGreaterThan(15);
+    expect(count(towerIcon('prism'), 'bcde')).toBeGreaterThanOrEqual(30);
+    expect(count(towerIcon('mindspike'), 'STUV')).toBeGreaterThanOrEqual(20);
+    expect(count(towerIcon('lantern'), 'GH')).toBeGreaterThanOrEqual(12);
+    expect(silhouetteDiff(towerIcon('prism'), towerIcon('mindspike'))).toBeGreaterThan(15);
+    expect(silhouetteDiff(towerIcon('mindspike'), towerIcon('lantern'))).toBeGreaterThan(15);
   });
 });
 

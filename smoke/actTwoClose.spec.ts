@@ -1,7 +1,8 @@
-// Act II's close (T512; act2.md § A2M6, core-loop.md § 1.1 and § 6.6): A2M6's Results (the results
-// fixture, `__sd.results`, on the after_a2m6 save) → Continue → the stinger over the dark (a held
-// beat, the PA's "Shift change.", the caption as the jingle plays once in its minor arrangement,
-// then a beat while it rings out) → the base, with no Bounty tab (it retires with Act II, without
+// Act II's close (T512; act2.md § A2M6, core-loop.md § 1.1 and § 6.6): Ves'thara's debrief
+// (Ishael) full-screen, then A2M6's Results (the results fixture, `__sd.results`, on the
+// after_a2m6 save) → Continue → the stinger over the dark (a held beat, the PA's "Shift change.",
+// the caption as the jingle plays once in its minor arrangement, then a beat while it rings out)
+// → the base, with no Bounty tab (it retires with Act II, without
 // comment; after_a2m5's base still has it) → the Sector map at night: the `act3` phase and Act
 // III's theme, Sundown cleared under the marker, *The Preserve* (A3M1) as its Coming soon teaser
 // with no Start, the Long Walk named, and nothing past the teaser. Screenshots in
@@ -20,9 +21,16 @@ test("act II's close: A2M6's card → the PA's minor stinger → the base → th
   await page.goto('/?test=1&dialogue=1&fasttext=1&audio=1&seed=1&save=after_a2m6');
   await waitForReady(page);
   void page.evaluate(() => globalThis.__sd!.results({ map: 'a2_m06', outcome: 'won' }));
+  // Ishael first (D138): the debrief plays full-screen before the card, and the card doesn't
+  // repeat it.
+  const debrief = page.getByRole('dialog', { name: 'Scene' });
+  await expect(debrief).toContainText('Ishael');
+  await nextFrames(page);
+  await shot(page, 'act2-close', 0, 'ishael');
+  await page.keyboard.press('Escape');
   const card = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
   await expect(card).toBeVisible();
-  await expect(card).toContainText('Be awake.');
+  await expect(card).not.toContainText('Be awake.');
   // Leaving the card is the gesture that unlocks the audio.
   await card.getByRole('button', { name: 'Continue' }).click();
 

@@ -1,6 +1,6 @@
 // Escort and Sundown map validation (T500a; design/maps.md § 5.1–5.2; the rule list is
 // validateMap.ts's header): [escort] and [darkness].
-import { DARK_RANGE_PENALTY, REFUGEE_GROUP_SIZE } from './rules.ts';
+import { DARK_RANGE_PENALTY } from './rules.ts';
 import type { IdSpace, MapDef } from './types.ts';
 import { Issues, duplicates, fmt, isPositive, isPositiveInt } from './validateHelpers.ts';
 
@@ -9,7 +9,7 @@ import { Issues, duplicates, fmt, isPositive, isPositiveInt } from './validateHe
  * Preserve gate: the core before A2M5's pivot, the safe exit after); each refugee group walks a
  * ground path that ends there, `count` refugees (a whole number ≥ 1), Pebble with at most one
  * group; an Escort map (from the start, or by `setObjective`) has refugees; every `spawnAllies`
- * names a group; `maxLost` (losing that many loses the map) is 1 to the refugees' total.
+ * names a group; `maxLost` (losing that many loses the map) is a whole number ≥ 1.
  */
 export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const bad = (w: string, msg: string): void => issues.add('escort', w, msg);
@@ -60,17 +60,9 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
     }
     if (g.withPebble === true && ++pebble === 2) bad(w, 'Pebble rides with one group only');
   }
-  // Losing `maxLost` refugees loses the map (D138), so it's at least 1 and at most them all.
-  if (def.maxLost !== undefined) {
-    const total = Object.values(groups).reduce(
-      (n, g) => n + (g.count ?? REFUGEE_GROUP_SIZE),
-      0,
-    );
-    if (!(Number.isInteger(def.maxLost) && def.maxLost >= 1)) {
-      bad(`${where}.maxLost`, 'must be a whole number ≥ 1 (losing that many loses the map)');
-    } else if (def.maxLost > total) {
-      bad(`${where}.maxLost`, `${def.maxLost} is more than the map's ${total} refugees`);
-    }
+  // Losing `maxLost` refugees loses the map (D138), so 0 would lose it before the first refugee.
+  if (def.maxLost !== undefined && !(Number.isInteger(def.maxLost) && def.maxLost >= 1)) {
+    bad(`${where}.maxLost`, 'must be a whole number ≥ 1 (losing that many loses the map)');
   }
 }
 

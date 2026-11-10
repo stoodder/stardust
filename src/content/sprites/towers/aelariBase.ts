@@ -39,7 +39,12 @@ const LIFT = 2;
 const HEIGHT = 3;
 
 /** Whether (x, y) is on the top face of `isoBox(…, cx, cy, hw, height)`. */
-function isoTop(cx: number, cy: number, hw: number, height: number): (x: number, y: number) => boolean {
+function isoTop(
+  cx: number,
+  cy: number,
+  hw: number,
+  height: number,
+): (x: number, y: number) => boolean {
   return (x, y) => Math.abs(x + 0.5 - cx) / hw + Math.abs(y + height + 0.5 - cy) / (hw / 2) <= 1;
 }
 

@@ -103,7 +103,10 @@ function parWith(tower: TowerId, spec: 'a' | 'b' | null): CompiledBuild {
   const steps: CompiledBuildStep[] = par.steps.map((st) =>
     st.kind === 'build' && st.tower === 'rivet' ? { ...st, tower } : st,
   );
-  if (spec !== null) steps.push({ wave: 12, kind: 'specialize', tile: POCKET_W, spec });
+  if (spec !== null) {
+    steps.push({ wave: 11, kind: 'upgrade', tile: POCKET_W });
+    steps.push({ wave: 12, kind: 'specialize', tile: POCKET_W, spec });
+  }
   return { ...par, loadout: par.loadout.map((t) => (t === 'rivet' ? tower : t)), steps };
 }
 

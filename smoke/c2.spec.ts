@@ -107,29 +107,24 @@ test("c2: A2M4's first win pays the Q3 Bonus and offers C2; Sell is written at o
 test('c2: a card never answered is offered at the base, before its visit scenes', async ({
   page,
 }) => {
-  // The tab closed on A2M4's card: A2M4 won, `stardust_choice` unset (`__sd.save` edits it in).
-  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a2m4_returned');
+  // The tab closed on A2M4's card: A2M4 won, the Q3 Bonus banked, `stardust_choice` unset.
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a2m4_unanswered');
   await waitForReady(page);
-  await page.evaluate(() => {
-    const sd = globalThis.__sd!;
-    sd.editSave((s) => {
-      const { stardust_choice: _c, ...flags } = s.story.flags;
-      return {
-        ...s,
-        currencies: { ...s.currencies, stardust: 940 },
-        story: { ...s.story, flags },
-      };
-    });
-  });
+  const bank = (await save(page))?.currencies.stardust ?? 0;
+  expect(bank).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Base' }).click();
   const panel = page.getByRole('dialog', { name: "Zibzab's offer" });
   await expect(panel).toBeVisible();
-  await expect(panel).toContainText('The whole bank: 940 Stardust');
+  await expect(panel).toContainText(`The whole bank: ${bank.toLocaleString('en-US')} Stardust`);
   await expect(panel.getByTestId('choice-heading')).toBeFocused();
-  await expect(panel.getByTestId('choice-pays').nth(0)).toHaveText('+6 Intel · Zibzab Tune-up');
-  // Esc doesn't answer for the player, or leave the base.
+  const windfall = Math.min(8, Math.max(3, Math.floor(bank / 150)));
+  await expect(panel.getByTestId('choice-pays').nth(0)).toHaveText(
+    `+${windfall} Intel · Zibzab Tune-up`,
+  );
+  // Esc doesn't answer for the player, or leave the base; the visit scenes wait.
   await page.keyboard.press('Escape');
   await expect(panel).toBeVisible();
+  expect((await page.evaluate(() => globalThis.__sd!.dialogue.shown())).scene).toBeNull();
   await shot(page, 'c2', 4, 'base-offer');
   const back = panel.getByRole('button', { name: 'Take it to them.' });
   await expect(back).not.toHaveAttribute('aria-disabled', 'true');
@@ -139,9 +134,12 @@ test('c2: a card never answered is offered at the base, before its visit scenes'
   expect(after?.story.flags.stardust_choice).toBe('returned');
   expect(after?.currencies.stardust).toBe(0);
   await shot(page, 'c2', 5, 'base-answered');
+  // Continue: the visit scene it held back (Bricks hands Pebble over) plays now.
   await panel.getByRole('button', { name: 'Continue' }).click();
   await expect(panel).toBeHidden();
-  await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
+  await expect
+    .poll(async () => (await page.evaluate(() => globalThis.__sd!.dialogue.shown())).scene)
+    .toBe('a2_m04_base_handover');
 });
 
 test('c2: Return on the results fixture carries the bank home, on a copy', async ({ page }) => {

@@ -316,14 +316,12 @@ describe('M5 map rules', () => {
     expect(errors(withMap(bad), 'escort')).toHaveLength(1);
   });
 
-  it('[escort] maxLost is 1 to the refugees total (losing that many loses the map, D138)', () => {
-    // g1 alone: six refugees (REFUGEE_GROUP_SIZE).
+  it('[escort] maxLost is a whole number ≥ 1 (losing that many loses the map, D138)', () => {
     expect(errors(withMap({ ...escort, maxLost: 1 }), 'escort')).toEqual([]);
     expect(errors(withMap({ ...escort, maxLost: 6 }), 'escort')).toEqual([]);
-    expect(errors(withMap({ ...escort, maxLost: 0 }), 'escort')).toHaveLength(1);
     expect(errors(withMap({ ...escort, maxLost: 2.5 }), 'escort')).toHaveLength(1);
-    expect(errors(withMap({ ...escort, maxLost: 7 }), 'escort')).toEqual([
-      "[escort] maps.fx_map.maxLost: 7 is more than the map's 6 refugees",
+    expect(errors(withMap({ ...escort, maxLost: 0 }), 'escort')).toEqual([
+      '[escort] maps.fx_map.maxLost: must be a whole number ≥ 1 (losing that many loses the map)',
     ]);
   });
 

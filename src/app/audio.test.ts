@@ -55,7 +55,13 @@ const asset = (damage: 'damaged' | 'critical'): void => {
 /** A Results card with C2 offered (`picked` null) or taken, and the transaction it made. */
 const c2Card = (picked: number | null, choice: 'sold' | 'returned'): RunResult => {
   const base = {
-    choice: { by: 'ZIBZAB', bank: 400, options: ['Sell it.', 'Take it to them.'], picked },
+    choice: {
+      by: 'ZIBZAB',
+      bank: 400,
+      options: ['Sell it.', 'Take it to them.'],
+      pays: [],
+      picked,
+    },
     rewards: {
       transactions:
         picked === null ? [] : [{ kind: 'c2', choice, bank: 400, intel: 0, tuneUp: null }],
