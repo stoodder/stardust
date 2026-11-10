@@ -17,7 +17,7 @@ import {
   drawLampMask,
   ghostDiscImage,
   GHOST_DOT_PERIOD,
-  GHOST_COLOR,
+  GHOST_COLORS,
   GHOST_UNDER,
   LAMP_LIGHT,
   noDark,
@@ -180,8 +180,15 @@ describe('a Prism’s ghost disc (review R9)', () => {
     // The same disc in the dark mask, its source at the image's pixel corner (cx, cy).
     const mask = new Uint32Array(w * h);
     drawDarkMask(mask, w, h, 0, 0, { x: g.cx, y: g.cy }, [{ x: 0, y: 0, radiusSq }]);
-    const c = rgbOf(GHOST_COLOR);
+    const golds = GHOST_COLORS.map((n) => {
+      const c = rgbOf(n);
+      return [c.r, c.g, c.b];
+    });
+    const isGold = (o: number): boolean =>
+      data[o + 3] === 255 &&
+      golds.some((c) => c[0] === data[o] && c[1] === data[o + 1] && c[2] === data[o + 2]);
     const u = rgbOf(GHOST_UNDER);
+    const seen = new Set<string>();
     let lit = 0;
     let rim = 0;
     const inDisc = (x: number, y: number): boolean =>
@@ -196,25 +203,26 @@ describe('a Prism’s ghost disc (review R9)', () => {
         if (data[o + 3] === 0) continue;
         const px = [data[o], data[o + 1], data[o + 2], data[o + 3]];
         if (px[0] === u.r && px[1] === u.g && px[2] === u.b) {
-          // An under-stroke: right under a dash.
-          const a = o - w * 4;
-          expect([data[a], data[a + 1], data[a + 2]], `${x},${y}`).toEqual([c.r, c.g, c.b]);
+          // An under-stroke: right under a dot.
+          expect(isGold(o - w * 4), `${x},${y}`).toBe(true);
           continue;
         }
         lit++;
         // Every dot is on the disc's rim (inside the lit disc, at its edge), opaque, gold.
         expect(edge, `${x},${y}`).toBe(true);
-        expect(px).toEqual([c.r, c.g, c.b, 255]);
+        expect(isGold(o), `${x},${y}`).toBe(true);
+        seen.add(px.join());
         // Dots, not dashes: no dot touches another along the row (D139 S6).
-        const right = o + 4;
-        expect(x + 1 < w && data[right + 3] !== 0 && data[right] === c.r, `${x},${y}`).toBe(false);
+        expect(x + 1 < w && isGold(o + 4), `${x},${y}`).toBe(false);
       }
     }
     // Dotted: one rim pixel in GHOST_DOT_PERIOD is lit, so it never reads as a lit edge, let
     // alone a lit disc, nor as a range ring's dashes.
     expect(lit).toBeGreaterThanOrEqual(Math.floor(rim / GHOST_DOT_PERIOD));
     expect(lit).toBeLessThanOrEqual(Math.ceil(rim / GHOST_DOT_PERIOD));
-    expect(GHOST_COLOR.startsWith('gold.')).toBe(true);
+    // Both golds take turns round the rim (the pale on sand, the deep in the dark).
+    expect(GHOST_COLORS.every((n) => n.startsWith('gold.'))).toBe(true);
+    expect(seen.size).toBe(2);
     // The disc spans its 2.0 tiles each way on screen (2.83 tiles across the diamond's axes).
     expect(g.cx).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 16));
     expect(g.cy).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 8));

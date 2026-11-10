@@ -6,6 +6,7 @@ import {
   beamCore,
   beamWidth,
   fadeAlpha,
+  lobVelocity,
   pulseRadius,
   SHAKE_MS,
   shakeOffset,
@@ -102,5 +103,20 @@ describe('Time Dilation tint (T312a)', () => {
     const tail = [29, 25, 19, 15, 9, 5, 0].map((left) => fieldAlpha(400, left, false));
     expect(tail).toEqual([0, 0, 0.15, 0.15, 0, 0, 0]);
     expect(fieldAlpha(400, 5, true)).toBe(0.15);
+  });
+});
+
+describe('lobVelocity (the shed spark, D139 S4)', () => {
+  it('lands the lob exactly dy below its start after ms, arcing g·ms²/8 over the line', () => {
+    const g = 0.002;
+    const ms = 400;
+    for (const dy of [20, -10, 0]) {
+      const vy = lobVelocity(dy, ms, g);
+      const at = (t: number): number => vy * t + 0.5 * g * t * t;
+      expect(at(ms)).toBeCloseTo(dy, 9);
+      // At the midpoint it stands g·ms²/8 (40 px) above the straight line (up is negative).
+      expect(dy / 2 - at(ms / 2)).toBeCloseTo((g * ms * ms) / 8, 9);
+    }
+    expect(lobVelocity(5, 0, g)).toBe(0);
   });
 });

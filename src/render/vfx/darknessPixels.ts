@@ -215,8 +215,11 @@ function stampDiscs(
  * and the links' tethers.
  */
 export const GHOST_DOT_PERIOD = 3;
-/** The ghost disc's colour: the light's warm gold (a light, never a range). */
-export const GHOST_COLOR: ColorName = 'gold.3';
+/**
+ * The ghost disc's dots alternate these two golds (the light's warm gold, never a range's pale):
+ * the pale one carries the ring on A2M6's daylight sand, the deep one keeps it gold in the dark.
+ */
+export const GHOST_COLORS: readonly [ColorName, ColorName] = ['gold.4', 'gold.3'];
 /** The ghost's dots carry a 1 px under-stroke (the range rings'), so they read on gold ground. */
 export const GHOST_UNDER: ColorName = 'ink.0';
 
@@ -229,16 +232,19 @@ export interface GhostDisc {
 
 /**
  * The ghost of a light source's disc (review R9: a Prism at rest, and the placement preview of
- * one): only its rim, dotted, in `color`, so it promises light without reading as lit. The rim is
+ * one): only its rim, dotted in `colors`, so it promises light without reading as lit. The rim is
  * the edge of exactly the disc the dark mask clears (the same per-pixel test, `stampDiscs`): the
  * disc's pixels with a 4-neighbour outside it. Walked round by angle on the ground plane, every
- * GHOST_DOT_PERIOD-th rim pixel is a dot (D139 S6), each over a 1 px `ink.0` under-stroke where
+ * GHOST_DOT_PERIOD-th rim pixel is a dot (D139 S6), alternating GHOST_COLORS, each over a 1 px `ink.0` under-stroke where
  * the pixel under it is clear (as the range rings carry), so the dots read on A2M6's gold before
  * the dark. The source's ground point is the image's pixel corner (`cx`, `cy`), as a tile centre
  * lands on a pixel corner on screen. Its inside stays clear but for those under-strokes: nothing
  * under a ghost lightens (D137: a rim only, never a hole or a pool). Baked once per radius.
  */
-export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR): GhostDisc {
+export function ghostDiscImage(
+  radiusSq: number,
+  colors: readonly [ColorName, ColorName] = GHOST_COLORS,
+): GhostDisc {
   const r = Math.sqrt(Math.max(0, radiusSq));
   const cx = Math.ceil(r * Math.SQRT2 * HALF_W) + 2;
   const cy = Math.ceil(r * Math.SQRT2 * HALF_H) + 2;
@@ -248,7 +254,8 @@ export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR)
   const disc: LightDisc = { x: 0, y: 0, radiusSq };
   stampDiscs(inside, w, h, 0, 0, { x: cx, y: cy }, [disc], 0, 1, 1);
   const data = new Uint8ClampedArray(w * h * 4);
-  const c = rgbOf(color);
+  const dot = new Uint8Array(w * h);
+  const cs = [rgbOf(colors[0]), rgbOf(colors[1])] as const;
   const isIn = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < w && y < h && inside[y * w + x] === 1;
   // The rim's pixels, by their angle on the ground plane (the screen ellipse un-squashed).
@@ -261,8 +268,10 @@ export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR)
     }
   }
   rim.sort((p, q) => p.a - q.a);
-  for (let i = 0; i < rim.length; i += GHOST_DOT_PERIOD) {
+  for (let i = 0, n = 0; i < rim.length; i += GHOST_DOT_PERIOD, n++) {
     const o = rim[i]!.o; // i < length
+    const c = cs[n % 2]!; // 0 or 1
+    dot[o / 4] = 1;
     data[o] = c.r;
     data[o + 1] = c.g;
     data[o + 2] = c.b;
@@ -274,8 +283,7 @@ export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR)
     for (let x = 0; x < w; x++) {
       const o = (y * w + x) * 4;
       const above = o - w * 4;
-      if (data[o + 3] !== 0 || data[above + 3] === 0) continue;
-      if (data[above] !== c.r || data[above + 1] !== c.g || data[above + 2] !== c.b) continue;
+      if (data[o + 3] !== 0 || dot[above / 4] !== 1) continue;
       data[o] = u.r;
       data[o + 1] = u.g;
       data[o + 2] = u.b;
