@@ -83,11 +83,10 @@ describe('gating', () => {
     expect(mapShown('a2_m02', actOne)).toBe(false);
     const a2m3 = DEV_SAVES.after_a2m3.build();
     expect(mapMilestone('a2_m02', a2m3)).toBe('The Glass Witch');
-    // The frontier is named; the map after it is not (built, so by its position).
+    // The frontier is named; the maps after it are not (built, by their position).
     expect(mapMilestone('a2_m04', a2m3)).toBe('Second Harvest');
     expect(mapMilestone('a2_m05', a2m3)).toBe('Shift 10');
     expect(unlockHint('xenotech', a2m3)).toBe('Opens after Shift 10');
-    expect(mapMilestone('a2_m06', a2m3)).toBe('Shift 11 (coming soon)');
     expect(mapShown('dev_range', a2m3)).toBe(false);
   });
 });

@@ -68,6 +68,7 @@ describe('effect summaries', () => {
       "Unlocks tier 4: Haggler's Stall or Magnet Crane", // the Crane's (T408)
       'Unlocks tier 4: Refractor or Sunlance', // the Prism's (T504)
       'Unlocks tier 4: Echo Spike or Dread', // the Mindspike's (T507)
+      'Unlocks tier 4: All-Seeing or Truthlight', // the Lantern's (T508)
     ]);
     // R&D's Technician ability (T406).
     const sweep = rnd.find((o) => o.item.kind === 'ability');

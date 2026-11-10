@@ -82,8 +82,8 @@ function bonusText(b: LinkBonusDef): string {
 
 /**
  * A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b), and
- * the Lookout's detection radius from Overwatch and Skywatch (T406), and Reel It In's kill credits
- * (T408).
+ * the Lookout's detection radius from Overwatch and Skywatch (T406), Reel It In's kill credits
+ * (T408), and Lightsong's faster ramp and stronger Marks (T508).
  */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
@@ -93,6 +93,9 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
   if (p.detectRadiusTiles !== undefined) parts.push(`+${p.detectRadiusTiles} detection radius`);
   // Reel It In (T408).
   if (p.killCredits !== undefined) parts.push(`+${p.killCredits} credits per kill`);
+  // Lightsong (T508).
+  if (p.rampPct !== undefined) parts.push(`ramps ${Math.round(p.rampPct * 100)}% faster`);
+  if (p.markPct !== undefined) parts.push(`Marks +${Math.round(p.markPct * 100)}%`);
   return parts.join(', ');
 }
 

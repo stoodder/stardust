@@ -1,8 +1,11 @@
-// The Mindspike's and Stillness's minimal views (T507; mindLook.ts has the rules; T530a polishes):
+// The Mindspike's and Stillness's views (T507; mindLook.ts has the rules; T530a's polish):
 // - **Unnerved:** a wobbling `violet.4` squiggle over the head of each Unnerved unit (a boss's
 //   too: it is interrupted, if not slowed), from the sim's `unnervedTicks`, so it holds while
-//   paused and goes the tick the status does. A flyer's sits over its lifted body.
-// - **Echo Spike:** on EchoBurst, a fast `violet.3` ring out to the echo's radius at the target.
+//   paused and goes the tick the status does. It sits over the body as EnemyView draws it (its
+//   lane offset, a flyer's lift; unitAnchor.ts), falling back to the grid point without a view.
+//   The body's 1 px jitter is EnemyView's.
+// - **Echo Spike:** on EchoBurst, a fast `violet.4` ring out to the echo's radius at the target,
+//   with a small `white.1` pop at its heart.
 // - **Stillness:** on StasisArea, a pale `blue.4` disc on the ground over the circle it froze,
 //   fading over the Stasis's 3 s (render time), and a ring growing out to its edge.
 // Allocation-free per frame: a fixed pool of squiggle images in `overlay`, with the tell glyphs.
@@ -17,6 +20,9 @@ import { discTexture } from '../vfx/overlayTextures.ts';
 import {
   ECHO_COLOR,
   ECHO_MS,
+  ECHO_POP_COLOR,
+  ECHO_POP_MS,
+  ECHO_POP_TILES,
   SQUIGGLE_H,
   SQUIGGLE_W,
   squiggleFrame,
@@ -29,6 +35,7 @@ import {
 } from './mindLook.ts';
 import { enemyBody, spriteId } from './spriteInfo.ts';
 import type { TransientFx } from './TransientFx.ts';
+import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The enemy pool as this view reads it. */
@@ -43,11 +50,13 @@ const FLY_LIFT_PX = 12;
 const SQUIGGLE_KEYS = ['fx.unnerved.0', 'fx.unnerved.1'] as const;
 
 const pos: Vec2 = { x: 0, y: 0 };
+const body = blankBox();
 
 export class MindView {
   readonly #ctx: ViewContext;
   readonly #fx: TransientFx;
   readonly #reducedMotion: () => boolean;
+  readonly #anchors: UnitAnchors;
   readonly #marks: Phaser.GameObjects.Image[] = [];
   /** Each body sprite's headroom over its anchor (px), read once per sprite id. */
   readonly #headroom = new Map<string, number>();
@@ -57,10 +66,16 @@ export class MindView {
   echoes = 0;
   stills = 0;
 
-  constructor(ctx: ViewContext, fx: TransientFx, reducedMotion: () => boolean) {
+  constructor(
+    ctx: ViewContext,
+    fx: TransientFx,
+    reducedMotion: () => boolean,
+    anchors: UnitAnchors = NO_ANCHORS,
+  ) {
     this.#ctx = ctx;
     this.#fx = fx;
     this.#reducedMotion = reducedMotion;
+    this.#anchors = anchors;
     const scene = ctx.scene;
     for (const [i, key] of SQUIGGLE_KEYS.entries()) {
       if (!scene.textures.exists(key)) {
@@ -80,6 +95,7 @@ export class MindView {
     const offEcho = bus.on('EchoBurst', (ev) => {
       this.echoes++;
       this.#fx.ring(ev.x, ev.y, ev.radiusTiles, ECHO_COLOR, ECHO_MS, true);
+      this.#fx.ring(ev.x, ev.y, ECHO_POP_TILES, ECHO_POP_COLOR, ECHO_POP_MS, true);
     });
     const offStill = bus.on('StasisArea', (ev) => {
       this.stills++;
@@ -103,11 +119,19 @@ export class MindView {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!e.alive || e.def === null || e.unnervedTicks <= 0 || e.burrowed || e.phased) continue;
       const mark = this.#marks[n++]!; // n < MAX_MARKS
-      gridToScreen(e.x, e.y, this.#ctx.origin, pos);
-      const lift = e.def.layer === 'air' ? FLY_LIFT_PX : 0;
-      const top = pos.y - lift - this.#headroomOf(enemyBody(e.def.sprites.body, e.tags));
+      let x: number;
+      let top: number;
+      if (this.#anchors.box(e.uid, body)) {
+        x = body.x;
+        top = body.top;
+      } else {
+        gridToScreen(e.x, e.y, this.#ctx.origin, pos);
+        const lift = e.def.layer === 'air' ? FLY_LIFT_PX : 0;
+        x = pos.x;
+        top = pos.y - lift - this.#headroomOf(enemyBody(e.def.sprites.body, e.tags));
+      }
       if (mark.texture.key !== key) mark.setTexture(key);
-      mark.setPosition(Math.round(pos.x), Math.round(top - UNNERVED_GAP_PX)).setVisible(true);
+      mark.setPosition(Math.round(x), Math.round(top - UNNERVED_GAP_PX)).setVisible(true);
     }
     this.#shown = n;
     for (; n < MAX_MARKS; n++) {

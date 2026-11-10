@@ -99,6 +99,7 @@ import {
   type PoseEnemy,
 } from './enemyPose.ts';
 import { unnervedJitterPx } from './mindLook.ts';
+import { overheadDepth } from './overheadDepth.ts';
 import type { UnitBox } from './unitAnchor.ts';
 import type { DeathStyle } from './deathLook.ts';
 import { QUIET_DEATH_FRAMES } from './deathLook.ts';
@@ -167,19 +168,7 @@ export { SHIMMER_MS };
 const RIM_LOW_ALPHA = STEPPED_ALPHA[1];
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
-/**
- * Health bars and tell glyphs sort among themselves in `overlay` by their body's screen y, in a
- * band over the overlay's unsorted pieces (depth 0) and under the floaters (TransientFx's depth 1).
- */
-export const OVERHEAD_DEPTH = 0.5;
-/** Screen y's share of the band (a playfield is under 10,000 px tall), and a uid's tie-break. */
-const OVERHEAD_Y_STEP = 1e-5;
-const OVERHEAD_UID_STEP = 1e-9;
 
-/** The overhead's depth for a body whose ground point sits at screen y `y` (T501i). */
-export function overheadDepth(y: number, uid: number): number {
-  return OVERHEAD_DEPTH + Math.max(0, y) * OVERHEAD_Y_STEP + (uid % 1000) * OVERHEAD_UID_STEP;
-}
 
 /** The sideways direction before an enemy has moved, with no route to seed it (screen, unit). */
 const SIDE_DEFAULT_X = -0.894;

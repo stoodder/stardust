@@ -53,6 +53,7 @@ describe('the loadout screen (app side)', () => {
       ['crane', []],
       ['prism', ['T1']], // plays since T504: its beam's armor applies per second
       ['mindspike', []], // plays since T507: answers armor only where Hollow or Aelari wear it
+      ['lantern', []], // plays since T508: detection, air, and (Truthlight) burrowed; A1M2 asks armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -73,7 +74,9 @@ describe('the loadout screen (app side)', () => {
       'Skywatch',
       'Reel It In', // the Harpoon's and Crane's (T408): the Crane gets nothing itself
       'Resonance', // the Zapcoil's and Prism's (T504)
+      'Lightsong', // the Prism's and Lantern's (T508)
     ]);
+    expect(view.links[7]?.bonus).toBe("Prism Spire ramps 30% faster · Seer's Lantern Marks +5%");
     expect(view.links[3]?.bonus).toContain('Lookout Shack +0.5 detection radius');
     expect(view.links[5]?.bonus).toBe('Grapple Harpoon +10% fire rate, +3 credits per kill');
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');

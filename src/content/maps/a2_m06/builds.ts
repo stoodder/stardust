@@ -6,30 +6,24 @@ import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, ScriptedBuild } from '../../types.ts';
 
-/** The wall walk west of the west gate (lit by its lamp). */
-const WALL_W: GridPos = [4, 3];
-/** The wall walk between the gates (lit). */
+/** The wall walk between the gates (lit by its lamps). */
 const WALK_W: GridPos = [8, 3];
-const WALK_E: GridPos = [9, 3];
 /** The wall walk east of the east gate (lit). */
 const WALL_E: GridPos = [13, 3];
-/** The pocket inside the wall between the gates, beside each gate's road in (lit). */
+/** The pocket inside the wall between the gates, beside the west gate's road in (lit). */
 const POCKET_W: GridPos = [7, 4];
-const POCKET_E: GridPos = [10, 4];
 /** The old watchtower (high ground), just inside the wall at the merge. */
 const TOWER: GridPos = [9, 6];
 /** Either side of the merge, in the crook of each road in (within a Prism's light on the tower). */
 const MERGE_W: GridPos = [7, 6];
 const MERGE_E: GridPos = [10, 6];
-/** The yard: west of its west turn, inside its loop, and under the watchtower. */
-const YARD_W: GridPos = [2, 8];
+/** The yard: inside its loop, under the watchtower, and by its east end. */
 const YARD_MID: GridPos = [5, 8];
 const YARD_IN: GridPos = [9, 8];
 const YARD_E: GridPos = [12, 8];
-/** South of the yard road, and beside the domes. */
+/** South of the yard road. */
 const SOUTH_W: GridPos = [6, 10];
 const SOUTH_MID: GridPos = [10, 10];
-const DOMES: GridPos = [14, 10];
 
 /** The merge, where the Rift Moths' lane crosses the roads in. */
 const MERGE: GridPos = [8, 5];
@@ -252,15 +246,3 @@ export const SUNLANCE_PROBE: ScriptedBuild = {
     STILL_W14,
   ],
 };
-
-/** Pads no build uses yet (kept for the step table's names). */
-export const SPARE_PADS: readonly GridPos[] = [
-  WALL_W,
-  WALK_E,
-  WALL_E,
-  POCKET_E,
-  YARD_W,
-  YARD_E,
-  SOUTH_W,
-  DOMES,
-];

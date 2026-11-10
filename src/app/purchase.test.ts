@@ -54,6 +54,7 @@ describe('purchases in the save session', () => {
       'maxed',
       'maxed', // the Prism's (T504)
       'maxed', // the Mindspike's (T507)
+      'maxed', // the Lantern's (T508)
     ]);
   });
 });
