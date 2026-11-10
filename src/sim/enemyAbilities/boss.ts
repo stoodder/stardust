@@ -10,6 +10,9 @@
 // - Every ability's tell is its timer's last BOSS_ABILITY_TELL_SEC (`bossTelling`).
 // - `hastePct` speeds the boss (`Enemy.paceMul`, under HASTE_CAP), and `huddle` makes it a huddle
 //   leader for its young (the abilities system runs it with the other huddles).
+// - A shield-broken phase (the Penitent's phase 2; T506) begins when the shield breaks and
+//   releases its shards; its shield re-forms while they live (shieldBroken.ts, run first, before
+//   the invulnerability wait, since its re-form clock runs through everything).
 // Young are born in the boss's wave with its tags (brood.ts). A leaving boss is moved by leave.ts.
 // Chitterbloom: (1) 100–60% sneezes 2 Nibblers every 5 s; (2) 60–25% burrows twice for 3 s and
 // surfaces with a Bunchling each time; (3) 25–0% Haste 50% and a huddle on her young; `driveOff`
@@ -22,6 +25,7 @@ import type { SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
 import { spawnBrood } from './brood.ts';
+import { shieldBrokenStep } from './shieldBroken.ts';
 
 export const BOSS_ABILITY_TELL_TICKS = secToTicks(BOSS_ABILITY_TELL_SEC);
 
@@ -62,6 +66,7 @@ export function bossTelling(boss: Enemy): boolean {
 /** One tick of a live boss that isn't leaving. */
 export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: CompiledBoss): void {
   if (boss.bossPhase === 0) enterBossPhase(state, boss, def, 1, false);
+  shieldBrokenStep(state, ctx, boss, def);
   const p = def.phases[boss.bossPhase - 1]!; // 1 ≤ bossPhase ≤ phases.length
   if (p.hastePct > 0) boss.paceMul *= 1 + (p.hastePct < HASTE_CAP ? p.hastePct : HASTE_CAP);
   if (boss.invulnerableTicks > 0) {

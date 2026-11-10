@@ -6,6 +6,7 @@ import type { SimConfig } from './config.ts';
 import type { PurchasePrice } from './economy.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
+import { darkness } from './darkness.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
 import { abilities } from './systems/abilities.ts';
 import { allies } from './systems/allies.ts';
@@ -71,6 +72,7 @@ export type SystemName =
   | 'movement'
   | 'detection'
   | 'towers'
+  | 'darkness'
   | 'allies'
   | 'projectiles'
   | 'cleanup';
@@ -89,6 +91,7 @@ export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System
     { name: 'movement', run: movement },
     { name: 'detection', run: detection },
     { name: 'towers', run: towers },
+    { name: 'darkness', run: darkness }, // Sundown (T505): after the towers, as render draws it
     { name: 'allies', run: allies },
     { name: 'projectiles', run: projectiles },
     { name: 'cleanup', run: cleanup },

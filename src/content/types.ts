@@ -918,7 +918,8 @@ export interface LightingKeyDef {
 /** A lamp (MapLayoutDef.lights): a light source on a decor marker. */
 export interface LightDef {
   readonly marker: MarkerId;
-  readonly radiusTiles: number;
+  /** Its light's radius in tiles (default LAMP_RADIUS_TILES, 1.5; T505). */
+  readonly radiusTiles?: number;
 }
 
 /**

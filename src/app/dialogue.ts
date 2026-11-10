@@ -261,6 +261,8 @@ interface Session {
   simSec(): number;
   /** Skitterkin killed this run (for `{pests_processed}`): this attempt's (`attemptKills`). */
   runKills(): number;
+  /** The map's meter count now (for `{evacuated}`): refugees evacuated (`stats.evacuated`). */
+  evacuated(): number;
   /**
    * A resumed run's replay (`Host.replaying`; app/checkpoints.ts): barks are still picked, so
    * their spacing and once-limits count what the replayed attempt heard, but nothing plays.
@@ -324,7 +326,8 @@ function textContext(): TextContext {
   return {
     profile: save?.profile ?? null,
     pestsProcessed: (save?.stats.pestsProcessed ?? 0) + (session?.runKills() ?? 0),
-    evacuated: null,
+    // The current map's meter count; outside a battle, null (it reads 0).
+    evacuated: session?.evacuated() ?? null,
   };
 }
 
@@ -1058,6 +1061,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     present: presentSpeakers(mapDef),
     simSec: () => sim.state.tick / TICK_HZ,
     runKills: () => attemptKills(host),
+    evacuated: () => sim.state.stats.evacuated,
     replaying: () => host.replaying,
     pool: map === null ? [] : barksFor(map),
     barks: newBarkState(sim.config.seed),

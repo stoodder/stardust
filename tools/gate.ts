@@ -11,10 +11,10 @@ import { performance } from 'node:perf_hooks';
 const GATE_BUDGET: readonly (readonly [step: string, budgetSec: number])[] = [
   ['typecheck', 10],
   ['lint', 25],
-  ['test', 100],
+  ['test', 60],
   ['build', 15],
-  ['sim', 30],
-  ['smoke', 235],
+  ['sim', 40],
+  ['smoke', 325],
   ['check:docs', 5],
 ];
 /** The whole gate's budget: the sum of the shares. */

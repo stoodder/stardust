@@ -36,11 +36,13 @@ import { fracture_shard } from '../../content/enemies/fracture_shard.ts';
 import { gerald } from '../../content/enemies/gerald.ts';
 import { glass_witch } from '../../content/enemies/glass_witch.ts';
 import { glimmer } from '../../content/enemies/glimmer.ts';
+import { glimmer_shard } from '../../content/enemies/glimmer_shard.ts';
 import { lightwing } from '../../content/enemies/lightwing.ts';
 import { mote } from '../../content/enemies/mote.ts';
 import { nibbler } from '../../content/enemies/nibbler.ts';
 import { puffwing } from '../../content/enemies/puffwing.ts';
 import { riftmoth } from '../../content/enemies/riftmoth.ts';
+import { sunderglass_penitent } from '../../content/enemies/sunderglass_penitent.ts';
 import { veilwalker } from '../../content/enemies/veilwalker.ts';
 import { weft_warden } from '../../content/enemies/weft_warden.ts';
 import { conductive } from '../../content/links/conductive.ts';
@@ -165,6 +167,15 @@ const devGlassWitch = defineEnemy({
   shield: { hp: 200, regenPerSec: 30, regenDelaySec: 4 },
 });
 
+// dev_penitent's (T506): the Sunderglass Penitent on under a quarter of its HP and a sixth of its
+// shield, its phases, pulse, shards, re-form, and pivot to the Ward unchanged.
+const devPenitent = defineEnemy({
+  ...sunderglass_penitent,
+  id: 'dev_penitent',
+  hp: 800,
+  shield: { hp: 400, regenPerSec: 40, regenDelaySec: 4 },
+});
+
 const devStrike = defineAbility({
   id: 'dev_strike',
   name: 'Dev Strike',
@@ -215,6 +226,9 @@ const DEV_ENTITIES = {
     fracture,
     fracture_shard,
     riftmoth,
+    // dev_penitent's (T506): the short Penitent and its real shards.
+    dev_penitent: devPenitent,
+    glimmer_shard,
   }),
   // Bricks's real Suppressing Fire, so slot 2, its aiming, and its sounds run here (T207b), and
   // QUILL's Time Dilation for dev_sky (T312a).
@@ -1248,6 +1262,121 @@ export const escortMap = dev.defineMap({
   },
 });
 
+// dev_dark (T505; planned in devM5.ts, defined here so DEV_CONTENT can register it without an import
+// cycle): dev_act2 at Sundown in two waves, half dark as W1 starts and full dark as W2 does, with
+// two lamps (one on the west road's bend, one by the merge; LAMP_RADIUS_TILES). Rivets inside the
+// bend's lamp and out in the dark, a Prism on the high ground and a Rivet beside it that only the
+// Prism's beam lights. The darkness smoke (smoke/darkness.spec.ts) checks render's dark against
+// the sim's and the lit Rivet's full range.
+export const darkMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_dark',
+  lighting: [
+    { wave: 1, env: 'act2.dusk', dark: 0.5 },
+    { wave: 2, env: 'act2.dusk', dark: 1 },
+  ],
+  markers: { lamp_bend: [9, 4], lamp_merge: [16, 6] },
+  lights: [{ marker: 'lamp_bend' }, { marker: 'lamp_merge' }],
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'dev_nibbler', count: 8, route: 'a' }] },
+    { countdownSec: 10, groups: [{ enemy: 'dev_nibbler', count: 10, route: 'b' }] },
+  ]),
+  referenceProfile: {
+    towers: ['rivet', 'prism'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['rivet', 'prism'],
+    steps: [
+      // Inside the bend's lamp, out in the dark, and by the Prism on the high ground.
+      { wave: 1, build: 'rivet', tile: [8, 4] },
+      { wave: 1, build: 'rivet', tile: [3, 6] },
+      { wave: 1, build: 'prism', tile: [13, 4] },
+      { wave: 1, build: 'rivet', tile: [14, 4] },
+    ],
+  },
+  noCounterBuilds: {},
+});
+
+// dev_penitent (T506): A2M5's shape in six waves on dev_act2. W1–W4 send a Glimmer each down the
+// north road; W5 the short Penitent (its shield wall and pulse, then, once the shield breaks, 3
+// cloaked Glimmer-shards that re-form it 4 s later while any lives); W6 (25 s after) the Hollow
+// surge, Motes behind the refugees on the north road and down the south-west road. The pivot comes
+// at the Penitent's 50% or as W6 starts, whichever is first (D137): the Aelari stand down, the
+// Penitent kneels where it stands and becomes the Ward (Hollow within 2.5 tiles Chilled 40%), the
+// map becomes an Escort (the gate, the core tile, is the safe exit), and one group of 4 refugees
+// walks the north road past the Ward. Par: a Lookout over the bend (the shards) and Zapcoils
+// along the north road force the pivot in W5 (Kneel). sim tests: devPenitent.test.ts; the smoke
+// flow: smoke/penitent.spec.ts. `?map=dev_penitent`.
+const PIVOT_ACTIONS = [
+  { setObjective: 'escort', meterLabel: 'evacuated' },
+  { spawnAllies: 'first' },
+] as const;
+
+export const penitentMap = dev.defineMap({
+  ...act2Layout,
+  id: 'dev_penitent',
+  env: 'act2.dusk',
+  startCredits: 1000,
+  maxLost: 4,
+  markers: { gate: [17, 10] },
+  safeExit: 'gate',
+  refugees: { first: { route: 'a', count: 4 } },
+  threatIntel: ['shielded', 'boss', 'clustered'],
+  requiredCounters: ['shield', 'splash'],
+  waves: dev.defineWaves([
+    { groups: [{ enemy: 'glimmer', count: 1, route: 'a' }] },
+    { countdownSec: 5, groups: [{ enemy: 'glimmer', count: 1, route: 'a' }] },
+    { countdownSec: 5, groups: [{ enemy: 'glimmer', count: 1, route: 'a' }] },
+    { countdownSec: 5, groups: [{ enemy: 'glimmer', count: 1, route: 'a' }] },
+    { countdownSec: 5, groups: [{ enemy: 'dev_penitent', count: 1, route: 'a' }] },
+    {
+      countdownSec: 25,
+      groups: [
+        { enemy: 'mote', count: 4, route: 'a', delaySec: 8, intervalSec: 0.5 },
+        { enemy: 'mote', count: 4, route: 'b', delaySec: 2, intervalSec: 0.5 },
+      ],
+    },
+  ]),
+  events: [
+    // Whichever comes first (D137): the Penitent broken to 50% (its own `pivot` ending)...
+    { id: 'pivot_hp', on: { bossHpPct: 0.5 }, actions: PIVOT_ACTIONS },
+    // ...or the surge wave starting, which forces the pivot if it hasn't happened.
+    {
+      id: 'pivot_surge',
+      on: { wave: 6, phase: 'start' },
+      when: { stat: 'pivotWave', lte: 0 },
+      actions: [{ bossEnd: 'pivot' }, ...PIVOT_ACTIONS],
+    },
+  ],
+  referenceProfile: {
+    towers: ['lookout', 'zapcoil'],
+    specs: [],
+    shop: {},
+    protocols: [],
+    technicianAbility: 'dev_strike',
+  },
+  parBuild: {
+    loadout: ['lookout', 'zapcoil'],
+    steps: [
+      { wave: 1, build: 'lookout', tile: [8, 4] },
+      { wave: 1, build: 'zapcoil', tile: [5, 4] },
+      { wave: 1, build: 'zapcoil', tile: [10, 3] },
+      { wave: 1, build: 'zapcoil', tile: [12, 3] },
+      { wave: 1, build: 'zapcoil', tile: [4, 2] },
+      { wave: 1, build: 'zapcoil', tile: [13, 1] },
+      { wave: 1, build: 'zapcoil', tile: [14, 4] },
+    ],
+  },
+  noCounterBuilds: {
+    shield: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [8, 4] }] },
+    splash: { loadout: ['lookout'], steps: [{ wave: 1, build: 'lookout', tile: [8, 4] }] },
+  },
+});
+
 /** The dev battle's raw content (compile it with compileContent). */
 export const DEV_CONTENT: RawContent<DevIds> = {
   ...DEV_ENTITIES,
@@ -1269,6 +1398,8 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_aura: auraMap,
     dev_rift: riftMap,
     dev_prism: prismMap, // T504 (devPrism.ts)
+    dev_penitent: penitentMap, // T506
+    dev_dark: darkMap, // T505
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).

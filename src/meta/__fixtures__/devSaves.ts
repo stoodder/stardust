@@ -24,13 +24,7 @@ import { withFirstPaydayCaughtUp } from '../runEnd.ts';
 import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
-import {
-  Q3_BONUS_GRANT,
-  STORY_TRANSACTION_RULES,
-  c2Windfall,
-  ZIBZAB_TUNE_UP,
-  giftGrantId,
-} from '../storyTransactions.ts';
+import { grantGift, grantQ3Bonus, resolveC2 } from '../storyTransactions.ts';
 
 export type DevSaveId =
   | 'fresh'
@@ -206,31 +200,19 @@ const ACT_TWO_PREP: Readonly<Record<ActTwoMap, readonly PurchaseItem[]>> = {
 type C2Branch = 'returned' | 'sold';
 
 /**
- * A2M4's Results as the story transactions leave them (meta/storyTransactions.ts; T510 builds the
- * transactions, so this applies their documented effects directly): the Q3 Bonus paid and
- * recorded, then C2 for the whole bank: Return empties it; Sell empties it for the Intel windfall
- * and the Zibzab Tune-up. `stardust_choice` records the branch.
+ * A2M4's Results as the story transactions leave them (meta/storyTransactions.ts): the Q3 Bonus
+ * paid and recorded (run end's step 6), then C2 for the whole bank (`resolveC2`: Return empties
+ * it; Sell empties it for the Intel windfall and the Zibzab Tune-up), `stardust_choice` recording
+ * the branch.
  */
 export function afterA2M4Results(save: SaveData, c2: C2Branch): SaveData {
-  save.currencies.stardust += STORY_TRANSACTION_RULES.q3BonusStardust;
-  save.story.granted.push(Q3_BONUS_GRANT);
-  const bank = save.currencies.stardust;
-  save.currencies.stardust = 0;
-  save.story.flags.stardust_choice = c2;
-  if (c2 === 'sold') {
-    save.currencies.intel += c2Windfall(bank);
-    save.upgrades[ZIBZAB_TUNE_UP] = 1;
-  }
-  return save;
+  return resolveC2(grantQ3Bonus(save).save, c2).save;
 }
 
-/** A2M5's debrief gift (act2.md § A2M5: Ves'thara gives the Prism Spire), once registered. */
+/** A2M5's debrief gift (act2.md § A2M5: Ves'thara gives the Prism Spire; `grantGift`). */
 export function afterA2M5Results(save: SaveData): SaveData {
   const prism = knownTower('prism');
-  if (prism === undefined) return save;
-  if (!save.unlocks.towers.includes(prism)) save.unlocks.towers.push(prism);
-  save.story.granted.push(giftGrantId(prism));
-  return save;
+  return prism === undefined ? save : grantGift(save, prism).save;
 }
 
 /**

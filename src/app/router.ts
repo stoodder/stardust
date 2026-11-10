@@ -47,6 +47,8 @@ import {
   type RunEndInput,
 } from './runResult.ts';
 import { flowScenes, playInOrder, setAfterResults } from './runFlow.ts';
+import { withResultsChoice } from './resultsFlow.ts';
+import { escortAtEnd } from './resultsStory.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 
 /** The campaign screen's notice when a checkpoint retry couldn't replay to its checkpoint. */
@@ -351,6 +353,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       ...(sim.map.asset === null
         ? {}
         : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
+      ...escortAtEnd(sim),
       // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
       skitterkinKilled: attemptKills(b.host),
       wavesCleared,
@@ -466,11 +469,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       if (battle === null) return Promise.reject(new Error('router: no battle to end'));
       if (ended) return Promise.resolve();
       const input = recordEnd(battle, outcome);
-      // The debrief reads the save as the run left it (its flags, seen list, and profile).
-      const result = runResultOf(
-        { ...input.input, ...debriefStoryOf(activeSave()) },
+      // The debrief reads the save as the run left it (its flags, seen list, and profile), and
+      // offers its story choice (C2) before its own effects are applied (app/resultsFlow.ts).
+      const story = { ...input.input, ...debriefStoryOf(activeSave()) };
+      const result = withResultsChoice(
+        runResultOf(story, outcome, input.summary),
+        story,
         outcome,
-        input.summary,
+        activeSave(),
       );
       // Then a won debrief's effects reach the save (A2M2's Thorn), and the scenes around Results
       // read this run (T413).

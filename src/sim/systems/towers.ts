@@ -26,7 +26,9 @@
 // A tower picks a fresh target when it's ready to fire, and otherwise keeps its current one while
 // it stays valid (performance rule 6), so `targetUid` (render aims with it) is always current.
 // Stats: damage, rate, and range go through the stacking formula with the tower's bonuses
-// (sim/bonuses.ts; the links system sums them), and a link's conditional `vsStatus` bonus is
+// (sim/bonuses.ts; the links system sums them), range then × (1 − `darkRangePct`) for a tower
+// the darkness reaches (Sundown, sim/darkness.ts; set after the towers act, so a tick fires at
+// the light the frame before showed), and a link's conditional `vsStatus` bonus is
 // checked per victim: on the hit for hitscan and pulses, on impact for shells. Resonance's
 // `vsShieldPct` (T504) joins it the same way against a unit whose shield is up, in `damageOn`
 // (the Zapcoil's and the Prism's attacks; no shell reads it).
@@ -614,11 +616,12 @@ function pulseBurst(
 }
 
 /**
- * The tower's range as targeting reads it: the attack's own fields when no range bonus applies,
- * else the bonus range in the tick's scratch (minimum range never changes).
+ * The tower's range as targeting reads it: the attack's own fields when no range bonus or
+ * darkness (Sundown, T505: `darkRangePct`) applies, else the bonus range in the tick's scratch
+ * (minimum range never changes).
  */
 export function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec {
-  if (t.flatRange === 0 && t.pctRange === 0) return attack;
+  if (t.flatRange === 0 && t.pctRange === 0 && t.darkRangePct === 0) return attack;
   const r = bonusRangeTiles(attack, t);
   const out = ctx.scratch.range;
   out.rangeSq = r * r;

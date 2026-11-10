@@ -21,6 +21,7 @@ export type TowerBonuses = Readonly<
     | 'pctRange'
     | 'vsStatusMask'
     | 'vsStatusPct'
+    | 'darkRangePct'
   >
 >;
 
@@ -34,6 +35,7 @@ export const NO_BONUSES: TowerBonuses = Object.freeze({
   pctRange: 0,
   vsStatusMask: 0,
   vsStatusPct: 0,
+  darkRangePct: 0,
 });
 
 type AttackStats = Pick<CompiledAttack, 'damage' | 'cooldownTicks' | 'rangeTiles'>;
@@ -51,9 +53,13 @@ export function bonusDamageVs(attack: AttackStats, b: TowerBonuses): number {
   return stackedStat('damage', attack.damage, b.flatDamage, b.pctDamage + b.vsStatusPct);
 }
 
-/** Reach in tiles (a pulse's radius). Minimum range never changes. */
+/**
+ * Reach in tiles (a pulse's radius). Minimum range never changes. Sundown's darkness (T505;
+ * sim/darkness.ts) multiplies it after the stacking formula, outside the cap: × (1 − darkRangePct).
+ */
 export function bonusRangeTiles(attack: AttackStats, b: TowerBonuses): number {
-  return stackedStat('range', attack.rangeTiles, b.flatRange, b.pctRange);
+  const r = stackedStat('range', attack.rangeTiles, b.flatRange, b.pctRange);
+  return b.darkRangePct === 0 ? r : r * (1 - b.darkRangePct);
 }
 
 /**

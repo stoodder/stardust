@@ -127,6 +127,11 @@ export interface Tower extends PoolEntity {
   linkMarkPct: number;
   /** Inside a light source this tick (Sundown; T505), so its range ignores the darkness. */
   lit: boolean;
+  /**
+   * Range lost to the darkness, a fraction (Sundown; T505): DARK_RANGE_PENALTY × `state.dark`
+   * while unlit, else 0. Set by the darkness system each tick; bonusRangeTiles applies it.
+   */
+  darkRangePct: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -176,6 +181,7 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkRampPct: 0,
   linkMarkPct: 0,
   lit: true,
+  darkRangePct: 0,
 });
 
 export interface Enemy extends PoolEntity {

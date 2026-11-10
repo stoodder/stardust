@@ -22,6 +22,7 @@ import { checkId, entriesOf, periodTicks, ticks, type Ctx, type Refs } from './c
 import {
   DEFAULT_CORE_INTEGRITY,
   DEFAULT_COUNTDOWN_SEC,
+  LAMP_RADIUS_TILES,
   REFUGEE_GROUP_SIZE,
   REFUGEE_SPACING_TILES,
   REFUGEE_SPEED_TILES_PER_SEC,
@@ -195,7 +196,7 @@ function compileAsset(
   };
 }
 
-/** Lamps (MapDef.lights; T505): each marker resolved to its tile centre. */
+/** Lamps (MapDef.lights; T505): each marker resolved to its tile centre, its radius filled in. */
 function compileLights(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledLight[] {
   const out: CompiledLight[] = [];
   for (const [i, l] of (def.lights ?? []).entries()) {
@@ -204,13 +205,8 @@ function compileLights(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledL
       ctx.errors.push(`${where}.lights[${i}].marker: unknown marker '${l.marker}'`);
       continue;
     }
-    out.push({
-      marker: l.marker,
-      x: tile[0] + 0.5,
-      y: tile[1] + 0.5,
-      radiusTiles: l.radiusTiles,
-      radiusSq: l.radiusTiles * l.radiusTiles,
-    });
+    const r = l.radiusTiles ?? LAMP_RADIUS_TILES;
+    out.push({ marker: l.marker, x: tile[0] + 0.5, y: tile[1] + 0.5, radiusTiles: r, radiusSq: r * r });
   }
   return out;
 }

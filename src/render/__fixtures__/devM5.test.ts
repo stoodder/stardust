@@ -1,6 +1,5 @@
-// M5's dev maps (devM5.ts; T500a): they compile and validate on dev_act2's layout, and createSim
-// refuses each until the task that runs it (T305c's Escort, T505's darkness), which then registers
-// it in DEV_CONTENT (dev_escort since T305c).
+// M5's dev maps (devM5.ts; T500a): they compile and validate on dev_act2's layout, and each task
+// that runs one registers it in DEV_CONTENT (dev_escort since T305c, dev_dark since T505).
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -37,16 +36,17 @@ describe('the M5 dev maps', () => {
     expect(() => createSim(config('dev_escort'))).not.toThrow(); // T305c
   });
 
-  it('dev_dark: half dark, then full dark, with two lamps', () => {
+  it('dev_dark: half dark, then full dark, with two lamps of the rule radius', () => {
     expect(maps.dev_dark?.lighting.map((k) => k.dark)).toEqual([0.5, 1]);
-    expect(maps.dev_dark?.lights.map((l) => l.marker)).toEqual(['lamp_bend', 'lamp_merge']);
-    expect(() => createSim(config('dev_dark'))).toThrow(
-      /Sundown's darkness is not simulated until T505/,
-    );
+    expect(maps.dev_dark?.lights.map((l) => [l.marker, l.radiusTiles])).toEqual([
+      ['lamp_bend', 1.5],
+      ['lamp_merge', 1.5],
+    ]);
+    expect(() => createSim(config('dev_dark'))).not.toThrow(); // T505
   });
 
   it('are in DEV_CONTENT once their task lands (the battle smoke boots every registered dev map)', () => {
     expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_escort')).toBe(true); // T305c
-    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_dark')).toBe(false);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_dark')).toBe(true); // T505
   });
 });

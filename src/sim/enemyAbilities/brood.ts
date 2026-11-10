@@ -34,13 +34,17 @@ export function broodDef(ctx: TickContext, id: string): CompiledEnemyDef {
   return base;
 }
 
-/** Spawns `count` of enemy `id` on the parent's route, in its wave (EnemySpawned for each). */
+/**
+ * Spawns `count` of enemy `id` on the parent's route, in its wave (EnemySpawned for each), each
+ * with `ownerUid` (a boss's shards name the boss: shieldBroken.ts; 0 for none).
+ */
 export function spawnBrood(
   state: SimState,
   ctx: TickContext,
   id: string,
   count: number,
   parent: BroodParent,
+  ownerUid = 0,
 ): void {
   const route = parent.route;
   if (route === null || count <= 0) return;
@@ -54,6 +58,7 @@ export function spawnBrood(
     e.hp = def.hp;
     e.shieldHp = def.shield === null ? 0 : def.shield.hp;
     e.spawnTick = state.tick;
+    e.ownerUid = ownerUid;
     const back = parent.dist - i * BROOD_SPREAD_TILES;
     placeOnRoute(e, route, back > 0 ? back : 0);
     if (parent.wave > 0) state.schedule.remaining[parent.wave - 1]!++; // wave ≤ waves.length

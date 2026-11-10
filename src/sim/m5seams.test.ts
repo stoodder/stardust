@@ -159,7 +159,8 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
       'map.escort': null,
       'enemy.boss.pivot': 'T506',
       'enemy.boss.shieldBroken': 'T506',
-      'map.darkness': 'T505',
+      // Sundown runs since T505 (darkness.test.ts).
+      'map.darkness': null,
       'status.unnerved': 'T507',
       'attack.echo': 'T507',
       'ability.stasisArea': 'T507',
@@ -195,14 +196,11 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     }
   });
 
-  it('refuse Sundown on the map (Escort runs since T305c)', () => {
-    // Escort runs since T305c (escort.test.ts).
+  it('refuse neither Escort nor Sundown on the map (T305c, T505)', () => {
+    // Escort runs since T305c (escort.test.ts), Sundown's darkness since T505 (darkness.test.ts).
     expect(gateRefusals(withMap({ objective: 'escort' }))).toEqual([]);
     const lighting = [{ wave: 1, env: 'act2.dusk' as const, dark: 0.4 }];
-    expect(gateRefusals(withMap({ lighting }))).toEqual([
-      "Sundown's darkness is not simulated until T505",
-    ]);
-    // A schedule with no darkness is the cosmetic crossfade (T410a).
+    expect(gateRefusals(withMap({ lighting }))).toEqual([]);
     expect(gateRefusals(withMap({ lighting: [{ ...lighting[0]!, dark: 0 }] }))).toEqual([]);
   });
 

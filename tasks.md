@@ -249,6 +249,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [ ] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
 - [ ] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
 - [ ] **T562** Corrosive Kiss's "Corroded enemies regenerate shields 50% slower" (towers.md; a listed `shield_aura` counter in enemies.md) isn't in the sim's shield regen: build it and decide whether it also halves the Cantor's aura.
+- [ ] **T563** A content check that a link's `vsShielded` bonus sits only on towers whose attacks read `damageOn` (shells and projectiles ignore it today; fine for the Zapcoil and the Prism).
 - [ ] **T561** Docs: *Built so far (M5)*, data pointers, enemies.md open question 4, maps.md §5.1–5.2, art-direction §7 and §10.
 
 Carry-overs from M4, folded in:

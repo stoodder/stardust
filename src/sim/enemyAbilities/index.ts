@@ -3,8 +3,9 @@
 // a huddle's pace, or a boss's haste applies to this tick's step. Four passes, each in ascending
 // slot order:
 // 1. Reset each live unit's per-tick ability state (`paceMul` 1, `huddleUid` 0).
-// 2. Each unit's own abilities: a leaving unit only leaves (leave.ts); otherwise burrow.ts (the
-//    Digger's dig cycle) and boss.ts (a boss's phase abilities: sneezes, burrows, haste). Act II
+// 2. Each unit's own abilities: a unit standing down only fades (pivot.ts; T506), a leaving unit
+//    only leaves (leave.ts); otherwise burrow.ts (the Digger's dig cycle) and boss.ts (a boss's
+//    phase abilities: sneezes, burrows, haste, a shield-broken phase's shards; T506). Act II
 //    (T400a seams): skittish.ts (a bolting fleeing unit's haste; T402), pulse.ts (shield pulses,
 //    a unit's or its boss phase's; T403), and blink.ts (a unit's or its boss phase's, holding it
 //    still through the tell; T404). M5: phase.ts (the Rift Moth's Phased cycle; T503). cloak.ts
@@ -27,6 +28,7 @@ import { huddleStep } from './huddle.ts';
 import { hushPass } from './hush.ts';
 import { leaveStep } from './leave.ts';
 import { phaseStep } from './phase.ts';
+import { standDownStep } from './pivot.ts';
 import { pulseStep } from './pulse.ts';
 import { shieldAuraPass } from './shieldAura.ts';
 import { skittishStep } from './skittish.ts';
@@ -53,6 +55,10 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
     const e = pool.items[i]!; // i < used (which a boss's young may grow) ≤ items.length
     const def = e.def;
     if (!e.alive || def === null) continue;
+    if (e.standDownTicks > 0) {
+      standDownStep(state, e); // standing down (pivot.ts): it fades where it stands
+      continue;
+    }
     if (e.leaving) {
       leaveStep(state, ctx, e);
       continue;

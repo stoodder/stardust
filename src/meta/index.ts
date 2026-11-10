@@ -133,6 +133,7 @@ export type {
 } from './storyTransactions.ts';
 export {
   Q3_BONUS_GRANT,
+  Q3_BONUS_MEMO,
   RUN_END_TRANSACTIONS,
   STORY_TRANSACTION_RULES,
   c2Windfall,
@@ -141,6 +142,7 @@ export {
   grantQ3Bonus,
   resolveC2,
   runEndTransactions,
+  ZIBZAB_TUNE_UP,
 } from './storyTransactions.ts';
 export {
   baseStoryContext,

@@ -52,6 +52,7 @@ import type { Bus } from '../../shared/bus.ts';
 import {
   abilityStats,
   clearTicksFor,
+  hasDarkness,
   isBuildableTile,
   liveTileAt,
   tileElevation,
@@ -95,6 +96,7 @@ import { presentationOfMap } from '../../story/presentation.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
+import { DarknessView } from '../views/DarknessView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HarpoonView } from '../views/HarpoonView.ts';
@@ -202,6 +204,8 @@ export class BattleScene extends Phaser.Scene {
   #plinks!: PlinkFx;
   #fieldTint!: FieldTintView;
   #lighting!: LightingView;
+  /** Sundown's darkness overlay, from the sim's `state.dark` and light sources (T505). */
+  #darkness!: DarknessView;
   /** Scanner Sweep's circle while its reveal zone lives (T406). */
   #sweeps!: SweepView;
   #wreckage!: WreckageView;
@@ -347,6 +351,7 @@ export class BattleScene extends Phaser.Scene {
     this.#plinks = new PlinkFx(ctx, this.#fx);
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
     this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
+    this.#darkness = new DarknessView(ctx, { lights: map.lights, dark: hasDarkness(map) });
     this.#sweeps = new SweepView(ctx, this.#fx);
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
@@ -497,6 +502,7 @@ export class BattleScene extends Phaser.Scene {
       this.#plinks.reset();
       this.#fieldTint.reset();
       this.#lighting.reset();
+      this.#darkness.reset();
       this.#sweeps.reset();
       this.#wreckage.reset();
       this.#tidybots.reset();
@@ -534,6 +540,7 @@ export class BattleScene extends Phaser.Scene {
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     // After the wreckage, so a tile salvaged this frame is under the grade and tinted at once.
     this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
+    this.#darkness.update(state.dark, state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
@@ -665,6 +672,11 @@ export class BattleScene extends Phaser.Scene {
       keepClear: this.#keepClear.size,
       peekerRaised: this.#peeker?.raised === true,
       lighting: this.#lighting.look(),
+      darkness: {
+        dark: this.#darkness.dark,
+        lights: this.#darkness.lights,
+        ringDimmed: this.#placement.ringDimmed,
+      },
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,
       specs: {

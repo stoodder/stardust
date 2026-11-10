@@ -10,7 +10,9 @@ import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   costFor,
+  darkRangeMul,
   detectRadiusTiles,
+  isLitAt,
   liveTileAt,
   salvageFor,
   segmentSpan,
@@ -165,7 +167,14 @@ export class BattleHover {
       // A tower without an attack (the Lookout) shows its detection radius instead (T406).
       const t1 = armed.tiers[0];
       const range = t1.attack?.rangeTiles ?? t1.detect?.radiusTiles ?? 0;
-      placement.setRing(tile.col + 0.5, tile.row + 0.5, range, look.ghostValid);
+      // Sundown (T505): out of every light, the ring shrinks with the dark and dims.
+      const state = sim.state;
+      const lit =
+        state.dark === 0 ||
+        t1.attack === null ||
+        isLitAt(sim.map.lights, state.towers, tile.col + 0.5, tile.row + 0.5);
+      const mul = darkRangeMul(state.dark, lit);
+      placement.setRing(tile.col + 0.5, tile.row + 0.5, range * mul, look.ghostValid, !lit);
       this.#setHand(false);
       return;
     }
@@ -184,7 +193,9 @@ export class BattleHover {
       ringTower === null
         ? 0
         : (attack?.rangeTiles ?? detectRadiusTiles(ringTower, sim.config.modifiers));
-    placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range, true);
+    // Sundown (T505): a tower the darkness reaches shows its shortened range, dimmed.
+    const dark = attack === null ? 0 : (ringTower?.darkRangePct ?? 0);
+    placement.setRing(ringTower?.x ?? 0, ringTower?.y ?? 0, range * (1 - dark), true, dark > 0);
   }
 
   /** Puts the default cursor back (the scene is shutting down). */

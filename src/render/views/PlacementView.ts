@@ -21,6 +21,8 @@ import type { ViewContext } from './ViewContext.ts';
 
 /** Stepped alpha (art-direction §7): the ghost is 60%. */
 const GHOST_ALPHA = 0.6;
+/** A dimmed range ring's alpha: a tower outside every light at Sundown (T505). */
+export const RING_DIM_ALPHA = 0.45;
 /** The ghost's tile-bonus label sits this far above its ground point (px): over a tier-1 head. */
 const GHOST_LABEL_LIFT_PX = 30;
 /** The salvage label sits over the wreck's stake, in the clickable-object gold. */
@@ -56,6 +58,7 @@ export class PlacementView {
   #ghostLabelColor: ColorName | null = null;
   #hoverKey = '';
   #ringKey = '';
+  #ringDim = false;
   #ghostBaseId: string | null = null;
   #ghostHeadId: string | null = null;
   /** One `teal.3` highlight per buildable tile, for the onboarding pulse. */
@@ -110,6 +113,11 @@ export class PlacementView {
     if (z > 0) on.setDepth(raisedDepth(pos.y, z, row * 256 + col));
   }
 
+  /** The range ring shows dimmed (Sundown: its tower is in the dark; T505). */
+  get ringDimmed(): boolean {
+    return this.#ringDim && this.#ring.visible;
+  }
+
   /** The highlight under the selected tower's tile, or none (col < 0). */
   setSelectedTile(col: number, row: number): void {
     if (col < 0) {
@@ -125,8 +133,13 @@ export class PlacementView {
     this.#placeHighlight(this.#selected, this.#selectedRaised, col, row);
   }
 
-  /** One range ring centered on grid point (gx, gy), or none (radius ≤ 0). */
-  setRing(gx: number, gy: number, radiusTiles: number, valid: boolean): void {
+  /**
+   * One range ring centered on grid point (gx, gy), or none (radius ≤ 0); `dim` draws it at
+   * RING_DIM_ALPHA (a tower the darkness reaches, Sundown; T505).
+   */
+  setRing(gx: number, gy: number, radiusTiles: number, valid: boolean, dim = false): void {
+    this.#ringDim = dim && radiusTiles > 0;
+    this.#ring.setAlpha(this.#ringDim ? RING_DIM_ALPHA : 1);
     if (radiusTiles <= 0) {
       this.#ring.setVisible(false);
       return;

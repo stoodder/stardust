@@ -97,6 +97,15 @@ export {
 } from './bonuses.ts';
 export { isLinkActive, tileAndLinkRules } from './systems/links.ts';
 export {
+  DARK_EASE_TICKS,
+  darkRangeMul,
+  hasDarkness,
+  isLightSource,
+  isLitAt,
+  type LightTower,
+  type LightTowers,
+} from './darkness.ts';
+export {
   ANY_ENEMY,
   evaluateCondition,
   isMedalExempt,

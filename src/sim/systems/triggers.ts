@@ -7,9 +7,11 @@
 // click or by fallback; sim/clickables.ts), and `refugeesRemaining` (T305c: at most that many
 // refugees not yet safe or lost; sim/escort.ts), guarded by an optional `when` condition
 // (sim/conditions.ts), with the actions `unlockTowerClass` (what `towerUnlockWave` compiles to),
-// `cue`, `grantCredits`, `bossEnd` (`driveOff` or `retreat`: every live boss starts its ending now,
-// whatever its HP; enemyAbilities/bossPhases.ts), `setClickable` (T409), and the Escort's
-// `setObjective` and `spawnAllies` (T305c; sim/escort.ts). Before the events,
+// `cue`, `grantCredits`, `bossEnd` (`driveOff`, `retreat`, or `pivot`: every live boss starts that
+// ending now, whatever its HP; enemyAbilities/bossPhases.ts, pivot.ts), `standDown` (T506: every
+// live hostile unit of a faction stands down; enemyAbilities/pivot.ts), `setClickable` (T409), and
+// the Escort's `setObjective` and `spawnAllies` (T305c; sim/escort.ts). A pivot's event runs the
+// objective switch and the refugees beside it, in its action order. Before the events,
 // each clickable marker's fallback trigger is checked: reached, the sim interacts with it itself
 // (`byFallback`), so its `interacted` events fire on this same pass. createSim refuses a map that
 // uses anything else
@@ -33,6 +35,7 @@ import { evaluateCondition, wreckageClearedAt } from '../conditions.ts';
 import { earn } from '../economy.ts';
 import { refugeesRemaining, setObjective, spawnRefugees } from '../escort.ts';
 import { startBossEnding } from '../enemyAbilities/bossPhases.ts';
+import { standDown } from '../enemyAbilities/pivot.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 
@@ -117,12 +120,13 @@ export function runScriptAction(
     earn(state, action.grantCredits);
   } else if ('bossEnd' in action) {
     const how = action.bossEnd;
-    if (how === 'pivot') return; // refused by createSim (unsupportedScript)
     const pool = state.enemies;
     for (let i = 0; i < pool.used; i++) {
       const e = pool.items[i]!; // i < used ≤ items.length
       if (e.alive && e.def !== null && e.def.boss !== null) startBossEnding(state, e, how);
     }
+  } else if ('standDown' in action) {
+    standDown(state, action.standDown);
   } else if ('setClickable' in action) {
     const { marker, on, fallback } = action.setClickable;
     setClickable(state, marker, on, fallback);
@@ -136,7 +140,7 @@ export function runScriptAction(
 
 /**
  * The task that runs each map-script trigger and action the sim doesn't run yet (keyed by the
- * part's key; `bossEnd: 'pivot'` as `bossEnd.pivot`). Like FEATURE_GATES, each task deletes its
+ * part's key; every `bossEnd` runs since T506's pivot). Like FEATURE_GATES, each task deletes its
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
@@ -150,8 +154,6 @@ export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
   setLighting: 'M7',
   // The finale's Phase 2 checkpoint (T305b runs the wave checkpoints, not this action).
   checkpoint: 'M7',
-  standDown: 'T506',
-  'bossEnd.pivot': 'T506',
 });
 
 /** "not simulated yet", with the task that lifts it when SCRIPT_GATES names one. */
@@ -202,13 +204,12 @@ function unsupportedAction(a: CompiledScriptAction<IdSpace>, where: string, out:
     // Its fallback is a trigger like an event's (T409).
     const fallback = a.setClickable.fallback;
     if (fallback !== null) unsupportedTrigger(fallback, `${where}: setClickable fallback`, out);
-  } else if ('bossEnd' in a && a.bossEnd === 'pivot') {
-    out.push(`${where}: action bossEnd 'pivot' ${notYet('bossEnd.pivot')}`);
   } else if (
     !('unlockTowerClass' in a) &&
     !('cue' in a) &&
     !('grantCredits' in a) &&
     !('bossEnd' in a) &&
+    !('standDown' in a) &&
     !('setObjective' in a) &&
     !('spawnAllies' in a)
   ) {

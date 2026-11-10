@@ -10,12 +10,14 @@
 //   memos it delivers): A2M4's Q3 Bonus (+400 Stardust, so the bank is full when its debrief offers
 //   C2; `memo_a2_04` arrives with step 8), A2M5's gift of the Prism Spire. The table is
 //   `RUN_END_TRANSACTIONS`.
-// - **Results** (T510, the debrief's choice): C2, `resolveC2`. With an empty bank there is nothing
-//   to trade, `stardust_choice = none` (the debrief tests it with the `bank` condition).
+// - **Results** (the debrief's choice; app/resultsFlow.ts): C2, `resolveC2`. With an empty bank
+//   there is nothing to trade, `stardust_choice = none` (the debrief tests it with the `bank`
+//   condition).
 // - Later acts add `buyJailbreak`, `inheritAbility`, `resolveC4`, `revokeAbility`, and `openCrate`
 //   with their maps (meta-runtime.md lists them).
 import type { CampaignMapId } from '../content/campaign.ts';
 import type { FlagValueOf } from '../content/dialogue/flags.ts';
+import type { MemoId } from '../content/memos/types.ts';
 import type { MapId, TowerId, UpgradeId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
@@ -38,6 +40,12 @@ export const ZIBZAB_TUNE_UP: UpgradeId = 'tune_zibzab';
 
 /** The `story.granted` id the Q3 Bonus records (meta-runtime.md § Save system). */
 export const Q3_BONUS_GRANT = 'q3_bonus';
+
+/**
+ * The Q3 Bonus's memo, which arrives on A2M4's results card with it (core-loop.md § 6.4): step 8
+ * delivers it to the Inbox like any memo due, and Results shows it beside the +400.
+ */
+export const Q3_BONUS_MEMO: MemoId = 'memo_a2_04';
 
 /** The `story.granted` id a tower gift records: `gift_<tower>` (A2M5's `gift_prism`). */
 export function giftGrantId(tower: TowerId): string {

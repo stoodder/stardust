@@ -112,7 +112,7 @@ export const waves = defineWaves([
   // W7 · Veilwalkers + Glimmers [X: cloak]
   {
     countdownSec: COUNTDOWN,
-    groups: [veils(6, OPEN, 2.5), glimmers(12, OPEN + 12, 0.8), motes(40, OPEN + 22, PACKED)],
+    groups: [veils(6, OPEN, 2.5), glimmers(12, OPEN + 12, 0.8), motes(40, OPEN + 22, PACKED), motes(30, OPEN + 30, PACKED)],
   },
   // W8 · Lightwings over the vats + Wardens down the road, Veilwalkers in their shadow
   {
@@ -120,7 +120,7 @@ export const waves = defineWaves([
     groups: [
       wardens(4, OPEN, 3),
       veils(3, OPEN + 2, 4),
-      lightwings(5, OPEN + 12, 2),
+      lightwings(6, OPEN + 12, 2),
       motes(40, OPEN + 16, PACKED),
     ],
   },
@@ -151,7 +151,7 @@ export const waves = defineWaves([
       wardens(3, OPEN, 4),
       veils(8, OPEN + 6, 1.5),
       blinks(8, OPEN + 10, 1.5),
-      lightwings(6, OPEN + 16, 1.5),
+      lightwings(9, OPEN + 16, 1.5),
       glimmers(12, OPEN + 22),
       motes(50, OPEN + 30, PACKED, 'vats'),
     ],

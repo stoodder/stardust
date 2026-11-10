@@ -8,7 +8,9 @@
 // or Shift board) or Retry, with Change loadout beside Retry where the map offers the loadout
 // screen (T220), and after a loss with a checkpoint (Act II on) "Retry from wave N" first
 // (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
-// (app/runFlow.ts).
+// (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
+// A2M5's gift, C2's trade), an Escort's meter joins the stats (Evacuated), and a debrief's story
+// choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts).
 // Compact by design: everything fits 360 game px of height.
 import { campaignScreenName } from '../../app/starMap.ts';
 import { silkText } from '../silk.ts';
@@ -21,6 +23,7 @@ import {
   retryFromCheckpoint,
   retryRun,
 } from '../../app/navigation.ts';
+import { pickResultsChoice } from '../../app/resultsFlow.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
@@ -29,6 +32,8 @@ import {
   runResult,
   type MedalResult,
   type ObjectiveResult,
+  type ResultsChoice,
+  type ResultsTransaction,
   type RunResult,
   type RunRewards,
 } from './state.ts';
@@ -217,6 +222,66 @@ function ObjectiveRow({ objective: o }: { objective: ObjectiveResult }) {
 }
 
 /**
+ * A story transaction's payroll row (T510; progression.md § 2.1): the Q3 Bonus's Stardust, C2's
+ * trade, price first and never a verdict (Sell's Intel, Return's IOU). A gift and C2's `none`
+ * have no row: the gift is an aside, and with an empty bank there was nothing to trade.
+ */
+function TransactionRow({ t }: { t: ResultsTransaction }) {
+  switch (t.kind) {
+    case 'q3_bonus':
+      return (
+        <li data-testid="results-q3-bonus">
+          <span class="sd-results-pay-label">Q3 Performance Bonus</span>
+          <Amount n={t.stardust} currency="stardust" />
+        </li>
+      );
+    case 'c2':
+      if (t.choice === 'none') return null;
+      return (
+        <li data-testid="results-c2">
+          <span class="sd-results-pay-label">
+            {t.choice === 'sold' ? 'Sold at market' : 'Carried home'}
+            <span class="sd-results-pay-note"> · {formatCount(t.bank)} Stardust</span>
+          </span>
+          {t.choice === 'sold' ? (
+            <Amount n={t.intel} currency="intel" />
+          ) : (
+            <span class="sd-results-pay-note">Fee: an IOU</span>
+          )}
+        </li>
+      );
+    case 'gift':
+      return null;
+    default:
+      return assertNever(t);
+  }
+}
+
+/** The story's asides under the payroll: a gift, the Zibzab Tune-up, the memo on the card. */
+function StoryAsides({ rewards }: { rewards: RunRewards }) {
+  return (
+    <>
+      {rewards.transactions.map((t, i) =>
+        t.kind === 'gift' ? (
+          <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-gift">
+            Given: {silkText(t.tower)}
+          </p>
+        ) : t.kind === 'c2' && t.tuneUp !== null ? (
+          <p key={i} class="sd-results-pay-aside sd-results-issued" data-testid="results-tune-up">
+            {silkText(`${t.tuneUp.name}: ${t.tuneUp.line}`)}
+          </p>
+        ) : null,
+      )}
+      {rewards.memos.map((m) => (
+        <p key={m.id} class="sd-results-pay-aside sd-results-memo" data-testid="results-memo">
+          New memo: {silkText(m.subject)}
+        </p>
+      ))}
+    </>
+  );
+}
+
+/**
  * The payroll: the run's Stardust with where it came from, then (on a win) the map's medals, each
  * paying its Intel the first time it is earned.
  */
@@ -244,6 +309,9 @@ function Payroll({
           </span>
           <Amount n={rewards.stardust.amount} currency="stardust" />
         </li>
+        {rewards.transactions.map((t, i) => (
+          <TransactionRow key={i} t={t} />
+        ))}
       </ul>
       {rewards.stardustNote !== null && (
         <p class="sd-results-pay-aside">{silkText(rewards.stardustNote)}</p>
@@ -253,6 +321,7 @@ function Payroll({
           Issued for next shift: {silkText(rewards.issued.join(', '))}
         </p>
       )}
+      <StoryAsides rewards={rewards} />
       {rewards.saveNotice !== null && (
         <p class="sd-results-save-notice" role="alert">
           {silkText(rewards.saveNotice)}
@@ -330,6 +399,36 @@ function OnwardButton({ won }: { won: boolean }) {
   );
 }
 
+/**
+ * A debrief's story choice (C2; app/resultsFlow.ts), in the way on's place until answered: the
+ * stake first (price first: the whole bank), then the options as the debrief writes them, side by
+ * side and alike (neither is wrong), the first focused.
+ */
+function Choice({ choice }: { choice: ResultsChoice }) {
+  return (
+    <div
+      class="sd-results-buttons sd-results-choice"
+      role="group"
+      aria-label={choice.by === '' ? 'Your answer' : `${choice.by}'s offer`}
+    >
+      <p class="sd-results-stake">
+        The whole bank: <span class="sd-stardust">{formatCount(choice.bank)} Stardust</span>
+      </p>
+      {choice.options.map((text, i) => (
+        <button
+          key={i}
+          type="button"
+          class="sd-button"
+          ref={i === 0 ? focusOnce : null}
+          onClick={() => pickResultsChoice(i)}
+        >
+          {silkText(text)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** A story stamp (core-loop.md § 6.2): red, askew, over the headline's right. Never pays. */
 function Stamp({ text, index }: { text: string; index: number }) {
   return (
@@ -345,11 +444,15 @@ function Body({ result }: { result: RunResult }) {
   const { rewards } = result;
   const checkpoint = won ? null : result.retryFromWave;
   const header = resultsHeader(result.counter, result.outcome);
+  const { escort } = result;
   const counter = resultsCounter(
     result.counter,
     result.pestsProcessed,
     rewards?.lifetimePests ?? result.pestsProcessed,
+    // An Escort's meter line, where the dial shows one (Act III; core-loop.md § 6.2).
+    escort === null ? null : { kind: escort.kind, n: escort.evacuated },
   );
+  const asking = result.choice !== null && result.choice.picked === null;
   const counted = useCountUp(counter.n ?? 0);
   return (
     <section
@@ -372,12 +475,23 @@ function Body({ result }: { result: RunResult }) {
             {result.wavesSurvived} / {result.waveCount}
           </dd>
         </div>
-        <div>
-          <dt>Core integrity</dt>
-          <dd>
-            {result.integrity} / {result.maxIntegrity}
-          </dd>
-        </div>
+        {/* An Escort from the start has no core to defend: its meter stands in (T305c). */}
+        {escort?.fromStart !== true && (
+          <div>
+            <dt>Core integrity</dt>
+            <dd>
+              {result.integrity} / {result.maxIntegrity}
+            </dd>
+          </div>
+        )}
+        {escort !== null && (
+          <div data-testid="results-escort">
+            <dt>{escort.label}</dt>
+            <dd>
+              {escort.evacuated} / {escort.total}
+            </dd>
+          </div>
+        )}
         {result.asset !== null && (
           <div data-testid="results-asset">
             <dt>{result.asset.name}</dt>
@@ -397,39 +511,51 @@ function Body({ result }: { result: RunResult }) {
         <Payroll rewards={rewards} won={won} resumedFromWave={result.resumedFromWave} />
       )}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
-      <div class="sd-results-buttons">
-        {/* A loss with a checkpoint (Act II on): pick up where the run was, first and focused. */}
-        {checkpoint !== null && (
-          <button
-            type="button"
-            class="sd-button sd-button-primary"
-            ref={focusOnce}
-            onClick={retryFromCheckpoint}
-          >
-            Retry from wave {checkpoint}
-          </button>
-        )}
+      {asking && result.choice !== null && <Choice choice={result.choice} />}
+      {!asking && <WayOn result={result} won={won} checkpoint={checkpoint} />}
+    </section>
+  );
+}
+
+/** The way on from Results: Retry from a checkpoint, Retry, Change loadout, and Continue. */
+function WayOn({
+  result,
+  won,
+  checkpoint,
+}: {
+  result: RunResult;
+  won: boolean;
+  checkpoint: number | null;
+}) {
+  return (
+    <div class="sd-results-buttons">
+      {/* A loss with a checkpoint (Act II on): pick up where the run was, first and focused. */}
+      {checkpoint !== null && (
         <button
           type="button"
-          class={won || checkpoint !== null ? 'sd-button' : 'sd-button sd-button-primary'}
-          ref={won || checkpoint !== null ? null : focusOnce}
-          onClick={retryRun}
+          class="sd-button sd-button-primary"
+          ref={focusOnce}
+          onClick={retryFromCheckpoint}
         >
-          Retry
+          Retry from wave {checkpoint}
         </button>
-        {/* Before a retry, a different four (T220): only where the loadout screen is offered. */}
-        {campaign.value !== null && loadoutOfferedAfterRun(result.mapId) && (
-          <button
-            type="button"
-            class="sd-button"
-            onClick={() => changeLoadoutAfterRun(result.mapId)}
-          >
-            Change loadout
-          </button>
-        )}
-        <OnwardButton won={won} />
-      </div>
-    </section>
+      )}
+      <button
+        type="button"
+        class={won || checkpoint !== null ? 'sd-button' : 'sd-button sd-button-primary'}
+        ref={won || checkpoint !== null ? null : focusOnce}
+        onClick={retryRun}
+      >
+        Retry
+      </button>
+      {/* Before a retry, a different four (T220): only where the loadout screen is offered. */}
+      {campaign.value !== null && loadoutOfferedAfterRun(result.mapId) && (
+        <button type="button" class="sd-button" onClick={() => changeLoadoutAfterRun(result.mapId)}>
+          Change loadout
+        </button>
+      )}
+      <OnwardButton won={won} />
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@
 // owns the Crane, so it can't be an `altBuilds` entry.
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
-import type { BuildStep, GridPos } from '../../types.ts';
+import type { BuildStep, GridPos, ScriptedBuild } from '../../types.ts';
 
 /** The yard entrance, inside the road's turn down into the intake yard. */
 const YARD_N: GridPos = [4, 3];
@@ -52,15 +52,14 @@ function parSteps(): BuildStep[] {
     { wave: 6, build: 'rivet', tile: CORE_W },
     { wave: 6, build: 'zapcoil', tile: BEND },
     { wave: 7, upgrade: CATWALK_E },
-    { wave: 7, build: 'zapcoil', tile: VAT_E },
-    { wave: 8, ability: 2 }, // Clearance Sale: the next three purchases 40% off
-    { wave: 8, upgrade: YARD_S },
     { wave: 8, upgrade: CATWALK_E },
+    { wave: 8, upgrade: YARD_S },
     { wave: 8, upgrade: CORE_W },
     { wave: 9, specialize: CATWALK_E, spec: 'a' }, // Overload Coil
     { wave: 10, upgrade: BEND },
     { wave: 10, upgrade: HOPPER_N },
     { wave: 11, upgrade: INTAKE_W },
+    { wave: 12, build: 'zapcoil', tile: VAT_E },
   ];
 }
 
@@ -162,27 +161,29 @@ export const builds = defineBuilds({
         { wave: 4, build: 'zapcoil', tile: INTAKE_W },
         { wave: 5, upgrade: HOPPER_N },
         { wave: 5, upgrade: HOPPER_S },
-        { wave: 6, build: 'thumper', tile: CORE_W },
-        { wave: 6, build: 'zapcoil', tile: BEND },
+        { wave: 6, build: 'zapcoil', tile: CONDUIT },
+        { wave: 6, build: 'thumper', tile: ROW9_MID },
         { wave: 7, upgrade: CATWALK_E },
-        { wave: 7, build: 'zapcoil', tile: VAT_E },
+        { wave: 7, build: 'skyhook', tile: CORE_W },
         { wave: 8, ability: 2 }, // Clearance Sale
         { wave: 8, upgrade: YARD_S },
-        { wave: 8, upgrade: CATWALK_E },
-        { wave: 8, build: 'skyhook', tile: CATWALK_W },
-        { wave: 9, upgrade: VAT_E },
-        { wave: 10, upgrade: CORE_W },
-        { wave: 11, upgrade: INTAKE_W },
+        { wave: 8, upgrade: CONDUIT },
+        { wave: 8, upgrade: CORE_W },
+        { wave: 9, upgrade: CATWALK_E },
+        { wave: 9, specialize: CATWALK_E, spec: 'a' }, // Overload Coil
+        { wave: 10, build: 'skyhook', tile: BEND },
+        { wave: 11, upgrade: CONDUIT },
+        { wave: 11, upgrade: BEND },
       ],
     },
-    // Lookout, Zapcoil, Skyhook: Zapcoils chaining through the clusters and the shields round
-    // Intake B and under the vats, Skyhooks on the Lightwings over them.
-    coil_and_hook: {
-      loadout: ['lookout', 'zapcoil', 'skyhook'],
+    // Lookout, Zapcoil, Thumper: no Skyhook, so the Zapcoils under the vats take the Lightwings
+    // too; Thumpers on the clusters at the yard's entrance and under the vats.
+    coil_and_shell: {
+      loadout: ['lookout', 'zapcoil', 'thumper'],
       steps: [
         { wave: 1, build: 'zapcoil', tile: YARD_S },
         { wave: 1, build: 'zapcoil', tile: CATWALK_E },
-        { wave: 1, build: 'zapcoil', tile: YARD_N },
+        { wave: 1, build: 'thumper', tile: YARD_N },
         { wave: 1, clear: HOPPER_N },
         { wave: 1, clear: HOPPER_S },
         { wave: 2, build: 'lookout', tile: HOPPER_N },
@@ -191,21 +192,62 @@ export const builds = defineBuilds({
         { wave: 4, build: 'zapcoil', tile: INTAKE_W },
         { wave: 5, upgrade: HOPPER_N },
         { wave: 5, upgrade: HOPPER_S },
-        { wave: 6, build: 'zapcoil', tile: BEND },
-        { wave: 6, build: 'skyhook', tile: VAT_E },
+        { wave: 6, build: 'zapcoil', tile: CONDUIT },
+        { wave: 6, build: 'thumper', tile: ROW9_MID },
         { wave: 7, upgrade: CATWALK_E },
-        { wave: 7, build: 'skyhook', tile: CATWALK_W },
+        { wave: 7, build: 'zapcoil', tile: CORE_W },
         { wave: 8, ability: 2 }, // Clearance Sale
         { wave: 8, upgrade: YARD_S },
-        { wave: 8, upgrade: CATWALK_E },
-        { wave: 8, upgrade: VAT_E },
-        { wave: 9, upgrade: BEND },
-        { wave: 10, upgrade: CATWALK_W },
-        { wave: 11, upgrade: INTAKE_W },
+        { wave: 8, upgrade: CONDUIT },
+        { wave: 8, upgrade: CORE_W },
+        { wave: 9, upgrade: CATWALK_E },
+        { wave: 9, specialize: CATWALK_E, spec: 'a' }, // Overload Coil
+        { wave: 10, build: 'zapcoil', tile: BEND },
+        { wave: 11, upgrade: CONDUIT },
+        { wave: 11, upgrade: BEND },
       ],
     },
   },
 });
+
+/**
+ * The Crane alt (D137; T501c): Lookout, Zapcoil, Thumper, and a Salvage Crane by the intake
+ * hoppers, so the drone clears the south one at double speed for +25% salvage and the Crane pays
+ * every wave. The reference profile never owns the Crane (campaign.md § 4.9), so it isn't an
+ * `altBuilds` entry: balance/a2m4.test.ts runs it on the reference profile plus the Crane's
+ * license.
+ */
+export const CRANE_ALT: ScriptedBuild = {
+  loadout: ['lookout', 'zapcoil', 'thumper', 'crane'],
+  steps: [
+    { wave: 1, build: 'crane', tile: ROW9_W },
+    { wave: 1, build: 'zapcoil', tile: YARD_S },
+    { wave: 1, build: 'zapcoil', tile: CATWALK_E },
+    { wave: 1, clear: HOPPER_S },
+    { wave: 1, clear: HOPPER_N },
+    { wave: 2, build: 'lookout', tile: HOPPER_N },
+    { wave: 2, build: 'thumper', tile: YARD_N },
+    { wave: 3, build: 'zapcoil', tile: HOPPER_S },
+    { wave: 4, upgrade: YARD_S },
+    { wave: 4, build: 'zapcoil', tile: INTAKE_W },
+    { wave: 5, upgrade: HOPPER_N },
+    { wave: 5, upgrade: HOPPER_S },
+    { wave: 6, build: 'zapcoil', tile: CONDUIT },
+    { wave: 6, upgrade: ROW9_W },
+    { wave: 7, upgrade: CATWALK_E },
+    { wave: 7, build: 'thumper', tile: ROW9_MID },
+    { wave: 8, ability: 2 }, // Clearance Sale
+    { wave: 8, upgrade: YARD_S },
+    { wave: 8, upgrade: CONDUIT },
+    { wave: 8, build: 'zapcoil', tile: CORE_W },
+    { wave: 9, upgrade: CATWALK_E },
+    { wave: 9, specialize: CATWALK_E, spec: 'a' }, // Overload Coil
+    { wave: 10, upgrade: CORE_W },
+    { wave: 10, build: 'zapcoil', tile: BEND },
+    { wave: 11, upgrade: CONDUIT },
+    { wave: 11, upgrade: BEND },
+  ],
+};
 
 /** Tiles the balance test and the smoke name (the Crane alt's and the clicks'). */
 export const TILES = {

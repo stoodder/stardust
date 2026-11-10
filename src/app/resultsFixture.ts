@@ -1,7 +1,8 @@
 // The results fixture (`__sd.results`, `?test=1` only; T316): a finished run built from a few
 // facts instead of played, so the smoke flows and agents can see any map's Results and its flow
-// (A1M5's party → card → stinger, its CONTAINMENT LAPSE stamp) without playing ten waves. It reads
-// the save in play but never writes it: the payroll is what the run *would* pay.
+// (A1M5's party → card → stinger, its CONTAINMENT LAPSE stamp; A2M4's C2 offer) without playing
+// ten waves. It reads the save in play but never writes it: the payroll is what the run *would*
+// pay, and a story choice taken on its card changes nothing.
 import { SCENES, type Scene } from '../content/dialogue/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { MapId, WaveTag } from '../content/types.ts';
@@ -10,6 +11,7 @@ import type { FlagRuleStats } from '../story/flags.ts';
 import { DEV_SCENES } from '../ui/dialogue/dev.ts';
 import type { RunResult } from '../ui/screens/state.ts';
 import type { ResultsScenes } from './router.ts';
+import { withResultsChoice } from './resultsFlow.ts';
 import { flowScenes } from './runFlow.ts';
 import {
   debriefStoryOf,
@@ -90,9 +92,13 @@ function inputOf(f: ResultsFixture): RunEndInput {
 export function fixtureResult(f: ResultsFixture, save: SaveData | null): RunResult {
   const input = inputOf(f);
   const meta = metaRunEndOf(input, f.outcome);
-  const summary =
-    save === null || !isMapId(f.map) ? null : runEnd(save, { ...meta, mapId: f.map }).summary;
-  return runResultOf({ ...input, ...debriefStoryOf(save) }, f.outcome, summary);
+  const ended = save === null || !isMapId(f.map) ? null : runEnd(save, { ...meta, mapId: f.map });
+  // The debrief reads the save as this run would leave it (the Q3 Bonus banked before C2), and its
+  // story choice plays on a copy: nothing is written (app/resultsFlow.ts, `record` false).
+  const after = ended?.save ?? save;
+  const story = { ...input, ...debriefStoryOf(after) };
+  const result = runResultOf(story, f.outcome, ended?.summary ?? null);
+  return withResultsChoice(result, story, f.outcome, after, false);
 }
 
 /** A flow scene by id: registered, or a dev scene (`ui/dialogue/dev.ts`). */

@@ -31,6 +31,7 @@ describe('the system pipeline', () => {
       'movement',
       'detection',
       'towers',
+      'darkness',
       'allies',
       'projectiles',
       'cleanup',

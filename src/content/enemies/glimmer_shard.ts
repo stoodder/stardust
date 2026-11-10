@@ -1,10 +1,11 @@
 // Glimmer-shard (design/enemies.md § 6, the Sunderglass Penitent): one of the 3 cloaked shards the
-// Penitent releases when its shield breaks. They must be revealed and killed, or its shield
-// re-forms (D137: 4 s after it broke, unless all three are dead). Aelari, crystalline, cloaked.
-//
-// A stub registered ahead of its task (T500a): its numbers aren't in the docs, so T506 settles
-// them (here a Glimmer's body, no shield, at the Penitent's pace so the shards walk with it) and
-// whether a shard leaks. Sprites: placeholders under their final ids (T540a).
+// Penitent releases when its shield breaks (T506; enemyAbilities/shieldBroken.ts). While any shard
+// lives, the Penitent's shield re-forms 4 s after each break (D137), so they must be revealed and
+// killed. Aelari, crystalline, cloaked, never shielded (a Glimmer's 60 HP body without its own
+// shield). They walk at the Penitent's pace, so they stay round it and inside the detection that
+// covers it; a shard that leaks costs 1, and one killed pays 3 (half a Glimmer). Born only from
+// the boss (never in a wave group), they stand down with it at the pivot.
+// Sprites: placeholders under their final ids (T540a).
 import { defineEnemy } from '../define.ts';
 
 export const glimmer_shard = defineEnemy({
@@ -17,7 +18,7 @@ export const glimmer_shard = defineEnemy({
   armor: 0,
   speedTilesPerSec: 0.35,
   leak: 1,
-  bounty: 0,
+  bounty: 3,
   spawnIntervalSec: 0.5,
   traits: ['cloaked'],
   tells: ['stealth'],

@@ -49,6 +49,8 @@ describe('runResultOf', () => {
       rewards: null,
       resumedFromWave: null,
       retryFromWave: null,
+      escort: null,
+      choice: null,
     });
   });
 
@@ -150,6 +152,8 @@ describe('the run end and the rewards on the card', () => {
       firstPayday: false,
       issued: [],
       saveNotice: null,
+      transactions: [],
+      memos: [],
     });
   });
 

@@ -214,8 +214,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.split': null,
   'enemy.huddle': null,
   'enemy.boss': null,
-  'enemy.boss.pivot': 'T506',
-  'enemy.boss.shieldBroken': 'T506',
+  'enemy.boss.pivot': null,
+  'enemy.boss.shieldBroken': null,
   'enemy.boss.layToRest': 'M7',
   'enemy.hush': null,
   'enemy.skittish': null,
@@ -229,7 +229,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'map.revisit': null,
   'map.clickable': null,
   'map.escort': null,
-  'map.darkness': 'T505',
+  'map.darkness': null,
   'run.checkpoints': null,
 });
 

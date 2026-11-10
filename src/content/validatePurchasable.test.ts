@@ -215,7 +215,9 @@ describe('[purchasable]', () => {
       // A row owning a tower still ahead of its task is refused for it, and only for it.
       const ahead = { ...LIVE_PURCHASE_RULES, aheadOfTask: ['lookout'] };
       const refused = errorsOf(withActTwoRows(), ahead);
-      expect(refused).toHaveLength(3);
+      // One per Act II row (A2M1–A2M3 stand in; A2M4 on is live once registered).
+      const actTwo = new Set([...CAMPAIGN, 'a2_m01', 'a2_m02', 'a2_m03']);
+      expect(refused).toHaveLength([...actTwo].filter((id) => id.startsWith('a2_')).length);
       for (const e of refused) expect(e).toMatch(/towers: 'lookout' waits for its task/);
     });
 

@@ -67,7 +67,7 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
 
 /**
  * [darkness]: each lighting key's `dark` is in [0, 1]; each lamp (`lights`) names a marker of the
- * map, once, with a radius > 0; lamps go with a darkening schedule (they light nothing otherwise).
+ * map, once, with a radius > 0 when it gives one (LAMP_RADIUS_TILES by default); lamps go with a darkening schedule (they light nothing otherwise).
  */
 export function validateDarkness(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const bad = (w: string, msg: string): void => issues.add('darkness', w, msg);
@@ -81,7 +81,9 @@ export function validateDarkness(issues: Issues, def: MapDef<IdSpace>, where: st
   for (const [i, l] of lights.entries()) {
     const w = `${where}.lights[${i}]`;
     if (!Object.hasOwn(markers, l.marker)) bad(`${w}.marker`, `unknown marker '${l.marker}'`);
-    if (!isPositive(l.radiusTiles)) bad(`${w}.radiusTiles`, 'must be > 0');
+    if (l.radiusTiles !== undefined && !isPositive(l.radiusTiles)) {
+      bad(`${w}.radiusTiles`, 'must be > 0');
+    }
   }
   for (const m of duplicates(lights.map((l) => l.marker))) {
     bad(`${where}.lights`, `marker '${m}' has two lamps`);

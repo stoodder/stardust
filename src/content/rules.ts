@@ -591,3 +591,9 @@ export const REFUGEE_SPEED_TILES_PER_SEC = 0.7;
  * range × (1 − DARK_RANGE_PENALTY × d); −15% at full dark.
  */
 export const DARK_RANGE_PENALTY = 0.15;
+/**
+ * A lamp's light radius in tiles when its map gives none (MapDef.lights; T505): the lamp's tile
+ * and the eight round it (a tile centre is lit at a distance ≤ the radius), smaller than a beaming
+ * Prism Spire's 2.0, so the Spire is the light worth building for.
+ */
+export const LAMP_RADIUS_TILES = 1.5;

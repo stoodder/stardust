@@ -30,11 +30,13 @@ import type {
   MedalResult,
   ObjectiveResult,
   RunAsset,
+  RunEscort,
   RunResult,
   RunRewards,
 } from '../ui/screens/state.ts';
 import { setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
+import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
@@ -68,6 +70,11 @@ export interface RunEndInput {
   readonly integrity: number;
   /** A Protect map's asset meter at the end (T305a); absent on other maps. */
   readonly asset?: RunAsset;
+  /**
+   * The Escort meter at the end, when the map was an Escort as it ended (from the start or after
+   * a pivot; T305c); absent otherwise. Its Evacuated count is run end's meter and `{evacuated}`.
+   */
+  readonly escort?: RunEscort;
   readonly skitterkinKilled: number;
   /** `WaveCleared` events seen this run. */
   readonly wavesCleared: number;
@@ -127,7 +134,13 @@ export function debriefStoryOf(save: SaveData | null): { story?: DebriefStory } 
   const base = baseStoryContext(save);
   return {
     story: {
-      story: { flags: base.flags, pestsProcessed: base.pestsProcessed, seen: base.seen },
+      // The bank too: A2M4's debrief tests it for C2's `none` (after run end's Q3 Bonus).
+      story: {
+        flags: base.flags,
+        pestsProcessed: base.pestsProcessed,
+        seen: base.seen,
+        ...(base.bank === undefined ? {} : { bank: base.bank }),
+      },
       text: { profile: save.profile, pestsProcessed: base.pestsProcessed, evacuated: null },
     },
   };
@@ -137,6 +150,16 @@ const NO_STORY: DebriefStory = {
   story: { flags: {}, pestsProcessed: 0, seen: [] },
   text: { profile: null, pestsProcessed: 0, evacuated: null },
 };
+
+/**
+ * What the card's lines read: the save's story (none outside a campaign), with `{evacuated}` the
+ * run's Escort count (the map that just ended is "the current map"; null on other runs).
+ */
+export function debriefStory(input: Pick<RunEndInput, 'story' | 'escort'>): DebriefStory {
+  const story = input.story ?? NO_STORY;
+  const evacuated = input.escort?.evacuated ?? null;
+  return evacuated === null ? story : { ...story, text: { ...story.text, evacuated } };
+}
 
 /** One of a map's medals: its save id and the name the results card shows. */
 export interface MapMedal {
@@ -191,7 +214,8 @@ export function metaRunEndOf(
     ...(input.stats === undefined ? {} : { stats: input.stats }),
     ...(input.met === undefined ? {} : { met: input.met }),
     skitterkinKilled: input.skitterkinKilled,
-    meter: Math.max(0, input.integrity),
+    // The map's meter as it ended: an Escort's Evacuated count, else the core's integrity.
+    meter: Math.max(0, input.escort?.evacuated ?? input.integrity),
     ...(input.resumedFromWave === undefined || input.resumedFromWave === null
       ? {}
       : { usedCheckpoint: true, resumedFromWave: input.resumedFromWave }),
@@ -250,10 +274,12 @@ export function runRewardsOf(
     stardustNote: firstPayday ? note : null,
     firstPayday,
     saveNotice: summary.writeFailed ?? null,
+    ...storyRewardsOf(summary),
   };
 }
 
-function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLine {
+/** A line as the card shows it: its speaker's name plate and color, its tokens resolved. */
+export function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLine {
   const def = SPEAKER_DEFS[speaker];
   return { name: def.name, color: def.color, text: resolveText(text, story.text) };
 }
@@ -262,7 +288,7 @@ function spoken(speaker: SpeakerId, text: string, story: DebriefStory): SpokenLi
  * What the card's story reads: the save as the run left it, and the run itself (`outcome`, and
  * `thisRun` over its stats).
  */
-function runStoryContext(
+export function runStoryContext(
   map: CampaignMapId,
   input: Pick<RunEndInput, 'stats' | 'story'>,
   outcome: RunOutcome,
@@ -303,12 +329,12 @@ export function resultStamps(
  * choice isn't played yet; the first is A2M4's C2).
  */
 export function debriefLines(
-  input: Pick<RunEndInput, 'mapId' | 'firstLeakAgo' | 'stats' | 'story'>,
+  input: Pick<RunEndInput, 'mapId' | 'firstLeakAgo' | 'stats' | 'story' | 'escort'>,
   outcome: RunOutcome,
 ): SpokenLine[] {
   const map = input.mapId;
   if (!isCampaignMapId(map)) return [];
-  const story = input.story ?? NO_STORY;
+  const story = debriefStory(input);
   const ctx = runStoryContext(map, input, outcome);
   const ago = input.firstLeakAgo;
   const recent =
@@ -378,6 +404,9 @@ export function runResultOf(
     resumedFromWave: input.resumedFromWave ?? null,
     // "Retry from wave N" (core-loop.md § 2.12): a loss offers the run's latest checkpoint.
     retryFromWave: outcome === 'lost' ? (input.checkpointWave ?? null) : null,
+    escort: input.escort ?? null,
+    // The debrief's choice (C2) is app/resultsFlow.ts's `withResultsChoice`, over the save in play.
+    choice: null,
   };
 }
 

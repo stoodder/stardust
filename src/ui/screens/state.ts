@@ -48,6 +48,62 @@ export interface RunResult {
   readonly resumedFromWave: number | null;
   /** A loss's latest checkpoint wave: the card offers "Retry from wave N". Null: none. */
   readonly retryFromWave: number | null;
+  /**
+   * The run's Escort meter as it ended (the map was an Escort at the end: from the start, or
+   * after a pivot; T305c), or null on other runs. Results lists it beside (or, on an Escort from
+   * the start, in place of) Core integrity, and a `meter` counter shows its line.
+   */
+  readonly escort: RunEscort | null;
+  /**
+   * The debrief's story choice the card offers (C2 on A2M4's first win; app/resultsFlow.ts), or
+   * null. While it waits (`picked` null) the card's way on is the choice.
+   */
+  readonly choice: ResultsChoice | null;
+}
+
+/** An Escort's meter at the run's end ("Evacuated 9 / 12"). */
+export interface RunEscort {
+  /** The meter's kind and label ("Evacuated", "Sheltered"; the map's `meterLabel`). */
+  readonly kind: 'evacuated' | 'sheltered';
+  readonly label: string;
+  readonly evacuated: number;
+  /** The map's refugees (`escort.total`). */
+  readonly total: number;
+  readonly lost: number;
+  /** The map was an Escort from its start (no core to defend: Core integrity isn't listed). */
+  readonly fromStart: boolean;
+}
+
+/** A debrief's story choice on the card (C2: Zibzab's Price). */
+export interface ResultsChoice {
+  /** Who makes the offer, for the group's name ("Zibzab's offer"). */
+  readonly by: string;
+  /** Price first: the stake, the whole Stardust bank. */
+  readonly bank: number;
+  /** The options' text, as the debrief writes them (never previewing the payoff). */
+  readonly options: readonly string[];
+  /** The option taken, or null while the card waits. */
+  readonly picked: number | null;
+}
+
+/** A story transaction as the card shows it (meta/storyTransactions.ts `StoryTransaction`). */
+export type ResultsTransaction =
+  | { readonly kind: 'q3_bonus'; readonly stardust: number }
+  /** A tower the story gave (A2M5's Prism Spire), by its display name. */
+  | { readonly kind: 'gift'; readonly tower: string }
+  /** C2 as resolved: the bank it took, the Intel windfall, and the Zibzab Tune-up's name and line. */
+  | {
+      readonly kind: 'c2';
+      readonly choice: 'sold' | 'returned' | 'none';
+      readonly bank: number;
+      readonly intel: number;
+      readonly tuneUp: { readonly name: string; readonly line: string } | null;
+    };
+
+/** A memo that arrives on the results card (A2M4's Q3 Bonus memo): its id and subject. */
+export interface ResultsMemo {
+  readonly id: string;
+  readonly subject: string;
 }
 
 /** A Protect map's asset meter at the run's end: its name, what's left, and its full value. */
@@ -124,6 +180,13 @@ export interface RunRewards {
    * message says so in Records' voice.
    */
   readonly saveNotice: string | null;
+  /**
+   * The story transactions this run made (run end's step 6: the Q3 Bonus, a gift), then the
+   * debrief's choice once taken (C2), in order. Empty on most runs.
+   */
+  readonly transactions: readonly ResultsTransaction[];
+  /** Memos that arrive on the card itself (the Q3 Bonus's), in delivery order. Usually none. */
+  readonly memos: readonly ResultsMemo[];
 }
 
 /** The last finished run, or null before any run has ended. */

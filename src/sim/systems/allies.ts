@@ -17,9 +17,15 @@
 //   pace (`speedTilesPerTick`), first, in ascending slot order, and stands still while a Hollow
 //   unit's hush tell holds it (`hushUid`; enemyAbilities/hush.ts). One that reaches its route's
 //   end (the safe exit) is evacuated (sim/escort.ts `evacuate`) and leaves the map.
+// - **The Ward** (T506; a pivoted boss, enemyAbilities/pivot.ts spawns it): a `stationary` ally,
+//   group −1 (never a refugee), never hurt, with no attack. Each tick, before the attacks, every
+//   live Hollow unit (any layer) within its radius (`rangeSq`, centres, inclusive) that an ally
+//   can reach (not burrowed, Phased, leaving, or cloaked out: layers.ts `untargetable`) is Chilled
+//   `auraChillPct` for the next movement tick (combat/damage.ts `applyChill`: the strongest chill
+//   wins, a boss takes half), so the chill holds exactly while it stays inside (enemies.md § 6.1).
 import { ALLY_NEVER_TARGET_TAGS } from '../../content/rules.ts';
 import type { WaveTag } from '../../content/types.ts';
-import { applyDamage, PLAIN_HIT } from '../combat/damage.ts';
+import { applyChill, applyDamage, PLAIN_HIT } from '../combat/damage.ts';
 import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
 import { evacuate } from '../escort.ts';
@@ -37,6 +43,7 @@ const allySource: { kind: 'ally'; uid: number } = { kind: 'ally', uid: 0 };
 export function allies(state: SimState, ctx: TickContext): void {
   if (state.tick === 0) spawnPosts(state, ctx);
   walkRouteAllies(state);
+  wardAuras(state);
   const pool = state.allies;
   for (let i = 0; i < pool.used; i++) {
     const a = pool.items[i]!; // i < used ≤ items.length
@@ -81,6 +88,21 @@ function walkRouteAllies(state: SimState): void {
       evacuate(state, a);
     } else if (a.dist >= 0) {
       a.seg = pointAt(route, a.dist, a, a.seg);
+    }
+  }
+}
+
+/** Each Ward's chill over the Hollow units inside its radius (see the header). */
+export function wardAuras(state: SimState): void {
+  const pool = state.allies;
+  const enemies = state.enemies;
+  for (let i = 0; i < pool.used; i++) {
+    const a = pool.items[i]!; // i < used ≤ items.length
+    if (!a.alive || a.auraChillPct <= 0) continue;
+    for (let j = 0; j < enemies.used; j++) {
+      const e = enemies.items[j]!; // j < used ≤ items.length
+      if (!e.alive || e.def === null || e.def.faction !== 'hollow' || untargetable(e)) continue;
+      if (distSqTo(a.x, a.y, e) <= a.rangeSq) applyChill(e, a.auraChillPct, 1);
     }
   }
 }
