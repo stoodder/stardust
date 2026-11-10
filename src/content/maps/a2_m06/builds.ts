@@ -242,6 +242,5 @@ export const SUNLANCE_PROBE: ScriptedBuild = {
     { wave: 10, upgrade: MERGE_E },
     { wave: 11, specialize: TOWER, spec: 'b' }, // Sunlance
     { wave: 12, upgrade: SOUTH_MID },
-    STILL_W14,
   ],
 };
