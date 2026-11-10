@@ -75,15 +75,18 @@ test("a full-screen scene's history keeps a long speaker label on one line", asy
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a2_m06_scene_stinger'));
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toBeVisible();
-  const name = scene.locator('.dlg-history .dlg-name', { hasText: /Everglow PA/i });
-  for (let i = 0; i < 8 && (await name.count()) === 0; i++) {
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(150);
-  }
+  // The PA's line (after the opening silence), then Next: it joins the history above the caption.
+  await expect(scene.locator('.dlg-line .dlg-name', { hasText: /Everglow PA/i })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(scene).toContainText('(The jingle, once. Slower.)');
+  const row = scene.locator('.dlg-history .dlg-past', { hasText: /Everglow PA/i });
+  const name = row.locator('.dlg-name');
   await expect(name).toBeVisible();
   // One line, never two: no taller than its own line's words beside it ("Shift change.").
-  const words = scene.locator('.dlg-past', { has: name }).locator('.dlg-text');
-  const [nameBox, wordsBox] = [await name.boundingBox(), await words.boundingBox()];
+  const [nameBox, wordsBox] = [
+    await name.boundingBox(),
+    await row.locator('.dlg-text').boundingBox(),
+  ];
   expect(nameBox).not.toBeNull();
   expect(wordsBox).not.toBeNull();
   expect(nameBox!.height).toBeLessThanOrEqual(wordsBox!.height + 0.5);

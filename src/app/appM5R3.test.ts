@@ -90,6 +90,11 @@ const radio = defineScene('a1_m01_cue_radio_test', [
   { kind: 'line', speaker: 'bricks', text: 'Old news from wave two.' },
 ]);
 
+/** Runs the comms panel dry (well past every hold), on fake timers. */
+function drain(): void {
+  for (let i = 0; i < 40; i++) vi.advanceTimersByTime(5_000);
+}
+
 describe('no stale comms after a scene holds input (D139 S3)', () => {
   let unbind: () => void = noop;
   const seen: string[] = [];
@@ -116,11 +121,6 @@ describe('no stale comms after a scene holds input (D139 S3)', () => {
     vi.useRealTimers();
     screen.value = null;
   });
-
-  /** Runs the panel dry (well past every hold). */
-  const drain = (): void => {
-    for (let i = 0; i < 40; i++) vi.advanceTimersByTime(5_000);
-  };
 
   it('drops a scene already stale as the hold began; the line it cut goes on', () => {
     // The report's last line shows once the radio queued behind it has gone stale.
