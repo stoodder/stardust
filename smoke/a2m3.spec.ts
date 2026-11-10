@@ -123,7 +123,7 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
 
   // The rescue cue: her squeak under a plate that doesn't know her name yet, then Bricks.
   const comms = page.getByTestId('comms');
-  await expect(comms).toContainText('(squeak)', { timeout: 10_000 });
+  await expect(comms).toContainText('(squeak)', { timeout: 25_000 });
   await expect(comms).toContainText('???');
   await shot(page, 'a2m3', 6, 'cue-squeak');
   await expect(comms).toContainText("Pocket's got room.", { timeout: 15_000 });

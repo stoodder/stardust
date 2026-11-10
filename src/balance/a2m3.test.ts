@@ -53,7 +53,7 @@ describe('A2M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     // The rescue is par's own click, the tick after W5 starts (the fallback never fires).
     const click = par.steps.find((s) => s.kind === 'interact')!;
     expect(click.error).toBeNull();
-    expect(click.issuedTick! - par.waves[4]!.startTick).toBe(1);
+    expect(click.issuedTick - par.waves[4]!.startTick).toBe(1);
   });
 
   it('lets a player who spares every runner win, and only that player sets the flag', () => {
