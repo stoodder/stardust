@@ -85,8 +85,8 @@ export const waves = defineWaves([
     groups: [
       fractures('west', 1, OPEN, 3),
       fractures('east', 1, OPEN + 1.5, 3),
-      motes('west', 16, OPEN + 12, PACKED),
-      motes('east', 16, OPEN + 14, PACKED),
+      motes('west', 12, OPEN + 12, PACKED),
+      motes('east', 12, OPEN + 14, PACKED),
     ],
   },
   // W8 · Rift Moths + Fractures
@@ -97,7 +97,7 @@ export const waves = defineWaves([
   // W9 · a Rift Moth flock [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(12, OPEN, 0.5), motes('west', 16, OPEN + 8, PACKED)],
+    groups: [moths(12, OPEN, 0.5), motes('west', 30, OPEN + 8, PACKED)],
   },
   // W10 · big mixed
   {
@@ -148,7 +148,7 @@ export const waves = defineWaves([
       motes('east', 24, OPEN + 2, PACKED),
       fractures('west', 2, OPEN + 8, 1.5),
       fractures('east', 2, OPEN + 9, 1.5),
-      moths(22, OPEN + 12, 0.4),
+      moths(23, OPEN + 12, 0.4),
       motes('west', 24, OPEN + 22, PACKED),
       motes('east', 24, OPEN + 24, PACKED),
     ],

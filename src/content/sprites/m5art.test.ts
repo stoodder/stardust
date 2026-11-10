@@ -199,6 +199,16 @@ describe('the Sunderglass Penitent (T540b; art-direction §6)', () => {
 
 const TOWERS = ['prism', 'mindspike', 'lantern'] as const;
 
+/** A tower head's resting SE frame (the Lantern's idle first frame). */
+function se(t: string): [string, string] {
+  return t === 'lantern' ? [`tower.${t}_head`, 'glow_0'] : [`tower.${t}_head`, 'se'];
+}
+
+/** The share of a frame's sapphire that's lit glass. */
+function light(rows: readonly string[]): number {
+  return count(rows, '34') / count(rows, '01234');
+}
+
 describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
   it('stand on the floating Aelari dais: aelari palette, no Everglow logo or Vrell price tag', () => {
     for (const t of TOWERS) {
@@ -276,13 +286,10 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
   });
 
   it('read apart at 1×: three different heads', () => {
-    const se = (t: string): [string, string] =>
-      t === 'lantern' ? [`tower.${t}_head`, 'glow_0'] : [`tower.${t}_head`, 'se'];
     expect(unlike(se('prism'), se('mindspike'))).toBeGreaterThan(0.15);
     expect(unlike(se('prism'), se('lantern'))).toBeGreaterThan(0.35);
     expect(unlike(se('mindspike'), se('lantern'))).toBeGreaterThan(0.35);
     // The Prism is light glass, the Mindspike dark.
-    const light = (rows: readonly string[]): number => count(rows, '34') / count(rows, '01234');
     expect(light(grid('tower.prism_head', 'se'))).toBeGreaterThan(
       light(grid('tower.mindspike_head', 'se')) + 0.1,
     );

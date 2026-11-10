@@ -80,6 +80,8 @@ export interface RenderState {
    * began (T507, MindView).
    */
   readonly mind: { readonly unnerved: number; readonly echoes: number; readonly stills: number };
+  /** Marked units wearing an eye now, and those of them under Truthlight (T508, MarkView). */
+  readonly marks: { readonly marked: number; readonly truth: number };
   /** Debris pixels in flight (shards, motes, flecks). */
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */

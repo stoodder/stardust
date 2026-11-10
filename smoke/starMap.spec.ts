@@ -201,7 +201,7 @@ test('star map: after A1M5, the keyboard, Replay, and every way back', async ({ 
   await expect(page.getByTestId('star-notice')).toHaveCount(0);
 });
 
-test('star map: reduced motion holds still; after A2M4 the Long Walk teaser at dusk', async ({
+test('star map: reduced motion holds still; after A2M4 the Long Walk next up at dusk', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -224,17 +224,13 @@ test('star map: reduced motion holds still; after A2M4 the Long Walk teaser at d
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-phase', 'act2.dusk');
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-act', '2');
   await expect(node(page, 'Second Harvest')).toHaveAttribute('aria-current', 'location');
-  // The teaser: its tagline, the padlock, no Start; its node takes the focus.
-  const teaser = node(page, 'The Long Walk');
-  await expect(teaser).toBeFocused();
-  await expect(teaser).toHaveAccessibleName(
-    /\. Coming soon\. .*Then the Hollow comes for everyone on it\.$/,
-  );
+  // Built (T521), the frontier is next up, not a teaser: its node, with a Start; nothing past it
+  // shows.
+  const next = node(page, 'The Long Walk');
+  await expect(next).toHaveAccessibleName(/\. Next up\. /);
   const panel = page.getByRole('region', { name: 'The Long Walk' });
-  await expect(panel).toContainText('Coming soon');
-  await expect(panel).toContainText('Then the Hollow comes for everyone on it.');
-  await expect(panel.getByRole('button')).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: 'Start The Long Walk' })).toBeVisible();
   await expect(page.locator('body')).not.toContainText('Sundown');
   await nextFrames(page);
-  await shot(page, 'starmap', 3, 'after-a2m4-teaser');
+  await shot(page, 'starmap', 3, 'after-a2m4-next');
 });

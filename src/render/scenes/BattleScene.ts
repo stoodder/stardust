@@ -43,6 +43,8 @@
 // each ramps (BeamView).
 // M5 (T507): an Unnerved unit wears a wobbling violet squiggle overhead, an Echo Spike hit rings
 // out to its echo's radius, and Stillness leaves a pale blue disc where it froze (MindView).
+// M5 (T508): a Marked unit wears a pink eye beside its head, Truthlight's filled gold-and-white
+// while it can't evade (MarkView).
 // M4 (T410a): a map's lighting schedule crossfades the sky and a multiply grade as its waves start
 // (LightingView; cosmetic), and its dressing greys the grass (GroundView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
@@ -89,6 +91,7 @@ import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
 import { MindView } from '../views/MindView.ts';
+import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
 import { AssetView } from '../views/AssetView.ts';
 import { CuePropView } from '../views/CuePropView.ts';
@@ -230,6 +233,8 @@ export class BattleScene extends Phaser.Scene {
   #phases!: PhaseView;
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
   #mind!: MindView;
+  /** Marks and Truthlight's no-evade (T508). */
+  #marks!: MarkView;
   #harpoon!: HarpoonView;
   /** The Prism's beams (T504). */
   #beams!: BeamView;
@@ -378,6 +383,7 @@ export class BattleScene extends Phaser.Scene {
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion);
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion);
+    this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
     this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r));
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
@@ -531,6 +537,7 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.reset();
       this.#phases.reset();
       this.#mind.reset();
+      this.#marks.reset();
       this.#harpoon.reset();
       this.#beams.reset();
       this.#leaves.reset();
@@ -570,6 +577,7 @@ export class BattleScene extends Phaser.Scene {
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#mind.update(dt, state.enemies);
+    this.#marks.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
     this.#beams.update(dt, state.towers, state.enemies);
     this.#leaves.update(dt);
@@ -684,6 +692,7 @@ export class BattleScene extends Phaser.Scene {
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
       phases: { ...this.#phases.shown, phasedIn: this.#phases.phasedIn },
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
+      marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
       beams: { drawn: this.#beams.beams, topStep: this.#beams.topStep },
       debris: this.#fx.debrisLive,

@@ -42,7 +42,7 @@ function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'thumper', tile: MERGE_W },
     { wave: 1, build: 'prism', tile: TOWER },
-    { wave: 1, build: 'rivet', tile: YARD_MID },
+    { wave: 1, build: 'thumper', tile: YARD_MID },
     { wave: 1, build: 'thumper', tile: SOUTH_MID },
     { wave: 2, upgrade: MERGE_W },
     { wave: 3, upgrade: SOUTH_MID },
@@ -52,17 +52,16 @@ function parSteps(): BuildStep[] {
     { wave: 6, upgrade: YARD_IN },
     { wave: 6, upgrade: YARD_MID },
     { wave: 7, upgrade: WALL_E },
-    { wave: 7, upgrade: MERGE_W },
+    { wave: 7, build: 'rivet', tile: POCKET_W },
     STILL_W9,
     { wave: 9, upgrade: TOWER },
-    { wave: 9, upgrade: SOUTH_MID },
+    { wave: 9, upgrade: MERGE_W },
     { wave: 10, upgrade: YARD_IN },
     { wave: 10, upgrade: WALL_E },
-    { wave: 10, build: 'rivet', tile: YARD_E },
+    { wave: 10, upgrade: POCKET_W },
     { wave: 11, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
-    { wave: 12, upgrade: YARD_MID },
+    { wave: 12, upgrade: SOUTH_MID },
     STILL_W14,
-    { wave: 14, specialize: SOUTH_MID, spec: 'a' }, // Cluster Thumper
   ];
 }
 
@@ -133,11 +132,11 @@ export const builds = defineBuilds({
         { wave: 5, upgrade: MERGE_E },
         { wave: 6, upgrade: YARD_IN },
         { wave: 6, upgrade: TOWER },
+        { wave: 6, build: 'thumper', tile: YARD_MID },
         { wave: 7, upgrade: WALL_E },
         { wave: 7, upgrade: MERGE_W },
-        { wave: 8, build: 'zapcoil', tile: YARD_MID },
+        { wave: 8, upgrade: YARD_MID },
         STILL_W9,
-        { wave: 9, upgrade: YARD_MID },
         { wave: 9, upgrade: SOUTH_MID },
         { wave: 10, upgrade: YARD_IN },
         { wave: 10, upgrade: WALL_E },
@@ -191,22 +190,28 @@ export const SEEKER_ALT: ScriptedBuild = {
   loadout: ['skyhook', 'thumper', 'zapcoil', 'sprinkler'],
   steps: [
     { wave: 1, build: 'thumper', tile: MERGE_W },
-    { wave: 1, build: 'zapcoil', tile: POCKET_W },
-    { wave: 1, build: 'thumper', tile: YARD_MID },
-    { wave: 2, build: 'zapcoil', tile: TOWER },
-    { wave: 3, upgrade: MERGE_W },
+    { wave: 1, build: 'zapcoil', tile: TOWER },
+    { wave: 1, build: 'sprinkler', tile: MERGE_E }, // Conductive with the watchtower's Zapcoil
+    { wave: 1, build: 'thumper', tile: SOUTH_MID },
+    { wave: 2, upgrade: MERGE_W },
+    { wave: 3, upgrade: TOWER },
+    { wave: 3, upgrade: SOUTH_MID },
     { wave: 4, build: 'skyhook', tile: YARD_IN },
-    { wave: 5, upgrade: TOWER },
-    { wave: 6, upgrade: MERGE_W },
+    { wave: 4, upgrade: MERGE_E },
+    { wave: 5, build: 'skyhook', tile: WALL_E },
+    { wave: 5, upgrade: YARD_IN },
     { wave: 6, upgrade: YARD_IN },
-    { wave: 7, upgrade: YARD_IN },
-    { wave: 8, specialize: YARD_IN, spec: 'b' }, // Seeker Swarm
+    { wave: 6, build: 'thumper', tile: YARD_MID },
+    { wave: 7, specialize: YARD_IN, spec: 'b' }, // Seeker Swarm
+    { wave: 8, upgrade: MERGE_W },
     STILL_W9,
+    { wave: 9, upgrade: WALL_E },
     { wave: 9, upgrade: YARD_MID },
-    { wave: 10, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
-    { wave: 11, build: 'sprinkler', tile: MERGE_E },
-    { wave: 11, upgrade: TOWER },
-    { wave: 12, upgrade: YARD_MID },
+    { wave: 10, upgrade: TOWER },
+    { wave: 10, upgrade: SOUTH_MID },
+    { wave: 11, upgrade: WALL_E },
+    { wave: 12, upgrade: MERGE_E },
+    STILL_W14,
   ],
 };
 
