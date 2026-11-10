@@ -602,3 +602,11 @@ export const DARK_RANGE_PENALTY = 0.15;
  * Prism Spire's 2.0, so the Spire is the light worth building for.
  */
 export const LAMP_RADIUS_TILES = 1.5;
+
+// ── Act III, part one (D141; T600a seams, each run by the task named) ─────────────────────────
+
+/**
+ * A blocker's health floor (maps.md § 5.4: Bricks at the Gap falls to 5% near the end, before the
+ * SEAL, whatever the player's DPS; AllyPostDef.block; T605). His timeline's keys stay at or above.
+ */
+export const BLOCKER_HEALTH_FLOOR = 0.05;

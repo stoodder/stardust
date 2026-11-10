@@ -83,10 +83,6 @@ function body(g: CharGrid, bristle: boolean): void {
       plot(g, x + 2, y, dark);
     }
   }
-  // A paler muzzle round the mouth, so it reads at 1×.
-  disc(g, 24.5, 32, 6.2, (d, x, y) =>
-    d > 5.6 ? (g[y]?.[x] ?? '3') : y < 30 ? '4' : x + y > 57 ? '3' : '4',
-  );
   // The butter belly at the bottom, its top edge fuzzy.
   for (let y = 38; y < S; y++) {
     for (let x = 0; x < S; x++) {
@@ -116,11 +112,13 @@ function shimmer(g: CharGrid): void {
       if (!inBody(x, y)) continue;
       const dx = (x + 0.5 - CX) / RX;
       const dy = (y + 0.5 - CY) / RY;
-      if (Math.hypot(dx, dy) < 0.68 || dy > -0.05) continue;
-      const h = (x * 13 + y * 29) % 17;
+      const d = Math.hypot(dx, dy);
+      // A band over her crown and down her shoulders, clear of the face.
+      if (d < 0.8 || dy > -0.1) continue;
+      const h = (x * 13 + y * 29) % 19;
       if (h === 0) plot(g, x, y, '*');
-      else if (h === 5) plot(g, x, y, 'P');
-      else if (h === 11) plot(g, x, y, '+');
+      else if (h === 6) plot(g, x, y, 'P');
+      else if (h === 12) plot(g, x, y, '+');
     }
   }
 }
@@ -151,18 +149,23 @@ function wreath(g: CharGrid, bristle: boolean): void {
 /** One of her young, peeking over her right shoulder (screen left) out of her fur. */
 // prettier-ignore
 const YOUNG = [
-  '...x4x...',
-  '..x434x..',
-  '.x44444x.',
-  'x4wk3wk4x',
-  'x3kk3kk3x',
-  'x3333333x',
+  '....x4x....',
+  '...x434x...',
+  '.xx44444xx.',
+  'x444444444x',
+  'x44wk4wk44x',
+  'x43kk3kk34x',
+  'x3P33333P3x',
+  '.x3333333x.',
+  '..xxxxxxx..',
 ] as const;
-// Ducked: only its tuft and the top of its head show over the fur.
+// Ducked: only its tuft and the top of its head show over her fur.
 // prettier-ignore
 const YOUNG_DUCKED = [
-  '...x4x...',
-  '..x434x..',
+  '....x4x....',
+  '...x434x...',
+  '.xx44444xx.',
+  'xxxxxxxxxxx',
 ] as const;
 
 /** A big eye: dark, a deeper shine low down, a glint. `look` shifts the glint (and pupil). */
@@ -200,7 +203,7 @@ function shutEye(g: CharGrid, cx: number, cy: number, up: boolean): void {
 // prettier-ignore
 const BROWS: Readonly<Record<string, readonly string[]>> = {
   // Level and heavy, a little down at the nose: unimpressed.
-  neutral: ['.........', '0000000..', '1111110000'],
+  neutral: ['.........', '000000000', '111111100'],
   // Eased up and softened.
   happy: ['.0000000.', '111111111', '.........'],
   // Up in the middle.
@@ -252,7 +255,7 @@ function paint({ expression, mouth }: PaintArgs): CharGrid {
   shimmer(g);
   wreath(g, bristle);
   // Her little one: peeking, or ducked into her fur when she's worried.
-  stamp(g, 1, 13, e === 'worried' ? YOUNG_DUCKED : YOUNG);
+  stamp(g, 0, e === 'worried' ? 17 : 12, e === 'worried' ? YOUNG_DUCKED : YOUNG);
   // Eyes.
   if (e === 'happy') {
     shutEye(g, EYE_L, EYE_Y, true);

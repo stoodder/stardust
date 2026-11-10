@@ -78,6 +78,14 @@ function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): Compil
         radiusSq: e.radiusTiles * e.radiusTiles,
         durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
       };
+    case 'pathTrap':
+      return {
+        kind: 'pathTrap',
+        type: e.type,
+        damage: e.damage,
+        pinTicks: ticks(ctx, e.pinSec, `${where}.pinSec`),
+        durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
+      };
     default:
       return assertNever(e);
   }

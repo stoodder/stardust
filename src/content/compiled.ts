@@ -103,6 +103,23 @@ export interface CompiledTier {
     readonly radiusSq: number;
     readonly pct: number;
   } | null;
+  /** The Hum Choir's jam multiplier on the towers its aura covers (TierDef.jamMul; 1: none). */
+  readonly jamMul: number;
+  /** Lullaby's radius (TierDef.lull; T607), or null. */
+  readonly lull: { readonly radiusTiles: number; readonly radiusSq: number } | null;
+  /** The Stasis Bloom's field (TierDef.field; T608) in ticks, or null. */
+  readonly field: CompiledField | null;
+}
+
+/** FieldDef in ticks (pullBack 0 / 0 when absent). */
+export interface CompiledField {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly chillPct: number;
+  readonly pulseEveryTicks: number;
+  readonly stasisTicks: number;
+  readonly pullBackTiles: number;
+  readonly pullBackCooldownTicks: number;
 }
 
 /** DetectDef with the linger in ticks and the radius squared (0 / 0 for absent fields). */
@@ -199,7 +216,15 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly jumpRangeSq: number;
         readonly falloffPct: number;
       }
-    | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
+    | {
+        // The Scuttle Den (AttackDef `spawner`; T604): `damage` is per second, in DoT ticks.
+        readonly kind: 'spawner';
+        readonly ally: 'swarmling' | 'champion';
+        readonly maxAlive: number;
+        readonly latchTicks: number;
+        readonly restTicks: number;
+        readonly chillPct: number;
+      }
     | {
         readonly kind: 'pulse';
         /** PulseBurstDef in ticks (Flash Freeze), or null. */
@@ -334,6 +359,10 @@ export interface CompiledEnemyDef<Id extends string = string> {
   readonly phase: CompiledPhase | null;
   /** EnemyDef.shieldAura per tick (the Aegis Cantor; T502), or null. */
   readonly shieldAura: CompiledShieldAura | null;
+  /** EnemyDef.gather in ticks (the Maw; T602), or null. */
+  readonly gather: CompiledGather | null;
+  /** EnemyDef.hasteAura (the Expediter; T603), or null. */
+  readonly hasteAura: CompiledHasteAura | null;
   /**
    * Hushes under the hush rule (enemies.md § 5.4): derived, true for a non-boss Hollow unit that
    * doesn't gather (a Maw's one hush is a gather). Run by enemyAbilities/hush.ts (T402).
@@ -383,6 +412,22 @@ export interface CompiledShieldAura {
   readonly radiusTiles: number;
   readonly radiusSq: number;
   readonly shieldPerTick: number;
+}
+/** GatherDef in ticks, the radius squared. */
+export interface CompiledGather {
+  readonly everyTicks: number;
+  readonly tellTicks: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly maxAbsorbs: number;
+  readonly growPct: number;
+  readonly leakPerAbsorb: number;
+  readonly bountyPerHollowAbsorb: number;
+}
+export interface CompiledHasteAura {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly pct: number;
 }
 export interface CompiledBoss {
   readonly phases: readonly CompiledBossPhase[];
@@ -475,6 +520,13 @@ export type CompiledAbilityEffect =
       readonly radiusTiles: number;
       readonly radiusSq: number;
       readonly durationTicks: number;
+    }
+  | {
+      readonly kind: 'pathTrap';
+      readonly type: DamageType;
+      readonly damage: number;
+      readonly pinTicks: number;
+      readonly durationTicks: number;
     };
 
 /** A compiled ally post (AllyPostDef): the marker resolved to its tile, the attack in ticks. */
@@ -491,6 +543,11 @@ export interface CompiledAllyPost {
     readonly hitsGround: boolean;
     readonly hitsAir: boolean;
   };
+  /** A blocker's numbers (AllyPostDef.block; T605), or null. Health keys as authored. */
+  readonly block: {
+    readonly capacity: number;
+    readonly health: readonly { readonly wave: number; readonly pct: number }[];
+  } | null;
 }
 
 // ── Maps ─────────────────────────────────────────────────────────────────────────────────────
@@ -648,13 +705,20 @@ export interface CompiledRefugeeGroup {
   readonly route: CompiledRoute;
   readonly count: number;
   readonly withPebble: boolean;
+  /** Its exit marker (RefugeeGroupDef.exit, else the map's safeExit) and that marker's tile. */
+  readonly exit: MarkerId;
+  readonly exitTile: GridPos;
+  /** RefugeeGroupDef.when (a story-flag gate, A3M3's `door_choice`), or null: it always walks. */
+  readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue } | null;
   readonly spacingTiles: number;
   readonly speedTilesPerTick: number;
 }
 
 /**
  * Escort data (MapDef.safeExit, MapDef.refugees; T305c): the safe exit's tile, the refugee groups
- * in authored order, and their total (Pebble not counted: the meter's denominator).
+ * in authored order, and their total (Pebble not counted). `total` counts every group; a run whose
+ * flags keep a gated group home (`when`) counts fewer: the meter's denominator is the run's
+ * `state.refugeeTotal` (sim/escort.ts `escortTotal`).
  */
 export interface CompiledEscort {
   readonly safeExit: MarkerId;

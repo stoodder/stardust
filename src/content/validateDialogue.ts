@@ -29,7 +29,8 @@
 // - [dialogue-button]: reply buttons only on radio and cue lines; a reply names a registered scene.
 // - [dialogue-cond]: `thisRun` names a flag with a run-end rule; `outcome` and `thisRun` only in
 //   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark; a
-//   `bank` test has a bound, each a non-negative integer, `gte` ≤ `lte`.
+//   `bank` or `runStat` test has a bound, each a non-negative integer, `gte` ≤ `lte`; a `runStat`
+//   names a run story stat and never sits in a base topic (no run there).
 // - [dialogue-pause]: `pause: true` only on a cue scene (`cue_<name>`, D134; T501l): the briefing,
 //   full-screen scenes, and base topics already hold input, and radio and debriefs never pause.
 // - [dialogue-bark]: trigger waves and phases are positive integers; a `flag` trigger has a
@@ -56,6 +57,7 @@ import {
   BARK_ID,
   BASE_EXPRESSIONS,
   EXPRESSION_EXTRAS,
+  RUN_STORY_STATS,
   type Bark,
   type Condition,
   type DialogueNode,
@@ -520,18 +522,35 @@ function validateCondition(
       );
     }
   }
-  if ('bank' in cond) {
-    const bounds = [cond.gte, cond.lte].filter((b) => b !== undefined);
-    if (bounds.length === 0) issues.add('dialogue-cond', where, 'a bank test needs gte or lte');
-    if (bounds.some((b) => !(Number.isInteger(b) && b >= 0))) {
-      issues.add('dialogue-cond', where, 'bank bounds must be non-negative integers');
+  if ('bank' in cond) validateBounds(issues, where, 'bank', cond);
+  if ('runStat' in cond) {
+    if (!(RUN_STORY_STATS as readonly string[]).includes(cond.runStat)) {
+      issues.add('dialogue-cond', where, `runStat '${cond.runStat}' is not a run story stat`);
     }
-    if (cond.gte !== undefined && cond.lte !== undefined && cond.gte > cond.lte) {
-      issues.add('dialogue-cond', where, 'bank gte is above its lte: it never holds');
+    validateBounds(issues, where, 'runStat', cond);
+    if (slot?.kind === 'base') {
+      issues.add('dialogue-cond', where, 'runStat reads a run; a base topic has none');
     }
   }
   if ('seen' in cond && !known.has(cond.seen)) {
     issues.add('dialogue-cond', where, `seen '${cond.seen}' is not a registered scene or bark`);
+  }
+}
+
+/** A `bank` or `runStat` test's bounds: at least one, each a non-negative integer, `gte` ≤ `lte`. */
+function validateBounds(
+  issues: Issues,
+  where: string,
+  what: 'bank' | 'runStat',
+  cond: { readonly gte?: number; readonly lte?: number },
+): void {
+  const bounds = [cond.gte, cond.lte].filter((b) => b !== undefined);
+  if (bounds.length === 0) issues.add('dialogue-cond', where, `a ${what} test needs gte or lte`);
+  if (bounds.some((b) => !(Number.isInteger(b) && b >= 0))) {
+    issues.add('dialogue-cond', where, `${what} bounds must be non-negative integers`);
+  }
+  if (cond.gte !== undefined && cond.lte !== undefined && cond.gte > cond.lte) {
+    issues.add('dialogue-cond', where, `${what} gte is above its lte: it never holds`);
   }
 }
 

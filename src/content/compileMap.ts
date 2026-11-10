@@ -243,12 +243,21 @@ function compileEscort(
       continue;
     }
     const count = g.count ?? REFUGEE_GROUP_SIZE;
+    const exit = g.exit ?? def.safeExit;
+    const exitTile = def.markers?.[exit];
+    if (exitTile === undefined) {
+      ctx.errors.push(`${where}.refugees.${id}.exit: unknown marker '${exit}'`);
+      continue;
+    }
     total += count;
     groups.push({
       id,
       route,
       count,
       withPebble: g.withPebble === true,
+      exit,
+      exitTile: [exitTile[0], exitTile[1]],
+      when: g.when === undefined ? null : { flag: g.when.flag, eq: g.when.eq },
       spacingTiles: REFUGEE_SPACING_TILES,
       speedTilesPerTick: perSecToPerTick(REFUGEE_SPEED_TILES_PER_SEC),
     });
@@ -280,6 +289,13 @@ function compileAllies(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledA
         hitsGround: at.targets.ground,
         hitsAir: at.targets.air,
       },
+      block:
+        a.block === undefined
+          ? null
+          : {
+              capacity: a.block.capacity,
+              health: a.block.health.map((k) => ({ wave: k.wave, pct: k.pct })),
+            },
     });
   }
   return out;

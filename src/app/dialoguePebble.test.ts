@@ -39,10 +39,16 @@ describe("Bricks's pocket and Pebble's name plate", () => {
     expect(bricks(ctx('a3_m01'))).toBe('pebble');
   });
 
-  it("shows Ves'thara touched from A2M5's pivot on (D138)", () => {
+  it("shows Ves'thara touched from this run's A2M5 pivot on (D138; T569)", () => {
+    const live = (pivotWave: number) => ({ pivotWave, evacuated: 0, refugeesLost: 0, revocations: 0 });
     expect(vesthara(ctx('a2_m04'))).toBeNull();
     expect(vesthara(ctx('a2_m05', ['a2_m05_brief']))).toBeNull();
-    expect(vesthara(ctx('a2_m05', ['a2_m05_cue_pivot']))).toBe('touched');
+    // A replay: the pivot seen on an earlier run, not yet on this one.
+    expect(vesthara({ ...ctx('a2_m05', ['a2_m05_cue_pivot']), live: live(0) })).toBeNull();
+    expect(vesthara({ ...ctx('a2_m05', ['a2_m05_cue_pivot']), live: live(5) })).toBe('touched');
+    // Her debrief, on Results: the run's final stats.
+    const run = { outcome: 'won' as const, ruleFlags: {}, stats: live(6) };
+    expect(vesthara({ ...ctx('a2_m05'), run })).toBe('touched');
     expect(vesthara(ctx('a2_m06'))).toBe('touched');
     expect(vesthara(ctx('a3_m01'))).toBe('touched_deep');
   });

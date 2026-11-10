@@ -95,6 +95,15 @@ export const BARK_ID = /^[a-z]+_[a-z0-9_]+_a(1|2|3|fin)_\d\d$/;
 /** The meta currencies a `bank` condition reads (design/progression.md § 1). */
 export type BankCurrency = 'stardust' | 'intel';
 
+/**
+ * The run stats a `runStat` condition reads (T569): this run's, never the save's. Each is the sim's
+ * `SimStats` counter of the same name: `pivotWave` (the wave a boss's pivot ran in, 0 before),
+ * `evacuated` and `refugeesLost` (an Escort's or Holdout's refugees), `revocations` (one per
+ * revocation that took effect: A3M2's Clean Exit counts 2 with Orbital Strike owned).
+ */
+export const RUN_STORY_STATS = ['pivotWave', 'evacuated', 'refugeesLost', 'revocations'] as const;
+export type RunStoryStat = (typeof RUN_STORY_STATS)[number];
+
 /** The acts story conditions can name. */
 export type StoryAct = Extract<Act, 1 | 2 | 3 | 'finale'>;
 
@@ -124,6 +133,14 @@ export type Condition =
   /** A scene id (or a once-per-campaign bark id) is in the save's `story.seen`. */
   | { readonly seen: string }
   | { readonly outcome: 'won' | 'lost' }
+  /**
+   * This run's stat is within the bounds (`gte` and/or `lte`, inclusive; T569): live in a battle
+   * (the context's `live`), final while the run's end is on screen (`run.stats`); false outside a
+   * run. For what must follow this run's moment, not the campaign's: Ves'thara is `touched` on
+   * A2M5 once this run's pivot has run (`pivotWave` ≥ 1), so a replay starts her untouched; A3M2's
+   * lines after the Clean Exit test `revocations` ≥ 1.
+   */
+  | { readonly runStat: RunStoryStat; readonly gte?: number; readonly lte?: number }
   /** The value `flag`'s run-end rule gives over the run that just ended (FLAG_RULES). */
   | { readonly thisRun: BooleanFlagId; readonly eq: boolean }
   /**

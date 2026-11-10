@@ -129,12 +129,14 @@ export const SPEAKERS = {
     variants: [
       { variant: 'touched_deep', when: { act: 3 } },
       // Touched from A2M5's pivot on (she kneels and becomes the wall; D138), and every map after.
+      // On A2M5 it is this run's pivot (T569: `pivotWave` is set as it runs, live in the battle and
+      // final on Results), so a replay starts her untouched until the pivot comes round again.
       {
         variant: 'touched',
         when: {
           any: [
             { mapAtLeast: 'a2_m06' },
-            { all: [{ mapIs: 'a2_m05' }, { seen: 'a2_m05_cue_pivot' }] },
+            { all: [{ mapIs: 'a2_m05' }, { runStat: 'pivotWave', gte: 1 }] },
           ],
         },
       },
@@ -189,8 +191,11 @@ export const SPEAKERS = {
     blip: 'blip.thrum',
   },
   chitterbloom: {
-    // Displayed as "Bramble" from A3M1 (characters.md); the name plate rule joins with Act III.
+    // Everglow's codename until Pebble names her in A3M1's briefing ("'Chitterbloom' is a sun-lady
+    // word"); from A3M1 on, dialogue says Bramble (characters.md, style-guide.md § 5.1). She speaks
+    // through Ves'thara before Pebble's line, so the plate turns with the map, not the line.
     name: 'Chitterbloom',
+    names: [{ name: 'Bramble', when: { mapAtLeast: 'a3_m01' } }],
     color: 'coral.3',
     frame: 'portrait',
     portrait: 'portrait.chitterbloom',

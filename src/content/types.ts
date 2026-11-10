@@ -151,8 +151,20 @@ export type TellId =
   | 'hollow';
 /** Story wave tags. Allies and the spare-runners filter never pick the first three. */
 export type WaveTag = 'quiet_wave' | 'youngling' | 'fleeing' | 'medal_exempt';
+/**
+ * Friendly units (design/maps.md § 5.4). A Scuttle Den sends `swarmling`s, or `champion`s with
+ * Brave Hearts (towers.md § 7; T600a); `leaper`s are the Sproing Pad's (M7).
+ */
 export type AllyKind =
-  'swarmling' | 'leaper' | 'refugee' | 'bearer' | 'singer' | 'bricks' | 'militia' | 'ward';
+  | 'swarmling'
+  | 'champion'
+  | 'leaper'
+  | 'refugee'
+  | 'bearer'
+  | 'singer'
+  | 'bricks'
+  | 'militia'
+  | 'ward';
 export type TowerStat = 'damage' | 'rate' | 'range';
 
 /** Every property optional, recursively. Arrays are replaced whole, never merged. */
@@ -204,6 +216,35 @@ export interface TierDef {
    * § 7: radius 3.5, +15%), a Mark like any other (highest only). Run by T508.
    */
   readonly markArea?: MarkAreaDef;
+  /**
+   * The Hum Choir's jam rule (towers.md § 7; T600a seam, T607): Jammed durations on the towers
+   * its aura covers are multiplied by this (T1 0.5, T3 0.25, Rally Chorus 0: immune). Inert data
+   * until M7's jammers (D141).
+   */
+  readonly jamMul?: number;
+  /**
+   * Lullaby (the Hum Choir's spec A; T607): enemies within `radiusTiles` are Lulled (enemies.md
+   * § 2.4: ability cooldowns run ×1.5 longer, ×1.25 on a boss) while they stay inside.
+   */
+  readonly lull?: { readonly radiusTiles: number };
+  /** A control field (the Stasis Bloom, towers.md § 7; T608): chill inside, Stasis pulses. */
+  readonly field?: FieldDef;
+}
+
+/**
+ * The Stasis Bloom's field (TierDef.field; T608): every enemy the tier's layers reach within
+ * `radiusTiles` is Chilled `chillPct` while inside, and every `pulseEverySec` each takes Stasis
+ * for `stasisSec` (the Stasis rule: it interrupts abilities). Gravity Well (spec A) also pulls
+ * each pulsed enemy back `pullBackTiles` along its route, at most once every `pullBackCooldownSec`
+ * per enemy (bosses immune). T1: radius 2.0, 30%, every 10 s, 1.5 s.
+ */
+export interface FieldDef {
+  readonly radiusTiles: number;
+  readonly chillPct: number;
+  readonly pulseEverySec: number;
+  readonly stasisSec: number;
+  readonly pullBackTiles?: number;
+  readonly pullBackCooldownSec?: number;
 }
 
 /** An area Mark (TierDef.markArea): every enemy the tower's layers reach within the radius. */
@@ -326,7 +367,20 @@ export type AttackDef = AttackCommon &
         /** Fraction lost per jump: 0.2 = −20%. */
         readonly falloffPct: number;
       }
-    | { readonly kind: 'spawner'; readonly ally: AllyKind; readonly maxAlive: number }
+    | {
+        // Scuttle Den (towers.md § 7; T604): up to `maxAlive` units of `ally` live at the tower.
+        // Each dashes out to a ground enemy within `rangeTiles` (a burrowed one too; `champion`s
+        // leap onto flyers when the tier targets air), latches on for `latchSec` dealing `damage`
+        // per second of `type` as a DoT (DOT_TICK_SEC ticks; armor bypassed), Chilling it
+        // `chillPct` (swarmling chills stack to SWARMLING_CHILL_CAP, then count as one source),
+        // then runs home and rests `restSec`. `ratePerSec` restates the DoT tick (1 / DOT_TICK_SEC).
+        readonly kind: 'spawner';
+        readonly ally: 'swarmling' | 'champion';
+        readonly maxAlive: number;
+        readonly latchSec: number;
+        readonly restSec: number;
+        readonly chillPct: number;
+      }
     // Sprinkler: every period, hits every enemy within rangeTiles (no target, no priority)
     | {
         readonly kind: 'pulse';
@@ -534,6 +588,20 @@ export interface EnemyDef<Id extends string = string> {
    */
   readonly shieldAura?: ShieldAuraDef;
   /**
+   * Gathering (the `gathering` trait, `consumer` tell; the Maw, enemies.md § 5.4): every
+   * `everySec`, after a `tellSec` tendril tell, it draws in the nearest eligible unit within
+   * `radiusTiles` (a non-boss Hollow unit, or at most one Skitterkin enemy or refugee: that gather
+   * is its one hush), adding that unit's current HP to its own HP and max HP. Run by
+   * enemyAbilities/gather.ts (T602).
+   */
+  readonly gather?: GatherDef;
+  /**
+   * A haste aura (the `haste_aura` trait and tell; the Expediter): every other unit of its faction
+   * within `radiusTiles` has Haste `pct` (highest only, under HASTE_CAP; enemies.md § 2.4),
+   * continuously. Run by enemyAbilities/hasteAura.ts (T603).
+   */
+  readonly hasteAura?: HasteAuraDef;
+  /**
    * A neutral unit (Gerald, core-loop.md § 2.7): towers that aren't holding fire target it like an
    * enemy, but it takes no damage (hits plink off, `NeutralHit`), never leaks, pays nothing, and
    * never counts toward a wave's resolution or a medal (T304a).
@@ -601,6 +669,29 @@ export interface PhaseDef {
 export interface ShieldAuraDef {
   readonly radiusTiles: number;
   readonly shieldPerSec: number;
+}
+
+/**
+ * Gathering (EnemyDef.gather; the Maw: every 4 s, 1 s tell, 1 tile, max 5 absorbs, +10% size,
+ * leak +1 per absorb, bounty +3 per Hollow absorb only; enemies.md § 5.4).
+ */
+export interface GatherDef {
+  readonly everySec: number;
+  readonly tellSec: number;
+  readonly radiusTiles: number;
+  readonly maxAbsorbs: number;
+  /** Size growth per absorb, a fraction (render only: 0.1 = +10%). */
+  readonly growPct: number;
+  /** Leak added per absorb (any unit). */
+  readonly leakPerAbsorb: number;
+  /** Bounty added per Hollow absorb (a gathered Skitterkin adds none). */
+  readonly bountyPerHollowAbsorb: number;
+}
+
+/** A haste aura (EnemyDef.hasteAura; the Expediter: +30% within 2 tiles). */
+export interface HasteAuraDef {
+  readonly radiusTiles: number;
+  readonly pct: number;
 }
 
 /** How a boss fight ends without a death (design/enemies.md § 6.1). */
@@ -757,13 +848,25 @@ export type AbilityEffect =
       readonly kind: 'stasisArea';
       readonly radiusTiles: number;
       readonly durationSec: number;
+    }
+  | {
+      /**
+       * Underfoot (Bramble's, design/core-loop.md § 3.2; T604): a targeted path tile, live for
+       * `durationSec`. Each ground enemy that crosses it, burrowed ones included, is Pinned
+       * `pinSec` and takes `damage` of `type`, once per enemy per trap (6 s; 1 s; 30 Kinetic).
+       */
+      readonly kind: 'pathTrap';
+      readonly type: DamageType;
+      readonly damage: number;
+      readonly pinSec: number;
+      readonly durationSec: number;
     };
 
 /**
  * A scripted ally at a fixed post beside the path (design/maps.md § 5.4: Bricks in person,
- * colonist militia). It is never hurt (vulnerability `never`; Bricks's A3M3 health timeline is
- * M3), never targets `quiet_wave`, `youngling`, or `fleeing` units, and fires at the nearest
- * enemy in range. Its numbers are map data.
+ * colonist militia). It is never hurt (vulnerability `never`) unless it blocks (`block`: Bricks
+ * at the Gap, A3M3), never targets `quiet_wave`, `youngling`, or `fleeing` units, and fires at the
+ * nearest enemy in range. Its numbers are map data.
  */
 export interface AllyPostDef {
   readonly kind: 'bricks' | 'militia';
@@ -777,6 +880,23 @@ export interface AllyPostDef {
     readonly rangeTiles: number;
     readonly targets: { readonly ground: boolean; readonly air: boolean };
   };
+  /**
+   * A blocker (Bricks at the Gap, maps.md § 5.4; T605): its post stands on a path tile's edge and
+   * holds up to `capacity` non-boss ground units at a time (others pass; D141: 2); they stop and
+   * wear him down instead of passing. His health is `health`, never the damage they deal.
+   */
+  readonly block?: BlockDef;
+}
+
+/**
+ * A blocker's numbers (AllyPostDef.block; T605). `health` is the scripted timeline (D141: it
+ * follows the timeline only, so nothing reads as the player's fault): the health, a fraction of
+ * full, as each keyed wave starts (1-based, ascending), stepping per wave between keys like the
+ * lighting schedule; full before the first key. Never below BLOCKER_HEALTH_FLOOR (5%).
+ */
+export interface BlockDef {
+  readonly capacity: number;
+  readonly health: readonly { readonly wave: number; readonly pct: number }[];
 }
 
 // ── Maps ─────────────────────────────────────────────────────────────────────────────────────
@@ -944,6 +1064,17 @@ export interface RefugeeGroupDef {
   readonly route: RouteId;
   readonly count?: number;
   readonly withPebble?: true;
+  /**
+   * The group's own exit, a decor marker its route ends beside (A3M3's two blast doors), instead
+   * of the map's `safeExit` (T600a).
+   */
+  readonly exit?: MarkerId;
+  /**
+   * The group walks only when this story flag has this value (A3M3: `door_choice` picks the side).
+   * A group that doesn't walk is never released (`spawnAllies` does nothing) and never counts
+   * toward the meter's total (`state.refugeeTotal`; sim/escort.ts).
+   */
+  readonly when?: { readonly flag: ScriptFlagId; readonly eq: FlagValue };
 }
 
 /**
@@ -1183,7 +1314,13 @@ export type RunStat =
   | 'pivotWave'
   /** Escort (T305c): refugees who reached the safe exit, and refugees lost (hushed, or at the exit). */
   | 'evacuated'
-  | 'refugeesLost';
+  | 'refugeesLost'
+  /**
+   * Refugees a Maw gathered (Nothing Gathered: `lte: 0`; counted by T602's gather, also a loss).
+   */
+  | 'refugeesGathered'
+  /** Revocations that took effect this run: each tower class and each ability counts one (T606). */
+  | 'revocations';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -1245,6 +1382,11 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
   | { readonly wreckageCleared: MarkerId }
   /** That optional objective of the map is done (settled `done`; failed or open is false). */
   | { readonly objectiveDone: string }
+  /**
+   * Refugees of that group (a `refugees` key) lost this run, hushed, gathered, or taken at the
+   * exit (The Matriarch's Young: Bramble's column loses no one, `lte: 0`). A run atom.
+   */
+  | { readonly groupLost: string; readonly gte?: number; readonly lte?: number }
   | { readonly all: readonly ConditionDef<K>[] }
   | { readonly any: readonly ConditionDef<K>[] }
   | { readonly not: ConditionDef<K> };

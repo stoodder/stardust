@@ -7,6 +7,7 @@ import {
   actOf,
   evaluateCondition,
   runContextOf,
+  runStoryStats,
   withFlags,
   type StoryContext,
 } from './conditions.ts';
@@ -155,6 +156,43 @@ describe('bank (C2: nothing to trade, T500b)', () => {
   it('is false without a bank (and so its negation holds)', () => {
     expect(holds(broke)).toBe(false);
     expect(holds({ not: broke })).toBe(true);
+  });
+});
+
+describe('runStat (this run, T569)', () => {
+  const pivoted: Condition = { runStat: 'pivotWave', gte: 1 };
+  const live = (pivotWave: number, revocations = 0) =>
+    runStoryStats({ pivotWave, evacuated: 12, refugeesLost: 3, revocations });
+
+  it("reads the battle's live stats, with inclusive bounds", () => {
+    expect(holds(pivoted, { ...base, live: live(0) })).toBe(false);
+    expect(holds(pivoted, { ...base, live: live(4) })).toBe(true);
+    expect(holds({ runStat: 'evacuated', gte: 12, lte: 12 }, { ...base, live: live(0) })).toBe(true);
+    expect(holds({ runStat: 'refugeesLost', lte: 2 }, { ...base, live: live(0) })).toBe(false);
+    expect(holds({ runStat: 'revocations', gte: 1 }, { ...base, live: live(0, 2) })).toBe(true);
+  });
+
+  it("reads the ended run's final stats on Results, and the battle's first while one is bound", () => {
+    const run = runContextOf('a2_m05', 'won', { ...quietStats(4, 4), pivotWave: 5 });
+    expect(run.stats).toEqual({ pivotWave: 5, evacuated: 0, refugeesLost: 0, revocations: 0 });
+    expect(holds(pivoted, { ...base, run })).toBe(true);
+    expect(holds(pivoted, { ...base, run, live: live(0) })).toBe(false);
+  });
+
+  it('is false outside a run, never reading the save (so a replay starts afresh)', () => {
+    expect(holds(pivoted, { ...base, seen: ['a2_m05_cue_pivot'] })).toBe(false);
+    expect(holds({ not: pivoted })).toBe(true);
+    // A run context built without stats (a test's) has none either.
+    expect(holds(pivoted, { ...base, run: { outcome: 'won', ruleFlags: {} } })).toBe(false);
+  });
+
+  it('fills counters the stats lack with 0', () => {
+    expect(runStoryStats({})).toEqual({
+      pivotWave: 0,
+      evacuated: 0,
+      refugeesLost: 0,
+      revocations: 0,
+    });
   });
 });
 

@@ -27,6 +27,13 @@ import { scenes as a2m05Scenes } from './a2/a2_m05/scenes.ts';
 import { barks as a2m06Barks } from './a2/a2_m06/barks.ts';
 import { scenes as a2m06BaseScenes } from './a2/a2_m06/base.ts';
 import { scenes as a2m06Scenes } from './a2/a2_m06/scenes.ts';
+import { barks as a3m01Barks } from './a3/a3_m01/barks.ts';
+import { scenes as a3m01BaseScenes } from './a3/a3_m01/base.ts';
+import { scenes as a3m01Scenes } from './a3/a3_m01/scenes.ts';
+import { barks as a3m02Barks } from './a3/a3_m02/barks.ts';
+import { scenes as a3m02Scenes } from './a3/a3_m02/scenes.ts';
+import { barks as a3m03Barks } from './a3/a3_m03/barks.ts';
+import { scenes as a3m03Scenes } from './a3/a3_m03/scenes.ts';
 import { SHARED_BARKS } from './barks/index.ts';
 import type { Bark, BarkId, MapDialogue, Scene, SceneId } from './types.ts';
 
@@ -48,6 +55,9 @@ export const MAP_DIALOGUE: readonly MapDialogue[] = [
   { map: 'a2_m04', scenes: [...a2m04Scenes, ...a2m04BaseScenes], barks: a2m04Barks },
   { map: 'a2_m05', scenes: a2m05Scenes, barks: a2m05Barks },
   { map: 'a2_m06', scenes: [...a2m06Scenes, ...a2m06BaseScenes], barks: a2m06Barks },
+  { map: 'a3_m01', scenes: [...a3m01Scenes, ...a3m01BaseScenes], barks: a3m01Barks },
+  { map: 'a3_m02', scenes: a3m02Scenes, barks: a3m02Barks },
+  { map: 'a3_m03', scenes: a3m03Scenes, barks: a3m03Barks },
 ];
 
 /** Every scene, by id. */

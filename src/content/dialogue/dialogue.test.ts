@@ -26,6 +26,8 @@ import { SHARED_BARKS } from './barks/index.ts';
 import { FLAGS } from './flags.ts';
 import { ACT1_SPEAKERS } from './speakers.ts';
 import { EXPRESSION_EXTRAS, SPEAKER_IDS } from './types.ts';
+import { evaluateCondition, type StoryContext } from '../../story/conditions.ts';
+import type { CampaignMapId } from '../campaign.ts';
 
 describe('speakers (style-guide § 5.1)', () => {
   it('registers every speaker id, in order', () => {
@@ -58,9 +60,33 @@ describe('speakers (style-guide § 5.1)', () => {
   });
 });
 
+describe('Act III speaker rules (T600b)', () => {
+  const at = (map: CampaignMapId): StoryContext => ({
+    flags: {},
+    map,
+    pestsProcessed: 0,
+    seen: [],
+    run: null,
+  });
+  const plate = (map: CampaignMapId): string => {
+    const def = SPEAKER_DEFS.chitterbloom;
+    return def.names?.find((r) => evaluateCondition(r.when, at(map)))?.name ?? def.name;
+  };
+
+  it('names the matriarch Bramble from A3M1 (Everglow\'s codename before)', () => {
+    expect(plate('a1_m05')).toBe('Chitterbloom');
+    expect(plate('a2_m06')).toBe('Chitterbloom');
+    for (const map of ['a3_m01', 'a3_m03', 'fin_m01'] as const) expect(plate(map), map).toBe('Bramble');
+  });
+
+  it("gives Old Thrum Pebble's `singing` for the Leaving Song (T641 draws it)", () => {
+    expect(EXPRESSION_EXTRAS.thrum).toEqual({ singing: 'happy' });
+  });
+});
+
 describe('the dialogue registries', () => {
-  it('has one entry per Act I and Act II map (A2M4–A2M6 from M5, T500b), in campaign order', () => {
-    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 11));
+  it('has one entry per map through A3M3 (A3M1–A3M3 from M6, T600b), in campaign order', () => {
+    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 14));
   });
 
   it('files every scene under its own map, with a well-formed, unique id', () => {

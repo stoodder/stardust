@@ -6,6 +6,7 @@ import type {
   CompiledBomblets,
   CompiledDetect,
   CompiledEffect,
+  CompiledField,
   CompiledTier,
   CompiledTowerDef,
   CompiledTowerEconomy,
@@ -17,6 +18,7 @@ import type {
   BombletsDef,
   DetectDef,
   EffectDef,
+  FieldDef,
   TierDef,
   TierPatch,
   TowerDef,
@@ -29,7 +31,7 @@ const ATTACK_FIELDS: Readonly<Record<AttackKind, readonly string[]>> = {
   lobbed: ['projectile', 'flightSec', 'splashTiles', 'lead'],
   beam: ['tickSec'],
   chain: ['jumps', 'jumpRangeTiles', 'falloffPct'],
-  spawner: ['ally', 'maxAlive'],
+  spawner: ['ally', 'maxAlive', 'latchSec', 'restSec', 'chillPct'],
   pulse: [],
   charge: ['chargeSec', 'splashTiles', 'splashPct'],
   line: ['lengthTiles'],
@@ -123,6 +125,30 @@ function compileTier(
             radiusSq: tier.markArea.radiusTiles * tier.markArea.radiusTiles,
             pct: tier.markArea.pct,
           },
+    jamMul: tier.jamMul ?? 1,
+    lull:
+      tier.lull === undefined
+        ? null
+        : {
+            radiusTiles: tier.lull.radiusTiles,
+            radiusSq: tier.lull.radiusTiles * tier.lull.radiusTiles,
+          },
+    field: tier.field === undefined ? null : compileField(ctx, tier.field, `${where}.field`),
+  };
+}
+
+function compileField(ctx: Ctx, f: FieldDef, where: string): CompiledField {
+  return {
+    radiusTiles: f.radiusTiles,
+    radiusSq: f.radiusTiles * f.radiusTiles,
+    chillPct: f.chillPct,
+    pulseEveryTicks: ticks(ctx, f.pulseEverySec, `${where}.pulseEverySec`),
+    stasisTicks: ticks(ctx, f.stasisSec, `${where}.stasisSec`),
+    pullBackTiles: f.pullBackTiles ?? 0,
+    pullBackCooldownTicks:
+      f.pullBackCooldownSec === undefined
+        ? 0
+        : ticks(ctx, f.pullBackCooldownSec, `${where}.pullBackCooldownSec`),
   };
 }
 
@@ -270,7 +296,15 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
         falloffPct: a.falloffPct,
       };
     case 'spawner':
-      return { ...common, kind: a.kind, ally: a.ally, maxAlive: a.maxAlive };
+      return {
+        ...common,
+        kind: a.kind,
+        ally: a.ally,
+        maxAlive: a.maxAlive,
+        latchTicks: ticks(ctx, a.latchSec, `${where}.latchSec`),
+        restTicks: ticks(ctx, a.restSec, `${where}.restSec`),
+        chillPct: a.chillPct,
+      };
     case 'charge':
       return {
         ...common,

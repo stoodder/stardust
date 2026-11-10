@@ -1,7 +1,8 @@
 // Enemy compilation: seconds to ticks, optional fields resolved to a value or null. The enemy
 // abilities (burrow, split, huddle, boss: T300a; pulse, blink, and the derived hush and cloak
-// flags: T400a; phase, the shield aura, a boss's shield-broken phase and ward: T500a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a
-// spawn's enemy) are checked by validate().
+// flags: T400a; phase, the shield aura, a boss's shield-broken phase and ward: T500a; gathering
+// and the haste aura: T600a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a
+// split's or a spawn's enemy) are checked by validate().
 import { perSecToPerTick } from '../shared/time.ts';
 import type {
   CompiledBlink,
@@ -9,6 +10,7 @@ import type {
   CompiledBossPhase,
   CompiledBurrow,
   CompiledEnemyDef,
+  CompiledGather,
   CompiledHuddle,
   CompiledPhase,
   CompiledPulse,
@@ -20,6 +22,7 @@ import type {
   BossDef,
   BurrowDef,
   EnemyDef,
+  GatherDef,
   HuddleDef,
   PhaseDef,
   PulseDef,
@@ -73,6 +76,15 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
     blink: def.blink === undefined ? null : compileBlink(ctx, def.blink, `${where}.blink`),
     phase: def.phase === undefined ? null : compilePhase(ctx, def.phase, `${where}.phase`),
     shieldAura: def.shieldAura === undefined ? null : compileShieldAura(def.shieldAura),
+    gather: def.gather === undefined ? null : compileGather(ctx, def.gather, `${where}.gather`),
+    hasteAura:
+      def.hasteAura === undefined
+        ? null
+        : {
+            radiusTiles: def.hasteAura.radiusTiles,
+            radiusSq: def.hasteAura.radiusTiles * def.hasteAura.radiusTiles,
+            pct: def.hasteAura.pct,
+          },
     hushes: hushesOf(def),
     cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,
@@ -120,6 +132,19 @@ function compileShieldAura(a: ShieldAuraDef): CompiledShieldAura {
     radiusTiles: a.radiusTiles,
     radiusSq: a.radiusTiles * a.radiusTiles,
     shieldPerTick: perSecToPerTick(a.shieldPerSec),
+  };
+}
+
+function compileGather(ctx: Ctx, g: GatherDef, where: string): CompiledGather {
+  return {
+    everyTicks: ticks(ctx, g.everySec, `${where}.everySec`),
+    tellTicks: ticks(ctx, g.tellSec, `${where}.tellSec`),
+    radiusTiles: g.radiusTiles,
+    radiusSq: g.radiusTiles * g.radiusTiles,
+    maxAbsorbs: g.maxAbsorbs,
+    growPct: g.growPct,
+    leakPerAbsorb: g.leakPerAbsorb,
+    bountyPerHollowAbsorb: g.bountyPerHollowAbsorb,
   };
 }
 

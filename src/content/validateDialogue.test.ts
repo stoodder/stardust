@@ -416,6 +416,24 @@ describe('one failing fixture per rule', () => {
     expect(banked({ bank: 'stardust', gte: -1 })).toEqual(['dialogue-cond']);
     expect(banked({ bank: 'stardust', lte: 0.5 })).toEqual(['dialogue-cond']);
     expect(banked({ bank: 'stardust', gte: 9, lte: 8 })).toEqual(['dialogue-cond']);
+    // A runStat test (T569) has the same bounds rules, names a run story stat, and never sits in a
+    // base topic (there is no run at the base).
+    expect(banked({ runStat: 'revocations', gte: 1 })).toEqual([]);
+    expect(banked({ runStat: 'pivotWave', gte: 1, lte: 5 })).toEqual([]);
+    expect(banked({ runStat: 'pivotWave' })).toEqual(['dialogue-cond']);
+    expect(banked({ runStat: 'evacuated', gte: 1.5 })).toEqual(['dialogue-cond']);
+    expect(banked({ runStat: 'evacuated', gte: 3, lte: 2 })).toEqual(['dialogue-cond']);
+    expect(banked({ runStat: 'integrityLost', gte: 1 })).toEqual(['dialogue-cond']);
+    const line = { kind: 'line', speaker: 'bricks', text: 'Hm.' } as const;
+    const at = (id: string): string[] =>
+      rules(
+        content({
+          scenes: [defineScene(id, [line], { runStat: 'pivotWave', gte: 1 })],
+        }),
+      );
+    expect(at('a1_m01_w03')).toEqual([]);
+    expect(at('a1_m01_debrief')).toEqual([]);
+    expect(at('a1_m01_base_talk')).toEqual(['dialogue-cond']);
   });
 
   it('[dialogue-pause] (T501l): only a cue scene pauses the battle', () => {

@@ -1,22 +1,25 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
-// - [feature]: Defend, Protect, and Escort maps only (Holdout and Choir arrive with their maps).
-//   createSim refuses Escort until T305c (`map.escort`).
+// - [feature]: Defend, Protect, Escort, and Holdout maps (the Choir arrives with the finale).
+//   createSim refuses Holdout until T605 (`map.holdout`).
 // - [asset]: a Protect map has an `asset` (and only it does): a short name, a meter ≥ 1, one or more
 //   routes, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
 //   content; a pick list is non-empty with no repeats.
 // - [ally]: ally posts have a positive attack rate and range, damage ≥ 0, and a layer to hit;
-//   no two share a post, and Bricks is on a map at most once. (The post marker resolving is a
+//   no two share a post, and Bricks is on a map at most once. A blocker (`block`, T600a) holds a
+//   whole number ≥ 1 of units, and its health keys name the map's waves in rising order, each in
+//   [BLOCKER_HEALTH_FLOOR, 1]. (The post marker resolving is a
 //   compile error; [marker] puts it on decor.)
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
-// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit).
+// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit);
+//   a Holdout has at least one (each a door its refugees leave by: A3M3's two blast doors).
 // - [escort], [darkness]: validateEscort.ts (T500a): refugees and the safe exit; Sundown's `dark`
 //   keys and lamps.
 // - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
-//   tile changes (`openTile`), and a Protect map's asset sit on decor (§ 3; D042). The one marker
-//   on a path tile is an Escort's `safeExit`, on the core ([escort]).
+//   tile changes (`openTile`), and a Protect map's asset sit on decor (§ 3; D042). The markers on
+//   a path tile are an Escort's `safeExit` and its groups' `exit`s, on a core ([escort]).
 // - [terraces]: the render-only terrace levels, if given, are shaped like `tiles`, one digit
 //   '0'–'3' per tile.
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
@@ -64,7 +67,12 @@
 // (builds).
 //
 // Medals and conditions ([medals], [condition]) are validateMedals.ts's, run by validate.ts.
-import { MAX_CAMPAIGN_GRID_SPAN, SALVAGE_MAX, SALVAGE_MIN } from './rules.ts';
+import {
+  BLOCKER_HEALTH_FLOOR,
+  MAX_CAMPAIGN_GRID_SPAN,
+  SALVAGE_MAX,
+  SALVAGE_MIN,
+} from './rules.ts';
 import type { EnemyDef, GridPos, IdSpace, MapDef, RawContent } from './types.ts';
 import type { ValidationRules } from './validate.ts';
 import { validateBuilds } from './validateBuilds.ts';
@@ -180,13 +188,13 @@ function validateMap(
   const where = `maps.${def.id}`;
   const grid = gridOf(def);
 
-  // Feature guards. Escort is content now (T500a's shapes; createSim refuses it until T305c,
-  // `map.escort`); Holdout and Choir arrive with their maps (A3M3, the finale).
-  if (def.objective === 'holdout' || def.objective === 'choir') {
+  // Feature guards. Holdout is content now (T600a's shapes; createSim refuses it until T605,
+  // `map.holdout`); the Choir arrives with the finale (M8).
+  if (def.objective === 'choir') {
     issues.add(
       'feature',
       `${where}.objective`,
-      `'${def.objective}' maps arrive with their maps (M6–M7); 'defend', 'protect', and 'escort' only`,
+      "'choir' maps arrive with the finale (M8); 'defend', 'protect', 'escort', and 'holdout' only",
     );
   }
   validateAsset(issues, def, where);
@@ -311,6 +319,13 @@ function validateGeometry(
       `a Defend, Protect, or Escort map has exactly one core 'C' (found ${grid.count('C')})`,
     );
   }
+  if (def.objective === 'holdout' && grid.count('C') < 1) {
+    issues.add('core', `${where}.tiles`, "a Holdout map has at least one core 'C' (its doors)");
+  }
+  const exits = new Set<string>([
+    ...(def.safeExit === undefined ? [] : [def.safeExit]),
+    ...Object.values(def.refugees ?? {}).flatMap((g) => (g.exit === undefined ? [] : [g.exit])),
+  ]);
   // A marker may sit on any non-path tile (D042: A1M2's pump station marks its power node), but
   // an ally post or a scripted tile change takes the tile, so those markers stay on decor.
   const decorOnly = new Set<string>([
@@ -321,7 +336,7 @@ function validateGeometry(
     ),
   ]);
   for (const [name, pos] of Object.entries(def.markers ?? {})) {
-    if (name === def.safeExit) continue; // on the core ([escort])
+    if (exits.has(name)) continue; // on a core ([escort])
     const t = grid.at(pos);
     const ok = decorOnly.has(name) ? t === '.' : t !== undefined && !PATH_TILES.has(t);
     if (!ok) {
@@ -461,5 +476,18 @@ function validateAllies(issues: Issues, def: MapDef<IdSpace>, where: string): vo
     if (!(at.ratePerSec > 0)) bad('attack.ratePerSec must be > 0');
     if (!(at.rangeTiles > 0)) bad('attack.rangeTiles must be > 0');
     if (!at.targets.ground && !at.targets.air) bad('attack.targets hits neither layer');
+    const b = a.block;
+    if (b === undefined) continue;
+    if (!isPositiveInt(b.capacity)) bad('block.capacity must be a whole number ≥ 1');
+    let last = 0;
+    for (const [k, key] of b.health.entries()) {
+      if (!isPositiveInt(key.wave) || key.wave > def.waves.length || key.wave <= last) {
+        bad(`block.health[${k}].wave ${key.wave} must name a wave of the map, in rising order`);
+      }
+      last = key.wave;
+      if (!(key.pct >= BLOCKER_HEALTH_FLOOR && key.pct <= 1)) {
+        bad(`block.health[${k}].pct ${key.pct} must be in [${BLOCKER_HEALTH_FLOOR}, 1]`);
+      }
+    }
   }
 }
