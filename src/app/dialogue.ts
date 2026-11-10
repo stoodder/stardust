@@ -508,7 +508,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
   const resume = mode !== 'briefing' && inBattle ? speed.value : null;
   if (resume !== null) setSpeed(0);
   holdComms(true);
-  if (endsBeat(scene)) dropComms();
+  if (endsBeat(scene) || mapOver) dropComms();
   const h: Holding = {
     scene,
     mode,
@@ -710,6 +710,12 @@ let onIdle: (() => void) | null = null;
  * from now on holds `endLineMs` (its typing and a beat), not its reading time.
  */
 let commsEnding = false;
+/**
+ * The battle's map has ended (`playMapEndLines` ran): a scene opening now is a flow scene (A2M6's
+ * Ishael before the card), so what the panel still holds is dropped, not resumed over Results
+ * (D139), like the pivot's drop (`endsBeat`).
+ */
+let mapOver = false;
 
 function clearCommsTimer(): void {
   if (commsTimer !== null) clearTimeout(commsTimer);
@@ -977,6 +983,7 @@ export function playMapEndLines(
   outcome: 'won' | 'lost' = 'won',
 ): number {
   if (!enabled || session === null || commsHeld) return 0;
+  mapOver = true;
   if (lines.length === 0) return outcome === 'won' ? finishComms() : 0;
   const nodes = lines.map((l) => ({ ...l, durationSec: endLineMs(l.text) / 1000 }));
   // Not a scene id (SCENE_ID), so nothing is saved as seen: the card's debrief keeps the lines.
@@ -1115,6 +1122,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   commsQueue.length = 0;
   commsNow = null;
   commsEnding = false;
+  mapOver = false;
   onIdle = null;
 
   const save = activeSave();
@@ -1375,6 +1383,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     commsQueue.length = 0;
     commsNow = null;
     commsEnding = false;
+    mapOver = false;
     onIdle = null;
     dialogue.comms.value = null;
     // A battle's scenes end with it (none can be open as it stops, but a test may leave one).

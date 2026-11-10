@@ -145,8 +145,8 @@ const SHATTER_COLORS: readonly ColorName[] = ['blue.4', 'teal.4', 'white.1', 'pi
 const SHIELD_SHARD_COLORS: readonly ColorName[] = ['blue.4', 'white.1', 'blue.3'];
 const UNSUNG_COLORS: readonly ColorName[] = ['violet.3', 'violet.4', 'white.1'];
 /** A shed spark (D139 S4): its flight (ms), its lob's gravity (px/ms²: a 16 px arc), its pixels. */
-export const SHED_MS = 4000; // TEMP-VISUAL
-const SHED_G = 0.000008; // TEMP-VISUAL
+export const SHED_MS = 400;
+const SHED_G = 0.0008;
 const SHED_LAG_MS = 30;
 const SHED_TRAIL: readonly { readonly size: 1 | 2; readonly color: ColorName }[] = [
   { size: 2, color: 'white.1' },

@@ -1,7 +1,8 @@
 // M5 review round 2's app fixes (D139), built in round 3: the pivot's held relabel shows the old
 // meter whole until the meter has played its beat (S1); a scene holding input freezes the comms
-// queue's stale clock, so what was stale when it opened is dropped as it closes (S3: no old radio
-// line over Results after a flow scene) while a line it cut, or one queued fresh, still plays; and
+// queue's stale clock, so what was stale when it opened is dropped as it closes, while a line it
+// cut, or one queued fresh, still plays; a flow scene opening after the map's end drops what the
+// panel still holds (S3: no old radio line over Results after a flow scene); and
 // Pebble's whistle plays full-screen at the base after QUILL's loophole panel (S7). Real-time holds
 // run on fake timers.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,6 +22,7 @@ import {
   closeScene,
   commsHoldMs,
   COMMS_STALE_MS,
+  playMapEndLines,
   playScene,
   setDialogueEnabled,
   skipScene,
@@ -86,6 +88,11 @@ function longRadio(n: number): Scene {
   );
 }
 
+/** A full-screen flow scene (as A2M6's debrief plays before its card). */
+const flowScene = defineScene('a1_m01_scene_flow_test', [
+  { kind: 'line', speaker: 'quill', text: 'After the shift.' },
+]);
+
 const radio = defineScene('a1_m01_cue_radio_test', [
   { kind: 'line', speaker: 'bricks', text: 'Old news from wave two.' },
 ]);
@@ -139,6 +146,24 @@ describe('no stale comms after a scene holds input (D139 S3)', () => {
     drain();
     expect(seen.at(-1)).toBe(LONG_LINE(n));
     expect(seen).not.toContain('Old news from wave two.');
+  });
+
+  it("drops what the panel holds when a flow scene opens after the map's end (no radio over Results)", () => {
+    playScene(longRadio(6));
+    playScene(radio);
+    vi.advanceTimersByTime(500);
+    expect(dialogue.comms.value?.line.text).toBe(LONG_LINE(1));
+    // The map ends; the results hold runs out before the panel does, and Ishael's debrief opens.
+    expect(playMapEndLines([], 'won')).toBeGreaterThan(0);
+    playScene(flowScene, { mode: 'fullscreen' });
+    expect(dialogue.comms.value).toBeNull();
+    advanceScene();
+    expect(dialogue.scene.value).toBeNull();
+    seen.length = 0;
+    drain();
+    expect(seen).toEqual([]);
+    // What the cut report set so far still counts as heard.
+    expect(activeSave()?.story.seen).toContain('a1_m01_cue_long_test');
   });
 
   it('keeps a scene queued fresh as the hold began, however long the hold', () => {
