@@ -166,8 +166,11 @@ describe('M5 towers, ability, links, and catalog rows', () => {
   });
 
   it('none waits for its task (STUB_TOWER_TASKS; T504, T507, T508 lifted theirs), with access rows', () => {
-    expect(STUB_TOWER_TASKS).toEqual({});
-    expect(TOWERS_AHEAD_OF_TASK).toEqual([]);
+    // M6's stubs (sim/m6seams.test.ts) are the only towers still waiting.
+    for (const id of ['prism', 'mindspike', 'lantern']) {
+      expect(Object.hasOwn(STUB_TOWER_TASKS, id), id).toBe(false);
+      expect(TOWERS_AHEAD_OF_TASK, id).not.toContain(id);
+    }
     expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
     for (const id of ['mindspike', 'lantern'] as const) {
       expect(TOWER_ACCESS[id], id).toEqual({

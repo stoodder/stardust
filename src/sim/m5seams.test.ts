@@ -173,9 +173,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     expect(SCRIPT_GATES).not.toHaveProperty('standDown'); // T506
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot');
     expect(SCRIPT_GATES).toMatchObject({
-      // No M5 map uses these (D137).
-      objectiveCompleted: 'M6',
-      checkpoint: 'M7',
+      // No M5 map uses these (D137); retargeted by D141.
+      objectiveCompleted: 'M7',
+      checkpoint: 'M8',
     });
   });
 
@@ -217,8 +217,10 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
 describe('the stub towers (STUB_TOWER_TASKS; T501k generalised)', () => {
   it('are refused whole, naming their task, whatever their tiers use', () => {
     // Every M5 stub is lifted (the Prism by T504, the Mindspike by T507, the Lantern by T508), so
-    // the mechanism is checked on a stub map of its own.
-    expect(STUB_TOWER_TASKS).toEqual({});
+    // the mechanism is checked on a stub map of its own (M6's stubs: m6seams.test.ts).
+    for (const id of ['prism', 'mindspike', 'lantern']) {
+      expect(Object.hasOwn(STUB_TOWER_TASKS, id), id).toBe(false);
+    }
     for (const id of ['prism', 'mindspike', 'lantern', 'rivet']) {
       expect(stubTowerGate(id), id).toBeNull();
     }

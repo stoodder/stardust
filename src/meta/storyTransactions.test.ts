@@ -10,8 +10,15 @@ import { createNewSave, type SaveData } from './saveData.ts';
 import { SAVE_LIMITS, validateSave } from './validate.ts';
 import { runEnd } from './runEnd.ts';
 import {
+  BRIEFING_GIFTS,
   Q3_BONUS_GRANT,
+  REVOCATION_REFUNDS,
   RUN_END_TRANSACTIONS,
+  briefingGifts,
+  revokeAbility,
+  revokeTower,
+  runEndRevocations,
+  setDoorChoice,
   ZIBZAB_TUNE_UP,
   c2Windfall,
   giftGrantId,
@@ -44,11 +51,27 @@ describe('grant ids', () => {
 });
 
 describe('run end step 6 (runEndTransactions)', () => {
-  it("lists A2M4's Q3 Bonus and A2M5's Prism gift as the run-end transactions", () => {
+  it("lists A2M4's Q3 Bonus, A2M5's Prism gift, and A3M1's Hum Choir if spared", () => {
     expect(RUN_END_TRANSACTIONS).toEqual({
       a2_m04: [{ kind: 'q3_bonus' }],
       a2_m05: [{ kind: 'gift', tower: 'prism' }],
+      a3_m01: [{ kind: 'gift', tower: 'choir', when: { flag: 'spared_quiet_wave', eq: true } }],
     });
+  });
+
+  it("gives a conditional gift only when its condition holds over the save's flags", () => {
+    const table: Record<string, readonly RunEndTransactionDef[]> = {
+      a1_m01: [{ kind: 'gift', tower: 'skyhook', when: { flag: 'spared_quiet_wave', eq: true } }],
+    };
+    const first = { mapId: 'a1_m01', won: true, wonBefore: false } as const;
+    const cleared = createNewSave();
+    cleared.story.flags.spared_quiet_wave = false;
+    expect(runEndTransactions(cleared, first, table).transactions).toEqual([]);
+    const spared = createNewSave();
+    spared.story.flags.spared_quiet_wave = true;
+    expect(runEndTransactions(spared, first, table).transactions).toEqual([
+      { kind: 'gift', tower: 'skyhook' },
+    ]);
   });
 
   it('transacts only on a first win, in table order', () => {
@@ -245,3 +268,106 @@ describe('run end with the story transactions', () => {
 function isMapId(id: string): id is MapId {
   return Object.hasOwn(MAPS, id);
 }
+
+describe('Act III part one (T600b): briefing gifts, revocation, C3', () => {
+  it("gives A3M1's Scuttle Den in its briefing, once a save", () => {
+    expect(BRIEFING_GIFTS).toEqual({ a3_m01: ['burrow'] });
+    const save = deepFreeze(createNewSave());
+    const r = briefingGifts(save, 'a3_m01');
+    expect(r.transactions).toEqual([{ kind: 'gift', tower: 'burrow' }]);
+    expect(r.save.unlocks.towers).toContain('burrow');
+    expect(r.save.story.granted).toContain(giftGrantId('burrow'));
+    expect(briefingGifts(r.save, 'a3_m01')).toEqual({ save: r.save, transactions: [] });
+    // A map with none leaves the save as it is.
+    expect(briefingGifts(save, 'a3_m02').save).toBe(save);
+  });
+
+  it('revokes a class once, only one the save owns', () => {
+    const save = deepFreeze(createNewSave());
+    const r = revokeTower(save, 'rivet');
+    expect(r.applied).toEqual({ kind: 'revoke_tower', tower: 'rivet' });
+    expect(r.save.unlocks.revokedTowers).toEqual(['rivet']);
+    expect(r.save.unlocks.towers).toEqual(save.unlocks.towers); // still owned (the jailbreak, M7)
+    expect(validateSave(r.save).ok).toBe(true);
+    expect(revokeTower(r.save, 'rivet')).toEqual({ save: r.save, applied: null });
+    expect(revokeTower(save, 'skyhook')).toEqual({ save, applied: null });
+  });
+
+  it("revokes the uplink and refunds Orbital Strike Mk II's Intel (progression.md § 7.3)", () => {
+    expect(REVOCATION_REFUNDS).toEqual({ orbital_strike: 'orbital_strike_mk2' });
+    const plain = deepFreeze(createNewSave());
+    const bare = revokeAbility(plain, 'orbital_strike');
+    expect(bare.applied).toEqual({
+      kind: 'revoke_ability',
+      ability: 'orbital_strike',
+      refund: null,
+    });
+    expect(bare.save.unlocks.revokedAbilities).toEqual(['orbital_strike']);
+    expect(bare.save.currencies).toEqual(plain.currencies);
+
+    const mk2 = createNewSave();
+    mk2.upgrades.orbital_strike_mk2 = 1;
+    mk2.currencies.intel = 1;
+    const r = revokeAbility(deepFreeze(mk2), 'orbital_strike');
+    const price = UPGRADES.orbital_strike_mk2.ranks[0]!.price;
+    expect(r.applied).toEqual({
+      kind: 'revoke_ability',
+      ability: 'orbital_strike',
+      refund: { upgrade: 'orbital_strike_mk2', currency: 'intel', amount: price },
+    });
+    expect(r.save.currencies.intel).toBe(1 + price);
+    // The rank stays on record (R&D shows it bought and never sells it again).
+    expect(r.save.upgrades.orbital_strike_mk2).toBe(1);
+    expect(validateSave(r.save).ok).toBe(true);
+    // Once: no second refund.
+    expect(revokeAbility(r.save, 'orbital_strike')).toEqual({ save: r.save, applied: null });
+  });
+
+  it("saves the run's revocations on its first win only (run end, step 3)", () => {
+    const save = createNewSave();
+    save.upgrades.orbital_strike_mk2 = 1;
+    const revoked = { towers: ['thumper'], abilities: ['orbital_strike'] } as const;
+    for (const [won, wonBefore] of [
+      [false, false],
+      [true, true],
+    ] as const) {
+      expect(runEndRevocations(save, { won, wonBefore, revoked })).toEqual({
+        save,
+        revocations: [],
+      });
+    }
+    expect(runEndRevocations(save, { won: true, wonBefore: false })).toEqual({
+      save,
+      revocations: [],
+    });
+    const r = runEndRevocations(save, { won: true, wonBefore: false, revoked });
+    expect(r.revocations.map((t) => t.kind)).toEqual(['revoke_tower', 'revoke_ability']);
+    expect(r.save.unlocks.revokedTowers).toEqual(['thumper']);
+    expect(r.save.unlocks.revokedAbilities).toEqual(['orbital_strike']);
+
+    // Through run end: the summary lists them, and the refund lands in the bank with the pay.
+    const end = runEnd(save, {
+      mapId: 'a1_m01',
+      outcome: 'won',
+      mapStardust: 0,
+      waveCount: 7,
+      wavesResolved: 7,
+      earnedMedals: ['victory'],
+      skitterkinKilled: 0,
+      meter: 20,
+      revoked,
+    });
+    expect(end.summary.revocations).toEqual(r.revocations);
+    expect(end.save.unlocks.revokedTowers).toEqual(['thumper']);
+    expect(end.save.currencies.intel).toBe(save.currencies.intel + 1 + 2);
+  });
+
+  it('commits C3 once: the door is never asked again', () => {
+    const save = deepFreeze(createNewSave());
+    const r = setDoorChoice(save, 'warren');
+    expect(r.applied).toEqual({ kind: 'c3', choice: 'warren' });
+    expect(r.save.story.flags.door_choice).toBe('warren');
+    expect(setDoorChoice(r.save, 'convoy')).toEqual({ save: r.save, applied: null });
+    expect(validateSave(r.save).ok).toBe(true);
+  });
+});

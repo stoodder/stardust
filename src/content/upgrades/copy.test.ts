@@ -103,7 +103,12 @@ describe('item copy', () => {
   });
 
   it("Ves'thara's Xenotech lines: no price, no contractions, and never stardust", () => {
-    expect(vesthara.toSorted()).toEqual(['attune_lantern', 'attune_mindspike', 'gift_prism']);
+    expect(vesthara.toSorted()).toEqual([
+      'attune_bloom',
+      'attune_lantern',
+      'attune_mindspike',
+      'gift_prism',
+    ]);
     for (const id of vesthara) {
       const text = ITEM_COPY[id] ?? '';
       expect(text, id).not.toBe('');

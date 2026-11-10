@@ -118,6 +118,10 @@ describe('towers', () => {
       'prism',
       'mindspike',
       'lantern',
+      // M6's (T600a stubs; src/sim/m6seams.test.ts).
+      'burrow',
+      'choir',
+      'bloom',
     ]);
     expect([rivet, thumper, sprinkler].map((t) => t.name)).toEqual([
       'Rivet',
@@ -316,6 +320,11 @@ describe('enemies', () => {
       'fracture',
       'fracture_shard',
       'riftmoth',
+      // M6's (T600a stubs; src/sim/m6seams.test.ts).
+      'maw',
+      'undertow',
+      'compliance',
+      'expediter',
     ]);
     expect(
       Object.values(content.enemies)

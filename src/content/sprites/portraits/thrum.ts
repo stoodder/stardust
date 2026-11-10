@@ -46,7 +46,7 @@ function shell(g: CharGrid, singing: boolean): void {
       const dy = (y + 0.5 - SHELL.cy) / SHELL.ry;
       if (dx * dx + dy * dy > 1 || dy > 0) continue;
       const d = PLATES.map((p) => Math.abs(x + 0.5 - p));
-      const sorted = [...d].sort((a, b) => a - b);
+      const sorted = d.toSorted((a, b) => a - b);
       const k = d.indexOf(sorted[0] ?? 0);
       // A seam where two plates meet, shimmer glinting through it.
       const seam = Math.abs((sorted[0] ?? 0) - (sorted[1] ?? 0)) < 1.2;
@@ -138,7 +138,7 @@ function eye(g: CharGrid, cx: number, cy: number, look: 'up' | 'ahead'): void {
     return 'k';
   });
   const gx = Math.floor(cx) - 1;
-  const gy = Math.floor(cy) - (look === 'up' ? 2 : 1);
+  const gy = Math.floor(cy) - (look === 'up' ? 1 : 0);
   stamp(g, gx, gy, ['ww', 'w.']);
 }
 

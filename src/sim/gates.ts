@@ -12,7 +12,9 @@
 // echoes, area Marks, and Truthlight's `noEvade`), and the map (T300a: flyers, neutral units, enemy
 // abilities, bosses, and optional objectives; T400a: the hush rule, Skittish, shield pulses, blinks,
 // cloaks, Protect, revisits, and clickable objects; T500a: phasing, shield auras, a boss's
-// shield-broken phase, Escort, and Sundown's darkness). Wreckage needs no gate: the `clear`
+// shield-broken phase, Escort, and Sundown's darkness; T600a: gathering, haste auras, rift lanes,
+// the Holdout, and blockers). The loadout adds T600a's Lullaby and the Bloom's field, and slot 2
+// Underfoot's trap (`pathTrap`). Wreckage needs no gate: the `clear`
 // command and the salvage drone run since T304b (systems/wreckage.ts).
 //
 // A tower registered ahead of its task (content/towers/index.ts STUB_TOWER_TASKS, which names
@@ -79,6 +81,12 @@ export type Feature =
   | 'ability.reveal'
   /** Stillness (T507). */
   | 'ability.stasisArea'
+  /** Underfoot's trap (T604). */
+  | 'ability.pathTrap'
+  /** A tier with `lull` (the Hum Choir [Lullaby]: Lulled; T607). */
+  | 'status.lulled'
+  /** A tier with `field` (the Stasis Bloom; T608). */
+  | 'tower.field'
   /** A wave group of flyers: an air-layer enemy or an air lane (air targeting; T304a). */
   | 'enemy.flying'
   /** A neutral unit in the waves (Gerald: targeted, never hurt, never leaks). */
@@ -109,6 +117,16 @@ export type Feature =
   | 'enemy.phase'
   /** A shield-recharge aura (the Aegis Cantor; T502). */
   | 'enemy.shieldAura'
+  /** Gathering (the Maw; T602). */
+  | 'enemy.gather'
+  /** A haste aura (the Expediter; T603). */
+  | 'enemy.hasteAura'
+  /** Rift lanes: Hollow routes that open at a wave, telegraphed a wave ahead (T602). */
+  | 'map.rift'
+  /** The Holdout (A3M3; no defeat, an Evacuated score, ended by script; T605). */
+  | 'map.holdout'
+  /** A blocker ally (`AllyPostDef.block`: Bricks at the Gap, his health on a timeline; T605). */
+  | 'ally.blocker'
   /** A boss phase that begins when its shield breaks, and its shards (the Penitent; T506). */
   | 'enemy.boss.shieldBroken'
   /** Escort: refugees, the safe exit, the Evacuated meter (`escort` maps and pivots; T305c). */
@@ -170,11 +188,12 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
   // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504, live), Unnerved
   // and echoes with the Mindspike and Stillness's Stasis area (T507, live), area Marks and Truthlight
-  // with the Lantern (T508, live); spawners (Scuttle Den) are M6's.
+  // with the Lantern (T508, live). M6 (D141): spawners with the Scuttle Den (T604), Lulled with the
+  // Hum Choir's Lullaby (T607), the Stasis Bloom's field (T608).
   'attack.projectile': null,
   'attack.beam': null,
   'attack.chain': null,
-  'attack.spawner': 'M6',
+  'attack.spawner': 'T604',
   'attack.homing': null,
   'attack.charge': null,
   'attack.line': null,
@@ -187,6 +206,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'attack.echo': null,
   'tower.markArea': null,
   'status.noEvade': null,
+  'status.lulled': 'T607',
+  'tower.field': 'T608',
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,
@@ -209,6 +230,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ability.discount': null,
   'ability.reveal': null,
   'ability.stasisArea': null,
+  'ability.pathTrap': 'T604',
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
@@ -217,7 +239,8 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.boss': null,
   'enemy.boss.pivot': null,
   'enemy.boss.shieldBroken': null,
-  'enemy.boss.layToRest': 'M7',
+  // The finale's ending (D141: M8).
+  'enemy.boss.layToRest': 'M8',
   'enemy.hush': null,
   'enemy.skittish': null,
   'enemy.pulse': null,
@@ -225,6 +248,13 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'enemy.cloak': null,
   'enemy.phase': null,
   'enemy.shieldAura': null,
+  // M6 (D141): the Hollow's Maw and rift lanes (T602), Everglow Security's haste aura (T603), the
+  // Holdout and Bricks's block (T605).
+  'enemy.gather': 'T602',
+  'enemy.hasteAura': 'T603',
+  'map.rift': 'T602',
+  'map.holdout': 'T605',
+  'ally.blocker': 'T605',
   'map.objectives': null,
   'map.protect': null,
   'map.revisit': null,
@@ -236,7 +266,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
 
 type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line';
 type GatedStatus = 'pinned' | 'stasis' | 'unnerved';
-type GatedEffect = 'slowAll' | 'discount' | 'reveal' | 'stasisArea';
+type GatedEffect = 'slowAll' | 'discount' | 'reveal' | 'stasisArea' | 'pathTrap';
 
 function isGatedKind(kind: AttackKind): kind is GatedKind {
   return (
@@ -254,7 +284,13 @@ function isGatedStatus(status: StatusId): status is GatedStatus {
 }
 
 function isGatedEffect(kind: AbilityEffect['kind']): kind is GatedEffect {
-  return kind === 'slowAll' || kind === 'discount' || kind === 'reveal' || kind === 'stasisArea';
+  return (
+    kind === 'slowAll' ||
+    kind === 'discount' ||
+    kind === 'reveal' ||
+    kind === 'stasisArea' ||
+    kind === 'pathTrap'
+  );
 }
 
 /** The gate a modifier needs open. */
@@ -289,6 +325,8 @@ interface GateTier {
   readonly detect?: object | null;
   readonly economy?: object | null;
   readonly markArea?: object | null;
+  readonly lull?: object | null;
+  readonly field?: object | null;
 }
 
 /** The attack kinds, statuses, and tier abilities `tiers` use that have gates. */
@@ -313,6 +351,8 @@ function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
     if (tier.markArea !== undefined && tier.markArea !== null) {
       use('tower.markArea', `an area Mark (${id})`);
     }
+    if (tier.lull !== undefined && tier.lull !== null) use('status.lulled', `Lullaby (${id})`);
+    if (tier.field !== undefined && tier.field !== null) use('tower.field', `a field (${id})`);
     for (const e of [...(tier.effects ?? []), ...(a?.burst?.effects ?? [])]) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
@@ -349,6 +389,8 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
   if (def.cloaked) use('enemy.cloak', `a cloak (${id})`);
   if (def.phase !== null) use('enemy.phase', `phasing (${id})`);
   if (def.shieldAura !== null) use('enemy.shieldAura', `a shield aura (${id})`);
+  if (def.gather !== null) use('enemy.gather', `gathering (${id})`);
+  if (def.hasteAura !== null) use('enemy.hasteAura', `a haste aura (${id})`);
   if (phases.some((p) => p.onShieldBroken || p.shards !== null)) {
     use('enemy.boss.shieldBroken', `a shield-broken phase (${id})`);
   }
@@ -375,6 +417,12 @@ function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
   if (clickables.length > 0) use('map.clickable', `clickable objects (${clickables.join(', ')})`);
   if (map.objective === 'escort' || map.escort !== null) use('map.escort', 'an Escort (refugees)');
   if (hasDarkness(map)) use('map.darkness', "Sundown's darkness");
+  const rifts = map.routeList.filter((r) => r.kind === 'rift').map((r) => r.id);
+  if (rifts.length > 0) use('map.rift', `rift lanes (${rifts.join(', ')})`);
+  if (map.objective === 'holdout') use('map.holdout', 'a Holdout');
+  for (const a of map.allies) {
+    if (a.block !== null) use('ally.blocker', `a blocker ('${a.kind}' at '${a.post}')`);
+  }
 }
 
 /** What `cfg` uses that a closed gate refuses: one message per feature, in the order first used. */

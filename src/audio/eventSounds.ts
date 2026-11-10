@@ -161,6 +161,21 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   EchoBurst: true,
   StasisArea: true,
   DarknessShift: true,
+  // M6 (T600a seams): silent until T650 sounds them (it flips each it sounds to true).
+  GatherTell: false,
+  Gathered: false,
+  RiftOpening: false,
+  RiftOpened: false,
+  SwarmLatch: false,
+  SwarmHome: false,
+  TrapSprung: false,
+  Blocked: false,
+  ForcedInput: false,
+  ForcedInputResolved: false,
+  TowerRevoked: false,
+  ClassRevoked: false,
+  AbilityRevoked: false,
+  ModifierChanged: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -521,6 +536,21 @@ export function createEventSounds(
         case 'Interacted':
         case 'ObjectiveChanged':
         case 'BeamChanged':
+        // M6 (T600a seams): silent until T650 sounds them.
+        case 'GatherTell':
+        case 'Gathered':
+        case 'RiftOpening':
+        case 'RiftOpened':
+        case 'SwarmLatch':
+        case 'SwarmHome':
+        case 'TrapSprung':
+        case 'Blocked':
+        case 'ForcedInput':
+        case 'ForcedInputResolved':
+        case 'TowerRevoked':
+        case 'ClassRevoked':
+        case 'AbilityRevoked':
+        case 'ModifierChanged':
           return;
         default:
           assertNever(e);

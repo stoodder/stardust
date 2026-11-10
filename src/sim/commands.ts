@@ -1,7 +1,8 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
 // fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b), and M4's `interact`
-// (sim/clickables.ts, T409); `scriptInput` arrives with its Act III map.
+// (sim/clickables.ts, T409). M6's `scriptInput` is declared (T600a) and rejected `notImplemented`
+// until T605 runs the forced input (A3M3's SEAL).
 // `notImplemented` is kept for handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, MarkerId, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';
@@ -40,7 +41,13 @@ export type Command<K extends IdSpace = LiveIds> =
   /** Commander abilities: slot 1 the Technician's, slot 2 the companion's (T207a). */
   | { readonly type: 'ability'; readonly slot: 1 | 2; readonly target?: GridPos }
   /** Call the next wave early (or start wave 1). */
-  | { readonly type: 'callWave' };
+  | { readonly type: 'callWave' }
+  /**
+   * Press the forced single input `id` (core-loop.md § 2.11: A3M3's SEAL; T605): resolves
+   * `state.forcedInput` when it is `id` (the `forcedInputResolved` trigger), so the moment is in
+   * the command log and the harness can press it.
+   */
+  | { readonly type: 'scriptInput'; readonly id: string };
 export type CommandType = Command['type'];
 /** A tower's tier-4 specialization: `TowerDef.specs.a` or `.b`. */
 export type SpecChoice = 'a' | 'b';
@@ -130,6 +137,8 @@ export function copyCommand<K extends IdSpace>(cmd: Command<K>): Command<K> {
       return { type: 'clear', tile: [cmd.tile[0], cmd.tile[1]] };
     case 'interact':
       return { type: 'interact', marker: cmd.marker };
+    case 'scriptInput':
+      return { type: 'scriptInput', id: cmd.id };
     default:
       return assertNever(cmd);
   }

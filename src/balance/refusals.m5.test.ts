@@ -7,8 +7,9 @@ import { HARNESS_GATES } from './refusals.ts';
 describe('HARNESS_GATES (M5)', () => {
   it('name the task or milestone that lifts each row', () => {
     expect(HARNESS_GATES.objectives).toBeNull();
-    expect(HARNESS_GATES.holdout).toBe('M6');
-    expect(HARNESS_GATES.choir).toBe('M7');
-    expect(HARNESS_GATES.jamLimit).toBe('M6');
+    // Retargeted by D141 (sim/m6seams.test.ts).
+    expect(HARNESS_GATES.holdout).toBe('T605');
+    expect(HARNESS_GATES.choir).toBe('M8');
+    expect(HARNESS_GATES.jamLimit).toBe('M7');
   });
 });

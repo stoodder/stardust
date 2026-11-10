@@ -1,15 +1,21 @@
 // Escort and Sundown map validation (T500a; design/maps.md § 5.1–5.2; the rule list is
 // validateMap.ts's header): [escort] and [darkness].
+import { FLAGS, type FlagDef } from './dialogue/flags.ts';
 import { DARK_RANGE_PENALTY } from './rules.ts';
 import type { IdSpace, MapDef } from './types.ts';
 import { Issues, duplicates, fmt, isPositive, isPositiveInt } from './validateHelpers.ts';
 
+/** The flag registry by plain id (a refugee group's `when`). */
+const FLAG_DEFS: Readonly<Record<string, FlagDef>> = FLAGS;
+
 /**
- * [escort]: `safeExit` and `refugees` go together; the exit is a marker on the map's core `C` (the
+ * [escort]: `safeExit` and `refugees` go together; the exit is a marker on a core `C` (the
  * Preserve gate: the core before A2M5's pivot, the safe exit after); each refugee group walks a
- * ground path that ends there, `count` refugees (a whole number ≥ 1), Pebble with at most one
- * group; an Escort map (from the start, or by `setObjective`) has refugees; every `spawnAllies`
- * names a group; `maxLost` (losing that many loses the map) is a whole number ≥ 1.
+ * ground path that ends on its exit (its own `exit`, a marker on a core `C`, else `safeExit`: A3M3's
+ * two blast doors), `count` refugees (a whole number ≥ 1), Pebble with at most one group; a group's
+ * `when` names a script flag and one of its values (T600a); an Escort map (from the start, or by
+ * `setObjective`) and a Holdout map have refugees; every `spawnAllies` names a group; `maxLost`
+ * (losing that many loses the map) is a whole number ≥ 1, and a Holdout has none (no defeat).
  */
 export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const bad = (w: string, msg: string): void => issues.add('escort', w, msg);
@@ -23,9 +29,13 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
   ];
   const escorts =
     def.objective === 'escort' ||
+    def.objective === 'holdout' ||
     actions.some((a) => 'setObjective' in a && a.setObjective === 'escort');
   if (escorts && groups === undefined) {
-    bad(`${where}.refugees`, 'an Escort map (from the start or by setObjective) has refugees');
+    bad(
+      `${where}.refugees`,
+      'an Escort or Holdout map (an Escort from the start or by setObjective) has refugees',
+    );
   }
   for (const a of actions) {
     if ('spawnAllies' in a && (groups === undefined || !Object.hasOwn(groups, a.spawnAllies))) {
@@ -46,19 +56,42 @@ export function validateEscort(issues: Issues, def: MapDef<IdSpace>, where: stri
   let pebble = 0;
   for (const [id, g] of Object.entries(groups)) {
     const w = `${where}.refugees.${id}`;
+    let to = exit;
+    if (g.exit !== undefined) {
+      const own = def.markers?.[g.exit];
+      if (own === undefined) {
+        bad(`${w}.exit`, `unknown marker '${g.exit}'`);
+        continue;
+      }
+      if (def.tiles[own[1]]?.charAt(own[0]) !== 'C') {
+        bad(`${w}.exit`, `marker '${g.exit}' ${fmt(own)} is not on a core 'C'`);
+      }
+      to = own;
+    }
     const path = def.paths.find((p) => p.id === g.route);
     if (path === undefined) {
       bad(`${w}.route`, `'${g.route}' is not a ground path of this map`);
     } else {
       const end = path.tiles[path.tiles.length - 1];
-      if (end === undefined || end[0] !== exit[0] || end[1] !== exit[1]) {
-        bad(`${w}.route`, `path '${g.route}' doesn't end on the safe exit ${fmt(exit)}`);
+      if (end === undefined || end[0] !== to[0] || end[1] !== to[1]) {
+        bad(`${w}.route`, `path '${g.route}' doesn't end on its exit ${fmt(to)}`);
+      }
+    }
+    if (g.when !== undefined) {
+      const rule = FLAG_DEFS[g.when.flag];
+      if (rule === undefined || rule.script !== true) {
+        bad(`${w}.when.flag`, `'${g.when.flag}' is not a script flag`);
+      } else if (!rule.values.includes(g.when.eq)) {
+        bad(`${w}.when.eq`, `'${String(g.when.eq)}' is not a value of '${g.when.flag}'`);
       }
     }
     if (g.count !== undefined && !isPositiveInt(g.count)) {
       bad(`${w}.count`, 'must be a whole number ≥ 1');
     }
     if (g.withPebble === true && ++pebble === 2) bad(w, 'Pebble rides with one group only');
+  }
+  if (def.objective === 'holdout' && def.maxLost !== undefined) {
+    bad(`${where}.maxLost`, 'a Holdout has no defeat (maps.md § 5.2), so no maxLost');
   }
   // Losing `maxLost` refugees loses the map (D138), so 0 would lose it before the first refugee.
   if (def.maxLost !== undefined && !(Number.isInteger(def.maxLost) && def.maxLost >= 1)) {

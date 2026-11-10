@@ -1,6 +1,6 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. Every M2–M5 event is declared; the ones whose task
+// sim, systems communicate through state. Every M2–M6 event is declared; the ones whose task
 // hasn't landed are never emitted yet (each names its task). An event's owning task may add
 // payload fields.
 import type {
@@ -584,6 +584,115 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly type: 'DarknessShift';
       readonly wave: number;
       readonly dark: number;
+    }
+  // ── M6 (T600a seams; declared ahead of their tasks, never emitted until each lands) ──────────
+  | {
+      /**
+       * A Maw's tendril tell began (T602): for its 1 s it draws `targetUid` (an enemy, or a refugee
+       * ally when `ally`) toward it; Stasis or Unnerved interrupt it. Render's tendrils.
+       */
+      readonly type: 'GatherTell';
+      readonly uid: number;
+      readonly targetUid: number;
+      readonly ally: boolean;
+    }
+  | {
+      /**
+       * A Maw gathered a unit (T602; enemies.md § 5.4): `victim` is an enemy id, or `'refugee'`
+       * for a refugee ally (`victimUid` the ally's uid; a loss, `stats.refugeesGathered`). It
+       * gained `hp` (to HP and max HP) and has `absorbs` now. Never a kill, a leak, or a bounty.
+       */
+      readonly type: 'Gathered';
+      readonly uid: number;
+      readonly victimUid: number;
+      readonly victim: K['enemy'] | 'refugee';
+      readonly hp: number;
+      readonly absorbs: number;
+    }
+  | {
+      /**
+       * A rift lane opens a wave from now (T602; maps.md § 4: telegraphed a wave ahead): emitted as
+       * wave `wave − 1`'s countdown begins (as wave 1's build phase for a lane open from W1).
+       */
+      readonly type: 'RiftOpening';
+      readonly route: RouteId;
+      readonly wave: number;
+    }
+  /** A rift lane opened as its wave started (T602): Hollow groups may walk it from now on. */
+  | { readonly type: 'RiftOpened'; readonly route: RouteId; readonly wave: number }
+  | {
+      /**
+       * A swarmling or Champion latched onto an enemy (T604), or let go (`on: false`) to run home.
+       * Render's latch; audio's chitter.
+       */
+      readonly type: 'SwarmLatch';
+      readonly uid: number;
+      readonly enemyUid: number;
+      readonly on: boolean;
+    }
+  /** A swarmling or Champion reached its Den (T604): the head-count chirp (towers.md § 8). */
+  | { readonly type: 'SwarmHome'; readonly uid: number; readonly towerUid: number }
+  | {
+      /** Underfoot's trap sprang on an enemy (T604): Pinned and hit, once per enemy per trap. */
+      readonly type: 'TrapSprung';
+      readonly zoneUid: number;
+      readonly enemyUid: number;
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * A blocker took (`on`) or released an enemy (T605; Bricks at the Gap). His health is
+       * `Ally.health`, on the timeline.
+       */
+      readonly type: 'Blocked';
+      readonly allyUid: number;
+      readonly enemyUid: number;
+      readonly on: boolean;
+    }
+  | {
+      /**
+       * A forced single input began (T605; core-loop.md § 2.11: A3M3's SEAL): waves, movement, and
+       * firing freeze until a `scriptInput` command with `id` arrives (the sim keeps ticking).
+       */
+      readonly type: 'ForcedInput';
+      readonly id: string;
+    }
+  /** The forced input `id` was pressed (`scriptInput`; T605): the `forcedInputResolved` trigger. */
+  | { readonly type: 'ForcedInputResolved'; readonly id: string }
+  | {
+      /**
+       * A tower of a revoked class powered down and folded away (T606; towers.md § 9): its
+       * `refund` (100% of what was paid) is credited. The LICENSE REVOKED stamp shows 1 s.
+       */
+      readonly type: 'TowerRevoked';
+      readonly uid: number;
+      readonly tower: K['tower'];
+      readonly refund: number;
+    }
+  | {
+      /**
+       * A tower class was revoked for the rest of the map (T606; `revokeTowerClass`), with the
+       * total `refund` over its towers (0 with none placed). `state.revoked.towers` records it.
+       */
+      readonly type: 'ClassRevoked';
+      readonly tower: K['tower'];
+      readonly refund: number;
+    }
+  | {
+      /**
+       * A commander ability was revoked (T606; `revokeAbility`: A3M2's Orbital Strike): `slot` goes
+       * dark ("UPLINK REVOKED"), or null when it wasn't equipped. `state.revoked.abilities`.
+       */
+      readonly type: 'AbilityRevoked';
+      readonly ability: K['ability'];
+      readonly slot: 1 | 2 | null;
+    }
+  | {
+      /** A script modifier turned on or off (T606; `setModifier`: QUILL's lockout, A3M2). */
+      readonly type: 'ModifierChanged';
+      readonly modifier: 'quillLockout' | 'previewHidden';
+      readonly on: boolean;
     }
   | { readonly type: 'MapWon' }
   | { readonly type: 'MapLost' }

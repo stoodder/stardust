@@ -13,7 +13,9 @@
 //   of the kind went past the marker at some point; latched in `stats.markersPassed` by
 //   trackConditions, which cleanup runs every tick). M5 (T500a): `leaks.waves` counts the leaks by
 //   units of those waves (`stats.leaksByWave`), and `passedMarker.unrevealed` only a cloaked unit
-//   never Revealed before it went past (`Enemy.everRevealed`; latched under its own key).
+//   never Revealed before it went past (`Enemy.everRevealed`; latched under its own key). M6
+//   (T600a): `groupLost` counts one refugee group's losses on the road (`stats.lostByGroup`;
+//   The Matriarch's Young), `gte`/`lte` like `stat`.
 // - `objectiveDone`: another optional objective of the map is `done` (T400a; settled once that
 //   objective settles).
 // - `flag`: a story flag from `SimConfig.scriptFlags` (fixed for the run; unset never matches).
@@ -36,12 +38,12 @@ type View = DeepReadonly<SimState>;
 
 /**
  * What conditions read besides state: the links (for `linkActive`), the story flags, and the map
- * (markers for `wreckageCleared`, objectives for `objectiveDone`).
+ * (markers for `wreckageCleared`, objectives for `objectiveDone`, refugee groups for `groupLost`).
  */
 export interface ConditionContext {
   readonly content: Pick<CompiledContent<IdSpace>, 'links'>;
   readonly config: Pick<SimConfig<IdSpace>, 'scriptFlags'>;
-  readonly map: Pick<CompiledMapDef<IdSpace>, 'markers' | 'cols' | 'objectives'>;
+  readonly map: Pick<CompiledMapDef<IdSpace>, 'markers' | 'cols' | 'objectives' | 'escort'>;
 }
 
 /** The `markersPassed` key for "any enemy" (`passedMarker` without `enemy`). */
@@ -88,8 +90,13 @@ export function settledCondition(c: Condition, state: View, ctx: ConditionContex
   }
   if ('flag' in c) return atom(c, state, ctx);
   if ('passedMarker' in c || 'wreckageCleared' in c) return atom(c, state, ctx) ? true : null;
-  if ('stat' in c || 'leaks' in c) {
-    const v = 'stat' in c ? state.stats[c.stat] : leakCount(state, c.leaks);
+  if ('stat' in c || 'leaks' in c || 'groupLost' in c) {
+    const v =
+      'stat' in c
+        ? state.stats[c.stat]
+        : 'leaks' in c
+          ? leakCount(state, c.leaks)
+          : groupLostCount(state, ctx, c.groupLost);
     if (c.lte !== undefined) return v > c.lte ? false : null;
     return c.gte === undefined || v >= c.gte ? true : null;
   }
@@ -119,7 +126,17 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
   if ('leaks' in c) return within(leakCount(state, c.leaks), c.gte, c.lte);
   if ('wreckageCleared' in c) return wreckageClearedAt(state, ctx.map, c.wreckageCleared);
   if ('objectiveDone' in c) return objectiveStatus(state, ctx, c.objectiveDone) === 'done';
+  if ('groupLost' in c) return within(groupLostCount(state, ctx, c.groupLost), c.gte, c.lte);
   return false; // combinators are handled by the callers
+}
+
+/** Refugees of group `id` lost this run (0 for an unknown group: validate rejects it). */
+function groupLostCount(state: View, ctx: ConditionContext, id: string): number {
+  const groups = ctx.map.escort?.groups ?? [];
+  for (let i = 0; i < groups.length; i++) {
+    if (groups[i]!.id === id) return state.stats.lostByGroup[i] ?? 0; // i < length
+  }
+  return 0;
 }
 
 /**

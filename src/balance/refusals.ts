@@ -57,14 +57,15 @@ export type HarnessFeature =
  */
 export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Object.freeze({
   objectives: null,
-  holdout: 'M6',
-  choir: 'M7',
+  // M6 (D141): the Holdout's floor with A3M3 (T605); the finale's Voices (M8).
+  holdout: 'T605',
+  choir: 'M8',
   protect: null,
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
-  // No M5 map has a jammer (D137).
-  jamLimit: 'M6',
+  // No M6 map has a jammer (D141: jamming is M7's).
+  jamLimit: 'M7',
 });
 
 /**

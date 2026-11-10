@@ -167,7 +167,7 @@ describe('M4 map and condition rules', () => {
         'asset',
       ),
     ).toHaveLength(1);
-    expect(errors(withMap({ objective: 'holdout' }), 'feature')).toHaveLength(1);
+    expect(errors(withMap({ objective: 'choir' }), 'feature')).toHaveLength(1);
   });
 
   it('[clickable] setClickable and interacted name a declared clickable marker', () => {

@@ -73,6 +73,37 @@ const A2M6: ProfileDef = {
 };
 
 /**
+ * Bramble's warren gives the Scuttle Den in A3M1's briefing; Ability Coolant 1 and Emergency
+ * Bulkhead before A3M1 (campaign.md § 4.9). A profile equips as many protocols as it has slots
+ * (one: the reference buys no slot), so on A3M1's Escort it keeps Head Start, and the Bulkhead,
+ * which absorbs core leaks an Escort doesn't count, goes on for A3M2's Defend.
+ */
+const A3M1: ProfileDef = {
+  ...A2M6,
+  towers: [...A2M6.towers, 'burrow'],
+  shop: { ...A2M6.shop, ability_coolant: 1 },
+};
+/** The Harpoon's license (250 Stardust) and the Mindspike's attunement (3 Intel: 10) before A3M2. */
+const A3M2: ProfileDef = {
+  ...A3M1,
+  towers: [...A3M1.towers, 'harpoon', 'mindspike'],
+  protocols: ['emergency_bulkhead'],
+};
+/**
+ * After A3M2's Clean Exit: the class its par build loses (the Rivet, the most credits invested;
+ * act3.md § A3M2) and Orbital Strike are gone (slot 1 holds Scanner Sweep only if bought, and the
+ * reference never buys it); Seed Money 2. Holdout has no core to leak into, so Head Start is back
+ * on. The harness's per-class variants (T606) swap which class is gone.
+ */
+const A3M3: ProfileDef = {
+  ...A3M2,
+  towers: A3M2.towers.filter((t) => t !== 'rivet'),
+  shop: { ...A3M2.shop, seed_money: 2 },
+  protocols: ['head_start'],
+  technicianAbility: null,
+};
+
+/**
  * The reference profile before each campaign map (story/campaign.md § 4.9: Standard, first-clear
  * Stardust spent sensibly, one Intel per map won, the weaker branch of every flag), through the
  * last map built or being built. A map's builds.ts uses its row as `referenceProfile`.
@@ -89,4 +120,7 @@ export const REFERENCE_PROFILES = {
   a2_m04: A2M4,
   a2_m05: A2M5,
   a2_m06: A2M6,
+  a3_m01: A3M1,
+  a3_m02: A3M2,
+  a3_m03: A3M3,
 } as const satisfies Partial<Record<CampaignMapId, ProfileDef>>;

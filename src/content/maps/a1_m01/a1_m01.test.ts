@@ -104,6 +104,7 @@ describe('A1M1 · Orientation Day', () => {
           hitsGround: true,
           hitsAir: true,
         },
+        block: null,
       },
     ]);
     const rivet = RAW_CONTENT.towers.rivet.tiers[0].attack!; // tier 1 has an attack

@@ -18,9 +18,12 @@ const STARDUST = [
   ['a2_m04', 225],
   ['a2_m05', 240],
   ['a2_m06', 260],
+  ['a3_m01', 280],
+  ['a3_m02', 300],
+  ['a3_m03', 320],
 ] as const;
 
-/** The live campaign with every map through A2M6 present, unbuilt ones stood in. */
+/** The live campaign with every map through A3M3 present, unbuilt ones stood in. */
 function withRows(): RawContent<IdSpace> {
   const a1m5: MapDef<IdSpace> = RAW_CONTENT.maps.a1_m05;
   const maps: Record<string, MapDef<IdSpace>> = { ...RAW_CONTENT.maps };
@@ -60,14 +63,15 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
     expect(a2_m06.shop).toEqual({ ...a2_m05.shop, reinforced_core: 2 });
   });
 
-  it('prices the rows on the campaign timeline (the Prism as its task will leave it)', () => {
-    // The Prism Spire is a stub until T504 lifts it, so its row waits for that (see below).
+  it('prices the rows on the campaign timeline (each stub tower as its task will leave it)', () => {
+    // A stub tower (the Scuttle Den until T604) waits for its task: priced as it will be.
     const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
     expect(purchasable(live)).toEqual([]);
-    // While the Prism is ahead of its task, A2M6's row is refused for it alone.
-    const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['prism'] });
+    // While a tower is ahead of its task, every row owning it is refused for it alone.
+    const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['burrow'] });
+    expect(ahead.length).toBe(3);
     for (const e of ahead)
-      expect(e).toMatch(/a2_m06\.referenceProfile.*'prism' waits for its task/);
+      expect(e).toMatch(/a3_m0[1-3]\.referenceProfile.*'burrow' waits for its task/);
   });
 
   it("checks A2M5's row against the bank C2 Return emptied", () => {
@@ -82,5 +86,36 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
     expect(validate({ ...raw, maps }).join('\n')).toMatch(
       /a2_m05\.referenceProfile: spends 40 Stardust since the bank reset after a2_m04; the maps before it pay 0/,
     );
+  });
+});
+
+describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
+  const { a2_m06, a3_m01, a3_m02, a3_m03 } = REFERENCE_PROFILES;
+
+  it('follows campaign.md § 4.9 into A3M1: the Scuttle Den (a briefing gift) and Ability Coolant 1', () => {
+    expect(a3_m01.towers).toEqual([...a2_m06.towers, 'burrow']);
+    expect(a3_m01.specs).toEqual(a2_m06.specs);
+    expect(a3_m01.shop).toEqual({ ...a2_m06.shop, ability_coolant: 1 });
+    // One slot: Head Start stays on for the Escort.
+    expect(a3_m01.protocols).toEqual(['head_start']);
+    expect(a3_m01.technicianAbility).toBe('orbital_strike');
+  });
+
+  it('follows it into A3M2: the Harpoon and the Mindspike, the Bulkhead on for the Defend', () => {
+    expect(a3_m02.towers).toEqual([...a3_m01.towers, 'harpoon', 'mindspike']);
+    expect(a3_m02.protocols).toEqual(['emergency_bulkhead']);
+    expect(a3_m02.technicianAbility).toBe('orbital_strike');
+  });
+
+  it('follows it into A3M3: the Clean Exit took the Rivet and the uplink; Seed Money 2', () => {
+    expect(a3_m03.towers).toEqual(a3_m02.towers.filter((t) => t !== 'rivet'));
+    expect(a3_m03.towers).toContain('thumper'); // the Everglow class A3M2 didn't take
+    expect(a3_m03.shop).toEqual({ ...a3_m02.shop, seed_money: 2 });
+    expect(a3_m03.technicianAbility).toBeNull();
+  });
+
+  it('every Act III row is affordable: Intel 10 by A3M2, as § 4.9 says', () => {
+    const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
+    expect(purchasable(live).filter((e) => /a3_m0\d/.test(e))).toEqual([]);
   });
 });

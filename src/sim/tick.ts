@@ -6,13 +6,19 @@ import type { SimConfig } from './config.ts';
 import type { PurchasePrice } from './economy.ts';
 import type { Point } from './path.ts';
 import type { SimState } from './state.ts';
+import { traps } from './abilities/underfoot.ts';
+import { blockers } from './blocker.ts';
 import { darkness } from './darkness.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
+import { forcedInput } from './forcedInput.ts';
+import { rifts } from './rifts.ts';
+import { swarmlings } from './swarmlings.ts';
 import { abilities } from './systems/abilities.ts';
 import { allies } from './systems/allies.ts';
 import { applyCommands } from './systems/applyCommands.ts';
 import { cleanup } from './systems/cleanup.ts';
 import { detection } from './systems/detection.ts';
+import { fields } from './systems/fields.ts';
 import { links } from './systems/links.ts';
 import { movement } from './systems/movement.ts';
 import { projectiles } from './systems/projectiles.ts';
@@ -64,34 +70,50 @@ export type SystemName =
   | 'applyCommands'
   | 'wreckage'
   | 'waves'
+  | 'rifts'
   | 'triggers'
+  | 'forcedInput'
   | 'status'
+  | 'fields'
   | 'links'
   | 'enemyAbilities'
+  | 'blockers'
   | 'abilities'
   | 'movement'
+  | 'traps'
   | 'detection'
   | 'towers'
   | 'darkness'
+  | 'swarmlings'
   | 'allies'
   | 'projectiles'
   | 'cleanup';
 
-/** The system pipeline, in order. */
+/**
+ * The system pipeline, in order. M6's slots (T600a) are empty passes until their tasks fill their
+ * own files: rifts (T602), forcedInput and blockers (T605), fields (T608), traps and swarmlings
+ * (T604); gathering and haste auras run inside enemyAbilities (T602, T603).
+ */
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([
     { name: 'applyCommands', run: applyCommands },
     { name: 'wreckage', run: wreckage },
     { name: 'waves', run: waves },
+    { name: 'rifts', run: rifts }, // T602: a wave's countdown and start are this tick's
     { name: 'triggers', run: triggers },
+    { name: 'forcedInput', run: forcedInput }, // T605: a forceInput action freezes this tick
     { name: 'status', run: status },
+    { name: 'fields', run: fields }, // T608: the Bloom's chill and pulse, before the tells
     { name: 'links', run: links },
     { name: 'enemyAbilities', run: enemyAbilities },
+    { name: 'blockers', run: blockers }, // T605: a held unit doesn't step this tick
     { name: 'abilities', run: abilities },
     { name: 'movement', run: movement },
+    { name: 'traps', run: traps }, // T604: Underfoot judges this tick's crossings
     { name: 'detection', run: detection },
     { name: 'towers', run: towers },
     { name: 'darkness', run: darkness }, // Sundown (T505): after the towers, as render draws it
+    { name: 'swarmlings', run: swarmlings }, // T604: after the towers (a sold Den's call home)
     { name: 'allies', run: allies },
     { name: 'projectiles', run: projectiles },
     { name: 'cleanup', run: cleanup },

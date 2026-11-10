@@ -24,7 +24,16 @@ import { withFirstPaydayCaughtUp } from '../runEnd.ts';
 import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
-import { grantGift, grantQ3Bonus, resolveC2 } from '../storyTransactions.ts';
+import {
+  briefingGifts,
+  grantGift,
+  grantQ3Bonus,
+  resolveC2,
+  runEndRevocations,
+  runEndTransactions,
+  setDoorChoice,
+  type C3Choice,
+} from '../storyTransactions.ts';
 
 export type DevSaveId =
   | 'fresh'
@@ -43,6 +52,12 @@ export type DevSaveId =
   | 'after_a2m4_unanswered'
   | 'after_a2m5'
   | 'after_a2m6'
+  | 'after_a3m1_spared'
+  | 'after_a3m1_cleared'
+  | 'after_a3m2_rivet'
+  | 'after_a3m2_thumper'
+  | 'after_a3m3_convoy'
+  | 'after_a3m3_warren'
   | 'all_unlocked';
 
 export interface DevSave {
@@ -322,6 +337,104 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
   return caughtUp(save);
 }
 
+/** The Act III maps the dev saves cover (M6: A3M1–A3M3), in campaign order. */
+const ACT_THREE = ['a3_m01', 'a3_m02', 'a3_m03'] as const;
+type ActThreeMap = (typeof ACT_THREE)[number];
+
+/**
+ * What the reference profile buys before each Act III map (campaign.md § 4.9): Ability Coolant 1
+ * and Emergency Bulkhead into A3M1; the Harpoon's license and the Mindspike's attunement (3 Intel)
+ * into A3M2; Seed Money 2 into A3M3 (its rank 1 came before A2M2).
+ */
+const ACT_THREE_PREP: Readonly<Record<ActThreeMap, readonly PurchaseItem[]>> = {
+  a3_m01: [
+    { kind: 'upgrade', id: 'ability_coolant' },
+    { kind: 'protocol', id: 'emergency_bulkhead' },
+  ],
+  a3_m02: [
+    { kind: 'license', tower: 'harpoon' },
+    { kind: 'attune', tower: 'mindspike' },
+  ],
+  a3_m03: [{ kind: 'upgrade', id: 'seed_money' }],
+};
+
+/**
+ * The protocol the reference equips on each Act III map (one slot; reference.ts): Head Start on
+ * A3M1's Escort and A3M3's Holdout, the Bulkhead on A3M2's Defend.
+ */
+const ACT_THREE_PROTOCOL: Readonly<Record<ActThreeMap, ProtocolId>> = {
+  a3_m01: 'head_start',
+  a3_m02: 'emergency_bulkhead',
+  a3_m03: 'head_start',
+};
+
+/**
+ * The scenes a save that won each Act III map has seen, the base entered since: A3M1's Leaving
+ * Song and Bricks's survey confession (a base visit scene, so smoke flows entering the base aren't
+ * held by it); A3M2's Clean Exit and the Asset Yield Log; A3M3's briefing (C3) and the SEAL.
+ */
+const ACT_THREE_SEEN: Readonly<Record<ActThreeMap, readonly SceneId[]>> = {
+  a3_m01: ['a3_m01_scene_song', 'a3_m01_base_survey'],
+  a3_m02: ['a3_m02_cue_revoke', 'a3_m02_scene_confession'],
+  a3_m03: ['a3_m03_brief', 'a3_m03_cue_seal'],
+};
+
+/** Act III's base visit scenes (`ACT_THREE_SEEN`'s `base_*`): seen by a save that has won every map. */
+const ACT_THREE_BASE_SEEN: readonly SceneId[] = Object.values(ACT_THREE_SEEN)
+  .flat()
+  .filter((id) => id.includes('_base_'));
+
+/** An Act III dev save's branches (campaign.md § 6: C1's echo, the revoked class, C3). */
+interface ActThreePlan {
+  /** C1 as A3M1 reads it: `spared` gives Thrum's group and the Hum Choir at A3M1's debrief. */
+  readonly c1: 'spared' | 'cleared';
+  /** The Everglow class A3M2's Clean Exit took (the reference's par loses the Rivet). */
+  readonly revoked: 'rivet' | 'thumper';
+  /** C3, the door Bricks held. */
+  readonly door: C3Choice;
+}
+
+/**
+ * The reference profile through `last` in Act III: `after_a2m6`, then each Act III map prepared for
+ * (its § 4.9 purchases through the shop's `buy`) and won with Victory, the story transactions as
+ * the app makes them: A3M1's briefing gift (the Scuttle Den) and its debrief's Hum Choir if
+ * spared; A3M2's revocation of `revoked` and the uplink (Mk II refunded if owned) at run end's
+ * step 3; C3 committed in A3M3's briefing. C1 is the plan's: `spared` flips the reference's
+ * cleared branch. A map not registered yet is skipped with its purchases, so until A3M1–A3M3
+ * land the saves equal `after_a2m6` (with the plan's C1).
+ */
+function actThreeThrough(last: ActThreeMap, plan: ActThreePlan): SaveData {
+  let save = actTwoThrough('a2_m06');
+  save.story.flags.spared_quiet_wave = plan.c1 === 'spared';
+  for (const step of ACT_THREE.slice(0, ACT_THREE.indexOf(last) + 1)) {
+    const map: string = step;
+    if (!isRegistered(map)) continue;
+    save = bought(save, ACT_THREE_PREP[step]);
+    save.loadouts.protocols = [ACT_THREE_PROTOCOL[step]];
+    // The briefing: its gifts as the loadout first opens; C3 committed as it closes.
+    save = briefingGifts(save, step).save;
+    if (step === 'a3_m03') save = setDoorChoice(save, plan.door).save;
+    save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
+    save.currencies.intel += 1;
+    save.currencies.stardust += MAPS[map].stardust;
+    for (const e of mapEnemies(map)) {
+      if (!save.campaign.seenEnemies.includes(e)) save.campaign.seenEnemies.push(e);
+    }
+    save.stats = { pestsProcessed: save.stats.pestsProcessed, runs: save.stats.runs + 2 };
+    // Run end's step 3, then step 6 (meta/runEnd.ts order).
+    if (step === 'a3_m02') {
+      const revoked = { towers: [plan.revoked], abilities: ['orbital_strike'] } as const;
+      save = runEndRevocations(save, { won: true, wonBefore: false, revoked }).save;
+    }
+    save = runEndTransactions(save, { mapId: map, won: true, wonBefore: false }).save;
+    // The {name} turret (A3M3's last tag): the par build's Scuttle Den at the choke.
+    if (step === 'a3_m03') save.story.memorialTower = knownTower('burrow') ?? null;
+    save.story.seen.push(...ACT_THREE_SEEN[step].filter((id) => !save.story.seen.includes(id)));
+  }
+  save.story.bricksTagIndex = tagIndexFor(save);
+  return caughtUp(save);
+}
+
 /** A2M4's scenes a save that won it has seen: the truth scene and the base's handover. */
 const A2M4_SEEN: readonly SceneId[] = ['a2_m04_scene_truth', 'a2_m04_base_handover'];
 
@@ -451,6 +564,47 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       'Skipped while A2M6 is not registered.',
     build: () => actTwoThrough('a2_m06'),
   },
+  after_a3m1_spared: {
+    description:
+      'after_a2m6 with the Quiet Wave spared, then Ability Coolant 1 and Emergency Bulkhead bought ' +
+      'and A3M1 won (Victory): the Scuttle Den given in its briefing, Thrum alive and the Hum ' +
+      'Choir given at its debrief; the Leaving Song and the survey confession seen. Skipped ' +
+      'while A3M1 is not registered.',
+    build: () => actThreeThrough('a3_m01', { c1: 'spared', revoked: 'rivet', door: 'convoy' }),
+  },
+  after_a3m1_cleared: {
+    description:
+      'The reference into A3M2: after_a2m6 (the Quiet Wave cleared), then A3M1 bought for and won ' +
+      '(Victory): the Scuttle Den given, no Hum Choir (it comes in A3M4). Skipped while A3M1 is ' +
+      'not registered.',
+    build: () => actThreeThrough('a3_m01', { c1: 'cleared', revoked: 'rivet', door: 'convoy' }),
+  },
+  after_a3m2_rivet: {
+    description:
+      'after_a3m1_cleared, then the Harpoon licensed, the Mindspike attuned, and A3M2 won ' +
+      '(Victory): the Clean Exit took the Rivet and Orbital Strike (the reference). Skipped while ' +
+      'A3M2 is not registered.',
+    build: () => actThreeThrough('a3_m02', { c1: 'cleared', revoked: 'rivet', door: 'convoy' }),
+  },
+  after_a3m2_thumper: {
+    description:
+      'after_a3m2_rivet, but the Clean Exit took the Thumper (and Orbital Strike). Skipped while ' +
+      'A3M2 is not registered.',
+    build: () => actThreeThrough('a3_m02', { c1: 'cleared', revoked: 'thumper', door: 'convoy' }),
+  },
+  after_a3m3_convoy: {
+    description:
+      'after_a3m2_rivet, then Seed Money 2 bought and A3M3 held (Victory) with C3 the convoy ' +
+      "(door_choice = convoy): Bricks's {name} turret a Scuttle Den. Skipped while A3M3 is not " +
+      'registered.',
+    build: () => actThreeThrough('a3_m03', { c1: 'cleared', revoked: 'rivet', door: 'convoy' }),
+  },
+  after_a3m3_warren: {
+    description:
+      'after_a3m3_convoy, but C3 the warren (door_choice = warren). Skipped while A3M3 is not ' +
+      'registered.',
+    build: () => actThreeThrough('a3_m03', { c1: 'cleared', revoked: 'rivet', door: 'warren' }),
+  },
   all_unlocked: {
     description:
       'Every campaign map won with every medal; every registered tower, built spec, ability, protocol, ' +
@@ -478,8 +632,14 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];
       // Every campaign map won: the star map has been opened (its sweep spent), and the base with
-      // Zibzab's shop (his arrival played), and A2M4's and A2M6's scenes.
-      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID, ...A2M4_SEEN, ...A2M6_SEEN);
+      // Zibzab's shop (his arrival played), A2M4's and A2M6's scenes, and Act III's visit scenes.
+      story.story.seen.push(
+        STAR_MAP_SEEN_ID,
+        ARRIVAL_SCENE_ID,
+        ...A2M4_SEEN,
+        ...A2M6_SEEN,
+        ...ACT_THREE_BASE_SEEN,
+      );
       return withFirstPaydayCaughtUp(story);
     },
   },

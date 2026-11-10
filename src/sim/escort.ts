@@ -21,13 +21,20 @@
 //   while the map is an Escort doesn't by itself (sim/medals.ts). Pebble never counts.
 // - **Victory** waits for the road to empty: every wave resolved and no refugee still walking
 //   (cleanup; `refugeesOnRoad`).
-// - **The meter** is Evacuated: `evacuated` of the map's `escort.total` (Pebble not counted);
-//   `refugeesRemaining` (total − evacuated − lost: the ones not yet safe or lost, spawned or not)
-//   only falls, so its script trigger is monotonic like every other.
+// - **The meter** is Evacuated: `evacuated` of the run's `state.refugeeTotal` (Pebble not counted;
+//   `escortTotal`); `refugeesRemaining` (total − evacuated − lost: the ones not yet safe or lost,
+//   spawned or not) only falls, so its script trigger is monotonic like every other.
+// - **Gated groups** (T600a; A3M3's `door_choice`): a group whose `when` doesn't hold under the
+//   run's story flags never walks. createSim marks it released (`gateRefugeeGroups`), so
+//   `spawnAllies` does nothing for it, and it isn't in the run's total.
+// - **Losses by group** (`stats.lostByGroup`; the `groupLost` condition): a refugee hushed or
+//   gathered on the road is its group's loss; one taken at the exit was already sheltered, so it
+//   is the shelter's, booked to no group.
 // T506's pivot (`standDown`, the Ward, `bossEnd: 'pivot'`) runs `setObjective` and `spawnAllies`
 // from the same script as any other map.
 import type { CompiledMapDef, CompiledRefugeeGroup } from '../content/compiled.ts';
 import type { IdSpace, MeterLabel, ObjectiveKind } from '../content/types.ts';
+import type { ScriptFlags } from './config.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import { ALLY_BLANK, type Ally, type Enemy } from './entities.ts';
 import { bookRefugeeLost } from './medals.ts';
@@ -36,6 +43,33 @@ import { poolAlloc, poolKill } from './pool.ts';
 import { defaultMeterLabel, emit, takeUid, type SimState } from './state.ts';
 
 type EscortMap = Pick<CompiledMapDef<IdSpace>, 'escort'>;
+
+/**
+ * The run's refugee total (the meter's denominator; Pebble not counted): every group of the map's
+ * escort data whose `when` holds under `flags`. 0 without escort data.
+ */
+export function escortTotal(map: EscortMap, flags: ScriptFlags): number {
+  let n = 0;
+  for (const g of map.escort?.groups ?? []) if (groupWalks(g, flags)) n += g.count;
+  return n;
+}
+
+/** Whether refugee group `g` walks under the run's story `flags` (its `when`, if any). */
+export function groupWalks(g: Pick<CompiledRefugeeGroup, 'when'>, flags: ScriptFlags): boolean {
+  return g.when === null || flags[g.when.flag] === g.when.eq;
+}
+
+/**
+ * At createSim: the groups that don't walk under the run's flags are marked released, so a
+ * `spawnAllies` for one does nothing, and the run's total (`state.refugeeTotal`) leaves them out.
+ */
+export function gateRefugeeGroups(state: SimState, map: EscortMap, flags: ScriptFlags): void {
+  const groups = map.escort?.groups ?? [];
+  for (let i = 0; i < groups.length; i++) {
+    if (!groupWalks(groups[i]!, flags)) state.refugeesReleased[i] = true; // i < length
+  }
+  state.refugeeTotal = escortTotal(map, flags);
+}
 
 /**
  * `setObjective` (a script action): the map is now `objective`, its meter labeled `meterLabel`
@@ -108,15 +142,18 @@ export function evacuate(state: SimState, a: Ally): void {
 
 /**
  * Books a lost refugee (hushed on the road by enemy `enemyUid`, or one sheltered at the exit taken
- * by it): `stats.refugeesLost` + 1, RefugeeLost, and Perfect forfeited.
+ * by it): `stats.refugeesLost` + 1, its group's loss (`group`: its index in the escort's groups;
+ * −1 for one taken at the exit), RefugeeLost, and Perfect forfeited.
  */
 export function loseRefugee(
   state: SimState,
   uid: number,
   cause: 'hushed' | 'exit',
   enemyUid: number,
+  group = -1,
 ): void {
   state.stats.refugeesLost++;
+  if (group >= 0 && group < state.stats.lostByGroup.length) state.stats.lostByGroup[group]!++;
   emit(state, { type: 'RefugeeLost', uid, cause, enemyUid });
   bookRefugeeLost(state);
 }
@@ -176,10 +213,10 @@ export function refugeesOnRoad(state: DeepReadonly<Pick<SimState, 'allies'>>): n
  * trigger's count. Only falls. 0 on a map without escort data.
  */
 export function refugeesRemaining(
-  state: DeepReadonly<Pick<SimState, 'stats'>>,
+  state: DeepReadonly<Pick<SimState, 'stats' | 'refugeeTotal'>>,
   map: EscortMap,
 ): number {
   if (map.escort === null) return 0;
-  const left = map.escort.total - state.stats.evacuated - state.stats.refugeesLost;
+  const left = state.refugeeTotal - state.stats.evacuated - state.stats.refugeesLost;
   return left > 0 ? left : 0;
 }

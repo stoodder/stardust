@@ -60,23 +60,27 @@ describe('speakers (style-guide § 5.1)', () => {
   });
 });
 
-describe('Act III speaker rules (T600b)', () => {
-  const at = (map: CampaignMapId): StoryContext => ({
-    flags: {},
-    map,
-    pestsProcessed: 0,
-    seen: [],
-    run: null,
-  });
-  const plate = (map: CampaignMapId): string => {
-    const def = SPEAKER_DEFS.chitterbloom;
-    return def.names?.find((r) => evaluateCondition(r.when, at(map)))?.name ?? def.name;
-  };
+/** A story context on `map`, between maps. */
+const storyAt = (map: CampaignMapId): StoryContext => ({
+  flags: {},
+  map,
+  pestsProcessed: 0,
+  seen: [],
+  run: null,
+});
 
-  it('names the matriarch Bramble from A3M1 (Everglow\'s codename before)', () => {
+/** Bramble's name plate on `map`. */
+function plate(map: CampaignMapId): string {
+  const def = SPEAKER_DEFS.chitterbloom;
+  return def.names?.find((r) => evaluateCondition(r.when, storyAt(map)))?.name ?? def.name;
+}
+
+describe('Act III speaker rules (T600b)', () => {
+  it("names the matriarch Bramble from A3M1 (Everglow's codename before)", () => {
     expect(plate('a1_m05')).toBe('Chitterbloom');
     expect(plate('a2_m06')).toBe('Chitterbloom');
-    for (const map of ['a3_m01', 'a3_m03', 'fin_m01'] as const) expect(plate(map), map).toBe('Bramble');
+    for (const map of ['a3_m01', 'a3_m03', 'fin_m01'] as const)
+      expect(plate(map), map).toBe('Bramble');
   });
 
   it("gives Old Thrum Pebble's `singing` for the Leaving Song (T641 draws it)", () => {

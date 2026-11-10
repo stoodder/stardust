@@ -113,6 +113,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'A thought, made sharp. It strikes the mind, not the shell. What has no mind, it barely touches.',
   attune_lantern:
     'The Watch kept vigil by this light. Now it watches for you. What it sees cannot hide.',
+  // A first draft registered with the stub (T600a); T609 settles the Bloom's row.
+  attune_bloom: 'A garden where time holds still. What walks into it stops, and waits.',
 };
 
 /** Item `id`'s copy, or null when it has none (copy.test.ts proves every catalog item has one). */

@@ -203,7 +203,7 @@ describe('catalog: progression.md numbers', () => {
   it('Xenotech (§ 7.2, T509): the Prism given, the other Aelari attuned for 3 Intel once it is owned', () => {
     expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
     const attuned = Object.entries(TOWER_ACCESS).filter(([, a]) => a.how === 'attune');
-    expect(attuned.map(([t]) => t)).toEqual(['mindspike', 'lantern']);
+    expect(attuned.map(([t]) => t)).toEqual(['mindspike', 'lantern', 'bloom']);
     for (const [tower, a] of attuned) {
       expect(
         (TOWERS as Readonly<Record<string, { readonly faction: string }>>)[tower]?.faction,
@@ -213,7 +213,8 @@ describe('catalog: progression.md numbers', () => {
         how: 'attune',
         currency: 'intel',
         price: 3,
-        availableAfter: 'a2_m05',
+        // The Stasis Bloom after A3M1 (campaign.md § 4.1; T600a's stub, T608's tower).
+        availableAfter: tower === 'bloom' ? 'a3_m01' : 'a2_m05',
         requires: 'prism',
       });
     }

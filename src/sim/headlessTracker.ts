@@ -333,6 +333,21 @@ export function createRunTracker<K extends IdSpace>(
           case 'EchoBurst':
           case 'StasisArea':
           case 'DarknessShift':
+          // M6 (T600a seams): their tasks may tally them.
+          case 'GatherTell':
+          case 'Gathered':
+          case 'RiftOpening':
+          case 'RiftOpened':
+          case 'SwarmLatch':
+          case 'SwarmHome':
+          case 'TrapSprung':
+          case 'Blocked':
+          case 'ForcedInput':
+          case 'ForcedInputResolved':
+          case 'TowerRevoked':
+          case 'ClassRevoked':
+          case 'AbilityRevoked':
+          case 'ModifierChanged':
             break;
           default:
             e satisfies never;

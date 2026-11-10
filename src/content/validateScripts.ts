@@ -76,6 +76,10 @@ export function validateScripts(issues: Issues, def: MapDef<IdSpace>, mapWhere: 
   for (const [i, l] of (def.lockedAbilities ?? []).entries()) {
     for (const f of flagsOf(l.when)) flagsRead.push([f, `${mapWhere}.lockedAbilities[${i}].when`]);
   }
+  // A refugee group gated on a flag (A3M3's `door_choice`) changes the sim per value (T600a).
+  for (const [id, g] of Object.entries(def.refugees ?? {})) {
+    if (g.when !== undefined) flagsRead.push([g.when.flag, `${mapWhere}.refugees.${id}.when`]);
+  }
   const forcedInputs = new Set<string>();
   for (const [a] of actions) if ('forceInput' in a) forcedInputs.add(a.forceInput.id);
 

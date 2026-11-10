@@ -39,7 +39,8 @@ export const ACT3_MEMOS: readonly MemoDef[] = [
       'Your Corporate Tower License has been revoked. Your Orbital Strike uplink has been ' +
       'revoked. Remaining access: none listed.\n\n' +
       'No action is required. No reply is monitored.',
-    smallPrint: 'Revocation is final. Refunds issued per Policy CE-1. This message was not reviewed.',
+    smallPrint:
+      'Revocation is final. Refunds issued per Policy CE-1. This message was not reviewed.',
     afterMap: 'a3_m02',
   },
   {

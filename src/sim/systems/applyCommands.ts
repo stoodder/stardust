@@ -75,6 +75,9 @@ function applyCommand(
     case 'interact':
       // A clickable world object (T409): `notClickable` unless a script has made it clickable.
       return interact(state, cmd.marker, false);
+    case 'scriptInput':
+      // The forced input (A3M3's SEAL) runs with T605 (sim/forcedInput.ts).
+      return 'notImplemented';
     default:
       return assertNever(cmd);
   }

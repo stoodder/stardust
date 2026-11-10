@@ -159,15 +159,19 @@ describe('bank (C2: nothing to trade, T500b)', () => {
   });
 });
 
+/** A battle's live stats: the pivot in `pivotWave`, 12 evacuated, 3 lost. */
+const live = (pivotWave: number, revocations = 0) =>
+  runStoryStats({ pivotWave, evacuated: 12, refugeesLost: 3, revocations });
+
 describe('runStat (this run, T569)', () => {
   const pivoted: Condition = { runStat: 'pivotWave', gte: 1 };
-  const live = (pivotWave: number, revocations = 0) =>
-    runStoryStats({ pivotWave, evacuated: 12, refugeesLost: 3, revocations });
 
   it("reads the battle's live stats, with inclusive bounds", () => {
     expect(holds(pivoted, { ...base, live: live(0) })).toBe(false);
     expect(holds(pivoted, { ...base, live: live(4) })).toBe(true);
-    expect(holds({ runStat: 'evacuated', gte: 12, lte: 12 }, { ...base, live: live(0) })).toBe(true);
+    expect(holds({ runStat: 'evacuated', gte: 12, lte: 12 }, { ...base, live: live(0) })).toBe(
+      true,
+    );
     expect(holds({ runStat: 'refugeesLost', lte: 2 }, { ...base, live: live(0) })).toBe(false);
     expect(holds({ runStat: 'revocations', gte: 1 }, { ...base, live: live(0, 2) })).toBe(true);
   });

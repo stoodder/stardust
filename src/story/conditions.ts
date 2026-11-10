@@ -11,7 +11,6 @@ import {
 } from '../content/dialogue/flags.ts';
 import { mapAct, mapIndex } from '../content/dialogue/rules.ts';
 import {
-  RUN_STORY_STATS,
   type BankCurrency,
   type Condition,
   type RunStoryStat,
@@ -64,10 +63,15 @@ export interface StoryContext {
  * The story's view of a run's stats (`runStat`): `stats`' counters of those names, each 0 when
  * absent (a stats object from before the counter existed, or a test's partial one).
  */
-export function runStoryStats(stats: Readonly<Partial<Record<RunStoryStat, number>>>): RunStoryStats {
-  const out = {} as Record<RunStoryStat, number>;
-  for (const s of RUN_STORY_STATS) out[s] = stats[s] ?? 0;
-  return out;
+export function runStoryStats(
+  stats: Readonly<Partial<Record<RunStoryStat, number>>>,
+): RunStoryStats {
+  return {
+    pivotWave: stats.pivotWave ?? 0,
+    evacuated: stats.evacuated ?? 0,
+    refugeesLost: stats.refugeesLost ?? 0,
+    revocations: stats.revocations ?? 0,
+  };
 }
 
 /** This run's stats a `runStat` reads: the battle's live ones, else the ended run's; none outside. */

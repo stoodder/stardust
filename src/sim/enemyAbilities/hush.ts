@@ -303,7 +303,7 @@ function landHushAlly(state: SimState, h: Enemy, a: Ally): void {
     x: a.x,
     y: a.y,
   });
-  loseRefugee(state, a.uid, 'hushed', h.uid);
+  loseRefugee(state, a.uid, 'hushed', h.uid, a.group);
   emit(state, { type: 'AllyRemoved', uid: a.uid });
   h.hushUid = 0;
   h.hushTicks = 0;

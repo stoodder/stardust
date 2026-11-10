@@ -263,8 +263,8 @@ describe('wreckage by marker and objectives as conditions', () => {
     expect(SCRIPT_GATES).not.toHaveProperty('setClickable');
     expect(SCRIPT_GATES).toMatchObject({
       // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's.
-      setLighting: 'M7',
-      checkpoint: 'M7',
+      setLighting: 'M8',
+      checkpoint: 'M8',
     });
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot'); // the pivot runs since T506
     const events = [
@@ -273,9 +273,9 @@ describe('wreckage by marker and objectives as conditions', () => {
       { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: true }], once: true },
     ] as const;
     expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'a': trigger objectiveCompleted is not simulated until M6",
-      "event 'b': action setLighting is not simulated until M7",
-      "event 'c': action checkpoint is not simulated until M7",
+      "event 'a': trigger objectiveCompleted is not simulated until M7",
+      "event 'b': action setLighting is not simulated until M8",
+      "event 'c': action checkpoint is not simulated until M8",
     ]);
   });
 });
@@ -312,8 +312,8 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'attack.beam': null,
       'status.unnerved': null, // T507
       'enemy.boss.pivot': null, // T506
-      'attack.spawner': 'M6',
-      'enemy.boss.layToRest': 'M7',
+      'attack.spawner': 'T604', // D141
+      'enemy.boss.layToRest': 'M8',
     });
   });
 

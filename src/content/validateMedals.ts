@@ -16,7 +16,8 @@
 //   locks): `stat` and `towers` have a bound (`gte` and/or `lte`, whole numbers ≥ 0, gte ≤ lte);
 //   `tagRatio.gte` is in (0, 1]; `all` and `any` are non-empty; a `passedMarker` names a marker
 //   within PASSED_MARKER_REACH_TILES of a route its units walk (else "past it" means nothing); a
-//   `leaks` with `waves` names waves of the map, `from` ≤ `to`, and no faction or enemy beside them.
+//   `leaks` with `waves` names waves of the map, `from` ≤ `to`, and no faction or enemy beside them;
+//   a `groupLost` names a refugee group of the map and has a bound like `stat` (T600a).
 import type {
   ConditionDef,
   GridPos,
@@ -202,7 +203,10 @@ function validateCondition(
     for (const [i, s] of list.entries()) validateCondition(issues, def, s, `${where}.${key}[${i}]`);
   } else if ('not' in c) {
     validateCondition(issues, def, c.not, `${where}.not`);
-  } else if ('stat' in c || 'towers' in c) {
+  } else if ('stat' in c || 'towers' in c || 'groupLost' in c) {
+    if ('groupLost' in c && !Object.hasOwn(def.refugees ?? {}, c.groupLost)) {
+      issues.add('condition', `${where}.groupLost`, `names no refugee group '${c.groupLost}'`);
+    }
     const { gte, lte } = c;
     if (gte === undefined && lte === undefined) {
       issues.add('condition', where, 'needs a bound (gte and/or lte)');

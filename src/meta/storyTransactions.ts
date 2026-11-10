@@ -3,7 +3,8 @@
 // every one returns a new save (the input is untouched) and what it did.
 //
 // Built by T500b (the seam: signatures, grant ids, the C2 rule's numbers, run end's step 6 hook)
-// and T510 (the bodies).
+// and T510 (the bodies); Act III part one's (T600b): the briefing gifts, the run-end gift's
+// condition, revocation with the Mk II refund, and C3.
 //
 // Which ones run where:
 // - **Run end, step 6** (on the run that first wins the map, before the towers it issues and the
@@ -13,17 +14,29 @@
 // - **Results** (the debrief's choice; app/resultsFlow.ts): C2, `resolveC2`. With an empty bank
 //   there is nothing to trade, `stardust_choice = none` (the debrief tests it with the `bank`
 //   condition).
-// - Later acts add `buyJailbreak`, `inheritAbility`, `resolveC4`, `revokeAbility`, and `openCrate`
-//   with their maps (meta-runtime.md lists them).
+// - **Run end, step 3** (on the run that first wins the map; `runEndRevocations`): the classes and
+//   abilities the run revoked (A3M2's Clean Exit: `revokeTower`, `revokeAbility` with Orbital
+//   Strike Mk II's Intel refunded).
+// - **The briefing** (as the map's loadout first opens; `briefingGifts`): A3M1's Scuttle Den. C3,
+//   `setDoorChoice`, is committed as A3M3's briefing closes.
+// - Later acts add `buyJailbreak`, `inheritAbility`, `resolveC4`, and `openCrate` with their maps
+//   (meta-runtime.md lists them).
 import type { CampaignMapId } from '../content/campaign.ts';
 import type { FlagValueOf } from '../content/dialogue/flags.ts';
+import type { Condition } from '../content/dialogue/types.ts';
 import type { MemoId } from '../content/memos/types.ts';
-import type { MapId, TowerId, UpgradeId } from '../content/types.ts';
+import type { AbilityId, MapId, TowerId, UpgradeId } from '../content/types.ts';
+import { UPGRADES } from '../content/upgrades/index.ts';
+import type { Currency } from '../content/upgrades/types.ts';
+import { evaluateCondition } from '../story/conditions.ts';
 import type { SaveData } from './saveData.ts';
+import { baseStoryContext } from './story.ts';
 import { clampCurrency } from './validate.ts';
 
 /** C2's three outcomes: the `stardust_choice` flag's values (campaign.md § 6.2). */
 export type C2Choice = FlagValueOf<'stardust_choice'>;
+/** C3's two doors: the `door_choice` flag's values (campaign.md § 6.2). */
+export type C3Choice = FlagValueOf<'door_choice'>;
 
 /** The numbers of the story's grants (design/progression.md § 2.1, its one home). */
 export const STORY_TRANSACTION_RULES = {
@@ -157,19 +170,26 @@ export function grantGift(save: SaveData, tower: TowerId): TransactionResult {
   };
 }
 
-/** A transaction run end makes on a map's first win (step 6). */
+/**
+ * A transaction run end makes on a map's first win (step 6). A gift with a `when` is given only
+ * when it holds over the save as step 6 finds it (`baseStoryContext`: its flags, so A3M1's Hum
+ * Choir comes at its debrief only under `spared_quiet_wave`, else in A3M4's briefing).
+ */
 export type RunEndTransactionDef =
-  { readonly kind: 'q3_bonus' } | { readonly kind: 'gift'; readonly tower: TowerId };
+  | { readonly kind: 'q3_bonus' }
+  | { readonly kind: 'gift'; readonly tower: TowerId; readonly when?: Condition };
 
 /**
  * Each map's run-end transactions, in order (campaign data: story/campaign/act2.md, A2M4's
- * *Results* and A2M5's *Debrief*).
+ * *Results* and A2M5's *Debrief*; act3.md § A3M1's *Gifts*: the Hum Choir, Thrum's ring, if
+ * spared; cleared, the shelter elders give it in A3M4's briefing, M7).
  */
 export const RUN_END_TRANSACTIONS: Readonly<
   Partial<Record<CampaignMapId, readonly RunEndTransactionDef[]>>
 > = {
   a2_m04: [{ kind: 'q3_bonus' }],
   a2_m05: [{ kind: 'gift', tower: 'prism' }],
+  a3_m01: [{ kind: 'gift', tower: 'choir', when: { flag: 'spared_quiet_wave', eq: true } }],
 };
 
 /** What run end's step 6 reads about the run. */
@@ -200,9 +220,195 @@ export function runEndTransactions(
   let next = save;
   const transactions: StoryTransaction[] = [];
   for (const def of table[input.mapId] ?? []) {
+    if (def.kind === 'gift' && def.when !== undefined) {
+      if (!evaluateCondition(def.when, baseStoryContext(next))) continue;
+    }
     const r = def.kind === 'q3_bonus' ? grantQ3Bonus(next) : grantGift(next, def.tower);
     next = r.save;
     if (r.applied !== null) transactions.push(r.applied);
   }
   return { save: next, transactions };
+}
+
+// ─── Act III part one (T600b): briefing gifts, revocation, C3 ───────────────────────────────────
+
+/**
+ * The towers a map's briefing gives (campaign.md § 4.1's *Gift* rows given "in the briefing"),
+ * granted as the map's loadout first opens (D141), so the gift can be picked for that very map:
+ * A3M1's Scuttle Den from Bramble's warren; later, A3M4's and A3M6's
+ * Gloop and A3M5's Sproing (M7).
+ */
+export const BRIEFING_GIFTS: Readonly<Partial<Record<CampaignMapId, readonly TowerId[]>>> = {
+  a3_m01: ['burrow'],
+};
+
+/**
+ * The briefing gifts of `map` (`BRIEFING_GIFTS`, each through `grantGift`, so once a save): what
+ * the app calls as the map's loadout first opens (or the battle starts, with no loadout screen).
+ * A map with none leaves the save as it is.
+ */
+export function briefingGifts(
+  save: SaveData,
+  map: CampaignMapId,
+  table: Readonly<Partial<Record<string, readonly TowerId[]>>> = BRIEFING_GIFTS,
+): RunEndTransactions {
+  let next = save;
+  const transactions: StoryTransaction[] = [];
+  for (const tower of table[map] ?? []) {
+    const r = grantGift(next, tower);
+    next = r.save;
+    if (r.applied !== null) transactions.push(r.applied);
+  }
+  return { save: next, transactions };
+}
+
+/**
+ * The R&D upgrade whose price is refunded when an ability is revoked (progression.md § 7.3:
+ * Orbital Strike Mk II, "Refunded when the uplink is revoked in A3M2").
+ */
+export const REVOCATION_REFUNDS: Readonly<Partial<Record<AbilityId, UpgradeId>>> = {
+  orbital_strike: 'orbital_strike_mk2',
+};
+
+/** A revocation, C3, as made on the save (Results and the run-end summary read them). */
+export type RevocationTransaction =
+  | { readonly kind: 'revoke_tower'; readonly tower: TowerId }
+  /**
+   * An ability revoked, with what was refunded for it: the upgrade, its currency, and the price of
+   * every rank the save owned (null when it owned none).
+   */
+  | {
+      readonly kind: 'revoke_ability';
+      readonly ability: AbilityId;
+      readonly refund: {
+        readonly upgrade: UpgradeId;
+        readonly currency: Currency;
+        readonly amount: number;
+      } | null;
+    };
+
+/** C3 as committed: the door Bricks holds. */
+export interface C3Transaction {
+  readonly kind: 'c3';
+  readonly choice: C3Choice;
+}
+
+/**
+ * A tower class revoked for good (A3M2's Clean Exit; until the jailbreak, M7): it joins
+ * `unlocks.revokedTowers`, so the loadout no longer offers it (meta/pools.ts). Once: a class
+ * already revoked, or one the save doesn't own (nothing to revoke), changes nothing (`applied`
+ * null). Presets that hold it are fitted when read (meta/loadout.ts).
+ */
+export function revokeTower(
+  save: SaveData,
+  tower: TowerId,
+): { readonly save: SaveData; readonly applied: RevocationTransaction | null } {
+  const u = save.unlocks;
+  if (!u.towers.includes(tower) || u.revokedTowers.includes(tower)) return { save, applied: null };
+  return {
+    save: { ...save, unlocks: { ...u, revokedTowers: [...u.revokedTowers, tower] } },
+    applied: { kind: 'revoke_tower', tower },
+  };
+}
+
+/**
+ * An ability revoked for good (A3M2's uplink): it joins `unlocks.revokedAbilities`, and the price
+ * of every rank owned of its `REVOCATION_REFUNDS` upgrade comes back to the bank (Orbital Strike
+ * Mk II: its one rank, 2 Intel; clamped like any payout). The rank stays on record, so R&D shows
+ * it bought and never sells it again. Once: an ability already revoked, or not owned, changes
+ * nothing.
+ */
+export function revokeAbility(
+  save: SaveData,
+  ability: AbilityId,
+  upgrades: Readonly<
+    Record<
+      string,
+      { readonly currency: Currency; readonly ranks: readonly { readonly price: number }[] }
+    >
+  > = UPGRADES,
+): { readonly save: SaveData; readonly applied: RevocationTransaction | null } {
+  const u = save.unlocks;
+  if (!u.abilities.includes(ability) || u.revokedAbilities.includes(ability)) {
+    return { save, applied: null };
+  }
+  const upgrade = REVOCATION_REFUNDS[ability];
+  const def = upgrade === undefined ? undefined : upgrades[upgrade];
+  const owned = upgrade === undefined ? 0 : (save.upgrades[upgrade] ?? 0);
+  const refund =
+    upgrade === undefined || def === undefined || owned === 0
+      ? null
+      : {
+          upgrade,
+          currency: def.currency,
+          amount: def.ranks.slice(0, owned).reduce((sum, r) => sum + r.price, 0),
+        };
+  const currencies =
+    refund === null
+      ? save.currencies
+      : {
+          ...save.currencies,
+          [refund.currency]: clampCurrency(save.currencies[refund.currency] + refund.amount),
+        };
+  return {
+    save: {
+      ...save,
+      currencies,
+      unlocks: { ...u, revokedAbilities: [...u.revokedAbilities, ability] },
+    },
+    applied: { kind: 'revoke_ability', ability, refund },
+  };
+}
+
+/** What a run revoked (the sim's `state.revoked`, in the order revoked). */
+export interface RunRevocations {
+  readonly towers: readonly TowerId[];
+  readonly abilities: readonly AbilityId[];
+}
+
+/**
+ * Run end's step 3 (meta-runtime.md § Run end): on the run that first wins the map, every class and
+ * ability it revoked, in order (`revokeTower`, `revokeAbility`); nothing on a loss or a replay
+ * (D141: saved only on a win; a replay's Clean Exit, which may take another class, changes
+ * nothing, like the flags and transactions of a replay).
+ */
+export function runEndRevocations(
+  save: SaveData,
+  input: { readonly won: boolean; readonly wonBefore: boolean; readonly revoked?: RunRevocations },
+): { readonly save: SaveData; readonly revocations: readonly RevocationTransaction[] } {
+  if (!input.won || input.wonBefore || input.revoked === undefined) {
+    return { save, revocations: [] };
+  }
+  let next = save;
+  const revocations: RevocationTransaction[] = [];
+  for (const tower of input.revoked.towers) {
+    const r = revokeTower(next, tower);
+    next = r.save;
+    if (r.applied !== null) revocations.push(r.applied);
+  }
+  for (const ability of input.revoked.abilities) {
+    const r = revokeAbility(next, ability);
+    next = r.save;
+    if (r.applied !== null) revocations.push(r.applied);
+  }
+  return { save: next, revocations };
+}
+
+/**
+ * C3, Which door (campaign.md § 6.1): Bricks holds the convoy road or the warren tunnel. Committed
+ * as A3M3's first briefing closes, so the sim reads it (`door_choice` is a script flag) and the
+ * question is never asked again: a save whose flag is set is left as it is.
+ */
+export function setDoorChoice(
+  save: SaveData,
+  choice: C3Choice,
+): { readonly save: SaveData; readonly applied: C3Transaction | null } {
+  if (save.story.flags.door_choice !== undefined) return { save, applied: null };
+  return {
+    save: {
+      ...save,
+      story: { ...save.story, flags: { ...save.story.flags, door_choice: choice } },
+    },
+    applied: { kind: 'c3', choice },
+  };
 }

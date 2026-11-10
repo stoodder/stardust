@@ -21,7 +21,13 @@ import {
 } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
 import { enemiesMet, isEnemyId, withStoryUnlocks } from './story.ts';
-import { runEndTransactions, type StoryTransaction } from './storyTransactions.ts';
+import {
+  runEndRevocations,
+  runEndTransactions,
+  type RevocationTransaction,
+  type RunRevocations,
+  type StoryTransaction,
+} from './storyTransactions.ts';
 import { clampCurrency } from './validate.ts';
 
 /** What a run end reads from the finished battle. */
@@ -70,6 +76,11 @@ export interface RunEndInput {
    * (progression.md § 2; step 5). Default null.
    */
   readonly resumedFromWave?: number | null;
+  /**
+   * The classes and abilities this run revoked (the sim's `state.revoked`, in the order revoked:
+   * A3M2's Clean Exit). Step 3 saves them on the run that first wins the map. Default none.
+   */
+  readonly revoked?: RunRevocations;
 }
 
 /**
@@ -128,6 +139,12 @@ export interface RunEndSummary {
    * A2M5's Prism gift. Empty on most runs, and on every replay and loss.
    */
   readonly transactions: readonly StoryTransaction[];
+  /**
+   * What step 3 saved (meta/storyTransactions.ts `runEndRevocations`): each class and ability this
+   * run revoked, the ability with its refund (Orbital Strike Mk II's Intel). Empty on most runs,
+   * and on every replay and loss.
+   */
+  readonly revocations: readonly RevocationTransaction[];
 }
 
 export interface RunEndResult {
@@ -164,8 +181,8 @@ export function runEnd(
       ? runEndFlags(input.mapId, input.stats, rules)
       : {};
 
-  // 3. Revoked towers and abilities: TODO(M3) when a map script can revoke (A3M2; the sim has no
-  //    `state.revoked` yet).
+  // 3. Revoked towers and abilities (below, on the folded save): applied after the payouts so the
+  //    refund lands in the same bank (meta/storyTransactions.ts `runEndRevocations`).
 
   // 4. Medals: the sim settled them (D042). A run that used a checkpoint keeps Victory only
   //    (core-loop.md § 2.12); its objectives still count (the replay reproduced them exactly).
@@ -212,10 +229,17 @@ export function runEnd(
     },
     stats: { pestsProcessed, runs: save.stats.runs + 1 },
   };
+  // 3. The classes and abilities this run revoked, saved on the run that first wins the map
+  //    (A3M2's Clean Exit; D141), Orbital Strike Mk II's Intel refunded with the uplink.
+  const revoked = runEndRevocations(folded, {
+    won,
+    wonBefore,
+    ...(input.revoked === undefined ? {} : { revoked: input.revoked }),
+  });
   // 6. The map's story transactions on its first win (meta/storyTransactions.ts: A2M4's Q3 Bonus,
-  //    A2M5's Prism gift; T510 builds their bodies). C2 isn't here: it is the debrief's choice,
+  //    A2M5's Prism gift, A3M1's Hum Choir if spared). C2 isn't here: it is the debrief's choice,
   //    made on Results.
-  const transacted = runEndTransactions(folded, { mapId: input.mapId, won, wonBefore });
+  const transacted = runEndTransactions(revoked.save, { mapId: input.mapId, won, wonBefore });
   // 7. Towers the win issues for the next map (meta/issued.ts; the Sprinkler after A1M1). A gift
   //    from step 6 is owned already, so it is never counted as issued.
   const withTowers = withIssuedTowers(transacted.save);
@@ -243,6 +267,7 @@ export function runEnd(
       memos: story.memos,
       codex: story.codex,
       transactions: transacted.transactions,
+      revocations: revoked.revocations,
     },
   };
 }

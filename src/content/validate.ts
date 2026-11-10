@@ -13,7 +13,8 @@
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
 //   ⇔ shield, burrowing ⇔ `burrow`, splitting ⇔ `split`, huddle ⇔ `huddle`, the `carrier` tell ⇔
 //   `carrier`, the `boss` tell ⇔ `boss`, blink ⇔ `blink`, phasing ⇔ `phase`, shield_aura ⇔
-//   `shieldAura`), and every trait shows its tell (enemies.md § 1, rule 1).
+//   `shieldAura`, gathering ⇔ `gather`, haste_aura ⇔ `hasteAura`), and every trait shows its tell
+//   (enemies.md § 1, rule 1).
 // - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
 //   (never themselves), with sane numbers (a pulse or a blink tells for less than its period, and
 //   a boss's for at least BOSS_MIN_TELL_SEC; a pulse needs a shield): a boss's phases start at full HP and fall, it ends at
@@ -23,7 +24,9 @@
 //   a rate and a shield to go with it; a shield-broken phase isn't the first, its boss has a
 //   shield, and only it releases shards (`shards`: a known enemy, a count, a re-form time); a
 //   `pivot` ending has a `ward` (radius > 0, chill within the cap) and only it does; a split chain
-//   never loops and is at most SPLIT_MAX_DEPTH deep (Fracture → Shard → Mote).
+//   never loops and is at most SPLIT_MAX_DEPTH deep (Fracture → Shard → Mote). M6 (T600a): only
+//   the Hollow gathers, its tell fits in its period, its absorbs and growth are whole and sane; a
+//   haste aura's pct is within HASTE_CAP.
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
@@ -449,6 +452,28 @@ function validateEnemyAbilities(
     if (def.shield === undefined) bad('shieldAura', 'a shield aura needs a shield on the unit');
     if (!isPositive(aura.radiusTiles)) bad('shieldAura.radiusTiles', 'must be > 0');
     if (!isPositive(aura.shieldPerSec)) bad('shieldAura.shieldPerSec', 'must be > 0');
+  }
+  const g = def.gather;
+  if (g !== undefined) {
+    if (!isPositive(g.everySec)) bad('gather.everySec', 'must be > 0');
+    if (!isPositive(g.tellSec) || g.tellSec >= g.everySec) {
+      bad('gather.tellSec', 'must be > 0 and below everySec');
+    }
+    if (!isPositive(g.radiusTiles)) bad('gather.radiusTiles', 'must be > 0');
+    if (!isPositiveInt(g.maxAbsorbs)) bad('gather.maxAbsorbs', 'must be a whole number ≥ 1');
+    if (!isNonNegative(g.growPct)) bad('gather.growPct', 'must be ≥ 0');
+    if (!isNonNegativeInt(g.leakPerAbsorb)) bad('gather.leakPerAbsorb', 'a whole number ≥ 0');
+    if (!isNonNegativeInt(g.bountyPerHollowAbsorb)) {
+      bad('gather.bountyPerHollowAbsorb', 'must be a whole number ≥ 0');
+    }
+    if (def.faction !== 'hollow') bad('gather', 'only the Hollow gathers (enemies.md § 5.4)');
+  }
+  const haste = def.hasteAura;
+  if (haste !== undefined) {
+    if (!isPositive(haste.radiusTiles)) bad('hasteAura.radiusTiles', 'must be > 0');
+    if (!(haste.pct > 0 && haste.pct <= HASTE_CAP)) {
+      bad('hasteAura.pct', `${haste.pct} must be in (0, ${HASTE_CAP}] (HASTE_CAP)`);
+    }
   }
   const threats = def.traits.filter((t) => t !== 'flying');
   if (def.neutral === true && (def.leak !== 0 || def.bounty !== 0 || threats.length > 0)) {

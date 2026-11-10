@@ -13,7 +13,9 @@
 //   Stasis T407a; homing and charge attacks T407b; Pinned and link kill credits T408), and T500a
 //   the M5 ones (phasing T503; beams and Resonance/Lightsong T504/T508; Sundown's light T505; the
 //   Penitent's shards, re-form, stand-down, and Ward T506; Unnerved T507; Truthlight T508; refugees
-//   T305c); until then they keep their blank values.
+//   T305c), and T600a the M6 ones (gathering T602; the haste aura T603; swarmlings, their chill,
+//   and Underfoot's trap T604; the blocker T605; the Choir's jam rule and Lulled T607; the Bloom's
+//   pull-back T608); until then they keep their blank values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -139,6 +141,14 @@ export interface Tower extends PoolEntity {
    * while unlit, else 0. Set by the darkness system each tick; bonusRangeTiles applies it.
    */
   darkRangePct: number;
+  // M6 (T600a seams).
+  /**
+   * The Hum Choir's jam rule on this tower (T607): Jammed durations × this, the strongest Choir
+   * aura covering it (1: none; 0: immune, Rally Chorus). Inert until M7's jammers (D141).
+   */
+  jamMul: number;
+  /** A Scuttle Den's swarmlings or Champions alive now (≤ its `maxAlive`; T604). */
+  swarmAlive: number;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -190,6 +200,8 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkMarkPct: 0,
   lit: true,
   darkRangePct: 0,
+  jamMul: 1,
+  swarmAlive: 0,
 });
 
 export interface Enemy extends PoolEntity {
@@ -304,6 +316,33 @@ export interface Enemy extends PoolEntity {
   reformTicks: number;
   /** Standing down (`standDown`, the pivot; T506): its 1 s fade's ticks left; 0: not. */
   standDownTicks: number;
+  // M6 enemy state (T600a seams). Blank until each task runs it.
+  /**
+   * Gathering (T602; the Maw): ticks until its next gather (the tell is the last part of the wait),
+   * the unit its tendrils hold during the tell (0: none), its absorbs so far (leak +1 each; size
+   * +`growPct` each), how many were Hollow (bounty +3 each), whether it has taken its one
+   * Skitterkin (its hush), and the max HP its absorbs added (max HP = def.hp + bonusMaxHp).
+   */
+  gatherTicks: number;
+  gatherUid: number;
+  absorbs: number;
+  hollowAbsorbs: number;
+  gatheredSkitterkin: boolean;
+  bonusMaxHp: number;
+  /** Haste from an enemy haste aura this tick (T603; the strongest covering it; 0: none). */
+  auraHastePct: number;
+  /**
+   * Swarmlings (T604): the swarmling chill on it now (theirs stack to SWARMLING_CHILL_CAP, then
+   * count as one chill source), and how many swarmlings or Champions are latched on.
+   */
+  swarmChillPct: number;
+  latchCount: number;
+  /** Held by a blocker (T605; Bricks at the Gap): the ally's uid; 0: not blocked. */
+  blockerUid: number;
+  /** Lulled (T607): inside a Lullaby's radius this tick (ability cooldowns ×1.5, a boss's ×1.25). */
+  lulled: boolean;
+  /** Gravity Well (T608): ticks before a Bloom's pulse may pull it back again; 0: it may. */
+  pullImmuneTicks: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -358,6 +397,18 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   ownerUid: 0,
   reformTicks: 0,
   standDownTicks: 0,
+  gatherTicks: 0,
+  gatherUid: 0,
+  absorbs: 0,
+  hollowAbsorbs: 0,
+  gatheredSkitterkin: false,
+  bonusMaxHp: 0,
+  auraHastePct: 0,
+  swarmChillPct: 0,
+  latchCount: 0,
+  blockerUid: 0,
+  lulled: false,
+  pullImmuneTicks: 0,
 });
 
 /**
@@ -453,9 +504,11 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
  * `segment` covers a stretch of one route for its duration (Suppressing Fire, T207a); `field`
  * covers the whole map for its duration (Time Dilation, T304d: `slowPct` on every enemy; it has
  * no position or route, and render tints the battlefield while it lives); `reveal` Reveals the
- * cloaked enemies in its radius for its duration (Scanner Sweep; T406).
+ * cloaked enemies in its radius for its duration (Scanner Sweep; T406); `trap` springs on each
+ * ground enemy that crosses its path tile, burrowed ones too, once each, for its duration
+ * (Underfoot, T604: `damage` and `pinTicks`; `state.trapSprung` remembers who).
  */
-export type ZoneKind = 'strike' | 'segment' | 'field' | 'reveal';
+export type ZoneKind = 'strike' | 'segment' | 'field' | 'reveal' | 'trap';
 
 /** Ground effects and ability areas (the Orbital Strike reticle, T113). */
 export interface Zone extends PoolEntity {
@@ -479,6 +532,8 @@ export interface Zone extends PoolEntity {
   distTo: number;
   /** A segment's or field's slow on the enemies inside it, as a fraction (0.5 = −50% speed). */
   slowPct: number;
+  /** A trap's Pin on each enemy it springs on, in ticks (Underfoot; T604); else 0. */
+  pinTicks: number;
 }
 
 export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
@@ -497,12 +552,19 @@ export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   distFrom: 0,
   distTo: 0,
   slowPct: 0,
+  pinTicks: 0,
 });
 
 /** How an ally moves (architecture.md § Entity model). */
 export type AllyMode = 'post' | 'route' | 'owner' | 'stationary';
 /** Who can hurt an ally: nobody, the Hollow's hush, or a scripted timeline (Bricks in A3M3). */
 export type AllyVulnerability = 'never' | 'hush' | 'scripted';
+
+/**
+ * A swarmling's or Champion's step (T604; towers.md § 7, the Scuttle Den): resting at home, dashing
+ * out to its target, latched on (dealing its DoT), or running home.
+ */
+export type SwarmState = 'home' | 'out' | 'latched' | 'back';
 
 /**
  * Friendly non-tower units (design/maps.md § 5.4): Bricks at his post, militia, refugees, the
@@ -553,6 +615,19 @@ export interface Ally extends PoolEntity {
    */
   auraChillPct: number;
   enemyId: string | null;
+  // M6 (T600a seams).
+  /**
+   * A swarmling or Champion (T604; `mode: 'owner'`, its Den in `ownerUid`): its step, the enemy
+   * it dashes to or holds (`targetUid`), and the ticks left in its latch or rest (0: none).
+   */
+  swarmState: SwarmState;
+  swarmTicks: number;
+  /**
+   * A blocker (T605; Bricks at the Gap): the units it can hold at once (0: not a blocker) and how
+   * many it holds now. Its `health` follows its map's timeline (`vulnerability: 'scripted'`).
+   */
+  blockCapacity: number;
+  blocking: number;
 }
 
 export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
@@ -584,4 +659,8 @@ export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
   hushUid: 0,
   auraChillPct: 0,
   enemyId: null,
+  swarmState: 'home',
+  swarmTicks: 0,
+  blockCapacity: 0,
+  blocking: 0,
 });

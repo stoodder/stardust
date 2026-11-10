@@ -87,7 +87,7 @@ describe('createSim', () => {
     ).toMatch(/limit is 4/);
     expect(bad({ companion: 'bricks' })).toMatch(/companion 'bricks' needs a slot/);
     expect(bad({ content: SPAWNER_GUN })).toMatch(
-      /'spawner' attack \(fx_gun\) is not simulated until M6/,
+      /'spawner' attack \(fx_gun\) is not simulated until T604/,
     );
     // @ts-expect-error -- an unknown tower id is a type error too
     expect(bad({ specsUnlocked: ['nope'] })).toMatch(/specsUnlocked: unknown tower 'nope'/);

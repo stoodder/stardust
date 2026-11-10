@@ -7,6 +7,11 @@ import { buy } from './purchase.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from './saveData.ts';
 import { validateSave } from './validate.ts';
 
+/** Whether campaign map `id` is registered yet. */
+const isRegistered = (id: string): boolean => (CAMPAIGN as readonly string[]).includes(id);
+/** A fresh copy of dev save `id`. */
+const build = (id: keyof typeof DEV_SAVES) => DEV_SAVES[id].build();
+
 /** The reference into A2M4 with a bank as A2M4's first clear might leave it (500 Stardust). */
 function intoA2M4Results(): ReturnType<typeof createNewSave> {
   const save = DEV_SAVES.after_a2m3_ref.build();
@@ -210,5 +215,52 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(save.story.memosDelivered.length).toBeGreaterThan(1);
     expect(save.story.memosRead).toEqual(save.story.memosDelivered);
     expect(save.story.bricksTagIndex).toBeGreaterThanOrEqual(2);
+  });
+
+  describe('Act III part one: a save for every branch (T600b)', () => {
+    it('takes C1 as named; the rest follows the reference until the maps land', () => {
+      expect(build('after_a3m1_spared').story.flags.spared_quiet_wave).toBe(true);
+      expect(build('after_a3m1_cleared').story.flags.spared_quiet_wave).toBe(false);
+      // Act II is complete in every one of them.
+      for (const id of ['after_a3m1_cleared', 'after_a3m2_rivet', 'after_a3m3_warren'] as const) {
+        expect(build(id).campaign.maps.a2_m06?.completed, id).toBe(true);
+      }
+    });
+
+    it.runIf(isRegistered('a3_m01'))(
+      'A3M1: the Scuttle Den given in its briefing, the Hum Choir only if spared',
+      () => {
+        const spared = build('after_a3m1_spared');
+        const cleared = build('after_a3m1_cleared');
+        for (const save of [spared, cleared]) {
+          expect(save.unlocks.towers).toContain('burrow');
+          expect(save.story.seen).toContain('a3_m01_base_survey');
+        }
+        expect(spared.unlocks.towers).toContain('choir');
+        expect(cleared.unlocks.towers).not.toContain('choir');
+      },
+    );
+
+    it.runIf(isRegistered('a3_m02'))('A3M2: the class the Clean Exit took, and the uplink', () => {
+      const rivet = build('after_a3m2_rivet');
+      const thumper = build('after_a3m2_thumper');
+      expect(rivet.unlocks.revokedTowers).toEqual(['rivet']);
+      expect(thumper.unlocks.revokedTowers).toEqual(['thumper']);
+      for (const save of [rivet, thumper]) {
+        expect(save.unlocks.revokedAbilities).toEqual(['orbital_strike']);
+        expect(save.unlocks.towers).toEqual(expect.arrayContaining(['harpoon', 'mindspike']));
+      }
+    });
+
+    it.runIf(isRegistered('a3_m03'))('A3M3: the door Bricks held, and his {name} turret', () => {
+      expect(build('after_a3m3_convoy').story.flags.door_choice).toBe('convoy');
+      expect(build('after_a3m3_warren').story.flags.door_choice).toBe('warren');
+      expect(build('after_a3m3_warren').story.memorialTower).toBe('burrow');
+    });
+
+    it("lets every save past A2M6 into the base: Act III's visit scenes count as seen once won", () => {
+      const all = build('all_unlocked');
+      expect(all.story.seen.includes('a3_m01_base_survey')).toBe(true);
+    });
   });
 });

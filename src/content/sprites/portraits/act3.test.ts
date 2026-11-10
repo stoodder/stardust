@@ -49,7 +49,8 @@ function resolve(def: SpriteDef, name: string): string[] {
 
 /** A frame character's master color under the sprite's palette and legend. */
 function colorOf(def: SpriteDef, ch: string): ColorName | null {
-  if (ch === '.') return null;
+  // Transparent, or a `region` row separator.
+  if (ch === '.' || ch === '|') return null;
   const slot = STANDARD_LEGEND[ch];
   const palette = PALETTES[def.palette];
   if (slot !== undefined) return palette[slot];
@@ -80,6 +81,32 @@ const mask = (rows: readonly string[]): string => rows.join('').replace(/[^.]/g,
 const opaque = (rows: readonly string[]): number => mask(rows).replace(/\./g, '').length;
 
 const lum = (c: ColorName): number => luminance(rgbOf(c));
+
+/** The white glints of Bramble's young (its eyes show only while it peeks). */
+const youngEyes = (e: string): number =>
+  region(resolve(portraitBramble, e), 0, 12, 11, 21).replace(/[^w]/g, '').length;
+/** The first row of Thrum's face with an eye glint in it. */
+const glintRow = (e: string): number =>
+  resolve(portraitThrum, e).findIndex((r, y) => y > 27 && /w/.test(r.slice(14, 34)));
+/** Thrum's eye band, and the open part of her mouth (dark coral). */
+const eyes = (rows: readonly string[]): string => region(rows, 12, 28, 35, 34);
+const open = (rows: readonly string[]): number =>
+  region(rows, 20, 36, 28, 38).replace(/[^R]/g, '').length;
+/** Thrum's lit shimmer over her shell. */
+const lit = (e: string): number =>
+  region(resolve(portraitThrum, e), 0, 0, 47, 26).replace(/[^*P]/g, '').length;
+/** How many pixels two masks disagree on. */
+const diff = (a: string, c: string): number => {
+  let n = 0;
+  for (let i = 0; i < a.length; i++) if (a.charAt(i) !== c.charAt(i)) n++;
+  return n;
+};
+/** The dark eye pixels of a neutral face. */
+const eyePx = (def: SpriteDef): number =>
+  resolve(def, 'neutral').join('').replace(/[^kJ]/g, '').length;
+/** A Goldie `act3` frame. */
+const act3 = (e: string, mouth: 'closed' | 'talk' = 'closed'): string[] =>
+  resolve(portraitGoldie, portraitFrame(e, { variant: 'act3', mouth }));
 
 describe('Act III portraits: the frame contract', () => {
   it.each([
@@ -197,8 +224,6 @@ describe('Bramble: the matriarch, too big for the frame', () => {
   });
 
   it('carries one of her young over her shoulder; it ducks into her fur when she’s worried', () => {
-    const youngEyes = (e: string): number =>
-      region(resolve(portraitBramble, e), 0, 12, 11, 21).replace(/[^w]/g, '').length;
     for (const e of BRAMBLE_EXPRESSIONS) {
       if (e === 'worried') expect(youngEyes(e), e).toBe(0);
       else expect(youngEyes(e), e).toBeGreaterThanOrEqual(2);
@@ -222,11 +247,16 @@ describe('Bramble: the matriarch, too big for the frame', () => {
         rows.forEach((r, y) => {
           for (let x = 0; x < r.length; x++) {
             if (r.charAt(x) === plain[y]?.charAt(x)) continue;
-            // Only the face, the young, and the bristled crown change.
+            // Only the face, the young, the wreath, and (angry) the bristling rim change.
             const inFace = x >= x0 && x <= x1 && y >= y0 && y <= y1;
             const young = x <= 11 && y >= 12 && y <= 21;
-            const crown = y <= 12 || (e === 'angry' && rows[y]?.charAt(x) !== 'x');
-            expect(inFace || young || crown || e === 'angry', `${e} ${mouth} ${x},${y}`).toBe(true);
+            const wreath = y < y0;
+            const rim =
+              e === 'angry' &&
+              [-2, -1, 0, 1, 2].some((d) =>
+                /[.x]/.test((plain[y + d]?.charAt(x) ?? '.') + (plain[y]?.charAt(x + d) ?? '.')),
+              );
+            expect(inFace || young || wreath || rim, `${e} ${mouth} ${x},${y}`).toBe(true);
           }
         });
       }
@@ -257,22 +287,15 @@ describe('Old Thrum: the Elder of the Quiet Wave', () => {
   });
 
   it('looks up at you at rest (she is knee-high): her glints sit high in her eyes', () => {
-    const glintRow = (e: string): number =>
-      resolve(portraitThrum, e).findIndex((r, y) => y > 27 && /w/.test(r.slice(14, 34)));
     expect(glintRow('neutral')).toBeLessThan(glintRow('worried'));
   });
 
   it('hums with her eyes shut and a round mouth, the shimmer lit in her shell’s seams', () => {
     const rest = resolve(portraitThrum, 'singing');
     const hum = resolve(portraitThrum, 'singing_talk');
-    const eyes = (rows: readonly string[]): string => region(rows, 12, 28, 35, 34);
     expect(eyes(rest)).not.toMatch(/[kw]/);
-    const open = (rows: readonly string[]): number =>
-      region(rows, 20, 36, 28, 38).replace(/[^R]/g, '').length;
     expect(open(rest)).toBeGreaterThan(0);
     expect(open(hum)).toBeGreaterThan(open(rest));
-    const lit = (e: string): number =>
-      region(resolve(portraitThrum, e), 0, 0, 47, 26).replace(/[^*P]/g, '').length;
     expect(lit('singing')).toBeGreaterThan(lit('neutral') + 10);
   });
 });
@@ -282,15 +305,12 @@ describe('the elders read apart from Pebble and from each other', () => {
     const b = mask(resolve(portraitBramble, 'neutral'));
     const t = mask(resolve(portraitThrum, 'neutral'));
     const p = mask(resolve(portraitPebble, 'neutral'));
-    const diff = (a: string, c: string): number => [...a].filter((ch, i) => ch !== c[i]).length;
     expect(diff(b, t)).toBeGreaterThan(200);
     expect(diff(b, p)).toBeGreaterThan(200);
     expect(diff(t, p)).toBeGreaterThan(200);
   });
 
   it('gives the elders older, smaller eyes than the youngling’s', () => {
-    const eyePx = (def: SpriteDef): number =>
-      resolve(def, 'neutral').join('').replace(/[^kJ]/g, '').length;
     expect(eyePx(portraitBramble)).toBeLessThan(eyePx(portraitPebble));
     expect(eyePx(portraitThrum)).toBeLessThan(eyePx(portraitPebble));
   });
@@ -316,15 +336,16 @@ describe('the elders read apart from Pebble and from each other', () => {
 });
 
 describe('Goldie `act3`: the convoy organizer at night', () => {
-  const act3 = (e: string, mouth: 'closed' | 'talk' = 'closed'): string[] =>
-    resolve(portraitGoldie, portraitFrame(e, { variant: 'act3', mouth }));
-
   it('keeps the base frame’s face, so every expression reads as it does there', () => {
     for (const e of BASE_EXPRESSIONS) {
       for (const mouth of ['closed', 'talk'] as const) {
         const base = resolve(portraitGoldie, portraitFrame(e, { mouth }));
-        expect(region(act3(e, mouth), 14, 20, 31, 32), `${e} ${mouth}`).toBe(
-          region(base, 14, 20, 31, 32),
+        // Brows and eyes, then the mouth (the hat's brim shows behind her neck beside it).
+        expect(region(act3(e, mouth), 14, 20, 31, 30), `${e} ${mouth}`).toBe(
+          region(base, 14, 20, 31, 30),
+        );
+        expect(region(act3(e, mouth), 17, 29, 27, 32), `${e} ${mouth}`).toBe(
+          region(base, 17, 29, 27, 32),
         );
       }
     }

@@ -24,6 +24,8 @@ const pebble = (c: StoryContext) =>
 const plate = (c: StoryContext) =>
   lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).name;
 
+/** This run's stats with the pivot in `pivotWave` (0: not yet). */
+const live = (pivotWave: number) => ({ pivotWave, evacuated: 0, refugeesLost: 0, revocations: 0 });
 const vesthara = (c: StoryContext) =>
   lineView({ speaker: 'vesthara', text: 'Be awake.' }, c, TEXT, null).portrait?.variant ?? null;
 
@@ -40,7 +42,6 @@ describe("Bricks's pocket and Pebble's name plate", () => {
   });
 
   it("shows Ves'thara touched from this run's A2M5 pivot on (D138; T569)", () => {
-    const live = (pivotWave: number) => ({ pivotWave, evacuated: 0, refugeesLost: 0, revocations: 0 });
     expect(vesthara(ctx('a2_m04'))).toBeNull();
     expect(vesthara(ctx('a2_m05', ['a2_m05_brief']))).toBeNull();
     // A replay: the pivot seen on an earlier run, not yet on this one.

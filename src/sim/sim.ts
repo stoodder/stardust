@@ -8,6 +8,7 @@ import { copyCommand } from './commands.ts';
 import { validateConfig, type SimConfig } from './config.ts';
 import type { SimEvent } from './events.ts';
 import { applyRunModifiers } from './economy.ts';
+import { gateRefugeeGroups } from './escort.ts';
 import { hashState } from './hashState.ts';
 import { createState, type SimState } from './state.ts';
 import { applyCommands } from './systems/applyCommands.ts';
@@ -40,6 +41,7 @@ export function createSim<K extends IdSpace = LiveIds>(cfg: SimConfig<K>): Sim<K
   const map = validateConfig(wide);
   const state = createState(map, cfg.seed);
   applyRunModifiers(state, map, wide.modifiers);
+  gateRefugeeGroups(state, map, wide.scriptFlags);
   const ctx: TickContext = { content: wide.content, map, config: wide, scratch: createScratch() };
 
   // Validated boundary: every id in the queue, the log, and the events came from K's content or

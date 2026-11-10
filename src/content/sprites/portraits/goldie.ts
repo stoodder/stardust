@@ -121,7 +121,7 @@ function hair(g: CharGrid): void {
 
 /** Bare-headed (`act3`): the crown of her bob, where the hat used to sit. */
 function crownHair(g: CharGrid): void {
-  for (let y = 9; y <= 20; y++) {
+  for (let y = 9; y <= 19; y++) {
     for (let x = 0; x < S; x++) {
       const dx = x + 0.5 - CX;
       const ny = (y + 0.5 - 20) / 9.5;

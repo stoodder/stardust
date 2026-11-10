@@ -144,16 +144,31 @@ export function runScriptAction(
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers. `objectiveCompleted` waits for M6 (no M5 map uses it; D137).
-  objectiveCompleted: 'M6',
-  restProgressPct: 'M7',
-  forcedInputResolved: 'M6',
-  // Actions.
-  // A lighting change at a script moment (the finale's Dawn); wave-paced light is map data
-  // (`MapDef.lighting`, T410a), Sundown's darkness included (T505).
-  setLighting: 'M7',
-  // The finale's Phase 2 checkpoint (T305b runs the wave checkpoints, not this action).
-  checkpoint: 'M7',
+  // Triggers (D141). The SEAL's press (T605); `objectiveCompleted` waits for A3M5 (M7); the
+  // finale's rest (M8).
+  forcedInputResolved: 'T605',
+  objectiveCompleted: 'M7',
+  restProgressPct: 'M8',
+  // Actions (D141). M6: the SEAL and the Holdout's end (T605); Clean Exit's revocations and
+  // QUILL's lockout (T606).
+  forceInput: 'T605',
+  endMap: 'T605',
+  revokeTowerClass: 'T606',
+  revokeAbility: 'T606',
+  setModifier: 'T606',
+  // M7: A3M5's opened tile (Shareholder Value's jettison) and a scripted wave.
+  openTile: 'M7',
+  spawnWave: 'M7',
+  // M8, the finale: a lighting change at a script moment (Dawn; wave-paced light is map data,
+  // `MapDef.lighting`, T410a, Sundown's darkness included, T505), the Phase 2 checkpoint (T305b
+  // runs the wave checkpoints, not this action), the restored class after "Who's there?", and the
+  // song's timers and phases.
+  setLighting: 'M8',
+  checkpoint: 'M8',
+  restoreTowerClass: 'M8',
+  startTimer: 'M8',
+  setTimerRate: 'M8',
+  setPhase: 'M8',
 });
 
 /** "not simulated yet", with the task that lifts it when SCRIPT_GATES names one. */

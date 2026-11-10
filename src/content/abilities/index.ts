@@ -6,6 +6,7 @@ import { scanner_sweep } from './scanner_sweep.ts';
 import { stillness } from './stillness.ts';
 import { suppressing_fire } from './suppressing_fire.ts';
 import { time_dilation } from './time_dilation.ts';
+import { underfoot } from './underfoot.ts';
 
 export const ABILITIES = defineRegistry({
   orbital_strike,
@@ -15,4 +16,6 @@ export const ABILITIES = defineRegistry({
   scanner_sweep,
   // M5 (T500a stub: Ves'thara's, run by T507).
   stillness,
+  // M6 (T600a stub: Bramble's, run by T604).
+  underfoot,
 });

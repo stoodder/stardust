@@ -307,7 +307,7 @@ describe('createSim and map scripts', () => {
           },
         }),
       }),
-    ).toThrow(/'rock': setClickable fallback restProgressPct is not simulated until M7/);
+    ).toThrow(/'rock': setClickable fallback restProgressPct is not simulated until M8/);
     expect(() =>
       simWith({
         events: [{ id: 'boss', on: { restProgressPct: 50 }, actions: [{ cue: 'fx_map_boss' }] }],
