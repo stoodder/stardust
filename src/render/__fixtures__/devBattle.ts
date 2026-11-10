@@ -140,7 +140,9 @@ const devCantor = defineEnemy({
   id: 'dev_cantor',
   name: 'Dev Cantor',
   hp: 120,
-  traits: ['shielded', 'shield_aura'],
+  // A pulse, not the `shield_aura` trait: the trait goes with the Cantor's continuous aura
+  // (`shieldAura`, T502; T500a), and this unit shows the pulse's tell and ring. The tell stays.
+  traits: ['shielded'],
   tells: ['shielded', 'regen', 'shield_aura'],
   pulse: { everySec: 4, tellSec: 1.5, radiusTiles: 2, shield: 40 },
 });
@@ -223,7 +225,8 @@ const DEV_ENTITIES = {
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
 
-const dev = mapDefinersFor<DevIds>();
+/** The dev maps' definers (devM5.ts's maps use them too). */
+export const dev = mapDefinersFor<DevIds>();
 
 // An S-bend from the spawn (top left) to the core (bottom right), with pads on both sides. Sgt.
 // Bricks stands at his post on decor (7,2), beside the bend, with Suppressing Fire in slot 2 (as
@@ -571,7 +574,7 @@ const bossMap = dev.defineMap({ ...bossLayout, waves: bossWaves, ...bossBuilds }
 // spawns (west and south-west) merge on the east road into the core; `act2.gold` tiles; plain
 // Nibblers on the real Rivet and Sprinkler. `?map=dev_act2`; the battle smoke boots it with every
 // dev map.
-const act2Layout = dev.defineMapLayout({
+export const act2Layout = dev.defineMapLayout({
   id: 'dev_act2',
   act: 2,
   env: 'act2.gold',
@@ -709,7 +712,7 @@ const aelariMap = dev.defineMap({
   id: 'dev_aelari',
   act: 2,
   env: 'act2.gold',
-  threatIntel: ['shielded', 'shield_aura', 'flying', 'armored'],
+  threatIntel: ['shielded', 'flying', 'armored'],
   requiredCounters: ['shield'],
   waves: dev.defineWaves([
     {

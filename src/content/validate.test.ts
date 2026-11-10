@@ -227,8 +227,9 @@ describe('validate: entities', () => {
 });
 
 describe('validate: maps', () => {
-  it('[feature] non-Defend objectives', () => {
-    rejects(withMap({ objective: 'escort' }), 'feature');
+  it('[feature] Holdout and Choir objectives (Escort is content since T500a)', () => {
+    rejects(withMap({ objective: 'holdout' }), 'feature');
+    rejects(withMap({ objective: 'choir' }), 'feature');
   });
 
   it('[companion] every companion named has an ability; pick lists are non-empty and unique', () => {

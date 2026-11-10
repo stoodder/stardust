@@ -76,6 +76,14 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   glimmer: 5,
   weft_warden: -5,
   lightwing: 8,
+  // M5's units (T500a stubs; T550 tunes them): their faction's death sound at a size's pitch.
+  veilwalker: 3,
+  blinkstrider: 2,
+  cantor: -4,
+  glimmer_shard: 6,
+  fracture: -4,
+  fracture_shard: 4,
+  riftmoth: 6,
 };
 
 /** A splitter's death (a Bunchling, `split` in its content): this follows its pop, after `delay` s. */
@@ -121,6 +129,16 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
   chitterbloom: { ...DEFAULT_BOSS_SOUNDS, spawnTell: 'sneeze_tell', spawn: 'sneeze' },
   // Glass, not a tuba (T450): she withdraws to the fanfare's minor turn, `witch_sting`.
   glass_witch: {
+    arrive: 'witch_arrive',
+    phase: 'witch_phase',
+    spawnTell: null,
+    spawn: null,
+    end: 'witch_retreat',
+    endCue: 'witch_sting',
+  },
+  // The Penitent (T500a stub): the Witch's glass until T550 gives it its own (its kneel is no
+  // retreat; T506's pivot decides what `end` plays).
+  sunderglass_penitent: {
     arrive: 'witch_arrive',
     phase: 'witch_phase',
     spawnTell: null,
@@ -200,6 +218,8 @@ export const ABILITY_SOUNDS: Readonly<
   clearance_sale: { cast: 'sale_kaching', land: [] },
   // A wide sonar ping as the zone goes down (each unit it reveals pings too, CLOAK_SOUNDS).
   scanner_sweep: { cast: 'scan_ping', land: [] },
+  // Stillness (T500a stub): Time Dilation's swell until T550 gives it its own.
+  stillness: { cast: 'dilation_swell', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

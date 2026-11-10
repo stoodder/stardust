@@ -312,10 +312,10 @@ describe('createSim and map scripts', () => {
       simWith({
         events: [{ id: 'boss', on: { refugeesRemaining: 2 }, actions: [{ cue: 'fx_map_boss' }] }],
       }),
-    ).toThrow(/'boss': trigger refugeesRemaining is not simulated until T305c \(M5\)/);
+    ).toThrow(/'boss': trigger refugeesRemaining is not simulated until T305c/);
     expect(() =>
       simWith({ events: [{ id: 'pivot', on: { tick: 5 }, actions: [{ bossEnd: 'pivot' }] }] }),
-    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated until T305c \(M5\)/);
+    ).toThrow(/'pivot': action bossEnd 'pivot' is not simulated until T506/);
     const cond = {
       ...FIXTURE_CONTENT.maps.fx_map,
       events: [

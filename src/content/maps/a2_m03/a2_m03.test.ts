@@ -23,7 +23,7 @@ describe('A2M3 · Second Look', () => {
       requiredCounters: ['shield', 'air', 'splash'],
     });
     expect(map.waves).toHaveLength(11);
-    expect(map.lighting).toEqual([{ wave: 11, env: 'act2.dusk' }]);
+    expect(map.lighting).toEqual([{ wave: 11, env: 'act2.dusk', dark: 0 }]);
   });
 
   it("keeps A1M2's 11 pads unchanged and adds the strip mine's 4 benches in the band", () => {

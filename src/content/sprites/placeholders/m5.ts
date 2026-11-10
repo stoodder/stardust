@@ -17,6 +17,12 @@ import {
   iconEnemyWeftWarden,
 } from '../icons/act2_enemies.ts';
 import { iconEnemyGlassWitch } from '../icons/glass_witch.ts';
+import {
+  iconTellFast,
+  iconTellHollow,
+  iconTellShielded,
+  iconTellSplitter,
+} from '../icons/glyphs.ts';
 import { iconTowerRivet } from '../icons/rivet.ts';
 import { iconAbilityScannerSweep } from '../icons/scanner_sweep.ts';
 import { iconTowerLookout } from '../icons/vrell_towers.ts';
@@ -84,6 +90,12 @@ export const towerLanternHead = placeholder(towerLookoutHead, 'tower.lantern_hea
 export const iconTowerPrism = placeholder(iconTowerRivet, 'icon.tower.prism', 'aelari');
 export const iconTowerMindspike = placeholder(iconTowerZapcoil, 'icon.tower.mindspike', 'aelari');
 export const iconTowerLantern = placeholder(iconTowerLookout, 'icon.tower.lantern', 'aelari');
+
+// The tell glyphs M5's units name (T540b draws them; T501k): stealth, blink, shield_aura, phasing.
+export const iconTellStealth = placeholder(iconTellHollow, 'icon.tell.stealth', 'aelari');
+export const iconTellBlink = placeholder(iconTellFast, 'icon.tell.blink', 'aelari');
+export const iconTellShieldAura = placeholder(iconTellShielded, 'icon.tell.shield_aura', 'aelari');
+export const iconTellPhasing = placeholder(iconTellSplitter, 'icon.tell.phasing', 'hollow');
 
 // Stillness's ability icon (T540b).
 export const iconAbilityStillness = placeholder(

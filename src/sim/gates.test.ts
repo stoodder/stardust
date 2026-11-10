@@ -31,7 +31,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     const unnerved = { status: 'unnerved', durationTicks: 60 } as const;
     const content = withGunTier(1, { ...GUN.tiers[1], effects: [unnerved] });
     expect(gateRefusals(fixtureConfig({ content }))).toEqual([
-      'the unnerved status (fx_gun) is not simulated until M5',
+      'the unnerved status (fx_gun) is not simulated until T507',
     ]);
     // Not in the loadout: nothing to refuse.
     expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }))).toEqual([]);
@@ -59,13 +59,13 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     // Stasis runs since T407a; closing its row again refuses it.
     const closed = { ...FEATURE_GATES, 'status.stasis': 'T407a' } as const;
     expect(gateRefusals(cfg, closed)).toEqual([
-      "a 'beam' attack (fx_gun) is not simulated until M5",
+      "a 'beam' attack (fx_gun) is not simulated until T504",
       'the stasis status (fx_gun) is not simulated until T407a',
-      'the unnerved status (fx_gun) is not simulated until M5',
+      'the unnerved status (fx_gun) is not simulated until T507',
     ]);
     const lifted = { ...FEATURE_GATES, 'attack.beam': null };
     expect(gateRefusals(cfg, lifted)).toEqual([
-      'the unnerved status (fx_gun) is not simulated until M5',
+      'the unnerved status (fx_gun) is not simulated until T507',
     ]);
   });
 
@@ -73,10 +73,10 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     expect(FEATURE_GATES.specs).toBeNull();
     expect(FEATURE_GATES['attack.projectile']).toBeNull(); // T304a
     expect(FEATURE_GATES['attack.chain']).toBeNull(); // T304b
-    expect(FEATURE_GATES['attack.beam']).toBe('M5'); // Prism
+    expect(FEATURE_GATES['attack.beam']).toBe('T504'); // Prism
     expect(FEATURE_GATES['attack.spawner']).toBe('M6'); // Scuttle Den
     expect(FEATURE_GATES['status.stasis']).toBeNull(); // Flash Freeze (T407a)
     expect(FEATURE_GATES['status.pinned']).toBeNull(); // Tether, Magnet Crane (T408)
-    expect(FEATURE_GATES['status.unnerved']).toBe('M5'); // Mindspike
+    expect(FEATURE_GATES['status.unnerved']).toBe('T507'); // Mindspike
   });
 });

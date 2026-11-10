@@ -264,8 +264,8 @@ describe('wreckage by marker and objectives as conditions', () => {
     expect(SCRIPT_GATES).toMatchObject({
       // Wave-paced light is map data since T410a (MapDef.lighting); the action is the finale's.
       setLighting: 'M7',
-      checkpoint: 'T305b',
-      'bossEnd.pivot': 'T305c (M5)',
+      checkpoint: 'M7',
+      'bossEnd.pivot': 'T506',
     });
     const events = [
       { id: 'a', on: { objectiveCompleted: 'x' }, when: null, actions: [], once: true },
@@ -273,9 +273,9 @@ describe('wreckage by marker and objectives as conditions', () => {
       { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: true }], once: true },
     ] as const;
     expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'a': trigger objectiveCompleted is not simulated until M5",
+      "event 'a': trigger objectiveCompleted is not simulated until M6",
       "event 'b': action setLighting is not simulated until M7",
-      "event 'c': action checkpoint is not simulated until T305b",
+      "event 'c': action checkpoint is not simulated until M7",
     ]);
   });
 });
@@ -292,7 +292,6 @@ describe('FEATURE_GATES (T400a rows)', () => {
       // Cloaks, detection, the Lookout, and Scanner Sweep run since T406 (systems/detection.test.ts).
       'enemy.cloak': null,
       'tower.detection': null,
-      'tower.lookout': null,
       'ability.reveal': null,
       // Stasis (Flash Freeze) runs since T407a (sim/stasis.test.ts).
       'status.stasis': null,
@@ -304,16 +303,14 @@ describe('FEATURE_GATES (T400a rows)', () => {
       'attack.line': null,
       'attack.targetFilter': null,
       'tower.economy': null,
-      'tower.harpoon': null,
-      'tower.crane': null,
       // Clickable objects run since T409 (sim/clickables.test.ts).
       'map.clickable': null,
       // Revisits run since T410a (content/compileRevisit.test.ts).
       'map.revisit': null,
-      // Renumbered by D101 (M5 = Act II, part two; M6 = Act III; M7 = the finale).
-      'attack.beam': 'M5',
-      'status.unnerved': 'M5',
-      'enemy.boss.pivot': 'M5',
+      // M5's rows name their tasks (D137; sim/m5seams.test.ts).
+      'attack.beam': 'T504',
+      'status.unnerved': 'T507',
+      'enemy.boss.pivot': 'T506',
       'attack.spawner': 'M6',
       'enemy.boss.layToRest': 'M7',
     });
@@ -412,7 +409,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
   });
 
   it('keeps the stub towers and content TOWERS_AHEAD_OF_TASK in step', () => {
-    // A task that lifts a `tower.<id>` row drops the tower from TOWERS_AHEAD_OF_TASK too (and so
+    // A task lifts its tower by deleting its STUB_TOWER_TASKS entry, which drops it here too (and so
     // brings it into [quiet-wave-reach] and the catalog's tune-up check).
     for (const id of Object.keys(RAW_CONTENT.towers)) {
       expect(stubTowerGate(id) !== null, id).toBe(TOWERS_AHEAD_OF_TASK.includes(id));

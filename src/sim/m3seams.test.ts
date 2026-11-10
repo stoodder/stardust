@@ -152,7 +152,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
       'enemy.split': null, // T304c
       'enemy.huddle': null, // T304c
       'enemy.boss': null, // T304c
-      'enemy.boss.pivot': 'M5', // T305c (D101 renumbered the milestones)
+      'enemy.boss.pivot': 'T506', // the Penitent (D137)
       'enemy.boss.layToRest': 'M7',
       'ability.slowAll': null, // T304d
       'ability.discount': null, // T304d
@@ -196,7 +196,7 @@ describe('FEATURE_GATES (T300a rows)', () => {
     expect(closed(e.chitterbloom)).toEqual(['a boss (chitterbloom) is not simulated until T304c']);
     // Boss endings Act I doesn't use stay refused.
     for (const [ending, owner] of [
-      ['pivot', 'M5'],
+      ['pivot', 'T506'],
       ['layToRest', 'M7'],
     ] as const) {
       const boss = { ...e.chitterbloom.boss!, ending };

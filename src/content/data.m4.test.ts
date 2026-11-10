@@ -115,6 +115,9 @@ describe('M4 towers, ability, links, and catalog rows', () => {
       'overwatch',
       'skywatch',
       'reel_it_in',
+      // M5's (T500a stubs; data.m5.test.ts).
+      'resonance',
+      'lightsong',
     ]);
     expect(TOWER_ACCESS.lookout).toMatchObject({ price: 150, availableAfter: 'a1_m05' });
     expect(TOWER_ACCESS.harpoon).toMatchObject({ price: 250, availableAfter: 'a2_m01' });
@@ -164,7 +167,7 @@ describe('M4 map and condition rules', () => {
         'asset',
       ),
     ).toHaveLength(1);
-    expect(errors(withMap({ objective: 'escort' }), 'feature')).toHaveLength(1);
+    expect(errors(withMap({ objective: 'holdout' }), 'feature')).toHaveLength(1);
   });
 
   it('[clickable] setClickable and interacted name a declared clickable marker', () => {

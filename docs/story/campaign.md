@@ -295,7 +295,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 
 **Objective Intel** (+1 each, optional, never moral): A1M4, A2M1, A2M4, A3M1, A3M4, A3M5, FIN = 7.
 
-**Reference profile** (Standard; first-clear Stardust spent sensibly; Intel from Victory medals only, so one per map; the *weaker* branch of every flag: C1 cleared, C2 Return, both C3 branches, every C4). Every par build in the act files uses only what this profile owns at that map, and the harness asserts it. The rows built so far are data: `REFERENCE_PROFILES` in [`src/content/upgrades/reference.ts`](../../src/content/upgrades/reference.ts) (A1M1–A2M3; each map's `builds.ts` takes its row), and a later map's row joins it with its map task.
+**Reference profile** (Standard; first-clear Stardust spent sensibly; Intel from Victory medals only, so one per map; the *weaker* branch of every flag: C1 cleared, C2 Return, both C3 branches, every C4). Every par build in the act files uses only what this profile owns at that map, and the harness asserts it. The rows built so far are data: `REFERENCE_PROFILES` in [`src/content/upgrades/reference.ts`](../../src/content/upgrades/reference.ts) (A1M1–A2M6; each map's `builds.ts` takes its row, and a row owning a tower still ahead of its task stays refused until that task lands).
 
 | Before map | Towers owned | Intel spent (running total) | Notable shop state |
 |---|---|---|---|

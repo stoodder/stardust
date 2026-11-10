@@ -322,6 +322,11 @@ export const SPRITES = [
   iconTellRegen,
   iconTellHollow,
   iconTellSkittish,
+  // M5's tell glyphs (placeholders until T540b).
+  m5.iconTellStealth,
+  m5.iconTellBlink,
+  m5.iconTellShieldAura,
+  m5.iconTellPhasing,
   sceneRig9Feed,
   // The star map's glyphs (T301b).
   uiStarNode,

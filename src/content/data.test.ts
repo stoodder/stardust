@@ -114,6 +114,10 @@ describe('towers', () => {
       'lookout',
       'harpoon',
       'crane',
+      // M5's (T500a stubs; data.m5.test.ts).
+      'prism',
+      'mindspike',
+      'lantern',
     ]);
     expect([rivet, thumper, sprinkler].map((t) => t.name)).toEqual([
       'Rivet',
@@ -303,6 +307,15 @@ describe('enemies', () => {
       'weft_warden',
       'lightwing',
       'glass_witch',
+      // M5's (T500a stubs; data.m5.test.ts).
+      'veilwalker',
+      'blinkstrider',
+      'cantor',
+      'sunderglass_penitent',
+      'glimmer_shard',
+      'fracture',
+      'fracture_shard',
+      'riftmoth',
     ]);
     expect(
       Object.values(content.enemies)
