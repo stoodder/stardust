@@ -134,7 +134,12 @@ export const SPEAKERS = {
     color: 'coral.4',
     frame: 'portrait',
     portrait: 'portrait.pebble',
-    variants: [{ variant: 'patch', when: { mapAtLeast: 'a3_m03' } }],
+    // Bricks's bottle cap from A2M4 (art-direction.md § Portrait roster), carrying his Survey Corps
+    // patch from A3M3.
+    variants: [
+      { variant: 'patch', when: { mapAtLeast: 'a3_m03' } },
+      { variant: 'cap', when: { mapAtLeast: 'a2_m04' } },
+    ],
     blip: 'blip.pebble',
   },
   goldie: {

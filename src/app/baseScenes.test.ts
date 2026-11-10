@@ -1,4 +1,5 @@
-// The base's conversations (app/baseScenes.ts, T308): Zibzab's arrival once, and the open question.
+// The base's conversations (app/baseScenes.ts, T308, T513): the visit scenes once each (Zibzab's
+// arrival, Pebble's handover after A2M4), and the open question.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStore } from '../meta/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
@@ -6,12 +7,14 @@ import {
   ARRIVAL_SCENE,
   arrivalDue,
   askOpenQuestion,
+  HANDOVER_SCENE,
   OPEN_QUESTION_SCENE,
   openQuestionShown,
-  playArrivalIfDue,
+  playBaseScenesIfDue,
+  visitScenesDue,
 } from './baseScenes.ts';
 import { chooseOption, closeScene, setDialogueEnabled, skipScene } from './dialogue.ts';
-import { activeSave, initSaves, loadDevSave } from './save.ts';
+import { activeSave, initSaves, loadDevSave, updateActiveSave } from './save.ts';
 
 beforeEach(() => {
   initSaves(new MemoryStore(), () => 1);
@@ -31,13 +34,13 @@ describe("Zibzab's arrival at the base", () => {
     loadDevSave('after_a1m3');
     expect(activeSave()?.unlocks.towers).toContain('zapcoil'); // the sample is in hand
     expect(arrivalDue()).toBe(true);
-    expect(playArrivalIfDue()).toBe(true);
+    expect(playBaseScenesIfDue()).toBe(true);
     expect(dialogue.scene.value).toMatchObject({ sceneId: ARRIVAL_SCENE, mode: 'panel' });
     expect(skipScene()).toBe(true);
     expect(dialogue.scene.value).toBeNull();
     expect(activeSave()?.story.seen).toContain(ARRIVAL_SCENE);
     expect(arrivalDue()).toBe(false);
-    expect(playArrivalIfDue()).toBe(false);
+    expect(playBaseScenesIfDue()).toBe(false);
   });
 
   it('has played in the dev saves from after_a1m4 on (bought at his shop; T461)', () => {
@@ -51,7 +54,70 @@ describe("Zibzab's arrival at the base", () => {
     loadDevSave('after_a1m3');
     setDialogueEnabled(false);
     expect(arrivalDue()).toBe(false);
-    expect(playArrivalIfDue()).toBe(false);
+    expect(playBaseScenesIfDue()).toBe(false);
+  });
+});
+
+describe("Pebble's handover (A2M4's base scene)", () => {
+  /** A2M4 won, but the handover not seen yet (a real player's first visit). */
+  const freshAfterA2M4 = (): void => {
+    loadDevSave('after_a2m4_returned');
+    updateActiveSave((s) => ({
+      ...s,
+      story: { ...s.story, seen: s.story.seen.filter((id) => id !== HANDOVER_SCENE) },
+    }));
+  };
+
+  it('is seen in the dev saves past A2M4, with the truth scene (devSaves.ts)', () => {
+    for (const id of ['after_a2m4_returned', 'after_a2m4_sold', 'all_unlocked'] as const) {
+      loadDevSave(id);
+      expect(activeSave()?.story.seen, id).toEqual(
+        expect.arrayContaining([HANDOVER_SCENE, 'a2_m04_scene_truth']),
+      );
+      expect(visitScenesDue(), id).toEqual([]);
+    }
+  });
+
+  it('is not due before A2M4 is won', () => {
+    loadDevSave('after_a2m3_ref');
+    expect(visitScenesDue()).toEqual([]);
+  });
+
+  it('plays once on the first visit after A2M4 is won, as a panel, without the shop tab', () => {
+    freshAfterA2M4();
+    expect(visitScenesDue()).toEqual([HANDOVER_SCENE]);
+    expect(arrivalDue()).toBe(false);
+    expect(playBaseScenesIfDue()).toBe(false);
+    expect(dialogue.scene.value).toMatchObject({ sceneId: HANDOVER_SCENE, mode: 'panel' });
+    skipScene();
+    expect(dialogue.scene.value).toBeNull();
+    expect(activeSave()?.story.seen).toContain(HANDOVER_SCENE);
+    expect(visitScenesDue()).toEqual([]);
+    expect(playBaseScenesIfDue()).toBe(false);
+    expect(dialogue.scene.value).toBeNull();
+  });
+
+  it('plays after the arrival when both are due, each in turn', () => {
+    freshAfterA2M4();
+    updateActiveSave((s) => ({
+      ...s,
+      story: { ...s.story, seen: s.story.seen.filter((id) => id !== ARRIVAL_SCENE) },
+    }));
+    expect(visitScenesDue()).toEqual([ARRIVAL_SCENE, HANDOVER_SCENE]);
+    expect(playBaseScenesIfDue()).toBe(true);
+    expect(dialogue.scene.value?.sceneId).toBe(ARRIVAL_SCENE);
+    skipScene();
+    expect(dialogue.scene.value?.sceneId).toBe(HANDOVER_SCENE);
+    skipScene();
+    expect(dialogue.scene.value).toBeNull();
+    expect(visitScenesDue()).toEqual([]);
+  });
+
+  it('waits while dialogue is off', () => {
+    freshAfterA2M4();
+    setDialogueEnabled(false);
+    expect(visitScenesDue()).toEqual([]);
+    expect(playBaseScenesIfDue()).toBe(false);
   });
 });
 

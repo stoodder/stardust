@@ -4,10 +4,11 @@
 // shows a locked pane with what opens it ("Opens after The Audit"; meta/progress.ts
 // SYSTEM_UNLOCKS). An open tab shows its pane (BasePanes.tsx). Entering the base delivers any memo
 // or codex unlock a save missed (app/inbox.ts). The first visit with Zibzab's shop open lands on
-// the Shop tab and plays his arrival (app/baseScenes.ts, T308); otherwise an unread memo opens the
-// Inbox (T320), and nothing new opens Research.
+// the Shop tab and plays his arrival (app/baseScenes.ts, T308; with any other visit scene due, such
+// as Pebble's handover after A2M4); otherwise an unread memo opens the Inbox (T320), and nothing
+// new opens Research.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { arrivalDue, playArrivalIfDue } from '../../app/baseScenes.ts';
+import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
@@ -63,7 +64,7 @@ export function Base() {
   useEffect(() => {
     // A memo the catch-up delivers (an older save's) opens the Inbox as one from a run end would.
     const delivered = catchUpStory() !== null;
-    if (playArrivalIfDue()) setTab('shop');
+    if (playBaseScenesIfDue()) setTab('shop');
     else if (delivered && storyBadges().inbox > 0 && !picked.current) setTab('inbox');
   }, []);
   const view = campaign.value;
