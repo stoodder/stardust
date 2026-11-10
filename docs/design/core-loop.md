@@ -299,7 +299,7 @@ Story owners and timing come from [../story/bible.md §12](../story/bible.md#12-
 | Point at a tile | Move the mouse | Arrows move the **tile cursor**; Enter acts there as a click would |
 | Upgrade / specialize / sell / retarget | Click a tower to open its panel | Enter on a tower selects it; U upgrade, S sell, T cycle targeting |
 | Reach a clickable world object (A2M3's Peeker rock, §6.9) | Click it while it shows its dashed gold outline (the pointer turns to a hand), with or without a tower armed | The tile cursor reaches it while it's clickable; Enter |
-| Call wave early | Click an incoming flag | W (not the Quiet Wave: it can't be called, so Call hides and W says "This one comes in its own time") |
+| Call wave early | Click an incoming flag | W (not the Quiet Wave or another `noCall` wave, A2M5's W6: it can't be called, so Call hides and W says "This one comes in its own time") |
 | Abilities | Click the ability button, then the target; an untargeted one (Time Dilation, Clearance Sale) casts on the click | Q (slot 1), E (slot 2) |
 | Pause / speed | HUD buttons | Space pause, F toggle 1x/2x |
 | Hold fire | Tower panel toggle (one tower) or HUD button (all) | H (selected), Shift+H (all) |

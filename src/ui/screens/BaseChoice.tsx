@@ -11,7 +11,7 @@ import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { formatCount } from './format.ts';
 import { StoryChoice } from './StoryChoice.tsx';
-import { baseChoice, type ResultsTransaction } from './state.ts';
+import { baseChoice, type BaseChoiceView, type ResultsTransaction } from './state.ts';
 import './results.css';
 
 /** What the choice did, in the payroll row's words: "Sold at market · 940 Stardust +6 Intel". */
@@ -36,12 +36,19 @@ function Made({ t }: { t: ResultsTransaction }) {
 /** The panel, while a choice is offered at the base. */
 export function BaseChoice() {
   const view = baseChoice.value;
-  // Esc never answers for the player; once answered, it closes like Continue.
+  return view === null ? null : <Panel view={view} />;
+}
+
+/**
+ * The panel itself: mounted only while it shows, so its Esc handler sits over the base's (a
+ * sub-panel mounts after its screen; escape.ts).
+ */
+function Panel({ view }: { view: BaseChoiceView }) {
+  // Esc never answers for the player, or leaves the base; once answered, it closes like Continue.
   useEscape(() => {
     closeBaseChoice();
     return true;
   });
-  if (view === null) return null;
   const answered = view.choice.picked !== null;
   return (
     <div class="sd-screen sd-base-choice" data-testid="base-choice">

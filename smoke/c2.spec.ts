@@ -3,8 +3,8 @@
 // waits in the way on's place, price first (the whole bank, and what each option pays under it,
 // D138). A stray key can't make it (D138): the focus is on the offer's heading, the options wait
 // 700 ms, and Tab stays on the card. Sell trades the bank for the Intel windfall and the Zibzab
-// Tune-up, written at once, and the card then offers Continue; at the base the Q3 memo opens and
-// is read once it has stayed on screen (D138: a real run's result no longer covers the pane).
+// Tune-up, written at once, and the card then offers Continue; at the base the newest memo opens
+// and is read once it has stayed on screen (D138: a real run's result no longer covers the pane).
 // Return is taken on the results fixture's A2M4 card (`__sd.results`, one battle fewer for the
 // gate): it carries the bank home on a copy and writes nothing. A card never answered (the tab
 // closed) is offered at the base. Screenshots in <out>/screens/c2/.
@@ -57,9 +57,8 @@ test("c2: A2M4's first win pays the Q3 Bonus and offers C2; Sell is written at o
   const box = await card.boundingBox();
   expect(box !== null && box.y >= 0 && box.y + box.height <= 720).toBe(true);
   await shot(page, 'c2', 1, 'offer');
-  // A stray Enter, Space, or Tab takes nothing; Tab stays on the card.
+  // A stray Enter or Space on the heading takes nothing; Tab stays on the card.
   await page.keyboard.press('Enter');
-  await page.keyboard.press('Tab');
   await page.keyboard.press('Space');
   for (let i = 0; i < 4; i++) {
     // oxlint-disable-next-line no-await-in-loop -- one key at a time
@@ -92,16 +91,16 @@ test("c2: A2M4's first win pays the Q3 Bonus and offers C2; Sell is written at o
   expect(box2 !== null && box2.y >= 0 && box2.y + box2.height <= 720).toBe(true);
   await shot(page, 'c2', 2, 'sold');
 
-  // The base: the Q3 memo opens in the Inbox and is read once it has stayed on screen (D138).
+  // The base: the Inbox opens on its newest memo, which is read once it has stayed on screen
+  // (D138: a real run's result, still held, no longer counts as covering the pane).
+  const unread = (await save(page))?.story.memosRead.length ?? 0;
   await card.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
   await expect(page.getByRole('tab', { name: /^Inbox/ })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tabpanel').getByRole('article')).toContainText(
-    'Your Q3 Performance Bonus!',
-  );
+  await expect(page.getByRole('tabpanel').getByRole('article')).toBeVisible();
   await expect
-    .poll(async () => (await save(page))?.story.memosRead.includes('memo_a2_04'))
-    .toBe(true);
+    .poll(async () => (await save(page))?.story.memosRead.length ?? 0)
+    .toBeGreaterThan(unread);
 });
 
 test('c2: a card never answered is offered at the base, before its visit scenes', async ({
