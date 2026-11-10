@@ -85,7 +85,7 @@ test('mindspike: Stillness freezes the cluster, Dread unnerves, Echo Spike echoe
       .towers.items.filter((t) => t.alive && t.def?.id === 'mindspike')
       .map((t) => t.spec),
   );
-  expect(specs.toSorted()).toEqual(['a', 'b']);
+  expect(specs.toSorted((x, y) => String(x).localeCompare(String(y)))).toEqual(['a', 'b']);
 
   // Stillness: aim from the HUD over the Mote cluster, then click to cast.
   expect(await until(page, 'cluster')).toBe(true);

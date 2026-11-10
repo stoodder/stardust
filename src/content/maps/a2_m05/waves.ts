@@ -51,30 +51,30 @@ export const waves = defineWaves([
   // W1 · Glimmers + one Aegis Cantor [T: shield aura; kill it first], the Cantor mid-column
   {
     teach: true,
-    groups: [road('glimmer', 10, 0, 0.8), road('cantor', 1, 3.5)],
+    groups: [road('glimmer', 6, 0, 1.2), road('cantor', 1, 3)],
   },
-  // W2 · Weft Wardens with Cantors walking among them [X], Glimmers behind
+  // W2 · Weft Wardens with a Cantor walking among them [X], Glimmers behind
   {
     countdownSec: COUNTDOWN,
     groups: [
-      road('weft_warden', 4, OPEN, 3),
-      road('cantor', 2, OPEN + 1.5, 3),
-      road('glimmer', 10, OPEN + 14, 0.8),
+      road('weft_warden', 2, OPEN, 4),
+      road('cantor', 1, OPEN + 2),
+      road('glimmer', 6, OPEN + 12, 1.0),
     ],
   },
   // W3 · Blinkstriders + Veilwalkers [C]
   {
     countdownSec: COUNTDOWN,
-    groups: [road('blinkstrider', 6, OPEN, 1.5), road('veilwalker', 8, OPEN + 3, 1.5)],
+    groups: [road('blinkstrider', 3, OPEN, 2), road('veilwalker', 6, OPEN + 4, 3)],
   },
-  // W4 · Lightwings over the fencing + Cantors down the road [X], Veilwalkers in their shadow
+  // W4 · Lightwings over the valley + Cantors down the road [X], Veilwalkers in their shadow
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('lightwing', 8, 'sky', OPEN, 1.0),
-      road('cantor', 3, OPEN + 2, 2.5),
-      road('glimmer', 12, OPEN + 3, 0.8),
-      road('veilwalker', 3, OPEN + 6, 2),
+      g('lightwing', 5, 'sky', OPEN, 1.2),
+      road('cantor', 2, OPEN + 2, 4),
+      road('glimmer', 6, OPEN + 3, 1.0),
+      road('veilwalker', 6, OPEN + 8, 3),
     ],
   },
   // W5 · the Sunderglass Penitent, alone (shield wall and recharge pulse; cloaked shards when

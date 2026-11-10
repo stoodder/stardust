@@ -10,7 +10,13 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledContent, CompiledEnemyDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { IdSpace } from '../content/types.ts';
-import { enemyDef, placeTower, setup as setupFixture, spawn, WALKER } from './__fixtures__/combat.ts';
+import {
+  enemyDef,
+  placeTower,
+  setup as setupFixture,
+  spawn,
+  WALKER,
+} from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 import { hasStatusIn } from './bonuses.ts';
 import { applyChill, applyEffects } from './combat/damage.ts';
@@ -57,6 +63,11 @@ function setup(over: Partial<SimConfig<IdSpace>> = {}): ReturnType<typeof setupF
 type Ev = SimEvent<IdSpace>;
 function events<T extends Ev['type']>(state: SimState, type: T): Extract<Ev, { type: T }>[] {
   return state.events.filter((e): e is Extract<Ev, { type: T }> => e.type === type);
+}
+
+/** Slot 2 aimed at tile (col, row). */
+function cast(col: number, row: number): Extract<Command<IdSpace>, { type: 'ability' }> {
+  return { type: 'ability', slot: 2, target: [col, row] };
 }
 
 /** A sturdy organic walker with light armor (Psionic ignores it; body ×1). */
@@ -224,12 +235,6 @@ describe('the Mindspike Obelisk (towers.md § 7)', () => {
 });
 
 describe("Stillness (core-loop.md § 3.2), Ves'thara's", () => {
-  const cast = (col: number, row: number): Extract<Command<IdSpace>, { type: 'ability' }> => ({
-    type: 'ability',
-    slot: 2,
-    target: [col, row],
-  });
-
   it("is Ves'thara's: Stasis 3 s in radius 2.5, every 45 s", () => {
     expect(STILLNESS).toMatchObject({ companion: 'vesthara', cooldownTicks: 2700 });
     expect(STILLNESS.effect).toEqual({
@@ -361,8 +366,4 @@ describe('reach: a unit out of reach (T507’s fixes, enemies.md § 2.6)', () =>
     abilities(t.state, t.ctx);
     expect([deep.chillPct, phased.chillPct]).toEqual([0.4, 0.4]);
   });
-
-  function cast(col: number, row: number): Extract<Command<IdSpace>, { type: 'ability' }> {
-    return { type: 'ability', slot: 2, target: [col, row] };
-  }
 });

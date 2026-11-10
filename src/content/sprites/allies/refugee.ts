@@ -23,8 +23,8 @@ type Look = 'bundle' | 'carry';
 /** Burlap and its tie, and the rider's colours (custom legend, so they hold in both palettes). */
 const LEGEND = {
   G: 'brass.4',
-  H: 'grime.4',
-  J: 'grime.3',
+  H: 'brass.3',
+  J: 'grime.4',
 } as const;
 
 /** The bundle on its back: a burlap sack, lit at the top left, tied off with a cord knot. */
@@ -57,7 +57,7 @@ function refugee(facing: 'se' | 'ne', step: 0 | 1, look: Look): string[] {
       ? [[back, 1 + down, BUNDLE]]
       : [
           // The little one: a small round body on its back, one big eye over the parent's crown.
-          [back, 3 + down, ['.444.', '43333', '33332', '.322.']],
+          [back, 3 + down, ['.444.', '44433', '43332', '.332.']],
           [back + 1, 2 + down, facing === 'se' ? ['.c'] : ['c.']],
           ...(facing === 'se'
             ? ([[back + 3, 3 + down, ['wk', 'kk']]] as [number, number, readonly string[]][])

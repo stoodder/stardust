@@ -78,9 +78,9 @@ export const map = defineMapLayout({
       ],
     },
   ],
-  // W4's Lightwings fly in over the fencing from the north-east, down to the gate.
+  // W4's Lightwings fly in over the fencing from the north, across the valley, down to the gate.
   // prettier-ignore
-  airLanes: [{ id: 'sky', points: [[17, 0], [14, 5], [14, 10]] }],
+  airLanes: [{ id: 'sky', points: [[6, 0], [7, 5], [14, 10]] }],
   // Markers (render draws the ones it knows as props; the Preserve's are T540c's): the Preserve
   // gate (the core before the pivot and the safe exit after), the fenced basin behind it, the
   // relocation fencing along the road, and the rigs' end of the rig road.

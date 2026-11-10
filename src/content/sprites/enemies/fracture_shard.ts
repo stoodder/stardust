@@ -33,10 +33,16 @@ function shard(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
   const { sink, legs } = STEPS[step] ?? { sink: 0, legs: [] };
   const cx = 8.5;
   const cy = 6.5 + (tell ? -1 : 0);
-  const rx = heavy ? 5.6 : 5;
-  const ry = heavy ? 4.8 : tell ? 3.8 : 4.2;
+  const rx = heavy ? 6.2 : 5;
+  const ry = heavy ? 5.2 : tell ? 3.8 : 4.2;
   const body: CharGrid = grid(W, H);
   hollowBody(body, cx, cy, rx, ry, 0, heavy);
+  // Lit only along its round crown: the raw half is darker than a whole body, so it sits deep
+  // under Act II's ground like every Hollow shape (art-direction §3).
+  for (let y = H - 1; y > 0; y--) {
+    const row = body[y];
+    for (let x = 0; x < W; x++) if (row?.[x] === '3' && body[y - 1]?.[x] !== '.') row[x] = '2';
+  }
   const g: CharGrid = grid(W, H);
   // Half a body: everything behind the broken edge is gone; the edge glows. It leans toward the
   // missing half, the edge sinking a pixel on the hobble's low step.
@@ -46,7 +52,10 @@ function shard(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
       const c = body[y]?.[x] ?? '.';
       if (c === '.') continue;
       const yy = y + (x <= edge + 1 ? sink : 0);
-      plot(g, x, yy, x === edge ? ((y + step) % 3 === 0 ? 'U' : 'V') : c);
+      // The broken edge: violet glowing through the cracks in it, dimmer once it's fed (Heavy).
+      const lit = heavy ? (y + step) % 3 === 0 : (y + step) % 2 === 0;
+      const glint = !heavy && (y + step) % 3 === 0;
+      plot(g, x, yy, x === edge ? (lit ? 'V' : glint ? 'U' : '0') : c);
     }
   }
   stamp(g, edge - 2, H - legs.length, heavy ? legs.slice(0, 1) : legs);
