@@ -177,7 +177,7 @@ export interface TowerDef<Id extends string = string> {
   readonly specs?: { readonly a: SpecDef; readonly b: SpecDef };
   // A tower's links live in `links/` (one home); compile lists them on CompiledTowerDef.links.
   readonly sprites: { readonly base: SpriteId; readonly head?: SpriteId; readonly icon: SpriteId };
-  /** A light source under darkness (Prism Spire). */
+  /** A light source at Sundown while its beam is active, in tiles (Prism Spire: 2.0; T505). */
   readonly lightRadiusTiles?: number;
 }
 

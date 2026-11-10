@@ -21,6 +21,7 @@ const escortMap = dev.defineMap({
   safeExit: 'gate',
   refugees: { first: { route: 'a', withPebble: true }, second: { route: 'a' } },
   threatIntel: ['clustered'],
+  requiredCounters: ['splash'],
   waves: dev.defineWaves([
     { groups: [{ enemy: 'mote', count: 6, route: 'b', delaySec: 6, intervalSec: 0.3 }] },
     {
@@ -46,7 +47,9 @@ const escortMap = dev.defineMap({
       { wave: 1, build: 'rivet', tile: [16, 8] },
     ],
   },
-  noCounterBuilds: {},
+  noCounterBuilds: {
+    splash: { loadout: ['rivet'], steps: [{ wave: 1, build: 'rivet', tile: [16, 8] }] },
+  },
 });
 
 const darkMap = dev.defineMap({
@@ -84,7 +87,7 @@ const darkMap = dev.defineMap({
 });
 
 /** M5's dev maps, by id, for the tasks that register them (T305c, T505). */
-export const DEV_M5_MAPS: { readonly [id: string]: MapDef<DevIds, string> } = {
+export const DEV_M5_MAPS: { readonly [id: string]: MapDef<DevIds> } = {
   dev_escort: escortMap,
   dev_dark: darkMap,
 };

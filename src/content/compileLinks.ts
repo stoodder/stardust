@@ -3,7 +3,9 @@
 // errors: an unknown or repeated partner, a link past MAX_LINKS, a malformed bonus, and a tower
 // with two conditional (`vsStatus`) bonuses, which the sim's one pair of `vsStatus*` fields can't
 // hold (no link in the design gives a tower two). A partner can also take chain jumps and a Soaked
-// it applies (Conductive, T304b): `chainJumps` a whole number ≥ 0, `soakedSec` a duration > 0.
+// it applies (Conductive, T304b): `chainJumps` a whole number ≥ 0, `soakedSec` a duration > 0;
+// and (T500a) a damage bonus against a raised shield (`vsShielded`: Resonance, one per partner), a
+// faster beam ramp (`rampPct`), and a stronger Mark (`markPct`: Lightsong), each a fraction > 0.
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';

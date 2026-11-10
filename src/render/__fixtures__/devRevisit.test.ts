@@ -66,7 +66,7 @@ describe('one source: A1M2 → dev_terraces → dev_revisit (the shape of A2M3)'
   });
 
   it('carries the lighting schedule and the dressing to render', () => {
-    expect(m.lighting).toEqual([{ wave: 4, env: 'act2.dusk' }]);
+    expect(m.lighting).toEqual([{ wave: 4, env: 'act2.dusk', dark: 0 }]);
     expect(m.dressing.map((d) => d.kind)).toEqual(['greySoil', 'mineScar']);
   });
 });

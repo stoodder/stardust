@@ -56,6 +56,9 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   overwatch: { ring: 'gold.3', text: 'gold.4' },
   skywatch: { ring: 'violet.3', text: 'violet.4' },
   reel_it_in: { ring: 'green.3', text: 'green.4' },
+  // M5's links (T500a first pass; T530a may restyle them).
+  resonance: { ring: 'blue.3', text: 'teal.4' },
+  lightsong: { ring: 'pink.3', text: 'pink.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */
