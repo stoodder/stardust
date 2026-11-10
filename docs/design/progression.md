@@ -115,7 +115,7 @@ Every tower has 3 tune-up ranks, bought in order. **Rule:** a tower's tune-up ca
 
 That is 260 Stardust per tower and ~4,160 for all 16. Players are expected to tune their favorites, not everything.
 
-**As built:** a support tower's ranks 1 and 3 are the `supportStat` grant (T406; the Lookout Shack's: aura strength adds to its auras as a power node's +20% does, and radius scales its detection and aura radii). The Salvage Crane's rank 1 is the `supportStat` income grant (+5% on its per-wave income, rounded half up) and its rank 3 the usual +5% range, which widens its economy radius (T408; [towers.md § 7](towers.md#salvage-crane-crane)).
+**As built:** a support tower's ranks 1 and 3 are the `supportStat` grant (T406; the Lookout Shack's: aura strength adds to its auras as a power node's +20% does, and radius scales its detection and aura radii). The Salvage Crane's rank 1 is the `supportStat` income grant (+5% on its per-wave income, rounded half up) and its rank 3 the usual +5% range, which widens its economy radius (T408; [towers.md § 7](towers.md#salvage-crane-crane)). The Prism Spire's (T504) is stocked after A2M5, with the gift, in Zibzab's shop until T509 settles where Aelari tune-ups are sold.
 
 ### 4.3 Global upgrades
 

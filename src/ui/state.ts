@@ -307,6 +307,17 @@ export interface AssetMeterView {
 }
 
 /**
+ * An Escort's meter (T305c; core-loop § 2.9): refugees evacuated of the map's total, and those
+ * lost against `maxLost` (null: no limit). The minimal readout; T531 builds the real meter.
+ */
+export interface EscortMeterView {
+  readonly evacuated: number;
+  readonly total: number;
+  readonly lost: number;
+  readonly maxLost: number | null;
+}
+
+/**
  * Bricks's name tag on a turret (T431; story/tags.ts): the tower's uid and the plate's text, in
  * the 3×5 font's capitals. The battle scene draws the plate over that tower.
  */
@@ -345,6 +356,8 @@ export const hud = {
   asset: signal<AssetMeterView | null>(null),
   /** The latest hit on the asset, for its meter's flash, or null. */
   assetHit: signal<LeakFlash | null>(null),
+  /** An Escort's meter (app/hudEscort.ts) while the map is one, else null (T305c). */
+  escort: signal<EscortMeterView | null>(null),
   /** The last wave started (0 during the setup phase). */
   wave: signal(0),
   waveCount: signal(0),

@@ -21,6 +21,7 @@ import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
 import { bindAssetMeter } from './hudAsset.ts';
+import { bindEscortMeter } from './hudEscort.ts';
 import { selectedView } from './hudPanel.ts';
 import {
   displayName,
@@ -617,6 +618,7 @@ export function bindHud(
   syncTowers();
   const offs = [
     bindAssetMeter(host),
+    bindEscortMeter(host), // T305c
     host.onAfterFrame(sync),
     interaction.subscribe(syncInteraction),
     // Inputs refused before the sim (render/input/apply.ts): a path ability aimed off the path

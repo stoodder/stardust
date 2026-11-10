@@ -54,7 +54,7 @@ export const prismMap = dev.defineMap({
       ],
     },
   ],
-  startCredits: 900,
+  startCredits: 1400,
   stardust: 0,
   threatIntel: ['shielded', 'armored'],
   requiredCounters: ['shield'],

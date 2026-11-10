@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { ENEMY_BLANK, type Enemy } from '../../sim/entities.ts';
+import type { Enemy } from '../../sim/index.ts';
 import {
   PHASED_ALPHA,
   PHASED_PLAIN_ALPHA,
@@ -19,7 +19,8 @@ const LIVE = compileContent(RAW_CONTENT);
 const MOTH = LIVE.enemies.riftmoth;
 
 function moth(phased: boolean, phaseTicks: number): Enemy {
-  return { ...ENEMY_BLANK, alive: true, uid: 1, def: MOTH, phased, phaseTicks };
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only these fields are read
+  return { alive: true, uid: 1, def: MOTH, phased, phaseTicks } as Enemy;
 }
 
 describe('phasing’s look', () => {

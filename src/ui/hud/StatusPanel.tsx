@@ -3,6 +3,7 @@
 // (T312c).
 import { hud, type MedalView, type ObjectiveView } from '../state.ts';
 import { AssetMeter } from './AssetMeter.tsx';
+import { EscortMeter } from './EscortMeter.tsx';
 import { Icon } from './Icon.tsx';
 import { useTicker } from './parts.tsx';
 
@@ -21,7 +22,10 @@ export function StatusPanel() {
       {/* A leak flashes the panel's edge red (D026); the key restarts it on every leak. */}
       {leak !== null && <span key={leak.id} class="hud-leak-flash chamfer" aria-hidden="true" />}
       <NamePlate />
+      {/* An Escort shows its own meter instead of the core's (T305c). */}
+      <EscortMeter />
       <div
+        hidden={hud.escort.value !== null}
         class="hud-meter"
         role="status"
         aria-label={`${label} ${integrity}${low ? ', integrity low' : ''}`}

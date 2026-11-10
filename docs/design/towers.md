@@ -133,12 +133,12 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 - **Each link type counts once per tower.** A Rivet touching two Thumpers gets Crossfire once.
 - A tower can have several *different* active links (each tower has 2–3 possible partners by design). Their bonuses add under the stacking formula (section 4).
 - Links are **flat**: they don't scale with tier (first pass). The Linked Up protocol scales every link bonus by ×1.5.
-- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, and Reel It In so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down), `killCredits` (whole credits per kill it makes, scaled and rounded down the same way; Reel It In's +3 is +4 under Linked Up; a spared runner pays none), and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts as long as the Sprinkler's tier-3 Soak is designed to (3 s). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
+- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, Reel It In, and Resonance so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two); Resonance's is `vsShielded`, a damage percent against a unit whose shield is up as the hit lands, which joins the damage percent before the cap the same way (Linked Up scales it). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down), `killCredits` (whole credits per kill it makes, scaled and rounded down the same way; Reel It In's +3 is +4 under Linked Up; a spared runner pays none), and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts as long as the Sprinkler's tier-3 Soak is designed to (3 s). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
 - **Readability:** active links show as a soft animated tether between the towers, in a color per link. The loadout screen lists which links the chosen four can form. The tower panel lists active links.
 
 ### 6.2 Link table
 
-Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, and Reel It In are built: their exact values are their files in `src/content/links/`, and their rows give the intent. The other rows are first-pass numbers.
+Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, Reel It In, and Resonance are built: their exact values are their files in `src/content/links/`, and their rows give the intent. The other rows are first-pass numbers.
 
 | Link | Partners | Effect | Available from (recommended) | Faction mix |
 |---|---|---|---|---|
@@ -276,6 +276,7 @@ Elegant floating crystal lattices that chime when they fire, attuned for the pla
 - **A: Refractor (480):** splits into 3 beams on 3 targets, ramp cap ×3.
 - **B: Sunlance (480):** ramps +100% per second, cap ×10 (up to 160/s). The boss killer.
 - **Links:** Resonance (Zapcoil), Lightsong (Lantern).
+- **As built (T504):** the beam's full rules are [`src/sim/attacks/beam.ts`](../../src/sim/attacks/beam.ts)'s header. The ramp is linear: the multiplier starts at ×1 on the tick a beam locks a target and grows by the per-second step each tick it holds it (×4 after 6 s, Sunlance's ×10 after 9 s), and resets to ×1 whenever that beam takes a new target or loses its own; an upgrade keeps it, clamped to a lower cap (T3's ×5 to Refractor's ×3). It multiplies the hit after the stacking formula, so the damage cap never limits it. Damage lands in 0.25 s beam ticks (a tick at once when a ready tower locks on); the tier's rate restates the tick (4/s), so a fire-rate bonus means more ticks of the same size. **Refractor's** three beams each hold their own target and never share one; with fewer targets in range, the spare beams stay dark. Hold Fire puts every beam out and resets the ramps. Ves'thara's gift ([progression.md §8](progression.md#8-tower-acquisition)); its tune-up is stocked after A2M5, with the gift.
 
 #### Mindspike Obelisk (`mindspike`)
 - **T1 (150):** 18 Psionic, 0.8 shots/s, range 3.0, single target, G+A. Psionic **ignores armor**. Default: First.

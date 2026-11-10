@@ -82,7 +82,7 @@ Every recipe ends with **the test loop** (below) and **updating the docs** (CLAU
    Tiers 2 and 3 patch the tier before, and specs patch tier 3 (`compileContent()` resolves them; the merge rule is in `src/content/compile.ts`). A tier may also change `targets` or `defaultPriority`. Numbers come from towers.md. Modifiers stack by the design formula (flat first, then summed percentages; see [architecture.md §2](architecture.md#sim-public-api)).
 4. **Register** it in `src/content/towers/index.ts`. Its synergy links (towers.md §6.2) go in `src/content/links/<link>.ts` via `defineLink({ id, name, partners: [{ tower, bonuses }, { tower, bonuses }] })` (`LinkDef` in `types.ts`), registered in `links/index.ts` (append: registry order is each link's bit).
 5. **New behavior?** If the attack `kind` doesn't exist yet, add its variant to `AttackDef`, a `FEATURE_GATES` row naming the task that will run it (`src/sim/gates.ts`), and `src/sim/attacks/<kind>.ts` (the towers system routes the kind there, as it does `chain`), and write `<kind>.test.ts` (damage, cooldown, range edge cases, targeting modes, jammed state, hold fire, determinism).
-6. **New visuals?** Add the projectile or beam handling in `render/views/ProjectileView.ts`, following [art-direction.md §7](../art/art-direction.md#7-vfx).
+6. **New visuals?** Add the projectile handling in `render/views/ProjectileView.ts` (a beam's is `render/views/BeamView.ts`), following [art-direction.md §7](../art/art-direction.md#7-vfx).
 7. **Unlock** it through progression content (`content/upgrades/`), per [design/progression.md](../design/progression.md).
 8. **Test loop:** `npm run check`. While tuning, run `npm run sim -- --map <id>` for each map whose builds or reference profile include the tower.
 

@@ -231,6 +231,17 @@ section.chamfer,
   text-align: right;
 }
 
+/* An Escort's meter (T305c) stands in for the core's: evacuated of the total, then the lost count
+   on its own row. The minimal readout; T531 builds the real one. */
+.hud-meter[hidden] {
+  display: none;
+}
+
+.hud-escort [data-testid='escort-lost'] {
+  grid-column: 2 / 4;
+  text-align: right;
+}
+
 /* A Protect map's asset meter (T305a, T431): a second row under the core's, built like it, with
    its own glyph (icon.asset.rig: its beacon turns red from `critical`) and flash. */
 .hud-asset {
