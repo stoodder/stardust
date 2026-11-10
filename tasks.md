@@ -216,7 +216,7 @@ M3 cut and plan: `docs/decisions.md` D064. Waves (≤ 4 agents): W1 T225·T300a�
 - [x] **T408** Harpoon and Crane (the cut lever; look at their sprites in a battle once the gate opens): T1–3, specs, Pinned, Reel It In, licenses after A2M1; settle the Harpoon's 4.0 range vs A1M5's `[quiet-wave-reach]` before lifting its gate (D105; D107's first-win scope is one option); their tune-ups.
 
 ## M5 — Act II, part two (A2M4–A2M6) · M6 — Act III · M7 — Finale, post-game & polish
-To be split up when we reach them. Known items:
+**M5 status: current (started 2026-11-10), planning.** M6 and M7 are split up when we reach them. Known items:
 - [ ] **T601b** M6: settle the star map's Act III/finale node positions, the `act3` node accent and the `act3`/`dawn` chart phases; the Deep Halls label (D102, D125).
 - [ ] **T601c** M6: Act III's and the finale's Results kickers (they read Act II's today), Act III's meter line in Results (`resultsCounter('meter', …)` is ready; `RunResult` has no meter), the still Skitterkin body.
 - [ ] **T601d** M6: Act III's Hollow die with no sound (enemies.md §8) — `hollow_unravel` needs a presentation dial.
