@@ -116,7 +116,7 @@ export const INSTRUMENTS = {
    * a little warble, as if from a loudspeaker on a pole.
    */
   pa: {
-    gain: 0.4,
+    gain: 0.5,
     layers: [
       {
         wave: 'square',

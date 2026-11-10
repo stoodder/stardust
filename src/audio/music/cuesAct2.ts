@@ -28,7 +28,7 @@ export const HOME_HUM: Song = {
       layer: 'lead',
       instrument: 'hum',
       stepsPerToken: 2,
-      gain: 0.75,
+      gain: 0.95,
       pattern: `${H1} - ${H2} ${H3} ${H4} - - - | - - . . . . . .`,
     },
   ],

@@ -111,7 +111,7 @@ export function drawCell(
     const block = new Phaser.GameObjects.Image(scene, pos.x, pos.y, bf.texture, bf.frame);
     const footY = pos.y + HALF_H;
     block.setDisplayOrigin(ba.x, ba.y).setDepth(worldDepth(footY, 'highGround', propTieBreak(id)));
-    layers.world.add(markScenery(block));
+    layers.world.add(markScenery(block, i + 0.5, j + 0.5));
   }
   const prop = look.prop;
   if (prop === null) return null;
@@ -123,7 +123,7 @@ export function drawCell(
     .setDisplayOrigin(pa.x, pa.y)
     .setDepth(worldDepth(pos.y, 'prop', propTieBreak(id)));
   if (prop.anim !== null) img.play(sprites.anim(prop.sprite, prop.anim, pv));
-  layers.world.add(markScenery(img));
+  layers.world.add(markScenery(img, i + 0.5, j + 0.5));
   return img;
 }
 

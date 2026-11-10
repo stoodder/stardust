@@ -132,6 +132,25 @@ export interface RenderState {
     readonly dark: number;
     readonly lights: number;
     readonly ringDimmed: boolean;
+    /**
+     * The night's tones drawn now (T530b, vfx/darknessPixels.ts; 0xRRGGBB): the world's whole
+     * multiply (the ground, the sky, the scenery out of the light) and the actors' veil.
+     */
+    readonly world: number;
+    readonly veil: number;
+    /** Scenery in `world` standing in the light now, and out of it (both 0 without darkness). */
+    readonly litScenery: number;
+    readonly darkScenery: number;
+  };
+  /**
+   * The world's glow (WorldGlowView, T530b): props wearing their glow, pools of light in lit discs,
+   * Prism crystals glowing, and whether the moons are lit over the night sky.
+   */
+  readonly glow: {
+    readonly props: number;
+    readonly pools: number;
+    readonly crystals: number;
+    readonly moons: boolean;
   };
   /** Floating numbers and callouts up now. */
   readonly floats: number;

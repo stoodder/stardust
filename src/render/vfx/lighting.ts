@@ -62,25 +62,34 @@ export function lightPosition(stops: readonly LightStop[], wave: number): number
   return 0;
 }
 
+/** Where a position falls between two stops (`lightMix`'s answer). */
+export interface LightMix {
+  /** The first stop's index. */
+  stop: number;
+  from: EnvPaletteId;
+  to: EnvPaletteId;
+  /** How far toward `to` (0–1). */
+  t: number;
+}
+
 /**
  * The two stops a position falls between: the first's index (`stop`) and env, the second's env,
- * and how far toward it (0–1). Past the last stop, the last two at t = 1.
+ * and how far toward it (0–1). Past the last stop, the last two at t = 1. Writes `out` (a view
+ * reuses one, so a crossfade allocates nothing per frame).
  */
 export function lightMix(
   stops: readonly LightStop[],
   pos: number,
-): {
-  readonly stop: number;
-  readonly from: EnvPaletteId;
-  readonly to: EnvPaletteId;
-  readonly t: number;
-} {
+  out: LightMix = { stop: 0, from: 'act1', to: 'act1', t: 0 },
+): LightMix {
   const last = stops.length - 1;
   const p = Math.min(Math.max(pos, 0), last);
   const k = Math.min(Math.floor(p), Math.max(0, last - 1));
-  const from = stops[k]!.env; // k ≤ last
-  const to = (stops[k + 1] ?? stops[k]!).env; // k ≤ last
-  return { stop: k, from, to, t: last === 0 ? 0 : p - k };
+  out.stop = k;
+  out.from = stops[k]!.env; // k ≤ last
+  out.to = (stops[k + 1] ?? stops[k]!).env; // k ≤ last
+  out.t = last === 0 ? 0 : p - k;
+  return out;
 }
 
 /**
@@ -125,6 +134,26 @@ function ratio(base: number, env: number): number {
 export function gradeAt(base: EnvPaletteId, stops: readonly LightStop[], pos: number): Rgb {
   const { from, to, t } = lightMix(stops, pos);
   return lerpRgb(gradeOf(base, from), gradeOf(base, to), t);
+}
+
+/** Each stop's grade over a map baked in `base`, as 0xRRGGBB numbers (a view computes them once). */
+export function stopGrades(base: EnvPaletteId, stops: readonly LightStop[]): number[] {
+  return stops.map((s) => rgbNumber(gradeOf(base, s.env)));
+}
+
+/**
+ * The grade at `mix` from the stops' grades (`stopGrades`), as a 0xRRGGBB number: `gradeAt`
+ * without allocating, for a view's per-frame crossfade.
+ */
+export function gradeNumberAt(grades: readonly number[], mix: LightMix): number {
+  const a = grades[mix.stop] ?? 0xffffff;
+  const b = grades[mix.stop + 1] ?? a;
+  const ch = (shift: number): number => {
+    const x = (a >> shift) & 0xff;
+    const y = (b >> shift) & 0xff;
+    return Math.round(x + (y - x) * mix.t);
+  };
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
 
 export function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
@@ -196,6 +225,16 @@ function drawMoon(img: RgbaImage, moon: (typeof SKY_MOONS)[number]): void {
       img.data[i + 3] = 255;
     }
   }
+}
+
+/**
+ * The sky's two moons alone, on a clear `w`×`h` image laid exactly over the sky's: Sundown's
+ * glow adds them back over the night, so the moons stay the night's lights (art-direction §3).
+ */
+export function moonsImage(w: number, h: number): RgbaImage {
+  const img = { w, h, data: new Uint8ClampedArray(new ArrayBuffer(w * h * 4)) };
+  for (const moon of SKY_MOONS) drawMoon(img, moon);
+  return img;
 }
 
 /** 4×4 ordered-dither thresholds (0–15). */

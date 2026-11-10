@@ -136,40 +136,41 @@ test("audio: A2M1 plays Act II's theme, its deaths, and the Hollow's hum", async
   expect((await status(page))?.played ?? {}).not.toHaveProperty('cue:bright_sting');
 });
 
-test('audio: every sound renders at a sane level, and the storms keep 3 dB of headroom', async ({
-  page,
-}) => {
-  test.setTimeout(150_000);
+/** Renders `names` offline in the page (`__sd.audio.render`), by name. */
+async function renderAll(
+  page: Page,
+  names: readonly string[],
+): Promise<Record<string, RenderSample>> {
+  return page.evaluate(async (list) => {
+    const a = globalThis.__sd!.audio;
+    const renders = await Promise.all(list.map((n) => a.render(n)));
+    return Object.fromEntries(list.map((n, i) => [n, renders[i]!]));
+  }, names);
+}
+
+/** The level table's row for render `name` (logged, so a run reports the levels). */
+function levelRow(name: string, r: RenderSample): string {
+  return `${name.padEnd(24)} peak ${r.out.peakDb.toFixed(1).padStart(6)} dB  rms ${r.out.rmsDb
+    .toFixed(1)
+    .padStart(
+      6,
+    )} dB  raw peak ${r.raw.peakDb.toFixed(1).padStart(6)} dB  ${r.out.durationSec.toFixed(2)} s`;
+}
+
+test('audio: every sound, cue, and theme renders at a sane level', async ({ page }) => {
+  // Seconds on a quiet machine; minutes under a loaded one (offline renders share the CPU).
+  test.setTimeout(240_000);
   await page.goto('/?test=1&audio=1');
   await waitForReady(page);
-  const report = await page.evaluate(async () => {
-    const a = globalThis.__sd!.audio;
-    const ids = a.ids();
-    const names = [
-      ...ids.sfx.map((id) => `sfx:${id}`),
-      ...ids.cues.map((id) => `cue:${id}`),
-      ...ids.themes.map((id) => `theme:${id}`),
-      ...ids.storms.map((id) => `storm:${id}`),
-      ...ids.storms.map((id) => `storm:${id}:ducked`),
-    ];
-    const renders = await Promise.all(names.map((n) => a.render(n)));
-    return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
-  });
-  // A ducked storm's render also carries its speech margins (src/audio/offline.ts).
-  const speech = (name: string): readonly SpeechMargin[] => {
-    const r: RenderSample | undefined = report[name];
-    const margins: unknown = r !== undefined && 'speech' in r ? r.speech : undefined;
-    return Array.isArray(margins) ? margins.filter(isSpeechMargin) : [];
-  };
+  const ids = await page.evaluate(() => globalThis.__sd!.audio.ids());
+  const report = await renderAll(page, [
+    ...ids.sfx.map((id) => `sfx:${id}`),
+    ...ids.cues.map((id) => `cue:${id}`),
+    ...ids.themes.map((id) => `theme:${id}`),
+  ]);
   const rows: string[] = [];
   for (const [name, r] of Object.entries(report)) {
-    rows.push(
-      `${name.padEnd(24)} peak ${r.out.peakDb.toFixed(1).padStart(6)} dB  rms ${r.out.rmsDb
-        .toFixed(1)
-        .padStart(
-          6,
-        )} dB  raw peak ${r.raw.peakDb.toFixed(1).padStart(6)} dB  ${r.out.durationSec.toFixed(2)} s`,
-    );
+    rows.push(levelRow(name, r));
     // Audible, never clipped, never louder than -1 dBFS through the chain.
     expect(r.out.clipped, name).toBe(0);
     expect(r.out.peak, name).toBeLessThan(0.9);
@@ -180,46 +181,77 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
       expect(r.out.durationSec, name).toBeLessThan(3.4);
     }
   }
+  const peak = (name: string): number => report[name]!.out.peakDb;
   // The rock lighting up turns heads (D135): about 6 dB over the panic and sad squeaks of the
   // Skitterkin around it (5–8 dB over the louder of the two).
-  const squeaks = Math.max(
-    report['sfx:panic_squeak']!.out.peakDb,
-    report['sfx:sad_squeak']!.out.peakDb,
-  );
-  const lightsUp = report['sfx:peeker_lights_up']!.out.peakDb - squeaks;
+  const lightsUp =
+    peak('sfx:peeker_lights_up') - Math.max(peak('sfx:panic_squeak'), peak('sfx:sad_squeak'));
   rows.push(`peeker_lights_up over the squeaks: ${lightsUp.toFixed(1)} dB`);
-  for (const name of Object.keys(report)) {
-    for (const m of speech(name)) {
-      rows.push(
-        `${name.padEnd(24)} ${m.blip.padEnd(18)} ${m.blipDb.toFixed(1).padStart(6)} dB over the rest's ${m.restDb.toFixed(1).padStart(6)} dB: ${m.marginDb.toFixed(1).padStart(5)} dB`,
-      );
-    }
-  }
+  // Act II's quiet moments stay quiet (T550): the Penitent's kneel and the stand-down sit well
+  // under the Witch's arrival and the Penitent's own, and the night's air under a rivet shot.
+  const kneel = peak('cue:witch_sting') - peak('sfx:penitent_kneel');
+  rows.push(`penitent_kneel under the Witch's sting: ${kneel.toFixed(1)} dB`);
   console.log(`audio levels (default volumes):\n${rows.join('\n')}`);
   expect(lightsUp).toBeGreaterThanOrEqual(5);
   expect(lightsUp).toBeLessThanOrEqual(8);
+  for (const hushed of ['sfx:penitent_kneel', 'sfx:stand_down']) {
+    expect(peak(hushed), hushed).toBeLessThanOrEqual(peak('sfx:penitent_arrive') - 3);
+    expect(peak(hushed), hushed).toBeLessThanOrEqual(peak('sfx:witch_arrive') - 3);
+  }
+  expect(peak('sfx:night_air')).toBeLessThan(peak('sfx:rivet_shot'));
   // Blips sit back (D135): a lone blip peaks at −10 dBFS or under, well under the strike's boom.
   const blips = Object.keys(report).filter((n) => n.startsWith('sfx:blip.'));
   expect(blips.length).toBeGreaterThanOrEqual(14);
-  for (const name of blips) expect(report[name]!.out.peakDb, name).toBeLessThanOrEqual(-10);
-  // The storms, unducked (the loudest case) and ducked as the game ducks them: the limiter and the
-  // clipper's ceiling hold them 3 dB under full scale (T323), and the raw mix isn't wildly over
-  // (the voice limits work).
-  const storms = Object.keys(report).filter((n) => n.startsWith('storm:'));
-  expect(storms.filter((n) => n.endsWith(':ducked')).length).toBeGreaterThanOrEqual(2);
-  expect(storms.length).toBeGreaterThanOrEqual(4);
-  for (const name of storms) {
-    expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
-    expect(report[name]!.raw.peak, name).toBeLessThan(2);
-    // Speech stays on top (D134, D135): in a ducked storm the line's blip, and every other
-    // speaker's spoken at the same moment, stands at least 6 dB over everything else sounding (the
-    // music under the radio's duck and the Hollow's, the rattle and the moments under speech's
-    // −6 dB and the line-start dip's further −8 dB, the alarms at full level), measured at the
-    // blip's loudest moment.
-    if (name.endsWith(':ducked')) {
-      const margins = speech(name);
-      expect(margins.length, name).toBeGreaterThanOrEqual(14);
-      for (const m of margins) expect(m.marginDb, `${name} ${m.blip}`).toBeGreaterThanOrEqual(6);
-    }
-  }
+  for (const name of blips) expect(peak(name), name).toBeLessThanOrEqual(-10);
 });
+
+/**
+ * The storms (src/audio/offline.ts `STORMS`), one test each so they render in parallel: Act I's,
+ * the Witch fight, and A2M5–A2M6's dusk (T550).
+ */
+const STORM_IDS = ['act1', 'act2', 'act2_dusk'] as const;
+
+for (const storm of STORM_IDS) {
+  test(`audio: the ${storm} storm keeps 3 dB of headroom, and speech stays on top of it`, async ({
+    page,
+  }) => {
+    test.setTimeout(240_000);
+    await page.goto('/?test=1&audio=1');
+    await waitForReady(page);
+    const ids = await page.evaluate(() => globalThis.__sd!.audio.ids());
+    expect(ids.storms.toSorted()).toEqual([...STORM_IDS].toSorted());
+    const report = await renderAll(page, [`storm:${storm}`, `storm:${storm}:ducked`]);
+    // A ducked storm's render also carries its speech margins (src/audio/offline.ts).
+    const speech = (name: string): readonly SpeechMargin[] => {
+      const r: RenderSample | undefined = report[name];
+      const margins: unknown = r !== undefined && 'speech' in r ? r.speech : undefined;
+      return Array.isArray(margins) ? margins.filter(isSpeechMargin) : [];
+    };
+    const rows: string[] = [];
+    for (const [name, r] of Object.entries(report)) rows.push(levelRow(name, r));
+    for (const name of Object.keys(report)) {
+      for (const m of speech(name)) {
+        rows.push(
+          `${name.padEnd(24)} ${m.blip.padEnd(18)} ${m.blipDb.toFixed(1).padStart(6)} dB over the rest's ${m.restDb.toFixed(1).padStart(6)} dB: ${m.marginDb.toFixed(1).padStart(5)} dB`,
+        );
+      }
+    }
+    console.log(`audio storm ${storm} (default volumes):\n${rows.join('\n')}`);
+    // Unducked (the loudest case) and ducked as the game ducks it: the limiter and the clipper's
+    // ceiling hold it 3 dB under full scale (T323), and the raw mix isn't wildly over (the voice
+    // limits work).
+    for (const name of Object.keys(report)) {
+      expect(report[name]!.out.clipped, name).toBe(0);
+      expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
+      expect(report[name]!.raw.peak, name).toBeLessThan(2);
+    }
+    // Speech stays on top (D134, D135): in the ducked storm the line's blip, and every other
+    // speaker's spoken at the same moment, stands at least 6 dB over everything else sounding (the
+    // music under the radio's duck and the Hollow's and the dark's, the rattle and the moments
+    // under speech's −6 dB and the line-start dip's further −8 dB, the alarms at full level),
+    // measured at the blip's loudest moment.
+    const margins = speech(`storm:${storm}:ducked`);
+    expect(margins.length).toBeGreaterThanOrEqual(14);
+    for (const m of margins) expect(m.marginDb, m.blip).toBeGreaterThanOrEqual(6);
+  });
+}

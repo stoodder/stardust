@@ -1,48 +1,92 @@
-// Sundown's light map (vfx/darknessPixels.ts; T505): the tone follows the dark, and a hole is
-// exactly the sim's lit disc: a pixel is white iff its centre is within the source's radius in grid
-// space (sim/darkness.ts isLitAt's test), so lit on screen is lit in the sim (D137).
+// Sundown's light map (vfx/darknessPixels.ts; T505, T530b): the night falls deep on the world and
+// lightly on the actors, and a hole is exactly the sim's lit disc: a pixel is clear iff its centre
+// is within the source's radius in grid space (sim/darkness.ts isLitAt's test), so lit on screen
+// is lit in the sim (D137).
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import { DARK_EASE_TICKS } from '../../sim/index.ts';
 import { screenToGrid, type Vec2 } from '../iso.ts';
 import { LIGHT_FADE_TICKS } from './lighting.ts';
 import {
-  DARK_SHADE,
-  DARK_SHADE_STRENGTH,
-  darkTone,
-  drawDarkness,
-  packPixel,
+  darkTones,
+  drawDarkMask,
+  lumOf,
+  MASK_DARK,
+  MASK_LIT,
+  NIGHT_SHADE,
+  noDark,
+  rgbOfNumber,
+  sceneryTint,
 } from './darknessPixels.ts';
 
-const lum = (d: number): number => {
-  const c = darkTone(d);
-  return c.r + c.g + c.b;
+const tones = (d: number) => darkTones(d, noDark());
+const mul = (a: number, b: number): number => {
+  const x = rgbOfNumber(a);
+  const y = rgbOfNumber(b);
+  const ch = (p: number, q: number) => Math.round((p * q) / 255);
+  return (ch(x.r, y.r) << 16) | (ch(x.g, y.g) << 8) | ch(x.b, y.b);
 };
 
-describe('the darkness tone', () => {
-  it('is white at 0 and DARK_SHADE_STRENGTH toward the shade at full dark', () => {
-    expect(darkTone(0)).toEqual({ r: 255, g: 255, b: 255 });
-    const s = rgbOf(DARK_SHADE);
-    const k = DARK_SHADE_STRENGTH;
-    expect(darkTone(1)).toEqual({
-      r: Math.round(255 + (s.r - 255) * k),
-      g: Math.round(255 + (s.g - 255) * k),
-      b: Math.round(255 + (s.b - 255) * k),
-    });
-    // Darker as the dark deepens, never past full.
-    expect(lum(0.25)).toBeGreaterThan(lum(0.5));
-    expect(lum(0.5)).toBeGreaterThan(lum(1));
-    expect(darkTone(2)).toEqual(darkTone(1));
+describe('the night’s tones', () => {
+  it('are no darkness at 0: white multiplies and no lift', () => {
+    expect(tones(0)).toEqual({ world: 0xffffff, ground: 0xffffff, veil: 0xffffff, lift: 0 });
   });
 
-  it('moves with the sky and the grade: the sim eases the dark over the tint fade’s 4 s', () => {
+  it('fall deep on the world at full dark and only veil the actors (deep darks, D134)', () => {
+    const t = tones(1);
+    // The world (ground, sky, scenery out of the light) keeps under a fifth of its light.
+    expect(lumOf(t.world)).toBeLessThan(0.05);
+    // The actors keep most of theirs, so they read in their faction palettes over the dark.
+    expect(lumOf(t.veil)).toBeGreaterThan(0.5);
+    // The lift is a little of the night's plum, never a grey: blue over red over green.
+    const lift = rgbOfNumber(t.lift);
+    const s = rgbOf(NIGHT_SHADE);
+    expect(lift.b).toBeGreaterThan(lift.r);
+    expect(lift.r).toBeGreaterThan(lift.g);
+    expect(lift.b).toBeLessThan(s.b);
+  });
+
+  it('the ground image times the veil is the world', () => {
+    for (const d of [0.25, 0.5, 1]) {
+      const t = tones(d);
+      const w = rgbOfNumber(t.world);
+      const got = rgbOfNumber(mul(t.ground, t.veil));
+      expect(Math.abs(got.r - w.r)).toBeLessThanOrEqual(1);
+      expect(Math.abs(got.g - w.g)).toBeLessThanOrEqual(1);
+      expect(Math.abs(got.b - w.b)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('deepen as the dark does, never past full', () => {
+    expect(lumOf(tones(0.25).world)).toBeGreaterThan(lumOf(tones(0.5).world));
+    expect(lumOf(tones(0.5).world)).toBeGreaterThan(lumOf(tones(1).world));
+    expect(lumOf(tones(0.5).veil)).toBeGreaterThan(lumOf(tones(1).veil));
+    expect(tones(2)).toEqual(tones(1));
+  });
+
+  it('write in place (no allocation per frame)', () => {
+    const out = noDark();
+    expect(darkTones(0.7, out)).toBe(out);
+  });
+
+  it('move with the sky and the grade: the sim eases the dark over the tint fade’s 4 s', () => {
     expect(DARK_EASE_TICKS).toBe(LIGHT_FADE_TICKS);
   });
+});
 
-  it('packs opaque little-endian RGBA words', () => {
-    const word = packPixel({ r: 1, g: 2, b: 3 });
-    const bytes = new Uint8Array(new Uint32Array([word]).buffer);
-    expect([...bytes]).toEqual([1, 2, 3, 255]);
+describe('the scenery’s tint', () => {
+  it('in the light, the grade alone; in the dark, the grade times the world over the veil', () => {
+    const t = tones(1);
+    expect(sceneryTint(0xffffff, t, true)).toBe(0xffffff);
+    expect(sceneryTint(0xd0c0ff, t, true)).toBe(0xd0c0ff);
+    expect(sceneryTint(0xffffff, t, false)).toBe(t.ground);
+    // Under the veil, an unlit prop ends where the ground does: at the world's tone.
+    const total = rgbOfNumber(mul(sceneryTint(0xffffff, t, false), t.veil));
+    const w = rgbOfNumber(t.world);
+    expect(Math.abs(total.r - w.r)).toBeLessThanOrEqual(1);
+    expect(Math.abs(total.b - w.b)).toBeLessThanOrEqual(1);
+    // A grade composes with it.
+    expect(sceneryTint(0x808080, t, false)).toBe(mul(0x808080, t.ground));
   });
 });
 
@@ -57,10 +101,9 @@ describe('the light map', () => {
     { x: 6.5, y: 1.5, radiusSq: 4 }, // a beaming Prism (2.0), clear of the lamp
   ];
 
-  it('is the tone everywhere but the discs, and a pixel is lit iff the sim would light it', () => {
+  it('is dark everywhere but the discs, and a pixel is lit iff the sim would light it', () => {
     const px = new Uint32Array(W * H);
-    const tone = darkTone(1);
-    drawDarkness(px, W, H, LEFT, TOP, origin, tone, discs);
+    drawDarkMask(px, W, H, LEFT, TOP, origin, discs);
     const g: Vec2 = { x: 0, y: 0 };
     let lit = 0;
     for (let y = 0; y < H; y++) {
@@ -69,9 +112,9 @@ describe('the light map', () => {
         const inside = discs.some((d) => (g.x - d.x) ** 2 + (g.y - d.y) ** 2 <= d.radiusSq + 1e-9);
         const outside = discs.every((d) => (g.x - d.x) ** 2 + (g.y - d.y) ** 2 > d.radiusSq - 1e-9);
         const v = px[y * W + x];
-        if (v === 0xffffffff) lit++;
-        if (inside && !outside) expect(v, `${x},${y}`).toBe(0xffffffff);
-        if (outside && !inside) expect(v, `${x},${y}`).toBe(packPixel(tone));
+        if (v === MASK_LIT) lit++;
+        if (inside && !outside) expect(v, `${x},${y}`).toBe(MASK_LIT);
+        if (outside && !inside) expect(v, `${x},${y}`).toBe(MASK_DARK);
       }
     }
     // Each disc is an ellipse of about π·r²·(2·HALF_W·HALF_H) px (a tile is 256 px).
@@ -79,9 +122,15 @@ describe('the light map', () => {
     expect(lit).toBeLessThan(1.1 * Math.PI * (2.25 + 4) * 256);
   });
 
+  it('is opaque white where dark (the tint is the tone) and clear where lit (untouched)', () => {
+    const bytes = (word: number) => [...new Uint8Array(new Uint32Array([word]).buffer)];
+    expect(bytes(MASK_DARK)).toEqual([255, 255, 255, 255]);
+    expect(bytes(MASK_LIT)).toEqual([0, 0, 0, 0]);
+  });
+
   it('draws only the first `count` discs', () => {
     const px = new Uint32Array(W * H);
-    drawDarkness(px, W, H, LEFT, TOP, origin, darkTone(1), discs, 0);
-    expect(px.every((v) => v === packPixel(darkTone(1)))).toBe(true);
+    drawDarkMask(px, W, H, LEFT, TOP, origin, discs, 0);
+    expect(px.every((v) => v === MASK_DARK)).toBe(true);
   });
 });

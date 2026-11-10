@@ -220,7 +220,7 @@ describe('towers', () => {
       damage: 140,
       cooldownTicks: 150,
       splashTiles: 0.6,
-      effects: [{ status: 'corroded', stacks: 3, maxStacks: 3 }],
+      effects: [{ status: 'corroded', stacks: 3, maxStacks: 3, shieldRegenMul: 1 }],
     });
     expect(buster.attack).toMatchObject({ bomblets: null, flightTicks: 48, lead: true });
   });

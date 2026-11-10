@@ -70,7 +70,7 @@ export function createTypeTicker(): TypeTicker {
   let holdUntil = -Infinity;
   return {
     blipped(nowMs) {
-      holdUntil = nowMs + TYPE_TICK_AFTER_BLIP_MS;
+      holdUntil = Math.max(holdUntil, nowMs + TYPE_TICK_AFTER_BLIP_MS);
     },
     quietUntil(untilMs) {
       holdUntil = Math.max(holdUntil, untilMs);

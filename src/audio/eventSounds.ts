@@ -338,8 +338,9 @@ export function createEventSounds(
           if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
           if (enemies.splits(e.enemy)) {
             const faction = enemies.faction(e.enemy);
-            const id = (faction === null ? undefined : FACTION_SPLIT_SOUNDS[faction]) ?? SPLIT_SOUND.id;
-            at(out, id, e.x, e.y, 0, SPLIT_SOUND.delay);
+            const split =
+              (faction === null ? undefined : FACTION_SPLIT_SOUNDS[faction]) ?? SPLIT_SOUND.id;
+            at(out, split, e.x, e.y, 0, SPLIT_SOUND.delay);
           }
           return;
         }

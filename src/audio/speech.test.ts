@@ -72,6 +72,14 @@ describe('the typewriter tick', () => {
     expect(t.tick('hollow', 6000)).toBeNull();
   });
 
+  it("holds off for a sung line's cue, and a blip never shortens the hold", () => {
+    const t = createTypeTicker();
+    t.quietUntil(4000);
+    t.blipped(1000);
+    expect(t.tick('pebble', 3999)).toBeNull();
+    expect(t.tick('pebble', 4000)).not.toBeNull();
+  });
+
   it('is soft, short, and rate-limited in the synth too', () => {
     const r = SFX.type_tick;
     expect(recipeDuration(r)).toBeLessThan(0.05);

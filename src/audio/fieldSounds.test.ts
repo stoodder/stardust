@@ -7,7 +7,9 @@ import { secToTicks, TICK_HZ } from '../shared/time.ts';
 import type { SoundCall } from './eventSounds.ts';
 import { DRONE_SOUNDS, ENEMY_LOOPS } from './eventTables.ts';
 import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
+import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
 import {
+  beamPitch,
   createFieldSounds,
   spawnTelling,
   type FieldEnemy,
@@ -278,5 +280,128 @@ describe('Act II field sounds (T450)', () => {
     expect(hums()).toEqual([]);
     bank.chargeTicks = 1;
     expect(hums()).toEqual([0]);
+  });
+});
+
+const CONTENT = compileContent(RAW_CONTENT);
+const PRISM = CONTENT.towers.prism.tiers[0];
+
+/** A Capacitor Bank (BANK) that isn't charging yet, alone on the field, and its full charge. */
+const charging = (): {
+  w: World;
+  bank: Bank;
+  full: number;
+  f: ReturnType<typeof createFieldSounds>;
+} => {
+  const full = BANK.attack?.kind === 'charge' ? BANK.attack.chargeTicks : 0;
+  const bank: Bank = {
+    uid: 7,
+    alive: true,
+    tierDef: BANK,
+    chargeTicks: 0,
+    flatRate: 0,
+    pctRate: 0,
+  };
+  const w = world();
+  w.towers = { items: [bank], used: 1 };
+  return { w, bank, full, f: createFieldSounds(CLEAR) };
+};
+/** How many fizzles a frame plays. */
+const fizzles = (f: ReturnType<typeof createFieldSounds>, w: World): number =>
+  frame(f, w).filter((id) => id === CHARGE_SOUNDS.fizzle).length;
+
+describe('M5 field sounds (T550, T501h)', () => {
+  it("collapses a Capacitor Bank's charge that fizzles or is vented, not one that discharges", () => {
+    const { w, bank, full, f } = charging();
+    w.tick = 10;
+    bank.chargeTicks = Math.ceil(full / 2);
+    frame(f, w);
+    // It lost its target a tick later: back to 0 far short of full.
+    w.tick = 11;
+    bank.chargeTicks = 0;
+    expect(fizzles(f, w)).toBe(1);
+    // A full charge discharging (the reset comes as it reaches full) is the discharge's sound.
+    w.tick = 100;
+    bank.chargeTicks = full - 1;
+    frame(f, w);
+    w.tick = 102;
+    bank.chargeTicks = 1;
+    expect(fizzles(f, w)).toBe(0);
+    // A charge that barely began says nothing as it drops.
+    w.tick = 200;
+    bank.chargeTicks = 0;
+    frame(f, w);
+    w.tick = 201;
+    bank.chargeTicks = 2;
+    frame(f, w);
+    w.tick = 202;
+    bank.chargeTicks = 0;
+    expect(fizzles(f, w)).toBe(0);
+  });
+
+  it('hums while a beam holds a target, one sound for every beam, climbing with the strongest ramp', () => {
+    const attack = PRISM.attack;
+    expect(attack?.kind).toBe('beam');
+    const cap = attack?.kind === 'beam' ? attack.rampCap : 1;
+    expect(cap).toBeGreaterThan(1);
+    const f = createFieldSounds(CLEAR);
+    const prism = (uid: number, o: Partial<Bank> = {}): Bank => ({
+      uid,
+      alive: true,
+      tierDef: PRISM,
+      chargeTicks: 0,
+      flatRate: 0,
+      pctRate: 0,
+      beamActive: false,
+      beamRamp: 1,
+      ...o,
+    });
+    const a = prism(1);
+    const b = prism(2);
+    const w = world();
+    w.towers = { items: [a, b], used: 2 };
+    const hum = (): number[] => {
+      const out: SoundCall[] = [];
+      f.frame(w, out);
+      return out.flatMap((c) => (c.kind === 'sfx' && c.id === BEAM_SOUNDS.hum ? [c.pitch] : []));
+    };
+    expect(hum()).toEqual([]);
+    a.beamActive = true;
+    b.beamActive = true;
+    b.beamRamp = cap;
+    expect(hum()).toEqual([BEAM_SOUNDS.maxPitch]);
+    // Within the loop's period: nothing new.
+    w.tick += 1;
+    expect(hum()).toEqual([]);
+    // The ramped beam lets go; the other's ramp is halfway.
+    b.beamActive = false;
+    a.beamRamp = 1 + (cap - 1) / 2;
+    w.tick += Math.round(BEAM_SOUNDS.everySec * TICK_HZ);
+    expect(hum()).toEqual([Math.round(BEAM_SOUNDS.maxPitch / 2)]);
+    // Sold (a sold tower sends no "off"): the hum stops with it.
+    a.alive = false;
+    w.tick += Math.round(BEAM_SOUNDS.everySec * TICK_HZ);
+    expect(hum()).toEqual([]);
+    expect(beamPitch(prism(3, { beamActive: false }))).toBeNull();
+  });
+
+  it("breathes the night's air at Sundown, as loud as it's dark, on sim time", () => {
+    const f = createFieldSounds(CLEAR);
+    const w: World & { dark: number } = { ...world(), dark: 0 };
+    const air = (): (number | undefined)[] => {
+      const out: SoundCall[] = [];
+      f.frame(w, out);
+      return out.flatMap((c) => (c.kind === 'sfx' && c.id === DARK_SOUNDS.air ? [c.gain] : []));
+    };
+    expect(air()).toEqual([]);
+    w.dark = DARK_SOUNDS.airFrom / 2;
+    expect(air()).toEqual([]);
+    w.dark = 0.6;
+    expect(air()).toEqual([0.6]);
+    w.tick += 1;
+    expect(air()).toEqual([]);
+    w.dark = 1;
+    w.tick += Math.round(DARK_SOUNDS.airEverySec * TICK_HZ);
+    expect(air()).toEqual([1]);
   });
 });

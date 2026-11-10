@@ -52,7 +52,7 @@ export const ACT2B_SFX = {
    * and slower, a glass giant, with the cut thread's flat C on top (Ves'thara is inside).
    */
   penitent_arrive: {
-    gain: 0.36,
+    gain: 0.33,
     priority: 3,
     minGapMs: 1000,
     maxVoices: 1,
@@ -298,7 +298,7 @@ export const ACT2B_SFX = {
    * so its quiet keeps it (HOLLOW_QUIET).
    */
   void_crack: {
-    gain: 0.22,
+    gain: 0.3,
     priority: 1,
     minGapMs: 60,
     maxVoices: 2,
@@ -437,7 +437,7 @@ export const ACT2B_SFX = {
    * overlaps the next, so it reads as a bed, never a pulse.
    */
   night_air: {
-    gain: 0.14,
+    gain: 0.2,
     priority: 0,
     minGapMs: 2000,
     maxVoices: 2,

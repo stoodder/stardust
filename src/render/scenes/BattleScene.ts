@@ -103,6 +103,7 @@ import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
 import { DarknessView } from '../views/DarknessView.ts';
+import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { StillnessAimView } from '../views/StillnessAimView.ts';
 import { FxView } from '../views/FxView.ts';
@@ -215,6 +216,8 @@ export class BattleScene extends Phaser.Scene {
   #lighting!: LightingView;
   /** Sundown's darkness overlay, from the sim's `state.dark` and light sources (T505). */
   #darkness!: DarknessView;
+  /** The world's glow: lamps, windows, vats, seams, pools of lamplight, the Prism's crystal (T530b). */
+  #glow!: WorldGlowView;
   /** Scanner Sweep's circle while its reveal zone lives (T406). */
   #sweeps!: SweepView;
   /** Stillness's aim preview (T531). */
@@ -370,7 +373,16 @@ export class BattleScene extends Phaser.Scene {
     this.#plinks = new PlinkFx(ctx, this.#fx);
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
     this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
-    this.#darkness = new DarknessView(ctx, { lights: map.lights, dark: hasDarkness(map) });
+    this.#darkness = new DarknessView(ctx, this.#lighting, {
+      lights: map.lights,
+      dark: hasDarkness(map),
+    });
+    this.#glow = new WorldGlowView(
+      ctx,
+      this.#darkness,
+      { lights: map.lights, lighting: map.lighting, dark: hasDarkness(map) },
+      (c, r) => this.#liftPx(c, r),
+    );
     this.#sweeps = new SweepView(ctx, this.#fx);
     this.#stillAim = new StillnessAimView(ctx);
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
@@ -539,6 +551,7 @@ export class BattleScene extends Phaser.Scene {
       this.#fieldTint.reset();
       this.#lighting.reset();
       this.#darkness.reset();
+      this.#glow.reset();
       this.#sweeps.reset();
       this.#stillAim.reset();
       this.#wreckage.reset();
@@ -581,6 +594,7 @@ export class BattleScene extends Phaser.Scene {
     // After the wreckage, so a tile salvaged this frame is under the grade and tinted at once.
     this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
     this.#darkness.update(state.dark, state.towers);
+    this.#glow.update(state.dark, state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
@@ -734,6 +748,15 @@ export class BattleScene extends Phaser.Scene {
         dark: this.#darkness.dark,
         lights: this.#darkness.lights,
         ringDimmed: this.#placement.ringDimmed,
+        world: this.#darkness.tones.world,
+        veil: this.#darkness.tones.veil,
+        ...this.#darkness.scenery(),
+      },
+      glow: {
+        props: this.#glow.props,
+        pools: this.#glow.pools,
+        crystals: this.#glow.crystals,
+        moons: this.#glow.moons,
       },
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,

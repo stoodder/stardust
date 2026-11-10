@@ -48,13 +48,12 @@ import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { JingleVariant } from '../content/presentation.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import { assetDamage, clearTicksFor, type SimEvent, type SimState } from '../sim/index.ts';
+import { clearTicksFor, type SimEvent } from '../sim/index.ts';
 import { setTypeTick } from '../ui/dialogue/LineText.tsx';
 import { presentationOfMap } from '../story/presentation.ts';
 import { dialogue, speaking } from '../ui/dialogue/state.ts';
 import { runResult, type ResultsChoice } from '../ui/screens/state.ts';
 import { hud, screen } from '../ui/state.ts';
-import { escortLow } from './dialogue.ts';
 import type { Host } from './host.ts';
 import { activeSave } from './save.ts';
 import type { AudioHooks } from './testHookTypes.ts';
@@ -146,9 +145,9 @@ const LINE_CUE_DUCK = 'line_cue';
 /**
  * A spoken line (the comms panel or a scene) ducks the music and the low-priority sound effects,
  * and blips as it starts; a sung line (LINE_CUES) plays its cue instead of the blip and hushes
- * the music until the next spoken line. Returns the unwiring (installAudio's; tests).
+ * the music until the next spoken line. Returns the unwiring.
  */
-export function bindSpeechAudio(ticker: TypeTicker): () => void {
+function bindSpeechAudio(ticker: TypeTicker): () => void {
   let lineId = 0;
   let sung = false;
   return effect(() => {
@@ -188,9 +187,9 @@ export function bindSpeechAudio(ticker: TypeTicker): () => void {
 
 /**
  * C2's sting as its choice is taken on the Results card (C2_STINGS, by the transaction it made).
- * Returns the unwiring (installAudio's; tests).
+ * Returns the unwiring.
  */
-export function bindResultsAudio(): () => void {
+function bindResultsAudio(): () => void {
   let was: ResultsChoice | null = null;
   return effect(() => {
     const r = runResult.value;
@@ -346,8 +345,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     engine.holdDuck(DARK_SOUNDS.duck, level < 1 ? level : null, DARK_SOUNDS.duckFadeSec);
   };
   // The meters' alarm (METER_ALARM), once as each crosses into its low band.
-  let assetLow = meterLow(sim.state, 'asset', sim.map.maxLost);
-  let escortWasLow = meterLow(sim.state, 'escort', sim.map.maxLost);
+  let assetLow = false;
+  let escortLow = false;
   const onEvent = (e: SimEvent<IdSpace>): void => {
     sounds.sounds(e, calls);
     if (e.type === 'AbilityUsed' && e.uid !== 0) {
@@ -407,13 +406,13 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     }
     integrity = s.integrity;
     // The asset's critical band and the Escort's low mark sound the same alarm (T501h).
-    const assetNow = meterLow(s, 'asset', sim.map.maxLost);
-    const escortNow = meterLow(s, 'escort', sim.map.maxLost);
-    if ((assetNow && !assetLow) || (escortNow && !escortWasLow)) {
+    const assetNow = s.outcome === 'playing' && meterLow('asset');
+    const escortNow = s.outcome === 'playing' && meterLow('escort');
+    if ((assetNow && !assetLow) || (escortNow && !escortLow)) {
       engine.play(METER_ALARM, { delay: LOW_ALARM_DELAY_SEC });
     }
     assetLow = assetNow;
-    escortWasLow = escortNow;
+    escortLow = escortNow;
     if (screen.value === 'battle') {
       setMusic(
         battleMusic({
@@ -446,19 +445,13 @@ export function darkDuckLevel(dark: number): number {
 }
 
 /**
- * Whether a map's other meter is in its low band while the map is played: the asset's `critical`
- * band (a Protect map), or an Escort's losses at its low mark (`escortLow`, the meter's alarm).
+ * Whether a map's other meter shows its low alarm (the HUD's, so the sound and the blinking box
+ * agree): the asset's `critical` band on a Protect map (app/hudAsset.ts), or an Escort's losses at
+ * its low mark (app/hudEscort.ts `low`).
  */
-export function meterLow(
-  s: Pick<SimState, 'outcome' | 'asset' | 'maxAsset' | 'objective'> & {
-    readonly stats: Pick<SimState['stats'], 'refugeesLost'>;
-  },
-  meter: 'asset' | 'escort',
-  maxLost: number | null,
-): boolean {
-  if (s.outcome !== 'playing') return false;
-  if (meter === 'asset') return assetDamage(s.asset, s.maxAsset) === 'critical';
-  return s.objective === 'escort' && escortLow(s.stats.refugeesLost, maxLost);
+function meterLow(meter: 'asset' | 'escort'): boolean {
+  if (meter === 'asset') return hud.asset.value?.damage === 'critical';
+  return hud.escort.value?.low === true;
 }
 
 /** The `__sd.audio` hooks: live state, and offline renders for the level checks (offline.ts). */

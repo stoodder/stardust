@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SCENES } from '../content/dialogue/index.ts';
 import { DRUMS, INSTRUMENTS } from './music/instruments.ts';
-import { CUES, THEMES } from './music/index.ts';
+import { CUES, HOME_MOTIF, THEMES } from './music/index.ts';
 import { compileSong, songProblems } from './music/pattern.ts';
 import { midiToHz, noteHz, noteToMidi, semitones } from './notes.ts';
 import {
@@ -13,6 +14,7 @@ import {
   recipeProblems,
 } from './recipes.ts';
 import { SFX, SFX_IDS, sfxRecipe } from './sfx/index.ts';
+import { C2_STINGS, LINE_CUES, lineCue, PA_JINGLE_CUE } from './storyCues.ts';
 import type { ToneLayer } from './types.ts';
 
 const instrumentIds = new Set([...Object.keys(INSTRUMENTS), ...Object.keys(DRUMS)]);
@@ -373,5 +375,54 @@ describe('instruments and songs', () => {
     const problems = songProblems(bad, instrumentIds, drumIds);
     expect(problems.join('\n')).toMatch(/4 tokens, expected 8/);
     expect(problems.join('\n')).toMatch(/'X9' is not a note/);
+  });
+});
+
+/** A track pattern's notes. */
+const notes = (pattern: string): string[] => pattern.split(/\s+/).filter((t) => /^[A-G]/.test(t));
+
+describe("Act II's story cues (T550)", () => {
+  it("hums the home motif as written once (HOME_MOTIF), alone on Pebble's voice", () => {
+    expect(HOME_MOTIF).toEqual(['A3', 'C4', 'D4', 'A3']);
+    expect(lead('home_hum')).toEqual([...HOME_MOTIF]);
+    expect(CUES.home_hum.tracks).toHaveLength(1);
+    expect(CUES.home_hum.tracks[0]!.instrument).toBe('hum');
+    // In tune (the Hollow's hum is the one that's wrong): the hum voice never glides or bends.
+    for (const l of INSTRUMENTS.hum.layers) expect(l).not.toHaveProperty('glide');
+  });
+
+  it('carries the stardust home on the motif an octave up; selling it shrugs in minor', () => {
+    const up = HOME_MOTIF.map((n) => noteToMidi(n)! + 12);
+    expect(lead('c2_returned').map((n) => noteToMidi(n))).toEqual(up);
+    // Sold: Zibzab's coin, then a bass that stops on the dominant, not home.
+    const bass = CUES.c2_sold.tracks.find((t) => t.instrument === 'bass')!;
+    expect(notes(bass.pattern).at(-1)).toBe('G2');
+    expect(C2_STINGS).toEqual({ sold: 'c2_sold', returned: 'c2_returned', none: null });
+  });
+
+  it("plays the PA's shift change in minor on the PA, the six notes with the third flattened", () => {
+    expect(PA_JINGLE_CUE.minor).toBe('pa_shift_minor');
+    const pa = CUES.pa_shift_minor.tracks.filter((t) => t.instrument === 'pa');
+    expect(pa.length).toBeGreaterThanOrEqual(1);
+    expect(lead('pa_shift_minor').slice(0, 6)).toEqual(['G4', 'C5', 'Eb5', 'F5', 'D5', 'C5']);
+    expect(lead('pa_shift_minor').at(-1)).toBe('C4');
+  });
+
+  it("sings Pebble's hum in place of her blip on her singing line, and only there", () => {
+    for (const c of LINE_CUES) {
+      const scene = SCENES[c.scene];
+      expect(scene, c.scene).toBeDefined();
+      // Line `line` counts every line node in play order (this scene has no branches).
+      const lines = scene!.nodes.filter((n) => n.kind === 'line');
+      const line = lines[c.line];
+      expect(line, `${c.scene}#${c.line}`).toMatchObject({
+        speaker: 'pebble',
+        expression: 'singing',
+      });
+      expect(c.musicDuck).toBeGreaterThan(0);
+      expect(c.musicDuck).toBeLessThan(1);
+    }
+    expect(lineCue('a2_m06_base_whistle', 3)?.cue).toBe('home_hum');
+    expect(lineCue('a2_m06_base_whistle', 4)).toBeNull();
   });
 });

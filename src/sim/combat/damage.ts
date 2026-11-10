@@ -203,7 +203,8 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         const capped = stacks < fx.maxStacks ? stacks : fx.maxStacks;
         if (capped > enemy.corrodedStacks) enemy.corrodedStacks = capped;
         enemy.corrodedTicks = CORRODED_TICKS;
-        if (fx.shieldRegenMul < enemy.corrodedShieldMul) enemy.corrodedShieldMul = fx.shieldRegenMul;
+        const mul = fx.shieldRegenMul;
+        if (mul < enemy.corrodedShieldMul) enemy.corrodedShieldMul = mul; // Corrosive Kiss
         break;
       }
       case 'marked':
