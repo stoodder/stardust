@@ -210,3 +210,31 @@ test('dialogue: barks on the comms panel with a portrait, and a reply button', a
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.clock.resume();
 });
+
+test("dialogue: Pebble's handover at the base, in Bricks's bottle cap (T513)", async ({ page }) => {
+  // A2M4 won: the dev save has made its first base visit already, so the base opens clear.
+  await page.goto('/?test=1&seed=1&dialogue=1&fasttext=1&save=after_a2m4_returned');
+  await waitForReady(page);
+  await page.evaluate(() => globalThis.__sd!.goto('base'));
+  await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
+  const scene = page.getByRole('dialog', { name: 'Comms' });
+  await expect(scene).toHaveCount(0);
+  // The handover as its first visit plays it: a panel over the base.
+  await page.evaluate(() => globalThis.__sd!.dialogue.play('a2_m04_base_handover'));
+  await expect(scene).toContainText("She's yours tonight, Goldie. She bites.");
+  const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
+  await expect(next).toBeFocused();
+  await page.keyboard.press('Enter');
+  // Pebble, named, in the cap (`cap.<expression>`).
+  await expect(scene).toContainText('(squeak) Only a little.');
+  await expect(scene.locator('.dlg-name').first()).toHaveText('Pebble');
+  await expect(scene.locator('.dlg-portrait')).toHaveAttribute('data-frame', /^cap\./);
+  await page.waitForTimeout(250); // the panel's 160 ms line-in step
+  await shot(page, 'dialogue', 9, 'handover-cap');
+  await page.keyboard.press('Enter');
+  await expect(scene).toContainText('Like a little egg.');
+  await page.keyboard.press('Enter');
+  await expect(scene).toBeHidden();
+  const seen = await page.evaluate(() => globalThis.__sd!.save()!.story.seen);
+  expect(seen).toContain('a2_m04_base_handover');
+});

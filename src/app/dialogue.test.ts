@@ -91,6 +91,8 @@ describe('dialogue helpers', () => {
     const hi = defineScene('a2_m03_cue_test', [{ kind: 'line', speaker: 'pebble', text: 'Hi.' }]);
     expect(sceneMode(hi)).toBe('comms');
     expect(sceneMode({ ...hi, pause: true })).toBe('panel');
+    // A base topic is always a panel over the base (T513), choice or not.
+    expect(sceneMode(defineScene('a2_m04_base_handover', [{ kind: 'end' }]))).toBe('panel');
   });
 
   it('queues only the first leak and a tagged sale (never lost); every other bark drops', () => {

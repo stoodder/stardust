@@ -58,7 +58,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       road('weft_warden', 1, OPEN),
-      road('cantor', 2, OPEN + 2, 6),
+      road('cantor', 1, OPEN + 2),
       road('glimmer', 6, OPEN + 7, 1.0),
       road('veilwalker', 2, OPEN + 20, 3),
     ],
@@ -73,8 +73,8 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('lightwing', 4, 'sky', OPEN, 1.5),
-      road('cantor', 3, OPEN + 2, 3),
-      road('glimmer', 10, OPEN + 2.5, 0.8),
+      road('cantor', 4, OPEN + 2, 3),
+      road('glimmer', 12, OPEN + 2.5, 0.9),
       road('veilwalker', 6, OPEN + 14, 3.5),
     ],
   },

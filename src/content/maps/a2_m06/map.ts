@@ -77,10 +77,10 @@ export const map = defineMapLayout({
       ],
     },
   ],
-  // The Rift Moths: in from the north-west, across the wall diagonally, over the merge, down to
-  // the domes.
+  // The Rift Moths: in from the north-east corner, across the wall diagonally and over the merge to
+  // the yard's west side, then down to the domes.
   // prettier-ignore
-  airLanes: [{ id: 'sky', points: [[0, 1], [7, 6], [13, 11]] }],
+  airLanes: [{ id: 'sky', points: [[17, 0], [5, 8], [13, 11]] }],
   markers: {
     lamp_west_gate: [5, 3],
     lamp_west_walk: [7, 3],
