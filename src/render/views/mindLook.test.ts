@@ -69,7 +69,7 @@ describe('the Unnerved jitter (T530a)', () => {
       last = j;
       expect(unnervedJitterPx(3, ms, true)).toBe(0);
     }
-    expect([...seen].toSorted()).toEqual([-1, 0, 1]);
+    expect([...seen].toSorted((x, y) => x - y)).toEqual([-1, 0, 1]);
     expect(changes).toBeGreaterThan(30); // it shakes, not drifts
     // Steady within a step, and a neighbour shakes on its own beat.
     expect(unnervedJitterPx(3, 5, false)).toBe(unnervedJitterPx(3, JITTER_STEP_MS - 1, false));

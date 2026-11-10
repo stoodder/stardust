@@ -203,19 +203,21 @@ describe('poseFacts for the Glass Witch (T430b, D123)', () => {
   });
 });
 
+const moth = (e: LiveEnemy): boolean => e.def!.id === 'riftmoth';
+/** dev_penitent's boss (the only one on its map). */
+const penitent = (e: LiveEnemy): boolean => e.def!.boss !== null;
+
 describe('poseFacts for M5 units (T530a)', () => {
   it('folds a Phased Rift Moth into its `phase` pose, and back to the walk when it solidifies', () => {
     const sim = createSim(battleConfig('dev_rift', 1));
     sim.enqueue({ type: 'callWave' });
-    const moth = (e: LiveEnemy): boolean => e.def!.id === 'riftmoth';
     expect(poseWhen(sim, (e) => moth(e) && e.phased)).toBe('phase');
     expect(poseWhen(sim, (e) => moth(e) && !e.phased && e.phaseTicks > 40)).toBe('walk');
   });
 
-  it("marches the Penitent `broken` while its shield is down in phase 2, and whole once it re-forms", () => {
+  it('marches the Penitent `broken` while its shield is down in phase 2, and whole once it re-forms', () => {
     const sim = createSim(battleConfig('dev_penitent', 1));
     sim.enqueue({ type: 'callWave' });
-    const penitent = (e: LiveEnemy): boolean => e.def!.boss !== null; // dev_penitent, the only boss
     expect(poseWhen(sim, penitent)).toBe('walk');
     const pool = sim.state.enemies;
     const found = pool.items.slice(0, pool.used).find((e) => e.alive && penitent(e))!;

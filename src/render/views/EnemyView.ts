@@ -171,7 +171,6 @@ const HEAVY_GLYPH = spriteId('icon.tell.heavy');
 /** The generic burrow mound (a unit without its own `under` anim). */
 const MOUND_SPRITE = 'fx.burrow_mound';
 
-
 /** The sideways direction before an enemy has moved, with no route to seed it (screen, unit). */
 const SIDE_DEFAULT_X = -0.894;
 const SIDE_DEFAULT_Y = 0.447;

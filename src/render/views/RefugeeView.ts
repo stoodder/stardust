@@ -4,13 +4,17 @@
 // bottle cap, `ally.pebble`), facing the way it moves. One still filing in at the route's start
 // (`dist` < 0) isn't drawn; one a Hollow unit is hushing freezes on its frame (its Hollow unit
 // tells). A hushed or evacuated refugee's view goes with it (the sweep). Depth-sorted in `world`
-// like an enemy. T530a polishes it (the hush's struggle, the walk into the gate).
+// like an enemy. T530a (refugeeLook.ts): each walks a little to the side of the road's line by uid,
+// every third parent carries a little one (`carry_<facing>`), and Pebble walks on the near side of
+// her group, sorted in front of the parent ahead of her, so she is never hidden behind it.
 import type * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { Ally } from '../../sim/index.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
-import { facingOf, type Facing } from './spriteInfo.ts';
+import { sideOf } from './EnemyView.ts';
+import { nearSide, PEBBLE_RAISE_PX, refugeeAnim, refugeeLanePx } from './refugeeLook.ts';
+import { facingOf, hasAnim, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
 
@@ -21,6 +25,7 @@ export const PEBBLE_SPRITE: SpriteId = 'ally.pebble';
 export const REFUGEE_VARIANT = 'skitterkin.ally';
 
 const pos: Vec2 = { x: 0, y: 0 };
+const side: Vec2 = { x: 0, y: 0 };
 
 /** The refugee fields the view reads (a live sim Ally satisfies it). */
 export type RefugeeLike = Readonly<Pick<Ally, 'x' | 'y' | 'dist' | 'hushUid' | 'pebble'>>;
@@ -41,6 +46,12 @@ export class RefugeeView implements PooledView {
   #x = Number.NaN;
   #y = Number.NaN;
   #held = false;
+  /** Its walk's family (`walk`, or `carry` with a little one), its lane offset (px) and side. */
+  #anim: 'walk' | 'carry' = 'walk';
+  #lane = 0;
+  #pebble = false;
+  #sideX = 0;
+  #sideY = 0;
 
   constructor(ctx: ViewContext) {
     this.#ctx = ctx;
@@ -53,6 +64,12 @@ export class RefugeeView implements PooledView {
   show(uid: number, pebble: boolean): void {
     this.#uid = uid;
     this.#sprite = pebble ? PEBBLE_SPRITE : REFUGEE_SPRITE;
+    this.#pebble = pebble;
+    const anim = refugeeAnim(uid, pebble);
+    this.#anim = anim === 'carry' && hasAnim(this.#sprite, 'carry_se') ? 'carry' : 'walk';
+    this.#lane = refugeeLanePx(uid, pebble);
+    this.#sideX = 0;
+    this.#sideY = 0;
     this.#facing = 'se';
     this.#x = Number.NaN;
     this.#y = Number.NaN;
@@ -83,6 +100,11 @@ export class RefugeeView implements PooledView {
         this.#facing = f;
         this.#play();
       }
+      if (sideOf(a.x - this.#x, a.y - this.#y, side) !== null) {
+        if (this.#pebble) nearSide(side);
+        this.#sideX = side.x;
+        this.#sideY = side.y;
+      }
     }
     const held = a.hushUid !== 0;
     if (held !== this.#held) {
@@ -95,7 +117,10 @@ export class RefugeeView implements PooledView {
     this.#x = a.x;
     this.#y = a.y;
     gridToScreen(a.x, a.y, this.#ctx.origin, pos);
-    this.#body.setPosition(pos.x, pos.y).setDepth(worldDepth(pos.y, 'enemy', this.#uid));
+    const x = pos.x + Math.round(this.#sideX * this.#lane);
+    const y = pos.y + Math.round(this.#sideY * this.#lane);
+    const raise = this.#pebble ? PEBBLE_RAISE_PX : 0;
+    this.#body.setPosition(x, y).setDepth(worldDepth(y + raise, 'enemy', this.#uid));
   }
 
   release(): void {
@@ -106,7 +131,7 @@ export class RefugeeView implements PooledView {
 
   #play(): void {
     const { sprites } = this.#ctx;
-    const anim = `walk_${this.#facing}`;
+    const anim = `${this.#anim}_${this.#facing}`;
     this.#body.play(sprites.anim(this.#sprite, anim, REFUGEE_VARIANT), true);
     const a = sprites.frameAnchor(this.#sprite, `${anim}_0`);
     this.#body.setDisplayOrigin(a.x, a.y);

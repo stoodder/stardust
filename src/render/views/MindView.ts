@@ -50,7 +50,7 @@ const FLY_LIFT_PX = 12;
 const SQUIGGLE_KEYS = ['fx.unnerved.0', 'fx.unnerved.1'] as const;
 
 const pos: Vec2 = { x: 0, y: 0 };
-const body = blankBox();
+const drawn = blankBox();
 
 export class MindView {
   readonly #ctx: ViewContext;
@@ -121,9 +121,9 @@ export class MindView {
       const mark = this.#marks[n++]!; // n < MAX_MARKS
       let x: number;
       let top: number;
-      if (this.#anchors.box(e.uid, body)) {
-        x = body.x;
-        top = body.top;
+      if (this.#anchors.box(e.uid, drawn)) {
+        x = drawn.x;
+        top = drawn.top;
       } else {
         gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         const lift = e.def.layer === 'air' ? FLY_LIFT_PX : 0;

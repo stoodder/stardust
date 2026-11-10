@@ -96,7 +96,7 @@ export const waves = defineWaves([
   // W9 · a Rift Moth flock [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(14, OPEN, 0.25), motes('west', 30, OPEN + 8, PACKED)],
+    groups: [moths(16, OPEN, 0.25), motes('west', 30, OPEN + 8, PACKED)],
   },
   // W10 · big mixed
   {

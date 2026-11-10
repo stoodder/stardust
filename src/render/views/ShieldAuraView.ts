@@ -73,11 +73,7 @@ export class ShieldAuraView {
   readonly #sources = new Int32Array(MAX_SOURCES);
   #glinting = 0;
 
-  constructor(
-    ctx: ViewContext,
-    reducedMotion: () => boolean,
-    anchors: UnitAnchors = NO_ANCHORS,
-  ) {
+  constructor(ctx: ViewContext, reducedMotion: () => boolean, anchors: UnitAnchors = NO_ANCHORS) {
     this.#ctx = ctx;
     this.#reducedMotion = reducedMotion;
     this.#anchors = anchors;
@@ -88,7 +84,8 @@ export class ShieldAuraView {
     }
     const textures = ctx.scene.textures;
     for (const [k, key] of GLINT_KEYS.entries()) {
-      if (!textures.exists(key)) textures.addCanvas(key, imageToCanvas(glintImage(k === 0 ? 0 : 1)));
+      if (!textures.exists(key))
+        textures.addCanvas(key, imageToCanvas(glintImage(k === 0 ? 0 : 1)));
     }
     const half = (GLINT_SIZE - 1) / 2;
     for (let i = 0; i < MAX_GLINTS; i++) {
@@ -156,7 +153,10 @@ export class ShieldAuraView {
         const key = GLINT_KEYS[glintFrame(tick, e.uid, reduced)];
         if (img.texture.key !== key) img.setTexture(key);
         img
-          .setPosition(Math.round(body.x + body.halfW - GLINT_IN_PX), Math.round(body.top + GLINT_DOWN_PX))
+          .setPosition(
+            Math.round(body.x + body.halfW - GLINT_IN_PX),
+            Math.round(body.top + GLINT_DOWN_PX),
+          )
           .setVisible(true);
       }
     }

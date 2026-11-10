@@ -8,13 +8,17 @@
 // and 25%; the next one is the stop no burst skips). A phase change flashes the whole bar white;
 // while the boss is invulnerable after it, the fill shimmers `white.1` ↔ `gold.4` (steady white
 // under reduced motion). Once its ending starts (`BossEnded`: driven off), the bar holds a moment
-// and steps out. Allocation-free per frame: the Graphics redraws only when what it shows changes.
+// and steps out; a pivot (the Penitent kneeling, T506) steps out at once, holding the HP it had
+// rather than draining to empty as the boss's body fades away (T530a). A shield-broken phase has no
+// marker (bossBar.ts). Allocation-free per frame: the Graphics redraws only when what it shows
+// changes.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { VIEW_W } from '../scale.ts';
 import {
+  BAR_HOLD_MS,
   barFadeAlpha,
   barFillPx,
   BOSS_BAR_H,
@@ -68,8 +72,9 @@ export class BossBarView {
   #fill = -1;
   #chip = 0;
   #flashMs = 0;
-  /** ms since its ending began (−1: still fighting). */
+  /** ms since its ending began (−1: still fighting), and how long it holds before stepping out. */
   #endedMs = -1;
+  #holdMs = BAR_HOLD_MS;
   /** What the Graphics shows (its values packed in a number), so it redraws only on a change. */
   #key = -1;
   #shimmer = false;
@@ -104,20 +109,27 @@ export class BossBarView {
     if (uid === this.#uid && phase > 1) this.#flashMs = PHASE_FLASH_MS;
   }
 
-  /** A boss's ending began (driven off): the bar holds, then steps out. */
-  ended(uid: number): void {
-    if (uid === this.#uid && this.#endedMs < 0) this.#endedMs = 0;
+  /**
+   * A boss's ending began: the bar holds, then steps out (driven off); a `pivot` steps out at once,
+   * keeping the HP it shows.
+   */
+  ended(uid: number, pivot = false): void {
+    if (uid !== this.#uid || this.#endedMs >= 0) return;
+    this.#endedMs = 0;
+    this.#holdMs = pivot ? 0 : BAR_HOLD_MS;
   }
 
   /** One frame: finds the boss on the map, and draws its bar. */
   update(dt: number, enemies: BossPool): void {
     const boss = this.#find(enemies);
-    if (boss === null && this.#uid !== 0 && this.#endedMs < 0) this.#endedMs = 0; // gone
+    // Gone without an ending (killed): it steps out from empty; after one, it keeps its fill.
+    const gone = boss === null && this.#uid !== 0 && this.#endedMs < 0;
+    if (gone) this.#endedMs = 0;
     if (boss !== null && boss.uid !== this.#uid) this.#open(boss);
     if (this.#uid === 0) return;
     if (this.#endedMs >= 0) {
       this.#endedMs += dt;
-      const a = barFadeAlpha(this.#endedMs);
+      const a = barFadeAlpha(this.#endedMs, this.#holdMs);
       if (a <= 0) {
         this.#close();
         return;
@@ -129,7 +141,7 @@ export class BossBarView {
       }
     }
     const max = this.#maxHp;
-    const fill = boss === null ? 0 : barFillPx(boss.hp, max);
+    const fill = boss !== null ? barFillPx(boss.hp, max) : gone || this.#fill < 0 ? 0 : this.#fill;
     if (fill !== this.#fill) this.#fill = fill;
     this.#chip = chipPx(this.#chip, fill, dt);
     if (this.#flashMs > 0) this.#flashMs = Math.max(0, this.#flashMs - dt);
@@ -166,6 +178,7 @@ export class BossBarView {
     this.#chip = this.#fill;
     this.#flashMs = 0;
     this.#endedMs = boss.leaving ? 0 : -1;
+    this.#holdMs = BAR_HOLD_MS;
     this.#key = -1;
     this.#alpha = 1;
     this.#gfx.setAlpha(1).setVisible(true);
@@ -183,6 +196,7 @@ export class BossBarView {
   #close(): void {
     this.#uid = 0;
     this.#endedMs = -1;
+    this.#holdMs = BAR_HOLD_MS;
     this.#fill = -1;
     this.#key = -1;
     this.#gfx.clear().setVisible(false);

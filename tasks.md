@@ -237,10 +237,10 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [x] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
 - [x] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
 - [~] **T522** A2M6 *Sundown*: the wall, gates, merge, diagonal air lane, watchtower, lamps; 14 waves; full dark by W12 with Goldie's line in the dark (test); Ves'thara + Stillness; Bricks's post; Before the Dark; the Ishael debrief; `base_a2_loophole`, `base_a2_whistle`; par ~68; no-splash loses by W9, no-air by W10; a Seeker Swarm alt.
-- [~] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
+- [x] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
 - [x] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
 - [x] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
-- [ ] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
+- [~] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
 - [ ] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
 - [~] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
 - [~] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.

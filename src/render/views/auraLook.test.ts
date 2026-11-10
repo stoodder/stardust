@@ -14,6 +14,14 @@ import {
   glintImage,
 } from './auraLook.ts';
 
+/** How many pixels of glint frame `f` are lit. */
+function lit(f: 0 | 1): number {
+  const d = glintImage(f).data;
+  let n = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i]! > 0) n++;
+  return n;
+}
+
 describe('the aura glint (T530a)', () => {
   it('is a white-hearted star in the aura’s blue, large and small', () => {
     const heart = rgbOf(GLINT_HEART);
@@ -26,11 +34,6 @@ describe('the aura glint (T530a)', () => {
       const up = (1 * GLINT_SIZE + 2) * 4;
       expect([img.data[up], img.data[up + 1], img.data[up + 2]]).toEqual([arm.r, arm.g, arm.b]);
     }
-    const lit = (f: 0 | 1): number => {
-      let n = 0;
-      for (let i = 3; i < glintImage(f).data.length; i += 4) if (glintImage(f).data[i]! > 0) n++;
-      return n;
-    };
     expect(lit(0)).toBeGreaterThan(lit(1));
   });
 
@@ -53,13 +56,15 @@ describe('the aura glint (T530a)', () => {
     for (let k = 0; k < 2400 && !found; k++) {
       sim.step();
       let n = 0;
-      for (let i = 0; i < pool.used; i++) if (projectedAura(pool.items[i]!) !== null) sources[n++] = i;
+      for (let i = 0; i < pool.used; i++)
+        if (projectedAura(pool.items[i]!) !== null) sources[n++] = i;
       if (n === 0) continue;
       for (let i = 0; i < pool.used; i++) {
         const e = pool.items[i]!;
         if (!e.alive || e.def?.id !== 'glimmer') continue;
         const cantor = pool.items[sources[0]!]!;
-        const inside = Math.hypot(e.x - cantor.x, e.y - cantor.y) <= cantor.def!.shieldAura!.radiusTiles;
+        const inside =
+          Math.hypot(e.x - cantor.x, e.y - cantor.y) <= cantor.def!.shieldAura!.radiusTiles;
         if (!inside) {
           expect(auraRefilling(pool, i, sources, n)).toBe(false);
           continue;

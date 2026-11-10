@@ -206,11 +206,11 @@ export class BeamView {
           this.#lockAge[slot] = 0;
           this.throws++;
         } else {
-          this.#lockAge[slot] = this.#lockAge[slot]! + dt; // slot < length (#fit)
+          this.#lockAge[slot] += dt; // slot < length (#fit)
         }
-        const age = this.#lockAge[slot]!; // as above
+        const age = this.#lockAge[slot]; // as above
         const ramp = k === 0 ? t.beamRamp : k === 1 ? t.beam2Ramp : t.beam3Ramp;
-        const look = beamLook(ramp, attack!.rampCap); // `on` checked it
+        const look = beamLook(ramp, attack.rampCap);
         if (this.#anchors.box(uid, body)) {
           b.x = body.x;
           b.y = Math.round((body.top + body.bottom) / 2);

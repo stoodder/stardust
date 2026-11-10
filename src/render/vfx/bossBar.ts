@@ -29,14 +29,18 @@ export function barFillPx(hp: number, maxHp: number, w = BOSS_BAR_W): number {
 
 /**
  * Where each phase threshold falls on a `w`-px bar (px from its left), for every phase after the
- * first: Chitterbloom's 60% and 25%.
+ * first: Chitterbloom's 60% and 25%. A shield-broken phase (the Penitent's, T506) begins when its
+ * shield breaks, at no HP share, so it has no mark (T530a).
  */
 export function phaseMarksPx(
-  phases: readonly { readonly fromPct: number }[],
+  phases: readonly { readonly fromPct: number; readonly onShieldBroken?: boolean }[],
   w = BOSS_BAR_W,
 ): number[] {
   const out: number[] = [];
-  for (let i = 1; i < phases.length; i++) out.push(Math.round(phases[i]!.fromPct * w)); // i < length
+  for (let i = 1; i < phases.length; i++) {
+    const p = phases[i]!; // i < length
+    if (p.onShieldBroken !== true) out.push(Math.round(p.fromPct * w));
+  }
   return out;
 }
 
@@ -47,10 +51,14 @@ export function chipPx(chip: number, fill: number, dt: number): number {
   return next < fill ? fill : next;
 }
 
-/** The bar's alpha `ms` after its boss's ending began: held, then 60, 35, 15%, then gone (0). */
-export function barFadeAlpha(ms: number): number {
-  if (ms < BAR_HOLD_MS) return 1;
-  const t = (ms - BAR_HOLD_MS) / BAR_FADE_MS;
+/**
+ * The bar's alpha `ms` after its boss's ending began: held `holdMs`, then 60, 35, 15%, then gone
+ * (0). A pivot holds nothing (T530a): the fight is over and the boss is kneeling, not fleeing, so
+ * the bar steps out with its fade at once.
+ */
+export function barFadeAlpha(ms: number, holdMs = BAR_HOLD_MS): number {
+  if (ms < holdMs) return 1;
+  const t = (ms - holdMs) / BAR_FADE_MS;
   return t < 1 / 3 ? 0.6 : t < 2 / 3 ? 0.35 : t < 1 ? 0.15 : 0;
 }
 

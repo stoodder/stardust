@@ -389,12 +389,7 @@ export class BattleScene extends Phaser.Scene {
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
-    this.#beams = new BeamView(
-      ctx,
-      prefersReducedMotion,
-      (c, r) => this.#liftPx(c, r),
-      anchors,
-    );
+    this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r), anchors);
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
     this.#asset = new AssetView(ctx, map);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);

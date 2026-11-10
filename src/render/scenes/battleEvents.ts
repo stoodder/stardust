@@ -409,7 +409,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     bus.on('BossEnded', (e) => {
       // Driven off: she turns and runs for the edge with her brood (EnemyView's `flee`); the bar
       // holds a moment and steps out.
-      views.bossBar.ended(e.uid);
+      views.bossBar.ended(e.uid, e.how === 'pivot'); // a pivot steps out at once (T530a)
     }),
     bus.on('CountdownStarted', (e) => {
       views.cueProps.reveal(e.wave);

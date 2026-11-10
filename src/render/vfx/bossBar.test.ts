@@ -24,6 +24,11 @@ describe('the boss bar (T312b)', () => {
     const phases = [{ fromPct: 1 }, { fromPct: 0.6 }, { fromPct: 0.25 }];
     expect(phaseMarksPx(phases)).toEqual([96, 40]);
     expect(phaseMarksPx([{ fromPct: 1 }])).toEqual([]);
+    // The Penitent's shield-broken phase starts when its shield breaks: no mark at 0 (T530a).
+    expect(phaseMarksPx([{ fromPct: 1 }, { fromPct: 0, onShieldBroken: true }])).toEqual([]);
+    expect(
+      phaseMarksPx([{ fromPct: 1 }, { fromPct: 0, onShieldBroken: true }, { fromPct: 0.3 }]),
+    ).toEqual([48]);
   });
 
   it('drains the damage chip toward the fill, never below it', () => {
@@ -40,6 +45,9 @@ describe('the boss bar (T312b)', () => {
     expect(barFadeAlpha(BAR_HOLD_MS + BAR_FADE_MS / 2)).toBe(0.35);
     expect(barFadeAlpha(BAR_HOLD_MS + BAR_FADE_MS * 0.9)).toBe(0.15);
     expect(barFadeAlpha(BAR_HOLD_MS + BAR_FADE_MS)).toBe(0);
+    // A pivot steps out at once (no hold).
+    expect(barFadeAlpha(0, 0)).toBe(0.6);
+    expect(barFadeAlpha(BAR_FADE_MS, 0)).toBe(0);
   });
 
   it('labels the bar in capitals', () => {
