@@ -14,18 +14,35 @@ import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 const URL = '/?test=1&seed=1&dialogue=1';
 
-/** Reads one line on: Enter finishes its typing (Skip → Next), Enter again moves on. */
+/**
+ * Reads one line on: Enter finishes its typing (Skip → Next), Enter again moves on. Called with the
+ * page's clock paused (`pauseClock`), so the line can't finish typing between the look and the
+ * key; a line already whole as the clock stopped (the first, on a slow machine) takes one Enter.
+ */
 async function readLine(page: Page, next: Locator): Promise<void> {
   await expect(next).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(next).toHaveText('Next');
+  if ((await next.textContent())?.trim() === 'Skip') {
+    await page.keyboard.press('Enter');
+    await expect(next).toHaveText('Next');
+  }
   await page.keyboard.press('Enter');
 }
 
-/** Stops the page's clock where it is (time, timers, and frames hold until `resume`). */
+/**
+ * Stops the page's clock just ahead of where it is (time, timers, and frames hold until
+ * `resume`); the margin covers the round trip (the clock can't be moved back), widened on a miss.
+ */
 async function pauseClock(page: Page): Promise<void> {
-  const now = await page.evaluate(() => Date.now());
-  await page.clock.pauseAt(now + 1);
+  for (let margin = 100; ; margin *= 2) {
+    const now = await page.evaluate(() => Date.now());
+    try {
+      await page.clock.pauseAt(now + margin);
+      return;
+    } catch (e) {
+      // The round trip outran the margin ("Cannot fast-forward to the past"): try a wider one.
+      if (margin >= 3200) throw e;
+    }
+  }
 }
 
 /** Starts A1M1 from the Title (a new save), with its briefing up. */
@@ -41,6 +58,8 @@ async function startShift(page: Page): Promise<void> {
 
 test('dialogue: the briefing plays as a scene, by keyboard alone', async ({ page }) => {
   await startShift(page);
+  // The clock holds through the briefing, so each line is still typing when its first Enter lands.
+  await pauseClock(page);
   const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
   const lines = page.getByTestId('briefing-lines');
   // QUILL first, with its portrait; the line types (Skip), then reads on (Next).
@@ -136,6 +155,8 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
   await startShift(page);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
+  // The clock holds while the lines are read, so each is still typing when its first Enter lands.
+  await pauseClock(page);
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m01_scene_dev_party'));
   const scene = page.getByRole('dialog', { name: 'Scene' });
   await expect(scene).toBeVisible();
@@ -151,6 +172,7 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
   await expect(next).toHaveText('Next');
   await page.keyboard.press('Enter');
   await expect(scene).toContainText('Bricks');
+  await page.clock.resume();
   await page.waitForTimeout(1500); // Bricks's line types out
   await nextFrames(page);
   await shot(page, 'dialogue', 6, 'fullscreen');

@@ -93,17 +93,17 @@ export const waves = defineWaves([
   // W7 · Motes + the second group, the Motes down the road behind it
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(10, OPEN, 0.4), motes(12, OPEN + 12, 0.4, 'road')],
+    groups: [motes(10, OPEN, 0.4), motes(10, OPEN + 12, 0.4, 'road')],
   },
-  // W8 · Mote clusters from both ends
+  // W8 · Mote clusters from both ends, the third group between them
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(20, OPEN, PACKED), motes(20, OPEN + 4, PACKED, 'road')],
+    groups: [motes(14, OPEN + 4, 0.3), motes(14, OPEN + 16, 0.3, 'road')],
   },
   // W9 · larger Mote clusters, one ahead of the third group
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(30, OPEN + 10, PACKED), motes(30, OPEN + 16, PACKED, 'road')],
+    groups: [motes(18, OPEN + 4, 0.3), motes(18, OPEN + 16, 0.3, 'road')],
   },
   // W10 · Motes ×20
   {
@@ -113,11 +113,11 @@ export const waves = defineWaves([
   // W11 · two groups at once, clusters from both ends
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(36, OPEN + 8, PACKED), motes(36, OPEN + 18, PACKED, 'road')],
+    groups: [motes(26, OPEN + 10, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
   },
   // W12 · the last group + the largest surge
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(44, OPEN + 6, PACKED), motes(44, OPEN + 16, PACKED, 'road')],
+    groups: [motes(32, OPEN + 6, 0.25), motes(28, OPEN + 16, 0.25, 'road')],
   },
 ]);
