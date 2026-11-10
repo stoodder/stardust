@@ -60,8 +60,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     if (leakedThisTick(e)) {
       bookLeak(state, e);
       if (bossAtExit(state, e)) breached = true;
-    }
-    else if (e.def !== null && e.def.split !== null) splitOnDeath(state, ctx, e, e.def.split);
+    } else if (e.def !== null && e.def.split !== null) splitOnDeath(state, ctx, e, e.def.split);
     // A killed Skitterkin sets the runners around it bolting (Skittish; a hush does it in hush.ts).
     if (e.def !== null && e.def.faction === 'skitterkin' && wasKilled(e)) boltNear(state, e.x, e.y);
   }

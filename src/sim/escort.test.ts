@@ -40,7 +40,7 @@ const BOSS = LIVE.enemies.chitterbloom;
 const SRC = { kind: 'ability', slot: 1 } as const;
 
 /** fx_map's road ends on its core at (5, 4): the safe exit. */
-const ESCORT: Partial<MapDef<FixtureIds>> = {
+const ESCORT: Partial<MapDef<FixtureIds, 'fx_map'>> = {
   objective: 'escort',
   maxLost: 2,
   markers: { rock: [0, 2], gate: [5, 4] },
@@ -48,7 +48,7 @@ const ESCORT: Partial<MapDef<FixtureIds>> = {
   refugees: { g1: { route: 'a', withPebble: true }, g2: { route: 'a', count: 2 } },
 };
 
-function content(over: Partial<MapDef<FixtureIds>> = {}): CompiledContent<FixtureIds> {
+function content(over: Partial<MapDef<FixtureIds, 'fx_map'>> = {}): CompiledContent<FixtureIds> {
   const fx = SIM_FIXTURE.maps.fx_map;
   return compileContent({ ...SIM_FIXTURE, maps: { fx_map: { ...fx, ...ESCORT, ...over } } });
 }
@@ -142,18 +142,18 @@ describe('refugees (route allies)', () => {
   });
 });
 
-describe('the hush on refugees', () => {
-  /** A refugee of g1 on the road at `dist` (the group spawned, the rest moved off the road). */
-  function oneRefugee(state: SimState, dist: number): Ally {
-    spawnRefugees(state, MAP, 'g1');
-    const rs = refugees(state);
-    for (const a of rs.slice(1)) a.dist = -99; // still filing in: out of reach
-    const a = rs[0]!;
-    a.dist = dist;
-    a.seg = 0;
-    return a;
-  }
+/** A refugee of g1 on the road at `dist` (the group spawned, the rest moved off the road). */
+function oneRefugee(state: SimState, dist: number): Ally {
+  spawnRefugees(state, MAP, 'g1');
+  const rs = refugees(state);
+  for (const a of rs.slice(1)) a.dist = -99; // still filing in: out of reach
+  const a = rs[0]!;
+  a.dist = dist;
+  a.seg = 0;
+  return a;
+}
 
+describe('the hush on refugees', () => {
   it('holds both still for the tell, then the refugee is lost and the Mote turns Heavy', () => {
     const { state, ctx } = setup();
     const r = oneRefugee(state, 3.3);

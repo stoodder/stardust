@@ -61,7 +61,10 @@ function hex(name: BeamColor | 'blue.0' | 'white.1'): number {
   const c = rgbOf(name);
   return (c.r << 16) | (c.g << 8) | c.b;
 }
-const COLOR: Readonly<Record<BeamColor, number>> = { 'blue.3': hex('blue.3'), 'teal.4': hex('teal.4') };
+const COLOR: Readonly<Record<BeamColor, number>> = {
+  'blue.3': hex('blue.3'),
+  'teal.4': hex('teal.4'),
+};
 const UNDER = hex('blue.0');
 const CORE = hex('white.1');
 

@@ -360,6 +360,11 @@ export function monotonicCheck<K extends IdSpace>(
   }
 }
 
+/** Whether these script actions pivot the map into an Escort (`setObjective: 'escort'`). */
+function pivotsToEscort(actions: readonly object[]): boolean {
+  return actions.some((a) => 'setObjective' in a && a.setObjective === 'escort');
+}
+
 /**
  * The chain a map's par margin belongs to (#3; maps.md § 6.1): `escort` for an Escort or Choir
  * map, and for a map a script pivots into an Escort (A2M5: Defend → Escort, judged on Evacuated
@@ -370,9 +375,10 @@ export function marginChain<K extends IdSpace>(
 ): 'escort' | 'integrity' | null {
   if (map.objective === 'holdout') return null;
   if (map.objective === 'escort' || map.objective === 'choir') return 'escort';
-  const pivots = (actions: readonly object[]): boolean =>
-    actions.some((a) => 'setObjective' in a && a.setObjective === 'escort');
-  if (map.events.some((e) => pivots(e.actions)) || map.objectives.some((o) => pivots(o.onComplete)))
+  if (
+    map.events.some((e) => pivotsToEscort(e.actions)) ||
+    map.objectives.some((o) => pivotsToEscort(o.onComplete))
+  )
     return 'escort';
   return 'integrity';
 }

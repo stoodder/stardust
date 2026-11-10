@@ -361,7 +361,9 @@ export function createRunTracker<K extends IdSpace>(
       const st = state.stats;
       // Every refugee spawned is walking, evacuated, or lost, never more (T305c).
       if (st.evacuated < 0 || st.evacuated + st.refugeesLost > st.refugeesSpawned) {
-        violate(`refugees: ${st.evacuated} evacuated + ${st.refugeesLost} lost of ${st.refugeesSpawned}`);
+        violate(
+          `refugees: ${st.evacuated} evacuated + ${st.refugeesLost} lost of ${st.refugeesSpawned}`,
+        );
       }
       const ledger = startCredits + st.creditsEarned - st.creditsSpent + st.creditsRefunded;
       if (state.credits !== ledger) {

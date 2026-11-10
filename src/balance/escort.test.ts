@@ -14,7 +14,7 @@ import { marginChain, runMap } from './harness.ts';
 import { HARNESS_GATES, refusedFeatures } from './refusals.ts';
 
 /** fx_map as an Escort: two groups (6 + 2) to the gate (its core), released as W1 and W2 start. */
-const ESCORT: Partial<MapDef<FixtureIds>> = {
+const ESCORT: Partial<MapDef<FixtureIds, 'fx_map'>> = {
   objective: 'escort',
   maxLost: 3,
   markers: { rock: [0, 2], gate: [5, 4] },
@@ -26,7 +26,9 @@ const ESCORT: Partial<MapDef<FixtureIds>> = {
   ],
 };
 
-function escortContent(over: Partial<MapDef<FixtureIds>> = {}): CompiledContent<FixtureIds> {
+function escortContent(
+  over: Partial<MapDef<FixtureIds, 'fx_map'>> = {},
+): CompiledContent<FixtureIds> {
   const compiled = compileContent<FixtureIds>({
     ...SIM_FIXTURE,
     maps: { fx_map: { ...SIM_FIXTURE.maps.fx_map, ...ESCORT, ...over } },
