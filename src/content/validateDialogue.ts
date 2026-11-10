@@ -28,7 +28,10 @@
 // - [dialogue-size]: lines on the longest play-through, by slot (`SCENE_LINES`).
 // - [dialogue-button]: reply buttons only on radio and cue lines; a reply names a registered scene.
 // - [dialogue-cond]: `thisRun` names a flag with a run-end rule; `outcome` and `thisRun` only in
-//   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark.
+//   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark; a
+//   `bank` test has a bound, each a non-negative integer, `gte` ≤ `lte`.
+// - [dialogue-pause]: `pause: true` only on a cue scene (`cue_<name>`, D134; T501l): the briefing,
+//   full-screen scenes, and base topics already hold input, and radio and debriefs never pause.
 // - [dialogue-bark]: trigger waves and phases are positive integers; a `flag` trigger has a
 //   `when`; `cooldownSec` > 0 and not with `once`.
 // - [dialogue-tag]: name tags are on planned maps in campaign order.
@@ -145,6 +148,13 @@ function validateScene(
   const slot = parsed.slot;
   const act = mapAct(map);
   if (scene.when !== undefined) validateCondition(issues, scene.when, `${where}.when`, slot, known);
+  if (scene.pause === true && slot.kind !== 'cue') {
+    issues.add(
+      'dialogue-pause',
+      where,
+      `only a cue scene may pause the battle, not a ${slot.kind}`,
+    );
+  }
   const labels = new Map<string, number>();
   scene.nodes.forEach((n, i) => {
     if (n.label === undefined) return;
@@ -508,6 +518,16 @@ function validateCondition(
         where,
         `outcome and thisRun read a run's end; a ${slot.kind} has none`,
       );
+    }
+  }
+  if ('bank' in cond) {
+    const bounds = [cond.gte, cond.lte].filter((b) => b !== undefined);
+    if (bounds.length === 0) issues.add('dialogue-cond', where, 'a bank test needs gte or lte');
+    if (bounds.some((b) => !(Number.isInteger(b) && b >= 0))) {
+      issues.add('dialogue-cond', where, 'bank bounds must be non-negative integers');
+    }
+    if (cond.gte !== undefined && cond.lte !== undefined && cond.gte > cond.lte) {
+      issues.add('dialogue-cond', where, 'bank gte is above its lte: it never holds');
     }
   }
   if ('seen' in cond && !known.has(cond.seen)) {

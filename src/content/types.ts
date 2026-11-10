@@ -199,6 +199,17 @@ export interface TierDef {
   readonly detect?: DetectDef;
   /** Economy effects (the Salvage Crane, design/towers.md § 7; T408). */
   readonly economy?: TowerEconomyDef;
+  /**
+   * Marks every enemy within `radiusTiles` at `pct` (Seer's Lantern [All-Seeing], design/towers.md
+   * § 7: radius 3.5, +15%), a Mark like any other (highest only). Run by T508.
+   */
+  readonly markArea?: MarkAreaDef;
+}
+
+/** An area Mark (TierDef.markArea): every enemy the tower's layers reach within the radius. */
+export interface MarkAreaDef {
+  readonly radiusTiles: number;
+  readonly pct: number;
 }
 
 /**
@@ -260,7 +271,15 @@ interface AttackCommon {
 }
 export type AttackDef = AttackCommon &
   (
-    | { readonly kind: 'hitscan' } // Rivet: damage lands the tick it fires
+    | {
+        // Rivet: damage lands the tick it fires
+        readonly kind: 'hitscan';
+        /**
+         * Each hit echoes `pct` of its damage to every other enemy within `radiusTiles` of the
+         * target (Mindspike [Echo Spike], design/towers.md § 7: 50% within 1.2; T507).
+         */
+        readonly echo?: EchoDef;
+      }
     | {
         // A shot that flies to its target at a fixed speed (Skyhook's flak, T304a)
         readonly kind: 'projectile';
@@ -283,7 +302,22 @@ export type AttackDef = AttackCommon &
         /** Cluster Thumper: each shell also scatters bomblets where it lands. */
         readonly bomblets?: BombletsDef;
       }
-    | { readonly kind: 'beam'; readonly tickSec: number } // not DoT: armor applies per tick
+    | {
+        // Not DoT: armor applies per tick (enemies.md § 2.3). Prism Spire, the Lantern's
+        // light-beam (T504, T508). `damage` is per second. A beam is sticky: it keeps its target
+        // until the target dies or leaves range (towers.md § 5).
+        readonly kind: 'beam';
+        readonly tickSec: number;
+        /**
+         * The ramp on one target (Prism Spire: +50% per second up to ×4; Sunlance +100% to ×10):
+         * the damage multiplier grows by `rampPctPerSec` each second on the same target, capped
+         * at `rampCap`, and resets on retarget. Absent: no ramp (the Lantern's beam).
+         */
+        readonly rampPctPerSec?: number;
+        readonly rampCap?: number;
+        /** Beams at once, each on its own target (Refractor 3, Lantern T3's two Marks; default 1). */
+        readonly beams?: number;
+      }
     | {
         readonly kind: 'chain';
         /** Jumps after the first hit: `jumps + 1` targets in all ("chains to 3" is 2). */
@@ -316,6 +350,12 @@ export type AttackDef = AttackCommon &
   );
 export type AttackKind = AttackDef['kind'];
 
+/** An echo (hitscan `echo`): Echo Spike's 50% of each hit to enemies within 1.2 tiles of the target. */
+export interface EchoDef {
+  readonly pct: number;
+  readonly radiusTiles: number;
+}
+
 /**
  * Bomblets a lobbed shell scatters on impact (Cluster Thumper, design/towers.md § 7): `count`
  * small shells, each flying `flightSec` from the impact point to a random point within
@@ -347,7 +387,16 @@ export type EffectDef =
   | { readonly status: 'chilled'; readonly pct: number; readonly durationSec: number }
   | { readonly status: 'soaked'; readonly durationSec: number }
   | { readonly status: 'corroded'; readonly stacks: number; readonly maxStacks: number }
-  | { readonly status: 'marked'; readonly pct: number; readonly durationSec: number }
+  | {
+      readonly status: 'marked';
+      readonly pct: number;
+      readonly durationSec: number;
+      /**
+       * While this Mark holds, the unit can't cloak, blink, phase, or burrow (Seer's Lantern
+       * [Truthlight], design/towers.md § 7; `Enemy.noEvadeTicks`, T508).
+       */
+      readonly noEvade?: true;
+    }
   | { readonly status: 'pinned'; readonly durationSec: number }
   | { readonly status: 'stasis'; readonly durationSec: number }
   | { readonly status: 'unnerved'; readonly durationSec: number };
@@ -388,6 +437,10 @@ export interface LinkPartnerDef<K extends IdSpace = LiveIds> {
   readonly detectRadiusTiles?: number;
   /** Credits per kill the partner makes (Reel It In: Harpoon kills +3; T408). */
   readonly killCredits?: number;
+  /** The partner's beam ramps this much faster, a fraction (Lightsong: Prism +30%; T508). */
+  readonly rampPct?: number;
+  /** Added to the partner's Marks, a fraction (Lightsong: Lantern Mark +5%; T508). */
+  readonly markPct?: number;
 }
 /**
  * A stat bonus under the stacking formula (towers.md § 4): `flat` adds to the stat, `pct` (a
@@ -399,6 +452,11 @@ export interface LinkBonusDef {
   readonly flat?: number;
   readonly pct?: number;
   readonly vsStatus?: readonly StatusId[];
+  /**
+   * A conditional damage bonus against an enemy whose shield is up (shield HP > 0 when the hit
+   * lands): `pct` only (Resonance: +20% vs shields; T504). Not combined with `vsStatus`.
+   */
+  readonly vsShielded?: true;
 }
 
 // ── Enemies ──────────────────────────────────────────────────────────────────────────────────
@@ -454,6 +512,19 @@ export interface EnemyDef<Id extends string = string> {
   /** Blink (the `blink` tell): teleports forward along its route (enemyAbilities/blink.ts; T404). */
   readonly blink?: BlinkDef;
   /**
+   * Phasing (the `phasing` trait and tell; the Rift Moth): every `everySec` it is Phased (enemies.md
+   * § 2.6: nothing targets or hits it) for `durationSec`, after a `tellSec` flicker. Stasis and
+   * Unnerved interrupt the tell (D137). Run by enemyAbilities/phase.ts (T503).
+   */
+  readonly phase?: PhaseDef;
+  /**
+   * A shield-recharge aura (the `shield_aura` trait; the Aegis Cantor): continuously restores
+   * `shieldPerSec` to every shielded unit of its faction within `radiusTiles` (itself included),
+   * never past each one's max (D137: continuous, not a pulse). Run by enemyAbilities/shieldAura.ts
+   * (T502).
+   */
+  readonly shieldAura?: ShieldAuraDef;
+  /**
    * A neutral unit (Gerald, core-loop.md § 2.7): towers that aren't holding fire target it like an
    * enemy, but it takes no damage (hits plink off, `NeutralHit`), never leaks, pays nothing, and
    * never counts toward a wave's resolution or a medal (T304a).
@@ -507,6 +578,22 @@ export interface BlinkDef {
   readonly tiles: number;
 }
 
+/**
+ * Phasing (EnemyDef.phase; the Rift Moth: 1.5 s Phased every 5 s, after a 0.5 s flicker). The cycle
+ * is `everySec` long: it ends with the tell, then `durationSec` Phased.
+ */
+export interface PhaseDef {
+  readonly everySec: number;
+  readonly durationSec: number;
+  readonly tellSec: number;
+}
+
+/** A shield-recharge aura (EnemyDef.shieldAura; the Aegis Cantor: 15 shield/s within 2 tiles). */
+export interface ShieldAuraDef {
+  readonly radiusTiles: number;
+  readonly shieldPerSec: number;
+}
+
 /** How a boss fight ends without a death (design/enemies.md § 6.1). */
 export type BossEnding = 'driveOff' | 'retreat' | 'pivot' | 'layToRest';
 
@@ -521,12 +608,43 @@ export interface BossDef {
   readonly ending: BossEnding;
   /** The HP share at which the ending runs (0: at 0 HP, instead of dying). */
   readonly endAtPct: number;
+  /**
+   * What a `pivot` ending leaves behind (the Sunderglass Penitent, enemies.md § 6.1): a stationary
+   * ward ally at its position. Required with `pivot`, and only there (T506).
+   */
+  readonly ward?: WardDef;
 }
 
-/** One boss phase. Every field is optional; a phase runs whichever it lists. */
+/**
+ * The Ward (maps.md § 5.4): a kneeling boss turned stationary ally. Hollow units inside its
+ * radius are Chilled `chillPct` (the Penitent: 2.5 tiles, 40%), as long as they stay inside.
+ */
+export interface WardDef {
+  readonly radiusTiles: number;
+  readonly chillPct: number;
+}
+
+/**
+ * A shield-broken phase's shards (the Penitent's 3 cloaked Glimmer-shards; T506): as the phase
+ * begins it releases `count` of `enemy` (an EnemyId) at its position. Its shield re-forms to full
+ * `reformSec` after it broke unless every shard is dead by then (D137: 4 s).
+ */
+export interface ShardsDef {
+  readonly enemy: string;
+  readonly count: number;
+  readonly reformSec: number;
+}
+
+/** One boss phase. Every field but `fromPct` is optional; a phase runs whichever it lists. */
 export interface BossPhaseDef {
-  /** The HP share (1 = full) at which this phase begins. */
-  readonly fromPct: number;
+  /**
+   * The HP share (1 = full) at which this phase begins, or `'shieldBroken'`: the moment its shield
+   * first breaks (the Penitent's phase 2; T506), whatever its HP. A shield-broken phase is never
+   * the first, and the boss has a shield.
+   */
+  readonly fromPct: number | 'shieldBroken';
+  /** Shards released as a shield-broken phase begins, and the shield's re-form (T506). */
+  readonly shards?: ShardsDef;
   /** Spawns `count` of `enemy` (an EnemyId) every `everySec` at its position (the sneeze). */
   readonly spawn?: { readonly enemy: string; readonly count: number; readonly everySec: number };
   /** Burrows `times` times for `durationSec` each, surfacing with `surfaceSpawn` if any. */
@@ -566,7 +684,7 @@ interface AbilityCommon<Id extends string> {
 export type AbilityCooldown =
   | { readonly cooldownSec: number; readonly cooldownWaves?: never }
   | { readonly cooldownWaves: number; readonly cooldownSec?: never };
-/** Other effect kinds (Stillness, Underfoot, …) arrive with their tasks. */
+/** Other effect kinds (Underfoot, System Reboot, …) arrive with their tasks. */
 export type AbilityEffect =
   | {
       // Orbital Strike: a targeted area hit after a visible reticle
@@ -615,6 +733,16 @@ export type AbilityEffect =
        * `durationSec` (design/core-loop.md § 3.2: 4 tiles, 10 s).
        */
       readonly kind: 'reveal';
+      readonly radiusTiles: number;
+      readonly durationSec: number;
+    }
+  | {
+      /**
+       * Stillness (Ves'thara's, design/core-loop.md § 3.2; T507): a targeted circle; every enemy
+       * inside it takes Stasis for `durationSec` (a boss Chilled 50% instead, the Stasis rule),
+       * which interrupts its abilities. Radius 2.5, 3 s.
+       */
+      readonly kind: 'stasisArea';
       readonly radiusTiles: number;
       readonly durationSec: number;
     };
@@ -731,8 +859,8 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   /**
    * The lighting schedule (art-direction.md § 7, the lighting overlay's tint path): keyframes the
    * light reaches as each named wave starts, crossfading the sky and the shade from the map's
-   * `env` (the light before wave 1) through each key in turn. Cosmetic: the sim never reads it
-   * (A2M3's gold-to-dusk, D101). M5's Sundown extends a key with darkness.
+   * `env` (the light before wave 1) through each key in turn. The tint is cosmetic (A2M3's
+   * gold-to-dusk, D101); a key's `dark` (Sundown) is sim state (D137; T505).
    */
   readonly lighting?: readonly LightingKeyDef[];
   /** Render-only dressing layers laid over the ground (A2M3's grey soil; design/maps.md § 7). */
@@ -749,11 +877,26 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
    * (`map.clickable`).
    */
   readonly clickables?: Readonly<Record<MarkerId, { readonly name: string }>>;
+  /**
+   * Light sources under darkness (maps.md § 5.1, Sundown; T505): lamps on decor markers, each
+   * with its radius. Towers inside any light keep their full range at any darkness.
+   */
+  readonly lights?: readonly LightDef[];
+  /**
+   * Escort (maps.md § 5.2; T305c): the decor or core tile refugees walk to (A2M5: the Preserve gate,
+   * the core before the pivot). Required with `refugees`, and only with them.
+   */
+  readonly safeExit?: MarkerId;
+  /**
+   * Refugee groups by id, for the `spawnAllies` action (escort maps; T305c). Each walks its ground
+   * path to `safeExit`. A map with refugees is an Escort map from the start or by `setObjective`.
+   */
+  readonly refugees?: Readonly<Record<string, RefugeeGroupDef>>;
   /** Map scripts (story-runtime.md § Map scripts). */
   readonly events?: readonly ScriptedEvent<K>[];
   /**
-   * Scripted allies on the map from the start (design/maps.md § 5.4). M2: posts only (Bricks);
-   * route allies, ally groups for `spawnAllies`, and health timelines are M3.
+   * Scripted allies on the map from the start (design/maps.md § 5.4): posts (Bricks, militia).
+   * Refugees are `refugees` (spawned by script); health timelines arrive with A3M3.
    */
   readonly allies?: readonly AllyPostDef[];
   // Not yet: song (finale); flag-conditioned dressing (maps.md § 7, with its maps).
@@ -764,6 +907,30 @@ export interface LightingKeyDef {
   /** The light is `env`'s as this wave starts (1-based), crossfading from the key before. */
   readonly wave: number;
   readonly env: EnvPaletteId;
+  /**
+   * Sundown's darkness at this key, 0–1 (default 0; maps.md § 5.1): sim state, eased in ticks
+   * from the key before (D137: lit on screen = lit in the sim). At darkness d, a tower outside
+   * every light has its range × (1 − DARK_RANGE_PENALTY × d) (T505).
+   */
+  readonly dark?: number;
+}
+
+/** A lamp (MapLayoutDef.lights): a light source on a decor marker. */
+export interface LightDef {
+  readonly marker: MarkerId;
+  readonly radiusTiles: number;
+}
+
+/**
+ * A refugee group (maps.md § 5.2; T305c): `count` refugees (default REFUGEE_GROUP_SIZE, 6) walking
+ * `route`, a ground path that ends on the safe exit, spaced and paced by rule (rules.ts:
+ * 0.6 tiles apart, 0.7 tiles/s). `withPebble`: Pebble rides with this group (never a loss, never
+ * hushed, not counted in the meter).
+ */
+export interface RefugeeGroupDef {
+  readonly route: RouteId;
+  readonly count?: number;
+  readonly withPebble?: true;
 }
 
 /**
@@ -988,7 +1155,15 @@ export type RunStat =
    * Leaks by Heavy units: Hollow units that hushed someone on the way (Hiccup Contained: no Heavy
    * Mote gets through; counted in movement, T460).
    */
-  | 'heavyLeaks';
+  | 'heavyLeaks'
+  /**
+   * The wave during which a boss's `pivot` ran (0 until it does; Kneel: `gte: 1, lte: 5`, the
+   * pivot forced before W6 starts). Set once, by T506.
+   */
+  | 'pivotWave'
+  /** Escort (T305c): refugees who reached the safe exit, and refugees lost (hushed, or at the exit). */
+  | 'evacuated'
+  | 'refugeesLost';
 
 /**
  * Medal, objective, and script `when` conditions: one grammar, evaluated by the sim over run state
@@ -1018,7 +1193,15 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
        * route distance passed the route point closest to the marker. Medal-exempt units never
        * count (design/core-loop.md § 2.7).
        */
-      readonly passedMarker: { readonly marker: MarkerId; readonly enemy?: K['enemy'] };
+      readonly passedMarker: {
+        readonly marker: MarkerId;
+        readonly enemy?: K['enemy'];
+        /**
+         * Only a unit never Revealed before it went past counts (Nothing Unseen: "every Veilwalker
+         * is revealed before it passes Intake B" is `not` this; `Enemy.everRevealed`).
+         */
+        readonly unrevealed?: true;
+      };
     }
   | { readonly flag: ScriptFlagId; readonly eq: FlagValue }
   | {
@@ -1026,7 +1209,15 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
        * Leaks this run by units of that faction (or enemy), medal-exempt units never counted
        * (`stats.leaksByFaction`, `stats.leaksByEnemy`). A run atom, like `stat`.
        */
-      readonly leaks: { readonly faction?: EnemyFaction; readonly enemy?: K['enemy'] };
+      readonly leaks: {
+        readonly faction?: EnemyFaction;
+        readonly enemy?: K['enemy'];
+        /**
+         * Only units that spawned in waves `from`–`to` (inclusive; Before the Dark: no leaks in the
+         * last three waves). Not combined with `faction` or `enemy` (`stats.leaksByWave`).
+         */
+        readonly waves?: readonly [from: number, to: number];
+      };
       readonly gte?: number;
       readonly lte?: number;
     }
@@ -1106,8 +1297,10 @@ export type ScriptAction<K extends IdSpace = LiveIds> =
   | { readonly revokeAbility: K['ability'] }
   | { readonly setObjective: ObjectiveKind; readonly meterLabel?: MeterLabel }
   | { readonly bossEnd: 'driveOff' | 'retreat' | 'pivot' }
-  | { readonly standDown: EnemyFaction } // remove that faction's hostiles, no leak
-  | { readonly spawnAllies: string }
+  // Every live hostile unit of that faction stops, fades out over 1 s, and is removed: no leak, no
+  // bounty, and its wave resolves without it (enemies.md § 6.1, `pivot`; T506).
+  | { readonly standDown: EnemyFaction }
+  | { readonly spawnAllies: string } // a refugee group (MapDef.refugees; T305c)
   | { readonly spawnWave: string }
   | {
       readonly setClickable: {

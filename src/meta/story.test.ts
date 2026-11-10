@@ -147,5 +147,7 @@ describe('the catch-up for older saves (entering the base)', () => {
     expect(furthestWon(createNewSave())).toBeNull();
     expect(furthestWon(s)).toBe('a1_m01');
     expect(baseStoryContext(s)).toMatchObject({ map: 'a1_m01', run: null });
+    // The banks, for the `bank` condition (C2's `none`, T500b).
+    expect(baseStoryContext(s).bank).toEqual(s.currencies);
   });
 });

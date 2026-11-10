@@ -71,6 +71,13 @@ function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): Compil
         radiusSq: e.radiusTiles * e.radiusTiles,
         durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
       };
+    case 'stasisArea':
+      return {
+        kind: 'stasisArea',
+        radiusTiles: e.radiusTiles,
+        radiusSq: e.radiusTiles * e.radiusTiles,
+        durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
+      };
     default:
       return assertNever(e);
   }

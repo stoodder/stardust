@@ -12,13 +12,18 @@
 // - [tower-range], [enemy-range], [ability-range]: numbers are in range on every resolved tier.
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
 //   ⇔ shield, burrowing ⇔ `burrow`, splitting ⇔ `split`, huddle ⇔ `huddle`, the `carrier` tell ⇔
-//   `carrier`, the `boss` tell ⇔ `boss`, blink ⇔ `blink`), and every trait shows its tell
-//   (enemies.md § 1, rule 1).
+//   `carrier`, the `boss` tell ⇔ `boss`, blink ⇔ `blink`, phasing ⇔ `phase`, shield_aura ⇔
+//   `shieldAura`), and every trait shows its tell (enemies.md § 1, rule 1).
 // - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
 //   (never themselves), with sane numbers (a pulse or a blink tells for less than its period, and
 //   a boss's for at least BOSS_MIN_TELL_SEC; a pulse needs a shield): a boss's phases start at full HP and fall, it ends at
 //   or below its last phase, and it pays no bounty; a neutral unit (Gerald) leaks and pays 0 and
 //   has no trait but flying. (Boss ability tells are a rule, BOSS_ABILITY_TELL_SEC, not data.)
+//   M5 (T500a): a phase's tell and Phased stretch fit in its period; a shield aura has a radius and
+//   a rate and a shield to go with it; a shield-broken phase isn't the first, its boss has a
+//   shield, and only it releases shards (`shards`: a known enemy, a count, a re-form time); a
+//   `pivot` ending has a `ward` (radius > 0, chill within the cap) and only it does; a split chain
+//   never loops and is at most SPLIT_MAX_DEPTH deep (Fracture → Shard → Mote).
 // - [jammer-source]: only the listed jammers jam (enemies.md § 4).
 // - [companion]: at most one ability per companion (its slot-2 signature).
 // - [campaign]: no map twice.
@@ -44,6 +49,7 @@ import {
   HASTE_CAP,
   JAMMER_ENEMIES,
   MAX_STATUS_PCT,
+  SPLIT_MAX_DEPTH,
   TRAIT_TELL,
   type CounterAnswers,
 } from './rules.ts';
@@ -56,6 +62,7 @@ import type {
   BlinkDef,
   CounterId,
   EnemyDef,
+  PhaseDef,
   PulseDef,
   IdSpace,
   RawContent,
@@ -96,7 +103,8 @@ export function validate<K extends IdSpace>(
   issues.errors.push(...artErrors(), ...dialogueErrors());
   for (const def of Object.values<TowerDef>(raw.towers)) validateTower(issues, def);
   const enemyIds: ReadonlySet<string> = new Set(Object.keys(raw.enemies));
-  for (const def of Object.values<EnemyDef>(raw.enemies)) validateEnemy(issues, def, enemyIds);
+  const enemyDefs = new Map(Object.values<EnemyDef>(raw.enemies).map((e) => [e.id, e]));
+  for (const def of enemyDefs.values()) validateEnemy(issues, def, enemyIds, enemyDefs);
   const abilities = Object.values<AbilityDef>(raw.abilities);
   for (const def of abilities) validateAbility(issues, def);
   validateCompanionAbilities(issues, abilities);
@@ -227,6 +235,11 @@ function validateTier(issues: Issues, tier: TierDef, cost: number, where: string
   for (const [field, v] of Object.entries(tier.economy ?? {})) {
     if (typeof v !== 'number' || !isNonNegative(v)) bad(`.economy.${field}`, 'must be ≥ 0');
   }
+  const m = tier.markArea;
+  if (m !== undefined) {
+    if (!isPositive(m.radiusTiles)) bad('.markArea.radiusTiles', 'must be > 0');
+    if (!(m.pct > 0 && m.pct <= 1)) bad('.markArea.pct', `${m.pct} must be in (0, 1]`);
+  }
 }
 
 /** Attack field rules: [field, holds, what it must be]. Only fields present are checked. */
@@ -247,6 +260,9 @@ const ATTACK_RULES: readonly [string, (v: unknown) => boolean, string][] = [
   ['chargeSec', isPositive, 'must be > 0'],
   ['splashPct', (v) => typeof v === 'number' && v > 0 && v <= 1, 'must be in (0, 1]'],
   ['lengthTiles', isPositive, 'must be > 0'],
+  ['rampPctPerSec', isPositive, 'must be > 0'],
+  ['rampCap', (v) => typeof v === 'number' && Number.isFinite(v) && v > 1, 'must be > 1'],
+  ['beams', isPositiveInt, 'must be a whole number ≥ 1'],
 ];
 
 function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef): void {
@@ -257,6 +273,13 @@ function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef)
   if (a.kind === 'projectile' && a.splashTiles === 0) fields.delete('splashTiles');
   for (const [field, holds, what] of ATTACK_RULES) {
     if (fields.has(field) && !holds(fields.get(field))) bad(`.attack.${field}`, what);
+  }
+  if (a.kind === 'beam' && (a.rampPctPerSec === undefined) !== (a.rampCap === undefined)) {
+    bad('.attack.rampCap', 'a ramp needs both rampPctPerSec and rampCap');
+  }
+  if (a.kind === 'hitscan' && a.echo !== undefined) {
+    if (!(a.echo.pct > 0 && a.echo.pct <= 1)) bad('.attack.echo.pct', 'must be in (0, 1]');
+    if (!isPositive(a.echo.radiusTiles)) bad('.attack.echo.radiusTiles', 'must be > 0');
   }
   const min = a.minRangeTiles;
   if (min !== undefined && (!isNonNegative(min) || min >= a.rangeTiles)) {
@@ -282,7 +305,12 @@ function projectileSprites(def: TowerDef): [id: string, where: string][] {
 
 // ── Enemies ──────────────────────────────────────────────────────────────────────────────────
 
-function validateEnemy(issues: Issues, def: EnemyDef, enemyIds: ReadonlySet<string>): void {
+function validateEnemy(
+  issues: Issues,
+  def: EnemyDef,
+  enemyIds: ReadonlySet<string>,
+  enemies: ReadonlyMap<string, EnemyDef>,
+): void {
   const where = `enemies.${def.id}`;
   checkSprite(issues, def.sprites.body, 'enemy', `${where}.sprites.body`);
   checkSprite(issues, def.sprites.icon, 'icon', `${where}.sprites.icon`);
@@ -335,10 +363,17 @@ function validateEnemy(issues: Issues, def: EnemyDef, enemyIds: ReadonlySet<stri
   // Blink is a trait on a unit that blinks on its own (the Blinkstrider); a boss's phase blinks are
   // boss behaviour (its intel shows the `boss` icon), like Chitterbloom's burrows.
   if (has('blink') !== (def.blink !== undefined)) traits('traits', "'blink' goes with `blink`");
+  if (has('phasing') !== (def.phase !== undefined)) {
+    traits('traits', "'phasing' goes with `phase`");
+  }
+  if (has('shield_aura') !== (def.shieldAura !== undefined)) {
+    traits('traits', "'shield_aura' goes with `shieldAura`");
+  }
   if (def.tells.includes('boss') !== (def.boss !== undefined)) {
     traits('tells', "the 'boss' tell goes with `boss`");
   }
   validateEnemyAbilities(issues, def, enemyIds);
+  validateSplitChain(issues, def, enemies);
   if (has('jammer') && !JAMMER_ENEMIES.includes(def.id)) {
     issues.add(
       'jammer-source',
@@ -394,6 +429,13 @@ function validateEnemyAbilities(
   if (def.huddle !== undefined) huddle('huddle', def.huddle);
   if (def.pulse !== undefined) pulse('pulse', def.pulse);
   if (def.blink !== undefined) blink('blink', def.blink);
+  if (def.phase !== undefined) phase(bad, def.phase);
+  const aura = def.shieldAura;
+  if (aura !== undefined) {
+    if (def.shield === undefined) bad('shieldAura', 'a shield aura needs a shield on the unit');
+    if (!isPositive(aura.radiusTiles)) bad('shieldAura.radiusTiles', 'must be > 0');
+    if (!isPositive(aura.shieldPerSec)) bad('shieldAura.shieldPerSec', 'must be > 0');
+  }
   const threats = def.traits.filter((t) => t !== 'flying');
   if (def.neutral === true && (def.leak !== 0 || def.bounty !== 0 || threats.length > 0)) {
     bad('neutral', 'a neutral unit leaks 0, pays 0, and has no trait but flying (core-loop § 2.7)');
@@ -405,10 +447,21 @@ function validateEnemyAbilities(
   let last = Infinity;
   for (const [i, p] of boss.phases.entries()) {
     const w = `boss.phases[${i}]`;
-    if (i === 0 ? p.fromPct !== 1 : !(p.fromPct > 0 && p.fromPct < last)) {
-      bad(`${w}.fromPct`, i === 0 ? 'the first phase starts at 1 (full HP)' : 'must fall, > 0');
+    const from = p.fromPct;
+    if (from === 'shieldBroken') {
+      if (i === 0) bad(`${w}.fromPct`, 'the first phase starts at 1 (full HP)');
+      if (def.shield === undefined) bad(`${w}.fromPct`, 'a shield-broken phase needs a shield');
+    } else {
+      if (i === 0 ? from !== 1 : !(from > 0 && from < last)) {
+        bad(`${w}.fromPct`, i === 0 ? 'the first phase starts at 1 (full HP)' : 'must fall, > 0');
+      }
+      last = from;
     }
-    last = p.fromPct;
+    if (p.shards !== undefined) {
+      if (from !== 'shieldBroken') bad(`${w}.shards`, 'only a shield-broken phase releases shards');
+      child(`${w}.shards`, p.shards.enemy, p.shards.count);
+      if (!isPositive(p.shards.reformSec)) bad(`${w}.shards.reformSec`, 'must be > 0');
+    }
     if (p.spawn !== undefined) {
       child(`${w}.spawn`, p.spawn.enemy, p.spawn.count);
       if (!isPositive(p.spawn.everySec)) bad(`${w}.spawn.everySec`, 'must be > 0');
@@ -437,6 +490,55 @@ function validateEnemyAbilities(
   if (!(boss.endAtPct >= 0 && boss.endAtPct < last)) {
     bad('boss.endAtPct', 'must be ≥ 0 and below the last phase');
   }
+  const ward = boss.ward;
+  if ((ward !== undefined) !== (boss.ending === 'pivot')) {
+    bad('boss.ward', "goes with the 'pivot' ending (and only with it)");
+  }
+  if (ward !== undefined) {
+    if (!isPositive(ward.radiusTiles)) bad('boss.ward.radiusTiles', 'must be > 0');
+    if (!(ward.chillPct > 0 && ward.chillPct <= CHILL_CAP)) {
+      bad('boss.ward.chillPct', `must be in (0, ${CHILL_CAP}]`);
+    }
+  }
+}
+
+/** A phase's tell and Phased stretch both fit inside its period, back to back (enemies.md § 3). */
+function phase(bad: (field: string, msg: string) => void, p: PhaseDef): void {
+  if (!isPositive(p.everySec)) bad('phase.everySec', 'must be > 0');
+  if (!isPositive(p.durationSec)) bad('phase.durationSec', 'must be > 0');
+  if (!isPositive(p.tellSec)) bad('phase.tellSec', 'must be > 0');
+  if (!(p.tellSec + p.durationSec < p.everySec)) {
+    bad('phase.durationSec', 'the tell and the Phased stretch must fit in everySec');
+  }
+}
+
+/**
+ * [enemy-ability]: a split chain (a splitter's child splitting in turn: Fracture → Shard → Mote)
+ * never comes back to an enemy above it and is at most SPLIT_MAX_DEPTH levels deep.
+ */
+function validateSplitChain(
+  issues: Issues,
+  def: EnemyDef,
+  enemies: ReadonlyMap<string, EnemyDef>,
+): void {
+  const seen = [def.id];
+  let at = def.split;
+  while (at !== undefined) {
+    if (seen.includes(at.enemy)) {
+      issues.add('enemy-ability', `enemies.${def.id}.split`, `the split chain loops back to '${at.enemy}'`);
+      return;
+    }
+    seen.push(at.enemy);
+    if (seen.length - 1 > SPLIT_MAX_DEPTH) {
+      issues.add(
+        'enemy-ability',
+        `enemies.${def.id}.split`,
+        `splits ${seen.length - 1} levels deep (${seen.join(' → ')}); at most ${SPLIT_MAX_DEPTH}`,
+      );
+      return;
+    }
+    at = enemies.get(at.enemy)?.split;
+  }
 }
 
 // ── Abilities ────────────────────────────────────────────────────────────────────────────────
@@ -463,7 +565,7 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
   } else if (e.kind === 'discount') {
     if (!(e.pct > 0 && e.pct < 1)) bad('effect.pct', 'must be in (0, 1)');
     if (!isPositiveInt(e.charges)) bad('effect.charges', 'must be a whole number ≥ 1');
-  } else if (e.kind === 'reveal') {
+  } else if (e.kind === 'reveal' || e.kind === 'stasisArea') {
     if (!isPositive(e.radiusTiles)) bad('effect.radiusTiles', 'must be > 0');
     if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
   } else {

@@ -501,6 +501,7 @@ export function aimOf(kind: CompiledAbilityEffect['kind']): AbilitySlotView['aim
       return 'path';
     case 'strike':
     case 'reveal':
+    case 'stasisArea':
       return 'area';
     case 'slowAll':
     case 'discount':

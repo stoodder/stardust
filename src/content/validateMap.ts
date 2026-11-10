@@ -1,6 +1,7 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
-// - [feature]: Defend and Protect maps only until T305c (Escort safe exits, Holdout, Choir).
+// - [feature]: Defend, Protect, and Escort maps only (Holdout and Choir arrive with their maps).
+//   createSim refuses Escort until T305c (`map.escort`).
 // - [asset]: a Protect map has an `asset` (and only it does): a short name, a meter ≥ 1, one or more
 //   routes, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
@@ -10,9 +11,12 @@
 //   compile error; [marker] puts it on decor.)
 // - [map-range]: start credits, core integrity, and first-clear Stardust.
 // - [grid-span]: campaign maps fit on one screen, `cols + rows ≤ 36` (maps.md § 1).
-// - [core]: a Defend or Protect map has exactly one core `C`.
+// - [core]: a Defend, Protect, or Escort map has exactly one core `C` (an Escort's is its safe exit).
+// - [escort], [darkness]: validateEscort.ts (T500a): refugees and the safe exit; Sundown's `dark`
+//   keys and lamps.
 // - [marker]: markers sit inside the map, off the path (`#`, `S`, `C`); ally posts and scripted
-//   tile changes (`openTile`), and a Protect map's asset sit on decor (§ 3; D042).
+//   tile changes (`openTile`), and a Protect map's asset sit on decor (§ 3; D042). The one marker
+//   on a path tile is an Escort's `safeExit`, on the core ([escort]).
 // - [terraces]: the render-only terrace levels, if given, are shaped like `tiles`, one digit
 //   '0'–'3' per tile.
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
@@ -73,6 +77,7 @@ import {
   parseKey,
   type Grid,
 } from './validateHelpers.ts';
+import { validateDarkness, validateEscort } from './validateEscort.ts';
 import { validateScripts } from './validateScripts.ts';
 import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import type { RangedTower } from './counterAnswers.ts';
@@ -174,16 +179,18 @@ function validateMap(
   const where = `maps.${def.id}`;
   const grid = gridOf(def);
 
-  // Feature guards. Protect is content now (A2M2) and createSim refuses it until T305a
-  // (`map.protect`); Escort, Holdout, and Choir arrive with T305c (M5).
-  if (def.objective !== 'defend' && def.objective !== 'protect') {
+  // Feature guards. Escort is content now (T500a's shapes; createSim refuses it until T305c,
+  // `map.escort`); Holdout and Choir arrive with their maps (A3M3, the finale).
+  if (def.objective === 'holdout' || def.objective === 'choir') {
     issues.add(
       'feature',
       `${where}.objective`,
-      `'${def.objective}' maps arrive with T305c (Escort safe exits, Holdout, Choir); 'defend' and 'protect' only`,
+      `'${def.objective}' maps arrive with their maps (M6–M7); 'defend', 'protect', and 'escort' only`,
     );
   }
   validateAsset(issues, def, where);
+  validateEscort(issues, def, where);
+  validateDarkness(issues, def, where);
   validateCompanion(issues, ctx, def, where);
   validateAllies(issues, def, where);
 
@@ -290,11 +297,12 @@ function validateGeometry(
       `cols + rows is ${grid.cols + grid.rows}; a campaign map fits one screen (≤ ${MAX_CAMPAIGN_GRID_SPAN})`,
     );
   }
-  if ((def.objective === 'defend' || def.objective === 'protect') && grid.count('C') !== 1) {
+  const cored = def.objective === 'defend' || def.objective === 'protect';
+  if ((cored || def.objective === 'escort') && grid.count('C') !== 1) {
     issues.add(
       'core',
       `${where}.tiles`,
-      `a Defend or Protect map has exactly one core 'C' (found ${grid.count('C')})`,
+      `a Defend, Protect, or Escort map has exactly one core 'C' (found ${grid.count('C')})`,
     );
   }
   // A marker may sit on any non-path tile (D042: A1M2's pump station marks its power node), but
@@ -307,6 +315,7 @@ function validateGeometry(
     ),
   ]);
   for (const [name, pos] of Object.entries(def.markers ?? {})) {
+    if (name === def.safeExit) continue; // on the core ([escort])
     const t = grid.at(pos);
     const ok = decorOnly.has(name) ? t === '.' : t !== undefined && !PATH_TILES.has(t);
     if (!ok) {

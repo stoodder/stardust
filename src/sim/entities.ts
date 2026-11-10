@@ -10,8 +10,10 @@
 //   (specs T202b, links and bonuses T202a, fire control T206a, segment zones and allies T207a),
 //   T300a the M3 ones (enemy abilities and bosses T304c), and T400a the M4 ones (the hush rule,
 //   Skittish, and Heavy T402; shield pulses T403; blink T404; detection and reveal zones T406;
-//   Stasis T407a; homing and charge attacks T407b; Pinned and link kill credits T408); until then
-//   they keep their blank values.
+//   Stasis T407a; homing and charge attacks T407b; Pinned and link kill credits T408), and T500a
+//   the M5 ones (phasing T503; beams and Resonance/Lightsong T504/T508; Sundown's light T505; the
+//   Penitent's shards, re-form, stand-down, and Ward T506; Unnerved T507; Truthlight T508; refugees
+//   T305c); until then they keep their blank values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -103,6 +105,28 @@ export interface Tower extends PoolEntity {
    * goes off on a tick that starts at 0 with an enemy in range, then waits `burst.everyTicks`.
    */
   burstTicks: number;
+  // M5 (T500a seams).
+  /**
+   * Beams (T504): a beam is on a target this tick (the Prism's light at Sundown; the hum), and each
+   * beam's ramp multiplier on its target (1: none yet; reset on retarget). `targetUid` is the first
+   * beam's target; `beam2Uid`/`beam3Uid` the extra beams' (Refractor, the Lantern's T3; 0: none).
+   */
+  beamActive: boolean;
+  beamRamp: number;
+  beam2Uid: number;
+  beam2Ramp: number;
+  beam3Uid: number;
+  beam3Ramp: number;
+  /**
+   * More link extras, recomputed with the bonuses: `vsShieldPct` damage against a unit with its
+   * shield up (Resonance; T504), `linkRampPct` faster beam ramp (Lightsong's Prism) and
+   * `linkMarkPct` added to its Marks (Lightsong's Lantern; T508). 0 for none.
+   */
+  vsShieldPct: number;
+  linkRampPct: number;
+  linkMarkPct: number;
+  /** Inside a light source this tick (Sundown; T505), so its range ignores the darkness. */
+  lit: boolean;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -142,6 +166,16 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkKillCredits: 0,
   chargeTicks: 0,
   burstTicks: 0,
+  beamActive: false,
+  beamRamp: 1,
+  beam2Uid: 0,
+  beam2Ramp: 1,
+  beam3Uid: 0,
+  beam3Ramp: 1,
+  vsShieldPct: 0,
+  linkRampPct: 0,
+  linkMarkPct: 0,
+  lit: true,
 });
 
 export interface Enemy extends PoolEntity {
@@ -228,6 +262,28 @@ export interface Enemy extends PoolEntity {
   stasisImmuneTicks: number;
   pinnedTicks: number;
   pinImmuneTicks: number;
+  // M5 enemy state (T500a seams). Blank until each task runs it.
+  /**
+   * Phasing (T503; enemies.md § 2.6): `phased` while nothing can target or hit it; `phaseTicks`
+   * until its next phase step (the tell is the last part of the wait, as for a blink).
+   */
+  phased: boolean;
+  phaseTicks: number;
+  /** Unnerved (T507): ticks left; −20% speed (not on a boss) and its abilities interrupted. */
+  unnervedTicks: number;
+  /** Truthlight (T508): ticks it can't cloak, blink, phase, or burrow (a `noEvade` Mark). */
+  noEvadeTicks: number;
+  /**
+   * Revealed at least once since it spawned (set where `revealedTicks` is: systems/detection.ts):
+   * the `passedMarker` condition's `unrevealed` (Nothing Unseen).
+   */
+  everRevealed: boolean;
+  /** A boss's shard (the Penitent's Glimmer-shards; T506): the boss's uid; 0 for none. */
+  ownerUid: number;
+  /** A shield-broken boss's shield re-forms when this reaches 0 (T506; 0: not counting down). */
+  reformTicks: number;
+  /** Standing down (`standDown`, the pivot; T506): its 1 s fade's ticks left; 0: not. */
+  standDownTicks: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -273,6 +329,14 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   stasisImmuneTicks: 0,
   pinnedTicks: 0,
   pinImmuneTicks: 0,
+  phased: false,
+  phaseTicks: 0,
+  unnervedTicks: 0,
+  noEvadeTicks: 0,
+  everRevealed: false,
+  ownerUid: 0,
+  reformTicks: 0,
+  standDownTicks: 0,
 });
 
 /**
@@ -452,6 +516,22 @@ export interface Ally extends PoolEntity {
   targetSlot: number;
   /** Health as a fraction of full (1); scripted allies follow their map's timeline. */
   health: number;
+  // M5 (T500a seams).
+  /**
+   * A refugee (T305c): its group's index in `map.escort.groups` (−1: not a refugee), its pace,
+   * and whether it is Pebble (never a loss, never hushed, not counted in the meter).
+   */
+  group: number;
+  speedTilesPerTick: number;
+  pebble: boolean;
+  /** The Hollow unit hushing it (the hush tell holds it still; T305c), or 0. */
+  hushUid: number;
+  /**
+   * A Ward's aura (T506; a kneeling boss): Hollow units within `rangeSq` are Chilled
+   * `auraChillPct`. 0 for none. `enemyId` is the boss it was (render draws its kneel).
+   */
+  auraChillPct: number;
+  enemyId: string | null;
 }
 
 export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
@@ -477,4 +557,10 @@ export const ALLY_BLANK: Readonly<Ally> = Object.freeze({
   targetUid: 0,
   targetSlot: -1,
   health: 1,
+  group: -1,
+  speedTilesPerTick: 0,
+  pebble: false,
+  hushUid: 0,
+  auraChillPct: 0,
+  enemyId: null,
 });

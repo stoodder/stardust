@@ -1,6 +1,6 @@
 // Enemy compilation: seconds to ticks, optional fields resolved to a value or null. The enemy
 // abilities (burrow, split, huddle, boss: T300a; pulse, blink, and the derived hush and cloak
-// flags: T400a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a
+// flags: T400a; phase, the shield aura, a boss's shield-broken phase and ward: T500a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a
 // spawn's enemy) are checked by validate().
 import { perSecToPerTick } from '../shared/time.ts';
 import type {
@@ -10,10 +10,21 @@ import type {
   CompiledBurrow,
   CompiledEnemyDef,
   CompiledHuddle,
+  CompiledPhase,
   CompiledPulse,
+  CompiledShieldAura,
 } from './compiled.ts';
 import { ticks, type Ctx } from './compileHelpers.ts';
-import type { BlinkDef, BossDef, BurrowDef, EnemyDef, HuddleDef, PulseDef } from './types.ts';
+import type {
+  BlinkDef,
+  BossDef,
+  BurrowDef,
+  EnemyDef,
+  HuddleDef,
+  PhaseDef,
+  PulseDef,
+  ShieldAuraDef,
+} from './types.ts';
 
 /**
  * Whether a unit hushes under the hush rule (enemies.md § 5.4): every non-boss Hollow unit, except
@@ -60,6 +71,8 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
     boss: def.boss === undefined ? null : compileBoss(ctx, def.boss, `${where}.boss`),
     pulse: def.pulse === undefined ? null : compilePulse(ctx, def.pulse, `${where}.pulse`),
     blink: def.blink === undefined ? null : compileBlink(ctx, def.blink, `${where}.blink`),
+    phase: def.phase === undefined ? null : compilePhase(ctx, def.phase, `${where}.phase`),
+    shieldAura: def.shieldAura === undefined ? null : compileShieldAura(def.shieldAura),
     hushes: hushesOf(def),
     cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,
@@ -94,6 +107,22 @@ function compileBlink(ctx: Ctx, b: BlinkDef, where: string): CompiledBlink {
   };
 }
 
+function compilePhase(ctx: Ctx, p: PhaseDef, where: string): CompiledPhase {
+  return {
+    everyTicks: ticks(ctx, p.everySec, `${where}.everySec`),
+    durationTicks: ticks(ctx, p.durationSec, `${where}.durationSec`),
+    tellTicks: ticks(ctx, p.tellSec, `${where}.tellSec`),
+  };
+}
+
+function compileShieldAura(a: ShieldAuraDef): CompiledShieldAura {
+  return {
+    radiusTiles: a.radiusTiles,
+    radiusSq: a.radiusTiles * a.radiusTiles,
+    shieldPerTick: perSecToPerTick(a.shieldPerSec),
+  };
+}
+
 function compileHuddle(h: HuddleDef): CompiledHuddle {
   return {
     radiusTiles: h.radiusTiles,
@@ -105,8 +134,18 @@ function compileHuddle(h: HuddleDef): CompiledHuddle {
 function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
   const phases = b.phases.map((p, i): CompiledBossPhase => {
     const w = `${where}.phases[${i}]`;
+    const shieldBroken = p.fromPct === 'shieldBroken';
     return {
-      fromPct: p.fromPct,
+      fromPct: shieldBroken ? 0 : p.fromPct,
+      onShieldBroken: shieldBroken,
+      shards:
+        p.shards === undefined
+          ? null
+          : {
+              enemy: p.shards.enemy,
+              count: p.shards.count,
+              reformTicks: ticks(ctx, p.shards.reformSec, `${w}.shards.reformSec`),
+            },
       spawn:
         p.spawn === undefined
           ? null
@@ -132,5 +171,13 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
       blink: p.blink === undefined ? null : compileBlink(ctx, p.blink, `${w}.blink`),
     };
   });
-  return { phases, ending: b.ending, endAtPct: b.endAtPct };
+  const ward =
+    b.ward === undefined
+      ? null
+      : {
+          radiusTiles: b.ward.radiusTiles,
+          radiusSq: b.ward.radiusTiles * b.ward.radiusTiles,
+          chillPct: b.ward.chillPct,
+        };
+  return { phases, ending: b.ending, endAtPct: b.endAtPct, ward };
 }

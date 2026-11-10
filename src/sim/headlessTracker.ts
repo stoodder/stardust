@@ -306,6 +306,16 @@ export function createRunTracker<K extends IdSpace>(
           case 'CheckpointReached':
           case 'ClickableChanged':
           case 'Interacted':
+          case 'PhaseShift':
+          case 'ShieldReformed':
+          case 'StoodDown':
+          case 'ObjectiveChanged':
+          case 'RefugeeEvacuated':
+          case 'RefugeeLost':
+          case 'BeamChanged':
+          case 'EchoBurst':
+          case 'StasisArea':
+          case 'DarknessShift':
             break;
           default:
             e satisfies never;
@@ -421,7 +431,11 @@ export function createRunTracker<K extends IdSpace>(
         maxAsset: state.maxAsset,
         credits: state.credits,
         lostAtWave,
-        stats: { ...state.stats, killsByEnemy: { ...state.stats.killsByEnemy } },
+        stats: {
+          ...state.stats,
+          killsByEnemy: { ...state.stats.killsByEnemy },
+          leaksByWave: [...state.stats.leaksByWave],
+        },
         waves,
         towers,
         abilityKills,

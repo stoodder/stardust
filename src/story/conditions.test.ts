@@ -138,6 +138,26 @@ describe('objectiveDone (A2M1’s crew logs)', () => {
   });
 });
 
+/** The base context with `stardust` banked (and 3 Intel). */
+const at = (stardust: number): StoryContext => ({ ...base, bank: { stardust, intel: 3 } });
+
+describe('bank (C2: nothing to trade, T500b)', () => {
+  const broke: Condition = { bank: 'stardust', lte: 0 };
+  it('reads the bank in the context, with inclusive bounds', () => {
+    expect(holds(broke, at(0))).toBe(true);
+    expect(holds(broke, at(1))).toBe(false);
+    expect(holds({ bank: 'stardust', gte: 625 }, at(625))).toBe(true);
+    expect(holds({ bank: 'stardust', gte: 625 }, at(624))).toBe(false);
+    expect(holds({ bank: 'intel', gte: 2, lte: 3 }, at(0))).toBe(true);
+    expect(holds({ bank: 'intel', gte: 4 }, at(0))).toBe(false);
+  });
+
+  it('is false without a bank (and so its negation holds)', () => {
+    expect(holds(broke)).toBe(false);
+    expect(holds({ not: broke })).toBe(true);
+  });
+});
+
 describe('actOf and withFlags', () => {
   it('maps ids to acts', () => {
     expect(actOf('a1_m05')).toBe(1);

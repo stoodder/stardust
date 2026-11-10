@@ -1,18 +1,21 @@
-// Act II portraits (T441; art-direction § Portrait roster, characters.md § Ves'thara and §
-// Pebble): Ves'thara, Pebble, and Bricks's `pebble` variant. Each has the frame contract the
-// dialogue panel asks for, and each keeps its tells: Ves'thara woven (real holes, colored outline,
-// no skin), her cut thread, her knots of light; Pebble the Peeker's seedling, bare-headed, her
-// `singing` hum lighting the shimmer; Bricks with Pebble in his pocket in every expression.
+// Act II portraits (T441, T541; art-direction § Portrait roster, characters.md § Ves'thara, §
+// Pebble and § Kip): Ves'thara, Pebble, and Bricks's `pebble` variant. Each has the frame contract
+// the dialogue panel asks for, and each keeps its tells: Ves'thara woven (real holes, colored
+// outline, no skin), her cut thread, her knots of light; Pebble the Peeker's seedling, bare-headed,
+// her `singing` hum lighting the shimmer; Bricks with Pebble in his pocket in every expression.
+// M5's variants: Kip's `act2` coat, Pebble's `cap`, and Ves'thara's `touched`, `touched_deep` and
+// `dawn`, each keeping the base frame's faces so the expressions read as they do there.
 import { describe, expect, it } from 'vitest';
 import { SPEAKER_DEFS } from '../../dialogue/speakers.ts';
 import { EXPRESSION_EXTRAS, type SpeakerId } from '../../dialogue/types.ts';
 import { contrastRatio, luminance } from '../../palettes/color.ts';
 import { PALETTES } from '../../palettes/index.ts';
-import { rgbOf } from '../../palettes/master.ts';
+import { isColorName, rgbOf } from '../../palettes/master.ts';
 import { SPRITES } from '../index.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { portraitBricks } from './bricks.ts';
-import { portraitPebble } from './pebble.ts';
+import { portraitKip } from './kip.ts';
+import { PEBBLE_EXPRESSIONS, portraitPebble } from './pebble.ts';
 import {
   BASE_EXPRESSIONS,
   portraitFrame,
@@ -275,5 +278,271 @@ describe('Bricks `pebble`: Pebble in his breast pocket', () => {
 
   it('is the variant speakers.ts picks for Bricks once Pebble rides with him', () => {
     expect(SPEAKER_DEFS.bricks.variants.map((v) => v.variant)).toContain('pebble');
+  });
+});
+
+/** A portrait variant (T541) and the expressions it carries. */
+const M5_VARIANTS: readonly (readonly [SpriteDef, string, readonly string[]])[] = [
+  [portraitKip, 'act2', BASE_EXPRESSIONS],
+  [portraitPebble, 'cap', PEBBLE_EXPRESSIONS],
+  [portraitVesthara, 'touched', BASE_EXPRESSIONS],
+  [portraitVesthara, 'touched_deep', BASE_EXPRESSIONS],
+  [portraitVesthara, 'dawn', BASE_EXPRESSIONS],
+];
+
+/** The pixels in rows `y0..y1` and columns `x0..x1` of a frame, joined. */
+const region = (rows: readonly string[], x0: number, y0: number, x1: number, y1: number): string =>
+  rows
+    .slice(y0, y1 + 1)
+    .map((r) => r.slice(x0, x1 + 1))
+    .join('|');
+
+/** Ves'thara's fray colors: the Hollow's grey and the cold violet in the gaps. */
+const isFray = (c: string): boolean => c.startsWith('hollow.') || c.startsWith('violet.');
+
+/** Where each fray-colored pixel of a Ves'thara frame is. */
+function frayPixels(name: string): [number, number][] {
+  const legend: Readonly<Record<string, string>> = portraitVesthara.legend ?? {};
+  const out: [number, number][] = [];
+  resolve(portraitVesthara, name).forEach((r, y) => {
+    for (let x = 0; x < r.length; x++) if (isFray(legend[r.charAt(x)] ?? '')) out.push([x, y]);
+  });
+  return out;
+}
+
+/** The variant names a speaker's rules in speakers.ts pick. */
+const rules = (id: 'kip' | 'vesthara'): string[] => SPEAKER_DEFS[id].variants.map((v) => v.variant);
+
+/** The row where capped Pebble's seedling starts (higher is perkier). */
+const capSproutTop = (e: string): number =>
+  resolve(portraitPebble, portraitFrame(e, { variant: 'cap' })).findIndex((r) => /[GHI]/.test(r));
+
+describe('M5 portrait variants: the frame contract (T541)', () => {
+  it.each(M5_VARIANTS.map(([d, v, es]) => [`${d.id} ${v}`, d, v, es] as const))(
+    '%s: every expression and talking mouth, patched over the base',
+    (_name, def, variant, expressions) => {
+      const neutral = def.frames[portraitFrame('neutral', { variant })];
+      expect(neutral !== undefined && isPatch(neutral) && neutral.from === 'neutral').toBe(true);
+      const faces = new Set<string>();
+      for (const e of expressions) {
+        const name = portraitFrame(e, { variant });
+        const talk = portraitFrame(e, { variant, mouth: 'talk' });
+        const rows = resolve(def, name);
+        expect(rows, `${name} differs from the base ${e}`).not.toEqual(resolve(def, e));
+        expect(resolve(def, talk), talk).not.toEqual(rows);
+        expect(def.anims?.[portraitTalkAnim(e, variant)]).toEqual({
+          frames: [name, talk],
+          fps: TALK_FPS,
+        });
+        if (e !== 'neutral') {
+          const fd = def.frames[name];
+          expect(fd !== undefined && isPatch(fd) && fd.from === `${variant}.neutral`, name).toBe(
+            true,
+          );
+        }
+        faces.add(rows.join('\n'));
+      }
+      expect(faces.size, 'every expression a different face').toBe(expressions.length);
+    },
+  );
+
+  it('registers the variants speakers.ts already names (T513 wires Pebble’s cap)', () => {
+    expect(rules('kip')).toContain('act2');
+    expect(rules('vesthara')).toEqual(expect.arrayContaining(['touched', 'touched_deep']));
+    for (const [def, variant] of M5_VARIANTS) {
+      expect(
+        def.frames[portraitFrame('neutral', { variant })],
+        `${def.id} ${variant}`,
+      ).toBeDefined();
+    }
+  });
+});
+
+describe('M5 variants keep the base faces, so every expression reads as it does there', () => {
+  it('Kip `act2`: his head, cap and sunglasses are the base frame’s in every expression', () => {
+    for (const e of BASE_EXPRESSIONS) {
+      for (const mouth of ['closed', 'talk'] as const) {
+        const base = resolve(portraitKip, portraitFrame(e, { mouth }));
+        const act2 = resolve(portraitKip, portraitFrame(e, { variant: 'act2', mouth }));
+        expect(region(act2, 0, 0, 47, 32), `${e} ${mouth}`).toBe(region(base, 0, 0, 47, 32));
+      }
+    }
+  });
+
+  it('Pebble `cap`: her eyes, blush, mouth and brows are the base frame’s', () => {
+    for (const e of PEBBLE_EXPRESSIONS) {
+      for (const mouth of ['closed', 'talk'] as const) {
+        const base = resolve(portraitPebble, portraitFrame(e, { mouth }));
+        const cap = resolve(portraitPebble, portraitFrame(e, { variant: 'cap', mouth }));
+        expect(region(cap, 0, 19, 47, 47), `${e} ${mouth}`).toBe(region(base, 0, 19, 47, 47));
+        // The brow tufts that reach up beside the cap are drawn over it, never under.
+        const plain = resolve(portraitPebble, 'neutral');
+        for (let y = 15; y < 19; y++) {
+          for (let x = 0; x < 48; x++) {
+            if (at(base, x, y) !== at(plain, x, y) && at(base, x, y) === '1') {
+              expect(at(cap, x, y), `${e} brow ${x},${y}`).toBe('1');
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("Ves'thara `touched` and `dawn`: her face and veil are the base frame's", () => {
+    for (const variant of ['touched', 'dawn']) {
+      for (const e of BASE_EXPRESSIONS) {
+        for (const mouth of ['closed', 'talk'] as const) {
+          const base = resolve(portraitVesthara, portraitFrame(e, { mouth }));
+          const v = resolve(portraitVesthara, portraitFrame(e, { variant, mouth }));
+          expect(region(v, 0, 0, 36, 27), `${variant} ${e} ${mouth}`).toBe(
+            region(base, 0, 0, 36, 27),
+          );
+        }
+      }
+    }
+  });
+
+  it("Ves'thara `touched_deep`: the same brows, dark on a face one step dimmer (≥ 4:1, D134)", () => {
+    const p = PALETTES.aelari;
+    expect(contrastRatio(luminance(rgbOf(p.p3)), luminance(rgbOf(p.p1)))).toBeGreaterThanOrEqual(4);
+    for (const e of BASE_EXPRESSIONS) {
+      const base = resolve(portraitVesthara, e);
+      const deep = resolve(portraitVesthara, portraitFrame(e, { variant: 'touched_deep' }));
+      // The face's heart is a step down (blue.3), its brows the base frame's dark threads.
+      expect(at(deep, 23, 20), e).toBe('3');
+      const browsOf = (rows: readonly string[]): string =>
+        region(rows, 17, 14, 30, 16).replace(/[^1|]/g, '.');
+      expect(browsOf(deep), e).toBe(browsOf(base));
+    }
+  });
+});
+
+describe('Kip `act2`: Reclamation Lead in a white coat, the pin still on', () => {
+  it('wears the white coat over the jumpsuit, popped collar, pin, and the stardust smear', () => {
+    for (const e of BASE_EXPRESSIONS) {
+      const name = portraitFrame(e, { variant: 'act2' });
+      const rows = resolve(portraitKip, name);
+      const chest = region(rows, 0, 40, 47, 47).replace(/[.|x]/g, '');
+      const white = chest.replace(/[^34]/g, '').length;
+      expect(white / chest.length, `${e}: mostly white coat`).toBeGreaterThan(0.5);
+      const used = new Set(colorsOf(portraitKip, name));
+      // The cap and sunglasses, the teal jumpsuit collar, the gold pin, and a pink-gold smear.
+      for (const c of ['4', 'ink.3', '8', '9', 'gold.3', 'pink.4', 'gold.4']) {
+        expect(used, `${e}: ${c}`).toContain(c);
+      }
+    }
+    // Act I's jumpsuit is teal across the chest, with no coat and no smear.
+    const plain = region(resolve(portraitKip, 'neutral'), 0, 40, 47, 47);
+    expect(plain.replace(/[^34]/g, '').length).toBeLessThan(10);
+    expect(colorsOf(portraitKip, 'neutral')).not.toContain('pink.4');
+  });
+});
+
+describe('Pebble `cap`: Bricks’s bottle cap, the seedling up through it', () => {
+  it('sits on her crown: a teal-ringed white top and a crimped steel skirt', () => {
+    for (const e of PEBBLE_EXPRESSIONS) {
+      const legend: Readonly<Record<string, string>> = portraitPebble.legend ?? {};
+      const crown = region(
+        resolve(portraitPebble, portraitFrame(e, { variant: 'cap' })),
+        14,
+        9,
+        33,
+        18,
+      )
+        .split('')
+        .map((ch) => legend[ch] ?? ch);
+      for (const c of ['steel.2', 'steel.3', 'steel.4', 'd', 'w'])
+        expect(crown, `${e}: ${c}`).toContain(c);
+    }
+  });
+
+  it('keeps the seedling’s tell: perkier when happy, drooping when worried or sad', () => {
+    const top = capSproutTop;
+    expect(top('happy')).toBeLessThan(top('neutral'));
+    expect(top('worried')).toBeGreaterThan(top('neutral'));
+    expect(top('sad')).toBeGreaterThan(top('neutral'));
+    // And it grows out of the cap's hole: an unbroken stem from the leaves down into the cap.
+    for (const e of PEBBLE_EXPRESSIONS) {
+      const rows = resolve(portraitPebble, portraitFrame(e, { variant: 'cap' }));
+      for (let y = 10; y <= 12; y++) expect(at(rows, 24, y), `${e} stem ${y}`).toBe('G');
+    }
+  });
+});
+
+describe("Ves'thara `touched`: her left arm and neck fray grey, cold violet in the gaps", () => {
+  it('draws no violet or grey on her outside the fray (D103 keeps violet for it)', () => {
+    for (const variant of [null, 'dawn']) {
+      for (const e of BASE_EXPRESSIONS) {
+        expect(frayPixels(portraitFrame(e, { variant })), `${variant ?? 'base'} ${e}`).toEqual([]);
+      }
+    }
+  });
+
+  it('frays only her left side (screen right) of the neck, shoulder and arm, deeper in Act III', () => {
+    for (const e of BASE_EXPRESSIONS) {
+      const touched = frayPixels(portraitFrame(e, { variant: 'touched' }));
+      const deep = frayPixels(portraitFrame(e, { variant: 'touched_deep' }));
+      expect(touched.length, e).toBeGreaterThan(120);
+      expect(deep.length, e).toBeGreaterThan(touched.length + 30);
+      // Never on her face or veil above the neck, never on her right shoulder.
+      for (const [x, y] of touched) expect(y >= 28 && x >= 23, `${e} ${x},${y}`).toBe(true);
+      for (const [x, y] of deep) expect(y >= 28 && x >= 21, `${e} deep ${x},${y}`).toBe(true);
+      // The cold violet shows in the gaps.
+      const used = colorsOf(portraitVesthara, portraitFrame(e, { variant: 'touched' }));
+      for (const c of ['violet.0', 'violet.1', 'hollow.2', 'hollow.3'])
+        expect(used, `${e}: ${c}`).toContain(c);
+    }
+  });
+
+  it('keeps the cut thread ruby through the fray, and the dawn', () => {
+    for (const variant of ['touched', 'touched_deep', 'dawn']) {
+      for (const e of BASE_EXPRESSIONS) {
+        for (const mouth of ['closed', 'talk'] as const) {
+          const rows = resolve(portraitVesthara, portraitFrame(e, { variant, mouth }));
+          for (const [x, y] of VESTHARA_CUT_THREAD) {
+            expect(at(rows, x, y), `${variant} ${e} ${x},${y}`).toBe('d');
+          }
+        }
+      }
+    }
+  });
+
+  it('never lets the fray outshine her face', () => {
+    const legend: Readonly<Record<string, string>> = portraitVesthara.legend ?? {};
+    const p = PALETTES.aelari;
+    for (const [variant, heart] of [
+      ['touched', p.p4],
+      ['touched_deep', p.p3],
+    ] as const) {
+      for (const e of BASE_EXPRESSIONS) {
+        const rows = resolve(portraitVesthara, portraitFrame(e, { variant }));
+        for (const [x, y] of frayPixels(portraitFrame(e, { variant }))) {
+          const c = legend[at(rows, x, y)] ?? '';
+          if (!isColorName(c)) throw new Error(`${variant} ${e}: ${c} is not a color`);
+          expect(luminance(rgbOf(c)), `${variant} ${e} ${c}`).toBeLessThan(luminance(rgbOf(heart)));
+        }
+      }
+    }
+  });
+
+  it('dims her eyes a step in Act III: no white core in any face', () => {
+    for (const e of BASE_EXPRESSIONS) {
+      const deep = resolve(portraitVesthara, portraitFrame(e, { variant: 'touched_deep' }));
+      expect(region(deep, 16, 13, 31, 27), e).not.toMatch(/\*/);
+      expect(region(deep, 16, 13, 31, 27), e).toMatch(/\+|8/);
+    }
+  });
+
+  it('`dawn`: no fray, the broken threads re-lit gold, a gold mote at her shoulder', () => {
+    for (const e of BASE_EXPRESSIONS) {
+      const name = portraitFrame(e, { variant: 'dawn' });
+      const used = colorsOf(portraitVesthara, name);
+      for (const c of ['gold.2', 'gold.3', 'gold.4']) expect(used, `${e}: ${c}`).toContain(c);
+      // The mote's white-gold heart, just off her left shoulder, clear of her silhouette.
+      expect(at(resolve(portraitVesthara, name), 41, 29), e).toBe('Y');
+      // Her eyes burn as in the base frame.
+      const eyes = resolve(portraitVesthara, name).slice(14, 23).join('');
+      expect(eyes.includes('*'), e).toBe(e !== 'sad');
+    }
   });
 });

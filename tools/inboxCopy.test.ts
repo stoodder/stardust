@@ -24,8 +24,8 @@ function expectQuoted(doc: string, text: string): void {
   expect(doc.includes(text), `the doc doesn't quote: ${text}`).toBe(true);
 }
 
-/** Memos whose small print the act file leaves to the content (A1M5's names none). */
-const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05']);
+/** Memos whose small print the act file leaves to the content (A1M5's and A2M4's Q3 Bonus name none). */
+const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05', 'memo_a2_04']);
 
 describe('the welcome memo is the style guide sample', () => {
   const m = MEMOS.memo_a1_00!;

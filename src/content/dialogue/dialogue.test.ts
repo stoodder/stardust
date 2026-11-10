@@ -59,8 +59,8 @@ describe('speakers (style-guide § 5.1)', () => {
 });
 
 describe('the dialogue registries', () => {
-  it('has one entry per Act I map and per M4 Act II map (A2M1–A2M3), in campaign order', () => {
-    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 8));
+  it('has one entry per Act I and Act II map (A2M4–A2M6 from M5, T500b), in campaign order', () => {
+    expect(MAP_DIALOGUE.map((m) => m.map)).toEqual(CAMPAIGN_PLAN_IDS.slice(0, 11));
   });
 
   it('files every scene under its own map, with a well-formed, unique id', () => {
@@ -90,7 +90,7 @@ describe('the dialogue registries', () => {
 
   it('looks up scenes and maps safely', () => {
     expect(sceneById('__proto__')).toBeUndefined();
-    expect(mapDialogue('a2_m04')).toEqual({ map: 'a2_m04', scenes: [], barks: [] });
+    expect(mapDialogue('a3_m01')).toEqual({ map: 'a3_m01', scenes: [], barks: [] });
     expect(barksFor('a1_m03')).toEqual([...mapDialogue('a1_m03').barks, ...SHARED_BARKS]);
   });
 

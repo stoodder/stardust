@@ -21,6 +21,7 @@ import {
 } from './rewards.ts';
 import type { MapRecord, SaveData } from './saveData.ts';
 import { enemiesMet, isEnemyId, withStoryUnlocks } from './story.ts';
+import { runEndTransactions, type StoryTransaction } from './storyTransactions.ts';
 import { clampCurrency } from './validate.ts';
 
 /** What a run end reads from the finished battle. */
@@ -122,6 +123,11 @@ export interface RunEndSummary {
   readonly memos: readonly MemoId[];
   /** Codex entries with a version this run unlocked (step 8), in codex order. */
   readonly codex: readonly CodexId[];
+  /**
+   * The story transactions step 6 made (meta/storyTransactions.ts), in order: A2M4's Q3 Bonus,
+   * A2M5's Prism gift. Empty on most runs, and on every replay and loss.
+   */
+  readonly transactions: readonly StoryTransaction[];
 }
 
 export interface RunEndResult {
@@ -196,9 +202,6 @@ export function runEnd(
   const intel =
     medals.reduce((sum, m) => sum + m.intel, 0) + objectives.reduce((sum, o) => sum + o.intel, 0);
 
-  // 6. The map's story transactions (meta-runtime.md § Story transactions): TODO(M3); no M2 map
-  //    has one (the first is A2M4's Q3 Bonus). The caller saves.
-  // 7. Towers the win issues for the next map (meta/issued.ts; the Sprinkler after A1M1).
   const folded: SaveData = {
     ...save,
     story: { ...save.story, flags: { ...save.story.flags, ...flags } },
@@ -209,8 +212,16 @@ export function runEnd(
     },
     stats: { pestsProcessed, runs: save.stats.runs + 1 },
   };
-  const withTowers = withIssuedTowers(folded);
-  const issued = withTowers.unlocks.towers.filter((t) => !folded.unlocks.towers.includes(t));
+  // 6. The map's story transactions on its first win (meta/storyTransactions.ts: A2M4's Q3 Bonus,
+  //    A2M5's Prism gift; T510 builds their bodies). C2 isn't here: it is the debrief's choice,
+  //    made on Results.
+  const transacted = runEndTransactions(folded, { mapId: input.mapId, won, wonBefore });
+  // 7. Towers the win issues for the next map (meta/issued.ts; the Sprinkler after A1M1). A gift
+  //    from step 6 is owned already, so it is never counted as issued.
+  const withTowers = withIssuedTowers(transacted.save);
+  const issued = withTowers.unlocks.towers.filter(
+    (t) => !transacted.save.unlocks.towers.includes(t),
+  );
   // 8. Story unlocks (meta/story.ts): the enemies this run met join the seen list, the memos now
   //    due are delivered with their gifts, and the codex versions now unlocked are added. After
   //    step 7, so an issued tower's entry unlocks with it.
@@ -231,6 +242,7 @@ export function runEnd(
       issued,
       memos: story.memos,
       codex: story.codex,
+      transactions: transacted.transactions,
     },
   };
 }

@@ -15,13 +15,13 @@ import type {
   CounterId,
   DamageType,
   DressingLayerDef,
+  EnvPaletteId,
   EnemyFaction,
   FlagValue,
   GridPos,
   HoldFireWhileTarget,
   IdSpace,
   Layer,
-  LightingKeyDef,
   LiveIds,
   MarkerId,
   MedalKind,
@@ -77,7 +77,9 @@ export interface CompiledTowerDef<Id extends string = string> {
     readonly head: SpriteId | null;
     readonly icon: SpriteId;
   };
+  /** A light source while its beam is active (TowerDef.lightRadiusTiles; Sundown, T505), or null. */
   readonly lightRadiusTiles: number | null;
+  readonly lightRadiusSq: number;
 }
 
 export interface CompiledTier {
@@ -95,6 +97,12 @@ export interface CompiledTier {
   readonly detect: CompiledDetect | null;
   /** The Crane's economy (TierDef.economy), or null. */
   readonly economy: CompiledTowerEconomy | null;
+  /** An area Mark (TierDef.markArea: All-Seeing; T508), or null. */
+  readonly markArea: {
+    readonly radiusTiles: number;
+    readonly radiusSq: number;
+    readonly pct: number;
+  } | null;
 }
 
 /** DetectDef with the linger in ticks and the radius squared (0 / 0 for absent fields). */
@@ -135,7 +143,15 @@ interface CompiledAttackCommon {
 }
 export type CompiledAttack = CompiledAttackCommon &
   (
-    | { readonly kind: 'hitscan' }
+    | {
+        readonly kind: 'hitscan';
+        /** Echo Spike's echo (`echo`: pct of each hit within the radius of the target; T507), or null. */
+        readonly echo: {
+          readonly pct: number;
+          readonly radiusTiles: number;
+          readonly radiusSq: number;
+        } | null;
+      }
     | {
         readonly kind: 'projectile';
         readonly projectile: SpriteId;
@@ -163,6 +179,11 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly beamTickTicks: number;
         /** The rounded beam tick in seconds (beamTickTicks / TICK_HZ): the armor proration factor. */
         readonly beamTickSec: number;
+        /** The ramp per tick on one target (`rampPctPerSec` / TICK_HZ; 0: no ramp), and its cap (1: none). */
+        readonly rampPctPerTick: number;
+        readonly rampCap: number;
+        /** Beams at once, each on its own target (default 1; T504, T508). */
+        readonly beams: number;
       }
     | {
         readonly kind: 'chain';
@@ -206,7 +227,13 @@ export type CompiledEffect =
   | { readonly status: 'chilled'; readonly pct: number; readonly durationTicks: number }
   | { readonly status: 'soaked'; readonly durationTicks: number }
   | { readonly status: 'corroded'; readonly stacks: number; readonly maxStacks: number }
-  | { readonly status: 'marked'; readonly pct: number; readonly durationTicks: number }
+  | {
+      readonly status: 'marked';
+      readonly pct: number;
+      readonly durationTicks: number;
+      /** Truthlight: no cloak, blink, phase, or burrow while it holds (EffectDef; T508). */
+      readonly noEvade: boolean;
+    }
   | { readonly status: 'pinned'; readonly durationTicks: number }
   | { readonly status: 'stasis'; readonly durationTicks: number }
   | { readonly status: 'unnerved'; readonly durationTicks: number };
@@ -250,6 +277,12 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
   readonly detectRadiusTiles: number;
   /** Credits per kill the partner makes (Reel It In; 0: none). */
   readonly killCredits: number;
+  /** A conditional damage bonus against an enemy whose shield is up (`vsShielded`: Resonance; 0: none). */
+  readonly vsShieldPct: number;
+  /** The partner's beam ramps this much faster, a fraction (Lightsong's Prism; 0: none). */
+  readonly rampPct: number;
+  /** Added to the partner's Marks, a fraction (Lightsong's Lantern; 0: none). */
+  readonly markPct: number;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────
@@ -284,6 +317,10 @@ export interface CompiledEnemyDef<Id extends string = string> {
   /** EnemyDef.pulse and EnemyDef.blink in ticks (T403, T404), or null. */
   readonly pulse: CompiledPulse | null;
   readonly blink: CompiledBlink | null;
+  /** EnemyDef.phase in ticks (the Rift Moth; T503), or null. */
+  readonly phase: CompiledPhase | null;
+  /** EnemyDef.shieldAura per tick (the Aegis Cantor; T502), or null. */
+  readonly shieldAura: CompiledShieldAura | null;
   /**
    * Hushes under the hush rule (enemies.md § 5.4): derived, true for a non-boss Hollow unit that
    * doesn't gather (a Maw's one hush is a gather). Run by enemyAbilities/hush.ts (T402).
@@ -324,14 +361,42 @@ export interface CompiledBlink {
   readonly tellTicks: number;
   readonly tiles: number;
 }
+export interface CompiledPhase {
+  readonly everyTicks: number;
+  readonly durationTicks: number;
+  readonly tellTicks: number;
+}
+export interface CompiledShieldAura {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly shieldPerTick: number;
+}
 export interface CompiledBoss {
   readonly phases: readonly CompiledBossPhase[];
   readonly ending: BossEnding;
   readonly endAtPct: number;
+  /** A `pivot` ending's ward (BossDef.ward; T506), or null. */
+  readonly ward: {
+    readonly radiusTiles: number;
+    readonly radiusSq: number;
+    readonly chillPct: number;
+  } | null;
 }
 /** BossPhaseDef in ticks; absent parts are null. */
 export interface CompiledBossPhase {
+  /**
+   * The HP share at which it begins; 0 for a shield-broken phase (`onShieldBroken`), which HP never
+   * reaches first: a boss with one ends above 0 (T506 enters it when the shield breaks).
+   */
   readonly fromPct: number;
+  /** BossPhaseDef `fromPct: 'shieldBroken'`: it begins when the boss's shield first breaks. */
+  readonly onShieldBroken: boolean;
+  /** A shield-broken phase's shards (BossPhaseDef.shards; T506), the re-form in ticks, or null. */
+  readonly shards: {
+    readonly enemy: string;
+    readonly count: number;
+    readonly reformTicks: number;
+  } | null;
   readonly spawn: {
     readonly enemy: string;
     readonly count: number;
@@ -387,6 +452,12 @@ export type CompiledAbilityEffect =
   | { readonly kind: 'discount'; readonly pct: number; readonly charges: number }
   | {
       readonly kind: 'reveal';
+      readonly radiusTiles: number;
+      readonly radiusSq: number;
+      readonly durationTicks: number;
+    }
+  | {
+      readonly kind: 'stasisArea';
       readonly radiusTiles: number;
       readonly radiusSq: number;
       readonly durationTicks: number;
@@ -539,6 +610,43 @@ export interface CompiledAsset {
   readonly routes: readonly RouteId[];
 }
 
+/** A lamp (LightDef) with its marker resolved to its tile centre. */
+export interface CompiledLight {
+  readonly marker: MarkerId;
+  readonly x: number;
+  readonly y: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+}
+
+/** A lighting key (LightingKeyDef) with `dark` resolved (0 when absent). */
+export interface CompiledLightingKey {
+  readonly wave: number;
+  readonly env: EnvPaletteId;
+  readonly dark: number;
+}
+
+/** A refugee group (RefugeeGroupDef) with its route resolved and its numbers by rule. */
+export interface CompiledRefugeeGroup {
+  readonly id: string;
+  readonly route: CompiledRoute;
+  readonly count: number;
+  readonly withPebble: boolean;
+  readonly spacingTiles: number;
+  readonly speedTilesPerTick: number;
+}
+
+/**
+ * Escort data (MapDef.safeExit, MapDef.refugees; T305c): the safe exit's tile, the refugee groups
+ * in authored order, and their total (Pebble not counted: the meter's denominator).
+ */
+export interface CompiledEscort {
+  readonly safeExit: MarkerId;
+  readonly exitTile: GridPos;
+  readonly groups: readonly CompiledRefugeeGroup[];
+  readonly total: number;
+}
+
 /** An ObjectiveDef with its `onComplete` actions compiled (none: empty). */
 export interface CompiledObjective<K extends IdSpace = LiveIds> {
   readonly id: string;
@@ -603,8 +711,15 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly revisitAt: GridPos | null;
   /** The original's footprint (its size), or null. */
   readonly revisitSize: { readonly cols: number; readonly rows: number } | null;
-  /** The lighting schedule (MapDef.lighting): cosmetic, render reads it; empty for none. */
-  readonly lighting: readonly LightingKeyDef[];
+  /**
+   * The lighting schedule (MapDef.lighting): the tint is cosmetic (render reads it); `dark` is sim
+   * state (Sundown; T505). Empty for none.
+   */
+  readonly lighting: readonly CompiledLightingKey[];
+  /** Lamps (MapDef.lights; T505); empty for none. */
+  readonly lights: readonly CompiledLight[];
+  /** Escort data (MapDef.safeExit and refugees; T305c), or null. */
+  readonly escort: CompiledEscort | null;
   /** Render-only dressing layers (MapDef.dressing); empty for none. */
   readonly dressing: readonly DressingLayerDef[];
   /** The Protect map's asset, its marker resolved (T305a), or null. */

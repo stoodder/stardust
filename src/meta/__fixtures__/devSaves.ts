@@ -24,6 +24,12 @@ import { withFirstPaydayCaughtUp } from '../runEnd.ts';
 import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
+import {
+  Q3_BONUS_GRANT,
+  STORY_TRANSACTION_RULES,
+  c2Windfall,
+  giftGrantId,
+} from '../storyTransactions.ts';
 
 export type DevSaveId =
   | 'fresh'
@@ -36,6 +42,11 @@ export type DevSaveId =
   | 'after_a2m1'
   | 'after_a2m2'
   | 'after_a2m3'
+  | 'after_a2m3_ref'
+  | 'after_a2m4_returned'
+  | 'after_a2m4_sold'
+  | 'after_a2m5'
+  | 'after_a2m6'
   | 'all_unlocked';
 
 export interface DevSave {
@@ -163,13 +174,15 @@ function actOneThrough(last: 'a1_m03' | 'a1_m04' | 'a1_m05'): SaveData {
   return withFirstPaydayCaughtUp(withTowers); // A1M2's Results showed the first payday
 }
 
-/** The Act II maps the dev saves cover (M4), in campaign order. */
-type ActTwoMap = 'a2_m01' | 'a2_m02' | 'a2_m03';
+/** The Act II maps the dev saves cover, in campaign order. */
+const ACT_TWO = ['a2_m01', 'a2_m02', 'a2_m03', 'a2_m04', 'a2_m05', 'a2_m06'] as const;
+type ActTwoMap = (typeof ACT_TWO)[number];
 
 /**
  * What the reference profile buys before each Act II map (campaign.md § 4.9): the Lookout license
  * into A2M1; Sprinkler specs, Seed Money 1, and Zapcoil tune 1 into A2M2; Sprinkler tune 2 into
- * A2M3 (its rank 1 came before A1M5).
+ * A2M3 (its rank 1 came before A1M5); Zapcoil specs and the Zapcoil and Rivet tune 2 into A2M4;
+ * nothing into A2M5 (C2 Return emptied the bank); Reinforced Core 2 into A2M6.
  */
 const ACT_TWO_PREP: Readonly<Record<ActTwoMap, readonly PurchaseItem[]>> = {
   a2_m01: [{ kind: 'license', tower: 'lookout' }],
@@ -179,7 +192,57 @@ const ACT_TWO_PREP: Readonly<Record<ActTwoMap, readonly PurchaseItem[]>> = {
     { kind: 'upgrade', id: 'tune_zapcoil' },
   ],
   a2_m03: [{ kind: 'upgrade', id: 'tune_sprinkler' }],
+  a2_m04: [
+    { kind: 'specs', tower: 'zapcoil' },
+    { kind: 'upgrade', id: 'tune_zapcoil' },
+    { kind: 'upgrade', id: 'tune_rivet' },
+  ],
+  a2_m05: [],
+  a2_m06: [{ kind: 'upgrade', id: 'reinforced_core' }],
 };
+
+/** C2's branch a dev save takes on A2M4's Results (the reference takes Return). */
+type C2Branch = 'returned' | 'sold';
+
+/**
+ * A2M4's Results as the story transactions leave them (meta/storyTransactions.ts; T510 builds the
+ * transactions, so this applies their documented effects directly): the Q3 Bonus paid and
+ * recorded, then C2 for the whole bank: Return empties it; Sell empties it for the Intel windfall
+ * and the Zibzab Tune-up (once its upgrade is registered). `stardust_choice` records the branch.
+ */
+export function afterA2M4Results(save: SaveData, c2: C2Branch): SaveData {
+  save.currencies.stardust += STORY_TRANSACTION_RULES.q3BonusStardust;
+  save.story.granted.push(Q3_BONUS_GRANT);
+  const bank = save.currencies.stardust;
+  save.currencies.stardust = 0;
+  save.story.flags.stardust_choice = c2;
+  if (c2 === 'sold') {
+    save.currencies.intel += c2Windfall(bank);
+    const tuneUp = knownUpgrade(ZIBZAB_TUNE_UP_ID);
+    if (tuneUp !== undefined) save.upgrades[tuneUp] = 1;
+  }
+  return save;
+}
+
+/**
+ * The Zibzab Tune-up's upgrade id (C2 Sell's grant, progression.md § 2.1): registered as a
+ * granted-only upgrade by T500a; a dev save grants it once it exists.
+ */
+const ZIBZAB_TUNE_UP_ID = 'zibzab_tune_up';
+
+/** The registered upgrade `id`, if it is registered yet. */
+function knownUpgrade(id: string): keyof typeof UPGRADES | undefined {
+  return Object.keys(UPGRADES).find((k): k is keyof typeof UPGRADES => k === id);
+}
+
+/** A2M5's debrief gift (act2.md § A2M5: Ves'thara gives the Prism Spire), once registered. */
+export function afterA2M5Results(save: SaveData): SaveData {
+  const prism = knownTower('prism');
+  if (prism === undefined) return save;
+  if (!save.unlocks.towers.includes(prism)) save.unlocks.towers.push(prism);
+  save.story.granted.push(giftGrantId(prism));
+  return save;
+}
 
 /**
  * `save` with `items` bought through the shop's own `buy`, in order. An item whose content hasn't
@@ -222,26 +285,34 @@ function caughtUp(save: SaveData): SaveData {
   return next;
 }
 
+/** How far an Act II dev save goes. */
+interface ActTwoPlan {
+  /** Buy the next map's reference purchases too (the `_ref` saves: into that map). */
+  readonly prepNext?: boolean;
+  /** C2's branch on A2M4's Results (default Return, the reference's). */
+  readonly c2?: C2Branch;
+}
+
 /**
  * The reference profile through `last` (campaign.md § 4.9): Act I through A1M5 with the weaker C1
- * branch (the Quiet Wave cleared), the Lookout license bought for A2M1 (once stocked), then
- * each Act II map up to `last` prepared for and won with Victory, its first-clear Stardust and
- * Intel banked. An Act II map that isn't registered yet is skipped, its purchases with it, so the
- * save stays valid while A2M1–A2M3 land (`last` null: into A2M1, nothing of Act II won). The
- * story follows the wins: Biscuit's tag (A2M1), Thorn (A2M2's debrief), Auntie Funmi's tag and
- * `held_fire_second_look` cleared (A2M3, the weaker branch).
+ * branch (the Quiet Wave cleared), then each Act II map up to `last` prepared for (its purchases
+ * bought through the shop's `buy`) and won with Victory, its first-clear Stardust and Intel
+ * banked; with `prepNext`, the next map's purchases too (`last` null: into A2M1). An Act II map
+ * that isn't registered yet is skipped with its purchases (the next map's prep is still bought),
+ * so the save stays valid while A2M4–A2M6 land. The story follows the wins: Biscuit's tag
+ * (A2M1), Thorn (A2M2's debrief), Auntie Funmi's tag and `held_fire_second_look` cleared (A2M3,
+ * the weaker branch), the Q3 Bonus and C2 (A2M4, Return unless `c2` says Sell), and the Prism
+ * Spire (A2M5).
  */
-function actTwoThrough(last: ActTwoMap | null): SaveData {
+function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData {
   let save = actOneThrough('a1_m05');
   save.story.flags.spared_quiet_wave = false;
-  save = bought(save, ACT_TWO_PREP.a2_m01);
-  const order: readonly ActTwoMap[] = ['a2_m01', 'a2_m02', 'a2_m03'];
-  const played = last === null ? [] : order.slice(0, order.indexOf(last) + 1);
+  const played = last === null ? [] : ACT_TWO.slice(0, ACT_TWO.indexOf(last) + 1);
   for (const step of played) {
     // Widened, so the registered check narrows to MapId while the Act II maps aren't in it yet.
     const map: string = step;
     if (!isRegistered(map)) continue;
-    if (step !== 'a2_m01') save = bought(save, ACT_TWO_PREP[step]); // A2M1's is bought above
+    save = bought(save, ACT_TWO_PREP[step]);
     save.campaign.maps[map] = won(map, medalIds(map).slice(0, 1));
     save.currencies.intel += 1;
     save.currencies.stardust += MAPS[map].stardust;
@@ -250,7 +321,11 @@ function actTwoThrough(last: ActTwoMap | null): SaveData {
     }
     save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
     if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
+    if (step === 'a2_m04') save = afterA2M4Results(save, plan.c2 ?? 'returned');
+    if (step === 'a2_m05') save = afterA2M5Results(save);
   }
+  const next = ACT_TWO[played.length];
+  if (plan.prepNext === true && next !== undefined) save = bought(save, ACT_TWO_PREP[next]);
   // A save that has played Act II has opened the star map (its first-visit sweep is spent).
   if (played.some((m) => isRegistered(m)) && !save.story.seen.includes(STAR_MAP_SEEN_ID)) {
     save.story.seen.push(STAR_MAP_SEEN_ID);
@@ -324,7 +399,7 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
     description:
       'The reference profile into A2M1 (campaign.md § 4.9): Act I complete with the Quiet Wave ' +
       'cleared (spared_quiet_wave = false), then the Lookout license bought (once stocked).',
-    build: () => actTwoThrough(null),
+    build: () => actTwoThrough(null, { prepNext: true }),
   },
   after_a2m1: {
     description:
@@ -343,6 +418,38 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       'after_a2m2, then Sprinkler tune 2 bought and A2M3 won with held_fire_second_look cleared: ' +
       'Auntie Funmi tagged. Skipped while A2M3 is not registered.',
     build: () => actTwoThrough('a2_m03'),
+  },
+  after_a2m3_ref: {
+    description:
+      'The reference profile into A2M4 (campaign.md § 4.9): after_a2m3, then Zapcoil specs and ' +
+      'the Zapcoil and Rivet tune 2 bought.',
+    build: () => actTwoThrough('a2_m03', { prepNext: true }),
+  },
+  after_a2m4_returned: {
+    description:
+      'after_a2m3_ref, then A2M4 won (Victory) with the Q3 Bonus paid and C2 taken as Return ' +
+      '(stardust_choice = returned, the bank 0): the reference. Skipped while A2M4 is not ' +
+      'registered.',
+    build: () => actTwoThrough('a2_m04'),
+  },
+  after_a2m4_sold: {
+    description:
+      'after_a2m3_ref, then A2M4 won (Victory) with the Q3 Bonus paid and C2 taken as Sell ' +
+      '(stardust_choice = sold, the bank 0, the Intel windfall, the Zibzab Tune-up once ' +
+      'registered). Skipped while A2M4 is not registered.',
+    build: () => actTwoThrough('a2_m04', { c2: 'sold' }),
+  },
+  after_a2m5: {
+    description:
+      'after_a2m4_returned, then A2M5 won (Victory): the Prism Spire given (once registered) ' +
+      'and Xenotech open. Skipped while A2M5 is not registered.',
+    build: () => actTwoThrough('a2_m05'),
+  },
+  after_a2m6: {
+    description:
+      'after_a2m5, then Reinforced Core 2 bought and A2M6 won (Victory): Act II complete. ' +
+      'Skipped while A2M6 is not registered.',
+    build: () => actTwoThrough('a2_m06'),
   },
   all_unlocked: {
     description:

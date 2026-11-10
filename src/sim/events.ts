@@ -1,16 +1,19 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. Every M2, M3, and M4 event is declared; the ones whose
-// task hasn't landed are never emitted yet (each names its task). An event's owning task may add
+// sim, systems communicate through state. Every M2–M5 event is declared; the ones whose task
+// hasn't landed are never emitted yet (each names its task). An event's owning task may add
 // payload fields.
 import type {
   AllyKind,
   AttackKind,
   BossEnding,
+  EnemyFaction,
   GridPos,
   IdSpace,
   LiveIds,
   MedalKind,
+  MeterLabel,
+  ObjectiveKind,
   RouteId,
   SpriteId,
   TileChar,
@@ -345,6 +348,11 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly enemy: K['enemy'];
       readonly victim: number;
       readonly victimEnemy: K['enemy'] | null;
+      /**
+       * The hushed ally's kind (a refugee, a singer, a bearer; T305c), for the `ally_hushed` bark
+       * (T513); absent when the victim is an enemy.
+       */
+      readonly victimAlly?: AllyKind;
       readonly x: number;
       readonly y: number;
     }
@@ -473,6 +481,107 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly type: 'Interacted';
       readonly marker: string;
       readonly byFallback: boolean;
+    }
+  // ── Act II, part two (T500a seams; each names the task that emits it) ─────────────────────────
+  | {
+      /**
+       * Phasing (T503; enemies.md § 2.6): the flicker tell began (`tell`), the unit is Phased
+       * (`in`: nothing targets or hits it), it is back (`out`), or Stasis or Unnerved cancelled the
+       * tell (`interrupted`). Position in tiles.
+       */
+      readonly type: 'PhaseShift';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly phase: 'tell' | 'in' | 'out' | 'interrupted';
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * A shield-broken boss's shield came back to full (T506: `reformTicks` ran out with a shard
+       * still alive; enemies.md § 6, the Penitent). Position in tiles.
+       */
+      readonly type: 'ShieldReformed';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /**
+       * A hostile unit began standing down (`standDown`, the pivot; T506): it stops and fades out
+       * over STAND_DOWN_FADE_SEC, then is removed with no further event (no leak, no bounty).
+       */
+      readonly type: 'StoodDown';
+      readonly uid: number;
+      readonly enemy: K['enemy'];
+      readonly faction: EnemyFaction;
+      readonly x: number;
+      readonly y: number;
+    }
+  | {
+      /** `setObjective` ran (T305c): the map is now `objective`, its meter labeled `meterLabel`. */
+      readonly type: 'ObjectiveChanged';
+      readonly objective: ObjectiveKind;
+      readonly meterLabel: MeterLabel;
+    }
+  | {
+      /** A refugee reached the safe exit (T305c): `stats.evacuated` + 1 (Pebble: `pebble`, not counted). */
+      readonly type: 'RefugeeEvacuated';
+      readonly uid: number;
+      readonly pebble: boolean;
+    }
+  | {
+      /**
+       * A refugee was lost (T305c): hushed on the road (`hushed`, after its Hushed event) or at the
+       * safe exit by an enemy that got there (`exit`: one already sheltered). `stats.refugeesLost`
+       * + 1. `uid` is the hushed refugee's (0 for `exit`: a sheltered one has no entity).
+       */
+      readonly type: 'RefugeeLost';
+      readonly uid: number;
+      readonly cause: 'hushed' | 'exit';
+    }
+  | {
+      /**
+       * A tower's beam went on or off (T504): on when it locks a target, off when it has none. The
+       * beam's own damage is ProjectileHit per beam tick; render reads `beamActive` and `beamRamp`.
+       */
+      readonly type: 'BeamChanged';
+      readonly towerUid: number;
+      readonly on: boolean;
+    }
+  | {
+      /**
+       * Echo Spike's echo (T507): `hits` enemies within `radiusTiles` of (x, y) took the echo of a
+       * hit on the target there. Tiles.
+       */
+      readonly type: 'EchoBurst';
+      readonly towerUid: number;
+      readonly x: number;
+      readonly y: number;
+      readonly radiusTiles: number;
+      readonly hits: number;
+    }
+  | {
+      /**
+       * Stillness landed (T507; a `stasisArea` ability, after its AbilityUsed): `frozen` units
+       * entered Stasis within `radiusTiles` of (x, y) (a boss's converted chill doesn't count).
+       */
+      readonly type: 'StasisArea';
+      readonly slot: 1 | 2;
+      readonly x: number;
+      readonly y: number;
+      readonly radiusTiles: number;
+      readonly frozen: number;
+    }
+  | {
+      /**
+       * Sundown (T505): wave `wave` started and the darkness began easing toward `dark` (a lighting
+       * key's), from `state.dark`. Audio's dark ambience, the HUD's dark-range readout.
+       */
+      readonly type: 'DarknessShift';
+      readonly wave: number;
+      readonly dark: number;
     }
   | { readonly type: 'MapWon' }
   | { readonly type: 'MapLost' }

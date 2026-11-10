@@ -7,6 +7,9 @@
 // of the weave, dimmer than the rest (the unthreading). She speaks without contractions; her face
 // does the work: brows of thread, the knots' shape and brightness, and a mouth that is a seam in
 // the weave, which opens on her inner light when she talks.
+// Variant `touched` (A2M5 on, Hollow-touched; characters.md § Ves'thara): her left arm and neck
+// (screen right) fray: the threads there go grey and slack, with cold violet in the gaps. Her
+// face, veil and cut thread are the base frame's, so her expressions read as before.
 import { grid, line, plot, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -290,16 +293,184 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   },
 };
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+/** Grey for each lit thread the fray reaches: brighter threads go to the paler grey. */
+const FRAY_GREY: Readonly<Record<string, string>> = {
+  '1': 'R',
+  '2': 'R',
+  '6': 'R',
+  '3': 'S',
+  '7': 'S',
+  '4': 'S',
+  '8': 'S',
+  '9': 'S',
+  b: 'R',
+  c: 'R',
+};
+
+/** How far the fray has spread: 1 from A2M5 (`touched`), 2 in Act III (`touched_deep`). */
+type FrayDepth = 1 | 2;
+
+/** The fray's inner edge over the robe at row `y` (it reaches further in, deeper). */
+function frayEdge(y: number, depth: FrayDepth): number {
+  return (depth === 2 ? 27 : 30) - Math.floor((y - 34) / 4);
+}
+
+/**
+ * Inside the fray: her left side of the neck, the collar beyond the cut, and the left shoulder and
+ * arm under the robe, its inner edge ragged (a dither) so it reads as spreading, not painted on.
+ * Deeper, it takes the whole neck and more of the shoulder.
+ */
+function inFray(x: number, y: number, depth: FrayDepth): boolean {
+  if (y >= 28 && y <= 33) return x >= (depth === 2 ? 21 : y < 30 ? 25 : 23) && x <= 26;
+  if (y < 34) return false;
+  // Within the robe's silhouette only (the veil behind it is untouched).
+  const half = Math.min(21, 8 + Math.round(Math.sqrt(y - 34) * 4));
+  if (x > Math.round(CX + half)) return false;
+  const edge = frayEdge(y, depth);
+  if (x > edge) return true;
+  return x >= edge - 2 && (x + y) % 2 === 0;
+}
+
+/** The slack threads sagging across her arm: [row, from x, to x, sag]. Deeper, there are more. */
+const SLACK: Readonly<Record<FrayDepth, readonly (readonly [number, number, number, number])[]>> = {
+  1: [
+    [37, 30, 38, 2],
+    [39, 29, 42, 3],
+    [42, 29, 44, 3],
+    [45, 28, 45, 2],
+  ],
+  2: [
+    [36, 27, 37, 2],
+    [38, 26, 41, 3],
+    [41, 26, 44, 3],
+    [43, 25, 45, 2],
+    [46, 24, 46, 1],
+  ],
+};
+
+/** The slack threads' pixels: brightest at the middle of each sagging loop, darker at its ends. */
+function slackThreads(depth: FrayDepth): [number, number, 0 | 1 | 2][] {
+  const out: [number, number, 0 | 1 | 2][] = [];
+  for (const [y0, xa, xb, sag] of SLACK[depth]) {
+    for (let x = xa; x <= xb; x++) {
+      const t = (x - xa) / (xb - xa);
+      const y = y0 + Math.round(sag * Math.sin(Math.PI * t)) + Math.round(t * 2);
+      out.push([x, y, t > 0.35 && t < 0.65 ? 2 : t > 0.15 && t < 0.85 ? 1 : 0]);
+    }
+  }
+  return out;
+}
+
+/** The loose ends hanging past the shoulder's edge (`L` the lit end, `l` the slack). */
+const LOOSE_ENDS: readonly (readonly [number, number, readonly string[]])[] = [
+  [42, 38, ['L..', '.L.', '.l.', 'l..']],
+  [45, 43, ['L', 'l', 'l']],
+];
+
+/**
+ * The Hollow's touch (`touched`, `touched_deep`): within the fray the weave comes apart. On her
+ * neck the lit threads go grey and its gaps fill with cold violet; over the shoulder and arm the
+ * weave opens on a dark violet, its threads gone grey and slack, sagging in loops, a glint of
+ * cold violet between them, and loose ends hanging past the robe's edge. The cut thread stays
+ * ruby.
+ */
+function fray(g: CharGrid, holes: [number, number][], depth: FrayDepth): void {
+  const cut = new Set(VESTHARA_CUT_THREAD.map(([x, y]) => `${x},${y}`));
+  for (let y = 28; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      if (!inFray(x, y, depth) || inHead(x, y) || cut.has(`${x},${y}`)) continue;
+      const ch = g[y]?.[x] ?? '.';
+      if (y >= 36 && x > frayEdge(y, depth)) {
+        // The arm: the weave opened on the dark, a few cold violet glints in it.
+        const h = (x * 5 + y * 3) % 13;
+        plot(g, x, y, h === 0 ? 'W' : h === 6 ? 'V' : 'U');
+        continue;
+      }
+      const grey = FRAY_GREY[ch];
+      if (grey !== undefined) plot(g, x, y, grey);
+      else if (ch === '5' || ch === '+' || ch === '*') plot(g, x, y, 'U');
+      else if (ch === HOLE) plot(g, x, y, 'V');
+    }
+  }
+  // The neck's gaps in the fray are filled, not see-through.
+  for (let i = holes.length - 1; i >= 0; i--) {
+    const h = holes[i];
+    if (h !== undefined && inFray(h[0], h[1], depth)) holes.splice(i, 1);
+  }
+  for (const [x, y, lit] of slackThreads(depth)) {
+    // Never brighter than her face: deeper, with her light dimmed, the loops dim too.
+    const top = depth === 2 ? 'S' : 'Q';
+    if (!cut.has(`${x},${y}`)) plot(g, x, y, lit === 2 ? top : lit === 1 ? 'S' : 'R');
+  }
+  for (const [x, y, src] of LOOSE_ENDS)
+    put(
+      g,
+      x,
+      y,
+      src.map((r) => r.replace(/L/g, 'S').replace(/l/g, 'R')),
+    );
+}
+
+/**
+ * The dawn (`dawn`): the fray is gone and the threads it took are re-lit. Where the slack threads
+ * hung, gold threads run through her mended weave (where it broke, it shines), and one gold mote
+ * of light rests at her left shoulder.
+ */
+function relit(g: CharGrid): void {
+  const cut = new Set(VESTHARA_CUT_THREAD.map(([x, y]) => `${x},${y}`));
+  for (const [x, y, lit] of slackThreads(1)) {
+    // Mended, the threads are taut again: the gold runs only where each one broke, mid-loop.
+    if (lit > 0 && !cut.has(`${x},${y}`)) plot(g, x, y, lit === 2 ? 'Z' : 'X');
+  }
+  for (const [x, y, src] of LOOSE_ENDS.slice(0, 1))
+    put(
+      g,
+      x - 1,
+      y - 1,
+      src.slice(0, 2).map((r) => r.replace(/L/g, 'Z').replace(/l/g, 'X')),
+    );
+  // The mote: a small gold light just off her shoulder, a soft glow round a white-gold heart.
+  // prettier-ignore
+  put(g, 39, 27, [
+    '..X..',
+    '.XZX.',
+    'XZYZX',
+    '.XZX.',
+    '..X..',
+  ]);
+}
+
+/** One step dimmer (`touched_deep`, Act III): each light in the face and chest a ramp step down. */
+const DIM_FACE: Readonly<Record<string, string>> = { '4': '3', '3': '2' };
+const DIM_LIGHT: Readonly<Record<string, string>> = { '*': '+', '+': '8', '8': '7' };
+
+function dimInnerLight(g: CharGrid): void {
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const ch = g[y]?.[x] ?? '.';
+      const lightRow = y >= 13 && y <= 27 && x >= 16 && x <= 31;
+      const dimmed = DIM_LIGHT[ch];
+      if (dimmed !== undefined && (lightRow || (y >= 36 && y <= 40 && x >= 21 && x <= 26))) {
+        plot(g, x, y, dimmed);
+      } else if (inHead(x, y) && DIM_FACE[ch] !== undefined) plot(g, x, y, DIM_FACE[ch] ?? ch);
+    }
+  }
+}
+
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   const holes: [number, number][] = [];
   veil(g, holes);
   robes(g);
   neck(g, holes);
   head(g);
+  if (variant === 'touched') fray(g, holes, 1);
+  if (variant === 'touched_deep') fray(g, holes, 2);
+  if (variant === 'dawn') relit(g);
   put(g, 17, EYE_Y - 4, EYES[expression] ?? EYES['neutral'] ?? []);
   const m = MOUTHS[expression] ?? MOUTHS['neutral'];
   if (m !== undefined) put(g, 20, MOUTH_Y - 1, mouth === 'talk' ? m.talk : m.closed);
+  if (variant === 'touched_deep') dimInnerLight(g);
   outlineInPlace(g);
   // The lattice's gaps are real holes: the panel behind her shows through (art-direction §4).
   for (const [x, y] of holes) if (g[y]?.[x] === HOLE) plot(g, x, y, '.');
@@ -309,7 +480,15 @@ function paint({ expression, mouth }: PaintArgs): CharGrid {
 export const portraitVesthara = definePortrait({
   id: 'portrait.vesthara',
   palette: 'aelari',
-  legend: { H: 'blue.1' },
+  // The fray: grey threads (the Hollow's grey) and cold violet in the gaps; the dawn's gold.
+  // prettier-ignore
+  legend: {
+    H: 'blue.1',
+    Q: 'hollow.4', R: 'hollow.2', S: 'hollow.3',
+    U: 'violet.0', V: 'violet.1', W: 'violet.2',
+    X: 'gold.2', Y: 'gold.4', Z: 'gold.3',
+  },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  variants: ['touched', 'touched_deep', 'dawn'],
   paint,
 });

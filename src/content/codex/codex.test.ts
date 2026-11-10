@@ -70,6 +70,9 @@ const ACT2_LISTS = {
   a2_m01: ['codex_mote', 'codex_diggings', 'codex_hushed', 'codex_crew_log'],
   a2_m02: ['codex_glimmer', 'codex_glass_witch', 'codex_lumenglass', 'codex_aelari'],
   a2_m03: ['codex_weft_warden', 'codex_lightwing', 'codex_pebble'],
+  // M5's stubs (T500b); T511 completes A2M4–A2M6's lists.
+  a2_m04: ['codex_second_harvest'],
+  a2_m05: ['codex_preserve'],
 } as const;
 
 /** Entries unlocked by something other than their map's win (act2.md § A2M1: Crew Logs). */

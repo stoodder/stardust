@@ -408,6 +408,24 @@ describe('one failing fixture per rule', () => {
     expect(
       rules(content({ barks: [bark({ when: { not: { seen: 'quill_idle_a1_01' } } })] })),
     ).toEqual([]);
+    // A bank test (C2's `none`) needs a bound, non-negative integers, and a range that can hold.
+    const banked = (when: object): string[] => rules(content({ barks: [bark({ when })] }));
+    expect(banked({ bank: 'stardust', lte: 0 })).toEqual([]);
+    expect(banked({ bank: 'intel', gte: 3, lte: 8 })).toEqual([]);
+    expect(banked({ bank: 'stardust' })).toEqual(['dialogue-cond']);
+    expect(banked({ bank: 'stardust', gte: -1 })).toEqual(['dialogue-cond']);
+    expect(banked({ bank: 'stardust', lte: 0.5 })).toEqual(['dialogue-cond']);
+    expect(banked({ bank: 'stardust', gte: 9, lte: 8 })).toEqual(['dialogue-cond']);
+  });
+
+  it('[dialogue-pause] (T501l): only a cue scene pauses the battle', () => {
+    const line = { kind: 'line', speaker: 'quill', text: 'Hi.' } as const;
+    const pausing = (id: string): Scene => ({ ...defineScene(id, [line]), pause: true });
+    expect(rules(content({ scenes: [pausing('a1_m01_cue_look')] }))).toEqual([]);
+    for (const id of ['a1_m01_w02', 'a1_m01_brief', 'a1_m01_debrief', 'a1_m01_scene_party']) {
+      expect(rules(content({ scenes: [pausing(id)] })), id).toEqual(['dialogue-pause']);
+    }
+    expect(rules(content({ scenes: [pausing('a1_m01_base_chat')] }))).toEqual(['dialogue-pause']);
   });
 
   it('[dialogue-bark]', () => {

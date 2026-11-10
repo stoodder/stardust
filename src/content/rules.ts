@@ -569,3 +569,25 @@ export const FLEEING_LEAD_MAX_SEC = 4;
 /** Retry checkpoints: every 5 waves, from Act II (architecture.md § Checkpoints). */
 export const CHECKPOINT_EVERY_WAVES = 5;
 export const CHECKPOINTS_FROM_ACT: Extract<Act, number> = 2;
+
+// ── Act II, part two (D137; T500a seams, each run by the task named) ──────────────────────────
+
+/**
+ * Splitting chains (enemies.md § 5.4: Fracture → 2 Shards → 2 Motes each): a splitter's child may
+ * split again, at most this many levels deep, and never back into an enemy above it (validate).
+ */
+export const SPLIT_MAX_DEPTH = 2;
+/** `standDown` and the `pivot` (enemies.md § 6.1): each unit fades out over 1 s, then goes (T506). */
+export const STAND_DOWN_FADE_SEC = 1;
+/**
+ * Escort (maps.md § 5.2; T305c): refugees walk in groups of 6, spaced 0.6 tiles apart, at
+ * 0.7 tiles/s. A group's `count` may differ; spacing and pace don't.
+ */
+export const REFUGEE_GROUP_SIZE = 6;
+export const REFUGEE_SPACING_TILES = 0.6;
+export const REFUGEE_SPEED_TILES_PER_SEC = 0.7;
+/**
+ * Sundown (maps.md § 5.1; T505): at darkness d (0–1), a tower outside every light source has its
+ * range × (1 − DARK_RANGE_PENALTY × d); −15% at full dark.
+ */
+export const DARK_RANGE_PENALTY = 0.15;

@@ -20,6 +20,9 @@ describe('the memo content', () => {
       'memo_a2_02_kfa',
       'memo_a2_02',
       'memo_a2_03',
+      'memo_a2_04',
+      'memo_a2_05',
+      'memo_a2_06',
     ]);
     expect(MEMO_LIST.map((m) => m.afterMap)).toEqual([
       null,
@@ -32,6 +35,9 @@ describe('the memo content', () => {
       'a2_m02',
       'a2_m02',
       'a2_m03',
+      'a2_m04',
+      'a2_m04',
+      'a2_m05',
     ]);
     for (const id of MEMO_IDS) expect(id).toMatch(MEMO_ID);
   });
@@ -71,6 +77,16 @@ describe('the memo content', () => {
       expect(m.subject).toContain('!');
       expect(m.stamp).toBeUndefined();
     }
+  });
+
+  it("lands the Q3 Bonus memo with A2M4's results, giftless (the bonus is a story transaction)", () => {
+    expect(MEMOS.memo_a2_04?.afterMap).toBe('a2_m04');
+    expect(MEMOS.memo_a2_04?.gift).toBeUndefined();
+    expect(MEMO_IDS.indexOf('memo_a2_04')).toBeLessThan(MEMO_IDS.indexOf('memo_a2_05'));
+    // Sterling's one real-looking favour (act2.md § A2M5), word for word.
+    expect(MEMOS.memo_a2_06?.body).toContain(
+      "Goldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. Stay cozy!",
+    );
   });
 
   it("files A2M2's KFA form as its own item, just before Sterling's memo asking to disregard it", () => {

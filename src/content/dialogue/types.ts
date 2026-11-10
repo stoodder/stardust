@@ -4,7 +4,7 @@
 // (§ 5.4), barks (§ 5.5), special line kinds (§ 5.6), and choices (§ 5.7). Content only: the
 // runner, conditions, and token resolution are in src/story/.
 import type { CampaignMapId } from '../campaign.ts';
-import type { Act, EnemyId, FlagId, TowerId } from '../types.ts';
+import type { Act, AllyKind, EnemyId, FlagId, TowerId } from '../types.ts';
 import type { BooleanFlagId, FlagSet, FlagValueOf } from './flags.ts';
 import type { CallsignId } from './profile.ts';
 
@@ -90,6 +90,9 @@ export const BARK_ID = /^[a-z]+_[a-z0-9_]+_a(1|2|3|fin)_\d\d$/;
 
 // ─── Conditions (story-runtime.md § Conditions) ───────────────────────────────────────────────
 
+/** The meta currencies a `bank` condition reads (design/progression.md § 1). */
+export type BankCurrency = 'stardust' | 'intel';
+
 /** The acts story conditions can name. */
 export type StoryAct = Extract<Act, 1 | 2 | 3 | 'finale'>;
 
@@ -110,6 +113,12 @@ export type Condition =
   | { readonly mapAtLeast: CampaignMapId }
   | { readonly mapIs: CampaignMapId }
   | { readonly stat: 'pestsProcessed'; readonly gte: number }
+  /**
+   * The save's bank of that currency is within the bounds (`gte` and/or `lte`, inclusive): C2's
+   * "No refunds. I did say." when A2M4's debrief finds the Stardust bank at 0 (`stardust_choice =
+   * none`). The context's `bank`; false without one.
+   */
+  | { readonly bank: BankCurrency; readonly gte?: number; readonly lte?: number }
   /** A scene id (or a once-per-campaign bark id) is in the save's `story.seen`. */
   | { readonly seen: string }
   | { readonly outcome: 'won' | 'lost' }
@@ -278,7 +287,6 @@ export type BarkTrigger =
         | 'hold_fire_used'
         | 'skitterkin_killed_ahead'
         | 'idle'
-        | 'ally_hushed'
         | 'skitterkin_hushed'
         /** A build phase from W2 on that opens with BANK_NUDGE_CREDITS banked (D059). */
         | 'bank_nudge'
@@ -296,6 +304,11 @@ export type BarkTrigger =
   | { readonly on: 'tower_sold'; readonly tower?: TowerId; readonly tagged?: boolean }
   | { readonly on: 'enemy_killed' | 'enemy_leaked' | 'new_enemy'; readonly enemy: EnemyId }
   | { readonly on: 'boss_phase'; readonly phase?: number }
+  /**
+   * A route ally was hushed (core-loop.md § 6.3: a refugee or singer; A3M6's bearers too). A bark
+   * naming `ally` plays only for that kind (the sim's `Hushed` event names the victim's kind).
+   */
+  | { readonly on: 'ally_hushed'; readonly ally?: HushableAllyKind }
   /** A neutral unit (Gerald) was hit by the player's fire (A1M3). */
   | { readonly on: 'neutral_hit' }
   /** The battle starts with a newly issued tower in the loadout (meta/hints.ts; D061). */
@@ -303,6 +316,9 @@ export type BarkTrigger =
   | { readonly on: 'menu'; readonly screen: MenuScreen };
 
 export type BarkTriggerId = BarkTrigger['on'];
+
+/** The ally kinds a Hollow unit can hush (the escort's walkers and the finale's singers). */
+export type HushableAllyKind = Extract<AllyKind, 'refugee' | 'bearer' | 'singer'>;
 
 /** One bark: a single line on a trigger. Pools draw without repeats until exhausted. */
 export type Bark = {

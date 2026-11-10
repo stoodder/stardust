@@ -3,7 +3,13 @@
 // Immutable inputs (content, the map, the config) live in the TickContext instead (tick.ts).
 import type { CompiledMapDef, CompiledScriptTrigger } from '../content/compiled.ts';
 import { SELL_REFUND_PCT } from '../content/rules.ts';
-import type { EnemyFaction, IdSpace, WaveTag } from '../content/types.ts';
+import type {
+  EnemyFaction,
+  IdSpace,
+  MeterLabel,
+  ObjectiveKind,
+  WaveTag,
+} from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
 import type { Command, CommandLogEntry } from './commands.ts';
 import {
@@ -120,6 +126,21 @@ export interface SimStats {
    */
   leaksByFaction: FactionCounts;
   leaksByEnemy: Record<string, number>;
+  /**
+   * Non-exempt leaks by the leaking unit's wave (index = wave − 1; the `leaks` condition's
+   * `waves`: Before the Dark). Counted in movement with `leaksByFaction` (T500a).
+   */
+  leaksByWave: number[];
+  /** The wave during which a boss's `pivot` ran; 0 until it does (Kneel; set by T506). */
+  pivotWave: number;
+  /**
+   * Escort (T305c): refugees spawned (`spawnAllies`; Pebble not counted), refugees who reached
+   * the safe exit, and refugees lost (hushed on the road, or at the exit by an enemy that got
+   * there). The Evacuated meter is `evacuated` of the map's `escort.total`.
+   */
+  refugeesSpawned: number;
+  evacuated: number;
+  refugeesLost: number;
 }
 
 /** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
@@ -219,6 +240,17 @@ export interface SimState<K extends IdSpace = IdSpace> {
   maxIntegrity: number;
   /** The last wave started (1-based); 0 during the setup phase. */
   wave: number;
+  /**
+   * The map's objective and meter label now: the map's own, until a `setObjective` action
+   * changes them (the A2M5 pivot: Defend → Escort, the meter relabeled Evacuated; T305c).
+   */
+  objective: ObjectiveKind;
+  meterLabel: MeterLabel;
+  /**
+   * Sundown's darkness now, 0–1 (maps.md § 5.1; D137: sim state, lit on screen = lit in the
+   * sim): eased in ticks toward each lighting key's `dark` (T505). 0 on a map without one.
+   */
+  dark: number;
   schedule: WaveSchedule;
   /** Per map event (CompiledMapDef.events, same order): it has fired. */
   scriptFired: boolean[];
@@ -335,6 +367,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     integrity: map.coreIntegrity,
     maxIntegrity: map.coreIntegrity,
     wave: 0,
+    objective: map.objective,
+    meterLabel: map.meterLabel ?? defaultMeterLabel(map.objective),
+    dark: 0,
     schedule: {
       phase: 'setup',
       waveTicks: 0,
@@ -379,6 +414,11 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       heavyLeaks: 0,
       leaksByFaction: factionCounts(),
       leaksByEnemy: {},
+      leaksByWave: map.waves.map(() => 0),
+      pivotWave: 0,
+      refugeesSpawned: 0,
+      evacuated: 0,
+      refugeesLost: 0,
     },
     abilityCooldownTicks: [0, 0],
     abilityCooldownWaves: [0, 0],
@@ -405,6 +445,15 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     commandLog: [],
     events: [],
   };
+}
+
+/**
+ * The meter's label when a map doesn't set one (core-loop.md § 2.9): Core integrity on Defend and
+ * Protect, Evacuated on Escort and Holdout, Voices on the Choir.
+ */
+export function defaultMeterLabel(objective: ObjectiveKind): MeterLabel {
+  if (objective === 'escort' || objective === 'holdout') return 'evacuated';
+  return objective === 'choir' ? 'voices' : 'integrity';
 }
 
 /** A zero count for every wave tag. */

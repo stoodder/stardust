@@ -78,6 +78,7 @@ export function compileTower<Id extends string>(
     links: [], // compileContent fills it from the link registry (compileLinks.ts)
     sprites: { base: def.sprites.base, head: def.sprites.head ?? null, icon: def.sprites.icon },
     lightRadiusTiles: def.lightRadiusTiles ?? null,
+    lightRadiusSq: (def.lightRadiusTiles ?? 0) * (def.lightRadiusTiles ?? 0),
   };
 }
 
@@ -112,6 +113,14 @@ function compileTier(
     })),
     detect: tier.detect === undefined ? null : compileDetect(ctx, tier.detect, `${where}.detect`),
     economy: tier.economy === undefined ? null : compileEconomy(tier.economy),
+    markArea:
+      tier.markArea === undefined
+        ? null
+        : {
+            radiusTiles: tier.markArea.radiusTiles,
+            radiusSq: tier.markArea.radiusTiles * tier.markArea.radiusTiles,
+            pct: tier.markArea.pct,
+          },
   };
 }
 
@@ -165,7 +174,18 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
   };
   switch (a.kind) {
     case 'hitscan':
-      return { ...common, kind: a.kind };
+      return {
+        ...common,
+        kind: a.kind,
+        echo:
+          a.echo === undefined
+            ? null
+            : {
+                pct: a.echo.pct,
+                radiusTiles: a.echo.radiusTiles,
+                radiusSq: a.echo.radiusTiles * a.echo.radiusTiles,
+              },
+      };
     case 'pulse':
       return {
         ...common,
@@ -207,7 +227,15 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
       };
     case 'beam': {
       const beamTickTicks = ticks(ctx, a.tickSec, `${where}.tickSec`);
-      return { ...common, kind: a.kind, beamTickTicks, beamTickSec: beamTickTicks / TICK_HZ };
+      return {
+        ...common,
+        kind: a.kind,
+        beamTickTicks,
+        beamTickSec: beamTickTicks / TICK_HZ,
+        rampPctPerTick: perSecToPerTick(a.rampPctPerSec ?? 0),
+        rampCap: a.rampCap ?? 1,
+        beams: a.beams ?? 1,
+      };
     }
     case 'chain':
       return {
@@ -278,8 +306,14 @@ function compileBomblets(ctx: Ctx, b: BombletsDef, where: string): CompiledBombl
 function compileEffect(ctx: Ctx, e: EffectDef, where: string): CompiledEffect {
   switch (e.status) {
     case 'chilled':
-    case 'marked':
       return { status: e.status, pct: e.pct, durationTicks: ticks(ctx, e.durationSec, where) };
+    case 'marked':
+      return {
+        status: e.status,
+        pct: e.pct,
+        durationTicks: ticks(ctx, e.durationSec, where),
+        noEvade: e.noEvade === true,
+      };
     case 'soaked':
     case 'pinned':
     case 'stasis':

@@ -12,6 +12,11 @@
 // Mote's redaction, its own Act I build-site suggestion beside Rig 3. Ves'thara's margin notes
 // join from A2M6 (M5).
 //
+// A2M4–A2M6 (M5): T500b registers the two places whose originals the act file opens with (Second
+// Harvest, the Preserve), each a first draft from that quote; T511 writes their final text and
+// the rest of § A2M4–A2M6's *Codex* lines (the Intake Manifest, Ves'thara, the Long Night, the new
+// enemies and towers, the Tidybot and Stardust annotations, Ves'thara's margin notes).
+//
 // An entry with a subject unlocks when the save meets it; one without unlocks once its map is won
 // (`mapAtLeast`), except the crew log, which the Crew Logs objective unlocks (`objectiveDone`).
 import type { CodexEntryDef, CodexLaterVersions } from './types.ts';
@@ -193,6 +198,37 @@ export const ACT2_CODEX: readonly CodexEntryDef[] = [
     photo: 'Withheld',
     versions: {
       original: { text: '[QUILL: Entry withheld.]', when: { mapAtLeast: 'a2_m03' } },
+    },
+  },
+  // ── A2M4 · Second Harvest (T500b stub; T511 writes the text) ─────────────────────────────
+  {
+    id: 'codex_second_harvest',
+    title: 'Second Harvest',
+    kind: 'place',
+    versions: {
+      original: {
+        text:
+          'A sustainability success story! Reclamation Facility 2 turns what the perimeter ' +
+          'collects into premium stardust, with nothing on Tumble IV going to waste. Tidybots ' +
+          'unload at Intake B around the clock. The vats glow. The smell is burnt sugar, and ' +
+          'staff report that you get used to it.',
+        when: { mapAtLeast: 'a2_m04' },
+      },
+    },
+  },
+  // ── A2M5 · The Long Walk (T500b stub; T511 writes the text) ──────────────────────────────
+  {
+    id: 'codex_preserve',
+    title: 'The Preserve',
+    kind: 'place',
+    versions: {
+      original: {
+        text:
+          'Humane Relocation Preserve: a forever home! A fenced basin past the Preserve gate, ' +
+          'reached by a scenic road between relocation fencing, where our little neighbors can ' +
+          "live safely out of everyone's way. Plenty of room. Plenty!",
+        when: { mapAtLeast: 'a2_m05' },
+      },
     },
   },
 ];

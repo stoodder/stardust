@@ -10,7 +10,7 @@ import {
   type FlagSet,
 } from '../content/dialogue/flags.ts';
 import { mapAct, mapIndex } from '../content/dialogue/rules.ts';
-import type { Condition, StoryAct } from '../content/dialogue/types.ts';
+import type { BankCurrency, Condition, StoryAct } from '../content/dialogue/types.ts';
 import { evaluateFlagRule, flagValue, type FlagRuleStats } from './flags.ts';
 
 /** The run that just ended, for `outcome` and `thisRun` (a debrief, results, run-end barks). */
@@ -37,6 +37,11 @@ export interface StoryContext {
    * `objectiveDone`); none when left out.
    */
   readonly objectives?: Readonly<Partial<Record<CampaignMapId, readonly string[]>>>;
+  /**
+   * The save's banks (`currencies`), for `bank` (C2's `none`: A2M4's debrief with nothing to
+   * trade); every `bank` test is false when left out.
+   */
+  readonly bank?: Readonly<Record<BankCurrency, number>>;
 }
 
 /** The run context for a run of `map` that ended `outcome` with `stats` (every rule of the map). */
@@ -61,6 +66,8 @@ export function runContextOf(
  * - `outcome` / `thisRun`: false without a run; `thisRun` is false too when the ended map has no
  *   rule for that flag (its value is unknown, so neither `eq` holds).
  * - `objectiveDone`: the save holds that map's objective (a win completed it, on any run).
+ * - `bank`: the context's bank of that currency is within `gte`/`lte` (inclusive); false without
+ *   a bank.
  */
 export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('all' in cond) return cond.all.every((c) => evaluateCondition(c, ctx));
@@ -75,6 +82,11 @@ export function evaluateCondition(cond: Condition, ctx: StoryContext): boolean {
   if ('stat' in cond) return ctx.pestsProcessed >= cond.gte;
   if ('seen' in cond) return ctx.seen.includes(cond.seen);
   if ('outcome' in cond) return ctx.run !== null && ctx.run.outcome === cond.outcome;
+  if ('bank' in cond) {
+    const v = ctx.bank?.[cond.bank];
+    if (v === undefined) return false;
+    return (cond.gte === undefined || v >= cond.gte) && (cond.lte === undefined || v <= cond.lte);
+  }
   if ('objectiveDone' in cond) {
     const done = ctx.objectives?.[cond.objectiveDone.map] ?? [];
     return done.includes(cond.objectiveDone.objective);

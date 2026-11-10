@@ -203,6 +203,12 @@ export function abilityDescription(def: CompiledAbilityDef, stats?: AbilityStats
     const sec = statNum(e.durationTicks / TICK_HZ);
     return `Reveals cloaked enemies in a ${radius}-tile radius for ${sec} s. Recharges ${cd} s.`;
   }
+  // Stillness (T500a seam; T507 runs it, and T531 may reword the line).
+  if (e.kind === 'stasisArea') {
+    const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
+    const sec = statNum(e.durationTicks / TICK_HZ);
+    return `Freezes enemies in a ${radius}-tile radius for ${sec} s. Recharges ${cd} s.`;
+  }
   const delay = statNum(e.delayTicks / TICK_HZ);
   const radius = statNum(stats?.radiusTiles ?? e.radiusTiles);
   return `${statNum(e.damage)} damage in a ${radius}-tile radius after ${delay} s. Recharges ${cd} s.`;

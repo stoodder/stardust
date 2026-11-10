@@ -9,6 +9,11 @@
 // "Please disregard it" is the newest item and opens first, with the form right under it, unread.
 // It speaks the KFA's dialect (races.md: numbered regulations, passive voice, "the undersigned")
 // and calls the incident what it is.
+//
+// A2M4–A2M6's memos (`memo_a2_04`–`_06`) are registered by T500b with the act file's subjects and
+// small print and first-draft bodies; T511 writes their final text. `memo_a2_04` (the Q3 Bonus) is
+// due after A2M4 like `memo_a2_05`, so run end delivers it as Results opens; it carries no gift:
+// the +400 is the `grantQ3Bonus` story transaction (meta/storyTransactions.ts), never paid twice.
 import type { MemoDef } from './types.ts';
 
 const STERLING = 'Director Joy Sterling, Frontier Operations';
@@ -86,5 +91,45 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
     smallPrint:
       'Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person.',
     afterMap: 'a2_m03',
+  },
+  // ── M5 (T500b stubs; T511 writes the bodies) ────────────────────────────────────────────
+  {
+    id: 'memo_a2_04',
+    from: STERLING,
+    to: TO_447,
+    subject: 'Your Q3 Performance Bonus!',
+    body:
+      'Congratulations, #ED-447! Second Harvest beat every throughput target this quarter, and ' +
+      'you helped! Your Q3 Performance Bonus of 400 Stardust is already in your account.\n\n' +
+      'Treat yourself! A rewarded technician is a productive technician.',
+    signOff: SIGN_OFF,
+    smallPrint: 'Bonus paid in Everglow premium mineral. Not redeemable for cash or explanations.',
+    afterMap: 'a2_m04',
+  },
+  {
+    id: 'memo_a2_05',
+    from: STERLING,
+    to: TO_447,
+    subject: 'Humane Relocation Pilot: Next Steps!',
+    body:
+      'Exciting times, team! The Humane Relocation Pilot is go. Our little neighbors will walk ' +
+      'the Preserve Road to their forever home, escorted by Perimeter staff.\n\n' +
+      'Questions? The usual channels are open, as always!',
+    signOff: SIGN_OFF,
+    smallPrint: 'Preserve capacity planned per Protocol BP-2359.',
+    afterMap: 'a2_m04',
+  },
+  {
+    id: 'memo_a2_06',
+    from: STERLING,
+    to: TO_447,
+    subject: 'Long Night Readiness: Stay Positive!',
+    body:
+      'The Long Night is coming, team, and Everglow is ready! Positivity is our first line of ' +
+      "defense.\n\nGoldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. " +
+      'Stay cozy!',
+    signOff: SIGN_OFF,
+    smallPrint: 'Shelter costs deducted from colonist wages in 48 easy installments.',
+    afterMap: 'a2_m05',
   },
 ];

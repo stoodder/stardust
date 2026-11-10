@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { TOWERS } from '../content/towers/index.ts';
 import { CAMPAIGN } from '../content/campaign.ts';
-import { DEV_SAVES } from './__fixtures__/devSaves.ts';
+import { DEV_SAVES, afterA2M4Results, afterA2M5Results } from './__fixtures__/devSaves.ts';
 import { exportCode, importCode } from './codec.ts';
 import { buy } from './purchase.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from './saveData.ts';
 import { validateSave } from './validate.ts';
+
+/** The reference into A2M4 with a bank as A2M4's first clear might leave it (500 Stardust). */
+function intoA2M4Results(): ReturnType<typeof createNewSave> {
+  const save = DEV_SAVES.after_a2m3_ref.build();
+  save.currencies.stardust = 500;
+  return save;
+}
 
 describe('dev saves (the ?save= fixtures)', () => {
   it.each(Object.entries(DEV_SAVES))(
@@ -112,6 +119,72 @@ describe('dev saves (the ?save= fixtures)', () => {
       expect(m3.story.flags.held_fire_second_look).toBe(false);
       expect(m3.story.bricksTagIndex).toBe(4);
     }
+  });
+
+  it('after_a2m3_ref is the reference profile into A2M4: Zapcoil specs, Zapcoil and Rivet tune 2', () => {
+    const m3 = DEV_SAVES.after_a2m3.build();
+    const ref = DEV_SAVES.after_a2m3_ref.build();
+    expect(ref.campaign.maps).toEqual(m3.campaign.maps);
+    expect(ref.unlocks.specs).toEqual([...m3.unlocks.specs, 'zapcoil']);
+    expect(ref.upgrades).toEqual({ ...m3.upgrades, tune_zapcoil: 2, tune_rivet: 2 });
+    // Bought through the shop: 3 Intel for the Vrell specs, 80 + 80 Stardust for the ranks.
+    expect(ref.currencies).toEqual({
+      stardust: m3.currencies.stardust - 160,
+      intel: m3.currencies.intel - 3,
+    });
+  });
+
+  it('the A2M4–A2M6 saves follow the reference, and skip each map until it is registered', () => {
+    const campaign: readonly string[] = CAMPAIGN;
+    const m3 = DEV_SAVES.after_a2m3.build();
+    const chain = [
+      ['after_a2m4_returned', 'a2_m04'],
+      ['after_a2m4_sold', 'a2_m04'],
+      ['after_a2m5', 'a2_m05'],
+      ['after_a2m6', 'a2_m06'],
+    ] as const;
+    for (const [id, map] of chain) {
+      const save = DEV_SAVES[id].build();
+      const maps: Partial<Record<string, unknown>> = save.campaign.maps;
+      expect(maps[map] !== undefined, `${id}: ${map}`).toBe(campaign.includes(map));
+      for (const m of Object.keys(save.campaign.maps)) expect(CAMPAIGN).toContain(m);
+      // A skipped map takes its purchases with it, so with none of them built each is after_a2m3.
+      if (!campaign.includes('a2_m04')) expect(save, id).toEqual(m3);
+    }
+    if (!campaign.includes('a2_m04')) return;
+    // A2M4's Results: the Q3 Bonus paid, then C2 for the whole bank.
+    const returned = DEV_SAVES.after_a2m4_returned.build();
+    const sold = DEV_SAVES.after_a2m4_sold.build();
+    for (const save of [returned, sold]) {
+      expect(save.story.granted).toContain('q3_bonus');
+      expect(save.currencies.stardust).toBe(0);
+      expect(save.story.memosDelivered).toEqual(
+        expect.arrayContaining(['memo_a2_04', 'memo_a2_05']),
+      );
+    }
+    expect(returned.story.flags.stardust_choice).toBe('returned');
+    expect(sold.story.flags.stardust_choice).toBe('sold');
+    expect(sold.currencies.intel).toBeGreaterThanOrEqual(returned.currencies.intel + 3);
+    expect(sold.currencies.intel).toBeLessThanOrEqual(returned.currencies.intel + 8);
+  });
+
+  it("applies A2M4's Results as the story transactions document them, before A2M4 is built", () => {
+    const returned = afterA2M4Results(intoA2M4Results(), 'returned');
+    expect(returned.currencies.stardust).toBe(0);
+    expect(returned.currencies.intel).toBe(intoA2M4Results().currencies.intel);
+    expect(returned.story.flags.stardust_choice).toBe('returned');
+    expect(returned.story.granted).toContain('q3_bonus');
+    expect(validateSave(returned).ok).toBe(true);
+    // Sell: 900 banked (500 + the 400 bonus) is a windfall of 6 Intel.
+    const sold = afterA2M4Results(intoA2M4Results(), 'sold');
+    expect(sold.currencies).toEqual({ stardust: 0, intel: intoA2M4Results().currencies.intel + 6 });
+    expect(sold.story.flags.stardust_choice).toBe('sold');
+    expect(validateSave(sold).ok).toBe(true);
+    // A2M5's gift waits for the Prism Spire to be registered.
+    const gifted = afterA2M5Results(DEV_SAVES.after_a2m3_ref.build());
+    const towers: readonly string[] = LIVE_KNOWN_IDS.towers;
+    expect(gifted.story.granted.includes('gift_prism')).toBe(towers.includes('prism'));
+    expect(validateSave(gifted).ok).toBe(true);
   });
 
   it('all_unlocked owns every registered tower, built spec, and ability, and wins every map', () => {

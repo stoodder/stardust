@@ -132,6 +132,17 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   CheckpointReached: true,
   ClickableChanged: false,
   Interacted: false,
+  // M5's (T500a seams): their sounds arrive with T550.
+  PhaseShift: false,
+  ShieldReformed: false,
+  StoodDown: false,
+  ObjectiveChanged: false,
+  RefugeeEvacuated: false,
+  RefugeeLost: false,
+  BeamChanged: false,
+  EchoBurst: false,
+  StasisArea: false,
+  DarknessShift: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -424,6 +435,16 @@ export function createEventSounds(
         case 'AssetLost':
         case 'ClickableChanged':
         case 'Interacted':
+        case 'PhaseShift':
+        case 'ShieldReformed':
+        case 'StoodDown':
+        case 'ObjectiveChanged':
+        case 'RefugeeEvacuated':
+        case 'RefugeeLost':
+        case 'BeamChanged':
+        case 'EchoBurst':
+        case 'StasisArea':
+        case 'DarknessShift':
           return;
         default:
           assertNever(e);

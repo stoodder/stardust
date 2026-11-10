@@ -50,6 +50,11 @@ const deniseSold: Bark = {
 
 describe('triggerMatches', () => {
   it('matches the id and every parameter the bark names', () => {
+    // `ally_hushed` may name the hushed ally's kind (T500b): A3M6's bearers, the finale's singers.
+    const refugee = { on: 'ally_hushed', ally: 'refugee' } as const;
+    expect(triggerMatches(refugee, { on: 'ally_hushed', ally: 'refugee' })).toBe(true);
+    expect(triggerMatches(refugee, { on: 'ally_hushed', ally: 'singer' })).toBe(false);
+    expect(triggerMatches({ on: 'ally_hushed' }, { on: 'ally_hushed', ally: 'bearer' })).toBe(true);
     expect(triggerMatches(killed.trigger, { on: 'enemy_killed', enemy: 'hauler' })).toBe(true);
     expect(triggerMatches(killed.trigger, { on: 'enemy_killed', enemy: 'chonk' })).toBe(false);
     expect(triggerMatches(genericSold.trigger, { on: 'tower_sold', tagged: true })).toBe(true);

@@ -124,6 +124,24 @@ export type {
 export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './saveData.ts';
 export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';
+export type {
+  C2Choice,
+  RunEndTransactionDef,
+  RunEndTransactions,
+  StoryTransaction,
+  TransactionResult,
+} from './storyTransactions.ts';
+export {
+  Q3_BONUS_GRANT,
+  RUN_END_TRANSACTIONS,
+  STORY_TRANSACTION_RULES,
+  c2Windfall,
+  giftGrantId,
+  grantGift,
+  grantQ3Bonus,
+  resolveC2,
+  runEndTransactions,
+} from './storyTransactions.ts';
 export {
   baseStoryContext,
   deliverMemos,

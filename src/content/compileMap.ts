@@ -7,6 +7,8 @@
 import type {
   CompiledAllyPost,
   CompiledAsset,
+  CompiledEscort,
+  CompiledLight,
   CompiledRoute,
   CompiledMapDef,
   CompiledScriptAction,
@@ -17,7 +19,14 @@ import type {
 } from './compiled.ts';
 import { compileBuilds } from './compileBuilds.ts';
 import { checkId, entriesOf, periodTicks, ticks, type Ctx, type Refs } from './compileHelpers.ts';
-import { DEFAULT_CORE_INTEGRITY, DEFAULT_COUNTDOWN_SEC } from './rules.ts';
+import {
+  DEFAULT_CORE_INTEGRITY,
+  DEFAULT_COUNTDOWN_SEC,
+  REFUGEE_GROUP_SIZE,
+  REFUGEE_SPACING_TILES,
+  REFUGEE_SPEED_TILES_PER_SEC,
+} from './rules.ts';
+import { perSecToPerTick } from '../shared/time.ts';
 import type {
   Act,
   ConditionDef,
@@ -111,6 +120,8 @@ export function compileMap<K extends IdSpace>(
 
   const allies = compileAllies(ctx, def, where);
   const asset = compileAsset(ctx, def, routes, where);
+  const lights = compileLights(ctx, def, where);
+  const escort = compileEscort(ctx, def, routes, where);
   const builds = compileBuilds(ctx, refs, def, where);
   if (ctx.errors.length > errorsBefore) return null;
   return {
@@ -150,7 +161,9 @@ export function compileMap<K extends IdSpace>(
       def.revisitOf === undefined || revisitSize === null
         ? null
         : { cols: revisitSize.cols, rows: revisitSize.rows },
-    lighting: def.lighting ?? [],
+    lighting: (def.lighting ?? []).map((k) => ({ wave: k.wave, env: k.env, dark: k.dark ?? 0 })),
+    lights,
+    escort,
     dressing: def.dressing ?? [],
     asset,
     clickables: { ...def.clickables },
@@ -180,6 +193,64 @@ function compileAsset(
     tile: [tile[0], tile[1]],
     routes: [...a.routes],
   };
+}
+
+/** Lamps (MapDef.lights; T505): each marker resolved to its tile centre. */
+function compileLights(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledLight[] {
+  const out: CompiledLight[] = [];
+  for (const [i, l] of (def.lights ?? []).entries()) {
+    const tile = def.markers?.[l.marker];
+    if (tile === undefined) {
+      ctx.errors.push(`${where}.lights[${i}].marker: unknown marker '${l.marker}'`);
+      continue;
+    }
+    out.push({
+      marker: l.marker,
+      x: tile[0] + 0.5,
+      y: tile[1] + 0.5,
+      radiusTiles: l.radiusTiles,
+      radiusSq: l.radiusTiles * l.radiusTiles,
+    });
+  }
+  return out;
+}
+
+/**
+ * Escort data (MapDef.safeExit and refugees; T305c): the exit's marker resolved, each group's
+ * route resolved (validateMap checks it's a path that ends on the exit), the rule numbers filled in.
+ */
+function compileEscort(
+  ctx: Ctx,
+  def: MapDef<IdSpace>,
+  routes: ReadonlyMap<string, CompiledRoute>,
+  where: string,
+): CompiledEscort | null {
+  if (def.safeExit === undefined || def.refugees === undefined) return null; // validateMap pairs them
+  const tile = def.markers?.[def.safeExit];
+  if (tile === undefined) {
+    ctx.errors.push(`${where}.safeExit: unknown marker '${def.safeExit}'`);
+    return null;
+  }
+  const groups: CompiledEscort['groups'][number][] = [];
+  let total = 0;
+  for (const [id, g] of Object.entries(def.refugees)) {
+    const route = routes.get(g.route);
+    if (route === undefined) {
+      ctx.errors.push(`${where}.refugees.${id}.route: unknown route '${g.route}'`);
+      continue;
+    }
+    const count = g.count ?? REFUGEE_GROUP_SIZE;
+    total += count;
+    groups.push({
+      id,
+      route,
+      count,
+      withPebble: g.withPebble === true,
+      spacingTiles: REFUGEE_SPACING_TILES,
+      speedTilesPerTick: perSecToPerTick(REFUGEE_SPEED_TILES_PER_SEC),
+    });
+  }
+  return { safeExit: def.safeExit, exitTile: [tile[0], tile[1]], groups, total };
 }
 
 /** Ally posts: the marker resolved to its tile (validateMap checks it's decor), rates in ticks. */

@@ -54,6 +54,17 @@ const A2M2: ProfileDef = {
   shop: { ...A2M1.shop, seed_money: 1, tune_zapcoil: 1 },
 };
 const A2M3: ProfileDef = { ...A2M2, shop: { ...A2M2.shop, tune_sprinkler: 2 } };
+/** Zapcoil specs (Overload, 3 Intel: 7 in all) and the Zapcoil and Rivet tune 2 before A2M4. */
+const A2M4: ProfileDef = {
+  ...A2M3,
+  specs: [...A2M3.specs, 'zapcoil'],
+  shop: { ...A2M3.shop, tune_zapcoil: 2, tune_rivet: 2 },
+};
+/**
+ * Nothing new before A2M5: the reference takes C2's Return, so the bank (A2M4's payout and the
+ * Q3 Bonus) went to the Skitterkin (REFERENCE_ECONOMY.bankResetAfter).
+ */
+const A2M5: ProfileDef = A2M4;
 
 /**
  * The reference profile before each campaign map (story/campaign.md § 4.9: Standard, first-clear
@@ -69,4 +80,6 @@ export const REFERENCE_PROFILES = {
   a2_m01: A2M1,
   a2_m02: A2M2,
   a2_m03: A2M3,
+  a2_m04: A2M4,
+  a2_m05: A2M5,
 } as const satisfies Partial<Record<CampaignMapId, ProfileDef>>;

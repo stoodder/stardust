@@ -78,6 +78,9 @@ function partner<K extends IdSpace>(
     soakedTicks: 0,
     detectRadiusTiles: 0,
     killCredits: 0,
+    vsShieldPct: 0,
+    rampPct: 0,
+    markPct: 0,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -97,12 +100,30 @@ function partner<K extends IdSpace>(
     if (Number.isInteger(def.killCredits) && def.killCredits > 0) out.killCredits = def.killCredits;
     else ctx.errors.push(`${where}.killCredits: needs a whole number > 0`);
   }
+  for (const f of ['rampPct', 'markPct'] as const) {
+    const v = def[f];
+    if (v === undefined) continue;
+    if (Number.isFinite(v) && v > 0) out[f] = v;
+    else ctx.errors.push(`${where}.${f}: needs a fraction > 0`);
+  }
   for (const [i, bonus] of def.bonuses.entries()) {
     const at = `${where}.bonuses[${i}]`;
     const flat = bonus.flat ?? 0;
     const pct = bonus.pct ?? 0;
     if (!Number.isFinite(flat) || !Number.isFinite(pct) || (flat === 0 && pct === 0)) {
       ctx.errors.push(`${at}: needs a finite, non-zero flat or pct`);
+      continue;
+    }
+    if (bonus.vsShielded === true) {
+      if (bonus.stat !== 'damage' || flat !== 0 || bonus.vsStatus !== undefined) {
+        ctx.errors.push(`${at}: a vsShielded bonus is a damage pct alone (no vsStatus)`);
+        continue;
+      }
+      if (out.vsShieldPct !== 0) {
+        ctx.errors.push(`${at}: a partner takes one vsShielded bonus`);
+        continue;
+      }
+      out.vsShieldPct = pct;
       continue;
     }
     if (bonus.vsStatus !== undefined) {
