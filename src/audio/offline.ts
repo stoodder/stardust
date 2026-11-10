@@ -10,19 +10,14 @@ import { CUES, THEMES, type CueId, type ThemeId } from './music/index.ts';
 import { compileSong } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
 import { BLIP_SFX } from './sfx/blips.ts';
-import { SFX, type SfxId } from './sfx/index.ts';
+import { isSfxId, SFX, type SfxId } from './sfx/index.ts';
 import { PUMP_MS } from './engine.ts';
 import { HOLLOW_DUCK } from './eventTablesAct2.ts';
-import {
-  DEFAULT_VOLUMES,
-  RADIO_DUCK,
-  SPEECH_SFX_DUCK,
-  Synth,
-  type SynthOptions,
-} from './synth.ts';
+import { DEFAULT_VOLUMES, RADIO_DUCK, SPEECH_SFX_DUCK, Synth, type SynthOptions } from './synth.ts';
 
 const RATE = 44_100;
-const BLIP_IDS = Object.keys(BLIP_SFX) as (keyof typeof BLIP_SFX)[];
+/** Every speaker's blip. */
+const BLIP_IDS: readonly SfxId[] = Object.keys(BLIP_SFX).filter(isSfxId);
 const TAIL_SEC = 0.3;
 
 /**
@@ -157,7 +152,7 @@ interface Storm {
   readonly cue: CueId;
   /** Schedules the storm's sounds with `at(t, id, pitch)`. */
   readonly sounds: (at: (t: number, id: SfxId, pitch?: number) => void) => void;
-  /** A line spoken over it: its speaker's blip at `at`, then 1 s of typing (`line`). */
+  /** A line spoken over it: its speaker's blip at `at`, then 1 s of typing (`typing`). */
   readonly line: { readonly at: number; readonly blip: SfxId };
   /** Hollow units walk throughout (a ducked render holds HOLLOW_DUCK from the start). */
   readonly hollow: boolean;
@@ -421,9 +416,7 @@ export async function renderStorm(
     { rawMaster: true },
     duckedTimeline(storm, false),
   );
-  const speech: SpeechMargin[] = [];
-  for (const blip of [storm.line.blip, ...BLIP_IDS.filter((b) => b !== storm.line.blip)]) {
-    speech.push(await speechMargin(blip, rest, storm.line.at));
-  }
+  const blips = [storm.line.blip, ...BLIP_IDS.filter((b) => b !== storm.line.blip)];
+  const speech = await Promise.all(blips.map((b) => speechMargin(b, rest, storm.line.at)));
   return { out: analyze([out], RATE), raw: analyze([raw], RATE), speech };
 }

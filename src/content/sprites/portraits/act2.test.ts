@@ -6,6 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import { SPEAKER_DEFS } from '../../dialogue/speakers.ts';
 import { EXPRESSION_EXTRAS, type SpeakerId } from '../../dialogue/types.ts';
+import { contrastRatio, luminance } from '../../palettes/color.ts';
+import { PALETTES } from '../../palettes/index.ts';
+import { rgbOf } from '../../palettes/master.ts';
 import { SPRITES } from '../index.ts';
 import type { FrameDef, PatchFrame, SpriteDef } from '../types.ts';
 import { portraitBricks } from './bricks.ts';
@@ -177,6 +180,30 @@ describe("Ves'thara: woven lumenglass, lit from inside", () => {
       expect(eyes.includes('*'), e).toBe(e !== 'sad');
       expect(eyes, e).toMatch(/\+/);
     }
+  });
+
+  it('reads her expressions: dark thread brows on a face lit a step brighter (D134)', () => {
+    const p = PALETTES.aelari;
+    const lum = (ch: '0' | '1' | '4'): number =>
+      luminance(rgbOf(p[ch === '0' ? 'p0' : ch === '1' ? 'p1' : 'p4']));
+    const brows = new Set<string>();
+    for (const e of BASE_EXPRESSIONS) {
+      const rows = resolve(portraitVesthara, e);
+      // The face's heart is her brightest blue, and her brows (the stamp's top rows, x 17–30)
+      // are dark threads across it, ≥ 4:1 against it.
+      expect(at(rows, 23, 20), e).toBe('4');
+      const brow = rows
+        .slice(14, 17)
+        .map((r) => r.slice(17, 31))
+        .join('|');
+      expect(brow.replace(/[^1]/g, '').length, e).toBeGreaterThanOrEqual(6);
+      // No bright thread brows (teal.4) left to wash into the lit face.
+      expect(brow, e).not.toMatch(/9/);
+      brows.add(brow);
+    }
+    expect(contrastRatio(lum('4'), lum('1'))).toBeGreaterThanOrEqual(4);
+    // Five faces, five brows.
+    expect(brows.size).toBe(BASE_EXPRESSIONS.length);
   });
 
   it('opens her mouth on her inner light when she talks', () => {

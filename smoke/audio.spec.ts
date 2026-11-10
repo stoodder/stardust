@@ -19,6 +19,10 @@ interface SpeechMargin {
   readonly marginDb: number;
 }
 
+function isSpeechMargin(m: unknown): m is SpeechMargin {
+  return typeof m === 'object' && m !== null && 'blip' in m && 'marginDb' in m;
+}
+
 const status = (page: Page): Promise<AudioSample | null> =>
   page.evaluate(() => globalThis.__sd?.audio.status() ?? null);
 
@@ -151,8 +155,11 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
     return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
   });
   // A ducked storm's render also carries its speech margins (src/audio/offline.ts).
-  const speech = (name: string): readonly SpeechMargin[] =>
-    (report[name] as RenderSample & { readonly speech?: readonly SpeechMargin[] }).speech ?? [];
+  const speech = (name: string): readonly SpeechMargin[] => {
+    const r: RenderSample | undefined = report[name];
+    const margins: unknown = r !== undefined && 'speech' in r ? r.speech : undefined;
+    return Array.isArray(margins) ? margins.filter(isSpeechMargin) : [];
+  };
   const rows: string[] = [];
   for (const [name, r] of Object.entries(report)) {
     rows.push(

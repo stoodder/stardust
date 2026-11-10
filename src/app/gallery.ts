@@ -120,7 +120,7 @@ function isScene(b: BakedSprite): boolean {
  * card shows only its authored frames (the scurry, the glance, the panic hop), dark, with glow.
  */
 function isFleeingBody(b: BakedSprite): boolean {
-  return b.id.endsWith('_fleeing');
+  return b.id.startsWith('enemy.') && b.id.endsWith('_fleeing');
 }
 
 /**

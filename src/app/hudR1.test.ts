@@ -10,7 +10,7 @@ import { pickHint } from '../ui/hud/Notices.tsx';
 import { battleConfig } from './battleSetup.ts';
 import { holdFireOneHintShows, salvageHintShows } from './hud.ts';
 import { CLEAR_FIRST_TEXT, refusalText } from './hudText.ts';
-import { threatIntel, threatNames, wavePreview } from './hudViews.ts';
+import { previewIcon, threatIntel, threatNames, wavePreview } from './hudViews.ts';
 import { teaserRow } from './save.ts';
 
 const mapIds = Object.keys(MAPS);
@@ -66,6 +66,26 @@ describe('runners on the threat strip (D134)', () => {
       'Huddle',
       'Carrier',
     ]);
+  });
+});
+
+describe("a fleeing Hauler's preview icon (D134 R3)", () => {
+  it('shows the untied sack for a fleeing group, the plain sack otherwise', () => {
+    const a2m3 = createSim(battleConfig('a2_m03', 1)).map;
+    const w = a2m3.waves.findIndex((x) =>
+      x.groups.some((g) => g.enemy.id === 'hauler' && g.tags.includes('fleeing')),
+    );
+    expect(w).toBeGreaterThanOrEqual(0);
+    const row = wavePreview(a2m3, w)!.groups.find((g) => g.enemy === 'hauler');
+    expect(row?.icon).toBe('icon.enemy.brood_hauler_fleeing');
+    const a1m2 = createSim(battleConfig('a1_m02', 1)).map;
+    const plain = a1m2.waves
+      .map((_, i) => wavePreview(a1m2, i)!.groups.find((g) => g.enemy === 'hauler'))
+      .find((g) => g !== undefined);
+    expect(plain?.icon).toBe('icon.enemy.brood_hauler');
+    // Only a registered look is used: a fleeing Nibbler keeps its own icon.
+    expect(previewIcon('icon.enemy.nibbler', true)).toBe('icon.enemy.nibbler');
+    expect(previewIcon('icon.enemy.brood_hauler', false)).toBe('icon.enemy.brood_hauler');
   });
 });
 

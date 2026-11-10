@@ -157,7 +157,10 @@ function neck(g: CharGrid, holes: [number, number][]): void {
   for (const [x, y] of VESTHARA_CUT_THREAD) plot(g, x, y, 'd');
 }
 
-/** The face: a long woven oval lit from inside, brightest at its heart, in a dark frame. */
+/**
+ * The face: a long woven oval lit from inside, brightest at its heart (`blue.4`, a step over the
+ * lattice's brightest thread, so her dark brows and sockets read on it; D134), in a dark frame.
+ */
 function head(g: CharGrid): void {
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
@@ -173,8 +176,8 @@ function head(g: CharGrid): void {
       const d = Math.hypot((x + 0.5 - CX) / 7.6, (y + 0.5 - 19.5) / 11.5);
       // The heart of the face glows smooth; the fine weave shows toward its rim.
       const wv = weave(x, y);
-      let ch = d < 0.55 ? '3' : d < 0.88 ? '2' : '1';
-      if (d >= 0.55 && wv !== null) ch = d < 0.88 ? '3' : '2';
+      let ch = d < 0.55 ? '4' : d < 0.88 ? '3' : '2';
+      if (d >= 0.55 && wv !== null) ch = d < 0.88 ? '4' : '3';
       plot(g, x, y, ch);
     }
   }
@@ -193,14 +196,15 @@ function head(g: CharGrid): void {
 }
 
 // Brows and eyes per expression: a 14×9 stamp from (17, EYE_Y - 4). Each eye is a knot of light
-// (a white core, teal ends) in a dim almond socket (`1`); the brows are single threads. The
+// (a white core, teal ends) in a dim almond socket (`1`); the brows are single dark threads (`1`)
+// across her lit face, so each expression reads at a glance (D134). The
 // stamp's columns 2–5 and 8–11 are the eyes (x 19–22 and 25–28).
 // prettier-ignore
 const EYES: Readonly<Record<string, readonly string[]>> = {
   // Level brows, steady knots: formal, precise, watching.
   neutral: [
     '..............',
-    '.44999..99944.',
+    '.11111..11111.',
     '..............',
     '..1++1..1++1..',
     '.1+**+11+**+1.',
@@ -211,8 +215,8 @@ const EYES: Readonly<Record<string, readonly string[]>> = {
   ],
   // The rare dry smile: brows lifted, the knots creased into bright crescents.
   happy: [
-    '..4999..9994..',
-    '.4..........4.',
+    '..1111..1111..',
+    '.1..........1.',
     '..............',
     '...++....++...',
     '..+**+..+**+..',
@@ -223,9 +227,9 @@ const EYES: Readonly<Record<string, readonly string[]>> = {
   ],
   // Inner ends raised; the knots wide open, their light drawn long.
   worried: [
-    '....99..99....',
-    '..99......99..',
-    '.4.++....++.4.',
+    '....11..11....',
+    '..11......11..',
+    '.1.++....++.1.',
     '..1++1..1++1..',
     '.1+**+11+**+1.',
     '..1++1..1++1..',
@@ -236,9 +240,9 @@ const EYES: Readonly<Record<string, readonly string[]>> = {
   // Brows driven down to the bridge; the knots narrowed to hot slits. Shorter sentences.
   angry: [
     '..............',
-    '.499......994.',
-    '...999..999...',
-    '..1111991111..',
+    '.111......111.',
+    '...111..111...',
+    '..1111111111..',
     '.1+**+11+**+1.',
     '..1111..1111..',
     '..............',
@@ -249,9 +253,9 @@ const EYES: Readonly<Record<string, readonly string[]>> = {
   // falls from her eye like a tear.
   sad: [
     '..............',
-    '....99..99....',
-    '..99......99..',
-    '.41881..18814.',
+    '....11..11....',
+    '..11......11..',
+    '.11881..18811.',
     '.18++8118++81.',
     '..1881..1881..',
     '...8..........',
