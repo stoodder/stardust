@@ -11,8 +11,7 @@
 // wait while a scene or the pause menu holds the HUD (A2M5's pivot cue plays over the old meter).
 // Under reduced motion nothing blinks: the old meter holds 2 s, then the new label shows in a
 // steady accent for 2 s before it settles.
-import { useState } from 'preact/hooks';
-import { lostWords } from '../../app/hudEscort.ts';
+import { lostWords, relabelShown } from '../../app/hudEscort.ts';
 import { hud, type MeterRelabel } from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
 
@@ -45,8 +44,6 @@ function HeldMeter({ relabel, onDone }: { relabel: MeterRelabel; onDone: () => v
 }
 
 export function EscortMeter() {
-  // The relabel whose held beat has played (its id): the Escort's rows show from then on.
-  const [swapped, setSwapped] = useState(0);
   const m = hud.escort.value;
   if (m === null) return null;
   const label = hud.meterLabel.value;
@@ -54,7 +51,7 @@ export function EscortMeter() {
   const relabel = hud.relabel.value;
   const lost = lostWords(m.lost, m.maxLost);
   const last = m.maxLost !== null && m.lost >= m.maxLost;
-  const held = relabel !== null && swapped !== relabel.id;
+  const held = relabel !== null && relabel.held;
   return (
     <div
       class="hud-escort"
@@ -65,7 +62,7 @@ export function EscortMeter() {
     >
       {flash !== null && <span key={flash.id} class="hud-asset-flash" aria-hidden="true" />}
       {held ? (
-        <HeldMeter key={relabel.id} relabel={relabel} onDone={() => setSwapped(relabel.id)} />
+        <HeldMeter key={relabel.id} relabel={relabel} onDone={() => relabelShown(relabel.id)} />
       ) : (
         <>
           <div class="hud-meter">

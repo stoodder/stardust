@@ -12,7 +12,7 @@ import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { AREA_MARK_SEC } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
-import { placeTower, setup as setupFixture, spawn, WALKER } from './__fixtures__/combat.ts';
+import { GUN, placeTower, setup as setupFixture, spawn, WALKER } from './__fixtures__/combat.ts';
 import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
 import { beamUid } from './attacks/beam.ts';
 import { applyDamage, applyEffects } from './combat/damage.ts';
@@ -560,7 +560,7 @@ describe('its reach is its detection radius, after stacking (D137, D139)', () =>
 
   it('a tower that detects nothing keeps its stacked range (no cap)', () => {
     const { state, ctx } = setup();
-    const g = placeTower(state, CONTENT.towers.fx_gun, 3, 2, 1); // high ground: 3 × 1.25
+    const g = placeTower(state, GUN, 3, 2, 1); // high ground: 3 × 1.25
     state.linksDirty = true;
     links(state, ctx);
     expect(bonusRangeTiles(g.tierDef!.attack!, g)).toBeCloseTo(3.75, 12);

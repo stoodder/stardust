@@ -339,10 +339,15 @@ export interface MeterRelabel {
   readonly id: number;
   readonly from: string;
   /**
-   * The old meter's number as it changed (the core's last integrity), held beside the struck label
+   * The old meter's number as it changed (the core's last integrity), shown with the old label
    * until the new one shows (D138: never "Core 0"); null shows "—".
    */
   readonly fromValue: number | null;
+  /**
+   * The old meter still shows whole (D139): true until its held beat has played (`relabelShown`),
+   * then the Escort's rows show at once.
+   */
+  readonly held: boolean;
 }
 
 /**

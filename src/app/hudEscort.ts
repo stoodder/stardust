@@ -4,7 +4,8 @@
 // they're lost; the alarm once few are left, `escortLow`), and the meter's label follows the sim's
 // (`state.meterLabel`, relabeled on ObjectiveChanged). `hud.escortLost` flashes the meter on each
 // RefugeeLost, and `hud.relabel` carries the old label and number for the relabel moment when a
-// map turns Escort mid-map (A2M5's pivot). A resumed run's replay shows neither (app/checkpoints.ts).
+// map turns Escort mid-map (A2M5's pivot): the old meter held whole until the meter has shown it
+// (`relabelShown`, D139), then the new label's blink. A resumed run's replay shows neither (app/checkpoints.ts).
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
 import { evaluateCondition, type Sim } from '../sim/index.ts';
@@ -71,6 +72,15 @@ export function lostWords(lost: number, maxLost: number | null): string {
   return maxLost === null ? `${lost}` : `${lost}/${maxLost}`;
 }
 
+/**
+ * The relabel's held beat (the old meter whole, D139) has played: the Escort's rows show at once.
+ * A later relabel (another `id`) is left alone.
+ */
+export function relabelShown(id: number): void {
+  const r = hud.relabel.value;
+  if (r !== null && r.id === id && r.held) hud.relabel.value = { ...r, held: false };
+}
+
 /** Wires the Escort's meter to a battle. Returns the unwiring (which also clears it). */
 export function bindEscortMeter(host: Host<IdSpace>): () => void {
   const { sim } = host;
@@ -103,7 +113,7 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
       sync();
       // The relabel moment: only a live change of the meter's name (a replay's played already).
       if (!host.replaying && from !== hud.meterLabel.value && hud.escort.value !== null) {
-        hud.relabel.value = { id: ++relabelId, from, fromValue };
+        hud.relabel.value = { id: ++relabelId, from, fromValue, held: true };
       }
     }),
     host.bus.on('RefugeeLost', () => {

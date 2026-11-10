@@ -91,12 +91,13 @@ describe('compileContent: towers and tier patches', () => {
       // Fx Rail reaches 6, so it sees 6.
       specs: { ...gun.specs!, b: { ...gun.specs!.b, detect: { radiusTiles: 6 } } },
     };
-    const out = compileContent({ ...FIXTURE, towers: { ...FIXTURE.towers, fx_gun: seer } });
-    const tiers = out.towers.fx_gun.tiers;
+    const raw: RawContent<IdSpace> = { ...FIXTURE, towers: { ...FIXTURE.towers, fx_gun: seer } };
+    const out = compileContent(raw);
+    const tiers = out.towers.fx_gun!.tiers;
     // Tier 2 inherits tier 1's detection; the specs inherit tier 3's unless they patch it.
     expect(tiers.map((t) => t.attack?.detectCapTiles)).toEqual([3, 3, 3]);
-    expect(out.towers.fx_gun.specs?.a.attack?.detectCapTiles).toBe(3);
-    expect(out.towers.fx_gun.specs?.b.attack?.detectCapTiles).toBe(6);
+    expect(out.towers.fx_gun!.specs?.a.attack?.detectCapTiles).toBe(3);
+    expect(out.towers.fx_gun!.specs?.b.attack?.detectCapTiles).toBe(6);
     // A tier that doesn't detect has no cap.
     expect(content.towers.fx_gun.specs?.b.attack?.detectCapTiles).toBe(0);
     // The live Lantern: each tier's reach is its detection radius.
@@ -108,10 +109,10 @@ describe('compileContent: towers and tier patches', () => {
 
   it('refuses a detecting tier whose attack reaches past its detection radius', () => {
     const gun = FIXTURE.towers.fx_gun; // range 3
+    const { specs: _specs, ...plain } = gun; // no specs: one error, tier 1's
     const far: TowerDef = {
-      ...gun,
+      ...plain,
       tiers: [{ ...gun.tiers[0], detect: { radiusTiles: 2.5 } }, { cost: 1 }, { cost: 1 }],
-      specs: undefined,
     };
     const errors = errorsFor({ ...FIXTURE, towers: { ...FIXTURE.towers, fx_gun: far } });
     expect(errors[0]).toBe(
