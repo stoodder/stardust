@@ -234,7 +234,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [x] **T510** Story transactions and Results choices: runEnd step 6, the Q3 Bonus (+400, once per save, `memo_a2_04` on Results), C2 on Results (sold/returned/none, the Intel windfall, the Zibzab Tune-up; T329's C2 half), the Prism gift; idempotent; smoke for both branches.
 - [~] **T521** A2M5 *The Long Walk*: 12 waves (5 + 7), Bricks companion, Cantors, the Penitent; the pivot cue pauses mid-fight (test), refugees from W6, Kneel reachable, `ally_hushed`, the Prism gift, `memo_a2_06`; par ~71 Evacuated; no-detection loses by the pivot, no-shield by W5, no-splash by W8; a Capacitor Bank alt; median 1× runtime ≤ 15 min, recorded.
 - [x] **T507** Unnerved (−20% speed; interrupts tells, bosses' too), Mindspike (T1–3, Echo Spike, Dread), Stillness (Stasis 3 s, r 2.5, 45 s) and Ves'thara as a companion.
-- [~] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
+- [x] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
 - [x] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
 - [~] **T522** A2M6 *Sundown*: the wall, gates, merge, diagonal air lane, watchtower, lamps; 14 waves; full dark by W12 with Goldie's line in the dark (test); Ves'thara + Stillness; Bricks's post; Before the Dark; the Ishael debrief; `base_a2_loophole`, `base_a2_whistle`; par ~68; no-splash loses by W9, no-air by W10; a Seeker Swarm alt.
 - [~] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
@@ -242,7 +242,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [~] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
 - [ ] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
 - [ ] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
-- [ ] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
+- [~] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
 - [ ] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
 - [ ] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
 - [ ] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.

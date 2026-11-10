@@ -33,14 +33,14 @@ export const map = defineMapLayout({
     'S########.........',
     '..o....o#..o......',
     '.....o..#......o..',
-    '..###############S',
+    '..#######.........',
     '.o#.o.......o.....',
     '..#...^.o....o....',
     '..###########.....',
-    '.........o..#o....',
-    '............#.....',
-    '.........o..##C...',
-    '..........o.......',
+    '.....#...o..#o....',
+    '.....#......#.....',
+    '.....#...o..##C...',
+    '.....S....o.......',
   ],
   // prettier-ignore
   paths: [
@@ -62,16 +62,11 @@ export const map = defineMapLayout({
       ],
     },
     {
-      // The rig road (from the pivot): the Hollow comes in from the rigs at the east edge, west
-      // across the valley, and joins the Preserve Road at the fencing's end (8,4), a third of
-      // the way along (34 tiles).
+      // The rig road (from the pivot): up from the south edge into the valley floor.
       id: 'rig',
       tiles: [
-        [17, 4], [16, 4], [15, 4], [14, 4], [13, 4], [12, 4], [11, 4], [10, 4], [9, 4],
-        [8, 4],
-        [7, 4], [6, 4], [5, 4], [4, 4], [3, 4], [2, 4],
-        [2, 5], [2, 6], [2, 7],
-        [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [8, 7], [9, 7],
+        [5, 11], [5, 10], [5, 9], [5, 8],
+        [5, 7], [6, 7], [7, 7], [8, 7], [9, 7],
         [10, 7], [11, 7], [12, 7],
         [12, 8], [12, 9], [12, 10],
         [13, 10], [14, 10],

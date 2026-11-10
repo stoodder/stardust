@@ -6,7 +6,9 @@
 // (the pivot stands down live units only), and W6 has an ordinary countdown, so its start is the
 // pivot's deadline. A countdown opens once the wave before it finishes spawning. Groups without an
 // `intervalSec` use the enemy's default spacing (Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s,
-// Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Cantor 1.2 s).
+// Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Cantor 1.2 s). After the pivot every group
+// is Motes (0.25–0.5 s apart): the rig road's groups reach the Preserve Road at the fencing's end
+// (8,4) 5.6 s after they spawn, the road's catch the refugees walking ahead of them.
 import { defineWaves } from '../../define.ts';
 import type { EnemyId, RouteId, WaveGroup } from '../../types.ts';
 
@@ -44,8 +46,6 @@ export const COUNTDOWN = 25;
  * to the gate (0.35 tiles/s: 100 s).
  */
 export const PENITENT_WINDOW = 60;
-/** A packed Mote cluster's spacing (seconds). */
-export const PACKED = 0.2;
 
 export const waves = defineWaves([
   // W1 · Glimmers + one Aegis Cantor [T: shield aura; kill it first], the Cantor mid-column
@@ -53,7 +53,7 @@ export const waves = defineWaves([
     teach: true,
     groups: [road('glimmer', 4, 0, 1.5), road('cantor', 1, 2.5)],
   },
-  // W2 · Weft Wardens with a Cantor walking among them [X], Glimmers behind
+  // W2 · a Weft Warden with a Cantor at its side [X], Glimmers behind, two Veilwalkers last
   {
     countdownSec: COUNTDOWN,
     groups: [
@@ -88,7 +88,7 @@ export const waves = defineWaves([
   // escort, gently]
   {
     countdownSec: PENITENT_WINDOW,
-    groups: [motes(12, 14, 0.5)],
+    groups: [motes(12, OPEN + 8, 0.5)],
   },
   // W7 · Motes + the second group, the Motes down the road behind it
   {

@@ -377,6 +377,15 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
       if (torso(x, y)) plot(g, x, y, u <= 0 ? '3' : '2');
     }
   }
+  // Kneeling, the weave inside dims a ramp step; its rim keeps its light, so the shape still reads.
+  if (f.kneel > 0) {
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const dim = DIM[at(g, x, y)];
+        if (dim !== undefined) plot(g, x, y, dim);
+      }
+    }
+  }
   rim(g, body, CX - 6, heartY - 8);
   // Beats 1–3 each slide their own strands (the planted beats differ too); beat 0 is still.
   const pane = front && top !== null ? paneMask(top) : null;
@@ -390,7 +399,8 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
       plot(g, CX - 1, heartY + 3, 'd');
       plot(g, CX, heartY + 3, 'c');
     } else if (f.kneel > 0) {
-      stamp(g, CX - 2, heartY - 1, ['.+.', '+*+', '.+.']);
+      // Its heart, laid open over the road it shelters.
+      stamp(g, CX - 3, heartY - 2, ['..+..', '.+*+.', '++*++', '.+*+.', '..+..']);
     }
   } else {
     plot(g, CX - 1, heartY, '+');
@@ -405,14 +415,6 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   }
 
   drawHead(g, f);
-  if (f.kneel > 0) {
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const dim = DIM[at(g, x, y)];
-        if (dim !== undefined) plot(g, x, y, dim);
-      }
-    }
-  }
   if (f.kneel === 2 && front) drawLaidShield(g);
   if (front && top !== null) {
     drawPane(g, top, pose === 'tell' ? 'lit' : pose === 'broken' ? 'broken' : 'whole', beat);

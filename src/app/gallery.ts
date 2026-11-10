@@ -896,7 +896,8 @@ class SheetPacker {
 
   #newSheet(): void {
     const sh = el('section', 'sheet');
-    sh.append(el('h1'));
+    // The title takes its line now, so packing measures the height `finish` will give it.
+    sh.append(el('h1', undefined, 'Stardust sprite gallery · sheet'));
     this.#root.append(sh);
     this.sheets.push(sh);
     this.#sheet = sh;

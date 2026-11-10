@@ -59,6 +59,9 @@ import { zapcoil } from '../../content/towers/zapcoil.ts';
 import type { IdsOf, LinkDef, RawContent } from '../../content/types.ts';
 import { prismMap } from './devPrism.ts';
 import { mindMap } from './devMind.ts';
+import { lanternMap } from './devLantern.ts';
+import { lantern } from '../../content/towers/lantern.ts';
+import { lightsong } from '../../content/links/lightsong.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
@@ -210,6 +213,8 @@ const DEV_ENTITIES = {
     prism,
     // dev_mind's (T507).
     mindspike,
+    // dev_lantern's (T508).
+    lantern,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -1416,6 +1421,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_penitent: penitentMap, // T506
     dev_dark: darkMap, // T505
     dev_mind: mindMap, // T507 (devMind.ts)
+    dev_lantern: lanternMap, // T508 (devLantern.ts)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
@@ -1424,6 +1430,9 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     // Resonance (T504): the real Zapcoil and Prism, for dev_prism.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
     resonance: resonance as unknown as LinkDef<DevIds>,
+    // Lightsong (T508): the real Prism and Lantern, for dev_lantern.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    lightsong: lightsong as unknown as LinkDef<DevIds>,
   },
   campaign: ['dev_range'],
 };

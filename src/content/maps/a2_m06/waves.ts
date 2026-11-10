@@ -77,22 +77,22 @@ export const waves = defineWaves([
   // W6 · Fractures + Motes [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [fractures('west', 2, OPEN, 3), motes('east', 16, OPEN + 6, PACKED)],
+    groups: [fractures('west', 1, OPEN, 3), motes('east', 24, OPEN + 6, PACKED)],
   },
   // W7 · both roads
   {
     countdownSec: COUNTDOWN,
     groups: [
-      fractures('west', 2, OPEN, 3),
+      fractures('west', 1, OPEN, 3),
       fractures('east', 1, OPEN + 1.5, 3),
-      motes('west', 10, OPEN + 12, PACKED),
-      motes('east', 10, OPEN + 14, PACKED),
+      motes('west', 16, OPEN + 12, PACKED),
+      motes('east', 16, OPEN + 14, PACKED),
     ],
   },
   // W8 · Rift Moths + Fractures
   {
     countdownSec: COUNTDOWN,
-    groups: [fractures('east', 4, OPEN, 2.5), moths(5, OPEN + 6, 1.2)],
+    groups: [fractures('east', 2, OPEN, 2.5), moths(5, OPEN + 6, 1.2)],
   },
   // W9 · a Rift Moth flock [X]
   {
@@ -103,7 +103,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      fractures('west', 2, OPEN, 2.5),
+      fractures('west', 1, OPEN, 2.5),
       fractures('east', 2, OPEN + 1, 2.5),
       moths(5, OPEN + 8, 1),
       motes('west', 10, OPEN + 14, PACKED),
@@ -115,7 +115,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       motes('west', 30, OPEN, PACKED),
-      fractures('west', 3, OPEN + 6, 1.5),
+      fractures('west', 2, OPEN + 6, 1.5),
       motes('west', 24, OPEN + 16, PACKED),
     ],
   },
@@ -124,7 +124,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       motes('east', 30, OPEN, PACKED),
-      fractures('east', 3, OPEN + 6, 1.5),
+      fractures('east', 2, OPEN + 6, 1.5),
       moths(4, OPEN + 10, 0.8),
       motes('east', 24, OPEN + 16, PACKED),
     ],
@@ -146,8 +146,8 @@ export const waves = defineWaves([
     groups: [
       motes('west', 24, OPEN, PACKED),
       motes('east', 24, OPEN + 2, PACKED),
-      fractures('west', 3, OPEN + 8, 1.5),
-      fractures('east', 3, OPEN + 9, 1.5),
+      fractures('west', 2, OPEN + 8, 1.5),
+      fractures('east', 2, OPEN + 9, 1.5),
       moths(22, OPEN + 12, 0.4),
       motes('west', 24, OPEN + 22, PACKED),
       motes('east', 24, OPEN + 24, PACKED),

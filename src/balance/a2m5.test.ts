@@ -213,7 +213,10 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       const r = run(alt);
       expect(r.result!.outcome, alt).toBe('won');
       expect(r.marginPct, alt).toBeGreaterThanOrEqual(20);
-      expect(r.result!.steps.every((s) => s.error === null && s.issuedTick >= 0), alt).toBe(true);
+      expect(
+        r.result!.steps.every((s) => s.error === null && s.issuedTick >= 0),
+        alt,
+      ).toBe(true);
     }
     const map = content.maps.a2_m05;
     const cap = map.builds.altBuilds.capacitor!;

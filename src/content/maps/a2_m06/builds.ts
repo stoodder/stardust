@@ -114,55 +114,70 @@ export const builds = defineBuilds({
   },
   noCounterLoseByWave: 10,
   altBuilds: {
-    // Prism, Thumper, Zapcoil, Sprinkler (Cloudburst): the Zapcoils and a Cloudburst Sprinkler take
-    // the Rift Moths instead of the Skyhooks.
-    prism_and_coil: {
-      loadout: ['prism', 'thumper', 'zapcoil', 'sprinkler'],
+    // Prism, Skyhook, Zapcoil, Sprinkler: no Thumper. The Prism on the watchtower burns the
+    // Fractures down; Zapcoils beside Sprinklers (Conductive: Soaked Hollow take +25% Energy, the
+    // chains jump twice more) take their Shards and Motes at the merge and in the yard; Skyhooks
+    // under the air lane.
+    prism_and_soak: {
+      loadout: ['prism', 'skyhook', 'zapcoil', 'sprinkler'],
       steps: [
-        { wave: 1, build: 'thumper', tile: MERGE_W },
-        { wave: 1, build: 'zapcoil', tile: POCKET_W },
-        { wave: 1, build: 'prism', tile: TOWER },
-        { wave: 2, build: 'thumper', tile: YARD_MID },
-        { wave: 3, upgrade: MERGE_W },
-        { wave: 4, build: 'zapcoil', tile: YARD_IN },
+        { wave: 1, build: 'zapcoil', tile: TOWER },
+        { wave: 1, build: 'sprinkler', tile: MERGE_E }, // Conductive with the watchtower's Zapcoil
+        { wave: 1, build: 'prism', tile: POCKET_W },
+        { wave: 1, build: 'zapcoil', tile: SOUTH_MID },
+        { wave: 2, upgrade: TOWER },
+        { wave: 3, upgrade: MERGE_E },
+        { wave: 4, build: 'skyhook', tile: YARD_IN },
+        { wave: 4, upgrade: MERGE_E },
+        { wave: 5, build: 'skyhook', tile: WALL_E },
         { wave: 5, upgrade: TOWER },
-        { wave: 6, upgrade: MERGE_W },
-        { wave: 7, build: 'sprinkler', tile: MERGE_E },
-        { wave: 7, upgrade: YARD_IN },
-        { wave: 8, upgrade: MERGE_E },
-        { wave: 8, upgrade: MERGE_E },
-        { wave: 9, specialize: MERGE_E, spec: 'b' }, // Cloudburst
+        { wave: 6, upgrade: POCKET_W },
+        { wave: 6, upgrade: YARD_IN },
+        { wave: 7, build: 'zapcoil', tile: YARD_MID },
+        { wave: 7, upgrade: SOUTH_MID },
+        { wave: 8, upgrade: WALL_E },
+        { wave: 8, upgrade: YARD_MID },
         STILL_W9,
-        { wave: 9, upgrade: YARD_MID },
+        { wave: 9, specialize: TOWER, spec: 'a' }, // Overload Coil
         { wave: 10, upgrade: YARD_IN },
-        { wave: 10, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
-        { wave: 11, build: 'zapcoil', tile: SOUTH_MID },
-        { wave: 12, upgrade: SOUTH_MID },
+        { wave: 10, upgrade: SOUTH_MID },
+        { wave: 11, upgrade: WALL_E },
+        { wave: 11, upgrade: YARD_MID },
+        { wave: 12, upgrade: POCKET_W },
+        STILL_W14,
       ],
     },
-    // Rivet, Skyhook, Zapcoil, Lookout: no Prism and no Thumper; Zapcoils' chains on the clusters.
+    // Rivet, Skyhook, Zapcoil: no Prism and no Thumper. Rivets on the watchtower and in the yard on
+    // the Fractures, Zapcoils' chains on the clusters at the merge and by the domes, Skyhooks
+    // under the air lane.
     rivets_and_coils: {
-      loadout: ['rivet', 'skyhook', 'zapcoil', 'lookout'],
+      loadout: ['rivet', 'skyhook', 'zapcoil'],
       steps: [
+        { wave: 1, build: 'rivet', tile: TOWER },
         { wave: 1, build: 'zapcoil', tile: MERGE_W },
-        { wave: 1, build: 'zapcoil', tile: YARD_MID },
-        { wave: 1, build: 'rivet', tile: POCKET_W },
-        { wave: 2, build: 'zapcoil', tile: TOWER },
+        { wave: 1, build: 'rivet', tile: YARD_MID },
+        { wave: 1, build: 'zapcoil', tile: SOUTH_MID },
+        { wave: 2, upgrade: TOWER },
         { wave: 3, upgrade: MERGE_W },
         { wave: 4, build: 'skyhook', tile: YARD_IN },
-        { wave: 5, upgrade: TOWER },
-        { wave: 6, upgrade: MERGE_W },
-        { wave: 6, upgrade: YARD_MID },
-        { wave: 7, build: 'skyhook', tile: SOUTH_MID },
-        { wave: 7, upgrade: TOWER },
-        { wave: 8, upgrade: YARD_IN },
-        { wave: 8, specialize: MERGE_W, spec: 'a' }, // Overload Coil
+        { wave: 5, build: 'skyhook', tile: WALL_E },
+        { wave: 5, upgrade: YARD_MID },
+        { wave: 6, upgrade: SOUTH_MID },
+        { wave: 6, upgrade: YARD_IN },
+        { wave: 7, build: 'zapcoil', tile: POCKET_W },
+        { wave: 7, upgrade: WALL_E },
+        { wave: 8, upgrade: TOWER },
+        { wave: 8, upgrade: MERGE_W },
         STILL_W9,
-        { wave: 9, upgrade: SOUTH_MID },
-        { wave: 10, upgrade: YARD_MID },
-        { wave: 10, build: 'zapcoil', tile: MERGE_E },
-        { wave: 11, upgrade: MERGE_E },
-        { wave: 12, upgrade: MERGE_E },
+        { wave: 9, upgrade: YARD_MID },
+        { wave: 9, upgrade: POCKET_W },
+        { wave: 10, upgrade: SOUTH_MID },
+        { wave: 10, build: 'rivet', tile: YARD_E },
+        { wave: 11, upgrade: YARD_IN },
+        { wave: 11, upgrade: YARD_E },
+        { wave: 12, upgrade: WALL_E },
+        { wave: 12, specialize: MERGE_W, spec: 'a' }, // Overload Coil
+        STILL_W14,
       ],
     },
   },
