@@ -1,12 +1,15 @@
 // The sound effect registry: every recipe by id (architecture.md § Audio). Recipes are data; the
 // synth plays any of them the same way, and recipes.test.ts validates each one.
 import type { SfxRecipe } from '../types.ts';
+import { ACT2_SFX } from './act2.ts';
+import { AELARI_SFX } from './aelari.ts';
 import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
 import { SPEECH_SFX } from './blips.ts';
 import { BOSS_SFX } from './boss.ts';
 import { COMMANDER_SFX } from './commander.ts';
 import { HIT_SFX } from './hits.ts';
+import { HOLLOW_SFX } from './hollow.ts';
 import { PEST_SFX } from './pests.ts';
 import { TOWER_SFX } from './towers.ts';
 import { UI_SFX } from './ui.ts';
@@ -22,6 +25,9 @@ export const SFX = {
   ...PEST_SFX,
   ...BOSS_SFX,
   ...COMMANDER_SFX,
+  ...AELARI_SFX,
+  ...HOLLOW_SFX,
+  ...ACT2_SFX,
   ...SPEECH_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 
