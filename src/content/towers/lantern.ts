@@ -2,13 +2,15 @@
 // upgrades/access.ts), Aelari, ground and air. Detection radius 3.0, and a thin light-beam that
 // deals 4 Psionic/s to one target and Marks it +15% (more damage from every source; highest Mark
 // only). T2 Mark +20%, detection 3.5; T3 marks 2 targets at once (two beams). All-Seeing: marks
-// every enemy within 3.5 at +15%. Truthlight: one target Marked +35% that can't cloak, blink, phase,
-// or burrow while Marked (`noEvade`). Default Strong.
+// every enemy within 3.5 at +15% (and keeps T3's two beams). Truthlight: one beam, its target
+// Marked +35% and unable to cloak, blink, phase, or burrow while Marked (`noEvade`). Default Strong.
 //
-// A stub registered ahead of its task (T500a; the cut lever, D137): T508 confirms the numbers, runs
-// the Mark beam, All-Seeing, and Truthlight, and lifts it from towers/index.ts STUB_TOWER_TASKS.
-// Not in the docs, so T508 settles them: the beam's range (here its detection radius) and how
-// long a Mark outlasts the beam (here 1 s). Sprites: placeholders under their final ids (T540b).
+// Live since T508. The beam is sim/attacks/beam.ts (no ramp: `damage` per second in 0.25 s beam
+// ticks, each landing the tier's Mark); its range is the detection radius. A Mark outlasts the
+// last beam tick by 1 s (so a held beam keeps it up, and it lapses 1 s after the beam moves on);
+// All-Seeing's area Mark is sim/systems/markArea.ts (AREA_MARK_SEC, the same 1 s); Truthlight's
+// `noEvade` is systems/status.ts `evadeBlocked` and systems/detection.ts. Lightsong (the Prism)
+// adds +5% to every Mark it lands. Sprites: placeholders under their final ids (T540b).
 import { DEFAULT_BEAM_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 
@@ -43,12 +45,7 @@ export const lantern = defineTower({
     { cost: 180, attack: { beams: 2 } },
   ],
   specs: {
-    a: {
-      name: 'All-Seeing',
-      cost: 360,
-      attack: { beams: 1 },
-      markArea: { radiusTiles: 3.5, pct: 0.15 },
-    },
+    a: { name: 'All-Seeing', cost: 360, markArea: { radiusTiles: 3.5, pct: 0.15 } },
     b: {
       name: 'Truthlight',
       cost: 360,

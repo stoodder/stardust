@@ -29,7 +29,7 @@ import type { DamageSource } from '../events.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
-import { applyPin, applyStasis, applyUnnerved } from '../systems/status.ts';
+import { applyMarked, applyPin, applyStasis, applyUnnerved } from '../systems/status.ts';
 import { payKillIncome } from '../towerEconomy.ts';
 
 export type { DamageSource };
@@ -181,7 +181,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  * - Soaked: refreshes (the longer of the remaining and the new duration).
  * - Corroded: adds stacks up to the attack's max (never removing stacks a higher-max source left)
  *   and refreshes the shared 5 s timer.
- * - Marked: highest only, like Chilled.
+ * - Marked: highest only, like Chilled; a Truthlight Mark also stops evading (applyMarked).
  * - Stasis: never stacks or extends, then 2× immunity; a boss takes Chilled 50% (applyStasis).
  * - Pinned: never stacks or extends, then 1 s immunity; a boss takes Chilled 50% (applyPin).
  * - Unnerved: refreshes to the longer duration; a boss is interrupted but not slowed (applyUnnerved).
@@ -205,7 +205,8 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         break;
       }
       case 'marked':
-        applyMark(enemy, fx.pct, fx.durationTicks);
+        // Highest only; a Truthlight Mark also stops evading (systems/status.ts; T508).
+        applyMarked(enemy, fx.pct, fx.durationTicks, fx.noEvade);
         break;
       case 'stasis':
         // Frozen, or a boss's Chilled 50% (systems/status.ts; T407a).

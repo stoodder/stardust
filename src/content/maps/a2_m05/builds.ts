@@ -44,7 +44,6 @@ function parSteps(): BuildStep[] {
     { wave: 9, upgrade: DROP_W },
     { wave: 10, upgrade: FLOOR_S },
     { wave: 11, upgrade: GATE_N },
-    { wave: 12, upgrade: KNOLL },
   ];
 }
 
@@ -115,8 +114,9 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
-    // Lookout, Zapcoil, Sprinkler, Skyhook, with a Capacitor Bank on the knoll for the Penitent's
-    // shield (T501c) and an Overload Coil over the rig road, where it joins the Preserve Road.
+    // Lookout, Zapcoil, Sprinkler, Skyhook (T501c): par's hairpins, then from the pivot a
+    // Sprinkler and a Zapcoil over the rig road where it joins the Preserve Road, the Zapcoil a
+    // Capacitor Bank from W9 (it can't be afforded before the Penitent: D137).
     capacitor: {
       loadout: ['lookout', 'zapcoil', 'sprinkler', 'skyhook'],
       steps: [
@@ -127,20 +127,16 @@ export const builds = defineBuilds({
         { wave: 2, upgrade: UPPER_MID },
         { wave: 3, upgrade: KNOLL },
         { wave: 3, build: 'zapcoil', tile: UPPER_W },
-        { wave: 4, upgrade: KNOLL },
+        { wave: 4, upgrade: FENCE_END },
         { wave: 4, build: 'skyhook', tile: VALLEY_MID },
-        { wave: 5, specialize: KNOLL, spec: 'b' }, // Capacitor Bank
+        { wave: 5, upgrade: UPPER_W },
         { wave: 6, build: 'sprinkler', tile: RIG_S },
         { wave: 6, build: 'zapcoil', tile: RIG_N },
         { wave: 7, upgrade: RIG_N },
         { wave: 7, upgrade: RIG_S },
         { wave: 8, upgrade: RIG_N },
-        { wave: 8, upgrade: UPPER_MID },
-        { wave: 9, specialize: RIG_N, spec: 'a' }, // Overload Coil
+        { wave: 9, specialize: RIG_N, spec: 'b' }, // Capacitor Bank
         { wave: 10, build: 'zapcoil', tile: FLOOR_S },
-        { wave: 10, upgrade: FLOOR_S },
-        { wave: 11, upgrade: FLOOR_S },
-        { wave: 12, build: 'sprinkler', tile: DROP_W },
       ],
     },
     // Lookout, Zapcoil, Skyhook: no Sprinkler and no Thumper, so Zapcoils take the Motes, and
@@ -165,8 +161,6 @@ export const builds = defineBuilds({
         { wave: 9, build: 'zapcoil', tile: RIG_N },
         { wave: 9, upgrade: RIG_S },
         { wave: 10, specialize: RIG_S, spec: 'a' }, // Overload Coil
-        { wave: 11, upgrade: RIG_N },
-        { wave: 12, upgrade: FLOOR_S },
       ],
     },
   },

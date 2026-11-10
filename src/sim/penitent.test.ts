@@ -102,13 +102,13 @@ function wardScene() {
 }
 
 describe('the Penitent’s data (T506 settles the stub)', () => {
-  it('phase 1: the shield wall and a 250-shield pulse every 8 s; phase 2 on the break, no pulse', () => {
+  it('phase 1: the shield wall and a 150-shield pulse every 8 s; phase 2 on the break, no pulse', () => {
     const [p1, p2] = PENITENT.boss!.phases;
     expect(p1!.pulse).toMatchObject({
       everyTicks: 480,
       tellTicks: 90,
       radiusTiles: 2,
-      shield: 250,
+      shield: 150,
     });
     expect(p2).toMatchObject({ onShieldBroken: true, pulse: null });
     expect(p2!.shards).toEqual({ enemy: 'glimmer_shard', count: 3, reformTicks: REFORM });

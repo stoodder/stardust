@@ -163,8 +163,22 @@ import { enemyGlassWitch } from './enemies/glass_witch.ts';
 import { towerCrane, towerCraneHead } from './towers/crane.ts';
 import { towerHarpoon, towerHarpoonHead } from './towers/harpoon.ts';
 import { towerLookout, towerLookoutHead } from './towers/lookout.ts';
-// M5's placeholders under their final ids (T500a; the art tasks replace each).
-import * as m5 from './placeholders/m5.ts';
+// M5's Penitent, Aelari towers, beam fx, and icons (T540b).
+import { enemySunderglassPenitent } from './enemies/sunderglass_penitent.ts';
+import { fxBeamKnot } from './fx/beam_knot.ts';
+import { iconTowerLantern, iconTowerMindspike, iconTowerPrism } from './icons/aelari_towers.ts';
+import {
+  iconTellBlink,
+  iconTellHeavy,
+  iconTellPhasing,
+  iconTellShieldAura,
+  iconTellStealth,
+} from './icons/m5_glyphs.ts';
+import { iconAbilityStillness } from './icons/stillness.ts';
+import { iconEnemySunderglassPenitent } from './icons/sunderglass_penitent.ts';
+import { towerLantern, towerLanternHead } from './towers/lantern.ts';
+import { towerMindspike, towerMindspikeHead } from './towers/mindspike.ts';
+import { towerPrism, towerPrismHead } from './towers/prism.ts';
 
 export const SPRITES = [
   tileGrass,
@@ -221,13 +235,13 @@ export const SPRITES = [
   towerHarpoonHead,
   towerCrane,
   towerCraneHead,
-  // M5's Aelari towers (placeholders until T540b).
-  m5.towerPrism,
-  m5.towerPrismHead,
-  m5.towerMindspike,
-  m5.towerMindspikeHead,
-  m5.towerLantern,
-  m5.towerLanternHead,
+  // M5's Aelari towers (T540b).
+  towerPrism,
+  towerPrismHead,
+  towerMindspike,
+  towerMindspikeHead,
+  towerLantern,
+  towerLanternHead,
   enemyNibbler,
   enemyZoomer,
   enemyChonk,
@@ -255,11 +269,11 @@ export const SPRITES = [
   enemyWeftWarden,
   enemyLightwing,
   enemyGlassWitch,
-  // M5's units (placeholders until T540a; the Penitent T540b).
+  // M5's units (T540a; the Penitent T540b).
   enemyVeilwalker,
   enemyBlinkstrider,
   enemyCantor,
-  m5.enemySunderglassPenitent,
+  enemySunderglassPenitent,
   enemyGlimmerShard,
   enemyFracture,
   enemyFractureShard,
@@ -280,6 +294,7 @@ export const SPRITES = [
   fxSackBurst,
   fxBurrowMound,
   fxLinkTether,
+  fxBeamKnot,
   fxOrbitalReticle,
   fxConfettiBurst,
   iconTowerRivet,
@@ -312,19 +327,19 @@ export const SPRITES = [
   iconEnemyLightwing,
   iconEnemyGlassWitch,
   iconAbilityScannerSweep,
-  // M5's icons (the units' T540a; the towers' placeholders until T540b).
-  m5.iconTowerPrism,
-  m5.iconTowerMindspike,
-  m5.iconTowerLantern,
+  // M5's icons (the units' T540a; the towers', the Penitent's, and Stillness's T540b).
+  iconTowerPrism,
+  iconTowerMindspike,
+  iconTowerLantern,
   iconEnemyVeilwalker,
   iconEnemyBlinkstrider,
   iconEnemyCantor,
-  m5.iconEnemySunderglassPenitent,
+  iconEnemySunderglassPenitent,
   iconEnemyGlimmerShard,
   iconEnemyFracture,
   iconEnemyFractureShard,
   iconEnemyRiftmoth,
-  m5.iconAbilityStillness,
+  iconAbilityStillness,
   iconCredits,
   iconCore,
   iconLock,
@@ -343,11 +358,12 @@ export const SPRITES = [
   iconTellRegen,
   iconTellHollow,
   iconTellSkittish,
-  // M5's tell glyphs (placeholders until T540b).
-  m5.iconTellStealth,
-  m5.iconTellBlink,
-  m5.iconTellShieldAura,
-  m5.iconTellPhasing,
+  // M5's tell glyphs (T540b; T501k).
+  iconTellStealth,
+  iconTellBlink,
+  iconTellShieldAura,
+  iconTellPhasing,
+  iconTellHeavy,
   sceneRig9Feed,
   // The star map's glyphs (T301b).
   uiStarNode,

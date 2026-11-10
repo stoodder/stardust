@@ -11,18 +11,19 @@
 //   stretch, so a unit spawned on tick t first tells on t + solid − tell and is Phased on ticks
 //   t + solid … t + solid + duration − 1 (all in ticks: deterministic).
 // - **The interrupt** (§ 2.4; D137): while the interrupt hook holds (systems/status.ts
-//   `isInterrupted`: Stasis on a non-boss today; Unnerved joins it there with T507, nothing else to
-//   change here), the tell can't start or go on: the phase is cancelled, even mid-tell (PhaseShift
-//   `interrupted` if its tell had begun), and its solid stretch restarts from zero. Nothing
-//   interrupts a unit already Phased: no status reaches it.
-// - **Truthlight** (T508; towers.md § Seer's Lantern) will stop a Marked unit phasing: its check
-//   joins `phaseBlocked`.
+//   `isInterrupted`: Stasis on a non-boss; Unnerved on any unit), the tell can't start or go on:
+//   the phase is cancelled, even mid-tell (PhaseShift `interrupted` if its tell had begun), and its
+//   solid stretch restarts from zero. Nothing interrupts a unit already Phased: no status reaches
+//   it.
+// - **Truthlight** (T508; towers.md § Seer's Lantern): a unit under a Truthlight Mark can't phase
+//   either. `phaseBlocked` is systems/status.ts `evadeBlocked` (the interrupt, or `noEvadeTicks`),
+//   so the Mark cancels a tell under way and restarts the solid stretch, as an interrupt does.
 // Events: PhaseShift `tell` as the tell begins, `in` as it phases, `out` as it's back, and
 // `interrupted`. Story difficulty changes no phase number (systems/waves.ts `scaledEnemy` keeps it).
 import type { CompiledPhase } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
-import { isInterrupted } from '../systems/status.ts';
+import { evadeBlocked } from '../systems/status.ts';
 
 /** Ticks a phaser stays solid between phases (at least its tell, and 1). */
 export function solidTicks(phase: CompiledPhase): number {
@@ -31,9 +32,9 @@ export function solidTicks(phase: CompiledPhase): number {
   return up > min ? up : min;
 }
 
-/** Whether a tell can't start or go on this tick (the interrupt hook; Truthlight with T508). */
+/** Whether a tell can't start or go on this tick: interrupted, or under Truthlight (T508). */
 export function phaseBlocked(e: Readonly<Enemy>): boolean {
-  return isInterrupted(e);
+  return evadeBlocked(e);
 }
 
 /** Whether `e` is showing its phase tell (the flicker) this tick: render reads it. */

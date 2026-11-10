@@ -69,6 +69,11 @@ export const BOSS_CONVERTED_CHILL = 0.5;
 /** After a Pin ends, the target is immune to Pin for 1 s. */
 export const PIN_IMMUNITY_SEC = 1;
 /**
+ * An area Mark (Seer's Lantern [All-Seeing]; sim/systems/markArea.ts) lasts this long after the
+ * unit leaves its radius: the Lantern's beam Marks' 1 s (content/towers/lantern.ts; T508, chosen).
+ */
+export const AREA_MARK_SEC = 1;
+/**
  * A line attack (the Harpoon's Skewer; sim/attacks/line.ts) hits every enemy whose centre is
  * within this distance of the line: a band under a tile wide, so a packed group on the road reads
  * as skewered and the units beside it don't (T408, chosen).

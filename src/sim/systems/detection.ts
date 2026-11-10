@@ -1,5 +1,5 @@
-// System 9b: detection (design/enemies.md § 2.5; T406). After movement, before the towers pick
-// targets, so every tower sees this tick's reveals:
+// System 9b: detection (design/enemies.md § 2.5; T406), and area Marks (T508). After movement,
+// before the towers pick targets, so every tower sees this tick's reveals:
 // - Each live cloaked unit (`def.cloaked`) first loses a tick of its reveal (`Enemy.revealedTicks`).
 // - Then it is Revealed again if it stands inside a detector's radius or a live `reveal` zone
 //   (Scanner Sweep): a detector sets it to at least 1 + its linger (Lookout T3 and its specs: 2 s),
@@ -9,7 +9,10 @@
 //   High ground and power nodes don't change it: they raise attack range and aura strength.
 // - A detector with `revealedDamagePct` (Crow's Nest: +10%) Marks each unit it reveals for as long
 //   as the reveal (`applyMark`: highest only, so it never stacks with a Mark).
+// - **Truthlight** (T508): a cloaked unit under a Truthlight Mark (`Enemy.noEvadeTicks`) can't
+//   cloak: it is Revealed (at least 1) every tick the Mark's no-evade lasts, wherever it stands.
 // - `Revealed` and `Cloaked` events mark each change (a unit spawns cloaked, with no event).
+// - Then the area Marks (All-Seeing; systems/markArea.ts), so they reach what was just revealed.
 // An undetected cloaked unit is untouchable (enemyAbilities/cloak.ts `cloakedOut`, folded into
 // layers.ts): no targeting, splash, chains, statuses, or hits reach it, and it still leaks.
 // Allocation-free; a map with no cloaked unit costs one pass over the enemy pool.
@@ -19,6 +22,7 @@ import type { Modifier, SupportStat } from '../config.ts';
 import type { Enemy, Tower } from '../entities.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { markAreas } from './markArea.ts';
 
 /**
  * Σ pct of the `supportStat` modifiers on `tower` (or '*') for `stat`: a support tower's tune-up
@@ -65,6 +69,7 @@ export function detection(state: SimState, ctx: TickContext): void {
     if (now && !was) emit(state, { type: 'Revealed', uid: e.uid });
     else if (was && !now) emit(state, { type: 'Cloaked', uid: e.uid });
   }
+  markAreas(state);
 }
 
 /** Reveals `e` for every detector and reveal zone that covers it this tick. */
@@ -91,4 +96,5 @@ function reveal(state: SimState, ctx: TickContext, e: Enemy): void {
     const dy = e.y - z.y;
     if (dx * dx + dy * dy <= z.radiusSq && e.revealedTicks < 1) e.revealedTicks = 1;
   }
+  if (e.noEvadeTicks > 0 && e.revealedTicks < 1) e.revealedTicks = 1; // Truthlight: no cloaking
 }

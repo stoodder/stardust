@@ -8,6 +8,12 @@
 // - Then its `spawn` (the sneeze): `count` of `enemy` every `everyTicks`, the first one
 //   `everyTicks` into the phase (or after the last surfacing).
 // - Every ability's tell is its timer's last BOSS_ABILITY_TELL_SEC (`bossTelling`).
+// - **The interrupt** (enemies.md § 2.4; T508): while `isInterrupted` holds (on a boss, only
+//   Unnerved: its Stasis converts to Chilled), a dig's or a sneeze's tell can't start or go on: the
+//   ability is cancelled and its timer restarts from zero (a dig's BOSS_BURROW_GAP_SEC, a sneeze's
+//   period).
+//   A dig is an evade, so a Truthlight Mark (`noEvadeTicks`) blocks it the same way
+//   (systems/status.ts `evadeBlocked`). A surfacing has no tell: nothing holds a boss underground.
 // - `hastePct` speeds the boss (`Enemy.paceMul`, under HASTE_CAP), and `huddle` makes it a huddle
 //   leader for its young (the abilities system runs it with the other huddles).
 // - A shield-broken phase (the Penitent's phase 2; T506) begins when the shield breaks and
@@ -22,6 +28,7 @@ import { BOSS_ABILITY_TELL_SEC, HASTE_CAP } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import type { Enemy } from '../entities.ts';
 import type { SimState } from '../state.ts';
+import { evadeBlocked, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 import { BOSS_BURROW_GAP_TICKS, enterBossPhase } from './bossPhases.ts';
 import { spawnBrood } from './brood.ts';
@@ -63,6 +70,16 @@ export function bossTelling(boss: Enemy): boolean {
   );
 }
 
+/**
+ * Whether the boss's pending `next` ability can't tell this tick: a dig under the evade hook
+ * (an interrupt or Truthlight), a sneeze under the interrupt; a surfacing never.
+ */
+function bossTellBlocked(boss: Readonly<Enemy>, next: BossAbility | null): boolean {
+  if (next === 'burrow') return evadeBlocked(boss);
+  if (next === 'spawn') return isInterrupted(boss);
+  return false;
+}
+
 /** One tick of a live boss that isn't leaving. */
 export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: CompiledBoss): void {
   if (boss.bossPhase === 0) enterBossPhase(state, boss, def, 1, false);
@@ -73,7 +90,15 @@ export function bossStep(state: SimState, ctx: TickContext, boss: Enemy, def: Co
     boss.invulnerableTicks--;
     return;
   }
-  if (boss.abilityTicks <= 0 || --boss.abilityTicks > 0) return;
+  if (boss.abilityTicks <= 0) return;
+  const next = bossNextAbility(boss);
+  const left = --boss.abilityTicks;
+  if (left <= BOSS_ABILITY_TELL_TICKS && bossTellBlocked(boss, next)) {
+    // Cancelled; its timer restarts from zero (next is 'burrow' or 'spawn' here).
+    boss.abilityTicks = next === 'burrow' ? BOSS_BURROW_GAP_TICKS : (p.spawn?.everyTicks ?? 0);
+    return;
+  }
+  if (left > 0) return;
   if (boss.burrowed) {
     boss.burrowed = false;
     boss.abilityCount--;

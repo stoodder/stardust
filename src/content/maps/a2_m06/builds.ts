@@ -38,29 +38,29 @@ function parSteps(): BuildStep[] {
   return [
     { wave: 1, build: 'thumper', tile: MERGE_W },
     { wave: 1, build: 'prism', tile: TOWER },
+    { wave: 1, build: 'thumper', tile: SOUTH_MID },
     { wave: 1, build: 'rivet', tile: POCKET_W },
-    { wave: 1, build: 'thumper', tile: YARD_MID },
     { wave: 2, upgrade: MERGE_W },
-    { wave: 3, upgrade: YARD_MID },
+    { wave: 3, build: 'thumper', tile: YARD_MID },
     { wave: 4, build: 'skyhook', tile: YARD_IN },
     { wave: 4, upgrade: TOWER },
-    { wave: 5, build: 'skyhook', tile: SOUTH_MID },
+    { wave: 5, build: 'skyhook', tile: WALL_E },
+    { wave: 6, upgrade: SOUTH_MID },
     { wave: 6, upgrade: YARD_IN },
-    { wave: 6, upgrade: MERGE_W },
-    { wave: 7, upgrade: SOUTH_MID },
-    { wave: 7, build: 'rivet', tile: MERGE_E },
+    { wave: 7, upgrade: MERGE_W },
+    { wave: 7, build: 'rivet', tile: YARD_E },
     { wave: 8, specialize: MERGE_W, spec: 'a' }, // Cluster Thumper
     STILL_W9,
-    { wave: 9, upgrade: YARD_IN },
+    { wave: 9, upgrade: WALL_E },
     { wave: 9, upgrade: TOWER },
     { wave: 10, upgrade: YARD_MID },
-    { wave: 10, upgrade: MERGE_E },
+    { wave: 10, upgrade: YARD_E },
     { wave: 11, upgrade: SOUTH_MID },
-    { wave: 11, build: 'skyhook', tile: WALL_E },
-    { wave: 12, specialize: YARD_MID, spec: 'a' }, // Cluster Thumper
-    { wave: 12, upgrade: WALL_E },
-    { wave: 13, upgrade: MERGE_E },
-    { wave: 13, upgrade: POCKET_W },
+    { wave: 11, upgrade: YARD_IN },
+    { wave: 12, specialize: SOUTH_MID, spec: 'a' }, // Cluster Thumper
+    { wave: 13, upgrade: WALL_E },
+    { wave: 13, upgrade: YARD_E },
+    { wave: 14, upgrade: POCKET_W },
   ];
 }
 

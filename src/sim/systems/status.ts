@@ -40,6 +40,18 @@
 //   isn't slowed (§ 6: interrupt only).
 // - **Stacking:** a new Unnerved refreshes it to the longer of the remaining and the new duration
 //   (Soaked's rule); there is no immunity.
+//
+// Marked (enemies.md § 2.4; T508, the Seer's Lantern): `applyMarked` is a tower's way in (a tier's
+// `marked` effect through combat/damage.ts `applyEffects`, Lightsong's extra here, All-Seeing's
+// area in systems/markArea.ts); the highest-only rule itself is combat/damage.ts `applyMark`.
+// - **Truthlight** (`noEvade`): a `noEvade` Mark also sets `noEvadeTicks` to its duration (the
+//   longer of the remaining and the new, whichever Mark wins on `markPct`), counting the tick it
+//   lands, on any unit, a boss too (Marked is "Normal" on bosses). While it lasts the unit can't
+//   evade: `evadeBlocked` holds, so a blink, a phase, a dig (a unit's or a boss's) can't start or go
+//   on and its cooldown restarts from zero, as an interrupt does; and a cloaked unit stays Revealed
+//   (systems/detection.ts). Its other abilities (a shield pulse, a hush, a sneeze) go on.
+// - **Lightsong** (`Tower.linkMarkPct`, systems/links.ts): each of the tower's own Marks lands
+//   again at + linkMarkPct (`applyLinkStatuses`), so the stronger one wins.
 import {
   BOSS_CONVERTED_CHILL,
   PIN_IMMUNITY_SEC,
@@ -47,7 +59,8 @@ import {
   UNNERVED_SLOW,
 } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
-import { applyChill } from '../combat/damage.ts';
+import { applyChill, applyMark } from '../combat/damage.ts';
+import { untargetable } from '../enemyAbilities/layers.ts';
 import type { Enemy, Tower } from '../entities.ts';
 import type { SimState } from '../state.ts';
 
@@ -61,6 +74,31 @@ import type { SimState } from '../state.ts';
  */
 export function isInterrupted(e: Readonly<Enemy>): boolean {
   return e.unnervedTicks > 0 || (e.stasisTicks > 0 && e.def !== null && e.def.boss === null);
+}
+
+/**
+ * **The evade hook** (towers.md § Seer's Lantern [Truthlight]): whether `e` can't evade this tick:
+ * interrupted (`isInterrupted`), or under a Truthlight Mark (`noEvadeTicks`). The evasive abilities
+ * ask it in place of `isInterrupted`: the blink (blink.ts), the phase (phase.ts `phaseBlocked`),
+ * and the dig (burrow.ts; a boss's in boss.ts). The cloak's half is systems/detection.ts.
+ */
+export function evadeBlocked(e: Readonly<Enemy>): boolean {
+  return e.noEvadeTicks > 0 || isInterrupted(e);
+}
+
+/** Whether `e` is Marked this tick (render's mark reads it). */
+export function isMarked(e: Readonly<Enemy>): boolean {
+  return e.markTicks > 0 && e.markPct > 0;
+}
+
+/**
+ * Marked `pct` for `ticks` (enemies.md § 2.4: highest only; combat/damage.ts `applyMark`), and
+ * with `noEvade` (Truthlight) no evading for `ticks` (see the header). A dead unit takes nothing.
+ */
+export function applyMarked(e: Enemy, pct: number, ticks: number, noEvade: boolean): void {
+  if (!e.alive || e.def === null) return;
+  applyMark(e, pct, ticks);
+  if (noEvade && ticks > e.noEvadeTicks) e.noEvadeTicks = ticks;
 }
 
 /** Whether `e` is Unnerved this tick (render's mark reads it). */
@@ -130,13 +168,22 @@ export function applyPin(e: Enemy, ticks: number): boolean {
 }
 
 /**
- * The statuses a tower's links add to its hits (Conductive: the Sprinkler Soaks from tier 1),
- * applied after the hit's damage like its tier's own effects. Soaked refreshes to the longer of
- * the remaining and the new duration (combat/damage.ts `applyEffects`' rule).
+ * The statuses a tower's links add to its hits (Conductive: the Sprinkler Soaks from tier 1;
+ * Lightsong: the Lantern's Marks +5%), applied after the hit's damage and its tier's own effects.
+ * Soaked refreshes to the longer of the remaining and the new duration (combat/damage.ts
+ * `applyEffects`' rule); each of the tier's Marks lands again at + `linkMarkPct` (highest only, so
+ * the linked Mark is the one that holds), carrying its `noEvade`.
  */
 export function applyLinkStatuses(t: Tower, e: Enemy): void {
   const soak = t.linkSoakedTicks;
   if (soak > e.soakedTicks && e.alive) e.soakedTicks = soak;
+  const plus = t.linkMarkPct;
+  if (plus <= 0 || t.tierDef === null || !e.alive || untargetable(e)) return;
+  const effects = t.tierDef.effects;
+  for (let i = 0; i < effects.length; i++) {
+    const fx = effects[i]!; // i < length
+    if (fx.status === 'marked') applyMarked(e, fx.pct + plus, fx.durationTicks, fx.noEvade);
+  }
 }
 
 export function status(state: SimState): void {
@@ -163,6 +210,7 @@ export function status(state: SimState): void {
     } else if (e.pinImmuneTicks > 0) e.pinImmuneTicks--;
     if (e.corrodedTicks > 0 && --e.corrodedTicks === 0) e.corrodedStacks = 0;
     if (e.markTicks > 0 && --e.markTicks === 0) e.markPct = 0;
+    if (e.noEvadeTicks > 0) e.noEvadeTicks--;
 
     // Shields regenerate after the delay without damage (applyDamage resets the delay), unless
     // the enemy's data gives no regen.

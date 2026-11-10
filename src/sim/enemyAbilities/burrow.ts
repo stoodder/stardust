@@ -8,12 +8,13 @@
 //   § 2.6), none of which is in Act I. It keeps following its route, and leaks normally.
 // - Then it surfaces and the cycle restarts. A fresh spawn starts at the top of a surface stretch.
 // - The interrupt (§ 2.4; T407a): while the interrupt hook (systems/status.ts `isInterrupted`:
-//   Stasis on a non-boss; Unnerved in M5) holds, the dig tell can't start or go on: the dig is
-//   cancelled and the surface stretch restarts from zero. A boss's own burrows (its phases) are
-//   never interrupted. Truthlight arrives with the Lantern (M5).
+//   Stasis on a non-boss; Unnerved since T507) holds, the dig tell can't start or go on: the dig is
+//   cancelled and the surface stretch restarts from zero. A boss's own burrows are boss.ts's.
+// - Truthlight (T508): a unit under a Truthlight Mark (`noEvadeTicks`) can't dig either: the check
+//   is systems/status.ts `evadeBlocked` (the interrupt or the Mark), with the interrupt's outcome.
 import type { CompiledBurrow } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
-import { isInterrupted } from '../systems/status.ts';
+import { evadeBlocked } from '../systems/status.ts';
 
 /** Ticks a burrower spends on the surface between digs (at least its tell, and 1). */
 export function surfaceTicks(burrow: CompiledBurrow): number {
@@ -33,7 +34,7 @@ export function burrowStep(e: Enemy, burrow: CompiledBurrow): void {
     e.abilityTicks = surfaceTicks(burrow); // first tick alive
   } else {
     const left = --e.abilityTicks;
-    if (left <= burrow.tellTicks && isInterrupted(e)) {
+    if (left <= burrow.tellTicks && evadeBlocked(e)) {
       e.abilityTicks = surfaceTicks(burrow); // the dig is cancelled; its cooldown restarts
     } else if (left <= 0) {
       e.burrowed = true;

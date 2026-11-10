@@ -18,17 +18,20 @@
 //   Witch's retreat before her third).
 // - **Waits:** a boss's timer waits while it's invulnerable between phases (its other timers' rule).
 //   A leaving unit never blinks (the abilities system only moves it), so a retreat cancels a tell.
-// - **The interrupt** (§ 2.4): while `isInterrupted` (systems/status.ts: Stasis on a non-boss
-//   today, Unnerved in M5) a tell can't start or go on: the blink is cancelled, even mid-tell
+// - **The interrupt** (§ 2.4): while `isInterrupted` (systems/status.ts: Stasis on a non-boss;
+//   Unnerved on any unit) a tell can't start or go on: the blink is cancelled, even mid-tell
 //   (BlinkInterrupted if its tell had begun), and its cooldown restarts from zero. A boss's Stasis
 //   converts to Chilled 50%, which interrupts nothing (D101).
+// - **Truthlight** (T508): a unit under a Truthlight Mark (`noEvadeTicks`), a boss too, can't blink
+//   either: the check is systems/status.ts `evadeBlocked` (the interrupt or the Mark), with the
+//   interrupt's outcome (cancelled, BlinkInterrupted, the cooldown restarts).
 // Story difficulty changes no blink number (systems/waves.ts `scaledEnemy` keeps it).
 // Allocation-free and stateless: the landing point is worked out in `ctx.scratch.point`.
 import type { CompiledBlink } from '../../content/compiled.ts';
 import type { Enemy } from '../entities.ts';
 import { pointAt, type Point } from '../path.ts';
 import { emit, type SimState } from '../state.ts';
-import { isInterrupted } from '../systems/status.ts';
+import { evadeBlocked } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
 
 /** The blink `e` runs now (its boss phase's, else its own), or null. */
@@ -78,7 +81,7 @@ export function blinkStep(state: SimState, ctx: TickContext, e: Enemy, blink: Co
   }
   const wasTelling = e.blinkTicks <= blink.tellTicks;
   const left = --e.blinkTicks;
-  if (left <= blink.tellTicks && isInterrupted(e)) {
+  if (left <= blink.tellTicks && evadeBlocked(e)) {
     e.blinkTicks = blink.everyTicks;
     if (wasTelling) emit(state, { type: 'BlinkInterrupted', uid: e.uid });
     return;

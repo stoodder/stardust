@@ -17,7 +17,10 @@
 //   bonus; systems/detection.ts reads it), and its kill credits (Reel It In: `linkKillCredits`,
 //   scaled and rounded down like jumps; sim/towerEconomy.ts pays them);
 // - Resonance's damage against a raised shield (`vsShieldPct`, scaled like any link bonus; T504;
-//   systems/towers.ts `damageOn` reads it).
+//   systems/towers.ts `damageOn` reads it);
+// - Lightsong's faster beam ramp (`linkRampPct`: the Prism's +30%; attacks/beam.ts reads it) and
+//   its stronger Marks (`linkMarkPct`: the Lantern's +5%; systems/status.ts `applyLinkStatuses` and
+//   systems/markArea.ts read it), each scaled like any link bonus (T508).
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
 // (the new pair list); it runs only when dirty, never per tick.
 import type { CompiledContent, CompiledLinkDef } from '../../content/compiled.ts';
@@ -144,6 +147,9 @@ function recompute(state: SimState, ctx: TickContext): void {
       if (p.killCredits !== 0) t.linkKillCredits += Math.floor(p.killCredits * k + 1e-9);
       // Resonance (T504): damage against a raised shield, scaled like any link bonus.
       t.vsShieldPct += p.vsShieldPct * k;
+      // Lightsong (T508): a faster ramp and stronger Marks, scaled like any link bonus.
+      t.linkRampPct += p.rampPct * k;
+      t.linkMarkPct += p.markPct * k;
     }
   }
 
@@ -203,6 +209,8 @@ function clearBonuses(t: Tower): void {
   t.bonusDetectTiles = 0;
   t.linkKillCredits = 0;
   t.vsShieldPct = 0;
+  t.linkRampPct = 0;
+  t.linkMarkPct = 0;
 }
 
 function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {
