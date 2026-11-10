@@ -181,7 +181,7 @@ export interface AudioHooks {
   render(what: string): Promise<RenderSample>;
 }
 
-/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&dialogue=1&audio=1&save=…`). */
+/** Boot parameters read from the URL (`?test=1&seed=…&map=…&skipIntro=1&dialogue=1&audio=1&fasttext=1&save=…`). */
 export interface BootParams {
   readonly test: boolean;
   /**
@@ -204,6 +204,12 @@ export interface BootParams {
    * save plays), and `&intake=1` turns it back on for the specs that assert it.
    */
   readonly intake: boolean;
+  /**
+   * Test-only fast text (`?test=1&fasttext=1`, T461): dialogue lines show whole at once and timed
+   * holds run shorter (`fastHoldMs` in app/dialogue.ts), so story smoke flows don't wait on the
+   * typewriter. Always false without `?test=1`.
+   */
+  readonly fastText: boolean;
   /**
    * A dev save to play (`meta/__fixtures__/devSaves.ts`), in an in-memory scratch slot with its
    * `devUnlocks`. Read only with `?test=1` (D031); null otherwise.

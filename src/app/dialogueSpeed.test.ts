@@ -7,13 +7,15 @@ import type { IdSpace } from '../content/types.ts';
 import { MemoryStore } from '../meta/index.ts';
 import { createSim, type SimEvent, type SimState } from '../sim/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
-import { typeMs } from '../ui/dialogue/text.ts';
+import { revealedAt, setFastText, typeMs } from '../ui/dialogue/text.ts';
 import { screen } from '../ui/state.ts';
 import { battleConfig } from './battleSetup.ts';
 import { setSpeed } from './commands.ts';
 import {
   bindDialogue,
   commsHoldMs,
+  FAST_TEXT_MIN_HOLD_MS,
+  fastHoldMs,
   holdAtSpeedMs,
   RADIO_MIN_READ_MS,
   REPLY_BEAT_MS,
@@ -45,6 +47,26 @@ describe('holdAtSpeedMs (D126)', () => {
     // A short silence keeps its own length.
     expect(holdAtSpeedMs(1000, '', 2)).toBe(1000);
     expect(holdAtSpeedMs(4000, '', 2)).toBe(2000);
+  });
+});
+
+describe('test-only fast text (T461)', () => {
+  afterEach(() => {
+    setFastText(false);
+  });
+
+  it('is off by default: lines type and holds keep their length', () => {
+    expect(typeMs('x'.repeat(40))).toBe(1000);
+    expect(fastHoldMs(8000)).toBe(8000);
+  });
+
+  it('shows lines whole and shortens holds, never below the floor unless already shorter', () => {
+    setFastText(true);
+    expect(typeMs('x'.repeat(40))).toBe(0);
+    expect(revealedAt('x'.repeat(40), 0)).toBe(40);
+    expect(fastHoldMs(10_000)).toBe(4000);
+    expect(fastHoldMs(2500)).toBe(FAST_TEXT_MIN_HOLD_MS);
+    expect(fastHoldMs(800)).toBe(800);
   });
 });
 
@@ -84,6 +106,24 @@ describe('the radio at 2× (D126)', () => {
     expect(holdAtSpeedMs(reply, punchline!, 2)).toBeLessThan(reply);
     vi.advanceTimersByTime(holdAtSpeedMs(reply, punchline!, 2));
     expect(shown()).toBe(answer);
+  });
+
+  it('plays the radio on shortened holds under fast text (T461)', () => {
+    setFastText(true);
+    try {
+      const [setup, punchline, answer] = lines('a1_m01_w06');
+      emit(countdown(6));
+      expect(shown()).toBe(setup);
+      vi.advanceTimersByTime(fastHoldMs(hold(setup!)) - 1);
+      expect(shown()).toBe(setup);
+      vi.advanceTimersByTime(1);
+      expect(shown()).toBe(punchline);
+      // A reply's hold is just the beat (its typing is none), cut to the floor.
+      vi.advanceTimersByTime(fastHoldMs(REPLY_BEAT_MS));
+      expect(shown()).toBe(answer);
+    } finally {
+      setFastText(false);
+    }
   });
 
   it('drops a radio scene still queued when its wave starts; the one on screen plays on', () => {

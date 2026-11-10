@@ -56,6 +56,7 @@ import {
 import {
   campaign,
   menuNotice,
+  rememberStarMapMarker,
   slots,
   type CampaignView,
   type Difficulty,
@@ -572,8 +573,17 @@ function campaignView(s: Session): CampaignView {
   };
 }
 
+/** The session the menus' view models last showed (a new one forgets the star map's marker). */
+let shown: Session | null = null;
+
 /** Rebuilds the menus' view models from storage and the session. */
 function refresh(): void {
+  if (session !== shown) {
+    // Another save in play (a slot switch, a new game, an import, the Title): the star map's
+    // marker memory was the old save's (T461).
+    shown = session;
+    rememberStarMapMarker(null);
+  }
   slots.value = listSlots(store).map(({ slot, load }) => slotView(slot, load));
   campaign.value = session === null ? null : campaignView(session);
 }

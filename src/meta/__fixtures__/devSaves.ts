@@ -21,7 +21,7 @@ import { isMapWon, type MetaSystem } from '../progress.ts';
 import { META_SYSTEMS } from '../progress.ts';
 import { buy, type PurchaseItem } from '../purchase.ts';
 import { withFirstPaydayCaughtUp } from '../runEnd.ts';
-import type { MapRecord, SaveData } from '../saveData.ts';
+import type { MapRecord, SaveData, SceneId } from '../saveData.ts';
 import { LIVE_KNOWN_IDS, createNewSave } from '../saveData.ts';
 import { withStoryUnlocks } from '../story.ts';
 
@@ -137,7 +137,9 @@ function actOneThrough(last: 'a1_m03' | 'a1_m04' | 'a1_m05'): SaveData {
     withTowers.unlocks.towers.push(zapcoil);
   }
   if (last !== 'a1_m03') {
-    // Before A1M4: Head Start equipped, Rivet and Thumper tune 1 (campaign.md § 4.9).
+    // Before A1M4: Head Start equipped, Rivet and Thumper tune 1 (campaign.md § 4.9). Bought at
+    // Zibzab's, so the base has opened with his shop and his arrival has played.
+    withTowers.story.seen.push(ARRIVAL_SCENE_ID);
     const headStart: ProtocolId = 'head_start';
     withTowers.unlocks.protocols = [headStart];
     withTowers.loadouts.protocols = [headStart];
@@ -258,6 +260,9 @@ function actTwoThrough(last: ActTwoMap | null): SaveData {
   return caughtUp(save);
 }
 
+/** Zibzab's arrival at the base (app/baseScenes.ts `ARRIVAL_SCENE`; the first base visit with his shop). */
+const ARRIVAL_SCENE_ID: SceneId = 'a1_m03_base_arrival';
+
 /** The registered tower `id`, if it is registered yet. */
 function knownTower(id: string): TowerId | undefined {
   const towers: readonly string[] = LIVE_KNOWN_IDS.towers;
@@ -365,8 +370,9 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       save.story.bricksTagIndex = tagIndexFor(save);
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];
-      // Every campaign map won: the star map has been opened (its sweep spent).
-      story.story.seen.push(STAR_MAP_SEEN_ID);
+      // Every campaign map won: the star map has been opened (its sweep spent), and the base with
+      // Zibzab's shop (his arrival played).
+      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID);
       return withFirstPaydayCaughtUp(story);
     },
   },

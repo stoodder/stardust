@@ -7,6 +7,7 @@ import type { SpeakerId } from '../../content/dialogue/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import {
   distort,
+  fastText,
   plainText,
   restSegments,
   revealedAt,
@@ -38,8 +39,8 @@ export interface Typewriter {
 
 /**
  * Types `line` from the moment its id first renders, or (`clock`, a scene's) from when the scene
- * says it started, finished when the scene says so. `instant` (dialogue off under `?test=1`) and
- * reduced motion show it whole; a silence has nothing to type.
+ * says it started, finished when the scene says so. `instant` (dialogue off under `?test=1`), fast
+ * text (`?fasttext=1`, tests only), and reduced motion show it whole; a silence has nothing to type.
  */
 export function useTypewriter(
   line: LineView | null,
@@ -47,7 +48,7 @@ export function useTypewriter(
   clock: { readonly from: number; readonly done: boolean } | null = null,
 ): Typewriter {
   const total = line === null ? 0 : typedLength(line.text);
-  const whole = instant || prefersReducedMotion() || total === 0;
+  const whole = instant || fastText() || prefersReducedMotion() || total === 0;
   const start = useRef({ id: -1, at: 0, finished: false, ticked: 0 });
   if (line !== null && start.current.id !== line.id) {
     start.current = { id: line.id, at: performance.now(), finished: whole, ticked: 0 };

@@ -248,7 +248,7 @@ New threats per map under §3 (≤ 2), and the other new things that satisfy "so
 | A1M3 | Puffwing (+air lane) | Skyhook, Hold Fire, Gerald, wreckage, Time Dilation, shop, the optional bark button |
 | A1M4 | Elder, Bunchling | Zapcoil, loadout choice, salvage yard, Clearance Sale |
 | A1M5 | Digger, second spawn | First boss (capstone), T4 specs, Quiet Wave |
-| A2M1 | Mote (with the hush), Skittish | Fleeing groups, the Spare runners filter, kill-order bark, checkpoints, Act II presentation |
+| A2M1 | Mote (with the hush), Skittish | Fleeing groups, the Spare runners filter, kill-order bark, checkpoints, Act II presentation, the yard cut (a third route down the dark east edge from W8) |
 | A2M2 | Glimmer, Glass Witch | Protect objective, in-stage boss dialogue, retreat |
 | A2M3 | Weft Warden, Lightwing | Revisit, codex annotations, Pebble, the clickable rescue |
 | A2M4 | Veilwalker, Blinkstrider | Lookout as a required counter, Q3 Bonus, C2 |
@@ -295,7 +295,7 @@ Per map: the **threat intel** (`threatIntel`: every trait present in the waves, 
 
 **Objective Intel** (+1 each, optional, never moral): A1M4, A2M1, A2M4, A3M1, A3M4, A3M5, FIN = 7.
 
-**Reference profile** (Standard; first-clear Stardust spent sensibly; Intel from Victory medals only, so one per map; the *weaker* branch of every flag: C1 cleared, C2 Return, both C3 branches, every C4). Every par build in the act files uses only what this profile owns at that map, and the harness asserts it.
+**Reference profile** (Standard; first-clear Stardust spent sensibly; Intel from Victory medals only, so one per map; the *weaker* branch of every flag: C1 cleared, C2 Return, both C3 branches, every C4). Every par build in the act files uses only what this profile owns at that map, and the harness asserts it. The rows built so far are data: `REFERENCE_PROFILES` in [`src/content/upgrades/reference.ts`](../../src/content/upgrades/reference.ts) (A1M1–A2M3; each map's `builds.ts` takes its row), and a later map's row joins it with its map task.
 
 | Before map | Towers owned | Intel spent (running total) | Notable shop state |
 |---|---|---|---|

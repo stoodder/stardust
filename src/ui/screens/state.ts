@@ -221,6 +221,23 @@ export type SlotView =
 /** The campaign in play, or null on the Title (no save loaded). */
 export const campaign = signal<CampaignView | null>(null);
 
+/**
+ * The node the star map last showed its marker on, in this save's session (UI memory, not saved):
+ * the marker walks from it to a newly won node (ui/screens/StarMap.tsx). app/save.ts forgets it
+ * whenever the save in play changes (T461), so a walk never starts from another save's node.
+ */
+let starMapMarker: CampaignMapId | null = null;
+
+/** The star map's remembered marker node (`starMapMarker`), or null. */
+export function lastStarMapMarker(): CampaignMapId | null {
+  return starMapMarker;
+}
+
+/** Remembers the node the star map shows its marker on; null forgets it. */
+export function rememberStarMapMarker(id: CampaignMapId | null): void {
+  starMapMarker = id;
+}
+
 /** The three save slots, refreshed whenever one changes. */
 export const slots = signal<readonly SlotView[]>([]);
 

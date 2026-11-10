@@ -153,7 +153,7 @@ test('results flow: a scene before the card, and one as it is dismissed', async 
   await shot(page, 'results-flow', 5, 'after-scene');
   await page.keyboard.press('Escape');
   await expect(scene).toBeHidden();
-  // The base (where Zibzab's arrival may play as a panel: it's not full-screen).
+  // The base (the dev save has seen Zibzab's arrival).
   await expect(page.getByRole('tab', { name: 'Shop', exact: true })).toBeAttached();
 
   // A loss plays no flow.

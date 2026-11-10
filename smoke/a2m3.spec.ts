@@ -1,11 +1,13 @@
 // T422: A2M3 *Second Look* rendered and played by par (`autoplay('par')`), in the save after A2M2
-// (`?save=after_a2m2&map=a2_m03`, so the story context has a save to record the rescue in) until
-// T301b's star map lands. The briefing (Bricks), the setup in the gold light, W3's fleeing Haulers
-// with their young in the sacks, the Peeker's rock lighting up as W5 starts with Pebble on it, the
-// player's own click and the rescue cue (her plate reads ???), Bricks naming her at W7 with her in
-// his pocket, the dusk by W11, and the debrief's pension line on Results. Before each shot the sim
-// plays a moment at 1×, so the frame isn't a fast-forward's pile. Screenshots in
-// test-results/screens/a2m3/ (look at them: the young in the sacks, the outlined rock, the light).
+// (`?save=after_a2m2&map=a2_m03`, so the story context has a save to record the rescue in; the
+// Sector map's normal flow into it is starMap.spec.ts's). The briefing (Bricks), the setup in the
+// gold light, W3's fleeing Haulers with their young in the sacks, the Peeker's rock lighting up as
+// W5 starts with Pebble on it, the player's own click and the rescue cue (her plate reads ???),
+// Bricks naming her at W7 with her in his pocket, the dusk by W11, and the debrief's pension line
+// on Results. Before each shot the sim plays a moment at 1×, so the frame isn't a fast-forward's
+// pile. Fast text (`&fasttext=1`, T461) shows each line whole and shortens the radio's holds, so
+// the flow doesn't wait on the typewriter. Screenshots in test-results/screens/a2m3/ (look at them:
+// the young in the sacks, the outlined rock, the light).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -74,7 +76,7 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   page,
 }) => {
   test.setTimeout(150_000);
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a2m2&map=a2_m03');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a2m2&map=a2_m03');
   await waitForReady(page);
 
   const brief = page.getByRole('dialog');
@@ -150,18 +152,17 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   const comms = page.getByTestId('comms');
   await expect(comms).toContainText('(squeak)', { timeout: 20_000 });
   await expect(comms).toContainText('???');
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(250); // the panel's 160 ms line-in step
   await shot(page, 'a2m3', 6, 'cue-squeak');
   await expect(comms).toContainText("Pocket's got room.", { timeout: 15_000 });
-  await page.waitForTimeout(1_500);
+  await page.waitForTimeout(250); // the panel's 160 ms line-in step
   await shot(page, 'a2m3', 7, 'cue-bricks');
   await expect(comms).toContainText('(squeak, smaller)', { timeout: 15_000 });
-  await page.waitForTimeout(2_500);
 
   // W7's radio: he names her, with her in his pocket.
   expect(await until(page, 'w7')).toBe(true);
   await expect(comms).toContainText("Pebble. That's you.", { timeout: 10_000 });
-  await page.waitForTimeout(1_500);
+  await page.waitForTimeout(250); // the panel's 160 ms line-in step
   await shot(page, 'a2m3', 8, 'named');
 
   // The dusk by W11.

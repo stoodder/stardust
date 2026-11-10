@@ -40,6 +40,13 @@ describe("Zibzab's arrival at the base", () => {
     expect(playArrivalIfDue()).toBe(false);
   });
 
+  it('has played in the dev saves from after_a1m4 on (bought at his shop; T461)', () => {
+    for (const id of ['after_a1m4', 'after_a1m5', 'after_a2m3', 'all_unlocked'] as const) {
+      loadDevSave(id);
+      expect(arrivalDue()).toBe(false);
+    }
+  });
+
   it('waits while dialogue is off (`?test=1` without `&dialogue=1`)', () => {
     loadDevSave('after_a1m3');
     setDialogueEnabled(false);

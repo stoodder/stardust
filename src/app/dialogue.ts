@@ -18,7 +18,8 @@
 //   newly issued tower at the battle's start (`<map>_cue_issued_<tower>`).
 // - What a scene changed (flags, the callsign) and that it was seen go into the save as it ends.
 // `?test=1` turns the comms panel and in-battle scenes off unless `&dialogue=1` (the radio's rule);
-// the briefing still shows, whole, at once (up to its first choice).
+// the briefing still shows, whole, at once (up to its first choice). `&fasttext=1` (tests only)
+// shows every line whole and shortens the timed holds (`fastHoldMs`), for story smoke flows.
 import { ENEMIES } from '../content/enemies/index.ts';
 import { BANK_NUDGE_CREDITS, BANK_NUDGE_IDLE_PHASES } from '../content/rules.ts';
 import { TOWERS } from '../content/towers/index.ts';
@@ -73,7 +74,7 @@ import {
   type StagingView,
 } from '../ui/dialogue/state.ts';
 import { stagingLeadInMs, stagingOf } from '../ui/dialogue/staging.ts';
-import { typedLength, typeMs } from '../ui/dialogue/text.ts';
+import { fastText, typedLength, typeMs } from '../ui/dialogue/text.ts';
 import { prefersReducedMotion } from '../ui/motion.ts';
 import { silkText } from '../ui/silk.ts';
 import { hud, screen, speed } from '../ui/state.ts';
@@ -85,6 +86,20 @@ import type { Speed } from './testHookTypes.ts';
 
 // The bank nudge's rule (D059, T229) is content/rules.ts's, so the balance tests can check it.
 export { BANK_NUDGE_CREDITS, BANK_NUDGE_IDLE_PHASES };
+/**
+ * Under test-only fast text (`?test=1&fasttext=1`; `setFastText`), a timed hold (a comms line, a
+ * silence, a map-end line) runs at this share of its length, but no shorter than
+ * FAST_TEXT_MIN_HOLD_MS (so a smoke test's polling still sees each line) unless it was shorter.
+ */
+export const FAST_TEXT_HOLD_SHARE = 0.4;
+export const FAST_TEXT_MIN_HOLD_MS = 1500;
+
+/** A timed hold of `ms`, shortened under fast text (FAST_TEXT_HOLD_SHARE); else `ms`. */
+export function fastHoldMs(ms: number): number {
+  if (!fastText()) return ms;
+  return Math.min(ms, Math.max(FAST_TEXT_MIN_HOLD_MS, ms * FAST_TEXT_HOLD_SHARE));
+}
+
 /** A queued comms scene waiting longer than this (ms of real time) is dropped (D048's staleness). */
 export const COMMS_STALE_MS = 15_000;
 /** A line answered by the next (another speaker) holds this long once typed (D028's beat). */
@@ -386,7 +401,8 @@ function armSilence(h: Holding): void {
   const step = h.cursor.step;
   if (!advancesItself(h.mode, line, h.instant) || step.kind !== 'line') return;
   const wait =
-    Math.max(0, h.typedFrom - performance.now()) + (step.node.durationSec ?? SILENCE_SEC) * 1000;
+    Math.max(0, h.typedFrom - performance.now()) +
+    fastHoldMs((step.node.durationSec ?? SILENCE_SEC) * 1000);
   silenceTimer = setTimeout(() => {
     silenceTimer = null;
     if (holding === h && h.line === line) advanceScene();
@@ -456,7 +472,7 @@ function settle(h: Holding): void {
     if (!h.instant) {
       h.line = view;
       h.typedFrom = performance.now();
-      h.typedOut = reducedMotion() || typedLength(view.text) === 0;
+      h.typedOut = fastText() || reducedMotion() || typedLength(view.text) === 0;
       break;
     }
     h.transcript.push(view);
@@ -756,7 +772,9 @@ function showCommsLine(): void {
     moveOn,
     commsEnding
       ? endHoldMs(node)
-      : holdAtSpeedMs(commsHoldMs(view.text, node.durationSec, reply), view.text, speed.value),
+      : fastHoldMs(
+          holdAtSpeedMs(commsHoldMs(view.text, node.durationSec, reply), view.text, speed.value),
+        ),
   );
 }
 
@@ -815,9 +833,14 @@ export function endLineMs(text: string): number {
   return typeMs(text) + END_LINE_BEAT_MS;
 }
 
-/** How long a line holds on the panel once the map has ended: its `durationSec`, else `endLineMs`. */
+/**
+ * How long a line holds on the panel once the map has ended: its `durationSec`, else `endLineMs`
+ * (shortened under fast text).
+ */
 function endHoldMs(node: Pick<LineNode, 'text' | 'durationSec'>): number {
-  return node.durationSec !== undefined ? node.durationSec * 1000 : endLineMs(node.text);
+  return fastHoldMs(
+    node.durationSec !== undefined ? node.durationSec * 1000 : endLineMs(node.text),
+  );
 }
 
 /**
@@ -882,7 +905,7 @@ export function playMapEndLines(
     button: null,
   };
   showCommsLine();
-  return lines.reduce((ms, l) => ms + endLineMs(l.text), 0);
+  return lines.reduce((ms, l) => ms + fastHoldMs(endLineMs(l.text)), 0);
 }
 
 // ─── Barks ───────────────────────────────────────────────────────────────────────────────────

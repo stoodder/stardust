@@ -105,8 +105,10 @@
   cursor: pointer;
 }
 
+/* As tall as its lines: name and role, plus the counter chips on a map that has counters. Denser
+   than a fixed height, so eight towers leave the Field Protocols two rows (T461). */
 .sd-lo-tower {
-  min-height: 36px;
+  min-height: 26px;
 }
 
 .sd-lo-tower.sd-lo-on,

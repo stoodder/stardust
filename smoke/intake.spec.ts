@@ -82,7 +82,10 @@ test('intake: a new game files the profile, then A1M1; the name shows on the Shi
 });
 
 test('intake: Continue on a v1 save runs the intake, then its Shift board', async ({ page }) => {
-  const v1 = readFileSync(new URL('../src/meta/__fixtures__/save.v1.json', import.meta.url), 'utf8');
+  const v1 = readFileSync(
+    new globalThis.URL('../src/meta/__fixtures__/save.v1.json', import.meta.url),
+    'utf8',
+  );
   await page.addInitScript((raw) => {
     if (localStorage.getItem('stardust:slot:1') === null) {
       localStorage.setItem('stardust:slot:1', raw);

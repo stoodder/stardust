@@ -1,11 +1,11 @@
 // T420: A2M1 *Rig Nine* rendered, played by par (`autoplay('par')`), reached with `?map=a2_m01`
-// until T301b's star map lands (the Shift board is Act I's, D102, so it never lists Rig Nine). The
-// briefing (Sterling, Bricks, the threat strip with Skittish and the clusters, Hiccup Contained),
-// the setup with both crew-log rigs cleared, a hush on the Spires road (W3, the
-// Mote's teach), the double cluster meeting at the merge (W7), and the yard cut down the
-// dark east edge (W10). Before each shot the sim plays a moment at 1×, so the frame isn't a
-// fast-forward's pile. Screenshots in test-results/screens/a2m1/ (look at them: the chase, the hush
-// ring and the clusters' read against Act II's gold are the point).
+// (the Sector map's normal flow into it is starMap.spec.ts's). The briefing (Sterling, Bricks,
+// the threat strip with Skittish and the clusters, Hiccup Contained), the setup with both
+// crew-log rigs cleared, a hush on the Spires road (W3, the Mote's teach), the double cluster
+// meeting at the merge (W7), and the yard cut down the dark east edge (W10). Before each shot the
+// sim plays a moment at 1×, so the frame isn't a fast-forward's pile. Screenshots in
+// test-results/screens/a2m1/ (look at them: the chase, the hush ring and the clusters' read
+// against Act II's gold are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';

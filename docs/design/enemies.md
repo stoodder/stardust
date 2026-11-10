@@ -150,7 +150,7 @@ target.hp -= damage
 
 **How the shield pulse runs (rule; T403).** One module (`src/sim/enemyAbilities/pulse.ts`) runs a unit's own pulse (`pulse` in its data) and a boss phase's (the Glass Witch's, D101); later, the Sunderglass Penitent's recharge pulse and the Aegis Cantor's recharge can use it (M5).
 - **Timing.** The first pulse comes one period after the unit spawns. The last `tellSec` of each period is the tell (the ring and chime; the Witch's is 1.5 s, §6). A boss's pulse timer waits while it's invulnerable between phases and carries on across a phase change.
-- **What it restores.** When the timer runs out it restores its `shield` amount to itself and to every live unit **of its faction with a shield** whose centre is within `radiusTiles`, flyers included, never past each unit's own max. A leaving or burrowed unit gets nothing (nothing reaches it, §2.6). A pulse refills; it doesn't restart anyone's regen delay.
+- **What it restores.** When the timer runs out it restores its `shield` amount to itself and to every live unit **of its faction with a shield** whose centre is within `radiusTiles`, flyers included, never past each unit's own max. A leaving or burrowed unit gets nothing (nothing reaches it, §2.6). A pulse refills; it doesn't restart anyone's regen delay. On Story difficulty the amount scales with the enemies' shield modifier, like every shield (the Witch's 120 becomes 84).
 - **Interrupts (§2.4).** Stasis on a non-boss cancels a pulse mid-tell and stops a tell from starting; either way its cooldown restarts from zero. Unnerved will do the same when it ships (M5). A boss is never in Stasis (it converts to Chilled 50%), so nothing but Unnerved interrupts the Witch's pulse.
 - **Story difficulty** scales the amount with the shield (−30%), so a pulse restores the same share of a weaker shield.
 
@@ -287,9 +287,9 @@ Corporate, cold, and spotless. They arrive in A3M2, when Clean Exit sends Compli
 | ID | Name | HP | Armor | Shield | Spd | Leak | Bounty | Layer | Traits | Recommended act |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `mote` | **Mote** | 25 | 0 | — | 1.6 | 1 | 2 | G | Comes in clusters of 6–12; can use rift lanes | Act II start (A2M1, first Hollow), Act III |
-| `fracture` | **Fracture** | 200 | 0 | — | 0.9 | 2 | 8 | G | Splitting: 2 Shards (80 HP, speed 1.1) → each splits into 2 Motes | Act III early |
+| `fracture` | **Fracture** | 200 | 0 | — | 0.9 | 2 | 8 | G | Splitting: 2 Shards (80 HP, speed 1.1) → each splits into 2 Motes | Act II end (A2M6), Act III |
 | `maw` | **Maw** | 400 | 2 | — | 0.7 | 2 (+1 per absorb) | 20 (+3 per Hollow absorb only) | G | **Gathering** (`consumer`): every 4 s, after a 1 s tendril tell, draws in the nearest eligible unit within 1 tile (§5.4: Hollow, or at most one Skitterkin; never a boss), adding that unit's current HP to its own HP and max HP and growing 10% in size. Max 5 absorbs. | Act III early |
-| `riftmoth` | **Rift Moth** | 120 | 0 | — | 1.2 | 1 | 10 | A | Flying; Phasing: untargetable for 1.5 s every 5 s (0.5 s flicker tell) | Act III mid |
+| `riftmoth` | **Rift Moth** | 120 | 0 | — | 1.2 | 1 | 10 | A | Flying; Phasing: untargetable for 1.5 s every 5 s (0.5 s flicker tell) | Act II end (A2M6), Act III |
 | `undertow` | **Undertow** | 350 | 5 | — | 0.8 | 2 | 18 | G | Burrowing: every 7 s digs in for 3 s, with a visible ripple trail | Act III mid |
 | `silencer` | **Silencer** | 260 | 4 | — | 0.8 | 2 | 22 | G | **Jammer:** every 12 s, targets a **Hum Choir** within 2.5 tiles if there is one (else the highest-tier tower; ties: lowest entity id), skipping jam-immune towers (§4), with a 2 s creeping-tendril tell, then jams it for 4 s | Act III mid–late |
 

@@ -53,6 +53,12 @@ describe('dev saves (the ?save= fixtures)', () => {
     expect(m4.loadouts.protocols).toEqual(['head_start']);
     expect(m4.upgrades).toMatchObject({ tune_rivet: 1, tune_thumper: 1 });
     expect(m4.story.bricksTagIndex).toBe(1);
+    // Bought at Zibzab's: his arrival has played by then (not yet after A1M3: the shop just opened).
+    expect(m4.story.seen).toContain('a1_m03_base_arrival');
+    expect(DEV_SAVES.after_a1m3.build().story.seen).not.toContain('a1_m03_base_arrival');
+    for (const id of ['after_a1m5', 'after_a2m3', 'all_unlocked'] as const) {
+      expect(DEV_SAVES[id].build().story.seen).toContain('a1_m03_base_arrival');
+    }
     const m5 = DEV_SAVES.after_a1m5.build();
     expect(m5.unlocks.specs).toEqual(['thumper']);
     expect(m5.story.flags.spared_quiet_wave).toBe(true);

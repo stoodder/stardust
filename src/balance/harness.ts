@@ -301,12 +301,7 @@ function runLevelChecks<K extends IdSpace>(
   return [
     check('steps', 'build steps run cleanly', steps, `${runs.length} runs`),
     check('12', 'no invariant violations', invariants, `${runs.length} runs`),
-    check(
-      '13',
-      `each run within ${RUN_BUDGET_MS} ms CPU`,
-      slow,
-      `slowest ${Math.round(maxMs)} ms`,
-    ),
+    check('13', `each run within ${RUN_BUDGET_MS} ms CPU`, slow, `slowest ${Math.round(maxMs)} ms`),
   ];
 }
 

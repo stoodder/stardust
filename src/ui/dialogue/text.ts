@@ -7,6 +7,21 @@ import { GLYPH_CHARS } from '../../story/text.ts';
 /** Typewriter speed, in characters per second (art-direction.md § Dialogue presentation). */
 export const TYPE_CPS = 40;
 
+let fast = false;
+
+/**
+ * Test-only fast text (`?test=1&fasttext=1`; conventions.md § Browser smoke tests): lines show
+ * whole at once, and app/dialogue.ts shortens its timed holds (`fastHoldMs`). Never on in play.
+ */
+export function setFastText(on: boolean): void {
+  fast = on;
+}
+
+/** Whether fast text is on (`setFastText`). */
+export function fastText(): boolean {
+  return fast;
+}
+
 /** One run of a line: plain or emphasized text, or an inline glyph. */
 export type TextSegment =
   { readonly kind: 'text'; readonly text: string; readonly em: boolean } | { readonly kind: 'sun' };
@@ -47,13 +62,15 @@ export function plainText(text: string): string {
     .join('');
 }
 
-/** How long `text` takes to type, in ms. */
+/** How long `text` takes to type, in ms (none under fast text). */
 export function typeMs(text: string): number {
+  if (fast) return 0;
   return Math.ceil((typedLength(text) * 1000) / TYPE_CPS);
 }
 
 /** Characters shown `ms` after a line starts typing (all of them once it's done). */
 export function revealedAt(text: string, ms: number): number {
+  if (fast) return typedLength(text);
   return Math.min(typedLength(text), Math.max(0, Math.floor((ms * TYPE_CPS) / 1000)));
 }
 

@@ -7,6 +7,7 @@ import { BootScene } from '../render/scenes/BootScene.ts';
 import { mountUi } from '../ui/Overlay.tsx';
 import { dialogue as dialogueView, sceneBlocks } from '../ui/dialogue/state.ts';
 import { DEV_BARKS, DEV_SCENES } from '../ui/dialogue/dev.ts';
+import { setFastText } from '../ui/dialogue/text.ts';
 import { hud, screen } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import { dismissBriefing, issue, setSpeed } from './commands.ts';
@@ -39,6 +40,7 @@ export function parseBootParams(search: string): BootParams {
     map: q.get('map'),
     skipIntro: q.get('skipIntro') === '1',
     intake: !test || q.get('intake') === '1',
+    fastText: test && q.get('fasttext') === '1',
     // Dev saves load only under ?test=1 (D031): a player URL can't open gated systems.
     save: test ? q.get('save') : null,
   };
@@ -59,6 +61,7 @@ function requireElement(id: string): HTMLElement {
 export async function boot(): Promise<void> {
   const params = parseBootParams(window.location.search);
   setDialogueEnabled(params.dialogue);
+  setFastText(params.fastText);
   setIntakeEnabled(params.intake);
   initSettings();
   installAudio(params.audio);

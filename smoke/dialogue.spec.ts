@@ -140,7 +140,8 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
 });
 
 test('dialogue: barks on the comms panel with a portrait, and a reply button', async ({ page }) => {
-  await page.goto('/?test=1&skipIntro=1&seed=1&dialogue=1');
+  // Fast text (T461): lines show whole and the panel's holds run shorter.
+  await page.goto('/?test=1&skipIntro=1&seed=1&dialogue=1&fasttext=1');
   await waitForReady(page);
   // The first leak: QUILL's bark, with its portrait. It queues behind the bank nudge if that
   // speaks first (nothing is built, so W2's build phase opens with a big bank).
@@ -153,7 +154,7 @@ test('dialogue: barks on the comms panel with a portrait, and a reply button', a
   const comms = page.getByRole('log', { name: 'Radio' });
   await expect(comms).toContainText('Pest escaped containment!', { timeout: 10_000 });
   await expect(comms.locator('.dlg-portrait img')).toBeVisible();
-  await page.waitForTimeout(2000); // let it type out
+  await page.waitForTimeout(250); // the panel's 160 ms line-in step
   await nextFrames(page);
   await shot(page, 'dialogue', 7, 'bark');
   // A bark with a reply button: pressing it plays the reply at once. The game keeps running.

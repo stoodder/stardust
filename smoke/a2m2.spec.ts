@@ -1,12 +1,13 @@
-// T421: A2M2 *The Glass Witch* rendered, played by par (`autoplay('par')`), reached with `?map=a2_m02`
-// until T301b's star map lands. The briefing (Sterling's "vandalism", the threat strip with Shielded
-// and the boss, Glass Half Empty, the Rigs meter), the setup (the Zapcoil pair either side of the
-// Sprinkler on the outcrop, the Thumper and Rivet at the fork), the Rigs meter hit (fire held on
-// W2's Glimmers until one reaches the rigs, so the meter has something to show: par alone never
-// lets one through), her shield pulse's tell on the branch, the Witch telling a blink in her
-// second phase, and her retreat. Before each shot the sim plays a moment at 1×, so the frame isn't
-// a fast-forward's pile. Screenshots in test-results/screens/a2m2/ (look at them: the Witch's read
-// against Act II's gold, the pulse ring and the blink ghost are the point).
+// T421: A2M2 *The Glass Witch* rendered, played by par (`autoplay('par')`), reached with
+// `?map=a2_m02` (the Sector map's normal flow into it is starMap.spec.ts's). The briefing
+// (Sterling's "vandalism", the threat strip with Shielded and the boss, Glass Half Empty, the Rigs
+// meter), the setup (the Zapcoil pair either side of the Sprinkler on the outcrop, the Thumper and
+// Rivet at the fork), the Rigs meter hit (fire held on W2's Glimmers until one reaches the rigs, so
+// the meter has something to show: par alone never lets one through), her shield pulse's tell on
+// the branch, the Witch telling a blink in her second phase, and her retreat. Before each shot the
+// sim plays a moment at 1×, so the frame isn't a fast-forward's pile. Screenshots in
+// test-results/screens/a2m2/ (look at them: the Witch's read against Act II's gold, the pulse ring
+// and the blink ghost are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';

@@ -18,7 +18,6 @@ import {
   type StarNodeView,
 } from '../../app/starMap.ts';
 import { activeSave } from '../../app/save.ts';
-import type { CampaignMapId } from '../../content/campaign.ts';
 import {
   NODE_BOX,
   NODE_CLEAR_BOX,
@@ -35,7 +34,7 @@ import { Banks } from './Banks.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
 import { MenuNotice } from './MenuNotice.tsx';
-import { campaign } from './state.ts';
+import { campaign, lastStarMapMarker, rememberStarMapMarker } from './state.ts';
 import { starMapChart } from './starMapChart.ts';
 import './screens.css';
 import './starMap.css';
@@ -54,9 +53,6 @@ const NODE_VARIANT: Readonly<Record<StarMapView['act'], string>> = {
   '3': 'act3',
   finale: 'finale',
 };
-
-/** The node the screen last showed the marker on, this session (UI memory, not saved). */
-let lastMarker: CampaignMapId | null = null;
 
 /** The chart's pixels for the last phase and legs drawn (it repaints only when those change). */
 let chartCache: { readonly key: string; readonly image: RgbaImage } | null = null;
@@ -300,7 +296,7 @@ export function StarMap() {
   const panel = useRef<HTMLElement | null>(null);
   // The marker's walk from the node it last stood on this session (none under reduced motion).
   const [walk] = useState(() => {
-    const from = lastMarker;
+    const from = lastStarMapMarker();
     const to = view?.marker ?? null;
     return from !== null && to !== null && from !== to && !still ? { from, to } : null;
   });
@@ -320,7 +316,7 @@ export function StarMap() {
   }, []);
 
   useEffect(() => {
-    lastMarker = view?.marker ?? null;
+    rememberStarMapMarker(view?.marker ?? null);
     if (walk === null) return undefined;
     let raf = 0;
     const start = performance.now();

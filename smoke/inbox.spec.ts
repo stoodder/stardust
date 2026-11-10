@@ -85,16 +85,14 @@ test('inbox: the NEW badge, a memo with its small print, and the codex', async (
 });
 
 // T320 / T335: after A1M5's stinger the base lands on the Inbox and Sterling's Record Quarter memo
-// (its small print: Rig Nine's "scheduled quiet period"), not on a bright shelf. The dev save hasn't
-// seen Zibzab's arrival (real play always has by A1M5), so a first visit plays it and is left.
+// (its small print: Rig Nine's "scheduled quiet period"), not on a bright shelf. The flow starts
+// from the base (a menu); the dev save has seen Zibzab's arrival, as real play has by A1M5.
 test('inbox: after the stinger, the base lands on the Record Quarter memo', async ({ page }) => {
   await page.goto('/?test=1&dialogue=1&seed=1&save=after_a1m5');
   await waitForReady(page);
-  const scene = page.getByTestId('scene');
   await page.getByRole('button', { name: 'Base' }).click();
-  await expect(scene).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(scene).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
+  await expect(page.getByTestId('scene')).toBeHidden();
 
   // A1M5's flow (shown from the base, a menu): the party before the card (skipped), the card, then
   // Continue: the stinger plays full-screen, and skipping it lands in the base again.

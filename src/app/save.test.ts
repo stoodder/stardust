@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
 import { MemoryStore, SAVE_KEYS, createNewSave, exportCode, getLastSlot } from '../meta/index.ts';
-import { campaign, slots } from '../ui/screens/state.ts';
+import { campaign, lastStarMapMarker, rememberStarMapMarker, slots } from '../ui/screens/state.ts';
 import {
   IMPORT_MESSAGES,
   activeSave,
@@ -159,6 +159,21 @@ describe('the save session', () => {
     deleteSave(1);
     expect(activeSave()).toBeNull();
     expect(slots.value[0]?.status).toBe('empty');
+  });
+
+  it("forgets the star map's marker when the save in play changes, not when it is saved (T461)", () => {
+    newGame(1);
+    rememberStarMapMarker('a1_m05');
+    run('a1_m01', 20); // the same save, written
+    expect(lastStarMapMarker()).toBe('a1_m05');
+    newGame(2); // another slot
+    expect(lastStarMapMarker()).toBeNull();
+    rememberStarMapMarker('a1_m05');
+    closeSession(); // back to the Title
+    expect(lastStarMapMarker()).toBeNull();
+    rememberStarMapMarker('a1_m05');
+    expect(loadDevSave('after_a2m1')).toBe(true);
+    expect(lastStarMapMarker()).toBeNull();
   });
 
   it('an unreadable slot shows as such and offers its raw text', () => {
