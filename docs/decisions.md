@@ -1543,3 +1543,13 @@ Reviewers: correctness/architecture/performance (no high-severity findings; repl
   - **Readability:** the boss bar shows a shield strip and an end mark (the Witch's 40% retreat too); the Aelari towers are a pink gem (Prism), a violet needle (Mindspike) and a gold-lit cage (Lantern) on one dais with per-tower trim; Motes get an inner ink.0 contour; the Phased ghost a white rim; the relabel holds the last integrity; reduced motion keeps it; spec cards name what a choice gives up; margin notes in violet ink; the gallery has an M5 corner.
   - **Audio:** the beam hum is an octave lower, −3 dB, climbing ≤ 5 semitones, and yields to a soft bed (`beam_bed`) once capped.
   - Probes: the Mindspike holds par's level on A2M6; the Lantern is weak there (no cloaks) — T568.
+
+### D139 — 2026-11-10 — M5 review round 2 rulings (fixed in round 3, the last)
+Reviewers: correctness of round 1's seams (no high-severity findings; `noCall`, the cue guards, C2 at the base, `debriefAsScene`, the Escort's reach rule, `darkDims`, the boss bars and the beam bed verified end to end) and a playtester (round 1's fixes land: C2 can't be taken by a stray key, the Penitent's fight reads, Ishael's debrief lands as the act's peak; the art trail still beats M4's).
+- **The pivot's held relabel shows the old meter whole** (Core and its last value), then swaps everything at once.
+- **The Seer's Lantern has one reach:** its placement ring ignores the dark and its beam is clamped to its detection radius after stacking.
+- **No stale comms line after a flow scene** (no old radio over the Results card).
+- **The shards are seen:** they draw above the Penitent, and a short spark sheds each one on the break. **The shield strip is scaled to the shield**, with "½" under the kneel flag. **The light ring has its own dotted gold look.**
+- **Act II's last image gets a stage:** Pebble's whistle scene plays full-screen. The Lantern's cage reads gold. Speaker labels never wrap.
+- Ves'thara's `touched` keys to this run's pivot where the speaker rules allow; the pivot-faction rule also covers a boss's own wave.
+- **Accepted:** the pivot clears everything on the comms panel (a hard cut); W6 stays locked after an early Kneel.
