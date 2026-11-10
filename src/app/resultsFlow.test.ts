@@ -277,10 +277,10 @@ describe('escortAtEnd', () => {
         evacuated: 9,
         total: 12,
         lost: 2,
-        fromStart: true,
       },
     });
-    expect(escortAtEnd(sim('escort', 'defend')).escort?.fromStart).toBe(false);
+    // After a pivot (A2M5's) the same: the map ended as an Escort.
+    expect(escortAtEnd(sim('escort', 'defend'))).toEqual(escortAtEnd(sim('escort', 'escort')));
     expect(escortAtEnd(sim('defend', 'defend'))).toEqual({});
   });
 

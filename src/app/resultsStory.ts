@@ -63,10 +63,7 @@ export function storyRewardsOf(summary: {
 
 /** What `escortAtEnd` reads of a finished battle. */
 interface EscortSim {
-  readonly map: {
-    readonly objective: string;
-    readonly escort: { readonly total: number } | null;
-  };
+  readonly map: { readonly escort: { readonly total: number } | null };
   readonly state: {
     readonly objective: string;
     readonly meterLabel: MeterLabel | null;
@@ -89,7 +86,6 @@ export function escortAtEnd(sim: EscortSim): { escort?: RunEscort } {
       evacuated: s.stats.evacuated,
       total: sim.map.escort?.total ?? 0,
       lost: s.stats.refugeesLost,
-      fromStart: sim.map.objective === 'escort',
     },
   };
 }

@@ -9,7 +9,7 @@
 // screen (T220), and after a loss with a checkpoint (Act II on) "Retry from wave N" first
 // (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
 // (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
-// A2M5's gift, C2's trade), an Escort's meter joins the stats (Evacuated), and a debrief's story
+// A2M5's gift, C2's trade), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
 // choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts).
 // Compact by design: everything fits 360 game px of height.
 import { campaignScreenName } from '../../app/starMap.ts';
@@ -24,6 +24,7 @@ import {
   retryRun,
 } from '../../app/navigation.ts';
 import { pickResultsChoice } from '../../app/resultsFlow.ts';
+import { resultsStats } from '../../app/runResult.ts';
 import { countUpDuration, countUpValue } from './countUp.ts';
 import { formatCount } from './format.ts';
 import { focusOnce } from './focus.ts';
@@ -485,37 +486,16 @@ function Body({ result }: { result: RunResult }) {
         <Stamp key={t} text={t} index={i} />
       ))}
       <dl class="sd-results-stats">
-        <div>
-          <dt>Waves survived</dt>
-          <dd>
-            {result.wavesSurvived} / {result.waveCount}
-          </dd>
-        </div>
-        {/* An Escort from the start has no core to defend: its meter stands in (T305c). */}
-        {escort?.fromStart !== true && (
-          <div>
-            <dt>Core integrity</dt>
+        {/* An Escort's meter stands in Core integrity's place (core-loop.md § 6.2). */}
+        {resultsStats(result).map((row) => (
+          <div key={row.id} data-testid={`results-${row.id}`}>
+            <dt>{silkText(row.label)}</dt>
             <dd>
-              {result.integrity} / {result.maxIntegrity}
+              {row.value}
+              {row.note !== null && <span class="sd-results-stat-note"> · {row.note}</span>}
             </dd>
           </div>
-        )}
-        {escort !== null && (
-          <div data-testid="results-escort">
-            <dt>{escort.label}</dt>
-            <dd>
-              {escort.evacuated} / {escort.total}
-            </dd>
-          </div>
-        )}
-        {result.asset !== null && (
-          <div data-testid="results-asset">
-            <dt>{result.asset.name}</dt>
-            <dd>
-              {result.asset.value} / {result.asset.max}
-            </dd>
-          </div>
-        )}
+        ))}
       </dl>
       <div class="sd-results-counts">
         <Counter counter={counter} shown={counted} />

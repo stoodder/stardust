@@ -87,6 +87,9 @@ export class WorldGlowView {
   readonly #liftPx: (col: number, row: number) => number;
   readonly #props: PropLight[] = [];
   readonly #pools: Phaser.GameObjects.Image[] = [];
+  /** Each pool slot's source as drawn: its squared radius and whether it's a lamp. */
+  readonly #poolSq: number[] = [];
+  readonly #poolLamp: boolean[] = [];
   readonly #crystals: Phaser.GameObjects.Image[] = [];
   readonly #moons: Phaser.GameObjects.Image | null = null;
   #dark = -1;
@@ -144,6 +147,8 @@ export class WorldGlowView {
       const img = scene.make.image({}, false).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
       layers.decal.add(img);
       this.#pools.push(img);
+      this.#poolSq.push(-1);
+      this.#poolLamp.push(false);
     }
     const halo = 'glow.crystal';
     if (!scene.textures.exists(halo)) {
@@ -219,8 +224,12 @@ export class WorldGlowView {
     for (let i = 0; i < shown; i++) {
       const d = discs[i]!; // i < lights ≤ discs.length
       const img = pools[i]!; // i < pools.length
-      const key = this.#poolTexture(d.radiusSq, i < this.#lamps ? LAMP_POOL : PRISM_POOL);
-      if (img.texture.key !== key) {
+      const lamp = i < this.#lamps;
+      // A slot's texture changes only when its source does (no key string per frame).
+      if (this.#poolSq[i] !== d.radiusSq || this.#poolLamp[i] !== lamp) {
+        this.#poolSq[i] = d.radiusSq;
+        this.#poolLamp[i] = lamp;
+        const key = this.#poolTexture(d.radiusSq, lamp ? LAMP_POOL : PRISM_POOL);
         const a = this.#poolAnchor(key);
         img.setTexture(key).setDisplayOrigin(a.x, a.y);
       }

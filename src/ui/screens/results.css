@@ -102,6 +102,11 @@
   color: var(--sd-white-1);
 }
 
+/* A row's quieter aside, as the payroll's notes: an Escort's " · lost 11". */
+.sd-results-stat-note {
+  color: var(--sd-steel-3);
+}
+
 /* The counter and the career total, side by side. */
 .sd-results-counts {
   display: flex;
@@ -266,11 +271,15 @@
   flex: none;
 }
 
-/* The debrief (D028): spoken lines under their name plates, like the radio ticker's. */
+/* The debrief (D028): spoken lines under their name plates, like the radio ticker's. Two columns
+   shared by every line (each row a subgrid of the list's): the name plates' column as wide as the
+   widest on the card (at least STERLING's 44 px; VES'THARA's is wider), so every line's text starts
+   in one column. */
 .sd-results-debrief {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  grid-template-columns: minmax(44px, max-content) minmax(0, 1fr);
+  column-gap: 6px;
+  row-gap: 3px;
   width: 100%;
   margin: 0;
   padding: 5px 4px 0;
@@ -280,25 +289,27 @@
 }
 
 .sd-results-debrief li {
-  display: flex;
-  gap: 6px;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: baseline;
 }
 
 .sd-results-speaker {
-  flex: none;
-  /* Wide enough for STERLING, so every line starts in one column. */
-  min-width: 44px;
   font-family: var(--font-heading);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-/* A held silence (T531): no name plate, a quiet "…" in the speaker's colour where their line would
-   start (the speaker column's 44 px and the 6 px gap). */
+/* A held silence (T531): no name plate, a quiet "…" in the speaker's colour in the text column,
+   where their line would start. */
 .sd-results-debrief li.sd-results-silence {
-  padding-left: 50px;
   font-family: var(--font-body);
   line-height: 10px;
+}
+
+.sd-results-silence > span {
+  grid-column: 2;
 }
 
 .sd-results-line {

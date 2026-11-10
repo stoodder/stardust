@@ -50,8 +50,8 @@ export interface RunResult {
   readonly retryFromWave: number | null;
   /**
    * The run's Escort meter as it ended (the map was an Escort at the end: from the start, or
-   * after a pivot; T305c), or null on other runs. Results lists it beside (or, on an Escort from
-   * the start, in place of) Core integrity, and a `meter` counter shows its line.
+   * after a pivot; T305c), or null on other runs. Results lists it in Core integrity's place
+   * (app/runResult.ts `resultsStats`), and a `meter` counter shows its line.
    */
   readonly escort: RunEscort | null;
   /**
@@ -69,9 +69,8 @@ export interface RunEscort {
   readonly evacuated: number;
   /** The map's refugees (`escort.total`). */
   readonly total: number;
+  /** Refugees lost (`stats.refugeesLost`): the row's " · lost N". */
   readonly lost: number;
-  /** The map was an Escort from its start (no core to defend: Core integrity isn't listed). */
-  readonly fromStart: boolean;
 }
 
 /** A debrief's story choice on the card (C2: Zibzab's Price). */

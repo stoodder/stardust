@@ -410,6 +410,63 @@ export function runResultOf(
   };
 }
 
+/** One of the card's stat rows under the headline: "Waves survived 12 / 12". */
+export interface ResultsStat {
+  /** The row's id (its smoke test id is `results-<id>`). */
+  readonly id: 'waves' | 'integrity' | 'escort' | 'asset';
+  readonly label: string;
+  readonly value: string;
+  /** A quieter aside after the value (" · lost 11"), or null. */
+  readonly note: string | null;
+}
+
+/**
+ * The card's stat rows (core-loop.md § 6.2): the waves, then the map's meter as it ended. A map
+ * that ended as an Escort (from the start, or after a pivot like A2M5's) lists its meter in Core
+ * integrity's place, as the HUD did ("Evacuated 25 / 36 · lost 11"; the lost count only when one
+ * was lost); a Protect map's asset joins the core.
+ */
+export function resultsStats(
+  r: Pick<
+    RunResult,
+    'wavesSurvived' | 'waveCount' | 'integrity' | 'maxIntegrity' | 'escort' | 'asset'
+  >,
+): ResultsStat[] {
+  const out: ResultsStat[] = [
+    {
+      id: 'waves',
+      label: 'Waves survived',
+      value: `${r.wavesSurvived} / ${r.waveCount}`,
+      note: null,
+    },
+  ];
+  const { escort, asset } = r;
+  if (escort === null) {
+    out.push({
+      id: 'integrity',
+      label: 'Core integrity',
+      value: `${r.integrity} / ${r.maxIntegrity}`,
+      note: null,
+    });
+  } else {
+    out.push({
+      id: 'escort',
+      label: escort.label,
+      value: `${escort.evacuated} / ${escort.total}`,
+      note: escort.lost > 0 ? `lost ${escort.lost}` : null,
+    });
+  }
+  if (asset !== null) {
+    out.push({
+      id: 'asset',
+      label: asset.name,
+      value: `${asset.value} / ${asset.max}`,
+      note: null,
+    });
+  }
+  return out;
+}
+
 /**
  * The save after a run's debrief (T413): a **won** run applies what its `<map>_debrief` does as
  * this run plays it (`readThrough`: its `set` nodes up to any choice; A2M2's Thorn callsign) and

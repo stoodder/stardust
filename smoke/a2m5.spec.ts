@@ -206,6 +206,14 @@ test('A2M5: from the Sector map, the Penitent, the pivot mid-fight, the escort, 
   const card = page.getByRole('dialog').filter({ hasText: 'Not there. Never there.' });
   await expect(card).toBeVisible({ timeout: 10_000 });
   await expect(card).toContainText('Prism Spire');
+  // T565: the map ended as an Escort after its pivot, so its meter stands in Core integrity's
+  // place, with the refugees lost ("Evacuated 25 / 36 · lost 11").
+  const end = await page.evaluate(() => globalThis.__sd!.state()!.stats);
+  const lost = end.refugeesLost > 0 ? ` · lost ${end.refugeesLost}` : '';
+  await expect(card.getByTestId('results-escort')).toHaveText(
+    new RegExp(`^Evacuated\\s*${end.evacuated} / 36${lost}$`),
+  );
+  await expect(card).not.toContainText('Core integrity');
   await nextFrames(page);
   await shot(page, 'a2m5', 10, 'debrief');
 });

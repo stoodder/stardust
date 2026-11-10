@@ -7,6 +7,7 @@ import {
   metaRunEndOf,
   offeredMedals,
   resultStamps,
+  resultsStats,
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
@@ -24,6 +25,49 @@ const INPUT: RunEndInput = {
   medals: offeredMedals({ medals: { challenge: { id: 'teamwork', name: 'Teamwork!' } } }),
   earnedMedals: [],
 };
+
+describe('resultsStats', () => {
+  const escort = {
+    kind: 'evacuated' as const,
+    label: 'Evacuated',
+    evacuated: 25,
+    total: 36,
+    lost: 11,
+  };
+  const card = { ...runResultOf(INPUT, 'won') };
+
+  it('lists the waves and Core integrity on a Defend map', () => {
+    expect(resultsStats(card)).toEqual([
+      { id: 'waves', label: 'Waves survived', value: '7 / 7', note: null },
+      { id: 'integrity', label: 'Core integrity', value: '13 / 20', note: null },
+    ]);
+  });
+
+  it("lists an Escort's meter with its lost count in Core integrity's place, pivot or not", () => {
+    // A2M5's par: the map ended as an Escort after its pivot, so its core isn't listed.
+    expect(resultsStats({ ...card, escort })).toEqual([
+      { id: 'waves', label: 'Waves survived', value: '7 / 7', note: null },
+      { id: 'escort', label: 'Evacuated', value: '25 / 36', note: 'lost 11' },
+    ]);
+    // Nobody lost: no lost count.
+    const safe = { ...escort, evacuated: 36, lost: 0 };
+    expect(resultsStats({ ...card, escort: safe })[1]).toEqual({
+      id: 'escort',
+      label: 'Evacuated',
+      value: '36 / 36',
+      note: null,
+    });
+  });
+
+  it("adds a Protect map's asset after the core", () => {
+    const asset = { name: 'Rigs', value: 7, max: 10 };
+    expect(resultsStats({ ...card, asset }).map((r) => [r.id, r.value])).toEqual([
+      ['waves', '7 / 7'],
+      ['integrity', '13 / 20'],
+      ['asset', '7 / 10'],
+    ]);
+  });
+});
 
 describe('runResultOf', () => {
   it('reports a loss with the waves resolved so far', () => {

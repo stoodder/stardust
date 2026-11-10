@@ -222,7 +222,7 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
   - w05 Ves'thara: "Thorn. No. You need a new name. Ask the small one. She has opinions."
   - w08 Goldie: "They never ate a single leaf. Not one. They were just walking home through my garden."
   - w12 Zibzab: "The Hollow is the worst customer I ever had. It doesn't want anything. It only wants."
-- *Script cue* `a3_m06_cue_sheltered` (on the map's first `RefugeeSaved`): QUILL (Keep/Rewrite): "Pest escaped containment. ...Toward the domes. Logging it. Gladly." · (Purge) "Sheltered: {evacuated}."
+- *Script cue* `a3_m06_cue_sheltered` (on the map's first `RefugeeEvacuated`): QUILL (Keep/Rewrite): "Pest escaped containment. ...Toward the domes. Logging it. Gladly." · (Purge) "Sheltered: {evacuated}."
 - *Barks:* QUILL `tower_built` (on the greenhouse roof, Keep/Rewrite): "Greenhouse roof. Your first Rivet went right there. ...Look at you now." · Zibzab `tower_built`: "Good build. I would have charged you more for it."
 - *Debrief:* Pebble: "I picked Waykeeper. Grandmother says the ones who walk with the song need a name. You have to like it." (cleared: "Bramble says...") → callsign **Waykeeper**. The choir gathers in Dome 1.
 - *Codex:* Asset Recovery Gunship, Black Budget Operative, the Gathering Maw, Dome Row corrected, Zibzab corrected.
