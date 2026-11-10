@@ -243,8 +243,8 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [x] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
 - [~] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
 - [~] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
-- [~] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
-- [ ] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
+- [x] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
+- [~] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
 - [x] **T531** HUD: the Evacuated meter, lost vs `maxLost`, the relabel moment, Stillness aim, the dark-range readout, status chips, the beam ramp, threat entries.
 - [~] **T550** Audio: cloak footsteps, Cantor, Penitent, refugees, stand-down, phase flicker, splits, the beam hum, Mindspike/Lantern, Stillness, dark ambience, the PA's minor jingle, Pebble's four-note hum motif (reusable for Act III and the finale), a C2 sting; T501h.
 - [~] **T560** The Act II curve: Defend chain 81.0 → 76.2 → 76.2 → ~74 → ~68 (snapped to integrity steps), the Escort chain from ~71, a C2-Sell profile that wins, 9–13 min a map; T501g.
@@ -262,7 +262,7 @@ Carry-overs from M4, folded in:
 - [ ] **T501c** (→ T520/T521/T522 (Crane, Capacitor Bank, Seeker Swarm alts); the Harpoon/Crane/Flak/Magnet alts → M6 (A3M2)) M5: give the first maps with armored flyers or tanks alt builds that use the Harpoon, the Crane, Seeker Swarm / Capacitor Bank / Flak Curtain / Overload (no campaign map exercises them yet; 0.5/s and 6 tiles/s are first-pass numbers).
 - [x] **T501d** (→ T540a + T530a) M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
 - [x] **T501e** (→ T511) M5: A2M6's Ves'thara margin note on the Brood Hauler needs a second annotation or a conditional paragraph (a version holds one text).
-- [ ] **T501f** (→ T530b) M5: A2M4's `unloading` Tidybots at the plant (the dial exists; it sweeps like Act I/II until then).
+- [~] **T501f** (→ T530b) M5: A2M4's `unloading` Tidybots at the plant (the dial exists; it sweeps like Act I/II until then).
 - [ ] **T501g** (→ T560) M5: A2M1's Hiccup Contained is earned by every winning build (no Heavy leak is easy) — make it a real challenge or accept it as the Hollow's gentle intro; A1M4's W9 is fragile when robustness shifts combine (convoys −1 s + Bunchlings −0.2 s drops par to 70); A2M3's alts sit at 38/33.
 - [ ] **T501h** (→ T550) M5 audio: a low-asset alarm when the rigs reach the critical band; sounds for a fizzled/vented Capacitor charge and for `TowerIncome`; Skewer's and Magnet Crane's own sounds; a `bindBattleAudio` unit test with a fake engine (the Hollow duck releases at map end, the line dip fires per non-silent line); a listen to Zibzab's reshaped blip.
 - [ ] **T501i** (→ T530a) M5 render: the name-tag plate can sit over the Peeker rock on A2M3 (place plates clear of clickables); bunched enemies' health bars overlap; smoke shots of `burst_young` and the Lookout's spec heads (no `?map=` loadout carries the Lookout; `save=all_unlocked` fails SimConfig on dev maps); decide whether Lightwings flying over A2M3's armed rock should fade over it (walkers already pass behind).

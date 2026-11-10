@@ -86,6 +86,53 @@ export const INSTRUMENTS = {
       },
     ],
   },
+  /**
+   * A hummed voice (T550; Pebble's home motif, and the hums of Act III and the finale): a soft
+   * sine with a slow, breathy swell and a gentle wobble, a low-passed octave and a faint third
+   * partial for the closed-mouth "m".
+   */
+  hum: {
+    gain: 0.5,
+    layers: [
+      {
+        wave: 'sine',
+        vibrato: { hz: 4.5, cents: 14 },
+        env: { a: 0.06, d: 0.2, s: 0.8, r: 0.25 },
+        gain: 0.6,
+      },
+      {
+        wave: 'triangle',
+        ratio: 2,
+        filter: { type: 'lowpass', freq: 1500 },
+        vibrato: { hz: 4.5, cents: 14 },
+        env: { a: 0.08, d: 0.2, s: 0.5, r: 0.25 },
+        gain: 0.2,
+      },
+      { wave: 'sine', ratio: 3, env: { a: 0.1, d: 0.2, s: 0.4, r: 0.2 }, gain: 0.08 },
+    ],
+  },
+  /**
+   * The colony PA (T550; the shift change): a thin, high-passed square through a tinny horn, with
+   * a little warble, as if from a loudspeaker on a pole.
+   */
+  pa: {
+    gain: 0.4,
+    layers: [
+      {
+        wave: 'square',
+        filter: { type: 'highpass', freq: 700 },
+        vibrato: { hz: 7, cents: 6 },
+        env: { a: 0.01, d: 0.12, s: 0.7, r: 0.12 },
+        gain: 0.5,
+      },
+      {
+        wave: 'pulse12',
+        filter: { type: 'lowpass', freq: 2500 },
+        env: { a: 0.01, d: 0.12, s: 0.6, r: 0.12 },
+        gain: 0.25,
+      },
+    ],
+  },
   /** The sad trombone of the loss sting: a sagging, wobbling saw. */
   wah: {
     gain: 0.45,

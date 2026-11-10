@@ -1,40 +1,99 @@
-// A2M5's tuning is robust where it matters (T521). As tuned, par wins at 25/36 Evacuated (69.4%,
-// the Escort chain's first map; act2.md § A2M5) with the core whole before the pivot, its eleven
-// refugees lost where the rig road joins the Preserve Road (W8, W11, W12). Detection and shields are
+// A2M5's tuning is robust where it matters (T521, T560). As tuned, par wins at 27/36 Evacuated (75%,
+// the Escort chain's first map; act2.md § A2M5) with the core whole before the pivot, its nine
+// refugees lost where the rig road joins the Preserve Road (W8, W11, W12), inside the Ward's ring:
+// without her chill par evacuates 24. Detection and shields are
 // tested before the pivot: blind, the Veilwalkers walk through (W2–W4); without Energy or Soaked,
 // the Cantor columns do (W2, W4); each loses by W5. Without splash the build can't hold the Cantor
 // columns either and loses by W5 too (well inside W8). Both alts win, the Capacitor Bank's among
 // them, and Story wins.
 //
 // The beats (act2.md § A2M5, D137): the Penitent comes alone in W5, and W6's countdown opens as
-// she spawns, so W6 starts (and forces the pivot) 60 s later, long before she could reach the gate.
+// she spawns, so W6 starts (and forces the pivot) 60 s later, long before she could reach the gate:
+// she walks 12 tiles, to the fencing's end, and the Ward kneels where the rig road joins.
 // In every Standard reference run her shield breaks in W5 (the shield cue and the shards land), the
 // shards re-form it, and exactly one pivot event runs: the forced one, as W6 starts, mid-fight with
-// the Penitent on the road. The first refugees walk from the pivot. A retry from the W5 and W10
-// checkpoints replays across the pivot to the same end. With the post-pivot Motes shifted ±0.2 s
-// together, par holds at 25/36 and every beat holds.
+// the Penitent on the road. The first refugees walk from the pivot. Kneel is a skill medal: par
+// never earns it, and a skilled build on the same economy (KNEEL_BUILD: the Lookout over the road's
+// first leg, the Orbital Strike on the break) breaks her to 50% in W5 and wins. Story's par earns it
+// too (90 s and a softer shield). A retry from the W5 and W10 checkpoints replays across the pivot
+// to the same end. With the post-pivot Motes shifted ±0.2 s together, par stays in the band
+// (25–27 of 36) and every beat holds.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { WaveGroup } from '../content/types.ts';
+import { KNEEL_BUILD } from '../content/maps/a2_m05/builds.ts';
+import type { BuildStep, RawContent, ScriptedBuild, WaveGroup } from '../content/types.ts';
 import {
   createBuildExecutor,
   createSim,
+  runHeadless,
   type CommandLogEntry,
   type SimEvent,
 } from '../sim/index.ts';
+import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
+import { secToTicks } from '../shared/time.ts';
 import { both, bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
 import { referenceRunProfile, runConfig } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const content = compileContent(RAW_CONTENT);
-const PAR_EVACUATED = 25;
+const PAR_EVACUATED = 27;
+/** Par's Evacuated with the Ward's chill switched off. */
+const PAR_EVACUATED_UNCHILLED = 24;
 const PIVOT_CUE = 'a2_m05_cue_pivot';
 const TICK_HZ = 60;
 /** W6's countdown, the Penitent's fight (waves.ts PENITENT_WINDOW), on Standard. */
 const WINDOW_TICKS = 60 * TICK_HZ;
+
+/** A build step as the content compiler shapes it (compileBuilds.ts; the kinds KNEEL_BUILD uses). */
+function compileStep(s: BuildStep): CompiledBuildStep {
+  const wave = s.wave;
+  if ('build' in s) return { wave, kind: 'build', tower: s.build, tile: s.tile };
+  if ('upgrade' in s) return { wave, kind: 'upgrade', tile: s.upgrade };
+  if ('ability' in s) {
+    const when = s.when;
+    return {
+      wave,
+      kind: 'ability',
+      slot: s.ability,
+      target: s.target ?? null,
+      when:
+        when === undefined
+          ? 'asap'
+          : when === 'waveStart'
+            ? when
+            : { afterTicks: secToTicks(when.afterSec) },
+    };
+  }
+  throw new Error(`a test-level build step this helper doesn't compile: ${JSON.stringify(s)}`);
+}
+
+/** A test-level build (D137) compiled by hand: its steps as the content compiler shapes them. */
+function compileTestBuild(c: CompiledContent, b: ScriptedBuild): CompiledBuild {
+  return {
+    loadout: b.loadout,
+    companion: c.maps.a2_m05.builds.parBuild.companion,
+    technicianAbility: c.maps.a2_m05.builds.referenceProfile.technicianAbility,
+    callEarly: false,
+    steps: b.steps.map(compileStep),
+  };
+}
+
+/** The live content with the Ward's chill all but switched off (the validator wants it > 0). */
+function unchilled(): CompiledContent {
+  const raw = RAW_CONTENT;
+  const p = raw.enemies.sunderglass_penitent;
+  const next: RawContent = {
+    ...raw,
+    enemies: {
+      ...raw.enemies,
+      sunderglass_penitent: { ...p, boss: { ...p.boss!, ward: { ...p.boss!.ward!, chillPct: 1e-4 } } },
+    },
+  };
+  return compileContent(next);
+}
 
 const isPostPivotMote = (g: WaveGroup): boolean => g.enemy === 'mote';
 
@@ -50,6 +109,10 @@ const SHIFTS = {
 interface Beats {
   readonly outcome: string;
   readonly evacuated: number;
+  readonly pivotWave: number;
+  readonly kneel: string;
+  /** Where the Ward kneels (tile units; null: no pivot). */
+  readonly ward: readonly [number, number] | null;
   /** Each event's tick, by kind (the cues by id). */
   readonly at: Readonly<Record<string, readonly number[]>>;
   /** The Penitent's spawn tick, and whether it was alive (not standing down) at each cue. */
@@ -81,7 +144,7 @@ function beats(
   replay: readonly CommandLogEntry[] | null = null,
 ): Beats {
   const map = c.maps.a2_m05;
-  const build = buildFor(label, map, c)!;
+  const build = label === 'kneel' ? compileTestBuild(c, KNEEL_BUILD) : buildFor(label, map, c)!;
   const sim = createSim(runConfig(c, map, build, referenceRunProfile(map, c, difficulty), 1));
   const exec = replay === null ? createBuildExecutor(sim, build) : null;
   const st = sim.state;
@@ -132,6 +195,11 @@ function beats(
   return {
     outcome: st.outcome,
     evacuated: st.stats.evacuated,
+    pivotWave: st.stats.pivotWave,
+    ward: ((w) => (w === undefined ? null : ([w.x, w.y] as const)))(
+      st.allies.items.slice(0, st.allies.used).find((a) => a.kind === 'ward'),
+    ),
+    kneel: st.medals.challenge,
     at,
     penitentSpawn,
     penitentOnRoadAtPivot,
@@ -177,19 +245,55 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const report = runMap(content, 'a2_m05', { seeds: 1 });
   const run = (build: string) => report.runs.find((r) => r.build === build && !r.repeat)!;
 
-  it('passes every harness check as tuned, par at 25/36 Evacuated', () => {
+  it('passes every harness check as tuned, par at 27/36 Evacuated', () => {
     expect(report.checks.filter((k) => !k.ok).map((k) => k.id)).toEqual([]);
     const par = run('par').result!;
     expect(par.outcome).toBe('won');
     expect([par.stats.evacuated, par.escortTotal, par.stats.refugeesLost]).toEqual([
       PAR_EVACUATED,
       36,
-      11,
+      9,
     ]);
     // The core whole at the pivot, the refugees lost where the rig road joins (W8, W11, W12).
     expect(par.integrity).toBe(par.maxIntegrity);
-    expect(par.waves.map((w) => w.refugeesLost)).toEqual([0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4, 3]);
+    expect(par.waves.map((w) => w.refugeesLost)).toEqual([0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 3]);
     expect(par.stats.pivotWave).toBe(6);
+    // Kneel is a skill medal: par never earns it.
+    expect(par.medals.challenge).not.toBe('earned');
+  });
+
+  it('makes the Ward count: she kneels at the junction, and without her chill par loses 3 more', () => {
+    // A forced pivot kneels her at the fencing's end: the rig road's junction (8,4) is inside her
+    // 2.5-tile ring.
+    const [x, y] = beats(content, 'par').ward!;
+    expect(Math.hypot(x - 8.5, y - 4.5)).toBeLessThan(2.5);
+    const c = unchilled();
+    const build = buildFor('par', c.maps.a2_m05, c)!;
+    const bare = runHeadless(
+      runConfig(c, c.maps.a2_m05, build, referenceRunProfile(c.maps.a2_m05, c, 'standard'), 1),
+      build,
+    );
+    expect(bare.outcome).toBe('won');
+    expect(bare.stats.evacuated).toBe(PAR_EVACUATED_UNCHILLED);
+  });
+
+  it('lets a skilled build on par’s economy earn Kneel: its strike kills the shards on the break', () => {
+    const b = beats(content, 'kneel');
+    expect(b.outcome).toBe('won');
+    expect(b.pivotWave).toBe(5);
+    expect(b.kneel).toBe('earned');
+    // The shield breaks once and never re-forms (the shards die on the break), and the one pivot
+    // is her own 50%, before W6 and with time to spare.
+    expect(b.at['BossPhase 2']).toHaveLength(1);
+    expect(b.at.ShieldReformed ?? []).toEqual([]);
+    const pivot = b.at[PIVOT_CUE]!;
+    expect(pivot).toHaveLength(1);
+    // Her own `pivot` ending runs as she reaches 50%; the map's `bossHpPct` event the tick after.
+    expect(b.at['BossEnded pivot']).toEqual([pivot[0]! - 1]);
+    expect(pivot[0]! - b.penitentSpawn).toBeLessThan(WINDOW_TICKS - 5 * TICK_HZ);
+    expect(b.at['WaveStarted 6']![0]!).toBeGreaterThan(pivot[0]!);
+    expect(b.penitentOnRoadAtPivot).toBe(true);
+    expect(b.refugeesBeforeSurge).toBe(6);
   });
 
   it('tests detection and shields before the pivot, and loses without splash by W8', () => {
@@ -233,12 +337,29 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(median).toBeLessThan(15);
   });
 
-  it('lands every beat in par, both alts, and Story: the shield, then one pivot as W6 starts', () => {
+  it('lands every beat in par and both alts: the shield, then one pivot as W6 starts', () => {
     for (const label of ['par', 'alt:capacitor', 'alt:coil_and_hook']) {
       expectBeats(beats(content, label), label);
     }
-    // Story's countdowns run 50% longer: she walks 90 s, still short of the gate (100 s).
-    expectBeats(beats(content, 'par', 'story'), 'Story', 1.5 * WINDOW_TICKS);
+  });
+
+  it('lands the beats on Story too, where par breaks her to half (Kneel) before W6', () => {
+    // Story's countdowns run 50% longer (90 s; she'd walk 18 tiles of 36) and her shield is
+    // softer, so the shards walk into the Lookout's reach and par breaks her to 50% itself.
+    const b = beats(content, 'par', 'story');
+    expect(b.outcome).toBe('won');
+    const broke = b.at['BossPhase 2']![0]!;
+    expect(b.at.a2_m05_cue_shield).toEqual([broke + 1]);
+    expect(b.at.ShieldReformed!.length).toBeGreaterThanOrEqual(1);
+    const pivot = b.at[PIVOT_CUE]!;
+    expect(pivot).toHaveLength(1);
+    expect(b.at['BossEnded pivot']).toEqual([pivot[0]! - 1]);
+    expect(b.at.ObjectiveChanged).toEqual(pivot);
+    expect(pivot[0]! - b.penitentSpawn).toBeLessThan(1.5 * WINDOW_TICKS);
+    expect([b.pivotWave, b.kneel]).toEqual([5, 'earned']);
+    expect(b.penitentOnRoadAtPivot).toBe(true);
+    expect(b.refugeesBeforeSurge).toBe(6);
+    expect(b.at.RefugeeEvacuated!.at(-1)!).toBeLessThanOrEqual(b.at.MapWon![0]!);
   });
 
   it('replays a retry from the W5 and W10 checkpoints across the pivot to the same end', () => {
@@ -261,11 +382,12 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it.each(bothWays(SHIFTS))(
-    'holds par at 25/36 and every beat with %s shifted %s',
+    'holds par in the band (25–27 of 36) and every beat with %s shifted %s',
     (_name, _way, patches) => {
       const c = shiftedContent('a2_m05', patches);
       const b = beats(c, 'par');
-      expect(b.evacuated).toBe(PAR_EVACUATED);
+      expect(b.evacuated).toBeGreaterThanOrEqual(25);
+      expect(b.evacuated).toBeLessThanOrEqual(PAR_EVACUATED);
       expectBeats(b, 'par');
     },
   );

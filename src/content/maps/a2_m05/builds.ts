@@ -2,7 +2,7 @@
 // mirrors these). The map is judged on Evacuated % (the Escort chain; maps.md § 6.1).
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
-import type { BuildStep, GridPos } from '../../types.ts';
+import type { BuildStep, GridPos, ScriptedBuild } from '../../types.ts';
 
 /** Inside the road's first turn, over its run east under the fencing and its run back west. */
 const UPPER_W: GridPos = [2, 2];
@@ -23,6 +23,8 @@ const VALLEY_MID: GridPos = [8, 6];
 const FLOOR_S: GridPos = [9, 8];
 /** Beside the road's drop to the gate. */
 const GATE_N: GridPos = [13, 8];
+/** The road's first leg, where a skilled build breaks the Penitent's shield (W5). */
+const FIRST_LEG: GridPos = [6, 1];
 
 function parSteps(): BuildStep[] {
   return [
@@ -165,3 +167,39 @@ export const builds = defineBuilds({
     },
   },
 });
+
+/**
+ * Kneel, by a skilled build on the reference economy (T560; act2.md § A2M5, Medals): par's towers
+ * and spending with the Lookout and a Zapcoil swapped, so the Lookout stands over the road's first
+ * leg, where the Penitent's shield breaks (W5, 28 s after she spawns). Its shards are revealed
+ * there, and the Orbital Strike (with Bricks's Suppressing Fire) lands on the break and kills all
+ * three at once, so the shield never re-forms; the Zapcoils and the Rivet then take her to 50%
+ * about 6 s before W6 would force the pivot. It isn't an `altBuilds` entry (it shares all four of
+ * par's towers): balance/a2m5.test.ts runs it.
+ */
+export const KNEEL_BUILD: ScriptedBuild = {
+  loadout: PAR_LOADOUT,
+  steps: [
+    { wave: 1, build: 'zapcoil', tile: VALLEY_W },
+    { wave: 1, build: 'zapcoil', tile: KNOLL },
+    { wave: 1, build: 'zapcoil', tile: FENCE_END },
+    { wave: 2, build: 'lookout', tile: UPPER_MID },
+    { wave: 2, upgrade: VALLEY_W },
+    { wave: 3, upgrade: KNOLL },
+    { wave: 3, build: 'zapcoil', tile: UPPER_W },
+    { wave: 4, build: 'zapcoil', tile: VALLEY_MID },
+    { wave: 4, upgrade: FENCE_END },
+    { wave: 5, build: 'rivet', tile: DROP_W },
+    { wave: 5, upgrade: UPPER_W },
+    // The break comes 27.6 s after she spawns (W5 + 6 s): the strike's reticle lands 1 s later.
+    { wave: 5, ability: 1, target: FIRST_LEG, when: { afterSec: 33.8 } },
+    { wave: 5, ability: 2, target: FIRST_LEG, when: { afterSec: 34.3 } },
+    { wave: 6, build: 'thumper', tile: FLOOR_S },
+    { wave: 6, build: 'thumper', tile: GATE_N },
+    { wave: 7, upgrade: FLOOR_S },
+    { wave: 8, upgrade: UPPER_MID },
+    { wave: 9, upgrade: GATE_N },
+    { wave: 10, upgrade: FLOOR_S },
+    { wave: 11, upgrade: GATE_N },
+  ],
+};

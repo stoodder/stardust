@@ -45,6 +45,7 @@ export {
   newTowerHint,
   UPGRADE_HINT,
   withHintsSeen,
+  XENOTECH_HINT,
 } from './hints.ts';
 export { issuedTowers, withIssuedTowers } from './issued.ts';
 export { migrate, migrations } from './migrations.ts';

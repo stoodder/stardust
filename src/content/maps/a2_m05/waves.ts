@@ -112,15 +112,14 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [motes(20, OPEN, 0.3)],
   },
-  // W11 · two groups at once, clusters from both ends (the rig road's meets the line of twelve
-  // at the junction, inside the Ward's ring)
+  // W11 · two groups at once, clusters from both ends
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(22, OPEN + 7, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
+    groups: [motes(22, OPEN + 10, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
   },
   // W12 · the last group + the largest surge
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(28, OPEN + 6, 0.25), motes(28, OPEN + 16, 0.25, 'road')],
+    groups: [motes(28, OPEN + 5, 0.25), motes(28, OPEN + 16, 0.25, 'road')],
   },
 ]);

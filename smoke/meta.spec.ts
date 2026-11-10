@@ -222,8 +222,8 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
   const pane = page.getByRole('tabpanel');
-  const open = async (tab: string, text: string): Promise<void> => {
-    const t = page.getByRole('tab', { name: tab, exact: true });
+  const open = async (tab: string | RegExp, text: string): Promise<void> => {
+    const t = page.getByRole('tab', { name: tab, exact: typeof tab === 'string' });
     await t.click();
     await expect(t).toHaveAttribute('aria-selected', 'true');
     await expect(pane).toContainText(text);
@@ -233,6 +233,8 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
   await open('Shop', "Zibzab's Genuine Pre-Owned");
   await open('Engineering', 'Engineering · QUILL');
   await shot(page, 'meta', 10, 'base-all-unlocked');
+  // Ves'thara's shelf (T509): open in this save (every system), so its tab shows (T566).
+  await open(/^Xenotech/, "Xenotech · Ves'thara"); // its NEW tag names it "Xenotech (new)"
   // A battle from this save brings at most four towers and still plays (through the loadout
   // screen, T201: this save has a choice of ability).
   await page.getByRole('button', { name: 'Sector map' }).click();

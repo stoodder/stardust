@@ -333,7 +333,7 @@ A big, round, happy Skitterkin (an ex-Chonk, recognizably) who spits sticky acid
 - **T2 (95):** damage 16, max 6 stacks.
 - **T3 (180):** 2 stacks per hit, max 8.
 - **A: Big Glorp (360):** leaves a puddle for 3 s: Chilled 25% and 10/s acid (Kinetic DoT; bypasses armor).
-- **B: Corrosive Kiss (360):** 3 stacks per hit, max 12. Corroded enemies also regenerate shields 50% slower.
+- **B: Corrosive Kiss (360):** 3 stacks per hit, max 12. Corroded enemies also regenerate shields 50% slower, a Cantor's aura and shield pulses included ([enemies.md §2.4](enemies.md#24-status-effects)).
 - **Links:** Acid Rain (Thumper), Sticky Flak (Skyhook).
 
 #### Sproing Pad (`sproing`)

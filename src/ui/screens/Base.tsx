@@ -3,7 +3,8 @@
 // the base is, and carry a NEW badge while something in them is unread; a shelf tab whose system
 // the campaign hasn't opened yet shows a locked pane with what opens it ("Opens after The Audit";
 // meta/progress.ts SYSTEM_UNLOCKS), except Xenotech's, which is hidden until it opens after A2M5,
-// so the base never names Ves'thara's shelf before she joins. An open tab shows its pane
+// so the base never names Ves'thara's shelf before she joins; it then carries a NEW tag until its
+// first visit (the `xenotech` hint, meta/hints.ts; T566). An open tab shows its pane
 // (BasePanes.tsx). Entering the base delivers any memo or codex unlock a save missed
 // (app/inbox.ts). The first visit with Zibzab's shop open lands on the Shop tab and plays his
 // arrival (app/baseScenes.ts, T308; with any other visit scene due, such as Pebble's handover after
@@ -11,6 +12,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
+import { hintShown, markHintsShown } from '../../app/save.ts';
+import { XENOTECH_HINT } from '../../meta/index.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
 import { campaignScreenName } from '../../app/starMap.ts';
 import { BASE_PANES, isStoryTab, type BaseTab } from './BasePanes.tsx';
@@ -70,13 +73,25 @@ export function Base() {
     if (playBaseScenesIfDue()) setTab('shop');
     else if (delivered && storyBadges().inbox > 0 && !picked.current) setTab('inbox');
   }, []);
+  // The Xenotech tab's NEW tag (T566) holds until its first visit.
+  useEffect(() => {
+    if (tab === 'xenotech') markHintsShown([XENOTECH_HINT]);
+  }, [tab]);
   const view = campaign.value;
   if (view === null) return null;
   const system = systemOf(view, tab);
   const Pane = BASE_PANES[tab];
   const badges = storyBadges();
+  const xenotechNew =
+    view.systems.xenotech.unlocked && tab !== 'xenotech' && !hintShown(XENOTECH_HINT);
   const badgeOf = (id: BaseTab): number =>
-    id === 'inbox' ? badges.inbox : id === 'codex' ? badges.codex : 0;
+    id === 'inbox'
+      ? badges.inbox
+      : id === 'codex'
+        ? badges.codex
+        : id === 'xenotech' && xenotechNew
+          ? 1
+          : 0;
   const tabs = TABS.filter(
     (t) =>
       (t.id !== 'bounty' || view.bountyBoard.shown) &&
@@ -133,7 +148,9 @@ export function Base() {
                 {badge > 0 && (
                   <>
                     <NewTag />
-                    <span class="sd-visually-hidden">{` (${badge} new)`}</span>
+                    <span class="sd-visually-hidden">
+                      {t.id === 'xenotech' ? ' (new)' : ` (${badge} new)`}
+                    </span>
                   </>
                 )}
               </button>

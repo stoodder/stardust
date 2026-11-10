@@ -39,9 +39,10 @@ export type GrantId = string;
 
 /**
  * A one-time hint a save has already shown (D061): `upgrade`, the upgrade teach (D028), and
- * `new:<tower>`, a newly issued tower's first battle (its NEW pip and QUILL's announcement).
+ * `new:<tower>`, a newly issued tower's first battle (its NEW pip and QUILL's announcement), and
+ * `xenotech`, the first visit to Ves'thara's Xenotech tab (its NEW tag until then; T566).
  */
-export type HintId = 'upgrade' | `new:${TowerId}`;
+export type HintId = 'upgrade' | 'xenotech' | `new:${TowerId}`;
 
 /** One campaign map's record. A map with no record has never been played to an end. */
 export interface MapRecord {

@@ -19,9 +19,12 @@ async function openBase(page: Page, save: string): Promise<void> {
 
 test('xenotech: after A2M5, attune the Mindspike, and it joins the loadout', async ({ page }) => {
   await openBase(page, 'after_a2m5');
-  const tab = page.getByRole('tab', { name: 'Xenotech', exact: true });
+  // Its first visit: a NEW tag until then (T566), gone once the tab is open.
+  const tab = page.getByRole('tab', { name: /^Xenotech/ });
+  await expect(tab).toHaveAccessibleName('Xenotech (new)');
   await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(tab).toHaveAccessibleName('Xenotech');
   const pane = page.getByRole('tabpanel');
   await expect(pane).toContainText("Xenotech · Ves'thara");
   await expect(pane).toContainText('I take no stardust.');
@@ -64,13 +67,13 @@ test('xenotech: after A2M5, attune the Mindspike, and it joins the loadout', asy
 test('xenotech: no tab before A2M5; all_unlocked shows it owned in full', async ({ page }) => {
   await openBase(page, 'after_a2m4_returned');
   await expect(page.getByRole('tab', { name: 'Engineering', exact: true })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Xenotech', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: /^Xenotech/ })).toHaveCount(0);
   // Nor does any other shelf name an Aelari tower early.
   await page.getByRole('tab', { name: 'Shop', exact: true }).click();
   await expect(page.getByRole('tabpanel')).not.toContainText('Prism');
 
   await openBase(page, 'all_unlocked');
-  await page.getByRole('tab', { name: 'Xenotech', exact: true }).click();
+  await page.getByRole('tab', { name: /^Xenotech/ }).click();
   await expect(offerRow(page, 'Prism Spire').locator('.sd-offer-owned')).toHaveText('Given');
   await Promise.all(
     ['Mindspike Obelisk', "Seer's Lantern"].map((name) =>

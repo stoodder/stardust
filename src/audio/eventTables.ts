@@ -18,11 +18,11 @@ export const ATTACK_SOUNDS: Readonly<
   // Capacitor Bank's discharge (T407b, T450): its crack and thump; the charge's hum climbs to it
   // (CHARGE_SOUNDS, fieldSounds.ts).
   charge: { fire: 'capacitor_discharge', land: null },
-  // The Harpoon's Skewer (T408): the hitscan's crack for now (its own sound is a follow-up).
-  line: { fire: 'rivet_shot', land: null },
-  // A beam locking a target (T504; ProjectileFired kind 'beam', once per lock, not per beam tick).
-  // TODO(T550): a stub (the Zapcoil's arc) until the Prism's own lock chime and beam hum.
-  beam: { fire: 'zap_arc', land: null },
+  // The Harpoon's Skewer (T408, T550): its harpoon tearing down the line.
+  line: { fire: 'skewer_shot', land: null },
+  // A beam locking a target (T504, T550; ProjectileFired kind 'beam', once per lock, not per beam
+  // tick): the Prism's glass "ting-ting". While it holds, the beam hums (BEAM_SOUNDS).
+  beam: { fire: 'prism_lock', land: null },
 };
 
 /**
@@ -79,7 +79,7 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   glimmer: 5,
   weft_warden: -5,
   lightwing: 8,
-  // M5's units (T500a stubs; T550 tunes them): their faction's death sound at a size's pitch.
+  // M5's units (T550): their faction's death sound at a size's pitch.
   veilwalker: 3,
   blinkstrider: 2,
   cantor: -4,
@@ -114,7 +114,8 @@ export interface BossSounds {
   readonly spawnTell: SfxId | null;
   readonly spawn: SfxId | null;
   readonly end: SfxId;
-  readonly endCue: CueId;
+  /** The sting after `end`, or null for an ending that stays hushed (the Penitent's pivot). */
+  readonly endCue: CueId | null;
 }
 /**
  * The default ending's sting: "Everglow Bright" triumphant, stopping a step short of home (Act
@@ -139,15 +140,16 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'witch_retreat',
     endCue: 'witch_sting',
   },
-  // The Penitent (T500a stub): the Witch's glass until T550 gives it its own (its kneel is no
-  // retreat; T506's pivot decides what `end` plays).
+  // The Penitent (T550): the Witch's chord an octave down, its shield bursting into shards at
+  // phase 2 (the shield-broken phase), and its only ending, the pivot, a hushed kneel with no
+  // sting (the pivot's cue speaks over it; sfx/act2b.ts).
   sunderglass_penitent: {
-    arrive: 'witch_arrive',
-    phase: 'witch_phase',
+    arrive: 'penitent_arrive',
+    phase: 'penitent_break',
     spawnTell: null,
     spawn: null,
-    end: 'witch_retreat',
-    endCue: 'witch_sting',
+    end: 'penitent_kneel',
+    endCue: null,
   },
 };
 
@@ -173,6 +175,13 @@ export const ENEMY_LOOPS: Readonly<
   weft_warden: { id: 'aelari_hum', everySec: 1.8 },
   lightwing: { id: 'aelari_hum', everySec: 1.8 },
   mote: { id: 'hollow_hum', everySec: 9 },
+  // M5's (T550): the Cantor sings; the uncloaked Aelari hum (a cloaked one's tell is its
+  // footsteps, CLOAK_SOUNDS); the Hollow's new units hum the jingle wrong like the Mote.
+  cantor: { id: 'cantor_song', everySec: 2.4 },
+  blinkstrider: { id: 'aelari_hum', everySec: 1.8 },
+  fracture: { id: 'hollow_hum', everySec: 9 },
+  fracture_shard: { id: 'hollow_hum', everySec: 9 },
+  riftmoth: { id: 'hollow_hum', everySec: 9 },
 };
 
 /** Burrowing (D073): digging in and surfacing, for a Digger or a burrowing boss. */
@@ -221,8 +230,9 @@ export const ABILITY_SOUNDS: Readonly<
   clearance_sale: { cast: 'sale_kaching', land: [] },
   // A wide sonar ping as the zone goes down (each unit it reveals pings too, CLOAK_SOUNDS).
   scanner_sweep: { cast: 'scan_ping', land: [] },
-  // Stillness (T500a stub): Time Dilation's swell until T550 gives it its own.
-  stillness: { cast: 'dilation_swell', land: [] },
+  // Ves'thara's Stillness (T550): her held breath as it's cast; the freeze locks in on its
+  // StasisArea (STASIS_SOUNDS' lock, as Flash Freeze's does).
+  stillness: { cast: 'stillness_cast', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

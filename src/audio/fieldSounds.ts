@@ -2,8 +2,9 @@
 // frame (architecture.md § Audio). A burrower digging in and surfacing, a boss's sneeze tell and
 // the sneeze itself, a huddle forming, the loops while a kind of enemy is on the field (a
 // Puffwing flock's wingbeats, the Aelari's hum, the Hollow humming the jingle wrong), a hidden
-// cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges, and the salvage drone
-// flying and working. It also keeps where the Hollow units stand, for their quiet (`quietAt`,
+// cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
+// charge fizzles), a beam's hum climbing with its ramp, the night's air at Sundown, and the salvage
+// drone flying and working. It also keeps where the Hollow units stand, for their quiet (`quietAt`,
 // HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet. It reads only public sim
 // state (the same fields render reads), and never touches it.
 import type { CompiledAttack } from '../content/compiled.ts';
@@ -19,6 +20,7 @@ import {
   HUDDLE_SOUND,
 } from './eventTables.ts';
 import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
+import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
 import { sfx, type SoundCall } from './eventSounds.ts';
 
 /** A boss's tell is the last BOSS_ABILITY_TELL_SEC of its ability timer (sim/enemyAbilities/boss.ts). */
@@ -54,7 +56,10 @@ export interface FieldEnemy {
   readonly revealedTicks: number;
 }
 
-/** The tower fields the field sounds read (a live sim Tower passes as is): a charge's progress. */
+/**
+ * The tower fields the field sounds read (a live sim Tower passes as is): a charge's progress, and
+ * a beam's (on, and each beam's ramp; a beam's extra beams count while they have a target).
+ */
 export interface FieldTower {
   readonly uid: number;
   readonly alive: boolean;
@@ -62,6 +67,12 @@ export interface FieldTower {
   readonly chargeTicks: number;
   readonly flatRate: number;
   readonly pctRate: number;
+  readonly beamActive?: boolean;
+  readonly beamRamp?: number;
+  readonly beam2Uid?: number;
+  readonly beam2Ramp?: number;
+  readonly beam3Uid?: number;
+  readonly beam3Ramp?: number;
 }
 
 /** The state the field sounds read (the live SimState passes as is). */
@@ -70,6 +81,22 @@ export interface FieldState {
   readonly enemies: { readonly items: readonly FieldEnemy[]; readonly used: number };
   readonly towers: { readonly items: readonly FieldTower[]; readonly used: number };
   readonly wreckage: { readonly queue: readonly number[]; readonly progressTicks: number };
+  /** Sundown's darkness, 0–1 (absent: none). */
+  readonly dark?: number;
+}
+
+/**
+ * The beam hum's pitch for tower `t` (semitones, whole steps up to BEAM_SOUNDS.maxPitch) from its
+ * strongest beam's ramp toward the attack's cap, or null when it isn't beaming.
+ */
+export function beamPitch(t: FieldTower): number | null {
+  const attack = t.tierDef?.attack ?? null;
+  if (!t.alive || attack?.kind !== 'beam' || t.beamActive !== true) return null;
+  let ramp = t.beamRamp ?? 1;
+  if ((t.beam2Uid ?? 0) !== 0) ramp = Math.max(ramp, t.beam2Ramp ?? 1);
+  if ((t.beam3Uid ?? 0) !== 0) ramp = Math.max(ramp, t.beam3Ramp ?? 1);
+  const share = attack.rampCap > 1 ? (ramp - 1) / (attack.rampCap - 1) : 0;
+  return Math.round(Math.min(1, Math.max(0, share)) * BEAM_SOUNDS.maxPitch);
 }
 
 /**
@@ -127,9 +154,19 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   const hollowY: number[] = [];
   let hollowN = 0;
   const quietR2 = HOLLOW_QUIET.radiusTiles * HOLLOW_QUIET.radiusTiles;
-  /** Each charging tower's last hum step this charge (CHARGE_SOUNDS), and this frame's. */
-  let charges = new Map<number, number>();
-  let nextCharges = new Map<number, number>();
+  /**
+   * Each charging tower's charge last frame and its last hum step this charge (CHARGE_SOUNDS), and
+   * this frame's.
+   */
+  let charges = new Map<number, { ticks: number; step: number }>();
+  let nextCharges = new Map<number, { ticks: number; step: number }>();
+  /** The sim tick of the last frame (a charge's reset is a discharge or a fizzle by the gap). */
+  let lastTick = -1;
+  /** When the beam hum plays next, and the night's air (sim ticks; -1: not playing). */
+  let beamAt = -1;
+  const beamEvery = Math.max(1, Math.round(BEAM_SOUNDS.everySec * TICK_HZ));
+  let airAt = -1;
+  const airEvery = Math.max(1, Math.round(DARK_SOUNDS.airEverySec * TICK_HZ));
   const workEvery = Math.max(1, Math.round(DRONE_SOUNDS.workEverySec * TICK_HZ));
   const flyTicks = clearTicks * DRONE_SOUNDS.flyFrac;
   let head = -1;
@@ -205,25 +242,54 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
         out.push(sfx(CLOAK_SOUNDS.steps));
         stepsAt = state.tick + stepsEvery;
       }
-      // A charge attack's hum, a step higher at each quarter of its charge.
+      // A charge attack's hum, a step higher at each quarter of its charge; and its collapse when
+      // the charge starts over short of full (it fizzled or was vented, not discharged).
       const towers = state.towers;
+      const elapsed = lastTick < 0 ? 1 : Math.max(1, state.tick - lastTick);
+      let beamPitchNow: number | null = null;
       for (let i = 0; i < towers.used; i++) {
         const bank = towers.items[i]!; // i < used ≤ items.length
+        const bp = beamPitch(bank);
+        if (bp !== null) beamPitchNow = Math.max(beamPitchNow ?? 0, bp);
         const attack = bank.tierDef?.attack ?? null;
-        if (!bank.alive || attack?.kind !== 'charge' || bank.chargeTicks <= 0) continue;
-        const full = bonusChargeTicks(attack, bank);
+        if (!bank.alive || attack?.kind !== 'charge') continue;
+        const full = Math.max(1, bonusChargeTicks(attack, bank));
+        const prev = charges.get(bank.uid);
+        let last = prev?.step ?? -1;
+        if (prev !== undefined && bank.chargeTicks < prev.ticks) {
+          // It started over: a discharge if it could have reached full since, else a fizzle.
+          const discharged = prev.ticks + elapsed - bank.chargeTicks >= full;
+          if (!discharged && prev.ticks >= full * CHARGE_SOUNDS.fizzleFrom) {
+            out.push(sfx(CHARGE_SOUNDS.fizzle));
+          }
+          last = -1;
+        }
+        if (bank.chargeTicks <= 0) continue;
         const step = Math.min(
           CHARGE_SOUNDS.steps - 1,
-          Math.floor(((bank.chargeTicks - 1) * CHARGE_SOUNDS.steps) / Math.max(1, full)),
+          Math.floor(((bank.chargeTicks - 1) * CHARGE_SOUNDS.steps) / full),
         );
-        const last = charges.get(bank.uid) ?? -1;
         if (step > last) out.push(sfx(CHARGE_SOUNDS.hum, step * CHARGE_SOUNDS.pitchPerStep));
-        nextCharges.set(bank.uid, Math.max(step, last));
+        nextCharges.set(bank.uid, { ticks: bank.chargeTicks, step: Math.max(step, last) });
       }
       const c = charges;
       charges = nextCharges;
       nextCharges = c;
       nextCharges.clear();
+      lastTick = state.tick;
+      // A beam holding a target hums, one sound for every beam, climbing with the strongest ramp.
+      if (beamPitchNow === null) beamAt = -1;
+      else if (state.tick >= beamAt) {
+        out.push(sfx(BEAM_SOUNDS.hum, beamPitchNow));
+        beamAt = state.tick + beamEvery;
+      }
+      // Sundown: the night's air while it's dark enough, as loud as it is dark.
+      const dark = state.dark ?? 0;
+      if (dark < DARK_SOUNDS.airFrom) airAt = -1;
+      else if (state.tick >= airAt) {
+        out.push(sfx(DARK_SOUNDS.air, 0, 0, Math.min(1, dark)));
+        airAt = state.tick + airEvery;
+      }
       // The salvage drone: it flies out to each tile (or home once the queue is empty), then works.
       const w = state.wreckage;
       const now = w.queue.length > 0 ? w.queue[0]! : -1; // length > 0

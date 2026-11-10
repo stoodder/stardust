@@ -39,6 +39,16 @@ import {
   SKITTERKIN_DEATH_SOUNDS,
   STASIS_SOUNDS,
 } from './eventTablesAct2.ts';
+import {
+  DARK_SOUNDS,
+  ECHO_SOUND,
+  ESCORT_SOUNDS,
+  FACTION_SPLIT_SOUNDS,
+  INCOME_SOUNDS,
+  PHASE_SOUNDS,
+  PIVOT_SOUNDS,
+  TOWER_SOUNDS,
+} from './eventTablesAct2b.ts';
 import { WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
 
@@ -55,17 +65,22 @@ export {
   UPGRADE_PITCH_PER_TIER,
 } from './eventTables.ts';
 
-/** A sound to play: an effect (pitch in semitones, delay in seconds) or a music cue. */
+/**
+ * A sound to play: an effect (pitch in semitones, delay in seconds, and a gain multiplier when it
+ * isn't 1: the night's air follows the dark) or a music cue.
+ */
 export type SoundCall =
-  | { readonly kind: 'sfx'; readonly id: SfxId; readonly pitch: number; readonly delay: number }
+  | {
+      readonly kind: 'sfx';
+      readonly id: SfxId;
+      readonly pitch: number;
+      readonly delay: number;
+      readonly gain?: number;
+    }
   | { readonly kind: 'cue'; readonly id: CueId };
 
-export const sfx = (id: SfxId, pitch = 0, delay = 0): SoundCall => ({
-  kind: 'sfx',
-  id,
-  pitch,
-  delay,
-});
+export const sfx = (id: SfxId, pitch = 0, delay = 0, gain?: number): SoundCall =>
+  gain === undefined ? { kind: 'sfx', id, pitch, delay } : { kind: 'sfx', id, pitch, delay, gain };
 
 /** The `flying` kind of a Cluster Thumper's bomblet (BOMBLET_SOUNDS). */
 const BOMBLET_KIND = 'bomblet';
@@ -121,8 +136,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   Blinked: true,
   BlinkInterrupted: true,
   PulseBurst: true,
-  // Crane income and Reel It In's credits (T408): the floater is enough for now.
-  TowerIncome: false,
+  // Crane income, Haggler's interest, and Reel It In's credits (T408): a coin (T501h).
+  TowerIncome: true,
   Revealed: true,
   // Slipping back into the cloak: the footsteps resume (fieldSounds.ts).
   Cloaked: false,
@@ -132,17 +147,20 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   CheckpointReached: true,
   ClickableChanged: false,
   Interacted: false,
-  // M5's (T500a seams): their sounds arrive with T550.
-  PhaseShift: false,
-  ShieldReformed: false,
-  StoodDown: false,
+  // M5's (T550).
+  PhaseShift: true,
+  ShieldReformed: true,
+  StoodDown: true,
+  // The pivot's cue and the kneel cover it.
   ObjectiveChanged: false,
-  RefugeeEvacuated: false,
-  RefugeeLost: false,
+  RefugeeEvacuated: true,
+  RefugeeLost: true,
+  // The lock is its ProjectileFired; the hum is the field's (beamActive, fieldSounds.ts), which a
+  // sold tower stops too (it sends no "off").
   BeamChanged: false,
-  EchoBurst: false,
-  StasisArea: false,
-  DarknessShift: false,
+  EchoBurst: true,
+  StasisArea: true,
+  DarknessShift: true,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */
@@ -172,6 +190,8 @@ export interface EnemyLookup {
   faction(enemy: string): EnemyFaction | null;
   /** Whether (x, y) (tiles) is inside a Hollow unit's quiet (HOLLOW_QUIET), as of the last frame. */
   quietAt(x: number, y: number): boolean;
+  /** The id of the tower with `uid` (its TOWER_SOUNDS row), or null if unknown. */
+  tower?(uid: number): string | null;
 }
 const NO_ENEMIES: EnemyLookup = { splits: () => false, faction: () => null, quietAt: () => false };
 
@@ -219,6 +239,19 @@ export function createEventSounds(
   const flying = new Map<number, string>();
   /** Allies' kinds by uid, so their shots find their sound. */
   const allies = new Map<number, string>();
+  /** Towers' ids by uid (uids are never reused in a battle), from TowerBuilt or the lookup. */
+  const towers = new Map<number, string>();
+  const towerId = (uid: number): string | null => {
+    const known = towers.get(uid);
+    if (known !== undefined) return known;
+    const id = enemies.tower?.(uid) ?? null;
+    if (id !== null) towers.set(uid, id);
+    return id;
+  };
+  /** Beaming towers by uid: whether this lock has plinked yet (BEAM_SOUNDS: once per lock). */
+  const beams = new Map<number, boolean>();
+  /** Sundown's last dark target (a DarknessShift deeper than it falls). */
+  let darkTarget = 0;
   /** The chain attack whose hits are arriving (its tower, or -1), and how many have. */
   let chainTower = -1;
   let chainHits = 0;
@@ -259,6 +292,7 @@ export function createEventSounds(
       if (e.type !== 'ShieldHit') flushPlink(out);
       switch (e.type) {
         case 'TowerBuilt':
+          towers.set(e.uid, e.tower);
           out.push(sfx('build'));
           return;
         case 'TowerUpgraded':
@@ -272,13 +306,16 @@ export function createEventSounds(
           return;
         case 'ProjectileFired': {
           const bomblet = e.kind === 'lobbed' && e.targetUid === 0;
-          const own = e.sprite === null ? undefined : PROJECTILE_SOUNDS[e.sprite];
+          const sprite = e.sprite === null ? undefined : PROJECTILE_SOUNDS[e.sprite];
+          const tower = TOWER_SOUNDS[towerId(e.towerUid) ?? '']?.[e.kind];
+          const own = sprite ?? tower;
           const s = bomblet ? BOMBLET_SOUNDS : (own ?? ATTACK_SOUNDS[e.kind]);
           // A shot sounds where it's fired from (the tower).
           if (s?.fire) at(out, s.fire, e.x, e.y);
           if (e.uid !== 0 && s?.land) {
-            flying.set(e.uid, bomblet ? BOMBLET_KIND : own !== undefined ? e.sprite! : e.kind);
+            flying.set(e.uid, bomblet ? BOMBLET_KIND : sprite !== undefined ? e.sprite! : e.kind);
           }
+          if (e.kind === 'beam') beams.set(e.towerUid, false);
           chainTower = e.kind === 'chain' ? e.towerUid : -1;
           chainHits = 0;
           return;
@@ -287,13 +324,23 @@ export function createEventSounds(
           landing(e, out);
           // The "wrong tool" tells: a hit that did nothing (unless its shield ripples, above),
           // else one that armor blunted.
+          if (e.uid === 0 && beams.has(e.towerUid)) {
+            // A beam tick: its plink once per lock.
+            const wrong = (e.hits > 0 && e.damage === 0) || e.reduced;
+            if (!wrong || beams.get(e.towerUid) === true) return;
+            beams.set(e.towerUid, true);
+          }
           if (e.hits > 0 && e.damage === 0) plink = { x: e.x, y: e.y };
           else if (e.reduced) at(out, PLINK_SOUNDS.reduced, e.x, e.y);
           return;
         case 'EnemyDied': {
           const id = deathSound(e.enemy);
           if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
-          if (enemies.splits(e.enemy)) at(out, SPLIT_SOUND.id, e.x, e.y, 0, SPLIT_SOUND.delay);
+          if (enemies.splits(e.enemy)) {
+            const faction = enemies.faction(e.enemy);
+            const id = (faction === null ? undefined : FACTION_SPLIT_SOUNDS[faction]) ?? SPLIT_SOUND.id;
+            at(out, id, e.x, e.y, 0, SPLIT_SOUND.delay);
+          }
           return;
         }
         case 'EnemyLeaked':
@@ -373,7 +420,7 @@ export function createEventSounds(
         case 'BossEnded': {
           const s = bossSounds(e.enemy);
           out.push(sfx(s.end));
-          if (!ended) out.push({ kind: 'cue', id: s.endCue });
+          if (!ended && s.endCue !== null) out.push({ kind: 'cue', id: s.endCue });
           return;
         }
         case 'WreckageCleared':
@@ -423,6 +470,41 @@ export function createEventSounds(
         case 'CheckpointReached':
           out.push(sfx(CHECKPOINT_SOUND));
           return;
+        case 'TowerIncome':
+          at(out, INCOME_SOUNDS.coin, e.x, e.y, e.kind === 'kill' ? INCOME_SOUNDS.killPitch : 0);
+          return;
+        // Act II, part two (T550). Phasing flickers, falls away, and comes back; an interrupted
+        // tell fizzles like every other.
+        case 'PhaseShift':
+          out.push(sfx(PHASE_SOUNDS[e.phase]));
+          return;
+        // The pivot: the shield back while a shard lives, and every hostile breathing out.
+        case 'ShieldReformed':
+          out.push(sfx(PIVOT_SOUNDS.reformed));
+          return;
+        case 'StoodDown':
+          out.push(sfx(PIVOT_SOUNDS.standDown));
+          return;
+        // The Escort: a refugee safe (Pebble her own), one taken at the exit (a hushed one is the
+        // hush's sound).
+        case 'RefugeeEvacuated':
+          out.push(sfx(e.pebble ? ESCORT_SOUNDS.pebble : ESCORT_SOUNDS.evacuated));
+          return;
+        case 'RefugeeLost':
+          if (e.cause === 'exit') out.push(sfx(ESCORT_SOUNDS.taken));
+          return;
+        case 'EchoBurst':
+          at(out, ECHO_SOUND, e.x, e.y);
+          return;
+        // Stillness's freeze locks in like Flash Freeze's (its cast is ABILITY_SOUNDS').
+        case 'StasisArea':
+          if (e.frozen > 0) out.push(sfx(STASIS_SOUNDS.lock));
+          return;
+        // Sundown: a fall as a wave takes the dark deeper (the night's air is the field's).
+        case 'DarknessShift':
+          if (e.dark > darkTarget) out.push(sfx(DARK_SOUNDS.fall));
+          darkTarget = e.dark;
+          return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
@@ -432,21 +514,12 @@ export function createEventSounds(
         case 'LinkBroken':
         case 'ObjectiveProgress':
         case 'TurnedHeavy':
-        case 'TowerIncome':
         case 'Cloaked':
         case 'AssetLost':
         case 'ClickableChanged':
         case 'Interacted':
-        case 'PhaseShift':
-        case 'ShieldReformed':
-        case 'StoodDown':
         case 'ObjectiveChanged':
-        case 'RefugeeEvacuated':
-        case 'RefugeeLost':
         case 'BeamChanged':
-        case 'EchoBurst':
-        case 'StasisArea':
-        case 'DarknessShift':
           return;
         default:
           assertNever(e);

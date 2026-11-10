@@ -87,7 +87,7 @@ target.hp -= damage
 |---|---|---|---|
 | **Chilled X%** | Move speed × (1 − X). | Only the strongest source applies (a weaker chill while a stronger one runs does nothing; an equal one extends it), except swarmling chills, which stack with each other to 30% and then count as one source. **Cap 70%.** | Half strength, except a Chilled 50% converted from Pin or Stasis, which is already boss strength and isn't halved again |
 | **Soaked** | +25% Energy damage taken, and Kinetic and Explosive hits strip its shields at ×0.8 instead of ×0.5 (2.1). | Refreshes duration. | Normal |
-| **Corroded** | −1 armor per stack (armor can't go below 0). | Stacks up to the applying tower's max. Each stack lasts 5 s and refreshes on a new hit. | Normal |
+| **Corroded** | −1 armor per stack (armor can't go below 0). A Corroded from **Corrosive Kiss** also halves every shield the unit regains: its own regeneration, a shield aura's, and a shield pulse's (not a boss's shield re-forming). | Stacks up to the applying tower's max. Each stack lasts 5 s and refreshes on a new hit. The shield slow keeps the strongest source and ends with the stacks; a plain Corroded refreshing them never lifts it. | Normal |
 | **Marked X%** | +X% damage taken from all sources. | Highest only. | Normal |
 | **Pinned** | Movement stops. A pinned flyer is **grounded**: ground-only towers can hit it. | After a Pin ends, the target is immune to Pin for 1 s. | Converted to Chilled 50% for the same duration |
 | **Stasis** | Frozen in place. Still takes damage. **Interrupts** abilities. | Never stacks or extends: a Stasis lands only on a unit neither in Stasis nor immune. After Stasis ends, immune to Stasis for **2× the duration** of the Stasis just applied (a 1.5 s Stasis gives 3 s of immunity). | Converted to Chilled 50% for the same duration (no interrupt, no immunity) |
@@ -137,7 +137,7 @@ target.hp -= damage
 | **Burrowing** | `burrower` *(new)* | Periodically digs in (untargetable) and moves underground. | Dirt spray 0.8 s before; a ripple trail underground | Kill it before it digs; Stasis or Unnerved blocks the dig; Truthlight; Scuttle Den and Underfoot hit it underground |
 | **Splitting** | `splitter` | Spawns smaller enemies on death. | Visibly "packed" sprite with bulges | Splash; Chilled zones near the death point; overkill doesn't help, so plan for the children |
 | **Healer aura** | `healer` | Restores HP of allies nearby. | Green pulses | Focus it with Strong targeting or Railspike; Unnerved interrupts the pulse |
-| **Shield-recharge aura** | `shield_aura` *(new)* | Restores allies' shields, continuously. | A dashed blue ring round the source, always on | Energy splash; kill it first; Corrosive Kiss slows shield regen |
+| **Shield-recharge aura** | `shield_aura` *(new)* | Restores allies' shields, continuously. | A dashed blue ring round the source, always on | Energy splash; kill it first; Corrosive Kiss halves what it restores to Corroded units (2.4) |
 | **Haste aura** | `haste_aura` *(new)* | Speeds up allies nearby. | Speed lines, a metronome tick | Kill it first; strong slows (the speed rule caps haste) |
 | **Blink (phase-shift)** | `blink` *(new)* | Teleports forward along the path. | A 0.8 s shimmer and an afterimage at the destination | Stasis or Unnerved interrupts; Truthlight blocks it; place damage later on the route |
 | **Phasing** | `phasing` *(new)* | Briefly untargetable (flyers). | A 0.5 s flicker | Burst damage between phases; Truthlight |

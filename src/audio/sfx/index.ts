@@ -2,6 +2,8 @@
 // synth plays any of them the same way, and recipes.test.ts validates each one.
 import type { SfxRecipe } from '../types.ts';
 import { ACT2_SFX } from './act2.ts';
+import { ACT2B_SFX } from './act2b.ts';
+import { ACT2_TOWER_SFX } from './act2towers.ts';
 import { AELARI_SFX } from './aelari.ts';
 import { ALLY_SFX } from './allies.ts';
 import { BATTLE_SFX } from './battle.ts';
@@ -28,6 +30,8 @@ export const SFX = {
   ...AELARI_SFX,
   ...HOLLOW_SFX,
   ...ACT2_SFX,
+  ...ACT2B_SFX,
+  ...ACT2_TOWER_SFX,
   ...SPEECH_SFX,
 } as const satisfies Readonly<Record<string, SfxRecipe>>;
 

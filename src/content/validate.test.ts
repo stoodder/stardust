@@ -53,6 +53,25 @@ function withEvent(e: NonNullable<MapDef<IdSpace>['events']>[number]): RawConten
 function withSteps(steps: typeof fxBuilds.parBuild.steps): RawContent<IdSpace> {
   return withMap({ parBuild: { ...fxBuilds.parBuild, steps } });
 }
+/** `raw` with a Resonance-like link: `tower` takes a vsShielded damage bonus (T563). */
+function resonance(
+  tower: 'fx_gun' | 'fx_mortar',
+  raw: RawContent<IdSpace> = BASE,
+): RawContent<IdSpace> {
+  return {
+    ...raw,
+    links: {
+      fx_resonance: {
+        id: 'fx_resonance',
+        name: 'Fx Resonance',
+        partners: [
+          { tower, bonuses: [{ stat: 'damage', pct: 0.2, vsShielded: true }] },
+          { tower: 'fx_sprinkler', bonuses: [{ stat: 'rate', pct: 0.1 }] },
+        ],
+      },
+    },
+  };
+}
 /** compileContent() must throw, and the message must name the rule. */
 /** The entity rules' errors only (a fixture enemy's new trait also moves the map's threat rules). */
 function entityErrors(raw: RawContent<IdSpace>): string[] {
@@ -242,19 +261,6 @@ describe('validate: entities', () => {
   });
 
   it('[vs-shielded] a vsShielded bonus only on towers whose attacks read damageOn (T563)', () => {
-    const resonance = (tower: 'fx_gun' | 'fx_mortar', raw: RawContent<IdSpace> = BASE) => ({
-      ...raw,
-      links: {
-        fx_resonance: {
-          id: 'fx_resonance',
-          name: 'Fx Resonance',
-          partners: [
-            { tower, bonuses: [{ stat: 'damage', pct: 0.2, vsShielded: true }] },
-            { tower: 'fx_sprinkler', bonuses: [{ stat: 'rate', pct: 0.1 }] },
-          ],
-        },
-      },
-    } satisfies RawContent<IdSpace>);
     expect(validate(resonance('fx_gun'))).toEqual([]); // hitscan on every tier and spec
     rejects(resonance('fx_mortar'), 'vs-shielded'); // a shell bakes its damage at launch
     // One spec that switches to a shell is enough to refuse it.

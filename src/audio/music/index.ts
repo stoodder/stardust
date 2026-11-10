@@ -14,8 +14,10 @@ import {
   WIN_JINGLE,
   WITCH_STING,
 } from './cues.ts';
+import { C2_RETURNED, C2_SOLD, HOME_HUM, PA_SHIFT_MINOR } from './cuesAct2.ts';
 
 export { ALL_INSTRUMENTS, DRUMS, INSTRUMENTS, KIT } from './instruments.ts';
+export { HOME_MOTIF } from './cuesAct2.ts';
 
 /** Looping themes. */
 export const THEMES = {
@@ -34,6 +36,10 @@ export const CUES = {
   lose: LOSE_STING,
   boss_sting: BOSS_STING,
   witch_sting: WITCH_STING,
+  pa_shift_minor: PA_SHIFT_MINOR,
+  home_hum: HOME_HUM,
+  c2_sold: C2_SOLD,
+  c2_returned: C2_RETURNED,
 } as const satisfies Readonly<Record<string, Song>>;
 export type CueId = keyof typeof CUES;
 

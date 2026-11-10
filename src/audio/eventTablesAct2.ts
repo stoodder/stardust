@@ -78,7 +78,7 @@ export const HOLLOW_QUIET = {
   faction: 'hollow',
   radiusTiles: 1.5,
   maxPriority: 1,
-  keep: ['hollow_unravel'],
+  keep: ['hollow_unravel', 'void_crack'],
 } as const satisfies {
   readonly faction: EnemyFaction;
   readonly radiusTiles: number;
@@ -140,17 +140,23 @@ export const PROJECTILE_SOUNDS: Readonly<
 /**
  * A charge attack charging (the Capacitor Bank, D120; fieldSounds.ts reads `chargeTicks`): the
  * hum plays as the charge starts and at each of its `steps` (quarters), `pitchPerStep` semitones
- * higher each time, so the whine climbs to the discharge (ATTACK_SOUNDS `charge`). A fizzled or
- * vented charge just stops.
+ * higher each time, so the whine climbs to the discharge (ATTACK_SOUNDS `charge`). A charge that
+ * fizzles (its target escaped, or nothing is left in range) or is vented (Hold Fire) collapses
+ * with `fizzle` (T501h), once it had reached `fizzleFrom` of its full charge: a blip of a charge
+ * that barely started says nothing.
  */
 export const CHARGE_SOUNDS = {
   hum: 'capacitor_hum',
   steps: 4,
   pitchPerStep: 3,
+  fizzle: 'charge_fizzle',
+  fizzleFrom: 0.25,
 } as const satisfies {
   readonly hum: SfxId;
   readonly steps: number;
   readonly pitchPerStep: number;
+  readonly fizzle: SfxId;
+  readonly fizzleFrom: number;
 };
 
 /** A leak hitting the asset (AssetHit; D111); the asset lost (AssetLost) is the loss cue's. */
