@@ -4,6 +4,9 @@
 // - `afterResults`: full-screen scenes a **win** plays once its Results is dismissed (any way on);
 // - `debriefOnHold`: a **win** plays its debrief's lines on the comms panel over the frozen battle
 //   first, during the results hold (D098: A1M5's C1 reaction lands before the party);
+// - `debriefAsScene`: a **win** plays its debrief as a full-screen scene before Results, after
+//   `beforeResults`, and the card then shows the payroll without its lines (D138: A2M6's Ishael,
+//   the act's peak, isn't a few lines under a payroll);
 // - `jingles`: the colony jingle, in one of its arrangements, played as a flow scene's line shows
 //   (the PA's minor shift change that closes Act II, after A2M6's card);
 // - `stamps`: story-only stamps on the card. Each `when` reads the run that just ended (`outcome`,
@@ -44,6 +47,8 @@ export interface ResultsFlow {
   readonly afterResults?: readonly SceneId[];
   /** The debrief's lines play on the comms panel as the map is won, before `beforeResults`. */
   readonly debriefOnHold?: boolean;
+  /** A win's debrief plays full-screen before Results (after `beforeResults`), not on the card. */
+  readonly debriefAsScene?: boolean;
   readonly jingles?: readonly FlowJingle[];
   readonly stamps?: readonly ResultsStamp[];
 }
@@ -64,10 +69,13 @@ export const RESULTS_FLOW: Readonly<Partial<Record<CampaignMapId, ResultsFlow>>>
       },
     ],
   },
-  // A2M6 · Sundown (act2.md § A2M6): Act II's close. No memo from Sterling: after the card, the
+  // A2M6 · Sundown (act2.md § A2M6): Act II's close. Ves'thara's debrief (Ishael) full-screen
+  // before the card. No memo from Sterling: after the card, the
   // dark, the PA's shift change, and the jingle once in minor as its caption shows; then the base
   // (QUILL's loophole, Pebble's hum) and the Sector map at night.
   a2_m06: {
+    // Ishael (D138): the debrief is the act's peak, so it plays as a scene before the card.
+    debriefAsScene: true,
     afterResults: ['a2_m06_scene_stinger'],
     jingles: [{ scene: 'a2_m06_scene_stinger', line: 2, jingle: 'minor' }],
   },

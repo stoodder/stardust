@@ -13,7 +13,7 @@ import { BLIP_SFX } from './sfx/blips.ts';
 import { isSfxId, SFX, type SfxId } from './sfx/index.ts';
 import { PUMP_MS } from './engine.ts';
 import { HOLLOW_DUCK } from './eventTablesAct2.ts';
-import { DARK_SOUNDS } from './eventTablesAct2b.ts';
+import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
 import { DEFAULT_VOLUMES, RADIO_DUCK, SPEECH_SFX_DUCK, Synth, type SynthOptions } from './synth.ts';
 
 const RATE = 44_100;
@@ -191,11 +191,12 @@ const darkLevel = (dark: number): number => 1 - DARK_SOUNDS.duckDepth * dark;
  *   times and a leak, a checkpoint, Tidybots, and Ves'thara speaking over it.
  * - **act2_dusk**: A2M5's pivot and A2M6's W12 in full dark at once (T550): the Act II theme under
  *   the PA's minor shift change, the rattle and the deaths, Fracture cracks, Rift Moths phasing,
- *   two Prisms locking and humming at full ramp, the Lantern's lock, Mindspike shots and echoes,
- *   Skewer, Magnet Crane, a fizzled charge, income coins, Cantors singing, the Penitent's arrival,
- *   break, re-forming shield and kneel, the stand-down, refugees reaching the exit (Pebble too)
- *   and two taken there, the meter's alarm, Stillness locking a freeze, the dusk's fall and the
- *   night's air, the hush, the Hollow's hum, and Goldie speaking in the dark.
+ *   two Prisms locking, their hum climbing and then held as a bed at full ramp, the Lantern's
+ *   lock, Mindspike shots and echoes, Skewer, Magnet Crane, a fizzled charge, income coins,
+ *   Cantors singing, the Penitent's arrival, break, re-forming shield and kneel, the stand-down,
+ *   refugees reaching the exit (Pebble too) and two taken there, the meter's alarm, Stillness
+ *   locking a freeze, the dusk's fall and the night's air, the hush, the Hollow's hum, and Goldie
+ *   speaking in the dark.
  */
 export const STORMS = {
   act1: {
@@ -327,7 +328,8 @@ export const STORMS = {
         if (i % 3 === 1) at(t, 'flak_burst');
         if (i % 4 === 0) at(t, 'shield_ripple');
         if (i % 6 === 0) at(t, 'aelari_shatter', (i % 3) * 2);
-        if (i % 10 === 0) at(t, 'beam_hum', 7);
+        if (i % 10 === 0 && t < 5) at(t, 'beam_hum', Math.min(4, Math.floor(t)));
+        if (i % 46 === 0 && t >= 4) at(t, 'beam_bed', BEAM_SOUNDS.maxPitch);
         if (i % 16 === 4) at(t, 'prism_lock');
         if (i % 25 === 9) at(t, 'lantern_lock');
         if (i % 4 === 2) at(t, 'mindspike_shot');

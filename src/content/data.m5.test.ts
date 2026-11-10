@@ -96,7 +96,7 @@ describe('M5 enemies (stubs under their final ids)', () => {
 
   it('the Sunderglass Penitent: a shield-broken phase with 3 shards, a pivot at 50% to the Ward', () => {
     const p = content.enemies.sunderglass_penitent;
-    expect(p).toMatchObject({ hp: 1400, bounty: 0, speedTilesPerTick: 0.2 / 60 });
+    expect(p).toMatchObject({ hp: 1200, bounty: 0, speedTilesPerTick: 0.2 / 60 });
     expect(p.shield?.hp).toBe(600);
     const boss = p.boss!;
     expect(boss).toMatchObject({ ending: 'pivot', endAtPct: 0.5 });

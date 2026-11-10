@@ -104,6 +104,12 @@ export interface RenderState {
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */
   readonly bossBar: number;
+  /**
+   * The boss bar's shield strip fill (px of 160; −1: none shows, or the boss has no shield) and
+   * its end mark (px; −1: none), where the Penitent kneels (review R6).
+   */
+  readonly bossShield: number;
+  readonly bossEnd: number;
   /** Link tethers drawn. */
   readonly tethers: number;
   /** Bricks's name-tag plate (T431): the tower it sits over and its text as drawn, or null. */
@@ -144,13 +150,17 @@ export interface RenderState {
   };
   /**
    * The world's glow (WorldGlowView, T530b): props wearing their glow, pools of light in lit discs,
-   * Prism crystals glowing, and whether the moons are lit over the night sky.
+   * Prism crystals glowing, and whether the moons are lit over the night sky; and the ghosts of
+   * light (LightGhostView, review R9): resting Prisms showing their disc's ghost, and whether the
+   * armed Prism's placement preview shows its own.
    */
   readonly glow: {
     readonly props: number;
     readonly pools: number;
     readonly crystals: number;
     readonly moons: boolean;
+    readonly ghosts: number;
+    readonly ghostPreview: boolean;
   };
   /** Floating numbers and callouts up now. */
   readonly floats: number;

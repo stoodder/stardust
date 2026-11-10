@@ -1,7 +1,8 @@
 // The flow around a won map's results card (T316; content/dialogue/resultsFlow.ts): full-screen
-// scenes before Results (A1M5's party, over the frozen battle) and after it is dismissed (the
-// stinger, before the way on the player picked). A listed scene plays only once it is registered,
-// and only while dialogue plays (`?test=1` turns it off unless `&dialogue=1`, the radio's rule).
+// scenes before Results (A1M5's party, over the frozen battle; A2M6's debrief, D138) and after it
+// is dismissed (the stinger, before the way on the player picked). A listed scene plays only once
+// it is registered, and only while dialogue plays (`?test=1` turns it off unless `&dialogue=1`,
+// the radio's rule).
 // Every win plays them; Esc or Skip skips one (style-guide.md § 4: full-screen scenes are
 // skippable). A flow scene's line can play the colony jingle as it shows (the flow's `jingles`:
 // the PA's minor shift change that closes Act II, T512); a skipped line never plays it.
@@ -15,7 +16,11 @@ import type { RunOutcome } from './testHookTypes.ts';
 /** When a flow scene plays: before the results card, or after it's dismissed. */
 export type FlowSlot = 'before' | 'after';
 
-/** The registered scenes a run of `mapId` that ended `outcome` plays at `slot` (a win's only). */
+/**
+ * The registered scenes a run of `mapId` that ended `outcome` plays at `slot` (a win's only):
+ * before Results, the flow's `beforeResults` and then its debrief when it plays as a scene
+ * (`debriefAsScene`, D138: A2M6's Ishael).
+ */
 export function flowScenes(
   mapId: string,
   outcome: RunOutcome,
@@ -24,7 +29,10 @@ export function flowScenes(
 ): Scene[] {
   if (outcome !== 'won') return [];
   const flow = resultsFlow(mapId);
-  const ids = (slot === 'before' ? flow.beforeResults : flow.afterResults) ?? [];
+  const ids =
+    slot === 'before'
+      ? [...(flow.beforeResults ?? []), ...(flow.debriefAsScene === true ? [`${mapId}_debrief`] : [])]
+      : (flow.afterResults ?? []);
   return ids.flatMap((id) => {
     const scene = lookup(id);
     return scene === undefined ? [] : [scene];

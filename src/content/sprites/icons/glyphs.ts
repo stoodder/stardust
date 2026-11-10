@@ -330,15 +330,17 @@ export const iconRefugee = defineSprite({
   palette: 'skitterkin',
   outline: 'auto',
   // The Escort meter's glyph (T531, T540c): a little coral refugee with its tuft, walking, a
-  // burlap bundle on its back (ally.refugee's colours), what the meter counts home.
-  legend: { B: 'brass.3', C: 'brass.2' },
+  // burlap bundle on its back (ally.refugee's colours), what the meter counts home. The bundle is a
+  // compact 3×2 sack riding high behind its head (U9), so the coral body and the dark eye own the
+  // glyph and read at 1×.
+  legend: { B: 'brass.4', C: 'brass.3' },
   frames: {
     icon: [
-      '..d...',
-      '.c3.BB',
-      '3w33BC',
-      '3k32CC',
-      '33322C',
+      '.d.BBB',
+      '.33CCC',
+      '3w333.',
+      '3k332.',
+      '33322.',
       '.2.2..',
     ],
   },

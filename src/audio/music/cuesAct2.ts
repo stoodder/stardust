@@ -35,11 +35,11 @@ export const HOME_HUM: Song = {
 };
 
 /**
- * The PA's shift change in minor (act2.md § A2M6, the stinger: "The jingle plays once, over the
- * dark. In minor."): the six notes on the colony's tinny PA, slow, the third flattened, then the
- * couplet's last words sinking an octave ("clearing the way") and stopping on the low tonic, with
- * the PA's own slap echo off the empty domes an eighth behind, over a dark low drone. Not the
- * wave-clear sting: nobody is cheering, and the shift changes anyway.
+ * The PA's shift change in minor (act2.md § A2M6, the stinger; it starts as the caption "(The
+ * jingle, once. Slower.)" shows): the six notes on the colony's tinny PA, slow, the third
+ * flattened, then the couplet's last words sinking an octave ("clearing the way") and stopping on
+ * the low tonic, with the PA's own slap echo off the empty domes an eighth behind, over a dark low
+ * drone. Not the wave-clear sting: nobody is cheering, and the shift changes anyway.
  */
 export const PA_SHIFT_MINOR: Song = {
   id: 'pa_shift_minor',

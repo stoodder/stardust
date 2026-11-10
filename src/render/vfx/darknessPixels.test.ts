@@ -15,6 +15,8 @@ import {
   MASK_LIT,
   NIGHT_SHADE,
   drawLampMask,
+  ghostDiscImage,
+  GHOST_COLOR,
   LAMP_LIGHT,
   noDark,
   rgbOfNumber,
@@ -165,5 +167,46 @@ describe('the light map', () => {
     const px = new Uint32Array(W * H);
     drawDarkMask(px, W, H, LEFT, TOP, origin, discs, 0);
     expect(px.every((v) => v === MASK_DARK)).toBe(true);
+  });
+});
+
+describe('a Prism’s ghost disc (review R9)', () => {
+  it('is the lit disc’s rim only, dashed, on the very pixels the dark mask would clear', () => {
+    const radiusSq = 4; // the Prism's 2.0
+    const g = ghostDiscImage(radiusSq);
+    const { w, h, data } = g.image;
+    // The same disc in the dark mask, its source at the image's pixel corner (cx, cy).
+    const mask = new Uint32Array(w * h);
+    drawDarkMask(mask, w, h, 0, 0, { x: g.cx, y: g.cy }, [{ x: 0, y: 0, radiusSq }]);
+    const c = rgbOf(GHOST_COLOR);
+    let lit = 0;
+    let rim = 0;
+    const inDisc = (x: number, y: number): boolean =>
+      x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] === MASK_LIT;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const o = (y * w + x) * 4;
+        const edge =
+          inDisc(x, y) &&
+          !(inDisc(x - 1, y) && inDisc(x + 1, y) && inDisc(x, y - 1) && inDisc(x, y + 1));
+        if (edge) rim++;
+        if (data[o + 3] === 0) continue;
+        lit++;
+        // Every ghost pixel is on the disc's rim (inside the lit disc, at its edge), opaque, cold.
+        expect(edge, `${x},${y}`).toBe(true);
+        expect([data[o], data[o + 1], data[o + 2], data[o + 3]]).toEqual([c.r, c.g, c.b, 255]);
+      }
+    }
+    // Dashed: about half the rim is lit, so it never reads as a lit edge, let alone a lit disc.
+    expect(lit).toBeGreaterThan(0.35 * rim);
+    expect(lit).toBeLessThan(0.65 * rim);
+    // The disc spans its 2.0 tiles each way on screen (2.83 tiles across the diamond's axes).
+    expect(g.cx).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 16));
+    expect(g.cy).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 8));
+  });
+
+  it('is empty for no radius', () => {
+    const g = ghostDiscImage(0);
+    expect(g.image.data.some((v) => v !== 0)).toBe(false);
   });
 });

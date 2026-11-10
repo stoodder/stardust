@@ -4,10 +4,9 @@
 // Puffwing flock's wingbeats, the Aelari's hum, the Hollow humming the jingle wrong), a hidden
 // cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
 // charge fizzles), a beam's hum climbing with its ramp (and held once it caps), the night's air at
-// Sundown, and the salvage
-// drone flying and working. It also keeps where the Hollow units stand, for their quiet (`quietAt`,
-// HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet. It reads only public sim
-// state (the same fields render reads), and never touches it.
+// Sundown, and the salvage drone flying and working. It also keeps where the Hollow units stand,
+// for their quiet (`quietAt`, HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet.
+// It reads only public sim state (the same fields render reads), and never touches it.
 import type { CompiledAttack } from '../content/compiled.ts';
 import { BOSS_ABILITY_TELL_SEC } from '../content/rules.ts';
 import type { EnemyFaction } from '../content/types.ts';

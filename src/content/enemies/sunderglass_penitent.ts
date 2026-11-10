@@ -1,5 +1,5 @@
 // The Sunderglass Penitent (design/enemies.md § 6; A2M5's boss): Ves'thara in a glass giant. HP
-// 1400, shield 600 (regen 40/s after 4 s), speed 0.2, no armor, bounty 0 (its wave's clear bonus
+// 1200, shield 600 (regen 40/s after 4 s), speed 0.2, no armor, bounty 0 (its wave's clear bonus
 // is tripled). Phases (T506):
 // (1) marches behind its shield wall with a Cantor-style recharge pulse: every 8 s (1.5 s tell)
 //     it restores 60 shield (a tenth of its own, the Glass Witch's share) to itself and every
@@ -18,7 +18,8 @@
 // 60 s before W6 forces the pivot, so the Ward kneels at the fencing's end, where the rig road
 // joins, and its chill counts there; the shield breaks in W5 in every reference run (the shards
 // unrevealed, so it re-forms), and a skilled build that reveals and kills the shards (a Lookout
-// over the road's first leg and an Orbital Strike on the break) has 700 HP to take for Kneel.
+// over the road's first leg and an Orbital Strike on the break) has 600 HP to take for Kneel, with
+// about 11 s to spare before W6 (D138: 10–15 s of slack; par still takes a quarter of her HP).
 import { defineEnemy } from '../define.ts';
 
 export const sunderglass_penitent = defineEnemy({
@@ -27,7 +28,7 @@ export const sunderglass_penitent = defineEnemy({
   faction: 'aelari',
   body: 'crystalline',
   layer: 'ground',
-  hp: 1400,
+  hp: 1200,
   armor: 0,
   shield: { hp: 600, regenPerSec: 40, regenDelaySec: 4 },
   speedTilesPerSec: 0.2,

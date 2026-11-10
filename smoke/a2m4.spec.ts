@@ -110,11 +110,31 @@ test('A2M4: from the Sector map, the cloak, the truth scene, the surge, and C2â€
   expect(await until(page, 'veils')).toBe(true);
   await play(page, 200);
   await shot(page, 'a2m4', 3, 'veils');
-  const yard = await page.evaluate(() => globalThis.__sd!.tileToClient(2.5, 5.5));
+  // The zoom wants the yard clear of the radio: wait out its line (comms hold in real time, paused
+  // or not), so the shimmer isn't under the panel (U18).
+  await expect(page.getByTestId('comms')).toBeHidden({ timeout: 20_000 });
+  await nextFrames(page);
+  // Centred on a Revealed Veilwalker in the yard (else the yard's middle), inside the viewport.
+  const yard = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    const st = sd.state()!;
+    for (let i = 0; i < st.enemies.used; i++) {
+      const e = st.enemies.items[i]!;
+      const seen = e.alive && e.def?.id === 'veilwalker' && e.revealedTicks > 0;
+      if (seen && e.x < 5 && e.y > 3) return sd.tileToClient(Math.floor(e.x), Math.floor(e.y));
+    }
+    return sd.tileToClient(2, 5);
+  });
   expect(yard).not.toBeNull();
+  const view = page.viewportSize()!;
   await page.screenshot({
     path: outPath('screens/a2m4/03b-yard-zoom.png'),
-    clip: { x: yard!.x - 110, y: yard!.y - 80, width: 220, height: 160 },
+    clip: {
+      x: Math.min(Math.max(yard!.x - 110, 0), view.width - 220),
+      y: Math.min(Math.max(yard!.y - 80, 0), view.height - 160),
+      width: 220,
+      height: 160,
+    },
   });
 
   // W4 is cleared in W5's build phase, with nothing on the field: the truth scene's moment.

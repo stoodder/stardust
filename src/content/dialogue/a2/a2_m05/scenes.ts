@@ -2,8 +2,9 @@
 // `a2_m05_<slot>` (style-guide.md § 5.3); tools/dialogueCanon.test.ts checks each against act2.md
 // § A2M5. Ves'thara's turn: she comes for the Preserve Road in a glass giant and argues with the
 // player through it (the Penitent's cues, played by the map script at its spawn and as its shield
-// first breaks), then the Hollow comes for everyone on the road and she kneels over the refugees
-// (the pivot cue, the one pausing cue on the map: it holds the battle mid-fight until it's read).
+// first breaks, never once the pivot has come: both events wait on `pivotWave` 0), then the Hollow
+// comes for everyone on the road and she kneels over the refugees (the pivot cue, the one pausing
+// cue on the map: it holds the battle mid-fight until it's read).
 // After it the radio is the escort: QUILL likes a number, Sterling likes the initiative, Pebble is
 // in Bricks's pocket. The debrief is hers: "Not there. Never there." Her portrait is `touched`
 // from this map on (speakers.ts); the Prism Spire she gives is the run end's gift (T510).
@@ -39,13 +40,20 @@ export const scenes = defineScenes([
       text: "She's not wrong about the road, Thorn. Doesn't mean she gets it.",
     },
   ]),
-  // Its shield breaks (phase 2: the cloaked shards).
+  // Its shield breaks (phase 2: the cloaked shards). Her count, then QUILL on what the break left:
+  // three shards it can't see, and the shield re-forming while any lives (D138).
   defineScene('a2_m05_cue_shield', [
     {
       kind: 'line',
       speaker: 'vesthara',
       expression: 'sad',
       text: 'You count them, Counter. I carry them. One of us will have to stop.',
+    },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'worried',
+      text: "It shed three pieces. I can't see them. While they live, the shield grows back.",
     },
   ]),
   // The pivot (her 50%, or W6 starting): she kneels and becomes the wall, the PA clears the area,

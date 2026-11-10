@@ -69,14 +69,24 @@ export const SPEAKERS = {
     frame: 'portrait',
     portrait: 'portrait.bricks',
     // Pebble in his breast pocket (D103): from her rescue on, live mid-battle (the cue is saved as
-    // seen as it ends), and on every map after.
+    // seen as it ends), and on every map after, but A2M6: she's in Dome 3 with Goldie through
+    // Sundown, so his pocket is empty in its battle and debrief, and she's back in it for the
+    // whistle scene after (QUILL's loophole plays first, on the same visit; D138).
     variants: [
       {
         variant: 'pebble',
         when: {
           any: [
-            { mapAtLeast: 'a2_m04' },
+            { mapAtLeast: 'a3_m01' },
+            { all: [{ mapAtLeast: 'a2_m04' }, { not: { mapIs: 'a2_m06' } }] },
             { all: [{ mapIs: 'a2_m03' }, { seen: 'a2_m03_cue_pebble' }] },
+            {
+              all: [
+                { mapIs: 'a2_m06' },
+                { seen: 'a2_m06_base_loophole' },
+                { not: { seen: 'a2_m06_base_whistle' } },
+              ],
+            },
           ],
         },
       },
@@ -118,7 +128,16 @@ export const SPEAKERS = {
     // The finale's Phase 3 `dawn` variant needs a phase condition; it joins with the finale.
     variants: [
       { variant: 'touched_deep', when: { act: 3 } },
-      { variant: 'touched', when: { mapAtLeast: 'a2_m05' } },
+      // Touched from A2M5's pivot on (she kneels and becomes the wall; D138), and every map after.
+      {
+        variant: 'touched',
+        when: {
+          any: [
+            { mapAtLeast: 'a2_m06' },
+            { all: [{ mapIs: 'a2_m05' }, { seen: 'a2_m05_cue_pivot' }] },
+          ],
+        },
+      },
     ],
     blip: 'blip.vesthara',
   },

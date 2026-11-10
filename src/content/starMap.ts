@@ -91,9 +91,7 @@ export const STAR_MAP_NODES: Readonly<Record<CampaignMapId, StarMapNode>> = {
   },
   a2_m05: {
     place: 'Preserve Road',
-    tagline:
-      "Ves'thara comes for the Preserve Road in a glass giant. Then the Hollow comes for " +
-      'everyone on it.',
+    tagline: "Ves'thara comes for the Preserve Road in a glass giant.",
     x: 176,
     y: 164,
   },

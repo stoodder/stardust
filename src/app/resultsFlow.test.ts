@@ -16,7 +16,7 @@ import {
   type SaveData,
 } from '../meta/index.ts';
 import { runResult } from '../ui/screens/state.ts';
-import { pickResultsChoice, resultsChoicePending, withResultsChoice } from './resultsFlow.ts';
+import { C2_RETURN_NOTE, pickResultsChoice, withResultsChoice } from './resultsFlow.ts';
 import { escortAtEnd, resultsMemos, storyRewardsOf } from './resultsStory.ts';
 import {
   debriefStory,
@@ -95,6 +95,9 @@ function card(save: SaveData, record: boolean, outcome: 'won' | 'lost' = 'won') 
   return result;
 }
 
+/** Whether the card on screen waits on its story choice. */
+const pending = (): boolean => runResult.value?.choice?.picked === null;
+
 describe('C2 on the results card', () => {
   it('offers the debrief choice on a won A2M4 with Stardust banked, price first', () => {
     const result = card(withBank(createNewSave(), 625), false);
@@ -102,9 +105,14 @@ describe('C2 on the results card', () => {
       by: 'Zibzab',
       bank: 625,
       options: ['Sell it. Market price.', 'Take it to them.'],
+      // Price first (D138): what each pays, before the pick.
+      pays: [
+        { intel: 4, note: 'Zibzab Tune-up' },
+        { intel: 0, note: C2_RETURN_NOTE },
+      ],
       picked: null,
     });
-    expect(resultsChoicePending()).toBe(true);
+    expect(pending()).toBe(true);
   });
 
   it('offers nothing on a loss, or once the save has made the choice', () => {
@@ -112,7 +120,7 @@ describe('C2 on the results card', () => {
     const made = withBank(createNewSave(), 625);
     made.story.flags.stardust_choice = 'returned';
     expect(card(made, false).choice).toBeNull();
-    expect(resultsChoicePending()).toBe(false);
+    expect(pending()).toBe(false);
   });
 
   it('with an empty bank, makes `none` as the card opens: no offer, no trade row', () => {
@@ -215,7 +223,7 @@ describe('C2 taken in the save in play', () => {
     expect(save?.story.flags.stardust_choice).toBe('sold');
     expect(save?.currencies).toEqual({ stardust: 0, intel: intel + 6 });
     expect(save?.upgrades[ZIBZAB_TUNE_UP]).toBe(1);
-    expect(resultsChoicePending()).toBe(false);
+    expect(pending()).toBe(false);
     // A second press (or the other option) changes nothing.
     const shown = runResult.value;
     pickResultsChoice(1);

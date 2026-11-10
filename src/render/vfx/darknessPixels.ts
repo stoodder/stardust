@@ -20,6 +20,7 @@
 //   own). The actors are never toned (D134).
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { HALF_H, HALF_W, type IsoOrigin } from '../iso.ts';
+import type { RgbaImage } from '../sprites/rasterize.ts';
 import type { Rgb } from './lighting.ts';
 
 /** The night's ink the dark multiplies toward (`act2.dusk`'s near-black plum shade). */
@@ -206,4 +207,65 @@ function stampDiscs(
       }
     }
   }
+}
+
+/** The ghost disc's dashes: lit for this share of every dash period round the rim. */
+export const GHOST_DASH_PX = 2;
+export const GHOST_GAP_PX = 2;
+/** The ghost disc's colour: the Prism's cold light (WorldGlowView's pool), as a promise. */
+export const GHOST_COLOR: ColorName = 'blue.4';
+
+/** A ghost disc's pixels, and the pixel corner its source's ground point sits on. */
+export interface GhostDisc {
+  readonly image: RgbaImage;
+  readonly cx: number;
+  readonly cy: number;
+}
+
+/**
+ * The ghost of a light source's disc (review R9: a Prism at rest, and the placement preview of
+ * one): only its rim, dashed, in `color`, so it promises light without reading as lit. The rim is
+ * the edge of exactly the disc the dark mask clears (the same per-pixel test, `stampDiscs`): the
+ * disc's pixels with a 4-neighbour outside it. The dashes run round the rim by angle (2 on, 2
+ * off). The source's ground point is the image's pixel corner (`cx`, `cy`), as a tile centre
+ * lands on a pixel corner on screen. Its inside stays clear: nothing under a ghost lightens.
+ */
+export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR): GhostDisc {
+  const r = Math.sqrt(Math.max(0, radiusSq));
+  const cx = Math.ceil(r * Math.SQRT2 * HALF_W) + 2;
+  const cy = Math.ceil(r * Math.SQRT2 * HALF_H) + 2;
+  const w = 2 * cx;
+  const h = 2 * cy;
+  const inside = new Uint32Array(w * h);
+  const disc: LightDisc = { x: 0, y: 0, radiusSq };
+  stampDiscs(inside, w, h, 0, 0, { x: cx, y: cy }, [disc], 0, 1, 1);
+  const data = new Uint8ClampedArray(w * h * 4);
+  const c = rgbOf(color);
+  const isIn = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < w && y < h && inside[y * w + x] === 1;
+  // The rim's length (its pixel count) sets how many dashes go round it.
+  const rim: number[] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!isIn(x, y)) continue;
+      if (isIn(x - 1, y) && isIn(x + 1, y) && isIn(x, y - 1) && isIn(x, y + 1)) continue;
+      rim.push(x, y);
+    }
+  }
+  const period = GHOST_DASH_PX + GHOST_GAP_PX;
+  const dashes = Math.max(4, Math.round(rim.length / 2 / period));
+  for (let i = 0; i < rim.length; i += 2) {
+    const x = rim[i]!; // i < length
+    const y = rim[i + 1]!; // i + 1 < length (pairs)
+    // The angle on the ground plane (the screen ellipse un-squashed), so dashes space evenly.
+    const a = Math.atan2((y + 0.5 - cy) * 2, x + 0.5 - cx);
+    const t = (a / (2 * Math.PI) + 1) % 1;
+    if (Math.floor(t * dashes * 2) % 2 === 1) continue;
+    const o = (y * w + x) * 4;
+    data[o] = c.r;
+    data[o + 1] = c.g;
+    data[o + 2] = c.b;
+    data[o + 3] = 255;
+  }
+  return { image: { w, h, data }, cx, cy };
 }

@@ -173,8 +173,8 @@ export const builds = defineBuilds({
  * and spending with the Lookout and a Zapcoil swapped, so the Lookout stands over the road's first
  * leg, where the Penitent's shield breaks (W5, 28 s after she spawns). Its shards are revealed
  * there, and the Orbital Strike (with Bricks's Suppressing Fire) lands on the break and kills all
- * three at once, so the shield never re-forms; the Zapcoils and the Rivet then take her to 50%
- * about 6 s before W6 would force the pivot. It isn't an `altBuilds` entry (it shares all four of
+ * three at once, so the shield never re-forms; the Zapcoils then take her to 50% about 11 s
+ * before W6 would force the pivot (D138: 10–15 s of slack). It isn't an `altBuilds` entry (it shares all four of
  * par's towers): balance/a2m5.test.ts runs it.
  */
 export const KNEEL_BUILD: ScriptedBuild = {

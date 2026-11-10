@@ -157,6 +157,7 @@ describe('sound effect recipes', () => {
         'zap_arc',
         'zap_jump',
         // Act II, part two (T550, T501h).
+        'beam_bed',
         'beam_hum',
         'cantor_song',
         'charge_fizzle',

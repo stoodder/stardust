@@ -374,3 +374,31 @@
   opacity: 0.7;
   cursor: default;
 }
+
+/* C2 offered at the base (BaseChoice.tsx; D138): the card's choice as a panel over the base, its
+   scrim the results card's. */
+.sd-base-choice {
+  /* ink.0 at 45%, the results card's scrim. */
+  background: rgb(5 3 10 / 45%);
+}
+
+.sd-base-choice-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 432px;
+  padding: 10px 16px 12px;
+}
+
+.sd-base-choice-made {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4px;
+}
+
+.sd-base-choice-tune-up {
+  flex-basis: 100%;
+  color: var(--sd-steel-3);
+}

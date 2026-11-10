@@ -40,7 +40,7 @@ export const BEAM_SOUNDS = {
   everySec: 0.5,
   maxPitch: 5,
   bed: 'beam_bed',
-  bedEverySec: 2.6,
+  bedEverySec: 2.3,
 } as const satisfies {
   readonly hum: SfxId;
   readonly everySec: number;

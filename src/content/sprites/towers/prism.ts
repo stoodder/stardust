@@ -1,6 +1,6 @@
 // Prism Spire (`prism`, design/towers.md § Aelari towers): Ves'thara's gift, the ramping beam, "I
 // will hold the light." On the floating Aelari dais (towers/aelariBase.ts) in its **ruby-pink trim**
-// (a pink rim thread, pink tier shards), a squat cut gem floats over a woven emerald cradle: broad
+// (pink threads woven across the dais, a pink rim thread, pink tier shards), a squat cut gem floats over a woven emerald cradle: broad
 // and six-sided, its ruby-pink facets lit pink-white on the left and deep ruby on the right, a
 // sapphire thread wound round it (the Aelari weave), and a white heart at the height the beam leaves
 // it (render's `MUZZLE_PX`, 14 px over the tile: 9 over the mount). Squat and warm where the
@@ -28,7 +28,7 @@ type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'refractor' | 'sunlance';
 
 /** The Prism's trim (U5): ruby-pink, its light white. */
-export const PRISM_TRIM: Trim = { rim: 'd', ramp: ['e', 'd', 'c', 'b'], tip: '*' };
+export const PRISM_TRIM: Trim = { rim: 'd', weave: 'e', ramp: ['e', 'd', 'c', 'b'], tip: '*' };
 
 /** The cradle: a woven emerald ring the crystal floats over, ruby knots at its sides. */
 function cradle(g: CharGrid, rx: number): void {
@@ -43,7 +43,8 @@ function cradle(g: CharGrid, rx: number): void {
 }
 
 /**
- * A six-sided ruby-pink gem from `top` to `bottom` (pointed at both ends, the caps `cap` rows),
+ * A six-sided ruby-pink gem from `top` to `bottom` (pointed at both ends: the crown `cap` rows, the
+ * foot `foot`),
  * `hw` px half-wide, centred on column `cx` (pixel edges): its left facet lit pink-white, the middle
  * pink, the right ruby and deep ruby, the ridge between the lit facets catching white light, and a
  * table of lit pink across its crown.
@@ -55,9 +56,10 @@ function crystal(
   bottom: number,
   hw: number,
   cap = Math.max(2, Math.round(hw)),
+  foot = cap,
 ): void {
   for (let y = top; y <= bottom; y++) {
-    const w = Math.min(hw, (y - top + 0.5) * (hw / cap), (bottom - y + 0.5) * (hw / cap));
+    const w = Math.min(hw, (y - top + 0.5) * (hw / cap), (bottom - y + 0.5) * (hw / foot));
     for (let x = Math.floor(cx - w); x < Math.ceil(cx + w); x++) {
       const u = (x + 0.5 - cx) / Math.max(1, w);
       plot(g, x, y, u < -0.45 ? 'e' : u < 0.1 ? 'd' : u < 0.55 ? 'c' : 'b');
@@ -110,16 +112,14 @@ function lens(g: CharGrid, facing: Facing, hw: number, fire: boolean): void {
   plot(g, lx + 4, ly + dy, '*');
 }
 
-/** The sapphire thread wound round the gem (the Aelari weave), on the diagonal across its front. */
-function windings(g: CharGrid, cx: number, top: number, bottom: number, hw: number): void {
-  for (let y = top + 3; y <= bottom - 2; y += 4) {
-    const n = Math.round(hw * 2);
-    for (let k = 0; k < n; k++) {
-      const x = Math.floor(cx - hw) + k;
-      const yy = y + Math.floor((k * 2) / n);
-      const c = g[yy]?.[x];
-      if (c !== undefined && c !== '.') plot(g, x, yy, k < n / 2 ? '4' : '2');
-    }
+/** The sapphire thread wound round the gem's waist (the Aelari weave), rising across its front. */
+function windings(g: CharGrid, cx: number, y: number, hw: number): void {
+  const n = Math.round(hw * 2);
+  for (let k = 0; k < n; k++) {
+    const x = Math.floor(cx - hw) + k;
+    const yy = y - Math.floor((k * 3) / n);
+    const c = g[yy]?.[x];
+    if (c !== undefined && c !== '.') plot(g, x, yy, k < n / 2 ? '4' : '2');
   }
 }
 
@@ -131,7 +131,7 @@ function prismHead(facing: Facing, fire: boolean, kit: Kit = 't1'): string[] {
     // Two smaller gems leaning out to either side, a heart in each: three beams.
     for (const side of [-1, 1]) {
       const sx = CX + side * 7.5;
-      crystal(g, sx, HEART - 7, HEART + 4, 2.6, 2);
+      crystal(g, sx, HEART - 8, HEART + 4, 2.6, 3, 2);
       heart(g, sx - side, HEART, fire);
     }
   }
@@ -147,13 +147,13 @@ function prismHead(facing: Facing, fire: boolean, kit: Kit = 't1'): string[] {
       );
     }
   }
-  // Squat: a broad gem with short caps (T1 13 rows × 11 px; T2 and the triad 16 × 13); the
-  // Sunlance is the one long lance.
-  const hw = kit === 'sunlance' ? 2.6 : big ? 6.5 : 5.5;
-  const top = kit === 'sunlance' ? 2 : big ? HEART - 10 : HEART - 7;
+  // Squat: a broad gem, its crown pointed and its foot short (T1 16 rows × 10 px; T2 and the triad
+  // 18 × 12); the Sunlance is the one long lance.
+  const hw = kit === 'sunlance' ? 2.6 : big ? 6 : 5;
+  const top = kit === 'sunlance' ? 2 : big ? HEART - 13 : HEART - 11;
   const bottom = CY - 4;
-  crystal(g, CX, top, bottom, hw, kit === 'sunlance' ? 3 : 3);
-  windings(g, CX, top, bottom, hw);
+  crystal(g, CX, top, bottom, hw, kit === 'sunlance' ? 3 : Math.round(hw), 2);
+  windings(g, CX, HEART + 3, hw);
   if (kit === 't2') {
     // Two satellite shards floating beside it.
     floatingCrystal(g, CX - 9, HEART - 5, 2, PRISM_TRIM);

@@ -368,21 +368,81 @@ describe('M5 field sounds (T550, T501h)', () => {
     expect(hum()).toEqual([]);
     a.beamActive = true;
     b.beamActive = true;
-    b.beamRamp = cap;
-    expect(hum()).toEqual([BEAM_SOUNDS.maxPitch]);
+    a.beamRamp = 1 + (cap - 1) / 2;
+    expect(hum()).toEqual([Math.floor(BEAM_SOUNDS.maxPitch / 2)]);
     // Within the loop's period: nothing new.
     w.tick += 1;
     expect(hum()).toEqual([]);
-    // The ramped beam lets go; the other's ramp is halfway.
-    b.beamActive = false;
-    a.beamRamp = 1 + (cap - 1) / 2;
+    // The stronger ramp leads: just short of the cap is the step under the top.
+    b.beamRamp = cap - 0.01;
     w.tick += Math.round(BEAM_SOUNDS.everySec * TICK_HZ);
-    expect(hum()).toEqual([Math.round(BEAM_SOUNDS.maxPitch / 2)]);
-    // Sold (a sold tower sends no "off"): the hum stops with it.
+    expect(hum()).toEqual([BEAM_SOUNDS.maxPitch - 1]);
+    // Sold (a sold tower sends no "off"): the hum stops with it, and the other's carries on.
+    b.alive = false;
+    w.tick += Math.round(BEAM_SOUNDS.everySec * TICK_HZ);
+    expect(hum()).toEqual([Math.floor(BEAM_SOUNDS.maxPitch / 2)]);
     a.alive = false;
     w.tick += Math.round(BEAM_SOUNDS.everySec * TICK_HZ);
     expect(hum()).toEqual([]);
     expect(beamPitch(prism(3, { beamActive: false }))).toBeNull();
+    expect(beamPitch(prism(4, { beamActive: true, beamRamp: cap }))).toBe(BEAM_SOUNDS.maxPitch);
+  });
+
+  it('settles a capped beam into the held bed, softer and slower, and climbs again on a new lock', () => {
+    // R16: an octave under the first cut, a smaller climb, and no 2 Hz pulse once it's capped.
+    expect(BEAM_SOUNDS.maxPitch).toBe(5);
+    expect(BEAM_SOUNDS.bedEverySec).toBeGreaterThanOrEqual(4 * BEAM_SOUNDS.everySec);
+    const attack = PRISM.attack;
+    const cap = attack?.kind === 'beam' ? attack.rampCap : 1;
+    const f = createFieldSounds(CLEAR);
+    const t: Bank = {
+      uid: 1,
+      alive: true,
+      tierDef: PRISM,
+      chargeTicks: 0,
+      flatRate: 0,
+      pctRate: 0,
+      beamActive: true,
+      beamRamp: 1,
+    };
+    const w = world();
+    w.towers = { items: [t], used: 1 };
+    const sounds = (): string[] => {
+      const out: SoundCall[] = [];
+      f.frame(w, out);
+      return out.flatMap((c) =>
+        c.kind === 'sfx' && (c.id === BEAM_SOUNDS.hum || c.id === BEAM_SOUNDS.bed)
+          ? [`${c.id}@${c.pitch}`]
+          : [],
+      );
+    };
+    // The climb: a hum every `everySec`, never the top step.
+    const heard: string[] = [];
+    const climbTicks = Math.round(((cap - 1) / 0.5) * TICK_HZ);
+    for (let k = 0; k < climbTicks; k++) {
+      t.beamRamp = Math.min(cap, 1 + ((cap - 1) * k) / climbTicks);
+      heard.push(...sounds());
+      w.tick += 1;
+    }
+    expect(heard.length).toBe(Math.ceil(climbTicks / Math.round(BEAM_SOUNDS.everySec * TICK_HZ)));
+    expect(heard.every((h) => h.startsWith(`${BEAM_SOUNDS.hum}@`))).toBe(true);
+    expect(heard).not.toContain(`${BEAM_SOUNDS.hum}@${BEAM_SOUNDS.maxPitch}`);
+    // Capped: the bed at the top step at once, then only every `bedEverySec`; the hum is silent.
+    t.beamRamp = cap;
+    const held: string[] = [];
+    const heldTicks = Math.round(3 * BEAM_SOUNDS.bedEverySec * TICK_HZ);
+    for (let k = 0; k < heldTicks; k++) {
+      held.push(...sounds());
+      w.tick += 1;
+    }
+    expect(held).toEqual(Array(3).fill(`${BEAM_SOUNDS.bed}@${BEAM_SOUNDS.maxPitch}`));
+    // A new target starts the ramp over: the climbing hum is straight back.
+    t.beamRamp = 1;
+    expect(sounds()).toEqual([`${BEAM_SOUNDS.hum}@0`]);
+    // Let go: silence.
+    t.beamActive = false;
+    w.tick += Math.round(BEAM_SOUNDS.bedEverySec * TICK_HZ);
+    expect(sounds()).toEqual([]);
   });
 
   it("breathes the night's air at Sundown, as loud as it's dark, on sim time", () => {

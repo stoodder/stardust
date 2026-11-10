@@ -1,6 +1,6 @@
 // Pebble and Bricks on screen (T422; D103): his `pebble` portrait (her in his breast pocket) shows
 // only once she's rescued (A2M3's cue seen, so it changes mid-battle, and every map after), and her
-// name plate reads "???" until he names her (A2M3 w07).
+// name plate reads "???" until he names her (A2M3 w07). Through A2M6 she's in the dome (D138).
 import { describe, expect, it, vi } from 'vitest';
 import type { CampaignMapId } from '../content/campaign.ts';
 import type { StoryContext } from '../story/conditions.ts';
@@ -24,7 +24,29 @@ const pebble = (c: StoryContext) =>
 const plate = (c: StoryContext) =>
   lineView({ speaker: 'pebble', text: '(squeak)' }, c, TEXT, null).name;
 
+const vesthara = (c: StoryContext) =>
+  lineView({ speaker: 'vesthara', text: 'Be awake.' }, c, TEXT, null).portrait?.variant ?? null;
+
 describe("Bricks's pocket and Pebble's name plate", () => {
+  it("empties Bricks's pocket through A2M6 (she's in the dome) and fills it for the whistle", () => {
+    expect(bricks(ctx('a2_m05'))).toBe('pebble');
+    expect(bricks(ctx('a2_m06'))).toBeNull();
+    expect(bricks(ctx('a2_m06', ['a2_m06_brief', 'a2_m06_debrief']))).toBeNull();
+    // The whistle scene plays after QUILL's loophole, on the same base visit.
+    expect(bricks(ctx('a2_m06', ['a2_m06_base_loophole']))).toBe('pebble');
+    // A replay of Sundown after that visit: she's in the dome again.
+    expect(bricks(ctx('a2_m06', ['a2_m06_base_loophole', 'a2_m06_base_whistle']))).toBeNull();
+    expect(bricks(ctx('a3_m01'))).toBe('pebble');
+  });
+
+  it("shows Ves'thara touched from A2M5's pivot on (D138)", () => {
+    expect(vesthara(ctx('a2_m04'))).toBeNull();
+    expect(vesthara(ctx('a2_m05', ['a2_m05_brief']))).toBeNull();
+    expect(vesthara(ctx('a2_m05', ['a2_m05_cue_pivot']))).toBe('touched');
+    expect(vesthara(ctx('a2_m06'))).toBe('touched');
+    expect(vesthara(ctx('a3_m01'))).toBe('touched_deep');
+  });
+
   it('keeps Bricks bare-pocketed on A2M3 until the rescue cue has played', () => {
     expect(bricks(ctx('a2_m02'))).toBeNull();
     expect(bricks(ctx('a2_m03'))).toBeNull();

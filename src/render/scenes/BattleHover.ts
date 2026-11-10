@@ -1,6 +1,7 @@
 // The playfield's pointer and hover feedback (T225 split from BattleScene.ts): where the pointer is
 // (or the keyboard tile cursor, while it shows), and what hovering there shows: the tile
-// highlight, the placement ghost with its tile-bonus label and range ring, the aimed ability's
+// highlight, the placement ghost with its tile-bonus label and range ring (and an armed Prism's
+// ghost light disc on a dark map, review R9), the aimed ability's
 // reticle or segment preview, and the selected or hovered tower's range ring. The decisions are
 // input/intents.ts's (`hoverLook`); this draws them. Allocation-free per frame: the ghost label's
 // words are built once per battle (input/ghostLabel.ts, T234), and the tile facts and preview
@@ -53,6 +54,8 @@ export interface BattleHoverDeps {
   readonly stillRadius?: readonly number[];
   /** Draws Stillness's aim (StillnessAimView). */
   readonly stills?: { setAim(col: number, row: number, radiusTiles: number): void };
+  /** Draws the disc an armed light source (the Prism) would light, as a ghost (review R9). */
+  readonly lightGhosts?: { setPreview(col: number, row: number, radiusSq: number): void };
 }
 
 export class BattleHover {
@@ -179,9 +182,12 @@ export class BattleHover {
         isLitAt(sim.map.lights, state.towers, tile.col + 0.5, tile.row + 0.5);
       const mul = darkRangeMul(state.dark, lit);
       placement.setRing(tile.col + 0.5, tile.row + 0.5, range * mul, look.ghostValid, !lit);
+      // A Prism shows the disc it would light from here, as a ghost (review R9).
+      this.#deps.lightGhosts?.setPreview(tile.col, tile.row, armed.lightRadiusSq);
       this.#setHand(false);
       return;
     }
+    this.#deps.lightGhosts?.setPreview(-1, 0, 0);
     placement.setGhost(0, 0, null, null);
     placement.setSalvageLabel(
       tile.col,

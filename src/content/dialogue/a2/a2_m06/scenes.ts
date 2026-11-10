@@ -4,8 +4,9 @@
 // from the dome, Sterling is afraid for once, and as W12's build phase opens, in full Long Night
 // darkness (the map's lighting reaches it as W11 starts; balance/a2m6.test.ts checks every
 // reference run), Goldie puts the lights out in Dome 3 and QUILL forgets the end of its joke. The
-// debrief is Ishael: Ves'thara's mother, sung into the oldest chamber, in the shapes we broke. The
-// stinger closes Act II over the dark.
+// debrief is Ishael: Ves'thara's mother, sung into the oldest chamber, in the shapes we broke; it
+// plays full-screen before the Results card (D138), which doesn't repeat it. The stinger closes
+// Act II over the dark.
 import { defineScene, defineScenes } from '../../define.ts';
 
 export const scenes = defineScenes([
@@ -38,6 +39,15 @@ export const scenes = defineScenes([
   defineScene('a2_m06_w06', [
     { kind: 'line', speaker: 'bricks', text: 'Everybody on the wall. Even the fancy one.' },
     { kind: 'line', speaker: 'vesthara', text: 'I heard that.' },
+  ]),
+  // The Stillness lesson (D138), as W8's build phase opens: before W8's few Rift Moths reach the
+  // merge, because a cast on them would still be returning when W9's flock comes (beats.test.ts).
+  defineScene('a2_m06_w08', [
+    {
+      kind: 'line',
+      speaker: 'vesthara',
+      text: 'A few moths first, then a flock. Keep my Stillness for the many. It is slow to return.',
+    },
   ]),
   // Sterling's moment of fear, before the Rift Moth flock.
   defineScene('a2_m06_w09', [
@@ -91,14 +101,15 @@ export const scenes = defineScenes([
   ]),
   // Act II's close, after Results (content/dialogue/resultsFlow.ts): no memo from Sterling, only
   // the dark, the PA's shift change, and the jingle once in its minor arrangement (played as the
-  // caption shows, `afterResultsJingle`), left to ring out before the base.
+  // caption shows, `afterResultsJingle`), left to ring out before the base. The caption says what
+  // plays, plainly, and leaves the callback to the player (D138).
   defineScene('a2_m06_scene_stinger', [
     { kind: 'line', speaker: 'narrator', text: '', durationSec: 2 },
     { kind: 'line', speaker: 'pa', text: 'Shift change.' },
     {
       kind: 'line',
       speaker: 'narrator',
-      text: 'The jingle plays once, over the dark. In minor.',
+      text: '(The jingle, once. Slower.)',
     },
     { kind: 'line', speaker: 'narrator', text: '', durationSec: 3 },
   ]),

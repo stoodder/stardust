@@ -106,6 +106,7 @@ import { DarknessView } from '../views/DarknessView.ts';
 import { WorldGlowView } from '../views/WorldGlowView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { StillnessAimView } from '../views/StillnessAimView.ts';
+import { LightGhostView } from '../views/LightGhostView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HarpoonView } from '../views/HarpoonView.ts';
 import { BeamView } from '../views/BeamView.ts';
@@ -222,6 +223,8 @@ export class BattleScene extends Phaser.Scene {
   #sweeps!: SweepView;
   /** Stillness's aim preview (T531). */
   #stillAim!: StillnessAimView;
+  /** A resting Prism's ghost light disc, and the armed Prism's preview (review R9). */
+  #lightGhosts!: LightGhostView;
   #wreckage!: WreckageView;
   #drone!: DroneView;
   /** The Tidybots and the stardust specks they sweep after each wave (T410b; the map's dial). */
@@ -385,6 +388,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#sweeps = new SweepView(ctx, this.#fx);
     this.#stillAim = new StillnessAimView(ctx);
+    this.#lightGhosts = new LightGhostView(ctx, hasDarkness(map));
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
       this.#lighting.relight(),
@@ -491,6 +495,7 @@ export class BattleScene extends Phaser.Scene {
       sweeps: this.#sweeps,
       stillRadius: this.#stillRadius,
       stills: this.#stillAim,
+      lightGhosts: this.#lightGhosts,
     });
 
     this.#offs.push(
@@ -560,6 +565,7 @@ export class BattleScene extends Phaser.Scene {
       this.#glow.reset();
       this.#sweeps.reset();
       this.#stillAim.reset();
+      this.#lightGhosts.reset();
       this.#wreckage.reset();
       this.#tidybots.reset();
       this.#bossBar.reset();
@@ -601,6 +607,7 @@ export class BattleScene extends Phaser.Scene {
     this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
     this.#darkness.update(state.dark, state.towers);
     this.#glow.update(state.dark, state.towers);
+    this.#lightGhosts.update(state.towers);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
@@ -743,6 +750,8 @@ export class BattleScene extends Phaser.Scene {
       },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
+      bossShield: this.#bossBar.shieldPx,
+      bossEnd: this.#bossBar.endPx,
       tethers: this.tethers,
       nameTag:
         this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },
@@ -763,6 +772,8 @@ export class BattleScene extends Phaser.Scene {
         pools: this.#glow.pools,
         crystals: this.#glow.crystals,
         moons: this.#glow.moons,
+        ghosts: this.#lightGhosts.resting,
+        ghostPreview: this.#lightGhosts.previewing,
       },
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,

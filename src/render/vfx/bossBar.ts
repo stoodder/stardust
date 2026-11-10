@@ -1,5 +1,9 @@
 // The boss bar's numbers (art-direction §8, the `boss` tell: "HUD bar with phase markers";
 // design/enemies.md § 6). Pure, so the layout is unit-tested; views/BossBarView.ts draws it.
+// A shielded boss's bar carries a thin shield strip under the HP (its shield against its own
+// maximum, re-forming as a ghost while its shards count down), and a boss whose fight ends above
+// 0 (`endAtPct`: the Glass Witch's retreat, the Penitent's kneel) carries the end mark where the
+// HP stops (review R6).
 
 /** The bar: its width and height inside a 1 px frame (game px), and where it sits on screen. */
 export const BOSS_BAR_W = 160;
@@ -42,6 +46,45 @@ export function phaseMarksPx(
     if (p.onShieldBroken !== true) out.push(Math.round(p.fromPct * w));
   }
   return out;
+}
+
+/** The shield strip under a shielded boss's HP: its height, under a 1 px `ink.0` rule (px). */
+export const BOSS_SHIELD_H = 2;
+/** The shield strip's segments (the small health bar's): this many px lit in every period. */
+export const SHIELD_SEG_ON = 3;
+export const SHIELD_SEG_PERIOD = 4;
+/** The end mark's flag over the bar: this wide at its top (px), narrowing to the 1 px tick. */
+export const END_FLAG_W = 3;
+
+/** The bar's whole height inside its frame (px): the HP, and for a shielded boss the strip. */
+export function barBodyH(shielded: boolean): number {
+  return shielded ? BOSS_BAR_H + 1 + BOSS_SHIELD_H : BOSS_BAR_H;
+}
+
+/**
+ * Where a boss's fight ends on a `w`-px bar (px from its left), or −1 for none: its `endAtPct`
+ * when above 0 (the Glass Witch's 40% retreat, the Penitent's 50% kneel; Chitterbloom is driven
+ * off at 0 and has none). The HP never drains past it.
+ */
+export function endMarkPx(endAtPct: number, w = BOSS_BAR_W): number {
+  if (!(endAtPct > 0) || !(endAtPct < 1)) return -1;
+  return Math.round(endAtPct * w);
+}
+
+/** Whether pixel `x` of the shield strip is a lit segment (3 on, 1 off, from the left). */
+export function shieldSegLit(x: number): boolean {
+  return x % SHIELD_SEG_PERIOD < SHIELD_SEG_ON;
+}
+
+/**
+ * The shield strip's re-forming ghost (px), while a shield-broken boss's shield is down and its
+ * shards count it back (`reformTicks` of `totalTicks` left): it grows from empty to the full bar
+ * as the re-form nears, so the player sees the wall coming back; 0 when nothing is re-forming.
+ */
+export function reformPx(reformTicks: number, totalTicks: number, w = BOSS_BAR_W): number {
+  if (!(reformTicks > 0) || !(totalTicks > 0)) return 0;
+  const done = 1 - Math.min(reformTicks, totalTicks) / totalTicks;
+  return Math.max(0, Math.min(w, Math.floor(done * w)));
 }
 
 /** The chip's width after `dt` ms: it drains toward the fill, and never sits below it. */

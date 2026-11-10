@@ -1,20 +1,23 @@
 // Seer's Lantern (`lantern`, design/towers.md § Aelari towers): detection and the Mark, attuned in
-// Xenotech. On the floating Aelari dais (towers/aelariBase.ts) a woven lantern hangs in the air over
-// an emerald cradle: a cage of sapphire threads shaped like a seed (pointed top and bottom), an
-// emerald hoop at its crown, a ruby tassel hanging below, and inside it the seer's eye, a white
-// light in a teal ring that sees what hides (it answers the Cloaked tell, art-direction §8). It
-// doesn't aim: its idle `glow` turns the cage slowly (the strands step round a pixel a frame, the
-// Aelari's slow rotation, towers.md §8) while the light breathes and the lantern bobs a pixel
-// (4 frames, 3 fps); render draws its light-beam (BeamView). Tiers read on the base. The specs:
-// **All-Seeing** (`spec_a`, marks everything in reach) opens the cage round a bigger eye and wears a
-// halo of four small eye-knots circling it, over a base with a small lantern hung on a thread arch
-// at each corner; **Truthlight** (`spec_b`, one target can't hide) stretches the lantern long and
-// narrow into a lens-tipped prism, the light a hard white slit, over a base with a tall white-tipped
-// lens post at each corner. Each spec turns at its own pace.
+// Xenotech. On the floating Aelari dais (towers/aelariBase.ts) in its **gold trim** (gold threads
+// woven across the dais, a gold rim thread, sapphire tier shards tipped gold-white), a woven lantern
+// hangs in the air over an emerald cradle: a round cage of sapphire threads, an emerald hoop at its
+// crown, a ruby tassel hanging below, and inside it the seer's light, a gold-white core (a white
+// heart in rings of pale and deep gold) that sees what hides (it answers the Cloaked tell,
+// art-direction §8). A round gold-lit cage where the Prism is a squat pink gem and the Mindspike a
+// violet needle (U5). It doesn't aim: its idle `glow` turns the cage slowly (the strands step round
+// a pixel a frame, the Aelari's slow rotation, towers.md §8) while the light breathes and the
+// lantern bobs a pixel (4 frames, 3 fps); render draws its light-beam (BeamView). Tiers read on the
+// base. The specs: **All-Seeing** (`spec_a`, marks everything in reach) opens a bigger cage round a
+// bigger light and wears a halo of four small eye-knots circling it, over a base with a small
+// lantern hung on a thread arch at each corner; **Truthlight** (`spec_b`, one target can't hide)
+// stretches the lantern long and narrow into a lens-tipped prism, the light a hard white slit edged
+// gold, over a base with a tall white-tipped lens post at each corner. Each spec turns at its own
+// pace.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
-import { aelariBase, aelariSpecBase, shard } from './aelariBase.ts';
+import { aelariBase, aelariSpecBase, shard, type Trim } from './aelariBase.ts';
 
 const W = 26;
 const H = 34;
@@ -22,6 +25,12 @@ const CX = 13;
 const CY = 31;
 
 type Kit = 't1' | 'allSeeing' | 'truthlight';
+
+/** The Lantern's trim (U5): gold (custom legend `G` `gold.3`, `H` `gold.4`), sapphire shards. */
+export const LANTERN_TRIM: Trim = { rim: 'G', weave: 'H', ramp: ['4', '3', '2', '1'], tip: 'H' };
+
+/** Its light's gold, outside the Aelari's own ramps. */
+const LEGEND = { G: 'gold.3', H: 'gold.4' } as const;
 
 /** The cradle: a woven emerald ring the lantern hangs over. */
 function cradle(g: CharGrid): void {
@@ -37,14 +46,19 @@ function lanternHead(beat: number, kit: Kit): string[] {
   const g = grid(W, H);
   cradle(g);
   const bob = beat === 1 || beat === 2 ? 1 : 0;
-  const tall = kit === 'truthlight' ? 18 : kit === 'allSeeing' ? 14 : 13;
-  const half = kit === 'truthlight' ? 3.6 : kit === 'allSeeing' ? 5.6 : 4.6;
+  // Round (Truthlight's the long one): as tall as it is wide.
+  const tall = kit === 'truthlight' ? 18 : kit === 'allSeeing' ? 13 : 11;
+  const half = kit === 'truthlight' ? 3.6 : kit === 'allSeeing' ? 6.6 : 5.6;
   const bottom = CY - 5 - bob;
   const top = bottom - tall;
   const mid = (top + bottom) / 2;
   const eyeY = Math.round(mid);
-  /** The cage's half-width at row y: a seed, pointed at both ends. */
-  const hwAt = (y: number): number => half * Math.sin(((y + 0.5 - top) / (tall + 1)) * Math.PI);
+  /** The cage's half-width at row y: a ball (Truthlight's a seed, pointed at both ends). */
+  const hwAt = (y: number): number => {
+    const t = (y + 0.5 - top) / (tall + 1);
+    if (kit === 'truthlight') return half * Math.sin(t * Math.PI);
+    return half * Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2));
+  };
   // The cage: strands that run top to bottom round the seed, stepping round as it turns. A strand
   // at angle a shows at x = cx + sin(a)·hw, lit on the near side and dim on the far.
   const strands = kit === 'allSeeing' ? 5 : 6;
@@ -64,22 +78,22 @@ function lanternHead(beat: number, kit: Kit): string[] {
     plot(g, Math.floor(CX - w), y, '4');
     plot(g, Math.ceil(CX + w) - 1, y, '2');
   }
-  // The light inside, breathing: a white eye in a teal ring (Truthlight's a hard white slit).
+  // The light inside, breathing: a gold-white core (Truthlight's a hard white slit edged gold).
   const big = beat % 2 === 0;
   if (kit === 'truthlight') {
     for (let y = eyeY - 4; y <= eyeY + 4; y++)
-      plot(g, CX - 1, y, Math.abs(y - eyeY) < 3 ? '*' : '+');
-    plot(g, CX, eyeY, '+');
-    plot(g, CX - 2, eyeY, '+');
+      plot(g, CX - 1, y, Math.abs(y - eyeY) < 3 ? '*' : 'H');
+    plot(g, CX, eyeY, 'H');
+    plot(g, CX - 2, eyeY, 'H');
     // The lens at its tip, down toward the road.
     plot(g, CX - 1, bottom + 1, '*');
     plot(g, CX - 1, bottom + 2, '9');
   } else {
-    const r = kit === 'allSeeing' ? (big ? 2.6 : 2.1) : big ? 2.1 : 1.6;
-    for (let y = eyeY - 3; y <= eyeY + 3; y++) {
-      for (let x = CX - 4; x <= CX + 3; x++) {
+    const r = kit === 'allSeeing' ? (big ? 3.1 : 2.6) : big ? 2.6 : 2.1;
+    for (let y = eyeY - 4; y <= eyeY + 4; y++) {
+      for (let x = CX - 5; x <= CX + 4; x++) {
         const d = Math.hypot(x + 0.5 - CX, y + 0.5 - (eyeY + 0.5));
-        if (d <= r) plot(g, x, y, d < r - 1.1 ? '*' : '+');
+        if (d <= r) plot(g, x, y, d < r - 1.6 ? '*' : d < r - 0.8 ? 'H' : 'G');
       }
     }
   }
@@ -111,7 +125,7 @@ function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
     // A crystal foot the arch's post stands in.
-    shard(g, x, cy - 1, 4);
+    shard(g, x, cy - 1, 4, LANTERN_TRIM);
     for (let y = cy - 14; y <= cy - 4; y++) plot(g, x, y, '7');
     plot(g, x - side, cy - 15, '8');
     plot(g, x - 2 * side, cy - 15, '8');
@@ -124,7 +138,7 @@ function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
       [0, -11, '*'],
       [1, -11, '2'],
       [-1, -10, '3'],
-      [0, -10, '+'],
+      [0, -10, 'H'],
       [1, -10, '2'],
       [0, -9, '3'],
       [0, -8, 'd'],
@@ -138,7 +152,7 @@ function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
 function truthlightKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
-    shard(g, x, cy - 1, 4);
+    shard(g, x, cy - 1, 4, LANTERN_TRIM);
     for (let y = cy - 15; y <= cy - 4; y++) {
       plot(g, x - 1, y, y < cy - 12 ? '9' : '4');
       plot(g, x, y, y < cy - 12 ? '8' : '2');
@@ -159,12 +173,13 @@ export const towerLantern = defineSprite({
   palette: 'aelari',
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
+  legend: LEGEND,
   frames: {
-    t1: aelariBase(1),
-    t2: aelariBase(2),
-    t3: aelariBase(3),
-    spec_a: aelariSpecBase(allSeeingKit),
-    spec_b: aelariSpecBase(truthlightKit),
+    t1: aelariBase(1, LANTERN_TRIM),
+    t2: aelariBase(2, LANTERN_TRIM),
+    t3: aelariBase(3, LANTERN_TRIM),
+    spec_a: aelariSpecBase(allSeeingKit, LANTERN_TRIM),
+    spec_b: aelariSpecBase(truthlightKit, LANTERN_TRIM),
   },
 });
 
@@ -177,6 +192,7 @@ export const towerLanternHead = defineSprite({
   palette: 'aelari',
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
+  legend: LEGEND,
   frames: Object.fromEntries([
     ...GLOW.map((k) => [`glow_${k}`, lanternHead(k, 't1')]),
     ...GLOW.map((k) => [`glow_spec_a_${k}`, lanternHead(k, 'allSeeing')]),

@@ -34,7 +34,7 @@ import type {
   RunResult,
   RunRewards,
 } from '../ui/screens/state.ts';
-import { setStoryRun, withSceneEffects } from './dialogue.ts';
+import { dialogueEnabled, setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
 import { storyRewardsOf } from './resultsStory.ts';
 import { activeSave, updateActiveSave } from './save.ts';
@@ -326,7 +326,8 @@ export function resultStamps(
  * within FIRST_LEAK_RECENT_MS (and FIRST_LEAK_RECENT_TICKS) of the end and the bark could play
  * this run (its `when` holds; a once-per-campaign bark not already in the save's seen list), then
  * the map's `<map>_debrief` scene as the run's outcome plays it, up to any choice (a debrief's
- * choice isn't played yet; the first is A2M4's C2).
+ * choice isn't played yet; the first is A2M4's C2), unless a win plays it as a scene before the
+ * card (`debriefAsScene`, while dialogue plays).
  */
 export function debriefLines(
   input: Pick<RunEndInput, 'mapId' | 'firstLeakAgo' | 'stats' | 'story' | 'escort'>,
@@ -347,7 +348,11 @@ export function debriefLines(
           (b.when === undefined || evaluateCondition(b.when, ctx)),
       )
     : undefined;
-  const debrief = SCENES[`${map}_debrief`];
+  // A win whose debrief plays as a scene before the card (D138: A2M6) doesn't repeat it there;
+  // with dialogue off (no scene plays) the card keeps it.
+  const asScene =
+    outcome === 'won' && resultsFlow(map).debriefAsScene === true && dialogueEnabled();
+  const debrief = asScene ? undefined : SCENES[`${map}_debrief`];
   return [
     ...(leak === undefined ? [] : [spoken(leak.speaker, leak.text, story)]),
     ...(debrief === undefined ? [] : linesUntilChoice(debrief, ctx)).map((l) =>

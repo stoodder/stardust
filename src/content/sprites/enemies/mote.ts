@@ -14,8 +14,11 @@
 // - `tell_<facing>` (the hush tell, one held frame): it stops and reaches, two thin limbs it never
 //   had stretching forward, its ring-face opened wide.
 // No death frames: the Hollow unravels into violet motes (render's `unravel`).
+// Its body's edge is a 1 px `ink.0` contour inside the pale outline (U12), so the pale ring always
+// sits on the darkest dark: a cluster of Motes stays a count of separate shapes, and one crossing a
+// grey Everglow base or the grey mining scars doesn't melt into it.
 import { defineSprite } from '../defineSprite.ts';
-import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import { at, grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { dropPixels, hollowBody, ringRound } from './hollow.ts';
 
 /** Authored canvas: room behind the body (left, facing SE) for Heavy's speed lines. */
@@ -52,6 +55,23 @@ const SPEED = [
   ['3.3', '...', '.33', '...'],
 ] as const;
 
+/** The body's edge (every body pixel touching the outside, 4-adjacent) inked `ink.0` (`K`). */
+function contour(g: CharGrid): void {
+  const edge: [number, number][] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (at(g, x, y) === '.') continue;
+      const out =
+        at(g, x - 1, y) === '.' ||
+        at(g, x + 1, y) === '.' ||
+        at(g, x, y - 1) === '.' ||
+        at(g, x, y + 1) === '.';
+      if (out) edge.push([x, y]);
+    }
+  }
+  for (const [x, y] of edge) plot(g, x, y, 'K');
+}
+
 function mote(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
   const g: CharGrid = grid(W, H);
   const heavy = look === 'heavy';
@@ -63,6 +83,7 @@ function mote(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
   const rx = heavy ? 5.2 : tell ? 5 : 4.6;
   const ry = heavy ? 4.6 : tell ? 3.4 : 3.8;
   hollowBody(g, cx, cy, rx, ry, facing === 'se' ? 0.8 : -0.6, heavy);
+  contour(g);
   const top = Math.round(cy - ry);
   const left = Math.round(cx - rx);
   // The legs (Heavy plants three, the reach one).
@@ -138,7 +159,8 @@ export const enemyMote = defineSprite({
   anchor: { x: AX, y: AY },
   palette: 'hollow',
   outline: 'auto',
-  legend: MOTE_LEGEND,
+  // Unsung stardust's violet, and the body's `ink.0` contour.
+  legend: { ...MOTE_LEGEND, K: 'ink.0' },
   frames,
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2'], fps: 7 },

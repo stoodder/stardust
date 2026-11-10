@@ -1,19 +1,21 @@
 // Mindspike Obelisk (`mindspike`, design/towers.md § Aelari towers): armor-ignoring Psionic DPS, the
-// anti-Hollow answer, attuned in Xenotech. On the floating Aelari dais (towers/aelariBase.ts) a
-// dark obelisk floats point-up over a woven emerald cradle: deep sapphire glass, lit on its left
-// edge, carved down its face with a column of ruby knots, and near its tip the mind-eye, a knot of
-// psionic violet (art-direction §7: Psionic is violet and pink, ripples, no solid projectile) that
-// turns to its target (low on its right facing us, high facing away). Firing, the eye flares white
-// and a violet ripple rings the tip. From tier 2 the obelisk stands taller and two thorn-shards float
-// at its sides. The specs: **Echo Spike** (`spec_a`) is a chord of three, the obelisk flanked by two
-// smaller echoes of itself, each with its own eye, a ring of violet knots round them, over a base
-// with a small floating spike at each corner; **Dread** (`spec_b`, Unnerved) is heavier and darker,
-// crowned with three ruby-tipped thorns over a great open violet eye, over a base with jagged dark
-// thorns jutting from its corners.
+// anti-Hollow answer, attuned in Xenotech. On the floating Aelari dais (towers/aelariBase.ts) in its
+// **violet trim** (lilac threads woven across the dais, a violet rim thread, violet tier spikes), a needle of psionic glass floats
+// point-up over a woven emerald cradle: deep violet (art-direction §7: Psionic is violet and pink,
+// ripples, no solid projectile), lit lilac on its left edge, tapering long and thin to a white point,
+// a column of ruby knots down its face, and near its tip the mind-eye, a lilac knot in a ring of
+// pink that turns to its target (low on its right facing us, high facing away). A thin violet needle
+// where the Prism is a squat pink gem and the Lantern a round gold-lit cage (U5). Firing, the eye
+// flares white and a violet ripple rings the tip. From tier 2 the needle stands taller and two
+// thorn-shards float at its sides. The specs: **Echo Spike** (`spec_a`) is a chord of three, the
+// needle flanked by two smaller echoes of itself, each with its own eye, a ring of violet knots
+// round them, over a base with a small floating spike at each corner; **Dread** (`spec_b`,
+// Unnerved) is heavier and darker, crowned with three ruby-tipped thorns over a great open eye, over
+// a base with jagged dark thorns jutting from its corners.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
-import { aelariBase, aelariSpecBase } from './aelariBase.ts';
+import { aelariBase, aelariSpecBase, type Trim } from './aelariBase.ts';
 
 const W = 26;
 const H = 38;
@@ -22,6 +24,9 @@ const CY = 35;
 
 type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'echo' | 'dread';
+
+/** The Mindspike's trim (U5): psionic violet (custom legend `S`–`V`), its light white. */
+export const MINDSPIKE_TRIM: Trim = { rim: 'V', weave: 'U', ramp: ['U', 'V', 'T', 'S'], tip: '*' };
 
 /** The cradle: a woven emerald ring the obelisk floats over, ruby knots at its sides. */
 function cradle(g: CharGrid, rx: number): void {
@@ -36,19 +41,18 @@ function cradle(g: CharGrid, rx: number): void {
 }
 
 /**
- * An obelisk centred on column `cx` (pixel edges), its foot at `foot`, `tall` rows to its point,
- * `hw` px half-wide at the foot: dark glass lit on its left edge, a pyramidion at the top.
+ * A needle centred on column `cx` (pixel edges), its foot at `foot`, `tall` rows to its point, `hw`
+ * px half-wide at the foot: deep violet glass lit lilac on its left edge, tapering the whole way to a
+ * long sharp point, its tip white.
  */
 function obelisk(g: CharGrid, cx: number, foot: number, tall: number, hw: number): void {
-  const capH = Math.max(2, Math.round(hw * 1.4));
   for (let k = 0; k < tall; k++) {
     const y = foot - k;
-    const shaft = hw - (k / tall) * hw * 0.45;
-    const w = k >= tall - capH ? (shaft * (tall - k)) / (capH + 0.5) : shaft;
+    // Straight-sided for its lower half, then a long taper to a 1 px point.
+    const w = k < tall / 2 ? hw : Math.max(0.5, hw * (1 - (k - tall / 2) / (tall / 2 + 1)));
     for (let x = Math.floor(cx - w); x < Math.ceil(cx + w); x++) {
       const u = (x + 0.5 - cx) / Math.max(0.5, w);
-      const cap = k >= tall - capH;
-      plot(g, x, y, u < -0.5 ? (cap ? '4' : '3') : u < 0.2 ? (cap ? '3' : '1') : cap ? '1' : '0');
+      plot(g, x, y, k === tall - 1 ? '*' : u < -0.5 ? 'V' : u < 0.25 ? 'T' : 'S');
     }
   }
 }
@@ -61,7 +65,7 @@ function knots(g: CharGrid, cx: number, foot: number, tall: number): void {
   }
 }
 
-/** The mind-eye at (x, y): a violet diamond, white-cored when it fires (bigger for Dread). */
+/** The mind-eye at (x, y): a lilac knot in a pink ring, white when it fires (bigger for Dread). */
 function eye(g: CharGrid, x: number, y: number, fire: boolean, big = false): void {
   const r = big ? 2 : 1;
   for (let dy = -r; dy <= r; dy++) {
@@ -72,7 +76,7 @@ function eye(g: CharGrid, x: number, y: number, fire: boolean, big = false): voi
         g,
         x + dx,
         y + dy,
-        d === 0 ? (fire ? 'w' : 'U') : d < r ? (fire ? 'w' : 'U') : fire ? 'U' : 'V',
+        d === 0 ? (fire ? 'w' : 'U') : d < r ? (fire ? 'w' : 'U') : fire ? 'U' : 'd',
       );
     }
   }
@@ -92,11 +96,11 @@ function ripple(g: CharGrid, cx: number, cy: number, r: number): void {
   }
 }
 
-/** A thorn-shard floating free: a slim dark spike, point up, lit left. */
-function thorn(g: CharGrid, x: number, foot: number, tall: number, tip = '4'): void {
+/** A thorn-shard floating free: a slim violet spike, point up, lit left. */
+function thorn(g: CharGrid, x: number, foot: number, tall: number, tip = 'U'): void {
   for (let k = 0; k < tall; k++) {
-    plot(g, x - 1, foot - k, k === tall - 1 ? '.' : '3');
-    plot(g, x, foot - k, k === tall - 1 ? tip : '1');
+    plot(g, x - 1, foot - k, k === tall - 1 ? '.' : 'V');
+    plot(g, x, foot - k, k === tall - 1 ? tip : 'S');
   }
 }
 
@@ -104,13 +108,14 @@ function mindspikeHead(facing: Facing, fire: boolean, kit: Kit = 't1'): string[]
   const g = grid(W, H);
   cradle(g, kit === 't1' ? 4.5 : 5.5);
   const foot = CY - 4;
-  const tall = kit === 't1' ? 21 : kit === 'dread' ? 24 : 26;
-  const hw = kit === 'dread' ? 4.6 : kit === 't1' ? 3.4 : 3.8;
+  // A needle: thin (4 px at T1) and tall (Dread is the heavy one).
+  const tall = kit === 't1' ? 24 : kit === 'dread' ? 24 : 27;
+  const hw = kit === 'dread' ? 3.6 : kit === 't1' ? 2 : 2.5;
   if (kit === 'echo') {
     // Two smaller echoes of itself, each with its own eye.
     for (const side of [-1, 1]) {
       const ex = CX + side * 7;
-      obelisk(g, ex, foot - 3, 14, 2.2);
+      obelisk(g, ex, foot - 3, 15, 1.5);
       eye(g, Math.floor(ex) + (side < 0 ? 0 : 0), foot - 13, fire);
     }
   }
@@ -118,7 +123,7 @@ function mindspikeHead(facing: Facing, fire: boolean, kit: Kit = 't1'): string[]
   knots(g, CX, foot, tall);
   const tip = foot - tall + 1;
   // The eye, turned to the target: low on its right facing us, high on its right facing away.
-  const ex = Math.floor(CX + hw * 0.5);
+  const ex = Math.floor(CX + hw * 0.5) - (hw < 3 ? 1 : 0);
   const ey = facing === 'se' ? tip + 7 : tip + 4;
   if (kit === 'dread') {
     // The crown of thorns over a great open eye.
@@ -158,7 +163,7 @@ function echoKit(g: CharGrid, cx: number, cy: number): void {
     for (let k = 0; k < 9; k++) {
       const y = cy - 5 - k;
       const w = k > 6 ? 0 : 1;
-      for (let dx = -w - 1; dx <= w; dx++) plot(g, x + dx, y, dx < -w ? '4' : dx < 0 ? '3' : '1');
+      for (let dx = -w - 1; dx <= w; dx++) plot(g, x + dx, y, dx < -w ? 'U' : dx < 0 ? 'V' : 'S');
     }
     plot(g, x - 1, cy - 2, 'V');
     plot(g, x, cy - 2, 'U');
@@ -177,15 +182,15 @@ function dreadKit(g: CharGrid, cx: number, cy: number): void {
     ] as const) {
       for (let k = 0; k < t; k++) {
         const px = x + ox + side * Math.floor((k * lean) / 4);
-        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : '4');
-        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : '2');
+        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : 'V');
+        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : 'S');
       }
     }
   }
 }
 
-// Psionic: violet (art-direction §7), outside the Aelari's own ramps.
-const LEGEND = { V: 'violet.3', U: 'violet.4' } as const;
+// Psionic: violet (art-direction §7), outside the Aelari's own ramps: the needle's glass and trim.
+const LEGEND = { S: 'violet.1', T: 'violet.2', V: 'violet.3', U: 'violet.4' } as const;
 
 export const towerMindspike = defineSprite({
   id: 'tower.mindspike',
@@ -197,11 +202,11 @@ export const towerMindspike = defineSprite({
   glow: { slots: ['e0', 'e1'], radius: 1 },
   legend: LEGEND,
   frames: {
-    t1: aelariBase(1),
-    t2: aelariBase(2),
-    t3: aelariBase(3),
-    spec_a: aelariSpecBase(echoKit),
-    spec_b: aelariSpecBase(dreadKit),
+    t1: aelariBase(1, MINDSPIKE_TRIM),
+    t2: aelariBase(2, MINDSPIKE_TRIM),
+    t3: aelariBase(3, MINDSPIKE_TRIM),
+    spec_a: aelariSpecBase(echoKit, MINDSPIKE_TRIM),
+    spec_b: aelariSpecBase(dreadKit, MINDSPIKE_TRIM),
   },
 });
 

@@ -8,9 +8,13 @@
 // (BasePanes.tsx). Entering the base delivers any memo or codex unlock a save missed
 // (app/inbox.ts). The first visit with Zibzab's shop open lands on the Shop tab and plays his
 // arrival (app/baseScenes.ts, T308; with any other visit scene due, such as Pebble's handover after
-// A2M4); otherwise an unread memo opens the Inbox (T320), and nothing new opens Research.
+// A2M4); otherwise an unread memo opens the Inbox (T320), and nothing new opens Research. Before
+// any of them, a won A2M4 whose card was never answered offers C2 as a panel over the base (D138;
+// app/baseChoice.ts, BaseChoice.tsx), the base behind it inert.
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { dropBaseChoice, offerChoiceAtBase } from '../../app/baseChoice.ts';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
+import { BaseChoice } from './BaseChoice.tsx';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { hintShown, markHintsShown } from '../../app/save.ts';
 import { XENOTECH_HINT } from '../../meta/index.ts';
@@ -21,7 +25,7 @@ import { NewTag } from './Inbox.tsx';
 import { Banks } from './Campaign.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
-import { campaign, type CampaignView, type SystemView } from './state.ts';
+import { baseChoice, campaign, type CampaignView, type SystemView } from './state.ts';
 import './screens.css';
 import './base.css';
 import './inbox.css';
@@ -70,8 +74,12 @@ export function Base() {
   useEffect(() => {
     // A memo the catch-up delivers (an older save's) opens the Inbox as one from a run end would.
     const delivered = catchUpStory() !== null;
-    if (playBaseScenesIfDue()) setTab('shop');
+    // An unanswered C2 first (D138), then the visit scenes once it closes.
+    const arrival = arrivalDue();
+    if (!offerChoiceAtBase(playBaseScenesIfDue)) playBaseScenesIfDue();
+    if (arrival) setTab('shop');
     else if (delivered && storyBadges().inbox > 0 && !picked.current) setTab('inbox');
+    return dropBaseChoice;
   }, []);
   // The Xenotech tab's NEW tag (T566) holds until its first visit.
   useEffect(() => {
@@ -106,7 +114,7 @@ export function Base() {
   };
   return (
     <main class="sd-screen sd-menu" aria-labelledby="sd-base-heading">
-      <section class="sd-panel sd-menu-panel sd-base-panel">
+      <section class="sd-panel sd-menu-panel sd-base-panel" inert={baseChoice.value !== null}>
         <header class="sd-menu-header">
           <div>
             <p class="sd-kicker">Everglow · Dome Row Perimeter · Base</p>
@@ -127,6 +135,9 @@ export function Base() {
                 type="button"
                 role="tab"
                 class={`sd-tab${t.id === tab ? ' sd-tab-on' : ''}${open ? '' : ' sd-tab-locked'}`}
+                // One name, said once (D138, U3): "Xenotech (new)", "Inbox (2 new)", "Shop (locked)";
+                // the lock and the NEW tag are only for the eyes.
+                aria-label={tabName(t.label, open, t.id === 'xenotech' && badge > 0 ? 'new' : badge)}
                 aria-selected={t.id === tab}
                 aria-controls="sd-tab-pane"
                 tabIndex={t.id === tab ? 0 : -1}
@@ -144,15 +155,7 @@ export function Base() {
               >
                 {!open && <span class="sd-lock" aria-hidden="true" />}
                 {t.label}
-                {!open && <span class="sd-visually-hidden"> (locked)</span>}
-                {badge > 0 && (
-                  <>
-                    <NewTag />
-                    <span class="sd-visually-hidden">
-                      {t.id === 'xenotech' ? ' (new)' : ` (${badge} new)`}
-                    </span>
-                  </>
-                )}
+                {badge > 0 && <NewTag />}
               </button>
             );
           })}
@@ -182,8 +185,16 @@ export function Base() {
           </button>
         </footer>
       </section>
+      <BaseChoice />
     </main>
   );
+}
+
+/** A tab's accessible name: its label, locked, and what's new in it (a count, or just "new"). */
+export function tabName(label: string, open: boolean, badge: number | 'new'): string {
+  const locked = open ? '' : ' (locked)';
+  const fresh = badge === 0 ? '' : badge === 'new' ? ' (new)' : ` (${badge} new)`;
+  return `${label}${locked}${fresh}`;
 }
 
 function paneClass(tab: BaseTab, unlocked: boolean): string {

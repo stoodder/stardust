@@ -98,6 +98,18 @@ function unchilled(): CompiledContent {
   return compileContent(next);
 }
 
+/** The live content with W6 callable again (as before D138), so a pivot can come first. */
+function w6Callable(): CompiledContent {
+  const raw = RAW_CONTENT;
+  const m = raw.maps.a2_m05;
+  const waves = m.waves.map((w, i) => {
+    if (i !== 5) return w;
+    const { noCall: _locked, ...open } = w;
+    return open;
+  });
+  return compileContent({ ...raw, maps: { ...raw.maps, a2_m05: { ...m, waves } } });
+}
+
 const isPostPivotMote = (g: WaveGroup): boolean => g.enemy === 'mote';
 
 /** The compound shift, run both ways (`s` = ±1): every post-pivot Mote group. */
@@ -292,7 +304,10 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(pivot).toHaveLength(1);
     // Her own `pivot` ending runs as she reaches 50%; the map's `bossHpPct` event the tick after.
     expect(b.at['BossEnded pivot']).toEqual([pivot[0]! - 1]);
-    expect(pivot[0]! - b.penitentSpawn).toBeLessThan(WINDOW_TICKS - 5 * TICK_HZ);
+    // With 10–15 s to spare before W6 would force it (D138: room for a skilled player's slips).
+    const slack = (b.penitentSpawn + WINDOW_TICKS - pivot[0]!) / TICK_HZ;
+    expect(slack).toBeGreaterThanOrEqual(10);
+    expect(slack).toBeLessThanOrEqual(15);
     expect(b.at['WaveStarted 6']![0]!).toBeGreaterThan(pivot[0]!);
     expect(b.penitentOnRoadAtPivot).toBe(true);
     expect(b.refugeesBeforeSurge).toBe(6);
@@ -353,6 +368,18 @@ describe('A2M5 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expectBeats(b, 'alwaysCallEarly');
     // Every other wave is called early; W6 walks in on its own, the window whole.
     expect(b.commands.filter((c) => c.cmd.type === 'callWave')).toHaveLength(11);
+  });
+
+  it('plays none of her cues once the pivot has come (the backstop, D138)', () => {
+    // With W6 callable, alwaysCallEarly forces the pivot before her fight: her challenge and her
+    // shield's cue are spent unplayed, and the pivot's cue is the only one of the three.
+    const b = beats(w6Callable(), 'alwaysCallEarly');
+    const pivot = b.at[PIVOT_CUE]!;
+    expect(pivot).toHaveLength(1);
+    expect(b.at['BossEnded pivot']).toEqual(pivot);
+    for (const cue of ['a2_m05_cue_penitent', 'a2_m05_cue_shield']) {
+      expect((b.at[cue] ?? []).filter((t) => t >= pivot[0]!), cue).toEqual([]);
+    }
   });
 
   it('lands the beats on Story too, where par breaks her to half (Kneel) before W6', () => {

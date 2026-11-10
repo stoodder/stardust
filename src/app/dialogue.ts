@@ -508,6 +508,7 @@ function open(scene: Scene, opts: PlayOptions, mode: SceneMode): void {
   const resume = mode !== 'briefing' && inBattle ? speed.value : null;
   if (resume !== null) setSpeed(0);
   holdComms(true);
+  if (endsBeat(scene)) dropComms();
   const h: Holding = {
     scene,
     mode,
@@ -736,6 +737,27 @@ function holdComms(on: boolean): void {
     if (q !== undefined) commsQueue[i] = { ...q, at: now };
   }
   pumpComms();
+}
+
+/**
+ * Whether `scene` is a pausing cue that ends a beat (D138): the pivot (`<map>_cue_pivot`, A2M5's).
+ * What the comms panel had on screen or queued before it belongs to the beat it ends (her
+ * challenge, her shield), so it's dropped, not resumed after. Every other pausing scene keeps
+ * D135's rule: it never eats a line.
+ */
+export function endsBeat(scene: Scene): boolean {
+  const slot = sceneSlot(scene.id);
+  return scene.pause === true && slot?.kind === 'cue' && slot.name === 'pivot';
+}
+
+/**
+ * Drops the comms queue (`endsBeat`): a scene cut mid-play saves what it set so far (its `set`
+ * nodes, and that it was heard); one that never showed is dropped unheard.
+ */
+function dropComms(): void {
+  for (const q of commsQueue.splice(0)) {
+    if (q.cursor !== undefined) commit(q.scene.id, q.cursor.effects);
+  }
 }
 
 function queueComms(scene: Scene, wave = 0): void {
@@ -1073,6 +1095,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const leakyPool = s.pool.filter((b) => !JINGLE_BARKS.has(b.id));
   // Per wave (index = wave − 1): a Quiet Wave (any group tagged `quiet_wave`), a boss wave.
   const quiet = sim.map.waves.map((w) => w.groups.some((g) => g.tags.includes('quiet_wave')));
+  const hostile = hostileWaves(sim.map.waves);
   const boss = sim.map.waves.map(isBossWave);
   /** A boss wave's `wave_start` and `wave_cleared` say so (`boss: true`; D098). */
   const bossOf = (w: number): { boss?: true } => (boss[w - 1] === true ? { boss: true } : {});
@@ -1206,7 +1229,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       stepTags(e);
       const triggers: BarkTrigger[] = [{ on: 'wave_cleared', wave: e.wave, ...bossOf(e.wave) }];
       const clean = !leakedWaves.has(e.wave);
-      if (clean) triggers.push({ on: 'perfect_wave' });
+      // Praise only for a wave with something hostile in it (D138): never for runners alone.
+      if (clean && hostile[e.wave - 1] !== false) triggers.push({ on: 'perfect_wave' });
       offerBarks(triggers, clean ? s.pool : leakyPool);
     }),
     bus.on('EnemySpawned', (e) => {
@@ -1408,9 +1432,19 @@ export function isHushableAlly(kind: AllyKind | undefined): kind is HushableAlly
 }
 
 /**
+ * Per wave (index = wave − 1): whether it has a hostile group, one not tagged `fleeing` (D138:
+ * `perfect_wave` praise only follows one; A2M4's W1 is runners alone).
+ */
+export function hostileWaves(
+  waves: readonly { readonly groups: readonly { readonly tags: readonly string[] }[] }[],
+): boolean[] {
+  return waves.map((w) => w.groups.some((g) => !g.tags.includes('fleeing')));
+}
+
+/**
  * Whether an Escort's losses are low on the meter (`low_integrity`, T513): the losses left before
- * defeat (lost > `maxLost`) are LOW_INTEGRITY_SHARE of `maxLost` or fewer. Never without a
- * `maxLost` (no limit, no defeat) or before the first loss.
+ * defeat (lost reaching `maxLost`, D138) are LOW_INTEGRITY_SHARE of `maxLost` or fewer. Never
+ * without a `maxLost` (no limit, no defeat) or before the first loss.
  */
 export function escortLow(lost: number, maxLost: number | null): boolean {
   return maxLost !== null && lost > 0 && maxLost - lost <= maxLost * LOW_INTEGRITY_SHARE;

@@ -43,7 +43,8 @@ export interface LineCue {
 
 /**
  * Sung lines: Pebble's hum in A2M6's whistle scene (act2.md § A2M6, `base_a2_whistle`: "Hm.
- * Hm-hm. Hmmm."), the home motif's first hum (HOME_MOTIF), over a hushed base.
+ * Hm-hm. Hmmm."), the home motif (HOME_MOTIF) as she first hums it, over a hushed base. (The
+ * motif is first heard on glass in C2's carried-home sting, D137.)
  */
 export const LINE_CUES: readonly LineCue[] = [
   { scene: 'a2_m06_base_whistle', line: 3, cue: 'home_hum', quietMs: 3000, musicDuck: 0.2 },

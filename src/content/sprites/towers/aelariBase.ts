@@ -11,29 +11,37 @@
 // lit crystal over the left shard (6+ px taller). A tier-4 spec (`aelariSpecBase`) keeps the three
 // knots, lights a white status knot at the front corner, and swaps the shards and crystal for the
 // spec's own kit. Each tower wears its own **trim** (`Trim`, U5) on the shared dais, so the three
-// tell apart at a glance while staying one family: the dais's top rim thread, its chord-knot's
-// weave, and the tier shards and crystal are drawn in the tower's signature ramp (the Prism's
-// ruby-pink, the Mindspike's psionic violet, the Lantern's sapphire with gold-white light).
+// tell apart at a glance while staying one family (the same floating sapphire slab): the threads
+// woven across its top face, its top rim thread, its chord-knot's weave, and the tier shards and
+// crystal are drawn in the tower's signature colours (the Prism's ruby-pink, the Mindspike's
+// psionic violet, the Lantern's gold, its shards sapphire tipped gold-white).
 import { grid, isoBox, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_W } from './base.ts';
 
 /**
  * A tower's signature on the shared dais: `rim` the top face's lit rim thread and the chord-knot's
- * weave; `ramp` the shards' and floating crystal's facets, lit to dark (four characters); `tip` the
+ * weave; `weave` the threads crossing the top face; `ramp` the shards' and floating crystal's facets, lit to dark (four characters); `tip` the
  * light at a shard's tip and the crystal's heart.
  */
 export interface Trim {
   readonly rim: string;
+  /** The top face's crossing threads. */
+  readonly weave: string;
   readonly ramp: readonly [string, string, string, string];
   readonly tip: string;
 }
 
 /** The plain Aelari trim: emerald rim, sapphire crystal, white light. */
-export const SAPPHIRE: Trim = { rim: '9', ramp: ['4', '3', '2', '1'], tip: '*' };
+export const SAPPHIRE: Trim = { rim: '9', weave: '4', ramp: ['4', '3', '2', '1'], tip: '*' };
 
 /** The dais floats this many rows over its shadow. */
 const LIFT = 2;
 const HEIGHT = 3;
+
+/** Whether (x, y) is on the top face of `isoBox(…, cx, cy, hw, height)`. */
+function isoTop(cx: number, cy: number, hw: number, height: number): (x: number, y: number) => boolean {
+  return (x, y) => Math.abs(x + 0.5 - cx) / hw + Math.abs(y + height + 0.5 - cy) / (hw / 2) <= 1;
+}
 
 /** The floating dais with `knots` tier knots. */
 function dais(knots: number, trim: Trim): CharGrid {
@@ -42,11 +50,14 @@ function dais(knots: number, trim: Trim): CharGrid {
   isoBox(g, cx, cy + 1, 12, 0, { top: '_', rim: '_', left: '_', right: '_' });
   // The glass slab, woven on the diagonal: lit threads over a lighter pane on the top face.
   isoBox(g, cx, cy - LIFT, 11, HEIGHT, { top: '3', rim: trim.rim, left: '3', right: '2' });
+  // The top face's crossing threads are the trim's (the tower's colour woven into the glass); the
+  // side faces keep sapphire threads.
+  const top = isoTop(cx, cy - LIFT, 11, HEIGHT);
   for (let y = 0; y < BASE_H; y++) {
     for (let x = 0; x < BASE_W; x++) {
       const c = g[y]?.[x];
       const thread = (x + y) % 4 === 0 || (x - y + 40) % 4 === 0;
-      if (c === '3' && thread) plot(g, x, y, y < cy - LIFT - HEIGHT + 3 ? '4' : '4');
+      if (c === '3' && thread) plot(g, x, y, top(x, y) ? trim.weave : '4');
       else if (c === '2' && thread) plot(g, x, y, '3');
     }
   }
