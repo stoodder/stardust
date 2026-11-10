@@ -52,7 +52,7 @@ test("c2: A2M4's first win pays the Q3 Bonus and offers C2; Sell is written at o
   await expect(offer.getByTestId('choice-heading')).toBeFocused();
   const pays = offer.getByTestId('choice-pays');
   await expect(pays.nth(0)).toHaveText(`+${windfall} Intel · Zibzab Tune-up`);
-  await expect(pays.nth(1)).toHaveText('Carried home · Fee: an IOU');
+  await expect(pays.nth(1)).toHaveText('Fee: an IOU');
   await expect(card.getByRole('button', { name: 'Continue' })).toHaveCount(0);
   const box = await card.boundingBox();
   expect(box !== null && box.y >= 0 && box.y + box.height <= 720).toBe(true);

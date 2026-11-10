@@ -391,6 +391,11 @@
   padding: 10px 16px 12px;
 }
 
+.sd-base-choice-panel h1 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 .sd-base-choice-made {
   display: flex;
   flex-wrap: wrap;

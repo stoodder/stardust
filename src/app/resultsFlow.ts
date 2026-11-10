@@ -56,7 +56,7 @@ export interface ResultsChoiceRule {
 }
 
 /** The note under C2's Return, as its payroll row will read ("Carried home", "Fee: an IOU"). */
-export const C2_RETURN_NOTE = 'Carried home · Fee: an IOU';
+export const C2_RETURN_NOTE = 'Fee: an IOU';
 
 /** What C2's `value` would pay over `save`: Sell's windfall and Tune-up, Return's IOU. */
 function c2Pays(save: SaveData, value: string): ResultsPay {

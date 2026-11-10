@@ -83,7 +83,7 @@ export interface ResultsChoice {
   readonly options: readonly string[];
   /**
    * What each option pays, in `options`' order, shown under it before the pick (price first,
-   * D138): Sell's Intel windfall and the Zibzab Tune-up; Return's "Carried home · Fee: an IOU".
+   * D138): Sell's Intel windfall and the Zibzab Tune-up; Return's "Fee: an IOU".
    */
   readonly pays: readonly ResultsPay[];
   /** The option taken, or null while the card waits. */
@@ -94,7 +94,7 @@ export interface ResultsChoice {
 export interface ResultsPay {
   /** The Intel it pays (Sell's windfall), or 0. */
   readonly intel: number;
-  /** The rest, in plain words ("Zibzab Tune-up", "Carried home · Fee: an IOU"). */
+  /** The rest, in plain words ("Zibzab Tune-up", "Fee: an IOU"). */
   readonly note: string;
 }
 

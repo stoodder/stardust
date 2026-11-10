@@ -49,9 +49,12 @@ export function BaseChoice() {
         class="sd-panel sd-base-choice-panel"
         role="dialog"
         aria-modal="true"
-        aria-label={`${view.choice.by}'s offer`}
+        aria-labelledby="sd-base-choice-heading"
         onKeyDown={trapTab}
       >
+        <h1 id="sd-base-choice-heading" class="sd-results-kicker">
+          {view.choice.by}'s offer
+        </h1>
         <ul class="sd-results-debrief" aria-label="Debrief">
           {view.lines.map((l, i) => (
             <li key={i}>

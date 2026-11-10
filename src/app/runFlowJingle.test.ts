@@ -43,9 +43,7 @@ describe("the A2M6 stinger's jingle", () => {
     await settle();
     expect(played).toEqual([]);
     advanceScene();
-    expect(dialogue.scene.value?.line?.text).toBe(
-      '(The jingle, once. Slower.)',
-    );
+    expect(dialogue.scene.value?.line?.text).toBe('(The jingle, once. Slower.)');
     await vi.waitFor(() => expect(played).toEqual(['minor']));
     // Left to ring out, then the way on; it never plays twice.
     advanceScene();

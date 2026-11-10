@@ -173,7 +173,7 @@ describe('the pivot ends a beat (D138)', () => {
     screen.value = null;
   });
 
-  it("drops her half-read challenge and her queued shield line: they never play past the pivot", () => {
+  it('drops her half-read challenge and her queued shield line: they never play past the pivot', () => {
     host.bus.emit({ type: 'ScriptCue', cueId: 'a2_m05_cue_penitent' });
     host.bus.emit({ type: 'ScriptCue', cueId: 'a2_m05_cue_shield' });
     expect(shown()).not.toBeNull();
