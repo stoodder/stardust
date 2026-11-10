@@ -10,8 +10,9 @@
 // Clickable world objects (T409; A2M3's Peeker holding Pebble) are sim commands instead: a click
 // or Enter on one issues `interact` (render/input). `bindClickables` adds what the sim's events
 // call for outside the playfield: screen readers hear when one turns clickable (its name from the
-// map's `clickables`), and the Peeker's marker squeaks as it lights up and again when clicked (the
-// scene it cues says the rest). Nothing squeaks while a checkpoint replays.
+// map's `clickables`), or that one already is as the battle binds (a resumed checkpoint), and the
+// Peeker's marker plays its lights-up call as it lights up and squeaks when clicked (the scene it
+// cues says the rest). Nothing sounds while a checkpoint replays.
 import type { CompiledMapDef } from '../content/compiled.ts';
 import { PEEKER_MARKER } from '../render/views/peekerMotion.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -59,9 +60,10 @@ export function clickableText(name: string): string {
 }
 
 /**
- * Listens for clickable world objects in a battle (T409): announces each as it turns clickable,
- * and squeaks as the Peeker's rock lights up and when the player reaches it (the fallback doesn't:
- * the scene tells it).
+ * Listens for clickable world objects in a battle (T409): announces each as it turns clickable
+ * (and, as it binds, any already clickable: a resumed checkpoint's replay ran before it, silently),
+ * plays `peeker_lights_up` as the Peeker's rock lights up (D135), and squeaks when the player
+ * reaches it (the fallback doesn't: the scene tells it).
  * Returns the unsubscribe.
  */
 export function bindClickables(host: Host<IdSpace>): () => void {
@@ -69,12 +71,15 @@ export function bindClickables(host: Host<IdSpace>): () => void {
   if (Object.keys(map.clickables).length === 0) return () => {};
   const nameOf = (marker: string): string =>
     (Object.hasOwn(map.clickables, marker) ? map.clickables[marker]?.name : null) ?? 'Something';
+  // Already armed as the battle binds (D135): heard once, with no sound (it lit up before).
+  const armed = host.sim.state.clickable;
+  if (armed.length > 0) announce(armed.map((m) => clickableText(nameOf(m))).join(' '));
   const offs = [
     host.bus.on('ClickableChanged', (e) => {
       if (!e.on) return;
       announce(clickableText(nameOf(e.marker)));
-      // The rock lights up with the Act I squeak, once (D134: a map arms it once a run).
-      if (e.marker === PEEKER_MARKER && !host.replaying) playSfx('peeker_squeak');
+      // The rock lights up with its own call, once (D135; a map arms it once a run).
+      if (e.marker === PEEKER_MARKER && !host.replaying) playSfx('peeker_lights_up');
     }),
     host.bus.on('Interacted', (e) => {
       if (!e.byFallback && e.marker === PEEKER_MARKER && !host.replaying) {

@@ -25,11 +25,18 @@ const SQUELCH: ToneLayer = {
  */
 const VOICE = { priority: 3, minGapMs: 200, maxVoices: 1 } as const;
 
+/**
+ * Every blip sits 5 dB under D134's one level (its loudest 50 ms ≈ −17.5 dBFS RMS before the
+ * limiter, which each recipe's own gain below still evens out to): a lone blip stays well under the
+ * strike's boom, and the line-start dip under it (synth.ts LINE_DIP) keeps it ≥ 6 dB over a storm.
+ */
+const SIT_BACK = 10 ** (-5 / 20);
+
 export const BLIP_SFX = {
   /** The Technician: an even, unhurried two-note "mm-hm" (they rarely speak unprompted). */
   'blip.player': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       SQUELCH,
       {
@@ -45,7 +52,7 @@ export const BLIP_SFX = {
   /** QUILL: two bright rising chirps, eager and precise. */
   'blip.quill': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       SQUELCH,
       ...[1568, 1760].map((freq, i) => ({
@@ -62,7 +69,7 @@ export const BLIP_SFX = {
   /** Bricks: one low, unimpressed "hm". */
   'blip.bricks': {
     ...VOICE,
-    gain: 0.54,
+    gain: SIT_BACK * 0.54,
     layers: [
       SQUELCH,
       {
@@ -89,7 +96,7 @@ export const BLIP_SFX = {
   /** Goldie: a warm, quick two-note lilt. */
   'blip.goldie': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       SQUELCH,
       {
@@ -108,7 +115,7 @@ export const BLIP_SFX = {
    */
   'blip.kip': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       SQUELCH,
       {
@@ -133,7 +140,7 @@ export const BLIP_SFX = {
   /** Sterling: a sparkly major "ding-ding-ding!" (exclamation points, all of them). */
   'blip.sterling': {
     ...VOICE,
-    gain: 0.93,
+    gain: SIT_BACK * 0.93,
     layers: [
       SQUELCH,
       ...[1046.5, 2093].map((freq, i) => ({
@@ -152,7 +159,7 @@ export const BLIP_SFX = {
   /** Zibzab: a nasal merchant's buzz, then the clink of a coin. Price first. */
   'blip.zibzab': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       SQUELCH,
       {
@@ -175,7 +182,7 @@ export const BLIP_SFX = {
    */
   'blip.vesthara': {
     ...VOICE,
-    gain: 0.79,
+    gain: SIT_BACK * 0.79,
     layers: [
       // The strike: glass's inharmonic partial (2.76 × the root) rings off first.
       { wave: 'sine', freq: 2428.8, env: { a: 0.001, d: 0.12, s: 0, r: 0.08 }, gain: 0.18 },
@@ -209,7 +216,7 @@ export const BLIP_SFX = {
    */
   'blip.pebble': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       {
         wave: 'triangle',
@@ -233,7 +240,7 @@ export const BLIP_SFX = {
   /** Old Thrum: a slow, low, warm hum with a faint glass overtone (Ves'thara translates). */
   'blip.thrum': {
     ...VOICE,
-    gain: 0.67,
+    gain: SIT_BACK * 0.67,
     layers: [
       {
         wave: 'sine',
@@ -258,7 +265,7 @@ export const BLIP_SFX = {
   /** Bramble (Chitterbloom): a low, dryly unimpressed "hmph" between two chitters. */
   'blip.chitterbloom': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [
       {
         wave: 'sawtooth',
@@ -282,7 +289,7 @@ export const BLIP_SFX = {
   /** Compliance Officer Prim: two flat, identical beeps. Polite. Relentless. */
   'blip.prim': {
     ...VOICE,
-    gain: 0.97,
+    gain: SIT_BACK * 0.97,
     layers: [
       SQUELCH,
       ...[0.04, 0.15].map((at) => ({
@@ -298,7 +305,7 @@ export const BLIP_SFX = {
   /** Gerald: his delivery chime, "ding-dong" (he speaks in chimes and status text only). */
   'blip.gerald': {
     ...VOICE,
-    gain: 0.68,
+    gain: SIT_BACK * 0.68,
     layers: [
       {
         wave: 'sine',
@@ -322,7 +329,7 @@ export const BLIP_SFX = {
    */
   'blip.pa': {
     ...VOICE,
-    gain: 1,
+    gain: SIT_BACK,
     layers: [392, 784].map((freq, i) => ({
       wave: i === 0 ? ('sine' as const) : ('triangle' as const),
       freq,

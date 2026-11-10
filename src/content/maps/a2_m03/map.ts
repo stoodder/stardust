@@ -8,7 +8,7 @@
 // the warren sends runs south down the switchbacks to the gate. Ves'thara's constructs come another
 // way: down the strip mine's floor from the north-east and along the foot of the terraces to the
 // gate's outer side, and the Lightwings fly the same line overhead. The Peeker's rock is still at
-// the warren mouth halfway down the east side, beside the strip mine; from W5's countdown it holds
+// the warren mouth halfway down the east side, beside the strip mine; once W4 is cleared it holds
 // Pebble.
 import { defineMapLayout } from '../../define.ts';
 
@@ -98,7 +98,7 @@ export const map = defineMapLayout({
   ],
   // The light goes from gold to dusk across the shift (cosmetic; D114), arriving as W11 starts.
   lighting: [{ wave: 11, env: 'act2.dusk' }],
-  // Pebble's rock: clickable from W5's countdown (the map script below), named for the cursor and the screen
+  // Pebble's rock: clickable once W4 is cleared (the map script below), named for the cursor and the screen
   // reader. The player hasn't met her yet, so it's still the Peeker's rock.
   clickables: { peeker: { name: "The Peeker's rock" } },
   startCredits: 550,
@@ -121,13 +121,14 @@ export const map = defineMapLayout({
   // Bricks walks this shift with you: slot 2 is his Suppressing Fire.
   companion: { id: 'bricks', state: 'present' },
   events: [
-    // Pebble's rescue (design/core-loop.md § 6.9): as W5's countdown begins (the build phase, hands
-    // free; D134), the rock holds her and lights up, and the app squeaks once; the player's click
-    // (or W6's clear, if they never click) plays the rescue cue, a pausing panel, so it always
-    // lands before W7's radio names her.
+    // Pebble's rescue (design/core-loop.md § 6.9): once W4 is cleared (the build phase before W5,
+    // hands free; D135: W5's countdown opens while W4's Warden is still walking), the rock holds
+    // her and lights up, and the app plays its lights-up sound; the player's click (or W6's clear,
+    // if they never click) plays the rescue cue, a pausing panel, so it always lands before W7's
+    // radio names her.
     {
       id: 'pebble_on',
-      on: { wave: 5, phase: 'countdown' },
+      on: { wave: 4, phase: 'cleared' },
       actions: [
         { setClickable: { marker: 'peeker', on: true, fallback: { wave: 6, phase: 'cleared' } } },
       ],

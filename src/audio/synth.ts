@@ -6,8 +6,9 @@
 // code renders offline (offline.ts) for the level checks.
 //
 // The bus graph:
-//   sfx voices (priority ≤ 2, not speech) ─▶ underSpeech ─▶ sfx ─┐ (ducks while someone speaks, R10)
-//   speech (blips, ticks) and alarms (3) ─▶ sfx ─────────────────┤
+//   sfx voices (priority ≤ 2, not speech) ─▶ underSpeech ─▶ lineDip ─▶ sfx ─┐ (ducks while a line
+//                                              is spoken, R10, and dips again as each one starts)
+//   speech (blips, ticks), `overSpeech` sounds, alarms (3) ─▶ sfx ──────────┤
 //   theme voices ─▶ layer gains ─▶ theme fade ─▶ duck ─▶ music ─▶ master ─▶ glue ─▶ limiter ─▶ trim ─▶ clip ─▶ out
 //   cue voices ─▶ cues ───────────────────────────────┘ (into music, after the duck)
 import { createRng, nextFloat, type Rng } from '../shared/rng.ts';
@@ -51,6 +52,16 @@ export const UNDER_SPEECH_MAX_PRIORITY = 2;
  * stands at least 6 dB over the mix (smoke/audio.spec.ts measures it in the ducked storms).
  */
 export const SPEECH_SFX_DUCK = 0.5;
+/**
+ * As each line starts, the `underSpeech` bus dips a further −8 dB (D135) for LINE_DIP_SEC, on top
+ * of SPEECH_SFX_DUCK, so the speaker's blip (5 dB quieter than D134's level) still clears the mix
+ * by 6 dB without being loud on its own: it settles in LINE_DIP_ATTACK_SEC and comes back over
+ * LINE_DIP_RELEASE_SEC (about 95% each way).
+ */
+export const LINE_DIP = 10 ** (-8 / 20);
+export const LINE_DIP_SEC = 0.35;
+export const LINE_DIP_ATTACK_SEC = 0.03;
+export const LINE_DIP_RELEASE_SEC = 0.25;
 /** The music's level under a spoken line (the comms panel or a scene), so the line reads as spoken. */
 export const RADIO_DUCK = 0.55;
 /** The limiter: its threshold (dB) and ratio; fast and hard. */
@@ -162,6 +173,8 @@ export class Synth {
   readonly sfx: GainNode;
   /** The sound effects that duck under speech (all but speech's own and the alarms). */
   readonly underSpeech: GainNode;
+  /** The `underSpeech` bus's short dip as each line starts (`dipUnderSpeech`). */
+  readonly lineDip: GainNode;
   readonly duck: GainNode;
   readonly cues: GainNode;
   readonly #rng: Rng;
@@ -195,7 +208,9 @@ export class Synth {
     this.music = ctx.createGain();
     this.sfx = ctx.createGain();
     this.underSpeech = ctx.createGain();
-    this.underSpeech.connect(this.sfx);
+    this.lineDip = ctx.createGain();
+    this.underSpeech.connect(this.lineDip);
+    this.lineDip.connect(this.sfx);
     this.duck = ctx.createGain();
     this.cues = ctx.createGain();
     this.duck.connect(this.music);
@@ -363,6 +378,20 @@ export class Synth {
     this.#speechTarget = target;
     this.underSpeech.gain.cancelScheduledValues(now);
     this.underSpeech.gain.setTargetAtTime(target, now, down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC);
+  }
+
+  /**
+   * A line starts (D135): the `underSpeech` bus dips a further LINE_DIP for LINE_DIP_SEC, then
+   * comes back; a new line restarts the dip. It stacks with the held speech duck (its own gain).
+   */
+  dipUnderSpeech(): void {
+    if (this.#noDuck) return;
+    const now = this.ctx.currentTime;
+    const g = this.lineDip.gain;
+    g.cancelScheduledValues(now);
+    // A time constant settles about 95% in three of them.
+    g.setTargetAtTime(LINE_DIP, now, LINE_DIP_ATTACK_SEC / 3);
+    g.setTargetAtTime(1, now + LINE_DIP_SEC, LINE_DIP_RELEASE_SEC / 3);
   }
 
   /** Schedules the music up to the lookahead and updates the duck. Call it often (every ~25 ms). */
@@ -597,9 +626,16 @@ export class Synth {
   }
 }
 
-/** Whether sound `id` ducks under speech: the rattle and the moments, never a line's own sound. */
+/**
+ * Whether sound `id` ducks under speech: the rattle and the moments, never a line's own sound nor
+ * one that must be heard over a line (`overSpeech`: the Peeker's rock lighting up, D135).
+ */
 export function ducksUnderSpeech(id: SfxId, recipe: SfxRecipe): boolean {
-  return recipe.priority <= UNDER_SPEECH_MAX_PRIORITY && !Object.hasOwn(SPEECH_SFX, id);
+  return (
+    recipe.priority <= UNDER_SPEECH_MAX_PRIORITY &&
+    recipe.overSpeech !== true &&
+    !Object.hasOwn(SPEECH_SFX, id)
+  );
 }
 
 function clamp01(n: number): number {

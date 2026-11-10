@@ -23,7 +23,8 @@
 // allocates nothing per frame. A boss and a neutral unit have none (`setBar(0, 0)`; the boss has
 // BossBarView); a burrowed or leaving unit hides it. The first of each type's tell glyph shows for
 // 3 s of sim time (TELL_TICKS), so fast-forward shortens it and a pause holds it; every unit's
-// shows while the pointer is on it (T332).
+// shows while the pointer is on it (T332). Both hide while the unit stands within KEEP_CLEAR_TILES
+// of an armed clickable or Pebble's lift (D135; vfx/keepClear.ts), so nothing covers the rock.
 // T430a's Act II looks (EnemyDress.ts places them; the rules are the *Look.ts files):
 // - **The hush** (hushLook.ts): the Hollow unit in its tell freezes mid-reach, leans 1 px at its
 //   victim, and flickers an acid rim; the held runner shakes inside a closing pale ring (sim
@@ -66,6 +67,7 @@ import {
   type HealthBarFill,
 } from '../vfx/healthBar.ts';
 import { SHIMMER_MS, STEPPED_ALPHA, tellHigh } from '../vfx/fxTiming.ts';
+import type { KeepClear } from '../vfx/keepClear.ts';
 import { healthStripTexture } from '../vfx/overlayTextures.ts';
 import {
   blankFacts,
@@ -297,6 +299,9 @@ export class EnemyView implements PooledView {
   #barShieldPx = -1;
   #barShown = false;
   #hovered = false;
+  /** The scene's keep-clear spots (null: none), and whether it stands near one now. */
+  readonly #keepClear: KeepClear | null;
+  #clear = false;
   #set: AnimSet | null = null;
   /** The tell glyph is up (until TELL_TICKS after the unit spawned). */
   #telling = false;
@@ -368,10 +373,14 @@ export class EnemyView implements PooledView {
   #glance = false;
   #tempoMul = 1;
 
-  /** `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes). */
-  constructor(ctx: ViewContext, exits: LeaveFx | null = null) {
+  /**
+   * `exits` carries a leaving unit's sprite on past the map edge (null: it just vanishes);
+   * `keepClear` is the scene's keep-clear spots (its overhead hides near one).
+   */
+  constructor(ctx: ViewContext, exits: LeaveFx | null = null, keepClear: KeepClear | null = null) {
     this.#ctx = ctx;
     this.#exits = exits;
+    this.#keepClear = keepClear;
     this.#body = ctx.scene.make.sprite({}, false);
     this.#body.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       if (this.#oneShot === null) return;
@@ -569,6 +578,7 @@ export class EnemyView implements PooledView {
     this.#maxHp = 0;
     this.#maxShield = 0;
     this.#hovered = false;
+    this.#clear = false;
     this.#barHpPx = -1;
     this.#barShieldPx = -1;
     this.#hideBar();
@@ -590,6 +600,7 @@ export class EnemyView implements PooledView {
     const up =
       this.#glyph !== null &&
       (this.#telling || this.#hovered) &&
+      !this.#clear &&
       this.#body.visible &&
       !Number.isNaN(this.#x) &&
       !this.#burrowedLook();
@@ -617,8 +628,13 @@ export class EnemyView implements PooledView {
       this.#telling = false;
       this.#syncGlyph();
     }
+    // Near an armed clickable or a lift (it arms, or the unit walks up to one): the overhead hides.
+    const clear = this.#keepClear?.near(e.x, e.y) === true;
+    const cleared = clear !== this.#clear;
+    this.#clear = clear;
     if (e.x === this.#x && e.y === this.#y) {
-      if (hit) this.#syncBar();
+      if (cleared) this.#syncGlyph();
+      if (hit || cleared) this.#syncBar();
       if (this.#flying) this.#syncBob();
       return;
     }
@@ -693,6 +709,7 @@ export class EnemyView implements PooledView {
       this.#body.visible &&
       !Number.isNaN(this.#x) &&
       !this.#leaving &&
+      !this.#clear &&
       !this.#burrowedLook() &&
       healthBarShown(hp, this.#maxHp, this.#shieldHp, this.#maxShield, this.#hovered);
     if (!show) {

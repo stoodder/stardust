@@ -221,7 +221,11 @@
   gap: 6px;
   width: 400px;
   padding: 6px 8px;
-  /* Opaque: the HUD (and the PAUSED pill) under it never show through. */
+}
+
+/* Opaque (D135): the HUD under it never shows through. Scoped under the scrim so it outranks
+   hud.css's `section.chamfer` translucent panel fill. */
+.dlg-scrim > .dlg-panel {
   background: var(--sd-ink-1);
 }
 

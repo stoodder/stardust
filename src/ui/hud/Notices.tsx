@@ -3,16 +3,21 @@
 // paused overlay. The comms panel (radio and barks) is ui/dialogue/CommsPanel.tsx.
 import type { ComponentChildren } from 'preact';
 import { assertNever } from '../../shared/types.ts';
+import { dialogue, type SceneMode } from '../dialogue/state.ts';
 import { hud, speed } from '../state.ts';
 import { Key } from './parts.tsx';
 
-/** A short message (a rejected command), top center. */
+/** A short message (a rejected command), top center; a banner (HudNotice.banner) below the top row. */
 export function Notice() {
   const n = hud.notice.value;
   return (
     <div class="hud-notice-slot" role="status" aria-live="polite">
       {n !== null && (
-        <div key={n.id} class="hud-notice chamfer">
+        <div
+          key={n.id}
+          class={n.banner === true ? 'hud-notice banner chamfer' : 'hud-notice chamfer'}
+          data-testid="hud-notice"
+        >
           {n.text}
         </div>
       )}
@@ -203,9 +208,23 @@ export function CheckpointCueView() {
   );
 }
 
+/**
+ * Whether the PAUSED notice shows (D026): paused while the map plays, unless a scene holds the
+ * battle (a pausing panel or a full-screen scene; D135): its own opaque panel says so already.
+ */
+export function showsPaused(
+  gameSpeed: number,
+  outcome: string,
+  scene: SceneMode | null,
+): boolean {
+  if (gameSpeed !== 0 || outcome !== 'playing') return false;
+  return scene === null || scene === 'briefing';
+}
+
 /** While paused: a light scrim over the playfield and a pinned PAUSED notice (D026). */
 export function PausedOverlay() {
-  if (speed.value !== 0 || hud.outcome.value !== 'playing') return null;
+  const scene = dialogue.scene.value?.mode ?? null;
+  if (!showsPaused(speed.value, hud.outcome.value, scene)) return null;
   return (
     <>
       <div class="hud-paused-scrim" aria-hidden="true" />

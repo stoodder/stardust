@@ -307,7 +307,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
       // and unpauses when ready (core-loop.md § 2.12).
       setSpeed(0);
-      showNotice(resumedNotice(resume.checkpoint.wave), RESUMED_NOTICE_MS);
+      showNotice(resumedNotice(resume.checkpoint.wave), RESUMED_NOTICE_MS, true);
     }
     return next.firstFrame;
   };

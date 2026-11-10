@@ -1475,3 +1475,4 @@ Reviewers: correctness of round 1's seams (no high-severity findings; every paus
 - **The resume banner wraps below the HUD row; the pausing panel is opaque** and hides the PAUSED chip.
 - **Dusk dims all scenery** (sprites too, the rock included) and salvaged tiles sit under it.
 - **Blips sit back:** ~5 dB lower, with a short ~−8 dB dip of everything under speech at each line's start; speech still clears the mix by ≥ 6 dB, and a lone blip peaks ≤ −10 dBFS.
+- *Supersedes the W4-cleared timing above:* on A2M3 a countdown opens once the previous wave finishes spawning, and W4 clears after W5 starts in every reference run; the only hands-free window in every build is W3's clear (W4's long build phase, 4.5–11 s before anything spawns), so the rock lights on `{ wave: 3, phase: 'cleared' }` — straight after the young-in-the-sacks wave. Par clicks in W4; the W6-cleared fallback stays.

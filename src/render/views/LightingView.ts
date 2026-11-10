@@ -2,12 +2,13 @@
 // lighting schedule (MapDef.lighting, A2M3's gold-to-dusk), the sky behind the map (the
 // `backdrop` layer) and a multiply grade over the world follow the schedule as each wave starts,
 // easing over LIGHT_FADE_TICKS sim ticks (holding while paused; stepped under reduced motion).
-// **Dusk dims the world, not the actors** (D134): the grade is a multiply rectangle over the
-// `ground` layer (the last thing in it) and the same color as a tint on the world's scenery in
-// `world` (scenery.ts: high ground, decor, wreckage, assets, cue props); units, allies, towers,
-// air, projectiles and effects above it keep their faction palettes. Cosmetic: the sim never reads
-// it. On a map without a schedule it draws nothing. Allocation-free per frame: it only recolors
-// when the shown position moves.
+// **Dusk dims the world, not the actors** (D134, D135): the grade is a multiply rectangle over the
+// `ground` layer (kept the last thing in it: a salvaged tile drawn later is put under it, `relight`)
+// and the same color as a tint on every piece of scenery in `world` (scenery.ts: high ground, decor
+// and wreckage props, assets, cue props, the Peeker's rock; Images and Sprites alike); units,
+// allies, towers, Pebble's lift, air, projectiles and effects above it keep their faction palettes.
+// Cosmetic: the sim never reads it. On a map without a schedule it draws nothing. Allocation-free
+// per frame: it only recolors when the shown position moves (or `relight` asks).
 import * as Phaser from 'phaser';
 import { ENV_PALETTE_IDS } from '../../content/palettes/env.ts';
 import type { EnvPaletteId, LightingKeyDef } from '../../content/types.ts';
@@ -22,6 +23,7 @@ import {
   skyImage,
   type LightStop,
 } from '../vfx/lighting.ts';
+import type { LightingLook } from './renderState.ts';
 import { isScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -35,6 +37,7 @@ export class LightingView {
   readonly #stops: readonly LightStop[];
   readonly #reducedMotion: () => boolean;
   readonly #world: Phaser.GameObjects.Layer | null = null;
+  readonly #ground: Phaser.GameObjects.Layer | null = null;
   readonly #grade: Phaser.GameObjects.Rectangle | null = null;
   /** One sky image per stop, in stop order (so a later stop draws over an earlier one). */
   readonly #skies: Phaser.GameObjects.Image[] = [];
@@ -76,6 +79,7 @@ export class LightingView {
     this.#grade.setOrigin(0, 0).setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false);
     // Over the ground (built before this view, never added to after), under everything else.
     layers.ground.add(this.#grade);
+    this.#ground = layers.ground;
     this.#world = layers.world;
   }
 
@@ -105,8 +109,9 @@ export class LightingView {
     const color = rgbNumber(c);
     grade.setFillStyle(color).setVisible(graded);
     // The scenery standing on the ground takes the same light (a multiply tint).
+    // Phaser 4's Sprite isn't an Image, so test for the tint itself.
     for (const obj of this.#world?.list ?? []) {
-      if (!isScenery(obj) || !(obj instanceof Phaser.GameObjects.Image)) continue;
+      if (!isScenery(obj) || !tintable(obj)) continue;
       if (graded) obj.setTint(color);
       else obj.clearTint();
     }
@@ -119,7 +124,49 @@ export class LightingView {
     }
   }
 
+  /**
+   * Something was drawn after the grade (WreckageView's salvaged tile: its ground under the grade's
+   * layer end, its block or prop new scenery): puts the grade back on top of the ground and retints
+   * the scenery on the next update.
+   */
+  relight(): void {
+    const grade = this.#grade;
+    if (grade === null) return;
+    this.#ground?.bringToTop(grade);
+    this.#shown = Number.NaN;
+  }
+
+  /** What the grade and the scenery show now (the smoke hooks' view of the light). */
+  look(): LightingLook {
+    let scenery = 0;
+    let tinted = 0;
+    let sprites = 0;
+    for (const obj of this.#world?.list ?? []) {
+      if (!isScenery(obj) || !tintable(obj)) continue;
+      scenery++;
+      if (obj.tintTopLeft === WHITE) continue;
+      tinted++;
+      if (obj instanceof Phaser.GameObjects.Sprite) sprites++;
+    }
+    const grade = this.#grade;
+    const graded = grade?.visible === true;
+    return {
+      grade: graded ? grade.fillColor : WHITE,
+      gradeOnTop: grade === null || this.#ground?.list[this.#ground.list.length - 1] === grade,
+      scenery,
+      tinted,
+      tintedSprites: sprites,
+    };
+  }
+
   reset(): void {
     this.#shown = Number.NaN;
   }
+}
+
+const WHITE = 0xffffff;
+
+/** A game object the grade can tint (Images and Sprites; Phaser 4's Sprite isn't an Image). */
+function tintable(obj: object): obj is Phaser.GameObjects.Components.Tint {
+  return 'setTint' in obj && 'clearTint' in obj && 'tintTopLeft' in obj;
 }

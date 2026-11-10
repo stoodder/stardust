@@ -313,7 +313,7 @@ export class BattleScene extends Phaser.Scene {
     this.#airLanes = new AirLaneView(ctx, map, prefersReducedMotion);
     this.#towers = new ViewPool(() => new TowerView(ctx));
     this.#leaves = new LeaveFx(ctx);
-    this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves));
+    this.#enemies = new ViewPool(() => new EnemyView(ctx, this.#leaves, this.#keepClear));
     this.#projectiles = new ViewPool(() => new ProjectileView(ctx));
     this.#allies = new ViewPool(() => new AllyView(ctx));
     this.#placement = new PlacementView(ctx, this.#elevationOf);
@@ -329,7 +329,10 @@ export class BattleScene extends Phaser.Scene {
     this.#fieldTint = new FieldTintView(ctx, map.cols, map.rows, this.#fx, prefersReducedMotion);
     this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
     this.#sweeps = new SweepView(ctx, this.#fx);
-    this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
+    // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
+    this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
+      this.#lighting.relight(),
+    );
     this.#drone = new DroneView(ctx, map);
     this.#tidybots = new TidybotView(ctx, map.cols, map.rows, presentationOfMap(map).tidybots);
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
@@ -500,9 +503,10 @@ export class BattleScene extends Phaser.Scene {
     this.#specs.update(dt, state.towers);
     this.#plinks.update(dt);
     this.#fieldTint.update(state.zones);
-    this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
     this.#sweeps.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
+    // After the wreckage, so a tile salvaged this frame is under the grade and tinted at once.
+    this.#lighting.update(state.wave, state.schedule.startTick, state.tick);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
     this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
@@ -625,6 +629,7 @@ export class BattleScene extends Phaser.Scene {
         this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },
       spawnFlags: this.#spawnFlags.shown,
       keepClear: this.#keepClear.size,
+      lighting: this.#lighting.look(),
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,
       specs: {

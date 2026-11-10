@@ -5,10 +5,11 @@
 //   one at a time. In a battle a scene other than the briefing pauses the sim (`setSpeed(0)`) and
 //   puts the speed back as it ends. Lines type and wait for Next; choices wait for a pick.
 // - **The comms panel** (top-left, never blocking) plays radio scenes (`w<NN>` as wave NN's
-//   countdown begins), script cues, and barks, one line at a time on real-time holds (scaled by
-//   the game speed, `holdAtSpeedMs`; D126). Scenes queue (going stale after COMMS_STALE_MS, and a
-//   countdown's radio dropped once its wave starts); barks never queue: one that can't show now is
-//   dropped (D070).
+//   countdown begins), script cues, and barks, one line at a time on real-time holds (a typed
+//   line's minimum read time, `minReadMs`, D135; scaled by the game speed, `holdAtSpeedMs`, D126).
+//   Scenes queue (going stale after COMMS_STALE_MS, and a countdown's radio dropped once its wave
+//   starts); barks never queue: one that can't show now is dropped (D070). A scene that holds input
+//   opening over the panel never eats its line: what was on it goes on from that line after (D135).
 // - **Barks** are standalone (never a reply to another speaker's line; D061), picked by
 //   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
 //   queue behind the line on the panel instead (`QUEUED_BARKS`): QUILL's first-leak seed, and
@@ -106,6 +107,9 @@ export const COMMS_STALE_MS = 15_000;
 export const REPLY_BEAT_MS = 2500;
 /** At 2×, a comms line still stays whole on screen at least this long, in ms (D126). */
 export const RADIO_MIN_READ_MS = 1500;
+/** A typed comms line's minimum read time (D135): this, plus MIN_READ_PER_CHAR_MS a character. */
+export const MIN_READ_BASE_MS = 1500;
+export const MIN_READ_PER_CHAR_MS = 45;
 /** Integrity at or below this share of the maximum fires `low_integrity` (core-loop.md § 6.3). */
 export const LOW_INTEGRITY_SHARE = 0.25;
 
@@ -127,8 +131,17 @@ export function readMs(text: string): number {
 }
 
 /**
+ * How long a typed line stays whole on the panel at the least before the next replaces it, in ms
+ * (D135): MIN_READ_BASE_MS plus MIN_READ_PER_CHAR_MS a character, so a long line gets read.
+ */
+export function minReadMs(text: string): number {
+  return MIN_READ_BASE_MS + MIN_READ_PER_CHAR_MS * typedLength(text);
+}
+
+/**
  * How long a comms line holds, in ms (its `durationSec` for a silence or a timed line): its
- * reading time, and at least REPLY_BEAT_MS once typed; just that beat when the next line answers it.
+ * reading time, and at least REPLY_BEAT_MS once typed (just that beat when the next line answers
+ * it), but never less than its minimum read time once typed (`minReadMs`; D135).
  */
 export function commsHoldMs(
   text: string,
@@ -138,8 +151,9 @@ export function commsHoldMs(
   if (durationSec !== undefined) return durationSec * 1000;
   // Reading starts as the line types; a short line still stays up a beat once it's whole.
   const typing = typeMs(text);
-  if (nextIsReply) return typing + REPLY_BEAT_MS;
-  return Math.max(readMs(text), typing + REPLY_BEAT_MS);
+  const floor = typing + minReadMs(text);
+  if (nextIsReply) return Math.max(typing + REPLY_BEAT_MS, floor);
+  return Math.max(readMs(text), typing + REPLY_BEAT_MS, floor);
 }
 
 /**
@@ -660,8 +674,19 @@ interface CommsPlay {
   moveOn?: () => void;
 }
 
-/** Queued comms scenes: when each queued, and the wave a countdown's radio is for (else 0). */
-const commsQueue: { scene: Scene; at: number; wave: number }[] = [];
+/**
+ * Queued comms scenes: when each queued, and the wave a countdown's radio is for (else 0). A scene
+ * a pausing scene cut mid-play (`holdComms`) waits at the front with its `cursor` (and the line
+ * before it, `prev`), to go on from the line it was showing.
+ */
+interface QueuedComms {
+  readonly scene: Scene;
+  readonly at: number;
+  readonly wave: number;
+  readonly cursor?: DialogueCursor;
+  readonly prev?: LineView | null;
+}
+const commsQueue: QueuedComms[] = [];
 let commsNow: CommsPlay | null = null;
 let commsTimer: ReturnType<typeof setTimeout> | null = null;
 /** Set while a scene holds input: the panel waits (its queue's clocks restart as it frees). */
@@ -682,10 +707,22 @@ function clearCommsTimer(): void {
 function holdComms(on: boolean): void {
   commsHeld = on;
   if (on) {
-    // The line on screen goes; a scene that was playing is cut, never replayed.
+    // The line on screen goes for now (D135): its scene (or bark) waits at the front of the queue
+    // from that line, shown again once the panel frees. Its `set` nodes so far ride its cursor,
+    // saved as it ends. As it was on the panel, a countdown's start never drops it (D132).
     clearCommsTimer();
+    const c = commsNow;
     commsNow = null;
     dialogue.comms.value = null;
+    if (c !== null && c.cursor.step.kind === 'line') {
+      commsQueue.unshift({
+        scene: c.scene,
+        at: performance.now(),
+        wave: 0,
+        cursor: c.cursor,
+        prev: c.prev,
+      });
+    }
     return;
   }
   const now = performance.now();
@@ -729,8 +766,8 @@ function pumpComms(): void {
   const map = session?.map ?? mapOfScene(next.scene.id);
   commsNow = {
     scene: next.scene,
-    cursor: start(next.scene, storyContext(map)),
-    prev: null,
+    cursor: next.cursor ?? start(next.scene, storyContext(map)),
+    prev: next.prev ?? null,
     button: null,
   };
   showCommsLine();
@@ -877,7 +914,16 @@ function finishComms(): number {
     }
   }
   for (const q of queued) {
-    for (const l of readThrough(q.scene, ctx).lines) ms += endHoldMs(l);
+    if (q.cursor === undefined) {
+      for (const l of readThrough(q.scene, ctx).lines) ms += endHoldMs(l);
+      continue;
+    }
+    // A scene a pausing panel cut: from the line it was showing.
+    let cursor = q.cursor;
+    while (cursor.step.kind === 'line') {
+      ms += endHoldMs(cursor.step.node);
+      cursor = advance(q.scene, cursor, ctx);
+    }
   }
   return ms;
 }

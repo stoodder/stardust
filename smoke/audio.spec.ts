@@ -4,8 +4,9 @@
 // Nobody can listen in CI, so every sound, cue, and theme is also rendered offline through the real
 // master chain and its levels asserted, plus the worst-case storms (Act I's W7 and boss wave, Act
 // II's Witch fight), unducked and ducked as the game ducks them, which must keep 3 dB of headroom;
-// in the ducked storms every speaker's blip must stand 6 dB over the rest of the mix (D134;
-// architecture.md § Audio).
+// in the ducked storms every speaker's blip must stand 6 dB over the rest of the mix, while a lone
+// blip peaks at −10 dBFS or under, and the Peeker's rock lighting up sounds about 6 dB over the
+// squeaks around it (D134, D135; architecture.md § Audio).
 import type { Page } from '@playwright/test';
 import type { AudioSample, RenderSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
@@ -179,6 +180,14 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
       expect(r.out.durationSec, name).toBeLessThan(3.4);
     }
   }
+  // The rock lighting up turns heads (D135): about 6 dB over the panic and sad squeaks of the
+  // Skitterkin around it (5–8 dB over the louder of the two).
+  const squeaks = Math.max(
+    report['sfx:panic_squeak']!.out.peakDb,
+    report['sfx:sad_squeak']!.out.peakDb,
+  );
+  const lightsUp = report['sfx:peeker_lights_up']!.out.peakDb - squeaks;
+  rows.push(`peeker_lights_up over the squeaks: ${lightsUp.toFixed(1)} dB`);
   for (const name of Object.keys(report)) {
     for (const m of speech(name)) {
       rows.push(
@@ -187,6 +196,12 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
     }
   }
   console.log(`audio levels (default volumes):\n${rows.join('\n')}`);
+  expect(lightsUp).toBeGreaterThanOrEqual(5);
+  expect(lightsUp).toBeLessThanOrEqual(8);
+  // Blips sit back (D135): a lone blip peaks at −10 dBFS or under, well under the strike's boom.
+  const blips = Object.keys(report).filter((n) => n.startsWith('sfx:blip.'));
+  expect(blips.length).toBeGreaterThanOrEqual(14);
+  for (const name of blips) expect(report[name]!.out.peakDb, name).toBeLessThanOrEqual(-10);
   // The storms, unducked (the loudest case) and ducked as the game ducks them: the limiter and the
   // clipper's ceiling hold them 3 dB under full scale (T323), and the raw mix isn't wildly over
   // (the voice limits work).
@@ -196,10 +211,11 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
   for (const name of storms) {
     expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
     expect(report[name]!.raw.peak, name).toBeLessThan(2);
-    // Speech stays on top (D134): in a ducked storm the line's blip, and every other speaker's
-    // spoken at the same moment, stands at least 6 dB over everything else sounding (the music
-    // under the radio's duck and the Hollow's, the rattle and the moments under speech's −6 dB,
-    // the alarms at full level), measured at the blip's loudest moment.
+    // Speech stays on top (D134, D135): in a ducked storm the line's blip, and every other
+    // speaker's spoken at the same moment, stands at least 6 dB over everything else sounding (the
+    // music under the radio's duck and the Hollow's, the rattle and the moments under speech's
+    // −6 dB and the line-start dip's further −8 dB, the alarms at full level), measured at the
+    // blip's loudest moment.
     if (name.endsWith(':ducked')) {
       const margins = speech(name);
       expect(margins.length, name).toBeGreaterThanOrEqual(14);

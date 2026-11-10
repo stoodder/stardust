@@ -1,5 +1,5 @@
-// Keep clear of what the player can reach (D134 K2): while a world object is clickable (sim
-// `state.clickable`, A2M3's Peeker rock, armed from W5's countdown) and as Pebble lifts off it,
+// Keep clear of what the player can reach (D134 K2, D135): while a world object is clickable (sim
+// `state.clickable`, A2M3's Peeker rock, armed once W4 is cleared) and as Pebble lifts off it,
 // nothing drawn on top of the world covers it. Each spot is kept clear twice over:
 // - **on the grid**: nothing that rises from a point within KEEP_CLEAR_TILES of it (a floater
 //   spawned by a unit, a tower, a link) is drawn;
@@ -7,8 +7,11 @@
 //   and the 1.5-tile ground footprint around it) is drawn, so a plate or a callout standing over
 //   a tower two tiles away can't reach up across the rock either.
 // Floaters (TransientFx) are dropped at spawn, or the moment a spot arms if one is already up; the
-// name-tag plate (NameTagView) hides until the spot clears. Pure and allocation-free (fixed
-// arrays the scene refills each frame), so the rule is unit-tested.
+// name-tag plate (NameTagView) hides until the spot clears; an enemy standing within
+// KEEP_CLEAR_TILES hides its health bar and tell glyph (EnemyView). Inside the world the rock
+// itself (PeekerView) sorts KEEP_CLEAR_RAISE_PX further forward, so the walkers round it pass
+// behind it. Pure and allocation-free (fixed arrays the scene refills each frame), so the rule is
+// unit-tested.
 import { HALF_H, HALF_W } from '../iso.ts';
 
 /** How near (in tiles, on the grid plane) to a clickable nothing else may draw over it. */
@@ -16,6 +19,12 @@ export const KEEP_CLEAR_TILES = 1.5;
 /** KEEP_CLEAR_TILES on screen: half the footprint's width and height round a tile's center. */
 export const KEEP_CLEAR_HALF_W_PX = Math.ceil(KEEP_CLEAR_TILES * Math.SQRT2 * HALF_W);
 export const KEEP_CLEAR_HALF_H_PX = Math.ceil(KEEP_CLEAR_TILES * Math.SQRT2 * HALF_H);
+/**
+ * How much further forward (screen px of foot y) an armed clickable sorts in the world while it can
+ * be reached and as Pebble lifts off it: past every walker whose foot is inside the keep-clear
+ * footprint, and the tile row in front of that (whose heads reach up over its base).
+ */
+export const KEEP_CLEAR_RAISE_PX = KEEP_CLEAR_HALF_H_PX + 2 * HALF_H;
 /** Spots at most (clickables armed at once, plus a lift). */
 const MAX_SPOTS = 8;
 

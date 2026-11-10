@@ -622,6 +622,17 @@ section.chamfer,
   pointer-events: none;
 }
 
+/* A longer banner (the checkpoint resume's; D135): two balanced lines at most 320 px wide (640 on
+   screen), centred below the top-right button row (Menu, Mute, Pause, speeds: y 4–20), so it
+   never covers them, the callsign plate, or the wave panel (x 486 on). */
+.hud-notice.banner {
+  box-sizing: border-box;
+  max-width: 320px;
+  margin-top: 18px;
+  text-align: center;
+  text-wrap: balance;
+}
+
 /* The upgrade hint (D028): bottom center, between the ability and build bars, above PAUSED. */
 .hud-hint-slot {
   position: absolute;

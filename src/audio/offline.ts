@@ -23,8 +23,8 @@ const TAIL_SEC = 0.3;
 /**
  * How far a line's blip stands over the rest of a ducked storm's mix as it's spoken: the blip's
  * RMS at its loudest moment (MOMENT_SEC) and the RMS of everything else over the line's opening
- * (OPENING_SEC), both before the limiter (which treats both alike), and their difference (D134:
- * at least 6 dB).
+ * (OPENING_SEC), both before the limiter (which treats both alike), and their difference (D134,
+ * D135: at least 6 dB).
  */
 export interface SpeechMargin {
   readonly blip: SfxId;
@@ -326,7 +326,8 @@ function stormMusic(storm: Storm, s: Synth): void {
 /**
  * A ducked storm's timeline, as the live game ducks it (app/audio.ts): the Hollow's steady duck
  * while Hollow walk, and while its line shows the radio's music duck and speech's duck of the
- * low-priority sounds; every sound's own `duck` follows the clock.
+ * low-priority sounds, with the line-start dip under its blip; every sound's own `duck` follows
+ * the clock.
  */
 function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
   const timed: Timed[] = stormPlays(storm, withBlip).map(([t, id, pitch]) => ({
@@ -346,6 +347,7 @@ function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
       run: (s) => {
         s.holdDuck('radio', RADIO_DUCK);
         s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
+        s.dipUnderSpeech();
       },
     },
     {

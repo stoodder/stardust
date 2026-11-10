@@ -10,7 +10,8 @@
 // - **Being cleared** (the queue's head): the beacon lit (`v<n>_lit`), then half cleared
 //   (`v<n>_half`) for the second half of the drone's work; DroneView draws the drone.
 // - **Cleared:** the wreck goes, and the tile's live tile (its `underWreckage`: a pad, high ground,
-//   a hidden power node) is drawn in its place, once.
+//   a hidden power node) is drawn in its place, once; then `onRedraw` (BattleScene: the lighting
+//   view's `relight`) puts the dusk grade back over it and tints its new scenery (D135).
 // Allocation-free per frame: every marker is made up front (one per wreckage tile), and the queue
 // is compared against the last frame's copy.
 import type * as Phaser from 'phaser';
@@ -63,21 +64,24 @@ export class WreckageView {
   readonly #ctx: ViewContext;
   readonly #map: CompiledMapDef<IdSpace>;
   readonly #fx: TransientFx;
+  readonly #onRedraw: () => void;
   readonly #tiles: WreckTile[] = [];
 
   /**
    * `props`: GroundView's wreck sprites by tile index (drawGround's `wreckage`). `fx` grows the
-   * ring when a tile joins the queue.
+   * ring when a tile joins the queue. `onRedraw` runs after a cleared tile is drawn.
    */
   constructor(
     ctx: ViewContext,
     map: CompiledMapDef<IdSpace>,
     props: ReadonlyMap<number, Phaser.GameObjects.Sprite>,
     fx: TransientFx,
+    onRedraw: () => void = () => {},
   ) {
     this.#ctx = ctx;
     this.#map = map;
     this.#fx = fx;
+    this.#onRedraw = onRedraw;
     map.tiles.forEach((t, index) => {
       if (t !== 'x') return;
       const col = index % map.cols;
@@ -185,6 +189,7 @@ export class WreckageView {
     // The map's terraces too, so a cleared tile at a terrace's foot keeps its cliff face (T312b).
     const grid: GroundGrid = { cols: map.cols, rows: map.rows, tiles, terraces: map.terraces };
     drawCell(this.#ctx, map.env, w.col, w.row, dressTile(grid, w.col, w.row), w.index);
+    this.#onRedraw();
   }
 }
 

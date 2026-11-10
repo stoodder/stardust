@@ -308,9 +308,12 @@ export function announce(text: string): void {
   hud.announce.value = prev === t ? `${t}\u00a0` : t;
 }
 
-/** Shows a short HUD notice for `ms` (default NOTICE_MS), replacing any current one. */
-export function showNotice(text: string, ms = NOTICE_MS): void {
-  hud.notice.value = { id: ++noticeId, text: silkText(text) };
+/**
+ * Shows a short HUD notice for `ms` (default NOTICE_MS), replacing any current one; `banner` lays
+ * a longer one out as a two-line banner below the HUD's top row (HudNotice.banner).
+ */
+export function showNotice(text: string, ms = NOTICE_MS, banner = false): void {
+  hud.notice.value = { id: ++noticeId, text: silkText(text), ...(banner ? { banner } : {}) };
   if (noticeTimer !== null) clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => {
     noticeTimer = null;

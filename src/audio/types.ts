@@ -71,6 +71,11 @@ export interface SfxRecipe {
   readonly jitter?: number;
   /** Music ducks to this level (0–1) while the sound plays (big sounds only). */
   readonly duck?: number;
+  /**
+   * Heard like a line, never under one: skips the `underSpeech` bus and its ducks (a cue that must
+   * turn heads mid-battle, such as the Peeker's rock lighting up; D135).
+   */
+  readonly overSpeech?: true;
 }
 
 /** A music instrument: tone layers pitched by the note (`freq` left out) or fixed (drums). */

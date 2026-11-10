@@ -13,12 +13,16 @@
 // Behind the rock those are the Peeker's own frames (T440c): `hold` (Pebble up on the rock, paws
 // over its crown) and `empty`; another cover holds with its `peek` and empties to `hidden`. As she
 // is picked up (`holding` → `empty`: a click or the fallback) her held frame lifts off the rock and
-// fades (peekerMotion.ts `liftLook`, T430b); the scene puffs a dust ring under it.
+// fades (peekerMotion.ts `liftLook`, T430b); the scene puffs a dust ring under it. While she's
+// held and as she lifts, the rock (and her lift) sort KEEP_CLEAR_RAISE_PX further forward, so the
+// walkers round it pass behind it (D135). The rock is scenery (the dusk grade tints it, scenery.ts);
+// her lift isn't.
 import * as Phaser from 'phaser';
 import { peekerFrame, type PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { createRng, nextFloat } from '../../shared/rng.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { KEEP_CLEAR_RAISE_PX } from '../vfx/keepClear.ts';
 import { propVariant } from './groundTiles.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import {
@@ -29,6 +33,7 @@ import {
   type PeekerPose,
 } from './peekerMotion.ts';
 import type { ObjectFrame } from './ClickableView.ts';
+import { markScenery } from './scenery.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const SPRITE = 'prop.peeker';
@@ -71,6 +76,10 @@ export class PeekerView {
   /** The tile index of the rock (the cursor and the pointer test against it). */
   readonly tile: number;
   #shown = -1;
+  /** The rock's sort depth at rest, and raised (held or lifting: over the walkers round it). */
+  readonly #restDepth: number;
+  readonly #raisedDepth: number;
+  #raised = false;
 
   /**
    * The Peeker on tile (`col`, `row`) of a `cols`-wide map in env `env`. `seed` seeds its own
@@ -115,7 +124,9 @@ export class PeekerView {
     )
       .setDisplayOrigin(anchor.x, anchor.y)
       .setDepth(worldDepth(pos.y, 'prop', this.tile & TIE_MASK));
-    layers.world.add(this.#img);
+    this.#restDepth = this.#img.depth;
+    this.#raisedDepth = worldDepth(pos.y + KEEP_CLEAR_RAISE_PX, 'prop', this.tile & TIE_MASK);
+    layers.world.add(markScenery(this.#img));
     this.#lift = new Phaser.GameObjects.Image(
       scene,
       pos.x,
@@ -175,6 +186,7 @@ export class PeekerView {
       this.#setHold(hold);
     }
     if (this.#liftMs >= 0) this.#syncLift(realMs);
+    this.#syncDepth();
     if (hold !== 'shy') return;
     const shy = hovered || enemyNear(enemies.items, enemies.used, this.#cx, this.#cy);
     this.#motion.update(realMs, playMs, shy);
@@ -212,6 +224,21 @@ export class PeekerView {
       this.#shown = -1;
       this.#show();
     }
+  }
+
+  /** Raised while she's held or lifting; at rest otherwise (her lift just over the rock). */
+  #syncDepth(): void {
+    const raised = this.#hold === 'holding' || this.#liftMs >= 0;
+    if (raised === this.#raised) return;
+    this.#raised = raised;
+    const depth = raised ? this.#raisedDepth : this.#restDepth;
+    this.#img.setDepth(depth);
+    this.#lift.setDepth(depth + 1e-5);
+  }
+
+  /** Whether the rock sorts raised over the walkers now (the smoke hooks' view of it). */
+  get raised(): boolean {
+    return this.#raised;
   }
 
   /** Pebble's lift: up off the rock and fading, then gone. */

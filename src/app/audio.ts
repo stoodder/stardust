@@ -164,10 +164,12 @@ export function installAudio(enabled: boolean): () => void {
     effect(() => {
       const l = speaking.value;
       engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
-      // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line.
+      // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line, and a
+      // further 8 dB for a moment as each line starts, under its blip (D135).
       engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
       if (l !== null && l.id !== lineId) {
         lineId = l.id;
+        if (!l.silence) engine.dipUnderSpeech();
         const blip = l.silence ? null : blipFor(l.speaker);
         if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
       }
@@ -254,8 +256,9 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     sounds.endFrame(calls);
     field.frame(s, calls);
     playCalls(calls);
-    // The music sits steadily ducked while any Hollow walks (one long dip, not one per hum).
-    setHollowDuck(field.hollowLive());
+    // The music sits steadily ducked while any Hollow walks (one long dip, not one per hum), and
+    // comes back as the map ends, whoever is still on the field (D135).
+    setHollowDuck(s.outcome === 'playing' && field.hollowLive());
     tidy.due(s.tick, chimes);
     for (const bot of chimes) {
       engine.play(TIDYBOT_SOUNDS.chime, { pitch: bot * TIDYBOT_SOUNDS.pitchPerBot });

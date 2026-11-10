@@ -47,6 +47,8 @@ export interface AudioEngine {
   holdDuck(key: string, level: number | null, fadeSec?: number): void;
   /** Holds the low-priority sound effects ducked under `key` (a spoken line, R10), or releases. */
   holdSfxDuck(key: string, level: number | null): void;
+  /** A line starts: the low-priority sound effects dip briefly under it (Synth.dipUnderSpeech). */
+  dipUnderSpeech(): void;
   setVolumes(v: Volumes): void;
   /** Pauses the audio clock (a hidden tab) or resumes it. */
   setSuspended(suspended: boolean): void;
@@ -69,6 +71,7 @@ export function silentEngine(muted = false): AudioEngine {
     setMusic() {},
     holdDuck() {},
     holdSfxDuck() {},
+    dipUnderSpeech() {},
     setVolumes() {},
     setSuspended() {},
     status: () => ({
@@ -152,6 +155,9 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
       if (level === null) sfxHeld.delete(key);
       else sfxHeld.set(key, level);
       synth?.holdSfxDuck(key, level);
+    },
+    dipUnderSpeech() {
+      if (ctx?.state === 'running') synth?.dipUnderSpeech();
     },
     setVolumes(v) {
       volumes = v;

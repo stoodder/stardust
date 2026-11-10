@@ -98,6 +98,44 @@ export const BATTLE_SFX = {
       },
     ],
   },
+  /**
+   * The Peeker's rock lights up (A2M3, D135): it calls to the player mid-battle, so it must turn
+   * heads. The poke's squeak twice, the second a step higher ("eep! eep!"), then a soft, high
+   * chime with a fifth over it. About 6 dB over the panic and sad squeaks around it, and heard like
+   * a line (`overSpeech`): no line's duck ever buries it.
+   */
+  peeker_lights_up: {
+    gain: 0.55,
+    priority: 2,
+    minGapMs: 500,
+    maxVoices: 1,
+    overSpeech: true,
+    layers: [
+      ...[1300, 1550].map((freq, i) => ({
+        wave: 'triangle' as const,
+        at: i * 0.12,
+        freq,
+        glide: 1.6,
+        glideSec: 0.06,
+        env: { a: 0.003, d: 0.06, s: 0, r: 0.02 },
+        gain: 0.65,
+      })),
+      {
+        wave: 'sine',
+        at: 0.24,
+        freq: 2637,
+        env: { a: 0.002, d: 0.4, s: 0, r: 0.3 },
+        gain: 0.3,
+      },
+      {
+        wave: 'sine',
+        at: 0.25,
+        freq: 3951.07,
+        env: { a: 0.002, d: 0.3, s: 0, r: 0.2 },
+        gain: 0.1,
+      },
+    ],
+  },
   /** A leak at the core: a clear two-tone alarm the player can't miss. */
   leak: {
     gain: 0.42,

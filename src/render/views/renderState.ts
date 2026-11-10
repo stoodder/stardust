@@ -26,6 +26,18 @@ export interface EnemyRenderState {
   readonly glance: boolean;
 }
 
+/** The light as drawn (LightingView `look`, D135). */
+export interface LightingLook {
+  /** The grade's color (white: none shows). */
+  readonly grade: number;
+  /** The grade is the last thing in the ground layer (nothing on the ground draws over it). */
+  readonly gradeOnTop: boolean;
+  /** Scenery in `world`, how many of it are tinted, and how many of those are Sprites. */
+  readonly scenery: number;
+  readonly tinted: number;
+  readonly tintedSprites: number;
+}
+
 /** One ally's view. */
 export interface AllyRenderState {
   readonly uid: number;
@@ -63,6 +75,12 @@ export interface RenderState {
   readonly spawnFlags: number;
   /** Spots kept clear of floaters and the name plate now (D134 K2: armed clickables, a lift). */
   readonly keepClear: number;
+  /**
+   * The lighting grade (LightingView, D135): its color (white: none), whether it's the last thing
+   * on the ground, and the world's scenery, how much of it is tinted, and how many of those are
+   * Sprites (decor and wreckage props, rigs, cue props, the Peeker's rock).
+   */
+  readonly lighting: LightingLook;
   /** Floating numbers and callouts up now. */
   readonly floats: number;
   /** Scanner Sweep's aim preview shows (T431: its own circle, not the strike's reticle). */
