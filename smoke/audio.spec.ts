@@ -157,13 +157,20 @@ test("audio: A2M6 plays Sundown's dusk and night, and the Prism's lock and hum",
     }
     // Into W6's dark (its ease runs over 4 s).
     sd.fastForward(300);
+    // Then the night plays on in real time. The fast-forward's burst fills the voice pool, and the
+    // night's air (priority 0, every 2.5 s of sim time) yields to it as it should; it is heard as
+    // the night goes on, as in play, not necessarily in the burst.
+    sd.setSpeed(2);
   });
-  expect((await status(page))?.played ?? {}).toMatchObject({
-    dusk_fall: expect.any(Number),
-    night_air: expect.any(Number),
-    prism_lock: expect.any(Number),
-    beam_hum: expect.any(Number),
-  });
+  await expect
+    .poll(async () => (await status(page))?.played ?? {}, { timeout: 20_000 })
+    .toMatchObject({
+      dusk_fall: expect.any(Number),
+      night_air: expect.any(Number),
+      prism_lock: expect.any(Number),
+      beam_hum: expect.any(Number),
+    });
+  expect(await page.evaluate(() => globalThis.__sd!.state()!.dark)).toBeGreaterThanOrEqual(0.25);
   // The Prism's lock is its own, never the Zapcoil's arc it stood in with (par has no Zapcoil).
   expect((await status(page))?.played ?? {}).not.toHaveProperty('zap_arc');
 });
