@@ -44,13 +44,12 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
     halo: 'gold.4',
     dusk: 0.35,
   },
-  // A2M6's Dome 3: its round window's warm light, and Pebble asleep in it (the lettuce stays a
-  // silhouette against the light).
+  // A2M6's Dome 3: its round window, warm, the lettuce and Pebble asleep in it lit by it.
   'prop.dome': {
     frames: ['window'],
-    colors: ['gold.4', 'coral.3', 'coral.4'],
+    colors: ['gold.4', 'green.3', 'green.2', 'coral.3', 'coral.4'],
     radius: 5,
-    halo: 'gold.4',
+    halo: 'orange.4',
     dusk: 0.25,
   },
   // A2M4's vats: the slurry, cold violet (unsung), wherever it churns.
