@@ -60,16 +60,17 @@ function parapet(g: CharGrid, seed: number, u0 = 0, u1 = 1): void {
     }
   }
   // Chips and scuffs on the face.
-  for (const [x, y] of seed === 0
-    ? [
-        [TX + 3, TY - 1],
-        [TX + 11, TY + 3],
-      ]
-    : [
-        [TX + 6, TY + 1],
-        [TX + 1, TY - 3],
-      ])
-    plot(g, x, y, 'A');
+  const chips: readonly (readonly [number, number])[] =
+    seed === 0
+      ? [
+          [TX + 3, TY - 1],
+          [TX + 11, TY + 3],
+        ]
+      : [
+          [TX + 6, TY + 1],
+          [TX + 1, TY - 3],
+        ];
+  for (const [x, y] of chips) plot(g, x, y, 'A');
 }
 
 /** The tile point at fraction `u` along the north-east edge, `v` of the way in. */
