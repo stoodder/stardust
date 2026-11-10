@@ -19,8 +19,9 @@ export const SKITTERKIN_DEATH_SOUNDS: Readonly<Record<SkitterkinDeath, SfxId | n
 };
 
 /**
- * How the other factions die (enemies.md § 8), in every act: the Aelari shatter into chiming
- * shards, the Hollow unravel into static. A faction without a row pops (Everglow's own, later).
+ * How the other factions die (enemies.md § 8), whatever the Skitterkin dial: the Aelari shatter
+ * into chiming shards, the Hollow unravel into static. A faction without a row pops (Everglow's
+ * own, later). Act III's Hollow die with no sound (§ 8): M6 silences them with its maps.
  */
 export const FACTION_DEATH_SOUNDS: Readonly<Partial<Record<EnemyFaction, SfxId>>> = {
   aelari: 'aelari_shatter',
@@ -32,7 +33,10 @@ export const FACTION_DEATH_SOUNDS: Readonly<Partial<Record<EnemyFaction, SfxId>>
  * shield took whole plays the ripple instead of the nothing-plink (`invuln_plink` stays for a boss
  * between phases): an Energy hit stripping a shield isn't the wrong tool.
  */
-export const SHIELD_SOUNDS = { ripple: 'shield_ripple', shatter: 'shield_shatter' } as const satisfies {
+export const SHIELD_SOUNDS = {
+  ripple: 'shield_ripple',
+  shatter: 'shield_shatter',
+} as const satisfies {
   readonly ripple: SfxId;
   readonly shatter: SfxId;
 };
@@ -66,17 +70,19 @@ export const HUSH_SOUNDS = {
 
 /**
  * The Hollow's quiet (design/enemies.md § 5.4: "wrong in every channel"; story/bible.md: the
- * Quiet): a low-priority sound (priority ≤ 1: a shot, a hit, a pop) placed within `radiusTiles`
+ * Quiet): a low-priority sound (≤ `maxPriority`: a shot, a hit, a pop) placed within `radiusTiles`
  * of a live Hollow unit is dropped, so the small sounds around one fall away. Its own sounds
  * (`keep`) still play. Alarms, speech, and the moments (priority ≥ 2) are never dropped.
  */
 export const HOLLOW_QUIET = {
   faction: 'hollow',
   radiusTiles: 1.5,
+  maxPriority: 1,
   keep: ['hollow_unravel'],
 } as const satisfies {
   readonly faction: EnemyFaction;
   readonly radiusTiles: number;
+  readonly maxPriority: number;
   readonly keep: readonly SfxId[];
 };
 
@@ -85,7 +91,11 @@ export const HOLLOW_QUIET = {
  * walks (one voice however many; design/enemies.md § 3 "footsteps sound"), and the ping as one is
  * Revealed (Revealed; slipping back into the cloak, Cloaked, is silent).
  */
-export const CLOAK_SOUNDS = { steps: 'cloak_steps', everySec: 0.55, reveal: 'reveal_ping' } as const satisfies {
+export const CLOAK_SOUNDS = {
+  steps: 'cloak_steps',
+  everySec: 0.55,
+  reveal: 'reveal_ping',
+} as const satisfies {
   readonly steps: SfxId;
   readonly everySec: number;
   readonly reveal: SfxId;
@@ -118,7 +128,11 @@ export const PROJECTILE_SOUNDS: Readonly<
  * higher each time, so the whine climbs to the discharge (ATTACK_SOUNDS `charge`). A fizzled or
  * vented charge just stops.
  */
-export const CHARGE_SOUNDS = { hum: 'capacitor_hum', steps: 4, pitchPerStep: 3 } as const satisfies {
+export const CHARGE_SOUNDS = {
+  hum: 'capacitor_hum',
+  steps: 4,
+  pitchPerStep: 3,
+} as const satisfies {
   readonly hum: SfxId;
   readonly steps: number;
   readonly pitchPerStep: number;

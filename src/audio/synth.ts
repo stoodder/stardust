@@ -8,7 +8,7 @@
 // The bus graph:
 //   sfx voices (priority ≤ 1) ─▶ low ─▶ sfx ────────┐ (low ducks while someone speaks, R10)
 //   sfx voices (priority ≥ 2) ─▶ sfx ───────────────┤
-//   theme voices ─▶ layer gains ─▶ theme fade ─▶ duck ─▶ music ─▶ master ─▶ glue ─▶ limiter ─▶ clip ─▶ out
+//   theme voices ─▶ layer gains ─▶ theme fade ─▶ duck ─▶ music ─▶ master ─▶ glue ─▶ limiter ─▶ trim ─▶ clip ─▶ out
 //   cue voices ─▶ cues ───────────────────────────────┘ (into music, after the duck)
 import { createRng, nextFloat, type Rng } from '../shared/rng.ts';
 import { midiToHz, semitones } from './notes.ts';
@@ -43,6 +43,25 @@ export const DUCK_RELEASE_SEC = 0.2;
 export const LOW_PRIORITY_MAX = 1;
 /** The `low` bus's level while a line is spoken: about −3 dB (R10). */
 export const SPEECH_SFX_DUCK = 0.7;
+/** The limiter: its threshold (dB) and ratio; fast and hard. */
+export const LIMITER_THRESHOLD_DB = -8;
+export const LIMITER_RATIO = 20;
+/**
+ * A WebAudio compressor adds its own makeup gain, (1 / full range gain)^0.6 in the spec's
+ * DynamicsCompressorNode: at a −8 dB threshold and 20:1 it lifts everything 4.6 dB, so the
+ * limiter's loudest output would sit near −3.4 dBFS, not −8 (at −4 dB, its old threshold, the
+ * makeup was 2.3 dB and storms peaked at −1.1 dBFS; T323).
+ */
+export function limiterMakeupDb(thresholdDb: number, ratio: number): number {
+  return -0.6 * thresholdDb * (1 - 1 / ratio);
+}
+/**
+ * The trim after the limiter (dB): it keeps 2.3 dB of the makeup (what the −4 dB limiter added),
+ * so sounds under the threshold play exactly as loud as before, while the loud ceiling comes down
+ * by the difference: storms peak about 4 dB under full scale (D033's −3 dB headroom target).
+ */
+export const LIMITER_TRIM_DB =
+  limiterMakeupDb(-4, LIMITER_RATIO) - limiterMakeupDb(LIMITER_THRESHOLD_DB, LIMITER_RATIO);
 /** Notes due longer ago than this when the scheduler wakes are skipped (s). */
 const LATE_SEC = 0.05;
 /** The quietest an envelope ramps to before it is cut (exponential ramps can't reach 0). */
@@ -183,19 +202,22 @@ export class Synth {
       glue.ratio.value = 3;
       glue.attack.value = 0.005;
       glue.release.value = 0.25;
-      // Limiter: fast and hard, a little under full scale.
+      // Limiter: fast and hard, its ceiling 3 dB under full scale once trimmed.
       const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -4;
+      limiter.threshold.value = LIMITER_THRESHOLD_DB;
       limiter.knee.value = 0;
-      limiter.ratio.value = 20;
+      limiter.ratio.value = LIMITER_RATIO;
       limiter.attack.value = 0.001;
       limiter.release.value = 0.1;
+      const trim = ctx.createGain();
+      trim.gain.value = 10 ** (LIMITER_TRIM_DB / 20);
       // The clipper catches whatever the limiter's attack lets through.
       const clip = ctx.createWaveShaper();
       clip.curve = clipCurve();
       this.master.connect(glue);
       glue.connect(limiter);
-      limiter.connect(clip);
+      limiter.connect(trim);
+      trim.connect(clip);
       clip.connect(ctx.destination);
     }
     this.setVolumes(DEFAULT_VOLUMES);

@@ -1,8 +1,9 @@
-// Audio (T205, T314): off under ?test=1 unless &audio=1; unlocked by the first gesture; the
-// battle's music and sounds play from real events; a spoken line blips and its typewriter ticks; M
-// and the speaker button mute it, and the choice persists. Nobody can listen in CI, so every
-// sound, cue, and theme is also rendered offline through the real master chain and its levels
-// asserted, plus a storm past W7 and the boss wave that must not clip (architecture.md § Audio).
+// Audio (T205, T314, T450): off under ?test=1 unless &audio=1; unlocked by the first gesture; the
+// battle's music and sounds play from real events (Act I's, and Act II's on A2M1); a spoken line
+// blips and its typewriter ticks; M and the speaker button mute it, and the choice persists.
+// Nobody can listen in CI, so every sound, cue, and theme is also rendered offline through the real
+// master chain and its levels asserted, plus the worst-case storms (Act I's W7 and boss wave, Act
+// II's Witch fight), which must keep 3 dB of headroom (architecture.md § Audio).
 import type { Page } from '@playwright/test';
 import type { AudioSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
@@ -92,8 +93,38 @@ test('audio: M and the speaker button mute it, and the choice persists', async (
   await shot(page, 'audio', 2, 'hud-muted');
 });
 
-test('audio: every sound renders at a sane level, and a W7 storm never clips', async ({ page }) => {
+test("audio: A2M1 plays Act II's theme, its deaths, and the Hollow's hum", async ({ page }) => {
   test.setTimeout(60_000);
+  await page.goto('/?test=1&audio=1&map=a2_m01&seed=1');
+  await waitForReady(page);
+  // Closing the briefing is the gesture that unlocks the audio.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('hud')).toBeVisible();
+  await expect.poll(async () => (await status(page))?.state).toBe('running');
+  await expect.poll(async () => (await status(page))?.theme).toBe('act2_battle');
+  // Par through W3, the Mote's teach: runners flee and die quietly, the Hollow hums and hushes.
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    const st = sd.state()!;
+    for (let k = 0; k < 60 * 400 && !(st.wave >= 4 || st.outcome !== 'playing'); k++) {
+      sd.fastForward(1);
+    }
+  });
+  expect((await status(page))?.played ?? {}).toMatchObject({
+    wave_start: expect.any(Number),
+    sad_squeak: expect.any(Number),
+    hollow_hum: expect.any(Number),
+    'cue:bright_minor': expect.any(Number),
+  });
+  expect((await status(page))?.played ?? {}).not.toHaveProperty('cue:bright_sting');
+});
+
+test('audio: every sound renders at a sane level, and the storms keep 3 dB of headroom', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
   await page.goto('/?test=1&audio=1');
   await waitForReady(page);
   const report = await page.evaluate(async () => {
@@ -103,7 +134,7 @@ test('audio: every sound renders at a sane level, and a W7 storm never clips', a
       ...ids.sfx.map((id) => `sfx:${id}`),
       ...ids.cues.map((id) => `cue:${id}`),
       ...ids.themes.map((id) => `theme:${id}`),
-      'storm',
+      ...ids.storms.map((id) => `storm:${id}`),
     ];
     const renders = await Promise.all(names.map((n) => a.render(n)));
     return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
@@ -128,7 +159,12 @@ test('audio: every sound renders at a sane level, and a W7 storm never clips', a
     }
   }
   console.log(`audio levels (default volumes):\n${rows.join('\n')}`);
-  // The storm: the limiter holds it, and the raw mix isn't wildly over (voice limits work).
-  expect(report['storm']!.out.peak).toBeLessThan(0.99);
-  expect(report['storm']!.raw.peak).toBeLessThan(2);
+  // The storms: the limiter and the clipper's ceiling hold them 3 dB under full scale (T323), and
+  // the raw mix isn't wildly over (the voice limits work).
+  const storms = Object.keys(report).filter((n) => n.startsWith('storm:'));
+  expect(storms.length).toBeGreaterThanOrEqual(2);
+  for (const name of storms) {
+    expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
+    expect(report[name]!.raw.peak, name).toBeLessThan(2);
+  }
 });

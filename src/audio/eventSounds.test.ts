@@ -35,7 +35,7 @@ const bomblet = (uid: number): SimEvent<IdSpace> => ({ ...fired('lobbed', uid), 
 const cueFor = (act: 1 | 2 | 3 | 'finale') => WAVE_CLEAR_CUE[PRESENTATION.byAct[act].jingle];
 
 function run(events: SimEvent<IdSpace>[], jingle: JingleVariant = 'bright'): SoundCall[] {
-  const s = createEventSounds(jingle);
+  const s = createEventSounds({ jingle, skitterkinDeath: 'confetti' });
   const out: SoundCall[] = [];
   for (const e of events) s.sounds(e, out);
   s.endFrame(out);
@@ -244,15 +244,14 @@ describe('event sounds', () => {
     expect(run([cleared(1)], 'none')).toEqual([]);
   });
 
-  it("plays the map's jingle dial: Act I's bright sting, nothing cheerful after (T450 fills)", () => {
+  it("plays the map's jingle dial: Act I's bright sting, Act II's minor ones, never a cheer after (D126)", () => {
     expect(cueFor(1)).toBe('bright_sting');
     for (const act of [2, 3, 'finale'] as const) expect(cueFor(act)).not.toBe('bright_sting');
-    expect(WAVE_CLEAR_CUE[PRESENTATION.byMap.a2_m04?.jingle ?? 'bright']).not.toBe('bright_sting');
-    expect(run([cleared(1)], 'minor_bridges')).toEqual(
-      WAVE_CLEAR_CUE.minor_bridges === null
-        ? []
-        : [{ kind: 'cue', id: WAVE_CLEAR_CUE.minor_bridges }],
-    );
+    expect(cueFor(2)).toBe('bright_minor');
+    expect(WAVE_CLEAR_CUE[PRESENTATION.byMap.a2_m04?.jingle ?? 'bright']).toBe('minor_sting');
+    expect(ids(run([cleared(1)], 'minor_bridges'))).toEqual(['cue:bright_minor']);
+    expect(ids(run([cleared(1)], 'minor'))).toEqual(['cue:minor_sting']);
+    expect(run([cleared(1)], 'song')).toEqual([]);
   });
 
   it("gives M2's best moments a sound: a link's chime, a spec's flourish, a kind forfeit (D059)", () => {
@@ -276,7 +275,7 @@ describe('event sounds', () => {
     ]);
     expect(ids(run([forfeit('perfectCore'), { type: 'MapWon' }]))).toEqual(['cue:win']);
     // Nothing after the map ends, either.
-    const s = createEventSounds('bright');
+    const s = createEventSounds({ jingle: 'bright', skitterkinDeath: 'confetti' });
     const out: SoundCall[] = [];
     s.sounds({ type: 'MapLost' }, out);
     s.endFrame(out);

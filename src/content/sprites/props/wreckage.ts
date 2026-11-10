@@ -49,11 +49,12 @@ function scorch(g: CharGrid, seed: number): void {
     for (let x = 0; x < W; x++) {
       const n = hash01(x, y, seed);
       const d = diamond(x, y - TOP) + (n - 0.5) * 1.6;
-      if (d > 6.2) continue;
+      // Wide enough that the burnt heart shows round the debris lying on it (T334, T430b).
+      if (d > 7.4) continue;
       let ch = '6';
-      if (d < 2.8) ch = 'K';
-      else if (d < 4.0) ch = n < 0.3 ? 'K' : 'J';
-      else if (d < 5.2) ch = n < 0.5 ? 'J' : 'L';
+      if (d < 3.8) ch = 'K';
+      else if (d < 5.2) ch = n < 0.45 ? 'K' : 'J';
+      else if (d < 6.4) ch = n < 0.5 ? 'J' : 'L';
       else ch = n < 0.45 ? 'L' : '6';
       plot(g, x, y, ch);
     }

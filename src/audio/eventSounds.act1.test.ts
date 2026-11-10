@@ -66,10 +66,14 @@ const cast = (ability: string): E => ({
   target: null,
 });
 
-const SPLITS: EnemyLookup = { splits: (id) => id === 'bunchling' };
+const SPLITS: EnemyLookup = {
+  splits: (id) => id === 'bunchling',
+  faction: () => 'skitterkin',
+  quietAt: () => false,
+};
 
 function run(events: E[], enemies?: EnemyLookup): SoundCall[] {
-  const s = createEventSounds('bright', enemies);
+  const s = createEventSounds({ jingle: 'bright', skitterkinDeath: 'confetti' }, enemies);
   const out: SoundCall[] = [];
   for (const e of events) s.sounds(e, out);
   s.endFrame(out);

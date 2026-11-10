@@ -80,6 +80,7 @@ describe('M4 state fields', () => {
     const state = createState(MAP, 1);
     expect(state.stats).toMatchObject({
       bossBlinks: 0,
+      heavyLeaks: 0,
       leaksByFaction: { skitterkin: 0, aelari: 0, everglow: 0, hollow: 0 },
       leaksByEnemy: {},
     });
@@ -160,6 +161,21 @@ describe('leaks by faction and enemy (Hiccup Contained)', () => {
       hollow: 1,
     });
     expect(state.stats.leaksByEnemy).toEqual({ fx_walker: 1, fx_hollow: 1 });
+  });
+
+  it('movement counts a Heavy unit’s leak in heavyLeaks, which the `stat` atom reads (T460)', () => {
+    const { state, ctx } = setup();
+    const end = MAP.routes.a!.lengthTiles;
+    const hollow = enemyDef('fx_hollow', { faction: 'hollow', body: 'void' });
+    spawn(state, hollow, { dist: end - 0.001 }); // a plain Hollow unit: not Heavy
+    const none: ConditionDef<IdSpace> = { stat: 'heavyLeaks', lte: 0 };
+    movement(state);
+    expect([state.stats.leaksByFaction.hollow, state.stats.heavyLeaks]).toEqual([1, 0]);
+    expect(evaluateCondition(none, state, ctx)).toBe(true);
+    spawn(state, hollow, { dist: end - 0.001 }).heavy = true; // it hushed someone on the way
+    movement(state);
+    expect([state.stats.leaksByFaction.hollow, state.stats.heavyLeaks]).toEqual([2, 1]);
+    expect(settledCondition(none, state, ctx)).toBe(false);
   });
 
   it('the `leaks` atom reads them: a run atom that settles false past lte', () => {

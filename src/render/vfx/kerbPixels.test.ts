@@ -27,7 +27,8 @@ describe('kerbImage (T430b)', () => {
     // The ne edge runs from the top vertex (16, 0) to the right one (31, 7).
     expect(colorAt(face, 24, 4)).toBe('face');
     const kinds = new Set<string | null>();
-    for (let y = 0; y < KERB_H; y++) for (let x = 0; x < KERB_W; x++) kinds.add(colorAt(face, x, y));
+    for (let y = 0; y < KERB_H; y++)
+      for (let x = 0; x < KERB_W; x++) kinds.add(colorAt(face, x, y));
     expect(kinds).toEqual(new Set([null, 'face', 'shadow']));
     expect(colorAt(face, 10, 12)).toBeNull();
   });

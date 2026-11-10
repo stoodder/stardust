@@ -115,7 +115,10 @@ describe('skyImage', () => {
         const lit = rgbOf(m.lit);
         const shade = rgbOf(m.shade);
         const c = [sky.data[i], sky.data[i + 1], sky.data[i + 2]];
-        expect([[lit.r, lit.g, lit.b], [shade.r, shade.g, shade.b]]).toContainEqual(c);
+        expect([
+          [lit.r, lit.g, lit.b],
+          [shade.r, shade.g, shade.b],
+        ]).toContainEqual(c);
       }
     }
   });

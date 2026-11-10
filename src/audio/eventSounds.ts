@@ -1,17 +1,18 @@
 // Sim events → sounds (pure): which sound effects and music cues each drained event plays, from
-// the data tables in eventTables.ts (a new tower attack kind, enemy, or ability gets its sound by
-// adding a row there, not a branch here). Cosmetic pitch variance (a recipe's `jitter`) is the
-// synth's, from its own RNG; nothing here reads or affects the sim. What no event announces (a
-// sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the state after each frame.
-import type { JingleVariant } from '../content/presentation.ts';
-import type { IdSpace } from '../content/types.ts';
+// the data tables in eventTables.ts and eventTablesAct2.ts (a new tower attack kind, enemy, or
+// ability gets its sound by adding a row there, not a branch here). Cosmetic pitch variance (a
+// recipe's `jitter`) is the synth's, from its own RNG; nothing here reads or affects the sim. What
+// no event announces (a sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the
+// state after each frame; so is where the Hollow units stand, which drops the small sounds an
+// event places near one (HOLLOW_QUIET).
+import type { JingleVariant, SkitterkinDeath } from '../content/presentation.ts';
+import type { EnemyFaction, IdSpace } from '../content/types.ts';
 import type { SimEvent, SimEventType } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
 import {
   ALLY_SOUNDS,
   ATTACK_SOUNDS,
   BOMBLET_SOUNDS,
-  BOSS_END_CUE,
   bossSounds,
   CHAIN_SOUNDS,
   DRONE_SOUNDS,
@@ -24,8 +25,22 @@ import {
   ABILITY_SOUNDS,
   UPGRADE_PITCH_PER_TIER,
 } from './eventTables.ts';
+import {
+  ASSET_HIT_SOUND,
+  BLINK_SOUNDS,
+  CHECKPOINT_SOUND,
+  CLOAK_SOUNDS,
+  FACTION_DEATH_SOUNDS,
+  HOLLOW_QUIET,
+  HUSH_SOUNDS,
+  PROJECTILE_SOUNDS,
+  PULSE_SOUNDS,
+  SHIELD_SOUNDS,
+  SKITTERKIN_DEATH_SOUNDS,
+  STASIS_SOUNDS,
+} from './eventTablesAct2.ts';
 import { WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
-import type { SfxId } from './sfx/index.ts';
+import { SFX, type SfxId } from './sfx/index.ts';
 
 export {
   ABILITY_SOUNDS,
@@ -94,25 +109,27 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BossPhase: true,
   BossEnded: true,
   WreckageCleared: true,
-  // Act II's events (T400a seams) are silent until their sounds land (T450).
-  HushStarted: false,
-  Hushed: false,
+  // Act II's events (T450).
+  HushStarted: true,
+  Hushed: true,
+  // The hush's sound covers it.
   TurnedHeavy: false,
-  SkittishBolt: false,
-  ShieldPulse: false,
-  ShieldHit: false,
-  BlinkTell: false,
-  Blinked: false,
-  BlinkInterrupted: false,
-  // Flash Freeze's burst: Stasis's sound is T450's.
-  PulseBurst: false,
-  // Crane income and Reel It In's credits (T408): the floater is enough for now (T450).
+  SkittishBolt: true,
+  ShieldPulse: true,
+  ShieldHit: true,
+  BlinkTell: true,
+  Blinked: true,
+  BlinkInterrupted: true,
+  PulseBurst: true,
+  // Crane income and Reel It In's credits (T408): the floater is enough for now.
   TowerIncome: false,
-  Revealed: false,
+  Revealed: true,
+  // Slipping back into the cloak: the footsteps resume (fieldSounds.ts).
   Cloaked: false,
-  AssetHit: false,
+  AssetHit: true,
+  // The loss cue follows it (MapLost) and stands alone.
   AssetLost: false,
-  CheckpointReached: false,
+  CheckpointReached: true,
   ClickableChanged: false,
   Interacted: false,
 };
@@ -133,28 +150,74 @@ export interface EventSounds {
   endFrame(out: SoundCall[]): void;
 }
 
-/** What the event sounds need to know about the battle's enemies (content's compiled defs). */
+/**
+ * What the event sounds need to know about the battle's enemies (content's compiled defs) and its
+ * field (fieldSounds.ts).
+ */
 export interface EnemyLookup {
   /** Whether `enemy` splits when it dies (a Bunchling). */
   splits(enemy: string): boolean;
+  /** `enemy`'s faction (its death sound), or null if unknown (it pops). */
+  faction(enemy: string): EnemyFaction | null;
+  /** Whether (x, y) (tiles) is inside a Hollow unit's quiet (HOLLOW_QUIET), as of the last frame. */
+  quietAt(x: number, y: number): boolean;
 }
-const NO_ENEMIES: EnemyLookup = { splits: () => false };
+const NO_ENEMIES: EnemyLookup = { splits: () => false, faction: () => null, quietAt: () => false };
+
+/** The map's presentation dials the event sounds play by (story/presentation.ts). */
+export interface SoundDials {
+  /** The wave-clear jingle (WAVE_CLEAR_CUE). */
+  readonly jingle: JingleVariant;
+  /** How a Skitterkin dies (SKITTERKIN_DEATH_SOUNDS). */
+  readonly skitterkinDeath: SkitterkinDeath;
+}
+
+/** Whether `id` is one of the small sounds the Hollow's quiet drops (HOLLOW_QUIET). */
+function quietable(id: SfxId): boolean {
+  return (
+    SFX[id].priority <= HOLLOW_QUIET.maxPriority &&
+    !(HOLLOW_QUIET.keep as readonly SfxId[]).includes(id)
+  );
+}
 
 /**
- * Event sounds for a battle whose wave-clear jingle is `jingle` (its presentation dial; story/
- * presentation.ts `presentationOfMap`).
+ * Event sounds for a battle with presentation dials `dials` (story/presentation.ts
+ * `presentationOfMap`).
  */
 export function createEventSounds(
-  jingle: JingleVariant,
+  dials: SoundDials,
   enemies: EnemyLookup = NO_ENEMIES,
 ): EventSounds {
-  /** Fired projectiles' kinds by uid, so their landing finds its sound. */
+  const { jingle } = dials;
+  /** A Skitterkin's death sound under this map's dial. */
+  const skitterkinDeath = SKITTERKIN_DEATH_SOUNDS[dials.skitterkinDeath];
+  /** The death sound of `enemy` (by its faction; enemies.md § 8), or null for none. */
+  const deathSound = (enemy: string): SfxId | null => {
+    const faction = enemies.faction(enemy);
+    if (faction === 'skitterkin') return skitterkinDeath;
+    return (faction === null ? undefined : FACTION_DEATH_SOUNDS[faction]) ?? 'enemy_pop';
+  };
+  /** Pushes a sound placed at (x, y), unless the Hollow's quiet swallows it there. */
+  const at = (out: SoundCall[], id: SfxId, x: number, y: number, pitch = 0, delay = 0): void => {
+    if (quietable(id) && enemies.quietAt(x, y)) return;
+    out.push(sfx(id, pitch, delay));
+  };
+  /** Fired projectiles' kinds (or their PROJECTILE_SOUNDS sprite) by uid, for their landing. */
   const flying = new Map<number, string>();
   /** Allies' kinds by uid, so their shots find their sound. */
   const allies = new Map<number, string>();
   /** The chain attack whose hits are arriving (its tower, or -1), and how many have. */
   let chainTower = -1;
   let chainHits = 0;
+  /**
+   * A hit that took no HP waits for the next event before it plinks: if it's that hit's ShieldHit,
+   * the shield's ripple says it instead (an Energy hit stripping a shield isn't the wrong tool).
+   */
+  let plink: { x: number; y: number } | null = null;
+  const flushPlink = (out: SoundCall[]): void => {
+    if (plink !== null) at(out, PLINK_SOUNDS.nothing, plink.x, plink.y);
+    plink = null;
+  };
   let pendingClear = false;
   let pendingForfeit = false;
   let ended = false;
@@ -167,19 +230,20 @@ export function createEventSounds(
           ? BOMBLET_SOUNDS.land
           : kind === undefined
             ? null
-            : ATTACK_SOUNDS[kind]?.land;
-      if (land) out.push(sfx(land));
+            : (PROJECTILE_SOUNDS[kind] ?? ATTACK_SOUNDS[kind])?.land;
+      if (land) at(out, land, e.x, e.y);
     } else if (e.towerUid === chainTower) {
       // The arc runs down the line: each jump a beat later and a step higher.
       const k = chainHits++;
       if (k > 0) {
         const pitch = Math.min(k * CHAIN_SOUNDS.pitchPerJump, CHAIN_SOUNDS.maxPitch);
-        out.push(sfx(CHAIN_SOUNDS.jump, pitch, k * CHAIN_SOUNDS.gapSec));
+        at(out, CHAIN_SOUNDS.jump, e.x, e.y, pitch, k * CHAIN_SOUNDS.gapSec);
       }
     }
   };
   return {
     sounds(e, out) {
+      if (e.type !== 'ShieldHit') flushPlink(out);
       switch (e.type) {
         case 'TowerBuilt':
           out.push(sfx('build'));
@@ -195,28 +259,35 @@ export function createEventSounds(
           return;
         case 'ProjectileFired': {
           const bomblet = e.kind === 'lobbed' && e.targetUid === 0;
-          const s = bomblet ? BOMBLET_SOUNDS : ATTACK_SOUNDS[e.kind];
-          if (s?.fire) out.push(sfx(s.fire));
-          if (e.uid !== 0 && s?.land) flying.set(e.uid, bomblet ? BOMBLET_KIND : e.kind);
+          const own = e.sprite === null ? undefined : PROJECTILE_SOUNDS[e.sprite];
+          const s = bomblet ? BOMBLET_SOUNDS : (own ?? ATTACK_SOUNDS[e.kind]);
+          // A shot sounds where it's fired from (the tower).
+          if (s?.fire) at(out, s.fire, e.x, e.y);
+          if (e.uid !== 0 && s?.land) {
+            flying.set(e.uid, bomblet ? BOMBLET_KIND : own !== undefined ? e.sprite! : e.kind);
+          }
           chainTower = e.kind === 'chain' ? e.towerUid : -1;
           chainHits = 0;
           return;
         }
         case 'ProjectileHit':
           landing(e, out);
-          // The "wrong tool" tells: a hit that did nothing, else one that armor blunted.
-          if (e.hits > 0 && e.damage === 0) out.push(sfx(PLINK_SOUNDS.nothing));
-          else if (e.reduced) out.push(sfx(PLINK_SOUNDS.reduced));
+          // The "wrong tool" tells: a hit that did nothing (unless its shield ripples, above),
+          // else one that armor blunted.
+          if (e.hits > 0 && e.damage === 0) plink = { x: e.x, y: e.y };
+          else if (e.reduced) at(out, PLINK_SOUNDS.reduced, e.x, e.y);
           return;
-        case 'EnemyDied':
-          out.push(sfx('enemy_pop', ENEMY_POP_PITCH[e.enemy] ?? 0));
-          if (enemies.splits(e.enemy)) out.push(sfx(SPLIT_SOUND.id, 0, SPLIT_SOUND.delay));
+        case 'EnemyDied': {
+          const id = deathSound(e.enemy);
+          if (id !== null) at(out, id, e.x, e.y, ENEMY_POP_PITCH[e.enemy] ?? 0);
+          if (enemies.splits(e.enemy)) at(out, SPLIT_SOUND.id, e.x, e.y, 0, SPLIT_SOUND.delay);
           return;
+        }
         case 'EnemyLeaked':
           if (e.leak > 0) out.push(sfx('leak'));
           return;
         case 'SackBurst':
-          out.push(sfx('sack_pop'));
+          at(out, 'sack_pop', e.x, e.y);
           return;
         case 'WaveStarted':
           if (e.early) out.push(sfx('wave_call'), sfx('wave_start', 0, HORN_AFTER_CALL_SEC));
@@ -250,6 +321,7 @@ export function createEventSounds(
           ended = true;
           pendingClear = false;
           pendingForfeit = false;
+          plink = null;
           out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
           return;
         case 'HoldFireChanged':
@@ -285,12 +357,58 @@ export function createEventSounds(
           out.push(sfx(e.phase <= 1 ? s.arrive : s.phase));
           return;
         }
-        case 'BossEnded':
-          out.push(sfx(bossSounds(e.enemy).end));
-          if (!ended) out.push({ kind: 'cue', id: BOSS_END_CUE });
+        case 'BossEnded': {
+          const s = bossSounds(e.enemy);
+          out.push(sfx(s.end));
+          if (!ended) out.push({ kind: 'cue', id: s.endCue });
           return;
+        }
         case 'WreckageCleared':
           out.push(sfx(DRONE_SOUNDS.cleared));
+          return;
+        // Act II (T450). The Aelari: shields ripple and shatter, pulses and blinks tell, fire,
+        // and fizzle when Stasis cuts the tell short (one fizzle for both).
+        case 'ShieldHit':
+          // It replaces its hit's nothing-plink, if it was waiting.
+          plink = null;
+          if (e.broken) out.push(sfx(SHIELD_SOUNDS.shatter));
+          else at(out, SHIELD_SOUNDS.ripple, e.x, e.y);
+          return;
+        case 'ShieldPulse':
+          out.push(sfx(PULSE_SOUNDS[e.phase]));
+          return;
+        case 'BlinkTell':
+          out.push(sfx(BLINK_SOUNDS.tell));
+          return;
+        case 'Blinked':
+          out.push(sfx(BLINK_SOUNDS.blinked));
+          return;
+        case 'BlinkInterrupted':
+          out.push(sfx(BLINK_SOUNDS.interrupted));
+          return;
+        // The hush: the breath, the hush itself, and a runner bolting in panic.
+        case 'HushStarted':
+          out.push(sfx(HUSH_SOUNDS.tell));
+          return;
+        case 'Hushed':
+          out.push(sfx(HUSH_SOUNDS.hushed));
+          return;
+        case 'SkittishBolt':
+          out.push(sfx(HUSH_SOUNDS.bolt));
+          return;
+        // Flash Freeze's frost, and Stasis locking in when it froze anything.
+        case 'PulseBurst':
+          at(out, STASIS_SOUNDS.burst, e.x, e.y);
+          if (e.frozen > 0) out.push(sfx(STASIS_SOUNDS.lock, 0, STASIS_SOUNDS.lockAfterSec));
+          return;
+        case 'Revealed':
+          out.push(sfx(CLOAK_SOUNDS.reveal));
+          return;
+        case 'AssetHit':
+          out.push(sfx(ASSET_HIT_SOUND));
+          return;
+        case 'CheckpointReached':
+          out.push(sfx(CHECKPOINT_SOUND));
           return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
@@ -300,22 +418,10 @@ export function createEventSounds(
         case 'NotFiringAtSkitterkin':
         case 'LinkBroken':
         case 'ObjectiveProgress':
-        case 'HushStarted':
-        case 'Hushed':
         case 'TurnedHeavy':
-        case 'SkittishBolt':
-        case 'ShieldPulse':
-        case 'ShieldHit':
-        case 'BlinkTell':
-        case 'Blinked':
-        case 'BlinkInterrupted':
-        case 'PulseBurst':
         case 'TowerIncome':
-        case 'Revealed':
         case 'Cloaked':
-        case 'AssetHit':
         case 'AssetLost':
-        case 'CheckpointReached':
         case 'ClickableChanged':
         case 'Interacted':
           return;
@@ -324,6 +430,7 @@ export function createEventSounds(
       }
     },
     endFrame(out) {
+      flushPlink(out);
       const cue = WAVE_CLEAR_CUE[jingle];
       if (pendingClear && !ended && cue !== null) out.push({ kind: 'cue', id: cue });
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));

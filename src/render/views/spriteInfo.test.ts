@@ -44,7 +44,7 @@ describe('spriteInfo', () => {
     expect(headSuffix(spriteId('tower.rivet_head'), 4, 'b')).toBe('_spec_b');
   });
 
-  it('plays an idle head spec\'s own anim once specialized (T430b)', () => {
+  it("plays an idle head spec's own anim once specialized (T430b)", () => {
     const sprinkler = spriteId('tower.sprinkler_head');
     expect(headStyle(spriteId('tower.lookout_head'))).toEqual({ kind: 'idle', anim: 'look' });
     expect(idleAnim(sprinkler, 'spin', null)).toBe('spin');

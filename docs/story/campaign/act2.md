@@ -77,7 +77,7 @@ Totals count spawns; each fleeing Bunchling adds its fleeing Nibblers when it di
 - *Codex:* Mote (original: "Rig Nine Atmospheric Event. Not dangerous! [REDACTED]"), the Diggings, "Hushed" (wellness-event classification), and the crew log (the rig crew's last shifts, ending in a hand that no longer knows whose log it is; unlocked by Crew Logs: its `original` has `when: { objectiveDone: { map: 'a2_m01', objective: 'crew_logs' } }`, a story condition that reads the save). Rig Nine's Act I entry ("Status: answering.") gains its `annotated` version: Everglow's own status update, signed by Frontier Operations (crew resting, bore sealed, the humming is the machinery). The texts are in [`src/content/codex/act2.ts`](../../../src/content/codex/act2.ts).
 - *Memo after:* `memo_a2_01` *Rig Nine: A Minor Operational Hiccup!* (small print: "Rig crew wellness events are covered under Plan B.")
 
-**Medals.** Victory · Perfect Core · **Hiccup Contained:** no Hollow unit leaks (`leaks: { faction: 'hollow' }, lte: 0`; a Heavy unit is Hollow). **Objective Intel +1, Crew Logs:** clear both log wreckage tiles (`wreckageCleared` on `crew_log_bore` and `crew_log_yard`; unlocks the crew-log codex entry). Since every Skitterkin group here flees (leak 0), every leak on this map is Hollow: Hiccup Contained and Perfect Core are earned together.
+**Medals.** Victory · Perfect Core · **Hiccup Contained:** no Heavy Mote leaks: every Mote that hushed a runner on the way is stopped before the lift (`stat: 'heavyLeaks', lte: 0`; [D113](../../decisions.md#d113--2026-11-09--t420-a2m1-rig-nine)). It is not Perfect Core: plain Motes may leak. **Objective Intel +1, Crew Logs:** clear both log wreckage tiles (`wreckageCleared` on `crew_log_bore` and `crew_log_yard`; unlocks the crew-log codex entry).
 **Rewards.** Stardust 180 · Intel 3 (+1).
 **Par build.** Rivet, Thumper, Sprinkler (Cloudburst not yet), Zapcoil, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A1M5's, plus the Lookout Shack's license; the core holds 21). Thumper ×2 and the Sprinkler at the merge (the Thumpers sweep the clusters; the Sprinkler's chill slows the trunk); a Zapcoil between the roads; Rivet on the west ledge; from W8, a Zapcoil beside the yard cut and a Rivet on the east ledge. Par uses plain targeting (it shoots any runner its priorities pick) and doesn't build on the Spires road, so the Motes catch most runners before the merge; the harness's `spareFleeing` run is par with Spare runners on for every tower.
 
@@ -93,7 +93,7 @@ Totals count spawns; each fleeing Bunchling adds its fleeing Nibblers when it di
 | W9 | The cut Zapcoil and the east Rivet to T2; Orbital Strike on the cut and Suppressing Fire at the merge (8,6), 22 s in |
 | W10 | The cut Zapcoil and the conduit's Thumper to T3; Orbital Strike on the cut, 24.6 s in (the cut's packed cluster) |
 
-Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1–W10); it ends with about 520 unspent (W7's 150 Motes pay for the cut and then some). **Par's margin is the yard cut's, by design:** nothing gets through the merge; one Mote of W9's cut group, and three of W10's (its packed cluster, which the strike breaks, and the column behind it), slip past the cut Zapcoil and the east Rivet. Par wins at **17/21 (81.0%)** on every seed, the post-boss re-baseline (campaign.md §7's target 82, snapped to the 1/21 step). **The casts matter** (`#abilities`): without them W8's cut group gets through too (66.7). **Orbital Strike Mk II changes a result** (its wider blast takes one more of W10's cut cluster: 85.7); Bricks's Rapport doesn't (par casts Suppressing Fire once).
+Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1–W10); it ends with about 520 unspent (W7's 150 Motes pay for the cut and then some). **The bank stays unspent on purpose:** one more tower reaching the cut (a Rivet by the lift in W9) takes par to 100 with Perfect Core, and a tower on the Spires road from W8 saves two runners and changes nothing else; the late waves' runners are few. **Par's margin is the yard cut's, by design:** nothing gets through the merge; one Mote of W9's cut group, and three of W10's (its packed cluster, which the strike breaks, and the column behind it), slip past the cut Zapcoil and the east Rivet. Par wins at **17/21 (81.0%)** on every seed, the post-boss re-baseline (campaign.md §7's target 82, snapped to the 1/21 step), **with Hiccup Contained** (`parMedals`): the merge kills every Heavy Mote, and the cut's Motes hush no one. **The casts matter** (`#abilities`): without them W8's cut group gets through too (66.7). **Orbital Strike Mk II changes a result** (its wider blast takes one more of W10's cut cluster: 85.7); Bricks's Rapport doesn't (par casts Suppressing Fire once).
 
 **No-counter build** (`noCounterBuilds`, by category; must lose by W7, `noCounterLoseByWave`, since the splash test is W6's clusters):
 - **no-splash:** Rivets on par's merge and west-ledge tiles and between the roads, a Rivet in the bore road's bend, a Sprinkler, a Lookout beside the merge Rivet (Overwatch), a Skyhook; no Thumper, no Zapcoil; the same W6 strike. It loses to W6's clusters, and with the full catalog to W7's double cluster.
@@ -106,7 +106,7 @@ Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1
 
 | Run | Result | Integrity lost |
 |---|---|---|
-| par | wins at **81.0** (band 65–85; 17/21) | 1 in W9, 3 in W10 |
+| par | wins at **81.0** (band 65–85; 17/21), Hiccup Contained | 1 in W9, 3 in W10 |
 | par with Orbital Strike Mk II | 85.7 | 1 in W9, 2 in W10 |
 | par with Rapport: Sgt. Bricks | 81.0 | 1 in W9, 3 in W10 |
 | par without its casts | 66.7 | 1 in W8, 1 in W9, 5 in W10 |
@@ -119,7 +119,9 @@ Par's bank at each build phase: 462, 202, 157, 79, 39, 27, 71, 427, 436, 445 (W1
 | `shell_and_rivet` | 85.7 | 2 in W6, 1 in W9 |
 | do-nothing | loses at W4 | 6 in W3, 15 in W4 |
 
-Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): with W7's double cluster shifted ±0.2 s par stays at 17/21; with a cut group shifted ±0.2 s every verdict holds and par loses at most two more (the strike and the Zapcoil's chains land differently in the column).
+Robustness ([`src/balance/a2m1.test.ts`](../../../src/balance/a2m1.test.ts)): with W7's double cluster and W8's and W10's cut groups shifted ±0.2 s together, every verdict holds, W7 costs par nothing, and par loses at most two more (the strike and the Zapcoil's chains land differently in the column). Every run that wins also earns Hiccup Contained.
+
+**W7's peak stays** (T460): its 156 spawns put about 90 units on screen at once, and par's frame time there (`__sd.perf()`, about 2–3 ms in the smoke browser) matches W3's with seven; it is the wave the no-splash build loses to with the full catalog. The Spires road stays undefended by par (about 63 hushes a run, most of them in W3–W7, when par's bank is under 80): the hush is the map's lesson, and the pads at (3,4) and (4,7) are there for the player who wants to answer it.
 
 ## A2M2 · The Glass Witch
 
@@ -198,7 +200,7 @@ Totals count spawns (164 Glimmers, 399 Motes). Fleeing units leak for 0, so the 
 | W10 | Cloudburst; Rivet (11,6) in the rig pocket |
 | W11 | Time Dilation 8 s in (the rush down the road as she steps out); the pocket Rivet to T2; Rivet (16,11) on the rigs' doorstep; Orbital Strike on the hairpin (10,5), 60 s in (her second phase); Time Dilation again, 60 s in (only with QUILL's Rapport: 68 s in without it) |
 
-Par's bank at each build phase: 570, 142, 73, 8, 70, 94, 20, 46, 166, 69, 35 (W1–W11); W11's own bounties and its tripled clear bonus leave about 350 unspent at the end. **Par's margin is the core's** (the rigs come through untouched): two of W8's first cluster, one of W10's, and two of W11's surge get through, so par wins at **16/21 (76.2%)** on every seed, with both rigs intact (campaign.md §7's target 79, snapped to the 1/21 step). Her shield comes down on the back run; she crosses 70% about 58 s into W11, at the back run's west end, and the strike lands as she tells her first blink at the hairpin: she retreats after one blink, 67 s in, with about ten tiles of the branch still to go. **Glass Half Empty is the strike's:** par without it (Time Dilations only) wins with three blinks, driven off on the last drop; par without its casts loses the rigs. **QUILL's Rapport changes a result (T401):** with the 51 s cooldown the second Time Dilation lands on the surge in time, and it all dies on the road: 85.7. Orbital Strike Mk II doesn't change one (par's one strike is already on her).
+Par's bank at each build phase: 570, 142, 73, 8, 70, 94, 20, 46, 166, 69, 35 (W1–W11); W11's own bounties and its tripled clear bonus leave about 350 unspent at the end. Par spends as it earns (never more than 170 banked); the end's bank is W11's pay, with no build phase after it. **Par's margin is the core's** (the rigs come through untouched): two of W8's first cluster, one of W10's, and two of W11's surge get through, so par wins at **16/21 (76.2%)** on every seed, with both rigs intact (campaign.md §7's target 79, snapped to the 1/21 step). Her shield comes down on the back run; she crosses 70% about 58 s into W11, at the back run's west end, and the strike lands as she tells her first blink at the hairpin: she retreats after one blink, 67 s in, with about ten tiles of the branch still to go. **Glass Half Empty is the strike's:** par without it (Time Dilations only) wins with three blinks, driven off on the last drop; par without its casts loses the rigs. **That loss is fair** (T460): she is the map's boss and the casts are the answer to her, and the W10 checkpoint ([D118](../../decisions.md#d118--2026-11-09--t305b-checkpoints)) puts the player who forgot them back in W10's build phase with W1–W9 kept, two waves from the fight. **QUILL's Rapport changes a result (T401, the verdict D096 deferred here: Act II is where QUILL's Rapport pays):** with the 51 s cooldown the second Time Dilation lands on the surge in time, and it all dies on the road: 85.7. Orbital Strike Mk II doesn't change one (par's one strike is already on her).
 
 **No-counter builds** (`noCounterBuilds`, by category; both must lose by W8, `noCounterLoseByWave`, with and without the full catalog):
 - **no-shield:** Thumper, Rivet, Skyhook, Lookout (no Energy, no Soaked): Rivets on the west outcrop and in the rig pocket, Thumpers on the conduit, the thread-glass outcrop and the bend, a Lookout in the pocket. The road holds; the Glimmer columns reach the rigs (5 in W4, 5 in W5), and with the full catalog (whose Reinforced Core and Emergency Bulkhead guard only the relay) in W8.
@@ -227,7 +229,7 @@ Par's bank at each build phase: 570, 142, 73, 8, 70, 94, 20, 46, 166, 69, 35 (W1
 | `soak_and_shell` | 81.0, Glass Half Empty | 3 in W6, 1 in W7 |
 | do-nothing | loses at W4 | |
 
-Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): with the Witch shifted ±0.2 s (±1 s checked in T421) the fight plays out the same; with W11's surge and its runners, or W8, shifted ±0.2 s every verdict holds and par stays within one leak of 16/21. The surge's leaks ride on where the Thumpers' shells land in a packed cluster: shifting its Motes alone, away from their runners, can save par both (85.7, over the band).
+Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): with W8, the Witch, and W11's surge and its runners shifted ±0.2 s together (the Witch ±1 s, and each alone, checked in T421) every verdict holds, the fight plays out the same (one blink), and par stays within one leak of 16/21. The surge's leaks ride on where the Thumpers' shells land in a packed cluster: shifting its Motes alone, away from their runners, can save par both (85.7, over the band).
 
 ## A2M3 · Second Look
 
@@ -257,7 +259,7 @@ Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): wi
 
 **Waves.** 1 Skitterkin families with younglings in tow, fleeing · 2 Glimmers on the strip mine · 3 Haulers fleeing (sacks visibly young), nothing behind them · 4 one Weft Warden + Glimmers [T: heavy shield; Soaked + Zapcoil] · 5 a Mote cluster down the mine, then fleeing Skitterkin + Motes [the rock lights up as the wave starts] · 6 Lightwings ×4 over the strip mine [T: flying shields] + Glimmers · 7 Wardens ×2 + Lightwings [X] + a Mote cluster down the mine · 8 a Mote cluster down the mine, then Elders with younglings + Motes · 9 big Aelari wave · 10 Hollow push, both routes · 11 everything.
 
-**Wave data** (the data is [`src/content/maps/a2_m03/waves.ts`](../../../src/content/maps/a2_m03/waves.ts)). W3, W5–W8, W10, and W11 have a **30 s** countdown; W2, W4, and W9 a **60 s** one, so the slow runners before them (W1's younglings, W3's Haulers, W8's Elders) are off the road before the next wave's threats arrive: a player holding fire on every runner group isn't holding it on the Aelari too. W2–W11 **open 6 s into the wave**. Every Skitterkin group is `fleeing` (†) and runs the road; younglings (‡, `youngling`) run at half speed. Glimmers walk the *mine* road, Wardens the road, Lightwings the *sky*; Motes the road unless marked *mine*, **packed** at 0.2 s where marked. A fleeing group with Motes behind it leads them by 3 s ([fleeing-lead]); the big clusters come before the runners or after they've gone. Default spacing Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s, Lightwing 0.7 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s, Elder 2 s.
+**Wave data** (the data is [`src/content/maps/a2_m03/waves.ts`](../../../src/content/maps/a2_m03/waves.ts)). W3, W5–W8, W10, and W11 have a **30 s** countdown; W2, W4, and W9 a **60 s** one, so the slow runners before them (W1's younglings, W3's Haulers, W8's Elders) are off the road before the next wave's threats arrive: a player holding fire on every runner group isn't holding it on the Aelari too. W2–W11 **open 6 s into the wave**. Every Skitterkin group is `fleeing` (†) and runs the road; younglings (‡, `youngling`) run at half speed. Glimmers walk the *mine* road, Wardens the road, Lightwings the *sky*; Motes the road unless marked *mine*, **packed** at 0.2 s where marked. A fleeing group with Motes behind it leads them by 3 s ([fleeing-lead]); the big clusters come before the runners or after they've gone. Only two Motes chase the slow runners (W5's Nibblers, W8's Elders and younglings), and W10–W11's Zoomers run packed at 0.2 s, so all of them spawn before their chasers and outrun them: a player holding fire on the runners lets through only the slow runners' chasers. Default spacing Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s, Lightwing 0.7 s, Nibbler 0.8 s, Zoomer 0.5 s, Hauler 2.5 s, Elder 2 s.
 
 | Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`) | Total |
 |---|---|---|
@@ -265,13 +267,13 @@ Robustness ([`src/balance/a2m2.test.ts`](../../../src/balance/a2m2.test.ts)): wi
 | W2 | Glimmer ×4 @ 1.5, 14 | 4 |
 | W3 | Hauler† ×3, 6 | 3 |
 | W4 | Weft Warden ×1, 6 · Glimmer ×6 @ 1.2, 10 | 7 |
-| W5 | Mote ×16 packed, 6 *mine* · Nibbler† ×8, 20 · Mote ×3, 23 | 27 |
+| W5 | Mote ×16 packed, 6 *mine* · Nibbler† ×8, 20 · Mote ×2, 23 | 26 |
 | W6 | Lightwing ×4 @ 4, 6 · Glimmer ×6, 22 | 10 |
 | W7 | Weft Warden ×2 @ 4, 6 · Lightwing ×5 @ 3, 12 · Mote ×20 packed, 26 *mine* | 27 |
-| W8 | Mote ×24 packed, 6 *mine* · Elder† ×2 @ 6, 22 · Nibbler‡ ×10 @ 0.6, 22.4 · Mote ×3, 25 | 39 |
+| W8 | Mote ×24 packed, 6 *mine* · Elder† ×2 @ 6, 22 · Nibbler‡ ×10 @ 0.6, 22.4 · Mote ×2, 25 | 38 |
 | W9 | Weft Warden ×3 @ 3, 6 · Glimmer ×16, 6 · Lightwing ×8 @ 2, 26 | 27 |
-| W10 | Zoomer† ×12 @ 0.4, 6 · Mote ×4, 9 · Mote ×30 packed, 26 *mine* · Mote ×50 packed, 32 | 96 |
-| W11 | Zoomer† ×10 @ 0.4, 6 · Mote ×4, 9 · Weft Warden ×2 @ 6, 18 · Glimmer ×16, 30 · Lightwing ×14 @ 1, 40 · Mote ×40 packed, 50 · Mote ×24 packed, 56 *mine* | 110 |
+| W10 | Zoomer† ×12 @ 0.2, 6 · Mote ×4, 9 · Mote ×30 packed, 26 *mine* · Mote ×50 packed, 32 | 96 |
+| W11 | Zoomer† ×10 @ 0.2, 6 · Mote ×4, 9 · Weft Warden ×2 @ 6, 18 · Glimmer ×16, 30 · Lightwing ×14 @ 1, 40 · Mote ×40 packed, 50 · Mote ×24 packed, 56 *mine* | 110 |
 
 Fleeing units leak for 0, so the threats are the Aelari and the Hollow. **The road is the heavy-shield test:** a Warden's 200 shield regenerates (20/s after 3 s), so it has to come down and stay down along the east switchback and Terrace 3, where the pump station's Zapcoil and its Conductive Sprinkler wait; each Warden through costs 3. **The strip mine is the air test:** the Lightwings' shields (60, regenerating after 4 s) come back over the foot of the terraces if they get through the strip mine, so the benches and Terrace 3's lip have to finish them. **The mine road is the splash test:** its packed clusters drown single-target towers.
 
@@ -320,14 +322,14 @@ Par's bank at each build phase: 627, 181, 118, 84, 116, 8, 91, 83, 73, 104, 170 
 - `coil_and_shell`, Zapcoil + Thumper + Lookout: Zapcoils on all four benches (the mine road and the air), on the pump station, at the switchback's foot, and on Terrace 3; a Thumper on Terrace 3's lip by the gate; a Lookout below the pump station. **38.1, with Clear Skies:** the benches never let a Lightwing through.
 - `soak_and_shell`, Sprinkler (Soaked) + Zapcoil + Thumper + Lookout: Thumpers on the pump station and Terrace 3 into Soaked shields, the Sprinkler below the pump station (Sitting Ducks, then T3's Soak); Zapcoils on the foot and top benches and at the switchback's foot, the foot Sprinkler a Cloudburst from W9. **33.3.**
 
-**Story variants** (harness): the map's run-end flag (`runEndFlags`): **`holdFireWhile:fleeing`** (par holding fire on every runner group, wave by wave) **wins at 28.6 and sets `held_fire_second_look`** (46 of 59 fleeing units leak; the Motes behind W5's, W8's, W10's, and W11's runners walk while it holds); par (it never holds fire) and **`spareFleeing`** (the filter, 76.2) leave it unset.
+**Story variants** (harness): the map's run-end flag (`runEndFlags`): **`holdFireWhile:fleeing`** (par holding fire on every runner group, wave by wave) **wins at 57.1 (12/21) and sets `held_fire_second_look`** (55 of 59 fleeing units leak). Mercy costs integrity, never most of it ([D121](../../decisions.md#d121--2026-11-10--t422-a2m3-second-look)): the two Motes behind W5's runners and the two behind W8's catch them and walk through while it holds (2 each), and the Zoomers' chasers are still on the road when it lifts, where par's towers finish them. Par (it never holds fire) and **`spareFleeing`** (the filter, 76.2) leave it unset.
 
 **Harness runs** (every seed; margin, then integrity lost per wave):
 
 | Run | Result | Lost |
 |---|---|---|
 | par | wins at **76.2** (band 65–85; 16/21) | 3 in W9, 2 in W11 |
-| `holdFireWhile:fleeing` | 28.6, sets `held_fire_second_look` | |
+| `holdFireWhile:fleeing` | 57.1 (12/21), sets `held_fire_second_look` | 2 in W5, 2 in W8, 3 in W9, 2 in W11 |
 | `spareFleeing` | 76.2 | |
 | `alwaysCallEarly` | 23.8 | |
 | no-shield | loses in W6 | |
@@ -341,7 +343,7 @@ Par's bank at each build phase: 627, 181, 118, 84, 116, 8, 91, 83, 73, 104, 170 
 | `soak_and_shell` | 33.3 | |
 | do-nothing | loses at W5 | |
 
-Par's shift runs about 11.7 min at 1×. Robustness ([`src/balance/a2m3.test.ts`](../../../src/balance/a2m3.test.ts)): with W9's Lightwings shifted ±0.2 s (±1 s checked in T422), or W5, W7, W9, or W11 shifted ±0.2 s as a whole, par holds at 16/21 and every verdict holds.
+Par's shift runs about 11.8 min at 1×. Robustness ([`src/balance/a2m3.test.ts`](../../../src/balance/a2m3.test.ts)): with W9's Lightwings and the runners' chasers shifted ±0.2 s together, par holds at 16/21 and the hold-fire run at 12/21 (the Lightwings ±1 s, and W5, W7, W9, or W11 shifted as a whole, checked in T422; the chasers ±0.5 s in T460).
 
 ## A2M4 · Second Harvest
 

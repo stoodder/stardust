@@ -165,13 +165,19 @@ export interface AudioSample {
 
 export interface AudioHooks {
   status(): AudioSample;
-  /** Every sound effect, cue, and theme id. */
+  /** Every sound effect, cue, theme, and storm id. */
   ids(): {
     readonly sfx: readonly string[];
     readonly cues: readonly string[];
     readonly themes: readonly string[];
+    readonly storms: readonly string[];
   };
-  /** Renders a sound effect (`sfx:<id>`), cue (`cue:<id>`), theme (`theme:<id>`), or `storm` offline. */
+  /**
+   * Renders audio offline through the real synth graph (`src/audio/offline.ts`) and measures it:
+   * a sound effect (`sfx:<id>`), a cue (`cue:<id>`), one loop of a theme with every layer up
+   * (`theme:<id>`), or a worst-case storm (`storm` is Act I's, `storm:<id>` any in `ids().storms`).
+   * Not `__sd.render()`, which reports what the playfield draws. Rejects an unknown id.
+   */
   render(what: string): Promise<RenderSample>;
 }
 

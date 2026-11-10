@@ -469,7 +469,8 @@ describe("Act II's looks (T440c)", () => {
 });
 
 describe('kerbs between lanes side by side (T430b)', () => {
-  const compiled = compileContent(RAW_CONTENT).maps['a2_m02']!;
+  const maps = compileContent(RAW_CONTENT).maps;
+  const compiled = maps.a2_m02;
 
   it("kerbs A2M2's hairpin lanes, rows 4 and 5, and nowhere else", () => {
     const kerbed: string[] = [];
@@ -480,7 +481,7 @@ describe('kerbs between lanes side by side (T430b)', () => {
     }
     const expected: string[] = [];
     for (let c = 10; c <= 14; c++) expected.push(`${c},4,sw`, `${c},5,ne`);
-    expect(kerbed.sort()).toEqual(expected.sort());
+    expect(kerbed.toSorted()).toEqual(expected.toSorted());
     expect(dressTile(compiled, 12, 4).kerb).toEqual(['sw']);
   });
 
@@ -492,8 +493,8 @@ describe('kerbs between lanes side by side (T430b)', () => {
   });
 
   it('draws no kerb on a map whose lanes never lie side by side, or without routes', () => {
-    for (const id of ['a1_m01', 'a1_m02', 'a1_m05', 'a2_m01', 'a2_m03']) {
-      const m = compileContent(RAW_CONTENT).maps[id]!;
+    for (const id of ['a1_m01', 'a1_m02', 'a1_m05', 'a2_m01', 'a2_m03'] as const) {
+      const m = maps[id];
       for (let r = 0; r < m.rows; r++) {
         for (let c = 0; c < m.cols; c++) expect(kerbEdges(m, c, r), `${id} ${c},${r}`).toEqual([]);
       }

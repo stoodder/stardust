@@ -138,6 +138,13 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   // Par's own click lands on the same tick (autoplay keeps playing); the marker is reached once.
   expect(clicked.interacted).toEqual(['peeker']);
   expect(clicked.clicks).toBeGreaterThanOrEqual(1);
+  // Picked up (T430b): she lifts off the rock, fading, over a little dust.
+  await nextFrames(page);
+  await page.waitForTimeout(120);
+  await page.screenshot({
+    path: 'test-results/screens/a2m3/05b-lift-zoom.png',
+    clip: { x: at!.x - 90, y: at!.y - 70, width: 180, height: 120 },
+  });
 
   // The rescue cue: her squeak under a plate that doesn't know her name yet, then Bricks.
   const comms = page.getByTestId('comms');

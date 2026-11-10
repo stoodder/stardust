@@ -103,12 +103,7 @@ import { SpawnFlagView } from '../views/SpawnFlagView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
-import {
-  LIFT_PUFF_MS,
-  LIFT_PUFF_TILES,
-  PEEKER_MARKER,
-  peekerHold,
-} from '../views/peekerMotion.ts';
+import { LIFT_PUFF_MS, LIFT_PUFF_TILES, PEEKER_MARKER, peekerHold } from '../views/peekerMotion.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';

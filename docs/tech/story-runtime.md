@@ -75,9 +75,9 @@ Story conditions are data, not strings (`Condition` in [`content/dialogue/types.
 | `{ towers: { tower?, faction? }, gte?, lte? }` | Live towers of that tower id or faction (all towers if neither) | As things stand (a medal's on the win tick) |
 | `{ linkActive: LinkId }` | At least one pair of that synergy link is active | As things stand |
 | `{ tagRatio: { tag, of: 'leaked' \| 'killed', gte } }` | That tag's leaked or killed units ÷ its spawned units (false when none spawned) | As things stand |
-| `{ stat: RunStat, gte?, lte? }` | A run counter (`integrityLost`, `towersBuilt`, `creditsSpent`, `abilityUses`); counters only grow | Over the run |
+| `{ stat: RunStat, gte?, lte? }` | A run counter (`integrityLost`, `towersBuilt`, `creditsSpent`, `abilityUses`, …; `heavyLeaks` counts leaks by Heavy units: A2M1's Hiccup Contained is `{ stat: 'heavyLeaks', lte: 0 }`); counters only grow | Over the run |
 | `{ passedMarker: { marker, enemy? } }` | A unit of `enemy` (any enemy if omitted) went past the marker at some point: its route distance passed the route point closest to the marker (the later one where a route doubles back). Medal-exempt units never count. Latched each tick in `stats.markersPassed` | Over the run |
-| `{ leaks: { faction?, enemy? }, gte?, lte? }` | Leaks by that faction or enemy id (every leak if neither); medal-exempt units never count. Counted by movement in `stats.leaksByFaction` and `leaksByEnemy` (A2M1's Hiccup Contained: `{ leaks: { faction: 'hollow' }, lte: 0 }`) | Over the run |
+| `{ leaks: { faction?, enemy? }, gte?, lte? }` | Leaks by that faction or enemy id (every leak if neither); medal-exempt units never count. Counted by movement in `stats.leaksByFaction` and `leaksByEnemy` | Over the run |
 | `{ wreckageCleared: marker }` | The salvage drone cleared the wreckage tile under that marker (A2M1's crew logs) | Over the run |
 | `{ objectiveDone: id }` | Another optional objective of the map is `done` (never itself) | Settles when that objective does |
 | `{ flag, eq }` | `SimConfig.scriptFlags`; an unset flag never matches | Fixed for the run |

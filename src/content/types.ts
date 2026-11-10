@@ -1024,8 +1024,7 @@ export type ConditionDef<K extends IdSpace = LiveIds> =
   | {
       /**
        * Leaks this run by units of that faction (or enemy), medal-exempt units never counted
-       * (`stats.leaksByFaction`, `stats.leaksByEnemy`): Hiccup Contained is `{ leaks: { faction:
-       * 'hollow' }, lte: 0 }` (a Heavy unit is Hollow). A run atom, like `stat`.
+       * (`stats.leaksByFaction`, `stats.leaksByEnemy`). A run atom, like `stat`.
        */
       readonly leaks: { readonly faction?: EnemyFaction; readonly enemy?: K['enemy'] };
       readonly gte?: number;

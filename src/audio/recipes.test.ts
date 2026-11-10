@@ -52,7 +52,12 @@ describe('sound effect recipes', () => {
   it('cover every sound the game plays', () => {
     expect(SFX_IDS.toSorted()).toEqual(
       [
+        'aelari_hum',
+        'aelari_shatter',
         'armor_plink',
+        'asset_hit',
+        'blink',
+        'blink_tell',
         'blip.bricks',
         'blip.chitterbloom',
         'blip.gerald',
@@ -73,6 +78,10 @@ describe('sound effect recipes', () => {
         'boss_retreat',
         'bricks_ready',
         'bricks_shot',
+        'capacitor_discharge',
+        'capacitor_hum',
+        'checkpoint',
+        'cloak_steps',
         'build',
         'burrow_dig',
         'burrow_surface',
@@ -84,33 +93,50 @@ describe('sound effect recipes', () => {
         'enemy_pop',
         'flak_burst',
         'flak_fire',
+        'frost_burst',
         'gerald_chime',
         'gerald_whistle',
         'hold_fire_off',
         'hold_fire_on',
         'huddle_coo',
+        'hollow_hum',
+        'hollow_unravel',
+        'hush_tell',
+        'hushed',
         'invuln_plink',
         'leak',
         'link_chime',
         'low_integrity',
         'medal_forfeit',
+        'panic_squeak',
         'peeker_squeak',
         'reject',
+        'pulse_fire',
+        'pulse_tell',
+        'reveal_ping',
         'rivet_shot',
         'sack_pop',
+        'sad_squeak',
         'sale_kaching',
+        'scan_ping',
+        'seeker_launch',
+        'shield_ripple',
+        'shield_shatter',
         'sell',
         'sneeze',
         'sneeze_tell',
         'specialize',
         'split_pop',
         'sprinkler_pulse',
+        'stasis_lock',
         'strike_beam',
         'strike_boom',
         'strike_charge',
         'suppress_burst',
+        'tell_fizzle',
         'thumper_impact',
         'thumper_launch',
+        'tidybot_chime',
         'type_tick',
         'ui_click',
         'ui_hover',
@@ -119,6 +145,9 @@ describe('sound effect recipes', () => {
         'wave_call',
         'wave_start',
         'wing_flap',
+        'witch_arrive',
+        'witch_phase',
+        'witch_retreat',
         'zap_arc',
         'zap_jump',
       ].toSorted(),
@@ -141,6 +170,8 @@ describe('sound effect recipes', () => {
       'invuln_plink',
       'wing_flap',
       'type_tick',
+      'shield_ripple',
+      'panic_squeak',
     ] as const;
     for (const id of frequent) {
       const r = sfxRecipe(id);
@@ -207,6 +238,13 @@ describe('sound effect recipes', () => {
   });
 });
 
+/** The notes of a cue's first lead track. */
+const lead = (id: keyof typeof CUES): string[] =>
+  CUES[id].tracks
+    .find((t) => t.layer === 'lead')!
+    .pattern.split(/\s+/)
+    .filter((t) => /^[A-G]/.test(t));
+
 describe('instruments and songs', () => {
   it('instruments are valid (drums carry their own pitch)', () => {
     const problems = [
@@ -235,6 +273,28 @@ describe('instruments and songs', () => {
       const c = compileSong(song);
       expect(c.steps * c.secPerStep).toBeLessThan(5);
     }
+  });
+
+  it("Act II's theme has every layer; its stings keep the phrase's shape in minor (T450)", () => {
+    const layers = new Set(THEMES.act2_battle.tracks.map((t) => t.layer));
+    expect([...layers].toSorted()).toEqual(['base', 'drums', 'lead']);
+    // The minor-bridges sting: the six notes as Act I sang them, then a sigh off home.
+    expect(lead('bright_minor').slice(0, 6)).toEqual(['G5', 'C6', 'E6', 'F6', 'D6', 'C6']);
+    expect(lead('bright_minor').slice(6)).toEqual(['Ab5', 'G5']);
+    // The minor sting: the six notes with the third flattened.
+    expect(lead('minor_sting')).toEqual(['G5', 'C6', 'Eb6', 'F6', 'D6', 'C6']);
+  });
+
+  it('hums the jingle wrong: forward, then backwards, never in tune (the Hollow, bible §8)', () => {
+    const hum = SFX.hollow_hum.layers[0];
+    const base = hum.freq;
+    const notes = [base, ...hum.steps.map(([, m]) => base * m)];
+    expect(notes).toHaveLength(6);
+    const midi = notes.map((hz) => 69 + 12 * Math.log2(hz / 440));
+    // G–C–E, then C–D–F (F–D–C backwards), each well off its semitone.
+    expect(midi.map((m) => Math.round(m))).toEqual([55, 60, 64, 60, 62, 65]);
+    for (const m of midi.slice(1)) expect(Math.abs(m - Math.round(m))).toBeGreaterThan(0.15);
+    expect(SFX.hollow_hum.duck).toBeLessThan(1);
   });
 
   it('the Act I battle theme has every layer, and the sting is the six-note phrase', () => {

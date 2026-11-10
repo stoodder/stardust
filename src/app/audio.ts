@@ -30,7 +30,15 @@ import {
   type SfxId,
   type SoundCall,
 } from '../audio/index.ts';
-import { renderCue, renderSfx, renderStorm, renderTheme } from '../audio/offline.ts';
+import { TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
+import {
+  isStormId,
+  renderCue,
+  renderSfx,
+  renderStorm,
+  renderTheme,
+  STORMS,
+} from '../audio/offline.ts';
 import type { SpeakerId } from '../content/dialogue/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
@@ -42,6 +50,7 @@ import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import type { AudioHooks } from './testHookTypes.ts';
 import { settings } from './settings.ts';
+import { createTidyChimes } from './tidybotChimes.ts';
 
 /** The music's level under a radio line (it ducks so the line reads as spoken). */
 export const RADIO_DUCK = 0.55;
@@ -192,12 +201,21 @@ export function installAudio(enabled: boolean): () => void {
 export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const { sim } = host;
   const enemies = sim.config.content.enemies;
-  // The wave-clear jingle is the map's presentation dial (core-loop.md § 6.7).
-  const sounds = createEventSounds(presentationOfMap(sim.map).jingle, {
-    splits: (id) => Object.hasOwn(enemies, id) && (enemies[id]?.split ?? null) !== null,
-  });
-  // What no event announces (digs, a sneeze's tell, a flock, the drone), from the state.
+  const enemy = (id: string) => (Object.hasOwn(enemies, id) ? (enemies[id] ?? null) : null);
+  // The wave-clear jingle and the Skitterkin's death are the map's presentation dials (core-loop.md
+  // § 6.7).
+  const dials = presentationOfMap(sim.map);
+  // What no event announces (digs, a sneeze's tell, a flock, the drone, a cloak's footsteps, a
+  // charge's hum), from the state; and where the Hollow units stand, for their quiet.
   const field = createFieldSounds(clearTicksFor(sim.config.modifiers));
+  const sounds = createEventSounds(dials, {
+    splits: (id) => (enemy(id)?.split ?? null) !== null,
+    faction: (id) => enemy(id)?.faction ?? null,
+    quietAt: (x, y) => field.quietAt(x, y),
+  });
+  // The Tidybots' chime as each drone finishes its sweep (render draws the sweep).
+  const tidy = createTidyChimes(dials.tidybots !== 'off', sim.map.waves.length);
+  const chimes: number[] = [];
   const calls: SoundCall[] = [];
   /** Ability zones waiting to land, with the sounds they land with. */
   let zones: { uid: number; land: readonly SfxId[] }[] = [];
@@ -208,6 +226,12 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     if (e.type === 'AbilityUsed' && e.uid !== 0) {
       const s = ABILITY_SOUNDS[e.ability];
       if (s !== undefined) zones.push({ uid: e.uid, land: s.land });
+    } else if (e.type === 'EnemyDied') {
+      if (enemy(e.enemy)?.faction === 'skitterkin') tidy.died();
+    } else if (e.type === 'WaveCleared') {
+      tidy.cleared(e.wave, sim.state.tick);
+    } else if (e.type === 'MapWon' || e.type === 'MapLost') {
+      tidy.ended();
     }
     playCalls(calls);
   };
@@ -224,6 +248,11 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     sounds.endFrame(calls);
     field.frame(s, calls);
     playCalls(calls);
+    tidy.due(s.tick, chimes);
+    for (const bot of chimes) {
+      engine.play(TIDYBOT_SOUNDS.chime, { pitch: bot * TIDYBOT_SOUNDS.pitchPerBot });
+    }
+    chimes.length = 0;
     if (zones.length > 0) {
       const landed = zones.filter((z) => !zoneAlive(z.uid));
       if (landed.length > 0) {
@@ -269,10 +298,16 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
 export function audioTestHooks(): AudioHooks {
   return {
     status: audioStatus,
-    ids: () => ({ sfx: SFX_IDS, cues: Object.keys(CUES), themes: Object.keys(THEMES) }),
+    ids: () => ({
+      sfx: SFX_IDS,
+      cues: Object.keys(CUES),
+      themes: Object.keys(THEMES),
+      storms: Object.keys(STORMS),
+    }),
     render(what) {
-      if (what === 'storm') return renderStorm();
       const [kind, id = ''] = what.split(':');
+      if (kind === 'storm' && id === '') return renderStorm();
+      if (kind === 'storm' && isStormId(id)) return renderStorm(id);
       if (kind === 'sfx' && isSfxId(id)) return renderSfx(id);
       if (kind === 'cue' && isCueId(id)) return renderCue(id);
       if (kind === 'theme' && isThemeId(id)) return renderTheme(id);

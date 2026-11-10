@@ -32,6 +32,7 @@ import {
   type GroundGrid,
   type TileDressing,
 } from '../render/views/groundTiles.ts';
+import { OUTLINE_PAD, outlineImage, silhouetteContour } from '../render/vfx/clickOutline.ts';
 import { logError } from './log.ts';
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -291,7 +292,48 @@ function spriteCard(b: BakedSprite, count: Counters): HTMLElement {
     block.append(el('div', 'vlabel', label), panels);
     variants.append(block);
   }
+  if (b.id === 'prop.peeker') variants.append(clickableBlock(byKey, zoom));
   return card;
+}
+
+/** The Peeker frame the clickable outline hugs on A2M3 (Pebble holding on to the rock; T409). */
+const CLICKABLE_FRAME = 'hold_0';
+
+/**
+ * The clickable-object outline (T409, T430b; art-direction §6) round Pebble on her rock, as
+ * ClickableView draws it: three steps of the march on dark, and one on light (the pale sand
+ * paths it must read on). It sits beside the Peeker's last row, so it adds no height.
+ */
+function clickableBlock(byKey: ReadonlyMap<string, BakedFrame>, zoom: number): HTMLElement {
+  const block = el('div', 'variant');
+  const f = byKey.get(frameKey('prop.peeker', DEFAULT_VARIANT, CLICKABLE_FRAME));
+  if (f === undefined) return block;
+  const { w, h, data } = f.image;
+  const alpha = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) alpha[i] = data[i * 4 + 3] ?? 0;
+  const contour = silhouetteContour(alpha, w, h);
+  const outlined = (phase: number): { name: string; f: BakedFrame } => {
+    const img = outlineImage(contour, alpha, w, h, phase);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const s = (y * w + x) * 4;
+        if ((data[s + 3] ?? 0) === 0) continue;
+        const d = ((y + OUTLINE_PAD) * img.w + x + OUTLINE_PAD) * 4;
+        for (let k = 0; k < 4; k++) img.data[d + k] = data[s + k] ?? 0;
+      }
+    }
+    return {
+      name: `phase ${phase}`,
+      f: { key: `clickable.${phase}`, image: img, anchor: f.anchor },
+    };
+  };
+  const panels = el('div', 'panels');
+  panels.append(
+    panel([0, 1, 2].map(outlined), zoom, 'dark', null),
+    panel([outlined(0)], zoom, 'light', null),
+  );
+  block.append(el('div', 'vlabel', `clickable outline (${CLICKABLE_FRAME}, A2M3)`), panels);
+  return block;
 }
 
 /** Portraits get their own section and card (portraitCard). */

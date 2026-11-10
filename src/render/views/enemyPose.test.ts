@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { battleConfig } from '../../app/battleSetup.ts';
-import { createSim, type Sim } from '../../sim/index.ts';
+import { createSim, type Enemy, type Sim } from '../../sim/index.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   blankFacts,
@@ -126,9 +126,9 @@ describe('poseFacts on the dev boss range', () => {
   });
 });
 
-describe('poseFacts for the Glass Witch (T430b, D123)', () => {
-  const isWitch = (e: LiveEnemy): boolean => e.def!.id === 'dev_glass_witch';
+const isWitch = (e: LiveEnemy): boolean => e.def!.id === 'dev_glass_witch';
 
+describe('poseFacts for the Glass Witch (T430b, D123)', () => {
   it('raises her arms through a shield pulse tell and holds the blink pose through a blink tell', () => {
     const sim = createSim(battleConfig('dev_witch', 1));
     sim.enqueue({ type: 'callWave' });
@@ -142,7 +142,9 @@ describe('poseFacts for the Glass Witch (T430b, D123)', () => {
     ).toBe('tell');
     // Phase 2 (pushed there by hand): a blink tell outranks the pulse she keeps.
     const pool = sim.state.enemies;
-    const witch = pool.items.slice(0, pool.used).find((e) => e.alive && isWitch(e))!;
+    const found = pool.items.slice(0, pool.used).find((e) => e.alive && isWitch(e))!;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test sets her timers directly
+    const witch = found as Enemy;
     witch.bossPhase = 2;
     const blink = witch.def!.boss!.phases[1]!.blink!;
     witch.blinkTicks = blink.tellTicks;

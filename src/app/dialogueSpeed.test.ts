@@ -48,8 +48,10 @@ describe('holdAtSpeedMs (D126)', () => {
   });
 });
 
+const noop = (): void => {};
+
 describe('the radio at 2× (D126)', () => {
-  let unbind: () => void = () => {};
+  let unbind: () => void = noop;
   let host: Host<IdSpace>;
   const emit = (e: Ev): void => host.bus.emit(e);
 

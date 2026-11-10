@@ -51,5 +51,9 @@ export function noCounterLoseByWave(waveCount: number): number {
   return Math.floor(waveCount * NO_COUNTER_LOSE_BY_SHARE);
 }
 
-/** Vitest's per-test timeout for tests that re-run a whole map's harness (a1m1/a1m2.test.ts). */
-export const HARNESS_TEST_TIMEOUT_MS = 30_000;
+/**
+ * Vitest's per-test timeout for the map balance tests (src/balance/<map>.test.ts), each of which
+ * re-runs a whole map's harness at most once (T460). One Act II harness run takes about 4 s on a
+ * quiet machine; the margin is for a gate sharing the machine with other agents' (load 5×+).
+ */
+export const HARNESS_TEST_TIMEOUT_MS = 60_000;

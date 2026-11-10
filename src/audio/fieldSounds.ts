@@ -1,10 +1,16 @@
 // Sounds from the field's state (pure): what no sim event announces, read from the state after each
 // frame (architecture.md § Audio). A burrower digging in and surfacing, a boss's sneeze tell and
-// the sneeze itself, a huddle forming, a Puffwing flock's wingbeats, and the salvage drone flying
-// and working. Timing is in sim ticks, so a paused battle is quiet. It reads only public sim
+// the sneeze itself, a huddle forming, the loops while a kind of enemy is on the field (a
+// Puffwing flock's wingbeats, the Aelari's hum, the Hollow humming the jingle wrong), a hidden
+// cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges, and the salvage drone
+// flying and working. It also keeps where the Hollow units stand, for their quiet (`quietAt`,
+// HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet. It reads only public sim
 // state (the same fields render reads), and never touches it.
+import type { CompiledAttack } from '../content/compiled.ts';
 import { BOSS_ABILITY_TELL_SEC } from '../content/rules.ts';
+import type { EnemyFaction } from '../content/types.ts';
 import { secToTicks, TICK_HZ } from '../shared/time.ts';
+import { bonusChargeTicks } from '../sim/index.ts';
 import {
   BURROW_SOUNDS,
   bossSounds,
@@ -12,6 +18,7 @@ import {
   ENEMY_LOOPS,
   HUDDLE_SOUND,
 } from './eventTables.ts';
+import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
 import { sfx, type SoundCall } from './eventSounds.ts';
 
 /** A boss's tell is the last BOSS_ABILITY_TELL_SEC of its ability timer (sim/enemyAbilities/boss.ts). */
@@ -23,6 +30,9 @@ export interface FieldEnemy {
   readonly alive: boolean;
   readonly def: {
     readonly id: string;
+    readonly faction: EnemyFaction;
+    /** Cloaked (the `cloaked` trait): hidden unless Revealed (sim `cloakedOut`). */
+    readonly cloaked: boolean;
     readonly boss: {
       readonly phases: readonly {
         readonly spawn: object | null;
@@ -37,12 +47,28 @@ export interface FieldEnemy {
   readonly abilityTicks: number;
   readonly abilityCount: number;
   readonly leaving: boolean;
+  /** Position in tiles. */
+  readonly x: number;
+  readonly y: number;
+  /** Ticks it stays Revealed (0: a cloaked unit is hidden). */
+  readonly revealedTicks: number;
+}
+
+/** The tower fields the field sounds read (a live sim Tower passes as is): a charge's progress. */
+export interface FieldTower {
+  readonly uid: number;
+  readonly alive: boolean;
+  readonly tierDef: { readonly attack: CompiledAttack | null } | null;
+  readonly chargeTicks: number;
+  readonly flatRate: number;
+  readonly pctRate: number;
 }
 
 /** The state the field sounds read (the live SimState passes as is). */
 export interface FieldState {
   readonly tick: number;
   readonly enemies: { readonly items: readonly FieldEnemy[]; readonly used: number };
+  readonly towers: { readonly items: readonly FieldTower[]; readonly used: number };
   readonly wreckage: { readonly queue: readonly number[]; readonly progressTicks: number };
 }
 
@@ -63,6 +89,16 @@ export function spawnTelling(e: FieldEnemy): boolean {
 export interface FieldSounds {
   /** Appends the sounds the field's changes since the last frame play to `out`. */
   frame(state: FieldState, out: SoundCall[]): void;
+  /**
+   * Whether (x, y) (tiles) lies within HOLLOW_QUIET's radius of a live Hollow unit, as the last
+   * frame left them (the event sounds' `quietAt`).
+   */
+  quietAt(x: number, y: number): boolean;
+}
+
+/** A hidden cloaked unit (mirrors sim `cloakedOut`; a burrowed or leaving one makes no steps). */
+function hidden(e: FieldEnemy): boolean {
+  return e.def !== null && e.def.cloaked && e.revealedTicks <= 0 && !e.burrowed && !e.leaving;
 }
 
 /** Field sounds for one battle; `clearTicks` is the drone's time per tile (sim `clearTicksFor`). */
@@ -78,17 +114,44 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   /** When each looping enemy sound plays next (sim tick), while that enemy is on the field. */
   const loopAt = new Map<string, number>();
   const present = new Set<string>();
+  /** When the next hidden footsteps play (sim tick); -1: none on the field last frame. */
+  let stepsAt = -1;
+  const stepsEvery = Math.max(1, Math.round(CLOAK_SOUNDS.everySec * TICK_HZ));
+  /** The live Hollow units' positions as of the last frame (`hollowN` of them). */
+  const hollowX: number[] = [];
+  const hollowY: number[] = [];
+  let hollowN = 0;
+  const quietR2 = HOLLOW_QUIET.radiusTiles * HOLLOW_QUIET.radiusTiles;
+  /** Each charging tower's last hum step this charge (CHARGE_SOUNDS), and this frame's. */
+  let charges = new Map<number, number>();
+  let nextCharges = new Map<number, number>();
   const workEvery = Math.max(1, Math.round(DRONE_SOUNDS.workEverySec * TICK_HZ));
   const flyTicks = clearTicks * DRONE_SOUNDS.flyFrac;
   let head = -1;
   let workAt = -1;
   return {
+    quietAt(x, y) {
+      for (let i = 0; i < hollowN; i++) {
+        const dx = hollowX[i]! - x; // i < hollowN ≤ length
+        const dy = hollowY[i]! - y;
+        if (dx * dx + dy * dy <= quietR2) return true;
+      }
+      return false;
+    },
     frame(state, out) {
       const { items, used } = state.enemies;
       present.clear();
+      hollowN = 0;
+      let anyHidden = false;
       for (let i = 0; i < used; i++) {
         const e = items[i]!; // i < used ≤ items.length
         if (!e.alive || e.def === null) continue;
+        if (e.def.faction === HOLLOW_QUIET.faction && !e.leaving) {
+          hollowX[hollowN] = e.x;
+          hollowY[hollowN] = e.y;
+          hollowN++;
+        }
+        if (hidden(e)) anyHidden = true;
         // Digging in and surfacing (a Digger, or a boss's burrow).
         const was = burrowed.get(e.uid);
         if (was !== undefined && was !== e.burrowed) {
@@ -130,6 +193,31 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
         out.push(sfx(loop.id));
         loopAt.set(id, state.tick + Math.max(1, Math.round(loop.everySec * TICK_HZ)));
       }
+      // A hidden cloaked unit's footsteps: one voice for all of them, on sim time.
+      if (!anyHidden) stepsAt = -1;
+      else if (state.tick >= stepsAt) {
+        out.push(sfx(CLOAK_SOUNDS.steps));
+        stepsAt = state.tick + stepsEvery;
+      }
+      // A charge attack's hum, a step higher at each quarter of its charge.
+      const towers = state.towers;
+      for (let i = 0; i < towers.used; i++) {
+        const bank = towers.items[i]!; // i < used ≤ items.length
+        const attack = bank.tierDef?.attack ?? null;
+        if (!bank.alive || attack?.kind !== 'charge' || bank.chargeTicks <= 0) continue;
+        const full = bonusChargeTicks(attack, bank);
+        const step = Math.min(
+          CHARGE_SOUNDS.steps - 1,
+          Math.floor(((bank.chargeTicks - 1) * CHARGE_SOUNDS.steps) / Math.max(1, full)),
+        );
+        const last = charges.get(bank.uid) ?? -1;
+        if (step > last) out.push(sfx(CHARGE_SOUNDS.hum, step * CHARGE_SOUNDS.pitchPerStep));
+        nextCharges.set(bank.uid, Math.max(step, last));
+      }
+      const c = charges;
+      charges = nextCharges;
+      nextCharges = c;
+      nextCharges.clear();
       // The salvage drone: it flies out to each tile (or home once the queue is empty), then works.
       const w = state.wreckage;
       const now = w.queue.length > 0 ? w.queue[0]! : -1; // length > 0

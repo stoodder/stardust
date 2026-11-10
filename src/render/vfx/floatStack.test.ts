@@ -26,7 +26,11 @@ describe('stackFloat (T334, T332)', () => {
       placed.push(y);
       if (y !== null) slots.push(at(100, y, 12));
     }
-    expect(placed.slice(0, FLOAT_STACK_ROWS)).toEqual([50, 50 - FLOAT_ROW_PX, 50 - 2 * FLOAT_ROW_PX]);
+    expect(placed.slice(0, FLOAT_STACK_ROWS)).toEqual([
+      50,
+      50 - FLOAT_ROW_PX,
+      50 - 2 * FLOAT_ROW_PX,
+    ]);
     expect(placed.slice(FLOAT_STACK_ROWS).every((y) => y === null)).toBe(true);
   });
 });

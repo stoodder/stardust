@@ -13,13 +13,13 @@ import type { SfxRecipe } from '../types.ts';
 const HUM_HZ = 196;
 /**
  * The hum's notes over HUM_HZ, each `[at s, ratio]`: G–C–E (forward) then C–D–F (F–D–C
- * backwards), every one off by its own cents (−35, +20, −50, +30, −40): out of tune, half
+ * backwards), every one off by its own cents (−35, +20, −45, +30, −40): out of tune, half
  * backwards (bible §8).
  */
 const HUM_STEPS = [
   [0.45, 1.3348 * 0.98],
   [0.9, 1.6818 * 1.0116],
-  [1.35, 1.3348 * 0.9715],
+  [1.35, 1.3348 * 0.9743],
   [1.8, 1.4983 * 1.0175],
   [2.25, 1.7818 * 0.9772],
 ] as const;
@@ -33,7 +33,7 @@ export const HOLLOW_SFX = {
   hollow_hum: {
     gain: 0.3,
     priority: 2,
-    minGapMs: 4000,
+    minGapMs: 2000,
     maxVoices: 1,
     duck: 0.45,
     layers: [
@@ -98,7 +98,7 @@ export const HOLLOW_SFX = {
    * the runner's tiny alarmed "eep?" on top.
    */
   hush_tell: {
-    gain: 0.28,
+    gain: 0.36,
     priority: 2,
     minGapMs: 200,
     maxVoices: 2,

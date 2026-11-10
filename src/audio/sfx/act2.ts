@@ -12,7 +12,7 @@ export const ACT2_SFX = {
    * soft, muffled pads, a loop while anything hidden walks (one voice however many).
    */
   cloak_steps: {
-    gain: 0.2,
+    gain: 0.36,
     priority: 0,
     minGapMs: 250,
     maxVoices: 1,
@@ -23,7 +23,7 @@ export const ACT2_SFX = {
       freq: 440,
       filter: { type: 'lowpass' as const, freq: 500, q: 1.5 },
       env: { a: 0.004, d: 0.05, s: 0, r: 0.03 },
-      gain: 0.6,
+      gain: 0.8,
     })),
   },
   /** A cloaked unit is Revealed (Revealed): a short sonar "ping" with a thin echo. */
@@ -227,7 +227,7 @@ export const ACT2_SFX = {
    * sound per volley (the gap merges the four shots' events into it).
    */
   seeker_launch: {
-    gain: 0.26,
+    gain: 0.4,
     priority: 1,
     minGapMs: 400,
     maxVoices: 1,
@@ -243,7 +243,7 @@ export const ACT2_SFX = {
         q: 2,
       },
       env: { a: 0.005, d: 0.08, s: 0, r: 0.04 },
-      gain: 0.55,
+      gain: 0.8,
     })),
   },
   /**

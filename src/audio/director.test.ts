@@ -52,7 +52,8 @@ describe('battle music', () => {
     });
   });
 
-  it('falls back to the Act I theme for acts without one yet', () => {
+  it("plays Act II's theme in Act II, and falls back to Act I's for acts without one yet", () => {
+    expect(battleMusic({ ...MOOD, act: 2 }).theme).toBe('act2_battle');
     expect(battleMusic({ ...MOOD, act: 3 }).theme).toBe('act1_battle');
   });
 

@@ -116,7 +116,13 @@ export class PeekerView {
       .setDisplayOrigin(anchor.x, anchor.y)
       .setDepth(worldDepth(pos.y, 'prop', this.tile & TIE_MASK));
     layers.world.add(this.#img);
-    this.#lift = new Phaser.GameObjects.Image(scene, pos.x, pos.y, this.#held.texture, this.#held.frame)
+    this.#lift = new Phaser.GameObjects.Image(
+      scene,
+      pos.x,
+      pos.y,
+      this.#held.texture,
+      this.#held.frame,
+    )
       .setDisplayOrigin(this.#heldAnchor.x, this.#heldAnchor.y)
       // Just over the bare rock (a tie-break step), so she rises off it rather than into it.
       .setDepth(this.#img.depth + 1e-5)

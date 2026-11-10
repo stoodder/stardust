@@ -380,7 +380,7 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | A1M5 | 3 | 4 | 6 | 81 | Boss; the Quiet Wave; stinger |
 | A2M1 | 4 | 4 | 7 | 81 | Re-baseline after the boss (17/21; the target 82 snapped to Reinforced Core 1's 1/21 steps); the margin is the yard cut's, W9–W10 |
 | A2M2 | 4 | 5 | 6 | 76 | First boss of Act II and the first Protect map; 16/21 (the target 79 snapped to 1/21 steps, as A2M1's); the margin is the core's, W8–W11, the rigs untouched |
-| A2M3 | 5 | 5 | 4 | 76 | Deliberate low novelty: room to look; 16/21 (the target 77 snapped to 1/21 steps); the margin is W9's Lightwings and W11's Motes |
+| A2M3 | 5 | 5 | 4 | 76 | Deliberate low novelty: room to look; 16/21 (the target 77 snapped to 1/21 steps); the margin is W9's Lightwings and W11's Motes; holding fire on every runner costs 4 more (57) |
 | A2M4 | 6 | 6 | 6 | 74 | The midpoint |
 | A2M5 | 6 | 6 | 8 | 71 (escort) | Overloaded by design; split trigger in §1 |
 | A2M6 | 6 | 7 | 5 | 68 | Warm, then dark |
@@ -391,6 +391,8 @@ Tone: 1 = pure whimsy, 10 = grief. Difficulty: relative effort on Standard. Nove
 | A3M5 | 7 | 9 | 6 | 57 | Hitting back; the difficulty peak before the finale |
 | A3M6 | 6 | 8 | 6 | 60 (escort) | Hope; Waykeeper; a power trip |
 | FIN | 8 → 2 | 10 | 4 | 48 (escort) | Tear beat 3, then dawn |
+
+**Act II as built so far (T460):** par 81.0 → 76.2 → 76.2, Story wins on all three (100, 87.1, 100), runtimes at 1× 9.4 / 9.4 / 11.8 min (maps.md §6.1's 9–13). The R&D picks change a result on A2M1 (Orbital Strike Mk II, 85.7) and A2M2 (QUILL's Rapport, 85.7: the Act I curve's deferred verdict, [act1.md](campaign/act1.md), lands here); Bricks's Rapport changes nothing in Act II so far.
 
 **Two chains.** Defend and Protect par margins fall monotonically (each ≤ the previous + 5) inside every act's band ([../tech/conventions.md](../tech/conventions.md#balance-sims-npm-run-sim)): A1M1 → A2M4, then A2M6, A3M2, A3M4, A3M5. A2M1 uses its post-boss re-baseline, A3M3 is excluded, and A3M4 is checked against A3M2. Escort maps form their own band by the same rule: A2M5 → A3M1 → A3M6 → FIN.
 
