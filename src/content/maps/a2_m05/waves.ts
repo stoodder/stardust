@@ -66,16 +66,16 @@ export const waves = defineWaves([
   // W3 · Blinkstriders + Veilwalkers [C]
   {
     countdownSec: COUNTDOWN,
-    groups: [road('blinkstrider', 3, OPEN, 2), road('veilwalker', 6, OPEN + 4, 3)],
+    groups: [road('blinkstrider', 2, OPEN, 3), road('veilwalker', 6, OPEN + 5, 3.5)],
   },
   // W4 · Lightwings over the valley + Cantors down the road [X], Veilwalkers in their shadow
   {
     countdownSec: COUNTDOWN,
     groups: [
-      g('lightwing', 5, 'sky', OPEN, 1.2),
+      g('lightwing', 4, 'sky', OPEN, 1.5),
       road('cantor', 2, OPEN + 2, 4),
-      road('glimmer', 6, OPEN + 3, 1.0),
-      road('veilwalker', 6, OPEN + 8, 3),
+      road('glimmer', 8, OPEN + 3, 1.0),
+      road('veilwalker', 6, OPEN + 14, 3.5),
     ],
   },
   // W5 · the Sunderglass Penitent, alone (shield wall and recharge pulse; cloaked shards when

@@ -129,8 +129,8 @@ describe('A2M5 on the radio', () => {
   });
 
   it("Bricks tags the earliest turret 'Dele' at the first wave clear (campaign.md § 6.3)", () => {
-    emit({ type: 'TowerBuilt', uid: 7, tower: 'rivet', tile: { x: 1, y: 1 }, cost: 100 });
-    emit({ type: 'TowerBuilt', uid: 8, tower: 'thumper', tile: { x: 2, y: 1 }, cost: 120 });
+    emit({ type: 'TowerBuilt', uid: 7, tower: 'rivet', tile: [1, 1], cost: 100 });
+    emit({ type: 'TowerBuilt', uid: 8, tower: 'thumper', tile: [2, 1], cost: 120 });
     at(60);
     emit({ type: 'WaveCleared', wave: 1, bonus: 20 });
     expect(hud.nameTag.value).toEqual({ uid: 7, text: 'Dele' });

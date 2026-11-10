@@ -3,6 +3,11 @@
 // player's first choice, Clock in), a scene with a choice
 // that pauses play and puts the speed back, a full-screen scene, a bark on the comms panel with
 // its portrait, and a bark's reply button. `?test=1` keeps dialogue off unless `&dialogue=1`.
+// The typewriter and the radio's holds run on the page's clock: where a step must land while a
+// line is still typing, or while a button is still up, the test pauses the clock (Playwright's
+// `page.clock`), so a loaded machine can't let the line finish (or the bark go) between two
+// steps (T513: the keyboard-pick flow failed under the gate's load, its answer typed out before
+// the Enter meant to finish it).
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -17,8 +22,16 @@ async function readLine(page: Page, next: Locator): Promise<void> {
   await page.keyboard.press('Enter');
 }
 
+/** Stops the page's clock where it is (time, timers, and frames hold until `resume`). */
+async function pauseClock(page: Page): Promise<void> {
+  const now = await page.evaluate(() => Date.now());
+  await page.clock.pauseAt(now + 1);
+}
+
 /** Starts A1M1 from the Title (a new save), with its briefing up. */
 async function startShift(page: Page): Promise<void> {
+  // The clock is installed (running as usual) so a test can pause it (`pauseClock`).
+  await page.clock.install();
   await page.goto(URL);
   await waitForReady(page);
   await expect(page.getByRole('button', { name: 'Start shift' })).toBeFocused();
@@ -72,6 +85,9 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Shift briefing' })).toBeHidden();
   await page.evaluate(() => globalThis.__sd!.setSpeed(2));
+  // The page's clock holds from here to the scene's end, so each line is still typing when its
+  // first Enter lands, however slow the machine (the scene's own pause is checked by the tick).
+  await pauseClock(page);
   await page.evaluate(() => globalThis.__sd!.dialogue.play('a1_m01_cue_dev_survey'));
   const scene = page.getByRole('dialog', { name: 'Comms' });
   await expect(scene).toBeVisible();
@@ -96,8 +112,11 @@ test('dialogue: a scene with a choice pauses play, takes a keyboard pick, and re
   await expect(next).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(next).toHaveText('Next');
-  // The sim didn't move under the scene.
+  // The sim didn't move under the scene, even with time running (at 2×, a second is 120 ticks).
+  await page.clock.resume();
+  await page.waitForTimeout(1000);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(tick);
+  await expect(next).toHaveText('Next');
   await page.keyboard.press('Enter');
   await expect(scene).toBeHidden();
   // The speed came back.
@@ -141,6 +160,7 @@ test('dialogue: a full-screen scene, and Esc skips it', async ({ page }) => {
 
 test('dialogue: barks on the comms panel with a portrait, and a reply button', async ({ page }) => {
   // Fast text (T461): lines show whole and the panel's holds run shorter.
+  await page.clock.install();
   await page.goto('/?test=1&skipIntro=1&seed=1&dialogue=1&fasttext=1');
   await waitForReady(page);
   // The first leak: QUILL's bark, with its portrait. It queues behind the bank nudge if that
@@ -161,8 +181,12 @@ test('dialogue: barks on the comms panel with a portrait, and a reply button', a
   await page.evaluate(() => globalThis.__sd!.dialogue.bark('quill_map_start_a1_99'));
   const reply = comms.getByRole('button', { name: "Who's there?" });
   await expect(reply).toBeVisible({ timeout: 15_000 });
+  // The button stays only for its bark's hold (1.5 s under fast text): the clock holds while the
+  // shot is taken and the button pressed, so a slow screenshot can't outlast it (T513's flake).
+  await pauseClock(page);
   await shot(page, 'dialogue', 8, 'bark-button');
   await reply.click();
   await expect(comms).toContainText('Lettuce!');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.clock.resume();
 });
