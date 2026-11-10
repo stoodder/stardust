@@ -6,7 +6,7 @@
 // (−20% speed, abilities interrupted and blocked; enemies.md § 2.4).
 //
 // Live since T507: the echo is sim/attacks/echo.ts, Unnerved systems/status.ts `applyUnnerved`.
-// Sprites: placeholders under their final ids (T540b).
+// Sprites: content/sprites/towers/mindspike.ts (T540b).
 import { defineTower } from '../define.ts';
 
 export const mindspike = defineTower({

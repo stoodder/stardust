@@ -10,7 +10,7 @@
 // last beam tick by 1 s (so a held beam keeps it up, and it lapses 1 s after the beam moves on);
 // All-Seeing's area Mark is sim/systems/markArea.ts (AREA_MARK_SEC, the same 1 s); Truthlight's
 // `noEvade` is systems/status.ts `evadeBlocked` and systems/detection.ts. Lightsong (the Prism)
-// adds +5% to every Mark it lands. Sprites: placeholders under their final ids (T540b).
+// adds +5% to every Mark it lands. Sprites: content/sprites/towers/lantern.ts (T540b).
 import { DEFAULT_BEAM_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 

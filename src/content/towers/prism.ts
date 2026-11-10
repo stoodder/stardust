@@ -8,8 +8,8 @@
 //
 // The beam's rules are sim/attacks/beam.ts's (T504): `damage` is per second, landing in 0.25 s beam
 // ticks, and `ratePerSec` restates that tick (4/s): a fire-rate bonus means more beam ticks. The
-// ramp is linear (+`rampPctPerSec` of the base each second held). Sprites: placeholders under
-// their final ids (T540b).
+// ramp is linear (+`rampPctPerSec` of the base each second held). Sprites:
+// content/sprites/towers/prism.ts (T540b).
 import { DEFAULT_BEAM_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 
