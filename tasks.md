@@ -241,7 +241,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [x] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
 - [x] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
 - [x] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
-- [~] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
+- [x] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
 - [x] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
 - [x] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
 - [~] **T530b** World render: darkness polish (lamps, Prism, the dome window), Tidybots at Intake B (T501f), the vats; T501k's LightingView/TidybotView allocations.
@@ -257,7 +257,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 
 Carry-overs from M4, folded in:
 
-- [ ] **T501a** (→ T541) M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
+- [x] **T501a** (→ T541) M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
 - [ ] **T501b** (→ T502) M5: a cloak smoke flow with the Veilwalker (no cloaked unit ships in M4).
 - [ ] **T501c** (→ T520/T521/T522 (Crane, Capacitor Bank, Seeker Swarm alts); the Harpoon/Crane/Flak/Magnet alts → M6 (A3M2)) M5: give the first maps with armored flyers or tanks alt builds that use the Harpoon, the Crane, Seeker Swarm / Capacitor Bank / Flak Curtain / Overload (no campaign map exercises them yet; 0.5/s and 6 tiles/s are first-pass numbers).
 - [x] **T501d** (→ T540a + T530a) M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
