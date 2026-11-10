@@ -103,7 +103,12 @@ import { SpawnFlagView } from '../views/SpawnFlagView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
-import { PEEKER_MARKER, peekerHold } from '../views/peekerMotion.ts';
+import {
+  LIFT_PUFF_MS,
+  LIFT_PUFF_TILES,
+  PEEKER_MARKER,
+  peekerHold,
+} from '../views/peekerMotion.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
@@ -541,7 +546,15 @@ export class BattleScene extends Phaser.Scene {
     const hovered = this.#hover.pointerTile(true).index === p.tile;
     const scripted = Object.hasOwn(this.#deps.sim.map.clickables, PEEKER_MARKER);
     const hold = peekerHold(scripted, state.clickable);
+    const was = p.hold;
     p.update(delta, played ? delta : 0, state.enemies, hovered, hold);
+    // Pebble picked up (T430b): a little dust off the rock as she lifts away.
+    if (was === 'holding' && hold === 'empty') {
+      const at = this.#deps.sim.map.markers[PEEKER_MARKER];
+      if (at !== undefined) {
+        this.#fx.ring(at[0] + 0.5, at[1] + 0.5, LIFT_PUFF_TILES, 'steel.4', LIFT_PUFF_MS, true);
+      }
+    }
   }
 
   /** The boss bar's fill (px of 160), or −1 while no bar shows (the smoke flows' check). */

@@ -188,6 +188,8 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   }
   /** Enemy types whose tell glyph has shown this battle (once per type; D028). */
   const told = new Set<string>();
+  /** Fleeing carriers alive now: their sack is untied, so it bursts as `burst_young` (T430b). */
+  const untied = new Set<number>();
   /**
    * Towers built in this frame's dispatch (its events all carry the same sim tick), whose `−cost`
    * floaters a link's callout must clear (T329), and that tick.
@@ -351,6 +353,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const unit = enemyOf(e.uid);
       // A `youngling`-tagged unit draws as the little one (D074).
       const body = enemyBody(def.sprites.body, unit?.tags ?? []);
+      if (def.carrierYoung > 0 && unit?.tags.includes('fleeing') === true) untied.add(e.uid);
       const v = views.enemies.acquire(e.uid);
       v.show(e.uid, body, def.layer === 'air', glyph, route);
       v.setBar(barMaxHp(def), def.shield?.hp ?? 0);
@@ -392,6 +395,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       fx.leakShake();
     }),
     bus.on('Hushed', (e) => {
+      untied.delete(e.victim);
       views.enemies.release(e.victim);
       fx.ring(e.x, e.y, HUSH_RING_TILES, 'acid.3', HUSH_RING_MS, true);
     }),
@@ -412,9 +416,10 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     bus.on('SackBurst', (e) => {
       // The young run back up the route toward the warren (D059); render-only.
       const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
-      views.sacks.burst(e.x, e.y, route, e.dist, e.young);
+      views.sacks.burst(e.x, e.y, route, e.dist, e.young, untied.delete(e.uid));
     }),
     bus.on('EnemyLeaked', (e) => {
+      untied.delete(e.uid);
       const v = views.enemies.get(e.uid);
       const core = views.core.nearest(v?.x ?? Number.NaN, v?.y ?? Number.NaN);
       views.enemies.release(e.uid);

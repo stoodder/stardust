@@ -3,8 +3,9 @@
 // T301b's star map lands. The briefing (Bricks), the setup in the gold light, W3's fleeing Haulers
 // with their young in the sacks, the Peeker's rock lighting up as W5 starts with Pebble on it, the
 // player's own click and the rescue cue (her plate reads ???), Bricks naming her at W7 with her in
-// his pocket, the dusk by W11, and the debrief's pension line on Results. Before each shot the sim
-// plays a moment at 1×, so the frame isn't a fast-forward's pile. Screenshots in
+// his pocket, the dusk by W11, and the debrief's pension line on Results. The story beats and the
+// dusk-to-Results end run as two tests (T460: so the gate's workers share them). Before each shot
+// the sim plays a moment at 1×, so the frame isn't a fast-forward's pile. Screenshots in
 // test-results/screens/a2m3/ (look at them: the young in the sacks, the outlined rock, the light).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -12,6 +13,9 @@ import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 /** What the flow waits for, checked in the page against the live sim state. */
 type Cond = 'setup' | 'haulers' | 'rock' | 'w7' | 'dusk' | 'end';
+
+/** The battle, in the save after A2M2, with dialogue on. */
+const URL = '/?test=1&dialogue=1&seed=1&save=after_a2m2&map=a2_m03';
 
 /** The Peeker's rock (A1M2's (13,4), moved by A2M3's revisit offset). */
 const ROCK = [15, 5] as const;
@@ -70,11 +74,9 @@ async function play(page: Page, ms: number): Promise<void> {
   await nextFrames(page);
 }
 
-test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pension', async ({
-  page,
-}) => {
-  test.setTimeout(150_000);
-  await page.goto('/?test=1&dialogue=1&seed=1&save=after_a2m2&map=a2_m03');
+test('A2M3: the sacks, the rock, the click, and Pebble named', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto(URL);
   await waitForReady(page);
 
   const brief = page.getByRole('dialog');
@@ -156,6 +158,21 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   await expect(comms).toContainText("Pebble. That's you.", { timeout: 10_000 });
   await page.waitForTimeout(1_500);
   await shot(page, 'a2m3', 8, 'named');
+});
+
+test('A2M3: the dusk by W11, and the pension on Results', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto(URL);
+  await waitForReady(page);
+  await expect(page.getByRole('dialog')).toContainText('Same terraces. Different day.');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('hud')).toBeVisible();
+  await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    sd.setSpeed(0);
+    sd.autoplay('par');
+    sd.fastForward(0);
+  });
 
   // The dusk by W11.
   expect(await until(page, 'dusk')).toBe(true);

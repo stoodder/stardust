@@ -13,7 +13,10 @@
 //   gold to dusk is the dusk's lilac light. M5's Sundown adds darkness and light stamps on
 //   top of this; nothing here reads the sim beyond the wave number.
 // - **The sky** is each stop's sky gradient (ENV_SKY) as dithered bands across the top of the view
-//   that fade into the void, crossfaded by alpha between the two stops in play.
+//   that fade into the void, crossfaded by alpha between the two stops in play. Two small moons
+//   hang in it (art-direction §3: in every act's sky), up right of the map's north corner where
+//   the HUD and the playfield leave the sky clear, the same in every stop so the crossfade never
+//   doubles them (T430b).
 import { ENV_SKY } from '../../content/palettes/env.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { EnvPaletteId, LightingKeyDef } from '../../content/types.ts';
@@ -144,6 +147,44 @@ export function lightAt(
   return from + ((to - from) * Math.max(0, ticks)) / LIGHT_FADE_TICKS;
 }
 
+/**
+ * The battle sky's two small moons (the menu backdrop's pair, smaller): centers as shares of the
+ * sky image, radius in px, lit from the upper right.
+ */
+export const SKY_MOONS: readonly {
+  readonly x: number;
+  readonly y: number;
+  readonly r: number;
+  readonly lit: ColorName;
+  readonly shade: ColorName;
+}[] = [
+  { x: 0.7, y: 0.11, r: 6, lit: 'white.0', shade: 'steel.3' },
+  { x: 0.765, y: 0.19, r: 3, lit: 'pink.4', shade: 'coral.3' },
+];
+
+function drawMoon(img: RgbaImage, moon: (typeof SKY_MOONS)[number]): void {
+  const cx = Math.round(moon.x * img.w);
+  const cy = Math.round(moon.y * img.h);
+  const r = moon.r;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r + r) continue;
+      const x = cx + dx;
+      const y = cy + dy;
+      if (x < 0 || y < 0 || x >= img.w || y >= img.h) continue;
+      // The far side of an offset disc is in shade (a crescent of shadow lower left).
+      const sx = dx - Math.ceil(r / 3);
+      const sy = dy + Math.ceil(r / 4);
+      const c = rgbOf(sx * sx + sy * sy > r * r ? moon.shade : moon.lit);
+      const i = (y * img.w + x) * 4;
+      img.data[i] = c.r;
+      img.data[i + 1] = c.g;
+      img.data[i + 2] = c.b;
+      img.data[i + 3] = 255;
+    }
+  }
+}
+
 /** 4×4 ordered-dither thresholds (0–15). */
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 
@@ -178,5 +219,7 @@ export function skyImage(env: EnvPaletteId, w: number, h: number): RgbaImage {
       data[i + 3] = 255;
     }
   }
-  return { w, h, data };
+  const img = { w, h, data };
+  for (const moon of SKY_MOONS) drawMoon(img, moon);
+  return img;
 }

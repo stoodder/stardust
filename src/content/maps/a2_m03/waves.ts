@@ -138,7 +138,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('zoomer', 12, OPEN, 0.25),
+      run('zoomer', 12, OPEN, 0.2),
       motes(4, OPEN + FLEE_LEAD),
       motes(30, OPEN + 20, PACKED, 'mine'),
       motes(50, OPEN + 26, PACKED),
@@ -148,7 +148,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      run('zoomer', 10, OPEN, 0.3),
+      run('zoomer', 10, OPEN, 0.2),
       motes(4, OPEN + FLEE_LEAD),
       wardens(2, OPEN + 12, 6),
       glimmers(16, OPEN + 24, 0.8),

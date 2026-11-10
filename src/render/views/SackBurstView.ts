@@ -3,7 +3,8 @@
 // entity for them) scurry *back up the route toward the warren* for ~2.5 s, one stopping to look
 // back, then fade. They draw in the vfx layer, above the towers, so a turret beside the road never
 // hides them. Pooled: a fixed set of bursts, the oldest reused, so a W8 of Haulers allocates
-// nothing. Real time, cosmetic; the motion is the pure vfx/scurry.ts.
+// nothing. Real time, cosmetic; the motion is the pure vfx/scurry.ts. A fleeing Hauler's untied
+// sack opens on its young straining in its mouth (`burst_young`, T430b) before the same pop.
 import type * as Phaser from 'phaser';
 import type { CompiledRoute } from '../../content/compiled.ts';
 import { pointAt, type Point } from '../../sim/index.ts';
@@ -55,6 +56,9 @@ export class SackBurstView {
   readonly #ctx: ViewContext;
   readonly #bursts: Burst[] = [];
   readonly #walk = new Map<Facing, { key: string; ox: number; oy: number }>();
+  /** The pop (a tied sack's), and the untied sack's that opens on its young (T430b). */
+  readonly #pop: string;
+  readonly #popYoung: string;
   #next = 0;
 
   constructor(ctx: ViewContext) {
@@ -62,6 +66,8 @@ export class SackBurstView {
     const { scene, layers, sprites } = ctx;
     const popAnchor = sprites.meta('fx.sack_burst').anchor;
     const popFrame = sprites.frame('fx.sack_burst', 'f0');
+    this.#pop = sprites.anim('fx.sack_burst', 'burst');
+    this.#popYoung = sprites.anim('fx.sack_burst', 'burst_young');
     for (const f of FACINGS) {
       const a = sprites.frameAnchor('enemy.hauler_young', `walk_${f}_0`);
       this.#walk.set(f, {
@@ -88,16 +94,24 @@ export class SackBurstView {
 
   /**
    * A sack bursts at grid (x, y), `dist` tiles along `route`: the pop, and `young` young running
-   * back up the route (at most MAX_YOUNG drawn). A null route shows the pop alone.
+   * back up the route (at most MAX_YOUNG drawn). A null route shows the pop alone. An `untied`
+   * sack (a fleeing Hauler's, its young in its mouth; T430b) opens on `burst_young`.
    */
-  burst(x: number, y: number, route: CompiledRoute | null, dist: number, young: number): void {
+  burst(
+    x: number,
+    y: number,
+    route: CompiledRoute | null,
+    dist: number,
+    young: number,
+    untied = false,
+  ): void {
     const b = this.#bursts[this.#next]!; // index < MAX_BURSTS
     this.#next = (this.#next + 1) % MAX_BURSTS;
     gridToScreen(x, y, this.#ctx.origin, pos);
     b.pop
       .setPosition(Math.round(pos.x), Math.round(pos.y))
       .setVisible(true)
-      .play(this.#ctx.sprites.anim('fx.sack_burst', 'burst'));
+      .play(untied ? this.#popYoung : this.#pop);
     b.route = route;
     b.dist0 = dist;
     b.count = route === null ? 0 : Math.min(young, MAX_YOUNG);

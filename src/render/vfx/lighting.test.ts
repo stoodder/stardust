@@ -10,6 +10,7 @@ import {
   lightPosition,
   lightStops,
   skyImage,
+  SKY_MOONS,
   SKY_SHARE,
 } from './lighting.ts';
 
@@ -98,6 +99,25 @@ describe('skyImage', () => {
     const below = Math.round(h * SKY_SHARE) + Math.round(h / 8) + 1;
     for (let x = 0; x < w; x++) expect(px(x, below)[3], `x ${x}`).toBe(0);
     expect(px(0, h - 1)[3]).toBe(0);
+  });
+
+  it('hangs two small moons in every sky, the same in each stop (T430b)', () => {
+    const W = 640;
+    const H = 360;
+    const gold = skyImage('act2.gold', W, H);
+    const dusk = skyImage('act2.dusk', W, H);
+    for (const m of SKY_MOONS) {
+      const cx = Math.round(m.x * W);
+      const cy = Math.round(m.y * H);
+      expect(cy + m.r).toBeLessThan(H * SKY_SHARE); // in the sky, not its fade
+      for (const sky of [gold, dusk]) {
+        const i = (cy * W + cx) * 4;
+        const lit = rgbOf(m.lit);
+        const shade = rgbOf(m.shade);
+        const c = [sky.data[i], sky.data[i + 1], sky.data[i + 2]];
+        expect([[lit.r, lit.g, lit.b], [shade.r, shade.g, shade.b]]).toContainEqual(c);
+      }
+    }
   });
 
   it('dithers the fade (some pixels on, some off, in the fade rows)', () => {

@@ -38,6 +38,7 @@ import {
   floatTextTexture,
   PULSE_COLOR,
 } from '../vfx/overlayTextures.ts';
+import { stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
@@ -45,6 +46,8 @@ const MAX_TRACERS = 64;
 const MAX_PULSES = 32;
 const MAX_DECALS = 8;
 const MAX_FLOATS = 16;
+/** Floaters draw over the rest of the overlay layer (its other children stay at depth 0). */
+const FLOAT_DEPTH = 1;
 const MAX_BURSTS = 40;
 const MAX_DEBRIS = 128;
 
@@ -90,12 +93,16 @@ interface Decal {
 }
 
 /** A floating number rising from a point. */
-interface Float {
+interface Float extends FloatSlot {
   active: boolean;
   ms: number;
   durationMs: number;
   x: number;
   y: number;
+  /** As drawn now (floatStack.ts reads them): its center, baseline, and width. */
+  cx: number;
+  baseY: number;
+  w: number;
   img: Phaser.GameObjects.Image;
 }
 
@@ -225,9 +232,20 @@ export class TransientFx {
       this.#decals.push({ active: false, ms: 0, durationMs: 0, img });
     }
     for (let i = 0; i < MAX_FLOATS; i++) {
-      const img = scene.make.image({}, false).setVisible(false);
+      // Over everything else in the overlay (health bars, tells, outlines), so a number reads.
+      const img = scene.make.image({}, false).setVisible(false).setDepth(FLOAT_DEPTH);
       layers.overlay.add(img);
-      this.#floats.push({ active: false, ms: 0, durationMs: FLOAT_MS, x: 0, y: 0, img });
+      this.#floats.push({
+        active: false,
+        ms: 0,
+        durationMs: FLOAT_MS,
+        x: 0,
+        y: 0,
+        cx: 0,
+        baseY: 0,
+        w: 0,
+        img,
+      });
     }
     const boom = sprites.meta('fx.explosion').anchor;
     const boomFrame = sprites.frame('fx.explosion', 'f0');
@@ -453,13 +471,26 @@ export class TransientFx {
     ms = FLOAT_MS,
   ): void {
     const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
-    this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
     gridToScreen(x, y, this.ctx.origin, pos);
     const key = floatTextTexture(this.ctx.scene, text, color);
+    const w = this.ctx.scene.textures.getFrame(key)?.width ?? 0;
+    // Clear of the floaters already up (T334), or dropped where they're stacked full (T332). The
+    // oldest slot it takes over doesn't count.
+    const wasActive = f.active;
+    f.active = false;
+    const cx = Math.round(pos.x);
+    const baseY = stackFloat(this.#floats, cx, Math.round(pos.y - liftPx), w);
+    if (baseY === null) {
+      f.active = wasActive;
+      return;
+    }
+    this.#nextFloat = (this.#nextFloat + 1) % MAX_FLOATS;
     f.img.setTexture(key);
     f.img.setOrigin(0.5, 1);
-    f.x = Math.round(pos.x);
-    f.y = Math.round(pos.y - liftPx);
+    f.x = cx;
+    f.y = baseY;
+    f.cx = cx;
+    f.w = w;
     f.ms = 0;
     f.durationMs = ms;
     f.active = true;
@@ -618,8 +649,9 @@ export class TransientFx {
   }
 
   #syncFloat(f: Float): void {
+    f.baseY = f.y - floatRise(Math.min(f.ms, FLOAT_MS));
     f.img
-      .setPosition(f.x, f.y - floatRise(Math.min(f.ms, FLOAT_MS)))
+      .setPosition(f.x, f.baseY)
       .setAlpha(fadeAlpha(f.ms / f.durationMs))
       .setVisible(true);
   }

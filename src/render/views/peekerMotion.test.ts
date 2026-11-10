@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 import {
   DUCK_MS,
   enemyNear,
+  LIFT_MS,
+  LIFT_RISE_PX,
+  liftLook,
   PEEK_EVERY_MAX_MS,
   PEEK_EVERY_MIN_MS,
   PEEK_HOLD_MS,
@@ -82,5 +85,28 @@ describe('enemyNear', () => {
     expect(enemyNear([at(3.5, 1.5, false)], 1, 3.5, 1.5)).toBe(false);
     // Only the pool's used entries count.
     expect(enemyNear([at(9, 9), at(3.5, 1.5)], 1, 3.5, 1.5)).toBe(false);
+  });
+});
+
+describe('liftLook (T430b: Pebble picked up)', () => {
+  it('rises 1 px at a time to LIFT_RISE_PX and fades in alpha steps, then ends', () => {
+    expect(liftLook(0, false)).toEqual({ risePx: 0, alpha: 1 });
+    let last = 0;
+    const alphas = new Set<number>();
+    for (let ms = 0; ms < LIFT_MS; ms += 10) {
+      const l = liftLook(ms, false)!;
+      expect(l.risePx - last).toBeLessThanOrEqual(1);
+      expect(l.risePx).toBeGreaterThanOrEqual(last);
+      last = l.risePx;
+      alphas.add(l.alpha);
+    }
+    expect(last).toBe(LIFT_RISE_PX);
+    expect([...alphas]).toEqual([1, 0.7, 0.4]);
+    expect(liftLook(LIFT_MS, false)).toBeNull();
+    expect(liftLook(-1, false)).toBeNull();
+  });
+
+  it('fades where she sat under reduced motion', () => {
+    for (let ms = 0; ms < LIFT_MS; ms += 40) expect(liftLook(ms, true)!.risePx).toBe(0);
   });
 });

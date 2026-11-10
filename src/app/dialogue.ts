@@ -5,8 +5,10 @@
 //   one at a time. In a battle a scene other than the briefing pauses the sim (`setSpeed(0)`) and
 //   puts the speed back as it ends. Lines type and wait for Next; choices wait for a pick.
 // - **The comms panel** (top-left, never blocking) plays radio scenes (`w<NN>` as wave NN's
-//   countdown begins), script cues, and barks, one line at a time on real-time holds. Scenes queue
-//   (going stale after COMMS_STALE_MS); barks never queue: one that can't show now is dropped (D070).
+//   countdown begins), script cues, and barks, one line at a time on real-time holds (scaled by
+//   the game speed, `holdAtSpeedMs`; D126). Scenes queue (going stale after COMMS_STALE_MS, and a
+//   countdown's radio dropped once its wave starts); barks never queue: one that can't show now is
+//   dropped (D070).
 // - **Barks** are standalone (never a reply to another speaker's line; D061), picked by
 //   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
 //   queue behind the line on the panel instead (`QUEUED_BARKS`): QUILL's first-leak seed, and
@@ -87,6 +89,8 @@ export { BANK_NUDGE_CREDITS, BANK_NUDGE_IDLE_PHASES };
 export const COMMS_STALE_MS = 15_000;
 /** A line answered by the next (another speaker) holds this long once typed (D028's beat). */
 export const REPLY_BEAT_MS = 2500;
+/** At 2×, a comms line still stays whole on screen at least this long, in ms (D126). */
+export const RADIO_MIN_READ_MS = 1500;
 /** Integrity at or below this share of the maximum fires `low_integrity` (core-loop.md § 6.3). */
 export const LOW_INTEGRITY_SHARE = 0.25;
 
@@ -121,6 +125,16 @@ export function commsHoldMs(
   const typing = typeMs(text);
   if (nextIsReply) return typing + REPLY_BEAT_MS;
   return Math.max(readMs(text), typing + REPLY_BEAT_MS);
+}
+
+/**
+ * A comms hold at game speed `gameSpeed` (D126, T430b): the radio keeps pace with the battle, so
+ * at 2× each hold halves, but never below RADIO_MIN_READ_MS once the line is typed (and never
+ * longer than at 1×). Paused or at 1× it holds `ms`.
+ */
+export function holdAtSpeedMs(ms: number, text: string, gameSpeed: number): number {
+  if (gameSpeed <= 1) return ms;
+  return Math.max(ms / gameSpeed, Math.min(ms, typeMs(text) + RADIO_MIN_READ_MS));
 }
 
 /** What a scene changed, applied to `save`: flags, the callsign, and (for a real scene id) seen. */
@@ -336,6 +350,8 @@ export interface PlayOptions {
   readonly onEnd?: () => void;
   /** Default true; false: nothing it does is saved (the results fixture, `__sd.results`). */
   readonly record?: boolean;
+  /** A countdown's radio (`w<NN>`): the wave it's for, dropped unplayed once that wave starts. */
+  readonly radioWave?: number;
 }
 
 /** How long a silence holds when its line names no `durationSec`, in seconds. */
@@ -508,7 +524,7 @@ function finish(): void {
 export function playScene(scene: Scene, opts: PlayOptions = {}): void {
   const mode = opts.mode ?? sceneMode(scene);
   if (mode === 'comms') {
-    queueComms(scene);
+    queueComms(scene, opts.radioWave ?? 0);
     return;
   }
   if (holding !== null) {
@@ -625,7 +641,8 @@ interface CommsPlay {
   moveOn?: () => void;
 }
 
-const commsQueue: { scene: Scene; at: number }[] = [];
+/** Queued comms scenes: when each queued, and the wave a countdown's radio is for (else 0). */
+const commsQueue: { scene: Scene; at: number; wave: number }[] = [];
 let commsNow: CommsPlay | null = null;
 let commsTimer: ReturnType<typeof setTimeout> | null = null;
 /** Set while a scene holds input: the panel waits (its queue's clocks restart as it frees). */
@@ -660,10 +677,22 @@ function holdComms(on: boolean): void {
   pumpComms();
 }
 
-function queueComms(scene: Scene): void {
+function queueComms(scene: Scene, wave = 0): void {
   if (!enabled) return;
-  commsQueue.push({ scene, at: performance.now() });
+  commsQueue.push({ scene, at: performance.now(), wave });
   pumpComms();
+}
+
+/**
+ * Wave `wave` has started (D126): a countdown's radio still queued for it (or an earlier wave) is
+ * dropped unplayed, so it never talks over the wave it was setting up. A scene already on the
+ * panel plays on.
+ */
+function dropRadioFor(wave: number): void {
+  for (let i = commsQueue.length - 1; i >= 0; i--) {
+    const w = commsQueue[i]?.wave ?? 0;
+    if (w > 0 && w <= wave) commsQueue.splice(i, 1);
+  }
 }
 
 function pumpComms(): void {
@@ -725,7 +754,9 @@ function showCommsLine(): void {
   clearCommsTimer();
   commsTimer = setTimeout(
     moveOn,
-    commsEnding ? endHoldMs(node) : commsHoldMs(view.text, node.durationSec, reply),
+    commsEnding
+      ? endHoldMs(node)
+      : holdAtSpeedMs(commsHoldMs(view.text, node.durationSec, reply), view.text, speed.value),
   );
 }
 
@@ -1076,7 +1107,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       radio.delete(e.wave);
       // A resumed run's replay plays no scene (app/checkpoints.ts): its lines were heard already.
       const plays = scene !== undefined && enabled && !host.replaying;
-      if (plays && scenePlays(scene, storyContext(map))) playScene(scene);
+      if (plays && scenePlays(scene, storyContext(map))) playScene(scene, { radioWave: e.wave });
       // Never before the Quiet Wave (D098): its countdown is the held breath.
       const quietNext = quiet[e.wave - 1] === true;
       const idle = idlePhases >= BANK_NUDGE_IDLE_PHASES;
@@ -1085,6 +1116,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('WaveStarted', (e) => {
       wave = Math.max(wave, e.wave);
+      dropRadioFor(e.wave);
       // The Quiet Wave's silence starts with it (before its first spawn) and lasts the map.
       if (quiet[e.wave - 1] === true) s.silent = true;
       offerBarks([{ on: 'wave_start', wave: e.wave, ...bossOf(e.wave) }]);

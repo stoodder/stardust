@@ -11,14 +11,23 @@
 // (Pebble stays up on the rock, looking about and blinking, never shy: she wants to be found;
 // ClickableView outlines her `outlineFrame`), and `empty` before and after (the same rock, bare).
 // Behind the rock those are the Peeker's own frames (T440c): `hold` (Pebble up on the rock, paws
-// over its crown) and `empty`; another cover holds with its `peek` and empties to `hidden`.
+// over its crown) and `empty`; another cover holds with its `peek` and empties to `hidden`. As she
+// is picked up (`holding` → `empty`: a click or the fallback) her held frame lifts off the rock and
+// fades (peekerMotion.ts `liftLook`, T430b); the scene puffs a dust ring under it.
 import * as Phaser from 'phaser';
 import { peekerFrame, type PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { createRng, nextFloat } from '../../shared/rng.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { propVariant } from './groundTiles.ts';
-import { enemyNear, PeekerMotion, type PeekerHold, type PeekerPose } from './peekerMotion.ts';
+import { prefersReducedMotion } from '../motion.ts';
+import {
+  enemyNear,
+  liftLook,
+  PeekerMotion,
+  type PeekerHold,
+  type PeekerPose,
+} from './peekerMotion.ts';
 import type { ObjectFrame } from './ClickableView.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -39,6 +48,9 @@ export interface PeekerEnemies {
 
 export class PeekerView {
   readonly #img: Phaser.GameObjects.Sprite;
+  /** Pebble lifting off the rock as she's picked up (her held frame), and how long it has run. */
+  readonly #lift: Phaser.GameObjects.Image;
+  #liftMs = -1;
   readonly #motion: PeekerMotion;
   readonly #hidden: { readonly texture: string; readonly frame: string };
   readonly #peek: string;
@@ -104,6 +116,12 @@ export class PeekerView {
       .setDisplayOrigin(anchor.x, anchor.y)
       .setDepth(worldDepth(pos.y, 'prop', this.tile & TIE_MASK));
     layers.world.add(this.#img);
+    this.#lift = new Phaser.GameObjects.Image(scene, pos.x, pos.y, this.#held.texture, this.#held.frame)
+      .setDisplayOrigin(this.#heldAnchor.x, this.#heldAnchor.y)
+      // Just over the bare rock (a tie-break step), so she rises off it rather than into it.
+      .setDepth(this.#img.depth + 1e-5)
+      .setVisible(false);
+    layers.world.add(this.#lift);
     this.#cx = col + 0.5;
     this.#cy = row + 0.5;
     const rng = createRng((seed ^ 0x5eec_e7a1) >>> 0);
@@ -113,6 +131,11 @@ export class PeekerView {
   /** Its pose now (the smoke hooks' view of it). */
   get pose(): PeekerPose {
     return this.#motion.pose;
+  }
+
+  /** She's lifting off the rock now (the smoke hooks' view of it). */
+  get lifting(): boolean {
+    return this.#liftMs >= 0;
   }
 
   /** Its story state (the smoke hooks' view of it). */
@@ -141,7 +164,11 @@ export class PeekerView {
     hovered: boolean,
     hold: PeekerHold = 'shy',
   ): void {
-    if (hold !== this.#hold) this.#setHold(hold);
+    if (hold !== this.#hold) {
+      if (this.#hold === 'holding' && hold === 'empty') this.#liftMs = 0;
+      this.#setHold(hold);
+    }
+    if (this.#liftMs >= 0) this.#syncLift(realMs);
     if (hold !== 'shy') return;
     const shy = hovered || enemyNear(enemies.items, enemies.used, this.#cx, this.#cy);
     this.#motion.update(realMs, playMs, shy);
@@ -181,6 +208,21 @@ export class PeekerView {
     }
   }
 
+  /** Pebble's lift: up off the rock and fading, then gone. */
+  #syncLift(realMs: number): void {
+    const look = liftLook(this.#liftMs, prefersReducedMotion());
+    this.#liftMs += Number.isFinite(realMs) && realMs > 0 ? realMs : 0;
+    if (look === null) {
+      this.#liftMs = -1;
+      this.#lift.setVisible(false);
+      return;
+    }
+    this.#lift
+      .setPosition(this.#px, this.#py - look.risePx)
+      .setAlpha(look.alpha)
+      .setVisible(true);
+  }
+
   #show(): void {
     const m = this.#motion;
     if (m.serial === this.#shown) return;
@@ -202,5 +244,6 @@ export class PeekerView {
 
   destroy(): void {
     this.#img.destroy();
+    this.#lift.destroy();
   }
 }

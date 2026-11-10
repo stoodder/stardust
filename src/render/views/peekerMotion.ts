@@ -141,3 +141,29 @@ export function enemyNear(
   }
   return false;
 }
+
+/**
+ * Pebble picked up (T430b, D115): as the rock goes from `holding` to `empty` her held frame lifts
+ * off it, LIFT_RISE_PX up in 1 px steps over LIFT_MS (Bricks's hands, out of frame), fading on the
+ * stepped-alpha ladder (100 → 70 → 40%), over a small dust ring at the rock. Real time, cosmetic.
+ */
+export const LIFT_MS = 480;
+export const LIFT_RISE_PX = 8;
+/** The dust ring the rock puffs as she leaves it: half a new tower's. */
+export const LIFT_PUFF_TILES = 0.5;
+export const LIFT_PUFF_MS = 240;
+
+export interface LiftLook {
+  /** How far up she has risen (whole px; 0 under reduced motion: she fades where she sat). */
+  readonly risePx: number;
+  readonly alpha: number;
+}
+
+/** Her lift `ms` after it began, or null once it's over. */
+export function liftLook(ms: number, reduced: boolean): LiftLook | null {
+  if (!(ms >= 0) || ms >= LIFT_MS) return null;
+  const t = ms / LIFT_MS;
+  const risePx = reduced ? 0 : Math.min(LIFT_RISE_PX, Math.floor(t * (LIFT_RISE_PX + 1)));
+  const alpha = t < 1 / 3 ? 1 : t < 2 / 3 ? 0.7 : 0.4;
+  return { risePx, alpha };
+}

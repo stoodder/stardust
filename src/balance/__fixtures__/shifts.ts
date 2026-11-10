@@ -34,7 +34,7 @@ export function bothWays(
 
 /** The live content with `mapId`'s waves patched. */
 export function shiftedContent(mapId: MapId, patches: WavePatches): CompiledContent {
-  const raw = RAW_CONTENT.maps[mapId]!;
+  const raw = RAW_CONTENT.maps[mapId];
   const waves = raw.waves.map((w: WaveDef, i): WaveDef => {
     const patch = patches[i + 1];
     return patch === undefined ? w : { ...w, groups: w.groups.map(patch) };
