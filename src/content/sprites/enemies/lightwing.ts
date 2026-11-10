@@ -6,7 +6,7 @@
 // only beats its wings (up, level, down, level; 6 fps) while the threads hum.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
+import { frayLooks, hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
 
 const W = 27;
 const H = 19;
@@ -91,6 +91,23 @@ function lightwing(facing: 'se' | 'ne', stroke: Stroke): string[] {
   return rows(g);
 }
 
+const frames = {
+  walk_se_0: lightwing('se', 0),
+  walk_se_1: lightwing('se', 1),
+  walk_se_2: lightwing('se', 2),
+  walk_ne_0: lightwing('ne', 0),
+  walk_ne_1: lightwing('ne', 1),
+  walk_ne_2: lightwing('ne', 2),
+};
+const anims = {
+  walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2', 'walk_se_1'], fps: 6 },
+  walk_sw: { mirrorOf: 'walk_se' },
+  walk_ne: { frames: ['walk_ne_0', 'walk_ne_1', 'walk_ne_2', 'walk_ne_1'], fps: 6 },
+  walk_nw: { mirrorOf: 'walk_ne' },
+};
+/** Its fray when hurt (T501d; `fray1_`/`fray2_<facing>`, lattice.ts `frayLooks`). */
+const frayed = frayLooks(frames, anims, 7);
+
 export const enemyLightwing = defineSprite({
   id: 'enemy.lightwing',
   size: { w: W, h: H },
@@ -99,18 +116,6 @@ export const enemyLightwing = defineSprite({
   // The outline is the weave's own (lattice.ts `outlineOutside`), so the gaps stay see-through.
   outline: 'none',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  frames: {
-    walk_se_0: lightwing('se', 0),
-    walk_se_1: lightwing('se', 1),
-    walk_se_2: lightwing('se', 2),
-    walk_ne_0: lightwing('ne', 0),
-    walk_ne_1: lightwing('ne', 1),
-    walk_ne_2: lightwing('ne', 2),
-  },
-  anims: {
-    walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2', 'walk_se_1'], fps: 6 },
-    walk_sw: { mirrorOf: 'walk_se' },
-    walk_ne: { frames: ['walk_ne_0', 'walk_ne_1', 'walk_ne_2', 'walk_ne_1'], fps: 6 },
-    walk_nw: { mirrorOf: 'walk_ne' },
-  },
+  frames: { ...frames, ...frayed.frames },
+  anims: { ...anims, ...frayed.anims },
 });

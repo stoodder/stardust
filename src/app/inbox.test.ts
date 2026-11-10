@@ -11,7 +11,14 @@ import {
   markMemoRead,
   storyBadges,
 } from './inbox.ts';
-import { activeSave, initSaves, loadDevSave, newGame, recordRun } from './save.ts';
+import {
+  activeSave,
+  initSaves,
+  loadDevSave,
+  newGame,
+  recordRun,
+  updateActiveSave,
+} from './save.ts';
 
 beforeEach(() => {
   initSaves(new MemoryStore(), () => 1);
@@ -116,6 +123,60 @@ describe('Act II in the base (T411)', () => {
     // The dev save's A2M1 win took Victory only: no crew logs, so no crew-log entry.
     expect(view.entries.map((e) => e.id)).not.toContain('codex_crew_log');
     expect(view.entries.find((e) => e.id === 'codex_diggings')?.photo).toBe('Photo pending');
+  });
+});
+
+describe("Ves'thara's margin notes (T501e)", () => {
+  /** after_a2m3 with the margin notes unlocked as Sundown's win leaves them. */
+  function withMargins(): void {
+    loadDevSave('after_a2m3');
+    updateActiveSave((s) => ({
+      ...s,
+      story: {
+        ...s.story,
+        codex: {
+          ...s.story.codex,
+          codex_brood_hauler: ['original', 'annotated', 'margin'],
+          codex_glass_witch: ['original', 'margin'],
+        },
+      },
+    }));
+  }
+
+  it("shows the Hauler's margin note under QUILL's, both under the record", () => {
+    withMargins();
+    const hauler = codexView()!.entries.find((e) => e.id === 'codex_brood_hauler')!;
+    expect(hauler.versions).toHaveLength(1);
+    const [v] = hauler.versions;
+    expect(v).toMatchObject({
+      version: 'margin',
+      text: "[In the margin, in Ves'thara's hand: They are carrying their children away from what you made.]",
+      record: expect.objectContaining({ text: expect.stringContaining('Do not inspect cargo.') }),
+      earlier: [
+        expect.objectContaining({
+          version: 'annotated',
+          text: expect.stringMatching(/^\[QUILL: Cargo inspected\./),
+        }),
+      ],
+    });
+    // The new note is NEW even with QUILL's read; reading it marks the margin version seen.
+    expect(hauler.isNew).toBe(true);
+    markCodexRead('codex_brood_hauler');
+    expect(activeSave()?.story.seen).toContain('codex_brood_hauler__margin');
+    expect(codexView()!.entries.find((e) => e.id === 'codex_brood_hauler')?.isNew).toBe(false);
+  });
+
+  it('shows a margin note alone under the record when no one annotated it before her', () => {
+    withMargins();
+    const witch = codexView()!.entries.find((e) => e.id === 'codex_glass_witch')!;
+    expect(witch.versions[0]).toMatchObject({
+      version: 'margin',
+      record: expect.objectContaining({ text: expect.stringContaining('Probably sad!') }),
+      earlier: [],
+    });
+    // A plain original has no record and no earlier notes.
+    const nibbler = codexView()!.entries.find((e) => e.id === 'codex_nibbler')!;
+    expect(nibbler.versions[0]).toMatchObject({ version: 'original', record: null, earlier: [] });
   });
 });
 

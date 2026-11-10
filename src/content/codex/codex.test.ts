@@ -70,25 +70,43 @@ const ACT2_LISTS = {
   a2_m01: ['codex_mote', 'codex_diggings', 'codex_hushed', 'codex_crew_log'],
   a2_m02: ['codex_glimmer', 'codex_glass_witch', 'codex_lumenglass', 'codex_aelari'],
   a2_m03: ['codex_weft_warden', 'codex_lightwing', 'codex_pebble'],
-  // M5's stubs (T500b); T511 completes A2M4–A2M6's lists.
-  a2_m04: ['codex_second_harvest'],
-  a2_m05: ['codex_preserve'],
+  a2_m04: [
+    'codex_second_harvest',
+    'codex_veilwalker',
+    'codex_blinkstrider',
+    'codex_kip',
+    'codex_intake_manifest',
+  ],
+  a2_m05: ['codex_cantor', 'codex_penitent', 'codex_preserve', 'codex_vesthara'],
+  // The Prism Spire's entry is A2M6's line; it unlocks once the tower is owned (A2M5's gift).
+  a2_m06: ['codex_fracture', 'codex_riftmoth', 'codex_prism', 'codex_long_night'],
 } as const;
 
-/** Entries unlocked by something other than their map's win (act2.md § A2M1: Crew Logs). */
+/**
+ * Entries unlocked by something other than their map's win (their maps' objectives: act2.md §
+ * A2M1, Crew Logs; § A2M4, Intake Manifest).
+ */
 const UNLOCKED_BY: Readonly<Record<string, Condition>> = {
   codex_crew_log: { objectiveDone: { map: 'a2_m01', objective: 'crew_logs' } },
+  codex_intake_manifest: { objectiveDone: { map: 'a2_m04', objective: 'intake_manifest' } },
 };
 
 /**
  * The versions each entry has, where it has more than an original: Act II's annotations (Rig
- * Nine's status update from A2M1; QUILL's from A2M3), by the map that unlocks them.
+ * Nine's status update from A2M1; QUILL's from A2M3 and A2M4) and Ves'thara's margin notes (from
+ * A2M6), by the map that unlocks them.
  */
 const LATER_VERSIONS: Readonly<Record<string, Partial<Record<CodexVersion, CampaignMapId>>>> = {
   codex_rig_nine: { annotated: 'a2_m01' },
   codex_mote: { annotated: 'a2_m03' },
-  codex_brood_hauler: { annotated: 'a2_m03' },
+  codex_brood_hauler: { annotated: 'a2_m03', margin: 'a2_m06' },
   codex_rig_3: { annotated: 'a2_m03' },
+  codex_tidybot: { annotated: 'a2_m04' },
+  codex_stardust: { annotated: 'a2_m04' },
+  codex_hushed: { margin: 'a2_m06' },
+  codex_glass_witch: { margin: 'a2_m06' },
+  codex_lumenglass: { margin: 'a2_m06' },
+  codex_aelari: { margin: 'a2_m06' },
 };
 
 const sprites = SPRITES as readonly SpriteDef[];
@@ -132,9 +150,15 @@ describe('the codex content', () => {
       for (const v of laterVersions) {
         expect(e.versions[v]?.when, `${e.id}.${v}`).toEqual({ mapAtLeast: later[v] });
       }
-      // An annotation is bracketed and signed (style-guide § 6.2).
+      // An annotation is bracketed and signed (style-guide § 6.2); a margin note is Ves'thara's.
       const note = e.versions.annotated?.text;
       if (note !== undefined) expect(note).toMatch(/^\[[A-Z][^\]]*\]$/);
+      const margin = e.versions.margin?.text;
+      if (margin !== undefined) {
+        expect(margin).toMatch(/^\[In the margin, in Ves'thara's hand: [A-Z][^\]]*\]$/);
+        // Her voice: no contractions (characters.md § Ves'thara).
+        expect(margin).not.toMatch(/\w'(?:s|t|re|ll|ve|d|m)\b(?<!Ves'thara's)/);
+      }
     },
   );
 
@@ -163,6 +187,37 @@ describe('the codex content', () => {
       objectiveDone: { map: 'a2_m01', objective: 'crew_logs' },
     });
     expect(objectives).toContain('crew_logs');
+  });
+
+  it("gates the Intake Manifest on A2M4's objective of that name, a real one of that map", () => {
+    const objective = MAPS.a2_m04.objectives?.find((o) => o.id === 'intake_manifest');
+    expect(objective?.name).toBe(CODEX.codex_intake_manifest?.title);
+  });
+
+  it("shows the Act II portraits' frames: Kip's plant coat, Ves'thara touched (T541)", () => {
+    expect(CODEX.codex_kip?.sprite).toEqual({ id: 'portrait.kip', frame: 'act2.neutral' });
+    expect(CODEX.codex_vesthara?.sprite).toEqual({
+      id: 'portrait.vesthara',
+      frame: 'touched.neutral',
+    });
+    expect(CODEX.codex_long_night).toMatchObject({ photo: 'Too dark' });
+    expect(CODEX.codex_long_night?.sprite).toBeUndefined();
+  });
+
+  it("writes Ves'thara's margin notes only once Sundown is won, under QUILL's on the Hauler", () => {
+    const margins = CODEX_ENTRIES.filter((e) => e.versions.margin !== undefined).map((e) => e.id);
+    expect(margins).toEqual([
+      'codex_brood_hauler',
+      'codex_hushed',
+      'codex_glass_witch',
+      'codex_lumenglass',
+      'codex_aelari',
+    ]);
+    expect(Object.keys(CODEX.codex_brood_hauler!.versions)).toEqual([
+      'original',
+      'annotated',
+      'margin',
+    ]);
   });
 
   it('withholds the "Pebble" entry: QUILL won\'t file her (act2.md § A2M3)', () => {

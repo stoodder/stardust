@@ -218,7 +218,9 @@ export function validateNovelty(
   if (used('air') && !history.airLane && !newFlyer) modifiers.push('air lane');
   if (used('rift') && !history.rift) modifiers.push('rift lanes');
   // A capstone boss built only from mechanics already taught is exempt (maps.md § 6.3, rule 2):
-  // every trait it has is known, and so is every unit its phases bring.
+  // every trait it has is known, and so is every unit its phases bring. Shards (the Penitent's
+  // Glimmer-shards) are born only from their boss, never in a wave, so they're judged by their
+  // traits: every one already taught.
   const capstone = (id: string): boolean => {
     const e = ctx.enemies.get(id);
     if (e?.boss === undefined) return false;
@@ -226,8 +228,14 @@ export function validateNovelty(
       ...(p.spawn === undefined ? [] : [p.spawn.enemy]),
       ...(p.burrow?.surfaceSpawn === undefined ? [] : [p.burrow.surfaceSpawn.enemy]),
     ]);
+    const shards = e.boss.phases.flatMap((p) =>
+      p.shards === undefined ? [] : [ctx.enemies.get(p.shards.enemy)],
+    );
+    const known = (t: Trait): boolean => history.traits.has(t);
     return (
-      e.traits.every((t) => history.traits.has(t)) && brings.every((b) => history.enemies.has(b))
+      e.traits.every(known) &&
+      shards.every((s) => s !== undefined && s.traits.every(known)) &&
+      brings.every((b) => history.enemies.has(b))
     );
   };
   const threats = [

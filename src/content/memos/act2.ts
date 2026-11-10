@@ -10,10 +10,13 @@
 // It speaks the KFA's dialect (races.md: numbered regulations, passive voice, "the undersigned")
 // and calls the incident what it is.
 //
-// A2M4–A2M6's memos (`memo_a2_04`–`_06`) are registered by T500b with the act file's subjects and
-// small print and first-draft bodies; T511 writes their final text. `memo_a2_04` (the Q3 Bonus) is
-// due after A2M4 like `memo_a2_05`, so run end delivers it as Results opens; it carries no gift:
-// the +400 is the `grantQ3Bonus` story transaction (meta/storyTransactions.ts), never paid twice.
+// A2M4–A2M6's memos: `memo_a2_04` (the Q3 Bonus) is due after A2M4 like `memo_a2_05`, so run end
+// delivers it as Results opens (the only memo the card names; the rest wait in the Inbox). It
+// carries no gift: the +400 is the `grantQ3Bonus` story transaction (meta/storyTransactions.ts),
+// never paid twice. After the truth, Sterling's memos sound exactly the same and say the worst
+// things yet: the bonus that "pays twice", relocation that spares everyone the processing "unless
+// they won't walk", and a Preserve that is "very peaceful out there". `memo_a2_05` notices C2's
+// Return as Accounting would (an empty bank, a big spender).
 import type { MemoDef } from './types.ts';
 
 const STERLING = 'Director Joy Sterling, Frontier Operations';
@@ -92,18 +95,21 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
       'Coupon not valid on stardust products. To name a beneficiary, file Form P-19 in person.',
     afterMap: 'a2_m03',
   },
-  // ── M5 (T500b stubs; T511 writes the bodies) ────────────────────────────────────────────
+  // ── A2M4–A2M5 (M5) ─────────────────────────────────────────────────────────────────────
   {
     id: 'memo_a2_04',
     from: STERLING,
     to: TO_447,
     subject: 'Your Q3 Performance Bonus!',
     body:
-      'Congratulations, #ED-447! Second Harvest beat every throughput target this quarter, and ' +
-      'you helped! Your Q3 Performance Bonus of 400 Stardust is already in your account.\n\n' +
-      'Treat yourself! A rewarded technician is a productive technician.',
+      'Congratulations, #ED-447! Second Harvest beat its throughput target this quarter, and ' +
+      'your perimeter supplied a record share of the intake! Your Q3 Performance Bonus, 400 ' +
+      'Stardust, is already in your account.\n\n' +
+      'Think of it as sustainability in action: every pest you process pays twice, once at the ' +
+      'perimeter and once at the vats!\n\n' +
+      "Treat yourself. You've earned it, quite literally!",
     signOff: SIGN_OFF,
-    smallPrint: 'Bonus paid in Everglow premium mineral. Not redeemable for cash or explanations.',
+    smallPrint: "Bonus calculated per tonne of perimeter intake, rounded in Everglow's favor.",
     afterMap: 'a2_m04',
   },
   {
@@ -112,9 +118,21 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
     to: TO_447,
     subject: 'Humane Relocation Pilot: Next Steps!',
     body:
-      'Exciting times, team! The Humane Relocation Pilot is go. Our little neighbors will walk ' +
-      'the Preserve Road to their forever home, escorted by Perimeter staff.\n\n' +
-      'Questions? The usual channels are open, as always!',
+      'Exciting news, team! The Humane Relocation Pilot starts next shift. Our little ' +
+      'neighbors will walk the Preserve Road to their forever home, with Perimeter staff as ' +
+      'their escort. Sgt. Okonkwo has the lead!\n\n' +
+      'Relocation is kinder, quieter, and fully budgeted. Nobody has to process anybody. ' +
+      "(Unless they won't walk!)\n\n" +
+      "The Preserve is not a public site, so please don't visit. Trust me!",
+    extra: [
+      {
+        // C2's Return (campaign.md § 6.1) emptied the bank; Accounting sees only the balance.
+        when: { flag: 'stardust_choice', eq: 'returned' },
+        text:
+          'P.S. Accounting says your Stardust balance is zero. Big spender! Just remember, the ' +
+          'Q3 Bonus is non-refundable.',
+      },
+    ],
     signOff: SIGN_OFF,
     smallPrint: 'Preserve capacity planned per Protocol BP-2359.',
     afterMap: 'a2_m04',
@@ -125,9 +143,11 @@ export const ACT2_MEMOS: readonly MemoDef[] = [
     to: TO_447,
     subject: 'Long Night Readiness: Stay Positive!',
     body:
-      'The Long Night is coming, team, and Everglow is ready! Positivity is our first line of ' +
-      "defense.\n\nGoldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. " +
-      'Stay cozy!',
+      'The Long Night starts this week, team, and Everglow is ready! 19 days of cozy: lamps on ' +
+      'the wall, 22 degrees in every dome, and a positive attitude in every heart.\n\n' +
+      'The Relocation Pilot was a real learning experience! Everyone who reached the Preserve ' +
+      "is settling in. It's very peaceful out there.\n\n" +
+      "Goldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. Stay cozy!",
     signOff: SIGN_OFF,
     smallPrint: 'Shelter costs deducted from colonist wages in 48 easy installments.',
     afterMap: 'a2_m05',

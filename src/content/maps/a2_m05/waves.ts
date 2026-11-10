@@ -1,0 +1,122 @@
+// A2M5 waves: docs/story/campaign/act2.md § A2M5, Wave data. Routes: `road` (the Preserve Road,
+// north-west to the gate: the Aelari before the pivot, the refugees after, and the Hollow behind
+// them from W8), `rig` (the rig road, in from the east onto the road at the fencing's end: the
+// Hollow, from the pivot), and `sky` (W4's Lightwings, over the fencing). Five waves before the
+// pivot and seven after: W5 is the Sunderglass Penitent alone, so nothing Aelari spawns after it
+// (the pivot stands down live units only), and W6 has an ordinary countdown, so its start is the
+// pivot's deadline. A countdown opens once the wave before it finishes spawning. Groups without an
+// `intervalSec` use the enemy's default spacing (Mote 0.3 s, Glimmer 0.8 s, Weft Warden 2 s,
+// Lightwing 0.7 s, Veilwalker 1 s, Blinkstrider 1 s, Cantor 1.2 s).
+import { defineWaves } from '../../define.ts';
+import type { EnemyId, RouteId, WaveGroup } from '../../types.ts';
+
+/** `count` of `enemy` on `route`, starting `delaySec` into the wave, `intervalSec` apart. */
+function g(
+  enemy: EnemyId,
+  count: number,
+  route: RouteId,
+  delaySec = 0,
+  intervalSec?: number,
+): WaveGroup {
+  return {
+    enemy,
+    count,
+    route,
+    delaySec,
+    ...(intervalSec === undefined ? {} : { intervalSec }),
+  };
+}
+
+const road = (enemy: EnemyId, count: number, delaySec: number, intervalSec?: number): WaveGroup =>
+  g(enemy, count, 'road', delaySec, intervalSec);
+
+/** A Mote group on `route` (default the rig road), `intervalSec` apart (default 0.3 s). */
+const motes = (count: number, delaySec: number, intervalSec?: number, route = 'rig'): WaveGroup =>
+  g('mote', count, route, delaySec, intervalSec);
+
+/** W2–W12 open this long after they start, so the last wave's bounties land before contact. */
+export const OPEN = 6;
+/** The build phase before most waves. */
+export const COUNTDOWN = 25;
+/**
+ * W6's build phase: the Penitent's fight. It opens as she spawns (W5's only group), so W6 starts
+ * (and forces the pivot) PENITENT_WINDOW s after her, long before she could walk the 36-tile road
+ * to the gate (0.35 tiles/s: 100 s).
+ */
+export const PENITENT_WINDOW = 60;
+/** A packed Mote cluster's spacing (seconds). */
+export const PACKED = 0.2;
+
+export const waves = defineWaves([
+  // W1 · Glimmers + one Aegis Cantor [T: shield aura; kill it first], the Cantor mid-column
+  {
+    teach: true,
+    groups: [road('glimmer', 10, 0, 0.8), road('cantor', 1, 3.5)],
+  },
+  // W2 · Weft Wardens with Cantors walking among them [X], Glimmers behind
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      road('weft_warden', 4, OPEN, 3),
+      road('cantor', 2, OPEN + 1.5, 3),
+      road('glimmer', 10, OPEN + 14, 0.8),
+    ],
+  },
+  // W3 · Blinkstriders + Veilwalkers [C]
+  {
+    countdownSec: COUNTDOWN,
+    groups: [road('blinkstrider', 6, OPEN, 1.5), road('veilwalker', 8, OPEN + 3, 1.5)],
+  },
+  // W4 · Lightwings over the fencing + Cantors down the road [X], Veilwalkers in their shadow
+  {
+    countdownSec: COUNTDOWN,
+    groups: [
+      g('lightwing', 8, 'sky', OPEN, 1.0),
+      road('cantor', 3, OPEN + 2, 2.5),
+      road('glimmer', 12, OPEN + 3, 0.8),
+      road('veilwalker', 3, OPEN + 6, 2),
+    ],
+  },
+  // W5 · the Sunderglass Penitent, alone (shield wall and recharge pulse; cloaked shards when
+  // its shield breaks; the pivot at 50% or when W6 starts)
+  {
+    countdownSec: COUNTDOWN,
+    groups: [road('sunderglass_penitent', 1, OPEN)],
+  },
+  // (the pivot) W6 · the surge: Motes from the rig road toward the first refugee group [T:
+  // escort, gently]
+  {
+    countdownSec: PENITENT_WINDOW,
+    groups: [motes(12, 14, 0.5)],
+  },
+  // W7 · Motes + the second group, the Motes down the road behind it
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(10, OPEN, 0.4), motes(12, OPEN + 12, 0.4, 'road')],
+  },
+  // W8 · Mote clusters from both ends
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(20, OPEN, PACKED), motes(20, OPEN + 4, PACKED, 'road')],
+  },
+  // W9 · larger Mote clusters, one ahead of the third group
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(24, OPEN + 10, PACKED), motes(24, OPEN + 16, PACKED, 'road')],
+  },
+  // W10 · Motes ×20
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(20, OPEN, 0.3)],
+  },
+  // W11 · two groups at once, clusters from both ends
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(28, OPEN + 8, PACKED), motes(28, OPEN + 18, PACKED, 'road')],
+  },
+  // W12 · the last group + the largest surge
+  {
+    countdownSec: COUNTDOWN,
+    groups: [motes(36, OPEN + 6, PACKED), motes(36, OPEN + 16, PACKED, 'road')],
+  },
+]);

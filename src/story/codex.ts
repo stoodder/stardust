@@ -3,9 +3,11 @@
 // side-by-side mode from A3M1. Pure over content (content/codex/) and the story context.
 import {
   CODEX_ENTRIES,
+  CODEX_NOTE_VERSIONS,
   CODEX_VERSIONS,
   type CodexEntryDef,
   type CodexId,
+  type CodexNoteVersion,
   type CodexSubject,
   type CodexVersion,
 } from '../content/codex/index.ts';
@@ -82,8 +84,9 @@ export function codexTitle(ctx: StoryContext): string {
 
 /**
  * The versions an entry shows, given those unlocked (in version order): before Act III the newest
- * (older ones a tab away); in the *Field Journal* an entry with a correction shows its original and
- * its correction side by side (core-loop.md § 6.5).
+ * (a note version brings the record and the earlier notes with it: `notesShown`); in the *Field
+ * Journal* an entry with a correction shows its original and its correction side by side
+ * (core-loop.md § 6.5).
  */
 export function shownVersions(
   unlocked: readonly CodexVersion[],
@@ -96,6 +99,25 @@ export function shownVersions(
     return ['original', 'corrected'];
   }
   return [newest];
+}
+
+/** Whether `v` is a note written on the original (`annotated`, `margin`; style-guide § 6.2). */
+export function isNoteVersion(v: CodexVersion): v is CodexNoteVersion {
+  return (CODEX_NOTE_VERSIONS as readonly CodexVersion[]).includes(v);
+}
+
+/**
+ * The notes a note version shows, oldest first, ending with itself: every note version unlocked up
+ * to it, so Ves'thara's margin note shows under QUILL's annotation, both under the record (T501e).
+ * Empty for a version that isn't a note.
+ */
+export function notesShown(
+  version: CodexVersion,
+  unlocked: readonly CodexVersion[],
+): CodexNoteVersion[] {
+  if (!isNoteVersion(version)) return [];
+  const upTo = CODEX_NOTE_VERSIONS.indexOf(version);
+  return CODEX_NOTE_VERSIONS.filter((v, i) => i <= upTo && (v === version || unlocked.includes(v)));
 }
 
 /**

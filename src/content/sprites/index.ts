@@ -1,5 +1,7 @@
 // Sprite registry: every sprite definition, in gallery order.
 import { allyBricks } from './allies/bricks.ts';
+import { allyPebble } from './allies/pebble.ts';
+import { allyRefugee } from './allies/refugee.ts';
 import { enemyBroodHauler } from './enemies/brood_hauler.ts';
 import { enemyChonk } from './enemies/chonk.ts';
 import { enemyHaulerYoung } from './enemies/hauler_young.ts';
@@ -16,6 +18,13 @@ import { enemyMote } from './enemies/mote.ts';
 import { enemyGlimmer } from './enemies/glimmer.ts';
 import { enemyWeftWarden } from './enemies/weft_warden.ts';
 import { enemyLightwing } from './enemies/lightwing.ts';
+import { enemyRiftmoth } from './enemies/riftmoth.ts';
+import { enemyFractureShard } from './enemies/fracture_shard.ts';
+import { enemyFracture } from './enemies/fracture.ts';
+import { enemyGlimmerShard } from './enemies/glimmer_shard.ts';
+import { enemyCantor } from './enemies/cantor.ts';
+import { enemyVeilwalker } from './enemies/veilwalker.ts';
+import { enemyBlinkstrider } from './enemies/blinkstrider.ts';
 import {
   enemyBroodHaulerFleeing,
   enemyBunchlingFleeing,
@@ -238,15 +247,18 @@ export const SPRITES = [
   enemyLightwing,
   enemyGlassWitch,
   // M5's units (placeholders until T540a; the Penitent T540b).
-  m5.enemyVeilwalker,
-  m5.enemyBlinkstrider,
-  m5.enemyCantor,
+  enemyVeilwalker,
+  enemyBlinkstrider,
+  enemyCantor,
   m5.enemySunderglassPenitent,
-  m5.enemyGlimmerShard,
-  m5.enemyFracture,
-  m5.enemyFractureShard,
-  m5.enemyRiftmoth,
+  enemyGlimmerShard,
+  enemyFracture,
+  enemyFractureShard,
+  enemyRiftmoth,
   allyBricks,
+  // M5's escort: the refugees and Pebble among them (T540a).
+  allyRefugee,
+  allyPebble,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,

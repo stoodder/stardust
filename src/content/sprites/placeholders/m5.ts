@@ -2,14 +2,10 @@
 // before their art lands (D069's pattern, as T400a did for M4). Each is an existing sprite under
 // the new id in its faction's palette, without palette variants, so it keeps the sprite contract
 // (enemy walks in four facings, tower t1–t3 frames with a mount and a head, 14×14 icons). The art
-// tasks replace each behind the same id and delete its line here: T540a the units (Veilwalker,
-// Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth), T540b the Penitent, the
-// Aelari towers, and Stillness's icon. This file goes away with the last of them.
+// tasks replace each behind the same id and delete its line here (T540a drew the units' bodies);
+// what's left is T540b's: the Penitent, the units' icons, the Aelari towers, the tell glyphs, and
+// Stillness's icon. This file goes away with the last of them.
 import { enemyGlassWitch } from '../enemies/glass_witch.ts';
-import { enemyGlimmer } from '../enemies/glimmer.ts';
-import { enemyLightwing } from '../enemies/lightwing.ts';
-import { enemyMote } from '../enemies/mote.ts';
-import { enemyWeftWarden } from '../enemies/weft_warden.ts';
 import {
   iconEnemyGlimmer,
   iconEnemyLightwing,
@@ -42,19 +38,12 @@ function placeholder<const Id extends string>(
   return { ...rest, id, palette };
 }
 
-// Units (T540a; the Penitent T540b).
-export const enemyVeilwalker = placeholder(enemyGlimmer, 'enemy.veilwalker', 'aelari');
-export const enemyBlinkstrider = placeholder(enemyGlimmer, 'enemy.blinkstrider', 'aelari');
-export const enemyCantor = placeholder(enemyWeftWarden, 'enemy.cantor', 'aelari');
+// The Penitent (T540b), and the units' icons (T540b).
 export const enemySunderglassPenitent = placeholder(
   enemyGlassWitch,
   'enemy.sunderglass_penitent',
   'aelari',
 );
-export const enemyGlimmerShard = placeholder(enemyGlimmer, 'enemy.glimmer_shard', 'aelari');
-export const enemyFracture = placeholder(enemyMote, 'enemy.fracture', 'hollow');
-export const enemyFractureShard = placeholder(enemyMote, 'enemy.fracture_shard', 'hollow');
-export const enemyRiftmoth = placeholder(enemyLightwing, 'enemy.riftmoth', 'hollow');
 export const iconEnemyVeilwalker = placeholder(iconEnemyGlimmer, 'icon.enemy.veilwalker', 'aelari');
 export const iconEnemyBlinkstrider = placeholder(
   iconEnemyGlimmer,

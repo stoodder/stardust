@@ -25,6 +25,7 @@ import {
 import { clearance_sale } from '../../content/abilities/clearance_sale.ts';
 import { suppressing_fire } from '../../content/abilities/suppressing_fire.ts';
 import { time_dilation } from '../../content/abilities/time_dilation.ts';
+import { stillness } from '../../content/abilities/stillness.ts';
 import { blinkstrider } from '../../content/enemies/blinkstrider.ts';
 import { bunchling } from '../../content/enemies/bunchling.ts';
 import { cantor } from '../../content/enemies/cantor.ts';
@@ -48,6 +49,7 @@ import { weft_warden } from '../../content/enemies/weft_warden.ts';
 import { conductive } from '../../content/links/conductive.ts';
 import { resonance } from '../../content/links/resonance.ts';
 import { prism } from '../../content/towers/prism.ts';
+import { mindspike } from '../../content/towers/mindspike.ts';
 import { lookout } from '../../content/towers/lookout.ts';
 import { map as a1m2 } from '../../content/maps/a1_m02/map.ts';
 import { rivet } from '../../content/towers/rivet.ts';
@@ -56,6 +58,7 @@ import { sprinkler } from '../../content/towers/sprinkler.ts';
 import { zapcoil } from '../../content/towers/zapcoil.ts';
 import type { IdsOf, LinkDef, RawContent } from '../../content/types.ts';
 import { prismMap } from './devPrism.ts';
+import { mindMap } from './devMind.ts';
 
 const devRivet = defineTower({
   id: 'dev_rivet',
@@ -205,6 +208,8 @@ const DEV_ENTITIES = {
     lookout,
     // dev_prism's (T504).
     prism,
+    // dev_mind's (T507).
+    mindspike,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -245,6 +250,8 @@ const DEV_ENTITIES = {
     suppressing_fire,
     time_dilation,
     clearance_sale,
+    // Ves'thara's Stillness for dev_mind (T507).
+    stillness,
   }),
 };
 export type DevIds = IdsOf<typeof DEV_ENTITIES, 'dev_range'>;
@@ -1408,6 +1415,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_prism: prismMap, // T504 (devPrism.ts)
     dev_penitent: penitentMap, // T506
     dev_dark: darkMap, // T505
+    dev_mind: mindMap, // T507 (devMind.ts)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).

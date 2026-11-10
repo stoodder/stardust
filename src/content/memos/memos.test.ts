@@ -89,6 +89,15 @@ describe('the memo content', () => {
     );
   });
 
+  it("notices C2's Return in the relocation memo, as Accounting would (an empty bank)", () => {
+    expect(MEMOS.memo_a2_05?.extra).toEqual([
+      expect.objectContaining({ when: { flag: 'stardust_choice', eq: 'returned' } }),
+    ]);
+    expect(MEMOS.memo_a2_05?.extra?.[0]?.text).toMatch(/^P\.S\. Accounting says/);
+    // The Q3 Bonus memo pays nothing itself and names the bonus it announces.
+    expect(MEMOS.memo_a2_04?.body).toContain('400 Stardust');
+  });
+
   it("files A2M2's KFA form as its own item, just before Sterling's memo asking to disregard it", () => {
     const i = MEMO_IDS.indexOf('memo_a2_02_kfa');
     expect(MEMOS.memo_a2_02_kfa?.format).toBe('form');

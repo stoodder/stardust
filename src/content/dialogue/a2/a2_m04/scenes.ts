@@ -10,8 +10,18 @@
 // - **C2** (T510 reads this shape on Results): the lines up to the choice show on the card; the
 //   choice's options set `stardust_choice` and become C2's buttons while the flag is unset; with an
 //   empty Stardust bank (after step 6) the read-through takes `no_bank` instead and sets `none`.
-//   A loss plays only its own line and offers nothing.
+//   A replay after C2 was made ends after Sterling's lines; a loss plays only its own line.
 import { defineScene, defineScenes } from '../../define.ts';
+import type { Condition } from '../../types.ts';
+
+/** C2 was already made (`stardust_choice` set): a replay's debrief offers nothing. */
+const C2_MADE: Condition = {
+  any: [
+    { flag: 'stardust_choice', eq: 'sold' },
+    { flag: 'stardust_choice', eq: 'returned' },
+    { flag: 'stardust_choice', eq: 'none' },
+  ],
+};
 
 export const scenes = defineScenes([
   // The tour: Kip, promoted, proud, and not looking at the vats; QUILL stops him mid-sentence, then
@@ -129,6 +139,8 @@ export const scenes = defineScenes([
       speaker: 'sterling',
       text: "Let's call it the Humane Relocation Pilot. My budget, my risk. Just trust me, okay?",
     },
+    // A replay after C2 was made: no second offer, the debrief ends quietly.
+    { kind: 'branch', cond: C2_MADE, goto: 'done' },
     { kind: 'branch', cond: { bank: 'stardust', lte: 0 }, goto: 'no_bank' },
     {
       kind: 'line',
@@ -150,7 +162,7 @@ export const scenes = defineScenes([
     { kind: 'end' },
     { label: 'no_bank', kind: 'line', speaker: 'zibzab', text: 'No refunds. I did say.' },
     { kind: 'set', flag: 'stardust_choice', value: 'none' },
-    { kind: 'end' },
+    { label: 'done', kind: 'end' },
     {
       label: 'lost',
       kind: 'line',

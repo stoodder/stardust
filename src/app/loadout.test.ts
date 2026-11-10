@@ -52,6 +52,7 @@ describe('the loadout screen (app side)', () => {
       ['harpoon', ['T1']], // plays since T408: anti-armor from tier 1
       ['crane', []],
       ['prism', ['T1']], // plays since T504: its beam's armor applies per second
+      ['mindspike', []], // plays since T507: answers armor only where Hollow or Aelari wear it
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -62,6 +63,7 @@ describe('the loadout screen (app side)', () => {
       'Time Dilation', // plays since T304d
       'Clearance Sale',
       'Scanner Sweep', // plays since T406
+      'Stillness', // plays since T507
     ]);
     expect(view.links.map((l) => l.name)).toEqual([
       'Crossfire',

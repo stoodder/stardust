@@ -442,3 +442,8 @@
   box-shadow: inset 1px 0 0 var(--sd-teal-3);
   color: var(--sd-steel-4);
 }
+
+/* Ves'thara's margin note (T501e): her sapphire rule, under QUILL's teal one. */
+.sd-codex .sd-codex-margin {
+  box-shadow: inset 1px 0 0 var(--sd-blue-3);
+}

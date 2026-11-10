@@ -41,6 +41,8 @@
 // (ShieldAuraView).
 // M5 (T504): a beam tower's lit beams run from its crystal to their targets, wider and brighter as
 // each ramps (BeamView).
+// M5 (T507): an Unnerved unit wears a wobbling violet squiggle overhead, an Echo Spike hit rings
+// out to its echo's radius, and Stillness leaves a pale blue disc where it froze (MindView).
 // M4 (T410a): a map's lighting schedule crossfades the sky and a multiply grade as its waves start
 // (LightingView; cosmetic), and its dressing greys the grass (GroundView).
 // The sim-event wiring is battleEvents.ts's, and the pointer and hover feedback (the ghost, aim
@@ -86,6 +88,7 @@ import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
+import { MindView } from '../views/MindView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
 import { AssetView } from '../views/AssetView.ts';
 import { CuePropView } from '../views/CuePropView.ts';
@@ -225,6 +228,8 @@ export class BattleScene extends Phaser.Scene {
   #blinks!: BlinkView;
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
   #phases!: PhaseView;
+  /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
+  #mind!: MindView;
   #harpoon!: HarpoonView;
   /** The Prism's beams (T504). */
   #beams!: BeamView;
@@ -372,6 +377,7 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion);
+    this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
     this.#beams = new BeamView(ctx, prefersReducedMotion, (c, r) => this.#liftPx(c, r));
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
@@ -422,10 +428,13 @@ export class BattleScene extends Phaser.Scene {
       const id = slot === 1 ? a.slot1 : a.slot2;
       const def = id === null ? undefined : sim.config.content.abilities[id];
       const e = def?.effect;
-      const area = def !== undefined && (e?.kind === 'strike' || e?.kind === 'reveal');
+      const area =
+        def !== undefined &&
+        (e?.kind === 'strike' || e?.kind === 'reveal' || e?.kind === 'stasisArea');
       const radius = area ? abilityStats(def, sim.config.modifiers).radiusTiles : 0;
       // Aiming previews an area at its real radius: a strike's reticle, or Scanner Sweep's circle.
-      this.#strikeRadius[slot - 1] = e?.kind === 'strike' ? radius : 0;
+      // Stillness (T507) borrows the strike's reticle at its own radius until T531's aim.
+      this.#strikeRadius[slot - 1] = e?.kind === 'strike' || e?.kind === 'stasisArea' ? radius : 0;
       this.#sweepRadius[slot - 1] = e?.kind === 'reveal' ? radius : 0;
       this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
     }
@@ -482,6 +491,7 @@ export class BattleScene extends Phaser.Scene {
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
+      this.#mind.bind(bus),
       this.#harpoon.bind(bus, (uid) => {
         const t = sim.state.towers.items.find((x) => x.alive && x.uid === uid);
         return t === undefined ? 0 : this.#liftPx(t.col, t.row);
@@ -520,6 +530,7 @@ export class BattleScene extends Phaser.Scene {
       this.#wards.reset();
       this.#blinks.reset();
       this.#phases.reset();
+      this.#mind.reset();
       this.#harpoon.reset();
       this.#beams.reset();
       this.#leaves.reset();
@@ -558,6 +569,7 @@ export class BattleScene extends Phaser.Scene {
     this.#wards.update(state.allies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
+    this.#mind.update(dt, state.enemies);
     this.#harpoon.update(dt, state.enemies);
     this.#beams.update(dt, state.towers, state.enemies);
     this.#leaves.update(dt);
@@ -671,6 +683,7 @@ export class BattleScene extends Phaser.Scene {
       wards: this.#wards.shown,
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
       phases: { ...this.#phases.shown, phasedIn: this.#phases.phasedIn },
+      mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
       beams: { drawn: this.#beams.beams, topStep: this.#beams.topStep },
       debris: this.#fx.debrisLive,

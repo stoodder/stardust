@@ -7,7 +7,7 @@
 // hum, the fringe swinging (3 fps). From behind: no gaze, a dimmer heart.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
+import { frayLooks, hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
 
 const W = 21;
 const H = 27;
@@ -73,6 +73,21 @@ function warden(facing: 'se' | 'ne', beat: 0 | 1): string[] {
   return rows(g);
 }
 
+const frames = {
+  walk_se_0: warden('se', 0),
+  walk_se_1: warden('se', 1),
+  walk_ne_0: warden('ne', 0),
+  walk_ne_1: warden('ne', 1),
+};
+const anims = {
+  walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 3 },
+  walk_sw: { mirrorOf: 'walk_se' },
+  walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 3 },
+  walk_nw: { mirrorOf: 'walk_ne' },
+};
+/** Its fray when hurt (T501d; `fray1_`/`fray2_<facing>`, lattice.ts `frayLooks`). */
+const frayed = frayLooks(frames, anims, 5);
+
 export const enemyWeftWarden = defineSprite({
   id: 'enemy.weft_warden',
   size: { w: W, h: H },
@@ -81,16 +96,6 @@ export const enemyWeftWarden = defineSprite({
   // The outline is the weave's own (lattice.ts `outlineOutside`), so the gaps stay see-through.
   outline: 'none',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  frames: {
-    walk_se_0: warden('se', 0),
-    walk_se_1: warden('se', 1),
-    walk_ne_0: warden('ne', 0),
-    walk_ne_1: warden('ne', 1),
-  },
-  anims: {
-    walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 3 },
-    walk_sw: { mirrorOf: 'walk_se' },
-    walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 3 },
-    walk_nw: { mirrorOf: 'walk_ne' },
-  },
+  frames: { ...frames, ...frayed.frames },
+  anims: { ...anims, ...frayed.anims },
 });

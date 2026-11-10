@@ -38,7 +38,7 @@ describe('A2M4 scenes', () => {
     }
   });
 
-  it('offers C2 on a win with a bank, sets none with an empty one, and nothing on a loss', () => {
+  it('offers C2 on a win with a bank, sets none with an empty one, nothing on a replay or a loss', () => {
     const won = { outcome: 'won' as const, ruleFlags: {} };
     const offer = readThrough(scene('a2_m04_debrief'), ctx({}, won, 625));
     expect(offer.lines.map((l) => l.speaker)).toEqual(['sterling', 'sterling', 'zibzab', 'zibzab']);
@@ -52,6 +52,23 @@ describe('A2M4 scenes', () => {
     const empty = readThrough(scene('a2_m04_debrief'), ctx({}, won, 0));
     expect(empty.lines.at(-1)?.text).toBe('No refunds. I did say.');
     expect(empty.cursor.effects.flags).toEqual({ stardust_choice: 'none' });
+    // A replay after C2: Sterling's lines, then nothing more (no offer, no "No refunds").
+    for (const [choice, bank] of [
+      ['sold', 0],
+      ['returned', 0],
+      ['none', 300],
+    ] as const) {
+      const replay = readThrough(
+        scene('a2_m04_debrief'),
+        ctx({ stardust_choice: choice }, won, bank),
+      );
+      expect(
+        replay.lines.map((l) => l.speaker),
+        choice,
+      ).toEqual(['sterling', 'sterling']);
+      expect(replay.cursor.step.kind, choice).toBe('end');
+      expect(replay.cursor.effects.flags, choice).toEqual({});
+    }
     const lost = texts('a2_m04_debrief', ctx({}, { outcome: 'lost', ruleFlags: {} }, 625));
     expect(lost).toEqual(['No charge for that one, Technician. Go again.']);
   });

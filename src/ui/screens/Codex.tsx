@@ -1,15 +1,17 @@
 // The codex (T303, T411; design/core-loop.md § 6.5): the base's *Pest Field Guide* pane. Unlocked
 // entries, grouped by kind, in a list beside the open entry: its picture (the subject's icon, or a
-// prop or portrait), its title, and the version it shows (from A3M1, original beside corrected). An
-// annotated version shows the original it annotates, dimmed, with the bracketed note under it in
-// the margin's rule (the record and what was written on it). Opening an entry reads it, which
-// clears its NEW tag. The view models are app/inbox.ts.
+// prop or portrait), its title, and the version it shows (from A3M1, original beside corrected). A
+// note (annotated, margin) shows the original it annotates, dimmed, with the bracketed notes under
+// it, oldest first, each behind its rule (the record and what was written on it; Ves'thara's margin
+// note under QUILL's, behind a sapphire rule, T501e). Opening an entry reads it, which clears its
+// NEW tag. The view models are app/inbox.ts.
 import { useState } from 'preact/hooks';
 import {
   CODEX_SECTIONS,
   codexView,
   markCodexRead,
   type CodexEntryView,
+  type CodexNoteView,
   type CodexVersionView,
 } from '../../app/inbox.ts';
 import { Icon } from '../hud/Icon.tsx';
@@ -20,8 +22,34 @@ import './inbox.css';
 const VERSION_LABEL = {
   original: 'Pest Field Guide',
   annotated: 'Annotated',
+  margin: 'Annotated',
   corrected: 'Field Journal',
 } as const;
+
+/** A note's class: every note behind its rule; Ves'thara's margin note in her own colour. */
+function noteClass(version: CodexNoteView['version']): string {
+  return version === 'margin'
+    ? 'sd-codex-text sd-codex-note sd-codex-margin'
+    : 'sd-codex-text sd-codex-note';
+}
+
+/** A note written on the record before the one the version shows (QUILL's above Ves'thara's). */
+function EarlierNote({ id, n }: { id: string; n: CodexNoteView }) {
+  return (
+    <>
+      <p class={noteClass(n.version)}>
+        <GlyphText text={n.text} />
+      </p>
+      {n.smallPrint !== null && (
+        <SmallPrint
+          key={`${id}-${n.version}`}
+          id={`sd-codex-print-${id}-${n.version}`}
+          text={n.smallPrint}
+        />
+      )}
+    </>
+  );
+}
 
 /** One version's text and small print; an annotation under the record it was written on. */
 function Version({ id, v, label }: { id: string; v: CodexVersionView; label: boolean }) {
@@ -42,7 +70,10 @@ function Version({ id, v, label }: { id: string; v: CodexVersionView; label: boo
           )}
         </div>
       )}
-      <p class={v.record === null ? 'sd-codex-text' : 'sd-codex-text sd-codex-note'}>
+      {v.earlier.map((n) => (
+        <EarlierNote key={n.version} id={id} n={n} />
+      ))}
+      <p class={v.record === null ? 'sd-codex-text' : noteClass(v.version)}>
         <GlyphText text={v.text} />
       </p>
       {v.smallPrint !== null && (
@@ -59,8 +90,8 @@ function Version({ id, v, label }: { id: string; v: CodexVersionView; label: boo
 function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
   const section = CODEX_SECTIONS.find((s) => s.kind === entry.kind)?.label ?? '';
   const sideBySide = entry.versions.length > 1;
-  // A single annotated version says so in the kicker (side by side, each version is labelled).
-  const annotated = !sideBySide && entry.versions[0]?.version === 'annotated';
+  // A single note version says so in the kicker (side by side, each version is labelled).
+  const annotated = !sideBySide && (entry.versions[0]?.record ?? null) !== null;
   return (
     <article class="sd-codex-entry" aria-labelledby="sd-codex-title">
       <header class="sd-codex-head">

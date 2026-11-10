@@ -1,10 +1,10 @@
 // Refugees on an Escort (design/maps.md § 5.2; T305c): the minimal readable view. Each refugee on
-// the field walks its route as a Skitterkin in the `skitterkin.ally` palette (the Act I sprites,
-// as maps.md says; placeholders until T540a draws the refugees: `enemy.nibbler`, and Pebble as
-// `enemy.youngling`), facing the way it moves. One still filing in at the route's start (`dist` < 0)
-// isn't drawn; one a Hollow unit is hushing freezes on its frame (its Hollow unit tells). A
-// hushed or evacuated refugee's view goes with it (the sweep). Depth-sorted in `world` like an
-// enemy. T530a polishes it (the hush's struggle, the walk into the gate).
+// the field walks its route as a Skitterkin in the `skitterkin.ally` palette (the Act I body, as
+// maps.md says, carrying its belongings: `ally.refugee`, T540a; Pebble walks among them in her
+// bottle cap, `ally.pebble`), facing the way it moves. One still filing in at the route's start
+// (`dist` < 0) isn't drawn; one a Hollow unit is hushing freezes on its frame (its Hollow unit
+// tells). A hushed or evacuated refugee's view goes with it (the sweep). Depth-sorted in `world`
+// like an enemy. T530a polishes it (the hush's struggle, the walk into the gate).
 import type * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { Ally } from '../../sim/index.ts';
@@ -14,9 +14,9 @@ import { facingOf, type Facing } from './spriteInfo.ts';
 import type { ViewContext } from './ViewContext.ts';
 import { ViewPool, type PooledView } from './ViewPool.ts';
 
-/** The placeholder sprites (T540a replaces them under the same ids or here). */
-export const REFUGEE_SPRITE: SpriteId = 'enemy.nibbler';
-export const PEBBLE_SPRITE: SpriteId = 'enemy.youngling';
+/** The refugees' and Pebble's sprites (T540a; allies/refugee.ts, allies/pebble.ts). */
+export const REFUGEE_SPRITE: SpriteId = 'ally.refugee';
+export const PEBBLE_SPRITE: SpriteId = 'ally.pebble';
 /** Refugees wear the Skitterkin allies' palette (maps.md § 5.2). */
 export const REFUGEE_VARIANT = 'skitterkin.ally';
 

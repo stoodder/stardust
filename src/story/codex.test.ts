@@ -3,7 +3,9 @@ import { CODEX, type CodexEntryDef } from '../content/codex/index.ts';
 import {
   codexSeenId,
   codexTitle,
+  isNoteVersion,
   newCodexUnlocks,
+  notesShown,
   shownVersions,
   unlockedVersions,
   unreadVersions,
@@ -125,6 +127,45 @@ describe('codex unlocks', () => {
     expect(a2m3.codex_pebble).toEqual(['original']);
     expect(shownVersions(['original', 'annotated'], ctx('a2_m03'))).toEqual(['annotated']);
   });
+
+  it("adds QUILL's A2M4 notes and the A2M4–A2M6 entries as their maps are won (T511)", () => {
+    const met: CodexEncounters = {
+      enemies: ['veilwalker', 'blinkstrider', 'cantor', 'sunderglass_penitent'],
+      towers: ['prism'],
+      abilities: [],
+    };
+    const have = { codex_tidybot: ['original'], codex_stardust: ['original'] } as const;
+    const a2m4 = newCodexUnlocks(have, ctx('a2_m04'), met);
+    expect(a2m4.codex_tidybot).toEqual(['annotated']);
+    expect(a2m4.codex_stardust).toEqual(['annotated']);
+    for (const id of ['codex_second_harvest', 'codex_kip', 'codex_veilwalker', 'codex_cantor']) {
+      expect(a2m4[id], id).toEqual(['original']);
+    }
+    // The manifest waits for its objective; the places wait for their maps.
+    expect(a2m4).not.toHaveProperty('codex_intake_manifest');
+    expect(a2m4).not.toHaveProperty('codex_preserve');
+    const manifest = { ...ctx('a2_m04'), objectives: { a2_m04: ['intake_manifest'] } };
+    expect(newCodexUnlocks(have, manifest, met).codex_intake_manifest).toEqual(['original']);
+    const a2m5 = newCodexUnlocks({}, ctx('a2_m05'), met);
+    expect(a2m5.codex_preserve).toEqual(['original']);
+    expect(a2m5.codex_vesthara).toEqual(['original']);
+    expect(a2m5.codex_prism).toEqual(['original']);
+    expect(a2m5).not.toHaveProperty('codex_long_night');
+    expect(newCodexUnlocks({}, ctx('a2_m06'), NONE).codex_long_night).toEqual(['original']);
+  });
+
+  it("writes Ves'thara's margin notes once Sundown is won, over QUILL's (T501e)", () => {
+    const met: CodexEncounters = { ...NONE, enemies: ['hauler', 'glass_witch'] };
+    const have = {
+      codex_brood_hauler: ['original', 'annotated'],
+      codex_glass_witch: ['original'],
+    } as const;
+    expect(newCodexUnlocks(have, ctx('a2_m05'), met)).not.toHaveProperty('codex_brood_hauler');
+    const a2m6 = newCodexUnlocks(have, ctx('a2_m06'), met);
+    expect(a2m6.codex_brood_hauler).toEqual(['margin']);
+    expect(a2m6.codex_glass_witch).toEqual(['margin']);
+    expect(shownVersions(['original', 'annotated', 'margin'], ctx('a2_m06'))).toEqual(['margin']);
+  });
 });
 
 describe('the codex title and its versions on screen', () => {
@@ -145,6 +186,27 @@ describe('the codex title and its versions on screen', () => {
     ]);
   });
 
+  it('shows a note with the notes written before it, oldest first', () => {
+    expect(isNoteVersion('annotated')).toBe(true);
+    expect(isNoteVersion('margin')).toBe(true);
+    expect(isNoteVersion('original')).toBe(false);
+    expect(isNoteVersion('corrected')).toBe(false);
+    expect(notesShown('margin', ['original', 'annotated', 'margin'])).toEqual([
+      'annotated',
+      'margin',
+    ]);
+    // A margin note on an entry with no annotation stands alone under the record.
+    expect(notesShown('margin', ['original', 'margin'])).toEqual(['margin']);
+    expect(notesShown('annotated', ['original', 'annotated', 'margin'])).toEqual(['annotated']);
+    expect(notesShown('original', ['original', 'annotated'])).toEqual([]);
+    expect(notesShown('corrected', ['original', 'annotated', 'corrected'])).toEqual([]);
+    // The Field Journal sets the correction beside the original; the notes step aside.
+    expect(shownVersions(['original', 'annotated', 'margin', 'corrected'], ctx('a3_m01'))).toEqual([
+      'original',
+      'corrected',
+    ]);
+  });
+
   it('marks a version read in the seen list', () => {
     expect(codexSeenId('codex_nibbler', 'original')).toBe('codex_nibbler__original');
     const seen = [codexSeenId('codex_test_hauler', 'original')];
@@ -153,5 +215,6 @@ describe('the codex title and its versions on screen', () => {
     ]);
     // A seen id fits the save's free-form id shape (validate.ts: ≤ 48, lowercase snake_case).
     expect(codexSeenId('codex_chitterbloom', 'corrected')).toMatch(/^[a-z][a-z0-9_]{0,47}$/);
+    expect(codexSeenId('codex_intake_manifest', 'margin')).toMatch(/^[a-z][a-z0-9_]{0,47}$/);
   });
 });

@@ -5,9 +5,10 @@
 // heart. It hovers two pixels over its shadow and never walks: its `walk` is a glide, a 1 px bob
 // and the threads' hum (a few strands slide a pixel on alternate frames, 4 fps). Seen from behind
 // it shows no eye and a dimmer heart. Its shield bubble (render) sizes itself from this frame.
+// Hurt, it frays (`fray1_`/`fray2_<facing>`, T501d): loose thread-ends hang from its edges.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
+import { frayLooks, hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
 
 const W = 13;
 const H = 19;
@@ -46,6 +47,21 @@ function glimmer(facing: 'se' | 'ne', beat: 0 | 1): string[] {
   return rows(g);
 }
 
+const frames = {
+  walk_se_0: glimmer('se', 0),
+  walk_se_1: glimmer('se', 1),
+  walk_ne_0: glimmer('ne', 0),
+  walk_ne_1: glimmer('ne', 1),
+};
+const anims = {
+  walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 4 },
+  walk_sw: { mirrorOf: 'walk_se' },
+  walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 4 },
+  walk_nw: { mirrorOf: 'walk_ne' },
+};
+/** Its fray when hurt (T501d; `fray1_`/`fray2_<facing>`, lattice.ts `frayLooks`). */
+const frayed = frayLooks(frames, anims, 3);
+
 export const enemyGlimmer = defineSprite({
   id: 'enemy.glimmer',
   size: { w: W, h: H },
@@ -54,16 +70,6 @@ export const enemyGlimmer = defineSprite({
   // The outline is the weave's own (lattice.ts `outlineOutside`), so the gaps stay see-through.
   outline: 'none',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  frames: {
-    walk_se_0: glimmer('se', 0),
-    walk_se_1: glimmer('se', 1),
-    walk_ne_0: glimmer('ne', 0),
-    walk_ne_1: glimmer('ne', 1),
-  },
-  anims: {
-    walk_se: { frames: ['walk_se_0', 'walk_se_1'], fps: 4 },
-    walk_sw: { mirrorOf: 'walk_se' },
-    walk_ne: { frames: ['walk_ne_0', 'walk_ne_1'], fps: 4 },
-    walk_nw: { mirrorOf: 'walk_ne' },
-  },
+  frames: { ...frames, ...frayed.frames },
+  anims: { ...anims, ...frayed.anims },
 });

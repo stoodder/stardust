@@ -75,6 +75,11 @@ export interface RenderState {
   readonly harpoon: { readonly pins: number; readonly skewered: number };
   /** Beams drawn now, and the brightest ramp step among them (−1: none; T504, BeamView). */
   readonly beams: { readonly drawn: number; readonly topStep: number };
+  /**
+   * Unnerved squiggles up now, and Echo Spike bursts and Stillness casts seen since the battle
+   * began (T507, MindView).
+   */
+  readonly mind: { readonly unnerved: number; readonly echoes: number; readonly stills: number };
   /** Debris pixels in flight (shards, motes, flecks). */
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */

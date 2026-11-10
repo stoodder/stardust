@@ -10,9 +10,23 @@ export type CodexId = string;
 /** The codex-id pattern. */
 export const CODEX_ID = /^codex_[a-z0-9_]+$/;
 
-/** The versions an entry can have, in unlock order. */
-export const CODEX_VERSIONS = ['original', 'annotated', 'corrected'] as const;
+/**
+ * The versions an entry can have, in unlock order: the `original` (the *Pest Field Guide*), Act
+ * II's two layers of notes written on it (`annotated`: Everglow's update or QUILL's note;
+ * `margin`: Ves'thara's margin note, from A2M6), and Act III's `corrected`.
+ */
+export const CODEX_VERSIONS = ['original', 'annotated', 'margin', 'corrected'] as const;
 export type CodexVersion = (typeof CODEX_VERSIONS)[number];
+
+/**
+ * The versions that are notes written on the `original` (style-guide § 6.2): each shows under the
+ * record it annotates, the earlier note above the later one.
+ */
+export const CODEX_NOTE_VERSIONS = [
+  'annotated',
+  'margin',
+] as const satisfies readonly CodexVersion[];
+export type CodexNoteVersion = (typeof CODEX_NOTE_VERSIONS)[number];
 
 /** What an entry is about (the codex's tabs). */
 export type CodexKind = 'enemy' | 'tower' | 'ability' | 'place' | 'person' | 'thing';
@@ -26,8 +40,9 @@ export type CodexSubject =
 
 export interface CodexVersionDef {
   /**
-   * ≤ 600 characters after substitution. Original: smug PR; annotated: bracketed and signed, the
-   * note alone (the codex shows it under the original it annotates). Single line breaks show.
+   * ≤ 600 characters after substitution. Original: smug PR; annotated and margin: bracketed and
+   * signed, the note alone (the codex shows it under the original it annotates, a margin note under
+   * the annotation too). Single line breaks show.
    */
   readonly text: string;
   /**

@@ -8,7 +8,7 @@
 //   outline drawn round nothing); one on the edge bites the silhouette.
 // - `ringRound`: hand-placed outline pixels round everything opaque (the inner ring of Heavy's 2 px
 //   swollen outline; the outline pass adds the outer one).
-import { at, fromRows, hash01, plot, rows, type CharGrid } from '../helpers.ts';
+import { at, fromRows, hash01, line, plot, rows, type CharGrid } from '../helpers.ts';
 
 /** Characters `dropPixels` may knock out: the body's greys (never a feature, outline, or eye). */
 const BODY = new Set(['0', '1', '2', '3']);
@@ -91,4 +91,57 @@ export function hollowBody(
       plot(g, x, y, String(step));
     }
   }
+}
+
+/** The victim's silhouette inside a Heavy Hollow unit: a little round Skitterkin with its tuft. */
+// prettier-ignore
+export const HEAVY_VICTIM = [
+  '..w..',
+  '.www.',
+  'wwwww',
+  '.w.w.',
+] as const;
+
+/** Pale speed lines trailing a Heavy Hollow unit (it is 15% faster), one pattern per step. */
+// prettier-ignore
+export const HEAVY_SPEED = [
+  ['33.', '...', '.33', '...'],
+  ['.33', '...', '33.', '...'],
+  ['3.3', '...', '.33', '...'],
+] as const;
+
+/**
+ * Dresses a Hollow body as Heavy (art-direction §8 `heavy`, after it hushes someone; T440a's
+ * Mote set the look): the victim pale inside it at (vx, vy), the inner ring of its doubled 2 px
+ * outline (the outline pass adds the outer one), and speed lines trailing at (sx, sy).
+ */
+export function heavyDress(
+  g: CharGrid,
+  vx: number,
+  vy: number,
+  sx: number,
+  sy: number,
+  step: number,
+): void {
+  for (const [dy, r] of HEAVY_VICTIM.entries()) {
+    for (let dx = 0; dx < r.length; dx++) if (r.charAt(dx) === 'w') plot(g, vx + dx, vy + dy, 'w');
+  }
+  ringRound(g);
+  const speed = HEAVY_SPEED[step % HEAVY_SPEED.length] ?? [];
+  for (const [dy, r] of speed.entries()) {
+    for (let dx = 0; dx < r.length; dx++) {
+      if (r.charAt(dx) !== '.' && at(g, sx + dx, sy + dy) === '.') plot(g, sx + dx, sy + dy, '3');
+    }
+  }
+}
+
+/**
+ * The hush reach (the `tell` pose, art-direction §8): two thin limbs the shape never had, from
+ * (x0, y0) out to the canvas's leading edge at row `ey`, pale-tipped.
+ */
+export function reach(g: CharGrid, x0: number, y0: number, ex: number, ey: number): void {
+  line(g, x0, y0, ex, ey, '2');
+  line(g, x0, y0 + 2, ex, ey + 2, '1');
+  plot(g, ex, ey, 'w');
+  plot(g, ex, ey + 2, 'w');
 }

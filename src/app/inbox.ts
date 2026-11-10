@@ -18,7 +18,13 @@ import {
   type CodexVersion,
   type SaveData,
 } from '../meta/index.ts';
-import { codexSeenId, codexTitle, shownVersions, unreadVersions } from '../story/codex.ts';
+import {
+  codexSeenId,
+  codexTitle,
+  notesShown,
+  shownVersions,
+  unreadVersions,
+} from '../story/codex.ts';
 import { memoBody, unreadMemos } from '../story/inbox.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { activeSave, updateActiveSave, type SaveResult } from './save.ts';
@@ -145,14 +151,25 @@ export interface CodexText {
   readonly smallPrint: string | null;
 }
 
+/** A note written on the record (an `annotated` or `margin` version), and whose it is. */
+export interface CodexNoteView extends CodexText {
+  readonly version: CodexVersion;
+}
+
 /** One version on screen. */
 export interface CodexVersionView extends CodexText {
   readonly version: CodexVersion;
   /**
-   * An annotation is written on the record: the `original` it annotates, shown above the note
-   * (null for any other version). So the newest version on screen still shows the older one.
+   * A note (annotated, margin) is written on the record: the `original` it annotates, shown above
+   * the note (null for any other version). So the newest version on screen still shows the older
+   * one.
    */
   readonly record: CodexText | null;
+  /**
+   * The notes written on the record before this one, oldest first, shown between the record and
+   * this note: QUILL's annotation above Ves'thara's margin note (T501e). Empty for the rest.
+   */
+  readonly earlier: readonly CodexNoteView[];
 }
 
 /** One unlocked entry, ready to show. */
@@ -199,7 +216,8 @@ export function codexView(save: SaveData | null = activeSave()): CodexView | nul
     smallPrint: def.smallPrint === undefined ? null : resolveText(def.smallPrint, text),
   });
   for (const e of CODEX_ENTRIES) {
-    const shown = shownVersions(unlockedOf(save, e), ctx);
+    const unlocked = unlockedOf(save, e);
+    const shown = shownVersions(unlocked, ctx);
     if (shown.length === 0) continue;
     const original = e.versions.original;
     entries.push({
@@ -208,11 +226,18 @@ export function codexView(save: SaveData | null = activeSave()): CodexView | nul
       kind: e.kind,
       picture: pictureOf(e),
       photo: e.photo ?? 'Photo pending',
-      versions: shown.map((v) => ({
-        version: v,
-        ...resolved(e.versions[v]!),
-        record: v === 'annotated' && original !== undefined ? resolved(original) : null,
-      })),
+      versions: shown.map((v) => {
+        const notes = notesShown(v, unlocked);
+        return {
+          version: v,
+          ...resolved(e.versions[v]!),
+          record: notes.length > 0 && original !== undefined ? resolved(original) : null,
+          earlier: notes.slice(0, -1).flatMap((n) => {
+            const def = e.versions[n];
+            return def === undefined ? [] : [{ version: n, ...resolved(def) }];
+          }),
+        };
+      }),
       isNew: unreadVersions(e.id, shown, save.story.seen).length > 0,
     });
   }

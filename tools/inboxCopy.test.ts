@@ -24,8 +24,8 @@ function expectQuoted(doc: string, text: string): void {
   expect(doc.includes(text), `the doc doesn't quote: ${text}`).toBe(true);
 }
 
-/** Memos whose small print the act file leaves to the content (A1M5's and A2M4's Q3 Bonus name none). */
-const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05', 'memo_a2_04']);
+/** Memos whose small print the act file leaves to the content (A1M5's names none). */
+const UNQUOTED_SMALL_PRINT = new Set(['memo_a1_00', 'memo_a1_05']);
 
 describe('the welcome memo is the style guide sample', () => {
   const m = MEMOS.memo_a1_00!;
@@ -100,6 +100,49 @@ describe('codex lines the docs quote', () => {
     const note = annotated('codex_brood_hauler');
     expect(note).toMatch(/^\[QUILL: /);
     expectQuoted(STYLE, `"${note}`);
+  });
+
+  // Act II part two (T511): the act file's quotes from each entry, word for word.
+  it.each([
+    ['codex_second_harvest', 'original', 'in hours what nature takes years to do'],
+    ['codex_second_harvest', 'original', 'a lovely violet'],
+    ['codex_kip', 'original', 'The smear on the pocket is product.'],
+    ['codex_tidybot', 'annotated', 'because inventory was the word I was given'],
+    ['codex_stardust', 'annotated', 'Further questions: Reclamation.'],
+    ['codex_stardust', 'annotated', '(Per policy.)'],
+    ['codex_stardust', 'annotated', 'The figures match.'],
+    ['codex_intake_manifest', 'original', 'processed (assorted)'],
+    ['codex_intake_manifest', 'original', 'processed (very small)'],
+    ['codex_intake_manifest', 'original', 'Names: no such field.'],
+    ['codex_cantor', 'original', 'Shoot the singer first. Everglow is aware of how that sounds.'],
+    ['codex_penitent', 'original', "Security has filed this under 'surrender.'"],
+    ['codex_preserve', 'original', 'Humane Relocation Preserve: a forever home!'],
+    ['codex_preserve', 'original', 'very peaceful, and very quiet'],
+    ['codex_vesthara', 'original', "Ves'thara is not known to Everglow."],
+    ['codex_vesthara', 'original', 'Witnesses are reminded that it did not happen.'],
+    ['codex_prism', 'original', 'Everglow thanks the donor, who does not exist.'],
+    ['codex_long_night', 'original', 'Remember: a clean perimeter.'],
+  ] as const)('%s (%s) holds the act file\'s "%s"', (id, version, line) => {
+    expectQuoted(ACT2, `"${line}`);
+    expect(CODEX[id]?.versions[version]?.text).toContain(line);
+  });
+
+  it("quotes the Preserve's small print: its fencing faces inward", () => {
+    const print = CODEX.codex_preserve?.versions.original?.smallPrint ?? '';
+    expect(print).toContain('For safety, its fencing faces inward.');
+    expectQuoted(ACT2, '"For safety, its fencing faces inward."');
+  });
+
+  it("writes Ves'thara's margin notes as the act file quotes them, the Hauler's the style guide's", () => {
+    const prefix = "[In the margin, in Ves'thara's hand: ";
+    const margins = Object.values(CODEX).filter((e) => e.versions.margin !== undefined);
+    expect(margins.length).toBeGreaterThan(0);
+    for (const e of margins) {
+      const note = e.versions.margin?.text ?? '';
+      expect(note.startsWith(prefix), e.id).toBe(true);
+      expectQuoted(ACT2, `("${note.slice(prefix.length, -1)}")`);
+    }
+    expectQuoted(STYLE, CODEX.codex_brood_hauler?.versions.margin?.text ?? '-');
   });
 
   it("carries the Orbital Strike's small print, and Rig Nine's one line", () => {
