@@ -199,6 +199,9 @@ describe('balance harness', () => {
       kind: 'beam',
       beamTickTicks: 6,
       beamTickSec: 0.1,
+      rampPctPerTick: 0,
+      rampCap: 1,
+      beams: 1,
     };
     const beam: CompiledTier = { ...t1, attack };
     const refused: CompiledContent<FixtureIds> = {

@@ -8,17 +8,23 @@
 //
 // Features come from three places: the config (a companion, slot 2, specs, difficulty, each
 // modifier kind, and each ability effect in a slot), the loadout's reachable tiers (attack kinds
-// and on-hit statuses; T400a: detection, economy, homing, charge, line, and target filters, and the
-// three Act II towers registered ahead of their tasks), and the map (T300a: flyers, neutral
-// units, enemy abilities, bosses, and optional objectives; T400a: the hush rule, Skittish, shield
-// pulses, blinks, cloaks, Protect, revisits, and clickable objects). Wreckage needs no gate: the
-// `clear` command and the salvage drone run since T304b (systems/wreckage.ts).
+// and on-hit statuses; T400a: detection, economy, homing, charge, line, and target filters; T500a:
+// echoes, area Marks, and Truthlight's `noEvade`), and the map (T300a: flyers, neutral units, enemy
+// abilities, bosses, and optional objectives; T400a: the hush rule, Skittish, shield pulses, blinks,
+// cloaks, Protect, revisits, and clickable objects; T500a: phasing, shield auras, a boss's
+// shield-broken phase, Escort, and Sundown's darkness). Wreckage needs no gate: the `clear`
+// command and the salvage drone run since T304b (systems/wreckage.ts).
+//
+// A tower registered ahead of its task (content/towers/index.ts STUB_TOWER_TASKS, which names
+// the task) is refused whole, whatever its tiers use: its numbers are a stub until the task
+// confirms them. That list is its one home; the task lifts it by deleting the tower's entry there.
 //
 // `run.checkpoints` refuses nothing (no config asks for a checkpoint); the waves system emits
 // CheckpointReached since T305b, so its row is null.
 // `towerRefusal` and `abilityRefusal` answer the same question for one raw tower or ability, so
 // meta can keep a save that runs ahead of the sim out of play.
 import type { CompiledEnemyDef, CompiledMapDef } from '../content/compiled.ts';
+import { STUB_TOWER_TASKS } from '../content/towers/index.ts';
 import type { AbilityEffect, AttackKind, IdSpace, StatusId } from '../content/types.ts';
 import type { EconomyStat, Modifier, SimConfig } from './config.ts';
 
@@ -55,12 +61,12 @@ export type Feature =
   | 'tower.detection'
   /** A tier with `economy` (the Salvage Crane; T408). */
   | 'tower.economy'
-  /**
-   * An Act II tower registered ahead of its task (T400a): its numbers are a stub until the task
-   * confirms them, so it stays out of play, the loadout pools, and the shop's shelves. The task
-   * that lifts the row also drops the tower from content's TOWERS_AHEAD_OF_TASK.
-   */
-  | StubTowerFeature
+  /** A hitscan `echo` (Mindspike [Echo Spike]; T507). */
+  | 'attack.echo'
+  /** A tier with `markArea` (Seer's Lantern [All-Seeing]; T508). */
+  | 'tower.markArea'
+  /** A `noEvade` Mark (Seer's Lantern [Truthlight]; T508). */
+  | 'status.noEvade'
   /**
    * A commander ability effect in slot 1 or 2 that the abilities system doesn't run yet. Time
    * Dilation (`slowAll`) and Clearance Sale (`discount`, with its wave-count cooldown) run since
@@ -70,6 +76,8 @@ export type Feature =
   | 'ability.discount'
   /** Scanner Sweep (T406). */
   | 'ability.reveal'
+  /** Stillness (T507). */
+  | 'ability.stasisArea'
   /** A wave group of flyers: an air-layer enemy or an air lane (air targeting; T304a). */
   | 'enemy.flying'
   /** A neutral unit in the waves (Gerald: targeted, never hurt, never leaks). */
@@ -96,6 +104,16 @@ export type Feature =
   | 'enemy.blink'
   /** A cloaked unit (T406). */
   | 'enemy.cloak'
+  /** Phasing (the Rift Moth; T503). */
+  | 'enemy.phase'
+  /** A shield-recharge aura (the Aegis Cantor; T502). */
+  | 'enemy.shieldAura'
+  /** A boss phase that begins when its shield breaks, and its shards (the Penitent; T506). */
+  | 'enemy.boss.shieldBroken'
+  /** Escort: refugees, the safe exit, the Evacuated meter (`escort` maps and pivots; T305c). */
+  | 'map.escort'
+  /** Sundown: a lighting key with `dark` > 0, or lamps (T505). */
+  | 'map.darkness'
   /** Optional objectives (Objective Intel). */
   | 'map.objectives'
   /** Protect the asset: a `protect` map's asset meter (T305a). */
@@ -126,24 +144,15 @@ export type Feature =
   | 'modifier.firstBuildFree'
   | 'modifier.freeCast';
 
-/**
- * The Act II towers registered ahead of their tasks (T400a; content/towers/index.ts
- * TOWERS_AHEAD_OF_TASK lists the ones still waiting), each with its own row.
- */
-export type StubTowerFeature = 'tower.lookout' | 'tower.harpoon' | 'tower.crane';
-
-/** A tower's own gate row, if it was registered ahead of its task. */
-function stubFeature(id: string): StubTowerFeature | null {
-  return id === 'lookout' || id === 'harpoon' || id === 'crane' ? `tower.${id}` : null;
-}
+/** Towers registered ahead of their task, and the task each waits for. */
+export type StubTowers = Readonly<Record<string, GateOwner>>;
 
 /**
- * The task a stub tower waits for (its `tower.<id>` row), or null for any other tower or once the
- * row is lifted. Meta keeps a refused stub's license and spec unlock off the shelves.
+ * The task a tower registered ahead of its task waits for (content's STUB_TOWER_TASKS), or
+ * null for any other tower. Meta keeps a refused stub's license and spec unlock off the shelves.
  */
-export function stubTowerGate(id: string, gates: Gates = FEATURE_GATES): GateOwner | null {
-  const f = stubFeature(id);
-  return f === null ? null : gates[f];
+export function stubTowerGate(id: string, stubs: StubTowers = STUB_TOWER_TASKS): GateOwner | null {
+  return Object.hasOwn(stubs, id) ? (stubs[id] ?? null) : null;
 }
 
 /**
@@ -158,10 +167,11 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
   // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
   // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
-  // live), detection with the Lookout (T406, live). Beams (Prism) and Unnerved (Mindspike) are M5's;
-  // spawners (Scuttle Den) M6's.
+  // live), detection with the Lookout (T406, live). M5 (D137): beams with the Prism (T504), Unnerved
+  // and echoes with the Mindspike (T507), area Marks and Truthlight with the Lantern (T508); spawners
+  // (Scuttle Den) are M6's.
   'attack.projectile': null,
-  'attack.beam': 'M5',
+  'attack.beam': 'T504',
   'attack.chain': null,
   'attack.spawner': 'M6',
   'attack.homing': null,
@@ -170,12 +180,12 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'attack.targetFilter': null,
   'status.pinned': null,
   'status.stasis': null,
-  'status.unnerved': 'M5',
+  'status.unnerved': 'T507',
   'tower.detection': null,
   'tower.economy': null,
-  'tower.lookout': null,
-  'tower.harpoon': null,
-  'tower.crane': null,
+  'attack.echo': 'T507',
+  'tower.markArea': 'T508',
+  'status.noEvade': 'T508',
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,
@@ -197,29 +207,35 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   'ability.slowAll': null,
   'ability.discount': null,
   'ability.reveal': null,
+  'ability.stasisArea': 'T507',
   'enemy.flying': null,
   'enemy.neutral': null,
   'enemy.burrow': null,
   'enemy.split': null,
   'enemy.huddle': null,
   'enemy.boss': null,
-  'enemy.boss.pivot': 'M5',
+  'enemy.boss.pivot': 'T506',
+  'enemy.boss.shieldBroken': 'T506',
   'enemy.boss.layToRest': 'M7',
   'enemy.hush': null,
   'enemy.skittish': null,
   'enemy.pulse': null,
   'enemy.blink': null,
   'enemy.cloak': null,
+  'enemy.phase': 'T503',
+  'enemy.shieldAura': 'T502',
   'map.objectives': null,
   'map.protect': null,
   'map.revisit': null,
   'map.clickable': null,
+  'map.escort': 'T305c',
+  'map.darkness': 'T505',
   'run.checkpoints': null,
 });
 
 type GatedKind = 'projectile' | 'beam' | 'chain' | 'spawner' | 'charge' | 'line';
 type GatedStatus = 'pinned' | 'stasis' | 'unnerved';
-type GatedEffect = 'slowAll' | 'discount' | 'reveal';
+type GatedEffect = 'slowAll' | 'discount' | 'reveal' | 'stasisArea';
 
 function isGatedKind(kind: AttackKind): kind is GatedKind {
   return (
@@ -237,7 +253,7 @@ function isGatedStatus(status: StatusId): status is GatedStatus {
 }
 
 function isGatedEffect(kind: AbilityEffect['kind']): kind is GatedEffect {
-  return kind === 'slowAll' || kind === 'discount' || kind === 'reveal';
+  return kind === 'slowAll' || kind === 'discount' || kind === 'reveal' || kind === 'stasisArea';
 }
 
 /** The gate a modifier needs open. */
@@ -264,16 +280,16 @@ interface GateTier {
     readonly homing?: boolean;
     readonly volley?: number;
     readonly targetFilter?: object | null;
+    readonly echo?: object | null;
   } | null;
-  readonly effects?: readonly { readonly status?: StatusId }[];
+  readonly effects?: readonly { readonly status?: StatusId; readonly noEvade?: boolean }[];
   readonly detect?: object | null;
   readonly economy?: object | null;
+  readonly markArea?: object | null;
 }
 
 /** The attack kinds, statuses, and tier abilities `tiers` use that have gates. */
 function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
-  const stub = stubFeature(id);
-  if (stub !== null) use(stub, `the '${id}' tower`);
   for (const tier of tiers) {
     const a = tier.attack;
     const kind = a?.kind;
@@ -290,11 +306,16 @@ function useTiers(tiers: readonly GateTier[], id: string, use: Use): void {
     if (tier.economy !== undefined && tier.economy !== null) {
       use('tower.economy', `tower economy (${id})`);
     }
+    if (a?.echo !== undefined && a.echo !== null) use('attack.echo', `an echo (${id})`);
+    if (tier.markArea !== undefined && tier.markArea !== null) {
+      use('tower.markArea', `an area Mark (${id})`);
+    }
     for (const e of [...(tier.effects ?? []), ...(a?.burst?.effects ?? [])]) {
       const status = e.status;
       if (status !== undefined && isGatedStatus(status)) {
         use(`status.${status}`, `the ${status} status (${id})`);
       }
+      if (e.noEvade === true) use('status.noEvade', `a Truthlight Mark (${id})`);
     }
   }
 }
@@ -323,6 +344,11 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
     use('enemy.blink', `a blink (${id})`);
   }
   if (def.cloaked) use('enemy.cloak', `a cloak (${id})`);
+  if (def.phase !== null) use('enemy.phase', `phasing (${id})`);
+  if (def.shieldAura !== null) use('enemy.shieldAura', `a shield aura (${id})`);
+  if (phases.some((p) => p.onShieldBroken || p.shards !== null)) {
+    use('enemy.boss.shieldBroken', `a shield-broken phase (${id})`);
+  }
 }
 
 /** The features a map needs from its waves and layout (T300a; T400a). */
@@ -344,6 +370,10 @@ function useMap(map: CompiledMapDef<IdSpace>, use: Use): void {
   if (map.revisitOf !== null) use('map.revisit', `a revisit of '${map.revisitOf}'`);
   const clickables = Object.keys(map.clickables);
   if (clickables.length > 0) use('map.clickable', `clickable objects (${clickables.join(', ')})`);
+  if (map.objective === 'escort' || map.escort !== null) use('map.escort', 'an Escort (refugees)');
+  if (map.lights.length > 0 || map.lighting.some((k) => k.dark > 0)) {
+    use('map.darkness', "Sundown's darkness");
+  }
 }
 
 /** What `cfg` uses that a closed gate refuses: one message per feature, in the order first used. */
@@ -357,9 +387,12 @@ export function gateRefusals(cfg: SimConfig<IdSpace>, gates: Gates = FEATURE_GAT
   if (slot2 !== null || slot2State !== 'none') use('abilitySlot2', 'ability slot 2');
   if (cfg.specsUnlocked.length > 0) use('specs', 'tier-4 specializations');
   if (cfg.difficulty === 'story') use('storyDifficulty', 'Story difficulty');
+  const stubs: string[] = [];
   for (const id of cfg.loadout) {
     const def = cfg.content.towers[id];
     if (def === undefined) continue; // validateConfig reports it
+    const stub = stubTowerGate(id);
+    if (stub !== null) stubs.push(`the '${id}' tower is not simulated until ${stub}`);
     useTiers(def.tiers, id, use);
     if (def.specs !== null && cfg.specsUnlocked.includes(id)) {
       useTiers([def.specs.a, def.specs.b], id, use);
@@ -376,7 +409,7 @@ export function gateRefusals(cfg: SimConfig<IdSpace>, gates: Gates = FEATURE_GAT
   }
   const map = cfg.content.maps[cfg.mapId];
   if (map !== undefined) useMap(map, use); // validateConfig reports an unknown map
-  return refusals(used, gates);
+  return [...stubs, ...refusals(used, gates)];
 }
 
 function refusals(used: ReadonlyMap<Feature, string>, gates: Gates): string[] {
@@ -397,7 +430,10 @@ function refusals(used: ReadonlyMap<Feature, string>, gates: Gates): string[] {
 export function towerRefusal(
   tower: { readonly id: string; readonly tiers: readonly GateTier[] },
   gates: Gates = FEATURE_GATES,
+  stubs: StubTowers = STUB_TOWER_TASKS,
 ): string | null {
+  const stub = stubTowerGate(tower.id, stubs);
+  if (stub !== null) return `the '${tower.id}' tower is not simulated until ${stub}`;
   const used = new Map<Feature, string>();
   useTiers(tower.tiers, tower.id, (f, what) => {
     if (!used.has(f)) used.set(f, what);

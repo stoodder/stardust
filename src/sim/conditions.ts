@@ -11,7 +11,9 @@
 //   grow), `leaks` (non-exempt leaks of a faction or enemy, `gte`/`lte`; T400a), `wreckageCleared`
 //   (the drone cleared the wreckage under a marker; T400a), and `passedMarker` (a non-exempt unit
 //   of the kind went past the marker at some point; latched in `stats.markersPassed` by
-//   trackConditions, which cleanup runs every tick).
+//   trackConditions, which cleanup runs every tick). M5 (T500a): `leaks.waves` counts the leaks by
+//   units of those waves (`stats.leaksByWave`), and `passedMarker.unrevealed` only a cloaked unit
+//   never Revealed before it went past (`Enemy.everRevealed`; latched under its own key).
 // - `objectiveDone`: another optional objective of the map is `done` (T400a; settled once that
 //   objective settles).
 // - `flag`: a story flag from `SimConfig.scriptFlags` (fixed for the run; unset never matches).
@@ -110,8 +112,8 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
     return spawned > 0 && n / spawned >= gte;
   }
   if ('passedMarker' in c) {
-    const { marker, enemy } = c.passedMarker;
-    return markerPassedTick(state, marker, enemy ?? ANY_ENEMY) >= 0;
+    const { marker, enemy, unrevealed } = c.passedMarker;
+    return markerPassedTick(state, marker, markerKey(enemy, unrevealed === true)) >= 0;
   }
   if ('flag' in c) return ctx.config.scriptFlags[c.flag] === c.eq;
   if ('leaks' in c) return within(leakCount(state, c.leaks), c.gte, c.lte);
@@ -120,11 +122,24 @@ function atom(c: Condition, state: View, ctx: ConditionContext): boolean {
   return false; // combinators are handled by the callers
 }
 
-/** Non-exempt leaks of `faction` and/or `enemy` (both given: the enemy's, if of that faction). */
+/**
+ * Non-exempt leaks of `faction` and/or `enemy` (both given: the enemy's, if of that faction), or by
+ * units of waves `waves[0]`–`waves[1]`.
+ */
 function leakCount(
   state: View,
-  of: { readonly faction?: EnemyFaction; readonly enemy?: string },
+  of: {
+    readonly faction?: EnemyFaction;
+    readonly enemy?: string;
+    readonly waves?: readonly [number, number];
+  },
 ): number {
+  if (of.waves !== undefined) {
+    const byWave = state.stats.leaksByWave;
+    let n = 0;
+    for (let w = of.waves[0]; w <= of.waves[1]; w++) n += byWave[w - 1] ?? 0;
+    return n;
+  }
   if (of.enemy !== undefined) return state.stats.leaksByEnemy[of.enemy] ?? 0;
   if (of.faction !== undefined) return state.stats.leaksByFaction[of.faction];
   const f = state.stats.leaksByFaction;
@@ -169,6 +184,18 @@ function countTowers(state: View, tower: string | undefined, faction: string | u
   return n;
 }
 
+/**
+ * The `markersPassed` key a `passedMarker` latches under: the enemy id (ANY_ENEMY for any), with
+ * UNREVEALED_SUFFIX when only never-Revealed units count.
+ */
+export function markerKey(enemy: string | undefined, unrevealed: boolean): string {
+  const key = enemy ?? ANY_ENEMY;
+  return unrevealed ? `${key}${UNREVEALED_SUFFIX}` : key;
+}
+
+/** Marks a `markersPassed` key that counts only never-Revealed cloaked units. */
+export const UNREVEALED_SUFFIX = ':unrevealed';
+
 /** The tick a unit of `enemy` (ANY_ENEMY for any) first went past `marker`, or −1. */
 export function markerPassedTick(
   state: DeepReadonly<Pick<SimState, 'stats'>>,
@@ -210,7 +237,8 @@ function track(c: Condition, state: SimState, map: CompiledMapDef<IdSpace>): voi
   }
   if (!('passedMarker' in c)) return;
   const { marker, enemy } = c.passedMarker;
-  const key = enemy ?? ANY_ENEMY;
+  const unrevealed = c.passedMarker.unrevealed === true;
+  const key = markerKey(enemy, unrevealed);
   if (markerPassedTick(state, marker, key) >= 0) return;
   const pos = map.markers[marker];
   if (pos === undefined) return; // validateMedals rejects an unknown marker
@@ -223,6 +251,7 @@ function track(c: Condition, state: SimState, map: CompiledMapDef<IdSpace>): voi
     if (e.uid === 0 || e.def === null || e.route === null) continue;
     if (enemy !== undefined && e.def.id !== enemy) continue;
     if (isMedalExempt(e.tags)) continue;
+    if (unrevealed && (!e.def.cloaked || e.everRevealed)) continue;
     if (e.dist > markerRouteDist(e.route, mx, my)) {
       (state.stats.markersPassed[marker] ??= {})[key] = state.tick;
       return;

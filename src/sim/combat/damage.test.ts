@@ -239,8 +239,8 @@ describe('statuses (enemies.md §2.4)', () => {
     applyEffects(e, [{ status: 'soaked', durationTicks: 5 }]);
     applyEffects(e, [{ status: 'soaked', durationTicks: 3 }]);
     expect(e.soakedTicks).toBe(5);
-    applyEffects(e, [{ status: 'marked', pct: 0.2, durationTicks: 5 }]);
-    applyEffects(e, [{ status: 'marked', pct: 0.1, durationTicks: 50 }]);
+    applyEffects(e, [{ status: 'marked', pct: 0.2, durationTicks: 5, noEvade: false }]);
+    applyEffects(e, [{ status: 'marked', pct: 0.1, durationTicks: 50, noEvade: false }]);
     expect([e.markPct, e.markTicks]).toEqual([0.2, 5]);
     for (let i = 0; i < 5; i++) status(state);
     expect([e.soakedTicks, e.markTicks, e.markPct]).toEqual([0, 0, 0]);

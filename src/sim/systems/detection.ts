@@ -61,6 +61,7 @@ export function detection(state: SimState, ctx: TickContext): void {
     if (e.revealedTicks > 0) e.revealedTicks--;
     reveal(state, ctx, e);
     const now = e.revealedTicks > 0;
+    if (now) e.everRevealed = true; // the `passedMarker` condition's `unrevealed` (T500a)
     if (now && !was) emit(state, { type: 'Revealed', uid: e.uid });
     else if (was && !now) emit(state, { type: 'Cloaked', uid: e.uid });
   }

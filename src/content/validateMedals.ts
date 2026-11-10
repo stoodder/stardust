@@ -15,7 +15,8 @@
 // - [condition]: every condition on a map (the Challenge, objectives, events' `when`, ability
 //   locks): `stat` and `towers` have a bound (`gte` and/or `lte`, whole numbers ≥ 0, gte ≤ lte);
 //   `tagRatio.gte` is in (0, 1]; `all` and `any` are non-empty; a `passedMarker` names a marker
-//   within PASSED_MARKER_REACH_TILES of a route its units walk (else "past it" means nothing).
+//   within PASSED_MARKER_REACH_TILES of a route its units walk (else "past it" means nothing); a
+//   `leaks` with `waves` names waves of the map, `from` ≤ `to`, and no faction or enemy beside them.
 import type {
   ConditionDef,
   GridPos,
@@ -223,6 +224,24 @@ function validateCondition(
       issues.add('condition', `${where}.tagRatio.gte`, `${g} must be in (0, 1]`);
   } else if ('passedMarker' in c) {
     passedMarker(issues, def, c.passedMarker.marker, c.passedMarker.enemy, where);
+  } else if ('leaks' in c && c.leaks.waves !== undefined) {
+    const [from, to] = c.leaks.waves;
+    const n = def.waves.length;
+    const isWave = (w: number): boolean => Number.isInteger(w) && w >= 1 && w <= n;
+    if (!isWave(from) || !isWave(to) || from > to) {
+      issues.add(
+        'condition',
+        `${where}.leaks.waves`,
+        `[${from}, ${to}] must be waves 1–${n}, from ≤ to`,
+      );
+    }
+    if (c.leaks.faction !== undefined || c.leaks.enemy !== undefined) {
+      issues.add(
+        'condition',
+        `${where}.leaks`,
+        '`waves` counts every leak; no faction or enemy beside it',
+      );
+    }
   }
 }
 

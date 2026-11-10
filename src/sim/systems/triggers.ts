@@ -126,20 +126,21 @@ export function runScriptAction(state: SimState, action: CompiledScriptAction<Id
  * own rows when it lands, and a part not listed here waits for a later milestone.
  */
 export const SCRIPT_GATES: Readonly<Record<string, string>> = Object.freeze({
-  // Triggers.
-  objectiveCompleted: 'M5',
-  refugeesRemaining: 'T305c (M5)',
+  // Triggers. `objectiveCompleted` waits for M6 (no M5 map uses it; D137).
+  objectiveCompleted: 'M6',
+  refugeesRemaining: 'T305c',
   restProgressPct: 'M7',
   forcedInputResolved: 'M6',
   // Actions.
   // A lighting change at a script moment (the finale's Dawn); wave-paced light is map data
-  // (`MapDef.lighting`, T410a).
+  // (`MapDef.lighting`, T410a), Sundown's darkness included (T505).
   setLighting: 'M7',
-  checkpoint: 'T305b',
-  setObjective: 'T305c (M5)',
-  standDown: 'T305c (M5)',
-  spawnAllies: 'T305c (M5)',
-  'bossEnd.pivot': 'T305c (M5)',
+  // The finale's Phase 2 checkpoint (T305b runs the wave checkpoints, not this action).
+  checkpoint: 'M7',
+  setObjective: 'T305c',
+  spawnAllies: 'T305c',
+  standDown: 'T506',
+  'bossEnd.pivot': 'T506',
 });
 
 /** "not simulated yet", with the task that lifts it when SCRIPT_GATES names one. */

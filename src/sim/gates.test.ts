@@ -43,6 +43,9 @@ describe('T121: unsimulated attack kinds and statuses', () => {
       kind: 'beam',
       beamTickTicks: 6,
       beamTickSec: 0.1,
+      rampPctPerTick: 0,
+      rampCap: 1,
+      beams: 1,
     } as const;
     const content = withGunTier(0, {
       ...GUN.tiers[0],

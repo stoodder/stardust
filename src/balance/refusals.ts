@@ -57,7 +57,8 @@ export const HARNESS_GATES: Readonly<Record<HarnessFeature, string | null>> = Ob
   flagVariants: null,
   companionPick: null,
   holdFireRuns: null,
-  jamLimit: 'M5',
+  // No M5 map has a jammer (D137).
+  jamLimit: 'M6',
 });
 
 /**

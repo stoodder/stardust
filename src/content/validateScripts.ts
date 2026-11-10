@@ -125,6 +125,9 @@ export function validateScripts(issues: Issues, def: MapDef<IdSpace>, mapWhere: 
       issues.add('script', w, `unknown objective '${t.objectiveCompleted}'`);
     }
     if ('interacted' in t) clickable(t.interacted, w);
+    if ('refugeesRemaining' in t && !isNonNegativeInt(t.refugeesRemaining)) {
+      issues.add('script', w, 'refugeesRemaining must be a whole number ≥ 0');
+    }
     if ('wreckageCleared' in t) wreck(t.wreckageCleared, w);
     if ('forcedInputResolved' in t && !forcedInputs.has(t.forcedInputResolved)) {
       issues.add('script', w, `no forceInput action requests '${t.forcedInputResolved}'`);

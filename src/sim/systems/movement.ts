@@ -126,7 +126,8 @@ function arrive(
 }
 
 /**
- * Counts a leak by faction and by enemy id (the `leaks` condition atom; T400a) and a Heavy unit's
+ * Counts a leak by faction, by enemy id (the `leaks` condition atom; T400a), and by the unit's wave
+ * (`leaks.waves`: Before the Dark; T500a), and a Heavy unit's
  * (`heavyLeaks`: Hiccup Contained, T460), except a medal-exempt unit's, which no Challenge may read
  * (core-loop.md § 2.7).
  */
@@ -135,6 +136,7 @@ function countLeak(state: SimState, e: Enemy, def: CompiledEnemyDef): void {
   const stats = state.stats;
   stats.leaksByFaction[def.faction]++;
   stats.leaksByEnemy[def.id] = (stats.leaksByEnemy[def.id] ?? 0) + 1;
+  if (e.wave >= 1 && e.wave <= stats.leaksByWave.length) stats.leaksByWave[e.wave - 1]!++; // T500a
   if (e.heavy) stats.heavyLeaks++; // Hiccup Contained (T460)
 }
 

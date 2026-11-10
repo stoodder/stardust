@@ -525,7 +525,11 @@ function validateSplitChain(
   let at = def.split;
   while (at !== undefined) {
     if (seen.includes(at.enemy)) {
-      issues.add('enemy-ability', `enemies.${def.id}.split`, `the split chain loops back to '${at.enemy}'`);
+      issues.add(
+        'enemy-ability',
+        `enemies.${def.id}.split`,
+        `the split chain loops back to '${at.enemy}'`,
+      );
       return;
     }
     seen.push(at.enemy);
