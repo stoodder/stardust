@@ -53,22 +53,24 @@ function wings(g: CharGrid, side: -1 | 1, tip: number, cy: number, dark: boolean
   const root = CX + side * 0.4;
   const tipX = CX + side * 11.8;
   const fore: [Pt, Pt, Pt] = [
-    [root, cy - 4],
+    [root, cy - 3.5],
     [root, cy + 1.5],
-    [tipX, cy + tip - 3],
+    [tipX, cy + tip - 4],
   ];
+  // The trailing edge rises from the shoulder to the tip, so a notch opens under it.
   const foreBack: [Pt, Pt, Pt] = [
     [root, cy + 1.5],
-    [tipX, cy + tip - 3],
-    [CX + side * 8.5, cy + tip / 2 + 2],
+    [tipX, cy + tip - 4],
+    [CX + side * 6, cy + tip / 3 + 0.5],
   ];
   const inFore = (px: number, py: number): boolean =>
     inTri(px, py, ...fore) || inTri(px, py, ...foreBack);
-  // The hindwing: a rounded lobe under the forewing, swinging a third as far.
-  const hx = CX + side * 4.6;
-  const hy = cy + 3.6 + tip / 4;
+  // The hindwing: a small rounded lobe under the shoulder, swinging a quarter as far, with a gap
+  // between the two lobes where the abdomen hangs.
+  const hx = CX + side * 3.2;
+  const hy = cy + 4 + tip / 4;
   const inHind = (px: number, py: number): boolean =>
-    Math.hypot((px - hx) / 4.3, (py - hy) / 3) <= 1 && (px - CX) * side > 0;
+    Math.hypot((px - hx) / 2.6, (py - hy) / 2.1) <= 1 && (px - CX) * side > 1;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const px = x + 0.5;
@@ -91,7 +93,7 @@ function wings(g: CharGrid, side: -1 | 1, tip: number, cy: number, dark: boolean
   }
   // Two dark veins from the shoulder out along the forewing.
   const sx = Math.round(CX + side * 1.5);
-  line(g, sx, Math.round(cy - 1), Math.round(CX + side * 10), Math.round(cy + tip - 2.5), '0');
+  line(g, sx, Math.round(cy - 1), Math.round(CX + side * 10), Math.round(cy + tip - 3.5), '0');
   line(g, sx, Math.round(cy + 1), Math.round(CX + side * 7.5), Math.round(cy + tip / 2 + 1), '0');
 }
 
@@ -117,7 +119,7 @@ function moth(facing: Facing, step: number, look: Look): string[] {
   plot(g, Math.round(CX + 9), Math.round(cy + rt - 1), '+');
   if (step !== 2) plot(g, Math.round(CX + 3), Math.round(cy + 2), '+');
   // The body: a dark segmented abdomen, the violet speck at its heart.
-  const bodyH = heavy ? 6 : 5;
+  const bodyH = heavy ? 7 : 6;
   for (let y = Math.round(cy - 3); y <= Math.round(cy + bodyH); y++) {
     const wide = y < cy + bodyH - 1 ? (heavy ? 2 : 1) : 0;
     for (let x = 12 - wide; x <= 12 + wide; x++) plot(g, x, y, y % 2 === 0 ? '0' : '1');
@@ -143,7 +145,7 @@ function moth(facing: Facing, step: number, look: Look): string[] {
     // Limbs it never had dangle down and reach ahead for the living.
     reach(g, 13, Math.round(cy + 3), W - 1, facing === 'se' ? H - 4 : H - 6);
   }
-  if (heavy) heavyDress(g, 10, Math.round(cy) - 1, 0, H - 5, step);
+  if (heavy) heavyDress(g, 10, Math.round(cy) - 1, 4, Math.round(cy) + 3, step);
   return dropPixels(rows(g), (facing === 'se' ? 70 : 80) + step + (heavy ? 5 : tell ? 9 : 0));
 }
 

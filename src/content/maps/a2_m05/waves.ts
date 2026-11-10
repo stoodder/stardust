@@ -43,7 +43,7 @@ export const COUNTDOWN = 25;
  * (and forces the pivot) PENITENT_WINDOW s after her, long before she could walk the 36-tile road
  * to the gate (0.35 tiles/s: 100 s).
  */
-export const PENITENT_WINDOW = 75;
+export const PENITENT_WINDOW = 60;
 /** A packed Mote cluster's spacing (seconds). */
 export const PACKED = 0.2;
 
@@ -51,15 +51,16 @@ export const waves = defineWaves([
   // W1 · Glimmers + one Aegis Cantor [T: shield aura; kill it first], the Cantor mid-column
   {
     teach: true,
-    groups: [road('glimmer', 6, 0, 1.2), road('cantor', 1, 3)],
+    groups: [road('glimmer', 4, 0, 1.5), road('cantor', 1, 2.5)],
   },
   // W2 · Weft Wardens with a Cantor walking among them [X], Glimmers behind
   {
     countdownSec: COUNTDOWN,
     groups: [
-      road('weft_warden', 2, OPEN, 4),
+      road('weft_warden', 1, OPEN),
       road('cantor', 1, OPEN + 2),
-      road('glimmer', 6, OPEN + 12, 1.0),
+      road('glimmer', 5, OPEN + 10, 1.2),
+      road('veilwalker', 2, OPEN + 20, 3),
     ],
   },
   // W3 · Blinkstriders + Veilwalkers [C]
@@ -102,7 +103,7 @@ export const waves = defineWaves([
   // W9 · larger Mote clusters, one ahead of the third group
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(24, OPEN + 10, PACKED), motes(24, OPEN + 16, PACKED, 'road')],
+    groups: [motes(30, OPEN + 10, PACKED), motes(30, OPEN + 16, PACKED, 'road')],
   },
   // W10 · Motes ×20
   {
@@ -112,11 +113,11 @@ export const waves = defineWaves([
   // W11 · two groups at once, clusters from both ends
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(28, OPEN + 8, PACKED), motes(28, OPEN + 18, PACKED, 'road')],
+    groups: [motes(36, OPEN + 8, PACKED), motes(36, OPEN + 18, PACKED, 'road')],
   },
   // W12 · the last group + the largest surge
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(36, OPEN + 6, PACKED), motes(36, OPEN + 16, PACKED, 'road')],
+    groups: [motes(44, OPEN + 6, PACKED), motes(44, OPEN + 16, PACKED, 'road')],
   },
 ]);

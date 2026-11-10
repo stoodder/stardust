@@ -25,7 +25,7 @@ export const map = defineMapLayout({
   objective: 'defend',
   // The refugees lost (hushed on the road, or taken at the gate) that lose the map once passed:
   // generous, because the escort is taught here (act2.md § A2M5) and tested in A3M1.
-  maxLost: 12,
+  maxLost: 13,
   size: { cols: 18, rows: 12 },
   // prettier-ignore
   tiles: [
@@ -149,7 +149,7 @@ export const map = defineMapLayout({
     },
     // The rest of the refugees, as their waves start, early enough for the road to empty.
     { id: 'second', on: { wave: 7, phase: 'start' }, actions: [{ spawnAllies: 'second' }] },
-    { id: 'third', on: { wave: 9, phase: 'start' }, actions: [{ spawnAllies: 'third' }] },
+    { id: 'third', on: { wave: 8, phase: 'start' }, actions: [{ spawnAllies: 'third' }] },
     // W11's two groups at once: the fifth files in on the fourth's heels (six refugees 0.6 tiles
     // apart take 5.1 s to file in at 0.7 tiles/s), one line of twelve.
     { id: 'fourth', on: { wave: 11, phase: 'start' }, actions: [{ spawnAllies: 'fourth' }] },
