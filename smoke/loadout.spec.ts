@@ -39,14 +39,17 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
     'aria-checked',
     'true',
   );
-  // A1M1 has Bricks in slot 2, and the pool can form five links: Crossfire and Sitting Ducks lit,
+  // A1M1 has Bricks in slot 2, and the pool can form six links: Crossfire and Sitting Ducks lit,
   // Conductive waiting on the Zapcoil, Overwatch and Skywatch on the Lookout (owned, not in the
-  // default four; T406).
+  // default four; T406), Reel It In on the Harpoon and the Crane (T408).
   await expect(page.getByText('Bricks · Suppressing Fire')).toBeVisible();
   const links = page.locator('.sd-lo-link');
-  await expect(links).toHaveCount(5);
+  await expect(links).toHaveCount(6);
   await expect(links.filter({ hasText: 'Conductive' })).toContainText('Needs Zapcoil');
   await expect(links.filter({ hasText: 'Overwatch' })).toContainText('Needs Lookout');
+  await expect(links.filter({ hasText: 'Reel It In' })).toContainText(
+    'Needs Salvage Crane + Grapple Harpoon',
+  );
   await expect(links.filter({ hasText: 'Crossfire' })).toContainText('Linked');
   await expect(links.filter({ hasText: 'Sitting Ducks' })).toContainText('Linked');
   await page.waitForTimeout(200);
@@ -141,7 +144,7 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
   await towerCard(page, 'Skyhook').click();
   await expect(warning).toHaveText(
     'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-      'Thumper would.',
+      'Thumper or Grapple Harpoon would.',
   );
   await shot(page, 'loadout', 5, 'heads-up');
   await page.getByRole('button', { name: 'Lock in' }).click();

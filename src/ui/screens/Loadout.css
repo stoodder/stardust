@@ -238,7 +238,8 @@
 }
 
 /* The links take the column's leftover height and scroll when the pool forms more than fit (T431:
-   five with all_unlocked ran under the footer's buttons), formed links first. */
+   five with all_unlocked ran under the footer's buttons), formed links first; a link still missing
+   a partner is one line. */
 .sd-lo-links {
   display: flex;
   flex: 1 1 0;
@@ -249,14 +250,14 @@
   padding: 0;
   overflow-y: auto;
   list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
 }
 
 .sd-lo-link {
-  flex: none;
-}
-
-.sd-lo-link {
+  position: relative;
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: 2px;
   padding: 2px 4px;
@@ -278,12 +279,20 @@
   gap: 4px;
 }
 
+/* The name holds its line; a long "Needs …" wraps under itself, right-aligned. */
+.sd-lo-link-name {
+  flex: none;
+  white-space: nowrap;
+}
+
 .sd-lo-link-on .sd-lo-link-name {
   color: var(--accent-2);
 }
 
 .sd-lo-link-state {
+  min-width: 0;
   color: var(--sd-steel-3);
+  text-align: right;
 }
 
 .sd-lo-link-on .sd-lo-link-state {
@@ -304,6 +313,8 @@
   padding: 0;
   overflow-y: auto;
   list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-steel-1) var(--sd-ink-1);
 }
 
 .sd-lo-protocol-row {

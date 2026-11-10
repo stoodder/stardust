@@ -64,6 +64,8 @@ describe('effect summaries', () => {
       'Unlocks tier 4: Flak Curtain or Seeker Swarm', // the Skyhook's (T407b)
       'Unlocks tier 4: Overload Coil or Capacitor Bank', // the Zapcoil's (T407b)
       "Unlocks tier 4: Crow's Nest or Overclock Rig", // the Lookout's (T406)
+      'Unlocks tier 4: Skewer or Tether', // the Harpoon's (T408)
+      "Unlocks tier 4: Haggler's Stall or Magnet Crane", // the Crane's (T408)
     ]);
     // R&D's Technician ability (T406).
     const sweep = rnd.find((o) => o.item.kind === 'ability');

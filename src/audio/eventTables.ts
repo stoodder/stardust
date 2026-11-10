@@ -17,6 +17,8 @@ export const ATTACK_SOUNDS: Readonly<
   chain: { fire: 'zap_arc', land: null },
   // Capacitor Bank's discharge (T407b): the arc's snap for now (its own sound is a follow-up).
   charge: { fire: 'zap_arc', land: null },
+  // The Harpoon's Skewer (T408): the hitscan's crack for now (its own sound is a follow-up).
+  line: { fire: 'rivet_shot', land: null },
 };
 
 /**

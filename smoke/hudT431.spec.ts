@@ -1,7 +1,8 @@
 // T431, the HUD (and T326's leftovers). Screenshots in test-results/screens/hud-t431/ (look at
 // them: the failed objective, the flag on the spawn, the plate over Denise, the briefing's
 // objectives and "Hollow clusters", slot 2's face, the Spare hint, the Checkpoint cue with the rig
-// glyph and four-digit credits, the loss card's one-line buttons).
+// glyph and four-digit credits, the loss card's one-line buttons, the loadout's scrolled links, the
+// Scanner Sweep's aim circle).
 // - A1M4: the objective tracker follows the sim: a late sell fails Clean Audit at once (D090).
 // - A1M2: an "incoming" flag stands on the spawn in the setup and a click on it starts wave 1;
 //   Bricks's name-tag plate goes over Denise at the first clear.
@@ -9,6 +10,8 @@
 //   face; the Spare runners teach pulses Spare (all) from W1 until the filter is used.
 // - A2M2 (after A2M1): the Checkpoint cue as W5's countdown takes it; four-digit credits fit.
 // - Results: a loss with a checkpoint keeps each of its four buttons on one line.
+// - Loadout (all_unlocked): the link list counts its formed links and scrolls to the last; Scanner
+//   Sweep, aimed, shows its own circle (render().sweepAim) until Esc.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -186,4 +189,49 @@ test("hud: a loss card's four buttons each sit on one line", async ({ page }) =>
   );
   expect(lines).toEqual([1, 1, 1, 1]);
   await shot(page, FLOW, 7, 'loss-card-buttons');
+});
+
+test('hud: the loadout scrolls its links, and Scanner Sweep aims its own circle', async ({
+  page,
+}) => {
+  await page.goto('/?test=1&seed=1&save=all_unlocked');
+  await waitForReady(page);
+  await page.evaluate(() => globalThis.__sd!.goto('loadout'));
+  // Every link the pool can form is listed (formed first, with the bonus; the rest one line
+  // each), the heading counts the formed ones, and the last scrolls into view inside the panel.
+  const list = page.getByTestId('loadout-links');
+  const links = list.locator('.sd-lo-link');
+  const total = await links.count();
+  expect(total).toBeGreaterThanOrEqual(5);
+  const formed = await list.locator('.sd-lo-link-on').count();
+  await expect(page.getByTestId('loadout-links-count')).toHaveText(`${formed} / ${total}`);
+  await expect(links.first()).toHaveClass(/sd-lo-link-on/);
+  const last = links.last();
+  await last.scrollIntoViewIfNeeded();
+  const listBox = await list.boundingBox();
+  const lastBox = await last.boundingBox();
+  const lockBox = await page.getByRole('button', { name: 'Lock in' }).boundingBox();
+  expect(listBox).not.toBeNull();
+  expect(lastBox).not.toBeNull();
+  expect(lockBox).not.toBeNull();
+  expect(lastBox!.y + lastBox!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
+  expect(listBox!.y + listBox!.height).toBeLessThanOrEqual(lockBox!.y);
+  await shot(page, FLOW, 8, 'loadout-links-scrolled');
+
+  // Scanner Sweep in slot 1: aiming it previews the sweep's green circle, not the strike reticle.
+  await page.getByRole('radio', { name: /Scanner Sweep/ }).click();
+  await page.getByRole('button', { name: 'Lock in' }).click();
+  await page.waitForFunction(() => globalThis.__sd!.state() !== null);
+  await clockIn(page);
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  const at = await page.evaluate(() => globalThis.__sd!.tileToClient(6, 4));
+  if (at === null) throw new Error('no battle');
+  await page.keyboard.press('q');
+  await page.mouse.move(at.x, at.y);
+  await nextFrames(page);
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.sweepAim)).toBe(true);
+  await shot(page, FLOW, 9, 'scanner-sweep-aim');
+  await page.keyboard.press('Escape');
+  await nextFrames(page);
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.sweepAim)).toBe(false);
 });

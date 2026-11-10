@@ -211,28 +211,40 @@ function Protocols(props: {
   );
 }
 
+/** How many of the pool's links `pick` forms (the Links heading's count). */
+function linkedCount(view: LoadoutView, pick: LoadoutPickView): number {
+  const formed = formedLinks(pick);
+  return view.links.filter((l) => formed.includes(l.id)).length;
+}
+
 function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   const formed = formedLinks(pick);
   if (view.links.length === 0) {
     return <p class="sd-lo-dim">No links among your towers yet.</p>;
   }
-  // Formed links first, so what the pick does shows before what it could (the list scrolls).
+  // Formed links first, so what the pick does shows before what it could (the list scrolls). A
+  // formed link shows its bonus; one still missing a partner is a single line (its bonus is the
+  // tooltip and the screen reader's), so five or six links fit the column (T431).
   const shown = view.links.toSorted(
     (a, b) => Number(formed.includes(b.id)) - Number(formed.includes(a.id)),
   );
   return (
-    <ul class="sd-lo-links" aria-label="Links">
+    <ul class="sd-lo-links" aria-label="Links" data-testid="loadout-links">
       {shown.map((l) => {
         const on = formed.includes(l.id);
         const missing = l.partners.filter((p) => !pick.towers.includes(p));
         const names = missing.map((p) => view.towers.find((t) => t.id === p)?.name ?? p);
         return (
-          <li key={l.id} class={on ? 'sd-lo-link sd-lo-link-on' : 'sd-lo-link'}>
+          <li
+            key={l.id}
+            class={on ? 'sd-lo-link sd-lo-link-on' : 'sd-lo-link'}
+            title={on ? undefined : l.bonus}
+          >
             <span class="sd-lo-link-head">
               <span class="sd-lo-link-name">{l.name}</span>
               <span class="sd-lo-link-state">{on ? 'Linked' : `Needs ${names.join(' + ')}`}</span>
             </span>
-            <span class="sd-lo-link-bonus">{l.bonus}</span>
+            <span class={on ? 'sd-lo-link-bonus' : 'sd-visually-hidden'}>{l.bonus}</span>
           </li>
         );
       })}
@@ -365,7 +377,15 @@ export function Loadout() {
                 {view.companion}
               </p>
             )}
-            <h2 class="sd-panel-heading sd-lo-heading">Links</h2>
+            <h2 class="sd-panel-heading sd-lo-heading">
+              Links{' '}
+              {view.links.length > 0 && (
+                // How many of the pool's links the pick forms: the list may scroll (T431).
+                <span class="sd-lo-count" data-testid="loadout-links-count">
+                  {linkedCount(view, pick)} / {view.links.length}
+                </span>
+              )}
+            </h2>
             <Links view={view} pick={pick} />
             <div class="sd-lo-warnings" aria-live="polite">
               {warnings.map((w) => (
