@@ -144,9 +144,10 @@ interface Debris {
 const SHATTER_COLORS: readonly ColorName[] = ['blue.4', 'teal.4', 'white.1', 'pink.4', 'blue.3'];
 const SHIELD_SHARD_COLORS: readonly ColorName[] = ['blue.4', 'white.1', 'blue.3'];
 const UNSUNG_COLORS: readonly ColorName[] = ['violet.3', 'violet.4', 'white.1'];
-/** A shed spark (D139 S4): its flight (ms), its lob's gravity (px/ms²: a 16 px arc), its pixels. */
+/** A shed spark (D139 S4): its flight (ms), its lob's gravity (px/ms²: a 40 px arc, cresting over a
+ * Penitent's hood against the dark before it falls to the shard), its pixels. */
 export const SHED_MS = 400;
-const SHED_G = 0.0008;
+const SHED_G = 0.002;
 const SHED_LAG_MS = 30;
 const SHED_TRAIL: readonly { readonly size: 1 | 2; readonly color: ColorName }[] = [
   { size: 2, color: 'white.1' },
@@ -346,7 +347,7 @@ export class TransientFx {
 
   /**
    * A boss sheds a shard (D139 S4): a spark lobs from its heart at grid (x0, y0), `fromLiftPx` up,
-   * to the shard's body at grid (x1, y1) in SHED_MS, a 2 px `white.1` head with a `teal.4` and a
+   * high over its head and down to the shard's body at grid (x1, y1) in SHED_MS, a 2 px `white.1` head with a `teal.4` and a
    * `blue.3` pixel trailing, held whole so it lands seen. Under reduced motion nothing flies: the
    * spot itself glints for the same time.
    */

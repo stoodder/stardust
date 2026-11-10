@@ -8,8 +8,10 @@
 //   countdown begins), script cues, and barks, one line at a time on real-time holds (a typed
 //   line's minimum read time, `minReadMs`, D135; scaled by the game speed, `holdAtSpeedMs`, D126).
 //   Scenes queue (going stale after COMMS_STALE_MS, a clock that stops while a scene holds input,
-//   and a countdown's radio dropped once its wave starts); barks never queue: one that can't show now is dropped (D070). A scene that holds input
-//   opening over the panel never eats its line: what was on it goes on from that line after (D135).
+//   and a countdown's radio dropped once its wave starts); barks never queue: one that can't show
+//   now is dropped (D070). A scene that holds input opening over the panel never eats its line:
+//   what was on it goes on from that line after (D135), except the pivot's cue and a flow scene
+//   after the map's end, which drop it (D138, D139).
 // - **Barks** are standalone (never a reply to another speaker's line; D061), picked by
 //   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
 //   queue behind the line on the panel instead (`QUEUED_BARKS`): QUILL's first-leak seed, and
@@ -767,7 +769,7 @@ export function endsBeat(scene: Scene): boolean {
 }
 
 /**
- * Drops the comms queue (`endsBeat`): a scene cut mid-play saves what it set so far (its `set`
+ * Drops the comms queue (`endsBeat`, or any scene once the map is over: `mapOver`): a scene cut mid-play saves what it set so far (its `set`
  * nodes, and that it was heard); one that never showed is dropped unheard.
  */
 function dropComms(): void {
