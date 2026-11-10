@@ -7,6 +7,7 @@ import {
   firstLook,
   headStyle,
   headSuffix,
+  idleAnim,
   spriteId,
   YOUNGLING_SPRITE,
 } from './spriteInfo.ts';
@@ -41,6 +42,17 @@ describe('spriteInfo', () => {
     expect(headSuffix(head, 3, null)).toBe('_t2');
     expect(headSuffix(head, 4, 'a')).toBe('_spec_a');
     expect(headSuffix(spriteId('tower.rivet_head'), 4, 'b')).toBe('_spec_b');
+  });
+
+  it('plays an idle head spec\'s own anim once specialized (T430b)', () => {
+    const sprinkler = spriteId('tower.sprinkler_head');
+    expect(headStyle(spriteId('tower.lookout_head'))).toEqual({ kind: 'idle', anim: 'look' });
+    expect(idleAnim(sprinkler, 'spin', null)).toBe('spin');
+    expect(idleAnim(sprinkler, 'spin', 'a')).toBe('spin_spec_a');
+    expect(idleAnim(sprinkler, 'spin', 'b')).toBe('spin_spec_b');
+    expect(idleAnim(spriteId('tower.lookout_head'), 'look', 'b')).toBe('look_spec_b');
+    // A head without the spec's anim keeps its idle.
+    expect(idleAnim(sprinkler, 'spin_t2', 'a')).toBe('spin_t2');
   });
 
   it('finds a still frame or an anim', () => {

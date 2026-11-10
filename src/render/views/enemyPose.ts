@@ -5,7 +5,10 @@
 // - **Leaving** (`driveOff`, `retreat`, and a driven-off boss's brood): `flee`.
 // - **Burrowed:** `under` (Chitterbloom's mound with her crown showing; a Digger's generic mound).
 // - **Between phases** (a boss's invulnerability): `puff`, which EnemyView shimmers.
-// - **Telling:** a boss's sneeze tell is `tell`, its dig tell `dig`; a Digger's dirt spray `dig`.
+// - **Telling:** a boss's sneeze tell is `tell`, its dig tell `dig`; a Digger's dirt spray `dig`;
+//   a blink's tell `blink` (the Glass Witch drawn up tall and thin, held still; T430b) and a shield
+//   pulse's tell `tell` (her arms raised, light in her palms; T430b). A sprite without the pose
+//   walks (EnemyView), so a Glimmer's or a Cantor's tell shows only its rim.
 // - **Panicking** (a boss phase with haste or a huddle: Chitterbloom's phase 3; a runner held in a
 //   hush tell or bolting, T402): `panic` (a fleeing runner's panic hop, T440a).
 // - **A Hollow unit's hush tell** (T440a): `tell`, its reach (no sneeze follows: a Mote has none).
@@ -18,10 +21,14 @@
 // boss comes up. Each holds until its anim ends, unless the boss leaves, burrows, or goes
 // invulnerable meanwhile.
 import {
+  activeBlink,
+  activePulse,
   bossNextAbility,
   bossTelling,
+  blinkTelling,
   burrowTelling,
   cloakedOut,
+  pulseTelling,
   type Enemy,
 } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
@@ -38,6 +45,7 @@ export const ENEMY_POSES = [
   'flee',
   'heavy',
   'glance',
+  'blink',
 ] as const;
 export type EnemyPose = (typeof ENEMY_POSES)[number];
 
@@ -54,6 +62,7 @@ export const POSE_INDEX: Readonly<Record<EnemyPose, number>> = {
   flee: 8,
   heavy: 9,
   glance: 10,
+  blink: 11,
 };
 
 /** The poses that stride along the route (their tempo follows the unit's pace, walkTempo.ts). */
@@ -69,8 +78,8 @@ export interface PoseFacts {
   readonly leaving: boolean;
   readonly burrowed: boolean;
   readonly invulnerable: boolean;
-  /** The tell showing: a sneeze tell (`tell`), a dig (`dig`), or none. */
-  readonly telling: 'tell' | 'dig' | null;
+  /** The tell showing: a sneeze or shield pulse tell (`tell`), a dig (`dig`), a blink, or none. */
+  readonly telling: 'tell' | 'dig' | 'blink' | null;
   readonly panic: boolean;
   /** Heavy: a Hollow unit that has hushed someone (T402). */
   readonly heavy: boolean;
@@ -122,6 +131,16 @@ export function poseFacts(e: PoseEnemy, out: MutablePoseFacts): MutablePoseFacts
     out.panic = phase !== undefined && (phase.hastePct > 0 || phase.huddle !== null);
   } else if (def.burrow !== null && burrowTelling(live, def.burrow)) {
     out.telling = 'dig';
+  }
+  // A blink's tell, then a shield pulse's (T430b, D123): the Witch keeps her pulse in phase 2, and
+  // the blink is the more urgent read (she holds still, then moves).
+  if (out.telling === null) {
+    const blink = activeBlink(live);
+    if (blink !== null && blinkTelling(live, blink)) out.telling = 'blink';
+    else {
+      const pulse = activePulse(live);
+      if (pulse !== null && pulseTelling(live, pulse)) out.telling = 'tell';
+    }
   }
   // The hush rule and Skittish (T402; hushLook.ts): the runner a Hollow unit holds struggles, and a
   // bolting runner runs scared; the Hollow unit in its tell reaches (`tell`: no sneeze follows it,

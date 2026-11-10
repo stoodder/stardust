@@ -1,6 +1,6 @@
 // A pooled tower: the tier's base frame (a specialized tower's `spec_a`/`spec_b`), the head on the
 // base's mount (aimed by facing, with the `_t2` head from tier 2 and the spec's own head at tier 4,
-// or an idle anim), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier
+// or an idle anim, the spec's own `<idle>_spec_<a|b>` once specialized), and their additive @glow halos in the `vfx` layer (art-direction §7, glow tier
 // 2). Selection swaps both to the baked `+selected` variant (white outline). A new build drops in a
 // few px (D026), and an upgrade flashes both white for 2 frames. A tower on high ground stands on
 // the raised block's top face, `liftPx` up, but sorts by its tile (tech-spec § Depth sorting). A
@@ -21,6 +21,7 @@ import {
   baseFrame,
   headStyle,
   headSuffix,
+  idleAnim,
   spriteId,
   type Facing,
   type HeadStyle,
@@ -123,6 +124,8 @@ export class TowerView implements PooledView {
   #headStyle: HeadStyle = { kind: 'aim' };
   #tier = 0;
   #spec: SpecLetter | null = null;
+  /** The idle anim an idle head plays (its spec's own once specialized; T430b). */
+  #idleName = '';
   /** How far up its tile's ground point the tower stands (px): ELEV_H on high ground. */
   #liftPx = 0;
   #facing: Facing = 'se';
@@ -341,12 +344,16 @@ export class TowerView implements PooledView {
         this.#still = h;
         this.#head.setTexture(h.texture, h.frame).setDisplayOrigin(ha.x, ha.y);
         setGlow(this.#headGlow, sprites, this.#headId, look);
-      } else if (restartIdle) {
-        const anim = sprites.anim(this.#headId, this.#headStyle.anim, variant);
-        this.#head.play(anim);
-        // Idle heads don't mirror, so every frame shares the sprite's anchor.
-        const a = sprites.meta(this.#headId).anchor;
-        this.#head.setDisplayOrigin(a.x, a.y);
+      } else {
+        // An idle head plays its spec's own anim once specialized (T430b): a change restarts it.
+        const name = idleAnim(this.#headId, this.#headStyle.anim, this.#spec);
+        if (restartIdle || name !== this.#idleName) {
+          this.#idleName = name;
+          this.#head.play(sprites.anim(this.#headId, name, variant));
+          // Idle heads don't mirror, so every frame shares the sprite's anchor.
+          const a = sprites.meta(this.#headId).anchor;
+          this.#head.setDisplayOrigin(a.x, a.y);
+        }
       }
     }
     if (!Number.isNaN(this.#x)) {

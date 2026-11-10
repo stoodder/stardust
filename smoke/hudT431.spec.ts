@@ -154,8 +154,8 @@ test('hud: the Checkpoint cue on A2M2, with the rig glyph and four-digit credits
   await page.evaluate(() => {
     const sd = globalThis.__sd!;
     sd.autoplay('none');
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test sets credits
-    (sd.state() as unknown as { credits: number }).credits = 1208;
+    // The test sets the bank directly (the hook's state is read-only to the type system).
+    Reflect.set(sd.state()!, 'credits', 1208);
     sd.fastForward(1);
   });
   const credits = page.locator('.hud-credits .big');

@@ -6,53 +6,32 @@
 // Empty); without its casts she reaches the rigs. QUILL's Rapport (Time Dilation 60 s → 51 s, T401)
 // has par's second Time Dilation ready for the surge: 85.7. The no-shield build loses the rigs to
 // the Glimmer columns and the no-splash build loses the relay to the Mote clusters, both by W8 with
-// and without the full catalog. With the Witch shifted ±0.2 s the fight plays out the same; with
-// W11's surge (and its runners) or W8 shifted, every verdict holds and par stays within one leak.
-// The waves and builds are documented in docs/story/campaign/act2.md § A2M2.
+// and without the full catalog. With W8, the Witch, and W11's surge (and its runners) shifted
+// ±0.2 s together, every verdict holds, the fight plays out the same (one blink), and par stays
+// within one leak (T460: one compound shift for the gate's time; T421 checked each alone). The
+// waves and builds are documented in docs/story/campaign/act2.md § A2M2.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
+import type { WaveGroup } from '../content/types.ts';
+import { both, bothWays, delay, judgeShift, shiftedContent } from './__fixtures__/shifts.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
-const raw = RAW_CONTENT.maps.a2_m02;
 const content = compileContent(RAW_CONTENT);
 const PAR_INTEGRITY = 16;
-
-/** The content with each group of wave `wave` (1-based) that `pick` selects shifted `d` s later. */
-function shifted(wave: number, pick: (g: WaveGroup) => boolean, d: number): typeof content {
-  const ws = raw.waves.map((w: WaveDef, i): WaveDef =>
-    i + 1 !== wave
-      ? w
-      : {
-          ...w,
-          groups: w.groups.map((g) =>
-            pick(g) ? { ...g, delaySec: Math.max(0, (g.delaySec ?? 0) + d) } : g,
-          ),
-        },
-  );
-  const next: RawContent = {
-    ...RAW_CONTENT,
-    maps: { ...RAW_CONTENT.maps, a2_m02: { ...raw, waves: ws } },
-  };
-  return compileContent(next);
-}
-
-/** Every failing check, and par's integrity left and Challenge medal on the seed. */
-function judge(c: typeof content): { failed: string[]; par: number; ghe: string } {
-  const report = runMap(c, 'a2_m02', { seeds: 1 });
-  const par = report.runs.find((r) => r.build === 'par' && !r.repeat)?.result;
-  return {
-    failed: report.checks.filter((k) => !k.ok).map((k) => `#${k.id} ${k.title}`),
-    par: par?.integrity ?? -1,
-    ghe: par?.medals.challenge ?? 'none',
-  };
-}
 
 const isWitch = (g: WaveGroup): boolean => g.enemy === 'glass_witch';
 /** W11's surge: the Motes and their runners down the main road, late in the wave. */
 const isSurge = (g: WaveGroup): boolean => g.route === 'main' && (g.delaySec ?? 0) > 20;
+
+/** The compound shift, run both ways (`s` = ±1). */
+const SHIFTS = {
+  'W8, the Witch, and W11’s surge': (s: number) => ({
+    8: delay(() => true, 0.2 * s),
+    11: both(delay(isWitch, 0.2 * s), delay(isSurge, 0.2 * s)),
+  }),
+} as const;
 
 // Each test re-runs a whole map's harness: seconds, not milliseconds.
 describe('A2M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
@@ -102,28 +81,17 @@ describe('A2M2 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     }
   });
 
-  it('holds with the Witch ±0.2 s: the same fight, one blink', () => {
-    for (const d of [-0.2, 0.2]) {
-      expect({ d, ...judge(shifted(11, isWitch, d)) }).toEqual({
-        d,
-        failed: [],
-        par: PAR_INTEGRITY,
-        ghe: 'earned',
-      });
-    }
-  });
-
   // The surge's leaks and W8's ride on where the Thumpers' shells land in a packed cluster, so a
   // 0.2 s shift may cost par one more or save it one (71.4–81.0, inside the band).
-  it.each([
-    ['W11’s surge', 11, isSurge],
-    ['W8', 8, () => true],
-  ] as const)('holds with %s ±0.2 s', (_name, wave, pick) => {
-    for (const d of [-0.2, 0.2]) {
-      const { failed, par, ghe } = judge(shifted(wave, pick, d));
-      expect({ d, failed, ghe }).toEqual({ d, failed: [], ghe: 'earned' });
-      expect(par).toBeGreaterThanOrEqual(PAR_INTEGRITY - 1);
-      expect(par).toBeLessThanOrEqual(PAR_INTEGRITY + 1);
-    }
+  it.each(bothWays(SHIFTS))('holds with %s shifted %s: the same fight', (_name, _way, patches) => {
+    const { failed, par } = judgeShift(shiftedContent('a2_m02', patches), 'a2_m02');
+    const r = par.result!;
+    expect({ failed, ghe: r.medals.challenge, blinks: r.stats.bossBlinks }).toEqual({
+      failed: [],
+      ghe: 'earned',
+      blinks: 1,
+    });
+    expect(r.integrity).toBeGreaterThanOrEqual(PAR_INTEGRITY - 1);
+    expect(r.integrity).toBeLessThanOrEqual(PAR_INTEGRITY + 1);
   });
 });

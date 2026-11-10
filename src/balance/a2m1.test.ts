@@ -5,46 +5,21 @@
 // towers at the merge. Splash is the map's one answer: par's two Thumpers at the merge sweep the
 // packed clusters (no Mote gets through the merge), while the no-splash build loses to W6's
 // clusters and, with the full catalog, to W7's double cluster (both roads at once). Spare runners
-// cost nothing. With W7's double cluster shifted ±0.2 s par stays at 17/21; with W8's or W10's
-// cut group shifted, every verdict holds and par loses at most two more (W9's cut group, checked
-// in T420, holds at 17/21; trimmed for the gate's time). The waves and builds are documented in
+// cost nothing. Hiccup Contained is "no Heavy Mote leaks" (D113, T460): the cut's Motes hush no one,
+// so par earns it without Perfect Core. With W7's double cluster and W8's and W10's cut groups
+// shifted ±0.2 s together, every verdict holds, W7 costs par nothing, and par loses at most two
+// more (T420 checked each alone, and W9's cut group). The waves and builds are documented in
 // docs/story/campaign/act2.md § A2M1.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { RawContent, WaveDef, WaveGroup } from '../content/types.ts';
+import type { WaveGroup } from '../content/types.ts';
+import { bothWays, delay, judgeShift, shiftedContent } from './__fixtures__/shifts.ts';
 import { runMap } from './harness.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
-const raw = RAW_CONTENT.maps.a2_m01;
 const content = compileContent(RAW_CONTENT);
 const PAR_INTEGRITY = 17;
-
-/** The content with each group of wave `wave` (1-based) that `pick` selects shifted `d` s later. */
-function shifted(wave: number, pick: (g: WaveGroup) => boolean, d: number): typeof content {
-  const ws = raw.waves.map((w: WaveDef, i): WaveDef =>
-    i + 1 !== wave
-      ? w
-      : {
-          ...w,
-          groups: w.groups.map((g) =>
-            pick(g) ? { ...g, delaySec: Math.max(0, (g.delaySec ?? 0) + d) } : g,
-          ),
-        },
-  );
-  const next: RawContent = {
-    ...RAW_CONTENT,
-    maps: { ...RAW_CONTENT.maps, a2_m01: { ...raw, waves: ws } },
-  };
-  return compileContent(next);
-}
-
-/** Every failing check, and par's integrity left on the seed. */
-function judge(c: typeof content): { failed: string[]; par: number } {
-  const report = runMap(c, 'a2_m01', { seeds: 1 });
-  const par = report.runs.find((r) => r.build === 'par' && !r.repeat)?.result?.integrity ?? -1;
-  return { failed: report.checks.filter((k) => !k.ok).map((k) => `#${k.id} ${k.title}`), par };
-}
 
 /** The Mote groups on `route`. */
 const motesOn =
@@ -54,6 +29,15 @@ const motesOn =
 /** W7's double cluster: the Spires road's and the bore's, released to meet at the merge. */
 const doubleCluster = (g: WaveGroup): boolean =>
   g.enemy === 'mote' && (g.delaySec ?? 0) < 10 && g.route !== 'cut';
+
+/** The compound shift, run both ways (`s` = ±1). */
+const SHIFTS = {
+  'W7’s double cluster and W8’s and W10’s cut groups': (s: number) => ({
+    7: delay(doubleCluster, 0.2 * s),
+    8: delay(motesOn('cut'), 0.2 * s),
+    10: delay(motesOn('cut'), 0.2 * s),
+  }),
+} as const;
 
 // Each test re-runs a whole map's harness: seconds, not milliseconds.
 describe('A2M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
@@ -66,8 +50,10 @@ describe('A2M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(par.integrity).toBe(PAR_INTEGRITY);
     expect(par.maxIntegrity).toBe(21); // Reinforced Core 1
     expect(par.waves.map((w) => w.integrityLost)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 1, 3]);
-    // Every leak is a Mote, so par earns neither Perfect Core nor Hiccup Contained.
-    expect(par.medals.challenge).not.toBe('earned');
+    // Every leak is a plain Mote down the cut: no Perfect Core, but Hiccup Contained (D113).
+    expect(par.medals.perfectCore).not.toBe('earned');
+    expect([par.stats.leaksByFaction.hollow, par.stats.heavyLeaks]).toEqual([4, 0]);
+    expect(par.medals.challenge).toBe('earned');
     // Par sends the drone to both crew-log rigs before W1: Crew Logs is done.
     expect(par.objectives).toEqual(['done']);
   });
@@ -94,27 +80,13 @@ describe('A2M1 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(spared.hushes).toBeGreaterThan(0);
   });
 
-  it('holds with W7’s double cluster ±0.2 s, par still at 17/21', () => {
-    for (const d of [-0.2, 0.2]) {
-      expect({ d, ...judge(shifted(7, doubleCluster, d)) }).toEqual({
-        d,
-        failed: [],
-        par: PAR_INTEGRITY,
-      });
-    }
-  });
-
   // The cut's leaks ride on where the strike and the Zapcoil's chains land in its column, so a 0.2 s
   // shift may cost par one or two more (76.2 or 71.4, inside the band): every verdict still holds.
-  it.each([
-    ['W8’s', 8],
-    ['W10’s', 10],
-  ] as const)('holds with %s cut group ±0.2 s', (_name, wave) => {
-    for (const d of [-0.2, 0.2]) {
-      const { failed, par } = judge(shifted(wave, motesOn('cut'), d));
-      expect({ d, failed }).toEqual({ d, failed: [] });
-      expect(par).toBeGreaterThanOrEqual(PAR_INTEGRITY - 2);
-      expect(par).toBeLessThanOrEqual(PAR_INTEGRITY);
-    }
+  it.each(bothWays(SHIFTS))('holds with %s shifted %s', (_name, _way, patches) => {
+    const { failed, par } = judgeShift(shiftedContent('a2_m01', patches), 'a2_m01');
+    expect(failed).toEqual([]);
+    expect(par.result!.waves[6]!.integrityLost).toBe(0); // W7's double cluster
+    expect(par.result!.integrity).toBeGreaterThanOrEqual(PAR_INTEGRITY - 2);
+    expect(par.result!.integrity).toBeLessThanOrEqual(PAR_INTEGRITY);
   });
 });

@@ -67,6 +67,16 @@ export function headSuffix(id: SpriteId, tier: number, spec: SpecLetter | null):
   return '';
 }
 
+/**
+ * The idle anim an idle head plays for a spec (T430b, D123): the spec's own `<idle>_spec_<a|b>`
+ * once specialized, when the head authors it (the Sprinkler's and the Lookout's), else `<idle>`.
+ */
+export function idleAnim(id: SpriteId, idle: string, spec: SpecLetter | null): string {
+  if (spec === null) return idle;
+  const name = `${idle}_spec_${spec}`;
+  return hasAnim(id, name) ? name : idle;
+}
+
 /** Whether a sprite authors (or mirrors) an anim named `anim`. */
 export function hasAnim(id: SpriteId, anim: string): boolean {
   const def = BY_ID.get(id);

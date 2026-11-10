@@ -125,3 +125,41 @@ describe('poseFacts on the dev boss range', () => {
     expect(poseWhen(sim, (e) => isBoss(e) && e.leaving)).toBe('flee');
   });
 });
+
+describe('poseFacts for the Glass Witch (T430b, D123)', () => {
+  const isWitch = (e: LiveEnemy): boolean => e.def!.id === 'dev_glass_witch';
+
+  it('raises her arms through a shield pulse tell and holds the blink pose through a blink tell', () => {
+    const sim = createSim(battleConfig('dev_witch', 1));
+    sim.enqueue({ type: 'callWave' });
+    // Phase 1: her pulse tell is the `tell` pose (no sneeze follows: she has none).
+    expect(
+      poseWhen(sim, (e) => {
+        if (!isWitch(e) || e.def!.boss === null) return false;
+        const pulse = e.def!.boss.phases[0]!.pulse;
+        return pulse !== null && e.pulseTicks > 0 && e.pulseTicks <= pulse.tellTicks;
+      }),
+    ).toBe('tell');
+    // Phase 2 (pushed there by hand): a blink tell outranks the pulse she keeps.
+    const pool = sim.state.enemies;
+    const witch = pool.items.slice(0, pool.used).find((e) => e.alive && isWitch(e))!;
+    witch.bossPhase = 2;
+    const blink = witch.def!.boss!.phases[1]!.blink!;
+    witch.blinkTicks = blink.tellTicks;
+    witch.pulseTicks = 1;
+    const f = blankFacts();
+    expect(statePose(poseFacts(witch, f))).toBe('blink');
+    witch.blinkTicks = blink.tellTicks + 1;
+    expect(statePose(poseFacts(witch, f))).toBe('tell');
+    witch.pulseTicks = 999;
+    expect(statePose(poseFacts(witch, f))).toBe('walk');
+  });
+
+  it('ranks the blink tell as a tell: a phase change or a retreat outranks it', () => {
+    expect(statePose({ ...calm, telling: 'blink' })).toBe('blink');
+    expect(statePose({ ...calm, telling: 'blink', invulnerable: true })).toBe('puff');
+    expect(statePose({ ...calm, telling: 'blink', leaving: true })).toBe('flee');
+    expect(isStride('blink')).toBe(false);
+    expect(oneShotFor('blink', 'walk')).toBeNull();
+  });
+});
