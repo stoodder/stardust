@@ -24,7 +24,7 @@ export const UNNERVED_WOBBLE_MS = 160;
  */
 export const UNNERVED_GAP_PX = HEALTH_BAR_ROOM_PX + TELL_GLYPH_PX + 1;
 export const ECHO_COLOR: ColorName = 'violet.3';
-export const ECHO_MS = 240;
+export const ECHO_MS = 320;
 export const STILLNESS_COLOR: ColorName = 'blue.4';
 export const STILLNESS_RING_MS = 420;
 /** The disc fades over Stillness's Stasis (core-loop.md § 3.2: 3 s), in render time. */

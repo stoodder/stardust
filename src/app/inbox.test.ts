@@ -126,23 +126,23 @@ describe('Act II in the base (T411)', () => {
   });
 });
 
-describe("Ves'thara's margin notes (T501e)", () => {
-  /** after_a2m3 with the margin notes unlocked as Sundown's win leaves them. */
-  function withMargins(): void {
-    loadDevSave('after_a2m3');
-    updateActiveSave((s) => ({
-      ...s,
-      story: {
-        ...s.story,
-        codex: {
-          ...s.story.codex,
-          codex_brood_hauler: ['original', 'annotated', 'margin'],
-          codex_glass_witch: ['original', 'margin'],
-        },
+/** after_a2m3 with the margin notes unlocked as Sundown's win leaves them. */
+function withMargins(): void {
+  loadDevSave('after_a2m3');
+  updateActiveSave((s) => ({
+    ...s,
+    story: {
+      ...s.story,
+      codex: {
+        ...s.story.codex,
+        codex_brood_hauler: ['original', 'annotated', 'margin'],
+        codex_glass_witch: ['original', 'margin'],
       },
-    }));
-  }
+    },
+  }));
+}
 
+describe("Ves'thara's margin notes (T501e)", () => {
   it("shows the Hauler's margin note under QUILL's, both under the record", () => {
     withMargins();
     const hauler = codexView()!.entries.find((e) => e.id === 'codex_brood_hauler')!;
