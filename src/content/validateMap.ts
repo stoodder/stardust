@@ -22,7 +22,8 @@
 // - [wreckage]: every `x` says what lies under it (a pad, high ground, power node, or decor) and
 //   pays 30–80 salvage; nothing else does.
 // - [wave]: a map has at least one wave; every wave has groups; counts and intervals are
-//   positive; wave 1 has no countdown.
+//   positive; wave 1 has no countdown, and `noCall` is never on wave 1; no group of a pivoting
+//   boss's faction spawns in a wave after that boss's (D138).
 // - [route-walk]: every group can walk its route (flyers on air lanes, ground units on paths or
 //   rift lanes; a neutral flyer, Gerald, may fly a path; rift lanes carry only the Hollow, from
 //   the wave they open).

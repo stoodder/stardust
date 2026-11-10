@@ -109,6 +109,17 @@ describe('refugees (route allies)', () => {
     spawnRefugees(state, MAP, 'g2');
     expect(state.stats.refugeesSpawned).toBe(REFUGEE_GROUP_SIZE + 2);
     expect(refugees(state).filter((a) => a.group === 1)).toHaveLength(2);
+    expect(state.refugeesReleased).toEqual([true, true]);
+  });
+
+  it('release a group once: a second spawnAllies for it does nothing (D138)', () => {
+    const { state } = setup();
+    expect(state.refugeesReleased).toEqual([false, false]);
+    spawnRefugees(state, MAP, 'g2');
+    const before = state.allies.used;
+    state.events.length = 0;
+    spawnRefugees(state, MAP, 'g2');
+    expect([state.allies.used, state.stats.refugeesSpawned, state.events]).toEqual([before, 2, []]);
   });
 
   it('walk at 0.7 tiles/s, 0.6 apart, and are evacuated at the safe exit (Pebble uncounted)', () => {

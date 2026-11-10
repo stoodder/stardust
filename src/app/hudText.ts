@@ -36,6 +36,20 @@ export function towerName(id: string): string {
   return (Object.hasOwn(TOWER_NAMES, id) ? TOWER_NAMES[id]?.name : undefined) ?? displayName(id);
 }
 
+/**
+ * What a tower's card says beside its role where its name could mislead (style-guide § 2): the
+ * Seer's Lantern sees in the dark but doesn't light it (D138; the Prism lights while it beams).
+ */
+const TOWER_CARD_NOTES: Readonly<Record<string, string>> = {
+  lantern: "Doesn't light the dark",
+};
+
+/** A tower's role as its cards show it (the loadout, the shelves): with its note, if it has one. */
+export function towerRoleText(id: string, role: string): string {
+  const note = Object.hasOwn(TOWER_CARD_NOTES, id) ? TOWER_CARD_NOTES[id] : undefined;
+  return note === undefined ? role : `${role}. ${note}`;
+}
+
 /** A content id as a display name: `dev_` dropped, words capitalized (`rivet` → `Rivet`). */
 export function displayName(id: string): string {
   return id
@@ -106,6 +120,7 @@ export function beamDps(s: Pick<TowerStatLine, 'damage' | 'ratePerSec'>, tickSec
 export function statLineText(
   s: TowerStatLine,
   tier: DeepReadonly<CompiledTier> | null = null,
+  from: DeepReadonly<CompiledTier> | null = null,
 ): string {
   if (s.kind === null) return supportText(tier);
   const a = tier?.attack ?? null;
@@ -115,7 +130,7 @@ export function statLineText(
       : [`${statNum(s.damage)} dmg`, `${statNum(s.ratePerSec)}/s`];
   parts.push(`range ${statNum(s.rangeTiles)}`);
   if (s.splashTiles > 0) parts.push(`splash ${statNum(s.splashTiles)}`);
-  if (tier !== null) parts.push(...traitTexts(tier));
+  if (tier !== null) parts.push(...traitTexts(tier, from));
   return parts.join(' · ');
 }
 
@@ -149,19 +164,27 @@ function supportText(tier: DeepReadonly<CompiledTier> | null): string {
  * spec cards say the same): "+4 bomblets", "ignores armor", "1 s spin-up", "2 Corroded"; and
  * T407b's, so the Skyhook's and Zapcoil's spec cards read apart from tier 3: "chains to 8",
  * "4 homing", "4 s charge", "50% splash 1", "pierce 4"; and M5's (T531), so the Prism's,
- * Mindspike's and Lantern's do too: "3 beams", "ramp ×4 in 6 s", "50% echo 1.2", "Unnerves
- * 1.5 s", "Mark +35%", "no evading", "detect 3.5", "Marks all in 3.5".
+ * Mindspike's and Lantern's do too: "3 beams", "ramp ×4 in 6 s", "echo 50%", "1.2 tiles",
+ * "Unnerves 1.5 s", "Mark +35%", "no evading", "detect 3.5", "Marks all in 3.5". A spec card
+ * also says what its choice gives up against `from`, the tier it replaces (D138): Truthlight's
+ * "1 beam" against tier 3's two.
  */
-export function traitTexts(tier: DeepReadonly<CompiledTier>): string[] {
+export function traitTexts(
+  tier: DeepReadonly<CompiledTier>,
+  from: DeepReadonly<CompiledTier> | null = null,
+): string[] {
   const parts: string[] = [];
   const a = tier.attack;
   if (a !== null) {
     if (a.kind === 'beam') {
+      const was = from?.attack?.kind === 'beam' ? from.attack.beams : 1;
       if (a.beams > 1) parts.push(`${a.beams} beams`);
+      else if (was > 1) parts.push('1 beam');
       if (a.rampCap > 1 && a.rampPctPerTick > 0) parts.push(rampText(a.rampCap, a.rampPctPerTick));
     }
     if (a.kind === 'hitscan' && a.echo !== null) {
-      parts.push(`${statNum(Math.round(a.echo.pct * 100))}% echo ${statNum(a.echo.radiusTiles)}`);
+      parts.push(`echo ${statNum(Math.round(a.echo.pct * 100))}%`);
+      parts.push(`${statNum(a.echo.radiusTiles)} tiles`);
     }
     if (a.kind === 'lobbed' && a.bomblets !== null) parts.push(`+${a.bomblets.count} bomblets`);
     if (a.kind === 'chain') parts.push(`chains to ${a.jumps + 1}`);
@@ -351,8 +374,12 @@ export function darkTexts(darkRangePct: number, lit: boolean, dark: number): str
  * line once it's built): its numbers, then what's special about it, e.g.
  * "9 dmg · 7.5/s · range 3 · 1 s spin-up" or "120 dmg · 0.5/s · range 6 · ignores armor".
  */
-export function specDescription(spec: TowerStatLine, tier: DeepReadonly<CompiledTier>): string {
-  return statLineText(spec, tier);
+export function specDescription(
+  spec: TowerStatLine,
+  tier: DeepReadonly<CompiledTier>,
+  from: DeepReadonly<CompiledTier> | null = null,
+): string {
+  return statLineText(spec, tier, from);
 }
 
 /**

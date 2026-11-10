@@ -164,6 +164,41 @@ export function validateWaves(
     }
     validateFleeingLead(issues, ctx, wave.groups, where);
   }
+  validatePivotFaction(issues, ctx, def, mapWhere);
+}
+
+/**
+ * [wave]: once a wave sends a boss whose ending is `pivot`, no later wave sends a group of its
+ * faction (D138): the pivot stands down only the live units of its side (enemies.md § 6.1), so a
+ * later one would walk in hostile after its side has stood down.
+ */
+function validatePivotFaction(
+  issues: Issues,
+  ctx: MapCtx,
+  def: MapDef<IdSpace>,
+  mapWhere: string,
+): void {
+  const pivots = new Map<string, number>(); // faction → the first pivoting boss's wave index
+  for (const [w, wave] of def.waves.entries()) {
+    for (const [g, group] of wave.groups.entries()) {
+      const enemy = ctx.enemies.get(group.enemy);
+      if (enemy === undefined) continue;
+      const from = pivots.get(enemy.faction);
+      if (from !== undefined && w > from) {
+        issues.add(
+          'wave',
+          `${mapWhere}.waves[${w}].groups[${g}]`,
+          `'${enemy.id}' (${enemy.faction}) spawns after wave ${from + 1}'s boss pivots its side`,
+        );
+      }
+    }
+    for (const group of wave.groups) {
+      const enemy = ctx.enemies.get(group.enemy);
+      if (enemy?.boss?.ending === 'pivot' && !pivots.has(enemy.faction)) {
+        pivots.set(enemy.faction, w);
+      }
+    }
+  }
 }
 
 /** Float slack for authored seconds (2.0 − 0.1 is not quite 1.9). */

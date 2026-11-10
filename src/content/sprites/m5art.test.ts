@@ -191,6 +191,21 @@ describe('the Sunderglass Penitent (T540b; art-direction §6)', () => {
     for (const [name, rows] of frames) expect(count(rows, 'cd'), name).toBeGreaterThanOrEqual(10);
   });
 
+  it('wears a closed weave over an ink backing (U4): a dark figure on gold, still with real gaps', () => {
+    expect(def(PENITENT).legend).toMatchObject({ K: 'ink.0' });
+    for (const f of ['kneel_se_0', 'kneel_ne_0', 'walk_ne_0', 'tell_ne_0', 'broken_ne_0']) {
+      const rows = grid(PENITENT, f);
+      const inside = opaque(rows) + holes(rows);
+      const open = holes(rows) / inside;
+      const gaps = (holes(rows) + count(rows, 'K')) / inside;
+      // About a quarter of the body is gap; about half of that is backed in ink.
+      expect(gaps, `${f} gaps`).toBeGreaterThan(0.18);
+      expect(gaps, `${f} gaps`).toBeLessThan(0.32);
+      expect(open, `${f} see-through`).toBeGreaterThan(0.08);
+      expect(open, `${f} see-through`).toBeLessThan(0.18);
+    }
+  });
+
   it('marches: its four walk frames differ, and a foot lifts', () => {
     const walk = [0, 1, 2, 3].map((k) => grid(PENITENT, `walk_se_${k}`).join('|'));
     expect(new Set(walk).size).toBe(4);
@@ -328,7 +343,7 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     expect(count(lantern, 'STUV')).toBe(0);
     // Shapes, above the cradle: the gem broad (≥ 10 px, under 2× as tall as wide), the needle ≤ 5 px
     // wide and ≥ 4× as tall, the cage round (width and height within 2 px).
-    const above = (rows: readonly string[]): readonly string[] => rows.slice(0, rows.length - 6);
+    const above = (rows: readonly string[]): readonly string[] => rows.slice(0, rows.length - 8);
     const p = bounds(above(prism));
     const n = bounds(above(needle));
     const l = bounds(above(lantern));

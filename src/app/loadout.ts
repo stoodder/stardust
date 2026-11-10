@@ -49,7 +49,7 @@ import {
 } from '../ui/screens/loadoutView.ts';
 import { grantText } from '../ui/screens/storeText.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
-import { displayName, towerName } from './hudText.ts';
+import { displayName, towerName, towerRoleText } from './hudText.ts';
 import { mapThreats } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
@@ -134,7 +134,7 @@ function towerView(
   return {
     id,
     name: silkText(def.name),
-    role: silkText(def.role),
+    role: silkText(towerRoleText(id, def.role)),
     // The list price (D077: the same `purchasePriceInto` the sim charges, before a battle: no
     // sale running, and Rapid Deploy's free first build isn't any one tower's).
     cost: priceOf(LIST_PRICE_STATE, modifiers, id, def.tiers[0].cost, 'build').cost,

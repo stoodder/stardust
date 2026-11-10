@@ -68,12 +68,16 @@ describe('the Phased ghost’s rim (review U10)', () => {
   // A 4×3 silhouette: a solid 2×2 block at (1,0)-(2,1), and one more pixel at (1,2).
   const W = 4;
   const H = 3;
-  const solid = new Set(['1,0', '2,0', '1,1', '2,1', '1,2']);
+  const pixels: readonly (readonly [number, number])[] = [
+    [1, 0],
+    [2, 0],
+    [1, 1],
+    [2, 1],
+    [1, 2],
+  ];
+  const solid = new Set(pixels.map(([x, y]) => `${x},${y}`));
   const data = new Uint8ClampedArray(W * H * 4);
-  for (const k of solid) {
-    const [x, y] = k.split(',').map(Number) as [number, number];
-    data[(y * W + x) * 4 + 3] = 255;
-  }
+  for (const [x, y] of pixels) data[(y * W + x) * 4 + 3] = 255;
 
   it('is 1 px of white.1 just outside the silhouette, never on it, in an image 1 px bigger', () => {
     const img = ghostRimImage(data, W, H);

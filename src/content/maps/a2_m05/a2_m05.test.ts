@@ -91,12 +91,18 @@ describe('A2M5 · The Long Walk', () => {
       'a2_m05_cue_pivot',
     ]);
     const cues = map.events.flatMap((e) => e.actions.flatMap((a) => ('cue' in a ? [a.cue] : [])));
+    // The pivot's events first, so her own cues are judged after a pivot on the same tick, and
+    // spent unplayed once it has come (D138).
     expect(cues).toEqual([
+      'a2_m05_cue_pivot',
+      'a2_m05_cue_pivot',
       'a2_m05_cue_penitent',
       'a2_m05_cue_shield',
-      'a2_m05_cue_pivot',
-      'a2_m05_cue_pivot',
     ]);
+    const byId = new Map(map.events.map((e) => [e.id, e]));
+    for (const id of ['penitent_cue', 'shield_cue']) {
+      expect(byId.get(id)?.when, id).toEqual({ stat: 'pivotWave', lte: 0 });
+    }
   });
 
   it('counts the Penitent as a capstone: its shards bring only taught traits', () => {
@@ -126,5 +132,31 @@ describe('A2M5 · The Long Walk', () => {
     expect(newThreats(withMoth)).toEqual([]);
     const untaught = { ...withMoth, enemies: { ...withMoth.enemies, glimmer_shard: shard } };
     expect(newThreats(untaught).join()).toContain('enemy sunderglass_penitent');
+  });
+
+  it('sends nothing Aelari after the Penitent pivots her side ([wave], D138)', () => {
+    const waveIssues = (r: RawContent): string[] =>
+      validate(r).filter((m) => m.startsWith('[wave] maps.a2_m05'));
+    expect(waveIssues(RAW_CONTENT)).toEqual([]);
+    const raw = RAW_CONTENT;
+    const m = raw.maps.a2_m05;
+    const w7 = m.waves[6]!;
+    const late: RawContent = {
+      ...raw,
+      maps: {
+        ...raw.maps,
+        a2_m05: {
+          ...m,
+          waves: m.waves.map((w) =>
+            w === w7
+              ? { ...w7, groups: [...w7.groups, { enemy: 'glimmer', count: 2, route: 'road' }] }
+              : w,
+          ),
+        },
+      },
+    };
+    expect(waveIssues(late)).toEqual([
+      "[wave] maps.a2_m05.waves[6].groups[2]: 'glimmer' (aelari) spawns after wave 5's boss pivots its side",
+    ]);
   });
 });

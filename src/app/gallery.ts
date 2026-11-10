@@ -2,7 +2,11 @@
 // integer zoom on dark and light backgrounds, plus small dioramas that exercise anchors, tile
 // seams, head mounts, and environment palette swaps. Deterministic, so its screenshot can be
 // compared milestone to milestone. Smoke reads the data-* counters on <body>. The page is laid
-// out as sheets of at most SHEET_MAX_PX, each captured as its own image (the art trail).
+// out as sheets of at most SHEET_MAX_PX, each captured as its own image (the art trail). After the
+// environment dioramas comes the M5 corner (review U11), on A2M5–A2M6's dusk palette: by dusk, the
+// Ward kneeling over the road as refugees file past and a Prism beaming; at full dark, a lamp's
+// pool, a beaming Prism's lit disc and a resting one's ghost, composited with the game's own
+// night (vfx/darknessPixels.ts, vfx/glowPixels.ts) so the trail shows the night as play draws it.
 import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.ts';
 import { rgbOf } from '../content/palettes/master.ts';
 import { PALETTES } from '../content/palettes/index.ts';
@@ -34,6 +38,24 @@ import {
   type TileDressing,
 } from '../render/views/groundTiles.ts';
 import { OUTLINE_PAD, outlineImage, silhouetteContour } from '../render/vfx/clickOutline.ts';
+import { LAMP_RADIUS_TILES } from '../content/rules.ts';
+import { prism } from '../content/towers/prism.ts';
+import {
+  darkTones,
+  drawDarkMask,
+  drawLampMask,
+  ghostDiscImage,
+  noDark,
+  type LightDisc,
+} from '../render/vfx/darknessPixels.ts';
+import {
+  emissiveGlow,
+  glowAlpha,
+  poolImage,
+  prismHaloImage,
+  PROP_GLOWS,
+} from '../render/vfx/glowPixels.ts';
+import { GHOST_REST_ALPHA } from '../render/views/LightGhostView.ts';
 import { logError } from './log.ts';
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -778,6 +800,277 @@ function diorama(
   return out;
 }
 
+/**
+ * The M5 corner's grid (review U11): a strip of A2M5–A2M6's road under the dusk, a lamp on its
+ * gatepost by the road, two Prism pads north of it, and one south.
+ */
+const CORNER_MAP = ['.o.....o.', '.........', '#########', '.........', '....o....'];
+const CORNER_GRID: GroundGrid = {
+  cols: CORNER_MAP[0]?.length ?? 0,
+  rows: CORNER_MAP.length,
+  tiles: CORNER_MAP.join('').split('').filter(isTileChar),
+  markers: { lamp_corner: [1, 1] },
+  env: 'act2.dusk',
+};
+/** The beaming Prism, the resting one (night only), the lamp, and the beam's Hollow target. */
+const CORNER_PRISM = [7, 0] as const;
+const CORNER_REST = [4, 4] as const;
+const CORNER_LAMP = CORNER_GRID.markers?.['lamp_corner'] ?? [1, 1];
+const CORNER_TARGET = [8.1, 2.55] as const;
+/** The beam leaves the crystal this high over its tile (render/views/BeamView.ts MUZZLE_PX). */
+const CORNER_MUZZLE_PX = 14;
+
+/** A master colour as a CSS colour. */
+function cssOf(name: Parameters<typeof rgbOf>[0]): string {
+  const k = rgbOf(name);
+  return `#${((k.r << 16) | (k.g << 8) | k.b).toString(16).padStart(6, '0')}`;
+}
+
+/**
+ * A canvas the size of the corner that is `on` where `mask` is opaque (MASK_DARK) and `off`
+ * elsewhere (null: clear), for compositing one of the night's images over the picture.
+ */
+function maskLayer(mask: Uint32Array, w: number, h: number, on: number, off: number | null) {
+  const c = el('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d');
+  if (ctx === null) return c;
+  const img = ctx.createImageData(w, h);
+  const d = img.data;
+  for (let i = 0; i < w * h; i++) {
+    const col = mask[i] !== 0 ? on : off;
+    if (col === null) continue;
+    d[i * 4] = (col >> 16) & 0xff;
+    d[i * 4 + 1] = (col >> 8) & 0xff;
+    d[i * 4 + 2] = col & 0xff;
+    d[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
+/**
+ * The M5 corner (review U11) on `act2.dusk`: by dusk (`night` false; A2M5) the Ward kneels over
+ * the road, its refugees filing past, while a Prism beams at a Hollow shard; at full dark (A2M6) a
+ * lamp's pool, the beaming Prism's lit disc and a resting Prism's ghost, with the Hollow on the
+ * road. The night is composited as BattleScene layers it (DarknessView, WorldGlowView,
+ * LightGhostView): the ground's multiply and the lamplight, the pools, the actors, the beam and
+ * the crystal's halo, then the actors' veil and the lift.
+ */
+function m5Corner(
+  baked: ReadonlyMap<string, BakedSprite>,
+  night: boolean,
+  zoom: number,
+): HTMLCanvasElement {
+  const env: EnvPaletteId = 'act2.dusk';
+  const rowsN = CORNER_GRID.rows;
+  const colsN = CORNER_GRID.cols;
+  const w = (colsN + rowsN) * 16 + 32;
+  const oy = 56; // headroom for the Prism's crystal over the back pads
+  const h = oy + (colsN + rowsN) * 8 + 16;
+  const ox = rowsN * 16 + 16;
+  const origin = { x: ox, y: oy };
+  const c = el('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d');
+  if (ctx === null) return c;
+  backdrop(ctx, env, w, h);
+  const frameOf = (id: SpriteId, frame: string, variant = DEFAULT_VARIANT) =>
+    baked.get(id)?.frames.find((f) => f.key === frameKey(id, variant, frame));
+  const screen = (gx: number, gy: number): [number, number] => [
+    Math.round((gx - gy) * 16 + ox),
+    Math.round((gx + gy) * 8 + oy),
+  ];
+  const draw = (f: BakedFrame | undefined, x: number, y: number, add?: BakedFrame): void => {
+    if (f === undefined) return;
+    ctx.drawImage(imageToCanvas(f.image), x - f.anchor.x, y - f.anchor.y);
+    if (add === undefined) return;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(imageToCanvas(add.image), x - add.anchor.x, y - add.anchor.y);
+    ctx.globalCompositeOperation = 'source-over';
+  };
+  const image = (
+    img: RgbaImage,
+    x: number,
+    y: number,
+    alpha = 1,
+    op: GlobalCompositeOperation = 'source-over',
+  ): void => {
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = op;
+    ctx.drawImage(imageToCanvas(img), x, y);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };
+  // The ground and its scenery (the lamp's gatepost), as the game dresses them.
+  const props: Placed[] = [];
+  for (let d = 0; d <= colsN + rowsN - 2; d++) {
+    for (let i = Math.max(0, d - rowsN + 1); i <= Math.min(d, colsN - 1); i++) {
+      const look = dressTile(CORNER_GRID, i, d - i);
+      const [sx, sy] = screen(i, d - i);
+      draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
+      for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
+      if (look.prop !== null) {
+        props.push([
+          look.prop.sprite,
+          look.prop.frame,
+          i + 0.5,
+          d - i + 0.5,
+          propVariant(look.prop.sprite, env),
+        ]);
+      }
+    }
+  }
+  for (const [id, frame, gx, gy, variant] of props) {
+    const [sx, sy] = screen(gx, gy);
+    draw(frameOf(id, frame, variant), sx, sy);
+  }
+  // The night: the sources' discs (the lamp; the Prism while it beams), punched out of the dark.
+  const dark = night ? 1 : 0;
+  const tones = darkTones(dark, noDark());
+  const discs: LightDisc[] = [
+    { x: CORNER_LAMP[0] + 0.5, y: CORNER_LAMP[1] + 0.5, radiusSq: LAMP_RADIUS_TILES ** 2 },
+    {
+      x: CORNER_PRISM[0] + 0.5,
+      y: CORNER_PRISM[1] + 0.5,
+      radiusSq: (prism.lightRadiusTiles ?? 0) ** 2,
+    },
+  ];
+  const mask = new Uint32Array(w * h);
+  if (night) {
+    drawDarkMask(mask, w, h, 0, 0, origin, discs);
+    const lamp = new Uint32Array(w * h);
+    drawLampMask(lamp, w, h, 0, 0, origin, discs, 1);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(maskLayer(mask, w, h, tones.ground, 0xffffff), 0, 0);
+    ctx.drawImage(maskLayer(lamp, w, h, tones.lamp, 0xffffff), 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    // Pools of light in the discs (WorldGlowView: warm lamplight, the Prism's fainter cold light).
+    for (const [disc, color, strength] of [
+      [discs[0]!, 'orange.4', 1],
+      [discs[1]!, 'blue.4', 0.5],
+    ] as const) {
+      const pool = poolImage(Math.sqrt(disc.radiusSq), color, strength);
+      const [px, py] = screen(disc.x, disc.y);
+      image(pool.img, px - pool.ax, py - pool.ay, dark, 'lighter');
+    }
+    // A resting Prism's ghost (LightGhostView): the rim of the disc it would light, dashed.
+    const ghost = ghostDiscImage(discs[1]!.radiusSq);
+    const [gx, gy] = screen(CORNER_REST[0] + 0.5, CORNER_REST[1] + 0.5);
+    image(ghost.image, gx - ghost.cx, gy - ghost.cy, GHOST_REST_ALPHA);
+  }
+  // The lamp's own glow (WorldGlowView's PROP_GLOWS), a little at dusk, whole in the dark.
+  const lampGlow = PROP_GLOWS['prop.wall'];
+  for (const [id, frame, gx, gy, variant] of props) {
+    if (id !== 'prop.wall' || lampGlow === undefined) continue;
+    const f = frameOf(id, frame, variant);
+    if (f === undefined) continue;
+    const glow = emissiveGlow([f.image], lampGlow.colors, lampGlow.radius, lampGlow.halo ?? null);
+    const [sx, sy] = screen(gx, gy);
+    const r = lampGlow.radius;
+    image(glow, sx - f.anchor.x - r, sy - f.anchor.y - r, glowAlpha(lampGlow, dark), 'lighter');
+  }
+  // The actors, back to front: the Prisms, the Hollow on the road, and by dusk the Ward and its
+  // refugees.
+  type Actor = readonly [id: SpriteId, frame: string, gx: number, gy: number];
+  const actors: Actor[] = [
+    ['enemy.fracture_shard', 'walk_sw_1', ...CORNER_TARGET],
+    ['enemy.mote', 'walk_sw_0', 8.6, 2.3],
+  ];
+  if (night) {
+    actors.push(
+      ['enemy.mote', 'walk_sw_1', 5.4, 2.6],
+      ['enemy.fracture_shard', 'walk_sw_0', 6.3, 2.35],
+    );
+  } else {
+    actors.push(
+      ['enemy.sunderglass_penitent', 'kneel_se_0', 3.7, 2.5],
+      ['ally.refugee', 'carry_se_0', 1.2, 2.35],
+      ['ally.refugee', 'walk_se_1', 2.0, 2.7],
+      ['ally.refugee', 'walk_se_0', 5.1, 2.35],
+      ['ally.refugee', 'carry_se_1', 5.8, 2.7],
+    );
+  }
+  const towerAt = (pad: readonly [number, number], head: string): void => {
+    const [sx, sy] = screen(pad[0] + 0.5, pad[1] + 0.5);
+    const base = frameOf('tower.prism', 't1');
+    draw(base, sx, sy, glowOf(baked, 'tower.prism', 't1'));
+    const def = SPRITES.find((d) => d.id === 'tower.prism');
+    const mount = def === undefined ? null : mountOf(def);
+    if (base === undefined || mount === null) return;
+    draw(
+      frameOf('tower.prism_head', head),
+      sx - base.anchor.x + mount.x,
+      sy - base.anchor.y + mount.y,
+      glowOf(baked, 'tower.prism_head', head),
+    );
+  };
+  for (const [id, , gx, gy] of actors) {
+    const s = groundShadowFor(id);
+    const [sx, sy] = screen(gx, gy);
+    ctx.globalAlpha = s.alpha;
+    draw(frameOf(s.sprite, s.frame), sx, sy);
+    ctx.globalAlpha = 1;
+  }
+  const order: (Actor | { pad: readonly [number, number]; head: string })[] = [
+    ...actors,
+    { pad: CORNER_PRISM, head: 'se_fire' },
+    ...(night ? [{ pad: CORNER_REST, head: 'ne' }] : []),
+  ];
+  const footY = (o: (typeof order)[number]): number =>
+    'pad' in o ? o.pad[0] + o.pad[1] + 1.003 : o[2] + o[3];
+  for (const o of order.toSorted((a, b) => footY(a) - footY(b))) {
+    if ('pad' in o) {
+      towerAt(o.pad, o.head);
+      continue;
+    }
+    const [id, frame, gx, gy] = o;
+    const [sx, sy] = screen(gx, gy);
+    draw(frameOf(id, frame), sx, sy, glowOf(baked, id, frame));
+  }
+  // The beam at its cap (BeamView: a white-cored teal.4 thread over a blue.0 under-stroke), from
+  // the crystal to the shard's middle, its knot burning there; the crystal's halo in the dark.
+  const [bx, by] = screen(CORNER_PRISM[0] + 0.5, CORNER_PRISM[1] + 0.5);
+  const target = frameOf('enemy.fracture_shard', 'walk_sw_1');
+  const [tx, ty0] = screen(...CORNER_TARGET);
+  const ty = ty0 - Math.round((target?.anchor.y ?? 0) / 2);
+  const line = (width: number, color: string, alpha: number): void => {
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(bx, by - CORNER_MUZZLE_PX);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  };
+  line(6, cssOf('blue.0'), 0.6);
+  line(4, cssOf('teal.4'), 1);
+  line(2, cssOf('white.1'), 1);
+  draw(frameOf('fx.beam_knot', 'h0'), tx, ty);
+  if (night) {
+    const halo = prismHaloImage(6, 'blue.4');
+    image(halo, bx - 6, by - CORNER_MUZZLE_PX - 6, dark, 'lighter');
+    // The actors' veil and the night's lift, outside the discs (DarknessView's two images).
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(maskLayer(mask, w, h, tones.veil, 0xffffff), 0, 0);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(maskLayer(mask, w, h, tones.lift, null), 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  const out = el('canvas');
+  out.width = w * zoom;
+  out.height = h * zoom;
+  const octx = out.getContext('2d');
+  if (octx !== null) {
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(c, 0, 0, out.width, out.height);
+  }
+  return out;
+}
+
 // prettier-ignore
 const BAYER4 = [
   [0, 8, 2, 10],
@@ -938,6 +1231,18 @@ function render(root: HTMLElement): void {
   for (const env of ENV_PALETTE_IDS) {
     const box = el('div', 'frame');
     box.append(diorama(byId, env, 1), el('span', undefined, env));
+    pack.add(box);
+  }
+  // The M5 corner (review U11): A2M5 by dusk, then A2M6 at full dark.
+  for (const [night, label] of [
+    [false, 'M5 corner · act2.dusk · the Ward and its refugees, a Prism beaming'],
+    [
+      true,
+      'M5 corner · act2.dusk at full dark · a lamp’s pool, a lit Prism, a resting one’s ghost',
+    ],
+  ] as const) {
+    const box = el('div', 'frame');
+    box.append(m5Corner(byId, night, 2), el('span', undefined, label));
     pack.add(box);
   }
 

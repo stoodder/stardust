@@ -57,15 +57,17 @@ export function setObjective(
 /**
  * `spawnAllies` (a script action): releases refugee group `groupId` onto its route, in a line
  * from its start (see the header), Pebble in its middle. Each emits AllySpawned. Counts the
- * group's refugees in `stats.refugeesSpawned`. Validation guarantees the group exists; a map
- * without escort data spawns nothing.
+ * group's refugees in `stats.refugeesSpawned`. A group is released once (`refugeesReleased`): a
+ * second release does nothing. Validation guarantees the group exists; a map without escort
+ * data spawns nothing.
  */
 export function spawnRefugees(state: SimState, map: EscortMap, groupId: string): void {
   const escort = map.escort;
   if (escort === null) return;
   const index = escort.groups.findIndex((g) => g.id === groupId);
   const g = escort.groups[index];
-  if (g === undefined) return;
+  if (g === undefined || state.refugeesReleased[index] === true) return;
+  state.refugeesReleased[index] = true;
   for (let i = 0; i < g.count; i++) spawnOne(state, g, index, -i * g.spacingTiles, false);
   if (g.withPebble) spawnOne(state, g, index, (-(g.count - 1) * g.spacingTiles) / 2, true);
   state.stats.refugeesSpawned += g.count;

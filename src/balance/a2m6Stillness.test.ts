@@ -5,14 +5,14 @@
 // starts, so W9's build phase would be too late. The line is canon in story/campaign/act2.md
 // § A2M6 (tools/dialogueCanon.test.ts).
 import { describe, expect, it } from 'vitest';
-import { buildFor } from '../../../../balance/harness.ts';
-import { referenceRunProfile, runConfig } from '../../../../balance/profile.ts';
-import { HARNESS_TEST_TIMEOUT_MS } from '../../../../balance/rules.ts';
-import { secToTicks } from '../../../../shared/time.ts';
-import { createBuildExecutor, createSim, type SimEvent } from '../../../../sim/index.ts';
-import { compileContent } from '../../../compile.ts';
-import { RAW_CONTENT } from '../../../registry.ts';
-import { scenes } from './scenes.ts';
+import { buildFor } from './harness.ts';
+import { referenceRunProfile, runConfig } from './profile.ts';
+import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
+import { secToTicks } from '../shared/time.ts';
+import { createBuildExecutor, createSim, type SimEvent } from '../sim/index.ts';
+import { compileContent } from '../content/compile.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
+import { scenes } from '../content/dialogue/a2/a2_m06/scenes.ts';
 
 const content = compileContent(RAW_CONTENT);
 const map = content.maps.a2_m06;

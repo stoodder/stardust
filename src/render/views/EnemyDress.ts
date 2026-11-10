@@ -157,7 +157,7 @@ export class EnemyDress {
     const known = ghostRims.get(frame);
     if (known !== undefined) return known;
     let key: string | null = null;
-    const name = String(frame.name);
+    const name = frame.name;
     const hash = name.indexOf('#');
     const colon = name.indexOf(':', hash + 1);
     if (hash > 0 && colon > 0) {

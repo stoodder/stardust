@@ -443,7 +443,9 @@
   color: var(--sd-steel-4);
 }
 
-/* Ves'thara's margin note (T501e): her sapphire rule, under QUILL's teal one. */
+/* Ves'thara's margin note (T501e): in her own violet ink (her name plate's violet.4; D138), behind
+   her violet rule, under QUILL's teal one. */
 .sd-codex .sd-codex-margin {
-  box-shadow: inset 1px 0 0 var(--sd-blue-3);
+  box-shadow: inset 1px 0 0 var(--sd-violet-3);
+  color: var(--sd-violet-4);
 }

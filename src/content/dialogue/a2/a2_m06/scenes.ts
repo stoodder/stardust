@@ -41,7 +41,7 @@ export const scenes = defineScenes([
     { kind: 'line', speaker: 'vesthara', text: 'I heard that.' },
   ]),
   // The Stillness lesson (D138), as W8's build phase opens: before W8's few Rift Moths reach the
-  // merge, because a cast on them would still be returning when W9's flock comes (beats.test.ts).
+  // merge, because a cast on them would still be returning when W9's flock comes (balance/a2m6Stillness.test.ts).
   defineScene('a2_m06_w08', [
     {
       kind: 'line',

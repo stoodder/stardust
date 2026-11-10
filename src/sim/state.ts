@@ -254,6 +254,11 @@ export interface SimState<K extends IdSpace = IdSpace> {
   schedule: WaveSchedule;
   /** Per map event (CompiledMapDef.events, same order): it has fired. */
   scriptFired: boolean[];
+  /**
+   * Per refugee group (CompiledEscort.groups, same order; empty without escort data): it has been
+   * released (`spawnAllies`). A group spawns once: a second release does nothing (D138).
+   */
+  refugeesReleased: boolean[];
   /** Loadout towers not yet unlocked (towerUnlockWave), in unlock order. */
   lockedTowers: string[];
   /** Row-major, one per map tile: the slot of the tower standing there, or −1. */
@@ -381,6 +386,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       resolved: map.waves.map(() => false),
     },
     scriptFired: map.events.map(() => false),
+    refugeesReleased: map.escort === null ? [] : map.escort.groups.map(() => false),
     lockedTowers: [...map.lockedTowersAtStart],
     towerAtTile: Array.from({ length: map.cols * map.rows }, () => -1),
     towers: createPool(TOWER_BLANK, POOL_CAPACITY.towers),

@@ -45,7 +45,11 @@ const line = (id: string, tier: number): string =>
 
 /** A spec card's description, as authored. */
 const card = (id: string, spec: 'a' | 'b'): string =>
-  specDescription(towerStats(tower(id), 4, undefined, [], spec), tower(id).specs![spec]);
+  specDescription(
+    towerStats(tower(id), 4, undefined, [], spec),
+    tower(id).specs![spec],
+    tower(id).tiers[2],
+  );
 
 describe('beams in the tower panel (T531)', () => {
   it('reads a beam as its damage per second, never damage × ticks', () => {
@@ -105,7 +109,7 @@ describe("M5's spec cards read apart (D059)", () => {
   });
 
   it("Mindspike: Echo Spike's echo, Dread's Unnerved", () => {
-    expect(card('mindspike', 'a')).toBe('34 dmg · 1/s · range 3 · 50% echo 1.2');
+    expect(card('mindspike', 'a')).toBe('34 dmg · 1/s · range 3 · echo 50% · 1.2 tiles');
     expect(card('mindspike', 'b')).toBe('50 dmg · 1/s · range 3 · Unnerves 1.5 s');
     expect(card('mindspike', 'a')).not.toBe(line('mindspike', 3));
   });
@@ -118,6 +122,8 @@ describe("M5's spec cards read apart (D059)", () => {
     expect(truthlight).toContain('Mark +35% · no evading');
     expect(allSeeing).toContain('2 beams');
     expect(truthlight).not.toContain('beams');
+    // What Truthlight gives up (D138): tier 3's second beam.
+    expect(truthlight).toContain('1 beam');
   });
 });
 

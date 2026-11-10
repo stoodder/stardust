@@ -21,6 +21,7 @@ import type { CommandLogEntry } from './commands.ts';
 import {
   DARK_EASE_TICKS,
   darkAt,
+  darkDims,
   darkRangeMul,
   darkTarget,
   darkness,
@@ -32,10 +33,15 @@ import { poolKill } from './pool.ts';
 import { createSim, type Sim } from './sim.ts';
 import { createState } from './state.ts';
 import { rangeOf } from './systems/towers.ts';
+import { lineLengthTiles, type LineAttack } from './attacks/line.ts';
 import { towerStats } from './towerStats.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
 const PRISM = LIVE.towers.prism;
+const LANTERN = LIVE.towers.lantern;
+const LOOKOUT = LIVE.towers.lookout;
+const HARPOON = LIVE.towers.harpoon;
+const SKEWER = HARPOON.specs!.a;
 
 /** fx_map at Sundown: half dark at W1, full at W2; a lamp on the rock (0,2) at the rule radius. */
 function darkContent(
@@ -159,6 +165,63 @@ describe('light and range', () => {
     poolKill(state.towers, prism); // sold: no BeamChanged off, but no longer alive
     darkness(state, ctx);
     expect(near.lit).toBe(false);
+  });
+});
+
+describe('what the dark dims (D138)', () => {
+  /** Full dark, every tower placed far from the rock's lamp. */
+  function fullDark(): ReturnType<typeof darkSetup> {
+    const set = darkSetup();
+    set.state.wave = 2;
+    set.state.schedule.startTick[0] = -500;
+    set.state.schedule.startTick[1] = -300;
+    return set;
+  }
+
+  it('a tower with no attack keeps its numbers (no penalty, so no dark line)', () => {
+    const { state, ctx } = fullDark();
+    const look = placeTower(state, LOOKOUT, 4, 3);
+    darkness(state, ctx);
+    expect([look.lit, look.darkRangePct]).toEqual([false, 0]);
+    expect(darkDims(LOOKOUT.tiers[0])).toBe(false);
+    expect(darkDims(null)).toBe(false);
+  });
+
+  it("the Seer's Lantern's beam keeps its reach: it marks as far as it reveals", () => {
+    const { state, ctx } = fullDark();
+    const lantern = placeTower(state, LANTERN, 4, 3);
+    darkness(state, ctx);
+    expect([lantern.lit, lantern.darkRangePct]).toEqual([false, 0]);
+    const attack = lantern.tierDef!.attack!;
+    expect(bonusRangeTiles(attack, lantern)).toBe(lantern.tierDef!.detect!.radiusTiles);
+    expect(darkDims(LANTERN.tiers[0])).toBe(false);
+    expect(darkDims(GUN.tiers[0])).toBe(true);
+  });
+
+  it("a Skewer's line shrinks with its reach in the dark, with no other range bonus", () => {
+    const { state, ctx } = fullDark();
+    const t = placeTower(state, HARPOON, 4, 3, SKEWER);
+    darkness(state, ctx);
+    expect(t.darkRangePct).toBe(DARK_RANGE_PENALTY);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the Skewer's attack is a line
+    const line = SKEWER.attack as LineAttack;
+    expect(line.kind).toBe('line');
+    expect(lineLengthTiles(line, t)).toBeCloseTo(line.lengthTiles * (1 - DARK_RANGE_PENALTY), 12);
+    t.darkRangePct = 0;
+    expect(lineLengthTiles(line, t)).toBe(line.lengthTiles);
+  });
+
+  it("a pulse's radius shrinks in the dark too (the Sprinkler's ring)", () => {
+    const { state, ctx } = fullDark();
+    const sprinkler = LIVE.towers.sprinkler;
+    const t = placeTower(state, sprinkler, 4, 3);
+    darkness(state, ctx);
+    const attack = sprinkler.tiers[0].attack!;
+    expect(attack.kind).toBe('pulse');
+    expect(rangeOf(ctx, t, attack).rangeSq).toBeCloseTo(
+      (attack.rangeTiles * (1 - DARK_RANGE_PENALTY)) ** 2,
+      12,
+    );
   });
 });
 

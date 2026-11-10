@@ -4,7 +4,7 @@
 // these are the screens' own strings. They show from Act I to the finale, so like the catalog copy
 // they use no exclamation points and no protected word (story/style-guide.md §§ 2, 3, 6.3, 6.4).
 import { silkText } from '../silk.ts';
-import { displayName, towerName as hudTowerName } from '../../app/hudText.ts';
+import { displayName, towerName as hudTowerName, towerRoleText } from '../../app/hudText.ts';
 import { ABILITIES } from '../../content/abilities/index.ts';
 import { TOWERS } from '../../content/towers/index.ts';
 import { itemCopy } from '../../content/upgrades/copy.ts';
@@ -121,6 +121,12 @@ export function grantText(g: ModifierGrant): string {
   }
 }
 
+/** A tower's role as its shelf row says it (with its card note: the Lantern's dark, D138). */
+function roleOf(tower: string): string | undefined {
+  const role = lookup(TOWER_ROLES, tower)?.role;
+  return role === undefined ? undefined : towerRoleText(tower, role);
+}
+
 /**
  * An offer's effect summary: its next (or top) rank's grants, what a spec unlock opens, the
  * turret a license or an attunement adds (a gift's "Given: …"), or the Technician ability R&D adds.
@@ -128,7 +134,7 @@ export function grantText(g: ModifierGrant): string {
 export function effectText(o: Offer): string {
   if (o.item.kind === 'attune') {
     // A gift's row reads as Results' "Given: Prism Spire" does.
-    const role = lookup(TOWER_ROLES, o.item.tower)?.role;
+    const role = roleOf(o.item.tower);
     const tower = towerName(o.item.tower);
     const what = o.gift ? `Given: ${tower}` : `Adds the ${tower} to your turrets`;
     return silkText(role === undefined ? what : `${what}${o.gift ? ' · ' : ': '}${role}`);
@@ -137,7 +143,7 @@ export function effectText(o: Offer): string {
     return `Adds ${silkText(abilityName(o.item.id))} to your Technician abilities (slot 1)`;
   }
   if (o.item.kind === 'license') {
-    const role = lookup(TOWER_ROLES, o.item.tower)?.role;
+    const role = roleOf(o.item.tower);
     const what = `Adds the ${towerName(o.item.tower)} to your turrets`;
     return silkText(role === undefined ? what : `${what}: ${role}`);
   }

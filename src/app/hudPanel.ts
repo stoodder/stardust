@@ -62,6 +62,8 @@ export function specChoice(
     const description = specDescription(
       towerStats(def, MAX_TIER_BEFORE_SPEC + 1, bonuses, modifiers, choice),
       tierDef,
+      // What the choice gives up, against the tier it replaces (D138).
+      def.tiers[MAX_TIER_BEFORE_SPEC - 1],
     );
     const { cost, price } = priceOf(state, modifiers, def.id, tierDef.cost, 'spec');
     return {
