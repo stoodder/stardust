@@ -4,7 +4,8 @@
 // fuzzy coral ball with a butter belly, two stubby front feet, huge dark shiny eyes, and the
 // Peeker's seedling for a tuft (the same green two-leaf sprout as `prop.peeker`, so the player
 // knows her). The faint pink-gold shimmer frost on her back is still faint, because she's young.
-// In the `skitterkin.ally` palette. Bare-headed: Bricks's bottle-cap hat comes with A2M4 (M5).
+// In the `skitterkin.ally` palette. Bare-headed at A2M3; variant `cap` (from A2M4) is Bricks's
+// Everglow bottle cap worn as a hat, the seedling poking up through a hole punched in its middle.
 // The seedling is her tell: it perks up when she's happy and droops when she's worried or sad.
 // `singing` (the Leaving Song, A3M1): eyes closed, a round mouth, the shimmer lit; its two talk
 // frames are a small and a large round mouth, a hum.
@@ -228,13 +229,54 @@ const MOUTHS: Readonly<Record<string, { readonly closed: readonly string[]; read
   },
 };
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+/** How far the cap lifts the seedling: it grows up through the cap's hole. */
+const CAP_LIFT = 2;
+/** The cap's top row; its hole is two rows down, at the seedling's column. */
+const CAP_Y = 11;
+
+/**
+ * Bricks's Everglow bottle cap, worn as a hat (the `cap` variant, from A2M4): a crown cork seen a
+ * little from above, its white top ringed in Everglow teal with a hole punched in the middle for
+ * the seedling, and a crimped steel skirt sitting down in her fuzz.
+ */
+function bottleCap(g: CharGrid): void {
+  const cx = 24;
+  // The crimped skirt, flaring a little toward the bottom; its teeth bite into her fur.
+  for (let y = CAP_Y + 3; y <= CAP_Y + 6; y++) {
+    const half = 7 + (y >= CAP_Y + 5 ? 1 : 0);
+    for (let x = cx - half; x < cx + half; x++) {
+      const k = (x + 1) % 3;
+      let ch = k === 0 ? 'U' : k === 1 ? 'S' : 'R';
+      if (x >= cx + half - 2) ch = k === 1 ? 'R' : 'U';
+      if (y === CAP_Y + 6) ch = k === 1 ? 'U' : 'x';
+      plot(g, x, y, ch);
+    }
+  }
+  // The teeth's shadow in the fur under the skirt.
+  for (let x = cx - 8; x < cx + 8; x++) if ((x + 1) % 3 === 1) plot(g, x, CAP_Y + 7, 'x');
+  // The top: a white disc in a teal ring, seen at a slant.
+  // prettier-ignore
+  put(g, cx - 7, CAP_Y, [
+    '...ccccccccc...',
+    '.cddSSSSSSSddc.',
+    'cdSSwwwkwwwSSdc',
+    '.ddSSSSSSSSSdd.',
+  ]);
+  plot(g, cx - 8, CAP_Y + 2, 'x');
+  plot(g, cx + 8, CAP_Y + 2, 'x');
+}
+
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   const e = MOUTHS[expression] === undefined ? 'neutral' : expression;
+  const capped = variant === 'cap';
   body(g);
   feet(g);
   shimmer(g, e === 'singing');
-  put(g, 18, 5, SPROUTS[SPROUT_OF[e] ?? 'up']);
+  if (capped) bottleCap(g);
+  put(g, 18, capped ? 5 - CAP_LIFT : 5, SPROUTS[SPROUT_OF[e] ?? 'up']);
+  // Capped, the stem runs on down into the hole.
+  if (capped) for (let y = 12 - CAP_LIFT; y < CAP_Y + 2; y++) plot(g, 24, y, 'G');
   if (e === 'happy' || e === 'singing') {
     closedEye(g, EYE_L, EYE_Y, e === 'happy');
     closedEye(g, EYE_R, EYE_Y, e === 'happy');
@@ -284,7 +326,12 @@ export const portraitPebble = definePortrait({
     Q: 'pink.4',
     J: 'ink.3',
     T: 'blue.4',
+    // Bricks's bottle cap: crimped steel.
+    R: 'steel.3',
+    S: 'steel.4',
+    U: 'steel.2',
   },
   expressions: PEBBLE_EXPRESSIONS,
+  variants: ['cap'],
   paint,
 });

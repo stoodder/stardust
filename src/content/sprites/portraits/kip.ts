@@ -4,6 +4,9 @@
 // popped, a white Everglow cap on backwards (the snapback's gap on his forehead with a sandy tuft
 // through it, the bill sticking out behind), sunglasses pushed up onto it, and the gold
 // "#1 EXTERMINATOR" trophy pin on his chest. Breezy: his neutral is a smirk under one raised brow.
+// Variant `act2` (Act II, Reclamation Lead at Second Harvest): a white reclamation-plant coat over
+// the jumpsuit (its teal collar still popped up out of the coat's), the trophy pin moved to the
+// coat's lapel, a pen in the breast pocket, and a faint pink-gold smear of stardust on the pocket.
 import { grid, line, plot, stamp, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
@@ -44,6 +47,64 @@ function jumpsuit(g: CharGrid): void {
   stamp(g, 15, 33, ['...99', '..998', '.9988', '99887', '.8877']);
   stamp(g, 28, 33, ['77...', '776..', '7766.', '77665', '6655.']);
   // The "#1 EXTERMINATOR" trophy pin on his chest: a little gold cup on a base, a 1 on it.
+  // prettier-ignore
+  stamp(g, 28, 39, [
+    'NMMMMN.',
+    'NMOMMG.',
+    '.MOMG..',
+    '..MG...',
+    '..MG...',
+    '.GMMG..',
+  ]);
+}
+
+/**
+ * The `act2` reclamation coat over the jumpsuit: white, lit from the left, open in a V on the
+ * teal jumpsuit and its zip, broad lapels, the trophy pin on his left lapel, a breast pocket with a
+ * pen, and the faint pink-gold smear on it: the plant's product, which he hasn't looked at.
+ */
+function coat(g: CharGrid): void {
+  for (let y = 36; y < S; y++) {
+    const t = y - 36;
+    const half = Math.min(21, 8 + Math.round(Math.sqrt(t) * 4.6));
+    const x0 = Math.round(CX - half);
+    const x1 = Math.round(CX + half);
+    // The V between the lapels narrows from the collar to a point low on his chest; each lapel's
+    // outer fold runs parallel to it, 3 pixels out.
+    const open = Math.max(0, 3.6 - t * 0.42);
+    for (let x = x0; x <= x1; x++) {
+      const dx = Math.abs(x + 0.5 - CX);
+      const right = x > CX;
+      let ch = right ? (x > CX + 9 ? '2' : '3') : '4';
+      if (x - x0 < 1.5) ch = '3';
+      if (x1 - x < 2.5) ch = '1';
+      if (dx <= open) ch = right ? '7' : '8';
+      else if (dx <= open + 3 && t < 9) ch = right ? '3' : '4';
+      else if (dx <= open + 4 && t < 9) ch = '1';
+      // The lapel's inner edge, where the coat folds back from the V.
+      if (dx > open && dx <= open + 1 && t < 10) ch = right ? '2' : '3';
+      plot(g, x, y, ch);
+    }
+  }
+  // The jumpsuit's zip down the V.
+  line(g, 23, 36, 23, 39, '9');
+  line(g, 24, 36, 24, 39, '6');
+  // A shade where the coat falls from each shoulder.
+  line(g, 11, 43, 10, 47, '3');
+  line(g, 37, 42, 38, 47, '1');
+  // The breast pocket (his right, screen left): a teal pen clipped in it, the faint pink-gold smear.
+  // prettier-ignore
+  stamp(g, 12, 42, [
+    '..6....',
+    '..7....',
+    '2222222',
+    '..EF...',
+    '...E...',
+  ]);
+  // The popped jumpsuit collar still stands up out of the coat's.
+  stamp(g, 15, 33, ['...99', '..998', '.9988', '99887', '.4887']);
+  stamp(g, 28, 33, ['77...', '776..', '7766.', '77663', '7663.']);
+  // The pin, still on: on his left lapel.
   // prettier-ignore
   stamp(g, 28, 39, [
     'NMMMMN.',
@@ -214,9 +275,10 @@ function sweat(g: CharGrid): void {
   stamp(g, 12, 15, ['.w', 'wU', 'UU']);
 }
 
-function paint({ expression, mouth }: PaintArgs): CharGrid {
+function paint({ expression, variant, mouth }: PaintArgs): CharGrid {
   const g = grid(S, S);
   jumpsuit(g);
+  if (variant === 'act2') coat(g);
   head(g);
   cap(g);
   stamp(g, 15, EYE_Y - 4, EYES[expression] ?? EYES['neutral'] ?? []);
@@ -236,7 +298,9 @@ export const portraitKip = definePortrait({
     H: 'brass.2', I: 'brass.3', J: 'brass.4',
     K: 'ink.3', P: 'pink.3', R: 'red.2', W: 'white.0', U: 'blue.4',
     G: 'gold.1', M: 'gold.3', N: 'gold.4', O: 'gold.0',
+    E: 'pink.4', F: 'gold.4',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
+  variants: ['act2'],
   paint,
 });
