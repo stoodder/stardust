@@ -26,7 +26,7 @@ type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'echo' | 'dread';
 
 /** The Mindspike's trim (U5): psionic violet (custom legend `S`–`V`), its light white. */
-export const MINDSPIKE_TRIM: Trim = { rim: 'U', weave: 'U', ramp: ['U', 'V', 'T', 'S'], tip: '*' };
+export const MINDSPIKE_TRIM: Trim = { rim: 'U', weave: 'U', ramp: ['U', 'U', 'U', 'V'], tip: '*' };
 
 /** The cradle: a woven emerald ring the obelisk floats over, ruby knots at its sides. */
 function cradle(g: CharGrid, rx: number): void {
@@ -163,7 +163,7 @@ function echoKit(g: CharGrid, cx: number, cy: number): void {
     for (let k = 0; k < 9; k++) {
       const y = cy - 5 - k;
       const w = k > 6 ? 0 : 1;
-      for (let dx = -w - 1; dx <= w; dx++) plot(g, x + dx, y, dx < -w ? 'U' : dx < 0 ? 'V' : 'S');
+      for (let dx = -w - 1; dx <= w; dx++) plot(g, x + dx, y, dx < -w ? 'U' : dx < 0 ? 'U' : 'V');
     }
     plot(g, x - 1, cy - 2, 'V');
     plot(g, x, cy - 2, 'U');
@@ -182,8 +182,8 @@ function dreadKit(g: CharGrid, cx: number, cy: number): void {
     ] as const) {
       for (let k = 0; k < t; k++) {
         const px = x + ox + side * Math.floor((k * lean) / 4);
-        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : 'V');
-        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : 'S');
+        plot(g, px - 1, cy - 1 - k, k === t - 1 ? 'd' : 'U');
+        plot(g, px, cy - 1 - k, k === t - 1 ? 'c' : 'V');
       }
     }
   }

@@ -3,8 +3,8 @@
 // count of the map's refugees and the refugees lost against `maxLost` (a pip each, filled as
 // they're lost; the alarm once few are left, `escortLow`), and the meter's label follows the sim's
 // (`state.meterLabel`, relabeled on ObjectiveChanged). `hud.escortLost` flashes the meter on each
-// RefugeeLost, and `hud.relabel` carries the old label for the relabel moment when a map turns
-// Escort mid-map (A2M5's pivot). A resumed run's replay shows neither (app/checkpoints.ts).
+// RefugeeLost, and `hud.relabel` carries the old label and number for the relabel moment when a
+// map turns Escort mid-map (A2M5's pivot). A resumed run's replay shows neither (app/checkpoints.ts).
 // Otherwise `hud.escort` is null and the core's meter shows.
 import type { IdSpace } from '../content/types.ts';
 import { evaluateCondition, type Sim } from '../sim/index.ts';
@@ -93,8 +93,9 @@ export function bindEscortMeter(host: Host<IdSpace>): () => void {
     host.onAfterFrame(sync),
     host.bus.on('ObjectiveChanged', (e) => {
       const from = hud.meterLabel.value;
-      // The core's last integrity, held with the struck label (D138: never "Core 0").
-      const fromValue = hud.escort.value === null ? sim.state.integrity : null;
+      // The old meter's last number (the core's integrity), held with the struck label (D138:
+      // never "Core 0").
+      const fromValue = hud.escort.value?.evacuated ?? sim.state.integrity;
       hud.meterLabel.value = meterLabelText(e.meterLabel);
       sync();
       // The relabel moment: only a live change of the meter's name (a replay's played already).

@@ -343,8 +343,33 @@ section.chamfer,
   }
 }
 
+/* The old meter's number (D138: the core's last integrity, never "Core 0") stays with the struck
+   label, then the new count shows with the new label. */
+.hud-relabel-num-from {
+  position: absolute;
+  inset: 0;
+  text-align: right;
+  animation: hud-relabel-from 2s steps(1, end) forwards;
+}
+
+.hud-relabel-num-to {
+  animation: hud-relabel-num-to 2s steps(1, end) forwards;
+}
+
+@keyframes hud-relabel-num-to {
+  0% {
+    visibility: hidden;
+  }
+  25%,
+  100% {
+    visibility: visible;
+  }
+}
+
 .hud-play[inert] .hud-relabel-from,
-.hud-play[inert] .hud-relabel-to {
+.hud-play[inert] .hud-relabel-to,
+.hud-play[inert] .hud-relabel-num-from,
+.hud-play[inert] .hud-relabel-num-to {
   animation-play-state: paused;
 }
 
@@ -1068,13 +1093,55 @@ section.chamfer,
   pointer-events: none;
 }
 
+/* Reduced motion (D138): no blink. The struck label (and the old number) hold a steady 2 s, then
+   the new label shows in a steady accent for 2 s before it settles. Each a cut, never a motion. */
+@keyframes hud-relabel-still-from {
+  0% {
+    visibility: visible;
+  }
+  50%,
+  100% {
+    visibility: hidden;
+  }
+}
+
+@keyframes hud-relabel-still-to {
+  0% {
+    visibility: hidden;
+    color: var(--accent);
+  }
+  50% {
+    visibility: visible;
+    color: var(--accent);
+  }
+  100% {
+    visibility: visible;
+    color: var(--sd-steel-3);
+  }
+}
+
+@keyframes hud-relabel-still-num-to {
+  0% {
+    visibility: hidden;
+  }
+  50%,
+  100% {
+    visibility: visible;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hud-relabel-from {
-    display: none;
+  .hud-relabel-from,
+  .hud-relabel-num-from {
+    animation: hud-relabel-still-from 4s steps(1, end) forwards;
   }
 
   .hud-relabel-to {
-    animation: none;
+    animation: hud-relabel-still-to 4s steps(1, end) forwards;
+  }
+
+  .hud-relabel-num-to {
+    animation: hud-relabel-still-num-to 4s steps(1, end) forwards;
   }
 
   .hud-alarm,
