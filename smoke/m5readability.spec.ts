@@ -47,7 +47,8 @@ test('a resting Prism shows its light’s ghost; arming one previews it; neither
   // Arm the Prism (slot 2) and hover a free pad: the preview's ghost shows there.
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), PREVIEW);
   await page.keyboard.press('Digit2');
-  await page.mouse.move(at.x, at.y);
+  expect(at).not.toBeNull();
+  await page.mouse.move(at!.x, at!.y); // checked just above
   await expect.poll(async () => (await glow(page)).ghostPreview).toBe(true);
   await shot(page, 'm5readability', 2, 'prism-preview');
   await page.keyboard.press('Escape');

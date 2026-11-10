@@ -11,7 +11,8 @@
 // - **Lamp pools** (`poolImage`): inside a light source's lit disc, warm light pooled round it in
 //   stepped bands that stop short of the disc's edge, so the light falls off toward the edge while
 //   the edge itself, the sim's lit range, stays hard and exact (D137: glow never reads as range).
-// - **The Prism's crystal**: a cool halo on a beaming Prism Spire's crystal (`prismHaloImage`).
+// - **The Prism's crystal**: a halo in its gem's colour on a beaming Prism Spire's crystal
+//   (`prismHaloImage`).
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 import { GLOW_STEPS } from '../sprites/rasterize.ts';
@@ -204,7 +205,7 @@ export function poolImage(
   return { img: { w, h, data }, ax: ex, ay: ey };
 }
 
-/** The Prism's crystal halo: a small cool disc stepped down GLOW_STEPS, centred at (r, r). */
+/** The Prism's crystal halo: a small disc stepped down GLOW_STEPS, centred at (r, r). */
 export function prismHaloImage(radius: number, color: ColorName): RgbaImage {
   const w = 2 * radius + 1;
   const data = new Uint8ClampedArray(w * w * 4);

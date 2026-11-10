@@ -1052,7 +1052,7 @@ function m5Corner(
   line(2, cssOf('white.1'), 1);
   draw(frameOf('fx.beam_knot', 'h0'), tx, ty);
   if (night) {
-    const halo = prismHaloImage(6, 'blue.4');
+    const halo = prismHaloImage(6, 'pink.4'); // the gem's colour (WorldGlowView)
     image(halo, bx - 6, by - CORNER_MUZZLE_PX - 6, dark, 'lighter');
     // The actors' veil and the night's lift, outside the discs (DarknessView's two images).
     ctx.globalCompositeOperation = 'multiply';

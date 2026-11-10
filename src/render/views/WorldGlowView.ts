@@ -10,7 +10,7 @@
 // - **Lamp pools:** in the dark, warm light pools inside each lamp's lit disc (a beaming Prism's
 //   cool), in `decal` under everything standing there, stepped bands that stop short of the
 //   disc's edge, so the edge stays the sim's lit range exactly (D137).
-// - **The Prism's crystal** glows while its beam lights the dark, in `vfx`.
+// - **The Prism's crystal** glows its gem's `pink.4` while its beam lights the dark, in `vfx`.
 // - **The moons** come back over the night sky (a map with a lighting schedule draws them).
 // Render-only and cosmetic. Allocation-free per frame: textures are baked once, images pooled,
 // and nothing is set that hasn't changed.
@@ -41,6 +41,8 @@ const MAX_CRYSTALS = 8;
 /** The crystal's height over its tile (BeamView's muzzle), and its halo's radius. */
 const CRYSTAL_PX = 14;
 const CRYSTAL_HALO_PX = 6;
+/** The Prism's crystal halo: its ruby-pink gem's own colour (the pool below is its light). */
+const CRYSTAL_HALO = 'pink.4';
 /** The pools' colors: lamplight, and the Prism's cold Aelari light. */
 const LAMP_POOL = 'orange.4';
 const PRISM_POOL = 'blue.4';
@@ -152,7 +154,7 @@ export class WorldGlowView {
     }
     const halo = 'glow.crystal';
     if (!scene.textures.exists(halo)) {
-      scene.textures.addCanvas(halo, imageToCanvas(prismHaloImage(CRYSTAL_HALO_PX, 'blue.4')));
+      scene.textures.addCanvas(halo, imageToCanvas(prismHaloImage(CRYSTAL_HALO_PX, CRYSTAL_HALO)));
     }
     for (let i = 0; i < MAX_CRYSTALS; i++) {
       const img = scene.make.image({}, false).setTexture(halo).setBlendMode(Phaser.BlendModes.ADD);
