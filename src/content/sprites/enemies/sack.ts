@@ -5,11 +5,27 @@
 import { at, plot, stamp, type CharGrid } from '../helpers.ts';
 
 /**
+ * The young's own colours (custom, so a fleeing body's flatten/glance never reads them as its own
+ * tuft or face): the youngling's coral (`coral.2`–`.4`), its ink eyes with a white glint, and its
+ * seedling's greens (art-direction §6; D134).
+ */
+const YOUNG_LEGEND_FWD = {
+  C: 'coral.3',
+  D: 'coral.2',
+  E: 'coral.4',
+  K: 'ink.1',
+  W: 'white.1',
+  L: 'green.4',
+  M: 'green.2',
+} as const;
+
+/**
  * Custom legend for the sack: burlap lit to parchment (`brass.4`), bright enough that the cargo
  * sits in the actor value band (art-direction §1) and a step below the glitter's gold, so the
  * flecks read; rope, and the glitter's pink and gold.
  */
 export const SACK_LEGEND = {
+  ...YOUNG_LEGEND_FWD,
   G: 'brass.4',
   H: 'grime.4',
   J: 'grime.3',
@@ -28,18 +44,32 @@ export interface SackShape {
   /** Which glitter pattern twinkles this frame. */
   readonly twinkle: 0 | 1;
   /**
-   * From Act II (a fleeing Hauler, art-direction §6): the neck is untied and the young show, a
-   * cluster of round heads in the mouth of the bag, big-eyed facing you, frosted from behind.
+   * From Act II (a fleeing Hauler, art-direction §6): the neck is untied, the bag lit pale behind
+   * the young (so their heads read against it), and its mouth a dark fold; youngHeads() puts them
+   * in it, once the frame has YOUNG_HEADROOM rows above it.
    */
   readonly young?: 'se' | 'ne';
 }
 
-/** One of the young in the sack's mouth, facing you: coral fuzz, one huge eye, a glint. */
+/**
+ * One of the young over the sack's rim (D134: they read by sight at 1×): the W1 youngling's face
+ * small — its seedling (two leaves on a stem), a round coral crown lit upper left, two eyes
+ * looking straight out (a white glint over ink), a shaded chin on the rim. Eyes forward in both
+ * facings: walking away, the young peer back out of the open sack at you.
+ */
 // prettier-ignore
-const HEAD_SE = ['.33.', '3wk3', '2kk2'] as const;
-/** One of the young seen from behind: coral fuzz with the pink-gold frost of the very young. */
-// prettier-ignore
-const HEAD_NE = ['.34.', '3P43', '2332'] as const;
+export const YOUNG_HEAD = [
+  'L.L..',
+  '.M...',
+  '.EEC.',
+  'CWCWC',
+  'CKCKD',
+  'DDDDD',
+] as const;
+/** Rows a young head stands above its chin. */
+const HEAD_RISE = YOUNG_HEAD.length - 1;
+/** How far above the bag's top the young can reach (rows a frame must leave clear above it). */
+export const YOUNG_HEADROOM = 2;
 
 /** Draws the bag, its tied neck and knot, creases, and glitter. */
 export function sack(g: CharGrid, s: SackShape): void {
@@ -54,7 +84,8 @@ export function sack(g: CharGrid, s: SackShape): void {
       if (d > 1) continue;
       const lit = -0.7 * dx - 0.7 * dy;
       let ch = 'H';
-      if (lit > -0.15 && d < 0.9) ch = 'G';
+      // An untied sack is lit pale behind its young (its upper half), so their heads stand out.
+      if ((lit > -0.15 || (s.young !== undefined && dy < 0.1)) && d < 0.9) ch = 'G';
       else if (lit < -0.5 || (d > 0.88 && dy > 0.4)) ch = 'J';
       if (dy > 0.8 && d > 0.9) ch = 'I';
       plot(g, x, y, ch);
@@ -73,7 +104,8 @@ export function sack(g: CharGrid, s: SackShape): void {
   }
   if (s.young !== undefined) {
     glitter(g, s);
-    youngInMouth(g, nx, top, s.young, s.twinkle);
+    // The untied mouth: a dark fold of burlap the young stand in.
+    for (let x = nx - 4; x <= nx + 5; x++) if (at(g, x, top + 1) !== '.') plot(g, x, top + 1, 'J');
     return;
   }
   // The tied neck and its knot, with two cloth ears.
@@ -88,19 +120,24 @@ export function sack(g: CharGrid, s: SackShape): void {
   glitter(g, s);
 }
 
+/** The bag's neck column and top row, as sack() draws them. */
+export function sackMouth(s: SackShape): { readonly nx: number; readonly top: number } {
+  return { nx: Math.round(s.cx - 0.5), top: Math.floor(s.cy - s.ry) };
+}
+
 /**
- * The untied mouth (a dark fold of burlap) and three young in it: the middle one up highest,
- * bobbing a pixel with the step; facing you, one huge eye each (the hauler_young's look).
+ * Three young over an untied sack's rim (D134), drawn `dy` rows down (the headroom the frame was
+ * given above the sack's own rows): two at the sides riding with the bag, the middle one in
+ * front, a row higher, which holds still as the bag bobs on `step` 1, so they jostle each step.
+ * Their chins sit on the mouth's dark fold.
  */
-function youngInMouth(g: CharGrid, nx: number, top: number, facing: 'se' | 'ne', bob: 0 | 1): void {
-  for (let x = nx - 3; x <= nx + 4; x++) if (at(g, x, top + 1) !== '.') plot(g, x, top + 1, 'J');
-  const head = facing === 'se' ? HEAD_SE : HEAD_NE;
-  stamp(g, nx - 4, top - 1, head);
-  stamp(g, nx + 2, top - 1 + bob, head);
-  stamp(g, nx - 1, top - 3 + bob, head);
-  // Frost on the youngest's crown; a moss tuft on the eldest's.
-  plot(g, nx, top - 3 + bob, 'P');
-  plot(g, nx - 3, top - 2, 'c');
+export function youngHeads(g: CharGrid, s: SackShape, dy: number, step: 0 | 1): void {
+  const { nx, top } = sackMouth(s);
+  const half = s.rx * 0.62;
+  const chin = top + dy;
+  stamp(g, Math.round(nx - half) - 2, chin - HEAD_RISE, YOUNG_HEAD);
+  stamp(g, Math.round(nx + half) - 1, chin - HEAD_RISE, YOUNG_HEAD);
+  stamp(g, nx - 2, chin - 1 + step - HEAD_RISE, YOUNG_HEAD);
 }
 
 /**

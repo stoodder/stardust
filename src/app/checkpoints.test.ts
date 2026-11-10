@@ -10,7 +10,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../content/types.ts';
 import { MemoryStore, stardustPayout } from '../meta/index.ts';
-import { createSim, type CommandLogEntry, type SimConfig, type SimEvent } from '../sim/index.ts';
+import {
+  createSim,
+  type CommandLogEntry,
+  type SimConfig,
+  type SimEvent,
+  type SimState,
+} from '../sim/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
 import { menuNotice, runResult } from '../ui/screens/state.ts';
 import { hud, screen, speed } from '../ui/state.ts';
@@ -97,6 +103,10 @@ function giveUp(host: H): void {
 }
 
 const playing = (host: H) => () => host.sim.state.outcome !== 'playing';
+
+/** The sim's state, writable: a test stages what play can't reach on cue. */
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the test sets up state directly
+const writable = (host: H): SimState => host.sim.state as unknown as SimState;
 
 /** The straight run the checkpoint runs are measured against: par from wave 1 to the end. */
 interface Straight {
@@ -403,7 +413,7 @@ describe('through the router: Retry from wave N', () => {
       playLog(host, run.log);
       stepUntil(host, () => host.sim.state.tick >= w10.tick - 1);
       // The core gives out on the very tick W10's countdown begins.
-      host.sim.state.integrity = 0;
+      writable(host).integrity = 0;
       host.fastForward(1);
       const s = host.sim.state;
       expect(s.outcome).toBe('lost');
@@ -438,7 +448,7 @@ describe('through the router: Retry from wave N', () => {
       const cps = host.checkpoints as Checkpoint[];
       cps.length = 0;
       cps.push(checkpointOf({ wave: 10, tick: s.tick }, s.commandLog));
-      s.tick++; // so the router takes it as usable
+      writable(host).tick++; // so the router takes it as usable
       await expect(router.retryFromCheckpoint()).rejects.toThrow(/checkpoint replay diverged/);
       expect(screen.value).toBe('campaign');
       expect(menuNotice.value).toBe(RETRY_FAILED);

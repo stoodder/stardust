@@ -9,6 +9,7 @@ import { analyze, type Levels } from './analyze.ts';
 import { CUES, THEMES, type CueId, type ThemeId } from './music/index.ts';
 import { compileSong } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
+import { BLIP_SFX } from './sfx/blips.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
 import { PUMP_MS } from './engine.ts';
 import { HOLLOW_DUCK } from './eventTablesAct2.ts';
@@ -21,12 +22,14 @@ import {
 } from './synth.ts';
 
 const RATE = 44_100;
+const BLIP_IDS = Object.keys(BLIP_SFX) as (keyof typeof BLIP_SFX)[];
 const TAIL_SEC = 0.3;
 
 /**
- * How far a storm's line stands over the rest of its mix (a ducked storm only): the blip's RMS and
- * the RMS of everything else, over the blip's own span, before the limiter (which treats both
- * alike), and their difference (D134: at least 6 dB).
+ * How far a line's blip stands over the rest of a ducked storm's mix as it's spoken: the blip's
+ * RMS at its loudest moment (MOMENT_SEC) and the RMS of everything else over the line's opening
+ * (OPENING_SEC), both before the limiter (which treats both alike), and their difference (D134:
+ * at least 6 dB).
  */
 export interface SpeechMargin {
   readonly blip: SfxId;
@@ -39,9 +42,17 @@ export interface SpeechMargin {
 export interface RenderLevels {
   readonly out: Levels;
   readonly raw: Levels;
-  /** A ducked storm's speech margin. */
-  readonly speech?: SpeechMargin;
+  /**
+   * A ducked storm's speech margins: its own line's blip first, then every other speaker's blip
+   * spoken at the same moment over the same mix.
+   */
+  readonly speech?: readonly SpeechMargin[];
 }
+
+/** The moment a blip's loudness is measured over (s): about what the ear sums a short sound over. */
+const MOMENT_SEC = 0.05;
+/** A line's opening (s), the bed its blip is heard against. */
+const OPENING_SEC = 0.3;
 
 /** The live pump's step: a stepped render wakes this often. */
 const STEP_SEC = PUMP_MS / 1000;
@@ -325,7 +336,6 @@ function stormMusic(storm: Storm, s: Synth): void {
 function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
   const timed: Timed[] = stormPlays(storm, withBlip).map(([t, id, pitch]) => ({
     t,
-    id,
     run: (s, delay) => s.play(id, { delay, pitch }),
   }));
   if (storm.hollow) {
@@ -354,17 +364,33 @@ function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
   return timed;
 }
 
-/** RMS (dB) of `samples` over [from, to) seconds. */
-function windowRmsDb(samples: Float32Array, from: number, to: number): number {
-  const a = Math.max(0, Math.floor(from * RATE));
-  const b = Math.min(samples.length, Math.ceil(to * RATE));
-  return analyze([samples.subarray(a, b)], RATE).rmsDb;
+/** RMS (dB) of `samples` over [from, from + sec) seconds. */
+function momentDb(samples: Float32Array, from: number, sec = MOMENT_SEC): number {
+  const a = Math.max(0, Math.round(from * RATE));
+  const b = Math.min(samples.length, a + Math.round(sec * RATE));
+  let sum = 0;
+  for (let i = a; i < b; i++) sum += samples[i]! * samples[i]!; // a ≤ i < b ≤ length
+  return b > a && sum > 0 ? 10 * Math.log10(sum / (b - a)) : -Infinity;
+}
+
+/**
+ * How far `blip`, spoken at `at` over `rest` (a raw render), stands over it: the blip alone (raw)
+ * at its loudest moment (MOMENT_SEC, stepped every 5 ms) against the rest's level over the line's
+ * opening (OPENING_SEC from `at`; an average, so one shot landing on the moment doesn't decide it).
+ */
+async function speechMargin(blip: SfxId, rest: Float32Array, at: number): Promise<SpeechMargin> {
+  const dur = recipeDuration(SFX[blip]);
+  const alone = await renderBuffer(dur + 0.1, (s) => s.play(blip), { rawMaster: true });
+  let blipDb = -Infinity;
+  for (let t = 0; t + MOMENT_SEC <= dur; t += 0.005) blipDb = Math.max(blipDb, momentDb(alone, t));
+  const restDb = momentDb(rest, at, OPENING_SEC);
+  return { blip, blipDb, restDb, marginDb: blipDb - restDb };
 }
 
 /**
  * Renders storm `id` (STORMS) through the real graph, its cue over its opening: with no ducking
- * (the loudest case), or `ducked` as the live game ducks it, with its speech margin (the blip
- * against the rest of the mix, both raw, over the blip's span).
+ * (the loudest case), or `ducked` as the live game ducks it, with its speech margins (each blip
+ * at its loudest moment against the rest of the mix over the line's opening, both raw).
  */
 export async function renderStorm(
   id: StormId = 'act1',
@@ -388,66 +414,16 @@ export async function renderStorm(
   const full = duckedTimeline(storm, true);
   const out = await renderBuffer(STORM_SEC, music, {}, full);
   const raw = await renderBuffer(STORM_SEC, music, { rawMaster: true }, full);
-  // The rest of the mix without the blip, and the blip alone (the raw graph is linear).
+  // The rest of the mix without the line's blip (the raw graph is linear), against every blip.
   const rest = await renderBuffer(
     STORM_SEC,
     music,
     { rawMaster: true },
     duckedTimeline(storm, false),
   );
-  const { at, blip } = storm.line;
-  const alone = await renderBuffer(STORM_SEC, () => {}, { rawMaster: true }, [
-    { t: at, run: (s, delay) => s.play(blip, { delay }) },
-  ]);
-  const end = at + recipeDuration(SFX[blip]);
-  const blipDb = windowRmsDb(alone, at, end);
-  const restDb = windowRmsDb(rest, at, end);
-  const parts: Record<string, number> = {};
-  const sub = async (name: string, keep: (id: SfxId) => boolean, withMusic: boolean) => {
-    const tl = duckedTimeline(storm, false).filter((e) => {
-      const id = (e as { id?: SfxId }).id;
-      return id === undefined || keep(id);
-    });
-    const buf = await renderBuffer(STORM_SEC, withMusic ? music : () => {}, { rawMaster: true }, tl);
-    parts[name] = windowRmsDb(buf, at, end);
-  };
-  await sub('music', () => false, true);
-  await sub('low', (id) => SFX[id].priority <= 1, false);
-  await sub('high', (id) => SFX[id].priority >= 2 && id !== 'type_tick', false);
-  await sub('ticks', (id) => id === 'type_tick', false);
-  for (const id of new Set(stormPlays(storm, false).filter(([t]) => t > at - 3 && t < end).map(([, i]) => i))) {
-    if (SFX[id].priority >= 2) await sub(id, (i) => i === id, false);
+  const speech: SpeechMargin[] = [];
+  for (const blip of [storm.line.blip, ...BLIP_IDS.filter((b) => b !== storm.line.blip)]) {
+    speech.push(await speechMargin(blip, rest, storm.line.at));
   }
-  const W = 0.05;
-  let best = -Infinity, bestT = at;
-  for (let t = at; t + W <= end; t += 0.005) {
-    const v = windowRmsDb(alone, t, t + W);
-    if (v > best) { best = v; bestT = t; }
-  }
-  let restMax = -Infinity;
-  for (let t = at; t + W <= end; t += 0.005) restMax = Math.max(restMax, windowRmsDb(rest, t, t + W));
-  const sub2 = async (name: string, keep: (id: SfxId) => boolean, withMusic: boolean) => {
-    const tl = duckedTimeline(storm, false).filter((e) => {
-      const id = (e as { id?: SfxId }).id;
-      return id === undefined || keep(id);
-    });
-    const buf = await renderBuffer(STORM_SEC, withMusic ? music : () => {}, { rawMaster: true }, tl);
-    parts['@' + name] = windowRmsDb(buf, bestT, bestT + W);
-  };
-  await sub2('music', () => false, true);
-  await sub2('low', (id) => SFX[id].priority <= 1, false);
-  await sub2('high', (id) => SFX[id].priority >= 2 && id !== 'type_tick', false);
-  await sub2('hum', (id) => id === 'hollow_hum', false);
-  parts['blip50'] = best;
-  parts['blip50at'] = bestT;
-  parts['restAtBest'] = windowRmsDb(rest, bestT, bestT + W);
-  parts['restMax50'] = restMax;
-  parts['blipSpan'] = blipDb;
-  parts['restSpan'] = restDb;
-  console.log(id, JSON.stringify(parts));
-  return {
-    out: analyze([out], RATE),
-    raw: analyze([raw], RATE),
-    speech: { blip, blipDb, restDb, marginDb: blipDb - restDb },
-  };
+  return { out: analyze([out], RATE), raw: analyze([raw], RATE), speech };
 }

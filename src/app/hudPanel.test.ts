@@ -238,7 +238,12 @@ describe('the briefing (T202d)', () => {
     // Bunker Buster (spec b) answers armor in any act; on an Act III map it's Thumper's only one.
     const act3 = threatIntel({ ...map, act: 3 }, ['thumper'], ['thumper']);
     expect(act3.required[0]?.answers).toEqual(['Thumper [Bunker Buster]']);
-    expect(intel.threats[0]).toEqual({ id: 'fast', label: 'Fast', glyph: 'icon.tell.fast' });
+    expect(intel.threats[0]).toEqual({
+      id: 'fast',
+      label: 'Fast',
+      glyph: 'icon.tell.fast',
+      tip: null,
+    });
     expect(intel.required).toEqual([
       { counter: 'armor', label: 'Armor', answers: ['Rivet T3', 'Thumper'] },
     ]);

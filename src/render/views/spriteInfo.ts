@@ -25,6 +25,23 @@ export function tellGlyph(tells: readonly string[]): SpriteId | null {
   return null;
 }
 
+/** The Skittish glyph (art-direction §8): every runner's, whatever its own tells (D134). */
+export const SKITTISH_GLYPH = 'icon.tell.skittish';
+
+/**
+ * A unit's tell glyph: a runner (`fleeing`) wears the Skittish glyph in place of its own tells
+ * (a fleeing Hauler drops nothing, so it shows no Carrier glyph; D134), any other unit its
+ * tells' first glyph (tellGlyph), or null.
+ */
+export function unitGlyph(tells: readonly string[], fleeing: boolean): SpriteId | null {
+  return fleeing ? spriteId(SKITTISH_GLYPH) : tellGlyph(tells);
+}
+
+/** Whether a unit runs as a runner: a `fleeing`-tagged unit that doesn't hush (the Hollow). */
+export function isRunner(def: { readonly hushes: boolean }, tags: readonly string[]): boolean {
+  return !def.hushes && tags.includes('fleeing');
+}
+
 /** How a tower head is drawn: aimed by facing (se/sw/ne/nw frames), or an idle anim. */
 export type HeadStyle = { readonly kind: 'aim' } | { readonly kind: 'idle'; readonly anim: string };
 

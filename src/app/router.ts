@@ -447,7 +447,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     },
     retryFromCheckpoint() {
       const b = battle;
-      const checkpoint = b === null ? null : usableCheckpoint(b.host.checkpoints, b.host.sim.state.tick);
+      const checkpoint =
+        b === null ? null : usableCheckpoint(b.host.checkpoints, b.host.sim.state.tick);
       if (b === null || checkpoint === null || !ended) {
         return Promise.reject(new Error('router: the last run has no checkpoint to retry from'));
       }

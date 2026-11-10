@@ -2,10 +2,13 @@
 // § Dialogue presentation): one plate, centered just above the tagged tower's art in the `overlay`
 // layer, so no tower or unit hides it. Above the pause plate when that tower holds fire. The app
 // says which tower carries it and the name (`tagStep`'s effects, app/dialogue.ts); this view only
-// follows that tower's art. A texture per name, registered once; nothing allocates per frame.
+// follows that tower's art. It hides while it would cover a spot kept clear (D134 K2: an armed
+// clickable or Pebble's lift, vfx/keepClear.ts) and comes back when the spot clears. A texture per
+// name, registered once; nothing allocates per frame.
 import type * as Phaser from 'phaser';
 import type { Vec2 } from '../iso.ts';
 import { imageToCanvas } from '../sprites/canvas.ts';
+import type { KeepClear } from '../vfx/keepClear.ts';
 import { nameTagImage, nameTagText } from '../vfx/nameTagPixels.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -32,11 +35,17 @@ export class NameTagView {
   #text = '';
   #x = Number.NaN;
   #y = Number.NaN;
+  #keepClear: KeepClear | null = null;
 
   constructor(ctx: ViewContext) {
     this.#scene = ctx.scene;
     this.#plate = ctx.scene.make.image({}, false).setOrigin(0.5, 1).setVisible(false);
     ctx.layers.overlay.add(this.#plate);
+  }
+
+  /** The spots the plate keeps clear of (the scene refills it each frame). */
+  setKeepClear(keepClear: KeepClear): void {
+    this.#keepClear = keepClear;
   }
 
   /** The tower carrying the tag (0: none). */
@@ -71,6 +80,14 @@ export class NameTagView {
     }
     const x = Math.round(top.x);
     const y = Math.round(top.y) - NAME_TAG_GAP_PX - (art.holding ? HOLD_PLATE_PX : 0);
+    const k = this.#keepClear;
+    const half = this.#plate.width / 2;
+    if (k !== null && k.size > 0 && k.covers(x - half, y - this.#plate.height, x + half, y)) {
+      // Kept clear: hidden (the tag stays on its tower and shows again once the spot clears).
+      this.#x = Number.NaN;
+      this.#plate.setVisible(false);
+      return;
+    }
     if (x !== this.#x || y !== this.#y || !this.#plate.visible) {
       this.#x = x;
       this.#y = y;

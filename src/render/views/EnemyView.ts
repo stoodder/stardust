@@ -97,7 +97,7 @@ import {
 import { bubbleAlpha } from './shieldLook.ts';
 import { isFrozen, STASIS_TINT } from './stasisLook.ts';
 import type { LeaveFx } from './LeaveFx.ts';
-import { facingOf, hasAnim, spriteId, tellGlyph, type Facing } from './spriteInfo.ts';
+import { facingOf, hasAnim, isRunner, spriteId, unitGlyph, type Facing } from './spriteInfo.ts';
 import { walkTempo } from './walkTempo.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 import type { PooledView } from './ViewPool.ts';
@@ -431,6 +431,11 @@ export class EnemyView implements PooledView {
   /** The body's alpha now (the render-state hook's view of it). */
   get alpha(): number {
     return this.#alpha;
+  }
+
+  /** The tell glyph it wears (shown or not), or null (the render-state hook's view of it). */
+  get glyph(): string | null {
+    return this.#glyph;
   }
 
   /** Whether its tell glyph shows (the render-state hook's view of it). */
@@ -844,11 +849,12 @@ export class EnemyView implements PooledView {
     this.#factsUid = this.#uid;
     const def = e.def;
     this.#hollow = def !== null && glitches(def.faction);
-    this.#fleeing = def !== null && !def.hushes && e.tags.includes('fleeing');
+    this.#fleeing = def !== null && isRunner(def, e.tags);
     this.#shielded = def !== null && def.shield !== null;
     this.#cloakable = def !== null && def.cloaked;
     if (this.#glyph === null && def !== null) {
-      const g = tellGlyph(def.tells);
+      // On hover a runner shows the Skittish glyph, as on its first showing (D134).
+      const g = unitGlyph(def.tells, this.#fleeing);
       if (g !== null) this.#setGlyph(g);
     }
   }

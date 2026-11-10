@@ -103,8 +103,14 @@ import { SpawnFlagView } from '../views/SpawnFlagView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
-import { LIFT_PUFF_MS, LIFT_PUFF_TILES, PEEKER_MARKER, peekerHold } from '../views/peekerMotion.ts';
-import { KeepClear } from '../vfx/keepClear.ts';
+import {
+  LIFT_PUFF_MS,
+  LIFT_PUFF_TILES,
+  LIFT_RISE_PX,
+  PEEKER_MARKER,
+  peekerHold,
+} from '../views/peekerMotion.ts';
+import { KeepClear, type Box } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
@@ -153,6 +159,8 @@ export interface BattleSceneDeps {
 const PING_RING_TILES = 1;
 const PING_RING_MS = 700;
 const pingAt: Vec2 = { x: 0, y: 0 };
+/** Scratch for a kept-clear spot's screen point (D134 K2). */
+const clearAt: Vec2 = { x: 0, y: 0 };
 /** A dig-in or a surfacing kicks up a ring of dirt (T312b). */
 const DIRT_RING_TILES = 0.5;
 const DIRT_RING_MS = 300;
@@ -207,6 +215,7 @@ export class BattleScene extends Phaser.Scene {
   #clickables!: ClickableView;
   /** What floaters and the name plate keep clear of (D134 K2): armed clickables, Pebble's lift. */
   readonly #keepClear = new KeepClear();
+  readonly #clearBox: Box = { left: 0, top: 0, right: 0, bottom: 0 };
   /** The sim tick at the last frame: play time only passes while it moves. */
   #lastTick = 0;
   /** The radio pointer id last pinged (0: none). */
@@ -334,6 +343,7 @@ export class BattleScene extends Phaser.Scene {
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
     this.#nameTag = new NameTagView(ctx);
+    this.#nameTag.setKeepClear(this.#keepClear);
     this.#spawnFlags = new SpawnFlagView(ctx, map, prefersReducedMotion, pulseOn);
     this.#pinged = 0;
     this.#pingTower = 0;
@@ -588,6 +598,7 @@ export class BattleScene extends Phaser.Scene {
         alpha: v.alpha,
         bar: v.barShown,
         tell: v.tellShown,
+        glyph: v.glyph,
         ...v.dress,
       });
     }
@@ -706,16 +717,13 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /**
-   * The name-tag plate follows the turret the app says carries it (T431), hidden while that turret
-   * stands within KEEP_CLEAR_TILES of an armed clickable or a lift (D134 K2).
+   * The name-tag plate follows the turret the app says carries it (T431), hidden while it would
+   * cover an armed clickable or a lift (D134 K2: NameTagView reads the keep-clear spots).
    */
   #syncNameTag(): void {
     const tag = this.#deps.nameTag?.() ?? null;
-    const tower = tag === null ? null : this.#findTower(tag.uid);
-    const clear =
-      tower !== null && this.#keepClear.near(tower.x, tower.y);
     this.#nameTag.sync(
-      clear ? 0 : (tag?.uid ?? 0),
+      tag?.uid ?? 0,
       tag?.text ?? '',
       tag === null ? undefined : this.#towers.get(tag.uid),
     );
@@ -730,15 +738,39 @@ export class BattleScene extends Phaser.Scene {
     k.clear();
     const { sim } = this.#deps;
     const markers = sim.map.markers;
+    const p = this.#peeker;
     for (const marker of sim.state.clickable) {
       const at = Object.hasOwn(markers, marker) ? markers[marker] : undefined;
-      if (at !== undefined) k.add(at[0] + 0.5, at[1] + 0.5);
+      if (at === undefined) continue;
+      gridToScreen(at[0] + 0.5, at[1] + 0.5, this.#origin, clearAt);
+      k.add(
+        at[0] + 0.5,
+        at[1] + 0.5,
+        clearAt,
+        p !== null && marker === PEEKER_MARKER ? this.#peekerBox() : undefined,
+      );
     }
-    const p = this.#peeker;
-    if (p !== null && p.lifting) {
+    if (p !== null && p.lifting && !sim.state.clickable.includes(PEEKER_MARKER)) {
       const at = markers[PEEKER_MARKER];
-      if (at !== undefined) k.add(at[0] + 0.5, at[1] + 0.5);
+      if (at !== undefined) {
+        gridToScreen(at[0] + 0.5, at[1] + 0.5, this.#origin, clearAt);
+        k.add(at[0] + 0.5, at[1] + 0.5, clearAt, this.#peekerBox());
+      }
     }
+  }
+
+  /** The Peeker holding Pebble on screen, up to the top of her lift (the keep-clear box). */
+  #peekerBox(): Box {
+    const box = this.#clearBox;
+    const p = this.#peeker;
+    if (p === null) return box;
+    const f = p.outlineFrame();
+    const frame = this.textures.getFrame(f.texture, f.frame);
+    box.left = f.left;
+    box.top = f.top - LIFT_RISE_PX;
+    box.right = f.left + (frame?.width ?? 0);
+    box.bottom = f.top + (frame?.height ?? 0);
+    return box;
   }
 
   /** How many "incoming" flags show (T326; the smoke hooks' view of them). */

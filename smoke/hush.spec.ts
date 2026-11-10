@@ -50,6 +50,13 @@ test('hush: the tell on the runner, then a Heavy Mote walking on', async ({ page
     sd.fastForward(1);
   });
 
+  // The first runner shows the Skittish glyph over it, not its own tells (D134).
+  await nextFrames(page);
+  const first = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
+  const runners = first.filter((e) => e.glyph === 'icon.tell.skittish');
+  expect(runners.length).toBeGreaterThan(0);
+  expect(runners.some((e) => e.tell)).toBe(true);
+
   expect(await until(page, 'tell')).toBe(true);
   const tell = await page.evaluate(() => globalThis.__sd!.render()!.enemies);
   expect(tell.some((e) => e.hushRing)).toBe(true);

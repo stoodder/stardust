@@ -25,6 +25,7 @@ import {
   fadeAlpha,
   floatRise,
   FLOAT_MS,
+  FLOAT_RISE_PX,
   LEAK_SHAKE_MS,
   leakShakeOffset,
   PULSE_MS,
@@ -39,7 +40,7 @@ import {
   floatTextTexture,
   PULSE_COLOR,
 } from '../vfx/overlayTextures.ts';
-import { stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
+import { FLOAT_ROW_PX, stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
 import type { KeepClear } from '../vfx/keepClear.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -472,6 +473,16 @@ export class TransientFx {
     this.#keepClear = keepClear;
   }
 
+  /**
+   * Whether a floater `w` wide at (cx, baseY), rising `risePx` more, would draw over a spot kept
+   * clear (D134 K2).
+   */
+  #overClear(cx: number, baseY: number, w: number, risePx: number): boolean {
+    const k = this.#keepClear;
+    if (k === null || k.size === 0) return false;
+    return k.covers(cx - w / 2, baseY - risePx - FLOAT_ROW_PX, cx + w / 2, baseY);
+  }
+
   /** How many floaters are up (tests' view of them). */
   get floatsUp(): number {
     let n = 0;
@@ -503,7 +514,7 @@ export class TransientFx {
     f.active = false;
     const cx = Math.round(pos.x);
     const baseY = stackFloat(this.#floats, cx, Math.round(pos.y - liftPx), w);
-    if (baseY === null) {
+    if (baseY === null || this.#overClear(cx, baseY, w, FLOAT_RISE_PX)) {
       f.active = wasActive;
       return;
     }
@@ -588,7 +599,11 @@ export class TransientFx {
       if (!f.active) continue;
       f.ms += dt;
       // One already up when a spot near it arms goes at once (D134 K2).
-      if (f.ms >= f.durationMs || this.#keepClear?.near(f.gx, f.gy) === true) {
+      if (
+        f.ms >= f.durationMs ||
+        this.#keepClear?.near(f.gx, f.gy) === true ||
+        this.#overClear(f.cx, f.baseY, f.w, 0)
+      ) {
         f.active = false;
         f.img.setVisible(false);
       } else {

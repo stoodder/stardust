@@ -121,7 +121,9 @@ describe('the Peeker', () => {
     vi.mocked(playSfx).mockClear();
     const tick = host.sim.state.tick;
     const cp = checkpointOf({ wave: 1, tick }, host.sim.state.commandLog);
-    const resumed = createHost(sim('dev_click'), { resume: resumeOf(host.sim.state.commandLog, cp) });
+    const resumed = createHost(sim('dev_click'), {
+      resume: resumeOf(host.sim.state.commandLog, cp),
+    });
     const off2 = bindClickables(resumed);
     resumed.catchUp();
     expect(resumed.sim.state.tick).toBe(tick);

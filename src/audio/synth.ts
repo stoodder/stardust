@@ -6,8 +6,8 @@
 // code renders offline (offline.ts) for the level checks.
 //
 // The bus graph:
-//   sfx voices (priority ≤ 1) ─▶ low ─▶ sfx ────────┐ (low ducks while someone speaks, R10)
-//   sfx voices (priority ≥ 2) ─▶ sfx ───────────────┤
+//   sfx voices (priority ≤ 2, not speech) ─▶ underSpeech ─▶ sfx ─┐ (ducks while someone speaks, R10)
+//   speech (blips, ticks) and alarms (3) ─▶ sfx ─────────────────┤
 //   theme voices ─▶ layer gains ─▶ theme fade ─▶ duck ─▶ music ─▶ master ─▶ glue ─▶ limiter ─▶ trim ─▶ clip ─▶ out
 //   cue voices ─▶ cues ───────────────────────────────┘ (into music, after the duck)
 import { createRng, nextFloat, type Rng } from '../shared/rng.ts';
@@ -21,6 +21,7 @@ import {
   type Sequencer,
 } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
+import { SPEECH_SFX } from './sfx/blips.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
 import type { Instrument, MusicLayer, SfxRecipe, Song, ToneLayer } from './types.ts';
 import { MUSIC_LAYERS } from './types.ts';
@@ -39,11 +40,15 @@ export const THEME_FADE_SEC = 0.5;
 /** Ducking: how fast the music dips and comes back (time constants, s). */
 export const DUCK_ATTACK_SEC = 0.03;
 export const DUCK_RELEASE_SEC = 0.2;
-/** Sound effects at this priority or below go through the `low` bus, which speech ducks (R10). */
-export const LOW_PRIORITY_MAX = 1;
 /**
- * The `low` bus's level while a line is spoken: −6 dB (R10; D134), so a speaker's blip stands at
- * least 6 dB over the mix (smoke/audio.spec.ts measures it in the ducked storms).
+ * Sound effects at this priority or below, except speech's own (SPEECH_SFX: the blips and the
+ * typewriter's tick), go through the `underSpeech` bus, which ducks while someone speaks (R10):
+ * the rattle (0–1) and the moments (2: the Hollow's hum, a horn, a chime). Alarms (3) never duck.
+ */
+export const UNDER_SPEECH_MAX_PRIORITY = 2;
+/**
+ * The `underSpeech` bus's level while a line is spoken: −6 dB (R10; D134), so a speaker's blip
+ * stands at least 6 dB over the mix (smoke/audio.spec.ts measures it in the ducked storms).
  */
 export const SPEECH_SFX_DUCK = 0.5;
 /** The music's level under a spoken line (the comms panel or a scene), so the line reads as spoken. */
@@ -155,8 +160,8 @@ export class Synth {
   readonly master: GainNode;
   readonly music: GainNode;
   readonly sfx: GainNode;
-  /** The low-priority sound effects (shots, hits, pops, clicks): ducked under speech. */
-  readonly low: GainNode;
+  /** The sound effects that duck under speech (all but speech's own and the alarms). */
+  readonly underSpeech: GainNode;
   readonly duck: GainNode;
   readonly cues: GainNode;
   readonly #rng: Rng;
@@ -171,9 +176,9 @@ export class Synth {
   #ducks: { level: number; until: number }[] = [];
   readonly #held = new Map<string, { level: number; fadeSec: number | null }>();
   #duckTarget = 1;
-  /** Held ducks of the low-priority sound effects (speech), by key. */
-  readonly #lowHeld = new Map<string, number>();
-  #lowTarget = 1;
+  /** Held ducks of the `underSpeech` bus (a spoken line), by key. */
+  readonly #speechHeld = new Map<string, number>();
+  #speechTarget = 1;
   readonly #noDuck: boolean;
   #themeLevel = 1;
   /** Sound effects started, by id (the test hooks report it). */
@@ -189,8 +194,8 @@ export class Synth {
     this.master = ctx.createGain();
     this.music = ctx.createGain();
     this.sfx = ctx.createGain();
-    this.low = ctx.createGain();
-    this.low.connect(this.sfx);
+    this.underSpeech = ctx.createGain();
+    this.underSpeech.connect(this.sfx);
     this.duck = ctx.createGain();
     this.cues = ctx.createGain();
     this.duck.connect(this.music);
@@ -258,7 +263,7 @@ export class Synth {
       ratio: semitones(pitch),
       noteHz: null,
       noteSec: null,
-      dest: recipe.priority <= 2 && !id.startsWith('blip.') && id !== 'type_tick' ? this.low : this.sfx,
+      dest: ducksUnderSpeech(id, recipe) ? this.underSpeech : this.sfx,
     });
     const end = start + recipeDuration(recipe);
     this.#book.add(id, recipe.priority, start, end, voice);
@@ -342,21 +347,22 @@ export class Synth {
   }
 
   /**
-   * Holds the low-priority sound effects (priority ≤ LOW_PRIORITY_MAX) ducked to `level` under
-   * `key` (a spoken line, R10) until it's released with null; the lowest held level wins.
+   * Holds the sound effects that duck under speech (`underSpeech`: priority ≤
+   * UNDER_SPEECH_MAX_PRIORITY, not speech's own) at `level` under `key` (a spoken line, R10) until
+   * it's released with null; the lowest held level wins.
    */
   holdSfxDuck(key: string, level: number | null): void {
-    if (level === null) this.#lowHeld.delete(key);
-    else this.#lowHeld.set(key, level);
+    if (level === null) this.#speechHeld.delete(key);
+    else this.#speechHeld.set(key, level);
     if (this.#noDuck) return;
     let target = 1;
-    for (const l of this.#lowHeld.values()) target = Math.min(target, l);
-    if (target === this.#lowTarget) return;
+    for (const l of this.#speechHeld.values()) target = Math.min(target, l);
+    if (target === this.#speechTarget) return;
     const now = this.ctx.currentTime;
-    const down = target < this.#lowTarget;
-    this.#lowTarget = target;
-    this.low.gain.cancelScheduledValues(now);
-    this.low.gain.setTargetAtTime(target, now, down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC);
+    const down = target < this.#speechTarget;
+    this.#speechTarget = target;
+    this.underSpeech.gain.cancelScheduledValues(now);
+    this.underSpeech.gain.setTargetAtTime(target, now, down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC);
   }
 
   /** Schedules the music up to the lookahead and updates the duck. Call it often (every ~25 ms). */
@@ -589,6 +595,11 @@ export class Synth {
       },
     };
   }
+}
+
+/** Whether sound `id` ducks under speech: the rattle and the moments, never a line's own sound. */
+export function ducksUnderSpeech(id: SfxId, recipe: SfxRecipe): boolean {
+  return recipe.priority <= UNDER_SPEECH_MAX_PRIORITY && !Object.hasOwn(SPEECH_SFX, id);
 }
 
 function clamp01(n: number): number {

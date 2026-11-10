@@ -4,7 +4,7 @@
 // Nobody can listen in CI, so every sound, cue, and theme is also rendered offline through the real
 // master chain and its levels asserted, plus the worst-case storms (Act I's W7 and boss wave, Act
 // II's Witch fight), unducked and ducked as the game ducks them, which must keep 3 dB of headroom;
-// in the ducked storms a line's blip must stand 6 dB over the rest of the mix (D134;
+// in the ducked storms every speaker's blip must stand 6 dB over the rest of the mix (D134;
 // architecture.md § Audio).
 import type { Page } from '@playwright/test';
 import type { AudioSample, RenderSample } from '../src/app/testHookTypes.ts';
@@ -135,7 +135,6 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
   page,
 }) => {
   test.setTimeout(150_000);
-  page.on('console', (m) => { if (m.text().startsWith('act')) console.log(m.text()); });
   await page.goto('/?test=1&audio=1');
   await waitForReady(page);
   const report = await page.evaluate(async () => {
@@ -151,9 +150,9 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
     const renders = await Promise.all(names.map((n) => a.render(n)));
     return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
   });
-  // A ducked storm's render also carries its speech margin (src/audio/offline.ts).
-  const speech = (name: string): SpeechMargin | undefined =>
-    (report[name] as (RenderSample & { readonly speech?: SpeechMargin }) | undefined)?.speech;
+  // A ducked storm's render also carries its speech margins (src/audio/offline.ts).
+  const speech = (name: string): readonly SpeechMargin[] =>
+    (report[name] as RenderSample & { readonly speech?: readonly SpeechMargin[] }).speech ?? [];
   const rows: string[] = [];
   for (const [name, r] of Object.entries(report)) {
     rows.push(
@@ -174,10 +173,9 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
     }
   }
   for (const name of Object.keys(report)) {
-    const m = speech(name);
-    if (m !== undefined) {
+    for (const m of speech(name)) {
       rows.push(
-        `${name.padEnd(24)} ${m.blip} rms ${m.blipDb.toFixed(1)} dB over the rest's ${m.restDb.toFixed(1)} dB: +${m.marginDb.toFixed(1)} dB`,
+        `${name.padEnd(24)} ${m.blip.padEnd(18)} ${m.blipDb.toFixed(1).padStart(6)} dB over the rest's ${m.restDb.toFixed(1).padStart(6)} dB: ${m.marginDb.toFixed(1).padStart(5)} dB`,
       );
     }
   }
@@ -191,12 +189,14 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
   for (const name of storms) {
     expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
     expect(report[name]!.raw.peak, name).toBeLessThan(2);
-    // Speech stays on top (D134): in a ducked storm the line's blip stands at least 6 dB over
-    // everything else sounding while it does (music under the radio duck and the Hollow's, the
-    // low-priority sounds under speech's −6 dB, and every alarm and moment at full level).
+    // Speech stays on top (D134): in a ducked storm the line's blip, and every other speaker's
+    // spoken at the same moment, stands at least 6 dB over everything else sounding (the music
+    // under the radio's duck and the Hollow's, the rattle and the moments under speech's −6 dB,
+    // the alarms at full level), measured at the blip's loudest moment.
     if (name.endsWith(':ducked')) {
-      expect(speech(name), name).toBeDefined();
-      expect(speech(name)!.marginDb, name).toBeGreaterThanOrEqual(6);
+      const margins = speech(name);
+      expect(margins.length, name).toBeGreaterThanOrEqual(14);
+      for (const m of margins) expect(m.marginDb, `${name} ${m.blip}`).toBeGreaterThanOrEqual(6);
     }
   }
 });

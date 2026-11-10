@@ -28,7 +28,7 @@ export { CUES, THEMES, isCueId, isThemeId, type CueId, type ThemeId } from './mu
 export { SFX_IDS, isSfxId, type SfxId } from './sfx/index.ts';
 export {
   DEFAULT_VOLUMES,
-  LOW_PRIORITY_MAX,
+  UNDER_SPEECH_MAX_PRIORITY,
   RADIO_DUCK,
   SPEECH_SFX_DUCK,
   type Volumes,

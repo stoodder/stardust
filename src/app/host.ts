@@ -192,7 +192,11 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
       replaying = false;
       killsBefore = sim.state.stats.skitterkinKilled;
       // A replay that ended the run can't be played on (D134): the caller fails safely instead.
-      if (sim.state.tick !== checkpoint.tick || i !== log.length || sim.state.outcome !== 'playing') {
+      if (
+        sim.state.tick !== checkpoint.tick ||
+        i !== log.length ||
+        sim.state.outcome !== 'playing'
+      ) {
         throw new Error(
           `checkpoint replay diverged: tick ${sim.state.tick} of ${checkpoint.tick}, ` +
             `${i} of ${log.length} commands, outcome ${sim.state.outcome}`,

@@ -14,6 +14,8 @@ export interface EnemyRenderState {
   readonly bar: boolean;
   /** Its tell glyph shows (its type's first 3 s, or hovered). */
   readonly tell: boolean;
+  /** The tell glyph it wears (`icon.tell.<tell>`: a runner's is `icon.tell.skittish`), or null. */
+  readonly glyph: string | null;
   /** The rim it wears (EnemyDress.ts): none, heavy, hush, crystal, blink, or pulse. */
   readonly rim: string;
   /** Its shield bubble, a held runner's hush ring, a Revealed unit's target bracket. */

@@ -38,7 +38,7 @@ import {
 import type { PlinkFx } from '../views/PlinkFx.ts';
 import type { ProjectileView } from '../views/ProjectileView.ts';
 import type { SackBurstView } from '../views/SackBurstView.ts';
-import { enemyBody, facingOf, tellGlyph } from '../views/spriteInfo.ts';
+import { enemyBody, facingOf, isRunner, unitGlyph } from '../views/spriteInfo.ts';
 import { FREEZE_RING_COLOR, FREEZE_RING_MS } from '../views/stasisLook.ts';
 import type { TowerView } from '../views/TowerView.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from '../views/TransientFx.ts';
@@ -347,10 +347,14 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const def = content.enemies[e.enemy]!; // spawned from the map's waves
       // A tell glyph shows over the first of each enemy type this battle, not every one (D028):
       // the body cue carries the rest.
-      const glyph = told.has(e.enemy) ? null : tellGlyph(def.tells);
-      if (glyph !== null) told.add(e.enemy);
-      const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
+      // A runner wears the Skittish glyph instead of its own (D134): the first runner of each
+      // type shows it, apart from that type's first non-runner.
       const unit = enemyOf(e.uid);
+      const runner = unit !== null && isRunner(def, unit.tags);
+      const key = runner ? `${e.enemy}:fleeing` : e.enemy;
+      const glyph = told.has(key) ? null : unitGlyph(def.tells, runner);
+      if (glyph !== null) told.add(key);
+      const route = Object.hasOwn(map.routes, e.route) ? (map.routes[e.route] ?? null) : null;
       // A `youngling`-tagged unit draws as the little one (D074).
       const body = enemyBody(def.sprites.body, unit?.tags ?? []);
       if (def.carrierYoung > 0 && unit?.tags.includes('fleeing') === true) untied.add(e.uid);

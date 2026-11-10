@@ -85,9 +85,9 @@ describe('dialogue helpers', () => {
     expect(sceneMode(knock!)).toBe('comms');
     expect(sceneMode(defineScene('a1_m01_brief', [{ kind: 'end' }]))).toBe('briefing');
     // A cue flagged `pause` (D134) is a pausing panel too, with no choice in it.
-    const cue = defineScene('a2_m03_cue_test', [{ kind: 'line', speaker: 'pebble', text: 'Hi.' }]);
-    expect(sceneMode(cue)).toBe('comms');
-    expect(sceneMode({ ...cue, pause: true })).toBe('panel');
+    const hi = defineScene('a2_m03_cue_test', [{ kind: 'line', speaker: 'pebble', text: 'Hi.' }]);
+    expect(sceneMode(hi)).toBe('comms');
+    expect(sceneMode({ ...hi, pause: true })).toBe('panel');
   });
 
   it('queues only the first leak and a tagged sale (never lost); every other bark drops', () => {
@@ -410,14 +410,14 @@ describe("a battle's dialogue", () => {
   it('holds the sim for a cue flagged pause until its last line, then puts the speed back', () => {
     bind('a1_m01');
     setSpeed(2);
-    const cue: Scene = {
+    const paused: Scene = {
       ...defineScene('a1_m01_cue_test', [
         { kind: 'line', speaker: 'quill', text: 'One.' },
         { kind: 'line', speaker: 'quill', text: 'Two.' },
       ]),
       pause: true,
     };
-    playScene(cue);
+    playScene(paused);
     expect(speed.value).toBe(0);
     expect(dialogue.scene.value?.mode).toBe('panel');
     expect(dialogue.comms.value).toBeNull();

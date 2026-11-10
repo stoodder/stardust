@@ -432,8 +432,12 @@ describe("Act II's looks (T440c)", () => {
     };
     expect(highGroundLook(g, 5, 3)).toBe('outcrop');
     expect(dressTile(g, 13, 3).block?.frame).toBe('outcrop');
-    expect(dressTile(g, 1, 3).prop?.sprite).toBe('prop.dome');
-    expect(dressTile(g, 1, 8).prop?.sprite).toBe('prop.dome');
+    // The domes stand on their markers (moved clear of the comms panel, D134).
+    for (const id of ['dome_north', 'dome_south']) {
+      const at = g.markers[id];
+      expect(at, id).toBeDefined();
+      expect(dressTile(g, at![0], at![1]).prop?.sprite, id).toBe('prop.dome');
+    }
     expect(dressTile(g, 17, 10).prop).toBeNull(); // AssetView draws the rigs there
     expect(dressTile(g, 4, 1).prop?.sprite).not.toBe('prop.dome'); // the fork names no decor
     expect(hushFrame(g, 17, 0)).toBeNull();

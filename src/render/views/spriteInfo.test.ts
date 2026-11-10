@@ -8,7 +8,10 @@ import {
   headStyle,
   headSuffix,
   idleAnim,
+  isRunner,
   spriteId,
+  tellGlyph,
+  unitGlyph,
   YOUNGLING_SPRITE,
 } from './spriteInfo.ts';
 
@@ -100,5 +103,19 @@ describe('enemyBody (D074)', () => {
         }
       }
     }
+  });
+});
+
+describe('runner glyphs (D134)', () => {
+  it('shows the Skittish glyph on a runner in place of its own tells (no Carrier on a fleeing Hauler)', () => {
+    expect(unitGlyph(['carrier', 'armored'], true)).toBe('icon.tell.skittish');
+    expect(unitGlyph(['carrier', 'armored'], false)).toBe(tellGlyph(['carrier', 'armored']));
+    expect(unitGlyph([], true)).toBe('icon.tell.skittish');
+  });
+
+  it('counts a fleeing unit as a runner unless it hushes (the Hollow)', () => {
+    expect(isRunner({ hushes: false }, ['fleeing'])).toBe(true);
+    expect(isRunner({ hushes: true }, ['fleeing'])).toBe(false);
+    expect(isRunner({ hushes: false }, ['youngling'])).toBe(false);
   });
 });

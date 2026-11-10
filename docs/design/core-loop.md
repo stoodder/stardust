@@ -91,7 +91,7 @@ Example: with A2M3 won and A2M4 not built, the frontier is the teaser *Second Ha
 
 **Reduced motion.** The frontier's beacon holds still, the marker doesn't bob or walk (it is simply at its node), and the first-visit sweep is skipped (the notice still shows).
 
-**As built (T301b).** All of the above, for Act II's phases (`act2.gold`, and `act2.dusk` from A2M4's frontier; `act3` and `dawn` are sketches). The first-visit notice shows top centre for 4 s after the sweep; the panel stays clear of the selected node's plate; the marker's walk animates only within a session (a reload shows it at its node).
+**As built (T301b).** All of the above, for Act II's phases (`act2.gold`, and `act2.dusk` from A2M4's frontier; `act3` and `dawn` are sketches). The first-visit notice shows for 4 s after the sweep under the header (in the notices' column, clear of the region labels and the node panel); the panel stays clear of the selected node's plate; the marker's walk animates only within a session (a reload shows it at its node).
 
 ---
 
@@ -224,7 +224,7 @@ Story moments that change play are map-script actions ([maps.md §5.1](maps.md#5
 
 From **Act II** on, a lost run can be resumed from a checkpoint instead of from wave 1.
 
-- **When.** The game records a checkpoint as the **countdown to every 5th wave begins** (W5, W10, W15, …), so a retry lands in the build phase before that wave; how it is stored and restored is in [../tech/architecture.md § Checkpoints](../tech/architecture.md#checkpoints). On a loss, Results offers **"Retry from wave N"** for the latest checkpoint, first and focused, beside Retry (from wave 1). The run resumes exactly as it stood: the towers, credits, core and asset meters, cooldowns, timers, and the earlier waves' enemies still walking. It opens **paused** ("Resumed at wave N. Unpause when ready."), so the player can look and rebuild first. Nothing said or heard before the checkpoint plays again (lines, barks, banners), and a later loss offers the latest checkpoint again.
+- **When.** The game records a checkpoint as the **countdown to every 5th wave begins** (W5, W10, W15, …), so a retry lands in the build phase before that wave; how it is stored and restored is in [../tech/architecture.md § Checkpoints](../tech/architecture.md#checkpoints). On a loss, Results offers **"Retry from wave N"** for the latest checkpoint taken before the run's final tick, first and focused, beside Retry (from wave 1): a run lost on the very tick W10's countdown began offers W5, since W10's would replay straight into the loss (D134). The run resumes exactly as it stood: the towers, credits, core and asset meters, cooldowns, timers, and the earlier waves' enemies still walking. It opens **paused** ("Resumed before wave N. Unpause when ready. Perfect Core and the Challenge need a shift from wave 1.", for 6 s; "before", because the wave counter still shows the waves behind it), so the player can look and rebuild first. A retry whose replay can't reach its checkpoint still playing never strands the player: it lands on the campaign screen with "That checkpoint couldn't be restored. The shift is safe to play again from wave 1." Nothing said or heard before the checkpoint plays again (lines, barks, banners), and a later loss offers the latest checkpoint again.
 - **Only after a loss (rule).** The pause menu's Retry stays a full retry from wave 1: a checkpoint recovers a lost run, it is not a way to rewind a wave that went badly.
 - **Finale.** The finale also records a checkpoint at the **start of Phase 2** (towers, credits, Voices, and Deep Bore %), so a Phase 2 loss offers "Retry from the Halls" and never replays the Descent.
 - **Cost (rule):** a run that used a checkpoint can still earn **Victory**, the first-clear rewards, and its optional objectives (§2.13; story content, never a medal), but **forfeits Perfect Core and the Challenge medal** for that run. The HUD's medal tracker shows them forfeited from the resume, and the Results card says why.
@@ -365,7 +365,7 @@ Barks are one-line, non-blocking reactions to game state, drawn from pools (auth
 | `boss_phase` | A boss changes phase |
 | `hold_fire_used` | Hold Fire is turned on (any tower) |
 | `not_firing` | Skitterkin have been in range of at least one tower for **10 s** of sim time with no tower firing at any of them (Hold Fire, or simply choosing not to): "...You okay, Sprout?" Once per map |
-| `skitterkin_killed_ahead` | The player kills a Skitterkin that was fleeing ahead of a Hollow group on the same route (wave tag `fleeing`). Once per map |
+| `skitterkin_killed_ahead` | The player kills a Skitterkin that was fleeing ahead of a Hollow group on the same route (wave tag `fleeing`), while a Hollow unit is still alive on that route (with none behind it, there was nothing to run from; D134). Once per map |
 | `idle` | No player command for 30 s of sim time during a wave |
 | `ally_hushed` | A refugee or singer is hushed |
 | `skitterkin_hushed` | A non-ally Skitterkin (a `fleeing` unit) is hushed by a Hollow unit. Once per map |
