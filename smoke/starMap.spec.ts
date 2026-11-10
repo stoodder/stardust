@@ -6,8 +6,8 @@
 // Look's Start reaching A2M3's. On after_a1m5_ref: what shows (and what
 // doesn't), the keyboard (arrows, Home, End, Enter, Esc), Replay, and every way back reading
 // "Sector map"; an export and import into a real slot, then the Title's Continue, lands on it with
-// no second notice. Under reduced motion nothing animates; after A2M3 the frontier is the *Second
-// Harvest* teaser in the dusk phase. Screenshots in test-results/screens/starmap/ (look at them:
+// no second notice. Under reduced motion nothing animates; after A2M4 the frontier is the *Long
+// Walk* teaser in the dusk phase. Screenshots in test-results/screens/starmap/ (look at them:
 // the chart, the plates, and the panel's placement are the point).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
@@ -201,7 +201,7 @@ test('star map: after A1M5, the keyboard, Replay, and every way back', async ({ 
   await expect(page.getByTestId('star-notice')).toHaveCount(0);
 });
 
-test('star map: reduced motion holds still; after A2M3 the Second Harvest teaser at dusk', async ({
+test('star map: reduced motion holds still; after A2M4 the Long Walk teaser at dusk', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -219,22 +219,22 @@ test('star map: reduced motion holds still; after A2M3 the Second Harvest teaser
   expect(await anim('.sd-star-ping')).toBe('none');
   expect(await anim('.sd-star-marker img')).toBe('none');
 
-  await page.goto('/?test=1&seed=1&save=after_a2m3');
+  await page.goto('/?test=1&seed=1&save=after_a2m4_returned');
   await waitForReady(page);
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-phase', 'act2.dusk');
   await expect(page.getByTestId('star-map')).toHaveAttribute('data-act', '2');
-  await expect(node(page, 'Second Look')).toHaveAttribute('aria-current', 'location');
+  await expect(node(page, 'Second Harvest')).toHaveAttribute('aria-current', 'location');
   // The teaser: its tagline, the padlock, no Start; its node takes the focus.
-  const teaser = node(page, 'Second Harvest');
+  const teaser = node(page, 'The Long Walk');
   await expect(teaser).toBeFocused();
   await expect(teaser).toHaveAccessibleName(
-    /\. Coming soon\. .*Ask Zibzab where stardust comes from\.$/,
+    /\. Coming soon\. .*Then the Hollow comes for everyone on it\.$/,
   );
-  const panel = page.getByRole('region', { name: 'Second Harvest' });
+  const panel = page.getByRole('region', { name: 'The Long Walk' });
   await expect(panel).toContainText('Coming soon');
-  await expect(panel).toContainText('Ask Zibzab where stardust comes from.');
+  await expect(panel).toContainText('Then the Hollow comes for everyone on it.');
   await expect(panel.getByRole('button')).toHaveCount(0);
-  await expect(page.locator('body')).not.toContainText('The Long Walk');
+  await expect(page.locator('body')).not.toContainText('Sundown');
   await nextFrames(page);
-  await shot(page, 'starmap', 3, 'after-a2m3-teaser');
+  await shot(page, 'starmap', 3, 'after-a2m4-teaser');
 });

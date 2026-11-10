@@ -176,6 +176,27 @@ describe("A2M4's own debrief", () => {
   });
 });
 
+describe("A2M4's own debrief on a loss", () => {
+  it.runIf(Object.hasOwn(SCENES, 'a2_m04_debrief'))(
+    "shows only Zibzab's line and offers no C2, whatever the bank",
+    () => {
+      const save = withBank(createNewSave(), 625);
+      const lost = withResultsChoice(
+        runResultOf(storyOf(save), 'lost'),
+        storyOf(save),
+        'lost',
+        save,
+        false,
+      );
+      expect(lost.choice).toBeNull();
+      expect(lost.debrief.map((l) => l.text)).toEqual([
+        'No charge for that one, Technician. Go again.',
+      ]);
+      expect(lost.rewards).toBeNull();
+    },
+  );
+});
+
 describe('C2 taken in the save in play', () => {
   let store: MemoryStore;
   beforeEach(() => {
