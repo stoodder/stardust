@@ -1,7 +1,7 @@
 // The Hollow, and what it does to the Skitterkin (T450; design/enemies.md § 5.4, § 8; story/
 // bible.md §8). The Hollow *hums the jingle, wrong*: "Ev-er-glow" forward, then the second half
 // backwards, every note out of tune, a wobbling hum that drops in while Hollow units are on the
-// field and ducks the music under it (a loop, ENEMY_LOOPS). Around a Hollow unit the small sounds
+// field while the music sits ducked under it (a loop, ENEMY_LOOPS; the steady duck is HOLLOW_DUCK). Around a Hollow unit the small sounds
 // drop out (HOLLOW_QUIET, eventTables.ts). Its hush tell is a breath drawn in; the hush itself a
 // squeak cut off mid-breath and a low, hollow thud, the music dipping with it; a Hollow unit dies
 // by unravelling into static, a faint backward hiss cut dead, so the silence after it is the
@@ -26,16 +26,18 @@ const HUM_STEPS = [
 
 export const HOLLOW_SFX = {
   /**
-   * The Hollow hums the jingle wrong (a loop while Hollow units are on the field): two sine voices
-   * a few cents apart, so the hum beats against itself, over a breath of noise. It ducks the music
-   * while it hums ("drops in near Hollow units while other music ducks").
+   * The Hollow hums the jingle wrong (a loop while Hollow units are on the field): a sine and a
+   * triangle a few cents apart, so the hum beats against itself, an octave partial a few cents
+   * sharp over them (G3's fundamental is below what laptop speakers play; the octave and its
+   * overtones carry the tune there), and a breath of noise. The music sits ducked under it for as
+   * long as any Hollow walks (HOLLOW_DUCK, eventTablesAct2.ts; "drops in near Hollow units while
+   * other music ducks"), so the hum itself never pumps the music.
    */
   hollow_hum: {
     gain: 0.3,
     priority: 2,
     minGapMs: 2000,
     maxVoices: 1,
-    duck: 0.45,
     layers: [
       {
         wave: 'sine',
@@ -43,7 +45,7 @@ export const HOLLOW_SFX = {
         steps: HUM_STEPS,
         vibrato: { hz: 3.3, cents: 30 },
         env: { a: 0.3, d: 0.3, s: 0.8, hold: 1.8, r: 0.4 },
-        gain: 0.5,
+        gain: 0.4,
       },
       {
         wave: 'triangle',
@@ -53,6 +55,16 @@ export const HOLLOW_SFX = {
         filter: { type: 'lowpass', freq: 900 },
         env: { a: 0.4, d: 0.3, s: 0.7, hold: 1.7, r: 0.4 },
         gain: 0.3,
+      },
+      {
+        // The octave, 12 cents sharp against the fundamental's pair: what small speakers hear.
+        wave: 'triangle',
+        freq: HUM_HZ * 2 * 1.007,
+        steps: HUM_STEPS,
+        vibrato: { hz: 3.1, cents: 35 },
+        filter: { type: 'lowpass', freq: 2400 },
+        env: { a: 0.35, d: 0.3, s: 0.75, hold: 1.75, r: 0.4 },
+        gain: 0.35,
       },
       {
         wave: 'noise',

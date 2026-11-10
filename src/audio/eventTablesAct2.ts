@@ -87,6 +87,21 @@ export const HOLLOW_QUIET = {
 };
 
 /**
+ * The Hollow's duck (D134, R7): while any Hollow unit is on the field (fieldSounds' `hollowLive`,
+ * the same units that keep the quiet), the music sits steadily `level` down (about −4 dB), easing
+ * there and back over `fadeSec`: one long held breath under the hum, never a dip per hum.
+ */
+export const HOLLOW_DUCK = {
+  key: 'hollow',
+  level: 0.63,
+  fadeSec: 0.4,
+} as const satisfies {
+  readonly key: string;
+  readonly level: number;
+  readonly fadeSec: number;
+};
+
+/**
  * Detection (T406): a hidden cloaked unit's footsteps, every `everySec` of sim time while one
  * walks (one voice however many; design/enemies.md § 3 "footsteps sound"), and the ping as one is
  * Revealed (Revealed; slipping back into the cloak, Cloaked, is silent).

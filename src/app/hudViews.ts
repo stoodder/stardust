@@ -271,38 +271,83 @@ function mapEnemies(map: Pick<CompiledMapDef<IdSpace>, 'waves'>): Map<string, Ma
   return enemies;
 }
 
+/** The runner chip's tooltip (D134): what the runners are, and that they don't hurt the core. */
+export function runnersTip(traits: readonly string[]): string {
+  const list = traits.map((t) => threatLabel(t).toLowerCase()).join(', ');
+  return list === ''
+    ? "Runners · They don't hurt the core."
+    : `Runners: ${list} · They don't hurt the core.`;
+}
+
 /**
  * A map's threats as the briefing lists them: each `threatIntel` trait with its tell's glyph
- * (`THREAT_INTEL_TELL`: `burrowing` draws `icon.tell.burrower`, `boss` `icon.tell.boss`), then any other glyph-bearing tell of its
- * enemies (the Hauler's `carrier`), each tell once. Neutrals (Gerald) aren't threats.
+ * (`THREAT_INTEL_TELL`: `burrowing` draws `icon.tell.burrower`, `boss` `icon.tell.boss`), then any
+ * other glyph-bearing tell of its enemies (the Hauler's `carrier`), each tell once. Neutrals
+ * (Gerald) aren't threats, and neither are runners (D134): every unit of a `fleeing` group stands
+ * behind one Skittish chip whose tooltip names their traits, and a trait (or tell) only runners
+ * bring is left off the strip.
  */
-function threatViews(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): ThreatView[] {
+export function mapThreats(
+  map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>,
+): ThreatView[] {
+  const threatEnemies = new Map<string, MapEnemy>();
+  const runnerEnemies = new Map<string, MapEnemy>();
+  for (const w of map.waves) {
+    for (const g of w.groups) {
+      if (g.enemy.neutral) continue;
+      const fleeing = g.tags.includes('fleeing');
+      (fleeing ? runnerEnemies : threatEnemies).set(g.enemy.id, g.enemy);
+    }
+  }
+  const has = (enemies: Map<string, MapEnemy>, trait: string): boolean => {
+    for (const e of enemies.values()) if (e.traits.some((t) => t === trait)) return true;
+    return false;
+  };
+  const runners = runnerEnemies.size > 0;
+  /** A trait only runners bring: it lives in the Skittish chip's tooltip, not on the strip. */
+  const runnerOnly = (trait: string): boolean =>
+    runners && trait !== 'boss' && has(runnerEnemies, trait) && !has(threatEnemies, trait);
+  const runnerTraits: string[] = [];
   const seen = new Set<string>();
   const threats: ThreatView[] = [];
-  for (const trait of map.threatIntel) {
-    const tell = THREAT_INTEL_TELL[trait];
-    if (seen.has(tell)) continue;
+  const add = (id: string, tell: string): void => {
+    if (seen.has(tell)) return;
     seen.add(tell);
-    threats.push({ id: trait, label: threatLabel(trait), glyph: tellGlyph([tell]) });
+    threats.push({ id, label: threatLabel(id), glyph: tellGlyph([tell]), tip: null });
+  };
+  for (const trait of map.threatIntel) {
+    if (runners && trait === 'skittish') continue;
+    if (runnerOnly(trait)) runnerTraits.push(trait);
+    else add(trait, THREAT_INTEL_TELL[trait]);
   }
-  for (const e of mapEnemies(map).values()) {
-    if (e.neutral) continue;
-    for (const tell of e.tells) {
-      const glyph = tellGlyph([tell]);
-      if (seen.has(tell) || glyph === null) continue;
-      seen.add(tell);
-      threats.push({ id: tell, label: threatLabel(tell), glyph });
+  // Runner traits the intel doesn't list still read in the tooltip (every fleeing unit's).
+  for (const e of runnerEnemies.values()) {
+    for (const t of e.traits) {
+      if (t !== 'skittish' && !runnerTraits.includes(t) && runnerOnly(t)) runnerTraits.push(t);
     }
+  }
+  for (const e of threatEnemies.values()) {
+    for (const tell of e.tells) {
+      if (tellGlyph([tell]) !== null) add(tell, tell);
+    }
+  }
+  if (runners) {
+    threats.unshift({
+      id: 'skittish',
+      label: threatLabel('skittish'),
+      glyph: tellGlyph(['skittish']),
+      tip: runnersTip(runnerTraits),
+    });
   }
   return threats;
 }
 
 /**
  * A map's threat names, exactly the briefing's strip (D059: the loadout screen's Threats list
- * reads the same, Carrier included): "Fast", "Armored", "Carrier".
+ * reads the same `mapThreats`, Carrier included): "Fast", "Armored", "Carrier".
  */
 export function threatNames(map: Pick<CompiledMapDef<IdSpace>, 'threatIntel' | 'waves'>): string[] {
-  return threatViews(map).map((t) => t.label);
+  return mapThreats(map).map((t) => t.label);
 }
 
 /**
@@ -318,7 +363,7 @@ export function threatIntel(
   specsUnlocked: readonly string[],
 ): ThreatIntelView {
   const enemies = mapEnemies(map);
-  const threats = threatViews(map);
+  const threats = mapThreats(map);
   const required: RequiredCounterView[] = map.requiredCounters.map((counter) => {
     const scope = answerScope(counter, map.act, enemies.values());
     const answers: string[] = [];

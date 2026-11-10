@@ -1461,3 +1461,4 @@ Reviewers: correctness/architecture/performance (no high-severity findings), a p
 - **A checkpoint can never soft-lock:** only one taken before the run's final tick is offered; a replay that ends the run fails safely. The resume banner says why medals are forfeit.
 - **Dusk dims the world, not the actors;** Act II's grass turns back toward gold at the same value band.
 - **The Hollow's sound is eerie, not broken:** one steady duck while any Hollow walks instead of a dip per hum; **speech stays ≥ 6 dB over the mix**, asserted.
+- *Supersedes D121's timing:* Pebble becomes clickable at W5's countdown (the build phase), no longer as W5 starts; the W6-cleared fallback stands.

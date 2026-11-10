@@ -196,19 +196,25 @@ describe('Act II field sounds (T450)', () => {
     const mote = unit(1, plain('mote', 'hollow'), { x: 5, y: 5 });
     const w = world(mote, unit(2, plain('nibbler'), { x: 9, y: 9 }));
     expect(f.quietAt(5, 5)).toBe(false); // nothing seen yet
+    expect(f.hollowLive()).toBe(false);
     frame(f, w);
     const r = HOLLOW_QUIET.radiusTiles;
     expect(f.quietAt(5, 5)).toBe(true);
+    expect(f.hollowLive()).toBe(true); // the music's steady duck holds (HOLLOW_DUCK)
     expect(f.quietAt(5 + r * 0.7, 5 + r * 0.7)).toBe(true);
     expect(f.quietAt(5 + r, 5 + r)).toBe(false);
     expect(f.quietAt(9, 9)).toBe(false); // a Skitterkin makes no quiet
     mote.leaving = true;
     frame(f, w);
     expect(f.quietAt(5, 5)).toBe(false);
+    expect(f.hollowLive()).toBe(false);
     mote.leaving = false;
+    frame(f, w);
+    expect(f.hollowLive()).toBe(true);
     mote.alive = false;
     frame(f, w);
     expect(f.quietAt(5, 5)).toBe(false);
+    expect(f.hollowLive()).toBe(false);
   });
 
   it('hums for the Hollow and the Aelari while they are on the field', () => {

@@ -2,12 +2,13 @@
 // (`?save=after_a2m2&map=a2_m03`, so the story context has a save to record the rescue in; the
 // Sector map's normal flow into it is starMap.spec.ts's). The briefing (Bricks), the setup in the
 // gold light, W3's fleeing Haulers with their young in the sacks, the Peeker's rock lighting up as
-// W5 starts with Pebble on it, the player's own click and the rescue cue (her plate reads ???),
-// Bricks naming her at W7 with her in his pocket, the dusk by W11, and the debrief's pension line
-// on Results. Before each shot the sim plays a moment at 1×, so the frame isn't a fast-forward's
-// pile. Fast text (`&fasttext=1`, T461) shows each line whole and shortens the radio's holds, so
-// the flow doesn't wait on the typewriter. Screenshots in test-results/screens/a2m3/ (look at them:
-// the young in the sacks, the outlined rock, the light).
+// W5's countdown begins with Pebble on it (the build phase, hands free; D134), the player's own
+// click and the rescue cue as a pausing panel that holds the battle until it's read (her plate
+// reads ???), Bricks naming her at W7 with her in his pocket, the dusk by W11, and the debrief's
+// pension line on Results. Before each shot the sim plays a moment at 1×, so the frame isn't a
+// fast-forward's pile. Fast text (`&fasttext=1`, T461) shows each line whole (one Next a line) and
+// shortens the radio's holds, so the flow doesn't wait on the typewriter. Screenshots in
+// test-results/screens/a2m3/ (look at them: the young in the sacks, the outlined rock, the light).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -115,8 +116,14 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
     clip: { x: hauler!.x - 60, y: hauler!.y - 70, width: 120, height: 100 },
   });
 
-  // W5 starts: the rock lights up with Pebble on it. The player's own click, before par's.
+  // W5's countdown begins: the rock lights up with Pebble on it, in the build phase. The player's
+  // own click, before par's (par clicks once its last W4 purchase is in).
   expect(await until(page, 'rock')).toBe(true);
+  const phase = await page.evaluate(() => {
+    const st = globalThis.__sd!.state()!;
+    return { phase: st.schedule.phase, wave: st.schedule.countdownWave };
+  });
+  expect(phase).toEqual({ phase: 'countdown', wave: 5 });
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), ROCK);
   expect(at).not.toBeNull();
   await page.mouse.move(at!.x, at!.y);
@@ -128,19 +135,23 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   });
   await shot(page, 'a2m3', 5, 'rock');
   await page.mouse.click(at!.x, at!.y);
-  // The click goes in on the next tick, and the script cues the rescue the tick after.
-  await page.evaluate(() => globalThis.__sd!.fastForward(2));
+  // Played at 1×: the click goes in on the next tick, the script cues the rescue the tick after,
+  // and the cue pauses the battle as a panel.
+  await page.evaluate(() => globalThis.__sd!.setSpeed(1));
+  const scene = page.getByRole('dialog', { name: 'Comms' });
+  await expect(scene).toBeVisible({ timeout: 10_000 });
   const clicked = await page.evaluate(() => {
     const s = globalThis.__sd!.state()!;
     return {
       interacted: [...s.interacted],
       clicks: s.commandLog.filter((l) => l.cmd.type === 'interact').length,
+      tick: s.tick,
     };
   });
-  // Par's own click lands on the same tick (autoplay keeps playing); the marker is reached once.
+  // The player's click reached her; the marker is reached once.
   expect(clicked.interacted).toEqual(['peeker']);
-  expect(clicked.clicks).toBeGreaterThanOrEqual(1);
-  // Picked up (T430b): she lifts off the rock, fading, over a little dust.
+  expect(clicked.clicks).toBe(1);
+  // Picked up (T430b): she lifts off the rock, over a little dust, with nothing drawn over her.
   await nextFrames(page);
   await page.waitForTimeout(120);
   await page.screenshot({
@@ -148,16 +159,30 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
     clip: { x: at!.x - 90, y: at!.y - 70, width: 180, height: 120 },
   });
 
-  // The rescue cue: her squeak under a plate that doesn't know her name yet, then Bricks.
-  const comms = page.getByTestId('comms');
-  await expect(comms).toContainText('(squeak)', { timeout: 20_000 });
-  await expect(comms).toContainText('???');
-  await page.waitForTimeout(250); // the panel's 160 ms line-in step
+  // The rescue cue: her squeak under a plate that doesn't know her name yet, then Bricks. The
+  // battle holds under it (paused, the sim's tick still), and nothing moves on by itself.
+  await expect(scene).toContainText('(squeak)');
+  await expect(scene).toContainText('???');
+  await expect(page.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => globalThis.__sd!.state()!.tick)).toBe(clicked.tick);
   await shot(page, 'a2m3', 6, 'cue-squeak');
-  await expect(comms).toContainText("Pocket's got room.", { timeout: 15_000 });
+  const next = scene.getByRole('button', { name: /^(Skip|Next)$/ });
+  await next.click();
+  await expect(scene).toContainText("Pocket's got room.");
   await page.waitForTimeout(250); // the panel's 160 ms line-in step
   await shot(page, 'a2m3', 7, 'cue-bricks');
-  await expect(comms).toContainText('(squeak, smaller)', { timeout: 15_000 });
+  await next.click();
+  await expect(scene).toContainText('(squeak, smaller)');
+  await next.click();
+  await expect(scene).toBeHidden();
+  // The battle's speed comes back (1×), then the flow takes the sim again.
+  await expect(page.getByRole('button', { name: 'Pause' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await page.evaluate(() => globalThis.__sd!.setSpeed(0));
+  const comms = page.getByTestId('comms');
 
   // W7's radio: he names her, with her in his pocket.
   expect(await until(page, 'w7')).toBe(true);

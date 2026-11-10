@@ -39,6 +39,36 @@ describe('the threat strip (U-H2)', () => {
   });
 });
 
+describe('runners on the threat strip (D134)', () => {
+  it('one Skittish chip stands for every fleeing unit; the strip lists only real threats', () => {
+    const a2m1 = createSim(battleConfig('a2_m01', 1)).map;
+    const threats = threatIntel(a2m1, [], []).threats;
+    expect(threats.map((t) => t.label)).toEqual(['Skittish', 'Hollow clusters']);
+    expect(threats[0]?.glyph).toBe('icon.tell.skittish');
+    expect(threats[0]?.tip).toBe(
+      "Runners: fast, flying, burrowing, armored, splitting, huddle · They don't hurt the core.",
+    );
+    expect(threats[1]?.tip).toBeNull();
+  });
+
+  it("keeps a trait a real threat brings too, and no fleeing Hauler's Carrier", () => {
+    const a2m3 = createSim(battleConfig('a2_m03', 1)).map;
+    const labels = threatNames(a2m3);
+    expect(labels[0]).toBe('Skittish');
+    expect(labels).toContain('Armored'); // the Aelari's, not only the runners'
+    expect(labels).not.toContain('Fast');
+    expect(labels).not.toContain('Carrier');
+    // Act I has no runners: no chip stands in, every trait is its own.
+    expect(threatNames(createSim(battleConfig('a1_m04', 1)).map)).toEqual([
+      'Fast',
+      'Armored',
+      'Splitting',
+      'Huddle',
+      'Carrier',
+    ]);
+  });
+});
+
 describe("Gerald's preview row (R9)", () => {
   it('reads MAIL: never NEW, never AIR', () => {
     const a1m3 = createSim(battleConfig('a1_m03', 1)).map;

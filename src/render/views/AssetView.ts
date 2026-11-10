@@ -15,6 +15,7 @@ import { ASSET_SPRITES, assetLook } from './assetLook.ts';
 import { OCCLUDING_ALPHA } from './CoreView.ts';
 import { tilesBehind } from './groundTiles.ts';
 import type { ViewContext } from './ViewContext.ts';
+import { markScenery } from './scenery.ts';
 
 /** Props sort among themselves by a per-tile id (GroundView's `propTieBreak`). */
 const TIE_MASK = 0xff;
@@ -50,7 +51,7 @@ export class AssetView {
     this.#sprite = new Phaser.GameObjects.Sprite(scene, pos.x, pos.y, f.texture, f.frame)
       .setDisplayOrigin(a.x, a.y)
       .setDepth(worldDepth(pos.y, 'prop', (row * map.cols + col) & TIE_MASK));
-    layers.world.add(this.#sprite);
+    layers.world.add(markScenery(this.#sprite));
     this.#id = id;
     this.#behind = tilesBehind(map, col, row, a.y);
   }

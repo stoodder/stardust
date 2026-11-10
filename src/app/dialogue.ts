@@ -1035,6 +1035,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   const save = activeSave();
   const met = new Set<string>(save?.campaign.seenEnemies ?? []);
   const waveOf = new Map<number, number>();
+  /** Each live enemy's route (`skitterkin_killed_ahead` asks whether a Hollow unit walks it). */
+  const routeOf = new Map<number, string>();
   const towerOf = new Map<number, string>();
   const leakedWaves = new Set<number>();
   const leakedEnemies = new Set<string>();
@@ -1156,32 +1158,40 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     }),
     bus.on('EnemySpawned', (e) => {
       waveOf.set(e.uid, e.wave);
+      routeOf.set(e.uid, e.route);
       if (met.has(e.enemy)) return;
       met.add(e.enemy);
       if (isEnemy(e.enemy)) offerBarks([{ on: 'new_enemy', enemy: e.enemy }]);
     }),
     bus.on('EnemyDied', (e) => {
       waveOf.delete(e.uid);
+      const route = routeOf.get(e.uid);
+      routeOf.delete(e.uid);
       const triggers: BarkTrigger[] = isEnemy(e.enemy)
         ? [{ on: 'enemy_killed', enemy: e.enemy }]
         : [];
       // A kill of a runner fleeing the Hollow (core-loop.md § 6.3): the run's fleeing kill count
-      // moved since the last one offered (the event doesn't carry its unit's wave tags).
+      // moved since the last one offered (the event doesn't carry its unit's wave tags), and a
+      // Hollow unit is still walking its route (D134: no Hollow behind it, nothing it ran from).
       const killed = sim.state.stats.tagKilled.fleeing;
       if (killed > fleeingKilled) {
         fleeingKilled = killed;
-        triggers.push({ on: 'skitterkin_killed_ahead' });
+        if (route !== undefined && hollowOnRoute(sim.state.enemies, route)) {
+          triggers.push({ on: 'skitterkin_killed_ahead' });
+        }
       }
       offerBarks(triggers);
     }),
     // A Hollow unit hushed a fleeing Skitterkin (enemies.md § 5.4; the bark's once-per-map limit).
     bus.on('Hushed', (e) => {
+      routeOf.delete(e.victim);
       if (e.victimEnemy !== null) offerBarks([{ on: 'skitterkin_hushed' }]);
     }),
     bus.on('EnemyLeaked', (e) => {
       const w = waveOf.get(e.uid);
       if (w !== undefined) leakedWaves.add(w);
       waveOf.delete(e.uid);
+      routeOf.delete(e.uid);
       const triggers: BarkTrigger[] = [];
       if (!leaked) {
         leaked = true;
@@ -1317,4 +1327,23 @@ export function dialogueTestHooks(): {
       comms: dialogue.comms.value?.line.text ?? null,
     }),
   };
+}
+
+/** Whether a Hollow unit is alive on route `route` (the runners' reason to run; D134). */
+export function hollowOnRoute(
+  enemies: {
+    readonly used: number;
+    readonly items: readonly {
+      readonly alive: boolean;
+      readonly def: { readonly faction: string } | null;
+      readonly route: { readonly id: string } | null;
+    }[];
+  },
+  route: string,
+): boolean {
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used
+    if (e.alive && e.def?.faction === 'hollow' && e.route?.id === route) return true;
+  }
+  return false;
 }

@@ -1,21 +1,94 @@
 // Offline renders for the level checks (nobody can listen in CI): each sound effect, cue, and
-// theme, and the worst-case storms (Act I's W7 and boss, Act II's Witch fight), rendered through the real synth graph into an
-// OfflineAudioContext and measured (analyze.ts). The `__sd.audio` test hooks expose them and
+// theme, and the worst-case storms (Act I's W7 and boss, Act II's Witch fight), rendered through
+// the real synth graph into an OfflineAudioContext and measured (analyze.ts). A storm renders two
+// ways: with no ducking (the loudest case, for headroom), and ducked as the live game ducks, its
+// clock stepped like the live pump so each duck lands when its sound does, which also measures how
+// far its line's blip stands over the rest of the mix. The `__sd.audio` test hooks expose them and
 // smoke/audio.spec.ts asserts the numbers. Browser only.
 import { analyze, type Levels } from './analyze.ts';
 import { CUES, THEMES, type CueId, type ThemeId } from './music/index.ts';
 import { compileSong } from './music/pattern.ts';
 import { recipeDuration } from './recipes.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
-import { DEFAULT_VOLUMES, Synth, type SynthOptions } from './synth.ts';
+import { PUMP_MS } from './engine.ts';
+import { HOLLOW_DUCK } from './eventTablesAct2.ts';
+import {
+  DEFAULT_VOLUMES,
+  RADIO_DUCK,
+  SPEECH_SFX_DUCK,
+  Synth,
+  type SynthOptions,
+} from './synth.ts';
 
 const RATE = 44_100;
 const TAIL_SEC = 0.3;
+
+/**
+ * How far a storm's line stands over the rest of its mix (a ducked storm only): the blip's RMS and
+ * the RMS of everything else, over the blip's own span, before the limiter (which treats both
+ * alike), and their difference (D134: at least 6 dB).
+ */
+export interface SpeechMargin {
+  readonly blip: SfxId;
+  readonly blipDb: number;
+  readonly restDb: number;
+  readonly marginDb: number;
+}
 
 /** Levels through the full master chain, and the raw mix before the limiter (headroom). */
 export interface RenderLevels {
   readonly out: Levels;
   readonly raw: Levels;
+  /** A ducked storm's speech margin. */
+  readonly speech?: SpeechMargin;
+}
+
+/** The live pump's step: a stepped render wakes this often. */
+const STEP_SEC = PUMP_MS / 1000;
+
+/** Something a stepped render does at `t` (s): `run(synth, delay)` with `delay` from now to `t`. */
+interface Timed {
+  readonly t: number;
+  readonly run: (s: Synth, delay: number) => void;
+}
+
+/**
+ * Renders `seconds` of a synth into a mono buffer. `build` runs on the clock's zero. With `timed`,
+ * the clock is stepped (the offline context suspends every STEP_SEC): each step runs what falls
+ * before the next one and pumps the music, as the live engine does, so a duck starts with its
+ * sound instead of on the clock's zero; without, `build` schedules everything up front.
+ */
+async function renderBuffer(
+  seconds: number,
+  build: (s: Synth) => void,
+  opts: SynthOptions,
+  timed: readonly Timed[] | null = null,
+): Promise<Float32Array> {
+  const ctx = new OfflineAudioContext(1, Math.ceil(seconds * RATE), RATE);
+  const synth = new Synth(ctx, opts);
+  synth.setVolumes(DEFAULT_VOLUMES);
+  build(synth);
+  if (timed !== null) {
+    const queue = timed.toSorted((a, b) => a.t - b.t);
+    let next = 0;
+    const step = (): void => {
+      const now = ctx.currentTime;
+      for (; next < queue.length && queue[next]!.t < now + STEP_SEC; next++) {
+        const e = queue[next]!; // next < length
+        e.run(synth, Math.max(0, e.t - now));
+      }
+      synth.pump();
+    };
+    step();
+    for (let k = 1; k * STEP_SEC < seconds - STEP_SEC; k++) {
+      void ctx.suspend(k * STEP_SEC).then(() => {
+        step();
+        return ctx.resume();
+      });
+    }
+  }
+  const buf = await ctx.startRendering();
+  return buf.getChannelData(0);
 }
 
 async function render(
@@ -23,12 +96,7 @@ async function render(
   build: (s: Synth) => void,
   opts: SynthOptions,
 ): Promise<Levels> {
-  const ctx = new OfflineAudioContext(1, Math.ceil(seconds * RATE), RATE);
-  const synth = new Synth(ctx, opts);
-  synth.setVolumes(DEFAULT_VOLUMES);
-  build(synth);
-  const buf = await ctx.startRendering();
-  return analyze([buf.getChannelData(0)], RATE);
+  return analyze([await renderBuffer(seconds, build, opts)], RATE);
 }
 
 async function both(
@@ -78,17 +146,24 @@ interface Storm {
   readonly cue: CueId;
   /** Schedules the storm's sounds with `at(t, id, pitch)`. */
   readonly sounds: (at: (t: number, id: SfxId, pitch?: number) => void) => void;
+  /** A line spoken over it: its speaker's blip at `at`, then 1 s of typing (`line`). */
+  readonly line: { readonly at: number; readonly blip: SfxId };
+  /** Hollow units walk throughout (a ducked render holds HOLLOW_DUCK from the start). */
+  readonly hollow: boolean;
 }
 
-/** The type-ticks of a line typing from `from` for 1 s, after its speaker's blip. */
-function line(at: (t: number, id: SfxId, pitch?: number) => void, from: number, blip: SfxId) {
-  at(from - 0.2, blip);
-  for (let t = from; t < from + 1; t += 0.025) at(t, 'type_tick', 5);
+/** How long a storm's line shows (s): its blip, 1 s of typing, and a held beat after. */
+const LINE_SEC = 2.2;
+
+/** The type-ticks of a line typing for 1 s, starting just after its speaker's blip at `blipAt`. */
+function typing(at: (t: number, id: SfxId, pitch?: number) => void, blipAt: number) {
+  for (let t = blipAt + 0.2; t < blipAt + 1.2; t += 0.025) at(t, 'type_tick', 5);
 }
 
 /**
  * The worst cases the levels are checked against (`render('storm')`, `render('storm:act2')`),
- * each through the voice limits with no ducking:
+ * each through the voice limits, rendered with no ducking and again ducked
+ * (`render('storm:act2:ducked')`):
  * - **act1**: well past A1M1's W7 at 2× and past A1M5's boss wave: the battle theme, Rivet shots
  *   attempted 20 a second, pops 10 a second (each Bunchling's split after it), Thumper fire and
  *   impacts 4 a second each, Sprinkler pulses, Skyhook flak and its bursts, a Zapcoil arc with
@@ -146,11 +221,12 @@ export const STORMS = {
       at(7, 'build');
       at(7.2, 'upgrade');
       at(7.4, 'sell');
-      line(at, 7.8, 'blip.quill');
       at(8, 'gerald_whistle');
       at(8.5, 'drone_cleared');
       at(8.8, 'boss_retreat');
     },
+    line: { at: 7.6, blip: 'blip.quill' },
+    hollow: false,
   },
   act2: {
     theme: 'act2_battle',
@@ -211,9 +287,10 @@ export const STORMS = {
       at(7.2, 'upgrade');
       at(7.5, 'tidybot_chime');
       at(7.7, 'tidybot_chime', 3);
-      line(at, 7.8, 'blip.vesthara');
       at(8.8, 'witch_retreat');
     },
+    line: { at: 7.6, blip: 'blip.vesthara' },
+    hollow: true,
   },
 } as const satisfies Readonly<Record<string, Storm>>;
 export type StormId = keyof typeof STORMS;
@@ -222,25 +299,155 @@ export function isStormId(id: string): id is StormId {
   return Object.hasOwn(STORMS, id);
 }
 
-/** Renders storm `id` (STORMS) through the real graph, its cue over its opening. */
-export function renderStorm(id: StormId = 'act1'): Promise<RenderLevels> {
-  const storm: Storm = STORMS[id];
-  return both(
-    STORM_SEC,
-    (s) => {
-      s.setTheme(storm.theme, { base: 1, drums: 1, lead: 1 });
-      const plays: [t: number, id: SfxId, pitch: number][] = [];
-      storm.sounds((t, sfxId, pitch = 0) => {
-        plays.push([t, sfxId, pitch]);
-      });
-      // In time order, so the voice book sees them as the live game would.
-      for (const [t, sfxId, pitch] of plays.toSorted((a, b) => a[0] - b[0])) {
-        s.play(sfxId, { delay: t, pitch });
-      }
-      // A cue starts on the offline clock's zero: the boss sting over the storm's opening.
-      s.cue(storm.cue);
-      s.pump(STORM_SEC);
+/** A storm's plays in time order, so the voice book sees them as the live game would. */
+function stormPlays(storm: Storm, withBlip: boolean): [t: number, id: SfxId, pitch: number][] {
+  const plays: [t: number, id: SfxId, pitch: number][] = [];
+  const at = (t: number, id: SfxId, pitch = 0): void => {
+    plays.push([t, id, pitch]);
+  };
+  storm.sounds(at);
+  if (withBlip) at(storm.line.at, storm.line.blip);
+  typing(at, storm.line.at);
+  return plays.toSorted((a, b) => a[0] - b[0]);
+}
+
+/** A storm's theme and cue (a cue starts on the offline clock's zero, over the storm's opening). */
+function stormMusic(storm: Storm, s: Synth): void {
+  s.setTheme(storm.theme, { base: 1, drums: 1, lead: 1 });
+  s.cue(storm.cue);
+}
+
+/**
+ * A ducked storm's timeline, as the live game ducks it (app/audio.ts): the Hollow's steady duck
+ * while Hollow walk, and while its line shows the radio's music duck and speech's duck of the
+ * low-priority sounds; every sound's own `duck` follows the clock.
+ */
+function duckedTimeline(storm: Storm, withBlip: boolean): Timed[] {
+  const timed: Timed[] = stormPlays(storm, withBlip).map(([t, id, pitch]) => ({
+    t,
+    id,
+    run: (s, delay) => s.play(id, { delay, pitch }),
+  }));
+  if (storm.hollow) {
+    timed.push({
+      t: 0,
+      run: (s) => s.holdDuck(HOLLOW_DUCK.key, HOLLOW_DUCK.level, HOLLOW_DUCK.fadeSec),
+    });
+  }
+  const { at } = storm.line;
+  timed.push(
+    {
+      t: at,
+      run: (s) => {
+        s.holdDuck('radio', RADIO_DUCK);
+        s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
+      },
     },
-    true,
+    {
+      t: at + LINE_SEC,
+      run: (s) => {
+        s.holdDuck('radio', null);
+        s.holdSfxDuck('speech', null);
+      },
+    },
   );
+  return timed;
+}
+
+/** RMS (dB) of `samples` over [from, to) seconds. */
+function windowRmsDb(samples: Float32Array, from: number, to: number): number {
+  const a = Math.max(0, Math.floor(from * RATE));
+  const b = Math.min(samples.length, Math.ceil(to * RATE));
+  return analyze([samples.subarray(a, b)], RATE).rmsDb;
+}
+
+/**
+ * Renders storm `id` (STORMS) through the real graph, its cue over its opening: with no ducking
+ * (the loudest case), or `ducked` as the live game ducks it, with its speech margin (the blip
+ * against the rest of the mix, both raw, over the blip's span).
+ */
+export async function renderStorm(
+  id: StormId = 'act1',
+  { ducked = false }: { readonly ducked?: boolean } = {},
+): Promise<RenderLevels> {
+  const storm: Storm = STORMS[id];
+  if (!ducked) {
+    return both(
+      STORM_SEC,
+      (s) => {
+        stormMusic(storm, s);
+        for (const [t, sfxId, pitch] of stormPlays(storm, true)) {
+          s.play(sfxId, { delay: t, pitch });
+        }
+        s.pump(STORM_SEC);
+      },
+      true,
+    );
+  }
+  const music = (s: Synth): void => stormMusic(storm, s);
+  const full = duckedTimeline(storm, true);
+  const out = await renderBuffer(STORM_SEC, music, {}, full);
+  const raw = await renderBuffer(STORM_SEC, music, { rawMaster: true }, full);
+  // The rest of the mix without the blip, and the blip alone (the raw graph is linear).
+  const rest = await renderBuffer(
+    STORM_SEC,
+    music,
+    { rawMaster: true },
+    duckedTimeline(storm, false),
+  );
+  const { at, blip } = storm.line;
+  const alone = await renderBuffer(STORM_SEC, () => {}, { rawMaster: true }, [
+    { t: at, run: (s, delay) => s.play(blip, { delay }) },
+  ]);
+  const end = at + recipeDuration(SFX[blip]);
+  const blipDb = windowRmsDb(alone, at, end);
+  const restDb = windowRmsDb(rest, at, end);
+  const parts: Record<string, number> = {};
+  const sub = async (name: string, keep: (id: SfxId) => boolean, withMusic: boolean) => {
+    const tl = duckedTimeline(storm, false).filter((e) => {
+      const id = (e as { id?: SfxId }).id;
+      return id === undefined || keep(id);
+    });
+    const buf = await renderBuffer(STORM_SEC, withMusic ? music : () => {}, { rawMaster: true }, tl);
+    parts[name] = windowRmsDb(buf, at, end);
+  };
+  await sub('music', () => false, true);
+  await sub('low', (id) => SFX[id].priority <= 1, false);
+  await sub('high', (id) => SFX[id].priority >= 2 && id !== 'type_tick', false);
+  await sub('ticks', (id) => id === 'type_tick', false);
+  for (const id of new Set(stormPlays(storm, false).filter(([t]) => t > at - 3 && t < end).map(([, i]) => i))) {
+    if (SFX[id].priority >= 2) await sub(id, (i) => i === id, false);
+  }
+  const W = 0.05;
+  let best = -Infinity, bestT = at;
+  for (let t = at; t + W <= end; t += 0.005) {
+    const v = windowRmsDb(alone, t, t + W);
+    if (v > best) { best = v; bestT = t; }
+  }
+  let restMax = -Infinity;
+  for (let t = at; t + W <= end; t += 0.005) restMax = Math.max(restMax, windowRmsDb(rest, t, t + W));
+  const sub2 = async (name: string, keep: (id: SfxId) => boolean, withMusic: boolean) => {
+    const tl = duckedTimeline(storm, false).filter((e) => {
+      const id = (e as { id?: SfxId }).id;
+      return id === undefined || keep(id);
+    });
+    const buf = await renderBuffer(STORM_SEC, withMusic ? music : () => {}, { rawMaster: true }, tl);
+    parts['@' + name] = windowRmsDb(buf, bestT, bestT + W);
+  };
+  await sub2('music', () => false, true);
+  await sub2('low', (id) => SFX[id].priority <= 1, false);
+  await sub2('high', (id) => SFX[id].priority >= 2 && id !== 'type_tick', false);
+  await sub2('hum', (id) => id === 'hollow_hum', false);
+  parts['blip50'] = best;
+  parts['blip50at'] = bestT;
+  parts['restAtBest'] = windowRmsDb(rest, bestT, bestT + W);
+  parts['restMax50'] = restMax;
+  parts['blipSpan'] = blipDb;
+  parts['restSpan'] = restDb;
+  console.log(id, JSON.stringify(parts));
+  return {
+    out: analyze([out], RATE),
+    raw: analyze([raw], RATE),
+    speech: { blip, blipDb, restDb, marginDb: blipDb - restDb },
+  };
 }

@@ -83,8 +83,11 @@ export interface LoadoutView {
   readonly mapName: string;
   /** Its shift number on the campaign plan, or null off the plan. */
   readonly shift: number | null;
-  /** The map's threat intel, as words ("Fast", "Armored"). */
-  readonly threats: readonly string[];
+  /**
+   * The map's threat intel, as words ("Fast", "Armored"), each with its tooltip or null (the
+   * Skittish chip's names the runners' traits; D134).
+   */
+  readonly threats: readonly { readonly label: string; readonly tip: string | null }[];
   readonly counters: readonly LoadoutCounterView[];
   readonly towers: readonly LoadoutTowerView[];
   readonly abilities: readonly LoadoutAbilityView[];

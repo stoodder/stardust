@@ -3,11 +3,21 @@
 // blips and its typewriter ticks; M and the speaker button mute it, and the choice persists.
 // Nobody can listen in CI, so every sound, cue, and theme is also rendered offline through the real
 // master chain and its levels asserted, plus the worst-case storms (Act I's W7 and boss wave, Act
-// II's Witch fight), which must keep 3 dB of headroom (architecture.md § Audio).
+// II's Witch fight), unducked and ducked as the game ducks them, which must keep 3 dB of headroom;
+// in the ducked storms a line's blip must stand 6 dB over the rest of the mix (D134;
+// architecture.md § Audio).
 import type { Page } from '@playwright/test';
-import type { AudioSample } from '../src/app/testHookTypes.ts';
+import type { AudioSample, RenderSample } from '../src/app/testHookTypes.ts';
 import { expect, test } from './fixtures.ts';
 import { shot, waitForReady } from './hooks.ts';
+
+/** A ducked storm's speech margin (`src/audio/offline.ts` SpeechMargin). */
+interface SpeechMargin {
+  readonly blip: string;
+  readonly blipDb: number;
+  readonly restDb: number;
+  readonly marginDb: number;
+}
 
 const status = (page: Page): Promise<AudioSample | null> =>
   page.evaluate(() => globalThis.__sd?.audio.status() ?? null);
@@ -125,6 +135,7 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
   page,
 }) => {
   test.setTimeout(150_000);
+  page.on('console', (m) => { if (m.text().startsWith('act')) console.log(m.text()); });
   await page.goto('/?test=1&audio=1');
   await waitForReady(page);
   const report = await page.evaluate(async () => {
@@ -135,10 +146,14 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
       ...ids.cues.map((id) => `cue:${id}`),
       ...ids.themes.map((id) => `theme:${id}`),
       ...ids.storms.map((id) => `storm:${id}`),
+      ...ids.storms.map((id) => `storm:${id}:ducked`),
     ];
     const renders = await Promise.all(names.map((n) => a.render(n)));
     return Object.fromEntries(names.map((n, i) => [n, renders[i]!]));
   });
+  // A ducked storm's render also carries its speech margin (src/audio/offline.ts).
+  const speech = (name: string): SpeechMargin | undefined =>
+    (report[name] as (RenderSample & { readonly speech?: SpeechMargin }) | undefined)?.speech;
   const rows: string[] = [];
   for (const [name, r] of Object.entries(report)) {
     rows.push(
@@ -158,13 +173,30 @@ test('audio: every sound renders at a sane level, and the storms keep 3 dB of he
       expect(r.out.durationSec, name).toBeLessThan(3.4);
     }
   }
+  for (const name of Object.keys(report)) {
+    const m = speech(name);
+    if (m !== undefined) {
+      rows.push(
+        `${name.padEnd(24)} ${m.blip} rms ${m.blipDb.toFixed(1)} dB over the rest's ${m.restDb.toFixed(1)} dB: +${m.marginDb.toFixed(1)} dB`,
+      );
+    }
+  }
   console.log(`audio levels (default volumes):\n${rows.join('\n')}`);
-  // The storms: the limiter and the clipper's ceiling hold them 3 dB under full scale (T323), and
-  // the raw mix isn't wildly over (the voice limits work).
+  // The storms, unducked (the loudest case) and ducked as the game ducks them: the limiter and the
+  // clipper's ceiling hold them 3 dB under full scale (T323), and the raw mix isn't wildly over
+  // (the voice limits work).
   const storms = Object.keys(report).filter((n) => n.startsWith('storm:'));
-  expect(storms.length).toBeGreaterThanOrEqual(2);
+  expect(storms.filter((n) => n.endsWith(':ducked')).length).toBeGreaterThanOrEqual(2);
+  expect(storms.length).toBeGreaterThanOrEqual(4);
   for (const name of storms) {
     expect(report[name]!.out.peakDb, name).toBeLessThan(-3);
     expect(report[name]!.raw.peak, name).toBeLessThan(2);
+    // Speech stays on top (D134): in a ducked storm the line's blip stands at least 6 dB over
+    // everything else sounding while it does (music under the radio duck and the Hollow's, the
+    // low-priority sounds under speech's −6 dB, and every alarm and moment at full level).
+    if (name.endsWith(':ducked')) {
+      expect(speech(name), name).toBeDefined();
+      expect(speech(name)!.marginDb, name).toBeGreaterThanOrEqual(6);
+    }
   }
 });

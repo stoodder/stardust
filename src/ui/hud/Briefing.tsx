@@ -30,9 +30,10 @@ function IntelStrip({ intel }: { intel: ThreatIntelView }) {
       <ul class="hud-intel-threats">
         <li class="hud-label">Threats</li>
         {intel.threats.map((t) => (
-          <li key={t.id} class="hud-intel-threat">
+          <li key={t.id} class="hud-intel-threat" title={t.tip ?? undefined}>
             {t.glyph !== null && <Icon id={t.glyph} />}
             <span>{t.label}</span>
+            {t.tip !== null && <span class="hud-sr-only"> ({t.tip})</span>}
           </li>
         ))}
       </ul>

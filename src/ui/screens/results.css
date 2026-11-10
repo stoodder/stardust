@@ -228,6 +228,11 @@
   color: var(--sd-ink-0);
 }
 
+/* Act II's card tags NEW in the act colour, not Act I's pink (D134 U10). */
+.sd-results[data-act='2'] .sd-results-new {
+  background: var(--accent);
+}
+
 /* The first payday (T235): a gold tag on the Stardust line. */
 .sd-results-payday {
   padding: 0 2px;

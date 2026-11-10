@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { asContext, FakeAudioContext, FakeNode, lastTarget } from './__fixtures__/fakeAudio.ts';
+import {
+  asContext,
+  FakeAudioContext,
+  FakeNode,
+  fakeParam,
+  lastTarget,
+  lastTimeConstant,
+} from './__fixtures__/fakeAudio.ts';
 import { analyze } from './analyze.ts';
 import { createAudioEngine, silentEngine } from './engine.ts';
 import { SFX, SFX_IDS } from './sfx/index.ts';
@@ -9,10 +16,14 @@ import {
   LOW_PRIORITY_MAX,
   MAX_SFX_VOICES,
   MUSIC_TRIM,
+  DUCK_ATTACK_SEC,
+  DUCK_RELEASE_SEC,
+  RADIO_DUCK,
   SFX_TRIM,
   SPEECH_SFX_DUCK,
   Synth,
 } from './synth.ts';
+import { HOLLOW_DUCK } from './eventTablesAct2.ts';
 
 /** Whether `node`'s outputs lead to `target` (the fake graph records every connect). */
 function reaches(node: unknown, target: unknown): boolean {
@@ -103,7 +114,34 @@ describe('the synth', () => {
     expect(lastTarget(s.duck.gain)).toBe(1);
   });
 
-  it('routes low-priority sounds through the bus speech ducks by about 3 dB (R10)', () => {
+  it("holds the Hollow's steady duck about 4 dB down, easing in and out over its fade (D134)", () => {
+    const { s } = synth();
+    expect(20 * Math.log10(HOLLOW_DUCK.level)).toBeCloseTo(-4, 0);
+    s.holdDuck(HOLLOW_DUCK.key, HOLLOW_DUCK.level, HOLLOW_DUCK.fadeSec);
+    expect(lastTarget(s.duck.gain)).toBe(HOLLOW_DUCK.level);
+    expect(lastTimeConstant(s.duck.gain)).toBeCloseTo(HOLLOW_DUCK.fadeSec / 3);
+    // A line ducks further with the radio's quick attack, and comes back to the Hollow's level.
+    s.holdDuck('radio', RADIO_DUCK);
+    expect(lastTarget(s.duck.gain)).toBe(RADIO_DUCK);
+    expect(lastTimeConstant(s.duck.gain)).toBe(DUCK_ATTACK_SEC);
+    s.holdDuck('radio', null);
+    expect(lastTarget(s.duck.gain)).toBe(HOLLOW_DUCK.level);
+    expect(lastTimeConstant(s.duck.gain)).toBe(DUCK_RELEASE_SEC);
+    // The Hollow gone, the music eases back as slowly as it went.
+    s.holdDuck(HOLLOW_DUCK.key, null);
+    expect(lastTarget(s.duck.gain)).toBe(1);
+    expect(lastTimeConstant(s.duck.gain)).toBeCloseTo(HOLLOW_DUCK.fadeSec / 3);
+  });
+
+  it('never ducks the music for the hum itself: the Hollow duck is held, not per hum', () => {
+    const { s } = synth();
+    const calls = fakeParam(s.duck.gain).calls.length;
+    expect(SFX.hollow_hum).not.toHaveProperty('duck');
+    s.play('hollow_hum');
+    expect(fakeParam(s.duck.gain).calls).toHaveLength(calls);
+  });
+
+  it('routes low-priority sounds through the bus speech ducks by 6 dB (R10, D134)', () => {
     const { ctx, s } = synth();
     expect(SFX.rivet_shot.priority).toBeLessThanOrEqual(LOW_PRIORITY_MAX);
     s.play('rivet_shot');
@@ -113,7 +151,7 @@ describe('the synth', () => {
     expect(reaches(ctx.started.at(-1), s.low)).toBe(false);
     expect(reaches(ctx.started.at(-1), s.sfx)).toBe(true);
     s.holdSfxDuck('speech', SPEECH_SFX_DUCK);
-    expect(20 * Math.log10(lastTarget(s.low.gain) ?? 1)).toBeCloseTo(-3, 0);
+    expect(20 * Math.log10(lastTarget(s.low.gain) ?? 1)).toBeCloseTo(-6, 0);
     s.holdSfxDuck('speech', null);
     expect(lastTarget(s.low.gain)).toBe(1);
   });

@@ -9,7 +9,8 @@
 // - Bursts: fx.explosion at a shell's impact (or a death); a Cluster Thumper's bomblets pop with
 //   the small fx.bomblet_burst.
 // - Ground decals (a strike's flash and scorch), floating numbers and callouts in the 3×5 pixel
-//   font, and the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
+//   font (none within KEEP_CLEAR_TILES of a clickable or a lift, D134: vfx/keepClear.ts), and
+//   the camera shake (a strike's 2 px, a leak's 1 px; skipped under reduced motion).
 // - Debris (T430a): pooled 1 and 2 px palette pixels with a velocity, gravity, and a stepped fade
 //   (art-direction § Particles: at most 0.8 s each, far under the 512 cap): an Aelari unit's
 //   shatter and a broken shield's shards, the Hollow's unravelling violet motes, and the stardust
@@ -39,6 +40,7 @@ import {
   PULSE_COLOR,
 } from '../vfx/overlayTextures.ts';
 import { stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
+import type { KeepClear } from '../vfx/keepClear.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
@@ -99,6 +101,9 @@ interface Float extends FloatSlot {
   durationMs: number;
   x: number;
   y: number;
+  /** Where it rose from on the grid (the keep-clear check's). */
+  gx: number;
+  gy: number;
   /** As drawn now (floatStack.ts reads them): its center, baseline, and width. */
   cx: number;
   baseY: number;
@@ -193,6 +198,8 @@ export class TransientFx {
   #nextDecal = 0;
   #nextFloat = 0;
   #shakeMs = -1;
+  /** The spots floaters keep clear of (a clickable, a lift; the scene's), or none. */
+  #keepClear: KeepClear | null = null;
   /** Which shake runs: the strike's 2 px or a leak's 1 px. */
   #shakeSmall = false;
 
@@ -241,6 +248,8 @@ export class TransientFx {
         durationMs: FLOAT_MS,
         x: 0,
         y: 0,
+        gx: 0,
+        gy: 0,
         cx: 0,
         baseY: 0,
         w: 0,
@@ -458,6 +467,18 @@ export class TransientFx {
     this.#syncPulse(p);
   }
 
+  /** The spots floaters keep clear of (the scene refills it each frame). */
+  setKeepClear(keepClear: KeepClear): void {
+    this.#keepClear = keepClear;
+  }
+
+  /** How many floaters are up (tests' view of them). */
+  get floatsUp(): number {
+    let n = 0;
+    for (const f of this.#floats) if (f.active) n++;
+    return n;
+  }
+
   /**
    * A floating number or callout (the 3×5 font) rising from grid (x, y), `liftPx` above the
    * ground, for `ms` (a callout stays up longer, to be read).
@@ -470,6 +491,8 @@ export class TransientFx {
     liftPx: number,
     ms = FLOAT_MS,
   ): void {
+    // Nothing rises over what the player can reach (D134 K2).
+    if (this.#keepClear?.near(x, y) === true) return;
     const f = this.#floats[this.#nextFloat]!; // index < MAX_FLOATS
     gridToScreen(x, y, this.ctx.origin, pos);
     const key = floatTextTexture(this.ctx.scene, text, color);
@@ -489,6 +512,8 @@ export class TransientFx {
     f.img.setOrigin(0.5, 1);
     f.x = cx;
     f.y = baseY;
+    f.gx = x;
+    f.gy = y;
     f.cx = cx;
     f.w = w;
     f.ms = 0;
@@ -562,7 +587,8 @@ export class TransientFx {
     for (const f of this.#floats) {
       if (!f.active) continue;
       f.ms += dt;
-      if (f.ms >= f.durationMs) {
+      // One already up when a spot near it arms goes at once (D134 K2).
+      if (f.ms >= f.durationMs || this.#keepClear?.near(f.gx, f.gy) === true) {
         f.active = false;
         f.img.setVisible(false);
       } else {

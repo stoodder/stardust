@@ -40,11 +40,12 @@ export const STAR_MAP_ACCESS_NOTICE = 'Access upgraded! Perimeter Ops now covers
 export const STAR_MAP_CHART_LABEL =
   'Sector map of the valley: the colony in the south, the Spires in the north';
 
-/** A threat on a node's panel: its tell glyph (if drawn) and its name. */
+/** A threat on a node's panel: its tell glyph (if drawn), its name, and its tooltip (or null). */
 export interface StarThreatView {
   readonly id: string;
   readonly label: string;
   readonly glyph: string | null;
+  readonly tip: string | null;
 }
 
 /** A built map's briefing facts on its panel. */
@@ -165,7 +166,7 @@ function briefOf(map: MapDef, save: SaveData): StarBriefView {
   const done = record?.objectives ?? [];
   const open = { victory: 'open', perfectCore: 'open', challenge: 'open' } as const;
   return {
-    threats: intel.threats.map((t) => ({ id: t.id, label: t.label, glyph: t.glyph })),
+    threats: intel.threats.map((t) => ({ id: t.id, label: t.label, glyph: t.glyph, tip: t.tip })),
     required: intel.required.map((r) => r.label),
     medals: medalViews(map, open, held).map((m) => ({ id: m.id, name: m.name, earned: m.held })),
     objectives: objectiveViews(map).map((o) => ({

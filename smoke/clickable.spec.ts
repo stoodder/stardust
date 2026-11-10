@@ -61,6 +61,9 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await nextFrames(page);
   expect(await clicks(page)).toEqual({ clickable: ['peeker'], interacted: [], interacts: 0 });
   await expect(page.getByTestId('action-announce')).toHaveText(/^The Peeker's rock: within reach/);
+  // Nothing draws over her while she can be reached (D134 K2): floaters and the name plate keep
+  // clear of the armed rock.
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.keepClear)).toBe(1);
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), ROCK);
   await page.mouse.move(at!.x, at!.y);
   await nextFrames(page);
@@ -74,6 +77,8 @@ test('clickable: the rock holds Pebble under the outline; a click reaches her', 
   await page.evaluate(() => globalThis.__sd!.fastForward(0));
   await nextFrames(page);
   expect(await clicks(page)).toEqual({ clickable: [], interacted: ['peeker'], interacts: 1 });
+  // As she lifts off the rock it's still kept clear (D134 K2).
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.keepClear)).toBe(1);
   await page.mouse.move(at!.x + 1, at!.y);
   await nextFrames(page);
   expect(await pointer(page)).not.toBe('pointer');

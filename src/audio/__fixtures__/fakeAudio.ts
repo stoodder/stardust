@@ -4,6 +4,8 @@
 export class FakeParam {
   value: number;
   readonly calls: [method: string, value: number, time: number][] = [];
+  /** Each setTargetAtTime's time constant, in call order. */
+  readonly timeConstants: number[] = [];
   constructor(value = 0) {
     this.value = value;
   }
@@ -21,8 +23,9 @@ export class FakeParam {
     this.calls.push(['exp', v, t]);
     return this;
   }
-  setTargetAtTime(v: number, t: number, _c: number): this {
+  setTargetAtTime(v: number, t: number, c: number): this {
     this.calls.push(['target', v, t]);
+    this.timeConstants.push(c);
     this.value = v;
     return this;
   }
@@ -174,4 +177,9 @@ export function fakeParam(p: AudioParam): FakeParam {
 /** The value a fake param was last set or ramped toward. */
 export function lastTarget(p: AudioParam): number | undefined {
   return fakeParam(p).calls.at(-1)?.[1];
+}
+
+/** The time constant of the last setTargetAtTime on `p`. */
+export function lastTimeConstant(p: AudioParam): number | undefined {
+  return fakeParam(p).timeConstants.at(-1);
 }

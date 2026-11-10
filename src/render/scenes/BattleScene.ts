@@ -104,6 +104,7 @@ import { SackBurstView } from '../views/SackBurstView.ts';
 import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
 import { LIFT_PUFF_MS, LIFT_PUFF_TILES, PEEKER_MARKER, peekerHold } from '../views/peekerMotion.ts';
+import { KeepClear } from '../vfx/keepClear.ts';
 import { PlinkFx } from '../views/PlinkFx.ts';
 import { ShieldView } from '../views/ShieldView.ts';
 import { PlacementView } from '../views/PlacementView.ts';
@@ -204,6 +205,8 @@ export class BattleScene extends Phaser.Scene {
   #peeker: PeekerView | null = null;
   /** The clickable-object outlines (T409). */
   #clickables!: ClickableView;
+  /** What floaters and the name plate keep clear of (D134 K2): armed clickables, Pebble's lift. */
+  readonly #keepClear = new KeepClear();
   /** The sim tick at the last frame: play time only passes while it moves. */
   #lastTick = 0;
   /** The radio pointer id last pinged (0: none). */
@@ -307,6 +310,7 @@ export class BattleScene extends Phaser.Scene {
     this.#placement = new PlacementView(ctx, this.#elevationOf);
     this.#links = new LinkView(ctx, prefersReducedMotion);
     this.#fx = new FxView(ctx, prefersReducedMotion);
+    this.#fx.setKeepClear(this.#keepClear);
     this.#sacks = new SackBurstView(ctx);
     this.#chains = new ChainFx(ctx);
     this.#specs = new SpecFx(ctx, this.#fx, this.#chains, prefersReducedMotion, (c, r) =>
@@ -475,6 +479,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   override update(_time: number, delta: number): void {
+    // Before the frame's events spawn floaters.
+    this.#syncKeepClear();
     this.#deps.frame(delta);
     this.#syncViews();
     const state = this.#deps.sim.state;
@@ -607,6 +613,8 @@ export class BattleScene extends Phaser.Scene {
       nameTag:
         this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },
       spawnFlags: this.#spawnFlags.shown,
+      keepClear: this.#keepClear.size,
+      floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,
       specs: {
         glows: this.#specs.glows,
@@ -697,14 +705,40 @@ export class BattleScene extends Phaser.Scene {
     this.#ping.update(delta, id !== 0 && id === this.#pinged && this.#pingTower !== 0);
   }
 
-  /** The name-tag plate follows the turret the app says carries it (T431). */
+  /**
+   * The name-tag plate follows the turret the app says carries it (T431), hidden while that turret
+   * stands within KEEP_CLEAR_TILES of an armed clickable or a lift (D134 K2).
+   */
   #syncNameTag(): void {
     const tag = this.#deps.nameTag?.() ?? null;
+    const tower = tag === null ? null : this.#findTower(tag.uid);
+    const clear =
+      tower !== null && this.#keepClear.near(tower.x, tower.y);
     this.#nameTag.sync(
-      tag?.uid ?? 0,
+      clear ? 0 : (tag?.uid ?? 0),
       tag?.text ?? '',
       tag === null ? undefined : this.#towers.get(tag.uid),
     );
+  }
+
+  /**
+   * What floaters and the name plate keep clear of now (D134 K2): every armed clickable's tile,
+   * and the Peeker's rock while Pebble lifts off it.
+   */
+  #syncKeepClear(): void {
+    const k = this.#keepClear;
+    k.clear();
+    const { sim } = this.#deps;
+    const markers = sim.map.markers;
+    for (const marker of sim.state.clickable) {
+      const at = Object.hasOwn(markers, marker) ? markers[marker] : undefined;
+      if (at !== undefined) k.add(at[0] + 0.5, at[1] + 0.5);
+    }
+    const p = this.#peeker;
+    if (p !== null && p.lifting) {
+      const at = markers[PEEKER_MARKER];
+      if (at !== undefined) k.add(at[0] + 0.5, at[1] + 0.5);
+    }
   }
 
   /** How many "incoming" flags show (T326; the smoke hooks' view of them). */

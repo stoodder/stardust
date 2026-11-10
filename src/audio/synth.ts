@@ -41,8 +41,13 @@ export const DUCK_ATTACK_SEC = 0.03;
 export const DUCK_RELEASE_SEC = 0.2;
 /** Sound effects at this priority or below go through the `low` bus, which speech ducks (R10). */
 export const LOW_PRIORITY_MAX = 1;
-/** The `low` bus's level while a line is spoken: about −3 dB (R10). */
-export const SPEECH_SFX_DUCK = 0.7;
+/**
+ * The `low` bus's level while a line is spoken: −6 dB (R10; D134), so a speaker's blip stands at
+ * least 6 dB over the mix (smoke/audio.spec.ts measures it in the ducked storms).
+ */
+export const SPEECH_SFX_DUCK = 0.5;
+/** The music's level under a spoken line (the comms panel or a scene), so the line reads as spoken. */
+export const RADIO_DUCK = 0.55;
 /** The limiter: its threshold (dB) and ratio; fast and hard. */
 export const LIMITER_THRESHOLD_DB = -8;
 export const LIMITER_RATIO = 20;
@@ -162,9 +167,9 @@ export class Synth {
   readonly #compiled = new Map<string, CompiledSong>();
   #themes: PlayingTheme[] = [];
   #cueSeqs: Sequencer[] = [];
-  /** Timed ducks (big sounds) and held ones (the radio), by key. */
+  /** Timed ducks (big sounds) and held ones (the radio, the Hollow), by key. */
   #ducks: { level: number; until: number }[] = [];
-  readonly #held = new Map<string, number>();
+  readonly #held = new Map<string, { level: number; fadeSec: number | null }>();
   #duckTarget = 1;
   /** Held ducks of the low-priority sound effects (speech), by key. */
   readonly #lowHeld = new Map<string, number>();
@@ -253,7 +258,7 @@ export class Synth {
       ratio: semitones(pitch),
       noteHz: null,
       noteSec: null,
-      dest: recipe.priority <= LOW_PRIORITY_MAX ? this.low : this.sfx,
+      dest: recipe.priority <= 2 && !id.startsWith('blip.') && id !== 'type_tick' ? this.low : this.sfx,
     });
     const end = start + recipeDuration(recipe);
     this.#book.add(id, recipe.priority, start, end, voice);
@@ -323,11 +328,17 @@ export class Synth {
     this.pump();
   }
 
-  /** Holds the music ducked to `level` under `key` (the radio) until it's released with null. */
-  holdDuck(key: string, level: number | null): void {
+  /**
+   * Holds the music ducked to `level` under `key` (the radio, the Hollow) until it's released
+   * with null; the lowest level of every held and timed duck wins. `fadeSec` (optional) is how
+   * long the duck takes to settle (about 95%) when this hold moves the music, going down and
+   * coming back: a slow, steady dip (the Hollow's) rather than the snap a big sound gets.
+   */
+  holdDuck(key: string, level: number | null, fadeSec?: number): void {
+    const was = this.#held.get(key);
     if (level === null) this.#held.delete(key);
-    else this.#held.set(key, level);
-    this.#updateDuck();
+    else this.#held.set(key, { level, fadeSec: fadeSec ?? null });
+    this.#updateDuck(fadeSec ?? was?.fadeSec ?? null);
   }
 
   /**
@@ -406,19 +417,22 @@ export class Synth {
     th.fade.gain.setTargetAtTime(level, t, LAYER_FADE_SEC / 3);
   }
 
-  #updateDuck(): void {
+  /** Moves the music's duck to the lowest active level; `fadeSec` overrides the attack/release. */
+  #updateDuck(fadeSec: number | null = null): void {
     if (this.#noDuck) return;
     const now = this.ctx.currentTime;
     if (this.#ducks.some((d) => d.until <= now))
       this.#ducks = this.#ducks.filter((d) => d.until > now);
     let target = 1;
     for (const d of this.#ducks) target = Math.min(target, d.level);
-    for (const level of this.#held.values()) target = Math.min(target, level);
+    for (const h of this.#held.values()) target = Math.min(target, h.level);
     if (target === this.#duckTarget) return;
     const down = target < this.#duckTarget;
     this.#duckTarget = target;
+    // A time constant settles about 95% in three of them.
+    const tc = fadeSec === null ? (down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC) : fadeSec / 3;
     this.duck.gain.cancelScheduledValues(now);
-    this.duck.gain.setTargetAtTime(target, now, down ? DUCK_ATTACK_SEC : DUCK_RELEASE_SEC);
+    this.duck.gain.setTargetAtTime(target, now, tc);
   }
 
   #compile(song: Song): CompiledSong {

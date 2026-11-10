@@ -249,6 +249,8 @@ export interface ThreatView {
   readonly label: string;
   /** The 8×8 `icon.tell.*` glyph, or null (the label stands alone). */
   readonly glyph: string | null;
+  /** Its tooltip, or null: the Skittish chip names the runners' traits (D134). */
+  readonly tip: string | null;
 }
 
 /** A required counter (campaign.md § 4.8) and the owned towers that answer it. */

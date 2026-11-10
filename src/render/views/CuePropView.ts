@@ -16,6 +16,7 @@ import { CUE_DECOR, propVariant, tilesBehind, type CueDecor } from './groundTile
 import { firstLook } from './spriteInfo.ts';
 import type { TransientFx } from './TransientFx.ts';
 import type { ViewContext } from './ViewContext.ts';
+import { markScenery } from './scenery.ts';
 
 /** The drop: from this far up (px), 1 px every DROP_STEP_MS. */
 const DROP_PX = 4;
@@ -68,7 +69,7 @@ export class CuePropView {
         .setDepth(worldDepth(pos.y, 'prop', (row * cols + col) & TIE_MASK))
         .setVisible(false);
       if (look.anim !== null) sprite.play(sprites.anim(cue.sprite, look.anim, variant));
-      layers.world.add(sprite);
+      layers.world.add(markScenery(sprite));
       const behind = tilesBehind(grid, col, row, a.y);
       this.#props.push({ cue, col, row, sprite, y: pos.y, behind, ms: -1 });
     }

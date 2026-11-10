@@ -140,8 +140,9 @@ export function bossSounds(enemy: string): BossSounds {
 /**
  * Sounds that loop while a kind of enemy is on the field (fieldSounds.ts), every `everySec` of
  * sim time while one is (one voice however many): a Puffwing flock's wingbeats (subtle); an
- * Aelari formation's faint glass hum; and the Hollow humming the jingle wrong, ducking the music
- * (bible §8; the recipe's gap and single voice keep a mixed wave to one hum at a time).
+ * Aelari formation's faint glass hum; and the Hollow humming the jingle wrong over the music's
+ * steady duck (HOLLOW_DUCK; bible §8; the recipe's gap and single voice keep a mixed wave to one
+ * hum at a time).
  */
 export const ENEMY_LOOPS: Readonly<
   Partial<Record<string, { readonly id: SfxId; readonly everySec: number }>>

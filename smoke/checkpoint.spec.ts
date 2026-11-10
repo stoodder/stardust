@@ -86,7 +86,11 @@ test('checkpoint: a lost Act II run retries from wave 5 with the state it had th
   await fromCheckpoint.click();
   await expect(card).toBeHidden();
   await expect(page.getByTestId('hud')).toBeVisible();
-  await expect(page.getByText('Resumed at wave 5. Unpause when ready.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Resumed before wave 5. Unpause when ready. Perfect Core and the Challenge need a shift from wave 1.',
+    ),
+  ).toBeVisible();
   expect(await snapshot(page)).toEqual(atCheckpoint);
   const phase = await page.evaluate(() => globalThis.__sd!.state()!.schedule.phase);
   expect(phase).toBe('countdown');

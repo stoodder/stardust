@@ -12,16 +12,22 @@ import type { IdSpace } from '../content/types.ts';
 import { MemoryStore, stardustPayout } from '../meta/index.ts';
 import { createSim, type CommandLogEntry, type SimConfig, type SimEvent } from '../sim/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
-import { runResult } from '../ui/screens/state.ts';
+import { menuNotice, runResult } from '../ui/screens/state.ts';
 import { hud, screen, speed } from '../ui/state.ts';
 import { startAutoplay } from './autoplay.ts';
 import type { Battle, BattleStart } from './battle.ts';
 import { battleConfig } from './battleSetup.ts';
-import { attemptKills, checkpointOf, resumeOf, type Checkpoint } from './checkpoints.ts';
+import {
+  attemptKills,
+  checkpointOf,
+  resumeOf,
+  usableCheckpoint,
+  type Checkpoint,
+} from './checkpoints.ts';
 import { setSpeed } from './commands.ts';
 import { bindDialogue, setDialogueEnabled } from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
-import { createRouter, resumedNotice, type Router } from './router.ts';
+import { createRouter, resumedNotice, RETRY_FAILED, type Router } from './router.ts';
 import { activeSave, initSaves, loadDevSave } from './save.ts';
 
 // A real sim and host per battle, without a scene: what startBattle does for the router, minus
@@ -231,6 +237,29 @@ describe('a resumed host (replay)', () => {
     TIMEOUT_MS,
   );
 
+  it('offers only a checkpoint taken before the run ended (D134)', () => {
+    const w5 = { wave: 5, tick: 100, commandCount: 3 };
+    const w10 = { wave: 10, tick: 200, commandCount: 7 };
+    expect(usableCheckpoint([w5, w10], 201)).toBe(w10);
+    expect(usableCheckpoint([w5, w10], 200)).toBe(w5); // lost on W10's countdown-begin tick
+    expect(usableCheckpoint([w5, w10], 100)).toBeNull();
+    expect(usableCheckpoint([], 500)).toBeNull();
+  });
+
+  it('throws when the replay ends the run at the checkpoint (D134)', () => {
+    const run = straightRun();
+    const host = createHost(createSim(run.cfg), { now: () => 0, speed: 0 });
+    playLog(host, run.log);
+    stepUntil(host, () => host.checkpoints.length > 0);
+    giveUp(host);
+    stepUntil(host, playing(host));
+    const s = host.sim.state;
+    expect(s.outcome).toBe('lost');
+    const atLoss = checkpointOf({ wave: 10, tick: s.tick }, s.commandLog);
+    const replay = createHost(createSim(run.cfg), { resume: resumeOf(s.commandLog, atLoss) });
+    expect(() => replay.catchUp()).toThrow(/checkpoint replay diverged.*outcome lost/);
+  });
+
   it('throws when the replay diverges from the log', () => {
     const run = straightRun();
     const cp = run.checkpoints[0]!;
@@ -358,6 +387,61 @@ describe('through the router: Retry from wave N', () => {
       expect(save.currencies.stardust).toBe(banked.currencies.stardust + paid.amount);
       expect(save.campaign.maps[MAP]?.completed ?? false).toBe(false);
       expect(save.campaign.maps[MAP]?.medals ?? []).toEqual([]);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "a loss on W10's countdown-begin tick offers W5, and its retry plays (D134)",
+    async () => {
+      const run = straightRun();
+      const w10 = run.checkpoints[1]!;
+      loadDevSave('after_a2m1');
+      router = createRouter(game, { mapId: MAP, seed: SEED });
+      await router.goto('battle');
+      const host = battleHost();
+      playLog(host, run.log);
+      stepUntil(host, () => host.sim.state.tick >= w10.tick - 1);
+      // The core gives out on the very tick W10's countdown begins.
+      host.sim.state.integrity = 0;
+      host.fastForward(1);
+      const s = host.sim.state;
+      expect(s.outcome).toBe('lost');
+      expect(s.tick).toBe(w10.tick);
+      expect(host.checkpoints.map((c) => c.wave)).toEqual([5, 10]);
+      await router.flushResults();
+      expect(runResult.value?.retryFromWave).toBe(5);
+      await router.retryFromCheckpoint();
+      expect(screen.value).toBe('battle');
+      expect(battleHost().resumedFrom?.wave).toBe(5);
+      expect(battleHost().sim.state.outcome).toBe('playing');
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    'a retry whose replay ends the run lands safely on the campaign screen (D134)',
+    async () => {
+      const run = straightRun();
+      loadDevSave('after_a2m1');
+      router = createRouter(game, { mapId: MAP, seed: SEED });
+      await router.goto('battle');
+      const host = battleHost();
+      playLog(host, run.log);
+      stepUntil(host, () => host.checkpoints.length > 0);
+      giveUp(host);
+      stepUntil(host, playing(host));
+      await router.flushResults();
+      // A checkpoint on the losing tick itself (usableCheckpoint never offers one; a bug might).
+      const s = host.sim.state;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the host's own array, rewritten to stage the bug
+      const cps = host.checkpoints as Checkpoint[];
+      cps.length = 0;
+      cps.push(checkpointOf({ wave: 10, tick: s.tick }, s.commandLog));
+      s.tick++; // so the router takes it as usable
+      await expect(router.retryFromCheckpoint()).rejects.toThrow(/checkpoint replay diverged/);
+      expect(screen.value).toBe('campaign');
+      expect(menuNotice.value).toBe(RETRY_FAILED);
     },
     TIMEOUT_MS,
   );

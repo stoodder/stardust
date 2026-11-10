@@ -68,12 +68,13 @@ export const map = defineMapLayout({
   ],
   // Markers (render draws the ones it knows as props, render/views/groundTiles.ts): the rigs (the
   // asset, on decor at the branch's end; AssetView draws them by damage band), the habitat domes
-  // on the west edge (decor she never goes near), the fork, where the branch leaves the road, and
-  // the two thread-glass outcrops (the high ground, drawn woven with Aelari glass).
+  // on the west side by the relay (decor she never goes near; below the comms panel's bottom edge
+  // at 1280×720, so the radio never hides them, D134), the fork, where the branch leaves the road,
+  // and the two thread-glass outcrops (the high ground, drawn woven with Aelari glass).
   markers: {
     rigs: [17, 10],
-    dome_north: [1, 3],
-    dome_south: [1, 8],
+    dome_north: [2, 10],
+    dome_south: [1, 11],
     fork: [4, 1],
     outcrop_west: [5, 3],
     outcrop_ledge: [13, 3],

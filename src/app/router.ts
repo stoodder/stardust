@@ -19,7 +19,7 @@ import { campaign, menuNotice, runResult, type RunResult } from '../ui/screens/s
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
-import { attemptKills, resumeOf, type Resume } from './checkpoints.ts';
+import { attemptKills, resumeOf, usableCheckpoint, type Resume } from './checkpoints.ts';
 import { cancel, setSpeed } from './commands.ts';
 import { showNotice } from './hud.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -48,6 +48,10 @@ import {
 } from './runResult.ts';
 import { flowScenes, playInOrder, setAfterResults } from './runFlow.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
+
+/** The campaign screen's notice when a checkpoint retry couldn't replay to its checkpoint. */
+export const RETRY_FAILED =
+  "That checkpoint couldn't be restored. The shift is safe to play again from wave 1.";
 
 /** The menu notice when a battle can't start (the error itself is logged by navigation). */
 export const BATTLE_FAILED =
@@ -97,7 +101,7 @@ export interface Router {
   retry(): Promise<void>;
   /**
    * Results → "Retry from wave N" (core-loop.md § 2.12): resumes the lost run from its latest
-   * checkpoint, paused in that wave's countdown with the towers, credits, meters, cooldowns, and
+   * usable checkpoint (`usableCheckpoint`: taken before the run's final tick), paused in that wave's countdown with the towers, credits, meters, cooldowns, and
    * timers it had then (app/checkpoints.ts). Rejects when the last run has no checkpoint to offer.
    */
   retryFromCheckpoint(): Promise<void>;
@@ -141,8 +145,16 @@ function markFirstPaydayShown(): void {
 
 /** The notice a checkpoint retry opens with, paused in wave `wave`'s countdown. */
 export function resumedNotice(wave: number): string {
-  return `Resumed at wave ${wave}. Unpause when ready.`;
+  // "Before": the wave panel still counts the waves behind it (D134 U3), and the tracker's dimmed
+  // medals get their reason.
+  return (
+    `Resumed before wave ${wave}. Unpause when ready. ` +
+    'Perfect Core and the Challenge need a shift from wave 1.'
+  );
 }
+
+/** How long the resumed notice stays up: long enough to read its two sentences (ms). */
+export const RESUMED_NOTICE_MS = 6000;
 
 /** Menus Settings can return to. */
 type MenuId = 'title' | 'campaign' | 'base';
@@ -280,7 +292,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         resume === null ? { listen } : { listen, resume },
       );
     } catch (err) {
-      menuNotice.value = BATTLE_FAILED;
+      // A checkpoint whose replay ends the run or diverges never strands the player (D134).
+      menuNotice.value = resume === null ? BATTLE_FAILED : RETRY_FAILED;
       return showFailed().then(() =>
         Promise.reject(err instanceof Error ? err : new Error(String(err))),
       );
@@ -294,7 +307,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       // A checkpoint retry waits, paused, in the wave's countdown: the player looks, rebuilds,
       // and unpauses when ready (core-loop.md § 2.12).
       setSpeed(0);
-      showNotice(resumedNotice(resume.checkpoint.wave));
+      showNotice(resumedNotice(resume.checkpoint.wave), RESUMED_NOTICE_MS);
     }
     return next.firstFrame;
   };
@@ -357,7 +370,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       stats: s.stats,
       met,
       resumedFromWave: resumed?.wave ?? null,
-      checkpointWave: b.host.checkpoints.at(-1)?.wave ?? null,
+      checkpointWave: usableCheckpoint(b.host.checkpoints, s.tick)?.wave ?? null,
     };
     const summary = recordRun(metaRunEndOf(input, outcome));
     // The battle freezes where it ended and stays drawn behind the results.
@@ -434,8 +447,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     },
     retryFromCheckpoint() {
       const b = battle;
-      const checkpoint = b?.host.checkpoints.at(-1);
-      if (b === null || checkpoint === undefined || !ended) {
+      const checkpoint = b === null ? null : usableCheckpoint(b.host.checkpoints, b.host.sim.state.tick);
+      if (b === null || checkpoint === null || !ended) {
         return Promise.reject(new Error('router: the last run has no checkpoint to retry from'));
       }
       // The lost run's own config (same seed, loadout, and modifiers), so the replay reproduces it.

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { SPRITES } from '../sprites/index.ts';
 import { isCustomChar, STANDARD_LEGEND } from '../sprites/legend.ts';
 import type { SlotPalette, SpriteDef } from '../sprites/types.ts';
+import {
+  ACT2_BAND_ACTORS,
+  AELARI_BAND_FRAMES,
+  bodyLuminance,
+  HOLLOW_BAND_FRAMES,
+  slotLuminance,
+  sprite,
+} from '../__fixtures__/valueBands.ts';
 import { contrastRatio, hsv, isHollowReserved, luminance } from './color.ts';
 import { ENV_PALETTE_IDS, ENV_PALETTES } from './env.ts';
 import { PALETTE_IDS, PALETTES } from './index.ts';
@@ -121,34 +129,6 @@ describe('path vs pad contrast (art-direction §8 Tile readability)', () => {
   });
 });
 
-/** Mean luminance of a frame's body pixels: no outline, eye, or shadow (the value of its mass). */
-function bodyLuminance(def: SpriteDef, frame: string, palette: SlotPalette): number {
-  const fd = def.frames[frame];
-  if (fd === undefined || !Array.isArray(fd))
-    throw new Error(`${def.id}:${frame} is not a grid frame`);
-  const rows: readonly string[] = fd;
-  let sum = 0;
-  let n = 0;
-  for (const row of rows) {
-    for (const ch of row) {
-      const slot = STANDARD_LEGEND[ch];
-      if (slot === 'outline' || slot === 'eye' || slot === 'shadow') continue;
-      const color =
-        slot !== undefined ? palette[slot] : isCustomChar(ch) ? def.legend?.[ch] : undefined;
-      if (color === undefined) continue;
-      sum += luminance(rgbOf(color));
-      n++;
-    }
-  }
-  return sum / n;
-}
-
-function sprite(id: string): SpriteDef {
-  const d = SPRITES.find((s) => s.id === id) as SpriteDef | undefined;
-  if (d === undefined) throw new Error(`no sprite ${id}`);
-  return d;
-}
-
 describe('Act I value bands (art-direction §1)', () => {
   const env = ENV_PALETTES.act1;
   const grass = bodyLuminance(sprite('tile.grass'), 'v0', env);
@@ -212,25 +192,16 @@ describe('Act I value bands (art-direction §1)', () => {
   });
 });
 
-/** Mean luminance of a frame's pixels in `slots` only (an Aelari lattice's knots, its outline). */
-function slotLuminance(def: SpriteDef, frame: string, slots: readonly string[]): number {
-  const fd = def.frames[frame];
-  if (fd === undefined || !Array.isArray(fd))
-    throw new Error(`${def.id}:${frame} is not a grid frame`);
-  const palette = PALETTES[def.palette];
-  const rows: readonly string[] = fd;
-  let sum = 0;
-  let n = 0;
-  for (const row of rows) {
-    for (const ch of row) {
-      const slot = STANDARD_LEGEND[ch];
-      if (slot === undefined || !slots.includes(slot)) continue;
-      sum += luminance(rgbOf(palette[slot]));
-      n++;
+describe("Act II's gold (art-direction §3, D134)", () => {
+  it('turns the grass gold, not olive: hue 38–42°, saturated, on its body steps', () => {
+    for (const step of [1, 2, 3] as const) {
+      const { h, s } = hsv(rgbOf(`act2.grass.${step}`));
+      expect(h, `act2.grass.${step} hue`).toBeGreaterThanOrEqual(38);
+      expect(h, `act2.grass.${step} hue`).toBeLessThanOrEqual(42);
+      expect(s, `act2.grass.${step} saturation`).toBeGreaterThanOrEqual(0.75);
     }
-  }
-  return sum / n;
-}
+  });
+});
 
 describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
   // Act II's ground is re-banded under Act I's units (T440c, D119): dry gold grass < the rust
@@ -245,39 +216,13 @@ describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
     it(`${env}: keeps the grass a band below the road`, () => {
       expect(path).toBeGreaterThan(grass);
       expect(contrastRatio(path, grass)).toBeGreaterThanOrEqual(1.3);
+      // The grass's value stays in its band (≈ 0.22, art-direction §3) whatever its hue does.
+      expect(grass).toBeGreaterThan(0.19);
+      expect(grass).toBeLessThan(0.25);
     });
 
     it(`${env}: puts every Act II unit, ally, and tower body a band above the road`, () => {
-      const actors: readonly [string, string][] = [
-        // The runners (every Act II Skitterkin flees) and the Act I bodies they're built from.
-        ['enemy.nibbler', 'walk_se_0'],
-        ['enemy.zoomer', 'walk_se_0'],
-        ['enemy.bunchling', 'walk_se_0'],
-        ['enemy.elder', 'walk_se_0'],
-        ['enemy.digger', 'walk_se_0'],
-        ['enemy.youngling', 'walk_se_0'],
-        ['enemy.brood_hauler', 'walk_se_0'],
-        ['enemy.nibbler_fleeing', 'walk_se_0'],
-        ['enemy.zoomer_fleeing', 'walk_se_0'],
-        ['enemy.bunchling_fleeing', 'walk_se_0'],
-        ['enemy.elder_fleeing', 'walk_se_0'],
-        ['enemy.youngling_fleeing', 'walk_se_0'],
-        ['enemy.brood_hauler_fleeing', 'walk_se_0'],
-        ['enemy.puffwing_fleeing', 'walk_se_0'],
-        // Bricks, and the towers Act II builds on its ground.
-        ['ally.bricks', 'idle_se_0'],
-        ['tower.rivet', 't1'],
-        ['tower.thumper', 't1'],
-        ['tower.sprinkler', 't1'],
-        ['tower.skyhook', 't1'],
-        ['tower.zapcoil', 't1'],
-        ['tower.lookout', 't1'],
-        ['tower.harpoon', 'spec_b'],
-        ['tower.crane', 'spec_a'],
-        ['prop.salvage_drone', 'fly_0'],
-        ['prop.tidybot', 'fly_0'],
-      ];
-      for (const [id, frame] of actors) {
+      for (const [id, frame] of ACT2_BAND_ACTORS) {
         const d = sprite(id);
         const l = bodyLuminance(d, frame, PALETTES[d.palette]);
         expect(l, `${id}:${frame}`).toBeGreaterThan(path);
@@ -286,7 +231,7 @@ describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
     });
 
     it(`${env}: the Hollow sits well below the ground it crosses, Heavy too`, () => {
-      for (const frame of ['walk_se_0', 'walk_ne_0', 'heavy_se_0']) {
+      for (const frame of HOLLOW_BAND_FRAMES) {
         const d = sprite('enemy.mote');
         const l = bodyLuminance(d, frame, PALETTES[d.palette]);
         expect(contrastRatio(l, path), frame).toBeGreaterThanOrEqual(2);
@@ -295,14 +240,7 @@ describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
     });
 
     it(`${env}: the Aelari's knots shine over the road inside a rim darker than it`, () => {
-      for (const [id, frame] of [
-        ['enemy.glimmer', 'walk_se_0'],
-        ['enemy.weft_warden', 'walk_se_0'],
-        ['enemy.lightwing', 'walk_se_1'],
-        ['enemy.glass_witch', 'walk_se_0'],
-        ['enemy.glass_witch', 'walk_ne_0'],
-        ['enemy.glass_witch', 'tell_se_1'],
-      ] as const) {
+      for (const [id, frame] of AELARI_BAND_FRAMES) {
         const d = sprite(id);
         const knots = slotLuminance(d, frame, ['e0', 'e1', 'hi']);
         const rim = slotLuminance(d, frame, ['outline']);

@@ -1,6 +1,6 @@
 // A2M3's tuning is robust where it matters (T422, T460). As tuned, par wins at 16/21 (76.2%) on every
 // seed, its five lost late: three Lightwings in W9's big Aelari wave (before its Cloudburst lands)
-// and two Motes in W11. Its click on the Peeker's rock goes in the tick after W5 starts. A player
+// and two Motes in W11. Its click on the Peeker's rock lands 1.2 s into W5's countdown. A player
 // who holds fire on every runner group still wins at 12/21 (57.1%, near the band's floor: mercy may
 // cost integrity, never most of it, D121): only W5's and W8's two Motes chasing the slow runners
 // get through while the hold lasts, and W10–W11's Zoomers outrun theirs. That player sets
@@ -13,6 +13,8 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import type { WaveGroup } from '../content/types.ts';
+import { COUNTDOWN } from '../content/maps/a2_m03/waves.ts';
+import { secToTicks } from '../shared/time.ts';
 import { runHeadless, type HeadlessResult } from '../sim/index.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
@@ -62,10 +64,12 @@ describe('A2M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const par = run('par').result!;
     expect([par.integrity, par.maxIntegrity]).toEqual([PAR_INTEGRITY, 21]);
     expect(par.waves.map((w) => w.integrityLost)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 2]);
-    // The rescue is par's own click, the tick after W5 starts (the fallback never fires).
+    // The rescue is par's own click in W5's build phase, as soon as its W4 Zapcoil is bought,
+    // 1.2 s into the countdown (the rock lights as it begins; D134), and the fallback never fires.
     const click = par.steps.find((s) => s.kind === 'interact')!;
     expect(click.error).toBeNull();
-    expect(click.issuedTick - par.waves[4]!.startTick).toBe(1);
+    const countdownTick = par.waves[4]!.startTick - secToTicks(COUNTDOWN);
+    expect(click.issuedTick - countdownTick).toBe(secToTicks(1.2));
   });
 
   it('lets a player who spares every runner win, and only that player sets the flag', () => {

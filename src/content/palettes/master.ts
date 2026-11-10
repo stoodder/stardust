@@ -37,7 +37,7 @@ export const MASTER = {
   'act1.shade': '#3a2c5e', 'act1.light': '#fff4dc',
   // Act II: the Long Dusk (grass, clay, and path are shared by act2.gold and act2.dusk). Grass and
   // path sit a value band under Act I's units, as Act I's do (T440c, art-direction §3).
-  'act2.grass.0': '#3c3416', 'act2.grass.1': '#60511a', 'act2.grass.2': '#987e27', 'act2.grass.3': '#c9ab41', 'act2.grass.4': '#eddb84',
+  'act2.grass.0': '#433113', 'act2.grass.1': '#6c4d14', 'act2.grass.2': '#a77a1c', 'act2.grass.3': '#daa534', 'act2.grass.4': '#f9d77c',
   'act2.clay.0': '#3c1630', 'act2.clay.1': '#6c2838', 'act2.clay.2': '#a84638', 'act2.clay.3': '#de7440', 'act2.clay.4': '#ffae62',
   'act2.path.0': '#4a2a32', 'act2.path.1': '#6d4039', 'act2.path.2': '#996746', 'act2.path.3': '#bd8d58', 'act2.path.4': '#debc7e',
   'act2.gold.sky.0': '#ff7a52', 'act2.gold.sky.1': '#ffae52', 'act2.gold.sky.2': '#ffd88c',

@@ -4,6 +4,7 @@ import { ENV_SKY } from '../../content/palettes/env.ts';
 import {
   gradeAt,
   gradeOf,
+  GRADE_STRENGTH,
   LIGHT_FADE_TICKS,
   lightAt,
   lightMix,
@@ -73,9 +74,11 @@ describe('the grade (the shade)', () => {
     }
   });
 
-  it('lights gold as dusk with the dusk light (a lilac: blue over red over green)', () => {
+  it('lights gold as dusk with the dusk light at GRADE_STRENGTH (a lilac: blue over red over green)', () => {
     const dusk = gradeOf('act2.gold', 'act2.dusk');
-    expect(dusk).toEqual(rgbOf('act2.dusk.light'));
+    const light = rgbOf('act2.dusk.light');
+    const at = (v: number): number => Math.round(255 - (255 - v) * GRADE_STRENGTH);
+    expect(dusk).toEqual({ r: at(light.r), g: at(light.g), b: at(light.b) });
     expect(dusk.b).toBeGreaterThan(dusk.r);
     expect(dusk.r).toBeGreaterThan(dusk.g);
     // Halfway, halfway between.

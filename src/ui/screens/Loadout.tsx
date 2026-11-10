@@ -9,6 +9,7 @@
 // radio group; Enter or Space toggles a tower or a protocol; Lock in has the focus on arrival, so
 // Enter goes straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
+import { Fragment } from 'preact';
 import { useState } from 'preact/hooks';
 import {
   formedLinks,
@@ -292,7 +293,17 @@ export function Loadout() {
           <dl class="sd-lo-intel">
             <div>
               <dt>Threats</dt>
-              <dd>{view.threats.length === 0 ? 'None reported' : view.threats.join(' · ')}</dd>
+              <dd>
+                {view.threats.length === 0
+                  ? 'None reported'
+                  : view.threats.map((t, i) => (
+                      <Fragment key={t.label}>
+                        {i > 0 && ' · '}
+                        <span title={t.tip ?? undefined}>{t.label}</span>
+                        {t.tip !== null && <span class="sd-visually-hidden"> ({t.tip})</span>}
+                      </Fragment>
+                    ))}
+              </dd>
             </div>
             {view.counters.some((c) => c.required) && (
               <div>

@@ -294,7 +294,15 @@ describe('instruments and songs', () => {
     // G–C–E, then C–D–F (F–D–C backwards), each well off its semitone.
     expect(midi.map((m) => Math.round(m))).toEqual([55, 60, 64, 60, 62, 65]);
     for (const m of midi.slice(1)) expect(Math.abs(m - Math.round(m))).toBeGreaterThan(0.15);
-    expect(SFX.hollow_hum.duck).toBeLessThan(1);
+    // An octave partial carries the tune where small speakers can't play G3 (D134), on the same
+    // wrong notes; the music's duck is held while Hollow walk (HOLLOW_DUCK), not per hum.
+    const octave = SFX.hollow_hum.layers.filter(
+      (l) => l.wave !== 'noise' && 'freq' in l && l.freq / base > 1.9 && l.freq / base < 2.1,
+    );
+    expect(octave).toHaveLength(1);
+    expect(octave[0]).toMatchObject({ steps: hum.steps });
+    expect(octave[0]!.gain).toBeGreaterThanOrEqual(0.3);
+    expect(SFX.hollow_hum).not.toHaveProperty('duck');
   });
 
   it('the Act I battle theme has every layer, and the sting is the six-note phrase', () => {

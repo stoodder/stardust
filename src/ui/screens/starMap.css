@@ -129,14 +129,10 @@
   width: 208px;
 }
 
-/* The first-visit notice: top center, for 4 s. */
+/* The first-visit notice: under the header (the notices' column), for 4 s. */
 .sd-star-notice {
-  position: absolute;
-  left: 364px;
-  top: 12px;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: 280px;
+  position: relative;
+  margin: 0;
   padding: 3px 6px;
   border: 1px solid var(--accent);
   background: var(--sd-ink-1);

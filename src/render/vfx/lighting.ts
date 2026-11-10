@@ -7,11 +7,15 @@
 //   wave 1, then each key): stop k once its wave has started, and between two stops in equal
 //   steps per wave started. As a wave starts the light eases from the wave before's position over
 //   `LIGHT_FADE_TICKS` sim ticks (so it holds while paused); under reduced motion it steps.
-// - **The shade** is a multiply grade over the whole view (ENV_GRADE: each env's light over
-//   daylight). The ground is baked in the map's own env, so the grade toward env E is E's over the
-//   base's, capped at 1 (a grade only darkens): the map's own env grades to white (no change), and
-//   gold to dusk is the dusk's lilac light. M5's Sundown adds darkness and light stamps on
-//   top of this; nothing here reads the sim beyond the wave number.
+// - **The shade** is a multiply grade over the world, not the actors (D134: dusk dims the world,
+//   not the actors; art-direction §3: actors keep their faction palettes in every act). It lies
+//   over the ground layer and tints the world's scenery (high ground, decor, wreckage, assets, cue
+//   props, the Peeker's rock); units, allies, towers, air, projectiles and effects are never
+//   graded. Its target is each env's light over daylight (ENV_GRADE), capped at 1 (a grade only
+//   darkens), at GRADE_STRENGTH: the map's own env grades to white (no change), and gold to dusk
+//   is the dusk's lilac light at 40%, so the ground's value band holds at every stop
+//   (lightingBands.test.ts). M5's Sundown adds darkness and light stamps on top of this; nothing
+//   here reads the sim beyond the wave number.
 // - **The sky** is each stop's sky gradient (ENV_SKY) as dithered bands across the top of the view
 //   that fade into the void, crossfaded by alpha between the two stops in play. Two small moons
 //   hang in it (art-direction §3: in every act's sky), up right of the map's north corner where
@@ -93,8 +97,16 @@ export const ENV_GRADE: Readonly<Record<EnvPaletteId, ColorName>> = {
 };
 
 /**
+ * How far the world's grade goes toward an env's light: a dusk that only tints and dims the
+ * ground a little, so the ground's value band, the actors over it and the Hollow under it still
+ * read at every stop (D134; lightingBands.test.ts holds it).
+ */
+export const GRADE_STRENGTH = 0.4;
+
+/**
  * The multiply grade that lights a map baked in `base` as `env`: `env`'s grade over `base`'s, per
- * channel, capped at 1 (a grade only darkens; the base's own light is white, unchanged).
+ * channel, capped at 1 (a grade only darkens; the base's own light is white, unchanged), taken
+ * GRADE_STRENGTH of the way from white.
  */
 export function gradeOf(base: EnvPaletteId, env: EnvPaletteId): Rgb {
   if (base === env) return { r: 255, g: 255, b: 255 };
@@ -103,9 +115,10 @@ export function gradeOf(base: EnvPaletteId, env: EnvPaletteId): Rgb {
   return { r: ratio(b.r, e.r), g: ratio(b.g, e.g), b: ratio(b.b, e.b) };
 }
 
-/** One channel of a grade: `env`'s over the base's, as 0–255, capped at 255. */
+/** One channel of a grade: `env`'s over the base's, capped at 1, GRADE_STRENGTH of the way. */
 function ratio(base: number, env: number): number {
-  return Math.round(255 * Math.min(1, env / Math.max(base, 1)));
+  const full = 255 * Math.min(1, env / Math.max(base, 1));
+  return Math.round(255 - (255 - full) * GRADE_STRENGTH);
 }
 
 /** The grade at position `pos` along `stops` for a map baked in `base`. */

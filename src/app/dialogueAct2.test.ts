@@ -77,20 +77,45 @@ describe('A2M1 on the radio', () => {
     screen.value = null;
   });
 
-  it('QUILL notices a runner the player killed (skitterkin_killed_ahead)', () => {
+  /** A live Mote walking `route` (the Hollow the runners flee), straight into the sim's pool. */
+  const moteOn = (route: string): void => {
+    const group = host.sim.map.waves.flatMap((w) => w.groups).find((g) => g.enemy.id === 'mote');
+    const e = state.enemies.items[0]!;
+    e.alive = true;
+    e.def = group!.enemy;
+    e.route = host.sim.map.routes[route]!;
+    state.enemies.used = Math.max(state.enemies.used, 1);
+  };
+  /** A fleeing Nibbler on `route`, met earlier (its NEW line drained), killed now. */
+  const killRunner = (uid: number, route: string): void => {
+    emit({ type: 'EnemySpawned', uid, enemy: 'nibbler', route, wave: 2 });
+    drain();
     at(100);
     state.stats.tagKilled.fleeing += 1;
     emit({
       type: 'EnemyDied',
-      uid: 4,
+      uid,
       enemy: 'nibbler',
       bounty: 1,
       killer: { kind: 'tower', uid: 9 },
       x: 0,
       y: 0,
     });
+  };
+
+  it('QUILL notices a runner the player killed (skitterkin_killed_ahead)', () => {
+    moteOn('spires');
+    killRunner(4, 'spires');
     expect(shown()).toBe(bark('quill_skitterkin_killed_ahead_a2_01'));
     expect(shown()).toBe('That one was running. From it.');
+  });
+
+  it('says nothing of a runner killed with no Hollow on its route (D134)', () => {
+    const other = Object.keys(host.sim.map.routes).find((r) => r !== 'spires');
+    expect(other).toBeDefined();
+    moteOn('spires');
+    killRunner(4, other!);
+    expect(shown()).not.toBe(bark('quill_skitterkin_killed_ahead_a2_01'));
   });
 
   it("doesn't call a kill that wasn't a runner one", () => {

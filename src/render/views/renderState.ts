@@ -59,6 +59,10 @@ export interface RenderState {
   readonly nameTag: { readonly uid: number; readonly text: string } | null;
   /** "Incoming" flags standing on the next wave's spawns (T326). */
   readonly spawnFlags: number;
+  /** Spots kept clear of floaters and the name plate now (D134 K2: armed clickables, a lift). */
+  readonly keepClear: number;
+  /** Floating numbers and callouts up now. */
+  readonly floats: number;
   /** Scanner Sweep's aim preview shows (T431: its own circle, not the strike's reticle). */
   readonly sweepAim: boolean;
   /**

@@ -31,6 +31,22 @@ export function checkpointOf(
   return { wave: e.wave, tick: e.tick, commandCount: n };
 }
 
+/**
+ * The checkpoint a lost run offers (D134): the latest one taken before the run's final tick
+ * (`endTick`, the sim's `state.tick` once it ended), or null. One taken on the very tick the run
+ * ended would replay straight into the loss, so an earlier one stands in (W5, not W10).
+ */
+export function usableCheckpoint(
+  checkpoints: readonly Checkpoint[],
+  endTick: number,
+): Checkpoint | null {
+  for (let i = checkpoints.length - 1; i >= 0; i--) {
+    const c = checkpoints[i]!; // i < length
+    if (c.tick < endTick) return c;
+  }
+  return null;
+}
+
 /** What a resumed battle replays: its checkpoint, and the logged commands that lead to it. */
 export interface Resume<K extends IdSpace = LiveIds> {
   readonly checkpoint: Checkpoint;

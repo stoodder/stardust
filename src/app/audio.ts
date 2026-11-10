@@ -15,6 +15,7 @@ import {
   createTypeTicker,
   crossedLowIntegrity,
   SOUND_EVENT_TYPES,
+  RADIO_DUCK,
   SPEECH_SFX_DUCK,
   screenMusic,
   silentEngine,
@@ -30,7 +31,7 @@ import {
   type SfxId,
   type SoundCall,
 } from '../audio/index.ts';
-import { TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
+import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
 import {
   isStormId,
   renderCue,
@@ -52,8 +53,6 @@ import type { AudioHooks } from './testHookTypes.ts';
 import { settings } from './settings.ts';
 import { createTidyChimes } from './tidybotChimes.ts';
 
-/** The music's level under a radio line (it ducks so the line reads as spoken). */
-export const RADIO_DUCK = 0.55;
 /** The low-integrity klaxon waits for the leak's alarm to finish (s). */
 export const LOW_ALARM_DELAY_SEC = 0.5;
 
@@ -165,7 +164,7 @@ export function installAudio(enabled: boolean): () => void {
     effect(() => {
       const l = speaking.value;
       engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
-      // Dialogue is never buried (R10): shots, hits, and pops dip about 3 dB under a line.
+      // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line.
       engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
       if (l !== null && l.id !== lineId) {
         lineId = l.id;
@@ -221,6 +220,13 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   let zones: { uid: number; land: readonly SfxId[] }[] = [];
   let countdown: number | null = null;
   let integrity = sim.state.integrity;
+  /** Whether the Hollow's steady duck is held (HOLLOW_DUCK). */
+  let hollowDuck = false;
+  const setHollowDuck = (on: boolean): void => {
+    if (on === hollowDuck) return;
+    hollowDuck = on;
+    engine.holdDuck(HOLLOW_DUCK.key, on ? HOLLOW_DUCK.level : null, HOLLOW_DUCK.fadeSec);
+  };
   const onEvent = (e: SimEvent<IdSpace>): void => {
     sounds.sounds(e, calls);
     if (e.type === 'AbilityUsed' && e.uid !== 0) {
@@ -248,6 +254,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     sounds.endFrame(calls);
     field.frame(s, calls);
     playCalls(calls);
+    // The music sits steadily ducked while any Hollow walks (one long dip, not one per hum).
+    setHollowDuck(field.hollowLive());
     tidy.due(s.tick, chimes);
     for (const bot of chimes) {
       engine.play(TIDYBOT_SOUNDS.chime, { pitch: bot * TIDYBOT_SOUNDS.pitchPerBot });
@@ -291,6 +299,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   ];
   return () => {
     for (const off of offs) off();
+    setHollowDuck(false);
   };
 }
 
@@ -305,9 +314,11 @@ export function audioTestHooks(): AudioHooks {
       storms: Object.keys(STORMS),
     }),
     render(what) {
-      const [kind, id = ''] = what.split(':');
+      const [kind, id = '', variant = ''] = what.split(':');
       if (kind === 'storm' && id === '') return renderStorm();
-      if (kind === 'storm' && isStormId(id)) return renderStorm(id);
+      if (kind === 'storm' && isStormId(id) && (variant === '' || variant === 'ducked')) {
+        return renderStorm(id, { ducked: variant === 'ducked' });
+      }
       if (kind === 'sfx' && isSfxId(id)) return renderSfx(id);
       if (kind === 'cue' && isCueId(id)) return renderCue(id);
       if (kind === 'theme' && isThemeId(id)) return renderTheme(id);

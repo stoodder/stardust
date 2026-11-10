@@ -40,7 +40,11 @@ export interface AudioEngine {
     layers: Readonly<Record<MusicLayer, number>>,
     level?: number,
   ): void;
-  holdDuck(key: string, level: number | null): void;
+  /**
+   * Holds the music ducked to `level` under `key` (the radio, the Hollow), or releases it (null);
+   * `fadeSec` sets how long that hold's dip and return take (Synth.holdDuck).
+   */
+  holdDuck(key: string, level: number | null, fadeSec?: number): void;
   /** Holds the low-priority sound effects ducked under `key` (a spoken line, R10), or releases. */
   holdSfxDuck(key: string, level: number | null): void;
   setVolumes(v: Volumes): void;
@@ -92,7 +96,7 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
     layers: Readonly<Record<MusicLayer, number>>;
     level: number;
   } = { theme: null, layers: { base: 0, drums: 0, lead: 0 }, level: 1 };
-  const held = new Map<string, number>();
+  const held = new Map<string, { level: number; fadeSec?: number }>();
   const sfxHeld = new Map<string, number>();
 
   const startTimer = (): void => {
@@ -120,7 +124,7 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
         }
         synth = new Synth(ctx);
         synth.setVolumes(volumes);
-        for (const [key, level] of held) synth.holdDuck(key, level);
+        for (const [key, h] of held) synth.holdDuck(key, h.level, h.fadeSec);
         for (const [key, level] of sfxHeld) synth.holdSfxDuck(key, level);
         synth.setTheme(music.theme, music.layers, music.level);
         startTimer();
@@ -139,10 +143,10 @@ export function createAudioEngine(factory: ContextFactory = browserContext): Aud
       music = { theme, layers, level };
       synth?.setTheme(theme, layers, level);
     },
-    holdDuck(key, level) {
+    holdDuck(key, level, fadeSec) {
       if (level === null) held.delete(key);
-      else held.set(key, level);
-      synth?.holdDuck(key, level);
+      else held.set(key, fadeSec === undefined ? { level } : { level, fadeSec });
+      synth?.holdDuck(key, level, fadeSec);
     },
     holdSfxDuck(key, level) {
       if (level === null) sfxHeld.delete(key);

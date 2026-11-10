@@ -94,6 +94,11 @@ export interface FieldSounds {
    * frame left them (the event sounds' `quietAt`).
    */
   quietAt(x: number, y: number): boolean;
+  /**
+   * Whether a live Hollow unit was on the field (not leaving) as of the last frame: the music's
+   * steady duck (HOLLOW_DUCK) holds while it is.
+   */
+  hollowLive(): boolean;
 }
 
 /** A hidden cloaked unit (mirrors sim `cloakedOut`; a burrowed or leaving one makes no steps). */
@@ -130,6 +135,7 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   let head = -1;
   let workAt = -1;
   return {
+    hollowLive: () => hollowN > 0,
     quietAt(x, y) {
       for (let i = 0; i < hollowN; i++) {
         const dx = hollowX[i]! - x; // i < hollowN ≤ length

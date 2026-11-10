@@ -62,7 +62,8 @@ export interface Host<K extends IdSpace = LiveIds> {
    * Replays a resumed run up to its checkpoint, headlessly: before each tick it enqueues the
    * logged commands due then, and after each tick it dispatches that tick's events (with
    * `replaying` true); the after-frame listeners run once at the end. No-op for a fresh run or
-   * once done. Throws if the replay doesn't reach the checkpoint (the run diverged).
+   * once done. Throws if the replay doesn't reach the checkpoint (the run diverged) or ends the
+   * run there (D134: `usableCheckpoint` never offers such a checkpoint).
    */
   catchUp(): void;
 }
@@ -190,7 +191,8 @@ export function createHost<K extends IdSpace>(sim: Sim<K>, opts: HostOptions = {
       }
       replaying = false;
       killsBefore = sim.state.stats.skitterkinKilled;
-      if (sim.state.tick !== checkpoint.tick || i !== log.length) {
+      // A replay that ended the run can't be played on (D134): the caller fails safely instead.
+      if (sim.state.tick !== checkpoint.tick || i !== log.length || sim.state.outcome !== 'playing') {
         throw new Error(
           `checkpoint replay diverged: tick ${sim.state.tick} of ${checkpoint.tick}, ` +
             `${i} of ${log.length} commands, outcome ${sim.state.outcome}`,

@@ -50,7 +50,7 @@ import {
 import { grantText } from '../ui/screens/storeText.ts';
 import { battleConfig, defaultPick } from './battleSetup.ts';
 import { displayName, towerName } from './hudText.ts';
-import { threatNames } from './hudViews.ts';
+import { mapThreats } from './hudViews.ts';
 import { logError } from './log.ts';
 import { activeSave, rememberLoadout, type SaveResult } from './save.ts';
 
@@ -209,7 +209,7 @@ export function openLoadout(mapId: string): boolean {
     mapId,
     mapName: silkText(mapName(mapId)),
     shift: shift < 0 ? null : shift + 1,
-    threats: threatNames(map),
+    threats: mapThreats(map).map((t) => ({ label: t.label, tip: t.tip })),
     counters: mapCounters(c.map).map((id) => ({
       id,
       label: COUNTER_LABELS[id],

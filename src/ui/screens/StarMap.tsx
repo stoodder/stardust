@@ -220,9 +220,10 @@ function Panel({
           <hr class="sd-star-rule" />
           <ul class="sd-star-threats" aria-label="Threat intel">
             {brief.threats.map((t) => (
-              <li key={t.id}>
+              <li key={t.id} title={t.tip ?? undefined}>
                 {t.glyph !== null && <Icon id={t.glyph} />}
                 <span>{t.label}</span>
+                {t.tip !== null && <span class="sd-visually-hidden"> ({t.tip})</span>}
               </li>
             ))}
           </ul>
@@ -429,14 +430,15 @@ export function StarMap() {
       <div class="sd-starmap-banks sd-star-chrome">
         <Banks view={camp} />
       </div>
+      {/* Under the header, clear of the region labels and the node panel (D134 U9). */}
       <div class="sd-starmap-notices">
         <MenuNotice />
+        {noticeOn && (
+          <p class="sd-star-notice" role="status" data-testid="star-notice">
+            {STAR_MAP_ACCESS_NOTICE}
+          </p>
+        )}
       </div>
-      {noticeOn && (
-        <p class="sd-star-notice" role="status" data-testid="star-notice">
-          {STAR_MAP_ACCESS_NOTICE}
-        </p>
-      )}
       <ol class="sd-star-nodes" aria-label="Shifts">
         {view.nodes.map((n, i) => (
           <Node
