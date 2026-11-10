@@ -64,6 +64,7 @@ function inputOf(f: ResultsFixture): RunEndInput {
   const medals = offeredMedals({ medals: map?.medals ?? null });
   return {
     mapId: f.map,
+    act: map?.act ?? 1,
     waveCount,
     maxIntegrity: map?.coreIntegrity ?? 20,
     integrity: won ? 18 : 0,

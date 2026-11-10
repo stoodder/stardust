@@ -3,13 +3,22 @@
 // through app/navigation.ts and app/save.ts.
 import { signal } from '@preact/signals';
 import type { RunOutcome } from '../../app/testHookTypes.ts';
+import type { CampaignMapId } from '../../content/campaign.ts';
 import type { ArrivalReason, CallsignId, PronounId } from '../../content/dialogue/profile.ts';
+import type { StoryAct } from '../../content/dialogue/types.ts';
+import type { CounterStyle } from '../../content/presentation.ts';
 import type { SpokenLine } from '../state.ts';
 
 /** A finished run, as the results screen shows it (built by app/runResult.ts at run end). */
 export interface RunResult {
   readonly mapId: string;
   readonly outcome: RunOutcome;
+  /**
+   * The map's results counter style and UI act theme (its presentation dials, core-loop.md
+   * § 6.7): Act I's starred brag and "Exemplary!", Act II's plain line (story/counter.ts).
+   */
+  readonly counter: CounterStyle;
+  readonly theme: StoryAct;
   /** Waves resolved this run (all of them on a win). */
   readonly wavesSurvived: number;
   readonly waveCount: number;

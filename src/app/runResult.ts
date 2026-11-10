@@ -12,6 +12,7 @@ import {
   type RunEndSummary,
   type SaveData,
 } from '../meta/index.ts';
+import type { Act } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import {
   evaluateCondition,
@@ -20,6 +21,7 @@ import {
   type StoryContext,
 } from '../story/conditions.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
+import { presentationOfMap } from '../story/presentation.ts';
 import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
@@ -56,6 +58,11 @@ export interface LeakAgo {
 /** What a run end reads from the finished battle. */
 export interface RunEndInput {
   readonly mapId: string;
+  /**
+   * The map's act (`MapDef.act`), which picks a non-campaign map's presentation dials (a dev
+   * map's); a campaign map's come from its id (story/presentation.ts). Absent: Act I.
+   */
+  readonly act?: Act;
   readonly waveCount: number;
   readonly maxIntegrity: number;
   readonly integrity: number;
@@ -351,9 +358,13 @@ export function runResultOf(
   outcome: RunOutcome,
   summary: (RunEndSummary & RecordStatus) | null = null,
 ): RunResult {
+  // The card's tone is the map's presentation dials (core-loop.md § 6.7): its counter and theme.
+  const dials = presentationOfMap({ id: input.mapId, act: input.act ?? 1 });
   return {
     mapId: input.mapId,
     outcome,
+    counter: dials.counter,
+    theme: dials.theme,
     wavesSurvived: wavesResolved(input, outcome),
     waveCount: input.waveCount,
     integrity: Math.max(0, input.integrity),

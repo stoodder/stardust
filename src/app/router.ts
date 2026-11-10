@@ -331,6 +331,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
     const resumed = b.host.resumedFrom;
     const input: RunEndInput = {
       mapId: sim.map.id,
+      act: sim.map.act,
       waveCount: sim.map.waves.length,
       maxIntegrity: s.maxIntegrity,
       integrity: s.integrity,
