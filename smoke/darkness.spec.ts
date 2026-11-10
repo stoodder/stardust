@@ -38,12 +38,13 @@ const tower = (page: Page, [c, r]: readonly [number, number]): Promise<Row | nul
     [c, r] as const,
   );
 
+/** One sRGB channel (0–255), linearized. */
+const lin = (v: number): number =>
+  v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
+
 /** Relative luminance (0–1) of a 0xRRGGBB tone: how bright a multiply leaves white. */
-const lumOf = (c: number): number => {
-  const lin = (v: number) =>
-    v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
-  return 0.2126 * lin((c >> 16) & 0xff) + 0.7152 * lin((c >> 8) & 0xff) + 0.0722 * lin(c & 0xff);
-};
+const lumOf = (c: number): number =>
+  0.2126 * lin((c >> 16) & 0xff) + 0.7152 * lin((c >> 8) & 0xff) + 0.0722 * lin(c & 0xff);
 
 /** The playfield's mean brightness (0–255) as shot: the middle of the view, clear of the HUD. */
 async function playfieldLum(page: Page): Promise<number> {

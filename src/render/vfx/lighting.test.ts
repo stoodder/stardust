@@ -10,9 +10,14 @@ import {
   lightMix,
   lightPosition,
   lightStops,
+  moonsImage,
+  gradeNumberAt,
+  rgbNumber,
   skyImage,
   SKY_MOONS,
   SKY_SHARE,
+  stopGrades,
+  type LightMix,
 } from './lighting.ts';
 
 // A2M3's shape: gold before wave 1, dusk by wave 11 (act2.md § A2M3).
@@ -132,5 +137,48 @@ describe('skyImage', () => {
     const y = Math.round(h * SKY_SHARE) + 4;
     const alphas = new Set(Array.from({ length: w }, (_, x) => px(x, y)[3]));
     expect(alphas).toEqual(new Set([0, 255]));
+  });
+});
+
+describe('the crossfade without allocation (T501k)', () => {
+  const sched = lightStops('act2.gold', [
+    { wave: 5, env: 'act2.dusk' },
+    { wave: 9, env: 'act3' },
+  ]);
+  const grades = stopGrades('act2.gold', sched);
+
+  it('writes the mix in place and matches a fresh one', () => {
+    const out: LightMix = { stop: 0, from: 'act1', to: 'act1', t: 0 };
+    for (const pos of [0, 0.3, 1, 1.5, 2, 3]) {
+      expect(lightMix(sched, pos, out)).toBe(out);
+      expect(out).toEqual(lightMix(sched, pos));
+    }
+  });
+
+  it('grades as gradeAt does, as one number', () => {
+    const out: LightMix = { stop: 0, from: 'act1', to: 'act1', t: 0 };
+    for (const pos of [0, 0.25, 0.5, 1, 1.75, 2]) {
+      expect(gradeNumberAt(grades, lightMix(sched, pos, out))).toBe(
+        rgbNumber(gradeAt('act2.gold', sched, pos)),
+      );
+    }
+  });
+});
+
+describe('moonsImage', () => {
+  it('is the sky’s moons alone, on clear, exactly where the sky has them', () => {
+    const w = 120;
+    const h = 80;
+    const sky = skyImage('act2.dusk', w, h);
+    const moons = moonsImage(w, h);
+    let lit = 0;
+    for (let i = 0; i < w * h; i++) {
+      if (moons.data[i * 4 + 3] === 0) continue;
+      lit++;
+      expect(Array.from(moons.data.subarray(i * 4, i * 4 + 4))).toEqual(
+        Array.from(sky.data.subarray(i * 4, i * 4 + 4)),
+      );
+    }
+    expect(lit).toBeGreaterThan(SKY_MOONS.length * 9);
   });
 });

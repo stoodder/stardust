@@ -14,7 +14,7 @@
 //   graded. Its target is each env's light over daylight (ENV_GRADE), capped at 1 (a grade only
 //   darkens), at GRADE_STRENGTH: the map's own env grades to white (no change), and gold to dusk
 //   is the dusk's lilac light at 40%, so the ground's value band holds at every stop
-//   (lightingBands.test.ts). M5's Sundown adds darkness and light stamps on top of this; nothing
+//   (lightingBands.test.ts). Sundown's darkness (darknessPixels.ts) builds on this; nothing
 //   here reads the sim beyond the wave number.
 // - **The sky** is each stop's sky gradient (ENV_SKY) as dithered bands across the top of the view
 //   that fade into the void, crossfaded by alpha between the two stops in play. Two small moons

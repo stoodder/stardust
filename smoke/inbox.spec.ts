@@ -90,19 +90,30 @@ test('inbox: the NEW badge, a memo with its small print, and the codex', async (
 test('inbox: after the stinger, the base lands on the Record Quarter memo', async ({ page }) => {
   await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a1m5');
   await waitForReady(page);
-  await page.getByRole('button', { name: 'Base' }).click();
-  await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
-  await expect(page.getByTestId('scene')).toBeHidden();
-
   // A1M5's flow (shown from the base, a menu): the party before the card (skipped), the card, then
-  // Continue: the stinger plays full-screen, and skipping it lands in the base again.
-  void page.evaluate(() =>
-    globalThis.__sd!.results({
+  // Continue: the stinger plays full-screen, and skipping it lands in the base again. The save
+  // holds an unread memo, and the Inbox pane marks a memo it opened by itself as read after 0.8 s
+  // on screen, so the base is opened and the flow started in one evaluate: a gap between them
+  // under load would read the memo before the card covers the pane (the dwell waits while it's covered).
+  void page.evaluate(async () => {
+    const base = [...document.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Base',
+    );
+    base!.click();
+    await new Promise<void>((done) => {
+      const tick = (): void => {
+        const heads = [...document.querySelectorAll('h1, h2')];
+        if (heads.some((h) => h.textContent?.trim() === 'Base')) done();
+        else requestAnimationFrame(tick);
+      };
+      tick();
+    });
+    await globalThis.__sd!.results({
       map: 'a1_m05',
       outcome: 'won',
       quietWave: { spawned: 7, leaked: 0 },
-    }),
-  );
+    });
+  });
   const full = page.getByRole('dialog', { name: 'Scene' });
   const card = page.getByRole('dialog', { name: 'PERIMETER SECURED!' });
   await expect(full).toBeVisible();

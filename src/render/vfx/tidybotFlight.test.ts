@@ -1,11 +1,13 @@
 // The Tidybots' sweep (T410b): specks split among 1–3 drones in screen order, each drone in from the
 // nearest edge, its stops vacuumed in turn (a stop's specks gone halfway through), a chime, out by
-// the nearest edge; pause-proof because it reads ticks only.
+// the nearest edge (or, where the drones unload, up to the hopper, its load emptied in turn, then
+// out); pause-proof because it reads ticks only.
 import { describe, expect, it } from 'vitest';
 import {
   edgeNear,
   planSweep,
   TIDY_CHIME_TICKS,
+  TIDY_DOCK_TICKS,
   TIDY_EDGE_OUT,
   TIDY_HOP_TICKS,
   TIDY_IN_TICKS,
@@ -13,6 +15,7 @@ import {
   TIDY_MAX_STOPS,
   TIDY_OUT_TICKS,
   TIDY_STAGGER_TICKS,
+  TIDY_UNLOAD_TICKS,
   TIDY_VAC_TICKS,
   tidyPose,
   tidyTicks,
@@ -127,5 +130,65 @@ describe('tidyPose', () => {
     expect(end).toBe(chime + TIDY_CHIME_TICKS + TIDY_OUT_TICKS);
     expect(tidyPose(plan, end - 1, pose()).phase).toBe('fly');
     expect(tidyPose(plan, end, pose())).toMatchObject({ phase: 'gone', x: 4, y: -1.5, cleared: 2 });
+  });
+});
+
+describe('unloading at the plant (A2M4, T501f, T530b)', () => {
+  const dock = { x: 2.5, y: 6.5 };
+  const specks = Array.from({ length: 18 }, (_, i) => ({
+    x: 4 + (i % 9),
+    y: 2 + Math.floor(i / 9),
+  }));
+  const plain = planSweep(specks, 18, 12).plans;
+  const docked = planSweep(specks, 18, 12, dock).plans;
+  const chimeAt = (p: (typeof plain)[number]): number => {
+    for (let t = 0; t < tidyTicks(p); t++) if (tidyPose(p, t, pose()).phase === 'chime') return t;
+    return -1;
+  };
+
+  it('chimes on the same tick as a plain sweep (the audio rings from the same sums)', () => {
+    expect(docked).toHaveLength(plain.length);
+    expect(docked.map(chimeAt)).toEqual(plain.map(chimeAt));
+  });
+
+  it('rises to the hopper after its chime, unloads there at the mouth, and leaves from it', () => {
+    const p = docked[0]!;
+    const t0 = chimeAt(p) + TIDY_CHIME_TICKS + (p.hold ?? 0);
+    const climb = tidyPose(p, t0 + TIDY_DOCK_TICKS / 2, pose());
+    expect(climb.phase).toBe('fly');
+    expect(climb.lift).toBeGreaterThan(0);
+    expect(climb.lift).toBeLessThan(1);
+    const unload = tidyPose(p, t0 + TIDY_DOCK_TICKS, pose());
+    expect(unload).toMatchObject({ phase: 'unload', x: dock.x, y: dock.y, lift: 1 });
+    expect(tidyPose(p, t0 + TIDY_DOCK_TICKS + TIDY_UNLOAD_TICKS, pose()).phase).toBe('fly');
+    expect(p.exit).toEqual(edgeNear(dock, 18, 12));
+    const end = tidyTicks(p);
+    expect(end).toBe(t0 + TIDY_DOCK_TICKS + TIDY_UNLOAD_TICKS + TIDY_OUT_TICKS);
+    expect(tidyPose(p, end, pose())).toMatchObject({ phase: 'gone', lift: 0 });
+  });
+
+  it('takes turns at the mouth: no two drones unload at once', () => {
+    expect(docked.length).toBeGreaterThan(1);
+    const end = Math.max(...docked.map(tidyTicks));
+    for (let t = 0; t <= end; t++) {
+      const at = docked.filter((p) => tidyPose(p, t, pose()).phase === 'unload').length;
+      expect(at, `tick ${t}`).toBeLessThanOrEqual(1);
+    }
+    // And each one does unload.
+    for (const p of docked) {
+      let seen = false;
+      for (let t = 0; t <= tidyTicks(p) && !seen; t++)
+        seen = tidyPose(p, t, pose()).phase === 'unload';
+      expect(seen).toBe(true);
+    }
+  });
+
+  it('a plain sweep never unloads and never lifts', () => {
+    const p = plain[0]!;
+    for (let t = 0; t <= tidyTicks(p); t++) {
+      const q = tidyPose(p, t, pose());
+      expect(q.phase).not.toBe('unload');
+      expect(q.lift).toBe(0);
+    }
   });
 });

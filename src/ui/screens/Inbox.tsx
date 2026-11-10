@@ -8,7 +8,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { inboxView, markMemoRead, type MemoView } from '../../app/inbox.ts';
 import { GLYPH_CHARS } from '../../story/text.ts';
 import { silkText } from '../silk.ts';
-import { campaign } from './state.ts';
+import { dialogue } from '../dialogue/state.ts';
+import { campaign, runResult } from './state.ts';
 import './inbox.css';
 
 // ── Shared with the codex pane ───────────────────────────────────────────────────────────────
@@ -77,13 +78,18 @@ export function useReaderTop(id: string | null): { current: HTMLDivElement | nul
   return ref;
 }
 
-/** Marks the shown item read once it has stayed on screen for READ_DWELL_MS. */
+/**
+ * Marks the shown item read once it has stayed on screen, uncovered, for READ_DWELL_MS. A scene or
+ * a Results card over the base hides the pane, so the dwell waits (and restarts) until it lifts:
+ * a memo under a card hasn't been read.
+ */
 export function useReadOnDwell(id: string | null, mark: (id: string) => unknown): void {
+  const covered = dialogue.scene.value !== null || runResult.value !== null;
   useEffect(() => {
-    if (id === null) return undefined;
+    if (id === null || covered) return undefined;
     const timer = setTimeout(() => mark(id), READ_DWELL_MS);
     return () => clearTimeout(timer);
-  }, [id]);
+  }, [id, covered]);
 }
 
 /**

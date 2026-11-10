@@ -247,5 +247,6 @@ export function tidyPose(plan: TidyPlan, ticks: number, out: TidyPose): TidyPose
   out.phase = 'gone';
   out.x = plan.exit.x;
   out.y = plan.exit.y;
+  out.lift = 0;
   return out;
 }

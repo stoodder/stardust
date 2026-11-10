@@ -58,7 +58,7 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
     colors: ['violet.3', 'violet.4'],
     radius: 3,
     halo: 'violet.3',
-    dusk: 0.35,
+    dusk: 0.25,
   },
   // A2M4's seams: the stardust veins in the cliff, warm gold flushed pink (sung).
   'prop.seam': {
