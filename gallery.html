@@ -9,7 +9,7 @@
       /* Dev page (T104). Colors are master palette values: ink.0–4, steel.3–4, white.0, teal.3. */
       body {
         margin: 0;
-        padding: 16px 24px 32px;
+        padding: 0;
         background: #0d0a18;
         color: #e6ebf5;
         font:
@@ -17,6 +17,12 @@
           'DejaVu Sans Mono',
           Menlo,
           monospace;
+      }
+      /* A sheet is one art-trail image (app/gallery.ts SheetPacker): its own padding, so each
+         capture stands alone. */
+      .sheet {
+        padding: 16px 24px 24px;
+        border-bottom: 2px solid #251c3a;
       }
       h1 {
         margin: 0 0 4px;

@@ -1,8 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import { SMOKE_OUT } from './smoke/out.ts';
 
 // SMOKE_PORT moves the preview server off the default 4173 (a second checkout's smoke run, say).
 // The gate still runs one `npm run check` at a time: runs also share `dist/`.
 const PORT = Number(process.env['SMOKE_PORT'] ?? 4173);
+// SMOKE_DIST serves another build folder than dist/ (`vite build --outDir <dir>`), so an agent's
+// targeted smoke run needn't rebuild the shared dist/ under another agent's gate.
+const DIST = process.env['SMOKE_DIST'];
 
 // Browser resolution: CHROME_PATH (set in Claude Code cloud sessions, where the preinstalled
 // Chromium doesn't match the pinned Playwright's revision); otherwise Playwright's own Chromium
@@ -17,8 +21,9 @@ const WORKERS = process.env['SMOKE_WORKERS'] ?? '50%';
 
 export default defineConfig({
   testDir: './smoke',
-  // Default output dir; screenshots go to test-results/screens/ (cleaned each run).
-  outputDir: './test-results',
+  // SMOKE_OUT (smoke/out.ts), else ./test-results; screenshots go to <out>/screens/, the gallery's
+  // sheets to <out>/gallery/. Playwright cleans it at the start of each run.
+  outputDir: SMOKE_OUT,
   fullyParallel: true,
   workers: /^\d+$/.test(WORKERS) ? Number(WORKERS) : WORKERS,
   // The gate-time guardrail: name every spec file over 15 s at the end of the run.
@@ -42,7 +47,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     // `npm run preview`'s Vite command, with the port.
-    command: `npx vite preview --port ${PORT} --strictPort`,
+    command: `npx vite preview --port ${PORT} --strictPort${DIST === undefined ? '' : ` --outDir ${DIST}`}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false,
     timeout: 30_000,

@@ -1,7 +1,8 @@
 // Sprite gallery dev page (gallery.html, T104): every sprite, variant, and frame at 1× and an
 // integer zoom on dark and light backgrounds, plus small dioramas that exercise anchors, tile
 // seams, head mounts, and environment palette swaps. Deterministic, so its screenshot can be
-// compared milestone to milestone. Smoke reads the data-* counters on <body>.
+// compared milestone to milestone. Smoke reads the data-* counters on <body>. The page is laid
+// out as sheets of at most SHEET_MAX_PX, each captured as its own image (the art trail).
 import { ENV_PALETTE_IDS, ENV_PALETTES, ENV_SKY } from '../content/palettes/env.ts';
 import { rgbOf } from '../content/palettes/master.ts';
 import { PALETTES } from '../content/palettes/index.ts';
@@ -826,6 +827,95 @@ function glowOf(
   return baked.get(id)?.frames.find((f) => f.key === key);
 }
 
+/**
+ * The tallest a sheet may be, in CSS px (T501j). The gallery is laid out as sheets, each captured
+ * as its own image (smoke/gallery.spec.ts): 8,000 px fits one screenshot with no stitching and is
+ * small enough to send whole.
+ */
+const SHEET_MAX_PX = 8000;
+
+/**
+ * Lays blocks out on sheets of at most SHEET_MAX_PX: each block goes into the current sheet's
+ * open section, and one that would push the sheet over the limit moves to a new sheet, where its
+ * section continues under a "(continued)" heading. Measuring forces layout, so the page is packed
+ * at the viewport it opens at (the smoke test's 1600 px).
+ */
+class SheetPacker {
+  readonly sheets: HTMLElement[] = [];
+  #sheet: HTMLElement | null = null;
+  #title = '';
+  #cls = '';
+  #box: HTMLElement | null = null;
+
+  readonly #root: HTMLElement;
+
+  constructor(root: HTMLElement) {
+    this.#root = root;
+    this.#newSheet();
+  }
+
+  /** The sheet being filled. */
+  get current(): HTMLElement {
+    if (this.#sheet === null) throw new Error('gallery: no sheet');
+    return this.#sheet;
+  }
+
+  /** Starts a section: a heading and a container (class `cls`) its blocks go into. */
+  section(title: string, cls: string): void {
+    this.#title = title;
+    this.#cls = cls;
+    this.#open(title);
+  }
+
+  /** Adds a block to the open section, on a new sheet if it doesn't fit on this one. */
+  add(block: HTMLElement): void {
+    const box = this.#box;
+    const sheet = this.#sheet;
+    if (box === null || sheet === null) throw new Error('gallery: add before section');
+    box.append(block);
+    // A sheet's first block stays even if it alone is too tall (the smoke test names it).
+    if (box.childElementCount > 1 && sheet.offsetHeight > SHEET_MAX_PX) {
+      block.remove();
+      this.#newSheet();
+      this.#open(`${this.#title} (continued)`);
+      this.#box?.append(block);
+    }
+  }
+
+  /** Titles every sheet "… sheet n of N" once all are packed. */
+  finish(): void {
+    this.sheets.forEach((sh, i) => {
+      sh.dataset['sheet'] = String(i + 1);
+      const head = sh.querySelector('h1');
+      if (head !== null) {
+        head.textContent = `Stardust sprite gallery · sheet ${i + 1} of ${this.sheets.length}`;
+      }
+    });
+  }
+
+  #newSheet(): void {
+    const sh = el('section', 'sheet');
+    sh.append(el('h1'));
+    this.#root.append(sh);
+    this.sheets.push(sh);
+    this.#sheet = sh;
+  }
+
+  #open(title: string): void {
+    const box = el('div', this.#cls);
+    const h = el('h2', undefined, title);
+    this.#sheet?.append(h, box);
+    // A heading never ends a sheet alone: the section starts on the next sheet instead.
+    if ((this.#sheet?.offsetHeight ?? 0) > SHEET_MAX_PX - 200) {
+      h.remove();
+      box.remove();
+      this.#newSheet();
+      this.#sheet?.append(h, box);
+    }
+    this.#box = box;
+  }
+}
+
 function render(root: HTMLElement): void {
   const t0 = performance.now();
   const baked = bakeAll(SPRITES, PALETTES);
@@ -833,46 +923,38 @@ function render(root: HTMLElement): void {
   const byId = new Map(baked.map((b) => [b.id, b]));
   const frames = baked.flatMap((b) => b.frames.filter((f) => !f.key.endsWith('@glow')));
 
-  root.append(
-    el('h1', undefined, 'Stardust sprite gallery'),
+  const pack = new SheetPacker(root);
+  pack.current.append(
     el(
       'div',
       'sub',
       `${baked.length} sprites · ${frames.length} frames across all variants · dark (ink.0) and light (steel.4) backgrounds`,
     ),
   );
-  root.append(el('h2', undefined, 'Dioramas: act1 at 2×, then every environment palette at 1×'));
-  const dioramas = el('div', 'dioramas');
-  dioramas.append(diorama(byId, 'act1', 2));
-  root.append(dioramas);
-  const envRow = el('div', 'dioramas');
+  pack.section('Dioramas: act1 at 2×, then every environment palette at 1×', 'dioramas');
+  pack.add(diorama(byId, 'act1', 2));
   for (const env of ENV_PALETTE_IDS) {
     const box = el('div', 'frame');
     box.append(diorama(byId, env, 1), el('span', undefined, env));
-    envRow.append(box);
+    pack.add(box);
   }
-  root.append(envRow);
 
-  root.append(
-    el(
-      'h2',
-      undefined,
-      'Sprites: default (authored frames; mirrors at 1×), one more palette (authored frames), derived (first frame)',
-    ),
+  pack.section(
+    'Sprites: default (authored frames; mirrors at 1×), one more palette (authored frames), derived (first frame)',
+    'cards',
   );
   const count: Counters = { expected: 0, rendered: 0 };
-  const cards = el('div', 'cards');
-  for (const b of baked) if (!isPortrait(b)) cards.append(spriteCard(b, count));
-  root.append(cards);
-  root.append(el('h2', undefined, 'Portraits: expressions at 2× as the comms panel frames them'));
-  const portraits = el('div', 'portraits');
-  for (const b of baked) if (isPortrait(b)) portraits.append(portraitCard(b, count));
-  root.append(portraits);
+  for (const b of baked) if (!isPortrait(b)) pack.add(spriteCard(b, count));
+  pack.section('Portraits: expressions at 2× as the comms panel frames them', 'portraits');
+  for (const b of baked) if (isPortrait(b)) pack.add(portraitCard(b, count));
+  pack.finish();
 
   const ds = document.body.dataset;
   ds['spriteCount'] = String(baked.length);
   ds['framesExpected'] = String(count.expected);
   ds['framesRendered'] = String(count.rendered);
+  ds['sheetCount'] = String(pack.sheets.length);
+  ds['sheetMaxPx'] = String(SHEET_MAX_PX);
   ds['bakeMs'] = bakeMs.toFixed(1);
   ds['galleryReady'] = '1';
 }
