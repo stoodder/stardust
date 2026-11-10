@@ -4,11 +4,13 @@
 // shows a locked pane with what opens it ("Opens after The Audit"; meta/progress.ts
 // SYSTEM_UNLOCKS). An open tab shows its pane (BasePanes.tsx). Entering the base delivers any memo
 // or codex unlock a save missed (app/inbox.ts). The first visit with Zibzab's shop open lands on
-// the Shop tab and plays his arrival (app/baseScenes.ts, T308).
+// the Shop tab and plays his arrival (app/baseScenes.ts, T308); otherwise an unread memo opens the
+// Inbox (T320), and nothing new opens Research.
 import { useEffect, useState } from 'preact/hooks';
 import { arrivalDue, playArrivalIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { openSettings, toCampaign } from '../../app/navigation.ts';
+import { campaignScreenName } from '../../app/starMap.ts';
 import { BASE_PANES, isStoryTab, type BaseTab } from './BasePanes.tsx';
 import { NewTag } from './Inbox.tsx';
 import { Banks } from './Campaign.tsx';
@@ -19,13 +21,15 @@ import './screens.css';
 import './base.css';
 import './inbox.css';
 
-/** In tab order. Research stays the tab the base opens on; the badges point at the story tabs. */
+/** In tab order. The base opens on `openingTab`'s pick; the badges point at the story tabs. */
 const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
   { id: 'inbox', label: 'Inbox' },
   { id: 'codex', label: 'Codex' },
   { id: 'rnd', label: 'Research' },
   { id: 'shop', label: 'Shop' },
   { id: 'engineering', label: 'Engineering' },
+  // The Pest Bounty Board (T301b): Acts I–II only, from A1M2 won (CampaignView.bountyBoard).
+  { id: 'bounty', label: 'Bounty' },
 ];
 
 const OPEN: SystemView = { unlocked: true, hint: '' };
@@ -34,19 +38,30 @@ function systemOf(view: CampaignView, tab: BaseTab): SystemView {
   return isStoryTab(tab) ? OPEN : view.systems[tab];
 }
 
+/**
+ * The tab the base opens on (T320): Zibzab's shop when his arrival plays; the Inbox while a memo is
+ * unread (the run end just delivered one, so after A1M5's stinger the player lands on Sterling's
+ * Record Quarter memo, not a shelf); otherwise Research.
+ */
+export function openingTab(arrival: boolean, unreadMemos: number): BaseTab {
+  if (arrival) return 'shop';
+  return unreadMemos > 0 ? 'inbox' : 'rnd';
+}
+
 /** The base for the save in play. Arrow keys move between tabs (the WAI-ARIA tabs pattern). */
 export function Base() {
-  // Zibzab's arrival opens on his shop; otherwise Research.
-  const [tab, setTab] = useState<BaseTab>(() => (arrivalDue() ? 'shop' : 'rnd'));
-  // Esc (T212) goes back to the Shift board, as its button does.
+  const [tab, setTab] = useState<BaseTab>(() => openingTab(arrivalDue(), storyBadges().inbox));
+  // Esc (T212) goes back to the campaign screen, as its button does.
   useEscape(() => {
     toCampaign();
     return true;
   });
   // Entering the base: memos due and codex unlocks a save missed arrive now (a no-op after a run).
   useEffect(() => {
-    catchUpStory();
+    // A memo the catch-up delivers (an older save's) opens the Inbox as one from a run end would.
+    const delivered = catchUpStory() !== null;
     if (playArrivalIfDue()) setTab('shop');
+    else if (delivered && storyBadges().inbox > 0) setTab('inbox');
   }, []);
   const view = campaign.value;
   if (view === null) return null;
@@ -55,9 +70,10 @@ export function Base() {
   const badges = storyBadges();
   const badgeOf = (id: BaseTab): number =>
     id === 'inbox' ? badges.inbox : id === 'codex' ? badges.codex : 0;
+  const tabs = TABS.filter((t) => t.id !== 'bounty' || view.bountyBoard.shown);
   const move = (by: number): void => {
-    const i = TABS.findIndex((t) => t.id === tab);
-    const next = TABS[(i + by + TABS.length) % TABS.length]!;
+    const i = tabs.findIndex((t) => t.id === tab);
+    const next = tabs[(i + by + tabs.length) % tabs.length]!;
     setTab(next.id);
     document.getElementById(`sd-tab-${next.id}`)?.focus();
   };
@@ -74,7 +90,7 @@ export function Base() {
           <Banks view={view} />
         </header>
         <div class="sd-tabs" role="tablist" aria-label="Base">
-          {TABS.map((t) => {
+          {tabs.map((t) => {
             const open = systemOf(view, t.id).unlocked;
             const badge = badgeOf(t.id);
             return (
@@ -127,7 +143,7 @@ export function Base() {
         </div>
         <footer class="sd-row sd-menu-footer">
           <button type="button" class="sd-button sd-button-primary" onClick={toCampaign}>
-            Shift board
+            {campaignScreenName()}
           </button>
           <button type="button" class="sd-button" onClick={openSettings}>
             Settings

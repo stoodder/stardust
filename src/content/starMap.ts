@@ -15,6 +15,9 @@ export const CHART_H = 360;
  */
 export const STAR_MAP_AFTER: CampaignMapId = 'a1_m05';
 
+/** The `story.seen` id the star map's first visit adds (D102; no SaveData change). */
+export const STAR_MAP_SEEN_ID = 'star_map_opened';
+
 /** One campaign map on the chart. */
 export interface StarMapNode {
   /** Where in the valley (story/campaign.md § 2's biome column): "The Diggings". */
@@ -220,13 +223,19 @@ export interface ChartRect {
 
 /** The corner chrome (header, banks, footer): ground only under them, never a node or label. */
 export const STAR_MAP_RESERVED: readonly ChartRect[] = [
-  { x: 8, y: 8, w: 192, h: 40 },
+  { x: 8, y: 8, w: 208, h: 40 },
   { x: 512, y: 8, w: 120, h: 28 },
   { x: 392, y: 328, w: 240, h: 24 },
 ];
 
 /** A node's hit box (and its glyph's frame): 16×16 around its centre. */
 export const NODE_BOX = { dx: -8, dy: -8, w: 16, h: 16 } as const;
+
+/**
+ * What the node panel keeps clear of around a node: its glyph, its pips, and its name plate
+ * below (a plate up to 80 px wide).
+ */
+export const NODE_CLEAR_BOX = { dx: -40, dy: -9, w: 80, h: 36 } as const;
 
 /** The nearest two nodes may stand, on at least one axis (px). */
 export const NODE_SPACING = 16;

@@ -63,6 +63,9 @@ describe('tower tier silhouettes', () => {
     'tower.sprinkler',
     'tower.skyhook',
     'tower.zapcoil',
+    'tower.lookout',
+    'tower.harpoon',
+    'tower.crane',
   ] as const) {
     it(`${id}: T2 is wider than T1 and T3 taller than T2`, () => {
       const [t1, t2, t3] = (['t1', 't2', 't3'] as const).map((t) => bounds(grid(id, t)));
@@ -90,9 +93,26 @@ function silhouetteDiff(a: readonly string[], b: readonly string[]): number {
 }
 
 describe('tier-4 spec frames (the tower changed, base and head)', () => {
+  // The towers whose heads don't aim (their spec heads are idle anims; the rest are below).
+  for (const base of ['tower.sprinkler', 'tower.lookout'] as const) {
+    it(`${base}: each spec base is as wide as T2 and its silhouette differs from T3 and the other`, () => {
+      const t2 = bounds(grid(base, 't2'));
+      for (const spec of ['spec_a', 'spec_b']) {
+        const b = bounds(grid(base, spec));
+        expect(b.x1 - b.x0, spec).toBeGreaterThanOrEqual(t2.x1 - t2.x0);
+        expect(silhouetteDiff(grid(base, spec), grid(base, 't3')), spec).toBeGreaterThan(30);
+      }
+      expect(silhouetteDiff(grid(base, 'spec_a'), grid(base, 'spec_b'))).toBeGreaterThan(30);
+    });
+  }
+
   for (const [base, head] of [
     ['tower.rivet', 'tower.rivet_head'],
     ['tower.thumper', 'tower.thumper_head'],
+    ['tower.skyhook', 'tower.skyhook_head'],
+    ['tower.zapcoil', 'tower.zapcoil_head'],
+    ['tower.harpoon', 'tower.harpoon_head'],
+    ['tower.crane', 'tower.crane_head'],
   ] as const) {
     it(`${base}: each spec base is as wide as T2 and its silhouette differs from T3 and the other`, () => {
       const t2 = bounds(grid(base, 't2'));
@@ -226,9 +246,12 @@ describe('tier-2 heads (D029: the upgrade reads in the head too)', () => {
     'tower.thumper_head',
     'tower.skyhook_head',
     'tower.zapcoil_head',
+    'tower.harpoon_head',
+    'tower.crane_head',
   ] as const) {
     it(`${id}: the T2+ head is bigger than T1's in every authored facing`, () => {
-      for (const f of ['se', 'ne', 'se_fire', 'ne_fire']) {
+      const fires = def(id).frames['se_fire'] !== undefined;
+      for (const f of fires ? ['se', 'ne', 'se_fire', 'ne_fire'] : ['se', 'ne']) {
         const t1 = bounds(grid(id, f));
         const t2 = bounds(grid(id, f.replace(/^(se|ne)/, '$1_t2')));
         const area = (b: typeof t1): number => (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1);

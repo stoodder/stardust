@@ -26,6 +26,21 @@ import { endRunStory, withDebriefEffects } from './runResult.ts';
 import { activeSave, initSaves, newGame } from './save.ts';
 
 const PROFILE = { name: 'Ada', pronouns: 'she', callsign: 'sprout' } as const;
+type Ev = SimEvent<IdSpace>;
+const noop = (): void => {};
+const shown = (): string | null => dialogue.comms.value?.line.text ?? null;
+/** The first line of scene `id`. */
+const text = (id: string): string => {
+  const n = SCENES[id]?.nodes[0];
+  return n?.kind === 'line' ? n.text : `<no scene ${id}>`;
+};
+/** Every line the scene on screen has shown, the one on screen last. */
+const said = (): string[] => {
+  const v = dialogue.scene.value;
+  return [...(v?.transcript ?? []), ...(v?.line === null || v === null ? [] : [v.line])].map(
+    (l) => l.text,
+  );
+};
 
 function saveWith(callsign: 'sprout' | 'thorn' | 'waykeeper' = 'sprout'): SaveData {
   return { ...createNewSave(), profile: { ...PROFILE, callsign } };
@@ -97,12 +112,6 @@ describe('the scenes around Results read the run that ended (T329)', () => {
       { label: 'won', kind: 'line', speaker: 'narrator', text: 'Won.' },
     ],
   };
-  const said = (): string[] => {
-    const v = dialogue.scene.value;
-    return [...(v?.transcript ?? []), ...(v?.line === null || v === null ? [] : [v.line])].map(
-      (l) => l.text,
-    );
-  };
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -126,14 +135,8 @@ describe('the scenes around Results read the run that ended (T329)', () => {
 });
 
 describe('the results hold lets cued lines finish on a win (T413)', () => {
-  type Ev = SimEvent<IdSpace>;
-  let unbind: () => void = () => {};
-  let emit: (e: Ev) => void = () => {};
-  const shown = (): string | null => dialogue.comms.value?.line.text ?? null;
-  const text = (id: string): string => {
-    const n = SCENES[id]?.nodes[0];
-    return n?.kind === 'line' ? n.text : `<no scene ${id}>`;
-  };
+  let unbind = noop;
+  let emit: (e: Ev) => void = noop;
 
   beforeEach(() => {
     vi.useFakeTimers();

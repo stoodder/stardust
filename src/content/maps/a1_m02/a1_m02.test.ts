@@ -31,7 +31,6 @@ describe('A1M2 · Hatching Season', () => {
     });
     expect(map.waves).toHaveLength(8);
     expect(map.allies).toEqual([]); // no Bricks post on A1M2 (campaign.md § 2)
-    expect(map.briefing).toContain('Sensors show something big and sparkly on the terraces.');
   });
 
   it('has 11 buildable tiles: one high ground (irrigation tower), one power node (pump station)', () => {

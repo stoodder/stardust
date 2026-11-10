@@ -14,15 +14,18 @@ export interface Baked {
 
 const cache = new Map<string, Baked | null>();
 
-/** The sprite's baked `frame` as a data URL, or null if no such sprite or frame exists. */
-export function baked(id: string, frameName: string): Baked | null {
-  const cacheKey = `${id}|${frameName}`;
+/**
+ * The sprite's baked `frame` (in palette `variant`, default its own) as a data URL, or null if no
+ * such sprite, variant, or frame exists.
+ */
+export function baked(id: string, frameName: string, variant = DEFAULT_VARIANT): Baked | null {
+  const cacheKey = `${id}|${variant}|${frameName}`;
   const hit = cache.get(cacheKey);
   if (hit !== undefined) return hit;
   const def = (SPRITES as readonly SpriteDef[]).find((s) => s.id === id);
   let out: Baked | null = null;
   if (def !== undefined) {
-    const key = frameKey(id, DEFAULT_VARIANT, frameName);
+    const key = frameKey(id, variant, frameName);
     const frame = bakeSprite(def, PALETTES).frames.find((f) => f.key === key);
     if (frame !== undefined) {
       out = { url: imageToCanvas(frame.image).toDataURL(), w: frame.image.w, h: frame.image.h };

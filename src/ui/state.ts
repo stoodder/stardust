@@ -209,12 +209,6 @@ export interface ObjectiveView {
   readonly status: ObjectiveStatusView;
 }
 
-/** One line of a map's static briefing (M1), with its speaker if it names one. */
-export interface BriefingLine {
-  readonly speaker: string | null;
-  readonly text: string;
-}
-
 /** Which of a map's three medals (design/progression.md § 3). */
 export type MedalKindView = 'victory' | 'perfectCore' | 'challenge';
 

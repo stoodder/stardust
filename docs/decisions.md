@@ -1379,3 +1379,10 @@ Every M4 shape, event, command, stat, stub and data id is declared (architecture
 - **The strip mine has its own road** (`mine`, down the far wall into the gate), because a revisit's new routes can't join the original's road; the air lane flies the same line. The warren spawn stays one tile in from the edge (the band reads as spoil). **W3 is a pure "look" wave:** three fleeing Haulers with their young showing and nothing behind them.
 - **Pebble becomes clickable as W5 starts** (fallback W6 cleared). **Bricks's `pebble` portrait shows once the rescue cue is seen** (mid-battle on A2M3, always from A2M4), and **her name plate reads "???" until Bricks names her** (`a2_m03_w07`); speakers gain name-plate rules. On a replay both show from the start.
 - **Ruling for T460:** the hold-fire run sets `held_fire_second_look` but scores 28.6; mercy may cost integrity, never most of it — retune toward the band floor.
+
+### D122 — 2026-11-10 — T413 dialogue and app carry-overs
+- **A won run applies its debrief's `set` effects once per campaign** (guarded by `story.seen`), after run end and after the card's lines are read: A2M2's Thorn callsign now reaches the save. A loss applies nothing; a replay or a checkpoint win can never undo a later callsign.
+- **The win hold lets lines cued before the win finish** (each to its typing time + its hold, capped at 5 s); a bark alone holds nothing; a loss stays 1.5 s.
+- **`NotFiringAtSkitterkin` fires at most once a wave and carries its wave**, so an early hold no longer spends Bricks's Quiet Wave line (A1M5's bark is `wave: 10`).
+- **The bank nudge also fires after two build phases with no purchase** while the cheapest tower is affordable, so A1M2's never-spend player hears it before the W7 wall (T229).
+- `MapDef.briefing` is gone (briefings are scenes); A1M3 has its debrief (new canon in act1.md); `saveModifiers` lives in `meta/loadout.ts` and counts equipped protocols; full-screen scenes around Results can read `thisRun`. The name-tag plate is still undrawn (T431).

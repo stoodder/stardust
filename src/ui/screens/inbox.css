@@ -201,6 +201,61 @@
   color: var(--sd-teal-1);
 }
 
+/* ---- A KFA form: the off-white form panel (art-direction § 9), ink rules, a stamp box ---- */
+
+.sd-form {
+  box-shadow: inset 0 0 0 1px var(--sd-steel-2);
+}
+
+.sd-form-head {
+  border-bottom-color: var(--sd-ink-1);
+}
+
+.sd-form .sd-memo-brand {
+  color: var(--sd-ink-1);
+}
+
+.sd-form .sd-memo-subject,
+.sd-form .sd-memo-sign {
+  color: var(--sd-ink-1);
+}
+
+/* The clauses: numbered lines with their wrap hanging under the text, like a printed form. */
+.sd-form .sd-memo-body p {
+  padding-left: 2px;
+  box-shadow: inset 1px 0 0 var(--sd-steel-3);
+}
+
+/* The stamp box at the foot: a ruled box for official use, the stamp red and askew inside it (the
+   Results stamps' look, on paper). */
+.sd-form-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 4px 6px;
+  border: 1px dashed var(--sd-steel-2);
+}
+
+.sd-form-box-label {
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-steel-2);
+}
+
+.sd-form-stamp {
+  margin: 0 0 0 auto;
+  padding: 2px 3px 1px;
+  border: 2px solid var(--sd-red-2);
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 8px;
+  white-space: nowrap;
+  color: var(--sd-red-2);
+  transform: rotate(-6deg);
+}
+
 /* The Evie sun: a gold disc with four rays, drawn in pixels (the font has no glyph for it). */
 .sd-glyph-sun {
   display: inline-block;
@@ -370,5 +425,20 @@
   font-family: var(--font-body);
   font-size: 8px;
   line-height: 10px;
+  white-space: pre-line;
   color: var(--sd-white-0);
+}
+
+/* An annotation (T411): the record it was written on in steel.3, the bracketed note under it in
+   steel.4 behind a teal rule (art-direction's "the codex annotations' look": old words dimmed,
+   new words bright). */
+.sd-codex .sd-codex-record .sd-codex-text {
+  color: var(--sd-steel-3);
+}
+
+.sd-codex .sd-codex-note {
+  margin-top: 6px;
+  padding-left: 4px;
+  box-shadow: inset 1px 0 0 var(--sd-teal-3);
+  color: var(--sd-steel-4);
 }

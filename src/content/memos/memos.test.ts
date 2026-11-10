@@ -1,6 +1,6 @@
-// The Act I Everglow Inbox content (T303): one memo before A1M1 and one after each Act I map, each
-// within the style guide's limits, Sterling never using the player's name, and the welcome memo
-// carrying the Orbital Strike uplink.
+// The Everglow Inbox content (T303, T411): one memo before A1M1 and one after each map, each within
+// the style guide's limits, Sterling never using the player's name, the welcome memo carrying the
+// Orbital Strike uplink, and A2M2's KFA form filed as its own item.
 import { describe, expect, it } from 'vitest';
 import { ABILITIES } from '../abilities/index.ts';
 import { TEXT_LIMITS, tokenProblems, usesName, worstCaseLength } from '../dialogue/rules.ts';
@@ -17,6 +17,7 @@ describe('the memo content', () => {
       'memo_a1_04',
       'memo_a1_05',
       'memo_a2_01',
+      'memo_a2_02_kfa',
       'memo_a2_02',
       'memo_a2_03',
     ]);
@@ -28,6 +29,7 @@ describe('the memo content', () => {
       'a1_m04',
       'a1_m05',
       'a2_m01',
+      'a2_m02',
       'a2_m02',
       'a2_m03',
     ]);
@@ -59,8 +61,27 @@ describe('the memo content', () => {
     expect(worstCaseLength(body)).toBeLessThanOrEqual(TEXT_LIMITS.memoBody);
     expect(m.smallPrint).toBeDefined();
     expect(worstCaseLength(m.smallPrint ?? '')).toBeLessThanOrEqual(TEXT_LIMITS.smallPrint);
-    // Subject lines are cheerful in every act (§ 6.1): Act I's all exclaim.
-    expect(m.subject).toContain('!');
+    if (m.format === 'form') {
+      // A KFA form (§ 6.1): numbered clauses, a stamp in ASCII capitals, and no Everglow cheer.
+      expect(m.body).toMatch(/^1\. /m);
+      expect(m.stamp).toMatch(/^[A-Z0-9 .!-]{1,20}$/);
+      expect(`${m.subject}${m.body}`).not.toContain('!');
+    } else {
+      // Subject lines are cheerful in every act (§ 6.1): every Everglow memo's so far exclaims.
+      expect(m.subject).toContain('!');
+      expect(m.stamp).toBeUndefined();
+    }
+  });
+
+  it("files A2M2's KFA form as its own item, just before Sterling's memo asking to disregard it", () => {
+    const i = MEMO_IDS.indexOf('memo_a2_02_kfa');
+    expect(MEMOS.memo_a2_02_kfa?.format).toBe('form');
+    expect(MEMO_IDS[i + 1]).toBe('memo_a2_02');
+    expect(MEMOS.memo_a2_02?.body).toContain('An automated form went out by mistake.');
+    expect(MEMOS.memo_a2_02_kfa?.body).toContain('Status: filed, pending.');
+    expect(MEMO_LIST.filter((m) => m.format === 'form').map((m) => m.id)).toEqual([
+      'memo_a2_02_kfa',
+    ]);
   });
 
   it('adds the Containment Lapse note to the Record Quarter memo only if the wave was spared', () => {

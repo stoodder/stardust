@@ -1,6 +1,6 @@
 // Act I `bank_nudge` (story/campaign/act1.md § Act I barks): QUILL's once-a-shift nudge to spend,
-// on every Act I map (D059): a build phase from W2 on that opens with 250+ credits banked. Never a
-// scold.
+// on every Act I map (D059): a build phase from W2 on that opens with credits sitting unspent (the
+// rule is app/dialogue.ts's, core-loop.md § 6.3; T229). Never a scold.
 import { defineBarks } from '../define.ts';
 
 export const bankNudge = defineBarks([

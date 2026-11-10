@@ -8,7 +8,7 @@
 // 3.5, +20% fire rate instead of range. Both specs keep T3's 2 s linger (a patch merges into T3's
 // `detect`). Its links (Overwatch, Skywatch) add +0.5 detection radius; its tune-up is aura
 // strength and radius (`supportStat`, upgrades/tuneUps.ts). Licensed after A1M5 for 150 Stardust
-// (upgrades/access.ts). Sprites are placeholders under their final ids (T440b).
+// (upgrades/access.ts). Sprites: content/sprites/towers/lookout.ts (T440b).
 import { defineTower } from '../define.ts';
 
 export const lookout = defineTower({

@@ -41,6 +41,7 @@ import { fxLinkTether } from './fx/link_tether.ts';
 import { fxOrbitalReticle } from './fx/orbital_reticle.ts';
 import { fxConfettiBurst } from './fx/confetti_burst.ts';
 import { sceneRig9Feed } from './scenes/rig9_feed.ts';
+import { uiStarMarker, uiStarNode, uiStarPips } from './ui/star.ts';
 import { fxShadow } from './fx/shadow.ts';
 import { iconEnemyBroodHauler } from './icons/brood_hauler.ts';
 import { iconEnemyChonk } from './icons/chonk.ts';
@@ -129,14 +130,10 @@ import { portraitQuill } from './portraits/quill.ts';
 import { portraitSterling } from './portraits/sterling.ts';
 import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
-import {
-  enemyGlassWitch,
-  iconAbilityScannerSweep,
-  iconEnemyGlassWitch,
-  iconTowerCrane,
-  iconTowerHarpoon,
-  iconTowerLookout,
-} from './placeholders/index.ts';
+import { iconEnemyGlassWitch } from './icons/glass_witch.ts';
+import { iconAbilityScannerSweep } from './icons/scanner_sweep.ts';
+import { iconTowerCrane, iconTowerHarpoon, iconTowerLookout } from './icons/vrell_towers.ts';
+import { enemyGlassWitch } from './enemies/glass_witch.ts';
 import { towerCrane, towerCraneHead } from './towers/crane.ts';
 import { towerHarpoon, towerHarpoonHead } from './towers/harpoon.ts';
 import { towerLookout, towerLookoutHead } from './towers/lookout.ts';
@@ -182,7 +179,7 @@ export const SPRITES = [
   towerSkyhookHead,
   towerZapcoil,
   towerZapcoilHead,
-  // M4's towers, placeholders until T440b (placeholders/index.ts).
+  // M4's towers (Vrell scrap, T440b).
   towerLookout,
   towerLookoutHead,
   towerHarpoon,
@@ -210,7 +207,7 @@ export const SPRITES = [
   enemyBunchlingFleeing,
   enemyElderFleeing,
   enemyBroodHaulerFleeing,
-  // M4's units (the Glass Witch a placeholder until T440b, placeholders/index.ts).
+  // M4's units: the Hollow's first, the Aelari constructs, and the Glass Witch.
   enemyMote,
   enemyGlimmer,
   enemyWeftWarden,
@@ -250,7 +247,7 @@ export const SPRITES = [
   iconEnemyGerald,
   iconAbilityTimeDilation,
   iconAbilityClearanceSale,
-  // M4's icons (the towers', the Witch's, and Scanner Sweep's placeholders until T440b).
+  // M4's icons.
   iconTowerLookout,
   iconTowerHarpoon,
   iconTowerCrane,
@@ -277,6 +274,10 @@ export const SPRITES = [
   iconTellHollow,
   iconTellSkittish,
   sceneRig9Feed,
+  // The star map's glyphs (T301b).
+  uiStarNode,
+  uiStarPips,
+  uiStarMarker,
   portraitPlayer,
   portraitBricks,
   portraitQuill,

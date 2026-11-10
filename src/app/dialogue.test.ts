@@ -406,9 +406,18 @@ describe("a battle's dialogue", () => {
   it('skips to the next choice on Esc, and a pause the player made stays', () => {
     bind('a1_m01');
     setSpeed(0);
-    playScene(DEV_SCENES[0]!);
+    const survey = DEV_SCENES[0]!;
+    playScene(survey);
     expect(skipScene()).toBe(true);
     expect(dialogue.scene.value?.choices).toHaveLength(3);
+    // Every skipped line is in the transcript, not only the one on screen (T327).
+    const skipped = survey.nodes.slice(
+      0,
+      survey.nodes.findIndex((n) => n.kind === 'choice'),
+    );
+    expect(dialogue.scene.value?.transcript.map((l) => l.text)).toEqual(
+      skipped.map((n) => (n.kind === 'line' ? n.text : '')),
+    );
     chooseOption(2);
     expect(skipScene()).toBe(true);
     expect(dialogue.scene.value).toBeNull();

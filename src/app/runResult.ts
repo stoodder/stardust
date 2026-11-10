@@ -264,7 +264,11 @@ function runStoryContext(
 }
 
 /** The run that ended (`outcome`, and `thisRun` over its stats when it has them). */
-function runOf(map: CampaignMapId, stats: FlagRuleStats | undefined, outcome: RunOutcome): RunContext {
+function runOf(
+  map: CampaignMapId,
+  stats: FlagRuleStats | undefined,
+  outcome: RunOutcome,
+): RunContext {
   return stats === undefined ? { outcome, ruleFlags: {} } : runContextOf(map, outcome, stats);
 }
 
@@ -393,7 +397,10 @@ export function withDebriefEffects(
  * debrief's effects go into the save in play (`withDebriefEffects`), and the scenes around
  * Results read this run (`outcome`, `thisRun`; T329) until the next battle starts.
  */
-export function endRunStory(input: Pick<RunEndInput, 'mapId' | 'stats'>, outcome: RunOutcome): void {
+export function endRunStory(
+  input: Pick<RunEndInput, 'mapId' | 'stats'>,
+  outcome: RunOutcome,
+): void {
   const map = input.mapId;
   setStoryRun(isCampaignMapId(map) ? runOf(map, input.stats, outcome) : null);
   const save = activeSave();

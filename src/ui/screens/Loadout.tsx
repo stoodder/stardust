@@ -18,6 +18,7 @@ import {
   togglePickTower,
 } from '../../app/loadout.ts';
 import { lockInLoadout, toCampaign } from '../../app/navigation.ts';
+import { campaignScreenName } from '../../app/starMap.ts';
 import { Icon } from '../hud/Icon.tsx';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
@@ -373,7 +374,7 @@ export function Loadout() {
         </div>
         <footer class="sd-row sd-menu-footer">
           <button type="button" class="sd-button" onClick={toCampaign}>
-            Shift board
+            {campaignScreenName()}
           </button>
           <button
             type="button"

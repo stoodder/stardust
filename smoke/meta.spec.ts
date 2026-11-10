@@ -1,14 +1,14 @@
 // The M2 flow shell (T209; D031): slots, the Shift board, the base, Settings, and codes, through
-// the real UI. New game → A1M1 (autoplay par) → Results → Continue → Base (Research open, the rest
-// locked with their hints) → Shift board → A1M2 with the Sprinkler issued (D059) → Title → reload
+// the real UI. New game → A1M1 (autoplay par) → Results → Continue → Base (on the Inbox with the new
+// memo; Research open, the rest locked with their hints) → Shift board → A1M2 with the Sprinkler issued (D059) → Title → reload
 // → Continue. An export → import round
 // trip through Settings and the Title. `?test=1&save=all_unlocked` reaches every gated pane. The
 // Shift board runs through Act I (T331): winning A1M2 offers A1M3 next, A1M4 leads to A1M5, and
-// with A1M5 won every shift is cleared.
+// A1M5 is next up once A1M4 is won (with A1M5 won the Sector map takes over: starMap.spec.ts).
 // Screenshots in test-results/screens/meta/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
-import { shot, waitForReady } from './hooks.ts';
+import { playShift, shot, waitForReady } from './hooks.ts';
 
 /** Fast-forwards the running battle until the map ends; returns the outcome. */
 const playOut = (page: Page) =>
@@ -55,11 +55,15 @@ test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Contin
   const towers = await page.evaluate(() => globalThis.__sd!.save()?.unlocks.towers);
   expect(towers).toEqual(['rivet', 'thumper', 'sprinkler']);
 
-  // Continue: A1M1 opened the base. Research is open; the Shop and Engineering show their hints,
-  // which name only maps the Shift board shows (G8).
+  // Continue: A1M1 opened the base, on the Inbox (T320): the run end delivered Sterling's Q2 memo,
+  // unread. Research is a tab away; the Shop and Engineering show their hints, which name only
+  // maps the Shift board shows (G8).
   await onward.click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();
   const pane = page.getByRole('tabpanel');
+  await expect(page.getByRole('tab', { name: /^Inbox/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(pane.getByRole('article')).toContainText('Q2 Results: Pest Losses Down 38%!');
+  await page.getByRole('tab', { name: 'Research' }).click();
   await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
     'aria-selected',
     'true',
@@ -117,19 +121,23 @@ test('meta: new game → A1M1 won → Base (R&D open) → Shift board → Contin
   await expect(shiftRow(page, 'Orientation Day')).toContainText('Cleared');
 });
 
-test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → A1M5 won', async ({
+test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → A1M5 next', async ({
   page,
 }) => {
   // A1M2 won in normal flow, from the board (not `?map=`).
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
   const rows = page.getByRole('list', { name: 'Shifts' }).getByRole('listitem');
-  // Act I's five shifts, then the dimmed, padlocked teaser (D097 R6): the only "Coming soon".
+  // Act I's five shifts, then the dimmed, padlocked sixth row (D097 R6), never named (D102): A2M1
+  // is built, so it reads "Shift 6 · Locked"; the star map names Rig Nine after A1M5.
   await expect(rows).toHaveCount(6);
   await expect(shiftRow(page, 'Special Delivery')).toContainText('Locked');
-  await expect(rows.filter({ hasText: 'Coming soon' })).toHaveCount(1);
   await expect(rows.last()).toHaveAttribute('data-testid', 'shift-teaser');
+  await expect(rows.last()).toContainText('Shift 6');
+  await expect(rows.last()).toContainText('Locked');
   await expect(rows.last().getByRole('button')).toHaveCount(0);
+  await expect(page.getByTestId('star-map')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('Rig Nine');
   await shiftRow(page, 'Hatching Season')
     .getByRole('button', { name: 'Start Hatching Season' })
     .click();
@@ -157,17 +165,8 @@ test('meta: the Shift board runs through Act I: A1M2 won → A1M3 next, … → 
   await waitForReady(page);
   await expect(shiftRow(page, 'The Audit')).toContainText('Cleared');
   await expect(shiftRow(page, 'Record Quarter')).toContainText('Next up');
-
-  // A1M5 won: Act I cleared, nothing next up, and the focus on the last shift's Replay.
-  await page.goto('/?test=1&seed=1&save=after_a1m5');
-  await waitForReady(page);
-  await expect(rows).toHaveCount(6);
-  await expect(rows.filter({ hasText: 'Cleared' })).toHaveCount(5);
-  await expect(rows.last()).toContainText('Coming soon');
-  await expect(
-    shiftRow(page, 'Record Quarter').getByRole('button', { name: 'Replay Record Quarter' }),
-  ).toBeFocused();
-  await shot(page, 'meta', 13, 'shift-board-after-a1m5');
+  await expect(rows.last()).not.toContainText('Rig Nine');
+  // With A1M5 won the campaign screen is the Sector map (smoke/starMap.spec.ts, D102).
 });
 
 test('meta: export a code from Settings, import it on the Title into slot 2', async ({ page }) => {
@@ -236,8 +235,8 @@ test('meta: ?test=1&save=all_unlocked opens every base pane', async ({ page }) =
   await shot(page, 'meta', 10, 'base-all-unlocked');
   // A battle from this save brings at most four towers and still plays (through the loadout
   // screen, T201: this save has a choice of ability).
-  await page.getByRole('button', { name: 'Shift board' }).click();
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await page.getByRole('button', { name: 'Sector map' }).click();
+  await playShift(page, 'Orientation Day');
   await page.getByRole('button', { name: 'Lock in' }).click();
   await page.waitForFunction(() => (globalThis.__sd?.state()?.tick ?? -1) >= 0);
   const loadout = await page.evaluate(() => globalThis.__sd!.state()!.towers.live);

@@ -16,6 +16,7 @@ import type {
   Act,
   Body,
   CounterId,
+  IdSpace,
   Layer,
   MapId,
   ProtocolId,
@@ -25,6 +26,8 @@ import type {
 } from '../content/types.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import { PROTOCOLS } from '../content/upgrades/index.ts';
+import type { Modifier } from '../sim/index.ts';
+import { metaModifiers } from './modifiers.ts';
 import { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
 import { isSystemUnlocked, type MetaSystem } from './progress.ts';
 import type { LoadoutPreset, SaveData } from './saveData.ts';
@@ -294,6 +297,25 @@ export function fitProtocols(
     equipped.push(id);
   }
   return { equipped, picks };
+}
+
+/**
+ * A save's modifiers (meta-runtime.md § Meta): its owned ranks, its equipped Field Protocols as the
+ * battle takes them (`equippedProtocols`: owned, within its slots, with their tower picks), and its
+ * difficulty, through `metaModifiers` (T327: protocols were left out). Owning a protocol grants
+ * nothing until it's equipped.
+ */
+export function saveModifiers(
+  save: SaveData,
+  devUnlocks: readonly MetaSystem[] = [],
+): Modifier<IdSpace>[] {
+  const { equipped, picks } = equippedProtocols(save, devUnlocks);
+  return metaModifiers({
+    upgrades: save.upgrades,
+    protocols: equipped,
+    picks,
+    difficulty: save.settings.difficulty,
+  });
 }
 
 /** The save's equipped protocols as the battle takes them (fitProtocols over `loadouts`). */

@@ -1,42 +1,18 @@
-// The Shift board (T209, D031): the campaign's maps in order, standing in for the star map (T301).
-// Each row shows its shift number, name, medals, and state: Start (open), Replay (won), locked
-// until the shift before is won, or coming soon (its content isn't built yet; past the last built
-// map, one dimmed, padlocked teaser row, so the board never dead-ends, D097). The header shows
-// the banks; the footer leads to the base (locked with its hint until A1M1 is won) and Settings.
+// The campaign screen: the Shift board (T209, D031) through Act I, and the star map (the Sector
+// map, StarMap.tsx; T301b, D102) once A1M5 is won, so every way back to the campaign lands on the
+// right one. The Shift board lists Act I's maps in order. Each row shows its shift number, name,
+// medals, and state: Start (open), Replay (won), locked until the shift before is won, or coming
+// soon (its content isn't built yet); then one dimmed, padlocked, unnamed sixth row, so the board
+// never dead-ends (D097). The header shows the banks; the footer leads to the base (locked with
+// its hint until A1M1 is won) and Settings.
+import { Banks, MedalPips } from './Banks.tsx';
 import { MenuNotice } from './MenuNotice.tsx';
+import { StarMap } from './StarMap.tsx';
 import { silkText } from '../silk.ts';
 import { openSettings, playMap, toBase, toTitle } from '../../app/navigation.ts';
 import { focusOnce } from './focus.ts';
-import { formatCount } from './format.ts';
-import { campaign, type CampaignView, type ShiftView } from './state.ts';
+import { campaign, type ShiftView } from './state.ts';
 import './screens.css';
-
-/** A map has three medals (progression.md § 3); filled pips for the ones earned. */
-export function MedalPips({ earned }: { earned: number }) {
-  return (
-    <span class="sd-medals" role="img" aria-label={`${earned} of 3 medals`}>
-      {[0, 1, 2].map((i) => (
-        <span key={i} class={i < earned ? 'sd-medal sd-medal-on' : 'sd-medal'} />
-      ))}
-    </span>
-  );
-}
-
-/** The banks: Stardust and Intel. */
-export function Banks({ view }: { view: CampaignView }) {
-  return (
-    <dl class="sd-banks">
-      <div>
-        <dt class="sd-stardust">Stardust</dt>
-        <dd>{formatCount(view.stardust)}</dd>
-      </div>
-      <div>
-        <dt class="sd-intel">Intel</dt>
-        <dd>{formatCount(view.intel)}</dd>
-      </div>
-    </dl>
-  );
-}
 
 const STATE_TEXT: Readonly<Record<ShiftView['state'], string>> = {
   won: 'Cleared',
@@ -83,10 +59,13 @@ function ShiftRow({ shift, first }: { shift: ShiftView; first: boolean }) {
   );
 }
 
-/** The Shift board for the save in play. */
+export { Banks, MedalPips };
+
+/** The campaign screen for the save in play: the Shift board, or the star map after Act I. */
 export function Campaign() {
   const view = campaign.value;
   if (view === null) return null;
+  if (view.mode === 'starMap') return <StarMap />;
   // The focus lands on the next shift to play (else the first playable one).
   const focus =
     view.board.find((s) => s.state === 'open') ??

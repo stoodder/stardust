@@ -179,6 +179,17 @@ describe('Act I value bands (art-direction §1)', () => {
       ['tower.skyhook', 't1'],
       ['tower.zapcoil', 't1'],
       ['tower.zapcoil', 't3'],
+      // T440b: the idle heads' and Vrell towers' spec bases, and Act II's Vrell towers.
+      ['tower.sprinkler', 'spec_a'],
+      ['tower.sprinkler', 'spec_b'],
+      ['tower.skyhook', 'spec_a'],
+      ['tower.skyhook', 'spec_b'],
+      ['tower.zapcoil', 'spec_a'],
+      ['tower.zapcoil', 'spec_b'],
+      ['tower.lookout', 't1'],
+      ['tower.lookout', 'spec_a'],
+      ['tower.harpoon', 'spec_b'],
+      ['tower.crane', 'spec_a'],
       ['enemy.puffwing', 'walk_se_1'],
       ['enemy.bunchling', 'walk_se_0'],
       ['enemy.digger', 'walk_se_0'],
@@ -223,6 +234,9 @@ describe('Act II value bands (art-direction §1, T440a)', () => {
         ['enemy.glimmer', 'walk_se_0'],
         ['enemy.weft_warden', 'walk_se_0'],
         ['enemy.lightwing', 'walk_se_1'],
+        ['enemy.glass_witch', 'walk_se_0'],
+        ['enemy.glass_witch', 'walk_ne_0'],
+        ['enemy.glass_witch', 'tell_se_1'],
       ] as const) {
         const d = sprite(id);
         const l = bodyLuminance(d, frame, PALETTES[d.palette]);

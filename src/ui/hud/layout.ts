@@ -6,9 +6,9 @@ export const UI_W = 640;
 export const UI_H = 360;
 /** Clear space between the HUD and the screen edge. */
 export const EDGE = 4;
-/** Horizontal gap between a tower's ground point and its panel (clears TOWER_BOX). */
-const GAP = 14;
-/** Vertical gap between a tower's box and a panel above or below it. */
+/** Horizontal gap between the selected box's edge and a panel beside it. */
+const GAP_X = 2;
+/** Vertical gap between the selected box and a panel above or below it. */
 const GAP_Y = 4;
 
 /** A screen rectangle in game pixels. */
@@ -62,6 +62,14 @@ export interface Point {
  */
 export const TOWER_BOX = { dx: -12, dy: -28, w: 24, h: 34 } as const;
 
+/** A selected thing's box on screen, relative to its point (TOWER_BOX, or a star map node's). */
+export interface AnchorBox {
+  readonly dx: number;
+  readonly dy: number;
+  readonly w: number;
+  readonly h: number;
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(Math.max(v, lo), hi);
 }
@@ -71,21 +79,30 @@ function overlapsRect(left: number, top: number, w: number, h: number, r: Rect):
   return left < r.x + r.w && r.x < left + w && top < r.y + r.h && r.y < top + h;
 }
 
-/** Whether the w×h panel at (left, top) overlaps the box of the tower standing at `p`. */
-function covers(left: number, top: number, w: number, h: number, p: Point): boolean {
-  const bx = p.x + TOWER_BOX.dx;
-  const by = p.y + TOWER_BOX.dy;
-  return left < bx + TOWER_BOX.w && bx < left + w && top < by + TOWER_BOX.h && by < top + h;
+/** Whether the w×h panel at (left, top) overlaps `box` around the point `p`. */
+function covers(
+  left: number,
+  top: number,
+  w: number,
+  h: number,
+  p: Point,
+  box: AnchorBox = TOWER_BOX,
+): boolean {
+  const bx = p.x + box.dx;
+  const by = p.y + box.dy;
+  return left < bx + box.w && bx < left + w && top < by + box.h && by < top + h;
 }
 
 /**
- * Where the selected tower's panel goes (T126; art-direction § Look). The candidates, in order of
- * preference: beside the tower on the side away from the screen center, then the other side
- * (each level with the tower, then raised, then lowered by half the panel), then above and below
- * it (centered, then shifted left, then right). Each is clamped onto the screen. The first one
- * that covers none of the `others` (the other towers' ground points) and none of the `blocked`
- * rectangles (the HUD corners, T213) wins; failing that, the cheapest (a tower costs 1, a corner
- * 2). A candidate that covers the selected tower itself only wins when every one does.
+ * Where the selected tower's panel goes (T126; art-direction § Look), or any panel beside a
+ * selected box (`box`: the star map's node panel passes a node's 16×16 box, T301b). The
+ * candidates, in order of preference: beside the box on the side away from the screen center,
+ * then the other side (each level with it, then raised, then lowered by half the panel), then
+ * above and below it (centered, then shifted left, then right). Each is clamped onto the screen.
+ * The first one that covers none of the `others` (the other towers' ground points, or nodes'
+ * centres, with `othersBox`, by default the same box) and none of the `blocked` rectangles (the HUD corners, T213) wins;
+ * failing that, the cheapest (another box costs 1, a blocked rectangle 2). A candidate that
+ * covers the selected box itself only wins when every one does.
  */
 export function placePanel(
   towerX: number,
@@ -94,15 +111,18 @@ export function placePanel(
   h: number,
   others: readonly Point[] = [],
   blocked: readonly Rect[] = [],
+  box: AnchorBox = TOWER_BOX,
+  othersBox: AnchorBox = box,
 ): { left: number; top: number } {
   const self: Point = { x: towerX, y: towerY };
-  const level = Math.round(towerY - h / 2 - 8);
-  const leftX = towerX - GAP - w;
-  const rightX = towerX + GAP;
+  // Level with the box's middle, 3 px low (a tower's panel sits 8 px above its ground point).
+  const level = Math.round(towerY + box.dy + box.h / 2 + 3 - h / 2);
+  const leftX = towerX + box.dx - GAP_X - w;
+  const rightX = towerX + box.dx + box.w + GAP_X;
   const sides = towerX < UI_W / 2 ? [leftX, rightX] : [rightX, leftX];
   const shiftsY = [0, -Math.round(h / 2), Math.round(h / 2)];
-  const aboveY = towerY + TOWER_BOX.dy - GAP_Y - h;
-  const belowY = towerY + TOWER_BOX.dy + TOWER_BOX.h + GAP_Y;
+  const aboveY = towerY + box.dy - GAP_Y - h;
+  const belowY = towerY + box.dy + box.h + GAP_Y;
   const centerX = Math.round(towerX - w / 2);
   const shiftsX = [0, -Math.round(w / 2), Math.round(w / 2)];
   const candidates: [number, number][] = [];
@@ -114,8 +134,8 @@ export function placePanel(
   for (const [x, y] of candidates) {
     const left = clamp(x, EDGE, UI_W - EDGE - w);
     const top = clamp(y, EDGE, UI_H - EDGE - h);
-    let score = covers(left, top, w, h, self) ? 1000 : 0;
-    for (const p of others) if (covers(left, top, w, h, p)) score++;
+    let score = covers(left, top, w, h, self, box) ? 1000 : 0;
+    for (const p of others) if (covers(left, top, w, h, p, othersBox)) score++;
     for (const r of blocked) if (overlapsRect(left, top, w, h, r)) score += CORNER_COST;
     if (score < bestScore) {
       best = { left, top };

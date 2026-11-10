@@ -11,9 +11,9 @@ import { MAX_LOADOUT } from '../content/rules.ts';
 import type { IdSpace, RawContent } from '../content/types.ts';
 import {
   abilityPool,
-  equippedProtocols,
   metaModifiers,
   resolveLoadout,
+  saveModifiers,
   towerPool,
   type LoadoutPick,
   type SaveData,
@@ -124,17 +124,11 @@ function companionOf(
 /**
  * Modifiers from the save's purchases, its equipped Field Protocols (T308: save-wide, fitted to
  * what it owns and its slots; meta/loadout.ts `equippedProtocols`), and its difficulty, through
- * meta/modifiers.ts `metaModifiers`, less any the sim still refuses, so a save ahead of the sim
+ * meta/loadout.ts `saveModifiers`, less any the sim still refuses, so a save ahead of the sim
  * plays.
  */
 export function simulatedSaveModifiers(save: SaveData): Modifier<IdSpace>[] {
-  const { equipped, picks } = equippedProtocols(save);
-  return metaModifiers({
-    upgrades: save.upgrades,
-    protocols: equipped,
-    picks,
-    difficulty: save.settings.difficulty,
-  }).filter((m) => simulated(modifierFeature(m)));
+  return saveModifiers(save).filter((m) => simulated(modifierFeature(m)));
 }
 
 /**

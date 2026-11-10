@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
-import { saveModifiers } from './modifiers.ts';
+import { saveModifiers } from './loadout.ts';
 import {
   LIVE_STORE,
   buy,

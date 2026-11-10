@@ -15,6 +15,11 @@ test('shop: after A1M1, order Mk II with 2 of 3 Intel; the strike radius is 2.0 
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
   await page.getByRole('button', { name: 'Base' }).click();
+  // The base opens on the Inbox (Sterling's Q2 memo is unread, T320); Research is two tabs over.
+  await expect(page.getByRole('tab', { name: /^Inbox/ })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: /^Codex/ })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
     'aria-selected',
     'true',
@@ -187,9 +192,8 @@ test("shop: after A1M3, Zibzab's arrival, the Zapcoil sample, QUILL's Rapport, a
   await expect(pane.getByRole('heading', { name: 'Ask Zibzab' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Shift board' }).click();
   await page.getByRole('button', { name: 'Base' }).click();
-  await expect(page.getByRole('tab', { name: 'Research' })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
+  // No arrival this time: the base opens on the Inbox, where A1M3's memo still waits unread (T320).
+  await expect(page.getByRole('tab', { name: /^Inbox/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(pane.getByRole('article')).toContainText('Mandatory Fun Friday Is Back!');
   await expect(scene).toHaveCount(0);
 });

@@ -20,7 +20,7 @@ const ctx = (map: StoryContext['map'], flags: StoryContext['flags'] = {}): Story
 });
 const NONE: CodexEncounters = { enemies: [], towers: [], abilities: [] };
 
-/** A three-version entry, for the later acts' rules (Act I ships originals only). */
+/** A three-version entry, for the later acts' rules (no shipped entry has a correction yet). */
 const HAULER: CodexEntryDef = {
   id: 'codex_test_hauler',
   title: 'Brood Hauler',
@@ -98,6 +98,32 @@ describe('codex unlocks', () => {
     const before = newCodexUnlocks({}, ctx('a1_m05'), met);
     expect(Object.keys(before)).not.toContain('codex_digger');
     expect(Object.keys(before)).not.toContain('codex_chitterbloom');
+  });
+
+  it("unlocks the crew log only with A2M1's Crew Logs objective on file (T411)", () => {
+    const won = ctx('a2_m01');
+    expect(newCodexUnlocks({}, won, NONE)).not.toHaveProperty('codex_crew_log');
+    const logs = { ...won, objectives: { a2_m01: ['crew_logs'] } };
+    expect(newCodexUnlocks({}, logs, NONE).codex_crew_log).toEqual(['original']);
+  });
+
+  it("adds Act II's annotations to Act I entries: Rig Nine from A2M1, QUILL's from A2M3", () => {
+    const met: CodexEncounters = { ...NONE, enemies: ['hauler', 'mote'] };
+    const have = { codex_brood_hauler: ['original'], codex_rig_nine: ['original'] } as const;
+    const a2m1 = newCodexUnlocks(have, ctx('a2_m01'), met);
+    expect(a2m1.codex_rig_nine).toEqual(['annotated']);
+    expect(a2m1).not.toHaveProperty('codex_brood_hauler');
+    expect(a2m1.codex_mote).toEqual(['original']);
+    const a2m3 = newCodexUnlocks(
+      { ...have, codex_rig_nine: ['original', 'annotated'], codex_mote: ['original'] },
+      ctx('a2_m03'),
+      met,
+    );
+    expect(a2m3.codex_brood_hauler).toEqual(['annotated']);
+    expect(a2m3.codex_mote).toEqual(['annotated']);
+    expect(a2m3.codex_rig_3).toEqual(['original', 'annotated']);
+    expect(a2m3.codex_pebble).toEqual(['original']);
+    expect(shownVersions(['original', 'annotated'], ctx('a2_m03'))).toEqual(['annotated']);
   });
 });
 

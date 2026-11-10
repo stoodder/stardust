@@ -7,7 +7,7 @@
 // economy stays. Design target: a T1 Crane built on wave 1 pays for itself by about wave 8.
 // Licensed after A2M1 (upgrades/access.ts). A T400a stub: T408 runs it and confirms these numbers,
 // and createSim refuses it until then (`tower.crane`, `tower.economy`; Magnet Crane also
-// `attack.targetFilter` and `status.pinned`). Sprites are placeholders (T440b).
+// `attack.targetFilter` and `status.pinned`). Sprites: content/sprites/towers/crane.ts (T440b).
 import { defineTower } from '../define.ts';
 
 export const crane = defineTower({

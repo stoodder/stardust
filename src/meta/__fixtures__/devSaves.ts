@@ -10,6 +10,7 @@ import { CAMPAIGN, type CampaignMapId } from '../../content/campaign.ts';
 import { CODEX_IDS } from '../../content/codex/index.ts';
 import { MAPS } from '../../content/maps/index.ts';
 import { MEMO_IDS } from '../../content/memos/index.ts';
+import { STAR_MAP_SEEN_ID } from '../../content/starMap.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import type { EnemyId, MapId, MedalId, ProtocolId, TowerId } from '../../content/types.ts';
 import type { CallsignId } from '../../content/dialogue/profile.ts';
@@ -248,6 +249,10 @@ function actTwoThrough(last: ActTwoMap | null): SaveData {
     save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
     if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
   }
+  // A save that has played Act II has opened the star map (its first-visit sweep is spent).
+  if (played.some((m) => isRegistered(m)) && !save.story.seen.includes(STAR_MAP_SEEN_ID)) {
+    save.story.seen.push(STAR_MAP_SEEN_ID);
+  }
   save.story.bricksTagIndex = tagIndexFor(save);
   if (save.profile !== null) save.profile = { ...save.profile, callsign: callsignFor(save) };
   return caughtUp(save);
@@ -360,6 +365,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       save.story.bricksTagIndex = tagIndexFor(save);
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];
+      // Every campaign map won: the star map has been opened (its sweep spent).
+      story.story.seen.push(STAR_MAP_SEEN_ID);
       return withFirstPaydayCaughtUp(story);
     },
   },

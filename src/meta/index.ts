@@ -27,6 +27,7 @@ export {
   pickProblems,
   protocolProblems,
   resolveLoadout,
+  saveModifiers,
   showsLoadoutScreen,
   specsOwned,
   takesTowerPick,
@@ -54,16 +55,9 @@ export {
   maxRanks,
   metaModifiers,
   protocolSlots,
-  saveModifiers,
 } from './modifiers.ts';
 export { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
-export type {
-  MetaSystem,
-  ShiftEntry,
-  ShiftState,
-  StarMapEntry,
-  StarMapState,
-} from './progress.ts';
+export type { MetaSystem, ShiftEntry, ShiftState, StarMapEntry, StarMapState } from './progress.ts';
 export {
   META_SYSTEMS,
   SHIFT_BOARD_SIZE,

@@ -134,7 +134,6 @@ export function compileMap<K extends IdSpace>(
     startCredits: def.startCredits,
     coreIntegrity: def.coreIntegrity ?? DEFAULT_CORE_INTEGRITY,
     stardust: def.stardust,
-    briefing: def.briefing ?? null,
     lockedTowersAtStart: unlocks.map((u) => u.tower),
     threatIntel: def.threatIntel,
     requiredCounters: def.requiredCounters,

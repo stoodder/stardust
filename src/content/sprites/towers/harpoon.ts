@@ -13,23 +13,26 @@ import { disc, grid, isoBox, line, plot, rows, type CharGrid } from '../helpers.
 import { BASE_ANCHOR, BASE_H, BASE_MOUNT, BASE_W } from './base.ts';
 import { VRELL_BASE_LEGEND, vrellBase, vrellSpecBase } from './vrellBase.ts';
 
-const W = 36;
-const H = 24;
+const W = 40;
+const H = 28;
 const CX = 9;
-const CY = 21;
+const CY = 25;
 
 type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'skewer' | 'tether';
 
 /** Where the barrel leaves the breech, and its screen slope (down-right for SE). */
 function bore(facing: Facing): { x0: number; y0: number; dir: 1 | -1 } {
-  return facing === 'se' ? { x0: CX + 3, y0: CY - 7, dir: 1 } : { x0: CX + 3, y0: CY - 10, dir: -1 };
+  return facing === 'se'
+    ? { x0: CX + 3, y0: CY - 8, dir: 1 }
+    : { x0: CX + 3, y0: CY - 10, dir: -1 };
 }
 
-/** A point `t` px along the barrel (2 px across for each px of rise). */
+/** A point `t` px along the barrel (3 px across for each px down when facing SE, 2 for each px
+ * up facing NE: it reaches for flyers as well as walkers). */
 function along(facing: Facing, t: number): [number, number] {
   const { x0, y0, dir } = bore(facing);
-  return [x0 + t, y0 + Math.round((dir * t) / 2)];
+  return [x0 + t, y0 + Math.round((dir * t) / (dir > 0 ? 3 : 2))];
 }
 
 /** The barbed head: a steel point with two barbs swept back, white at the tip. */
@@ -112,13 +115,13 @@ function gunHead(facing: Facing, fire: boolean, kit: Kit): string[] {
   const [lx, ly] = along(facing, Math.min(6, len));
   line(g, CX - 2, facing === 'se' ? CY - 8 : CY - 10, lx, ly - 2, 'R');
   if (kit === 't2') {
-    // A spare harpoon in a clamp over the breech, point up.
-    line(g, CX - 3, CY - 6, CX + 3, CY - 18, 'S');
-    line(g, CX - 2, CY - 6, CX + 4, CY - 18, 'T');
-    plot(g, CX + 4, CY - 19, 'w');
-    plot(g, CX + 2, CY - 18, 'T');
-    plot(g, CX + 5, CY - 17, 'T');
-    line(g, CX - 1, CY - 10, CX + 2, CY - 10, '3');
+    // A spare harpoon in a clamp over the breech, standing tall, point up.
+    line(g, CX + 1, CY - 6, CX - 4, CY - 23, 'S');
+    line(g, CX + 2, CY - 6, CX - 3, CY - 23, 'T');
+    plot(g, CX - 4, CY - 24, 'w');
+    plot(g, CX - 5, CY - 22, 'T');
+    plot(g, CX - 2, CY - 22, 'T');
+    line(g, CX - 2, CY - 12, CX + 1, CY - 12, '3');
   }
   const [mx, my] = along(facing, len);
   if (!fire) {
@@ -164,7 +167,7 @@ function gunHead(facing: Facing, fire: boolean, kit: Kit): string[] {
 function skewerKit(g: CharGrid, cx: number, cy: number): void {
   for (const side of [-1, 1]) {
     const x = cx + side * 10;
-    isoBox(g, x, cy + 1, 3, 3, { top: '6', rim: '7', left: '6', right: '5' });
+    isoBox(g, x, cy + 1, 4, 3, { top: '6', rim: '7', left: '6', right: '5' });
     for (const k of [-1, 1]) {
       const x0 = Math.round(x) + k;
       line(g, x0, cy, x0 - side * 3, cy - 14, k < 0 ? 'S' : 'T');
@@ -245,13 +248,29 @@ export const towerHarpoonHead = defineSprite({
     fire_sw_t2: { mirrorOf: 'fire_se_t2' },
     fire_ne_t2: { frames: ['ne_t2_fire', 'ne_t2_fire', 'ne_t2'], fps: 8, loop: false },
     fire_nw_t2: { mirrorOf: 'fire_ne_t2' },
-    fire_se_spec_a: { frames: ['se_spec_a_fire', 'se_spec_a_fire', 'se_spec_a'], fps: 8, loop: false },
+    fire_se_spec_a: {
+      frames: ['se_spec_a_fire', 'se_spec_a_fire', 'se_spec_a'],
+      fps: 8,
+      loop: false,
+    },
     fire_sw_spec_a: { mirrorOf: 'fire_se_spec_a' },
-    fire_ne_spec_a: { frames: ['ne_spec_a_fire', 'ne_spec_a_fire', 'ne_spec_a'], fps: 8, loop: false },
+    fire_ne_spec_a: {
+      frames: ['ne_spec_a_fire', 'ne_spec_a_fire', 'ne_spec_a'],
+      fps: 8,
+      loop: false,
+    },
     fire_nw_spec_a: { mirrorOf: 'fire_ne_spec_a' },
-    fire_se_spec_b: { frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'], fps: 8, loop: false },
+    fire_se_spec_b: {
+      frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'],
+      fps: 8,
+      loop: false,
+    },
     fire_sw_spec_b: { mirrorOf: 'fire_se_spec_b' },
-    fire_ne_spec_b: { frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'], fps: 8, loop: false },
+    fire_ne_spec_b: {
+      frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'],
+      fps: 8,
+      loop: false,
+    },
     fire_nw_spec_b: { mirrorOf: 'fire_ne_spec_b' },
   },
 });

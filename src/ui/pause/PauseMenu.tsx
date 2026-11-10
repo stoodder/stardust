@@ -3,17 +3,18 @@
 // HUD behind it is inert, Tab stays inside, Resume has the focus, and Esc resumes (app/keys.ts).
 // Retry and Quit file the run as a loss first (app/navigation.ts); the note says so, cheerfully.
 import { quitDestination, quitFromPause, retryFromPause } from '../../app/navigation.ts';
+import { campaignScreenName } from '../../app/starMap.ts';
 import { openPauseMenu, resumeFromPause } from '../../app/pause.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
 import { focusOnce } from '../screens/focus.ts';
 import '../screens/screens.css';
 import './pause.css';
 
-/** Quit's label, by where it goes (style-guide.md § 2). */
+/** Quit's label, by where it goes (style-guide.md § 2): the campaign screen by its name. */
 const QUIT_LABEL = {
-  base: 'Quit to base',
-  campaign: 'Quit to Shift board',
-  title: 'Quit to Title',
+  base: () => 'Quit to base',
+  campaign: () => `Quit to ${campaignScreenName()}`,
+  title: () => 'Quit to Title',
 } as const;
 
 /** The menu over the frozen battle. */
@@ -43,7 +44,7 @@ export function PauseMenu() {
             Retry shift
           </button>
           <button type="button" class="sd-button" onClick={quitFromPause}>
-            {QUIT_LABEL[quitDestination()]}
+            {QUIT_LABEL[quitDestination()]()}
           </button>
         </div>
         <p class="sd-pause-note">Leaving files the shift as an incident. Pests still count!</p>

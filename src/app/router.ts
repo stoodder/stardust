@@ -15,7 +15,7 @@ import { assertNever } from '../shared/types.ts';
 import { loadoutChangeable } from '../ui/screens/loadoutView.ts';
 import type { Scene } from '../content/dialogue/index.ts';
 import { pauseMenu } from '../ui/pause/state.ts';
-import { menuNotice, runResult, type RunResult } from '../ui/screens/state.ts';
+import { campaign, menuNotice, runResult, type RunResult } from '../ui/screens/state.ts';
 import { screen } from '../ui/state.ts';
 import { startBattle, type Battle } from './battle.ts';
 import { battleConfig, DEFAULT_MAP_ID, randomSeed } from './battleSetup.ts';
@@ -303,11 +303,14 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   const showFailed = (): Promise<void> =>
     activeSave() === null ? showMenu('title') : showMenu('campaign');
 
-  /** Shows a menu over the backdrop, ending any battle. */
+  /**
+   * Shows a menu over the backdrop, ending any battle. The star map's chart covers the backdrop,
+   * so the backdrop stops while it shows (T301b) and starts again on leaving.
+   */
   const showMenu = (id: MenuId | 'settings' | 'loadout' | 'intake'): Promise<void> => {
     stopBattle();
     if (id !== 'loadout') closeLoadout();
-    showBackdrop(true);
+    showBackdrop(!(id === 'campaign' && campaign.value?.mode === 'starMap'));
     screen.value = id;
     return Promise.resolve();
   };
@@ -383,7 +386,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
           return showMenu('intake');
         case 'campaign':
           if (activeSave() === null) {
-            return Promise.reject(new Error('router: the Shift board needs a loaded save'));
+            return Promise.reject(new Error('router: the campaign screen needs a loaded save'));
           }
           return showMenu('campaign');
         case 'base':

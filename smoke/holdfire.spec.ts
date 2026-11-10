@@ -6,7 +6,7 @@
 import type { Page } from '@playwright/test';
 import { DEV_MAP_ID } from '../src/app/battleSetup.ts';
 import { expect, test } from './fixtures.ts';
-import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { nextFrames, playShift, shot, waitForReady } from './hooks.ts';
 
 /** Free pads on the dev battle (render/__fixtures__/devBattle.ts). */
 const PAD_A = [3, 1] as const;
@@ -35,7 +35,6 @@ const fireControl = (page: Page) =>
     return { holdFireAll: s?.holdFireAll ?? null, spareRunnersAll: s?.spareRunnersAll ?? null };
   });
 
-const shiftRow = (page: Page, name: string) => page.getByRole('listitem').filter({ hasText: name });
 
 /** Fast-forwards the running battle until the map ends; returns the outcome. */
 const playOut = (page: Page) =>
@@ -120,7 +119,7 @@ test('spare runners: shown with all_unlocked; Alt+H sets it on every tower, new 
 }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await playShift(page, 'Orientation Day');
   await page.getByRole('button', { name: 'Lock in' }).click();
   await page.getByRole('button', { name: 'Clock in' }).click();
   await page.getByRole('button', { name: 'Pause' }).click();
@@ -155,7 +154,7 @@ test('results: Change loadout goes back to the loadout screen where the map offe
 }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await playShift(page, 'Orientation Day');
   await page.getByRole('button', { name: 'Lock in' }).click();
   await page.getByRole('button', { name: 'Clock in' }).click();
   await page.evaluate(() => globalThis.__sd!.autoplay('none'));

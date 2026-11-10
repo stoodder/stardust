@@ -514,6 +514,18 @@ export const YOUNGLING_SPEED_MUL = 0.5;
  * a tower for this long with no tower firing at any of them.
  */
 export const NOT_FIRING_SEC = 10;
+
+/**
+ * The bank nudge (core-loop.md § 6.3, the `bank_nudge` bark; app/dialogue.ts plays it): credits
+ * banked as a build phase opens (W2 on) that fire it (D059).
+ */
+export const BANK_NUDGE_CREDITS = 250;
+/**
+ * Build phases in a row with no purchase (no build, upgrade, or specialization) after which the
+ * bank nudge fires with the loadout's cheapest tower affordable, whatever the bank (T229, D096:
+ * A1M2's never-spend player meets W7's countdown with ~140 credits, a Thumper's worth).
+ */
+export const BANK_NUDGE_IDLE_PHASES = 2;
 export const FLEEING_BOUNTY = 1;
 /** Wave tags whose units leak for 0 (core-loop.md § 2.9). */
 export const LEAK_FREE_TAGS: readonly WaveTag[] = ['fleeing', 'youngling'];

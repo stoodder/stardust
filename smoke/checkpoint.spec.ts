@@ -78,7 +78,7 @@ test('checkpoint: a lost Act II run retries from wave 5 with the state it had th
   await expect(fromCheckpoint).toBeVisible();
   await expect(fromCheckpoint).toBeFocused();
   await expect(card.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
-  await expect(card.getByRole('button', { name: 'Shift board' })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Sector map' })).toBeVisible();
   await nextFrames(page);
   await shot(page, 'checkpoint', 1, 'results');
 

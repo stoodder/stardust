@@ -574,7 +574,6 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly startCredits: number;
   readonly coreIntegrity: number;
   readonly stardust: number;
-  readonly briefing: string | null;
   /** Loadout towers that start locked: the keys of `towerUnlockWave`, in unlock order. */
   readonly lockedTowersAtStart: readonly K['tower'][];
   readonly threatIntel: readonly ThreatIntelId[];

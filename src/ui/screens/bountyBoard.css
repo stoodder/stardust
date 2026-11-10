@@ -1,0 +1,117 @@
+/* The Pest Bounty Board (T301b; art-direction §9's menu style): a ranked list in the base's ink.2
+   well, the player's row lit in the act accent, scores right-aligned in gold. Game pixels. */
+
+.sd-tab-pane.sd-tab-pane-story .sd-bounty {
+  flex: 1;
+}
+
+.sd-bounty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-heading);
+  text-align: left;
+}
+
+.sd-bounty p {
+  margin: 0;
+}
+
+.sd-bounty-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--sd-ink-3);
+}
+
+.sd-bounty-title {
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-gold-4);
+}
+
+.sd-bounty-period {
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-bounty-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-bounty-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-left: 2px solid var(--sd-ink-4);
+  background: var(--sd-ink-1);
+}
+
+.sd-bounty-row:first-child {
+  border-left-color: var(--sd-gold-3);
+}
+
+.sd-bounty-you {
+  border-left-color: var(--accent);
+  background: var(--sd-ink-3);
+}
+
+.sd-bounty-rank {
+  flex: none;
+  width: 20px;
+  color: var(--sd-steel-3);
+}
+
+.sd-bounty-row:first-child .sd-bounty-rank {
+  color: var(--sd-gold-3);
+}
+
+.sd-bounty-who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sd-bounty-name {
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sd-white-1);
+}
+
+.sd-bounty-note {
+  text-transform: uppercase;
+  color: var(--sd-steel-3);
+}
+
+.sd-bounty-you .sd-bounty-note {
+  color: var(--accent);
+}
+
+.sd-bounty-score {
+  flex: none;
+  color: var(--sd-gold-3);
+}
+
+.sd-bounty-foot {
+  margin-top: auto;
+  font-family: var(--font-body);
+  line-height: 9px;
+  color: var(--sd-steel-3);
+}
+
+/* Six base tabs (the board's joins the five) share the row: tighter, and no letter-spacing. */
+.sd-tabs:has(> :nth-child(6)) .sd-tab {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 5px;
+  letter-spacing: 0;
+}

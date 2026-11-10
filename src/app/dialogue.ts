@@ -18,6 +18,7 @@
 // `?test=1` turns the comms panel and in-battle scenes off unless `&dialogue=1` (the radio's rule);
 // the briefing still shows, whole, at once (up to its first choice).
 import { ENEMIES } from '../content/enemies/index.ts';
+import { BANK_NUDGE_CREDITS, BANK_NUDGE_IDLE_PHASES } from '../content/rules.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
 import { SHARED_BARKS } from '../content/dialogue/barks/index.ts';
@@ -80,14 +81,8 @@ import type { Host } from './host.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 import type { Speed } from './testHookTypes.ts';
 
-/** Credits banked as a build phase opens (W2 on) that fire `bank_nudge` (D059). */
-export const BANK_NUDGE_CREDITS = 250;
-/**
- * Build phases in a row with no purchase (no build, upgrade, or specialization) after which
- * `bank_nudge` fires with any tower affordable, whatever the bank (T229, D096: A1M2's never-spend
- * player meets W7's countdown with ~140 credits, a Thumper's worth, and no nudge until W8).
- */
-export const BANK_NUDGE_IDLE_PHASES = 2;
+// The bank nudge's rule (D059, T229) is content/rules.ts's, so the balance tests can check it.
+export { BANK_NUDGE_CREDITS, BANK_NUDGE_IDLE_PHASES };
 /** A queued comms scene waiting longer than this (ms of real time) is dropped (D048's staleness). */
 export const COMMS_STALE_MS = 15_000;
 /** A line answered by the next (another speaker) holds this long once typed (D028's beat). */
@@ -596,8 +591,9 @@ export function skipScene(): boolean {
   const h = holding;
   if (h === null || h.mode === 'briefing') return false;
   const ctx = storyContext(h.map);
+  // Every skipped line joins the transcript (T327), not only the one on screen.
   while (h.cursor.step.kind === 'line') {
-    if (h.line !== null) h.transcript.push(h.line);
+    h.transcript.push(h.line ?? lineView(h.cursor.step.node, ctx, textContext(), onRadio()));
     h.cursor = advance(h.scene, h.cursor, ctx);
     h.line = null;
   }

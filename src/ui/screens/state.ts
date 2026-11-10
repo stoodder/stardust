@@ -166,6 +166,11 @@ export interface CampaignView {
   /** The player's file from the intake (T306), or null until it's filled in. */
   readonly profile: ProfileView | null;
   readonly board: readonly ShiftView[];
+  /**
+   * The Pest Bounty Board's base tab (core-loop.md § 6.6): shown from A1M2 won through Act II, and
+   * Kip's row on assignment from A2M4 (ui/screens/bountyBoard.ts).
+   */
+  readonly bountyBoard: { readonly shown: boolean; readonly kipAway: boolean };
   readonly systems: {
     readonly base: SystemView;
     readonly rnd: SystemView;

@@ -1,6 +1,7 @@
 // Meta → SimConfig.modifiers (meta-runtime.md § Meta; design/progression.md §§ 4, 5, 7, 9). A pure
 // mapping from what the player owns and equips (upgrade ranks, Field Protocols, difficulty) to the
-// sim's Modifiers. The game calls it on a save (`saveModifiers`); the balance harness calls the
+// sim's Modifiers. The game calls it on a save (meta/loadout.ts `saveModifiers`, which fits the
+// equipped Field Protocols first); the balance harness calls the
 // same `metaModifiers` on a map's reference profile and on the full-catalog profile
 // (balance/profile.ts), so the harness tests the real progression math.
 //
@@ -19,7 +20,6 @@ import {
 } from '../content/upgrades/index.ts';
 import { REFERENCE_ECONOMY } from '../content/upgrades/reference.ts';
 import type { DifficultyId, Modifier } from '../sim/index.ts';
-import type { SaveData } from './saveData.ts';
 
 /** What the mapping reads: the ranked upgrades and Field Protocols on sale. */
 export interface MetaCatalog {
@@ -140,20 +140,6 @@ export function metaModifiers(
   }
   out.push(...DIFFICULTY_MODIFIERS[own.difficulty]);
   return out;
-}
-
-/**
- * A save's modifiers: its owned ranks and its difficulty. Equipping Field Protocols is M3 (the
- * picker, D031), so a save equips none yet; owning one grants nothing until it's equipped.
- */
-export function saveModifiers(
-  save: Pick<SaveData, 'upgrades' | 'settings'>,
-  catalog: MetaCatalog = LIVE_CATALOG,
-): Modifier<IdSpace>[] {
-  return metaModifiers(
-    { upgrades: save.upgrades, protocols: [], difficulty: save.settings.difficulty },
-    catalog,
-  );
 }
 
 /** Every ranked upgrade in `catalog` at its top rank (the full-catalog profile's ranks). */

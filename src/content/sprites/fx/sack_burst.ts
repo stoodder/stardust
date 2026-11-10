@@ -1,7 +1,9 @@
 // A Brood Hauler's sack bursting when it dies (design/enemies.md § Brood Hauler): the bag swells
 // and splits, burlap shreds fly, and a puff of glitter (gold and pink) drifts down. Act I slapstick,
 // so it pops rather than mourns; the young that scurry out are `enemy.hauler_young`. Plays once,
-// drawn at the Hauler's ground point.
+// drawn at the Hauler's ground point. From Act II the sack is untied with its young showing
+// (art-direction §6, D119), so `burst_young` opens on that sack straining (`young_0`: three young
+// big-eyed in its mouth) before the same pop; render plays it for a fleeing Hauler.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, hash01, plot, rows, type CharGrid } from '../helpers.ts';
 import { sack, SACK_LEGEND } from '../enemies/sack.ts';
@@ -36,9 +38,14 @@ function shreds(g: CharGrid, r: number, drop: number): void {
   }
 }
 
-function burst(k: number): string[] {
+function burst(k: number, young = false): string[] {
   const g = grid(W, H);
-  if (k === 0) {
+  if (k === 0 && young) {
+    // Act II: the untied sack swells with its young crowding the mouth, a white split down it.
+    sack(g, { cx: CX, cy: CY + 2, rx: 7, ry: 6, twinkle: 0, young: 'se' });
+    for (let y = 9; y <= 13; y++) plot(g, Math.round(CX - 0.5 + (y % 2)), y, 'w');
+    glitter(g, 4, 7, 9, 1, 0);
+  } else if (k === 0) {
     // Swelling: the bag strains, a white split down its middle, the first sparkles escaping.
     sack(g, { cx: CX, cy: CY + 1, rx: 7, ry: 6.5, twinkle: 0 });
     for (let y = 5; y <= 12; y++) plot(g, Math.round(CX - 0.5 + (y % 2)), y, 'w');
@@ -84,6 +91,16 @@ export const fxSackBurst = defineSprite({
   outline: 'auto',
   glow: { slots: ['e0', 'e1', 'hi'], radius: 2 },
   legend: SACK_LEGEND,
-  frames: { f0: burst(0), f1: burst(1), f2: burst(2), f3: burst(3), f4: burst(4) },
-  anims: { burst: { frames: ['f0', 'f1', 'f2', 'f3', 'f4'], fps: 10, loop: false } },
+  frames: {
+    f0: burst(0),
+    f1: burst(1),
+    f2: burst(2),
+    f3: burst(3),
+    f4: burst(4),
+    young_0: burst(0, true),
+  },
+  anims: {
+    burst: { frames: ['f0', 'f1', 'f2', 'f3', 'f4'], fps: 10, loop: false },
+    burst_young: { frames: ['young_0', 'f1', 'f2', 'f3', 'f4'], fps: 10, loop: false },
+  },
 });

@@ -1,0 +1,106 @@
+// The star map's view (core-loop.md § 1.1): what the Sector map shows for a save, and nothing
+// past the frontier.
+import { afterEach, describe, expect, it } from 'vitest';
+import { CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { DEV_SAVES } from '../meta/__fixtures__/devSaves.ts';
+import { campaign, type CampaignView } from '../ui/screens/state.ts';
+import { campaignScreenName, phaseFor, starMapView, STAR_MAP_SEEN_ID } from './starMap.ts';
+
+afterEach(() => {
+  campaign.value = null;
+});
+
+describe('starMapView', () => {
+  it('after A1M5: Act I cleared, Rig Nine next up with its briefing facts, in the gold phase', () => {
+    const view = starMapView(DEV_SAVES.after_a1m5_ref.build());
+    expect(view.phase).toBe('act2.gold');
+    expect(view.act).toBe('2');
+    expect(view.nodes.map((n) => n.id)).toEqual([
+      'a1_m01',
+      'a1_m02',
+      'a1_m03',
+      'a1_m04',
+      'a1_m05',
+      'a2_m01',
+    ]);
+    expect(view.marker).toBe('a1_m05');
+    expect(view.frontier).toBe('a2_m01');
+    expect(view.firstVisit).toBe(true);
+    const rig = view.nodes.at(-1)!;
+    expect(rig).toMatchObject({ state: 'open', name: 'Rig Nine', place: 'The Diggings', x: 500 });
+    expect(rig.label).toBe('Shift 6, Rig Nine, The Diggings. Next up. 0 of 3 medals.');
+    expect(rig.tagline).toBe('Rig Nine stopped answering. Go take a peek. Minor operational hiccup!');
+    expect(rig.brief?.threats.map((t) => t.label)).toContain('Skittish');
+    expect(rig.brief?.required).toEqual(['Splash']);
+    expect(rig.brief?.medals.map((m) => m.name)).toEqual([
+      'Victory',
+      'Perfect Core',
+      'Hiccup Contained',
+    ]);
+    expect(rig.brief?.medals.some((m) => m.earned)).toBe(false);
+    expect(rig.brief?.objectives.map((o) => o.name)).toEqual(['Crew Logs']);
+    // Cleared nodes carry their medals; the legs join them in order, the last in the accent.
+    expect(view.nodes[0]?.label).toMatch(/^Shift 1, Orientation Day, Dome Row\. Cleared\. \d of 3 medals\.$/);
+    expect(view.nodes[0]?.brief?.medals.some((m) => m.earned)).toBe(true);
+    expect(view.legs).toHaveLength(5);
+    expect(view.legs.map((l) => l.accent)).toEqual([false, false, false, false, true]);
+    expect(view.regions.find((r) => r.id === 'long_walk')).toMatchObject({
+      text: 'Surge corridor',
+      struck: null,
+    });
+  });
+
+  it('after A2M3: the Second Harvest teaser, the dusk phase, the marker on A2M3', () => {
+    const view = starMapView(DEV_SAVES.after_a2m3.build());
+    expect(view.phase).toBe('act2.dusk');
+    expect(view.marker).toBe('a2_m03');
+    expect(view.frontier).toBe('a2_m04');
+    expect(view.firstVisit).toBe(false);
+    const teaser = view.nodes.at(-1)!;
+    expect(teaser).toMatchObject({ id: 'a2_m04', state: 'coming_soon', brief: null });
+    expect(teaser.label).toMatch(/^Shift 9, Second Harvest, Reclamation Facility 2\. Coming soon\. /);
+    expect(teaser.label).toContain('Ask Zibzab where stardust comes from.');
+    // Nothing past the frontier, in any field.
+    const later = CAMPAIGN_PLAN.slice(9).map((m) => m.name);
+    const text = JSON.stringify(view);
+    for (const name of later) expect(text).not.toContain(name);
+  });
+
+  it('marks the first visit until the save has seen it', () => {
+    const save = DEV_SAVES.after_a1m5_ref.build();
+    save.story.seen.push(STAR_MAP_SEEN_ID);
+    expect(starMapView(save).firstVisit).toBe(false);
+  });
+
+  it("corrects Everglow's label once the Long Walk is won", () => {
+    const save = DEV_SAVES.after_a2m3.build();
+    const maps: Record<string, unknown> = save.campaign.maps;
+    maps.a2_m05 = { completed: true, medals: [], bestMeter: 1 };
+    expect(starMapView(save).regions.find((r) => r.id === 'long_walk')).toMatchObject({
+      text: 'The Long Walk',
+      struck: 'Surge corridor',
+    });
+  });
+});
+
+describe('phaseFor', () => {
+  it('follows the frontier: gold, dusk from A2M4, Act III, then dawn', () => {
+    expect(phaseFor('a2_m01')).toBe('act2.gold');
+    expect(phaseFor('a2_m03')).toBe('act2.gold');
+    expect(phaseFor('a2_m04')).toBe('act2.dusk');
+    expect(phaseFor('a2_m06')).toBe('act2.dusk');
+    expect(phaseFor('a3_m01')).toBe('act3');
+    expect(phaseFor('fin_m01')).toBe('act3');
+    expect(phaseFor(null)).toBe('dawn');
+  });
+});
+
+describe('campaignScreenName', () => {
+  it('names the campaign screen for the buttons that go back to it', () => {
+    expect(campaignScreenName()).toBe('Shift board');
+    campaign.value = { mode: 'starMap' } as CampaignView;
+    expect(campaignScreenName()).toBe('Sector map');
+    campaign.value = { mode: 'shiftBoard' } as CampaignView;
+    expect(campaignScreenName()).toBe('Shift board');
+  });
+});

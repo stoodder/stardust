@@ -30,7 +30,6 @@ describe('A1M1 · Orientation Day', () => {
       companion: { id: 'bricks', state: 'present' },
     });
     expect(map.cols + map.rows).toBeLessThanOrEqual(36); // one screen
-    expect(map.briefing).toContain("Today's forecast: Nibblers, with a chance of Zoomers!");
   });
 
   it('has 10 buildable tiles, one of them high ground, at the documented spots', () => {

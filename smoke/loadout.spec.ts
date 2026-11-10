@@ -8,10 +8,8 @@
 // Screenshots in test-results/screens/loadout/.
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
-import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { nextFrames, playShift, shot, waitForReady } from './hooks.ts';
 
-const shiftRow = (page: Page, name: string) =>
-  page.getByRole('list', { name: 'Shifts' }).getByRole('listitem').filter({ hasText: name });
 
 const towerCard = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${name},`) });
@@ -21,7 +19,7 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
 }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await playShift(page, 'Orientation Day');
 
   // The screen, starting from the default pick: everything owned (four towers), Orbital Strike.
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
@@ -98,10 +96,11 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   await expect(towerCard(page, 'Thumper')).toHaveAttribute('aria-pressed', 'false');
   await expect(towerCard(page, 'Sprinkler')).toHaveAccessibleName(/build slot 2/);
   await expect(suppress).toHaveAttribute('aria-checked', 'true');
-  // Esc goes back to the Shift board; Start brings the screen back with the same pick.
+  // Esc goes back to the campaign screen (the Sector map: every map is won); Start brings the
+  // screen back with the same pick.
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('heading', { name: 'Shift board' })).toBeVisible();
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await expect(page.getByRole('heading', { name: 'Sector map' })).toBeVisible();
+  await playShift(page, 'Orientation Day');
   await expect(lockIn).toBeFocused();
   await expect(towerCard(page, 'Thumper')).toHaveAttribute('aria-pressed', 'false');
   // Enter locks in (Lock in has the focus), then Enter clocks in.
@@ -127,7 +126,7 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
 }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  await shiftRow(page, 'Hatching Season').getByRole('button').click();
+  await playShift(page, 'Hatching Season');
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await expect(page.getByText('Needs an answer to')).toBeVisible();
   // Thumper answers Armor from tier 1 (Act I's light armor); Rivet from tier 3.
@@ -156,7 +155,7 @@ test('loadout: skipped when the system is locked or there is no choice', async (
   // A1M1 won: three towers and one ability, the loadout system still locked (it opens after A1M3).
   await page.goto('/?test=1&seed=1&save=after_a1m1');
   await waitForReady(page);
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await playShift(page, 'Orientation Day');
   const briefing = page.getByRole('dialog', { name: 'Shift briefing' });
   await expect(briefing).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Loadout' })).toHaveCount(0);
@@ -176,7 +175,7 @@ test('loadout: equip a Field Protocol, and the battle starts with its modifier',
   await page.goto('/?test=1&seed=1&save=after_a1m3');
   await waitForReady(page);
   // Unequipped first: the plain start.
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await playShift(page, 'Orientation Day');
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await expect(page.getByText('Field Protocols')).toBeVisible();
   await expect(page.getByText('None owned yet. Zibzab sells them.')).toBeVisible();
@@ -195,8 +194,8 @@ test('loadout: equip a Field Protocol, and the battle starts with its modifier',
   await expect(page.getByTestId('store-line')).toContainText('Zibzab:');
 
   // Equip it on the loadout screen: one slot, so it shows 1 / 1.
-  await page.getByRole('button', { name: 'Shift board' }).click();
-  await shiftRow(page, 'Orientation Day').getByRole('button').click();
+  await page.getByRole('button', { name: /^(Shift board|Sector map)$/ }).click();
+  await playShift(page, 'Orientation Day');
   const headStart = page.getByRole('button', { name: /^Head Start: \+10% starting credits/ });
   await expect(headStart).toHaveAttribute('aria-pressed', 'false');
   await headStart.click();

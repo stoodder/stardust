@@ -29,8 +29,9 @@ describe('spriteInfo', () => {
     expect(baseFrame(rivet, 3, null)).toBe('t3');
     expect(baseFrame(rivet, 4, 'a')).toBe('spec_a');
     expect(baseFrame(rivet, 4, 'b')).toBe('spec_b');
-    // A base with no spec frames keeps its top tier.
-    expect(baseFrame(spriteId('tower.sprinkler'), 4, 'a')).toBe('t3');
+    // Every tower base draws its specs now (T440b), idle heads' towers and Vrell ones too.
+    expect(baseFrame(spriteId('tower.sprinkler'), 4, 'a')).toBe('spec_a');
+    expect(baseFrame(spriteId('tower.lookout'), 4, 'b')).toBe('spec_b');
   });
 
   it('picks the head frames: _t2 from tier 2, the spec head at tier 4', () => {

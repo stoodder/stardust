@@ -246,7 +246,6 @@ export const fxLayout = fx.defineMapLayout({
   salvage: { '4,3': 40 },
   startCredits: 200,
   stardust: 0,
-  briefing: 'Fixture briefing.',
   towerUnlockWave: { fx_sprinkler: 2, fx_mortar: 2 },
   // W2's fleeing runners bring Skittish (D101).
   threatIntel: ['fast', 'shielded', 'skittish'],

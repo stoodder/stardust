@@ -6,6 +6,7 @@ import { CODEX_ENTRIES, CODEX_VERSIONS } from '../content/codex/index.ts';
 import { BARKS, SCENES } from '../content/dialogue/index.ts';
 import { MEMO_IDS } from '../content/memos/index.ts';
 import { codexSeenId } from '../story/codex.ts';
+import { STAR_MAP_SEEN_ID } from '../content/starMap.ts';
 import { FIRST_PAYDAY_SEEN_ID } from './runEnd.ts';
 import { isFreeId } from './validate.ts';
 
@@ -28,6 +29,7 @@ describe('story.seen ids are free ids', () => {
   it('every memo id, and the first payday mark', () => {
     expect(bad(MEMO_IDS)).toEqual([]);
     expect(isFreeId(FIRST_PAYDAY_SEEN_ID)).toBe(true);
+    expect(isFreeId(STAR_MAP_SEEN_ID)).toBe(true);
   });
 
   it('refuses ids a save would refuse', () => {

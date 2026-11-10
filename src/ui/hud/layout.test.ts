@@ -144,3 +144,19 @@ describe('wrapParts', () => {
     ).toBe(108 + 18);
   });
 });
+
+describe('placePanel around another box (T301b: a star map node)', () => {
+  const NODE = { dx: -8, dy: -8, w: 16, h: 16 } as const;
+  it('sits 2 px beside the box, away from the screen centre', () => {
+    expect(placePanel(200, 180, 176, 100, [], [], NODE).left).toBe(200 - 8 - 2 - 176);
+    expect(placePanel(440, 180, 176, 100, [], [], NODE).left).toBe(440 + 8 + 2);
+  });
+
+  it('keeps clear of the other boxes it is given, by their own box', () => {
+    const wide = { dx: -40, dy: -9, w: 80, h: 36 } as const;
+    // A node 30 px to the left: the wide box would cover it, the node box doesn't.
+    const p = placePanel(500, 180, 176, 100, [{ x: 300, y: 180 }], [], wide, NODE);
+    const covers = p.left < 300 + 8 && 300 - 8 < p.left + 176 && p.top < 188 && 172 < p.top + 100;
+    expect(covers).toBe(false);
+  });
+});

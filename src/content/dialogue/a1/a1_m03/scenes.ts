@@ -117,4 +117,28 @@ export const scenes = defineScenes([
       text: "Pension form. Rejected. 'Missing signature.' I signed it. Twice. In pen.",
     },
   ]),
+  // The debrief, on the results card: Gerald's route done, and Bricks on the mail that got
+  // through when his form didn't (W8). QUILL on a loss: never a scold.
+  defineScene('a1_m03_debrief', [
+    { kind: 'branch', cond: { outcome: 'lost' }, goto: 'lost' },
+    {
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: "Gerald finished his route! All mail delivered. One parcel slightly singed. He'd like that noted.",
+    },
+    {
+      kind: 'line',
+      speaker: 'bricks',
+      text: "Mail got through. Good. Somebody's paperwork should.",
+    },
+    { kind: 'end' },
+    {
+      label: 'lost',
+      kind: 'line',
+      speaker: 'quill',
+      expression: 'happy',
+      text: "Gerald finished his route! The pests finished theirs too. I'm logging one of those as a win.",
+    },
+  ]),
 ]);

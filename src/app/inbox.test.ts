@@ -83,6 +83,42 @@ describe('the codex', () => {
   });
 });
 
+describe('Act II in the base (T411)', () => {
+  it("files A2M2's KFA form as a form, under Sterling's memo asking to disregard it", () => {
+    loadDevSave('after_a2m2');
+    const items = inboxView();
+    expect(items.slice(0, 2).map((m) => [m.id, m.format, m.unread])).toEqual([
+      ['memo_a2_02', 'memo', true],
+      ['memo_a2_02_kfa', 'form', false],
+    ]);
+    expect(items[1]).toMatchObject({ stamp: 'PENDING', signOff: 'Signature: pending' });
+    expect(items[0]?.stamp).toBeNull();
+  });
+
+  it('shows an annotation under the original it annotates, and the withheld entry', () => {
+    loadDevSave('after_a2m3');
+    const view = codexView()!;
+    const hauler = view.entries.find((e) => e.id === 'codex_brood_hauler')!;
+    expect(hauler.versions).toEqual([
+      expect.objectContaining({
+        version: 'annotated',
+        text: expect.stringMatching(/^\[QUILL: Cargo inspected\. Contents: young\./),
+        record: expect.objectContaining({ text: expect.stringContaining('Do not inspect cargo.') }),
+      }),
+    ]);
+    // The annotation is new to read; reading it marks the annotated version seen.
+    expect(hauler.isNew).toBe(true);
+    markCodexRead('codex_brood_hauler');
+    expect(activeSave()?.story.seen).toContain('codex_brood_hauler__annotated');
+    const pebble = view.entries.find((e) => e.id === 'codex_pebble')!;
+    expect(pebble).toMatchObject({ kind: 'person', picture: null, photo: 'Withheld' });
+    expect(pebble.versions[0]).toMatchObject({ text: '[QUILL: Entry withheld.]', record: null });
+    // The dev save's A2M1 win took Victory only: no crew logs, so no crew-log entry.
+    expect(view.entries.map((e) => e.id)).not.toContain('codex_crew_log');
+    expect(view.entries.find((e) => e.id === 'codex_diggings')?.photo).toBe('Photo pending');
+  });
+});
+
 describe('entering the base', () => {
   it('catches an older save up once, then writes nothing', () => {
     loadDevSave('after_a1m1');

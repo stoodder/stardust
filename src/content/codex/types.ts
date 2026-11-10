@@ -25,7 +25,10 @@ export type CodexSubject =
   { readonly enemy: EnemyId } | { readonly tower: TowerId } | { readonly ability: AbilityId };
 
 export interface CodexVersionDef {
-  /** ≤ 600 characters after substitution. Original: smug PR; annotated: bracketed and signed. */
+  /**
+   * ≤ 600 characters after substitution. Original: smug PR; annotated: bracketed and signed, the
+   * note alone (the codex shows it under the original it annotates). Single line breaks show.
+   */
   readonly text: string;
   /**
    * ≤ 140 characters; collapsed until clicked, like a memo's. Sterling's gifts carry theirs here
@@ -49,6 +52,11 @@ export interface CodexEntryDef {
   readonly kind: CodexKind;
   readonly subject?: CodexSubject;
   readonly sprite?: CodexSprite;
+  /**
+   * What the photo frame says when the entry has no picture: "Photo pending" by default; A2M3's
+   * withheld "Pebble" entry says "Withheld" (≤ 12 characters, two lines of the frame).
+   */
+  readonly photo?: string;
   readonly versions: { readonly [V in CodexVersion]?: CodexVersionDef };
 }
 

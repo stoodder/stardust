@@ -9,7 +9,7 @@
 // § 6.1). A Stasis converted to Chilled on her interrupts nothing (D101). Her blinks are boss
 // behaviour, not the Blink trait (her intel shows the `boss` icon), and count toward Glass Half
 // Empty (`stats.bossBlinks`). `leak` 3 never applies (a leaking boss drains everything it reaches).
-// Sprites are placeholders under their final ids (T440b).
+// Sprites: content/sprites/enemies/glass_witch.ts (T440b).
 import { defineEnemy } from '../define.ts';
 
 const PULSE = { everySec: 8, tellSec: 1.5, radiusTiles: 2, shield: 120 } as const;

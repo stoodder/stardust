@@ -1,6 +1,7 @@
-// The Everglow Inbox (T303; design/core-loop.md § 6.4, art-direction § 9 *Memos*): the base's
-// memo pane. Delivered memos, newest first, in a list beside a reader on Everglow letterhead; the
-// small print collapses under its toggle, one click away. Showing a memo reads it, which clears its
+// The Everglow Inbox (T303, T411; design/core-loop.md § 6.4, art-direction § 9 *Memos*): the base's
+// memo pane. Delivered memos, newest first, in a list beside a reader on Everglow letterhead (a KFA
+// form on its own off-white form panel, with a stamp box); the small print collapses under its
+// toggle, one click away. Showing a memo reads it, which clears its
 // NEW tag (and, with the last one, the Inbox tab's badge). The view models are app/inbox.ts.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -67,6 +68,15 @@ export function SmallPrint({ id, text }: { id: string; text: string }) {
  */
 export const READ_DWELL_MS = 800;
 
+/** A reader scrolled to its top whenever it shows another item (a long memo left scrolled). */
+export function useReaderTop(id: string | null): { current: HTMLDivElement | null } {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current !== null) ref.current.scrollTop = 0;
+  }, [id]);
+  return ref;
+}
+
 /** Marks the shown item read once it has stayed on screen for READ_DWELL_MS. */
 export function useReadOnDwell(id: string | null, mark: (id: string) => unknown): void {
   useEffect(() => {
@@ -99,7 +109,60 @@ export function listKeys(e: KeyboardEvent, pick: (index: number) => void, count:
 
 // ── The Inbox ────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * A KFA form (art-direction § 9, *Portrait-less speakers*): the off-white form panel in ink, its
+ * header the KFA's, the clauses as written, and a stamp box. No Everglow sun anywhere on it.
+ */
+function Form({ memo }: { memo: MemoView }) {
+  return (
+    <article class="sd-memo sd-form" aria-labelledby="sd-memo-subject">
+      <header class="sd-memo-head sd-form-head">
+        <span class="sd-memo-brand">Kepler Frontier Authority</span>
+        <dl class="sd-memo-fields">
+          <dt>From</dt>
+          <dd>
+            <GlyphText text={memo.from} />
+          </dd>
+          <dt>To</dt>
+          <dd>
+            <GlyphText text={memo.to} />
+          </dd>
+          <dt>Re</dt>
+          <dd id="sd-memo-subject" class="sd-memo-subject">
+            <GlyphText text={memo.subject} />
+          </dd>
+        </dl>
+      </header>
+      <div class="sd-memo-body">
+        {memo.paragraphs.map((p, i) => (
+          <p key={i}>
+            <GlyphText text={p} />
+          </p>
+        ))}
+        {memo.signOff !== null && (
+          <p class="sd-memo-sign">
+            <GlyphText text={memo.signOff} />
+          </p>
+        )}
+      </div>
+      {memo.stamp !== null && (
+        <div class="sd-form-box">
+          <span class="sd-form-box-label">Official use only</span>
+          <p class="sd-form-stamp">
+            <span class="sd-visually-hidden">Stamped: </span>
+            {silkText(memo.stamp)}
+          </p>
+        </div>
+      )}
+      {memo.smallPrint !== null && (
+        <SmallPrint key={memo.id} id={`sd-memo-print-${memo.id}`} text={memo.smallPrint} />
+      )}
+    </article>
+  );
+}
+
 function Letter({ memo }: { memo: MemoView }) {
+  if (memo.format === 'form') return <Form memo={memo} />;
   return (
     <article class="sd-memo" aria-labelledby="sd-memo-subject">
       <header class="sd-memo-head">
@@ -153,6 +216,7 @@ export function InboxPane() {
 
   // Showing a memo reads it (core-loop.md § 6.4: the badge counts the unread).
   useReadOnDwell(shown?.id ?? null, markMemoRead);
+  const reader = useReaderTop(shown?.id ?? null);
 
   if (shown === null) {
     return (
@@ -193,7 +257,7 @@ export function InboxPane() {
           ))}
         </ul>
       </nav>
-      <div class="sd-story-reader" tabIndex={0} aria-label="Memo">
+      <div class="sd-story-reader" ref={reader} tabIndex={0} aria-label="Memo">
         <Letter memo={shown} />
       </div>
     </div>

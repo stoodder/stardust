@@ -21,7 +21,6 @@ import {
 import {
   abilityCooldownTotals,
   abilitySlots,
-  briefingLines,
   buildSlots,
   cooldownView,
   countdownSeconds,
@@ -151,22 +150,6 @@ describe('hud view models', () => {
     announce('Targeting: Last.');
     expect(hud.announce.value).not.toBe('Targeting: Last.');
     expect(hud.announce.value.trim()).toBe('Targeting: Last.');
-  });
-
-  it('splits a static briefing into lines with their speakers', () => {
-    expect(briefingLines(null)).toEqual([]);
-    expect(briefingLines("QUILL: Hello, Technician! I'm QUILL.\nNo speaker here\n\n")).toEqual([
-      { speaker: 'QUILL', text: "Hello, Technician! I'm QUILL." },
-      { speaker: null, text: 'No speaker here' },
-    ]);
-    // "&" reaches Silkscreen as "and" (D059): QUILL's very first line.
-    expect(briefingLines('QUILL: Logistics & Lethality')).toEqual([
-      { speaker: 'QUILL', text: 'Logistics and Lethality' },
-    ]);
-    // A colon deep in a sentence isn't a speaker.
-    expect(briefingLines('Note the time and the place: noon, the gate')).toEqual([
-      { speaker: null, text: 'Note the time and the place: noon, the gate' },
-    ]);
   });
 
   it('counts the countdown down in whole seconds, rounded up, only while one runs', () => {

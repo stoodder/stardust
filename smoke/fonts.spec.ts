@@ -5,12 +5,11 @@
 // test-results/screens/fonts/.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
-import { shot, waitForReady } from './hooks.ts';
+import { playShift, shot, waitForReady } from './hooks.ts';
 
 /** The font family an element renders with. */
 const fontOf = (el: Locator) => el.evaluate((e) => getComputedStyle(e).fontFamily);
 
-const shiftRow = (page: Page, name: string) => page.getByRole('listitem').filter({ hasText: name });
 
 test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen', async ({
   page,
@@ -34,7 +33,7 @@ test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen',
   await page.getByRole('tab', { name: 'Engineering', exact: true }).click();
   await shot(page, 'fonts', 3, 'engineering');
 
-  await page.getByRole('button', { name: 'Shift board' }).click();
+  await page.getByRole('button', { name: 'Sector map' }).click();
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
   await shot(page, 'fonts', 4, 'settings');
@@ -43,7 +42,7 @@ test('fonts: Research, Shop, Engineering, and Settings body text is Silkscreen',
 test('fonts: the loadout screen and Results read plainly', async ({ page }) => {
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  await shiftRow(page, 'Hatching Season').getByRole('button').click();
+  await playShift(page, 'Hatching Season');
   await expect(page.getByRole('heading', { name: 'Loadout' })).toBeVisible();
   await page.waitForTimeout(200);
   await shot(page, 'fonts', 5, 'loadout');

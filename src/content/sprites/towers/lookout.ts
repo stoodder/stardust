@@ -158,7 +158,8 @@ function lookoutHead(k: number, kit: Kit): string[] {
 function nestKit(g: CharGrid, cx: number, cy: number): void {
   const mx = cx - 10;
   // The mast: two brass poles with rungs between them (a ladder up the back corner).
-  for (let y = cy - 19; y <= cy + 2; y++) {
+  isoBox(g, mx, cy + 1, 3.5, 2, { top: '2', rim: '3', left: '2', right: '1' });
+  for (let y = cy - 19; y <= cy + 1; y++) {
     plot(g, mx - 2, y, '4');
     plot(g, mx + 1, y, '2');
     if (y % 3 === 0) {
@@ -174,7 +175,7 @@ function nestKit(g: CharGrid, cx: number, cy: number): void {
   line(g, mx + 1, cy - 26, mx + 4, cy - 25, '+');
   line(g, mx + 1, cy - 25, mx + 3, cy - 25, 'd');
   // A signal lamp on a post at the right corner.
-  isoBox(g, cx + 10, cy + 1, 2.5, 3, { top: '2', rim: '3', left: '2', right: '1' });
+  isoBox(g, cx + 10, cy + 1, 3.5, 3, { top: '2', rim: '3', left: '2', right: '1' });
   line(g, cx + 10, cy - 3, cx + 10, cy - 8, '2');
   isoBox(g, cx + 10, cy - 8, 2.5, 4, { top: '3', rim: '4', left: '+', right: '+' });
   plot(g, cx + 9, cy - 10, '*');

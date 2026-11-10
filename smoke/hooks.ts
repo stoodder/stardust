@@ -30,3 +30,20 @@ export async function nextFrames(page: Page): Promise<void> {
       }),
   );
 }
+
+/**
+ * Opens a map from the campaign screen, whichever it is (D102): on the Shift board, its row's
+ * Start or Replay; on the star map (the Sector map, once A1M5 is won), its node, then the panel's
+ * Start or Replay. `name` is the map's display name.
+ */
+export async function playShift(page: Page, name: string): Promise<void> {
+  await page.getByRole('heading', { name: /^(Shift board|Sector map)$/ }).waitFor();
+  const shifts = page.getByRole('list', { name: 'Shifts' });
+  const node = shifts.getByRole('button', { name: new RegExp(`^Shift \\d+, ${name}, `) });
+  if ((await node.count()) > 0) {
+    await node.click();
+    await page.getByRole('button', { name: new RegExp(`^(Start|Replay) ${name}$`) }).click();
+  } else {
+    await shifts.getByRole('listitem').filter({ hasText: name }).getByRole('button').click();
+  }
+}

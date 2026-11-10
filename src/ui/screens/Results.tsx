@@ -9,6 +9,7 @@
 // (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
 // (app/runFlow.ts).
 // Compact by design: everything fits 360 game px of height.
+import { campaignScreenName } from '../../app/starMap.ts';
 import { silkText } from '../silk.ts';
 import { useEffect, useState } from 'preact/hooks';
 import {
@@ -80,23 +81,22 @@ function useCountUp(target: number): number {
 function Counter({ n, shown }: { n: number; shown: number }) {
   const done = shown === n;
   return (
-    // The live text updates every frame while counting; screen readers get the final line only.
-    <p
-      class="sd-results-counter"
-      aria-label={`PESTS PROCESSED: ${formatCount(n)}, Top 5% of Technicians!`}
-    >
-      <span class="sd-results-counter-label">PESTS PROCESSED:</span>{' '}
-      <span
-        class={done ? 'sd-results-count sd-results-count-done' : 'sd-results-count'}
-        // Reserve the final width, so the line doesn't shift while it counts.
-        style={{ minWidth: `${formatCount(n).length}ch` }}
-      >
-        {formatCount(shown)}
-      </span>{' '}
-      <span class="sd-results-star" aria-hidden="true">
-        ★
-      </span>{' '}
-      <span class="sd-results-brag">Top 5% of Technicians!</span>
+    // The live text updates every frame while counting, so screen readers get the final line
+    // only, as hidden text (an `aria-label` on a <p> isn't announced; T329).
+    <p class="sd-results-counter">
+      <span class="sd-visually-hidden">{`PESTS PROCESSED: ${formatCount(n)}, Top 5% of Technicians!`}</span>
+      <span class="sd-results-counter-shown" aria-hidden="true">
+        <span class="sd-results-counter-label">PESTS PROCESSED:</span>{' '}
+        <span
+          class={done ? 'sd-results-count sd-results-count-done' : 'sd-results-count'}
+          // Reserve the final width, so the line doesn't shift while it counts.
+          style={{ minWidth: `${formatCount(n).length}ch` }}
+        >
+          {formatCount(shown)}
+        </span>{' '}
+        <span class="sd-results-star">★</span>{' '}
+        <span class="sd-results-brag">Top 5% of Technicians!</span>
+      </span>
     </p>
   );
 }
@@ -308,7 +308,7 @@ function Career({ n, run, counted }: { n: number; run: number; counted: number }
  */
 function OnwardButton({ won }: { won: boolean }) {
   const inCampaign = campaign.value !== null;
-  const label = !inCampaign ? 'Title' : won ? 'Continue' : 'Shift board';
+  const label = !inCampaign ? 'Title' : won ? 'Continue' : campaignScreenName();
   const go = !inCampaign
     ? () => leaveResultsTo('title')
     : won

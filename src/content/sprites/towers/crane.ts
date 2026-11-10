@@ -22,7 +22,10 @@ type Facing = 'se' | 'ne';
 type Kit = 't1' | 't2' | 'stall' | 'magnet';
 
 /** The jib's foot on the cab and its tip, per facing and length. */
-function jibEnds(facing: Facing, long: boolean): { x0: number; y0: number; x1: number; y1: number } {
+function jibEnds(
+  facing: Facing,
+  long: boolean,
+): { x0: number; y0: number; x1: number; y1: number } {
   const reach = long ? 16 : 13;
   return facing === 'se'
     ? { x0: CX + 2, y0: CY - 8, x1: CX + 2 + reach, y1: CY - 8 - Math.round(reach * 1.2) }
@@ -165,7 +168,8 @@ function stallKit(g: CharGrid, cx: number, cy: number): void {
   const jx = cx + 10;
   isoBox(g, jx, cy + 1, 3, 8, { top: 'e', rim: 'e', left: 'c', right: 'b' });
   for (let y = cy - 4; y <= cy; y++) {
-    for (let x = Math.floor(jx - 2); x <= Math.ceil(jx + 1); x++) plot(g, x, y + (x > jx ? 1 : 0), (x + y) % 2 === 0 ? '4' : '3');
+    for (let x = Math.floor(jx - 2); x <= Math.ceil(jx + 1); x++)
+      plot(g, x, y + (x > jx ? 1 : 0), (x + y) % 2 === 0 ? '4' : '3');
   }
   stamp(g, Math.round(jx) + 2, cy - 7, ['WW', 'UW']);
 }
@@ -184,7 +188,13 @@ function magnetKit(g: CharGrid, cx: number, cy: number): void {
 }
 
 // Steel cable and hook, the goods' burlap, plus the price tag's colors.
-const LEGEND = { ...VRELL_BASE_LEGEND, S: 'steel.4', T: 'steel.2', R: 'grime.4', Q: 'grime.2' } as const;
+const LEGEND = {
+  ...VRELL_BASE_LEGEND,
+  S: 'steel.4',
+  T: 'steel.2',
+  R: 'grime.4',
+  Q: 'grime.2',
+} as const;
 
 export const towerCrane = defineSprite({
   id: 'tower.crane',
@@ -240,9 +250,17 @@ export const towerCraneHead = defineSprite({
     fire_ne_spec_a: { frames: ['ne_spec_a'], fps: 1, loop: false },
     fire_nw_spec_a: { mirrorOf: 'fire_ne_spec_a' },
     // The grab and slam (every 6 s): the magnet drops white-hot, then hangs again.
-    fire_se_spec_b: { frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'], fps: 6, loop: false },
+    fire_se_spec_b: {
+      frames: ['se_spec_b_fire', 'se_spec_b_fire', 'se_spec_b'],
+      fps: 6,
+      loop: false,
+    },
     fire_sw_spec_b: { mirrorOf: 'fire_se_spec_b' },
-    fire_ne_spec_b: { frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'], fps: 6, loop: false },
+    fire_ne_spec_b: {
+      frames: ['ne_spec_b_fire', 'ne_spec_b_fire', 'ne_spec_b'],
+      fps: 6,
+      loop: false,
+    },
     fire_nw_spec_b: { mirrorOf: 'fire_ne_spec_b' },
   },
 });

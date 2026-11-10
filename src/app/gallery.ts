@@ -81,7 +81,9 @@ function isShownVariant(name: string): boolean {
  * - each derived variant (`default+selected`, `default+jammed`, `default+cloak`), its first frame
  *   only;
  * - a Hollow unit's Heavy and reach frames in a dark row of their own, and a fleeing body's card
- *   only its authored frames, dark (T440a).
+ *   only its authored frames, dark (T440a);
+ * - a tower's spec frames and an Aelari unit's non-walk poses in a dark row of their own (T440b),
+ *   kept out of the palette variant's row.
  */
 interface CardPlan {
   readonly rows: readonly {
@@ -126,6 +128,18 @@ function isHollowLook(b: BakedSprite, n: string): boolean {
   return DEFS.get(b.id)?.palette === 'hollow' && /^(heavy|tell)_/.test(n);
 }
 
+/**
+ * A tower's tier-4 spec frames (`spec_a`, `se_spec_b_fire`, `spin_spec_a_0`, …; T440b) and an
+ * Aelari unit's non-walk poses (the Glass Witch's tell, blink, puff, and flee) get a row of their
+ * own, dark only, so the cards stay compact.
+ */
+function isDarkOnlyLook(b: BakedSprite, n: string): boolean {
+  if (b.id.startsWith('tower.')) return /(^|_)spec_[ab]/.test(n);
+  return (
+    DEFS.get(b.id)?.palette === 'aelari' && b.id.startsWith('enemy.') && !n.startsWith('walk_')
+  );
+}
+
 function cardPlan(b: BakedSprite): CardPlan {
   if (isScene(b)) {
     return {
@@ -136,9 +150,11 @@ function cardPlan(b: BakedSprite): CardPlan {
     const frames = b.frameNames.filter((n) => !isMirrorFrame(b, n) && !isDeath(n));
     return { rows: [{ variant: DEFAULT_VARIANT, frames, light: false, glow: true }] };
   }
-  const looks = b.frameNames.filter((n) => !isMirrorFrame(b, n) && isHollowLook(b, n));
+  const looks = b.frameNames.filter(
+    (n) => !isMirrorFrame(b, n) && (isHollowLook(b, n) || isDarkOnlyLook(b, n)),
+  );
   const authored = b.frameNames.filter(
-    (n) => !isMirrorFrame(b, n) && !isDeath(n) && !isHollowLook(b, n),
+    (n) => !isMirrorFrame(b, n) && !isDeath(n) && !isHollowLook(b, n) && !isDarkOnlyLook(b, n),
   );
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
   const deaths = b.frameNames.filter(isDeath);
@@ -149,7 +165,7 @@ function cardPlan(b: BakedSprite): CardPlan {
       { variant: DEFAULT_VARIANT, frames: authored, light: true, glow: true },
       ...(looks.length === 0
         ? []
-        : [{ variant: DEFAULT_VARIANT, frames: looks, light: false, glow: false }]),
+        : [{ variant: DEFAULT_VARIANT, frames: looks, light: false, glow: true }]),
       ...(deaths.length === 0
         ? []
         : [{ variant: DEFAULT_VARIANT, frames: deaths, light: false, glow: false }]),
@@ -509,15 +525,17 @@ function diorama(
     ['ally.bricks', 'fire_nw_0', 8.5, 6.5],
   );
   // [base, head, col, row, head frame, look]; the Rivet on (2, 2) stands on high ground. Every
-  // tier and both specs of the Rivet and Thumper are on show, facing both ways, with a Skyhook
-  // and a Zapcoil (on the power node, firing).
+  // tier and both specs of the Rivet and Thumper are on show, facing both ways, with a Skyhook,
+  // a Flash Freeze Sprinkler, a Capacitor Bank (on the power node, firing), and a Lookout.
   const towers: readonly [SpriteId, SpriteId, number, number, string, TowerLook][] = [
     ['tower.rivet', 'tower.rivet_head', 6, 1, 'sw', 't1'],
     ['tower.thumper', 'tower.thumper_head', 6, 2, 'se', 't2'],
     ['tower.rivet', 'tower.rivet_head', 2, 2, 'se', 't2'],
-    ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 't3'],
+    ['tower.sprinkler', 'tower.sprinkler_head', 3, 4, 'spin_0', 'spec_a'],
     ['tower.skyhook', 'tower.skyhook_head', 8, 4, 'nw', 't2'],
-    ['tower.zapcoil', 'tower.zapcoil_head', 7, 1, 'sw_fire', 't3'],
+    ['tower.zapcoil', 'tower.zapcoil_head', 7, 1, 'sw_fire', 'spec_b'],
+    // A Lookout Shack keeping watch from the high ground.
+    ['tower.lookout', 'tower.lookout_head', 1, 2, 'look_1', 't3'],
     ['tower.thumper', 'tower.thumper_head', 3, 5, 'ne', 't1'],
     ['tower.rivet', 'tower.rivet_head', 2, 7, 'se_fire', 't3'],
     ['tower.thumper', 'tower.thumper_head', 7, 0, 'nw', 'spec_a'],

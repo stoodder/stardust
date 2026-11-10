@@ -3,9 +3,14 @@
 // catch-up that delivers what an older save missed when the base opens. Text comes out resolved
 // (story/text.ts), with the Evie sun as its private-use character for the screens to draw.
 import { ABILITIES } from '../content/abilities/index.ts';
-import { CODEX_ENTRIES, type CodexEntryDef, type CodexKind } from '../content/codex/index.ts';
+import {
+  CODEX_ENTRIES,
+  type CodexEntryDef,
+  type CodexKind,
+  type CodexVersionDef,
+} from '../content/codex/index.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
-import { MEMOS } from '../content/memos/index.ts';
+import { MEMOS, type MemoFormat } from '../content/memos/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import {
   baseStoryContext,
@@ -64,6 +69,10 @@ function unlockedOf(save: SaveData, e: CodexEntryDef): readonly CodexVersion[] {
 /** One delivered memo, ready to show. */
 export interface MemoView {
   readonly id: string;
+  /** Everglow letterhead (`memo`) or the KFA's form panel (`form`). */
+  readonly format: MemoFormat;
+  /** A form's stamp ("PENDING"), or null. */
+  readonly stamp: string | null;
   readonly from: string;
   readonly to: string;
   readonly subject: string;
@@ -87,6 +96,8 @@ export function inboxView(save: SaveData | null = activeSave()): readonly MemoVi
     if (m === undefined) continue;
     out.push({
       id,
+      format: m.format ?? 'memo',
+      stamp: m.stamp ?? null,
       from: r(m.from),
       to: r(m.to),
       subject: r(m.subject),
@@ -128,18 +139,32 @@ export interface CodexPicture {
   readonly frame: string;
 }
 
+/** A version's text, resolved, with its small print. */
+export interface CodexText {
+  readonly text: string;
+  readonly smallPrint: string | null;
+}
+
+/** One version on screen. */
+export interface CodexVersionView extends CodexText {
+  readonly version: CodexVersion;
+  /**
+   * An annotation is written on the record: the `original` it annotates, shown above the note
+   * (null for any other version). So the newest version on screen still shows the older one.
+   */
+  readonly record: CodexText | null;
+}
+
 /** One unlocked entry, ready to show. */
 export interface CodexEntryView {
   readonly id: string;
   readonly title: string;
   readonly kind: CodexKind;
   readonly picture: CodexPicture | null;
+  /** What the photo frame says without a picture ("Photo pending"; "Withheld"). */
+  readonly photo: string;
   /** The versions on screen (the newest; original beside corrected in the Field Journal). */
-  readonly versions: readonly {
-    readonly version: CodexVersion;
-    readonly text: string;
-    readonly smallPrint: string | null;
-  }[];
+  readonly versions: readonly CodexVersionView[];
   /** A version on screen hasn't been opened yet. */
   readonly isNew: boolean;
 }
@@ -169,22 +194,25 @@ export function codexView(save: SaveData | null = activeSave()): CodexView | nul
   const ctx = baseStoryContext(save);
   const text = textContext(save);
   const entries: CodexEntryView[] = [];
+  const resolved = (def: CodexVersionDef): CodexText => ({
+    text: resolveText(def.text, text),
+    smallPrint: def.smallPrint === undefined ? null : resolveText(def.smallPrint, text),
+  });
   for (const e of CODEX_ENTRIES) {
     const shown = shownVersions(unlockedOf(save, e), ctx);
     if (shown.length === 0) continue;
+    const original = e.versions.original;
     entries.push({
       id: e.id,
       title: e.title,
       kind: e.kind,
       picture: pictureOf(e),
-      versions: shown.map((v) => {
-        const def = e.versions[v]!;
-        return {
-          version: v,
-          text: resolveText(def.text, text),
-          smallPrint: def.smallPrint === undefined ? null : resolveText(def.smallPrint, text),
-        };
-      }),
+      photo: e.photo ?? 'Photo pending',
+      versions: shown.map((v) => ({
+        version: v,
+        ...resolved(e.versions[v]!),
+        record: v === 'annotated' && original !== undefined ? resolved(original) : null,
+      })),
       isNew: unreadVersions(e.id, shown, save.story.seen).length > 0,
     });
   }

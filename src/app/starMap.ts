@@ -11,6 +11,7 @@ import {
   STAR_MAP_PHASE_ACT,
   STAR_MAP_PHASES,
   STAR_MAP_REGIONS,
+  STAR_MAP_SEEN_ID,
   type StarMapPhase,
 } from '../content/starMap.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -28,13 +29,12 @@ import { silkText } from '../ui/silk.ts';
 import { battleConfig } from './battleSetup.ts';
 import { medalViews, objectiveViews, threatIntel } from './hudViews.ts';
 import { logError } from './log.ts';
+import { activeSave, updateActiveSave } from './save.ts';
 
-/** The `story.seen` id the star map's first visit adds (D102; no SaveData change). */
-export const STAR_MAP_SEEN_ID = 'star_map_opened';
+export { STAR_MAP_SEEN_ID };
 
 /** The first-visit notice (story/style-guide.md § 2). */
-export const STAR_MAP_ACCESS_NOTICE =
-  'Access upgraded! Perimeter Ops now covers the whole valley.';
+export const STAR_MAP_ACCESS_NOTICE = 'Access upgraded! Perimeter Ops now covers the whole valley.';
 
 /** The chart's one-line description for screen readers (style-guide § 2). */
 export const STAR_MAP_CHART_LABEL =
@@ -53,8 +53,16 @@ export interface StarBriefView {
   /** "Armor": each counter the map requires an answer to. */
   readonly required: readonly string[];
   /** The three medals by name, earned (on file) or not. */
-  readonly medals: readonly { readonly id: string; readonly name: string; readonly earned: boolean }[];
-  readonly objectives: readonly { readonly id: string; readonly name: string; readonly done: boolean }[];
+  readonly medals: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly earned: boolean;
+  }[];
+  readonly objectives: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly done: boolean;
+  }[];
 }
 
 export interface StarNodeView {
@@ -132,7 +140,10 @@ export function starStateText(state: StarMapState): string {
 type MapDef = CompiledMapDef<IdSpace>;
 
 /** The compiled maps, keyed by id (one compile serves every node), or null if none can be built. */
-function compiledMaps(ids: readonly string[], save: SaveData): Readonly<Record<string, MapDef>> | null {
+function compiledMaps(
+  ids: readonly string[],
+  save: SaveData,
+): Readonly<Record<string, MapDef>> | null {
   const first = ids[0];
   if (first === undefined) return null;
   try {
@@ -191,8 +202,7 @@ export function starMapView(save: SaveData): StarMapView {
       y: n.y,
       medals,
       brief: e.state === 'coming_soon' || map === undefined ? null : briefOf(map, save),
-      label:
-        e.state === 'coming_soon' ? `${head} ${tagline}` : `${head} ${medals} of 3 medals.`,
+      label: e.state === 'coming_soon' ? `${head} ${tagline}` : `${head} ${medals} of 3 medals.`,
     };
   });
   const marker = entries.findLast((e) => e.state === 'won')?.id ?? null;
@@ -235,4 +245,20 @@ export function starMapView(save: SaveData): StarMapView {
  */
 export function campaignScreenName(): 'Sector map' | 'Shift board' {
   return campaign.value?.mode === 'starMap' ? 'Sector map' : 'Shift board';
+}
+
+/**
+ * Marks the star map's first visit shown in the save in play (`story.seen`, once; D102), so the
+ * sweep and the notice never repeat. A failed write is logged and harmless.
+ */
+export function markStarMapOpened(): void {
+  const save = activeSave();
+  if (save === null || save.story.seen.includes(STAR_MAP_SEEN_ID)) return;
+  updateActiveSave((s) => ({ ...s, story: { ...s.story, seen: [...s.story.seen, STAR_MAP_SEEN_ID] } }));
+}
+
+/** The star map for the save in play, or null without one. */
+export function activeStarMap(): StarMapView | null {
+  const save = activeSave();
+  return save === null ? null : starMapView(save);
 }

@@ -1,11 +1,19 @@
-// The codex (T303; design/core-loop.md § 6.5): the base's *Pest Field Guide* pane. Unlocked entries,
-// grouped by kind, in a list beside the open entry: its picture (the subject's icon, or a prop or
-// portrait), its title, and the version it shows (from A3M1, original beside corrected). Opening an
-// entry reads it, which clears its NEW tag. The view models are app/inbox.ts.
+// The codex (T303, T411; design/core-loop.md § 6.5): the base's *Pest Field Guide* pane. Unlocked
+// entries, grouped by kind, in a list beside the open entry: its picture (the subject's icon, or a
+// prop or portrait), its title, and the version it shows (from A3M1, original beside corrected). An
+// annotated version shows the original it annotates, dimmed, with the bracketed note under it in
+// the margin's rule (the record and what was written on it). Opening an entry reads it, which
+// clears its NEW tag. The view models are app/inbox.ts.
 import { useState } from 'preact/hooks';
-import { CODEX_SECTIONS, codexView, markCodexRead, type CodexEntryView } from '../../app/inbox.ts';
+import {
+  CODEX_SECTIONS,
+  codexView,
+  markCodexRead,
+  type CodexEntryView,
+  type CodexVersionView,
+} from '../../app/inbox.ts';
 import { Icon } from '../hud/Icon.tsx';
-import { GlyphText, listKeys, NewTag, SmallPrint, useReadOnDwell } from './Inbox.tsx';
+import { GlyphText, listKeys, NewTag, SmallPrint, useReadOnDwell, useReaderTop } from './Inbox.tsx';
 import { campaign } from './state.ts';
 import './inbox.css';
 
@@ -15,15 +23,50 @@ const VERSION_LABEL = {
   corrected: 'Field Journal',
 } as const;
 
+/** One version's text and small print; an annotation under the record it was written on. */
+function Version({ id, v, label }: { id: string; v: CodexVersionView; label: boolean }) {
+  return (
+    <section class="sd-codex-version">
+      {label && <p class="sd-codex-version-label">{VERSION_LABEL[v.version]}</p>}
+      {v.record !== null && (
+        <div class="sd-codex-record">
+          <p class="sd-codex-text">
+            <GlyphText text={v.record.text} />
+          </p>
+          {v.record.smallPrint !== null && (
+            <SmallPrint
+              key={`${id}-record`}
+              id={`sd-codex-print-${id}-record`}
+              text={v.record.smallPrint}
+            />
+          )}
+        </div>
+      )}
+      <p class={v.record === null ? 'sd-codex-text' : 'sd-codex-text sd-codex-note'}>
+        <GlyphText text={v.text} />
+      </p>
+      {v.smallPrint !== null && (
+        <SmallPrint
+          key={`${id}-${v.version}`}
+          id={`sd-codex-print-${id}-${v.version}`}
+          text={v.smallPrint}
+        />
+      )}
+    </section>
+  );
+}
+
 function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
   const section = CODEX_SECTIONS.find((s) => s.kind === entry.kind)?.label ?? '';
   const sideBySide = entry.versions.length > 1;
+  // A single annotated version says so in the kicker (side by side, each version is labelled).
+  const annotated = !sideBySide && entry.versions[0]?.version === 'annotated';
   return (
     <article class="sd-codex-entry" aria-labelledby="sd-codex-title">
       <header class="sd-codex-head">
         <div class="sd-codex-photo">
           {entry.picture === null ? (
-            <span class="sd-codex-pending">Photo pending</span>
+            <span class="sd-codex-pending">{entry.photo}</span>
           ) : (
             <Icon
               id={entry.picture.id}
@@ -38,6 +81,7 @@ function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
         <div>
           <p class="sd-codex-kicker">
             {title} · {section}
+            {annotated && ' · Annotated'}
           </p>
           <h2 id="sd-codex-title" class="sd-codex-title">
             {entry.title}
@@ -46,19 +90,7 @@ function Entry({ entry, title }: { entry: CodexEntryView; title: string }) {
       </header>
       <div class={sideBySide ? 'sd-codex-versions sd-codex-side' : 'sd-codex-versions'}>
         {entry.versions.map((v) => (
-          <section key={v.version} class="sd-codex-version">
-            {sideBySide && <p class="sd-codex-version-label">{VERSION_LABEL[v.version]}</p>}
-            <p class="sd-codex-text">
-              <GlyphText text={v.text} />
-            </p>
-            {v.smallPrint !== null && (
-              <SmallPrint
-                key={`${entry.id}-${v.version}`}
-                id={`sd-codex-print-${entry.id}-${v.version}`}
-                text={v.smallPrint}
-              />
-            )}
-          </section>
+          <Version key={v.version} id={entry.id} v={v} label={sideBySide} />
         ))}
       </div>
     </article>
@@ -77,6 +109,7 @@ export function CodexPane() {
   const shown = entries.find((e) => e.id === picked) ?? entries[0] ?? null;
 
   useReadOnDwell(shown?.id ?? null, markCodexRead);
+  const reader = useReaderTop(shown?.id ?? null);
 
   if (view === null || shown === null) {
     return (
@@ -141,7 +174,7 @@ export function CodexPane() {
           })}
         </div>
       </nav>
-      <div class="sd-story-reader" tabIndex={0} aria-label="Codex entry">
+      <div class="sd-story-reader" ref={reader} tabIndex={0} aria-label="Codex entry">
         <Entry entry={shown} title={view.title} />
       </div>
     </div>

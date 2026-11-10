@@ -112,6 +112,7 @@
 
 /* The counter: an Act I rounded badge (art-direction §9 act themes). */
 .sd-results-counter {
+  position: relative;
   padding: 3px 8px;
   border: 1px solid var(--sd-gold-2);
   border-radius: 6px;

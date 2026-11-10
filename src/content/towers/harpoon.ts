@@ -5,7 +5,7 @@
 // flyer is grounded; bosses take Chilled 50% instead).
 // Licensed after A2M1 (upgrades/access.ts). A T400a stub: T408 runs it and confirms these numbers
 // (the shot may become a projectile), and createSim refuses it until then (`tower.harpoon`; the
-// specs also need `attack.line` and `status.pinned`). Sprites are placeholders (T440b).
+// specs also need `attack.line` and `status.pinned`). Sprites: content/sprites/towers/harpoon.ts (T440b).
 import { defineTower } from '../define.ts';
 
 export const harpoon = defineTower({

@@ -32,7 +32,6 @@ import {
 import type {
   AbilityCooldownView,
   AbilitySlotView,
-  BriefingLine,
   BuildSlotView,
   MedalView,
   ObjectiveStatusView,
@@ -223,24 +222,6 @@ export function wavePreview(
     }
   }
   return { number: next.number, groups };
-}
-
-/**
- * A map's static briefing (M1: map data `briefing`, one line per `\n`) as lines with their
- * speakers: "QUILL: Hello!" is spoken by QUILL. A line with no short speaker prefix has none.
- */
-export function briefingLines(briefing: string | null): BriefingLine[] {
-  if (briefing === null) return [];
-  return briefing
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l !== '')
-    .map((line) => {
-      const m = /^([^:\s][^:]{0,15}): (.+)$/.exec(line);
-      return m === null
-        ? { speaker: null, text: silkText(line) }
-        : { speaker: m[1]!, text: silkText(m[2]!) };
-    });
 }
 
 /** Whole seconds left in the countdown to the next wave (rounded up), or null when none runs. */

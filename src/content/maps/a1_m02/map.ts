@@ -70,10 +70,6 @@ export const map = defineMapLayout({
   startCredits: 300,
   coreIntegrity: 20,
   stardust: 130,
-  briefing: [
-    'QUILL: Sensors show something big and sparkly on the terraces. Sparkly is good! Usually!',
-    "Bricks: Hatching season. Everything's out and about. Keep your eyes on the path, Sprout.",
-  ].join('\n'),
   threatIntel: ['fast', 'armored'],
   requiredCounters: ['armor'],
   // Aim for the Sack! (act1.md § A1M2, Medals): no Brood Hauler gets past the pump station.

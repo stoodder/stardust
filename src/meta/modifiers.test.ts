@@ -17,9 +17,9 @@ import {
   maxRanks,
   metaModifiers,
   protocolSlots,
-  saveModifiers,
   type MetaLoadout,
 } from './modifiers.ts';
+import { saveModifiers } from './loadout.ts';
 import { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
 import { createNewSave } from './saveData.ts';
 import { compileContent } from '../content/compile.ts';
@@ -169,6 +169,7 @@ describe('meta modifiers', () => {
 
   it('a save brings its ranks and difficulty, never its owned-but-unequipped protocols', () => {
     const save = DEV_SAVES.all_unlocked.build();
+    save.loadouts = { ...save.loadouts, protocols: [], protocolPicks: {} };
     const mods = saveModifiers(save);
     expect(mods.some((m) => m.source.startsWith('protocol:'))).toBe(false);
     expect(mods).toEqual(
@@ -177,6 +178,16 @@ describe('meta modifiers', () => {
     save.settings.difficulty = 'story';
     expect(saveModifiers(save).slice(-5)).toEqual(DIFFICULTY_MODIFIERS.story);
     expect(saveModifiers(createNewSave())).toEqual([]);
+  });
+
+  it('a save brings its equipped protocols, as the battle fits them (T327)', () => {
+    const save = DEV_SAVES.all_unlocked.build();
+    const id = Object.values(PROTOCOLS).find((p) => p.choice === undefined)!.id;
+    save.loadouts = { ...save.loadouts, protocols: [id], protocolPicks: {} };
+    expect(saveModifiers(save)).toEqual(
+      metaModifiers({ upgrades: maxRanks(), protocols: [id], difficulty: 'standard' }),
+    );
+    expect(saveModifiers(save).some((m) => m.source === `protocol:${id}`)).toBe(true);
   });
 });
 

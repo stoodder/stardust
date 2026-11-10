@@ -138,10 +138,11 @@ test('keyboard: Esc backs out of Settings, the Title panels, and the Base', asyn
   await page.keyboard.press('Escape');
   await expect(title).toBeVisible();
 
-  // A save with the base open: Shift board → Base → Esc → Shift board; Settings → Esc → board.
+  // A save with the base open (every map won, so the campaign screen is the Sector map): the map
+  // → Base → Esc → the map; Settings → Esc → the map.
   await page.goto('/?test=1&seed=1&save=all_unlocked');
   await waitForReady(page);
-  const board = page.getByRole('heading', { name: 'Shift board' });
+  const board = page.getByRole('heading', { name: 'Sector map' });
   await expect(board).toBeVisible();
   await page.getByRole('button', { name: 'Base', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Base' })).toBeVisible();

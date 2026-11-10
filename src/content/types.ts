@@ -686,8 +686,6 @@ export interface MapLayoutDef<K extends IdSpace = LiveIds, Id extends string = s
   readonly coreIntegrity?: number;
   /** First-clear Stardust reward (A1M1 pays 0). */
   readonly stardust: number;
-  /** M1 only: the static briefing shown before story/ exists. */
-  readonly briefing?: string;
   /** A loadout tower held back until that wave's countdown starts (compiles to an unlock event). */
   readonly towerUnlockWave?: Readonly<Partial<Record<K['tower'], number>>>;
   /**

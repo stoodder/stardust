@@ -1,6 +1,6 @@
-// The codex and the Inbox quote the docs where the docs give the words (T303): the welcome memo is
-// style-guide § 6.1's sample, every memo's subject and small print is its act-file line, and
-// the codex lines the docs quote appear in their entries. The content files are the home of
+// The codex and the Inbox quote the docs where the docs give the words (T303, T411): the welcome
+// memo is style-guide § 6.1's sample, every memo's (and A2M2's KFA form's) subject and small print
+// is its act-file line, and the codex lines the docs quote appear in their entries. The content files are the home of
 // everything else. Reads the docs from disk, so it lives with the other node-side checks.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -58,6 +58,11 @@ function original(id: string): string {
   return CODEX[id]?.versions.original?.text ?? '';
 }
 
+/** An entry's annotated text. */
+function annotated(id: string): string {
+  return CODEX[id]?.versions.annotated?.text ?? '';
+}
+
 describe('codex lines the docs quote', () => {
   it.each([
     ['codex_brood_hauler', STYLE],
@@ -74,6 +79,27 @@ describe('codex lines the docs quote', () => {
   ])('%s quotes its act-file line', (id, line) => {
     expectQuoted(ACT1, line);
     expect(original(id)).toContain(line);
+  });
+
+  it.each([
+    ['codex_mote', ACT2],
+    ['codex_glass_witch', ACT2],
+  ] as const)('%s (Act II) is verbatim', (id, doc) => {
+    expectQuoted(doc, `"${original(id)}"`);
+  });
+
+  it.each([
+    ['codex_lumenglass', '"woven glass, origin unknown, humming"'],
+    ['codex_pebble', '"Entry withheld."'],
+  ])('%s quotes its act-file line', (id, quoted) => {
+    expectQuoted(ACT2, quoted);
+    expect(original(id)).toContain(quoted.replace(/"/g, ''));
+  });
+
+  it("annotates the Brood Hauler with QUILL's half of the style guide's annotation", () => {
+    const note = annotated('codex_brood_hauler');
+    expect(note).toMatch(/^\[QUILL: /);
+    expectQuoted(STYLE, `"${note}`);
   });
 
   it("carries the Orbital Strike's small print, and Rig Nine's one line", () => {

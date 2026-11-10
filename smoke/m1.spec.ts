@@ -26,8 +26,10 @@ const MAX_CHUNKS = 60;
 
 const tick = (page: Page) => page.evaluate(() => globalThis.__sd?.state()?.tick ?? null);
 
-/** The results counter paragraph (its accessible name is the final line). */
-const counter = (page: Page) => page.locator('.sd-results-counter');
+/** The results counter as it shows (it counts up; hidden from screen readers). */
+const counter = (page: Page) => page.locator('.sd-results-counter-shown');
+/** The counter's final line, the text screen readers get (T329). */
+const counterSpoken = (page: Page) => page.locator('.sd-results-counter .sd-visually-hidden');
 
 /** Fast-forwards the running battle in chunks until the map ends; returns the outcome. */
 const playOut = (page: Page) =>
@@ -40,9 +42,9 @@ const playOut = (page: Page) =>
     [CHUNK, MAX_CHUNKS] as const,
   );
 
-/** The number in the counter's accessible name ("PESTS PROCESSED: 1,234, Top 5% …"). */
+/** The number in the counter's spoken line ("PESTS PROCESSED: 1,234, Top 5% …"). */
 async function pestsProcessed(page: Page): Promise<number> {
-  const label = (await counter(page).getAttribute('aria-label')) ?? '';
+  const label = (await counterSpoken(page).textContent()) ?? '';
   const m = /^PESTS PROCESSED: ([\d,]+), Top 5% of Technicians!$/.exec(label);
   expect(m, `counter label: ${label}`).not.toBeNull();
   return Number(m![1]!.replaceAll(',', '')); // matched just above
