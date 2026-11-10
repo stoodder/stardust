@@ -93,7 +93,7 @@ The world is drawn in **fixed layers** (Phaser `Layer`s), bottom to top:
 | 1 | `backdrop` | Sky gradient, stars, far parallax | none |
 | 2 | `ground` | Ground tiles, cliffs, water; last, the lighting schedule's multiply grade over the world (A2M3 onward; it also tints the world's scenery in `world`, Sprites too, never the actors, D134, D135), then on a map with darkness the night's ground multiply and the lamplight multiply (`DarknessView`); all kept last when a salvaged tile is drawn | static, by `(i + j)` then `i` |
 | 3 | `decal` | Path markings, buildable-tile markers, range rings, shadows, scorch marks; in the dark, the pads' bracket glow and the lamps' light pools (additive, `WorldGlowView`) | insertion order |
-| 4 | `world` | Towers, ground enemies, props, tall terrain, Suppressing Fire's live strip; a glowing prop's additive glow just in front of it (`depth + 0.00005`) | **`depth = footY + kindBias + (uid & 0xff) / 1e4`** |
+| 4 | `world` | Towers, ground enemies, props, tall terrain, Suppressing Fire's live strip; a glowing prop's additive glow just in front of it (`depth + 0.00005`); a boss's shard never under the boss that shed it (at least its owner's depth `+ 0.00005`, `views/shardLook.ts`) | **`depth = footY + kindBias + (uid & 0xff) / 1e4`** |
 | 5 | `air` | Flying enemies, lobbed projectiles at the top of their arc | same formula |
 | 6 | `vfx` | Projectiles, impacts, particles, glow sprites (additive; a beaming Prism's crystal halo in the dark) | insertion order |
 | 7 | `lighting` | Time Dilation's field tint; on a map with darkness (A2M6 through the finale) the actors' night veil (multiply) and the night's lift (additive), both punched out at the sim's lit discs, then the moons added back over the night sky | none |

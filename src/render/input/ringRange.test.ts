@@ -71,10 +71,11 @@ describe('the range ring', () => {
   });
 });
 
+const unlit = (): boolean => false;
+const lit = (): boolean => true;
+
 describe('the placement preview ring (D139 S2)', () => {
   const out: PreviewRing = { rangeTiles: 0, dimmed: false };
-  const unlit = (): boolean => false;
-  const lit = (): boolean => true;
 
   it('shrinks and dims an attacking tower out of every light, and not in a light', () => {
     const base = RIVET.tiers[0].attack!.rangeTiles;

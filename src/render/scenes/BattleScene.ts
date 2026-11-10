@@ -135,6 +135,7 @@ import { ShieldAuraView } from '../views/ShieldAuraView.ts';
 import { WardView } from '../views/WardView.ts';
 import type { UnitAnchors } from '../views/unitAnchor.ts';
 import { ShieldView } from '../views/ShieldView.ts';
+import { shardDepthFloor } from '../views/shardLook.ts';
 import { PlacementView } from '../views/PlacementView.ts';
 import { ProjectileView } from '../views/ProjectileView.ts';
 import { RefugeeViews } from '../views/RefugeeView.ts';
@@ -726,6 +727,7 @@ export class BattleScene extends Phaser.Scene {
       shields: {
         ripples: sh.ripples,
         breaks: sh.breaks,
+        sheds: sh.sheds,
         pulseRings: sh.pulseRings,
         tells: sh.tells,
         auras: this.#auras.rings,
@@ -969,7 +971,9 @@ export class BattleScene extends Phaser.Scene {
         v.setBar(barMaxHp(e.def), e.def.shield?.hp ?? 0);
       }
       v.stamp = stamp;
-      v.sync(e, state.tick);
+      // A boss's shard sorts over the boss that shed it (D139 S4; views/shardLook.ts).
+      const owner = e.ownerUid === 0 ? undefined : this.#enemies.get(e.ownerUid);
+      v.sync(e, state.tick, shardDepthFloor(owner?.depth ?? null, e.uid));
       const under = v.burrowed;
       v.syncPose(e);
       if (under !== v.burrowed)

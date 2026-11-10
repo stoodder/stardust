@@ -4,7 +4,9 @@ import {
   RIPPLE_GAP_MS,
   RIPPLES_PER_FRAME,
   RippleGate,
+  shedOwner,
   tellAlpha,
+  type ShieldPool,
 } from './ShieldView.ts';
 
 describe('RippleGate (the shield ripple, T403)', () => {
@@ -57,5 +59,24 @@ describe('the charge ring', () => {
     expect(chargeRadius(1, 90, 2)).toBe(0.25);
     expect(chargeRadius(0, 90, 2)).toBe(0.25);
     expect(chargeRadius(200, 90, 2)).toBe(2);
+  });
+});
+
+/** A pool of units with only the fields the shed reads. */
+function pool(...units: { uid: number; alive: boolean; ownerUid: number }[]): ShieldPool {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only these fields are read
+  return { used: units.length, items: units } as unknown as ShieldPool;
+}
+
+describe('the shed spark (D139 S4)', () => {
+  it("throws a spark only from a shard's live owner", () => {
+    const boss = { uid: 5, alive: true, ownerUid: 0 };
+    const shard = { uid: 9, alive: true, ownerUid: 5 };
+    const brood = { uid: 10, alive: true, ownerUid: 0 };
+    const units = pool(boss, shard, brood);
+    expect(shedOwner(units, shard)).toBe(boss);
+    expect(shedOwner(units, brood)).toBeNull(); // a plain spawn sheds nothing
+    expect(shedOwner(units, boss)).toBeNull();
+    expect(shedOwner(pool({ ...boss, alive: false }, shard), shard)).toBeNull();
   });
 });

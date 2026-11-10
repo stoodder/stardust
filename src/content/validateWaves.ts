@@ -167,8 +167,10 @@ export function validateWaves(
 
 /**
  * [wave]: once a wave sends a boss whose ending is `pivot`, no later wave sends a group of its
- * faction (D138): the pivot stands down only the live units of its side (enemies.md § 6.1), so a
- * later one would walk in hostile after its side has stood down.
+ * faction (D138), and neither does the boss's own wave after the boss's group starts (a group
+ * whose `delaySec` is later than the boss group's; D139): the pivot stands down only the live
+ * units of its side (enemies.md § 6.1), so a later one would walk in hostile after its side has
+ * stood down.
  */
 function validatePivotFaction(
   issues: Issues,
@@ -177,24 +179,41 @@ function validatePivotFaction(
   mapWhere: string,
 ): void {
   const pivots = new Map<string, number>(); // faction → the first pivoting boss's wave index
+  const bossDelay = new Map<string, number>(); // faction → this wave's earliest pivoting boss delay
   for (const [w, wave] of def.waves.entries()) {
+    bossDelay.clear();
+    for (const group of wave.groups) {
+      const enemy = ctx.enemies.get(group.enemy);
+      if (enemy?.boss?.ending !== 'pivot') continue;
+      const delay = group.delaySec ?? 0;
+      const was = bossDelay.get(enemy.faction);
+      if (was === undefined || delay < was) bossDelay.set(enemy.faction, delay);
+    }
     for (const [g, group] of wave.groups.entries()) {
       const enemy = ctx.enemies.get(group.enemy);
       if (enemy === undefined) continue;
       const from = pivots.get(enemy.faction);
+      const at = `${mapWhere}.waves[${w}].groups[${g}]`;
       if (from !== undefined && w > from) {
         issues.add(
           'wave',
-          `${mapWhere}.waves[${w}].groups[${g}]`,
+          at,
           `'${enemy.id}' (${enemy.faction}) spawns after wave ${from + 1}'s boss pivots its side`,
+        );
+        continue;
+      }
+      const boss = bossDelay.get(enemy.faction);
+      if (boss !== undefined && (group.delaySec ?? 0) > boss) {
+        issues.add(
+          'wave',
+          at,
+          `'${enemy.id}' (${enemy.faction}) starts after its own wave's pivoting boss ` +
+            `(delay ${group.delaySec ?? 0} s > ${boss} s)`,
         );
       }
     }
-    for (const group of wave.groups) {
-      const enemy = ctx.enemies.get(group.enemy);
-      if (enemy?.boss?.ending === 'pivot' && !pivots.has(enemy.faction)) {
-        pivots.set(enemy.faction, w);
-      }
+    for (const [faction] of bossDelay) {
+      if (!pivots.has(faction)) pivots.set(faction, w);
     }
   }
 }

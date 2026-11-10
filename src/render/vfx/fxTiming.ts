@@ -23,6 +23,14 @@ export function fadeAlpha(t: number): number {
   return STEPPED_ALPHA[3];
 }
 
+/**
+ * The starting vertical speed (px/ms) of a lob under gravity `g` (px/ms², down) that falls `dy` px
+ * (negative: rises) in `ms`: it lands exactly there, arcing `g·ms²/8` px over the straight line.
+ */
+export function lobVelocity(dy: number, ms: number, g: number): number {
+  return ms > 0 ? (dy - 0.5 * g * ms * ms) / ms : 0;
+}
+
 // ── Tells on sim ticks (art-direction §8, T430a) ─────────────────────────────────────────────
 
 /**

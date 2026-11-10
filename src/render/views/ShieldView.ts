@@ -45,6 +45,8 @@ const PULSE_FLASH_TILES = 0.5;
 const PULSE_FLASH_MS = 250;
 /** A break's shards fly from the bubble's middle, a little above the hit point (px). */
 const SHARD_LIFT_PX = 2;
+/** A shed spark leaves the boss's heart this far over its ground point (px; the Penitent's chest). */
+const SHED_FROM_LIFT_PX = 24;
 /** Units remembered by the ripple gate (the oldest is forgotten first). */
 const GATE_SLOTS = 32;
 const MAX_TELLS = 6;
@@ -142,6 +144,8 @@ export class ShieldView {
   pulseRings = 0;
   /** Shields broken (their shards thrown) since the view was made. */
   breaks = 0;
+  /** Shed sparks thrown from a boss to its shards since the view was made. */
+  sheds = 0;
 
   constructor(ctx: ViewContext, fx: TransientFx, reducedMotion: () => boolean) {
     this.#ctx = ctx;
@@ -179,9 +183,19 @@ export class ShieldView {
       this.#fx.ring(e.x, e.y, PULSE_FLASH_TILES, 'white.1', PULSE_FLASH_MS, false);
       this.#fx.ring(e.x, e.y, e.radiusTiles, 'blue.4', PULSE_RING_MS, true);
     });
+    // A boss's shards (D139 S4): a spark sheds from its heart to each shard's spot as they spawn.
+    const offSpawn = bus.on('EnemySpawned', (e) => {
+      const units = pool();
+      const shard = findUnit(units, e.uid);
+      const owner = shard === null ? null : shedOwner(units, shard);
+      if (shard === null || owner === null) return;
+      this.#fx.shed(owner.x, owner.y, shard.x, shard.y, SHED_FROM_LIFT_PX);
+      this.sheds++;
+    });
     return () => {
       offHit();
       offPulse();
+      offSpawn();
     };
   }
 
@@ -249,4 +263,24 @@ function flying(enemies: ShieldPool, uid: number): boolean {
     if (e.uid === uid) return e.def?.layer === 'air';
   }
   return false;
+}
+
+/**
+ * The live boss a just-spawned unit was shed from (its `ownerUid`: a Penitent's shard), or null for
+ * any other spawn (D139 S4).
+ */
+export function shedOwner(
+  enemies: ShieldPool,
+  unit: Pick<DeepReadonly<Enemy>, 'ownerUid'>,
+): DeepReadonly<Enemy> | null {
+  return unit.ownerUid === 0 ? null : findUnit(enemies, unit.ownerUid);
+}
+
+/** The live unit `uid` in the pool, or null. */
+export function findUnit(enemies: ShieldPool, uid: number): DeepReadonly<Enemy> | null {
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (e.uid === uid && e.alive) return e;
+  }
+  return null;
 }

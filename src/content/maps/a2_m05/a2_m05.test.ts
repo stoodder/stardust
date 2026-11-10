@@ -161,4 +161,33 @@ describe('A2M5 · The Long Walk', () => {
       "[wave] maps.a2_m05.waves[6].groups[2]: 'glimmer' (aelari) spawns after wave 5's boss pivots its side",
     ]);
   });
+
+  it('nor in her own wave after her group starts ([wave], D139)', () => {
+    const raw = RAW_CONTENT;
+    const m = raw.maps.a2_m05;
+    const w5 = m.waves[4]!; // the Penitent's wave: her group alone, at OPEN
+    const boss = w5.groups[0]!;
+    expect(boss.enemy).toBe('sunderglass_penitent');
+    const at = (delaySec: number): RawContent => ({
+      ...raw,
+      maps: {
+        ...raw.maps,
+        a2_m05: {
+          ...m,
+          waves: [
+            ...m.waves.slice(0, 4),
+            { ...w5, groups: [boss, { enemy: 'glimmer', count: 2, route: 'road', delaySec }] },
+            ...m.waves.slice(5),
+          ],
+        },
+      },
+    });
+    const bossAt = boss.delaySec ?? 0;
+    expect(waveIssues(at(bossAt + 4))).toEqual([
+      `[wave] maps.a2_m05.waves[4].groups[1]: 'glimmer' (aelari) starts after its own wave's pivoting boss (delay ${bossAt + 4} s > ${bossAt} s)`,
+    ]);
+    // Beside her or before her, they stand down with her.
+    expect(waveIssues(at(bossAt))).toEqual([]);
+    expect(waveIssues(at(0))).toEqual([]);
+  });
 });

@@ -320,6 +320,10 @@ export class EnemyView implements PooledView {
   #barShieldPx = -1;
   #barShown = false;
   #hovered = false;
+  /** Its own sort depths (body, overhead), and the floor its owner sets (a boss's shard; S4). */
+  #ownDepth = 0;
+  #overDepth = 0;
+  #depthFloor = Number.NEGATIVE_INFINITY;
   /** The scene's keep-clear spots (null: none), and whether it stands near one now. */
   readonly #keepClear: KeepClear | null;
   #clear = false;
@@ -586,6 +590,7 @@ export class EnemyView implements PooledView {
     this.#overClear = false;
     this.#strode = false;
     this.#tellStart = -1;
+    this.#depthFloor = Number.NEGATIVE_INFINITY;
     this.#stopFlash();
     const layer = flying ? this.#ctx.layers.air : this.#ctx.layers.world;
     layer.add(this.#body);
@@ -650,10 +655,13 @@ export class EnemyView implements PooledView {
 
   /**
    * Positions the enemy from sim state (at sim tick `tick`, the tell glyph's clock), turns it to
-   * face where it moved, and updates its health bar.
+   * face where it moved, and updates its health bar. `depthFloor`: the least depth its body sorts
+   * at (a boss's shard draws over its owner, shardLook.ts; −∞ for none).
    */
-  sync(e: EnemyLike, tick: number): void {
+  sync(e: EnemyLike, tick: number, depthFloor = Number.NEGATIVE_INFINITY): void {
     const hit = e.hp !== this.#hp || e.shieldHp !== this.#shieldHp;
+    const floorMoved = depthFloor !== this.#depthFloor;
+    this.#depthFloor = depthFloor;
     this.#tick = tick;
     this.#syncFlash(e.hp);
     // A hit on the shield flashes its bubble (shieldLook.ts).
@@ -665,6 +673,7 @@ export class EnemyView implements PooledView {
       this.#syncGlyph();
     }
     if (e.x === this.#x && e.y === this.#y) {
+      if (floorMoved && !Number.isNaN(this.#x)) this.#applyDepth();
       // A spot may have armed or cleared round a unit standing still.
       const cleared = this.#syncClear();
       if (cleared) this.#syncGlyph();
@@ -703,22 +712,34 @@ export class EnemyView implements PooledView {
     this.#bob = 0;
     this.#placeBody();
     if (this.#flying) this.#syncBob();
-    const depth = worldDepth(gy + oy, 'enemy', this.#uid);
-    if (this.#body.depth !== depth) {
-      this.#body.setDepth(depth);
-      // The overhead sorts like the body: a front unit's bar over the one behind it (T501i).
-      const od = overheadDepth(gy + oy, this.#uid);
-      this.#barTrack.setDepth(od);
-      this.#barHp.setDepth(od);
-      this.#barShield.setDepth(od);
-      this.#tell.setDepth(od);
-    }
+    this.#ownDepth = worldDepth(gy + oy, 'enemy', this.#uid);
+    // The overhead sorts like the body: a front unit's bar over the one behind it (T501i).
+    this.#overDepth = overheadDepth(gy + oy, this.#uid);
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
-    this.#mound.setPosition(gx + ox, gy + oy).setDepth(depth);
+    this.#mound.setPosition(gx + ox, gy + oy);
+    this.#applyDepth();
     this.#syncClear();
     // A burrowed unit's glyph waits underground with it.
     this.#syncGlyph();
     this.#syncBar();
+  }
+
+  /**
+   * Sorts the body (and its mound) at its own depth or its floor, whichever is higher, and its
+   * overhead at its own.
+   */
+  #applyDepth(): void {
+    const depth = Math.max(this.#ownDepth, this.#depthFloor);
+    if (this.#body.depth !== depth) {
+      this.#body.setDepth(depth);
+      this.#mound.setDepth(depth);
+    }
+    const od = this.#overDepth;
+    if (this.#tell.depth === od) return;
+    this.#barTrack.setDepth(od);
+    this.#barHp.setDepth(od);
+    this.#barShield.setDepth(od);
+    this.#tell.setDepth(od);
   }
 
   /**

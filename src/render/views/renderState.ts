@@ -63,6 +63,8 @@ export interface RenderState {
   readonly shields: {
     readonly ripples: number;
     readonly breaks: number;
+    /** Shed sparks thrown from a boss to its shards (D139 S4). */
+    readonly sheds: number;
     readonly pulseRings: number;
     readonly tells: number;
     readonly auras: number;

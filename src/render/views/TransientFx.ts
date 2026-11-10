@@ -24,6 +24,7 @@ import {
   BURST_MS,
   fadeAlpha,
   floatRise,
+  lobVelocity,
   FLOAT_MS,
   FLOAT_RISE_PX,
   LEAK_SHAKE_MS,
@@ -132,6 +133,8 @@ interface Debris {
   vx: number;
   vy: number;
   g: number;
+  /** Holds 100% to the end rather than stepping out (a shed spark, which must land seen). */
+  steady: boolean;
   /** Its pixel's size (the texture it shows). */
   size: 1 | 2;
   img: Phaser.GameObjects.Image;
@@ -141,6 +144,16 @@ interface Debris {
 const SHATTER_COLORS: readonly ColorName[] = ['blue.4', 'teal.4', 'white.1', 'pink.4', 'blue.3'];
 const SHIELD_SHARD_COLORS: readonly ColorName[] = ['blue.4', 'white.1', 'blue.3'];
 const UNSUNG_COLORS: readonly ColorName[] = ['violet.3', 'violet.4', 'white.1'];
+/** A shed spark (D139 S4): its flight (ms), its lob's gravity (px/ms²: an 8 px arc), its pixels. */
+export const SHED_MS = 400;
+const SHED_G = 0.0004;
+const SHED_LAG_MS = 30;
+const SHED_TRAIL: readonly { readonly size: 1 | 2; readonly color: ColorName }[] = [
+  { size: 2, color: 'white.1' },
+  { size: 1, color: 'teal.4' },
+  { size: 1, color: 'blue.3' },
+];
+
 /** How each debris kind moves and lasts. */
 const SHATTER = {
   count: 12,
@@ -279,6 +292,7 @@ export class TransientFx {
         vx: 0,
         vy: 0,
         g: 0,
+        steady: false,
         size: 1,
         img,
       });
@@ -330,6 +344,36 @@ export class TransientFx {
     this.#spawn(pos.x + 1, pos.y - 1, 0, 0, 0, FLECK_MS, 1, 'pink.3');
   }
 
+  /**
+   * A boss sheds a shard (D139 S4): a spark lobs from its heart at grid (x0, y0), `fromLiftPx` up,
+   * to the shard's body at grid (x1, y1) in SHED_MS, a 2 px `white.1` head with a `teal.4` and a
+   * `blue.3` pixel trailing, held whole so it lands seen. Under reduced motion nothing flies: the
+   * spot itself glints for the same time.
+   */
+  shed(x0: number, y0: number, x1: number, y1: number, fromLiftPx: number): void {
+    gridToScreen(x1, y1, this.ctx.origin, pos);
+    const tx = pos.x;
+    const ty = pos.y - BODY_LIFT_PX;
+    if (this.reducedMotion()) {
+      this.#spawn(tx, ty, 0, 0, 0, SHED_MS, 2, 'white.1', true);
+      return;
+    }
+    gridToScreen(x0, y0, this.ctx.origin, pos);
+    const sx = pos.x;
+    const sy = pos.y - fromLiftPx;
+    const vx = (tx - sx) / SHED_MS;
+    const vy = lobVelocity(ty - sy, SHED_MS, SHED_G);
+    for (let i = 0; i < SHED_TRAIL.length; i++) {
+      const k = SHED_TRAIL[i]!; // i < length
+      // Each trailing pixel leaves a little later on the same arc, so it follows the head.
+      const lag = i * SHED_LAG_MS;
+      const life = SHED_MS - lag;
+      const bx = sx + vx * lag;
+      const by = sy + vy * lag + 0.5 * SHED_G * lag * lag;
+      this.#spawn(bx, by, vx, vy + SHED_G * lag, SHED_G, life, k.size, k.color, true);
+    }
+  }
+
   /** `kind.count` pixels flung out from (sx, sy) at random angles, starting `startPx` out. */
   #spray(
     sx: number,
@@ -374,6 +418,7 @@ export class TransientFx {
     lifeMs: number,
     size: 1 | 2,
     color: ColorName,
+    steady = false,
   ): void {
     const d = this.#debris[this.#nextDebris]!; // index < MAX_DEBRIS
     this.#nextDebris = (this.#nextDebris + 1) % MAX_DEBRIS;
@@ -388,6 +433,7 @@ export class TransientFx {
     d.g = g;
     d.ms = 0;
     d.lifeMs = lifeMs;
+    d.steady = steady;
     d.active = true;
     d.img.setTint(tintOf(color)).setAlpha(1).setVisible(true);
     d.img.setPosition(Math.round(x), Math.round(y));
@@ -635,7 +681,9 @@ export class TransientFx {
       d.vy += d.g * dt;
       d.x += d.vx * dt;
       d.y += d.vy * dt;
-      d.img.setPosition(Math.round(d.x), Math.round(d.y)).setAlpha(fadeAlpha(d.ms / d.lifeMs));
+      d.img
+        .setPosition(Math.round(d.x), Math.round(d.y))
+        .setAlpha(d.steady ? 1 : fadeAlpha(d.ms / d.lifeMs));
     }
   }
 

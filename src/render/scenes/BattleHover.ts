@@ -21,12 +21,7 @@ import {
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import { ghostLabel, ghostLabels, salvageLabel, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';
-import {
-  previewRing,
-  ringDimmed,
-  ringRangeTiles,
-  type PreviewRing,
-} from '../input/ringRange.ts';
+import { previewRing, ringDimmed, ringRangeTiles, type PreviewRing } from '../input/ringRange.ts';
 import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
 import { pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import type { CursorView } from '../views/CursorView.ts';
@@ -189,7 +184,13 @@ export class BattleHover {
       this.#litCol = tile.col;
       this.#litRow = tile.row;
       const ring = previewRing(armed.tiers[0], sim.state.dark, this.#litAtHover, this.#ring);
-      placement.setRing(tile.col + 0.5, tile.row + 0.5, ring.rangeTiles, look.ghostValid, ring.dimmed);
+      placement.setRing(
+        tile.col + 0.5,
+        tile.row + 0.5,
+        ring.rangeTiles,
+        look.ghostValid,
+        ring.dimmed,
+      );
       // A Prism shows the disc it would light from here, as a ghost (review R9).
       this.#deps.lightGhosts?.setPreview(tile.col, tile.row, armed.lightRadiusSq);
       this.#setHand(false);
