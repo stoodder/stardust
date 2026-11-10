@@ -2,7 +2,10 @@
 import { defineRegistry } from '../define.ts';
 import { crane } from './crane.ts';
 import { harpoon } from './harpoon.ts';
+import { lantern } from './lantern.ts';
 import { lookout } from './lookout.ts';
+import { mindspike } from './mindspike.ts';
+import { prism } from './prism.ts';
 import { rivet } from './rivet.ts';
 import { skyhook } from './skyhook.ts';
 import { sprinkler } from './sprinkler.ts';
@@ -10,13 +13,20 @@ import { thumper } from './thumper.ts';
 import { zapcoil } from './zapcoil.ts';
 
 /**
- * Towers registered ahead of their task (T400a): stubs whose numbers their task confirms, refused
- * by the sim until then (sim/gates.ts, each `tower.<id>` row). The task that lifts a row removes
- * the tower here in the same change (src/sim/m4seams.test.ts checks the two agree). None is
- * listed since T408 (T406 lifted the Lookout, T408 the Harpoon and Crane); a later act's stub
- * joins here. While listed, a tower is left out of [quiet-wave-reach] and the loadout pools.
+ * Towers registered ahead of their task (T400a's seam, generalised by T500a), with the task each
+ * waits for: stubs whose numbers that task confirms. This is the one home of the refusal: the sim
+ * refuses a listed tower whole (sim/gates.ts `stubTowerGate`), meta keeps its license, attunement,
+ * and spec unlock off the shelves, and [quiet-wave-reach] and the loadout pools leave it out. The
+ * task lifts it by deleting its entry here. M5 (D137): the Prism (T504), the Mindspike (T507), and
+ * the Seer's Lantern (T508, the cut lever).
  */
-export const TOWERS_AHEAD_OF_TASK: readonly string[] = [];
+export const STUB_TOWER_TASKS: Readonly<Record<string, `T${number}${string}`>> = Object.freeze({
+  prism: 'T504',
+  mindspike: 'T507',
+  lantern: 'T508',
+});
+/** The towers in STUB_TOWER_TASKS (its keys), for the checks that only ask whether one waits. */
+export const TOWERS_AHEAD_OF_TASK: readonly string[] = Object.freeze(Object.keys(STUB_TOWER_TASKS));
 
 export const TOWERS = defineRegistry({
   rivet,
@@ -28,4 +38,8 @@ export const TOWERS = defineRegistry({
   lookout,
   harpoon,
   crane,
+  // M5 (T500a stubs: STUB_TOWER_TASKS).
+  prism,
+  mindspike,
+  lantern,
 });

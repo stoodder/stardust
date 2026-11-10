@@ -273,7 +273,7 @@ To be split up when we reach them. Known items:
 - [ ] **T701** M7: finale.md's eastern horizon warms one step per Phase 1 wave, but art-direction says the light doesn't brighten per wave — reconcile with the finale's `setLighting` Dawn.
 - [ ] **T501** M7: C4 Keep edge cases: the Technician can't equip an ability the companion provides (no double Time Dilation in the finale), and the Phase 2 lock must be phase-scoped and non-persisting (not `revokeAbility`), per D006.
 - [ ] **T501c-M6** M6: the Harpoon, Crane, Flak Curtain and Magnet Crane alts on A3M2, the first map with armored flyers or tanks (T501c's remainder).
-- [ ] **T318-M6** M6/M7: T318's Act III portrait variants (QUILL `purge`, player `reflect_*`, Goldie `act3`, Kip `act3`; Ves'thara `touched_deep`/`dawn` if T541 doesn't reach them) and T335's party hats.
+- [ ] **T318-M6** M6/M7: T318's Act III portrait variants (QUILL `purge`, player `reflect_*`, Goldie `act3`, Kip `act3`; Ves'thara's `dawn` speaker rule for the finale) and T335's party hats.
 
 ## Backlog / Ideas
 - HUD wave preview: the NEW badge and codex hint (needs saves, M2+); the callsign plate (T306)

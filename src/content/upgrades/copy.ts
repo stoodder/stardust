@@ -54,6 +54,8 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Sharper tip, cheaper winch, longer rope. The rope is mostly rope.',
   tune_crane:
     'Price first: 40 stardust, rising. More per shift, cheaper parts, a longer arm. My cut is small.',
+  // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
+  tune_zibzab: 'Ten percent. Honestly, eight.',
 
   // Zibzab: Field Protocols (protocols.ts).
   head_start:

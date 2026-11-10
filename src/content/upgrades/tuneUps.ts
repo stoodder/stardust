@@ -82,3 +82,19 @@ export const tune_crane = defineUpgrade({
     { price: PRICES[2], grants: [{ kind: 'towerStat', tower: 'crane', stat: 'range', pct: 0.05 }] },
   ],
 });
+
+/**
+ * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
+ * damage for every Vrell tower, permanently. Never sold (`kind: 'grant'`): A2M4's C2 Sell grants
+ * it (T510's `resolveC2`), so its price is 0. A stub (T500a): its grant needs a faction-wide
+ * `towerStat` modifier the sim doesn't take yet, so it grants nothing until T510 wires it.
+ */
+export const tune_zibzab = defineUpgrade({
+  id: 'tune_zibzab',
+  name: 'Zibzab Tune-up',
+  copy: itemCopy('tune_zibzab'),
+  kind: 'grant',
+  currency: 'stardust',
+  availableAfter: 'a2_m04',
+  ranks: [{ price: 0, grants: [] }],
+});

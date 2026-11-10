@@ -90,7 +90,8 @@ export interface UpgradeRank {
 
 /**
  * A ranked permanent upgrade (`UpgradeId`): tune-ups and global upgrades in the shop, Command
- * items in R&D. The save stores the owned rank (SaveData.upgrades); ranks are bought in order,
+ * items in R&D, and `grant` items no shelf sells (a story transaction grants them: the C2 Zibzab
+ * Tune-up, T510). The save stores the owned rank (SaveData.upgrades); ranks are bought in order,
  * and owning rank n grants ranks 1..n.
  */
 export interface UpgradeDef<
@@ -98,7 +99,7 @@ export interface UpgradeDef<
   M extends string = CampaignMapId,
 > extends ItemText {
   readonly id: Id;
-  readonly kind: 'shop' | 'rnd';
+  readonly kind: 'shop' | 'rnd' | 'grant';
   readonly currency: Currency;
   /** Stocked once this campaign map is won; null from the start. */
   readonly availableAfter: M | null;

@@ -194,6 +194,7 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
     case 'upgrade': {
       if (!Object.hasOwn(catalog.upgrades, item.id)) return null;
       const def = catalog.upgrades[item.id]!;
+      if (def.kind === 'grant') return null; // never sold: a story transaction grants it (T510)
       const upgrades: Readonly<Partial<Record<string, number>>> = save.upgrades;
       const owned = Math.min(upgrades[item.id] ?? 0, def.ranks.length);
       const rank = def.ranks[Math.min(owned, def.ranks.length - 1)];
