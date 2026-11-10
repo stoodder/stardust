@@ -158,7 +158,7 @@ Portraits and icons are authored at their display size and shown 1:1 in game pix
 | Enemy icons (wave preview) | 16×16 | The enemy's own body builder, front-facing (Skitterkin: `enemies/skitter.ts`). Authored 14×14 plus outline. `icon.enemy.<id>`. The Aelari's are woven at 16×16 with the lattice builders and their outline on the outside only, so their gaps stay see-through (`icons/act2_enemies.ts`, M5's `icons/m5_enemies.ts`); a Hollow unit too big for the box is redrawn small (the Fracture, the Rift Moth) |
 | Status and tell glyphs | 8×8 | See §8. `icon.tell.<id>` (`icon.tell.fast`, `icon.tell.armored`, `icon.tell.carrier`; M5's in `icons/m5_glyphs.ts`). Authored 6×6 plus outline |
 | Currency icons | 8×8 | Credits (gold chip, `icon.credits`), Stardust (shimmer cycle), Intel (teal data shard) |
-| HUD glyphs | 8×8 | The meter's core orb (`icon.core`) and the locked-slot padlock (`icon.lock`). Glyphs are authored 6×6 plus outline |
+| HUD glyphs | 8×8 | The meter's core orb (`icon.core`), the Escort meter's refugee (`icon.refugee`: a little coral Skitterkin with its tuft and a burlap bundle on its back), and the locked-slot padlock (`icon.lock`). Glyphs are authored 6×6 plus outline |
 
 ### Portrait roster
 

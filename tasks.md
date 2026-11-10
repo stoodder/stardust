@@ -240,7 +240,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [x] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
 - [x] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
 - [x] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
-- [~] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
+- [x] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
 - [~] **T512** Act II's close: the PA's minor stinger after A2M6's Results, the night `act3` chart phase + an A3M1 teaser (T601b's slice), the Bounty Board retiring.
 - [~] **T530a** Unit render: aura ring, shards, kneel/Ward ring, stand-down fade, refugees, phase flicker, Fracture bursts, beams by ramp, Unnerved, Mark, Stillness, fray picks; T501i.
 - [~] **T540c** Props and tiles for A2M4–A2M6; Tidybots `unloading`; T501k's grey-on-grey and tier-1 Vrell bases.
@@ -252,6 +252,7 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [ ] **T563** A content check that a link's `vsShielded` bonus sits only on towers whose attacks read `damageOn` (shells and projectiles ignore it today; fine for the Zapcoil and the Prism).
 - [ ] **T564** Gate follow-ups (T501j): take a quiet-machine gate timing (load ≤ 3) and confirm smoke ≤ 325 s, then settle Playwright workers (2 vs 3); split the audio levels smoke test (47 s, the run's tail); watch `dialogue.spec`'s "a scene with a choice…" and "the briefing…" (failed under heavy load); trim the darkness smoke (22 s loaded) and import `hasDarkness` in `gates.ts`.
 - [ ] **T565** Results polish (M5 HUD/Escort): an Escort row lost count ("Evacuated 25 / 36 · lost 11"); confirm a real A2M5 pivot run hides Core integrity on Results (the fixture shows 18/20); debrief speakers wider than STERLING (VES'THARA) push their line out of the text column (results.css).
+- [ ] **T566** Xenotech follow-ups (T509): `validatePurchasable` checks a profile owning an attuned tower also owns its `requires` tower (A3M2 needs it); `smoke/meta.spec.ts`'s "opens every base pane" should open Xenotech; optional: a NEW tag on the Xenotech tab on the first visit after A2M5, and the "new tower" pip and radio line for gift/attuned towers' first battle (`meta/hints.ts newlyIssuedTowers`). M6: whether Mindspike, Lantern and Stillness get codex entries.
 - [ ] **T561** Docs: *Built so far (M5)*, data pointers, enemies.md open question 4, maps.md §5.1–5.2, art-direction §7 and §10.
 
 Carry-overs from M4, folded in:
