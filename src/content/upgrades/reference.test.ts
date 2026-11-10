@@ -33,6 +33,13 @@ function withRows(): RawContent<IdSpace> {
   return { ...RAW_CONTENT, maps, campaign };
 }
 
+/** The [purchasable] errors of `withRows()` under `rules`. */
+function purchasable(rules: PurchaseRules): string[] {
+  return validate(withRows(), { ...DEFAULT_VALIDATION_RULES, purchases: rules }).filter((e) =>
+    e.startsWith('[purchasable]'),
+  );
+}
+
 describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
   it('follows campaign.md § 4.9 into A2M4 and A2M5', () => {
     const { a2_m03, a2_m04, a2_m05 } = REFERENCE_PROFILES;
@@ -56,10 +63,6 @@ describe('REFERENCE_PROFILES, Act II part two (M5)', () => {
   it('prices the rows on the campaign timeline (the Prism as its task will leave it)', () => {
     // The Prism Spire is a stub until T504 lifts it, so its row waits for that (see below).
     const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
-    const purchasable = (rules: PurchaseRules): string[] =>
-      validate(withRows(), { ...DEFAULT_VALIDATION_RULES, purchases: rules }).filter((e) =>
-        e.startsWith('[purchasable]'),
-      );
     expect(purchasable(live)).toEqual([]);
     // While the Prism is ahead of its task, A2M6's row is refused for it alone.
     const ahead = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: ['prism'] });

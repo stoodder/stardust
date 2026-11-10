@@ -53,10 +53,17 @@ describe('catalog: shape', () => {
 
   it('the shop sells for Stardust and R&D for Intel; prices are whole and positive', () => {
     for (const u of upgrades) {
+      if (u.kind === 'grant') continue; // never sold (below)
       expect(u.currency, u.id).toBe(u.kind === 'shop' ? 'stardust' : 'intel');
       for (const p of prices(u)) expect(Number.isInteger(p) && p > 0, u.id).toBe(true);
     }
     for (const p of protocols) expect(Number.isInteger(p.price) && p.price > 0, p.id).toBe(true);
+  });
+
+  it('a granted item (a story transaction gives it) has one rank at price 0', () => {
+    const grants = upgrades.filter((u) => u.kind === 'grant');
+    expect(grants.map((u) => u.id)).toEqual(['tune_zibzab']);
+    for (const u of grants) expect(prices(u), u.id).toEqual([0]);
   });
 
   it('ids are unique across upgrades and protocols, and every item has a name', () => {
@@ -131,6 +138,14 @@ describe('catalog: progression.md numbers', () => {
       [{ kind: 'towerCost', tower: 'lookout', tiers: 'all', pct: -0.05 }],
       [{ kind: 'supportStat', tower: 'lookout', stat: 'radius', pct: 0.05 }],
     ]);
+  });
+
+  it('the Zibzab Tune-up (§ 2.1, C2 Sell): +8% damage on every Vrell tower', () => {
+    const vrell = Object.values(TOWERS).filter((t) => t.faction === 'vrell');
+    expect(vrell.map((t) => t.id)).toEqual(['zapcoil', 'lookout', 'harpoon', 'crane']);
+    expect(UPGRADES.tune_zibzab.ranks.flatMap((r) => r.grants)).toEqual(
+      vrell.map((t) => ({ kind: 'towerStat', tower: t.id, stat: 'damage', pct: 0.08 })),
+    );
   });
 
   it('Field Protocols (§ 5): ten, 1,420 Stardust in all', () => {

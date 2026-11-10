@@ -8,6 +8,7 @@
 import { itemCopy } from './copy.ts';
 import { defineUpgrade } from './define.ts';
 import type { UpgradeDef } from './types.ts';
+import { TOWERS } from '../towers/index.ts';
 import type { TowerId } from '../types.ts';
 
 const PRICES = [40, 80, 140] as const;
@@ -85,9 +86,9 @@ export const tune_crane = defineUpgrade({
 
 /**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%
- * damage for every Vrell tower, permanently. Never sold (`kind: 'grant'`): A2M4's C2 Sell grants
- * it (T510's `resolveC2`), so its price is 0. A stub (T500a): its grant needs a faction-wide
- * `towerStat` modifier the sim doesn't take yet, so it grants nothing until T510 wires it.
+ * damage for every Vrell tower, permanently: one `towerStat` grant per Vrell tower in the registry,
+ * so a later Vrell tower joins by itself. Never sold (`kind: 'grant'`, price 0): A2M4's C2 Sell
+ * grants it (T510's `resolveC2`).
  */
 export const tune_zibzab = defineUpgrade({
   id: 'tune_zibzab',
@@ -96,5 +97,12 @@ export const tune_zibzab = defineUpgrade({
   kind: 'grant',
   currency: 'stardust',
   availableAfter: 'a2_m04',
-  ranks: [{ price: 0, grants: [] }],
+  ranks: [
+    {
+      price: 0,
+      grants: Object.values(TOWERS)
+        .filter((t) => t.faction === 'vrell')
+        .map((t) => ({ kind: 'towerStat', tower: t.id, stat: 'damage', pct: 0.08 }) as const),
+    },
+  ],
 });
