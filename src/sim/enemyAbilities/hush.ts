@@ -6,16 +6,17 @@
 // HUSH_SPEED_MUL, movement.ts). One hush each: a Heavy unit ignores every other hushable unit.
 // - **Contact:** the same layer (a ground Hollow can't hush a flyer), within HUSH_CONTACT_TILES
 //   along the route when both walk the same one, or in a straight line when they don't (where two
-//   roads merge, their units share tiles). A burrowed or leaving unit is in no contact.
+//   roads merge, their units share tiles). A unit out of reach (burrowed, Phased, or leaving;
+//   layers.ts `outOfReach`) is in no contact, either side (T507: a Phased Hollow unit can't hush).
 // - **The tell:** the Hollow unit holds `hushUid` (its victim) and `hushTicks` (the tell left), and
 //   the victim holds `hushUid` (its Hollow unit); both stand still (`paceMul` 0) for the tell
 //   (HushStarted). Towers can still shoot either one: if the victim dies or leaks first, the
 //   Hollow unit walks on with its hush unspent; if the Hollow unit dies, the victim runs on (and
-//   so does either one if the other digs in or starts leaving with a boss).
+//   so does either one if the other digs in, phases, or starts leaving with a boss).
 // - **The interrupt** (§ 2.4; T407a): while the interrupt hook holds a Hollow unit
-//   (systems/status.ts `isInterrupted`: Stasis), it can't start a hush, and a tell under way is
-//   cancelled: the victim runs on and the hush stays unspent (no event: render sees `hushUid`
-//   clear).
+//   (systems/status.ts `isInterrupted`: Stasis, Unnerved), it can't start a hush, and a tell
+//   under way is cancelled: the victim runs on and the hush stays unspent (no event: render sees
+//   `hushUid` clear).
 // - **The hush:** the victim is removed, marked `leaving` so cleanup counts it neither a kill nor a
 //   leak (Hushed, then TurnedHeavy), and the Skitterkin around it bolt (skittish.ts).
 // - **Refugees** (T305c; sim/escort.ts): an ally victim is matched in the same pass as enemy ones
@@ -36,6 +37,7 @@ import { poolKill, type Pool } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
 import { isInterrupted } from '../systems/status.ts';
+import { outOfReach } from './layers.ts';
 import { boltNear } from './skittish.ts';
 
 export const HUSH_TELL_TICKS = secToTicks(HUSH_TELL_SEC);
@@ -50,8 +52,7 @@ export function canHush(h: Enemy): boolean {
     def.hushes &&
     !h.heavy &&
     h.hushUid === 0 &&
-    !h.burrowed &&
-    !h.leaving &&
+    !outOfReach(h) &&
     !isInterrupted(h)
   );
 }
@@ -65,8 +66,7 @@ export function isHushable(v: Enemy): boolean {
     def.boss === null &&
     !def.neutral &&
     v.hushUid === 0 &&
-    !v.burrowed &&
-    !v.leaving &&
+    !outOfReach(v) &&
     v.tags.includes('fleeing')
   );
 }
@@ -213,8 +213,8 @@ export function hushPass(state: SimState, ctx: TickContext): void {
       if (tellOnAlly(state, e)) continue; // its victim is a refugee (T305c)
     }
     if (e.def.hushes) {
-      const gone = other === null || other.leaving || other.burrowed;
-      if (gone || e.leaving || e.burrowed || isInterrupted(e)) {
+      const gone = other === null || outOfReach(other);
+      if (gone || outOfReach(e) || isInterrupted(e)) {
         e.hushUid = 0;
         e.hushTicks = 0;
         if (other !== null) other.hushUid = 0;
@@ -266,7 +266,7 @@ export function hushPass(state: SimState, ctx: TickContext): void {
 function tellOnAlly(state: SimState, e: Enemy): boolean {
   const a = liveAllyByUid(state.allies, e.hushUid);
   if (a === null) return false;
-  if (e.leaving || e.burrowed || isInterrupted(e)) {
+  if (outOfReach(e) || isInterrupted(e)) {
     e.hushUid = 0;
     e.hushTicks = 0;
     a.hushUid = 0;
