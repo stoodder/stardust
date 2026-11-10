@@ -3,9 +3,11 @@
 // T2 (120): 55 damage. T3 (225): armor pierce 8, 0.5 shots/s. Skewer (450): pierces every enemy in
 // a 5-tile line for 70 each. Tether (450): 80 damage, and the target is Pinned 2.5 s (a pinned
 // flyer is grounded; bosses take Chilled 50% instead).
-// Licensed after A2M1 (upgrades/access.ts). A T400a stub: T408 runs it and confirms these numbers
-// (the shot may become a projectile), and createSim refuses it until then (`tower.harpoon`; the
-// specs also need `attack.line` and `status.pinned`). Sprites: content/sprites/towers/harpoon.ts (T440b).
+// Licensed after A2M1 (upgrades/access.ts), so A1M5's Quiet Wave is judged without its 4.0 reach
+// ([quiet-wave-reach] counts only towers the map's first-win run can own; T408). Runs since T408:
+// the shot is hitscan (the harpoon lands the tick it fires); Skewer is a `line` attack
+// (sim/attacks/line.ts) and Tether's Pin is systems/status.ts `applyPin`. Its links: Reel It In
+// (Crane). Sprites: content/sprites/towers/harpoon.ts (T440b).
 import { defineTower } from '../define.ts';
 
 export const harpoon = defineTower({

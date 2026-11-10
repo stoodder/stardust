@@ -7,7 +7,12 @@ import { cancel, pressAbility } from '../../app/commands.ts';
 import { cooldownChip, cooldownWords } from '../../app/hudViews.ts';
 import { DEFAULT_VARIANT } from '../../render/sprites/bake.ts';
 import { plateColor } from '../dialogue/plate.ts';
-import { hud, type AbilityCooldownView, type AbilitySlotView, type CompanionView } from '../state.ts';
+import {
+  hud,
+  type AbilityCooldownView,
+  type AbilitySlotView,
+  type CompanionView,
+} from '../state.ts';
 import { baked, Icon } from './Icon.tsx';
 import { Key, noFocusOnPress } from './parts.tsx';
 import { alignPulse } from './pulse.ts';
@@ -29,7 +34,7 @@ function CompanionFace({ c, absent }: { c: CompanionView; absent: boolean }) {
   return (
     <span
       class="hud-companion"
-      style={{ '--frame': plateColor(c.color) }}
+      style={{ '--frame': plateColor(c.color), width: `${FACE_PX}px`, height: `${FACE_PX}px` }}
       data-testid="companion-face"
       title={c.name}
       aria-hidden="true"

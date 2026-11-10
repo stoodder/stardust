@@ -6,15 +6,25 @@ import {
   apronCells,
   cliffFrames,
   CUE_DECOR,
+  decorLook,
   DECOR_MARKERS,
   dressTile,
   envVariant,
+  highGroundLook,
+  hushFrame,
   inDressingArea,
+  isActTwo,
   peekerCover,
   propVariant,
   soilFrame,
   tilesBehind,
+  wreckageFrame,
 } from './groundTiles.ts';
+import { map as a2m01 } from '../../content/maps/a2_m01/map.ts';
+import { map as a2m02 } from '../../content/maps/a2_m02/map.ts';
+import { compileContent } from '../../content/compile.ts';
+import { RAW_CONTENT } from '../../content/registry.ts';
+import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
 
 function grid(rows: readonly string[]): {
   cols: number;
@@ -336,5 +346,123 @@ describe("dressing layers (T410a: the revisit's grey soil)", () => {
         expect(look.prop?.sprite, `${col},${row}`).not.toBe('prop.flora');
       }
     }
+  });
+});
+
+function frames(id: SpriteId): readonly string[] {
+  return Object.keys(SPRITES.find((d) => d.id === id)?.frames ?? {});
+}
+
+describe("Act II's looks (T440c)", () => {
+  it('reads Act II from the env', () => {
+    expect(isActTwo('act2.gold')).toBe(true);
+    expect(isActTwo('act2.dusk')).toBe(true);
+    expect(isActTwo('act1')).toBe(false);
+    expect(isActTwo(undefined)).toBe(false);
+  });
+
+  it('peels the billboard, fades the scarecrow, and sets Rig 3 to the strip mine', () => {
+    expect(decorLook('prop.billboard', 'act1').frame).toBe('beaming');
+    expect(decorLook('prop.billboard', 'act2.gold').frame).toBe('peeling');
+    expect(decorLook('prop.scarecrow', 'act2.dusk').frame).toBe('faded');
+    expect(decorLook('prop.rig', 'act2.gold').frame).toBe('strip');
+    expect(decorLook('prop.fountain', 'act2.gold')).toEqual({ frame: 'f0', anim: 'flow' });
+    expect(decorLook('prop.dome', 'act2.gold')).toEqual({ frame: 'v0', anim: null });
+    // Every frame named here exists.
+    for (const [sprite, frame] of [
+      ['prop.billboard', 'peeling'],
+      ['prop.scarecrow', 'faded'],
+      ['prop.rig', 'strip'],
+      ['prop.rig', 'nine'],
+      ['prop.spoil', 'warren'],
+      ['prop.spoil', 'drill_1'],
+      ['prop.warren', 'v1'],
+      ['tile.high_ground', 'ledge'],
+      ['tile.high_ground', 'outcrop'],
+      ['tile.power_node', 'conduit_0'],
+      ['prop.wreckage', 'v2'],
+      ['prop.wreckage', 'v3'],
+      ['tile.hush', 'd3'],
+    ] as const) {
+      expect(frames(sprite), `${sprite}:${frame}`).toContain(frame);
+    }
+  });
+
+  it("dresses A2M1: Rig Nine, the crew's hut, the crew-log rigs, the spoil, the dark edge", () => {
+    const g = { ...grid(a2m01.tiles), markers: a2m01.markers ?? {}, env: a2m01.env };
+    expect(dressTile(g, 16, 0).prop).toEqual({ sprite: 'prop.rig', frame: 'nine', anim: null });
+    expect(dressTile(g, 16, 2).prop).toEqual({ sprite: 'prop.crew_hut', frame: 'v0', anim: null });
+    expect(dressTile(g, 16, 5).prop).toEqual({
+      sprite: 'prop.spoil',
+      frame: 'drill_1',
+      anim: null,
+    });
+    expect(dressTile(g, 16, 8).prop?.frame).toBe('drill_0');
+    // The crew-log wrecks are Act II's broken rigs (their markers aren't decor).
+    for (const [c, r] of [
+      [13, 5],
+      [10, 10],
+    ] as const) {
+      expect(dressTile(g, c, r).prop?.frame, `${c},${r}`).toMatch(/^v[23]$/);
+      expect(dressTile(g, c, r).prop?.frame).toBe(wreckageFrame(c, r, 'act2.gold'));
+    }
+    // The canyon ledges and the stardust conduit.
+    expect(dressTile(g, 4, 2).block?.frame).toBe('ledge');
+    expect(dressTile(g, 9, 7).ground).toEqual({
+      sprite: 'tile.power_node',
+      frame: 'conduit_0',
+      anim: 'conduit',
+    });
+    // The dark creeps in from the north-east corner and down the east edge, over decor only.
+    expect(dressTile(g, 17, 0).hush).toBe('d3');
+    expect(dressTile(g, 16, 11).hush).toBeDefined();
+    expect(dressTile(g, 2, 11).hush).toBeUndefined();
+    expect(dressTile(g, 15, 5).hush).toBeUndefined(); // the yard cut keeps its read
+    expect(dressTile(g, 13, 4).hush).toBeUndefined(); // so does the ledge
+    expect(apronCells(g, 'act2.gold').some((c) => c.hush === 'd3')).toBe(true);
+  });
+
+  it('dresses A2M2: the outcrops are thread-glass, the domes stand, the rigs are left bare', () => {
+    const g = {
+      ...grid(a2m02.tiles),
+      markers: a2m02.markers ?? {},
+      env: a2m02.env,
+      asset: { marker: 'rigs' },
+    };
+    expect(highGroundLook(g, 5, 3)).toBe('outcrop');
+    expect(dressTile(g, 13, 3).block?.frame).toBe('outcrop');
+    expect(dressTile(g, 1, 3).prop?.sprite).toBe('prop.dome');
+    expect(dressTile(g, 1, 8).prop?.sprite).toBe('prop.dome');
+    expect(dressTile(g, 17, 10).prop).toBeNull(); // AssetView draws the rigs there
+    expect(dressTile(g, 4, 1).prop?.sprite).not.toBe('prop.dome'); // the fork names no decor
+    expect(hushFrame(g, 17, 0)).toBeNull();
+  });
+
+  it('dresses A2M3: the warrens line the road and the mining cuts cross two terraces', () => {
+    // A revisit: compiled, so A1M2's layout is composed in.
+    const g = compileContent(RAW_CONTENT).maps['a2_m03'];
+    if (g === undefined) throw new Error('no a2_m03');
+    expect(dressTile(g, 13, 0).prop).toEqual({ sprite: 'prop.spoil', frame: 'warren', anim: null });
+    expect(dressTile(g, 12, 2).prop).toEqual({ sprite: 'prop.warren', frame: 'v1', anim: null });
+    expect(dressTile(g, 3, 5).prop?.frame).toBe('v0');
+    expect(soilFrame(g, 2, 1)).toMatch(/^scar_/);
+    expect(soilFrame(g, 14, 10)).toMatch(/^scar_/);
+    expect(soilFrame(g, 8, 8)).toMatch(/^soil_/);
+  });
+
+  it('keeps the dressing on decor: a hush never lands on a pad, the road, or a block', () => {
+    const g = {
+      ...grid(['....', '.o#.', '.^#+']),
+      markers: { halls_dark: [3, 0] as const },
+      env: 'act2.gold',
+    };
+    for (let col = 0; col < 4; col++) {
+      for (let row = 0; row < 3; row++) {
+        const look = dressTile(g, col, row);
+        if (look.ground.sprite !== 'tile.grass' || look.block !== undefined)
+          expect(look.hush, `${col},${row}`).toBeUndefined();
+      }
+    }
+    expect(dressTile(g, 3, 0).hush).toBe('d3');
   });
 });

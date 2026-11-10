@@ -29,6 +29,7 @@ import {
   createNewSave,
   deleteSlot,
   exportCode,
+  frontierOf,
   getLastSlot,
   hintSeen,
   importCode,
@@ -486,6 +487,7 @@ function slotView(slot: SlotId, load: SlotLoad): SlotView {
         intel: load.save.currencies.intel,
         savedAt: load.savedAt,
         fromBackup: load.source === 'bak',
+        frontier: frontierOf(load.save),
       };
     }
     case 'unreadable':
@@ -540,6 +542,7 @@ function campaignView(s: Session): CampaignView {
     // The star map replaces the Shift board, for good, once Act I is won (D102).
     mode: onStarMap(s.save) ? 'starMap' : 'shiftBoard',
     slot: s.scratch ? null : s.slot,
+    frontier: frontierOf(s.save),
     stardust: s.save.currencies.stardust,
     intel: s.save.currencies.intel,
     pestsProcessed: s.save.stats.pestsProcessed,

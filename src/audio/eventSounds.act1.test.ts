@@ -69,7 +69,7 @@ const cast = (ability: string): E => ({
 const SPLITS: EnemyLookup = { splits: (id) => id === 'bunchling' };
 
 function run(events: E[], enemies?: EnemyLookup): SoundCall[] {
-  const s = createEventSounds(1, enemies);
+  const s = createEventSounds('bright', enemies);
   const out: SoundCall[] = [];
   for (const e of events) s.sounds(e, out);
   s.endFrame(out);

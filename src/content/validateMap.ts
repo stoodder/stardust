@@ -30,7 +30,8 @@
 //   fleeing group spawns 2–4 s before one of them (enemies.md § 7; FLEEING_LEAD_*_SEC).
 // - [quiet-wave-reach]: no buildable tile's best tier-3 range (high ground's bonus and
 //   REACH_SLACK_TILES included) reaches the first 4 tiles of a route a `quiet_wave` group walks
-//   (D097: the Quiet Wave is seen before any tower could fire on it).
+//   (D097: the Quiet Wave is seen before any tower could fire on it), counting only the towers
+//   and range auras the run that first wins the map can own (T406, T408).
 // - [threat-intel]: `threatIntel` is exactly the set of traits in the waves.
 // - [required-counters]: at most 3, no duplicates, each with a `noCounterBuilds` entry.
 // - [soft-traits]: soft enemies are ≤ 15% of every wave's threat (maps.md § 6.2).
@@ -79,14 +80,14 @@ import { emptyHistory, validateNovelty, validateThreats, type History } from './
 import { CAMPAIGN_PLAN_IDS } from './campaign.ts';
 import { TOWER_ACCESS } from './upgrades/access.ts';
 import {
-  bestT3Reach,
   rangeAuras,
+  towerReaches,
   validateQuietWaveReach,
   validateWaves,
   type AuraTower,
   type RangeAura,
-  type T3Reach,
   type TargetedTower,
+  type TowerReach,
 } from './validateWaves.ts';
 
 /** Validates every map: campaign maps in campaign order (with history), then the rest. */
@@ -107,24 +108,21 @@ export function validateCampaignMaps<K extends IdSpace>(
     if (a.companion !== undefined) companionAbilities.set(a.companion, a.id);
   }
   const towers = new Map<string, RangedTower>(Object.entries<RangedTower>(raw.towers));
+  const stockedAfter = (id: string): number => {
+    const access: Readonly<Record<string, { availableAfter: string | null }>> = TOWER_ACCESS;
+    const after = Object.hasOwn(access, id) ? (access[id]?.availableAfter ?? null) : null;
+    return after === null ? -1 : planIndex(after);
+  };
+  // Stubs registered ahead of their task don't count yet (towers/index.ts TOWERS_AHEAD_OF_TASK).
+  const live = Object.entries<TargetedTower & AuraTower>(raw.towers).filter(
+    ([id]) => !TOWERS_AHEAD_OF_TASK.includes(id),
+  );
   const ctx = {
     enemies,
     towers,
-    // Stubs registered ahead of their task don't count yet (towers/index.ts TOWERS_AHEAD_OF_TASK).
-    t3Reach: bestT3Reach(
-      Object.entries<TargetedTower>(raw.towers)
-        .filter(([id]) => !TOWERS_AHEAD_OF_TASK.includes(id))
-        .map(([, t]) => t),
-    ),
-    // Range auras a pad could take ([quiet-wave-reach]), by when each tower is first stocked.
-    rangeAuras: rangeAuras(
-      Object.entries<AuraTower>(raw.towers).filter(([id]) => !TOWERS_AHEAD_OF_TASK.includes(id)),
-      (id) => {
-        const access: Readonly<Record<string, { availableAfter: string | null }>> = TOWER_ACCESS;
-        const after = Object.hasOwn(access, id) ? (access[id]?.availableAfter ?? null) : null;
-        return after === null ? -1 : planIndex(after);
-      },
-    ),
+    // Each tower's tier-3 reach and range aura, by when it's first stocked ([quiet-wave-reach]).
+    towerReaches: towerReaches(live, stockedAfter),
+    rangeAuras: rangeAuras(live, stockedAfter),
     campaignIndex: planIndex,
     towersWithSpecs,
     companionAbilities,
@@ -154,8 +152,8 @@ export interface MapCtx {
   readonly enemies: ReadonlyMap<string, EnemyDef>;
   /** Each tower's tiers and specs, for the range a placed tower reaches (counterAnswers.ts). */
   readonly towers: ReadonlyMap<string, RangedTower>;
-  /** The best tier-3 range any tower brings, per layer ([quiet-wave-reach]). */
-  readonly t3Reach: T3Reach;
+  /** Every tower's best tier-3 range per layer, with when it's first stocked ([quiet-wave-reach]). */
+  readonly towerReaches: readonly TowerReach[];
   /** Every tower's best tier-3 range aura, with when it's first stocked ([quiet-wave-reach]). */
   readonly rangeAuras: readonly RangeAura[];
   /** A map's index in the campaign plan (−1: not a campaign map). */

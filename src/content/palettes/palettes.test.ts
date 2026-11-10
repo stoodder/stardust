@@ -212,13 +212,78 @@ describe('Act I value bands (art-direction §1)', () => {
   });
 });
 
-describe('Act II value bands (art-direction §1, T440a)', () => {
-  // Act II's ground is lit gold: its road is as bright as an Act I body. The Hollow reads by its
-  // dark interior inside a pale outline, the Aelari by their sapphire weave in a dark blue outline.
+/** Mean luminance of a frame's pixels in `slots` only (an Aelari lattice's knots, its outline). */
+function slotLuminance(def: SpriteDef, frame: string, slots: readonly string[]): number {
+  const fd = def.frames[frame];
+  if (fd === undefined || !Array.isArray(fd))
+    throw new Error(`${def.id}:${frame} is not a grid frame`);
+  const palette = PALETTES[def.palette];
+  const rows: readonly string[] = fd;
+  let sum = 0;
+  let n = 0;
+  for (const row of rows) {
+    for (const ch of row) {
+      const slot = STANDARD_LEGEND[ch];
+      if (slot === undefined || !slots.includes(slot)) continue;
+      sum += luminance(rgbOf(palette[slot]));
+      n++;
+    }
+  }
+  return sum / n;
+}
+
+describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
+  // Act II's ground is re-banded under Act I's units (T440c, D119): dry gold grass < the rust
+  // road < every Skitterkin, ally, and tower body, as in Act I. The Hollow reads by its dark
+  // interior inside a pale outline; the Aelari, whose lattices have real holes (the road shows
+  // through them), by bright knots in a dark blue rim.
   for (const env of ['act2.gold', 'act2.dusk'] as const) {
     const palette = ENV_PALETTES[env];
     const grass = bodyLuminance(sprite('tile.grass'), 'v0', palette);
     const path = bodyLuminance(sprite('tile.path'), 'tread_x', palette);
+
+    it(`${env}: keeps the grass a band below the road`, () => {
+      expect(path).toBeGreaterThan(grass);
+      expect(contrastRatio(path, grass)).toBeGreaterThanOrEqual(1.3);
+    });
+
+    it(`${env}: puts every Act II unit, ally, and tower body a band above the road`, () => {
+      const actors: readonly [string, string][] = [
+        // The runners (every Act II Skitterkin flees) and the Act I bodies they're built from.
+        ['enemy.nibbler', 'walk_se_0'],
+        ['enemy.zoomer', 'walk_se_0'],
+        ['enemy.bunchling', 'walk_se_0'],
+        ['enemy.elder', 'walk_se_0'],
+        ['enemy.digger', 'walk_se_0'],
+        ['enemy.youngling', 'walk_se_0'],
+        ['enemy.brood_hauler', 'walk_se_0'],
+        ['enemy.nibbler_fleeing', 'walk_se_0'],
+        ['enemy.zoomer_fleeing', 'walk_se_0'],
+        ['enemy.bunchling_fleeing', 'walk_se_0'],
+        ['enemy.elder_fleeing', 'walk_se_0'],
+        ['enemy.youngling_fleeing', 'walk_se_0'],
+        ['enemy.brood_hauler_fleeing', 'walk_se_0'],
+        ['enemy.puffwing_fleeing', 'walk_se_0'],
+        // Bricks, and the towers Act II builds on its ground.
+        ['ally.bricks', 'idle_se_0'],
+        ['tower.rivet', 't1'],
+        ['tower.thumper', 't1'],
+        ['tower.sprinkler', 't1'],
+        ['tower.skyhook', 't1'],
+        ['tower.zapcoil', 't1'],
+        ['tower.lookout', 't1'],
+        ['tower.harpoon', 'spec_b'],
+        ['tower.crane', 'spec_a'],
+        ['prop.salvage_drone', 'fly_0'],
+        ['prop.tidybot', 'fly_0'],
+      ];
+      for (const [id, frame] of actors) {
+        const d = sprite(id);
+        const l = bodyLuminance(d, frame, PALETTES[d.palette]);
+        expect(l, `${id}:${frame}`).toBeGreaterThan(path);
+        expect(contrastRatio(l, path), `${id}:${frame}`).toBeGreaterThanOrEqual(1.2);
+      }
+    });
 
     it(`${env}: the Hollow sits well below the ground it crosses, Heavy too`, () => {
       for (const frame of ['walk_se_0', 'walk_ne_0', 'heavy_se_0']) {
@@ -229,7 +294,7 @@ describe('Act II value bands (art-direction §1, T440a)', () => {
       }
     });
 
-    it(`${env}: the Aelari stand a band apart from the road they glide along`, () => {
+    it(`${env}: the Aelari's knots shine over the road inside a rim darker than it`, () => {
       for (const [id, frame] of [
         ['enemy.glimmer', 'walk_se_0'],
         ['enemy.weft_warden', 'walk_se_0'],
@@ -239,8 +304,11 @@ describe('Act II value bands (art-direction §1, T440a)', () => {
         ['enemy.glass_witch', 'tell_se_1'],
       ] as const) {
         const d = sprite(id);
-        const l = bodyLuminance(d, frame, PALETTES[d.palette]);
-        expect(contrastRatio(l, path), `${id}:${frame}`).toBeGreaterThanOrEqual(1.2);
+        const knots = slotLuminance(d, frame, ['e0', 'e1', 'hi']);
+        const rim = slotLuminance(d, frame, ['outline']);
+        expect(contrastRatio(knots, path), `${id}:${frame} knots`).toBeGreaterThanOrEqual(2);
+        expect(path, `${id}:${frame} rim`).toBeGreaterThan(rim);
+        expect(contrastRatio(rim, path), `${id}:${frame} rim`).toBeGreaterThanOrEqual(3);
       }
     });
   }

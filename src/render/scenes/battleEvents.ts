@@ -24,6 +24,7 @@ import type { BossBarView } from '../views/BossBarView.ts';
 import type { CuePropView } from '../views/CuePropView.ts';
 import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
+import { presentationOfMap } from '../../story/presentation.ts';
 import { deathStyle } from '../views/deathLook.ts';
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
@@ -158,6 +159,8 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   const { sim, bus, interaction, fx } = views;
   const map = sim.map;
   const content = sim.config.content;
+  /** The map's Skitterkin death, a presentation dial (core-loop.md § 6.7). */
+  const skitterkinDeath = presentationOfMap(map).skitterkinDeath;
   /**
    * Lobbed shells in flight, by uid → splash radius (tiles; negative for a bomblet): their impact
    * draws a burst and a ring (a bomblet: its small pop, no ring).
@@ -355,11 +358,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       if (unit !== null && unit.dist > BROOD_MIN_DIST_TILES) v.popIn();
     }),
     bus.on('EnemyDied', (e) => {
-      // The death tone by act and faction (deathLook.ts): Act I's comic pop is the unit's own
+      // The death tone by the map's dial and faction (deathLook.ts): Act I's comic pop is the unit's own
       // `death` anim (T311c), Act II's the same pop without the confetti and a fleck left lying;
       // the Aelari shatter and the Hollow unravel; a sprite with no death anim bursts.
       const def = Object.hasOwn(content.enemies, e.enemy) ? content.enemies[e.enemy] : undefined;
-      const style = def === undefined ? 'comic' : deathStyle(map.act, def.faction);
+      const style = def === undefined ? 'comic' : deathStyle(skitterkinDeath, def.faction);
       const lift = DEATH_BODY_PX + (def?.layer === 'air' ? AIR_LIFT_PX : 0);
       const popped = views.enemies.get(e.uid)?.die(style) === true;
       views.enemies.release(e.uid);
@@ -435,6 +438,9 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         views.chains.begin(e.x, e.y, ARC_EMITTER_PX + towerLift(e.towerUid));
       } else if (e.kind === 'hitscan') {
         fx.tracer(e.x, e.y, e.targetX, e.targetY, isFlyer(e.targetUid));
+      } else if (e.kind === 'line') {
+        // Skewer (T408): the streak runs to the line's far end; HarpoonView draws the line.
+        fx.tracer(e.x, e.y, e.targetX, e.targetY, false);
       } else if (e.kind === 'pulse') {
         if (e.radiusTiles > 0) fx.pulse(e.x, e.y, e.radiusTiles);
         // A pulse that reaches flyers (Cloudburst, D112) rings at their height too, in cloud
@@ -515,6 +521,13 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
     bus.on('NeutralExited', (e) => {
       // Gerald delivered the mail and left: never a leak (D072).
       views.enemies.release(e.uid);
+    }),
+    // The Crane's income and Reel It In's credits (T408): gold floaters, a wave's and interest
+    // over the tower, a kill's where the unit fell.
+    bus.on('TowerIncome', (e) => {
+      const lift =
+        e.kind === 'kill' ? SALVAGE_FLOAT_LIFT_PX : TOWER_FLOAT_LIFT_PX + towerLift(e.towerUid);
+      fx.floatText(`+${e.credits}`, 'gold.4', e.x, e.y, lift);
     }),
     bus.on('WreckageCleared', (e) => {
       // WreckageView swaps the wreck for its live tile; the salvage is income, floated in gold.

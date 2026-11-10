@@ -13,7 +13,9 @@
 //   or decor), read through `liveTile` (the compiled map never changes). It pays its `salvage`
 //   (Salvage Rights' `economy.salvage`: `round((set ?? salvage + Σ flat) × (1 + Σ pct))`) as
 //   income, counts `stats.wreckageCleared`, and emits `WreckageCleared`.
-// - The Salvage Crane's double speed and +25% salvage arrive with the Crane (Act II, M4).
+// - **A Salvage Crane** whose radius holds the head tile (sim/towerEconomy.ts `craneSalvageAt`;
+//   T408) adds its speed and salvage percents to the run's sums: the best Crane's, read each tick
+//   while the tile clears, so a Crane built or sold mid-clear changes the time left.
 // State: `state.wreckage` (state.ts): the queue, the head's progress, and the cleared tiles.
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import { WRECKAGE_CLEAR_SEC } from '../../content/rules.ts';
@@ -25,6 +27,7 @@ import { earn } from '../economy.ts';
 import { tileIndex } from '../grid.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { craneSalvageAt } from '../towerEconomy.ts';
 
 /** The drone's time per tile with no modifiers, in ticks (6 s: 360). */
 export const WRECKAGE_CLEAR_TICKS = secToTicks(WRECKAGE_CLEAR_SEC);
@@ -96,11 +99,15 @@ export function clearCommand(tile: GridPos): Extract<Command<IdSpace>, { type: '
   return { type: 'clear', tile: [tile[0], tile[1]] };
 }
 
-/** `(set ?? base + Σ flat) × (1 + Σ pct)` over one economy stat's modifiers (economy.ts's rule). */
+/**
+ * `(set ?? base + Σ flat) × (1 + Σ pct + extraPct)` over one economy stat's modifiers (economy.ts's
+ * rule); `extraPct` is a Crane's (T408).
+ */
 function economyStat(
   modifiers: readonly Modifier<IdSpace>[],
   stat: EconomyStat,
   base: number,
+  extraPct = 0,
 ): number {
   let set: number | null = null;
   let flat = 0;
@@ -111,20 +118,30 @@ function economyStat(
     flat += m.flat ?? 0;
     pct += m.pct ?? 0;
   }
-  return ((set ?? base) + flat) * (1 + pct);
+  return ((set ?? base) + flat) * (1 + pct + extraPct);
 }
 
-/** Ticks the drone takes per tile under the run's `clearSpeed` modifiers (at least 1). */
-export function clearTicksFor(modifiers: readonly Modifier<IdSpace>[]): number {
-  const speed = economyStat(modifiers, 'clearSpeed', 1);
+/**
+ * Ticks the drone takes per tile under the run's `clearSpeed` modifiers (at least 1), with a
+ * Crane's speed percent (`cranePct`, T408) on top.
+ */
+export function clearTicksFor(modifiers: readonly Modifier<IdSpace>[], cranePct = 0): number {
+  const speed = economyStat(modifiers, 'clearSpeed', 1, cranePct);
   if (!(speed > 0)) return WRECKAGE_CLEAR_TICKS; // a non-positive speed can't stop the drone
   const t = Math.ceil(WRECKAGE_CLEAR_TICKS / speed - 1e-9);
   return t > 1 ? t : 1;
 }
 
-/** What clearing a tile worth `base` salvage pays under the run's `salvage` modifiers (≥ 0). */
-export function salvageFor(modifiers: readonly Modifier<IdSpace>[], base: number): number {
-  const paid = Math.round(economyStat(modifiers, 'salvage', base));
+/**
+ * What clearing a tile worth `base` salvage pays under the run's `salvage` modifiers (≥ 0), with a
+ * Crane's salvage percent (`cranePct`, T408) on top.
+ */
+export function salvageFor(
+  modifiers: readonly Modifier<IdSpace>[],
+  base: number,
+  cranePct = 0,
+): number {
+  const paid = Math.round(economyStat(modifiers, 'salvage', base, cranePct));
   return paid > 0 ? paid : 0;
 }
 
@@ -133,13 +150,17 @@ export function wreckage(state: SimState, ctx: TickContext): void {
   const w = state.wreckage;
   if (w.queue.length === 0 || state.outcome !== 'playing') return;
   w.progressTicks++;
-  if (w.progressTicks < clearTicksFor(ctx.config.modifiers)) return;
-  const idx = w.queue.shift()!; // the queue is non-empty
+  const map = ctx.map;
+  const head = w.queue[0]!; // the queue is non-empty
+  const crane = ctx.scratch.crane;
+  craneSalvageAt(state, (head % map.cols) + 0.5, Math.floor(head / map.cols) + 0.5, crane);
+  if (w.progressTicks < clearTicksFor(ctx.config.modifiers, crane.speedPct)) return;
+  const idx = w.queue.shift()!; // the head, read above
   w.progressTicks = 0;
   w.cleared.push(idx);
-  const map = ctx.map;
   const to = underAt(map, idx);
-  const salvage = salvageFor(ctx.config.modifiers, map.salvage[keyOf(map, idx)] ?? 0);
+  const base = map.salvage[keyOf(map, idx)] ?? 0;
+  const salvage = salvageFor(ctx.config.modifiers, base, crane.salvagePct);
   earn(state, salvage);
   state.stats.wreckageCleared++;
   emit(state, {

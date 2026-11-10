@@ -16,6 +16,7 @@ import {
   objectiveStatusById,
 } from '../sim/index.ts';
 import { CALLSIGNS } from '../content/dialogue/profile.ts';
+import { presentationOfMap } from '../story/presentation.ts';
 import { hud, speed, type AbilityCooldownView } from '../ui/state.ts';
 import { silkText } from '../ui/silk.ts';
 import type { Host } from './host.ts';
@@ -334,7 +335,8 @@ export function bindHud(
   const towers = sim.config.content.towers;
   const origin = mapOrigin(sim.map.cols, sim.map.rows, VIEW_W, VIEW_H);
   hud.mapId.value = sim.map.id;
-  hud.act.value = String(sim.map.act);
+  // The UI act theme is a presentation dial (core-loop.md § 6.7; story/presentation.ts).
+  hud.act.value = String(presentationOfMap(sim.map).theme);
   hud.waveCount.value = sim.map.waves.length;
   hud.meterLabel.value = meterLabelText(sim.map.meterLabel);
   hud.loadout.value = [...sim.config.loadout];

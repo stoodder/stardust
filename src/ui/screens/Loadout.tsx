@@ -216,9 +216,13 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   if (view.links.length === 0) {
     return <p class="sd-lo-dim">No links among your towers yet.</p>;
   }
+  // Formed links first, so what the pick does shows before what it could (the list scrolls).
+  const shown = view.links.toSorted(
+    (a, b) => Number(formed.includes(b.id)) - Number(formed.includes(a.id)),
+  );
   return (
-    <ul class="sd-lo-links">
-      {view.links.map((l) => {
+    <ul class="sd-lo-links" aria-label="Links">
+      {shown.map((l) => {
         const on = formed.includes(l.id);
         const missing = l.partners.filter((p) => !pick.towers.includes(p));
         const names = missing.map((p) => view.towers.find((t) => t.id === p)?.name ?? p);

@@ -77,12 +77,22 @@ export const map = defineMapLayout({
   airLanes: [{ id: 'sky', points: [[16, 0], [16, 11], [6, 11], [6, 10]] }],
   // A1M2's markers come with its layout (the pump station (12,7), the Peeker's rock (15,5), Rig 3
   // (11,4), the housing block (6,4), the scarecrow (13,4)); the warren's spoil heap over the mouth
-  // is this map's own decor.
-  markers: { warren_spoil: [13, 0] },
-  // The mining scars (design/maps.md § 7; render-only): grey streaks over A1M2's grass, and the
+  // and the exposed warrens with their eggs, cut open beside the road, are this map's own decor.
+  markers: {
+    warren_spoil: [13, 0],
+    warren_1: [12, 2],
+    warren_2: [3, 5],
+    warren_3: [11, 5],
+    warren_4: [9, 10],
+  },
+  // The mining scars (design/maps.md § 7; render-only): grey streaks over A1M2's grass, two mining
+  // cuts to bare earth slicing down across the terraces (the west one from the top terrace to the
+  // middle, the east one from the middle to the foot, beside the strip mine; never a pad), and the
   // strip mine cut to bare earth down the east band, its benches and floor.
   dressing: [
     { kind: 'greySoil', area: 'all' },
+    { kind: 'mineScar', area: { from: [2, 1], to: [3, 5] } },
+    { kind: 'mineScar', area: { from: [14, 6], to: [15, 10] } },
     { kind: 'mineScar', area: { from: [16, 0], to: [17, 11] } },
   ],
   // The light goes from gold to dusk across the shift (cosmetic; D114), arriving as W11 starts.

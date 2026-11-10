@@ -2,7 +2,9 @@
 // and the way into a campaign. With no saves, one big Start shift button starts a new campaign in
 // slot 1, straight into its first briefing. With saves, Continue (the slot played last) leads, and
 // New game, Load, and Import open their panels in place of the buttons. Copy: Everglow's slogan
-// (story/races.md § Everglow Dynamics) and the Act I loading tip (story/style-guide.md §2).
+// (story/races.md § Everglow Dynamics) and a loading tip from the Continue slot's presentation
+// dials (its next map's act: Act I's "a clean perimeter is a happy perimeter!", Act II's "a clean
+// perimeter."; story/style-guide.md §2), Act I's with no save to continue.
 import { useState } from 'preact/hooks';
 import { continueGame, loadGame, newGame, openSettings, startGame } from '../../app/navigation.ts';
 import { continueSlot, deleteSave, rawSlotText, type SaveResult } from '../../app/save.ts';
@@ -13,6 +15,7 @@ import { focusOnce } from './focus.ts';
 import { ImportPanel } from './ImportPanel.tsx';
 import { SlotList } from './SlotList.tsx';
 import { slots, type SlotView } from './state.ts';
+import { titleTip } from './presentationText.ts';
 import './screens.css';
 
 type Panel = 'main' | 'new' | 'load' | 'import';
@@ -248,9 +251,8 @@ export function Title() {
         </p>
       )}
       <MuteButton class="sd-title-sound" />
-      <p class="sd-title-tip">
-        <span class="sd-title-tip-label">Tip</span> Remember: a clean perimeter is a happy
-        perimeter!
+      <p class="sd-title-tip" data-testid="title-tip">
+        <span class="sd-title-tip-label">Tip</span> {titleTip(slots.value, continueSlot())}
       </p>
     </main>
   );

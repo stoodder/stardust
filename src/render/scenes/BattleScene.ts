@@ -79,14 +79,18 @@ import { SpecFx } from '../views/SpecFx.ts';
 import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
+import { AssetView } from '../views/AssetView.ts';
 import { CuePropView } from '../views/CuePropView.ts';
 import { CursorView } from '../views/CursorView.ts';
 import { DroneView } from '../views/DroneView.ts';
+import { TidybotView } from '../views/TidybotView.ts';
+import { presentationOfMap } from '../../story/presentation.ts';
 import { EnemyView } from '../views/EnemyView.ts';
 import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
 import { SweepView } from '../views/SweepView.ts';
 import { FxView } from '../views/FxView.ts';
+import { HarpoonView } from '../views/HarpoonView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
 import { LeaveFx } from '../views/LeaveFx.ts';
 import { drawGround } from '../views/GroundView.ts';
@@ -94,6 +98,8 @@ import { peekerCover } from '../views/groundTiles.ts';
 import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
+import { NameTagView } from '../views/NameTagView.ts';
+import { SpawnFlagView } from '../views/SpawnFlagView.ts';
 import { SackBurstView } from '../views/SackBurstView.ts';
 import { ClickableView } from '../views/ClickableView.ts';
 import { PeekerView } from '../views/PeekerView.ts';
@@ -135,6 +141,11 @@ export interface BattleSceneDeps {
    * id is a new ping), else 0. Optional: without it nothing is pointed at.
    */
   pointFirstTower?(): number;
+  /**
+   * Bricks's name tag (T431): the tower carrying it and the name its plate reads, or null.
+   * Optional: without it no plate is drawn.
+   */
+  nameTag?(): { readonly uid: number; readonly text: string } | null;
 }
 
 /** The Denise pointer's ring (D059), and the arrow's spot over the turret head (scratch). */
@@ -159,6 +170,10 @@ export class BattleScene extends Phaser.Scene {
   #links!: LinkView;
   #sacks!: SackBurstView;
   #ping!: PingView;
+  /** Bricks's name-tag plate over the tagged turret (T431). */
+  #nameTag!: NameTagView;
+  /** The "incoming" flags on the next wave's spawns (T326). */
+  #spawnFlags!: SpawnFlagView;
   #airLanes!: AirLaneView;
   #chains!: ChainFx;
   /** The Skyhook's and Zapcoil's spec looks: capacitor orbs, discharges, curtain puffs (T407b). */
@@ -170,14 +185,19 @@ export class BattleScene extends Phaser.Scene {
   #sweeps!: SweepView;
   #wreckage!: WreckageView;
   #drone!: DroneView;
+  /** The Tidybots and the stardust specks they sweep after each wave (T410b; the map's dial). */
+  #tidybots!: TidybotView;
   #bossBar!: BossBarView;
   #huddles!: HuddleView;
   /** Aelari shields: the ripple, the pulse tell and ring (T403). */
   #shields!: ShieldView;
   /** Blinks: the tell's ghost at the landing, the afterimage (T404). */
   #blinks!: BlinkView;
+  #harpoon!: HarpoonView;
   #leaves!: LeaveFx;
   #cueProps!: CuePropView;
+  /** A Protect map's asset on its marker, by damage band (T440c). */
+  #asset!: AssetView;
   /** The salvage drone's time per tile under the run's modifiers (ticks). */
   #clearTicks = 0;
   /** The Peeker on the map's `peeker` marker, or null on a map without one. */
@@ -217,8 +237,8 @@ export class BattleScene extends Phaser.Scene {
   readonly #offs: (() => void)[] = [];
   /** Each ability slot's strike radius after modifiers (Mk II), and segment reach (tiles; 0: none). */
   readonly #strikeRadius: [number, number] = [0, 0];
-  /** What aiming each slot previews: a strike's reticle, or Scanner Sweep's circle (T406). */
-  readonly #aimRadius: [number, number] = [0, 0];
+  /** Each slot's Scanner Sweep radius: aiming it previews the sweep's own circle (T406, T431). */
+  readonly #sweepRadius: [number, number] = [0, 0];
   readonly #segmentReach: [number, number] = [0, 0];
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
   /** The pointer's spot (game px; scratch), and the enemy hovered there (0: none). */
@@ -298,14 +318,19 @@ export class BattleScene extends Phaser.Scene {
     this.#sweeps = new SweepView(ctx, this.#fx);
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx);
     this.#drone = new DroneView(ctx, map);
+    this.#tidybots = new TidybotView(ctx, map.cols, map.rows, presentationOfMap(map).tidybots);
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
+    this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
     this.#cueProps = new CuePropView(ctx, map, map.env, this.#fx);
+    this.#asset = new AssetView(ctx, map);
     this.#clearTicks = clearTicksFor(sim.config.modifiers);
     this.#shooter = null;
     this.#ping = new PingView(ctx, prefersReducedMotion);
+    this.#nameTag = new NameTagView(ctx);
+    this.#spawnFlags = new SpawnFlagView(ctx, map, prefersReducedMotion, pulseOn);
     this.#pinged = 0;
     this.#pingTower = 0;
     // Each Suppressing Fire streak flashes Bricks's muzzle toward where it lands (D059).
@@ -348,9 +373,9 @@ export class BattleScene extends Phaser.Scene {
       const e = def?.effect;
       const area = def !== undefined && (e?.kind === 'strike' || e?.kind === 'reveal');
       const radius = area ? abilityStats(def, sim.config.modifiers).radiusTiles : 0;
+      // Aiming previews an area at its real radius: a strike's reticle, or Scanner Sweep's circle.
       this.#strikeRadius[slot - 1] = e?.kind === 'strike' ? radius : 0;
-      // Aiming previews an area at its real radius: a strike's, or Scanner Sweep's (T406).
-      this.#aimRadius[slot - 1] = radius;
+      this.#sweepRadius[slot - 1] = e?.kind === 'reveal' ? radius : 0;
       this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
     }
     this.#built = false;
@@ -365,8 +390,10 @@ export class BattleScene extends Phaser.Scene {
       cursor: this.#cursor,
       origin: this.#origin,
       elevationAt: this.#elevationAt,
-      strikeRadius: this.#aimRadius,
+      strikeRadius: this.#strikeRadius,
       segmentReach: this.#segmentReach,
+      sweepRadius: this.#sweepRadius,
+      sweeps: this.#sweeps,
     });
 
     this.#offs.push(
@@ -393,8 +420,20 @@ export class BattleScene extends Phaser.Scene {
         },
       }),
       interaction.onPoke(() => this.#peeker?.poke()),
+      this.#tidybots.bind(
+        bus,
+        (id) =>
+          Object.hasOwn(sim.config.content.enemies, id) &&
+          sim.config.content.enemies[id]?.faction === 'skitterkin',
+        () => sim.state.tick,
+        map.waves.length,
+      ),
       this.#shields.bind(bus, () => sim.state.enemies),
       this.#blinks.bind(bus, () => sim.state.enemies),
+      this.#harpoon.bind(bus, (uid) => {
+        const t = sim.state.towers.items.find((x) => x.alive && x.uid === uid);
+        return t === undefined ? 0 : this.#liftPx(t.col, t.row);
+      }),
       this.#specs.bind(
         bus,
         () => sim.state.towers,
@@ -409,6 +448,8 @@ export class BattleScene extends Phaser.Scene {
       this.#fx.reset();
       this.#sacks.reset();
       this.#ping.reset();
+      this.#nameTag.reset();
+      this.#spawnFlags.reset();
       this.#links.reset();
       this.#chains.reset();
       this.#specs.reset();
@@ -417,10 +458,12 @@ export class BattleScene extends Phaser.Scene {
       this.#lighting.reset();
       this.#sweeps.reset();
       this.#wreckage.reset();
+      this.#tidybots.reset();
       this.#bossBar.reset();
       this.#huddles.reset();
       this.#shields.reset();
       this.#blinks.reset();
+      this.#harpoon.reset();
       this.#leaves.reset();
       this.#hover.reset();
       this.#clickables.reset();
@@ -445,15 +488,20 @@ export class BattleScene extends Phaser.Scene {
     this.#sweeps.update(state.zones);
     this.#wreckage.update(state.wreckage, this.#clearTicks);
     this.#drone.update(state.wreckage, this.#clearTicks, state.tick);
+    this.#tidybots.update(state.tick);
     this.#bossBar.update(dt, state.enemies);
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#blinks.update(dt, state.enemies);
+    this.#harpoon.update(dt, state.enemies);
     this.#leaves.update(dt);
     this.#cueProps.update(dt, state.towerAtTile);
+    this.#asset.update(state.asset, state.maxAsset, state.towerAtTile);
     this.#airLanes.update(state.wave, this.#armedHitsAir());
     this.#sacks.update(delta);
     this.#links.update();
+    this.#syncNameTag();
+    this.#spawnFlags.update(state);
     this.#syncPing(delta);
     this.#syncPeeker(delta);
     this.#clickables.update(dt, state.clickable);
@@ -544,15 +592,26 @@ export class BattleScene extends Phaser.Scene {
         tells: sh.tells,
       },
       blinks: { tells: this.#blinks.tells, afterimages: this.#blinks.afterimages },
+      harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
       debris: this.#fx.debrisLive,
       bossBar: this.bossBarFill,
       tethers: this.tethers,
+      nameTag:
+        this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },
+      spawnFlags: this.#spawnFlags.shown,
+      sweepAim: this.#sweeps.aiming,
       specs: {
         glows: this.#specs.glows,
         puffs: this.#specs.puffs,
         discharges: this.#specs.discharges,
         fizzles: this.#specs.fizzles,
         seekers: this.#seekersShown(),
+      },
+      tidybots: {
+        flying: this.#tidybots.flying,
+        specks: this.#tidybots.specks,
+        sweeps: this.#tidybots.sweeps,
+        drones: this.#tidybots.drones(),
       },
     };
   }
@@ -609,6 +668,8 @@ export class BattleScene extends Phaser.Scene {
       }
       const view = first === null ? undefined : this.#towers.get(first.uid);
       if (first !== null && view !== undefined && view.artTop(pingAt)) {
+        // The arrow lands over the name plate when this turret carries it (the tag line points).
+        if (this.#nameTag.uid === first.uid) pingAt.y -= this.#nameTag.height;
         this.#pingTower = first.uid;
         this.#pingRingMs = 0;
         this.#ping.point(pingAt.x, pingAt.y);
@@ -626,6 +687,21 @@ export class BattleScene extends Phaser.Scene {
       }
     }
     this.#ping.update(delta, id !== 0 && id === this.#pinged && this.#pingTower !== 0);
+  }
+
+  /** The name-tag plate follows the turret the app says carries it (T431). */
+  #syncNameTag(): void {
+    const tag = this.#deps.nameTag?.() ?? null;
+    this.#nameTag.sync(
+      tag?.uid ?? 0,
+      tag?.text ?? '',
+      tag === null ? undefined : this.#towers.get(tag.uid),
+    );
+  }
+
+  /** How many "incoming" flags show (T326; the smoke hooks' view of them). */
+  get spawnFlagsShown(): number {
+    return this.#spawnFlags.shown;
   }
 
   /** The ping's arrow, for the smoke hooks: whether one shows. */

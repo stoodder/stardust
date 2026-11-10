@@ -1,4 +1,5 @@
-// The results screen (T115, T204c, T316): shown over the frozen battle when a run ends. One headline
+// The results screen (T115, T204c, T316, T410b): shown over the frozen battle when a run ends, in
+// the map's presentation dials (its counter style and UI act theme; core-loop.md § 6.7). One headline
 // (with any story stamp beside it: A1M5's CONTAINMENT LAPSE, core-loop.md § 6.2), the run's waves
 // and integrity on one line, the counter and the lifetime count, which tick up together
 // (art-direction §9; T235), the payroll (the Stardust paid and why, the first payday marked; on a
@@ -36,23 +37,11 @@ import { colorVar } from '../color.ts';
 import { assertNever } from '../../shared/types.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import type { SpokenLine } from '../state.ts';
+import { resultsCounter, type ResultsCounter } from '../../story/counter.ts';
+import { resultsHeader, spokenCounter } from './presentationText.ts';
 import './screens.css';
 import './results.css';
-
-/**
- * Headlines in Everglow's voice. A loss is never scolded: it is a "minor operational hiccup", the
- * euphemism dictionary's word for a catastrophe (story/races.md § Everglow Dynamics).
- */
-const HEADLINE = {
-  won: 'PERIMETER SECURED!',
-  lost: 'MINOR OPERATIONAL HICCUP',
-} as const;
-
-/** The kicker above the headline, in the same corporate voice (D026). */
-const KICKER = {
-  won: 'Shift report · Exemplary!',
-  lost: 'Shift report · Incident logged',
-} as const;
+import './resultsCounter.css';
 
 /** Counts up from 0 to `target` once, on mount (instantly under reduced motion). */
 function useCountUp(target: number): number {
@@ -77,25 +66,40 @@ function useCountUp(target: number): number {
   return shown;
 }
 
-/** This run's count, ticking up (`shown`) to `n`. */
-function Counter({ n, shown }: { n: number; shown: number }) {
-  const done = shown === n;
+/**
+ * This run's counter line in the map's style (story/counter.ts): Act I's starred badge, Act II's
+ * plain line. Its number ticks up (`shown`) to its own.
+ */
+function Counter({ counter, shown }: { counter: ResultsCounter; shown: number }) {
+  const { n } = counter;
+  const done = n === null || shown >= n;
   return (
     // The live text updates every frame while counting, so screen readers get the final line
     // only, as hidden text (an `aria-label` on a <p> isn't announced; T329).
-    <p class="sd-results-counter">
-      <span class="sd-visually-hidden">{`PESTS PROCESSED: ${formatCount(n)}, Top 5% of Technicians!`}</span>
-      <span class="sd-results-counter-shown" aria-hidden="true">
-        <span class="sd-results-counter-label">PESTS PROCESSED:</span>{' '}
-        <span
-          class={done ? 'sd-results-count sd-results-count-done' : 'sd-results-count'}
-          // Reserve the final width, so the line doesn't shift while it counts.
-          style={{ minWidth: `${formatCount(n).length}ch` }}
-        >
-          {formatCount(shown)}
-        </span>{' '}
-        <span class="sd-results-star">★</span>{' '}
-        <span class="sd-results-brag">Top 5% of Technicians!</span>
+    <p class={`sd-results-counter sd-results-counter-${counter.stars ? 'starred' : 'plain'}`}>
+      <span class="sd-visually-hidden">{spokenCounter(counter)}</span>
+      <span class="sd-results-counter-shown" aria-hidden="true" data-testid="results-counter">
+        <span class="sd-results-counter-label">{counter.label}</span>
+        {n !== null && (
+          <>
+            {' '}
+            <span
+              class={done ? 'sd-results-count sd-results-count-done' : 'sd-results-count'}
+              // Reserve the final width, so the line doesn't shift while it counts.
+              style={{ minWidth: `${formatCount(n).length}ch` }}
+            >
+              {formatCount(Math.min(shown, n))}
+            </span>
+          </>
+        )}
+        {counter.end}
+        {counter.brag !== null && (
+          <>
+            {' '}
+            <span class="sd-results-star">★</span>{' '}
+            <span class="sd-results-brag">{counter.brag}</span>
+          </>
+        )}
       </span>
     </p>
   );
@@ -339,8 +343,14 @@ function Stamp({ text, index }: { text: string; index: number }) {
 function Body({ result }: { result: RunResult }) {
   const won = result.outcome === 'won';
   const { rewards } = result;
-  const counted = useCountUp(result.pestsProcessed);
   const checkpoint = won ? null : result.retryFromWave;
+  const header = resultsHeader(result.counter, result.outcome);
+  const counter = resultsCounter(
+    result.counter,
+    result.pestsProcessed,
+    rewards?.lifetimePests ?? result.pestsProcessed,
+  );
+  const counted = useCountUp(counter.n ?? 0);
   return (
     <section
       class={`sd-panel sd-results-panel ${won ? 'sd-results-won' : 'sd-results-lost'}`}
@@ -348,9 +358,9 @@ function Body({ result }: { result: RunResult }) {
       aria-modal="true"
       aria-labelledby="sd-results-heading"
     >
-      <p class="sd-results-kicker">{KICKER[result.outcome]}</p>
+      <p class="sd-results-kicker">{header.kicker}</p>
       <h1 id="sd-results-heading" class="sd-results-heading">
-        {HEADLINE[result.outcome]}
+        {header.headline}
       </h1>
       {result.stamps.map((t, i) => (
         <Stamp key={t} text={t} index={i} />
@@ -378,8 +388,8 @@ function Body({ result }: { result: RunResult }) {
         )}
       </dl>
       <div class="sd-results-counts">
-        <Counter n={result.pestsProcessed} shown={counted} />
-        {rewards !== null && (
+        <Counter counter={counter} shown={counted} />
+        {rewards !== null && counter.career !== null && (
           <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
         )}
       </div>
@@ -429,7 +439,8 @@ export function Results() {
   if (result === null) return null;
   return (
     // Inert under a scene (the stinger plays over the card as it's dismissed).
-    <main class="sd-screen sd-results" inert={sceneBlocks.value}>
+    // The map's UI act theme (its presentation dial): Act II's card edges in orange.
+    <main class="sd-screen sd-results" inert={sceneBlocks.value} data-act={result.theme}>
       <Body result={result} />
     </main>
   );

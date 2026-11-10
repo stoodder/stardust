@@ -283,12 +283,13 @@ describe('FEATURE_GATES (T400a rows)', () => {
       // Homing, volleys, and charges run since T407b (sim/homing.test.ts, attacks/charge.test.ts).
       'attack.homing': null,
       'attack.charge': null,
-      'status.pinned': 'T408',
-      'attack.line': 'T408',
-      'attack.targetFilter': 'T408',
-      'tower.economy': 'T408',
-      'tower.harpoon': 'T408',
-      'tower.crane': 'T408',
+      // Pin, lines, target filters, economy, and their towers run since T408 (sim/harpoonCrane.test.ts).
+      'status.pinned': null,
+      'attack.line': null,
+      'attack.targetFilter': null,
+      'tower.economy': null,
+      'tower.harpoon': null,
+      'tower.crane': null,
       // Clickable objects run since T409 (sim/clickables.test.ts).
       'map.clickable': null,
       // Revisits run since T410a (content/compileRevisit.test.ts).
@@ -347,7 +348,7 @@ describe('FEATURE_GATES (T400a rows)', () => {
     );
   });
 
-  it('refuses the stub towers and their new tier abilities (the Lookout and Scanner Sweep play)', () => {
+  it('plays the Act II towers and their tier abilities (the Lookout, Harpoon, and Crane)', () => {
     const towers = { ...FIXTURE_CONTENT.towers, ...LIVE.towers };
     const cfg = (loadout: string[], specsUnlocked: string[] = []): SimConfig<IdSpace> => ({
       ...fixtureConfig(),
@@ -357,20 +358,10 @@ describe('FEATURE_GATES (T400a rows)', () => {
     });
     // The Lookout and detection play since T406, its specs too.
     expect(gateRefusals(cfg(['lookout'], ['lookout']))).toEqual([]);
-    expect(gateRefusals(cfg(['harpoon']))).toEqual([
-      "the 'harpoon' tower is not simulated until T408",
-    ]);
-    expect(gateRefusals(cfg(['harpoon'], ['harpoon']))).toEqual([
-      "the 'harpoon' tower is not simulated until T408",
-      "a 'line' attack (harpoon) is not simulated until T408",
-      'the pinned status (harpoon) is not simulated until T408',
-    ]);
-    expect(gateRefusals(cfg(['crane'], ['crane']))).toEqual([
-      "the 'crane' tower is not simulated until T408",
-      'tower economy (crane) is not simulated until T408',
-      'a target filter (crane) is not simulated until T408',
-      'the pinned status (crane) is not simulated until T408',
-    ]);
+    // The Harpoon and Crane play since T408, their specs too.
+    expect(gateRefusals(cfg(['harpoon', 'crane'], ['harpoon', 'crane']))).toEqual([]);
+    expect(towerRefusal(RAW_CONTENT.towers.harpoon)).toBeNull();
+    expect(towerRefusal(RAW_CONTENT.towers.crane)).toBeNull();
     expect(towerRefusal(RAW_CONTENT.towers.lookout)).toBeNull();
     expect(towerRefusal(RAW_CONTENT.towers.rivet)).toBeNull();
     // Homing and charge attacks play since T407b, on a fixture tier.

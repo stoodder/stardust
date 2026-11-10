@@ -1,0 +1,18 @@
+/* The results counter per counter style (T410b; the presentation dial, core-loop.md § 6.7;
+   art-direction §9 Results). Act I's starred badge is results.css's `.sd-results-counter`. Act II's
+   plain line is the same words with nothing round or bright around them: no badge, no star, no
+   brag, the label in steel and the number in white, so it reads like the career total beside it. */
+.sd-results-counter-plain {
+  padding: 3px 0;
+  border-color: transparent;
+  background: none;
+}
+
+.sd-results-counter-plain .sd-results-counter-label {
+  color: var(--sd-steel-3);
+}
+
+.sd-results-counter-plain .sd-results-count,
+.sd-results-counter-plain .sd-results-count-done {
+  color: var(--sd-white-1);
+}

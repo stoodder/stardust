@@ -14,7 +14,8 @@
 //   tower never covers itself), each at its tower's strength: 1, +20% on a power node, plus its
 //   `supportStat` aura tune-up, and over its radius × its `supportStat` radius tune-up (T406);
 // - a link's detection radius (Overwatch, Skywatch: `bonusDetectTiles`, scaled like any link
-//   bonus; systems/detection.ts reads it).
+//   bonus; systems/detection.ts reads it), and its kill credits (Reel It In: `linkKillCredits`,
+//   scaled and rounded down like jumps; sim/towerEconomy.ts pays them).
 // The caps apply when a stat is read (sim/bonuses.ts), never here. Recomputing allocates a little
 // (the new pair list); it runs only when dirty, never per tick.
 import type { CompiledContent, CompiledLinkDef } from '../../content/compiled.ts';
@@ -137,6 +138,8 @@ function recompute(state: SimState, ctx: TickContext): void {
       if (p.chainJumps !== 0) t.bonusJumps += Math.floor(p.chainJumps * k + 1e-9);
       if (p.soakedTicks > t.linkSoakedTicks) t.linkSoakedTicks = p.soakedTicks;
       t.bonusDetectTiles += p.detectRadiusTiles * k;
+      // Reel It In (T408): whole credits per kill, scaled like jumps and rounded down.
+      if (p.killCredits !== 0) t.linkKillCredits += Math.floor(p.killCredits * k + 1e-9);
     }
   }
 
@@ -194,6 +197,7 @@ function clearBonuses(t: Tower): void {
   t.bonusJumps = 0;
   t.linkSoakedTicks = 0;
   t.bonusDetectTiles = 0;
+  t.linkKillCredits = 0;
 }
 
 function addBonus(t: Tower, stat: TowerStat, flat: number, pct: number): void {

@@ -78,14 +78,20 @@ export const map = defineMapLayout({
   // Two broken mining rigs hide pads; their crew logs are the Objective Intel.
   underWreckage: { '13,5': 'o', '10,10': 'o' },
   salvage: { '13,5': 50, '10,10': 40 },
-  // Markers (render draws the ones it knows as props; T440c dresses the rest): the crew-log rigs
-  // (the objective and the w06 cue name them), Rig Nine's head frame over the bore mouth, and the
-  // crew's hut beside the bore road, where the hushed crew sit.
+  // Markers (render draws the ones it knows as props, render/views/groundTiles.ts): the crew-log
+  // rigs (the objective and the w06 cue name them), Rig Nine's head frame over the bore mouth, the
+  // crew's hut beside the bore road, where the hushed crew sit, and the drill spoil dumped beside
+  // the yard cut. `halls_dark` is the corner the dark creeps in from, toward the Halls (render
+  // darkens the north-east edge and the cut down the east edge by their distance from it).
   markers: {
     crew_log_bore: [13, 5],
     crew_log_yard: [10, 10],
     rig_nine: [16, 0],
     crew_hut: [16, 2],
+    spoil_1: [16, 5],
+    spoil_2: [16, 8],
+    spoil_3: [16, 11],
+    halls_dark: [17, 0],
   },
   startCredits: 420,
   stardust: 180,

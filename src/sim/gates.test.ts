@@ -28,10 +28,10 @@ describe('T121: unsimulated attack kinds and statuses', () => {
   });
 
   it('refuses a status on any tier 1–3 of a loadout tower', () => {
-    const pinned = { status: 'pinned', durationTicks: 60 } as const;
-    const content = withGunTier(1, { ...GUN.tiers[1], effects: [pinned] });
+    const unnerved = { status: 'unnerved', durationTicks: 60 } as const;
+    const content = withGunTier(1, { ...GUN.tiers[1], effects: [unnerved] });
     expect(gateRefusals(fixtureConfig({ content }))).toEqual([
-      'the pinned status (fx_gun) is not simulated until T408',
+      'the unnerved status (fx_gun) is not simulated until M5',
     ]);
     // Not in the loadout: nothing to refuse.
     expect(gateRefusals(fixtureConfig({ content, loadout: ['fx_mortar'] }))).toEqual([]);
@@ -73,7 +73,7 @@ describe('T121: unsimulated attack kinds and statuses', () => {
     expect(FEATURE_GATES['attack.beam']).toBe('M5'); // Prism
     expect(FEATURE_GATES['attack.spawner']).toBe('M6'); // Scuttle Den
     expect(FEATURE_GATES['status.stasis']).toBeNull(); // Flash Freeze (T407a)
-    expect(FEATURE_GATES['status.pinned']).toBe('T408'); // Tether, Magnet Crane
+    expect(FEATURE_GATES['status.pinned']).toBeNull(); // Tether, Magnet Crane (T408)
     expect(FEATURE_GATES['status.unnerved']).toBe('M5'); // Mindspike
   });
 });

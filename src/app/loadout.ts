@@ -82,7 +82,8 @@ function bonusText(b: LinkBonusDef): string {
 
 /**
  * A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b), and
- * the Lookout's detection radius from Overwatch and Skywatch (T406).
+ * the Lookout's detection radius from Overwatch and Skywatch (T406), and Reel It In's kill credits
+ * (T408).
  */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
@@ -90,6 +91,8 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
   if (p.soakedSec !== undefined) parts.push(`Soaks for ${p.soakedSec} s`);
   // Overwatch, Skywatch (T406).
   if (p.detectRadiusTiles !== undefined) parts.push(`+${p.detectRadiusTiles} detection radius`);
+  // Reel It In (T408).
+  if (p.killCredits !== undefined) parts.push(`+${p.killCredits} credits per kill`);
   return parts.join(', ');
 }
 
@@ -159,7 +162,11 @@ function linkView(l: (typeof LINKS)[keyof typeof LINKS]): LoadoutLinkView {
     name: silkText(l.name),
     partners: [a.tower, b.tower],
     partnerNames: `${towerName(a.tower)} + ${towerName(b.tower)}`,
-    bonus: l.partners.map((p) => `${towerName(p.tower)} ${partnerText(p)}`).join(' · '),
+    // A partner that gets nothing itself (Reel It In's Crane) isn't listed.
+    bonus: l.partners
+      .filter((p) => partnerText(p) !== '')
+      .map((p) => `${towerName(p.tower)} ${partnerText(p)}`)
+      .join(' · '),
   };
 }
 

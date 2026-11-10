@@ -73,7 +73,7 @@ describe('resultsCounter (one line per counter style)', () => {
     });
   });
 
-  it("draws its parts into its line (Results renders the parts, screen readers the line)", () => {
+  it('draws its parts into its line (Results renders the parts, screen readers the line)', () => {
     for (const style of ['starred', 'plain', 'remembered'] as const) {
       const c = resultsCounter(style, 7, 7);
       const brag = c.brag === null ? '' : ` ★ ${c.brag}`;

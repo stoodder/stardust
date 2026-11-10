@@ -6,7 +6,13 @@ import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
 import { TEXT_LIMITS, tokenProblems, worstCaseLength } from '../content/dialogue/rules.ts';
 import { PRESENTATION, type PresentationTable } from '../content/presentation.ts';
 import { actOf } from './conditions.ts';
-import { presentationFor } from './presentation.ts';
+import {
+  loadingTip,
+  presentationBetweenMaps,
+  presentationFor,
+  presentationOfMap,
+  storyActOf,
+} from './presentation.ts';
 
 describe('the presentation table', () => {
   it("has core-loop § 6.7's defaults for every act", () => {
@@ -54,5 +60,40 @@ describe('presentationFor', () => {
     };
     expect(presentationFor('a1_m02', table).evie).toBe('dark');
     expect(presentationFor('a1_m03', table)).toBe(PRESENTATION.byAct[1]);
+  });
+});
+
+describe('presentationOfMap', () => {
+  it("reads a campaign map's own dials, whatever act it claims", () => {
+    expect(presentationOfMap({ id: 'a2_m04', act: 2 })).toEqual(presentationFor('a2_m04'));
+    expect(presentationOfMap({ id: 'a2_m03', act: 1 })).toEqual(presentationFor('a2_m03'));
+  });
+
+  it("gives a dev map its act's row, and post-game maps the finale's", () => {
+    expect(presentationOfMap({ id: 'dev_act2', act: 2 })).toBe(PRESENTATION.byAct[2]);
+    expect(presentationOfMap({ id: 'dev_range', act: 1 })).toBe(PRESENTATION.byAct[1]);
+    expect(presentationOfMap({ id: 'endless_x', act: 'endless' })).toBe(PRESENTATION.byAct.finale);
+    expect(storyActOf('challenge')).toBe('finale');
+  });
+});
+
+describe('between maps', () => {
+  it("reads the frontier's dials: Act II's from A1M5 won, the post-game's after the finale", () => {
+    expect(presentationBetweenMaps('a1_m05')).toBe(PRESENTATION.byAct[1]);
+    expect(presentationBetweenMaps('a2_m01').loadingTips).toEqual(['Remember: a clean perimeter.']);
+    expect(presentationBetweenMaps(null).loadingTips).toEqual(['Remember them.']);
+  });
+
+  it('picks a stable tip from the pool, wrapping', () => {
+    const dials = { ...PRESENTATION.byAct[1], loadingTips: ['a', 'b', 'c'] };
+    expect([0, 1, 2, 3, -1, Number.NaN].map((n) => loadingTip(dials, n))).toEqual([
+      'a',
+      'b',
+      'c',
+      'a',
+      'b',
+      'a',
+    ]);
+    expect(loadingTip(PRESENTATION.byAct[2], 7)).toBe('Remember: a clean perimeter.');
   });
 });

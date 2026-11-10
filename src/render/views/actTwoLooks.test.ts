@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { RING_STEP_TILES } from '../vfx/overlayPixels.ts';
 import { SHIMMER_MS, STEPPED_ALPHA, TELL_STEP_TICKS, tellHigh } from '../vfx/fxTiming.ts';
+import { PRESENTATION } from '../../content/presentation.ts';
 import { deathStyle } from './deathLook.ts';
 import {
   BOLT_TEMPO,
@@ -142,18 +143,23 @@ describe('a fleeing runner', () => {
   });
 });
 
+/** The Skitterkin's death is each act's presentation dial (core-loop.md § 6.7). */
+const dial = (act: 1 | 2 | 3 | 'finale') => PRESENTATION.byAct[act].skitterkinDeath;
+
 describe('the death tone (enemies.md § 8)', () => {
   it('Act I pops with confetti; Act II pops quietly; later acts lie still', () => {
-    expect(deathStyle(1, 'skitterkin')).toBe('comic');
-    expect(deathStyle(2, 'skitterkin')).toBe('quiet');
-    expect(deathStyle(3, 'skitterkin')).toBe('still');
+    expect(deathStyle(dial(1), 'skitterkin')).toBe('comic');
+    expect(deathStyle(dial(2), 'skitterkin')).toBe('quiet');
+    expect(deathStyle(dial(3), 'skitterkin')).toBe('still');
+    expect(deathStyle(dial('finale'), 'skitterkin')).toBe('still');
   });
 
   it('the Aelari shatter, the Hollow unravel (every act), Everglow bursts', () => {
-    expect(deathStyle(2, 'aelari')).toBe('shatter');
-    expect(deathStyle(2, 'hollow')).toBe('unravel');
-    expect(deathStyle('finale', 'hollow')).toBe('unravel');
-    expect(deathStyle(3, 'everglow')).toBe('burst');
+    expect(deathStyle(dial(2), 'aelari')).toBe('shatter');
+    expect(deathStyle(dial(2), 'hollow')).toBe('unravel');
+    expect(deathStyle(dial('finale'), 'hollow')).toBe('unravel');
+    expect(deathStyle(dial(3), 'everglow')).toBe('burst');
+    expect(deathStyle(dial(1), 'hollow')).toBe('unravel');
   });
 });
 

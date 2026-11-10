@@ -5,9 +5,10 @@
 // each wave resolves (at most +40). Magnet Crane (450): every 6 s it grabs a Mechanical or armored
 // ground enemy within 2.5 tiles, lifts it (Pinned 1.5 s), and slams it for 150 Kinetic; the
 // economy stays. Design target: a T1 Crane built on wave 1 pays for itself by about wave 8.
-// Licensed after A2M1 (upgrades/access.ts). A T400a stub: T408 runs it and confirms these numbers,
-// and createSim refuses it until then (`tower.crane`, `tower.economy`; Magnet Crane also
-// `attack.targetFilter` and `status.pinned`). Sprites: content/sprites/towers/crane.ts (T440b).
+// Licensed after A2M1 (upgrades/access.ts). Runs since T408: its economy is sim/towerEconomy.ts
+// (the radius takes range bonuses: high ground, a Lookout, its tune-up), Magnet Crane's grab is a
+// hitscan with a `targetFilter` and Pinned 1.5 s on landing (on a boss, Chilled 50%). Its links:
+// Reel It In (Harpoon). Sprites: content/sprites/towers/crane.ts (T440b).
 import { defineTower } from '../define.ts';
 
 export const crane = defineTower({

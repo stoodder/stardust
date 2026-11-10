@@ -74,8 +74,9 @@ describe('offers', () => {
     const fresh = createNewSave();
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
-    // Every upgrade but R&D's four, every protocol, and the Zapcoil and Lookout licenses.
-    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 2);
+    // Every upgrade but R&D's four, every protocol, and the four Vrell licenses (T408: the
+    // Harpoon's and Crane's joined the Zapcoil's and Lookout's).
+    expect(shop.length).toBe(Object.keys(UPGRADES).length - 4 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -91,7 +92,8 @@ describe('offers', () => {
     );
     expect(kinds[0]).toBe('license');
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
-    expect(kinds.filter((k) => k === 'tune')).toHaveLength(6); // Skyhook's, Zapcoil's, Lookout's
+    // One per registered tower (the Harpoon's and Crane's since T408).
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(8);
   });
 
   it('orders each group by arrival, then entry price, then name', () => {
@@ -108,8 +110,8 @@ describe('offers', () => {
     // A bought rank doesn't move an item.
     const save = afterA1M4();
     save.upgrades.salvage_rights = 1;
-    // After the two licenses (Zapcoil's, then the Lookout's).
-    expect(shelf(save, 'shop')[2]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
+    // After the four licenses (Zapcoil's, the Lookout's, then the Crane's and Harpoon's).
+    expect(shelf(save, 'shop')[4]?.item).toEqual({ kind: 'upgrade', id: 'salvage_rights' });
   });
 
   it('a tune-up needs its tower, and a spec unlock needs specs', () => {

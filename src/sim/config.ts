@@ -38,9 +38,10 @@ export type BonusTile = 'highGround' | 'powerNode';
 /**
  * A support tower's stats a modifier can raise (design/progression.md § 4.2: a support tower's
  * tune-up ranks 1 and 3): `aura` adds to its auras' strength (as a power node's +20% does), and
- * `radius` scales its detection and aura radii (T406).
+ * `radius` scales its detection and aura radii (T406); `income` raises an economy tower's per-wave
+ * income (the Salvage Crane's rank 1, T408; sim/towerEconomy.ts).
  */
-export type SupportStat = 'aura' | 'radius';
+export type SupportStat = 'aura' | 'radius' | 'income';
 
 /**
  * A change from outside the map: permanent upgrades, Field Protocols, and difficulty arrive as a
@@ -111,7 +112,8 @@ export type Modifier<K extends IdSpace = LiveIds> =
     }
   /**
    * A support tower's tune-up (T406; the Lookout Shack's ranks 1 and 3): +`pct` aura strength, or
-   * its detection and aura radii × (1 + Σ pct). A tower with an attack ignores it.
+   * its detection and aura radii × (1 + Σ pct); a tower with an attack ignores those. `income`:
+   * the Salvage Crane's per-wave income × (1 + Σ pct) (T408).
    */
   | {
       readonly kind: 'supportStat';

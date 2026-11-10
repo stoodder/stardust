@@ -78,7 +78,11 @@ function BriefingMedals({ medals }: { medals: readonly MedalView[] }) {
  */
 function BriefingObjectives({ objectives }: { objectives: readonly ObjectiveView[] }) {
   return (
-    <ul class="hud-briefing-medals" aria-label="Optional objectives" data-testid="briefing-objectives">
+    <ul
+      class="hud-briefing-medals"
+      aria-label="Optional objectives"
+      data-testid="briefing-objectives"
+    >
       {objectives.map((o) => (
         <li
           key={o.id}

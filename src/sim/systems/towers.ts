@@ -15,6 +15,9 @@
 //   (cooldown 0) until an enemy is in range, so its first pulse always affects one.
 // - chain (Zapcoil, T304b): sim/attacks/chain.ts.
 // - charge (Capacitor Bank, T407b): sim/attacks/charge.ts. Holding fire vents its charge.
+// - line (the Harpoon's Skewer, T408): sim/attacks/line.ts.
+// A `targetFilter` (Magnet Crane, T408) narrows a single-target tower's pick and keep to the units
+// it passes (combat/targeting.ts `passesFilter`).
 // A link's statuses (Conductive's Soak; systems/status.ts `applyLinkStatuses`) land after the
 // tier's own on hitscan, pulse, and chain hits.
 // Cooldowns: a tower fires on a tick whose cooldown starts at 0, then waits `cooldownTicks`.
@@ -49,6 +52,7 @@ import {
 } from '../bonuses.ts';
 import { chainAttack } from '../attacks/chain.ts';
 import { chargeAttack } from '../attacks/charge.ts';
+import { lineAttack } from '../attacks/line.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
 import {
@@ -103,11 +107,13 @@ export function towers(state: SimState, ctx: TickContext): void {
       case 'charge':
         if (chargeAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
         break;
-      // Beams (Prism, M5), spawners (Scuttle Den, M6), and lines (Skewer, T408) arrive with their
-      // towers and specs. createSim refuses each until then (FEATURE_GATES).
+      case 'line':
+        if (lineAttack(state, ctx, t, tier, attack)) firedAtSkitterkin = true;
+        break;
+      // Beams (Prism, M5) and spawners (Scuttle Den, M6) arrive with their towers. createSim
+      // refuses each until then (FEATURE_GATES).
       case 'beam':
       case 'spawner':
-      case 'line':
         break;
       default:
         assertNever(attack);
@@ -157,12 +163,16 @@ function aimAndFire(
   const layers = tier.targets;
   const range = rangeOf(ctx, t, attack);
   const spare = t.spareRunners;
+  // Magnet Crane picks only Mechanical or armored units (T408); every other attack, anyone.
+  const filter = attack.targetFilter;
   let target: Enemy | null = null;
   if (t.cooldownTicks > 0) {
-    target = isStillTarget(enemies, t.targetSlot, t.targetUid, t.x, t.y, layers, range, spare);
+    const slot = t.targetSlot;
+    target = isStillTarget(enemies, slot, t.targetUid, t.x, t.y, layers, range, spare, filter);
   }
   if (target === null) {
-    target = pickTarget(enemies, t.x, t.y, layers, range, t.priority ?? 'first', spare);
+    const priority = t.priority ?? 'first';
+    target = pickTarget(enemies, t.x, t.y, layers, range, priority, spare, null, filter);
   }
   if (target === null) {
     t.targetUid = 0;

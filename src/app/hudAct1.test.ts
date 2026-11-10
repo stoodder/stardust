@@ -219,9 +219,12 @@ describe('the objective tracker', () => {
         description: 'Sell no turret after its build phase.',
         intel: 1,
         status: 'open',
+        held: false,
       },
     ]);
     expect(objectiveViews(map, { clean_audit: 'failed' })[0]?.status).toBe('failed');
+    // One the save holds already (the briefing's "On file", T431).
+    expect(objectiveViews(map, {}, ['clean_audit'])[0]?.held).toBe(true);
   });
 });
 

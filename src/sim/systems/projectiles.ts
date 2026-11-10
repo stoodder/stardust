@@ -33,7 +33,7 @@ import { secToTicks } from '../../shared/time.ts';
 import { hasStatusIn } from '../bonuses.ts';
 import { applyDamage, applyEffects, armorReduces } from '../combat/damage.ts';
 import { hitNeutral, isNeutral } from '../combat/neutral.ts';
-import { untargetable } from '../enemyAbilities/layers.ts';
+import { onLayers, untargetable } from '../enemyAbilities/layers.ts';
 import { PROJECTILE_BLANK, type Enemy, type Projectile } from '../entities.ts';
 import { isSpared } from '../fireControl.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
@@ -126,7 +126,7 @@ function steer(state: SimState, ctx: TickContext, p: Projectile): boolean {
 /** Whether a shot that hits these layers can touch `e` at all (alive, hittable, its layer). */
 function reachable(p: Projectile, e: Enemy): boolean {
   if (!e.alive || e.def === null || untargetable(e)) return false;
-  return e.def.layer === 'air' ? p.hitsAir : p.hitsGround;
+  return onLayers(e, p.hitsGround, p.hitsAir);
 }
 
 /** The homing shot's own target, if it's still one it can chase; else null. */
@@ -224,7 +224,7 @@ function land(state: SimState, ctx: TickContext, p: Projectile): void {
   for (let i = 0; i < enemies.used; i++) {
     const e = enemies.items[i]!; // i < used ≤ items.length
     if (!e.alive || e.def === null) continue;
-    if (!(e.def.layer === 'air' ? p.hitsAir : p.hitsGround)) continue;
+    if (!onLayers(e, p.hitsGround, p.hitsAir)) continue; // a pinned flyer is grounded (T408)
     if (untargetable(e)) continue; // burrowed or leaving: no hit, no armor `reduced` tell
     if (p.splashSq === 0) {
       if (e.uid !== p.targetUid) continue;

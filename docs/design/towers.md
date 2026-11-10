@@ -2,7 +2,7 @@
 
 The tower roster, roles, upgrade paths, stacking rules, targeting, and adjacency synergies ("links").
 
-> **Numbers ([D019](../decisions.md#d019--2026-11-09--t105c-content-data-first-pass-numbers)):** a tower with a data file in [`src/content/towers/`](../../src/content/towers/) (Rivet, Thumper, Sprinkler, Skyhook, Zapcoil) has its exact numbers there, and this doc keeps its role, rules, and target ranges ("about", "~"). A tower or specialization with no data yet keeps its **first-pass numbers** here, its only home, until its data lands and they move. A number labeled a **rule** is a rule wherever it sits.
+> **Numbers ([D019](../decisions.md#d019--2026-11-09--t105c-content-data-first-pass-numbers)):** a tower with a data file in [`src/content/towers/`](../../src/content/towers/) (Rivet, Thumper, Sprinkler, Skyhook, Zapcoil, Lookout, Harpoon, Crane) has its exact numbers there, and this doc keeps its role, rules, and target ranges ("about", "~"). A tower or specialization with no data yet keeps its **first-pass numbers** here, its only home, until its data lands and they move. A number labeled a **rule** is a rule wherever it sits.
 >
 > **Ordering:** each tower lists a *recommended* act of introduction. [../story/campaign.md](../story/campaign.md) is **authoritative** for when each tower actually appears and unlocks.
 
@@ -50,7 +50,7 @@ Acquisition rules and the story-timed gift schedule are in [progression.md §8](
 | Need | Towers that answer it (spec in brackets when only a specialization does) |
 |---|---|
 | Single-target DPS | Rivet, Harpoon, Mindspike, Prism, Rivet [Railspike] |
-| Splash / swarm clear | Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike], Sproing Pad [Big Bonk] |
+| Splash / swarm clear | Thumper, Gloop, Zapcoil, Rivet [Rivet Storm], Mindspike [Echo Spike], Sproing Pad [Big Bonk], Harpoon [Skewer] (a line, not a blast) |
 | Slow / control | Sprinkler, Stasis Bloom, Scuttle Den, Mindspike [Dread], Hum Choir [Lullaby] (slows enemy abilities, not movement) |
 | Anti-air | Skyhook, Sproing Pad, Rivet, Zapcoil, Harpoon, Prism, Mindspike, Sprinkler [Cloudburst] |
 | Detection (cloaked) | Lookout Shack, Seer's Lantern, *Scanner Sweep ability* |
@@ -133,12 +133,12 @@ Links make the 4-tower loadout a spatial puzzle: *which* four towers, and *where
 - **Each link type counts once per tower.** A Rivet touching two Thumpers gets Crossfire once.
 - A tower can have several *different* active links (each tower has 2–3 possible partners by design). Their bonuses add under the stacking formula (section 4).
 - Links are **flat**: they don't scale with tier (first pass). The Linked Up protocol scales every link bonus by ×1.5.
-- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, and Conductive so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down) and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts as long as the Sprinkler's tier-3 Soak is designed to (3 s). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
+- **Data:** links live in [`src/content/links/`](../../src/content/links/) (Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, and Reel It In so far), the one home of who links with whom. A partner's conditional bonus is a `vsStatus` damage percent, and a tower takes at most one (no link here gives a tower two). A partner can also take `chainJumps` (whole jumps; Linked Up scales them, rounding down), `killCredits` (whole credits per kill it makes, scaled and rounded down the same way; Reel It In's +3 is +4 under Linked Up; a spared runner pays none), and `soakedSec` (a Soak its hits apply at any tier; the duration doesn't scale). Conductive's Soak lasts as long as the Sprinkler's tier-3 Soak is designed to (3 s). The sim emits `LinkFormed` / `LinkBroken` per adjacent pair and counts each link's uptime.
 - **Readability:** active links show as a soft animated tether between the towers, in a color per link. The loadout screen lists which links the chosen four can form. The tower panel lists active links.
 
 ### 6.2 Link table
 
-Crossfire, Sitting Ducks, and Conductive are built: their exact values are their files in `src/content/links/`, and their rows give the intent. The other rows are first-pass numbers.
+Crossfire, Sitting Ducks, Conductive, Overwatch, Skywatch, and Reel It In are built: their exact values are their files in `src/content/links/`, and their rows give the intent. The other rows are first-pass numbers.
 
 | Link | Partners | Effect | Available from (recommended) | Faction mix |
 |---|---|---|---|---|
@@ -168,7 +168,7 @@ Every tower has 2 or 3 link partners. Eleven of the 17 links are cross-faction. 
 
 Format: **T1** is the base. Each later tier lists only what changes. DPS figures ignore armor and shields.
 
-**Where the exact numbers live** (D019). The five towers built so far, Rivet, Thumper, Sprinkler, Skyhook, and Zapcoil, have their tiers 1–3 and both specializations in [`src/content/towers/`](../../src/content/towers/) (`rivet.ts`, `thumper.ts`, `sprinkler.ts`, `skyhook.ts`, `zapcoil.ts`; the Sprinkler's specs since T407a, the Skyhook's and Zapcoil's since T407b). Their entries below give each tier's job and target ranges, not the numbers. **Every other tower** keeps its first-pass numbers here, with a T4 cost on the default curve unless stated.
+**Where the exact numbers live** (D019). The eight towers built so far, Rivet, Thumper, Sprinkler, Skyhook, Zapcoil, Lookout, Harpoon, and Crane, have their tiers 1–3 and both specializations in [`src/content/towers/`](../../src/content/towers/) (one file each; the Sprinkler's specs since T407a, the Skyhook's and Zapcoil's since T407b, the Lookout's since T406, the Harpoon's and Crane's since T408). Their entries below give each tier's job and target ranges, not the numbers. **Every other tower** keeps its first-pass numbers here, with a T4 cost on the default curve unless stated.
 
 **Specializations as built** (the `specialize` command, `src/sim/specialize.ts`):
 - **The command.** A tower specializes only at tier 3, once its pair is unlocked (`SimConfig.specsUnlocked`). It pays the spec's cost after `towerCost` modifiers (tune-ups and Specialist both apply), and the cost joins `invested`, so the sell value counts it. The choice is permanent (`alreadySpecialized`; upgrading stays `maxTier`). The new stats apply at once, and the cooldown carries over.
@@ -221,12 +221,19 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 
 #### Salvage Crane (`crane`)
 - Licensed from Zibzab after A2M1, so it debuts on longer Act II maps where economy has time to pay back.
-- **T1 (150):** no attack. **+10 credits** each time a wave resolves. Kills by *any* tower within radius 2.5 give **+1 credit**. Clears wreckage within 2.5 tiles at double speed with +25% salvage.
-- **T2 (120):** +18 per wave.
-- **T3 (225):** +28 per wave, +2 credits per kill in radius.
-- **A: Haggler's Stall (450):** also pays **interest**: +2% of banked credits when each wave resolves (capped at +40 per wave).
-- **B: Magnet Crane (450):** gains an attack. Every 6 s it grabs a Mechanical or armored ground enemy in radius 2.5, lifts it (Pinned 1.5 s), and slams it for 150 Kinetic. Economy effects are kept. Shines against Everglow security in Act III.
-- **Design target:** a T1 Crane built on wave 1 pays for itself by about wave 8 on a typical map. It's a greed choice that costs a loadout slot.
+- **T1:** no attack. A little income each time a wave resolves (about 10 credits). Kills by *any* tower within its radius (about 2.5 tiles) pay a credit each. Wreckage within its radius clears at double speed for a quarter more salvage.
+- **T2:** more per wave (nearly double).
+- **T3:** more per wave again (nearly triple T1's), and kills in its radius pay two.
+- **A: Haggler's Stall:** also pays **interest** on banked credits when each wave resolves (2%, capped per wave at about 40).
+- **B: Magnet Crane:** gains an attack. Every 6 s it grabs a Mechanical or armored ground enemy in its radius, lifts it (Pinned 1.5 s), and slams it for heavy Kinetic (150). Economy effects are kept. Shines against Everglow security in Act III.
+- **Design target:** a T1 Crane built on wave 1 pays for itself by about wave 8 on a typical map, standing by a tower that kills. It's a greed choice that costs a loadout slot.
+- **As built (T408;** [`src/sim/towerEconomy.ts`](../../src/sim/towerEconomy.ts)'s header has the full rules**):**
+  - **Its radius is its range:** the tier's radius takes the tower's range bonuses (high ground, a Lookout's aura, its tune-up's +5% range), for income, salvage, and Magnet Crane's grab alike.
+  - **Per wave:** as each wave resolves, right after its clear bonus, every Crane pays its per-wave income (× its income tune-up, rounded half up). Then the bank earns **interest once**: the best Haggler's Stall's rate on the credits banked after the wave's other payouts, rounded down and capped. Stalls don't stack (one bank, one rate).
+  - **Per kill:** a kill by a tower's own hit or shell (never an ability's or an ally's) pays each Crane whose radius holds the **killing tower**, so two Cranes by one Thumper pay twice. **A spared runner (fleeing, youngling) pays no kill credits** (the Crane's or Reel It In's), so greed never puts a price on a runner.
+  - **Salvage:** the drone's tile clears faster and pays more with the best Crane whose radius holds it; its speed and salvage percents join Salvage Expert's and Salvage Rights' sums under the stacking formula.
+  - **Magnet Crane's grab** is a hitscan with a target filter: it picks and keeps only a Mechanical unit or one with armor in its data, by Strong, and holds its fire when none is in reach.
+  - On screen each payout floats a gold `+N` (a wave's and interest over the Crane, a kill's where the unit fell).
 - **Links:** Reel It In (Harpoon), Finders Keepers (Burrow).
 
 #### Zapcoil (`zapcoil`)
@@ -240,11 +247,12 @@ Corporate-issue perimeter kit with cheerful product names, safety stickers, and 
 - **Links:** Conductive (Sprinkler), Resonance (Prism).
 
 #### Grapple Harpoon (`harpoon`)
-- **T1 (150):** 40 Kinetic, 0.4 shots/s, range 4.0, **armor pierce 4**, single target, G+A. Default: Strong.
-- **T2 (120):** damage 55.
-- **T3 (225):** armor pierce 8, 0.5 shots/s.
-- **A: Skewer (450):** the harpoon pierces through every enemy in a 5-tile line for 70 damage each.
-- **B: Tether (450):** 80 damage, and the target is **Pinned 2.5 s**. A pinned flyer is grounded and can be hit by ground-only towers. Bosses are Chilled 50% for 2.5 s instead.
+- **T1:** a heavy Kinetic spear, **hitscan**, single target, G+A: a slow shot (about one every 2.5 s) at medium-long range (4 tiles) with **armor pierce** (4). Default: Strong.
+- **T2:** a damage step.
+- **T3:** more armor pierce (8) and a faster shot.
+- **A: Skewer:** the harpoon pierces through every enemy in a 5-tile line for heavy damage each (70). Built for packed columns.
+- **B: Tether:** a heavier hit (80), and the target is **Pinned 2.5 s**. A pinned flyer is grounded and can be hit by ground-only towers. Bosses are Chilled 50% for 2.5 s instead.
+- **As built (T408):** Licensed after A2M1, so [quiet-wave-reach] doesn't count its range on A1M5 (the rule counts only towers the map's first-win run can own, [core-loop.md § 2.7](core-loop.md#27-hold-fire)). **Skewer's line** ([`src/sim/attacks/line.ts`](../../src/sim/attacks/line.ts)) runs from the tower's centre through its target's, 5 tiles long (scaled with the tower's range bonus, so high ground makes it 6.25), and hits every enemy on its layers whose centre is within 0.4 tiles of it (`LINE_HALF_WIDTH_TILES`), each for the full hit; it passes neutral units by (one it targets plinks), and hits spared runners in its way as splash does. **Pin** is [enemies.md § 2.4](enemies.md#24-status-effects)'s.
 - **Links:** Reel It In (Crane), Pinned Down (Bloom).
 
 #### Lookout Shack (`lookout`)

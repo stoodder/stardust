@@ -1,8 +1,8 @@
-// An Evie billboard, `beaming` (art-direction §6; apron decor on Act I maps). The A1M1 board
+// An Evie billboard, `beaming` (art-direction §6; apron decor on Act I maps) and `peeling` (Act II's). The A1M1 board
 // reads "PESTS PROCESSED THIS QUARTER: 38% MORE!"; at 1× only "38%" survives, so the rest is
 // drawn as symbols: the smiling Evie sun, a rising pink bar chart, and small-print lines.
 import { defineSprite } from '../defineSprite.ts';
-import { disc, grid, plot, rows, stamp } from '../helpers.ts';
+import { disc, fromRows, grid, plot, rows, stamp } from '../helpers.ts';
 
 const W = 38;
 const H = 26;
@@ -69,6 +69,42 @@ function beaming(): string[] {
   return rows(g);
 }
 
+/**
+ * Act II's board (`peeling`, act2.md: "Evie billboards peeling"): the same panel left out in the
+ * Long Dusk. The paper has torn away down its right side, baring the grimy backboard (most of
+ * "38%" gone with it), a long flap curls back from the tear, grime has run from the frame, and Evie's sun is torn through one eye: still smiling.
+ */
+function peeling(): string[] {
+  const g = fromRows(beaming());
+  // The backboard where the paper's gone: a ragged tear widening down the right, grime-streaked.
+  for (let y = TOP + 1; y < BOTTOM; y++) {
+    const jag = [0, 1, 0, 2, 1, 0, 1, 2][y % 8] ?? 0;
+    const edge = 29 - Math.round((y - TOP) * 0.6) + jag;
+    for (let x = edge; x < W - 2; x++) {
+      const streak = (x * 5 + Math.floor(y / 3)) % 9 === 0;
+      plot(g, x, y, x === edge ? '2' : streak ? 'K' : 'J');
+    }
+  }
+  // The flap: a long curl of paper peeled back from the tear's top, hanging over the bare board,
+  // lit on its face and shaded where it turns under.
+  // prettier-ignore
+  stamp(g, 28, TOP + 1, [
+    '4444',
+    '.443',
+    '..43',
+    '..42',
+    '...3',
+    '...2',
+  ]);
+  // Evie's sun torn through her right eye: the board shows through; the smile holds.
+  stamp(g, 9, 6, ['JJ', 'JK', '.J']);
+  // Grime run down from the frame's top edge.
+  for (const x of [4, 15, 22]) {
+    for (let y = TOP + 1; y < TOP + 3 + (x % 3); y++) plot(g, x, y, 'L');
+  }
+  return rows(g);
+}
+
 export const propBillboard = defineSprite({
   id: 'prop.billboard',
   size: { w: W, h: H },
@@ -76,6 +112,16 @@ export const propBillboard = defineSprite({
   palette: 'everglow',
   variants: ['everglow.worn'],
   outline: 'auto',
-  legend: { G: 'gold.2', H: 'gold.3', I: 'gold.4', P: 'pink.3', Q: 'pink.2' },
-  frames: { beaming: beaming() },
+  legend: {
+    G: 'gold.2',
+    H: 'gold.3',
+    I: 'gold.4',
+    P: 'pink.3',
+    Q: 'pink.2',
+    // The bare backboard and its grime.
+    J: 'grime.2',
+    K: 'grime.1',
+    L: 'grime.3',
+  },
+  frames: { beaming: beaming(), peeling: peeling() },
 });

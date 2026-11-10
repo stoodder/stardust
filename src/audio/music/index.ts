@@ -1,5 +1,6 @@
 // The music registry: looping themes and one-shot cues, by id (architecture.md § Audio). Which one
 // plays is the director's call (director.ts), never hard-coded per map.
+import type { JingleVariant } from '../../content/presentation.ts';
 import type { Act } from '../../content/types.ts';
 import type { Song } from '../types.ts';
 import { ACT1_BATTLE, TITLE_THEME } from './act1.ts';
@@ -25,10 +26,20 @@ export type CueId = keyof typeof CUES;
 /** The battle theme for each act (Acts II–III and the finale add theirs as they're built). */
 export const BATTLE_THEME: Readonly<Partial<Record<Act, ThemeId>>> = { 1: 'act1_battle' };
 
-/** The wave-clear cue for each act; Act III has none (the jingle stops playing; core-loop §6.7). */
-export const WAVE_CLEAR_CUE: Readonly<Partial<Record<Act, CueId | null>>> = {
-  1: 'bright_sting',
-  3: null,
+/**
+ * The wave-clear cue for each jingle variant, the map's presentation dial (core-loop.md § 6.7;
+ * story/presentation.ts picks it, the director never reads the act): Act I's bright sting; Act
+ * II's sting with minor bridges and A2M4–A2M6's minor arrangement are silent until T450 writes
+ * them (the hook is here: a variant's cue is its row; never Act I's bright sting, which would
+ * cheer); Act III has none (the jingle stops playing); the finale's song is architecture.md
+ * § Audio's, not a wave-clear cue.
+ */
+export const WAVE_CLEAR_CUE: Readonly<Record<JingleVariant, CueId | null>> = {
+  bright: 'bright_sting',
+  minor_bridges: null,
+  minor: null,
+  none: null,
+  song: null,
 };
 
 export function isCueId(id: string): id is CueId {

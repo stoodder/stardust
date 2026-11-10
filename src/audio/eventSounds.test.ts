@@ -1,3 +1,5 @@
+import { PRESENTATION, type JingleVariant } from '../content/presentation.ts';
+import { WAVE_CLEAR_CUE } from './music/index.ts';
 import { describe, expect, it } from 'vitest';
 import { SFX } from './sfx/index.ts';
 import type { AttackKind, IdSpace } from '../content/types.ts';
@@ -29,8 +31,11 @@ const fired = (kind: AttackKind, uid: number): Fired => ({
 /** A Cluster Thumper bomblet: a lobbed shot with no target. */
 const bomblet = (uid: number): SimEvent<IdSpace> => ({ ...fired('lobbed', uid), targetUid: 0 });
 
-function run(events: SimEvent<IdSpace>[], act: 1 | 3 = 1): SoundCall[] {
-  const s = createEventSounds(act);
+/** The wave-clear cue an act's jingle dial plays (core-loop.md § 6.7). */
+const cueFor = (act: 1 | 2 | 3 | 'finale') => WAVE_CLEAR_CUE[PRESENTATION.byAct[act].jingle];
+
+function run(events: SimEvent<IdSpace>[], jingle: JingleVariant = 'bright'): SoundCall[] {
+  const s = createEventSounds(jingle);
   const out: SoundCall[] = [];
   for (const e of events) s.sounds(e, out);
   s.endFrame(out);
@@ -236,7 +241,18 @@ describe('event sounds', () => {
     expect(ids(run([cleared(7), { type: 'MapWon' }]))).toEqual(['cue:win']);
     expect(ids(run([{ type: 'MapLost' }]))).toEqual(['cue:lose']);
     // Act III has no wave-clear jingle (core-loop §6.7).
-    expect(run([cleared(1)], 3)).toEqual([]);
+    expect(run([cleared(1)], 'none')).toEqual([]);
+  });
+
+  it("plays the map's jingle dial: Act I's bright sting, nothing cheerful after (T450 fills)", () => {
+    expect(cueFor(1)).toBe('bright_sting');
+    for (const act of [2, 3, 'finale'] as const) expect(cueFor(act)).not.toBe('bright_sting');
+    expect(WAVE_CLEAR_CUE[PRESENTATION.byMap.a2_m04?.jingle ?? 'bright']).not.toBe('bright_sting');
+    expect(run([cleared(1)], 'minor_bridges')).toEqual(
+      WAVE_CLEAR_CUE.minor_bridges === null
+        ? []
+        : [{ kind: 'cue', id: WAVE_CLEAR_CUE.minor_bridges }],
+    );
   });
 
   it("gives M2's best moments a sound: a link's chime, a spec's flourish, a kind forfeit (D059)", () => {
@@ -260,7 +276,7 @@ describe('event sounds', () => {
     ]);
     expect(ids(run([forfeit('perfectCore'), { type: 'MapWon' }]))).toEqual(['cue:win']);
     // Nothing after the map ends, either.
-    const s = createEventSounds(1);
+    const s = createEventSounds('bright');
     const out: SoundCall[] = [];
     s.sounds({ type: 'MapLost' }, out);
     s.endFrame(out);

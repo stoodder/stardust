@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCount, pestsProcessedLine } from './format.ts';
+import { formatCount } from './format.ts';
 
 describe('formatCount', () => {
   it('adds comma thousands separators', () => {
@@ -18,11 +18,5 @@ describe('formatCount', () => {
 
   it('stays within the 9-character worst case for counts below ten million', () => {
     expect(formatCount(9_999_999)).toHaveLength(9);
-  });
-});
-
-describe('pestsProcessedLine', () => {
-  it('is the Act I results line from the style guide', () => {
-    expect(pestsProcessedLine(4312)).toBe('PESTS PROCESSED: 4,312 ★ Top 5% of Technicians!');
   });
 });

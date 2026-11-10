@@ -2,7 +2,8 @@
 // 2349, outstanding in his field. A burlap head with button eyes and a stitched smile under a
 // faded Everglow cap; a faded blue plaid shirt on the crossbar (cool, so he never reads as a
 // Skitterkin at a glance) with straw at the cuffs and hem; his gold Employee of the Month badge;
-// and a small bird sitting on his arm, entirely unbothered.
+// and a small bird sitting on his arm, entirely unbothered. `faded` is A2M3's (act2.md § A2M3): the
+// same scarecrow at dusk, his badge gone dull brass with no glint and its ribbons bleached.
 import { defineSprite } from '../defineSprite.ts';
 import { disc, grid, isoBox, plot, rows, stamp } from '../helpers.ts';
 
@@ -11,7 +12,7 @@ const H = 30;
 const CX = 10;
 const FOOT_Y = 27; // the pole's foot (the anchor)
 
-function scarecrowGrid(): string[] {
+function scarecrowGrid(faded = false): string[] {
   const g = grid(W, H);
   isoBox(g, CX, FOOT_Y + 1, 4, 0, { top: '_', rim: '_', left: '_', right: '_' });
   // The pole, lit on its left.
@@ -34,7 +35,8 @@ function scarecrowGrid(): string[] {
   stamp(g, CX + 7, 12, ['.Y', 'YZ', '.Y']);
   stamp(g, CX - 4, 22, ['Y.ZY.Y.Z']);
   // Employee of the Month: a gold badge with a glint and pink ribbon tails.
-  stamp(g, CX - 4, 15, ['wY', 'YZ', 'P.', '.P']);
+  // In Act II (`faded`) the badge has gone dull in the sun, its glint gone, the ribbons bleached.
+  stamp(g, CX - 4, 15, faded ? ['GF', 'FG', 'E.', '.E'] : ['wY', 'YZ', 'P.', '.P']);
   // The head: a burlap sack, button eyes, a stitched smile.
   disc(g, CX, 8.5, 3.6, (d, x, y) => (d > 2.8 && x >= CX ? 'M' : x + y < CX + 6 ? 'H' : 'N'));
   plot(g, CX - 2, 8, 'k');
@@ -73,6 +75,9 @@ export const propScarecrow = defineSprite({
     C: 'blue.2',
     Q: 'ink.4',
     R: 'orange.3',
+    G: 'brass.3',
+    F: 'grime.3',
+    E: 'pink.4',
   },
-  frames: { v0: scarecrowGrid() },
+  frames: { v0: scarecrowGrid(), faded: scarecrowGrid(true) },
 });

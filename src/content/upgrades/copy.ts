@@ -15,7 +15,7 @@
 export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Zibzab: Vrell tower licenses (access.ts). The Zapcoil sample's line is act1.md's (A1M3, *Base*).
   license_zapcoil: "Price first: your next visit. First one's on me. Zibzab is patient.",
-  // M4's licenses (T400a; on the shelf once their towers play: T406 Lookout, T408 the others).
+  // M4's licenses (T400a; on the shelf since their towers play: T406 Lookout, T408 the others).
   license_lookout:
     'Price first: 150 stardust. A shack with a view. It spots what hides. The view is used. Still works.',
   license_harpoon:
@@ -50,6 +50,10 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. My own coil, tuned by me. I charged myself. I paid. Honestly.',
   tune_lookout:
     'Price first: 40 stardust, rising. Stronger nudge, cheaper shack, wider eyes. Same view. Nicer.',
+  tune_harpoon:
+    'Price first: 40 stardust, rising. Sharper tip, cheaper winch, longer rope. The rope is mostly rope.',
+  tune_crane:
+    'Price first: 40 stardust, rising. More per shift, cheaper parts, a longer arm. My cut is small.',
 
   // Zibzab: Field Protocols (protocols.ts).
   head_start:

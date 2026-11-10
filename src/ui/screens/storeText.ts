@@ -101,7 +101,8 @@ export function grantText(g: ModifierGrant): string {
     }
     case 'supportStat': {
       const who = g.tower === '*' ? 'support tower' : towerName(g.tower);
-      return `${pct(g.pct)} ${who} ${g.stat === 'aura' ? 'aura strength' : 'radius'}`;
+      const what = g.stat === 'aura' ? 'aura strength' : g.stat === 'radius' ? 'radius' : 'income';
+      return `${pct(g.pct)} ${who} ${what}`;
     }
     case 'linkBonus':
       return `${pct(g.pct)} link bonuses`;

@@ -47,12 +47,20 @@ export interface RenderState {
   };
   /** BlinkView's tells up now and afterimages since the battle began. */
   readonly blinks: { readonly tells: number; readonly afterimages: number };
+  /** Pinned units roped to a stake now, and Skewer lines drawn so far (T408, HarpoonView). */
+  readonly harpoon: { readonly pins: number; readonly skewered: number };
   /** Debris pixels in flight (shards, motes, flecks). */
   readonly debris: number;
   /** The boss bar's fill (px of 160), or −1 while none shows. */
   readonly bossBar: number;
   /** Link tethers drawn. */
   readonly tethers: number;
+  /** Bricks's name-tag plate (T431): the tower it sits over and its text as drawn, or null. */
+  readonly nameTag: { readonly uid: number; readonly text: string } | null;
+  /** "Incoming" flags standing on the next wave's spawns (T326). */
+  readonly spawnFlags: number;
+  /** Scanner Sweep's aim preview shows (T431: its own circle, not the strike's reticle). */
+  readonly sweepAim: boolean;
   /**
    * SpecFx's (T407b): capacitor orbs and Flak Curtain puffs showing now, discharges and fizzles
    * since the battle began, and seekers in flight with their trails.
@@ -63,5 +71,16 @@ export interface RenderState {
     readonly discharges: number;
     readonly fizzles: number;
     readonly seekers: number;
+  };
+  /**
+   * The Tidybots (T410b): drones in the air now, stardust specks lying on the field, and sweeps
+   * since the battle began (none on a map whose `tidybots` dial is off).
+   */
+  readonly tidybots: {
+    readonly flying: number;
+    readonly specks: number;
+    readonly sweeps: number;
+    /** Each drone in the air: where (grid) and what it's doing (fly, vacuum, chime). */
+    readonly drones: readonly { readonly x: number; readonly y: number; readonly phase: string }[];
   };
 }

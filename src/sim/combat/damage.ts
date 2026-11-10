@@ -29,7 +29,8 @@ import type { DamageSource } from '../events.ts';
 import { countTags } from '../fireControl.ts';
 import { poolKill } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
-import { applyStasis } from '../systems/status.ts';
+import { applyPin, applyStasis } from '../systems/status.ts';
+import { payKillIncome } from '../towerEconomy.ts';
 
 export type { DamageSource };
 
@@ -170,6 +171,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
     y: enemy.y,
   });
   burstSack(state, enemy); // a carrier's sack (the Brood Hauler): SackBurst after EnemyDied
+  payKillIncome(state, enemy, source); // Crane and Reel It In kill credits (T408)
 }
 
 /**
@@ -181,6 +183,7 @@ function killEnemy(state: SimState, enemy: Enemy, source: DamageSource): void {
  *   and refreshes the shared 5 s timer.
  * - Marked: highest only, like Chilled.
  * - Stasis: never stacks or extends, then 2× immunity; a boss takes Chilled 50% (applyStasis).
+ * - Pinned: never stacks or extends, then 1 s immunity; a boss takes Chilled 50% (applyPin).
  */
 export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): void {
   if (!enemy.alive || untargetable(enemy)) return;
@@ -207,9 +210,11 @@ export function applyEffects(enemy: Enemy, effects: readonly CompiledEffect[]): 
         // Frozen, or a boss's Chilled 50% (systems/status.ts; T407a).
         applyStasis(enemy, fx.durationTicks);
         break;
-      // Pinned (T408) and Unnerved (M5) arrive with the towers that apply them; createSim refuses
-      // them until then (FEATURE_GATES).
       case 'pinned':
+        // Held in place, a flyer grounded, or a boss's Chilled 50% (systems/status.ts; T408).
+        applyPin(enemy, fx.durationTicks);
+        break;
+      // Unnerved (M5) arrives with the Mindspike; createSim refuses it until then (FEATURE_GATES).
       case 'unnerved':
         break;
       default:

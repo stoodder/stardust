@@ -415,6 +415,21 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly radiusTiles: number;
       readonly frozen: number;
     }
+  | {
+      /**
+       * A tower paid income (sim/towerEconomy.ts; T408): the Salvage Crane's per-wave income or
+       * Haggler's Stall's interest as wave `wave` resolved (at the tower), or a kill's credits (a
+       * Crane's kill bonus or a link's, Reel It In; at the dying unit, wave = its wave). Already
+       * credited. Position in tiles: where render floats the `+credits`.
+       */
+      readonly type: 'TowerIncome';
+      readonly towerUid: number;
+      readonly kind: 'wave' | 'kill' | 'interest';
+      readonly credits: number;
+      readonly wave: number;
+      readonly x: number;
+      readonly y: number;
+    }
   /** A cloaked unit became Revealed (T406), or slipped back into its cloak (`Cloaked`). */
   | { readonly type: 'Revealed'; readonly uid: number }
   | { readonly type: 'Cloaked'; readonly uid: number }

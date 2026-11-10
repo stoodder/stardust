@@ -53,11 +53,14 @@ export type ModifierGrant =
       readonly flat?: number;
       readonly pct?: number;
     }
-  /** A support tower's tune-up (T406): aura strength or detection/aura radius, as a fraction. */
+  /**
+   * A support tower's tune-up (T406): aura strength or detection/aura radius, as a fraction; or
+   * the Salvage Crane's per-wave income (T408).
+   */
   | {
       readonly kind: 'supportStat';
       readonly tower: TowerId | '*';
-      readonly stat: 'aura' | 'radius';
+      readonly stat: 'aura' | 'radius' | 'income';
       readonly pct: number;
     }
   | { readonly kind: 'linkBonus'; readonly pct: number }

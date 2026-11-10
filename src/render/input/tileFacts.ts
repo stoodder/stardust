@@ -4,6 +4,7 @@
 import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace, MarkerId } from '../../content/types.ts';
 import { isBuildableTile, liveTileAt, wreckageStatus, type Sim } from '../../sim/index.ts';
+import { incomingAt } from '../views/spawnFlags.ts';
 import type { TileFacts } from './intents.ts';
 
 export type MutableTileFacts = { -readonly [K in keyof TileFacts]: TileFacts[K] };
@@ -20,6 +21,7 @@ export function emptyTileFacts(): MutableTileFacts {
     peeker: false,
     wreckage: 'none',
     clickable: null,
+    incoming: false,
   };
 }
 
@@ -87,6 +89,7 @@ export function fillTileFacts(
     out.peeker = false;
     out.wreckage = 'none';
     out.clickable = null;
+    out.incoming = false;
     return out;
   }
   out.index = index;
@@ -100,6 +103,7 @@ export function fillTileFacts(
   out.peeker = index === peekerTile(map);
   out.wreckage = wreckageStatus(map, sim.state.wreckage, out.col, out.row);
   out.clickable = clickableAt(sim, index);
+  out.incoming = incomingAt(map, sim.state, index);
   return out;
 }
 

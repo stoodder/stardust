@@ -1007,6 +1007,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     let sold = false;
     for (const fx of step.effects) {
       if (fx.kind === 'untagged' && fx.reason === 'sold') sold = true;
+      // The plate over the tagged turret (T431): render draws `hud.nameTag` (BattleScene).
+      if (fx.kind === 'untagged' && hud.nameTag.value?.uid === fx.uid) hud.nameTag.value = null;
+      if (fx.kind === 'tagged') {
+        hud.nameTag.value = { uid: fx.uid, text: resolveText(fx.name, textContext()) };
+      }
       if (fx.kind === 'tagged' && !tagGiven) {
         tagGiven = true;
         playSlot('cue_name_tag');

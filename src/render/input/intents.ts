@@ -29,6 +29,11 @@ export interface TileFacts {
    * Peeker holding Pebble), or null: a click here interacts with it.
    */
   readonly clickable?: MarkerId | null;
+  /**
+   * A spawn carrying an "incoming" flag now (T326; views/spawnFlags.ts): a plain click calls the
+   * next wave (core-loop.md § 2.4).
+   */
+  readonly incoming?: boolean;
 }
 
 /** What a click does. The scene applies the selection and issues the command. */
@@ -54,6 +59,8 @@ export type Intent =
    * decor, so nothing could be built there anyway); only an aimed ability fires instead.
    */
   | { readonly kind: 'interact'; readonly marker: MarkerId }
+  /** A plain click on an "incoming" flag: start or call the next wave (`callWave`; T326). */
+  | { readonly kind: 'callWave' }
   /** A plain click on wreckage: send the salvage drone (the `clear` command; maps.md § 3). */
   | { readonly kind: 'clear'; readonly tile: GridPos }
   /** A click on wreckage the drone is already queued for, or clearing: the HUD says so. */
@@ -99,6 +106,7 @@ export function resolveClick(
   if (clickable !== null) return { kind: 'interact', marker: clickable };
   if (tile.towerUid !== 0) return { kind: 'selectTower', uid: tile.towerUid };
   if (armed === null && tile.peeker === true) return { kind: 'poke' };
+  if (armed === null && tile.incoming === true) return { kind: 'callWave' };
   if (armed !== null) {
     if (tile.buildable) return { kind: 'build', tower: armed, tile: [tile.col, tile.row] };
     return standingWreck(tile.wreckage) ? { kind: 'clearFirst' } : { kind: 'cantBuild' };
@@ -179,6 +187,10 @@ export function hoverLook(
     look.highlight = canPlace ? 'hover' : 'invalid';
     look.ghost = true;
     look.ghostValid = canPlace;
+  } else if (armed === null && tile.incoming === true) {
+    // An "incoming" flag: a click calls the wave, so the pointer is the hand (T326).
+    look.highlight = 'hover';
+    look.clickable = true;
   } else if (armed === null && tile.wreckage === 'wreckage') {
     // Nothing armed over a wreck the drone isn't on yet: a click clears it, so say so.
     look.highlight = 'salvage';

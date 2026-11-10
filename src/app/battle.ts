@@ -84,6 +84,8 @@ export function startBattle(
         const l = speaking.value;
         return l !== null && l.point ? l.id : 0;
       },
+      // Bricks's name tag (T431): the turret carrying it, set by app/dialogue.ts's tagging.
+      nameTag: () => hud.nameTag.value,
     },
     key,
   );

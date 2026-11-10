@@ -18,7 +18,7 @@ import type { WaveTag } from '../../content/types.ts';
 import { applyDamage, PLAIN_HIT } from '../combat/damage.ts';
 import { isNeutral } from '../combat/neutral.ts';
 import { distSqTo } from '../combat/targeting.ts';
-import { untargetable } from '../enemyAbilities/layers.ts';
+import { onLayers, untargetable } from '../enemyAbilities/layers.ts';
 import { ALLY_BLANK, type Ally, type Enemy } from '../entities.ts';
 import { poolAlloc, poolKill } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
@@ -98,7 +98,7 @@ function pickAllyTarget(state: SimState, a: Ally): Enemy | null {
     const e = enemies.items[i]!; // i < used ≤ items.length
     // Burrowed or leaving units are out of reach; allies never shoot a neutral unit (Gerald).
     if (!e.alive || e.def === null || untargetable(e) || isNeutral(e)) continue;
-    if (e.def.layer === 'air' ? !a.hitsAir : !a.hitsGround) continue;
+    if (!onLayers(e, a.hitsGround, a.hitsAir)) continue; // a pinned flyer is grounded (T408)
     if (!allyMayTarget(e.tags)) continue;
     const d2 = distSqTo(a.x, a.y, e);
     if (d2 > a.rangeSq) continue;

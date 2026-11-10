@@ -18,7 +18,22 @@
 //   Stasis never extends or stacks (two Flash Freezes can't chain a unit frozen).
 // - **A boss** never enters Stasis: it takes Chilled BOSS_CONVERTED_CHILL for the same duration
 //   (not halved again), which interrupts nothing (D101). No immunity follows.
-import { BOSS_CONVERTED_CHILL, STASIS_IMMUNITY_MULT } from '../../content/rules.ts';
+//
+// Pinned (enemies.md § 2.4; T408: Tether, Magnet Crane): `applyPin` is the one way in, the same
+// shape as Stasis's.
+// - **A non-boss** is held in place (speed 0, movement.ts) for `pinnedTicks`, counting the tick it
+//   lands, and a pinned flyer is **grounded**: a tier that hits ground can hit it too
+//   (enemyAbilities/layers.ts `onLayers`), splash and allies included. A Pin doesn't interrupt
+//   abilities (§ 2.4 gives that to Stasis and Unnerved only): a pulse, dig, or hush goes on.
+// - **Immunity:** a Pin lands only on a unit neither pinned nor immune, so it never extends or
+//   stacks; once it ends the unit is immune to Pin for PIN_IMMUNITY_SEC (1 s).
+// - **A boss** takes Chilled 50% for the same duration instead (not halved again, no immunity).
+import {
+  BOSS_CONVERTED_CHILL,
+  PIN_IMMUNITY_SEC,
+  STASIS_IMMUNITY_MULT,
+} from '../../content/rules.ts';
+import { secToTicks } from '../../shared/time.ts';
 import { applyChill } from '../combat/damage.ts';
 import type { Enemy, Tower } from '../entities.ts';
 import type { SimState } from '../state.ts';
@@ -57,6 +72,29 @@ export function applyStasis(e: Enemy, ticks: number): boolean {
   return true;
 }
 
+/** Pin immunity after a Pin ends (PIN_IMMUNITY_SEC), in ticks. */
+export const PIN_IMMUNITY_TICKS = secToTicks(PIN_IMMUNITY_SEC);
+
+/** Whether `e` is Pinned this tick (held in place; a pinned flyer is grounded). */
+export function isPinned(e: Readonly<Enemy>): boolean {
+  return e.pinnedTicks > 0;
+}
+
+/**
+ * Pinned for `ticks` (enemies.md § 2.4; see the header): a non-boss is held unless it's already
+ * pinned or immune; a boss takes Chilled 50% instead. Returns whether a Pin landed.
+ */
+export function applyPin(e: Enemy, ticks: number): boolean {
+  if (!e.alive || e.def === null || ticks <= 0) return false;
+  if (e.def.boss !== null) {
+    applyChill(e, BOSS_CONVERTED_CHILL, ticks, true);
+    return false;
+  }
+  if (e.pinnedTicks > 0 || e.pinImmuneTicks > 0) return false;
+  e.pinnedTicks = ticks;
+  return true;
+}
+
 /**
  * The statuses a tower's links add to its hits (Conductive: the Sprinkler Soaks from tier 1),
  * applied after the hit's damage like its tier's own effects. Soaked refreshes to the longer of
@@ -84,6 +122,10 @@ export function status(state: SimState): void {
     if (e.soakedTicks > 0) e.soakedTicks--;
     if (e.stasisTicks > 0) e.stasisTicks--;
     else if (e.stasisImmuneTicks > 0) e.stasisImmuneTicks--;
+    // A Pin's immunity starts the pass it ends, so the next Pin waits PIN_IMMUNITY_TICKS passes.
+    if (e.pinnedTicks > 0) {
+      if (--e.pinnedTicks === 0) e.pinImmuneTicks = PIN_IMMUNITY_TICKS;
+    } else if (e.pinImmuneTicks > 0) e.pinImmuneTicks--;
     if (e.corrodedTicks > 0 && --e.corrodedTicks === 0) e.corrodedStacks = 0;
     if (e.markTicks > 0 && --e.markTicks === 0) e.markPct = 0;
 

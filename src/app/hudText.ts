@@ -10,6 +10,7 @@ import { TICK_HZ } from '../shared/time.ts';
 import { assertNever, type DeepReadonly } from '../shared/types.ts';
 import type { InputRefusal } from '../render/input/BattleInteraction.ts';
 import { clickableAt, peekerTile } from '../render/input/tileFacts.ts';
+import { incomingAt, incomingWave } from '../render/views/spawnFlags.ts';
 import {
   isBuildableTile,
   liveTileAt,
@@ -340,6 +341,11 @@ export function cursorText(
     return status === 'wreckage'
       ? `${what}. Enter sends the salvage drone.`
       : `${what}, the salvage drone's on it.`;
+  }
+  // An "incoming" flag (T326): Enter starts or calls the wave from here.
+  if (armed === null && incomingAt(map, sim.state, index)) {
+    const n = incomingWave(map, sim.state);
+    return `${what}, incoming flag. Enter ${sim.state.wave === 0 ? 'starts' : 'calls'} wave ${n}.`;
   }
   if (armed !== null && isBuildableTile(tile))
     return `${what}. Enter builds ${sim.config.content.towers[armed]?.name ?? towerName(armed)}.`;

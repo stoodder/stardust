@@ -105,6 +105,13 @@ import { propPodium } from './props/podium.ts';
 import { propPartyTent } from './props/party_tent.ts';
 import { propConfettiCannon } from './props/confetti_cannon.ts';
 import { propBunting } from './props/bunting.ts';
+// Act II's props and tiles (T440c).
+import { propTidybot } from './props/tidybot.ts';
+import { propRigs } from './props/rigs.ts';
+import { propCrewHut } from './props/crew_hut.ts';
+import { propWarren } from './props/warren.ts';
+import { propSpoil } from './props/spoil.ts';
+import { tileHush } from './tiles/hush.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
 import { tilePath } from './tiles/path.ts';
@@ -170,6 +177,13 @@ export const SPRITES = [
   propPartyTent,
   propConfettiCannon,
   propBunting,
+  // Act II's props and tiles (T440c).
+  propTidybot,
+  propRigs,
+  propCrewHut,
+  propWarren,
+  propSpoil,
+  tileHush,
   towerRivet,
   towerRivetHead,
   towerThumper,

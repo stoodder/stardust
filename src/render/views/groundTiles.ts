@@ -7,6 +7,7 @@ import { APRON_RINGS } from '../../content/sprites/tiles/apron.ts';
 import { CLIFF_VARIANTS, type CliffEdge } from '../../content/sprites/tiles/cliff.ts';
 import { VERGE_VARIANTS, type VergeEdge } from '../../content/sprites/tiles/verge.ts';
 import { GRIME_VARIANTS } from '../../content/sprites/tiles/grime.ts';
+import type { HighGroundLook } from '../../content/sprites/tiles/high_ground.ts';
 import type { DressingLayerDef, GridPos, MarkerId, TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
@@ -33,6 +34,11 @@ export interface TileDressing {
    * over a decor tile's grass (`soilFrame`; A2M3's grey soil). Absent with none.
    */
   readonly soil?: string;
+  /**
+   * A `tile.hush` overlay frame drawn over the ground, after the cliffs: the dark creeping in from
+   * a map's `halls_dark` marker (A2M1's north-east edge; `hushFrame`). Absent with none.
+   */
+  readonly hush?: string;
   /**
    * `tile.cliff` overlay frames drawn over the ground (and verge), in order: a terrace step down
    * from each back neighbour that stands higher (`GroundGrid.terraces`; T223). Absent with none.
@@ -62,6 +68,21 @@ export interface GroundGrid {
   /** A revisit's original footprint: where its (0, 0) sits, and its size (null: not a revisit). */
   readonly revisitAt?: GridPos | null;
   readonly revisitSize?: { readonly cols: number; readonly rows: number } | null;
+  /**
+   * The map's env palette (CompiledMapDef.env): Act II's maps dress their decor, wreckage, high
+   * ground, and power node in Act II's looks (`ACT2_ENVS`). Absent: Act I's.
+   */
+  readonly env?: string;
+  /** A Protect map's asset (CompiledMapDef.asset): AssetView draws it, so its tile stays bare. */
+  readonly asset?: { readonly marker: MarkerId } | null;
+}
+
+/** The env palettes whose maps take Act II's looks (art-direction §3, §6). */
+const ACT2_ENVS: ReadonlySet<string> = new Set(['act2.gold', 'act2.dusk']);
+
+/** True on an Act II map (by its env). */
+export function isActTwo(env: string | undefined): boolean {
+  return env !== undefined && ACT2_ENVS.has(env);
 }
 
 /**
@@ -83,7 +104,28 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   banner_line: 'prop.bunting',
   party_tent: 'prop.party_tent',
   confetti_cannon: 'prop.confetti_cannon',
+  // Act II (act2.md per map, T440c): A2M1's Rig Nine head frame and the crew's hut, its yard cut's
+  // spoil; A2M2's habitat domes; A2M3's exposed warrens and the warren's spoil.
+  rig_nine: 'prop.rig',
+  crew_hut: 'prop.crew_hut',
+  spoil: 'prop.spoil',
+  dome: 'prop.dome',
+  warren: 'prop.warren',
+  warren_spoil: 'prop.spoil',
 };
+
+/**
+ * A decor marker's own frame, where its sprite's frame isn't the default: Rig Nine is `prop.rig`'s
+ * `nine`; spoil heaps and warrens alternate their frames by the marker's `_<n>`.
+ */
+function markerFrame(id: MarkerId): string | null {
+  if (id === 'rig_nine') return 'nine';
+  if (id === 'warren_spoil') return 'warren';
+  const n = Number(/_(\d+)$/.exec(id)?.[1] ?? 0);
+  if (id.startsWith('spoil')) return `drill_${n % 2}`;
+  if (id.startsWith('warren')) return `v${n % 2}`;
+  return null;
+}
 
 /** A decor prop's frame and looping anim on the map, where it isn't `v0` and still. */
 const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: string | null }>>> = {
@@ -93,6 +135,25 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   'prop.billboard': { frame: 'beaming', anim: null },
   'prop.confetti_cannon': { frame: 'idle', anim: null },
 };
+
+/**
+ * Act II's looks for decor props that have one (act2.md): Evie's billboards peel (from A2M1), the
+ * Terrace 2 scarecrow's badge has faded and Rig 3 works the strip mine (A2M3, a revisit).
+ */
+const ACT2_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: string | null }>>> = {
+  'prop.billboard': { frame: 'peeling', anim: null },
+  'prop.scarecrow': { frame: 'faded', anim: null },
+  'prop.rig': { frame: 'strip', anim: null },
+};
+
+/** A decor prop's frame and anim on an `env` map: Act II's look, else its own, else `v0`. */
+export function decorLook(
+  sprite: SpriteId,
+  env: string | undefined,
+): { frame: string; anim: string | null } {
+  const act2 = isActTwo(env) ? ACT2_LOOKS[sprite] : undefined;
+  return act2 ?? DECOR_LOOKS[sprite] ?? { frame: 'v0', anim: null };
+}
 
 /**
  * Markers drawn by a view of their own, which leave their tile bare of sparse decor: the Peeker
@@ -128,23 +189,45 @@ export function peekerCover(mapId: string): PeekerCover {
   return Object.hasOwn(PEEKER_COVER_BY_MAP, mapId) ? PEEKER_COVER_BY_MAP[mapId]! : 'rock'; // hasOwn
 }
 
-/** The decor id a marker id names: itself, or itself less a `_<n>` suffix. */
+/**
+ * The decor id a marker id names: itself, or itself less a `_<suffix>` (`billboard_2`, a map with
+ * several; `dome_north`, a name).
+ */
 function decorSprite(id: MarkerId): SpriteId | undefined {
   if (Object.hasOwn(DECOR_MARKERS, id)) return DECOR_MARKERS[id];
-  const base = id.replace(/_\d+$/, '');
+  const base = id.replace(/_[a-z0-9]+$/, '');
   return base !== id && Object.hasOwn(DECOR_MARKERS, base) ? DECOR_MARKERS[base] : undefined;
 }
 
-/** The decor prop a marker puts on (col, row), if any; 'bare' for a view or cue marker's tile. */
-function decorAt(g: GroundGrid, col: number, row: number): SpriteId | 'bare' | null {
+/** A marker's decor on its tile: its sprite and, where it names one, its own frame. */
+interface MarkerDecor {
+  readonly sprite: SpriteId;
+  readonly frame: string | null;
+}
+
+/**
+ * The decor prop a marker puts on (col, row), if any; 'bare' for a view, cue, or asset marker's
+ * tile (its own view draws what stands there).
+ */
+function decorAt(g: GroundGrid, col: number, row: number): MarkerDecor | 'bare' | null {
   if (g.markers === undefined) return null;
   for (const [id, [c, r]] of Object.entries(g.markers)) {
     if (c !== col || r !== row) continue;
-    if (VIEW_MARKERS.includes(id) || Object.hasOwn(CUE_DECOR, id)) return 'bare';
+    if (VIEW_MARKERS.includes(id) || Object.hasOwn(CUE_DECOR, id) || g.asset?.marker === id)
+      return 'bare';
     const sprite = decorSprite(id);
-    if (sprite !== undefined) return sprite;
+    if (sprite !== undefined) return { sprite, frame: markerFrame(id) };
   }
   return null;
+}
+
+/** True when a marker whose id starts with `prefix` stands on (col, row). */
+function markerOn(g: GroundGrid, prefix: string, col: number, row: number): boolean {
+  if (g.markers === undefined) return false;
+  for (const [id, [c, r]] of Object.entries(g.markers)) {
+    if (c === col && r === row && id.startsWith(prefix)) return true;
+  }
+  return false;
 }
 
 /**
@@ -172,9 +255,43 @@ export function envVariant(env: string): string {
   return env === 'act1' ? DEFAULT_VARIANT : env;
 }
 
-/** The `prop.wreckage` wreck on tile (col, row): `v0` or `v1`, alternating (T311b's frames). */
-export function wreckageFrame(col: number, row: number): 'v0' | 'v1' {
-  return (col + row) % 2 === 0 ? 'v0' : 'v1';
+/**
+ * The `prop.wreckage` wreck on tile (col, row), alternating by tile: Act I's `v0` (a crashed drone)
+ * or `v1` (a toppled cart), T311b's; on an Act II map (`env`) its broken mining rigs, `v2` (a
+ * snapped derrick) or `v3` (a burst pump house), each with a crew log on its stake (T440c).
+ */
+export function wreckageFrame(col: number, row: number, env?: string): 'v0' | 'v1' | 'v2' | 'v3' {
+  const odd = (col + row) % 2 !== 0;
+  if (isActTwo(env)) return odd ? 'v3' : 'v2';
+  return odd ? 'v1' : 'v0';
+}
+
+/**
+ * The high-ground block's look on tile (col, row): an `outcrop*` marker's thread-glass (A2M2), an
+ * Act II map's canyon ledge (A2M1), else Act I's grassy block.
+ */
+export function highGroundLook(g: GroundGrid, col: number, row: number): HighGroundLook {
+  if (markerOn(g, 'outcrop', col, row)) return 'outcrop';
+  return isActTwo(g.env) ? 'ledge' : 'v0';
+}
+
+/** The marker the dark creeps in from (A2M1's north-east edge, toward the Halls). */
+const HUSH_MARKER = 'halls_dark';
+
+/**
+ * The `tile.hush` frame at (col, row) on a map with a `halls_dark` marker, or null: deepest near
+ * the marker, fading along the edges that lead away from it (a step across the grid's columns
+ * counts as much as five down its rows, so the dark runs down the east edge). Applies to apron
+ * cells too (outside the grid).
+ */
+export function hushFrame(g: GroundGrid, col: number, row: number): string | null {
+  const at = g.markers?.[HUSH_MARKER];
+  if (at === undefined) return null;
+  const reach = Math.abs(col - at[0]) + Math.abs(row - at[1]) / 5;
+  if (reach <= 1.5) return 'd3';
+  if (reach <= 3) return 'd2';
+  if (reach <= 4.5) return 'd1';
+  return null;
 }
 
 function isPathLike(t: TileChar | undefined): boolean {
@@ -222,7 +339,10 @@ export function dressTile(g: GroundGrid, col: number, row: number): TileDressing
     look = { ...look, soil, ...(bare ? { prop: null } : {}) };
   }
   const cliff = cliffFrames(g, col, row);
-  return cliff.length === 0 ? look : { ...look, cliff };
+  if (cliff.length > 0) look = { ...look, cliff };
+  // The dark edge: over grass (decor) only, so a pad, the road, and a block keep their read.
+  const hush = grass ? hushFrame(g, col, row) : null;
+  return hush === null ? look : { ...look, hush };
 }
 
 /** True when (col, row) is in a dressing layer's area (DressingLayerDef). */
@@ -282,18 +402,23 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       return { ground: { sprite: 'tile.spawn', frame: 'v0' }, prop: null };
     case 'o':
       return { ground: { sprite: 'tile.pad', frame: 'v0' }, prop: null };
-    case '^':
+    case '^': {
       // The block covers its whole footprint; the grass under it only backs its seams.
-      return { ground: grass, prop: null, block: { sprite: 'tile.high_ground', frame: 'v0' } };
+      const frame = highGroundLook(g, col, row);
+      return { ground: grass, prop: null, block: { sprite: 'tile.high_ground', frame } };
+    }
     case '+':
-      return { ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' }, prop: null };
+      // Act II's power node is a stardust conduit (A2M1, A2M2).
+      return isActTwo(g.env)
+        ? { ground: { sprite: 'tile.power_node', frame: 'conduit_0', anim: 'conduit' }, prop: null }
+        : { ground: { sprite: 'tile.power_node', frame: 'v0', anim: 'pulse' }, prop: null };
     case 'x':
     case '.':
     case undefined: {
       // A decor marker's prop; else sparse decor, so blocked ground reads as neither pad nor path.
       // A view marker's tile (the Peeker's rock) stays bare: its view draws what stands there.
       const decor = t === undefined ? null : decorAt(g, col, row);
-      let sprite: SpriteId | null = decor === 'bare' ? null : decor;
+      let sprite: SpriteId | null = decor === 'bare' || decor === null ? null : decor.sprite;
       if (decor === null) {
         if (t === 'x') sprite = 'prop.wreckage';
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
@@ -304,10 +429,12 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       let onTile: Prop | null = null;
       if (sprite === 'prop.bunting') {
         onTile = { sprite, frame: buntingFrame(g, col, row), anim: null };
+      } else if (sprite !== null && t === 'x' && decor === null) {
+        onTile = { sprite, frame: wreckageFrame(col, row, g.env), anim: null };
       } else if (sprite !== null) {
-        const look = DECOR_LOOKS[sprite];
-        const frame = t === 'x' ? wreckageFrame(col, row) : (look?.frame ?? 'v0');
-        onTile = { sprite, frame, anim: t === 'x' ? null : (look?.anim ?? null) };
+        const look = decorLook(sprite, g.env);
+        const own = decor !== null && decor !== 'bare' ? decor.frame : null;
+        onTile = own === null ? { sprite, ...look } : { sprite, frame: own, anim: null };
       }
       // Grass beside the road: a verge of darker clumps on each edge it shares with the road.
       const verge: string[] = [];
@@ -343,6 +470,9 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.party_tent',
   'prop.confetti_cannon',
   'prop.bunting',
+  'prop.rigs',
+  'prop.crew_hut',
+  'prop.tidybot',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */
@@ -377,8 +507,24 @@ function colonyDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
   return m;
 }
 
+/**
+ * Act II's apron dressing on the same north edges: the mining frontier. An Evie billboard peeling
+ * on the north-west with a drill spoil heap beside it, and spoil heaps along the north-east where
+ * Act I had Dome Row (act2.md: "Evie billboards peeling").
+ */
+function frontierDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
+  const m = new Map<string, Prop>();
+  m.set(`-2,${Math.round(g.rows * 0.2)}`, prop('prop.billboard', 'peeling'));
+  m.set(`-2,${Math.round(g.rows * 0.2) + 2}`, prop('prop.spoil', 'drill_1'));
+  m.set(`${Math.round(g.cols * 0.55)},-2`, prop('prop.spoil', 'drill_0'));
+  m.set(`${Math.round(g.cols * 0.3)},-2`, prop('prop.spoil', 'drill_1'));
+  return m;
+}
+
 const DECOR_BY_ENV: Readonly<Record<string, (g: GroundGrid) => ReadonlyMap<string, Prop>>> = {
   act1: colonyDecor,
+  'act2.gold': frontierDecor,
+  'act2.dusk': frontierDecor,
 };
 
 /**
@@ -441,7 +587,12 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
           }
         }
       }
-      out.push({ col, row, ring, ground, prop: p });
+      const hush = hushFrame(g, col, row);
+      out.push(
+        hush === null
+          ? { col, row, ring, ground, prop: p }
+          : { col, row, ring, ground, prop: p, hush },
+      );
     }
   }
   return out;

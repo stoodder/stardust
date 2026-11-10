@@ -10,8 +10,8 @@
 //   A hushed unit (enemyAbilities/hush.ts) left the fight: it books to its wave and nothing else.
 // - A wave resolves when every enemy in it has died, leaked, or left (a driven-off boss and her
 //   brood); its clear bonus (§ 2.3) pays then, leaks or not, tripled for a boss wave
-//   (waveClearBonusFor). Waves overlap, so they can resolve out of order; one tick resolves in
-//   wave order.
+//   (waveClearBonusFor), then the Salvage Crane's income and interest (sim/towerEconomy.ts). Waves
+//   overlap, so they can resolve out of order; one tick resolves in wave order.
 // - Victory when every wave has resolved (the last wave's enemies are all gone, and so is
 //   everything before it) with integrity above 0.
 // It also keeps the medals (sim/medals.ts): leaks book against Perfect Core, `passedMarker`
@@ -35,6 +35,7 @@ import {
 import { poolReleaseDead } from '../pool.ts';
 import { emit, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
+import { payWaveIncome } from '../towerEconomy.ts';
 
 export function cleanup(state: SimState, ctx: TickContext): void {
   // A dead tower (sold or revoked) frees its tile before its slot can be reused.
@@ -86,6 +87,7 @@ export function cleanup(state: SimState, ctx: TickContext): void {
     const bonus = waveClearBonusFor(w + 1, isBossWave(ctx.map.waves[w]!)); // w < waves.length
     earn(state, bonus);
     emit(state, { type: 'WaveCleared', wave: w + 1, bonus });
+    payWaveIncome(state, ctx.config.modifiers, w + 1); // the Crane's, then interest (T408)
   }
   if (allResolved) {
     state.outcome = 'won';

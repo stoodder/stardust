@@ -35,10 +35,11 @@ export const MASTER = {
   'act1.water.0': '#1c6ab0', 'act1.water.1': '#2e9ae0', 'act1.water.2': '#6ad4f4', 'act1.water.3': '#c2f6ff',
   'act1.sky.0': '#7ccbee', 'act1.sky.1': '#b2e6f8', 'act1.sky.2': '#e2f8ff',
   'act1.shade': '#3a2c5e', 'act1.light': '#fff4dc',
-  // Act II: the Long Dusk (grass, clay, and path are shared by act2.gold and act2.dusk)
-  'act2.grass.0': '#3c3416', 'act2.grass.1': '#6c5c1e', 'act2.grass.2': '#a88c2c', 'act2.grass.3': '#dcbc48', 'act2.grass.4': '#fbe88c',
+  // Act II: the Long Dusk (grass, clay, and path are shared by act2.gold and act2.dusk). Grass and
+  // path sit a value band under Act I's units, as Act I's do (T440c, art-direction §3).
+  'act2.grass.0': '#3c3416', 'act2.grass.1': '#60511a', 'act2.grass.2': '#987e27', 'act2.grass.3': '#c9ab41', 'act2.grass.4': '#eddb84',
   'act2.clay.0': '#3c1630', 'act2.clay.1': '#6c2838', 'act2.clay.2': '#a84638', 'act2.clay.3': '#de7440', 'act2.clay.4': '#ffae62',
-  'act2.path.0': '#4a2a32', 'act2.path.1': '#7a4840', 'act2.path.2': '#ae7650', 'act2.path.3': '#dca468', 'act2.path.4': '#fcd690',
+  'act2.path.0': '#4a2a32', 'act2.path.1': '#6d4039', 'act2.path.2': '#996746', 'act2.path.3': '#bd8d58', 'act2.path.4': '#debc7e',
   'act2.gold.sky.0': '#ff7a52', 'act2.gold.sky.1': '#ffae52', 'act2.gold.sky.2': '#ffd88c',
   'act2.gold.shade': '#3a1446', 'act2.gold.light': '#ffd49c',
   'act2.dusk.sky.0': '#3a1a5e', 'act2.dusk.sky.1': '#7a3484', 'act2.dusk.sky.2': '#d0587a',

@@ -33,6 +33,8 @@ export interface Scratch {
   readonly range: { rangeSq: number; minRangeSq: number };
   /** A purchase's price as the sim pays it (economy.ts `pay`). */
   readonly price: PurchasePrice;
+  /** The best Crane salvage bonus over the drone's tile (towerEconomy.ts `craneSalvageAt`). */
+  readonly crane: { speedPct: number; salvagePct: number };
 }
 
 /** Fresh scratch space for one sim. */
@@ -43,6 +45,7 @@ export function createScratch(): Scratch {
     towerSource: { kind: 'tower', uid: 0 },
     range: { rangeSq: 0, minRangeSq: 0 },
     price: { cost: 0, discounted: false },
+    crane: { speedPct: 0, salvagePct: 0 },
   };
 }
 

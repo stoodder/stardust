@@ -14,6 +14,11 @@
 //   and `idle_v0` / `idle_v1` wink it a quarter second in every two (untouched).
 // - `v0_half`, `v1_half`: half cleared (the drone has lifted the big piece away; scraps and the
 //   scorch remain), for the second half of a tile's clearing.
+// - `v2`, `v3` (and their `_lit`, `_half`, `blink_`, `idle_`): Act II's wreckage, the broken
+//   mining rigs (act2.md § A2M1): `v2` a derrick's top section snapped off and lying across the
+//   patch, its crown block nose-down; `v3` a pump house burst open, its pipe torn up out of the
+//   roof; both spill grey drill spoil flecked cold violet, and carry a crew log (a battered steel
+//   data case with a glinting teal screen) strapped to the salvage stake.
 // A cleared tile draws its `underWreckage` tile and no prop.
 import { defineSprite } from '../defineSprite.ts';
 import {
@@ -179,15 +184,93 @@ function cart(g: CharGrid): void {
   }
 }
 
+/** Grey drill spoil spilled on the patch, flecked cold violet (unsung, art-direction §1). */
+function spoil(g: CharGrid, x: number, y: number): void {
+  stamp(g, x, y, ['.MMA.', 'MMAMA', 'AAAJ.']);
+  plot(g, x + 1, y + 1, 'F');
+  plot(g, x + 3, y, 'F');
+}
+
+/** v2 (Act II): a mining derrick's top section, snapped off and lying across the patch. */
+function derrick(g: CharGrid): void {
+  // Two lattice legs running down-left across the patch, braced in X's.
+  const x0 = 6;
+  const y0 = TOP + 9;
+  const x1 = 23;
+  const y1 = TOP + 1;
+  line(g, x0, y0, x1, y1, 'V');
+  line(g, x0 + 1, y0 + 4, x1 + 1, y1 + 4, 'S');
+  for (let i = 0; i < 3; i++) {
+    const t0 = i / 3;
+    const t1 = (i + 1) / 3;
+    const ax = Math.round(x0 + (x1 - x0) * t0);
+    const ay = Math.round(y0 + (y1 - y0) * t0);
+    const bx = Math.round(x0 + (x1 - x0) * t1);
+    const by = Math.round(y0 + (y1 - y0) * t1);
+    line(g, ax + 1, ay + 1, bx, by + 3, 'W');
+  }
+  // The crown block at its end, nose in the dirt, its safety band dulled, its beacon dead.
+  stamp(g, x1 - 1, y1 - 3, ['.VW.', 'VWWS', 'QZZT', '.TT.']);
+  plot(g, x1 + 3, y1 - 2, 'T');
+  // The snapped end: bent stubs, a length of drill pipe rolled clear.
+  stamp(g, x0 - 2, y0 - 1, ['S.', '.T', 'S.']);
+  line(g, 9, TOP + 13, 16, TOP + 13, 'S');
+  plot(g, 16, TOP + 12, 'W');
+  spoil(g, 18, TOP + 9);
+  soot(g, 3);
+}
+
+/** v3 (Act II): a pump house burst open, its pipe torn up, spoil spilling from the split. */
+function pumpHouse(g: CharGrid): void {
+  isoBox(g, 15, TOP + 9, 7, 7, { top: 'W', rim: 'V', left: 'W', right: 'S' });
+  // The teal band, dulled, and the split down its front face.
+  for (let x = 8; x < 22; x++) {
+    const y = TOP + 9 - 7 + Math.round(Math.abs(x + 0.5 - 15) / 2);
+    plot(g, x, y + 2, x < 15 ? 'E' : 'D');
+  }
+  crack(g, [
+    [14, TOP + 1],
+    [16, TOP + 4],
+    [14, TOP + 7],
+    [15, TOP + 10],
+  ]);
+  stamp(g, 15, TOP + 6, ['KK', 'KK', '.K']);
+  // The pipe torn up out of its roof, bent over.
+  line(g, 13, TOP - 2, 13, TOP + 2, 'U');
+  line(g, 13, TOP - 2, 17, TOP - 5, 'U');
+  line(g, 12, TOP - 2, 12, TOP + 2, 'T');
+  stamp(g, 17, TOP - 6, ['SS', 'T.']);
+  spoil(g, 4, TOP + 9);
+  spoil(g, 19, TOP + 11);
+  soot(g, 4);
+}
+
 /** The half-cleared wreck: the big piece is gone; a few scraps, the parcels, and the stake. */
-function half(g: CharGrid, v: 0 | 1): void {
+function half(g: CharGrid, v: WreckIndex): void {
   if (v === 0) {
     crate(g, 24, TOP + 9, 3.5, 3);
     stamp(g, 10, TOP + 5, ['.TS.', 'TWWS', '.TT.']);
-  } else {
+  } else if (v === 1) {
     disc(g, 22, TOP + 9, 1.8, (d) => (d > 1.2 ? 'G' : 'H'));
     stamp(g, 9, TOP + 5, ['..SW.', '.TWWS', 'KUTT.']);
+  } else if (v === 2) {
+    spoil(g, 18, TOP + 9);
+    line(g, 9, TOP + 13, 14, TOP + 13, 'S');
+    stamp(g, 7, TOP + 7, ['.TS', 'TU.']);
+  } else {
+    spoil(g, 4, TOP + 9);
+    spoil(g, 19, TOP + 11);
+    stamp(g, 12, TOP + 7, ['.WWS', 'TWSS', '.TT.']);
   }
+}
+
+/**
+ * A crew log (Act II's wrecks, A2M1's Crew Logs): a battered steel data case strapped to the
+ * stake, its little teal screen still glinting: the rig crew's last entries.
+ */
+function crewLog(g: CharGrid, x: number, y: number): void {
+  stamp(g, x - 3, y, ['VVV', 'VRV', 'VVS']);
+  plot(g, x - 1, y + 3, 'U');
 }
 
 /** Rings the debris layer's pixels with a hand-placed ink outline (none round the scorch). */
@@ -203,14 +286,28 @@ function outlined(g: CharGrid, debris: CharGrid): void {
   debris.forEach((r, y) => r.forEach((ch, x) => ch !== '.' && plot(g, x, y, ch)));
 }
 
-function wreck(v: 0 | 1, state: 'dark' | 'lit' | 'half'): string[] {
+/** The wrecks: Act I's drone and cart (`v0`, `v1`), Act II's broken rigs (`v2`, `v3`). */
+type WreckIndex = 0 | 1 | 2 | 3;
+
+const STAKE_AT: Readonly<Record<WreckIndex, readonly [number, number]>> = {
+  0: [27, TOP - 6],
+  1: [26, TOP - 5],
+  2: [27, TOP - 3],
+  3: [26, TOP - 4],
+};
+
+function wreck(v: WreckIndex, state: 'dark' | 'lit' | 'half'): string[] {
   const g = grid(W, H);
   scorch(g, v + 1);
   const d = grid(W, H);
   if (state === 'half') half(d, v);
   else if (v === 0) drone(d);
-  else cart(d);
-  stake(d, v === 0 ? 27 : 26, v === 0 ? TOP - 6 : TOP - 5, state === 'lit');
+  else if (v === 1) cart(d);
+  else if (v === 2) derrick(d);
+  else pumpHouse(d);
+  const [sx, sy] = STAKE_AT[v];
+  stake(d, sx, sy, state === 'lit');
+  if (v >= 2) crewLog(d, sx, sy + 3);
   outlined(g, d);
   return rows(g);
 }
@@ -246,6 +343,11 @@ export const propWreckage = defineSprite({
     G: 'green.2',
     H: 'green.3',
     I: 'green.4',
+    // Act II's rigs: drill spoil and its cold violet flecks, and the crew log's case and screen.
+    A: 'grime.2',
+    M: 'grime.3',
+    F: 'violet.3',
+    R: 'teal.2',
   },
   frames: {
     v0: wreck(0, 'dark'),
@@ -254,6 +356,12 @@ export const propWreckage = defineSprite({
     v1_lit: wreck(1, 'lit'),
     v0_half: wreck(0, 'half'),
     v1_half: wreck(1, 'half'),
+    v2: wreck(2, 'dark'),
+    v3: wreck(3, 'dark'),
+    v2_lit: wreck(2, 'lit'),
+    v3_lit: wreck(3, 'lit'),
+    v2_half: wreck(2, 'half'),
+    v3_half: wreck(3, 'half'),
   },
   anims: {
     blink_v0: { frames: ['v0', 'v0_lit'], fps: 2 },
@@ -262,5 +370,9 @@ export const propWreckage = defineSprite({
     // "job here" without pulling the eye like a queued one (well under 3 Hz).
     idle_v0: { frames: ['v0', 'v0', 'v0', 'v0', 'v0', 'v0', 'v0', 'v0_lit'], fps: 4 },
     idle_v1: { frames: ['v1', 'v1', 'v1', 'v1', 'v1', 'v1', 'v1', 'v1_lit'], fps: 4 },
+    blink_v2: { frames: ['v2', 'v2_lit'], fps: 2 },
+    blink_v3: { frames: ['v3', 'v3_lit'], fps: 2 },
+    idle_v2: { frames: ['v2', 'v2', 'v2', 'v2', 'v2', 'v2', 'v2', 'v2_lit'], fps: 4 },
+    idle_v3: { frames: ['v3', 'v3', 'v3', 'v3', 'v3', 'v3', 'v3', 'v3_lit'], fps: 4 },
   },
 });

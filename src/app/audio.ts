@@ -36,6 +36,7 @@ import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { clearTicksFor, type SimEvent } from '../sim/index.ts';
 import { setTypeTick } from '../ui/dialogue/LineText.tsx';
+import { presentationOfMap } from '../story/presentation.ts';
 import { speaking } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
@@ -191,7 +192,8 @@ export function installAudio(enabled: boolean): () => void {
 export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const { sim } = host;
   const enemies = sim.config.content.enemies;
-  const sounds = createEventSounds(sim.map.act, {
+  // The wave-clear jingle is the map's presentation dial (core-loop.md § 6.7).
+  const sounds = createEventSounds(presentationOfMap(sim.map).jingle, {
     splits: (id) => Object.hasOwn(enemies, id) && (enemies[id]?.split ?? null) !== null,
   });
   // What no event announces (digs, a sneeze's tell, a flock, the drone), from the state.

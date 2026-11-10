@@ -68,6 +68,12 @@ export const BOSS_CHILL_MULT = 0.5;
 export const BOSS_CONVERTED_CHILL = 0.5;
 /** After a Pin ends, the target is immune to Pin for 1 s. */
 export const PIN_IMMUNITY_SEC = 1;
+/**
+ * A line attack (the Harpoon's Skewer; sim/attacks/line.ts) hits every enemy whose centre is
+ * within this distance of the line: a band under a tile wide, so a packed group on the road reads
+ * as skewered and the units beside it don't (T408, chosen).
+ */
+export const LINE_HALF_WIDTH_TILES = 0.4;
 /** After Stasis ends, immunity lasts this multiple of the Stasis just applied. */
 export const STASIS_IMMUNITY_MULT = 2;
 /** Each Corroded stack lasts 5 s and refreshes on a new hit. */
@@ -328,7 +334,8 @@ export const COUNTER_ANSWERS: Readonly<Record<CounterId, CounterAnswers>> = {
     abilities: ['underfoot'],
   },
   splash: {
-    // towers.md § 2.1's Splash row, plus Skyhook against air clusters.
+    // towers.md § 2.1's Splash row, plus Skyhook against air clusters. Skewer's line pierces
+    // every unit along it (T408).
     towers: [
       { tower: 'thumper' },
       { tower: 'gloop' },
@@ -336,6 +343,7 @@ export const COUNTER_ANSWERS: Readonly<Record<CounterId, CounterAnswers>> = {
       { tower: 'rivet', spec: 'a', specName: 'Rivet Storm' },
       { tower: 'mindspike', spec: 'a', specName: 'Echo Spike' },
       { tower: 'sproing', spec: 'b', specName: 'Big Bonk' },
+      { tower: 'harpoon', spec: 'a', specName: 'Skewer' },
       { tower: 'skyhook', vsAir: true },
     ],
     abilities: [],

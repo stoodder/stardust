@@ -376,7 +376,10 @@ type AbilityConfig = Pick<SimConfig<IdSpace>, 'content' | 'abilities' | 'modifie
   Partial<Pick<SimConfig<IdSpace>, 'companion'>>;
 
 const SPEAKER_DEFS_BY_ID: Readonly<
-  Record<string, { readonly name: string; readonly color: string; readonly portrait: string | null }>
+  Record<
+    string,
+    { readonly name: string; readonly color: string; readonly portrait: string | null }
+  >
 > = SPEAKERS;
 
 /** The companion slot 2 belongs to, as its portrait shows (T216), or null without a portrait. */

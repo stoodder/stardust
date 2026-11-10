@@ -115,7 +115,7 @@ Every tower has 3 tune-up ranks, bought in order. **Rule:** a tower's tune-up ca
 
 That is 260 Stardust per tower and ~4,160 for all 16. Players are expected to tune their favorites, not everything.
 
-**As built:** a support tower's ranks 1 and 3 are the `supportStat` grant (T406; the Lookout Shack's: aura strength adds to its auras as a power node's +20% does, and radius scales its detection and aura radii). The Crane's income rank waits for its task (T408).
+**As built:** a support tower's ranks 1 and 3 are the `supportStat` grant (T406; the Lookout Shack's: aura strength adds to its auras as a power node's +20% does, and radius scales its detection and aura radii). The Salvage Crane's rank 1 is the `supportStat` income grant (+5% on its per-wave income, rounded half up) and its rank 3 the usual +5% range, which widens its economy radius (T408; [towers.md § 7](towers.md#salvage-crane-crane)).
 
 ### 4.3 Global upgrades
 
@@ -200,7 +200,7 @@ R&D is run by QUILL in the base. Ves'thara takes over the Xenotech branch when s
 
 There are 16 spec unlocks: 4 × 2 + 12 × 3 = **44 Intel** for all of them.
 
-**As built:** Engineering sells the Rivet's, Thumper's, Sprinkler's (T407a), Lookout's (T406), and Skyhook's and Zapcoil's (T407b) specs; the Harpoon's and Crane's stay off the shelves with their towers until T408. A tower registered without specs would be listed as "Arrives in a later shipment" and refused (`no_specs`, [../tech/meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)); none is today. A spec unlock answers a counter on the loadout screen and the briefing only once its specs exist.
+**As built:** Engineering sells the Rivet's, Thumper's, Sprinkler's (T407a), Lookout's (T406), Skyhook's and Zapcoil's (T407b), and Harpoon's and Crane's (T408) specs. A tower registered without specs would be listed as "Arrives in a later shipment" and refused (`no_specs`, [../tech/meta-runtime.md § Purchases](../tech/meta-runtime.md#purchases)); none is today. A spec unlock answers a counter on the loadout screen and the briefing only once its specs exist.
 
 ### 7.2 Xenotech: Aelari attunement
 

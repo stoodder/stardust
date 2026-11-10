@@ -2,8 +2,9 @@
 // when Zibzab's shop opens after A1M3. Every registered tower has one (catalog.test.ts checks it).
 //
 // Support towers tune other stats: +5% aura strength (rank 1) and +5% radius (rank 3), the
-// `supportStat` grant (T406; the Lookout Shack's detection and aura radii). The Salvage Crane
-// (+5% income) gets its tune-up with its task (T408).
+// `supportStat` grant (T406; the Lookout Shack's detection and aura radii). The Salvage Crane's
+// rank 1 is +5% income (`supportStat` income: its per-wave payment) and its rank 3 the usual +5%
+// range, which widens its economy radius (sim/towerEconomy.ts; T408).
 import { itemCopy } from './copy.ts';
 import { defineUpgrade } from './define.ts';
 import type { UpgradeDef } from './types.ts';
@@ -58,3 +59,26 @@ function supportTuneUp<const Id extends string>(
 }
 
 export const tune_lookout = supportTuneUp('tune_lookout', 'lookout', 'Lookout Tune-up');
+export const tune_harpoon = tuneUp('tune_harpoon', 'harpoon', 'Harpoon Tune-up');
+
+/** The Salvage Crane's tune-up: rank 1 +5% income, rank 2 −5% cost, rank 3 +5% range (radius). */
+export const tune_crane = defineUpgrade({
+  id: 'tune_crane',
+  name: 'Crane Tune-up',
+  copy: itemCopy('tune_crane'),
+  kind: 'shop',
+  currency: 'stardust',
+  availableAfter: 'a1_m03',
+  tower: 'crane',
+  ranks: [
+    {
+      price: PRICES[0],
+      grants: [{ kind: 'supportStat', tower: 'crane', stat: 'income', pct: 0.05 }],
+    },
+    {
+      price: PRICES[1],
+      grants: [{ kind: 'towerCost', tower: 'crane', tiers: 'all', pct: -0.05 }],
+    },
+    { price: PRICES[2], grants: [{ kind: 'towerStat', tower: 'crane', stat: 'range', pct: 0.05 }] },
+  ],
+});

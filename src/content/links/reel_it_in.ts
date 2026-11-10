@@ -1,6 +1,6 @@
 // Reel It In (design/towers.md § 6.2): Salvage Crane + Grapple Harpoon. Harpoon kills pay +3
-// credits, and the Harpoon gets +10% fire rate. Act II early. A T400a stub: both towers are
-// refused until T408 (which runs the kill credits), so the link can't form before then.
+// credits, and the Harpoon gets +10% fire rate. Act II early. The credits are whole and scale with
+// Linked Up, rounded down (×1.5: +4); a spared runner pays none (sim/towerEconomy.ts; T408).
 import { defineLink } from '../define.ts';
 
 export const reel_it_in = defineLink({

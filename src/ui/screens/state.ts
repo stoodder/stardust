@@ -168,6 +168,11 @@ export interface CampaignView {
   readonly mode: 'shiftBoard' | 'starMap';
   /** 1–3, or null for the dev hook's in-memory scratch slot (`?test=1&save=`). */
   readonly slot: 1 | 2 | 3 | null;
+  /**
+   * The next map to play (meta/progress.ts `frontierOf`; null once the finale is won): the menus'
+   * presentation dials between maps (the UI act theme; story/presentation.ts).
+   */
+  readonly frontier: CampaignMapId | null;
   readonly stardust: number;
   readonly intel: number;
   readonly pestsProcessed: number;
@@ -203,6 +208,8 @@ export type SlotView =
       readonly savedAt: number;
       /** The main save was unreadable and its backup loaded. */
       readonly fromBackup: boolean;
+      /** Its next map to play (null once the finale is won): the Title's loading tip reads it. */
+      readonly frontier: CampaignMapId | null;
     }
   | {
       readonly slot: 1 | 2 | 3;

@@ -157,24 +157,25 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   storyDifficulty: null,
   // Skyhook's flak (a projectile with a burst; T304a) and Zapcoil's chain (T304b) are M3's. M4
   // (D101): Stasis with Flash Freeze (T407a, live), homing and charge with the Skyhook and Zapcoil specs
-  // (T407b, live), Pin, line, and target filters with the Harpoon and Crane (T408), detection with the
-  // Lookout (T406). Beams (Prism) and Unnerved (Mindspike) are M5's; spawners (Scuttle Den) M6's.
+  // (T407b, live), Pin, line, target filters, and tower economy with the Harpoon and Crane (T408,
+  // live), detection with the Lookout (T406, live). Beams (Prism) and Unnerved (Mindspike) are M5's;
+  // spawners (Scuttle Den) M6's.
   'attack.projectile': null,
   'attack.beam': 'M5',
   'attack.chain': null,
   'attack.spawner': 'M6',
   'attack.homing': null,
   'attack.charge': null,
-  'attack.line': 'T408',
-  'attack.targetFilter': 'T408',
-  'status.pinned': 'T408',
+  'attack.line': null,
+  'attack.targetFilter': null,
+  'status.pinned': null,
   'status.stasis': null,
   'status.unnerved': 'M5',
   'tower.detection': null,
-  'tower.economy': 'T408',
+  'tower.economy': null,
   'tower.lookout': null,
-  'tower.harpoon': 'T408',
-  'tower.crane': 'T408',
+  'tower.harpoon': null,
+  'tower.crane': null,
   'modifier.towerStat': null,
   'modifier.towerCost': null,
   'modifier.enemyStat': null,

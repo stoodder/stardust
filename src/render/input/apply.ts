@@ -67,6 +67,12 @@ export function applyIntent(
       interaction.selectTower(0);
       sink.issue({ type: 'interact', marker: intent.marker });
       return;
+    case 'callWave':
+      // An "incoming" flag (T326): the sim starts or calls the wave (it re-validates; a refusal,
+      // such as a wave still spawning, is the HUD's notice).
+      interaction.selectTower(0);
+      sink.issue({ type: 'callWave' });
+      return;
     case 'poke':
       // A click off a tower deselects, as anywhere else; the poke itself is a UI event.
       interaction.selectTower(0);

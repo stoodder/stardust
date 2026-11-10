@@ -9,6 +9,8 @@
 // - A boss's phase-change invulnerability: it can still be targeted (the shots that plink off are
 //   the tell), but it takes no damage.
 // - Cloaked and not Revealed (T406; cloak.ts): untouchable, as burrowed, but it still leaks.
+// - Pinned (T408; systems/status.ts): a pinned flyer is grounded, so a tier that hits ground can
+//   hit it as well as one that hits air (`onLayers`).
 import type { Enemy } from '../entities.ts';
 import { cloakedOut } from './cloak.ts';
 
@@ -20,4 +22,15 @@ export function untargetable(e: Enemy): boolean {
 /** Whether a hit on `e` deals nothing: untargetable, or a boss between phases. */
 export function immune(e: Enemy): boolean {
   return untargetable(e) || e.invulnerableTicks > 0;
+}
+
+/**
+ * Whether `e` (with a def) is on a layer a tier hitting `ground` and `air` can touch: a flyer is
+ * air, a walker ground, and a pinned flyer is grounded, so ground towers hit it too
+ * (design/enemies.md § 2.4, § 2.6; T408).
+ */
+export function onLayers(e: Enemy, ground: boolean, air: boolean): boolean {
+  if (e.def === null) return false;
+  if (e.def.layer !== 'air') return ground;
+  return air || (ground && e.pinnedTicks > 0);
 }

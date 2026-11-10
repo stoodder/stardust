@@ -214,6 +214,11 @@ export class TowerView implements PooledView {
     this.#refreshFrames(false);
   }
 
+  /** Whether it wears the pause plate (holding fire): a name plate sits above it (T431). */
+  get holding(): boolean {
+    return this.#holding;
+  }
+
   /** Holding fire: dims the tower and shows the pause plate (or undoes both). */
   setHolding(holding: boolean): void {
     if (holding === this.#holding) return;

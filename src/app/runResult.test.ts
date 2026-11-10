@@ -30,6 +30,8 @@ describe('runResultOf', () => {
     expect(runResultOf({ ...INPUT, integrity: 0 }, 'lost')).toEqual({
       mapId: 'a1_m01',
       outcome: 'lost',
+      counter: 'starred',
+      theme: 1,
       wavesSurvived: 4,
       waveCount: 7,
       integrity: 0,
@@ -48,6 +50,17 @@ describe('runResultOf', () => {
       resumedFromWave: null,
       retryFromWave: null,
     });
+  });
+
+  it("reads the map's presentation dials: Act I's starred card, Act II's plain one (T410b)", () => {
+    expect(runResultOf(INPUT, 'won')).toMatchObject({ counter: 'starred', theme: 1 });
+    expect(runResultOf({ ...INPUT, mapId: 'a2_m03' }, 'won')).toMatchObject({
+      counter: 'plain',
+      theme: 2,
+    });
+    // A dev map reads its act's row.
+    expect(runResultOf({ ...INPUT, mapId: 'dev_act2', act: 2 }, 'won').counter).toBe('plain');
+    expect(runResultOf({ ...INPUT, mapId: 'dev_range' }, 'won').counter).toBe('starred');
   });
 
   it('offers the latest checkpoint after a loss only, and says which wave a run resumed from', () => {

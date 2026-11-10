@@ -26,7 +26,9 @@ import {
   apronCells,
   dressTile,
   envVariant,
+  isActTwo,
   propVariant,
+  wreckageFrame,
   type GroundGrid,
   type TileDressing,
 } from '../render/views/groundTiles.ts';
@@ -399,6 +401,32 @@ const DIORAMA_GRID: GroundGrid = {
   ].join('').split('').map(Number),
 };
 
+/**
+ * The Act II dioramas' grid (T440c): the same corner dressed as an Act II map. Its Act I markers
+ * take their Act II looks (Rig 3 working the strip mine, the scarecrow's faded badge), and it adds
+ * the crew's hut, an exposed warren, a spoil heap, the dark creeping in from the north-east corner
+ * (`halls_dark`), grey soil over the north-west, and a mining scar down the west edge.
+ */
+const ACT2_DIORAMA_GRID: GroundGrid = {
+  ...DIORAMA_GRID,
+  markers: {
+    ...DIORAMA_GRID.markers,
+    crew_hut: [0, 3],
+    warren_1: [5, 4],
+    spoil_1: [8, 6],
+    halls_dark: [8, 0],
+  },
+  dressing: [
+    { kind: 'greySoil', area: { from: [0, 0], to: [3, 3] } },
+    { kind: 'mineScar', area: { from: [0, 6], to: [1, 8] } },
+  ],
+};
+
+/** The diorama grid an env dresses: Act II's on the Act II palettes, else Act I's corner. */
+function dioramaGrid(env: EnvPaletteId): GroundGrid {
+  return isActTwo(env) ? { ...ACT2_DIORAMA_GRID, env } : { ...DIORAMA_GRID, env };
+}
+
 /** A tower's look: a tier (1–3) or a tier-4 spec, named like its base frame. */
 type TowerLook = 't1' | 't2' | 't3' | 'spec_a' | 'spec_b';
 
@@ -435,10 +463,14 @@ type Placed = readonly [
  * (0, 6) waits its turn. Wreckage is drawn as `prop.wreckage` (a variant per tile, half cleared
  * while the drone works it), whatever groundTiles puts on an `x` tile.
  */
-function wreckageLook(i: number, j: number): { sprite: SpriteId; frame: string } | null {
+function wreckageLook(
+  i: number,
+  j: number,
+  env: EnvPaletteId,
+): { sprite: SpriteId; frame: string } | null {
   if (DIORAMA_MAP[j]?.[i] !== 'x') return null;
-  const v = (i + j) % 2;
-  return { sprite: 'prop.wreckage', frame: i === 0 && j === 5 ? `v${v}_half` : `v${v}` };
+  const v = wreckageFrame(i, j, env);
+  return { sprite: 'prop.wreckage', frame: i === 0 && j === 5 ? `${v}_half` : v };
 }
 
 function diorama(
@@ -486,18 +518,24 @@ function diorama(
     const [sx, sy] = screen(i, j);
     draw(frameOf(look.ground.sprite, look.ground.frame, envVariant(env)), sx, sy);
     for (const v of look.verge ?? []) draw(frameOf('tile.verge', v, envVariant(env)), sx, sy);
+    // The map's dressing (grey soil, mining scars) under the verge, as GroundView draws it.
+    if (look.soil !== undefined) draw(frameOf('tile.grime', look.soil, DEFAULT_VARIANT), sx, sy);
     for (const v of look.cliff ?? []) draw(frameOf('tile.cliff', v, envVariant(env)), sx, sy);
+    if (look.hush !== undefined) draw(frameOf('tile.hush', look.hush, DEFAULT_VARIANT), sx, sy);
     if (look.block !== undefined)
       blocks.push({ id: look.block.sprite, frame: look.block.frame, i, j });
-    const p = wreckageLook(i, j) ?? look.prop;
+    const p = wreckageLook(i, j, env) ?? look.prop;
     if (p !== null) objects.push([p.sprite, p.frame, i + 0.5, j + 0.5, propVariant(p.sprite, env)]);
   };
-  for (const a of apronCells(DIORAMA_GRID, env)) cell(a.col, a.row, a);
+  const grid = dioramaGrid(env);
+  for (const a of apronCells(grid, env)) cell(a.col, a.row, a);
   for (let d = 0; d <= colsN + rowsN - 2; d++) {
     for (let i = Math.max(0, d - rowsN + 1); i <= Math.min(d, colsN - 1); i++) {
-      cell(i, d - i, dressTile(DIORAMA_GRID, i, d - i));
+      cell(i, d - i, dressTile(grid, i, d - i));
     }
   }
+  // Act II: Rigs 7 and 8 on the east corner (a Protect asset, AssetView's), glass in both.
+  if (isActTwo(env)) objects.push(['prop.rigs', 'damaged', 8.5, 8.5]);
   // World objects sorted by ground y (tech-spec § Depth sorting).
   objects.push(
     ['enemy.nibbler', 'walk_sw_0', 4.5, 1.1],
@@ -622,6 +660,18 @@ function diorama(
     const [fx, fy] = screen(gx, gy);
     draw(frameOf('fx.shadow', shadow, DEFAULT_VARIANT), fx, fy);
     draw(frameOf(id, frame, DEFAULT_VARIANT), fx, fy - FLY_LIFT_PX, glowOf(baked, id, frame));
+  }
+  // A Tidybot vacuuming up after a wave (Acts I–II; its anchor is the ground point, the body
+  // hovers inside its frame), over its shadow.
+  if (env === 'act1' || isActTwo(env)) {
+    const [ux, uy] = screen(5.6, 8.4);
+    draw(frameOf('fx.shadow', 'small', DEFAULT_VARIANT), ux, uy);
+    draw(
+      frameOf('prop.tidybot', 'vac_1', DEFAULT_VARIANT),
+      ux,
+      uy,
+      glowOf(baked, 'prop.tidybot', 'vac_1'),
+    );
   }
   // The salvage drone at work over the half-cleared wreck (its anchor is the ground point; the
   // body hovers inside its frame), over its shadow.

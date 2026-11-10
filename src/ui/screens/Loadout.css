@@ -59,6 +59,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  min-height: 0;
   font-family: var(--font-heading);
 }
 
@@ -236,13 +237,22 @@
   text-transform: uppercase;
 }
 
+/* The links take the column's leftover height and scroll when the pool forms more than fit (T431:
+   five with all_unlocked ran under the footer's buttons), formed links first. */
 .sd-lo-links {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 2px;
+  min-height: 24px;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
+}
+
+.sd-lo-link {
+  flex: none;
 }
 
 .sd-lo-link {

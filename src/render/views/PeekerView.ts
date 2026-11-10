@@ -9,8 +9,9 @@
 // Where the map makes the rock a clickable world object (A2M3, T409), the scene reads its hold
 // from the sim (peekerMotion.ts `peekerHold`): `holding` while the `peeker` marker is clickable
 // (Pebble stays up on the rock, looking about and blinking, never shy: she wants to be found;
-// ClickableView outlines her `outlineFrame`), and `empty` before and after (the bare rock:
-// `prop.rock` in the act's colours, until T440c draws the Peeker's own).
+// ClickableView outlines her `outlineFrame`), and `empty` before and after (the same rock, bare).
+// Behind the rock those are the Peeker's own frames (T440c): `hold` (Pebble up on the rock, paws
+// over its crown) and `empty`; another cover holds with its `peek` and empties to `hidden`.
 import * as Phaser from 'phaser';
 import { peekerFrame, type PeekerCover } from '../../content/sprites/props/peeker.ts';
 import { createRng, nextFloat } from '../../shared/rng.ts';
@@ -22,8 +23,9 @@ import type { ObjectFrame } from './ClickableView.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 const SPRITE = 'prop.peeker';
-/** The empty rock after the rescue: decor's own rock, whose base row matches the Peeker's. */
-const EMPTY = { sprite: 'prop.rock', frame: 'v0' } as const;
+/** Her hold and the bare rock, behind the rock (`prop.peeker`'s `hold` anim and `empty`). */
+const HOLD = { frame: 'hold_0', anim: 'hold' } as const;
+const EMPTY = 'empty';
 
 const pos: Vec2 = { x: 0, y: 0 };
 /** Props sort among themselves by a per-tile id (GroundView's `propTieBreak`). */
@@ -41,6 +43,8 @@ export class PeekerView {
   readonly #hidden: { readonly texture: string; readonly frame: string };
   readonly #peek: string;
   readonly #duck: string;
+  /** The holding anim (`hold` behind the rock; a cover's `peek`). */
+  readonly #holdAnim: string;
   /** The holding pose's frame (peek_0): what the clickable outline hugs. */
   readonly #held: { readonly texture: string; readonly frame: string };
   readonly #heldAnchor: { readonly x: number; readonly y: number };
@@ -77,11 +81,14 @@ export class PeekerView {
     this.#peek = sprites.anim(SPRITE, peekerFrame(cover, 'peek'), variant);
     this.#duck = sprites.anim(SPRITE, peekerFrame(cover, 'duck'), variant);
     const anchor = sprites.frameAnchor(SPRITE, hidden);
-    const held = peekerFrame(cover, 'peek_0');
+    const rock = cover === 'rock';
+    const held = rock ? HOLD.frame : peekerFrame(cover, 'peek_0');
+    this.#holdAnim = rock ? sprites.anim(SPRITE, HOLD.anim, variant) : this.#peek;
     this.#held = sprites.frame(SPRITE, held, variant);
     this.#heldAnchor = sprites.frameAnchor(SPRITE, held);
-    this.#empty = sprites.frame(EMPTY.sprite, EMPTY.frame, propVariant(EMPTY.sprite, env));
-    this.#emptyAnchor = sprites.frameAnchor(EMPTY.sprite, EMPTY.frame);
+    const empty = rock ? EMPTY : hidden;
+    this.#empty = sprites.frame(SPRITE, empty, variant);
+    this.#emptyAnchor = sprites.frameAnchor(SPRITE, empty);
     this.#anchor = anchor;
     gridToScreen(col + 0.5, row + 0.5, origin, pos);
     this.#px = pos.x;
@@ -159,7 +166,7 @@ export class PeekerView {
       img
         .setTexture(this.#held.texture, this.#held.frame)
         .setDisplayOrigin(this.#heldAnchor.x, this.#heldAnchor.y)
-        .play(this.#peek);
+        .play(this.#holdAnim);
     } else if (hold === 'empty') {
       img
         .setTexture(this.#empty.texture, this.#empty.frame)

@@ -222,10 +222,7 @@ export type T3Reach = Readonly<Record<Layer, number>>;
 
 /**
  * The best tier-1-to-3 range over `towers`, per layer (specs aren't counted: tier 4 is a later
- * investment, D097). Every tower in the content counts, not only the map's issued ones, since a
- * replay brings whatever the save owns, except stubs registered ahead of their task (the caller
- * leaves out towers/index.ts TOWERS_AHEAD_OF_TASK). Tier patches carry their tier before's targets
- * and range.
+ * investment, D097). Tier patches carry their tier before's targets and range.
  */
 export function bestT3Reach(towers: Iterable<TargetedTower>): T3Reach {
   const best = { ground: 0, air: 0 };
@@ -241,6 +238,45 @@ export function bestT3Reach(towers: Iterable<TargetedTower>): T3Reach {
       if (ground) best.ground = Math.max(best.ground, range);
       if (air) best.air = Math.max(best.air, range);
     }
+  }
+  return best;
+}
+
+/**
+ * A tower's best tier-1-to-3 reach per layer (`bestT3Reach`) and the campaign index of the map
+ * whose win first stocks it (−1 from the start, or for a tower with no access row).
+ */
+export interface TowerReach {
+  readonly tower: string;
+  readonly reach: T3Reach;
+  readonly firstOwnedAfter: number;
+}
+
+/** Every tower's reach (`TowerReach`); `stockedAfter` gives a tower's campaign index. */
+export function towerReaches(
+  towers: Iterable<readonly [string, TargetedTower]>,
+  stockedAfter: (tower: string) => number,
+): TowerReach[] {
+  const out: TowerReach[] = [];
+  for (const [id, t] of towers) {
+    out.push({ tower: id, reach: bestT3Reach([t]), firstOwnedAfter: stockedAfter(id) });
+  }
+  return out;
+}
+
+/**
+ * The best reach on `layer` over the towers the run that first wins the map at campaign index
+ * `mapIndex` can own (−1: not a campaign map, so every tower). Only that run sets the map's flags
+ * (story-runtime.md § Flags), so it's the one [quiet-wave-reach] guards: a tower first stocked
+ * after the map itself isn't counted there, whatever a replay brings (D107's scope for auras,
+ * applied to attack ranges by T408: the Harpoon's 4.0, stocked after A2M1, would reach A1M5's
+ * Quiet Wave from two pads).
+ */
+export function reachOnMap(reaches: readonly TowerReach[], layer: Layer, mapIndex: number): number {
+  let best = 0;
+  for (const r of reaches) {
+    if (mapIndex >= 0 && r.firstOwnedAfter >= mapIndex) continue;
+    if (r.reach[layer] > best) best = r.reach[layer];
   }
   return best;
 }
@@ -371,10 +407,11 @@ function bestRangeAura(
 }
 
 /**
- * [quiet-wave-reach]: no buildable tile's best tier-3 range (with the high-ground bonus, the best
- * range aura a support tower beside it could add (`bestRangeAura`), and the static model's
- * REACH_SLACK_TILES, so it holds under any profile's small range bonuses) reaches the first
- * QUIET_WAVE_CLEAR_TILES tiles of a route a `quiet_wave` group walks.
+ * [quiet-wave-reach]: no buildable tile's best tier-3 range (`reachOnMap`: over the towers the
+ * map's first-win run can own; with the high-ground bonus, the best range aura a support tower
+ * beside it could add (`bestRangeAura`), and the static model's REACH_SLACK_TILES, so it holds
+ * under any profile's small range bonuses) reaches the first QUIET_WAVE_CLEAR_TILES tiles of a
+ * route a `quiet_wave` group walks.
  */
 export function validateQuietWaveReach(
   issues: Issues,
@@ -398,7 +435,7 @@ export function validateQuietWaveReach(
       const key = `${group.route}/${enemy.layer}`;
       if (judged.has(key)) continue;
       judged.add(key);
-      const range = ctx.t3Reach[enemy.layer];
+      const range = reachOnMap(ctx.towerReaches, enemy.layer, ctx.campaignIndex(def.id));
       if (range <= 0) continue;
       const head = routePrefix(route, QUIET_WAVE_CLEAR_TILES - 1);
       sites ??= buildSites(def, grid);

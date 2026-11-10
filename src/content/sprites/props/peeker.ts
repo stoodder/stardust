@@ -12,7 +12,16 @@
 // by A1M4's fountain. A1M3's fallen mailbox is a decor prop of its own (`prop.mailbox`) in front
 // of the rock, and A1M5's warren-track rock is the default.
 import { defineSprite } from '../defineSprite.ts';
-import { fromRows, grid, plot, recolor, rows, stamp, type CharGrid } from '../helpers.ts';
+import {
+  fromRows,
+  grid,
+  mirrorRows,
+  plot,
+  recolor,
+  rows,
+  stamp,
+  type CharGrid,
+} from '../helpers.ts';
 import { youngling } from '../enemies/youngling.ts';
 import { ENV_VARIANTS } from '../tiles/tileGen.ts';
 
@@ -82,7 +91,7 @@ export function peekerFrame(cover: PeekerCover, name: string): string {
   return cover === 'rock' ? name : `${cover}_${name}`;
 }
 
-type Pose = 'hidden' | 'peek' | 'blink' | 'duck';
+type Pose = 'hidden' | 'peek' | 'blink' | 'duck' | 'hold' | 'holdBlink' | 'holdAway' | 'empty';
 
 function peeker(pose: Pose, cover: PeekerCover = 'rock'): string[] {
   const g: CharGrid = grid(W, H);
@@ -94,7 +103,12 @@ function peeker(pose: Pose, cover: PeekerCover = 'rock'): string[] {
     // Squashed: the top half of the body only, pressed flat, sprout up in alarm.
     stamp(g, 6, 5, critter.slice(1, 5));
     stamp(g, 10, 3, ['V', 'V']);
-  } else {
+  } else if (pose === 'hold' || pose === 'holdBlink' || pose === 'holdAway') {
+    // Up on the rock and holding on (A2M3, T409): a pixel higher than a peek, looking about,
+    // the other way on `holdAway`.
+    stamp(g, 6, 0, pose === 'holdAway' ? mirrorRows(critter) : critter);
+    if (pose === 'holdBlink') stamp(g, 11, 3, ['MM.MM', 'QQ.QQ', 'MM.MM']);
+  } else if (pose !== 'empty') {
     stamp(g, 6, 1, critter);
     if (pose === 'blink') stamp(g, 11, 4, ['MM.MM', 'QQ.QQ', 'MM.MM']);
   }
@@ -112,6 +126,13 @@ function peeker(pose: Pose, cover: PeekerCover = 'rock'): string[] {
   fromRows(front).forEach((r, y) =>
     r.forEach((ch, x) => ch !== '.' && stamp(g, x, H - front.length + y, [ch])),
   );
+  // Holding on: two little paws gripping the rock's crown, over it.
+  if (pose === 'hold' || pose === 'holdBlink' || pose === 'holdAway') {
+    stamp(g, 7, 6, ['xNx']);
+    stamp(g, 12, 6, ['xNx']);
+    stamp(g, 7, 7, ['.x.']);
+    stamp(g, 12, 7, ['.x.']);
+  }
   // The shrubs would bury the sprout's tip: it pokes up through them, the hint for the curious.
   if (pose === 'hidden' && cover !== 'rock') stamp(g, 6, 5, critter.slice(0, 2));
   return rows(g);
@@ -146,6 +167,10 @@ export const propPeeker = defineSprite({
     planter_peek_0: peeker('peek', 'planter'),
     planter_peek_1: peeker('blink', 'planter'),
     planter_duck: peeker('duck', 'planter'),
+    hold_0: peeker('hold'),
+    hold_1: peeker('holdBlink'),
+    hold_2: peeker('holdAway'),
+    empty: peeker('empty'),
   },
   anims: {
     peek: { frames: ['peek_0', 'peek_0', 'peek_0', 'peek_1'], fps: 4 },
@@ -155,5 +180,9 @@ export const propPeeker = defineSprite({
       fps: 4,
     },
     planter_duck: { frames: ['planter_duck', 'planter_hidden'], fps: 8, loop: false },
+    hold: {
+      frames: ['hold_0', 'hold_0', 'hold_0', 'hold_1', 'hold_0', 'hold_2', 'hold_2', 'hold_2'],
+      fps: 4,
+    },
   },
 });

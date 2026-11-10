@@ -111,7 +111,7 @@ describe('the tower panel (T202d)', () => {
     const towers = battleConfig('a1_m01', 1).content.towers;
     const card = (id: 'skyhook' | 'zapcoil', spec: 'a' | 'b'): string =>
       specDescription(towerStats(towers[id]!, 4, undefined, [], spec), towers[id]!.specs![spec]);
-    expect(card('skyhook', 'a')).toBe('12 dmg · 3/s · range 4');
+    expect(card('skyhook', 'a')).toBe('12 dmg · 3/s · range 4 · splash 1.2');
     expect(card('skyhook', 'b')).toBe('25 dmg · 0.5/s · range 5 · 4 homing · pierce 4');
     expect(card('zapcoil', 'a')).toBe('14 dmg · 1.2/s · range 2.5 · chains to 8');
     expect(card('zapcoil', 'b')).toBe('250 dmg · 0.25/s · range 2.5 · 4 s charge · 50% splash 1');

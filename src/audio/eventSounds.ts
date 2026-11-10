@@ -3,7 +3,8 @@
 // adding a row there, not a branch here). Cosmetic pitch variance (a recipe's `jitter`) is the
 // synth's, from its own RNG; nothing here reads or affects the sim. What no event announces (a
 // sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the state after each frame.
-import type { Act, IdSpace } from '../content/types.ts';
+import type { JingleVariant } from '../content/presentation.ts';
+import type { IdSpace } from '../content/types.ts';
 import type { SimEvent, SimEventType } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
 import {
@@ -105,6 +106,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   BlinkInterrupted: false,
   // Flash Freeze's burst: Stasis's sound is T450's.
   PulseBurst: false,
+  // Crane income and Reel It In's credits (T408): the floater is enough for now (T450).
+  TowerIncome: false,
   Revealed: false,
   Cloaked: false,
   AssetHit: false,
@@ -137,8 +140,14 @@ export interface EnemyLookup {
 }
 const NO_ENEMIES: EnemyLookup = { splits: () => false };
 
-/** Event sounds for a battle in act `act`. */
-export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): EventSounds {
+/**
+ * Event sounds for a battle whose wave-clear jingle is `jingle` (its presentation dial; story/
+ * presentation.ts `presentationOfMap`).
+ */
+export function createEventSounds(
+  jingle: JingleVariant,
+  enemies: EnemyLookup = NO_ENEMIES,
+): EventSounds {
   /** Fired projectiles' kinds by uid, so their landing finds its sound. */
   const flying = new Map<number, string>();
   /** Allies' kinds by uid, so their shots find their sound. */
@@ -214,7 +223,7 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
           else out.push(sfx('wave_start'));
           return;
         case 'WaveCleared':
-          if (!ended && WAVE_CLEAR_CUE[act]) pendingClear = true;
+          if (!ended && WAVE_CLEAR_CUE[jingle] !== null) pendingClear = true;
           return;
         case 'AbilityUsed': {
           const s = ABILITY_SOUNDS[e.ability];
@@ -301,6 +310,7 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
         case 'Blinked':
         case 'BlinkInterrupted':
         case 'PulseBurst':
+        case 'TowerIncome':
         case 'Revealed':
         case 'Cloaked':
         case 'AssetHit':
@@ -314,8 +324,8 @@ export function createEventSounds(act: Act, enemies: EnemyLookup = NO_ENEMIES): 
       }
     },
     endFrame(out) {
-      const cue = WAVE_CLEAR_CUE[act];
-      if (pendingClear && !ended && cue) out.push({ kind: 'cue', id: cue });
+      const cue = WAVE_CLEAR_CUE[jingle];
+      if (pendingClear && !ended && cue !== null) out.push({ kind: 'cue', id: cue });
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));
       pendingClear = false;
       pendingForfeit = false;

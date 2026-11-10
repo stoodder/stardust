@@ -1,6 +1,7 @@
 // The static playfield: the decor apron and the map's ground tiles in the `ground` layer (back to
 // front: by i + j, then i; the power node's pulse is the one animated tile; the map's grey-soil
-// dressing, the road's grass verge, and any terrace cliff face overlay their tile), and what stands
+// dressing, the road's grass verge, any terrace cliff face, and a map's dark edge overlay their
+// tile; Act II's maps take Act II's looks, groundTiles' `isActTwo`), and what stands
 // on tiles depth-sorted in `world`: high-ground blocks (raised one step, `highGround` bias) and
 // props (core, fence, decor, and the map's decor markers). Drawn once per map. The apron lies
 // outside the grid, so picking never reaches it.
@@ -69,6 +70,13 @@ export function drawCell(
     const cf = sprites.frame('tile.cliff', frame, ev);
     layers.ground.add(
       new Phaser.GameObjects.Image(scene, pos.x, pos.y, cf.texture, cf.frame).setOrigin(0, 0),
+    );
+  }
+  if (look.hush !== undefined) {
+    // The dark edge (A2M1's north-east, toward the Halls): one master-colored dither overlay.
+    const hf = sprites.frame('tile.hush', look.hush, DEFAULT_VARIANT);
+    layers.ground.add(
+      new Phaser.GameObjects.Image(scene, pos.x, pos.y, hf.texture, hf.frame).setOrigin(0, 0),
     );
   }
   if (look.block !== undefined) {

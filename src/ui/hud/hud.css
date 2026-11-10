@@ -642,6 +642,41 @@ section.chamfer,
   background: var(--panel-fill);
 }
 
+/* The "Checkpoint" cue (T431; core-loop §2.12): a small panel under the wave panel for 3 s as a
+   checkpoint is taken, edged in the accent, with a flag glyph (a shape beside the word). */
+.hud-checkpoint {
+  --edge: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px 3px 5px;
+  color: var(--sd-white-1);
+  background: var(--panel-fill);
+  pointer-events: none;
+}
+
+.hud-checkpoint-wave {
+  color: var(--sd-steel-3);
+}
+
+/* A pennant on a pole: 1 px pole, a 4×3 flag in the accent. */
+.hud-checkpoint-flag {
+  position: relative;
+  width: 5px;
+  height: 7px;
+  border-left: 1px solid var(--sd-white-1);
+}
+
+.hud-checkpoint-flag::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 3px;
+  background: var(--accent);
+}
+
 /* ── Wave panel: countdown and the early-call bonus ───────────────────────────────────────── */
 
 .hud-countdown {

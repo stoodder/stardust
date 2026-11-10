@@ -8,7 +8,7 @@
 import type { CompiledAttack } from '../../content/compiled.ts';
 import type { TargetPriority } from '../../content/types.ts';
 import type { Enemy } from '../entities.ts';
-import { untargetable } from '../enemyAbilities/layers.ts';
+import { onLayers, untargetable } from '../enemyAbilities/layers.ts';
 import { isSpared } from '../fireControl.ts';
 import type { Pool } from '../pool.ts';
 
@@ -21,15 +21,29 @@ export interface TargetLayers {
 /** The range fields of an attack. */
 export type RangeSpec = Pick<CompiledAttack, 'rangeSq' | 'minRangeSq'>;
 
+/** An attack's target filter (Magnet Crane; T408): `CompiledAttack.targetFilter`. */
+export type TargetFilter = NonNullable<CompiledAttack['targetFilter']>;
+
+/**
+ * Whether `e` (with a def) passes `filter`: one of its bodies, or, with `armored`, any armor
+ * (its data's, whatever Corroded has stripped). Null passes everything.
+ */
+export function passesFilter(e: Enemy, filter: TargetFilter | null): boolean {
+  if (filter === null) return true;
+  const def = e.def;
+  if (def === null) return false;
+  return filter.bodies.includes(def.body) || (filter.armored && def.armor > 0);
+}
+
 /**
  * Whether a tower that hits `layers` may touch `e` at all: alive, not burrowed or leaving
  * (enemyAbilities/layers.ts), and in a layer it hits (design/enemies.md §2.6: a flyer is air, so a
- * ground-only tower never sees it). A neutral unit (Gerald) is targeted like any enemy; what a hit
- * on it does is combat/neutral.ts's. (Cloak and phase arrive with their enemies.)
+ * ground-only tower never sees it, unless it's Pinned: grounded, T408). A neutral unit (Gerald) is
+ * targeted like any enemy; what a hit on it does is combat/neutral.ts's.
  */
 export function canHit(e: Enemy, layers: TargetLayers): boolean {
   if (!e.alive || e.def === null || untargetable(e)) return false;
-  return e.def.layer === 'air' ? layers.air : layers.ground;
+  return onLayers(e, layers.ground, layers.air);
 }
 
 /**
@@ -56,7 +70,8 @@ function remaining(e: Enemy): number {
  * The best target from (x, y) under `priority`, or null. Priorities (towers.md §5): First (least
  * route distance left), Last (most left), Strong (highest HP + shield), Close (nearest). Ties:
  * First, then the lowest uid. With `spare` (the spare-runners filter), spared units are skipped,
- * and so are the enemy slots in `exclude` (a volley's targets so far; T407b).
+ * and so are the enemy slots in `exclude` (a volley's targets so far; T407b) and the units an
+ * attack's `filter` doesn't pass (Magnet Crane; T408).
  */
 export function pickTarget(
   enemies: Pool<Enemy>,
@@ -67,6 +82,7 @@ export function pickTarget(
   priority: TargetPriority,
   spare = false,
   exclude: readonly number[] | null = null,
+  filter: TargetFilter | null = null,
 ): Enemy | null {
   let best: Enemy | null = null;
   let bRem = 0;
@@ -77,6 +93,7 @@ export function pickTarget(
     if (!canHit(e, layers)) continue;
     if (spare && isSpared(e.tags)) continue;
     if (exclude !== null && exclude.includes(i)) continue;
+    if (!passesFilter(e, filter)) continue;
     const d2 = distSqTo(x, y, e);
     if (!isInRange(d2, range)) continue;
     const rem = remaining(e);
@@ -126,7 +143,7 @@ function isBetter(
 /**
  * Whether the enemy in `slot` is still the live, hittable, in-range enemy `uid` (a tower's current
  * target), so a cooling tower can keep it without a full scan. With `spare`, a spared unit isn't
- * kept (the filter was turned on while the tower was cooling).
+ * kept (the filter was turned on while the tower was cooling); nor is one `filter` doesn't pass.
  */
 export function isStillTarget(
   enemies: Pool<Enemy>,
@@ -137,10 +154,12 @@ export function isStillTarget(
   layers: TargetLayers,
   range: RangeSpec,
   spare = false,
+  filter: TargetFilter | null = null,
 ): Enemy | null {
   if (uid === 0 || slot < 0 || slot >= enemies.used) return null;
   const e = enemies.items[slot]!; // 0 ≤ slot < used ≤ items.length
   if (e.uid !== uid || !canHit(e, layers)) return null;
   if (spare && isSpared(e.tags)) return null;
+  if (!passesFilter(e, filter)) return null;
   return isInRange(distSqTo(x, y, e), range) ? e : null;
 }
