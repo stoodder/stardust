@@ -75,6 +75,32 @@ function types(state: SimState): string[] {
   return state.events.map((e) => e.type);
 }
 
+/** The Penitent at 50% with Aelari, a Hollow unit, and a neutral unit on the road, wave 5. */
+function pivotScene() {
+  const { state, ctx } = setup();
+  state.wave = 5;
+  const boss = penitent(state, ctx, 4);
+  const glimmer = spawn(state, GLIMMER, { dist: 2 });
+  const mote = spawn(state, MOTE, { dist: 1 });
+  const neutral = spawn(state, enemyDef('fx_gerald', { faction: 'aelari', neutral: true }), {
+    dist: 3,
+  });
+  for (const e of [glimmer, mote, neutral]) e.wave = 1;
+  state.schedule.startTick[0] = 0;
+  state.schedule.remaining[0] = 4;
+  state.events.length = 0;
+  return { state, ctx, boss, glimmer, mote, neutral };
+}
+
+/** The Penitent pivoted on the road, and its Ward. */
+function wardScene() {
+  const { state, ctx } = setup();
+  const boss = penitent(state, ctx, 4);
+  pivotBoss(state, boss);
+  const ward: Ally = state.allies.items.find((a) => a.alive && a.kind === 'ward')!; // pivotBoss spawned it
+  return { state, ctx, ward };
+}
+
 describe('the Penitent’s data (T506 settles the stub)', () => {
   it('phase 1: the shield wall and a 250-shield pulse every 8 s; phase 2 on the break, no pulse', () => {
     const [p1, p2] = PENITENT.boss!.phases;
@@ -232,23 +258,6 @@ describe('the re-form (D137: 4 s after a break, unless all three shards are dead
 });
 
 describe('the pivot (enemies.md § 6.1)', () => {
-  /** The Penitent at 50% with Aelari, a Hollow unit, and a neutral unit on the road, wave 5. */
-  function pivotScene() {
-    const { state, ctx } = setup();
-    state.wave = 5;
-    const boss = penitent(state, ctx, 4);
-    const glimmer = spawn(state, GLIMMER, { dist: 2 });
-    const mote = spawn(state, MOTE, { dist: 1 });
-    const neutral = spawn(state, enemyDef('fx_gerald', { faction: 'aelari', neutral: true }), {
-      dist: 3,
-    });
-    for (const e of [glimmer, mote, neutral]) e.wave = 1;
-    state.schedule.startTick[0] = 0;
-    state.schedule.remaining[0] = 4;
-    state.events.length = 0;
-    return { state, ctx, boss, glimmer, mote, neutral };
-  }
-
   it('at 50%: BossEnded `pivot`, pivotWave, its faction stands down, the Ward takes its place', () => {
     const { state, boss, glimmer, mote, neutral } = pivotScene();
     breakShield(state, boss);
@@ -342,14 +351,6 @@ describe('the pivot (enemies.md § 6.1)', () => {
 });
 
 describe('the Ward’s chill (Hollow within 2.5 tiles Chilled 40%)', () => {
-  function wardScene() {
-    const { state, ctx } = setup();
-    const boss = penitent(state, ctx, 4);
-    pivotBoss(state, boss);
-    const ward: Ally = state.allies.items.find((a) => a.alive && a.kind === 'ward')!; // pivotBoss spawned it
-    return { state, ctx, ward };
-  }
-
   it('chills a Hollow unit only while it is inside; not the Aelari; a Hollow boss at half', () => {
     const { state, ctx, ward } = wardScene();
     const inside = spawn(state, MOTE, { dist: 2 });

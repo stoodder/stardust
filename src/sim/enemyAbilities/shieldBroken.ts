@@ -63,7 +63,13 @@ export function shieldBrokenStep(
     if (--boss.reformTicks > 0) return;
     if (!shardsAlive(state, boss)) return;
     boss.shieldHp = shield.hp;
-    emit(state, { type: 'ShieldReformed', uid: boss.uid, enemy: boss.def!.id, x: boss.x, y: boss.y });
+    emit(state, {
+      type: 'ShieldReformed',
+      uid: boss.uid,
+      enemy: boss.def!.id,
+      x: boss.x,
+      y: boss.y,
+    });
   } else if (boss.shieldHp <= 0 && shardsAlive(state, boss)) {
     boss.reformTicks = shards.reformTicks - 1;
   }

@@ -70,13 +70,14 @@ function play(build: boolean, replay: readonly CommandLogEntry<IdSpace>[] | null
     }
     sim.enqueue({ type: 'callWave' });
   }
+  const commands = replay ?? [];
   let next = 0;
   const log: string[] = [];
   const atCheckpoint = new Map<number, { tick: number; hash: string }>();
   const out: SimEvent<IdSpace>[] = [];
   while (sim.state.outcome === 'playing' && sim.state.tick < 60 * 300) {
-    while (replay !== null && next < replay.length && replay[next]!.tick <= sim.state.tick) {
-      sim.enqueue(replay[next++]!.cmd);
+    for (; next < commands.length && commands[next]!.tick <= sim.state.tick; next++) {
+      sim.enqueue(commands[next]!.cmd);
     }
     sim.step();
     out.length = 0;
@@ -122,7 +123,7 @@ describe('dev_penitent', () => {
     const order = ['BossPhase 1', 'BossPhase 2', 'ShieldReformed', 'BossEnded pivot'];
     const at = order.map((o) => k.indexOf(o));
     expect(at.every((x) => x >= 0)).toBe(true);
-    expect(at).toEqual([...at].sort((x, y) => x - y));
+    expect(at).toEqual(at.toSorted((x, y) => x - y));
     expect(k.filter((x) => x === 'BossEnded pivot')).toHaveLength(1);
     // The objective switches once, the tick after the 50% hit (the `bossHpPct` event); the surge's
     // event is spent without running, so one group of 4 walks.
