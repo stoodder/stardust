@@ -17,6 +17,7 @@
 // layers.ts): no targeting, splash, chains, statuses, or hits reach it, and it still leaks.
 // Allocation-free; a map with no cloaked unit costs one pass over the enemy pool.
 import type { IdSpace } from '../../content/types.ts';
+import { stackedDetectTiles } from '../bonuses.ts';
 import { applyMark } from '../combat/damage.ts';
 import type { Modifier, SupportStat } from '../config.ts';
 import type { Enemy, Tower } from '../entities.ts';
@@ -53,7 +54,11 @@ export function detectRadiusTiles(
 ): number {
   const det = t.tierDef?.detect ?? null;
   if (det === null || t.def === null) return 0;
-  return (det.radiusTiles + t.bonusDetectTiles) * (1 + supportPct(modifiers, t.def.id, 'radius'));
+  return stackedDetectTiles(
+    det.radiusTiles,
+    t.bonusDetectTiles,
+    supportPct(modifiers, t.def.id, 'radius'),
+  );
 }
 
 export function detection(state: SimState, ctx: TickContext): void {

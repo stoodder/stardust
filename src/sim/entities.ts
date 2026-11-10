@@ -98,6 +98,13 @@ export interface Tower extends PoolEntity {
    */
   bonusDetectTiles: number;
   linkKillCredits: number;
+  /**
+   * Its `supportStat` radius tune-up, a fraction (the Lookout's, the Lantern's rank 3; T406):
+   * its detection radius × (1 + this). Set with the bonuses (systems/links.ts) so the stat
+   * functions can read the stacked detection radius without the modifiers (sim/bonuses.ts:
+   * a detecting tower's reach is capped by it; D139). 0 for none.
+   */
+  detectPct: number;
   /** A charge attack's progress on its target, in ticks (Capacitor Bank; T407b). */
   chargeTicks: number;
   /**
@@ -169,6 +176,7 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkSoakedTicks: 0,
   bonusDetectTiles: 0,
   linkKillCredits: 0,
+  detectPct: 0,
   chargeTicks: 0,
   burstTicks: 0,
   beamActive: false,

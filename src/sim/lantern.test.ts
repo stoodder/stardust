@@ -33,7 +33,8 @@ import type { SimEvent } from './events.ts';
 import { gateRefusals } from './gates.ts';
 import { createSim } from './sim.ts';
 import type { SimState } from './state.ts';
-import { detection } from './systems/detection.ts';
+import { bonusRangeTiles } from './bonuses.ts';
+import { detection, detectRadiusTiles } from './systems/detection.ts';
 import { links } from './systems/links.ts';
 import { AREA_MARK_TICKS } from './systems/markArea.ts';
 import {
@@ -46,6 +47,7 @@ import {
 } from './systems/status.ts';
 import { towers } from './systems/towers.ts';
 import type { TickContext } from './tick.ts';
+import { towerStats } from './towerStats.ts';
 
 const LIVE = compileContent(RAW_CONTENT);
 const E = LIVE.enemies;
@@ -494,6 +496,74 @@ describe('Lightsong (Prism + Lantern; towers.md § 6.2)', () => {
     const e = spawn(state, HIDE, { dist: 3 });
     tick(state, ctx);
     expect(e.markPct).toBeCloseTo(0.2, 12);
+  });
+});
+
+describe('its reach is its detection radius, after stacking (D137, D139)', () => {
+  /** A Lantern T1 on fx_map's high ground (3, 2), its links recomputed under `modifiers`. */
+  function onHighGround(modifiers: SimConfig<IdSpace>['modifiers'] = []): {
+    state: SimState;
+    ctx: TickContext;
+    t: Tower;
+  } {
+    const { state, ctx } = setup({ modifiers });
+    const t = lantern(state, 3, 2, 1);
+    links(state, ctx);
+    return { state, ctx, t };
+  }
+  const RANGE_5: SimConfig<IdSpace>['modifiers'] = [
+    { kind: 'towerStat', tower: '*', stat: 'range', pct: 0.05, source: 'rnd' },
+  ];
+  const TUNE_RANK_3: SimConfig<IdSpace>['modifiers'] = [
+    { kind: 'towerStat', tower: 'lantern', stat: 'range', pct: 0.05, source: 'shop' },
+    { kind: 'supportStat', tower: 'lantern', stat: 'radius', pct: 0.05, source: 'shop' },
+  ];
+
+  it('high ground and a range grant stretch nothing: the beam stops where the reveal does', () => {
+    for (const mods of [[], RANGE_5]) {
+      const { ctx, t } = onHighGround(mods);
+      expect(t.pctRange).toBeGreaterThan(0.2); // +25% high ground (and the grant)
+      const attack = t.tierDef!.attack!;
+      expect(bonusRangeTiles(attack, t)).toBe(3);
+      expect(bonusRangeTiles(attack, t)).toBe(detectRadiusTiles(t, ctx.config.modifiers));
+      // The panel reads Range = Detect (P saw "Range 3.15 · Detect 3").
+      expect(towerStats(LANTERN, 1, t, ctx.config.modifiers).rangeTiles).toBe(3);
+    }
+  });
+
+  it('a unit past the detection radius but inside the stacked range is not beamed', () => {
+    const { state, ctx, t } = onHighGround();
+    const far = spawn(state, HIDE, { dist: 0 }); // (0.5, 0.5): 3.61 from (3.5, 2.5); 3.75 > it
+    tick(state, ctx);
+    expect([t.targetUid, far.markPct, far.hp]).toEqual([0, 0, HIDE.hp]);
+    const near = spawn(state, HIDE, { dist: 4 }); // (2.5, 2.5): 1 tile away
+    tick(state, ctx);
+    expect(t.targetUid).toBe(near.uid);
+    expect(far.markPct).toBe(0);
+  });
+
+  it('a radius tune-up widens both: rank 3 reaches 3.15 and sees 3.15', () => {
+    const { ctx, t } = onHighGround(TUNE_RANK_3);
+    expect(t.detectPct).toBeCloseTo(0.05, 12);
+    const r = bonusRangeTiles(t.tierDef!.attack!, t);
+    expect(r).toBeCloseTo(3.15, 12);
+    expect(r).toBe(detectRadiusTiles(t, ctx.config.modifiers));
+  });
+
+  it("the HUD's next tier compares capped reach to capped reach (+0.5 to T2)", () => {
+    const { ctx, t } = onHighGround(RANGE_5);
+    const line = towerStats(LANTERN, 1, t, ctx.config.modifiers);
+    expect([line.rangeTiles, line.next?.rangeTiles]).toEqual([3, 0.5]);
+    // Truthlight and All-Seeing keep T2's 3.5 (their tier 3 inherits it).
+    expect(towerStats(LANTERN, 4, t, [], 'b').rangeTiles).toBe(3.5);
+  });
+
+  it('a tower that detects nothing keeps its stacked range (no cap)', () => {
+    const { state, ctx } = setup();
+    const g = placeTower(state, CONTENT.towers.fx_gun, 3, 2, 1); // high ground: 3 × 1.25
+    state.linksDirty = true;
+    links(state, ctx);
+    expect(bonusRangeTiles(g.tierDef!.attack!, g)).toBeCloseTo(3.75, 12);
   });
 });
 

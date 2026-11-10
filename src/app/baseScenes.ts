@@ -7,11 +7,14 @@
 //   loophole, then Bricks teaching Pebble to whistle. Several due on one visit play in turn.
 // - **The open question**, "Where does stardust come from?", which the player asks from its shop
 //   row (meta/purchase.ts `openQuestionOffered`).
-// All play as a pausing panel over the base (app/dialogue.ts); what they set (the scene seen,
+// Each plays as a pausing panel over the base (app/dialogue.ts) unless its row stages it
+// full-screen: Pebble's whistle, Act II's last image, plays on the dark stage like Ishael's debrief
+// (D139); QUILL's loophole before it stays a panel. What they set (the scene seen,
 // `asked_zibzab_early`) is written to the save as they end. They play only while dialogue does
 // (`?test=1` turns it off unless `&dialogue=1`, the radio's rule).
 import { sceneById, type SceneId } from '../content/dialogue/index.ts';
 import { isMapWon, openQuestionOffered, type SaveData } from '../meta/index.ts';
+import type { SceneMode } from '../ui/dialogue/state.ts';
 import { dialogueEnabled, playScene } from './dialogue.ts';
 import { activeSave, systemOpen } from './save.ts';
 
@@ -30,6 +33,8 @@ export const OPEN_QUESTION_SCENE: SceneId = 'a1_m03_base_stardust';
 interface VisitScene {
   readonly id: SceneId;
   readonly due: (save: SaveData) => boolean;
+  /** How it plays: 'fullscreen' on the dark stage; default a pausing panel over the base. */
+  readonly mode?: Extract<SceneMode, 'panel' | 'fullscreen'>;
 }
 
 /** The base's visit scenes, in the order they play when several are due. */
@@ -38,7 +43,7 @@ export const VISIT_SCENES: readonly VisitScene[] = [
   { id: HANDOVER_SCENE, due: (save) => isMapWon(save, 'a2_m04') },
   // After Sundown, one visit: QUILL's loophole, then Bricks teaching Pebble to whistle (her hum).
   { id: LOOPHOLE_SCENE, due: (save) => isMapWon(save, 'a2_m06') },
-  { id: WHISTLE_SCENE, due: (save) => isMapWon(save, 'a2_m06') },
+  { id: WHISTLE_SCENE, due: (save) => isMapWon(save, 'a2_m06'), mode: 'fullscreen' },
 ];
 
 /**
@@ -46,11 +51,15 @@ export const VISIT_SCENES: readonly VisitScene[] = [
  * registered yet (its map's task still authoring it) is never due.
  */
 export function visitScenesDue(): SceneId[] {
+  return visitRowsDue().map((v) => v.id);
+}
+
+function visitRowsDue(): VisitScene[] {
   const save = activeSave();
   if (save === null || !dialogueEnabled()) return [];
   return VISIT_SCENES.filter(
     (v) => !save.story.seen.includes(v.id) && v.due(save) && sceneById(v.id) !== undefined,
-  ).map((v) => v.id);
+  );
 }
 
 /** Whether Zibzab's arrival is due (the base then opens on the Shop tab). */
@@ -64,11 +73,11 @@ export function arrivalDue(): boolean {
  */
 export function playBaseScenesIfDue(): boolean {
   let arrival = false;
-  for (const id of visitScenesDue()) {
-    const scene = sceneById(id);
+  for (const v of visitRowsDue()) {
+    const scene = sceneById(v.id);
     if (scene === undefined) continue;
-    playScene(scene, { mode: 'panel' });
-    if (id === ARRIVAL_SCENE) arrival = true;
+    playScene(scene, { mode: v.mode ?? 'panel' });
+    if (v.id === ARRIVAL_SCENE) arrival = true;
   }
   return arrival;
 }

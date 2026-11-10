@@ -11,7 +11,6 @@ import type { CompiledTowerDef } from '../../content/compiled.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   costFor,
-  darkRangeMul,
   isLitAt,
   liveTileAt,
   salvageFor,
@@ -22,7 +21,12 @@ import {
 import type { BattleInteraction } from '../input/BattleInteraction.ts';
 import { ghostLabel, ghostLabels, salvageLabel, type GhostLabels } from '../input/ghostLabel.ts';
 import { hoverLook, type TileFacts } from '../input/intents.ts';
-import { ringDimmed, ringRangeTiles } from '../input/ringRange.ts';
+import {
+  previewRing,
+  ringDimmed,
+  ringRangeTiles,
+  type PreviewRing,
+} from '../input/ringRange.ts';
 import { emptyTileFacts, fillTileFacts, slotAimsAtPath } from '../input/tileFacts.ts';
 import { pickTile, type IsoOrigin, type Vec2 } from '../iso.ts';
 import type { CursorView } from '../views/CursorView.ts';
@@ -75,6 +79,15 @@ export class BattleHover {
   /** The canvas cursor as last set (the pointer hand over a wreck to clear). */
   #handCursor = false;
   #scene: Phaser.Scene | null = null;
+  /** Scratch for the placement preview's ring, and the tile its light check reads. */
+  readonly #ring: PreviewRing = { rangeTiles: 0, dimmed: false };
+  #litCol = 0;
+  #litRow = 0;
+  /** Whether the tile in `#litCol`/`#litRow` is in some light (built once: no per-frame closure). */
+  readonly #litAtHover = (): boolean => {
+    const { sim } = this.#deps;
+    return isLitAt(sim.map.lights, sim.state.towers, this.#litCol + 0.5, this.#litRow + 0.5);
+  };
 
   constructor(deps: BattleHoverDeps) {
     this.#deps = deps;
@@ -171,17 +184,12 @@ export class BattleHover {
         armed.sprites.head,
         this.#ghostLabel(armed, tile.col, tile.row),
       );
-      // A tower without an attack (the Lookout) shows its detection radius instead (T406).
-      const t1 = armed.tiers[0];
-      const range = t1.attack?.rangeTiles ?? t1.detect?.radiusTiles ?? 0;
-      // Sundown (T505): out of every light, the ring shrinks with the dark and dims.
-      const state = sim.state;
-      const lit =
-        state.dark === 0 ||
-        t1.attack === null ||
-        isLitAt(sim.map.lights, state.towers, tile.col + 0.5, tile.row + 0.5);
-      const mul = darkRangeMul(state.dark, lit);
-      placement.setRing(tile.col + 0.5, tile.row + 0.5, range * mul, look.ghostValid, !lit);
+      // The detection radius for the Lookout; shrunk and dimmed in the dark only for a tower the
+      // dark shortens (input/ringRange.ts `previewRing`; T406, T505, D139).
+      this.#litCol = tile.col;
+      this.#litRow = tile.row;
+      const ring = previewRing(armed.tiers[0], sim.state.dark, this.#litAtHover, this.#ring);
+      placement.setRing(tile.col + 0.5, tile.row + 0.5, ring.rangeTiles, look.ghostValid, ring.dimmed);
       // A Prism shows the disc it would light from here, as a ghost (review R9).
       this.#deps.lightGhosts?.setPreview(tile.col, tile.row, armed.lightRadiusSq);
       this.#setHand(false);

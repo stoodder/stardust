@@ -96,13 +96,15 @@ function compileTier(
   name: string | null,
   where: string,
 ): CompiledTier {
+  const attack =
+    tier.attack === undefined ? null : compileAttack(ctx, tier.attack, `${where}.attack`);
   return {
     tier: n,
     name,
     cost: tier.cost,
     targets: { ground: tier.targets.ground, air: tier.targets.air },
     defaultPriority: tier.defaultPriority,
-    attack: tier.attack === undefined ? null : compileAttack(ctx, tier.attack, `${where}.attack`),
+    attack: withDetectCap(ctx, attack, tier.detect, where),
     effects: (tier.effects ?? []).map((e, i) => compileEffect(ctx, e, `${where}.effects[${i}]`)),
     auras: (tier.auras ?? []).map((a) => ({
       kind: a.kind,
@@ -122,6 +124,26 @@ function compileTier(
             pct: tier.markArea.pct,
           },
   };
+}
+
+/**
+ * A detecting tier's attack reaches no further than it sees (the Seer's Lantern; D137, D139): the
+ * attack carries the detection radius as `detectCapTiles`, and its authored range must fit inside.
+ */
+function withDetectCap(
+  ctx: Ctx,
+  attack: CompiledAttack | null,
+  detect: DetectDef | undefined,
+  where: string,
+): CompiledAttack | null {
+  if (attack === null || detect === undefined) return attack;
+  if (attack.rangeTiles > detect.radiusTiles) {
+    ctx.errors.push(
+      `${where}.attack.rangeTiles: a tower that detects can't reach past its detection radius ` +
+        `(${attack.rangeTiles} > ${detect.radiusTiles})`,
+    );
+  }
+  return { ...attack, detectCapTiles: detect.radiusTiles };
 }
 
 function compileDetect(ctx: Ctx, d: DetectDef, where: string): CompiledDetect {
@@ -164,6 +186,7 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
     rangeSq: a.rangeTiles * a.rangeTiles,
     minRangeTiles: minRange,
     minRangeSq: minRange * minRange,
+    detectCapTiles: 0, // compileTier sets a detecting tier's (`withDetectCap`)
     armorPierce: a.armorPierce ?? 0,
     ignoresArmor: a.ignoresArmor ?? false,
     spinUpTicks: a.spinUpSec === undefined ? 0 : ticks(ctx, a.spinUpSec, `${where}.spinUpSec`),

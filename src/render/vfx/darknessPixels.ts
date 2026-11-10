@@ -209,12 +209,15 @@ function stampDiscs(
   }
 }
 
-/** The ghost disc's dashes: lit for this share of every dash period round the rim. */
-export const GHOST_DASH_PX = 2;
-export const GHOST_GAP_PX = 2;
-/** The ghost disc's colour: the Prism's cold light (WorldGlowView's pool), as a promise. */
-export const GHOST_COLOR: ColorName = 'blue.4';
-/** The ghost's dashes carry a 1 px under-stroke (the range rings'), so they read on gold. */
+/**
+ * The ghost disc's dots (D139 S6): one rim pixel lit in every GHOST_DOT_PERIOD round the rim, so
+ * the light's promise reads as a dotted gold ring, apart from the pale dashes of the range rings
+ * and the links' tethers.
+ */
+export const GHOST_DOT_PERIOD = 3;
+/** The ghost disc's colour: the light's warm gold (a light, never a range). */
+export const GHOST_COLOR: ColorName = 'gold.3';
+/** The ghost's dots carry a 1 px under-stroke (the range rings'), so they read on gold ground. */
 export const GHOST_UNDER: ColorName = 'ink.0';
 
 /** A ghost disc's pixels, and the pixel corner its source's ground point sits on. */
@@ -226,13 +229,14 @@ export interface GhostDisc {
 
 /**
  * The ghost of a light source's disc (review R9: a Prism at rest, and the placement preview of
- * one): only its rim, dashed, in `color`, so it promises light without reading as lit. The rim is
+ * one): only its rim, dotted, in `color`, so it promises light without reading as lit. The rim is
  * the edge of exactly the disc the dark mask clears (the same per-pixel test, `stampDiscs`): the
- * disc's pixels with a 4-neighbour outside it. The dashes run round the rim by angle (2 on, 2
- * off), each over a 1 px `ink.0` under-stroke where the pixel under it is clear (as the range
- * rings carry), so the dashes read on A2M6's gold before the dark. The source's ground point is
- * the image's pixel corner (`cx`, `cy`), as a tile centre lands on a pixel corner on screen. Its
- * inside stays clear but for those under-strokes: nothing under a ghost lightens.
+ * disc's pixels with a 4-neighbour outside it. Walked round by angle on the ground plane, every
+ * GHOST_DOT_PERIOD-th rim pixel is a dot (D139 S6), each over a 1 px `ink.0` under-stroke where
+ * the pixel under it is clear (as the range rings carry), so the dots read on A2M6's gold before
+ * the dark. The source's ground point is the image's pixel corner (`cx`, `cy`), as a tile centre
+ * lands on a pixel corner on screen. Its inside stays clear but for those under-strokes: nothing
+ * under a ghost lightens (D137: a rim only, never a hole or a pool). Baked once per radius.
  */
 export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR): GhostDisc {
   const r = Math.sqrt(Math.max(0, radiusSq));
@@ -247,31 +251,24 @@ export function ghostDiscImage(radiusSq: number, color: ColorName = GHOST_COLOR)
   const c = rgbOf(color);
   const isIn = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < w && y < h && inside[y * w + x] === 1;
-  // The rim's length (its pixel count) sets how many dashes go round it.
-  const rim: number[] = [];
+  // The rim's pixels, by their angle on the ground plane (the screen ellipse un-squashed).
+  const rim: { readonly o: number; readonly a: number }[] = [];
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (!isIn(x, y)) continue;
       if (isIn(x - 1, y) && isIn(x + 1, y) && isIn(x, y - 1) && isIn(x, y + 1)) continue;
-      rim.push(x, y);
+      rim.push({ o: (y * w + x) * 4, a: Math.atan2((y + 0.5 - cy) * 2, x + 0.5 - cx) });
     }
   }
-  const period = GHOST_DASH_PX + GHOST_GAP_PX;
-  const dashes = Math.max(4, Math.round(rim.length / 2 / period));
-  for (let i = 0; i < rim.length; i += 2) {
-    const x = rim[i]!; // i < length
-    const y = rim[i + 1]!; // i + 1 < length (pairs)
-    // The angle on the ground plane (the screen ellipse un-squashed), so dashes space evenly.
-    const a = Math.atan2((y + 0.5 - cy) * 2, x + 0.5 - cx);
-    const t = (a / (2 * Math.PI) + 1) % 1;
-    if (Math.floor(t * dashes * 2) % 2 === 1) continue;
-    const o = (y * w + x) * 4;
+  rim.sort((p, q) => p.a - q.a);
+  for (let i = 0; i < rim.length; i += GHOST_DOT_PERIOD) {
+    const o = rim[i]!.o; // i < length
     data[o] = c.r;
     data[o + 1] = c.g;
     data[o + 2] = c.b;
     data[o + 3] = 255;
   }
-  // The under-strokes, bottom-up, so one never lands on a dash.
+  // The under-strokes, bottom-up, so one never lands on a dot.
   const u = rgbOf(GHOST_UNDER);
   for (let y = h - 1; y >= 1; y--) {
     for (let x = 0; x < w; x++) {

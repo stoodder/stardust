@@ -12,10 +12,13 @@ import {
   barBodyH,
   bossLabel,
   chipPx,
+  endGlyph,
   endMarkPx,
+  HALF_GLYPH,
   phaseMarksPx,
   reformPx,
   shieldSegLit,
+  shieldStripPx,
 } from './bossBar.ts';
 
 describe('the boss bar (T312b)', () => {
@@ -96,5 +99,26 @@ describe('the boss bar (T312b)', () => {
     expect(reformPx(1, 240)).toBe(BOSS_BAR_W - 1);
     expect(reformPx(500, 240)).toBe(0);
     expect(reformPx(10, 0)).toBe(0);
+  });
+
+  it('scales the shield strip to the shield, not the HP: a full shield is the full strip (S5)', () => {
+    const pen = compileContent(RAW_CONTENT).enemies.sunderglass_penitent;
+    const max = pen.shield!.hp;
+    expect(max).toBeLessThan(pen.hp); // the case P read wrong: a shield half the HP
+    expect(shieldStripPx(max, max)).toBe(BOSS_BAR_W);
+    expect(shieldStripPx(max / 2, max)).toBe(BOSS_BAR_W / 2);
+    expect(shieldStripPx(0, max)).toBe(0);
+  });
+
+  it('writes a tiny "½" under the kneel flag, and nothing under any other end (S5)', () => {
+    const live = compileContent(RAW_CONTENT);
+    expect(endGlyph(live.enemies.sunderglass_penitent.boss!.endAtPct)).toBe(HALF_GLYPH);
+    expect(endGlyph(live.enemies.glass_witch.boss!.endAtPct)).toBeNull();
+    expect(endGlyph(0)).toBeNull();
+    // Odd-wide, so it centres on the 1 px tick; every row the same width; tiny (≤ 7 px).
+    const w = HALF_GLYPH[0]!.length;
+    expect(w % 2).toBe(1);
+    expect(HALF_GLYPH.every((r) => r.length === w && /^[#.]+$/.test(r))).toBe(true);
+    expect(HALF_GLYPH.length).toBeLessThanOrEqual(7);
   });
 });

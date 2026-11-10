@@ -1,18 +1,19 @@
 // Seer's Lantern (`lantern`, design/towers.md § Aelari towers): detection and the Mark, attuned in
 // Xenotech. On the floating Aelari dais (towers/aelariBase.ts) in its **gold trim** (gold threads
-// woven across the dais, a gold rim thread, sapphire tier shards tipped gold-white), a woven lantern
-// hangs in the air over an emerald cradle: a round cage of sapphire threads, an emerald hoop at its
+// woven across the dais, a gold rim thread, brass tier shards tipped white), a woven lantern hangs
+// in the air over an emerald cradle: a round cage of brass threads, an emerald hoop at its
 // crown, a ruby tassel hanging below, and inside it the seer's light, a gold-white core (a white
 // heart in rings of pale and deep gold) that sees what hides (it answers the Cloaked tell,
-// art-direction §8). A round gold-lit cage where the Prism is a squat pink gem and the Mindspike a
+// art-direction §8). A round brass cage lit gold where the Prism is a squat pink gem and the Mindspike a
 // violet needle (U5). It doesn't aim: its idle `glow` turns the cage slowly (the strands step round
 // a pixel a frame, the Aelari's slow rotation, towers.md §8) while the light breathes and the
 // lantern bobs a pixel (4 frames, 3 fps); render draws its light-beam (BeamView). Tiers read on the
 // base. The specs: **All-Seeing** (`spec_a`, marks everything in reach) opens a bigger cage round a
 // bigger light and wears a halo of four small eye-knots circling it, over a base with a small
-// lantern hung on a thread arch at each corner; **Truthlight** (`spec_b`, one target can't hide)
-// stretches the lantern long and narrow into a lens-tipped prism, the light a hard white slit edged
-// gold, over a base with a tall white-tipped lens post at each corner. Each spec turns at its own
+// brass lantern hung on a brass arch at each corner; **Truthlight** (`spec_b`, one target can't
+// hide) stretches the lantern long and narrow into a lens-tipped brass seed (wider than the
+// Mindspike's needle and pointed at both ends), the light a hard white slit edged gold, over a base
+// with a tall gold lens post, white-tipped, at each corner. Each spec turns at its own
 // pace.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, type CharGrid } from '../helpers.ts';
@@ -26,11 +27,24 @@ const CY = 31;
 
 type Kit = 't1' | 'allSeeing' | 'truthlight';
 
-/** The Lantern's trim (U5): gold (custom legend `G` `gold.3`, `H` `gold.4`), sapphire shards. */
-export const LANTERN_TRIM: Trim = { rim: 'G', weave: 'H', ramp: ['4', '3', '2', '1'], tip: 'H' };
+/**
+ * The Lantern's trim (U5): gold threads (`G` `gold.3`, `H` `gold.4`), brass shards (lit `gold.2`
+ * down to `brass.1`) tipped white.
+ */
+export const LANTERN_TRIM: Trim = { rim: 'G', weave: 'H', ramp: ['I', 'J', 'K', 'L'], tip: '*' };
 
-/** Its light's gold, outside the Aelari's own ramps. */
-const LEGEND = { G: 'gold.3', H: 'gold.4' } as const;
+/**
+ * Its gold, outside the Aelari's own ramps: the light (`G`, `H`) and the brass cage it hangs in
+ * (`I` lit, `J` mid, `K` shade, `L` the far side's dark).
+ */
+const LEGEND = {
+  G: 'gold.3',
+  H: 'gold.4',
+  I: 'gold.2',
+  J: 'brass.3',
+  K: 'brass.2',
+  L: 'brass.1',
+} as const;
 
 /** The cradle: a woven emerald ring the lantern hangs over. */
 function cradle(g: CharGrid): void {
@@ -69,14 +83,14 @@ function lanternHead(beat: number, kit: Kit): string[] {
       const x = Math.floor(CX + Math.sin(a) * hwAt(y));
       // All-Seeing's cage stands open: its strands stop short of the middle.
       if (kit === 'allSeeing' && Math.abs(y - mid) < 3 && near) continue;
-      plot(g, x, y, near ? (Math.sin(a) < 0 ? '4' : '3') : '1');
+      plot(g, x, y, near ? (Math.sin(a) < 0 ? 'I' : 'J') : 'L');
     }
   }
   // The outer rim of the cage, lit left.
   for (let y = top + 1; y < bottom; y++) {
     const w = hwAt(y);
-    plot(g, Math.floor(CX - w), y, '4');
-    plot(g, Math.ceil(CX + w) - 1, y, '2');
+    plot(g, Math.floor(CX - w), y, 'I');
+    plot(g, Math.ceil(CX + w) - 1, y, 'K');
   }
   // The light inside, breathing: a gold-white core (Truthlight's a hard white slit edged gold).
   const big = beat % 2 === 0;
@@ -126,21 +140,21 @@ function allSeeingKit(g: CharGrid, cx: number, cy: number): void {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
     // A crystal foot the arch's post stands in.
     shard(g, x, cy - 1, 4, LANTERN_TRIM);
-    for (let y = cy - 14; y <= cy - 4; y++) plot(g, x, y, '7');
-    plot(g, x - side, cy - 15, '8');
-    plot(g, x - 2 * side, cy - 15, '8');
-    plot(g, x - 3 * side, cy - 14, '7');
-    // The little lantern on the arch's end: a lit cage round a white light.
+    for (let y = cy - 14; y <= cy - 4; y++) plot(g, x, y, side < 0 ? 'J' : 'K');
+    plot(g, x - side, cy - 15, 'J');
+    plot(g, x - 2 * side, cy - 15, 'J');
+    plot(g, x - 3 * side, cy - 14, 'K');
+    // The little lantern on the arch's end: a brass cage round a white light.
     const lx = x - 3 * side;
     for (const [dx, dy, c] of [
-      [0, -12, '4'],
-      [-1, -11, '4'],
+      [0, -12, 'I'],
+      [-1, -11, 'I'],
       [0, -11, '*'],
-      [1, -11, '2'],
-      [-1, -10, '3'],
+      [1, -11, 'K'],
+      [-1, -10, 'J'],
       [0, -10, 'H'],
-      [1, -10, '2'],
-      [0, -9, '3'],
+      [1, -10, 'K'],
+      [0, -9, 'J'],
       [0, -8, 'd'],
     ] as const) {
       plot(g, lx + dx, cy + dy, c);
@@ -154,8 +168,8 @@ function truthlightKit(g: CharGrid, cx: number, cy: number): void {
     const x = cx + side * 11 + (side > 0 ? 1 : 0);
     shard(g, x, cy - 1, 4, LANTERN_TRIM);
     for (let y = cy - 15; y <= cy - 4; y++) {
-      plot(g, x - 1, y, y < cy - 12 ? '9' : '4');
-      plot(g, x, y, y < cy - 12 ? '8' : '2');
+      plot(g, x - 1, y, y < cy - 12 ? 'H' : 'I');
+      plot(g, x, y, y < cy - 12 ? 'G' : 'K');
     }
     plot(g, x - 1, cy - 16, '*');
     plot(g, x, cy - 16, '*');

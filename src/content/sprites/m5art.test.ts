@@ -349,7 +349,7 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     const prism = grid(...se('prism'));
     const needle = grid(...se('mindspike'));
     const lantern = grid(...se('lantern'));
-    // Each head is mostly its signature colour: ruby-pink, psionic violet, sapphire round gold.
+    // Each head is mostly its signature colour: ruby-pink, psionic violet, brass and gold.
     expect(count(prism, 'bcde') / opaque(prism)).toBeGreaterThan(0.5);
     expect(count(needle, 'STUV') / opaque(needle)).toBeGreaterThan(0.5);
     expect(count(lantern, 'bcde')).toBeLessThan(6);
@@ -364,6 +364,39 @@ describe('the Aelari towers (T540b; design/towers.md § Aelari towers)', () => {
     expect(n.x1 - n.x0 + 1).toBeLessThanOrEqual(5);
     expect(n.y1 - n.y0 + 1).toBeGreaterThanOrEqual(4 * (n.x1 - n.x0 + 1));
     expect(Math.abs(l.x1 - l.x0 - (l.y1 - l.y0))).toBeLessThanOrEqual(4);
+  });
+
+  it('the Lantern reads gold at 1× (D139 S8): a brass cage round its light, in every look', () => {
+    const gold = 'GHIJKL';
+    expect(def('tower.lantern_head').legend).toMatchObject({ I: 'gold.2', L: 'brass.1' });
+    for (const f of ['glow_0', 'glow_spec_a_0', 'glow_spec_b_0']) {
+      const head = above(grid('tower.lantern_head', f));
+      // Mostly gold and brass; no sapphire left in the cage.
+      expect(count(head, gold) / opaque(head), f).toBeGreaterThan(0.6);
+      expect(count(head, '01234'), f).toBe(0);
+    }
+    // Its tier shards and spec kits are brass too.
+    for (const f of ['t2', 't3', 'spec_a', 'spec_b']) {
+      expect(count(grid('tower.lantern', f), 'IJKL'), f).toBeGreaterThanOrEqual(14);
+    }
+    expect(count(towerIcon('lantern'), 'IKL')).toBeGreaterThanOrEqual(20);
+    expect(count(towerIcon('lantern'), '01234')).toBeLessThanOrEqual(
+      count(towerIcon('prism'), '01234'),
+    );
+  });
+
+  it("Truthlight's long lens stays unlike the Mindspike's needle: wider, pointed both ends, gold", () => {
+    const lens = bounds(above(grid('tower.lantern_head', 'glow_spec_b_0')));
+    const needle = bounds(above(grid('tower.mindspike_head', 'se')));
+    expect(lens.x1 - lens.x0).toBeGreaterThanOrEqual(needle.x1 - needle.x0 + 2);
+    expect(lens.y1 - lens.y0).toBeLessThan(needle.y1 - needle.y0);
+    expect(count(above(grid('tower.lantern_head', 'glow_spec_b_0')), 'STUV')).toBe(0);
+    for (const f of ['se', 'se_t2']) {
+      expect(
+        unlike(['tower.lantern_head', 'glow_spec_b_0'], ['tower.mindspike_head', f]),
+        f,
+      ).toBeGreaterThan(0.35);
+    }
   });
 
   it('their build icons tell apart the same way: pink, violet, gold', () => {

@@ -11,6 +11,8 @@
   align-items: center;
   gap: 3px;
   text-transform: uppercase;
+  /* A speaker's label never wraps (D139: "EVERGLOW PA" on one line). */
+  white-space: nowrap;
 }
 
 .dlg-text {
@@ -321,19 +323,27 @@
   padding: 8px;
 }
 
+/* The lines so far share one name column (each row a subgrid of the history's), as wide as the
+   widest name on screen (at least 52 px), so every line's text starts in one column and a long
+   name ("EVERGLOW PA") stays on one line. */
 .dlg-history {
   display: grid;
+  grid-template-columns: minmax(52px, max-content) minmax(0, 1fr);
   gap: 6px;
+}
+
+.dlg-history > * {
+  grid-column: 1 / -1;
 }
 
 .dlg-past {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 6px;
+  grid-template-columns: subgrid;
   margin: 0;
 }
 
 .dlg-past .dlg-text {
+  grid-column: 2;
   color: var(--sd-steel-3);
 }
 

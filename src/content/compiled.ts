@@ -135,6 +135,13 @@ interface CompiledAttackCommon {
   /** 0 when the tower has no minimum range. Exclusive. */
   readonly minRangeTiles: number;
   readonly minRangeSq: number;
+  /**
+   * The tier's detection radius as authored when the tier detects, else 0 (no cap). A tower that
+   * detects reaches no further than it sees (the Seer's Lantern; D137, D139): sim/bonuses.ts
+   * `bonusRangeTiles` clamps the stacked range to the stacked detection radius. Compile checks
+   * `rangeTiles` ≤ this, so the authored range never needs the clamp.
+   */
+  readonly detectCapTiles: number;
   readonly armorPierce: number;
   readonly ignoresArmor: boolean;
   readonly spinUpTicks: number;

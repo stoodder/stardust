@@ -5,7 +5,7 @@
 // **Prism Spire:** a squat ruby-pink gem, lit pink-white on the left, a white heart and a sapphire
 // thread round its waist (pink trim). **Mindspike Obelisk:** a thin violet needle point-up, ruby
 // knots down its face and a lilac mind-eye in a pink ring near its tip (violet trim). **Seer's
-// Lantern:** a round woven cage, a gold-white light inside it, an emerald hoop on top and a ruby
+// Lantern:** a round brass cage, a gold-white light inside it, an emerald hoop on top and a ruby
 // tassel below (gold trim).
 import { defineSprite } from '../defineSprite.ts';
 import { plot, rows, type CharGrid } from '../helpers.ts';
@@ -85,7 +85,7 @@ function lanternIcon(): string[] {
   // The hoop at the crown.
   plot(g, 6, 0, '9');
   plot(g, 7, 0, '8');
-  // The round cage: its rim lit left, shaded right, a strand down its middle.
+  // The round brass cage: its rim lit left, shaded right, dark brass inside.
   const rowsOf = [
     [5, 4],
     [4, 6],
@@ -98,7 +98,7 @@ function lanternIcon(): string[] {
   rowsOf.forEach(([x0, w], k) => {
     for (let x = x0; x < x0 + w; x++) {
       const edge = x === x0 || x === x0 + w - 1 || k === 0 || k === rowsOf.length - 1;
-      plot(g, x, k + 1, edge ? (x < 7 ? '4' : '2') : '1');
+      plot(g, x, k + 1, edge ? (x < 7 ? 'I' : 'K') : 'L');
     }
   });
   // The seer's light: a white heart in rings of pale and deep gold.
@@ -142,7 +142,7 @@ export const iconTowerLantern = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'aelari',
   outline: 'auto',
-  // The seer's gold-white light.
-  legend: { G: 'gold.3', H: 'gold.4' },
+  // The seer's gold-white light and its brass cage (towers/lantern.ts's legend).
+  legend: { G: 'gold.3', H: 'gold.4', I: 'gold.2', K: 'brass.2', L: 'brass.1' },
   frames: { icon: lanternIcon() },
 });

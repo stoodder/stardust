@@ -74,12 +74,49 @@ describe('compileContent: towers and tier patches', () => {
       rangeSq: 9,
       minRangeTiles: 0,
       minRangeSq: 0,
+      detectCapTiles: 0,
       armorPierce: 0,
       ignoresArmor: false,
       spinUpTicks: 0,
       targetFilter: null,
       echo: null,
     });
+  });
+
+  it("caps a detecting tier's attack at its detection radius (the Lantern; D139)", () => {
+    const gun = FIXTURE.towers.fx_gun;
+    const seer: TowerDef = {
+      ...gun,
+      tiers: [{ ...gun.tiers[0], detect: { radiusTiles: 3 } }, { cost: 1 }, { cost: 1 }],
+      // Fx Rail reaches 6, so it sees 6.
+      specs: { ...gun.specs!, b: { ...gun.specs!.b, detect: { radiusTiles: 6 } } },
+    };
+    const out = compileContent({ ...FIXTURE, towers: { ...FIXTURE.towers, fx_gun: seer } });
+    const tiers = out.towers.fx_gun.tiers;
+    // Tier 2 inherits tier 1's detection; the specs inherit tier 3's unless they patch it.
+    expect(tiers.map((t) => t.attack?.detectCapTiles)).toEqual([3, 3, 3]);
+    expect(out.towers.fx_gun.specs?.a.attack?.detectCapTiles).toBe(3);
+    expect(out.towers.fx_gun.specs?.b.attack?.detectCapTiles).toBe(6);
+    // A tier that doesn't detect has no cap.
+    expect(content.towers.fx_gun.specs?.b.attack?.detectCapTiles).toBe(0);
+    // The live Lantern: each tier's reach is its detection radius.
+    const live = compileContent(RAW_CONTENT).towers.lantern;
+    for (const t of [...live.tiers, live.specs!.a, live.specs!.b]) {
+      expect(t.attack?.detectCapTiles).toBe(t.detect?.radiusTiles);
+    }
+  });
+
+  it('refuses a detecting tier whose attack reaches past its detection radius', () => {
+    const gun = FIXTURE.towers.fx_gun; // range 3
+    const far: TowerDef = {
+      ...gun,
+      tiers: [{ ...gun.tiers[0], detect: { radiusTiles: 2.5 } }, { cost: 1 }, { cost: 1 }],
+      specs: undefined,
+    };
+    const errors = errorsFor({ ...FIXTURE, towers: { ...FIXTURE.towers, fx_gun: far } });
+    expect(errors[0]).toBe(
+      "towers.fx_gun.tiers[0].attack.rangeTiles: a tower that detects can't reach past its detection radius (3 > 2.5)",
+    );
   });
 
   it('compiles lobbed attacks, and replaces an attack whose kind changes', () => {

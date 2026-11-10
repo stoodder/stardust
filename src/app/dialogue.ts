@@ -7,8 +7,8 @@
 // - **The comms panel** (top-left, never blocking) plays radio scenes (`w<NN>` as wave NN's
 //   countdown begins), script cues, and barks, one line at a time on real-time holds (a typed
 //   line's minimum read time, `minReadMs`, D135; scaled by the game speed, `holdAtSpeedMs`, D126).
-//   Scenes queue (going stale after COMMS_STALE_MS, and a countdown's radio dropped once its wave
-//   starts); barks never queue: one that can't show now is dropped (D070). A scene that holds input
+//   Scenes queue (going stale after COMMS_STALE_MS, a clock that stops while a scene holds input,
+//   and a countdown's radio dropped once its wave starts); barks never queue: one that can't show now is dropped (D070). A scene that holds input
 //   opening over the panel never eats its line: what was on it goes on from that line after (D135).
 // - **Barks** are standalone (never a reply to another speaker's line; D061), picked by
 //   `pickBarkOf` from the map's pools with 6 s of sim-time spacing. Two must never be lost, so they
@@ -695,8 +695,14 @@ interface QueuedComms {
 const commsQueue: QueuedComms[] = [];
 let commsNow: CommsPlay | null = null;
 let commsTimer: ReturnType<typeof setTimeout> | null = null;
-/** Set while a scene holds input: the panel waits (its queue's clocks restart as it frees). */
+/**
+ * Set while a scene holds input: the panel waits. As it frees, what was already stale when the
+ * hold began goes (D139: no old radio line over Results after a flow scene) and the rest's clocks
+ * restart, so a long scene never ages the queue.
+ */
 let commsHeld = false;
+/** When the panel's hold began (performance.now), for the stale drop as it frees. */
+let commsHeldAt = 0;
 /** Runs when the panel next goes idle (the bank nudge's "after the countdown's radio"). */
 let onIdle: (() => void) | null = null;
 /**
@@ -711,6 +717,7 @@ function clearCommsTimer(): void {
 }
 
 function holdComms(on: boolean): void {
+  if (on && !commsHeld) commsHeldAt = performance.now();
   commsHeld = on;
   if (on) {
     // The line on screen goes for now (D135): its scene (or bark) waits at the front of the queue
@@ -732,9 +739,12 @@ function holdComms(on: boolean): void {
     return;
   }
   const now = performance.now();
-  for (let i = 0; i < commsQueue.length; i++) {
+  for (let i = commsQueue.length - 1; i >= 0; i--) {
     const q = commsQueue[i];
-    if (q !== undefined) commsQueue[i] = { ...q, at: now };
+    if (q === undefined) continue;
+    // Stale before the hold began (a line cut by it was on screen then, so it's never stale).
+    if (commsHeldAt - q.at > COMMS_STALE_MS) commsQueue.splice(i, 1);
+    else commsQueue[i] = { ...q, at: now };
   }
   pumpComms();
 }

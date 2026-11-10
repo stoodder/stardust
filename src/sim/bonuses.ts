@@ -22,6 +22,8 @@ export type TowerBonuses = Readonly<
     | 'vsStatusMask'
     | 'vsStatusPct'
     | 'darkRangePct'
+    | 'bonusDetectTiles'
+    | 'detectPct'
   >
 >;
 
@@ -36,9 +38,13 @@ export const NO_BONUSES: TowerBonuses = Object.freeze({
   vsStatusMask: 0,
   vsStatusPct: 0,
   darkRangePct: 0,
+  bonusDetectTiles: 0,
+  detectPct: 0,
 });
 
-type AttackStats = Pick<CompiledAttack, 'damage' | 'cooldownTicks' | 'rangeTiles'>;
+/** The attack fields the stat functions read (`detectCapTiles` absent: no cap). */
+type AttackStats = Pick<CompiledAttack, 'damage' | 'cooldownTicks' | 'rangeTiles'> &
+  Partial<Pick<CompiledAttack, 'detectCapTiles'>>;
 
 /** Damage per hit. */
 export function bonusDamage(attack: AttackStats, b: TowerBonuses): number {
@@ -54,12 +60,29 @@ export function bonusDamageVs(attack: AttackStats, b: TowerBonuses): number {
 }
 
 /**
+ * A detection radius in tiles: the tier's `radiusTiles` plus its links' `bonusDetectTiles`
+ * (Overwatch, Skywatch), × (1 + its radius tune-up, `pct`). The one formula: systems/detection.ts
+ * `detectRadiusTiles` (what is revealed) and the reach cap below (what a detector's beam reaches).
+ */
+export function stackedDetectTiles(radiusTiles: number, bonusTiles: number, pct: number): number {
+  return (radiusTiles + bonusTiles) * (1 + pct);
+}
+
+/**
  * Reach in tiles (a pulse's radius). Minimum range never changes. Sundown's darkness (T505;
  * sim/darkness.ts) multiplies it after the stacking formula, outside the cap: × (1 − darkRangePct).
+ * A tower that detects (`detectCapTiles` > 0: the Seer's Lantern) then reaches no further than it
+ * sees: the result is clamped to its stacked detection radius (D137, D139), so a range bonus its
+ * detection doesn't share (high ground, a `towerStat` range grant) can't stretch the beam past
+ * the reveal. The towers system, the HUD (towerStats) and the range ring all read this.
  */
 export function bonusRangeTiles(attack: AttackStats, b: TowerBonuses): number {
-  const r = stackedStat('range', attack.rangeTiles, b.flatRange, b.pctRange);
-  return b.darkRangePct === 0 ? r : r * (1 - b.darkRangePct);
+  const stacked = stackedStat('range', attack.rangeTiles, b.flatRange, b.pctRange);
+  const r = b.darkRangePct === 0 ? stacked : stacked * (1 - b.darkRangePct);
+  const cap = attack.detectCapTiles ?? 0;
+  if (cap === 0) return r;
+  const sees = stackedDetectTiles(cap, b.bonusDetectTiles, b.detectPct);
+  return r > sees ? sees : r;
 }
 
 /**

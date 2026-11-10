@@ -14,8 +14,10 @@
 //   tower never covers itself), each at its tower's strength: 1, +20% on a power node, plus its
 //   `supportStat` aura tune-up, and over its radius × its `supportStat` radius tune-up (T406);
 // - a link's detection radius (Overwatch, Skywatch: `bonusDetectTiles`, scaled like any link
-//   bonus; systems/detection.ts reads it), and its kill credits (Reel It In: `linkKillCredits`,
-//   scaled and rounded down like jumps; sim/towerEconomy.ts pays them);
+//   bonus; systems/detection.ts reads it) and its `supportStat` radius tune-up (`detectPct`, so
+//   sim/bonuses.ts can cap a detecting tower's reach at what it sees), and its kill credits
+//   (Reel It In: `linkKillCredits`, scaled and rounded down like jumps; sim/towerEconomy.ts pays
+//   them);
 // - Resonance's damage against a raised shield (`vsShieldPct`, scaled like any link bonus; T504;
 //   systems/towers.ts `damageOn` reads it);
 // - Lightsong's faster beam ramp (`linkRampPct`: the Prism's +30%; attacks/beam.ts reads it) and
@@ -89,6 +91,7 @@ function recompute(state: SimState, ctx: TickContext): void {
     const t = pool.items[i]!; // i < used ≤ items.length
     clearBonuses(t);
     if (!t.alive || t.def === null || t.tierDef === null) continue;
+    t.detectPct = supportPct(modifiers, t.def.id, 'radius');
     for (const m of modifiers) {
       if (m.kind !== 'towerStat' || (m.tower !== '*' && m.tower !== t.def.id)) continue;
       addBonus(t, m.stat, m.flat ?? 0, m.pct ?? 0);
@@ -208,6 +211,7 @@ function clearBonuses(t: Tower): void {
   t.linkSoakedTicks = 0;
   t.bonusDetectTiles = 0;
   t.linkKillCredits = 0;
+  t.detectPct = 0;
   t.vsShieldPct = 0;
   t.linkRampPct = 0;
   t.linkMarkPct = 0;

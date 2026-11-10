@@ -36,6 +36,7 @@ import {
   bossLabel,
   chipPx,
   END_FLAG_W,
+  endGlyph,
   endMarkPx,
   MARK_OVERHANG_PX,
   PHASE_FLASH_MS,
@@ -43,6 +44,7 @@ import {
   reformPx,
   SHIELD_SEG_PERIOD,
   shieldSegLit,
+  shieldStripPx,
 } from '../vfx/bossBar.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
 import { floatTextTexture } from '../vfx/overlayTextures.ts';
@@ -86,6 +88,8 @@ export class BossBarView {
   #maxHp = 0;
   /** Its end mark (px; −1: none), its shield's maximum (0: no strip), and the shards' re-form. */
   #end = -1;
+  /** The tiny fraction under the end mark's flag (the kneel's "½"), or null. */
+  #endGlyph: readonly string[] | null = null;
   #maxShield = 0;
   #shield = 0;
   #reform = 0;
@@ -215,7 +219,7 @@ export class BossBarView {
       this.#shieldFlashMs = PHASE_FLASH_MS;
     }
     this.#lastShield = hp;
-    this.#shield = barFillPx(hp, this.#maxShield);
+    this.#shield = shieldStripPx(hp, this.#maxShield);
     const phase = boss.def?.boss?.phases[boss.bossPhase - 1];
     const total = phase?.shards?.reformTicks ?? 0;
     this.#reform = hp > 0 ? 0 : reformPx(boss.reformTicks, total);
@@ -227,6 +231,7 @@ export class BossBarView {
     this.#maxHp = def.hp;
     this.#marks = phaseMarksPx(def.boss?.phases ?? []);
     this.#end = endMarkPx(def.boss?.endAtPct ?? 0);
+    this.#endGlyph = this.#end >= 0 ? endGlyph(def.boss?.endAtPct ?? 0) : null;
     this.#maxShield = def.shield?.hp ?? 0;
     this.#lastShield = -1;
     this.#shieldFlashMs = 0;
@@ -319,6 +324,23 @@ export class BossBarView {
       g.fillStyle(C.mark, 1);
       g.fillRect(mx, top, 1, foot - top);
       g.fillRect(mx - half, foot, END_FLAG_W, 1);
+      if (this.#endGlyph !== null) this.#glyph(this.#endGlyph, mx, foot + 2);
+    }
+  }
+
+  /** A tiny glyph (`#` lit) centred on column `mx` from row `top`: `white.1` over an `ink.0` rim. */
+  #glyph(rows: readonly string[], mx: number, top: number): void {
+    const g = this.#gfx;
+    const left = mx - (rows[0]!.length - 1) / 2; // the glyph has rows
+    for (const pass of [C.frame, C.mark]) {
+      g.fillStyle(pass, 1);
+      rows.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+          if (row[x] !== '#') continue;
+          if (pass === C.frame) g.fillRect(left + x - 1, top + y - 1, 3, 3);
+          else g.fillRect(left + x, top + y, 1, 1);
+        }
+      });
     }
   }
 

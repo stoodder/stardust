@@ -71,6 +71,34 @@ export function endMarkPx(endAtPct: number, w = BOSS_BAR_W): number {
   return Math.round(endAtPct * w);
 }
 
+/**
+ * The shield strip's fill (px) for `shieldHp` of the boss's own `maxShield` (D139 S5): scaled to
+ * the shield, never to the HP, so a full shield is the full strip (the Penitent's 600 under its
+ * 1,200 HP fills the strip end to end).
+ */
+export function shieldStripPx(shieldHp: number, maxShield: number, w = BOSS_BAR_W): number {
+  return barFillPx(shieldHp, maxShield, w);
+}
+
+/**
+ * The tiny "½" under the end mark's flag when the fight ends at half (the Penitent's kneel; D139
+ * S5), `#` lit: a 1 over a 2 across a slash, 7×7, drawn `white.1` over a 1 px `ink.0` outline,
+ * centred on the tick. Null for any other end (the Witch's 40% has none).
+ */
+export const HALF_GLYPH: readonly string[] = [
+  '#....#.',
+  '#...#..',
+  '#..#...',
+  '..#.##.',
+  '.#....#',
+  '#....#.',
+  '....###',
+];
+
+export function endGlyph(endAtPct: number): readonly string[] | null {
+  return endAtPct === 0.5 ? HALF_GLYPH : null;
+}
+
 /** Whether pixel `x` of the shield strip is a lit segment (3 on, 1 off, from the left). */
 export function shieldSegLit(x: number): boolean {
   return x % SHIELD_SEG_PERIOD < SHIELD_SEG_ON;

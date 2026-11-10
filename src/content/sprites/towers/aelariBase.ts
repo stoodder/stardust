@@ -14,7 +14,7 @@
 // tell apart at a glance while staying one family (the same floating sapphire slab): the threads
 // woven across its top face, its top rim thread, its chord-knot's weave, and the tier shards and
 // crystal are drawn in the tower's signature colours (the Prism's ruby-pink, the Mindspike's
-// psionic violet, the Lantern's gold, its shards sapphire tipped gold-white).
+// psionic violet, the Lantern's gold, its shards brass tipped white).
 import { grid, isoBox, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_W } from './base.ts';
 

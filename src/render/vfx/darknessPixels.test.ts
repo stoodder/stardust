@@ -16,6 +16,7 @@ import {
   NIGHT_SHADE,
   drawLampMask,
   ghostDiscImage,
+  GHOST_DOT_PERIOD,
   GHOST_COLOR,
   GHOST_UNDER,
   LAMP_LIGHT,
@@ -172,7 +173,7 @@ describe('the light map', () => {
 });
 
 describe('a Prism’s ghost disc (review R9)', () => {
-  it('is the lit disc’s rim only, dashed, on the very pixels the dark mask would clear', () => {
+  it('is the lit disc’s rim only, dotted gold, on the very pixels the dark mask would clear', () => {
     const radiusSq = 4; // the Prism's 2.0
     const g = ghostDiscImage(radiusSq);
     const { w, h, data } = g.image;
@@ -201,14 +202,19 @@ describe('a Prism’s ghost disc (review R9)', () => {
           continue;
         }
         lit++;
-        // Every dash pixel is on the disc's rim (inside the lit disc, at its edge), opaque, cold.
+        // Every dot is on the disc's rim (inside the lit disc, at its edge), opaque, gold.
         expect(edge, `${x},${y}`).toBe(true);
         expect(px).toEqual([c.r, c.g, c.b, 255]);
+        // Dots, not dashes: no dot touches another along the row (D139 S6).
+        const right = o + 4;
+        expect(x + 1 < w && data[right + 3] !== 0 && data[right] === c.r, `${x},${y}`).toBe(false);
       }
     }
-    // Dashed: about half the rim is lit, so it never reads as a lit edge, let alone a lit disc.
-    expect(lit).toBeGreaterThan(0.35 * rim);
-    expect(lit).toBeLessThan(0.65 * rim);
+    // Dotted: one rim pixel in GHOST_DOT_PERIOD is lit, so it never reads as a lit edge, let
+    // alone a lit disc, nor as a range ring's dashes.
+    expect(lit).toBeGreaterThanOrEqual(Math.floor(rim / GHOST_DOT_PERIOD));
+    expect(lit).toBeLessThanOrEqual(Math.ceil(rim / GHOST_DOT_PERIOD));
+    expect(GHOST_COLOR.startsWith('gold.')).toBe(true);
     // The disc spans its 2.0 tiles each way on screen (2.83 tiles across the diamond's axes).
     expect(g.cx).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 16));
     expect(g.cy).toBeGreaterThanOrEqual(Math.ceil(2 * Math.SQRT2 * 8));

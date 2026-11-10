@@ -29,10 +29,11 @@
 // Stats: damage, rate, and range go through the stacking formula with the tower's bonuses
 // (sim/bonuses.ts; the links system sums them), range then × (1 − `darkRangePct`) for a tower
 // the darkness reaches (Sundown, sim/darkness.ts; set after the towers act, so a tick fires at
-// the light the frame before showed), and a link's conditional `vsStatus` bonus is
-// checked per victim: on the hit for hitscan and pulses, on impact for shells. Resonance's
-// `vsShieldPct` (T504) joins it the same way against a unit whose shield is up, in `damageOn`
-// (the Zapcoil's and the Prism's attacks; no shell reads it).
+// the light the frame before showed), capped at the detection radius for a tower that detects
+// (the Seer's Lantern: its reach is what it sees; D139), and a link's conditional `vsStatus`
+// bonus is checked per victim: on the hit for hitscan and pulses, on impact for shells.
+// Resonance's `vsShieldPct` (T504) joins it the same way against a unit whose shield is up, in
+// `damageOn` (the Zapcoil's and the Prism's attacks; no shell reads it).
 // Fire control (design/core-loop.md § 2.7; sim/fireControl.ts):
 // - A tower holding fire (`holdFire`) doesn't attack: it drops its target and its cooldown keeps
 //   counting down, so it can fire the tick it's released. Its links and bonuses are untouched.
@@ -626,7 +627,9 @@ function pulseBurst(
 /**
  * The tower's range as targeting reads it: the attack's own fields when no range bonus or
  * darkness (Sundown, T505: `darkRangePct`) applies, else the bonus range in the tick's scratch
- * (minimum range never changes).
+ * (minimum range never changes). A detecting tower's reach is capped at its detection radius
+ * inside `bonusRangeTiles` (D139); compile keeps its authored range inside that radius, so the
+ * fast path needs no cap.
  */
 export function rangeOf(ctx: TickContext, t: Tower, attack: CompiledAttack): RangeSpec {
   if (t.flatRange === 0 && t.pctRange === 0 && t.darkRangePct === 0) return attack;
