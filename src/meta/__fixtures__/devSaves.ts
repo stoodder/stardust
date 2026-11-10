@@ -299,6 +299,10 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
       save.story.seen.push(...A2M4_SEEN.filter((id) => !save.story.seen.includes(id)));
     }
     if (step === 'a2_m05') save = afterA2M5Results(save);
+    // Won Sundown and back at the base since: its two visit scenes (app/baseScenes.ts).
+    if (step === 'a2_m06') {
+      save.story.seen.push(...A2M6_SEEN.filter((id) => !save.story.seen.includes(id)));
+    }
   }
   const next = ACT_TWO[played.length];
   if (plan.prepNext === true && next !== undefined) save = bought(save, ACT_TWO_PREP[next]);
@@ -313,6 +317,9 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
 
 /** A2M4's scenes a save that won it has seen: the truth scene and the base's handover. */
 const A2M4_SEEN: readonly SceneId[] = ['a2_m04_scene_truth', 'a2_m04_base_handover'];
+
+/** A2M6's base visit scenes a save that won it has seen: QUILL's loophole and the whistle. */
+const A2M6_SEEN: readonly SceneId[] = ['a2_m06_base_loophole', 'a2_m06_base_whistle'];
 
 /** Zibzab's arrival at the base (app/baseScenes.ts `ARRIVAL_SCENE`; the first base visit with his shop). */
 const ARRIVAL_SCENE_ID: SceneId = 'a1_m03_base_arrival';
@@ -457,8 +464,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];
       // Every campaign map won: the star map has been opened (its sweep spent), and the base with
-      // Zibzab's shop (his arrival played), and A2M4's scenes.
-      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID, ...A2M4_SEEN);
+      // Zibzab's shop (his arrival played), and A2M4's and A2M6's scenes.
+      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID, ...A2M4_SEEN, ...A2M6_SEEN);
       return withFirstPaydayCaughtUp(story);
     },
   },

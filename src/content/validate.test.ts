@@ -635,6 +635,9 @@ describe('validate: maps', () => {
       'lighting',
     );
     rejects(withMap({ lighting: [{ wave: 2, env: 'act1' }] }), 'lighting');
+    // A Sundown schedule may stay on the map's env and only darken (A2M6; T522).
+    expect(validate(withMap({ lighting: [{ wave: 2, env: 'act1', dark: 1 }] }))).toEqual([]);
+    rejects(withMap({ lighting: [{ wave: 2, env: 'act1', dark: 0 }] }), 'lighting');
   });
 
   it("[dressing] a revisit's areas need a revisit; an area lies on the map; no layer twice (T410a)", () => {

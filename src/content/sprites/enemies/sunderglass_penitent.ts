@@ -1,40 +1,40 @@
 // The Sunderglass Penitent (`sunderglass_penitent`, design/enemies.md § 6; A2M5's boss): a woven
 // giant that kneels, Ves'thara inside it (story/races.md § Aelari). Woven, never plated
-// (art-direction §4), but grave where the Glass Witch is graceful: broad and hunched where she is
-// tall and pointed, sapphire lattice where she wears emerald robes. Two great shoulders of open
-// weave (real holes: the ground shows through) rise higher than its head, which hangs low and
-// hooded between them, its two dim knots of light cast down; long woven arms end in fists bound at
-// the wrists with ruby thread (its penance), and it marches on two short pillar legs. In front of it
-// (facing us) it carries its **shield wall**: a tall pointed pane of sunderglass, dark sapphire
-// glass woven square in a lit emerald frame, a ruby knot at its heart, which its head bows over.
-// From behind: the hunched back, a ridge of ruby knots down its spine, its heart's glow through
-// the weave. Every boss state has its own shape, each in SE and NE (mirrored to SW/NW):
+// (art-direction §4), but grave where the Glass Witch is graceful: broad and heavy where she is
+// slender and pointed, sapphire lattice where she wears emerald robes, and the biggest Aelari on the
+// road. A deep rounded hood bowed forward, its face a dark recess with two dim knots of light cast
+// down; great woven shoulders sloping out like a cloak; long woven arms ending in fists bound at the
+// wrists in ruby thread (its penance); two short pillar legs that march. Before it (facing us) it
+// carries its **shield wall**, a tall pane of sunderglass: dark sapphire facets leaded together by
+// emerald threads that radiate from a ruby knot at its heart, a break mended (the Concord's law:
+// *mend; weave nothing new*); its hooded head bows over the pane's top. From behind: the hood's
+// mound, the lattice of its back with a ridge of ruby knots down the spine, its heart's glow through
+// the weave, the wall's edges showing past its hips. Its gaps are real holes; the outline is the
+// weave's own (`outlineOutside`). Every boss state has its own shape, each in SE and NE (mirrored):
 // - `walk`: the march, a heavy stomp (4 frames, 3 fps): a foot lifts, the body drops a pixel as it
 //   lands, the weave hums.
-// - `tell`: the recharge pulse's tell: the wall heaved up before it, the pane lit from inside with
-//   gathering light, the heart's knot blazing white, motes of light rising over its shoulders (2
-//   frames, 4 fps).
-// - `broken`: the shield broken (phase 2): the pane shattered out of its frame, a jagged shard of
-//   the frame left in each fist trailing loose threads, its chest open and its heart exposed,
-//   blazing; its head bowed a pixel lower (4 frames, 3 fps, the march). Render shows it while the
-//   shield is down (the shield-broken phase; the re-formed shield walks).
-// - `kneel`: the Ward (A2M5's pivot): down on its knees, head bowed to the ground, arms spread
-//   low and wide over the road (sheltering), its shield wall laid down flat before it, its strands
-//   dimmed one ramp step and humming faintly, its eyes shut (2 frames, 2 fps). WardView draws
-//   `kneel_se_0`.
-// - `flee`: the stand-down (`leaving` for its 1 s fade): sinking to its knees, then the kneel, so
-//   the fading boss and the Ward that replaces it read as one figure (2 frames, once).
+// - `tell`: the recharge pulse's tell: the wall heaved up before it, its facets lit from the heart
+//   out, the eyes gone white, motes of light rising over its shoulders (2 frames, 4 fps).
+// - `broken`: the shield broken (phase 2): the facets shattered out of the leading, a jagged edge of
+//   the wall left in each fist trailing loose threads, the chest open and its heart exposed and
+//   blazing, its head bowed lower (4 frames, 3 fps, the march). Render shows it while the shield is
+//   down; the re-formed shield marches in `walk`.
+// - `kneel`: the Ward (A2M5's pivot): down on its knees with its head bowed low, its arms spread
+//   wide and low over the road (sheltering), the wall laid down flat before it, its eyes shut, its
+//   strands dimmed one ramp step and humming faintly (2 frames, 2 fps). WardView draws `kneel_se_0`.
+// - `flee`: the stand-down (`leaving` for its 1 s fade): sinking, then the kneel, so the fading
+//   boss and the Ward that takes its place read as one figure (2 frames, once).
 import { defineSprite } from '../defineSprite.ts';
-import { at, grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
+import { at, grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import type { AnimDef } from '../types.ts';
 import { hum, outlineOutside, rim, weave, type Mask } from './lattice.ts';
 
 const W = 44;
-const H = 46;
+const H = 56;
 /** The centre line (pixel edges): columns 21 and 22 mirror each other. */
 const CX = 22;
 /** The feet's bottom row standing; the outline is the row under it, the ground point. */
-const FEET = 43;
+const FEET = 53;
 
 export type PenitentPose = 'walk' | 'tell' | 'broken' | 'kneel' | 'flee';
 type Facing = 'se' | 'ne';
@@ -56,46 +56,45 @@ interface Frame {
 
 function frameOf(pose: PenitentPose, facing: Facing, beat: number): Frame {
   // The march: down on frames 0 and 2 (both feet planted), up a pixel on 1 and 3 (a foot lifts).
-  const stride = beat % 2 === 1 ? 0 : 1;
+  const land = beat % 2 === 0 ? 1 : 0;
   switch (pose) {
     case 'walk':
-      return { pose, facing, beat, drop: stride, bow: 0, kneel: 0 };
+      return { pose, facing, beat, drop: land, bow: 0, kneel: 0 };
     case 'tell':
       return { pose, facing, beat, drop: 0, bow: 0, kneel: 0 };
     case 'broken':
-      return { pose, facing, beat, drop: stride, bow: 1, kneel: 0 };
+      return { pose, facing, beat, drop: land, bow: 2, kneel: 0 };
     case 'kneel':
-      return { pose, facing, beat, drop: 9, bow: 2, kneel: 2 };
+      return { pose, facing, beat, drop: 12, bow: 3, kneel: 2 };
     case 'flee':
       return beat === 0
-        ? { pose, facing, beat, drop: 5, bow: 1, kneel: 1 }
-        : { pose, facing, beat, drop: 9, bow: 2, kneel: 2 };
+        ? { pose, facing, beat, drop: 6, bow: 2, kneel: 1 }
+        : { pose, facing, beat, drop: 12, bow: 3, kneel: 2 };
   }
 }
 
-/** The torso: two great woven shoulders rising higher than the head, tapering to the hips. */
+/** The torso: great shoulders sloping out like a cloak from the hood, tapering to the hips. */
 function torsoMask(f: Frame): Mask {
   return (x, y) => {
     const yy = y - f.drop;
     const d = dxOf(x);
-    // The shoulders' tops: a hump either side, highest 9 px out from the centre.
-    const top = d < 4 ? 15 : 11 + Math.pow((d - 9) / 5, 2) * 4;
+    const top = 12 + Math.pow(Math.max(0, d - 5), 2) * 0.055;
     if (yy < top) return false;
-    const bottom = f.kneel === 2 ? 34 : f.kneel === 1 ? 36 : 38;
+    const bottom = f.kneel === 2 ? 42 : f.kneel === 1 ? 44 : 47;
     if (yy > bottom) return false;
-    const hw = yy <= 26 ? 14 : 14 - ((yy - 26) * 5) / 12;
+    const hw = yy <= 22 ? 15 : 15 - ((yy - 22) * 5) / 25;
     return d <= hw;
   };
 }
 
-/** Where each arm runs (shoulder to fist), per pose: [x0, y0, x1, y1] for the left arm. */
+/** The left arm's line, shoulder to fist (the right mirrors it), per pose. */
 function armLine(f: Frame): readonly [number, number, number, number] {
-  const y0 = 16 + f.drop;
-  if (f.kneel === 2) return [CX - 12, y0, CX - 19, 41];
-  if (f.kneel === 1) return [CX - 12, y0, CX - 16, 39];
-  if (f.pose === 'tell') return [CX - 12, y0, CX - 13, 24];
-  if (f.pose === 'broken') return [CX - 12, y0, CX - 14, 30 + f.drop];
-  return [CX - 12, y0, CX - 13, 30 + f.drop];
+  const y0 = 17 + f.drop;
+  if (f.kneel === 2) return [CX - 13, y0, CX - 19, 50];
+  if (f.kneel === 1) return [CX - 13, y0, CX - 17, 47];
+  if (f.pose === 'tell') return [CX - 13, y0, CX - 14, 31];
+  if (f.pose === 'broken') return [CX - 13, y0, CX - 15, 37 + f.drop];
+  return [CX - 13, y0, CX - 14, 36 + f.drop];
 }
 
 /** Distance from (px, py) to the segment (x0, y0)–(x1, y1). */
@@ -106,12 +105,12 @@ function segDist(px: number, py: number, x0: number, y0: number, x1: number, y1:
   return Math.hypot(px - x0 - t * vx, py - y0 - t * vy);
 }
 
-/** Both arms (the right mirrors the left): thick woven limbs, 4 px across. */
+/** Both arms (the right mirrors the left): thick woven limbs, 5 px across. */
 function armsMask(f: Frame): Mask {
   const [x0, y0, x1, y1] = armLine(f);
   return (x, y) => {
     const px = x + 0.5 < CX ? x + 0.5 : 2 * CX - (x + 0.5);
-    return segDist(px, y + 0.5, x0, y0, x1, y1) <= 2.1;
+    return segDist(px, y + 0.5, x0, y0, x1, y1) <= 2.4;
   };
 }
 
@@ -120,13 +119,13 @@ function legsMask(f: Frame): Mask {
   if (f.kneel === 2) {
     // Knees on the road: a knee forward on the left, a shin laid flat on the right.
     return (x, y) =>
-      Math.hypot((x + 0.5 - (CX - 7)) / 4, (y + 0.5 - 40.5) / 3) <= 1 ||
-      Math.hypot((x + 0.5 - (CX + 7)) / 5, (y + 0.5 - 42) / 1.8) <= 1;
+      Math.hypot((x + 0.5 - (CX - 7)) / 4.5, (y + 0.5 - 50) / 3.5) <= 1 ||
+      Math.hypot((x + 0.5 - (CX + 7)) / 5.5, (y + 0.5 - 51.5) / 2) <= 1;
   }
   if (f.kneel === 1) {
     return (x, y) =>
-      Math.hypot((x + 0.5 - (CX - 6)) / 3.5, (y + 0.5 - 39.5) / 4) <= 1 ||
-      Math.hypot((x + 0.5 - (CX + 6)) / 3.5, (y + 0.5 - 40.5) / 3) <= 1;
+      Math.hypot((x + 0.5 - (CX - 6)) / 4, (y + 0.5 - 49) / 4.5) <= 1 ||
+      Math.hypot((x + 0.5 - (CX + 6)) / 4, (y + 0.5 - 50) / 3.5) <= 1;
   }
   const lift = (side: number): number =>
     (f.beat === 1 && side < 0) || (f.beat === 3 && side > 0) ? 1 : 0;
@@ -134,105 +133,169 @@ function legsMask(f: Frame): Mask {
     for (const side of [-1, 1]) {
       const lx = CX + side * 5.5;
       const bottom = FEET - lift(side);
-      if (y < 34 + f.drop || y > bottom) continue;
+      if (y < 43 + f.drop || y > bottom) continue;
       // A broad foot on the last two rows.
-      const hw = y >= bottom - 1 ? 3.5 : 2.5;
+      const hw = y >= bottom - 1 ? 3.6 : 2.6;
       if (Math.abs(x + 0.5 - lx) <= hw) return true;
     }
     return false;
   };
 }
 
-/** The shield wall's pane: a tall pointed arch, its top `top` rows down at the centre. */
+/** The shield wall's pane, its top `top` rows down at the centre: a tall slab, its top peaked. */
 function paneMask(top: number): Mask {
   return (x, y) => {
     const d = dxOf(x);
-    if (d > 10.5) return false;
-    return y >= top + Math.floor(d * 0.4) && y <= top + 20;
+    if (d > 12) return false;
+    return y >= top + Math.floor(d * 0.3) && y <= top + 31 - Math.floor(d * 0.15);
   };
 }
 
-/** Rows the shield wall's top sits at, per pose (null: no pane in front). */
+/** The wall's top row at the centre, per pose (null: no pane before it). */
 function paneTop(f: Frame): number | null {
-  if (f.pose === 'walk') return 20 + f.drop;
-  if (f.pose === 'tell') return 13;
+  if (f.pose === 'walk') return 19 + f.drop;
+  if (f.pose === 'tell') return 14;
+  if (f.pose === 'broken') return 19 + f.drop;
   return null;
 }
+
+/** The leading, from the pane's heart (pane-local: x from the centre line, y from its top). */
+const HEART = { x: 0, y: 11 } as const;
+const LEADS: readonly (readonly [number, number])[] = [
+  [0, -1],
+  [-12, 3],
+  [12, 6],
+  [-12, 19],
+  [12, 23],
+  [-3, 32],
+  [6, 32],
+];
 
 /** Steps a frame's sapphire and emerald threads down one ramp step (the kneel's dimmed weave). */
 const DIM: Readonly<Record<string, string>> = { '4': '3', '3': '2', '2': '1', '9': '8', '8': '7' };
 
-/** The shield wall: an emerald frame round a dark pane woven square, a ruby knot at its heart. */
-function drawPane(g: CharGrid, top: number, lit: boolean, beat: number): void {
+/**
+ * The shield wall: an emerald frame round dark sapphire facets leaded by emerald threads that
+ * radiate from a ruby knot. `lit` (the tell) fills the facets with light from the heart out;
+ * `broken` (phase 2) leaves only the frame's sides and a few jagged facets at its edges.
+ */
+function drawPane(g: CharGrid, top: number, look: 'whole' | 'lit' | 'broken', beat: number): void {
   const pane = paneMask(top);
-  const heartY = top + 10;
+  const hx = CX - 0.5 + HEART.x;
+  const hy = top + HEART.y;
+  // The leading on a scratch grid: frame rows, then the radiating threads and the heart's ring.
+  const lead: CharGrid = grid(W, H);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (!pane(x, y)) continue;
-      // How deep inside the pane: 0 on its edge, 1 the frame's inner row, 2+ the glass.
-      let depth = 3;
-      for (let r = 1; r <= 2; r++) {
-        if (!pane(x - r, y) || !pane(x + r, y) || !pane(x, y - r) || !pane(x, y + r)) {
-          depth = Math.min(depth, r - 1);
+      const edge = !pane(x - 1, y) || !pane(x + 1, y) || !pane(x, y - 1) || !pane(x, y + 1);
+      const inner = !pane(x - 2, y) || !pane(x + 2, y) || !pane(x, y - 2);
+      if (edge) plot(lead, x, y, x + 0.5 < CX || !pane(x, y - 1) ? '8' : '6');
+      else if (inner) plot(lead, x, y, x + 0.5 < CX ? '7' : '6');
+    }
+  }
+  for (const [lx, ly] of LEADS) {
+    line(lead, Math.floor(hx), hy, Math.floor(hx + lx), top + ly, '7');
+  }
+  for (let a = 0; a < 16; a++) {
+    const t = (a / 16) * Math.PI * 2;
+    plot(lead, Math.floor(hx + 0.5 + Math.cos(t) * 3.2), Math.floor(hy + 0.5 + Math.sin(t) * 3.2), '8');
+  }
+  // Which facet each glass pixel is in (flood-filled between the leads), for its tone.
+  const facet = new Map<number, number>();
+  let n = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      if (!pane(x, y) || at(lead, x, y) !== '.' || facet.has(k)) continue;
+      const stack = [k];
+      facet.set(k, n);
+      while (stack.length > 0) {
+        const c = stack.pop() ?? 0;
+        const cx = c % W;
+        const cy = Math.floor(c / W);
+        for (const [nx, ny] of [
+          [cx - 1, cy],
+          [cx + 1, cy],
+          [cx, cy - 1],
+          [cx, cy + 1],
+        ] as const) {
+          const nk = ny * W + nx;
+          if (pane(nx, ny) && at(lead, nx, ny) === '.' && !facet.has(nk)) {
+            facet.set(nk, n);
+            stack.push(nk);
+          }
         }
       }
-      const left = x + 0.5 < CX;
-      if (depth === 0) {
-        // The frame's outer row: lit emerald on the upper left, shaded on the lower right.
-        const litEdge = left || !pane(x, y - 1);
-        plot(g, x, y, litEdge ? '8' : '6');
+      n++;
+    }
+  }
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!pane(x, y)) continue;
+      const d = Math.hypot(x + 0.5 - hx, y + 0.5 - hy);
+      const l = at(lead, x, y);
+      if (look === 'broken') {
+        // Only the frame's sides survive, with jagged teeth of glass along them.
+        const side = dxOf(x) >= 10 - Math.floor(((x * 7 + y * 3) % 5) / 2);
+        if (!side || y < top + 3 + ((x * 5) % 4) || y > top + 27 - ((x * 3) % 5)) continue;
+        plot(g, x, y, l !== '.' ? l : (x + y) % 3 === 0 ? '3' : '1');
         continue;
       }
-      if (depth === 1) {
-        plot(g, x, y, left ? '7' : '6');
+      if (l !== '.') {
+        plot(g, x, y, look === 'lit' && d < 6 + beat * 4 && l === '7' ? '9' : l);
         continue;
       }
-      // The glass: woven square every 3 px, knots where warp meets weft; lit, it fills with light.
-      const warp = (x - CX + 30) % 3 === 0;
-      const weft = (y - top + 30) % 3 === 1;
-      const d = Math.hypot(x + 0.5 - CX, y + 0.5 - heartY);
-      if (lit) {
-        const glow = d < 3 + beat * 2;
-        plot(g, x, y, warp && weft ? '+' : warp || weft ? (glow ? '+' : '4') : glow ? '9' : '2');
+      const id = facet.get(y * W + x) ?? 0;
+      // Light catches each facet along its upper-left leading.
+      const caught = at(lead, x - 1, y) !== '.' || at(lead, x, y - 1) !== '.';
+      if (look === 'lit') {
+        const glow = d < 4 + beat * 4;
+        plot(g, x, y, glow ? (d < 3 ? '*' : '+') : caught ? '4' : id % 2 === 0 ? '2' : '3');
       } else {
-        plot(g, x, y, warp && weft ? '3' : warp || weft ? '2' : '1');
+        plot(g, x, y, caught ? (id % 3 === 0 ? '4' : '3') : id % 2 === 0 ? '1' : '2');
       }
     }
   }
-  if (!lit) {
-    // A glint of light across the glass, high on the left.
-    for (let k = 0; k < 5; k++) {
-      const x = CX - 7 + k;
-      const y = top + 9 - k;
-      if (pane(x, y) && at(g, x, y) !== '6' && at(g, x, y) !== '7' && at(g, x, y) !== '8') {
-        plot(g, x, y, k === 2 ? 'w' : '4');
-      }
+  if (look === 'broken') return;
+  if (look === 'whole') {
+    // A glint across the glass, high on the left.
+    for (let k = 0; k < 4; k++) {
+      const x = CX - 8 + k;
+      const y = top + 8 - k;
+      if (pane(x, y) && at(lead, x, y) === '.') plot(g, x, y, k === 1 ? 'w' : '4');
     }
   }
-  // The ruby knot at the pane's heart (blazing white in the tell).
-  stamp(g, CX - 2, heartY - 1, lit ? ['.d*d.', 'd***d', '.d*d.'] : ['..d..', '.d+c.', '..c..']);
+  // The ruby knot at the heart (white-hot in the tell).
+  const kx = Math.floor(hx) - 1;
+  stamp(g, kx, hy - 1, look === 'lit' ? ['d*c', '***', 'c*b'] : ['.d.', 'd+c', '.c.']);
 }
 
-/** The hood: a cowl of dense weave sunk between the shoulders, its face a dark recess. */
+/** The hood: a deep cowl of dense weave, its face a dark recess with two dim eyes cast down. */
 function drawHead(g: CharGrid, f: Frame): void {
-  const cy = 17.5 + f.drop + f.bow;
-  const hood: Mask = (x, y) => Math.hypot((x + 0.5 - CX) / 4.6, (y + 0.5 - cy) / 4.6) <= 1;
+  const cy = 13.5 + f.drop + f.bow;
+  const hood: Mask = (x, y) =>
+    Math.hypot((x + 0.5 - CX) / 6.2, (y + 0.5 - cy) / 6.4) <= 1 && y + 0.5 < cy + 5.5;
   const front = f.facing === 'se';
   const recess: Mask = (x, y) =>
-    front && Math.hypot((x + 0.5 - CX) / 2.7, (y + 0.5 - (cy + 1.2)) / 3) <= 1;
+    front && Math.hypot((x + 0.5 - CX) / 3.6, (y + 0.5 - (cy + 2.2)) / 4) <= 1;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (hood(x, y)) plot(g, x, y, '.');
   weave(
     g,
     (x, y) => hood(x, y) && !recess(x, y),
-    { mode: 'diag', spacing: 2, phase: 1, lx: CX - 2, ly: cy - 2 },
-    5,
+    { mode: 'diag', spacing: 2, phase: 1, lx: CX - 3, ly: cy - 3 },
+    6,
   );
-  rim(g, hood, CX - 2, cy - 2);
+  rim(g, hood, CX - 3, cy - 3);
+  // A ruby knot at the hood's brow (on its crown from behind).
+  plot(g, CX - 1, Math.round(cy - 5), 'd');
+  plot(g, CX, Math.round(cy - 5), 'c');
   if (!front) return;
   for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) if (recess(x, y)) plot(g, x, y, '0');
+    for (let x = 0; x < W; x++) if (recess(x, y)) plot(g, x, y, y + 0.5 < cy ? '0' : '0');
   }
-  const ey = Math.round(cy + 1.5);
+  // The recess's lit lower rim, under the brow's shadow.
+  const ey = Math.round(cy + 3);
   if (f.kneel > 0) {
     // Eyes shut: two dim seams.
     plot(g, CX - 2, ey, '2');
@@ -251,79 +314,42 @@ function drawFists(g: CharGrid, f: Frame): void {
   for (const side of [-1, 1]) {
     const fx = side < 0 ? Math.round(x1) - 1 : Math.round(2 * CX - x1) - 1;
     const fy = Math.round(y1);
-    // The binding: two turns of ruby round the wrist, a knot hanging off it.
-    plot(g, fx - 1, fy - 2, 'c');
-    plot(g, fx, fy - 2, 'd');
-    plot(g, fx + 1, fy - 2, 'd');
-    plot(g, fx + 2, fy - 2, 'c');
-    plot(g, fx, fy - 1, 'c');
-    plot(g, fx + 1, fy - 1, 'c');
-    // The fist: a knot of thread with a lit knuckle.
+    // The binding: two turns of ruby round the wrist.
+    stamp(g, fx - 1, fy - 3, ['cddc', '.cc.']);
     if (f.kneel === 2) {
       // Palms down on the road, fingers spread as knots.
-      stamp(g, fx - 1, fy, ['3443', '3..3']);
+      stamp(g, fx - 1, fy - 1, ['3443', '4..4']);
     } else {
-      stamp(g, fx, fy, ['43', '32']);
+      stamp(g, fx - 1, fy - 1, ['.43.', '4432', '.32.']);
     }
   }
 }
 
-/** The broken shield: a jagged shard of the frame in each fist, trailing loose threads. */
-function drawShards(g: CharGrid, f: Frame): void {
-  const top = 20 + f.drop;
-  // prettier-ignore
-  const leftShard = [
-    '8.....',
-    '87....',
-    '871...',
-    '8723..',
-    '8712..',
-    '871...',
-    '8721..',
-    '8723.1',
-    '871...',
-    '87....',
-    '8712..',
-    '871...',
-    '87....',
-    '6.....',
-  ];
-  // prettier-ignore
-  const rightShard = [
-    '...6',
-    '..76',
-    '.276',
-    '2176',
-    '..76',
-    '.176',
-    '..76',
-    '...6',
-  ];
-  stamp(g, CX - 12, top + 3, leftShard);
-  stamp(g, CX + 8, top + 6, rightShard);
-  // Loose threads hanging from where the pane tore out of the frame, swaying with the march.
+/** Loose threads hanging from the broken wall's leading, swaying with the march. */
+function drawLooseThreads(g: CharGrid, f: Frame, top: number): void {
   const sway = f.beat === 1 || f.beat === 2 ? 1 : 0;
   for (const [x, y, len] of [
-    [CX - 9, top + 10, 4],
-    [CX - 8, top + 15, 3],
-    [CX + 9, top + 14, 4],
+    [CX - 8, top + 6, 5],
+    [CX - 6, top + 20, 4],
+    [CX + 8, top + 9, 4],
+    [CX + 6, top + 22, 5],
   ] as const) {
     for (let k = 0; k < len; k++) {
-      plot(g, x + (k === len - 1 ? sway : 0), y + k, k === len - 1 ? 'c' : '7');
+      plot(g, x + (k >= len - 2 ? sway * Math.sign(x - CX) : 0), y + k, k === len - 1 ? 'c' : '7');
     }
   }
 }
 
-/** The shield laid down flat on the road before it (the kneel): a thin slab, frame and glass. */
+/** The wall laid down flat on the road before it (the kneel): a thin slab of frame and glass. */
 function drawLaidShield(g: CharGrid): void {
-  for (let x = CX - 9; x < CX + 9; x++) {
-    const edge = x === CX - 9 || x === CX + 8;
-    plot(g, x, 42, edge ? '7' : '8');
-    plot(g, x, 43, edge ? '6' : (x - CX + 30) % 3 === 0 ? '3' : '1');
-    plot(g, x, 44, '6');
+  for (let x = CX - 11; x < CX + 11; x++) {
+    const end = x === CX - 11 || x === CX + 10;
+    plot(g, x, 51, end ? '7' : '8');
+    plot(g, x, 52, end ? '6' : (x - CX + 30) % 4 === 0 ? '7' : (x + 1) % 3 === 0 ? '2' : '1');
+    plot(g, x, 53, '6');
   }
-  plot(g, CX - 1, 43, 'd');
-  plot(g, CX, 43, 'c');
+  plot(g, CX - 1, 52, 'd');
+  plot(g, CX, 52, 'c');
 }
 
 function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
@@ -335,19 +361,30 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   const arms = armsMask(f);
   const legs = legsMask(f);
   const body: Mask = (x, y) => torso(x, y) || arms(x, y) || legs(x, y);
-  const heartY = 26 + f.drop;
+  const heartY = 28 + f.drop;
 
-  // From behind, the raised wall's top shows over its shoulders: drawn first, the body over it.
-  if (!front && top !== null && pose === 'tell') drawPane(g, top, true, beat);
-  weave(g, body, { mode: 'diag', spacing: 3, phase: 0, rise: f.drop, lx: CX, ly: heartY }, 9);
-  rim(g, body, CX - 6, heartY - 6);
-  // The hum: a few strands slide on the off beat (faintly, kneeling).
+  // From behind, the wall shows past its hips and (raised) over its shoulders: drawn first, the
+  // body over it.
+  if (!front && top !== null && pose !== 'broken') drawPane(g, top, pose === 'tell' ? 'lit' : 'whole', beat);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (body(x, y)) plot(g, x, y, '.');
+  weave(g, body, { mode: 'diag', spacing: 4, phase: 0, rise: f.drop, lx: CX, ly: heartY }, 8);
+  // Warp ribs down the torso, following its taper (lit left, shaded right): the cloth's structure,
+  // so the big body reads as woven, not as a mesh.
+  for (let y = 0; y < H; y++) {
+    for (const u of [-0.72, -0.36, 0, 0.36, 0.72]) {
+      let hw = 0;
+      while (torso(Math.floor(CX + hw), y) && hw < 20) hw++;
+      if (hw < 3) continue;
+      const x = Math.floor(CX + u * hw);
+      if (torso(x, y)) plot(g, x, y, u <= 0 ? '3' : '2');
+    }
+  }
+  rim(g, body, CX - 6, heartY - 8);
   hum(g, torso, beat, front ? 41 : 42);
 
-  // The heart: behind the wall when it marches, open and blazing when the wall is broken, dim when
-  // it kneels; from behind, only its glow through the weave.
   if (front) {
     if (pose === 'broken') {
+      // The chest open: the heart exposed and blazing, its ruby knot under it.
       stamp(g, CX - 3, heartY - 2, ['..+..', '.+*+.', '+***+', '.+*+.', '..+..']);
       plot(g, CX - 1, heartY + 3, 'd');
       plot(g, CX, heartY + 3, 'c');
@@ -358,8 +395,8 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
     plot(g, CX - 1, heartY, '+');
     plot(g, CX, heartY + 1, '+');
     // The spine: a ridge of ruby knots down its back.
-    for (let k = 0; k < 5; k++) {
-      const y = 15 + f.drop + k * 4;
+    for (let k = 0; k < 6; k++) {
+      const y = 18 + f.drop + k * 4;
       if (!torso(CX - 1, y)) continue;
       plot(g, CX - 1, y, k % 2 === 0 ? 'd' : 'c');
       plot(g, CX, y, 'c');
@@ -367,35 +404,36 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   }
 
   drawHead(g, f);
-  drawFists(g, f);
   if (f.kneel > 0) {
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        const c = at(g, x, y);
-        const dim = DIM[c];
+        const dim = DIM[at(g, x, y)];
         if (dim !== undefined) plot(g, x, y, dim);
       }
     }
   }
   if (f.kneel === 2 && front) drawLaidShield(g);
-  if (front && top !== null) drawPane(g, top, pose === 'tell', beat);
-  if (front && pose === 'broken') drawShards(g, f);
+  if (front && top !== null) {
+    drawPane(g, top, pose === 'tell' ? 'lit' : pose === 'broken' ? 'broken' : 'whole', beat);
+  }
+  drawFists(g, f);
+  if (front && pose === 'broken' && top !== null) drawLooseThreads(g, f, top);
 
   if (pose === 'tell') {
-    // Light gathering: motes rising over its shoulders toward the wall, more on the second beat.
-    const motes: [number, number][] =
+    // Light gathering: motes rising over its shoulders, more and higher on the second beat.
+    const motes: readonly (readonly [number, number])[] =
       beat === 0
         ? [
-            [CX - 9, 8],
-            [CX + 8, 8],
-            [CX - 1, 10],
+            [CX - 11, 9],
+            [CX + 10, 9],
+            [CX - 6, 6],
           ]
         : [
-            [CX - 10, 6],
-            [CX + 9, 6],
-            [CX - 5, 8],
-            [CX + 4, 8],
-            [CX - 1, 7],
+            [CX - 12, 6],
+            [CX + 11, 6],
+            [CX - 7, 3],
+            [CX + 6, 3],
+            [CX - 1, 1],
           ];
     for (const [x, y] of motes) {
       plot(g, x, y, '*');
@@ -406,7 +444,7 @@ function penitent(pose: PenitentPose, facing: Facing, beat: number): string[] {
   return rows(g);
 }
 
-const POSES: readonly [PenitentPose, number, number][] = [
+const POSES: readonly (readonly [PenitentPose, number, number])[] = [
   ['walk', 4, 3],
   ['tell', 2, 4],
   ['broken', 4, 3],
@@ -424,7 +462,8 @@ for (const [pose, n, fps] of POSES) {
       frames[name] = penitent(pose, f, k);
       names.push(name);
     }
-    anims[`${pose}_${f}`] = pose === 'flee' ? { frames: names, fps, loop: false } : { frames: names, fps };
+    anims[`${pose}_${f}`] =
+      pose === 'flee' ? { frames: names, fps, loop: false } : { frames: names, fps };
     anims[`${pose}_${f === 'se' ? 'sw' : 'nw'}`] = { mirrorOf: `${pose}_${f}` };
   }
 }

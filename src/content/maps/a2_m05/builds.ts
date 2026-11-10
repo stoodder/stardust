@@ -43,13 +43,13 @@ function parSteps(): BuildStep[] {
     { wave: 5, build: 'zapcoil', tile: VALLEY_MID },
     { wave: 5, upgrade: UPPER_W },
     { wave: 6, build: 'thumper', tile: FLOOR_S },
-    { wave: 6, build: 'thumper', tile: VALLEY_E },
+    { wave: 6, build: 'thumper', tile: GATE_N },
     { wave: 7, upgrade: FLOOR_S },
-    { wave: 8, build: 'thumper', tile: GATE_N },
-    { wave: 9, upgrade: VALLEY_E },
-    { wave: 10, upgrade: GATE_N },
-    { wave: 11, upgrade: FLOOR_S },
-    { wave: 12, build: 'thumper', tile: RIG_S },
+    { wave: 8, upgrade: GATE_N },
+    { wave: 9, upgrade: DROP_W },
+    { wave: 10, upgrade: FLOOR_S },
+    { wave: 11, upgrade: GATE_N },
+    { wave: 12, upgrade: KNOLL },
   ];
 }
 
@@ -60,22 +60,24 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a2_m05,
   parBuild: { loadout: PAR_LOADOUT, steps: parSteps() },
   noCounterBuilds: {
-    // No detection: no Lookout, and no Scanner Sweep (slot 1 is the profile's Orbital Strike).
+    // No detection: no Lookout, and no Scanner Sweep (slot 1 is the profile's Orbital Strike,
+    // never cast). Par's hairpins, blind: a Rivet where the Lookout stood.
     detection: {
       loadout: ['zapcoil', 'rivet', 'thumper', 'sprinkler'],
       steps: [
         { wave: 1, build: 'zapcoil', tile: UPPER_MID },
+        { wave: 1, build: 'zapcoil', tile: KNOLL },
         { wave: 1, build: 'zapcoil', tile: FENCE_END },
-        { wave: 1, build: 'rivet', tile: VALLEY_W },
-        { wave: 2, build: 'zapcoil', tile: KNOLL },
+        { wave: 2, build: 'rivet', tile: VALLEY_W },
         { wave: 2, upgrade: UPPER_MID },
-        { wave: 3, build: 'rivet', tile: UPPER_W },
-        { wave: 3, upgrade: FENCE_END },
-        { wave: 4, build: 'zapcoil', tile: VALLEY_E },
-        { wave: 4, upgrade: KNOLL },
-        { wave: 5, upgrade: UPPER_MID },
-        { wave: 6, build: 'thumper', tile: VALLEY_MID },
+        { wave: 3, upgrade: KNOLL },
+        { wave: 3, build: 'zapcoil', tile: UPPER_W },
+        { wave: 4, upgrade: FENCE_END },
+        { wave: 4, build: 'sprinkler', tile: DROP_W },
+        { wave: 5, build: 'zapcoil', tile: VALLEY_MID },
+        { wave: 5, upgrade: UPPER_W },
         { wave: 6, build: 'thumper', tile: FLOOR_S },
+        { wave: 6, build: 'thumper', tile: GATE_N },
       ],
     },
     // No shield answer: no Energy and no Soaked (Lookout, Rivet, Thumper, Skyhook).
@@ -83,17 +85,17 @@ export const builds = defineBuilds({
       loadout: ['lookout', 'rivet', 'thumper', 'skyhook'],
       steps: [
         { wave: 1, build: 'rivet', tile: UPPER_MID },
-        { wave: 1, build: 'rivet', tile: FENCE_END },
-        { wave: 1, build: 'thumper', tile: VALLEY_W },
-        { wave: 2, build: 'rivet', tile: KNOLL },
+        { wave: 1, build: 'rivet', tile: KNOLL },
+        { wave: 1, build: 'thumper', tile: FENCE_END },
+        { wave: 2, build: 'lookout', tile: VALLEY_W },
         { wave: 2, upgrade: UPPER_MID },
-        { wave: 3, build: 'lookout', tile: UPPER_W },
-        { wave: 3, upgrade: FENCE_END },
-        { wave: 4, build: 'skyhook', tile: VALLEY_E },
-        { wave: 4, upgrade: KNOLL },
-        { wave: 5, upgrade: UPPER_MID },
-        { wave: 6, build: 'thumper', tile: VALLEY_MID },
+        { wave: 3, upgrade: KNOLL },
+        { wave: 3, build: 'rivet', tile: UPPER_W },
+        { wave: 4, upgrade: FENCE_END },
+        { wave: 4, build: 'skyhook', tile: VALLEY_MID },
+        { wave: 5, upgrade: UPPER_W },
         { wave: 6, build: 'thumper', tile: FLOOR_S },
+        { wave: 6, build: 'thumper', tile: GATE_N },
       ],
     },
     // No splash answer: no Zapcoil or Thumper (Lookout, Rivet, Sprinkler with Soaked, Skyhook).
@@ -101,25 +103,25 @@ export const builds = defineBuilds({
       loadout: ['lookout', 'rivet', 'sprinkler', 'skyhook'],
       steps: [
         { wave: 1, build: 'rivet', tile: UPPER_MID },
-        { wave: 1, build: 'sprinkler', tile: FENCE_END },
-        { wave: 1, build: 'rivet', tile: VALLEY_W },
-        { wave: 2, build: 'rivet', tile: KNOLL },
-        { wave: 2, upgrade: FENCE_END },
-        { wave: 3, build: 'lookout', tile: UPPER_W },
-        { wave: 3, upgrade: FENCE_END }, // T3: Soaked
-        { wave: 4, build: 'skyhook', tile: VALLEY_E },
-        { wave: 4, upgrade: KNOLL },
+        { wave: 1, build: 'sprinkler', tile: KNOLL },
+        { wave: 1, build: 'rivet', tile: FENCE_END },
+        { wave: 2, build: 'lookout', tile: VALLEY_W },
+        { wave: 2, upgrade: KNOLL },
+        { wave: 3, upgrade: KNOLL }, // T3: Soaked
+        { wave: 3, build: 'rivet', tile: UPPER_W },
+        { wave: 4, upgrade: FENCE_END },
+        { wave: 4, build: 'skyhook', tile: VALLEY_MID },
         { wave: 5, upgrade: UPPER_MID },
-        { wave: 6, build: 'rivet', tile: VALLEY_MID },
         { wave: 6, build: 'rivet', tile: FLOOR_S },
-        { wave: 7, upgrade: VALLEY_MID },
-        { wave: 8, upgrade: FLOOR_S },
+        { wave: 6, build: 'rivet', tile: GATE_N },
+        { wave: 7, upgrade: FLOOR_S },
+        { wave: 8, upgrade: GATE_N },
       ],
     },
   },
   altBuilds: {
-    // Lookout, Zapcoil (Capacitor Bank), Sprinkler, Skyhook (T501c): par's hairpins with a
-    // Sprinkler's chill, and a Capacitor Bank on the upper hairpin for the Penitent's shield.
+    // Lookout, Zapcoil, Sprinkler, Skyhook, with a Capacitor Bank on the knoll for the Penitent's
+    // shield (T501c) and an Overload Coil over the rig road, where it joins the Preserve Road.
     capacitor: {
       loadout: ['lookout', 'zapcoil', 'sprinkler', 'skyhook'],
       steps: [
@@ -129,44 +131,48 @@ export const builds = defineBuilds({
         { wave: 2, build: 'lookout', tile: VALLEY_W },
         { wave: 2, upgrade: UPPER_MID },
         { wave: 3, upgrade: KNOLL },
-        { wave: 3, build: 'sprinkler', tile: UPPER_W },
-        { wave: 4, upgrade: UPPER_MID },
+        { wave: 3, build: 'zapcoil', tile: UPPER_W },
+        { wave: 4, upgrade: KNOLL },
         { wave: 4, build: 'skyhook', tile: VALLEY_MID },
-        { wave: 5, specialize: UPPER_MID, spec: 'b' }, // Capacitor Bank
-        { wave: 6, build: 'sprinkler', tile: FLOOR_S },
-        { wave: 6, build: 'zapcoil', tile: VALLEY_E },
-        { wave: 7, upgrade: FLOOR_S },
-        { wave: 8, build: 'zapcoil', tile: GATE_N },
-        { wave: 9, upgrade: VALLEY_E },
-        { wave: 10, upgrade: GATE_N },
-        { wave: 11, upgrade: FENCE_END },
+        { wave: 5, specialize: KNOLL, spec: 'b' }, // Capacitor Bank
+        { wave: 6, build: 'sprinkler', tile: RIG_S },
+        { wave: 6, build: 'zapcoil', tile: RIG_N },
+        { wave: 7, upgrade: RIG_N },
+        { wave: 7, upgrade: RIG_S },
+        { wave: 8, upgrade: RIG_N },
+        { wave: 8, upgrade: UPPER_MID },
+        { wave: 9, specialize: RIG_N, spec: 'a' }, // Overload Coil
+        { wave: 10, build: 'zapcoil', tile: FLOOR_S },
+        { wave: 10, upgrade: FLOOR_S },
+        { wave: 11, upgrade: FLOOR_S },
+        { wave: 12, build: 'sprinkler', tile: DROP_W },
       ],
     },
-    // Lookout, Sprinkler (Soaked), Thumper, Skyhook: the Soak lets the shells bite the shields.
-    soak_and_shell: {
-      loadout: ['lookout', 'sprinkler', 'thumper', 'skyhook'],
+    // Lookout, Zapcoil, Skyhook: no Sprinkler and no Thumper, so Zapcoils take the Motes, and
+    // from W8 an Overload Coil guards the rig road.
+    coil_and_hook: {
+      loadout: ['lookout', 'zapcoil', 'skyhook'],
       steps: [
-        { wave: 1, build: 'sprinkler', tile: UPPER_MID },
-        { wave: 1, upgrade: UPPER_MID },
-        { wave: 1, upgrade: UPPER_MID }, // T3: Soaked
-        { wave: 1, build: 'thumper', tile: KNOLL },
+        { wave: 1, build: 'zapcoil', tile: UPPER_MID },
+        { wave: 1, build: 'zapcoil', tile: KNOLL },
+        { wave: 1, build: 'zapcoil', tile: FENCE_END },
         { wave: 2, build: 'lookout', tile: VALLEY_W },
-        { wave: 2, build: 'thumper', tile: FENCE_END },
+        { wave: 2, upgrade: UPPER_MID },
         { wave: 3, upgrade: KNOLL },
-        { wave: 3, build: 'skyhook', tile: VALLEY_MID },
+        { wave: 3, build: 'zapcoil', tile: UPPER_W },
         { wave: 4, upgrade: FENCE_END },
-        { wave: 4, build: 'thumper', tile: UPPER_W },
-        { wave: 5, upgrade: VALLEY_MID },
-        { wave: 6, build: 'thumper', tile: FLOOR_S },
-        { wave: 6, build: 'thumper', tile: VALLEY_E },
+        { wave: 4, build: 'skyhook', tile: VALLEY_MID },
+        { wave: 5, upgrade: UPPER_W },
+        { wave: 6, build: 'zapcoil', tile: FLOOR_S },
         { wave: 7, upgrade: FLOOR_S },
-        { wave: 8, build: 'thumper', tile: GATE_N },
-        { wave: 9, upgrade: VALLEY_E },
-        { wave: 10, upgrade: GATE_N },
+        { wave: 8, build: 'zapcoil', tile: RIG_S },
+        { wave: 8, upgrade: RIG_S },
+        { wave: 9, build: 'zapcoil', tile: RIG_N },
+        { wave: 9, upgrade: RIG_S },
+        { wave: 10, specialize: RIG_S, spec: 'a' }, // Overload Coil
+        { wave: 11, upgrade: RIG_N },
+        { wave: 12, upgrade: FLOOR_S },
       ],
     },
   },
 });
-
-/** Unused tiles, named for the step tables (and so the tile list stays one home). */
-export const TILES = { RIG_N, RIG_E, DROP_W, GATE_W, GATE_S } as const;

@@ -4,7 +4,7 @@
 // Real-time holds run on fake timers; sim time is the sim's tick.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BARKS } from '../content/dialogue/index.ts';
-import type { IdSpace } from '../content/types.ts';
+import type { AllyKind, IdSpace } from '../content/types.ts';
 import { MemoryStore } from '../meta/index.ts';
 import { createSim, type SimEvent, type SimState } from '../sim/index.ts';
 import { dialogue } from '../ui/dialogue/state.ts';
@@ -45,7 +45,8 @@ const lost = (uid: number): Ev => ({ type: 'RefugeeLost', uid, cause: 'hushed', 
 
 describe('the rules', () => {
   it('names only the route allies a hush can take as ally_hushed kinds', () => {
-    expect(['refugee', 'bearer', 'singer'].every((k) => isHushableAlly(k as 'refugee'))).toBe(true);
+    const kinds: readonly AllyKind[] = ['refugee', 'bearer', 'singer'];
+    expect(kinds.every((k) => isHushableAlly(k))).toBe(true);
     expect(isHushableAlly('militia')).toBe(false);
     expect(isHushableAlly('ward')).toBe(false);
     expect(isHushableAlly(undefined)).toBe(false);

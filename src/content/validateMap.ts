@@ -51,7 +51,7 @@
 //   original centred, its footprint unchanged, new pads only in the band, no route, marker, or
 //   wreckage collisions) are compileRevisit.ts's, which composes a revisit before validation.
 // - [lighting]: the lighting schedule's keys name the map's waves in rising order, and it leaves
-//   the map's env at some point.
+//   the map's env or darkens (a Sundown `dark` > 0; A2M6 stays on `act2.dusk`) at some point.
 // - [dressing]: dressing over a revisit's `original` or `band` needs a revisit; a corner-to-corner
 //   area lies on the map; no layer twice.
 // - [clickable]: each `clickables` entry is a marker with a name; `setClickable` and the
@@ -228,7 +228,8 @@ function validateMap(
 
 /**
  * [lighting]: the schedule's keys name waves of the map, in rising order (the light before wave
- * 1 is the map's `env`), each changing the light.
+ * 1 is the map's `env`), and the schedule changes something: a key leaves the map's env or carries
+ * a Sundown `dark` level above 0.
  */
 function validateLighting(issues: Issues, def: MapDef<IdSpace>, where: string): void {
   const keys = def.lighting;
@@ -244,8 +245,12 @@ function validateLighting(issues: Issues, def: MapDef<IdSpace>, where: string): 
     }
     prev = k;
   }
-  if (keys.length > 0 && keys.every((k) => k.env === def.env)) {
-    issues.add('lighting', `${where}.lighting`, `never leaves the map's env '${def.env}'`);
+  if (keys.length > 0 && keys.every((k) => k.env === def.env && (k.dark ?? 0) === 0)) {
+    issues.add(
+      'lighting',
+      `${where}.lighting`,
+      `never leaves the map's env '${def.env}' and never darkens`,
+    );
   }
 }
 

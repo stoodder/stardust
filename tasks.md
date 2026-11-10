@@ -235,9 +235,9 @@ Every map task: par in Act II's band on its reference profile, robustness shifts
 - [~] **T521** A2M5 *The Long Walk*: 12 waves (5 + 7), Bricks companion, Cantors, the Penitent; the pivot cue pauses mid-fight (test), refugees from W6, Kneel reachable, `ally_hushed`, the Prism gift, `memo_a2_06`; par ~71 Evacuated; no-detection loses by the pivot, no-shield by W5, no-splash by W8; a Capacitor Bank alt; median 1× runtime ≤ 15 min, recorded.
 - [x] **T507** Unnerved (−20% speed; interrupts tells, bosses' too), Mindspike (T1–3, Echo Spike, Dread), Stillness (Stasis 3 s, r 2.5, 45 s) and Ves'thara as a companion.
 - [~] **T513** Presentation and dialogue: the jingle switch keyed on the truth scene, Pebble's `cap` rule, `ally_hushed` wiring, the third pause scene, Dele's tag.
-- [~] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
+- [x] **T540a** Unit sprites: Veilwalker, Blinkstrider, Cantor, Glimmer-shard, Fracture, Shard, Rift Moth (+ phase frames), refugees; Aelari fray frames (T501d).
 - [~] **T522** A2M6 *Sundown*: the wall, gates, merge, diagonal air lane, watchtower, lamps; 14 waves; full dark by W12 with Goldie's line in the dark (test); Ves'thara + Stillness; Bricks's post; Before the Dark; the Ishael debrief; `base_a2_loophole`, `base_a2_whistle`; par ~68; no-splash loses by W9, no-air by W10; a Seeker Swarm alt.
-- [ ] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
+- [~] **T508** Seer's Lantern (the cut lever): detection + beam + Mark, T1–3, All-Seeing, Truthlight, Lightsong.
 - [x] **T511** Codex and Inbox: Act II part two's entries, Ves'thara's entry and margin notes as second annotations (T501e), memos `04`–`06`.
 - [~] **T540b** Sprites: the Penitent (march, pulse, broken, kneeling Ward), Prism/Mindspike/Lantern + specs, beam fx, the Stillness icon, glyphs `stealth`/`phasing`/`shield_aura`/`heavy` and the cloak under-stroke (T501k).
 - [ ] **T509** Xenotech: Ves'thara's tab, 3-Intel attunements (Prism owned), specs and tune-ups, her Rapport, `all_unlocked`, smoke.
@@ -258,7 +258,7 @@ Carry-overs from M4, folded in:
 - [ ] **T501a** (→ T541) M5 portraits: Pebble's `cap` variant (A2M4+, Bricks's bottle cap), Ves'thara's `touched`, `touched_deep` and `dawn`; reconcile art-direction's "violet frost" with characters.md's frayed grey threads first. The star map's corrected Long Walk label from A2M5 (D102).
 - [ ] **T501b** (→ T502) M5: a cloak smoke flow with the Veilwalker (no cloaked unit ships in M4).
 - [ ] **T501c** (→ T520/T521/T522 (Crane, Capacitor Bank, Seeker Swarm alts); the Harpoon/Crane/Flak/Magnet alts → M6 (A3M2)) M5: give the first maps with armored flyers or tanks alt builds that use the Harpoon, the Crane, Seeker Swarm / Capacitor Bank / Flak Curtain / Overload (no campaign map exercises them yet; 0.5/s and 6 tiles/s are first-pass numbers).
-- [ ] **T501d** (→ T540a + T530a) M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
+- [x] **T501d** (→ T540a + T530a) M5: Aelari fray frames (`fray1_`/`fray2_<facing>`) chosen by render per HP band (art-direction §4).
 - [x] **T501e** (→ T511) M5: A2M6's Ves'thara margin note on the Brood Hauler needs a second annotation or a conditional paragraph (a version holds one text).
 - [ ] **T501f** (→ T530b) M5: A2M4's `unloading` Tidybots at the plant (the dial exists; it sweeps like Act I/II until then).
 - [ ] **T501g** (→ T560) M5: A2M1's Hiccup Contained is earned by every winning build (no Heavy leak is easy) — make it a real challenge or accept it as the Hollow's gentle intro; A1M4's W9 is fragile when robustness shifts combine (convoys −1 s + Bunchlings −0.2 s drops par to 70); A2M3's alts sit at 38/33.

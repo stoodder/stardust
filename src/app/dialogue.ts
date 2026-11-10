@@ -1239,7 +1239,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('Hushed', (e) => {
       routeOf.delete(e.victim);
       if (e.victimEnemy !== null) offerBarks([{ on: 'skitterkin_hushed' }]);
-      else if (isHushableAlly(e.victimAlly)) offerBarks([{ on: 'ally_hushed', ally: e.victimAlly }]);
+      else if (isHushableAlly(e.victimAlly))
+        offerBarks([{ on: 'ally_hushed', ally: e.victimAlly }]);
     }),
     // On an Escort the meter is the refugees (T513): `low_integrity` once the losses left before
     // defeat are LOW_INTEGRITY_SHARE of `maxLost` or fewer (`escortLow`), the core's rule's twin.

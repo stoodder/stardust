@@ -32,16 +32,14 @@ async function readLine(page: Page, next: Locator): Promise<void> {
  * Stops the page's clock just ahead of where it is (time, timers, and frames hold until
  * `resume`); the margin covers the round trip (the clock can't be moved back), widened on a miss.
  */
-async function pauseClock(page: Page): Promise<void> {
-  for (let margin = 100; ; margin *= 2) {
-    const now = await page.evaluate(() => Date.now());
-    try {
-      await page.clock.pauseAt(now + margin);
-      return;
-    } catch (e) {
-      // The round trip outran the margin ("Cannot fast-forward to the past"): try a wider one.
-      if (margin >= 3200) throw e;
-    }
+async function pauseClock(page: Page, margin = 100): Promise<void> {
+  const now = await page.evaluate(() => Date.now());
+  try {
+    await page.clock.pauseAt(now + margin);
+  } catch (e) {
+    // The round trip outran the margin ("Cannot fast-forward to the past"): try a wider one.
+    if (margin >= 3200) throw e;
+    await pauseClock(page, margin * 2);
   }
 }
 

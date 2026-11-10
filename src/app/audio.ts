@@ -57,6 +57,11 @@ import { createTidyChimes } from './tidybotChimes.ts';
 
 const NO_SCENES: readonly string[] = [];
 
+/** The save's seen scenes now (the jingle's key; none without a save). */
+function seenNow(): readonly string[] {
+  return activeSave()?.story.seen ?? NO_SCENES;
+}
+
 /** The low-integrity klaxon waits for the leak's alarm to finish (s). */
 export const LOW_ALARM_DELAY_SEC = 0.5;
 
@@ -210,7 +215,6 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   // The wave-clear jingle and the Skitterkin's death are the map's presentation dials (core-loop.md
   // § 6.7). The jingle follows the save's seen scenes live (A2M4's truth scene turns it minor
   // mid-battle), re-resolved only when the seen list changes.
-  const seenNow = (): readonly string[] => activeSave()?.story.seen ?? NO_SCENES;
   let seenAt = seenNow();
   const dials = presentationOfMap(sim.map, seenAt);
   let jingle = dials.jingle;

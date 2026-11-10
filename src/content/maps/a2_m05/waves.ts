@@ -73,8 +73,8 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       g('lightwing', 4, 'sky', OPEN, 1.5),
-      road('cantor', 2, OPEN + 2, 4),
-      road('glimmer', 8, OPEN + 3, 1.0),
+      road('cantor', 3, OPEN + 2, 3),
+      road('glimmer', 10, OPEN + 2.5, 0.8),
       road('veilwalker', 6, OPEN + 14, 3.5),
     ],
   },
@@ -113,11 +113,11 @@ export const waves = defineWaves([
   // W11 · two groups at once, clusters from both ends
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(26, OPEN + 10, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
+    groups: [motes(22, OPEN + 10, 0.25), motes(22, OPEN + 20, 0.25, 'road')],
   },
   // W12 · the last group + the largest surge
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(32, OPEN + 6, 0.25), motes(28, OPEN + 16, 0.25, 'road')],
+    groups: [motes(28, OPEN + 6, 0.25), motes(28, OPEN + 16, 0.25, 'road')],
   },
 ]);

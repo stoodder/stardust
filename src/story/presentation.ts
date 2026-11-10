@@ -28,11 +28,9 @@ function actDials(
   seen: readonly string[],
   table: PresentationTable,
 ): PresentationDials {
-  let dials = table.byAct[act];
-  for (const o of table.afterScene) {
-    if (o.acts.includes(act) && seen.includes(o.scene)) dials = { ...dials, ...o.dials };
-  }
-  return dials;
+  const row = table.byAct[act];
+  const reached = table.afterScene.filter((o) => o.acts.includes(act) && seen.includes(o.scene));
+  return reached.length === 0 ? row : Object.assign({}, row, ...reached.map((o) => o.dials));
 }
 
 /**
