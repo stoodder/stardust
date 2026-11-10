@@ -3,7 +3,12 @@
 // views/TidybotView.ts draws it. After a wave resolves, the stardust specks its Skitterkin left are
 // split among 1–3 drones (`planSweep`): each hovers in from the nearest map edge, vacuums its stops
 // one after another (a speck is gone once the nozzle has worked its stop halfway), chimes at its
-// last stop, and leaves by the nearest edge. Allocation-free per frame (`tidyPose` writes in place).
+// last stop, and leaves by the nearest edge. Where the map's drones unload (A2M4's Intake B, the
+// `unloading` dial; T501f, T530b), each one, after its chime, rises and flies to the hopper's
+// mouth (`dock`), empties its load into it, and leaves by the edge nearest the hopper; the drones
+// take turns at the mouth, a later one hovering at its last stop until the one before it is done.
+// The chime keeps its tick either way (app/tidybotChimes.ts rings it from the same sums).
+// Allocation-free per frame (`tidyPose` writes in place).
 import type { Vec2 } from '../iso.ts';
 
 /** At most this many drones per sweep, and stops per drone. */
@@ -19,6 +24,9 @@ export const TIDY_HOP_TICKS = 30;
 export const TIDY_VAC_TICKS = 48;
 export const TIDY_CHIME_TICKS = 24;
 export const TIDY_OUT_TICKS = 72;
+/** Unloading: the flight from the last stop up to the hopper's mouth, and the emptying. */
+export const TIDY_DOCK_TICKS = 60;
+export const TIDY_UNLOAD_TICKS = 72;
 /** Each drone after the first sets off this much later, so they don't arrive as one. */
 export const TIDY_STAGGER_TICKS = 18;
 /** How far past the map's edge a drone enters and leaves (grid units). */
@@ -31,6 +39,10 @@ export interface TidyPlan {
   readonly exit: Vec2;
   /** Its start, in ticks after the sweep began. */
   readonly delay: number;
+  /** Where it unloads (grid; the hopper's ground point), when the map's drones unload. */
+  readonly dock?: Vec2;
+  /** Ticks it hovers at its last stop after chiming, waiting its turn at the dock. */
+  readonly hold?: number;
 }
 
 /** A sweep: its drones, and which drone and stop clears each speck (`bot * TIDY_MAX_STOPS + stop`). */
@@ -39,7 +51,7 @@ export interface TidySweep {
   readonly stopOf: readonly number[];
 }
 
-export type TidyPhase = 'waiting' | 'fly' | 'vacuum' | 'chime' | 'gone';
+export type TidyPhase = 'waiting' | 'fly' | 'vacuum' | 'chime' | 'unload' | 'gone';
 
 /** Where a drone is and what it's doing (`tidyPose` writes it). */
 export interface TidyPose {
@@ -48,6 +60,11 @@ export interface TidyPose {
   phase: TidyPhase;
   /** How many of its stops it has cleared. */
   cleared: number;
+  /**
+   * How far up to the hopper's mouth it has risen (0: hovering over the ground, 1: at the mouth);
+   * `tidyPose` always writes it.
+   */
+  lift?: number;
 }
 
 /** A point just past the map's nearest edge from `p` (grid), on a `cols` × `rows` map. */
@@ -70,9 +87,15 @@ function runs(n: number, k: number): [number, number][] {
 /**
  * The sweep for `specks` (grid points) on a `cols` × `rows` map: none for no specks. The specks are
  * ordered across the screen (left to right, then top to bottom), cut into one run per drone, and
- * each run into up to TIDY_MAX_STOPS stops at their centroids.
+ * each run into up to TIDY_MAX_STOPS stops at their centroids. With a `dock` (the map's unloading
+ * hopper, grid), every drone unloads there after its chime, in turn, and leaves from it.
  */
-export function planSweep(specks: readonly Vec2[], cols: number, rows: number): TidySweep {
+export function planSweep(
+  specks: readonly Vec2[],
+  cols: number,
+  rows: number,
+  dock: Vec2 | null = null,
+): TidySweep {
   const n = specks.length;
   if (n === 0) return { plans: [], stopOf: [] };
   const order = specks
@@ -102,24 +125,41 @@ export function planSweep(specks: readonly Vec2[], cols: number, rows: number): 
     plans.push({
       entry: edgeNear(first, cols, rows),
       stops,
-      exit: edgeNear(last, cols, rows),
+      exit: edgeNear(dock ?? last, cols, rows),
       delay: bot * TIDY_STAGGER_TICKS,
+      ...(dock === null ? {} : { dock: { x: dock.x, y: dock.y }, hold: 0 }),
     });
   });
-  return { plans, stopOf };
+  return { plans: dock === null ? plans : queueAtDock(plans), stopOf };
+}
+
+/** The tick a drone's chime ends, from its sweep's start (its last stop's work done and rung). */
+function chimeEnd(plan: TidyPlan): number {
+  const n = plan.stops.length;
+  return (
+    plan.delay + TIDY_IN_TICKS + n * TIDY_VAC_TICKS + (n - 1) * TIDY_HOP_TICKS + TIDY_CHIME_TICKS
+  );
+}
+
+/** Gives each drone the hold that keeps its turn at the dock from overlapping the one before's. */
+function queueAtDock(plans: readonly TidyPlan[]): TidyPlan[] {
+  let free = 0;
+  return plans
+    .map((plan, i) => ({ plan, i, arrive: chimeEnd(plan) + TIDY_DOCK_TICKS }))
+    .toSorted((a, b) => a.arrive - b.arrive || a.i - b.i)
+    .map(({ plan, i, arrive }) => {
+      const hold = Math.max(0, free - arrive);
+      free = arrive + hold + TIDY_UNLOAD_TICKS;
+      return { i, plan: { ...plan, hold } };
+    })
+    .toSorted((a, b) => a.i - b.i)
+    .map(({ plan }) => plan);
 }
 
 /** A drone's whole sweep, from its delay to gone (ticks). */
 export function tidyTicks(plan: TidyPlan): number {
-  const n = plan.stops.length;
-  return (
-    plan.delay +
-    TIDY_IN_TICKS +
-    n * TIDY_VAC_TICKS +
-    (n - 1) * TIDY_HOP_TICKS +
-    TIDY_CHIME_TICKS +
-    TIDY_OUT_TICKS
-  );
+  const dock = plan.dock === undefined ? 0 : (plan.hold ?? 0) + TIDY_DOCK_TICKS + TIDY_UNLOAD_TICKS;
+  return chimeEnd(plan) + dock + TIDY_OUT_TICKS;
 }
 
 /** Smoothstep: the drone lifts off and settles rather than snapping. */
@@ -139,6 +179,7 @@ export function tidyPose(plan: TidyPlan, ticks: number, out: TidyPose): TidyPose
   const n = plan.stops.length;
   let t = ticks - plan.delay;
   out.cleared = 0;
+  out.lift = 0;
   if (t < 0 || n === 0) {
     out.phase = n === 0 ? 'gone' : 'waiting';
     out.x = plan.entry.x;
@@ -171,9 +212,36 @@ export function tidyPose(plan: TidyPlan, ticks: number, out: TidyPose): TidyPose
     return out;
   }
   t -= TIDY_CHIME_TICKS;
+  const dock = plan.dock;
+  if (dock !== undefined) {
+    // Its turn at the hopper: hover here till then, rise to the mouth, empty, and leave from it.
+    const hold = plan.hold ?? 0;
+    if (t < hold) {
+      out.phase = 'fly';
+      return out;
+    }
+    t -= hold;
+    if (t < TIDY_DOCK_TICKS) {
+      out.phase = 'fly';
+      lerp(out, at, dock, t / TIDY_DOCK_TICKS);
+      out.lift = ease(t / TIDY_DOCK_TICKS);
+      return out;
+    }
+    t -= TIDY_DOCK_TICKS;
+    out.x = dock.x;
+    out.y = dock.y;
+    out.lift = 1;
+    if (t < TIDY_UNLOAD_TICKS) {
+      out.phase = 'unload';
+      return out;
+    }
+    t -= TIDY_UNLOAD_TICKS;
+    at = dock;
+  }
   if (t < TIDY_OUT_TICKS) {
     out.phase = 'fly';
     lerp(out, at, plan.exit, t / TIDY_OUT_TICKS);
+    if (dock !== undefined) out.lift = 1 - ease(t / TIDY_OUT_TICKS);
     return out;
   }
   out.phase = 'gone';

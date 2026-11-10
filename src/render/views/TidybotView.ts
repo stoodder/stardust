@@ -3,10 +3,14 @@
 // stardust where it fell (a `gold.4` and a `pink.3` pixel, like Act II's fleck, lying until it's
 // swept); when a wave resolves, 1–3 `prop.tidybot`s hover in from the map's edge, vacuum the
 // specks up stop by stop, chime, and leave (vfx/tidybotFlight.ts, on sim ticks, so pause holds
-// them). Nobody says where the stardust goes; A2M4 shows the drones unloading at the plant (M5).
-// On a map whose dial is `off` (Act III on) there are neither specks nor drones. The body hovers
-// inside its frame (the anchor is the ground point under it), so it draws at its ground point in
-// `air`, depth-sorted like a flyer, over `fx.shadow`. Allocation-free per frame.
+// them). Nobody says where the stardust goes, until A2M4 (the `unloading` dial; T501f, T530b):
+// there each drone, after its chime, rises to the mouth of Intake B's hopper (the `intake_b`
+// marker's prop), hangs over it pouring its load in (`unload`), and leaves from it, the drones
+// taking turns. On a map whose dial is `off` (Act III on) there are neither specks nor drones. The
+// body hovers inside its frame (the anchor is the ground point under it), so it draws at its
+// ground point in `air`, depth-sorted like a flyer, over `fx.shadow`, raised over the hopper's
+// mouth while it unloads (its shadow stays on the ground). Allocation-free per frame (T501k: the
+// speck pool is searched with plain loops).
 import type * as Phaser from 'phaser';
 import type { TidybotMode } from '../../content/presentation.ts';
 import type { IdSpace } from '../../content/types.ts';
@@ -36,7 +40,15 @@ const PHASE_ANIM: Readonly<Record<Exclude<TidyPhase, 'waiting' | 'gone'>, string
   fly: 'fly',
   vacuum: 'vacuum',
   chime: 'chime',
+  unload: 'unload',
 };
+/** The marker whose prop the drones unload into (A2M4's Intake B). */
+export const UNLOAD_MARKER = 'intake_b';
+/**
+ * How far over the hopper's ground point its mouth is (`prop.intake`): the unloading drone's
+ * anchor hangs there, so the stream from its nozzle falls into the mouth (T540c).
+ */
+export const UNLOAD_LIFT_PX = 23;
 /** Its depth tie-breaks (not pooled entities): just past the salvage drone's. */
 const TIDY_TIE = 0x100;
 /** A speck's two pixels: stardust, the colours of the fleck Act II's pop leaves. */
@@ -77,20 +89,31 @@ export class TidybotView {
   readonly #on: boolean;
   readonly #specks: Speck[] = [];
   readonly #bots: Bot[] = [];
-  readonly #pose: TidyPose = { x: 0, y: 0, phase: 'gone', cleared: 0 };
+  readonly #pose: TidyPose = { x: 0, y: 0, phase: 'gone', cleared: 0, lift: 0 };
+  /** Where the drones unload (grid), on a map whose dial is `unloading`; else null. */
+  readonly #dock: Vec2 | null = null;
   /** The sim tick the current sweep began, or −1 with none under way. */
   #sweepTick = -1;
   /** The battle has ended: no new sweeps. */
   #ended = false;
-  /** Sweeps begun this battle (for `__sd.render()`). */
+  /** Sweeps begun this battle, and drones that have unloaded (for `__sd.render()`). */
   sweeps = 0;
+  unloads = 0;
 
-  constructor(ctx: ViewContext, cols: number, rows: number, mode: TidybotMode) {
+  constructor(
+    ctx: ViewContext,
+    cols: number,
+    rows: number,
+    mode: TidybotMode,
+    markers: Readonly<Record<string, readonly [number, number]>> = {},
+  ) {
     this.#ctx = ctx;
     this.#cols = cols;
     this.#rows = rows;
-    // A2M4's unloading at the plant is M5's; until then its drones sweep as everywhere else.
     this.#on = mode !== 'off';
+    // A2M4's drones unload at Intake B (without the marker they sweep as everywhere else).
+    const intake = mode === 'unloading' ? markers[UNLOAD_MARKER] : undefined;
+    if (intake !== undefined) this.#dock = { x: intake[0] + 0.5, y: intake[1] + 0.5 };
     if (!this.#on) return;
     const { scene, layers, sprites } = ctx;
     const px = debrisTexture(scene, 1);
@@ -170,11 +193,20 @@ export class TidybotView {
     };
   }
 
+  /** The first speck whose `stop` is `stop`, or null (a plain loop: no closure per death). */
+  #speckAt(stop: number): Speck | null {
+    const specks = this.#specks;
+    for (let i = 0; i < specks.length; i++) {
+      const s = specks[i]!; // i < length
+      if (s.stop === stop) return s;
+    }
+    return null;
+  }
+
   #leave(x: number, y: number): void {
     // A free slot, else a waiting one is swept unseen (its slot reused).
-    let slot = this.#specks.find((s) => s.stop === FREE);
-    slot ??= this.#specks.find((s) => s.stop === WAITING);
-    if (slot === undefined) return; // every speck is under a sweep: this one goes unseen
+    const slot = this.#speckAt(FREE) ?? this.#speckAt(WAITING);
+    if (slot === null) return; // every speck is under a sweep: this one goes unseen
     slot.x = x;
     slot.y = y;
     slot.stop = WAITING;
@@ -190,7 +222,7 @@ export class TidybotView {
     if (this.#ended || this.#sweepTick >= 0) return;
     const waiting: Speck[] = this.#specks.filter((s) => s.stop === WAITING);
     if (waiting.length === 0) return;
-    const sweep = planSweep(waiting, this.#cols, this.#rows);
+    const sweep = planSweep(waiting, this.#cols, this.#rows, this.#dock);
     waiting.forEach((s, i) => {
       s.stop = sweep.stopOf[i] ?? 0;
     });
@@ -225,7 +257,9 @@ export class TidybotView {
   #clear(bot: number, cleared: number): void {
     if (cleared === 0) return;
     const first = bot * TIDY_MAX_STOPS;
-    for (const s of this.#specks) {
+    const specks = this.#specks;
+    for (let i = 0; i < specks.length; i++) {
+      const s = specks[i]!; // i < length
       if (s.stop >= first && s.stop < first + cleared) {
         s.stop = FREE;
         s.a.setVisible(false);
@@ -247,6 +281,7 @@ export class TidybotView {
       const anim = this.#ctx.sprites.anim(TIDYBOT_SPRITE, PHASE_ANIM[p.phase]);
       bot.body.setVisible(true).play(anim, true);
       bot.shadow.setVisible(true);
+      if (p.phase === 'unload') this.unloads++;
       bot.phase = p.phase;
     }
     bot.x = p.x;
@@ -254,7 +289,7 @@ export class TidybotView {
     gridToScreen(p.x, p.y, this.#ctx.origin, pos);
     const x = Math.round(pos.x);
     const y = Math.round(pos.y);
-    bot.body.setPosition(x, y);
+    bot.body.setPosition(x, y - Math.round((p.lift ?? 0) * UNLOAD_LIFT_PX));
     bot.shadow.setPosition(x, y);
     const depth = worldDepth(y, 'enemy', TIDY_TIE + this.#bots.indexOf(bot));
     if (bot.body.depth !== depth) bot.body.setDepth(depth);

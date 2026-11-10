@@ -4,7 +4,7 @@
 //   and seams) wear their glow just in front of them in `world` (an actor in front still hides it),
 //   additive, a little at dusk and fully in the dark. On a map with darkness, every other piece of
 //   scenery with a baked `@glow` frame (a dome's window slits, the flora's glow) lights up with the
-//   dark too (the core's is CoreView's).
+//   dark too (the core's heart at full strength: CoreView's red overlays still sit over it).
 // - **Lamp pools:** in the dark, warm light pools inside each lamp's lit disc (a beaming Prism's
 //   cool), in `decal` under everything standing there, stepped bands that stop short of the
 //   disc's edge, so the edge stays the sim's lit range exactly (D137).
@@ -49,8 +49,8 @@ const GLOW_DEPTH = 0.00005;
 const OVERHANG_PX = 8;
 /** A baked `@glow`'s strength in the full dark: the world's small lights, under the lamps'. */
 const BAKED_PEAK = 0.6;
-/** Props whose glow another view draws. */
-const OWN_GLOW: ReadonlySet<string> = new Set(['prop.core']);
+/** Baked glows that shine at full strength in the dark: the core's heart (what you defend). */
+const FULL_BAKED: ReadonlySet<string> = new Set(['prop.core']);
 
 interface PropLight {
   readonly prop: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
@@ -101,7 +101,7 @@ export class WorldGlowView {
         continue;
       }
       const key = parseFrameKey(obj.frame.name);
-      if (key === null || OWN_GLOW.has(key.id)) continue;
+      if (key === null) continue;
       const glow = PROP_GLOWS[key.id];
       if (glow !== undefined && (glow.frames === undefined || glow.frames.includes(key.frame))) {
         this.#addProp(obj, this.#propTexture(key.id as SpriteId, key.variant, key.frame, glow), glow);
@@ -259,7 +259,7 @@ export class WorldGlowView {
       if (src === null) return;
       scene.textures.addCanvas(key, imageToCanvas(src));
     }
-    this.#addProp(prop, { key, radius }, { dusk: 0 }, BAKED_PEAK);
+    this.#addProp(prop, { key, radius }, { dusk: 0 }, FULL_BAKED.has(id) ? 1 : BAKED_PEAK);
   }
 
   /** The glow texture of a prop's frame (or its anim's union), baked once per battle's scene. */

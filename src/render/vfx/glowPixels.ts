@@ -49,7 +49,7 @@ export const PROP_GLOWS: Readonly<Record<string, PropGlow>> = {
   'prop.dome': {
     frames: ['window'],
     colors: ['gold.4', 'coral.3', 'coral.4'],
-    radius: 3,
+    radius: 5,
     halo: 'gold.4',
     dusk: 0.25,
   },

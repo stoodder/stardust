@@ -12,6 +12,8 @@ vi.mock('./audio.ts', () => ({
 }));
 
 const stinger = SCENES.a2_m06_scene_stinger!;
+/** Lets the audio's on-demand import settle. */
+const settle = () => new Promise((r) => setTimeout(r, 0));
 const lineIndex = (): number | null =>
   dialogue.scene.value?.line === null ? null : (dialogue.scene.value?.transcript.length ?? null);
 
@@ -30,7 +32,7 @@ describe("the A2M6 stinger's jingle", () => {
     expect(jingleDue(null, jinglesOf([stinger]))).toBeNull();
   });
 
-  it('plays once, in minor, as the caption shows (after the dark and the PA)', () => {
+  it('plays once, in minor, as the caption shows (after the dark and the PA)', async () => {
     let done = 0;
     playInOrder([stinger], () => done++);
     expect(dialogue.scene.value?.sceneId).toBe('a2_m06_scene_stinger');
@@ -38,21 +40,22 @@ describe("the A2M6 stinger's jingle", () => {
     expect(lineIndex()).toBe(0);
     advanceScene();
     expect(dialogue.scene.value?.line?.speaker).toBe('pa');
+    await settle();
     expect(played).toEqual([]);
     advanceScene();
     expect(dialogue.scene.value?.line?.text).toBe(
       'The jingle plays once, over the dark. In minor.',
     );
-    expect(played).toEqual(['minor']);
+    await vi.waitFor(() => expect(played).toEqual(['minor']));
     // Left to ring out, then the way on; it never plays twice.
     advanceScene();
-    expect(played).toEqual(['minor']);
     advanceScene();
     expect(done).toBe(1);
+    await settle();
     expect(played).toEqual(['minor']);
   });
 
-  it('plays nothing when the stinger is skipped, or while dialogue is off', () => {
+  it('plays nothing when the stinger is skipped, or while dialogue is off', async () => {
     let done = 0;
     playInOrder([stinger], () => done++);
     expect(skipScene()).toBe(true);
@@ -65,6 +68,7 @@ describe("the A2M6 stinger's jingle", () => {
     playInOrder([SCENES.a1_m05_scene_stinger!], () => done++);
     advanceScene();
     advanceScene();
+    await settle();
     expect(played).toEqual([]);
   });
 });

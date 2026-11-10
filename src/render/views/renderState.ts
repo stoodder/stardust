@@ -177,7 +177,9 @@ export interface RenderState {
     readonly flying: number;
     readonly specks: number;
     readonly sweeps: number;
-    /** Each drone in the air: where (grid) and what it's doing (fly, vacuum, chime). */
+    /** Drones that have unloaded at the plant's hopper (A2M4's `unloading` dial; T530b). */
+    readonly unloads: number;
+    /** Each drone in the air: where (grid) and what it's doing (fly, vacuum, chime, unload). */
     readonly drones: readonly { readonly x: number; readonly y: number; readonly phase: string }[];
   };
 }

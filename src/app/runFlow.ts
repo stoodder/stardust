@@ -9,7 +9,6 @@ import { effect } from '@preact/signals';
 import { sceneById, type Scene } from '../content/dialogue/index.ts';
 import { RESULTS_FLOW, resultsFlow, type FlowJingle } from '../content/dialogue/resultsFlow.ts';
 import { dialogue, type SceneView } from '../ui/dialogue/state.ts';
-import { playJingle } from './audio.ts';
 import { dialogueEnabled, playScene } from './dialogue.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
@@ -62,7 +61,9 @@ function watchJingles(jingles: readonly FlowJingle[]): void {
     const j = jingleDue(dialogue.scene.value, waiting);
     if (j === null) return;
     waiting.splice(waiting.indexOf(j), 1);
-    playJingle(j.jingle);
+    // Loaded on demand: a static import of the audio here closes an import cycle (audio → save →
+    // … → router → runFlow) that changes the app's module order at boot.
+    void import('./audio.ts').then((audio) => audio.playJingle(j.jingle));
   });
 }
 

@@ -390,7 +390,13 @@ export class BattleScene extends Phaser.Scene {
       this.#lighting.relight(),
     );
     this.#drone = new DroneView(ctx, map);
-    this.#tidybots = new TidybotView(ctx, map.cols, map.rows, presentationOfMap(map).tidybots);
+    this.#tidybots = new TidybotView(
+      ctx,
+      map.cols,
+      map.rows,
+      presentationOfMap(map).tidybots,
+      map.markers,
+    );
     this.#bossBar = new BossBarView(ctx, prefersReducedMotion);
     this.#huddles = new HuddleView(ctx, prefersReducedMotion, pulseOn);
     this.#shields = new ShieldView(ctx, this.#fx, prefersReducedMotion);
@@ -772,6 +778,7 @@ export class BattleScene extends Phaser.Scene {
         flying: this.#tidybots.flying,
         specks: this.#tidybots.specks,
         sweeps: this.#tidybots.sweeps,
+        unloads: this.#tidybots.unloads,
         drones: this.#tidybots.drones(),
       },
     };
