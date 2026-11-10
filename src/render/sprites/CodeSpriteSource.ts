@@ -48,6 +48,10 @@ export class CodeSpriteSource implements SpriteSource {
       const c = document.createElement('canvas');
       c.width = Math.max(1, p.w);
       c.height = Math.max(1, p.h);
+      // CPU-backed (T501j): thousands of putImageData calls (drawImageAt) and Phaser's one
+      // getImageData per page (its CanvasTexture) stay off the GPU. A boot under software WebGL
+      // was ~0.8 s slower with GPU-backed pages.
+      c.getContext('2d', { willReadFrequently: true });
       return c;
     });
     const byKey = new Map(frames.map((f) => [f.key, f]));
