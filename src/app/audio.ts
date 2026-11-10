@@ -41,6 +41,7 @@ import {
   STORMS,
 } from '../audio/offline.ts';
 import type { SpeakerId } from '../content/dialogue/types.ts';
+import type { JingleVariant } from '../content/presentation.ts';
 import type { IdSpace } from '../content/types.ts';
 import { TICK_HZ } from '../shared/time.ts';
 import { clearTicksFor, type SimEvent } from '../sim/index.ts';
@@ -49,9 +50,12 @@ import { presentationOfMap } from '../story/presentation.ts';
 import { speaking } from '../ui/dialogue/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
+import { activeSave } from './save.ts';
 import type { AudioHooks } from './testHookTypes.ts';
 import { settings } from './settings.ts';
 import { createTidyChimes } from './tidybotChimes.ts';
+
+const NO_SCENES: readonly string[] = [];
 
 /** The low-integrity klaxon waits for the leak's alarm to finish (s). */
 export const LOW_ALARM_DELAY_SEC = 0.5;
@@ -204,12 +208,27 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
   const enemies = sim.config.content.enemies;
   const enemy = (id: string) => (Object.hasOwn(enemies, id) ? (enemies[id] ?? null) : null);
   // The wave-clear jingle and the Skitterkin's death are the map's presentation dials (core-loop.md
-  // § 6.7).
-  const dials = presentationOfMap(sim.map);
+  // § 6.7). The jingle follows the save's seen scenes live (A2M4's truth scene turns it minor
+  // mid-battle), re-resolved only when the seen list changes.
+  const seenNow = (): readonly string[] => activeSave()?.story.seen ?? NO_SCENES;
+  let seenAt = seenNow();
+  const dials = presentationOfMap(sim.map, seenAt);
+  let jingle = dials.jingle;
+  const liveDials = {
+    get jingle(): JingleVariant {
+      const seen = seenNow();
+      if (seen !== seenAt) {
+        seenAt = seen;
+        jingle = presentationOfMap(sim.map, seen).jingle;
+      }
+      return jingle;
+    },
+    skitterkinDeath: dials.skitterkinDeath,
+  };
   // What no event announces (digs, a sneeze's tell, a flock, the drone, a cloak's footsteps, a
   // charge's hum), from the state; and where the Hollow units stand, for their quiet.
   const field = createFieldSounds(clearTicksFor(sim.config.modifiers));
-  const sounds = createEventSounds(dials, {
+  const sounds = createEventSounds(liveDials, {
     splits: (id) => (enemy(id)?.split ?? null) !== null,
     faction: (id) => enemy(id)?.faction ?? null,
     quietAt: (x, y) => field.quietAt(x, y),

@@ -3,15 +3,9 @@
 // the new id in its faction's palette, without palette variants, so it keeps the sprite contract
 // (enemy walks in four facings, tower t1–t3 frames with a mount and a head, 14×14 icons). The art
 // tasks replace each behind the same id and delete its line here (T540a drew the units' bodies);
-// what's left is T540b's: the Penitent, the units' icons, the Aelari towers, the tell glyphs, and
+// what's left is T540b's: the Penitent and its icon, the Aelari towers, the tell glyphs, and
 // Stillness's icon. This file goes away with the last of them.
 import { enemyGlassWitch } from '../enemies/glass_witch.ts';
-import {
-  iconEnemyGlimmer,
-  iconEnemyLightwing,
-  iconEnemyMote,
-  iconEnemyWeftWarden,
-} from '../icons/act2_enemies.ts';
 import { iconEnemyGlassWitch } from '../icons/glass_witch.ts';
 import {
   iconTellFast,
@@ -38,36 +32,17 @@ function placeholder<const Id extends string>(
   return { ...rest, id, palette };
 }
 
-// The Penitent (T540b), and the units' icons (T540b).
+// The Penitent (T540b).
 export const enemySunderglassPenitent = placeholder(
   enemyGlassWitch,
   'enemy.sunderglass_penitent',
   'aelari',
 );
-export const iconEnemyVeilwalker = placeholder(iconEnemyGlimmer, 'icon.enemy.veilwalker', 'aelari');
-export const iconEnemyBlinkstrider = placeholder(
-  iconEnemyGlimmer,
-  'icon.enemy.blinkstrider',
-  'aelari',
-);
-export const iconEnemyCantor = placeholder(iconEnemyWeftWarden, 'icon.enemy.cantor', 'aelari');
 export const iconEnemySunderglassPenitent = placeholder(
   iconEnemyGlassWitch,
   'icon.enemy.sunderglass_penitent',
   'aelari',
 );
-export const iconEnemyGlimmerShard = placeholder(
-  iconEnemyGlimmer,
-  'icon.enemy.glimmer_shard',
-  'aelari',
-);
-export const iconEnemyFracture = placeholder(iconEnemyMote, 'icon.enemy.fracture', 'hollow');
-export const iconEnemyFractureShard = placeholder(
-  iconEnemyMote,
-  'icon.enemy.fracture_shard',
-  'hollow',
-);
-export const iconEnemyRiftmoth = placeholder(iconEnemyLightwing, 'icon.enemy.riftmoth', 'hollow');
 
 // The Aelari towers (T540b), for now in borrowed Everglow and Vrell shapes.
 export const towerPrism = placeholder(towerRivet, 'tower.prism', 'aelari');

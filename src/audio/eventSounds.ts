@@ -454,8 +454,8 @@ export function createEventSounds(
     },
     endFrame(out) {
       flushPlink(out);
-      const cue = WAVE_CLEAR_CUE[dials.jingle];
-      if (pendingClear && !ended && cue !== null) out.push({ kind: 'cue', id: cue });
+      const cue = pendingClear && !ended ? WAVE_CLEAR_CUE[dials.jingle] : null;
+      if (cue !== null) out.push({ kind: 'cue', id: cue });
       if (pendingForfeit && !ended) out.push(sfx('medal_forfeit'));
       pendingClear = false;
       pendingForfeit = false;

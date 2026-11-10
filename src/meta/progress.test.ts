@@ -65,8 +65,8 @@ describe('gating', () => {
     expect(unlockHint('loadout')).toBe('Opens after Special Delivery');
     expect(unlockHint('engineering')).toBe('Opens after The Audit');
     expect(unlockHint('spareRunners')).toBe('Opens after Record Quarter');
-    // G8: never a map name the campaign screen doesn't show yet (A2M5 isn't built).
-    expect(unlockHint('xenotech')).toBe('Opens after Shift 10 (coming soon)');
+    // G8: never a map name the campaign screen doesn't show yet (A2M5 is built, not yet shown).
+    expect(unlockHint('xenotech')).toBe('Opens after Shift 10');
     expect(mapMilestone('a1_m02')).toBe('Hatching Season');
     expect(mapMilestone('dev_range')).toBe('dev_range');
   });
@@ -83,10 +83,11 @@ describe('gating', () => {
     expect(mapShown('a2_m02', actOne)).toBe(false);
     const a2m3 = DEV_SAVES.after_a2m3.build();
     expect(mapMilestone('a2_m02', a2m3)).toBe('The Glass Witch');
-    // The teaser frontier is named; the map after it is not, and isn't built.
+    // The frontier is named; the map after it is not (built, so by its position).
     expect(mapMilestone('a2_m04', a2m3)).toBe('Second Harvest');
-    expect(mapMilestone('a2_m05', a2m3)).toBe('Shift 10 (coming soon)');
-    expect(unlockHint('xenotech', a2m3)).toBe('Opens after Shift 10 (coming soon)');
+    expect(mapMilestone('a2_m05', a2m3)).toBe('Shift 10');
+    expect(unlockHint('xenotech', a2m3)).toBe('Opens after Shift 10');
+    expect(mapMilestone('a2_m06', a2m3)).toBe('Shift 11 (coming soon)');
     expect(mapShown('dev_range', a2m3)).toBe(false);
   });
 });

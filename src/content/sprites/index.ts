@@ -148,6 +148,15 @@ import { portraitSterling } from './portraits/sterling.ts';
 import { portraitVesthara } from './portraits/vesthara.ts';
 import { portraitZibzab } from './portraits/zibzab.ts';
 import { iconEnemyGlassWitch } from './icons/glass_witch.ts';
+import {
+  iconEnemyVeilwalker,
+  iconEnemyBlinkstrider,
+  iconEnemyCantor,
+  iconEnemyGlimmerShard,
+  iconEnemyFracture,
+  iconEnemyFractureShard,
+  iconEnemyRiftmoth,
+} from './icons/m5_enemies.ts';
 import { iconAbilityScannerSweep } from './icons/scanner_sweep.ts';
 import { iconTowerCrane, iconTowerHarpoon, iconTowerLookout } from './icons/vrell_towers.ts';
 import { enemyGlassWitch } from './enemies/glass_witch.ts';
@@ -303,18 +312,18 @@ export const SPRITES = [
   iconEnemyLightwing,
   iconEnemyGlassWitch,
   iconAbilityScannerSweep,
-  // M5's icons (placeholders until T540a and T540b).
+  // M5's icons (the units' T540a; the towers' placeholders until T540b).
   m5.iconTowerPrism,
   m5.iconTowerMindspike,
   m5.iconTowerLantern,
-  m5.iconEnemyVeilwalker,
-  m5.iconEnemyBlinkstrider,
-  m5.iconEnemyCantor,
+  iconEnemyVeilwalker,
+  iconEnemyBlinkstrider,
+  iconEnemyCantor,
   m5.iconEnemySunderglassPenitent,
-  m5.iconEnemyGlimmerShard,
-  m5.iconEnemyFracture,
-  m5.iconEnemyFractureShard,
-  m5.iconEnemyRiftmoth,
+  iconEnemyGlimmerShard,
+  iconEnemyFracture,
+  iconEnemyFractureShard,
+  iconEnemyRiftmoth,
   m5.iconAbilityStillness,
   iconCredits,
   iconCore,

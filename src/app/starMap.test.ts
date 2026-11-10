@@ -74,15 +74,15 @@ describe('starMapView', () => {
     expect(view.nodes.at(-1)).toMatchObject({ id: 'a2_m04', state: 'open' });
   });
 
-  it('after A2M4: The Long Walk teaser, the marker on A2M4', () => {
+  it('after A2M4: The Long Walk next up, the marker on A2M4', () => {
     const view = starMapView(DEV_SAVES.after_a2m4_returned.build());
     expect(view.phase).toBe('act2.dusk');
     expect(view.marker).toBe('a2_m04');
     expect(view.frontier).toBe('a2_m05');
-    const teaser = view.nodes.at(-1)!;
-    expect(teaser).toMatchObject({ id: 'a2_m05', state: 'coming_soon', brief: null });
-    expect(teaser.label).toMatch(/^Shift 10, The Long Walk, Preserve Road\. Coming soon\. /);
-    expect(teaser.label).toContain('Then the Hollow comes for everyone on it.');
+    const next = view.nodes.at(-1)!;
+    expect(next).toMatchObject({ id: 'a2_m05', state: 'open' });
+    expect(next.label).toBe('Shift 10, The Long Walk, Preserve Road. Next up. 0 of 3 medals.');
+    expect(next.brief?.medals.map((m) => m.id)).toEqual(['victory', 'perfect_core', 'kneel']);
     // Nothing past the frontier, in any field.
     const later = CAMPAIGN_PLAN.slice(10).map((m) => m.name);
     const text = JSON.stringify(view);

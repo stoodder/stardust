@@ -215,7 +215,8 @@ describe('the Aelari fray (art-direction §4; T501d)', () => {
         const outside = (rows: readonly string[]): number =>
           rows.reduce(
             (n, r, y) =>
-              n + r.split('').filter((c, x) => solid(c) && c !== 'x' && !solid(walk[y]?.[x])).length,
+              n +
+              r.split('').filter((c, x) => solid(c) && c !== 'x' && !solid(walk[y]?.[x])).length,
             0,
           );
         const changed = (rows: readonly string[]): number =>

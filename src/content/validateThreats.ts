@@ -221,6 +221,7 @@ export function validateNovelty(
   // every trait it has is known, and so is every unit its phases bring. Shards (the Penitent's
   // Glimmer-shards) are born only from their boss, never in a wave, so they're judged by their
   // traits: every one already taught.
+  const known = (t: Trait): boolean => history.traits.has(t);
   const capstone = (id: string): boolean => {
     const e = ctx.enemies.get(id);
     if (e?.boss === undefined) return false;
@@ -231,7 +232,6 @@ export function validateNovelty(
     const shards = e.boss.phases.flatMap((p) =>
       p.shards === undefined ? [] : [ctx.enemies.get(p.shards.enemy)],
     );
-    const known = (t: Trait): boolean => history.traits.has(t);
     return (
       e.traits.every(known) &&
       shards.every((s) => s !== undefined && s.traits.every(known)) &&

@@ -292,7 +292,12 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
     }
     save.stats = { pestsProcessed: save.stats.pestsProcessed + 300, runs: save.stats.runs + 2 };
     if (step === 'a2_m03') save.story.flags.held_fire_second_look = false;
-    if (step === 'a2_m04') save = afterA2M4Results(save, plan.c2 ?? 'returned');
+    if (step === 'a2_m04') {
+      save = afterA2M4Results(save, plan.c2 ?? 'returned');
+      // Won A2M4, the player has seen the truth scene (Act II's jingle turns minor on it) and,
+      // having entered the base since, Bricks's handover (app/baseScenes.ts HANDOVER_SCENE).
+      save.story.seen.push(...A2M4_SEEN.filter((id) => !save.story.seen.includes(id)));
+    }
     if (step === 'a2_m05') save = afterA2M5Results(save);
   }
   const next = ACT_TWO[played.length];
@@ -305,6 +310,9 @@ function actTwoThrough(last: ActTwoMap | null, plan: ActTwoPlan = {}): SaveData 
   if (save.profile !== null) save.profile = { ...save.profile, callsign: callsignFor(save) };
   return caughtUp(save);
 }
+
+/** A2M4's scenes a save that won it has seen: the truth scene and the base's handover. */
+const A2M4_SEEN: readonly SceneId[] = ['a2_m04_scene_truth', 'a2_m04_base_handover'];
 
 /** Zibzab's arrival at the base (app/baseScenes.ts `ARRIVAL_SCENE`; the first base visit with his shop). */
 const ARRIVAL_SCENE_ID: SceneId = 'a1_m03_base_arrival';
@@ -449,8 +457,8 @@ export const DEV_SAVES: Readonly<Record<DevSaveId, DevSave>> = {
       const story = withStoryUnlocks(save).save;
       story.story.memosRead = [...story.story.memosDelivered];
       // Every campaign map won: the star map has been opened (its sweep spent), and the base with
-      // Zibzab's shop (his arrival played).
-      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID);
+      // Zibzab's shop (his arrival played), and A2M4's scenes.
+      story.story.seen.push(STAR_MAP_SEEN_ID, ARRIVAL_SCENE_ID, ...A2M4_SEEN);
       return withFirstPaydayCaughtUp(story);
     },
   },

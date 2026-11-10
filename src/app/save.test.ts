@@ -268,12 +268,15 @@ describe('dev saves (?test=1&save=)', () => {
   });
 
   it('a dev save imported as a code carries no dev unlocks', async () => {
-    const code = await exportCode(DEV_SAVES.all_unlocked.build(), 0);
+    // Xenotech opens after A2M5: with that win taken out, only a dev unlock could open it.
+    const save = DEV_SAVES.all_unlocked.build();
+    const maps: Record<string, unknown> = save.campaign.maps;
+    delete maps.a2_m05;
+    const code = await exportCode(save, 0);
     const check = await checkImport(code);
     if (!check.ok) throw new Error(check.message);
     importInto(1, check.save);
     expect(systemOpen('rnd')).toBe(true);
-    // Xenotech opens after A2M5, far past every map the dev save can have won (A1M3 opens the shop).
     expect(systemOpen('xenotech')).toBe(false);
   });
 

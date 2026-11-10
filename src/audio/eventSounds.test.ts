@@ -248,7 +248,9 @@ describe('event sounds', () => {
     expect(cueFor(1)).toBe('bright_sting');
     for (const act of [2, 3, 'finale'] as const) expect(cueFor(act)).not.toBe('bright_sting');
     expect(cueFor(2)).toBe('bright_minor');
-    expect(WAVE_CLEAR_CUE[PRESENTATION.byMap.a2_m04?.jingle ?? 'bright']).toBe('minor_sting');
+    // A2M4's truth scene turns Act II's jingle minor (PRESENTATION.afterScene; T513).
+    const truth = PRESENTATION.afterScene.find((o) => o.scene === 'a2_m04_scene_truth');
+    expect(WAVE_CLEAR_CUE[truth?.dials.jingle ?? 'bright']).toBe('minor_sting');
     expect(ids(run([cleared(1)], 'minor_bridges'))).toEqual(['cue:bright_minor']);
     expect(ids(run([cleared(1)], 'minor'))).toEqual(['cue:minor_sting']);
     expect(run([cleared(1)], 'song')).toEqual([]);

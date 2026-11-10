@@ -492,8 +492,10 @@ Par's shift runs about 10.8 min at 1× (Story 13.3). **The truth scene's beat** 
   - w08 QUILL: "Evacuated is a number I like. I don't know if I'm allowed to like numbers."
   - w10 Sterling: "Love the initiative! The Preserve has plenty of room. Plenty!"
   - w11 Bricks: "Pebble's in my pocket. Don't tell Goldie. She thinks it's unsanitary." · Pebble: "(squeak) I am very sanitary."
+  - First `wave_cleared` with a turret up (name tag) Bricks: "That one's Dele. My brother. Accountant on the Core. Doesn't call. Still counts."
 - *Barks:* Bricks `ally_hushed`: "Lost one. Keep the rest moving." · QUILL `low_integrity`: "Too many. Too many on the road."
 - *Debrief:* Ves'thara, her threads fraying grey at the wrist: "Not there. Never there." · Bricks: "Then where?" · (silence, 2 s) · Ves'thara gives Prism Spire; R&D's Xenotech branch opens under her.
+  - *On a loss*, Bricks: "The road's still there. So are they. Go again, Thorn."
 - *Codex:* Aegis Cantor ("Shoot the singer first. Everglow is aware of how that sounds."), Sunderglass Penitent ("Security has filed this under 'surrender.'"), the Preserve (original: "Humane Relocation Preserve: a forever home!"; "very peaceful, and very quiet"; its small print: "For safety, its fencing faces inward."), and Ves'thara's first entry, Everglow's, over her `touched` portrait ("Ves'thara is not known to Everglow." … "Witnesses are reminded that it did not happen."). The Prism Spire's entry (A2M6's line) unlocks with the gift.
 - *Memo after:* `memo_a2_06` *Long Night Readiness: Stay Positive!* Sterling's one real-looking favour: "Goldie's shelter request? APPROVED! Concrete's on me, Four-Forty-Seven. Stay cozy!" (small print: "Shelter costs deducted from colonist wages in 48 easy installments.") The shelters are where A3M4 is fought. Above it, the pilot "was a real learning experience! Everyone who reached the Preserve is settling in. It's very peaceful out there."
 
