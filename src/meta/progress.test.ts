@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { STAR_MAP_AFTER } from '../content/starMap.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import {
   META_SYSTEMS,
-  STAR_MAP_AFTER,
   SHIFT_BOARD_SIZE,
   SYSTEM_UNLOCKS,
+  frontierOf,
   isMapWon,
   isSystemUnlocked,
   mapName,
+  mapShown,
   nextShift,
+  onStarMap,
   shiftBoard,
   mapMilestone,
+  starMapEntries,
   unlockHint,
 } from './progress.ts';
 import { createNewSave } from './saveData.ts';
@@ -55,17 +59,35 @@ describe('gating', () => {
       expect(isSystemUnlocked(all.build(), s, all.devUnlocks)).toBe(true);
   });
 
-  it('hints name the map that opens a system, once the Shift board lists it', () => {
+  it('hints name the map that opens a system, once the campaign screen shows it', () => {
     expect(unlockHint('rnd')).toBe('Opens after Orientation Day');
     expect(unlockHint('shop')).toBe('Opens after Special Delivery');
     expect(unlockHint('loadout')).toBe('Opens after Special Delivery');
     expect(unlockHint('engineering')).toBe('Opens after The Audit');
     expect(unlockHint('spareRunners')).toBe('Opens after Record Quarter');
-    // G8: never a map name the Shift board doesn't show yet (Act II isn't built).
+    // G8: never a map name the campaign screen doesn't show yet (A2M5 isn't built).
     expect(unlockHint('xenotech')).toBe('Opens after Shift 10 (coming soon)');
-    expect(unlockHint('shop', 2)).toBe('Opens after Shift 3 (coming soon)');
     expect(mapMilestone('a1_m02')).toBe('Hatching Season');
     expect(mapMilestone('dev_range')).toBe('dev_range');
+  });
+
+  it('names a later map only once it is won or the frontier (D102)', () => {
+    const fresh = createNewSave();
+    // Act I always; a built Act II map by its position until the star map shows it.
+    expect(mapMilestone('a1_m05', fresh)).toBe('Record Quarter');
+    expect(mapMilestone('a2_m01', fresh)).toBe('Shift 6');
+    expect(mapMilestone('a2_m01')).toBe('Shift 6');
+    const actOne = DEV_SAVES.after_a1m5_ref.build();
+    expect(mapMilestone('a2_m01', actOne)).toBe('Rig Nine');
+    expect(mapMilestone('a2_m02', actOne)).toBe('Shift 7');
+    expect(mapShown('a2_m02', actOne)).toBe(false);
+    const a2m3 = DEV_SAVES.after_a2m3.build();
+    expect(mapMilestone('a2_m02', a2m3)).toBe('The Glass Witch');
+    // The teaser frontier is named; the map after it is not, and isn't built.
+    expect(mapMilestone('a2_m04', a2m3)).toBe('Second Harvest');
+    expect(mapMilestone('a2_m05', a2m3)).toBe('Shift 10 (coming soon)');
+    expect(unlockHint('xenotech', a2m3)).toBe('Opens after Shift 10 (coming soon)');
+    expect(mapShown('dev_range', a2m3)).toBe(false);
   });
 });
 
@@ -135,5 +157,47 @@ describe('the live Shift board', () => {
     expect(board.every((e) => e.state === 'won')).toBe(true);
     // No sixth map to look for: the last won shift is the one offered.
     expect(nextShift(board)?.id).toBe('a1_m05');
+  });
+});
+
+describe('the star map', () => {
+  it('takes over once A1M5 is won', () => {
+    expect(onStarMap(DEV_SAVES.after_a1m4.build())).toBe(false);
+    expect(onStarMap(DEV_SAVES.after_a1m5.build())).toBe(true);
+  });
+
+  it('after A1M5: Act I cleared with medals, and Rig Nine next up; nothing later', () => {
+    const save = DEV_SAVES.after_a1m5_ref.build();
+    const entries = starMapEntries(save);
+    expect(entries.map((e) => [e.id, e.index, e.state])).toEqual([
+      ['a1_m01', 1, 'won'],
+      ['a1_m02', 2, 'won'],
+      ['a1_m03', 3, 'won'],
+      ['a1_m04', 4, 'won'],
+      ['a1_m05', 5, 'won'],
+      ['a2_m01', 6, 'open'],
+    ]);
+    expect(entries[0]?.medals.length).toBeGreaterThan(0);
+    expect(entries[5]?.medals).toEqual([]);
+    expect(frontierOf(save)).toBe('a2_m01');
+  });
+
+  it('after A2M3: the frontier is the Second Harvest teaser while A2M4 is unbuilt', () => {
+    const entries = starMapEntries(DEV_SAVES.after_a2m3.build(), registered(['a2_m03']));
+    expect(entries.at(-1)).toMatchObject({ id: 'a2_m04', index: 9, state: 'coming_soon' });
+    expect(entries.map((e) => e.id)).not.toContain('a2_m05');
+    // Built, the same frontier is next up.
+    const built = starMapEntries(DEV_SAVES.after_a2m3.build(), () => true);
+    expect(built.at(-1)).toMatchObject({ id: 'a2_m04', state: 'open' });
+  });
+
+  it('after the finale: every map cleared, no frontier', () => {
+    const save = createNewSave();
+    const maps: Record<string, unknown> = save.campaign.maps;
+    for (const m of CAMPAIGN_PLAN) maps[m.id] = { completed: true, medals: [], bestMeter: 1 };
+    expect(frontierOf(save)).toBeNull();
+    const entries = starMapEntries(save);
+    expect(entries).toHaveLength(CAMPAIGN_PLAN.length);
+    expect(entries.every((e) => e.state === 'won')).toBe(true);
   });
 });

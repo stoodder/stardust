@@ -108,7 +108,9 @@ export function countTags(counts: TagCounts, tags: readonly WaveTag[]): void {
  * The "not firing" bookkeeping, once per tick after the towers fire (towers system): a shot at a
  * Skitterkin resets `stats.ticksSinceFiredAtSkitterkin`; otherwise it counts up while one is in
  * range of a tower (`skitterkinInRange`, called only then) and freezes while none is. Crossing
- * NOT_FIRING_TICKS emits NotFiringAtSkitterkin, once per run.
+ * NOT_FIRING_TICKS emits NotFiringAtSkitterkin with the wave, at most once a wave: a new wave
+ * re-arms it and restarts the count (T330), so a hold in an early wave never spends a line
+ * written for a later one (A1M5's W10).
  */
 export function trackNotFiring(
   state: SimState,
@@ -117,6 +119,11 @@ export function trackNotFiring(
   skitterkinInRange: (state: SimState, ctx: TickContext) => boolean,
 ): void {
   const stats = state.stats;
+  if (state.notFiringWave !== state.wave) {
+    state.notFiringWave = state.wave;
+    state.notFiringAnnounced = false;
+    stats.ticksSinceFiredAtSkitterkin = 0;
+  }
   if (firedAtSkitterkin) {
     stats.ticksSinceFiredAtSkitterkin = 0;
     return;
@@ -125,6 +132,6 @@ export function trackNotFiring(
   stats.ticksSinceFiredAtSkitterkin++;
   if (stats.ticksSinceFiredAtSkitterkin >= NOT_FIRING_TICKS && !state.notFiringAnnounced) {
     state.notFiringAnnounced = true;
-    emit(state, { type: 'NotFiringAtSkitterkin' });
+    emit(state, { type: 'NotFiringAtSkitterkin', wave: state.wave });
   }
 }

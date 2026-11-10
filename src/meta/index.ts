@@ -57,18 +57,27 @@ export {
   saveModifiers,
 } from './modifiers.ts';
 export { abilityPool, protocolPool, protocolSlotCount, towerPool } from './pools.ts';
-export type { MetaSystem, ShiftEntry, ShiftState } from './progress.ts';
+export type {
+  MetaSystem,
+  ShiftEntry,
+  ShiftState,
+  StarMapEntry,
+  StarMapState,
+} from './progress.ts';
 export {
   META_SYSTEMS,
-  STAR_MAP_AFTER,
   SHIFT_BOARD_SIZE,
   SYSTEM_UNLOCKS,
+  frontierOf,
   isMapWon,
   isSystemUnlocked,
   mapMilestone,
   mapName,
+  mapShown,
   nextShift,
+  onStarMap,
   shiftBoard,
+  starMapEntries,
   unlockHint,
 } from './progress.ts';
 export type {

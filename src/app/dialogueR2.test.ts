@@ -146,7 +146,18 @@ describe('the battle radio, round 2 (D098)', () => {
     drain();
     // Bricks's own Quiet Wave line still plays.
     at(540);
-    emit({ type: 'NotFiringAtSkitterkin' });
+    emit({ type: 'NotFiringAtSkitterkin', wave: 10 });
+    expect(shown()).toBe(bark('bricks_not_firing_a1_05'));
+  });
+
+  it("T330: Bricks's W10 line waits for W10: a hold in an earlier wave doesn't spend it", () => {
+    bind('a1_m05');
+    at(200);
+    emit({ type: 'NotFiringAtSkitterkin', wave: 4 });
+    expect(shown()).not.toBe(bark('bricks_not_firing_a1_05'));
+    drain();
+    at(540);
+    emit({ type: 'NotFiringAtSkitterkin', wave: 10 });
     expect(shown()).toBe(bark('bricks_not_firing_a1_05'));
   });
 

@@ -6,7 +6,8 @@
 // Tiers tally as orange weld beads down the right face, and change the silhouette like Everglow
 // tiers do (tech-spec § Format rules), in Vrell scrap: T2 bolts a mismatched pod to each side
 // corner (a patina capacitor can on the left, a rusty crate on the right), and T3 adds a lightning
-// rod with a welding-hot tip on the crate.
+// rod with a welding-hot tip on the crate. A tier-4 spec (`vrellSpecBase`) keeps the three welds,
+// lights a welding-hot status lamp under the tag, and swaps the pods and rod for the spec's own kit.
 import { grid, isoBox, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
 import { BASE_ANCHOR, BASE_H, BASE_W } from './base.ts';
 
@@ -80,6 +81,20 @@ export function vrellBase(tier: 1 | 2 | 3): string[] {
     plot(g, mx - 1, cy - 20, '*');
     plot(g, mx, cy - 20, '+');
   }
+  return rows(g);
+}
+
+/**
+ * A tier-4 spec base: the patched plinth with three weld tallies, a welding-hot status lamp beside
+ * the price tag, and the spec's own kit (drawn by `kit` around the plinth's anchor) instead of T2's
+ * pods and T3's rod, so the base says which spec the tower took (tech-spec § Format rules).
+ */
+export function vrellSpecBase(kit: (g: CharGrid, cx: number, cy: number) => void): string[] {
+  const g = plinth(3);
+  const { x: cx, y: cy } = BASE_ANCHOR;
+  kit(g, cx, cy);
+  plot(g, cx + 2, cy + 3, '*');
+  plot(g, cx + 3, cy + 3, '+');
   return rows(g);
 }
 

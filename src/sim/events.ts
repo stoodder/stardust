@@ -220,10 +220,10 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly on: boolean;
     }
   /**
-   * Story-facing: `stats.ticksSinceFiredAtSkitterkin` reached NOT_FIRING_TICKS (sim/fireControl.ts;
-   * the "not firing" bark, core-loop.md § 6.3). Once per run.
+   * Story-facing: `stats.ticksSinceFiredAtSkitterkin` reached NOT_FIRING_TICKS in wave `wave`
+   * (sim/fireControl.ts; the "not firing" bark, core-loop.md § 6.3). At most once a wave (T330).
    */
-  | { readonly type: 'NotFiringAtSkitterkin' }
+  | { readonly type: 'NotFiringAtSkitterkin'; readonly wave: number }
   | {
       /**
        * A synergy link became active between towers `a` and `b` (design/towers.md § 6; T202a).

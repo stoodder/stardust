@@ -138,11 +138,9 @@ import {
   iconTowerLookout,
   towerCrane,
   towerCraneHead,
-  towerHarpoon,
-  towerHarpoonHead,
-  towerLookout,
-  towerLookoutHead,
 } from './placeholders/index.ts';
+import { towerHarpoon, towerHarpoonHead } from './towers/harpoon.ts';
+import { towerLookout, towerLookoutHead } from './towers/lookout.ts';
 
 export const SPRITES = [
   tileGrass,

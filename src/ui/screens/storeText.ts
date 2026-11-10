@@ -15,7 +15,7 @@ import {
   type ProtocolDef,
   type UpgradeDef,
 } from '../../content/upgrades/index.ts';
-import type { Offer, StorePane } from '../../meta/index.ts';
+import type { Offer, SaveData, StorePane } from '../../meta/index.ts';
 import { mapMilestone } from '../../meta/index.ts';
 import { assertNever } from '../../shared/types.ts';
 import { formatCount } from './format.ts';
@@ -190,11 +190,14 @@ export function priceText(o: Offer): string {
   return `${formatCount(o.price)} ${o.currency === 'intel' ? 'Intel' : 'Stardust'}`;
 }
 
-/** "Arrives after The Audit": an item not stocked yet. */
-export function arrivalText(o: Offer): string {
+/**
+ * "Arrives after The Audit": an item not stocked yet. A map the campaign screen doesn't show the
+ * save yet goes by its position ("Arrives after Shift 7"; meta mapMilestone, D102).
+ */
+export function arrivalText(o: Offer, save: SaveData | null = null): string {
   return o.availableAfter === null
     ? 'Not stocked yet'
-    : `Arrives after ${mapMilestone(o.availableAfter)}`;
+    : `Arrives after ${mapMilestone(o.availableAfter, save)}`;
 }
 
 /** Who presents each pane, and how. */

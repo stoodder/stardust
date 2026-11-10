@@ -48,11 +48,12 @@ import {
   type BarkEvent,
   type BarkState,
 } from '../story/barks.ts';
-import { evaluateCondition, type StoryContext } from '../story/conditions.ts';
+import { evaluateCondition, type RunContext, type StoryContext } from '../story/conditions.ts';
 import {
   advance,
   NO_EFFECTS,
   pressButton,
+  readThrough,
   scenePlays,
   sceneSlot,
   start,
@@ -81,6 +82,12 @@ import type { Speed } from './testHookTypes.ts';
 
 /** Credits banked as a build phase opens (W2 on) that fire `bank_nudge` (D059). */
 export const BANK_NUDGE_CREDITS = 250;
+/**
+ * Build phases in a row with no purchase (no build, upgrade, or specialization) after which
+ * `bank_nudge` fires with any tower affordable, whatever the bank (T229, D096: A1M2's never-spend
+ * player meets W7's countdown with ~140 credits, a Thumper's worth, and no nudge until W8).
+ */
+export const BANK_NUDGE_IDLE_PHASES = 2;
 /** A queued comms scene waiting longer than this (ms of real time) is dropped (D048's staleness). */
 export const COMMS_STALE_MS = 15_000;
 /** A line answered by the next (another speaker) holds this long once typed (D028's beat). */
@@ -247,14 +254,31 @@ function mapOfScene(sceneId: string): CampaignMapId | null {
 
 const NO_FLAGS: FlagSet = {};
 
+/**
+ * The run whose end is on screen (T329): set by the run's end (app/runResult.ts `endRunStory`), so
+ * the scenes around Results (the results flow's full-screen scenes) read `outcome` and `thisRun`
+ * as the debrief does. A new battle clears it.
+ */
+let storyRun: RunContext | null = null;
+
+/** Sets (or clears) the run whose end is on screen, for the scenes around Results. */
+export function setStoryRun(run: RunContext | null): void {
+  storyRun = run;
+}
+
 /** The story context for `map`: the save's (meta/story.ts), plus the run's kills so far. */
 function storyContext(map: CampaignMapId | null): StoryContext {
   const save = activeSave();
   const kills = session?.runKills() ?? 0;
   if (save === null) {
-    return { flags: NO_FLAGS, map, pestsProcessed: kills, seen: [], run: null };
+    return { flags: NO_FLAGS, map, pestsProcessed: kills, seen: [], run: storyRun };
   }
-  return { ...baseStoryContext(save), map, pestsProcessed: save.stats.pestsProcessed + kills };
+  return {
+    ...baseStoryContext(save),
+    map,
+    pestsProcessed: save.stats.pestsProcessed + kills,
+    run: storyRun,
+  };
 }
 
 function textContext(): TextContext {
@@ -600,6 +624,9 @@ interface CommsPlay {
   cursor: DialogueCursor;
   prev: LineView | null;
   button: ReplyButton | null;
+  /** The line on screen: when it showed (performance.now), and what moves past it. */
+  shownAt?: number;
+  moveOn?: () => void;
 }
 
 const commsQueue: { scene: Scene; at: number }[] = [];
@@ -609,6 +636,11 @@ let commsTimer: ReturnType<typeof setTimeout> | null = null;
 let commsHeld = false;
 /** Runs when the panel next goes idle (the bank nudge's "after the countdown's radio"). */
 let onIdle: (() => void) | null = null;
+/**
+ * The map has ended and the results hold waits for the panel (`playMapEndLines`): every line
+ * from now on holds `endLineMs` (its typing and a beat), not its reading time.
+ */
+let commsEnding = false;
 
 function clearCommsTimer(): void {
   if (commsTimer !== null) clearTimeout(commsTimer);
@@ -685,22 +717,30 @@ function showCommsLine(): void {
   };
   const next = advance(c.scene, c.cursor, ctx);
   const reply = next.step.kind === 'line' && next.step.node.speaker !== node.speaker;
+  const moveOn = (): void => {
+    commsTimer = null;
+    if (commsNow !== c || c.moveOn !== moveOn) return;
+    c.prev = view;
+    c.cursor = next;
+    showCommsLine();
+  };
+  c.shownAt = performance.now();
+  c.moveOn = moveOn;
   clearCommsTimer();
   commsTimer = setTimeout(
-    () => {
-      commsTimer = null;
-      if (commsNow !== c) return;
-      c.prev = view;
-      c.cursor = next;
-      showCommsLine();
-    },
-    commsHoldMs(view.text, node.durationSec, reply),
+    moveOn,
+    commsEnding ? endHoldMs(node) : commsHoldMs(view.text, node.durationSec, reply),
   );
 }
 
+/** The scenes `barkScene` made: a bark on the panel, as opposed to a scene's line. */
+const barkScenes = new WeakSet<Scene>();
+
 /** A bark on the panel: its own one-line scene, never under another line (D061). */
 function barkScene(b: Bark): Scene {
-  return { id: b.id, nodes: [{ ...b, kind: 'line' as const }] };
+  const scene: Scene = { id: b.id, nodes: [{ ...b, kind: 'line' as const }] };
+  barkScenes.add(scene);
+  return scene;
 }
 
 function showBark(b: Bark): void {
@@ -748,13 +788,60 @@ export function endLineMs(text: string): number {
   return typeMs(text) + END_LINE_BEAT_MS;
 }
 
+/** How long a line holds on the panel once the map has ended: its `durationSec`, else `endLineMs`. */
+function endHoldMs(node: Pick<LineNode, 'text' | 'durationSec'>): number {
+  return node.durationSec !== undefined ? node.durationSec * 1000 : endLineMs(node.text);
+}
+
 /**
- * Plays `lines` on the comms panel now, over the frozen battle as the map ends (D098: A1M5's C1
- * reaction lands before the party), cutting whatever the panel shows. Each holds `endLineMs`.
- * Returns how long they take in ms (0 when dialogue is off, outside a battle, or with no lines).
+ * As the map ends, what the comms panel was given before it ended finishes (T413: A2M2's
+ * retreat line, cued moments before the win): the line on screen holds just past its typing
+ * (`endLineMs` from when it showed), and every line after it in its scene and the queue holds
+ * `endLineMs`. A bark on screen with nothing behind it is left alone (it doesn't hold Results).
+ * Returns how long that takes in ms (0: nothing to wait for).
  */
-export function playMapEndLines(lines: readonly LineNode[]): number {
-  if (!enabled || session === null || commsHeld || lines.length === 0) return 0;
+function finishComms(): number {
+  const now = performance.now();
+  const queued = commsQueue.filter((q) => now - q.at <= COMMS_STALE_MS);
+  const c = commsNow;
+  const lineOnScreen = c !== null && c.cursor.step.kind === 'line' ? c.cursor.step.node : null;
+  if (queued.length === 0 && (c === null || lineOnScreen === null || barkScenes.has(c.scene))) {
+    return 0;
+  }
+  commsEnding = true;
+  const ctx = storyContext(session?.map ?? null);
+  let ms = 0;
+  if (c !== null && lineOnScreen !== null && c.moveOn !== undefined) {
+    // The line on screen: what's left of its typing and beat, then the rest of its scene.
+    const left = Math.max(0, (c.shownAt ?? now) + endHoldMs(lineOnScreen) - now);
+    clearCommsTimer();
+    commsTimer = setTimeout(c.moveOn, left);
+    ms += left;
+    let cursor = advance(c.scene, c.cursor, ctx);
+    while (cursor.step.kind === 'line') {
+      ms += endHoldMs(cursor.step.node);
+      cursor = advance(c.scene, cursor, ctx);
+    }
+  }
+  for (const q of queued) {
+    for (const l of readThrough(q.scene, ctx).lines) ms += endHoldMs(l);
+  }
+  return ms;
+}
+
+/**
+ * The comms panel as the map ends, over the frozen battle; returns how long the results hold
+ * should wait for it, in ms (0 when dialogue is off or outside a battle):
+ * - with `lines` (a won map's `debriefOnHold`, D098: A1M5's C1 reaction lands before the party),
+ *   plays them now, cutting whatever the panel shows, each held `endLineMs`;
+ * - else, on a win, lets what the panel was given before the map ended finish (`finishComms`).
+ */
+export function playMapEndLines(
+  lines: readonly LineNode[],
+  outcome: 'won' | 'lost' = 'won',
+): number {
+  if (!enabled || session === null || commsHeld) return 0;
+  if (lines.length === 0) return outcome === 'won' ? finishComms() : 0;
   const nodes = lines.map((l) => ({ ...l, durationSec: endLineMs(l.text) / 1000 }));
   // Not a scene id (SCENE_ID), so nothing is saved as seen: the card's debrief keeps the lines.
   const scene: Scene = { id: 'map_end', nodes };
@@ -885,9 +972,11 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   /** A boss wave's `wave_start` and `wave_cleared` say so (`boss: true`; D098). */
   const bossOf = (w: number): { boss?: true } => (boss[w - 1] === true ? { boss: true } : {});
   session = s;
+  storyRun = null;
   dialogue.comms.value = null;
   commsQueue.length = 0;
   commsNow = null;
+  commsEnding = false;
   onIdle = null;
 
   const save = activeSave();
@@ -955,10 +1044,25 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   });
   if (brief !== null) playScene(brief, { mode: 'briefing', instant: !enabled });
 
+  /** The loadout's cheapest tower to build (a tier 1), for the idle nudge (T229). */
+  const cheapest = Math.min(
+    ...sim.config.loadout.map((t) => sim.config.content.towers[t]?.tiers[0].cost ?? Infinity),
+  );
+  /** Build phases opened since the last purchase. */
+  let idlePhases = 0;
+  const purchased = (): void => {
+    idlePhases = 0;
+  };
+  /**
+   * Whether the bank calls for the nudge (D059, T229): BANK_NUDGE_CREDITS banked, or, after
+   * BANK_NUDGE_IDLE_PHASES build phases with no purchase, enough for the cheapest tower.
+   */
+  const bankWants = (idle: boolean): boolean =>
+    sim.state.credits >= BANK_NUDGE_CREDITS || (idle && sim.state.credits >= cheapest);
   /** The bank nudge waits for the countdown's radio to finish, within the same build phase. */
-  const nudge = (forWave: number): void => {
+  const nudge = (forWave: number, idle: boolean): void => {
     const fire = (): void => {
-      if (wave >= forWave || sim.state.credits < BANK_NUDGE_CREDITS) return;
+      if (wave >= forWave || !bankWants(idle)) return;
       offerBarks([{ on: 'bank_nudge' }]);
     };
     if (commsNow === null && commsQueue.length === 0 && !commsHeld) fire();
@@ -974,7 +1078,9 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       if (plays && scenePlays(scene, storyContext(map))) playScene(scene);
       // Never before the Quiet Wave (D098): its countdown is the held breath.
       const quietNext = quiet[e.wave - 1] === true;
-      if (e.wave >= 2 && !quietNext && sim.state.credits >= BANK_NUDGE_CREDITS) nudge(e.wave);
+      const idle = idlePhases >= BANK_NUDGE_IDLE_PHASES;
+      idlePhases++;
+      if (e.wave >= 2 && !quietNext && bankWants(idle)) nudge(e.wave, idle);
     }),
     bus.on('WaveStarted', (e) => {
       wave = Math.max(wave, e.wave);
@@ -1033,7 +1139,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
       }
       offerBarks(triggers);
     }),
+    bus.on('TowerUpgraded', purchased),
+    bus.on('TowerSpecialized', purchased),
     bus.on('TowerBuilt', (e) => {
+      purchased();
       towerOf.set(e.uid, e.tower);
       stepTags(e);
       offerBarks([
@@ -1050,7 +1159,8 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     bus.on('HoldFireChanged', (e) => {
       if (e.on) offerBarks([{ on: 'hold_fire_used' }]);
     }),
-    bus.on('NotFiringAtSkitterkin', () => offerBarks([{ on: 'not_firing' }])),
+    // Per wave (T330): a line written for one wave (A1M5's W10) waits for that wave.
+    bus.on('NotFiringAtSkitterkin', (e) => offerBarks([{ on: 'not_firing', wave: e.wave }])),
     bus.on('NeutralHit', () => offerBarks([{ on: 'neutral_hit' }])),
     bus.on('BossPhase', (e) => offerBarks([{ on: 'boss_phase', phase: e.phase }])),
     // A map script's cue: the scene with its id (`<map>_cue_*`, `<map>_scene_*`), or a bark.
@@ -1095,6 +1205,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     clearCommsTimer();
     commsQueue.length = 0;
     commsNow = null;
+    commsEnding = false;
     onIdle = null;
     dialogue.comms.value = null;
     // A battle's scenes end with it (none can be open as it stops, but a test may leave one).

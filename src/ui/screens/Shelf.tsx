@@ -8,7 +8,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { playSfx } from '../../app/audio.ts';
-import { purchase, storeShelf } from '../../app/save.ts';
+import { activeSave, purchase, storeShelf } from '../../app/save.ts';
 import type { Offer, StorePane } from '../../meta/index.ts';
 import {
   PRESENTERS,
@@ -79,7 +79,7 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
     side = (
       <span class="sd-offer-wait">
         <span class="sd-lock" aria-hidden="true" />
-        {arrivalText(offer)}
+        {arrivalText(offer, activeSave())}
       </span>
     );
   } else if (r === 'not_owned' || r === 'no_specs') {

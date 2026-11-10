@@ -39,6 +39,7 @@ import { FIRST_PAYDAY_SEEN_ID } from '../meta/index.ts';
 import { holdNewGame, intakeMode } from './profile.ts';
 import {
   debriefStoryOf,
+  endRunStory,
   holdLines,
   metaRunEndOf,
   offeredMedals,
@@ -250,7 +251,8 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         endedAt = { ms: performance.now(), tick: host.sim.state.tick };
         setSpeed(0);
         cancel();
-        // A won map's debrief may land first, on the radio (D098: Bricks's C1 reaction on A1M5).
+        // A won map's debrief may land first, on the radio (D098: Bricks's C1 reaction on A1M5);
+        // else a win lets the lines cued before it finish (T413: A2M2's retreat line).
         const { sim } = host;
         const lines = holdLines(
           { mapId: sim.map.id, stats: sim.state.stats, ...debriefStoryOf(activeSave()) },
@@ -263,7 +265,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
               pending = null;
               if (battle === b) void router.endRun(outcome);
             },
-            resultsHoldMs(playMapEndLines(lines)),
+            resultsHoldMs(playMapEndLines(lines, outcome)),
           ),
         };
       };
@@ -452,6 +454,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         outcome,
         input.summary,
       );
+      // Then a won debrief's effects reach the save (A2M2's Thorn), and the scenes around Results
+      // read this run (T413).
+      endRunStory(input.input, outcome);
       return router.presentResults(result);
     },
     abandon() {

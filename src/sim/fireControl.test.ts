@@ -258,7 +258,7 @@ describe('"not firing" (core-loop.md § 6.3)', () => {
     expect(NOT_FIRING_TICKS).toBe(600);
   });
 
-  it('counts while a Skitterkin is in range and no tower fires at one; fires the event once per run', () => {
+  it('counts while a Skitterkin is in range and no tower fires at one; fires the event once a wave', () => {
     const { state, ctx } = setup();
     const t = placeTower(state, GUN, 1, 1);
     t.holdFire = true;
@@ -278,6 +278,26 @@ describe('"not firing" (core-loop.md § 6.3)', () => {
     expect(state.stats.ticksSinceFiredAtSkitterkin).toBe(NOT_FIRING_TICKS + 10);
     expect(notFiring(evs)).toEqual([]);
     expect(state.notFiringAnnounced).toBe(true);
+  });
+
+  it('re-arms per wave: a new wave restarts the count and fires the event again, with its wave (T330)', () => {
+    const { state, ctx } = setup();
+    placeTower(state, GUN, 1, 1).holdFire = true;
+    spawn(state, still);
+    state.wave = 4;
+    let evs = run(state, ctx, NOT_FIRING_TICKS + 30);
+    expect(evs.filter((e) => e.type === 'NotFiringAtSkitterkin')).toEqual([
+      expect.objectContaining({ type: 'NotFiringAtSkitterkin', wave: 4 }),
+    ]);
+    // W10 starts with the hold still on: the count starts over, and the event fires for W10.
+    state.wave = 10;
+    evs = run(state, ctx, NOT_FIRING_TICKS - 1);
+    expect(notFiring(evs)).toEqual([]);
+    expect(state.stats.ticksSinceFiredAtSkitterkin).toBe(NOT_FIRING_TICKS - 1);
+    evs = run(state, ctx, 30);
+    expect(evs.filter((e) => e.type === 'NotFiringAtSkitterkin')).toEqual([
+      expect.objectContaining({ type: 'NotFiringAtSkitterkin', wave: 10 }),
+    ]);
   });
 
   it('only Skitterkin count, and only in range of a tower', () => {

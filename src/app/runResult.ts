@@ -13,9 +13,14 @@ import {
   type SaveData,
 } from '../meta/index.ts';
 import { TICK_HZ } from '../shared/time.ts';
-import { evaluateCondition, runContextOf, type StoryContext } from '../story/conditions.ts';
+import {
+  evaluateCondition,
+  runContextOf,
+  type RunContext,
+  type StoryContext,
+} from '../story/conditions.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
-import { linesUntilChoice } from '../story/runner.ts';
+import { linesUntilChoice, readThrough } from '../story/runner.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
@@ -26,7 +31,9 @@ import type {
   RunResult,
   RunRewards,
 } from '../ui/screens/state.ts';
+import { setStoryRun, withSceneEffects } from './dialogue.ts';
 import { towerName } from './hudText.ts';
+import { activeSave, updateActiveSave } from './save.ts';
 import type { RunOutcome } from './testHookTypes.ts';
 
 /**
@@ -253,11 +260,12 @@ function runStoryContext(
   input: Pick<RunEndInput, 'stats' | 'story'>,
   outcome: RunOutcome,
 ): StoryContext {
-  const run =
-    input.stats === undefined
-      ? { outcome, ruleFlags: {} }
-      : runContextOf(map, outcome, input.stats);
-  return { ...(input.story ?? NO_STORY).story, map, run };
+  return { ...(input.story ?? NO_STORY).story, map, run: runOf(map, input.stats, outcome) };
+}
+
+/** The run that ended (`outcome`, and `thisRun` over its stats when it has them). */
+function runOf(map: CampaignMapId, stats: FlagRuleStats | undefined, outcome: RunOutcome): RunContext {
+  return stats === undefined ? { outcome, ruleFlags: {} } : runContextOf(map, outcome, stats);
 }
 
 /**
@@ -356,4 +364,40 @@ export function runResultOf(
     // "Retry from wave N" (core-loop.md § 2.12): a loss offers the run's latest checkpoint.
     retryFromWave: outcome === 'lost' ? (input.checkpointWave ?? null) : null,
   };
+}
+
+/**
+ * The save after a run's debrief (T413): a **won** run applies what its `<map>_debrief` does as
+ * this run plays it (`readThrough`: its `set` nodes up to any choice; A2M2's Thorn callsign) and
+ * marks it seen, once a campaign: a debrief already in `story.seen` changes nothing, so a replay
+ * (or a later win after a checkpoint retry) never takes back a later callsign. A loss applies
+ * nothing. Reads the save as the run left it (meta's run end applied), like the card's lines.
+ */
+export function withDebriefEffects(
+  save: SaveData,
+  input: Pick<RunEndInput, 'mapId' | 'stats'>,
+  outcome: RunOutcome,
+): SaveData {
+  const map = input.mapId;
+  if (outcome !== 'won' || !isCampaignMapId(map)) return save;
+  const id = `${map}_debrief`;
+  const debrief = SCENES[id];
+  if (debrief === undefined || save.story.seen.includes(id)) return save;
+  const story = debriefStoryOf(save).story ?? NO_STORY;
+  const ctx: StoryContext = { ...story.story, map, run: runOf(map, input.stats, outcome) };
+  return withSceneEffects(save, id, readThrough(debrief, ctx).cursor.effects);
+}
+
+/**
+ * The story side of a run's end, once Results' lines are read (router `endRun`): the won
+ * debrief's effects go into the save in play (`withDebriefEffects`), and the scenes around
+ * Results read this run (`outcome`, `thisRun`; T329) until the next battle starts.
+ */
+export function endRunStory(input: Pick<RunEndInput, 'mapId' | 'stats'>, outcome: RunOutcome): void {
+  const map = input.mapId;
+  setStoryRun(isCampaignMapId(map) ? runOf(map, input.stats, outcome) : null);
+  const save = activeSave();
+  if (save === null) return;
+  const next = withDebriefEffects(save, input, outcome);
+  if (next !== save) updateActiveSave(() => next);
 }

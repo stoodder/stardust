@@ -4,6 +4,7 @@
 // step. The dev hook `?test=1&save=<id>` plays a dev save in an in-memory scratch slot that never
 // touches localStorage, with the dev save's `devUnlocks`.
 import { CAMPAIGN, CAMPAIGN_PLAN } from '../content/campaign.ts';
+import { MAPS } from '../content/maps/index.ts';
 import type { MapId } from '../content/types.ts';
 import { DEV_SAVES, type DevSaveId } from '../meta/__fixtures__/devSaves.ts';
 import {
@@ -37,11 +38,13 @@ import {
   newlyIssuedTowers,
   newTowerHint,
   nextShift,
+  onStarMap,
   runEnd,
   shelf,
   SHIFT_BOARD_SIZE,
   shiftBoard,
   showsLoadoutScreen,
+  starMapEntries,
   unlockHint,
   withHintsSeen,
   withIssuedTowers,
@@ -448,7 +451,10 @@ export function rawSlotText(slot: SlotId): string | null {
 // ── Views ────────────────────────────────────────────────────────────────────────────────────
 
 function summarize(save: SaveData): { progress: string; mapsWon: number } {
-  const next = shiftBoard(save).find((e) => e.state === 'open');
+  // The next map to play: the Shift board's, or the star map's frontier once it shows (D102).
+  const next = onStarMap(save)
+    ? starMapEntries(save).find((e) => e.state === 'open')
+    : shiftBoard(save).find((e) => e.state === 'open');
   const mapsWon = Object.values(save.campaign.maps).filter(
     (m) => m !== undefined && m.completed,
   ).length;
@@ -496,37 +502,37 @@ function profileView(save: SaveData): ProfileView | null {
 }
 
 function systemView(s: Session, id: MetaSystem): SystemView {
-  return { unlocked: isSystemUnlocked(s.save, id, s.devUnlocks), hint: unlockHint(id) };
+  return { unlocked: isSystemUnlocked(s.save, id, s.devUnlocks), hint: unlockHint(id, s.save) };
 }
 
 /**
- * The Shift board's dimmed, padlocked teaser (D097 R6): the plan's next map after the last
- * registered one, "Coming soon", so the board never ends in a dead end. None once the plan runs out.
+ * The Shift board's dimmed, padlocked sixth row (D097 R6, D102): the plan's next map after Act I,
+ * so the board never ends in a dead end. It never names its map (the star map names Rig Nine
+ * once A1M5 is won): "Shift 6 · Coming soon" while that map isn't built, "Shift 6 · Locked" once
+ * it is. None once the plan runs out.
  */
-export function teaserRow(size: number = SHIFT_BOARD_SIZE, named = false): ShiftView[] {
+export function teaserRow(
+  size: number = SHIFT_BOARD_SIZE,
+  registered: (id: string) => boolean = (id) => Object.hasOwn(MAPS, id),
+): ShiftView[] {
   const next = CAMPAIGN_PLAN[size];
   if (next === undefined) return [];
   return [
     {
       id: next.id,
-      // Named only once the board's last shift is won (the stinger says "Rig Nine" there); before
-      // that it goes by its position, like every map the player can't see yet (style-guide §2).
-      name: named ? next.name : '',
+      name: '',
       index: size + 1,
-      state: 'coming_soon',
+      state: registered(next.id) ? 'locked' : 'coming_soon',
       medals: 0,
       teaser: true,
     },
   ];
 }
 
-function teaserRowFor(save: SaveData): ShiftView[] {
-  const board = shiftBoard(save);
-  return teaserRow(SHIFT_BOARD_SIZE, board.length > 0 && board[board.length - 1]!.state === 'won');
-}
-
 function campaignView(s: Session): CampaignView {
   return {
+    // The star map replaces the Shift board, for good, once Act I is won (D102).
+    mode: onStarMap(s.save) ? 'starMap' : 'shiftBoard',
     slot: s.scratch ? null : s.slot,
     stardust: s.save.currencies.stardust,
     intel: s.save.currencies.intel,
@@ -542,7 +548,7 @@ function campaignView(s: Session): CampaignView {
         medals: e.medals.length,
         teaser: false,
       })),
-      ...teaserRowFor(s.save),
+      ...teaserRow(),
     ],
     systems: {
       base: systemView(s, 'base'),

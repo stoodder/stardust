@@ -258,8 +258,13 @@ export interface SimState<K extends IdSpace = IdSpace> {
   holdFireAll: boolean;
   /** The global spare-runners toggle: towers built while it's on start with the filter (T206a). */
   spareRunnersAll: boolean;
-  /** NotFiringAtSkitterkin has fired this run (it fires once; sim/fireControl.ts). */
+  /**
+   * NotFiringAtSkitterkin has fired in wave `notFiringWave` (it fires at most once a wave; a new
+   * wave re-arms it and restarts the count; sim/fireControl.ts, T330).
+   */
   notFiringAnnounced: boolean;
+  /** The wave the "not firing" count and NotFiringAtSkitterkin belong to (0 before W1). */
+  notFiringWave: number;
   /**
    * Something that changes links happened (a build, upgrade, specialization, or sell, or later a
    * jam): the links system recomputes them, and the towers' dynamic bonuses, then clears it.
@@ -381,6 +386,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     holdFireAll: false,
     spareRunnersAll: false,
     notFiringAnnounced: false,
+    notFiringWave: 0,
     linksDirty: false,
     linkPairs: [],
     leakAbsorbLeft: 0,

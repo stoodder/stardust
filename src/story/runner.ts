@@ -101,17 +101,29 @@ export function pressButton(button: ReplyButton): {
 }
 
 /**
+ * `scene` played in `ctx` with nobody advancing it by hand: the lines it shows from its start to
+ * its first choice or its end, and the cursor it rests on there (its `effects`: the flags and
+ * callsign its `set` nodes on the way gave; a won run's debrief applies them). Takes no choice.
+ */
+export function readThrough(
+  scene: Scene,
+  ctx: StoryContext,
+): { readonly lines: LineNode[]; readonly cursor: DialogueCursor } {
+  const lines: LineNode[] = [];
+  let cursor = start(scene, ctx);
+  while (cursor.step.kind === 'line') {
+    lines.push(cursor.step.node);
+    cursor = advance(scene, cursor, ctx);
+  }
+  return { lines, cursor };
+}
+
+/**
  * The lines `scene` plays in `ctx` with nobody advancing it by hand: from its start to its first
  * choice or its end (a debrief on the results card; the canon tests). Takes no choice.
  */
 export function linesUntilChoice(scene: Scene, ctx: StoryContext): LineNode[] {
-  const out: LineNode[] = [];
-  let cursor = start(scene, ctx);
-  while (cursor.step.kind === 'line') {
-    out.push(cursor.step.node);
-    cursor = advance(scene, cursor, ctx);
-  }
-  return out;
+  return readThrough(scene, ctx).lines;
 }
 
 /** A scene id's slot (`a1_m03_w04` → radio before wave 4), or null for a malformed id. */

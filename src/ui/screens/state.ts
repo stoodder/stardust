@@ -128,7 +128,7 @@ export interface ShiftView {
   readonly state: 'won' | 'open' | 'locked' | 'coming_soon';
   /** Medals earned, of the map's 3. */
   readonly medals: number;
-  /** The board's last row: the next map past the built ones, dimmed and padlocked (D097 R6). */
+  /** The board's last row: the map after Act I, unnamed, dimmed and padlocked (D097 R6, D102). */
   readonly teaser: boolean;
 }
 
@@ -152,6 +152,11 @@ export interface ProfileView {
 }
 
 export interface CampaignView {
+  /**
+   * Which campaign screen the save is on: the Shift board through Act I, the star map (the Sector
+   * map) once A1M5 is won (D102; meta/progress.ts `onStarMap`).
+   */
+  readonly mode: 'shiftBoard' | 'starMap';
   /** 1–3, or null for the dev hook's in-memory scratch slot (`?test=1&save=`). */
   readonly slot: 1 | 2 | 3 | null;
   readonly stardust: number;

@@ -1,11 +1,14 @@
-// Campaign progress: which maps the Shift board offers, and when each between-map system unlocks
+// Campaign progress: which maps the campaign screen offers (the Shift board through Act I, then
+// the star map's won maps and frontier), and when each between-map system unlocks
 // (docs/tech/meta-runtime.md § Progress and gating). The schedule is story/campaign.md's (§ 2 and
 // § 4.6); design/progression.md says what each system is. The map order and names are
 // content/campaign.ts's CAMPAIGN_PLAN, which includes maps whose content isn't built yet: the
-// Shift board runs to the last registered one (an unregistered gap shows "coming soon"), and the
-// gates name a later map by its position. Pure functions over a SaveData.
+// Shift board runs to the last registered Act I map (an unregistered gap shows "coming soon"),
+// and the gating copy names a map only once the campaign screen shows it. Pure functions over a
+// SaveData.
 import { CAMPAIGN_PLAN, type CampaignMapId } from '../content/campaign.ts';
 import { MAPS } from '../content/maps/index.ts';
+import { STAR_MAP_AFTER } from '../content/starMap.ts';
 import type { MapId } from '../content/types.ts';
 import type { SaveData } from './saveData.ts';
 
@@ -13,11 +16,8 @@ function isRegistered(id: string): id is MapId {
   return Object.hasOwn(MAPS, id);
 }
 
-/**
- * The Shift board's last map: it is Act I's view, and the star map takes over once it is won
- * (D102). T301b moves this to `content/starMap.ts` (architecture.md § UI).
- */
-export const STAR_MAP_AFTER: CampaignMapId = 'a1_m05';
+/** STAR_MAP_AFTER's campaign index: the Shift board's last row (Act I's last map). */
+const ACT_ONE_END = CAMPAIGN_PLAN.findIndex((m) => m.id === STAR_MAP_AFTER);
 
 /**
  * How many campaign maps the Shift board lists: the plan up to its last registered map, capped at
@@ -25,7 +25,7 @@ export const STAR_MAP_AFTER: CampaignMapId = 'a1_m05';
  */
 export const SHIFT_BOARD_SIZE: number = Math.min(
   CAMPAIGN_PLAN.findLastIndex((m) => isRegistered(m.id)) + 1,
-  CAMPAIGN_PLAN.findIndex((m) => m.id === STAR_MAP_AFTER) + 1,
+  ACT_ONE_END + 1,
 );
 
 /** Systems the campaign opens between maps. */
@@ -85,22 +85,44 @@ export function isSystemUnlocked(
 }
 
 /**
- * A planned map as the gating copy names it: its name while the Shift board lists it ("Orientation
- * Day"), else its position, so the copy never names a map the player can't see yet ("Shift 10
- * (coming soon)"). An id off the plan is itself.
+ * The star map's frontier: the first plan map not won (null once the finale is won). It shows on
+ * the campaign screen whether or not its content is built.
  */
-export function mapMilestone(id: string, size: number = SHIFT_BOARD_SIZE): string {
+export function frontierOf(save: SaveData): CampaignMapId | null {
+  return CAMPAIGN_PLAN.find((m) => !isMapWon(save, m.id))?.id ?? null;
+}
+
+/**
+ * Whether the campaign screen shows (and so the copy may name) a planned map: Act I's always (the
+ * Shift board lists them all), a later one once it is won or is the frontier (D102). Without a
+ * save, Act I's only.
+ */
+export function mapShown(id: string, save: SaveData | null = null): boolean {
+  const index = CAMPAIGN_PLAN.findIndex((m) => m.id === id);
+  if (index < 0) return false;
+  if (index <= ACT_ONE_END) return true;
+  return save !== null && (isMapWon(save, id) || frontierOf(save) === id);
+}
+
+/**
+ * A planned map as the gating copy names it: its name once the campaign screen shows it
+ * ("Orientation Day", mapShown), else its position, "Shift 7", or "Shift 10 (coming soon)" while
+ * its content isn't built, so the copy never names a map the player can't see yet (style-guide
+ * § 2). An id off the plan is itself.
+ */
+export function mapMilestone(id: string, save: SaveData | null = null): string {
   const index = CAMPAIGN_PLAN.findIndex((m) => m.id === id);
   if (index < 0) return id;
-  return index < size ? mapName(id) : `Shift ${index + 1} (coming soon)`;
+  if (mapShown(id, save)) return mapName(id);
+  return isRegistered(id) ? `Shift ${index + 1}` : `Shift ${index + 1} (coming soon)`;
 }
 
 /**
  * What opens a locked system, in words for its locked pane: "Opens after Special Delivery", or
- * "Opens after Shift 10 (coming soon)" for a map past the Shift board (mapMilestone).
+ * "Opens after Shift 10 (coming soon)" for a map the campaign screen doesn't show yet.
  */
-export function unlockHint(system: MetaSystem, size: number = SHIFT_BOARD_SIZE): string {
-  return `Opens after ${mapMilestone(SYSTEM_UNLOCKS[system], size)}`;
+export function unlockHint(system: MetaSystem, save: SaveData | null = null): string {
+  return `Opens after ${mapMilestone(SYSTEM_UNLOCKS[system], save)}`;
 }
 
 /** A Shift board row's state. */
@@ -158,4 +180,49 @@ export function shiftBoard(
 /** The board's next map to play: the first open one, else the last won one, else null. */
 export function nextShift(board: readonly ShiftEntry[]): ShiftEntry | null {
   return board.find((e) => e.state === 'open') ?? board.findLast((e) => e.state === 'won') ?? null;
+}
+
+/** A star map node's state: won (Replay), the frontier built (Start), or a teaser (Coming soon). */
+export type StarMapState = 'won' | 'open' | 'coming_soon';
+
+export interface StarMapEntry {
+  readonly id: CampaignMapId;
+  readonly name: string;
+  /** 1-based campaign position (its shift number). */
+  readonly index: number;
+  readonly state: StarMapState;
+  /** Medal ids earned on the map, in the order earned. */
+  readonly medals: readonly string[];
+}
+
+/**
+ * The star map's nodes (core-loop.md § 1.1): every won map, then the frontier (the first plan map
+ * not won: `open` when registered, else a `coming_soon` teaser), in plan order. Nothing after the
+ * frontier: later maps aren't drawn, named, or in the page. After the finale, every won map.
+ */
+export function starMapEntries(
+  save: SaveData,
+  registered: (id: string) => boolean = isRegistered,
+): StarMapEntry[] {
+  const maps: Readonly<Record<string, { readonly medals: readonly string[] } | undefined>> =
+    save.campaign.maps;
+  const frontier = frontierOf(save);
+  const out: StarMapEntry[] = [];
+  CAMPAIGN_PLAN.forEach((m, i) => {
+    const won = isMapWon(save, m.id);
+    if (!won && m.id !== frontier) return;
+    out.push({
+      id: m.id,
+      name: m.name,
+      index: i + 1,
+      state: won ? 'won' : registered(m.id) ? 'open' : 'coming_soon',
+      medals: Object.hasOwn(maps, m.id) ? [...(maps[m.id]?.medals ?? [])] : [],
+    });
+  });
+  return out;
+}
+
+/** Whether the campaign screen is the star map for this save: once STAR_MAP_AFTER is won (D102). */
+export function onStarMap(save: SaveData): boolean {
+  return isMapWon(save, STAR_MAP_AFTER);
 }

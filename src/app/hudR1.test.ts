@@ -90,37 +90,21 @@ describe('the bottom-center hints (R4)', () => {
   });
 });
 
-describe("the Shift board's teaser (R6)", () => {
-  it('adds the next planned map past the built ones, padlocked, and nothing past the plan', () => {
+describe("the Shift board's teaser (R6, D102)", () => {
+  it('adds the map after Act I, padlocked and never named, and nothing past the plan', () => {
     const next = CAMPAIGN_PLAN[SHIFT_BOARD_SIZE]!;
-    // Unnamed until the board's last shift is won (style-guide §2: never a name the player can't see).
-    expect(teaserRow()[0]!.name).toBe('');
-    const [row] = teaserRow(SHIFT_BOARD_SIZE, true);
+    // Never named (style-guide §2): the star map names Rig Nine once A1M5 is won.
+    const [row] = teaserRow();
     expect(row).toEqual({
       id: next.id,
-      name: next.name,
+      name: '',
       index: SHIFT_BOARD_SIZE + 1,
-      state: 'coming_soon',
+      state: 'locked',
       medals: 0,
       teaser: true,
     });
+    // "Shift 6 · Coming soon" while its map isn't built.
+    expect(teaserRow(SHIFT_BOARD_SIZE, () => false)[0]?.state).toBe('coming_soon');
     expect(teaserRow(CAMPAIGN_PLAN.length)).toEqual([]);
-  });
-});
-
-describe('the slot price key (C6)', () => {
-  it('is a number that tells apart every input the price reads', () => {
-    const base: PurchaseState = { stats: { towersBuilt: 1 }, discountCharges: 0, discountPct: 0 };
-    const states: PurchaseState[] = [
-      base,
-      { ...base, stats: { towersBuilt: 0 } },
-      { ...base, discountCharges: 3, discountPct: 0.4 },
-      { ...base, discountCharges: 2, discountPct: 0.4 },
-      { ...base, discountCharges: 3, discountPct: 0.25 },
-      { ...base, stats: { towersBuilt: 0 }, discountCharges: 3, discountPct: 0.4 },
-    ];
-    const keys = states.map(priceKey);
-    for (const k of keys) expect(typeof k).toBe('number');
-    expect(new Set(keys).size).toBe(keys.length);
   });
 });

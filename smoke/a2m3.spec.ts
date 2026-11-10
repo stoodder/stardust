@@ -98,12 +98,27 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   expect(await until(page, 'haulers')).toBe(true);
   await play(page, 300);
   await shot(page, 'a2m3', 3, 'sacks');
+  const hauler = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    const st = sd.state()!;
+    for (let i = 0; i < st.enemies.used; i++) {
+      const e = st.enemies.items[i]!;
+      if (e.alive && e.def?.id === 'hauler') return sd.tileToClient(e.x - 0.5, e.y - 0.5);
+    }
+    return null;
+  });
+  expect(hauler).not.toBeNull();
+  await page.screenshot({
+    path: 'test-results/screens/a2m3/03b-sack-zoom.png',
+    clip: { x: hauler!.x - 60, y: hauler!.y - 70, width: 120, height: 100 },
+  });
 
   // W5 starts: the rock lights up with Pebble on it. The player's own click, before par's.
   expect(await until(page, 'rock')).toBe(true);
   const at = await page.evaluate(([c, r]) => globalThis.__sd!.tileToClient(c, r), ROCK);
   expect(at).not.toBeNull();
   await page.mouse.move(at!.x, at!.y);
+  await page.waitForTimeout(1_500); // the last purchases' floaters fade (real time; the sim waits)
   await nextFrames(page);
   await page.screenshot({
     path: 'test-results/screens/a2m3/04-rock-zoom.png',
@@ -111,7 +126,8 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
   });
   await shot(page, 'a2m3', 5, 'rock');
   await page.mouse.click(at!.x, at!.y);
-  await page.evaluate(() => globalThis.__sd!.fastForward(0));
+  // The click goes in on the next tick, and the script cues the rescue the tick after.
+  await page.evaluate(() => globalThis.__sd!.fastForward(2));
   const clicked = await page.evaluate(() => {
     const s = globalThis.__sd!.state()!;
     return {
@@ -119,12 +135,15 @@ test('A2M3: the sacks, the rock, the click, Pebble named, the dusk, and the pens
       clicks: s.commandLog.filter((l) => l.cmd.type === 'interact').length,
     };
   });
-  expect(clicked).toEqual({ interacted: ['peeker'], clicks: 1 });
+  // Par's own click lands on the same tick (autoplay keeps playing); the marker is reached once.
+  expect(clicked.interacted).toEqual(['peeker']);
+  expect(clicked.clicks).toBeGreaterThanOrEqual(1);
 
   // The rescue cue: her squeak under a plate that doesn't know her name yet, then Bricks.
   const comms = page.getByTestId('comms');
-  await expect(comms).toContainText('(squeak)', { timeout: 25_000 });
+  await expect(comms).toContainText('(squeak)', { timeout: 20_000 });
   await expect(comms).toContainText('???');
+  await page.waitForTimeout(600);
   await shot(page, 'a2m3', 6, 'cue-squeak');
   await expect(comms).toContainText("Pocket's got room.", { timeout: 15_000 });
   await page.waitForTimeout(1_500);
