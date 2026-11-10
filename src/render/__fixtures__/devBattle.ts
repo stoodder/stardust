@@ -1121,7 +1121,8 @@ const cloakMap = dev.defineMap({
   ]),
   referenceProfile: {
     towers: ['lookout', 'rivet'],
-    specs: [],
+    // The Lookout's specs (T501i): smoke/unitPolish.spec.ts shows both heads here.
+    specs: ['lookout'],
     shop: {},
     protocols: [],
     technicianAbility: 'dev_strike',

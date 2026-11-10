@@ -1,4 +1,4 @@
-// The Escort's meter view (T305c; app/hudEscort.ts): shown only while the map is an Escort.
+// The Escort's meter view (T305c, T531; app/hudEscort.ts): shown only while the map is an Escort.
 import { describe, expect, it } from 'vitest';
 import { escortMeterView } from './hudEscort.ts';
 
@@ -9,6 +9,8 @@ describe('escortMeterView', () => {
       total: 12,
       lost: 1,
       maxLost: 6,
+      pips: [true, false, false, false, false, false],
+      low: false,
     });
     expect(escortMeterView('defend', 0, 0, 12, 6)).toBeNull();
   });

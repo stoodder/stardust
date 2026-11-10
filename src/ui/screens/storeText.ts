@@ -123,9 +123,16 @@ export function grantText(g: ModifierGrant): string {
 
 /**
  * An offer's effect summary: its next (or top) rank's grants, what a spec unlock opens, the
- * turret a license adds, or the Technician ability R&D adds.
+ * turret a license or an attunement adds (a gift's "Given: …"), or the Technician ability R&D adds.
  */
 export function effectText(o: Offer): string {
+  if (o.item.kind === 'attune') {
+    // A gift's row reads as Results' "Given: Prism Spire" does.
+    const role = lookup(TOWER_ROLES, o.item.tower)?.role;
+    const tower = towerName(o.item.tower);
+    const what = o.gift ? `Given: ${tower}` : `Adds the ${tower} to your turrets`;
+    return silkText(role === undefined ? what : `${what}${o.gift ? ' · ' : ': '}${role}`);
+  }
   if (o.item.kind === 'ability') {
     return `Adds ${silkText(abilityName(o.item.id))} to your Technician abilities (slot 1)`;
   }
@@ -160,6 +167,8 @@ export function offerName(o: Offer): string {
       return `${towerName(o.item.tower)} license`;
     case 'ability':
       return silkText(abilityName(o.item.id));
+    case 'attune':
+      return towerName(o.item.tower);
     default:
       return assertNever(o.item);
   }
@@ -181,6 +190,8 @@ export function offerCopy(o: Offer): string | null {
       return silkText(itemCopy(`license_${o.item.tower}`) ?? MISSING_COPY);
     case 'ability':
       return silkText(itemCopy(`ability_${o.item.id}`) ?? MISSING_COPY);
+    case 'attune':
+      return silkText(itemCopy(`${o.gift ? 'gift' : 'attune'}_${o.item.tower}`) ?? MISSING_COPY);
     default:
       return assertNever(o.item);
   }
@@ -262,5 +273,21 @@ export const PRESENTERS: Readonly<Record<StorePane, Presenter>> = {
     short: (o, bank) =>
       `That unlock is ${priceText(o)}. You have ${formatCount(bank)}. Medals pay Intel, one each.`,
     owned: 'Both specializations are already unlocked for that turret.',
+  },
+  // Ves'thara (T509): formal, no contractions, spare. She takes no stardust; Intel is "what you
+  // have learned". Hollow-touched from A2M5, she loses a word now and then.
+  xenotech: {
+    who: "Xenotech · Ves'thara",
+    speaker: "Ves'thara",
+    intro: 'I take no stardust. Bring me what you have learned, and I will attune what I can.',
+    thanks: [
+      'It is attuned. It knows your hand now. Do not make it regret that.',
+      'Done. It will answer you. It will... It will answer you.',
+      'Attuned. Build it where the dark comes first.',
+    ],
+    verb: 'Attune',
+    short: (o, bank) =>
+      `It asks ${priceText(o)}. You hold ${formatCount(bank)}. Each medal you earn teaches one more.`,
+    owned: 'It is already yours. A thread is not woven twice.',
   },
 };

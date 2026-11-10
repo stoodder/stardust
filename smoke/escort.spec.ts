@@ -62,15 +62,17 @@ test('escort: refugees walk to the gate under the Evacuated meter; the hushed ar
   await shot(page, 'escort', 2, 'hush');
   await page.evaluate(() => globalThis.__sd!.fastForward(40)); // the tell lands
   await nextFrames(page);
-  await expect(meter).toHaveAccessibleName(/, lost [1-9]\/6$/);
+  await expect(meter).toHaveAccessibleName(/, lost [1-9]\/6(, few left)?$/);
 
   // Someone reaches the gate: the Evacuated count rises; the core's integrity never moves.
   const safe = await until(page, 'evacuated');
   expect(safe.evacuated).toBeGreaterThan(0);
   await nextFrames(page);
+  // T531: ", few left" once the losses left are a quarter of maxLost or fewer (the alarm).
   await expect(meter).toHaveAccessibleName(
-    `Evacuated ${safe.evacuated} of 12, lost ${safe.lost}/6`,
+    new RegExp(`^Evacuated ${safe.evacuated} of 12, lost ${safe.lost}/6(, few left)?$`),
   );
+  if (safe.lost >= 5) await expect(meter).toHaveAttribute('data-low', 'true');
   await shot(page, 'escort', 3, 'evacuated');
 
   const end = await until(page, 'end');

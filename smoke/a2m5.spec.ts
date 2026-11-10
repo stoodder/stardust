@@ -125,6 +125,8 @@ test('A2M5: from the Sector map, the Penitent, the pivot mid-fight, the escort, 
   const brief = page.getByRole('dialog');
   await expect(brief).toContainText('Relocation pilot.');
   await expect(brief).toContainText('Kneel');
+  // T531: an Escort's Perfect, after the pivot.
+  await expect(brief).toContainText('No leaks, then no refugee lost.');
   await shot(page, 'a2m5', 1, 'briefing');
   await page.keyboard.press('Escape');
 

@@ -25,13 +25,25 @@ export const TOWER_ACCESS: Readonly<Record<TowerId, Access>> = {
   /** Zibzab's new shipment after A2M1 (progression.md § 4.1: Harpoon 250, Crane 200). */
   harpoon: { how: 'license', currency: 'stardust', price: 250, availableAfter: 'a2_m01' },
   crane: { how: 'license', currency: 'stardust', price: 200, availableAfter: 'a2_m01' },
-  // M5 (progression.md § 7.2; campaign.md § 4.1). Stubs until their tasks (towers/index.ts
-  // STUB_TOWER_TASKS), so on no shelf yet. Ves'thara gives the Prism in A2M5's debrief (T510's
-  // `grantGift`); the Mindspike and the Lantern are attuned in Xenotech after A2M5 for 3 Intel each,
-  // once the Prism is owned (that prerequisite is T509's).
+  // M5 (progression.md § 7.2; campaign.md § 4.1). Ves'thara gives the Prism in A2M5's debrief
+  // (meta/storyTransactions.ts `grantGift`); Xenotech, her shelf, lists it once given. The
+  // Mindspike and the Lantern are attuned there after A2M5 for 3 Intel each, once the Prism is
+  // owned (`requires`; meta/purchase.ts, T509).
   prism: { how: 'gift', availableAfter: 'a2_m05' },
-  mindspike: { how: 'attune', currency: 'intel', price: 3, availableAfter: 'a2_m05' },
-  lantern: { how: 'attune', currency: 'intel', price: 3, availableAfter: 'a2_m05' },
+  mindspike: {
+    how: 'attune',
+    currency: 'intel',
+    price: 3,
+    availableAfter: 'a2_m05',
+    requires: 'prism',
+  },
+  lantern: {
+    how: 'attune',
+    currency: 'intel',
+    price: 3,
+    availableAfter: 'a2_m05',
+    requires: 'prism',
+  },
 };
 
 /**

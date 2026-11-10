@@ -11,9 +11,10 @@ import type { AbilityId, CompanionId, TowerFaction, TowerId, TowerStat } from '.
 export type Currency = 'stardust' | 'intel';
 /**
  * Where an item is sold: Zibzab's shop (Stardust), R&D Command (Intel), R&D Engineering (Intel,
- * specializations), or a Field Protocol unlock (Stardust, in the shop).
+ * specializations), a Field Protocol unlock (Stardust, in the shop), or Ves'thara's Xenotech
+ * (Intel, Aelari attunements: TOWER_ACCESS's `how: 'attune'` rows).
  */
-export type CatalogKind = 'shop' | 'rnd' | 'engineering' | 'protocol';
+export type CatalogKind = 'shop' | 'rnd' | 'engineering' | 'protocol' | 'xenotech';
 
 /** Mirrors sim/config.ts EconomyStat. */
 export type GrantEconomyStat =
@@ -74,8 +75,9 @@ export type GrantKind = ModifierGrant['kind'];
 interface ItemText {
   readonly name: string;
   /**
-   * The seller's in-voice line, ≤ 100 chars: Zibzab's in the shop, QUILL's in R&D. The text's home
-   * is copy.ts (`itemCopy`); null only for an item that has none yet (copy.test.ts forbids that).
+   * The seller's in-voice line, ≤ 100 chars: Zibzab's in the shop, QUILL's in R&D (Ves'thara's in
+   * Xenotech, keyed `attune_<tower>`). The text's home is copy.ts (`itemCopy`); null only for an
+   * item that has none yet (copy.test.ts forbids that).
    */
   readonly copy: string | null;
 }
@@ -108,6 +110,12 @@ export interface UpgradeDef<
   readonly tower?: TowerId;
   /** A Companion Rapport's companion. */
   readonly companion?: CompanionId;
+  /**
+   * Kept off every shelf until it's stocked, instead of listed greyed out with "Arrives after
+   * {map}": an item that would name an ally the player hasn't met yet (Ves'thara's Rapport).
+   * meta/purchase.ts `shelf`.
+   */
+  readonly hideUntilStocked?: boolean;
 }
 
 /**
@@ -141,6 +149,11 @@ export type Access<M extends string = CampaignMapId> = {
       readonly how: 'license' | 'attune' | 'rnd';
       readonly currency: Currency;
       readonly price: number;
+      /**
+       * An attunement's prerequisite: the tower the save must own before Xenotech sells it (the
+       * Prism Spire, design/progression.md § 7.2).
+       */
+      readonly requires?: TowerId;
     }
 );
 

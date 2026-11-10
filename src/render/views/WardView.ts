@@ -7,18 +7,18 @@
 // (`Ally.rangeSq`) over a 1 px `ink.0` under-stroke in `decal`, steady: the chill holds as long as
 // a Hollow unit stays inside (the Cantor's dashed `blue.4` ring crawls; this one doesn't). The body
 // fades in up the alpha ladder over the boss's 1 s stand-down (standDownLook.ts `wardInAlpha`,
-// sim ticks), so the boss sinking in its `flee` pose and the Ward kneeling cross-fade as one
-// figure. Allocation-free per frame: pooled bodies and rings, set up when a Ward first shows.
+// timed by the boss's own `standDownTicks` while it fades, whole once it's gone), so the boss
+// sinking in its `flee` pose and the Ward kneeling cross-fade as one figure. Allocation-free per frame: pooled bodies and rings, set up when a Ward first shows.
 import type * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
-import type { Ally } from '../../sim/index.ts';
+import type { Ally, Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { effectRingTexture } from '../vfx/overlayTextures.ts';
 import { hasAnim, spriteId } from './spriteInfo.ts';
-import { wardInAlpha } from './standDownLook.ts';
+import { FADE_TICKS, wardInAlpha } from './standDownLook.ts';
 import { variantName, type ViewContext } from './ViewContext.ts';
 
 /** The ally pool as the Ward view reads it. */
@@ -28,6 +28,25 @@ export interface WardPool {
 }
 
 const MAX_WARDS = 2;
+
+/** The enemy pool as the Ward view reads it (its boss's fade). */
+export interface WardEnemies {
+  readonly used: number;
+  readonly items: readonly DeepReadonly<Enemy>[];
+}
+
+/**
+ * Ticks since the Ward of boss `enemyId` knelt: its boss's stand-down so far while the boss still
+ * fades on the field, else the whole fade (it's gone: the Ward stands whole).
+ */
+export function wardTicks(enemies: WardEnemies, enemyId: string): number {
+  for (let i = 0; i < enemies.used; i++) {
+    const e = enemies.items[i]!; // i < used ≤ items.length
+    if (!e.alive || e.standDownTicks <= 0 || e.def === null || e.def.boss === null) continue;
+    if (e.def.id === enemyId) return FADE_TICKS - e.standDownTicks;
+  }
+  return FADE_TICKS;
+}
 const RING_COLOR = 'blue.3';
 const RING_UNDER = 'ink.0';
 
@@ -42,8 +61,7 @@ interface Slot {
   readonly body: Phaser.GameObjects.Sprite;
   readonly ring: Phaser.GameObjects.Image;
   uid: number;
-  /** The sim tick it first knelt (its fade-in's clock), and its alpha now. */
-  since: number;
+  /** Its body's alpha now (the fade-in). */
   alpha: number;
 }
 
@@ -71,7 +89,7 @@ export class WardView {
       const ring = ctx.scene.make.image({}, false).setVisible(false);
       ctx.layers.world.add(body);
       ctx.layers.decal.add(ring);
-      this.#slots.push({ body, ring, uid: 0, since: 0, alpha: 1 });
+      this.#slots.push({ body, ring, uid: 0, alpha: 1 });
     }
   }
 
@@ -88,15 +106,15 @@ export class WardView {
     return n;
   }
 
-  /** Each frame, at sim tick `tick` (the fade-in's clock). */
-  update(allies: WardPool, tick = 0): void {
+  /** Each frame: every live Ward, fading in over its boss's stand-down (`enemies`). */
+  update(allies: WardPool, enemies: WardEnemies = { used: 0, items: [] }): void {
     let n = 0;
     for (let i = 0; i < allies.used && n < MAX_WARDS; i++) {
       const a = allies.items[i]!; // i < used ≤ items.length
       if (!a.alive || a.kind !== 'ward' || a.enemyId === null) continue;
       const slot = this.#slots[n++]!; // n < MAX_WARDS
-      if (slot.uid !== a.uid) this.#show(slot, a, tick);
-      const alpha = wardInAlpha(tick - slot.since);
+      if (slot.uid !== a.uid) this.#show(slot, a);
+      const alpha = wardInAlpha(wardTicks(enemies, a.enemyId));
       if (alpha !== slot.alpha) {
         slot.alpha = alpha;
         slot.body.setAlpha(alpha);
@@ -112,10 +130,9 @@ export class WardView {
     for (const s of this.#slots) this.#hide(s);
   }
 
-  #show(slot: Slot, a: DeepReadonly<Ally>, tick: number): void {
+  #show(slot: Slot, a: DeepReadonly<Ally>): void {
     slot.uid = a.uid;
-    slot.since = tick;
-    slot.alpha = wardInAlpha(0);
+    slot.alpha = -1; // set by update
     const { sprites, origin, scene } = this.#ctx;
     gridToScreen(a.x, a.y, origin, pos);
     const x = Math.round(pos.x);
@@ -130,7 +147,6 @@ export class WardView {
       .setDisplayOrigin(anchor.x, anchor.y)
       .setPosition(x, y)
       .setDepth(worldDepth(pos.y, 'enemy', a.uid))
-      .setAlpha(slot.alpha)
       .setVisible(true);
     // It hums on its knees (the `kneel` anim), unless motion is reduced.
     if (frame === 'kneel_se_0' && !this.#reducedMotion()) {

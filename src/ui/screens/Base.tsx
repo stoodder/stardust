@@ -1,12 +1,13 @@
-// The base (T209, D031, T303): the Everglow Inbox, the codex, Research, Zibzab's shop, and
-// Engineering as tabs. The Inbox and the codex are open whenever the base is, and carry a NEW
-// badge while something in them is unread; a shelf tab whose system the campaign hasn't opened yet
-// shows a locked pane with what opens it ("Opens after The Audit"; meta/progress.ts
-// SYSTEM_UNLOCKS). An open tab shows its pane (BasePanes.tsx). Entering the base delivers any memo
-// or codex unlock a save missed (app/inbox.ts). The first visit with Zibzab's shop open lands on
-// the Shop tab and plays his arrival (app/baseScenes.ts, T308; with any other visit scene due, such
-// as Pebble's handover after A2M4); otherwise an unread memo opens the Inbox (T320), and nothing
-// new opens Research.
+// The base (T209, D031, T303): the Everglow Inbox, the codex, Research, Zibzab's shop,
+// Engineering, and Ves'thara's Xenotech (T509) as tabs. The Inbox and the codex are open whenever
+// the base is, and carry a NEW badge while something in them is unread; a shelf tab whose system
+// the campaign hasn't opened yet shows a locked pane with what opens it ("Opens after The Audit";
+// meta/progress.ts SYSTEM_UNLOCKS), except Xenotech's, which is hidden until it opens after A2M5,
+// so the base never names Ves'thara's shelf before she joins. An open tab shows its pane
+// (BasePanes.tsx). Entering the base delivers any memo or codex unlock a save missed
+// (app/inbox.ts). The first visit with Zibzab's shop open lands on the Shop tab and plays his
+// arrival (app/baseScenes.ts, T308; with any other visit scene due, such as Pebble's handover after
+// A2M4); otherwise an unread memo opens the Inbox (T320), and nothing new opens Research.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
@@ -29,6 +30,8 @@ const TABS: readonly { readonly id: BaseTab; readonly label: string }[] = [
   { id: 'rnd', label: 'Research' },
   { id: 'shop', label: 'Shop' },
   { id: 'engineering', label: 'Engineering' },
+  // Ves'thara's shelf (T509): shown once it opens, after A2M5 (CampaignView.systems.xenotech).
+  { id: 'xenotech', label: 'Xenotech' },
   // The Pest Bounty Board (T301b): Acts I–II only, from A1M2 won (CampaignView.bountyBoard).
   { id: 'bounty', label: 'Bounty' },
 ];
@@ -74,7 +77,11 @@ export function Base() {
   const badges = storyBadges();
   const badgeOf = (id: BaseTab): number =>
     id === 'inbox' ? badges.inbox : id === 'codex' ? badges.codex : 0;
-  const tabs = TABS.filter((t) => t.id !== 'bounty' || view.bountyBoard.shown);
+  const tabs = TABS.filter(
+    (t) =>
+      (t.id !== 'bounty' || view.bountyBoard.shown) &&
+      (t.id !== 'xenotech' || view.systems.xenotech.unlocked),
+  );
   const move = (by: number): void => {
     picked.current = true;
     const i = tabs.findIndex((t) => t.id === tab);

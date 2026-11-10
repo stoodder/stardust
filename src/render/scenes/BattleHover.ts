@@ -49,6 +49,10 @@ export interface BattleHoverDeps {
   readonly sweepRadius?: readonly number[];
   /** Draws the Scanner Sweep's aim (SweepView). */
   readonly sweeps?: { setAim(col: number, row: number, radiusTiles: number): void };
+  /** Each slot's Stillness radius (tiles; 0: none), aimed with its own blue circle (T531). */
+  readonly stillRadius?: readonly number[];
+  /** Draws Stillness's aim (StillnessAimView). */
+  readonly stills?: { setAim(col: number, row: number, radiusTiles: number): void };
 }
 
 export class BattleHover {
@@ -242,17 +246,19 @@ export class BattleHover {
 
   /**
    * The aimed ability's feedback on the hovered tile: a strike's reticle at its real radius, a
-   * Scanner Sweep's own green circle at its radius (T431), or the stretch of path a segment would
+   * Scanner Sweep's own green circle at its radius (T431), Stillness's pale blue one (T531), or the stretch of path a segment would
    * cover there (exactly the sim's `segmentSpan`, on every ground route through the tile).
    */
   #syncAim(aim: boolean, tile: TileFacts, aiming: 1 | 2 | null): void {
-    const { fx, strikeRadius, segmentReach, sweepRadius, sweeps } = this.#deps;
+    const { fx, strikeRadius, segmentReach, sweepRadius, sweeps, stillRadius, stills } = this.#deps;
     const slot = aiming === null ? -1 : aiming - 1;
     const radius = strikeRadius[slot] ?? 0;
     const reach = segmentReach[slot] ?? 0;
     const sweep = sweepRadius?.[slot] ?? 0;
+    const still = stillRadius?.[slot] ?? 0;
     fx.setAim(aim && radius > 0 ? tile.col : -1, tile.row, radius);
     sweeps?.setAim(aim && sweep > 0 ? tile.col : -1, tile.row, sweep);
+    stills?.setAim(aim && still > 0 ? tile.col : -1, tile.row, still);
     const at = aim && reach > 0 ? tile.index : -1;
     if (at === this.#previewAt) return;
     this.#previewAt = at;

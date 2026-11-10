@@ -67,7 +67,16 @@ function RampRow({ cap }: { cap: number }) {
   const ramp = hud.beamRamp.value ?? 1;
   const fill = Math.max(0, Math.min(1, (ramp - 1) / (cap - 1)));
   return (
-    <p class="hud-ramp" data-testid="beam-ramp" aria-label={`Ramp ${rampNow(ramp)} of ×${cap}`}>
+    <p
+      class="hud-ramp"
+      role="meter"
+      data-testid="beam-ramp"
+      aria-label="Ramp"
+      aria-valuemin={1}
+      aria-valuemax={cap}
+      aria-valuenow={ramp}
+      aria-valuetext={`${rampNow(ramp)} of ×${cap}`}
+    >
       <span class="hud-label">Ramp</span>
       <span class="hud-ramp-bar" aria-hidden="true">
         <span class="hud-ramp-fill" style={{ width: `${Math.round(fill * 100)}%` }} />

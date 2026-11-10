@@ -120,6 +120,11 @@ import { propRigs } from './props/rigs.ts';
 import { propCrewHut } from './props/crew_hut.ts';
 import { propWarren } from './props/warren.ts';
 import { propSpoil } from './props/spoil.ts';
+// M5's props and tiles for A2M4–A2M6 (T540c).
+import { propVat } from './props/vat.ts';
+import { propIntake } from './props/intake.ts';
+import { propSeam } from './props/seam.ts';
+import { propWall } from './props/wall.ts';
 import { tileHush } from './tiles/hush.ts';
 import { tileApron } from './tiles/apron.ts';
 import { tileGrass } from './tiles/grass.ts';
@@ -217,6 +222,11 @@ export const SPRITES = [
   propCrewHut,
   propWarren,
   propSpoil,
+  // M5's props for A2M4–A2M6 (T540c).
+  propVat,
+  propIntake,
+  propSeam,
+  propWall,
   tileHush,
   towerRivet,
   towerRivetHead,

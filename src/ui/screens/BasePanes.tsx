@@ -1,8 +1,9 @@
 // The base's panes (T204d, T303): Base.tsx renders `BASE_PANES[tab]` for an open tab and a locked
 // pane (with its unlock hint) otherwise. The story panes are the Everglow Inbox (Inbox.tsx) and the
 // codex (Codex.tsx), open whenever the base is; the others are shelves of their system's items
-// (Shelf.tsx): R&D Command (Research.tsx), Zibzab's shop (Shop.tsx), and R&D Engineering
-// (Engineering.tsx). The Pest Bounty Board (BountyBoard.tsx, Acts I–II) is a story pane too.
+// (Shelf.tsx): R&D Command (Research.tsx), Zibzab's shop (Shop.tsx), R&D Engineering
+// (Engineering.tsx), and Ves'thara's Xenotech (Xenotech.tsx, after A2M5). The Pest Bounty Board
+// (BountyBoard.tsx, Acts I–II) is a story pane too.
 import type { ComponentType } from 'preact';
 import type { StorePane } from '../../meta/index.ts';
 import { BountyBoardPane } from './BountyBoard.tsx';
@@ -11,6 +12,7 @@ import { EngineeringPane } from './Engineering.tsx';
 import { InboxPane } from './Inbox.tsx';
 import { ResearchPane } from './Research.tsx';
 import { ShopPane } from './Shop.tsx';
+import { XenotechPane } from './Xenotech.tsx';
 import type { CampaignView } from './state.ts';
 
 /** The base's story panes: open whenever the base is (no system gates them). */
@@ -34,4 +36,5 @@ export const BASE_PANES: Readonly<Record<BaseTab, ComponentType<BasePaneProps>>>
   rnd: ResearchPane,
   shop: ShopPane,
   engineering: EngineeringPane,
+  xenotech: XenotechPane,
 };

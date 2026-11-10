@@ -1,6 +1,7 @@
 // A base pane's shelf (T204d): the presenter's line, then the pane's offers in groups. Each row
 // shows the item's name, rank pips, effect summary, and its seller's copy, with its price and a
-// buy button, or "Owned", or what it waits for ("Arrives after The Audit"). A purchase writes the
+// buy button, or "Owned" ("Given" for a gift), or what it waits for ("Arrives after The Audit",
+// "Needs the Prism Spire"). A purchase writes the
 // save at once (app/save.ts `purchase`), plays the upgrade sound, and the presenter says thanks in
 // a polite live region. After a purchase the focus stays on that row: its button (the next rank)
 // or, when the item is now owned in full and the button is gone, the row itself (U6). A button the
@@ -37,7 +38,7 @@ export interface ShelfProps {
 }
 
 /** Purchases made per pane this session, so the thank-you lines take turns. */
-const thanked: Record<StorePane, number> = { rnd: 0, shop: 0, engineering: 0 };
+const thanked: Record<StorePane, number> = { rnd: 0, shop: 0, engineering: 0, xenotech: 0 };
 
 /** Rank pips: one 5 px square per rank, filled for each owned. */
 export function RankPips({ owned, ranks }: { owned: number; ranks: number }) {
@@ -62,7 +63,7 @@ function effectLine(o: Offer): string {
 
 /** A row's stable key: the item it sells. */
 function offerKey(o: Offer): string {
-  return o.item.kind === 'specs' || o.item.kind === 'license'
+  return o.item.kind === 'specs' || o.item.kind === 'license' || o.item.kind === 'attune'
     ? `${o.item.kind}:${o.item.tower}`
     : `${o.item.kind}:${o.item.id}`;
 }
@@ -86,12 +87,12 @@ function OfferRow({ offer, onBuy }: { offer: Offer; onBuy: (o: Offer) => void })
     side = (
       <span class="sd-offer-wait">
         {r === 'not_owned'
-          ? `Needs the ${towerName(offer.tower ?? '')}`
+          ? `Needs the ${towerName(offer.needs ?? offer.tower ?? '')}`
           : 'Arrives in a later shipment'}
       </span>
     );
   } else if (r === 'maxed') {
-    side = <span class="sd-offer-owned">Owned</span>;
+    side = <span class="sd-offer-owned">{offer.gift ? 'Given' : 'Owned'}</span>;
   } else {
     const short = r === 'short';
     side = (
@@ -163,7 +164,8 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
       return;
     }
     bought.current = offerKey(o);
-    playSfx(o.item.kind === 'specs' || o.item.kind === 'license' ? 'unlock' : 'upgrade');
+    const unlock = o.item.kind === 'specs' || o.item.kind === 'license' || o.item.kind === 'attune';
+    playSfx(unlock ? 'unlock' : 'upgrade');
     const line = p.thanks[thanked[pane]++ % p.thanks.length] ?? '';
     setSaid(
       r.writeFailed === null

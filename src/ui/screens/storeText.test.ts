@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ITEM_COPY } from '../../content/upgrades/copy.ts';
 import { PROTOCOLS, UPGRADES } from '../../content/upgrades/index.ts';
 import { DEV_SAVES } from '../../meta/__fixtures__/devSaves.ts';
 import { shelf, type Offer } from '../../meta/index.ts';
@@ -91,8 +92,8 @@ describe('offer text', () => {
     expect(priceText(mk2)).toBe('2 Intel');
     expect(offerCopy(mk2)).toBe(UPGRADES.orbital_strike_mk2.copy);
     expect(arrivalText(byId(rnd, 'protocol_slots'))).toBe('Arrives after Special Delivery');
-    // Every shop and R&D item has its catalog copy (T210c).
-    for (const pane of ['rnd', 'shop'] as const) {
+    // Every shop, R&D, and Xenotech item has its catalog copy (T210c, T509).
+    for (const pane of ['rnd', 'shop', 'xenotech'] as const) {
       const all = shelf(DEV_SAVES.all_unlocked.build(), pane, [pane]);
       for (const o of all) expect(offerCopy(o)).not.toBe(MISSING_COPY);
     }
@@ -108,11 +109,44 @@ describe('offer text', () => {
   });
 
   it('never hands an "&" to Silkscreen: every name and copy line goes through silkText', () => {
-    for (const pane of ['rnd', 'shop', 'engineering'] as const) {
+    for (const pane of ['rnd', 'shop', 'engineering', 'xenotech'] as const) {
       for (const o of shelf(DEV_SAVES.all_unlocked.build(), pane, [pane])) {
         expect(offerName(o)).not.toContain('&');
         expect(offerCopy(o) ?? '').not.toContain('&');
       }
     }
+  });
+});
+
+describe("Xenotech's rows (T509)", () => {
+  it('name the tower, say what it adds, and carry her line; the gift reads as given', () => {
+    const [prism, mindspike, lantern] = shelf(DEV_SAVES.after_a2m5.build(), 'xenotech');
+    if (prism === undefined || mindspike === undefined || lantern === undefined) {
+      throw new Error('Xenotech lists three rows after A2M5');
+    }
+    expect([offerName(prism), offerName(mindspike), offerName(lantern)]).toEqual([
+      'Prism Spire',
+      'Mindspike Obelisk',
+      "Seer's Lantern",
+    ]);
+    expect(effectText(prism)).toBe('Given: Prism Spire · Ramping beam');
+    expect(effectText(mindspike)).toBe(
+      'Adds the Mindspike Obelisk to your turrets: Armor-ignoring DPS',
+    );
+    expect(offerCopy(prism)).toBe(ITEM_COPY.gift_prism);
+    expect(offerCopy(lantern)).toBe(ITEM_COPY.attune_lantern);
+    expect(priceText(mindspike)).toBe('3 Intel');
+  });
+
+  it("Ves'thara speaks without contractions", () => {
+    const p = PRESENTERS.xenotech;
+    const offer = shelf(DEV_SAVES.after_a2m5.build(), 'xenotech')[1]!;
+    expect(p.short(offer, 1)).toBe(
+      'It asks 3 Intel. You hold 1. Each medal you earn teaches one more.',
+    );
+    for (const line of [p.intro, p.owned, ...p.thanks, p.short(offer, 1)]) {
+      expect(line).not.toMatch(/n't\b|'(?:s|re|ll|ve|m|d)\b/i);
+    }
+    expect(p.verb).toBe('Attune');
   });
 });

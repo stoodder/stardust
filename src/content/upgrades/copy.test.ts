@@ -1,5 +1,7 @@
-// Item copy (copy.ts) against story/style-guide.md § 6.3 (Zibzab) and § 6.4 (QUILL).
+// Item copy (copy.ts) against story/style-guide.md § 6.3 (Zibzab) and § 6.4 (QUILL), and
+// Ves'thara's Xenotech lines (T509; characters.md: formal, no contractions).
 import { describe, expect, it } from 'vitest';
+import { TOWERS } from '../towers/index.ts';
 import { ITEM_COPY, itemCopy } from './copy.ts';
 import {
   ABILITY_ACCESS,
@@ -27,6 +29,17 @@ const licenses = Object.entries<Access>(TOWER_ACCESS)
   .filter(([, a]) => a.how === 'license')
   .map(([tower, a]) => ({ id: `license_${tower}`, price: a.how === 'license' ? a.price : 0 }));
 
+/**
+ * Xenotech's copy ids (T509): `attune_<tower>` for each `how: 'attune'` row, `gift_<tower>` for an
+ * Aelari gift (the Prism Spire), both in Ves'thara's voice.
+ */
+const vesthara = Object.entries<Access>(TOWER_ACCESS).flatMap(([tower, a]) => {
+  if (a.how === 'attune') return [`attune_${tower}`];
+  return a.how === 'gift' && TOWERS[tower as keyof typeof TOWERS].faction === 'aelari'
+    ? [`gift_${tower}`]
+    : [];
+});
+
 /** R&D's Technician abilities' copy ids: `ability_<id>` for each `how: 'rnd'` access row (T406). */
 const rndAbilities = Object.entries<Access | undefined>(ABILITY_ACCESS)
   .filter(([, a]) => a?.how === 'rnd')
@@ -39,6 +52,7 @@ describe('item copy', () => {
       ...protocols.map((p) => p.id),
       ...licenses.map((l) => l.id),
       ...rndAbilities,
+      ...vesthara,
     ];
     for (const item of [...upgrades, ...protocols]) {
       expect(item.copy, item.id).not.toBeNull();
@@ -85,5 +99,16 @@ describe('item copy', () => {
   it("QUILL's R&D lines are not Zibzab's", () => {
     for (const u of quill) expect(u.copy, u.id).not.toMatch(/^Price first/);
     for (const id of rndAbilities) expect(ITEM_COPY[id], id).not.toMatch(/^Price first/);
+  });
+
+  it("Ves'thara's Xenotech lines: no price, no contractions, and never stardust", () => {
+    expect(vesthara.toSorted()).toEqual(['attune_lantern', 'attune_mindspike', 'gift_prism']);
+    for (const id of vesthara) {
+      const text = ITEM_COPY[id] ?? '';
+      expect(text, id).not.toBe('');
+      expect(text, id).not.toMatch(/^Price first|stardust|intel/i);
+      // characters.md: formal and precise, with no contractions.
+      expect(text, id).not.toMatch(/n't\b|'(?:s|re|ll|ve|m|d)\b/i);
+    }
   });
 });

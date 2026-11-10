@@ -60,7 +60,7 @@ export function EscortMeter() {
         {m.pips === null ? (
           <span class={last ? 'num danger' : 'num'}>{lost}</span>
         ) : (
-          <span class="hud-pips" aria-hidden="true">
+          <span class={m.pips.length <= 10 ? 'hud-pips wide' : 'hud-pips'} aria-hidden="true">
             {m.pips.map((on, i) => (
               <span key={i} class={on ? 'hud-pip on' : 'hud-pip'} />
             ))}

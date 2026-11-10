@@ -28,8 +28,9 @@ export const orbital_strike_mk2 = defineUpgrade({
 /**
  * Companion Rapport: the companion's ability cooldown −15% (keyed by ability, so Bricks's carries
  * over to inherited Suppressing Fire). Stocked once the companion's ability has been met: after
- * the map it first appears on: Bricks's after A1M1, QUILL's after A1M3 (T308). Zibzab's,
- * Ves'thara's, and Bramble's arrive with their maps.
+ * the map it first appears on: Bricks's after A1M1, QUILL's after A1M3 (T308), Ves'thara's after
+ * A2M6 (T509). Zibzab's and Bramble's arrive with their maps. `hideUntilStocked` keeps the Rapport
+ * of an ally the player hasn't met yet off the shelf until then.
  */
 function rapport<const Id extends string>(
   id: Id,
@@ -37,6 +38,7 @@ function rapport<const Id extends string>(
   ability: AbilityId,
   availableAfter: CampaignMapId,
   name: string,
+  hideUntilStocked = false,
 ): UpgradeDef<Id> {
   return defineUpgrade({
     id,
@@ -47,6 +49,7 @@ function rapport<const Id extends string>(
     availableAfter,
     companion,
     ranks: [{ price: 2, grants: [{ kind: 'abilityStat', ability, stat: 'cooldown', pct: -0.15 }] }],
+    ...(hideUntilStocked ? { hideUntilStocked } : {}),
   });
 }
 
@@ -65,6 +68,20 @@ export const rapport_quill = rapport(
   'time_dilation',
   'a1_m03',
   'Rapport: QUILL',
+);
+
+/**
+ * Ves'thara's Rapport: Stillness first plays on A2M6, her first map as a companion, so it's stocked
+ * once A2M6 is won (T509). Sold here, in QUILL's voice, with the other Rapports; never listed
+ * before then, since the row would name an ally the player hasn't met.
+ */
+export const rapport_vesthara = rapport(
+  'rapport_vesthara',
+  'vesthara',
+  'stillness',
+  'a2_m06',
+  "Rapport: Ves'thara",
+  true,
 );
 
 /** Field Protocol slots 2 (4 Intel) and 3 (6 Intel); slot 1 comes with the shop. */

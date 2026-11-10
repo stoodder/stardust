@@ -20,11 +20,83 @@ function maskBottom(x: number): number {
  * The block's look: `v0` Act I's grassy terrace block; `ledge` a canyon ledge (A2M1: rock lips
  * instead of grass, three strata, cracks down the faces, rubble at the foot); `outcrop` an Aelari
  * thread-glass outcrop (A2M2: dark rock woven through with sapphire glass threads crossing at
- * bright knots, glass shards at its foot).
+ * bright knots, glass shards at its foot); `catwalk` a plant catwalk (A2M4, T540c: a steel deck of
+ * grating round the plate, hazard-striped along its lip, on an open trestle of legs and cross
+ * braces, the ground showing through); `watchtower` the colony's old watchtower (A2M6, T540c:
+ * coursed ferrocrete faces with a slit window on each and a door on the lit face, a battlement rim
+ * of merlons round the plate).
  */
-export type HighGroundLook = 'v0' | 'ledge' | 'outcrop';
+export type HighGroundLook = 'v0' | 'ledge' | 'outcrop' | 'catwalk' | 'watchtower';
+
+/** A built block (catwalk, watchtower): the plate kept, its grass margin and faces replaced. */
+function builtGrid(look: 'catwalk' | 'watchtower'): string[] {
+  const g = grid(TILE_W, TILE_H + ELEVATION_PX);
+  padGrid().forEach((row, y) => row.forEach((ch, x) => plot(g, x, y, ch)));
+  const plate = new Set(['K', 'L', 'M', 'N', 'P', 'T']);
+  // The margin round the plate: steel grating (the catwalk) or a battlement rim (the watchtower).
+  for (let y = 0; y < TILE_H; y++) {
+    for (let x = 0; x < TILE_W; x++) {
+      if (!inTileMask(x, y) || plate.has(g[y]?.[x] ?? '.')) continue;
+      const edge = !inTileMask(x, y - 1) || !inTileMask(x - 1, y) || !inTileMask(x + 1, y);
+      if (look === 'catwalk') {
+        plot(g, x, y, edge && y < 8 ? 'S' : (x + 2 * y) % 4 === 0 ? 'R' : 'Q');
+      } else {
+        // Merlons along the back edges (lit), the walk between them darker.
+        const merlon = Math.floor((x + 2) / 3) % 2 === 0;
+        plot(g, x, y, edge && y < 8 ? (merlon ? 'S' : 'V') : y < 8 ? 'Q' : 'R');
+      }
+    }
+  }
+  for (let x = 0; x < TILE_W; x++) {
+    const e = maskBottom(x);
+    if (e < 0) continue;
+    const left = x < 16;
+    for (let k = 1; k <= ELEVATION_PX; k++) {
+      const y = e + k;
+      if (look === 'catwalk') {
+        // The deck's lip, hazard-striped; under it an open trestle: legs at the corners and the
+        // middle, X-braces between them, and the ground showing through the rest.
+        if (k <= 2) {
+          plot(g, x, y, k === 1 ? ((x >> 1) % 2 === 0 ? 'U' : 'V') : left ? 'L' : 'K');
+          continue;
+        }
+        const leg = x <= 1 || x >= TILE_W - 2 || x === 15 || x === 16;
+        const span = left ? x : x - 16;
+        const brace = Math.abs((span % 16) - 7.5) * 0.75;
+        if (leg) plot(g, x, y, left ? 'Q' : 'K');
+        else if (Math.abs(k - 2 - brace) < 0.6 || Math.abs(ELEVATION_PX - k + 2 - brace) < 0.6)
+          plot(g, x, y, left ? 'L' : 'K');
+      } else {
+        // Coursed ferrocrete, lit left and shaded right; mortar lines every third row, offset.
+        let ch = left ? 'W' : 'X';
+        if (k % 3 === 0 || (x + (Math.floor(k / 3) % 2) * 3) % 6 === 0) ch = left ? 'X' : 'Y';
+        if (k === 1) ch = left ? 'S' : 'X';
+        if (x === 0 || x === TILE_W - 1) ch = 'Y';
+        plot(g, x, y, ch);
+      }
+    }
+  }
+  if (look === 'watchtower') {
+    // A slit window on each face, and a door on the lit face.
+    for (const [x, y] of [
+      [8, 15],
+      [24, 15],
+    ] as const) {
+      plot(g, x, y, 'V');
+      plot(g, x, y + 1, 'V');
+    }
+    // prettier-ignore
+    stamp(g, 11, 16, [
+      'VV',
+      'VV',
+      'VV',
+    ]);
+  }
+  return rows(g);
+}
 
 function highGroundGrid(look: HighGroundLook = 'v0'): string[] {
+  if (look === 'catwalk' || look === 'watchtower') return builtGrid(look);
   const g = grid(TILE_W, TILE_H + ELEVATION_PX);
   // The top face: a pad, raised one step (it occupies rows 0..15 of the taller frame).
   padGrid().forEach((row, y) => row.forEach((ch, x) => plot(g, x, y, ch)));
@@ -82,10 +154,26 @@ export const tileHighGround = defineSprite({
   anchor: { x: 16, y: ELEVATION_PX },
   palette: 'act1',
   variants: ENV_VARIANTS,
-  legend: { ...PAD_LEGEND, G: 'blue.2', H: 'blue.3', I: 'teal.4' },
+  legend: {
+    ...PAD_LEGEND,
+    G: 'blue.2',
+    H: 'blue.3',
+    I: 'teal.4',
+    // The built blocks (T540c): steel and hazard paint, and the watchtower's ferrocrete.
+    Q: 'steel.1',
+    R: 'ink.2',
+    S: 'steel.3',
+    U: 'orange.2',
+    V: 'ink.1',
+    W: 'grime.3',
+    X: 'grime.2',
+    Y: 'grime.1',
+  },
   frames: {
     v0: highGroundGrid('v0'),
     ledge: highGroundGrid('ledge'),
     outcrop: highGroundGrid('outcrop'),
+    catwalk: highGroundGrid('catwalk'),
+    watchtower: highGroundGrid('watchtower'),
   },
 });

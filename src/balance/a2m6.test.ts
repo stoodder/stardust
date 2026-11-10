@@ -18,7 +18,7 @@ import { compileContent } from '../content/compile.ts';
 import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
 import { SEEKER_ALT, SUNLANCE_PROBE } from '../content/maps/a2_m06/builds.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { BuildStep, ScriptedBuild, WaveGroup } from '../content/types.ts';
+import type { BuildStep, ScriptedBuild, TowerId, WaveGroup } from '../content/types.ts';
 import {
   createBuildExecutor,
   createSim,
@@ -29,6 +29,7 @@ import {
 import { bothWays, delay, judgeShift, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
 import { referenceRunProfile, runConfig, type RunProfile } from './profile.ts';
+import { secToTicks } from '../shared/time.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
 const content = compileContent(RAW_CONTENT);
@@ -52,48 +53,50 @@ const SHIFTS = {
   }),
 } as const;
 
+/** A build step as the content compiler shapes it (compileBuilds.ts; the kinds these builds use). */
+function compileStep(s: BuildStep): CompiledBuildStep {
+  const wave = s.wave;
+  if ('build' in s) return { wave, kind: 'build', tower: s.build, tile: s.tile };
+  if ('upgrade' in s) return { wave, kind: 'upgrade', tile: s.upgrade };
+  if ('specialize' in s) return { wave, kind: 'specialize', tile: s.specialize, spec: s.spec };
+  if ('ability' in s) {
+    const when = s.when;
+    return {
+      wave,
+      kind: 'ability',
+      slot: s.ability,
+      target: s.target ?? null,
+      when:
+        when === undefined
+          ? 'asap'
+          : when === 'waveStart'
+            ? when
+            : { afterTicks: secToTicks(when.afterSec) },
+    };
+  }
+  throw new Error(`a test-level build step this helper doesn't compile: ${JSON.stringify(s)}`);
+}
+
 /** A test-level build (D137) compiled by hand: its steps as the content compiler shapes them. */
 function compileTestBuild(b: ScriptedBuild): CompiledBuild {
-  const step = (s: BuildStep): CompiledBuildStep => {
-    const wave = s.wave;
-    if ('build' in s) return { wave, kind: 'build', tower: s.build, tile: s.tile };
-    if ('upgrade' in s) return { wave, kind: 'upgrade', tile: s.upgrade };
-    if ('specialize' in s) return { wave, kind: 'specialize', tile: s.specialize, spec: s.spec };
-    if ('ability' in s) {
-      const when = s.when;
-      return {
-        wave,
-        kind: 'ability',
-        slot: s.ability,
-        target: s.target ?? null,
-        when:
-          when === undefined
-            ? 'asap'
-            : when === 'waveStart'
-              ? when
-              : { afterTicks: Math.round(when.afterSec * 60) },
-      };
-    }
-    throw new Error(`a test-level build step this helper doesn't compile: ${JSON.stringify(s)}`);
-  };
   return {
     loadout: b.loadout,
     companion: null,
     technicianAbility: content.maps.a2_m06.builds.referenceProfile.technicianAbility,
     callEarly: false,
-    steps: b.steps.map(step),
+    steps: b.steps.map(compileStep),
   };
 }
 
 /** The test-level builds, with the specs each needs on top of the reference profile. */
-const TEST_LEVEL = {
+const TEST_LEVEL: Readonly<Record<string, { build: CompiledBuild; specs: readonly TowerId[] }>> = {
   seeker: { build: compileTestBuild(SEEKER_ALT), specs: ['skyhook'] },
   sunlance: { build: compileTestBuild(SUNLANCE_PROBE), specs: ['prism'] },
-} as const;
+};
 
 /** The build `label` on `c`: a harness label, or a test-level build's name. */
 function buildOf(c: CompiledContent, label: string): CompiledBuild {
-  const t = TEST_LEVEL[label as keyof typeof TEST_LEVEL];
+  const t = TEST_LEVEL[label];
   if (t !== undefined) return t.build;
   return buildFor(label, c.maps.a2_m06, c)!;
 }
@@ -105,7 +108,7 @@ function profileOf(
   difficulty: 'standard' | 'story' = 'standard',
 ): RunProfile {
   const p = referenceRunProfile(c.maps.a2_m06, c, difficulty);
-  const t = TEST_LEVEL[label as keyof typeof TEST_LEVEL];
+  const t = TEST_LEVEL[label];
   return t === undefined ? p : { ...p, specs: [...p.specs, ...t.specs] };
 }
 

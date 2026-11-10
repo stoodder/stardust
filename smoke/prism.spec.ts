@@ -103,6 +103,7 @@ test('prism: the beam locks, ramps, links with the Zapcoil, and splits as Refrac
   expect(await until(page, 'ramped')).toBe(true);
   const ramped = await page.evaluate(() => globalThis.__sd!.render()!.beams);
   expect(ramped.topStep).toBe(2);
+  expect(ramped.throws).toBeGreaterThan(0); // T530a: each lock throws its thread
   await shot(page, 'prism', 2, 'beam-ramped');
 
   // Refractor: tiers 2 and 3, then spec a; W2's Wardens and Glimmers take two or three beams.

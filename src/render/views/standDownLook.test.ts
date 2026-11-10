@@ -5,7 +5,7 @@ import { STAND_DOWN_FADE_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 import { STAND_DOWN_ALPHAS, standDownAlpha, wardInAlpha } from './standDownLook.ts';
 import { spriteId } from './spriteInfo.ts';
-import { wardFrame } from './WardView.ts';
+import { wardFrame, wardTicks, type WardEnemies } from './WardView.ts';
 
 describe('the stand-down fade', () => {
   it('steps down the alpha ladder, a rung per quarter of the 1 s fade', () => {
@@ -16,6 +16,13 @@ describe('the stand-down fade', () => {
   });
 });
 
+/** A boss standing down with `left` ticks of its fade to go (the fields wardTicks reads). */
+const boss = (left: number, alive = true): WardEnemies['items'][number] =>
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the fields the rule reads
+  ({ alive, standDownTicks: left, def: { id: 'dev_penitent', boss: {} } }) as never;
+/** An enemy pool of `items`. */
+const pool = (...items: WardEnemies['items']): WardEnemies => ({ used: items.length, items });
+
 describe('the Ward', () => {
   it('fades in up the ladder over the stand-down, crossing the sinking boss (T530a)', () => {
     expect([0, 14, 15, 29, 30, 45, 59, 60, 500].map(wardInAlpha)).toEqual([
@@ -25,6 +32,15 @@ describe('the Ward', () => {
     for (let t = 0; t < 60; t++) {
       expect(wardInAlpha(t) + standDownAlpha(60 - t)).toBeGreaterThanOrEqual(0.8);
     }
+  });
+
+  it('times its fade-in by its boss’s stand-down, and stands whole once the boss is gone', () => {
+    expect(wardTicks(pool(boss(60)), 'dev_penitent')).toBe(0);
+    expect(wardTicks(pool(boss(30)), 'dev_penitent')).toBe(30);
+    expect(wardInAlpha(wardTicks(pool(boss(30)), 'dev_penitent'))).toBe(0.6);
+    expect(wardTicks(pool(), 'dev_penitent')).toBe(60);
+    expect(wardTicks(pool(boss(30, false)), 'dev_penitent')).toBe(60);
+    expect(wardTicks(pool(boss(30)), 'sunderglass_penitent')).toBe(60);
   });
 
   it('kneels in the Penitent’s `kneel` pose', () => {

@@ -274,7 +274,12 @@ section.chamfer,
   box-sizing: border-box;
   width: 3px;
   height: 6px;
-  border: 1px solid var(--sd-steel-1);
+  border: 1px solid var(--sd-steel-2);
+}
+
+/* Up to ten fit wider (A2M5's fourteen keep 3 px). */
+.hud-pips.wide .hud-pip {
+  width: 4px;
 }
 
 .hud-pip.on {

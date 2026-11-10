@@ -9,7 +9,8 @@
 import { STAND_DOWN_FADE_SEC } from '../../content/rules.ts';
 import { secToTicks } from '../../shared/time.ts';
 
-const FADE_TICKS = secToTicks(STAND_DOWN_FADE_SEC);
+/** The stand-down's fade, in sim ticks. */
+export const FADE_TICKS = secToTicks(STAND_DOWN_FADE_SEC);
 /** The ladder's rungs, first to last. */
 export const STAND_DOWN_ALPHAS: readonly number[] = [0.8, 0.6, 0.4, 0.2];
 
@@ -23,7 +24,11 @@ export function standDownAlpha(ticksLeft: number): number {
 /** The ladder the Ward fades in up, first to last (then whole). */
 export const WARD_IN_ALPHAS: readonly number[] = [0.2, 0.4, 0.6, 0.8];
 
-/** The Ward's alpha `ticksSince` it knelt (0 the tick it appeared): up the ladder, then 1. */
+/**
+ * The Ward's alpha `ticksSince` it knelt (0 the tick it appeared): up the ladder, then 1. WardView
+ * reads the time from its boss's stand-down (FADE_TICKS − the fade's ticks left), so it is sim
+ * state, whatever the frame rate or speed.
+ */
 export function wardInAlpha(ticksSince: number): number {
   if (ticksSince >= FADE_TICKS) return 1;
   const step = Math.floor((Math.max(ticksSince, 0) * WARD_IN_ALPHAS.length) / FADE_TICKS);

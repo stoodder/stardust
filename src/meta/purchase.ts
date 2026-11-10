@@ -1,16 +1,19 @@
 // Purchases at the base (design/progression.md §§ 4, 5, 7; meta-runtime.md § Purchases): R&D
 // Command's and Zibzab's ranked upgrades, Field Protocol unlocks, Zibzab's Vrell tower licenses
-// (the Zapcoil sample at 0, given when the shop opens: meta/issued.ts), and R&D Engineering's spec
-// unlocks, and R&D Command's Technician abilities (Scanner Sweep, T406). Pure functions over a
-// SaveData: `offerFor` says what an item costs and whether it can be
-// bought now (with the reason it can't), `buy` returns the save after the purchase, and `shelf`
-// lists one pane's offers in catalog order for its screen. The app writes the new save at once.
+// (the Zapcoil sample at 0, given when the shop opens: meta/issued.ts), R&D Engineering's spec
+// unlocks, R&D Command's Technician abilities (Scanner Sweep, T406), and Xenotech's Aelari
+// attunements (T509: the Mindspike and the Lantern, once the Prism Spire is owned; the Prism itself
+// is listed once given). Pure functions over a SaveData: `offerFor` says what an item costs and
+// whether it can be bought now (with the reason it can't), `buy` returns the save after the
+// purchase, and `shelf` lists one pane's offers in catalog order for its screen. The app writes the
+// new save at once.
 //
 // An item can be bought when, in order: it exists; its pane is open (`isSystemUnlocked`); it is
 // stocked (its `availableAfter` map is won, or the dev hook's `devUnlocks` opens its pane, which
-// stocks the whole pane); its tower is owned (tune-ups, spec unlocks) and has specs (spec
-// unlocks); a next rank exists (ranked upgrades; a protocol, a license, a spec unlock, or an
-// ability is bought once); and the bank covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+// stocks the whole pane); the tower it needs is owned (a tune-up's or spec unlock's own tower, an
+// attunement's prerequisite) and has specs (spec unlocks); a next rank exists (ranked upgrades; a
+// protocol, a license, a spec unlock, an ability, or an attunement is bought once); and the bank
+// covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
 import { ABILITIES } from '../content/abilities/index.ts';
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
@@ -35,8 +38,11 @@ import type { SaveData } from './saveData.ts';
 import { clampCurrency } from './validate.ts';
 
 /** The base's buy panes (each is a MetaSystem). */
-export type StorePane = 'rnd' | 'shop' | 'engineering';
-export const STORE_PANES: readonly StorePane[] = ['rnd', 'shop', 'engineering'];
+export type StorePane = 'rnd' | 'shop' | 'engineering' | 'xenotech';
+export const STORE_PANES: readonly StorePane[] = ['rnd', 'shop', 'engineering', 'xenotech'];
+
+/** The faction whose towers Xenotech lists (design/progression.md § 7.2: Ves'thara's shelf). */
+const XENOTECH_FACTION: TowerFaction = 'aelari';
 
 /** Something the base sells. */
 export type PurchaseItem =
@@ -52,7 +58,12 @@ export type PurchaseItem =
    * A Technician ability R&D Command sells (an ABILITY_ACCESS row with `how: 'rnd'`: Scanner
    * Sweep), bought once; owning it puts it in the loadout's slot-1 pool.
    */
-  | { readonly kind: 'ability'; readonly id: string };
+  | { readonly kind: 'ability'; readonly id: string }
+  /**
+   * Xenotech: an Aelari tower, attuned once (a TOWER_ACCESS row with `how: 'attune'`, which may
+   * `require` a tower owned first), or given (`how: 'gift'`: listed only once owned, never sold).
+   */
+  | { readonly kind: 'attune'; readonly tower: string };
 
 /** Why an item can't be bought now, in check order. */
 export type Refusal =
@@ -62,11 +73,17 @@ export type Refusal =
   | 'pane_locked'
   /** Its `availableAfter` map isn't won yet. */
   | 'not_stocked'
-  /** A tune-up or spec unlock for a tower the save doesn't own. */
+  /**
+   * The tower the item needs isn't owned: a tune-up's or spec unlock's own tower, or an
+   * attunement's prerequisite (`Offer.needs`).
+   */
   | 'not_owned'
   /** A spec unlock for a tower with no tier-4 specs. */
   | 'no_specs'
-  /** Every rank owned, or the protocol, license, spec unlock, or ability already owned. */
+  /**
+   * Every rank owned, or the protocol, license, spec unlock, ability, or attuned (or given) tower
+   * already owned.
+   */
   | 'maxed'
   /** The bank is short of the price. */
   | 'short';
@@ -101,21 +118,28 @@ export interface Offer {
   readonly currency: Currency;
   /** The next rank's price; the top rank's once maxed. */
   readonly price: number;
-  /** Ranks owned (0 or 1 for a protocol, a license, a spec unlock, or an ability). */
+  /** Ranks owned (0 or 1 for a protocol, a license, a spec unlock, an ability, or an attunement). */
   readonly owned: number;
-  /** Ranks in all (1 for a protocol, a license, a spec unlock, or an ability). */
+  /** Ranks in all (1 for a protocol, a license, a spec unlock, an ability, or an attunement). */
   readonly ranks: number;
   /**
-   * What the next rank adds; the top rank's once maxed. Empty for a license, a spec unlock, or an
-   * ability.
+   * What the next rank adds; the top rank's once maxed. Empty for a license, a spec unlock, an
+   * ability, or an attunement.
    */
   readonly grants: readonly ModifierGrant[];
   /** Field Protocol slots the next (or top) rank adds. */
   readonly protocolSlots: number;
   /** The map whose win stocks it (null: from the start). */
   readonly availableAfter: CampaignMapId | null;
-  /** The tower a tune-up, license, or spec unlock is for. */
+  /** The tower a tune-up, license, spec unlock, or attunement is for. */
   readonly tower: TowerId | null;
+  /**
+   * The tower the save must own first, or null: a tune-up's or spec unlock's own tower, an
+   * attunement's prerequisite (the Prism Spire).
+   */
+  readonly needs: TowerId | null;
+  /** Given by the story, never sold (Xenotech's Prism Spire, listed once given). */
+  readonly gift: boolean;
   /** Why it can't be bought now, or null when it can. */
   readonly refusal: Refusal | null;
 }
@@ -171,6 +195,41 @@ function licenseOf(tower: string, catalog: StoreCatalog): License | null {
   return a.how === 'license' ? a : null;
 }
 
+/** An attunement's or a gift's terms (Xenotech), if `tower` is an Aelari tower with one. */
+interface Attunement {
+  readonly gift: boolean;
+  readonly currency: Currency;
+  readonly price: number;
+  readonly availableAfter: CampaignMapId | null;
+  readonly requires: TowerId | null;
+}
+
+/** Xenotech's row for `tower`: an Aelari tower whose access is `attune` or `gift`. */
+function attunementOf(tower: string, catalog: StoreCatalog): Attunement | null {
+  const access = catalog.towerAccess ?? {};
+  if (!Object.hasOwn(access, tower) || catalog.towers[tower]?.faction !== XENOTECH_FACTION) {
+    return null;
+  }
+  const a = access[tower]!;
+  if (a.how === 'gift') {
+    return {
+      gift: true,
+      currency: 'intel',
+      price: 0,
+      availableAfter: a.availableAfter,
+      requires: null,
+    };
+  }
+  if (a.how !== 'attune') return null;
+  return {
+    gift: false,
+    currency: a.currency,
+    price: a.price,
+    availableAfter: a.availableAfter,
+    requires: a.requires ?? null,
+  };
+}
+
 function owns(save: SaveData, tower: string): boolean {
   const towers: readonly string[] = save.unlocks.towers;
   return towers.includes(tower);
@@ -186,6 +245,8 @@ interface Basics {
   readonly protocolSlots: number;
   readonly availableAfter: CampaignMapId | null;
   readonly tower: TowerId | null;
+  readonly needs: TowerId | null;
+  readonly gift: boolean;
 }
 
 /** An item's facts before the checks, or null for an unknown item. */
@@ -208,6 +269,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         protocolSlots: rank?.protocolSlots ?? 0,
         availableAfter: def.availableAfter,
         tower: def.tower ?? null,
+        needs: def.tower ?? null,
+        gift: false,
       };
     }
     case 'protocol': {
@@ -224,6 +287,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         protocolSlots: 0,
         availableAfter: def.availableAfter,
         tower: null,
+        needs: null,
+        gift: false,
       };
     }
     case 'specs': {
@@ -241,6 +306,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         protocolSlots: 0,
         availableAfter: engineering.availableAfter,
         tower: item.tower,
+        needs: item.tower,
+        gift: false,
       };
     }
     case 'license': {
@@ -260,6 +327,8 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         // A license is stocked no earlier than the shop opens.
         availableAfter: license.availableAfter ?? SYSTEM_UNLOCKS.shop,
         tower: item.tower,
+        needs: null,
+        gift: false,
       };
     }
     case 'ability': {
@@ -278,6 +347,31 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         protocolSlots: 0,
         availableAfter: terms.availableAfter,
         tower: null,
+        needs: null,
+        gift: false,
+      };
+    }
+    case 'attune': {
+      const terms = attunementOf(item.tower, catalog);
+      if (!isTower(item.tower, catalog) || terms === null) return null;
+      // A tower registered ahead of its task (STUB_TOWER_TASKS) isn't stocked yet.
+      if (stubTowerGate(item.tower) !== null) return null;
+      const owned = owns(save, item.tower) ? 1 : 0;
+      // A gift is never sold: its row exists once the story has given it.
+      if (terms.gift && owned === 0) return null;
+      return {
+        pane: 'xenotech',
+        currency: terms.currency,
+        price: terms.price,
+        owned,
+        ranks: 1,
+        grants: [],
+        protocolSlots: 0,
+        // An attunement is stocked no earlier than Xenotech opens.
+        availableAfter: terms.availableAfter ?? SYSTEM_UNLOCKS.xenotech,
+        tower: item.tower,
+        needs: terms.requires,
+        gift: terms.gift,
       };
     }
     default:
@@ -297,8 +391,9 @@ function refusalOf(
   const stocked =
     b.availableAfter === null || isMapWon(save, b.availableAfter) || devUnlocks.includes(b.pane);
   if (!stocked) return 'not_stocked';
-  // A tune-up or spec unlock needs its tower (a license is how you get it).
-  if (item.kind !== 'license' && b.tower !== null && !owns(save, b.tower)) return 'not_owned';
+  // A tune-up or spec unlock needs its tower; an attunement its prerequisite (a license is how you
+  // get a tower, so it needs none).
+  if (b.needs !== null && !owns(save, b.needs)) return 'not_owned';
   if (item.kind === 'specs' && catalog.towers[item.tower]?.specs === undefined) return 'no_specs';
   if (b.owned >= b.ranks) return 'maxed';
   if (save.currencies[b.currency] < b.price) return 'short';
@@ -323,6 +418,7 @@ export function offerFor(
 function itemLabel(item: PurchaseItem): string {
   if (item.kind === 'specs') return `specs for '${item.tower}'`;
   if (item.kind === 'license') return `the license for '${item.tower}'`;
+  if (item.kind === 'attune') return `the attunement for '${item.tower}'`;
   return `${item.kind} '${item.id}'`;
 }
 
@@ -340,7 +436,7 @@ export function refusalMessage(save: SaveData, item: PurchaseItem, offer: Offer 
     case 'not_stocked':
       return `${what} is not stocked until ${offer.availableAfter ?? 'the start'} is won`;
     case 'not_owned':
-      return `${what} needs the ${offer.tower ?? 'tower'} owned`;
+      return `${what} needs the ${offer.needs ?? 'tower'} owned`;
     case 'no_specs':
       return `${what}: the tower has no tier-4 specializations`;
     case 'maxed':
@@ -354,7 +450,8 @@ export function refusalMessage(save: SaveData, item: PurchaseItem, offer: Offer 
 
 /**
  * Buys `item`: deducts its price and records it (an upgrade's next rank, a protocol, a licensed
- * tower, or a tower's spec unlock). Returns a new save (the input is untouched), or the refusal.
+ * or attuned tower, a tower's spec unlock, or an ability). Returns a new save (the input is
+ * untouched), or the refusal.
  */
 export function buy(
   save: SaveData,
@@ -392,6 +489,7 @@ export function buy(
       next.unlocks = { ...save.unlocks, specs: [...save.unlocks.specs, offer.tower!] };
       break;
     case 'license':
+    case 'attune':
       next.unlocks = { ...save.unlocks, towers: [...save.unlocks.towers, offer.tower!] };
       break;
     case 'ability': {
@@ -430,11 +528,41 @@ function entryPrice(o: Offer, catalog: StoreCatalog): number {
 }
 
 /**
+ * Whether a shelf lists `o` yet. Everything is listed, greyed out until stocked ("Arrives after
+ * {map}"), except an item that would name an ally the player hasn't met: an upgrade marked
+ * `hideUntilStocked` (Ves'thara's Rapport), and a tune-up or spec unlock for a tower that's given
+ * or attuned (an Aelari or Skitterkin tower), whose row waits until that tower's access row is
+ * stocked. A pane `devUnlocks` opens is fully stocked, so it lists everything.
+ */
+function listed(
+  save: SaveData,
+  o: Offer,
+  devUnlocks: readonly MetaSystem[],
+  catalog: StoreCatalog,
+): boolean {
+  if (devUnlocks.includes(o.pane)) return true;
+  const stocked = (after: string | null): boolean => after === null || isMapWon(save, after);
+  if (o.item.kind === 'upgrade' && catalog.upgrades[o.item.id]?.hideUntilStocked === true) {
+    return stocked(o.availableAfter);
+  }
+  if ((o.item.kind === 'upgrade' || o.item.kind === 'specs') && o.tower !== null) {
+    const access = catalog.towerAccess ?? {};
+    const a = Object.hasOwn(access, o.tower) ? access[o.tower] : undefined;
+    if (a !== undefined && (a.how === 'gift' || a.how === 'attune')) {
+      return stocked(a.availableAfter);
+    }
+  }
+  return true;
+}
+
+/**
  * One pane's offers, in a fixed display order: R&D Command's upgrades, then its Technician
- * abilities; the shop's Vrell licenses,
- * then global upgrades, then tune-ups, then Field Protocols; Engineering's spec unlock for each
- * registered tower with specs, then for each one whose specs ship later. Within each group, by when the item is stocked (campaign order), then by entry
- * price, then by name, so the order never depends on how a module namespace lists its exports.
+ * abilities; the shop's Vrell licenses, then global upgrades, then tune-ups, then Field Protocols;
+ * Engineering's spec unlock for each registered tower with specs, then for each one whose specs
+ * ship later; Xenotech's Aelari towers (the gift once given, then the attunements). Within each
+ * group, by when the item is stocked (campaign order), then by entry price, then by name (a
+ * license or an attunement keeps the access table's order), so the order never depends on how a
+ * module namespace lists its exports. Items not listed yet (`listed`) are left out.
  */
 export function shelf(
   save: SaveData,
@@ -454,6 +582,12 @@ export function shelf(
           .map(([id]) => ({ kind: 'specs', tower: id })),
       );
     }
+  } else if (pane === 'xenotech') {
+    groups.push(
+      Object.keys(catalog.towerAccess ?? {})
+        .filter((t) => attunementOf(t, catalog) !== null)
+        .map((t) => ({ kind: 'attune', tower: t })),
+    );
   } else {
     const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
     if (pane === 'shop') {
@@ -485,7 +619,7 @@ export function shelf(
     items
       .flatMap((item) => {
         const o = offerFor(save, item, devUnlocks, catalog);
-        return o === null ? [] : [o];
+        return o === null || !listed(save, o, devUnlocks, catalog) ? [] : [o];
       })
       .toSorted(
         (a, b) =>

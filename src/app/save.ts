@@ -569,6 +569,7 @@ function campaignView(s: Session): CampaignView {
       rnd: systemView(s, 'rnd'),
       shop: systemView(s, 'shop'),
       engineering: systemView(s, 'engineering'),
+      xenotech: systemView(s, 'xenotech'),
     },
   };
 }

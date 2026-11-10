@@ -2,7 +2,6 @@
 // inside them, the watchtower, the lamps along the wall (what they light and what they don't), the
 // diagonal air lane, and the Sundown schedule. A change is never silent.
 import { describe, expect, it } from 'vitest';
-import { darkTarget, isLitAt } from '../../../sim/darkness.ts';
 import { compileContent } from '../../compile.ts';
 import { RAW_CONTENT } from '../../registry.ts';
 import type { TileChar } from '../../types.ts';
@@ -11,8 +10,9 @@ const content = compileContent(RAW_CONTENT);
 const map = content.maps.a2_m06;
 const tilesOf = (ch: TileChar): [number, number][] =>
   map.tiles.flatMap((t, i) => (t === ch ? [[i % map.cols, Math.floor(i / map.cols)]] : []));
-const NO_TOWERS = { used: 0, items: [] };
-const lit = ([c, r]: [number, number]): boolean => isLitAt(map.lights, NO_TOWERS, c + 0.5, r + 0.5);
+/** Whether a lamp lights the tile's centre (the sim's rule, sim/darkness.ts `isLitAt`). */
+const lit = ([c, r]: [number, number]): boolean =>
+  map.lights.some((l) => (c + 0.5 - l.x) ** 2 + (r + 0.5 - l.y) ** 2 <= l.radiusSq);
 
 describe('A2M6 · Sundown', () => {
   it('has the facts act2.md gives', () => {
@@ -66,7 +66,7 @@ describe('A2M6 · Sundown', () => {
       [7, 4],
       [10, 4],
     ] as [number, number][]) {
-      expect(lit(pad), `${pad}`).toBe(true);
+      expect(lit(pad), pad.join(',')).toBe(true);
     }
     for (const pad of [
       [9, 6],
@@ -80,19 +80,19 @@ describe('A2M6 · Sundown', () => {
       [10, 10],
       [14, 10],
     ] as [number, number][]) {
-      expect(lit(pad), `${pad}`).toBe(false);
+      expect(lit(pad), pad.join(',')).toBe(false);
     }
   });
 
-  it('darkens from W4 to full Long Night darkness as W11 starts, and stays dark', () => {
-    const levels = map.waves.map((_, i) => darkTarget(map.lighting, i + 1));
-    expect(levels.slice(0, 3)).toEqual([0, 0, 0]);
-    expect(levels.slice(10)).toEqual([1, 1, 1, 1]);
-    for (let w = 4; w <= 11; w++) expect(levels[w - 1]).toBeGreaterThan(levels[w - 2]!);
+  it('darkens from W4 to full Long Night darkness as W11 starts (balance/a2m6.test.ts plays it)', () => {
+    expect(map.lighting.map((k) => [k.wave, k.env, k.dark])).toEqual([
+      [3, 'act2.dusk', 0],
+      [11, 'act2.dusk', 1],
+    ]);
   });
 
   it('awards Before the Dark for no leaks in the last three waves', () => {
-    expect(map.medals.challenge).toMatchObject({
+    expect(map.medals?.challenge).toMatchObject({
       id: 'before_the_dark',
       condition: { leaks: { waves: [12, 14] }, lte: 0 },
     });

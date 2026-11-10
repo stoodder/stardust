@@ -186,6 +186,36 @@ describe('catalog: progression.md numbers', () => {
     ]);
   });
 
+  it("Ves'thara's Rapport (§ 7.3, T509): 2 Intel, Stillness −15% cooldown, after A2M6", () => {
+    const u = UPGRADES.rapport_vesthara;
+    expect(u).toMatchObject({
+      kind: 'rnd',
+      companion: 'vesthara',
+      availableAfter: 'a2_m06',
+      hideUntilStocked: true,
+    });
+    expect(prices(u)).toEqual([2]);
+    expect(u.ranks[0]?.grants).toEqual([
+      { kind: 'abilityStat', ability: 'stillness', stat: 'cooldown', pct: -0.15 },
+    ]);
+  });
+
+  it('Xenotech (§ 7.2, T509): the Prism given, the other Aelari attuned for 3 Intel once it is owned', () => {
+    expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
+    const attuned = Object.entries(TOWER_ACCESS).filter(([, a]) => a.how === 'attune');
+    expect(attuned.map(([t]) => t)).toEqual(['mindspike', 'lantern']);
+    for (const [tower, a] of attuned) {
+      expect(TOWERS[tower as keyof typeof TOWERS].faction, tower).toBe('aelari');
+      expect(a, tower).toEqual({
+        how: 'attune',
+        currency: 'intel',
+        price: 3,
+        availableAfter: 'a2_m05',
+        requires: 'prism',
+      });
+    }
+  });
+
   it('Engineering (§ 7.1): Everglow specs 2 Intel, the rest 3, after A1M4', () => {
     expect(ENGINEERING).toEqual({
       currency: 'intel',

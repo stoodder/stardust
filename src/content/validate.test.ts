@@ -620,7 +620,7 @@ describe('validate: maps', () => {
     rejects(withMap({ revisitOf: 'fx_map' }), 'revisit');
   });
 
-  it("[lighting] keys name the map's waves in rising order and leave its env (T410a)", () => {
+  it("[lighting] keys name the map's waves in rising order and leave its env or darken (T410a, T522)", () => {
     expect(validate(withMap({ lighting: [{ wave: 2, env: 'act2.dusk' }] }))).toEqual([]);
     rejects(withMap({ lighting: [] }), 'lighting');
     rejects(withMap({ lighting: [{ wave: 3, env: 'act2.dusk' }] }), 'lighting');

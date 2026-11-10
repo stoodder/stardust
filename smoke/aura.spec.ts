@@ -102,6 +102,8 @@ test('aura: the Cantor rings and refills a chipped Glimmer; a Blinkstrider tells
 
   expect(await until(page, 'refill')).toBe(true);
   expect(await page.evaluate(() => globalThis.__sd!.render()!.shields.auras)).toBe(1);
+  // T530a: the Glimmer it refills glints (light catching its glass).
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.shields.glints)).toBeGreaterThan(0);
   await shot(page, 'aura', 2, 'refill');
 
   expect(await until(page, 'blinkTell')).toBe(true);

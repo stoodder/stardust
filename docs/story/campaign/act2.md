@@ -670,7 +670,7 @@ Par runs about 10.1 min at 1× and so do both alts (Story 12.7): **the median 1�
 | W11 | Cluster Thumper at the merge |
 | W12 | The (10,10) Thumper to T3 |
 
-Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 131, 30, 17, 285 (W1 after the setup, W2–W14), 456 unspent at the end, so calling waves early buys it nothing. **Par's margin is all in W14:** it holds every wave whole until the last, where five of the biggest flock's 17 Rift Moths cross the wall in full dark with everything else, so it wins at **17/22 (77.3%)** on every seed (campaign.md §7's target 68, a step and a half above it; one more Moth in W14's flock gives 16/22, 72.7, see the shifts below) and never earns Before the Dark.
+Par's bank as each build phase opens: 92, 96, 48, 16, 16, 102, 70, 14, 58, 133, 131, 30, 17, 285 (W1 after the setup, W2–W14), 456 unspent at the end, so calling waves early buys it nothing. **Par's margin is all in W14:** it holds every wave whole until the last, where five of the biggest flock's 17 Rift Moths cross the wall in full dark with everything else, so it wins at **17/22 (77.3%)** on every seed (campaign.md §7's target is 68: the W14 flock is the lever, and it moves par in noisy steps, 18 Moths giving 15/22 but 14, below the band, under a ±0.2 s shift, so par sits at 17; the Act II curve is T560's) and never earns Before the Dark.
 
 **No-counter builds** (`noCounterBuilds`, by category; `noCounterLoseByWave` 10; each also loses with the full catalog):
 - **no-splash:** Prism, Rivet, Skyhook, Sprinkler (no Thumper or Zapcoil), par's yard with Rivets where its Thumpers stand: W6–W7's clusters drown it; it loses in W7 (W13 with the full catalog).

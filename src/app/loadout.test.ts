@@ -77,6 +77,8 @@ describe('the loadout screen (app side)', () => {
       'Lightsong', // the Prism's and Lantern's (T508)
     ]);
     expect(view.links[7]?.bonus).toBe("Prism Spire ramps 30% faster · Seer's Lantern Marks +5%");
+    // Resonance holds only while a shield is up (T531).
+    expect(view.links[6]?.bonus).toBe('Zapcoil +20% damage vs shields · Prism Spire +20% damage vs shields');
     expect(view.links[3]?.bonus).toContain('Lookout Shack +0.5 detection radius');
     expect(view.links[5]?.bonus).toBe('Grapple Harpoon +10% fire rate, +3 credits per kill');
     expect(view.links[1]?.bonus).toBe('Thumper +20% damage vs Chilled · Sprinkler +0.3 range');

@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { saveModifiers } from './loadout.ts';
+import { towerPool } from './pools.ts';
 import {
   LIVE_STORE,
   buy,
   offerFor,
   openQuestionOffered,
+  refusalMessage,
   shelf,
   type PurchaseItem,
 } from './purchase.ts';
@@ -74,11 +76,12 @@ describe('offers', () => {
     const fresh = createNewSave();
     expect(offerFor(fresh, MK2)?.refusal).toBe('pane_locked');
     const shop = shelf(DEV_SAVES.after_a1m1.build(), 'shop');
-    // Every sellable upgrade but R&D's four, every protocol, and the four Vrell licenses (T408:
-    // the Harpoon's and Crane's joined the Zapcoil's and Lookout's). Granted-only upgrades (C2's
+    // Every shop upgrade but the Aelari tune-ups (kept off the shelf until A2M5: they'd name
+    // Ves'thara's towers early, T509), every protocol, and the four Vrell licenses (T408: the
+    // Harpoon's and Crane's joined the Zapcoil's and Lookout's). Granted-only upgrades (C2's
     // Zibzab Tune-up) never reach a shelf: the story gives them.
-    const sellable = Object.values(UPGRADES).filter((u) => u.kind !== 'grant').length;
-    expect(shop.length).toBe(sellable - 4 + Object.keys(PROTOCOLS).length + 4);
+    const shopUpgrades = Object.values(UPGRADES).filter((u) => u.kind === 'shop').length;
+    expect(shop.length).toBe(shopUpgrades - 3 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -94,9 +97,9 @@ describe('offers', () => {
     );
     expect(kinds[0]).toBe('license');
     expect(kinds).toEqual(kinds.toSorted((a, b) => order(a) - order(b)));
-    // One per registered tower (the Harpoon's and Crane's since T408, the Prism's since T504, the
-    // Mindspike's since T507, the Lantern's since T508).
-    expect(kinds.filter((k) => k === 'tune')).toHaveLength(11);
+    // One per registered tower (the Harpoon's and Crane's since T408), but the Aelari towers': the
+    // Prism's, Mindspike's, and Lantern's wait for A2M5 (T509).
+    expect(kinds.filter((k) => k === 'tune')).toHaveLength(8);
   });
 
   it('orders each group by arrival, then entry price, then name', () => {
@@ -167,6 +170,150 @@ describe('offers', () => {
     expect(offerFor(save, { kind: 'specs', tower: 'rivet' })?.refusal).toBe('pane_locked');
     expect(offerFor(save, { kind: 'specs', tower: 'rivet' }, ['engineering'])?.refusal).toBe(null);
     expect(offerFor(save, SLOTS, ['rnd'])?.refusal).toBe(null);
+  });
+});
+
+describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () => {
+  const MINDSPIKE: PurchaseItem = { kind: 'attune', tower: 'mindspike' };
+  const LANTERN: PurchaseItem = { kind: 'attune', tower: 'lantern' };
+  const PRISM: PurchaseItem = { kind: 'attune', tower: 'prism' };
+  const items = (offers: readonly { readonly item: PurchaseItem }[]): string[] =>
+    offers.map((o) => JSON.stringify(o.item));
+
+  it('before A2M5: Xenotech is locked, and no shelf names an Aelari tower or her Rapport', () => {
+    const save = DEV_SAVES.after_a2m4_returned.build();
+    save.currencies = { stardust: 1000, intel: 20 };
+    expect(shelf(save, 'xenotech').map((o) => o.refusal)).toEqual(['pane_locked', 'pane_locked']);
+    // The Prism isn't given yet, so its row isn't there at all.
+    expect(offerFor(save, PRISM)).toBeNull();
+    const aelari = new Set(['prism', 'mindspike', 'lantern']);
+    for (const pane of ['shop', 'engineering'] as const) {
+      expect(shelf(save, pane).filter((o) => aelari.has(o.tower ?? ''))).toEqual([]);
+    }
+    // The tune-ups still exist, refused as not stocked; they just aren't listed.
+    expect(offerFor(save, { kind: 'upgrade', id: 'tune_prism' })?.refusal).toBe('not_stocked');
+    expect(items(shelf(save, 'rnd'))).not.toContain(
+      JSON.stringify({ kind: 'upgrade', id: 'rapport_vesthara' }),
+    );
+  });
+
+  it('after A2M5: the Prism given, then the Mindspike and the Lantern at 3 Intel each', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    const xeno = shelf(save, 'xenotech');
+    expect(xeno.map((o) => [o.item, o.refusal])).toEqual([
+      [PRISM, 'maxed'],
+      [MINDSPIKE, null],
+      [LANTERN, null],
+    ]);
+    expect(xeno[0]).toMatchObject({ gift: true, price: 0, owned: 1, pane: 'xenotech' });
+    expect(xeno[1]).toMatchObject({
+      gift: false,
+      currency: 'intel',
+      price: 3,
+      ranks: 1,
+      owned: 0,
+      availableAfter: 'a2_m05',
+      tower: 'mindspike',
+      needs: 'prism',
+      grants: [],
+    });
+  });
+
+  it('attuning adds the tower to the save and the loadout pool, once', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    const intel = save.currencies.intel;
+    const r = buy(save, MINDSPIKE);
+    if (!r.ok) throw new Error(r.message);
+    expect(r.save.currencies.intel).toBe(intel - 3);
+    expect(r.save.unlocks.towers).toContain('mindspike');
+    expect(towerPool(r.save)).toContain('mindspike');
+    expect(save.unlocks.towers).not.toContain('mindspike'); // the input is untouched
+    expectValid(r.save);
+    expect(offerFor(r.save, MINDSPIKE)?.refusal).toBe('maxed');
+    expect(buy(r.save, MINDSPIKE)).toMatchObject({ ok: false, reason: 'maxed' });
+    // after_a2m5 holds 5 Intel: the second attunement waits for another medal.
+    expect(offerFor(r.save, LANTERN)).toMatchObject({ refusal: 'short', price: 3 });
+  });
+
+  it('needs the Prism Spire owned first', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    save.unlocks.towers = save.unlocks.towers.filter((t) => t !== 'prism');
+    const offer = offerFor(save, LANTERN);
+    expect(offer).toMatchObject({ refusal: 'not_owned', needs: 'prism', tower: 'lantern' });
+    expect(refusalMessage(save, LANTERN, offer)).toMatch(/needs the prism owned/);
+    expect(buy(save, LANTERN)).toMatchObject({ ok: false, reason: 'not_owned' });
+    // Not given, so the Prism's own row is gone, and it can't be bought.
+    expect(items(shelf(save, 'xenotech'))).toEqual([
+      JSON.stringify(MINDSPIKE),
+      JSON.stringify(LANTERN),
+    ]);
+    expect(buy(save, PRISM)).toMatchObject({ ok: false, reason: 'unknown' });
+  });
+
+  it('a gift is never sold: owned, it reads as owned', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    expect(buy(save, PRISM)).toMatchObject({ ok: false, reason: 'maxed' });
+  });
+
+  it('only Aelari towers are on the shelf; a non-Aelari attune row is not', () => {
+    const odd = {
+      ...LIVE_STORE,
+      towerAccess: {
+        ...LIVE_STORE.towerAccess,
+        rivet: { how: 'attune', currency: 'intel', price: 3, availableAfter: null },
+      } as const,
+    };
+    const save = DEV_SAVES.after_a2m5.build();
+    expect(offerFor(save, { kind: 'attune', tower: 'rivet' }, [], odd)).toBeNull();
+    expect(offerFor(save, { kind: 'attune', tower: 'zapcoil' })).toBeNull();
+    expect(offerFor(save, { kind: 'attune', tower: 'nope' })).toBeNull();
+  });
+
+  it('after A2M5 the Aelari tune-ups and specs are on their shelves, each needing its tower', () => {
+    const save = DEV_SAVES.after_a2m5.build();
+    save.currencies = { stardust: 1000, intel: 20 };
+    const tune = (id: string) => shelf(save, 'shop').find((o) => o.tower === id);
+    expect(tune('prism')).toMatchObject({ refusal: null, price: 40, needs: 'prism' });
+    expect(tune('mindspike')).toMatchObject({ refusal: 'not_owned', needs: 'mindspike' });
+    expect(tune('lantern')?.refusal).toBe('not_owned');
+    const specs = (id: string) => shelf(save, 'engineering').find((o) => o.tower === id);
+    expect(specs('prism')).toMatchObject({ refusal: null, price: 3, pane: 'engineering' });
+    expect(specs('mindspike')?.refusal).toBe('not_owned');
+    const r = buy(save, MINDSPIKE);
+    if (!r.ok) throw new Error(r.message);
+    expect(offerFor(r.save, { kind: 'upgrade', id: 'tune_mindspike' })?.refusal).toBe(null);
+    expect(offerFor(r.save, { kind: 'specs', tower: 'mindspike' })?.refusal).toBe(null);
+  });
+
+  it("the Lantern's tune-up rank 3 widens its range and its detection radius alike", () => {
+    expect(UPGRADES.tune_lantern.ranks[2]?.grants).toEqual([
+      { kind: 'towerStat', tower: 'lantern', stat: 'range', pct: 0.05 },
+      { kind: 'supportStat', tower: 'lantern', stat: 'radius', pct: 0.05 },
+    ]);
+  });
+
+  it("Ves'thara's Rapport waits, unlisted, until A2M6 is won (her first map as a companion)", () => {
+    const RAPPORT_V: PurchaseItem = { kind: 'upgrade', id: 'rapport_vesthara' };
+    const save = DEV_SAVES.after_a2m5.build();
+    expect(offerFor(save, RAPPORT_V)).toMatchObject({ refusal: 'not_stocked', price: 2 });
+    expect(items(shelf(save, 'rnd'))).not.toContain(JSON.stringify(RAPPORT_V));
+    // Listed for a dev pane open by devUnlocks, as everything is.
+    expect(items(shelf(save, 'rnd', ['rnd']))).toContain(JSON.stringify(RAPPORT_V));
+    (save.campaign.maps as Record<string, unknown>)['a2_m06'] = {
+      completed: true,
+      medals: [],
+      bestMeter: 0,
+    };
+    expect(items(shelf(save, 'rnd'))).toContain(JSON.stringify(RAPPORT_V));
+    const r = buy(save, RAPPORT_V);
+    if (!r.ok) throw new Error(r.message);
+    expect(saveModifiers(r.save)).toContainEqual({
+      kind: 'abilityStat',
+      ability: 'stillness',
+      stat: 'cooldown',
+      pct: -0.15,
+      source: 'rnd:rapport_vesthara',
+    });
   });
 });
 
@@ -290,7 +437,7 @@ describe('buying', () => {
   it('all_unlocked owns everything already', () => {
     const dev = DEV_SAVES.all_unlocked;
     const save = dev.build();
-    for (const pane of ['rnd', 'shop', 'engineering'] as const) {
+    for (const pane of ['rnd', 'shop', 'engineering', 'xenotech'] as const) {
       const offers = shelf(save, pane, dev.devUnlocks);
       expect(offers.length).toBeGreaterThan(0);
       // Everything is owned, every tower's specs included (T407b shipped the last of them).

@@ -293,6 +293,14 @@
   text-transform: uppercase;
 }
 
+/* A held silence (T531): no name plate, a quiet "…" in the speaker's colour where their line would
+   start (the speaker column's 44 px and the 6 px gap). */
+.sd-results-debrief li.sd-results-silence {
+  padding-left: 50px;
+  font-family: var(--font-body);
+  line-height: 10px;
+}
+
 .sd-results-line {
   font-family: var(--font-body);
   line-height: 10px;

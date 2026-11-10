@@ -104,6 +104,9 @@ test('mindspike: Stillness freezes the cluster, Dread unnerves, Echo Spike echoe
   const p = await page.evaluate(([c, r]) => globalThis.__sd?.tileToClient(c, r) ?? null, tile);
   expect(p).not.toBeNull();
   await page.mouse.move(p!.x, p!.y); // checked just above
+  await nextFrames(page);
+  // Stillness's own pale-blue circle (T531), not the strike's reticle.
+  expect(await page.evaluate(() => globalThis.__sd!.render()!.stillAim)).toBe(true);
   await shot(page, 'mindspike', 1, 'stillness-aim');
   await page.mouse.click(p!.x, p!.y);
   await expect(still).toHaveAttribute('aria-pressed', 'false');

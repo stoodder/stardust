@@ -84,6 +84,17 @@ test('the Penitent: its shards, the stand-down, the Ward, the Evacuated meter', 
     return { phase: b?.bossPhase, shield: b?.shieldHp };
   });
   expect(boss).toEqual({ phase: 2, shield: 0 });
+  // T530a: its wall shattered, it marches `broken`.
+  expect(
+    await page.evaluate(() => {
+      const sd = globalThis.__sd!;
+      const st = sd.state()!;
+      const b = st.enemies.items
+        .slice(0, st.enemies.used)
+        .find((e) => e.def?.id === 'dev_penitent');
+      return sd.render()!.enemies.find((e) => e.uid === b?.uid)?.pose;
+    }),
+  ).toBe('broken');
   await shot(page, 'penitent', 0, 'shards');
 
   // 50%: the pivot. It stands down with the Aelari, fading where it stopped.
@@ -93,9 +104,14 @@ test('the Penitent: its shards, the stand-down, the Ward, the Evacuated meter', 
     const st = sd.state()!;
     const b = st.enemies.items.slice(0, st.enemies.used).find((e) => e.def?.id === 'dev_penitent');
     const r = sd.render()!;
-    return { wards: r.wards, alpha: r.enemies.find((e) => e.uid === b?.uid)?.alpha ?? -1 };
+    return {
+      wards: r.wards,
+      alpha: r.enemies.find((e) => e.uid === b?.uid)?.alpha ?? -1,
+      wardAlpha: r.wardAlpha,
+    };
   });
-  expect(fading).toEqual({ wards: 1, alpha: 0.4 }); // the ladder's third rung, half way
+  // The ladder's third rung, half way; the Ward kneels in as the boss fades (T530a).
+  expect(fading).toEqual({ wards: 1, alpha: 0.4, wardAlpha: 0.6 });
   await shot(page, 'penitent', 1, 'stand-down');
 
   // Gone: the Ward kneels in its place, and the core meter is now the Evacuated meter.
@@ -107,6 +123,9 @@ test('the Penitent: its shards, the stand-down, the Ward, the Evacuated meter', 
   expect(after).toMatchObject({ pivotWave: 5, objective: 'escort' });
   expect(await page.evaluate(() => globalThis.__sd!.render()!.wards)).toBe(1);
   await expect(page.getByTestId('escort-meter')).toHaveAccessibleName('Evacuated 0 of 4, lost 0/2');
+  // T531: the relabel moment, Core giving way to Evacuated, and a pip per allowed loss.
+  await expect(page.getByTestId('meter-relabel')).toContainText('Evacuated');
+  await expect(page.getByTestId('escort-lost').locator('.hud-pip')).toHaveCount(2);
   await shot(page, 'penitent', 2, 'ward');
 
   // W6's Motes walk into the Ward's ring and slow.

@@ -253,6 +253,8 @@ export interface CampaignView {
     readonly rnd: SystemView;
     readonly shop: SystemView;
     readonly engineering: SystemView;
+    /** Ves'thara's Xenotech (after A2M5); its tab is hidden until it opens. */
+    readonly xenotech: SystemView;
   };
 }
 

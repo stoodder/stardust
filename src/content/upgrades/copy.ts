@@ -5,12 +5,18 @@
 //   first": the cost (the first rank's, then how it climbs), the pitch, the honest correction. He
 //   never says "free" and never says "friend" (that word is A3M6's).
 // - QUILL runs R&D Command: bright and precise, with "(Per policy.)" on a directive-driven line.
+// - Ves'thara runs Xenotech (the Aelari attunements, after A2M5; her gift's row too): spare and
+//   grave, formal, no contractions, images of light, glass, and memory; she never names a price
+//   (the shelf does) and takes no stardust, which is why the Aelari tune-ups are Zibzab's.
 // - The base shows this copy from Act I to the finale, so no line uses an exclamation point
-//   (style-guide § 2's Act III budget) and none says a protected word early (§ 3).
+//   (style-guide § 2's Act III budget) and none says a protected word early (§ 3). An item that
+//   names an ally the player hasn't met is kept off the shelf until it's stocked (meta/purchase.ts
+//   `shelf`), so its line can speak from after that map: the Aelari tune-ups from A2M5 on.
 
 /**
  * Each catalog item's copy, by item id (UpgradeId or ProtocolId; a Vrell license is
- * `license_<tower>`, from access.ts's `how: 'license'` rows).
+ * `license_<tower>`, from access.ts's `how: 'license'` rows; an attunement `attune_<tower>`, from
+ * its `how: 'attune'` rows, and an Aelari gift `gift_<tower>`, from its `how: 'gift'` row).
  */
 export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Zibzab: Vrell tower licenses (access.ts). The Zapcoil sample's line is act1.md's (A1M3, *Base*).
@@ -54,13 +60,13 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Price first: 40 stardust, rising. Sharper tip, cheaper winch, longer rope. The rope is mostly rope.',
   tune_crane:
     'Price first: 40 stardust, rising. More per shift, cheaper parts, a longer arm. My cut is small.',
-  // TODO(T509): a placeholder in Zibzab's voice until T509 settles where Aelari tune-ups live.
+  // The Aelari tune-ups (T509): Zibzab's, since Ves'thara takes no stardust. Shown from A2M5 on.
   tune_prism:
-    'Price first: 40 stardust, rising. Aelari glass, Vrell tools. She watched me the whole time.',
+    'Price first: 40 stardust, rising. She takes no stardust. I do. So I tune her glass. She watches.',
   tune_mindspike:
     'Price first: 40 stardust, rising. It hums in my teeth. I tuned it anyway. Teeth are fine.',
   tune_lantern:
-    'Price first: 40 stardust, rising. It looked at me. All of me. I gave a discount. Why did I do that.',
+    'Price first: 40 stardust, rising. Rank three, it sees further. It looked at me. All of me.',
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 
@@ -93,11 +99,20 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     "Suppressing Fire recharges 15% faster. Sergeant Okonkwo says he doesn't do rapport. Logged: maybe.",
   rapport_quill:
     'Time Dilation recharges 15% faster. Nobody has filed rapport with me before. I made a folder.',
+  rapport_vesthara:
+    'Stillness recharges 15% faster. She calls me the Machine. I have filed that under rapport.',
   protocol_slots:
     "One more Field Protocol slot. Protocols are policies you get to choose. I'd like to try that.",
   // QUILL: R&D Command's Technician abilities (access.ts `how: 'rnd'`; the id is `ability_<id>`).
   ability_scanner_sweep:
     'A 4-tile sweep reveals cloaked contacts for 10 s. Recharges in 30. I like seeing everyone.',
+
+  // Ves'thara: Xenotech (access.ts `how: 'attune'`, and her gift's row; T509).
+  gift_prism: 'I made it to break your rigs. Now it holds a light for you. Keep it lit.',
+  attune_mindspike:
+    'A thought, made sharp. It strikes the mind, not the shell. What has no mind, it barely touches.',
+  attune_lantern:
+    'The Watch kept vigil by this light. Now it watches for you. What it sees cannot hide.',
 };
 
 /** Item `id`'s copy, or null when it has none (copy.test.ts proves every catalog item has one). */

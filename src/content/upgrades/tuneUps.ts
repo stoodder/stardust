@@ -90,26 +90,49 @@ export const tune_crane = defineUpgrade({
   ],
 });
 
-/**
- * The Prism Spire's tune-up (T504): the usual three ranks, stocked once the Prism can be owned
- * (Ves'thara's gift after A2M5). TODO(T509): decide whether Aelari tune-ups sit in Xenotech in
- * Ves'thara's voice; until then it is Zibzab's, like every other tune-up.
- */
+// The Aelari tune-ups (T504, T507, T508; where they're sold is T509's): Zibzab's, like every other,
+// since Ves'thara takes no stardust (her Xenotech shelf deals in Intel only). Stocked after A2M5,
+// with the gift and the attunements. A tune-up for a given or attuned tower stays off the shelf
+// until then (meta/purchase.ts `shelf`), so the shop never names an Aelari tower early.
+
+/** The Prism Spire's tune-up: the usual three ranks (its beam's damage, its cost, its range). */
 export const tune_prism = tuneUp('tune_prism', 'prism', 'Prism Tune-up', 'a2_m05');
 
-/**
- * The Mindspike Obelisk's tune-up (T507): the usual three ranks, stocked once the Mindspike can be
- * attuned (Xenotech, after A2M5). TODO(T509): where Aelari tune-ups are sold, as the Prism's.
- */
+/** The Mindspike Obelisk's tune-up: the usual three ranks. */
 export const tune_mindspike = tuneUp('tune_mindspike', 'mindspike', 'Mindspike Tune-up', 'a2_m05');
 
 /**
- * The Seer's Lantern's tune-up (T508): the usual three ranks (its beam's damage, its cost, its
- * beam's range), stocked once the Lantern can be attuned (Xenotech, after A2M5). TODO(T509): where
- * Aelari tune-ups are sold, as the Prism's, and whether rank 3 should widen its detection radius
- * (`supportStat` radius) instead.
+ * The Seer's Lantern's tune-up: rank 1 +5% damage (its beam), rank 2 −5% cost, and rank 3 +5%
+ * range **and** +5% detection radius (the `supportStat` radius grant), because its beam's range is
+ * its detection radius (design/towers.md § 7): one rank widens both, so the beam never reaches
+ * past what the Lantern sees.
  */
-export const tune_lantern = tuneUp('tune_lantern', 'lantern', 'Lantern Tune-up', 'a2_m05');
+export const tune_lantern = defineUpgrade({
+  id: 'tune_lantern',
+  name: 'Lantern Tune-up',
+  copy: itemCopy('tune_lantern'),
+  kind: 'shop',
+  currency: 'stardust',
+  availableAfter: 'a2_m05',
+  tower: 'lantern',
+  ranks: [
+    {
+      price: PRICES[0],
+      grants: [{ kind: 'towerStat', tower: 'lantern', stat: 'damage', pct: 0.05 }],
+    },
+    {
+      price: PRICES[1],
+      grants: [{ kind: 'towerCost', tower: 'lantern', tiers: 'all', pct: -0.05 }],
+    },
+    {
+      price: PRICES[2],
+      grants: [
+        { kind: 'towerStat', tower: 'lantern', stat: 'range', pct: 0.05 },
+        { kind: 'supportStat', tower: 'lantern', stat: 'radius', pct: 0.05 },
+      ],
+    },
+  ],
+});
 
 /**
  * The Zibzab Tune-up (design/progression.md § 2.1, C2 Sell; "Ten percent. Honestly, eight."): +8%

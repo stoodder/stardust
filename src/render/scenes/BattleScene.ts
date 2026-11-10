@@ -104,6 +104,7 @@ import { FieldTintView } from '../views/FieldTintView.ts';
 import { LightingView } from '../views/LightingView.ts';
 import { DarknessView } from '../views/DarknessView.ts';
 import { SweepView } from '../views/SweepView.ts';
+import { StillnessAimView } from '../views/StillnessAimView.ts';
 import { FxView } from '../views/FxView.ts';
 import { HarpoonView } from '../views/HarpoonView.ts';
 import { BeamView } from '../views/BeamView.ts';
@@ -216,6 +217,8 @@ export class BattleScene extends Phaser.Scene {
   #darkness!: DarknessView;
   /** Scanner Sweep's circle while its reveal zone lives (T406). */
   #sweeps!: SweepView;
+  /** Stillness's aim preview (T531). */
+  #stillAim!: StillnessAimView;
   #wreckage!: WreckageView;
   #drone!: DroneView;
   /** The Tidybots and the stardust specks they sweep after each wave (T410b; the map's dial). */
@@ -287,6 +290,8 @@ export class BattleScene extends Phaser.Scene {
   readonly #strikeRadius: [number, number] = [0, 0];
   /** Each slot's Scanner Sweep radius: aiming it previews the sweep's own circle (T406, T431). */
   readonly #sweepRadius: [number, number] = [0, 0];
+  /** Each slot's Stillness radius: aiming it previews its own circle (T531). */
+  readonly #stillRadius: [number, number] = [0, 0];
   readonly #segmentReach: [number, number] = [0, 0];
   readonly #muzzle: Vec2 = { x: 0, y: 0 };
   /** The pointer's spot (game px; scratch), and the enemy hovered there (0: none). */
@@ -367,6 +372,7 @@ export class BattleScene extends Phaser.Scene {
     this.#lighting = new LightingView(ctx, map, prefersReducedMotion);
     this.#darkness = new DarknessView(ctx, { lights: map.lights, dark: hasDarkness(map) });
     this.#sweeps = new SweepView(ctx, this.#fx);
+    this.#stillAim = new StillnessAimView(ctx);
     // A salvaged tile is drawn after the dusk grade: the grade goes back over it (D135).
     this.#wreckage = new WreckageView(ctx, map, wreckProps, this.#fx, () =>
       this.#lighting.relight(),
@@ -442,10 +448,11 @@ export class BattleScene extends Phaser.Scene {
         def !== undefined &&
         (e?.kind === 'strike' || e?.kind === 'reveal' || e?.kind === 'stasisArea');
       const radius = area ? abilityStats(def, sim.config.modifiers).radiusTiles : 0;
-      // Aiming previews an area at its real radius: a strike's reticle, or Scanner Sweep's circle.
-      // Stillness (T507) borrows the strike's reticle at its own radius until T531's aim.
-      this.#strikeRadius[slot - 1] = e?.kind === 'strike' || e?.kind === 'stasisArea' ? radius : 0;
+      // Aiming previews an area at its real radius: a strike's reticle, Scanner Sweep's circle, or
+      // Stillness's own (T531).
+      this.#strikeRadius[slot - 1] = e?.kind === 'strike' ? radius : 0;
       this.#sweepRadius[slot - 1] = e?.kind === 'reveal' ? radius : 0;
+      this.#stillRadius[slot - 1] = e?.kind === 'stasisArea' ? radius : 0;
       this.#segmentReach[slot - 1] = e?.kind === 'segment' ? e.reachTiles : 0;
     }
     this.#built = false;
@@ -464,6 +471,8 @@ export class BattleScene extends Phaser.Scene {
       segmentReach: this.#segmentReach,
       sweepRadius: this.#sweepRadius,
       sweeps: this.#sweeps,
+      stillRadius: this.#stillRadius,
+      stills: this.#stillAim,
     });
 
     this.#offs.push(
@@ -531,6 +540,7 @@ export class BattleScene extends Phaser.Scene {
       this.#lighting.reset();
       this.#darkness.reset();
       this.#sweeps.reset();
+      this.#stillAim.reset();
       this.#wreckage.reset();
       this.#tidybots.reset();
       this.#bossBar.reset();
@@ -577,7 +587,7 @@ export class BattleScene extends Phaser.Scene {
     this.#huddles.update(state.enemies);
     this.#shields.update(dt, state.enemies);
     this.#auras.update(state.enemies, state.tick);
-    this.#wards.update(state.allies, state.tick);
+    this.#wards.update(state.allies, state.enemies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#mind.update(dt, state.enemies);
@@ -727,6 +737,7 @@ export class BattleScene extends Phaser.Scene {
       },
       floats: this.#fx.floatsUp,
       sweepAim: this.#sweeps.aiming,
+      stillAim: this.#stillAim.aiming,
       specs: {
         glows: this.#specs.glows,
         puffs: this.#specs.puffs,
