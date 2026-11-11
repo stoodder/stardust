@@ -24,6 +24,7 @@ import {
   STORY_CHOICE_LOCK_MS,
 } from './dialogue.ts';
 import { createHost, type Host } from './host.ts';
+import { startSeal } from './forcedInput.ts';
 import { initSaves } from './save.ts';
 
 vi.mock('./battle.ts', () => ({
@@ -67,7 +68,7 @@ beforeEach(() => {
 afterEach(() => {
   unbind();
   unbind = noop;
-  while (skipScene());
+  for (let i = 0; i < 50 && skipScene(); i++); // a scene at a choice keeps taking Esc
   setCommandTarget(null);
   vi.useRealTimers();
   screen.value = null;
@@ -143,6 +144,7 @@ describe('a locked choice right after another (S6)', () => {
   const scene = { id: 'dev_m6r2_twice', nodes: [door('First.'), door('Second.')] } as Scene;
 
   it('waits its own lock from when it shows', () => {
+    vi.advanceTimersByTime(1000); // a clock past 0 (0 is "no choice showing")
     playScene(scene, { mode: 'fullscreen', record: false });
     const first = dialogue.scene.value?.choices?.[0]?.lockedUntil ?? 0;
     expect(first).toBeGreaterThan(0);
@@ -150,7 +152,6 @@ describe('a locked choice right after another (S6)', () => {
     chooseOption(0);
     const second = dialogue.scene.value?.choices?.[0];
     expect(second?.text).toBe('Second.');
-    console.log('DBG', first, second?.lockedUntil, performance.now());
     expect(second?.lockedUntil).toBe(first + STORY_CHOICE_LOCK_MS);
     // A press a moment after it shows is no answer; one after its lock is.
     vi.advanceTimersByTime(50);
@@ -159,5 +160,52 @@ describe('a locked choice right after another (S6)', () => {
     vi.advanceTimersByTime(STORY_CHOICE_LOCK_MS);
     chooseOption(0);
     expect(dialogue.scene.value).toBeNull();
+  });
+});
+
+describe("the SEAL's permission, behind a line already on the panel (S5, S7)", () => {
+  it('never arms before "Do it, {name}." has typed, and the line stays until the press', () => {
+    bind('a3_m03');
+    // A refugee's hushed line, 4 s on the panel ahead of the cue (C1's case), and a slower one.
+    for (const aheadSec of [4, 9]) {
+      const ahead = {
+        id: `dev_m6r2_ahead_${aheadSec}`,
+        nodes: [{ kind: 'line', speaker: 'bricks', text: '(hush)', durationSec: aheadSec }],
+      } as const;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test scene
+      playScene(ahead as unknown as Scene, { mode: 'comms' });
+      const seal = startSeal('a3_m03', 'seal');
+      emit({ type: 'ScriptCue', cueId: 'a3_m03_cue_seal' });
+      let doItAt: number | null = null;
+      for (let t = 0; t < 40_000 && seal.permittedAt === null; t += 50) {
+        if (doItAt === null && (shown() ?? '').startsWith('Do it, ')) doItAt = performance.now();
+        vi.advanceTimersByTime(50);
+      }
+      expect(doItAt).not.toBeNull();
+      expect(seal.permittedAt).not.toBeNull();
+      expect(seal.permittedAt!).toBeGreaterThan(doItAt!); // it typed first (checked above)
+      // S7: the line stays on the panel while the button waits (short of the waiting line).
+      vi.advanceTimersByTime(10_000);
+      expect(shown()).toMatch(/^Do it, /);
+      // The press: it moves on.
+      seal.stop();
+      vi.advanceTimersByTime(100);
+      expect(shown()).toBeNull();
+      unbind();
+      unbind = noop;
+      bind('a3_m03');
+    }
+  });
+
+  it('the waiting line takes its place after 20 s', () => {
+    bind('a3_m03');
+    const seal = startSeal('a3_m03', 'seal');
+    emit({ type: 'ScriptCue', cueId: 'a3_m03_cue_seal' });
+    for (let t = 0; t < 40_000 && seal.permittedAt === null; t += 50) vi.advanceTimersByTime(50);
+    vi.advanceTimersByTime(19_000);
+    expect(shown()).toMatch(/^Do it, /);
+    vi.advanceTimersByTime(1_500);
+    expect(shown()).toMatch(/^Kid\. It's okay\./);
+    seal.stop();
   });
 });

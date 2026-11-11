@@ -762,7 +762,7 @@ export function chooseOption(index: number): void {
   h.remember =
     option.remember === undefined ? null : `${plateName(option.remember, ctx)} will remember that.`;
   // A choice right after this one gets its own lock from when it shows (D144 S6).
-  // h.choiceAt = 0;
+  h.choiceAt = 0;
   settle(h);
   if (h.cursor.step.kind === 'end' && h.mode !== 'briefing') {
     // A choice that ends the scene still shows its "will remember" before it closes.
@@ -818,6 +818,8 @@ interface CommsPlay {
   button: ReplyButton | null;
   /** From a `keep` queue entry (D144 S2): cut by a pausing scene, it queues as one again. */
   keep?: boolean;
+  /** Its last line has rested on the panel past its hold (`lingerLastLine`; D144 S7). */
+  lingered?: boolean;
   /** The line on screen: when it showed (performance.now), and what moves past it. */
   shownAt?: number;
   moveOn?: () => void;
@@ -881,8 +883,71 @@ const typedWaiters = new Map<string, (() => void)[]>();
 /** Times the last line on the panel typing out. */
 let typedTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** The comms scenes whose first line has shown on the panel this battle (or that were dropped). */
+const startedScenes = new Set<string>();
+/** Who waits for a scene's first line to show (`whenSceneStarted`). */
+const startedWaiters = new Map<string, (() => void)[]>();
+
+/** Scene `id`'s first line has shown (or it went unplayed): its waiters go on. */
+function markStarted(id: string): void {
+  if (startedScenes.has(id)) return;
+  startedScenes.add(id);
+  const waiters = startedWaiters.get(id);
+  startedWaiters.delete(id);
+  for (const w of waiters ?? []) w();
+}
+
+/**
+ * Runs `then` once comms scene `id`'s first line shows on the panel this battle, or at once when
+ * it already has, when it was dropped unplayed, or when dialogue is off (D144 S5: the SEAL's
+ * fallback counts from the permission cue's start, not from the button's show). Returns the cancel.
+ */
+export function whenSceneStarted(id: string, then: () => void): () => void {
+  if (!enabled || startedScenes.has(id) || typedScenes.has(id)) {
+    then();
+    return () => {};
+  }
+  const list = startedWaiters.get(id) ?? [];
+  list.push(then);
+  startedWaiters.set(id, list);
+  return () => {
+    const now = startedWaiters.get(id);
+    if (now !== undefined)
+      startedWaiters.set(
+        id,
+        now.filter((w) => w !== then),
+      );
+  };
+}
+
+/** Scenes whose last line stays on the panel past its hold (`lingerLastLine`). */
+const lingering = new Set<string>();
+/** The comms play resting on its last line (`lingerLastLine`), or null. */
+let lingerOn: CommsPlay | null = null;
+
+/**
+ * Keeps comms scene `id`'s last line on the panel once its hold is up (D144 S7: Bricks's "Do it,
+ * {name}." stays while the SEAL waits), until anything else queues for the panel (the waiting
+ * line) or the returned release runs (the press).
+ */
+export function lingerLastLine(id: string): () => void {
+  lingering.add(id);
+  return () => {
+    lingering.delete(id);
+    releaseLinger();
+  };
+}
+
+/** The line resting on the panel (`lingerOn`) moves on: its scene plays out and the queue goes on. */
+function releaseLinger(): void {
+  const c = lingerOn;
+  lingerOn = null;
+  if (c !== null && commsNow === c) c.moveOn?.();
+}
+
 /** Scene `id`'s last line has typed (or the scene went unplayed): its waiters go on. */
 function markTyped(id: string): void {
+  markStarted(id);
   typedScenes.add(id);
   const waiters = typedWaiters.get(id);
   typedWaiters.delete(id);
@@ -924,6 +989,7 @@ function holdComms(on: boolean): void {
     clearCommsTimer();
     const c = commsNow;
     commsNow = null;
+    lingerOn = null;
     dialogue.comms.value = null;
     if (c !== null && c.cursor.step.kind === 'line') {
       commsQueue.unshift({
@@ -983,7 +1049,9 @@ function dropComms(keepKept = false): void {
 function queueComms(scene: Scene, wave = 0, keep = false): void {
   if (!enabled) return;
   commsQueue.push({ scene, at: performance.now(), wave, ...(keep ? { keep } : {}) });
-  pumpComms();
+  // A line resting on the panel (`lingerLastLine`) gives way to what comes next.
+  if (lingerOn !== null) releaseLinger();
+  else pumpComms();
 }
 
 /**
@@ -1052,6 +1120,12 @@ function showCommsLine(): void {
   const moveOn = (): void => {
     commsTimer = null;
     if (commsNow !== c || c.moveOn !== moveOn) return;
+    // A lingering scene's last line rests here until released (`lingerLastLine`; D144 S7).
+    if (next.step.kind !== 'line' && lingering.has(c.scene.id) && c.lingered !== true) {
+      c.lingered = true;
+      lingerOn = c;
+      return;
+    }
     c.prev = view;
     c.cursor = next;
     showCommsLine();
@@ -1059,6 +1133,7 @@ function showCommsLine(): void {
   c.shownAt = performance.now();
   c.moveOn = moveOn;
   clearCommsTimer();
+  if (!barkScenes.has(c.scene)) markStarted(c.scene.id);
   // The scene's last line: once it has typed, its waiters go on (`whenSceneTyped`).
   if (next.step.kind !== 'line' && !barkScenes.has(c.scene)) {
     const id = c.scene.id;
@@ -1208,6 +1283,7 @@ export function playMapEndLines(
   clearCommsTimer();
   commsQueue.length = 0;
   onIdle = null;
+  lingerOn = null;
   commsNow = {
     scene,
     cursor: start(scene, storyContext(session.map)),
@@ -1377,6 +1453,10 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
   dialogue.comms.value = null;
   typedScenes.clear();
   typedWaiters.clear();
+  startedScenes.clear();
+  startedWaiters.clear();
+  lingering.clear();
+  lingerOn = null;
   commsQueue.length = 0;
   commsNow = null;
   commsEnding = false;
@@ -1681,6 +1761,7 @@ export function bindDialogue(host: Host<IdSpace>, opts: DialogueOptions): () => 
     clearCommsTimer();
     commsQueue.length = 0;
     commsNow = null;
+    lingerOn = null;
     commsEnding = false;
     mapOver = false;
     onIdle = null;

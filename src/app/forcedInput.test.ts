@@ -13,6 +13,7 @@ import { createHost } from './host.ts';
 import {
   ARM_DELAY_MS,
   HUM_EVERY_MS,
+  PERMISSION_BACKSTOP_MS,
   PERMISSION_FALLBACK_MS,
   WAIT_LINE_MS,
   bindForcedInput,
@@ -32,6 +33,7 @@ import {
  */
 function fakeWorld(held = false) {
   let pending: (() => void) | null = null;
+  let pendingStart: (() => void) | null = null;
   let now = 1000;
   let nextId = 1;
   const timers = new Map<number, { at: number; fn: () => void; every: number | null }>();
@@ -52,12 +54,19 @@ function fakeWorld(held = false) {
     },
     clearInterval: (id) => void timers.delete(id),
     playWaitLine: (map, input) => log.push(`line ${map} ${input}`),
-    awaitPermission(map, input, then) {
+    awaitPermission(map, input, then, started) {
       log.push(`await ${map} ${input}`);
-      if (!held) then();
-      else pending = then;
+      if (!held) {
+        started();
+        then();
+      } else {
+        pending = then;
+        pendingStart = started;
+      }
       return () => {
         pending = null;
+        pendingStart = null;
+        log.push('released');
       };
     },
     hum: () => log.push('hum'),
@@ -90,6 +99,12 @@ function fakeWorld(held = false) {
     permit: () => {
       const p = pending;
       pending = null;
+      p?.();
+    },
+    /** The permission line's scene starts on the panel. */
+    start: () => {
+      const p = pendingStart;
+      pendingStart = null;
       p?.();
     },
   };
@@ -279,19 +294,35 @@ describe('startSeal: permission first (D143 R2: "Do it, {name}." before the pres
     seal.stop();
   });
 
-  it('a permission line that never comes arms it after PERMISSION_FALLBACK_MS', () => {
+  it('a permission line that never types arms it PERMISSION_FALLBACK_MS after its scene started', () => {
     const w = fakeWorld(true);
     const seal = startSeal('a3_m03', 'seal', w.deps);
+    // Something ahead of the cue on the panel: its wait hasn't begun (D144 S5).
+    w.advance(10_000);
+    expect(seal.permittedAt).toBeNull();
+    w.start();
     w.advance(PERMISSION_FALLBACK_MS - 1);
     expect(seal.permittedAt).toBeNull();
     w.advance(1);
-    expect(seal.permittedAt).toBe(1000 + PERMISSION_FALLBACK_MS);
+    expect(seal.permittedAt).toBe(11_000 + PERMISSION_FALLBACK_MS);
     w.advance(ARM_DELAY_MS);
     expect(forcedInputArmed.value).toBe(true);
     // A late permission changes nothing.
     w.permit();
-    expect(seal.permittedAt).toBe(1000 + PERMISSION_FALLBACK_MS);
+    expect(seal.permittedAt).toBe(11_000 + PERMISSION_FALLBACK_MS);
     seal.stop();
+    expect(w.timers()).toBe(0);
+  });
+
+  it('a permission scene that never starts arms it PERMISSION_BACKSTOP_MS after the show', () => {
+    const w = fakeWorld(true);
+    const seal = startSeal('a3_m03', 'seal', w.deps);
+    w.advance(PERMISSION_BACKSTOP_MS - 1);
+    expect(seal.permittedAt).toBeNull();
+    w.advance(1);
+    expect(seal.permittedAt).toBe(1000 + PERMISSION_BACKSTOP_MS);
+    seal.stop();
+    expect(w.log).toContain('released');
     expect(w.timers()).toBe(0);
   });
 

@@ -4,8 +4,12 @@
 // - **Armed after permission.** The button shows as the input is requested, but it waits for the
 //   map's permission line: the last line of its `<map>_cue_<id>` scene (A3M3: Bricks's "Do it,
 //   {name}.") typed out on the comms panel (shown, under fast text; `whenSceneTyped`; D143 R2). With
-//   no such scene, or dialogue off, permission is given as it shows; a line that never comes gives
-//   it after PERMISSION_FALLBACK_MS. Then it takes no press for ARM_DELAY_MS more, and after that
+//   no such scene, or dialogue off, permission is given as it shows. A line that never types gives
+//   it PERMISSION_FALLBACK_MS after the scene's first line showed (`whenSceneStarted`; D144 S5: a
+//   bark or a line ahead of the cue never eats its wait), or PERMISSION_BACKSTOP_MS after the
+//   button showed when the scene never starts (its `when` cut every line). That last line stays on
+//   the panel until the press or the waiting line (`lingerLastLine`; D144 S7). Then it takes no
+//   press for ARM_DELAY_MS more, and after that
 //   only from a key-down or pointer-down that began after it armed (`pressAccepted`), so a key held
 //   or mashed through the cue, or a click already on its way, can't seal the door.
 // - **Every control locked.** The HUD is inert but for the Menu and the speaker (ui/hud/index.tsx),
@@ -39,16 +43,28 @@ import {
 import { pauseMenu } from '../ui/pause/state.ts';
 import { playSfx } from './audio.ts';
 import { cancel, issue } from './commands.ts';
-import { dialogueEnabled, playScene, whenSceneTyped } from './dialogue.ts';
+import {
+  dialogueEnabled,
+  lingerLastLine,
+  playScene,
+  whenSceneStarted,
+  whenSceneTyped,
+} from './dialogue.ts';
 import type { Host } from './host.ts';
 
 /** How long the button waits before it takes a press (ms; D141's 700 ms, as C3's options). */
 export const ARM_DELAY_MS = 700;
 /**
- * The most real time the button waits for its permission line (ms): a cue that never typed (cut,
- * or its `when` failing) can't leave it unarmed. The comms panel's stale time (COMMS_STALE_MS).
+ * The most real time the button waits for its permission line once the line's scene has started
+ * on the panel (ms): a cue cut before its last line typed can't leave it unarmed. The comms
+ * panel's stale time (COMMS_STALE_MS).
  */
 export const PERMISSION_FALLBACK_MS = 15_000;
+/**
+ * The most real time the button waits from its show when the permission scene never starts (ms):
+ * its `when` cut every line, or it went stale behind the panel's queue unheard.
+ */
+export const PERMISSION_BACKSTOP_MS = 30_000;
 /** Real time before the waiting line plays (ms; act3.md § A3M3: "After 20 s, once"), from permission. */
 export const WAIT_LINE_MS = 20_000;
 /** The hum's sound and how often it is struck again while the input waits (ms). */
@@ -119,10 +135,11 @@ export interface SealDeps {
   /** Plays the waiting line's scene, if the map has one (once). */
   playWaitLine(map: string, input: string): void;
   /**
-   * Calls `then` once the press is permitted (the permission line typed; at once without one).
-   * Returns the cancel.
+   * Calls `then` once the press is permitted (the permission line typed; at once without one),
+   * and `started` once that line's scene starts on the panel (at once without one). Returns the
+   * cancel, which also lets the permission line leave the panel (the press).
    */
-  awaitPermission(map: string, input: string, then: () => void): () => void;
+  awaitPermission(map: string, input: string, then: () => void, started: () => void): () => void;
   /** Strikes the hum once. */
   hum(): void;
   /** Issues the press. */
@@ -141,13 +158,22 @@ const defaultDeps: SealDeps = {
     const scene = SCENES[waitSceneId(map, input)];
     if (scene !== undefined && dialogueEnabled()) playScene(scene);
   },
-  awaitPermission(map, input, then) {
+  awaitPermission(map, input, then, started) {
     const id = permissionSceneId(map, input);
     if (SCENES[id] === undefined || !dialogueEnabled()) {
+      started();
       then();
       return () => {};
     }
-    return whenSceneTyped(id, then);
+    // "Do it, {name}." stays on the panel until the press (or the waiting line) moves it on.
+    const offLinger = lingerLastLine(id);
+    const offStarted = whenSceneStarted(id, started);
+    const offTyped = whenSceneTyped(id, then);
+    return () => {
+      offStarted();
+      offTyped();
+      offLinger();
+    };
   },
   hum() {
     if (isSfxId(HUM_SFX)) playSfx(HUM_SFX);
@@ -234,11 +260,19 @@ export function startSeal(map: string, input: string, deps: SealDeps = defaultDe
     }, ARM_DELAY_MS);
     if (deps.clockRuns()) runClock();
   };
-  fallback = deps.setTimeout(() => {
-    fallback = null;
-    permit();
-  }, PERMISSION_FALLBACK_MS);
-  const cancelPermission = deps.awaitPermission(map, input, permit);
+  const fallbackIn = (ms: number): void => {
+    if (fallback !== null) deps.clearTimeout(fallback);
+    fallback = deps.setTimeout(() => {
+      fallback = null;
+      permit();
+    }, ms);
+  };
+  // The backstop from the show, until the permission scene starts: then its own wait from there.
+  fallbackIn(PERMISSION_BACKSTOP_MS);
+  const started = (): void => {
+    if (permittedAt === null) fallbackIn(PERMISSION_FALLBACK_MS);
+  };
+  const cancelPermission = deps.awaitPermission(map, input, permit, started);
 
   return {
     input,
@@ -313,19 +347,18 @@ function onVisibility(): void {
 }
 
 /**
- * The open blast doors' screen boxes on `host`'s map (game px; render/views/blastDoor.ts), which
- * the forced input's screen keeps clear (`forcedInputAvoid`; D143 R3). None on a map without doors.
+ * The blast doors' screen boxes on `host`'s map (game px; render/views/blastDoor.ts), open or shut,
+ * which the forced input's screen keeps clear (`forcedInputAvoid`; D143 R3, D144 S8: the shut one
+ * too, so neither door is under the button). None on a map without doors.
  */
-export function openDoorBoxes(host: Host<IdSpace>): AvoidRect[] {
+export function doorBoxes(host: Host<IdSpace>): AvoidRect[] {
   const map = host.sim.map;
   const origin = mapOrigin(map.cols, map.rows, VIEW_W, VIEW_H);
-  return doorCores(map, host.sim.config.scriptFlags)
-    .filter((d) => d.open)
-    .map((d) => {
-      const r = { x: 0, y: 0, w: 0, h: 0 };
-      doorScreenBox(d.col, d.row, origin, r);
-      return { x: r.x, y: r.y, w: r.w, h: r.h };
-    });
+  return doorCores(map, host.sim.config.scriptFlags).map((d) => {
+    const r = { x: 0, y: 0, w: 0, h: 0 };
+    doorScreenBox(d.col, d.row, origin, r);
+    return { x: r.x, y: r.y, w: r.w, h: r.h };
+  });
 }
 
 /** Keeps the HUD's `forcedInput` in sync with `host`'s sim; returns the unbind. */
@@ -337,7 +370,7 @@ export function bindForcedInput(host: Host<IdSpace>, deps: SealDeps = defaultDep
     // Nothing armed, aimed, or selected under the lock: Esc goes straight to the pause menu.
     cancel();
     current = startSeal(map, id, deps);
-    forcedInputAvoid.value = openDoorBoxes(host);
+    forcedInputAvoid.value = doorBoxes(host);
     forcedInput.value = id;
   };
   if (host.sim.state.pendingInput !== null) show(host.sim.state.pendingInput);
