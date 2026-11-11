@@ -166,12 +166,10 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
     });
     // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts), and T606's
     // revokeTowerClass, revokeAbility, and setModifier (sim/revoke.test.ts).
-    // Retargeted by D146 (T700a: sim/m7seams.test.ts).
+    // Retargeted by D146 (T700a: sim/m7seams.test.ts); T706 runs objectiveCompleted, spawnWave,
+    // and the `cleared` atom.
     expect(SCRIPT_GATES).toEqual({
-      objectiveCompleted: 'T706',
       openTile: 'T707',
-      spawnWave: 'T706',
-      cleared: 'T706',
       restProgressPct: 'M8',
       setLighting: 'M8',
       checkpoint: 'M8',

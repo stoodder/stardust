@@ -70,6 +70,7 @@ describe('the loadout screen (app side)', () => {
       'Scanner Sweep', // plays since T406
       'Stillness', // plays since T507
       'Underfoot', // plays since T604
+      'System Reboot', // plays since T702
     ]);
     expect(view.links.map((l) => l.name)).toEqual([
       'Crossfire',

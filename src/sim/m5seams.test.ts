@@ -172,11 +172,9 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T500a rows; D137)', ()
     });
     expect(SCRIPT_GATES).not.toHaveProperty('standDown'); // T506
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot');
-    expect(SCRIPT_GATES).toMatchObject({
-      // No M5 map uses these (D137); retargeted by D141, then D146 (T706).
-      objectiveCompleted: 'T706',
-      checkpoint: 'M8',
-    });
+    // No M5 map uses these (D137); retargeted by D141, then D146: T706 runs objectiveCompleted.
+    expect(SCRIPT_GATES).toMatchObject({ checkpoint: 'M8' });
+    expect(SCRIPT_GATES).not.toHaveProperty('objectiveCompleted');
   });
 
   it('refuse the M5 enemies by mechanic, naming the enemy', () => {

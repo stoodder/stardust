@@ -267,13 +267,12 @@ describe('wreckage by marker and objectives as conditions', () => {
       checkpoint: 'M8',
     });
     expect(SCRIPT_GATES).not.toHaveProperty('bossEnd.pivot'); // the pivot runs since T506
+    // `objectiveCompleted` runs since T706 (render/__fixtures__/devBearers.test.ts).
     const events = [
-      { id: 'a', on: { objectiveCompleted: 'x' }, when: null, actions: [], once: true },
       { id: 'b', on: { tick: 1 }, when: null, actions: [{ setLighting: 'dusk' }], once: true },
       { id: 'c', on: { tick: 1 }, when: null, actions: [{ checkpoint: true }], once: true },
     ] as const;
     expect(unsupportedScript({ ...MAP, events })).toEqual([
-      "event 'a': trigger objectiveCompleted is not simulated until T706",
       "event 'b': action setLighting is not simulated until M8",
       "event 'c': action checkpoint is not simulated until M8",
     ]);

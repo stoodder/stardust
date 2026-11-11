@@ -44,10 +44,10 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
   // default four; T406), Reel It In on the Harpoon and the Crane (T408), Resonance on the Zapcoil
   // and the Prism (T504), Lightsong on the Prism and the Lantern (T508), Splash Zone and Finders
   // Keepers on the Scuttle Den (T604), Harmony on the Mindspike and the Hum Choir (T607), Pinned
-  // Down and Stillmind on the Stasis Bloom (T608).
+  // Down and Stillmind on the Stasis Bloom (T608), Acid Rain and Sticky Flak on the Gloop (T705).
   await expect(page.getByText('Bricks · Suppressing Fire')).toBeVisible();
   const links = page.locator('.sd-lo-link');
-  await expect(links).toHaveCount(13);
+  await expect(links).toHaveCount(15);
   await expect(links.filter({ hasText: 'Conductive' })).toContainText('Needs Zapcoil');
   await expect(links.filter({ hasText: 'Overwatch' })).toContainText('Needs Lookout');
   await expect(links.filter({ hasText: 'Reel It In' })).toContainText(
@@ -147,7 +147,7 @@ test("loadout: A1M2's counters, and a heads-up when the pick has no answer to Ar
   await towerCard(page, 'Skyhook').click();
   await expect(warning).toHaveText(
     'Heads up: this shift needs an answer to Armor, and nothing here has one. Rivet (T3) or ' +
-      'Thumper or Grapple Harpoon or Prism Spire would.',
+      'Thumper or Grapple Harpoon or Prism Spire or Gloop Spitter would.',
   );
   await shot(page, 'loadout', 5, 'heads-up');
   await page.getByRole('button', { name: 'Lock in' }).click();

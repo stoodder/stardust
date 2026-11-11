@@ -12,23 +12,24 @@ import type { CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace, MapDef, RawContent } from '../../content/types.ts';
 import { validate } from '../../content/validate.ts';
 import {
+  bearersCarried,
+  bearerTotal,
+  clearedInTime,
   createBuildExecutor,
   createSim,
+  evaluateCondition,
   gatedFlagDefaults,
+  postManned,
+  refugeesRemaining,
   runHeadless,
+  settledCondition,
+  type ConditionContext,
   type Sim,
   type SimConfig,
   type SimEvent,
+  type SimState,
 } from '../../sim/index.ts';
-import { bearersCarried, bearerTotal, postManned } from '../../sim/bearers.ts';
-import {
-  clearedInTime,
-  evaluateCondition,
-  settledCondition,
-  type ConditionContext,
-} from '../../sim/conditions.ts';
-import { refugeesRemaining } from '../../sim/escort.ts';
-import { createState } from '../../sim/state.ts';
+import type { DeepReadonly } from '../../shared/types.ts';
 import { flagGatedGround } from '../views/flagDressing.ts';
 import { DEV_CONTENT, type DevIds } from './devBattle.ts';
 import { bearersMap } from './devM7.ts';
@@ -271,12 +272,16 @@ describe('the `cleared` atom (T706)', () => {
   const feed1 = 11; // (11, 0)
   const feed2 = 7 * map.cols + 11;
 
-  function at(wave: number, cleared: number[], atWave: number[] = []) {
-    const state = createState(map, 1);
-    state.wave = wave;
-    state.wreckage.cleared.push(...cleared);
-    state.wreckageAtWave.push(...atWave);
-    return state;
+  const base = createSim(config()).state;
+  /** The run as it would stand at wave `wave` with those tiles cleared (a view; nothing runs). */
+  function at(wave: number, cleared: number[], atWave: number[] = []): typeof base {
+    const view: DeepReadonly<SimState> = {
+      ...base,
+      wave,
+      wreckage: { ...base.wreckage, cleared },
+      wreckageAtWave: atWave,
+    };
+    return view;
   }
 
   it('before its wave: open until all are cleared, then true and settled', () => {
