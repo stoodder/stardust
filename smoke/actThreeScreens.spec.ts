@@ -175,6 +175,13 @@ test("t714: QUILL's own list shows with its header line (A3M6, Rewrite)", async 
   await expect(list).toBeVisible();
   await expect(list.getByRole('listitem')).toHaveCount(5);
   await expect(list).toContainText('Directive 1');
+  // The header is the briefing line's, under QUILL.SYS (no Everglow plate), never the card's (D150).
+  await expect(list).not.toContainText(/Entries/i);
+  const header = page
+    .getByTestId('briefing-lines')
+    .locator('.hud-briefing-line')
+    .filter({ hasText: /QUILL\.DIRECTIVES/i });
+  await expect(header.locator('.dlg-name')).toHaveText(/^QUILL\.SYS$/i);
   await shot(page, 't714', 11, 'quill-list');
 });
 

@@ -173,7 +173,7 @@ export function Briefing({ view }: { view: SceneView }) {
         {/* A3M6 under Rewrite (T714): while the `system` header line is on screen, the list QUILL
             wrote stands where the intel and medals do (they come back with the next line). */}
         {listUp && view.line !== null ? (
-          <QuillListCard header={view.line.text} entries={QUILL_LIST} />
+          <QuillListCard entries={QUILL_LIST} />
         ) : (
           <>
             {intel !== null && <IntelStrip intel={intel} />}

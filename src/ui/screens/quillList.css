@@ -1,7 +1,8 @@
 /* QUILL's own list (quillListCard.tsx; T714; art-direction.md § Dialogue presentation): an
    Everglow terminal gone quiet, deep ink with QUILL's teal edge, standing in the briefing where its
-   intel and medals were while the header line shows. The header in steel, each directive's number in teal, its words in
-   white: QUILL's voice, no system cheer. */
+   intel and medals were while the header line shows (the header is the line's, never repeated
+   here; D150). Each directive's number in teal, its words in white: QUILL's voice, no system
+   cheer. */
 .ql {
   --edge: var(--sd-teal-3);
   box-sizing: border-box;
@@ -13,13 +14,6 @@
   font-size: 8px;
   line-height: 9px;
   text-transform: uppercase;
-}
-
-.ql-header {
-  margin: 0;
-  padding-bottom: 4px;
-  color: var(--sd-steel-4);
-  box-shadow: 0 1px 0 var(--sd-ink-3);
 }
 
 .ql-entries {
