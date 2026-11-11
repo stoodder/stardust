@@ -238,7 +238,7 @@ export function offerCopy(o: Offer): string | null {
  */
 function storyRefunded(id: string, save: SaveData): boolean {
   const choice = save.story.flags.quill_choice;
-  if (choice !== undefined && C4_EFFECTS[choice].refund === id) return true;
+  if (Object.entries(C4_EFFECTS).some(([c, e]) => c === choice && e.refund === id)) return true;
   const grants = lookup(UPGRADE_DEFS, id)?.ranks[0]?.grants ?? [];
   const lost: readonly string[] = save.unlocks.revokedAbilities;
   return (

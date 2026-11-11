@@ -116,10 +116,10 @@ describe('the M7 content (stubs under their final ids)', () => {
       tellTicks: 120,
       radiusTiles: 2.5,
       radiusSq: 6.25,
-      durationTicks: 240,
+      durationTicks: 360, // 6 s (T760)
       preferChoir: true,
     });
-    expect(e.auditor.jam).toMatchObject({ kind: 'ring', periodTicks: 600, durationTicks: 180 });
+    expect(e.auditor.jam).toMatchObject({ kind: 'ring', periodTicks: 600, durationTicks: 240 }); // 4 s (T760)
     expect(e.associate.healAura).toEqual({
       radiusTiles: 1.5,
       radiusSq: 2.25,
@@ -212,12 +212,12 @@ describe('validation of the M7 seams', () => {
     expect(() => compileContent(RAW_CONTENT)).not.toThrow();
   });
 
-  it('[enemy-ability]: jams tell ≥ 1.5 s and last ≤ 4 s; only a tendril picks', () => {
+  it('[enemy-ability]: jams tell ≥ 1.5 s and last ≤ JAM_MAX_SEC (6 s); only a tendril picks', () => {
     const silencer = RAW_CONTENT.enemies.silencer;
-    const bad = { ...silencer, jam: { ...silencer.jam!, tellSec: 1, durationSec: 5 } };
+    const bad = { ...silencer, jam: { ...silencer.jam!, tellSec: 1, durationSec: 7 } };
     expect(errors(live({ enemies: { silencer: bad } }), 'enemy-ability')).toEqual([
       '[enemy-ability] enemies.silencer.jam.tellSec: must be ≥ 1.5 s (JAM_MIN_TELL_SEC) and below periodSec',
-      '[enemy-ability] enemies.silencer.jam.durationSec: must be in (0, 4] s (JAM_MAX_SEC)',
+      '[enemy-ability] enemies.silencer.jam.durationSec: must be in (0, 6] s (JAM_MAX_SEC)',
     ]);
     const auditor = RAW_CONTENT.enemies.auditor;
     const picky = { ...auditor, jam: { ...auditor.jam!, prefer: 'choir' as const } };

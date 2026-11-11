@@ -261,13 +261,19 @@ describe("Zibzab's Rapport row (T709)", () => {
   });
 });
 
-describe("the jailbreak's row (T709)", () => {
-  const jailbreak = (save: ReturnType<(typeof DEV_SAVES)['fresh']['build']>): Offer => {
-    const o = shelf(save, 'shop').find((x) => x.item.kind === 'jailbreak');
-    if (o === undefined) throw new Error('no jailbreak row');
-    return o;
-  };
+type DevSaveData = ReturnType<(typeof DEV_SAVES)['fresh']['build']>;
 
+/** The shop's jailbreak row for `save`. */
+function jailbreak(save: DevSaveData): Offer {
+  const o = shelf(save, 'shop').find((x) => x.item.kind === 'jailbreak');
+  if (o === undefined) throw new Error('no jailbreak row');
+  return o;
+}
+
+/** R&D Command's shelf for `save`. */
+const rnd = (save: DevSaveData) => shelf(save, 'rnd');
+
+describe("the jailbreak's row (T709)", () => {
   it("under the warren: Zibzab's A3M4 line, and the price he names is the price", () => {
     const row = jailbreak(DEV_SAVES.after_a3m3_warren.build());
     expect(row.price).toBe(STORY_TRANSACTION_RULES.jailbreakStardust);
@@ -285,8 +291,6 @@ describe("the jailbreak's row (T709)", () => {
 });
 
 describe('rows the story refunded (T709)', () => {
-  const rnd = (save: ReturnType<(typeof DEV_SAVES)['fresh']['build']>) => shelf(save, 'rnd');
-
   it("Purge's QUILL Rapport reads Refunded: the rank stays on record, the Intel came back", () => {
     const base = DEV_SAVES.after_a3m3_convoy.build();
     const bought = { ...base, upgrades: { ...base.upgrades, rapport_quill: 1 } };
