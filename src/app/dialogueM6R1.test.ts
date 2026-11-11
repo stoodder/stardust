@@ -39,6 +39,8 @@ const text = (id: string): string => BARKS[id]?.text ?? `<no bark ${id}>`;
 let unbind: () => void = noop;
 let host: Host<IdSpace>;
 
+const emit = (e: Ev): void => host.bus.emit(e);
+
 /** Binds the radio to a fresh battle on `map` (the reference profile's par setup). */
 function bind(map: string): void {
   host = createHost(createSim(battleConfig(map, 1, null)));
@@ -71,20 +73,23 @@ afterEach(() => {
 });
 
 describe("the SEAL's permission line (R2)", () => {
-  it("goes on once the cue's last line has shown (fast text: shown), not before", () => {
+  it("goes on once the cue's last line has typed, not before", () => {
     bind('a3_m03');
-    let given = 0;
-    whenSceneTyped('a3_m03_cue_seal', () => given++);
-    host.bus.emit({ type: 'ScriptCue', cueId: 'a3_m03_cue_seal' });
+    const given = { n: 0 };
+    whenSceneTyped('a3_m03_cue_seal', () => given.n++);
+    emit({ type: 'ScriptCue', cueId: 'a3_m03_cue_seal' });
     expect(shown()).toBe("That's all we're getting through.");
-    expect(given).toBe(0);
+    expect(given.n).toBe(0);
     // Three lines on, "Do it, {name}." shows and types; then permission.
-    for (let i = 0; i < 40 && given === 0; i++) vi.advanceTimersByTime(500);
-    expect(given).toBe(1);
+    for (let i = 0; i < 40; i++) {
+      if (given.n > 0) break;
+      vi.advanceTimersByTime(500);
+    }
+    expect(given.n).toBe(1);
     expect(shown()).toMatch(/^Do it, /);
     // Already typed: a later waiter goes on at once.
-    whenSceneTyped('a3_m03_cue_seal', () => given++);
-    expect(given).toBe(2);
+    whenSceneTyped('a3_m03_cue_seal', () => given.n++);
+    expect(given.n).toBe(2);
   });
 
   it('with the radio off, nothing waits', () => {
@@ -99,7 +104,6 @@ describe("the SEAL's permission line (R2)", () => {
 describe("the Clean Exit takes Lucky's turret (R5)", () => {
   it('takes the plate, queues his tower_revoked line, and never the sold bark', () => {
     bind('a3_m02');
-    const emit = (e: Ev): void => host.bus.emit(e);
     emit({ type: 'TowerBuilt', uid: 1, tower: 'thumper', tile: [0, 0], cost: 0 });
     emit({ type: 'TowerBuilt', uid: 2, tower: 'rivet', tile: [1, 0], cost: 0 });
     emit({ type: 'WaveCleared', wave: 1, bonus: 0 });
