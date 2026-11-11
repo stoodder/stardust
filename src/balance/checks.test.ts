@@ -28,6 +28,13 @@ function judge(spec: CheckSpec, results: Readonly<Record<string, HeadlessResult>
   );
 }
 const parAt = (integrity: number) => ({ 'par#1': fakeResult('won', integrity) });
+/** A won Protect run with `left` of `max` asset. */
+const protectRun = (integrity: number, left: number, max = 10) => ({
+  ...fakeResult('won', integrity),
+  objective: 'protect' as const,
+  asset: left,
+  maxAsset: max,
+});
 /** fx_map's checks about alt:gun_only, with gun_only marked under-built. */
 const withOutcome = (outcome: 'lose' | 'either'): CheckSpec[] =>
   mapChecks(
@@ -285,18 +292,16 @@ describe('balance checks', () => {
     };
     const protect: typeof map = { ...map, objective: 'protect', asset };
     const nine = mapChecks(protect, [1, 2, 3], [1]).find((c) => c.id === '9')!;
-    const run = (integrity: number, left: number, max = 10) => ({
-      ...fakeResult('won', integrity),
-      objective: 'protect' as const,
-      asset: left,
-      maxAsset: max,
-    });
     // Standard's core (60%) sets its margin; its asset median is 80%.
-    const standard = { 'par#1': run(12, 6), 'par#2': run(12, 8), 'par#3': run(12, 10) };
+    const standard = {
+      'par#1': protectRun(12, 6),
+      'par#2': protectRun(12, 8),
+      'par#3': protectRun(12, 10),
+    };
     // Story's meter is ×1.5: 12 of 15 is 80%, the Standard median's; 11 of 15 clears the margin
     // median (60) but not the asset's.
-    expect(judge(nine, { ...standard, 'par@story#1': run(20, 12, 15) }).ok).toBe(true);
-    const below = judge(nine, { ...standard, 'par@story#1': run(20, 11, 15) });
+    expect(judge(nine, { ...standard, 'par@story#1': protectRun(20, 12, 15) }).ok).toBe(true);
+    const below = judge(nine, { ...standard, 'par@story#1': protectRun(20, 11, 15) });
     expect(below.failures).toEqual(['seed 1: asset 73.3% is below the Standard median 80%']);
   });
 
