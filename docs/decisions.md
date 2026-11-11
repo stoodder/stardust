@@ -1886,3 +1886,33 @@ It runs after the finale's screens exist, so the finale's own screens are declut
 - the playfield.
 
 Gameplay-critical readouts (threats, counters, tells, meters) stay one glance away. Each screen's before and after names what moved, and confirms the story and character elements kept or gained space.
+
+### D154 — 2026-11-11 — M8 cut: finale, post-game and polish
+
+M8 is the last milestone. It covers the finale (*Clearing the Way*: the Descent, the Unsung, Dawn), C5 and the epilogue, the post-game and polish, ending on the post-game star map at dawn. Its last task is the declutter pass (D153). It runs about 1.3× M7: 37 tasks in 10 waves. The plan and every leftover's home are in `tasks.md` § M8.
+
+**Forks, both taken as recommended:**
+1. **Post-game ships all three modes in small form:** veteran replays, endless, and three challenge maps. vision.md and maps.md §8 commit to them.
+2. **The burrowed exam (T801-burrow):** the finale keeps its three required counters (air, jam, splash). Burrowing is a pinned cost instead: the Unsung's phase 3 burrows toward the choir, and a build with no burrowed answer must end ≥ 10 Voices under par.
+
+**Cut levers, in order:**
+1. Challenge maps 3 → 1.
+2. Endless keeps one record per seed.
+3. Epilogue stills are static.
+4. Low leftovers go to the Backlog.
+5. Deploy becomes a written recipe for the owner.
+
+The finale's spine, C5, the epilogue, veteran replays and the declutter pass are never cut.
+
+**Rulings where the docs are silent** (numbers proposed; the map tasks tune them):
+- **Phase 2** starts at the later of W18 cleared and the choir at the Halls mouth. It checkpoints ("Retry from the Halls"), and Directive 0 fires 20 s in.
+- **Scatter and re-form** happen in Phase 2 only.
+- **The sky** warms per wave (T701), but the world stays dark until Dawn's `setLighting`.
+- **Directive 0's dark Time Dilation** is a phase-scoped lock, not a revocation. The Technician can't equip the companion's own ability (T501).
+- **The finale persists its latest checkpoint** to the save, so a 25-minute run survives a closed tab. Other maps keep in-memory checkpoints.
+- **The post-game star map:** dawn, every node cleared, the Endless and Challenge nodes, veteran pips, and 3× speed.
+- **The choir:** 10 singers plus Pebble (warren +4, convoy −2), with Thrum beside Pebble if spared. `minVoices` is 40% of the run's choir.
+
+**For the owner:**
+- **Deploy:** T875 adds a GitHub Pages workflow. The owner turns Pages on under Settings → Pages → GitHub Actions.
+- **Stay in the Backlog:** touch input, colorblind-safe tells and remappable keys (post-1.0).
