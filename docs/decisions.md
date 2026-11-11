@@ -1878,3 +1878,11 @@ The approach (main's recommendation, taken):
 - Show the owner before and after screenshots of each screen.
 
 It runs after the finale's screens exist, so the finale's own screens are decluttered in the same pass.
+
+*D153 addendum:* the owner added: "Be sure to keep the gameplay, story, and character very present of course." So the declutter pass removes chrome, repetition and secondary numbers, never the game's voice. These stay prominent and should, if anything, gain room:
+- portraits, speaker plates, barks and comms lines;
+- character copy: Zibzab's shelf lines, QUILL's notes, the memos;
+- story stamps and kickers;
+- the playfield.
+
+Gameplay-critical readouts (threats, counters, tells, meters) stay one glance away. Each screen's before and after names what moved, and confirms the story and character elements kept or gained space.
