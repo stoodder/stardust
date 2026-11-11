@@ -7,7 +7,14 @@ import type {
   CompiledBuilds,
 } from './compiled.ts';
 import { checkId, ticks, type Ctx, type Refs } from './compileHelpers.ts';
-import type { BuildStep, CounterId, IdSpace, MapDef, ScriptedBuild } from './types.ts';
+import type {
+  BuildStep,
+  CounterId,
+  IdSpace,
+  MapDef,
+  ProfileDef,
+  ScriptedBuild,
+} from './types.ts';
 
 export function compileBuilds<K extends IdSpace>(
   ctx: Ctx,
@@ -16,14 +23,22 @@ export function compileBuilds<K extends IdSpace>(
   mapWhere: string,
 ): CompiledBuilds<K> {
   const profile = def.referenceProfile;
-  const pw = `${mapWhere}.referenceProfile`;
-  for (const t of profile.towers) checkId(ctx, refs.towers, t, `${pw}.towers`, 'tower');
-  for (const t of profile.specs) checkId(ctx, refs.towers, t, `${pw}.specs`, 'tower');
-  if (profile.technicianAbility !== null) {
-    checkId(ctx, refs.abilities, profile.technicianAbility, `${pw}.technicianAbility`, 'ability');
-  }
+  checkProfile(ctx, refs, profile, `${mapWhere}.referenceProfile`);
   const build = (b: ScriptedBuild<K>, w: string): CompiledBuild<K> =>
     compileBuild(ctx, refs, b, profile.technicianAbility, `${mapWhere}.${w}`);
+  // Flag-variant cells (T700a): each profile's ids checked, its par build compiled against it.
+  const referenceProfileByFlag = (def.referenceProfileByFlag ?? []).map((cell, i) => {
+    const w = `${mapWhere}.referenceProfileByFlag[${i}]`;
+    checkProfile(ctx, refs, cell.profile, `${w}.profile`);
+    return {
+      when: { ...cell.when },
+      profile: cell.profile,
+      parBuild:
+        cell.parBuild === undefined
+          ? null
+          : compileBuild(ctx, refs, cell.parBuild, cell.profile.technicianAbility, `${w}.parBuild`),
+    };
+  });
   const noCounterBuilds: Partial<Record<CounterId, CompiledBuild<K>>> = {};
   for (const counter of def.requiredCounters) {
     const b = def.noCounterBuilds[counter];
@@ -52,7 +67,22 @@ export function compileBuilds<K extends IdSpace>(
     parMedals: def.parMedals ?? [],
     rndPickChanges: def.rndPickChanges ?? [],
     noCounterLoseByWave: def.noCounterLoseByWave ?? null,
+    referenceProfileByFlag,
   };
+}
+
+/** A reference profile's tower and ability ids name content. */
+function checkProfile<K extends IdSpace>(
+  ctx: Ctx,
+  refs: Refs<K>,
+  profile: ProfileDef<K>,
+  pw: string,
+): void {
+  for (const t of profile.towers) checkId(ctx, refs.towers, t, `${pw}.towers`, 'tower');
+  for (const t of profile.specs) checkId(ctx, refs.towers, t, `${pw}.specs`, 'tower');
+  if (profile.technicianAbility !== null) {
+    checkId(ctx, refs.abilities, profile.technicianAbility, `${pw}.technicianAbility`, 'ability');
+  }
 }
 
 function compileBuild<K extends IdSpace>(

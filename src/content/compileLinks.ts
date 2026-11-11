@@ -10,7 +10,9 @@
 // `swarmSpeedPct` a fraction > 0 with `latchSec` a duration > 0 (Splash Zone); and (T607) a Hum
 // Choir's `auraRadiusTiles` > 0 (Harmony) and `auraPct` a fraction > 0 (Bounce Chorus), and a
 // hitscan partner's `extraTargets` a whole number > 0 (Harmony's Mindspike); and (T608) a Stasis
-// Bloom's `fieldRadiusTiles` > 0 (Pinned Down) and `pulseSoonerSec` a duration > 0 (Stillmind).
+// Bloom's `fieldRadiusTiles` > 0 (Pinned Down) and `pulseSoonerSec` a duration > 0 (Stillmind);
+// and (T700a seams) `corrodedStacks` a whole number > 0 (Acid Rain, Sticky Flak), a Sproing Pad's
+// `pinSec` a duration > 0 (Bounce Chorus) and `preferMarked` (Lookie Here).
 import type { CompiledLinkDef, CompiledLinkPartner } from './compiled.ts';
 import { entriesOf, checkKey, ticks, type Ctx } from './compileHelpers.ts';
 import { MAX_LINKS, statusMask } from './rules.ts';
@@ -96,6 +98,9 @@ function partner<K extends IdSpace>(
     extraTargets: 0,
     fieldRadiusTiles: 0,
     pulseSoonerTicks: 0,
+    corrodedStacks: 0,
+    pinTicks: 0,
+    preferMarked: def.preferMarked === true,
   };
   if (def.chainJumps !== undefined) {
     if (Number.isInteger(def.chainJumps) && def.chainJumps > 0) out.chainJumps = def.chainJumps;
@@ -147,6 +152,17 @@ function partner<K extends IdSpace>(
     if (Number.isFinite(def.pulseSoonerSec) && def.pulseSoonerSec > 0) {
       out.pulseSoonerTicks = ticks(ctx, def.pulseSoonerSec, `${where}.pulseSoonerSec`);
     } else ctx.errors.push(`${where}.pulseSoonerSec: needs a duration > 0`);
+  }
+  // M7's (T700a seams): Corroded stacks per hit (T705), a Sproing Pad's longer Pin (T704).
+  if (def.corrodedStacks !== undefined) {
+    if (Number.isInteger(def.corrodedStacks) && def.corrodedStacks > 0) {
+      out.corrodedStacks = def.corrodedStacks;
+    } else ctx.errors.push(`${where}.corrodedStacks: needs a whole number > 0`);
+  }
+  if (def.pinSec !== undefined) {
+    if (Number.isFinite(def.pinSec) && def.pinSec > 0) {
+      out.pinTicks = ticks(ctx, def.pinSec, `${where}.pinSec`);
+    } else ctx.errors.push(`${where}.pinSec: needs a duration > 0`);
   }
   for (const f of ['rampPct', 'markPct', 'swarmSpeedPct', 'auraPct'] as const) {
     const v = def[f];

@@ -5,6 +5,7 @@
 import type { CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type {
   CompanionId,
+  EnemyFaction,
   FlagValue,
   IdSpace,
   LiveIds,
@@ -77,6 +78,18 @@ export type Modifier<K extends IdSpace = LiveIds> =
       readonly kind: 'enemyStat';
       readonly stat: EnemyStat;
       readonly pct: number;
+      readonly source: ModifierSource;
+    }
+  /**
+   * C4 Purge (core-loop.md § 6.11; T700a seam, T703 runs it): every unit of `faction` spawns with
+   * its armor + `flat` (−2: Everglow's open panels), never below 0. battleSetup adds it from A3M5
+   * on. Refused until T703 (`modifier.enemyStat.faction`).
+   */
+  | {
+      readonly kind: 'enemyStat';
+      readonly stat: 'armor';
+      readonly faction: EnemyFaction;
+      readonly flat: number;
       readonly source: ModifierSource;
     }
   /**

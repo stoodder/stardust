@@ -353,6 +353,22 @@ export function createRunTracker<K extends IdSpace>(
           case 'ClassRevoked':
           case 'AbilityRevoked':
           case 'ModifierChanged':
+          // M7 (T700a seams): their tasks may tally them.
+          case 'JamTell':
+          case 'TowerJammed':
+          case 'TowerUnjammed':
+          case 'JamInterrupted':
+          case 'Rebooted':
+          case 'TakeoverTell':
+          case 'Jettisoned':
+          case 'TileOpened':
+          case 'BossSplit':
+          case 'BossMerged':
+          case 'LeaperBonk':
+          case 'FlyerGrounded':
+          case 'PuddleSpawned':
+          case 'BearerHome':
+          case 'ScriptGroupSpawned':
             break;
           default:
             e satisfies never;

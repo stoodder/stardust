@@ -127,7 +127,16 @@ describe('Act II portraits: the frame contract', () => {
       expect(portraitPebble.frames[portraitFrame(e)], e).toBeDefined();
       expect(portraitPebble.frames[portraitFrame(e, { mouth: 'talk' })], `${e}_talk`).toBeDefined();
     }
-    expect('vesthara' in EXPRESSION_EXTRAS).toBe(false);
+    // Ves'thara's extras (T741's `laugh`) are drawn in the base frame and every variant.
+    const extras: Readonly<Record<string, Readonly<Record<string, string>>>> = EXPRESSION_EXTRAS;
+    for (const e of Object.keys(extras['vesthara'] ?? {})) {
+      for (const variant of [null, 'touched', 'touched_deep', 'dawn']) {
+        for (const mouth of ['closed', 'talk'] as const) {
+          const name = portraitFrame(e, { variant, mouth });
+          expect(portraitVesthara.frames[name], name).toBeDefined();
+        }
+      }
+    }
   });
 });
 

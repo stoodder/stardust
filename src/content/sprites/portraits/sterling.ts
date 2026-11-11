@@ -9,7 +9,7 @@
 // portrait seen on a live feed. Behind her the transparent ground fills with a teal-dark scanline
 // field, white viewfinder brackets mark the four corners, and a red REC lamp burns top left. She
 // is untouched (her face and smile are the base frame's), so the fair-play tell holds.
-import { disc, grid, line, plot, type CharGrid } from '../helpers.ts';
+import { disc, grid, line, mirrorRows, plot, type CharGrid } from '../helpers.ts';
 import { definePortrait, outlineInPlace, PORTRAIT_SIZE, type PaintArgs } from './portrait.ts';
 
 const S = PORTRAIT_SIZE;
@@ -222,7 +222,6 @@ function feed(g: CharGrid): void {
     for (let x = 0; x < S; x++) if (g[y]?.[x] === '.') plot(g, x, y, y % 2 === 0 ? 'A' : 'K');
   }
   const corner = ['SSSS', 'S...', 'S...', 'S...'];
-  const flip = (rows: readonly string[]): string[] => rows.map((r) => [...r].reverse().join(''));
   // The brackets show on the feed only (her suit and the globe sit in front of the lower ones).
   const onFeed = (x: number, y: number, rows: readonly string[]): void =>
     rows.forEach((r, dy) => {
@@ -232,9 +231,9 @@ function feed(g: CharGrid): void {
       }
     });
   onFeed(2, 2, corner);
-  onFeed(S - 6, 2, flip(corner));
-  onFeed(2, S - 6, [...corner].reverse());
-  onFeed(S - 6, S - 6, flip([...corner].reverse()));
+  onFeed(S - 6, 2, mirrorRows(corner));
+  onFeed(2, S - 6, corner.toReversed());
+  onFeed(S - 6, S - 6, mirrorRows(corner.toReversed()));
   // The REC lamp: a red dot with a darker rim, inside the top-left bracket.
   put(g, 4, 4, ['.Y.', 'YXY', '.Y.']);
 }

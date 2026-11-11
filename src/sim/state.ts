@@ -8,6 +8,7 @@ import type {
   IdSpace,
   MeterLabel,
   ObjectiveKind,
+  TileChar,
   WaveTag,
 } from '../content/types.ts';
 import { createRng, forkRng, type Rng } from '../shared/rng.ts';
@@ -153,6 +154,13 @@ export interface SimStats {
   refugeesGathered: number;
   /** Revocations that took effect: each tower class and each ability counts one (T606). */
   revocations: number;
+  // M7 (T700a seams; each counted by the task named).
+  /** The most towers Jammed at once this run (Keep the Lights On: ≤ 1; T702). */
+  jammedPeak: number;
+  /** The longest single Hostile Takeover jam this run, in ticks (Declined: ≤ 60, 1 s; T707). */
+  takeoverJamTicks: number;
+  /** Bearers who reached home (A3M5's Results line; T706). */
+  bearersHome: number;
 }
 
 /** A count per enemy faction (fixed keys, so the shape is monomorphic and hash order is stable). */
@@ -385,6 +393,16 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * already sprung on (once per enemy per trap). Pruned as traps expire.
    */
   trapSprung: number[];
+  // M7 (T700a seams; each run by the task named).
+  /**
+   * Markers whose tile a script opened (`openTile`: Shareholder Value's jettison plates; T707), in
+   * order, and what each became, index-aligned (`tilesOpenedTo`). The towers' tile checks and
+   * render read the opened tile through them.
+   */
+  tilesOpened: string[];
+  tilesOpenedTo: TileChar[];
+  /** Script groups spawned this run (`spawnWave`: A3M5's W10 surge; T706), in order. */
+  scriptGroupsSpawned: string[];
   /** Commands enqueued and not yet applied (FIFO). */
   pending: Command<K>[];
   /** Output, not state: every command applied so far, with its tick. Not hashed. */
@@ -473,6 +491,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       lostByGroup: map.escort === null ? [] : map.escort.groups.map(() => 0),
       refugeesGathered: 0,
       revocations: 0,
+      jammedPeak: 0,
+      takeoverJamTicks: 0,
+      bearersHome: 0,
     },
     abilityCooldownTicks: [0, 0],
     abilityCooldownWaves: [0, 0],
@@ -501,6 +522,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     pendingInput: null,
     forcedResolved: [],
     trapSprung: [],
+    tilesOpened: [],
+    tilesOpenedTo: [],
+    scriptGroupsSpawned: [],
     pending: [],
     commandLog: [],
     events: [],

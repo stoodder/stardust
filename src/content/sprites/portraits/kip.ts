@@ -406,7 +406,12 @@ export const KIP_PINHOLES: readonly (readonly [number, number])[] = [
 ];
 
 /** Where the `act3` ledger sits on his chest (for the sprite test). */
-export const KIP_LEDGER = { x0: 12, y0: 36, x1: 29, y1: 47 } as const;
+export const KIP_LEDGER: Readonly<Record<'x0' | 'y0' | 'x1' | 'y1', number>> = {
+  x0: 12,
+  y0: 36,
+  x1: 29,
+  y1: 47,
+};
 
 /**
  * `act3`: the ledger, held flat to his chest: a thick, worn brass-brown binder (a dark spine on
@@ -433,9 +438,9 @@ function ledger(g: CharGrid): void {
   // prettier-ignore
   stamp(g, 17, 39, [
     'WWWWWWWW',
-    'WKKKKKKW',
+    'WTTTTTTW',
     'WWWWWWWW',
-    'WKKKKWWW',
+    'WTTTTWWW',
     'WWWWWWWW',
   ]);
   // His right hand (screen left) round the spine; his left over the pages' edge.
@@ -479,7 +484,7 @@ export const portraitKip = definePortrait({
     K: 'ink.3', P: 'pink.3', R: 'red.2', W: 'white.0', U: 'blue.4',
     G: 'gold.1', M: 'gold.3', N: 'gold.4', O: 'gold.0',
     E: 'pink.4', F: 'gold.4',
-    V: 'steel.3', X: 'brass.1', Y: 'brass.0', Z: 'brass.2',
+    T: 'steel.1', V: 'steel.3', X: 'brass.1', Y: 'brass.0', Z: 'brass.2',
   },
   expressions: ['neutral', 'happy', 'worried', 'angry', 'sad'],
   variants: ['act2', 'act3'],

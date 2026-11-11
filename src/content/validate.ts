@@ -13,8 +13,8 @@
 // - [enemy-traits]: traits match the enemy's data (flying ⇔ air layer, armored ⇔ armor, shielded
 //   ⇔ shield, burrowing ⇔ `burrow`, splitting ⇔ `split`, huddle ⇔ `huddle`, the `carrier` tell ⇔
 //   `carrier`, the `boss` tell ⇔ `boss`, blink ⇔ `blink`, phasing ⇔ `phase`, shield_aura ⇔
-//   `shieldAura`, gathering ⇔ `gather`, haste_aura ⇔ `hasteAura`), and every trait shows its tell
-//   (enemies.md § 1, rule 1).
+//   `shieldAura`, gathering ⇔ `gather`, haste_aura ⇔ `hasteAura`, healer_aura ⇔ `healAura`), and
+//   every trait shows its tell (enemies.md § 1, rule 1).
 // - [enemy-ability]: enemy abilities and bosses (T300a; enemies.md § 5–6) name enemies that exist
 //   (never themselves), with sane numbers (a pulse or a blink tells for less than its period, and
 //   a boss's for at least BOSS_MIN_TELL_SEC; a pulse needs a shield): a boss's phases start at full HP and fall, it ends at
@@ -26,8 +26,15 @@
 //   `pivot` ending has a `ward` (radius > 0, chill within the cap) and only it does; a split chain
 //   never loops and is at most SPLIT_MAX_DEPTH deep (Fracture → Shard → Mote). M6 (T600a): only
 //   the Hollow gathers, its tell fits in its period, its absorbs and growth are whole and sane; a
-//   haste aura's pct is within HASTE_CAP.
-// - [jammer-source]: only the listed jammers jam (enemies.md § 4).
+//   haste aura's pct is within HASTE_CAP. M7 (T700a): a jam tells for JAM_MIN_TELL_SEC to below
+//   its period and lasts at most JAM_MAX_SEC, and only a `tendril` picks (`prefer`); a healer aura
+//   has a radius and a rate; a boss phase's gather follows the gathering rules, its hangar names
+//   an enemy, its Hostile Takeover tells for at least BOSS_MIN_TELL_SEC and jams for at most
+//   JAM_MAX_SEC, its jettison's haste is within HASTE_CAP and names plates (each map that sends
+//   it has them: [marker]), and its split names a part (never itself), a whole count ≥ 2, a share
+//   of HP in (0, 1], and a merge time and haste.
+// - [jammer-source]: only the listed jammers jam (enemies.md § 4): the `jammer` trait, a `jam`,
+//   or a Hostile Takeover; and the `jammer` trait goes with a `jam` or a Takeover phase.
 // - [companion]: at most one ability per companion (its slot-2 signature); a `lockedOutBy` only
 //   on a companion's ability (the lockout darkens its companion's slot).
 // - [campaign]: no map twice.
@@ -54,6 +61,8 @@ import {
   COUNTER_ANSWERS,
   HASTE_CAP,
   JAMMER_ENEMIES,
+  JAM_MAX_SEC,
+  JAM_MIN_TELL_SEC,
   MAX_STATUS_PCT,
   SPLIT_MAX_DEPTH,
   TRAIT_TELL,
@@ -68,6 +77,7 @@ import type {
   BlinkDef,
   CounterId,
   EnemyDef,
+  GatherDef,
   PhaseDef,
   PulseDef,
   IdSpace,
@@ -158,6 +168,7 @@ const TARGETED_KINDS: ReadonlySet<string> = new Set([
   'lobbed',
   'beam',
   'chain',
+  'leaper',
 ]);
 
 function validateTower(issues: Issues, def: TowerDef): void {
@@ -252,6 +263,15 @@ function validateTier(issues: Issues, tier: TierDef, cost: number, where: string
     if (!isPositive(m.radiusTiles)) bad('.markArea.radiusTiles', 'must be > 0');
     if (!(m.pct > 0 && m.pct <= 1)) bad('.markArea.pct', `${m.pct} must be in (0, 1]`);
   }
+  const p = tier.puddle;
+  if (p !== undefined) {
+    if (!isPositive(p.durationSec)) bad('.puddle.durationSec', 'must be > 0');
+    if (!isPositive(p.radiusTiles)) bad('.puddle.radiusTiles', 'must be > 0');
+    if (!(p.chillPct >= 0 && p.chillPct <= CHILL_CAP)) {
+      bad('.puddle.chillPct', `${p.chillPct} must be in [0, ${CHILL_CAP}] (it lands as Chilled)`);
+    }
+    if (!isNonNegative(p.damagePerSec)) bad('.puddle.damagePerSec', 'must be ≥ 0');
+  }
 }
 
 /** Attack field rules: [field, holds, what it must be]. Only fields present are checked. */
@@ -275,6 +295,8 @@ const ATTACK_RULES: readonly [string, (v: unknown) => boolean, string][] = [
   ['rampPctPerSec', isPositive, 'must be > 0'],
   ['rampCap', (v) => typeof v === 'number' && Number.isFinite(v) && v > 1, 'must be > 1'],
   ['beams', isPositiveInt, 'must be a whole number ≥ 1'],
+  ['leapers', isPositiveInt, 'must be a whole number ≥ 1'],
+  ['pinSec', isPositive, 'must be > 0'],
 ];
 
 function validateAttack(bad: (field: string, msg: string) => void, a: AttackDef): void {
@@ -387,17 +409,25 @@ function validateEnemy(
   if (has('haste_aura') !== (def.hasteAura !== undefined)) {
     traits('traits', "'haste_aura' goes with `hasteAura`");
   }
+  if (has('healer_aura') !== (def.healAura !== undefined)) {
+    traits('traits', "'healer_aura' goes with `healAura`");
+  }
   if (def.tells.includes('boss') !== (def.boss !== undefined)) {
     traits('tells', "the 'boss' tell goes with `boss`");
   }
   validateEnemyAbilities(issues, def, enemyIds);
   validateSplitChain(issues, def, enemies);
-  if (has('jammer') && !JAMMER_ENEMIES.includes(def.id)) {
+  const takeover = (def.boss?.phases ?? []).some((p) => p.takeover !== undefined);
+  const jams = def.jam !== undefined || takeover;
+  if ((has('jammer') || jams) && !JAMMER_ENEMIES.includes(def.id)) {
     issues.add(
       'jammer-source',
       `${where}.traits`,
       `only ${JAMMER_ENEMIES.join(', ')} may jam (adding a jammer needs a decision entry)`,
     );
+  }
+  if (has('jammer') !== jams) {
+    traits('traits', "'jammer' goes with `jam` or a Hostile Takeover phase");
   }
 }
 
@@ -454,20 +484,39 @@ function validateEnemyAbilities(
     if (!isPositive(aura.radiusTiles)) bad('shieldAura.radiusTiles', 'must be > 0');
     if (!isPositive(aura.shieldPerSec)) bad('shieldAura.shieldPerSec', 'must be > 0');
   }
-  const g = def.gather;
-  if (g !== undefined) {
-    if (!isPositive(g.everySec)) bad('gather.everySec', 'must be > 0');
+  const gather = (field: string, g: GatherDef): void => {
+    if (!isPositive(g.everySec)) bad(`${field}.everySec`, 'must be > 0');
     if (!isPositive(g.tellSec) || g.tellSec >= g.everySec) {
-      bad('gather.tellSec', 'must be > 0 and below everySec');
+      bad(`${field}.tellSec`, 'must be > 0 and below everySec');
     }
-    if (!isPositive(g.radiusTiles)) bad('gather.radiusTiles', 'must be > 0');
-    if (!isPositiveInt(g.maxAbsorbs)) bad('gather.maxAbsorbs', 'must be a whole number ≥ 1');
-    if (!isNonNegative(g.growPct)) bad('gather.growPct', 'must be ≥ 0');
-    if (!isNonNegativeInt(g.leakPerAbsorb)) bad('gather.leakPerAbsorb', 'a whole number ≥ 0');
+    if (!isPositive(g.radiusTiles)) bad(`${field}.radiusTiles`, 'must be > 0');
+    if (!isPositiveInt(g.maxAbsorbs)) bad(`${field}.maxAbsorbs`, 'must be a whole number ≥ 1');
+    if (!isNonNegative(g.growPct)) bad(`${field}.growPct`, 'must be ≥ 0');
+    if (!isNonNegativeInt(g.leakPerAbsorb)) bad(`${field}.leakPerAbsorb`, 'a whole number ≥ 0');
     if (!isNonNegativeInt(g.bountyPerHollowAbsorb)) {
-      bad('gather.bountyPerHollowAbsorb', 'must be a whole number ≥ 0');
+      bad(`${field}.bountyPerHollowAbsorb`, 'must be a whole number ≥ 0');
     }
-    if (def.faction !== 'hollow') bad('gather', 'only the Hollow gathers (enemies.md § 5.4)');
+    if (def.faction !== 'hollow') bad(field, 'only the Hollow gathers (enemies.md § 5.4)');
+  };
+  if (def.gather !== undefined) gather('gather', def.gather);
+  const jam = def.jam;
+  if (jam !== undefined) {
+    if (!isPositive(jam.periodSec)) bad('jam.periodSec', 'must be > 0');
+    if (!(jam.tellSec >= JAM_MIN_TELL_SEC && jam.tellSec < jam.periodSec)) {
+      bad('jam.tellSec', `must be ≥ ${JAM_MIN_TELL_SEC} s (JAM_MIN_TELL_SEC) and below periodSec`);
+    }
+    if (!isPositive(jam.radiusTiles)) bad('jam.radiusTiles', 'must be > 0');
+    if (!(jam.durationSec > 0 && jam.durationSec <= JAM_MAX_SEC)) {
+      bad('jam.durationSec', `must be in (0, ${JAM_MAX_SEC}] s (JAM_MAX_SEC)`);
+    }
+    if (jam.prefer !== undefined && jam.kind !== 'tendril') {
+      bad('jam.prefer', "only a 'tendril' picks its target");
+    }
+  }
+  const heal = def.healAura;
+  if (heal !== undefined) {
+    if (!isPositive(heal.radiusTiles)) bad('healAura.radiusTiles', 'must be > 0');
+    if (!isPositive(heal.hpPerSec)) bad('healAura.hpPerSec', 'must be > 0');
   }
   const haste = def.hasteAura;
   if (haste !== undefined) {
@@ -529,6 +578,7 @@ function validateEnemyAbilities(
     if (p.pulse !== undefined && p.pulse.tellSec < BOSS_MIN_TELL_SEC) {
       bad(`${w}.pulse.tellSec`, `a boss ability tells for at least ${BOSS_MIN_TELL_SEC} s`);
     }
+    validateM7Phase(bad, child, gather, def.id, p, w);
   }
   if (!(boss.endAtPct >= 0 && boss.endAtPct < last)) {
     bad('boss.endAtPct', 'must be ≥ 0 and below the last phase');
@@ -541,6 +591,55 @@ function validateEnemyAbilities(
     if (!isPositive(ward.radiusTiles)) bad('boss.ward.radiusTiles', 'must be > 0');
     if (!(ward.chillPct > 0 && ward.chillPct <= CHILL_CAP)) {
       bad('boss.ward.chillPct', `must be in (0, ${CHILL_CAP}]`);
+    }
+  }
+}
+
+/**
+ * M7's boss phase kinds (T700a; see the header): a gather (the gathering rules), a hangar, Hostile
+ * Takeover, the jettison, and a split with its merge.
+ */
+function validateM7Phase(
+  bad: (field: string, msg: string) => void,
+  child: (field: string, id: string, count: number) => void,
+  gather: (field: string, g: GatherDef) => void,
+  id: string,
+  p: NonNullable<EnemyDef['boss']>['phases'][number],
+  w: string,
+): void {
+  if (p.gather !== undefined) gather(`${w}.gather`, p.gather);
+  if (p.hangar !== undefined) {
+    child(`${w}.hangar`, p.hangar.enemy, p.hangar.count);
+    if (!isPositive(p.hangar.everySec)) bad(`${w}.hangar.everySec`, 'must be > 0');
+  }
+  const t = p.takeover;
+  if (t !== undefined) {
+    if (!(t.tellSec >= BOSS_MIN_TELL_SEC)) {
+      bad(`${w}.takeover.tellSec`, `a boss ability tells for at least ${BOSS_MIN_TELL_SEC} s`);
+    }
+    if (!(t.durationSec > 0 && t.durationSec <= JAM_MAX_SEC)) {
+      bad(`${w}.takeover.durationSec`, `must be in (0, ${JAM_MAX_SEC}] s (JAM_MAX_SEC)`);
+    }
+  }
+  const j = p.jettison;
+  if (j !== undefined) {
+    if (!(j.hastePct > 0 && j.hastePct <= HASTE_CAP)) {
+      bad(`${w}.jettison.hastePct`, `must be in (0, ${HASTE_CAP}]`);
+    }
+    if (j.plates.length === 0) bad(`${w}.jettison.plates`, 'names at least one marker');
+    for (const m of duplicates(j.plates)) bad(`${w}.jettison.plates`, `'${m}' is listed twice`);
+  }
+  const s = p.split;
+  if (s !== undefined) {
+    child(`${w}.split`, s.part, s.count);
+    if (s.part === id) bad(`${w}.split.part`, 'a boss splits into parts, never itself');
+    if (!(Number.isInteger(s.count) && s.count >= 2)) {
+      bad(`${w}.split.count`, 'must be a whole number ≥ 2');
+    }
+    if (!(s.hpPct > 0 && s.hpPct <= 1)) bad(`${w}.split.hpPct`, 'must be in (0, 1]');
+    if (!isPositive(s.mergeAfterSec)) bad(`${w}.split.mergeAfterSec`, 'must be > 0');
+    if (!(s.mergeHastePct >= 0 && s.mergeHastePct <= HASTE_CAP)) {
+      bad(`${w}.split.mergeHastePct`, `must be in [0, ${HASTE_CAP}]`);
     }
   }
 }
@@ -619,6 +718,8 @@ function validateAbility(issues: Issues, def: AbilityDef): void {
     if (!isNonNegative(e.damage)) bad('effect.damage', 'must be ≥ 0');
     if (!isPositive(e.pinSec)) bad('effect.pinSec', 'must be > 0');
     if (!isPositive(e.durationSec)) bad('effect.durationSec', 'must be > 0');
+  } else if (e.kind === 'reboot') {
+    if (!isPositive(e.immuneSec)) bad('effect.immuneSec', 'must be > 0');
   } else {
     if (!isNonNegative(e.damagePerSec)) bad('effect.damagePerSec', 'must be ≥ 0');
     // The slow lands as Chilled (strongest source wins), so it can't pass the chill cap.

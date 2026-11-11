@@ -130,6 +130,10 @@ export function towers(state: SimState, ctx: TickContext): void {
       // them after the towers.
       case 'spawner':
         break;
+      // A leaper pad (the Sproing Pad; T704) attacks through its leapers (sim/leapers.ts, after
+      // the towers). Refused until T704 (`attack.leaper`).
+      case 'leaper':
+        break;
       default:
         assertNever(attack);
     }

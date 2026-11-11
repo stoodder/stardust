@@ -1,8 +1,9 @@
 // Enemy compilation: seconds to ticks, optional fields resolved to a value or null. The enemy
 // abilities (burrow, split, huddle, boss: T300a; pulse, blink, and the derived hush and cloak
 // flags: T400a; phase, the shield aura, a boss's shield-broken phase and ward: T500a; gathering
-// and the haste aura: T600a) compile here; the sim runs them in sim/enemyAbilities/. Their ids (a
-// split's or a spawn's enemy) are checked by validate().
+// and the haste aura: T600a; jamming, the healer aura, and M7's boss phase kinds: T700a) compile
+// here; the sim runs them in sim/enemyAbilities/. Their ids (a split's or a spawn's enemy) are
+// checked by validate().
 import { perSecToPerTick } from '../shared/time.ts';
 import type {
   CompiledBlink,
@@ -11,7 +12,9 @@ import type {
   CompiledBurrow,
   CompiledEnemyDef,
   CompiledGather,
+  CompiledHealAura,
   CompiledHuddle,
+  CompiledJam,
   CompiledPhase,
   CompiledPulse,
   CompiledShieldAura,
@@ -23,7 +26,9 @@ import type {
   BurrowDef,
   EnemyDef,
   GatherDef,
+  HealAuraDef,
   HuddleDef,
+  JamDef,
   PhaseDef,
   PulseDef,
   ShieldAuraDef,
@@ -85,6 +90,8 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
             radiusSq: def.hasteAura.radiusTiles * def.hasteAura.radiusTiles,
             pct: def.hasteAura.pct,
           },
+    jam: def.jam === undefined ? null : compileJam(ctx, def.jam, `${where}.jam`),
+    healAura: def.healAura === undefined ? null : compileHealAura(def.healAura),
     hushes: hushesOf(def),
     cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,
@@ -148,6 +155,27 @@ function compileGather(ctx: Ctx, g: GatherDef, where: string): CompiledGather {
   };
 }
 
+function compileJam(ctx: Ctx, j: JamDef, where: string): CompiledJam {
+  return {
+    kind: j.kind,
+    periodTicks: ticks(ctx, j.periodSec, `${where}.periodSec`),
+    tellTicks: ticks(ctx, j.tellSec, `${where}.tellSec`),
+    radiusTiles: j.radiusTiles,
+    radiusSq: j.radiusTiles * j.radiusTiles,
+    durationTicks: ticks(ctx, j.durationSec, `${where}.durationSec`),
+    preferChoir: j.prefer === 'choir',
+  };
+}
+
+function compileHealAura(h: HealAuraDef): CompiledHealAura {
+  return {
+    radiusTiles: h.radiusTiles,
+    radiusSq: h.radiusTiles * h.radiusTiles,
+    hpPerTick: perSecToPerTick(h.hpPerSec),
+    body: h.body,
+  };
+}
+
 function compileHuddle(h: HuddleDef): CompiledHuddle {
   return {
     radiusTiles: h.radiusTiles,
@@ -195,6 +223,36 @@ function compileBoss(ctx: Ctx, b: BossDef, where: string): CompiledBoss {
       huddle: p.huddle === undefined ? null : compileHuddle(p.huddle),
       pulse: p.pulse === undefined ? null : compilePulse(ctx, p.pulse, `${w}.pulse`),
       blink: p.blink === undefined ? null : compileBlink(ctx, p.blink, `${w}.blink`),
+      gather: p.gather === undefined ? null : compileGather(ctx, p.gather, `${w}.gather`),
+      hangar:
+        p.hangar === undefined
+          ? null
+          : {
+              enemy: p.hangar.enemy,
+              count: p.hangar.count,
+              everyTicks: ticks(ctx, p.hangar.everySec, `${w}.hangar.everySec`),
+            },
+      takeover:
+        p.takeover === undefined
+          ? null
+          : {
+              tellTicks: ticks(ctx, p.takeover.tellSec, `${w}.takeover.tellSec`),
+              durationTicks: ticks(ctx, p.takeover.durationSec, `${w}.takeover.durationSec`),
+            },
+      jettison:
+        p.jettison === undefined
+          ? null
+          : { hastePct: p.jettison.hastePct, plates: [...p.jettison.plates] },
+      split:
+        p.split === undefined
+          ? null
+          : {
+              part: p.split.part,
+              count: p.split.count,
+              hpPct: p.split.hpPct,
+              mergeAfterTicks: ticks(ctx, p.split.mergeAfterSec, `${w}.split.mergeAfterSec`),
+              mergeHastePct: p.split.mergeHastePct,
+            },
     };
   });
   const ward =

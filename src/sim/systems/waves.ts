@@ -198,7 +198,8 @@ export function waveModifiers(
   const enemyPct: Record<EnemyStat, number> = { hp: 0, shield: 0, speed: 0 };
   for (const m of modifiers) {
     if (m.kind === 'countdown') countdownPct += m.pct;
-    else if (m.kind === 'enemyStat') enemyPct[m.stat] += m.pct;
+    // A faction's armor (C4 Purge) is refused until T703 (`modifier.enemyStat.faction`).
+    else if (m.kind === 'enemyStat' && m.stat !== 'armor') enemyPct[m.stat] += m.pct;
   }
   for (const stat of ['hp', 'shield', 'speed'] as const) {
     if (enemyPct[stat] <= -1) {

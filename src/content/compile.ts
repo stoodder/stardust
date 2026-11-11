@@ -86,6 +86,8 @@ function compileAbilityEffect(ctx: Ctx, e: AbilityEffect, where: string): Compil
         pinTicks: ticks(ctx, e.pinSec, `${where}.pinSec`),
         durationTicks: ticks(ctx, e.durationSec, `${where}.durationSec`),
       };
+    case 'reboot':
+      return { kind: 'reboot', immuneTicks: ticks(ctx, e.immuneSec, `${where}.immuneSec`) };
     default:
       return assertNever(e);
   }

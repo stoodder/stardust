@@ -194,6 +194,22 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   ClassRevoked: false,
   AbilityRevoked: true,
   ModifierChanged: false,
+  // M7's events (declared by T700a): silent until T750 sorts them.
+  JamTell: false,
+  TowerJammed: false,
+  TowerUnjammed: false,
+  JamInterrupted: false,
+  Rebooted: false,
+  TakeoverTell: false,
+  Jettisoned: false,
+  TileOpened: false,
+  BossSplit: false,
+  BossMerged: false,
+  LeaperBonk: false,
+  FlyerGrounded: false,
+  PuddleSpawned: false,
+  BearerHome: false,
+  ScriptGroupSpawned: false,
 };
 
 /** The sim event types the binder hands to `EventSounds.sounds` (the rest are always silent). */

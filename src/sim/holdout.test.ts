@@ -234,6 +234,7 @@ describe('the blocker rules (T605)', () => {
       kind: 'bricks',
       post: 'gap',
       tile: [3, 1],
+      when: null,
       attack: {
         type: 'kinetic',
         damage: 0,

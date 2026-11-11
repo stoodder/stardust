@@ -8,7 +8,15 @@ import { RAW_CONTENT } from '../registry.ts';
 import type { IdSpace, MapDef, RawContent } from '../types.ts';
 import { DEFAULT_VALIDATION_RULES, validate } from '../validate.ts';
 import { LIVE_PURCHASE_RULES, type PurchaseRules } from '../validatePurchasable.ts';
-import { REFERENCE_ECONOMY, REFERENCE_PROFILES } from './reference.ts';
+import {
+  REFERENCE_ECONOMY,
+  REFERENCE_PROFILES,
+  REFERENCE_STORY_PRICING,
+  REFERENCE_VARIANTS,
+  type StoryPricing,
+} from './reference.ts';
+import type { FlagProfileDef, ProfileDef } from '../types.ts';
+import type { UpgradeDef } from './types.ts';
 
 /** campaign.md § 4.9's first-clear Stardust for the maps the stand-ins replace. */
 const STARDUST = [
@@ -157,3 +165,132 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
     expect(purchasable(live).filter((e) => /a3_m0\d/.test(e))).toEqual([]);
   });
 });
+
+describe('REFERENCE_PROFILES, Act III part two (M7, T700b)', () => {
+  const { a3_m03, a3_m04, a3_m05, a3_m06 } = REFERENCE_PROFILES;
+  const [warren4] = REFERENCE_VARIANTS.a3_m04;
+
+  it('follows campaign.md § 4.9 into A3M4: the jailbroken Rivet, the Hum Choir, System Reboot', () => {
+    expect(a3_m04.towers).toEqual([...a3_m03.towers, 'rivet', 'choir']);
+    expect(a3_m04.shop).toEqual(a3_m03.shop);
+    expect(a3_m04.technicianAbility).toBe('system_reboot');
+    // A Defend with a core: the Bulkhead on, as on A3M2.
+    expect([a3_m04.protocols, a3_m04.unequippedProtocols]).toEqual([
+      ['emergency_bulkhead'],
+      ['head_start'],
+    ]);
+    // The warren's Gloop Spitter, given in the briefing.
+    expect(warren4?.when).toEqual({ door_choice: 'warren' });
+    expect(warren4?.profile.towers).toEqual([...a3_m04.towers, 'gloop']);
+  });
+
+  it('into A3M5: the Sproing Pad, the Stasis Bloom (Intel 13), Mindspike tune 1; Rewrite runs Suppressing Fire', () => {
+    expect(a3_m05.towers).toEqual([...a3_m04.towers, 'sproing', 'bloom']);
+    expect(a3_m05.shop).toEqual({ ...a3_m04.shop, tune_mindspike: 1 });
+    expect(a3_m05.technicianAbility).toBe('system_reboot');
+    const cell = (door: 'convoy' | 'warren', quill: 'keep' | 'purge' | 'rewrite'): ProfileDef =>
+      firstMatch(REFERENCE_VARIANTS.a3_m05, { door_choice: door, quill_choice: quill }) ?? a3_m05;
+    for (const door of ['convoy', 'warren'] as const) {
+      expect(cell(door, 'rewrite').technicianAbility).toBe('suppressing_fire');
+      expect(cell(door, 'keep').technicianAbility).toBe('system_reboot');
+      expect(cell(door, 'purge')).toEqual(cell(door, 'keep'));
+      expect(cell(door, 'keep').towers.includes('gloop')).toBe(door === 'warren');
+    }
+  });
+
+  it("into A3M6: the Gloop on both doors, Harpoon tune 2, and Zibzab's crate", () => {
+    expect(a3_m06.towers).toEqual([...a3_m05.towers, 'gloop']);
+    expect(a3_m06.shop).toEqual({
+      ...a3_m05.shop,
+      tune_zapcoil: 3,
+      tune_lookout: 3,
+      tune_harpoon: 3,
+    });
+    expect(a3_m06.technicianAbility).toBe('suppressing_fire');
+    expect(a3_m06.protocols).toEqual(['head_start']);
+    expect(REFERENCE_VARIANTS.a3_m06).toEqual([]);
+    // The crate's free ranks: what it adds over Harpoon tune 2 and Zapcoil tune 2, all of the
+    // Lookout's (meta/storyTransactions.ts `crateContents` installs them; its test pins the rule).
+    for (const door of ['convoy', 'warren'] as const) {
+      expect(REFERENCE_STORY_PRICING.a3_m06[door].giftedShop).toEqual({
+        tune_zapcoil: 3 - (a3_m05.shop.tune_zapcoil ?? 0),
+        tune_lookout: 3,
+        tune_harpoon: 1,
+      });
+    }
+  });
+
+  it('prices every door and C4 cell on the campaign timeline (jailbreak and crate as the story pays them)', () => {
+    for (const door of ['convoy', 'warren'] as const) {
+      for (const quill of ['keep', 'purge', 'rewrite'] as const) {
+        const flags = { door_choice: door, quill_choice: quill } as const;
+        expect(pricedErrors(flags), `${door} × ${quill}`).toEqual([]);
+      }
+    }
+  });
+
+  it('refuses a warren that spends more than the campaign pays once the jailbreak is priced', () => {
+    // The story's price counts: the jailbreak at 1,700 overspends from A3M4 on.
+    const errors = pricedErrors({ door_choice: 'warren', quill_choice: 'keep' }, 1400);
+    expect(errors.join('\n')).toMatch(/a3_m0[4-6]\.referenceProfile: spends \d+ Stardust/);
+  });
+});
+
+/** The first cell of `cells` whose `when` every flag in `flags` meets. */
+function firstMatch(
+  cells: readonly FlagProfileDef[],
+  flags: Readonly<Record<string, string>>,
+): ProfileDef | undefined {
+  return cells.find((c) => Object.entries(c.when).every(([f, v]) => flags[f] === v))?.profile;
+}
+
+/** campaign.md § 4.9's first-clear Stardust for M7's maps. */
+const M7_STARDUST = [
+  ['a3_m04', 330],
+  ['a3_m05', 355],
+  ['a3_m06', 380],
+] as const;
+
+/**
+ * The [purchasable] errors of the campaign with M7's maps stood in (A1M5 copies paying their
+ * first-clear Stardust), each carrying its cell under `flags`, priced as the story pays: the
+ * crate's ranks taken off the shop, and the jailbreak as a stand-in upgrade (`jailbreak`, its
+ * `StoryPricing.stardust`, plus `extra` to test the check reads it). Stub towers count as landed.
+ */
+function pricedErrors(flags: { door_choice: 'convoy' | 'warren'; quill_choice: string }, extra = 0): string[] {
+  const raw = withRows();
+  const a1m5: MapDef<IdSpace> = RAW_CONTENT.maps.a1_m05;
+  const maps: Record<string, MapDef<IdSpace>> = { ...raw.maps };
+  const campaign: string[] = [...raw.campaign];
+  for (const [id, stardust] of M7_STARDUST) {
+    const cells: readonly FlagProfileDef[] = REFERENCE_VARIANTS[id];
+    const profile = firstMatch(cells, flags) ?? REFERENCE_PROFILES[id];
+    const pricing: StoryPricing = REFERENCE_STORY_PRICING[id][flags.door_choice];
+    const shop: Record<string, number> = { ...profile.shop };
+    for (const [item, free] of Object.entries(pricing.giftedShop ?? {})) {
+      shop[item] = (shop[item] ?? 0) - (free ?? 0);
+      if (shop[item] === 0) delete shop[item];
+    }
+    if (pricing.stardust + extra > 0) shop['jailbreak'] = 1;
+    const priced = { ...profile, shop } as ProfileDef;
+    if (!campaign.includes(id)) campaign.push(id);
+    maps[id] = { ...(maps[id] ?? a1m5), id, stardust, referenceProfile: priced };
+  }
+  const jailbreak = {
+    id: 'jailbreak',
+    name: 'Jailbreak',
+    kind: 'shop',
+    currency: 'stardust',
+    availableAfter: 'a3_m03',
+    ranks: [{ price: REFERENCE_STORY_PRICING.a3_m04.warren.stardust + extra, grants: [] }],
+  } as unknown as UpgradeDef<string, string>;
+  const rules: PurchaseRules = {
+    ...LIVE_PURCHASE_RULES,
+    aheadOfTask: [],
+    upgrades: { ...LIVE_PURCHASE_RULES.upgrades, jailbreak },
+  };
+  return validate(
+    { ...raw, maps, campaign },
+    { ...DEFAULT_VALIDATION_RULES, purchases: rules },
+  ).filter((e) => e.startsWith('[purchasable]'));
+}

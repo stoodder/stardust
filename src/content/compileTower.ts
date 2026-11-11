@@ -7,6 +7,7 @@ import type {
   CompiledDetect,
   CompiledEffect,
   CompiledField,
+  CompiledPuddle,
   CompiledTier,
   CompiledTowerDef,
   CompiledTowerEconomy,
@@ -19,6 +20,7 @@ import type {
   DetectDef,
   EffectDef,
   FieldDef,
+  PuddleDef,
   TierDef,
   TierPatch,
   TowerDef,
@@ -35,6 +37,7 @@ const ATTACK_FIELDS: Readonly<Record<AttackKind, readonly string[]>> = {
   pulse: [],
   charge: ['chargeSec', 'splashTiles', 'splashPct'],
   line: ['lengthTiles'],
+  leaper: ['leapers', 'pinSec'],
 };
 const ATTACK_COMMON_FIELDS = ['type', 'damage', 'ratePerSec', 'rangeTiles'];
 
@@ -134,6 +137,18 @@ function compileTier(
             radiusSq: tier.lull.radiusTiles * tier.lull.radiusTiles,
           },
     field: tier.field === undefined ? null : compileField(ctx, tier.field, `${where}.field`),
+    puddle: tier.puddle === undefined ? null : compilePuddle(ctx, tier.puddle, `${where}.puddle`),
+  };
+}
+
+function compilePuddle(ctx: Ctx, p: PuddleDef, where: string): CompiledPuddle {
+  return {
+    durationTicks: ticks(ctx, p.durationSec, `${where}.durationSec`),
+    radiusTiles: p.radiusTiles,
+    radiusSq: p.radiusTiles * p.radiusTiles,
+    chillPct: p.chillPct,
+    damagePerTick: perSecToPerTick(p.damagePerSec),
+    type: p.type,
   };
 }
 
@@ -317,6 +332,17 @@ function compileAttack(ctx: Ctx, a: AttackDef, where: string): CompiledAttack | 
       };
     case 'line':
       return { ...common, kind: a.kind, lengthTiles: a.lengthTiles };
+    case 'leaper': {
+      const splash = a.splashTiles ?? 0;
+      return {
+        ...common,
+        kind: a.kind,
+        leapers: a.leapers,
+        pinTicks: ticks(ctx, a.pinSec, `${where}.pinSec`),
+        splashTiles: splash,
+        splashSq: splash * splash,
+      };
+    }
     default:
       return assertNever(a);
   }

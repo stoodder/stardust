@@ -15,7 +15,9 @@
 //   Penitent's shards, re-form, stand-down, and Ward T506; Unnerved T507; Truthlight T508; refugees
 //   T305c), and T600a the M6 ones (gathering T602; the haste aura T603; swarmlings, their chill,
 //   and Underfoot's trap T604; the blocker T605; the Choir's jam rule and Lulled T607; the Bloom's
-//   pull-back T608); until then they keep their blank values.
+//   pull-back T608), and T700a the M7 ones (the Jammed state and the jammers' tells T702, T707;
+//   the boss split's merge T708; Big Glorp's puddle T705); until then they keep their blank
+//   values.
 import type {
   CompiledBomblets,
   CompiledEffect,
@@ -173,6 +175,24 @@ export interface Tower extends PoolEntity {
    */
   linkFieldRadiusTiles: number;
   linkPulseSoonerTicks: number;
+  // M7 (T700a seams).
+  /**
+   * Jammed (enemies.md § 4; T702): ticks left (0: not jammed). While jammed it doesn't fire and
+   * its auras and links are off; it can still be sold, upgraded, or retargeted. `jammedBy` is the
+   * jammer's uid (0: none). `jamImmuneTicks`: it can't be jammed again until 0 (JAM_IMMUNITY_SEC
+   * after a jam ends, or System Reboot's).
+   */
+  jamTicks: number;
+  jamImmuneTicks: number;
+  jammedBy: number;
+  /**
+   * M7's link extras (T700a seams; systems/links.ts, read by their towers' systems): Corroded
+   * stacks each hit applies (Acid Rain's Thumper, Sticky Flak's Skyhook; T705), a Sproing Pad's Pin
+   * longer, in ticks (Bounce Chorus), and its leapers preferring Marked flyers (Lookie Here; T704).
+   */
+  linkCorrodedStacks: number;
+  linkPinTicks: number;
+  linkPreferMarked: boolean;
 }
 
 export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
@@ -234,6 +254,12 @@ export const TOWER_BLANK: Readonly<Tower> = Object.freeze({
   linkExtraTargets: 0,
   linkFieldRadiusTiles: 0,
   linkPulseSoonerTicks: 0,
+  jamTicks: 0,
+  jamImmuneTicks: 0,
+  jammedBy: 0,
+  linkCorrodedStacks: 0,
+  linkPinTicks: 0,
+  linkPreferMarked: false,
 });
 
 export interface Enemy extends PoolEntity {
@@ -381,6 +407,18 @@ export interface Enemy extends PoolEntity {
   lullBeat: number;
   /** Gravity Well (T608): ticks before a Bloom's pulse may pull it back again; 0: it may. */
   pullImmuneTicks: number;
+  // M7 enemy state (T700a seams). Blank until each task runs it.
+  /**
+   * A jammer (EnemyDef.jam; T702, T707) or Hostile Takeover (T707): ticks until its next jam
+   * (`jamTicks`; the tell is the last part of the wait, as a gather's), the tell's ticks left
+   * (`jamTellTicks`, > 0 while it shows: render's ring, tendril, or laser), and a tendril's picked
+   * tower (`jamTarget`, a tower uid; 0: none).
+   */
+  jamTicks: number;
+  jamTellTicks: number;
+  jamTarget: number;
+  /** A split boss's merge (T708): ticks until its parts merge; 0: not counting down. */
+  mergeTicks: number;
 }
 
 export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
@@ -448,6 +486,10 @@ export const ENEMY_BLANK: Readonly<Enemy> = Object.freeze({
   lulled: false,
   lullBeat: 0,
   pullImmuneTicks: 0,
+  jamTicks: 0,
+  jamTellTicks: 0,
+  jamTarget: 0,
+  mergeTicks: 0,
 });
 
 /**
@@ -545,9 +587,11 @@ export const PROJECTILE_BLANK: Readonly<Projectile> = Object.freeze({
  * no position or route, and render tints the battlefield while it lives); `reveal` Reveals the
  * cloaked enemies in its radius for its duration (Scanner Sweep; T406); `trap` springs on each
  * ground enemy that crosses its path tile, burrowed ones too, once each, for its duration
- * (Underfoot, T604: `damage` and `pinTicks`; `state.trapSprung` remembers who).
+ * (Underfoot, T604: `damage` and `pinTicks`; `state.trapSprung` remembers who); `puddle` Chills
+ * every ground enemy in its radius `chillPct` and deals `damage` per second as a DoT that bypasses
+ * armor, for its duration (Big Glorp, T705: its tower in `towerUid`).
  */
-export type ZoneKind = 'strike' | 'segment' | 'field' | 'reveal' | 'trap';
+export type ZoneKind = 'strike' | 'segment' | 'field' | 'reveal' | 'trap' | 'puddle';
 
 /** Ground effects and ability areas (the Orbital Strike reticle, T113). */
 export interface Zone extends PoolEntity {
@@ -573,6 +617,9 @@ export interface Zone extends PoolEntity {
   slowPct: number;
   /** A trap's Pin on each enemy it springs on, in ticks (Underfoot; T604); else 0. */
   pinTicks: number;
+  /** A puddle's Chilled on the enemies inside, and the tower that made it (T705); else 0. */
+  chillPct: number;
+  towerUid: number;
 }
 
 export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
@@ -592,6 +639,8 @@ export const ZONE_BLANK: Readonly<Zone> = Object.freeze({
   distTo: 0,
   slowPct: 0,
   pinTicks: 0,
+  chillPct: 0,
+  towerUid: 0,
 });
 
 /** How an ally moves (architecture.md § Entity model). */

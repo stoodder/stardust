@@ -17,7 +17,9 @@ import type {
   DressingLayerDef,
   EnvPaletteId,
   EnemyFaction,
+  FlagGateDef,
   FlagValue,
+  JamKind,
   GridPos,
   HoldFireWhileTarget,
   IdSpace,
@@ -109,6 +111,18 @@ export interface CompiledTier {
   readonly lull: { readonly radiusTiles: number; readonly radiusSq: number } | null;
   /** The Stasis Bloom's field (TierDef.field; T608) in ticks, or null. */
   readonly field: CompiledField | null;
+  /** Big Glorp's puddle (TierDef.puddle; T705) in ticks, or null. */
+  readonly puddle: CompiledPuddle | null;
+}
+
+/** PuddleDef in ticks, the radius squared, the DoT per tick. */
+export interface CompiledPuddle {
+  readonly durationTicks: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly chillPct: number;
+  readonly damagePerTick: number;
+  readonly type: DamageType;
 }
 
 /** FieldDef in ticks (pullBack 0 / 0 when absent). */
@@ -243,6 +257,15 @@ export type CompiledAttack = CompiledAttackCommon &
         readonly splashPct: number;
       }
     | { readonly kind: 'line'; readonly lengthTiles: number }
+    | {
+        // The Sproing Pad (AttackDef `leaper`; T704): `cooldownTicks` is each leaper's period.
+        readonly kind: 'leaper';
+        readonly leapers: number;
+        readonly pinTicks: number;
+        /** Big Bonk's burst where a leaper lands (0: the target only). */
+        readonly splashTiles: number;
+        readonly splashSq: number;
+      }
   );
 
 /** BombletsDef in ticks, with the squared radii precomputed. */
@@ -343,6 +366,14 @@ export interface CompiledLinkPartner<K extends IdSpace = LiveIds> {
    */
   readonly fieldRadiusTiles: number;
   readonly pulseSoonerTicks: number;
+  /**
+   * M7's link extras (T700a seams): Corroded stacks per hit (Acid Rain, Sticky Flak; T705), a
+   * Sproing Pad's Pin longer, in ticks (Bounce Chorus), and its leapers picking a Marked flyer
+   * first (Lookie Here; T704). 0 / false: none.
+   */
+  readonly corrodedStacks: number;
+  readonly pinTicks: number;
+  readonly preferMarked: boolean;
 }
 
 // ── Enemies and abilities ────────────────────────────────────────────────────────────────────
@@ -385,6 +416,10 @@ export interface CompiledEnemyDef<Id extends string = string> {
   readonly gather: CompiledGather | null;
   /** EnemyDef.hasteAura (the Expediter; T603), or null. */
   readonly hasteAura: CompiledHasteAura | null;
+  /** EnemyDef.jam in ticks (the Silencer T702, the Auditor T707), or null. */
+  readonly jam: CompiledJam | null;
+  /** EnemyDef.healAura per tick (the Maintenance Associate; T703), or null. */
+  readonly healAura: CompiledHealAura | null;
   /**
    * Hushes under the hush rule (enemies.md § 5.4): derived, true for a non-boss Hollow unit that
    * doesn't gather (a Maw's one hush is a gather). Run by enemyAbilities/hush.ts (T402).
@@ -451,6 +486,23 @@ export interface CompiledHasteAura {
   readonly radiusSq: number;
   readonly pct: number;
 }
+/** JamDef in ticks, the radius squared (`preferChoir`: `prefer: 'choir'`). */
+export interface CompiledJam {
+  readonly kind: JamKind;
+  readonly periodTicks: number;
+  readonly tellTicks: number;
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly durationTicks: number;
+  readonly preferChoir: boolean;
+}
+/** HealAuraDef per tick, the radius squared. */
+export interface CompiledHealAura {
+  readonly radiusTiles: number;
+  readonly radiusSq: number;
+  readonly hpPerTick: number;
+  readonly body: Body;
+}
 export interface CompiledBoss {
   readonly phases: readonly CompiledBossPhase[];
   readonly ending: BossEnding;
@@ -492,6 +544,22 @@ export interface CompiledBossPhase {
   readonly huddle: CompiledHuddle | null;
   readonly pulse: CompiledPulse | null;
   readonly blink: CompiledBlink | null;
+  /** M7's phase kinds (BossPhaseDef; T700a seams), in ticks, or null. */
+  readonly gather: CompiledGather | null;
+  readonly hangar: {
+    readonly enemy: string;
+    readonly count: number;
+    readonly everyTicks: number;
+  } | null;
+  readonly takeover: { readonly tellTicks: number; readonly durationTicks: number } | null;
+  readonly jettison: { readonly hastePct: number; readonly plates: readonly MarkerId[] } | null;
+  readonly split: {
+    readonly part: string;
+    readonly count: number;
+    readonly hpPct: number;
+    readonly mergeAfterTicks: number;
+    readonly mergeHastePct: number;
+  } | null;
 }
 
 export interface CompiledAbilityDef<Id extends string = string> {
@@ -551,7 +619,8 @@ export type CompiledAbilityEffect =
       readonly damage: number;
       readonly pinTicks: number;
       readonly durationTicks: number;
-    };
+    }
+  | { readonly kind: 'reboot'; readonly immuneTicks: number };
 
 /** A compiled ally post (AllyPostDef): the marker resolved to its tile, the attack in ticks. */
 export interface CompiledAllyPost {
@@ -567,6 +636,8 @@ export interface CompiledAllyPost {
     readonly hitsGround: boolean;
     readonly hitsAir: boolean;
   };
+  /** AllyPostDef.when (militia under a story flag; T706), or null: always manned. */
+  readonly when: FlagGateDef | null;
   /** A blocker's numbers (AllyPostDef.block; T605), or null. Health keys as authored. */
   readonly block: {
     readonly capacity: number;
@@ -696,6 +767,15 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly rndPickChanges: readonly UpgradeId[];
   /** The map's no-counter lose-by override (BuildsDef.noCounterLoseByWave), or null. */
   readonly noCounterLoseByWave: number | null;
+  /** BuildsDef.referenceProfileByFlag, each cell's par build compiled (null: the map's). */
+  readonly referenceProfileByFlag: readonly CompiledFlagProfile<K>[];
+}
+
+/** A flag-variant cell (FlagProfileDef) with its par build compiled, or null for the map's. */
+export interface CompiledFlagProfile<K extends IdSpace = LiveIds> {
+  readonly when: Readonly<Partial<Record<ScriptFlagId, FlagValue>>>;
+  readonly profile: ProfileDef<K>;
+  readonly parBuild: CompiledBuild<K> | null;
 }
 
 /** AssetDef with its marker resolved to a tile. */
@@ -734,6 +814,8 @@ export interface CompiledRefugeeGroup {
   readonly exitTile: GridPos;
   /** RefugeeGroupDef.when (a story-flag gate, A3M3's `door_choice`), or null: it always walks. */
   readonly when: { readonly flag: ScriptFlagId; readonly eq: FlagValue } | null;
+  /** RefugeeGroupDef.kind: `'bearer'` carries A3M5's dead home (T706); default `'refugee'`. */
+  readonly kind: 'refugee' | 'bearer';
   readonly spacingTiles: number;
   readonly speedTilesPerTick: number;
 }
@@ -837,5 +919,9 @@ export interface CompiledMapDef<K extends IdSpace = LiveIds> {
   readonly asset: CompiledAsset | null;
   /** Clickable world objects by marker (MapDef.clickables; T409); empty for none. */
   readonly clickables: Readonly<Record<MarkerId, { readonly name: string }>>;
+  /** Flag-gated decor by marker (MapDef.markerWhen; render-only, T730b); empty for none. */
+  readonly markerWhen: Readonly<Record<MarkerId, FlagGateDef>>;
+  /** Wave groups a `spawnWave` action spawns, by id (MapDef.scriptGroups; T706); empty for none. */
+  readonly scriptGroups: Readonly<Record<string, CompiledWaveGroup<K>>>;
   readonly builds: CompiledBuilds<K>;
 }

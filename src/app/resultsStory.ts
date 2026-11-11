@@ -2,6 +2,7 @@
 // end's step 6: A2M4's Q3 Bonus, A2M5's Prism gift; then C2 once the debrief's choice is taken,
 // app/resultsFlow.ts) and the memo that arrives on the card with the Q3 Bonus, as the card shows
 // them (ui/screens/state.ts). Pure.
+import { ABILITIES } from '../content/abilities/index.ts';
 import { MEMOS } from '../content/memos/index.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import type { MemoId } from '../content/memos/types.ts';
@@ -18,6 +19,9 @@ export function transactionView(t: StoryTransaction): ResultsTransaction {
       return { kind: 'q3_bonus', stardust: t.stardust };
     case 'gift':
       return { kind: 'gift', tower: towerName(t.tower) };
+    // An ability gift reads as a gift too ("Given: System Reboot"), by the ability's name.
+    case 'gift_ability':
+      return { kind: 'gift', tower: ABILITIES[t.ability].name };
     case 'c2': {
       const def = UPGRADES[ZIBZAB_TUNE_UP];
       return {

@@ -38,6 +38,7 @@ import type {
   ScriptTrigger,
   TileChar,
   WaveDef,
+  WaveGroup,
 } from './types.ts';
 
 const TILE_CHARS: ReadonlySet<string> = new Set<TileChar>(['#', 'o', '^', '+', 'x', '.', 'S', 'C']);
@@ -124,6 +125,11 @@ export function compileMap<K extends IdSpace>(
   const lights = compileLights(ctx, def, where);
   const escort = compileEscort(ctx, def, routes, where);
   const builds = compileBuilds(ctx, refs, def, where);
+  const scriptGroups: Record<string, CompiledWaveGroup<K>> = {};
+  for (const [id, g] of Object.entries(def.scriptGroups ?? {})) {
+    const group = compileGroup(ctx, refs, routes, g, `${where}.scriptGroups.${id}`);
+    if (group !== null) scriptGroups[id] = group;
+  }
   if (ctx.errors.length > errorsBefore) return null;
   return {
     id: def.id,
@@ -170,6 +176,8 @@ export function compileMap<K extends IdSpace>(
     dressing: def.dressing ?? [],
     asset,
     clickables: { ...def.clickables },
+    markerWhen: { ...def.markerWhen },
+    scriptGroups,
     builds,
   };
 }
@@ -259,6 +267,7 @@ function compileEscort(
       exit,
       exitTile: [exitTile[0], exitTile[1]],
       when: g.when === undefined ? null : { flag: g.when.flag, eq: g.when.eq },
+      kind: g.kind ?? 'refugee',
       spacingTiles: REFUGEE_SPACING_TILES,
       speedTilesPerTick: perSecToPerTick(REFUGEE_SPEED_TILES_PER_SEC),
     });
@@ -281,6 +290,7 @@ function compileAllies(ctx: Ctx, def: MapDef<IdSpace>, where: string): CompiledA
       kind: a.kind,
       post: a.post,
       tile: [tile[0], tile[1]],
+      when: a.when === undefined ? null : { flag: a.when.flag, eq: a.when.eq },
       attack: {
         type: at.type,
         damage: at.damage,
@@ -524,29 +534,12 @@ function compileWave<K extends IdSpace>(
   const groups: CompiledWaveGroup<K>[] = [];
   let lastSpawnTicks = 0;
   for (const [i, g] of wave.groups.entries()) {
-    const w = `${where}.groups[${i}]`;
-    const enemy = refs.enemies.get(g.enemy);
-    const route = routes.get(g.route);
-    if (enemy === undefined) ctx.errors.push(`${w}: unknown enemy '${g.enemy}'`);
-    if (route === undefined) ctx.errors.push(`${w}: unknown route '${g.route}'`);
-    if (enemy === undefined || route === undefined) continue;
-    const intervalTicks =
-      g.intervalSec === undefined
-        ? enemy.spawnIntervalTicks
-        : ticks(ctx, g.intervalSec, `${w}.intervalSec`);
-    const delayTicks = ticks(ctx, g.delaySec ?? 0, `${w}.delaySec`);
-    groups.push({
-      enemy,
-      count: g.count,
-      intervalTicks,
-      delayTicks,
-      route,
-      tags: g.tags ?? [],
-      teach: g.teach ?? false,
-    });
+    const group = compileGroup(ctx, refs, routes, g, `${where}.groups[${i}]`);
+    if (group === null) continue;
+    groups.push(group);
     lastSpawnTicks = Math.max(
       lastSpawnTicks,
-      delayTicks + Math.max(0, g.count - 1) * intervalTicks,
+      group.delayTicks + Math.max(0, group.count - 1) * group.intervalTicks,
     );
   }
   return {
@@ -561,6 +554,34 @@ function compileWave<K extends IdSpace>(
     noCall: wave.noCall === true,
     groups,
     lastSpawnTicks,
+  };
+}
+
+/** One wave group (a wave's, or a script group's: MapDef.scriptGroups), its refs resolved. */
+function compileGroup<K extends IdSpace>(
+  ctx: Ctx,
+  refs: Refs<K>,
+  routes: ReadonlyMap<string, CompiledRoute>,
+  g: WaveGroup<K>,
+  w: string,
+): CompiledWaveGroup<K> | null {
+  const enemy = refs.enemies.get(g.enemy);
+  const route = routes.get(g.route);
+  if (enemy === undefined) ctx.errors.push(`${w}: unknown enemy '${g.enemy}'`);
+  if (route === undefined) ctx.errors.push(`${w}: unknown route '${g.route}'`);
+  if (enemy === undefined || route === undefined) return null;
+  const intervalTicks =
+    g.intervalSec === undefined
+      ? enemy.spawnIntervalTicks
+      : ticks(ctx, g.intervalSec, `${w}.intervalSec`);
+  return {
+    enemy,
+    count: g.count,
+    intervalTicks,
+    delayTicks: ticks(ctx, g.delaySec ?? 0, `${w}.delaySec`),
+    route,
+    tags: g.tags ?? [],
+    teach: g.teach ?? false,
   };
 }
 

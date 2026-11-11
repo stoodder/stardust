@@ -17,6 +17,7 @@ const POST: CompiledAllyPost = {
   kind: 'bricks',
   post: 'rock',
   tile: [0, 2],
+  when: null,
   attack: {
     type: 'kinetic',
     damage: 8,

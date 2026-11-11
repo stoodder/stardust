@@ -3,7 +3,7 @@
 // spend on each map's timeline (REFERENCE_ECONOMY). Each map's builds.ts takes its row as its
 // `referenceProfile`; the par-purchasable check (validatePurchasable.ts) prices it.
 import type { CampaignMapId } from '../campaign.ts';
-import type { ProfileDef } from '../types.ts';
+import type { FlagProfileDef, ProfileDef, UpgradeId } from '../types.ts';
 
 export interface ReferenceEconomy<M extends string = CampaignMapId> {
   /** Intel per map won: Victory medals only (rule, § 10). */
@@ -109,6 +109,54 @@ const A3M3: ProfileDef = {
 };
 
 /**
+ * A3M4 (campaign.md § 4.9): the jailbreak brings the Rivet back (bought for 300 under the warren,
+ * free under the convoy: `REFERENCE_STORY_PRICING`), the shelter elders give the Hum Choir in the
+ * briefing (the reference cleared C1, so A3M1 didn't), and QUILL patches in System Reboot, slot 1's
+ * par ability. A Defend with a core, so the Bulkhead is on (as A3M2). The warren also has its
+ * Gloop Spitter (`A3M4_WARREN`).
+ */
+const A3M4: ProfileDef = {
+  ...A3M3,
+  towers: [...A3M3.towers, 'rivet', 'choir'],
+  protocols: ['emergency_bulkhead'],
+  unequippedProtocols: ['head_start'],
+  technicianAbility: 'system_reboot',
+};
+const A3M4_WARREN: ProfileDef = { ...A3M4, towers: [...A3M4.towers, 'gloop'] };
+/**
+ * A3M5: Pebble's Sproing Pad (a briefing gift), the Stasis Bloom attuned (3 Intel: 13) and
+ * Mindspike tune 1. Protect with a core, so the Bulkhead stays on. Par's slot 1 is System Reboot,
+ * but C4 Rewrite takes QUILL offline and locks it, so that cell runs Suppressing Fire (inherited in
+ * A3M4's mail) instead (core-loop.md § 6.11); Keep's Time Dilation and Purge's armor change no row.
+ */
+const A3M5: ProfileDef = {
+  ...A3M4,
+  towers: [...A3M4.towers, 'sproing', 'bloom'],
+  shop: { ...A3M4.shop, tune_mindspike: 1 },
+};
+const A3M5_WARREN: ProfileDef = { ...A3M5, towers: [...A3M5.towers, 'gloop'] };
+const REWRITE = { technicianAbility: 'suppressing_fire' } as const;
+/**
+ * A3M6: Goldie's Gloop Spitter under the convoy (the warren's came in A3M4, so both doors own it),
+ * Harpoon tune 2 bought, then Zibzab's crate (opened as the briefing closes): every rank of an
+ * owned Vrell tower's tune-up the save lacks, free (`REFERENCE_STORY_PRICING.giftedShop`). An
+ * Escort with no core, so Head Start is back on. Par's slot 1 is Suppressing Fire, whatever C4 was.
+ */
+const A3M6_BOUGHT = { tune_harpoon: 2 } as const;
+/** The crate's tune-ups as owned after it (each at its top rank). */
+const A3M6_CRATE = { tune_zapcoil: 3, tune_lookout: 3, tune_harpoon: 3 } as const;
+/** How many of each one's top ranks the crate gave (Zapcoil 2 → 3, Lookout 0 → 3, Harpoon 2 → 3). */
+const A3M6_CRATE_RANKS = { tune_zapcoil: 1, tune_lookout: 3, tune_harpoon: 1 } as const;
+const A3M6: ProfileDef = {
+  ...A3M5,
+  towers: [...A3M5.towers, 'gloop'],
+  shop: { ...A3M5.shop, ...A3M6_BOUGHT, ...A3M6_CRATE },
+  protocols: ['head_start'],
+  unequippedProtocols: ['emergency_bulkhead'],
+  technicianAbility: 'suppressing_fire',
+};
+
+/**
  * The reference profile before each campaign map (story/campaign.md § 4.9: Standard, first-clear
  * Stardust spent sensibly, one Intel per map won, the weaker branch of every flag), through the
  * last map built or being built. A map's builds.ts uses its row as `referenceProfile`.
@@ -128,4 +176,50 @@ export const REFERENCE_PROFILES = {
   a3_m01: A3M1,
   a3_m02: A3M2,
   a3_m03: A3M3,
+  // A3M4–A3M6: the convoy's rows (the other cells are REFERENCE_VARIANTS).
+  a3_m04: A3M4,
+  a3_m05: A3M5,
+  a3_m06: A3M6,
 } as const satisfies Partial<Record<CampaignMapId, ProfileDef>>;
+
+/**
+ * The flag-variant cells of the maps whose reference differs by a story flag (campaign.md § 4.9:
+ * "both C3 branches, every C4"; D146), as each map's builds.ts takes them for
+ * `referenceProfileByFlag` (first match wins; a run no cell matches uses its REFERENCE_PROFILES
+ * row, the convoy's). A3M4: the warren owns the Gloop. A3M5: the warren's Gloop, and Rewrite's
+ * slot 1. A3M6 owns the same whichever door or answer (what differs is the bank, below).
+ */
+export const REFERENCE_VARIANTS = {
+  a3_m04: [{ when: { door_choice: 'warren' }, profile: A3M4_WARREN }],
+  a3_m05: [
+    { when: { door_choice: 'warren', quill_choice: 'rewrite' }, profile: { ...A3M5_WARREN, ...REWRITE } },
+    { when: { door_choice: 'convoy', quill_choice: 'rewrite' }, profile: { ...A3M5, ...REWRITE } },
+    { when: { door_choice: 'warren' }, profile: A3M5_WARREN },
+  ],
+  a3_m06: [],
+} as const satisfies Partial<Record<CampaignMapId, readonly FlagProfileDef[]>>;
+
+/**
+ * What a reference row's bank paid, or didn't, outside the catalog the [purchasable] check prices
+ * (validatePurchasable.ts): `stardust` the story took for an item no shelf lists (the jailbreak,
+ * 300 under the warren, free under the convoy; still spent on every later map), and `giftedShop`,
+ * how many of the top ranks of each item in the row's `shop` the story gave (Zibzab's crate),
+ * owned but never paid for.
+ * reference.test.ts prices the rows with it; T710 makes the check read it (or its successor).
+ */
+export interface StoryPricing {
+  readonly stardust: number;
+  readonly giftedShop?: Readonly<Partial<Record<UpgradeId, number>>>;
+}
+
+/** `StoryPricing` for A3M4–A3M6 by C3's door (C4 moves no Stardust). */
+export const REFERENCE_STORY_PRICING = {
+  a3_m04: { convoy: { stardust: 0 }, warren: { stardust: 300 } },
+  a3_m05: { convoy: { stardust: 0 }, warren: { stardust: 300 } },
+  a3_m06: {
+    convoy: { stardust: 0, giftedShop: A3M6_CRATE_RANKS },
+    warren: { stardust: 300, giftedShop: A3M6_CRATE_RANKS },
+  },
+} as const satisfies Partial<
+  Record<CampaignMapId, Readonly<Record<'convoy' | 'warren', StoryPricing>>>
+>;

@@ -126,9 +126,14 @@ export { DIFFICULTIES, LIVE_KNOWN_IDS, SAVE_VERSION, createNewSave } from './sav
 export type { KeyValueStore, SlotId } from './store.ts';
 export type { StoryUnlocks } from './story.ts';
 export type {
+  ActThreeTwoTransaction,
+  BriefingGiftDef,
   C2Choice,
   C3Choice,
   C3Transaction,
+  C4Choice,
+  StoryOutcome,
+  StoryRefusal,
   RevocationTransaction,
   RunEndRevocationInput,
   RunRevocations,
@@ -154,6 +159,20 @@ export {
   revokedClassFactions,
   runEndRevocations,
   setDoorChoice,
+  ACT3_PART_TWO_TASK,
+  C4_CHOICES,
+  C4_EFFECTS,
+  CRATE,
+  INHERITED_ABILITIES,
+  JAILBREAK,
+  abilityGiftGrantId,
+  buyJailbreak,
+  crateContents,
+  grantAbilityGift,
+  inheritAbility,
+  jailbreakPrice,
+  openCrate,
+  resolveC4,
 } from './storyTransactions.ts';
 export {
   baseStoryContext,

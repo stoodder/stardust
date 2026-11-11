@@ -718,6 +718,58 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly modifier: 'quillLockout' | 'previewHidden';
       readonly on: boolean;
     }
+  // ── M7 (declared by T700a; emitted by the tasks each names) ─────────────────────────────────
+  | {
+      /**
+       * A jammer's tell began (enemies.md § 4): the Auditor's `ring` (T707), every tower in its
+       * reach now, or the Silencer's `tendril` (T702), the one tower it picked. Render's ring and
+       * tendril; audio's `jam_ring` / `jam_tendril`.
+       */
+      readonly type: 'JamTell';
+      readonly uid: number;
+      readonly kind: 'ring' | 'tendril';
+      readonly towers: readonly number[];
+    }
+  | {
+      /**
+       * A tower was Jammed for `ticks` (its `jamMul` applied; T702) by `source`: a jammer's uid,
+       * or a boss's for Hostile Takeover (T707).
+       */
+      readonly type: 'TowerJammed';
+      readonly uid: number;
+      readonly ticks: number;
+      readonly source: number;
+    }
+  /** A tower's jam ended, or System Reboot cleared it (T702); its immunity starts. */
+  | { readonly type: 'TowerUnjammed'; readonly uid: number }
+  /** A jammer's tell was interrupted by Stasis or Unnerved (T702): its period restarts. */
+  | { readonly type: 'JamInterrupted'; readonly uid: number }
+  /** System Reboot ran (T702): `towers` were unjammed (empty: none were), all now immune. */
+  | { readonly type: 'Rebooted'; readonly towers: readonly number[] }
+  /** Hostile Takeover's laser began (T707): `towers` are its targets, jammed as it ends. */
+  | { readonly type: 'TakeoverTell'; readonly uid: number; readonly towers: readonly number[] }
+  /** Shareholder Value jettisoned its plating (T707): armor 0, Haste; its plates land next. */
+  | { readonly type: 'Jettisoned'; readonly uid: number }
+  /** A script opened a marker's tile (`openTile`; T707): it is now `to` (a jettison plate: 'x'). */
+  | { readonly type: 'TileOpened'; readonly marker: string; readonly to: TileChar }
+  /** A boss split (T708): `parts` are the new units' uids; one boss bar sums them. */
+  | { readonly type: 'BossSplit'; readonly uid: number; readonly parts: readonly number[] }
+  /** A split boss's survivors merged into `uid` (T708), enraged. */
+  | { readonly type: 'BossMerged'; readonly uid: number }
+  /** A Sproing Pad's leaper bonked an enemy (T704): render's arc, audio's boing. */
+  | { readonly type: 'LeaperBonk'; readonly tower: number; readonly target: number }
+  /** A leaper's bonk Pinned a flyer for `ticks` (T704): grounded, so ground towers hit it. */
+  | { readonly type: 'FlyerGrounded'; readonly uid: number; readonly ticks: number }
+  /** Big Glorp's puddle landed (T705) at `at` (tile coordinates of its centre). */
+  | {
+      readonly type: 'PuddleSpawned';
+      readonly zoneUid: number;
+      readonly at: readonly [x: number, y: number];
+    }
+  /** A bearer reached home (T706): no meter change; `stats.bearersHome` counts it. */
+  | { readonly type: 'BearerHome'; readonly uid: number; readonly group: string }
+  /** A script group walked in (`spawnWave`; T706). */
+  | { readonly type: 'ScriptGroupSpawned'; readonly id: string }
   | { readonly type: 'MapWon' }
   | { readonly type: 'MapLost' }
   | { readonly type: 'CommandRejected'; readonly cmd: Command<K>; readonly reason: RejectReason };
