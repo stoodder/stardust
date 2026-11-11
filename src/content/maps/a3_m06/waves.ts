@@ -51,6 +51,8 @@ export const COUNTDOWN = 30;
 export const BEHIND = 12;
 /** W16: the Gathering Maw comes up the road this long in, behind the last group. */
 export const BOSS_SEC = 14;
+/** W17's countdown, which opens as W16's last Motes set off behind the Maw. */
+export const BOSS_COUNTDOWN = 45;
 
 const CALL = { countdownSec: COUNTDOWN } as const;
 const NO_CALL = { countdownSec: COUNTDOWN, noCall: true } as const;
@@ -143,11 +145,12 @@ export const waves = defineWaves([
   // W16 · the Gathering Maw, behind the last group
   {
     ...NO_CALL,
-    groups: [g('gathering_maw', 1, 'road', BOSS_SEC), motes(4, 'road', BOSS_SEC + 4)],
+    groups: [g('gathering_maw', 1, 'road', BOSS_SEC), motes(4, 'road', BOSS_SEC + 30)],
   },
-  // W17 · the road behind it fills
+  // W17 · the road behind it fills (a longer build phase: it opens while the Maw still walks)
   {
-    ...NO_CALL,
+    countdownSec: BOSS_COUNTDOWN,
+    noCall: true,
     groups: [
       maws(3, 'road', 0, 4),
       motes(6, 'road', 2),

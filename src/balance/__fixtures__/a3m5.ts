@@ -25,7 +25,9 @@ export interface A3m5Run {
   /** Each event's ticks by key: `WaveStarted N`, `CountdownStarted N`, `BossPhase N`, … */
   readonly at: Readonly<Record<string, readonly number[]>>;
   /** Core integrity and the asset meter as each wave starts. */
-  readonly startOf: Readonly<Record<number, { readonly integrity: number; readonly asset: number }>>;
+  readonly startOf: Readonly<
+    Record<number, { readonly integrity: number; readonly asset: number }>
+  >;
   /** Units that walked in while each wave ran (a split's children aside). */
   readonly spawnedByWave: Readonly<Record<number, number>>;
   /** Jams landed per wave, and those the platform's Takeover landed (with each one's ticks). */
@@ -58,8 +60,7 @@ export function runA3m5(
   const flags = opts.flags ?? flagsFor(label, map) ?? {};
   const build = opts.build ?? buildFor(label, map, c)!;
   const difficulty = opts.difficulty ?? (label.endsWith('@story') ? 'story' : 'standard');
-  const profile =
-    opts.profile ?? referenceRunProfile(map, c, difficulty, undefined, flags);
+  const profile = opts.profile ?? referenceRunProfile(map, c, difficulty, undefined, flags);
   const sim = createSim(runConfig(c, map, build, profile, 1, flags));
   const exec = createBuildExecutor(sim, build);
   const st = sim.state;

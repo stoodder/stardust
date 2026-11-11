@@ -81,10 +81,10 @@ function parSteps(): BuildStep[] {
     { wave: 14, upgrade: GATE_W },
     sale(15),
     { wave: 15, upgrade: DOME_W },
-    { wave: 15, build: 'sproing', tile: EASTB_N },
+    { wave: 15, build: 'mindspike', tile: EAST_N },
     fire(16, MAW_FIRE_SEC, MAW_TRAP),
     fire(16, MAW_FIRE_SEC + 50, MAW_TRAP),
-    { wave: 16, upgrade: EASTB_N },
+    { wave: 16, upgrade: EAST_N },
   ];
 }
 
