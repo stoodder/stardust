@@ -145,10 +145,10 @@ export function takeoverStep(state: SimState, boss: Enemy, t: CompiledTakeover):
   }
   const picks = takeoverPicks(state);
   if (picks.length === 0) return; // ready: it waits for towers to take over
-  boss.takeoverTowers = picks;
+  boss.takeoverTowers = Object.freeze(picks); // entity fields are never mutable objects
   boss.takeoverHeldTicks = 0;
   boss.jamTellTicks = tell;
-  emit(state, { type: 'TakeoverTell', uid: boss.uid, towers: picks.slice() });
+  emit(state, { type: 'TakeoverTell', uid: boss.uid, towers: boss.takeoverTowers });
 }
 
 /** Every live boss's Takeover, in slot order (the jams slot; sim/jam.ts). */

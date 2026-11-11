@@ -12,6 +12,12 @@ import {
   STARS,
 } from './leaperLook.ts';
 
+function at(k: number, ms: number, still = false): { dx: number; dy: number } {
+  const out = { dx: 0, dy: 0 };
+  starOffset(k, ms, still, out);
+  return out;
+}
+
 describe('the leaper’s boing (leaperLook.ts)', () => {
   it('a leg runs 0 → 1 by distance come over distance in all; a leg with no length is done', () => {
     expect(legProgress(0, 2)).toBe(0);
@@ -30,11 +36,6 @@ describe('the leaper’s boing (leaperLook.ts)', () => {
   });
 
   it('spaces the stars evenly round an iso orbit, turning with time, still under reduced motion', () => {
-    const at = (k: number, ms: number, still = false): { dx: number; dy: number } => {
-      const out = { dx: 0, dy: 0 };
-      starOffset(k, ms, still, out);
-      return out;
-    };
     expect(at(0, 0)).toEqual({ dx: STAR_ORBIT_RX, dy: 0 });
     for (let k = 0; k < STARS; k++) {
       const s = at(k, 123);

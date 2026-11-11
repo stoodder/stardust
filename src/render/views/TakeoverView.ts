@@ -76,6 +76,23 @@ function phaseOf(e: DeepReadonly<Enemy>): DeepReadonly<CompiledBossPhase> | null
   return boss === null || e.bossPhase === 0 ? null : (boss.phases[e.bossPhase - 1] ?? null);
 }
 
+/** Traces a diamond centred at (x, y), `hw` × `hh` half-sizes, its corners pushed `skew` px. */
+function quad(
+  g: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  hw: number,
+  hh: number,
+  skew: number,
+): void {
+  g.beginPath();
+  g.moveTo(x - hw, y + skew);
+  g.lineTo(x + skew, y - hh);
+  g.lineTo(x + hw, y - skew);
+  g.lineTo(x - skew, y + hh);
+  g.closePath();
+}
+
 export class TakeoverView {
   readonly #ctx: ViewContext;
   readonly #markers: Readonly<Record<string, GridPos>>;
@@ -150,11 +167,11 @@ export class TakeoverView {
 
   #drawDoor(g: Phaser.GameObjects.Graphics, e: DeepReadonly<Enemy>, share: number): void {
     gridToScreen(e.x, e.y, this.#ctx.origin, a);
-    const w = Math.max(2, Math.round(DOOR_PX * share));
+    const w = Math.max(4, Math.round(DOOR_PX * share));
     const x = Math.round(a.x - w / 2);
-    const y = Math.round(a.y - PLATFORM_PX - 6);
-    g.fillStyle(INK, 0.8).fillRect(x - 1, y - 1, w + 2, 5);
-    g.fillStyle(DOOR, 1).fillRect(x, y, w, 3);
+    const y = Math.round(a.y - PLATFORM_PX - 8);
+    g.fillStyle(INK, 0.85).fillRect(x - 2, y - 2, w + 4, 8);
+    g.fillStyle(DOOR, 1).fillRect(x, y, w, 4);
   }
 
   #drawLaser(
@@ -190,18 +207,16 @@ export class TakeoverView {
       const skew = plateSkew(i);
       const hw = HALF_W - 6;
       const hh = HALF_H - 3;
-      const pts = [
-        { x: a.x - hw, y: a.y + skew },
-        { x: a.x + skew, y: a.y - hh },
-        { x: a.x + hw, y: a.y - skew },
-        { x: a.x - skew, y: a.y + hh },
-      ];
-      g.fillStyle(INK, 0.9).fillPoints(
-        pts.map((p) => ({ x: p.x, y: p.y + 2 })),
-        true,
-      );
-      g.fillStyle(FILL, 1).fillPoints(pts, true);
-      g.lineStyle(1, EDGE, 1).strokePoints(pts, true);
+      // A slab askew on its tile: its shadow 2 px under it, then the plate and its edge.
+      for (const [drop, color, alpha] of [
+        [2, INK, 0.9],
+        [0, FILL, 1],
+      ] as const) {
+        quad(g, a.x, a.y + drop, hw, hh, skew);
+        g.fillStyle(color, alpha).fillPath();
+      }
+      quad(g, a.x, a.y, hw, hh, skew);
+      g.lineStyle(1, EDGE, 1).strokePath();
     }
     this.#platesDrawn = opened.length;
   }

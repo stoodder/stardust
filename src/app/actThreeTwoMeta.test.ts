@@ -190,7 +190,7 @@ describe("C4's effects in a battle (core-loop.md § 6.11)", () => {
     expect(quillOfflineHere('a3_m05')).toBe(false); // no save in play
   });
 
-  it("keeps out of slot 1 the map's locked abilities under the save's flags, and slot 2's", () => {
+  it("keeps out of slot 1 the map's locked abilities under the save's flags", () => {
     const map = {
       lockedAbilities: [
         { ability: 'system_reboot', when: { flag: 'quill_choice', eq: 'rewrite' } as const },
@@ -198,7 +198,6 @@ describe("C4's effects in a battle (core-loop.md § 6.11)", () => {
     };
     expect(abilitiesOffOn(map, withC4('rewrite'))).toEqual(['system_reboot']);
     expect(abilitiesOffOn(map, withC4('keep'))).toEqual([]);
-    expect(abilitiesOffOn(map, withC4('keep'), 'suppressing_fire')).toEqual(['suppressing_fire']);
     // A run atom never holds before the battle.
     const run = {
       lockedAbilities: [
@@ -206,16 +205,6 @@ describe("C4's effects in a battle (core-loop.md § 6.11)", () => {
       ],
     };
     expect(abilitiesOffOn(run, withC4())).toEqual([]);
-  });
-
-  it('gives slot 1 an inherited ability, never one slot 2 holds', () => {
-    const save = withC4('keep');
-    save.unlocks.abilities = ['suppressing_fire', 'time_dilation'];
-    save.unlocks.inheritedAbilities = ['suppressing_fire', 'time_dilation'];
-    // A1M1: Bricks is the companion, so slot 1 takes Time Dilation, not his Suppressing Fire.
-    const cfg = battleConfig('a1_m01', 1, save);
-    expect(cfg.abilities.slot2).toBe('suppressing_fire');
-    expect(cfg.abilities.slot1).toBe('time_dilation');
   });
 });
 

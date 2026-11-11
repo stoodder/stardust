@@ -212,9 +212,11 @@ export function offerCopy(o: Offer): string | null {
       return silkText(itemCopy(`ability_${o.item.id}`) ?? MISSING_COPY);
     case 'attune':
       return silkText(itemCopy(`${o.gift ? 'gift' : 'attune'}_${o.item.tower}`) ?? MISSING_COPY);
-    // Zibzab's line is T709's (copy.ts `jailbreak`).
-    case 'jailbreak':
-      return silkText(itemCopy('jailbreak') ?? MISSING_COPY);
+    // Zibzab's line is T709's (copy.ts `jailbreak`); none shows until it lands.
+    case 'jailbreak': {
+      const line = itemCopy('jailbreak');
+      return line === null ? null : silkText(line);
+    }
     default:
       return assertNever(o.item);
   }

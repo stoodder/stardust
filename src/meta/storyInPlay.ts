@@ -1,9 +1,8 @@
 // What the save's story changes in a battle (meta-runtime.md § Story transactions; D146): C4's
 // effects in play (`C4_IN_PLAY`: Purge's −2 Everglow armor from A3M5 on, QUILL offline on A3M5
 // under Rewrite), and the Technician abilities slot 1 can't hold on a map (its `lockedAbilities`
-// whose condition holds over the save's flags: System Reboot on A3M5 under Rewrite; and slot 2's
-// own ability, so an inherited one never doubles its companion's). Pure; app/battleSetup.ts and
-// the loadout screen read it.
+// whose condition holds over the save's flags: System Reboot on A3M5 under Rewrite). Pure;
+// app/battleSetup.ts and the loadout screen read it.
 import { CAMPAIGN_PLAN_IDS } from '../content/campaign.ts';
 import type { ConditionDef, IdSpace } from '../content/types.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
@@ -38,9 +37,7 @@ export function storyModifiers(mapId: string, save: SaveData): Modifier<IdSpace>
  */
 export function quillOffline(mapId: string, save: SaveData | null): boolean {
   const off = C4_IN_PLAY.quillOffline;
-  return (
-    save !== null && mapId === off.map && evaluateCondition(off.when, baseStoryContext(save))
-  );
+  return save !== null && mapId === off.map && evaluateCondition(off.when, baseStoryContext(save));
 }
 
 /**
@@ -58,8 +55,7 @@ function flagsHold(cond: ConditionDef<IdSpace>, flags: Readonly<Record<string, u
 
 /**
  * The Technician abilities slot 1 can't hold on `map` for `save`: each `lockedAbilities` row whose
- * condition holds over the save's flags (System Reboot on A3M5 under Rewrite), and slot 2's ability
- * (`slot2`), so an inherited companion ability never doubles its companion's.
+ * condition holds over the save's flags (System Reboot on A3M5 under Rewrite).
  */
 export function abilitiesOffOn(
   map: {
@@ -69,10 +65,7 @@ export function abilitiesOffOn(
     }[];
   },
   save: SaveData,
-  slot2: string | null = null,
 ): string[] {
   const flags: Readonly<Record<string, unknown>> = scriptFlagsOf(save.story.flags);
-  const out = map.lockedAbilities.filter((l) => flagsHold(l.when, flags)).map((l) => l.ability);
-  if (slot2 !== null && !out.includes(slot2)) out.push(slot2);
-  return out;
+  return map.lockedAbilities.filter((l) => flagsHold(l.when, flags)).map((l) => l.ability);
 }

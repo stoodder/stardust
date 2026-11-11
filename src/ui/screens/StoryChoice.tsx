@@ -51,7 +51,11 @@ export function StoryChoice({
   }, []);
   const by = choiceName(choice);
   return (
-    <div class="sd-results-buttons sd-results-choice" role="group" aria-label={by}>
+    <div
+      class={`sd-results-buttons sd-results-choice${choice.title === null ? '' : ' sd-results-choice-titled'}`}
+      role="group"
+      aria-label={by}
+    >
       <h2 class="sd-results-stake" tabIndex={-1} ref={focusOnce} data-testid="choice-heading">
         {choice.title === null ? (
           <>

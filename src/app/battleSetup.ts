@@ -152,7 +152,8 @@ export function simulatedStoryModifiers(mapId: string, save: SaveData): Modifier
  * modifiers (upgrades, equipped protocols, difficulty), and its difficulty. Each of those the
  * sim still refuses (FEATURE_GATES) is left out, so a save that runs ahead of the sim (the
  * all_unlocked dev save) plays rather than throws; it goes live when its task lifts the gate.
- * Without a save: the map's par loadout and Technician ability on its reference profile, on
+ * Without a save, or on a dev battle (its towers aren't a save's; a save adds only its story's
+ * script flags and modifiers): the map's par loadout and Technician ability on its reference profile, on
  * Standard, as the balance harness runs par (balance/profile.ts `referenceRunProfile`: the
  * profile's shop ranks and protocols, and its spec unlocks for the loadout's towers; T332).
  * Throws on an unknown map id.
@@ -162,7 +163,7 @@ export function battleConfig(
   seed: number,
   save: SaveData | null = null,
 ): SimConfig<IdSpace> {
-  for (const set of CONTENT_SETS) {
+  for (const [setIndex, set] of CONTENT_SETS.entries()) {
     if (!Object.hasOwn(set.raw.maps, mapId)) continue;
     const content = set.compile();
     const map = content.maps[mapId]!; // hasOwn above
@@ -181,7 +182,9 @@ export function battleConfig(
       scriptFlags: gatedFlagDefaults(map),
       specsUnlocked: [],
     };
-    if (save === null) {
+    // A dev battle's towers aren't a save's: it plays par on its reference profile, and a save
+    // adds only its story (its script flags; C4 Purge's armor, `?map=dev_heal&save=...`, T710).
+    if (save === null || setIndex > 0) {
       const profile = map.builds.referenceProfile;
       const modifiers = metaModifiers({
         upgrades: profile.shop,
@@ -191,14 +194,19 @@ export function battleConfig(
       const specs: readonly string[] = profile.specs;
       return {
         ...base,
-        modifiers,
+        modifiers:
+          save === null ? modifiers : [...modifiers, ...simulatedStoryModifiers(mapId, save)],
+        // A save's script flags reach a dev battle's script too (dev_holdout's door, T610).
+        ...(save === null
+          ? {}
+          : { scriptFlags: gatedFlagDefaults(map, scriptFlagsOf(save.story.flags)) }),
         specsUnlocked: simulated('specs') ? specs.filter((t) => par.loadout.includes(t)) : [],
       };
     }
     // The loadout screen's pick for this map (its preset), or the default (meta/loadout.ts),
-    // without the abilities slot 1 can't hold here (A3M5's locked System Reboot under C4 Rewrite;
-    // slot 2's own; meta/storyInPlay.ts).
-    const off = abilitiesOffOn(map, save, slot2);
+    // without the abilities the map locks under the save's flags (A3M5's System Reboot under C4
+    // Rewrite; meta/storyInPlay.ts).
+    const off = abilitiesOffOn(map, save);
     const pick = resolveLoadout(save, mapId, defaultPick(save, par, off), off);
     const loadout: readonly string[] = pick.towers;
     return {

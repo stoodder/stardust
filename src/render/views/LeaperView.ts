@@ -2,9 +2,9 @@
 // view, polished by T730a; leaperLook.ts has the rules). Read from the sim each frame, so it holds
 // while paused:
 // - each leaper in the air (out or back; at home it's in the pad, not drawn) boings along an arc
-//   (`leapLiftPx`) over a soft shadow at its ground point, in the swarmlings' body and palette (a
-//   placeholder until T740b's `ally.leaper`), facing the way its leg runs, depth-sorted in `world`
-//   by its ground point like a unit;
+//   (`leapLiftPx`) over a faint orange spot at its ground point, in the swarmlings' body and
+//   palette (a placeholder until T740b's `ally.leaper`), facing the way its leg runs, in the `air`
+//   layer (over the towers and walkers it boings past), sorted by its ground point like a flyer;
 // - each bonk (`LeaperBonk`) pops a small orange ring on its target;
 // - each flyer a leaper grounded (`FlyerGrounded`), while it stays Pinned, wears an orange ring on
 //   the ground under it and three gold dizzy stars over its head (one Graphics in `vfx`).
@@ -57,7 +57,6 @@ export interface LeaperState {
 const BODY = SWARM_SPRITES.swarmling;
 const RING = hexOf(GROUND_RING_COLOR);
 const STAR = hexOf(STAR_COLOR);
-const SHADOW = hexOf('ink.0');
 /** Sprites made up front: four Sky Bouncers. More are made as needed. */
 const SLOTS = 8;
 
@@ -195,8 +194,8 @@ export class LeaperView {
       const left = Math.hypot(toX - a.x, toY - a.y);
       const lift = leapLiftPx(legProgress(done, left), leg.fromLift, leg.toLift);
       gridToScreen(a.x, a.y, this.#ctx.origin, pos);
-      // Its shadow on the ground, so the height reads.
-      g.fillStyle(SHADOW, 0.35);
+      // Its spot on the ground, so the height reads (a dark shadow vanishes on Act III's ground).
+      g.fillStyle(RING, 0.45);
       g.fillEllipse(Math.round(pos.x), Math.round(pos.y), 8, 3);
       this.#look(slot, facingOf(toX - leg.fromX, toY - leg.fromY));
       slot.body
@@ -266,12 +265,12 @@ export class LeaperView {
       if (this.#anchors.box(e.uid, drawn)) {
         x = drawn.x;
         ground = drawn.groundY;
-        head = drawn.top - 2;
+        head = drawn.top - 7; // over its health bar
       } else {
         gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         x = pos.x;
         ground = pos.y;
-        head = pos.y - AIR_LIFT_PX - 14;
+        head = pos.y - AIR_LIFT_PX - 19;
       }
       shown++;
       g.lineStyle(1, RING, 1);
@@ -279,7 +278,7 @@ export class LeaperView {
       g.fillStyle(STAR, 1);
       for (let k = 0; k < STARS; k++) {
         starOffset(k, this.#ms, still, star);
-        g.fillRect(Math.round(x + star.dx) - 1, Math.round(head + star.dy) - 1, 2, 2);
+        g.fillRect(Math.round(x + star.dx) - 1, Math.round(head + star.dy) - 1, 3, 3);
       }
     }
     return shown;
@@ -300,7 +299,7 @@ export class LeaperView {
   /** One more pooled sprite, hidden. */
   #grow(): void {
     const body = this.#ctx.scene.make.sprite({}, false).setVisible(false);
-    this.#ctx.layers.world.add(body);
+    this.#ctx.layers.air.add(body);
     this.#slots.push({ body, facing: null });
   }
 

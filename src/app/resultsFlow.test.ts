@@ -105,6 +105,7 @@ describe('C2 on the results card', () => {
     expect(result.choice).toEqual({
       by: 'Zibzab',
       bank: 625,
+      title: null,
       options: ['Sell it. Market price.', 'Take it to them.'],
       // Price first (D138): what each pays, before the pick.
       pays: [

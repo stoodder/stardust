@@ -121,6 +121,8 @@ test('takeover: the hangar, Hostile Takeover’s laser, and the jettison’s pla
 
   // Phase 1: the hangar door opens over the platform before a launch.
   expect(await until(page, 'door')).toBe(true);
+  await page.evaluate(() => globalThis.__sd!.fastForward(40)); // the door nearly open
+  await nextFrames(page);
   expect((await look(page)).doors).toBe(1);
   await shot(page, 'takeover', 3, 'hangar-door');
 

@@ -288,8 +288,8 @@ export function openLoadout(mapId: string): boolean {
   if (cfg === null) return false;
   const content = cfg.content;
   const map = content.maps[mapId]!; // battleConfig found it
-  // Slot 1 leaves out what it can't hold here (A3M5's System Reboot under C4 Rewrite; slot 2's).
-  const off = abilitiesOffOn(map, save, cfg.abilities.slot2);
+  // Slot 1 leaves out what the map locks under the save's flags (A3M5's System Reboot, Rewrite).
+  const off = abilitiesOffOn(map, save);
   const pools = loadoutPools(save, [], off);
   const c: Context = {
     mapId,

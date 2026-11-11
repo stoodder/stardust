@@ -8,8 +8,9 @@
 //   that re-aims at a moving target stays smooth.
 // - **The bonk.** A small `orange.4` ring pops on the target (TransientFx), so each bonk reads.
 // - **A grounded flyer** (Pinned by a leaper: `FlyerGrounded`): an `orange.3` ring on the ground
-//   under it and three `gold.4` dizzy stars circling over its head, while the Pin holds. The stars
-//   turn once every STAR_PERIOD_MS, still under reduced motion.
+//   under it and three `gold.4` dizzy stars (3 px) circling over its head, above its health bar,
+//   while the Pin holds. The stars turn once every STAR_PERIOD_MS (held still under reduced
+//   motion).
 import type { ColorName } from '../../content/palettes/master.ts';
 
 /** The arc's peak over the straight line (px). */

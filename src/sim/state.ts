@@ -164,7 +164,10 @@ export interface SimStats {
   jamOverLimitTicks: number;
   jammedTowerTicks: number;
   towerTicks: number;
-  /** The longest single Hostile Takeover jam this run, in ticks (Declined: ≤ 60, 1 s; T707). */
+  /**
+   * The longest any single Hostile Takeover jam held this run, in ticks, counting its landing tick
+   * (Declined: ≤ 60, 1 s; enemyAbilities/takeover.ts, T707).
+   */
   takeoverJamTicks: number;
   /** Bearers who reached home (A3M5's Results line; T706). */
   bearersHome: number;

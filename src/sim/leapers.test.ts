@@ -445,25 +445,24 @@ describe('Lookie Here and Bounce Chorus (towers.md § 6.2)', () => {
   });
 });
 
-describe('the probe: the Sproing Pad answers air (towers.md § 2, § 7)', () => {
-  /** What a ground-only Thumper on (1,3) deals a still flyer at dist 3 over 10 s, with or without a pad. */
-  function thumperOnFlyer(withPad: boolean): number {
-    const { state, ctx } = world();
-    const thumper = build(state, 'thumper', 1, 1, 3);
-    if (withPad) build(state, 'sproing');
-    const f = spawn(state, FLYER, { dist: 3 });
-    let byThumper = 0;
-    for (let i = 0; i < 600; i++) {
-      state.events.length = 0;
-      tick(state, ctx);
-      for (const e of ofType(state, 'ProjectileHit')) {
-        if (e.towerUid === thumper.uid) byThumper += e.damage;
-      }
+/** What a ground-only Thumper on (1,3) deals a still flyer at dist 3 over 10 s, with or without a pad. */
+function thumperOnFlyer(withPad: boolean): number {
+  const { state, ctx } = world();
+  const thumper = build(state, 'thumper', 1, 1, 3);
+  if (withPad) build(state, 'sproing');
+  spawn(state, FLYER, { dist: 3 });
+  let byThumper = 0;
+  for (let i = 0; i < 600; i++) {
+    state.events.length = 0;
+    tick(state, ctx);
+    for (const e of ofType(state, 'ProjectileHit')) {
+      if (e.towerUid === thumper.uid) byThumper += e.damage;
     }
-    void f;
-    return byThumper;
   }
+  return byThumper;
+}
 
+describe('the probe: the Sproing Pad answers air (towers.md § 2, § 7)', () => {
   it('it grounds flyers for a ground-only tower: a Thumper never touches one alone, and does beside it', () => {
     expect(LIVE.towers.thumper!.tiers[0].targets.air).toBe(false);
     expect(thumperOnFlyer(false)).toBe(0);
@@ -485,7 +484,7 @@ describe('determinism (sim integration)', () => {
       scriptFlags: {},
       specsUnlocked: ['sproing'],
     };
-    const run = (): { hash: string; bonks: number; grounded: number } => {
+    const run = (): { hash: string; bonked: number; grounded: number } => {
       const sim = createSim(cfg);
       // Every buildable tile gets a pad (a1_m03's air lane crosses them), then the waves run
       // until three flyers have been grounded.
@@ -497,19 +496,19 @@ describe('determinism (sim integration)', () => {
         }
       }
       sim.enqueue({ type: 'callWave' });
-      let bonks = 0;
+      let bonked = 0;
       let grounded = 0;
       for (let i = 0; i < 60 * 240 && sim.state.outcome === 'playing' && grounded < 3; i++) {
         sim.step();
         for (const e of sim.state.events) {
-          if (e.type === 'LeaperBonk') bonks++;
+          if (e.type === 'LeaperBonk') bonked++;
           if (e.type === 'FlyerGrounded') grounded++;
         }
       }
-      return { hash: sim.hash(), bonks, grounded };
+      return { hash: sim.hash(), bonked, grounded };
     };
     const a = run();
-    expect(a.bonks).toBeGreaterThan(0);
+    expect(a.bonked).toBeGreaterThan(0);
     expect(a.grounded).toBe(3);
     expect(run()).toEqual(a);
   });

@@ -31,7 +31,7 @@ export const RETICLE_TO_PX = 5;
 export const LASER_MIN_PX = 1;
 export const LASER_MAX_PX = 3;
 /** The hangar door's full width (px) over the platform. */
-export const DOOR_PX = 14;
+export const DOOR_PX = 18;
 
 function clamp01(f: number): number {
   return f < 0 ? 0 : f > 1 ? 1 : f;

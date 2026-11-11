@@ -3,6 +3,7 @@
 // field, W7), so par never hits him and earns Signature: Received. Bricks's slot is empty, so slot
 // 1 (System Reboot) is the only ability; par casts it on the Silencers' tells.
 import { defineBuilds } from '../../define.ts';
+import { W15_SIL_SEC, W16_SIL_SEC } from './waves.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, ScriptedBuild, TowerId } from '../../types.ts';
 
@@ -67,6 +68,8 @@ function swapped(
  * Each wave lists its cast ahead of its buys, so a cast never waits behind an upgrade.
  */
 const REBOOT_SEC = 27.5;
+/** W16's first pack comes up the west rift, so its first tell is sooner. */
+const W16_RIFT_REBOOT_SEC = 11.6;
 
 function parSteps(): BuildStep[] {
   return [
@@ -82,30 +85,25 @@ function parSteps(): BuildStep[] {
     // they're in the corridor: its aura cuts their jams on the junction to a second.
     { wave: 4, build: 'choir', tile: HALL_W },
     { wave: 5, build: 'rivet', tile: SKY },
-    { wave: 5, upgrade: SKY },
     reboot(6, REBOOT_SEC),
     { wave: 6, upgrade: HALL_W },
-    { wave: 6, upgrade: J_S },
     { wave: 7, upgrade: HALL_W }, // T3: jams in its aura cut by 75%
-    { wave: 7, upgrade: J_SE },
+    { wave: 8, upgrade: J_SE },
     { wave: 8, upgrade: SV_S },
-    { wave: 8, upgrade: J_S },
     reboot(9, REBOOT_SEC),
-    { wave: 9, build: 'mindspike', tile: J_SW },
+    { wave: 9, upgrade: J_S },
     reboot(10, REBOOT_SEC),
-    { wave: 10, upgrade: J_SE },
-    { wave: 10, upgrade: J_SW },
-    { wave: 11, upgrade: SV_S },
+    { wave: 10, build: 'mindspike', tile: J_SW },
+    { wave: 11, upgrade: SKY },
     reboot(12, REBOOT_SEC),
-    { wave: 12, upgrade: SKY },
-    { wave: 12, upgrade: SV_N },
+    { wave: 12, upgrade: J_S },
     reboot(13, REBOOT_SEC),
-    { wave: 13, upgrade: J_SW },
-    { wave: 14, build: 'harpoon', tile: J_NW },
-    reboot(15, REBOOT_SEC),
-    { wave: 15, upgrade: J_NW },
-    reboot(16, REBOOT_SEC),
-    { wave: 16, upgrade: SV_N },
+    { wave: 13, upgrade: J_SE },
+    { wave: 14, upgrade: J_SW },
+    { wave: 14, upgrade: SV_N },
+    reboot(16, W16_RIFT_REBOOT_SEC),
+    { wave: 16, upgrade: SKY },
+    { wave: 16, upgrade: SV_S },
   ];
 }
 
@@ -163,18 +161,76 @@ export const builds = defineBuilds({
   },
   altBuilds: {
     // Hum Choir, Prism, Skyhook, Thumper (Bunker Buster): the Prisms' beams carry the armor, the
-    // Skyhooks the Moths, the Thumpers the screens; the Choir and System Reboot the jams.
+    // Skyhooks the Moths, a Thumper the screens and (as Bunker Buster) the plate; the Choir and
+    // System Reboot the jams.
     beam_and_flak: {
       loadout: ['choir', 'prism', 'skyhook', 'thumper'],
-      steps: withBunkerBusters(
-        swapped(PAR.steps, { harpoon: 'prism', rivet: 'skyhook', mindspike: 'thumper' }),
-        [J_S],
-      ),
+      steps: [
+        HOLD_FOR_GERALD,
+        { wave: 1, build: 'prism', tile: J_SE },
+        { wave: 1, build: 'prism', tile: SV_S },
+        { wave: 1, build: 'thumper', tile: J_S },
+        { wave: 1, build: 'skyhook', tile: SKY },
+        { wave: 2, build: 'skyhook', tile: J_NE },
+        { wave: 3, upgrade: J_S },
+        { wave: 4, build: 'prism', tile: J_SW },
+        { wave: 5, upgrade: SKY },
+        { wave: 5, upgrade: J_NE },
+        { wave: 6, build: 'choir', tile: HALL_W },
+        reboot(6, REBOOT_SEC),
+        { wave: 6, upgrade: J_SW },
+        { wave: 7, upgrade: HALL_W },
+        { wave: 7, upgrade: J_SE },
+        { wave: 8, upgrade: HALL_W },
+        reboot(9, REBOOT_SEC),
+        { wave: 9, upgrade: SV_S },
+        reboot(10, REBOOT_SEC),
+        { wave: 10, upgrade: J_S },
+        { wave: 11, upgrade: SKY },
+        reboot(12, REBOOT_SEC),
+        { wave: 12, upgrade: J_SW },
+        reboot(13, REBOOT_SEC),
+        { wave: 13, upgrade: J_SE },
+        { wave: 14, specialize: J_S, spec: 'b' }, // Bunker Buster
+        reboot(15, W15_SIL_SEC + REBOOT_SEC),
+        { wave: 15, upgrade: J_NE },
+        reboot(16, W16_RIFT_REBOOT_SEC),
+      ],
     },
     // Harpoon, Mindspike, Scuttle Den, Lookout: no Choir, so System Reboot carries the jam.
     den_and_lookout: {
       loadout: ['harpoon', 'mindspike', 'burrow', 'lookout'],
-      steps: swapped(PAR.steps, { rivet: 'harpoon', choir: 'burrow' }),
+      steps: [
+        HOLD_FOR_GERALD,
+        { wave: 1, build: 'harpoon', tile: SV_S },
+        { wave: 1, build: 'harpoon', tile: J_SE },
+        { wave: 1, build: 'mindspike', tile: J_S },
+        { wave: 1, build: 'burrow', tile: J_SW },
+        { wave: 2, build: 'harpoon', tile: J_NE },
+        { wave: 3, upgrade: J_SE },
+        { wave: 4, build: 'lookout', tile: HALL_W },
+        { wave: 5, build: 'mindspike', tile: SKY },
+        reboot(6, REBOOT_SEC),
+        { wave: 6, upgrade: J_S },
+        { wave: 7, upgrade: SV_S },
+        { wave: 8, build: 'mindspike', tile: J_NW },
+        reboot(9, REBOOT_SEC),
+        { wave: 9, upgrade: J_NW },
+        { wave: 9, upgrade: J_NE },
+        reboot(10, REBOOT_SEC),
+        { wave: 10, upgrade: J_S },
+        { wave: 10, build: 'harpoon', tile: SV_N },
+        { wave: 11, upgrade: J_SE },
+        reboot(12, REBOOT_SEC),
+        { wave: 12, upgrade: SV_S },
+        reboot(13, REBOOT_SEC),
+        { wave: 13, upgrade: SV_N },
+        { wave: 14, upgrade: J_NE },
+        reboot(15, W15_SIL_SEC + REBOOT_SEC),
+        { wave: 15, upgrade: J_NW },
+        reboot(16, W16_RIFT_REBOOT_SEC),
+        { wave: 16, upgrade: SKY },
+      ],
     },
   },
 });

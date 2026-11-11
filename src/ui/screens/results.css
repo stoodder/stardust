@@ -344,6 +344,19 @@
   align-items: center;
 }
 
+/* A titled choice (C4's three directives; T710): the title on its own line, the options wrapping
+   under it, so three long answers never run off the card. */
+.sd-results-choice-titled {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sd-results-choice-titled .sd-results-stake {
+  flex-basis: 100%;
+  margin: 0 0 2px;
+  text-align: center;
+}
+
 /* The group's heading: it takes the focus as the choice shows (D138), never an option. */
 .sd-results-stake {
   margin: 0 4px 0 0;

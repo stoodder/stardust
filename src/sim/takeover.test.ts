@@ -14,7 +14,7 @@ import { secToTicks } from '../shared/time.ts';
 import { MAP, placeTower, spawn } from './__fixtures__/combat.ts';
 import { fixtureConfig } from './__fixtures__/sim.ts';
 import { castReboot } from './abilities/reboot.ts';
-import type { Modifier } from './config.ts';
+import type { Modifier, SimConfig } from './config.ts';
 import { enemyAbilities } from './enemyAbilities/index.ts';
 import { bossDamage, enterBossPhase } from './enemyAbilities/bossPhases.ts';
 import { hangarTelling } from './enemyAbilities/hangar.ts';
@@ -48,8 +48,12 @@ const PURGE = {
 } as const satisfies Modifier;
 
 function world(modifiers: readonly Modifier[] = []): { state: SimState; ctx: TickContext } {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the live content's ids are an IdSpace
-  const config = fixtureConfig({ modifiers, content: LIVE as never });
+  const config: SimConfig<IdSpace> = {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- fx_map's config, live content
+    ...(fixtureConfig() as unknown as SimConfig<IdSpace>),
+    content: LIVE,
+    modifiers,
+  };
   return {
     state: createState(MAP, config.seed),
     ctx: { content: LIVE, map: MAP, config, scratch: createScratch() },
