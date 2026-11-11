@@ -64,10 +64,25 @@ function run(state: SimState, ctx: TickContext, n: number): SimEvent<IdSpace>[] 
   for (let i = 0; i < n; i++) {
     jams(state, ctx);
     state.tick++;
-    out.push(...(state.events as SimEvent<IdSpace>[]));
+    out.push(...state.events);
     state.events.length = 0;
   }
   return out;
+}
+
+/** Two Silencers among three Rivets for 3000 ticks: each event's type, in order. */
+function trace(): string {
+  const { state, ctx } = world();
+  for (const [c, r] of [
+    [1, 1],
+    [3, 1],
+    [3, 2],
+  ] as const) {
+    placeTower(state, RIVET, c, r);
+  }
+  spawn(state, SILENCER, { dist: 2 });
+  spawn(state, SILENCER, { dist: 2.2 });
+  return JSON.stringify(run(state, ctx, 3000).map((ev) => ev.type));
 }
 
 const types = (events: readonly SimEvent<IdSpace>[]): string[] => events.map((e) => e.type);
@@ -352,19 +367,6 @@ describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
   });
 
   it('is deterministic: two runs, the same jams on the same ticks', () => {
-    const trace = (): string => {
-      const { state, ctx } = world();
-      for (const [c, r] of [
-        [1, 1],
-        [3, 1],
-        [3, 2],
-      ] as const) {
-        placeTower(state, RIVET, c, r);
-      }
-      spawn(state, SILENCER, { dist: 2 });
-      spawn(state, SILENCER, { dist: 2.2 });
-      return JSON.stringify(run(state, ctx, 3000).map((ev) => [ev.type, state.tick]));
-    };
     expect(trace()).toBe(trace());
   });
 });

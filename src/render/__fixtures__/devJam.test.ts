@@ -16,10 +16,12 @@ import { jamTower } from '../../sim/jam.ts';
 import type { SimState } from '../../sim/state.ts';
 import { DEV_CONTENT } from './devBattle.ts';
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dev ids are an IdSpace
 const CONTENT = compileContent(DEV_CONTENT) as unknown as CompiledContent<IdSpace>;
 
 /** The sim's state, writable (a test lands jams directly). */
 function writable(s: Sim<IdSpace>): SimState {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test lands jams directly
   return s.state as unknown as SimState;
 }
 
@@ -78,6 +80,7 @@ describe('dev_silence (T702)', () => {
     expect(ten?.ok).toBe(true);
     const [check] = jamLimitChecks(CONTENT.maps.dev_silence!, [1]);
     const over = { jammedPeak: 2, jamOverLimitTicks: 30, jammedTowerTicks: 60, towerTicks: 120 };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a record with just the stats #10 reads
     const rec = { build: 'par', seed: 1, result: { stats: over } } as unknown as RunRecord;
     expect(check!.evaluate(() => rec)).toMatchObject({
       ok: false,
