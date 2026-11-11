@@ -225,12 +225,15 @@ export class BattleHover {
     // A hovered tower's ring wins over the selected tower's, so hovering previews any tower.
     const ringTower =
       look.ringTowerUid !== 0 ? findLiveTower(sim.state.towers, look.ringTowerUid) : selectedTower;
+    const ringTier = ringTower?.tierDef ?? null;
     placement.setRing(
       ringTower?.x ?? 0,
       ringTower?.y ?? 0,
       ringRangeTiles(ringTower, sim.config.modifiers),
       true,
       ringDimmed(ringTower),
+      // A standing Hum Choir's ring is its song's gold too, as its placement preview (T731).
+      ringTier !== null && songRing(ringTier),
     );
   }
 

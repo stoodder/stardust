@@ -283,6 +283,8 @@ export interface RenderState {
    */
   readonly bossShield: number;
   readonly bossEnd: number;
+  /** The boss bar's cells, one per split part while they walk (T731; 0: one bar). */
+  readonly bossCells: number;
   /** Link tethers drawn. */
   readonly tethers: number;
   /** Bricks's name-tag plate (T431): the tower it sits over and its text as drawn, or null. */

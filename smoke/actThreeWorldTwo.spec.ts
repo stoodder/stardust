@@ -7,7 +7,8 @@
 //   once "Shareholder Value" is out; at the jettison the four plates fly off the hull and land on
 //   the crash site.
 // - A3M6: Dome 1 open beside the gate, Pebble on the Peeker's rock, Zibzab's crate, the barricade;
-//   the first refugee turning in at Dome 1's door; Dome 1 frosting over as the night goes on.
+//   the first refugee turning in at Dome 1's door; Dome 1 frosting over as the night goes on; on
+//   the win, the apron's dark domes opening one after another before Results.
 // - Reduced motion: the plates lie on the crash site at once (dev_takeover).
 // Screenshots in <out>/screens/act-three-world-two/ (look at them: the generator, both memorials,
 // the vats' glow, the hangar, the plates in the air and down, Dome 1, the rock, the turn-in).
@@ -15,7 +16,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
-type Cond = 'boss' | 'jettison' | 'sheltered' | 'w7' | 'w14';
+type Cond = 'boss' | 'jettison' | 'sheltered' | 'w7' | 'w14' | 'won';
 
 /** Plays one tick at a time (up to `max`) until `cond` holds, then lets two frames render. */
 async function until(page: Page, cond: Cond, max = 60 * 1500): Promise<boolean> {
@@ -38,6 +39,8 @@ async function until(page: Page, cond: Cond, max = 60 * 1500): Promise<boolean> 
             return st.wave >= 7;
           case 'w14':
             return st.wave >= 14;
+          case 'won':
+            return st.outcome === 'won';
           default:
             return false;
         }
@@ -110,12 +113,12 @@ test('A3M5: the vats and the hangar at night; the hangar opens; the plates land'
   await shot(page, 'act-three-world-two', 4, 'a3m5-hangar-open');
   // The jettison: four plates off the hull, in the air, then down on the crash site.
   expect(await until(page, 'jettison')).toBe(true);
-  await step(page, 12);
+  await step(page, 30);
   const flying = await world(page);
   expect(flying.site.plates).toBe(4);
   expect(flying.site.landed).toBeLessThan(4);
   await shot(page, 'act-three-world-two', 5, 'a3m5-plates-flying');
-  await step(page, 90);
+  await step(page, 100);
   expect((await world(page)).site).toEqual({ plates: 4, landed: 4, hangar: 'open' });
   expect(await page.evaluate(() => globalThis.__sd!.render()!.everglowJams.plates)).toBe(4);
   await shot(page, 'act-three-world-two', 6, 'a3m5-plates-down');
@@ -144,6 +147,10 @@ test('A3M6: Dome 1 by the gate, Pebble on her rock; the turn-in; the frost', asy
   expect(await until(page, 'w14')).toBe(true);
   expect((await world(page)).domes.dome).toBe('frost_2');
   await shot(page, 'act-three-world-two', 9, 'a3m6-frost');
+  // The win: in the hold before Results, the apron's dark domes open one after another.
+  expect(await until(page, 'won')).toBe(true);
+  await expect.poll(async () => (await world(page)).domes.opened, { timeout: 1200 }).toBe(2);
+  await shot(page, 'act-three-world-two', 10, 'a3m6-domes-open');
 });
 
 test('reduced motion: the plates lie on the crash site at once', async ({ browser }) => {
@@ -160,6 +167,6 @@ test('reduced motion: the plates lie on the crash site at once', async ({ browse
   expect(await until(page, 'jettison', 60 * 600)).toBe(true);
   await step(page, 1);
   expect((await world(page)).site).toMatchObject({ plates: 4, landed: 4 });
-  await shot(page, 'act-three-world-two', 10, 'reduced-plates');
+  await shot(page, 'act-three-world-two', 11, 'reduced-plates');
   await context.close();
 });

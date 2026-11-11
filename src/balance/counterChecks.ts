@@ -153,9 +153,10 @@ export function noCounterChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
-    // #6: meta can't replace a counter (design/progression.md § 10), on every map (T760 retired
-    // the jam teach map's exception: jams now land as a jammer first reaches a tower and last
-    // up to 6 s).
+    // #6: meta can't replace a counter (design/progression.md § 10). Not for jam (D146 addendum,
+    // T760): the jam limit (sim/jam.ts `jamRoom`) caps what jamming takes at 25% of the towers,
+    // less than the whole catalog adds, so #5 holds no-jam to losing on the reference instead.
+    if (counter === 'jam') continue;
     const note =
       leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
     checks.push(

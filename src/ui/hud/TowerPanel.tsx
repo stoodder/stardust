@@ -233,11 +233,11 @@ export function TowerPanel({ t }: { t: SelectedTowerView }) {
         aria-label={
           t.priority !== null
             ? `Targeting: ${PRIORITY_LABEL[t.priority]}. Change`
-            : t.fixedTarget != null
+            : (t.fixedTarget ?? null) !== null
               ? `Targeting: ${t.fixedTarget}, fixed. Its leapers pick a flyer, then a Marked foe, then the first`
               : 'Targeting: hits everything in range'
         }
-        title={t.fixedTarget != null ? 'Leapers pick: flyer, Marked, then first' : undefined}
+        title={(t.fixedTarget ?? null) !== null ? 'Leapers pick: flyer, Marked, then first' : undefined}
         data-testid="targeting"
         onClick={cycleTargeting}
       >

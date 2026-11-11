@@ -27,6 +27,8 @@ export const iconTowerRivet = defineSprite({
   size: { w: ICON, h: ICON },
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
+  // A jailbroken class's loadout card and build slot (T731; towers.md § 9): its lights in Vrell orange.
+  variants: ['everglow.jailbroken'],
   outline: 'auto',
   frames: { icon: rivetIcon() },
 });

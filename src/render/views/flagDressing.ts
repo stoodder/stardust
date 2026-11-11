@@ -1,9 +1,9 @@
 // Flag-gated dressing and decor (design/maps.md § 7 "State-dependent dressing"; T706): a dressing
 // layer's `when` and a decor marker's `markerWhen` entry show only when the run's story flags meet
-// their gate (an unset flag never does), so a choice shows on the map (A3M4's HE HELD THE DOOR and
-// the Fun Friday banner under `convoy`). The ground is drawn once per battle (GroundView), from the
-// map as this returns it; T730b draws the gated props themselves. An ally post's `when` is the
-// sim's (sim/bearers.ts `postManned`).
+// their gate (an unset flag never does), so a choice shows on the map (A3M4's HE HELD THE DOOR
+// under `convoy`, the humming ring under `warren`). The ground is drawn once per battle
+// (GroundView), from the map as this returns it, so a gated decor marker's prop stands only under
+// its gate. An ally post's `when` is the sim's (sim/bearers.ts `postManned`).
 import type { FlagGateDef, MarkerId, GridPos } from '../../content/types.ts';
 import type { ScriptFlags } from '../../sim/index.ts';
 

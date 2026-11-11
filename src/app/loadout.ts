@@ -367,9 +367,9 @@ export function openLoadout(mapId: string): boolean {
     // What the map locks under the save's story (T731: A3M5's System Reboot under Rewrite), as
     // cards to read, with why.
     lockedAbilities: off.flatMap((id): LoadoutLockedAbilityView[] => {
-      const owned: readonly string[] = save.unlocks.abilities;
+      const ownedAbilities: readonly string[] = save.unlocks.abilities;
       const def = Object.hasOwn(content.abilities, id) ? content.abilities[id] : undefined;
-      return def === undefined || !owned.includes(id)
+      return def === undefined || !ownedAbilities.includes(id)
         ? []
         : [
             {

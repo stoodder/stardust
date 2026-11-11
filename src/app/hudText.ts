@@ -650,9 +650,7 @@ export function cursorText(
  * offline, it's gone (core-loop.md § 6.11). Act III copy: plain, no "!".
  */
 export function lockedAbilityReason(ability: string): string {
-  return ability === 'system_reboot'
-    ? 'QUILL is offline. She runs it.'
-    : 'Not on this shift.';
+  return ability === 'system_reboot' ? 'QUILL is offline. She runs it.' : 'Not on this shift.';
 }
 
 export function rejectText(reason: RejectReason): string | null {

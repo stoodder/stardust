@@ -205,7 +205,7 @@ export function cycleTargeting(): void {
   if (sel.priority === null) {
     // A leaper's picks are fixed (T731): say what they are rather than "no targeting".
     showNotice(
-      sel.fixedTarget != null
+      (sel.fixedTarget ?? null) !== null
         ? `${sel.fixedTarget}: leapers pick their own`
         : (rejectText('noTargeting') ?? ''),
     );

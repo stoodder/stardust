@@ -57,7 +57,7 @@ function BuildSlot({ index, slot }: { index: number; slot: BuildSlotView | undef
       }}
     >
       <Key k={String(index + 1)} />
-      <Icon id={slot.icon} class="slot-icon" />
+      <Icon id={slot.icon} class="slot-icon" variant={slot.iconVariant} />
       {locked ? (
         <span class="hud-locked">
           <Icon id="icon.lock" />

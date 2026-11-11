@@ -20,7 +20,10 @@
 // kneel's flag a tiny "½" (D139). A split boss (the Gathering Maw, T708) keeps one bar across its
 // parts and its merge (gmawLook.ts `bossBarKey`): from the split it measures their HP summed
 // (the sim's `splitHp`) against what they split with (`splitMaxHp`), without the whole boss's
-// marks, flashing as the parts and then the merged Maw come. Allocation-free per frame: the Graphics
+// marks, flashing as the parts and then the merged Maw come. While the parts walk (T731) the bar
+// is cut into one cell per part, in the order they split, each filling with that part's own HP
+// (its chip draining in its cell) and parted from the next by a 1 px `ink.0` gap, so a dead part
+// reads as an empty cell; the merged Maw is one bar again. Allocation-free per frame: the Graphics
 // redraws only when what it shows changes.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -41,6 +44,8 @@ import {
   chipPx,
   END_FLAG_W,
   endGlyph,
+  MAX_SEGMENTS,
+  segmentEdgesPx,
   endMarkPx,
   MARK_OVERHANG_PX,
   PHASE_FLASH_MS,
@@ -114,6 +119,15 @@ export class BossBarView {
   #alpha = 1;
   /** The phase shown (T708: a split boss's parts and merge flash the bar as they come). */
   #phase = 0;
+  /**
+   * The split's parts (T731), one cell each: their uids in split order (`#parts` of them; 0 while
+   * the boss isn't split, or once it merged), the cell edges, and each cell's fill and chip (px).
+   */
+  #parts = 0;
+  readonly #partUids: number[] = Array.from({ length: MAX_SEGMENTS }, () => 0);
+  #edges: number[] = [];
+  readonly #segFill: number[] = Array.from({ length: MAX_SEGMENTS }, () => 0);
+  readonly #segChip: number[] = Array.from({ length: MAX_SEGMENTS }, () => 0);
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
@@ -146,6 +160,11 @@ export class BossBarView {
 
   get endPx(): number {
     return this.#gfx.visible ? this.#end : -1;
+  }
+
+  /** The split's cells shown (T731; 0: one bar), for the smoke flow. */
+  get segments(): number {
+    return this.#gfx.visible ? this.#parts : 0;
   }
 
   /** A boss entered a phase after its first: the bar flashes white. */
@@ -190,6 +209,7 @@ export class BossBarView {
     const fill = boss !== null ? barFillPx(hp, max) : gone || this.#fill < 0 ? 0 : this.#fill;
     if (fill !== this.#fill) this.#fill = fill;
     this.#chip = chipPx(this.#chip, fill, dt);
+    if (this.#parts > 0) this.#readParts(enemies, boss === null, dt);
     if (this.#flashMs > 0) this.#flashMs = Math.max(0, this.#flashMs - dt);
     if (this.#shieldFlashMs > 0) this.#shieldFlashMs = Math.max(0, this.#shieldFlashMs - dt);
     if (boss !== null && this.#maxShield > 0) this.#readShield(boss);
@@ -245,10 +265,73 @@ export class BossBarView {
       this.#end = -1;
       this.#endGlyph = null;
       this.#chip = barFillPx(splitHp(enemies, boss.ownerUid), boss.splitMaxHp); // no drain across
+      this.#takeParts(boss.ownerUid, enemies);
+    }
+    // The merged boss (T708) is one bar again.
+    if (boss.splitFrom === null && this.#parts > 0) {
+      this.#parts = 0;
+      this.#key = -1;
     }
     if (boss.bossPhase > this.#phase) {
       if (this.#phase > 0) this.#flashMs = PHASE_FLASH_MS;
       this.#phase = boss.bossPhase;
+    }
+  }
+
+  /**
+   * The split's parts as it happens (T731): the live parts of `ownerUid`, in uid order (the order
+   * they split), each a cell; none past MAX_SEGMENTS (the bar stays one summed fill).
+   */
+  #takeParts(ownerUid: number, enemies: BossPool): void {
+    let n = 0;
+    for (let i = 0; i < enemies.used; i++) {
+      const e = enemies.items[i]!; // i < used ≤ items.length
+      if (!e.alive || e.splitFrom === null || e.ownerUid !== ownerUid) continue;
+      if (n >= MAX_SEGMENTS) {
+        n = 0;
+        break;
+      }
+      // Insertion by uid (a handful of parts): the cells keep the split's order.
+      let j = n++;
+      while (j > 0 && this.#partUids[j - 1]! > e.uid) {
+        this.#partUids[j] = this.#partUids[j - 1]!; // j - 1 < n ≤ MAX_SEGMENTS
+        j--;
+      }
+      this.#partUids[j] = e.uid;
+    }
+    this.#parts = n > 1 ? n : 0;
+    if (this.#parts === 0) return;
+    this.#edges = segmentEdgesPx(this.#parts);
+    for (let i = 0; i < this.#parts; i++) {
+      this.#segFill[i] = this.#edges[i + 1]! - this.#edges[i]!; // i + 1 ≤ parts
+      this.#segChip[i] = this.#segFill[i]!;
+    }
+    this.#key = -1;
+  }
+
+  /** Each part's cell (T731): its fill from its own HP (a split share of `#maxHp`), and its chip. */
+  #readParts(enemies: BossPool, gone: boolean, dt: number): void {
+    const share = this.#maxHp / this.#parts;
+    for (let i = 0; i < this.#parts; i++) {
+      const uid = this.#partUids[i]!; // i < parts ≤ MAX_SEGMENTS
+      let hp = 0;
+      if (!gone) {
+        for (let k = 0; k < enemies.used; k++) {
+          const e = enemies.items[k]!; // k < used ≤ items.length
+          if (e.alive && e.uid === uid) {
+            hp = e.hp;
+            break;
+          }
+        }
+      }
+      const cell = this.#edges[i + 1]! - this.#edges[i]!; // i + 1 ≤ parts
+      const fill = barFillPx(hp, share, cell);
+      const was = this.#segChip[i]!;
+      const chip = chipPx(was, fill, dt);
+      // A cell that changes redraws the bar (the change key holds the summed fill only).
+      if (fill !== this.#segFill[i] || Math.round(chip) !== Math.round(was)) this.#key = -1;
+      this.#segFill[i] = fill;
+      this.#segChip[i] = chip;
     }
   }
 
@@ -261,6 +344,7 @@ export class BossBarView {
     this.#end = endMarkPx(def.boss?.endAtPct ?? 0);
     this.#endGlyph = this.#end >= 0 ? endGlyph(def.boss?.endAtPct ?? 0) : null;
     this.#maxShield = def.shield?.hp ?? 0;
+    this.#parts = 0;
     this.#lastShield = -1;
     this.#shieldFlashMs = 0;
     this.#shield = 0;
@@ -295,6 +379,7 @@ export class BossBarView {
     this.#key2 = -1;
     this.#maxShield = 0;
     this.#end = -1;
+    this.#parts = 0;
     this.#gfx.clear().setVisible(false);
     this.#label.setVisible(false);
   }
@@ -326,11 +411,13 @@ export class BossBarView {
     g.fillRect(x - 1, y - 1, w + 2, bodyH + 2);
     g.fillStyle(C.track, 1);
     g.fillRect(x, y, w, h);
-    if (chip > this.#fill) {
+    if (this.#parts > 0) {
+      this.#drawParts(x, y, h, invulnerable, flash);
+    } else if (chip > this.#fill) {
       g.fillStyle(C.chip, 1);
       g.fillRect(x + this.#fill, y, chip - this.#fill, h);
     }
-    if (this.#fill > 0) {
+    if (this.#parts === 0 && this.#fill > 0) {
       const body = invulnerable ? (this.#shimmer ? C.flash : C.lit) : flash ? C.flash : C.fill;
       g.fillStyle(body, 1);
       g.fillRect(x, y, this.#fill, h);
@@ -354,6 +441,33 @@ export class BossBarView {
       g.fillRect(mx - half, foot, END_FLAG_W, 1);
       if (this.#endGlyph !== null) this.#glyph(this.#endGlyph, mx, foot + 2);
     }
+  }
+
+  /**
+   * The split's cells (T731): in each, the chip then the part's fill under its lit top row; then a
+   * 1 px `ink.0` gap at every inner edge, through the HP.
+   */
+  #drawParts(x: number, y: number, h: number, invulnerable: boolean, flash: boolean): void {
+    const g = this.#gfx;
+    const body = invulnerable ? (this.#shimmer ? C.flash : C.lit) : flash ? C.flash : C.fill;
+    const top = invulnerable || flash ? C.flash : C.lit;
+    for (let i = 0; i < this.#parts; i++) {
+      const left = x + this.#edges[i]!; // i < parts < edges.length
+      const fill = this.#segFill[i]!;
+      const chip = Math.round(this.#segChip[i]!);
+      if (chip > fill) {
+        g.fillStyle(C.chip, 1);
+        g.fillRect(left + fill, y, chip - fill, h);
+      }
+      if (fill > 0) {
+        g.fillStyle(body, 1);
+        g.fillRect(left, y, fill, h);
+        g.fillStyle(top, 1);
+        g.fillRect(left, y, fill, 1);
+      }
+    }
+    g.fillStyle(C.frame, 1);
+    for (let i = 1; i < this.#parts; i++) g.fillRect(x + this.#edges[i]!, y, 1, h); // i < edges
   }
 
   /** A tiny glyph (`#` lit) centred on column `mx` from row `top`: `white.1` over an `ink.0` rim. */

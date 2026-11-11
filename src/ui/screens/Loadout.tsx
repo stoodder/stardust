@@ -460,8 +460,8 @@ export function Loadout() {
             {view.abilities.length === 0 &&
               view.revokedAbilities.length === 0 &&
               (view.lockedAbilities ?? []).length === 0 && (
-              <p class="sd-lo-dim">No abilities issued yet.</p>
-            )}
+                <p class="sd-lo-dim">No abilities issued yet.</p>
+              )}
             {view.abilities.length > 0 && (
               <AbilityPicker
                 abilities={view.abilities}

@@ -174,7 +174,12 @@ export function buildSlots(
  * Unregistered ids are skipped.
  */
 export function lockedAbilityViews(
-  abilities: Readonly<Record<string, { readonly id: string; readonly name: string; readonly sprites: { readonly icon: string } }>>,
+  abilities: Readonly<
+    Record<
+      string,
+      { readonly id: string; readonly name: string; readonly sprites: { readonly icon: string } }
+    >
+  >,
   ids: readonly string[],
 ): LockedAbilityView[] {
   return ids.flatMap((id): LockedAbilityView[] => {

@@ -271,7 +271,9 @@ export function specCardHeight(descLines: number): number {
  */
 export function towerPanelHeight(
   t: Pick<SelectedTowerView, 'statsLines' | 'bonuses' | 'deltaLines' | 'specs'> &
-    Partial<Pick<SelectedTowerView, 'spareRunners' | 'dark' | 'rampCap' | 'jamSec' | 'jamImmuneSec'>>,
+    Partial<
+      Pick<SelectedTowerView, 'spareRunners' | 'dark' | 'rampCap' | 'jamSec' | 'jamImmuneSec'>
+    >,
 ): number {
   const rows: number[] = [PANEL_HEAD_H];
   // A ramping beam's live ramp row (T531) sits under the stats; Sundown's line under the bonuses.

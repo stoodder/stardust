@@ -137,3 +137,19 @@ export function barFadeAlpha(ms: number, holdMs = BAR_HOLD_MS): number {
 export function bossLabel(name: string): string {
   return name.toUpperCase();
 }
+
+/**
+ * A split boss's parts on its one bar (T731; the Gathering Maw's three, T708): the bar is cut into
+ * `n` equal cells, one per part in the order they split (equal shares: each part has the same
+ * share of the boss's HP). The cell edges (px from the bar's left), for i = 0..n: cell i spans
+ * [edges[i], edges[i + 1]).
+ */
+export function segmentEdgesPx(n: number, w = BOSS_BAR_W): number[] {
+  const out: number[] = [];
+  if (!(n > 0)) return [0, w];
+  for (let i = 0; i <= n; i++) out.push(Math.round((i * w) / n));
+  return out;
+}
+
+/** The most parts the bar cuts its cells for (a split of more reads as one summed bar). */
+export const MAX_SEGMENTS = 8;

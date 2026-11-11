@@ -9,6 +9,7 @@ import { TOWERS } from '../../content/towers/index.ts';
 import type { TowerId } from '../../content/types.ts';
 import { trapTab } from '../dialogue/SceneParts.tsx';
 import { Icon } from '../hud/Icon.tsx';
+import { JAILBROKEN_PALETTE } from '../../render/views/towerLook.ts';
 import { silkText } from '../silk.ts';
 import { useEscape } from './escape.ts';
 import { focusOnce } from './focus.ts';
@@ -81,8 +82,12 @@ export function JailbreakConfirm({
                 <Icon id={LICENSE_STAMP} class="jb-stamp" />
               </span>
               <span class="jb-arrow">›</span>
+              {/* What comes back: the jailbroken icon, its lights in Vrell orange (T731). */}
               <span class="jb-icon">
-                <Icon id={TOWERS[t]?.sprites.icon ?? `icon.tower.${t}`} />
+                <Icon
+                  id={TOWERS[t]?.sprites.icon ?? `icon.tower.${t}`}
+                  variant={JAILBROKEN_PALETTE}
+                />
               </span>
               <span class="jb-tag">Jailbroken</span>
             </li>

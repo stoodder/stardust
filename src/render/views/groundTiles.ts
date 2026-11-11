@@ -209,9 +209,9 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   // HELD THE DOOR under convoy and the humming ring under warren, by `markerWhen`; Gerald's mail
   // chute; any `bay_<n>`, a shelter bay); A3M5's hangar ("Shareholder Value"'s); A3M6's lettuce-crate
   // barricade (along x, across a road running along y; `barricade_y…` runs along y), Zibzab's crate
-  // (opened in the briefing), and Dome 1 by the gate (`dome_1`, a `prop.dome` drawn `open`; T730b
-  // frosts it). The generator (A3M4's core), the crash site's plates, and Pebble on the Peeker's
-  // rock (A3M6) are their views' (T730b).
+  // (opened in the briefing), and Dome 1 by the gate (`dome_1`, a `prop.dome` drawn `open`;
+  // DomeRowView frosts it). A3M4's core is the generator (`CORE_BY_MAP`), Pebble sits on A3M6's
+  // Peeker rock (`PERCH_MAPS`), and the crash site's plates are PlatformSiteView's (T730b).
   hall_door: 'prop.hall_door',
   banner_friday: 'prop.banner_friday',
   held_door: 'prop.held_door',
@@ -348,7 +348,7 @@ export function pebblePerches(mapId: string | undefined): boolean {
 
 /**
  * A marker whose tile a jettisoned boss's plate lands on (`crash_<n>`, A3M5's crash site; T707):
- * its tile stays bare of sparse decor, and CrashSiteView lands the plate there (T730b).
+ * its tile stays bare of sparse decor, and PlatformSiteView lands the plate there (T730b).
  */
 export function isPlateMarker(id: MarkerId): boolean {
   return /^crash_\d+$/.test(id);
@@ -827,7 +827,7 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
  * tile).
  */
 const PROP_NUDGE: Readonly<Partial<Record<SpriteId, readonly [number, number]>>> = {
-  'prop.hall_door': [-8, 4],
+  'prop.hall_door': [-3, 5],
 };
 
 /** A prop's nudge off its tile's centre (screen px), [0, 0] for most. */

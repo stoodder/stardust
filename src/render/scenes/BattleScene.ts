@@ -994,6 +994,7 @@ export class BattleScene extends Phaser.Scene {
       bossBar: this.bossBarFill,
       bossShield: this.#bossBar.shieldPx,
       bossEnd: this.#bossBar.endPx,
+      bossCells: this.#bossBar.segments, // T731
       tethers: this.tethers,
       nameTag:
         this.#nameTag.text === '' ? null : { uid: this.#nameTag.uid, text: this.#nameTag.text },

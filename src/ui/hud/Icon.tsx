@@ -54,8 +54,7 @@ export function Icon({
    */
   variant?: string | undefined;
 }) {
-  const b =
-    (variant === undefined ? null : baked(id, frame, variant)) ?? baked(id, frame);
+  const b = (variant === undefined ? null : baked(id, frame, variant)) ?? baked(id, frame);
   const name = `icon ${cls ?? ''}`.trim();
   if (b === null) return <span class={`${name} icon-missing`} aria-hidden="true" />;
   return <img class={name} src={b.url} width={b.w} height={b.h} alt="" aria-hidden="true" />;
