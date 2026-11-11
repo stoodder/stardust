@@ -35,7 +35,6 @@ import type { CompiledAllyPost, CompiledMapDef, CompiledRoute } from '../content
 import { BLOCKER_HEALTH_FLOOR } from '../content/rules.ts';
 import type { DeepReadonly } from '../shared/types.ts';
 import type { IdSpace } from '../content/types.ts';
-import { outOfReach } from './enemyAbilities/layers.ts';
 import type { Ally, Enemy } from './entities.ts';
 import { emit, type SimState } from './state.ts';
 import { allyMayTarget } from './systems/allies.ts';
@@ -111,8 +110,16 @@ export function blockerPost(
   return null;
 }
 
+/** What `blockable` reads of an enemy (a live Enemy, or render's read-only view of one). */
+export type BlockableEnemy = DeepReadonly<
+  Pick<
+    Enemy,
+    'alive' | 'def' | 'route' | 'burrowed' | 'phased' | 'leaving' | 'standDownTicks' | 'tags'
+  >
+>;
+
 /** Whether a blocker may hold `e` at all (see the header's "Who"). */
-export function blockable(e: Enemy): boolean {
+export function blockable(e: BlockableEnemy): boolean {
   const def = e.def;
   const route = e.route;
   return (
@@ -123,7 +130,7 @@ export function blockable(e: Enemy): boolean {
     !def.neutral &&
     def.layer === 'ground' &&
     route.layer === 'ground' &&
-    !outOfReach(e) &&
+    !(e.burrowed || e.phased || e.leaving) && // out of reach (layers.ts `outOfReach`)
     e.standDownTicks === 0 &&
     allyMayTarget(e.tags)
   );

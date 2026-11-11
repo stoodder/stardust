@@ -16,7 +16,9 @@ import type { DeepReadonly } from '../../shared/types.ts';
 import { gatherScale, type Enemy, type RiftStatus } from '../../sim/index.ts';
 
 /** How far through its tendril tell a Maw is (0 at the start, 1 as it gathers). */
-export function tendrilProgress(e: DeepReadonly<Enemy>): number {
+export function tendrilProgress(
+  e: DeepReadonly<Pick<Enemy, 'def' | 'gatherUid' | 'gatherTicks'>>,
+): number {
   const g = e.def?.gather ?? null;
   if (g === null || e.gatherUid === 0 || g.tellTicks <= 0) return 0;
   const p = 1 - e.gatherTicks / g.tellTicks;
@@ -29,14 +31,16 @@ export function nooseTiles(progress: number): number {
 }
 
 /** The growth ring's radius (tiles) under a Maw, or 0 before it has gathered. */
-export function growthRingTiles(e: DeepReadonly<Enemy>): number {
+export function growthRingTiles(e: DeepReadonly<Pick<Enemy, 'def' | 'absorbs'>>): number {
   if ((e.def?.gather ?? null) === null || e.absorbs <= 0) return 0;
   return GROWTH_RING_BASE_TILES * gatherScale(e);
 }
 export const GROWTH_RING_BASE_TILES = 0.4;
 
 /** Whether a unit draws a ripple trail now: a live burrowed Hollow unit (the Undertow). */
-export function showsRipples(e: DeepReadonly<Enemy>): boolean {
+export function showsRipples(
+  e: DeepReadonly<Pick<Enemy, 'alive' | 'burrowed' | 'leaving' | 'def'>>,
+): boolean {
   return e.alive && e.burrowed && !e.leaving && e.def !== null && e.def.faction === 'hollow';
 }
 

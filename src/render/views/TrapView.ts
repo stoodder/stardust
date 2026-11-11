@@ -21,7 +21,14 @@ export interface TrapZones {
 
 /** Where a spring's burst goes (FxView's effect ring). */
 export interface TrapFx {
-  ring(x: number, y: number, radiusTiles: number, color: 'green.4', ms: number, grow: boolean): void;
+  ring(
+    x: number,
+    y: number,
+    radiusTiles: number,
+    color: 'green.4',
+    ms: number,
+    grow: boolean,
+  ): void;
 }
 
 /** Underfoot is one slot's: two at once is plenty (a Ready Room recast). */

@@ -63,7 +63,7 @@ function holdoutResult(evacuated: number, forced: readonly string[] = ['seal']):
     escortTotal: 12,
     forcedInputs: forced,
     stats: { ...r.stats, refugeesSpawned: 12, evacuated },
-    waves: [1, 2, 3].map((wave) => ({ ...emptyWave, wave })),
+    waves: [1, 2, 3].map((wave) => Object.assign({}, emptyWave, { wave })),
   };
 }
 const emptyWave = {

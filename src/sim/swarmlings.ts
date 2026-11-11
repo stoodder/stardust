@@ -315,7 +315,8 @@ function run(state: SimState, a: Ally, den: Tower, attack: Spawner, speed: numbe
   a.swarmState = 'home';
   a.swarmTicks = attack.restTicks;
   emit(state, { type: 'SwarmHome', uid: a.uid, towerUid: den.uid });
-  if (a.kind !== attack.ally || den.swarmAlive > swarmMax(den, attack)) retire(state, a, den, attack);
+  if (a.kind !== attack.ally || den.swarmAlive > swarmMax(den, attack))
+    retire(state, a, den, attack);
 }
 
 /** Steps (x, y) toward a point; returns whether it got there this tick (it snaps on). */

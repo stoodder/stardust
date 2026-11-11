@@ -4,17 +4,19 @@
 // - at home (resting in the mound) none is drawn;
 // - dashing out or running home, each scurries in its walk anim in the Skitterkin allies' palette,
 //   facing the way it moves, depth-sorted in `world` like a unit;
-// - latched, it clings to its target's back: on the body as drawn (the lane offset, a flyer's lift;
-//   unitAnchor.ts, falling back to the grid point), spread a few px by uid so a pile reads as a
-//   pile, its anim held on a frame (it holds on), sorted just in front of the body.
+// - latched, it rides its target: its feet on the top of the body as drawn (the lane offset, a
+//   flyer's lift; unitAnchor.ts, falling back to the grid point), so the body still shows under
+//   it, spread a few px by uid so a pile reads as a pile, its anim held on a frame (it holds on),
+//   sorted just in front of the body. On a burrowed unit it rides the mound.
 // Allocation-free per frame: a fixed pool of sprites, set up once; an anim restarts only when the
 // slot's look changes.
 import type * as Phaser from 'phaser';
-import type { SpriteId } from '../../content/sprites/index.ts';
+import { SPRITES, type SpriteId } from '../../content/sprites/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import type { Ally, Enemy } from '../../sim/index.ts';
 import { worldDepth } from '../depth.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
+import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { REFUGEE_VARIANT } from './RefugeeView.ts';
 import { facingOf, type Facing } from './spriteInfo.ts';
 import { AIR_LIFT_PX, BODY_LIFT_PX } from './TransientFx.ts';
@@ -37,10 +39,22 @@ export const SWARM_SPRITES: Readonly<Record<'swarmling' | 'champion', SpriteId>>
   champion: 'ally.champion',
 };
 
+/**
+ * The palette each body wears: the Skitterkin allies' (as the refugees') where the sprite bakes
+ * it, else its own (the placeholders carry no variants until T640a).
+ */
+export const SWARM_VARIANT: ReadonlyMap<string, string> = new Map(
+  Object.values(SWARM_SPRITES).map((id) => {
+    const def = SPRITES.find((d) => d.id === id);
+    const ally = def?.variants?.includes(REFUGEE_VARIANT) === true;
+    return [id, ally ? REFUGEE_VARIANT : DEFAULT_VARIANT];
+  }),
+);
+
 /** Enough for four Big Families and a Finders Keepers each (more go unshown). */
 const MAX_SWARM = 40;
-/** How far down from the top of its target's frame a latched one clings (px). */
-const CLING_PX = 3;
+/** How far down from the top of its target's frame a latched one's feet cling (px). */
+const CLING_PX = 4;
 /** A latched one's sideways spread by uid (px either way), so a pile of them reads. */
 const SPREAD_PX = 3;
 
@@ -106,7 +120,7 @@ export class SwarmView {
       let foot: number;
       if (held && this.#anchors.box(a.targetUid, drawn)) {
         x = drawn.x + (((a.uid * 7) % (2 * SPREAD_PX + 1)) - SPREAD_PX);
-        y = drawn.top + CLING_PX + this.#ctx.sprites.frameAnchor(sprite, `walk_${facing}_0`).y;
+        y = drawn.top + CLING_PX; // its feet on the body's back: the body still shows
         foot = drawn.groundY + 1;
       } else {
         gridToScreen(a.x, a.y, this.#ctx.origin, pos);
@@ -161,7 +175,7 @@ export class SwarmView {
     const { sprites } = this.#ctx;
     const anim = `walk_${facing}`;
     const a = sprites.frameAnchor(sprite, `${anim}_0`);
-    slot.body.play(sprites.anim(sprite, anim, REFUGEE_VARIANT), true);
+    slot.body.play(sprites.anim(sprite, anim, SWARM_VARIANT.get(sprite) ?? DEFAULT_VARIANT), true);
     slot.body.setDisplayOrigin(a.x, a.y);
     if (held || this.#reducedMotion()) slot.body.anims.pause();
   }

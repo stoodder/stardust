@@ -19,7 +19,6 @@ import {
   type SimConfig,
   type SimEvent,
 } from '../../sim/index.ts';
-import { ENEMY_BLANK } from '../../sim/entities.ts';
 
 const MAP = 'dev_holdout';
 
@@ -278,8 +277,13 @@ describe('dev_holdout: the Holdout (T605)', () => {
       (d) => d.boss !== null && d.layer === 'ground',
     )!;
     const walker = cfg.content.enemies.mote!;
-    const route = map.routes.west!;
-    expect(blockable({ ...ENEMY_BLANK, alive: true, def: walker, route })).toBe(true);
-    expect(blockable({ ...ENEMY_BLANK, alive: true, def: boss, route })).toBe(false);
+    // A live Mote on the road, and the same unit as a boss.
+    const sim = createSim(cfg);
+    sim.enqueue({ type: 'callWave' });
+    play(sim, () => sim.state.enemies.items.some((e) => e.alive));
+    const mote = sim.state.enemies.items.find((e) => e.alive)!;
+    expect(mote.def?.id).toBe(walker.id);
+    expect(blockable(mote)).toBe(true);
+    expect(blockable({ ...mote, def: boss })).toBe(false);
   });
 });

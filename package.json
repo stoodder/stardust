@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc -p tsconfig.pure.json --noEmit && tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
-    "lint": "oxlint --type-aware && prettier --check .",
+    "lint": "oxlint --type-aware && prettier --check --cache --cache-strategy content .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",

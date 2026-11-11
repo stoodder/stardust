@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import { RAW_CONTENT } from '../../content/registry.ts';
-import { ENEMY_BLANK, type Enemy } from '../../sim/entities.ts';
+import type { Enemy } from '../../sim/index.ts';
 import {
   GROWTH_RING_BASE_TILES,
   growthRingTiles,
@@ -15,8 +15,22 @@ import {
 
 const E = compileContent(RAW_CONTENT).enemies;
 
-function unit(over: Partial<Enemy>): Enemy {
-  return { ...ENEMY_BLANK, alive: true, uid: 1, ...over };
+type Unit = Pick<
+  Enemy,
+  'alive' | 'def' | 'gatherUid' | 'gatherTicks' | 'absorbs' | 'burrowed' | 'leaving'
+>;
+
+function unit(over: Partial<Unit>): Unit {
+  return {
+    alive: true,
+    def: null,
+    gatherUid: 0,
+    gatherTicks: 0,
+    absorbs: 0,
+    burrowed: false,
+    leaving: false,
+    ...over,
+  };
 }
 
 describe('the Hollow looks (T602)', () => {

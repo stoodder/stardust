@@ -3,8 +3,8 @@
 // latch (a DoT that bypasses armor, reaching burrowed units), the chill stacking to 30%, the rest,
 // the spread, Brave Hearts' Champions on flyers, hold fire, a sale, the spare rule, and its links
 // (Splash Zone, Finders Keepers). Underfoot: Pinned 1 s and 30 Kinetic once per enemy per trap,
-// burrowed reached, flyers never, 6 s, a path tile only. Then dev_den end to end: determinism and
-// a replay of the command log (a checkpoint's resume).
+// burrowed reached, flyers never, 6 s, a path tile only. dev_den end to end (determinism, a replay
+// of the command log) is render/__fixtures__/devDen.test.ts.
 // fx_map's road `a` runs (0,0) → (2,0) → (2,3) → (3,3) → (3,4) → (5,4); route distance d sits on
 // tile d's centre, so (2,1) is distance 3. A Den at (3,1) reaches it 1 tile away (range 2.5).
 import { describe, expect, it } from 'vitest';
@@ -13,15 +13,19 @@ import type { CompiledContent, CompiledEnemyDef } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
 import { SWARMLING_CHILL_CAP } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
-import { DEV_CONTENT } from '../render/__fixtures__/devBattle.ts';
-import { enemyDef, GUN, MAP, placeTower, setup as setupFixture, spawn } from './__fixtures__/combat.ts';
-import { FIXTURE_CONTENT, fixtureConfig } from './__fixtures__/sim.ts';
-import type { Command } from './commands.ts';
+import {
+  enemyDef,
+  GUN,
+  MAP,
+  placeTower,
+  setup as setupFixture,
+  spawn,
+} from './__fixtures__/combat.ts';
+import { FIXTURE_CONTENT } from './__fixtures__/sim.ts';
 import type { Ally, Tower } from './entities.ts';
 import { placeOnRoute } from './path.ts';
 import type { SimEvent } from './events.ts';
 import { poolKill } from './pool.ts';
-import { createSim, type Sim } from './sim.ts';
 import type { SimState } from './state.ts';
 import { SWARM_DASH_TILES_PER_SEC, swarmSpread } from './swarmlings.ts';
 import { applyAbilityCommand } from './systems/abilities.ts';
@@ -49,10 +53,16 @@ const CONTENT: CompiledContent<IdSpace> = {
 /** A slow, sturdy, armored walker that stands still (speed 0): the latch's numbers show plainly. */
 const POST: CompiledEnemyDef = enemyDef('fx_post', { hp: 1000, armor: 5, speedTilesPerTick: 0 });
 const TANK: CompiledEnemyDef = enemyDef('fx_tank', { hp: 1000, armor: 5 });
-const FLYER: CompiledEnemyDef = enemyDef('fx_flyer', { hp: 1000, layer: 'air', speedTilesPerTick: 0 });
+const FLYER: CompiledEnemyDef = enemyDef('fx_flyer', {
+  hp: 1000,
+  layer: 'air',
+  speedTilesPerTick: 0,
+});
 
 /** Every system but the waves (enemies are placed by hand) and the script. */
-const RUN = SYSTEMS.filter((s) => s.name !== 'waves' && s.name !== 'rifts' && s.name !== 'triggers');
+const RUN = SYSTEMS.filter(
+  (s) => s.name !== 'waves' && s.name !== 'rifts' && s.name !== 'triggers',
+);
 
 function setup(): { state: SimState; ctx: TickContext } {
   const s = setupFixture({
@@ -116,7 +126,12 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
     expect(DEN.tiers[1].attack).toMatchObject({ maxAlive: 4 });
     expect(T3.attack).toMatchObject({ maxAlive: 4, damage: 8, latchTicks: 300 });
     expect(BIG_FAMILY.attack).toMatchObject({ ally: 'swarmling', maxAlive: 7 });
-    expect(BRAVE_HEARTS.attack).toMatchObject({ ally: 'champion', maxAlive: 3, damage: 20, chillPct: 0.15 });
+    expect(BRAVE_HEARTS.attack).toMatchObject({
+      ally: 'champion',
+      maxAlive: 3,
+      damage: 20,
+      chillPct: 0.15,
+    });
     expect(BRAVE_HEARTS.targets).toEqual({ ground: true, air: true });
     expect(swarmSpread(0.1)).toBe(3);
     expect(swarmSpread(0.15)).toBe(2);
@@ -139,7 +154,9 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
     const t = den(state);
     const e = spawn(state, POST, { dist: 3 }); // (2.5, 1.5): 1 tile from the Den
     run(state, ctx, 1);
-    expect(swarm(state, t).every((a) => a.swarmState === 'out' && a.targetUid === e.uid)).toBe(true);
+    expect(swarm(state, t).every((a) => a.swarmState === 'out' && a.targetUid === e.uid)).toBe(
+      true,
+    );
     // 1 tile at 4 tiles/s: 15 ticks.
     const took = runUntil(state, ctx, () => allIn(state, t, 'latched'));
     expect(took).toBe(Math.ceil(60 / SWARM_DASH_TILES_PER_SEC));
@@ -156,7 +173,11 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
     const t = den(state, 3, 1, BIG_FAMILY);
     const a = spawn(state, POST, { dist: 3 });
     const b = spawn(state, POST, { dist: 2 }); // (2.5, 0.5): behind a, in range too
-    runUntil(state, ctx, () => swarm(state, t).filter((s) => s.swarmState === 'latched').length === 7);
+    runUntil(
+      state,
+      ctx,
+      () => swarm(state, t).filter((s) => s.swarmState === 'latched').length === 7,
+    );
     // The First (a) takes the spread (3), the next 3 go to b, the last back to the First.
     expect(a.latchCount).toBe(4);
     expect(b.latchCount).toBe(3);
@@ -216,7 +237,11 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
     t.tierDef = BRAVE_HEARTS;
     t.tier = 4;
     t.spec = 'b';
-    runUntil(state, ctx, () => swarm(state, t).filter((a) => a.swarmState === 'latched').length === 3);
+    runUntil(
+      state,
+      ctx,
+      () => swarm(state, t).filter((a) => a.swarmState === 'latched').length === 3,
+    );
     const family = swarm(state, t);
     expect(family.map((a) => a.kind)).toEqual(['champion', 'champion', 'champion']);
     expect(t.swarmAlive).toBe(3);
@@ -304,17 +329,22 @@ describe('the Scuttle Den (towers.md § 7; T604)', () => {
       { credits: 1, kind: 'kill' },
     ]);
     // The link breaks: the fourth goes in for good when it next gets home.
-    poolKill(state.towers, state.towers.items.find((x) => x.alive && x.def?.id === 'crane')!);
+    poolKill(
+      state.towers,
+      state.towers.items.find((x) => x.alive && x.def?.id === 'crane')!,
+    );
     state.linksDirty = true;
     run(state, ctx, 400);
     expect(swarm(state, t)).toHaveLength(3);
   });
 });
 
-describe('Underfoot (core-loop.md § 3.2; T604)', () => {
-  const cast = (state: SimState, ctx: TickContext, tile: readonly [number, number]) =>
-    applyAbilityCommand(state, ctx, { type: 'ability', slot: 2, target: [tile[0], tile[1]] });
+/** Casts slot 2 (Underfoot) at `tile`, as the `ability` command does. */
+function cast(state: SimState, ctx: TickContext, tile: readonly [number, number]) {
+  return applyAbilityCommand(state, ctx, { type: 'ability', slot: 2, target: [tile[0], tile[1]] });
+}
 
+describe('Underfoot (core-loop.md § 3.2; T604)', () => {
   it('opens a 6 s trap on a path tile only; off the road it is rejected with no cooldown', () => {
     const { state, ctx } = setup();
     expect(cast(state, ctx, [1, 1])).toBe('invalidTarget');
@@ -358,64 +388,5 @@ describe('Underfoot (core-loop.md § 3.2; T604)', () => {
     expect(under.hp).toBe(975);
     expect(over.hp).toBe(1000);
     expect(over.pinnedTicks).toBe(0);
-  });
-});
-
-describe('dev_den end to end (T604)', () => {
-  const dev = compileContent({ ...DEV_CONTENT });
-  type DevSim = Sim<IdSpace>;
-  const config = { ...fixtureConfig(), content: dev } as const;
-
-  function devSim(): DevSim {
-    return createSim<IdSpace>({
-      ...config,
-      mapId: 'dev_den',
-      seed: 7,
-      loadout: ['burrow', 'rivet'],
-      companion: 'bramble',
-      abilities: { slot1: 'dev_strike', slot2: 'underfoot', slot2State: 'present' },
-      specsUnlocked: [],
-      modifiers: [],
-      difficulty: 'standard',
-      scriptFlags: {},
-    });
-  }
-
-  const SCRIPT: readonly { readonly tick: number; readonly cmd: Command<IdSpace> }[] = [
-    { tick: 0, cmd: { type: 'build', tower: 'burrow', tile: [5, 2] } },
-    { tick: 0, cmd: { type: 'build', tower: 'burrow', tile: [12, 4] } },
-    { tick: 0, cmd: { type: 'build', tower: 'rivet', tile: [7, 2] } },
-    { tick: 1, cmd: { type: 'callWave' } },
-    { tick: 600, cmd: { type: 'ability', slot: 2, target: [10, 3] } },
-  ];
-
-  function play(sim: DevSim, script: typeof SCRIPT, ticks: number): { latchedBelow: number } {
-    let latchedBelow = 0;
-    while (sim.state.tick < ticks && sim.state.outcome === 'playing') {
-      for (const s of script) if (s.tick === sim.state.tick) sim.enqueue(s.cmd);
-      sim.step();
-      for (const e of sim.state.enemies.items) if (e.alive && e.burrowed && e.latchCount > 0) latchedBelow++;
-    }
-    return { latchedBelow };
-  }
-
-  it('runs: the swarmlings follow the Undertows down, the trap springs, the same every time', () => {
-    const a = devSim();
-    const b = devSim();
-    const ra = play(a, SCRIPT, 3000);
-    play(b, SCRIPT, 3000);
-    expect(a.hash()).toBe(b.hash());
-    expect(ra.latchedBelow).toBeGreaterThan(0);
-    expect(a.state.stats.abilityUses).toBe(1);
-  });
-
-  it('replaying the command log (a checkpoint resume) reaches the same state', () => {
-    const a = devSim();
-    play(a, SCRIPT, 1500);
-    const log = a.state.commandLog.map((e) => ({ tick: e.tick, cmd: e.cmd }));
-    const b = devSim();
-    play(b, log, 1500);
-    expect(b.hash()).toBe(a.hash());
-    expect(b.state.allies.live).toBe(a.state.allies.live);
   });
 });
