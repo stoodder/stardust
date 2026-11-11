@@ -28,8 +28,8 @@ const BILLBOARD: GridPos = [17, 3];
 // The band's pads.
 /** North of the west rift. */
 const RIFT_W: GridPos = [2, 3];
-/** Under the east rift, by the shuttle pad. */
-const RIFT_E: GridPos = [18, 3];
+/** Below the gate, beside the east rift. */
+const GATE_S: GridPos = [16, 12];
 /** Beside the east edge, outside the gate court. */
 const EDGE_N: GridPos = [19, 6];
 const EDGE_S: GridPos = [19, 9];
@@ -57,21 +57,19 @@ function parSteps(): BuildStep[] {
     { wave: 6, upgrade: BEND },
     { wave: 6, upgrade: NW },
     // The Clean Exit takes the Rivets (660 invested against the Thumper's 225): the refund
-    // rebuilds as a Harpoon on the west pad and a Mindspike in the court (for the Hollow).
+    // rebuilds as a Harpoon on the west side and Mindspikes for the Hollow.
     { wave: 8, build: 'harpoon', tile: WEST_S },
     { wave: 8, build: 'mindspike', tile: COURT_N },
+    { wave: 8, build: 'mindspike', tile: SOUTH_W },
     { wave: 8, upgrade: COURT_N },
-    { wave: 8, upgrade: WEST_S },
-    { wave: 9, build: 'thumper', tile: SOUTH_W },
-    { wave: 9, upgrade: COURT_N },
-    { wave: 10, upgrade: SOUTH_W },
+    { wave: 9, upgrade: SOUTH_W },
+    { wave: 9, upgrade: WEST_S },
     { wave: 10, upgrade: COURT_W },
+    { wave: 10, upgrade: COURT_N },
     { wave: 11, upgrade: BEND },
-    { wave: 11, build: 'thumper', tile: RIFT_E },
+    { wave: 11, upgrade: SOUTH_W },
     { wave: 12, upgrade: NW },
-    { wave: 12, upgrade: RIFT_E },
     { wave: 13, upgrade: WEST_S },
-    { wave: 14, upgrade: SOUTH_W },
   ];
 }
 
@@ -138,15 +136,15 @@ export const builds = defineBuilds({
         { wave: 8, upgrade: COURT_S },
         { wave: 9, upgrade: NW },
         { wave: 9, upgrade: COURT_N },
-        { wave: 10, build: 'zapcoil', tile: RIFT_E },
-        { wave: 10, upgrade: RIFT_E },
+        { wave: 10, build: 'zapcoil', tile: GATE_S },
+        { wave: 10, upgrade: GATE_S },
         { wave: 11, upgrade: BEND },
         { wave: 11, upgrade: WEST_N },
         { wave: 12, build: 'harpoon', tile: SOUTH_E },
         { wave: 12, upgrade: COURT_S },
         { wave: 13, upgrade: SOUTH_E },
         { wave: 13, upgrade: NW },
-        { wave: 14, upgrade: RIFT_E },
+        { wave: 14, upgrade: GATE_S },
       ],
     },
     // Mindspike, Prism, Zapcoil, Rivet: the cue takes the Rivets; the Prisms' beams carry the
@@ -173,14 +171,14 @@ export const builds = defineBuilds({
         { wave: 8, upgrade: COURT_N },
         { wave: 9, upgrade: SOUTH_W },
         { wave: 9, upgrade: WEST_S },
-        { wave: 10, build: 'zapcoil', tile: RIFT_E },
-        { wave: 10, upgrade: RIFT_E },
+        { wave: 10, build: 'zapcoil', tile: GATE_S },
+        { wave: 10, upgrade: GATE_S },
         { wave: 11, upgrade: NW },
         { wave: 11, upgrade: COURT_W },
         { wave: 12, upgrade: COURT_N },
         { wave: 13, upgrade: BEND },
         { wave: 13, upgrade: WEST_S },
-        { wave: 14, upgrade: RIFT_E },
+        { wave: 14, upgrade: GATE_S },
       ],
     },
   },
@@ -201,7 +199,7 @@ export const PADS = {
   COURT_S,
   BILLBOARD,
   RIFT_W,
-  RIFT_E,
+  GATE_S,
   EDGE_N,
   EDGE_S,
   BAND_S,

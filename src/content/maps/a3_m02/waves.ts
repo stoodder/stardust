@@ -70,7 +70,7 @@ export const waves = defineWaves([
   // W9 · Expediters + drones
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(5, 0, 1.0), expediters(3, 2, 3), drones(6, 8, 1.0)],
+    groups: [drones(8, 0, 0.8), expediters(3, 2, 3), drones(8, 9, 0.8)],
   },
   // W10 · Motes through both rifts [the east rift opens; it cracked as W9 started]
   {
@@ -81,12 +81,12 @@ export const waves = defineWaves([
   // W11 · drones + Motes
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(10, 0, 1.0), motes(26, 'rift_e', 6, 0.2)],
+    groups: [drones(12, 0, 0.8), expediters(2, 3, 4), motes(14, 'rift_e', 8, 0.25)],
   },
   // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`)
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(20, 0, 0.7), expediters(4, 2, 3), drones(16, 15, 0.7)],
+    groups: [drones(16, 0, 0.8), expediters(3, 2, 3), drones(12, 16, 0.8)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -101,7 +101,7 @@ export const waves = defineWaves([
   // W14 · everything Everglow
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(22, 0, 0.6), expediters(6, 2, 2.5), drones(20, 16, 0.6)],
+    groups: [drones(18, 0, 0.7), expediters(4, 2, 3), drones(14, 16, 0.7)],
   },
   // W15 · everything
   {

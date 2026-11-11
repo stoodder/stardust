@@ -10,8 +10,8 @@
 // side, east along the south, up the east side, past the billboards, and down the east edge to
 // the gate at (17,11); 31 tiles): a leak is a repossession. The Hollow come by the road and by two
 // rifts that break the band. The west rift (W2) crosses the band along row 4 onto the west side;
-// the east rift (W10) cracks in from the east edge, runs west along the band's north row, and
-// drops onto the road where it turns past the billboards. Both cross only decor and the road,
+// the east rift (W10) cracks in from the east edge, runs west along the band's south row under
+// the gate, and turns up into the plaza onto the south side's east end. Both cross only decor and the road,
 // never a pad (maps.md § 4), and each cracks as the wave before it starts.
 import { defineMapLayout } from '../../define.ts';
 import type { GridPos } from '../../types.ts';
@@ -42,14 +42,14 @@ export const map = defineMapLayout({
   revisitWreckage: 'gone',
   size: { cols: 22, rows: 14 },
   // The band only: '*' is A1M4's footprint, composed in unchanged. The band's five pads: north of
-  // the west rift (2,3); south of the plaza (11,12); beside the gate court's east edge (19,6) and
-  // (19,9); and under the east rift's turn (18,2).
+  // the west rift (2,3); beside the east rift where it turns up into the plaza (11,12) and below
+  // the gate (16,12); and beside the gate court's east edge (19,6) and (19,9).
   // prettier-ignore
   tiles: [
     '......................',
     '......................',
     '....**************....',
-    '..o.**************o...',
+    '..o.**************....',
     '....**************....',
     '....**************....',
     '....**************.o..',
@@ -58,7 +58,7 @@ export const map = defineMapLayout({
     '....**************.o..',
     '....**************....',
     '....**************....',
-    '...........o..........',
+    '...........o....o.....',
     '......................',
   ],
   // A1M4's road (`road`) comes with its layout; the band adds no road of its own.
