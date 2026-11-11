@@ -186,7 +186,7 @@ Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.te
   - After 20 s, once (`a3_m03_cue_seal_wait`): "Kid. It's okay. Turns out I like this song."
   - Leaving during the SEAL (the pause menu's Quit or Retry) abandons the run like any map: a loss with no Results, nothing filed, no memo; the door waits for the replay.
 - *Results:* headline **Held.** · sub-line **Evacuated: {n}.** Medal toasts are held back on this screen and shown in the base afterwards. No debrief. The next screen is the base, and the Inbox has one automated memo.
-- *Codex:* Undertow, Okonkwo's Gap, the Amended Survey; the Elder's corrected entry now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'"
+- *Codex:* Undertow; Okonkwo's Gap, from this map ("On the old charts it had a number." … "The colony calls it Okonkwo's Gap now."); the Amended Survey, Bricks's briefing gift ("It is fifteen years late. He filed it anyway."); the Elder's corrected entry now cites "Amended Survey 2346, Okonkwo: 'Correction: they were singing.'" The texts are in [`src/content/codex/act3.ts`](../../../src/content/codex/act3.ts).
 - *Memo after:* `memo_a3_03` *Personnel Update* (automated): "Employee #ED-112 (Okonkwo, I.): Unscheduled Departure. Pension: Restructured." Small print: "Beneficiary changes are not accepted after departure."
 
 **Medals.** Victory (always, on the SEAL) · **Held the Door** (in Perfect's slot): Evacuated ≥ 85% · **Much Obliged** (Challenge): Evacuated ≥ 60% (as built: 22 of 36).
