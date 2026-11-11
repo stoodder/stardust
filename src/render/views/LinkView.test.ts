@@ -1,6 +1,7 @@
 // Link callouts (D059, D061): every link's name must be drawable in the 3×5 pixel font, or
 // BattleScene skips its floating text.
 import { describe, expect, it } from 'vitest';
+import { PRESENTATION } from '../../content/presentation.ts';
 import { LINKS } from '../../content/links/index.ts';
 import { canDraw } from '../vfx/pixelFont.ts';
 import {
@@ -18,6 +19,19 @@ describe('link callouts', () => {
     for (const link of links) {
       expect(canDraw(calloutText(link.name)), link.name).toBe(true);
       expect(LINK_CALLOUT[link.id], link.id).toBeDefined();
+    }
+  });
+
+  it('cheers in Acts I–II and drops the "!" from Act III on (T630a; style-guide § 2)', () => {
+    expect(calloutText('Crossfire')).toBe('CROSSFIRE!');
+    expect(calloutText('Crossfire', 'starred')).toBe('CROSSFIRE!');
+    expect(calloutText('Crossfire', 'plain')).toBe('CROSSFIRE!');
+    expect(calloutText('Splash Zone', 'meter')).toBe('SPLASH ZONE');
+    expect(calloutText('Harmony', 'remembered')).toBe('HARMONY');
+    // Every act's presentation dial maps to one of these four.
+    for (const act of [1, 2, 3, 'finale'] as const) {
+      const quiet = act === 3 || act === 'finale';
+      expect(calloutText('X', PRESENTATION.byAct[act].counter).endsWith('!')).toBe(!quiet);
     }
   });
 

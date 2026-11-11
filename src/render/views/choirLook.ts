@@ -1,5 +1,6 @@
-// The Hum Choir's minimal look (T607; design/towers.md § Hum Choir, enemies.md § 2.4 Lulled): pure
-// rules and pixel images, unit-tested, applied by ChoirView. T630a/T640a polish it.
+// The Hum Choir's look (T607, polished by T630a; design/towers.md § Hum Choir, enemies.md § 2.4
+// Lulled): pure rules and pixel images, unit-tested, applied by ChoirView. The singers are the
+// tower's sprites (T640b; Thrum's ring is TowerView's `hum_thrum` voice).
 // - **The song ring:** round every live tower projecting a `choir` aura, a dashed `gold.3` ring
 //   over a 1 px `ink.0` under-stroke at its aura's reach (`choirReach`: its widest `choir` aura,
 //   plus Harmony's extra, × its radius tune-up), so where its +damage reaches reads at a glance; the
@@ -10,11 +11,15 @@
 //   sleepy blue of the Lulled note, so its reach (2.5, past the aura's 2) reads apart. It's drawn
 //   under the song ring with its dashes a step off, so where the two coincide (Harmony widens the
 //   song to 2.5) the dashes interleave gold and blue.
-// - **Notes:** a small `gold.4` eighth note over each Choir, bobbing a pixel up and down on the
-//   beat (offset per uid so two Choirs don't bob in unison); still under reduced motion.
-// - **Lulled:** a small `blue.4` note on an `ink.0` rim over each Lulled unit's head
-//   (`showsLulled`: the sim's `Enemy.lulled`, out in the open), beside where Unnerved's squiggle
-//   sits (LULLED_SIDE_PX to the right), so a unit both Lulled and Unnerved shows both.
+// - **Notes:** a small `gold.4` eighth note beside each Choir's singers (NOTE_SIDE_PX right of its
+//   tile, NOTE_LIFT_PX up), bobbing a pixel up and down on the beat (offset per uid so two Choirs
+//   don't bob in unison); still under reduced motion. Off to the side, so the `−cost` a purchase
+//   floats up the tower's middle never covers it.
+// - **Lulled:** a `blue.4` pair of beamed notes (♫, `lulledImage`, bigger than the Choir's single
+//   note so it reads on a unit at 1×) on an `ink.0` rim, settled onto the top of each Lulled unit's
+//   head (its foot LULLED_DROP_PX inside the body's frame; `showsLulled`: the sim's
+//   `Enemy.lulled`, out in the open), to the right where Unnerved's squiggle sits left of it
+//   (LULLED_SIDE_PX), so a unit both Lulled and Unnerved shows both.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 
@@ -26,10 +31,14 @@ export const LULLED_COLOR: ColorName = 'blue.4';
 export const NOTE_RIM: ColorName = 'ink.0';
 /** The hum's beat: one step every this many sim ticks (a slow, steady hum: 1.5 a second). */
 export const HUM_BEAT_TICKS = 40;
-/** A Choir's note floats this far over its tile's ground point (px), over the tower's head. */
-export const NOTE_LIFT_PX = 26;
-/** The Lulled note sits this far right of the head's centre, clear of Unnerved's squiggle. */
-export const LULLED_SIDE_PX = 7;
+/** A Choir's note floats this far over its tile's ground point (px), beside the tower's head. */
+export const NOTE_LIFT_PX = 22;
+/** ...and this far right of its centre, clear of the purchase floats rising up the middle. */
+export const NOTE_SIDE_PX = 12;
+/** The Lulled notes sit this far right of the head's centre, clear of Unnerved's squiggle. */
+export const LULLED_SIDE_PX = 6;
+/** The Lulled notes' foot sits this far below the top of the body's frame (px): on the head. */
+export const LULLED_DROP_PX = 3;
 
 /** What the ring reads of a Choir tower. */
 export interface ChoirTower {
@@ -92,15 +101,34 @@ const NOTE: readonly string[] = ['..NN.', '..N.N', '..N..', '..N..', 'NNN..', 'N
 export const NOTE_W = NOTE[0]!.length + 2; // with its rim
 export const NOTE_H = NOTE.length + 2;
 
-/** Whether the note (without its rim) lights pixel (x, y) of the rimmed image. */
-function lit(x: number, y: number): boolean {
-  return NOTE[y - 1]?.[x - 1] === 'N';
-}
+/** Two beamed eighth notes (♫), 7×7: 'N' the notes. */
+const LULLED: readonly string[] = [
+  '..NNNNN',
+  '..NNNNN',
+  '..N...N',
+  '..N...N',
+  'NNN.NNN',
+  'NNN.NNN',
+  '.N...N.',
+];
+export const LULLED_W = LULLED[0]!.length + 2; // with its rim
+export const LULLED_H = LULLED.length + 2;
 
 /** The note image in `color`, on a 1 px `NOTE_RIM` rim round every lit pixel (7×9). */
 export function noteImage(color: ColorName): RgbaImage {
-  const w = NOTE_W;
-  const h = NOTE_H;
+  return rimmed(NOTE, color);
+}
+
+/** The Lulled notes (♫) in `color`, on a 1 px `NOTE_RIM` rim round every lit pixel (9×9). */
+export function lulledImage(color: ColorName): RgbaImage {
+  return rimmed(LULLED, color);
+}
+
+/** `rows` ('N' lit) in `color`, on a 1 px `NOTE_RIM` rim round every lit pixel. */
+function rimmed(rows: readonly string[], color: ColorName): RgbaImage {
+  const lit = (x: number, y: number): boolean => rows[y - 1]?.[x - 1] === 'N';
+  const w = rows[0]!.length + 2;
+  const h = rows.length + 2;
   const data = new Uint8ClampedArray(w * h * 4);
   const put = (x: number, y: number, c: ColorName): void => {
     const { r, g, b } = rgbOf(c);

@@ -92,10 +92,7 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [
-      g('undertow', 2, 'rift_east', OPEN, 2.5),
-      g('undertow', 2, 'rift_east', OPEN + 8, 2.5),
-    ],
+    groups: [g('undertow', 2, 'cut_west', OPEN, 2.5), g('undertow', 2, 'cut_east', OPEN + 8, 2.5)],
   },
   // W8 · everything, larger
   {

@@ -1,16 +1,17 @@
-// Underfoot's trap (core-loop.md § 3.2; T604): the minimal readable view (T630a polishes it; T631
-// draws the aim). While a `trap` zone lives, a moss-green ring holds on its path tile in `decal`
-// (a half-tile ring over a 1 px `ink.0` under-stroke, so it reads on any road), blinking at 4 Hz
-// in its last second (held lit under reduced motion) so the end is no surprise. Each time it
-// springs (a new pair in the sim's `trapSprung`), a quick green ring bursts from the tile (FxView's
-// effect ring). Read from the sim each frame, so it holds while paused. Allocation-free per frame:
-// a fixed pool of ring images, set up once.
+// Underfoot's trap (core-loop.md § 3.2; T604, polished by T630a; trapLook.ts has the rules; T631
+// draws the aim). While a `trap` zone lives, the snare lies on its path tile in `decal` (the moss
+// ring with its four pairs of inward jaws, over a 1 px `ink.0` under-stroke, so it reads on any
+// road), breathing 100% ↔ 60% while armed and blinking at 4 Hz in its last second (held lit under
+// reduced motion), so the end is no surprise. Each time it springs (a new pair in the sim's
+// `trapSprung`), a quick `green.4` ring bursts from the tile (FxView's effect ring). Read from the
+// sim each frame, so it holds while paused. Allocation-free per frame: a fixed pool of images, set
+// up once.
 import type * as Phaser from 'phaser';
-import { TICK_HZ } from '../../shared/time.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import type { Zone } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
-import { effectRingTexture } from '../vfx/overlayTextures.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import { trapAlpha, trapImage } from './trapLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The zone pool as this view reads it. */
@@ -33,14 +34,9 @@ export interface TrapFx {
 
 /** Underfoot is one slot's: two at once is plenty (a Ready Room recast). */
 const MAX_TRAPS = 2;
-const RING_TILES = 0.5;
-const RING_COLOR = 'green.3';
-const RING_UNDER = 'ink.0';
 const BURST_TILES = 0.75;
 const BURST_MS = 300;
-/** The last second blinks at 4 Hz. */
-const WARN_TICKS = TICK_HZ;
-const BLINK_TICKS = TICK_HZ / 8;
+const TRAP_KEY = 'fx.underfoot_snare';
 
 const pos: Vec2 = { x: 0, y: 0 };
 
@@ -58,10 +54,13 @@ export class TrapView {
     this.#ctx = ctx;
     this.#fx = fx;
     this.#reducedMotion = reducedMotion;
-    const tex = effectRingTexture(ctx.scene, RING_TILES, RING_COLOR, RING_UNDER);
+    const snare = trapImage();
+    if (!ctx.scene.textures.exists(TRAP_KEY)) {
+      ctx.scene.textures.addCanvas(TRAP_KEY, imageToCanvas(snare.image));
+    }
     for (let i = 0; i < MAX_TRAPS; i++) {
       const ring = ctx.scene.make.image({}, false).setVisible(false);
-      ring.setTexture(tex.key).setDisplayOrigin(tex.ox, tex.oy);
+      ring.setTexture(TRAP_KEY).setDisplayOrigin(snare.cx, snare.cy);
       ctx.layers.decal.add(ring);
       this.#rings.push(ring);
     }
@@ -80,11 +79,11 @@ export class TrapView {
       if (!z.alive || z.kind !== 'trap') continue;
       const ring = this.#rings[n++]!; // n < MAX_TRAPS
       gridToScreen(z.x, z.y, this.#ctx.origin, pos);
-      const blinkOff =
-        !this.#reducedMotion() &&
-        z.ticksLeft <= WARN_TICKS &&
-        Math.floor(z.ticksLeft / BLINK_TICKS) % 2 === 1;
-      ring.setPosition(Math.round(pos.x), Math.round(pos.y)).setVisible(!blinkOff);
+      const alpha = trapAlpha(z.ticksLeft, this.#reducedMotion());
+      ring
+        .setPosition(Math.round(pos.x), Math.round(pos.y))
+        .setAlpha(alpha)
+        .setVisible(alpha > 0);
     }
     this.#shown = n;
     for (; n < MAX_TRAPS; n++) {

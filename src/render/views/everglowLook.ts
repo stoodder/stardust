@@ -159,7 +159,7 @@ export const SPEED_MARKS_H = 7;
  */
 export function speedMarksImage(frame: 0 | 1, heading: 1 | -1): RgbaImage {
   const rows = MARKS[frame]!; // frame is 0 or 1
-  const drawn = heading === 1 ? rows : rows.map((r) => [...r].toReversed().join(''));
+  const drawn = heading === 1 ? rows : rows.map((r) => r.split('').toReversed().join(''));
   return pixels(drawn, { A: 'orange.4', B: HASTE_COLOR }, HASTE_UNDER);
 }
 

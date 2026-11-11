@@ -1,10 +1,15 @@
-// A blocker's view (design/maps.md § 5.4: Bricks at the Gap; T605, minimal: T630a polishes it). For
-// each live blocker ally (`Ally.blockCapacity` > 0): a small health bar over his head in `overlay`
+// A blocker's view (design/maps.md § 5.4: Bricks at the Gap; T605, polished by T630a). For each
+// live blocker ally (`Ally.blockCapacity` > 0): a small health bar just over his head in `overlay`
 // (a 1 px `ink.0` frame round an `ink.2` track, the health in `green.3`, `gold.3` at or below half,
 // `red.3` at or below a quarter), easing towards `Ally.health` over BAR_EASE_MS (the sim already
-// eases him along the timeline; this smooths what a frame shows, and reduced motion snaps it), and
-// a short `white.1` bracket under each unit he holds (`Enemy.blockerUid`), so the hold reads. His
-// health never moves with what he holds (D141), and the bar has no number on it.
+// eases him along the timeline; this smooths what a frame shows, and reduced motion snaps it):
+// as it falls, the part it is losing shows as a `white.0` chip that the fill drains into
+// (`barLayout`), so the loss reads without a number. His Tumble IV stone sits at the bar's left
+// end (`STONE_PIP`: a `pink.3` stone lit `gold.4`, in an `ink.0` rim), so the bar reads as his,
+// never as an enemy's. Under each unit he holds (`Enemy.blockerUid`) a pair of `white.1` corner
+// brackets close on its feet over an `ink.0` shadow, so the hold reads on Act III's dark road.
+// His health never moves with what he holds (D141), and the bar has no number on it. His stance
+// (`blockerPose`) is AllyView's: braced, straining, down on one knee.
 // Allocation-free per frame: one Graphics, redrawn each frame while something shows.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -22,7 +27,10 @@ export interface BlockerPools {
 /** The bar's size and lift over his ground point, in game px. */
 export const BAR_W = 16;
 export const BAR_H = 2;
-const BAR_LIFT = 34;
+/** The bar's top over his ground point: two pixels over his head as he stands braced (px). */
+export const BAR_LIFT = 29;
+/** A hold bracket's half-width round a held unit's ground point (px). */
+const HOLD_HALF_PX = 6;
 /** How long the shown health takes to catch up with the sim's (ms). */
 export const BAR_EASE_MS = 600;
 
@@ -58,7 +66,45 @@ export function easeBar(shown: number, target: number, dtMs: number, snap: boole
   return Math.abs(gap) <= step ? target : shown + Math.sign(gap) * step;
 }
 
+/** What the bar draws: the fill's width, the chip's past it (px), and the fill's colour. */
+export interface BarLayout {
+  fillPx: number;
+  chipPx: number;
+  color: 'green.3' | 'gold.3' | 'red.3';
+}
+
+/**
+ * The bar for the sim's `health` and the eased `shown`: the fill to the lower of the two (at least
+ * a pixel while he stands), the chip from there to `shown` while it is still falling, coloured by
+ * the sim's level (so the colour changes as the level does, not as the ease catches up).
+ */
+export function barLayout(health: number, shown: number, out: BarLayout): BarLayout {
+  const low = Math.min(health, shown);
+  out.fillPx = Math.max(1, Math.round(BAR_W * low));
+  out.chipPx = Math.max(0, Math.round(BAR_W * shown) - out.fillPx);
+  out.color = blockerBarColor(health);
+  return out;
+}
+
+/** His stone at the bar's left end: [dx, dy, colour] from the bar's top-left (5×5 with its rim). */
+export const STONE_PIP: readonly (readonly [number, number, 'ink.0' | 'pink.3' | 'gold.4'])[] = [
+  [-4, -1, 'ink.0'],
+  [-5, 0, 'ink.0'],
+  [-3, 0, 'ink.0'],
+  [-6, 1, 'ink.0'],
+  [-2, 1, 'ink.0'],
+  [-5, 2, 'ink.0'],
+  [-3, 2, 'ink.0'],
+  [-4, 3, 'ink.0'],
+  [-4, 0, 'gold.4'],
+  [-5, 1, 'pink.3'],
+  [-4, 1, 'pink.3'],
+  [-3, 1, 'pink.3'],
+  [-4, 2, 'pink.3'],
+];
+
 const pos: Vec2 = { x: 0, y: 0 };
+const layout: BarLayout = { fillPx: 0, chipPx: 0, color: 'green.3' };
 
 /** A master colour as a Phaser fill number. */
 function hex(name: ColorName): number {
@@ -69,6 +115,10 @@ const C = {
   frame: hex('ink.0'),
   track: hex('ink.2'),
   held: hex('white.1'),
+  chip: hex('white.0'),
+  'ink.0': hex('ink.0'),
+  'pink.3': hex('pink.3'),
+  'gold.4': hex('gold.4'),
   'green.3': hex('green.3'),
   'gold.3': hex('gold.3'),
   'red.3': hex('red.3'),
@@ -119,14 +169,14 @@ export class BlockerView {
         this.#shownHealth = Number.NaN;
       }
       this.#shownHealth = easeBar(this.#shownHealth, a.health, dtMs, this.#reducedMotion());
-      this.#bar(a.x, a.y, this.#shownHealth);
+      this.#bar(a.x, a.y, a.health, this.#shownHealth);
       this.shown++;
       this.#held(a.uid, pools.enemies);
       break; // one blocker a map (Bricks)
     }
   }
 
-  #bar(x: number, y: number, health: number): void {
+  #bar(x: number, y: number, health: number, shown: number): void {
     const g = this.#g;
     gridToScreen(x, y, this.#ctx.origin, pos);
     const left = Math.round(pos.x - BAR_W / 2);
@@ -135,9 +185,17 @@ export class BlockerView {
     g.fillRect(left - 1, top - 1, BAR_W + 2, BAR_H + 2);
     g.fillStyle(C.track, 1);
     g.fillRect(left, top, BAR_W, BAR_H);
-    const fill = Math.max(1, Math.round(BAR_W * health));
-    g.fillStyle(C[blockerBarColor(health)], 1);
-    g.fillRect(left, top, fill, BAR_H);
+    barLayout(health, shown, layout);
+    g.fillStyle(C[layout.color], 1);
+    g.fillRect(left, top, layout.fillPx, BAR_H);
+    if (layout.chipPx > 0) {
+      g.fillStyle(C.chip, 1);
+      g.fillRect(left + layout.fillPx, top, layout.chipPx, BAR_H);
+    }
+    for (const [dx, dy, c] of STONE_PIP) {
+      g.fillStyle(C[c], 1);
+      g.fillRect(left + dx, top + dy, 1, 1);
+    }
   }
 
   #held(uid: number, enemies: BlockerPools['enemies']): void {
@@ -146,11 +204,19 @@ export class BlockerView {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!e.alive || e.blockerUid !== uid) continue;
       gridToScreen(e.x, e.y, this.#ctx.origin, pos);
-      g.fillStyle(C.held, 1);
       const x = Math.round(pos.x);
-      const y = Math.round(pos.y) + 2;
-      g.fillRect(x - 4, y, 3, 1);
-      g.fillRect(x + 2, y, 3, 1);
+      const y = Math.round(pos.y) + 1;
+      // Corner brackets closing on its feet: [ ], each over its `ink.0` shadow a pixel down.
+      for (const [c, oy] of [
+        [C.frame, 1],
+        [C.held, 0],
+      ] as const) {
+        g.fillStyle(c, 1);
+        g.fillRect(x - HOLD_HALF_PX, y + oy - 2, 1, 3);
+        g.fillRect(x - HOLD_HALF_PX, y + oy, 2, 1);
+        g.fillRect(x + HOLD_HALF_PX, y + oy - 2, 1, 3);
+        g.fillRect(x + HOLD_HALF_PX - 1, y + oy, 2, 1);
+      }
       this.holding++;
     }
   }

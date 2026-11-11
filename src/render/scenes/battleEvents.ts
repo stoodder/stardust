@@ -316,7 +316,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       }
       // The pixel font has capitals, digits, and a few marks: a name it can't draw keeps its
       // rings and chime, and skips the text rather than throwing mid-battle (D061).
-      const text = name === undefined ? '' : calloutText(name);
+      const text = name === undefined ? '' : calloutText(name, presentationOfMap(map).counter);
       if (text === '' || !canDraw(text)) return;
       let lift = TOWER_FLOAT_LIFT_PX + Math.max(a.liftPx, b.liftPx) + LINK_CALLOUT_LIFT_PX;
       calloutMid.x = (a.col + b.col) / 2 + 0.5;

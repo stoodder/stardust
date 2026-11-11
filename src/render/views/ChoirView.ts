@@ -1,11 +1,12 @@
-// The Hum Choir on the field (T607's minimal view; choirLook.ts holds the rules and pixels):
+// The Hum Choir on the field (T607, polished by T630a; choirLook.ts holds the rules and pixels):
 // - **The song ring** round each live Choir at its aura's reach (dashed `gold.3`, its dashes
 //   crawling on the hum's beat), and a Lullaby's own ring at its radius (dashed `blue.4`). In
 //   `decal`, under the units, centred on the tower's tile.
-// - **A note** over each Choir (`gold.4`), bobbing on the beat, in `overlay`.
-// - **Lulled:** a `blue.4` note over the head of each Lulled unit (the sim's `Enemy.lulled`), beside
-//   Unnerved's squiggle, over the body as EnemyView draws it (unitAnchor.ts), falling back to the
-//   grid point without a view. No event drives any of it: it reads sim state, so it holds while
+// - **A note** beside each Choir's singers (`gold.4`), bobbing on the beat, in `overlay`, clear of
+//   the purchase floats.
+// - **Lulled:** `blue.4` beamed notes settled on the head of each Lulled unit (the sim's
+//   `Enemy.lulled`), right of Unnerved's squiggle, on the body as EnemyView draws it
+//   (unitAnchor.ts), falling back to the grid point and the body's headroom without a view. No event drives any of it: it reads sim state, so it holds while
 //   paused.
 // Allocation-free per frame: rings and notes are pooled; each ring texture (colour, snapped
 // radius, dash shift) is registered once.
@@ -20,11 +21,16 @@ import {
   choirReach,
   LULL_RING_COLOR,
   LULLED_COLOR,
+  LULLED_DROP_PX,
+  LULLED_H,
   LULLED_SIDE_PX,
+  LULLED_W,
+  lulledImage,
   lullReach,
   NOTE_COLOR,
   NOTE_H,
   NOTE_LIFT_PX,
+  NOTE_SIDE_PX,
   NOTE_W,
   noteBobPx,
   noteImage,
@@ -33,7 +39,6 @@ import {
   SONG_UNDER,
   songDashShift,
 } from './choirLook.ts';
-import { UNNERVED_GAP_PX } from './mindLook.ts';
 import { blankBox, NO_ANCHORS, type UnitAnchors } from './unitAnchor.ts';
 import type { ViewContext } from './ViewContext.ts';
 
@@ -46,7 +51,7 @@ export interface ChoirPools {
 const MAX_CHOIRS = 12;
 const MAX_LULLED = 24;
 const NOTE_KEY = 'fx.choir_note';
-const LULLED_KEY = 'fx.lulled_note';
+const LULLED_KEY = 'fx.lulled_notes';
 /** A flyer's body rides this far over its ground point (EnemyView's FLY_LIFT_PX). */
 const FLY_LIFT_PX = 12;
 /** A unit's head over its ground point when no view has drawn it (px). */
@@ -85,7 +90,7 @@ export class ChoirView {
       scene.textures.addCanvas(NOTE_KEY, imageToCanvas(noteImage(NOTE_COLOR)));
     }
     if (!scene.textures.exists(LULLED_KEY)) {
-      scene.textures.addCanvas(LULLED_KEY, imageToCanvas(noteImage(LULLED_COLOR)));
+      scene.textures.addCanvas(LULLED_KEY, imageToCanvas(lulledImage(LULLED_COLOR)));
     }
     for (let i = 0; i < 2 * MAX_CHOIRS; i++) {
       const img = scene.make.image({}, false).setVisible(false);
@@ -100,7 +105,7 @@ export class ChoirView {
     }
     for (let i = 0; i < MAX_LULLED; i++) {
       const img = scene.make.image({}, false).setVisible(false);
-      img.setTexture(LULLED_KEY).setDisplayOrigin((NOTE_W - 1) / 2, NOTE_H - 1);
+      img.setTexture(LULLED_KEY).setDisplayOrigin((LULLED_W - 1) / 2, LULLED_H - 1);
       ctx.layers.overlay.add(img);
       this.#lulled.push(img);
     }
@@ -151,7 +156,9 @@ export class ChoirView {
       this.#ring(r++, reach, SONG_COLOR, shift, x, y);
       songs++;
       const note = this.#notes[n++]!; // n < MAX_CHOIRS
-      note.setPosition(x, y - NOTE_LIFT_PX + noteBobPx(tick, t.uid, reduced)).setVisible(true);
+      note
+        .setPosition(x + NOTE_SIDE_PX, y - NOTE_LIFT_PX + noteBobPx(tick, t.uid, reduced))
+        .setVisible(true);
     }
     this.#ringsShown = songs;
     this.#lullRings = lulls;
@@ -182,7 +189,7 @@ export class ChoirView {
       }
       const img = this.#lulled[l++]!; // l < MAX_LULLED
       img
-        .setPosition(Math.round(x + LULLED_SIDE_PX), Math.round(top - UNNERVED_GAP_PX))
+        .setPosition(Math.round(x + LULLED_SIDE_PX), Math.round(top + LULLED_DROP_PX))
         .setVisible(true);
     }
     this.#lulledShown = l;

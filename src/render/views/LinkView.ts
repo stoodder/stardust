@@ -9,6 +9,7 @@
 // shimmer for their first second. Under reduced motion the beads hold still and nothing pulses.
 import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
+import type { CounterStyle } from '../../content/presentation.ts';
 import { tetherDir } from '../../content/sprites/fx/link_tether.ts';
 import { gridToScreen, HALF_H, type Vec2 } from '../iso.ts';
 import { GLYPH_H } from '../vfx/pixelFont.ts';
@@ -59,20 +60,30 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   // M5's links (T500a first pass; T530a may restyle them).
   resonance: { ring: 'blue.3', text: 'teal.4' },
   lightsong: { ring: 'pink.3', text: 'pink.4' },
-  // M6's links (T604 first pass; T630a may restyle them): water and moss, then salvage gold.
+  // M6's (T630a): each gift's own colour names the text, its partner's the ring. The Den's
+  // links speak in its moss (`green.4`) over the Sprinkler's water and the Crane's salvage gold;
+  // the Choir's in its song's gold over the Mindspike's violet; the Bloom's in its ice-white over
+  // the Harpoon's steel-blue rope and the Mindspike's violet.
   splash_zone: { ring: 'blue.3', text: 'green.4' },
   finders_keepers: { ring: 'gold.3', text: 'green.4' },
-  // The Hum Choir's (T607 first pass): the song's warm gold over the Mindspike's violet.
   harmony: { ring: 'violet.3', text: 'gold.4' },
-  // The Stasis Bloom's (T608 first pass): the field's pale ice, over the Harpoon's rope and the
-  // Mindspike's violet.
-  pinned_down: { ring: 'blue.4', text: 'white.0' },
-  stillmind: { ring: 'violet.3', text: 'blue.4' },
+  pinned_down: { ring: 'blue.3', text: 'white.1' },
+  stillmind: { ring: 'violet.3', text: 'white.1' },
 };
 
-/** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */
-export function calloutText(name: string): string {
-  return `${name.toUpperCase()}!`;
+/**
+ * The counter styles of the acts whose system voice has no exclamations left to spend
+ * (style-guide.md § 2: Act III's `meter` and the finale's `remembered`; the Results card's rule).
+ */
+const QUIET: ReadonlySet<CounterStyle> = new Set(['meter', 'remembered']);
+
+/**
+ * A link's callout text: its name in capitals, with feeling in Acts I–II ("CROSSFIRE!"), and
+ * without the "!" from Act III on (`counter`, the map's presentation dial), where the system's
+ * cheer has run out (T630a).
+ */
+export function calloutText(name: string, counter: CounterStyle = 'starred'): string {
+  return QUIET.has(counter) ? name.toUpperCase() : `${name.toUpperCase()}!`;
 }
 
 /** A floating number's height in the 3×5 font with its 1 px outline, and the gap kept over it (px). */

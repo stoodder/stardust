@@ -6,7 +6,12 @@ import {
   HUM_BEAT_TICKS,
   lullReach,
   NOTE_COLOR,
+  LULLED_DROP_PX,
+  LULLED_H,
+  LULLED_W,
+  lulledImage,
   NOTE_H,
+  NOTE_SIDE_PX,
   NOTE_RIM,
   NOTE_W,
   noteBobPx,
@@ -66,5 +71,19 @@ describe('choirLook', () => {
     expect(at(1, 5)).toEqual([gold.r, gold.g, gold.b, 255]); // the head
     expect(at(0, 5)).toEqual([ink.r, ink.g, ink.b, 255]); // its rim
     expect(at(6, 8)[3]).toBe(0); // clear
+  });
+  it('Lulled wears a bigger rimmed ♫ that settles on the head, not over it (T630a)', () => {
+    const img = lulledImage('blue.4');
+    expect([img.w, img.h, LULLED_W, LULLED_H]).toEqual([9, 9, 9, 9]);
+    expect(LULLED_W * LULLED_H).toBeGreaterThan(NOTE_W * NOTE_H);
+    expect(LULLED_DROP_PX).toBeGreaterThan(0);
+    const at = (x: number, y: number): number => img.data[(y * img.w + x) * 4 + 3]!;
+    expect(at(3, 1)).toBe(255); // the beam
+    expect(at(4, 4)).toBe(0); // open between the stems
+  });
+
+  it("the Choir's note stands aside, clear of a 4-digit purchase float up the middle", () => {
+    // A float like "−100" in the 3×5 font is about 18 px wide with its outline: 9 either side.
+    expect(NOTE_SIDE_PX - (NOTE_W - 1) / 2).toBeGreaterThanOrEqual(9);
   });
 });
