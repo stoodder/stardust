@@ -1811,3 +1811,15 @@ A3M4's loose economy is logged for the finale's economy pass (T773).
 - A3M5's asset meter is "Long Walk". Story difficulty raises a Protect asset ×1.5.
 - A3M4's W16 stays as tuned, with the teaching added: QUILL's tell-timing line and a W16 warning. The cliff, which comes from the Bulkhead absorbing every earlier leak, goes to T773.
 - Easing A3M5's W2 lifts its par to 68.2. On par alone it now ties A3M4, but it stays the hardest map for a real player: no-cast and ±2 s numbers are logged with the curve.
+
+### D151 — 2026-11-11 — M7 review round 2 rulings (fixed in round 3, the last)
+
+Round 2 confirmed round 1's fixes as landed: the jailbreak confirmation, the loadout at 1280×720, "Lent by QUILL", the Long Walk meter, Kip's beat, the crate quote, the locked-ability guard, the lazy dev fixtures, Story's asset and the teaching of Reboot timing. On A3M4 a Reboot on the tell now pays (72.7 against par's 68.2), while a Reboot after the jam lands scores the same as none. There were no highs.
+
+Rulings:
+- **A3M5 must reach a human, not just a timer.** Casts shifted ±2 s now clear the band, but a cluster-aware human caster reaches only the floor (50.0). The gap is W13's hunt. A countdown line tells the player where to freeze it, the hunt eases if that isn't enough, and a cluster-aware caster joins the harness pins at band min + 5.
+- **Declined's hint is fair and timely.** Pebble's Choir line moves to about W9, before the layout is set. It names the Choir's loudest song (T3) and plays only when the Choir was brought.
+- **A briefing replays as it first played.** Kip wears his pin on his ledger line every time A3M5's briefing runs.
+- **The loadout and the sim judge story locks the same way**, with one shared condition check (closes T774).
+- Polish: "▾ More" is a real button with a visible scrollbar. QUILL's list stays up through its payoff line. FIZZLED holds 0.8 s, never shows for a ring that later lands, and also covers a Reboot that spends a Takeover laser. The Auditor gets a white mast tip. The Gathering Maw's parts spread on diagonal roads too.
+- Kip's pinholes are invisible at briefing size. That is accepted: his cap and the missing pin carry the beat.
