@@ -89,7 +89,7 @@ describe('starMapView', () => {
     for (const name of later) expect(text).not.toContain(name);
   });
 
-  it("after A2M6 (Act II's close): the night chart, The Preserve as a teaser, nothing past it", () => {
+  it("after A2M6 (Act II's close): the night chart, The Preserve next up, nothing past it", () => {
     const view = starMapView(DEV_SAVES.after_a2m6.build());
     expect(view.phase).toBe('act3');
     expect(view.act).toBe('3');
@@ -97,23 +97,24 @@ describe('starMapView', () => {
     expect(view.frontier).toBe('a3_m01');
     expect(view.nodes).toHaveLength(12);
     expect(view.nodes.slice(0, 11).every((n) => n.state === 'won')).toBe(true);
-    const teaser = view.nodes.at(-1)!;
-    // Coming soon: its name, place, and tagline only (no briefing facts, no Start).
-    expect(teaser).toMatchObject({
+    // A3M1 is playable (T620): next up, with its briefing facts.
+    const next = view.nodes.at(-1)!;
+    expect(next).toMatchObject({
       id: 'a3_m01',
-      state: 'coming_soon',
+      state: 'open',
       name: 'The Preserve',
       place: 'The Preserve',
-      brief: null,
       tagline: 'The Hollow is inside the Preserve, where you led them. Get them out.',
     });
-    expect(teaser.label).toBe(
-      'Shift 12, The Preserve, The Preserve. Coming soon. The Hollow is inside the Preserve, ' +
-        'where you led them. Get them out.',
-    );
+    expect(next.label).toBe('Shift 12, The Preserve, The Preserve. Next up. 0 of 3 medals.');
+    expect(next.brief?.medals.map((m) => m.id)).toEqual([
+      'victory',
+      'perfect_core',
+      'nothing_gathered',
+    ]);
     // The leg from Sundown to the Preserve is the accent's (Act III's red), the rest steel.
     expect(view.legs.map((l) => l.accent)).toEqual([...Array<boolean>(10).fill(false), true]);
-    // The Long Walk is named; nothing later than the teaser is, in any field.
+    // The Long Walk is named; nothing later than the Preserve is, in any field.
     expect(view.regions.find((r) => r.id === 'long_walk')).toMatchObject({
       text: 'The Long Walk',
       struck: 'Surge corridor',
