@@ -1727,3 +1727,15 @@ The owner, before going AFK: "once this is done let's also move on to the second
 Proposed numbers for the Gathering Maw, `takeoverJamSec` and the like stay open to the map tasks' balance runs. Where a map task must change one, it logs an addendum here.
 
 Carried tasks: T660b → T760, T609c → T709 (cut progression.md §7.3's companion-barks clause; Rapports are numbers only), T501c-M6 → T722, T564b → T764, T318-M6's QUILL `purge` and Kip `act3` → T741.
+
+### D147 — 2026-11-11 — The gate is CPU-bound (T764)
+
+T764 measured the gate on a quiet 4-core machine: 563 s before, 550 s now with 3 smoke workers (524 s with 4, within noise). It found that ≤ 420 s is out of reach at M6 content without cutting work. The gate does about 2,100 CPU-seconds of work (smoke ~1,600, test ~320, sim ~120) and keeps all four cores 93–99% busy through test and smoke, so scheduling can't win much more back.
+
+What changed:
+- `sim` now runs beside `smoke`.
+- Each sprite atlas page is drawn once.
+- The gallery smoke is split into three parts.
+- Step shares are rebalanced (smoke 420, sim 90 beside it), and the 480 s budget is a wall-time total.
+
+Projection: M7 adds about 70–100 s, which puts a quiet gate at ~600–640 s, past the 10-minute command limit. Main's recommendation to the owner, who still holds the D145 fork: **the split gate**. That means a fast per-task gate (typecheck, lint, test, build, sim, and the task's own smoke specs), with the full gate run by the orchestrator per wave and at the milestone. This is how M7 already works in practice (the gate policy in the agent rules), so only CLAUDE.md's step 5 wording and a `check:fast` script would change (T766). Until the owner answers, every wave and the milestone still pass the full gate, which reports over budget but doesn't fail on time.
