@@ -1,5 +1,5 @@
 // A3M3 on the radio (T622; act3.md § A3M3, *Barks*): a refugee hushed on the road plays Bricks's
-// `ally_hushed` ("Got through. Keep 'em coming."), and the Holdout's low mark (story/meters.ts
+// `ally_hushed` ("Lost one. Keep 'em coming."), and the Holdout's low mark (story/meters.ts
 // `holdoutLow`: half the losses its floor allows) plays his `low_integrity` ("Steady. Steady now.")
 // once; an Escort keeps its own mark (`escortLow`). The last name tag goes on the newest turret as
 // its cue plays. Real-time holds run on fake timers; sim time is the sim's tick.
@@ -69,7 +69,7 @@ describe('A3M3 on the radio (T622)', () => {
     screen.value = null;
   });
 
-  it("Bricks marks a hushed refugee: 'Got through. Keep 'em coming.'", () => {
+  it("Bricks marks a hushed refugee: 'Lost one. Keep 'em coming.'", () => {
     at(100);
     emit({
       type: 'Hushed',
