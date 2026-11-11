@@ -161,7 +161,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
       'map.holdout': null, // T605
       'ally.blocker': null, // T605
       'status.lulled': null, // T607
-      'tower.field': 'T608',
+      'tower.field': null, // T608
       'enemy.boss.layToRest': 'M8',
     });
     // T605's forcedInputResolved, forceInput, and endMap run (sim/holdout.test.ts), and T606's
@@ -180,15 +180,16 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
     });
   });
 
-  it('refuse the Act III towers whole, naming their task (the Den and Underfoot run)', () => {
+  it('run the Act III towers (none waits for its task now)', () => {
     // The Scuttle Den and Underfoot run since T604 (sim/swarmlings.test.ts), the Hum Choir since
-    // T607 (sim/systems/auras.test.ts, sim/lull.test.ts).
-    expect(STUB_TOWER_TASKS).toEqual({ bloom: 'T608' });
+    // T607 (sim/systems/auras.test.ts, sim/lull.test.ts), the Stasis Bloom since T608
+    // (sim/bloom.test.ts).
+    expect(STUB_TOWER_TASKS).toEqual({});
     expect(towerRefusal(TOWERS.burrow)).toBeNull();
     expect(towerRefusal(TOWERS.choir)).toBeNull();
-    expect(towerRefusal(TOWERS.bloom)).toBe("the 'bloom' tower is not simulated until T608");
-    // Lifted, each is refused by what its tiers use until its own row opens.
-    expect(towerRefusal(TOWERS.bloom, FEATURE_GATES, {})).toBe(
+    expect(towerRefusal(TOWERS.bloom)).toBeNull();
+    // A closed row still refuses what a tower's tiers use (the field's, as before T608).
+    expect(towerRefusal(TOWERS.bloom, { ...FEATURE_GATES, 'tower.field': 'T608' }, {})).toBe(
       'a field (bloom) is not simulated until T608',
     );
     expect(abilityRefusal(LIVE.abilities.underfoot)).toBeNull();
