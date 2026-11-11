@@ -111,6 +111,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
     'Time Dilation recharges 15% faster. Nobody has filed rapport with me before. I made a folder.',
   rapport_vesthara:
     'Stillness recharges 15% faster. She calls me the Machine. I have filed that under rapport.',
+  // Bramble speaks through Ves'thara ("She says: ..."); QUILL has corrected her file (T609b).
+  rapport_bramble:
+    "Underfoot recharges 15% faster. Refiled: Bramble, not 'Chitterbloom.' She says rapport is earned.",
   protocol_slots:
     "One more Field Protocol slot. Protocols are policies you get to choose. I'd like to try that.",
   // QUILL: R&D Command's Technician abilities (access.ts `how: 'rnd'`; the id is `ability_<id>`).

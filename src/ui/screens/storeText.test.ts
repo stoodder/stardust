@@ -213,3 +213,20 @@ describe("Act III's shelf rows (T609)", () => {
     }
   });
 });
+
+describe("Bramble's Rapport row (T609b)", () => {
+  it("reads its effect, price, and QUILL's line once A3M1 is won; no row names her before", () => {
+    const row = byId(shelf(DEV_SAVES.after_a3m1_cleared.build(), 'rnd'), 'rapport_bramble');
+    expect(row.refusal).toBe(null);
+    expect(offerName(row)).toBe('Rapport: Bramble');
+    expect(effectText(row)).toBe('−15% Underfoot cooldown');
+    expect(priceText(row)).toBe('2 Intel');
+    expect(offerCopy(row)).toBe(ITEM_COPY.rapport_bramble);
+    // QUILL's R&D voice (style guide § 6.4): the number first, ≤ 100 characters, no "!".
+    expect(ITEM_COPY.rapport_bramble).toMatch(/^Underfoot recharges 15% faster\. /);
+    expect(ITEM_COPY.rapport_bramble!.length).toBeLessThanOrEqual(100);
+    expect(ITEM_COPY.rapport_bramble).not.toMatch(/!/);
+    const early = shelf(DEV_SAVES.after_a2m6.build(), 'rnd');
+    expect(early.map(offerName)).not.toContain('Rapport: Bramble');
+  });
+});

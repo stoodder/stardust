@@ -200,6 +200,27 @@ describe('catalog: progression.md numbers', () => {
     ]);
   });
 
+  it("Bramble's Rapport (§ 7.3, T609b): 2 Intel, Underfoot −15% cooldown, hidden until A3M1 is won", () => {
+    const u = UPGRADES.rapport_bramble;
+    expect(u).toMatchObject({
+      kind: 'rnd',
+      currency: 'intel',
+      companion: 'bramble',
+      availableAfter: 'a3_m01',
+      hideUntilStocked: true,
+      name: 'Rapport: Bramble',
+    });
+    expect(prices(u)).toEqual([2]);
+    expect(u.ranks[0]?.grants).toEqual([
+      { kind: 'abilityStat', ability: 'underfoot', stat: 'cooldown', pct: -0.15 },
+    ]);
+  });
+
+  it('a Rapport per companion who has a built ability, but Zibzab (a deliberate gap until M7)', () => {
+    const rapports = Object.values(UPGRADES).filter((u) => u.companion !== undefined);
+    expect(rapports.map((u) => u.companion)).toEqual(['bricks', 'quill', 'vesthara', 'bramble']);
+  });
+
   it('Xenotech (§ 7.2, T509): the Prism given, the other Aelari attuned for 3 Intel once it is owned', () => {
     expect(TOWER_ACCESS.prism).toEqual({ how: 'gift', availableAfter: 'a2_m05' });
     const attuned = Object.entries(TOWER_ACCESS).filter(([, a]) => a.how === 'attune');

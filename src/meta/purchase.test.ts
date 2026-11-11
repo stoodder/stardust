@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { compileContent } from '../content/compile.ts';
+import { RAW_CONTENT } from '../content/registry.ts';
 import { PROTOCOLS, UPGRADES } from '../content/upgrades/index.ts';
 import { DEV_SAVES } from './__fixtures__/devSaves.ts';
 import { saveModifiers } from './loadout.ts';
@@ -15,6 +17,9 @@ import {
 import { createNewSave, type SaveData } from './saveData.ts';
 import { briefingGifts } from './storyTransactions.ts';
 import { validateSave } from './validate.ts';
+import { abilityStats } from '../sim/index.ts';
+
+const LIVE = compileContent(RAW_CONTENT);
 
 const MK2: PurchaseItem = { kind: 'upgrade', id: 'orbital_strike_mk2' };
 const RAPPORT: PurchaseItem = { kind: 'upgrade', id: 'rapport_bricks' };
@@ -327,6 +332,40 @@ describe("Xenotech (progression.md § 7.2: Ves'thara's attunements, T509)", () =
       pct: -0.15,
       source: 'rnd:rapport_vesthara',
     });
+  });
+
+  it("Bramble's Rapport waits, unlisted, until A3M1 is won; bought, Underfoot recharges in 42.5 s", () => {
+    const RAPPORT_B: PurchaseItem = { kind: 'upgrade', id: 'rapport_bramble' };
+    // Before A3M1 the row would name the Act I boss as an ally: off the shelf, not greyed.
+    const before = DEV_SAVES.after_a2m6.build();
+    expect(offerFor(before, RAPPORT_B)).toMatchObject({ refusal: 'not_stocked', price: 2 });
+    expect(items(shelf(before, 'rnd'))).not.toContain(JSON.stringify(RAPPORT_B));
+    expect(items(shelf(before, 'rnd', ['rnd']))).toContain(JSON.stringify(RAPPORT_B));
+    for (const save of [
+      DEV_SAVES.after_a3m1_cleared.build(),
+      DEV_SAVES.after_a3m1_spared.build(),
+    ]) {
+      expect(items(shelf(save, 'rnd'))).toContain(JSON.stringify(RAPPORT_B));
+      const r = buy(save, RAPPORT_B);
+      if (!r.ok) throw new Error(r.message);
+      expectValid(r.save);
+      const mods = saveModifiers(r.save);
+      expect(mods).toContainEqual({
+        kind: 'abilityStat',
+        ability: 'underfoot',
+        stat: 'cooldown',
+        pct: -0.15,
+        source: 'rnd:rapport_bramble',
+      });
+      // The sim's own cooldown rule (60 Hz): 50 s × 0.85 = 42.5 s alone; with the save's Ability
+      // Coolant (−5%, additive) 50 s × 0.80 = 40 s.
+      const underfoot = (m: typeof mods) => abilityStats(LIVE.abilities.underfoot, m).cooldownTicks;
+      const rapport = mods.filter((m) => m.source === 'rnd:rapport_bramble');
+      expect(underfoot([])).toBe(3000);
+      expect(underfoot(rapport)).toBe(2550);
+      expect(underfoot(saveModifiers(save))).toBe(2850);
+      expect(underfoot(mods)).toBe(2400);
+    }
   });
 });
 

@@ -29,8 +29,9 @@ export const orbital_strike_mk2 = defineUpgrade({
  * Companion Rapport: the companion's ability cooldown −15% (keyed by ability, so Bricks's carries
  * over to inherited Suppressing Fire). Stocked once the companion's ability has been met: after
  * the map it first appears on: Bricks's after A1M1, QUILL's after A1M3 (T308), Ves'thara's after
- * A2M6 (T509). Zibzab's and Bramble's arrive with their maps. `hideUntilStocked` keeps the Rapport
- * of an ally the player hasn't met yet off the shelf until then.
+ * A2M6 (T509), Bramble's after A3M1 (T609b). Zibzab's is a deliberate gap until M7 (progression.md
+ * § 7.3). `hideUntilStocked` keeps the Rapport of an ally the player hasn't met yet off the shelf
+ * until then.
  */
 function rapport<const Id extends string>(
   id: Id,
@@ -81,6 +82,21 @@ export const rapport_vesthara = rapport(
   'stillness',
   'a2_m06',
   "Rapport: Ves'thara",
+  true,
+);
+
+/**
+ * Bramble's Rapport: Underfoot first plays on A3M1, her map as a companion, so it's stocked once
+ * A3M1 is won (T609b). It pays on an A3M1 replay and in the finale if she walks with you (the pick
+ * list, core-loop.md § 3.2). Off the shelf until then (`hideUntilStocked`): before A3M1 the row
+ * would name the Act I boss as an ally.
+ */
+export const rapport_bramble = rapport(
+  'rapport_bramble',
+  'bramble',
+  'underfoot',
+  'a3_m01',
+  'Rapport: Bramble',
   true,
 );
 
