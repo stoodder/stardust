@@ -93,13 +93,13 @@ describe('prop glows', () => {
 });
 
 /** A sprite's baked frame (default variant). */
-function baked(id: string, frame: string): RgbaImage {
+function baked(id: string, name: string): RgbaImage {
   const def = SPRITES.find((d) => d.id === id);
   if (def === undefined) throw new Error(`no ${id}`);
   const f = bakeSprite(def, PALETTES).frames.find(
-    (b) => b.key === frameKey(id, DEFAULT_VARIANT, frame),
+    (b) => b.key === frameKey(id, DEFAULT_VARIANT, name),
   );
-  if (f === undefined) throw new Error(`no ${id}:${frame}`);
+  if (f === undefined) throw new Error(`no ${id}:${name}`);
   return f.image;
 }
 

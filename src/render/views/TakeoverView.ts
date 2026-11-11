@@ -19,7 +19,7 @@ import {
   type SimEvent,
   type Tower,
 } from '../../sim/index.ts';
-import { gridToScreen, HALF_H, HALF_W, type Vec2 } from '../iso.ts';
+import { gridToScreen, type Vec2 } from '../iso.ts';
 import { TELL_STEP_TICKS } from '../vfx/fxTiming.ts';
 import { hexOf } from './jamLook.ts';
 import {

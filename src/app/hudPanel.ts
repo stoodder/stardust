@@ -6,6 +6,7 @@ import { MAX_TIER_BEFORE_SPEC } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
 import { gridToScreen, type IsoOrigin } from '../render/iso.ts';
 import type { DeepReadonly } from '../shared/types.ts';
+import { TICK_HZ } from '../shared/time.ts';
 import { DOT_TICK_SEC } from '../content/rules.ts';
 import { choirReach, lullReach } from '../render/views/choirLook.ts';
 import {
@@ -221,6 +222,9 @@ function selectedKey(
   k[27] = t.linkPulseSoonerTicks;
   k[28] = t.linkAuraRadiusTiles;
   k[29] = t.detectPct;
+  // The jam rows (T731): whole seconds, so the panel rebuilds once a second while they count.
+  k[30] = wholeSec(t.jamTicks);
+  k[31] = wholeSec(t.jamImmuneTicks);
   let same = keyParts.length === k.length;
   for (let i = 0; same && i < k.length; i++) same = keyParts[i] === k[i];
   if (same) return keyText;
@@ -228,6 +232,20 @@ function selectedKey(
   keyParts.length = k.length;
   keyText = k.join('|');
   return keyText;
+}
+
+/** Ticks as whole seconds, rounded up (a countdown reads 1 s until it's done), never below 0. */
+export function wholeSec(ticks: number): number {
+  return ticks > 0 ? Math.ceil(ticks / TICK_HZ) : 0;
+}
+
+/**
+ * The pick order shown on a tower whose targeting the priority doesn't steer (T731; T704: the
+ * Sproing Pad's leapers pick a flyer, then a Marked foe, then a free one, then the first), else
+ * null.
+ */
+export function fixedTargetText(attackKind: string | null): string | null {
+  return attackKind === 'leaper' ? 'Flyers first' : null;
 }
 
 /** The selected tower's screen point and sell value (selectedView's scratch, read every frame). */
@@ -296,6 +314,7 @@ export function selectedView(
     mods,
   );
   const specName = t.spec === null ? null : (t.def.specs?.[t.spec].name ?? null);
+  const fixed = fixedTargetText(attack?.kind ?? null);
   // The next tier's price as the sim will charge it (D077: tune-ups, then Clearance Sale).
   const nextTier = t.def.tiers[t.tier];
   const upgrade =
@@ -315,7 +334,12 @@ export function selectedView(
     sellValue: sell.value,
     fullRefund: sell.full,
     refundPct: Math.round(state.economy.sellRefundPct * 100),
-    priority: t.priority,
+    // A leaper's picks are fixed (T704): no priority to cycle, its order on the button instead.
+    priority: fixed === null ? t.priority : null,
+    fixedTarget: fixed,
+    // Jammed (T731): the countdown while it holds, then the immunity after (or System Reboot's).
+    jamSec: wholeSec(t.jamTicks),
+    jamImmuneSec: t.jamTicks > 0 ? 0 : wholeSec(t.jamImmuneTicks),
     holdFire: t.holdFire,
     // The filter only changes whom a tower picks, so a tower with no attack doesn't offer it.
     spareRunners: spareRunnersOpen && (t.tierDef?.attack ?? null) !== null ? t.spareRunners : null,

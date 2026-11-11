@@ -139,11 +139,10 @@ export const waves = defineWaves([
     ...NO_CALL,
     groups: [
       drones(5, 0, 1.0),
-      liabilities(3, 6),
+      liabilities(2, 6),
       moths(5, 10),
-      g('expediter', 2, 'service', 12, 6),
       silencers(4, 'rift_w', 0, SIL_GAP),
-      silencers(2, 'rift_e', 6, SIL_GAP),
+      silencers(4, 'rift_e', 6, SIL_GAP),
       silencers(4, 'tunnel', 0, SIL_GAP),
       motes(6, 'rift_w', 12),
     ],

@@ -76,8 +76,8 @@ function swapped(
  */
 const REBOOT_SEC = 27.5;
 /** W14's and W16's first packs come up the rifts, so their first tells are sooner. */
-const W14_RIFT_REBOOT_SEC = 13.6;
-const W16_RIFT_REBOOT_SEC = 11.6;
+const W14_RIFT_REBOOT_SEC = 8.3;
+const W16_RIFT_REBOOT_SEC = 17.8;
 /** W16's Reboot held for the tunnel pack instead (the Den alt's: it has no Choir for that one). */
 const W16_TUNNEL_REBOOT_SEC = 21;
 

@@ -103,6 +103,16 @@ describe("A3M6's Dome Row at night", () => {
   });
 });
 
+/** Each spawn tile's look on map `id`, in tile order. */
+function spawns(id: string): string[] {
+  const g = map(id);
+  const out: string[] = [];
+  g.tiles.forEach((t, k) => {
+    if (t === 'S') out.push(spawnFrame(g, k % g.cols, Math.floor(k / g.cols)));
+  });
+  return out;
+}
+
 describe('M7’s world render (T730b)', () => {
   it('draws A3M4’s core as the shelter generator, every other map’s as the core', () => {
     const a3m4 = map('a3_m04');
@@ -140,14 +150,6 @@ describe('M7’s world render (T730b)', () => {
   });
 
   it('draws a revisit’s own edge spawns as burrows, and only the inner ones as hatches', () => {
-    const spawns = (id: string): string[] => {
-      const g = map(id);
-      const out: string[] = [];
-      g.tiles.forEach((t, k) => {
-        if (t === 'S') out.push(spawnFrame(g, k % g.cols, Math.floor(k / g.cols)));
-      });
-      return out;
-    };
     // A3M6: A1M1's spawn at the head of its road (inside the band, on A1M1's own edge).
     expect(spawns('a3_m06')).toEqual(['v0']);
     // A3M5: the band's sluice and A2M4's road come up out of burrows; the vats' drain is a hatch.

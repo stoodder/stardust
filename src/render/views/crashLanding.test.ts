@@ -50,12 +50,13 @@ describe('the plates (T730b)', () => {
   });
 });
 
-describe('the hangar (T730b)', () => {
-  const boss = (alive: boolean, hangar: unknown) => ({
-    alive,
-    def: { boss: { phases: [{ hangar: null }, { hangar }] } },
-  });
+/** A boss whose second phase has `hangar`. */
+const boss = (alive: boolean, hangar: unknown) => ({
+  alive,
+  def: { boss: { phases: [{ hangar: null }, { hangar }] } },
+});
 
+describe('the hangar (T730b)', () => {
   it('opens once a live boss with a hangar phase is on the field', () => {
     expect(platformOut({ used: 0, items: [] })).toBe(false);
     expect(platformOut({ used: 1, items: [{ alive: true, def: { boss: null } }] })).toBe(false);

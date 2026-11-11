@@ -32,6 +32,11 @@ export interface BuildSlotView {
   readonly unlockWave: number | null;
   /** Newly issued, in its first battle for this save: the slot wears a NEW pip (D061). */
   readonly isNew: boolean;
+  /**
+   * The icon's palette variant (T731): `everglow.jailbroken` for a class the save holds jailbroken
+   * (towers.md § 9); absent: the sprite's own.
+   */
+  readonly iconVariant?: string;
 }
 
 /** How a purchase's price came about (D077): as listed, on sale, or free (Rapid Deploy). */
@@ -80,6 +85,19 @@ export interface AbilitySlotView {
    * on slot 1, or for a companion with no portrait.
    */
   readonly companion: CompanionView | null;
+}
+
+/**
+ * A Technician ability the map locks under the save's story (T731; A3M5's System Reboot under C4
+ * Rewrite: QUILL runs it, and she's offline): shown beside the bar, dark, never castable, with why.
+ */
+export interface LockedAbilityView {
+  readonly ability: string;
+  readonly label: string;
+  /** The `icon.ability.*` sprite id. */
+  readonly icon: string;
+  /** Why it's locked here ("QUILL is offline. She runs it."). */
+  readonly reason: string;
 }
 
 /** The companion beside slot 2: whose portrait shows on the slot (T216). */
@@ -152,8 +170,23 @@ export interface SelectedTowerView {
   readonly sellValue: number;
   /** True while a sell would still refund everything (core-loop §2.3 misclick grace). */
   readonly fullRefund: boolean;
-  /** null for towers that pick no target (pulse and support). */
+  /** null for towers that pick no target (pulse and support), or whose picks are fixed. */
   readonly priority: TargetPriority | null;
+  /**
+   * The fixed pick order of a tower whose targeting the priority doesn't steer (T731: the Sproing
+   * Pad's leapers, "Flyers first"), shown on its disabled Target button; else null.
+   */
+  readonly fixedTarget?: string | null;
+  /**
+   * Whole seconds left on the tower's jam (T731; design/enemies.md § 4), or 0 while it isn't
+   * Jammed: the panel's Jammed row and its countdown.
+   */
+  readonly jamSec?: number;
+  /**
+   * Whole seconds of jam immunity left while it isn't Jammed (a jam's own, or System Reboot's), or
+   * 0: the panel's Immune row.
+   */
+  readonly jamImmuneSec?: number;
   /** The current tier's stats after every bonus (`towerStats`), e.g. "8 dmg · 2.22/s · range 3". */
   readonly stats: string;
   /** `stats` wrapped to the panel's width (a long bonus-laden line takes two). */
@@ -324,6 +357,11 @@ export interface AssetMeterView {
   readonly value: number;
   readonly max: number;
   readonly damage: 'intact' | 'damaged' | 'critical' | 'lost';
+  /**
+   * Where the asset is the bearers (A3M5; T731): those carried home of the run's total so far,
+   * the meter's "Home n / total" row; absent on other Protect maps.
+   */
+  readonly bearers?: { readonly home: number; readonly total: number };
 }
 
 /**
@@ -443,6 +481,8 @@ export const hud = {
   armedTower: signal<string | null>(null),
   /** The commander ability slots, in slot order (bottom-left; empty when none is equipped). */
   abilities: signal<readonly AbilitySlotView[]>([]),
+  /** Technician abilities the map locks under the save's story (T731), shown dark by the bar. */
+  lockedAbilities: signal<readonly LockedAbilityView[]>([]),
   /** Each ability slot's cooldown, in the same order as `abilities`. */
   abilityCooldowns: signal<readonly AbilityCooldownView[]>([]),
   /** The ability slot being aimed (click a tile to fire), or null. */
