@@ -138,7 +138,7 @@ export const waves = defineWaves([
   {
     ...NO_CALL,
     groups: [
-      motes(10, 'vats', 0),
+      motes(8, 'vats', 0),
       fractures(3, 'vats', 4),
       g('maw', 1, 'vats', 8),
       motes(6, 'road', 2),
@@ -149,7 +149,7 @@ export const waves = defineWaves([
   {
     ...NO_CALL,
     groups: [
-      motes(14, 'vats', 0),
+      motes(12, 'vats', 0),
       fractures(3, 'vats', 3),
       g('maw', 2, 'vats', 6, 3),
       motes(10, 'road', 2),

@@ -26,7 +26,8 @@
 // - [dialogue-jump]: labels are unique in a scene; `goto` and `else` name one.
 // - [dialogue-reach]: every node is reachable from the first; no loop runs without a line or choice.
 // - [dialogue-size]: lines on the longest play-through, by slot (`SCENE_LINES`; a pausing cue
-//   `PAUSING_CUE_MAX_LINES`).
+//   `PAUSING_CUE_MAX_LINES`; a radio slot whose first line carries a reply button
+//   `RADIO_REPLY_MAX_LINES`).
 // - [dialogue-button]: reply buttons only on radio and cue lines; a reply names a registered scene.
 // - [dialogue-cond]: `thisRun` names a flag with a run-end rule; `outcome` and `thisRun` only in
 //   debriefs and full-screen scenes (a run must have just ended); `seen` names a scene or bark; a
@@ -46,6 +47,7 @@ import { SHARED_BARKS } from './dialogue/barks/index.ts';
 import {
   POLICY_TELL,
   PAUSING_CUE_MAX_LINES,
+  RADIO_REPLY_MAX_LINES,
   SCENE_LINES,
   TEXT_LIMITS,
   mapAct,
@@ -299,7 +301,9 @@ function validateFlow(
   const max =
     slot.kind === 'cue' && scene.pause === true
       ? PAUSING_CUE_MAX_LINES
-      : SCENE_LINES[slot.kind].max;
+      : slot.kind === 'radio' && opensWithButton(scene)
+        ? RADIO_REPLY_MAX_LINES
+        : SCENE_LINES[slot.kind].max;
   if (lines < min || lines > max) {
     issues.add(
       'dialogue-size',
@@ -307,6 +311,12 @@ function validateFlow(
       `a play-through shows ${lines} lines (${slot.kind}: ${min}–${max})`,
     );
   }
+}
+
+/** Whether the first line `scene` shows carries a reply button (the knock-knock's shape). */
+function opensWithButton(scene: Scene): boolean {
+  const first = scene.nodes.find((n) => n.kind === 'line');
+  return first?.kind === 'line' && first.button !== undefined;
 }
 
 /** The most lines any play-through shows (simple paths; scenes are small). */

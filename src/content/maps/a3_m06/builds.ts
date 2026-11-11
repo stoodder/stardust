@@ -117,6 +117,16 @@ export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a3_m06,
   referenceProfileByFlag: REFERENCE_VARIANTS.a3_m06,
   parBuild: { loadout: ['sproing', 'lookout', 'mindspike', 'harpoon'], steps: parSteps() },
+  // The detection exam is canon's two Operative waves (W5's two, W9's three; campaign.md § 4.8: one
+  // teach wave, one test wave): each that reaches the gate takes one sheltered refugee, too few to
+  // decide the map by W12, so its cost is pinned in balance/a3m6.test.ts instead (no-detection loses
+  // on the reference profile, ≥ 10 points under par, without Nothing Repossessed; D146 addendum).
+  counterExemptions: [
+    {
+      counter: 'detection',
+      reason: "detection exam is W5/W9's two Operative waves (campaign.md §4.8: one teach, one test)",
+    },
+  ],
   // The convoy first: a run with no door set (a dev battle) mans the militia's posts.
   flagVariants: { door_choice: ['convoy', 'warren'], quill_choice: ['keep', 'purge', 'rewrite'] },
   noCounterBuilds: {

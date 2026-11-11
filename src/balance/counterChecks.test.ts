@@ -93,3 +93,22 @@ describe('#6 on the jam teach map (D146 addendum, T720)', () => {
     expect(checkIds(noSplash)).toEqual(['#5 noCounter:splash', '#6 noCounter:splash']);
   });
 });
+
+describe('counter exemptions (BuildsDef.counterExemptions; D146 addenda, T721, T722)', () => {
+  it('skips #5 and #6 for an exempt counter only, the premise check still held', () => {
+    const exempt = (counter: 'jam' | 'detection') => ({
+      ...map,
+      builds: {
+        ...map.builds,
+        noCounterBuilds: { [counter]: steps(), splash: steps() },
+        counterExemptions: [{ counter, reason: 'pinned by the map tests' }],
+      },
+    });
+    for (const counter of ['jam', 'detection'] as const) {
+      expect(checkIds(exempt(counter)), counter).toEqual([
+        '#5 noCounter:splash',
+        '#6 noCounter:splash',
+      ]);
+    }
+  });
+});

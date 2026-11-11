@@ -52,6 +52,13 @@ export const SCENE_LINES: Readonly<Record<SceneSlot['kind'], { min: number; max:
  */
 export const PAUSING_CUE_MAX_LINES = 6;
 
+/**
+ * A radio slot whose first line carries a reply button may run to this many lines: its ignored
+ * ending mirrors the reply's, which plays as a cue (A3M6's knock-knock: Pebble's knock, the
+ * ignored punchline, Goldie, Bricks's silence; T722). Every other radio slot stops at 3.
+ */
+export const RADIO_REPLY_MAX_LINES = 4;
+
 /** QUILL's fair-play tell (style-guide § 5.6): a directive line starts or ends with this. */
 export const POLICY_TELL = '(Per policy.)';
 
