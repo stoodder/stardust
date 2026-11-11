@@ -25,25 +25,6 @@ function placeholder<const Id extends string>(base: SpriteDef, id: Id): SpriteDe
 
 /** M7's placeholders, in gallery order (sprites/index.ts spreads them into SPRITES). */
 export const M7_PLACEHOLDERS = [
-  // Units (T740a).
-  placeholder(enemyMaw, 'enemy.silencer'),
-  placeholder(enemyCompliance, 'enemy.auditor'),
-  placeholder(enemyCompliance, 'enemy.associate'),
-  placeholder(enemyCompliance, 'enemy.liability'),
-  placeholder(enemyCompliance, 'enemy.gunship'),
-  placeholder(enemyCompliance, 'enemy.blackbudget'),
-  placeholder(enemyCompliance, 'enemy.shareholder_value'),
-  placeholder(enemyMaw, 'enemy.gathering_maw'),
-  placeholder(enemyMaw, 'enemy.gathering_maw_part'),
-  placeholder(iconEnemyMaw, 'icon.enemy.silencer'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.auditor'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.associate'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.liability'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.gunship'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.blackbudget'),
-  placeholder(iconEnemyCompliance, 'icon.enemy.shareholder_value'),
-  placeholder(iconEnemyMaw, 'icon.enemy.gathering_maw'),
-  placeholder(iconEnemyMaw, 'icon.enemy.gathering_maw_part'),
   // Towers and icons (T740b), for now in borrowed shapes.
   placeholder(towerBurrow, 'tower.gloop'),
   placeholder(towerBurrowHead, 'tower.gloop_head'),

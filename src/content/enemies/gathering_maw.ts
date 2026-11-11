@@ -6,11 +6,15 @@
 // into one with their summed HP, enraged (Haste 30%). All three dead before the merge: the boss is
 // beaten. `leak` 3 never applies (a leaking boss drains everything).
 //
-// A stub registered ahead of its task (T700a): T708 confirms the numbers and runs the phase gather,
-// the split, and the merge (`enemy.boss.gather`, `enemy.boss.split`). The gather's tell is 1.5 s,
-// not D146's 1 s: every boss ability tells for at least BOSS_MIN_TELL_SEC (enemies.md § 6). Its
-// absorb cap, growth, and the leak and bounty per absorb are the Maw's (no doc numbers). Sprites:
-// placeholders under their final ids (T740a).
+// As built (T708; enemies.md § 6, *How the Gathering Maw runs*): the phase gather runs in
+// enemyAbilities/gather.ts (`gatherOf`), the split in bossSplit.ts as phase 2's 1.5 s telegraph
+// ends, the merge in bossMerge.ts (a fresh unit of this def in phase 3 where the lead part stood,
+// the parts' HP summed). The gather's tell is 1.5 s, not D146's 1 s: every boss ability tells for
+// at least BOSS_MIN_TELL_SEC. Its absorb cap and growth are the Maw's; no leak or bounty per
+// absorb (a boss's leak drains everything; it pays none). No doc numbers for those: T708's, for
+// A3M6 (T722) to tune (D146's addenda). The split-born Maw dies at 0 HP; `driveOff` is only a
+// `bossEnd` action's. Sprites: placeholders under their final ids (T740a: growth `_g1`–`_g5`
+// by absorbs, `panic` once merged).
 import { defineEnemy } from '../define.ts';
 
 export const gathering_maw = defineEnemy({

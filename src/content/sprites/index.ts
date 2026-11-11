@@ -225,6 +225,8 @@ import {
 } from './icons/m6_towers.ts';
 import { iconTellConsumer, iconTellHasteAura } from './icons/m6_glyphs.ts';
 import { M7_PLACEHOLDERS } from './placeholders/m7.ts';
+import { M7_ALLIES, M7_UNIT_FX, M7_UNITS } from './enemies/m7.ts';
+import { M7_UNIT_ICONS } from './icons/m7_enemies.ts';
 import { iconStampLicenseRevoked, iconStampUplinkRevoked } from './icons/revoked.ts';
 import { towerBloom, towerBloomHead } from './towers/bloom.ts';
 import { towerChoir, towerChoirHead } from './towers/choir.ts';
@@ -361,6 +363,8 @@ export const SPRITES = [
   enemyUndertow,
   enemyCompliance,
   enemyExpediter,
+  // M7's units (T740a: enemies/m7.ts).
+  ...M7_UNITS,
   allyBricks,
   // M5's escort: the refugees and Pebble among them (T540a).
   allyRefugee,
@@ -368,6 +372,8 @@ export const SPRITES = [
   // M6's swarmlings and Champions (T640a).
   allySwarmling,
   allyChampion,
+  // M7's allies (T740a): the leapers, the bearers, the militia.
+  ...M7_ALLIES,
   projectileRivetTracer,
   projectileThumperShell,
   projectileThumperBomblet,
@@ -388,6 +394,8 @@ export const SPRITES = [
   fxPowerOff,
   fxPriceTag,
   fxUnravelMote,
+  // M7's overlays (T740a): the Jammed static, C4 Purge's open panel.
+  ...M7_UNIT_FX,
   iconTowerRivet,
   iconTowerThumper,
   iconTowerSprinkler,
@@ -439,6 +447,8 @@ export const SPRITES = [
   iconEnemyUndertow,
   iconEnemyCompliance,
   iconEnemyExpediter,
+  // M7's unit icons (T740a).
+  ...M7_UNIT_ICONS,
   iconAbilityUnderfoot,
   iconStampLicenseRevoked,
   iconStampUplinkRevoked,

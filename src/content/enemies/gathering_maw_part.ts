@@ -1,10 +1,13 @@
 // A part of the Gathering Maw (design/enemies.md § 6; D146): one of the three its phase-2 split
 // releases, each with 20% of the Maw's max HP (the split's `hpPct` sets it; `hp` here is that
 // share of 12000). Boss rules: Pinned and Stasis become Chilled 50%, and a part at the gate is
-// defeat. Its HP joins the Maw's one boss bar. No gather of its own.
+// defeat. Its HP joins the Maw's one boss bar. No gather of its own; 12 s after the split (or as
+// the last but one dies) the survivors merge back into the Maw.
 //
-// A stub registered ahead of its task (T700a): T708 confirms it (the parts' bar, the merge).
-// Sprites: placeholders under their final ids (T740a).
+// As built (T708; enemyAbilities/bossSplit.ts, bossMerge.ts): its HP is set at the split
+// (20% of the Maw's stat HP); it carries the split's clock (`mergeTicks`), the Maw's def
+// (`splitFrom`), and the bar's maximum (`splitMaxHp`), and dies at 0 HP like a unit (its boss
+// `ending` is only a `bossEnd` action's). Sprites: placeholders under their final ids (T740a).
 import { defineEnemy } from '../define.ts';
 
 export const gathering_maw_part = defineEnemy({

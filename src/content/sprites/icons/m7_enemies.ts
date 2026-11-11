@@ -136,3 +136,16 @@ export const iconEnemyGatheringMawPart = icon(
   enemyGatheringMawPart,
   true,
 );
+
+/** M7's unit icons in gallery order (sprites/index.ts spreads them into SPRITES). */
+export const M7_UNIT_ICONS = [
+  iconEnemySilencer,
+  iconEnemyAuditor,
+  iconEnemyAssociate,
+  iconEnemyLiability,
+  iconEnemyGunship,
+  iconEnemyBlackBudget,
+  iconEnemyShareholderValue,
+  iconEnemyGatheringMaw,
+  iconEnemyGatheringMawPart,
+] as const;
