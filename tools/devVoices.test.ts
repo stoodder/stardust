@@ -4,18 +4,18 @@
 // gate (6,7) at the core end; the `halls` marker beside (6,1), so the leader stops 6 tiles up);
 // whole-sim runs cover the hush, defeat, victory, determinism, and the halts' share.
 import { describe, expect, it } from 'vitest';
-import { compileContent } from '../../content/compile.ts';
-import type { CompiledEnemyDef, CompiledMapDef, CompiledRoute } from '../../content/compiled.ts';
-import { CHOIR_SPACING_TILES } from '../../content/rules.ts';
-import type { IdSpace } from '../../content/types.ts';
-import type { CompiledContent } from '../../content/compiled.ts';
-import { fakeResult } from '../../balance/__fixtures__/harness.ts';
-import { marginOf } from '../../balance/checks.ts';
-import { marginChain, runMap } from '../../balance/harness.ts';
-import { HARNESS_GATES, refusedFeatures } from '../../balance/refusals.ts';
-import { parBand } from '../../balance/rules.ts';
-import { DEV_CONTENT } from './devBattle.ts';
-import { spawn } from '../../sim/__fixtures__/combat.ts';
+import { compileContent } from '../src/content/compile.ts';
+import type { CompiledEnemyDef, CompiledMapDef, CompiledRoute } from '../src/content/compiled.ts';
+import { CHOIR_SPACING_TILES } from '../src/content/rules.ts';
+import type { IdSpace } from '../src/content/types.ts';
+import type { CompiledContent } from '../src/content/compiled.ts';
+import { fakeResult } from '../src/balance/__fixtures__/harness.ts';
+import { marginOf } from '../src/balance/checks.ts';
+import { marginChain, runMap } from '../src/balance/harness.ts';
+import { HARNESS_GATES, refusedFeatures } from '../src/balance/refusals.ts';
+import { parBand } from '../src/balance/rules.ts';
+import { DEV_CONTENT } from '../src/render/__fixtures__/devBattle.ts';
+import { spawn } from '../src/sim/__fixtures__/combat.ts';
 import {
   choir,
   choirAt,
@@ -29,15 +29,15 @@ import {
   recoverSingers,
   songCircles,
   songRadius,
-} from '../../sim/choir.ts';
-import type { ScriptFlags, SimConfig } from '../../sim/config.ts';
-import type { Ally } from '../../sim/entities.ts';
-import type { SimEvent } from '../../sim/events.ts';
-import { createBuildExecutor, runHeadless } from '../../sim/headless.ts';
-import { bookLeak } from '../../sim/medals.ts';
-import { createSim } from '../../sim/sim.ts';
-import { createState, type SimState } from '../../sim/state.ts';
-import { createScratch, type TickContext } from '../../sim/tick.ts';
+} from '../src/sim/choir.ts';
+import type { ScriptFlags, SimConfig } from '../src/sim/config.ts';
+import type { Ally } from '../src/sim/entities.ts';
+import type { SimEvent } from '../src/sim/events.ts';
+import { createBuildExecutor, runHeadless } from '../src/sim/headless.ts';
+import { bookLeak } from '../src/sim/medals.ts';
+import { createSim } from '../src/sim/sim.ts';
+import { createState, type SimState } from '../src/sim/state.ts';
+import { createScratch, type TickContext } from '../src/sim/tick.ts';
 
 const DEV = compileContent(DEV_CONTENT);
 const MAPS: Readonly<Record<string, CompiledMapDef<IdSpace>>> = DEV.maps;

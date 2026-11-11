@@ -66,7 +66,7 @@ describe('the finale dev maps', () => {
     expect(map.choir?.paceTilesPerTick).toBeCloseTo(0.35 / 60);
     expect(map.song).toBeNull();
     expect(map.timers).toEqual([]);
-    expect(refused('dev_voices')).toEqual([]); // T804 (devVoices.test.ts)
+    expect(refused('dev_voices')).toEqual([]); // T804 (tools/devVoices.test.ts)
   });
 
   it('dev_song: the song, Phase 2 from wave 1, Dawn (T805, T806)', () => {

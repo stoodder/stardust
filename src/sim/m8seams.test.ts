@@ -117,7 +117,7 @@ describe('the `phaseAtLeast` condition atom (T800a; live)', () => {
 describe('FEATURE_GATES and SCRIPT_GATES (T800a rows; D154)', () => {
   it('name the task that lifts each finale mechanic', () => {
     expect(FEATURE_GATES).toMatchObject({
-      'map.choir': null, // T804 lifted (render/__fixtures__/devVoices.test.ts)
+      'map.choir': null, // T804 lifted (tools/devVoices.test.ts)
       'map.song': null, // T805 lifted
       'map.timers': null, // T806 (sim/timers.test.ts)
       'enemy.boss.layToRest': 'T808',

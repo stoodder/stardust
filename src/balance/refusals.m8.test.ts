@@ -1,5 +1,5 @@
 // The harness's finale rows (T800a; D154): a Choir map's Voices margins (#2) are measured since
-// T804 (render/__fixtures__/devVoices.test.ts); the song's Phase 2 timing per `quill_choice`
+// T804 (tools/devVoices.test.ts); the song's Phase 2 timing per `quill_choice`
 // (#18) waits for T821, refusing loudly, naming its task.
 import { describe, expect, it } from 'vitest';
 import type { CompiledMapDef } from '../content/compiled.ts';
