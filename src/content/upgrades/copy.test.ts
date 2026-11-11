@@ -46,6 +46,13 @@ const rndAbilities = Object.entries<Access | undefined>(ABILITY_ACCESS)
   .filter(([, a]) => a?.how === 'rnd')
   .map(([id]) => `ability_${id}`);
 
+/**
+ * The jailbreak's copy ids (T709): the Firmware row's line, priced (`jailbreak`) or under the
+ * convoy, where it costs nothing (`jailbreak_convoy`). storeText.test.ts holds the price to the
+ * story's (meta isn't content's to import).
+ */
+const JAILBREAK_COPY = ['jailbreak', 'jailbreak_convoy'];
+
 describe('item copy', () => {
   it('every catalog item carries its copy.ts line, and copy.ts has no line for a missing item', () => {
     const ids = [
@@ -54,6 +61,7 @@ describe('item copy', () => {
       ...licenses.map((l) => l.id),
       ...rndAbilities,
       ...vesthara,
+      ...JAILBREAK_COPY,
     ];
     for (const item of [...upgrades, ...protocols]) {
       expect(item.copy, item.id).not.toBeNull();
@@ -94,6 +102,17 @@ describe('item copy', () => {
       expect(text, id).toMatch(price === 0 ? /^Price first: your next visit\./ : /^Price first: /);
       if (price > 0) expect(text, id).toContain(`${price} stardust`);
       expect(text, id).not.toMatch(/\bfree\b|\bfriend\b/i);
+    }
+  });
+
+  it("the jailbreak's lines are Zibzab's: price first, never free, and not A3M6's line", () => {
+    expect(ITEM_COPY['jailbreak']).toMatch(/^Price first: \d+ stardust\. /);
+    // characters.md's A3M4 line: "Especially now. Demand is up."
+    expect(ITEM_COPY['jailbreak']).toContain('Especially now. Demand is up.');
+    // Goldie's engineers did it: nothing to pay, said without "free" or "Price first: nothing."
+    expect(ITEM_COPY['jailbreak_convoy']).toMatch(/^Price first: already paid\. /);
+    for (const id of JAILBREAK_COPY) {
+      expect(ITEM_COPY[id], id).not.toMatch(/\bfree\b|\bfriend\b|^Price first: nothing/i);
     }
   });
 

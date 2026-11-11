@@ -211,3 +211,11 @@ export const WAYKEEPER_STING = { scene: 'a3_m06_debrief', cue: 'waykeeper' } as 
   readonly scene: string;
   readonly cue: CueId;
 };
+
+/**
+ * A scene that plays a sound effect as it opens, by scene id (T750): A3M4's mail scene opens on
+ * Gerald's delivery (`mail_delivered`), the envelope he carried arriving on the table.
+ */
+export const SCENE_OPEN_SFX: Readonly<Partial<Record<string, SfxId>>> = {
+  a3_m04_scene_mail: 'mail_delivered',
+};

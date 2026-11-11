@@ -23,7 +23,9 @@ import { formatCount } from './format.ts';
 // The registries keyed by plain strings, for lookups by an offer's id.
 const UPGRADE_DEFS: Readonly<Record<string, UpgradeDef>> = UPGRADES;
 const PROTOCOL_DEFS: Readonly<Record<string, ProtocolDef>> = PROTOCOLS;
-const ABILITY_NAMES: Readonly<Record<string, { readonly name: string }>> = ABILITIES;
+const ABILITY_NAMES: Readonly<
+  Record<string, { readonly name: string; readonly cooldownWaves?: number }>
+> = ABILITIES;
 const TOWER_SPECS: Readonly<
   Record<
     string,
@@ -105,6 +107,13 @@ export function grantText(g: ModifierGrant): string {
     case 'abilityStat': {
       const what = g.stat === 'radius' ? 'radius' : 'cooldown';
       if (g.ability === '*') return `${amount(g)} ability ${what}s`;
+      // A cooldown in waves (Clearance Sale) moves in whole waves: say how many (T709; the sim's
+      // `round(waves × (1 + pct))`, at least 1, architecture.md § abilities).
+      const waves = lookup(ABILITY_NAMES, g.ability)?.cooldownWaves;
+      if (g.stat === 'cooldown' && waves !== undefined && g.pct !== undefined) {
+        const after = Math.max(1, Math.round(waves * (1 + g.pct)));
+        return `${abilityName(g.ability)} cooldown ${waves} → ${after} waves`;
+      }
       return `${amount(g)} ${abilityName(g.ability)} ${what}`;
     }
     case 'supportStat': {
@@ -212,11 +221,10 @@ export function offerCopy(o: Offer): string | null {
       return silkText(itemCopy(`ability_${o.item.id}`) ?? MISSING_COPY);
     case 'attune':
       return silkText(itemCopy(`${o.gift ? 'gift' : 'attune'}_${o.item.tower}`) ?? MISSING_COPY);
-    // Zibzab's line is T709's (copy.ts `jailbreak`); none shows until it lands.
-    case 'jailbreak': {
-      const line = itemCopy('jailbreak');
-      return line === null ? null : silkText(line);
-    }
+    // Zibzab's line (copy.ts): price first, so under the convoy, where it costs nothing, his
+    // other line (`jailbreak_convoy`; T709).
+    case 'jailbreak':
+      return silkText(itemCopy(o.price === 0 ? 'jailbreak_convoy' : 'jailbreak') ?? MISSING_COPY);
     default:
       return assertNever(o.item);
   }

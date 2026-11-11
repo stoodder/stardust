@@ -320,7 +320,7 @@ test('audio: every sound, cue, and theme renders at a sane level', async ({ page
   // Act III, part two (T750): the map beds sit back like Act III's; the domes' cadence, the
   // Waykeeper sting and the Maw at rest are voices, never louder than a sting; the knock-knock is
   // heard like a line (a blip's ceiling); the Jammed static and the puddle's sizzle sit under a
-  // Rivet shot; the bearers' notes under the Escort's chirp's level plus a little.
+  // Rivet shot; the laser under the strike's boom.
   for (const bed of ['theme:act3_shelters', 'theme:act3_vats']) {
     expect(peak(bed), bed).toBeLessThanOrEqual(peak('theme:act2_battle') - 3);
   }

@@ -29,9 +29,9 @@ export const orbital_strike_mk2 = defineUpgrade({
  * Companion Rapport: the companion's ability cooldown −15% (keyed by ability, so Bricks's carries
  * over to inherited Suppressing Fire). Stocked once the companion's ability has been met: after
  * the map it first appears on: Bricks's after A1M1, QUILL's after A1M3 (T308), Ves'thara's after
- * A2M6 (T509), Bramble's after A3M1 (T609b). Zibzab's is a deliberate gap until M7 (progression.md
- * § 7.3). `hideUntilStocked` keeps the Rapport of an ally the player hasn't met yet off the shelf
- * until then.
+ * A2M6 (T509), Bramble's after A3M1 (T609b), Zibzab's after A1M4 (T709). `hideUntilStocked` keeps
+ * the Rapport of an ally the player hasn't met yet off the shelf until then. Rapports are numbers
+ * only: no barks (progression.md § 7.3).
  */
 function rapport<const Id extends string>(
   id: Id,
@@ -97,6 +97,21 @@ export const rapport_bramble = rapport(
   'underfoot',
   'a3_m01',
   'Rapport: Bramble',
+  true,
+);
+
+/**
+ * Zibzab's Rapport (T709, carried from T609c): Clearance Sale first plays on A1M4, so it's stocked
+ * once A1M4 is won. Its cooldown is in waves, and −15% rounds 4 waves to 3 (core-loop.md § 3.2;
+ * Ability Coolant's −5% alone leaves 4). It pays on A2M4 and A3M6 (his maps after A1M4) and on an
+ * A1M4 replay. Off the shelf until stocked: R&D opens after A1M1, before Zibzab arrives (A1M3).
+ */
+export const rapport_zibzab = rapport(
+  'rapport_zibzab',
+  'zibzab',
+  'clearance_sale',
+  'a1_m04',
+  'Rapport: Zibzab',
   true,
 );
 

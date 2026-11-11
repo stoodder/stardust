@@ -2,7 +2,7 @@
 // text's home; story/style-guide.md § 6.3 (Zibzab), § 6.4 (QUILL), and § 6.5 (Ves'thara) hold the
 // rules.
 //
-// - Zibzab sells the shop's global upgrades, tune-ups, and Field Protocols. His lines are "price
+// - Zibzab sells the shop's global upgrades, tune-ups, Field Protocols, and the jailbreak. His lines are "price
 //   first": the cost (the first rank's, then how it climbs), the pitch, the honest correction. He
 //   never says "free" and never says "friend" (that word is A3M6's).
 // - QUILL runs R&D Command: bright and precise, with "(Per policy.)" on a directive-driven line.
@@ -17,7 +17,8 @@
 /**
  * Each catalog item's copy, by item id (UpgradeId or ProtocolId; a Vrell license is
  * `license_<tower>`, from access.ts's `how: 'license'` rows; an attunement `attune_<tower>`, from
- * its `how: 'attune'` rows, and an Aelari gift `gift_<tower>`, from its `how: 'gift'` row).
+ * its `how: 'attune'` rows, and an Aelari gift `gift_<tower>`, from its `how: 'gift'` row; the
+ * jailbreak `jailbreak`, or `jailbreak_convoy` where it costs nothing).
  */
 export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Zibzab: Vrell tower licenses (access.ts). The Zapcoil sample's line is act1.md's (A1M3, *Base*).
@@ -86,6 +87,14 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Granted, never sold: C2 Sell's (progression.md § 2.1; T510).
   tune_zibzab: 'Ten percent. Honestly, eight.',
 
+  // Zibzab: the jailbreak (the shop's Firmware row after A3M3, while a class is revoked; T710's item,
+  // towers.md § 9). His A3M4 line (characters.md), price first. Under the convoy it costs nothing,
+  // so the row reads `jailbreak_convoy` instead: still price first, still true, never "free" (and
+  // never "Price first: nothing.", which is A3M6's).
+  jailbreak: 'Price first: 300 stardust. Yes, now. Yes, even now. Especially now. Demand is up.',
+  jailbreak_convoy:
+    "Price first: already paid. Goldie's engineers did the work. I sold them the patches. Demand is up.",
+
   // Zibzab: Field Protocols (protocols.ts).
   head_start:
     'Price first: 100 stardust. Ten percent more credits at clock-in. Fair? No. Fair is another shop.',
@@ -120,6 +129,9 @@ export const ITEM_COPY: Readonly<Record<string, string>> = {
   // Bramble speaks through Ves'thara ("She says: ..."); QUILL has corrected her file (T609b).
   rapport_bramble:
     "Underfoot recharges 15% faster. Refiled: Bramble, not 'Chitterbloom.' She says rapport is earned.",
+  // Clearance Sale's cooldown is in waves: −15% rounds 4 waves to 3 (core-loop.md § 3.2; T709).
+  rapport_zibzab:
+    'Clearance Sale recharges in 3 waves, not 4. Zibzab asked what rapport costs. I told him: 2 Intel.',
   protocol_slots:
     "One more Field Protocol slot. Protocols are policies you get to choose. I'd like to try that.",
   // QUILL: R&D Command's Technician abilities (access.ts `how: 'rnd'`; the id is `ability_<id>`).

@@ -459,7 +459,7 @@ export const STORMS = {
         if (i % 2 === 0) at(t, 'everglow_shutdown', (i % 5) - 2);
         if (i % 3 === 0) at(t, 'gloop_spit');
         if (i % 3 === 2) at(t, 'gloop_splat');
-        if (i % 2 === 1) at(t, 'leaper_boing');
+        if (i % 4 === 1) at(t, 'leaper_boing');
         if (i % 5 === 0) at(t, 'thumper_launch');
         if (i % 5 === 2) at(t, 'thumper_impact');
         if (i % 30 === 15) at(t, 'skewer_shot');
@@ -469,8 +469,8 @@ export const STORMS = {
         if (i % 32 === 5) at(t, 'associate_hum');
         if (i % 11 === 0) at(t, 'bb_shimmer');
         if (i % 20 === 7) at(t, 'jam_static');
-        if (i % 6 === 1) at(t, 'jammed');
-        if (i % 7 === 4) at(t, 'jam_clear');
+        if (i % 10 === 1) at(t, 'jammed');
+        if (i % 10 === 6) at(t, 'jam_clear');
         if (i % 12 === 7) at(t, 'armor_plink');
         if (i % 14 === 9) at(t, 'grounded_thud');
       }

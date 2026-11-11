@@ -396,6 +396,15 @@ describe("installAudio's speech and Results", () => {
     expect(rec.ducks.has('silence')).toBe(false);
   });
 
+  it("opens A3M4's mail scene on Gerald's delivery, once (T750)", () => {
+    rec.log.length = 0;
+    show('a3_m04_scene_mail', 0, line('narrator'));
+    show('a3_m04_scene_mail', 1, line('narrator'));
+    expect(rec.log.filter((l) => l === 'sfx:mail_delivered')).toHaveLength(1);
+    show('a3_m04_debrief', 0, line('quill'));
+    expect(rec.log.filter((l) => l === 'sfx:mail_delivered')).toHaveLength(1);
+  });
+
   it("knocks twice on the dome's door for Pebble's knock-knock, then squeaks (T750)", () => {
     rec.log.length = 0;
     dialogue.comms.value = {

@@ -21,6 +21,7 @@ import {
   lineCue,
   lineSfx,
   PA_JINGLE_CUE,
+  SCENE_OPEN_SFX,
   silenceHush,
   WAYKEEPER_STING,
 } from './storyCues.ts';
@@ -562,6 +563,11 @@ describe("Act III, part two's story sounds (T750)", () => {
     }
     expect(lineSfx('pebble', 'Knock knock! (squeak)')?.sfx).toBe('knock_knock');
     expect(lineSfx('pebble', 'Knock knock!')).toBeNull();
+  });
+
+  it('opens the mail scene on its delivery, a scene that exists', () => {
+    for (const id of Object.keys(SCENE_OPEN_SFX)) expect(SCENES[id], id).toBeDefined();
+    expect(SCENE_OPEN_SFX.a3_m04_scene_mail).toBe('mail_delivered');
   });
 
   it("stings Waykeeper in A3M6's debrief, where Pebble names you", () => {

@@ -1,6 +1,7 @@
 // The catalog matches design/progression.md §§ 4–7 (prices, ranks, currencies) and
 // story/campaign.md § 4.1–4.6 (when each item is stocked), and every item grants something.
 import { describe, expect, it } from 'vitest';
+import { ABILITIES } from '../abilities/index.ts';
 import { CAMPAIGN, CAMPAIGN_PLAN, CAMPAIGN_PLAN_IDS } from '../campaign.ts';
 import { MAPS } from '../maps/index.ts';
 import { TOWERS, TOWERS_AHEAD_OF_TASK } from '../towers/index.ts';
@@ -216,9 +217,40 @@ describe('catalog: progression.md numbers', () => {
     ]);
   });
 
-  it('a Rapport per companion who has a built ability, but Zibzab (a deliberate gap until M7)', () => {
+  it("Zibzab's Rapport (§ 7.3, T709): 2 Intel, Clearance Sale −15% (4 waves → 3), hidden until A1M4 is won", () => {
+    const u = UPGRADES.rapport_zibzab;
+    expect(u).toMatchObject({
+      kind: 'rnd',
+      currency: 'intel',
+      companion: 'zibzab',
+      availableAfter: 'a1_m04',
+      hideUntilStocked: true,
+      name: 'Rapport: Zibzab',
+    });
+    expect(prices(u)).toEqual([2]);
+    expect(u.ranks[0]?.grants).toEqual([
+      { kind: 'abilityStat', ability: 'clearance_sale', stat: 'cooldown', pct: -0.15 },
+    ]);
+    // A cooldown in waves takes the percentages only, rounded (architecture.md § abilities).
+    expect(ABILITIES.clearance_sale.cooldownWaves).toBe(4);
+    expect(Math.round(4 * (1 - 0.15))).toBe(3);
+  });
+
+  it('a Rapport per companion, one each, and only for their own ability (numbers only, no barks)', () => {
     const rapports = Object.values(UPGRADES).filter((u) => u.companion !== undefined);
-    expect(rapports.map((u) => u.companion)).toEqual(['bricks', 'quill', 'vesthara', 'bramble']);
+    expect(rapports.map((u) => u.companion)).toEqual([
+      'bricks',
+      'quill',
+      'vesthara',
+      'bramble',
+      'zibzab',
+    ]);
+    for (const u of rapports) {
+      const grant = u.ranks[0]?.grants[0];
+      expect(grant?.kind === 'abilityStat' ? ABILITIES[grant.ability]?.companion : null, u.id).toBe(
+        u.companion,
+      );
+    }
   });
 
   it('Xenotech (§ 7.2, T509): the Prism given, the other Aelari attuned for 3 Intel once it is owned', () => {

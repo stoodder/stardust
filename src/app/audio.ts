@@ -43,6 +43,7 @@ import {
   lineCue,
   lineSfx,
   PA_JINGLE_CUE,
+  SCENE_OPEN_SFX,
   silenceHush,
   WAYKEEPER_STING,
   type LineCue,
@@ -312,6 +313,18 @@ function bindWaykeeperSting(): () => void {
   };
 }
 
+/** A scene's sound as it opens (SCENE_OPEN_SFX: A3M4's mail on Gerald's delivery). Returns the unwiring. */
+function bindSceneOpenAudio(): () => void {
+  let open: string | null = null;
+  return effect(() => {
+    const id = dialogue.scene.value?.sceneId ?? null;
+    if (id === open) return;
+    open = id;
+    const sfx = id === null || !Object.hasOwn(SCENE_OPEN_SFX, id) ? undefined : SCENE_OPEN_SFX[id];
+    if (sfx !== undefined) engine.play(sfx);
+  });
+}
+
 /** The music duck a hushing cue holds (CUE_HUSHES) while it shows. */
 const CUE_HUSH_DUCK = 'cue_hush';
 
@@ -426,6 +439,7 @@ export function installAudio(
     bindSpeechAudio(ticker),
     bindCueHushAudio(),
     bindWaykeeperSting(),
+    bindSceneOpenAudio(),
     bindResultsAudio(),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {

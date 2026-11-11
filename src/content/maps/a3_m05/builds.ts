@@ -123,8 +123,10 @@ function parSteps(): BuildStep[] {
   ];
 }
 
-/** W13: Stillness on the hunt as it catches the biggest bearer group by the old intake. */
+/** W15: Stillness on the hunt as it catches the last bearer group by the old intake. */
 const HUNT_STILL_SEC = 19;
+/** W13: the Sproing build's Stillness on the hunt, as its Silencers reach the hub. */
+const RIVET_HUNT_STILL_SEC = 17.5;
 const HUNT_STILL: GridPos = [0, 6];
 
 /** W3: Stillness on the Fractures as they reach the yard (the road's turn down past YARD_N). */
@@ -137,6 +139,8 @@ const HUNT_SUPPRESS: GridPos = [0, 6];
 const SUPPRESS_1: GridPos = [12, 9];
 const SUPPRESS_2: GridPos = [14, 10];
 
+/** W9: System Reboot as the Silencer pair's first tendril reaches the yard. */
+const W9_REBOOT_SEC = 16.3;
 /** W13: System Reboot as the hunt's Silencers start hushing the bearers' hub. */
 const HUNT_REBOOT_SEC = 17.5;
 /** W14: System Reboot as Hostile Takeover's first jams land (phase 2's laser ends). */
@@ -174,13 +178,18 @@ export const builds = defineBuilds({
   ),
   parBuild: PAR,
   // Jam stays required (the no-jam build carries no answer), but the harness doesn't hold it to a
-  // loss: a jam is at most 4 s on a tower, and A3M5's jammers die in its kill zones before they
-  // tell twice, so the reference no-jam build ends below par rather than losing (D146 addendum;
-  // T760 retunes jamming to retire this). balance/a3m5Jam.test.ts pins what jam costs instead.
-  counterExemptions: [{ counter: 'jam', reason: "jam exam is W14's Takeover (D146)" }],
+  // loss: the jam exam is the bearers' hub, where the hunt's Silencers hush the guns over the old
+  // intake in W13 and W15 (par answers with System Reboot and Stillness, and its Bloom). The
+  // reference no-jam build loses 10 of the 12 bearers there and ends ~47 points under par, but
+  // every hunt that takes the last two also breaks the alts and Story (more Silencers on the hunt
+  // hush bearers whatever the answer). balance/a3m5Jam.test.ts pins what jam costs instead (D146
+  // addenda, T721, T760).
+  counterExemptions: [
+    { counter: 'jam', reason: 'jam exam is the hub under the hunt (W13, W15): no-jam ≥ 40 under par' },
+  ],
   // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands
   // in W12) and then the platform at W14.
-  noCounterLoseByWave: 15,
+  noCounterLoseByWave: 14,
   // Act III's band (50–70), its top raised 5 points for C4 Purge's cell alone: the −2 Everglow
   // armor is the answer's earned edge, and its par holds the core to 18 of 22 where the others
   // hold 14, so the bearers' 9 of 12 (75%) decide it (balance/a3m5Cells.test.ts).
@@ -231,7 +240,7 @@ export const builds = defineBuilds({
         { wave: 12, upgrade: CATWALK_E },
         { wave: 12, upgrade: INTAKE_W },
         slot1(13, HUNT_REBOOT_SEC),
-        still(13, HUNT_STILL_SEC, HUNT_STILL),
+        still(13, RIVET_HUNT_STILL_SEC, HUNT_STILL),
         { wave: 13, build: 'thumper', tile: VAT_E },
         { wave: 13, upgrade: BEND },
         slot1(14, TAKEOVER_SEC),
@@ -266,6 +275,7 @@ export const builds = defineBuilds({
         { wave: 7, build: 'zapcoil', tile: BEND },
         { wave: 7, upgrade: YARD_S },
         { wave: 8, build: 'harpoon', tile: CATWALK_W },
+        slot1(9, W9_REBOOT_SEC),
         { wave: 9, upgrade: CONDUIT },
         { wave: 10, upgrade: BEND },
         { wave: 11, upgrade: SLUICE_S },

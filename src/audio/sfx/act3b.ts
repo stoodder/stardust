@@ -159,7 +159,7 @@ export const ACT3B_SFX = {
    * voice however many towers sit dark.
    */
   jam_static: {
-    gain: 0.12,
+    gain: 0.07,
     priority: 0,
     minGapMs: 500,
     maxVoices: 1,
@@ -408,7 +408,7 @@ export const ACT3B_SFX = {
    * cuts it dead (JAM_SOUNDS `stops`).
    */
   takeover_laser: {
-    gain: 0.3,
+    gain: 0.26,
     priority: 2,
     maxVoices: 1,
     layers: [
@@ -580,7 +580,7 @@ export const ACT3B_SFX = {
    * them. The Hollow's chord, and far too big.
    */
   gmaw_arrive: {
-    gain: 0.42,
+    gain: 0.28,
     priority: 2,
     maxVoices: 1,
     duck: 0.55,
@@ -618,7 +618,7 @@ export const ACT3B_SFX = {
    * beating harder, and a creak.
    */
   gmaw_strain: {
-    gain: 0.3,
+    gain: 0.24,
     priority: 2,
     maxVoices: 1,
     layers: [
@@ -696,7 +696,7 @@ export const ACT3B_SFX = {
    * it closes.
    */
   gmaw_merge: {
-    gain: 0.4,
+    gain: 0.32,
     priority: 2,
     maxVoices: 1,
     duck: 0.6,
@@ -839,7 +839,7 @@ export const ACT3B_SFX = {
   },
   /** Big Glorp's puddle spreads (PuddleSpawned): an acid sizzle, faint; one voice. */
   puddle_hiss: {
-    gain: 0.14,
+    gain: 0.07,
     priority: 1,
     minGapMs: 400,
     maxVoices: 1,
@@ -925,7 +925,7 @@ export const ACT3B_SFX = {
    * footsteps): active camouflage shimmering, two high tones beating, faint.
    */
   bb_shimmer: {
-    gain: 0.1,
+    gain: 0.05,
     priority: 0,
     minGapMs: 400,
     maxVoices: 1,
