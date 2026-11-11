@@ -1198,7 +1198,13 @@ export interface ProfileDef<K extends IdSpace = LiveIds> {
   readonly specs: readonly K['tower'][];
   /** Owned shop and R&D ranks. */
   readonly shop: Readonly<Partial<Record<UpgradeId, number>>>;
+  /** The Field Protocols equipped (as many as the profile's slots). */
   readonly protocols: readonly ProtocolId[];
+  /**
+   * Field Protocols owned but not equipped on this map (none if absent). Nothing reads them in a
+   * run; the [purchasable] bill prices them with the equipped ones (validatePurchasable.ts).
+   */
+  readonly unequippedProtocols?: readonly ProtocolId[];
   readonly technicianAbility: K['ability'] | null;
 }
 

@@ -7,8 +7,9 @@
 //   TOWERS_AHEAD_OF_TASK: its license is on no shelf yet) isn't, until its task lifts it (T412);
 // - a tower whose access `requires` another (an attunement needs the Prism Spire owned; T566)
 //   comes with that tower in the same profile;
-// - shop ranks are whole numbers within the item's ranks, protocols are listed once, and no more
-//   protocols are equipped than the profile's slots;
+// - shop ranks are whole numbers within the item's ranks, protocols are listed once (equipped or
+//   `unequippedProtocols`: owned, not equipped, still paid for), and no more protocols are
+//   equipped than the profile's slots;
 // - the Stardust spent is at most what the earlier maps' first clears paid (from each map's
 //   `stardust`; an unregistered map counts 0), restarting after a bank reset (A2M4's C2 Return:
 //   what's owned then stays owned, and only later payouts count);
@@ -193,10 +194,12 @@ function billOf(
     }
   }
 
-  for (const id of duplicates(profile.protocols)) {
+  // Every protocol owned is paid for, equipped or not (a protocol is listed once across both).
+  const owned = [...profile.protocols, ...(profile.unequippedProtocols ?? [])];
+  for (const id of duplicates(owned)) {
     report('.protocols', `'${id}' is listed twice`);
   }
-  for (const id of profile.protocols) {
+  for (const id of owned) {
     const def = rules.protocols[id];
     if (def === undefined) {
       report('.protocols', `'${id}' is not a Field Protocol`);

@@ -88,7 +88,8 @@ export const waves = defineWaves([
       g('riftmoth', 1, 'sky_east', OPEN + 6),
     ],
   },
-  // W7 · Undertows ×3 (the Den’s wave; burrowing is intel here, map.ts `softExempt`)
+  // W7 · Undertows ×3 (the Den’s wave; burrowing is intel here, map.ts `softExempt`): two down
+  // the west fork, then one down the east
   {
     countdownSec: COUNTDOWN,
     noCall: true,
@@ -125,7 +126,9 @@ export const waves = defineWaves([
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
   },
-  // W11 · the doomed escalation: the west rift opens too
+  // W11 · the doomed escalation: the west rift opens too. From here the clusters come packed (26
+  // Motes 0.15 s apart; a holdable wave's come 0.2 s apart or wider): splash's real exam, which a
+  // single-target build (Mindspikes or Rivets where par's Thumpers stand) fails (T660).
   {
     countdownSec: COUNTDOWN,
     noCall: true,

@@ -114,6 +114,44 @@ describe('REFERENCE_PROFILES, Act III part one (M6, T600b)', () => {
     expect(a3_m03.technicianAbility).toBeNull();
   });
 
+  it('owns Head Start and the Bulkhead from A3M1 on, one equipped and one left off (T660)', () => {
+    expect([a3_m01.protocols, a3_m01.unequippedProtocols]).toEqual([
+      ['head_start'],
+      ['emergency_bulkhead'],
+    ]);
+    expect([a3_m02.protocols, a3_m02.unequippedProtocols]).toEqual([
+      ['emergency_bulkhead'],
+      ['head_start'],
+    ]);
+    expect([a3_m03.protocols, a3_m03.unequippedProtocols]).toEqual([
+      ['head_start'],
+      ['emergency_bulkhead'],
+    ]);
+  });
+
+  it('prices a protocol owned but left off like an equipped one', () => {
+    // Priced past what the campaign pays, each Bulkhead is refused, A3M1's and A3M3's included,
+    // where it sits off.
+    const protocols = {
+      ...LIVE_PURCHASE_RULES.protocols,
+      emergency_bulkhead: { ...LIVE_PURCHASE_RULES.protocols.emergency_bulkhead!, price: 5000 },
+    };
+    const errors = purchasable({ ...LIVE_PURCHASE_RULES, aheadOfTask: [], protocols });
+    expect(errors.map((e) => /maps\.(a3_m0\d)\.referenceProfile: spends/.exec(e)?.[1])).toEqual([
+      'a3_m01',
+      'a3_m02',
+      'a3_m03',
+    ]);
+    // A protocol is listed once, equipped or not.
+    const raw = withRows();
+    const a3m1 = raw.maps.a3_m01!;
+    const twice = { ...a3m1.referenceProfile, unequippedProtocols: ['head_start'] as const };
+    const maps = { ...raw.maps, a3_m01: { ...a3m1, referenceProfile: twice } };
+    expect(validate({ ...raw, maps }).join('\n')).toMatch(
+      /a3_m01\.referenceProfile\.protocols: 'head_start' is listed twice/,
+    );
+  });
+
   it('every Act III row is affordable: Intel 10 by A3M2, as § 4.9 says', () => {
     const live = { ...LIVE_PURCHASE_RULES, aheadOfTask: [] };
     expect(purchasable(live).filter((e) => /a3_m0\d/.test(e))).toEqual([]);

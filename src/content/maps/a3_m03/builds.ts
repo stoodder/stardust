@@ -3,7 +3,9 @@
 // chain. The harness runs par through both doors (`flagVariants`: the convoy, the reference's first,
 // and the warren), and every build ends by pressing the SEAL (its `scriptInput` step) as W14
 // starts. Suppressing Fire goes where par loses people: the east rift's head as W4's Motes come in,
-// the W8 cluster at the choke, and the first rift Undertows of W11 and W12.
+// the W8 cluster at the choke, and the first rift Undertows of W11 and W12. Every build lists its
+// casts ahead of the upgrades bought with the same wave's credits, so a cast is never held behind
+// an upgrade it can't yet afford (steps run in order; sim/headless.ts).
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, TowerId } from '../../types.ts';
@@ -95,17 +97,20 @@ export const builds = defineBuilds({
       loadout: ['burrow', 'thumper', 'sprinkler', 'lookout'],
       steps: swapped({ prism: 'sprinkler', mindspike: 'lookout' }),
     },
-    // No splash: no Thumper or Zapcoil (Scuttle Den, Mindspike, Prism, Harpoon: a Harpoon where
-    // each of par's Thumpers stands).
+    // No splash: no Thumper or Zapcoil (Scuttle Den, Mindspike, Prism: a Mindspike where each of
+    // par's Thumpers stands). The Mindspike one-shots a Mote, so it is the strongest no-splash
+    // answer to the clusters the reference owns (a Harpoon there does far worse); the doomed
+    // waves' packed clusters still flood the choke past Bricks (T660).
     splash: {
-      loadout: ['burrow', 'mindspike', 'prism', 'harpoon'],
+      loadout: ['burrow', 'mindspike', 'prism'],
       steps: swapped({ thumper: 'mindspike' }),
     },
   },
   altBuilds: {
     // Scuttle Den, Zapcoil, Skyhook, Lookout: Zapcoils chaining the clusters in the switchback, at
     // the choke, behind Bricks, and beside the east rift; Dens on and behind the choke; Skyhooks
-    // under the Moths' crossing. The Lookout stays home (nothing on the map is cloaked).
+    // under the Moths' crossing; the choke's Zapcoil to tier 3 and an Overload Coil for the doomed
+    // waves' clusters. The Lookout stays home (nothing on the map is cloaked).
     coils: {
       loadout: ['burrow', 'zapcoil', 'skyhook', 'lookout'],
       steps: [
@@ -134,7 +139,8 @@ export const builds = defineBuilds({
     },
     // Scuttle Den, Prism, Harpoon, Zapcoil: no Everglow class at all, so any A3M2 revocation
     // leaves it whole. Zapcoils on the clusters, a Prism behind Bricks, Dens on and behind the
-    // choke, a Harpoon under the Moths' crossing.
+    // choke, a Harpoon under the fork from W3 (it kills the Undertows while they're surfaced), and
+    // an Overload Coil at the choke for the doomed waves' clusters.
     no_everglow: {
       loadout: ['burrow', 'prism', 'harpoon', 'zapcoil'],
       steps: [

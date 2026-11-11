@@ -76,18 +76,21 @@ const A2M6: ProfileDef = {
  * Bramble's warren gives the Scuttle Den in A3M1's briefing; Ability Coolant 1 and Emergency
  * Bulkhead before A3M1 (campaign.md § 4.9). A profile equips as many protocols as it has slots
  * (one: the reference buys no slot), so on A3M1's Escort it keeps Head Start, and the Bulkhead,
- * which absorbs core leaks an Escort doesn't count, goes on for A3M2's Defend.
+ * which absorbs core leaks an Escort doesn't count, goes on for A3M2's Defend. The one left off
+ * is still owned (`unequippedProtocols`), so the bill prices both.
  */
 const A3M1: ProfileDef = {
   ...A2M6,
   towers: [...A2M6.towers, 'burrow'],
   shop: { ...A2M6.shop, ability_coolant: 1 },
+  unequippedProtocols: ['emergency_bulkhead'],
 };
 /** The Harpoon's license (250 Stardust) and the Mindspike's attunement (3 Intel: 10) before A3M2. */
 const A3M2: ProfileDef = {
   ...A3M1,
   towers: [...A3M1.towers, 'harpoon', 'mindspike'],
   protocols: ['emergency_bulkhead'],
+  unequippedProtocols: ['head_start'],
 };
 /**
  * After A3M2's Clean Exit: the class its par build loses (the Rivet, the most credits invested;
@@ -101,6 +104,7 @@ const A3M3: ProfileDef = {
   towers: A3M2.towers.filter((t) => t !== 'rivet'),
   shop: { ...A3M2.shop, seed_money: 2 },
   protocols: ['head_start'],
+  unequippedProtocols: ['emergency_bulkhead'],
   technicianAbility: null,
 };
 
