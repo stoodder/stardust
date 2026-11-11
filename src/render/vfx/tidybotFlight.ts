@@ -105,6 +105,11 @@ function runs(n: number, k: number): [number, number][] {
   return out;
 }
 
+/** `v` kept inside a map `n` tiles across (on a tile's centre at the edges). */
+function clamp(v: number, n: number): number {
+  return Math.min(Math.max(v, 0.5), Math.max(n - 0.5, 0.5));
+}
+
 /**
  * Moves each drone's stops off every earlier drone's (in place) until none is nearer than
  * TIDY_STOP_GAP: straight away from the stop it crowds, or, on the very spot, to the screen's right
@@ -112,8 +117,6 @@ function runs(n: number, k: number): [number, number][] {
  * edge is in the way. A few passes at most; the stops' count and order never change.
  */
 function spreadStops(bots: Vec2[][], cols: number, rows: number): void {
-  const clamp = (v: number, n: number): number =>
-    Math.min(Math.max(v, 0.5), Math.max(n - 0.5, 0.5));
   for (let b = 1; b < bots.length; b++) {
     const side = b % 2 === 1 ? 1 : -1;
     const mine = bots[b]!; // b < length

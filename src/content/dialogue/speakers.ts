@@ -71,15 +71,22 @@ export const SPEAKERS = {
     // Pebble in his breast pocket (D103): from her rescue on, live mid-battle (the cue is saved as
     // seen as it ends), and on every map after, but A2M6: she's in Dome 3 with Goldie through
     // Sundown, so his pocket is empty in its battle and debrief, and she's back in it for the
-    // whistle scene after (QUILL's loophole plays first, on the same visit; D138).
+    // whistle scene after (QUILL's loophole plays first, on the same visit; D138). Empty again at
+    // the Gap (A3M3), where she goes with Goldie's convoy (T622's review).
     variants: [
       {
         variant: 'pebble',
         when: {
           any: [
-            // Not at the Gap (A3M3): Pebble walks with Goldie's convoy and hums over the radio.
-            { all: [{ mapAtLeast: 'a3_m01' }, { not: { mapIs: 'a3_m03' } }] },
-            { all: [{ mapAtLeast: 'a2_m04' }, { not: { mapIs: 'a2_m06' } }] },
+            // Not at the Gap (A3M3) either: Pebble walks with Goldie's convoy and hums over the
+            // radio at the SEAL.
+            {
+              all: [
+                { mapAtLeast: 'a2_m04' },
+                { not: { mapIs: 'a2_m06' } },
+                { not: { mapIs: 'a3_m03' } },
+              ],
+            },
             { all: [{ mapIs: 'a2_m03' }, { seen: 'a2_m03_cue_pebble' }] },
             {
               all: [

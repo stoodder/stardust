@@ -92,20 +92,23 @@ describe("Sterling's shuttle (A3M2)", () => {
   });
 });
 
+/** A3M3's doors under `flags`: each one's marker, tile, and whether it stands open. */
+function doorsOn(flags: Parameters<typeof doorCores>[1]): (string | number | boolean)[][] {
+  return doorCores(m3, flags).map((d) => [d.marker, d.col, d.row, d.open]);
+}
+
 describe("A3M3's blast doors", () => {
   it('finds both door cores, and opens only the door C3 chose', () => {
-    const at = (flags: Parameters<typeof doorCores>[1]) =>
-      doorCores(m3, flags).map((d) => [d.marker, d.col, d.row, d.open]);
-    expect(at({ door_choice: 'convoy' })).toEqual([
+    expect(doorsOn({ door_choice: 'convoy' })).toEqual([
       ['door_west', 3, 13, true],
       ['door_east', 17, 13, false],
     ]);
-    expect(at({ door_choice: 'warren' })).toEqual([
+    expect(doorsOn({ door_choice: 'warren' })).toEqual([
       ['door_west', 3, 13, false],
       ['door_east', 17, 13, true],
     ]);
     // Before C3 is answered nobody walks: both doors stand open.
-    expect(at({})).toEqual([
+    expect(doorsOn({})).toEqual([
       ['door_west', 3, 13, true],
       ['door_east', 17, 13, true],
     ]);
@@ -123,7 +126,7 @@ describe("A3M3's blast doors", () => {
   it('shuts the unchosen door, and runs the chosen one shut on the SEAL, then holds it sealed', () => {
     const seq: SealPhase[] = ['none', 'closing', 'sealed'];
     expect(seq.map((s) => doorLook(false, s, false))).toEqual(
-      Array(3).fill({ frame: 'shut', anim: null }),
+      Array.from({ length: 3 }, () => ({ frame: 'shut', anim: null })),
     );
     expect(seq.map((s) => doorLook(true, s, false))).toEqual([
       { frame: 'open', anim: null },
