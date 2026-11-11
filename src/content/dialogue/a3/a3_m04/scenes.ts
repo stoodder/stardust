@@ -158,6 +158,12 @@ export const scenes = defineScenes([
       expression: 'happy',
       text: "I'll have one tomorrow. I'm writing it.",
     },
-    { label: 'again', kind: 'line', speaker: 'pebble', expression: 'happy', text: '(squeak) Again!' },
+    {
+      label: 'again',
+      kind: 'line',
+      speaker: 'pebble',
+      expression: 'happy',
+      text: '(squeak) Again!',
+    },
   ]),
 ]);

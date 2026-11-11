@@ -3,7 +3,7 @@
 // field, W7), so par never hits him and earns Signature: Received. Bricks's slot is empty, so slot
 // 1 (System Reboot) is the only ability; par casts it on the Silencers' tells.
 import { defineBuilds } from '../../define.ts';
-import { W15_SIL_SEC, W16_SIL_SEC } from './waves.ts';
+import { W15_SIL_SEC } from './waves.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, ScriptedBuild, TowerId } from '../../types.ts';
 
@@ -71,6 +71,8 @@ const REBOOT_SEC = 27.5;
 /** W14's and W16's first packs come up the rifts, so their first tells are sooner. */
 const W14_RIFT_REBOOT_SEC = 13.6;
 const W16_RIFT_REBOOT_SEC = 11.6;
+/** W16's Reboot held for the tunnel pack instead (the Den alt's: it has no Choir for that one). */
+const W16_TUNNEL_REBOOT_SEC = 21;
 
 function parSteps(): BuildStep[] {
   return [
@@ -151,9 +153,14 @@ const PAR: ScriptedBuild = {
 function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[]): BuildStep[] {
   const same = (a: GridPos, b: GridPos): boolean => a[0] === b[0] && a[1] === b[1];
   const tierOf = (tile: GridPos): number =>
-    steps.filter((st) => ('build' in st && same(st.tile, tile)) || ('upgrade' in st && same(st.upgrade, tile))).length;
+    steps.filter(
+      (st) => ('build' in st && same(st.tile, tile)) || ('upgrade' in st && same(st.upgrade, tile)),
+    ).length;
   const tail = tiles.flatMap((tile): BuildStep[] => [
-    ...Array.from({ length: Math.max(0, 3 - tierOf(tile)) }, (): BuildStep => ({ wave: 16, upgrade: tile })),
+    ...Array.from({ length: Math.max(0, 3 - tierOf(tile)) }, (): BuildStep => ({
+      wave: 16,
+      upgrade: tile,
+    })),
     { wave: 16, specialize: tile, spec: 'b' },
   ]);
   return [...steps, ...tail];
@@ -263,7 +270,7 @@ export const builds = defineBuilds({
         { wave: 14, build: 'mindspike', tile: BAY_E },
         { wave: 14, upgrade: BAY_W },
         { wave: 15, upgrade: BAY_E },
-        reboot(16, W16_RIFT_REBOOT_SEC),
+        reboot(16, W16_TUNNEL_REBOOT_SEC),
         { wave: 16, upgrade: J_NE },
       ],
     },

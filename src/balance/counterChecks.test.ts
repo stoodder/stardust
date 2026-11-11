@@ -4,7 +4,7 @@ import type { CompiledBuild, CompiledBuildStep } from '../content/compiled.ts';
 import { COUNTER_ANSWERS } from '../content/rules.ts';
 import type { FixtureIds } from '../sim/__fixtures__/sim.ts';
 import { PLAIN_CONTENT } from './__fixtures__/harness.ts';
-import { compiledAnswersCarried, noCounterAnswerChecks } from './counterChecks.ts';
+import { compiledAnswersCarried, noCounterAnswerChecks, noCounterChecks } from './counterChecks.ts';
 import { runMap } from './harness.ts';
 
 const map = PLAIN_CONTENT.maps.fx_map;
@@ -72,5 +72,24 @@ describe('noCounterAnswerChecks', () => {
     const r = runMap(content, 'fx_map', { seeds: 1, build: 'noCounter:splash' });
     const premise = r.checks.find((c) => c.title === 'noCounter:splash carries no splash answer');
     expect(premise?.ok).toBe(true);
+  });
+});
+
+describe('#6 on the jam teach map (D146 addendum, T720)', () => {
+  const withNoJam = (teachMap: boolean) => ({
+    ...map,
+    builds: { ...map.builds, teachMap, noCounterBuilds: { jam: steps() } },
+  });
+  const ids = (m: typeof map) => noCounterChecks(m, [1], []).map((c) => `#${c.id} ${c.subject}`);
+
+  it("skips jam's full-catalog check on the map that teaches jam, and only there", () => {
+    expect(ids(withNoJam(true))).toEqual(['#5 noCounter:jam']);
+    expect(ids(withNoJam(false))).toEqual(['#5 noCounter:jam', '#6 noCounter:jam']);
+    // Any other category keeps #6 on a teach map.
+    const noSplash = {
+      ...withNoSplash(steps()),
+      builds: { ...withNoSplash(steps()).builds, teachMap: true },
+    };
+    expect(ids(noSplash)).toEqual(['#5 noCounter:splash', '#6 noCounter:splash']);
   });
 });

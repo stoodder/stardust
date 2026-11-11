@@ -87,6 +87,11 @@ export interface SpriteDef<Id extends string = string> {
   readonly glow?: { readonly slots: readonly Slot[]; readonly radius: number };
   /** Per-sprite legend entries mapping straight to master colors (use sparingly). */
   readonly legend?: Readonly<Partial<Record<CustomChar, ColorName>>>;
+  /**
+   * Enemies only: bake the `cloak` derived variant though the default palette's faction doesn't
+   * cloak (the Aelari and the Hollow get it anyway; the Black Budget Operative sets it).
+   */
+  readonly cloak?: boolean;
   /** Tower bases only: where the head's anchor sits, in this sprite's authored pixels. */
   readonly mount?: Point;
   readonly frames: Readonly<Record<string, FrameDef>>;

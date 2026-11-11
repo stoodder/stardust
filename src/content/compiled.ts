@@ -776,6 +776,8 @@ export interface CompiledBuilds<K extends IdSpace = LiveIds> {
   readonly rndPickChanges: readonly UpgradeId[];
   /** The map's no-counter lose-by override (BuildsDef.noCounterLoseByWave), or null. */
   readonly noCounterLoseByWave: number | null;
+  /** The map introduces a required-counter category (BuildsDef.teachMap). */
+  readonly teachMap: boolean;
   /** BuildsDef.referenceProfileByFlag, each cell's par build compiled (null: the map's). */
   readonly referenceProfileByFlag: readonly CompiledFlagProfile<K>[];
 }

@@ -94,16 +94,18 @@ const CLOAKING_PALETTES: ReadonlySet<PaletteId> = new Set<PaletteId>(['aelari', 
 /**
  * Derived variants baked for a category: actors get `selected`, towers also `jammed`, and
  * portraits `dark` (an absent speaker's frame). Enemies whose default palette is a faction that
- * cloaks or phases (the Aelari, the Hollow) also get `cloak` (art-direction §8 Cloaked).
+ * cloaks or phases (the Aelari, the Hollow), or whose definition sets `cloak` (a cloaking unit of
+ * another faction: the Black Budget Operative, T740a), also get `cloak` (art-direction §8 Cloaked).
  */
 export function derivedFor(
   category: SpriteCategory,
   palette?: PaletteId,
+  cloaks = false,
 ): readonly DerivedVariant[] {
   if (category === 'tower') return ['selected', 'jammed'];
   if (category === 'portrait') return ['dark'];
   if (category === 'enemy') {
-    return palette !== undefined && CLOAKING_PALETTES.has(palette)
+    return cloaks || (palette !== undefined && CLOAKING_PALETTES.has(palette))
       ? ['selected', 'cloak']
       : ['selected'];
   }
@@ -314,7 +316,7 @@ export function bakeSprite(
     { name: DEFAULT_VARIANT, palette: palettes[def.palette] },
     ...(def.variants ?? []).map((id) => ({ name: id, palette: palettes[id] })),
   ];
-  const derived = derivedFor(categoryOf(def.id), def.palette);
+  const derived = derivedFor(categoryOf(def.id), def.palette, def.cloak === true);
   const emissive = new Set((def.glow?.slots ?? []).map((s) => SLOT_CHAR[s].charCodeAt(0)));
   const frames: BakedFrame[] = [];
   const variants: string[] = [];

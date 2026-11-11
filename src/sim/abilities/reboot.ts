@@ -4,7 +4,7 @@
 //   ability command applies before the links pass, so the freed towers' links and auras are back
 //   that tick and they fire that tick).
 // - **What it does:** every live Jammed tower's jam ends (sim/jam.ts `unjamTower`: TowerUnjammed),
-//   and every live tower is jam-immune for `immuneTicks` (6 s, JAM_IMMUNITY_SEC's), counting the
+//   and every live tower is jam-immune for `immuneTicks` (6 s, REBOOT_IMMUNITY_SEC), counting the
 //   cast's tick, or keeps a longer immunity it already has. A tell under way on one of them spends
 //   itself on nothing (its landing finds the tower immune). A tower built after the cast isn't
 //   immune. Then Rebooted, with the towers it unjammed (empty when none were).

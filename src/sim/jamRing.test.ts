@@ -86,13 +86,13 @@ describe('the Auditor’s ring (enemies.md § 4)', () => {
     );
     expect([a.jamTicks, b.jamTicks, edge.jamTicks, far.jamTicks]).toEqual([180, 180, 180, 0]);
     expect(ringTelling(e)).toBe(false);
-    // Landing to landing is the period: the next ring starts 480 ticks on, the towers immune by
-    // then only if their jams ended within 6 s (they did: 3 s jams, then 6 s of immunity).
+    // Landing to landing is the period: the next ring lands 480 ticks on, and the towers are
+    // jammable again by then (3 s jams, then JAM_IMMUNITY_SEC's 3 s of immunity: free at 360).
     const next = run(state, ctx, RING.periodTicks);
     const kinds = next.map((ev) => ev.type);
     expect(kinds.filter((k) => k === 'TowerUnjammed')).toHaveLength(3);
     expect(kinds).toContain('JamTell');
-    expect(kinds.filter((k) => k === 'TowerJammed')).toHaveLength(0); // still immune
+    expect(kinds.filter((k) => k === 'TowerJammed')).toHaveLength(3); // immunity spent
   });
 
   it('skips Jammed and immune towers, and a Choir at T3 makes it 0.75 s', () => {

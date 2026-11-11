@@ -149,7 +149,10 @@ export function noCounterChecks<K extends IdSpace>(
         (recs) => recs.map(describeRun).join(', '),
       ),
     );
-    // #6: meta can't replace a counter (design/progression.md § 10).
+    // #6: meta can't replace a counter (design/progression.md § 10). Not for jam on its teach
+    // map (A3M4; D146 addendum, T720): a jam is at most 4 s on one tower, so its cost can't
+    // outweigh the whole meta catalog there; #5 still holds no-jam to losing on the reference.
+    if (counter === 'jam' && b.teachMap) continue;
     const note =
       leftOut.length === 0 ? '' : ` (left out, not simulated yet: ${leftOut.join(', ')})`;
     checks.push(

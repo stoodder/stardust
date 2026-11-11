@@ -35,6 +35,8 @@ import { enemyAbilities } from './index.ts';
 const E = compileContent(RAW_CONTENT).enemies;
 const MAW = E.maw;
 const MOTE = E.mote;
+const GMAW = E.gathering_maw; // T708: a boss phase's gather
+const GMAW_TELL = GMAW.boss!.phases[0]!.gather!.tellTicks;
 const SRC = { kind: 'ability', slot: 1 } as const;
 const FLEE: readonly WaveTag[] = ['fleeing'];
 const TELL = secToTicks(1);
@@ -392,8 +394,15 @@ const AIR_MAWS = RADII.map((r) => mawDef(r, 'air'));
 /** `v` on a 0.05 grid, so equal distances (the uid tie-break) come up often. */
 const grid = (v: number): number => Math.round(v * 20) / 20;
 
+/** The gather a unit runs: its def's, else its boss phase's (the Gathering Maw's phase 1; T708). */
+function refGather(m: Enemy): CompiledEnemyDef['gather'] {
+  const def = m.def;
+  if (def === null) return null;
+  return def.gather ?? def.boss?.phases[m.bossPhase - 1]?.gather ?? null;
+}
+
 function refReady(m: Enemy): boolean {
-  const g = m.def?.gather ?? null;
+  const g = refGather(m);
   const tell = g === null ? 0 : g.tellTicks > 0 ? g.tellTicks : 1;
   return (
     g !== null &&
@@ -446,7 +455,7 @@ function refNearest(
   for (const m of state.enemies.items.slice(0, state.enemies.used)) {
     if (!refReady(m)) continue;
     const d2 = refD2(m, u);
-    if (d2 > m.def!.gather!.radiusSq || !refBetter(d2, m.uid, bestD2, best?.uid ?? 0)) continue;
+    if (d2 > refGather(m)!.radiusSq || !refBetter(d2, m.uid, bestD2, best?.uid ?? 0)) continue;
     if (may(m)) {
       best = m;
       bestD2 = d2;
@@ -456,7 +465,7 @@ function refNearest(
 }
 
 function refUnitFor(state: SimState, m: Enemy): number {
-  const r2 = m.def!.gather!.radiusSq;
+  const r2 = refGather(m)!.radiusSq;
   let best = NONE;
   let bestUid = 0;
   let bestD2 = -1;
@@ -492,8 +501,11 @@ describe('the matching (R15 P1: O(G·N), the pairwise rule exactly)', () => {
   const MAP = C.maps.fx_map;
   const road = MAP.routes.a!;
 
-  /** A dense random field: Maws (some telling, some full of Skitterkin), Motes, runners, refugees. */
-  function field(seed: number): SimState {
+  /**
+   * A dense random field: Maws (some telling, some full of Skitterkin), Motes, runners, refugees;
+   * with `bosses`, a sixth of the Maws are Gathering Maws in their gathering phase (T708).
+   */
+  function field(seed: number, bosses = false): SimState {
     let r = seed;
     const rnd = (): number => {
       r = (Math.imul(r, 1664525) + 1013904223) >>> 0;
@@ -511,8 +523,10 @@ describe('the matching (R15 P1: O(G·N), the pairwise rule exactly)', () => {
       const dist = Math.round(rnd() * road.lengthTiles * 20) / 20;
       const k = rnd();
       if (k < 0.3) {
-        const m = spawn(state, MAW, { dist, route: road });
-        m.gatherTicks = rnd() < 0.8 ? TELL : EVERY; // most ready
+        const boss = bosses && rnd() < 1 / 6;
+        const m = spawn(state, boss ? GMAW : MAW, { dist, route: road });
+        if (boss) m.bossPhase = 1;
+        m.gatherTicks = rnd() < 0.8 ? (boss ? GMAW_TELL : TELL) : EVERY; // most ready
         m.gatheredSkitterkin = rnd() < 0.3;
         maws.push(m);
       } else if (k < 0.75) spawn(state, MOTE, { dist, route: road });
@@ -588,6 +602,24 @@ describe('the matching (R15 P1: O(G·N), the pairwise rule exactly)', () => {
     }
     return state;
   }
+
+  it('agrees with the pairwise rule with Gathering Maws among the Maws (T708)', () => {
+    const s = createScratch().gather;
+    let bossTells = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const state = field(seed, true);
+      gatherMatches(state, s);
+      const want = state.enemies.items
+        .slice(0, state.enemies.used)
+        .filter(refReady)
+        .map((m) => [m.slot, refUnitFor(state, m)]);
+      expect(s.ready.map((slot, r) => [slot, s.code[r]])).toEqual(want);
+      s.ready.forEach((slot, r) => {
+        if (state.enemies.items[slot]!.def === GMAW && s.code[r] !== NONE) bossTells++;
+      });
+    }
+    expect(bossTells).toBeGreaterThan(50); // the bosses' 2-tile reach really matches
+  });
 
   it('agrees with the pairwise rule with off-route units, air Maws, and varied radii', () => {
     const s = createScratch().gather;

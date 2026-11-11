@@ -8,7 +8,7 @@
 // EnemyView draws them, gatherLook.ts `mawBody`).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import { pointAt, type Ally, type Enemy, type Point } from '../../sim/index.ts';
+import { gatherOf, pointAt, type Ally, type Enemy, type Point } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { gridToScreen, rangeEllipsePx, type Vec2 } from '../iso.ts';
 import {
@@ -119,7 +119,7 @@ export class HollowView {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!e.alive || e.def === null) continue;
       if (showsRipples(e)) ripples += this.#drawRipples(g, e);
-      if (e.def.gather === null) continue;
+      if (gatherOf(e) === null && e.def.gather === null) continue; // T708: a boss phase's gather too
       if (e.absorbs > 0) grown++;
       this.#watchAbsorbs(e, frame);
       if (e.gatherUid !== 0 && this.#drawTendrils(this.#tendrils, e, enemies, allies, still))

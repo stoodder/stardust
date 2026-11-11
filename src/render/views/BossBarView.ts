@@ -17,11 +17,14 @@
 // along the empty strip (review R6). A boss whose fight ends above 0 (`endAtPct`) has the end
 // mark there: a `white.1` tick edged in `ink.0` through the whole bar, standing on a 3 px flag
 // under it, the place the HP stops (the Witch's retreat, the Penitent's kneel), and under the
-// kneel's flag a tiny "½" (D139). Allocation-free per frame: the Graphics
+// kneel's flag a tiny "½" (D139). A split boss (the Gathering Maw, T708) keeps one bar across its
+// parts and its merge (gmawLook.ts `bossBarKey`): from the split it measures their HP summed
+// (the sim's `splitHp`) against what they split with (`splitMaxHp`), without the whole boss's
+// marks, flashing as the parts and then the merged Maw come. Allocation-free per frame: the Graphics
 // redraws only when what it shows changes.
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import type { Enemy } from '../../sim/index.ts';
+import { splitHp, type Enemy } from '../../sim/index.ts';
 import type { DeepReadonly } from '../../shared/types.ts';
 import { VIEW_W } from '../scale.ts';
 import {
@@ -50,6 +53,7 @@ import {
 import { canDraw } from '../vfx/pixelFont.ts';
 import { floatTextTexture } from '../vfx/overlayTextures.ts';
 import { SHIMMER_MS } from './EnemyView.ts';
+import { bossBarKey } from './gmawLook.ts'; // T708
 import type { ViewContext } from './ViewContext.ts';
 
 /** The enemy pool as the bar reads it. */
@@ -108,6 +112,8 @@ export class BossBarView {
   #key2 = -1;
   #shimmer = false;
   #alpha = 1;
+  /** The phase shown (T708: a split boss's parts and merge flash the bar as they come). */
+  #phase = 0;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
@@ -163,8 +169,9 @@ export class BossBarView {
     // Gone without an ending (killed): it steps out from empty; after one, it keeps its fill.
     const gone = boss === null && this.#uid !== 0 && this.#endedMs < 0;
     if (gone) this.#endedMs = 0;
-    if (boss !== null && boss.uid !== this.#uid) this.#open(boss);
+    if (boss !== null && bossBarKey(boss) !== this.#uid) this.#open(boss);
     if (this.#uid === 0) return;
+    if (boss !== null && boss.splitMaxHp > 0) this.#readSplit(boss, enemies); // T708
     if (this.#endedMs >= 0) {
       this.#endedMs += dt;
       const a = barFadeAlpha(this.#endedMs, this.#holdMs);
@@ -179,7 +186,8 @@ export class BossBarView {
       }
     }
     const max = this.#maxHp;
-    const fill = boss !== null ? barFillPx(boss.hp, max) : gone || this.#fill < 0 ? 0 : this.#fill;
+    const hp = boss === null ? 0 : boss.splitMaxHp > 0 ? splitHp(enemies, boss.ownerUid) : boss.hp;
+    const fill = boss !== null ? barFillPx(hp, max) : gone || this.#fill < 0 ? 0 : this.#fill;
     if (fill !== this.#fill) this.#fill = fill;
     this.#chip = chipPx(this.#chip, fill, dt);
     if (this.#flashMs > 0) this.#flashMs = Math.max(0, this.#flashMs - dt);
@@ -203,7 +211,7 @@ export class BossBarView {
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
       if (!e.alive || e.def === null || e.def.boss === null) continue;
-      if (e.uid === this.#uid) return e;
+      if (bossBarKey(e) === this.#uid) return e; // T708: a split boss's parts are its bar
       first ??= e;
     }
     return first;
@@ -226,10 +234,29 @@ export class BossBarView {
     this.#reform = hp > 0 ? 0 : reformPx(boss.reformTicks, total);
   }
 
+  /**
+   * A split boss (T708): the bar goes on across its parts and its merge against their summed HP
+   * (`splitMaxHp`), losing the whole boss's marks, and flashes as each comes (its phase rises).
+   */
+  #readSplit(boss: DeepReadonly<Enemy>, enemies: BossPool): void {
+    if (this.#maxHp !== boss.splitMaxHp) {
+      this.#maxHp = boss.splitMaxHp;
+      this.#marks = [];
+      this.#end = -1;
+      this.#endGlyph = null;
+      this.#chip = barFillPx(splitHp(enemies, boss.ownerUid), boss.splitMaxHp); // no drain across
+    }
+    if (boss.bossPhase > this.#phase) {
+      if (this.#phase > 0) this.#flashMs = PHASE_FLASH_MS;
+      this.#phase = boss.bossPhase;
+    }
+  }
+
   #open(boss: DeepReadonly<Enemy>): void {
     const def = boss.def!; // #find only returns bosses with a def
-    this.#uid = boss.uid;
-    this.#maxHp = def.hp;
+    this.#uid = bossBarKey(boss);
+    this.#phase = boss.bossPhase;
+    this.#maxHp = boss.splitMaxHp > 0 ? boss.splitMaxHp : def.hp;
     this.#marks = phaseMarksPx(def.boss?.phases ?? []);
     this.#end = endMarkPx(def.boss?.endAtPct ?? 0);
     this.#endGlyph = this.#end >= 0 ? endGlyph(def.boss?.endAtPct ?? 0) : null;
@@ -239,7 +266,7 @@ export class BossBarView {
     this.#shield = 0;
     this.#reform = 0;
     if (this.#maxShield > 0) this.#readShield(boss);
-    this.#fill = barFillPx(boss.hp, def.hp);
+    this.#fill = barFillPx(boss.hp, this.#maxHp);
     this.#chip = this.#fill;
     this.#flashMs = 0;
     this.#endedMs = boss.leaving ? 0 : -1;

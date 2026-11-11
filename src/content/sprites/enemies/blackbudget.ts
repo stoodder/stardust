@@ -40,35 +40,37 @@ function operative(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3): string[] {
   const { near, far, dip } = STEP[step] ?? { near: 0, far: 0, dip: 0 };
   const top = 2 + dip;
   leg(g, 5, top + 11, 5 + far, false);
-  // The torso: a narrow wedge, gunmetal lit from the upper left.
-  for (let y = top + 5; y <= top + 12; y++) {
-    const half = y < top + 9 ? 3 : 2;
-    for (let x = 6 - half; x <= 6 + half; x++) plot(g, x, y, x - 6 + (y - top - 5) < 0 ? '3' : x < 7 ? '2' : '1');
-  }
-  // The cowl over its shoulders: angular camouflage panels with teal hex cells that shift.
-  for (let y = top + 3; y <= top + 6; y++) {
-    const half = y === top + 3 ? 3 : 5;
-    for (let x = 6 - half; x <= 6 + half; x++) {
-      const cell = (x * 2 + y + step) % 5 === 0;
-      plot(g, x, y, cell ? '6' : x < 5 ? '2' : '1');
+  // The cape of camouflage panels, hanging off its shoulders behind it and flaring to the knee,
+  // flecked with teal hex cells that shift as it walks (from behind, it covers the back).
+  for (let y = top + 4; y <= top + 13; y++) {
+    const k = y - (top + 4);
+    const x0 = se ? 4 - Math.floor(k / 3) : 4;
+    const x1 = se ? 6 : 8 + Math.floor(k / 3);
+    for (let x = x0; x <= x1; x++) {
+      const cell = (x * 2 + y * 3 + step) % 7 === 0;
+      plot(g, x, y, cell ? '6' : (se ? x === x0 : x === x1) ? '1' : '2');
     }
   }
-  line(g, 2, top + 6, 10, top + 6, '0');
-  // The wedge helmet, lit along its crest.
-  stamp(g, 4, top, ['.333.', '32221', '22211', '.211.']);
+  // The torso: narrow, gunmetal lit from the upper left (in front of the cape facing SE).
+  for (let y = top + 4; y <= top + 11; y++) {
+    for (let x = 6; x <= 8; x++) plot(g, x, y, x === 6 ? '3' : x === 7 ? '2' : '1');
+  }
+  // The wedge helmet on a short neck, lit along its crest.
+  stamp(g, 5, top, se ? ['.33.', '3222', '2221', '.21.'] : ['.33.', '2223', '1222', '.12.']);
   if (se) {
-    // One orange lens at the front of the helmet, a teal sensor line under it.
-    plot(g, 7, top + 2, 'e');
-    plot(g, 8, top + 2, 'd');
-    plot(g, 6, top + 3, '7');
-    // The REDACTED bar across its chest, where the logo plate should be.
-    line(g, 4, top + 8, 8, top + 8, 'k');
-    plot(g, 9, top + 8, '0');
+    // One orange lens at the front of the helmet; the REDACTED bar across its chest.
+    plot(g, 8, top + 1, 'e');
+    plot(g, 9, top + 1, 'd');
+    line(g, 6, top + 6, 8, top + 6, 'k');
+    plot(g, 9, top + 6, '0');
+    // One arm forward, a slim black device in its hand.
+    line(g, 8, top + 5, 10, top + 8, '2');
+    stamp(g, 10, top + 8, ['00', '0.']);
   } else {
-    // From behind: a slim pack and a teal antenna stub, its status lamp.
-    stamp(g, 4, top + 7, ['111', '101', '111']);
-    plot(g, 8, top + 1, '+');
-    plot(g, 8, top, '7');
+    // From behind: the cape's hood, a teal antenna stub and its status lamp.
+    plot(g, 8, top - 1, '7');
+    plot(g, 8, top, '+');
+    line(g, 4, top + 5, 8, top + 5, '0');
   }
   leg(g, 7, top + 11, 7 + near, true);
   return rows(g);

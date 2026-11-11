@@ -24,7 +24,7 @@
 //   so the trail reads as the ground disturbed in its wake rather than marks it carries. It moves
 //   only as the unit does (no clock), so reduced motion keeps it.
 import type { DeepReadonly } from '../../shared/types.ts';
-import { gatherScale, type Enemy } from '../../sim/index.ts';
+import { gatherOf, gatherScale, type Enemy } from '../../sim/index.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
 import { enemyBody } from './spriteInfo.ts';
 
@@ -53,9 +53,9 @@ export function mawBody(body: string, e: DeepReadonly<Pick<Enemy, 'def' | 'absor
 
 /** How far through its tendril tell a Maw is (0 at the start, 1 as it gathers). */
 export function tendrilProgress(
-  e: DeepReadonly<Pick<Enemy, 'def' | 'gatherUid' | 'gatherTicks'>>,
+  e: DeepReadonly<Pick<Enemy, 'def' | 'bossPhase' | 'gatherUid' | 'gatherTicks'>>,
 ): number {
-  const g = e.def?.gather ?? null;
+  const g = gatherOf(e); // T708: a boss phase's gather too
   if (g === null || e.gatherUid === 0 || g.tellTicks <= 0) return 0;
   const p = 1 - e.gatherTicks / g.tellTicks;
   return p < 0 ? 0 : p > 1 ? 1 : p;

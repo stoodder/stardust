@@ -167,7 +167,10 @@ export function statusMask(statuses: readonly StatusId[]): number {
 export const JAMMER_ENEMIES: readonly string[] = ['auditor', 'silencer', 'shareholder_value'];
 export const JAM_MAX_SEC = 4;
 export const JAM_MIN_TELL_SEC = 1.5;
-export const JAM_IMMUNITY_SEC = 6;
+/** A tower's jam immunity after a jam ends (3 s: a jammer pack can chain on it; D146 addendum, T720). */
+export const JAM_IMMUNITY_SEC = 3;
+/** System Reboot's immunity: longer than a jam's own, so the ability stays the stronger answer. */
+export const REBOOT_IMMUNITY_SEC = 6;
 /** In par play, at most this share of the player's towers is jammed at once (harness check). */
 export const JAM_MAX_TOWER_SHARE = 0.25;
 /**

@@ -1045,7 +1045,7 @@ export type AbilityEffect =
   | {
       /**
        * System Reboot (core-loop.md § 3.2; T700a seam, T702 runs it): no target; clears Jammed on
-       * every tower and makes each immune to jamming for `immuneSec` (6 s, JAM_IMMUNITY_SEC's).
+       * every tower and makes each immune to jamming for `immuneSec` (6 s, REBOOT_IMMUNITY_SEC).
        */
       readonly kind: 'reboot';
       readonly immuneSec: number;

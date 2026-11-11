@@ -105,6 +105,7 @@ import { PhaseView } from '../views/PhaseView.ts';
 import { JamView } from '../views/JamView.ts'; // T702
 import { JamRingView } from '../views/JamRingView.ts'; // T707
 import { TakeoverView } from '../views/TakeoverView.ts'; // T707
+import { GatheringMawView } from '../views/GatheringMawView.ts'; // T708
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { RiftView } from '../views/RiftView.ts'; // T630b
 import { ShuttleView } from '../views/ShuttleView.ts'; // T630b
@@ -284,6 +285,7 @@ export class BattleScene extends Phaser.Scene {
   #jams!: JamView; // T702: the Silencer's tendril, the Jammed static, System Reboot's pops
   #rings!: JamRingView; // T707: the Auditor's ring
   #takeover!: TakeoverView; // T707: the hangar door, Hostile Takeover's laser, the plates
+  #gmaw!: GatheringMawView; // T708: the Gathering Maw's split, tethers, and merge
   #hollow!: HollowView; // T602
   #rifts!: RiftView; // T630b: the rift cracks, a wave ahead
   #shuttle!: ShuttleView; // T630b: Sterling's shuttle lifting off (A3M2)
@@ -488,6 +490,7 @@ export class BattleScene extends Phaser.Scene {
     this.#jams = new JamView(ctx, this.#fx, prefersReducedMotion, (c, r) => this.#liftPx(c, r)); // T702
     this.#rings = new JamRingView(ctx, prefersReducedMotion); // T707
     this.#takeover = new TakeoverView(ctx, map.markers, (c, r) => this.#liftPx(c, r)); // T707
+    this.#gmaw = new GatheringMawView(ctx, prefersReducedMotion); // T708
     this.#hollow = new HollowView(ctx, prefersReducedMotion); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
@@ -634,6 +637,7 @@ export class BattleScene extends Phaser.Scene {
       this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
       this.#takeover.bind(bus), // T707
+      this.#gmaw.bind(bus), // T708
       this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
       this.#shuttle.bind(bus, () => sim.state.tick), // T630b
       this.#doors.bind(bus), // T630b
@@ -687,6 +691,7 @@ export class BattleScene extends Phaser.Scene {
       this.#jams.reset(); // T702
       this.#rings.reset(); // T707
       this.#takeover.reset(); // T707
+      this.#gmaw.reset(); // T708
       this.#hollow.reset(); // T602
       this.#rifts.reset(); // T630b
       this.#shuttle.reset(); // T630b
@@ -746,6 +751,7 @@ export class BattleScene extends Phaser.Scene {
     this.#jams.update(state); // T702
     this.#rings.update(state.enemies); // T707
     this.#takeover.update(state); // T707
+    this.#gmaw.update(dt, state.enemies); // T708
     this.#hollow.update(dt, state.enemies, state.allies); // T602
     this.#rifts.update(state.wave); // T630b
     this.#shuttle.update(state.tick, state.scriptFired); // T630b
@@ -897,6 +903,11 @@ export class BattleScene extends Phaser.Scene {
         lasersSeen: this.#takeover.lasersSeen,
         jettisons: this.#takeover.jettisons,
       }, // T707
+      gmaw: {
+        ...this.#gmaw.shown,
+        splitsSeen: this.#gmaw.splitsSeen,
+        mergesSeen: this.#gmaw.mergesSeen,
+      }, // T708
       phases: {
         ...this.#phases.shown,
         phasedIn: this.#phases.phasedIn,

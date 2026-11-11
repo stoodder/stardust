@@ -60,6 +60,7 @@ export function compileBuilds<K extends IdSpace>(
     parMedals: def.parMedals ?? [],
     rndPickChanges: def.rndPickChanges ?? [],
     noCounterLoseByWave: def.noCounterLoseByWave ?? null,
+    teachMap: def.teachMap === true,
     referenceProfileByFlag,
   };
 }

@@ -28,70 +28,73 @@ function g(
   };
 }
 
+/**
+ * A Silencer pack's spacing: a little over a tell (2 s), so each one's tell starts after the one
+ * before has landed and picks a tower that isn't Jammed yet (a pack told together picks one).
+ */
+export const SIL_GAP = 2.4;
+
 const motes = (count: number, route: RouteId, delaySec: number): WaveGroup =>
   g('mote', count, route, delaySec, 0.3);
 const drones = (count: number, delaySec: number, intervalSec = 1.2): WaveGroup =>
   g('compliance', count, 'service', delaySec, intervalSec);
 const liabilities = (count: number, delaySec: number, route: RouteId = 'service'): WaveGroup =>
   g('liability', count, route, delaySec);
-const silencers = (count: number, route: RouteId, delaySec: number, intervalSec = 4): WaveGroup =>
-  g('silencer', count, route, delaySec, intervalSec);
+const silencers = (
+  count: number,
+  route: RouteId,
+  delaySec: number,
+  intervalSec = SIL_GAP,
+): WaveGroup => g('silencer', count, route, delaySec, intervalSec);
 const moths = (count: number, delaySec: number, intervalSec = 1.0): WaveGroup =>
   g('riftmoth', count, 'sky', delaySec, intervalSec);
 
-/**
- * A Silencer pack's spacing: a little over a tell (2 s), so each one's tell starts after the one
- * before has landed and picks a tower that isn't Jammed yet (a pack told together picks one).
- */
-export const SIL_GAP = 2.4;
-/**
- * W15's and W16's Silencers set off this long into their waves, so they reach the hall junction
- * as the Liability Enforcers do: a jam there lands while the plate walks past.
- */
+/** W15's Silencers set off this long in, just behind the Liability Enforcers' first steps. */
 export const W15_SIL_SEC = 2;
-export const W16_SIL_SEC = 0;
 /** The build phase before most waves. */
-export const COUNTDOWN = 30;
-/** Gerald's pass: he enters the chute this long into W7, ahead of its drones. */
+export const COUNTDOWN = 32;
+/** Gerald's pass: he enters the chute as W7 starts, ahead of its drones. */
 export const GERALD_SEC = 0;
-/** W7's drones start this long in, as Gerald clears the junction. */
+/** W7's drones start this long in, once Gerald has cleared the junction (his pass is ~11 s). */
 export const W7_DRONES_SEC = 14;
+
+/**
+ * The waves never called early (core-loop.md § 2.4; `noCall`): W2 (the Liability's teach), W7
+ * (Gerald's pass: QUILL's warning plays in its countdown), and every wave that sends Silencers, so
+ * the build phase before a jam always runs whole (place out of reach, have System Reboot ready).
+ */
+const NO_CALL = { countdownSec: COUNTDOWN, noCall: true } as const;
+/** A wave that may be called early. */
+const CALL = { countdownSec: COUNTDOWN } as const;
 
 export const waves = defineWaves([
   // W1 · Compliance drones behind a thin Mote screen
   { groups: [motes(4, 'tunnel', 0), drones(5, 6, 1.5)] },
   // W2 · one Liability-Class Enforcer [T: heavy armor]
-  { countdownSec: COUNTDOWN, groups: [drones(3, 0, 1.5), liabilities(1, 8)] },
+  { ...NO_CALL, groups: [drones(3, 0, 1.5), liabilities(1, 8)] },
   // W3 · Compliance + Expediter
   {
-    countdownSec: COUNTDOWN,
+    ...CALL,
     groups: [motes(4, 'tunnel', 0), drones(2, 2), g('expediter', 1, 'service', 6), drones(2, 8)],
   },
-  // W4 · one Silencer [T: hushing; tendril tell]
-  { countdownSec: COUNTDOWN, groups: [silencers(1, 'tunnel', 0), drones(4, 10, 1.5)] },
+  // W4 · one Silencer [T: hushing; tendril tell; System Reboot, Hum Choir]
+  { ...NO_CALL, groups: [silencers(1, 'tunnel', 0), drones(4, 10, 1.5)] },
   // W5 · Rift Moths + drones
-  { countdownSec: COUNTDOWN, groups: [moths(4, 0), drones(4, 6)] },
+  { ...CALL, groups: [moths(4, 0), drones(4, 6)] },
   // W6 · Silencers ×2 [X]
   {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [silencers(2, 'tunnel', 0, SIL_GAP), drones(4, 6), motes(4, 'tunnel', 14)],
   },
-  // W7 · Gerald's pass + Compliance drones (never called early: QUILL's warning, a full build phase)
-  {
-    countdownSec: COUNTDOWN,
-    noCall: true,
-    groups: [g('gerald', 1, 'chute', GERALD_SEC), drones(6, W7_DRONES_SEC, 1.2)],
-  },
+  // W7 · Gerald's pass down the mail chute, then Compliance drones
+  { ...NO_CALL, groups: [g('gerald', 1, 'chute', GERALD_SEC), drones(6, W7_DRONES_SEC, 1.2)] },
   // W8 · Liability ×2 + drones [X]
-  { countdownSec: COUNTDOWN, groups: [drones(3, 0), liabilities(2, 4), drones(3, 14)] },
+  { ...CALL, groups: [drones(3, 0), liabilities(2, 4), drones(3, 14)] },
   // W9 · Rift Moths + a Silencer [X]
-  {
-    countdownSec: COUNTDOWN,
-    groups: [moths(5, 0), silencers(1, 'tunnel', 2), drones(3, 8)],
-  },
+  { ...NO_CALL, groups: [moths(5, 0), silencers(1, 'tunnel', 2), drones(3, 8)] },
   // W10 · Hollow surge: Rift Moths and Silencers, one Fracture
   {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [
       silencers(3, 'tunnel', 0, SIL_GAP),
       g('fracture', 1, 'tunnel', 6),
@@ -101,7 +104,7 @@ export const waves = defineWaves([
   },
   // W11 · the Everglow column
   {
-    countdownSec: COUNTDOWN,
+    ...CALL,
     groups: [
       drones(4, 0, 1.0),
       g('expediter', 2, 'service', 4, 6),
@@ -110,13 +113,10 @@ export const waves = defineWaves([
     ],
   },
   // W12 · Silencers + Rift Moths
+  { ...NO_CALL, groups: [silencers(3, 'tunnel', 0, SIL_GAP), moths(6, 14, 0.6), drones(4, 10)] },
+  // W13 · both spawns (the rifts crack as it starts)
   {
-    countdownSec: COUNTDOWN,
-    groups: [silencers(3, 'tunnel', 0, SIL_GAP), moths(6, 14, 0.6), drones(4, 10)],
-  },
-  // W13 · both spawns
-  {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [
       silencers(2, 'tunnel', 0, SIL_GAP),
       drones(6, 0, 1.0),
@@ -124,27 +124,27 @@ export const waves = defineWaves([
       motes(6, 'tunnel', 10),
     ],
   },
-  // W14 · the rifts open: Silencers and Rift Moths
+  // W14 · the rifts open: Silencers up both, and Rift Moths
   {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [silencers(2, 'rift_w', 0, SIL_GAP), silencers(2, 'rift_e', 1.2, SIL_GAP), moths(8, 8)],
   },
   // W15 · Liability + Silencers
   {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [liabilities(3, 0), drones(4, 10, 1.0), silencers(4, 'tunnel', W15_SIL_SEC, SIL_GAP)],
   },
-  // W16 · everything
+  // W16 · everything: Silencers up the west rift first, then the east's and the tunnel's
   {
-    countdownSec: COUNTDOWN,
+    ...NO_CALL,
     groups: [
-      drones(4, 0, 1.0),
+      drones(5, 0, 1.0),
       liabilities(3, 6),
       moths(5, 10),
       g('expediter', 2, 'service', 12, 6),
       silencers(4, 'rift_w', 0, SIL_GAP),
       silencers(2, 'rift_e', 6, SIL_GAP),
-      silencers(4, 'tunnel', W16_SIL_SEC, SIL_GAP),
+      silencers(4, 'tunnel', 0, SIL_GAP),
       motes(6, 'rift_w', 12),
     ],
   },

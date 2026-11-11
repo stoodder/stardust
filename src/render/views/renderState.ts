@@ -153,6 +153,19 @@ export interface RenderState {
     readonly lasersSeen: number;
     readonly jettisons: number;
   };
+  /**
+   * GatheringMawView (T708): the Gathering Maw's parts on the field now, the tethers drawn between
+   * them (and how many pulled taut in the merge's tell), split and merge bursts under way, and the
+   * splits and merges seen since the battle began. The one boss bar's fill is `bossBar`.
+   */
+  readonly gmaw: {
+    readonly parts: number;
+    readonly tethers: number;
+    readonly taut: number;
+    readonly bursts: number;
+    readonly splitsSeen: number;
+    readonly mergesSeen: number;
+  };
   /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
   readonly gloop: { readonly puddles: number; readonly spawned: number };
   /**

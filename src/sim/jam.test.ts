@@ -88,7 +88,7 @@ function trace(): string {
 const types = (events: readonly SimEvent<IdSpace>[]): string[] => events.map((e) => e.type);
 
 describe('the Jammed state (enemies.md § 4; sim/jam.ts)', () => {
-  it('lands for its ticks counting the tick it lands, then 6 s of immunity', () => {
+  it('lands for its ticks counting the tick it lands, then JAM_IMMUNITY_SEC of immunity', () => {
     const { state, ctx } = world();
     const t = placeTower(state, RIVET, 3, 1);
     expect(jamTower(state, t, 240, 99)).toBe(240);
