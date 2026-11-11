@@ -112,9 +112,8 @@ function parSteps(): BuildStep[] {
     { wave: 13, build: 'thumper', tile: VAT_E },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),
-    slot1(14, TAKEOVER_SEC + 45),
+    slot1(15, HUNT_REBOOT_SEC),
     { wave: 14, upgrade: CATWALK_W },
-    slot1(15, W15_REBOOT_SEC),
     { wave: 15, upgrade: VAT_E },
     { wave: 15, upgrade: BEND },
     { wave: 16, build: 'thumper', tile: SOUTH },
@@ -139,8 +138,6 @@ const SUPPRESS_2: GridPos = [14, 10];
 
 /** W13: System Reboot as the hunt's Silencers start hushing the bearers' hub. */
 const HUNT_REBOOT_SEC = 17.5;
-/** W15: System Reboot as the last hunt's Silencers start hushing (they set off later). */
-const W15_REBOOT_SEC = 23.5;
 /** W14: System Reboot as Hostile Takeover's first jams land (phase 2's laser ends). */
 const TAKEOVER_SEC = 91;
 /** W14: Stillness on the platform as it turns into the vats' row (a boss takes Chilled 50%). */

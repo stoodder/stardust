@@ -63,6 +63,8 @@ describe('the boss bar (T312b)', () => {
 
   it('labels the bar in capitals', () => {
     expect(bossLabel('Matriarch Chitterbloom')).toBe('MATRIARCH CHITTERBLOOM');
+    // The 3×5 font has no quotes (T731): Shareholder Value's bar keeps its name without them.
+    expect(bossLabel('"Shareholder Value"')).toBe('SHAREHOLDER VALUE');
   });
 
   it('marks where the fight ends: the Penitent kneels at 50%, the Witch retreats at 40% (R6)', () => {

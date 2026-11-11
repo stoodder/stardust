@@ -23,15 +23,15 @@ const TENTHS_BAR = 'E3 A3 C4 - D4 B3 A3 -';
 /** The phrase an octave under Pebble's (the player's voice, humming along). */
 const LOW_BAR = 'G3 C4 E4 - F4 D4 C4 -';
 /** The phrase over two bars in the battle bed, each half held (the Choir's line). */
-const CHOIR_PHRASE = 'G4 C5 E5 - - - . . | F5 D5 C5 - - - - -';
+export const CHOIR_PHRASE = 'G4 C5 E5 - - - . . | F5 D5 C5 - - - - -';
 /** The Choir's lower voice in the bed: the same tenths, an octave up. */
-const CHOIR_TENTHS = 'E4 A4 C5 - - - . . | D5 B4 A4 - - - - -';
+export const CHOIR_TENTHS = 'E4 A4 C5 - - - . . | D5 B4 A4 - - - - -';
 /** Bars of rest (8ths). */
-const REST = '. . . . . . . .';
-const rests = (n: number): string => Array.from({ length: n }, () => REST).join(' | ');
+export const REST = '. . . . . . . .';
+export const rests = (n: number): string => Array.from({ length: n }, () => REST).join(' | ');
 
 /** `note` an octave up (`A3` → `A4`). */
-const octaveUp = (note: string): string => note.replace(/\d$/, (d) => String(Number(d) + 1));
+export const octaveUp = (note: string): string => note.replace(/\d$/, (d) => String(Number(d) + 1));
 
 /**
  * The Hum Choir's harmony line in a bright theme (Act I's and Act II's battle loops, whose bars 1–2

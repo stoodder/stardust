@@ -10,6 +10,7 @@ import {
   dressTile,
   isPlateMarker,
   pebblePerches,
+  propNudge,
   spawnFrame,
   wreckageFrame,
 } from './groundTiles.ts';
@@ -126,6 +127,14 @@ describe('M7’s world render (T730b)', () => {
     expect(coreSprite('a3_m04')).toBe('prop.generator');
     for (const id of ['a1_m01', 'a3_m05', 'a3_m06']) expect(coreSprite(id)).toBe('prop.core');
     expect(coreSprite(undefined)).toBe('prop.core');
+  });
+
+  it('stands A3M4’s hall door back down-left, clear of the generator’s plinth', () => {
+    const [dx, dy] = propNudge('prop.hall_door');
+    expect(dx).toBeLessThan(0);
+    expect(dy).toBeGreaterThan(0);
+    expect(propNudge('prop.generator')).toEqual([0, 0]);
+    expect(propNudge('prop.banner_friday')).toEqual([0, 0]);
   });
 
   it('sits Pebble on the Peeker’s rock on A3M6, and leaves A3M2’s Peeker tile bare', () => {

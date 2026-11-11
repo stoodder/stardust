@@ -7,6 +7,14 @@ import { ACT1_BATTLE, TITLE_THEME } from './act1.ts';
 import { ACT2_BATTLE } from './act2.ts';
 import { ACT3_BATTLE, LEAVING_HUM, LEAVING_HUM_ALONG, LEAVING_HUM_TWO, LOSE_HUSH } from './act3.ts';
 import {
+  ACT3_SHELTERS,
+  ACT3_VATS,
+  DOMES_OPEN,
+  GMAW_BEATEN,
+  PA_FRANTIC,
+  WAYKEEPER,
+} from './act3b.ts';
+import {
   BOSS_STING,
   BRIGHT_MINOR,
   BRIGHT_STING,
@@ -26,6 +34,8 @@ export const THEMES = {
   act1_battle: ACT1_BATTLE,
   act2_battle: ACT2_BATTLE,
   act3_battle: ACT3_BATTLE,
+  act3_shelters: ACT3_SHELTERS,
+  act3_vats: ACT3_VATS,
 } as const satisfies Readonly<Record<string, Song>>;
 export type ThemeId = keyof typeof THEMES;
 
@@ -46,6 +56,10 @@ export const CUES = {
   leaving_hum_two: LEAVING_HUM_TWO,
   leaving_hum_along: LEAVING_HUM_ALONG,
   lose_hush: LOSE_HUSH,
+  domes_open: DOMES_OPEN,
+  waykeeper: WAYKEEPER,
+  pa_frantic: PA_FRANTIC,
+  gmaw_beaten: GMAW_BEATEN,
 } as const satisfies Readonly<Record<string, Song>>;
 export type CueId = keyof typeof CUES;
 
@@ -54,6 +68,16 @@ export const BATTLE_THEME: Readonly<Partial<Record<Act, ThemeId>>> = {
   1: 'act1_battle',
   2: 'act2_battle',
   3: 'act3_battle',
+};
+
+/**
+ * A map whose battle has its own bed over its act's (T750; music/act3b.ts): A3M4's shelters,
+ * where Bricks's hum stops halfway, and A3M5's vats at night humming the six notes. Read by the
+ * director (`BattleMood.map`) ahead of BATTLE_THEME.
+ */
+export const MAP_THEME: Readonly<Partial<Record<string, ThemeId>>> = {
+  a3_m04: 'act3_shelters',
+  a3_m05: 'act3_vats',
 };
 
 /**

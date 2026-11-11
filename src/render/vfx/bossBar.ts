@@ -4,6 +4,7 @@
 // maximum, re-forming as a ghost while its shards count down), and a boss whose fight ends above
 // 0 (`endAtPct`: the Glass Witch's retreat, the Penitent's kneel) carries the end mark where the
 // HP stops (review R6).
+import { GLYPHS } from '../../content/sprites/font3x5.ts';
 
 /** The bar: its width and height inside a 1 px frame (game px), and where it sits on screen. */
 export const BOSS_BAR_W = 160;
@@ -133,9 +134,17 @@ export function barFadeAlpha(ms: number, holdMs = BAR_HOLD_MS): number {
   return t < 1 / 3 ? 0.6 : t < 2 / 3 ? 0.35 : t < 1 ? 0.15 : 0;
 }
 
-/** The name as the 3×5 font draws it (capitals). */
+/**
+ * The name as the 3×5 font draws it: capitals, leaving out what the font has no glyph for (T731:
+ * the scare quotes round "Shareholder Value", so its bar still has its name), trimmed.
+ */
 export function bossLabel(name: string): string {
-  return name.toUpperCase();
+  return name
+    .toUpperCase()
+    .split('')
+    .filter((ch) => Object.hasOwn(GLYPHS, ch))
+    .join('')
+    .trim();
 }
 
 /**
