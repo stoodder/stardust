@@ -64,6 +64,9 @@ import { revokeMap } from './devM6.ts'; // T603
 import { mawMap } from './devM6.ts'; // T602
 import { denMap } from './devM6.ts'; // T604
 import { holdoutMap } from './devM6.ts'; // T605
+import { choirMap } from './devChoir.ts'; // T607
+import { choir } from '../../content/towers/choir.ts'; // T607
+import { harmony } from '../../content/links/harmony.ts'; // T607
 import { lantern } from '../../content/towers/lantern.ts';
 import { lightsong } from '../../content/links/lightsong.ts';
 import { underfoot } from '../../content/abilities/underfoot.ts';
@@ -229,6 +232,8 @@ const DEV_ENTITIES = {
     lantern,
     // M6's dev maps (devM6.ts; T600a): dev_den's Scuttle Den (T604).
     burrow,
+    // dev_choir's Hum Choir (devChoir.ts; T607).
+    choir,
   }),
   enemies: defineRegistry({
     dev_nibbler: devNibbler,
@@ -1450,6 +1455,7 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     dev_revoke: revokeMap, // T603 (devM6.ts: Everglow Security; T606 adds the revocation)
     dev_den: denMap, // T604 (devM6.ts: the Scuttle Den and Underfoot against Undertows)
     dev_holdout: holdoutMap, // T605 (devM6.ts: the Holdout, Bricks's block, the SEAL)
+    dev_choir: choirMap, // T607 (devChoir.ts: the Hum Choir's rings, Harmony, Lulled)
   }),
   links: {
     // Conductive is the live content's link (its partners are the real Zapcoil and Sprinkler).
@@ -1461,6 +1467,9 @@ export const DEV_CONTENT: RawContent<DevIds> = {
     // Lightsong (T508): the real Prism and Lantern, for dev_lantern.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
     lightsong: lightsong as unknown as LinkDef<DevIds>,
+    // Harmony (T607): the real Mindspike and Hum Choir, for dev_choir.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ids it names are DevIds too
+    harmony: harmony as unknown as LinkDef<DevIds>,
   },
   campaign: ['dev_range'],
 };
