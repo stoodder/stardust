@@ -6,8 +6,8 @@ import { compileContent } from '../../content/compile.ts';
 import type { CompiledContent, CompiledMapDef } from '../../content/compiled.ts';
 import type { IdSpace, MapDef, RawContent } from '../../content/types.ts';
 import { validate } from '../../content/validate.ts';
-import { createBuildExecutor } from '../../sim/headless.ts';
 import {
+  createBuildExecutor,
   createSim,
   type Command,
   type Sim,

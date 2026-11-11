@@ -7,7 +7,7 @@ describe('harness rules', () => {
     expect(parBand(2, null)).toEqual({ lo: 65, hi: 85 });
     expect(parBand(3, null)).toEqual({ lo: 50, hi: 70 });
     expect(parBand(1, { minPct: 70, maxPct: 95 })).toEqual({ lo: 70, hi: 95 });
-    expect(parBand('finale', null)).toBeNull();
+    expect(parBand('finale', null)).toEqual({ lo: 40, hi: 60 }); // Voices % (T804)
   });
 
   it('a no-counter build must lose before the final third', () => {
