@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { dropBaseChoice, offerChoiceAtBase } from '../../app/baseChoice.ts';
 import { arrivalDue, playBaseScenesIfDue } from '../../app/baseScenes.ts';
 import { BaseChoice } from './BaseChoice.tsx';
+import { HeldRewards } from './HeldRewards.tsx';
 import { catchUpStory, storyBadges } from '../../app/inbox.ts';
 import { hintShown, markHintsShown } from '../../app/save.ts';
 import { XENOTECH_HINT } from '../../meta/index.ts';
@@ -124,6 +125,8 @@ export function Base() {
           </div>
           <Banks view={view} />
         </header>
+        {/* A3M3's held-back rewards, once (T610; core-loop.md § 6.2). */}
+        <HeldRewards />
         <div class="sd-tabs" role="tablist" aria-label="Base">
           {tabs.map((t) => {
             const open = systemOf(view, t.id).unlocked;

@@ -95,6 +95,7 @@ describe('runResultOf', () => {
       retryFromWave: null,
       escort: null,
       choice: null,
+      heldRewards: false,
     });
   });
 
@@ -198,6 +199,8 @@ describe('the run end and the rewards on the card', () => {
       saveNotice: null,
       transactions: [],
       memos: [],
+      revocations: [],
+      stones: false,
     });
   });
 

@@ -101,8 +101,9 @@ export const builds = defineBuilds({
       steps: swapped({ burrow: 'rivet', prism: 'rivet' }),
     },
     // Thumper, Skyhook, Sprinkler, Zapcoil: no Den and no Prism. Par's Thumpers and Skyhooks, a
-    // Sprinkler slowing the north rift's Motes where par's Den stands, and a Zapcoil chaining at
-    // the gate. (A Cloudburst isn't needed: the Skyhooks carry the air.)
+    // Sprinkler slowing the north rift's Motes where par's Den stands, a third Skyhook at the
+    // gate, and a Zapcoil on the east ring for the Maws' Motes. (No Cloudburst: the Skyhooks carry
+    // the air.)
     soak_and_coil: {
       loadout: ['thumper', 'skyhook', 'sprinkler', 'zapcoil'],
       steps: [
@@ -117,16 +118,17 @@ export const builds = defineBuilds({
         { wave: 4, upgrade: CORNER },
         { wave: 5, upgrade: SOUTH },
         { wave: 6, build: 'thumper', tile: RING_NW },
-        { wave: 7, ability: 2, target: EAST_TRAP, when: { afterSec: 9 } },
-        { wave: 7, build: 'zapcoil', tile: GATE },
+        { wave: 7, ability: 2, target: EAST_TRAP, when: { afterSec: 12 } },
+        { wave: 7, build: 'skyhook', tile: GATE },
         { wave: 8, upgrade: RING_NW },
         { wave: 8, upgrade: GATE },
+        { wave: 9, ability: 2, target: NORTH_TRAP, when: { afterSec: 13 } },
         { wave: 9, upgrade: RING_W },
         { wave: 10, upgrade: CORNER },
-        { wave: 10, upgrade: SOUTH },
-        { wave: 11, upgrade: RIFT_SW },
+        { wave: 10, build: 'zapcoil', tile: RING_E },
+        { wave: 11, upgrade: SOUTH },
         { wave: 12, ability: 2, target: NORTH_TRAP, when: { afterSec: 10 } },
-        { wave: 12, upgrade: RING_NW },
+        { wave: 12, upgrade: RIFT_SW },
         { wave: 13, upgrade: GATE },
       ],
     },

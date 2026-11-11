@@ -216,3 +216,18 @@
   border-color: var(--sd-gold-4);
   background: var(--sd-gold-3);
 }
+
+/* A3M3's held-back rewards (T610; HeldRewards.tsx): one quiet line over the tabs, once. */
+.sd-base-held {
+  margin: 0 0 4px;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  line-height: 10px;
+  color: var(--sd-gold-3);
+}
+
+.sd-base-held-kicker {
+  color: var(--sd-steel-3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}

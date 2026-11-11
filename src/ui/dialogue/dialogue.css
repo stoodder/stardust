@@ -285,6 +285,12 @@
   background: var(--sd-ink-3);
 }
 
+/* C3's options in their first 700 ms (D141; T610): dimmed, then they take a press. */
+.dlg-choice[aria-disabled='true'] {
+  color: var(--sd-steel-3);
+  cursor: default;
+}
+
 .dlg-choice-n {
   flex: none;
   min-width: 5px;

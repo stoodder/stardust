@@ -107,7 +107,7 @@ export const waves = defineWaves([
     groups: [
       motes(22, 'rift_n', OPEN, 0.2),
       motes(22, 'rift_e', OPEN + 3, 0.2),
-      g('riftmoth', 5, 'sky', OPEN + 6, 1.5),
+      g('riftmoth', 4, 'sky', OPEN + 6, 2),
       g('fracture', 1, 'rift_e', OPEN + 10, 2.5),
     ],
   },
@@ -119,8 +119,8 @@ export const waves = defineWaves([
       motes(12, 'north', OPEN + 2, 0.3),
       g('maw', 1, 'rift_e', OPEN + 8),
       motes(12, 'rift_e', OPEN + 10, 0.3),
-      g('maw', 1, 'rift_n', OPEN + 16),
-      motes(12, 'rift_n', OPEN + 18, 0.3),
+      g('maw', 1, 'north', OPEN + 18),
+      motes(12, 'rift_n', OPEN + 14, 0.3),
     ],
   },
   // W13 · surge
@@ -138,7 +138,7 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [
       motes(20, 'north', OPEN, 0.2),
-      g('riftmoth', 6, 'sky', OPEN + 6, 1.2),
+      g('riftmoth', 7, 'sky', OPEN + 6, 1.2),
       motes(16, 'spiral', OPEN + 16, 0.2),
     ],
   },

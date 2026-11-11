@@ -162,6 +162,12 @@ export const map = defineMapLayout({
   companion: { id: 'bramble', state: 'present' },
   events: [
     { id: 'first', on: { wave: 1, phase: 'start' }, actions: [{ spawnAllies: 'first' }] },
+    // Ves'thara on the first Maw as it spawns (W4, its group at the wave's OPEN; waves.ts).
+    {
+      id: 'maw_cue',
+      on: { wave: 4, phase: { afterSec: 6 } },
+      actions: [{ cue: 'a3_m01_cue_maw' }],
+    },
     { id: 'second', on: { wave: 5, phase: 'start' }, actions: [{ spawnAllies: 'second' }] },
     { id: 'bramble', on: { wave: 9, phase: 'start' }, actions: [{ spawnAllies: 'bramble' }] },
     // Never released when she wasn't spared (sim/escort.ts: a gated group is released at createSim).

@@ -93,8 +93,9 @@ export function memorialAtEnd(
 }
 
 /**
- * Whether the save's story flags now give `cfg`'s map other script flags than the battle was built
- * with (a briefing just committed C3's door): the battle must restart on them.
+ * Whether the save's story flags now give `cfg`'s map other values of the script flags it reads
+ * (its `builds.flagVariants`) than the battle was built with (a briefing just committed C3's door):
+ * the battle must restart on them.
  */
 export function scriptFlagsChanged(cfg: SimConfig<IdSpace>, save: SaveData | null): boolean {
   if (save === null) return false;
@@ -105,8 +106,8 @@ export function scriptFlagsChanged(cfg: SimConfig<IdSpace>, save: SaveData | nul
     scriptFlagsOf(save.story.flags),
   );
   const have: Readonly<Record<string, unknown>> = cfg.scriptFlags;
-  const keys = new Set([...Object.keys(want), ...Object.keys(have)]);
-  return [...keys].some((k) => want[k] !== have[k]);
+  // Only the flags the map's script reads: the ones its builds vary (`flagVariants`).
+  return Object.keys(map.builds.flagVariants).some((k) => want[k] !== have[k]);
 }
 
 /**

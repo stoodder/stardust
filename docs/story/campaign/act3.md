@@ -14,12 +14,35 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
 
 *The Hollow is inside the Preserve, where you led them. Get them out.*
 
-- **Facts:** The Preserve · `act3` · **Escort** (meter **Evacuated**) · 22×14, 16 buildable · 14 waves · 600 credits · refugee groups (6 each, 0.7 tiles/s) walk from the inner basin to the back gate (safe exit toward the shelters); Hollow from two ground spawns, an air lane, and **rift lanes** from W2 · companion **Bramble** (Underfoot) · Technician Orbital Strike · gift in the briefing: **Scuttle Den**.
+- **Facts:** The Preserve · `act3` · **Escort** (meter **Evacuated**) · 22×14, 16 buildable · 14 waves · 600 credits · refugee groups (6 each, 0.7 tiles/s; 24 refugees, 30 when Old Thrum's group walks) walk from the inner basin to the back gate (safe exit toward the shelters); lost at 13 lost; Hollow from two ground spawns (inside the basin, behind the refugees, and the north road), an air lane, and **rift lanes** from W2 · companion **Bramble** (Underfoot) · Technician Orbital Strike · gift in the briefing: **Scuttle Den**.
 - **Story purpose:** C1 pays off; the matriarch gets her name; the **Leaving Song** (first tear beat, twist layer 5, sung not said). Bricks's survey confession (layer 6) follows in the base, as its own beat. **Target: grief arriving through a melody you already know.**
 
 **Layout.** A fenced bowl. The refugee route spirals out from the centre to a gate in the south-west. Everglow's "HUMANE RELOCATION PRESERVE" sign hangs over the inner gate. Rift cracks open through the fence on the north and east (telegraphed a wave ahead, never over a pad). Scuttle Den mounds look like the Preserve's own warren homes.
 
-**Waves.** 1 Motes, first group out · 2 the first rift opens [T: rift lanes] · 3 Fractures · 4 one Maw [T: gathering; burst it, or kill the small ones near it; Underfoot] · 5 Rift Moths over the second group · 6 Motes through two rifts [X] · 7 Maw + Motes [X] · 8 Fractures + Rift Moths · 9 Bramble's own column + two Maws · 10 the third group (Old Thrum's, if spared) · 11 rifts everywhere · 12 three Maws [X] · 13 surge · 14 the last group out.
+**Layout data** (the data is [`src/content/maps/a3_m01/map.ts`](../../../src/content/maps/a3_m01/map.ts); [`a3_m01.test.ts`](../../../src/content/maps/a3_m01/a3_m01.test.ts) pins it). The **spiral** (`spiral`, 50 tiles; a group takes about 75 s) starts in the inner basin (12,6), goes east and up round the basin's warren homes and its sign, back west along row 4, down column 10, the long run east along row 8, up the east fence (column 16), the long run west under the north fence (row 2), down the west side (column 8), and out along row 11 to the **back gate** (2,13), the safe exit (`gate`). The Hollow come from inside the basin behind the refugees (the spiral's own start) and down the **north road** (`north`), which joins the outer ring at (12,2). The **north rift** (`rift_n`, from W2) cracks down through the decor west of the spiral (column 5) and under it onto the west ring at (8,5); the **east rift** (`rift_e`, from W6) breaks in through the east fence along row 6 onto the east ring at (16,6). Both follow the spiral out. The **air lane** (`sky`) flies low over the south of the bowl from the east edge (21,9) to the gate. Every road shares the west ring and the south road to the gate, so that is the kill zone; pads sit between the rings (each covers two), beside the north rift, under the air lane, and by the gate.
+
+**Waves.** 1 Motes, first group out · 2 the first rift opens [T: rift lanes] · 3 a Fracture + Motes through the rift · 4 one Maw [T: gathering; burst it, or kill the small ones near it; Underfoot] · 5 Rift Moths over the second group · 6 Motes through two rifts [X] · 7 Maw + Motes [X] · 8 a Fracture + Rift Moths · 9 Bramble's own column + two Maws, Rift Moths over it · 10 the third group (Old Thrum's, if spared; east-rift Motes catch its tail) · 11 rifts everywhere · 12 three Maws [X] · 13 surge · 14 the last group out, the basin's Hollow behind it.
+
+**Wave data** (the data is [`src/content/maps/a3_m01/waves.ts`](../../../src/content/maps/a3_m01/waves.ts)). W2–W14 have a **30 s** countdown and open **6 s** into the wave (a countdown opens once the wave before it finishes spawning). W2 and W6, the waves the rifts open on, can't be called early (`noCall`), so each crack shows for a whole build phase. Each Maw leads its Motes by 2 s, so they catch it up as its first gather comes ready:
+
+| Wave | Groups (`enemy` ×`count` @ `intervalSec`, `delaySec`; the north road unless marked) | Total |
+|---|---|---|
+| W1 | Mote ×20 @ 0.2, 6 · Mote ×6 @ 0.25, 22 *basin* | 26 |
+| W2 | Mote ×18 @ 0.2, 6 *north rift* · Mote ×12 @ 0.2, 18 | 30 |
+| W3 | Fracture ×1, 6 · Mote ×14 @ 0.2, 14 *north rift* | 15 |
+| W4 | Maw ×1, 6 · Mote ×12 @ 0.3, 8 (teach) | 13 |
+| W5 | Mote ×20 @ 0.2, 6 · Rift Moth ×3 @ 2.5, 18 *sky* | 23 |
+| W6 | Mote ×20 @ 0.2, 6 *north rift* · Mote ×20 @ 0.2, 12 *east rift* | 40 |
+| W7 | Maw ×1, 6 *east rift* · Mote ×12 @ 0.3, 8 *east rift* · Fracture ×1, 12 | 14 |
+| W8 | Fracture ×1, 6 *north rift* · Rift Moth ×5 @ 2.5, 14 *sky* | 6 |
+| W9 | Maw ×1, 6 · Mote ×12 @ 0.3, 8 · Rift Moth ×5 @ 2.5, 12 *sky* · Maw ×1, 18 *east rift* · Mote ×12 @ 0.3, 20 *east rift* | 31 |
+| W10 | Fracture ×1, 6 · Mote ×20 @ 0.2, 16 *north rift* · Mote ×8 @ 0.25, 36 *east rift* | 29 |
+| W11 | Mote ×22 @ 0.2, 6 *north rift* · Mote ×22 @ 0.2, 9 *east rift* · Rift Moth ×4 @ 2, 12 *sky* · Fracture ×1, 16 *east rift* | 49 |
+| W12 | Maw ×1, 6 · Mote ×12 @ 0.3, 8 · Maw ×1, 14 *east rift* · Mote ×12 @ 0.3, 16 *east rift* · Mote ×12 @ 0.3, 20 *north rift* · Maw ×1, 24 | 39 |
+| W13 | Fracture ×2 @ 2.5, 6 · Mote ×22 @ 0.2, 10 *east rift* · Rift Moth ×5 @ 1.2, 14 *sky* · Mote ×22 @ 0.2, 20 *north rift* | 51 |
+| W14 | Mote ×20 @ 0.2, 6 · Rift Moth ×7 @ 1.2, 12 *sky* · Mote ×16 @ 0.2, 22 *basin* | 43 |
+
+**The west ring is the splash test** (the Mote clusters of every road meet there), **the Rift Moths are the air test** (each that reaches the gate takes one of the sheltered back out), and **the Maws are the escort test** (W9's east-rift Maw comes up the east ring through Bramble's column).
 
 **Story delivery.**
 - *Briefing:*
@@ -34,7 +57,8 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
   - w07 Pebble: "(squeak) Bricks says 'keep 'em off the perimeter.' What is perimeter? Is it a friend?"
   - w10 (if spared) Pebble: "(squeak) Grandmother!" · Thrum, via Ves'thara: "You are very tall. It must be lonely up there."
   - w10 (if cleared) Pebble: "Grandmother walked with the small ones. The sky sang the Leaving Song that day."
-- *Barks:* Bramble `ally_hushed` (translated): "One of mine." · QUILL `wave_cleared`: (no jingle plays, and QUILL notices) "...No song. Logging it." · Ves'thara `new_enemy` maw: "It takes them into itself. Break it before it is full."
+- *Barks:* Bramble `ally_hushed` (translated): "One of mine." · QUILL `wave_cleared` (once): (no jingle plays, and QUILL notices) "...No song. Logging it."
+- *Maw cue* `a3_m01_cue_maw` (as the first Maw spawns, W4; a cue rather than a `new_enemy` bark, since Ves'thara translates on the radio but isn't the companion): Ves'thara: "It takes them into itself. Break it before it is full."
 - *Full-screen scene* `a3_m01_scene_song` (after W14):
   - Pebble (`singing`): "(hum, six notes)" · Thrum, if alive, hums with her.
   - QUILL: "Melody match: 'Everglow Bright.'"
@@ -43,6 +67,7 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
   - Ves'thara, alone: "They thought you were mourning them."
   - The delayed C1 echo, if spared: "Old Thrum remembered." If cleared: nothing. The scene simply ends.
 - *Debrief (the first gift stones):* Bramble, via Ves'thara: "She says: these are ours. Sung, and warm. Take them." · "She says: the dead do not mind being useful. They mind being forgotten." (Zibzab's words from C2, back in Ves'thara's uncontracted voice.) From here the Stardust on the results screen arrives as warm-gold stones.
+  - *On a loss*, Bramble: "My young are still in there. So is my road. Walk it again."
 - *Base scene* `base_a3_survey` (Bricks's confession, its own beat, ≤ 8 lines):
   - Bricks: "Got something to say, Thorn. Should've said it fifteen years ago."
   - Bricks: "I wrote 'vocalizations: non-linguistic.' I heard 'em, kid. I heard 'em singing, and I wrote that."
@@ -50,13 +75,32 @@ Checkpoints and the fleeing and hush rules carry over from Act II ([enemies.md �
   - Player choice: "Then write it again. Right, this time." (earnest) / "Fifteen years is a long time not to ask." (wry) / "..." (quiet)
   - Bricks (earnest): "...Yeah. Working on it." · (wry) "Longer than both my marriages. Put together." · (quiet) (silence, 2 s) "Yeah. That's about right."
   - Pebble, asleep in his pocket: "(squeak, asleep)"
+- *Where it plays* (the data is [`src/content/dialogue/a3/a3_m01/`](../../../src/content/dialogue/a3/a3_m01/scenes.ts)): the briefing is `a3_m01_brief`; Bramble's and Old Thrum's translated lines carry their own portraits (Bramble's plate reads *Bramble* from this map on) and Ves'thara's *She says* lines are hers; w03 plays only with `held_fire_second_look`, w05 only with `stardust_choice = returned`, and w10 branches on `spared_quiet_wave`. The Leaving Song plays full-screen as a win ends, before the card ([`resultsFlow.ts`](../../../src/content/dialogue/resultsFlow.ts) `beforeResults`): the map is won only once the last group is off the road, so it always comes after W14. Its three answers set nothing; Thrum's hum and the C1 echo read `spared_quiet_wave`. The debrief plays on the card. The survey confession plays on the first base visit after the win (`a3_m01_base_survey`, [`baseScenes.ts`](../../../src/app/baseScenes.ts)); story/a3m1Scenes.test.ts plays each branch.
 - *Gifts:* Hum Choir (if spared: Thrum's ring). Stasis Bloom becomes attunable.
 - *Codex:* retitled *Field Journal*; corrected Brood Hauler and Elder entries unlock (the Elder's citation still reads "Survey 2346, Okonkwo" until A3M3); Maw; the Leaving Song; Bramble (corrected: "Not 'Chitterbloom.' A mother who walks at the back so no one is left"); Old Thrum or "the small ones' walk."
 - *Memo after:* `memo_a3_01` *We'll Get Through This Together!* Sterling's last sincere-sounding memo: "I fought for that Preserve, Four-Forty-Seven. I really did. Engineers inbound to secure the colony. Hang in there!" (small print: "Engineers: Clean Exit Asset Recovery, Phase 1 (Colony Core).")
 
 **Medals.** Victory · Perfect (no refugee lost) · **Nothing Gathered:** no Maw gathers a refugee. **Objective Intel +1, The Matriarch's Young:** Bramble's column (W9) loses no one.
 **Rewards.** Stardust 280 · Intel 3 (+1).
-**Par build.** Scuttle Den, Thumper, Prism, Skyhook. Den + Thumper at the spiral's outer ring; Prism (sticky beam) on the Maw's route; Skyhook under the air lane. Underfoot on each Maw. Target 66 (Evacuated %, on the escort band). **Alt builds:** Scuttle Den + Zapcoil + Rivet + Lookout; Thumper + Skyhook + Sprinkler (Cloudburst) + Zapcoil. Harness runs `spared` (Thrum's group present) and `cleared`. `noCounterBuilds`: **no-splash**, Scuttle Den + Prism + Skyhook + Rivet, no Thumper or Zapcoil and no Rivet Storm (Underfoot still goes on each Maw: a cooldown hit isn't a splash answer; the Mote and Fracture swarms reach the groups; must lose by W9); **no-air**, Scuttle Den + Thumper + Sprinkler (no Cloudburst) + Lookout, nothing in reach of the air lane (must lose by W9).
+**Par build.** Scuttle Den, Thumper, Prism, Skyhook, on the reference profile ([../campaign.md §4.9](../campaign.md#49-shop-stock-and-the-reference-profile): A2M6's plus the Scuttle Den and Ability Coolant 1; Head Start on). Two tier-2 Thumpers on the west ring, where every road meets, and the Den between the north rift and the ring from the start; two Skyhooks under the air lane by W3 (south of the long run east, and in the spiral's south-west corner); a third Thumper on the north ring at W6; the Prism on the east ring, the east rift's Maw road, at W7. Underfoot on a Maw at W4, W7, W9 and W12. Each step runs in the build phase before its wave, as soon as it's affordable; the data is [`src/content/maps/a3_m01/builds.ts`](../../../src/content/maps/a3_m01/builds.ts).
+
+| Wave | Par |
+|---|---|
+| W1 | Thumpers (9,6) on the west ring and (6,8) between the north rift and the ring, both to T2; Scuttle Den (6,4) beside the north rift |
+| W2 | Skyhook (9,10) in the spiral's south-west corner |
+| W3 | Skyhook (13,9) south of the long run east |
+| W4 | Underfoot on the Maw at (9,2), 10 s in; the corner Skyhook to T2 |
+| W5 | The south Skyhook to T2 |
+| W6 | Thumper (10,3) on the north ring |
+| W7 | Underfoot on the east-rift Maw at (16,4), 12 s in; Prism (15,5) on the east ring |
+| W8 | The north-ring Thumper to T2; the corner Skyhook to T3 |
+| W9 | Underfoot at (9,2), 13 s in; the west-ring Thumper to T3 |
+| W10 | The Prism to T2; the south Skyhook to T3 |
+| W12 | Underfoot at (9,2), 10 s in; the rift Thumper and the north-ring Thumper to T3 |
+
+Target 66 (Evacuated %, on the escort band). **As tuned** ([`src/balance/a3m1.test.ts`](../../../src/balance/a3m1.test.ts)): par wins at **16/24 (66.7%)** on the reference branch (`cleared`) and **20/30 (66.7%)** spared, Old Thrum's group losing two to W10's east-rift Motes. Par's eight are the Moths it can't stop (one in W8, two in W13, four in W14's flock) and the one refugee W9's east-rift Maw gathers out of Bramble's column, so par earns neither Nothing Gathered nor The Matriarch's Young; without its Underfoot casts it loses in W14. It holds at 16 with every Mote, Moth, Maw, or Fracture group shifted ±0.2 s. Story wins (70.8); alwaysCallEarly wins (62.5). About 12 minutes at 1×.
+
+**Alt builds** (as built; each shares two towers with par): **Thumper + Skyhook + Rivet + Lookout**, par's Thumpers and Skyhooks with Rivets where its Den and Prism stand (62.5); **Thumper + Skyhook + Sprinkler + Zapcoil**, par's Thumpers and Skyhooks, a Sprinkler beside the north rift, a third Skyhook at the gate, and a Zapcoil on the east ring (70.8; no Cloudburst: the Skyhooks carry the air). The design's Scuttle Den + Zapcoil + Rivet + Lookout loses by W7: Zapcoils (Energy, ×0.75 against the Hollow) don't hold the packed Mote clusters and Rivets don't stop the phasing Moths. Harness runs `spared` (Thrum's group present) and `cleared`. `noCounterBuilds`: **no-splash**, par with a Rivet wherever a Thumper stands (Scuttle Den + Prism + Skyhook + Rivet, no Rivet Storm; Underfoot still goes on each Maw: a cooldown hit isn't a splash answer); the Mote clusters walk through and it is lost in W9; **no-air**, par with a Lookout wherever a Skyhook stands and a Sprinkler for the Prism (Scuttle Den + Thumper + Sprinkler, no Cloudburst, + Lookout; nothing in reach of the air lane); every Moth of W5, W8 and W9 reaches the gate and it is lost in W9.
 
 ## A3M2 · License Revoked
 

@@ -20,6 +20,7 @@ import {
   runResultOf,
   type RunEndInput,
 } from './runResult.ts';
+import { revokedAtEnd } from './storyMeta.ts';
 import type { ResultsFixture } from './testHookTypes.ts';
 
 const NO_TAGS: Readonly<Record<WaveTag, number>> = {
@@ -85,6 +86,7 @@ function inputOf(f: ResultsFixture): RunEndInput {
     stats: statsOf(f),
     resumedFromWave: f.checkpoint?.resumedFrom ?? null,
     checkpointWave: f.checkpoint?.latest ?? f.checkpoint?.resumedFrom ?? null,
+    ...(f.revoked === undefined ? {} : { revoked: revokedAtEnd(f.revoked) }),
   };
 }
 

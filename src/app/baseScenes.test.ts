@@ -14,6 +14,7 @@ import {
   playBaseScenesIfDue,
   VISIT_SCENES,
   visitScenesDue,
+  SURVEY_SCENE,
   WHISTLE_SCENE,
 } from './baseScenes.ts';
 import { chooseOption, closeScene, setDialogueEnabled, skipScene } from './dialogue.ts';
@@ -131,6 +132,7 @@ describe("Sundown's visit scenes (A2M6)", () => {
       HANDOVER_SCENE,
       LOOPHOLE_SCENE,
       WHISTLE_SCENE,
+      SURVEY_SCENE,
     ]);
   });
 

@@ -9,7 +9,9 @@
 // screen (T220), and after a loss with a checkpoint (Act II on) "Retry from wave N" first
 // (core-loop.md § 2.12); after a win, leaving plays the map's after-Results scenes first
 // (app/runFlow.ts). The story's transactions join the payroll (T510: A2M4's Q3 Bonus with its memo,
-// A2M5's gift, C2's trade), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
+// A2M5's gift, C2's trade; T610: A3M2's revocations with the uplink's refund row), Act III's
+// Stardust arrives as the warrens' gift stones under "Given", A3M3's card holds its payroll back for
+// the base (`heldRewards`), an Escort's meter takes Core integrity's place in the stats (Evacuated, with its lost count), and a debrief's story
 // choice (C2) takes the way on's place until it is answered (app/resultsFlow.ts; StoryChoice.tsx:
 // price first, its heading focused, its options locked for a beat). The card is a real modal: Tab
 // stays on it.
@@ -180,6 +182,62 @@ function stardustLine(s: RunRewards['stardust']): { label: string; note?: string
   }
 }
 
+/**
+ * The Stardust line as the warrens' gift stones (Act III and the finale; progression.md § 1): the
+ * same amounts, never Everglow's pay. Act III's voice: plain, no exclamation points.
+ */
+export function stonesLine(s: RunRewards['stardust']): { label: string; note?: string } {
+  switch (s.source) {
+    case 'first_clear':
+    case 'replay':
+      return { label: 'Gift stones' };
+    case 'defeat': {
+      const since = s.fromWave === null ? '' : ` since wave ${s.fromWave}`;
+      return { label: 'Gift stones', note: `${s.wavesResolved}/${s.waveCount} waves${since}` };
+    }
+    case 'defeat_replay':
+      return { label: 'Gift stones', note: 'Walked before' };
+    default:
+      return assertNever(s.source);
+  }
+}
+
+/** A gift stone (art-direction.md § 6): a warm-gold pebble beside the Act III Stardust line. */
+function GiftStone() {
+  return <span class="sd-gift-stone" aria-hidden="true" data-testid="results-gift-stone" />;
+}
+
+/**
+ * What run end's step 3 saved (A3M2's Clean Exit; core-loop.md § 6.2): the refund's row in the
+ * payroll ("Refunded · Orbital Strike Mk II", +2 Intel), for each revoked ability with one.
+ */
+function RefundRows({ revocations }: { revocations: RunRewards['revocations'] }) {
+  return (
+    <>
+      {revocations.map((r, i) =>
+        r.kind === 'ability' && r.refund !== null ? (
+          <li key={i} data-testid="results-refund">
+            <span class="sd-results-pay-label">
+              Refunded<span class="sd-results-pay-note"> · {silkText(r.refund.name)}</span>
+            </span>
+            <Amount n={r.refund.amount} currency={r.refund.currency} />
+          </li>
+        ) : null,
+      )}
+    </>
+  );
+}
+
+/** The classes and abilities revoked for good, as one aside: "Revoked: Rivet, Orbital Strike". */
+function Revoked({ revocations }: { revocations: RunRewards['revocations'] }) {
+  if (revocations.length === 0) return null;
+  return (
+    <p class="sd-results-pay-aside sd-results-revoked" data-testid="results-revoked">
+      Revoked: {silkText(revocations.map((r) => r.name).join(', '))}
+    </p>
+  );
+}
+
 /** Why a checkpoint run's card lights Victory only (core-loop.md § 2.12). */
 export function resumedNote(wave: number): string {
   return `Resumed from wave ${wave}: Perfect Core and the Challenge need a shift from wave 1.`;
@@ -314,15 +372,17 @@ function Payroll({
   won: boolean;
   resumedFromWave: number | null;
 }) {
-  const { label, note } = stardustLine(rewards.stardust);
+  const { label, note } = (rewards.stones ? stonesLine : stardustLine)(rewards.stardust);
   return (
     <section class="sd-results-payroll" aria-labelledby="sd-results-payroll-heading">
+      {/* Act III: Everglow pays nothing any more; the warrens give (progression.md § 1). */}
       <h2 id="sd-results-payroll-heading" class="sd-results-payroll-heading">
-        Payroll
+        {rewards.stones ? 'Given' : 'Payroll'}
       </h2>
       <ul>
-        <li>
+        <li data-testid="results-stardust">
           <span class="sd-results-pay-label">
+            {rewards.stones && <GiftStone />}
             {label}
             {note !== undefined && <span class="sd-results-pay-note"> · {note}</span>}
             {rewards.firstPayday && <span class="sd-results-payday">FIRST PAYDAY!</span>}
@@ -332,6 +392,7 @@ function Payroll({
         {rewards.transactions.map((t, i) => (
           <TransactionRow key={i} t={t} />
         ))}
+        <RefundRows revocations={rewards.revocations} />
       </ul>
       {rewards.stardustNote !== null && (
         <p class="sd-results-pay-aside">{silkText(rewards.stardustNote)}</p>
@@ -342,6 +403,7 @@ function Payroll({
         </p>
       )}
       <StoryAsides rewards={rewards} />
+      <Revoked revocations={rewards.revocations} />
       {rewards.saveNotice !== null && (
         <p class="sd-results-save-notice" role="alert">
           {silkText(rewards.saveNotice)}
@@ -478,8 +540,14 @@ function Body({ result }: { result: RunResult }) {
           <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
         )}
       </div>
-      {rewards !== null && (
+      {/* A3M3 holds its rewards back (core-loop.md § 6.2): the base shows them, never the card. */}
+      {rewards !== null && !result.heldRewards && (
         <Payroll rewards={rewards} won={won} resumedFromWave={result.resumedFromWave} />
+      )}
+      {rewards !== null && result.heldRewards && rewards.saveNotice !== null && (
+        <p class="sd-results-save-notice" role="alert">
+          {silkText(rewards.saveNotice)}
+        </p>
       )}
       {result.debrief.length > 0 && <Debrief lines={result.debrief} />}
       {asking && result.choice !== null && (

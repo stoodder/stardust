@@ -67,6 +67,8 @@ Each map has a `stardust` value in its data (its **first-clear reward**).
 
 **As built (T510):** the Q3 Bonus, C2, and the Prism gift are story transactions ([meta-runtime.md § Story transactions](../tech/meta-runtime.md#story-transactions)). C2 is answered on A2M4's results card, where its two offers stand in for the way on under the stake ("The whole bank: … Stardust"), and the card then shows the trade, price first and never as a verdict.
 
+**As built (T610):** Act III part one's grants reach the save where the story makes them ([meta-runtime.md § Story transactions](../tech/meta-runtime.md#story-transactions)): A3M1's Scuttle Den as its loadout first opens (or its battle starts, where no loadout screen comes first), so it can be picked for A3M1 itself; the Hum Choir at A3M1's results on a spared first win; the Stasis Bloom's attunement stocked once A3M1 is won (on the shelf when its tower ships). A3M2's first win saves the revoked class and the uplink, refunds Orbital Strike Mk II's 2 Intel on its card, and keeps the rank on record. A3M3 pays its flat 320 on its first win, whatever the Evacuated score, and its card holds the payroll back for the base. From A3M1 every Results card shows the Stardust as gift stones ([core-loop.md § 6.2](core-loop.md#62-results-screen-and-the-lifetime-counter)).
+
 ---
 
 ## 3. Medals and Intel

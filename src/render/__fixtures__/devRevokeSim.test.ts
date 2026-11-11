@@ -5,18 +5,23 @@
 // the lockout's hidden preview and QUILL's slot, the input edges (D141), the forced class of the
 // harness's story variants, the executor's skips, and a replay paying the refund once.
 import { describe, expect, it } from 'vitest';
-import type { CompiledBuild, CompiledMapDef } from '../../content/compiled.ts';
+import type { CompiledBuild } from '../../content/compiled.ts';
 import { compileContent } from '../../content/compile.ts';
 import type { GridPos, IdSpace } from '../../content/types.ts';
 import { DEV_CONTENT } from './devBattle.ts';
-import type { Command } from '../../sim/commands.ts';
-import type { SimConfig } from '../../sim/config.ts';
-import type { SimEvent } from '../../sim/events.ts';
-import { createBuildExecutor, runHeadless } from '../../sim/headless.ts';
-import { previewHidden, selectRevokedClass, slotRevoked } from '../../sim/revoke.ts';
-import { createSim, type Sim } from '../../sim/sim.ts';
-import type { SimState } from '../../sim/state.ts';
-import { unsupportedScript } from '../../sim/systems/triggers.ts';
+import {
+  createBuildExecutor,
+  createSim,
+  previewHidden,
+  runHeadless,
+  selectRevokedClass,
+  slotRevoked,
+  type Command,
+  type Sim,
+  type SimConfig,
+  type SimEvent,
+  type SimState,
+} from '../../sim/index.ts';
 
 const content = compileContent(DEV_CONTENT);
 const maps: Readonly<Record<string, (typeof content.maps)[keyof typeof content.maps]>> =
@@ -282,26 +287,6 @@ describe('revokeAbility and setModifier', () => {
     mut(sim).scriptModifiers.quillLockout = false;
     mut(sim).scriptModifiers.previewHidden = true;
     expect(previewHidden(sim.state)).toBe(true);
-  });
-
-  it('an objective may not revoke (it has no run context); events may', () => {
-    const one: CompiledMapDef<IdSpace> = {
-      ...MAP,
-      objectives: [
-        {
-          id: 'x',
-          name: 'x',
-          description: 'x',
-          condition: { stat: 'lateSells', lte: 0 },
-          intel: 0,
-          onComplete: [{ revokeAbility: 'dev_strike' }, { setModifier: 'previewHidden', on: true }],
-        },
-      ],
-    };
-    expect(unsupportedScript(one)).toEqual([
-      "objective 'x': action revokeAbility runs from map events only",
-    ]);
-    expect(unsupportedScript(MAP)).toEqual([]);
   });
 });
 

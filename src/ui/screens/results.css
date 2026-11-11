@@ -407,3 +407,38 @@
   flex-basis: 100%;
   color: var(--sd-steel-3);
 }
+
+/* Act III's gift stone (T610; art-direction.md § 2 and § 6): a smooth 7x5 warm-gold pebble in
+   `stardust.sung` (pink.3 → gold.3 → gold.4), a 1 px hum-glyph scratched across it, set before the
+   Stardust line's label. */
+.sd-gift-stone {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 5px;
+  margin-right: 3px;
+  vertical-align: 0;
+  border-radius: 3px / 2px;
+  background: linear-gradient(
+    135deg,
+    var(--sd-gold-4) 0 30%,
+    var(--sd-gold-3) 30% 70%,
+    var(--sd-pink-3) 70%
+  );
+  box-shadow: 0 1px 0 var(--sd-ink-1);
+}
+
+.sd-gift-stone::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 3px;
+  height: 1px;
+  background: var(--sd-pink-3);
+}
+
+/* The classes revoked for good (A3M2): steel, plain, never alarming on the card. */
+.sd-results-revoked {
+  color: var(--sd-steel-3);
+}

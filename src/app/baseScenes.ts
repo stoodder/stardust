@@ -4,7 +4,8 @@
 //   *Base*), once his shop is open (the Zapcoil sample is already in hand: meta/issued.ts gives it
 //   as the shop opens); and Bricks handing Pebble to Goldie at Dome 3 (act2.md § A2M4, *Base*),
 //   once A2M4 is won; and after A2M6 (act2.md § A2M6, *Base scene*, *Base vignette*), QUILL's
-//   loophole, then Bricks teaching Pebble to whistle. Several due on one visit play in turn.
+//   loophole, then Bricks teaching Pebble to whistle; and after A3M1 (act3.md § A3M1, *Base
+//   scene*), Bricks's survey confession. Several due on one visit play in turn.
 // - **The open question**, "Where does stardust come from?", which the player asks from its shop
 //   row (meta/purchase.ts `openQuestionOffered`).
 // Each plays as a pausing panel over the base (app/dialogue.ts) unless its row stages it
@@ -26,6 +27,8 @@ export const HANDOVER_SCENE: SceneId = 'a2_m04_base_handover';
 export const LOOPHOLE_SCENE: SceneId = 'a2_m06_base_loophole';
 /** Bricks tries to teach Pebble to whistle; she hums (after A2M6). */
 export const WHISTLE_SCENE: SceneId = 'a2_m06_base_whistle';
+/** Bricks's survey confession (after A3M1). */
+export const SURVEY_SCENE: SceneId = 'a3_m01_base_survey';
 /** The shop's open question. */
 export const OPEN_QUESTION_SCENE: SceneId = 'a1_m03_base_stardust';
 
@@ -44,6 +47,8 @@ export const VISIT_SCENES: readonly VisitScene[] = [
   // After Sundown, one visit: QUILL's loophole, then Bricks teaching Pebble to whistle (her hum).
   { id: LOOPHOLE_SCENE, due: (save) => isMapWon(save, 'a2_m06') },
   { id: WHISTLE_SCENE, due: (save) => isMapWon(save, 'a2_m06'), mode: 'fullscreen' },
+  // After the Preserve: Bricks's survey confession, its own beat after the Leaving Song.
+  { id: SURVEY_SCENE, due: (save) => isMapWon(save, 'a3_m01') },
 ];
 
 /**

@@ -121,6 +121,11 @@ export interface ResultsFixture {
    * N"; its button needs a real lost battle to act on). Default none.
    */
   readonly checkpoint?: { readonly resumedFrom?: number; readonly latest?: number };
+  /**
+   * What the run's script revoked (A3M2's Clean Exit; T610): run end saves it on a first win and
+   * the card lists it, the uplink with its refund row. Default none.
+   */
+  readonly revoked?: { readonly towers: readonly string[]; readonly abilities: readonly string[] };
 }
 
 export interface DialogueHooks {

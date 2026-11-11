@@ -1,5 +1,6 @@
 // Dev dialogue for the smoke flows and agents (`__sd.dialogue`, only with `?test=1`): a cue scene
-// with a choice (it pauses play), a full-screen scene, and a bark with a reply button. Never in the
+// with a choice (it pauses play), C3's door choice, a full-screen scene, and a bark with a reply
+// button. Never in the
 // registries, so the game never plays them; dev.test.ts validates them like real dialogue.
 import { defineBarks, defineScene, defineScenes } from '../../content/dialogue/define.ts';
 
@@ -67,6 +68,19 @@ export const DEV_SCENES = defineScenes([
       speaker: 'quill',
       expression: 'happy',
       text: "Lettuce in, it's cold out here! ...That's the joke.",
+    },
+  ]),
+  // Last, so the scenes above keep their places. C3's shape (T610; A3M3's briefing): a choice whose options set `door_choice`, so the smoke
+  // flows can commit a door (and see its 700 ms lock) before A3M3's own briefing is registered.
+  // It ends (and commits) on the pick.
+  defineScene('a1_m01_cue_dev_door', [
+    { kind: 'line', speaker: 'bricks', text: 'Your call, Thorn. Which door do I hold?' },
+    {
+      kind: 'choice',
+      options: [
+        { text: 'The convoy road.', tone: 'earnest', set: { door_choice: 'convoy' } },
+        { text: 'The warren tunnel.', tone: 'quiet', set: { door_choice: 'warren' } },
+      ],
     },
   ]),
 ]);
