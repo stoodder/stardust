@@ -4,9 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../../content/compile.ts';
 import type { IdSpace } from '../../content/types.ts';
-import { gateRefusals } from '../../sim/gates.ts';
-import type { SimConfig } from '../../sim/index.ts';
-import { unsupportedScript } from '../../sim/systems/triggers.ts';
+import { createSim, type SimConfig } from '../../sim/index.ts';
 import { DEV_CONTENT } from './devBattle.ts';
 import { DEV_M6_MAPS } from './devM6.ts';
 
@@ -22,15 +20,21 @@ function config(mapId: string, slot2: string | null = null): SimConfig<IdSpace> 
     companion: slot2 === null ? null : 'bramble',
     modifiers: [],
     difficulty: 'standard',
-    abilities: { slot1: 'dev_strike', slot2, slot2State: slot2 === null ? 'none' : 'equipped' },
+    abilities: { slot1: 'dev_strike', slot2, slot2State: slot2 === null ? 'none' : 'present' },
     specsUnlocked: [],
     scriptFlags: { door_choice: 'convoy' },
   };
 }
 
-/** Everything createSim would refuse on `mapId`: gates, then script parts. */
+/** Everything createSim refuses on `mapId` (its RangeError's lines): gates, then script parts. */
 function refused(mapId: string, slot2: string | null = null): string[] {
-  return [...gateRefusals(config(mapId, slot2)), ...unsupportedScript(maps[mapId]!)];
+  try {
+    createSim(config(mapId, slot2));
+  } catch (err) {
+    const lines = (err instanceof Error ? err.message : String(err)).split('\n');
+    return lines.filter((l) => l.startsWith('- ')).map((l) => l.slice(2));
+  }
+  return [];
 }
 
 describe('the M6 dev maps', () => {

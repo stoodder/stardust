@@ -1,5 +1,5 @@
 // The forced single input (design/core-loop.md § 2.11: A3M3's SEAL; T600a slot, T605 fills it):
-// while `state.forcedInput` is set, waves, movement, and firing freeze but the sim keeps ticking,
+// while `state.pendingInput` is set, waves, movement, and firing freeze but the sim keeps ticking,
 // until a `scriptInput` command with that id resolves it (ForcedInputResolved, the
 // `forcedInputResolved` trigger). Runs after the triggers (tick.ts), so a `forceInput` action
 // freezes the same tick. Until T605 lands, createSim refuses `forceInput` (SCRIPT_GATES) and the

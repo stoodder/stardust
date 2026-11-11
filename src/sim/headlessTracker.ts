@@ -342,7 +342,8 @@ export function createRunTracker<K extends IdSpace>(
           case 'SwarmHome':
           case 'TrapSprung':
           case 'Blocked':
-          case 'ForcedInput':
+          case 'ForcedInputRequested':
+          case 'AllyHealthChanged':
           case 'ForcedInputResolved':
           case 'TowerRevoked':
           case 'ClassRevoked':

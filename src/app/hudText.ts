@@ -513,6 +513,12 @@ export function rejectText(reason: RejectReason): string | null {
     // Clickable world objects (T409): only a click that races the fallback, or a stale one.
     case 'notClickable':
       return 'Out of reach now';
+    // M6 (T600a seams; T631 may reword them). A revoked class or ability (T606).
+    case 'revoked':
+      return 'License revoked';
+    // The forced input locks every control (T605/T614): nothing to say over the one button.
+    case 'forcedInput':
+      return null;
     case 'mapEnded':
     case 'notInLoadout':
     case 'noSuchTower':

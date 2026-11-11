@@ -44,7 +44,7 @@ export type Command<K extends IdSpace = LiveIds> =
   | { readonly type: 'callWave' }
   /**
    * Press the forced single input `id` (core-loop.md § 2.11: A3M3's SEAL; T605): resolves
-   * `state.forcedInput` when it is `id` (the `forcedInputResolved` trigger), so the moment is in
+   * `state.pendingInput` when it is `id` (the `forcedInputResolved` trigger), so the moment is in
    * the command log and the harness can press it.
    */
   | { readonly type: 'scriptInput'; readonly id: string };
@@ -101,6 +101,13 @@ export type RejectReason =
   | 'alreadySpecialized'
   /** interact: the marker isn't a clickable object that's clickable now (T409). */
   | 'notClickable'
+  /**
+   * A forced input is pending (`state.pendingInput`; T605): every command but the matching
+   * `scriptInput` is rejected, and a `scriptInput` for another id (or none pending) too.
+   */
+  | 'forcedInput'
+  /** The tower class or ability was revoked this map (`state.revoked`; T606). */
+  | 'revoked'
   /** The handler belongs to a later task (named where the command is handled). */
   | 'notImplemented';
 

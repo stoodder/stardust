@@ -375,7 +375,7 @@ export interface SimState<K extends IdSpace = IdSpace> {
    * waves, movement, and firing freeze (the sim keeps ticking), or null. A `scriptInput` command
    * with this id resolves it.
    */
-  forcedInput: string | null;
+  pendingInput: string | null;
   /** Forced inputs resolved this run, in order (the `forcedInputResolved` trigger; T605). */
   forcedResolved: string[];
   /**
@@ -496,7 +496,7 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
     refugeeTotal: map.escort?.total ?? 0,
     revoked: { towers: [], abilities: [] },
     scriptModifiers: { quillLockout: false, previewHidden: false },
-    forcedInput: null,
+    pendingInput: null,
     forcedResolved: [],
     trapSprung: [],
     pending: [],

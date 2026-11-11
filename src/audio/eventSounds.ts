@@ -170,7 +170,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   SwarmHome: false,
   TrapSprung: false,
   Blocked: false,
-  ForcedInput: false,
+  ForcedInputRequested: false,
+  AllyHealthChanged: false,
   ForcedInputResolved: false,
   TowerRevoked: false,
   ClassRevoked: false,
@@ -545,7 +546,8 @@ export function createEventSounds(
         case 'SwarmHome':
         case 'TrapSprung':
         case 'Blocked':
-        case 'ForcedInput':
+        case 'ForcedInputRequested':
+        case 'AllyHealthChanged':
         case 'ForcedInputResolved':
         case 'TowerRevoked':
         case 'ClassRevoked':

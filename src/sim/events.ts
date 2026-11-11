@@ -652,10 +652,19 @@ export type SimEvent<K extends IdSpace = LiveIds> =
     }
   | {
       /**
+       * A scripted ally's health changed (T605: Bricks's timeline at the Gap; maps.md § 5.4), as a
+       * fraction of full: the HUD's bar, `cue_vitals`.
+       */
+      readonly type: 'AllyHealthChanged';
+      readonly uid: number;
+      readonly health: number;
+    }
+  | {
+      /**
        * A forced single input began (T605; core-loop.md § 2.11: A3M3's SEAL): waves, movement, and
        * firing freeze until a `scriptInput` command with `id` arrives (the sim keeps ticking).
        */
-      readonly type: 'ForcedInput';
+      readonly type: 'ForcedInputRequested';
       readonly id: string;
     }
   /** The forced input `id` was pressed (`scriptInput`; T605): the `forcedInputResolved` trigger. */

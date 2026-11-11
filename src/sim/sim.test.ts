@@ -103,7 +103,7 @@ describe('createSim', () => {
     );
     const both = bad({ seed: -1, content: SPAWNER_GUN });
     expect(both).toMatch(/seed/);
-    expect(both).toMatch(/until M6/);
+    expect(both).toMatch(/until T604/);
   });
 
   it('accepts a loadout of exactly 4 and an empty one', () => {
