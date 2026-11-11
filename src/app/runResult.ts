@@ -26,6 +26,7 @@ import type { FlagRuleStats } from '../story/flags.ts';
 import { plateName } from '../story/plates.ts';
 import { presentationOfMap } from '../story/presentation.ts';
 import { linesUntilChoice, readThrough } from '../story/runner.ts';
+import type { ResultsMeter } from '../story/counter.ts';
 import { resolveText, type TextContext } from '../story/text.ts';
 import { PERFECT_CORE_MEDAL_ID, VICTORY_MEDAL_ID } from '../sim/index.ts';
 import type { SpokenLine } from '../ui/state.ts';
@@ -448,11 +449,21 @@ export function runResultOf(
     // "Retry from wave N" (core-loop.md § 2.12): a loss offers the run's latest checkpoint.
     retryFromWave: outcome === 'lost' ? (input.checkpointWave ?? null) : null,
     escort: input.escort ?? null,
+    meter: meterOf(input),
     // The debrief's choice (C2) is app/resultsFlow.ts's `withResultsChoice`, over the save in play.
     choice: null,
     // A3M3's Holdout plays the card identically at any score: its rewards wait for the base.
     heldRewards: dials.holdRewardToasts,
   };
+}
+
+/**
+ * The run's meter for the card's `meter` counter line (core-loop.md § 6.2): an Escort's or a
+ * Holdout's Evacuated count (Sheltered on A3M6), or null on a map with no meter (Defend, Protect).
+ */
+export function meterOf(input: Pick<RunEndInput, 'escort'>): ResultsMeter | null {
+  const e = input.escort;
+  return e === undefined ? null : { kind: e.kind, n: e.evacuated };
 }
 
 /** One of the card's stat rows under the headline: "Waves survived 12 / 12". */

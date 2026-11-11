@@ -17,9 +17,15 @@ export function livePestsProcessed(lifetime: number, runKills: number): number {
   return lifetime + runKills;
 }
 
-/** An Act III map's meter, which replaces the counter on its results screen. */
-export type ResultsMeter =
-  { readonly kind: 'evacuated' | 'sheltered'; readonly n: number } | { readonly kind: 'held' };
+/**
+ * An Act III map's meter, which replaces the counter on its results screen: an Escort's or a
+ * Holdout's Evacuated count, or A3M6's Sheltered. ("Held." is the Holdout card's headline, never a
+ * meter line: ui/screens/heldCard.ts.)
+ */
+export interface ResultsMeter {
+  readonly kind: 'evacuated' | 'sheltered';
+  readonly n: number;
+}
 
 /** What the results screen shows for the counter. */
 export interface ResultsCounter {
@@ -27,7 +33,7 @@ export interface ResultsCounter {
   readonly line: string;
   /** The line's parts as the card draws them: the label, the number that counts up, the rest. */
   readonly label: string;
-  /** The number the card counts up to, or null for a line with none ("Held."). */
+  /** The number the card counts up to, or null for a line with none. */
   readonly n: number | null;
   /** What follows the number: "." (Act II, Act III's meter), or "" (Act I, the finale). */
   readonly end: string;
@@ -46,16 +52,28 @@ export const ACT_ONE_BRAG = 'Top 5% of Technicians!';
  * The results counter in the map's `counter` style (the presentation dial, core-loop.md § 6.2 and
  * § 6.7): `starred` (Act I) "PESTS PROCESSED: {n} ★ Top 5% of Technicians!" with stars and the
  * career line; `plain` (Act II) "Pests processed: {n}." with the career line and no stars; `meter`
- * (Act III) the map's meter line ("Evacuated: {n}.", "Held.", "Sheltered: {n}."; "Held." when the
- * map has no meter) and nothing else; `remembered` (the finale) "REMEMBERED: {n}" over the
- * lifetime count. `run` is this run's kills; `lifetime` the save's total after this run.
+ * (Act III) the map's meter line ("Evacuated: {n}.", "Sheltered: {n}.") and nothing else, or
+ * **no line at all** (null) on a map with no meter (a Defend or Protect map: the counter is gone,
+ * and nothing stands in its place); `remembered` (the finale) "REMEMBERED: {n}" over the lifetime
+ * count. `run` is this run's kills; `lifetime` the save's total after this run.
  */
+export function resultsCounter(
+  style: Exclude<CounterStyle, 'meter'>,
+  run: number,
+  lifetime: number,
+): ResultsCounter;
+export function resultsCounter(
+  style: CounterStyle,
+  run: number,
+  lifetime: number,
+  meter?: ResultsMeter | null,
+): ResultsCounter | null;
 export function resultsCounter(
   style: CounterStyle,
   run: number,
   lifetime: number,
   meter: ResultsMeter | null = null,
-): ResultsCounter {
+): ResultsCounter | null {
   const career = `Career total: ${formatCount(lifetime)}`;
   switch (style) {
     case 'starred':
@@ -79,7 +97,7 @@ export function resultsCounter(
         stars: false,
       };
     case 'meter':
-      return meterCounter(meter);
+      return meter === null ? null : meterCounter(meter);
     case 'remembered':
       return {
         line: `REMEMBERED: ${formatCount(lifetime)}`,
@@ -95,13 +113,18 @@ export function resultsCounter(
   }
 }
 
-function meterCounter(meter: ResultsMeter | null): ResultsCounter {
-  const none = { brag: null, career: null, stars: false } as const;
-  if (meter === null || meter.kind === 'held') {
-    return { line: 'Held.', label: 'Held.', n: null, end: '', ...none };
-  }
+/** An Act III meter's line ("Evacuated: {n}."): no star, brag, or career line. */
+export function meterCounter(meter: ResultsMeter): ResultsCounter {
   const label = meter.kind === 'evacuated' ? 'Evacuated:' : 'Sheltered:';
-  return { line: `${label} ${formatCount(meter.n)}.`, label, n: meter.n, end: '.', ...none };
+  return {
+    line: `${label} ${formatCount(meter.n)}.`,
+    label,
+    n: meter.n,
+    end: '.',
+    brag: null,
+    career: null,
+    stars: false,
+  };
 }
 
 /**

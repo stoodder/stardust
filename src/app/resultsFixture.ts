@@ -9,7 +9,10 @@ import type { MapId, WaveTag } from '../content/types.ts';
 import { runEnd, type SaveData } from '../meta/index.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
 import { DEV_SCENES } from '../ui/dialogue/dev.ts';
-import type { RunResult } from '../ui/screens/state.ts';
+import type { RunEscort, RunResult } from '../ui/screens/state.ts';
+import { escortTotal } from '../sim/index.ts';
+import { battleConfig } from './battleSetup.ts';
+import { meterLabelText } from './hudText.ts';
 import type { ResultsScenes } from './router.ts';
 import { withResultsChoice } from './resultsFlow.ts';
 import { flowScenes } from './runFlow.ts';
@@ -59,8 +62,33 @@ function isMapId(id: string): id is MapId {
   return Object.hasOwn(MAPS, id);
 }
 
+/**
+ * The fixture's Escort meter on a map that is an Escort or a Holdout from the start (A3M1, A3M3;
+ * T612): its refugees under the save's story flags (`escortTotal`, as the battle counts them),
+ * every one through on a win and half of them on a loss, unless `f.escort` says. None elsewhere
+ * (a pivot like A2M5's isn't played, so its card stays a Defend's).
+ */
+function escortOf(f: ResultsFixture, save: SaveData | null): { escort?: RunEscort } {
+  const config = battleConfig(f.map, 0, save);
+  const map = config.content.maps[f.map];
+  if (map === undefined || (map.objective !== 'escort' && map.objective !== 'holdout')) return {};
+  const total = escortTotal(map, config.scriptFlags);
+  const evacuated = f.escort?.evacuated ?? (f.outcome === 'won' ? total : Math.floor(total / 2));
+  const kind = map.meterLabel === 'sheltered' ? 'sheltered' : 'evacuated';
+  return {
+    escort: {
+      kind,
+      label: meterLabelText(kind),
+      evacuated,
+      total,
+      lost: f.escort?.lost ?? total - evacuated,
+      ...(map.objective === 'holdout' ? { holdout: true } : {}),
+    },
+  };
+}
+
 /** The run's facts: the map's own when it's registered, else a 10-wave map paying nothing. */
-function inputOf(f: ResultsFixture): RunEndInput {
+function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
   const map = isMapId(f.map) ? MAPS[f.map] : undefined;
   const waveCount = map?.waves.length ?? 10;
@@ -87,12 +115,13 @@ function inputOf(f: ResultsFixture): RunEndInput {
     resumedFromWave: f.checkpoint?.resumedFrom ?? null,
     checkpointWave: f.checkpoint?.latest ?? f.checkpoint?.resumedFrom ?? null,
     ...(f.revoked === undefined ? {} : { revoked: revokedAtEnd(f.revoked) }),
+    ...(map === undefined ? {} : escortOf(f, save)),
   };
 }
 
 /** The fixture's result, as Results would show it after the run end in `save` (never written). */
 export function fixtureResult(f: ResultsFixture, save: SaveData | null): RunResult {
-  const input = inputOf(f);
+  const input = inputOf(f, save);
   const meta = metaRunEndOf(input, f.outcome);
   const ended = save === null || !isMapId(f.map) ? null : runEnd(save, { ...meta, mapId: f.map });
   // The debrief reads the save as this run would leave it (the Q3 Bonus banked before C2), and its

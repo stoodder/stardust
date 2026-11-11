@@ -94,6 +94,7 @@ describe('runResultOf', () => {
       resumedFromWave: null,
       retryFromWave: null,
       escort: null,
+      meter: null,
       choice: null,
       heldRewards: false,
     });

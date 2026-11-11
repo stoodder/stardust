@@ -2,7 +2,13 @@
 // the results line per act, and the countdown at p = 0, 0.5, and 1.
 import { describe, expect, it } from 'vitest';
 import { PRESENTATION } from '../content/presentation.ts';
-import { countdownDisplay, formatCount, livePestsProcessed, resultsCounter } from './counter.ts';
+import {
+  countdownDisplay,
+  formatCount,
+  livePestsProcessed,
+  meterCounter,
+  resultsCounter,
+} from './counter.ts';
 
 describe('formatCount', () => {
   it.each([
@@ -48,21 +54,24 @@ describe('resultsCounter (one line per counter style)', () => {
   });
 
   it('meter (Act III) hides the counter behind the meter', () => {
-    expect(resultsCounter('meter', 40, 900, { kind: 'evacuated', n: 1200 }).line).toBe(
+    expect(resultsCounter('meter', 40, 900, { kind: 'evacuated', n: 1200 })?.line).toBe(
       'Evacuated: 1,200.',
     );
     expect(resultsCounter('meter', 40, 900, { kind: 'sheltered', n: 12 })).toMatchObject({
       line: 'Sheltered: 12.',
+      label: 'Sheltered:',
       n: 12,
-      career: null,
-    });
-    expect(resultsCounter('meter', 40, 900, { kind: 'held' })).toMatchObject({
-      line: 'Held.',
-      n: null,
+      end: '.',
+      brag: null,
       career: null,
       stars: false,
     });
-    expect(resultsCounter('meter', 40, 900).line).toBe('Held.');
+  });
+
+  it('meter (Act III) shows no line at all on a map with no meter, never "Held." (T612)', () => {
+    expect(resultsCounter('meter', 40, 900)).toBeNull();
+    expect(resultsCounter('meter', 40, 900, null)).toBeNull();
+    expect(meterCounter({ kind: 'evacuated', n: 9 }).line).toBe('Evacuated: 9.');
   });
 
   it('remembered (the finale) remembers the lifetime count', () => {
@@ -82,8 +91,11 @@ describe('resultsCounter (one line per counter style)', () => {
   });
 
   it("follows the dial, not the act: each act's row reads its style", () => {
-    expect(resultsCounter(PRESENTATION.byAct[1].counter, 1, 1).stars).toBe(true);
-    expect(resultsCounter(PRESENTATION.byAct[2].counter, 1, 1).line).toBe('Pests processed: 1.');
+    expect(resultsCounter(PRESENTATION.byAct[1].counter, 1, 1)?.stars).toBe(true);
+    expect(resultsCounter(PRESENTATION.byAct[2].counter, 1, 1)?.line).toBe('Pests processed: 1.');
+    expect(
+      resultsCounter(PRESENTATION.byAct[3].counter, 1, 1, { kind: 'evacuated', n: 1 }),
+    ).toMatchObject({ line: 'Evacuated: 1.' });
   });
 });
 

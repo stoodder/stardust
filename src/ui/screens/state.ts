@@ -7,6 +7,7 @@ import type { CampaignMapId } from '../../content/campaign.ts';
 import type { ArrivalReason, CallsignId, PronounId } from '../../content/dialogue/profile.ts';
 import type { StoryAct } from '../../content/dialogue/types.ts';
 import type { CounterStyle } from '../../content/presentation.ts';
+import type { ResultsMeter } from '../../story/counter.ts';
 import type { SpokenLine } from '../state.ts';
 
 /** A finished run, as the results screen shows it (built by app/runResult.ts at run end). */
@@ -54,6 +55,12 @@ export interface RunResult {
    * (app/runResult.ts `resultsStats`), and a `meter` counter shows its line.
    */
   readonly escort: RunEscort | null;
+  /**
+   * The map's meter as the run ended, for the `meter` counter's line (Act III; core-loop.md
+   * § 6.2): an Escort's or a Holdout's Evacuated count (A3M6's Sheltered), from `escort`; null on
+   * a map with no meter (a Defend or Protect map), whose Act III card shows no counter line.
+   */
+  readonly meter: ResultsMeter | null;
   /**
    * The debrief's story choice the card offers (C2 on A2M4's first win; app/resultsFlow.ts), or
    * null. While it waits (`picked` null) the card's way on is the choice.

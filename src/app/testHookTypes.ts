@@ -126,6 +126,11 @@ export interface ResultsFixture {
    * the card lists it, the uplink with its refund row. Default none.
    */
   readonly revoked?: { readonly towers: readonly string[]; readonly abilities: readonly string[] };
+  /**
+   * On an Escort or Holdout map (A3M1, A3M3): the refugees through and lost. Default every one
+   * through on a win, half on a loss (of the run's total under the save's flags; T612).
+   */
+  readonly escort?: { readonly evacuated?: number; readonly lost?: number };
 }
 
 export interface DialogueHooks {

@@ -153,18 +153,18 @@ interface Seat {
 
 /** The ring's five seats: three at the back facing out over the light, two at the front. */
 const SEATS: readonly Seat[] = [
-  { x: NX - 6, y: NY - 1, front: true },
-  { x: NX, y: NY - 3, front: true },
-  { x: NX + 6, y: NY - 1, front: true },
-  { x: NX - 3, y: NY + 2, front: false },
-  { x: NX + 4, y: NY + 2, front: false },
+  { x: NX - 7, y: NY - 1, front: true },
+  { x: NX, y: NY - 2, front: true },
+  { x: NX + 7, y: NY - 1, front: true },
+  { x: NX - 9, y: NY + 3, front: false },
+  { x: NX + 9, y: NY + 3, front: false },
 ];
 
 /** An elder: a coral ball, a white tuft, moss on her back; a closed-eyed humming face or a back. */
 function elder(g: CharGrid, s: Seat, sway: number, open: boolean, paw: boolean, tall: number): void {
   const cx = s.x + sway + 0.5;
-  const rx = 3.1;
-  const ry = 2.8 + tall * 0.7;
+  const rx = s.front ? 3.2 : 2.5;
+  const ry = (s.front ? 3 : 2.4) + tall * 0.7;
   const cy = s.y - ry + 1;
   for (let y = Math.floor(cy - ry - 1); y <= Math.ceil(cy + ry); y++) {
     for (let x = Math.floor(cx - rx - 1); x <= Math.ceil(cx + rx); x++) {

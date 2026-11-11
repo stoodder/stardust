@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { luminance } from '../../content/palettes/color.ts';
 import { MASTER, rgbOf, type ColorName } from '../../content/palettes/master.ts';
-import { STAR_MAP_RESERVED } from '../../content/starMap.ts';
+import { STAR_MAP_PHASE_ACT, STAR_MAP_RESERVED, type StarMapPhase } from '../../content/starMap.ts';
+import { uiStarNode } from '../../content/sprites/starmap/star.ts';
 import type { RgbaImage } from '../../render/sprites/rasterize.ts';
 import { LEG_STOP, chartAccent, starMapChart } from './starMapChart.ts';
 
@@ -133,5 +134,24 @@ describe('the star map chart', () => {
     expect(count(dusk, ['act3.crystal.3'])).toBe(0);
     // The frontier's leg is Act III's red.
     expect(chartAccent('act3')).toBe('red.3');
+  });
+
+  it("wears each phase's accent on the next glyph's core and ping, as on its leg (T612)", () => {
+    const suffix = { '2': '', '3': '_act3', finale: '_finale' } as const;
+    const legend: Readonly<Record<string, string>> = uiStarNode.legend ?? {};
+    for (const phase of [
+      'act2.gold',
+      'act2.dusk',
+      'act3',
+      'dawn',
+    ] as const satisfies readonly StarMapPhase[]) {
+      const s = suffix[STAR_MAP_PHASE_ACT[phase]];
+      const next = uiStarNode.frames[`next${s}`] as readonly string[];
+      const ping = uiStarNode.frames[`ping${s}_0`] as readonly string[];
+      expect(legend[next[7]![7]!]).toBe(chartAccent(phase)); // the core's centre
+      expect(legend[ping[2]![7]!]).toBe(chartAccent(phase)); // the ring's top edge
+    }
+    // Act III's alarm red, never the crystal violet its flora slot carries.
+    expect(legend[(uiStarNode.frames.next_act3 as readonly string[])[7]![7]!]).toBe('red.3');
   });
 });

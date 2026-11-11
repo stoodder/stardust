@@ -3,9 +3,11 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN_PLAN_IDS } from './campaign.ts';
 import {
+  NODE_BOX,
   STAR_MAP_AFTER,
   STAR_MAP_LONG_WALK,
   STAR_MAP_NODES,
+  STAR_MAP_RESERVED,
   STAR_MAP_PHASES,
   STAR_MAP_REGIONS,
   starMapProblems,
@@ -53,5 +55,45 @@ describe('the star map data', () => {
     const walk = STAR_MAP_REGIONS.find((r) => r.id === 'long_walk');
     expect(walk?.text).toBe('Surge corridor');
     expect(walk?.corrected).toEqual({ after: 'a2_m05', text: 'The Long Walk' });
+  });
+
+  it("sets Act III's nodes on their landmarks (art-direction § 10, T612)", () => {
+    const n = STAR_MAP_NODES;
+    // The Preserve: inside its bowl (x 120–196, y 188–240).
+    expect(n.a3_m01.x).toBeGreaterThanOrEqual(120);
+    expect(n.a3_m01.x).toBeLessThanOrEqual(196);
+    expect(n.a3_m01.y).toBeGreaterThanOrEqual(188);
+    expect(n.a3_m01.y).toBeLessThanOrEqual(240);
+    // A1M4 at night: beside Admin Plaza's node, the revisit's pair (as A2M3 stands by A1M2's).
+    expect(Math.abs(n.a3_m02.x - n.a1_m04.x)).toBe(16);
+    expect(Math.abs(n.a3_m02.y - n.a1_m04.y)).toBeLessThanOrEqual(8);
+    // Okonkwo's Gap: a vertex of the Long Walk, between the Halls' mouth and the north gate.
+    expect(STAR_MAP_LONG_WALK).toContainEqual({ x: n.a3_m03.x, y: n.a3_m03.y });
+    // The Shelters (A3M4's teaser): inside the colony's wall (x 268–424, y 196–304).
+    expect(n.a3_m04.x).toBeGreaterThan(268);
+    expect(n.a3_m04.x).toBeLessThan(424);
+    expect(n.a3_m04.y).toBeGreaterThan(196);
+    expect(n.a3_m04.y).toBeLessThan(304);
+  });
+
+  it('holds the Deep Halls label back until A3M4 names them, over the mouth, clear of the chrome', () => {
+    const halls = STAR_MAP_REGIONS.find((r) => r.id === 'deep_halls');
+    expect(halls).toMatchObject({ text: 'The Deep Halls', shownAfter: 'a3_m04' });
+    expect(STAR_MAP_REGIONS.filter((r) => r.shownAfter !== undefined)).toHaveLength(1);
+    // A label box about 90×10 px around its anchor: inside the chart, off the corner chrome, and
+    // above the finale's glyph at the Halls' mouth.
+    const box = { x: halls!.x - 45, y: halls!.y - 5, w: 90, h: 10 };
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    for (const r of STAR_MAP_RESERVED) {
+      expect(
+        box.x < r.x + r.w && r.x < box.x + box.w && box.y < r.y + r.h && r.y < box.y + box.h,
+      ).toBe(false);
+    }
+    expect(box.y + box.h).toBeLessThanOrEqual(STAR_MAP_NODES.fin_m01.y + NODE_BOX.dy);
+    expect(STAR_MAP_LONG_WALK).toContainEqual({
+      x: STAR_MAP_NODES.fin_m01.x,
+      y: STAR_MAP_NODES.fin_m01.y,
+    });
   });
 });

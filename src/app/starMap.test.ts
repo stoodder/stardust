@@ -123,6 +123,77 @@ describe('starMapView', () => {
     for (const m of CAMPAIGN_PLAN.slice(12)) expect(text).not.toContain(m.name);
   });
 
+  it('across Act III (T612): A3M1 cleared → License Revoked next, then The Gap, on the night chart', () => {
+    const after1 = starMapView(DEV_SAVES.after_a3m1_spared.build());
+    expect(after1).toMatchObject({ phase: 'act3', act: '3', marker: 'a3_m01', frontier: 'a3_m02' });
+    const revoked = after1.nodes.at(-1)!;
+    expect(revoked).toMatchObject({
+      id: 'a3_m02',
+      state: 'open',
+      name: 'License Revoked',
+      place: 'Admin Plaza at night',
+      x: 352,
+      y: 260,
+    });
+    expect(revoked.label).toBe(
+      'Shift 13, License Revoked, Admin Plaza at night. Next up. 0 of 3 medals.',
+    );
+    expect(revoked.brief?.medals.map((m) => m.name)).toContain('Back on Your Feet');
+    for (const m of CAMPAIGN_PLAN.slice(13)) expect(JSON.stringify(after1)).not.toContain(m.name);
+
+    const after2 = starMapView(DEV_SAVES.after_a3m2_rivet.build());
+    expect(after2).toMatchObject({ phase: 'act3', marker: 'a3_m02', frontier: 'a3_m03' });
+    expect(after2.nodes.at(-1)).toMatchObject({
+      id: 'a3_m03',
+      state: 'open',
+      name: 'The Gap',
+      place: "Okonkwo's Gap",
+      x: 372,
+      y: 136,
+    });
+    expect(after2.legs.at(-1)).toMatchObject({ accent: true, to: { x: 372, y: 136 } });
+    for (const m of CAMPAIGN_PLAN.slice(14)) expect(JSON.stringify(after2)).not.toContain(m.name);
+  });
+
+  it("after A3M3 (M6's close): Empty Slot teased, Coming soon, as Act II's close teased the Preserve", () => {
+    const view = starMapView(DEV_SAVES.after_a3m3_convoy.build());
+    expect(view).toMatchObject({ phase: 'act3', act: '3', marker: 'a3_m03', frontier: 'a3_m04' });
+    expect(view.nodes).toHaveLength(15);
+    expect(view.nodes.slice(0, 14).every((n) => n.state === 'won')).toBe(true);
+    const teaser = view.nodes.at(-1)!;
+    expect(teaser).toMatchObject({
+      id: 'a3_m04',
+      state: 'coming_soon',
+      name: 'Empty Slot',
+      place: 'The Shelters',
+      tagline: 'The shelters. His portrait is dark. The mail still comes.',
+      brief: null,
+      x: 296,
+      y: 248,
+    });
+    expect(teaser.label).toBe(
+      'Shift 15, Empty Slot, The Shelters. Coming soon. ' +
+        'The shelters. His portrait is dark. The mail still comes.',
+    );
+    // The leg from the Gap to the teaser wears the accent; nothing later is named anywhere.
+    expect(view.legs.at(-1)).toMatchObject({ accent: true, from: { x: 372, y: 136 } });
+    const text = JSON.stringify(view);
+    for (const m of CAMPAIGN_PLAN.slice(15)) expect(text).not.toContain(m.name);
+    // No M6 map names the Deep Halls: the chart doesn't either (A3M4's mail does).
+    expect(view.regions.map((r) => r.id)).not.toContain('deep_halls');
+    expect(text).not.toContain('Deep Halls');
+  });
+
+  it('labels the Deep Halls once A3M4, the map that names them, is won', () => {
+    const save = DEV_SAVES.after_a3m3_convoy.build();
+    const maps: Record<string, unknown> = save.campaign.maps;
+    maps.a3_m04 = { completed: true, medals: ['victory'], bestMeter: 1 };
+    expect(starMapView(save).regions.find((r) => r.id === 'deep_halls')).toMatchObject({
+      text: 'The Deep Halls',
+      struck: null,
+    });
+  });
+
   it('marks the first visit until the save has seen it', () => {
     const save = DEV_SAVES.after_a1m5_ref.build();
     save.story.seen.push(STAR_MAP_SEEN_ID);

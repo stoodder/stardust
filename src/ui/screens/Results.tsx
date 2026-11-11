@@ -503,16 +503,16 @@ function Body({ result }: { result: RunResult }) {
   const { rewards } = result;
   const checkpoint = won ? null : result.retryFromWave;
   const header = resultsHeader(result.counter, result.outcome);
-  const { escort } = result;
+  // The map's meter line where the dial shows one (Act III; core-loop.md § 6.2); none on an Act
+  // III map with no meter, whose card has no counter line at all.
   const counter = resultsCounter(
     result.counter,
     result.pestsProcessed,
     rewards?.lifetimePests ?? result.pestsProcessed,
-    // An Escort's meter line, where the dial shows one (Act III; core-loop.md § 6.2).
-    escort === null ? null : { kind: escort.kind, n: escort.evacuated },
+    result.meter,
   );
   const asking = result.choice !== null && result.choice.picked === null;
-  const counted = useCountUp(counter.n ?? 0);
+  const counted = useCountUp(counter?.n ?? 0);
   return (
     <section
       class={`sd-panel sd-results-panel ${won ? 'sd-results-won' : 'sd-results-lost'}`}
@@ -541,12 +541,14 @@ function Body({ result }: { result: RunResult }) {
           </div>
         ))}
       </dl>
-      <div class="sd-results-counts">
-        <Counter counter={counter} shown={counted} />
-        {rewards !== null && counter.career !== null && (
-          <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
-        )}
-      </div>
+      {counter !== null && (
+        <div class="sd-results-counts">
+          <Counter counter={counter} shown={counted} />
+          {rewards !== null && counter.career !== null && (
+            <Career n={rewards.lifetimePests} run={result.pestsProcessed} counted={counted} />
+          )}
+        </div>
+      )}
       {/* A3M3 holds its rewards back (core-loop.md § 6.2): the base shows them, never the card. */}
       {rewards !== null && !result.heldRewards && (
         <Payroll

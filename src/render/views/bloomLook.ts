@@ -4,9 +4,10 @@
 //   own rule, systems/fields.ts `fieldReachTiles`), its edge dithered, under a dashed ring at the
 //   same reach, so the held ground reads at a glance without hiding the road. Cold `blue` for the
 //   tiers, `violet` for Gravity Well (the pull), `teal` for Timeless Garden (the stronger chill):
-//   the disc in the colour's `.2`, the ring in its `.4`.
+//   the disc in the colour's `.3`, the ring in its `.4` (Act III's ground is a deep violet, so a
+//   `.2` disc vanished into it).
 // - **The pulse:** for PULSE_FLASH_TICKS after a pulse (the sim's pulse timer just reset:
-//   `pulseFlash`), the disc draws brighter (`.3`, more opaque), on top of the battle's own frost
+//   `pulseFlash`), the disc draws brighter (`.4`, more opaque), on top of the battle's own frost
 //   ring (PulseBurst, battleEvents.ts). Read from sim state, so it holds while paused; still the
 //   same under reduced motion (a brightness step, not motion).
 import type { ColorName } from '../../content/palettes/master.ts';
@@ -15,8 +16,8 @@ import { fieldPulseTicks, fieldReachTiles } from '../../sim/systems/fields.ts';
 /** How long a pulse brightens the disc, in sim ticks (0.3 s). */
 export const PULSE_FLASH_TICKS = 18;
 /** The disc's alpha at rest, and while a pulse flashes. */
-export const DISC_ALPHA = 0.16;
-export const DISC_FLASH_ALPHA = 0.32;
+export const DISC_ALPHA = 0.2;
+export const DISC_FLASH_ALPHA = 0.36;
 
 /** The field's colours: the disc at rest, the disc flashing, and the edge ring. */
 export interface BloomColors {
@@ -25,9 +26,9 @@ export interface BloomColors {
   readonly ring: ColorName;
 }
 
-const PLAIN: BloomColors = { disc: 'blue.2', flash: 'blue.3', ring: 'blue.4' };
-const WELL: BloomColors = { disc: 'violet.2', flash: 'violet.3', ring: 'violet.4' };
-const GARDEN: BloomColors = { disc: 'teal.2', flash: 'teal.3', ring: 'teal.4' };
+const PLAIN: BloomColors = { disc: 'blue.3', flash: 'blue.4', ring: 'blue.4' };
+const WELL: BloomColors = { disc: 'violet.3', flash: 'violet.4', ring: 'violet.4' };
+const GARDEN: BloomColors = { disc: 'teal.3', flash: 'teal.4', ring: 'teal.4' };
 
 /** What the look reads of a tower. */
 export interface BloomTower {

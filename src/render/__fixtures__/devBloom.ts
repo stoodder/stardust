@@ -3,8 +3,8 @@
 // (smoke/bloom.spec.ts) before A3M5 brings the Bloom to a real map. A road east along row 1, down
 // column 10, and east into the core (13,6). The Bloom's pad (9,2) sits in the road's corner, with
 // the Mindspike's (8,2) and the Harpoon's (9,3) beside it. W1 is a Maw with Motes catching it up
-// (the pulse's Stasis interrupts its gather), Diggers (it blocks the dig), and Puffwings (the
-// field reaches the air); W2 more Nibblers and Motes. Its own layout and definers, so devBattle.ts
+// (the pulse's Stasis interrupts its gather), Diggers (it blocks the dig), and Puffwings on an air
+// lane over the corner (the field reaches the air); W2 more Nibblers and Motes. Its own layout and definers, so devBattle.ts
 // (which registers it in DEV_CONTENT) imports this file without a cycle: only the DevIds type
 // comes back from there.
 import { mapDefinersFor } from '../../content/define.ts';
@@ -55,6 +55,17 @@ export const bloomMap = dev.defineMap({
       ],
     },
   ],
+  // The Puffwings fly in over the Bloom's corner (its field reaches the air).
+  airLanes: [
+    {
+      id: 'sky',
+      points: [
+        [8, 0],
+        [9, 3],
+        [13, 6],
+      ],
+    },
+  ],
   startCredits: 3000,
   stardust: 0,
   threatIntel: ['armored', 'gathering', 'clustered', 'burrowing', 'flying'],
@@ -67,7 +78,7 @@ export const bloomMap = dev.defineMap({
         { enemy: 'maw', count: 1, route: 'a' },
         { enemy: 'mote', count: 6, route: 'a', delaySec: 2, intervalSec: 0.3 },
         { enemy: 'digger', count: 3, route: 'a', delaySec: 4, intervalSec: 1.5 },
-        { enemy: 'puffwing', count: 3, route: 'a', delaySec: 6, intervalSec: 1 },
+        { enemy: 'puffwing', count: 3, route: 'sky', delaySec: 6, intervalSec: 1 },
       ],
     },
     {

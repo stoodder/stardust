@@ -2,7 +2,7 @@
 // card reads **Held.** with the sub-line **Evacuated: {n}.** and nothing else: no kicker, stats,
 // counter, payroll (its rewards are held for the base, `heldRewards`), stamps, or debrief, and only
 // the way on (Continue). DOM-free, so it's unit-tested; Results.tsx draws it.
-import { resultsCounter } from '../../story/counter.ts';
+import { meterCounter } from '../../story/counter.ts';
 import type { RunResult } from './state.ts';
 
 /** The card's words. */
@@ -17,6 +17,6 @@ export function heldCard(r: Pick<RunResult, 'outcome' | 'escort'>): HeldCard | n
   if (r.outcome !== 'won' || e === null || e.holdout !== true) return null;
   return {
     headline: 'Held.',
-    line: resultsCounter('meter', 0, 0, { kind: e.kind, n: e.evacuated }).line,
+    line: meterCounter({ kind: e.kind, n: e.evacuated }).line,
   };
 }
