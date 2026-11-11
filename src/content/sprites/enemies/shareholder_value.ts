@@ -52,7 +52,14 @@ const PLATES: readonly (readonly [number, number, number, number])[] = [
 ];
 
 /** A piston leg from the hull's underside down to its foot, lifted by `lift`. */
-function leg(g: CharGrid, x: number, from: number, lift: number, near: boolean, drag = false): void {
+function leg(
+  g: CharGrid,
+  x: number,
+  from: number,
+  lift: number,
+  near: boolean,
+  drag = false,
+): void {
   const foot = H - 1 - lift;
   for (let y = from; y < foot - 1; y++) {
     plot(g, x, y, near ? '3' : '2');
@@ -61,7 +68,12 @@ function leg(g: CharGrid, x: number, from: number, lift: number, near: boolean, 
   }
   plot(g, x + 1, from + 3, 'c'); // the orange knee joint
   plot(g, x + 1, from + 4, 'b');
-  stamp(g, x - 2 + (drag ? -2 : 0), foot - 1, drag ? ['.1333..', '0111100'] : ['1333311', '0111110']);
+  stamp(
+    g,
+    x - 2 + (drag ? -2 : 0),
+    foot - 1,
+    drag ? ['.1333..', '0111100'] : ['1333311', '0111110'],
+  );
 }
 
 /** A rectangle filled with `ch`. */
@@ -70,7 +82,14 @@ function box(g: CharGrid, x0: number, y0: number, x1: number, y1: number, ch: st
 }
 
 /** The bridge screen's face at (x0, y0), 13×7: a chart, a crash, dots, static, or its back. */
-function screen(g: CharGrid, x0: number, y0: number, look: PlatformLook, step: number, back: boolean): void {
+function screen(
+  g: CharGrid,
+  x0: number,
+  y0: number,
+  look: PlatformLook,
+  step: number,
+  back: boolean,
+): void {
   box(g, x0, y0, x0 + 12, y0 + 6, back ? '1' : 'k');
   if (back) {
     // From behind: the screen's steel back, vent slots and a status lamp.
@@ -84,7 +103,8 @@ function screen(g: CharGrid, x0: number, y0: number, look: PlatformLook, step: n
   }
   if (look === 'flee') {
     for (let y = y0; y <= y0 + 6; y++)
-      for (let x = x0; x <= x0 + 12; x++) if ((x * 7 + y * 5 + step * 3) % 4 === 0) plot(g, x, y, (x + y) % 3 === 0 ? 'w' : '2');
+      for (let x = x0; x <= x0 + 12; x++)
+        if ((x * 7 + y * 5 + step * 3) % 4 === 0) plot(g, x, y, (x + y) % 3 === 0 ? 'w' : '2');
     return;
   }
   const crash = look === 'panic';
@@ -212,7 +232,15 @@ function platform(facing: Facing, step: 0 | 1 | 2 | 3, look: PlatformLook): stri
     line(g, dx0 + 3, dtop + 2, dx0 + 3, 8, '1');
     line(g, dx0 + 4, dtop + 2, dx0 + 4, 8, '2');
     const lens = step % 2 === 0 ? ['QQQ', 'QwQ', 'QQQ'] : ['RRR', 'RQR', 'RRR'];
-    stamp(g, dx0 - 1, 0, ['..12221..', '.1233321.', '123333321', '123333321', '123333321', '.1233321.', '..12221..']);
+    stamp(g, dx0 - 1, 0, [
+      '..12221..',
+      '.1233321.',
+      '123333321',
+      '123333321',
+      '123333321',
+      '.1233321.',
+      '..12221..',
+    ]);
     stamp(g, dx0 + 2, 2, lens);
   } else if (!bare) {
     stamp(g, dx0, dtop, ['.2222.', '133331']);

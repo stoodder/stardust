@@ -54,7 +54,10 @@ const ABOVE = 4;
 const BELOW = 2;
 
 /** The body's half-extents (px) at scale `s`. */
-function extent(lobes: readonly Lobe[], s: number): { left: number; right: number; up: number; down: number } {
+function extent(
+  lobes: readonly Lobe[],
+  s: number,
+): { left: number; right: number; up: number; down: number } {
   let left = 0;
   let right = 0;
   let up = 0;
@@ -69,7 +72,10 @@ function extent(lobes: readonly Lobe[], s: number): { left: number; right: numbe
 }
 
 /** A canvas and its ground point, for `lobes` at `stage` absorbs. */
-function frameOf(lobes: readonly Lobe[], stage: number): { w: number; h: number; ax: number; ay: number; cx: number; cy: number } {
+function frameOf(
+  lobes: readonly Lobe[],
+  stage: number,
+): { w: number; h: number; ax: number; ay: number; cx: number; cy: number } {
   const s = 1 + GROW * stage;
   const e = extent(lobes, s);
   const w = BACK + Math.ceil(e.left + e.right) + 1 + AHEAD + stage;
@@ -236,10 +242,24 @@ function gatheringMaw(
     for (const [i, c] of centers.entries()) {
       if (i === 0 && !part) continue; // the back flank faces away
       if (puff) {
-        line(g, Math.round(c.x), Math.round(c.y + c.ry * 0.25), Math.round(c.x + c.rx * 0.6), Math.round(c.y + c.ry * 0.25), 'k');
+        line(
+          g,
+          Math.round(c.x),
+          Math.round(c.y + c.ry * 0.25),
+          Math.round(c.x + c.rx * 0.6),
+          Math.round(c.y + c.ry * 0.25),
+          'k',
+        );
         continue;
       }
-      mouth(g, Math.round(c.x - c.rx * 0.2), Math.round(c.x + c.rx * 0.7), Math.round(c.y + c.ry * 0.15), open, step === 1 ? 'U' : 'V');
+      mouth(
+        g,
+        Math.round(c.x - c.rx * 0.2),
+        Math.round(c.x + c.rx * 0.7),
+        Math.round(c.y + c.ry * 0.15),
+        open,
+        step === 1 ? 'U' : 'V',
+      );
     }
   }
   // Too many eyes.
@@ -287,7 +307,13 @@ function gatheringMaw(
       plot(g, f.w - 1, ey, 'w');
     }
   }
-  const seed = 200 + stage * 10 + (facing === 'se' ? 0 : 5) + step + (part ? 60 : 0) + ['walk', 'tell', 'panic', 'puff'].indexOf(look) * 3;
+  const seed =
+    200 +
+    stage * 10 +
+    (facing === 'se' ? 0 : 5) +
+    step +
+    (part ? 60 : 0) +
+    ['walk', 'tell', 'panic', 'puff'].indexOf(look) * 3;
   return dropPixels(rows(g), seed);
 }
 
@@ -303,10 +329,17 @@ function anims(look: Look, n: number, fps: number): Record<string, AnimDef> {
 }
 
 /** Frames of `look`, `n` per facing. */
-function frames(lobes: readonly Lobe[], part: boolean, stage: number, look: Look, n: number): Record<string, string[]> {
+function frames(
+  lobes: readonly Lobe[],
+  part: boolean,
+  stage: number,
+  look: Look,
+  n: number,
+): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const fc of ['se', 'ne'] as const) {
-    for (let i = 0; i < n; i++) out[`${look}_${fc}_${i}`] = gatheringMaw(lobes, part, stage, fc, i as 0 | 1 | 2, look);
+    for (let i = 0; i < n; i++)
+      out[`${look}_${fc}_${i}`] = gatheringMaw(lobes, part, stage, fc, i as 0 | 1 | 2, look);
   }
   return out;
 }

@@ -63,7 +63,7 @@ function liability(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3): string[] {
   if (se) {
     // The little teal visor peering over the shield, a glint on it.
     stamp(g, 13, top - 3, ['.1111.', '177771', '176671']);
-    plot(g, 15 + (step % 2), top - 2, 'w');
+    plot(g, 14 + step, top - 2, 'w'); // the glint sweeps the visor
     // The riot shield's face: a hazard chevron down it, a teal viewport slit.
     for (let k = 0; k < 4; k++) {
       plot(g, 8 + k, top + 5 + k, 'c');

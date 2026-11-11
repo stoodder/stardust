@@ -15,8 +15,10 @@ import type {
 import type { IdSpace, LiveIds, ProfileDef } from '../content/types.ts';
 import {
   LIVE_CATALOG,
+  createNewSave,
   maxRanks,
   metaModifiers,
+  storyModifiers,
   type MetaCatalog,
   type MetaLoadout,
 } from '../meta/index.ts';
@@ -256,8 +258,36 @@ export function fullCatalogProfile<K extends IdSpace = LiveIds>(
 }
 
 /**
+ * The modifiers the run's story flags add on `mapId`, as the game adds them from a save's
+ * (app/battleSetup.ts `simulatedStoryModifiers`, through meta/storyInPlay.ts `storyModifiers`):
+ * C4 Purge's −2 Everglow armor from A3M5 on. None without flags, so every run before A3M5, and
+ * every run with no `quill_choice`, is unchanged. A modifier naming an id `content` lacks is
+ * refused (D013).
+ */
+export function storyRunModifiers<K extends IdSpace>(
+  content: CompiledContent<K>,
+  mapId: string,
+  flags: ScriptFlags,
+): Modifier<K>[] {
+  if (Object.keys(flags).length === 0) return [];
+  const save = createNewSave();
+  const out: Modifier<K>[] = [];
+  for (const m of storyModifiers(mapId, {
+    ...save,
+    story: { ...save.story, flags: { ...save.story.flags, ...flags } },
+  })) {
+    if (!namesOnly(m, content)) {
+      throw new RangeError(`${m.source} names a tower or ability this content doesn't have`);
+    }
+    out.push(m);
+  }
+  return out;
+}
+
+/**
  * A config for one run of `build` on `map` under `profile`, with the story flags its scripts read
- * (none, except on a flag-variant run, #14).
+ * (none, except on a flag-variant run, #14), and the modifiers those flags add, as a save's would
+ * (`storyRunModifiers`: C4 Purge's armor on A3M5 and later).
  */
 export function runConfig<K extends IdSpace = LiveIds>(
   content: CompiledContent<K>,
@@ -276,7 +306,7 @@ export function runConfig<K extends IdSpace = LiveIds>(
     seed,
     loadout: build.loadout,
     companion: slot.companion,
-    modifiers: profile.modifiers,
+    modifiers: [...profile.modifiers, ...storyRunModifiers(content, map.id, scriptFlags)],
     difficulty: profile.difficulty,
     abilities: { slot1: build.technicianAbility, slot2: slot.slot2, slot2State: slot.slot2State },
     scriptFlags,

@@ -158,6 +158,9 @@ describe('bakeSprite', () => {
     expect(derivedFor('enemy', 'hollow')).toEqual(['selected', 'cloak']);
     expect(derivedFor('enemy', 'skitterkin')).toEqual(['selected']);
     expect(bakeSprite(mite, PALETTES).variants).not.toContain('default+cloak');
+    // A cloaking unit of another faction asks for it (`cloak`: the Black Budget Operative, T740a).
+    expect(derivedFor('enemy', 'everglow', true)).toEqual(['selected', 'cloak']);
+    expect(bakeSprite({ ...mite, cloak: true }, PALETTES).variants).toContain('default+cloak');
     const { glow: _glow, variants: _variants, ...plain } = mite;
     const veil: SpriteDef = {
       ...plain,

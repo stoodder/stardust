@@ -58,7 +58,14 @@ function militia(facing: 'se' | 'ne', step: 0 | 1, look: Look): string[] {
   for (let y = top + 5; y < 13; y++) for (let x = bx + 1; x < bx + 4; x++) plot(g, x, y, 'c');
   line(g, bx + 1, top + 8, bx + 3, top + 8, 'w');
   // The head: warm skin, a white hard hat with a teal stripe, a brim.
-  stamp(g, bx, top, se ? ['.444.', '44884', '0000.', '.EEF.', '.EEF.'] : ['.444.', '48844', '.0000', '.FEE.', '.FEE.']);
+  stamp(
+    g,
+    bx,
+    top,
+    se
+      ? ['.444.', '44884', '0000.', '.EEF.', '.EEF.']
+      : ['.444.', '48844', '.0000', '.FEE.', '.FEE.'],
+  );
   if (se) {
     plot(g, bx + 3, top + 3, 'k'); // an eye, looking down the barrel
     // The rifle across the crates, aimed down the path: a steel barrel, a brass stock.

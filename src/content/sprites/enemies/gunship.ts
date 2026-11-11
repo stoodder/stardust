@@ -42,7 +42,12 @@ function gunship(facing: 'se' | 'ne', step: 0 | 1 | 2 | 3): string[] {
   const tail = se ? 1 : W - 6;
   line(g, se ? 2 : 19, 7, se ? 7 : 24, 7, '2');
   line(g, se ? 2 : 19, 8, se ? 7 : 24, 8, '1');
-  stamp(g, tail, 3, se ? ['1....', '21...', '321..', '3221.'] : ['....1', '...12', '..123', '.1223']);
+  stamp(
+    g,
+    tail,
+    3,
+    se ? ['1....', '21...', '321..', '3221.'] : ['....1', '...12', '..123', '.1223'],
+  );
   // The pod: white paint lit from the upper left, steel belly plates.
   for (let y = 5; y <= 11; y++) {
     for (let x = 6; x <= 20; x++) {

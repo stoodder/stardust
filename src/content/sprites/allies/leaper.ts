@@ -62,9 +62,7 @@ function leaper(facing: 'se' | 'ne', look: Look): string[] {
   if (facing === 'se') {
     // Big eyes: squeezed with glee in the tuck and the landing, wide open in the stretch.
     stamps.push(
-      tuck || land
-        ? [CX - 1, fy + 1, ['k..k', '.k..']]
-        : [CX - 1, fy, ['wk.wk', 'kk.kk']],
+      tuck || land ? [CX - 1, fy + 1, ['k..k', '.k..']] : [CX - 1, fy, ['wk.wk', 'kk.kk']],
     );
   } else {
     stamps.push([CX - 1, fy + 1, ['+.+', '.*.']]);
