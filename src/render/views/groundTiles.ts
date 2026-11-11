@@ -240,6 +240,8 @@ export function decorLook(
   sprite: SpriteId,
   env: string | undefined,
 ): { frame: string; anim: string | null } {
+  // Act III's Evie is `dark` (content/presentation.ts; T613 draws the frame).
+  if (env === 'act3' && sprite === 'prop.billboard') return { frame: 'dark', anim: null };
   const act2 = isActTwo(env) ? ACT2_LOOKS[sprite] : undefined;
   return act2 ?? DECOR_LOOKS[sprite] ?? { frame: 'v0', anim: null };
 }

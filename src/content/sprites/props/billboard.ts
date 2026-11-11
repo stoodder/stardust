@@ -123,5 +123,6 @@ export const propBillboard = defineSprite({
     K: 'grime.1',
     L: 'grime.3',
   },
-  frames: { beaming: beaming(), peeling: peeling() },
+  // `dark` (Act III's dial) is the peeling board for now; T613 draws it unlit with the hum-glyph.
+  frames: { beaming: beaming(), peeling: peeling(), dark: peeling() },
 });
