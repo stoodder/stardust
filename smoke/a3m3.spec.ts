@@ -9,8 +9,11 @@
 // countdown, QUILL's vitals cue as W13 starts, the last group in at the convoy door, and the SEAL
 // as W14 starts; a press, and Results' "Held." card. The warren flow picks the warren and plays to
 // the SEAL, its groups walking in from the south-west to the east door. Before each shot the sim
-// plays a moment at 1×. Fast text (`&fasttext=1`) shows each line whole. Screenshots in
-// <out>/screens/a3m3/ (look at them: the briefing's C3, the choke, the tag, the vitals, the SEAL).
+// plays a moment at 1×. Fast text (`&fasttext=1`) shows each line whole. C3's lock runs on the
+// page's clock, so the flow pauses it (Playwright's `page.clock`) from the line before C3 until the
+// locked buttons are checked and shot: a loaded machine can't let the 700 ms pass before the look.
+// Screenshots in <out>/screens/a3m3/ (look at them: the briefing's C3, the choke, the tag, the
+// vitals, the SEAL).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
@@ -109,6 +112,21 @@ async function parLoadout(page: Page): Promise<void> {
   await expect(page.getByTestId('hud')).toBeVisible();
 }
 
+/**
+ * Stops the page's clock just ahead of where it is (time, timers, and frames hold until
+ * `resume`); the margin covers the round trip (the clock can't be moved back), widened on a miss.
+ */
+async function pauseClock(page: Page, margin = 100): Promise<void> {
+  const now = await page.evaluate(() => Date.now());
+  try {
+    await page.clock.pauseAt(now + margin);
+  } catch (e) {
+    // The round trip outran the margin ("Cannot fast-forward to the past"): try a wider one.
+    if (margin >= 3200) throw e;
+    await pauseClock(page, margin * 2);
+  }
+}
+
 /** Reads the briefing on to its next choice (Next until an answer group shows). */
 async function toChoice(page: Page): Promise<void> {
   const answer = page.getByRole('group', { name: 'Your answer' });
@@ -126,6 +144,8 @@ async function toChoice(page: Page): Promise<void> {
  * on the door, paused, with par at the controls.
  */
 async function briefAndChoose(page: Page, door: 'convoy' | 'warren', look: boolean): Promise<void> {
+  // The clock is installed (running as usual) so C3's lock can be held while it is checked.
+  await page.clock.install();
   await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m2_rivet');
   await waitForReady(page);
   expect((await save(page))?.story.flags.door_choice).toBeUndefined();
@@ -143,6 +163,8 @@ async function briefAndChoose(page: Page, door: 'convoy' | 'warren', look: boole
   await toChoice(page);
   const answer = page.getByRole('group', { name: 'Your answer' });
   await answer.getByRole('button', { name: 'The signing bonus.' }).click();
+  // The clock holds from here, so C3's 700 ms can't run out before its buttons are looked at.
+  await pauseClock(page);
   await toChoice(page);
   // Not the file's reason (lettuce): Bricks noticed, on the way to C3.
   await expect(brief).toContainText('Not what your file says. ...Files lie. I wrote one.');
@@ -154,6 +176,8 @@ async function briefAndChoose(page: Page, door: 'convoy' | 'warren', look: boole
   // C3 waits 700 ms before it takes a press (D141), and holds the briefing until answered.
   await expect(pick).toHaveAttribute('aria-disabled', 'true');
   if (look) await shot(page, 'a3m3', 1, 'c3');
+  // Time runs again: the lock passes.
+  await page.clock.resume();
   await expect(pick).not.toHaveAttribute('aria-disabled', 'true');
   await pick.click();
   await expect(brief).toContainText(

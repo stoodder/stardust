@@ -93,9 +93,11 @@ export type SystemName =
   | 'cleanup';
 
 /**
- * The system pipeline, in order. M6's slots (T600a) are empty passes until their tasks fill their
- * own files: rifts (T602), forcedInput and blockers (T605), fields (T608), traps and swarmlings
- * (T604); gathering and haste auras run inside enemyAbilities (T602, T603).
+ * The system pipeline, in order (architecture.md § Entity model's table). M6's systems each live
+ * in their own file: rifts (sim/rifts.ts), forcedInput and blockers (sim/forcedInput.ts,
+ * sim/blocker.ts), fields (systems/fields.ts), traps (abilities/underfoot.ts) and swarmlings
+ * (sim/swarmlings.ts); gathering and haste auras run inside enemyAbilities, and the aura rule and
+ * Lulled inside links and status (systems/auras.ts, systems/status.ts `lullPass`).
  */
 export const SYSTEMS: readonly { readonly name: SystemName; readonly run: System }[] =
   Object.freeze([

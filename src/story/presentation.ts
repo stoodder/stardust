@@ -11,6 +11,7 @@ import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import type { StoryAct } from '../content/dialogue/types.ts';
 import {
   PRESENTATION,
+  type CounterStyle,
   type PresentationDials,
   type PresentationTable,
 } from '../content/presentation.ts';
@@ -88,4 +89,18 @@ export function loadingTip(dials: PresentationDials, n: number): string {
   const pool = dials.loadingTips;
   const i = Number.isFinite(n) ? Math.abs(Math.trunc(n)) % pool.length : 0;
   return pool[i] ?? pool[0] ?? '';
+}
+
+/**
+ * The counter styles of the acts whose system voice has no exclamations left to spend
+ * (style-guide.md § 2: from Act III only Sterling and Pebble exclaim; the finale's belong to
+ * Pebble, Sterling's last line, and the final lyric): Act III's `meter` and the finale's
+ * `remembered`. The one home of the rule: the Results card's kicker, headline, and marks
+ * (ui/screens/presentationText.ts) and the link callouts (render's LinkView) read it.
+ */
+const NO_EXCLAMATION: ReadonlySet<CounterStyle> = new Set(['meter', 'remembered']);
+
+/** Whether the system's cheer drops its "!" on a map in counter style `style` (NO_EXCLAMATION). */
+export function exclamationsSpent(style: CounterStyle): boolean {
+  return NO_EXCLAMATION.has(style);
 }

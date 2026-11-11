@@ -12,10 +12,10 @@
 // in from the north-east, over the basin, to the gate. Pads sit between the spiral's rings, so a
 // tower there covers two of them, and outside the outer ring beside the rifts.
 //
-// Markers (render draws the ones it knows as props; the Preserve's are T630b's): the back gate (the
-// safe exit), the inner basin and its sign over the inner gate, the warren homes (the Scuttle Den's
-// mounds look like them), the fences the rifts break through, and Bricks's view of it all is none:
-// he's on the radio.
+// Markers (render draws the ones it knows as props, render/views/groundTiles.ts `DECOR_MARKERS`):
+// the back gate (the safe exit), the inner basin and its sign over the inner gate, the warren
+// homes (the Scuttle Den's mounds look like them), the fences the rifts break through, and
+// Bricks's view of it all is none: he's on the radio.
 import { defineMapLayout } from '../../define.ts';
 
 /** The spiral: from the inner basin (12,6) out to the back gate (2,13), 50 tiles. */

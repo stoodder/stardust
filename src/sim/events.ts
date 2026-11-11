@@ -1,8 +1,7 @@
 // Events: the sim's output (architecture.md § Events). Systems push them into `state.events`
 // during a tick; the host drains them after each frame. Systems never read events: inside the
-// sim, systems communicate through state. Every M2–M6 event is declared; the ones whose task
-// hasn't landed are never emitted yet (each names its task). An event's owning task may add
-// payload fields.
+// sim, systems communicate through state. Each event names the task that built it; an event's
+// owning task may add payload fields.
 import type {
   AllyKind,
   AttackKind,
@@ -601,7 +600,7 @@ export type SimEvent<K extends IdSpace = LiveIds> =
       readonly wave: number;
       readonly dark: number;
     }
-  // ── M6 (T600a seams; declared ahead of their tasks, never emitted until each lands) ──────────
+  // ── M6 (declared by T600a; emitted by the tasks each names) ─────────────────────────────────
   | {
       /**
        * A Maw's tendril tell began (T602): for its 1 s it draws `targetUid` (an enemy, or a refugee

@@ -3,15 +3,17 @@
 // tiles (a burrowed one too: Skitterkin follow anything underground), latch on for 4 s dealing
 // 5 Kinetic/s as a DoT (armor bypassed) and Chilled 10% (swarmling chills stack to 30%), then run
 // home and rest 3 s. They can't be harmed and always come home. On a burrowed target the DoT is
-// ×2.5 (`burrowedDotMul`, every tier; T622: riding a digger down, they're in their element). T1 (140) 3 swarmlings; T2 (110) 4;
-// T3 (210) 8/s and a 5 s latch. Big Family (420): 7 swarmlings. Brave Hearts (420): 3 Champions,
-// 20/s and Chilled 15% each, and they leap onto flyers too (the tier targets air).
+// ×2.5 (`burrowedDotMul`, every tier; T622: riding a digger down, they're in their element).
+// T1 (140) 3 swarmlings; T2 (110) 4; T3 (210) 8/s and a 5 s latch. Big Family (420): 7
+// swarmlings. Brave Hearts (420): 3 Champions, 20/s and Chilled 15% each, and they leap onto
+// flyers too (the tier targets air).
 //
 // The numbers are towers.md's first pass, confirmed by T604, which runs the spawner
 // (sim/swarmlings.ts: the dash, the latch, the DoT and stacked chill, the rest). No targeting
 // priority: each swarmling picks the First unit in range, spreading once the chill is stacked.
 // `ratePerSec` restates the DoT tick (4/s; a rate bonus quickens it). Links: Splash Zone
-// (Sprinkler), Finders Keepers (Crane). Sprites: placeholders under their final ids (T640b).
+// (Sprinkler), Finders Keepers (Crane). Sprites: `tower.burrow` and its head, `ally.swarmling` and
+// `ally.champion` (content/sprites/).
 import { DOT_TICK_SEC } from '../rules.ts';
 import { defineTower } from '../define.ts';
 

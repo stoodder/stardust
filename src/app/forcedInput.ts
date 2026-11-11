@@ -12,8 +12,10 @@
 // - **The line after 20 s.** A story timer on real time (never sim ticks), started as the input is
 //   requested and running only while it shows (not under the pause menu, not in a hidden tab), plays
 //   the map's `<map>_cue_<id>_wait` scene once after WAIT_LINE_MS (A3M3: Bricks's "Kid. It's okay.").
-// - **The hum.** HUM_SFX re-struck every HUM_EVERY_MS of real time while it waits (a sound the
-//   registry doesn't have yet plays nothing; T650 makes it).
+// - **The hum.** HUM_SFX (`door_hum`: Bricks low, Pebble above; T650) re-struck every
+//   HUM_EVERY_MS of real time while it waits; the audio side holds the music under it and cuts it
+//   at the press (`FORCED_INPUT_SOUNDS`, audio/eventTablesAct3.ts). Timers and sounds come
+//   through SealDeps, so tests drive them.
 // A press issues the `scriptInput` command, so the moment is in the command log like any other;
 // the sim rejects every other command while it waits (sim/forcedInput.ts), with no notice.
 import { effect } from '@preact/signals';

@@ -7,7 +7,8 @@
 //
 // The field's rules are sim/systems/fields.ts's header (T608): reach, the chill, the pulse (no
 // attack: `Tower.cooldownTicks` is its timer), Gravity Well's pull. Links: Pinned Down (Harpoon),
-// Stillmind (Mindspike). Its tune-up is `tune_bloom` (upgrades/tuneUps.ts). Sprites: T640b's.
+// Stillmind (Mindspike). Its tune-up is `tune_bloom` (upgrades/tuneUps.ts). Sprites: `tower.bloom`
+// and its head (content/sprites/).
 import { defineTower } from '../define.ts';
 
 export const bloom = defineTower({

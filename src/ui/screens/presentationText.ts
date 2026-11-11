@@ -4,7 +4,12 @@
 import type { RunOutcome } from '../../app/testHookTypes.ts';
 import type { CounterStyle } from '../../content/presentation.ts';
 import { formatCount, type ResultsCounter } from '../../story/counter.ts';
-import { loadingTip, presentationBetweenMaps, presentationFor } from '../../story/presentation.ts';
+import {
+  exclamationsSpent,
+  loadingTip,
+  presentationBetweenMaps,
+  presentationFor,
+} from '../../story/presentation.ts';
 import type { SlotView } from './state.ts';
 
 /**
@@ -19,16 +24,12 @@ const HEADLINE: Readonly<Record<RunOutcome, string>> = {
 };
 
 /**
- * Where the act's exclamation budget has run out (style-guide.md § 2: from Act III only Sterling and
- * Pebble exclaim; the finale's belong to Pebble, Sterling's last line, and the final lyric), the
- * system's cheer loses its "!" and keeps its words (*curdle by repetition*): Act III's and the
- * finale's card, by their counter styles.
+ * Drops a trailing "!" where `style`'s act has no exclamations to spend ("!" becomes ".";
+ * story/presentation.ts `exclamationsSpent`): the system's cheer loses its "!" and keeps its
+ * words (*curdle by repetition*), on Act III's and the finale's card.
  */
-const NO_EXCLAMATION: ReadonlySet<CounterStyle> = new Set(['meter', 'remembered']);
-
-/** Drops a trailing "!" where `style`'s act has no exclamations to spend ("!" becomes "."). */
 function spent(style: CounterStyle, text: string): string {
-  return NO_EXCLAMATION.has(style) && text.endsWith('!') ? `${text.slice(0, -1)}.` : text;
+  return exclamationsSpent(style) && text.endsWith('!') ? `${text.slice(0, -1)}.` : text;
 }
 
 /**
@@ -70,7 +71,7 @@ export interface MedalMarks {
 
 /** The medal and objective rows' marks in counter style `style` (style-guide.md § 2). */
 export function medalMarks(style: CounterStyle): MedalMarks {
-  return NO_EXCLAMATION.has(style)
+  return exclamationsSpent(style)
     ? { new: 'New', nextTime: 'Next time.' }
     : { new: 'NEW!', nextTime: 'Next time!' };
 }

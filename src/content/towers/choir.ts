@@ -10,8 +10,8 @@
 // Live since T607: the aura rule (two Choirs don't stack; no Choir aura covers any Choir; the jam
 // rule) is sim/systems/auras.ts, Lulled systems/status.ts `lullPass`. The jam rules are inert data
 // until M7's jammers (D141). Aura arrays replace whole, so each tier restates its aura. Links:
-// Harmony (Mindspike) and Bounce Chorus (Sproing, M7). Sprites: placeholders under their final ids
-// (T640b).
+// Harmony (Mindspike) and Bounce Chorus (Sproing, M7). Sprites: `tower.choir` and its head, with
+// Thrum's voice as extra anims on the same head (content/sprites/).
 import { defineTower } from '../define.ts';
 
 export const choir = defineTower({

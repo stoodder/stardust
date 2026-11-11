@@ -168,7 +168,7 @@ export interface AudioSample {
   readonly state: string | null;
   readonly muted: boolean;
   readonly theme: string | null;
-  readonly layers: Readonly<Record<'base' | 'drums' | 'lead', number>> | null;
+  readonly layers: Readonly<Record<'base' | 'drums' | 'lead' | 'choir', number>> | null;
   readonly voices: number;
   readonly played: Readonly<Record<string, number>>;
 }

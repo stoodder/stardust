@@ -374,8 +374,9 @@ export interface Enemy extends PoolEntity {
   /** Lulled (T607): inside a Lullaby's radius this tick (ability cooldowns ×1.5, a boss's ×1.25). */
   lulled: boolean;
   /**
-   * Lulled's beat (T607; sim/lull.ts): counts the Lulled ticks round its period (3, a boss's 5),
-   * and an ability cooldown holds still on the tick it comes back to 0. 0 while not Lulled.
+   * Lulled's beat (T607; systems/status.ts `lullPass`): counts the Lulled ticks round its period
+   * (3, a boss's 5), and an ability cooldown holds still on the tick it comes back to 0. 0 while
+   * not Lulled.
    */
   lullBeat: number;
   /** Gravity Well (T608): ticks before a Bloom's pulse may pull it back again; 0: it may. */

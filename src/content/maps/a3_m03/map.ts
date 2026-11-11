@@ -225,7 +225,7 @@ export const map = defineMapLayout({
     {
       trait: 'burrowing',
       reason:
-        'A3M3 introduces the Undertow and doom-scripts it behind Bricks; the burrowed exam is the finale’s (campaign.md §5).',
+        'A3M3 introduces the Undertow and doom-scripts it behind Bricks; the burrowed exam is the finale’s (campaign.md §4.8).',
     },
     {
       trait: 'armored',

@@ -8,6 +8,7 @@ import { TEXT_LIMITS, tokenProblems, worstCaseLength } from '../content/dialogue
 import { PRESENTATION, type PresentationTable } from '../content/presentation.ts';
 import { actOf } from './conditions.ts';
 import {
+  exclamationsSpent,
   loadingTip,
   presentationBetweenMaps,
   presentationFor,
@@ -148,5 +149,19 @@ describe('between maps', () => {
       'a',
     ]);
     expect(loadingTip(PRESENTATION.byAct[2], 7)).toBe('Remember: a clean perimeter.');
+  });
+});
+
+describe("the system's exclamations", () => {
+  it("are spent from Act III on: Act III's and the finale's counter styles, one rule for every reader", () => {
+    expect(exclamationsSpent('starred')).toBe(false);
+    expect(exclamationsSpent('plain')).toBe(false);
+    expect(exclamationsSpent('meter')).toBe(true);
+    expect(exclamationsSpent('remembered')).toBe(true);
+    // Every act's own row agrees: Acts I–II still cheer, Act III and the finale don't.
+    expect(exclamationsSpent(PRESENTATION.byAct[1].counter)).toBe(false);
+    expect(exclamationsSpent(PRESENTATION.byAct[2].counter)).toBe(false);
+    expect(exclamationsSpent(PRESENTATION.byAct[3].counter)).toBe(true);
+    expect(exclamationsSpent(PRESENTATION.byAct.finale.counter)).toBe(true);
   });
 });

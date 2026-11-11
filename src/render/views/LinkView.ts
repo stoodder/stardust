@@ -11,6 +11,7 @@ import type * as Phaser from 'phaser';
 import type { ColorName } from '../../content/palettes/master.ts';
 import type { CounterStyle } from '../../content/presentation.ts';
 import { tetherDir } from '../../content/sprites/fx/link_tether.ts';
+import { exclamationsSpent } from '../../story/presentation.ts';
 import { gridToScreen, HALF_H, type Vec2 } from '../iso.ts';
 import { GLYPH_H } from '../vfx/pixelFont.ts';
 import { PULSE_PERIOD_MS } from '../motion.ts';
@@ -72,18 +73,12 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
 };
 
 /**
- * The counter styles of the acts whose system voice has no exclamations left to spend
- * (style-guide.md § 2: Act III's `meter` and the finale's `remembered`; the Results card's rule).
- */
-const QUIET: ReadonlySet<CounterStyle> = new Set(['meter', 'remembered']);
-
-/**
  * A link's callout text: its name in capitals, with feeling in Acts I–II ("CROSSFIRE!"), and
  * without the "!" from Act III on (`counter`, the map's presentation dial), where the system's
- * cheer has run out (T630a).
+ * cheer has run out (story/presentation.ts `exclamationsSpent`; T630a).
  */
 export function calloutText(name: string, counter: CounterStyle = 'starred'): string {
-  return QUIET.has(counter) ? name.toUpperCase() : `${name.toUpperCase()}!`;
+  return exclamationsSpent(counter) ? name.toUpperCase() : `${name.toUpperCase()}!`;
 }
 
 /** A floating number's height in the 3×5 font with its 1 px outline, and the gap kept over it (px). */

@@ -3,8 +3,9 @@
 // Undertow's ripple trail. The gulps and ripples sit in `decal`, under the units; the tendrils in
 // `vfx`, over them, from body to body (a held unit is close enough that under the sprites they'd
 // hide). Redrawn each frame into two Graphics; the gulps are a fixed pool and each Maw's absorb
-// count one map entry: allocation-free per frame. The rift cracks are RiftView's (T630b). The Maw's growth and tendril pose and the
-// Undertow's `under` pose are its sprites' (T640a; EnemyView draws them, gatherLook.ts `mawBody`).
+// count one map entry: allocation-free per frame. The rift cracks are RiftView's (T630b). The
+// Maw's growth and tendril pose and the Undertow's `under` pose are its sprites' (T640a;
+// EnemyView draws them, gatherLook.ts `mawBody`).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import { pointAt, type Ally, type Enemy, type Point } from '../../sim/index.ts';

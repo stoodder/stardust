@@ -6,12 +6,29 @@
 // lands with T622) waits 700 ms before it takes a press and commits the warren once. Which door a
 // battle opens on each answer is app/storyMeta.test.ts's (the Holdout dev range can't take a
 // campaign save) and holdout.spec.ts's; T622's A3M3 flow plays both doors through the real
-// briefing. Screenshots via shot() (smoke/out.ts).
+// briefing. C3's lock runs on the page's clock: the flow pauses it (Playwright's `page.clock`)
+// while the locked button is checked and shot, so a loaded machine can't let the 700 ms pass
+// first. Screenshots via shot() (smoke/out.ts).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 import { nextFrames, playShift, shot, waitForReady } from './hooks.ts';
 
 const save = (page: Page) => page.evaluate(() => globalThis.__sd!.save());
+
+/**
+ * Stops the page's clock just ahead of where it is (time, timers, and frames hold until
+ * `resume`); the margin covers the round trip (the clock can't be moved back), widened on a miss.
+ */
+async function pauseClock(page: Page, margin = 100): Promise<void> {
+  const now = await page.evaluate(() => Date.now());
+  try {
+    await page.clock.pauseAt(now + margin);
+  } catch (e) {
+    // The round trip outran the margin ("Cannot fast-forward to the past"): try a wider one.
+    if (margin >= 3200) throw e;
+    await pauseClock(page, margin * 2);
+  }
+}
 
 test("act III meta: A3M1's Scuttle Den arrives as its loadout first opens", async ({ page }) => {
   await page.goto('/?test=1&seed=1&save=after_a2m6');
@@ -53,6 +70,8 @@ test('act III meta: Results shows gift stones and the Clean Exit with its refund
 });
 
 test('act III meta: C3 waits 700 ms, then commits its door once', async ({ page }) => {
+  // The clock is installed (running as usual) so C3's lock can be held while it is checked.
+  await page.clock.install();
   await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m2_rivet');
   await waitForReady(page);
   expect((await save(page))?.story.flags.door_choice).toBeUndefined();
@@ -63,12 +82,16 @@ test('act III meta: C3 waits 700 ms, then commits its door once', async ({ page 
     // Bricks asks (shown whole under fasttext); Next reads on to the choice.
     await page.getByRole('button', { name: /^(Skip|Next)$/ }).click();
   };
+  // The clock holds from before C3 shows, so its 700 ms can't run out before the look.
+  await pauseClock(page);
   await ask();
   const answer = page.getByRole('group', { name: 'Your answer' });
   const warren = answer.getByRole('button', { name: /The warren tunnel/ });
   await expect(warren).toBeVisible();
   await expect(warren).toHaveAttribute('aria-disabled', 'true');
   await shot(page, 'act-three-meta', 3, 'c3-locked');
+  // Time runs again: the lock passes.
+  await page.clock.resume();
   await expect(warren).not.toHaveAttribute('aria-disabled', 'true');
   await warren.click();
   await expect(answer).toHaveCount(0);

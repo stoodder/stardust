@@ -1,8 +1,8 @@
 // Commands: every player action, as plain serializable data (architecture.md § Commands).
 // Every M2 command is declared and live (`specialize` in specialize.ts, fire control in
 // fireControl.ts). M3's `clear` is live (systems/wreckage.ts, T304b), and M4's `interact`
-// (sim/clickables.ts, T409). M6's `scriptInput` is declared (T600a) and rejected `notImplemented`
-// until T605 runs the forced input (A3M3's SEAL).
+// (sim/clickables.ts, T409). M6's `scriptInput` presses the pending forced input
+// (sim/forcedInput.ts, T605: A3M3's SEAL).
 // `notImplemented` is kept for handlers declared ahead of their task.
 import type { GridPos, IdSpace, LiveIds, MarkerId, TargetPriority } from '../content/types.ts';
 import { assertNever } from '../shared/types.ts';

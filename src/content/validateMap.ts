@@ -1,7 +1,6 @@
 // Map validation (design/maps.md § 9's validation rules; architecture.md § Validation). The route
 // format itself is a compile error (compileMap.ts); this adds the rest:
 // - [feature]: Defend, Protect, Escort, and Holdout maps (the Choir arrives with the finale).
-//   createSim refuses Holdout until T605 (`map.holdout`).
 // - [asset]: a Protect map has an `asset` (and only it does): a short name, a meter ≥ 1, one or more
 //   routes, none twice; its marker sits on decor ([marker]). Its routes end beside it (compile).
 // - [companion]: a present companion and every pick-list entry has a slot-2 ability in the
@@ -214,8 +213,8 @@ function validateMap(
   const where = `maps.${def.id}`;
   const grid = gridOf(def);
 
-  // Feature guards. Holdout is content now (T600a's shapes; createSim refuses it until T605,
-  // `map.holdout`); the Choir arrives with the finale (M8).
+  // Feature guards. Holdout is content (T600a's shapes) and simulated (T605); the Choir arrives
+  // with the finale (M8).
   if (def.objective === 'choir') {
     issues.add(
       'feature',

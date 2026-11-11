@@ -6,8 +6,8 @@
 //   the purchase floats.
 // - **Lulled:** `blue.4` beamed notes settled on the head of each Lulled unit (the sim's
 //   `Enemy.lulled`), right of Unnerved's squiggle, on the body as EnemyView draws it
-//   (unitAnchor.ts), falling back to the grid point and the body's headroom without a view. No event drives any of it: it reads sim state, so it holds while
-//   paused.
+//   (unitAnchor.ts), falling back to the grid point and the body's headroom without a view. No
+//   event drives any of it: it reads sim state, so it holds while paused.
 // Allocation-free per frame: rings and notes are pooled; each ring texture (colour, snapped
 // radius, dash shift) is registered once.
 import type * as Phaser from 'phaser';

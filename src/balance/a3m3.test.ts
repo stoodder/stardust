@@ -1,20 +1,32 @@
-// A3M3's tuning and its beats (T622; act3.md § A3M3). A Holdout: judged on Evacuated % against its
-// 50% floor, outside the monotonic chain (balance/holdout.ts). As tuned (36 refugees through either
-// door), par holds 27/36 (75.0%) through the convoy's door and 29/36 (80.6%) through the warren's.
-// Its losses are the doomed escalation's: the Undertows that come down the rifts behind Bricks in
-// W11–W13 (no build holds them all) and a Moth in W13, each taking one of the sheltered. Without its
-// casts (Suppressing Fire on the east rift's W4 Motes, the W8 cluster at the choke, and the rift
-// Undertows of W11–W12) it ends at 72.2. Both alts reach the floor through both doors (Den + Zapcoil
-// + Skyhook + Lookout 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 52.8 / 58.3). Without air the
-// Moths take the sheltered (30.6 / 30.6); without splash the Mote clusters of W2, W8, W11 and W13
-// flood the choke past Bricks (25.0 / 25.0); doing nothing loses. Air and splash are the map's
-// required counters; burrowing is intel (map.ts `softExempt`): A3M3 introduces the Undertow and
-// doom-scripts it, and the burrowed exam is the finale's (D141, T604c).
+// A3M3's tuning and its beats (T622, T660; act3.md § A3M3). A Holdout: judged on Evacuated % against
+// its 50% floor, outside the monotonic chain (balance/holdout.ts). As tuned (36 refugees through
+// either door), par holds 25/36 (69.4%) through the convoy's door and 27/36 (75.0%) through the
+// warren's, the design's ≈70. Its losses are all the doomed escalation's: the Undertows that come
+// down the rifts behind Bricks in W11–W13 (two, then three, then three: no build holds them all),
+// each taking one of the sheltered (two hush the convoy on its road). Without its casts (Suppressing
+// Fire on the east rift's W4 Motes, the W8 cluster at the choke, and the rift Undertows of W11–W12)
+// it ends at 66.7. Both alts reach the floor through both doors (Den + Zapcoil + Skyhook + Lookout
+// 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 58.3 / 63.9). Without air the Moths take the
+// sheltered (22.2 / 27.8); without splash, Mindspikes where par's Thumpers stand hold every
+// holdable wave but the doomed waves' packed clusters flood the choke past Bricks (27.8 / 30.6);
+// doing nothing loses. Air and splash are the map's required counters; burrowing is intel (map.ts
+// `softExempt`): A3M3 introduces the Undertow and doom-scripts it, and the burrowed exam is the
+// finale's (D141, T604c).
 //
 // The revocation window (A3M2's Clean Exit could take the Rivet, the Thumper, the Sprinkler or the
 // Skyhook; content/validateRevocation.ts checks the counter guarantee statically): each build is run
 // with the class the cue took swapped for the Rivet the player kept, through both doors. The alts
-// and par still reach the floor; no-air and no-splash stay under it.
+// (neither carries a Thumper) still reach the floor, and so does par unless the cue took its
+// Thumper: Rivets in its place make it a no-splash build, and it falls with them (16.7 / 19.4; that
+// player brings the Zapcoil the counter guarantee leaves them, as both alts do). No-air and
+// no-splash stay under the floor.
+//
+// The Seer's Lantern probe (T568; report-only, like A2M6's D138 probes): par with the Lantern in
+// the Prism's place holds 26/36 / 28/36, a match for par, so it is no trap; Truthlight there, bought
+// with par's upgrades from W8 on, lands only in W11 and holds 22 / 24 (its 360 credits don't pay
+// back before the doom, whose Undertows nothing else is placed to kill once marked). In the
+// Mindspike's place the Lantern falls under the floor (12 / 14): the Mindspike is what kills the
+// Undertows, and the Lantern's 4 Psionic/s doesn't.
 //
 // The beats (act3.md § A3M3, Waves): every wave from W2 is `noCall`, so the waves start on fixed
 // ticks; the groups walk out as W1, W4, W7, W9 and W10 start, the last as W14's countdown opens (once
@@ -27,9 +39,9 @@
 // are half again as long, so there the road empties during W14's countdown, before the SEAL.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
-import type { CompiledBuild, CompiledContent } from '../content/compiled.ts';
+import type { CompiledBuild, CompiledBuildStep, CompiledContent } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import type { TowerId, WaveGroup } from '../content/types.ts';
+import type { GridPos, TowerId, WaveGroup } from '../content/types.ts';
 import { createBuildExecutor, createSim, runHeadless, type SimEvent } from '../sim/index.ts';
 import { bothWays, delay, shiftedContent } from './__fixtures__/shifts.ts';
 import { buildFor, runMap } from './harness.ts';
@@ -213,6 +225,38 @@ function expectBeats(b: Beats, label: string, exact = true): void {
 }
 
 const par = (c: CompiledContent = content): CompiledBuild => buildFor('par', c.maps.a3_m03, c)!;
+
+/**
+ * The Lantern probe (T568, report-only): par with its `from` tower swapped for the Seer's Lantern on
+ * the same pad and upgrades. With `truthlight`, par's upgrades from W8 on go instead to the
+ * Lantern's tier 3 (W7) and Truthlight (W8; it lands once the credits are in).
+ */
+function lanternProbe(from: TowerId, truthlight: boolean): CompiledBuild {
+  const p = par();
+  const pad = p.steps.find((st) => st.kind === 'build' && st.tower === from)!;
+  const tile: GridPos = pad.kind === 'build' ? pad.tile : [0, 0];
+  const on = (t: GridPos): boolean => t[0] === tile[0] && t[1] === tile[1];
+  const steps: CompiledBuildStep[] = [];
+  for (const st of p.steps) {
+    if (st.kind === 'build' && st.tower === from) steps.push({ ...st, tower: 'lantern' });
+    else if (truthlight && st.kind === 'upgrade' && !on(st.tile) && st.wave >= 8) continue;
+    else steps.push(st);
+  }
+  if (truthlight) {
+    const at = steps.findIndex((st) => st.wave >= 8);
+    const ranks = steps.filter((st) => st.kind === 'upgrade' && on(st.tile)).length;
+    const buy: CompiledBuildStep[] = [
+      ...Array.from({ length: 2 - ranks }, (): CompiledBuildStep => ({
+        wave: 7,
+        kind: 'upgrade',
+        tile,
+      })),
+      { wave: 8, kind: 'specialize', tile, spec: 'b' },
+    ];
+    steps.splice(at, 0, ...buy);
+  }
+  return { ...p, loadout: p.loadout.map((t) => (t === from ? 'lantern' : t)), steps };
+}
 const build = (label: string): CompiledBuild => buildFor(label, content.maps.a3_m03, content)!;
 
 /** Every group of `enemy`, in every wave, `d` s later. */
@@ -253,15 +297,17 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(Object.keys(m.builds.noCounterBuilds).toSorted()).toEqual(['air', 'splash']);
   });
 
-  it('holds par at 27/36 through the convoy and 29/36 through the warren', () => {
+  it('holds par at 25/36 through the convoy and 27/36 through the warren', () => {
     const p = run('par').result!;
     expect([p.outcome, p.stats.evacuated, p.escortTotal, p.forcedInputs]).toEqual([
       'won',
-      27,
+      25,
       36,
       ['seal'],
     ]);
-    expect(run('flag:door_choice=warren').result!.stats.evacuated).toBe(29);
+    expect(run('flag:door_choice=warren').result!.stats.evacuated).toBe(27);
+    // Every loss is the doom's (W11–W13): it holds every wave before.
+    expect(p.waves.slice(0, 10).every((w) => w.refugeesLost === 0)).toBe(true);
     // Much Obliged (≥ 60%) earned; Held the Door (≥ 85%, Perfect's slot) not.
     expect(p.medals).toMatchObject({ victory: 'earned', perfectCore: 'forfeited' });
     expect(p.medals.challenge).toBe('earned');
@@ -282,11 +328,14 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it.each(REVOCABLE)(
-    'with the Clean Exit having taken the %s: alts and par hold, no-air and no-splash fall, both doors',
+    'with the Clean Exit having taken the %s: the alts hold, no-air and no-splash fall, both doors',
     (taken) => {
       for (const door of DOORS) {
         const at = `${taken}, ${door}`;
-        expect(evacuatedPct('par', door, taken), at).toBeGreaterThanOrEqual(65);
+        // Par holds unless the class was its splash: Rivets in the Thumpers' place hold no cluster.
+        const parPct = evacuatedPct('par', door, taken);
+        if (taken === 'thumper') expect(parPct, at).toBeLessThan(50);
+        else expect(parPct, at).toBeGreaterThanOrEqual(65);
         for (const alt of ['alt:coils', 'alt:no_everglow']) {
           expect(evacuatedPct(alt, door, taken), `${alt} ${at}`).toBeGreaterThanOrEqual(50);
         }
@@ -301,6 +350,33 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     for (const door of DOORS) {
       for (const nc of ['noCounter:air', 'noCounter:splash']) {
         expect(evacuatedPct(nc, door, 'rivet', 'full'), `${nc} ${door}`).toBeLessThan(50);
+      }
+    }
+  });
+
+  // The Lantern probe's numbers are in the header; the probe only asserts that each run plays its
+  // script whole to the SEAL and that the Lantern in the Prism's place is no trap (the floor).
+  it('reports the Lantern probe: in the Prism’s place it holds the floor, Truthlight too', () => {
+    const map = content.maps.a3_m03;
+    const ref = referenceRunProfile(map, content);
+    const profile = { ...ref, specs: [...ref.specs, 'lantern' as const] };
+    const probes = {
+      prism: lanternProbe('prism', false),
+      truthlight: lanternProbe('prism', true),
+      mindspike: lanternProbe('mindspike', false),
+    };
+    for (const [name, b] of Object.entries(probes)) {
+      for (const door of DOORS) {
+        const r = runHeadless(runConfig(content, map, b, profile, 1, { door_choice: door }), b);
+        const at = `${name} ${door}`;
+        expect(r.forcedInputs, at).toEqual(['seal']);
+        expect(
+          r.steps.every((st) => st.error === null && st.issuedTick >= 0),
+          at,
+        ).toBe(true);
+        if (name !== 'mindspike') {
+          expect((100 * r.stats.evacuated) / r.escortTotal, at).toBeGreaterThanOrEqual(50);
+        }
       }
     }
   });
@@ -333,7 +409,7 @@ describe('A3M3 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       const c = shiftedContent('a3_m03', patches);
       for (const door of DOORS) {
         const b = beats(c, par(c), door);
-        expect(b.evacuated, door).toBeGreaterThanOrEqual(25);
+        expect(b.evacuated, door).toBeGreaterThanOrEqual(24);
         expectBeats(b, `par ${door}`);
       }
     },

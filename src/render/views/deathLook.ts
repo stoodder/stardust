@@ -14,7 +14,7 @@
 //   that drift up and away. Never a pop, never warm colour.
 // - `shutdown` (Everglow Security, every act; enemies.md § 8: a clean shutdown and a falling price
 //   tag; T603): no pop, no debris: a power-off line at the body and a price tag dropping to the
-//   ground (EverglowView, everglowLook.ts; T640a draws them as sprites).
+//   ground (EverglowView, everglowLook.ts; the `fx.power_off` and `fx.price_tag` sprites).
 // - `burst` (a sprite with no death anim): `fx.explosion`.
 import type { SkitterkinDeath } from '../../content/presentation.ts';
 import type { EnemyFaction } from '../../content/types.ts';
