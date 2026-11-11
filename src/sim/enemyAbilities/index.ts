@@ -16,6 +16,7 @@
 // 5. Shield-recharge auras over every unit at once (shieldAura.ts: the Aegis Cantor; T502).
 // 6. M6 (T600a slots): gathering over every unit at once (gather.ts: the Maw; T602), then haste
 //    auras (hasteAura.ts: the Expediter; T603), so movement reads this tick's haste.
+// 7. M7: healer auras over every unit at once (healAura.ts: the Maintenance Associate; T703).
 // Units born this tick (a boss's young) are visited by the later passes like any other.
 // Elsewhere: splitting runs from cleanup over the tick's kills (split.ts); a boss's phase changes
 // and ending run from the damage pipeline (bossPhases.ts) and the `bossEnd` script action; who
@@ -26,6 +27,7 @@ import type { TickContext } from '../tick.ts';
 import { blinkStep } from './blink.ts';
 import { gatherPass } from './gather.ts';
 import { hasteAuraPass } from './hasteAura.ts';
+import { healAuraPass } from './healAura.ts';
 import { bossHuddle, bossStep } from './boss.ts';
 import { burrowStep } from './burrow.ts';
 import { huddleStep } from './huddle.ts';
@@ -46,6 +48,7 @@ export { cloakedOut } from './cloak.ts';
 export { activeBlink, blinkLanding, blinkTelling } from './blink.ts';
 export { projectedAura } from './shieldAura.ts';
 export { projectedHaste } from './hasteAura.ts';
+export { healRate, projectedHeal, type HealUnits } from './healAura.ts';
 export { phaseTelling, solidTicks } from './phase.ts';
 
 export function enemyAbilities(state: SimState, ctx: TickContext): void {
@@ -89,4 +92,5 @@ export function enemyAbilities(state: SimState, ctx: TickContext): void {
   shieldAuraPass(state, ctx);
   gatherPass(state, ctx);
   hasteAuraPass(state, ctx);
+  healAuraPass(state, ctx); // T703
 }

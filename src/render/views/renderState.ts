@@ -118,6 +118,8 @@ export interface RenderState {
   };
   /** BloomView (T608): Stasis Bloom fields drawn now, and those flashing for a pulse now. */
   readonly bloom: { readonly fields: number; readonly flashing: number };
+  /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
+  readonly gloop: { readonly puddles: number; readonly spawned: number };
   /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
    * growth ring, ripples drawn behind burrowed Hollow units; and each rift lane's status as its

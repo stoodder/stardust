@@ -56,6 +56,17 @@ export function links(state: SimState, ctx: TickContext): void {
   countUptime(state, ctx.content.links);
 }
 
+/**
+ * Recomputes the links and bonuses now if `state.linksDirty` (a jam starting or ending after this
+ * tick's links pass: sim/jam.ts, T702), so a Jammed tower's links and auras are off from the tick
+ * it's jammed. Uptime is the links pass's alone.
+ */
+export function relinkIfDirty(state: SimState, ctx: TickContext): void {
+  if (!state.linksDirty) return;
+  recompute(state, ctx);
+  state.linksDirty = false;
+}
+
 /** The run's link and tile fractions after modifiers. */
 interface TileAndLinkRules {
   /** Every link bonus × this (1 + Σ `linkBonus` pct). */
@@ -116,6 +127,7 @@ function recompute(state: SimState, ctx: TickContext): void {
       for (let dc = -LINK_ADJACENCY_TILES; dc <= LINK_ADJACENCY_TILES; dc++) {
         const n = towerAt(state, map, t.col + dc, t.row + dr);
         if (n === null || n.uid <= t.uid || n.def === null) continue;
+        if (t.jamTicks > 0 || n.jamTicks > 0) continue; // a Jammed partner breaks it (T702)
         for (const link of content.links) {
           const [a, b] = link.partners;
           const matches =

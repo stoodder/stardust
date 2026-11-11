@@ -1739,3 +1739,11 @@ What changed:
 - Step shares are rebalanced (smoke 420, sim 90 beside it), and the 480 s budget is a wall-time total.
 
 Projection: M7 adds about 70–100 s, which puts a quiet gate at ~600–640 s, past the 10-minute command limit. Main's recommendation to the owner, who still holds the D145 fork: **the split gate**. That means a fast per-task gate (typecheck, lint, test, build, sim, and the task's own smoke specs), with the full gate run by the orchestrator per wave and at the milestone. This is how M7 already works in practice (the gate policy in the agent rules), so only CLAUDE.md's step 5 wording and a `check:fast` script would change (T766). Until the owner answers, every wave and the milestone still pass the full gate, which reports over budget but doesn't fail on time.
+
+### D148 — 2026-11-11 — Owner: the split gate
+
+The owner, on D147's fork: "I'm down to run a fast check where it makes sense". So the gate splits in two.
+- **Per task:** `npm run check:fast -- <smoke specs…>` (`tools/gate.ts --fast`). It runs every step whole except smoke, which runs only the named specs (the task's own and the flows its change touches), against a 5-minute budget.
+- **Whole gate:** `npm run check`, with every smoke flow and the 8-minute budget it reports against. The orchestrator runs it on each wave's integrated tree, after each round of review fixes, and before shipping. A task that changes shared infrastructure (`tools/`, configs, the smoke harness, BattleScene's wiring) runs the whole gate itself.
+
+The old `check:fast` (typecheck, lint, test, the inner loop) is replaced. The inner loop is `npm run test`, a single `sim -- --map`, or `smoke -- -g`. CLAUDE.md step 5 and conventions.md § The test loop say this. The whole gate's time overrun (D147) stays a warning. T766 tracks the rest of the trims.

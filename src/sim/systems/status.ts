@@ -263,7 +263,8 @@ export function lullPass(state: SimState): void {
     if (any && e.alive && e.def !== null && !e.def.neutral && !untargetable(e)) {
       for (let j = 0; j < towers.used && !lulled; j++) {
         const t = towers.items[j]!; // j < used ≤ items.length
-        const lull = t.alive && t.tierDef !== null ? t.tierDef.lull : null;
+        // A Jammed Choir (T702; sim/jam.ts) sings no Lullaby.
+        const lull = t.alive && t.tierDef !== null && t.jamTicks === 0 ? t.tierDef.lull : null;
         if (lull !== null && distSqTo(t.x, t.y, e) <= lullReachSq(lull, t.detectPct)) lulled = true;
       }
     }

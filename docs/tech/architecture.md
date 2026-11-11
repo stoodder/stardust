@@ -545,7 +545,7 @@ The npm scripts that make up the test loop (D002) are defined here. **What each 
 | `smoke` | `playwright test --trace off`: browser smoke tests against `npm run preview` |
 | `check:docs` | `node --experimental-strip-types tools/check-docs.ts`: link and docs-index checks |
 | `check` | **The whole gate:** `node --experimental-strip-types tools/gate.ts`: `typecheck`, `lint`, `test`, `build`, `sim`, `smoke`, `check:docs` in order, failing fast, then each step's time against its budget ([conventions.md § Gate time](conventions.md#gate-time)) |
-| `check:fast` | `typecheck && lint && test` (inner dev loop only, never the gate) |
+| `check:fast` | **The per-task gate** (D148): `node --experimental-strip-types tools/gate.ts --fast <smoke specs…>`: the whole gate's steps with `smoke` cut to the named specs ([conventions.md § The test loop](conventions.md#the-test-loop)) |
 
 `package.json` sets `"type": "module"` and `"engines": { "node": ">=22.6" }`.
 

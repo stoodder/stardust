@@ -157,6 +157,13 @@ export interface SimStats {
   // M7 (T700a seams; each counted by the task named).
   /** The most towers Jammed at once this run (Keep the Lights On: ≤ 1; T702). */
   jammedPeak: number;
+  /**
+   * The jam limit's tallies (sim/jam.ts; T702): ticks with more than JAM_MAX_TOWER_SHARE of the
+   * live towers Jammed (harness #10: none in par), and tower-ticks Jammed and alive (jam uptime).
+   */
+  jamOverLimitTicks: number;
+  jammedTowerTicks: number;
+  towerTicks: number;
   /** The longest single Hostile Takeover jam this run, in ticks (Declined: ≤ 60, 1 s; T707). */
   takeoverJamTicks: number;
   /** Bearers who reached home (A3M5's Results line; T706). */
@@ -492,6 +499,9 @@ export function createState(map: CompiledMapDef<IdSpace>, seed: number): SimStat
       refugeesGathered: 0,
       revocations: 0,
       jammedPeak: 0,
+      jamOverLimitTicks: 0,
+      jammedTowerTicks: 0,
+      towerTicks: 0,
       takeoverJamTicks: 0,
       bearersHome: 0,
     },

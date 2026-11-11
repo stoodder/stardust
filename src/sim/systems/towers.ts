@@ -39,6 +39,9 @@
 // - A tower holding fire (`holdFire`) doesn't attack: it drops its target and its cooldown keeps
 //   counting down, so it can fire the tick it's released. Its links and bonuses are untouched.
 //   `stats.holdFireTicks` counts ticks with any live tower holding.
+// - A Jammed tower (`jamTicks` > 0; enemies.md § 4, sim/jam.ts, T702) holds the same way: it drops
+//   its target, vents a charge, puts its beams out, and its cooldown keeps counting down. It isn't
+//   holding fire (`holdFireTicks` doesn't count it); its links and auras are the links system's.
 // - With the spare-runners filter (`spareRunners`), a single-target tower never picks or keeps a
 //   `fleeing` or `youngling` unit (combat/targeting.ts), and a pulse only goes off when an unspared
 //   unit is in range (a pulse picks no target, so it waits like a tower with none). Splash, and a
@@ -78,6 +81,7 @@ import {
 import { PROJECTILE_BLANK, type Enemy, type Projectile, type Tower } from '../entities.ts';
 import { isSpared, trackNotFiring } from '../fireControl.ts';
 import { pointAt } from '../path.ts';
+import { armShot } from '../puddles.ts';
 import { poolAlloc } from '../pool.ts';
 import { emit, takeUid, type SimState } from '../state.ts';
 import type { TickContext } from '../tick.ts';
@@ -98,7 +102,8 @@ export function towers(state: SimState, ctx: TickContext): void {
     if (attack === null) continue;
     if (t.cooldownTicks > 0) t.cooldownTicks--;
     if (t.burstTicks > 0) t.burstTicks--;
-    if (t.holdFire) {
+    // Holding fire, or Jammed (enemies.md § 4; T702, sim/jam.ts): it doesn't attack.
+    if (t.holdFire || t.jamTicks > 0) {
       t.targetUid = 0;
       t.targetSlot = -1;
       t.chargeTicks = 0;
@@ -511,6 +516,7 @@ function launch(
   p.hitsGround = tier.targets.ground;
   p.hitsAir = tier.targets.air;
   p.effects = tier.effects;
+  armShot(p, t, tier); // T705: Big Glorp's puddle and a link's Corroded, fixed at fire time
   return p;
 }
 

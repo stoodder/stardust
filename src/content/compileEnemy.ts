@@ -92,6 +92,7 @@ export function compileEnemy<Id extends string>(ctx: Ctx, def: EnemyDef<Id>): Co
           },
     jam: def.jam === undefined ? null : compileJam(ctx, def.jam, `${where}.jam`),
     healAura: def.healAura === undefined ? null : compileHealAura(def.healAura),
+    openPanel: false, // a run's faction armor modifier sets it (sim/factionArmor.ts; T703)
     hushes: hushesOf(def),
     cloaked: def.traits.includes('cloaked'),
     neutral: def.neutral === true,

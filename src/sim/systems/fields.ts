@@ -71,7 +71,7 @@ export function fields(state: SimState, ctx: TickContext): void {
     const t = towers.items[j]!; // j < used ≤ items.length
     if (!t.alive || t.def === null || t.tierDef === null || t.tierDef.field === null) continue;
     if (t.cooldownTicks > 0) t.cooldownTicks--;
-    if (t.holdFire) continue;
+    if (t.holdFire || t.jamTicks > 0) continue; // Jammed (T702): its field goes quiet
     fieldTick(state, ctx, t, t.tierDef.field);
   }
 }

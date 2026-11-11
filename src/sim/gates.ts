@@ -284,7 +284,7 @@ export const FEATURE_GATES: Readonly<Record<Feature, GateOwner | null>> = Object
   // (T703), the Sproing Pad (T704), the Gloop Spitter's puddle (T705), bearers and flag-gated
   // posts (T706), the Auditor and Shareholder Value (T707), the Gathering Maw (T708).
   'attack.leaper': 'T704',
-  'tower.puddle': 'T705',
+  'tower.puddle': null, // T705 lifted: sim/puddles.ts
   'ability.reboot': 'T702',
   'enemy.jam': 'T702',
   'enemy.jam.ring': 'T707',

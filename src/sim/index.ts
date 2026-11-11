@@ -36,6 +36,7 @@ export { activeBlink, blinkLanding, blinkTelling } from './enemyAbilities/blink.
 export { phaseTelling } from './enemyAbilities/phase.ts';
 export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
+export { healRate, projectedHeal, type HealUnits } from './enemyAbilities/healAura.ts'; // T703
 export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
 export { riftStatus, type RiftStatus } from './rifts.ts';
 export { escortMaxLost, escortTotal, gatedFlagDefaults } from './escort.ts'; // T605, T612; R7

@@ -120,6 +120,10 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
   // The Stasis Bloom's: Pinned Down's wider field, Stillmind's sooner pulse (T608).
   if (p.fieldRadiusTiles !== undefined) parts.push(`field +${p.fieldRadiusTiles} radius`);
   if (p.pulseSoonerSec !== undefined) parts.push(`pulses ${p.pulseSoonerSec} s sooner`);
+  // Acid Rain, Sticky Flak (T705).
+  if (p.corrodedStacks !== undefined) {
+    parts.push(`hits add ${p.corrodedStacks} Corroded ${p.corrodedStacks === 1 ? 'stack' : 'stacks'}`);
+  }
   return parts.join(', ');
 }
 

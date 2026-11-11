@@ -111,6 +111,7 @@ import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { BloomView } from '../views/BloomView.ts'; // T608
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { TrapView } from '../views/TrapView.ts'; // T604
+import { PuddleView } from '../views/PuddleView.ts'; // T705
 import { RevokedView } from '../views/RevokedView.ts'; // T606
 import { towerVoice } from '../views/towerLook.ts'; // T630a
 import { nightRings } from '../views/nightRings.ts'; // T630a
@@ -280,6 +281,7 @@ export class BattleScene extends Phaser.Scene {
   #bloom!: BloomView; // T608: the Stasis Bloom's field disc and its pulse
   #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
   #traps!: TrapView; // T604: Underfoot's trap ring and its springs
+  #puddles!: PuddleView; // T705: Big Glorp's puddles
   #revoked!: RevokedView; // T606: the LICENSE REVOKED stamp over a revoked class's towers
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
   #mind!: MindView;
@@ -472,6 +474,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bloom = new BloomView(ctx, prefersReducedMotion); // T608, T630a
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
+    this.#puddles = new PuddleView(ctx, prefersReducedMotion); // T705
     this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx, anchors); // T630a (T567): on the body as drawn
@@ -663,6 +666,7 @@ export class BattleScene extends Phaser.Scene {
       this.#bloom.reset(); // T608
       this.#swarm.reset(); // T604
       this.#traps.reset(); // T604
+      this.#puddles.reset(); // T705
       this.#revoked.reset(); // T606
       this.#mind.reset();
       this.#marks.reset();
@@ -716,6 +720,7 @@ export class BattleScene extends Phaser.Scene {
     this.#bloom.update(state, dt); // T608; T630a: its burst ring and pull streaks
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#traps.update(state.zones, state.trapSprung); // T604
+    this.#puddles.update(state.zones); // T705
     this.#revoked.update(dt); // T606
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
@@ -872,6 +877,7 @@ export class BattleScene extends Phaser.Scene {
         lulled: this.#choir.lulled,
       }, // T607
       bloom: { fields: this.#bloom.fields, flashing: this.#bloom.flashing }, // T608
+      gloop: this.#puddles.shown, // T705
       revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,

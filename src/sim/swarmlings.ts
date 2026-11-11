@@ -235,7 +235,7 @@ function home(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Sp
   }
   // Its rest counts the arrival's pass: it heads out on the restTicks-th pass after.
   if (a.swarmTicks > 0 && --a.swarmTicks > 0) return;
-  if (den.holdFire) return;
+  if (den.holdFire || den.jamTicks > 0) return; // Jammed (T702): as holding fire
   const target = pick(state, ctx, den, attack, a);
   if (target === null) return;
   a.swarmState = 'out';
@@ -252,7 +252,7 @@ function dash(
   attack: Spawner,
   speed: number,
 ): void {
-  if (den.holdFire) {
+  if (den.holdFire || den.jamTicks > 0) {
     turnBack(a);
     return;
   }
@@ -288,7 +288,12 @@ function keepsChasing(ctx: TickContext, den: Tower, attack: Spawner, a: Ally, e:
 /** Latched on: rides its target, lands its DoT ticks, adds its chill; lets go when it's over. */
 function hold(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Spawner): void {
   const target = enemyAt(state, a.targetSlot, a.targetUid);
-  if (den.holdFire || target === null || !reachable(target, a.hitsGround, a.hitsAir)) {
+  if (
+    den.holdFire ||
+    den.jamTicks > 0 ||
+    target === null ||
+    !reachable(target, a.hitsGround, a.hitsAir)
+  ) {
     letGo(state, a);
     return;
   }

@@ -421,6 +421,11 @@ export interface CompiledEnemyDef<Id extends string = string> {
   /** EnemyDef.healAura per tick (the Maintenance Associate; T703), or null. */
   readonly healAura: CompiledHealAura | null;
   /**
+   * C4 Purge's open maintenance panel (T703; sim/factionArmor.ts): a faction armor modifier
+   * lowered this run's armor. Never authored: false in content, set on the run's scaled def.
+   */
+  readonly openPanel: boolean;
+  /**
    * Hushes under the hush rule (enemies.md § 5.4): derived, true for a non-boss Hollow unit that
    * doesn't gather (a Maw's one hush is a gather). Run by enemyAbilities/hush.ts (T402).
    */

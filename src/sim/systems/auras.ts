@@ -16,8 +16,8 @@
 //   aura (range, or fire rate with Overclock Rig), so two Lookouts give only the stronger bonus.
 //   "Strongest" is a source's strongest covering aura of the kind; ties go to the lower slot.
 // - **The jam rule** (`Tower.jamMul`): the lowest `jamMul` of the sources of any kind covering it
-//   (1: none; the Choir's T1 0.5, T3 0.25, Rally Chorus 0: immune). Inert until M7's jammers
-//   (D141): nothing reads it yet. A Jammed tower provides no auras then.
+//   (1: none; the Choir's T1 0.5, T3 0.25, Rally Chorus 0: immune). sim/jam.ts reads it as a jam
+//   lands (T702). A Jammed tower (`jamTicks` > 0) provides no auras, its jam rule included.
 // Allocation-free; O(towers² × kinds), only on a recompute.
 import { AURA_KINDS, type AuraKind } from '../../content/rules.ts';
 import type { TowerStat } from '../../content/types.ts';
@@ -72,6 +72,7 @@ export function applyAuras(state: SimState, ctx: TickContext, powerNodeAuraPct: 
       for (let j = 0; j < pool.used; j++) {
         const s = pool.items[j]!; // j < used ≤ items.length
         if (j === i || !s.alive || s.tierDef === null || s.tierDef.auras.length === 0) continue;
+        if (s.jamTicks > 0) continue; // a Jammed tower provides no auras (T702; sim/jam.ts)
         const support = s.tierDef.attack === null;
         const onNode = support && liveTileAt(map, state.wreckage, s.row * map.cols + s.col) === '+';
         const tuned = support && s.def !== null ? supportPct(modifiers, s.def.id, 'aura') : 0;

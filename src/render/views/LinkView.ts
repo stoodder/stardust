@@ -70,6 +70,10 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   harmony: { ring: 'violet.3', text: 'gold.4' },
   pinned_down: { ring: 'blue.3', text: 'white.1' },
   stillmind: { ring: 'violet.3', text: 'white.1' },
+  // M7's (T705 first pass; T730a may restyle them): the Gloop's acid green over the Thumper's
+  // orange shells and the Skyhook's violet flak.
+  acid_rain: { ring: 'orange.3', text: 'green.4' },
+  sticky_flak: { ring: 'violet.3', text: 'green.4' },
 };
 
 /**
