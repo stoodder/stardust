@@ -100,9 +100,9 @@ function split(state: SimState, ctx: TickContext, b: Enemy) {
 }
 
 describe('the Gathering Maw’s data and gates (D146)', () => {
-  it('4400 HP, armor 4, speed 0.3; gathers 2 tiles every 5 s (1.5 s tell); 3 × 20%, merge 12 s, Haste 30%', () => {
+  it('4000 HP, armor 4, speed 0.3; gathers 2 tiles every 5 s (1.5 s tell); 3 × 20%, merge 12 s, Haste 30%', () => {
     expect([GMAW.hp, GMAW.armor, GMAW.speedTilesPerTick * 60, GMAW.bounty]).toEqual([
-      4400, 4, 0.3, 0,
+      4000, 4, 0.3, 0,
     ]);
     expect(GATHER).toMatchObject({ everyTicks: 300, tellTicks: 90, radiusSq: 4, maxAbsorbs: 5 });
     expect(GATHER.tellTicks).toBeGreaterThanOrEqual(secToTicks(BOSS_MIN_TELL_SEC));
@@ -115,7 +115,7 @@ describe('the Gathering Maw’s data and gates (D146)', () => {
       mergeHastePct: 0.3,
     });
     expect([PART.hp, PART.armor, PART.speedTilesPerTick * 60, PART.bounty]).toEqual([
-      880, 4, 0.3, 0,
+      800, 4, 0.3, 0,
     ]);
     expect(PART.boss).not.toBeNull(); // boss rules
     expect(MERGE_TELL_TICKS).toBe(secToTicks(BOSS_MIN_TELL_SEC));
@@ -139,7 +139,7 @@ describe('phase 1: the wide gather (gather.ts at the phase’s numbers)', () => 
     expect(of(gathered, 'Gathered')).toEqual([]);
     gathered.push(...run(state, ctx, 1));
     expect(of(gathered, 'Gathered')).toMatchObject([{ uid: b.uid, victim: 'fracture', hp: 200 }]);
-    expect([b.hp, b.bonusMaxHp, b.absorbs]).toEqual([4600, 200, 1]);
+    expect([b.hp, b.bonusMaxHp, b.absorbs]).toEqual([4200, 200, 1]);
     expect(gatherScale(b)).toBeCloseTo(1.1);
     expect(far.alive).toBe(true); // 2.5 tiles: out of reach
     // A boss's leak drains everything; its absorbs add no bounty.
@@ -201,7 +201,7 @@ describe('the split at 50% (bossSplit.ts)', () => {
     const parts = live(state);
     expect(parts.map((p) => p.uid)).toEqual(s!.parts);
     expect(parts.map((p) => [p.def!.id, p.hp, p.ownerUid, p.bossPhase, p.splitMaxHp])).toEqual(
-      Array.from({ length: 3 }, () => ['gathering_maw_part', 880, uid, 2, 2640]),
+      Array.from({ length: 3 }, () => ['gathering_maw_part', 800, uid, 2, 2400]),
     );
     expect(parts.map((p) => p.dist)).toEqual([4 - SPLIT_SPREAD_TILES, 4, 4 + SPLIT_SPREAD_TILES]);
     expect(parts.every((p) => p.splitFrom === GMAW && p.mergeTicks === SPLIT.mergeAfterTicks)).toBe(
@@ -210,7 +210,7 @@ describe('the split at 50% (bossSplit.ts)', () => {
     expect(parts.every((p) => isSplitPart(p) && isSplitBorn(p) && p.invulnerableTicks === 0)).toBe(
       true,
     );
-    expect(splitHp(state.enemies, uid)).toBe(2640); // the one bar: 2640 of 2640
+    expect(splitHp(state.enemies, uid)).toBe(2400); // the one bar: 2400 of 2400
   });
 
   it('parts follow boss rules (Stasis is Chilled 50%) but die at 0 HP like units', () => {
@@ -250,7 +250,7 @@ describe('the merge (bossMerge.ts)', () => {
     expect(one!.uid).toBe(m!.uid);
     expect([one!.def, one!.hp, one!.bossPhase, one!.invulnerableTicks]).toEqual([
       GMAW,
-      2640 - dealt, // the survivors' HP summed
+      2400 - dealt, // the survivors' HP summed
       3,
       BOSS_PHASE_INVULNERABLE_TICKS,
     ]);
@@ -264,8 +264,8 @@ describe('the merge (bossMerge.ts)', () => {
     run(state, ctx, 1);
     expect(one!.paceMul).toBeCloseTo(1 + Math.min(SPLIT.mergeHastePct, HASTE_CAP));
     expect(gatherOf(one!)).toBeNull(); // the merged Maw gathers no more
-    expect(splitHp(state.enemies, one!.ownerUid)).toBe(2640 - dealt);
-    expect(one!.splitMaxHp).toBe(2640);
+    expect(splitHp(state.enemies, one!.ownerUid)).toBe(2400 - dealt);
+    expect(one!.splitMaxHp).toBe(2400);
   });
 
   it('walks together in its last 1.5 s: the lead holds, the others close on it hasted', () => {
@@ -304,7 +304,7 @@ describe('the merge (bossMerge.ts)', () => {
     const events = run(state, ctx, 1);
     expect(of(events, 'BossMerged')).toHaveLength(1);
     const [one] = live(state);
-    expect([one!.def, one!.hp, one!.bossPhase]).toEqual([GMAW, 880 - dealt, 3]);
+    expect([one!.def, one!.hp, one!.bossPhase]).toEqual([GMAW, 800 - dealt, 3]);
   });
 
   it('never comes when all three parts die before it: the boss is beaten', () => {

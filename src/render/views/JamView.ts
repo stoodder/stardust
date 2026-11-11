@@ -1,8 +1,13 @@
-// The jams' view, minimal (T702; jamLook.ts has the rules; T730a polishes it): each Silencer's
-// creeping tendril toward the tower it picked, and on each Jammed tower its static and countdown
-// arc, redrawn each frame into two Graphics on the vfx layer (the tendril under the static); and
-// System Reboot's pops (TransientFx rings) on the towers it freed and every tower it covered.
-// Allocation-free per frame: the scratch points are module-level, the Graphics redraw in place.
+// The jams' view (T702's minimal one, polished by T730a; jamLook.ts has the rules): each
+// Silencer's creeping tendril toward the tower it picked, and on each Jammed tower T740a's
+// `fx.jam_static` crackling over it (the tower itself draws in its steel `+jammed` variant:
+// TowerView) and its countdown ring round its base; and System Reboot's pops: each tower it freed
+// flashes white (`flashTower`, TowerView's upgrade flash) under a teal power-on column and ring,
+// every tower it covered a smaller white ring (TransientFx). The tendrils, rings, and columns
+// redraw each frame into one Graphics on the vfx layer, the static in pooled sprites over it.
+// Allocation-free per frame: the scratch points are module-level, the Graphics redraws in place,
+// the static and column slots are reused (the static pool grows the first time more towers are
+// Jammed at once than it holds).
 import type * as Phaser from 'phaser';
 import type { IdSpace } from '../../content/types.ts';
 import type { Bus } from '../../shared/bus.ts';
@@ -11,16 +16,20 @@ import type { Enemy, SimEvent, Tower } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
 import {
   ARC_COLOR,
-  ARC_RADIUS_PX,
   hexOf,
   jamArc,
   REBOOT_COLOR,
-  STATIC_COLORS,
-  STATIC_SPARKS,
-  staticSpark,
+  REBOOT_COLUMN_W,
+  rebootColumn,
+  RING_SEGMENTS,
+  ringPoint,
+  STATIC_ANIM,
+  STATIC_SPRITE,
+  STATIC_STILL_FRAME,
   TENDRIL_CORE,
   TENDRIL_TIP,
   TENDRIL_UNDER,
+  tendrilBeadPx,
   tendrilReach,
 } from './jamLook.ts';
 import { BODY_LIFT_PX, type TransientFx } from './TransientFx.ts';
@@ -42,15 +51,35 @@ const UNDER = hexOf(TENDRIL_UNDER);
 const CORE = hexOf(TENDRIL_CORE);
 const TIP = hexOf(TENDRIL_TIP);
 const ARC = hexOf(ARC_COLOR);
-const STEPS = 6;
+const TEAL = hexOf(REBOOT_COLOR);
+const WHITE = hexOf('white.1');
+const STEPS = 8;
 const WAVE_PX = 1.5;
-/** Static rises over the tower's body: its dashes centre this high above the tile's centre. */
-const TOWER_BODY_PX = 6;
+/** The tendril reaches the tower's body, this high above its tile's centre. */
+const TOWER_BODY_PX = 8;
+/** Static sprites made up front (more are made as needed). */
+const STATIC_SLOTS = 8;
+/** Reboot columns at once (the oldest is reused). */
+const MAX_COLUMNS = 24;
+const STATIC = STATIC_SPRITE;
 
 const a: Vec2 = { x: 0, y: 0 };
 const b: Vec2 = { x: 0, y: 0 };
-const STATIC_HEX: readonly number[] = STATIC_COLORS.map(hexOf);
-const spark = { dx: 0, dy: 0, color: 0 };
+const p0 = { x: 0, y: 0 };
+const p1 = { x: 0, y: 0 };
+
+interface StaticSlot {
+  readonly sprite: Phaser.GameObjects.Sprite;
+  /** The tower it crackles on (0: free), and whether it shows the still frame. */
+  uid: number;
+  still: boolean;
+}
+
+interface Column {
+  active: boolean;
+  uid: number;
+  ms: number;
+}
 
 function findTower(towers: Pool<Tower>, uid: number): DeepReadonly<Tower> | null {
   for (let i = 0; i < towers.used; i++) {
@@ -65,10 +94,14 @@ export class JamView {
   readonly #fx: TransientFx;
   readonly #reducedMotion: () => boolean;
   readonly #liftPx: (col: number, row: number) => number;
-  readonly #tendrils: Phaser.GameObjects.Graphics;
-  readonly #static: Phaser.GameObjects.Graphics;
+  readonly #flashTower: (uid: number) => void;
+  readonly #g: Phaser.GameObjects.Graphics;
+  readonly #statics: StaticSlot[] = [];
+  readonly #columns: Column[] = [];
+  #nextColumn = 0;
   #tells = 0;
   #jammed = 0;
+  #columnsShown = 0;
   /** Tendril tells and jams seen since the view was made, and Reboots played (smoke's checks). */
   tellsSeen = 0;
   jamsSeen = 0;
@@ -79,18 +112,20 @@ export class JamView {
     fx: TransientFx,
     reducedMotion: () => boolean,
     liftPx: (col: number, row: number) => number,
+    flashTower: (uid: number) => void = () => {},
   ) {
     this.#ctx = ctx;
     this.#fx = fx;
     this.#reducedMotion = reducedMotion;
     this.#liftPx = liftPx;
-    this.#tendrils = ctx.scene.make.graphics({}, false);
-    ctx.layers.vfx.add(this.#tendrils);
-    this.#static = ctx.scene.make.graphics({}, false);
-    ctx.layers.vfx.add(this.#static);
+    this.#flashTower = flashTower;
+    this.#g = ctx.scene.make.graphics({}, false);
+    ctx.layers.vfx.add(this.#g);
+    for (let i = 0; i < STATIC_SLOTS; i++) this.#grow();
+    for (let i = 0; i < MAX_COLUMNS; i++) this.#columns.push({ active: false, uid: 0, ms: 0 });
   }
 
-  /** Counts the tells and jams, and pops System Reboot's rings. Returns the off. */
+  /** Counts the tells and jams, and pops System Reboot's flashes. Returns the off. */
   bind(bus: Bus<SimEvent<IdSpace>>, towers: () => Pool<Tower>): () => void {
     const offs = [
       bus.on('JamTell', () => {
@@ -107,15 +142,14 @@ export class JamView {
           if (!t.alive) continue;
           const lift = this.#liftPx(t.col, t.row);
           const freed = ev.towers.includes(t.uid);
-          this.#fx.ring(
-            t.x,
-            t.y,
-            freed ? 0.7 : 0.4,
-            freed ? REBOOT_COLOR : ARC_COLOR,
-            260,
-            true,
-            lift,
-          );
+          this.#fx.ring(t.x, t.y, freed ? 0.8 : 0.45, freed ? REBOOT_COLOR : ARC_COLOR, 420, true, lift);
+          if (!freed) continue;
+          this.#flashTower(t.uid);
+          const c = this.#columns[this.#nextColumn]!; // index < MAX_COLUMNS
+          this.#nextColumn = (this.#nextColumn + 1) % MAX_COLUMNS;
+          c.active = true;
+          c.uid = t.uid;
+          c.ms = 0;
         }
       }),
     ];
@@ -124,10 +158,10 @@ export class JamView {
     };
   }
 
-  /** Each frame: the tendrils under way, then each Jammed tower's static and countdown. */
-  update(state: JamState): void {
+  /** Each frame (`dt` ms): the tendrils under way, each Jammed tower's static and ring, the columns. */
+  update(state: JamState, dt = 0): void {
     const still = this.#reducedMotion();
-    const g = this.#tendrils;
+    const g = this.#g;
     g.clear();
     let tells = 0;
     const enemies = state.enemies;
@@ -141,16 +175,23 @@ export class JamView {
       tells++;
       this.#drawTendril(g, e, t, tendrilReach(e.jamTellTicks, jam.tellTicks), still, state.tick);
     }
-    const s = this.#static;
-    s.clear();
     let jammed = 0;
     const towers = state.towers;
     for (let i = 0; i < towers.used; i++) {
       const t = towers.items[i]!; // i < used ≤ items.length
       if (!t.alive || t.jamTicks <= 0) continue;
+      if (jammed === this.#statics.length) this.#grow();
+      this.#drawJammed(g, this.#statics[jammed]!, t, still); // jammed < length: grown above
       jammed++;
-      this.#drawJammed(s, t, still, state.tick);
     }
+    for (let k = jammed; k < this.#statics.length; k++) {
+      const s = this.#statics[k]!; // k < length
+      if (s.uid !== 0) {
+        s.uid = 0;
+        s.sprite.stop().setVisible(false);
+      }
+    }
+    this.#columnsShown = this.#drawColumns(g, towers, dt, still);
     this.#tells = tells;
     this.#jammed = jammed;
   }
@@ -173,56 +214,123 @@ export class JamView {
     const nx = -dy / len;
     const ny = dx / len;
     const phase = still ? 0 : tick * 0.25;
-    for (let pass = 0; pass < 2; pass++) {
-      g.lineStyle(pass === 0 ? 4 : 2, pass === 0 ? UNDER : CORE, pass === 0 ? 0.85 : 1);
+    for (let pass = 0; pass < 3; pass++) {
+      const w = pass === 0 ? 5 : pass === 1 ? 3 : 1;
+      g.lineStyle(w, pass === 0 ? UNDER : pass === 1 ? CORE : TIP, pass === 0 ? 0.9 : 1);
       let px = a.x;
       let py = a.y;
       for (let k = 1; k <= STEPS; k++) {
         const f = k / STEPS;
-        const w = k < STEPS ? Math.sin(phase + k * 1.7) * WAVE_PX : 0;
-        const qx = a.x + dx * f + nx * w;
-        const qy = a.y + dy * f + ny * w;
+        const wave = k < STEPS ? Math.sin(phase + k * 1.7) * WAVE_PX : 0;
+        const qx = a.x + dx * f + nx * wave;
+        const qy = a.y + dy * f + ny * wave;
         g.lineBetween(px, py, qx, qy);
         px = qx;
         py = qy;
       }
     }
-    g.fillStyle(UNDER, 1).fillRect(Math.round(a.x + dx) - 2, Math.round(a.y + dy) - 2, 4, 4);
-    g.fillStyle(TIP, 1).fillRect(Math.round(a.x + dx) - 1, Math.round(a.y + dy) - 1, 2, 2);
+    const bead = tendrilBeadPx(reach);
+    const tx = Math.round(a.x + dx);
+    const ty = Math.round(a.y + dy);
+    g.fillStyle(UNDER, 1).fillRect(tx - (bead >> 1) - 1, ty - (bead >> 1) - 1, bead + 2, bead + 2);
+    g.fillStyle(TIP, 1).fillRect(tx - (bead >> 1), ty - (bead >> 1), bead, bead);
+    g.fillStyle(WHITE, 1).fillRect(tx - (bead >> 1) + 1, ty - (bead >> 1) + 1, 1, 1);
   }
 
+  /** A Jammed tower: its static crackling over it and its countdown ring round its base. */
   #drawJammed(
     g: Phaser.GameObjects.Graphics,
+    slot: StaticSlot,
     t: DeepReadonly<Tower>,
     still: boolean,
-    tick: number,
   ): void {
     gridToScreen(t.x, t.y, this.#ctx.origin, b);
     b.y -= this.#liftPx(t.col, t.row);
-    const share = jamArc(t.jamTicks);
-    const start = -Math.PI / 2;
-    g.lineStyle(3, UNDER, 0.7).beginPath();
-    g.arc(b.x, b.y, ARC_RADIUS_PX, start, start + share * Math.PI * 2, false).strokePath();
-    g.lineStyle(1, ARC, 1).beginPath();
-    g.arc(b.x, b.y, ARC_RADIUS_PX, start, start + share * Math.PI * 2, false).strokePath();
-    for (let i = 0; i < STATIC_SPARKS; i++) {
-      staticSpark(tick, t.uid, i, still, spark);
-      const x = Math.round(b.x + spark.dx);
-      const y = Math.round(b.y - TOWER_BODY_PX + spark.dy);
-      g.fillStyle(UNDER, 0.8).fillRect(x - 1, y - 1, 5, 3);
-      g.fillStyle(STATIC_HEX[spark.color]!, 1).fillRect(x, y, 3, 1); // an index into it
+    const x = Math.round(b.x);
+    const y = Math.round(b.y);
+    if (slot.uid !== t.uid || slot.still !== still) {
+      slot.uid = t.uid;
+      slot.still = still;
+      const { sprites } = this.#ctx;
+      if (still) {
+        const f = sprites.frame(STATIC, STATIC_STILL_FRAME);
+        slot.sprite.stop().setTexture(f.texture, f.frame);
+      } else {
+        // Each tower's static crackles a frame apart, so two never flicker in unison.
+        slot.sprite.play({ key: sprites.anim(STATIC, STATIC_ANIM), startFrame: t.uid % 4 });
+      }
+      const anchor = sprites.meta(STATIC).anchor;
+      slot.sprite.setDisplayOrigin(anchor.x, anchor.y).setVisible(true);
+    }
+    slot.sprite.setPosition(x, y);
+    // The countdown: a faint full track, then the share left in white over an ink under-stroke.
+    const n = Math.round(jamArc(t.jamTicks) * RING_SEGMENTS);
+    g.lineStyle(1, UNDER, 0.55);
+    this.#ringArc(g, x, y, RING_SEGMENTS);
+    if (n <= 0) return;
+    g.lineStyle(4, UNDER, 0.8);
+    this.#ringArc(g, x, y, n);
+    g.lineStyle(2, ARC, 1);
+    this.#ringArc(g, x, y, n);
+  }
+
+  /** The ring's first `n` of RING_SEGMENTS segments round (x, y), from the top, clockwise. */
+  #ringArc(g: Phaser.GameObjects.Graphics, x: number, y: number, n: number): void {
+    ringPoint(0, p0);
+    for (let k = 1; k <= n; k++) {
+      ringPoint(k / RING_SEGMENTS, p1);
+      g.lineBetween(x + p0.x, y + p0.y, x + p1.x, y + p1.y);
+      p0.x = p1.x;
+      p0.y = p1.y;
     }
   }
 
-  /** What shows now (the smoke flow's check): tendrils drawn, and towers showing their static. */
-  get shown(): { readonly tells: number; readonly jammed: number } {
-    return { tells: this.#tells, jammed: this.#jammed };
+  /** System Reboot's power-on columns rising through the towers it freed; returns how many show. */
+  #drawColumns(g: Phaser.GameObjects.Graphics, towers: Pool<Tower>, dt: number, still: boolean): number {
+    let shown = 0;
+    for (const c of this.#columns) {
+      if (!c.active) continue;
+      c.ms += dt;
+      const col = rebootColumn(c.ms, still);
+      const t = col.alpha > 0 ? findTower(towers, c.uid) : null;
+      if (t === null) {
+        c.active = col.alpha > 0 && c.ms < 100; // its tower may show a frame late
+        continue;
+      }
+      gridToScreen(t.x, t.y, this.#ctx.origin, b);
+      const x = Math.round(b.x);
+      const y = Math.round(b.y - this.#liftPx(t.col, t.row));
+      const h = col.height;
+      const w = REBOOT_COLUMN_W;
+      g.fillStyle(TEAL, 0.45 * col.alpha).fillRect(x - w, y - h, w * 2, h);
+      g.fillStyle(TEAL, col.alpha).fillRect(x - (w >> 1), y - h, w, h);
+      g.fillStyle(WHITE, col.alpha).fillRect(x - 1, y - h, 2, h);
+      shown++;
+    }
+    return shown;
+  }
+
+  /** One more pooled static sprite, hidden. */
+  #grow(): void {
+    const sprite = this.#ctx.scene.make.sprite({}, false).setVisible(false);
+    this.#ctx.layers.vfx.add(sprite);
+    this.#statics.push({ sprite, uid: 0, still: false });
+  }
+
+  /** What shows now (the smoke flow's check): tendrils, towers with static, Reboot columns. */
+  get shown(): { readonly tells: number; readonly jammed: number; readonly columns: number } {
+    return { tells: this.#tells, jammed: this.#jammed, columns: this.#columnsShown };
   }
 
   reset(): void {
-    this.#tendrils.clear();
-    this.#static.clear();
+    this.#g.clear();
+    for (const s of this.#statics) {
+      s.uid = 0;
+      s.sprite.stop().setVisible(false);
+    }
+    for (const c of this.#columns) c.active = false;
     this.#tells = 0;
     this.#jammed = 0;
+    this.#columnsShown = 0;
   }
 }

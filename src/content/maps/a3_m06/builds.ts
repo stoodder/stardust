@@ -5,7 +5,7 @@
 // REFERENCE_VARIANTS: both doors own the Gloop by now, and Zibzab's crate is in it).
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
-import type { BuildStep, GridPos, TowerId } from '../../types.ts';
+import type { BuildStep, GridPos, ScriptedBuild, TowerId } from '../../types.ts';
 
 // The pads: A1M1's ten at its offset (4, 2), and the band's nine.
 /** Either side of the road's way in at the north edge (band). */
@@ -234,6 +234,30 @@ export const builds = defineBuilds({
     },
   },
 });
+
+/**
+ * The Flak Curtain alt (T501c-M6): `hooks` with its gate Skyhook made Flak Curtain for the last two
+ * waves (W17–W18: the Rift Moths and gunships over the road filling behind the Maw, where both air
+ * lanes end over the gate's approach), for the Harpoon it would put under the barricade. The
+ * reference profile owns no Skyhook specs (campaign.md § 4.9), so it isn't an `altBuilds` entry:
+ * balance/a3m6Probes.test.ts runs it on the reference profile plus the Skyhook's specs.
+ */
+export function flakAlt(): ScriptedBuild {
+  const hooks = builds.altBuilds?.['hooks'];
+  if (hooks === undefined) throw new Error('A3M6 has no hooks alt');
+  const atBarricade = (st: BuildStep): boolean =>
+    ('build' in st && st.tile === BAR_E) || ('upgrade' in st && st.upgrade === BAR_E);
+  const flak: BuildStep[] = [
+    { wave: 17, upgrade: GATE_E },
+    { wave: 17, specialize: GATE_E, spec: 'a' },
+  ];
+  return {
+    loadout: hooks.loadout,
+    steps: [...hooks.steps.filter((st) => !atBarricade(st)), ...flak].toSorted(
+      (a, b) => a.wave - b.wave,
+    ),
+  };
+}
 
 /** Pads named for the tests (balance/a3m6*.test.ts). */
 export const PADS = {

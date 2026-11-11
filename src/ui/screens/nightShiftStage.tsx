@@ -76,6 +76,7 @@ export function NightShiftStage({ from }: { from: number }) {
           <span class="ns-banner-half">{BANNER_TEXT.slice(0, 10)}</span>
           <span class="ns-banner-half sag">{BANNER_TEXT.slice(10)}</span>
         </div>
+        <div class="ns-wash" />
         <div class="ns-pool" />
         <Pixels rows={LAMP_ROWS} colors={LAMP} scale={2} class="ns-lamp" />
         <div class="ns-floor">

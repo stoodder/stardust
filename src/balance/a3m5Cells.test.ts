@@ -6,10 +6,9 @@
 // QUILL is offline and System Reboot locked, so par's slot 1 is Suppressing Fire (its own par
 // build) and the Choir carries the jam. The warren owns the Gloop Spitter; par doesn't build it.
 import { describe, expect, it } from 'vitest';
-import { simulatedStoryModifiers } from '../app/battleSetup.ts';
 import { compileContent } from '../content/compile.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { abilitiesOffOn, createNewSave } from '../meta/index.ts';
+import { abilitiesOffOn, createNewSave, storyModifiers } from '../meta/index.ts';
 import { createBuildExecutor, createSim } from '../sim/index.ts';
 import { expectBeats, runA3m5 } from './__fixtures__/a3m5.ts';
 import { buildFor } from './harness.ts';
@@ -37,7 +36,8 @@ describe('A3M5 door × C4 cells', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       expectBeats(r, l);
       const margin = Math.min(r.integrity / 22, r.asset / 12) * 100;
       expect(margin, l).toBeGreaterThanOrEqual(50);
-      expect(margin, l).toBeLessThanOrEqual(70);
+      // Act III's band, its top 75 for Purge's earned edge (builds.ts `marginBand`).
+      expect(margin, l).toBeLessThanOrEqual(c4 === 'purge' ? 75 : 70);
       expect(r.droveOffAt!, l).toBeLessThan(WORST_DRIVE_OFF);
       expect(r.stats.jamOverLimitTicks, l).toBe(0);
     },
@@ -63,7 +63,9 @@ describe('A3M5 door × C4 cells', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     const added = storyRunModifiers(content, 'a3_m05', flags);
     const save = createNewSave();
     const purged = { ...save, story: { ...save.story, flags: { ...save.story.flags, ...flags } } };
-    expect(added).toEqual(simulatedStoryModifiers('a3_m05', purged));
+    // The same modifiers a save's battle gets (app/battleSetup.ts `simulatedStoryModifiers` adds
+    // `storyModifiers`' less any the sim refuses; this one is live).
+    expect(added).toEqual(storyModifiers('a3_m05', purged));
     expect(added).toEqual([
       { kind: 'enemyStat', stat: 'armor', faction: 'everglow', flat: -2, source: 'c4:purge' },
     ]);

@@ -1,7 +1,7 @@
 // Everglow Security, part two's looks (T703; design/enemies.md § 3 `healer_aura`, § 5.3; art-
 // direction.md §8's `healer` row: a plus ✚, an expanding ring pulse, `green.3`). Pure rules and
-// pixel images, unit-tested; HealAuraView applies them. Minimal readable views: T730a/T740a
-// polish them.
+// pixel images, unit-tested; HealAuraView applies them (T730a polished the ✚ and swapped the panel
+// for T740a's sprite).
 // - **The heal ring:** a solid `green.3` ring over a 1 px `ink.0` under-stroke at the aura's radius
 //   round every unit projecting one (the sim's `projectedHeal`), always on (the aura is continuous),
 //   and once a second a **pulse**: a `green.4` ring that expands from a quarter of the radius out
@@ -10,15 +10,17 @@
 //   Cantor's is dashed blue and the Expediter's beats orange, so the three auras read apart. No
 //   pulse under reduced motion: the ring stays, steady.
 // - **The ✚:** every unit an aura is mending right now (the sim's `healRate` > 0: below its max HP,
-//   in a ring) wears a small plus at the top left of its body (`plusImage`: a `green.4` cross with a
-//   `white.1` heart in an `ink.0` rim, 7×7), rising a pixel on the pulse's second half; still under
-//   reduced motion. It goes the moment the unit is whole.
-// - **The open panel** (C4 Purge; the sim's `def.openPanel`): every such unit wears a maintenance
-//   hatch hanging open off its right flank (`panelImage`: a `steel.4` door on an `ink.0` rim, its
-//   dark `ink.0` bay behind it, 5×6) with an `orange.4` spark that blinks in the bay on the 3 Hz
-//   tell step (`panelSpark`; lit, steady, under reduced motion): QUILL working against it from
-//   inside. T740a draws the real panel into the Everglow sprites.
+//   in a ring) wears a plus at the top left of its body (`plusImage`: a chunky 3 px `green.4` cross
+//   with a `white.1` cross core in an `ink.0` rim, 9×9, so it reads at 1× on a pale Everglow body),
+//   rising a pixel on the pulse's second half; still under reduced motion. It goes the moment the
+//   unit is whole.
+// - **The open panel** (C4 Purge; the sim's `def.openPanel`): every such unit wears T740a's
+//   `fx.open_panel` hanging open off its right flank (a dark bay, its pale hatch swung out on its
+//   hinge, a loose cable), its `spark` frame (an `orange.4` spark in the bay) blinking with `dark`
+//   on the 3 Hz tell step (`panelSpark`; lit, steady, under reduced motion): QUILL working against
+//   it from inside.
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
+import type { SpriteId } from '../../content/sprites/index.ts';
 import type { RgbaImage } from '../sprites/rasterize.ts';
 import { TELL_STEP_TICKS } from '../vfx/fxTiming.ts';
 
@@ -89,31 +91,24 @@ function paint(rows: readonly string[], colors: Readonly<Record<string, ColorNam
   return { w, h, data };
 }
 
-/** The ✚ (7×7): a `green.4` cross, `white.1` heart, `ink.0` rim. */
+/** The ✚ (9×9): a 3 px `green.4` cross with a `white.1` cross core, in an `ink.0` rim. */
 export const PLUS_ROWS: readonly string[] = [
-  '..kkk..',
-  '..kgk..',
-  'kkkgkkk',
-  'kggwggk',
-  'kkkgkkk',
-  '..kgk..',
-  '..kkk..',
+  '..kkkkk..',
+  '..kgggk..',
+  'kkkgwgkkk',
+  'kgggwgggk',
+  'kgwwwwwgk',
+  'kgggwgggk',
+  'kkkgwgkkk',
+  '..kgggk..',
+  '..kkkkk..',
 ];
-export const PLUS_SIZE = 7;
+export const PLUS_SIZE = 9;
 
 export function plusImage(): RgbaImage {
   return paint(PLUS_ROWS, { k: HEAL_UNDER, g: HEAL_PULSE_COLOR, w: 'white.1' });
 }
 
-/**
- * The open panel (5×6): a `steel.4` hatch door swung out to the right of an `ink.0` bay, frame 1
- * with the `orange.4` spark lit inside the bay.
- */
-export const PANEL_ROWS: readonly (readonly string[])[] = [
-  ['kk...', 'kbk..', 'kbsk.', 'kbsk.', 'kbsk.', 'kkkk.'],
-  ['kk...', 'kbk..', 'kosk.', 'kbsk.', 'kbsk.', 'kkkk.'],
-];
-
-export function panelImage(frame: 0 | 1): RgbaImage {
-  return paint(PANEL_ROWS[frame]!, { k: HEAL_UNDER, b: 'ink.1', s: 'steel.4', o: 'orange.4' });
-}
+/** The open panel's sprite (T740a) and its frames: the dark bay, then the spark lit in it. */
+export const PANEL_SPRITE: SpriteId = 'fx.open_panel';
+export const PANEL_FRAMES: readonly ['dark', 'spark'] = ['dark', 'spark'];

@@ -20,6 +20,9 @@ import { loadoutChangeable } from '../screens/loadoutView.ts';
 import { Icon } from './Icon.tsx';
 import { crate } from '../screens/crate.ts'; // T714: Zibzab's crate's card over A3M6's briefing
 import { CrateCard } from '../screens/crateCard.tsx';
+import { QUILL_LIST } from '../../content/dialogue/a3/a3_m06/quillList.ts'; // T714: QUILL's own list
+import { isQuillListHeader } from '../screens/quillList.ts';
+import { QuillListCard } from '../screens/quillListCard.tsx';
 
 /**
  * The briefing's threat-intel strip (T202d; campaign.md § 4.8): the map's threats as tell glyphs
@@ -122,6 +125,7 @@ export function Briefing({ view }: { view: SceneView }) {
   // The portrait shows whoever speaks now (or spoke last).
   const speaker = view.line ?? view.transcript.at(-1) ?? null;
   const clockIn = useFocusOn(view.ended, view.ended);
+  const listUp = isQuillListHeader(view.line);
   return (
     <div class="hud-briefing-scrim">
       <section
@@ -163,9 +167,17 @@ export function Briefing({ view }: { view: SceneView }) {
           </div>
         </div>
         <LineAnnouncer line={view.line} />
-        {intel !== null && <IntelStrip intel={intel} />}
-        {medals.length > 0 && <BriefingMedals medals={medals} />}
-        {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
+        {/* A3M6 under Rewrite (T714): while the `system` header line is on screen, the list QUILL
+            wrote stands where the intel and medals do (they come back with the next line). */}
+        {listUp && view.line !== null ? (
+          <QuillListCard header={view.line.text} entries={QUILL_LIST} />
+        ) : (
+          <>
+            {intel !== null && <IntelStrip intel={intel} />}
+            {medals.length > 0 && <BriefingMedals medals={medals} />}
+            {objectives.length > 0 && <BriefingObjectives objectives={objectives} />}
+          </>
+        )}
         <div class="hud-briefing-actions">
           {/* Back to the loadout screen, where it came before this map (T201). */}
           {loadoutChangeable.value && (

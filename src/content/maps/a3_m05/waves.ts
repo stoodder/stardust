@@ -98,7 +98,7 @@ export const waves = defineWaves([
   // W10 · Hollow surge at the vats (one group bigger unless the feed is cut: SCRIPT_GROUPS)
   {
     ...NO_CALL,
-    groups: [motes(6, 'vats', 0), fractures(2, 'vats', 3), motes(6, 'road', 3)],
+    groups: [motes(8, 'vats', 0), fractures(2, 'vats', 3), motes(6, 'road', 3)],
   },
   // W11 · Expediters + Liability
   {
@@ -128,7 +128,7 @@ export const waves = defineWaves([
     countdownAfter: 'bossEnded',
     groups: [
       motes(6, 'hunt', HUNT_SEC, 0.5),
-      fractures(2, 'hunt', HUNT_SEC + 4, 3),
+      fractures(1, 'hunt', HUNT_SEC + 4),
       motes(8, 'vats', 2),
       fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),

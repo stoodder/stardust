@@ -17,6 +17,9 @@
 // motion).
 // T740b: a class the save holds jailbroken (towers.md § 9) draws its base's `_jb` twin (the logo
 // plate scratched out) and its base and head in `everglow.jailbroken` (towerLook.ts `jailbreakLook`).
+// T730a: a Jammed tower (`jamTicks` > 0) draws in its baked `+jammed` steel variant, glows out and
+// an idle head held (towerLook.ts `towerVariant`); a Sproing Pad's head bounces as each leaper
+// boings out and shows its empty pad while they're all away (`setPad`, towerLook.ts `padEmpty`).
 import * as Phaser from 'phaser';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -37,14 +40,16 @@ import {
   type SpecLetter,
 } from './spriteInfo.ts';
 import { HOLD_TINT_COLOR, holdMarkerImage, tintOf } from './holdMarker.ts';
-import { variantName, type ViewContext } from './ViewContext.ts';
+import type { ViewContext } from './ViewContext.ts';
 import { hasAnim } from './spriteInfo.ts';
 import {
   foldSinkPx,
   idleFire,
   jailbreakLook,
+  padEmpty,
   POWER_DOWN_COLOR,
   powerDownLook,
+  towerVariant,
   voicedIdle,
   type TowerPalette,
 } from './towerLook.ts';
@@ -60,6 +65,8 @@ export interface TowerLike {
   readonly holdFire?: boolean;
   /** Ticks until it may fire again (a sim Tower's): a jump up means it just fired. */
   readonly cooldownTicks?: number;
+  /** Ticks left Jammed (a sim Tower's; T730a): drawn in its `+jammed` variant while > 0. */
+  readonly jamTicks?: number;
 }
 
 /** Sprite ids of a tower definition (`CompiledTowerDef.sprites`). */
@@ -196,6 +203,11 @@ export class TowerView implements PooledView {
   #powered = true;
   #sinkHead = 0;
   #sinkBase = 0;
+  /** Jammed now (T730a): its `+jammed` variant, glows out, an idle head held. */
+  #jammed = false;
+  /** A Sproing Pad's leapers away now, and whether all of them are (its empty pad shows). */
+  #away = 0;
+  #padAll = false;
 
   /**
    * `voice`: the voice an idle head sings in where its sprite has one (null: its own idle);
@@ -365,6 +377,7 @@ export class TowerView implements PooledView {
   sync(t: TowerLike): void {
     if (!this.#powered) return;
     this.setHolding(t.holdFire === true);
+    this.#setJammed((t.jamTicks ?? 0) > 0);
     const cd = t.cooldownTicks ?? 0;
     if (cd > this.#lastCooldown) this.#fire();
     this.#lastCooldown = cd;
@@ -398,6 +411,38 @@ export class TowerView implements PooledView {
     }
     const anim = this.#fireAnims[FACING_INDEX[this.#facing]] ?? '';
     if (anim !== '') this.#head.play(anim);
+  }
+
+  /** Jammed or freed (T730a): redraws in the `+jammed` variant (or back), glows and idle with it. */
+  #setJammed(jammed: boolean): void {
+    if (jammed === this.#jammed) return;
+    this.#jammed = jammed;
+    if (jammed) this.#idleFiring = false;
+    this.#refreshFrames(true);
+  }
+
+  /** Whether it draws Jammed now (the render-state hook's check). */
+  get jammed(): boolean {
+    return this.#jammed;
+  }
+
+  /**
+   * A Sproing Pad's leapers (T730a): `away` of its `total` out of the pad now. One more away than
+   * last frame is a launch (the head's bounce plays once); all away shows its empty pad, and its
+   * idle comes back as one lands home. A head without those anims ignores it.
+   */
+  setPad(away: number, total: number): void {
+    const launched = away > this.#away;
+    this.#away = away;
+    const all = total > 0 && away >= total;
+    if (launched && this.#powered && !this.#jammed && this.#idleFireAnim !== '') {
+      this.#idleFiring = true;
+      this.#head.play(this.#idleFireAnim);
+    }
+    if (all !== this.#padAll) {
+      this.#padAll = all;
+      if (!this.#idleFiring && this.#powered) this.#refreshFrames(false);
+    }
   }
 
   #endFlash(): void {
@@ -475,6 +520,9 @@ export class TowerView implements PooledView {
     this.#baseId = null;
     this.#headId = null;
     this.#look = PLAIN_LOOK;
+    this.#jammed = false;
+    this.#away = 0;
+    this.#padAll = false;
     this.#head.stop();
     this.#base.setVisible(false);
     this.#head.setVisible(false);
@@ -487,8 +535,9 @@ export class TowerView implements PooledView {
     if (this.#baseId === null) return;
     // A jailbroken class (T740b) draws its base's `_jb` twin, base and head in its palette.
     const pal = this.#look;
-    const baseVariant = variantName(pal.base, this.#selected);
-    const variant = variantName(pal.head, this.#selected);
+    // Jammed (T730a) draws in the steel `+jammed` variant, over selection (towerLook.ts).
+    const baseVariant = towerVariant(pal.base, this.#selected, this.#jammed);
+    const variant = towerVariant(pal.head, this.#selected, this.#jammed);
     const tierFrame = baseFrame(this.#baseId, this.#tier, this.#spec) + pal.frameSuffix;
     const b = sprites.frame(this.#baseId, tierFrame, baseVariant);
     const ba = sprites.frameAnchor(this.#baseId, tierFrame);
@@ -519,7 +568,12 @@ export class TowerView implements PooledView {
       } else {
         // An idle head plays its spec's own anim once specialized (T430b), in its view's voice
         // (T630a): a change restarts it. Its shot, if it has one, follows the spec.
-        const name = voicedIdle(this.#headId, this.#headStyle.anim, this.#spec, this.#voice);
+        // A Sproing Pad with all its leapers away shows its empty pad (T730a).
+        const empty = this.#padAll ? padEmpty(this.#headId, this.#spec) : '';
+        const name =
+          empty !== ''
+            ? empty
+            : voicedIdle(this.#headId, this.#headStyle.anim, this.#spec, this.#voice);
         const fire = idleFire(this.#headId, this.#spec);
         this.#idleFireAnim = fire === '' ? '' : sprites.anim(this.#headId, fire, variant);
         if (restartIdle || name !== this.#idleName) {
@@ -529,7 +583,16 @@ export class TowerView implements PooledView {
           const a = sprites.meta(this.#headId).anchor;
           this.#head.setDisplayOrigin(a.x, a.y);
         }
+        // A Jammed idle head holds its frame (the Choir stops humming).
+        if (this.#jammed) this.#head.anims.pause();
       }
+    }
+    // A Jammed tower's lights are out.
+    if (this.#jammed) {
+      this.#baseGlow.setVisible(false);
+      this.#headGlow.setVisible(false);
+    } else if (this.#headId !== null && this.#headStyle.kind !== 'aim') {
+      this.#headGlow.setVisible(false);
     }
     if (!Number.isNaN(this.#x)) {
       this.#placeHead(this.#base.depth);

@@ -3,8 +3,9 @@
 // `projectedHeal`), a solid `green.3` ring at its radius and, once a second, a `green.4` pulse
 // ring expanding out to it (in `decal`, under the units, centred on the body as EnemyView draws
 // it; unitAnchor.ts); a ✚ over every unit an aura is mending now (the sim's `healRate`); and an
-// open maintenance hatch on the flank of every unit whose def has `openPanel` (C4 Purge's armor
-// modifier; both in `overlay`, so the dark never hides them). No event drives it: it reads sim
+// open maintenance hatch (T740a's `fx.open_panel`, its `dark`/`spark` frames blinking on the tell
+// step; T730a) on the flank of every unit whose def has `openPanel` (C4 Purge's armor modifier;
+// both in `overlay`, so the dark never hides them). No event drives it: it reads sim
 // state, like ShieldAuraView. Allocation-free per frame: every image is pooled, each radius's ring
 // and pulse frames are registered once, and the sources' slots go in a fixed scratch array.
 import type * as Phaser from 'phaser';
@@ -17,8 +18,9 @@ import {
   HEAL_PULSE_COLOR,
   HEAL_RING_ALPHA,
   HEAL_UNDER,
+  PANEL_FRAMES,
+  PANEL_SPRITE,
   PLUS_SIZE,
-  panelImage,
   panelSpark,
   plusImage,
   plusLifted,
@@ -35,7 +37,6 @@ const MAX_PANELS = 32;
 /** Aura sources considered at most (more than the rings ever show). */
 const MAX_SOURCES = 32;
 const PLUS_KEY = 'fx.heal_plus';
-const PANEL_KEYS = ['fx.open_panel.0', 'fx.open_panel.1'] as const;
 /** The ✚ sits in from the body's left edge and down from its top (px). */
 const PLUS_IN_PX = 2;
 const PLUS_DOWN_PX = 3;
@@ -55,6 +56,14 @@ interface Ring {
   step: number;
 }
 
+/** A pooled image's frame: its texture, frame, and display origin. */
+interface PanelFrame {
+  readonly texture: string;
+  readonly frame: string;
+  readonly ox: number;
+  readonly oy: number;
+}
+
 const pos: Vec2 = { x: 0, y: 0 };
 const body = blankBox();
 
@@ -66,6 +75,8 @@ export class HealAuraView {
   readonly #pluses: Phaser.GameObjects.Image[] = [];
   readonly #panels: Phaser.GameObjects.Image[] = [];
   readonly #frames = new Map<string, Frame>();
+  /** The open panel's two frames (dark, spark), looked up once. */
+  readonly #panelFrames: readonly PanelFrame[];
   readonly #sources = new Int32Array(MAX_SOURCES);
   #plusShown = 0;
   #panelShown = 0;
@@ -85,18 +96,20 @@ export class HealAuraView {
     }
     const textures = ctx.scene.textures;
     if (!textures.exists(PLUS_KEY)) textures.addCanvas(PLUS_KEY, imageToCanvas(plusImage()));
-    for (const [k, key] of PANEL_KEYS.entries()) {
-      if (!textures.exists(key))
-        textures.addCanvas(key, imageToCanvas(panelImage(k === 0 ? 0 : 1)));
-    }
+    this.#panelFrames = PANEL_FRAMES.map((name) => {
+      const f = ctx.sprites.frame(PANEL_SPRITE, name);
+      const a = ctx.sprites.frameAnchor(PANEL_SPRITE, name);
+      return { texture: f.texture, frame: f.frame, ox: a.x, oy: a.y };
+    });
     const half = (PLUS_SIZE - 1) / 2;
     for (let i = 0; i < MAX_PLUSES; i++) {
       const img = make().setTexture(PLUS_KEY).setDisplayOrigin(half, half);
       ctx.layers.overlay.add(img);
       this.#pluses.push(img);
     }
+    const dark = this.#panelFrames[0]!; // PANEL_FRAMES has two
     for (let i = 0; i < MAX_PANELS; i++) {
-      const img = make().setTexture(PANEL_KEYS[0]).setDisplayOrigin(0, 0);
+      const img = make().setTexture(dark.texture, dark.frame).setDisplayOrigin(dark.ox, dark.oy);
       ctx.layers.overlay.add(img);
       this.#panels.push(img);
     }
@@ -186,8 +199,8 @@ export class HealAuraView {
       }
       if (panel) {
         const img = this.#panels[q++]!; // q < MAX_PANELS
-        const key = PANEL_KEYS[panelSpark(tick, e.uid, reduced) ? 1 : 0];
-        if (img.texture.key !== key) img.setTexture(key);
+        const f = this.#panelFrames[panelSpark(tick, e.uid, reduced) ? 1 : 0]!; // two frames
+        if (img.frame.name !== f.frame) img.setTexture(f.texture, f.frame);
         img
           .setPosition(Math.round(body.x + body.halfW - 2), Math.round(body.top + PANEL_DOWN_PX))
           .setVisible(true);

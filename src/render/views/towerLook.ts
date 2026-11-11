@@ -18,6 +18,13 @@
 //   scratched out, a brass patch bolted on) and its base and head in the `everglow.jailbroken`
 //   palette (worn paint, Vrell-orange status lights), selected and glow alike (`jailbreakLook`). A
 //   sprite without the twin or the variant draws as it always did.
+// - **Jammed** (enemies.md § 4; T730a): a Jammed tower draws its base and head in the baked
+//   `+jammed` variant (every colour onto the steel ramp by luminance), its glows out and an idle
+//   head's anim held, under JamView's static and countdown ring (`towerVariant`: jammed wins over
+//   selected, so a clicked Jammed tower still reads dead; its range ring shows the selection).
+// - **The Sproing Pad's head** (towers.md § Sproing Pad; T730a): the pad plays its `fire` bounce
+//   each time one of its leapers boings out (`padAnims`), and its `empty` pad while all its leapers
+//   are away, back to its idle the moment one lands home.
 import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
@@ -147,4 +154,22 @@ export function jailbrokenBaseIds(
     if (t !== undefined) out.add(t.sprites.base);
   }
   return out;
+}
+
+/**
+ * The baked variant a tower's part draws in: `<palette>+jammed` while Jammed (over selection),
+ * else `<palette>+selected` while selected, else the palette's own.
+ */
+export function towerVariant(palette: string, selected: boolean, jammed: boolean): string {
+  if (jammed) return `${palette}+jammed`;
+  return selected ? `${palette}+selected` : palette;
+}
+
+/**
+ * The Sproing Pad's head anims for its spec: `empty` (`empty_spec_<x>`, else `empty`), or '' for a
+ * head without one (every other idle head).
+ */
+export function padEmpty(id: SpriteId, spec: SpecLetter | null): string {
+  if (spec !== null && hasAnim(id, `empty_spec_${spec}`)) return `empty_spec_${spec}`;
+  return hasAnim(id, 'empty') ? 'empty' : '';
 }

@@ -9,7 +9,8 @@
 // - Hostile Takeover takes min(2, floor(25% × placed)) and never lands past the 25% limit, even
 //   with an Auditor pair timed onto it (#10 stays clean in par on the map as built);
 // - Declined is earnable: par with its Choir built after its other tier-3 towers (so the laser
-//   picks towers inside the Choir's T3 aura: 1 s jams) and its yard Harpoon left at T2.
+//   picks towers inside the Choir's T3 aura: 1 s jams), at T3 by W13, and its yard Harpoon and
+//   the hub's Thumper left at T2.
 // Also the Gravity Well stacking test (towers.md open question 3): two Gravity Wells on the same
 // road pull each unit at most once per 20 s between them, and the stacked build stays in band.
 import { describe, expect, it } from 'vitest';
@@ -20,6 +21,9 @@ import { RAW_CONTENT } from '../content/registry.ts';
 import { secToTicks } from '../shared/time.ts';
 import { runA3m5 } from './__fixtures__/a3m5.ts';
 import { shiftedContent } from './__fixtures__/shifts.ts';
+import { validate } from '../content/validate.ts';
+import type { CounterExemption } from '../content/types.ts';
+import { noCounterChecks } from './counterChecks.ts';
 import { fullCatalogProfile } from './profile.ts';
 import { HARNESS_TEST_TIMEOUT_MS } from './rules.ts';
 
@@ -72,10 +76,11 @@ describe('A3M5 jamming', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
       steps: p.steps
         .flatMap((s) => {
           if (s.kind === 'build' && s.tower === 'choir') return [{ ...s, wave: 9 }];
-          if (s.kind === 'upgrade' && same(s.tile, PADS.BEND) && s.wave === 7) {
-            return [{ ...s, wave: 10 }];
+          if (s.kind === 'upgrade' && same(s.tile, PADS.BEND)) {
+            return [{ ...s, wave: s.wave === 7 ? 10 : 13 }];
           }
           if (s.kind === 'upgrade' && same(s.tile, PADS.YARD_N) && s.wave === 12) return [];
+          if (s.kind === 'upgrade' && same(s.tile, PADS.SLUICE_S) && s.wave === 13) return [];
           return [s];
         })
         .toSorted((a, b) => a.wave - b.wave),
@@ -127,5 +132,45 @@ describe('A3M5 Gravity Well stacking', { timeout: HARNESS_TEST_TIMEOUT_MS }, () 
     expect(pulled).toBeGreaterThan(0);
     expect(r.outcome).toBe('won');
     expect(margin(r)).toBeLessThanOrEqual(75);
+  });
+});
+
+describe('counter exemptions (BuildsDef.counterExemptions)', () => {
+  it("skip #5 and #6 for a listed counter only, and validate as one of the map's required", () => {
+    const ids = (m: typeof map) => noCounterChecks(m, [1], []).map((k) => `${k.id} ${k.subject}`);
+    expect(ids(map)).toEqual([
+      '5 noCounter:armor',
+      '6 noCounter:armor',
+      '5 noCounter:splash',
+      '6 noCounter:splash',
+    ]);
+    expect(ids({ ...map, builds: { ...map.builds, counterExemptions: [] } })).toContain(
+      '5 noCounter:jam',
+    );
+    const raw = RAW_CONTENT.maps.a3_m05;
+    const withEx = (counterExemptions: readonly CounterExemption[]) =>
+      validate({
+        ...RAW_CONTENT,
+        maps: { ...RAW_CONTENT.maps, a3_m05: { ...raw, counterExemptions } },
+      }).filter((e) => e.includes('counterExemptions'));
+    expect(withEx([{ counter: 'jam', reason: 'ok' }])).toEqual([]);
+    expect(withEx([{ counter: 'jam', reason: ' ' }]).join()).toMatch(/needs a reason/);
+    expect(
+      withEx([
+        { counter: 'jam', reason: 'a' },
+        { counter: 'jam', reason: 'b' },
+      ]).join(),
+    ).toMatch(/listed twice/);
+    const a3m4 = RAW_CONTENT.maps.a3_m02;
+    const off = validate({
+      ...RAW_CONTENT,
+      maps: {
+        ...RAW_CONTENT.maps,
+        a3_m02: { ...a3m4, counterExemptions: [{ counter: 'jam', reason: 'x' }] },
+      },
+    });
+    expect(off.join('\n')).toMatch(
+      /a3_m02\.counterExemptions\[0\].*not one of the map's required counters/,
+    );
   });
 });

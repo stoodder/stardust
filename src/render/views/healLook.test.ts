@@ -2,14 +2,16 @@
 // fade, the ✚'s lift, the spark's blink, reduced motion, and the pixel images.
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
+import { hasAnim, hasFrame } from './spriteInfo.ts';
 import {
-  PANEL_ROWS,
+  PANEL_FRAMES,
+  PANEL_SPRITE,
+  PLUS_ROWS,
   PLUS_SIZE,
   PULSE_FROM,
   PULSE_STEPS,
   PULSE_STEP_TICKS,
   PULSE_TICKS,
-  panelImage,
   panelSpark,
   plusImage,
   plusLifted,
@@ -55,32 +57,24 @@ describe('the heal pulse (art-direction §8 `healer`: an expanding ring pulse)',
 });
 
 describe('the images', () => {
-  it('the ✚ is a green cross with a white heart in an ink rim', () => {
+  it('the ✚ is a chunky green cross with a white core in an ink rim (T730a: 9×9)', () => {
     const img = plusImage();
     expect([img.w, img.h]).toEqual([PLUS_SIZE, PLUS_SIZE]);
+    expect(PLUS_ROWS.every((row) => row.length === PLUS_SIZE)).toBe(true);
     const at = (x: number, y: number): number[] => {
       const i = (y * img.w + x) * 4;
       return [img.data[i]!, img.data[i + 1]!, img.data[i + 2]!, img.data[i + 3]!];
     };
     const { r, g, b } = rgbOf('white.1');
-    expect(at(3, 3)).toEqual([r, g, b, 255]);
+    expect(at(4, 4)).toEqual([r, g, b, 255]);
     const green = rgbOf('green.4');
-    expect(at(3, 1)).toEqual([green.r, green.g, green.b, 255]);
+    expect(at(4, 1)).toEqual([green.r, green.g, green.b, 255]);
     expect(at(0, 0)[3]).toBe(0);
   });
 
-  it('the open panel lights its spark only in frame 1', () => {
-    const o = rgbOf('orange.4');
-    const has = (frame: 0 | 1): boolean => {
-      const img = panelImage(frame);
-      for (let i = 0; i < img.data.length; i += 4) {
-        if (img.data[i] === o.r && img.data[i + 1] === o.g && img.data[i + 2] === o.b) return true;
-      }
-      return false;
-    };
-    expect([has(0), has(1)]).toEqual([false, true]);
-    expect(PANEL_ROWS.every((rows) => rows.every((row) => row.length === rows[0]!.length))).toBe(
-      true,
-    );
+  it('the open panel is T740a’s sprite, dark then spark (T730a)', () => {
+    expect(PANEL_FRAMES).toEqual(['dark', 'spark']);
+    for (const f of PANEL_FRAMES) expect(hasFrame(PANEL_SPRITE, f)).toBe(true);
+    expect(hasAnim(PANEL_SPRITE, 'blink')).toBe(true);
   });
 });

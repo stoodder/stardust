@@ -4,7 +4,8 @@
 //   to a stake driven into the ground beside it. A pinned flyer's rope runs from its body (at
 //   flying height) straight down to a stake at its ground point, so "grounded" reads as pulled
 //   down. A 2 px rope in `gold.2` (Vrell hemp) over an `ink.0` under-stroke; the stake a 2×5 px
-//   `steel.4` post rimmed in `ink.0`.
+//   `steel.4` post rimmed in `ink.0`. A flyer a Sproing Pad's leaper grounded (LeaperView's
+//   `grounded`) wears no rope: its dizzy stars and ring are its look (T730a).
 // - **Skewer's line** (`ProjectileFired`, kind `line`): the harpoon's line from the muzzle to the
 //   line's far end at body height, a 2 px `steel.4` shaft over an `ink.0` rim that fades out over
 //   SKEWER_MS (held whole under reduced motion until it ends). The shot itself is the tracer
@@ -70,6 +71,9 @@ interface Skewer {
   active: boolean;
 }
 
+/** No Pin passed by (no leapers). */
+const NONE: ReadonlySet<number> = new Set();
+
 const a: Vec2 = { x: 0, y: 0 };
 const b: Vec2 = { x: 0, y: 0 };
 
@@ -111,7 +115,8 @@ export class HarpoonView {
     });
   }
 
-  update(dt: number, enemies: PinPool): void {
+  /** Each frame: the Skewer lines, then a rope on every Pinned unit but those in `notMine`. */
+  update(dt: number, enemies: PinPool, notMine: ReadonlySet<number> = NONE): void {
     const g = this.#gfx;
     g.clear();
     const reduced = this.#reducedMotion();
@@ -129,7 +134,7 @@ export class HarpoonView {
     let pins = 0;
     for (let i = 0; i < enemies.used; i++) {
       const e = enemies.items[i]!; // i < used ≤ items.length
-      if (!showsPin(e)) continue;
+      if (!showsPin(e) || notMine.has(e.uid)) continue;
       pins++;
       gridToScreen(e.x, e.y, this.#ctx.origin, a);
       const flyer = e.def?.layer === 'air';

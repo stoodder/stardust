@@ -396,9 +396,20 @@
 
 /* C4's "QUILL will remember that." once answered (T714; as C3's in the briefing): teal, quiet,
    never a warning. */
-.sd-choice-remember {
-  margin: 6px 0 0;
+.sd-choice-answered {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
   text-align: center;
+}
+
+.sd-choice-answer {
+  margin: 0;
+  color: var(--sd-white-1);
+}
+
+.sd-choice-remember {
+  margin: 0;
   color: var(--sd-teal-4);
 }
 

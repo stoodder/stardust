@@ -87,20 +87,37 @@
   right: 80px;
   top: 6px;
   bottom: -40px;
-  background: radial-gradient(ellipse 50% 60% at 50% 12%, rgb(232 170 70 / 18%), transparent 100%);
+  background: radial-gradient(ellipse 50% 60% at 50% 12%, rgb(232 170 70 / 22%), transparent 100%);
   transition:
     opacity 600ms ease-out,
     filter 600ms ease-out;
-  opacity: 0.7;
+  opacity: 0.5;
+}
+
+/* The whole room's warmth: none while cold, a wash as she laughs, a little of it kept after. */
+.ns-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 90% at 50% 0%, rgb(240 160 80 / 22%), transparent 100%);
+  opacity: 0;
+  transition: opacity 600ms ease-out;
 }
 
 .ns-warm .ns-pool {
-  opacity: 1;
+  opacity: 0.85;
+}
+
+.ns-warm .ns-wash {
+  opacity: 0.4;
 }
 
 .ns-laugh .ns-pool {
   opacity: 1;
-  filter: brightness(1.9) saturate(1.3);
+  filter: brightness(2.2) saturate(1.4);
+}
+
+.ns-laugh .ns-wash {
+  opacity: 1;
 }
 
 .ns-warm .ns-room,
@@ -129,12 +146,14 @@
 }
 
 .ns.still .ns-pool,
+.ns.still .ns-wash,
 .ns.still .ns-room {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ns-pool,
+  .ns-wash,
   .ns-room {
     transition: none;
   }

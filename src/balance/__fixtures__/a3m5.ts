@@ -96,65 +96,42 @@ export function runA3m5(
     sim.drainEvents(out);
     let tookOver = false;
     for (const e of out) {
-      switch (e.type) {
-        case 'WaveStarted':
-          push(`WaveStarted ${e.wave}`);
-          startOf[e.wave] = { integrity: st.integrity, asset: st.asset };
-          break;
-        case 'CountdownStarted':
-          push(`CountdownStarted ${e.wave}`);
-          break;
-        case 'EnemySpawned': {
-          // A wave's own units (and a script group's) walk in at their route's start; the units
-          // a split leaves behind appear where their parent fell.
-          const u = st.enemies.items.slice(0, st.enemies.used).find((x) => x.uid === e.uid);
-          if (u !== undefined && u.dist < 0.25) {
-            spawnedByWave[st.wave] = (spawnedByWave[st.wave] ?? 0) + 1;
-          }
-          if (e.enemy === 'shareholder_value') bossUid = e.uid;
-          break;
+      const type = e.type;
+      if (type === 'WaveStarted') {
+        push(`WaveStarted ${e.wave}`);
+        startOf[e.wave] = { integrity: st.integrity, asset: st.asset };
+      } else if (type === 'CountdownStarted') push(`CountdownStarted ${e.wave}`);
+      else if (type === 'EnemySpawned') {
+        // A wave's own units (and a script group's) walk in at their route's start; the units
+        // a split leaves behind appear where their parent fell.
+        const u = st.enemies.items.slice(0, st.enemies.used).find((x) => x.uid === e.uid);
+        if (u !== undefined && u.dist < 0.25) {
+          spawnedByWave[st.wave] = (spawnedByWave[st.wave] ?? 0) + 1;
         }
-        case 'BossPhase':
-          push(`BossPhase ${e.phase}`);
-          break;
-        case 'BossEnded': {
-          push('BossEnded');
-          const b = st.enemies.items.slice(0, st.enemies.used).find((x) => x.uid === e.uid);
-          droveOffAt = b === undefined ? null : b.dist;
-          break;
+        if (e.enemy === 'shareholder_value') bossUid = e.uid;
+      } else if (type === 'BossPhase') push(`BossPhase ${e.phase}`);
+      else if (type === 'BossEnded') {
+        push('BossEnded');
+        const b = st.enemies.items.slice(0, st.enemies.used).find((x) => x.uid === e.uid);
+        droveOffAt = b === undefined ? null : b.dist;
+      } else if (type === 'TowerJammed') {
+        jamsByWave[st.wave] = (jamsByWave[st.wave] ?? 0) + 1;
+        if (e.source === bossUid && bossUid !== 0) {
+          takeoverJams.push({ tick: st.tick, ticks: e.ticks });
+          tookOver = true;
         }
-        case 'TowerJammed':
-          jamsByWave[st.wave] = (jamsByWave[st.wave] ?? 0) + 1;
-          if (e.source === bossUid && bossUid !== 0) {
-            takeoverJams.push({ tick: st.tick, ticks: e.ticks });
-            tookOver = true;
-          }
-          break;
-        case 'TileOpened':
-          plates.push(e.marker);
-          break;
-        case 'ScriptCue':
-          cues.push(e.cueId);
-          push(`ScriptCue ${e.cueId}`);
-          break;
-        case 'AllySpawned':
-          if (e.kind === 'bearer') push('BearerSpawned');
-          break;
-        case 'ScriptGroupSpawned':
-          push(`ScriptGroupSpawned ${e.id}`);
-          break;
-        case 'PulledBack': {
-          const list = pulls.get(e.uid) ?? [];
-          list.push(st.tick);
-          pulls.set(e.uid, list);
-          break;
-        }
-        case 'ObjectiveProgress':
-          push(`Objective ${e.id} ${e.status}`);
-          break;
-        default:
-          break;
-      }
+      } else if (type === 'TileOpened') plates.push(e.marker);
+      else if (type === 'ScriptCue') {
+        cues.push(e.cueId);
+        push(`ScriptCue ${e.cueId}`);
+      } else if (type === 'AllySpawned') {
+        if (e.kind === 'bearer') push('BearerSpawned');
+      } else if (type === 'ScriptGroupSpawned') push(`ScriptGroupSpawned ${e.id}`);
+      else if (type === 'PulledBack') {
+        const list = pulls.get(e.uid) ?? [];
+        list.push(st.tick);
+        pulls.set(e.uid, list);
+      } else if (type === 'ObjectiveProgress') push(`Objective ${e.id} ${e.status}`);
     }
     let jammed = 0;
     let byBoss = 0;

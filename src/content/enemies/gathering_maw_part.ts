@@ -1,6 +1,6 @@
 // A part of the Gathering Maw (design/enemies.md § 6; D146): one of the three its phase-2 split
 // releases, each with 20% of the Maw's max HP (the split's `hpPct` sets it; `hp` here is that
-// share of 4400). Boss rules: Pinned and Stasis become Chilled 50%, and a part at the gate is
+// share of 4000). Boss rules: Pinned and Stasis become Chilled 50%, and a part at the gate is
 // defeat. Its HP joins the Maw's one boss bar. No gather of its own; 12 s after the split (or as
 // the last but one dies) the survivors merge back into the Maw.
 //
@@ -16,7 +16,7 @@ export const gathering_maw_part = defineEnemy({
   faction: 'hollow',
   body: 'void',
   layer: 'ground',
-  hp: 880,
+  hp: 800,
   armor: 4,
   speedTilesPerSec: 0.3,
   leak: 3,

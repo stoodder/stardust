@@ -2,7 +2,7 @@
 // `commitChoice`, so the pick is written as a real card's is; the run itself isn't filed) offers
 // "QUILL's directives" in the way on's place, its options waiting 700 ms; the answer commits at
 // once (Keep inherits Time Dilation; Purge refunds nothing here, no Rapport owned); then the base
-// plays Night Shift (T720's lines), mandatory: Esc skips nothing, Next reads every line to the
+// plays Night Shift (T720's lines; T714's stage), mandatory: Esc skips nothing, Next reads every line to the
 // end, and it is seen once. Then Purge in a battle: a dev battle (`?map=dev_heal`) on the Purge
 // save sends its Everglow units with their maintenance panels open (T703's view).
 // Screenshots in <out>/screens/c4/.
@@ -60,7 +60,7 @@ for (const [quill, option] of ANSWERS) {
       await shot(page, 'c4', 2, 'keep-answered');
     }
 
-    // The base: Night Shift plays as a pausing panel; Esc skips nothing.
+    // The base: Night Shift plays full-screen on its stage (T714); Esc skips nothing.
     await card.getByRole('button', { name: 'Continue' }).click();
     await page.evaluate(() => globalThis.__sd!.goto('base'));
     await expect.poll(() => shown(page)).toBe('a3_m04_base_night_shift');

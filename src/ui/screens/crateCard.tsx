@@ -80,37 +80,44 @@ function Card({ view }: { view: CrateView }) {
   }, []);
   const can = canTake(view, crate.pick.value);
   return (
-    <section
-      class="cr chamfer"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cr-title"
-      data-testid="crate-card"
-      data-kind={view.kind}
-      onKeyDown={trapTab}
-    >
-      <div class="cr-lid" aria-hidden="true">
-        <span class="cr-lid-brand">Zibzab</span>
-        <span class="cr-sticker">{STICKER}</span>
-      </div>
-      <h2 id="cr-title" class="cr-title" tabIndex={-1} ref={view.kind === 'pick' ? focusOnce : null}>
-        Zibzab's crate
-      </h2>
-      <p class="cr-line">{crateLine(view)}</p>
-      <Contents view={view} ready={ready} />
-      <div class="cr-actions">
-        <button
-          type="button"
-          class="hud-btn chamfer cr-take"
-          ref={view.kind === 'pick' ? null : focusOnce}
-          aria-disabled={can ? undefined : 'true'}
-          onClick={() => {
-            if (takeCrate(view)) dismissBriefing();
-          }}
+    <div class="cr-layer">
+      <section
+        class="cr chamfer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cr-title"
+        data-testid="crate-card"
+        data-kind={view.kind}
+        onKeyDown={trapTab}
+      >
+        <div class="cr-lid" aria-hidden="true">
+          <span class="cr-lid-brand">Zibzab</span>
+          <span class="cr-sticker">{STICKER}</span>
+        </div>
+        <h2
+          id="cr-title"
+          class="cr-title"
+          tabIndex={-1}
+          ref={view.kind === 'pick' ? focusOnce : null}
         >
-          Take the crate
-        </button>
-      </div>
-    </section>
+          Zibzab's crate
+        </h2>
+        <p class="cr-line">{crateLine(view)}</p>
+        <Contents view={view} ready={ready} />
+        <div class="cr-actions">
+          <button
+            type="button"
+            class="hud-btn chamfer cr-take"
+            ref={view.kind === 'pick' ? null : focusOnce}
+            aria-disabled={can ? undefined : 'true'}
+            onClick={() => {
+              if (takeCrate(view)) dismissBriefing();
+            }}
+          >
+            Take the crate
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

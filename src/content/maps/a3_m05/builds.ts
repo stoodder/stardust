@@ -105,12 +105,12 @@ function parSteps(): BuildStep[] {
     { wave: 13, upgrade: SLUICE_S },
     { wave: 13, upgrade: CATWALK_E },
     { wave: 13, build: 'thumper', tile: VAT_E },
-    { wave: 13, upgrade: BEND },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),
     slot1(14, TAKEOVER_SEC + 45),
     { wave: 14, upgrade: CATWALK_W },
     { wave: 15, upgrade: VAT_E },
+    { wave: 15, upgrade: BEND },
     { wave: 16, build: 'thumper', tile: SOUTH },
     { wave: 16, upgrade: VAT_E },
     { wave: 17, upgrade: SOUTH },
@@ -163,8 +163,9 @@ const REWRITE_PAR: ScriptedBuild = {
 
 export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a3_m05,
+  // Rewrite's two cells (each door) play their own par: Suppressing Fire in slot 1.
   referenceProfileByFlag: REFERENCE_VARIANTS.a3_m05.map((cell) =>
-    'quill_choice' in cell.when ? { ...cell, parBuild: REWRITE_PAR } : { ...cell },
+    Object.assign({}, cell, 'quill_choice' in cell.when ? { parBuild: REWRITE_PAR } : {}),
   ),
   parBuild: PAR,
   // Jam stays required (the no-jam build carries no answer), but the harness doesn't hold it to a
@@ -175,12 +176,16 @@ export const builds = defineBuilds({
   // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands
   // in W12) and then the platform at W14.
   noCounterLoseByWave: 14,
+  // Act III's band (50–70), its top raised 5 points for C4 Purge's cell alone: the −2 Everglow
+  // armor is the answer's earned edge, and its par holds the core to 18 of 22 where the others
+  // hold 14, so the bearers' 9 of 12 (75%) decide it (balance/a3m5Cells.test.ts).
+  marginBand: { minPct: 50, maxPct: 75 },
   flagVariants: { door_choice: ['convoy', 'warren'], quill_choice: ['keep', 'purge', 'rewrite'] },
   noCounterBuilds: {
     jam: {
       loadout: ['harpoon', 'prism', 'thumper', 'sproing'],
       technicianAbility: 'scanner_sweep',
-      steps: swapped(PAR.steps, { choir: 'prism', bloom: 'sproing' }, false),
+      steps: swapped(PAR.steps, { choir: 'sproing', bloom: 'prism' }, false),
     },
     armor: {
       loadout: ['choir', 'sproing', 'thumper', 'bloom'],

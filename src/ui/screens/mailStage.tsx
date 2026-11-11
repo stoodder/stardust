@@ -144,7 +144,8 @@ function Envelope({ state }: { state: 'shut' | 'opening' | 'open' }) {
 export function MailStage({ from }: { from: number }) {
   const still = prefersReducedMotion();
   const lead = mailLeadInMs(still);
-  const ms = useStageClock(from, (t) => !still && t < lead + 50);
+  // Redraw through the lead-in (still or not: the first paper comes out as it ends).
+  const ms = useStageClock(from, (t) => t < lead + 50);
   const view = dialogue.scene.value;
   const said = view === null ? [] : [...view.transcript, ...(view.line === null ? [] : [view.line])];
   const out = ms < lead ? 0 : papersOut(said);

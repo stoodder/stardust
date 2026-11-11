@@ -115,6 +115,7 @@ import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { BloomView } from '../views/BloomView.ts'; // T608
 import { SwarmView } from '../views/SwarmView.ts'; // T604
 import { LeaperView } from '../views/LeaperView.ts'; // T704
+import { leapersAway } from '../views/leaperLook.ts'; // T730a
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { PuddleView } from '../views/PuddleView.ts'; // T705
 import { RevokedView } from '../views/RevokedView.ts'; // T606
@@ -491,7 +492,9 @@ export class BattleScene extends Phaser.Scene {
     );
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
-    this.#jams = new JamView(ctx, this.#fx, prefersReducedMotion, (c, r) => this.#liftPx(c, r)); // T702
+    this.#jams = new JamView(ctx, this.#fx, prefersReducedMotion, (c, r) => this.#liftPx(c, r), (uid) =>
+      this.#towers.get(uid)?.flash(), // T730a: System Reboot's flash
+    ); // T702
     this.#rings = new JamRingView(ctx, prefersReducedMotion); // T707
     this.#takeover = new TakeoverView(ctx, map.markers, (c, r) => this.#liftPx(c, r)); // T707
     this.#gmaw = new GatheringMawView(ctx, prefersReducedMotion); // T708
@@ -752,7 +755,7 @@ export class BattleScene extends Phaser.Scene {
     this.#wards.update(state.allies, state.enemies);
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
-    this.#jams.update(state); // T702
+    this.#jams.update(state, dt); // T702; T730a: dt for Reboot's columns
     this.#rings.update(state.enemies); // T707
     this.#takeover.update(state); // T707
     this.#gmaw.update(dt, state.enemies); // T708
@@ -770,7 +773,7 @@ export class BattleScene extends Phaser.Scene {
     this.#revoked.update(dt); // T606
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
-    this.#harpoon.update(dt, state.enemies);
+    this.#harpoon.update(dt, state.enemies, this.#leapers.grounded); // T730a: no rope on a leaper's Pin
     this.#beams.update(dt, state.towers, state.enemies);
     this.#leaves.update(dt);
     this.#cueProps.update(dt, state.towerAtTile);
@@ -1219,6 +1222,7 @@ export class BattleScene extends Phaser.Scene {
       if (t.uid === selected) selectedTower = t;
       const target = t.targetUid === 0 ? undefined : this.#enemies.get(t.targetUid);
       if (target !== undefined) v.setFacing(facingOf(target.x - t.x, target.y - t.y));
+      if (t.tierDef?.attack?.kind === 'leaper') v.setPad(leapersAway(state.allies, t.uid), t.swarmAlive); // T730a
       v.sync(t);
     }
     this.#revoked.hold(this.#towers, stamp); // T606: powered down under the stamp for 1 s

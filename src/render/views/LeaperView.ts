@@ -3,13 +3,14 @@
 // while paused:
 // - each leaper in the air (out or back; at home it's in the pad, not drawn) boings along an arc
 //   (`leapLiftPx`) over a faint orange spot at its ground point, in its own body (`ally.leaper`,
-//   T740a: the tucked boing, its walk's frame 0), facing the way its leg runs, in the `air` layer
-//   (over the towers and walkers it boings past), sorted by its ground point like a flyer;
+//   T740a), facing the way its leg runs, in the pose its leg is in (T730a `leaperPose`: stretched
+//   springing off and reaching for the bonk, tucked through the arc, squashed landing home), in
+//   the `air` layer (over the towers and walkers it boings past), sorted by its ground point like
+//   a flyer;
 // - each bonk (`LeaperBonk`) pops a small orange ring on its target;
 // - each flyer a leaper grounded (`FlyerGrounded`), while it stays Pinned, wears an orange ring on
-//   the ground under it and three gold dizzy stars over its head (one Graphics in `vfx`).
-//   HarpoonView's rope still draws on every Pinned unit; T730a decides whether a leaper's Pin
-//   keeps it.
+//   the ground under it and three gold dizzy stars over its head (one Graphics in `vfx`). Its Pin
+//   draws no harpoon rope: HarpoonView passes by the flyers in `grounded` (T730a).
 // Allocation-free per frame once warm: a pool of sprites that grows the first time more leapers
 // are out than it holds, each leaper's leg kept by uid (made once per leaper), scratch points
 // module-level, the Graphics redrawn in place.
@@ -24,6 +25,9 @@ import { gridToScreen, type Vec2 } from '../iso.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { hexOf } from './jamLook.ts';
 import {
+  leaperFrame,
+  leaperPose,
+  type LeaperPose,
   BONK_COLOR,
   BONK_MS,
   BONK_RADIUS_TILES,
@@ -61,9 +65,20 @@ const STAR = hexOf(STAR_COLOR);
 const SLOTS = 8;
 
 interface Slot {
-  readonly body: Phaser.GameObjects.Sprite;
+  readonly body: Phaser.GameObjects.Image;
   facing: Facing | null;
+  pose: LeaperPose | null;
 }
+
+/** A pose's frame for one facing, looked up once. */
+interface PoseFrame {
+  readonly texture: string;
+  readonly frame: string;
+  readonly ax: number;
+  readonly ay: number;
+}
+const FACING_ORDER: readonly Facing[] = ['se', 'sw', 'ne', 'nw'];
+const POSES: readonly LeaperPose[] = ['stretch', 'tuck', 'land'];
 
 /** A leaper's current leg: where it began (grid, lift px) and its state then. */
 interface Leg {
@@ -110,6 +125,8 @@ export class LeaperView {
   readonly #legs = new Map<number, Leg>();
   /** The flyers a leaper grounded, by uid, while their Pin holds. */
   readonly #grounded = new Set<number>();
+  /** Each pose's frame per facing (`<pose>|<facing>`), looked up once. */
+  readonly #frames = new Map<string, PoseFrame>();
   readonly #marks: Phaser.GameObjects.Graphics;
   readonly #forget = (leg: Leg, uid: number): void => {
     if (leg.frame !== this.#frame) this.#legs.delete(uid);
@@ -134,7 +151,20 @@ export class LeaperView {
     this.#reducedMotion = reducedMotion;
     this.#marks = ctx.scene.make.graphics({}, false);
     ctx.layers.vfx.add(this.#marks);
+    for (const pose of POSES) {
+      for (const f of FACING_ORDER) {
+        const name = leaperFrame(pose, f);
+        const ref = ctx.sprites.frame(BODY, name, DEFAULT_VARIANT);
+        const a = ctx.sprites.frameAnchor(BODY, name);
+        this.#frames.set(pose + '|' + f, { texture: ref.texture, frame: ref.frame, ax: a.x, ay: a.y });
+      }
+    }
     for (let i = 0; i < SLOTS; i++) this.#grow();
+  }
+
+  /** The flyers a leaper grounded whose Pin still holds (HarpoonView draws no rope on them). */
+  get grounded(): ReadonlySet<number> {
+    return this.#grounded;
   }
 
   /** Leapers drawn in the air now, and grounded flyers marked now. */
@@ -192,12 +222,14 @@ export class LeaperView {
       }
       const done = Math.hypot(a.x - leg.fromX, a.y - leg.fromY);
       const left = Math.hypot(toX - a.x, toY - a.y);
-      const lift = leapLiftPx(legProgress(done, left), leg.fromLift, leg.toLift);
+      const p = legProgress(done, left);
+      const lift = leapLiftPx(p, leg.fromLift, leg.toLift);
       gridToScreen(a.x, a.y, this.#ctx.origin, pos);
       // Its spot on the ground, so the height reads (a dark shadow vanishes on Act III's ground).
       g.fillStyle(RING, 0.45);
       g.fillEllipse(Math.round(pos.x), Math.round(pos.y), 8, 3);
-      this.#look(slot, facingOf(toX - leg.fromX, toY - leg.fromY));
+      const facing = facingOf(toX - leg.fromX, toY - leg.fromY);
+      this.#look(slot, facing, leaperPose(a.swarmState === 'out', p));
       slot.body
         .setPosition(Math.round(pos.x), Math.round(pos.y - lift))
         .setDepth(worldDepth(pos.y, 'enemy', a.uid))
@@ -284,28 +316,25 @@ export class LeaperView {
     return shown;
   }
 
-  /** Plays the body's walk for `facing`, held on its first frame (a tucked boing pose). */
-  #look(slot: Slot, facing: Facing): void {
-    if (slot.facing === facing) return;
+  /** Shows the body's frame for `pose` facing `facing` (each a still frame; T730a). */
+  #look(slot: Slot, facing: Facing, pose: LeaperPose): void {
+    if (slot.facing === facing && slot.pose === pose) return;
     slot.facing = facing;
-    const { sprites } = this.#ctx;
-    const anim = `walk_${facing}`;
-    const a = sprites.frameAnchor(BODY, `${anim}_0`);
-    slot.body.play(sprites.anim(BODY, anim, DEFAULT_VARIANT), true);
-    slot.body.setDisplayOrigin(a.x, a.y);
-    slot.body.anims.pause();
+    slot.pose = pose;
+    const f = this.#frames.get(pose + '|' + facing);
+    if (f !== undefined) slot.body.setTexture(f.texture, f.frame).setDisplayOrigin(f.ax, f.ay);
   }
 
-  /** One more pooled sprite, hidden. */
+  /** One more pooled image, hidden. */
   #grow(): void {
-    const body = this.#ctx.scene.make.sprite({}, false).setVisible(false);
+    const body = this.#ctx.scene.make.image({}, false).setVisible(false);
     this.#ctx.layers.air.add(body);
-    this.#slots.push({ body, facing: null });
+    this.#slots.push({ body, facing: null, pose: null });
   }
 
   #hide(slot: Slot): void {
     slot.facing = null;
-    slot.body.stop();
+    slot.pose = null;
     slot.body.setVisible(false);
   }
 }

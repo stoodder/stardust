@@ -63,7 +63,7 @@ export const waves = defineWaves([
   // W1 · the first group behind a thin Mote screen (light: the player gets to feel strong); a
   // drone patrol walks in behind them, to repossess
   {
-    groups: [motes(4, 'road', 0), drones(3, 10, 2.5), drones(3, 24, 2.5)],
+    groups: [motes(4, 'road', 0), drones(3, 10, 2.5), drones(3, 30, 2.5)],
   },
   // W2 · Rift Moths over the second group
   { ...NO_CALL, groups: [moths(1, 'sky_w', 6), moths(2, 'sky_e', 9), drones(2, 14)] },

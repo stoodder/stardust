@@ -101,10 +101,15 @@ export function rememberedText(choice: ResultsChoice): string | null {
  */
 export function Remembered({ choice }: { choice: ResultsChoice }) {
   const text = rememberedText(choice);
-  if (text === null) return null;
+  if (text === null || choice.picked === null) return null;
+  const answer = choice.options[choice.picked] ?? '';
   return (
-    <p class="sd-choice-remember" role="status" data-testid="choice-remember">
-      {text}
-    </p>
+    <div class="sd-choice-answered" data-testid="choice-answered">
+      {/* The answer as the player said it (C3's shows as their own line in the briefing). */}
+      <p class="sd-choice-answer">{silkText(answer)}</p>
+      <p class="sd-choice-remember" role="status" data-testid="choice-remember">
+        {text}
+      </p>
+    </div>
   );
 }
