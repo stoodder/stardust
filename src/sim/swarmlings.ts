@@ -231,10 +231,8 @@ function home(state: SimState, ctx: TickContext, a: Ally, den: Tower, attack: Sp
     retire(state, a, den, attack);
     return;
   }
-  if (a.swarmTicks > 0) {
-    a.swarmTicks--;
-    return;
-  }
+  // Its rest counts the arrival's pass: it heads out on the restTicks-th pass after.
+  if (a.swarmTicks > 0 && --a.swarmTicks > 0) return;
   if (den.holdFire) return;
   const target = pick(state, ctx, den, attack, a);
   if (target === null) return;

@@ -9,7 +9,9 @@ import { battleConfig } from '../../app/battleSetup.ts';
 import type { IdSpace } from '../../content/types.ts';
 import {
   BLOCK_FRONT_TILES,
+  blockable,
   blockerLevel,
+  gatedFlagDefaults,
   createBuildExecutor,
   createSim,
   runHeadless,
@@ -17,6 +19,7 @@ import {
   type SimConfig,
   type SimEvent,
 } from '../../sim/index.ts';
+import { ENEMY_BLANK } from '../../sim/entities.ts';
 
 const MAP = 'dev_holdout';
 
@@ -86,7 +89,7 @@ describe('dev_holdout: the Holdout (T605)', () => {
 
   it("Bricks's health follows the timeline only: each wave starts on its level, to the 5% floor", () => {
     // Standard, and Story's longer countdowns (the ease stretches to arrive on time).
-    for (const modifiers of [[], [{ kind: 'countdown' as const, pct: 0.5 }]]) {
+    for (const modifiers of [[], [{ kind: 'countdown' as const, pct: 0.5, source: 'story' }]]) {
       const sim = createSim(config('convoy', { modifiers }));
       const keys = sim.map.allies[0]!.block!.health;
       expect([1, 2, 3].map((w) => blockerLevel(keys, w))).toEqual([1, 0.6, 0.05]);
@@ -263,5 +266,20 @@ describe('dev_holdout: the Holdout (T605)', () => {
       replay.step();
     }
     expect(replay.hash()).toBe(sim.hash());
+  });
+
+  it('opens the first listed door when a run sets none (no save; the harness), and holds no boss', () => {
+    const cfg = battleConfig(MAP, 1);
+    const map = cfg.content.maps[MAP]!;
+    expect(cfg.scriptFlags).toEqual({ door_choice: 'convoy' });
+    expect(gatedFlagDefaults(map)).toEqual({ door_choice: 'convoy' });
+    expect(gatedFlagDefaults(map, { door_choice: 'warren' })).toEqual({ door_choice: 'warren' });
+    const boss = Object.values(cfg.content.enemies).find(
+      (d) => d.boss !== null && d.layer === 'ground',
+    )!;
+    const walker = cfg.content.enemies.mote!;
+    const route = map.routes.west!;
+    expect(blockable({ ...ENEMY_BLANK, alive: true, def: walker, route })).toBe(true);
+    expect(blockable({ ...ENEMY_BLANK, alive: true, def: boss, route })).toBe(false);
   });
 });

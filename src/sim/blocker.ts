@@ -33,6 +33,7 @@
 //   vitals cue read `Ally.health` itself).
 import type { CompiledAllyPost, CompiledMapDef, CompiledRoute } from '../content/compiled.ts';
 import { BLOCKER_HEALTH_FLOOR } from '../content/rules.ts';
+import type { DeepReadonly } from '../shared/types.ts';
 import type { IdSpace } from '../content/types.ts';
 import { outOfReach } from './enemyAbilities/layers.ts';
 import type { Ally, Enemy } from './entities.ts';
@@ -145,7 +146,7 @@ export function blockers(state: SimState, ctx: TickContext): void {
  * it isn't scheduled: the setup, a wave held for a boss fight, the last wave, or the schedule done.
  */
 export function ticksToNextWave(
-  state: Pick<SimState, 'schedule' | 'wave'>,
+  state: DeepReadonly<Pick<SimState, 'schedule' | 'wave'>>,
   ctx: Pick<TickContext, 'map' | 'config'>,
 ): number {
   const s = state.schedule;

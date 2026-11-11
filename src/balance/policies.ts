@@ -12,10 +12,12 @@ export function policyBuild<K extends IdSpace = LiveIds>(
   towers: Readonly<Record<string, { readonly tiers: readonly { readonly cost: number }[] }>>,
 ): CompiledBuild<K> {
   const par = map.builds.parBuild;
+  // A forced input is pressed as par presses it, whatever the policy (A3M3's SEAL; T605).
+  const presses = par.steps.filter((s) => s.kind === 'scriptInput');
   switch (policy) {
     case 'none':
       // No towers and no abilities.
-      return { ...par, technicianAbility: null, callEarly: false, steps: [] };
+      return { ...par, technicianAbility: null, callEarly: false, steps: presses };
     case 'alwaysCallEarly':
       return { ...par, callEarly: true };
     case 'spareFleeing': {
@@ -29,7 +31,7 @@ export function policyBuild<K extends IdSpace = LiveIds>(
     }
     case 'spamCheapest': {
       const cheapest = cheapestTower(par.loadout, towers);
-      if (cheapest === null) return { ...par, steps: [] };
+      if (cheapest === null) return { ...par, steps: presses };
       const steps: CompiledBuildStep<K>[] = [];
       for (let row = 0; row < map.rows; row++) {
         for (let col = 0; col < map.cols; col++) {
@@ -39,7 +41,7 @@ export function policyBuild<K extends IdSpace = LiveIds>(
           }
         }
       }
-      return { ...par, steps };
+      return { ...par, steps: [...steps, ...presses] };
     }
     default:
       return assertNever(policy);

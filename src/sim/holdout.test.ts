@@ -5,12 +5,10 @@
 // lifted gates. dev_holdout end to end: render/__fixtures__/devHoldout.test.ts.
 import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
-import type { CompiledMapDef } from '../content/compiled.ts';
 import type { MapDef } from '../content/types.ts';
 import { SIM_FIXTURE, fixtureConfig, type FixtureIds } from './__fixtures__/sim.ts';
 import { blockable, blockerLevel, holdDistOn, ticksToNextWave } from './blocker.ts';
 import { ENEMY_BLANK, type Enemy } from './entities.ts';
-import { gatedFlagDefaults } from './escort.ts';
 import { FEATURE_GATES } from './gates.ts';
 import { createSim } from './sim.ts';
 import type { SimEvent } from './events.ts';
@@ -115,20 +113,16 @@ describe('endMap (T605)', () => {
   });
 
   it('runs from map events only: an objective may not end the map', () => {
-    const map = {
-      ...compileContent(SIM_FIXTURE).maps.fx_map,
-      events: [],
-      objectives: [
-        {
-          id: 'o',
-          name: 'O',
-          description: 'O',
-          condition: { stat: 'towersBuilt', gte: 1 },
-          intel: 1,
-          onComplete: [{ endMap: 'won' }],
-        },
-      ],
-    } as unknown as CompiledMapDef;
+    const fx = compileContent(SIM_FIXTURE).maps.fx_map;
+    const objective = {
+      id: 'o',
+      name: 'O',
+      description: 'O',
+      condition: { stat: 'towersBuilt', gte: 1 } as const,
+      intel: 1,
+      onComplete: [{ endMap: 'won' } as const],
+    };
+    const map = Object.assign({}, fx, { events: [], objectives: [objective] });
     expect(unsupportedScript(map)).toEqual([
       "objective 'o': action endMap runs from map events only",
     ]);
@@ -173,17 +167,22 @@ describe('the blocker rules (T605)', () => {
     const road = map.routes.a!;
     // The road runs (0,0) (1,0) (2,0) then down column 2; a post at (1,1) is beside (1,0).
     expect(holdDistOn(road, 1.5, 1.5)).toBeCloseTo(1, 12);
-    // Beside (2,1), the turn: nearest at 2 tiles along.
-    expect(holdDistOn(road, 3.5, 1.5)).toBeCloseTo(2, 12);
+    // Beside (2,1), just past the turn: 3 tiles along.
+    expect(holdDistOn(road, 3.5, 1.5)).toBeCloseTo(3, 12);
     expect(holdDistOn(road, 5.5, 0.5)).toBe(-1); // too far
     expect(holdDistOn(map.routes.sky!, 3.5, 1.5)).toBe(-1); // flyers pass over
   });
 
-  it('may hold a live ground unit only: never a boss, a flyer, a burrowed or leaving unit, or a spared one', () => {
+  it('may hold a live ground unit only: never a flyer, a burrowed or leaving unit, or a spared one', () => {
     const map = compileContent(SIM_FIXTURE).maps.fx_map;
     const def = compileContent(SIM_FIXTURE).enemies.fx_walker;
-    const unit = (over: Partial<Enemy>): Enemy =>
-      ({ ...ENEMY_BLANK, alive: true, def, route: map.routes.a!, ...over }) as Enemy;
+    const unit = (over: Partial<Enemy>): Enemy => ({
+      ...ENEMY_BLANK,
+      alive: true,
+      def,
+      route: map.routes.a!,
+      ...over,
+    });
     expect(blockable(unit({}))).toBe(true);
     expect(blockable(unit({ alive: false }))).toBe(false);
     expect(blockable(unit({ burrowed: true }))).toBe(false);
@@ -191,8 +190,7 @@ describe('the blocker rules (T605)', () => {
     expect(blockable(unit({ standDownTicks: 30 }))).toBe(false);
     expect(blockable(unit({ tags: ['fleeing'] }))).toBe(false);
     expect(blockable(unit({ route: map.routes.sky! }))).toBe(false);
-    const boss = { ...def, boss: { phases: [] } } as unknown as typeof def;
-    expect(blockable(unit({ def: boss }))).toBe(false);
+    // A boss walks through: render/__fixtures__/devHoldout.test.ts (the fixture has none).
   });
 
   it('counts the ticks to the next wave start: the rest of the spawning plus the countdown', () => {
@@ -209,17 +207,5 @@ describe('the blocker rules (T605)', () => {
     expect(sim.state.schedule.startTick[1]! - (startedAt - 1)).toBe(left);
     // In the last wave, nothing is scheduled.
     expect(ticksToNextWave(sim.state, ctx)).toBe(-1);
-  });
-});
-
-describe('gatedFlagDefaults (T605)', () => {
-  it('opens the first door a gated group lists, under any flag the run sets', () => {
-    const map = {
-      escort: { groups: [{ when: { flag: 'door_choice', eq: 'convoy' } }, { when: null }] },
-      builds: { flagVariants: { door_choice: ['convoy', 'warren'] } },
-    } as unknown as Pick<CompiledMapDef, 'escort' | 'builds'>;
-    expect(gatedFlagDefaults(map)).toEqual({ door_choice: 'convoy' });
-    expect(gatedFlagDefaults(map, { door_choice: 'warren' })).toEqual({ door_choice: 'warren' });
-    expect(gatedFlagDefaults(compileContent(SIM_FIXTURE).maps.fx_map)).toEqual({});
   });
 });

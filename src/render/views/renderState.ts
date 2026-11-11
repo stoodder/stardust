@@ -94,6 +94,11 @@ export interface RenderState {
     readonly phasedOut: number;
   };
   /**
+   * BlockerView (T605): blocker bars drawn now (Bricks at the Gap), the units drawn as held now,
+   * and the health the bar shows (NaN with none).
+   */
+  readonly blocker: { readonly shown: number; readonly holding: number; readonly health: number };
+  /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
    * growth ring, ripples drawn behind burrowed Hollow units, and each rift lane's status.
    */
@@ -103,6 +108,17 @@ export interface RenderState {
     readonly grown: number;
     readonly ripples: number;
     readonly rifts: readonly ('closed' | 'opening' | 'open')[];
+  };
+  /**
+   * The Scuttle Den and Underfoot (T604): swarmlings drawn dashing or running home now and latched
+   * now (SwarmView), Underfoot's traps showing now and the springs seen since the battle began
+   * (TrapView).
+   */
+  readonly swarm: {
+    readonly out: number;
+    readonly latched: number;
+    readonly traps: number;
+    readonly sprung: number;
   };
   /** Refugees drawn now (on the field), and those frozen in a hush (T305c, RefugeeView). */
   readonly refugees: { readonly shown: number; readonly held: number };

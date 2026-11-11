@@ -39,6 +39,8 @@
 // M5 (T503): a phaser's tell and Phased stretch show a broken teal ring under it (PhaseView).
 // M6 (T602): a Maw's tendril tell and growth ring, a burrowed Undertow's ripple trail, and the rift
 // cracks (closed, opening a wave ahead, open) (HollowView).
+// M6 (T605): a blocker's health bar over Bricks at the Gap, and a bracket under each unit he holds
+// (BlockerView).
 // M5 (T502): an Aegis Cantor's continuous shield aura shows as a crawling dashed blue ring
 // (ShieldAuraView).
 // M6 (T603): an Expediter's haste aura shows as a solid orange ring beating like a metronome, the
@@ -96,6 +98,9 @@ import { CoreView } from '../views/CoreView.ts';
 import { BlinkView } from '../views/BlinkView.ts';
 import { PhaseView } from '../views/PhaseView.ts';
 import { HollowView } from '../views/HollowView.ts'; // T602
+import { BlockerView } from '../views/BlockerView.ts'; // T605
+import { SwarmView } from '../views/SwarmView.ts'; // T604
+import { TrapView } from '../views/TrapView.ts'; // T604
 import { MindView } from '../views/MindView.ts';
 import { MarkView } from '../views/MarkView.ts';
 import { BossBarView } from '../views/BossBarView.ts';
@@ -252,6 +257,9 @@ export class BattleScene extends Phaser.Scene {
   /** Phasing: the broken ring under a telling or Phased unit (T503). */
   #phases!: PhaseView;
   #hollow!: HollowView; // T602
+  #blocker!: BlockerView; // T605: Bricks's bar at the Gap, the units he holds
+  #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
+  #traps!: TrapView; // T604: Underfoot's trap ring and its springs
   /** Unnerved squiggles, Echo Spike rings, and Stillness's disc (T507). */
   #mind!: MindView;
   /** Marks and Truthlight's no-evade (T508). */
@@ -427,6 +435,9 @@ export class BattleScene extends Phaser.Scene {
     this.#blinks = new BlinkView(ctx, this.#fx, prefersReducedMotion);
     this.#phases = new PhaseView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#hollow = new HollowView(ctx, map, prefersReducedMotion, pulseOn); // T602
+    this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
+    this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
+    this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#mind = new MindView(ctx, this.#fx, prefersReducedMotion, anchors);
     this.#marks = new MarkView(ctx);
     this.#harpoon = new HarpoonView(ctx, prefersReducedMotion);
@@ -591,6 +602,9 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.reset();
       this.#phases.reset();
       this.#hollow.reset(); // T602
+      this.#blocker.reset(); // T605
+      this.#swarm.reset(); // T604
+      this.#traps.reset(); // T604
       this.#mind.reset();
       this.#marks.reset();
       this.#harpoon.reset();
@@ -635,6 +649,9 @@ export class BattleScene extends Phaser.Scene {
     this.#blinks.update(dt, state.enemies);
     this.#phases.update(state.enemies);
     this.#hollow.update(dt, state.wave, state.enemies, state.allies); // T602
+    this.#blocker.update(dt, state); // T605
+    this.#swarm.update(state.allies, state.enemies); // T604
+    this.#traps.update(state.zones, state.trapSprung); // T604
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
     this.#harpoon.update(dt, state.enemies);
@@ -765,6 +782,12 @@ export class BattleScene extends Phaser.Scene {
         phasedOut: this.#phases.phasedOut,
       },
       hollow: { ...this.#hollow.shown, tellsSeen: this.#hollow.tellsSeen }, // T602
+      swarm: { ...this.#swarm.shown, ...this.#traps.shown }, // T604
+      blocker: {
+        shown: this.#blocker.shown,
+        holding: this.#blocker.holding,
+        health: this.#blocker.health,
+      }, // T605
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
       harpoon: { pins: this.#harpoon.pins, skewered: this.#harpoon.skewered },
@@ -1062,6 +1085,7 @@ export class BattleScene extends Phaser.Scene {
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used
       if (!a.alive || a.kind === null || a.group >= 0) continue; // refugees: RefugeeViews (T305c)
+      if (a.mode === 'owner') continue; // swarmlings: SwarmView (T604)
       let v = this.#allies.get(a.uid);
       if (v === undefined) {
         v = this.#allies.acquire(a.uid);

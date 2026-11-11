@@ -15,6 +15,7 @@ import { rejectText } from './hudText.ts';
 import { bindBattleAudio } from './audio.ts';
 import { bindDialogue } from './dialogue.ts';
 import { bindClickables, bindPeeker } from './peeker.ts';
+import { bindForcedInput } from './forcedInput.ts'; // T605
 import type { Resume } from './checkpoints.ts';
 
 /** Successive battles get distinct scene keys, so a new one never collides with a queued removal. */
@@ -107,6 +108,7 @@ export function startBattle(
   const unbindAudio = bindBattleAudio(host);
   const unbindPeeker = bindPeeker(sim.map, interaction);
   const unbindClickables = bindClickables(host);
+  const unbindForcedInput = bindForcedInput(host); // T605
   setCommandTarget({ host, interaction, cancel: () => scene.cancel() });
   game.scene.add(key, scene, true);
   return {
@@ -123,6 +125,7 @@ export function startBattle(
       unbindAudio();
       unbindPeeker();
       unbindClickables();
+      unbindForcedInput();
       game.scene.remove(key);
     },
   };

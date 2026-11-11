@@ -10,6 +10,8 @@ import { MenuButton, PauseMenu } from '../pause/PauseMenu.tsx';
 import { pauseMenu } from '../pause/state.ts';
 import { hud } from '../state.ts';
 import { MuteButton } from './MuteButton.tsx';
+import { ForcedInputButton } from './ForcedInputButton.tsx'; // T605
+import { forcedInput } from './forcedInputState.ts';
 import { AbilityBar } from './AbilityBar.tsx';
 import { Briefing } from './Briefing.tsx';
 import { BuildBar } from './BuildBar.tsx';
@@ -32,7 +34,12 @@ import './hud.css';
 export function Hud() {
   const selected = hud.selected.value;
   const briefing = dialogue.scene.value?.mode === 'briefing' ? dialogue.scene.value : null;
-  const open = hud.briefing.value !== null || sceneBlocks.value || pauseMenu.value;
+  // A forced input (T605) locks every control but its own button.
+  const open =
+    hud.briefing.value !== null ||
+    sceneBlocks.value ||
+    pauseMenu.value ||
+    forcedInput.value !== null;
   return (
     <div class="hud" data-act={hud.act.value} data-testid="hud">
       {/* Everything but the briefing: inert (unfocusable, unclickable) while it, a scene, or the
@@ -69,6 +76,7 @@ export function Hud() {
         <CursorAnnouncer />
         <ActionAnnouncer />
       </div>
+      <ForcedInputButton />
       {hud.briefing.value !== null && briefing !== null && <Briefing view={briefing} />}
       {pauseMenu.value && <PauseMenu />}
     </div>
