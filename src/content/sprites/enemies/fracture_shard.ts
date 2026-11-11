@@ -9,8 +9,8 @@
 // - `walk_<facing>` (3 frames, 7 fps); `heavy_<facing>` (§8 `heavy`); `tell_<facing>` (the reach).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { dropPixels, heavyDress, hollowBody, reach } from './hollow.ts';
-import { MOTE_LEGEND } from './mote.ts';
+import { dropPixels, heavyDress, hollowBody, inkContour, reach } from './hollow.ts';
+import { MOTE_BODY_LEGEND } from './mote.ts';
 
 const W = 15;
 const H = 13;
@@ -59,6 +59,8 @@ function shard(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
       plot(g, x, yy, x === edge ? (glint ? 'U' : lit ? 'V' : '0') : c);
     }
   }
+  // Its edge inked `ink.0` inside the pale outline, as the Mote's (T569): the crack stays lit.
+  inkContour(g);
   stamp(g, edge - 2, H - legs.length, heavy ? legs.slice(0, 1) : legs);
   const fy = Math.round(cy);
   const top = Math.round(cy - ry);
@@ -105,7 +107,7 @@ export const enemyFractureShard = defineSprite({
   anchor: { x: AX, y: AY },
   palette: 'hollow',
   outline: 'auto',
-  legend: MOTE_LEGEND,
+  legend: MOTE_BODY_LEGEND,
   frames,
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2'], fps: 7 },

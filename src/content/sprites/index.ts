@@ -14,7 +14,16 @@ import { enemyChitterbloom } from './enemies/chitterbloom.ts';
 import { enemyGerald } from './enemies/gerald.ts';
 import { enemyYoungling } from './enemies/youngling.ts';
 import { enemyZoomer } from './enemies/zoomer.ts';
+import {
+  enemyMaw,
+  enemyMawG1,
+  enemyMawG2,
+  enemyMawG3,
+  enemyMawG4,
+  enemyMawG5,
+} from './enemies/maw.ts';
 import { enemyMote } from './enemies/mote.ts';
+import { enemyUndertow } from './enemies/undertow.ts';
 import { enemyGlimmer } from './enemies/glimmer.ts';
 import { enemyWeftWarden } from './enemies/weft_warden.ts';
 import { enemyLightwing } from './enemies/lightwing.ts';
@@ -192,8 +201,6 @@ import {
   allySwarmling,
   enemyCompliance,
   enemyExpediter,
-  enemyMaw,
-  enemyUndertow,
   iconAbilityUnderfoot,
   iconEnemyCompliance,
   iconEnemyExpediter,
@@ -326,8 +333,13 @@ export const SPRITES = [
   enemyFracture,
   enemyFractureShard,
   enemyRiftmoth,
-  // M6's units (placeholders until T640a: placeholders/m6.ts).
+  // M6's units (T640a): the Maw at each growth step, the Undertow, Everglow Security.
   enemyMaw,
+  enemyMawG1,
+  enemyMawG2,
+  enemyMawG3,
+  enemyMawG4,
+  enemyMawG5,
   enemyUndertow,
   enemyCompliance,
   enemyExpediter,

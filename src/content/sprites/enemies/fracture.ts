@@ -13,8 +13,8 @@
 // No death frames: it splits (the sim spawns its Shards) and the Hollow unravels (render).
 import { defineSprite } from '../defineSprite.ts';
 import { grid, line, plot, rows, stamp, type CharGrid } from '../helpers.ts';
-import { dropPixels, heavyDress, hollowBody, reach } from './hollow.ts';
-import { MOTE_LEGEND } from './mote.ts';
+import { dropPixels, heavyDress, hollowBody, inkContour, reach } from './hollow.ts';
+import { MOTE_BODY_LEGEND } from './mote.ts';
 
 /** Authored canvas: room behind the body (left, facing SE) for Heavy's speed lines. */
 const W = 20;
@@ -73,6 +73,8 @@ function fracture(facing: Facing, step: 0 | 1 | 2, look: Look): string[] {
       }
     }
   }
+  // Its edge inked `ink.0` inside the pale outline, as the Mote's (T569): the crack stays lit.
+  inkContour(g);
   const left0 = Math.round(cx - rx);
   // The legs (Heavy plants fewer, the reach three).
   const legs = tell
@@ -134,7 +136,7 @@ export const enemyFracture = defineSprite({
   anchor: { x: AX, y: AY },
   palette: 'hollow',
   outline: 'auto',
-  legend: MOTE_LEGEND,
+  legend: MOTE_BODY_LEGEND,
   frames,
   anims: {
     walk_se: { frames: ['walk_se_0', 'walk_se_1', 'walk_se_2'], fps: 5 },

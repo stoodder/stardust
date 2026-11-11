@@ -8,6 +8,9 @@
 //   outline drawn round nothing); one on the edge bites the silhouette.
 // - `ringRound`: hand-placed outline pixels round everything opaque (the inner ring of Heavy's 2 px
 //   swollen outline; the outline pass adds the outer one).
+// - `inkContour`: the body's edge inked `ink.0` (`K` in the sprite's legend) inside the pale outline
+//   (U12, the Mote's first; T569 gave the Fracture and the Shard theirs), so the pale ring always
+//   sits on the darkest dark: a crowd stays a count of separate shapes on grey ground.
 import { at, fromRows, hash01, line, plot, rows, type CharGrid } from '../helpers.ts';
 
 /** Characters `dropPixels` may knock out: the body's greys (never a feature, outline, or eye). */
@@ -37,6 +40,32 @@ export function dropPixels(src: readonly string[], seed: number): string[] {
     plot(g, x, y, '.');
   }
   return rows(g);
+}
+
+/** Characters `inkContour` leaves lit on the edge: the unsung violet of a crack or a seam. */
+const GLOWS = new Set(['V', 'U']);
+
+/**
+ * Inks the body's edge: every opaque pixel 4-adjacent to the outside becomes `K` (`ink.0`), except
+ * the unsung violet (a crack's glow stays lit to the rim). Run it on the body before the features.
+ */
+export function inkContour(g: CharGrid): void {
+  const h = g.length;
+  const w = g[0]?.length ?? 0;
+  const edge: [number, number][] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const c = at(g, x, y);
+      if (c === '.' || GLOWS.has(c)) continue;
+      const out =
+        at(g, x - 1, y) === '.' ||
+        at(g, x + 1, y) === '.' ||
+        at(g, x, y - 1) === '.' ||
+        at(g, x, y + 1) === '.';
+      if (out) edge.push([x, y]);
+    }
+  }
+  for (const [x, y] of edge) plot(g, x, y, 'K');
 }
 
 /** Rings everything opaque in `g` with hand-placed outline pixels (`x`), 4-adjacent. */

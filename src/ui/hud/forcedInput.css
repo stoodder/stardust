@@ -25,6 +25,10 @@
 
 .hud-forced-input-button {
   --edge: var(--sd-steel-2);
+  margin: 0;
+  border: 0;
+  font: inherit;
+  text-transform: uppercase;
   min-width: 128px;
   min-height: 32px;
   padding: 8px 24px;
@@ -74,7 +78,12 @@
   }
 }
 
-/* The HUD's parts a forced input locks (index.tsx `Lock`): inert, and laid out as if unwrapped. */
+/* The HUD's parts a forced input locks (index.tsx `Lock`): inert, and laid out as if unwrapped.
+   Its controls dim so they read as out of reach; the readouts (status, waves) stay lit. */
 .hud-lock {
   display: contents;
+}
+
+.hud[data-locked] :is(.hud-bottom-left, .hud-build, .hud-speed, .hud-tower) {
+  opacity: 0.4;
 }

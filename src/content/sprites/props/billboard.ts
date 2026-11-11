@@ -108,13 +108,13 @@ function peeling(): string[] {
 
 /**
  * The panel unlit (Act III's `dark`): the peeling board with its power cut, every lit color one
- * band or more down (paper to dull steel, the frame's teal to its deepest, Evie's sun and the bars
- * to their darkest gold and pink, the backboard to near-black grime), its legs too.
+ * band or more down (the paper to the night's ink, the frame's teal to its deepest, Evie's sun and
+ * the bars to their darkest gold and pink, the backboard to near-black grime), its legs too.
  */
 const UNLIT_PANEL: Readonly<Record<string, string>> = {
-  '4': '1',
-  '3': '0',
-  '2': '0',
+  '4': 'T',
+  '3': 'U',
+  '2': 'U',
   '8': '6',
   '6': '5',
   G: 'M',
@@ -139,18 +139,17 @@ const SMILE: readonly (readonly [number, number])[] = [
 ];
 
 /**
- * The hum-glyph (art-direction §6; bible.md *Two suns*): the warrens' mark for the family hum,
- * "Hm. Hm-hm. Hmmm." (the home motif's four notes, A · C–D · A), painted in sung stardust's warm
- * pink-gold over the smile: four rising strokes, the last held long to the right, a drip of paint
- * under the second. The only lit thing on the board.
+ * The hum-glyph (art-direction §6; bible.md *Two suns*): the warrens' mark for the family hum, a
+ * singer (a gold dot) and three arcs of song going out from it, painted in sung stardust's warm
+ * pink-gold over Evie's smile (her eyes left looking out). The only lit thing on the board.
  */
 // prettier-ignore
 const HUM_GLYPH: readonly string[] = [
-  '....Z....',
-  '..Z.Y....',
-  'Z.Y.Y.Z..',
-  'Y.Y.Y.YYV',
-  '..Y......',
+  '....Y..Z.',
+  '..Y..Y..Y',
+  'V..Y.Y..Y',
+  '..Y..Y..Y',
+  '....Y..Z.',
 ];
 
 /** Act III's board (`dark`): the peeling board unlit, with the hum-glyph over Evie's smile. */
@@ -183,7 +182,10 @@ export const propBillboard = defineSprite({
     J: 'grime.2',
     K: 'grime.1',
     L: 'grime.3',
-    // Unlit (`dark`): Evie's sun and the bars at their darkest, the backboard near black.
+    // Unlit (`dark`): the paper in the night's ink, Evie's sun and the bars at their darkest, the
+    // backboard near black.
+    T: 'ink.4',
+    U: 'ink.3',
     M: 'gold.1',
     N: 'gold.0',
     R: 'pink.1',

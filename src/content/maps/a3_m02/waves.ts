@@ -35,11 +35,16 @@ const expediters = (count: number, delaySec: number, intervalSec?: number): Wave
 export const COUNTDOWN = 30;
 /** W7's drone column: ten, this far apart, so the Clean Exit (map.ts, 12 s in) lands mid-column. */
 export const W7_GAP = 2;
-/** The late drone columns, each sent twice (W12's, W14's, W15's), one drone a second. */
-export const W12_DRONES = 30;
-export const W14_DRONES = 32;
-export const W15_DRONES = 20;
-const GAP = 1;
+const E = (k: string, d: number): number => Number(process.env[k] ?? d);
+export const W12_RUSH = E('R12', 10);
+export const W14_RUSH = E('R14', 12);
+export const W15_RUSH = E('R15', 10);
+const RUSH_GAP = E('RG', 0.4);
+/** A hasted rush: `e` Expediters with `n` drones packed in among them, `delaySec` into the wave. */
+const rush = (delaySec: number, e: number, n: number): WaveGroup[] => [
+  expediters(e, delaySec, 1.2),
+  drones(n, delaySec + 0.3, RUSH_GAP),
+];
 /**
  * The Mote clusters before the cue (W1's second pack, W2's rift, W4's road, W6's rift) and after
  * it (W8's two packs, W10's rifts), this far apart: packed tight enough that only splash keeps up.
@@ -99,14 +104,11 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     groups: [drones(8, 0, 1.2), expediters(1, 4), motes(14, 'rift_e', 20, 0.3)],
   },
-  // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`)
+  // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`): a long column, then
+  // a hasted rush
   {
     countdownSec: COUNTDOWN,
-    groups: [
-      drones(W12_DRONES, 0, GAP),
-      expediters(4, 2, 4),
-      drones(W12_DRONES, W12_DRONES * GAP + 4, GAP),
-    ],
+    groups: [drones(20, 0, 1.2), ...rush(28, 2, W12_RUSH)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -118,25 +120,21 @@ export const waves = defineWaves([
       g('fracture', 2, 'rift_w', 26, 4),
     ],
   },
-  // W14 · everything Everglow
+  // W14 · everything Everglow: a column with its escorts, then the biggest rush
   {
     countdownSec: COUNTDOWN,
-    groups: [
-      drones(W14_DRONES, 0, GAP),
-      expediters(5, 2, 4),
-      drones(W14_DRONES, W14_DRONES * GAP + 4, GAP),
-    ],
+    groups: [drones(22, 0, 1.0), expediters(2, 6, 8), ...rush(30, 3, W14_RUSH)],
   },
   // W15 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(W15_DRONES, 0, GAP),
-      expediters(4, 2, 4),
+      drones(14, 0, 1.0),
+      expediters(2, 3, 6),
       motes(18, 'rift_w', 10, 0.3),
       g('fracture', 2, 'rift_e', 14, 4),
       motes(18, 'rift_e', 24, 0.3),
-      drones(W15_DRONES, 30, GAP),
+      ...rush(34, 2, W15_RUSH),
     ],
   },
 ]);

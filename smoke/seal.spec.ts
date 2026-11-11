@@ -46,9 +46,19 @@ test('seal: one button armed late, the rest locked but the Menu and the speaker;
   // Locked: every HUD control is out of reach but the Menu and the speaker.
   await expect(page.locator('.hud-lock:not([inert])')).toHaveCount(0);
   await expect(page.locator('.hud-play')).not.toHaveAttribute('inert', '');
-  await expect(page.getByRole('button', { name: 'Normal speed' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Mute sound' })).toHaveCount(1);
+  // (Playwright's role queries don't honour `inert`; focus does.)
+  const focusable = (sel: string) =>
+    page
+      .locator(sel)
+      .first()
+      .evaluate((el) => {
+        (el as HTMLElement).focus();
+        return document.activeElement === el;
+      });
+  expect(await focusable('.hud-speed button')).toBe(false);
+  expect(await focusable('.hud-build button')).toBe(false);
+  expect(await focusable('button[aria-label="Menu"]')).toBe(true);
+  expect(await focusable('button[aria-label="Mute sound"]')).toBe(true);
   await nextFrames(page);
   await shot(page, 'seal', 1, 'armed');
 

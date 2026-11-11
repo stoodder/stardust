@@ -3,7 +3,7 @@
 // that class are skipped by the executor (T606), and the refund rebuilds on the freed pads.
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES } from '../../upgrades/reference.ts';
-import type { BuildStep, GridPos } from '../../types.ts';
+import type { BuildStep, GridPos, ScriptedBuild } from '../../types.ts';
 
 // A1M4's pads on this grid (A1M4 + (4, 2)).
 /** Inside the plaza's north-west corner, beside the west side. */
@@ -41,6 +41,13 @@ const WEST_SIDE: GridPos = [6, 6];
 const SOUTH_SIDE: GridPos = [10, 9];
 /** Suppressing Fire: the east edge above the gate, where the drone columns arrive. */
 const GATE_ROAD: GridPos = [17, 7];
+/** Suppressing Fire on W14's rush as it reaches the east edge. */
+const SUPPRESS_W14: BuildStep = {
+  wave: 14,
+  ability: 2,
+  target: GATE_ROAD,
+  when: { afterSec: Number(process.env.SF14 ?? 63) },
+};
 
 function parSteps(): BuildStep[] {
   return [
@@ -70,13 +77,16 @@ function parSteps(): BuildStep[] {
     { wave: 11, upgrade: BEND },
     { wave: 11, upgrade: SOUTH_W },
     { wave: 12, upgrade: NW },
-    { wave: 12, ability: 2, target: GATE_ROAD, when: { afterSec: 30 } },
     { wave: 12, build: 'harpoon', tile: EDGE_S },
     { wave: 13, upgrade: WEST_S },
     { wave: 13, upgrade: EDGE_S },
     { wave: 14, upgrade: EDGE_S },
     { wave: 14, build: 'harpoon', tile: EDGE_N },
-    { wave: 15, ability: 2, target: GATE_ROAD, when: { afterSec: 32 } },
+    { wave: 14, upgrade: EDGE_N },
+    SUPPRESS_W14,
+    { wave: 15, upgrade: EDGE_N },
+    { wave: 15, build: 'harpoon', tile: NE },
+    { wave: 15, upgrade: NE },
   ];
 }
 
@@ -152,6 +162,7 @@ export const builds = defineBuilds({
         { wave: 13, upgrade: SOUTH_E },
         { wave: 13, upgrade: NW },
         { wave: 14, upgrade: GATE_S },
+        SUPPRESS_W14,
       ],
     },
     // Mindspike, Prism, Zapcoil, Rivet: the cue takes the Rivets; the Prisms' beams carry the
@@ -189,6 +200,7 @@ export const builds = defineBuilds({
         { wave: 13, upgrade: EDGE_S },
         { wave: 14, upgrade: GATE_S },
         { wave: 14, upgrade: EDGE_S },
+        SUPPRESS_W14,
       ],
     },
   },
@@ -214,3 +226,46 @@ export const PADS = {
   EDGE_S,
   BAND_S,
 } as const;
+
+/**
+ * The Crane alt (T501c-M6; D137): Salvage Crane (Magnet Crane), Grapple Harpoon, Thumper,
+ * Zapcoil. A Crane in the gate court from the start banks a credit for every kill there, and as
+ * Magnet Crane from W9 grabs a drone every 6 s and slams it (Pinned, 150 Kinetic): Everglow
+ * Security is what it was built for. The cue takes the Thumper (its one Everglow class); the
+ * Zapcoils carry the Hollow after it. The reference profile owns neither the Crane nor its specs
+ * (campaign.md § 4.9), so it isn't an `altBuilds` entry: balance/a3m2.test.ts runs it on the
+ * reference profile plus the Crane's license and specs.
+ */
+export const CRANE_ALT: ScriptedBuild = {
+  loadout: ['crane', 'harpoon', 'thumper', 'zapcoil'],
+  steps: [
+    { wave: 1, build: 'thumper', tile: COURT_W },
+    { wave: 1, build: 'crane', tile: COURT_E },
+    { wave: 1, build: 'zapcoil', tile: WEST_N },
+    { wave: 1, upgrade: COURT_W },
+    { wave: 1, ability: 1, target: WEST_SIDE, when: { afterSec: 6 } },
+    { wave: 2, build: 'harpoon', tile: BEND },
+    { wave: 2, upgrade: WEST_N },
+    { wave: 3, build: 'harpoon', tile: NW },
+    { wave: 4, upgrade: COURT_E },
+    { wave: 4, ability: 1, target: SOUTH_SIDE, when: { afterSec: 8 } },
+    { wave: 5, upgrade: BEND },
+    { wave: 5, upgrade: NW },
+    { wave: 6, upgrade: COURT_E },
+    { wave: 8, build: 'zapcoil', tile: COURT_N },
+    { wave: 8, upgrade: COURT_N },
+    { wave: 8, build: 'zapcoil', tile: SOUTH_W },
+    { wave: 9, specialize: COURT_E, spec: 'b' }, // Magnet Crane
+    { wave: 10, upgrade: SOUTH_W },
+    { wave: 10, upgrade: COURT_N },
+    { wave: 11, upgrade: BEND },
+    { wave: 11, upgrade: WEST_N },
+    { wave: 12, build: 'harpoon', tile: EDGE_S },
+    { wave: 12, upgrade: NW },
+    { wave: 13, upgrade: EDGE_S },
+    { wave: 13, upgrade: SOUTH_W },
+    { wave: 14, upgrade: EDGE_S },
+    SUPPRESS_W14,
+    { wave: 15, build: 'harpoon', tile: EDGE_N },
+  ],
+};
