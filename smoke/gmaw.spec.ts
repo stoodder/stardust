@@ -110,4 +110,18 @@ test('gmaw: the wide gather, the split under one bar, the merge', async ({ page 
   expect(await look(page)).toMatchObject({ parts: 0, tethers: 0, mergesSeen: 1 });
   expect(await bar(page)).toBeGreaterThan(0);
   await shot(page, 'gmaw', 4, 'merged');
+
+  // D150: past its puff, the merged Maw rages in its hot-magenta `panic` hide, sorted over the
+  // tower bases in front of it (look at the shot: it must read at 1× on the violet ground).
+  const raging = await page.evaluate(() => {
+    const sd = globalThis.__sd!;
+    const merged = () =>
+      sd.state()!.enemies.items.find((e) => e.alive && e.splitFrom === null && e.splitMaxHp > 0);
+    for (let k = 0; k < 600 && (merged()?.invulnerableTicks ?? 1) > 0; k++) sd.fastForward(1);
+    sd.fastForward(20);
+    return merged()?.invulnerableTicks === 0;
+  });
+  expect(raging).toBe(true);
+  await nextFrames(page);
+  await shot(page, 'gmaw', 5, 'merged-rage');
 });

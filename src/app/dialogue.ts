@@ -655,6 +655,11 @@ function publish(): void {
   dialogue.scene.value = view;
 }
 
+/** Whether a scene's speakers are there in person, not on the radio (a pausing panel, a briefing). */
+function inPerson(mode: SceneMode): boolean {
+  return mode === 'panel' || mode === 'briefing';
+}
+
 /** Rests the scene on its cursor: a line becomes the line on screen (all lines, when instant). */
 function settle(h: Holding): void {
   const ctx = storyContext(h.map);
@@ -663,8 +668,10 @@ function settle(h: Holding): void {
     const step = h.cursor.step;
     if (step.kind !== 'line') break;
     // A pausing panel's speakers are on the line (Sterling's held beat in A3M2's Clean Exit cue is
-    // hers, not an absent speaker's dark silence; T613): only one gone for good shows dark.
-    const view = lineView(step.node, ctx, textContext(), h.mode === 'panel' ? null : onRadio());
+    // hers, not an absent speaker's dark silence; T613), and a briefing's are in the room (Kip's
+    // silence as he leaves his pin in A3M5's, lit so the pin's absence shows; D150): only one gone
+    // for good shows dark.
+    const view = lineView(step.node, ctx, textContext(), inPerson(h.mode) ? null : onRadio());
     if (!h.instant) {
       h.line = view;
       h.typedFrom = performance.now();
@@ -865,7 +872,7 @@ export function skipScene(): boolean {
   while (h.cursor.step.kind === 'line') {
     h.transcript.push(
       h.line ??
-        lineView(h.cursor.step.node, ctx, textContext(), h.mode === 'panel' ? null : onRadio()),
+        lineView(h.cursor.step.node, ctx, textContext(), inPerson(h.mode) ? null : onRadio()),
     );
     h.cursor = liveAdvance(h.scene, h.cursor, ctx);
     h.line = null;

@@ -310,6 +310,25 @@ describe('in a battle', () => {
     expect(dialogue.scene.value).toBeNull();
   });
 
+  it("A3M5's briefing: Kip's silence is lit, in the frame without the pin (D150)", () => {
+    bind('a3_m05', 'after_a3m4_keep');
+    playScene(SCENES.a3_m05_brief!, { mode: 'briefing' });
+    const kip: { variant: string | null; dark: boolean; silence: boolean }[] = [];
+    for (let i = 0; i < 12 && dialogue.scene.value !== null; i++) {
+      const l = dialogue.scene.value.line;
+      if (l?.speaker === 'kip') {
+        const p = l.portrait!;
+        kip.push({ variant: p.variant, dark: p.dark, silence: l.silence });
+      }
+      nextScene();
+      nextScene();
+    }
+    expect(kip).toEqual([
+      { variant: 'act2', dark: false, silence: false },
+      { variant: 'act3', dark: false, silence: true },
+    ]);
+  });
+
   it('A3M5 under Keep (and A3M6 under Rewrite): QUILL speaks', () => {
     bind('a3_m05', 'after_a3m4_keep');
     playScene(QUILL_ONLY);

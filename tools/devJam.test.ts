@@ -112,7 +112,8 @@ describe('dev_silence (T702)', () => {
       'Rebooted',
     ]);
     expect([rivet.jamTicks, choir.jamTicks]).toEqual([0, 0]);
-    expect([rivet.jamImmuneTicks, choir.jamImmuneTicks]).toEqual([359, 359]);
+    // 6 s of jammer passes, the cast's tick the first: 360 left after it (D150).
+    expect([rivet.jamImmuneTicks, choir.jamImmuneTicks]).toEqual([360, 360]);
     expect(t.state.abilityCooldownTicks[0]).toBeGreaterThan(40 * 60 - 5);
   });
 

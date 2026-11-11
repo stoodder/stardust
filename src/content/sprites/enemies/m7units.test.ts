@@ -172,6 +172,22 @@ describe('Everglow Security, part two (enemies.md § 5.3)', () => {
     }
   });
 
+  it('D150: a tall mast with a violet jammer bulb sets the Auditor apart from the drone at 1×', () => {
+    expect(sprite('enemy.auditor').legend).toMatchObject({ V: 'violet.3', U: 'violet.4' });
+    for (const f of ['walk_se_0', 'walk_se_1', 'walk_ne_0', 'walk_ne_3']) {
+      const rows = grid('enemy.auditor', f);
+      expect(count(rows, 'VU'), f).toBeGreaterThanOrEqual(4); // the bulb
+      expect(count(rows.slice(0, 6), 'VU'), f).toBeGreaterThanOrEqual(4); // high over the box
+    }
+    for (const f of ['tell_se_0', 'tell_se_1']) {
+      expect(count(grid('enemy.auditor', f).slice(0, 3), 'U'), f).toBe(1); // the emitter's core
+    }
+    expect(walkBounds('enemy.auditor').h).toBeGreaterThanOrEqual(
+      walkBounds('enemy.compliance').h + 6,
+    );
+    expect(unlike('enemy.auditor', 'enemy.compliance')).toBeGreaterThan(0.35);
+  });
+
   it('the Associate wears the healer’s green ✚; the Gunship has two rotors and a claw', () => {
     expect(sprite('enemy.associate').legend).toMatchObject({ G: 'green.3', H: 'green.4' });
     for (const f of ['walk_se_0', 'walk_ne_1'])
@@ -285,6 +301,23 @@ describe('the Hollow’s new shapes (enemies.md § 5.4, § 6)', () => {
     const tell = grid(id, 'tell_se_0');
     const w = tell[0]?.length ?? 0;
     expect(tell.filter((r) => r[w - 1] === 'w').length).toBe(3);
+  });
+
+  it('D150: merged, its hide burns hot magenta, bright over the Act III road', () => {
+    const d = sprite('enemy.gathering_maw');
+    expect(d.legend).toMatchObject({ A: 'pink.0', B: 'pink.1', C: 'pink.2', D: 'pink.3' });
+    for (const id of GMAWS) {
+      for (const f of ['panic_se_0', 'panic_ne_2']) {
+        const rows = grid(id, f);
+        expect(count(rows, '0123'), `${id}:${f}`).toBe(0); // no drained grey left
+        expect(count(rows, 'BCD'), `${id}:${f}`).toBeGreaterThan(150);
+      }
+      expect(count(grid(id, 'walk_se_0'), 'ABCD'), id).toBe(0); // the whole Maw stays grey
+    }
+    const walk = bodyLuminance(d, 'walk_se_0', PALETTES.hollow);
+    const merged = bodyLuminance(d, 'panic_se_0', PALETTES.hollow);
+    expect(merged).toBeGreaterThan(walk * 2);
+    expect(contrastRatio(merged, road)).toBeGreaterThanOrEqual(2);
   });
 
   it('a part is one torn lobe: bigger than a Maw, smaller than the whole, with a merge tell', () => {

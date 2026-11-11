@@ -19,15 +19,16 @@
 //   immune for JAM_IMMUNITY_SEC (`jamImmuneTicks`, counting the tick it ends). System Reboot
 //   (sim/abilities/reboot.ts) ends every jam at once the same way, with its own immunity.
 // - **The jam limit** (T760; `jamRoom`): a jammer lands only while the towers Jammed stay within
-//   max(1, floor(JAM_MAX_TOWER_SHARE × towers placed)): the tendril and the ring check it here, the
-//   Takeover its own stricter floor. With four towers or more harness #10 holds by construction.
+//   max(1, floor(JAM_MAX_TOWER_SHARE × towers placed)) (`jamLimitFor`, the one definition): the
+//   tendril, the ring and the Takeover check it, and #10's tally counts the ticks past it, so
+//   harness #10 holds by construction.
 // - **The order** in this pass: the countdowns (immunity, then jams), then the jammers whose jams
 //   land in this slot (the Silencer's tendril, enemyAbilities/jamTendril.ts; then the Auditor's
 //   ring, jamRing.ts, and Hostile Takeover, takeover.ts, T707), then the tallies. A jam landed here holds from this tick for
 //   exactly its ticks; one landed earlier in the tick would lose a tick to this countdown.
 // - **The tallies** (integers, `state.stats`): `jammedPeak` (the most towers Jammed at once: Keep
-//   the Lights On), `jamOverLimitTicks` (ticks with more than JAM_MAX_TOWER_SHARE of the live towers
-//   Jammed: harness #10, balance/jamLimit.ts), and `jammedTowerTicks` / `towerTicks` (jam uptime,
+//   the Lights On), `jamOverLimitTicks` (ticks with more towers Jammed than the jam limit,
+//   `jamLimitFor` of the live towers: harness #10, balance/jamLimit.ts), and `jammedTowerTicks` / `towerTicks` (jam uptime,
 //   the report's). One pass over the towers a tick; no allocation.
 import {
   JAM_FIRST_READY_SEC,
@@ -160,5 +161,5 @@ export function jams(state: SimState, ctx: TickContext): void {
   if (jammed === 0) return;
   stats.jammedTowerTicks += jammed;
   if (jammed > stats.jammedPeak) stats.jammedPeak = jammed;
-  if (jammed > JAM_MAX_TOWER_SHARE * live) stats.jamOverLimitTicks++;
+  if (jammed > jamLimitFor(live)) stats.jamOverLimitTicks++;
 }

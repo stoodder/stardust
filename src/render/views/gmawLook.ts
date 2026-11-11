@@ -3,7 +3,13 @@
 // Its phase-1 gather is the Maw's look (gatherLook.ts, HollowView), at the boss's reach.
 // - **The parts side by side:** the sim spreads the three parts 0.6 tiles apart along the road;
 //   drawn there alone their bodies overlap into one blob, so each walks its own lane across the
-//   road (`partLanePx`: −PART_LANE_PX, 0, +PART_LANE_PX by uid), and three bodies read as three.
+//   road (`partLanePx`: −PART_LANE_PX, 0, +PART_LANE_PX by uid), and render spreads them along
+//   the road to SPREAD_TO_TILES apart (`gmawSpread`: each part's distance from its split's middle,
+//   scaled; as the merge pulls them together the spread closes with it), so three bodies read as
+//   three. The drawn spot leads or trails the sim's by at most 0.4 tiles (shots still land on it).
+// - **The merged Maw** (phase 3) sorts MERGED_DEPTH_LIFT_PX lower than its feet (`gmawSpread`), so
+//   its big body draws over the tower bases on the row in front instead of behind them. Its look
+//   is the sprite's `panic`: its hide hue-shifted to the merge's hot violet-pink (gathering_maw.ts).
 // - **The tether** (the parts are still one thing): while a split's parts walk apart, a `violet.3`
 //   thread (2 px) over an `ink.0` under-stroke runs body to body (as drawn) from each part to the
 //   next along the road (nearest first), with a `violet.4` bead at its middle, so three bodies
@@ -16,6 +22,8 @@
 //   Hollow motes (TransientFx `unravel`); under reduced motion the rings hold at full size and
 //   fade by alpha only, and no motes fly.
 import type { ColorName } from '../../content/palettes/master.ts';
+import type { DeepReadonly } from '../../shared/types.ts';
+import { isMergedBoss, isSplitPart, type Enemy } from '../../sim/index.ts';
 
 export const UNDER: ColorName = 'ink.0';
 export const TETHER: ColorName = 'violet.3';
@@ -41,6 +49,52 @@ const TAUT: readonly TetherStroke[] = [
   { px: 3, color: TETHER_TAUT, core: false },
   { px: 3, color: TETHER_TAUT, core: true },
 ];
+
+/** The sim's spacing between a split's parts along the road (bossSplit.ts SPLIT_SPREAD_TILES). */
+export const SIM_SPREAD_TILES = 0.6;
+/** The spacing render draws them at. */
+export const SPREAD_TO_TILES = 1.0;
+/** The merged Maw sorts as if its feet were this much lower (px: a tile row). */
+export const MERGED_DEPTH_LIFT_PX = 16;
+
+/** A unit as `gmawSpread` reads it. */
+type SpreadUnit = Pick<
+  DeepReadonly<Enemy>,
+  'uid' | 'alive' | 'leaving' | 'splitFrom' | 'splitMaxHp' | 'ownerUid' | 'dist'
+>;
+
+/** What `gmawSpread` returns: EnemyView `setSpread`'s two arguments. */
+export interface Spread {
+  alongTiles: number;
+  depthLiftPx: number;
+}
+
+const scratch: Spread = { alongTiles: 0, depthLiftPx: 0 };
+
+/**
+ * A split part's extra spread along its travel (tiles: its distance from the mean of its split's
+ * live parts, × (SPREAD_TO_TILES / SIM_SPREAD_TILES − 1)), and the merged Maw's sort lift; zeros
+ * for any other unit. Into `out` (a shared scratch by default); one pass over the pool for a part, none otherwise.
+ */
+export function gmawSpread(
+  e: SpreadUnit,
+  enemies: { readonly used: number; readonly items: readonly SpreadUnit[] },
+  out: Spread = scratch,
+): Spread {
+  out.alongTiles = 0;
+  out.depthLiftPx = isMergedBoss(e) ? MERGED_DEPTH_LIFT_PX : 0;
+  if (!isSplitPart(e) || e.leaving) return out;
+  let n = 0;
+  let sum = 0;
+  for (let i = 0; i < enemies.used; i++) {
+    const q = enemies.items[i]!; // i < used ≤ items.length
+    if (!isSplitPart(q) || q.leaving || q.ownerUid !== e.ownerUid) continue;
+    n++;
+    sum += q.dist;
+  }
+  if (n > 1) out.alongTiles = (e.dist - sum / n) * (SPREAD_TO_TILES / SIM_SPREAD_TILES - 1);
+  return out;
+}
 
 /** How far apart the parts' lanes are across the road (px). */
 export const PART_LANE_PX = 9;

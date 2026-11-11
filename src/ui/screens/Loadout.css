@@ -76,14 +76,23 @@
 /* The tower grid: two columns of cards; it scrolls, with a thin bar like the links list, when the
    collection outgrows the column (A3M5's 16 at 1280×720; D150). It gives up its height before the
    Field Protocols under it do (shrink 1000 to their 1), down to two rows, so no card ever sits
-   under the footer. */
+   under the footer. "▾ More" sits on its bottom edge while cards wait below (an overlay
+   scrollbar hides until scrolled). */
+.sd-lo-towers-wrap {
+  position: relative;
+  display: flex;
+  flex: 0 1000 auto;
+  flex-direction: column;
+  min-height: 60px;
+}
+
 .sd-lo-towers {
   display: grid;
-  flex: 0 1000 auto;
+  flex: 1 1 auto;
   grid-template-columns: repeat(2, 1fr);
   align-content: start;
   gap: 3px 4px;
-  min-height: 60px;
+  min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -400,6 +409,20 @@
 
 .sd-lo-link-on .sd-lo-link-state {
   color: var(--sd-teal-4);
+}
+
+/* Clear of the scrollbar, on the grid's bottom edge; never takes a click. */
+.sd-lo-more {
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  padding: 1px 4px;
+  background: var(--sd-ink-1);
+  box-shadow: 0 0 0 1px var(--sd-teal-3);
+  color: var(--sd-teal-4);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 /* Field Protocols (T308): toggles like the ability rows, the effect under the name. */

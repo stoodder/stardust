@@ -41,11 +41,15 @@ function sim(mapId: string): Sim<IdSpace> {
 
 type Kind = 'tendril' | 'ring';
 
-/** Builds `towers`, calls wave 1, and steps until a `kind` tell is under way; its jammer's uid. */
-function untilTell(s: Sim<IdSpace>, kind: Kind, towers: readonly [string, number, number][]) {
-  for (const [tower, c, r] of towers) {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- dev tower ids
-    s.enqueue({ type: 'build', tower: tower as never, tile: [c, r] });
+/** A tower pool as `ringDoomed` reads it. */
+function towers(list: { x: number; y: number; jamImmuneTicks: number }[]) {
+  return { used: list.length, items: list.map((t) => ({ alive: true, def: {}, ...t })) };
+}
+
+/** Builds `build`, calls wave 1, and steps until a `kind` tell is under way; its jammer's uid. */
+function untilTell(s: Sim<IdSpace>, kind: Kind, build: readonly [string, number, number][]) {
+  for (const [tower, c, r] of build) {
+    s.enqueue({ type: 'build', tower, tile: [c, r] });
   }
   s.step();
   s.enqueue({ type: 'callWave' });
@@ -98,13 +102,13 @@ const AUDIT: [string, number, number][] = [
 ];
 
 describe('the fizzle (D150): a Reboot in the tell dooms it, and a doomed tell never lands', () => {
-  for (const [kind, mapId, towers] of [
+  for (const [kind, mapId, build] of [
     ['tendril', 'dev_silence', SILENCE],
     ['ring', 'dev_takeover', AUDIT],
   ] as const) {
     it(`${kind}: no Reboot, never doomed, and it lands`, () => {
       const s = sim(mapId);
-      const uid = untilTell(s, kind, towers);
+      const uid = untilTell(s, kind, build);
       const { landed, marks } = playOut(s, uid, kind);
       expect(marks.length).toBeGreaterThan(1);
       expect(marks.every((m) => !m)).toBe(true);
@@ -113,7 +117,7 @@ describe('the fizzle (D150): a Reboot in the tell dooms it, and a doomed tell ne
 
     it(`${kind}: a Reboot mid-tell dooms it that tick, it stays doomed, and lands nothing`, () => {
       const s = sim(mapId);
-      const uid = untilTell(s, kind, towers);
+      const uid = untilTell(s, kind, build);
       s.step();
       expect(doomed(s, uid, kind)).toBe(false);
       s.enqueue({ type: 'ability', slot: 1 });
@@ -130,10 +134,6 @@ describe('the fizzle (D150): a Reboot in the tell dooms it, and a doomed tell ne
     expect(tellDoomed(30, 30)).toBe(false); // it runs out the tick the tell lands
     expect(tellDoomed(31, 30)).toBe(true);
     expect(tellDoomed(360, 0)).toBe(false); // no tell under way
-    const towers = (list: { x: number; y: number; jamImmuneTicks: number }[]) => ({
-      used: list.length,
-      items: list.map((t) => ({ alive: true, def: {}, ...t })),
-    });
     expect(ringDoomed(0, 0, 2, 30, towers([]))).toBe(false); // nothing in reach: not a fizzle
     expect(ringDoomed(0, 0, 2, 30, towers([{ x: 1, y: 0, jamImmuneTicks: 360 }]))).toBe(true);
     const mixed = [

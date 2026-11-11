@@ -13,7 +13,7 @@
 // Enter goes straight on with the remembered pick; Esc goes back to the Shift board.
 import { MenuNotice } from './MenuNotice.tsx';
 import { Fragment } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState, type MutableRef } from 'preact/hooks';
 import {
   formedLinks,
   pickWarnings,
@@ -334,6 +334,28 @@ function Links({ view, pick }: { view: LoadoutView; pick: LoadoutPickView }) {
   );
 }
 
+/**
+ * Whether the scrolling tower grid has cards below what shows (D150: A3M5's 16 towers at
+ * 1280×720), kept up to date as it scrolls or resizes.
+ */
+function useMoreBelow(ref: MutableRef<HTMLElement | null>): boolean {
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (el === null) return undefined;
+    const check = (): void => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    const resize = new ResizeObserver(check);
+    resize.observe(el);
+    return () => {
+      el.removeEventListener('scroll', check);
+      resize.disconnect();
+    };
+  }, []);
+  return more;
+}
+
 /** The loadout screen for the open map. */
 export function Loadout() {
   const view = loadout.value;
@@ -341,6 +363,8 @@ export function Loadout() {
     () => view?.initial ?? { towers: [], ability: null, protocols: [], protocolPicks: {} },
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const grid = useRef<HTMLUListElement>(null);
+  const more = useMoreBelow(grid);
   // Esc (T212) goes back to the Shift board, as its button does.
   useEscape(() => {
     toCampaign();
@@ -408,26 +432,35 @@ export function Loadout() {
                 {pick.towers.length} / {view.max}
               </span>
             </h2>
-            <ul class="sd-lo-towers" aria-label={`Towers, pick up to ${view.max}`}>
-              {view.towers.map((t, i) => {
-                const at = pick.towers.indexOf(t.id);
-                return (
-                  <TowerCard
-                    key={t.id}
-                    t={t}
-                    index={i}
-                    slot={at < 0 ? null : at + 1}
-                    full={full}
-                    onToggle={() => toggle(t.id)}
-                  />
-                );
-              })}
-              {view.revoked.map((r) => (
-                <li key={r.id}>
-                  <RevokedCard r={r} stamp={LICENSE_STAMP} what="License revoked" />
-                </li>
-              ))}
-            </ul>
+            <div class="sd-lo-towers-wrap">
+              <ul ref={grid} class="sd-lo-towers" aria-label={`Towers, pick up to ${view.max}`}>
+                {view.towers.map((t, i) => {
+                  const at = pick.towers.indexOf(t.id);
+                  return (
+                    <TowerCard
+                      key={t.id}
+                      t={t}
+                      index={i}
+                      slot={at < 0 ? null : at + 1}
+                      full={full}
+                      onToggle={() => toggle(t.id)}
+                    />
+                  );
+                })}
+                {view.revoked.map((r) => (
+                  <li key={r.id}>
+                    <RevokedCard r={r} stamp={LICENSE_STAMP} what="License revoked" />
+                  </li>
+                ))}
+              </ul>
+              {/* The grid scrolls past what fits (D150): a cue while cards wait below. Clicks pass
+                through it to the card under it. */}
+              {more && (
+                <span class="sd-lo-more" aria-hidden="true" data-testid="loadout-more">
+                  ▾ More
+                </span>
+              )}
+            </div>
             {view.protocolSlots > 0 && (
               <>
                 <h2 class="sd-panel-heading sd-lo-heading">

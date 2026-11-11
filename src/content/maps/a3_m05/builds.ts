@@ -109,7 +109,7 @@ function parSteps(): BuildStep[] {
     { wave: 13, upgrade: SLUICE_S },
     { wave: 13, upgrade: CATWALK_E },
     slot1(13, HUNT_REBOOT_SEC),
-    ...(process.env.W13S ? [still(13, Number(process.env.W13S), (process.env.W13T ?? '0,6').split(',').map(Number) as unknown as GridPos)] : []),
+    still(13, W13_STILL_SEC, HUNT_STILL),
     { wave: 13, build: 'thumper', tile: VAT_E },
     slot1(14, TAKEOVER_SEC),
     still(14, BOSS_STILL_SEC, [14, 10]),
@@ -124,6 +124,12 @@ function parSteps(): BuildStep[] {
   ];
 }
 
+/**
+ * W13: Stillness on the hunt as its Silencers stand by the old intake, 2.5 s after the Reboot: the
+ * second answer that keeps the hub when the Reboot comes early and the pair tells together once
+ * its immunity ends (D150: par's casts shifted ±2 s hold the band).
+ */
+const W13_STILL_SEC = 20;
 /** W15: Stillness on the hunt as it catches the last bearer group by the old intake. */
 const HUNT_STILL_SEC = 19;
 /** W13: the Sproing build's Stillness on the hunt, as its Silencers reach the hub. */
@@ -136,8 +142,8 @@ const YARD_N_ROAD: GridPos = [5, 4];
 
 /** W13 under Rewrite: Stillness on the hunt as its Silencers reach the hub. */
 const REWRITE_HUNT_STILL_SEC = 17.5;
-/** W13 under Rewrite: Suppressing Fire on the hunt once its Silencers stand telling. */
-const REWRITE_HUNT_SF_SEC = 20;
+/** W13 under Rewrite: Suppressing Fire on the hunt as its Silencers hold still to tell (late enough that a cast 2 s either side still finds them). */
+const REWRITE_HUNT_SF_SEC = 22;
 /** W13 and W15 under Rewrite: Suppressing Fire on the hunt's Silencers by the old intake. */
 const HUNT_SUPPRESS: GridPos = [0, 6];
 /** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
@@ -168,6 +174,8 @@ const REWRITE_PAR: ScriptedBuild = {
   loadout: PAR.loadout,
   technicianAbility: 'suppressing_fire',
   steps: PAR.steps.flatMap((st): BuildStep[] => {
+    // W13's Stillness is Rewrite's own, below (with Suppressing Fire), not par's.
+    if ('ability' in st && st.ability === 2 && st.wave === 13) return [];
     if (!('ability' in st) || st.ability !== 1) return [st];
     // W13's hunt: no Reboot to spend the Silencers' tells, so Stillness holds them too.
     if (st.wave === 13) {

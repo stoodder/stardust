@@ -18,12 +18,14 @@
 //   boss walks on (a boss's pace is its phases').
 // - **The landing** (as the laser ends): a jam of `durationTicks` × each target's `jamMul` from the
 //   boss (`jamTower`, `jammedBy` the boss's uid) on each target still standing that a jam may land
-//   on, in pick order, and only while one more jam keeps the map within the jam limit
-//   (floor(JAM_MAX_TOWER_SHARE × towers placed), counting every jam standing then: an Auditor's
-//   ring or a Silencer's tendril that landed during the laser takes its place; D146 addendum,
-//   T721). So a Takeover never takes the map past the limit, and since T760 neither does a ring or
-//   tendril landing after it (they land within `jamRoom`). A System Reboot during
-//   the laser (its immunity), a Rally Chorus, or a sale spends that target. So a Hum Choir at T3 (×0.25: 1 s) or a Reboot timed to the laser earns **Declined**.
+//   on, in pick order, and only within the jam limit (sim/jam.ts `jamRoom`, the one definition the
+//   tendril and the ring use too: max(1, floor(JAM_MAX_TOWER_SHARE × towers placed)) Jammed at
+//   once, counting every jam standing then: an Auditor's ring or a Silencer's tendril that landed
+//   during the laser takes its place; D146 addendum, T721, D150). A System Reboot during the
+//   laser (its immunity), a Rally Chorus, or a sale spends that target. **Declined** is the Hum
+//   Choir's medal (D150: the song beats corporate control): at T3 (×0.25) every Takeover jam
+//   holds 1 s. A Reboot timed to one laser spends it, but its 40 s cooldown can't cover the next
+//   laser 20 s later, so Reboot alone doesn't earn it.
 // - **Declined's tally:** from the landing, `takeoverHeldTicks` counts each tick (the landing's
 //   included) that any of its jams still holds on its tower, and `stats.takeoverJamTicks` keeps the
 //   run's longest: all of a laser's jams land together, so that is the longest single Takeover jam
@@ -36,7 +38,7 @@
 import type { CompiledBossPhase } from '../../content/compiled.ts';
 import { JAM_MAX_TOWER_SHARE, TAKEOVER_MAX_TOWERS } from '../../content/rules.ts';
 import { NO_UIDS, type Enemy, type Tower } from '../entities.ts';
-import { canJam, jamTower, towerByUid } from '../jam.ts';
+import { canJam, jamRoom, jamTower, towerByUid } from '../jam.ts';
 import { emit, type SimState } from '../state.ts';
 import { cooldownHeld, isInterrupted } from '../systems/status.ts';
 import type { TickContext } from '../tick.ts';
@@ -48,24 +50,6 @@ type CompiledTakeover = NonNullable<CompiledBossPhase['takeover']>;
 export function takeoverCount(placed: number): number {
   const share = Math.floor(JAM_MAX_TOWER_SHARE * placed);
   return share < TAKEOVER_MAX_TOWERS ? share : TAKEOVER_MAX_TOWERS;
-}
-
-/**
- * How many more towers a jam may land on now within the jam limit: floor(JAM_MAX_TOWER_SHARE ×
- * towers placed) less the towers Jammed now (never below 0).
- */
-function jamRoom(state: SimState): number {
-  const pool = state.towers;
-  let placed = 0;
-  let jammed = 0;
-  for (let i = 0; i < pool.used; i++) {
-    const t = pool.items[i]!; // i < used ≤ items.length
-    if (!t.alive || t.def === null) continue;
-    placed++;
-    if (t.jamTicks > 0) jammed++;
-  }
-  const room = Math.floor(JAM_MAX_TOWER_SHARE * placed) - jammed;
-  return room > 0 ? room : 0;
 }
 
 /** Whether candidate `t` outranks `best` (the highest tier, then the lowest uid). */
@@ -145,8 +129,8 @@ export function takeoverStep(state: SimState, boss: Enemy, t: CompiledTakeover):
     }
     if (--boss.jamTellTicks > 0) return;
     const picked = boss.takeoverTowers;
-    // The jam limit at the landing: only while one more jam keeps the map within
-    // floor(JAM_MAX_TOWER_SHARE × placed), counting every jam standing (a ring's, a tendril's).
+    // The jam limit at the landing (sim/jam.ts `jamRoom`), counting every jam standing (a ring's,
+    // a tendril's).
     const room = jamRoom(state);
     let landed = 0;
     for (let k = 0; k < picked.length && landed < room; k++) {

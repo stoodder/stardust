@@ -9,8 +9,9 @@ import { describe, expect, it } from 'vitest';
 import { compileContent } from '../content/compile.ts';
 import type { CompiledContent, CompiledTier } from '../content/compiled.ts';
 import { RAW_CONTENT } from '../content/registry.ts';
-import { JAM_IMMUNITY_SEC, JAM_MAX_SEC } from '../content/rules.ts';
+import { JAM_IMMUNITY_SEC, JAM_MAX_SEC, REBOOT_IMMUNITY_SEC } from '../content/rules.ts';
 import type { IdSpace } from '../content/types.ts';
+import { secToTicks } from '../shared/time.ts';
 import { MAP, placeTower, spawn } from './__fixtures__/combat.ts';
 import { fixtureConfig } from './__fixtures__/sim.ts';
 import { castReboot } from './abilities/reboot.ts';
@@ -24,6 +25,8 @@ import {
   JAM_IMMUNITY_TICKS,
   JAM_MAX_TICKS,
   jamImmune,
+  jamLimitFor,
+  jamRoom,
   jams,
   jamTicksFor,
   jamTower,
@@ -233,6 +236,20 @@ describe('the Jammed state (enemies.md § 4; sim/jam.ts)', () => {
     expect(state.stats).toMatchObject({ jammedPeak: 2, jamOverLimitTicks: 4 });
     expect(state.stats.jammedTowerTicks).toBe(5 + 4 * 2 + 5);
   });
+
+  it('counts the ticks past the jam limit the jammers land within: one of three is not over (D150)', () => {
+    const { state, ctx } = world();
+    const ts = [placeTower(state, RIVET, 1, 1), placeTower(state, RIVET, 3, 1)];
+    ts.push(placeTower(state, RIVET, 4, 2));
+    expect([jamLimitFor(3), jamRoom(state)]).toEqual([1, 1]);
+    jamTower(state, ts[0]!, 10, 1);
+    expect(jamRoom(state)).toBe(0);
+    run(state, ctx, 5); // 1 of 3: max(1, ⌊25% × 3⌋) = 1, at the limit
+    expect(state.stats).toMatchObject({ jammedPeak: 1, jamOverLimitTicks: 0 });
+    jamTower(state, ts[1]!, 10, 1);
+    run(state, ctx, 3);
+    expect(state.stats).toMatchObject({ jammedPeak: 2, jamOverLimitTicks: 3 });
+  });
 });
 
 describe('the Silencer’s tendril (enemies.md § 5.4; jamTendril.ts)', () => {
@@ -396,10 +413,11 @@ describe('System Reboot (core-loop.md § 3.2; abilities/reboot.ts)', () => {
       { type: 'TowerUnjammed', uid: c.uid },
       { type: 'Rebooted', towers: [a.uid, c.uid] },
     ]);
+    // 360 + 1: this tick's jams pass counts it down once (the next test).
     expect([a, b, c].map((t) => [t.jamTicks, t.jamImmuneTicks])).toEqual([
-      [0, 360],
+      [0, 361],
       [0, 500],
-      [0, 360],
+      [0, 361],
     ]);
     expect(state.linksDirty).toBe(true);
     const later = placeTower(state, RIVET, 1, 3); // built after the cast: not immune
@@ -412,7 +430,22 @@ describe('System Reboot (core-loop.md § 3.2; abilities/reboot.ts)', () => {
     state.events.length = 0;
     expect(castReboot(state, { kind: 'reboot', immuneTicks: 360 })).toBe(0);
     expect(state.events).toEqual([{ type: 'Rebooted', towers: [] }]);
-    expect(a.jamImmuneTicks).toBe(360);
+    expect(a.jamImmuneTicks).toBe(361);
+  });
+
+  it('is immune for exactly REBOOT_IMMUNITY_SEC of jams passes, the cast’s tick counted (D150)', () => {
+    const { state, ctx } = world();
+    const t = placeTower(state, RIVET, 1, 1);
+    jamTower(state, t, 240, 1);
+    castReboot(state, { kind: 'reboot', immuneTicks: secToTicks(REBOOT_IMMUNITY_SEC) });
+    // Each tick the jammers act after the countdown (sim/jam.ts): count the ticks they find it immune.
+    let immune = 0;
+    for (let i = 0; i < 400; i++) {
+      run(state, ctx, 1);
+      if (jamImmune(t)) immune++;
+    }
+    expect(immune).toBe(secToTicks(REBOOT_IMMUNITY_SEC));
+    expect(immune).toBe(360);
   });
 
   it('lifts its gates and the Silencer’s (T702)', () => {

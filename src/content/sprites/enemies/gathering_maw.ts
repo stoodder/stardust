@@ -10,7 +10,10 @@
 // - `tell_<facing>` (2 frames, 6 fps; phase 1's gather tell, `gatherTelling`): every mouth gapes
 //   and three tendrils writhe out of the middle one to the leading edge, pale-tipped.
 // - `panic_<facing>` (3 frames, 8 fps; the **merged** Maw, phase 3, enraged): the lobes jammed
-//   back together crooked, heaving against each other, the seams blazing, every mouth agape.
+//   back together crooked, heaving against each other, the seams blazing, every mouth agape, and
+//   its whole hide **hue-shifted** from the Hollow's drained grey into hot magenta (`MERGED`: the
+//   stolen stardust burning through it), so the merged Maw reads at 1× on Act III's violet ground
+//   and never as the grey whole Maw or its parts (D150).
 // - `puff_<facing>` (1 frame; invulnerable between phases): drawn in on itself, mouths shut.
 // **Growth** (+10% per absorb, as the Maw's): `enemy.gathering_maw` and
 // `enemy.gathering_maw_g1`–`_g5`, one sprite per absorb, one more face in its hide each; render
@@ -29,6 +32,10 @@ const GROW = 0.1;
 
 type Look = 'walk' | 'tell' | 'panic' | 'puff';
 type Facing = 'se' | 'ne';
+
+/** The merged Maw's hide: the Hollow's body steps (`0`–`3`) recoloured (panic frames only). */
+const MERGED: Readonly<Record<string, string>> = { '0': 'A', '1': 'B', '2': 'C', '3': 'D' };
+const MERGED_LEGEND = { A: 'pink.0', B: 'pink.1', C: 'pink.2', D: 'pink.3' } as const;
 
 /** One lobe: its centre offset from the body's centre and its radii, at no growth (px). */
 interface Lobe {
@@ -314,7 +321,9 @@ function gatheringMaw(
     step +
     (part ? 60 : 0) +
     ['walk', 'tell', 'panic', 'puff'].indexOf(look) * 3;
-  return dropPixels(rows(g), seed);
+  const out = dropPixels(rows(g), seed);
+  if (!panic) return out;
+  return out.map((r) => r.replace(/[0-3]/g, (c) => MERGED[c] ?? c));
 }
 
 /** The four facings of `look` over `n` frames at `fps` (SE and NE authored, SW and NW mirrored). */
@@ -353,7 +362,7 @@ function wholeSprite<const Id extends string>(id: Id, stage: number): SpriteDef<
     anchor: { x: f.ax, y: f.ay },
     palette: 'hollow',
     outline: 'auto',
-    legend: MOTE_BODY_LEGEND,
+    legend: { ...MOTE_BODY_LEGEND, ...MERGED_LEGEND },
     frames: {
       ...frames(LOBES, false, stage, 'walk', 3),
       ...frames(LOBES, false, stage, 'tell', 2),

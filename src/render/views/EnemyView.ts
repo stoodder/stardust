@@ -66,7 +66,7 @@ import { canGather } from '../../sim/index.ts'; // T708
 import { groundShadowFor } from '../../content/sprites/shadows.ts';
 import { TICK_HZ } from '../../shared/time.ts';
 import { worldDepth } from '../depth.ts';
-import { gridToScreen, type Vec2 } from '../iso.ts';
+import { gridToScreen, HALF_H, HALF_W, type Vec2 } from '../iso.ts';
 import { prefersReducedMotion } from '../motion.ts';
 import { animKey, DEFAULT_VARIANT } from '../sprites/bake.ts';
 import type { SpriteSource } from '../sprites/SpriteSource.ts';
@@ -354,6 +354,12 @@ export class EnemyView implements PooledView {
   #bob = 0;
   /** Sideways offset (px), and the screen unit vector it runs along (the ground perpendicular to travel). */
   #lane = 0;
+  /**
+   * A split part's extra spread along its travel (tiles) and a merged boss's sort lift (px):
+   * gmawLook.ts `gmawSpread` (D150), 0 for any other unit.
+   */
+  #along = 0;
+  #depthLift = 0;
   #sideX = SIDE_DEFAULT_X;
   #sideY = SIDE_DEFAULT_Y;
   /** The last move's grid direction (a leaver carries on along it past the edge). */
@@ -577,6 +583,8 @@ export class EnemyView implements PooledView {
     this.#y = Number.NaN;
     this.#hp = Number.NaN;
     this.#lane = laneOffsetPx(uid);
+    this.#along = 0;
+    this.#depthLift = 0;
     this.#statePose = 'walk';
     this.#oneShot = null;
     this.#shimmerOn = false;
@@ -714,14 +722,24 @@ export class EnemyView implements PooledView {
       this.#sideX = side.x;
       this.#sideY = side.y;
     }
-    const ox = Math.round(this.#sideX * this.#lane);
-    const oy = Math.round(this.#sideY * this.#lane);
+    let fx = this.#sideX * this.#lane;
+    let fy = this.#sideY * this.#lane;
+    const dl = this.#along === 0 ? 0 : Math.hypot(this.#dirX, this.#dirY);
+    if (dl > 0) {
+      // Along its travel on the ground: the grid step's screen offset (iso.ts's projection).
+      const ax = (this.#dirX / dl) * this.#along;
+      const ay = (this.#dirY / dl) * this.#along;
+      fx += (ax - ay) * HALF_W;
+      fy += (ax + ay) * HALF_H;
+    }
+    const ox = Math.round(fx);
+    const oy = Math.round(fy);
     this.#bodyX = gx + ox;
     this.#bodyY = (this.#flying ? gy - FLY_LIFT_PX : gy) + oy;
     this.#bob = 0;
     this.#placeBody();
     if (this.#flying) this.#syncBob();
-    this.#ownDepth = worldDepth(gy + oy, 'enemy', this.#uid);
+    this.#ownDepth = worldDepth(gy + oy + this.#depthLift, 'enemy', this.#uid);
     // The overhead sorts like the body: a front unit's bar over the one behind it (T501i).
     this.#overDepth = overheadDepth(gy + oy, this.#uid);
     this.#shadow.setPosition(gx + ox, gy + oy).setVisible(!this.#burrowedLook());
@@ -1121,6 +1139,15 @@ export class EnemyView implements PooledView {
    */
   setLane(px: number): void {
     this.#lane = px;
+  }
+
+  /**
+   * Sets a split part's extra spread along its travel (tiles) and a merged boss's sort lift (px)
+   * (D150; gmawLook.ts `gmawSpread`). Takes hold on its next move.
+   */
+  setSpread(alongTiles: number, depthLiftPx: number): void {
+    this.#along = alongTiles;
+    this.#depthLift = depthLiftPx;
   }
 
   /** Whether it draws faint over a spot kept clear (a flyer over the armed rock; T501i). */

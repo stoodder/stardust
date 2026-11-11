@@ -16,16 +16,20 @@ type RebootEffect = Extract<CompiledAbilityEffect, { kind: 'reboot' }>;
 
 /** System Reboot's landing (see the header). Returns how many towers it unjammed. */
 export function castReboot(state: SimState, e: RebootEffect): number {
+  // The cast lands before this tick's jams pass, which counts every immunity down once (sim/
+  // jam.ts), so one tick more makes it exactly `immuneTicks` of jammer passes, the cast's tick's
+  // first (D150). (A jam's own end is set after that countdown, so it needs none.)
+  const ticks = e.immuneTicks + 1;
   const pool = state.towers;
   const freed: number[] = [];
   for (let i = 0; i < pool.used; i++) {
     const t = pool.items[i]!; // i < used ≤ items.length
     if (!t.alive) continue;
     if (t.jamTicks > 0) {
-      unjamTower(state, t, e.immuneTicks);
+      unjamTower(state, t, ticks);
       freed.push(t.uid);
-    } else if (e.immuneTicks > t.jamImmuneTicks) {
-      t.jamImmuneTicks = e.immuneTicks;
+    } else if (ticks > t.jamImmuneTicks) {
+      t.jamImmuneTicks = ticks;
     }
   }
   emit(state, { type: 'Rebooted', towers: freed });

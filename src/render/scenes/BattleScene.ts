@@ -108,7 +108,7 @@ import { TakeoverView } from '../views/TakeoverView.ts'; // T707
 import { PlatformSiteView } from '../views/PlatformSiteView.ts'; // T730b
 import { DomeRowView } from '../views/DomeRowView.ts'; // T730b
 import { GatheringMawView } from '../views/GatheringMawView.ts'; // T708
-import { partLanePx } from '../views/gmawLook.ts'; // T730a
+import { gmawSpread, partLanePx } from '../views/gmawLook.ts'; // T730a; D150
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { RiftView } from '../views/RiftView.ts'; // T630b
 import { ShuttleView } from '../views/ShuttleView.ts'; // T630b
@@ -1215,6 +1215,8 @@ export class BattleScene extends Phaser.Scene {
         if (e.splitFrom !== null) v.setLane(partLanePx(e.uid)); // T730a: parts side by side
       }
       v.stamp = stamp;
+      const spread = gmawSpread(e, enemies); // D150: the Maw's parts spread, merged Maw on top
+      v.setSpread(spread.alongTiles, spread.depthLiftPx);
       // A boss's shard sorts over the boss that shed it (D139 S4; views/shardLook.ts).
       const owner = e.ownerUid === 0 ? undefined : this.#enemies.get(e.ownerUid);
       v.sync(e, state.tick, shardDepthFloor(owner?.depth ?? null, e.uid));
