@@ -18,7 +18,7 @@ test('act three: Results drops the cheer: "PERIMETER SECURED." and no star', asy
   await page.evaluate(() => globalThis.__sd!.results({ map: 'a3_m02', outcome: 'won', pests: 0 }));
   const card = page.getByRole('dialog', { name: 'PERIMETER SECURED.' });
   await expect(card).toBeVisible();
-  await expect(card.getByText('Shift report · Filed')).toBeVisible();
+  await expect(card.getByText('Shift report · Auto-filed')).toBeVisible();
   await expect(card).not.toContainText('PERIMETER SECURED!');
   await expect(card.locator('.sd-results-star')).toHaveCount(0);
   await expect(card).not.toContainText('Pests processed');
@@ -28,7 +28,7 @@ test('act three: Results drops the cheer: "PERIMETER SECURED." and no star', asy
   await page.evaluate(() => globalThis.__sd!.results({ map: 'a3_m02', outcome: 'lost', pests: 0 }));
   const lost = page.getByRole('dialog', { name: 'MINOR OPERATIONAL HICCUP' });
   await expect(lost).toBeVisible();
-  await expect(lost.getByText('Shift report · Incident logged')).toBeVisible();
+  await expect(lost.getByText('Shift report · Auto-filed')).toBeVisible();
   await shot(page, 'act-three', 2, 'results-lost');
 });
 
