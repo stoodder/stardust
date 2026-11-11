@@ -59,6 +59,12 @@ export const TOWER_ACCESS: Readonly<Record<TowerId, Access>> = {
     availableAfter: 'a3_m01',
     requires: 'prism',
   },
+  // M7 (campaign.md § 4.1; act3.md § A3M4–A3M6). Both are gifts given in a briefing (meta/
+  // storyTransactions.ts BRIEFING_GIFTS): the Gloop Spitter in A3M4's under the warren (so from
+  // A3M4) or A3M6's under the convoy; Pebble's Sproing Pad in A3M5's. Their tune-ups come with
+  // their tasks (T705, T704), since each is registered ahead of its task (STUB_TOWER_TASKS).
+  gloop: { how: 'gift', availableAfter: 'a3_m03' },
+  sproing: { how: 'gift', availableAfter: 'a3_m04' },
 };
 
 /**
@@ -75,6 +81,10 @@ export const ABILITY_ACCESS: Readonly<Partial<Record<AbilityId, Access>>> = {
    * `{ kind: 'ability' }`, T406), and owning it puts it in the loadout's slot-1 pool.
    */
   scanner_sweep: { how: 'rnd', currency: 'intel', price: 2, availableAfter: 'a2_m01' },
+  /** QUILL patches it in during A3M4's briefing (a briefing gift), so slot 1 holds it from A3M4. */
+  system_reboot: { how: 'gift', availableAfter: 'a3_m03' },
+  /** C4 Keep (A3M4's card): QUILL's own ability inherited into slot 1 from A3M5. */
+  time_dilation: { how: 'gift', availableAfter: 'a3_m04' },
 };
 
 /** One purchase unlocks both tier-4 specs of an owned tower, once Engineering opens after A1M4. */

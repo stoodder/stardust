@@ -18,6 +18,15 @@ import { glimmer_shard } from './glimmer_shard.ts';
 import { hauler } from './hauler.ts';
 import { lightwing } from './lightwing.ts';
 import { maw } from './maw.ts';
+import { associate } from './associate.ts';
+import { auditor } from './auditor.ts';
+import { blackbudget } from './blackbudget.ts';
+import { gathering_maw } from './gathering_maw.ts';
+import { gathering_maw_part } from './gathering_maw_part.ts';
+import { gunship } from './gunship.ts';
+import { liability } from './liability.ts';
+import { shareholder_value } from './shareholder_value.ts';
+import { silencer } from './silencer.ts';
 import { mote } from './mote.ts';
 import { nibbler } from './nibbler.ts';
 import { puffwing } from './puffwing.ts';
@@ -60,4 +69,16 @@ export const ENEMIES = defineRegistry({
   undertow,
   compliance,
   expediter,
+  // M7 (Act III, part two; T700a stubs under their final ids): the Silencer (T702), Everglow's
+  // Associate, Liability, Gunship, and Black Budget (T703), the Auditor and "Shareholder Value"
+  // (T707), the Gathering Maw and its parts (T708).
+  silencer,
+  associate,
+  liability,
+  gunship,
+  blackbudget,
+  auditor,
+  shareholder_value,
+  gathering_maw,
+  gathering_maw_part,
 });
