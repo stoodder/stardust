@@ -1,5 +1,5 @@
 // Sim events → sounds (pure): which sound effects and music cues each drained event plays, from
-// the data tables in eventTables.ts and eventTablesAct2.ts (a new tower attack kind, enemy, or
+// the data tables in eventTables.ts and eventTablesAct2*.ts / Act3.ts (a new tower attack kind, enemy, or
 // ability gets its sound by adding a row there, not a branch here). Cosmetic pitch variance (a
 // recipe's `jitter`) is the synth's, from its own RNG; nothing here reads or affects the sim. What
 // no event announces (a sneeze's tell, a dig, the drone's flight) is fieldSounds.ts's, from the
@@ -49,7 +49,18 @@ import {
   PIVOT_SOUNDS,
   TOWER_SOUNDS,
 } from './eventTablesAct2b.ts';
-import { WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
+import {
+  BLOCKER_SOUNDS,
+  FORCED_INPUT_SOUNDS,
+  GATHER_SOUNDS,
+  PULL_SOUND,
+  PULSE_TOWER_SOUNDS,
+  REVOKE_SOUNDS,
+  RIFT_SOUNDS,
+  SWARM_SOUNDS,
+  TRAP_SOUND,
+} from './eventTablesAct3.ts';
+import { LOSE_CUE, WAVE_CLEAR_CUE, type CueId } from './music/index.ts';
 import { SFX, type SfxId } from './sfx/index.ts';
 
 export {
@@ -136,7 +147,8 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   Blinked: true,
   BlinkInterrupted: true,
   PulseBurst: true,
-  PulledBack: false, // Gravity Well's pull (T608): silent until T650 gives it a sound
+  // Gravity Well's pull (T608): a sinking thrum (T650).
+  PulledBack: true,
   // Crane income, Haggler's interest, and Reel It In's credits (T408): a coin (T501h).
   TowerIncome: true,
   Revealed: true,
@@ -162,21 +174,25 @@ const MAKES_SOUND: Readonly<Record<SimEventType, boolean>> = {
   EchoBurst: true,
   StasisArea: true,
   DarknessShift: true,
-  // M6 (T600a seams): silent until T650 sounds them (it flips each it sounds to true).
-  GatherTell: false,
-  Gathered: false,
-  RiftOpening: false,
-  RiftOpened: false,
-  SwarmLatch: false,
-  SwarmHome: false,
-  TrapSprung: false,
-  Blocked: false,
+  // M6 (T650): the Maw, the rifts, the swarmlings, Underfoot, Bricks at the Gap, the SEAL, and the
+  // revocation stamps.
+  GatherTell: true,
+  Gathered: true,
+  RiftOpening: true,
+  RiftOpened: true,
+  SwarmLatch: true,
+  SwarmHome: true,
+  TrapSprung: true,
+  Blocked: true,
+  // The SEAL's cue and its door hum (app/forcedInput.ts) cover the request.
   ForcedInputRequested: false,
+  // His bar and QUILL's vitals cue carry it.
   AllyHealthChanged: false,
-  ForcedInputResolved: false,
-  TowerRevoked: false,
+  ForcedInputResolved: true,
+  TowerRevoked: true,
+  // The stamps and Sterling's lines say it.
   ClassRevoked: false,
-  AbilityRevoked: false,
+  AbilityRevoked: true,
   ModifierChanged: false,
 };
 
@@ -222,13 +238,14 @@ export interface SoundDials {
   /** How a Skitterkin dies (SKITTERKIN_DEATH_SOUNDS). */
   readonly skitterkinDeath: SkitterkinDeath;
   /**
-   * Whether MapWon plays the win jingle (default true; Act III: no, T613). The dial is data now;
-   * Act III's silence-forward bed around it is T650's to build.
+   * Whether MapWon plays the win jingle (default true; Act III: no, T613: the "No song." moment).
+   * The jingle dial also picks the loss cue (LOSE_CUE: Act III hums, it never laughs).
    */
   readonly winJingle?: boolean;
   /**
    * How the Hollow die (default `unravel`: FACTION_DEATH_SOUNDS' `hollow_unravel`; Act III's
-   * `silent`: no sound, enemies.md § 8, T601d). T650 may give the silence a bed of its own.
+   * `silent`: no sound, enemies.md § 8, T601d; their split's crack stays, so a Fracture's shards
+   * still read).
    */
   readonly hollowDeath?: HollowDeath;
 }
@@ -295,6 +312,12 @@ export function createEventSounds(
   let pendingClear = false;
   let pendingForfeit = false;
   let ended = false;
+  /** Revocation stamps this frame (each the next REVOKE_SOUNDS stagger step). */
+  let stamps = 0;
+  const stamp = (out: SoundCall[]): void => {
+    const k = Math.min(stamps++, REVOKE_SOUNDS.maxStagger);
+    out.push(sfx(REVOKE_SOUNDS.stamp, 0, k * REVOKE_SOUNDS.staggerSec));
+  };
   const landing = (e: Extract<SimEvent<IdSpace>, { type: 'ProjectileHit' }>, out: SoundCall[]) => {
     if (e.uid !== 0) {
       const kind = flying.get(e.uid);
@@ -411,10 +434,10 @@ export function createEventSounds(
           pendingClear = false;
           pendingForfeit = false;
           plink = null;
-          // Act III's win has no jingle (its `winJingle` dial; the jingle stops playing).
-          if (e.type === 'MapLost' || dials.winJingle !== false) {
-            out.push({ kind: 'cue', id: e.type === 'MapWon' ? 'win' : 'lose' });
-          }
+          // Act III's win has no jingle (its `winJingle` dial; the jingle stops playing), and its
+          // loss hums the song's last notes, unfinished (LOSE_CUE by the jingle dial).
+          if (e.type === 'MapLost') out.push({ kind: 'cue', id: LOSE_CUE[dials.jingle] });
+          else if (dials.winJingle !== false) out.push({ kind: 'cue', id: 'win' });
           return;
         case 'HoldFireChanged':
           out.push(sfx(e.on ? FIRE_CONTROL_SOUNDS.on : FIRE_CONTROL_SOUNDS.off));
@@ -488,10 +511,17 @@ export function createEventSounds(
         case 'SkittishBolt':
           out.push(sfx(HUSH_SOUNDS.bolt));
           return;
-        // Flash Freeze's frost, and Stasis locking in when it froze anything.
-        case 'PulseBurst':
-          at(out, STASIS_SOUNDS.burst, e.x, e.y);
+        // Flash Freeze's frost (a Stasis Bloom's field its crystal chime, PULSE_TOWER_SOUNDS), and
+        // Stasis locking in when it froze anything.
+        case 'PulseBurst': {
+          const own = PULSE_TOWER_SOUNDS[towerId(e.towerUid) ?? ''];
+          at(out, own ?? STASIS_SOUNDS.burst, e.x, e.y);
           if (e.frozen > 0) out.push(sfx(STASIS_SOUNDS.lock, 0, STASIS_SOUNDS.lockAfterSec));
+          return;
+        }
+        // Gravity Well pulls a unit back.
+        case 'PulledBack':
+          out.push(sfx(PULL_SOUND));
           return;
         case 'Revealed':
           out.push(sfx(CLOAK_SOUNDS.reveal));
@@ -537,6 +567,49 @@ export function createEventSounds(
           if (e.dark > darkTarget) out.push(sfx(DARK_SOUNDS.fall));
           darkTarget = e.dark;
           return;
+        // Act III (T650). The Maw draws a unit in and swallows it (a refugee is a loss, and sounds
+        // like one); a rift cracks a wave ahead and tears open as its wave starts.
+        case 'GatherTell':
+          out.push(sfx(GATHER_SOUNDS.tell));
+          return;
+        case 'Gathered':
+          out.push(sfx(GATHER_SOUNDS.gathered));
+          if (e.victim === 'refugee') out.push(sfx(GATHER_SOUNDS.refugee));
+          return;
+        case 'RiftOpening':
+          out.push(sfx(RIFT_SOUNDS.opening));
+          return;
+        case 'RiftOpened':
+          out.push(sfx(RIFT_SOUNDS.opened));
+          return;
+        // The Scuttle Den's swarmlings bite as they latch, and count themselves home; Underfoot's
+        // trap snaps.
+        case 'SwarmLatch':
+          if (e.on) out.push(sfx(SWARM_SOUNDS.latch));
+          return;
+        case 'SwarmHome':
+          out.push(sfx(SWARM_SOUNDS.home));
+          return;
+        case 'TrapSprung':
+          out.push(sfx(TRAP_SOUND));
+          return;
+        // Bricks takes a unit on at the Gap.
+        case 'Blocked':
+          if (e.on) out.push(sfx(BLOCKER_SOUNDS.brace));
+          return;
+        // The forced input's press (the SEAL: the door slams; app/audio.ts cuts the hum first).
+        case 'ForcedInputResolved': {
+          const s = FORCED_INPUT_SOUNDS.inputs[e.id];
+          if (s !== undefined) out.push(sfx(s.press));
+          return;
+        }
+        // LICENSE REVOKED, tower by tower, then the uplink if it was equipped.
+        case 'TowerRevoked':
+          stamp(out);
+          return;
+        case 'AbilityRevoked':
+          if (e.slot !== null) stamp(out);
+          return;
         // The HUD's notice plays the rejection buzz (it also covers rejections the HUD makes).
         case 'CommandRejected':
         case 'EnemySpawned':
@@ -552,23 +625,12 @@ export function createEventSounds(
         case 'Interacted':
         case 'ObjectiveChanged':
         case 'BeamChanged':
-        // M6 (T600a seams): silent until T650 sounds them.
-        case 'GatherTell':
-        case 'Gathered':
-        case 'RiftOpening':
-        case 'RiftOpened':
-        case 'SwarmLatch':
-        case 'SwarmHome':
-        case 'TrapSprung':
-        case 'Blocked':
+        // M6's silent ones (T650): the request (the SEAL's cue and hum), Bricks's health (his bar,
+        // QUILL's vitals cue), and the class and modifier (the stamps and Sterling's lines).
         case 'ForcedInputRequested':
         case 'AllyHealthChanged':
-        case 'ForcedInputResolved':
-        case 'TowerRevoked':
         case 'ClassRevoked':
-        case 'AbilityRevoked':
         case 'ModifierChanged':
-        case 'PulledBack': // Gravity Well (T608)
           return;
         default:
           assertNever(e);
@@ -583,6 +645,7 @@ export function createEventSounds(
       pendingForfeit = false;
       chainTower = -1;
       chainHits = 0;
+      stamps = 0;
     },
   };
 }

@@ -10,15 +10,22 @@
 import type { Song, Track } from '../types.ts';
 import { HOME_MOTIF } from './cuesAct2.ts';
 
-/** "Ev-er-glow, Ev-er-glow" in 8ths over two bars, held at the end of each half (Pebble's octave). */
-export const LEAVING_PHRASE = 'G4 C5 E5 - - - . . | F5 D5 C5 - - - - -';
 /**
- * The phrase's harmony in tenths below (Thrum's, and the Choir's lower voice an octave up):
- * E–A–C, D–B–A, so "Ev-er-glow" lands on A minor, the home motif's key.
+ * "Ev-er-glow, Ev-er-glow" as the Leaving Song sings it: one slow bar in the sting's own rhythm
+ * (`bright_sting`), in Pebble's octave.
  */
-const TENTHS_LOW = 'E3 A3 C4 - - - . . | D4 B3 A3 - - - - -';
-/** The phrase an octave down (the player's voice, humming along). */
-const PHRASE_LOW = 'G3 C4 E4 - - - . . | F4 D4 C4 - - - - -';
+export const LEAVING_BAR = 'G4 C5 E5 - F5 D5 C5 -';
+/**
+ * Its harmony in tenths below (Old Thrum's): E–A–C, D–B–A, so "Ev-er-glow" lands on A minor, the
+ * home motif's key.
+ */
+const TENTHS_BAR = 'E3 A3 C4 - D4 B3 A3 -';
+/** The phrase an octave under Pebble's (the player's voice, humming along). */
+const LOW_BAR = 'G3 C4 E4 - F4 D4 C4 -';
+/** The phrase over two bars in the battle bed, each half held (the Choir's line). */
+const CHOIR_PHRASE = 'G4 C5 E5 - - - . . | F5 D5 C5 - - - - -';
+/** The Choir's lower voice in the bed: the same tenths, an octave up. */
+const CHOIR_TENTHS = 'E4 A4 C5 - - - . . | D5 B4 A4 - - - - -';
 /** Bars of rest (8ths). */
 const REST = '. . . . . . . .';
 const rests = (n: number): string => Array.from({ length: n }, () => REST).join(' | ');
@@ -38,7 +45,7 @@ export const CHOIR_LINE_BRIGHT: readonly Track[] = [
     instrument: 'hum',
     stepsPerToken: 2,
     gain: 0.5,
-    pattern: `${PHRASE_LOW.replace(' - - - - -', ' - - - . .')} | ${rests(6)}`,
+    pattern: `G3 C4 E4 - - - . . | F4 D4 C4 - - - . . | ${rests(6)}`,
   },
   {
     layer: 'choir',
@@ -124,20 +131,20 @@ export const ACT3_BATTLE: Song = {
       instrument: 'hum',
       stepsPerToken: 2,
       gain: 0.55,
-      pattern: `${LEAVING_PHRASE} | ${rests(2)} | ${LEAVING_PHRASE} | ${rests(2)}`,
+      pattern: `${CHOIR_PHRASE} | ${rests(2)} | ${CHOIR_PHRASE} | ${rests(2)}`,
     },
     {
       layer: 'choir',
       instrument: 'hum',
       stepsPerToken: 2,
       gain: 0.4,
-      pattern: (() => {
-        const tenths = 'E4 A4 C5 - - - . . | D5 B4 A4 - - - - -';
-        return `${tenths} | ${rests(2)} | ${tenths} | ${rests(2)}`;
-      })(),
+      pattern: `${CHOIR_TENTHS} | ${rests(2)} | ${CHOIR_TENTHS} | ${rests(2)}`,
     },
   ],
 };
+
+/** The Leaving Song's tempo: slower than the bed, a held breath between the notes. */
+const SONG_BPM = 60;
 
 /**
  * The Leaving Song (act3.md § A3M1, `a3_m01_scene_song`: Pebble, "(hum, six notes)"): "Everglow
@@ -146,18 +153,10 @@ export const ACT3_BATTLE: Song = {
  */
 export const LEAVING_HUM: Song = {
   id: 'leaving_hum',
-  bpm: ACT3_BPM,
-  bars: 3,
+  bpm: SONG_BPM,
+  bars: 1,
   loop: false,
-  tracks: [
-    {
-      layer: 'lead',
-      instrument: 'hum',
-      stepsPerToken: 2,
-      gain: 0.9,
-      pattern: `${LEAVING_PHRASE} | ${REST}`,
-    },
-  ],
+  tracks: [{ layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.9, pattern: LEAVING_BAR }],
 };
 
 /**
@@ -166,24 +165,12 @@ export const LEAVING_HUM: Song = {
  */
 export const LEAVING_HUM_TWO: Song = {
   id: 'leaving_hum_two',
-  bpm: ACT3_BPM,
-  bars: 3,
+  bpm: SONG_BPM,
+  bars: 1,
   loop: false,
   tracks: [
-    {
-      layer: 'lead',
-      instrument: 'hum',
-      stepsPerToken: 2,
-      gain: 0.7,
-      pattern: `${LEAVING_PHRASE} | ${REST}`,
-    },
-    {
-      layer: 'lead',
-      instrument: 'hum',
-      stepsPerToken: 2,
-      gain: 0.85,
-      pattern: `${TENTHS_LOW} | ${REST}`,
-    },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.7, pattern: LEAVING_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.85, pattern: TENTHS_BAR },
   ],
 };
 
@@ -193,24 +180,12 @@ export const LEAVING_HUM_TWO: Song = {
  */
 export const LEAVING_HUM_ALONG: Song = {
   id: 'leaving_hum_along',
-  bpm: ACT3_BPM,
-  bars: 3,
+  bpm: SONG_BPM,
+  bars: 1,
   loop: false,
   tracks: [
-    {
-      layer: 'lead',
-      instrument: 'hum',
-      stepsPerToken: 2,
-      gain: 0.8,
-      pattern: `${PHRASE_LOW} | ${REST}`,
-    },
-    {
-      layer: 'lead',
-      instrument: 'hum',
-      stepsPerToken: 2,
-      gain: 0.55,
-      pattern: `${LEAVING_PHRASE} | ${REST}`,
-    },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.8, pattern: LOW_BAR },
+    { layer: 'lead', instrument: 'hum', stepsPerToken: 2, gain: 0.55, pattern: LEAVING_BAR },
   ],
 };
 
@@ -220,8 +195,8 @@ export const LEAVING_HUM_ALONG: Song = {
  */
 export const LOSE_HUSH: Song = {
   id: 'lose_hush',
-  bpm: ACT3_BPM,
-  bars: 2,
+  bpm: SONG_BPM,
+  bars: 1,
   loop: false,
   tracks: [
     {
@@ -229,14 +204,14 @@ export const LOSE_HUSH: Song = {
       instrument: 'hum',
       stepsPerToken: 2,
       gain: 0.75,
-      pattern: 'F4 - D4 - C4 - - - | B3 - - - - - . .',
+      pattern: 'F4 - D4 - C4 - B3 -',
     },
     {
       layer: 'base',
       instrument: 'pad',
       stepsPerToken: 2,
       gain: 0.45,
-      pattern: 'A2 - - - - - - - | E2 - - - - - . .',
+      pattern: 'A2 - - - - - E2 -',
     },
   ],
 };

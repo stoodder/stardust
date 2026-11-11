@@ -23,9 +23,9 @@ export const ATTACK_SOUNDS: Readonly<
   // A beam locking a target (T504, T550; ProjectileFired kind 'beam', once per lock, not per beam
   // tick): the Prism's glass "ting-ting". While it holds, the beam hums (BEAM_SOUNDS).
   beam: { fire: 'prism_lock', land: null },
-  // The Scuttle Den (T604) fires no shot: its swarmlings latch (SwarmLatch, T650's chitter). The
-  // row keeps the table whole; a placeholder until T650.
-  spawner: { fire: 'burrow_dig', land: null },
+  // The Scuttle Den (T604) fires no shot: its swarmlings latch (SwarmLatch: their chitter and
+  // bite, SWARM_SOUNDS in eventTablesAct3.ts). The row keeps the table whole.
+  spawner: { fire: null, land: null },
 };
 
 /**
@@ -90,7 +90,8 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   fracture: -4,
   fracture_shard: 4,
   riftmoth: 6,
-  // M6's units (T600a stub rows: T650 settles them): pitched by size like the rest.
+  // M6's units (T650): pitched by size like the rest (the Hollow's are silent in Act III, but
+  // keep their pitch for a replay in another act's dials; Everglow's shut down, enemies.md § 8).
   maw: -6,
   undertow: -5,
   compliance: 1,
@@ -190,9 +191,12 @@ export const ENEMY_LOOPS: Readonly<
   fracture: { id: 'hollow_hum', everySec: 9 },
   fracture_shard: { id: 'hollow_hum', everySec: 9 },
   riftmoth: { id: 'hollow_hum', everySec: 9 },
-  // M6's Hollow (T600a stub rows: T650 settles them).
+  // M6's (T650): the Hollow's hum the jingle wrong like the Mote; Everglow's machines walk on
+  // servos, and the Expediter's haste aura ticks like a metronome, so a hasted rush is heard.
   maw: { id: 'hollow_hum', everySec: 9 },
   undertow: { id: 'hollow_hum', everySec: 9 },
+  compliance: { id: 'compliance_step', everySec: 0.8 },
+  expediter: { id: 'haste_tick', everySec: 0.5 },
 };
 
 /** Burrowing (D073): digging in and surfacing, for a Digger or a burrowing boss. */
@@ -244,8 +248,9 @@ export const ABILITY_SOUNDS: Readonly<
   // Ves'thara's Stillness (T550): her held breath as it's cast; the freeze locks in on its
   // StasisArea (STASIS_SOUNDS' lock, as Flash Freeze's does).
   stillness: { cast: 'stillness_cast', land: [] },
-  // Bramble's Underfoot (T600a stub row: T650 gives it its own; the warren digging in for now).
-  underfoot: { cast: 'burrow_dig', land: [] },
+  // Bramble's Underfoot (T650): the warren digging the trap in, three quick chitters; each unit
+  // it catches snaps it (TrapSprung, TRAP_SOUND in eventTablesAct3.ts).
+  underfoot: { cast: 'underfoot_cast', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

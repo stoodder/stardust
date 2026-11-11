@@ -20,14 +20,14 @@ export const SKITTERKIN_DEATH_SOUNDS: Readonly<Record<SkitterkinDeath, SfxId | n
 
 /**
  * How the other factions die (enemies.md § 8), whatever the Skitterkin dial: the Aelari shatter
- * into chiming shards, the Hollow unravel into static. A faction without a row pops (Everglow's
- * own, later). Act III's Hollow die with no sound (§ 8): M6 silences them with its maps.
+ * into chiming shards, the Hollow unravel into static, Everglow's machines shut down with a
+ * falling price tag (T650). A faction without a row pops. Act III's Hollow die with no sound
+ * (§ 8): the map's `hollowDeath` dial (eventSounds.ts) silences them.
  */
 export const FACTION_DEATH_SOUNDS: Readonly<Partial<Record<EnemyFaction, SfxId>>> = {
   aelari: 'aelari_shatter',
   hollow: 'hollow_unravel',
-  // Everglow Security's clean shutdown (T600a stub row: the plain pop until T650 draws its own).
-  everglow: 'enemy_pop',
+  everglow: 'everglow_shutdown',
 };
 
 /**

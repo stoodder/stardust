@@ -2,7 +2,8 @@
 // a white Everglow dome on a steel ring, a teal band, lit window slits, and a round door.
 // `window` (A2M6's `dome_window`, act2.md § A2M6; T540c): Dome 3, an orange "3" on its band and a
 // round window on its lit side, warm inside, where rows of butterhead lettuce grow and a small
-// coral shape sleeps curled among them (Pebble; T530b lights it in the dark).
+// coral shape sleeps curled among them (Pebble; T530b lights it in the dark). `dark` (Act III's
+// apron, T640c): the Long Night's dome, its window slits out but one on emergency red.
 import { defineSprite } from '../defineSprite.ts';
 import { grid, isoBox, plot, rows, stamp } from '../helpers.ts';
 
@@ -11,7 +12,7 @@ const H = 24;
 const CX = 15;
 const FOOT_Y = 18;
 
-function domeGrid(look: 'v0' | 'window' = 'v0'): string[] {
+function domeGrid(look: 'v0' | 'window' | 'dark' = 'v0'): string[] {
   const g = grid(W, H);
   isoBox(g, CX, FOOT_Y + 1, 14, 0, { top: '_', rim: '_', left: '_', right: '_' });
   isoBox(g, CX, FOOT_Y, 13, 2, { top: '2', rim: '3', left: '1', right: '0' });
@@ -32,8 +33,10 @@ function domeGrid(look: 'v0' | 'window' = 'v0'): string[] {
   // The teal band, then window slits glowing along it.
   for (let x = CX - rx + 1; x < CX + rx - 1; x++) plot(g, x, by - 4, x < CX ? '8' : '7');
   for (const x of [CX - 8, CX - 4, CX + 4, CX + 8]) {
-    plot(g, x, by - 6, '+');
-    plot(g, x + 1, by - 6, '*');
+    // In the Long Night (`dark`) the slits are out but one, on emergency red.
+    const red = look === 'dark' && x === CX + 4;
+    plot(g, x, by - 6, look === 'dark' ? (red ? 'R' : 'k') : '+');
+    plot(g, x + 1, by - 6, look === 'dark' ? (red ? 'S' : 'k') : '*');
   }
   // The round door, front and center.
   for (let y = by - 4; y < by; y++) {
@@ -69,6 +72,14 @@ export const propDome = defineSprite({
   variants: ['everglow.worn'],
   outline: 'auto',
   glow: { slots: ['e0', 'e1'], radius: 1 },
-  legend: { G: 'gold.4', L: 'green.3', M: 'green.2', P: 'coral.3', Q: 'coral.4' },
-  frames: { v0: domeGrid(), window: domeGrid('window') },
+  legend: {
+    G: 'gold.4',
+    L: 'green.3',
+    M: 'green.2',
+    P: 'coral.3',
+    Q: 'coral.4',
+    R: 'red.2',
+    S: 'red.3',
+  },
+  frames: { v0: domeGrid(), window: domeGrid('window'), dark: domeGrid('dark') },
 });

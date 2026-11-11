@@ -263,7 +263,7 @@ describe('apronCells', () => {
     );
     for (const c of colony) expect(c.row < 0 || c.col < 0).toBe(true);
     for (const c of cells) if (c.ring > 2) expect(c.prop).toBeNull();
-    expect(apronCells(g, 'act3').some((c) => c.prop?.sprite === 'prop.dome')).toBe(false);
+    expect(apronCells(g, 'finale').some((c) => c.prop?.sprite === 'prop.dome')).toBe(false);
   });
 
   it('keeps hardware in its faction palette and decor in the env palette', () => {

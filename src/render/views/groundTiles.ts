@@ -11,6 +11,7 @@ import type { HighGroundLook } from '../../content/sprites/tiles/high_ground.ts'
 import type { DressingLayerDef, GridPos, MarkerId, TileChar } from '../../content/types.ts';
 import { assertNever } from '../../shared/types.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
+import { riftCrackTiles } from './riftCrack.ts';
 
 export interface TileLook {
   readonly sprite: SpriteId;
@@ -194,6 +195,13 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   rig_yard: 'prop.rig',
   lamp: 'prop.wall',
   wall: 'prop.wall',
+  // M6 (act3.md per map, T640c): A3M1's Preserve sign over the inner gate and its warren homes;
+  // A3M2's shuttle pad (Sterling's shuttle, parked until W12's cue: T630b lifts it) and your old
+  // turrets, dead in the dark band. A3M3's blast doors stand on its door cores (T630b draws them).
+  sign: 'prop.preserve_sign',
+  home: 'prop.warren_home',
+  shuttle_pad: 'prop.shuttle',
+  dead_turret: 'prop.dead_turret',
 };
 
 /**
@@ -210,6 +218,8 @@ function markerFrame(id: MarkerId): string | null {
   if (id.startsWith('fence')) return n === 0 ? 'v0' : 'v1';
   if (id.startsWith('spoil')) return `drill_${n % 2}`;
   if (id.startsWith('warren')) return `v${n % 2}`;
+  if (id.startsWith('home')) return `v${n % 2}`;
+  if (id.startsWith('dead_turret')) return `v${(n + 1) % 2}`;
   return null;
 }
 
@@ -223,6 +233,8 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   // A2M4's vats churn, and its seams glint (T540c).
   'prop.vat': { frame: 'v0', anim: 'churn' },
   'prop.seam': { frame: 'v0', anim: 'glint' },
+  // Sterling's shuttle waits on its pad, nav lights trading (A3M2, T640c).
+  'prop.shuttle': { frame: 'parked_0', anim: 'parked' },
 };
 
 /**
@@ -235,15 +247,34 @@ const ACT2_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: strin
   'prop.rig': { frame: 'strip', anim: null },
 };
 
-/** A decor prop's frame and anim on an `env` map: Act II's look, else its own, else `v0`. */
+/**
+ * Act III's looks (act3.md, T640c): Evie's billboards are `dark` (content/presentation.ts; T613
+ * drew the frame), the audit podium stands empty at night (A3M2: Prim's voice comes from the
+ * drones), the brush is crystal, and the domes are out but for an emergency light.
+ */
+const ACT3_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: string | null }>>> = {
+  'prop.billboard': { frame: 'dark', anim: null },
+  'prop.podium': { frame: 'v0', anim: null },
+  'prop.flora': { frame: 'crystal', anim: null },
+  'prop.dome': { frame: 'dark', anim: null },
+};
+
+/** A decor prop's frame and anim on an `env` map: its act's look, else its own, else `v0`. */
 export function decorLook(
   sprite: SpriteId,
   env: string | undefined,
 ): { frame: string; anim: string | null } {
-  // Act III's Evie is `dark` (content/presentation.ts; T613 draws the frame).
-  if (env === 'act3' && sprite === 'prop.billboard') return { frame: 'dark', anim: null };
-  const act2 = isActTwo(env) ? ACT2_LOOKS[sprite] : undefined;
-  return act2 ?? DECOR_LOOKS[sprite] ?? { frame: 'v0', anim: null };
+  const act = isActTwo(env) ? ACT2_LOOKS[sprite] : env === 'act3' ? ACT3_LOOKS[sprite] : undefined;
+  return act ?? DECOR_LOOKS[sprite] ?? { frame: 'v0', anim: null };
+}
+
+/**
+ * Whether the Peeker peeks on a map of `env` (PeekerView): not in the Long Night. A3M2 revisits
+ * A1M4 with its `peeker` marker, but no Skitterkin hides there now (act3.md § A3M2); its tile
+ * stays bare.
+ */
+export function peekerShows(env: string | undefined): boolean {
+  return env !== 'act3';
 }
 
 /**
@@ -478,6 +509,24 @@ export function cliffFrames(g: GroundGrid, col: number, row: number): string[] {
   return out;
 }
 
+/** Each grid's rift-crack tiles (tile indices), built once per grid. */
+const CRACKS = new WeakMap<GroundGrid, ReadonlySet<number>>();
+
+/** True when a rift lane's crack crosses (col, row) (`riftCrackTiles`): no sparse decor there. */
+function onCrack(g: GroundGrid, col: number, row: number): boolean {
+  let set = CRACKS.get(g);
+  if (set === undefined) {
+    const s = new Set<number>();
+    for (const r of g.routeList ?? []) {
+      if (r.kind !== 'rift') continue;
+      for (const k of riftCrackTiles(g, r)) s.add(k.row * g.cols + k.col);
+    }
+    set = s;
+    CRACKS.set(g, set);
+  }
+  return set.has(row * g.cols + col);
+}
+
 /** The dressing for tile (col, row). Deterministic: the same map always looks the same. */
 export function dressTile(g: GroundGrid, col: number, row: number): TileDressing {
   let look = dressBase(g, col, row);
@@ -583,6 +632,7 @@ function dressBase(g: GroundGrid, col: number, row: number): TileDressing {
       let sprite: SpriteId | null = decor === 'bare' || decor === null ? null : decor.sprite;
       if (decor === null) {
         if (t === 'x') sprite = 'prop.wreckage';
+        else if (onCrack(g, col, row)) sprite = null; // a rift lane's crack runs here (T640c)
         else if (onWall(g, col, row)) sprite = 'prop.wall';
         else if ((col * 3 + row * 5) % 7 === 0) sprite = 'prop.flora';
         else if ((col * 5 + row * 3) % 11 === 0) sprite = 'prop.rock';
@@ -643,6 +693,13 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.intake',
   'prop.wall',
   'prop.relocation_fence',
+  // M6's Everglow kit and the warrens' homes (T640c).
+  'prop.preserve_sign',
+  'prop.warren_home',
+  'prop.shuttle',
+  'prop.dead_turret',
+  'prop.blast_door',
+  'prop.emergency_lamp',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */
@@ -691,10 +748,30 @@ function frontierDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
   return m;
 }
 
+/**
+ * Act III's apron dressing on the same north edges: the colony in the Long Night. Evie's billboard
+ * `dark` on the north-west under an emergency lamp, crystal breaking out of the ground beside it,
+ * and the domes of Dome Row out but for their emergency lights on the north-east, each with a lamp
+ * (art-direction §3 *Act III*).
+ */
+function nightDecor(g: GroundGrid): ReadonlyMap<string, Prop> {
+  const m = new Map<string, Prop>();
+  const west = Math.round(g.rows * 0.2);
+  m.set(`-2,${west}`, prop('prop.billboard', 'dark'));
+  m.set(`-2,${west + 2}`, prop('prop.emergency_lamp', 'v0'));
+  m.set(`-2,${west + 4}`, prop('prop.flora', 'crystal'));
+  m.set(`${Math.round(g.cols * 0.55)},-2`, prop('prop.dome', 'dark'));
+  m.set(`${Math.round(g.cols * 0.55) + 2},-2`, prop('prop.emergency_lamp', 'v0'));
+  m.set(`${g.cols - 2},-2`, prop('prop.dome', 'dark'));
+  m.set(`${Math.round(g.cols * 0.3)},-2`, prop('prop.flora', 'crystal'));
+  return m;
+}
+
 const DECOR_BY_ENV: Readonly<Record<string, (g: GroundGrid) => ReadonlyMap<string, Prop>>> = {
   act1: colonyDecor,
   'act2.gold': frontierDecor,
   'act2.dusk': frontierDecor,
+  act3: nightDecor,
 };
 
 /**
@@ -753,7 +830,8 @@ export function apronCells(g: GroundGrid, env: string): ApronCell[] {
           p = decor.get(key) ?? null;
           if (p === null) {
             const h = (((col + 16) * 7 + (row + 16) * 11) >>> 0) % 9;
-            p = h === 0 ? prop('prop.flora', 'v0') : h === 4 ? prop('prop.rock', 'v0') : null;
+            const brush = prop('prop.flora', decorLook('prop.flora', env).frame);
+            p = h === 0 ? brush : h === 4 ? prop('prop.rock', 'v0') : null;
           }
         }
       }

@@ -1,8 +1,9 @@
 // Binds the audio (src/audio/) to the game (architecture.md § Audio): drained sim events and the
 // battle's state become sound effects, music layers, and cues; HUD signals (notices, spoken lines
-// and their typewriter, a sung line's cue, the screen, C2's choice on the Results card) and UI
-// buttons get their sounds; the settings drive the volumes and mute. Audio is created on the first
-// user gesture, and stays off under `?test=1` unless the URL adds `&audio=1`.
+// and their typewriter, a sung line's cue, a cue that hushes the music, the screen, C2's choice on
+// the Results card or at the base) and UI buttons get their sounds; the settings drive the volumes
+// and mute. Audio is created on the first user gesture, and stays off under `?test=1` unless the
+// URL adds `&audio=1`.
 import { effect } from '@preact/signals';
 import {
   ABILITY_SOUNDS,
@@ -34,8 +35,9 @@ import {
 } from '../audio/index.ts';
 import { HOLLOW_DUCK, TIDYBOT_SOUNDS } from '../audio/eventTablesAct2.ts';
 import { DARK_SOUNDS, METER_ALARM } from '../audio/eventTablesAct2b.ts';
-import { WAVE_CLEAR_CUE } from '../audio/music/index.ts';
-import { C2_STINGS, lineCue, PA_JINGLE_CUE } from '../audio/storyCues.ts';
+import { FORCED_INPUT_SOUNDS } from '../audio/eventTablesAct3.ts';
+import { WAVE_CLEAR_CUE, type CueId } from '../audio/music/index.ts';
+import { C2_STINGS, cueHush, lineCue, PA_JINGLE_CUE, type LineCue } from '../audio/storyCues.ts';
 import {
   isStormId,
   renderCue,
@@ -52,7 +54,12 @@ import { clearTicksFor, type SimEvent } from '../sim/index.ts';
 import { setTypeTick } from '../ui/dialogue/LineText.tsx';
 import { presentationOfMap } from '../story/presentation.ts';
 import { dialogue, speaking } from '../ui/dialogue/state.ts';
-import { runResult, type ResultsChoice } from '../ui/screens/state.ts';
+import {
+  baseChoice,
+  runResult,
+  type ResultsChoice,
+  type ResultsTransaction,
+} from '../ui/screens/state.ts';
 import { hud, screen } from '../ui/state.ts';
 import type { Host } from './host.ts';
 import { activeSave } from './save.ts';
@@ -117,7 +124,8 @@ function setMusic(m: MusicIntent): void {
     l.level === m.level &&
     l.layers.base === m.layers.base &&
     l.layers.drums === m.layers.drums &&
-    l.layers.lead === m.layers.lead
+    l.layers.lead === m.layers.lead &&
+    l.layers.choir === m.layers.choir
   ) {
     return;
   }
@@ -144,17 +152,48 @@ const LINE_CUE_DUCK = 'line_cue';
 
 /**
  * A spoken line (the comms panel or a scene) ducks the music and the low-priority sound effects,
- * and blips as it starts; a sung line (LINE_CUES) plays its cue instead of the blip and hushes
- * the music until the next spoken line. Returns the unwiring.
+ * and blips as it starts; a sung line (LINE_CUES) plays its cue instead of the blip (taking over
+ * from the last sung line's cue, if it still plays) and hushes the music until the next spoken
+ * line; a player's pick that is sung (the Leaving Song's "(hum along)") plays its cue as it joins
+ * the transcript. Returns the unwiring.
  */
 function bindSpeechAudio(ticker: TypeTicker): () => void {
   let lineId = 0;
   let sung = false;
+  /** The cue the last sung line started (a new sung line fades it out and takes over). */
+  let singing: CueId | null = null;
+  /** The scene on screen and how many transcript lines of it were seen (a pick joins it). */
+  let sceneOf: string | null = null;
+  let seen = 0;
+  const sing = (c: LineCue): void => {
+    sung = true;
+    engine.holdDuck(LINE_CUE_DUCK, c.musicDuck);
+    if (c.cue !== null) {
+      if (singing !== null) engine.stopCue(singing);
+      singing = c.cue;
+      engine.cue(c.cue);
+    }
+    ticker.quietUntil(performance.now() + c.quietMs);
+  };
   return effect(() => {
+    const scene = dialogue.scene.value;
+    // A sung pick: the player's own line, as it joins the transcript.
+    if (scene === null || scene.sceneId !== sceneOf) {
+      sceneOf = scene?.sceneId ?? null;
+      seen = scene?.transcript.length ?? 0;
+    } else {
+      for (let i = seen; i < scene.transcript.length; i++) {
+        const said = scene.transcript[i]!; // i < length
+        if (said.speaker !== 'player') continue;
+        const pick = lineCue(scene.sceneId, said.speaker, said.text);
+        if (pick !== null) sing(pick);
+      }
+      seen = scene.transcript.length;
+    }
     const l = speaking.value;
     engine.holdDuck('radio', l === null ? null : RADIO_DUCK);
     // Dialogue is never buried (R10, D134): shots, hits, and pops dip 6 dB under a line, and a
-    // further 8 dB for a moment as each line starts, under its blip (D135).
+    // further 8 dB for a moment as each spoken line starts, under its blip (D135).
     engine.holdSfxDuck('speech', l === null ? null : SPEECH_SFX_DUCK);
     if (l === null || l.id === lineId) {
       if (l === null && sung) {
@@ -165,42 +204,77 @@ function bindSpeechAudio(ticker: TypeTicker): () => void {
     }
     lineId = l.id;
     if (l.silence) return;
-    engine.dipUnderSpeech();
-    const scene = dialogue.scene.peek();
-    const cue =
-      scene !== null && scene.line === l ? lineCue(scene.sceneId, scene.transcript.length) : null;
-    if (sung && cue === null) {
+    const inScene = scene !== null && scene.line === l;
+    const cue = lineCue(inScene ? scene.sceneId : null, l.speaker, l.text);
+    if (cue !== null) {
+      sing(cue);
+      return;
+    }
+    if (sung) {
       sung = false;
       engine.holdDuck(LINE_CUE_DUCK, null);
     }
-    if (cue !== null) {
-      sung = true;
-      engine.holdDuck(LINE_CUE_DUCK, cue.musicDuck);
-      engine.cue(cue.cue);
-      ticker.quietUntil(performance.now() + cue.quietMs);
-      return;
-    }
+    engine.dipUnderSpeech();
     const blip = blipFor(l.speaker);
     if (blip !== null && engine.play(blip)) ticker.blipped(performance.now());
   });
 }
 
 /**
- * C2's sting as its choice is taken on the Results card (C2_STINGS, by the transaction it made).
- * Returns the unwiring.
+ * A cue that hushes the music while it shows (CUE_HUSHES: Sterling's Clean Exit, so her held beat
+ * is silence), released as it closes. Returns the unwiring.
+ */
+function bindCueHushAudio(): () => void {
+  let held = false;
+  return effect(() => {
+    const id = dialogue.scene.value?.sceneId ?? null;
+    const hush = id === null ? null : cueHush(id);
+    if (hush !== null) {
+      held = true;
+      engine.holdDuck(CUE_HUSH_DUCK, hush.musicDuck, hush.fadeSec);
+    } else if (held) {
+      held = false;
+      engine.holdDuck(CUE_HUSH_DUCK, null);
+    }
+  });
+}
+
+/** The music duck a hushing cue holds (CUE_HUSHES) while it shows. */
+const CUE_HUSH_DUCK = 'cue_hush';
+
+/** C2's sting for the transaction `t` made (C2_STINGS), or null. */
+function c2Sting(t: ResultsTransaction | undefined): CueId | null {
+  return t === undefined || t.kind !== 'c2' ? null : C2_STINGS[t.choice];
+}
+
+/**
+ * C2's sting as its choice is taken (C2_STINGS, by the transaction it made): on the Results card,
+ * or on the base's panel when the card was never answered (D138; T569). Returns the unwiring.
  */
 function bindResultsAudio(): () => void {
   let was: ResultsChoice | null = null;
-  return effect(() => {
+  let baseMade: ResultsTransaction | null = null;
+  const offCard = effect(() => {
     const r = runResult.value;
     const choice = r?.choice ?? null;
     if (r !== null && choice !== null && choice.picked !== null && was?.picked === null) {
-      const c2 = (r.rewards?.transactions ?? []).findLast((t) => t.kind === 'c2');
-      const cue = c2 === undefined || c2.kind !== 'c2' ? null : C2_STINGS[c2.choice];
+      const cue = c2Sting((r.rewards?.transactions ?? []).findLast((t) => t.kind === 'c2'));
       if (cue !== null) engine.cue(cue);
     }
     was = choice;
   });
+  const offBase = effect(() => {
+    const made = baseChoice.value?.made ?? null;
+    if (made !== null && baseMade === null) {
+      const cue = c2Sting(made);
+      if (cue !== null) engine.cue(cue);
+    }
+    baseMade = made;
+  });
+  return () => {
+    offCard();
+    offBase();
+  };
 }
 
 /**
@@ -258,6 +332,7 @@ export function installAudio(
       }
     }),
     bindSpeechAudio(ticker),
+    bindCueHushAudio(),
     bindResultsAudio(),
     // Screens without a battle; a battle's frames drive its own music (bindBattleAudio).
     effect(() => {
@@ -351,10 +426,22 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     darkLevel = level;
     engine.holdDuck(DARK_SOUNDS.duck, level < 1 ? level : null, DARK_SOUNDS.duckFadeSec);
   };
+  /** Whether a forced input's hush is held (FORCED_INPUT_SOUNDS: the music falls away). */
+  let forcedDuck = false;
+  const setForcedDuck = (on: boolean): void => {
+    if (on === forcedDuck) return;
+    forcedDuck = on;
+    const f = FORCED_INPUT_SOUNDS;
+    engine.holdDuck(f.duckKey, on ? f.duck : null, f.duckFadeSec);
+  };
   // The meters' alarm (METER_ALARM), once as each crosses into its low band.
   let assetLow = false;
   let escortLow = false;
   const onEvent = (e: SimEvent<IdSpace>): void => {
+    // A forced input's press cuts its loops dead (the SEAL stops the door hum) before it sounds.
+    if (e.type === 'ForcedInputResolved') {
+      for (const id of FORCED_INPUT_SOUNDS.inputs[e.id]?.stops ?? []) engine.stop(id);
+    }
     sounds.sounds(e, calls);
     if (e.type === 'AbilityUsed' && e.uid !== 0) {
       const s = ABILITY_SOUNDS[e.ability];
@@ -389,6 +476,8 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     setHollowDuck(s.outcome === 'playing' && field.hollowLive());
     // The music sits back as Sundown's dark deepens, and comes back as the map ends.
     setDarkDuck(s.outcome === 'playing' ? darkDuckLevel(s.dark) : 1);
+    // While a forced input waits (the SEAL), the music falls away under its hum.
+    setForcedDuck(s.outcome === 'playing' && s.pendingInput !== null);
     tidy.due(s.tick, chimes);
     for (const bot of chimes) {
       engine.play(TIDYBOT_SOUNDS.chime, { pitch: bot * TIDYBOT_SOUNDS.pitchPerBot });
@@ -430,6 +519,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
           integrity: s.integrity,
           outcome: s.outcome,
           paused: host.speed === 0,
+          choir: field.choirLive(),
         }),
       );
     }
@@ -442,6 +532,7 @@ export function bindBattleAudio(host: Host<IdSpace>): () => void {
     for (const off of offs) off();
     setHollowDuck(false);
     setDarkDuck(1);
+    setForcedDuck(false);
   };
 }
 

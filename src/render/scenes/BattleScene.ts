@@ -131,7 +131,7 @@ import { BeamView } from '../views/BeamView.ts';
 import { HuddleView } from '../views/HuddleView.ts';
 import { LeaveFx } from '../views/LeaveFx.ts';
 import { drawGround } from '../views/GroundView.ts';
-import { peekerCover } from '../views/groundTiles.ts';
+import { peekerCover, peekerShows } from '../views/groundTiles.ts';
 import { LinkView } from '../views/LinkView.ts';
 import { PING_RING_EVERY_MS } from '../vfx/pingPixels.ts';
 import { PingView } from '../views/PingView.ts';
@@ -477,7 +477,7 @@ export class BattleScene extends Phaser.Scene {
     this.#cursor = new CursorView(ctx);
     const peekerAt = map.markers['peeker'];
     this.#peeker =
-      peekerAt === undefined
+      peekerAt === undefined || !peekerShows(map.env)
         ? null
         : new PeekerView(
             ctx,

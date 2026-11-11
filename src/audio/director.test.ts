@@ -22,7 +22,7 @@ describe('battle music', () => {
   it('starts with the base layer in the setup phase', () => {
     expect(battleMusic(MOOD)).toEqual({
       theme: 'act1_battle',
-      layers: { base: 1, drums: 0, lead: 0 },
+      layers: { base: 1, drums: 0, lead: 0, choir: 0 },
       level: 1,
     });
   });
@@ -32,6 +32,7 @@ describe('battle music', () => {
       base: 1,
       drums: 1,
       lead: 0,
+      choir: 0,
     });
     expect(battleMusic({ ...MOOD, wave: 2, waveActive: false }).layers.drums).toBe(0);
   });
@@ -52,9 +53,16 @@ describe('battle music', () => {
     });
   });
 
-  it("plays Act II's theme in Act II, and falls back to Act I's for acts without one yet", () => {
+  it("plays each act's theme, and falls back to Act I's for acts without one yet", () => {
     expect(battleMusic({ ...MOOD, act: 2 }).theme).toBe('act2_battle');
-    expect(battleMusic({ ...MOOD, act: 3 }).theme).toBe('act1_battle');
+    expect(battleMusic({ ...MOOD, act: 3 }).theme).toBe('act3_battle');
+    expect(battleMusic({ ...MOOD, act: 'finale' }).theme).toBe('act1_battle');
+  });
+
+  it("brings in the Hum Choir's harmony line while a Choir stands, and drops it at the map's end", () => {
+    expect(battleMusic({ ...MOOD, choir: true }).layers.choir).toBe(1);
+    expect(battleMusic({ ...MOOD, choir: false }).layers.choir).toBe(0);
+    expect(battleMusic({ ...MOOD, choir: true, outcome: 'won' }).layers.choir).toBe(0);
   });
 
   it('plays the title theme on the title, and nothing on Results', () => {

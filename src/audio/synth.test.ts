@@ -83,12 +83,12 @@ describe('the synth', () => {
 
   it('schedules a theme ahead of the clock, only on its live layers', () => {
     const { ctx, s } = synth();
-    s.setTheme('act1_battle', { base: 1, drums: 0, lead: 0 });
+    s.setTheme('act1_battle', { base: 1, drums: 0, lead: 0, choir: 0 });
     const afterBase = ctx.voices;
     expect(afterBase).toBeGreaterThan(0);
-    s.setTheme('act1_battle', { base: 1, drums: 1, lead: 1 });
+    s.setTheme('act1_battle', { base: 1, drums: 1, lead: 1, choir: 1 });
     expect(s.theme).toBe('act1_battle');
-    expect(s.layerLevels).toEqual({ base: 1, drums: 1, lead: 1 });
+    expect(s.layerLevels).toEqual({ base: 1, drums: 1, lead: 1, choir: 1 });
     ctx.currentTime = 1;
     s.pump();
     // Notes start no earlier than now, and no later than the lookahead.
@@ -99,10 +99,10 @@ describe('the synth', () => {
 
   it('crossfades to another theme and fades out to silence', () => {
     const { s } = synth();
-    s.setTheme('title', { base: 1, drums: 0, lead: 1 });
-    s.setTheme('act1_battle', { base: 1, drums: 0, lead: 0 });
+    s.setTheme('title', { base: 1, drums: 0, lead: 1, choir: 1 });
+    s.setTheme('act1_battle', { base: 1, drums: 0, lead: 0, choir: 0 });
     expect(s.theme).toBe('act1_battle');
-    s.setTheme(null, { base: 0, drums: 0, lead: 0 });
+    s.setTheme(null, { base: 0, drums: 0, lead: 0, choir: 0 });
     expect(s.theme).toBeNull();
   });
 
@@ -243,7 +243,7 @@ describe('the engine', () => {
       made++;
       return asContext(ctx);
     });
-    e.setMusic('title', { base: 1, drums: 0, lead: 1 });
+    e.setMusic('title', { base: 1, drums: 0, lead: 1, choir: 1 });
     expect(e.play('ui_click')).toBe(false);
     expect(made).toBe(0);
     e.unlock();

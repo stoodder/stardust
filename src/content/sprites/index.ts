@@ -146,6 +146,10 @@ import { propRelocationFence } from './props/relocation_fence.ts';
 import { propBasin } from './props/basin.ts';
 import { propShuttle } from './props/shuttle.ts';
 import { propBlastDoor } from './props/blast_door.ts';
+import { propDeadTurret } from './props/dead_turret.ts';
+import { propWarrenHome } from './props/warren_home.ts';
+import { propPreserveSign } from './props/preserve_sign.ts';
+import { propEmergencyLamp } from './props/emergency_lamp.ts';
 import { tileHush } from './tiles/hush.ts';
 import { tileRift } from './tiles/rift.ts';
 import { tileApron } from './tiles/apron.ts';
@@ -272,6 +276,10 @@ export const SPRITES = [
   propBasin,
   propShuttle,
   propBlastDoor,
+  propDeadTurret,
+  propWarrenHome,
+  propPreserveSign,
+  propEmergencyLamp,
   tileHush,
   tileRift,
   towerRivet,

@@ -5,7 +5,8 @@
 // cloaked unit's footsteps, a Capacitor Bank's hum climbing as it charges (and collapsing when the
 // charge fizzles), a beam's hum climbing with its ramp (and held once it caps), the night's air at
 // Sundown, and the salvage drone flying and working. It also keeps where the Hollow units stand,
-// for their quiet (`quietAt`, HOLLOW_QUIET). Timing is in sim ticks, so a paused battle is quiet.
+// for their quiet (`quietAt`, HOLLOW_QUIET), and whether a Hum Choir stands (`choirLive`, the
+// music's harmony line). Timing is in sim ticks, so a paused battle is quiet.
 // It reads only public sim state (the same fields render reads), and never touches it.
 import type { CompiledAttack } from '../content/compiled.ts';
 import { BOSS_ABILITY_TELL_SEC } from '../content/rules.ts';
@@ -21,6 +22,7 @@ import {
 } from './eventTables.ts';
 import { CHARGE_SOUNDS, CLOAK_SOUNDS, HOLLOW_QUIET } from './eventTablesAct2.ts';
 import { BEAM_SOUNDS, DARK_SOUNDS } from './eventTablesAct2b.ts';
+import { ENEMY_BURROW_SOUNDS } from './eventTablesAct3.ts';
 import { sfx, type SoundCall } from './eventSounds.ts';
 
 /** A boss's tell is the last BOSS_ABILITY_TELL_SEC of its ability timer (sim/enemyAbilities/boss.ts). */
@@ -63,7 +65,11 @@ export interface FieldEnemy {
 export interface FieldTower {
   readonly uid: number;
   readonly alive: boolean;
-  readonly tierDef: { readonly attack: CompiledAttack | null } | null;
+  readonly tierDef: {
+    readonly attack: CompiledAttack | null;
+    /** Its auras' kinds (a Hum Choir projects `choir`: its harmony line, `choirLive`). */
+    readonly auras?: readonly { readonly kind: string }[] | null;
+  } | null;
   readonly chargeTicks: number;
   readonly flatRate: number;
   readonly pctRate: number;
@@ -127,6 +133,21 @@ export interface FieldSounds {
    * steady duck (HOLLOW_DUCK) holds while it is.
    */
   hollowLive(): boolean;
+  /**
+   * Whether a tower projecting a Hum Choir aura stood as of the last frame (design/towers.md § 7:
+   * any tower with a `choir` aura is a Choir): the music's harmony line (director.ts `choir`).
+   */
+  choirLive(): boolean;
+}
+
+/** The aura kind that makes a tower a Choir (its harmony line plays while one stands). */
+const CHOIR_AURA = 'choir';
+
+/** Whether tower `t` is a live Choir (it projects a `choir` aura at its tier or spec). */
+function isChoir(t: FieldTower): boolean {
+  if (!t.alive) return false;
+  for (const a of t.tierDef?.auras ?? []) if (a.kind === CHOIR_AURA) return true;
+  return false;
 }
 
 /** A hidden cloaked unit (mirrors sim `cloakedOut`; a burrowed or leaving one makes no steps). */
@@ -177,8 +198,10 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
   const flyTicks = clearTicks * DRONE_SOUNDS.flyFrac;
   let head = -1;
   let workAt = -1;
+  let choir = false;
   return {
     hollowLive: () => hollowN > 0,
+    choirLive: () => choir,
     quietAt(x, y) {
       for (let i = 0; i < hollowN; i++) {
         const dx = hollowX[i]! - x; // i < hollowN ≤ length
@@ -201,10 +224,11 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
           hollowN++;
         }
         if (hidden(e)) anyHidden = true;
-        // Digging in and surfacing (a Digger, or a boss's burrow).
+        // Digging in and surfacing (a Digger, or a boss's burrow; a Hollow burrower its own).
         const was = burrowed.get(e.uid);
         if (was !== undefined && was !== e.burrowed) {
-          out.push(sfx(e.burrowed ? BURROW_SOUNDS.dig : BURROW_SOUNDS.surface));
+          const b = ENEMY_BURROW_SOUNDS[e.def.id] ?? BURROW_SOUNDS;
+          out.push(sfx(e.burrowed ? b.dig : b.surface));
         }
         nextBurrowed.set(e.uid, e.burrowed);
         // A boss's spawn: its tell as it starts, its sneeze as the tell runs out in the same phase.
@@ -253,8 +277,10 @@ export function createFieldSounds(clearTicks: number): FieldSounds {
       const towers = state.towers;
       const elapsed = lastTick < 0 ? 1 : Math.max(1, state.tick - lastTick);
       let beamPitchNow: number | null = null;
+      choir = false;
       for (let i = 0; i < towers.used; i++) {
         const bank = towers.items[i]!; // i < used ≤ items.length
+        if (!choir && isChoir(bank)) choir = true;
         const bp = beamPitch(bank);
         if (bp !== null) beamPitchNow = Math.max(beamPitchNow ?? 0, bp);
         const attack = bank.tierDef?.attack ?? null;

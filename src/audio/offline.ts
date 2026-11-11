@@ -139,7 +139,7 @@ export function renderTheme(id: ThemeId): Promise<RenderLevels> {
   const c = compileSong(THEMES[id]);
   const secs = c.steps * c.secPerStep + 0.5;
   return both(secs, (s) => {
-    s.setTheme(id, { base: 1, drums: 1, lead: 1 });
+    s.setTheme(id, { base: 1, drums: 1, lead: 1, choir: 1 });
     s.pump(secs);
   });
 }
@@ -395,7 +395,7 @@ function stormPlays(storm: Storm, withBlip: boolean): [t: number, id: SfxId, pit
 
 /** A storm's theme and cue (a cue starts on the offline clock's zero, over the storm's opening). */
 function stormMusic(storm: Storm, s: Synth): void {
-  s.setTheme(storm.theme, { base: 1, drums: 1, lead: 1 });
+  s.setTheme(storm.theme, { base: 1, drums: 1, lead: 1, choir: 1 });
   s.cue(storm.cue);
 }
 

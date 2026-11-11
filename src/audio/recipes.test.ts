@@ -409,21 +409,28 @@ describe("Act II's story cues (T550)", () => {
     expect(lead('pa_shift_minor').at(-1)).toBe('C4');
   });
 
-  it("sings Pebble's hum in place of her blip on her singing line, and only there", () => {
+  it('sings each sung line in place of its blip, matched by its scene, speaker and text', () => {
     for (const c of LINE_CUES) {
       const scene = SCENES[c.scene];
       expect(scene, c.scene).toBeDefined();
-      // Line `line` counts every line node in play order (this scene has no branches).
-      const lines = scene!.nodes.filter((n) => n.kind === 'line');
-      const line = lines[c.line];
-      expect(line, `${c.scene}#${c.line}`).toMatchObject({
-        speaker: 'pebble',
-        expression: 'singing',
-      });
+      // The line (or, for the player, the pick) is in its scene as written.
+      const found = scene!.nodes.some(
+        (n) =>
+          (n.kind === 'line' && n.speaker === c.speaker && n.text === c.text) ||
+          (n.kind === 'choice' &&
+            c.speaker === 'player' &&
+            n.options.some((o) => o.text === c.text)),
+      );
+      expect(found, `${c.scene}: ${c.speaker} '${c.text}'`).toBe(true);
       expect(c.musicDuck).toBeGreaterThan(0);
       expect(c.musicDuck).toBeLessThan(1);
     }
-    expect(lineCue('a2_m06_base_whistle', 3)?.cue).toBe('home_hum');
-    expect(lineCue('a2_m06_base_whistle', 4)).toBeNull();
+    expect(lineCue('a2_m06_base_whistle', 'pebble', 'Hm. Hm-hm. Hmmm.')?.cue).toBe('home_hum');
+    expect(lineCue('a2_m06_base_loophole', 'pebble', 'Hm. Hm-hm. Hmmm.')).toBeNull();
+    expect(lineCue('a2_m06_base_whistle', 'pebble', '(squeak) Home.')).toBeNull();
+    // A comms cue's lines match without a scene id; a scene's never do.
+    expect(lineCue(null, 'bricks', '(hum, six notes, slow)')?.cue).toBeNull();
+    expect(lineCue(null, 'bricks', '(hum, six notes, slow)')).not.toBeNull();
+    expect(lineCue(null, 'pebble', 'Hm. Hm-hm. Hmmm.')).toBeNull();
   });
 });
