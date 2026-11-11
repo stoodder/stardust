@@ -82,6 +82,11 @@ export interface TestHooks {
   fastForward(ticks: number): void;
   /** Client (CSS pixel) coordinates of tile (x, y)'s center, or `null` outside a battle. */
   tileToClient(x: number, y: number): ClientPoint | null;
+  /**
+   * The boxes (game px) the forced input's screen keeps clear while it waits (A3M3's blast doors,
+   * open or shut; D143 R3, D144 S8), else empty.
+   */
+  sealAvoid(): readonly { x: number; y: number; w: number; h: number }[];
   /** Jumps to a screen. Resolves once it has rendered (`battle`: its first frame). */
   goto(screen: ScreenId): Promise<void>;
   /** Recent frame and sim timings and live entity counts. */

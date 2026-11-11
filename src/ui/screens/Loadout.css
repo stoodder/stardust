@@ -357,8 +357,10 @@
 }
 
 /* Field Protocols (T308): toggles like the ability rows, the effect under the name. */
-/* Under the tower grid, two to a row like the towers, taking the column's leftover height (it
-   scrolls when a save owns more than fit; the tower grid above never shrinks for it). */
+/* Under the tower grid, two to a row like the towers, as tall as its rows up to the column's
+   leftover height (it scrolls when a save owns more than fit; the tower grid above never shrinks
+   for it). A row shows its whole effect and note (D144: the pick-order hint went to the footer and
+   the cards tightened, so A3M3's Bulkhead row fits whole on both branches at 1280×720). */
 .sd-lo-protocols {
   display: grid;
   flex: 0 1 auto;

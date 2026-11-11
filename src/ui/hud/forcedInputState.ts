@@ -21,9 +21,10 @@ export const forcedInput = signal<string | null>(null);
 export const forcedInputArmed = signal(false);
 
 /**
- * What the forced input's screen must keep clear, in game px (D143 R3: A3M3's open blast door, so
- * the player sees the door they seal): the SEAL button lifts above it, and the comms panel moves to
- * the top centre. Set as the input shows and kept through the close (the doors run shut after the
+ * What the forced input's screen must keep clear, in game px (D143 R3, D144 S8: A3M3's blast
+ * doors, open or shut, so the player sees the door they seal): the SEAL button lifts above them (or
+ * to the top band, under the comms panel, with no room), and the comms panel moves to the top
+ * centre. Set as the input shows and kept through the close (the doors run shut after the
  * press); cleared as the battle unbinds. Empty: nothing to avoid.
  */
 export const forcedInputAvoid = signal<readonly AvoidRect[]>([]);

@@ -75,6 +75,16 @@ describe('a core-only protocol on a map with no core', () => {
   });
 });
 
+/** A protocol as the picker offers it (for `benchInert`). */
+const offer = (id: string, inert: string | null, takesTower = false) => ({
+  id,
+  name: id,
+  effect: '',
+  takesTower,
+  inert,
+  benched: null,
+});
+
 describe('a core-only protocol carried onto a map with no core (D144 S1b)', () => {
   it('is benched for the first owned protocol that acts, and says so; it can come back', () => {
     loadDevSave('after_a3m2_thumper');
@@ -107,18 +117,10 @@ describe('a core-only protocol carried onto a map with no core (D144 S1b)', () =
   });
 
   it('swaps in place, skips what is already equipped, and gives a tower pick its tower', () => {
-    const p = (id: string, inert: string | null, takesTower = false) => ({
-      id,
-      name: id,
-      effect: '',
-      takesTower,
-      inert,
-      benched: null,
-    });
     const offered = [
-      p('emergency_bulkhead', NO_CORE_TEXT),
-      p('head_start', null),
-      p('specialist', null, true),
+      offer('emergency_bulkhead', NO_CORE_TEXT),
+      offer('head_start', null),
+      offer('specialist', null, true),
     ];
     const start = {
       towers: ['rivet'],

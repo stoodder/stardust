@@ -6,10 +6,10 @@
 // each taking one of the sheltered (two hush the convoy on its road). Without its casts (Suppressing
 // Fire on the east rift's W4 Motes, the W8 cluster at the choke, and the rift Undertows of W11–W12)
 // it ends at 66.7. Both alts reach the floor through both doors (Den + Zapcoil + Skyhook + Lookout
-// 55.6 / 61.1; Den + Prism + Harpoon + Zapcoil 61.1 / 66.7). Without air the Moths take the
+// 58.3 / 63.9; Den + Prism + Harpoon + Zapcoil 61.1 / 66.7). Without air the Moths take the
 // sheltered (22.2 / 27.8); without splash, Mindspikes where par's Thumpers stand first lose people
-// to W10's packed cluster (four or five: the doom's preview, a wave splash holds, D143), then the
-// doomed waves' clusters flood the choke past Bricks (19.4 / 25.0); doing nothing loses. Air and
+// to W10's packed cluster (four / three: the doom's preview, a wave splash holds, D143), then the
+// doomed waves' clusters flood the choke past Bricks (25.0 / 30.6); doing nothing loses. Air and
 // splash are the map's required counters; burrowing is intel (map.ts `softExempt`): A3M3
 // introduces the Undertow and doom-scripts it, and the burrowed exam is the finale's (D141, T604c).
 //
@@ -19,8 +19,9 @@
 // (neither carries a Thumper) still reach the floor, and so does par unless the cue took its
 // Thumper: Rivets in its place make it a no-splash build, which leaks in W10 and falls in the doom
 // (13.9 / 19.4). That player's briefing says so (Bricks: "Bring something that chains."), and a
-// plain Zapcoil wherever par builds a Thumper holds W10 and the floor (55.6 / 58.3; D143). No-air
-// and no-splash stay under the floor.
+// plain Zapcoil wherever par builds a Thumper holds W10 and the floor (52.8 / 61.1; D143), with or
+// without Head Start (a3m3Protocols.test.ts: the map's 770 credits include Head Start's tenth, so
+// an inert Bulkhead in the slot costs nothing). No-air and no-splash stay under the floor.
 //
 // The Seer's Lantern probe (T568; report-only, like A2M6's D138 probes): par with the Lantern in
 // the Prism's place holds 25/36 / 27/36, a match for par, so it is no trap; Truthlight there, bought

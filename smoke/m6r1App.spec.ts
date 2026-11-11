@@ -111,9 +111,9 @@ test('loadout after the Clean Exit: the Thumper stamped, the uplink revoked, no 
   await expect(page.getByRole('button', { name: /^Thumper,/ })).toHaveCount(0);
   await expect(page.locator('[data-revoked="orbital_strike"]')).toContainText('Uplink revoked');
   await expect(page.getByText('No abilities issued yet.')).toHaveCount(0);
-  // The Holdout has no core: the Bulkhead says so, and still equips.
+  // The Holdout has no core: the Bulkhead says so (benched for Head Start, D144), and still equips.
   const bulkhead = page.locator('[data-protocol="emergency_bulkhead"]');
-  await expect(bulkhead).toContainText('No core on this shift');
+  await expect(bulkhead).toContainText(/no core on this shift/i);
   // Equipped or not, it's the player's call: it toggles like any other.
   const was = await bulkhead.getAttribute('aria-pressed');
   await bulkhead.click();

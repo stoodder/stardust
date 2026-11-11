@@ -379,6 +379,19 @@ describe('gathering a refugee (Escort)', () => {
 
 const NONE = Number.MIN_SAFE_INTEGER;
 
+/** A Maw with gather radius `r` tiles, on `layer`. */
+const mawDef = (r: number, layer: CompiledEnemyDef['layer'] = 'ground'): CompiledEnemyDef => ({
+  ...MAW,
+  layer,
+  gather: { ...MAW.gather!, radiusTiles: r, radiusSq: r * r },
+});
+const RADII = [0.5, 1, 1.5, 2.25] as const;
+const GROUND_MAWS = RADII.map((r) => mawDef(r));
+const AIR_MAWS = RADII.map((r) => mawDef(r, 'air'));
+
+/** `v` on a 0.05 grid, so equal distances (the uid tie-break) come up often. */
+const grid = (v: number): number => Math.round(v * 20) / 20;
+
 function refReady(m: Enemy): boolean {
   const g = m.def?.gather ?? null;
   const tell = g === null ? 0 : g.tellTicks > 0 ? g.tellTicks : 1;
@@ -528,5 +541,81 @@ describe('the matching (R15 P1: O(G·N), the pairwise rule exactly)', () => {
       tells += s.code.filter((c) => c !== NONE).length;
     }
     expect(tells).toBeGreaterThan(400); // the fields really match (refugees and runners included)
+  });
+
+  /**
+   * `field`'s mix widened: Maws of four radii, a quarter of them flying (they may take only the
+   * Rift Moths, never a Mote or a refugee); Rift Moths; and a third of every kind off the route
+   * (route null, up to 1.5 tiles to either side of the road), so a pair is measured in a straight
+   * line wherever both don't walk the route, and along it where both do.
+   */
+  function wideField(seed: number): SimState {
+    let r = seed;
+    const rnd = (): number => {
+      r = (Math.imul(r, 1664525) + 1013904223) >>> 0;
+      return r / 2 ** 32;
+    };
+    const state = createState(MAP, 1);
+    spawnRefugees(state, MAP, 'g1');
+    for (const a of state.allies.items.slice(0, state.allies.used)) {
+      a.dist = rnd() * road.lengthTiles;
+      a.seg = pointAt(road, a.dist, a, 0);
+    }
+    const maws: Enemy[] = [];
+    for (let i = 0; i < 48; i++) {
+      const dist = grid(rnd() * road.lengthTiles);
+      const k = rnd();
+      let e: Enemy;
+      if (k < 0.3) {
+        const defs = rnd() < 0.25 ? AIR_MAWS : GROUND_MAWS;
+        e = spawn(state, defs[Math.floor(rnd() * defs.length)]!, { dist, route: road });
+        e.gatherTicks = rnd() < 0.8 ? TELL : EVERY;
+        e.gatheredSkitterkin = rnd() < 0.3;
+        maws.push(e);
+      } else if (k < 0.6) e = spawn(state, MOTE, { dist, route: road });
+      else if (k < 0.8) e = spawn(state, E.riftmoth, { dist, route: road });
+      else e = spawn(state, WALKER, { dist, route: road, tags: FLEE });
+      if (rnd() < 1 / 3) {
+        e.route = null;
+        e.x = grid(e.x + (rnd() * 2 - 1) * 1.5);
+        e.y = grid(e.y + (rnd() * 2 - 1) * 1.5);
+      }
+    }
+    const held = state.enemies.items.filter((e) => e.alive && e.def?.gather === null);
+    for (const m of maws.slice(0, 3)) {
+      const v = held[Math.floor(rnd() * held.length)];
+      if (v !== undefined) m.gatherUid = v.uid;
+    }
+    return state;
+  }
+
+  it('agrees with the pairwise rule with off-route units, air Maws, and varied radii', () => {
+    const s = createScratch().gather;
+    const seen = { offRoute: 0, air: 0, ally: 0, straight: 0, radii: new Set<number>() };
+    for (let seed = 1; seed <= 200; seed++) {
+      const state = wideField(seed);
+      gatherMatches(state, s);
+      const ready = state.enemies.items.slice(0, state.enemies.used).filter(refReady);
+      expect(s.ready.map((slot, r) => [slot, s.code[r]])).toEqual(
+        ready.map((m) => [m.slot, refUnitFor(state, m)]),
+      );
+      ready.forEach((m, i) => {
+        const code = s.code[i]!;
+        if (code === NONE) return;
+        const u = code < 0 ? state.allies.items[-code - 1]! : state.enemies.items[code]!;
+        if (m.route === null) seen.offRoute++;
+        if (m.def!.layer === 'air') seen.air++;
+        if (code < 0) seen.ally++;
+        if (m.route === null || m.route !== u.route) seen.straight++;
+        seen.radii.add(m.def!.gather!.radiusTiles);
+      });
+    }
+    // Every case really comes up: off-route Maws, flying Maws, refugees, straight-line pairs, and
+    // a match at every radius.
+    expect(seen.offRoute).toBeGreaterThan(200);
+    expect(seen.air).toBeGreaterThan(150);
+    expect(seen.ally).toBeGreaterThan(150);
+    expect(seen.straight).toBeGreaterThan(300);
+    expect([...seen.radii].toSorted((a, b) => a - b)).toEqual([...RADII]);
   });
 });

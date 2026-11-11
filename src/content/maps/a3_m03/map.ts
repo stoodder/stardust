@@ -212,7 +212,12 @@ export const map = defineMapLayout({
       },
     },
   ],
-  startCredits: 700,
+  // 700 plus Head Start's tenth, paid to everyone (D144 S1c): those credits put a plain
+  // Zapcoil-for-Thumper swap's west-fork coil up before W10's cluster, so a player who carried the
+  // Bulkhead in (inert here: no core) or equipped nothing doesn't fail the exam on the protocol
+  // slot (balance/a3m3Protocols.test.ts). Much over 770 and a no-splash build's west-fork Mindspike
+  // is up in time too, and W10 stops showing that build its failure (balance/a3m3.test.ts).
+  startCredits: 770,
   // Flat: it doesn't scale with Evacuated (the score is never a price; progression.md § 2).
   stardust: 320,
   // Air (the Rift Moths) and splash (the Mote clusters and Fractures) are the map's answers

@@ -131,15 +131,17 @@ describe('"Lucky too, huh." from the real Clean Exit cue (S2)', () => {
   });
 });
 
+/** A locked choice (C3's flag) asking `ask`. */
+const door = (ask: string) =>
+  ({
+    kind: 'choice',
+    options: [
+      { text: ask, tone: 'earnest', set: { door_choice: 'convoy' } },
+      { text: `${ask} No.`, tone: 'quiet', set: { door_choice: 'warren' } },
+    ],
+  }) as const;
+
 describe('a locked choice right after another (S6)', () => {
-  const door = (text: string) =>
-    ({
-      kind: 'choice',
-      options: [
-        { text, tone: 'earnest', set: { door_choice: 'convoy' } },
-        { text: `${text} No.`, tone: 'quiet', set: { door_choice: 'warren' } },
-      ],
-    }) as const;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test scene, not registered
   const scene = { id: 'dev_m6r2_twice', nodes: [door('First.'), door('Second.')] } as Scene;
 
@@ -172,8 +174,7 @@ describe("the SEAL's permission, behind a line already on the panel (S5, S7)", (
         id: `dev_m6r2_ahead_${aheadSec}`,
         nodes: [{ kind: 'line', speaker: 'bricks', text: '(hush)', durationSec: aheadSec }],
       } as const;
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test scene
-      playScene(ahead as unknown as Scene, { mode: 'comms' });
+      playScene(ahead); // a comms scene (no slot, no choice)
       const seal = startSeal('a3_m03', 'seal');
       emit({ type: 'ScriptCue', cueId: 'a3_m03_cue_seal' });
       let doItAt: number | null = null;

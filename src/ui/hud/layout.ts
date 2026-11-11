@@ -287,6 +287,11 @@ export const SEAL_H = 32;
 export const SEAL_BOTTOM = 40;
 /** The clear space kept around a door the screen must not cover. */
 export const AVOID_MARGIN = 4;
+/**
+ * The SEAL button's top when lifting it clear of the doors would leave no room (D144 S8): the top
+ * band, under the comms panel (which sits at the top centre while a forced input waits).
+ */
+export const SEAL_TOP_BAND = 64;
 
 /** Whether two boxes overlap (touching edges don't). */
 export function overlaps(a: Rect, b: Rect): boolean {
@@ -300,16 +305,19 @@ export function grow(r: Rect, m: number): Rect {
 
 /**
  * The SEAL button's distance from the bottom edge (game px): SEAL_BOTTOM, or lifted just above
- * every box in `avoid` (plus AVOID_MARGIN) it would cover, so the door the player seals stays in
- * sight (D143 R3: the east door sits right under the button's usual place).
+ * every box in `avoid` (plus AVOID_MARGIN) it would cover, so the doors stay in sight (D143 R3:
+ * the east door sits right under the button's usual place; D144 S8: both doors, open or shut).
+ * Lifted past SEAL_TOP_BAND, it goes to that band instead.
  */
 export function sealButtonBottom(avoid: readonly Rect[]): number {
+  const band = UI_H - SEAL_TOP_BAND - SEAL_H;
   let bottom = SEAL_BOTTOM;
   for (let pass = 0; pass < avoid.length + 1; pass++) {
     const box: Rect = { x: (UI_W - SEAL_W) / 2, y: UI_H - bottom - SEAL_H, w: SEAL_W, h: SEAL_H };
+    if (box.y < SEAL_TOP_BAND) return band;
     const hit = avoid.map((a) => grow(a, AVOID_MARGIN)).find((a) => overlaps(box, a));
     if (hit === undefined) return bottom;
     bottom = UI_H - hit.y;
   }
-  return bottom;
+  return band;
 }

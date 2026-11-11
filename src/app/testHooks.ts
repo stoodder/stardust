@@ -1,6 +1,7 @@
 // `window.__sd`: test hooks for smoke tests and agents (docs/tech/conventions.md § Browser smoke tests).
 // Installed only when the URL has `?test=1`. They read state and issue the same commands a player
 // could, through the same paths (app/commands.ts and the host loop).
+import { forcedInputAvoid } from '../ui/hud/forcedInputState.ts';
 import type { IdSpace } from '../content/types.ts';
 import type { SaveData } from '../meta/index.ts';
 import type { Sim } from '../sim/index.ts';
@@ -98,6 +99,7 @@ export function createTestHooks(env: HookEnv): TestHooks {
       // Fast-forwarded time is test time: a map that just ended shows its Results now.
       env.flushResults();
     },
+    sealAvoid: () => [...forcedInputAvoid.value],
     tileToClient: (x: number, y: number): ClientPoint | null => {
       const b = env.battle();
       const canvas = env.canvas();
