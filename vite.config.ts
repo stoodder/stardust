@@ -41,6 +41,9 @@ export default defineConfig({
     // other agents loaded the machine (load 5×+). A hang still fails, just later; the balance tests
     // set their own (HARNESS_TEST_TIMEOUT_MS).
     testTimeout: 20_000,
+    // One worker per core (Vitest's default leaves one free for its main thread, which only waits
+    // here): the balance files keep every worker busy (T564b; conventions.md § Gate time).
+    maxWorkers: '100%',
     // Two projects (conventions.md § Gate time, T501j). With every file isolated, module import was
     // ~65% of the step: each file re-evaluated the content graph (maps, sprites, dialogue). Now most
     // files share one module graph per worker (`isolate: false`), so a test must leave module

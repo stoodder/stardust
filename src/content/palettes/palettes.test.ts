@@ -252,7 +252,7 @@ describe('Act II value bands (art-direction §1 and §3, T440a, T440c)', () => {
   }
 });
 
-describe('coloured darks (art-direction §1 principle 4, review R11)', () => {
+describe('coloured darks (art-direction §1 principle 2, review R11)', () => {
   it('never paints a sky band or an env shade pure black: every dark keeps a hue', () => {
     for (const env of ENV_PALETTE_IDS) {
       for (const name of [...ENV_SKY[env], ENV_PALETTES[env].outline]) {

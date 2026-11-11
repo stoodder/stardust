@@ -2,7 +2,8 @@
 // the rules are app/forcedInput.ts). While the sim waits for it, a veil under the HUD takes the
 // clicks off the playfield and darkens its edges, every HUD control but the Menu and the speaker is
 // inert (index.tsx), and one large button, centered low, labelled with the input ("SEAL"), is the
-// only way on. It has the focus as it appears, dimmed and "Not yet" to a screen reader until it
+// only way on, lifted above an open door it would cover (`sealButtonBottom`, `forcedInputAvoid`;
+// D143). It has the focus as it appears, dimmed and "Not yet" to a screen reader until it
 // arms (ARM_DELAY_MS after its permission line, Bricks's "Do it, {name}.", and then only from a
 // fresh key-down or pointer-down). Reduced motion: the veil
 // is there at once and the armed button holds still (no breathing fill). The focus comes back to it as the pause menu or a scene closes.

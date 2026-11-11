@@ -1,5 +1,6 @@
 // The comms panel (art-direction.md § Dialogue presentation; story-runtime.md § Barks): top-left
-// under the status panel, the speaker's portrait beside their name plate and the line as it
+// under the status panel (at the top centre while a forced input waits, off A3M3's doors; D143;
+// ui/hud/index.tsx), the speaker's portrait beside their name plate and the line as it
 // types, auto-dismissed. It never pauses, blocks, or takes the keys. A line that answers the one
 // before it (another speaker, same scene) shows under it, the cue dimmed above (D028). An optional
 // reply button (core-loop.md § 6.10) sits under the text, small and mouse-first, gone with the line.

@@ -1,5 +1,6 @@
 // Bricks's name tags (towers.md § 8; campaign.md § 6.3): the earliest attacking tower at the first
-// wave clear, support towers skipped, the sale that takes the tag, the A3M3 `latest` tag, and the
+// wave clear, support towers skipped, the sale (or revocation, D143 R5) that takes the tag, the
+// A3M3 `latest` tag, and the
 // list position the save keeps.
 import { describe, expect, it } from 'vitest';
 import { NAME_TAGS } from '../content/dialogue/tags.ts';
@@ -25,6 +26,12 @@ const built = (uid: number, tower: string): SimEvent<IdSpace> => ({
   cost: 0,
 });
 const sold = (uid: number): SimEvent<IdSpace> => ({ type: 'TowerSold', uid, refund: 0 });
+const revoked = (uid: number, tower: string): SimEvent<IdSpace> => ({
+  type: 'TowerRevoked',
+  uid,
+  tower,
+  refund: 0,
+});
 const cleared = (wave: number): SimEvent<IdSpace> => ({ type: 'WaveCleared', wave, bonus: 0 });
 /** A support tower in tests: everything but `aura`s attacks. */
 const attacking = (tower: string): boolean => tower !== 'aura';
@@ -114,6 +121,30 @@ describe('name tags', () => {
     ]);
     s = r.state;
     expect(taggedTowerType(s)).toBe('thumper');
+  });
+
+  it("the Clean Exit takes A3M2's Lucky with its turret: untagged, 'revoked', never 'sold'", () => {
+    const s = run(newTagState('a3_m02'), [built(1, 'thumper'), built(2, 'rivet'), cleared(1)]);
+    expect(s.state.tagged?.uid).toBe(1);
+    const r = run(s.state, [revoked(1, 'thumper')]);
+    // An `earliest` tag goes with it and stays gone (Lucky was given; nothing retags).
+    expect(r.effects).toEqual([{ kind: 'untagged', uid: 1, reason: 'revoked' }]);
+    expect(r.state.tagged).toBeNull();
+    expect(r.state.towers.map((t) => t.uid)).toEqual([2]);
+    // A revoked tower that wasn't tagged just leaves the list.
+    const other = run(s.state, [revoked(2, 'rivet')]);
+    expect(other.effects).toEqual([]);
+    expect(other.state.tagged?.uid).toBe(1);
+  });
+
+  it('a `latest` tag on a revoked turret retags the newest standing one', () => {
+    const s = run(newTagState('a3_m03'), [built(1, 'rivet'), built(2, 'thumper')]).state;
+    const cue = giveTag(s);
+    const r = run(cue.state, [revoked(2, 'thumper')]);
+    expect(r.effects).toEqual([
+      { kind: 'untagged', uid: 2, reason: 'revoked' },
+      { kind: 'tagged', uid: 1, tower: 'rivet', name: '{name}' },
+    ]);
   });
 
   it('keeps the list position past the furthest map tagged', () => {
