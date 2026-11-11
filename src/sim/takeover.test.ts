@@ -19,11 +19,7 @@ import { enemyAbilities } from './enemyAbilities/index.ts';
 import { bossDamage, enterBossPhase } from './enemyAbilities/bossPhases.ts';
 import { hangarTelling } from './enemyAbilities/hangar.ts';
 import { plateless } from './enemyAbilities/jettison.ts';
-import {
-  takeoverCount,
-  takeoverPicks,
-  takeoverTelling,
-} from './enemyAbilities/takeover.ts';
+import { takeoverCount, takeoverPicks, takeoverTelling } from './enemyAbilities/takeover.ts';
 import type { Enemy } from './entities.ts';
 import type { SimEvent } from './events.ts';
 import { FEATURE_GATES } from './gates.ts';
@@ -97,6 +93,22 @@ const TILES = [
   [5, 2],
 ] as const;
 
+/** A compiled map event opening marker `rock` to `to` at tick 10. */
+function openEvent(to: 'x' | 'o') {
+  return {
+    id: 'open',
+    on: { tick: 10 },
+    when: null,
+    once: true,
+    actions: [{ openTile: 'rock', to }],
+  } as const;
+}
+
+/** fx_map with that one event. */
+function openMap(to: 'x' | 'o'): CompiledMapDef<IdSpace> {
+  return { ...MAP, events: [openEvent(to)] };
+}
+
 describe('the phases’ data and gates (D146)', () => {
   it('2 drones every 8 s; a 3 s laser, a 4 s jam, every 15 s; armor 0, Haste 40%, four plates', () => {
     expect(HANGAR).toEqual({ enemy: 'compliance', count: 2, everyTicks: 480 });
@@ -118,7 +130,8 @@ describe('the phases’ data and gates (D146)', () => {
 describe('Hostile Takeover (takeover.ts)', () => {
   it('jams min(2, floor(25% of towers placed)): never past the jam limit', () => {
     expect([0, 3, 4, 7, 8, 12, 40].map(takeoverCount)).toEqual([0, 0, 1, 1, 2, 2, 2]);
-    for (let n = 0; n <= 40; n++) expect(takeoverCount(n)).toBeLessThanOrEqual(JAM_MAX_TOWER_SHARE * n);
+    for (let n = 0; n <= 40; n++)
+      expect(takeoverCount(n)).toBeLessThanOrEqual(JAM_MAX_TOWER_SHARE * n);
   });
 
   it('picks the highest tiers it may jam, ties to the lowest uid, anywhere on the map', () => {
@@ -320,16 +333,8 @@ describe('the jettison (jettison.ts) and its plates (openTile.ts)', () => {
     state.events.length = 0;
     runScriptAction(state, { openTile: 'crash', to: 'x' }, MAP);
     expect(state.events).toEqual([{ type: 'TileOpened', marker: 'crash', to: 'x' }]);
-    const event = (to: 'x' | 'o') => ({
-      id: 'open',
-      on: { tick: 10 },
-      when: null,
-      once: true,
-      actions: [{ openTile: 'rock', to }],
-    });
-    const map = (to: 'x' | 'o'): CompiledMapDef<IdSpace> => ({ ...MAP, events: [event(to)] });
-    expect(unsupportedScript(map('x'))).toEqual([]);
-    expect(unsupportedScript(map('o'))).toEqual([
+    expect(unsupportedScript(openMap('x'))).toEqual([]);
+    expect(unsupportedScript(openMap('o'))).toEqual([
       "event 'open': action openTile to buildable 'o' is not simulated until M8",
     ]);
   });

@@ -64,7 +64,7 @@ export const waves = defineWaves([
   // W4 · one Silencer [T: hushing; tendril tell]
   { countdownSec: COUNTDOWN, groups: [silencers(1, 'tunnel', 0), drones(5, 10, 1.5)] },
   // W5 · Rift Moths + drones
-  { countdownSec: COUNTDOWN, groups: [moths(6, 0), drones(6, 6)] },
+  { countdownSec: COUNTDOWN, groups: [moths(5, 0), drones(4, 6)] },
   // W6 · Silencers ×2 [X]
   {
     countdownSec: COUNTDOWN,
@@ -73,14 +73,14 @@ export const waves = defineWaves([
   // W7 · Gerald's pass + Compliance drones
   {
     countdownSec: COUNTDOWN,
-    groups: [g('gerald', 1, 'chute', GERALD_SEC), drones(8, W7_DRONES_SEC, 1.0)],
+    groups: [g('gerald', 1, 'chute', GERALD_SEC), drones(6, W7_DRONES_SEC, 1.2)],
   },
   // W8 · Liability ×2 + drones [X]
   { countdownSec: COUNTDOWN, groups: [drones(4, 0), liabilities(2, 4), drones(4, 14)] },
   // W9 · Rift Moths + a Silencer [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [moths(6, 0), silencers(1, 'tunnel', 2), drones(4, 8)],
+    groups: [moths(6, 0), silencers(1, 'tunnel', 2), drones(3, 8)],
   },
   // W10 · Hollow surge: Rift Moths and Silencers, one Fracture
   {
@@ -96,23 +96,23 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(6, 0, 1.0),
+      drones(5, 0, 1.0),
       g('expediter', 2, 'service', 4, 6),
       liabilities(2, 8),
-      drones(5, 20, 1.0),
+      drones(4, 20, 1.0),
     ],
   },
   // W12 · Silencers + Rift Moths
   {
     countdownSec: COUNTDOWN,
-    groups: [silencers(4, 'tunnel', 0, SIL_GAP), moths(8, 14, 0.6), drones(4, 10)],
+    groups: [silencers(4, 'tunnel', 0, SIL_GAP), moths(6, 14, 0.6), drones(3, 10)],
   },
   // W13 · both spawns
   {
     countdownSec: COUNTDOWN,
     groups: [
-      silencers(2, 'tunnel', 0, 3),
-      drones(8, 0, 1.0),
+      silencers(2, 'tunnel', 0, SIL_GAP),
+      drones(6, 0, 1.0),
       liabilities(2, 6),
       motes(6, 'tunnel', 10),
     ],
@@ -120,23 +120,23 @@ export const waves = defineWaves([
   // W14 · the rifts open: Silencers and Rift Moths
   {
     countdownSec: COUNTDOWN,
-    groups: [silencers(2, 'rift_w', 0, 3), silencers(2, 'rift_e', 4, 3), moths(8, 8)],
+    groups: [silencers(2, 'rift_w', 0, SIL_GAP), silencers(2, 'rift_e', 1.2, SIL_GAP), moths(8, 8)],
   },
   // W15 · Liability + Silencers
   {
     countdownSec: COUNTDOWN,
-    groups: [liabilities(2, 0), silencers(3, 'tunnel', 2, 3), drones(6, 10, 1.0)],
+    groups: [liabilities(2, 0), silencers(3, 'tunnel', 2, SIL_GAP), drones(6, 10, 1.0)],
   },
   // W16 · everything
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(10, 0, 1.0),
-      silencers(3, 'tunnel', 0, 3),
-      liabilities(3, 6),
+      drones(8, 0, 1.0),
+      silencers(3, 'tunnel', 0, SIL_GAP),
+      liabilities(2, 6),
       moths(8, 10),
       g('expediter', 2, 'service', 12, 6),
-      silencers(2, 'rift_w', 16, 3),
+      silencers(2, 'rift_w', 16, SIL_GAP),
       motes(8, 'tunnel', 20),
     ],
   },

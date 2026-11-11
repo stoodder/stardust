@@ -156,6 +156,16 @@ export interface RenderState {
   /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
   readonly gloop: { readonly puddles: number; readonly spawned: number };
   /**
+   * LeaperView (T704): the Sproing Pad's leapers in the air now and grounded flyers marked now,
+   * and bonks and groundings seen since the battle began.
+   */
+  readonly sproing: {
+    readonly out: number;
+    readonly grounded: number;
+    readonly bonks: number;
+    readonly groundings: number;
+  };
+  /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a
    * growth ring, ripples drawn behind burrowed Hollow units; and each rift lane's status as its
    * crack is drawn (RiftView, T630b).

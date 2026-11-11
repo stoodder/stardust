@@ -204,7 +204,6 @@ describe('the sound tables cover the content', () => {
         if (kind === 'spawner' || kind === 'leaper') {
           expect(ATTACK_SOUNDS[kind], t.id).toBeDefined();
         } else expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
-        else expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
       }
     }
   });

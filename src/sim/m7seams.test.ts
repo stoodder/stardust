@@ -135,7 +135,7 @@ describe('the M7 content (stubs under their final ids)', () => {
     const sv = e.shareholder_value.boss!;
     expect(sv.phases.map((p) => [p.fromPct, p.hangar, p.takeover, p.jettison])).toEqual([
       [1, { enemy: 'compliance', count: 2, everyTicks: 480 }, null, null],
-      [0.66, null, { tellTicks: 180, durationTicks: 240 }, null],
+      [0.66, null, { tellTicks: 180, durationTicks: 240, everyTicks: 900 }, null],
       [0.33, null, null, { hastePct: 0.4, plates: ['crash_1', 'crash_2', 'crash_3', 'crash_4'] }],
     ]);
     const maw = e.gathering_maw.boss!;

@@ -48,23 +48,18 @@ function refused(mapId: string): string[] {
 describe('the M7 dev maps', () => {
   it('dev_jam: the tendril, the rings, the healer, System Reboot (T702, T703, T707)', () => {
     expect(maps.dev_jam?.builds.referenceProfile.technicianAbility).toBe('system_reboot');
-    expect(refused('dev_jam')).toEqual([
-      // System Reboot and the tendril run since T702 (dev_silence: tools/devJam.test.ts), the healer
-      // aura since T703.
-      "a 'ring' jam (auditor) is not simulated until T707",
-    ]);
+    // System Reboot and the tendril run since T702 (dev_silence: tools/devJam.test.ts), the healer
+    // aura since T703, the Auditor's ring since T707 (tools/devTakeover.test.ts).
+    expect(refused('dev_jam')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_jam')).toBe(true);
   });
 
   it('dev_takeover: Shareholder Value’s phases and its four crash markers (T707)', () => {
     const map = maps.dev_takeover!;
     expect(Object.keys(map.markers)).toEqual(['crash_1', 'crash_2', 'crash_3', 'crash_4']);
-    // Its jams need the Jammed state (live since T702) as well as the Takeover itself (T707).
-    expect(refused('dev_takeover')).toEqual([
-      "a 'ring' jam (auditor) is not simulated until T707",
-      'a hangar (shareholder_value) is not simulated until T707',
-      'Hostile Takeover (shareholder_value) is not simulated until T707',
-      'a jettison (shareholder_value) is not simulated until T707',
-    ]);
+    // T707 runs it (sim/takeover.test.ts, tools/devTakeover.test.ts, smoke/takeover.spec.ts).
+    expect(refused('dev_takeover')).toEqual([]);
+    expect(Object.hasOwn(DEV_CONTENT.maps, 'dev_takeover')).toBe(true);
   });
 
   it('dev_gmaw: the Gathering Maw’s gather, split, and merge (T708)', () => {
@@ -99,6 +94,7 @@ describe('the M7 dev maps', () => {
     for (const id of Object.keys(DEV_M7_MAPS)) {
       if (id === 'dev_bearers') continue; // T706
       if (id === 'dev_sproing') continue; // T704
+      if (id === 'dev_jam' || id === 'dev_takeover') continue; // T707
       expect(Object.hasOwn(DEV_CONTENT.maps, id), id).toBe(false);
     }
   });

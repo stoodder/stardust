@@ -121,6 +121,7 @@ export class SwarmView {
     for (let i = 0; i < allies.used; i++) {
       const a = allies.items[i]!; // i < used ≤ items.length
       if (!a.alive || a.mode !== 'owner' || a.kind === null) continue;
+      if (a.kind === 'leaper') continue; // the Sproing Pad's: LeaperView (T704)
       if (a.swarmState === 'home') continue;
       const sprite = a.kind === 'champion' ? SWARM_SPRITES.champion : SWARM_SPRITES.swarmling;
       if (n === this.#slots.length) this.#grow();

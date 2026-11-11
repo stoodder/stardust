@@ -38,7 +38,12 @@ export function hangarTelling(boss: Readonly<Enemy>, h: CompiledHangar | null): 
 }
 
 /** One tick of a boss's hangar (after its invulnerability; see the header). */
-export function hangarStep(state: SimState, ctx: TickContext, boss: Enemy, h: CompiledHangar): void {
+export function hangarStep(
+  state: SimState,
+  ctx: TickContext,
+  boss: Enemy,
+  h: CompiledHangar,
+): void {
   if (boss.abilityTicks <= 0) boss.abilityTicks = h.everyTicks; // the phase began
   if (boss.abilityTicks > BOSS_ABILITY_TELL_TICKS && cooldownHeld(boss)) return; // Lulled
   const left = --boss.abilityTicks;

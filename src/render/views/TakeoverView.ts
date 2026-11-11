@@ -196,7 +196,10 @@ export class TakeoverView {
         { x: a.x + hw, y: a.y - skew },
         { x: a.x - skew, y: a.y + hh },
       ];
-      g.fillStyle(INK, 0.9).fillPoints(pts.map((p) => ({ x: p.x, y: p.y + 2 })), true);
+      g.fillStyle(INK, 0.9).fillPoints(
+        pts.map((p) => ({ x: p.x, y: p.y + 2 })),
+        true,
+      );
       g.fillStyle(FILL, 1).fillPoints(pts, true);
       g.lineStyle(1, EDGE, 1).strokePoints(pts, true);
     }

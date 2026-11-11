@@ -61,7 +61,11 @@ function swapped(
   });
 }
 
-/** System Reboot on the W6, W10 and W12 packs, as the first one's tell starts (it fizzles). */
+/**
+ * System Reboot as a pack's first tell starts, so that tell fizzles (sim/enemyAbilities/
+ * jamTendril.ts): every Silencer wave but W4's teach and W14's rifts (it's still cooling down).
+ * Each wave lists its cast ahead of its buys, so a cast never waits behind an upgrade.
+ */
 const REBOOT_SEC = 27.5;
 
 function parSteps(): BuildStep[] {
@@ -74,7 +78,9 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'mindspike', tile: J_S },
     { wave: 2, upgrade: J_NE }, // T3: pierce
     { wave: 3, build: 'harpoon', tile: SV_N },
-    { wave: 4, build: 'choir', tile: HALL_W }, // Harmony with the Mindspike beside it
+    // The Choir on the hall side of the Mindspike (Harmony), out of the Silencers' reach until
+    // they're in the corridor: its aura cuts their jams on the junction to a second.
+    { wave: 4, build: 'choir', tile: HALL_W },
     { wave: 5, build: 'rivet', tile: SKY },
     { wave: 5, upgrade: SKY },
     reboot(6, REBOOT_SEC),
@@ -84,22 +90,22 @@ function parSteps(): BuildStep[] {
     { wave: 7, upgrade: J_SE },
     { wave: 8, upgrade: SV_S },
     { wave: 8, upgrade: J_S },
+    reboot(9, REBOOT_SEC),
     { wave: 9, build: 'mindspike', tile: J_SW },
-    { wave: 9, upgrade: J_SE },
     reboot(10, REBOOT_SEC),
+    { wave: 10, upgrade: J_SE },
     { wave: 10, upgrade: J_SW },
-    { wave: 10, upgrade: SV_S },
-    { wave: 11, upgrade: SKY },
-    { wave: 11, upgrade: SV_N },
+    { wave: 11, upgrade: SV_S },
     reboot(12, REBOOT_SEC),
-    { wave: 12, upgrade: J_SW },
-    { wave: 12, build: 'harpoon', tile: J_NW },
-    { wave: 13, upgrade: J_NW },
-    { wave: 13, build: 'harpoon', tile: HALL_E },
-    { wave: 14, upgrade: HALL_E },
-    { wave: 14, upgrade: SV_N },
+    { wave: 12, upgrade: SKY },
+    { wave: 12, upgrade: SV_N },
+    reboot(13, REBOOT_SEC),
+    { wave: 13, upgrade: J_SW },
+    { wave: 14, build: 'harpoon', tile: J_NW },
+    reboot(15, REBOOT_SEC),
     { wave: 15, upgrade: J_NW },
-    { wave: 15, upgrade: HALL_E },
+    reboot(16, REBOOT_SEC),
+    { wave: 16, upgrade: SV_N },
   ];
 }
 
@@ -110,7 +116,7 @@ const PAR: ScriptedBuild = {
 
 /** Par's Thumpers (no-air's) specialized as Bunker Buster as each reaches tier 3. */
 function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[]): BuildStep[] {
-  return [...steps, ...tiles.map((tile): BuildStep => ({ wave: 15, specialize: tile, spec: 'b' }))];
+  return [...steps, ...tiles.map((tile): BuildStep => ({ wave: 16, specialize: tile, spec: 'b' }))];
 }
 
 export const builds = defineBuilds({
@@ -127,8 +133,11 @@ export const builds = defineBuilds({
   })),
   parBuild: PAR,
   flagVariants: { door_choice: ['convoy', 'warren'], spared_quiet_wave: [false, true] },
-  // The jam exam comes in W10's Hollow surge; the armor and air exams by W11 too (act3.md).
-  noCounterLoseByWave: 11,
+  // A3M4 introduces the jam category (campaign.md § 4.8), so it is a teach map: the no-jam build
+  // has to lose only by the final wave (the jams cost it across the Silencer waves, not in one);
+  // no-armor and no-air lose by W11 (balance/a3m4.test.ts pins both).
+  teachMap: true,
+  noCounterLoseByWave: 16,
   noCounterBuilds: {
     // No jam answer: par with a Prism where its Choir stands, Scanner Sweep in slot 1, no casts.
     jam: {

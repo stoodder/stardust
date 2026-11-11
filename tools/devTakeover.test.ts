@@ -126,9 +126,7 @@ describe('dev_takeover (T707): "Shareholder Value"', () => {
       ['crash_4', 'x'],
     ]);
     const map = s.map;
-    const pads = new Set(
-      map.builds.parBuild.steps.map((st) => `${st.tile[0]},${st.tile[1]}`),
-    );
+    const pads = new Set(map.builds.parBuild.steps.map((st) => `${st.tile[0]},${st.tile[1]}`));
     for (const m of ['crash_1', 'crash_2', 'crash_3', 'crash_4']) {
       const [c, r] = map.markers[m]!;
       expect(map.tiles[r * map.cols + c], m).toBe('.'); // decor: nothing builds there

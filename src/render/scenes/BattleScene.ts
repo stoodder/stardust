@@ -113,6 +113,7 @@ import { BlockerView } from '../views/BlockerView.ts'; // T605
 import { ChoirView } from '../views/ChoirView.ts'; // T607
 import { BloomView } from '../views/BloomView.ts'; // T608
 import { SwarmView } from '../views/SwarmView.ts'; // T604
+import { LeaperView } from '../views/LeaperView.ts'; // T704
 import { TrapView } from '../views/TrapView.ts'; // T604
 import { PuddleView } from '../views/PuddleView.ts'; // T705
 import { RevokedView } from '../views/RevokedView.ts'; // T606
@@ -291,6 +292,7 @@ export class BattleScene extends Phaser.Scene {
   #choir!: ChoirView; // T607: the Hum Choir's song and Lullaby rings, its notes, Lulled notes
   #bloom!: BloomView; // T608: the Stasis Bloom's field disc and its pulse
   #swarm!: SwarmView; // T604: the Scuttle Den's swarmlings dashing and latched
+  #leapers!: LeaperView; // T704: the Sproing Pad's leapers boinging, bonks, grounded flyers
   #traps!: TrapView; // T604: Underfoot's trap ring and its springs
   #puddles!: PuddleView; // T705: Big Glorp's puddles
   #revoked!: RevokedView; // T606: the LICENSE REVOKED stamp over a revoked class's towers
@@ -491,6 +493,7 @@ export class BattleScene extends Phaser.Scene {
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
     this.#bloom = new BloomView(ctx, prefersReducedMotion); // T608, T630a
     this.#swarm = new SwarmView(ctx, anchors, prefersReducedMotion); // T604
+    this.#leapers = new LeaperView(ctx, this.#fx, anchors, prefersReducedMotion); // T704
     this.#traps = new TrapView(ctx, this.#fx, prefersReducedMotion); // T604
     this.#puddles = new PuddleView(ctx, prefersReducedMotion); // T705
     this.#revoked = new RevokedView(ctx, prefersReducedMotion); // T606
@@ -628,6 +631,7 @@ export class BattleScene extends Phaser.Scene {
       this.#blinks.bind(bus, () => sim.state.enemies),
       this.#phases.bind(bus),
       this.#jams.bind(bus, () => sim.state.towers), // T702
+      this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
       this.#takeover.bind(bus), // T707
       this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
@@ -691,6 +695,7 @@ export class BattleScene extends Phaser.Scene {
       this.#choir.reset(); // T607
       this.#bloom.reset(); // T608
       this.#swarm.reset(); // T604
+      this.#leapers.reset(); // T704
       this.#traps.reset(); // T604
       this.#puddles.reset(); // T705
       this.#revoked.reset(); // T606
@@ -749,6 +754,7 @@ export class BattleScene extends Phaser.Scene {
     this.#choir.update(state, state.tick); // T607
     this.#bloom.update(state, dt); // T608; T630a: its burst ring and pull streaks
     this.#swarm.update(state.allies, state.enemies); // T604
+    this.#leapers.update(state, dt); // T704
     this.#traps.update(state.zones, state.trapSprung); // T604
     this.#puddles.update(state.zones); // T705
     this.#revoked.update(dt); // T606
@@ -923,6 +929,11 @@ export class BattleScene extends Phaser.Scene {
       }, // T607
       bloom: { fields: this.#bloom.fields, flashing: this.#bloom.flashing }, // T608
       gloop: this.#puddles.shown, // T705
+      sproing: {
+        ...this.#leapers.shown,
+        bonks: this.#leapers.bonks,
+        groundings: this.#leapers.groundings,
+      }, // T704
       revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
       mind: { unnerved: this.#mind.unnerved, echoes: this.#mind.echoes, stills: this.#mind.stills },
       marks: this.#marks.shown,
