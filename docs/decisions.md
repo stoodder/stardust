@@ -1801,3 +1801,13 @@ Rulings:
 - Initial JS: dev fixtures load only on demand.
 
 A3M4's loose economy is logged for the finale's economy pass (T773).
+
+*D150 addenda (round 1 fixes as landed):*
+- A production build compiles content without `validate()`. The gate still validates every shipped content set (`content.test.ts`, `tools/shippedContent.test.ts`).
+- Dev battles and dev saves load on demand from one lazy chunk. Boot awaits it for `?test=1` or for a dev `?map=`. Initial JS is down from 922 to 882 kB gz.
+- System Reboot's immunity is exactly 6 s, counting the cast's tick. Of every harness number, only A3M5's beams alt moved: 41.7 → 40.9.
+- The locked-abilities guard exposed a real hole: A3M5's Rewrite harness run was casting Reboot. It is now closed.
+- Violet marks a jammer, including the Auditor's mast. The merged Gathering Maw rages in magenta. A cancelled tell shows "FIZZLED", detected from sim state, not a new event.
+- A3M5's asset meter is "Long Walk". Story difficulty raises a Protect asset ×1.5.
+- A3M4's W16 stays as tuned, with the teaching added: QUILL's tell-timing line and a W16 warning. The cliff, which comes from the Bulkhead absorbing every earlier leak, goes to T773.
+- Easing A3M5's W2 lifts its par to 68.2. On par alone it now ties A3M4, but it stays the hardest map for a real player: no-cast and ±2 s numbers are logged with the curve.
