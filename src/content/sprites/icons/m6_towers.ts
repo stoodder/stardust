@@ -16,7 +16,7 @@ import { WARREN_LEGEND, dome } from '../towers/warrenBase.ts';
 import { ICON, iconGrid, rect } from './iconGen.ts';
 
 /** The Skitterkin plinth (rows 10–13): a slab of turned earth, moss along its top. */
-function warrenPlinth(g: CharGrid): void {
+export function warrenPlinth(g: CharGrid): void {
   rect(g, 1, 10, 12, 1, 'H');
   for (let x = 1; x < 13; x += 3) plot(g, x, 10, 'G');
   rect(g, 1, 11, 12, 1, 'F');

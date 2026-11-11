@@ -450,20 +450,26 @@
   color: var(--sd-violet-4);
 }
 
-/* ---- The automated letterhead (Act III from A3M2; T631): worn, sunless, unsigned ---- */
-.sd-memo.automated {
+/* ---- Act III's letterheads (`MemoDef.letterhead`): the colour gone to `everglow.worn`'s dimmer
+   teal. `worn` keeps the chevrons and the sun (a memo someone still signs: Sterling's
+   memo_a3_01); `automated` (from A3M2; T631) is sunless and unsigned, the sender as the brand. ---- */
+.sd-memo.worn {
   box-shadow: inset 0 0 0 1px var(--sd-teal-2);
 }
 
-.sd-memo.automated .sd-memo-head {
+.sd-memo.worn .sd-memo-head {
   border-bottom-color: var(--sd-teal-2);
 }
 
-.sd-memo.automated .sd-memo-brand {
+.sd-memo.worn .sd-memo-brand {
   color: var(--sd-teal-2);
 }
 
-.sd-memo.automated .sd-memo-subject {
+.sd-memo.worn .sd-memo-chevrons {
+  background: linear-gradient(135deg, transparent 50%, var(--sd-teal-2) 50%) 0 0 / 4px 6px repeat-x;
+}
+
+.sd-memo.worn .sd-memo-subject {
   color: var(--sd-ink-1);
 }
 

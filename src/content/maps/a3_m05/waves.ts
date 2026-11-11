@@ -90,6 +90,7 @@ export const waves = defineWaves([
       auditors(2, 0),
       silencers(2, 3),
       liabilities(2, 6),
+      associates(1, 7),
       drones(4, 10),
       motes(6, 'hunt', HUNT_SEC, 0.5),
     ],
@@ -106,7 +107,13 @@ export const waves = defineWaves([
   // W11 · Expediters + Liability
   {
     ...CALL,
-    groups: [expediters(2, 0), liabilities(2, 2), drones(6, 6), associates(1, 9), drones(4, 16)],
+    groups: [
+      expediters(2, 0),
+      liabilities(3, 2),
+      associates(2, 3),
+      drones(6, 8),
+      drones(4, 16),
+    ],
   },
   // W12 · mixed
   {

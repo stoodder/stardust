@@ -177,30 +177,29 @@ function Form({ memo }: { memo: MemoView }) {
   );
 }
 
-/** The sender of Act III's automated memos (content/memos/act3.ts, from A3M2). */
-const AUTOMATED_SENDER = 'Everglow Automated Systems';
-
 /**
- * Whether a memo is one of the automated ones (A3M2 on; T631): its letterhead is the worn one
- * (art-direction § Menu screens: the color gone, `everglow.worn`'s dimmer teal, and no Evie sun
- * or chevrons), branded with the sender's name, since nobody signs it.
+ * A memo on its letterhead (`MemoView.letterhead`, art-direction § Menu screens): `full` (white and
+ * teal, the chevrons and the Evie sun); `worn` (Act III's: the colour gone to `everglow.worn`'s
+ * dimmer teal, the chevrons and the sun kept, for a memo a person still signs: Sterling's
+ * `memo_a3_01`); `automated` (worn, sunless and unsigned, branded with the sender's name: from
+ * A3M2, "Everglow Automated Systems").
  */
-function isAutomated(memo: Pick<MemoView, 'from'>): boolean {
-  return memo.from === AUTOMATED_SENDER;
-}
-
 function Letter({ memo }: { memo: MemoView }) {
   if (memo.format === 'form') return <Form memo={memo} />;
-  const automated = isAutomated(memo);
+  const look = memo.letterhead;
+  const automated = look === 'automated';
   return (
     <article
-      class={automated ? 'sd-memo automated' : 'sd-memo'}
+      class={look === 'full' ? 'sd-memo' : `sd-memo worn${automated ? ' automated' : ''}`}
       aria-labelledby="sd-memo-subject"
+      data-letterhead={look}
       data-automated={automated || undefined}
     >
       <header class="sd-memo-head">
         {automated ? (
-          <span class="sd-memo-brand">{AUTOMATED_SENDER}</span>
+          <span class="sd-memo-brand">
+            <GlyphText text={memo.from} />
+          </span>
         ) : (
           <span class="sd-memo-brand">
             <span class="sd-memo-chevrons" aria-hidden="true" />

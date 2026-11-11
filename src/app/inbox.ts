@@ -10,7 +10,7 @@ import {
   type CodexVersionDef,
 } from '../content/codex/index.ts';
 import { ENEMIES } from '../content/enemies/index.ts';
-import { MEMOS, type MemoFormat } from '../content/memos/index.ts';
+import { MEMOS, type MemoFormat, type MemoLetterhead } from '../content/memos/index.ts';
 import { TOWERS } from '../content/towers/index.ts';
 import {
   baseStoryContext,
@@ -90,6 +90,12 @@ export interface MemoView {
   readonly id: string;
   /** Everglow letterhead (`memo`) or the KFA's form panel (`form`). */
   readonly format: MemoFormat;
+  /**
+   * A memo's letterhead (`MemoDef.letterhead`, default `full`): `worn` (Act III, the colour gone,
+   * the sun kept: Sterling's `memo_a3_01`) or `automated` (worn, sunless, the sender as the brand).
+   * A form's is `full` and unread.
+   */
+  readonly letterhead: MemoLetterhead;
   /** A form's stamp ("PENDING"), or null. */
   readonly stamp: string | null;
   readonly from: string;
@@ -116,6 +122,7 @@ export function inboxView(save: SaveData | null = activeSave()): readonly MemoVi
     out.push({
       id,
       format: m.format ?? 'memo',
+      letterhead: m.letterhead ?? 'full',
       stamp: m.stamp ?? null,
       from: r(m.from),
       to: r(m.to),
