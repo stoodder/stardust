@@ -3,14 +3,15 @@
 // tendril, over every unit in slot order. In ticks, so it's deterministic; state on the Enemy:
 // `jamTicks` (the period's countdown) and `jamTellTicks` (the tell's ticks left; > 0 only while the
 // ring shows, render's JamRingView). No target is picked (`jamTarget` stays 0).
-// - **The cycle** ("every 10 s, a 2 s ring"), the tendril's: the first tick alive sets `jamTicks`
-//   to the period, so the first tell starts `periodTicks − tellTicks` after the spawn (8 s). With
+// - **The cycle** ("every 10 s, a 2 s ring"), the tendril's: the first tick alive makes it ready
+//   (T760), so its first ring starts as soon as a tower it may jam is in reach. With
 //   `tellTicks` left it is **ready**: if a jam may land on some tower within `radiusTiles` (centre
 //   to centre; sim/jam.ts `canJam`) the ring starts, else it waits ready (scanning the towers each
 //   ready tick, and only then) until one is in reach. The tell runs `tellTicks`, the Auditor
 //   **holding still** (`paceMul` 0, as the Silencer: the ring is drawn where the jams will land,
 //   and it is a still target to kill); at its end every tower then within the radius that a jam
-//   may land on is jammed for `durationTicks` × its `jamMul` (`jamTower`), and the period starts
+//   may land on is jammed for `durationTicks` × its `jamMul` (`jamTower`), in slot order while the
+//   jam limit has room (sim/jam.ts `jamRoom`; the rest land on nothing), and the period starts
 //   over (landing to landing). JamTell `ring` lists the towers in reach as the ring starts (the
 //   ones it would jam now); a tower built, sold, or made immune during the tell counts at its end.
 // - **Interrupts** (§ 2.4; the gather rule): while `isInterrupted` holds (Stasis, Unnerved), a

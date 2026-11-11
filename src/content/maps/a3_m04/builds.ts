@@ -78,6 +78,8 @@ const REBOOT_SEC = 27.5;
 /** W14's and W16's first packs come up the rifts, so their first tells are sooner. */
 const W14_RIFT_REBOOT_SEC = 8.3;
 const W16_RIFT_REBOOT_SEC = 17.8;
+/** W16's Reboot in the warren's par (its Gloop's junction meets the rift packs later). */
+const W16_WARREN_REBOOT_SEC = 16;
 /** W16's Reboot held for the tunnel pack instead (the Den alt's: it has no Choir for that one). */
 const W16_TUNNEL_REBOOT_SEC = 11.2;
 /** W16's Reboot for the Prism alt: its Prisms by the service tunnel meet the rift packs sooner. */
@@ -146,7 +148,7 @@ function warrenSteps(): BuildStep[] {
     { wave: 13, upgrade: J_S },
     { wave: 14, upgrade: J_SE },
     { wave: 15, upgrade: J_SW },
-    reboot(16, W16_RIFT_REBOOT_SEC),
+    reboot(16, W16_WARREN_REBOOT_SEC),
     { wave: 16, upgrade: SKY },
     { wave: 16, upgrade: SV_S },
   ];

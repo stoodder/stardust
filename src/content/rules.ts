@@ -165,6 +165,7 @@ export function statusMask(statuses: readonly StatusId[]): number {
 
 /** The only jammers (an exhaustive list: adding one needs a decisions.md entry). */
 export const JAMMER_ENEMIES: readonly string[] = ['auditor', 'silencer', 'shareholder_value'];
+/** No jam lasts longer (6 s since T760: the Silencer's whole jam; the Auditor's is 4 s). */
 export const JAM_MAX_SEC = 6;
 export const JAM_MIN_TELL_SEC = 1.5;
 /** A tower's jam immunity after a jam ends (3 s: a jammer pack can chain on it; D146 addendum, T720). */

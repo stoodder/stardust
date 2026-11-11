@@ -3,8 +3,9 @@
 // countdowns and before the towers fire, over every unit in slot order. In ticks, so it's
 // deterministic; state on the Enemy: `jamTicks` (the period's countdown), `jamTellTicks` (the
 // tell's ticks left; > 0 only while it shows, render's tendril), `jamTarget` (the picked tower).
-// - **The cycle** ("every 12 s, a 2 s tell"), as a gather's: the first tick alive sets `jamTicks`
-//   to the period, so the first tell starts `periodTicks − tellTicks` after the spawn. With
+// - **The cycle** ("every 12 s, a 2 s tell"), as a gather's: the first tick alive makes it ready
+//   (`jamTicks` = the tell, plus JAM_FIRST_READY_SEC, 0: T760), so its first tell starts as soon as
+//   a tower it may jam is in reach, not a period less a tell after its spawn. With
 //   `tellTicks` left it is **ready**: it picks a target and starts its tell, or, with none in
 //   reach, waits ready (scanning the towers each ready tick, and only then) until one is. The tell
 //   runs `tellTicks`, the Silencer **holding still** (`paceMul` 0, as a gather's or a blink's
@@ -16,7 +17,8 @@
 //   tower projecting a `choir` aura) when the jam `preferChoir`s; else any. Then the highest tier
 //   (a spec is 4), ties to the lowest uid. JamTell `tendril` names it.
 // - **The landing** (at the tell's end): on that tower if it still stands within the radius (a
-//   Gravity Well's pull can carry the Silencer out) and a jam may land on it (a System Reboot or a
+//   Gravity Well's pull can carry the Silencer out), the jam limit has room (sim/jam.ts `jamRoom`:
+//   max(1, 25% of the towers placed) Jammed at once), and a jam may land on it (a System Reboot or a
 //   Rally Chorus during the tell spends the tell on nothing; so does selling the tower). `jamTower` scales it by the tower's `jamMul` then.
 // - **Interrupts** (§ 2.4; the gather rule): while `isInterrupted` holds (Stasis on a non-boss,
 //   Unnerved), a tell can't start or go on: one under way is cancelled (JamInterrupted) and the

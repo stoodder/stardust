@@ -18,6 +18,9 @@
 // - **The end:** `jamTicks` counts down here; at 0 the jam ends (TowerUnjammed) and the tower is
 //   immune for JAM_IMMUNITY_SEC (`jamImmuneTicks`, counting the tick it ends). System Reboot
 //   (sim/abilities/reboot.ts) ends every jam at once the same way, with its own immunity.
+// - **The jam limit** (T760; `jamRoom`): a jammer lands only while the towers Jammed stay within
+//   max(1, floor(JAM_MAX_TOWER_SHARE × towers placed)): the tendril and the ring check it here, the
+//   Takeover its own stricter floor. With four towers or more harness #10 holds by construction.
 // - **The order** in this pass: the countdowns (immunity, then jams), then the jammers whose jams
 //   land in this slot (the Silencer's tendril, enemyAbilities/jamTendril.ts; then the Auditor's
 //   ring, jamRing.ts, and Hostile Takeover, takeover.ts, T707), then the tallies. A jam landed here holds from this tick for

@@ -21,8 +21,8 @@
 //   on, in pick order, and only while one more jam keeps the map within the jam limit
 //   (floor(JAM_MAX_TOWER_SHARE × towers placed), counting every jam standing then: an Auditor's
 //   ring or a Silencer's tendril that landed during the laser takes its place; D146 addendum,
-//   T721). So a Takeover never takes the map past the limit (a ring or tendril landing after it
-//   still can; T760). A System Reboot during
+//   T721). So a Takeover never takes the map past the limit, and since T760 neither does a ring or
+//   tendril landing after it (they land within `jamRoom`). A System Reboot during
 //   the laser (its immunity), a Rally Chorus, or a sale spends that target. So a Hum Choir at T3 (×0.25: 1 s) or a Reboot timed to the laser earns **Declined**.
 // - **Declined's tally:** from the landing, `takeoverHeldTicks` counts each tick (the landing's
 //   included) that any of its jams still holds on its tower, and `stats.takeoverJamTicks` keeps the

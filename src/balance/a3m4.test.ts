@@ -1,15 +1,19 @@
-// A3M4's tuning is robust where it matters (T720). As tuned, par wins at 14/22 (63.6%), the Defend
-// chain after A3M2's 63.6 (act3.md § A3M4): its losses are W10's Hollow surge and W16's three
-// Silencer packs. The warren's par (Gloop for the junction Rivet, a Mindspike under the Moths'
-// lane) wins at 59.1, and both C1 branches play the same (the Choir is owned either way). The
-// jam exam is cumulative (A3M4 is jam's teach map: `teachMap`, D146 addendum): no-jam (par with a
-// Prism where its Choir stands, no Reboot) loses in W16, at least 10 points under par; no-armor
-// and no-air lose by W11 (both in W6). Both alts win; Story wins; alwaysCallEarly wins.
+// A3M4's tuning is robust where it matters (T720, retuned by T760 with jamming's teeth). As tuned,
+// par wins at 15/22 (68.2%), the Defend chain after A3M2's 63.6 (act3.md § A3M4): it holds every
+// wave before W10's surge, and W16 (Silencers up both rifts and the tunnel, a lighter Everglow
+// column) is its exam. The warren's par (Gloop for the junction Rivet, a Mindspike under the Moths'
+// lane) wins at 54.5, and both C1 branches play the same (the Choir is owned either way). The jam
+// exam: no-jam (par with a Prism where its Choir stands, no Reboot) loses in W16 on the reference
+// (A3M4 is jam's teach map: `teachMap`, the loss by its final wave); harness #6 never runs for jam
+// (the jam limit caps what jamming takes below what the catalog adds; D146 addendum, T760).
+// No-armor and no-air lose by W11 (W6, W7). Both alts win (54.5, 59.1); Story wins; alwaysCallEarly
+// wins.
 //
-// Jamming must be felt: par sees jams land in its Silencer waves (1 s on the towers in its Choir's
-// aura, 4 s outside it) and never more than 25% of its towers at once (#10), but doesn't earn Keep
-// the Lights On; a Reboot held for each pack's later tells earns it, and par with its Choir where
-// the Silencers reach it (the lazy build) forfeits it.
+// Jamming must be felt: par sees jams land in its Silencer waves (1.5 s on the towers in its
+// Choir's aura, 6 s outside it) and never more than 25% of its towers at once (#10), but doesn't
+// earn Keep the Lights On; the Choir's Rally Chorus (its aura's towers immune) with a Reboot held for
+// W16's later packs does, and par with its Choir where the Silencers reach it (the lazy build)
+// forfeits it.
 //
 // The beats (act3.md § A3M4): QUILL's "please hold fire" plays in W7's countdown (a `noCall`
 // wave, so it always runs whole), then Gerald flies the mail chute as W7 starts, ahead of its
@@ -35,7 +39,7 @@ const content = compileContent(RAW_CONTENT);
 const TICK_HZ = 60;
 const WAVES = 16;
 /** Par's integrity left, of 22 (Reinforced Core 2). */
-const PAR_INTEGRITY = 14;
+const PAR_INTEGRITY = 15;
 /** The waves that send Silencers. */
 const SILENCER_WAVES = [4, 6, 9, 10, 12, 13, 14, 15, 16];
 
@@ -161,7 +165,7 @@ describe('A3M4 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(par.objectives).toEqual(['done']);
     // Par holds every wave before W10's surge.
     expect(par.waves.slice(0, 9).every((w) => w.leaked === 0)).toBe(true);
-    // The jam check for jam's teach map is #5 alone (#6 is skipped there, D146 addendum).
+    // The jam check is #5 alone (#6 never runs for jam: the jam limit; D146 addendum, T760).
     expect(report.checks.some((k) => k.id === '6' && k.subject === 'noCounter:jam')).toBe(false);
   });
 
@@ -222,16 +226,27 @@ describe('A3M4 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   it('keeps Keep the Lights On earnable but not automatic', () => {
     const map = content.maps.a3_m04;
     const par = map.builds.parBuild;
-    // A Reboot held for each pack's later tells (W10 at 29 s, W16 at 21 s) earns it.
+    // The Choir's Rally Chorus at W11 (its aura's towers can't be jammed; the Choir's specs
+    // unlocked) and a Reboot held for each pack's later tells (W10 at 29 s, W14 at 12 s, W16 at
+    // 21–24 s) earn it: the towers outside the aura are jammed one at a time.
+    const at = par.steps.findIndex((s) => s.wave > 11);
     const held = {
       ...par,
-      steps: par.steps.map((s) => {
+      steps: [
+        ...par.steps.slice(0, at),
+        { wave: 11, kind: 'specialize' as const, tile: PADS.HALL_W, spec: 'b' as const },
+        ...par.steps.slice(at),
+      ].map((s) => {
         if (s.kind !== 'ability') return s;
-        const sec = s.wave === 10 ? 29 : s.wave === 16 ? 21 : null;
+        const sec = s.wave === 10 ? 29 : s.wave === 14 ? 12 : s.wave === 16 ? 22 : null;
         return sec === null ? s : { ...s, when: { afterTicks: sec * TICK_HZ } };
       }),
     };
-    const careful = run(content, 'par', held);
+    const prof = referenceRunProfile(map, content, 'standard');
+    const careful = runHeadless(
+      runConfig(content, map, held, { ...prof, specs: [...prof.specs, 'choir'] }, 1, {}),
+      held,
+    );
     expect(careful.outcome).toBe('won');
     expect(careful.stats.jammedPeak).toBe(1);
     expect(careful.medals.challenge).toBe('earned');
@@ -272,13 +287,19 @@ describe('A3M4 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it.each(bothWays(SHIFTS))(
-    'wins par, loses no-jam, and lands every beat with %s shifted %s',
+    'wins par and both alts, loses no-jam, and lands every beat with %s shifted %s',
     (_name, _way, patches) => {
       const c = shiftedContent('a3_m04', patches);
       const b = beats(c, 'par');
       expect(b.integrity).toBeGreaterThanOrEqual(11); // ≥ 50%: the band's floor
       expectBeats(b, 'par');
       expect(run(c, 'noCounter:jam').outcome).toBe('lost');
+      // The alts carry the jam answers too (the Choir and Reboot; Reboot alone): ≥ 20% (T760).
+      for (const alt of ['alt:beam_and_flak', 'alt:den_and_lookout']) {
+        const r = run(c, alt);
+        expect(r.outcome, alt).toBe('won');
+        expect(marginOf(r), alt).toBeGreaterThanOrEqual(20);
+      }
     },
   );
 });

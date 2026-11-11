@@ -1,11 +1,12 @@
-// A3M5's jamming (T721; D146 addenda). Jam stays a required counter here, but the harness exempts
-// it from #5/#6 (`counterExemptions`): the jammers' first tells come a period less a tell after
-// they spawn, so most die in the kill zones first, and a jam is at most 4 s on a tower. What jam
-// costs is pinned here instead (T768/T760 retune jamming to retire the exemption):
-// - the reference no-jam build (Harpoon, Prism, Thumper, Sproing; Scanner Sweep, no casts)
-//   forfeits Declined, loses more tower-time to W14's Takeover and its Auditor than par does (par:
-//   Reboot, Stillness, the Choir's aura), and never scores above par (they tie today; T768 aims
-//   for ≥ 10 points under);
+// A3M5's jamming (T721, retuned by T760; D146 addenda). Jam stays a required counter here, but the
+// harness exempts it from #5 (`counterExemptions`; #6 never runs for jam): the jam exam is the
+// bearers' hub, where the hunt's Silencers (two in W13, one in W15) hush the guns over the old intake
+// as the bearers walk past. What jam costs is pinned here instead:
+// - the reference no-jam build (Harpoon, Prism, Thumper, Sproing; Scanner Sweep, no casts) loses
+//   most of the bearers to those two hunts (par answers with System Reboot as the tendrils reach
+//   out, Stillness, and its Bloom), ends at least 40 points under par, forfeits Declined, and still
+//   loses more tower-time to W14's Takeover and its Auditor than par does; it doesn't lose the map
+//   (every hunt that takes its last bearers also breaks the alts and Story);
 // - Hostile Takeover takes min(2, floor(25% × placed)) and never lands past the 25% limit, even
 //   with an Auditor pair timed onto it (#10 stays clean in par on the map as built);
 // - Declined is earnable: par with its Choir built after its other tier-3 towers (so the laser
@@ -38,11 +39,16 @@ describe('A3M5 jamming', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   const par = runA3m5(content, 'par');
   const noJam = runA3m5(content, 'noCounter:jam');
 
-  it('costs the reference no-jam build Declined and more of W14, never scoring above par', () => {
+  it('costs the reference no-jam build the hub’s bearers, Declined, and more of W14', () => {
     expect(par.outcome).toBe('won');
-    // Not ≥ 10 points under par yet (they tie today: the Prism where par's Choir stands out-damages
-    // the Choir's +20%); that target is T768's (T760's jam retune).
-    expect(margin(noJam)).toBeLessThanOrEqual(margin(par));
+    expect(margin(par) - margin(noJam)).toBeGreaterThanOrEqual(40);
+    // The hunts with Silencers: par loses at most two bearers in each, no-jam at least four.
+    for (const w of [13, 15]) {
+      const lost = (r: typeof par): number =>
+        r.startOf[w]!.asset - (r.startOf[w + 1]?.asset ?? r.asset);
+      expect(lost(par), `par W${w}`).toBeLessThanOrEqual(2);
+      expect(lost(noJam), `no-jam W${w}`).toBeGreaterThanOrEqual(4);
+    }
     expect(noJam.medals.challenge).toBe('forfeited');
     // The metric: tower-ticks spent Jammed during W14 (the Takeover and its Auditor).
     expect(noJam.jammedTicksByWave[14]!).toBeGreaterThan(par.jammedTicksByWave[14]!);
@@ -54,8 +60,8 @@ describe('A3M5 jamming', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(jammed).toBeLessThanOrEqual(Math.min(2, Math.floor(0.25 * placed)));
     expect(par.takeoverOverLimit).toBe(0);
     expect(par.stats.jamOverLimitTicks).toBe(0);
-    // About 1% of par's tower-time is jammed (the jammers die before their second tell).
-    expect(par.stats.jammedTowerTicks / par.stats.towerTicks).toBeLessThan(0.02);
+    // About 1.6% of par's tower-time is jammed (its answers cut the hunts' jams short).
+    expect(par.stats.jammedTowerTicks / par.stats.towerTicks).toBeLessThan(0.025);
   });
 
   it('never lands a Takeover past the limit with an Auditor pair timed onto it', () => {

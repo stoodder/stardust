@@ -1,11 +1,11 @@
-// A3M5's tuning (T721; act3.md § A3M5, As tuned). Par wins at 14/22 (63.6%, the lower of the core
-// and the bearers' 9/12): the act's difficulty peak, level with A3M4's 63.6 (its ±0.2 s shifts land
-// at 54.5–63.6). The core pays for the vats' surges, the asset for the hunts out of the sluice
-// (W13's biggest group and W15's last).
+// A3M5's tuning (T721, retuned by T760; act3.md § A3M5, As tuned). Par wins at 14/22 (63.6%, the
+// lower of the core and the bearers' 9/12): the act's difficulty peak, below A3M4's 68.2 (its
+// ±0.2 s shifts land at 58.3–72.7). The core pays for the vats' surges, the asset for the hunts out
+// of the sluice (W13's biggest group and W15's last, each with Silencers at the bearers' hub).
 // "Shareholder Value" (3800 HP, D146 addendum) is driven off a few tiles short of the core after
 // all three of its phases. No-splash loses in W10's surge; no-armor in the W14 platform, having
-// already paid for the W11 Liability column in W12; jam is exempt from #5/#6 (D146 addendum) and
-// pinned in a3m5Jam.test.ts. Both alts, Story, and alwaysCallEarly win.
+// already paid for the W11 Liability column in W12; jam is exempt from #5 (and #6 never runs for
+// jam; D146 addenda) and pinned in a3m5Jam.test.ts. Both alts, Story, and alwaysCallEarly win.
 //
 // The beats: the bearer groups walk as W5, W9, W13 and W15 start (Kip opens the vats at W5); the
 // platform walks in W14 and its three cues play the tick after each phase begins; W15's countdown

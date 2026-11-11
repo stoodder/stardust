@@ -1,7 +1,8 @@
 // A3M5's robustness (T721): with every group of one enemy shifted ±0.2 s across the map (a compound
 // shift, conventions.md § Gate time), par still wins in band, lands every beat (the bearer groups
 // on their waves' starts, the platform's three cues on its phases, W15 after it), and drives the
-// platform off short of the core; the worst-case tile is pinned. alwaysCallEarly too.
+// platform off short of the core; the worst-case tile is pinned; both alts hold the forgiving
+// floor (T760). alwaysCallEarly too.
 import { describe, expect, it } from 'vitest';
 import type { WaveGroup } from '../content/types.ts';
 import { compileContent } from '../content/compile.ts';
@@ -54,6 +55,13 @@ describe('A3M5 shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     expect(margin).toBeLessThanOrEqual(BAND.maxPct);
     expect(r.droveOffAt!).toBeLessThan(WORST_DRIVE_OFF);
     expect(WORST_DRIVE_OFF).toBeLessThan(ROAD_TILES);
+    // Both alts carry the jam answers (System Reboot, Stillness; the Choir or the Bloom) and hold
+    // the forgiving floor under every shift (T760).
+    for (const alt of ['alt:rivet_sproing', 'alt:beams']) {
+      const a = runA3m5(c, alt);
+      expect(a.outcome, alt).toBe('won');
+      expect(Math.min(a.integrity / 22, a.asset / 12) * 100, alt).toBeGreaterThanOrEqual(20);
+    }
   });
 
   it('lands every beat with every wave called the instant it can be', () => {
