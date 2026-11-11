@@ -141,7 +141,7 @@ export const scenes = defineScenes([
     { kind: 'line', speaker: 'vesthara', text: 'I had forgotten I could do that.' },
     { kind: 'branch', cond: { flag: 'quill_choice', eq: 'keep' }, goto: 'keep' },
     { kind: 'branch', cond: { flag: 'quill_choice', eq: 'rewrite' }, goto: 'rewrite' },
-    // Purge: no line; his status bar blinks (a silence in his frame).
+    // Purge: no line; its status bar blinks (a silence in its frame).
     { kind: 'line', speaker: 'quill', text: '', durationSec: 2 },
     { kind: 'branch', cond: { flag: 'quill_choice', eq: 'purge' }, goto: 'again' },
     {

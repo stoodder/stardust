@@ -5,7 +5,7 @@
 //   #1 pin on the console (a silence: nobody comments), Pebble's Boing (the Sproing Pad gift), then
 //   the threat intel by C4's answer: QUILL's apology (Keep, or no answer yet), its flat Directive 0
 //   line (Purge), or `system`'s advisory (Rewrite: QUILL is offline here, and app/dialogue.ts skips
-//   her lines wherever she is; T713).
+//   its lines wherever it is; T713).
 // - The radio: w05 Ves'thara, w06 Kip, w09 Pebble (Grandmother if Old Thrum was spared, else
 //   Bramble).
 // - Cut the Feed (`a3_m05_cue_feed_cut`, the objective's `objectiveCompleted`): QUILL's line, or
