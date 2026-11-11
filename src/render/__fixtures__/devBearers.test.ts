@@ -53,10 +53,10 @@ function patched(patch: Partial<MapDef<DevIds>>, over: Partial<SimConfig<IdSpace
 function play(
   sim: Sim<IdSpace>,
   opts: { par?: boolean; until?: () => boolean; beforeTick?: () => void } = {},
-): SimEvent<IdSpace>[] {
+): Tagged[] {
   const exec = opts.par === true ? createBuildExecutor(sim, sim.map.builds.parBuild) : null;
   if (exec === null) sim.enqueue({ type: 'callWave' });
-  const all: SimEvent<IdSpace>[] = [];
+  const all: Tagged[] = [];
   const out: SimEvent<IdSpace>[] = [];
   for (let i = 0; i < 60 * 300 && sim.state.outcome === 'playing'; i++) {
     if (opts.until?.() === true) break;
@@ -65,14 +65,15 @@ function play(
     sim.step();
     out.length = 0;
     sim.drainEvents(out);
-    for (const e of out) all.push({ ...e, tick: sim.state.tick - 1 } as SimEvent<IdSpace>);
+    for (const e of out) all.push({ ...e, tick: sim.state.tick - 1 });
   }
   return all;
 }
 
+/** An event with the tick it was emitted on. */
 type Tagged = SimEvent<IdSpace> & { readonly tick: number };
-const ofType = <T extends SimEvent<IdSpace>['type']>(events: SimEvent<IdSpace>[], type: T) =>
-  events.filter((e) => e.type === type) as (Extract<Tagged, { type: T }> & { tick: number })[];
+const ofType = <T extends Tagged['type']>(events: readonly Tagged[], type: T) =>
+  events.filter((e): e is Extract<Tagged, { type: T }> => e.type === type);
 
 describe('dev_bearers: the bearers (T706)', () => {
   it('par wins, the same every time; the bearers home count, one hushed costs the asset 1', () => {
@@ -240,7 +241,7 @@ describe('script groups (T706; sim/scriptGroups.ts)', () => {
     expect(surge.every((e) => e.wave === 2)).toBe(true);
     // W2 resolves only once the surge (its units, wave 2) is gone too.
     const uids = new Set(surge.map((e) => e.uid));
-    const gone = (events as Tagged[])
+    const gone = events
       .filter((e) => (e.type === 'EnemyDied' || e.type === 'EnemyLeaked') && uids.has(e.uid))
       .map((e) => e.tick);
     expect(gone).toHaveLength(6);
@@ -267,7 +268,7 @@ describe('the `cleared` atom (T706)', () => {
   const map: CompiledMapDef<IdSpace> = config().content.maps[MAP]!;
   const ctx: ConditionContext = { content: config().content, config: config(), map };
   const c = { cleared: ['feed_1', 'feed_2'], byWave: 3 } as const;
-  const feed1 = 0 * map.cols + 11;
+  const feed1 = 11; // (11, 0)
   const feed2 = 7 * map.cols + 11;
 
   function at(wave: number, cleared: number[], atWave: number[] = []) {
@@ -305,17 +306,18 @@ describe('the `cleared` atom (T706)', () => {
   });
 });
 
+/** Militia posts manned on tick 0 of a dev_bearers run under `flags`. */
+function militiaManned(flags: SimConfig<IdSpace>['scriptFlags']): number {
+  const sim = createSim(config({ scriptFlags: flags }));
+  sim.step();
+  return sim.state.allies.items.filter((a) => a.alive && a.kind === 'militia').length;
+}
+
 describe('flag-gated posts and dressing (T706)', () => {
   it('the militia is manned under convoy only; an unset flag takes the first variant', () => {
-    const militia = (flags: SimConfig<IdSpace>['scriptFlags']) =>
-      createSim(config({ scriptFlags: flags }));
-    const count = (sim: Sim<IdSpace>) => {
-      sim.step();
-      return sim.state.allies.items.filter((a) => a.alive && a.kind === 'militia').length;
-    };
-    expect(count(militia({ door_choice: 'convoy' }))).toBe(1);
-    expect(count(militia({ door_choice: 'warren' }))).toBe(0);
-    expect(count(militia({}))).toBe(0);
+    expect(militiaManned({ door_choice: 'convoy' })).toBe(1);
+    expect(militiaManned({ door_choice: 'warren' })).toBe(0);
+    expect(militiaManned({})).toBe(0);
     const map = config().content.maps[MAP]!;
     expect(gatedFlagDefaults(map)).toEqual({ door_choice: 'convoy' });
     expect(postManned(map.allies[0]!, { door_choice: 'warren' })).toBe(false);
@@ -331,15 +333,16 @@ describe('flag-gated posts and dressing (T706)', () => {
   });
 });
 
-describe('validation: a script group is part of the map’s threat (T706)', () => {
-  function errors(patch: Partial<MapDef<DevIds>>, rule: string): string[] {
-    const raw: RawContent<IdSpace> = {
-      ...DEV_CONTENT,
-      maps: { dev_bearers: { ...bearersMap, ...patch } },
-    };
-    return validate(raw).filter((e) => e.startsWith(`[${rule}] `));
-  }
+/** The errors of rule `rule` validating dev_bearers with `patch` laid over it. */
+function errors(patch: Partial<MapDef<DevIds>>, rule: string): string[] {
+  const raw: RawContent<IdSpace> = {
+    ...DEV_CONTENT,
+    maps: { dev_bearers: { ...bearersMap, ...patch } },
+  };
+  return validate(raw).filter((e) => e.startsWith(`[${rule}] `));
+}
 
+describe('validation: a script group is part of the map’s threat (T706)', () => {
   it('its traits are threat intel the map must list', () => {
     const scriptGroups = { surge: { enemy: 'puffwing' as const, count: 2, route: 'sky' } };
     expect(errors({ scriptGroups }, 'threat-intel')).toEqual([
