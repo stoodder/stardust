@@ -220,13 +220,19 @@ describe('M6 tell glyphs (art-direction §8)', () => {
     expect(rows.map((r) => r.split('').toReversed().join(''))).toEqual(rows);
   });
 
-  it('`haste_aura` is `fast`’s orange double chevron over a swing arc, never `fast` itself', () => {
+  it('`haste_aura` is `fast`’s orange double chevron set in a ring, never `fast` itself', () => {
     const d = sprite('icon.tell.haste_aura');
     expect(Object.values(d.legend ?? {})).toEqual(
-      expect.arrayContaining(['orange.2', 'orange.3', 'orange.4']),
+      expect.arrayContaining(['orange.1', 'orange.3', 'orange.4']),
     );
-    expect(grid(d.id, 'icon').join('|')).not.toBe(grid('icon.tell.fast', 'icon').join('|'));
-    expect(grid(d.id, 'icon').slice(4).join('')).toMatch(/B/);
+    const rows = grid(d.id, 'icon');
+    // The » is `fast`'s, pixel for pixel; the ring fills the gaps round it.
+    const chevrons = rows.map((r) => r.replace(/A/g, '.'));
+    const fast = grid('icon.tell.fast', 'icon');
+    expect(chevrons.map((r) => r.replace(/[CD]/g, '#'))).toEqual(
+      fast.map((r) => r.replace(/[CD]/g, '#')),
+    );
+    expect(count(rows, 'A')).toBeGreaterThanOrEqual(10);
   });
 
   it('`burrower` reads on Act III’s near-black ground: a white arrow into a gap in the ground', () => {

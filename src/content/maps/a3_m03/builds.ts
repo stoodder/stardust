@@ -9,6 +9,8 @@ import type { BuildStep, GridPos, TowerId } from '../../types.ts';
 
 /** Inside the switchback's bend: both of its runs. */
 const BEND: GridPos = [8, 3];
+/** East of the cut's top: the switchback's head and the Moths' crossing. */
+const NORTH_E: GridPos = [12, 3];
 /** The choke's north face, either side of the road. */
 const CHOKE_W: GridPos = [8, 5];
 const CHOKE_E: GridPos = [12, 5];
@@ -29,12 +31,18 @@ const CHOKE: GridPos = [10, 5];
 /** The SEAL, pressed as W14 starts: every build's last step. */
 const SEAL: BuildStep = { wave: 14, scriptInput: 'seal' };
 
-/** Suppressing Fire on the choke, on the waves its cooldown allows. */
-const suppress = (wave: number): BuildStep => ({
+/** Where the doomed waves' first Undertows come down each rift. */
+const RIFT_W_RUN: GridPos = [5, 5];
+const RIFT_E_RUN: GridPos = [15, 6];
+/** The east rift's head, where W4's Motes come in. */
+const RIFT_E_HEAD: GridPos = [15, 3];
+
+/** Suppressing Fire `afterSec` into `wave` on `target`: the choke, or a rift's run. */
+const suppress = (wave: number, afterSec: number, target: GridPos = CHOKE): BuildStep => ({
   wave,
   ability: 2,
-  target: CHOKE,
-  when: { afterSec: 8 },
+  target,
+  when: { afterSec },
 });
 
 function parSteps(): BuildStep[] {
@@ -46,21 +54,19 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'thumper', tile: FORK_E },
     { wave: 2, build: 'prism', tile: MID },
     { wave: 3, build: 'burrow', tile: CHOKE_W },
-    suppress(4),
+    suppress(4, 10, RIFT_E_HEAD),
     { wave: 5, upgrade: CHOKE_E },
     { wave: 6, upgrade: MID },
-    suppress(7),
     { wave: 7, upgrade: CHOKE_W },
+    suppress(8, 15),
     { wave: 8, upgrade: BEHIND_E },
     { wave: 8, upgrade: FORK_E },
     { wave: 9, build: 'thumper', tile: FORK_W },
-    suppress(10),
     { wave: 10, upgrade: BEND },
+    suppress(11, 12, RIFT_W_RUN),
     { wave: 11, upgrade: FORK_W },
     { wave: 11, upgrade: CHOKE_E },
-    suppress(12),
-    { wave: 12, build: 'prism', tile: BEHIND_W },
-    { wave: 13, upgrade: MID },
+    suppress(12, 14, RIFT_E_RUN),
     SEAL,
   ];
 }
@@ -101,66 +107,62 @@ export const builds = defineBuilds({
     },
   },
   altBuilds: {
-    // Scuttle Den, Zapcoil, Skyhook, Lookout: Dens on the choke as par's, Zapcoils chaining the
-    // clusters in the switchback, behind Bricks and on the forks, Skyhooks for the Moths. The
-    // Lookout stays home (nothing on the map is cloaked).
+    // Scuttle Den, Zapcoil, Skyhook, Lookout: Zapcoils chaining the clusters in the switchback, at
+    // the choke, behind Bricks, and beside the east rift; Dens on and behind the choke; Skyhooks
+    // under the Moths' crossing. The Lookout stays home (nothing on the map is cloaked).
     coils: {
       loadout: ['burrow', 'zapcoil', 'skyhook', 'lookout'],
       steps: [
-        { wave: 1, build: 'burrow', tile: CHOKE_E },
         { wave: 1, build: 'zapcoil', tile: BEND },
         { wave: 1, upgrade: BEND },
-        { wave: 1, build: 'zapcoil', tile: BEHIND_E },
-        { wave: 2, build: 'zapcoil', tile: RIFT_E },
-        { wave: 3, build: 'burrow', tile: CHOKE_W },
-        suppress(4),
+        { wave: 1, build: 'burrow', tile: CHOKE_E },
+        { wave: 1, build: 'zapcoil', tile: CHOKE_W },
+        { wave: 2, build: 'zapcoil', tile: BEHIND_E },
+        { wave: 3, build: 'zapcoil', tile: RIFT_E },
+        suppress(4, 10, RIFT_E_HEAD),
         { wave: 4, upgrade: CHOKE_E },
-        { wave: 5, upgrade: BEHIND_E },
+        { wave: 5, upgrade: CHOKE_W },
         { wave: 6, build: 'skyhook', tile: MID },
-        suppress(7),
-        { wave: 7, upgrade: CHOKE_W },
-        { wave: 7, upgrade: CHOKE_E },
+        { wave: 7, build: 'burrow', tile: BEHIND_W },
+        { wave: 7, upgrade: BEHIND_E },
+        suppress(8, 15),
         { wave: 8, upgrade: MID },
-        { wave: 8, build: 'skyhook', tile: BEHIND_W },
-        { wave: 9, upgrade: CHOKE_W },
+        { wave: 8, build: 'skyhook', tile: NORTH_E },
         { wave: 9, upgrade: BEND },
-        suppress(10),
-        { wave: 10, build: 'zapcoil', tile: RIFT_W },
         { wave: 10, upgrade: RIFT_E },
-        { wave: 11, upgrade: BEHIND_E },
-        suppress(12),
-        { wave: 12, upgrade: RIFT_W },
-        { wave: 13, upgrade: BEHIND_W },
+        { wave: 10, upgrade: CHOKE_E },
+        suppress(11, 12, RIFT_W_RUN),
+        { wave: 11, upgrade: CHOKE_W },
+        suppress(12, 14, RIFT_E_RUN),
         SEAL,
       ],
     },
     // Scuttle Den, Prism, Harpoon, Zapcoil: no Everglow class at all, so any A3M2 revocation
-    // leaves it whole. Dens on the choke, Zapcoils for par's Thumpers, a Harpoon behind Bricks.
+    // leaves it whole. Zapcoils on the clusters, a Prism behind Bricks, Dens on and behind the
+    // choke, a Harpoon under the Moths' crossing.
     no_everglow: {
       loadout: ['burrow', 'prism', 'harpoon', 'zapcoil'],
       steps: [
-        { wave: 1, build: 'burrow', tile: CHOKE_E },
         { wave: 1, build: 'zapcoil', tile: BEND },
         { wave: 1, upgrade: BEND },
-        { wave: 1, build: 'harpoon', tile: BEHIND_E },
-        { wave: 2, build: 'prism', tile: MID },
-        { wave: 3, build: 'burrow', tile: CHOKE_W },
+        { wave: 1, build: 'burrow', tile: CHOKE_E },
+        { wave: 1, build: 'prism', tile: BEHIND_E },
+        { wave: 2, build: 'zapcoil', tile: CHOKE_W },
         { wave: 3, build: 'zapcoil', tile: RIFT_E },
-        suppress(4),
-        { wave: 5, upgrade: CHOKE_E },
-        { wave: 6, upgrade: MID },
-        suppress(7),
-        { wave: 7, upgrade: CHOKE_W },
-        { wave: 7, upgrade: BEHIND_E },
-        { wave: 8, upgrade: CHOKE_E },
-        { wave: 9, upgrade: BEND },
-        suppress(10),
-        { wave: 10, build: 'zapcoil', tile: RIFT_W },
+        suppress(4, 10, RIFT_E_HEAD),
+        { wave: 5, upgrade: BEHIND_E },
+        { wave: 6, build: 'harpoon', tile: MID },
+        { wave: 7, build: 'burrow', tile: BEHIND_W },
+        { wave: 7, upgrade: CHOKE_E },
+        suppress(8, 15),
+        { wave: 8, upgrade: CHOKE_W },
+        { wave: 8, upgrade: BEND },
+        { wave: 9, build: 'prism', tile: NORTH_E },
+        { wave: 10, upgrade: MID },
         { wave: 10, upgrade: RIFT_E },
-        { wave: 11, upgrade: CHOKE_W },
-        suppress(12),
-        { wave: 12, build: 'prism', tile: BEHIND_W },
-        { wave: 13, upgrade: MID },
+        suppress(11, 12, RIFT_W_RUN),
+        { wave: 11, upgrade: BEHIND_E },
+        suppress(12, 14, RIFT_E_RUN),
         SEAL,
       ],
     },

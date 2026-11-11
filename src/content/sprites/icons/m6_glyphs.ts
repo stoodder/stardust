@@ -4,9 +4,11 @@
 //   each side (▶ ◀), `acid.2` lit `acid.3` toward their points, pinching a dark mouth between
 //   them, inside the Hollow's pale outline (its palette), so it reads wrong like the Hollow's and
 //   holds on Act III's near-black ground as on grass.
-// - `haste_aura` (the Expediter): a double chevron with a ring: the » of `fast` (`orange.4` over
-//   `orange.3`), squat, over an `orange.2` arc, the swing of the Expediter's metronome pendulum,
-//   so it reads as `fast`'s family but never as `fast` alone.
+// - `haste_aura` (the Expediter): a double chevron with a ring: `fast`'s » (`orange.4` over
+//   `orange.3`) set in a ring of deep `orange.1` that fills the gaps round it (the swing of the
+//   Expediter's metronome), so it reads as a round "fast-forward" badge: `fast`'s family, never
+//   `fast` itself. (In 6×6 a » shorter than six rows reads as "22", and one inside a drawn ring
+//   breaks into a checker, so the ring takes the gaps.)
 import { defineSprite } from '../defineSprite.ts';
 import { GLYPH } from './iconGen.ts';
 
@@ -37,15 +39,15 @@ export const iconTellHasteAura = defineSprite({
   anchor: { x: 0, y: 0 },
   palette: 'everglow',
   outline: 'auto',
-  legend: { B: 'orange.2', C: 'orange.3', D: 'orange.4' },
+  legend: { A: 'orange.1', C: 'orange.3', D: 'orange.4' },
   frames: {
     icon: [
-      'DD.DD.',
-      '.DD.DD',
-      '.CC.CC',
-      'CC.CC.',
-      'B....B',
-      '.BBBB.',
+      'DAADA.',
+      'DD.DDA',
+      'ADD.DD',
+      'ACC.CC',
+      'CC.CCA',
+      'CAACA.',
     ],
   },
 });

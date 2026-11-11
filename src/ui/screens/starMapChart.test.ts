@@ -139,6 +139,13 @@ describe('the star map chart', () => {
   it("wears each phase's accent on the next glyph's core and ping, as on its leg (T612)", () => {
     const suffix = { '2': '', '3': '_act3', finale: '_finale' } as const;
     const legend: Readonly<Record<string, string>> = uiStarNode.legend ?? {};
+    /** The color at (x, y) of a grid frame (each of these is one). */
+    const colorAt = (frame: string, x: number, y: number): string | undefined => {
+      const f = uiStarNode.frames[frame];
+      if (!Array.isArray(f)) throw new Error(`${frame}: not a grid frame`);
+      const row: unknown = f[y];
+      return typeof row === 'string' ? legend[row[x] ?? '.'] : undefined;
+    };
     for (const phase of [
       'act2.gold',
       'act2.dusk',
@@ -146,12 +153,10 @@ describe('the star map chart', () => {
       'dawn',
     ] as const satisfies readonly StarMapPhase[]) {
       const s = suffix[STAR_MAP_PHASE_ACT[phase]];
-      const next = uiStarNode.frames[`next${s}`] as readonly string[];
-      const ping = uiStarNode.frames[`ping${s}_0`] as readonly string[];
-      expect(legend[next[7]![7]!]).toBe(chartAccent(phase)); // the core's centre
-      expect(legend[ping[2]![7]!]).toBe(chartAccent(phase)); // the ring's top edge
+      expect(colorAt(`next${s}`, 7, 7)).toBe(chartAccent(phase)); // the core's centre
+      expect(colorAt(`ping${s}_0`, 7, 2)).toBe(chartAccent(phase)); // the ring's top edge
     }
     // Act III's alarm red, never the crystal violet its flora slot carries.
-    expect(legend[(uiStarNode.frames.next_act3 as readonly string[])[7]![7]!]).toBe('red.3');
+    expect(colorAt('next_act3', 7, 7)).toBe('red.3');
   });
 });

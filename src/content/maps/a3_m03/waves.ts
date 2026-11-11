@@ -35,13 +35,13 @@ const motes = (count: number, route: RouteId, delaySec: number, intervalSec = 0.
   g('mote', count, route, delaySec, intervalSec);
 
 /** The build phase before most waves. */
-export const COUNTDOWN = 30;
+export const COUNTDOWN = 40;
 /**
  * W14's countdown: the last group's walk, from its release as the countdown opens to its last
  * refugee through the door the tick before W14 starts (20 tiles at 0.7 tiles/s, the last one 3
  * tiles back in the line).
  */
-export const LAST_WALK_SEC = 33;
+export const LAST_WALK_SEC = 32.87;
 /** Most waves open this long after they start. */
 export const OPEN = 6;
 
@@ -64,13 +64,13 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [g('undertow', 1, 'cut_east', OPEN), motes(6, 'cut_west', OPEN + 6)],
+    groups: [g('undertow', 1, 'cut_east', OPEN), motes(6, 'cut_west', OPEN + 12)],
   },
   // W4 · Motes + a rift (the east rift opens behind Bricks)
   {
     countdownSec: COUNTDOWN,
     noCall: true,
-    groups: [motes(8, 'cut_west', OPEN), motes(4, 'rift_east', OPEN + 8, 0.45)],
+    groups: [motes(8, 'cut_west', OPEN), motes(3, 'rift_east', OPEN + 8, 0.45)],
   },
   // W5 · a Maw, Motes catching it up
   {
@@ -99,10 +99,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 1, 'cut_east', OPEN, 2.5),
-      motes(18, 'cut_west', OPEN + 3, 0.2),
-      g('riftmoth', 2, 'sky_west', OPEN + 8, 2),
-      g('undertow', 1, 'cut_west', OPEN + 10, 2.5),
+      motes(18, 'cut_west', OPEN, 0.2),
+      g('riftmoth', 2, 'sky_west', OPEN + 6, 2),
+      motes(8, 'cut_east', OPEN + 10, 0.2),
     ],
   },
   // W9 · held, while the fourth group crosses
@@ -110,10 +109,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 1, 'cut_west', OPEN, 2.5),
+      g('undertow', 1, 'cut_east', OPEN),
       g('riftmoth', 2, 'sky_east', OPEN + 6, 2),
-      g('undertow', 2, 'cut_east', OPEN + 10, 2.5),
-      motes(8, 'cut_east', OPEN + 14, 0.3),
+      motes(10, 'cut_west', OPEN + 10, 0.25),
     ],
   },
   // W10 · the last holdable wave, the fifth group on the road
@@ -123,7 +121,7 @@ export const waves = defineWaves([
     groups: [
       g('maw', 1, 'cut_east', OPEN),
       motes(14, 'cut_east', OPEN + 2, 0.2),
-      g('undertow', 3, 'cut_west', OPEN + 6, 2.5),
+      g('undertow', 2, 'cut_west', OPEN + 6, 2.5),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
   },
@@ -132,9 +130,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 2, 'cut_east', OPEN, 2.5),
+      g('undertow', 1, 'rift_west', OPEN),
       motes(18, 'cut_west', OPEN + 4, 0.2),
-      g('undertow', 1, 'rift_west', OPEN + 8),
+      g('undertow', 1, 'cut_east', OPEN + 8),
       g('riftmoth', 2, 'sky_east', OPEN + 10, 2),
     ],
   },
@@ -143,10 +141,9 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 3, 'cut_west', OPEN, 2.5),
-      g('maw', 1, 'cut_east', OPEN + 4),
-      motes(8, 'cut_east', OPEN + 6, 0.2),
-      g('undertow', 1, 'rift_east', OPEN + 10),
+      g('undertow', 2, 'rift_east', OPEN, 2.5),
+      g('maw', 1, 'cut_west', OPEN + 4),
+      motes(12, 'cut_east', OPEN + 6, 0.2),
       g('riftmoth', 2, 'sky_west', OPEN + 12, 2),
     ],
   },
@@ -155,13 +152,12 @@ export const waves = defineWaves([
     countdownSec: COUNTDOWN,
     noCall: true,
     groups: [
-      g('undertow', 2, 'cut_east', OPEN, 2.5),
-      motes(8, 'cut_east', OPEN + 2, 0.2),
-      motes(18, 'cut_west', OPEN + 4, 0.2),
-      g('undertow', 1, 'rift_west', OPEN + 6),
-      g('fracture', 2, 'cut_west', OPEN + 8, 2),
+      g('undertow', 1, 'rift_west', OPEN),
+      motes(18, 'cut_west', OPEN + 2, 0.2),
+      g('undertow', 2, 'rift_east', OPEN + 4, 2.5),
+      motes(12, 'cut_east', OPEN + 6, 0.2),
+      g('fracture', 1, 'cut_west', OPEN + 8, 2),
       g('riftmoth', 3, 'sky_east', OPEN + 10, 1.5),
-      g('undertow', 1, 'rift_east', OPEN + 12),
     ],
   },
   // W14 · never plays: the SEAL fires as it starts, before anything spawns
