@@ -62,6 +62,8 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   // M6's links (T604 first pass; T630a may restyle them): water and moss, then salvage gold.
   splash_zone: { ring: 'blue.3', text: 'green.4' },
   finders_keepers: { ring: 'gold.3', text: 'green.4' },
+  // The Hum Choir's (T607 first pass): the song's warm gold over the Mindspike's violet.
+  harmony: { ring: 'violet.3', text: 'gold.4' },
 };
 
 /** A link's callout text: its name in capitals, with feeling ("CROSSFIRE!"). */

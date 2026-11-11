@@ -56,6 +56,7 @@ describe('purchases in the save session', () => {
       'maxed', // the Mindspike's (T507)
       'maxed', // the Lantern's (T508)
       'maxed', // the Scuttle Den's (T604)
+      'maxed', // the Hum Choir's (T607)
     ]);
   });
 });

@@ -55,6 +55,7 @@ describe('the loadout screen (app side)', () => {
       ['mindspike', []], // plays since T507: answers armor only where Hollow or Aelari wear it
       ['lantern', []], // plays since T508: detection, air, and (Truthlight) burrowed; A1M2 asks armor
       ['burrow', []], // plays since T604: burrowed (and Brave Hearts air); A1M2 asks armor
+      ['choir', []], // plays since T607: a support aura, no answer; A1M2 asks armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());
@@ -79,7 +80,11 @@ describe('the loadout screen (app side)', () => {
       'Lightsong', // the Prism's and Lantern's (T508)
       'Splash Zone', // the Sprinkler's and Scuttle Den's (T604)
       'Finders Keepers', // the Crane's and Scuttle Den's (T604)
+      'Harmony', // the Mindspike's and Hum Choir's (T607)
     ]);
+    expect(view.links[10]?.bonus).toBe(
+      'Mindspike Obelisk hits 1 extra target · Hum Choir aura +0.5 radius',
+    );
     expect(view.links[8]?.bonus).toBe(
       'Sprinkler +0.3 range · Scuttle Den swarmlings 30% faster, +1 s latch',
     );

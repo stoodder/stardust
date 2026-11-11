@@ -85,7 +85,7 @@ function bonusText(b: LinkBonusDef): string {
  * A partner's whole bonus: its stat bonuses, then Conductive's chain jumps and Soak (T304b), and
  * the Lookout's detection radius from Overwatch and Skywatch (T406), Reel It In's kill credits
  * (T408), Lightsong's faster ramp and stronger Marks (T508), and the Scuttle Den's swarmling,
- * dash, and latch (T604).
+ * dash, and latch (T604), and the Hum Choir's aura extras and Harmony's extra target (T607).
  */
 function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]): string {
   const parts = p.bonuses.map(bonusText);
@@ -108,6 +108,12 @@ function partnerText(p: (typeof LINKS)[keyof typeof LINKS]['partners'][number]):
     parts.push(`swarmlings ${Math.round(p.swarmSpeedPct * 100)}% faster`);
   }
   if (p.latchSec !== undefined) parts.push(`+${p.latchSec} s latch`);
+  // The Hum Choir's: Harmony's extra target and wider aura, Bounce Chorus's stronger aura (T607).
+  if (p.extraTargets !== undefined) {
+    parts.push(`hits ${p.extraTargets} extra ${p.extraTargets === 1 ? 'target' : 'targets'}`);
+  }
+  if (p.auraRadiusTiles !== undefined) parts.push(`aura +${p.auraRadiusTiles} radius`);
+  if (p.auraPct !== undefined) parts.push(`aura +${Math.round(p.auraPct * 100)}% damage`);
   return parts.join(', ');
 }
 

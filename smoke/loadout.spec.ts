@@ -39,14 +39,14 @@ test('loadout: pick towers and an ability, lock in, change it from the briefing,
     'aria-checked',
     'true',
   );
-  // A1M1 has Bricks in slot 2, and the pool can form ten links: Crossfire and Sitting Ducks lit,
+  // A1M1 has Bricks in slot 2, and the pool can form eleven links: Crossfire and Sitting Ducks lit,
   // Conductive waiting on the Zapcoil, Overwatch and Skywatch on the Lookout (owned, not in the
   // default four; T406), Reel It In on the Harpoon and the Crane (T408), Resonance on the Zapcoil
   // and the Prism (T504), Lightsong on the Prism and the Lantern (T508), Splash Zone and Finders
-  // Keepers on the Scuttle Den (T604).
+  // Keepers on the Scuttle Den (T604), Harmony on the Mindspike and the Hum Choir (T607).
   await expect(page.getByText('Bricks · Suppressing Fire')).toBeVisible();
   const links = page.locator('.sd-lo-link');
-  await expect(links).toHaveCount(10);
+  await expect(links).toHaveCount(11);
   await expect(links.filter({ hasText: 'Conductive' })).toContainText('Needs Zapcoil');
   await expect(links.filter({ hasText: 'Overwatch' })).toContainText('Needs Lookout');
   await expect(links.filter({ hasText: 'Reel It In' })).toContainText(
