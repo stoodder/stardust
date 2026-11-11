@@ -21,6 +21,15 @@ export const MEMO_ID = /^memo_a[1-3]_\d\d(_[a-z]+)?$/;
 export type MemoFormat = 'memo' | 'form';
 
 /**
+ * Which Everglow letterhead a memo sits on (art-direction § Menu screens): `full`, white and
+ * teal with the chevrons and the Evie sun (the default); `worn`, Act III's, the colour gone to
+ * `everglow.worn`'s dimmer teal but the sun kept, for a memo a person still signs (Sterling's
+ * `memo_a3_01`); `automated`, worn and sunless, the sender's name as the brand, since nobody
+ * signs it (from A3M2, "Everglow Automated Systems"). A form ignores it.
+ */
+export type MemoLetterhead = 'full' | 'worn' | 'automated';
+
+/**
  * A memo's gift, granted when it is delivered (not read), once (`story.granted`), so skipping the
  * Inbox never costs anything. `memo_a1_00` grants Orbital Strike (D031).
  */
@@ -37,6 +46,8 @@ export interface MemoDef {
   readonly id: MemoId;
   /** Default `memo`. A form's subject needn't exclaim: it isn't Everglow's (style-guide § 6.1). */
   readonly format?: MemoFormat;
+  /** Default `full`; a `memo` only. */
+  readonly letterhead?: MemoLetterhead;
   /** A form's stamp, in its stamp box: ASCII capitals, ≤ 20 characters ("PENDING"). */
   readonly stamp?: string;
   readonly from: string;

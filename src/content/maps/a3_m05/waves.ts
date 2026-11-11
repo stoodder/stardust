@@ -99,9 +99,8 @@ export const waves = defineWaves([
     ...NO_CALL,
     groups: [
       motes(8, 'vats', 0),
-      fractures(2, 'vats', 2),
-      g('maw', 1, 'vats', 4),
-      motes(8, 'road', 3),
+      fractures(2, 'vats', 3),
+      motes(6, 'road', 3),
     ],
   },
   // W11 · Expediters + Liability
@@ -116,8 +115,7 @@ export const waves = defineWaves([
       silencers(2, 0),
       auditors(1, 4),
       drones(4, 6),
-      fractures(2, 'vats', 2),
-      motes(8, 'vats', 8),
+      motes(6, 'vats', 8),
       associates(1, 10),
     ],
   },
@@ -125,9 +123,9 @@ export const waves = defineWaves([
   {
     ...NO_CALL,
     groups: [
-      motes(8, 'hunt', HUNT_SEC),
-      fractures(2, 'hunt', HUNT_SEC + 4),
-      motes(8, 'vats', 4),
+      motes(6, 'hunt', HUNT_SEC, 0.5),
+      fractures(1, 'hunt', HUNT_SEC + 4),
+      motes(6, 'vats', 4),
       liabilities(1, 0),
       drones(4, 4),
     ],
@@ -139,8 +137,7 @@ export const waves = defineWaves([
     groups: [
       drones(3, 0),
       g('shareholder_value', 1, 'road', BOSS_SEC),
-      auditors(2, BOSS_SEC + 6),
-      associates(1, BOSS_SEC + 3),
+      auditors(1, BOSS_SEC + 6),
     ],
   },
   // W15 · the last bearers, and the Unsung swarm out of the opened vats behind them (its countdown
