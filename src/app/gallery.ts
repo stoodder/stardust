@@ -8,8 +8,10 @@
 // Ward kneeling over the road as refugees file past and a Prism beaming; at full dark, a lamp's
 // pool, a beaming Prism's lit disc and a resting one's ghost, composited with the game's own
 // night (vfx/darknessPixels.ts, vfx/glowPixels.ts) so the trail shows the night as play draws it.
-// Then the M6 corners (review R10, app/galleryM6.ts): A3M1's Preserve and A3M3's Gap at the SEAL.
-// The act3 diorama and the M6 corners hang the two moons in their sky (app/galleryKit.ts).
+// Then the M6 corners (review R10, app/galleryM6.ts): A3M1's Preserve and A3M3's Gap at the SEAL;
+// and the M7 corners (T740c, app/galleryM7.ts): A3M4's Shelters, A3M5's Second Harvest at night,
+// A3M6's Dome Row at night. The act3 diorama and the Act III corners hang the two moons in their sky
+// (app/galleryKit.ts).
 import { ENV_PALETTE_IDS } from '../content/palettes/env.ts';
 import { PALETTES } from '../content/palettes/index.ts';
 import { SPRITES, type SpriteId } from '../content/sprites/index.ts';
@@ -59,6 +61,7 @@ import {
 import { GHOST_REST_ALPHA } from '../render/views/LightGhostView.ts';
 import { backdrop, cssOf, el, FLY_LIFT_PX, glowOf, isTileChar, type Placed } from './galleryKit.ts';
 import { m6Corner, M6_CORNERS } from './galleryM6.ts';
+import { m7Corner, M7_CORNERS } from './galleryM7.ts';
 import { logError } from './log.ts';
 
 function hasOpaque(img: RgbaImage): boolean {
@@ -1217,6 +1220,12 @@ function render(root: HTMLElement): void {
   for (const [scene, label] of M6_CORNERS) {
     const box = el('div', 'frame');
     box.append(m6Corner(byId, scene, 2), el('span', undefined, label));
+    pack.add(box);
+  }
+  // The M7 corners (T740c): A3M4's Shelters, A3M5's Second Harvest, A3M6's Dome Row, at night.
+  for (const [scene, label] of M7_CORNERS) {
+    const box = el('div', 'frame');
+    box.append(m7Corner(byId, scene, 2), el('span', undefined, label));
     pack.add(box);
   }
 

@@ -472,10 +472,12 @@ describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing
         'after_a3m3_convoy',
         'after_a3m3_warren',
         // M7's saves (T700b) lack the Choir only until A3M4 is registered (its briefing gives it),
-        // and the Sproing Pad (stocked after A3M4; T704) until A3M5's briefing gives it.
+        // the Sproing Pad (stocked after A3M4; T704) until A3M5's briefing gives it, and under the
+        // convoy the Gloop Spitter until A3M6's does.
         ...Object.entries(DEV_SAVES).flatMap(([id, dev]) => {
           const owned = dev.build().unlocks.towers;
-          const early = !owned.includes('choir') || !owned.includes('sproing');
+          const early =
+            !owned.includes('choir') || !owned.includes('sproing') || !owned.includes('gloop');
           return /^after_a3m[4-6]/.test(id) && early ? [id] : [];
         }),
       ].toSorted(),

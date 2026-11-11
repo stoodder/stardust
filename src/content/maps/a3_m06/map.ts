@@ -44,30 +44,28 @@ const ROAD: readonly GridPos[] = [
 const roadFrom = (x: number, y: number): GridPos[] =>
   ROAD.slice(ROAD.findIndex(([a, b]) => a === x && b === y));
 
-/** The refugee groups, in release order (waves.ts and the map script). */
-export const GROUPS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'last'] as const;
+/**
+ * The refugee groups, in release order (the map script; waves.ts sends the Hollow behind them):
+ * each group's id, the wave whose start releases it, how many walk in it, and how many seconds into
+ * that wave it sets off. Seven groups of six by W10 (the first behind W1's Mote screen, the second
+ * under W2's Moths, then W4's and W7's with Maws behind them), two smaller groups at once in W13,
+ * and the last in W16, ahead of the Gathering Maw.
+ */
+export const GROUPS = [
+  ['first', 1, 6, 3],
+  ['second', 2, 6, 0],
+  ['third', 4, 6, 0],
+  ['fourth', 6, 6, 0],
+  ['fifth', 7, 6, 0],
+  ['sixth', 9, 6, 0],
+  ['seventh', 10, 6, 0],
+  ['eighth', 13, 4, 0],
+  ['ninth', 13, 4, 8],
+  ['last', 16, 4, 0],
+] as const;
 
-/** The wave whose start releases each group (two at once in W13; the last in W16). */
-export const GROUP_WAVES: Readonly<Record<(typeof GROUPS)[number], number>> = {
-  first: 1,
-  second: 2,
-  third: 4,
-  fourth: 7,
-  fifth: 13,
-  sixth: 13,
-  last: 16,
-};
-
-/** Seconds into its wave a group sets off (the Hollow behind it give it a head start). */
-export const RELEASE_SEC: Readonly<Record<(typeof GROUPS)[number], number>> = {
-  first: 3,
-  second: 0,
-  third: 0,
-  fourth: 0,
-  fifth: 0,
-  sixth: 8,
-  last: 0,
-};
+/** Every refugee who walks (Pebble isn't counted; no group is gated). */
+export const REFUGEES = GROUPS.reduce((n, [, , count]) => n + count, 0);
 
 export const map = defineMapLayout({
   id: 'a3_m06',
@@ -78,14 +76,14 @@ export const map = defineMapLayout({
   revisitOf: 'a1_m01',
   revisitAt: [4, 2],
   // A generous limit (act3.md § A3M6: the breather inside A3M5 → A3M6 → FIN): the map is lost
-  // once 60% of the refugees are lost (⌈0.6 × 42⌉ = 26).
-  maxLostPct: 0.6,
+  // once half the refugees are lost (27 of 54).
+  maxLostPct: 0.5,
   size: { cols: 22, rows: 14 },
   // The band only: '*' is A1M1's footprint, composed in unchanged.
   // prettier-ignore
   tiles: [
-    '........S.............',
-    '.......o#o............',
+    '......................',
+    '.......o.o............',
     '....**************....',
     '....**************....',
     '...o**************o...',
@@ -99,10 +97,9 @@ export const map = defineMapLayout({
     '.......o.o............',
     '......................',
   ],
-  paths: [
-    // The refugees, and the Hollow behind them: in at the north edge, onto A1M1's road (22).
-    { id: 'north', tiles: [[8, 0], [8, 1], ...ROAD] },
-  ],
+  // A1M1's `road` comes with its layout (the refugees' route, and the Hollow's behind them); the
+  // band adds no path of its own.
+  paths: [],
   riftLanes: [
     // The west rift (W12): in along row 5 under the domes onto the road's turn east (8,5) (25).
     {
@@ -127,16 +124,16 @@ export const map = defineMapLayout({
     {
       id: 'sky_w',
       points: [
-        [0, 2],
-        [3, 9],
+        [0, 1],
+        [6, 6],
         [8, 11],
       ],
     },
     {
       id: 'sky_e',
       points: [
-        [21, 2],
-        [17, 9],
+        [21, 1],
+        [14, 5],
         [8, 11],
       ],
     },
@@ -161,16 +158,8 @@ export const map = defineMapLayout({
   },
   safeExit: 'gate',
   // The refugee groups (6 each, 0.7 tiles/s; maps.md § 5.2), released as their waves start
-  // (GROUP_WAVES). Pebble isn't with any of them: she is on the rock.
-  refugees: {
-    first: { route: 'north' },
-    second: { route: 'north' },
-    third: { route: 'north' },
-    fourth: { route: 'north' },
-    fifth: { route: 'north' },
-    sixth: { route: 'north' },
-    last: { route: 'north' },
-  },
+  // (GROUPS). Pebble isn't with any of them: she is on the rock.
+  refugees: Object.fromEntries(GROUPS.map(([id, , count]) => [id, { route: 'road', count }])),
   startCredits: 780,
   stardust: 380,
   // Air (the gunships and the Rift Moths), detection (the Black Budget Operatives), and armor (the
@@ -214,15 +203,12 @@ export const map = defineMapLayout({
     },
   })),
   events: [
-    ...GROUPS.map((g) => ({
-      id: g,
-      on: {
-        wave: GROUP_WAVES[g],
-        phase: RELEASE_SEC[g] === 0 ? ('start' as const) : { afterSec: RELEASE_SEC[g] },
-      },
-      actions: [{ spawnAllies: g }],
+    ...GROUPS.map(([id, wave, , afterSec]) => ({
+      id,
+      on: { wave, phase: afterSec === 0 ? ('start' as const) : { afterSec } },
+      actions: [{ spawnAllies: id }],
     })),
     // QUILL, as the first of them is sheltered (no refugee is lost before it in any reference run).
-    { id: 'sheltered', on: { refugeesRemaining: 41 }, actions: [{ cue: 'a3_m06_cue_sheltered' }] },
+    { id: 'sheltered', on: { refugeesRemaining: REFUGEES - 1 }, actions: [{ cue: 'a3_m06_cue_sheltered' }] },
   ],
 });

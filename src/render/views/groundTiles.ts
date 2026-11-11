@@ -147,7 +147,7 @@ export function kerbEdges(g: GroundGrid, col: number, row: number): VergeEdge[] 
 }
 
 /** A wreck's look (`prop.wreckage`'s base frames; `wreckageFrame`). */
-export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5';
+export type WreckLook = 'v0' | 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7';
 
 /** True on an Act II map (by its env: its decor takes Act II's looks; art-direction §3, §6). */
 export function isActTwo(env: string | undefined): boolean {
@@ -200,6 +200,22 @@ export const DECOR_MARKERS: Readonly<Record<MarkerId, SpriteId>> = {
   home: 'prop.warren_home',
   shuttle_pad: 'prop.shuttle',
   dead_turret: 'prop.dead_turret',
+  // M7 (act3.md per map, T740c): A3M4's Shelters (the hall door, the last Fun Friday banner, HE
+  // HELD THE DOOR under convoy and the humming ring under warren, by `markerWhen`; Gerald's mail
+  // chute; any `bay_<n>`, a shelter bay); A3M5's hangar ("Shareholder Value"'s); A3M6's lettuce-crate
+  // barricade (`barricade_y…` runs along y), Zibzab's crate (opened in the briefing), and Dome 1 by
+  // the gate (`dome_open`, its door open; T730b frosts it). The generator (A3M4's core), the crash
+  // site's plates, and Pebble on the Peeker's rock (A3M6) are their views' (T730b).
+  hall_door: 'prop.hall_door',
+  banner_friday: 'prop.banner_friday',
+  held_door: 'prop.held_door',
+  humming_ring: 'prop.humming_ring',
+  mail_chute: 'prop.mail_chute',
+  bay: 'prop.shelter_bay',
+  hangar: 'prop.hangar',
+  barricade: 'prop.barricade',
+  zibzab_crate: 'prop.crate',
+  dome_open: 'prop.dome',
 };
 
 /**
@@ -211,12 +227,16 @@ function markerFrame(id: MarkerId): string | null {
   if (id === 'rig_yard') return 'yard';
   if (id === 'warren_spoil') return 'warren';
   if (id === 'dome_window') return 'window';
+  if (id.startsWith('dome_open')) return 'open';
+  if (id === 'zibzab_crate') return 'open';
+  if (id.startsWith('barricade')) return /_y(_|$)/.test(id) ? 'y' : 'x';
   const n = Number(/_(\d+)$/.exec(id)?.[1] ?? 0);
   // The first run of relocation fencing carries Everglow's sign; numbered runs are plain.
   if (id.startsWith('fence')) return n === 0 ? 'v0' : 'v1';
   if (id.startsWith('spoil')) return `drill_${n % 2}`;
   if (id.startsWith('warren')) return `v${n % 2}`;
   if (id.startsWith('home')) return `v${n % 2}`;
+  if (id.startsWith('bay')) return `v${n % 2}`;
   if (id.startsWith('dead_turret')) return `v${(n + 1) % 2}`;
   return null;
 }
@@ -233,6 +253,10 @@ const DECOR_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: stri
   'prop.seam': { frame: 'v0', anim: 'glint' },
   // Sterling's shuttle waits on its pad, nav lights trading (A3M2, T640c).
   'prop.shuttle': { frame: 'parked_0', anim: 'parked' },
+  // M7 (T740c): the candles at HE HELD THE DOOR, the humming ring, the hangar's REC lamp (A3M4–5).
+  'prop.held_door': { frame: 'v0', anim: 'flicker' },
+  'prop.humming_ring': { frame: 'hum_0', anim: 'hum' },
+  'prop.hangar': { frame: 'shut_0', anim: 'idle' },
 };
 
 /**
@@ -258,6 +282,8 @@ const ACT3_LOOKS: Readonly<Partial<Record<SpriteId, { frame: string; anim: strin
   'prop.rock': { frame: 'night', anim: null },
   'prop.fountain': { frame: 'night_0', anim: 'night' },
   'prop.dome': { frame: 'dark', anim: null },
+  // A2M4's vats at maximum throughput (A3M5, T740c): burning violet at full blaze.
+  'prop.vat': { frame: 'blaze_0', anim: 'blaze' },
 };
 
 /** A decor prop's frame and anim on an `env` map: its act's look, else its own, else `v0`. */
@@ -424,7 +450,8 @@ export function envVariant(env: string): string {
  * or `v1` (a toppled cart), T311b's; on an Act II map (`env`) its broken mining rigs, `v2` (a
  * snapped derrick) or `v3` (a burst pump house), each with a crew log on its stake (T440c). A tile
  * under an `intake_hopper*` marker (A2M4's Intake Manifest, T540c) is a wrecked intake hopper,
- * `v4` (toppled) or `v5` (buckled and split), whatever the act.
+ * `v4` (toppled) or `v5` (buckled and split), whatever the act; under a `feed*` marker (A3M5's
+ * vat-feed lines, Cut the Feed; T740c), a burst feed line, `v6` (a pipe in two) or `v7` (a junction).
  */
 export function wreckageFrame(
   col: number,
@@ -436,6 +463,7 @@ export function wreckageFrame(
   if (markers !== undefined) {
     for (const [id, [c, r]] of Object.entries(markers)) {
       if (c === col && r === row && id.startsWith('intake_hopper')) return odd ? 'v5' : 'v4';
+      if (c === col && r === row && id.startsWith('feed')) return odd ? 'v7' : 'v6';
     }
   }
   if (isActTwo(env)) return odd ? 'v3' : 'v2';
@@ -704,6 +732,20 @@ const OWN_PALETTE: ReadonlySet<SpriteId> = new Set<SpriteId>([
   'prop.dead_turret',
   'prop.blast_door',
   'prop.emergency_lamp',
+  // M7's (T740c): Everglow kit, the Shelters' things, the warren's ring, Zibzab's crate, and Pebble
+  // on her rock (its own default palette is already `act3`).
+  'prop.generator',
+  'prop.hall_door',
+  'prop.shelter_bay',
+  'prop.banner_friday',
+  'prop.held_door',
+  'prop.humming_ring',
+  'prop.mail_chute',
+  'prop.hangar',
+  'prop.crash_plate',
+  'prop.barricade',
+  'prop.pebble_rock',
+  'prop.crate',
 ]);
 
 /** The palette variant a prop draws in on a map of env `env`. */

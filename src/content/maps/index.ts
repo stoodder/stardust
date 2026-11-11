@@ -16,6 +16,7 @@ import { a3M02 } from './a3_m02/index.ts';
 import { a3M03 } from './a3_m03/index.ts';
 import { a3M04 } from './a3_m04/index.ts';
 import { a3M05 } from './a3_m05/index.ts';
+import { a3M06 } from './a3_m06/index.ts';
 
 export const MAPS = defineRegistry({
   a1_m01: a1M01,
@@ -34,4 +35,5 @@ export const MAPS = defineRegistry({
   a3_m03: a3M03,
   a3_m04: a3M04,
   a3_m05: a3M05,
+  a3_m06: a3M06,
 });

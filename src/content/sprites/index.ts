@@ -151,6 +151,7 @@ import { propDeadTurret } from './props/dead_turret.ts';
 import { propWarrenHome } from './props/warren_home.ts';
 import { propPreserveSign } from './props/preserve_sign.ts';
 import { propEmergencyLamp } from './props/emergency_lamp.ts';
+import { M7_PROPS } from './props/m7.ts';
 import { tileHush } from './tiles/hush.ts';
 import { tileRift } from './tiles/rift.ts';
 import { tileApron } from './tiles/apron.ts';
@@ -288,6 +289,8 @@ export const SPRITES = [
   propWarrenHome,
   propPreserveSign,
   propEmergencyLamp,
+  // M7's props for A3M4–A3M6 (T740c: props/m7.ts).
+  ...M7_PROPS,
   tileHush,
   tileRift,
   towerRivet,

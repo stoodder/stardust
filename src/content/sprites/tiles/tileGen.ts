@@ -53,11 +53,23 @@ export function grassGrid(seed: number): CharGrid {
   return g;
 }
 
-/** Darkens the lower edges and lightens the upper edges of the mask (gentle tile read). */
-function shadeEdges(g: CharGrid, dark: string, light: string): void {
+/** A tile's four edges, named as verge.ts names them (`nw` top-left … `sw` bottom-left). */
+export type TileEdge = 'nw' | 'ne' | 'se' | 'sw';
+
+/** Which edge an edge pixel (x, y) of the mask lies on. */
+function edgeOf(x: number, y: number): TileEdge {
+  if (y < 8) return x < 16 ? 'nw' : 'ne';
+  return x < 16 ? 'sw' : 'se';
+}
+
+/**
+ * Darkens the lower edges and lightens the upper edges of the mask (gentle tile read), leaving
+ * `skip` unshaded (a 2-wide lane's shared edge, so its two tiles read as one road).
+ */
+function shadeEdges(g: CharGrid, dark: string, light: string, skip?: TileEdge): void {
   for (let y = 0; y < TILE_H; y++) {
     for (let x = 0; x < TILE_W; x++) {
-      if (!inTileMask(x, y)) continue;
+      if (!inTileMask(x, y) || edgeOf(x, y) === skip) continue;
       const edge =
         !inTileMask(x - 1, y) ||
         !inTileMask(x + 1, y) ||
@@ -70,8 +82,8 @@ function shadeEdges(g: CharGrid, dark: string, light: string): void {
   }
 }
 
-/** Sand path: base `8`, speckle `7`, pebbles (`6` with a `9` top), a worn rim. */
-export function pathGrid(seed: number): CharGrid {
+/** Sand path: base `8`, speckle `7`, pebbles (`6` with a `9` top), a worn rim (none on `skip`). */
+export function pathGrid(seed: number, skip?: TileEdge): CharGrid {
   const g = grid(TILE_W, TILE_H);
   for (let y = 0; y < TILE_H; y++) {
     for (let x = 0; x < TILE_W; x++) {
@@ -88,7 +100,7 @@ export function pathGrid(seed: number): CharGrid {
     plot(g, x, y + 1, '6');
     if (hash01(i, 7, seed) < 0.5) plot(g, x + 1, y + 1, '6');
   }
-  shadeEdges(g, '7', '9');
+  shadeEdges(g, '7', '9', skip);
   return g;
 }
 
@@ -111,6 +123,18 @@ function treads(g: CharGrid, axis: 'x' | 'y'): void {
 
 export function pathWithTreads(seed: number, axis: 'x' | 'y'): string[] {
   const g = pathGrid(seed);
+  treads(g, axis);
+  return rows(g);
+}
+
+/**
+ * One tile of a 2-wide lane (A3M6's road through the band, where the refugees walk two abreast):
+ * the treaded path along `axis` with no worn rim on `inner`, the edge it shares with the lane's
+ * other tile, so the two read as one wide road (`inner` is `sw` or `ne` along x, `se` or `nw`
+ * along y).
+ */
+export function wideLane(seed: number, axis: 'x' | 'y', inner: TileEdge): string[] {
+  const g = pathGrid(seed, inner);
   treads(g, axis);
   return rows(g);
 }

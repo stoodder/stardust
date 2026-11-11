@@ -29,7 +29,7 @@ const W = 20;
 const H = 16;
 
 /** The youngling's Skitterkin slots as custom legend chars, so the env palette doesn't recolor it. */
-const CRITTER: Readonly<Record<string, string>> = {
+export const CRITTER: Readonly<Record<string, string>> = {
   '0': 'K',
   '1': 'K',
   '2': 'L',
@@ -49,8 +49,9 @@ const CRITTER: Readonly<Record<string, string>> = {
   P: 'P',
 };
 
+/** The Peeker's rock (`prop.pebble_rock` sits Pebble on it in the Long Night). */
 // prettier-ignore
-const ROCK = [
+export const ROCK = [
   '......ddc...........',
   '....cddeddc.........',
   '...cdddddccb........',
