@@ -445,7 +445,10 @@ function useEnemy(def: CompiledEnemyDef, flyingRoute: boolean, use: Use): void {
   }
   // M7 (T700a).
   if (def.jam !== null) {
-    use(def.jam.kind === 'ring' ? 'enemy.jam.ring' : 'enemy.jam', `a '${def.jam.kind}' jam (${id})`);
+    use(
+      def.jam.kind === 'ring' ? 'enemy.jam.ring' : 'enemy.jam',
+      `a '${def.jam.kind}' jam (${id})`,
+    );
   }
   if (def.healAura !== null) use('enemy.healAura', `a healer aura (${id})`);
   if (phases.some((p) => p.hangar !== null)) use('enemy.boss.hangar', `a hangar (${id})`);

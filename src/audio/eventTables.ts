@@ -96,6 +96,13 @@ export const ENEMY_POP_PITCH: Readonly<Partial<Record<string, number>>> = {
   undertow: -5,
   compliance: 1,
   expediter: -1,
+  // M7's units (T700a placeholders, pitched by size; T750 sorts them).
+  silencer: -4,
+  associate: 0,
+  liability: -8,
+  gunship: -3,
+  blackbudget: 2,
+  auditor: -2,
 };
 
 /** A splitter's death (a Bunchling, `split` in its content): this follows its pop, after `delay` s. */
@@ -160,6 +167,10 @@ export const BOSS_SOUNDS: Readonly<Partial<Record<string, BossSounds>>> = {
     end: 'penitent_kneel',
     endCue: null,
   },
+  // M7's bosses (T700a placeholders on the default; T750 gives them their own).
+  shareholder_value: DEFAULT_BOSS_SOUNDS,
+  gathering_maw: DEFAULT_BOSS_SOUNDS,
+  gathering_maw_part: DEFAULT_BOSS_SOUNDS,
 };
 
 /** A boss's sounds by enemy id. */
@@ -251,6 +262,8 @@ export const ABILITY_SOUNDS: Readonly<
   // Bramble's Underfoot (T650): the warren digging the trap in, three quick chitters; each unit
   // it catches snaps it (TrapSprung, TRAP_SOUND in eventTablesAct3.ts).
   underfoot: { cast: 'underfoot_cast', land: [] },
+  // System Reboot (T700a placeholder: the sweep's ping; T750 gives it `reboot`).
+  system_reboot: { cast: 'scan_ping', land: [] },
 };
 
 /** Each ally kind's sounds: as it takes its post (AllySpawned), and per shot (AllyAttacked). */

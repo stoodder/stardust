@@ -112,11 +112,11 @@ describe('the M7 dev maps', () => {
 
 // ── The validators reject each malformed map-level seam shape ─────────────────────────────────
 
-/** DEV_CONTENT's entities with the M7 dev maps only (or `maps`). */
+/** DEV_CONTENT's entities with the M7 dev maps only (or `only`). */
 function devRaw(
-  maps: { readonly [id: string]: MapDef<DevIds> } = DEV_M7_MAPS,
+  only: { readonly [id: string]: MapDef<DevIds> } = DEV_M7_MAPS,
 ): RawContent<IdSpace> {
-  return { ...DEV_CONTENT, maps: { ...maps } };
+  return { ...DEV_CONTENT, maps: { ...only } };
 }
 /** The errors of rule `rule` in `raw`. */
 function errors(raw: RawContent<IdSpace>, rule: string): string[] {
