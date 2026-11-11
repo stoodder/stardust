@@ -38,9 +38,9 @@ describe('the Waykeeper beat (T714)', () => {
     expect(plateTurned([], naming, typing, whole, false)).toBe(false);
     expect(plateTurned([], naming, typing, whole + PLATE_TURN_HOLD_MS, false)).toBe(true);
     // Next finished the typing: the hold runs from there.
-    expect(plateTurned([], naming, { from: 1000, done: true }, 1000 + PLATE_TURN_HOLD_MS, false)).toBe(
-      true,
-    );
+    expect(
+      plateTurned([], naming, { from: 1000, done: true }, 1000 + PLATE_TURN_HOLD_MS, false),
+    ).toBe(true);
     expect(plateTurned([], naming, typing, 1000, true)).toBe(true);
     expect(plateTurned([naming], null, typing, 0, false)).toBe(true);
     expect(waykeeperLabel(true)).toContain('Callsign: Waykeeper');

@@ -1111,7 +1111,16 @@ export class EnemyView implements PooledView {
     out.bottom = y - this.#headroom + this.#metaH;
     out.groundY = this.#flying ? this.#bodyY + FLY_LIFT_PX : this.#bodyY;
     out.halfW = this.#metaW / 2;
+    out.facing = this.#facing; // T730a
     return true;
+  }
+
+  /**
+   * Sets its sideways offset from its route's line (px), in place of its uid's (T730a: a split
+   * boss's parts walk side by side, gmawLook.ts `partLanePx`). Takes hold on its next move.
+   */
+  setLane(px: number): void {
+    this.#lane = px;
   }
 
   /** Whether it draws faint over a spot kept clear (a flyer over the armed rock; T501i). */

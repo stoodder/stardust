@@ -1,65 +1,48 @@
-// Big Glorp's puddle as rules and pixels (T705's minimal readable look; T730a polishes it, T740b
-// may replace it with `fx.puddle`; PuddleView applies them): pure, so they're unit-tested.
-// - **The pool:** a 2:1 ellipse at the puddle's reach (the sim's radius, snapped to the ring bake
-//   step), filled `green.3` at ~45% with a ragged (dithered) edge, a solid `green.4` rim, and three
-//   `white.1` glints (bubbles) inside, so it reads as a pool on the ground, not a range ring
-//   (dashed), the Bloom's frost disc (blue), or Underfoot's toothed snare (a ring). Not the `acid`
-//   ramp: its yellow-green is the Hollow's reserved hue (art-direction §2).
-// - **Drying:** whole while it lives, then the stepped fade over its last half second
-//   (`puddleAlpha`), so its end is no surprise; under reduced motion it holds whole and vanishes.
-import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
+// Big Glorp's puddle as rules (T705's minimal look; T730a switched it to T740b's `fx.puddle`;
+// PuddleView applies them): pure, so they're unit-tested.
+// - **The pool** (`fx.puddle`'s `pool_0`/`pool_1`, 64×32 for the spec's radius 1.0): a dithered
+//   `green.3` pool with a ragged `green.4` rim and white-glinting bubbles that rise and pop
+//   (POOL_STEP_TICKS a frame, offset per puddle so two never bubble in unison), at its centre in
+//   `decal`, so it reads as a pool on the ground, not a range ring (dashed), the Bloom's frost disc
+//   (blue), or Underfoot's toothed snare. A puddle of another radius scales the art
+//   (`puddleScale`). Not the `acid` ramp: its yellow-green is the Hollow's (art-direction §2).
+// - **Drying:** whole while it lives, then the sprite's `dry_0`–`dry_2` over its last half second
+//   (DRY_TICKS: the fill thinning, the rim breaking, the last drops), so its end is no surprise;
+//   under reduced motion it holds on `pool_0` and vanishes (`puddleFrame`).
+import type { SpriteId } from '../../content/sprites/index.ts';
 import { TICK_HZ } from '../../shared/time.ts';
-import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
-import { discImage, ringImage, snapRingRadius, type RingImage } from '../vfx/overlayPixels.ts';
 
-export const PUDDLE_FILL: ColorName = 'green.3';
-export const PUDDLE_RIM: ColorName = 'green.4';
-export const PUDDLE_GLINT: ColorName = 'white.1';
-export const PUDDLE_FILL_ALPHA = 0.45;
-/** The fade runs over the puddle's last DRY_TICKS (half a second), a step per quarter of it. */
+/** The sprite, and the radius (tiles) its art is drawn for. */
+export const PUDDLE_SPRITE: SpriteId = 'fx.puddle';
+export const PUDDLE_ART_RADIUS = 1;
+/** The drying runs over the puddle's last DRY_TICKS (half a second: the sprite's `dry` anim). */
 export const DRY_TICKS = TICK_HZ / 2;
+/** The bubbles' frame steps (3 fps, the sprite's `pool` anim). */
+export const POOL_STEP_TICKS = TICK_HZ / 3;
 
-/** The puddle's alpha with `ticksLeft` to go: whole, then the stepped fade (0: gone). */
-export function puddleAlpha(ticksLeft: number, reducedMotion: boolean): number {
-  if (ticksLeft <= 0) return 0;
-  if (reducedMotion || ticksLeft > DRY_TICKS) return 1;
-  const step = STEPPED_ALPHA.length - Math.ceil((ticksLeft / DRY_TICKS) * STEPPED_ALPHA.length);
-  return STEPPED_ALPHA[Math.min(STEPPED_ALPHA.length - 1, Math.max(0, step))]!;
-}
+export type PuddleFrame = 'pool_0' | 'pool_1' | 'dry_0' | 'dry_1' | 'dry_2';
 
-/** The texture key for a puddle of `radiusTiles` (one per snapped radius). */
-export function puddleKey(radiusTiles: number): string {
-  return `fx.puddle_${snapRingRadius(radiusTiles)}`;
-}
-
-/** The pool's pixels: the fill, its rim over it, and three glints; (cx, cy) on its centre. */
-export function puddleImage(radiusTiles: number): RingImage {
-  const disc = discImage(radiusTiles, PUDDLE_FILL, PUDDLE_FILL_ALPHA, true);
-  const rim = ringImage(radiusTiles, PUDDLE_RIM, false);
-  const { w, h, data } = disc.image;
-  const out = new Uint8ClampedArray(data);
-  // The rim has the disc's width; its height matches (no under-stroke), so pixels line up.
-  for (let i = 0; i < rim.image.data.length && i < out.length; i += 4) {
-    if (rim.image.data[i + 3] === 0) continue;
-    out[i] = rim.image.data[i]!;
-    out[i + 1] = rim.image.data[i + 1]!;
-    out[i + 2] = rim.image.data[i + 2]!;
-    out[i + 3] = 255;
+/**
+ * The puddle's frame with `ticksLeft` to go at sim `tick` (`uid` offsets its bubbling), or null
+ * once it's gone: the pool, then the three drying frames over its last DRY_TICKS (under reduced
+ * motion `pool_0` to the end).
+ */
+export function puddleFrame(
+  ticksLeft: number,
+  tick: number,
+  uid: number,
+  reducedMotion: boolean,
+): PuddleFrame | null {
+  if (ticksLeft <= 0) return null;
+  if (reducedMotion) return 'pool_0';
+  if (ticksLeft > DRY_TICKS) {
+    return Math.floor((tick + uid * 7) / POOL_STEP_TICKS) % 2 === 0 ? 'pool_0' : 'pool_1';
   }
-  const glint = rgbOf(PUDDLE_GLINT);
-  const { cx, cy } = disc;
-  const put = (x: number, y: number): void => {
-    if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) return;
-    const i = (y * w + x) * 4;
-    out[i] = glint.r;
-    out[i + 1] = glint.g;
-    out[i + 2] = glint.b;
-    out[i + 3] = 255;
-  };
-  const qx = Math.max(1, Math.round(cx / 2));
-  const qy = Math.max(1, Math.round(cy / 2));
-  put(cx - qx, cy - 1);
-  put(cx + 1, cy - qy);
-  put(cx + qx, cy + 1);
-  return { image: { w, h, data: out }, cx, cy };
+  const k = Math.min(2, Math.floor((1 - ticksLeft / DRY_TICKS) * 3));
+  return k <= 0 ? 'dry_0' : k === 1 ? 'dry_1' : 'dry_2';
+}
+
+/** The art's scale for a puddle of `radiusTiles` (1 at the spec's 1.0). */
+export function puddleScale(radiusTiles: number): number {
+  return radiusTiles > 0 ? radiusTiles / PUDDLE_ART_RADIUS : 1;
 }

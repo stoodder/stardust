@@ -94,6 +94,12 @@ async function prepare(page: Page): Promise<void> {
     .getByRole('listitem')
     .filter({ hasText: 'Jailbreak' });
   await row.getByRole('button', { name: /^Buy Jailbreak/ }).click();
+  // T714's confirmation: Jailbreak it waits 700 ms.
+  const go = page
+    .getByRole('dialog', { name: 'Jailbreak' })
+    .getByRole('button', { name: 'Jailbreak it' });
+  await expect(go).not.toHaveAttribute('aria-disabled', 'true');
+  await go.click();
   await expect(row).toContainText('Owned');
   const save = await page.evaluate(() => globalThis.__sd!.save());
   expect(save?.unlocks.jailbroken).toEqual(['rivet']);

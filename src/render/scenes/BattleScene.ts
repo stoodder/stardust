@@ -106,6 +106,7 @@ import { JamView } from '../views/JamView.ts'; // T702
 import { JamRingView } from '../views/JamRingView.ts'; // T707
 import { TakeoverView } from '../views/TakeoverView.ts'; // T707
 import { GatheringMawView } from '../views/GatheringMawView.ts'; // T708
+import { partLanePx } from '../views/gmawLook.ts'; // T730a
 import { HollowView } from '../views/HollowView.ts'; // T602
 import { RiftView } from '../views/RiftView.ts'; // T630b
 import { ShuttleView } from '../views/ShuttleView.ts'; // T630b
@@ -496,8 +497,8 @@ export class BattleScene extends Phaser.Scene {
       this.#towers.get(uid)?.flash(), // T730a: System Reboot's flash
     ); // T702
     this.#rings = new JamRingView(ctx, prefersReducedMotion); // T707
-    this.#takeover = new TakeoverView(ctx, map.markers, (c, r) => this.#liftPx(c, r)); // T707
-    this.#gmaw = new GatheringMawView(ctx, prefersReducedMotion); // T708
+    this.#takeover = new TakeoverView(ctx, map.markers, (c, r) => this.#liftPx(c, r), anchors, this.#fx, prefersReducedMotion); // T707; T730a
+    this.#gmaw = new GatheringMawView(ctx, prefersReducedMotion, anchors, this.#fx); // T708; T730a
     this.#hollow = new HollowView(ctx, prefersReducedMotion); // T602
     this.#blocker = new BlockerView(ctx, prefersReducedMotion); // T605
     this.#choir = new ChoirView(ctx, prefersReducedMotion, anchors); // T607
@@ -643,7 +644,7 @@ export class BattleScene extends Phaser.Scene {
       this.#jams.bind(bus, () => sim.state.towers), // T702
       this.#leapers.bind(bus, () => sim.state.enemies), // T704
       this.#rings.bind(bus), // T707
-      this.#takeover.bind(bus), // T707
+      this.#takeover.bind(bus, () => sim.state.enemies), // T707; T730a: the jettison's burst
       this.#gmaw.bind(bus), // T708
       this.#bloom.bind(bus), // T630a: Gravity Well's pull streak
       this.#shuttle.bind(bus, () => sim.state.tick), // T630b
@@ -769,7 +770,7 @@ export class BattleScene extends Phaser.Scene {
     this.#swarm.update(state.allies, state.enemies); // T604
     this.#leapers.update(state, dt); // T704
     this.#traps.update(state.zones, state.trapSprung); // T604
-    this.#puddles.update(state.zones); // T705
+    this.#puddles.update(state.zones, state.tick); // T705; T730a: the tick bubbles fx.puddle
     this.#revoked.update(dt); // T606
     this.#mind.update(dt, state.enemies);
     this.#marks.update(state.enemies);
@@ -1183,6 +1184,7 @@ export class BattleScene extends Phaser.Scene {
         v = this.#enemies.acquire(e.uid);
         v.show(e.uid, enemyBody(e.def.sprites.body, e.tags), e.def.layer === 'air', null, e.route);
         v.setBar(barMaxHp(e.def), e.def.shield?.hp ?? 0);
+        if (e.splitFrom !== null) v.setLane(partLanePx(e.uid)); // T730a: parts side by side
       }
       v.stamp = stamp;
       // A boss's shard sorts over the boss that shed it (D139 S4; views/shardLook.ts).

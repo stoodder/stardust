@@ -98,7 +98,9 @@ export function JailbreakConfirm({
           </button>
           <button
             type="button"
-            class={ready ? 'sd-button sd-button-primary' : 'sd-button sd-button-primary sd-choice-locked'}
+            class={
+              ready ? 'sd-button sd-button-primary' : 'sd-button sd-button-primary sd-choice-locked'
+            }
             aria-disabled={ready ? undefined : 'true'}
             onClick={() => {
               if (ready) onConfirm();

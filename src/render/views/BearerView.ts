@@ -1,16 +1,17 @@
-// Bearers and militia (design/maps.md § 5.4; T706's minimal readable views; T730a polishes them;
-// T740a drew `ally.bearer`, worn here, and `ally.militia`, which T730a swaps in for the pixels):
+// Bearers and militia (design/maps.md § 5.4; T706's minimal readable views, polished by T730a in
+// T740a's bodies):
 // - **A bearer** (A3M5's Brood Haulers carrying the vats' dead home; sim/bearers.ts) walks its
-//   route in its own body (`ally.bearer`, T740a: a Hauler in the allies' palette, its sack glowing
-//   cold violet), with its **burden** over the sack: a small cold-violet glow (`stardust.unsung`'s violet), breathing
-//   slowly (still under reduced motion), so a bearer never reads as the Hauler enemy it was. One
-//   still filing in (`dist` < 0) isn't drawn; one a Hollow unit is hushing freezes on its frame,
-//   its burden dimmed. A hushed or home bearer's view goes with it (the sweep). Depth-sorted in
-//   `world` like a refugee.
-// - **Militia** (A3M6's colonist posts under `convoy`, a flag-gated post): a small colonist at its
-//   post, drawn in pixels (a brass post plate, a steel coat, a rifle), with a brief tracer to its
-//   target as it fires (its cooldown reset since the last frame). Depth-sorted with the towers.
-import type * as Phaser from 'phaser';
+//   route in its own body (`ally.bearer`: a Hauler in the allies' palette, its sack the **burden**,
+//   glowing cold violet in the sprite itself, so a bearer never reads as the Hauler enemy it was;
+//   no extra glow is drawn). One still filing in (`dist` < 0) isn't drawn; one a Hollow unit is
+//   hushing freezes on its frame, dimmed. A hushed or home bearer's view goes with it (the sweep).
+//   Depth-sorted in `world` like a refugee.
+// - **Militia** (A3M6's colonist posts under `convoy`, a flag-gated post): a colonist behind
+//   lettuce crates at its post (`ally.militia`), breathing (`idle_<facing>`, held on its first
+//   frame under reduced motion), turning to its target, and on each shot (its cooldown reset since
+//   the last frame) its `fire_<facing>` kick and muzzle flash, then idle again, with a brief gold
+//   tracer from the muzzle to the target. Depth-sorted with the towers.
+import * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import type { Ally } from '../../sim/index.ts';
@@ -23,20 +24,23 @@ import { ViewPool, type PooledView } from './ViewPool.ts';
 /** A bearer's body (T740a's `ally.bearer`: a Hauler with its violet burden) and its palette. */
 export const BEARER_SPRITE: SpriteId = 'ally.bearer';
 export const BEARER_VARIANT = 'default';
-/** The burden's glow: where it sits over the sack (px from the ground point), its size, its cycle. */
-const BURDEN_DY = -13;
-const BURDEN_R = 2.5;
-const BURDEN_CYCLE_MS = 1800;
-/** A militia shot's tracer (ms). */
+/** A hushed bearer's alpha (frozen and dimmed under the hush). */
+const HELD_ALPHA = 0.7;
+/** The militia's body (T740a) and its anims. */
+export const MILITIA_SPRITE: SpriteId = 'ally.militia';
+/** A militia shot's tracer (ms), and its muzzle's offset from the post's ground point (px). */
 const TRACER_MS = 80;
+const MUZZLE_DX = 8;
+const MUZZLE_DY = -10;
+const FACINGS: readonly Facing[] = ['se', 'sw', 'ne', 'nw'];
 
 /** Packs a master palette colour as Phaser's 0xRRGGBB. */
 function hex(name: ColorName): number {
   const c = rgbOf(name);
   return (c.r << 16) | (c.g << 8) | c.b;
 }
-const BURDEN_CORE = hex('violet.4');
-const BURDEN_HALO = hex('violet.3');
+const TRACER = hex('gold.4');
+const TRACER_UNDER = hex('ink.0');
 
 const pos: Vec2 = { x: 0, y: 0 };
 const aim: Vec2 = { x: 0, y: 0 };
@@ -72,25 +76,21 @@ export interface BearerWorld {
   };
 }
 
-/** One bearer: its Hauler body and its burden. */
+/** One bearer: its Hauler body with its glowing burden. */
 export class BearerView implements PooledView {
   stamp = 0;
   readonly #ctx: ViewContext;
   readonly #body: Phaser.GameObjects.Sprite;
-  readonly #burden: Phaser.GameObjects.Graphics;
-  readonly #still: () => boolean;
   #uid = 0;
   #facing: Facing = 'sw';
   #x = Number.NaN;
   #y = Number.NaN;
   #held = false;
 
-  constructor(ctx: ViewContext, reducedMotion: () => boolean) {
+  constructor(ctx: ViewContext) {
     this.#ctx = ctx;
-    this.#still = reducedMotion;
     this.#body = ctx.scene.make.sprite({}, false);
-    this.#burden = ctx.scene.make.graphics({}, false);
-    ctx.layers.world.add([this.#body, this.#burden]);
+    ctx.layers.world.add(this.#body);
     this.release();
   }
 
@@ -110,15 +110,14 @@ export class BearerView implements PooledView {
   get held(): boolean {
     return this.#held;
   }
-  /** Whether its burden shows (the readable difference from a Hauler enemy). */
+  /** Whether its burden shows (the glowing sack in its body: the difference from a Hauler enemy). */
   get burden(): boolean {
-    return this.#burden.visible;
+    return this.#body.visible;
   }
 
-  sync(a: BearerAlly, nowMs: number): void {
+  sync(a: BearerAlly): void {
     if (a.dist < 0) {
       this.#body.setVisible(false);
-      this.#burden.setVisible(false);
       return;
     }
     const moved = a.x !== this.#x || a.y !== this.#y;
@@ -134,6 +133,7 @@ export class BearerView implements PooledView {
       this.#held = held;
       if (held) this.#body.anims.pause();
       else this.#body.anims.resume();
+      this.#body.setAlpha(held ? HELD_ALPHA : 1);
     }
     this.#body.setVisible(true);
     if (moved) {
@@ -142,27 +142,13 @@ export class BearerView implements PooledView {
       gridToScreen(a.x, a.y, this.#ctx.origin, pos);
       const depth = worldDepth(pos.y, 'enemy', this.#uid);
       this.#body.setPosition(pos.x, pos.y).setDepth(depth);
-      this.#burden.setPosition(pos.x, pos.y + BURDEN_DY).setDepth(depth + 1e-5);
     }
-    // The burden breathes (a slow sine), dimmed while a hush holds the bearer.
-    const breath = this.#still()
-      ? 0.5
-      : 0.5 + 0.5 * Math.sin((nowMs / BURDEN_CYCLE_MS) * Math.PI * 2);
-    const alpha = (held ? 0.35 : 0.7) + 0.3 * breath;
-    const g = this.#burden;
-    g.clear();
-    g.fillStyle(BURDEN_HALO, 0.35 * alpha);
-    g.fillCircle(0, 0, BURDEN_R + 1.5);
-    g.fillStyle(BURDEN_CORE, alpha);
-    g.fillCircle(0, 0, BURDEN_R);
-    g.setVisible(true);
   }
 
   release(): void {
     this.#uid = 0;
     this.#body.stop();
-    this.#body.setVisible(false);
-    this.#burden.setVisible(false);
+    this.#body.setAlpha(1).setVisible(false);
   }
 
   #play(): void {
@@ -174,38 +160,52 @@ export class BearerView implements PooledView {
   }
 }
 
-/** One militia post: the colonist in pixels, and its tracer. */
+/** One militia post: the colonist behind its crates (`ally.militia`), and its tracer. */
 export class MilitiaView implements PooledView {
   stamp = 0;
   readonly #ctx: ViewContext;
-  readonly #body: Phaser.GameObjects.Graphics;
+  readonly #still: () => boolean;
+  readonly #body: Phaser.GameObjects.Sprite;
   readonly #tracer: Phaser.GameObjects.Graphics;
+  /** Each facing's idle and fire anim keys and frame-0 anchor (FACINGS order), looked up once. */
+  readonly #idle: string[] = [];
+  readonly #fire: string[] = [];
+  readonly #anchors: { readonly x: number; readonly y: number }[] = [];
+  #facing = 0;
+  #x = 0;
+  #y = 0;
   #tracerUntil = 0;
   #cooldown = 0;
   shots = 0;
 
-  constructor(ctx: ViewContext) {
+  constructor(ctx: ViewContext, reducedMotion: () => boolean) {
     this.#ctx = ctx;
-    this.#body = ctx.scene.make.graphics({}, false);
+    this.#still = reducedMotion;
+    const { sprites } = ctx;
+    for (const f of FACINGS) {
+      this.#idle.push(sprites.anim(MILITIA_SPRITE, `idle_${f}`));
+      this.#fire.push(sprites.anim(MILITIA_SPRITE, `fire_${f}`));
+      this.#anchors.push(sprites.frameAnchor(MILITIA_SPRITE, `idle_${f}_0`));
+    }
+    this.#body = ctx.scene.make.sprite({}, false);
     this.#tracer = ctx.scene.make.graphics({}, false);
     ctx.layers.world.add(this.#body);
     ctx.layers.vfx.add(this.#tracer);
+    // A shot's kick ends back on its facing's idle.
+    this.#body.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.#play(false));
     this.release();
   }
 
   show(uid: number, x: number, y: number): void {
     gridToScreen(x, y, this.#ctx.origin, pos);
-    const g = this.#body;
-    g.clear();
-    // The post plate, the colonist (coat, head, a helmet's brim), the rifle across.
-    g.fillStyle(hex('brass.1'), 1).fillEllipse(0, 0, 14, 6);
-    g.fillStyle(hex('steel.1'), 1).fillRect(-3, -11, 6, 10);
-    g.fillStyle(hex('skin.b.3'), 1).fillRect(-2, -15, 4, 4);
-    g.fillStyle(hex('steel.3'), 1).fillRect(-3, -16, 6, 2);
-    g.fillStyle(hex('grime.3'), 1).fillRect(-6, -8, 12, 2);
-    g.setPosition(pos.x, pos.y)
+    this.#x = x;
+    this.#y = y;
+    this.#facing = 0;
+    this.#body
+      .setPosition(pos.x, pos.y)
       .setDepth(worldDepth(pos.y, 'tower', uid))
       .setVisible(true);
+    this.#play(false);
     this.#tracer.setVisible(false);
     this.#tracerUntil = 0;
     this.#cooldown = 0;
@@ -217,32 +217,52 @@ export class MilitiaView implements PooledView {
   }
 
   /**
-   * Draws a tracer when it fired since the last frame (its cooldown reset upward: frames can skip
-   * ticks) and fades it out.
+   * Turns to its target and, when it fired since the last frame (its cooldown reset upward: frames
+   * can skip ticks), plays its shot and draws a tracer, fading it out.
    */
   sync(a: BearerAlly, world: BearerWorld, nowMs: number): void {
     const fired = a.cooldownTicks > this.#cooldown;
     this.#cooldown = a.cooldownTicks;
-    if (fired && a.targetUid !== 0) {
-      const t = findEnemy(world, a.targetUid);
-      if (t !== null) {
-        gridToScreen(a.x, a.y, this.#ctx.origin, pos);
-        gridToScreen(t.x, t.y, this.#ctx.origin, aim);
-        const g = this.#tracer;
-        g.clear();
-        g.lineStyle(1, hex('gold.4'), 1);
-        g.lineBetween(pos.x + 5, pos.y - 9, aim.x, aim.y - 6);
-        g.setVisible(true);
-        this.#tracerUntil = nowMs + TRACER_MS;
-        this.shots++;
+    const t = a.targetUid === 0 ? null : findEnemy(world, a.targetUid);
+    if (t !== null) {
+      const f = FACINGS.indexOf(facingOf(t.x - this.#x, t.y - this.#y));
+      if (f !== this.#facing && f >= 0) {
+        this.#facing = f;
+        this.#play(false);
       }
+    }
+    if (fired && t !== null) {
+      this.#play(true);
+      gridToScreen(a.x, a.y, this.#ctx.origin, pos);
+      gridToScreen(t.x, t.y, this.#ctx.origin, aim);
+      // The barrel points right facing se or nw (the sprite's own and its mirror), else left.
+      const f = FACINGS[this.#facing];
+      const mx = pos.x + (f === 'se' || f === 'nw' ? MUZZLE_DX : -MUZZLE_DX);
+      const my = pos.y + MUZZLE_DY;
+      const g = this.#tracer;
+      g.clear();
+      g.lineStyle(3, TRACER_UNDER, 0.6).lineBetween(mx, my, aim.x, aim.y - 6);
+      g.lineStyle(1, TRACER, 1).lineBetween(mx, my, aim.x, aim.y - 6);
+      g.setVisible(true);
+      this.#tracerUntil = nowMs + TRACER_MS;
+      this.shots++;
     }
     if (this.#tracer.visible && nowMs >= this.#tracerUntil) this.#tracer.setVisible(false);
   }
 
   release(): void {
+    this.#body.stop();
     this.#body.setVisible(false);
     this.#tracer.setVisible(false);
+  }
+
+  /** Its idle for its facing (held still under reduced motion), or its shot once. */
+  #play(fire: boolean): void {
+    const i = this.#facing;
+    const a = this.#anchors[i]!; // i < FACINGS.length
+    this.#body.play(fire ? this.#fire[i]! : this.#idle[i]!, !fire); // same index
+    this.#body.setDisplayOrigin(a.x, a.y);
+    if (!fire && this.#still()) this.#body.anims.pause();
   }
 }
 
@@ -261,8 +281,8 @@ export class BearerViews {
   readonly #militia: ViewPool<MilitiaView>;
 
   constructor(ctx: ViewContext, reducedMotion: () => boolean = () => false) {
-    this.#bearers = new ViewPool(() => new BearerView(ctx, reducedMotion));
-    this.#militia = new ViewPool(() => new MilitiaView(ctx));
+    this.#bearers = new ViewPool(() => new BearerView(ctx));
+    this.#militia = new ViewPool(() => new MilitiaView(ctx, reducedMotion));
   }
 
   sync(world: BearerWorld, stamp: number, nowMs: number): void {
@@ -277,7 +297,7 @@ export class BearerViews {
           v.show(a.uid);
         }
         v.stamp = stamp;
-        v.sync(a, nowMs);
+        v.sync(a);
       } else if (a.kind === 'militia') {
         let v = this.#militia.get(a.uid);
         if (v === undefined) {

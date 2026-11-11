@@ -1,15 +1,15 @@
 // Big Glorp's puddles on the field (towers.md § 7, the Gloop Spitter's spec A; T705's minimal
-// readable view, polished by T730a; puddleLook.ts has the rules). While a `puddle` zone lives, a
-// pool of acid lies at its centre at its reach in `decal` (under the units), whole until its last
-// half second and then drying in steps. Read from the sim each frame, so it holds while paused.
-// The spit itself is ProjectileView's (`projectile.gloop_glob`, a lobbed glob). Allocation-free
-// per frame: a fixed pool of images set up once; each texture (snapped radius) registered once.
+// view, T730a in T740b's `fx.puddle`; puddleLook.ts has the rules). While a `puddle` zone lives, a
+// pool of acid lies at its centre at its reach in `decal` (under the units), bubbling until its
+// last half second and then drying through the sprite's frames. Read from the sim each frame, so it
+// holds while paused. The spit itself is ProjectileView's (`projectile.gloop_glob`, a lobbed glob),
+// its landing TransientFx's green splat (gloopLook.ts). Allocation-free per frame: a fixed pool of
+// images set up once, each frame's texture looked up once.
 import type * as Phaser from 'phaser';
 import type { DeepReadonly } from '../../shared/types.ts';
 import type { Zone } from '../../sim/index.ts';
 import { gridToScreen, type Vec2 } from '../iso.ts';
-import { imageToCanvas } from '../sprites/canvas.ts';
-import { puddleAlpha, puddleImage, puddleKey } from './puddleLook.ts';
+import { PUDDLE_SPRITE, puddleFrame, puddleScale, type PuddleFrame } from './puddleLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** The zone pool as this view reads it. */
@@ -20,6 +20,13 @@ export interface PuddleZones {
 
 /** Puddles drawn at once: four Gloops' worth with a fire-rate bonus (three each live at 3 s). */
 const MAX_PUDDLES = 16;
+const FRAMES: readonly PuddleFrame[] = ['pool_0', 'pool_1', 'dry_0', 'dry_1', 'dry_2'];
+const SPRITE = PUDDLE_SPRITE;
+
+interface FrameRef {
+  readonly texture: string;
+  readonly frame: string;
+}
 
 const pos: Vec2 = { x: 0, y: 0 };
 
@@ -27,6 +34,7 @@ export class PuddleView {
   readonly #ctx: ViewContext;
   readonly #reducedMotion: () => boolean;
   readonly #pools: Phaser.GameObjects.Image[] = [];
+  readonly #frames = new Map<PuddleFrame, FrameRef>();
   #shown = 0;
   #spawned = 0;
   /** The highest puddle uid seen (uids only grow, so a higher one is a new puddle). */
@@ -35,8 +43,15 @@ export class PuddleView {
   constructor(ctx: ViewContext, reducedMotion: () => boolean = () => false) {
     this.#ctx = ctx;
     this.#reducedMotion = reducedMotion;
+    for (const f of FRAMES) {
+      const ref = ctx.sprites.frame(SPRITE, f);
+      this.#frames.set(f, { texture: ref.texture, frame: ref.frame });
+    }
+    const a = ctx.sprites.meta(SPRITE).anchor;
     for (let i = 0; i < MAX_PUDDLES; i++) {
       const img = ctx.scene.make.image({}, false).setVisible(false);
+      const first = this.#frames.get('pool_0')!; // set above
+      img.setTexture(first.texture, first.frame).setDisplayOrigin(a.x, a.y);
       ctx.layers.decal.add(img);
       this.#pools.push(img);
     }
@@ -47,10 +62,11 @@ export class PuddleView {
     return { puddles: this.#shown, spawned: this.#spawned };
   }
 
-  /** Each frame: a pool on each live puddle. */
-  update(zones: PuddleZones): void {
+  /** Each frame: a pool on each live puddle, at sim tick `tick`. */
+  update(zones: PuddleZones, tick = 0): void {
     let n = 0;
     let top = this.#lastUid;
+    const still = this.#reducedMotion();
     for (let i = 0; i < zones.used && n < MAX_PUDDLES; i++) {
       const z = zones.items[i]!; // i < used ≤ items.length
       if (!z.alive || z.kind !== 'puddle') continue;
@@ -58,23 +74,15 @@ export class PuddleView {
         this.#spawned++;
         if (z.uid > top) top = z.uid;
       }
+      const name = puddleFrame(z.ticksLeft, tick, z.uid, still);
+      if (name === null) continue;
       const img = this.#pools[n++]!; // n < MAX_PUDDLES
-      const radius = Math.sqrt(z.radiusSq);
-      const key = puddleKey(radius);
-      if (!this.#ctx.scene.textures.exists(key)) {
-        const baked = puddleImage(radius);
-        this.#ctx.scene.textures.addCanvas(key, imageToCanvas(baked.image));
-        img.setTexture(key).setDisplayOrigin(baked.cx, baked.cy);
-      } else if (img.texture.key !== key) {
-        const frame = this.#ctx.scene.textures.getFrame(key);
-        img.setTexture(key).setDisplayOrigin((frame.width - 1) / 2, (frame.height - 1) / 2);
-      }
+      const f = this.#frames.get(name)!; // every PuddleFrame is in FRAMES
+      if (img.frame.name !== f.frame) img.setTexture(f.texture, f.frame);
+      const scale = puddleScale(Math.sqrt(z.radiusSq));
+      if (img.scaleX !== scale) img.setScale(scale);
       gridToScreen(z.x, z.y, this.#ctx.origin, pos);
-      const alpha = puddleAlpha(z.ticksLeft, this.#reducedMotion());
-      img
-        .setPosition(Math.round(pos.x), Math.round(pos.y))
-        .setAlpha(alpha)
-        .setVisible(alpha > 0);
+      img.setPosition(Math.round(pos.x), Math.round(pos.y)).setVisible(true);
     }
     this.#lastUid = top;
     this.#shown = n;

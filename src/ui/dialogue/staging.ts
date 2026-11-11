@@ -14,12 +14,7 @@ import { waykeeperLeadInMs } from '../screens/waykeeper.ts';
 
 /** A scene's staging, by kind. */
 export type StagingKind =
-  | 'rig9_feed'
-  | 'party'
-  | 'yield_log'
-  | 'mail'
-  | 'night_shift'
-  | 'waykeeper';
+  'rig9_feed' | 'party' | 'yield_log' | 'mail' | 'night_shift' | 'waykeeper';
 
 /** Which scenes are staged (a UI-owned table, keyed by scene id; K6). */
 export const SCENE_STAGING: Readonly<Record<string, StagingKind>> = {

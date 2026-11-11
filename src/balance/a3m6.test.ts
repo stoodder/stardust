@@ -130,6 +130,20 @@ describe('A3M6 balance', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
     }
   });
 
+  it('lets the Gathering Maw through without armor answers, even with no loss cap', () => {
+    // No-armor loses by W10 on the losses; with the cap lifted it lives to W16, and the Maw (armor
+    // 4, the void body Psionic would ignore) walks through its shells and bonks to the gate.
+    const raw = RAW_CONTENT.maps.a3_m06;
+    const uncapped = compileContent({
+      ...RAW_CONTENT,
+      maps: { ...RAW_CONTENT.maps, a3_m06: { ...raw, maxLostPct: 1 } },
+    });
+    const b = a3m6Beats(uncapped, 'noCounter:armor');
+    expect(b.at['MawSpawned']).toHaveLength(1);
+    expect(b.bossAtGate).toBe(true);
+    expect(b.outcome).toBe('lost');
+  });
+
   it('loses the moment a part of the Maw reaches the gate', () => {
     // Par, holding fire on every tower from the split: the parts walk the last bend untouched.
     const b = a3m6Beats(content, 'par', {

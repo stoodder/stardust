@@ -58,11 +58,9 @@ describe("Gerald's mail (T714)", () => {
   });
 
   it('keeps Act III copy: no exclamation points on the papers', () => {
-    const words = [
-      ...Object.values(PENSION_FORM).flat(2).map(String),
-      KEY_SLIP,
-      KIP_BATCH,
-    ].join(' ');
+    const words = [...Object.values(PENSION_FORM).flat(2).map(String), KEY_SLIP, KIP_BATCH].join(
+      ' ',
+    );
     expect(words).not.toContain('!');
   });
 });

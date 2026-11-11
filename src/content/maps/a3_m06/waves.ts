@@ -71,8 +71,8 @@ export const waves = defineWaves([
   { ...CALL, groups: [drones(3, 0), gunships(1, 'sky_e', 6), drones(2, 10)] },
   // W4 · Maws behind a group
   { ...CALL, groups: [maws(2, 'road', BEHIND, 5), motes(4, 'road', BEHIND + 1)] },
-  // W5 · Black Budget Operatives ×2 [T: cloaked armor; Lookout + Harpoon]
-  { ...NO_CALL, groups: [drones(3, 0), operatives(2, 5, 3), drones(2, 10)] },
+  // W5 · Black Budget Operatives ×3 [T: cloaked armor; Lookout + Harpoon]
+  { ...NO_CALL, groups: [drones(3, 0), operatives(3, 5, 5), drones(2, 16)] },
   // W6 · Rift Moths
   { ...CALL, groups: [moths(2, 'sky_w', 0), moths(3, 'sky_e', 4), drones(3, 8)] },
   // W7 · Maws behind a group, with a Mote screen

@@ -1,17 +1,23 @@
-// Everglow's jammers' look, minimal (T707; design/enemies.md § 4 and § 6; art-direction.md § 8's
-// `disabler` tell; T730a polishes it, T730b the crash site): pure rules, unit-tested, applied by
-// JamRingView (the Auditor's ring) and TakeoverView ("Shareholder Value").
+// Everglow's jammers' look (T707's minimal one, polished by T730a; design/enemies.md § 4 and § 6;
+// art-direction.md § 8's `disabler` tell; T730b the crash site): pure rules, unit-tested, applied
+// by JamRingView (the Auditor's ring) and TakeoverView ("Shareholder Value").
 // - **The Auditor's ring** (its tell): an `orange.3` ring over an `ink.0` under-stroke grows from
 //   the Auditor (`ringTiles`: from RING_START of its reach to all of it as the jams land), with
 //   a faint `orange.2` outline of the whole reach from the tell's first tick, so where it will
 //   land reads before it does. Still under reduced motion it holds the full outline and fills
 //   only by alpha (`ringAlpha`).
-// - **Hostile Takeover's laser** (its tell): a `red.3` beam with an `ink.0` under-stroke and a
-//   `red.4` core from the platform to each tower it picked, widening as the jam comes
-//   (`laserWidth`), and a reticle closing on each target (`reticlePx`: RETICLE_FROM_PX down to
-//   RETICLE_TO_PX), so the player sees which towers and when.
-// - **The hangar's door** (a launch's tell): an `orange.3` bar over the platform opening wide
-//   (`doorShare`) through its 1.5 s.
+// - **Hostile Takeover's laser** (its tell): from the dish's red lens (`lensOffset`: where the
+//   `aim` frame draws it, by facing) to each tower it picked, a `red.3` beam over a wide faint
+//   `red.2` glow and an `ink.0` under-stroke, with a `red.4` core (`white.1` in its last third, as
+//   the jam comes), widening as it comes (`laserWidth`: LASER_MIN_PX to LASER_MAX_PX); a flare on
+//   the lens; and four corner brackets closing on each target (`reticlePx`: RETICLE_FROM_PX down
+//   to RETICLE_TO_PX), so the player sees which towers and when.
+// - **The hangar's door** (a launch's tell): the sprite's `tell` opens the door on its rear flank
+//   (`doorOffset`: where, by facing); over it a hazard frame (`orange.3` over `ink.0`, blinking on
+//   the tell step; steady under reduced motion) and under it a launch gauge filling through its
+//   1.5 s (`doorShare`), DOOR_PX wide, so the launch reads big on the hull, below the floaters.
+// - **The jettison:** a burst (fx.explosion) and an `orange.3` ring the platform's size as its
+//   plates blow off (TransientFx).
 // - **The plates** (the jettison): each opened `crash_*` tile shows a `steel.1` slab with a
 //   `steel.3` edge and an `ink.0` outline, set askew per marker (`plateSkew`).
 import type { ColorName } from '../../content/palettes/master.ts';
@@ -26,12 +32,21 @@ export const PLATE_FILL: ColorName = 'steel.1';
 export const PLATE_EDGE: ColorName = 'steel.3';
 /** The ring's radius as its tell starts, as a share of its reach. */
 export const RING_START = 0.15;
-export const RETICLE_FROM_PX = 12;
-export const RETICLE_TO_PX = 5;
-export const LASER_MIN_PX = 1;
-export const LASER_MAX_PX = 3;
-/** The hangar door's full width (px) over the platform. */
-export const DOOR_PX = 18;
+export const RETICLE_FROM_PX = 14;
+export const RETICLE_TO_PX = 6;
+export const LASER_MIN_PX = 2;
+export const LASER_MAX_PX = 5;
+export const LASER_GLOW: ColorName = 'red.2';
+/** The launch gauge's full width (px) under the hangar door, and the door's frame (px square). */
+export const DOOR_PX = 20;
+export const DOOR_FRAME_PX = 14;
+/** The jettison's ring (tiles). */
+export const JETTISON_RING_TILES = 1.2;
+/** The `aim` lens's and the hangar door's offsets from the platform's anchor, facing se (px). */
+const LENS_SE = { dx: -11, dy: -39 } as const;
+const LENS_NE = { dx: 13, dy: -39 } as const;
+const DOOR_SE = { dx: -15, dy: -18 } as const;
+const DOOR_NE = { dx: 12, dy: -18 } as const;
 
 function clamp01(f: number): number {
   return f < 0 ? 0 : f > 1 ? 1 : f;
@@ -72,4 +87,35 @@ export function doorShare(left: number, tell: number): number {
 /** A plate's skew (px, −2..2) on marker `i`: each lies a little differently. */
 export function plateSkew(i: number): number {
   return ((i * 7 + 3) % 5) - 2;
+}
+
+/** Whether the laser's core runs white (its last third, as the jam comes). */
+export function laserHot(progress: number): boolean {
+  return progress >= 2 / 3;
+}
+
+/**
+ * Where a point on "Shareholder Value" sits from its anchor (px) facing `facing`: authored for
+ * `se` and `ne`, mirrored for `sw` and `nw` (the sprite's mirrors: x flips round the anchor, which
+ * is the frame's centre, one pixel over).
+ */
+function offsetFor(
+  se: { readonly dx: number; readonly dy: number },
+  ne: { readonly dx: number; readonly dy: number },
+  facing: string,
+  out: { dx: number; dy: number },
+): void {
+  const src = facing === 'ne' || facing === 'nw' ? ne : se;
+  out.dx = facing === 'sw' || facing === 'nw' ? -src.dx - 1 : src.dx;
+  out.dy = src.dy;
+}
+
+/** The dish's lens (the laser's source) from the platform's anchor, facing `facing`. */
+export function lensOffset(facing: string, out: { dx: number; dy: number }): void {
+  offsetFor(LENS_SE, LENS_NE, facing, out);
+}
+
+/** The hangar door's centre from the platform's anchor, facing `facing`. */
+export function doorOffset(facing: string, out: { dx: number; dy: number }): void {
+  offsetFor(DOOR_SE, DOOR_NE, facing, out);
 }

@@ -18,6 +18,9 @@
 // - Unravel motes (T630a): a Hollow unit comes apart into `fx.unravel_mote` sprites (a pool of
 //   MAX_MOTES, its `drift` twinkle started a frame apart per mote; held on its `m0` cross under
 //   reduced motion), drifting up and away, stepping down the alpha ladder over their life.
+// - Splats (T730a; gloopLook.ts): a Gloop glob's green splat on the ground where it lands (its own
+//   pool of SPLAT_POOL, stepping out), its splash's reach in a green ring, and green drops flung up
+//   (none under reduced motion).
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -48,6 +51,14 @@ import {
 } from '../vfx/overlayTextures.ts';
 import { FLOAT_ROW_PX, stackFloat, type FloatSlot } from '../vfx/floatStack.ts';
 import type { KeepClear } from '../vfx/keepClear.ts';
+import { imageToCanvas } from '../sprites/canvas.ts';
+import {
+  SPLAT_DROP_COLORS,
+  SPLAT_DROPS,
+  SPLAT_MS,
+  SPLAT_RING,
+  splatImage,
+} from './gloopLook.ts';
 import type { ViewContext } from './ViewContext.ts';
 
 /** Pool sizes: the oldest effect of a kind is reused when its pool is full. */
@@ -58,6 +69,12 @@ const MAX_FLOATS = 16;
 /** Floaters draw over the rest of the overlay layer (its other children stay at depth 0). */
 const FLOAT_DEPTH = 1;
 const MAX_BURSTS = 40;
+/** Gloop splats on the ground at once (T730a; the oldest is reused), and their texture's key. */
+const SPLAT_POOL = 12;
+const SPLAT_KEY = 'fx.gloop_splat';
+/** The splat's centre in its image (gloopLook.ts `splatImage`). */
+const SPLAT_OX = 8;
+const SPLAT_OY = 4;
 const MAX_DEBRIS = 128;
 /** Unravel motes in flight at once (a crowd of deaths reuses the oldest). */
 const MAX_MOTES = 48;
@@ -229,6 +246,8 @@ export class TransientFx {
   readonly #bursts: Burst[] = [];
   readonly #debris: Debris[] = [];
   #nextDebris = 0;
+  readonly #splats: Decal[] = [];
+  #nextSplat = 0;
   readonly #motes: Mote[] = [];
   #nextMote = 0;
   /** The debris's cosmetic RNG state (xorshift32): its own, so the sim's never moves. */
@@ -317,6 +336,15 @@ export class TransientFx {
       layers.vfx.add(sprite);
       this.#motes.push({ active: false, ms: 0, lifeMs: 0, x: 0, y: 0, vx: 0, vy: 0, sprite });
     }
+    if (!scene.textures.exists(SPLAT_KEY)) {
+      scene.textures.addCanvas(SPLAT_KEY, imageToCanvas(splatImage()));
+    }
+    for (let i = 0; i < SPLAT_POOL; i++) {
+      const img = scene.make.image({}, false).setTexture(SPLAT_KEY);
+      img.setDisplayOrigin(SPLAT_OX, SPLAT_OY).setVisible(false);
+      layers.decal.add(img);
+      this.#splats.push({ active: false, ms: 0, durationMs: SPLAT_MS, img });
+    }
     const px1 = debrisTexture(scene, 1);
     for (let i = 0; i < MAX_DEBRIS; i++) {
       const img = scene.make.image({}, false).setTexture(px1).setOrigin(0, 0).setVisible(false);
@@ -336,6 +364,27 @@ export class TransientFx {
       });
     }
   }
+
+  /**
+   * A Gloop glob's splat at grid (x, y) (T730a; gloopLook.ts): the green splat on the ground, the
+   * splash's reach `radiusTiles` in a green ring, and green drops flung up (none, reduced motion).
+   */
+  splat(x: number, y: number, radiusTiles: number): void {
+    const s = this.#splats[this.#nextSplat]!; // index < SPLAT_POOL
+    this.#nextSplat = (this.#nextSplat + 1) % SPLAT_POOL;
+    gridToScreen(x, y, this.ctx.origin, pos);
+    s.img.setPosition(Math.round(pos.x), Math.round(pos.y)).setAlpha(1).setVisible(true);
+    s.ms = 0;
+    s.active = true;
+    this.splatsShown++;
+    if (radiusTiles > 0) this.ring(x, y, radiusTiles, SPLAT_RING, SPLAT_MS, false);
+    if (!this.reducedMotion()) {
+      this.#spray(pos.x, pos.y - 2, SPLAT_DROPS, SPLAT_DROP_COLORS, 2);
+    }
+  }
+
+  /** Splats played since the view was made (the smoke flow's check). */
+  splatsShown = 0;
 
   /** Debris pixels in flight (the render-state hook's count). */
   get debrisLive(): number {
@@ -737,6 +786,16 @@ export class TransientFx {
         this.#syncFloat(f);
       }
     }
+    for (const s of this.#splats) {
+      if (!s.active) continue;
+      s.ms += dt;
+      if (s.ms >= s.durationMs) {
+        s.active = false;
+        s.img.setVisible(false);
+      } else {
+        s.img.setAlpha(fadeAlpha(s.ms / s.durationMs));
+      }
+    }
     for (const b of this.#bursts) {
       if (!b.active) continue;
       b.ms += dt;
@@ -815,6 +874,10 @@ export class TransientFx {
     for (const d of this.#debris) {
       d.active = false;
       d.img.setVisible(false);
+    }
+    for (const s of this.#splats) {
+      s.active = false;
+      s.img.setVisible(false);
     }
     for (const m of this.#motes) {
       m.active = false;

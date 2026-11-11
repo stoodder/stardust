@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { SCENES } from '../../content/dialogue/index.ts';
 import { NIGHT_SHIFT_SCENE, VISIT_SCENES } from '../../app/baseScenes.ts';
 import { stagingOf } from '../dialogue/staging.ts';
-import { BANNER_TEXT, isLaugh, nightShiftLabel, nightShiftLeadInMs, roomLight } from './nightShift.ts';
+import {
+  BANNER_TEXT,
+  isLaugh,
+  nightShiftLabel,
+  nightShiftLeadInMs,
+  roomLight,
+} from './nightShift.ts';
 
 const said = (speaker: string, expression = 'neutral') => ({ speaker, portrait: { expression } });
 

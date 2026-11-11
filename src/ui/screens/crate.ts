@@ -51,7 +51,9 @@ export function ranksText(owned: number, top: number): string {
 export function crateView(offer: CrateOfferLike | null, save: SaveData | null): CrateView | null {
   if (offer === null || save === null) return null;
   const owned: Readonly<Partial<Record<string, number>>> = save.upgrades;
-  const ids = Object.keys(offer.tuneUps) as UpgradeId[];
+  const ids = Object.keys(offer.tuneUps).filter((id): id is UpgradeId =>
+    Object.hasOwn(UPGRADES, id),
+  );
   if (ids.length > 0) {
     return {
       kind: 'tune_ups',

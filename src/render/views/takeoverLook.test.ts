@@ -3,6 +3,9 @@
 import { describe, expect, it } from 'vitest';
 import { rgbOf } from '../../content/palettes/master.ts';
 import {
+  doorOffset,
+  laserHot,
+  lensOffset,
   doorShare,
   LASER_COLOR,
   LASER_MAX_PX,
@@ -57,5 +60,29 @@ describe('takeoverLook (T707)', () => {
     const skews = [0, 1, 2, 3].map(plateSkew);
     expect(new Set(skews).size).toBeGreaterThan(1);
     for (const s of skews) expect(Math.abs(s)).toBeLessThanOrEqual(2);
+  });
+
+  it('T730a: the lens and the door sit where the sprite draws them, mirrored for sw and nw', () => {
+    const o = { dx: 0, dy: 0 };
+    lensOffset('se', o);
+    expect(o).toEqual({ dx: -11, dy: -39 });
+    lensOffset('sw', o);
+    expect(o).toEqual({ dx: 10, dy: -39 });
+    lensOffset('ne', o);
+    expect(o).toEqual({ dx: 13, dy: -39 });
+    lensOffset('nw', o);
+    expect(o).toEqual({ dx: -14, dy: -39 });
+    doorOffset('se', o);
+    const se = o.dx;
+    doorOffset('sw', o);
+    expect(o.dx).toBe(-se - 1);
+    expect(o.dy).toBeLessThan(0);
+  });
+
+  it('T730a: the laser runs hot (a white core) over its last third', () => {
+    expect(laserHot(0.5)).toBe(false);
+    expect(laserHot(0.7)).toBe(true);
+    expect(laserWidth(0)).toBe(LASER_MIN_PX);
+    expect(laserWidth(1)).toBe(LASER_MAX_PX);
   });
 });

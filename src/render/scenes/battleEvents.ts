@@ -26,6 +26,7 @@ import type { ChainFx } from '../views/ChainFx.ts';
 import type { CoreView } from '../views/CoreView.ts';
 import { presentationOfMap } from '../../story/presentation.ts';
 import { deathStyle } from '../views/deathLook.ts';
+import { splats } from '../views/gloopLook.ts'; // T730a
 import type { EnemyView } from '../views/EnemyView.ts';
 import type { FxView } from '../views/FxView.ts';
 import {
@@ -166,6 +167,8 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
    * draws a burst and a ring (a bomblet: its small pop, no ring).
    */
   const shells = new Map<number, number>();
+  /** The lobbed shells in `shells` that are Gloop globs (T730a): they splat green. */
+  const gloopShells = new Set<number>();
   /** Flak in flight, by uid → splash radius (tiles): it bursts at its flyer's height. */
   const flak = new Map<number, number>();
   /** The tower whose chain is being drawn (its uid-0 ProjectileHits are the arc's hops), or 0. */
@@ -467,6 +470,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
         // its shell and splash.
         if (e.kind === 'lobbed') {
           shells.set(e.uid, bombletSprites.has(e.sprite) ? -1 : e.radiusTiles);
+          if (splats(e.sprite)) gloopShells.add(e.uid); // T730a: a glob splats green
           views.projectiles
             .acquire(e.uid)
             .show(e.uid, { sprite: e.sprite, flightTicks: e.flightTicks });
@@ -512,6 +516,11 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
       const splash = shells.get(e.uid);
       if (splash === undefined) return;
       shells.delete(e.uid);
+      if (gloopShells.delete(e.uid)) {
+        // A Gloop glob (T730a): a green splat and ring, not the Thumper's orange explosion.
+        fx.splat(e.x, e.y, splash);
+        return;
+      }
       if (splash < 0) {
         // A bomblet: its own small pop, no ring (four rings would bury the shell's); capped per tile.
         fx.shellBurst(e.x, e.y, true);
@@ -587,6 +596,7 @@ export function bindBattleEvents(views: BattleEventViews): () => void {
   return () => {
     for (const off of offs) off();
     shells.clear();
+    gloopShells.clear();
     flak.clear();
     chainTower = 0;
     builtNow.clear();

@@ -8,13 +8,7 @@ import { directiveParts } from './quillList.ts';
 import './quillList.css';
 
 /** The card: the header line's words, then the entries. */
-export function QuillListCard({
-  header,
-  entries,
-}: {
-  header: string;
-  entries: readonly string[];
-}) {
+export function QuillListCard({ header, entries }: { header: string; entries: readonly string[] }) {
   return (
     <section class="ql chamfer" aria-label="QUILL's list" data-testid="quill-list">
       <p class="ql-header">{silkText(header)}</p>

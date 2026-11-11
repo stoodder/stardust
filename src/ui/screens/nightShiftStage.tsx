@@ -7,12 +7,7 @@ import { prefersReducedMotion } from '../motion.ts';
 import { dialogue } from '../dialogue/state.ts';
 import { useStageClock } from '../dialogue/Staging.tsx';
 import { Pixels } from './mailStage.tsx';
-import {
-  BANNER_TEXT,
-  nightShiftLabel,
-  nightShiftLeadInMs,
-  roomLight,
-} from './nightShift.ts';
+import { BANNER_TEXT, nightShiftLabel, nightShiftLeadInMs, roomLight } from './nightShift.ts';
 import './nightShift.css';
 
 /** The hanging lamp: cord, shade, bulb (c: cord, s: shade, l: lit bulb, h: hot core). */
@@ -26,7 +21,12 @@ const LAMP_ROWS = [
   '..lhhhl..',
   '...lll...',
 ];
-const LAMP = { c: 'var(--sd-ink-4)', s: 'var(--sd-steel-1)', l: 'var(--sd-gold-3)', h: 'var(--sd-gold-4)' };
+const LAMP = {
+  c: 'var(--sd-ink-4)',
+  s: 'var(--sd-steel-1)',
+  l: 'var(--sd-gold-3)',
+  h: 'var(--sd-gold-4)',
+};
 
 /** One sleeper under a blanket (b: blanket, d: its fold, k: a kid's head). */
 const SLEEPER_ROWS = ['..kk.......', '.kkkbbbbb..', 'bbbbbbbbbbb', 'dbbbdbbbbbd'];
@@ -56,8 +56,7 @@ export function NightShiftStage({ from }: { from: number }) {
   const ms = useStageClock(from, (t) => t < lead + 50);
   const view = dialogue.scene.value;
   const leading = ms < lead;
-  const light =
-    view === null ? 'cold' : roomLight(view.transcript, leading ? null : view.line);
+  const light = view === null ? 'cold' : roomLight(view.transcript, leading ? null : view.line);
   return (
     <div
       class={`ns ns-${light}${still ? ' still' : ''}`}
