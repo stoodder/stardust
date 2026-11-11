@@ -4,8 +4,8 @@
 // (REBOOT_IMMUNITY_SEC, twice a jam's own JAM_IMMUNITY_SEC). 40 s cooldown. It answers `jam` (rules.ts COUNTER_ANSWERS). Kept under
 // every C4 outcome, but locked in A3M5 under Rewrite (the map's `lockedAbilities`).
 //
-// Live since T702: sim/abilities/reboot.ts runs the `reboot` effect on the cast's tick. Icon: a
-// placeholder under its final id (T740b).
+// Live since T702: sim/abilities/reboot.ts runs the `reboot` effect on the cast's tick. Icon:
+// icons/m7_towers.ts (T740b: the power symbol on a dark screen).
 import { REBOOT_IMMUNITY_SEC } from '../rules.ts';
 import { defineAbility } from '../define.ts';
 

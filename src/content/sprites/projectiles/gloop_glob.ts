@@ -1,4 +1,4 @@
-// The Gloop Spitter's spit (design/towers.md § 7; T705's first pass, T740b may restyle it): a
+// The Gloop Spitter's spit (design/towers.md § 7; T705, kept by T740b): a
 // wobbling glob of acid in the Skitterkin accent greens (never the Hollow's acid hue), with a
 // white core like every projectile (art-direction §7), lobbed like the Thumper's shell. Two
 // frames: round, then squashed mid-wobble.

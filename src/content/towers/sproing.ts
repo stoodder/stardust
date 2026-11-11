@@ -8,8 +8,8 @@
 // As built (T704): the leapers are owner allies from the swarmling pool (kind 'leaper'), and
 // sim/leapers.ts runs them: the pick (flyers first, then Lookie Here's Marked, then a free unit,
 // then First), the leap, the bonk, and the Pin. `ratePerSec` is each leaper's own period, from the
-// tick it leaps. Links: Lookie Here (Lantern), Bounce Chorus (Hum Choir). Sprites: placeholders
-// under their final ids (T740b).
+// tick it leaps. Links: Lookie Here (Lantern), Bounce Chorus (Hum Choir). Sprites:
+// towers/sproing.ts (T740b: the mushroom pad and its leaper).
 import { defineTower } from '../define.ts';
 
 export const sproing = defineTower({

@@ -303,4 +303,3 @@ export const towerSproingHead = defineSprite({
   frames: headFrames,
   anims: headAnims,
 });
-

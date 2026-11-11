@@ -10,7 +10,7 @@
 // the splash's radius (1.0) and lands where each glob does, hit or miss (sim/puddles.ts: one
 // puddle per unit at a time, its acid under the tower's damage percent). Links: Acid Rain
 // (Thumper: +0.5 range here) and Sticky Flak (Skyhook: +10% fire rate here). Sprites: the tower's
-// are placeholders under their final ids (T740b); the glob is `projectile.gloop_glob`.
+// are sprites/towers/gloop.ts (T740b); the glob is `projectile.gloop_glob`.
 import { defineTower } from '../define.ts';
 
 export const gloop = defineTower({

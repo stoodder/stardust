@@ -108,12 +108,16 @@ function parSteps(): BuildStep[] {
     slot1(14, TAKEOVER_SEC + 45),
     { wave: 14, upgrade: CATWALK_W },
     { wave: 15, build: 'thumper', tile: VAT_E },
-    { wave: 15, upgrade: INTAKE_W },
-    { wave: 15, specialize: CONDUIT, spec: 'a' },
+    { wave: 15, upgrade: VAT_E },
+    { wave: 16, build: 'thumper', tile: SOUTH },
     { wave: 16, upgrade: VAT_E },
-    { wave: 16, upgrade: SLUICE_N },
+    { wave: 17, upgrade: SOUTH },
   ];
 }
+
+/** W14 under Rewrite: Suppressing Fire on the vats' row, then on the turn down to the core. */
+const SUPPRESS_1: GridPos = [12, 9];
+const SUPPRESS_2: GridPos = [14, 10];
 
 /** W14: System Reboot as Hostile Takeover's first jams land (phase 2's laser ends). */
 const TAKEOVER_SEC = 91;
@@ -125,10 +129,42 @@ const PAR: ScriptedBuild = {
   steps: parSteps(),
 };
 
+/**
+ * Par under C4 Rewrite (core-loop.md § 6.11): QUILL is offline, so System Reboot is locked and
+ * slot 1 is Suppressing Fire (inherited in A3M4's mail); the Choir carries the jam. Its casts go
+ * on the platform where the Reboots went: the vats' row as Hostile Takeover begins, and the turn
+ * down to the core in the jettison.
+ */
+const REWRITE_PAR: ScriptedBuild = {
+  loadout: PAR.loadout,
+  technicianAbility: 'suppressing_fire',
+  steps: PAR.steps.map((st) =>
+    'ability' in st && st.ability === 1
+      ? {
+          ...st,
+          target:
+            st === PAR.steps.find((x) => 'ability' in x && x.ability === 1)
+              ? SUPPRESS_1
+              : SUPPRESS_2,
+        }
+      : st,
+  ),
+};
+
 export const builds = defineBuilds({
   referenceProfile: REFERENCE_PROFILES.a3_m05,
-  referenceProfileByFlag: REFERENCE_VARIANTS.a3_m05.map((cell) => ({ ...cell })),
+  referenceProfileByFlag: REFERENCE_VARIANTS.a3_m05.map((cell) =>
+    'quill_choice' in cell.when ? { ...cell, parBuild: REWRITE_PAR } : { ...cell },
+  ),
   parBuild: PAR,
+  // Jam stays required (the no-jam build carries no answer), but the harness doesn't hold it to a
+  // loss: a jam is at most 4 s on a tower, and A3M5's jammers die in its kill zones before they
+  // tell twice, so the reference no-jam build ends below par rather than losing (D146 addendum;
+  // T760 retunes jamming to retire this). balance/a3m5Jam.test.ts pins what jam costs instead.
+  counterExemptions: [{ counter: 'jam', reason: "jam exam is W14's Takeover (D146)" }],
+  // The armor exam is the W11 Liability column (it walks the 39-tile road for ~80 s, so it lands
+  // in W12) and then the platform at W14.
+  noCounterLoseByWave: 14,
   flagVariants: { door_choice: ['convoy', 'warren'], quill_choice: ['keep', 'purge', 'rewrite'] },
   noCounterBuilds: {
     jam: {
@@ -142,9 +178,7 @@ export const builds = defineBuilds({
     },
     splash: {
       loadout: ['choir', 'harpoon', 'prism', 'bloom'],
-      steps: swapped(PAR.steps, { thumper: 'prism' }).filter(
-        (s) => !('specialize' in s),
-      ),
+      steps: swapped(PAR.steps, { thumper: 'prism' }).filter((s) => !('specialize' in s)),
     },
   },
   altBuilds: {
@@ -162,11 +196,11 @@ export const builds = defineBuilds({
         { wave: 2, upgrade: YARD_S },
         { wave: 3, build: 'sproing', tile: INTAKE_W },
         { wave: 4, build: 'rivet', tile: SLUICE_N },
-        { wave: 5, build: 'choir', tile: BEND },
-        { wave: 5, upgrade: SLUICE_S },
-        { wave: 6, build: 'thumper', tile: CONDUIT },
-        { wave: 6, upgrade: YARD_S },
-        { wave: 7, specialize: YARD_S, spec: 'b' },
+        { wave: 4, upgrade: YARD_S },
+        { wave: 5, specialize: YARD_S, spec: 'b' },
+        { wave: 6, build: 'choir', tile: BEND },
+        { wave: 6, upgrade: SLUICE_S },
+        { wave: 7, build: 'thumper', tile: CONDUIT },
         { wave: 8, upgrade: CONDUIT },
         { wave: 8, upgrade: BEND },
         { wave: 9, build: 'rivet', tile: CATWALK_E },
@@ -180,9 +214,10 @@ export const builds = defineBuilds({
         { wave: 13, upgrade: BEND },
         slot1(14, TAKEOVER_SEC),
         { wave: 14, upgrade: VAT_E },
-        { wave: 15, upgrade: YARD_N },
-        { wave: 15, upgrade: SLUICE_N },
-        { wave: 16, upgrade: VAT_E },
+        { wave: 15, upgrade: VAT_E },
+        { wave: 15, build: 'thumper', tile: SOUTH },
+        { wave: 16, upgrade: SOUTH },
+        { wave: 16, upgrade: YARD_N },
       ],
     },
     // Harpoon, Prism, Zapcoil, Stasis Bloom (act3.md § A3M5): the Zapcoils chain the clusters,
@@ -201,28 +236,29 @@ export const builds = defineBuilds({
         { wave: 3, build: 'bloom', tile: INTAKE_W },
         { wave: 4, build: 'harpoon', tile: SLUICE_N },
         { wave: 4, upgrade: YARD_N },
-        { wave: 5, build: 'zapcoil', tile: CATWALK_E },
-        { wave: 6, build: 'zapcoil', tile: CONDUIT },
-        { wave: 6, upgrade: CATWALK_E },
-        { wave: 7, build: 'harpoon', tile: BEND },
-        { wave: 7, upgrade: CONDUIT },
-        { wave: 8, upgrade: YARD_N },
-        { wave: 8, upgrade: YARD_S },
-        { wave: 9, upgrade: CATWALK_E },
+        { wave: 5, build: 'zapcoil', tile: CONDUIT },
+        { wave: 6, build: 'harpoon', tile: CATWALK_E },
+        { wave: 6, upgrade: CONDUIT },
+        { wave: 7, build: 'zapcoil', tile: BEND },
+        { wave: 7, upgrade: YARD_S },
+        { wave: 8, build: 'harpoon', tile: CATWALK_W },
+        { wave: 8, upgrade: CATWALK_E },
+        { wave: 9, upgrade: YARD_N },
         { wave: 9, upgrade: CONDUIT },
-        { wave: 10, upgrade: BEND },
+        { wave: 9, upgrade: BEND },
+        { wave: 10, upgrade: CATWALK_E },
         { wave: 10, upgrade: SLUICE_S },
-        { wave: 11, build: 'harpoon', tile: CATWALK_W },
         { wave: 11, upgrade: CATWALK_W },
         { wave: 12, upgrade: BEND },
-        { wave: 12, build: 'zapcoil', tile: VAT_E },
+        { wave: 12, upgrade: CATWALK_W },
+        { wave: 13, build: 'zapcoil', tile: VAT_E },
         { wave: 13, upgrade: VAT_E },
-        { wave: 13, upgrade: CATWALK_W },
         slot1(14, TAKEOVER_SEC),
         still(14, BOSS_STILL_SEC, [14, 10]),
         { wave: 14, upgrade: VAT_E },
         { wave: 15, specialize: CONDUIT, spec: 'a' },
-        { wave: 16, upgrade: INTAKE_W },
+        { wave: 16, build: 'zapcoil', tile: SOUTH },
+        { wave: 16, upgrade: SOUTH },
       ],
     },
   },

@@ -98,33 +98,17 @@ export const waves = defineWaves([
   // W10 · Hollow surge at the vats (one group bigger unless the feed is cut: SCRIPT_GROUPS)
   {
     ...NO_CALL,
-    groups: [
-      motes(7, 'vats', 0),
-      fractures(2, 'vats', 3),
-      motes(6, 'road', 3),
-    ],
+    groups: [motes(6, 'vats', 0), fractures(2, 'vats', 3), motes(6, 'road', 3)],
   },
   // W11 · Expediters + Liability
   {
     ...CALL,
-    groups: [
-      expediters(2, 0),
-      liabilities(4, 2),
-      associates(2, 3),
-      drones(6, 8),
-      drones(4, 16),
-    ],
+    groups: [expediters(2, 0), liabilities(4, 2), associates(2, 3), drones(6, 8), drones(4, 16)],
   },
   // W12 · mixed
   {
     ...NO_CALL,
-    groups: [
-      silencers(2, 0),
-      auditors(1, 4),
-      drones(4, 6),
-      motes(6, 'vats', 8),
-      associates(1, 10),
-    ],
+    groups: [silencers(2, 0), auditors(1, 4), drones(4, 6), motes(6, 'vats', 8), associates(1, 10)],
   },
   // W13 · the bearers' biggest group, and the Hollow behind it
   {
@@ -141,11 +125,7 @@ export const waves = defineWaves([
   // the jettison
   {
     ...NO_CALL,
-    groups: [
-      drones(3, 0),
-      g('shareholder_value', 1, 'road', BOSS_SEC),
-      auditors(1, BOSS_SEC + 6),
-    ],
+    groups: [drones(3, 0), g('shareholder_value', 1, 'road', BOSS_SEC), auditors(1, BOSS_SEC + 6)],
   },
   // W15 · the last bearers, and the Unsung swarm out of the opened vats behind them (its countdown
   // opens once the platform is driven off)
@@ -153,7 +133,8 @@ export const waves = defineWaves([
     ...NO_CALL,
     countdownAfter: 'bossEnded',
     groups: [
-      motes(5, 'hunt', HUNT_SEC, 0.5),
+      motes(6, 'hunt', HUNT_SEC, 0.5),
+      fractures(1, 'hunt', HUNT_SEC + 4),
       motes(8, 'vats', 2),
       fractures(2, 'vats', 6),
       g('maw', 1, 'vats', 10),
@@ -163,10 +144,10 @@ export const waves = defineWaves([
   {
     ...NO_CALL,
     groups: [
-      motes(12, 'vats', 0),
+      motes(10, 'vats', 0),
       fractures(3, 'vats', 4),
       g('maw', 1, 'vats', 8),
-      motes(8, 'road', 2),
+      motes(6, 'road', 2),
       silencers(2, 6),
     ],
   },
@@ -177,7 +158,7 @@ export const waves = defineWaves([
       motes(14, 'vats', 0),
       fractures(3, 'vats', 3),
       g('maw', 2, 'vats', 6, 3),
-      motes(12, 'road', 2),
+      motes(10, 'road', 2),
       fractures(2, 'road', 6),
       silencers(2, 4),
     ],

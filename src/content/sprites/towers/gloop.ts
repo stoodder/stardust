@@ -290,8 +290,10 @@ const LOOKS: readonly (readonly [string, Look])[] = [
 ];
 
 const headFrames: Record<string, string[]> = {};
-const headAnims: Record<string, { frames: string[]; fps: number; loop: false } | { mirrorOf: string }> =
-  {};
+const headAnims: Record<
+  string,
+  { frames: string[]; fps: number; loop: false } | { mirrorOf: string }
+> = {};
 for (const [suffix, look] of LOOKS) {
   for (const facing of ['se', 'ne'] as const) {
     headFrames[`${facing}${suffix}`] = gloopHead(facing, look, false);

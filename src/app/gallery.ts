@@ -163,6 +163,21 @@ function isDarkOnlyLook(b: BakedSprite, n: string): boolean {
   );
 }
 
+/** The jailbroken palette (T740b) and its base frames' twins (`t1_jb`; towers/base.ts). */
+const JAILBROKEN = 'everglow.jailbroken';
+const isJailbrokenFrame = (n: string): boolean => n.endsWith('_jb');
+
+/**
+ * A jailbroken Everglow tower (T740b) gets a row of its own in `everglow.jailbroken`, dark only: a
+ * base's `_jb` twins, or a head's first two frames (its still and its shot).
+ */
+function jailbrokenRows(b: BakedSprite, authored: readonly string[]): CardPlan['rows'] {
+  if (!b.variants.includes(JAILBROKEN)) return [];
+  const twins = b.frameNames.filter(isJailbrokenFrame);
+  const frames = twins.length > 0 ? twins : authored.slice(0, 2);
+  return [{ variant: JAILBROKEN, frames, light: false, glow: true }];
+}
+
 function cardPlan(b: BakedSprite): CardPlan {
   if (isScene(b)) {
     return {
@@ -174,10 +189,16 @@ function cardPlan(b: BakedSprite): CardPlan {
     return { rows: [{ variant: DEFAULT_VARIANT, frames, light: false, glow: true }] };
   }
   const looks = b.frameNames.filter(
-    (n) => !isMirrorFrame(b, n) && (isHollowLook(b, n) || isDarkOnlyLook(b, n)),
+    (n) =>
+      !isMirrorFrame(b, n) && !isJailbrokenFrame(n) && (isHollowLook(b, n) || isDarkOnlyLook(b, n)),
   );
   const authored = b.frameNames.filter(
-    (n) => !isMirrorFrame(b, n) && !isDeath(n) && !isHollowLook(b, n) && !isDarkOnlyLook(b, n),
+    (n) =>
+      !isMirrorFrame(b, n) &&
+      !isDeath(n) &&
+      !isJailbrokenFrame(n) &&
+      !isHollowLook(b, n) &&
+      !isDarkOnlyLook(b, n),
   );
   const mirrored = b.frameNames.filter((n) => isMirrorFrame(b, n));
   const deaths = b.frameNames.filter(isDeath);
@@ -198,6 +219,7 @@ function cardPlan(b: BakedSprite): CardPlan {
       ...(second === undefined
         ? []
         : [{ variant: second, frames: authored, light: false, glow: false }]),
+      ...jailbrokenRows(b, authored),
       ...b.variants
         .filter((v) => v.startsWith(`${DEFAULT_VARIANT}+`))
         .map((variant) => ({

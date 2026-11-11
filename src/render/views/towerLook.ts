@@ -22,13 +22,7 @@ import type { ColorName } from '../../content/palettes/master.ts';
 import type { SpriteId } from '../../content/sprites/index.ts';
 import { DEFAULT_VARIANT } from '../sprites/bake.ts';
 import { STEPPED_ALPHA } from '../vfx/fxTiming.ts';
-import {
-  hasAnim,
-  hasFrame,
-  hasPaletteVariant,
-  idleAnim,
-  type SpecLetter,
-} from './spriteInfo.ts';
+import { hasAnim, hasFrame, hasPaletteVariant, idleAnim, type SpecLetter } from './spriteInfo.ts';
 
 /**
  * The voice the battle's towers sing in, from the run's story flags (`SimConfig.scriptFlags`):
@@ -133,7 +127,9 @@ export function jailbreakLook(
     return PLAIN;
   }
   const head =
-    headId !== null && hasPaletteVariant(headId, JAILBROKEN_PALETTE) ? JAILBROKEN_PALETTE : DEFAULT_VARIANT;
+    headId !== null && hasPaletteVariant(headId, JAILBROKEN_PALETTE)
+      ? JAILBROKEN_PALETTE
+      : DEFAULT_VARIANT;
   return { base: JAILBROKEN_PALETTE, head, frameSuffix: JAILBROKEN_FRAME_SUFFIX };
 }
 

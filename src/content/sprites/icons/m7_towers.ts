@@ -16,7 +16,16 @@ import { ICON, iconGrid, rect } from './iconGen.ts';
 import { warrenPlinth } from './m6_towers.ts';
 
 function gloopIcon(): string[] {
-  const body = skitterBody({ w: ICON, h: ICON, cx: 7, cy: 6.5, rx: 6.8, ry: 5, facing: 'se', belly: 0.5 });
+  const body = skitterBody({
+    w: ICON,
+    h: ICON,
+    cx: 7,
+    cy: 6.5,
+    rx: 6.8,
+    ry: 5,
+    facing: 'se',
+    belly: 0.5,
+  });
   const g = body;
   // The back bands: two rows of steel-rimmed plates over its crown.
   for (const [y, from, to, odd] of [

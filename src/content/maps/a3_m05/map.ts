@@ -165,7 +165,11 @@ export const map = defineMapLayout({
       when: { not: { objectiveDone: 'cut_the_feed' } },
       actions: [{ spawnWave: 'feed_surge' }],
     },
-    { id: 'feed_cut', on: { objectiveCompleted: 'cut_the_feed' }, actions: [{ cue: 'a3_m05_cue_feed_cut' }] },
+    {
+      id: 'feed_cut',
+      on: { objectiveCompleted: 'cut_the_feed' },
+      actions: [{ cue: 'a3_m05_cue_feed_cut' }],
+    },
     // Sterling, by remote: his platform's three phases (each cue plays the tick after its phase
     // begins; T707's hooks).
     { id: 'sv_spawn', on: { bossPhase: 1 }, actions: [{ cue: 'a3_m05_cue_sv_spawn' }] },
