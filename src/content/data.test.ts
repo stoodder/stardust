@@ -122,6 +122,9 @@ describe('towers', () => {
       'burrow',
       'choir',
       'bloom',
+      // M7's (T700a stubs; src/sim/m7seams.test.ts).
+      'gloop',
+      'sproing',
     ]);
     expect([rivet, thumper, sprinkler].map((t) => t.name)).toEqual([
       'Rivet',
@@ -325,6 +328,16 @@ describe('enemies', () => {
       'undertow',
       'compliance',
       'expediter',
+      // M7's (T700a stubs; src/sim/m7seams.test.ts).
+      'silencer',
+      'associate',
+      'liability',
+      'gunship',
+      'blackbudget',
+      'auditor',
+      'shareholder_value',
+      'gathering_maw',
+      'gathering_maw_part',
     ]);
     expect(
       Object.values(content.enemies)

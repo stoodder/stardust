@@ -12,7 +12,8 @@ import { LEAK_LEAD_WAVES, MAX_WAVE_LOSS_PCT } from './rules.ts';
 
 /**
  * One run: a build label ('par', 'none', 'alwaysCallEarly', 'parNoAbilities', 'spareFleeing',
- * 'holdFireWhile:quiet_wave', 'companion:x', 'flag:x=v', 'alt:x', 'noCounter:x', 'guard:x'), run on the map's
+ * 'holdFireWhile:quiet_wave', 'companion:x', 'flag:x=v', 'flags:x=v,y=w', 'alt:x', 'noCounter:x',
+ * 'guard:x'), run on the map's
  * reference profile on Standard unless a `@<meta>` suffix says otherwise ('par@story',
  * 'noCounter:armor@fullCatalog', 'par@rnd:orbital_strike_mk2'; `splitMeta`).
  */
@@ -118,10 +119,20 @@ export const flagVariantLabel = (flag: string, value: FlagValue): string =>
   `flag:${flag}=${String(value)}`;
 
 /**
+ * The run label of par under several story-flag values at once (a C4 × door cell, say):
+ * 'flags:door_choice=warren,quill_choice=purge', in the order given.
+ */
+export const flagCombinationLabel = (flags: Readonly<Record<string, FlagValue>>): string =>
+  `flags:${Object.entries(flags)
+    .map(([f, v]) => `${f}=${String(v)}`)
+    .join(',')}`;
+
+/**
  * The story flags a run sets (`SimConfig.scriptFlags`): for a 'flag:x=v' label, x set to the
- * `flagVariants` value that reads v; none for other labels, except that a flag gating a refugee
- * group takes its first `flagVariants` value (sim/escort.ts `gatedFlagDefaults`: A3M3's door;
- * T605). Null for a 'flag:' label naming a value the map doesn't list.
+ * `flagVariants` value that reads v; for a 'flags:x=v,y=w' label, each of them so; none for other
+ * labels, except that a flag gating a refugee group takes its first `flagVariants` value
+ * (sim/escort.ts `gatedFlagDefaults`: A3M3's door; T605). Null for a 'flag:' or 'flags:' label
+ * naming a flag twice or a value the map doesn't list.
  */
 export function flagsFor<K extends IdSpace>(
   label: string,
@@ -129,11 +140,27 @@ export function flagsFor<K extends IdSpace>(
 ): ScriptFlags | null {
   const build = splitMeta(label).build;
   // A flag that gates a refugee group (A3M3's door) takes its first variant (T605).
-  if (!build.startsWith('flag:')) return gatedFlagDefaults(map);
+  if (!build.startsWith('flag:') && !build.startsWith('flags:')) return gatedFlagDefaults(map);
+  const pairs = build.slice(build.indexOf(':') + 1).split(',');
+  if (build.startsWith('flag:') && pairs.length !== 1) return null;
+  const set: Partial<Record<keyof ScriptFlags, FlagValue>> = {};
+  for (const pair of pairs) {
+    const value = listedFlagValue(map, pair);
+    if (value === null || set[value.flag] !== undefined) return null;
+    set[value.flag] = value.value;
+  }
+  return gatedFlagDefaults(map, set);
+}
+
+/** The `flagVariants` entry an 'x=v' pair names (x a script flag, v one of its values), or null. */
+function listedFlagValue<K extends IdSpace>(
+  map: CompiledMapDef<K>,
+  pair: string,
+): { readonly flag: keyof ScriptFlags; readonly value: FlagValue } | null {
   for (const [flag, values] of Object.entries(map.builds.flagVariants)) {
     if (!isScriptFlagId(flag)) continue; // the type allows only script flags
     for (const value of values) {
-      if (flagVariantLabel(flag, value) === build) return gatedFlagDefaults(map, { [flag]: value });
+      if (`${flag}=${String(value)}` === pair) return { flag, value };
     }
   }
   return null;

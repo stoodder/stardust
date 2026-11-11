@@ -5,6 +5,7 @@ import { FLAG_VARIANT_CONTENT, QUIET_WAVE_CONTENT } from './__fixtures__/fireCon
 import { PLAIN_CONTENT, fakeResult, fakeRun } from './__fixtures__/harness.ts';
 import {
   VACUOUS_NOTE,
+  flagCombinationLabel,
   flagVariantLabel,
   flagsFor,
   median,
@@ -323,6 +324,29 @@ describe('balance checks', () => {
     expect(flagsFor('flag:spared_quiet_wave=maybe', fx)).toBeNull();
     expect(flagsFor('flag:door_choice=convoy', fx)).toBeNull();
     expect(flagsFor('par', fx)).toEqual({});
+  });
+
+  it("a 'flags:' label sets several flag values at once, each one the map lists", () => {
+    const fx0 = FLAG_VARIANT_CONTENT.maps.fx_map;
+    const fx = {
+      ...fx0,
+      builds: {
+        ...fx0.builds,
+        flagVariants: { ...fx0.builds.flagVariants, door_choice: ['convoy', 'warren'] },
+      },
+    };
+    const label = flagCombinationLabel({ spared_quiet_wave: true, door_choice: 'warren' });
+    expect(label).toBe('flags:spared_quiet_wave=true,door_choice=warren');
+    expect(flagsFor(label, fx)).toEqual({ spared_quiet_wave: true, door_choice: 'warren' });
+    expect(flagsFor(`${label}@story`, fx)).toEqual({
+      spared_quiet_wave: true,
+      door_choice: 'warren',
+    });
+    expect(flagsFor('flags:door_choice=convoy', fx)).toEqual({ door_choice: 'convoy' });
+    // A value the map doesn't list, a flag named twice, or several values under 'flag:': none.
+    expect(flagsFor('flags:spared_quiet_wave=true,door_choice=keep', fx)).toBeNull();
+    expect(flagsFor('flags:door_choice=convoy,door_choice=warren', fx)).toBeNull();
+    expect(flagsFor('flag:spared_quiet_wave=true,door_choice=warren', fx)).toBeNull();
   });
 
   it('refuses map features it cannot check yet', () => {

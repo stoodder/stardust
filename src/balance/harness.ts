@@ -4,7 +4,7 @@
 import type { CompiledBuild, CompiledContent, CompiledMapDef } from '../content/compiled.ts';
 import type { IdSpace, LiveIds, WaveTag } from '../content/types.ts';
 import { LIVE_CATALOG, type MetaCatalog } from '../meta/index.ts';
-import { runHeadless } from '../sim/index.ts';
+import { runHeadless, type ScriptFlags } from '../sim/index.ts';
 import {
   describeRun,
   flagsFor,
@@ -27,6 +27,7 @@ import { policyBuild, withHoldFireWhile, withoutAbilityCasts } from './policies.
 import { NOT_CHECKED, refusedFeatures } from './refusals.ts';
 import {
   fullCatalogProfile,
+  parBuildFor,
   referenceRunProfile,
   rndPickProfile,
   rndPicks,
@@ -96,9 +97,13 @@ export function buildFor<K extends IdSpace>(
   content: CompiledContent<K>,
 ): CompiledBuild<K> | null {
   const b = map.builds;
+  // Par under the run's story flags: a `referenceProfileByFlag` cell may give its own (T700a).
+  const flags = flagsFor(label, map);
+  if (flags === null) return null; // a 'flag:'/'flags:' label naming a value the map doesn't list
+  const par = parBuildFor(map, flags);
   label = splitMeta(label).build;
-  if (label === 'par') return b.parBuild;
-  if (label === 'parNoAbilities') return withoutAbilityCasts(b.parBuild);
+  if (label === 'par') return par;
+  if (label === 'parNoAbilities') return withoutAbilityCasts(par);
   if (label === 'none' || label === 'alwaysCallEarly' || label === 'spareFleeing') {
     return policyBuild(label, map, content.towers);
   }
@@ -108,19 +113,19 @@ export function buildFor<K extends IdSpace>(
   // field (the Quiet Wave; each fleeing group), on a map whose waves send that tag.
   if (kind === 'holdFireWhile') {
     const tag = mapTag(map, name);
-    return tag === null ? null : withHoldFireWhile(b.parBuild, tag);
+    return tag === null ? null : withHoldFireWhile(par, tag);
   }
-  // #14: par under one story-flag value (flagsFor gives the flags).
-  if (kind === 'flag') return flagsFor(label, map) === null ? null : b.parBuild;
+  // #14: par under one story-flag value, or several at once (flagsFor gives the flags).
+  if (kind === 'flag' || kind === 'flags') return par;
   if (kind === 'companion') {
     // #15: par with one companion from the map's pick list.
     const pick = map.companion !== null && 'pick' in map.companion ? map.companion.pick : [];
     const id = pick.find((c) => c === name);
-    return id === undefined ? null : { ...b.parBuild, companion: id };
+    return id === undefined ? null : { ...par, companion: id };
   }
   // #14's revocation variants (T606): par with the cue forced onto one class it could take.
   if (kind === 'revoke') {
-    return revocableClasses(map, b.parBuild, content).some((t) => t === name) ? b.parBuild : null;
+    return revocableClasses(map, par, content).some((t) => t === name) ? par : null;
   }
   if (kind === 'noCounter') {
     const entry = Object.entries(b.noCounterBuilds).find(([c]) => c === name);
@@ -162,23 +167,31 @@ export function runMap<K extends IdSpace = LiveIds>(
   const every = range(n);
   const few = range(Math.min(FEW_SEED_COUNT, n));
   const catalog = opts.catalog ?? LIVE_CATALOG;
-  // The run profiles (conventions.md § Balance sims, Profiles), each built once; a profile the
+  // The run profiles (conventions.md § Balance sims, Profiles), each built once per meta and story
+  // flags (a `referenceProfileByFlag` cell gives its own reference profile, T700a); a profile the
   // mapping refuses fails every run that needs it, with the reason.
-  const profiles = new Map<RunMeta, RunProfile<K> | string>();
-  const profileFor = (meta: RunMeta): RunProfile<K> | string => {
-    let p = profiles.get(meta);
+  const profiles = new Map<string, RunProfile<K> | string>();
+  const profileFor = (meta: RunMeta, flags: ScriptFlags = {}): RunProfile<K> | string => {
+    const key = `${meta}|${JSON.stringify(Object.entries(flags).toSorted(([a], [b]) => (a < b ? -1 : 1)))}`;
+    let p = profiles.get(key);
     if (p === undefined) {
       try {
         p =
           meta === 'fullCatalog'
             ? fullCatalogProfile(map, content, catalog)
             : meta.startsWith('rnd:')
-              ? rndPickProfile(map, content, meta.slice(4), catalog)
-              : referenceRunProfile(map, content, meta === 'story' ? 'story' : 'standard', catalog);
+              ? rndPickProfile(map, content, meta.slice(4), catalog, flags)
+              : referenceRunProfile(
+                  map,
+                  content,
+                  meta === 'story' ? 'story' : 'standard',
+                  catalog,
+                  flags,
+                );
       } catch (err) {
         p = `${meta} profile: ${err instanceof Error ? err.message : String(err)}`;
       }
-      profiles.set(meta, p);
+      profiles.set(key, p);
     }
     return p;
   };
@@ -204,7 +217,8 @@ export function runMap<K extends IdSpace = LiveIds>(
   const runs = new Map<string, RunRecord>();
   const execute = (req: RunRequest): RunRecord => {
     const build = buildFor(req.build, map, content);
-    const profile = profileFor(splitMeta(req.build).meta);
+    const flags = flagsFor(req.build, map) ?? {};
+    const profile = profileFor(splitMeta(req.build).meta, flags);
     const base = { build: req.build, seed: req.seed, repeat: req.repeat === true };
     if (build === null) {
       return { ...base, error: `unknown build '${req.build}'`, result: null, marginPct: 0, ms: 0 };
@@ -214,7 +228,6 @@ export function runMap<K extends IdSpace = LiveIds>(
     }
     const start = cpuNow();
     try {
-      const flags = flagsFor(req.build, map) ?? {};
       const plain = runConfig(content, map, build, profile, req.seed, flags);
       // A revocation variant forces the cue's class (T606; balance/revokeChecks.ts).
       const forced = revocableClasses(map, build, content).find(

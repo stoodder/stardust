@@ -182,11 +182,11 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T600a rows; D141)', ()
     });
   });
 
-  it('run the Act III towers (none waits for its task now)', () => {
+  it('run the Act III towers (none of M6’s waits for its task now)', () => {
     // The Scuttle Den and Underfoot run since T604 (sim/swarmlings.test.ts), the Hum Choir since
     // T607 (sim/systems/auras.test.ts, sim/lull.test.ts), the Stasis Bloom since T608
-    // (sim/bloom.test.ts).
-    expect(STUB_TOWER_TASKS).toEqual({});
+    // (sim/bloom.test.ts). M7's stubs wait (sim/m7seams.test.ts).
+    for (const id of ['burrow', 'choir', 'bloom']) expect(STUB_TOWER_TASKS).not.toHaveProperty(id);
     expect(towerRefusal(TOWERS.burrow)).toBeNull();
     expect(towerRefusal(TOWERS.choir)).toBeNull();
     expect(towerRefusal(TOWERS.bloom)).toBeNull();

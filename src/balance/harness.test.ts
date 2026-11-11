@@ -248,6 +248,31 @@ describe('balance harness', () => {
     expect(buildFor('holdFireWhile:medal_exempt', quietMap, QUIET_WAVE_CONTENT)).toBeNull();
   });
 
+  it("par under story flags is the matching referenceProfileByFlag cell's, else the map's", () => {
+    const fx = FLAG_VARIANT_CONTENT.maps.fx_map;
+    const cellPar = { ...fx.builds.parBuild, callEarly: true };
+    const map = {
+      ...fx,
+      builds: {
+        ...fx.builds,
+        referenceProfileByFlag: [
+          {
+            when: { spared_quiet_wave: true },
+            profile: fx.builds.referenceProfile,
+            parBuild: cellPar,
+          },
+        ],
+      },
+    };
+    expect(buildFor('flag:spared_quiet_wave=true', map, FLAG_VARIANT_CONTENT)).toBe(cellPar);
+    expect(buildFor('flags:spared_quiet_wave=true', map, FLAG_VARIANT_CONTENT)).toBe(cellPar);
+    expect(buildFor('flag:spared_quiet_wave=false', map, FLAG_VARIANT_CONTENT)).toBe(
+      fx.builds.parBuild,
+    );
+    expect(buildFor('par', map, FLAG_VARIANT_CONTENT)).toBe(fx.builds.parBuild);
+    expect(buildFor('flags:spared_quiet_wave=maybe', map, FLAG_VARIANT_CONTENT)).toBeNull();
+  });
+
   it('#3 re-baselines the first map after a boss against its own band (T412)', () => {
     // The live A1M5 (the Matriarch) or A1M4 (no boss), then A1M1 standing in as the next map.
     const a1m1 = LIVE.maps.a1_m01;

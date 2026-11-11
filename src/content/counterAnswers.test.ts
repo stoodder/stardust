@@ -250,7 +250,15 @@ describe('placement-aware answers (T313)', () => {
 
   it('counts a loadout tower the build never places, and a tower with no known range', () => {
     expect(air([], ['skyhook'])).toEqual(['skyhook']);
-    expect(air([at('sproing', [5, 9])])).toEqual(['sproing']); // no range data: not judged
+    // No range data (a tower the range function doesn't know): not judged.
+    const noRange = answersCarried(
+      COUNTER_ANSWERS.air,
+      answerScope('air', 1, [puffwing]),
+      towersReached([], [at('sproing', [5, 9])]),
+      [],
+      () => null,
+    );
+    expect(noRange).toEqual(['sproing']);
     // A step with no placement isn't judged either.
     expect(air([{ op: 'build', tower: 'rivet', tile: 'r' }])).toEqual(['rivet']);
   });

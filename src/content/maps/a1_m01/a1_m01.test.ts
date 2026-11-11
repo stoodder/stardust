@@ -95,6 +95,7 @@ describe('A1M1 · Orientation Day', () => {
         kind: 'bricks',
         post: 'bricks_post',
         tile: [5, 8],
+        when: null,
         attack: {
           type: 'kinetic',
           damage: 8,
