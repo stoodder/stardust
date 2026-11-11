@@ -36,7 +36,7 @@ describe('A3M6 under ±0.2 s shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () =
     (_name, _way, patches) => {
       const c = shiftedContent('a3_m06', patches);
       const b = a3m6Beats(c, 'par');
-      expectBeats(b, 'par');
+      expect(beatProblems(b, 'par')).toEqual([]);
       const pct = (b.evacuated / REFUGEES) * 100;
       expect(pct).toBeGreaterThanOrEqual(50);
       expect(pct).toBeLessThanOrEqual(70);

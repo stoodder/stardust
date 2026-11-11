@@ -68,7 +68,7 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await page.evaluate(() => globalThis.__sd!.fastForward(30));
   await nextFrames(page);
   look = await page.evaluate(() => globalThis.__sd!.render()!.jams);
-  expect(look).toMatchObject({ tells: 0, jammed: 1, jamsSeen: 1 });
+  expect(look).toMatchObject({ tells: 0, jammed: 1, jamsSeen: 1, drawnJammed: 1 });
   await shot(page, 'jam', 2, 'jammed');
 
   // System Reboot (slot 1, no target): the jam clears at once, with a teal pop on the Choir.
@@ -84,6 +84,7 @@ test('jam: the tendril tell, the Jammed Choir, and System Reboot clearing it', a
   await nextFrames(page);
   look = await page.evaluate(() => globalThis.__sd!.render()!.jams);
   expect(look).toMatchObject({ jammed: 0, reboots: 1 });
-  expect(look.columns).toBeGreaterThan(0); // T730a: the teal power-on column through the Choir
+  expect(look.columns).toBeGreaterThan(0);
+  expect(look.drawnJammed).toBe(0); // its colours back // T730a: the teal power-on column through the Choir
   await shot(page, 'jam', 3, 'rebooted');
 });

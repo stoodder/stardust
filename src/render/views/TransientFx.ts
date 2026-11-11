@@ -18,9 +18,9 @@
 // - Unravel motes (T630a): a Hollow unit comes apart into `fx.unravel_mote` sprites (a pool of
 //   MAX_MOTES, its `drift` twinkle started a frame apart per mote; held on its `m0` cross under
 //   reduced motion), drifting up and away, stepping down the alpha ladder over their life.
-// - Splats (T730a; gloopLook.ts): a Gloop glob's green splat on the ground where it lands (its own
-//   pool of SPLAT_POOL, made on the first splat so it draws over the puddles; stepping out), its splash's reach in a green ring, and green drops flung up
-//   (none under reduced motion).
+// - Splats (T730a; gloopLook.ts): a Gloop glob's green splash where it lands, over what it hit
+//   (its own pool of SPLAT_POOL in `vfx`, made on the first splat; stepping out), its splash's
+//   reach in a green ring, and green drops flung up (none under reduced motion).
 // FxView adds the abilities' effects on top (the Orbital Strike, Suppressing Fire).
 import type * as Phaser from 'phaser';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
@@ -359,7 +359,10 @@ export class TransientFx {
     const s = this.#splats[this.#nextSplat]!; // index < SPLAT_POOL
     this.#nextSplat = (this.#nextSplat + 1) % SPLAT_POOL;
     gridToScreen(x, y, this.ctx.origin, pos);
-    s.img.setPosition(Math.round(pos.x), Math.round(pos.y)).setAlpha(1).setVisible(true);
+    s.img
+      .setPosition(Math.round(pos.x), Math.round(pos.y) - 2)
+      .setAlpha(1)
+      .setVisible(true);
     s.ms = 0;
     s.active = true;
     this.splatsShown++;
@@ -372,10 +375,7 @@ export class TransientFx {
   /** Splats played since the view was made (the smoke flow's check). */
   splatsShown = 0;
 
-  /**
-   * The splat pool, made on the first splat: added to `decal` after the views built with the
-   * scene (Big Glorp's puddles among them), so a splat lands over a puddle, not under it.
-   */
+  /** The splat pool, made on the first splat, in `vfx`: the splash lands over the units it hits. */
   #makeSplats(): void {
     const { scene, layers } = this.ctx;
     if (!scene.textures.exists(SPLAT_KEY)) {
@@ -384,7 +384,7 @@ export class TransientFx {
     for (let i = 0; i < SPLAT_POOL; i++) {
       const img = scene.make.image({}, false).setTexture(SPLAT_KEY);
       img.setDisplayOrigin(SPLAT_OX, SPLAT_OY).setVisible(false);
-      layers.decal.add(img);
+      layers.vfx.add(img);
       this.#splats.push({ active: false, ms: 0, durationMs: SPLAT_MS, img });
     }
   }

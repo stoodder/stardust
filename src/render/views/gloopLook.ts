@@ -1,6 +1,6 @@
 // The Gloop Spitter's hit (towers.md § Gloop Spitter; T730a): pure rules and pixels, unit-tested,
 // applied by TransientFx's `splat` (battleEvents.ts calls it for the shots in SPLAT_PROJECTILES).
-// - **The splat:** where a glob lands, a green splat on the ground (`splatImage`: a ragged
+// - **The splat:** where a glob lands, a green splash over what it hit (`splatImage`: a ragged
 //   `green.3` blob with a `green.4` heart and a `white.1` glint, an `ink.0` rim, flung drops round
 //   it; 17×9), stepping out over SPLAT_MS (fxTiming's `fadeAlpha`), not the Thumper's orange
 //   explosion: acid, not fire. Under it the splash's reach rings in `green.3` (the Thumper's ring

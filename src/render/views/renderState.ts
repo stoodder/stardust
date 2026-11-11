@@ -139,6 +139,8 @@ export interface RenderState {
     readonly jammed: number;
     /** System Reboot's power-on columns showing now (T730a). */
     readonly columns: number;
+    /** Towers drawn in their steel `+jammed` variant now (T730a). */
+    readonly drawnJammed: number;
     readonly tellsSeen: number;
     readonly jamsSeen: number;
     readonly reboots: number;
@@ -186,6 +188,8 @@ export interface RenderState {
     readonly grounded: number;
     readonly bonks: number;
     readonly groundings: number;
+    /** Sproing Pads showing their empty pad, all their leapers away (T730a). */
+    readonly padsEmpty: number;
   };
   /**
    * HollowView (T602): Maw tendril tells up now and seen since the battle began, Maws wearing a

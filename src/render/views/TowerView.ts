@@ -421,6 +421,11 @@ export class TowerView implements PooledView {
     this.#refreshFrames(true);
   }
 
+  /** Whether a Sproing Pad's head shows its empty pad now (the render-state hook's check). */
+  get padEmpty(): boolean {
+    return this.#padAll && this.#idleName.startsWith('empty');
+  }
+
   /** Whether it draws Jammed now (the render-state hook's check). */
   get jammed(): boolean {
     return this.#jammed;

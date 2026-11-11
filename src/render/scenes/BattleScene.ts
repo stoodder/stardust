@@ -914,6 +914,7 @@ export class BattleScene extends Phaser.Scene {
         tellsSeen: this.#jams.tellsSeen,
         jamsSeen: this.#jams.jamsSeen,
         reboots: this.#jams.reboots,
+        drawnJammed: [...this.#towers.live.values()].filter((v) => v.jammed).length, // T730a
       }, // T702
       everglowJams: {
         rings: this.#rings.shown,
@@ -963,6 +964,7 @@ export class BattleScene extends Phaser.Scene {
         ...this.#leapers.shown,
         bonks: this.#leapers.bonks,
         groundings: this.#leapers.groundings,
+        padsEmpty: [...this.#towers.live.values()].filter((v) => v.padEmpty).length, // T730a
       }, // T704
       revoked: { shown: this.#revoked.shown, played: this.#revoked.played }, // T606
       jailbroken: [...this.#towers.live.values()].filter((v) => v.jailbroken).length, // T740b

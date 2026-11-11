@@ -1,4 +1,8 @@
-// A3M5 balance-harness builds: docs/story/campaign/act3.md § A3M5, Par build.
+// A3M5 balance-harness builds: docs/story/campaign/act3.md § A3M5, Par build (its As built and
+// As tuned notes describe these). Par holds the core in the yard and by the vats, and the bearers'
+// hub by the old intake (the Bloom with a Harpoon and a Thumper either side). Ves'thara's
+// Stillness (slot 2) and System Reboot (slot 1) are cast on fixed beats; each wave lists its casts
+// ahead of the buys still saving credits, so a cast lands on time.
 import { defineBuilds } from '../../define.ts';
 import { REFERENCE_PROFILES, REFERENCE_VARIANTS } from '../../upgrades/reference.ts';
 import type { BuildStep, GridPos, ScriptedBuild, TowerId } from '../../types.ts';
@@ -302,5 +306,3 @@ export const PADS = {
   SLUICE_S,
   SOUTH,
 } as const;
-
-export { slot1, still };

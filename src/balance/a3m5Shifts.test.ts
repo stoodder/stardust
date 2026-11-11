@@ -55,6 +55,9 @@ describe('A3M5 shifts', { timeout: HARNESS_TEST_TIMEOUT_MS }, () => {
   });
 
   it('lands every beat with every wave called the instant it can be', () => {
-    expect(beatMisses(runA3m5(compileContent(RAW_CONTENT), 'alwaysCallEarly')), 'alwaysCallEarly').toEqual([]);
+    expect(
+      beatMisses(runA3m5(compileContent(RAW_CONTENT), 'alwaysCallEarly')),
+      'alwaysCallEarly',
+    ).toEqual([]);
   });
 });

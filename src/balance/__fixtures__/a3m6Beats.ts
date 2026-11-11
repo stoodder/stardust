@@ -129,7 +129,11 @@ export const ALT_ROAD_LEFT_MIN = 0.5;
  * What a winning reference run gets wrong of the map's beats (empty when it lands them all), each
  * as `label: what`. The tests expect it empty (fixtures don't import vitest).
  */
-export function beatProblems(b: A3m6Beats, label: string, roadLeftMin = MAW_ROAD_LEFT_MIN): string[] {
+export function beatProblems(
+  b: A3m6Beats,
+  label: string,
+  roadLeftMin = MAW_ROAD_LEFT_MIN,
+): string[] {
   const out: string[] = [];
   const want = (ok: boolean, what: string): void => {
     if (!ok) out.push(`${label}: ${what}`);
@@ -149,7 +153,7 @@ export function beatProblems(b: A3m6Beats, label: string, roadLeftMin = MAW_ROAD
   );
   // The first refugee home before W2's countdown, QUILL's cue the tick after, nobody lost before.
   const sheltered = b.at['evacuated']?.[0] ?? Infinity;
-  want(sheltered < one('CountdownStarted 2'), 'the first refugee home before W2\'s countdown');
+  want(sheltered < one('CountdownStarted 2'), "the first refugee home before W2's countdown");
   want(one('cue a3_m06_cue_sheltered') - sheltered === 1, 'the sheltered cue the tick after');
   want((b.at['lost']?.[0] ?? Infinity) > sheltered, 'nobody lost before the first is home');
   // The rifts crack as W11 starts and open as W12 does; nothing walks one before.
