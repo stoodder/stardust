@@ -60,11 +60,16 @@ const NODE_ACCENT: Readonly<Record<StarMapView['act'], string>> = {
   finale: '_finale',
 };
 
-/** The chart's pixels for the last phase and legs drawn (it repaints only when those change). */
+/**
+ * The chart's pixels for the last phase, legs, and changes drawn (it repaints only when those
+ * change).
+ */
 let chartCache: { readonly key: string; readonly image: RgbaImage } | null = null;
 function chartImage(view: StarMapView): RgbaImage {
-  const key = `${view.phase}|${JSON.stringify(view.legs)}`;
-  if (chartCache?.key !== key) chartCache = { key, image: starMapChart(view.phase, view.legs) };
+  const key = `${view.phase}|${JSON.stringify(view.legs)}|${view.changes.join(',')}`;
+  if (chartCache?.key !== key) {
+    chartCache = { key, image: starMapChart(view.phase, view.legs, view.changes) };
+  }
   return chartCache.image;
 }
 
@@ -73,7 +78,7 @@ function Chart({ view }: { view: StarMapView }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
   useLayoutEffect(() => {
     if (canvas.current !== null) drawImageAt(canvas.current, chartImage(view), 0, 0);
-  }, [view.phase, view.legs]);
+  }, [view.phase, view.legs, view.changes]);
   return <canvas class="sd-starmap-canvas" width={640} height={360} ref={canvas} />;
 }
 

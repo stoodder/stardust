@@ -59,7 +59,7 @@ export class JamRingView {
       const growth = ringGrowth(e);
       gridToScreen(e.x, e.y, this.#ctx.origin, at);
       rangeEllipsePx(reach, semi);
-      g.lineStyle(1, OUTLINE, 0.5).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
+      g.lineStyle(1, OUTLINE, 0.75).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);
       rangeEllipsePx(ringTiles(growth, reach, still), semi);
       const alpha = ringAlpha(growth);
       g.lineStyle(4, INK, 0.6 * alpha).strokeEllipse(at.x, at.y, semi.x * 2, semi.y * 2);

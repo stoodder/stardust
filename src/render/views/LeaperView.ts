@@ -9,7 +9,8 @@
 //   a flyer;
 // - each bonk (`LeaperBonk`) pops a small orange ring on its target;
 // - each flyer a leaper grounded (`FlyerGrounded`), while it stays Pinned, wears an orange ring on
-//   the ground under it and three gold dizzy stars over its head (one Graphics in `vfx`). Its Pin
+//   the ground under it (over an ink under-stroke), a dotted orange drop from its feet down to the
+//   ring (T730a), and three gold dizzy stars over its head (one Graphics in `vfx`). Its Pin
 //   draws no harpoon rope: HarpoonView passes by the flyers in `grounded` (T730a).
 // Allocation-free per frame once warm: a pool of sprites that grows the first time more leapers
 // are out than it holds, each leaper's leg kept by uid (made once per leaper), scratch points
@@ -61,6 +62,7 @@ export interface LeaperState {
 const BODY: SpriteId = 'ally.leaper';
 const RING = hexOf(GROUND_RING_COLOR);
 const STAR = hexOf(STAR_COLOR);
+const INK = hexOf('ink.0');
 /** Sprites made up front: four Sky Bouncers. More are made as needed. */
 const SLOTS = 8;
 
@@ -299,19 +301,29 @@ export class LeaperView {
       let x: number;
       let ground: number;
       let head: number;
+      let feet: number;
       if (this.#anchors.box(e.uid, drawn)) {
         x = drawn.x;
         ground = drawn.groundY;
         head = drawn.top - 7; // over its health bar
+        feet = drawn.bottom;
       } else {
         gridToScreen(e.x, e.y, this.#ctx.origin, pos);
         x = pos.x;
         ground = pos.y;
         head = pos.y - AIR_LIFT_PX - 19;
+        feet = pos.y - AIR_LIFT_PX;
       }
       shown++;
+      const rx = Math.round(x);
+      const gy = Math.round(ground);
+      g.lineStyle(3, INK, 0.7);
+      g.strokeEllipse(rx, gy, GROUND_RING_RX * 2, GROUND_RING_RY * 2);
       g.lineStyle(1, RING, 1);
-      g.strokeEllipse(Math.round(x), Math.round(ground), GROUND_RING_RX * 2, GROUND_RING_RY * 2);
+      g.strokeEllipse(rx, gy, GROUND_RING_RX * 2, GROUND_RING_RY * 2);
+      // A dotted drop from its feet to the ring (T730a): held down there, grounded.
+      g.fillStyle(RING, 1);
+      for (let y = Math.round(feet) + 1; y < gy - GROUND_RING_RY; y += 3) g.fillRect(rx, y, 1, 2);
       g.fillStyle(STAR, 1);
       for (let k = 0; k < STARS; k++) {
         starOffset(k, this.#ms, still, star);

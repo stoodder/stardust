@@ -57,7 +57,7 @@ import {
 import { hud } from '../ui/state.ts';
 import { heldRewards } from '../ui/screens/state.ts';
 import { withResultsChoice } from './resultsFlow.ts';
-import { escortAtEnd } from './resultsStory.ts';
+import { bearersAtEnd, escortAtEnd } from './resultsStory.ts';
 import type { RunOutcome, ScreenId } from './testHookTypes.ts';
 import { resetCrate, takenPick } from '../ui/screens/crate.ts'; // T714
 
@@ -407,6 +407,7 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
         ? {}
         : { asset: { name: sim.map.asset.name, value: s.asset, max: s.maxAsset } }),
       ...escortAtEnd(sim),
+      ...bearersAtEnd(sim),
       // This attempt's kills: a checkpoint retry's replayed ones were filed by the attempt before.
       skitterkinKilled: attemptKills(b.host),
       wavesCleared,

@@ -1,4 +1,4 @@
-// The Sproing Pad's look, minimal (T704; LeaperView draws it, T730a polishes it): pure rules, so
+// The Sproing Pad's look (T704's, polished by T730a; LeaperView draws it): pure rules, so
 // they unit-test without Phaser.
 // - **The boing.** A leaper in the air rides an arc between where its leg began (the pad, or where
 //   it bonked) and where it's headed (its target, or the pad): its height over the ground is a
@@ -8,9 +8,10 @@
 //   that re-aims at a moving target stays smooth.
 // - **The bonk.** A small `orange.4` ring pops on the target (TransientFx), so each bonk reads.
 // - **A grounded flyer** (Pinned by a leaper: `FlyerGrounded`): an `orange.3` ring on the ground
-//   under it and three `gold.4` dizzy stars (3 px) circling over its head, above its health bar,
-//   while the Pin holds. The stars turn once every STAR_PERIOD_MS (held still under reduced
-//   motion).
+//   under it over an `ink.0` under-stroke, a dotted `orange.3` drop from its feet to the ring (no
+//   harpoon rope: see below), and three `gold.4` dizzy stars (3 px) circling over its head, above
+//   its health bar, while the Pin holds. The stars turn once every STAR_PERIOD_MS (held still
+//   under reduced motion).
 // - **The pose** (T730a, `leaperPose`; T740a's `ally.leaper` frames): stretched as it springs off
 //   (the first fifth of a leg out) and as it reaches for the bonk (its last 15%), tucked into a
 //   ball through the arc, and squashed (`land`) over the last fifth of the boing home. Each pose

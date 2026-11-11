@@ -8,7 +8,13 @@ import { UPGRADES } from '../content/upgrades/index.ts';
 import type { MemoId } from '../content/memos/types.ts';
 import { Q3_BONUS_MEMO, ZIBZAB_TUNE_UP, type StoryTransaction } from '../meta/index.ts';
 import type { MeterLabel } from '../content/types.ts';
-import type { ResultsMemo, ResultsTransaction, RunEscort } from '../ui/screens/state.ts';
+import type {
+  ResultsMemo,
+  ResultsTransaction,
+  RunBearers,
+  RunEscort,
+} from '../ui/screens/state.ts';
+import { bearersCarried } from '../sim/index.ts';
 import { assertNever } from '../shared/types.ts';
 import { meterLabelText, towerName } from './hudText.ts';
 
@@ -115,4 +121,21 @@ export function escortAtEnd(sim: EscortSim): { escort?: RunEscort } {
       ...(holdout ? { holdout: true } : {}),
     },
   };
+}
+
+/** What `bearersAtEnd` reads of a finished battle. */
+interface BearerSim {
+  readonly state: Parameters<typeof bearersCarried>[0];
+  readonly map: Parameters<typeof bearersCarried>[1];
+  readonly config: { readonly scriptFlags: Parameters<typeof bearersCarried>[2] };
+}
+
+/**
+ * The run's bearers as the map ended (`RunEndInput.bearers`; A3M5): those home and lost of the
+ * bearers its flags walked (`bearersCarried`), for Act III's "Carried: {n} of {total}." line; `{}`
+ * on a map with none.
+ */
+export function bearersAtEnd(sim: BearerSim): { bearers?: RunBearers } {
+  const b = bearersCarried(sim.state, sim.map, sim.config.scriptFlags);
+  return b === null ? {} : { bearers: { home: b.home, lost: b.lost, total: b.total } };
 }

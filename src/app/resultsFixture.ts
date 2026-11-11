@@ -10,8 +10,8 @@ import type { MapId, WaveTag } from '../content/types.ts';
 import { runEnd, type SaveData } from '../meta/index.ts';
 import type { FlagRuleStats } from '../story/flags.ts';
 import { DEV_SCENES } from '../ui/dialogue/dev.ts';
-import type { RunEscort, RunResult } from '../ui/screens/state.ts';
-import { escortTotal } from '../sim/index.ts';
+import type { RunAsset, RunBearers, RunEscort, RunResult } from '../ui/screens/state.ts';
+import { bearerTotal, escortTotal } from '../sim/index.ts';
 import { battleConfig } from './battleSetup.ts';
 import { meterLabelText } from './hudText.ts';
 import type { ResultsScenes } from './router.ts';
@@ -88,6 +88,27 @@ function escortOf(f: ResultsFixture, save: SaveData | null): { escort?: RunEscor
   };
 }
 
+/**
+ * The fixture's Protect meter and bearers (A3M5; T712): the asset whole on a win and at half on a
+ * loss; the bearers its flags walk (`bearerTotal`, as the battle counts them), every one home on a
+ * win and half of them on a loss, unless `f.bearers` says. None on a map with no asset or bearers.
+ */
+function protectOf(
+  f: ResultsFixture,
+  save: SaveData | null,
+): { asset?: RunAsset; bearers?: RunBearers } {
+  const config = battleConfig(f.map, 0, save);
+  const map = config.content.maps[f.map];
+  if (map === undefined || map.asset === null) return {};
+  const won = f.outcome === 'won';
+  const max = map.asset.integrity;
+  const asset = { name: map.asset.name, value: won ? max : Math.floor(max / 2), max };
+  const total = bearerTotal(map, config.scriptFlags);
+  if (total === 0) return { asset };
+  const home = f.bearers?.home ?? (won ? total : Math.floor(total / 2));
+  return { asset, bearers: { home, lost: f.bearers?.lost ?? total - home, total } };
+}
+
 /** The run's facts: the map's own when it's registered, else a 10-wave map paying nothing. */
 function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
   const won = f.outcome === 'won';
@@ -121,6 +142,7 @@ function inputOf(f: ResultsFixture, save: SaveData | null): RunEndInput {
     checkpointWave: f.checkpoint?.latest ?? f.checkpoint?.resumedFrom ?? null,
     ...(f.revoked === undefined ? {} : { revoked: revokedAtEnd(f.revoked) }),
     ...(map === undefined ? {} : escortOf(f, save)),
+    ...(map === undefined ? {} : protectOf(f, save)),
   };
 }
 

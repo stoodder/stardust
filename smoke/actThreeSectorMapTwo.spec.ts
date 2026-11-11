@@ -1,21 +1,14 @@
 // T712 exploratory (rewritten below once settled).
-import { test } from './fixtures.ts';
-import { nextFrames, shot, waitForReady } from './hooks.ts';
+import { expect, test } from './fixtures.ts';
+import { shot, waitForReady } from './hooks.ts';
 
 test('explore', async ({ page }) => {
-  for (const save of ['after_a3m4_keep', 'after_a3m5_keep', 'after_a3m6']) {
-    // oxlint-disable-next-line no-await-in-loop -- exploring
-    await page.goto(`/?test=1&seed=1&save=${save}`);
-    // oxlint-disable-next-line no-await-in-loop -- exploring
-    await waitForReady(page);
-    // oxlint-disable-next-line no-await-in-loop -- exploring
-    await nextFrames(page);
-    // oxlint-disable-next-line no-await-in-loop -- exploring
-    await shot(page, 'explore', 1, save);
-  }
-  await page.evaluate(() => globalThis.__sd!.results({ map: 'a3_m06', outcome: 'won', pests: 0 }));
-  await page.waitForTimeout(1500);
-  await shot(page, 'explore', 2, 'a3m6-results-flow');
-  await page.waitForTimeout(6000);
-  await shot(page, 'explore', 3, 'a3m6-results-flow-later');
+  await page.goto('/?test=1&dialogue=1&fasttext=1&seed=1&save=after_a3m5_keep');
+  await waitForReady(page);
+  void page
+    .evaluate(() => globalThis.__sd!.results({ map: 'a3_m06', outcome: 'won' }))
+    .catch(() => undefined);
+  await expect(page.getByTestId('stage-waykeeper')).toBeVisible();
+  await page.waitForTimeout(800);
+  await shot(page, 'explore', 7, 'waykeeper-over-star-map');
 });

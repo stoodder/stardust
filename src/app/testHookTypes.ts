@@ -138,6 +138,11 @@ export interface ResultsFixture {
    */
   readonly escort?: { readonly evacuated?: number; readonly lost?: number };
   /**
+   * On a map with bearers (A3M5): the bearers home and lost. Default every one home on a win, half
+   * on a loss (of the run's bearers under the save's flags; T712).
+   */
+  readonly bearers?: { readonly home?: number; readonly lost?: number };
+  /**
    * The story choice taken on the card is written to the save in play, as a real card's is (C4's
    * commit, T710); the run itself still isn't. Default false: nothing is written.
    */

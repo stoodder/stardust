@@ -57,8 +57,9 @@ export interface RunResult {
   readonly escort: RunEscort | null;
   /**
    * The map's meter as the run ended, for the `meter` counter's line (Act III; core-loop.md
-   * § 6.2): an Escort's or a Holdout's Evacuated count (A3M6's Sheltered), from `escort`; null on
-   * a map with no meter (a Defend or Protect map), whose Act III card shows no counter line.
+   * § 6.2): an Escort's or a Holdout's Evacuated count (A3M6's Sheltered), from `escort`; A3M5's
+   * bearers carried home; null on a map with no meter (a Defend map, a Protect map with no
+   * bearers), whose Act III card shows no counter line.
    */
   readonly meter: ResultsMeter | null;
   /**
@@ -86,6 +87,14 @@ export interface RunEscort {
   readonly lost: number;
   /** The map ended as a Holdout (A3M3: scored by Evacuated, ended on the SEAL). Default false. */
   readonly holdout?: boolean;
+}
+
+/** A run's bearers at its end (A3M5; sim/bearers.ts `bearersCarried`): home and lost, of all. */
+export interface RunBearers {
+  readonly home: number;
+  readonly lost: number;
+  /** The bearers that walk under the run's flags. */
+  readonly total: number;
 }
 
 /** A debrief's story choice on the card (C2: Zibzab's Price), or at the base (app/baseChoice.ts). */

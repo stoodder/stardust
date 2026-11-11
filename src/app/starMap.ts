@@ -2,16 +2,19 @@
 // Sector map shows for a save. The phase (the frontier's) and its UI act; the nodes in campaign
 // order, each with its state, medals, place, tagline, and, for a built map, the briefing's threat
 // strip, its medals by name, and its optional objectives; the marker's node (the latest won); the
-// legs between the visible nodes; the region labels; and whether this is the save's first visit.
+// legs between the visible nodes; the region labels; what the won maps changed on the chart; and
+// whether this is the save's first visit.
 // Maps past the frontier are never in it. Pure over a SaveData (the screen reads it through
 // `starMapView`, and `campaignScreenName` names the campaign screen for the buttons that go back).
 import { CAMPAIGN_PLAN, type CampaignMapId } from '../content/campaign.ts';
 import {
+  STAR_MAP_CHANGES,
   STAR_MAP_NODES,
   STAR_MAP_PHASE_ACT,
   STAR_MAP_PHASES,
   STAR_MAP_REGIONS,
   STAR_MAP_SEEN_ID,
+  type StarMapChange,
   type StarMapPhase,
 } from '../content/starMap.ts';
 import type { IdSpace } from '../content/types.ts';
@@ -112,6 +115,8 @@ export interface StarMapView {
   readonly frontier: CampaignMapId | null;
   readonly legs: readonly StarLegView[];
   readonly regions: readonly StarRegionView[];
+  /** What the won maps changed on the chart (`STAR_MAP_CHANGES`: the plant dark, the domes open). */
+  readonly changes: readonly StarMapChange[];
   /** Until the save's `story.seen` holds STAR_MAP_SEEN_ID: the sweep and the notice. */
   readonly firstVisit: boolean;
 }
@@ -239,6 +244,7 @@ export function starMapView(save: SaveData): StarMapView {
     frontier,
     legs,
     regions,
+    changes: STAR_MAP_CHANGES.filter((c) => isMapWon(save, c.after)).map((c) => c.change),
     firstVisit: !save.story.seen.includes(STAR_MAP_SEEN_ID),
   };
 }

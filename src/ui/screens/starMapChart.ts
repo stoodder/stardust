@@ -6,7 +6,11 @@
 // Terraces, the walled colony, the roads, the Preserve's bowl, the lowlands and the creek, the
 // Long Walk's dotted trail under the roads, and the north band where the survey stops. The legs
 // between the visible nodes are drawn last. Still: no palette cycles. Same input, same pixels.
-import { STAR_MAP_LONG_WALK, type StarMapPhase } from '../../content/starMap.ts';
+import {
+  STAR_MAP_LONG_WALK,
+  type StarMapChange,
+  type StarMapPhase,
+} from '../../content/starMap.ts';
 import { rgbOf, type ColorName } from '../../content/palettes/master.ts';
 import type { RgbaImage } from '../../render/sprites/rasterize.ts';
 import { createRng, nextFloat, nextInt, type Rng } from '../../shared/rng.ts';
@@ -170,7 +174,7 @@ const GATES = [
 const PLAZA = { x: 336, y: 252 } as const;
 const TERRACES = { x0: 228, y0: 140, x1: 300, y1: 188 } as const;
 const PRESERVE = { cx: 158, cy: 214, rx: 38, ry: 26 } as const;
-const PLANT = { x: 472, y: 168 } as const;
+export const PLANT = { x: 472, y: 168 } as const;
 const BORE = { x: 520, y: 76 } as const;
 /** Derricks: Ridge Rigs and Rigs 7 and 8 on the ledge east of it; the Diggings'. */
 const RIDGE_DERRICKS = [
@@ -505,6 +509,11 @@ const DOME_COLORS: Readonly<
   night: { rim: 'steel.1', shell: 'steel.0', shade: 'ink.3' },
 };
 
+/**
+ * A dome: its shell, rim, and shade, and its window when `lit`. An open dome (`open`, Dome Row
+ * once A3M6 is won) burns a warm `gold.3` window whatever the phase, its door a `gold.2` pixel on
+ * its south rim, and its light spills on the yard below in a dithered `gold.1`.
+ */
 function paintDome(
   c: Canvas,
   cx: number,
@@ -512,6 +521,7 @@ function paintDome(
   r: number,
   look: PhaseLook,
   lit: boolean,
+  open = false,
 ): void {
   for (let y = -r - 1; y <= r + 1; y++) {
     for (let x = -r - 1; x <= r + 1; x++) {
@@ -522,6 +532,17 @@ function paintDome(
       const k = DOME_COLORS[look.domes];
       put(c, cx + x, cy + y, rim ? (shade ? 'ink.1' : k.rim) : shade ? k.shade : k.shell);
     }
+  }
+  if (open) {
+    put(c, cx, cy, 'gold.3');
+    put(c, cx, cy + r, 'gold.2');
+    for (let dy = 1; dy <= 2; dy++) {
+      for (let dx = -dy; dx <= dy; dx++) {
+        if (bayer(cx + dx, cy + r + dy) < (dy === 1 ? 10 : 5))
+          put(c, cx + dx, cy + r + dy, 'gold.1');
+      }
+    }
+    return;
   }
   if (lit) put(c, cx, cy, look.windows === 'emergency' ? 'act3.emergency' : 'gold.3');
 }
@@ -541,7 +562,7 @@ function stream(k: number): Rng {
   return createRng(CHART_SEED + k);
 }
 
-function paintColony(c: Canvas, look: PhaseLook, rng: Rng): void {
+function paintColony(c: Canvas, look: PhaseLook, rng: Rng, domesOpen: boolean): void {
   const { x0, y0, x1, y1 } = COLONY;
   // The paved yard inside the wall, a touch lighter than the valley.
   for (let y = y0 + 1; y < y1; y++)
@@ -579,6 +600,7 @@ function paintColony(c: Canvas, look: PhaseLook, rng: Rng): void {
     if (!fits(x, y1 - 6, r)) continue;
     placed.push({ x, y: y1 - 6, r });
   }
+  const row = placed.length;
   // The rest in clusters around a few squares.
   for (let i = 0; i < 260 && placed.length < 52; i++) {
     const r = 2 + nextInt(rng, 2);
@@ -587,7 +609,9 @@ function paintColony(c: Canvas, look: PhaseLook, rng: Rng): void {
     if (noise(x, y, 18) < 0.42 || !fits(x, y, r)) continue;
     placed.push({ x, y, r });
   }
-  for (const d of placed) paintDome(c, d.x, d.y, d.r, look, look.windows !== 'none' && lit(d));
+  placed.forEach((d, i) =>
+    paintDome(c, d.x, d.y, d.r, look, look.windows !== 'none' && lit(d), domesOpen && i < row),
+  );
 }
 
 /** A peak: a jagged triangle in the clay ramp, its south-east side in shade. */
@@ -711,7 +735,22 @@ function paintAct3Landmarks(c: Canvas, look: PhaseLook): void {
   }
 }
 
-function paintPlant(c: Canvas): void {
+/** The vats' centres from the plant's. */
+export const VATS = [
+  { x: -14, y: 6 },
+  { x: 24, y: 6 },
+  { x: -26, y: 2 },
+] as const;
+
+/**
+ * The vats by phase and story (art-direction § 10): by day and dusk a `violet.3` core with one
+ * `violet.4` pixel; through the Long Night at full blaze, the whole core `violet.4` in a dithered
+ * `violet.2` halo (A3M5's maximum throughput); once A3M5 is won, opened and cold, an `ink.0` core
+ * in a `steel.1` ring with nothing burning.
+ */
+type VatLook = 'day' | 'blaze' | 'dark';
+
+function paintPlant(c: Canvas, vats: VatLook): void {
   // Gold seams in the cliff face above it.
   for (const [dx, dy, col] of [
     [-22, -20, 'pink.3'],
@@ -743,20 +782,28 @@ function paintPlant(c: Canvas): void {
   }
   // The stack.
   for (let y = -16; y < -8; y++) put(c, PLANT.x + 17, PLANT.y + y, 'steel.3');
-  // Three 5 px vats: violet cores, one brighter pixel each.
-  for (const v of [
-    { x: -14, y: 6 },
-    { x: 24, y: 6 },
-    { x: -26, y: 2 },
-  ]) {
+  // Three 5 px vats: violet cores, one brighter pixel each (VatLook).
+  const core: ColorName = vats === 'day' ? 'violet.3' : vats === 'blaze' ? 'violet.4' : 'ink.0';
+  for (const v of VATS) {
+    const vx = PLANT.x + v.x;
+    const vy = PLANT.y + v.y;
+    if (vats === 'blaze') {
+      for (let y = -4; y <= 4; y++) {
+        for (let x = -4; x <= 4; x++) {
+          const d = Math.hypot(x, y);
+          if (d > 2.9 && d <= 4.2 && bayer(vx + x, vy + y) < 7) put(c, vx + x, vy + y, 'violet.2');
+        }
+      }
+    }
     for (let y = -2; y <= 2; y++) {
       for (let x = -2; x <= 2; x++) {
         if (Math.abs(x) === 2 && Math.abs(y) === 2) continue;
         const ring = Math.abs(x) === 2 || Math.abs(y) === 2;
-        put(c, PLANT.x + v.x + x, PLANT.y + v.y + y, ring ? 'steel.2' : 'violet.3');
+        const rim: ColorName = vats === 'dark' ? 'steel.1' : 'steel.2';
+        put(c, vx + x, vy + y, ring ? rim : core);
       }
     }
-    put(c, PLANT.x + v.x, PLANT.y + v.y - 1, 'violet.4');
+    if (vats === 'day') put(c, vx, vy - 1, 'violet.4');
   }
 }
 
@@ -829,9 +876,17 @@ function paintLegs(c: Canvas, legs: readonly ChartLeg[], accent: ColorName): voi
   }
 }
 
-/** The chart for a phase and its legs: a 640×360 opaque image. */
-export function starMapChart(phase: StarMapPhase, legs: readonly ChartLeg[] = []): RgbaImage {
+/**
+ * The chart for a phase, its legs, and what the won maps changed on it (`STAR_MAP_CHANGES`): a
+ * 640×360 opaque image.
+ */
+export function starMapChart(
+  phase: StarMapPhase,
+  legs: readonly ChartLeg[] = [],
+  changes: readonly StarMapChange[] = [],
+): RgbaImage {
   const look = PHASE_LOOKS[phase];
+  const night = phase === 'act3' || phase === 'dawn';
   const c: Canvas = { data: new Uint8ClampedArray(W * H * 4) };
   paintRelief(c, look, stream(1));
   paintGrid(c, look);
@@ -840,11 +895,11 @@ export function starMapChart(phase: StarMapPhase, legs: readonly ChartLeg[] = []
   paintTerraces(c, look);
   paintLongWalk(c, look);
   paintRoads(c, look);
-  paintColony(c, look, stream(3));
+  paintColony(c, look, stream(3), changes.includes('domes_open'));
   paintSpires(c, look, stream(4), stream(5));
   paintRigs(c, look);
-  paintPlant(c);
-  if (phase === 'act3' || phase === 'dawn') paintAct3Landmarks(c, look);
+  paintPlant(c, changes.includes('plant_dark') ? 'dark' : night ? 'blaze' : 'day');
+  if (night) paintAct3Landmarks(c, look);
   if (look.tint > 0) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) blend(c, x, y, look.shade, look.tint);
   }

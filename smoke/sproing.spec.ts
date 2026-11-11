@@ -70,8 +70,11 @@ test('sproing: leapers boing, bonk, and ground a flyer; both links form', async 
   let look = await page.evaluate(() => globalThis.__sd!.render()!.sproing);
   expect(look.out).toBeGreaterThanOrEqual(1);
   // T730a: its one leaper away, the pad's head shows its empty pad (after the bounce plays).
-  await page.waitForTimeout(500);
-  expect((await page.evaluate(() => globalThis.__sd!.render()!.sproing)).padsEmpty).toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => globalThis.__sd!.render()!.sproing.padsEmpty), {
+      timeout: 3000,
+    })
+    .toBe(1);
   await shot(page, 'sproing', 1, 'leap');
 
   expect(await until(page, 'grounded')).toBe(true);

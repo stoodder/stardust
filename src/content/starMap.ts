@@ -29,7 +29,11 @@ export interface StarMapNode {
   readonly y: number;
 }
 
-/** Every planned campaign map's node. Act III and the finale are provisional (their milestones). */
+/**
+ * Every planned campaign map's node (art-direction § 10 *Node positions*). A revisit stands 16 px
+ * east of the map it revisits (A3M2 of A1M4; A3M5 of A2M4, 8 px south; A3M6 of A1M1, 8 px south),
+ * so the two read as one place on two nights; the finale stands at the Deep Halls' mouth.
+ */
 export const STAR_MAP_NODES: Readonly<Record<CampaignMapId, StarMapNode>> = {
   a1_m01: {
     place: 'Dome Row',
@@ -222,6 +226,22 @@ export const STAR_MAP_LONG_WALK: readonly { readonly x: number; readonly y: numb
   { x: 296, y: 360 },
 ];
 
+/**
+ * What a won map changes on the chart (art-direction § 10 *After a win*): the plant goes dark once
+ * A3M5 is won (Kip opened the vats; "Reclamation Facility 2: offline"), and Dome Row's domes stand
+ * open and warm once A3M6 is won (Goldie opened them all).
+ */
+export type StarMapChange = 'plant_dark' | 'domes_open';
+
+/** Each chart change, by the map whose win makes it. */
+export const STAR_MAP_CHANGES: readonly {
+  readonly after: CampaignMapId;
+  readonly change: StarMapChange;
+}[] = [
+  { after: 'a3_m05', change: 'plant_dark' },
+  { after: 'a3_m06', change: 'domes_open' },
+];
+
 /** A rectangle in chart px. */
 export interface ChartRect {
   readonly x: number;
@@ -242,9 +262,9 @@ export const NODE_BOX = { dx: -8, dy: -8, w: 16, h: 16 } as const;
 
 /**
  * What the node panel keeps clear of around a node: its glyph, its pips, and its name plate
- * below (a plate up to 80 px wide).
+ * below (a plate up to 96 px wide: "Clearing the Way", the widest name, is 90).
  */
-export const NODE_CLEAR_BOX = { dx: -40, dy: -9, w: 80, h: 36 } as const;
+export const NODE_CLEAR_BOX = { dx: -48, dy: -9, w: 96, h: 36 } as const;
 
 /** The nearest two nodes may stand, on at least one axis (px). */
 export const NODE_SPACING = 16;

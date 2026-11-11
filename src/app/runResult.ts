@@ -34,6 +34,7 @@ import type {
   MedalResult,
   ObjectiveResult,
   RunAsset,
+  RunBearers,
   RunEscort,
   RunResult,
   RunRewards,
@@ -81,6 +82,11 @@ export interface RunEndInput {
    * a pivot; T305c); absent otherwise. Its Evacuated count is run end's meter and `{evacuated}`.
    */
   readonly escort?: RunEscort;
+  /**
+   * The bearers as the map ended (A3M5; `sim/bearers.ts` `bearersCarried`): those home and lost of
+   * the run's, for Act III's "Carried: {n} of {total}." line; absent on a map with none.
+   */
+  readonly bearers?: RunBearers;
   readonly skitterkinKilled: number;
   /** `WaveCleared` events seen this run. */
   readonly wavesCleared: number;
@@ -459,11 +465,14 @@ export function runResultOf(
 
 /**
  * The run's meter for the card's `meter` counter line (core-loop.md § 6.2): an Escort's or a
- * Holdout's Evacuated count (Sheltered on A3M6), or null on a map with no meter (Defend, Protect).
+ * Holdout's Evacuated count (Sheltered on A3M6), the bearers carried home of the run's (A3M5), or
+ * null on a map with no meter (Defend, a Protect map with no bearers).
  */
-export function meterOf(input: Pick<RunEndInput, 'escort'>): ResultsMeter | null {
+export function meterOf(input: Pick<RunEndInput, 'escort' | 'bearers'>): ResultsMeter | null {
   const e = input.escort;
-  return e === undefined ? null : { kind: e.kind, n: e.evacuated };
+  if (e !== undefined) return { kind: e.kind, n: e.evacuated };
+  const b = input.bearers;
+  return b === undefined ? null : { kind: 'carried', n: b.home, total: b.total };
 }
 
 /** One of the card's stat rows under the headline: "Waves survived 12 / 12". */
