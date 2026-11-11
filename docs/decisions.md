@@ -1823,3 +1823,5 @@ Rulings:
 - **The loadout and the sim judge story locks the same way**, with one shared condition check (closes T774).
 - Polish: "▾ More" is a real button with a visible scrollbar. QUILL's list stays up through its payoff line. FIZZLED holds 0.8 s, never shows for a ring that later lands, and also covers a Reboot that spends a Takeover laser. The Auditor gets a white mast tip. The Gathering Maw's parts spread on diagonal roads too.
 - Kip's pinholes are invisible at briefing size. That is accepted: his cap and the missing pin carry the beat.
+
+*D151 addendum (APP):* a replayed scene shows each speaker as it first played. Portrait variant and name plate are judged as if the scene were still unseen. This is a general rule, not a Kip special case, and it also keeps Pebble's A2M6 whistle scene right on replay. The loadout and `createSim` now judge story locks through one check, `flagConditionHolds` over the map's gated flag defaults (T774 closed).
