@@ -86,7 +86,7 @@ export const waves = defineWaves([
   // W12 · the big drone wave (Sterling's shuttle leaves: map.ts `shuttle`)
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(14, 0, 1.0), expediters(3, 3, 4), drones(12, 15, 1.0)],
+    groups: [drones(20, 0, 0.7), expediters(4, 2, 3), drones(16, 15, 0.7)],
   },
   // W13 · the Hollow, both rifts
   {
@@ -101,7 +101,7 @@ export const waves = defineWaves([
   // W14 · everything Everglow
   {
     countdownSec: COUNTDOWN,
-    groups: [drones(16, 0, 1.0), expediters(5, 2, 3), drones(14, 17, 1.0)],
+    groups: [drones(22, 0, 0.6), expediters(6, 2, 2.5), drones(20, 16, 0.6)],
   },
   // W15 · everything
   {
