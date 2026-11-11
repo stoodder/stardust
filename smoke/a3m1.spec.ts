@@ -16,7 +16,7 @@ import { expect, test } from './fixtures.ts';
 import { nextFrames, shot, waitForReady } from './hooks.ts';
 
 /** What the flow waits for, checked in the page against the live sim state. */
-type Cond = 'setup' | 'w2' | 'gather' | 'moths' | 'column' | 'thrum' | 'last' | 'end';
+type Cond = 'setup' | 'w2' | 'gather' | 'moths' | 'column' | 'w10' | 'thrum' | 'last' | 'end';
 
 /** Plays par one tick at a time (up to `max`) until `cond` holds, then lets two frames render. */
 async function until(page: Page, cond: Cond, max = 60 * 900): Promise<boolean> {
@@ -52,6 +52,8 @@ async function until(page: Page, cond: Cond, max = 60 * 900): Promise<boolean> {
             return st.wave === 5 && count((e) => e.def?.id === 'riftmoth') >= 2 && walking() >= 4;
           case 'column':
             return st.wave === 9 && count((e) => e.def?.id === 'maw') >= 2 && walking() >= 6;
+          case 'w10':
+            return st.schedule.phase === 'countdown' && st.schedule.countdownWave === 10;
           case 'thrum':
             return st.wave === 10 && walking() >= 10;
           case 'last':
@@ -145,8 +147,14 @@ test('A3M1: from the Sector map, the rifts, the Maw, the Moths, the column, and 
   // Bramble through Ves'thara, her name, the Den's gift, QUILL's intel, and the medal to aim for.
   const brief = page.getByRole('dialog');
   await expect(brief).toContainText('You chased me off my own road. Now help me walk it.');
-  await expect(brief).toContainText("Her name is Bramble. 'Chitterbloom' is a sun-lady word.");
   await expect(brief).toContainText('Nothing Gathered');
+  await expect(brief).toContainText("The Matriarch's Young");
+  await expect(async () => {
+    await brief.getByRole('button', { name: 'Next' }).click();
+    await expect(brief).toContainText("Her name is Bramble. 'Chitterbloom' is a sun-lady word.", {
+      timeout: 500,
+    });
+  }).toPass({ timeout: 10_000 });
   await shot(page, 'a3m1', 1, 'briefing');
   await startPar(page);
 
@@ -226,12 +234,13 @@ test('A3M1 spared: Old Thrum’s group walks at W10, and the song ends on the C1
   await startPar(page);
   expect(await page.evaluate(() => globalThis.__sd!.state()!.refugeeTotal)).toBe(30);
 
-  // W10: Old Thrum's group walks out of the basin, and Pebble sees her grandmother.
-  expect(await until(page, 'thrum')).toBe(true);
+  // W10's build phase: Pebble sees her grandmother; then Old Thrum's group walks out of the basin.
+  expect(await until(page, 'w10')).toBe(true);
   await page.evaluate(() => globalThis.__sd!.setSpeed(1));
   await expect(page.getByTestId('comms')).toContainText('Grandmother!', { timeout: 10_000 });
   await page.evaluate(() => globalThis.__sd!.setSpeed(0));
-  await nextFrames(page);
+  expect(await until(page, 'thrum')).toBe(true);
+  await play(page, 300);
   await shot(page, 'a3m1', 11, 'thrum-group');
 
   // The song: Thrum hums with Pebble, and the C1 echo closes it.

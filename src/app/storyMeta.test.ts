@@ -52,6 +52,23 @@ describe('what run end reads from the battle', () => {
     ).toEqual({ towers: ['rivet'], abilities: ['orbital_strike'] });
   });
 
+  it("passes the factions of the class cues that fired, for towers.md § 9's map-end class", () => {
+    const events = [
+      { actions: [{ cue: 'a3_m02_cue_revoke' }] },
+      {
+        actions: [
+          { revokeTowerClass: { select: 'mostInvested', faction: 'everglow' }, refundPct: 100 },
+        ],
+      },
+      { actions: [{ revokeTowerClass: { select: 'mostInvested' }, refundPct: 100 }] },
+    ] as const;
+    const none = { towers: [], abilities: [] };
+    // A run lost before the cue fired: nothing at map end.
+    expect(revokedAtEnd(none, events, [true, false, false])).toEqual(none);
+    expect(revokedAtEnd(none, events, [true, true, false]).atMapEnd).toEqual(['everglow']);
+    expect(revokedAtEnd(none, events, [true, true, true]).atMapEnd).toEqual(['everglow', null]);
+  });
+
   const towers = {
     used: 3,
     items: [

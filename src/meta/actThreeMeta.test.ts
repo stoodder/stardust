@@ -46,13 +46,8 @@ describe("run end step 3: towers.md § 9's map-end class", () => {
     // A fresh save owns the Rivet then the Thumper (both Everglow), in that order.
     const save = deepFreeze(createNewSave());
     expect(save.unlocks.towers.slice(0, 2)).toEqual(['rivet', 'thumper']);
-    const revoked = { towers: [], abilities: ['orbital_strike'] } as const;
-    const r = runEndRevocations(save, {
-      won: true,
-      wonBefore: false,
-      revoked,
-      atMapEnd: ['everglow'],
-    });
+    const revoked = { towers: [], abilities: ['orbital_strike'], atMapEnd: ['everglow'] } as const;
+    const r = runEndRevocations(save, { won: true, wonBefore: false, revoked });
     expect(r.revocations).toEqual([
       { kind: 'revoke_tower', tower: 'rivet' },
       { kind: 'revoke_ability', ability: 'orbital_strike', refund: null },
@@ -66,15 +61,13 @@ describe("run end step 3: towers.md § 9's map-end class", () => {
     const took = runEndRevocations(save, {
       won: true,
       wonBefore: false,
-      revoked: { towers: ['thumper'], abilities: [] },
-      atMapEnd: ['everglow'],
+      revoked: { towers: ['thumper'], abilities: [], atMapEnd: ['everglow'] },
     });
     expect(took.save.unlocks.revokedTowers).toEqual(['thumper']);
     const vrell = runEndRevocations(save, {
       won: true,
       wonBefore: false,
-      revoked: { towers: [], abilities: [] },
-      atMapEnd: ['vrell'],
+      revoked: { towers: [], abilities: [], atMapEnd: ['vrell'] },
     });
     expect(vrell.revocations).toEqual([]);
     // A loss or a replay saves nothing, the map-end class included.
@@ -85,8 +78,7 @@ describe("run end step 3: towers.md § 9's map-end class", () => {
       const r = runEndRevocations(save, {
         won,
         wonBefore,
-        revoked: { towers: [], abilities: [] },
-        atMapEnd: ['everglow'],
+        revoked: { towers: [], abilities: [], atMapEnd: ['everglow'] },
       });
       expect(r).toEqual({ save, revocations: [] });
     }
@@ -98,10 +90,23 @@ describe("run end step 3: towers.md § 9's map-end class", () => {
     const r = runEndRevocations(deepFreeze(save), {
       won: true,
       wonBefore: false,
-      revoked: { towers: [], abilities: [] },
-      atMapEnd: ['everglow'],
+      revoked: { towers: [], abilities: [], atMapEnd: ['everglow'] },
     });
     expect(r.revocations).toEqual([{ kind: 'revoke_tower', tower: 'thumper' }]);
+    // A cue with no faction takes any class: the first owned and unrevoked.
+    const any = runEndRevocations(deepFreeze(save), {
+      won: true,
+      wonBefore: false,
+      revoked: { towers: [], abilities: [], atMapEnd: [null] },
+    });
+    expect(any.revocations).toEqual([{ kind: 'revoke_tower', tower: 'thumper' }]);
+    // No cue fired: nothing at map end.
+    const none = runEndRevocations(deepFreeze(save), {
+      won: true,
+      wonBefore: false,
+      revoked: { towers: [], abilities: [] },
+    });
+    expect(none.revocations).toEqual([]);
   });
 });
 
