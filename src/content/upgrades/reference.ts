@@ -208,7 +208,7 @@ export const REFERENCE_VARIANTS = {
  * 300 under the warren, free under the convoy; still spent on every later map), and `giftedShop`,
  * how many of the top ranks of each item in the row's `shop` the story gave (Zibzab's crate),
  * owned but never paid for.
- * reference.test.ts prices the rows with it; T710 makes the check read it (or its successor).
+ * The [purchasable] check reads it (validatePurchasable.ts `storyPricing`, T710).
  */
 export interface StoryPricing {
   readonly stardust: number;

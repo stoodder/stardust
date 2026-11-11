@@ -357,6 +357,11 @@ export function traitTexts(
       parts.push(`${statNum(a.chargeTicks / TICK_HZ)} s charge`);
       parts.push(`${statNum(Math.round(a.splashPct * 100))}% splash ${statNum(a.splashTiles)}`);
     }
+    // The Sproing Pad's (T704): its leapers (Sky Bouncers' two) and the Pin a bonked flyer takes.
+    if (a.kind === 'leaper') {
+      if (a.leapers > 1) parts.push(`${a.leapers} leapers`);
+      parts.push(`Pins flyers ${statNum(a.pinTicks / TICK_HZ)} s`);
+    }
     if (a.ignoresArmor) parts.push('ignores armor');
     else if (a.armorPierce > 0) parts.push(`pierce ${a.armorPierce}`);
     if (a.spinUpTicks > 0) parts.push(`${statNum(a.spinUpTicks / TICK_HZ)} s spin-up`);

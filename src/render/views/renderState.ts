@@ -139,6 +139,20 @@ export interface RenderState {
     readonly jamsSeen: number;
     readonly reboots: number;
   };
+  /**
+   * JamRingView and TakeoverView (T707): Auditor rings drawn now and seen since the battle began;
+   * Hostile Takeover lasers and hangar doors drawn now, plates lying on opened tiles, lasers seen,
+   * and jettisons played.
+   */
+  readonly everglowJams: {
+    readonly rings: number;
+    readonly ringsSeen: number;
+    readonly lasers: number;
+    readonly doors: number;
+    readonly plates: number;
+    readonly lasersSeen: number;
+    readonly jettisons: number;
+  };
   /** Big Glorp's puddles showing now, and seen since the battle began (T705). */
   readonly gloop: { readonly puddles: number; readonly spawned: number };
   /**

@@ -52,7 +52,8 @@ const PURGE = {
 } as const satisfies Modifier;
 
 function world(modifiers: readonly Modifier[] = []): { state: SimState; ctx: TickContext } {
-  const config = fixtureConfig({ modifiers });
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the live content's ids are an IdSpace
+  const config = fixtureConfig({ modifiers, content: LIVE as never });
   return {
     state: createState(MAP, config.seed),
     ctx: { content: LIVE, map: MAP, config, scratch: createScratch() },
@@ -147,10 +148,11 @@ describe('Hostile Takeover (takeover.ts)', () => {
     enterBossPhase(state, boss, SV.boss!, 2, true); // a phase change: 1.5 s invulnerable
     state.events.length = 0;
     // The invulnerability counts down in the abilities slot; the laser waits through it.
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 89; i++) {
       boss.invulnerableTicks--;
       expect(run(state, ctx, 1)).toEqual([]);
     }
+    boss.invulnerableTicks--;
     expect(boss.invulnerableTicks).toBe(0);
     expect(run(state, ctx, 1)).toEqual([
       { type: 'TakeoverTell', uid: boss.uid, towers: [ts[3]!.uid] },
@@ -164,50 +166,35 @@ describe('Hostile Takeover (takeover.ts)', () => {
     expect(ts[3]!.jammedBy).toBe(boss.uid);
     // The next laser starts 15 s after the first began (the jam and its immunity long over, so
     // the same tower is taken again).
-    const next = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks);
+    const next = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks - 1);
     expect(next.map((e) => e.type)).toEqual(['TowerUnjammed']);
     expect(run(state, ctx, 1)[0]).toMatchObject({ type: 'TakeoverTell', towers: [ts[3]!.uid] });
     expect(state.stats.takeoverJamTicks).toBe(240); // Declined missed: 4 s
   });
 
-  it('Declined: a Choir at T3 holds it to 1 s (60 ticks); so does a Reboot during the laser', () => {
-    const choirRun = (): SimState => {
-      const { state, ctx } = world();
-      placeTower(state, CHOIR, 3, 1, 3);
-      const top = placeTower(state, RIVET, 1, 1, 3); // within the Choir's 2 tiles
-      for (const [c, r] of TILES.slice(3, 6)) placeTower(state, RIVET, c, r);
-      state.linksDirty = true;
-      links(state, ctx);
-      state.events.length = 0;
-      bossIn(state, 2);
-      const out = run(state, ctx, 1 + TAKEOVER.tellTicks + 300);
-      // The Choir is tier 3 too and lower in uid: it is the pick, unguarded (no Choir aura
-      // covers a Choir); with eight towers the Rivet would be the second.
-      expect(out[0]).toMatchObject({ type: 'TakeoverTell' });
-      void top;
-      return state;
-    };
-    const s = choirRun();
-    expect(s.stats.takeoverJamTicks).toBe(240);
-
-    // Eight towers: the Choir and the Rivet beside it both taken; the Rivet's jam is 1 s.
+  it('Declined: a Choir at T3 holds a jam to 1 s (60 ticks); so does a Reboot on the laser', () => {
+    // Eight towers: the tier-3 Choir and the tier-3 Rivet beside it are both taken. No Choir aura
+    // covers a Choir, so its own jam is 4 s; the Rivet's is 1 s.
     const { state, ctx } = world();
-    placeTower(state, CHOIR, 3, 1, 3);
-    const guarded = placeTower(state, RIVET, 1, 1, 3);
+    const choir = placeTower(state, CHOIR, 3, 1, 3);
+    const guarded = placeTower(state, RIVET, 1, 1, 3); // within the Choir's 2 tiles
     for (const [c, r] of TILES.slice(3, 9)) placeTower(state, RIVET, c, r);
     state.linksDirty = true;
     links(state, ctx);
     state.events.length = 0;
     const boss = bossIn(state, 2);
-    run(state, ctx, 1 + TAKEOVER.tellTicks - 1);
-    const landed = run(state, ctx, 1);
-    expect(landed.find((e) => e.type === 'TowerJammed' && e.uid === guarded.uid)).toMatchObject({
-      ticks: 60,
-      source: boss.uid,
-    });
+    expect(run(state, ctx, 1)).toEqual([
+      { type: 'TakeoverTell', uid: boss.uid, towers: [choir.uid, guarded.uid] },
+    ]);
+    const landed = run(state, ctx, TAKEOVER.tellTicks);
+    expect(landed.filter((e) => e.type === 'TowerJammed')).toEqual([
+      { type: 'TowerJammed', uid: choir.uid, ticks: 240, source: boss.uid },
+      { type: 'TowerJammed', uid: guarded.uid, ticks: 60, source: boss.uid },
+    ]);
     run(state, ctx, 400);
-    expect(state.stats.takeoverJamTicks).toBe(240); // the Choir's own 4 s
-    // Alone under the Choir (the Choir itself made immune): 60 ticks, Declined.
+    expect(state.stats.takeoverJamTicks).toBe(240); // the Choir's own: Declined missed
+
+    // With the Choir out of reach of a jam (its immunity), only the guarded Rivet: Declined.
     const solo = world();
     const c = placeTower(solo.state, CHOIR, 3, 1, 3);
     placeTower(solo.state, RIVET, 1, 1, 3);
@@ -219,7 +206,7 @@ describe('Hostile Takeover (takeover.ts)', () => {
     run(solo.state, solo.ctx, 1 + TAKEOVER.tellTicks + 300);
     expect(solo.state.stats.takeoverJamTicks).toBe(60);
 
-    // A Reboot during the laser: nothing lands (Declined); one 30 ticks after it lands: 31.
+    // A Reboot during the laser: nothing lands (Declined); one 30 ticks after it lands: 31 ticks.
     for (const [castAt, held] of [
       [100, 0],
       [1 + TAKEOVER.tellTicks + 30, 31],
@@ -248,8 +235,7 @@ describe('Hostile Takeover (takeover.ts)', () => {
     expect([boss.jamTellTicks, boss.jamTicks, boss.takeoverTowers]).toEqual([0, 900, []]);
     boss.unnervedTicks = 0;
     const after = run(state, ctx, TAKEOVER.everyTicks - TAKEOVER.tellTicks);
-    expect(after.at(-1)).toMatchObject({ type: 'TakeoverTell' });
-    expect(after).toHaveLength(1);
+    expect(after).toEqual([{ type: 'TakeoverTell', uid: boss.uid, towers: expect.any(Array) }]);
   });
 
   it('drops a laser when the phase ends (the jettison); its landed jams hold', () => {
@@ -301,6 +287,7 @@ describe('the jettison (jettison.ts) and its plates (openTile.ts)', () => {
     expect(def.armor).toBe(13);
     const boss = spawn(state, def, { dist: 1 });
     enterBossPhase(state, boss, SV.boss!, 2, false);
+    boss.hp = 0.66 * def.hp;
     bossDamage(state, boss, 4000); // to 33%: phase 3 begins
     expect(boss.bossPhase).toBe(3);
     state.events.length = 0;

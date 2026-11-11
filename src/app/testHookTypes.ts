@@ -100,7 +100,8 @@ export interface TestHooks {
   /**
    * Shows a made-up finished run's Results (T316; app/resultsFixture.ts), with the map's flow: a
    * win's before-Results scenes, then the card, whose dismissal plays the after-Results scenes
-   * (scenes play only with `&dialogue=1`). It reads the save in play but never writes it. From a
+   * (scenes play only with `&dialogue=1`). It reads the save in play but never writes it (unless
+   * `commitChoice`, which writes the card's story choice). From a
    * menu, not a battle (it throws during one). Resolves once the card shows.
    */
   results(fixture: ResultsFixture): Promise<void>;
@@ -136,6 +137,11 @@ export interface ResultsFixture {
    * through on a win, half on a loss (of the run's total under the save's flags; T612).
    */
   readonly escort?: { readonly evacuated?: number; readonly lost?: number };
+  /**
+   * The story choice taken on the card is written to the save in play, as a real card's is (C4's
+   * commit, T710); the run itself still isn't. Default false: nothing is written.
+   */
+  readonly commitChoice?: boolean;
 }
 
 export interface DialogueHooks {

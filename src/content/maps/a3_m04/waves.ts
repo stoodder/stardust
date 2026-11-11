@@ -39,6 +39,11 @@ const silencers = (count: number, route: RouteId, delaySec: number, intervalSec 
 const moths = (count: number, delaySec: number, intervalSec = 1.0): WaveGroup =>
   g('riftmoth', count, 'sky', delaySec, intervalSec);
 
+/**
+ * A Silencer pack's spacing: a little over a tell (2 s), so each one's tell starts after the one
+ * before has landed and picks a tower that isn't Jammed yet (a pack told together picks one).
+ */
+export const SIL_GAP = 2.4;
 /** The build phase before most waves. */
 export const COUNTDOWN = 30;
 /** Gerald's pass: he enters the chute this long into W7, ahead of its drones. */
@@ -54,7 +59,7 @@ export const waves = defineWaves([
   // W3 · Compliance + Expediter
   {
     countdownSec: COUNTDOWN,
-    groups: [motes(4, 'tunnel', 0), drones(4, 2), g('expediter', 1, 'service', 6), drones(3, 8)],
+    groups: [motes(4, 'tunnel', 0), drones(3, 2), g('expediter', 1, 'service', 6), drones(3, 8)],
   },
   // W4 · one Silencer [T: hushing; tendril tell]
   { countdownSec: COUNTDOWN, groups: [silencers(1, 'tunnel', 0), drones(5, 10, 1.5)] },
@@ -63,7 +68,7 @@ export const waves = defineWaves([
   // W6 · Silencers ×2 [X]
   {
     countdownSec: COUNTDOWN,
-    groups: [silencers(2, 'tunnel', 0), drones(4, 6), motes(4, 'tunnel', 14)],
+    groups: [silencers(2, 'tunnel', 0, SIL_GAP), drones(4, 6), motes(4, 'tunnel', 14)],
   },
   // W7 · Gerald's pass + Compliance drones
   {
@@ -81,26 +86,26 @@ export const waves = defineWaves([
   {
     countdownSec: COUNTDOWN,
     groups: [
-      silencers(3, 'tunnel', 0, 3),
-      g('fracture', 1, 'tunnel', 8),
-      moths(6, 6),
-      motes(5, 'tunnel', 14),
+      silencers(4, 'tunnel', 0, SIL_GAP),
+      g('fracture', 1, 'tunnel', 6),
+      moths(6, 14, 0.6),
+      motes(5, 'tunnel', 10),
     ],
   },
   // W11 · the Everglow column
   {
     countdownSec: COUNTDOWN,
     groups: [
-      drones(8, 0, 1.0),
+      drones(6, 0, 1.0),
       g('expediter', 2, 'service', 4, 6),
       liabilities(2, 8),
-      drones(6, 20, 1.0),
+      drones(5, 20, 1.0),
     ],
   },
   // W12 · Silencers + Rift Moths
   {
     countdownSec: COUNTDOWN,
-    groups: [silencers(3, 'tunnel', 0, 3), moths(8, 6), drones(4, 10)],
+    groups: [silencers(4, 'tunnel', 0, SIL_GAP), moths(8, 14, 0.6), drones(4, 10)],
   },
   // W13 · both spawns
   {
@@ -120,7 +125,7 @@ export const waves = defineWaves([
   // W15 · Liability + Silencers
   {
     countdownSec: COUNTDOWN,
-    groups: [liabilities(3, 0), silencers(3, 'tunnel', 2, 3), drones(8, 10, 1.0)],
+    groups: [liabilities(2, 0), silencers(3, 'tunnel', 2, 3), drones(6, 10, 1.0)],
   },
   // W16 · everything
   {

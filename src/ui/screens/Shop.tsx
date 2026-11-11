@@ -1,6 +1,6 @@
 // Zibzab's shop (T204d, T308; design/progression.md § 4): the Stardust shelf, after A1M3. The open
 // question first ("Where does stardust come from?", from the shop's opening until it's asked or
-// A2M4), then the Vrell licenses (the Zapcoil sample, given as the shop opens), the global
+// A2M4), then the jailbreak (after A3M3, while a class is revoked; T710), the Vrell licenses (the Zapcoil sample, given as the shop opens), the global
 // upgrades, the tower tune-ups, and the Field Protocol unlocks, each group in catalog order.
 // Asking plays the question's scene over the base (app/baseScenes.ts).
 import { askOpenQuestion, openQuestionShown } from '../../app/baseScenes.ts';
@@ -10,6 +10,8 @@ import { Shelf, type ShelfGroup } from './Shelf.tsx';
 
 function shopGroups(offers: readonly Offer[]): ShelfGroup[] {
   const groups: ShelfGroup[] = [
+    // After A3M3 (T710): the revoked classes back, jailbroken.
+    { title: 'Firmware', offers: offers.filter((o) => o.item.kind === 'jailbreak') },
     { title: 'Licenses', offers: offers.filter((o) => o.item.kind === 'license') },
     {
       title: 'Global upgrades',

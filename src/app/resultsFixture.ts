@@ -2,7 +2,8 @@
 // facts instead of played, so the smoke flows and agents can see any map's Results and its flow
 // (A1M5's party → card → stinger, its CONTAINMENT LAPSE stamp; A2M4's C2 offer) without playing
 // ten waves. It reads the save in play but never writes it: the payroll is what the run *would*
-// pay, and a story choice taken on its card changes nothing.
+// pay, and a story choice taken on its card changes nothing (unless `commitChoice`, which writes
+// that choice as a real card does; the run is still never filed).
 import { SCENES, type Scene } from '../content/dialogue/index.ts';
 import { MAPS } from '../content/maps/index.ts';
 import type { MapId, WaveTag } from '../content/types.ts';
@@ -133,7 +134,8 @@ export function fixtureResult(f: ResultsFixture, save: SaveData | null): RunResu
   const after = ended?.save ?? save;
   const story = { ...input, ...debriefStoryOf(after) };
   const result = runResultOf(story, f.outcome, ended?.summary ?? null);
-  return withResultsChoice(result, story, f.outcome, after, false);
+  // `commitChoice` (T710's C4 smoke): the pick is made on the save in play and written.
+  return withResultsChoice(result, story, f.outcome, after, f.commitChoice === true);
 }
 
 /** A flow scene by id: registered, or a dev scene (`ui/dialogue/dev.ts`). */

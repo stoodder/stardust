@@ -71,12 +71,15 @@ describe('the live links (towers.md § 6.2)', () => {
     expect(live.towers.crane.links).toEqual(['reel_it_in', 'finders_keepers']);
     // M5's (T500a stubs).
     expect(live.towers.prism.links).toEqual(['resonance', 'lightsong']);
-    expect(live.towers.lantern.links).toEqual(['lightsong']);
+    expect(live.towers.lantern.links).toEqual(['lightsong', 'lookie_here']);
     // M6's: the Scuttle Den's (T604).
     expect(live.towers.burrow.links).toEqual(['splash_zone', 'finders_keepers']);
     // The Hum Choir's (T607) and the Stasis Bloom's (T608).
     expect(live.towers.mindspike.links).toEqual(['harmony', 'stillmind']);
     expect(live.towers.bloom.links).toEqual(['pinned_down', 'stillmind']);
+    // M7's: the Sproing Pad's (T704), with the Hum Choir's Bounce Chorus.
+    expect(live.towers.sproing.links).toEqual(['lookie_here', 'bounce_chorus']);
+    expect(live.towers.choir.links).toEqual(['harmony', 'bounce_chorus']);
   });
 
   it('refuses chain jumps that aren’t a whole number > 0, and a Soak that isn’t > 0', () => {

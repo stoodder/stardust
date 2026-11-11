@@ -58,6 +58,7 @@ describe('the loadout screen (app side)', () => {
       ['choir', []], // plays since T607: a support aura, no answer; A1M2 asks armor
       ['bloom', []], // plays since T608: burrowed and jam (its Stasis); A1M2 asks armor
       ['gloop', ['T1']], // plays since T705: Corroded answers armor from tier 1
+      ['sproing', []], // plays since T704: air (it grounds flyers); A1M2 asks armor
     ]);
     // Costs after the save's tune-ups (the sim charges the same: costFor).
     const cfg = battleConfig('a1_m02', 0, activeSave());

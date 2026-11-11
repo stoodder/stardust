@@ -44,10 +44,25 @@ const reboot = (wave: number, afterSec: number): BuildStep => ({
   when: { afterSec },
 });
 
-/** Par's steps with its Rivets built as `tower` (the warren's Gloop). */
-function rivetsAs(steps: readonly BuildStep[], tower: TowerId): BuildStep[] {
-  return steps.map((st) => ('build' in st && st.build === 'rivet' ? { ...st, build: tower } : st));
+/**
+ * `steps` with each tower `swap` names built as its swap instead (same tile, same upgrades), and
+ * without System Reboot's casts when `casts` is false.
+ */
+function swapped(
+  steps: readonly BuildStep[],
+  swap: Partial<Record<TowerId, TowerId>>,
+  casts = true,
+): BuildStep[] {
+  return steps.flatMap((st): BuildStep[] => {
+    if ('ability' in st) return casts ? [st] : [];
+    if (!('build' in st)) return [st];
+    const to = swap[st.build];
+    return [to === undefined ? st : { ...st, build: to }];
+  });
 }
+
+/** System Reboot on the W6, W10 and W12 packs, as the first one's tell starts (it fizzles). */
+const REBOOT_SEC = 27.5;
 
 function parSteps(): BuildStep[] {
   return [
@@ -59,31 +74,31 @@ function parSteps(): BuildStep[] {
     { wave: 1, build: 'mindspike', tile: J_S },
     { wave: 2, upgrade: J_NE }, // T3: pierce
     { wave: 3, build: 'harpoon', tile: SV_N },
-    { wave: 4, build: 'choir', tile: J_SW }, // Harmony with the Mindspike below it
+    { wave: 4, build: 'choir', tile: HALL_W }, // Harmony with the Mindspike beside it
     { wave: 5, build: 'rivet', tile: SKY },
     { wave: 5, upgrade: SKY },
-    { wave: 6, upgrade: J_SW },
-    reboot(6, 14),
-    { wave: 6, upgrade: J_SE },
-    { wave: 7, upgrade: SV_S },
-    { wave: 7, upgrade: J_SW }, // T3: jams in its aura cut by 75%
-    { wave: 8, upgrade: J_SE },
+    reboot(6, REBOOT_SEC),
+    { wave: 6, upgrade: HALL_W },
+    { wave: 6, upgrade: J_S },
+    { wave: 7, upgrade: HALL_W }, // T3: jams in its aura cut by 75%
+    { wave: 7, upgrade: J_SE },
+    { wave: 8, upgrade: SV_S },
     { wave: 8, upgrade: J_S },
-    { wave: 9, upgrade: SV_S },
-    { wave: 9, upgrade: SKY },
-    { wave: 10, upgrade: SV_N },
-    reboot(10, 14),
-    { wave: 10, build: 'mindspike', tile: HALL_W },
-    { wave: 11, upgrade: HALL_W },
-    { wave: 11, upgrade: J_S },
+    { wave: 9, build: 'mindspike', tile: J_SW },
+    { wave: 9, upgrade: J_SE },
+    reboot(10, REBOOT_SEC),
+    { wave: 10, upgrade: J_SW },
+    { wave: 10, upgrade: SV_S },
+    { wave: 11, upgrade: SKY },
+    { wave: 11, upgrade: SV_N },
+    reboot(12, REBOOT_SEC),
+    { wave: 12, upgrade: J_SW },
     { wave: 12, build: 'harpoon', tile: J_NW },
-    reboot(12, 14),
-    { wave: 12, upgrade: J_NW },
-    { wave: 13, upgrade: SV_N },
+    { wave: 13, upgrade: J_NW },
     { wave: 13, build: 'harpoon', tile: HALL_E },
     { wave: 14, upgrade: HALL_E },
-    { wave: 14, upgrade: J_NW },
-    { wave: 15, upgrade: HALL_W },
+    { wave: 14, upgrade: SV_N },
+    { wave: 15, upgrade: J_NW },
     { wave: 15, upgrade: HALL_E },
   ];
 }
@@ -92,6 +107,11 @@ const PAR: ScriptedBuild = {
   loadout: ['choir', 'harpoon', 'mindspike', 'rivet'],
   steps: parSteps(),
 };
+
+/** Par's Thumpers (no-air's) specialized as Bunker Buster as each reaches tier 3. */
+function withBunkerBusters(steps: readonly BuildStep[], tiles: readonly GridPos[]): BuildStep[] {
+  return [...steps, ...tiles.map((tile): BuildStep => ({ wave: 15, specialize: tile, spec: 'b' }))];
+}
 
 export const builds = defineBuilds({
   // A3M4's reference profile (campaign.md § 4.9): the jailbreak's Rivet back, the Hum Choir from
@@ -102,7 +122,7 @@ export const builds = defineBuilds({
     ...cell,
     parBuild: {
       loadout: ['choir', 'harpoon', 'mindspike', 'gloop'],
-      steps: rivetsAs(PAR.steps, 'gloop'),
+      steps: swapped(PAR.steps, { rivet: 'gloop' }),
     },
   })),
   parBuild: PAR,
@@ -110,63 +130,42 @@ export const builds = defineBuilds({
   // The jam exam comes in W10's Hollow surge; the armor and air exams by W11 too (act3.md).
   noCounterLoseByWave: 11,
   noCounterBuilds: {
+    // No jam answer: par with a Prism where its Choir stands, Scanner Sweep in slot 1, no casts.
     jam: {
       loadout: ['harpoon', 'mindspike', 'rivet', 'prism'],
       technicianAbility: 'scanner_sweep',
-      steps: [
-        HOLD_FOR_GERALD,
-        { wave: 1, build: 'harpoon', tile: SV_S },
-        { wave: 1, build: 'rivet', tile: J_NE },
-        { wave: 1, upgrade: J_NE },
-        { wave: 1, build: 'harpoon', tile: SV_N },
-        { wave: 2, upgrade: J_NE },
-        { wave: 3, build: 'prism', tile: J_NW },
-        { wave: 3, build: 'mindspike', tile: J_SW },
-      ],
+      steps: swapped(PAR.steps, { choir: 'prism' }, false),
     },
+    // No armor answer: Zapcoils where par's Harpoons stand, Skyhooks for its Rivets, a Scuttle Den
+    // for its Mindspikes (Psionic ignores the Silencers' armor, so it answers armor here).
     armor: {
       loadout: ['choir', 'zapcoil', 'skyhook', 'burrow'],
-      steps: [
-        HOLD_FOR_GERALD,
-        { wave: 1, build: 'zapcoil', tile: SV_S },
-        { wave: 1, build: 'burrow', tile: J_SW },
-        { wave: 1, build: 'zapcoil', tile: J_NE },
-        { wave: 2, build: 'choir', tile: J_NW },
-        { wave: 3, build: 'skyhook', tile: SKY },
-      ],
+      steps: swapped(PAR.steps, { harpoon: 'zapcoil', rivet: 'skyhook', mindspike: 'burrow' }),
     },
+    // No air answer: Thumpers (Bunker Buster) where par's Harpoons stand, Sprinklers for its
+    // Rivets, a Scuttle Den for its Mindspikes: nothing reaches the Moths.
     air: {
       loadout: ['choir', 'thumper', 'burrow', 'sprinkler'],
-      steps: [
-        HOLD_FOR_GERALD,
-        { wave: 1, build: 'thumper', tile: SV_S },
-        { wave: 1, build: 'burrow', tile: J_SW },
-        { wave: 1, build: 'thumper', tile: J_NE },
-        { wave: 2, build: 'choir', tile: J_NW },
-      ],
+      steps: withBunkerBusters(
+        swapped(PAR.steps, { harpoon: 'thumper', rivet: 'sprinkler', mindspike: 'burrow' }),
+        [SV_S, J_SE],
+      ),
     },
   },
   altBuilds: {
+    // Hum Choir, Prism, Skyhook, Thumper (Bunker Buster): the Prisms' beams carry the armor, the
+    // Skyhooks the Moths, the Thumpers the screens; the Choir and System Reboot the jams.
     beam_and_flak: {
       loadout: ['choir', 'prism', 'skyhook', 'thumper'],
-      steps: [
-        HOLD_FOR_GERALD,
-        { wave: 1, build: 'prism', tile: SV_S },
-        { wave: 1, build: 'thumper', tile: J_NE },
-        { wave: 1, build: 'skyhook', tile: SKY },
-        { wave: 2, build: 'choir', tile: J_NW },
-      ],
+      steps: withBunkerBusters(
+        swapped(PAR.steps, { harpoon: 'prism', rivet: 'skyhook', mindspike: 'thumper' }),
+        [J_S],
+      ),
     },
+    // Harpoon, Mindspike, Scuttle Den, Lookout: no Choir, so System Reboot carries the jam.
     den_and_lookout: {
       loadout: ['harpoon', 'mindspike', 'burrow', 'lookout'],
-      steps: [
-        HOLD_FOR_GERALD,
-        { wave: 1, build: 'harpoon', tile: SV_S },
-        { wave: 1, build: 'burrow', tile: J_SW },
-        { wave: 1, build: 'harpoon', tile: SV_N },
-        { wave: 2, build: 'mindspike', tile: J_NE },
-        reboot(6, 12),
-      ],
+      steps: swapped(PAR.steps, { rivet: 'harpoon', choir: 'burrow' }),
     },
   },
 });

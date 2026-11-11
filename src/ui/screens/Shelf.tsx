@@ -63,6 +63,7 @@ function effectLine(o: Offer): string {
 
 /** A row's stable key: the item it sells. */
 function offerKey(o: Offer): string {
+  if (o.item.kind === 'jailbreak') return 'jailbreak';
   return o.item.kind === 'specs' || o.item.kind === 'license' || o.item.kind === 'attune'
     ? `${o.item.kind}:${o.item.tower}`
     : `${o.item.kind}:${o.item.id}`;
@@ -164,7 +165,11 @@ export function Shelf({ pane, view, group, lead }: ShelfProps) {
       return;
     }
     bought.current = offerKey(o);
-    const unlock = o.item.kind === 'specs' || o.item.kind === 'license' || o.item.kind === 'attune';
+    const unlock =
+      o.item.kind === 'specs' ||
+      o.item.kind === 'license' ||
+      o.item.kind === 'attune' ||
+      o.item.kind === 'jailbreak';
     playSfx(unlock ? 'unlock' : 'upgrade');
     const line = p.thanks[thanked[pane]++ % p.thanks.length] ?? '';
     setSaid(

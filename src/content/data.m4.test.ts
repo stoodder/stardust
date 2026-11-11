@@ -129,6 +129,9 @@ describe('M4 towers, ability, links, and catalog rows', () => {
       // M7's: the Gloop Spitter's (T705; sim/gloop.test.ts).
       'acid_rain',
       'sticky_flak',
+      // The Sproing Pad's (T704; sim/leapers.test.ts).
+      'lookie_here',
+      'bounce_chorus',
     ]);
     expect(TOWER_ACCESS.lookout).toMatchObject({ price: 150, availableAfter: 'a1_m05' });
     expect(TOWER_ACCESS.harpoon).toMatchObject({ price: 250, availableAfter: 'a2_m01' });

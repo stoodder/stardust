@@ -141,6 +141,9 @@ function roleOf(tower: string): string | undefined {
  * turret a license or an attunement adds (a gift's "Given: …"), or the Technician ability R&D adds.
  */
 export function effectText(o: Offer): string {
+  if (o.item.kind === 'jailbreak') {
+    return 'Brings your revoked turrets back: jailbroken firmware, the same stats and specs';
+  }
   if (o.item.kind === 'attune') {
     // A gift's row reads as Results' "Given: Prism Spire" does.
     const role = roleOf(o.item.tower);
@@ -184,6 +187,8 @@ export function offerName(o: Offer): string {
       return silkText(abilityName(o.item.id));
     case 'attune':
       return towerName(o.item.tower);
+    case 'jailbreak':
+      return 'Jailbreak';
     default:
       return assertNever(o.item);
   }
@@ -207,13 +212,20 @@ export function offerCopy(o: Offer): string | null {
       return silkText(itemCopy(`ability_${o.item.id}`) ?? MISSING_COPY);
     case 'attune':
       return silkText(itemCopy(`${o.gift ? 'gift' : 'attune'}_${o.item.tower}`) ?? MISSING_COPY);
+    // Zibzab's line is T709's (copy.ts `jailbreak`).
+    case 'jailbreak':
+      return silkText(itemCopy('jailbreak') ?? MISSING_COPY);
     default:
       return assertNever(o.item);
   }
 }
 
-/** The price tag: "2 Intel", "120 Stardust". */
+/**
+ * The price tag: "2 Intel", "120 Stardust"; the jailbreak under the convoy, which costs nothing,
+ * "FREE — Goldie's engineers" (D146: the player still takes it).
+ */
 export function priceText(o: Offer): string {
+  if (o.item.kind === 'jailbreak' && o.price === 0) return "FREE — Goldie's engineers";
   return `${formatCount(o.price)} ${o.currency === 'intel' ? 'Intel' : 'Stardust'}`;
 }
 

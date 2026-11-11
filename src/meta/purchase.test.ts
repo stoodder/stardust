@@ -89,8 +89,8 @@ describe('offers', () => {
     // and Lookout's). Granted-only upgrades (C2's Zibzab Tune-up) never reach a shelf: the story
     // gives them.
     const shopUpgrades = Object.values(UPGRADES).filter((u) => u.kind === 'shop').length;
-    // The Gloop Spitter's tune-up waits for its gift too (T705).
-    expect(shop.length).toBe(shopUpgrades - 7 + Object.keys(PROTOCOLS).length + 4);
+    // The Gloop Spitter's and the Sproing Pad's tune-ups wait for their gifts too (T705, T704).
+    expect(shop.length).toBe(shopUpgrades - 8 + Object.keys(PROTOCOLS).length + 4);
     expect(new Set(shop.map((o) => o.refusal))).toEqual(new Set(['pane_locked']));
     expect(shelf(DEV_SAVES.after_a1m1.build(), 'engineering')[0]?.refusal).toBe('pane_locked');
   });
@@ -166,7 +166,7 @@ describe('offers', () => {
     const save = afterA1M4();
     expect(offerFor(save, { kind: 'upgrade', id: 'nope' })).toBeNull();
     expect(offerFor(save, { kind: 'protocol', id: '__proto__' })).toBeNull();
-    expect(offerFor(save, { kind: 'specs', tower: 'sproing' })).toBeNull(); // a stub (T704)
+    expect(offerFor(save, { kind: 'specs', tower: 'stub_tower' })).toBeNull();
     expect(buy(save, { kind: 'upgrade', id: 'nope' })).toMatchObject({
       ok: false,
       reason: 'unknown',
@@ -471,10 +471,13 @@ describe("a gift tower's rows wait for the gift (progression.md § 4.2's listing
         'after_a3m2_thumper',
         'after_a3m3_convoy',
         'after_a3m3_warren',
-        // M7's saves (T700b) lack the Choir only until A3M4 is registered (its briefing gives it).
-        ...Object.entries(DEV_SAVES).flatMap(([id, dev]) =>
-          /^after_a3m[4-6]/.test(id) && !dev.build().unlocks.towers.includes('choir') ? [id] : [],
-        ),
+        // M7's saves (T700b) lack the Choir only until A3M4 is registered (its briefing gives it),
+        // and the Sproing Pad (stocked after A3M4; T704) until A3M5's briefing gives it.
+        ...Object.entries(DEV_SAVES).flatMap(([id, dev]) => {
+          const owned = dev.build().unlocks.towers;
+          const early = !owned.includes('choir') || !owned.includes('sproing');
+          return /^after_a3m[4-6]/.test(id) && early ? [id] : [];
+        }),
       ].toSorted(),
     );
   });

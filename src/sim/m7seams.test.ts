@@ -54,7 +54,7 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
       'ability.reboot': null, // T702
       'enemy.healAura': null, // T703
       'modifier.enemyStat.faction': null, // T703
-      'attack.leaper': 'T704',
+      'attack.leaper': null, // T704 lifted it (sim/leapers.test.ts)
       'tower.puddle': null, // T705 lifted it (sim/gloop.test.ts)
       'map.bearers': null, // T706
       'ally.flagGated': null, // T706
@@ -73,13 +73,11 @@ describe('FEATURE_GATES, SCRIPT_GATES, and HARNESS_GATES (T700a rows; D146)', ()
   });
 
   it('refuse the M7 stubs whole, naming their task', () => {
-    expect(STUB_TOWER_TASKS).toEqual({ sproing: 'T704' }); // T705 lifted the Gloop
+    expect(STUB_TOWER_TASKS).toEqual({}); // T705 lifted the Gloop, T704 the Sproing Pad
     expect(towerRefusal(TOWERS.gloop)).toBeNull();
-    expect(towerRefusal(TOWERS.sproing)).toBe("the 'sproing' tower is not simulated until T704");
-    // Lifted from the stub list, each still waits on its own row.
-    expect(towerRefusal(TOWERS.sproing, FEATURE_GATES, {})).toBe(
-      "a 'leaper' attack (sproing) is not simulated until T704",
-    );
+    expect(towerRefusal(TOWERS.sproing)).toBeNull();
+    // Lifted from the stub list, neither waits on a row of its own.
+    expect(towerRefusal(TOWERS.sproing, FEATURE_GATES, {})).toBeNull();
     expect(towerRefusal(TOWERS.gloop, FEATURE_GATES, {})).toBeNull(); // the puddle is a spec's
     expect(abilityRefusal(LIVE.abilities.system_reboot)).toBeNull(); // T702 runs it
   });

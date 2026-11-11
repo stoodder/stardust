@@ -74,6 +74,10 @@ export const LINK_CALLOUT: Readonly<Record<string, { ring: ColorName; text: Colo
   // orange shells and the Skyhook's violet flak.
   acid_rain: { ring: 'orange.3', text: 'green.4' },
   sticky_flak: { ring: 'violet.3', text: 'green.4' },
+  // T704 first pass (T730a may restyle them): the Sproing Pad's mushroom orange over the Lantern's
+  // pink light and the Choir's song gold.
+  lookie_here: { ring: 'pink.3', text: 'orange.4' },
+  bounce_chorus: { ring: 'gold.3', text: 'orange.4' },
 };
 
 /**

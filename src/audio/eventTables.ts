@@ -26,6 +26,8 @@ export const ATTACK_SOUNDS: Readonly<
   // The Scuttle Den (T604) fires no shot: its swarmlings latch (SwarmLatch: their chitter and
   // bite, SWARM_SOUNDS in eventTablesAct3.ts). The row keeps the table whole.
   spawner: { fire: null, land: null },
+  // The Sproing Pad (T704) fires no shot either: its leapers bonk (LeaperBonk; the boing is T750's).
+  leaper: { fire: null, land: null },
 };
 
 /**

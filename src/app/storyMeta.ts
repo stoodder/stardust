@@ -5,20 +5,30 @@
 // - **What run end reads** from the finished battle: the classes and abilities its script revoked
 //   (`revokedAtEnd`, the sim's `state.revoked`), and the tower type under Bricks's `{name}` plate
 //   (`memorialAtEnd`; A3M3's last tag, saved as `memorialTower`).
-// - **A briefing that sets a script flag** (C3's `door_choice`, committed as A3M3's briefing closes):
-//   the battle was built before the answer, so when the save's script flags no longer match the
-//   battle's (`scriptFlagsChanged`), the router restarts it on the same seed with no briefing
+// - **A briefing that changes the battle** (C3's `door_choice`, committed as A3M3's briefing
+//   closes; Zibzab's crate, opened as A3M6's closes, `openCrateAtBriefing`, T710): the battle was
+//   built before, so when the save now gives it other script flags (`scriptFlagsChanged`) or other
+//   modifiers (`briefingChangedBattle`), the router restarts it on the same seed with no briefing
 //   (app/router.ts). It is still at its first tick: the briefing holds the battle.
-// Pure apart from `grantBriefingGifts`, which writes the save in play.
+// - **C4 in play** (T710; meta/storyInPlay.ts): `quillOfflineHere` (A3M5 under Rewrite: QUILL's
+//   barks and radio silent, `system` intel; the presentation is T713's), and what the crate holds
+//   (`crateOffer`, for T714's opening and its protocol pick).
+// Pure apart from `grantBriefingGifts` and `openCrateAtBriefing`, which write the save in play.
 import { ABILITIES } from '../content/abilities/index.ts';
 import type { CampaignMapId } from '../content/campaign.ts';
 import { isCampaignMapId } from '../content/dialogue/rules.ts';
 import { TOWERS } from '../content/towers/index.ts';
-import type { AbilityId, IdSpace, TowerId } from '../content/types.ts';
+import type { AbilityId, IdSpace, ProtocolId, TowerId, UpgradeId } from '../content/types.ts';
 import { UPGRADES } from '../content/upgrades/index.ts';
 import {
+  CRATE,
   briefingGifts,
+  crateContents,
+  crateProtocols,
+  openCrate,
+  quillOffline,
   revokedClassFactions,
+  type ActThreeTwoTransaction,
   type RevocationTransaction,
   type RunRevocations,
   type SaveData,
@@ -28,6 +38,7 @@ import { gatedFlagDefaults, type SimConfig } from '../sim/index.ts';
 import { scriptFlagsOf } from '../story/flags.ts';
 import { tagDefFor } from '../story/tags.ts';
 import type { ResultsRevocation } from '../ui/screens/state.ts';
+import { battleConfig } from './battleSetup.ts';
 import { towerName } from './hudText.ts';
 import { activeSave, updateActiveSave } from './save.ts';
 
@@ -140,4 +151,62 @@ export function revocationView(t: RevocationTransaction): ResultsRevocation {
             amount: t.refund.amount,
           },
   };
+}
+
+/**
+ * Whether the save now builds `cfg`'s battle differently (a briefing just committed C3's door, or
+ * opened Zibzab's crate): other script flags (`scriptFlagsChanged`) or other modifiers. The router
+ * restarts the battle on them.
+ */
+export function briefingChangedBattle(cfg: SimConfig<IdSpace>, save: SaveData | null): boolean {
+  if (save === null) return false;
+  if (scriptFlagsChanged(cfg, save)) return true;
+  let next: SimConfig<IdSpace>;
+  try {
+    next = battleConfig(cfg.mapId, cfg.seed, save);
+  } catch {
+    return false;
+  }
+  return JSON.stringify(next.modifiers) !== JSON.stringify(cfg.modifiers);
+}
+
+/** What Zibzab's crate holds for `save`: its tune-ups, else the protocols to pick from (D146). */
+export interface CrateOffer {
+  readonly tuneUps: Readonly<Partial<Record<UpgradeId, number>>>;
+  /** The Field Protocols the player may pick when it holds no tune-up (else empty). */
+  readonly protocols: readonly ProtocolId[];
+}
+
+/** The crate's offer for `save`, or null once it is opened (or for no save). */
+export function crateOffer(save: SaveData | null): CrateOffer | null {
+  if (save === null || save.story.granted.includes(CRATE.grant)) return null;
+  const tuneUps = crateContents(save);
+  return {
+    tuneUps,
+    protocols: Object.keys(tuneUps).length > 0 ? [] : crateProtocols(save),
+  };
+}
+
+/**
+ * As `mapId`'s briefing closes: on A3M6 (`CRATE.map`), Zibzab's crate opens on the save in play,
+ * once (D146: live from W1). Its tune-ups install at once; a crate holding none opens on the
+ * protocol `pick` (T714's picker in the briefing; without one it stays shut, refused
+ * `'needs_pick'`, and asks again on the next briefing). Returns what it did, or null.
+ */
+export function openCrateAtBriefing(
+  mapId: string,
+  pick?: ProtocolId,
+): ActThreeTwoTransaction | null {
+  const save = activeSave();
+  if (save === null || mapId !== CRATE.map) return null;
+  const r = openCrate(save, pick);
+  if (!r.ok || r.applied === null) return null;
+  const next = r.save;
+  updateActiveSave(() => next);
+  return r.applied;
+}
+
+/** Whether QUILL is offline on `mapId` for the save in play (A3M5 under C4 Rewrite; T713 reads). */
+export function quillOfflineHere(mapId: string): boolean {
+  return quillOffline(mapId, activeSave());
 }

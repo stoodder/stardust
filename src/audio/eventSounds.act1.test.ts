@@ -199,8 +199,11 @@ describe('the sound tables cover the content', () => {
       for (const tier of [...t.tiers, ...specs]) {
         const kind = tier.attack?.kind;
         if (kind === undefined) continue;
-        // A spawner (the Scuttle Den) fires no shot: its swarmlings' latches sound (SWARM_SOUNDS).
-        if (kind === 'spawner') expect(ATTACK_SOUNDS[kind], t.id).toBeDefined();
+        // A spawner (the Scuttle Den) fires no shot: its swarmlings' latches sound (SWARM_SOUNDS);
+        // nor does a leaper pad (the Sproing Pad, T704): its leapers' bonks will (T750).
+        if (kind === 'spawner' || kind === 'leaper') {
+          expect(ATTACK_SOUNDS[kind], t.id).toBeDefined();
+        } else expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
         else expect(ATTACK_SOUNDS[kind]?.fire, `${t.id}: ${kind}`).toBeTruthy();
       }
     }

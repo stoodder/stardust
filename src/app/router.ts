@@ -51,7 +51,8 @@ import {
   grantBriefingGifts,
   memorialAtEnd,
   revokedAtEnd,
-  scriptFlagsChanged,
+  briefingChangedBattle,
+  openCrateAtBriefing,
 } from './storyMeta.ts';
 import { hud } from '../ui/state.ts';
 import { heldRewards } from '../ui/screens/state.ts';
@@ -326,9 +327,11 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
   };
 
   /**
-   * As `b`'s briefing closes: when it committed a story flag the sim reads (C3's `door_choice` in
-   * A3M3's briefing; app/storyMeta.ts), the battle, built before the answer, restarts on the same
-   * seed with no briefing. It is still on its first tick (the briefing holds it), so nothing is lost.
+   * As `b`'s briefing closes: Zibzab's crate opens on A3M6 (`openCrateAtBriefing`); then, when the
+   * briefing committed a story flag the sim reads (C3's `door_choice` in A3M3's briefing) or the
+   * crate changed the modifiers (app/storyMeta.ts `briefingChangedBattle`), the battle, built
+   * before, restarts on the same seed with no briefing. It is still on its first tick (the
+   * briefing holds it), so nothing is lost.
    */
   const restartOnBriefingFlags = (
     request: BattleRequest,
@@ -340,7 +343,9 @@ export function createRouter(game: Phaser.Game, defaults: BattleRequest = {}): R
       off?.();
       // After the dialogue's own close (which commits the briefing's effects to the save).
       queueMicrotask(() => {
-        if (battle !== b || ended || !scriptFlagsChanged(cfg, activeSave())) return;
+        if (battle !== b || ended) return;
+        openCrateAtBriefing(cfg.mapId);
+        if (!briefingChangedBattle(cfg, activeSave())) return;
         let next: SimConfig<IdSpace>;
         try {
           next = battleConfig(cfg.mapId, cfg.seed, activeSave());

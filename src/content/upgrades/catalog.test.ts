@@ -260,6 +260,7 @@ describe('catalog: progression.md numbers', () => {
       tune_choir: 'a3_m01',
       tune_bloom: 'a3_m01',
       tune_gloop: 'a3_m03', // T705: with its earliest gift
+      tune_sproing: 'a3_m04', // T704: with its gift (A3M5's briefing)
     };
     const after = (id: string): string => (aelari.has(id) ? 'a2_m05' : (later[id] ?? 'a1_m03'));
     for (const u of upgrades.filter((x) => x.kind === 'shop')) {

@@ -288,10 +288,12 @@ function pricedErrors(
     availableAfter: 'a3_m03',
     ranks: [{ price: REFERENCE_STORY_PRICING.a3_m04.warren.stardust + extra, grants: [] }],
   };
+  // This helper prices the story by hand, so the check's own story pricing is off.
   const rules: PurchaseRules = {
     ...LIVE_PURCHASE_RULES,
     aheadOfTask: [],
     upgrades: { ...LIVE_PURCHASE_RULES.upgrades, jailbreak },
+    storyPricing: {},
   };
   return validate(
     { ...raw, maps, campaign },

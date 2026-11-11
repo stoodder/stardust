@@ -13,7 +13,8 @@
 // stocks the whole pane); the tower it needs is owned (a tune-up's or spec unlock's own tower, an
 // attunement's prerequisite) and has specs (spec unlocks); a next rank exists (ranked upgrades; a
 // protocol, a license, a spec unlock, an ability, or an attunement is bought once); and the bank
-// covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts).
+// covers that rank's price. Owning rank n grants ranks 1..n (meta/modifiers.ts). The jailbreak
+// (T710) sits on the shop's shelf too, taken through its story transaction.
 import { ABILITIES } from '../content/abilities/index.ts';
 import { CAMPAIGN_PLAN_IDS, type CampaignMapId } from '../content/campaign.ts';
 import { TOWERS } from '../content/towers/index.ts';
@@ -35,6 +36,7 @@ import {
 import { abilityRefusal, stubTowerGate } from '../sim/gates.ts';
 import { isMapWon, isSystemUnlocked, SYSTEM_UNLOCKS, type MetaSystem } from './progress.ts';
 import type { SaveData } from './saveData.ts';
+import { buyJailbreak, JAILBREAK, jailbreakPrice } from './storyTransactions.ts';
 import { clampCurrency } from './validate.ts';
 
 /** The base's buy panes (each is a MetaSystem). */
@@ -63,7 +65,14 @@ export type PurchaseItem =
    * Xenotech: an Aelari tower, attuned once (a TOWER_ACCESS row with `how: 'attune'`, which may
    * `require` a tower owned first), or given (`how: 'gift'`: listed only once owned, never sold).
    */
-  | { readonly kind: 'attune'; readonly tower: string };
+  | { readonly kind: 'attune'; readonly tower: string }
+  /**
+   * The jailbreak at Zibzab's (towers.md § 9; T710): every revoked class back, drawn jailbroken.
+   * Stocked after A3M3, 300 Stardust or free under the convoy (`jailbreakPrice`), taken once
+   * (meta/storyTransactions.ts `buyJailbreak`). Listed only once stocked with a class to bring
+   * back, or once taken.
+   */
+  | { readonly kind: 'jailbreak' };
 
 /** Why an item can't be bought now, in check order. */
 export type Refusal =
@@ -374,6 +383,20 @@ function basics(save: SaveData, item: PurchaseItem, catalog: StoreCatalog): Basi
         gift: terms.gift,
       };
     }
+    case 'jailbreak':
+      return {
+        pane: 'shop',
+        currency: 'stardust',
+        price: jailbreakPrice(save),
+        owned: save.story.granted.includes(JAILBREAK.grant) ? 1 : 0,
+        ranks: 1,
+        grants: [],
+        protocolSlots: 0,
+        availableAfter: JAILBREAK.availableAfter,
+        tower: null,
+        needs: null,
+        gift: false,
+      };
     default:
       return assertNever(item);
   }
@@ -416,6 +439,7 @@ export function offerFor(
 }
 
 function itemLabel(item: PurchaseItem): string {
+  if (item.kind === 'jailbreak') return 'the jailbreak';
   if (item.kind === 'specs') return `specs for '${item.tower}'`;
   if (item.kind === 'license') return `the license for '${item.tower}'`;
   if (item.kind === 'attune') return `the attunement for '${item.tower}'`;
@@ -466,6 +490,12 @@ export function buy(
       reason: offer?.refusal ?? 'unknown',
       message: refusalMessage(save, item, offer),
     };
+  }
+  // The jailbreak is a story transaction: it moves the classes and takes its own price.
+  if (item.kind === 'jailbreak') {
+    const r = buyJailbreak(save);
+    if (!r.ok) return { ok: false, reason: 'unknown', message: r.message };
+    return { ok: true, save: r.save, offer: { ...offer, owned: 1 } };
   }
   const currencies = {
     ...save.currencies,
@@ -543,6 +573,13 @@ function listed(
   devUnlocks: readonly MetaSystem[],
   catalog: StoreCatalog,
 ): boolean {
+  // The jailbreak names the revocation: listed once stocked with a class to bring back, or taken.
+  if (o.item.kind === 'jailbreak') {
+    return (
+      o.owned > 0 ||
+      (isMapWon(save, JAILBREAK.availableAfter) && save.unlocks.revokedTowers.length > 0)
+    );
+  }
   if (devUnlocks.includes(o.pane)) return true;
   const stocked = (after: string | null): boolean => after === null || isMapWon(save, after);
   if (o.item.kind === 'upgrade' && catalog.upgrades[o.item.id]?.hideUntilStocked === true) {
@@ -593,6 +630,8 @@ export function shelf(
   } else {
     const upgrades = Object.values(catalog.upgrades).filter((u) => upgradePane(u) === pane);
     if (pane === 'shop') {
+      // The jailbreak first: the shelf's story item (T710).
+      groups.push([{ kind: 'jailbreak' }]);
       groups.push(
         Object.keys(catalog.towerAccess ?? {})
           .filter((t) => licenseOf(t, catalog) !== null)

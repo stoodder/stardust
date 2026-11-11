@@ -39,6 +39,7 @@ const RULES: PurchaseRules = {
   },
   economy: { intelPerMap: 1, baseProtocolSlots: 1, bankResetAfter: [] },
   aheadOfTask: [],
+  storyPricing: {},
 };
 
 /** The fixture with fx_prior before fx_map, and fx_map's profile patched. */
@@ -111,6 +112,44 @@ describe('[purchasable]', () => {
       ...RULES,
       abilities: { fx_strike: { how: 'gift', availableAfter: 'fx_map' } },
     });
+  });
+
+  it("prices what the story took and gave by C3's door: the jailbreak's Stardust, the crate's ranks (T710)", () => {
+    // fx_prior pays 100 Stardust; Seed Money's first rank is 80.
+    const seed = UPGRADES.seed_money.ranks[0]!.price;
+    const paid = withProfile({ shop: { seed_money: 1 } });
+    const priced = (stardust: number, gifted = 0): PurchaseRules => ({
+      ...RULES,
+      storyPricing: {
+        fx_map: {
+          convoy: { stardust: 0 },
+          warren: { stardust, ...(gifted > 0 ? { giftedShop: { seed_money: gifted } } : {}) },
+        },
+      },
+    });
+    expect(errorsOf(paid, priced(100 - seed))).toEqual([]);
+    // The default row is priced under the dearest door: the warren's jailbreak overspends.
+    rejects(paid, /fx_map\.referenceProfile: spends \d+ Stardust/, priced(100));
+    // A rank the crate gave costs nothing.
+    expect(errorsOf(paid, priced(100, 1))).toEqual([]);
+    // A cell names its door: the convoy's cell pays no jailbreak.
+    const cell = {
+      ...fxMap,
+      referenceProfileByFlag: [
+        {
+          when: { door_choice: 'convoy' },
+          profile: { ...fxMap.referenceProfile, shop: { seed_money: 1 } },
+        },
+      ],
+    } as MapDef<IdSpace>;
+    const raw = {
+      ...FIXTURE,
+      maps: { fx_prior: PRIOR, fx_map: cell },
+      campaign: ['fx_prior', 'fx_map'],
+    };
+    expect(errorsOf(raw, priced(100)).filter((e) => e.includes('referenceProfileByFlag'))).toEqual(
+      [],
+    );
   });
 
   it('fails a tower still ahead of its task: its license is on no shelf yet', () => {

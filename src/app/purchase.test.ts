@@ -59,6 +59,7 @@ describe('purchases in the save session', () => {
       'maxed', // the Hum Choir's (T607)
       'maxed', // the Stasis Bloom's (T608)
       'maxed', // the Gloop Spitter's (T705)
+      'maxed', // the Sproing Pad's (T704)
     ]);
   });
 });

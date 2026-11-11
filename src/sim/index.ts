@@ -37,6 +37,10 @@ export { phaseTelling } from './enemyAbilities/phase.ts';
 export { projectedAura } from './enemyAbilities/shieldAura.ts';
 export { projectedHaste } from './enemyAbilities/hasteAura.ts';
 export { healRate, projectedHeal, type HealUnits } from './enemyAbilities/healAura.ts'; // T703
+export { ringGrowth, ringTelling } from './enemyAbilities/jamRing.ts'; // T707
+export { hangarTelling } from './enemyAbilities/hangar.ts'; // T707
+export { takeoverTelling } from './enemyAbilities/takeover.ts'; // T707
+export { openedTile } from './openTile.ts'; // T707
 export { gatherMaxHp, gatherScale, gatherTelling } from './enemyAbilities/gather.ts';
 export { riftStatus, type RiftStatus } from './rifts.ts';
 export {

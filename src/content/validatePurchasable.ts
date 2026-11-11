@@ -13,7 +13,12 @@
 // - the Stardust spent is at most what the earlier maps' first clears paid (from each map's
 //   `stardust`; an unregistered map counts 0), restarting after a bank reset (A2M4's C2 Return:
 //   what's owned then stays owned, and only later payouts count);
-// - the Intel spent is at most `intelPerMap` (Victory only) per earlier map.
+// - the Intel spent is at most `intelPerMap` (Victory only) per earlier map;
+// - what the story took or gave outside the shelves is priced as it pays (`storyPricing`,
+//   upgrades/reference.ts REFERENCE_STORY_PRICING, by C3's door; T710): the jailbreak's Stardust
+//   (300 under the warren, free under the convoy) is spent, and the shop ranks Zibzab's crate gave
+//   (its top ranks) aren't. A profile is priced under its cell's door, or under the dearest door
+//   when it names none (the map's default row).
 // Spending is the whole profile's price, since a profile lists everything owned by then; a
 // refunded item (Mk II after A3M2) simply drops out of later profiles. Maps off the plan (test
 // fixtures with their own campaign, dev maps) have no timeline and aren't checked.
@@ -33,7 +38,12 @@ import {
   type ProtocolDef,
   type UpgradeDef,
 } from './upgrades/index.ts';
-import { REFERENCE_ECONOMY, type ReferenceEconomy } from './upgrades/reference.ts';
+import {
+  REFERENCE_ECONOMY,
+  REFERENCE_STORY_PRICING,
+  type ReferenceEconomy,
+  type StoryPricing,
+} from './upgrades/reference.ts';
 import { TOWERS_AHEAD_OF_TASK } from './towers/index.ts';
 import { duplicates, type Issues } from './validateHelpers.ts';
 
@@ -49,7 +59,15 @@ export interface PurchaseRules {
   readonly economy: ReferenceEconomy<string>;
   /** Towers registered ahead of their task, whose licenses no shelf sells yet. */
   readonly aheadOfTask: readonly string[];
+  /**
+   * What the story took or gave outside the shelves, by map then by `STORY_PRICING_FLAG` value
+   * (REFERENCE_STORY_PRICING: the jailbreak, the crate); maps it leaves out price nothing extra.
+   */
+  readonly storyPricing: Readonly<Partial<Record<string, Readonly<Record<string, StoryPricing>>>>>;
 }
+
+/** The story flag `storyPricing` varies by: C3's door (the jailbreak's price follows it). */
+export const STORY_PRICING_FLAG = 'door_choice';
 
 export const LIVE_PURCHASE_RULES: PurchaseRules = {
   plan: CAMPAIGN_PLAN_IDS,
@@ -60,6 +78,7 @@ export const LIVE_PURCHASE_RULES: PurchaseRules = {
   engineering: ENGINEERING,
   economy: REFERENCE_ECONOMY,
   aheadOfTask: TOWERS_AHEAD_OF_TASK,
+  storyPricing: REFERENCE_STORY_PRICING,
 };
 
 type Purse = Record<Currency, number>;
@@ -86,18 +105,48 @@ export function validatePurchasable<K extends IdSpace>(
   for (const [index, id] of rules.plan.entries()) {
     const def = maps.get(id);
     if (def === undefined || !campaign.has(id)) continue;
-    // The map's profile, then each flag-variant cell's (T700a), each priced the same way.
-    const profiles: [ProfileDef<IdSpace>, string][] = [
-      [def.referenceProfile, `maps.${id}.referenceProfile`],
-      ...(def.referenceProfileByFlag ?? []).map((c, i): [ProfileDef<IdSpace>, string] => [
+    // The map's profile, then each flag-variant cell's (T700a), each priced the same way: under
+    // the story's pricing for its door (the cell's, else the dearest door the map prices).
+    const byDoor = rules.storyPricing[id];
+    const profiles: [ProfileDef<IdSpace>, string, unknown][] = [
+      [def.referenceProfile, `maps.${id}.referenceProfile`, undefined],
+      ...(def.referenceProfileByFlag ?? []).map((c, i): [ProfileDef<IdSpace>, string, unknown] => [
         c.profile,
         `maps.${id}.referenceProfileByFlag[${i}].profile`,
+        (c.when as Readonly<Record<string, unknown>>)[STORY_PRICING_FLAG],
       ]),
     ];
-    for (const [profile, where] of profiles) {
-      checkProfileBill(issues, maps, towers, rules, index, profile, where);
+    for (const [profile, where, door] of profiles) {
+      checkProfileBill(
+        issues,
+        maps,
+        towers,
+        rules,
+        index,
+        profile,
+        where,
+        storyPricingOf(byDoor, door),
+      );
     }
   }
+}
+
+/**
+ * The story's pricing for a profile: its cell's door's, else (the map's default row, or a cell that
+ * names no door) the dearest door's, so the row is affordable whichever door led to it. Null for a
+ * map the story prices nothing on.
+ */
+function storyPricingOf(
+  byDoor: Readonly<Record<string, StoryPricing>> | undefined,
+  door: unknown,
+): StoryPricing | null {
+  if (byDoor === undefined) return null;
+  if (typeof door === 'string' && Object.hasOwn(byDoor, door)) return byDoor[door] ?? null;
+  let dearest: StoryPricing | null = null;
+  for (const p of Object.values(byDoor)) {
+    if (dearest === null || p.stardust > dearest.stardust) dearest = p;
+  }
+  return dearest;
 }
 
 /** A profile at plan position `index` is affordable and available by then ([purchasable]). */
@@ -109,10 +158,11 @@ function checkProfileBill(
   index: number,
   profile: ProfileDef<IdSpace>,
   where: string,
+  pricing: StoryPricing | null = null,
 ): void {
   const report = (field: string, msg: string): void =>
     issues.add('purchasable', `${where}${field}`, msg);
-  const bill = billOf(profile, index, rules, towers, report);
+  const bill = billOf(profile, index, rules, towers, report, pricing);
 
   // What the earlier maps paid, restarting at each bank reset.
   let stardust = 0;
@@ -157,11 +207,15 @@ function billOf(
   rules: PurchaseRules,
   towers: ReadonlyMap<string, TowerDef>,
   report: (field: string, msg: string) => void,
+  pricing: StoryPricing | null = null,
 ): Bill {
   const spent: Purse = { stardust: 0, intel: 0 };
   const pay = (currency: Currency, price: number): void => {
     spent[currency] += price;
   };
+  // What the story took outside the shelves (the jailbreak's Stardust).
+  pay('stardust', pricing?.stardust ?? 0);
+  const gifted: Readonly<Partial<Record<string, number>>> = pricing?.giftedShop ?? {};
   const available = (after: string | null, field: string, what: string): void => {
     if (after === null) return;
     const at = rules.plan.indexOf(after);
@@ -210,8 +264,10 @@ function billOf(
       continue;
     }
     available(def.availableAfter, field, `'${id}'`);
-    for (const r of def.ranks.slice(0, rank)) {
-      pay(def.currency, r.price);
+    // The story's gifted top ranks (the crate's) own their slots but cost nothing.
+    const paid = Math.max(0, rank - (gifted[id] ?? 0));
+    for (const [i, r] of def.ranks.slice(0, rank).entries()) {
+      if (i < paid) pay(def.currency, r.price);
       protocolSlots += r.protocolSlots ?? 0;
     }
   }
